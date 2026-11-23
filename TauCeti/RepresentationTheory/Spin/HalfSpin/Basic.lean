@@ -454,7 +454,6 @@ theorem spinMinusSubrep_toRepresentation_apply_eq_spinMinusAction
       spinMinusAction Q P hline (spinGroupToEven Q g)
         ((LinearEquiv.ofEq _ _ (toSubmodule_spinMinusSubrep P hline).symm).symm s) := by
   apply Subtype.ext
-  simpa using (coe_spinMinusAction_spinGroupToEven_apply P hline g
-    ((LinearEquiv.ofEq _ _ (toSubmodule_spinMinusSubrep P hline).symm).symm s)).symm
+  simp
 
 end TauCeti

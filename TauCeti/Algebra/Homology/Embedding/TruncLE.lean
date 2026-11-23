@@ -5,9 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Homology.Embedding.Boundary
 public import Mathlib.Algebra.Homology.Embedding.TruncLEHomology
 public import Mathlib.Algebra.Homology.Embedding.ExtendHomology
+public import TauCeti.Algebra.Homology.Embedding.Boundary
 
 /-!
 # Good truncation of complexes
@@ -39,7 +39,6 @@ embedding of complex shapes, including boundary degrees, naturally in `K`.
 * `HomologicalComplex.liftTruncLE'`: the factorization of a morphism into `K.restriction e`
   whose boundary components are killed by the differential, and
   `HomologicalComplex.liftTruncLE'_truncLE'ToRestriction`, its defining property.
-* `ComplexShape.boundaryLE_embeddingDownNat_iff`: the boundary of `embeddingDownNat` is `0`.
 * `CochainComplex.truncLE'ToX`: the inclusion of degree `n` of `τ_{≥ 0} K` into `K^{-n}`, with
   `CochainComplex.truncLE'ToX_d_succ` and `CochainComplex.truncLE'ToX_zero_d` for the
   differentials.
@@ -62,13 +61,16 @@ lemma truncLE'ToRestriction_f_eq_iso_hom_iso_inv {i : ι} {i' : ι'} (hi' : e.f 
       (K.truncLE'XIso e hi' hi).hom ≫ (K.restrictionXIso e hi').inv := by
   -- Mathlib defines `truncLE'` and its comparison maps by dualizing `truncGE'`, so we dualize the
   -- description of `restrictionToTruncGE'` away from the boundary.
-  have h := congrArg Quiver.Hom.unop
-    (K.op.restrictionToTruncGE'_f_eq_iso_hom_iso_inv e.op hi' (by simpa using hi))
   subst hi'
-  refine h.trans ?_
-  simp only [restrictionXIso, eqToIso.hom, eqToIso.inv, unop_comp, eqToHom_unop]
-  -- `(K.truncLE'XIso e _ hi).hom` is by definition `(K.op.truncGE'XIso e.op _ _).inv.unop`.
-  rfl
+  apply Quiver.Hom.op_inj
+  rw [truncLE'ToRestriction, unopFunctor_map_f, Quiver.Hom.unop_op, Quiver.Hom.op_unop,
+    K.op.restrictionToTruncGE'_f_eq_iso_hom_iso_inv e.op rfl
+      (by rwa [ComplexShape.Embedding.op_boundaryGE_iff])]
+  -- Both restriction isomorphisms are identities, and `truncLE'XIso` is the opposite of the
+  -- inverse of `truncGE'XIso`.
+  simp only [restriction_X, ComplexShape.Embedding.op_f, op_X, restrictionXIso, eqToIso_refl,
+    Iso.refl_hom, Iso.refl_inv, Category.id_comp, Category.comp_id, truncLE'XIso, Iso.unop_symm,
+    Iso.symm_hom, Iso.unop_inv, Quiver.Hom.op_unop]
 
 /-- At the boundary, the comparison `K.truncLE' e ⟶ K.restriction e` is the inclusion of the
 cycles of `K`, up to the canonical isomorphisms. -/
@@ -76,23 +78,23 @@ lemma truncLE'ToRestriction_f_eq_iso_hom_iCycles_iso_inv {i : ι} {i' : ι'} (hi
     (hi : e.BoundaryLE i) :
     (K.truncLE'ToRestriction e).f i =
       (K.truncLE'XIsoCycles e hi' hi).hom ≫ K.iCycles i' ≫ (K.restrictionXIso e hi').inv := by
-  have hi₀ : e.op.BoundaryGE i := by simpa using hi
   -- Mathlib defines `truncLE'` and its comparison maps by dualizing `truncGE'`, so we dualize the
-  -- description of `restrictionToTruncGE'` at the boundary; pass through `opcyclesOpIso` first.
-  have h₁ : (K.opcyclesOpIso i').inv.unop ≫ K.iCycles i' = (K.op.pOpcycles i').unop := by
-    have h : K.op.pOpcycles i' ≫ (K.opcyclesOpIso i').hom = (K.iCycles i').op :=
-      (K.sc i').op_pOpcycles_opcyclesOpIso_hom
-    rw [← Quiver.Hom.unop_op (K.iCycles i'), ← h, ← unop_comp]
-    simp
-  have h₂ : (K.truncLE'XIsoCycles e hi' hi).hom ≫ K.iCycles i' =
-      (K.op.truncGE'XIsoOpcycles e.op hi' hi₀).inv.unop ≫ (K.op.pOpcycles i').unop :=
-    (Category.assoc _ _ _).trans (congrArg _ h₁)
-  have h₃ := congrArg Quiver.Hom.unop
-    (K.op.restrictionToTruncGE'_f_eq_iso_hom_pOpcycles_iso_inv e.op hi' hi₀)
-  rw [← Category.assoc, h₂]
+  -- description of `restrictionToTruncGE'` at the boundary.
   subst hi'
-  refine h₃.trans ?_
-  simp only [restrictionXIso, eqToIso.hom, eqToIso.inv, unop_comp, Category.assoc, eqToHom_unop]
+  apply Quiver.Hom.op_inj
+  -- Under `opcyclesOpIso`, the projection `K.op.pOpcycles` is the opposite of `K.iCycles`.
+  have h : K.op.pOpcycles (e.f i) = (K.iCycles (e.f i)).op ≫ (K.opcyclesOpIso (e.f i)).inv :=
+    (Iso.eq_comp_inv _).2 (K.sc (e.f i)).op_pOpcycles_opcyclesOpIso_hom
+  rw [truncLE'ToRestriction, unopFunctor_map_f, Quiver.Hom.unop_op, Quiver.Hom.op_unop,
+    K.op.restrictionToTruncGE'_f_eq_iso_hom_pOpcycles_iso_inv e.op rfl
+      (by rwa [ComplexShape.Embedding.op_boundaryGE_iff])]
+  -- Both restriction isomorphisms are identities, `truncLE'XIsoCycles` is the unop of the
+  -- inverse of `truncGE'XIsoOpcycles` followed by the unop of the inverse of `opcyclesOpIso`,
+  -- and `h` rewrites `K.op.pOpcycles`.
+  simp only [restriction_X, ComplexShape.Embedding.op_f, op_X, restrictionXIso, eqToIso_refl,
+    Iso.refl_hom, Iso.refl_inv, Category.id_comp, Category.comp_id, h, Category.assoc,
+    truncLE'XIsoCycles, Iso.trans_hom, Iso.symm_hom, Iso.unop_inv, op_comp, Opposite.op_unop,
+    Quiver.Hom.op_unop]
 
 /-- At the boundary, the comparison `K.truncLE' e ⟶ K.restriction e` lands in the cycles of `K`:
 it is killed by the differential of `K`. -/
@@ -186,14 +188,13 @@ lemma truncLE'HomologyIso_hom_naturality {L : HomologicalComplex C c'}
     [∀ i, L.HasHomology i] (φ : K ⟶ L) (i : ι) :
     homologyMap (truncLE'Map φ e) i ≫ (L.truncLE'HomologyIso e i).hom =
       (K.truncLE'HomologyIso e i).hom ≫ homologyMap φ (e.f i) := by
+  -- The comparison with extension by zero is natural, and so is its composite with `ιTruncLE`.
   have ht : extendMap (truncLE'Map φ e) e ≫ (L.truncLEIso e).inv =
       (K.truncLEIso e).inv ≫ truncLEMap φ e := by
-    apply (cancel_epi (K.truncLEIso e).hom).1
-    rw [← Category.assoc, ← truncLEIso_hom_naturality]
-    simp
+    rw [Iso.comp_inv_eq, Category.assoc, truncLEIso_hom_naturality, Iso.inv_hom_id_assoc]
   have hc : extendMap (truncLE'Map φ e) e ≫ (L.truncLEIso e).inv ≫ L.ιTruncLE e =
       (K.truncLEIso e).inv ≫ K.ιTruncLE e ≫ φ := by
-    rw [← Category.assoc, ht, Category.assoc, ιTruncLE_naturality]
+    rw [reassoc_of% ht, ιTruncLE_naturality]
   rw [← cancel_epi ((K.truncLE' e).extendHomologyIso e (j := i) rfl).hom,
     ← Category.assoc, ← extendHomologyIso_hom_naturality]
   simp only [truncLE'HomologyIso, Iso.trans_hom, Iso.symm_hom, homologyMapIso_hom, asIso_hom,
@@ -204,27 +205,6 @@ lemma truncLE'HomologyIso_hom_naturality {L : HomologicalComplex C c'}
 end Homology
 
 end HomologicalComplex
-
-namespace ComplexShape
-
-/-- The only boundary degree of the embedding `n ↦ -n` of `ComplexShape.down ℕ` into
-`ComplexShape.up ℤ` is `0`. -/
-lemma boundaryLE_embeddingDownNat_iff (n : ℕ) :
-    embeddingDownNat.BoundaryLE n ↔ n = 0 := by
-  constructor
-  · intro h
-    obtain _ | n := n
-    · rfl
-    · have := h.2 n
-      simp at this
-  · rintro rfl
-    constructor
-    · simp
-    · intro i hi
-      simp at hi
-      omega
-
-end ComplexShape
 
 namespace CochainComplex
 

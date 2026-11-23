@@ -169,12 +169,8 @@ theorem leviForm_congr_of_eventuallyEq (hfg : f =ᶠ[𝓝 x] g) : leviForm f x =
 /-- **The sum rule.** -/
 theorem leviForm_add (hf : ContDiffAt ℝ 2 f x) (hg : ContDiffAt ℝ 2 g x) :
     leviForm (f + g) x = leviForm f x + leviForm g x := by
-  have h2 (v w : V) : fderiv ℝ (fderiv ℝ (f + g)) x v w =
-      fderiv ℝ (fderiv ℝ f) x v w + fderiv ℝ (fderiv ℝ g) x v w := by
-    simpa [iteratedFDeriv_two_apply] using
-      congr($(iteratedFDeriv_add_apply (i := 2) hf hg) ![v, w])
   ext v w
-  apply Complex.ext <;> simp [h2] <;> ring
+  apply Complex.ext <;> simp [fderiv_fderiv_add hf hg] <;> ring
 
 /-- Negating a function negates its Levi form. -/
 @[simp]
