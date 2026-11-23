@@ -10,6 +10,7 @@ public import TauCeti.MeasureTheory.OptimalTransport.DynamicPlan
 public import TauCeti.MeasureTheory.OptimalTransport.MetricMeasure.Basic
 public import TauCeti.MeasureTheory.OptimalTransport.MetricMeasure.DistortionCoefficient
 public import TauCeti.MeasureTheory.OptimalTransport.Wasserstein.RenyiEntropy
+import TauCeti.Analysis.Convex.CCHypersurface.Regular.SufficientConditions
 import TauCeti.Analysis.Convex.McCannCondition
 import TauCeti.Data.EReal.Operations
 import TauCeti.MeasureTheory.OptimalTransport.Brenier.Basic

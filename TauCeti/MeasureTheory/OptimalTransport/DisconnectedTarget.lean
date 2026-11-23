@@ -7,6 +7,7 @@ module
 
 public import TauCeti.MeasureTheory.OptimalTransport.Brenier.Basic
 public import TauCeti.Probability.Distributions.Uniform.Ball.Support
+import TauCeti.Analysis.Convex.CCHypersurface.Regular.SufficientConditions
 import TauCeti.MeasureTheory.Measure.ProbabilityMeasure.Convex
 
 /-!

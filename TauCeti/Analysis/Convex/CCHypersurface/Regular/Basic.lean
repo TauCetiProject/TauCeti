@@ -5,13 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.MeasureTheory.Constructions.BorelSpace.Basic
 public import Mathlib.MeasureTheory.Measure.Dirac.Def
 public import Mathlib.MeasureTheory.Measure.Sum
 public import Mathlib.MeasureTheory.Measure.Typeclasses.NullSingletonClass
-public import Mathlib.Topology.MetricSpace.HausdorffDimension
 public import TauCeti.Analysis.Convex.CCHypersurface.Basic
-import TauCeti.Analysis.Convex.CCHypersurface.Measure
-import TauCeti.Analysis.InnerProductSpace.OrthogonalLine.HausdorffDimension
 
 /-!
 # `c - c`-regular measures
@@ -23,12 +21,15 @@ differentiability of every convex `E → ℝ` (see
 `TauCeti.Analysis.Convex.CCHypersurface.Regular.Differentiability`) and is the sharp source
 regularity hypothesis for Brenier's theorem
 (`TauCeti/MeasureTheory/OptimalTransport/Brenier/Basic.lean`,
-`TauCeti/MeasureTheory/OptimalTransport/Brenier/RegularSource.lean`).
+`TauCeti/MeasureTheory/OptimalTransport/Brenier/RegularSource.lean`). For Hausdorff-dimension and
+Haar absolute-continuity criteria, see
+`TauCeti.Analysis.Convex.CCHypersurface.Regular.SufficientConditions`.
 
 ## Main declarations
 
 * `TauCeti.IsCCRegular` — vanishing on every `c - c` hypersurface.
 * `TauCeti.isCCRegular_add_iff`, `TauCeti.isCCRegular_smul_iff`, `TauCeti.isCCRegular_sum_iff`,
+  `TauCeti.isCCRegular_sum_iff_of_countable`,
   `TauCeti.isCCRegular_map_add_left_iff_of_aemeasurable`,
   `TauCeti.isCCRegular_map_add_right_iff_of_aemeasurable`,
   `TauCeti.isCCRegular_map_continuousLinearEquiv_iff_of_aemeasurable`,
@@ -39,9 +40,8 @@ regularity hypothesis for Brenier's theorem
 * `TauCeti.IsCCRegular.measure_singleton`, `TauCeti.IsCCRegular.nullSingletonClass`,
   `TauCeti.not_isCCRegular_dirac`, `TauCeti.isCCRegular_iff_nullSingletonClass` — null singletons.
 * `TauCeti.isCCRegular_of_forall_isLipschitzHypersurface`,
-  `TauCeti.isCCRegular_of_null_lipschitz_graphs`, `TauCeti.isCCRegular_of_dimH_add_one_le`,
-  `TauCeti.isCCRegular_of_dimH_le`, `TauCeti.isCCRegular_of_isAddHaarMeasure`,
-  `TauCeti.isCCRegular_of_absolutelyContinuous` — sufficient conditions for `c - c`-regularity.
+  `TauCeti.isCCRegular_of_null_lipschitz_graphs` — Lipschitz-graph criteria for
+  `c - c`-regularity.
 
 ## References
 
@@ -139,10 +139,22 @@ theorem isCCRegular_smul_iff {c : ℝ≥0∞} : IsCCRegular (c • μ) ↔ c = 0
     (mul_eq_zero.1 (by simpa using h hs)).resolve_left hc,
     fun h => h.elim (fun hc => by simp [hc]) fun hμ => hμ.smul c⟩
 
+/-- A sum of measures is `c - c`-regular if and only if every summand is `c - c`-regular,
+provided open sets are measurable (so every `c - c` hypersurface is measurable). -/
+@[simp]
+theorem isCCRegular_sum_iff [OpensMeasurableSpace E] {ι : Type*} {μ : ι → Measure E} :
+    IsCCRegular (Measure.sum μ) ↔ ∀ i, IsCCRegular (μ i) := by
+  refine ⟨fun h i _ hs => ?_, fun h _ hs => ?_⟩
+  · have h0 := h hs
+    rw [Measure.sum_apply _ hs.isClosed.measurableSet] at h0
+    exact tsum_eq_zero_iff.1 h0 i
+  · rw [Measure.sum_apply _ hs.isClosed.measurableSet]
+    exact tsum_eq_zero_iff.2 fun i => h i hs
+
 /-- A countable sum of measures is `c - c`-regular if and only if every summand is
 `c - c`-regular. -/
 @[simp]
-theorem isCCRegular_sum_iff {ι : Type*} [Countable ι] {μ : ι → Measure E} :
+theorem isCCRegular_sum_iff_of_countable {ι : Type*} [Countable ι] {μ : ι → Measure E} :
     IsCCRegular (Measure.sum μ) ↔ ∀ i, IsCCRegular (μ i) := by
   simp only [IsCCRegular, Measure.sum_apply_eq_zero]
   exact ⟨fun h i _ hs => h hs i, fun h _ hs i => h i hs⟩
@@ -267,40 +279,5 @@ theorem isCCRegular_of_null_lipschitz_graphs {μ : Measure E}
     exact h v hv K g hg
 
 end Separable
-
-section SufficientConditions
-
-variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
-  [MeasurableSpace E]
-
-/-- **Measures vanishing on sets of Hausdorff codimension at least `1` are `c - c`-regular.** If
-`μ` vanishes on every measurable set `A` with `dimH A + 1 ≤ finrank ℝ E`, then `μ` is
-`c - c`-regular. -/
-theorem isCCRegular_of_dimH_add_one_le [OpensMeasurableSpace E] {μ : Measure E}
-    (h : ∀ A : Set E, MeasurableSet A →
-      dimH A + 1 ≤ (Module.finrank ℝ E : ℝ≥0∞) → μ A = 0) : IsCCRegular μ :=
-  isCCRegular_of_null_lipschitz_graphs fun _ hv _ _ hg =>
-    measure_range_add_smul_eq_zero_of_dimH_add_one_le h hv hg
-
-/-- **Measures vanishing on small-Hausdorff-dimension sets are `c - c`-regular.** If `μ` vanishes
-on every measurable set `A` with `dimH A ≤ finrank ℝ E - 1`, then `μ` is `c - c`-regular. -/
-theorem isCCRegular_of_dimH_le [OpensMeasurableSpace E] {μ : Measure E}
-    (h : ∀ A : Set E, MeasurableSet A →
-      dimH A ≤ ((Module.finrank ℝ E - 1 : ℕ) : ℝ≥0∞) → μ A = 0) : IsCCRegular μ :=
-  isCCRegular_of_dimH_add_one_le fun _ hA hdim =>
-    h _ hA (by
-      simpa only [ENNReal.natCast_sub, Nat.cast_one] using
-        ENNReal.le_sub_of_add_le_right ENNReal.one_ne_top hdim)
-
-/-- **Every additive Haar measure is `c - c`-regular.** -/
-theorem isCCRegular_of_isAddHaarMeasure [BorelSpace E] (μ : Measure E) [μ.IsAddHaarMeasure] :
-    IsCCRegular μ := fun _ hs => hs.addHaar_eq_zero μ
-
-/-- **Every measure absolutely continuous with respect to an additive Haar measure is
-`c - c`-regular.** -/
-theorem isCCRegular_of_absolutelyContinuous [BorelSpace E] {μ ρ : Measure E} [ρ.IsAddHaarMeasure]
-    (h : μ ≪ ρ) : IsCCRegular μ := (isCCRegular_of_isAddHaarMeasure ρ).mono_ac h
-
-end SufficientConditions
 
 end TauCeti

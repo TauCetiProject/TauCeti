@@ -10,6 +10,7 @@ public import Mathlib.Analysis.InnerProductSpace.PiL2
 public import TauCeti.Analysis.Convex.SingularSet
 public import TauCeti.Analysis.InnerProductSpace.OrthogonalLine.HausdorffDimension
 import TauCeti.Analysis.Convex.CCHypersurface.Regular.Differentiability
+import TauCeti.Analysis.Convex.CCHypersurface.Regular.SufficientConditions
 import TauCeti.Analysis.Convex.Separation
 import TauCeti.Analysis.Convex.SubgradientImage
 

@@ -7,16 +7,16 @@ module
 
 public import TauCeti.MeasureTheory.OptimalTransport.Brenier.Basic
 public import TauCeti.MeasureTheory.OptimalTransport.Wasserstein.Space
-import TauCeti.Analysis.Convex.CCHypersurface.Zajicek
+import TauCeti.Analysis.Convex.CCHypersurface.MeasurableSplitting
 
 /-!
 # Regular sources for quadratic optimal transport
 
 Brenier's theorem (`TauCeti/MeasureTheory/OptimalTransport/Brenier/Basic.lean`) holds whenever the
-source law `μ` on a finite-dimensional real inner product space `E` is **`c - c`-regular**
-(`TauCeti.IsCCRegular μ`) and the quadratic transport cost is finite, strictly generalizing absolute
-continuity with respect to additive Haar measure (e.g. atomless singular measures on `ℝ`, or
-product Cantor measures on `ℝ²`).
+source law `μ` on a finite-dimensional real inner product space `E` is a finite **`c - c`-regular**
+measure (`TauCeti.IsCCRegular μ`) and the quadratic transport cost is finite, strictly
+generalizing absolute continuity with respect to additive Haar measure (e.g. atomless singular
+measures on `ℝ`, or product Cantor measures on `ℝ²`).
 
 This module proves the converse / sharp characterization of Gangbo–McCann (1996) and
 Ambrosio–Gigli (2013, Theorem 1.26): a finite measure `μ` of finite second moment is

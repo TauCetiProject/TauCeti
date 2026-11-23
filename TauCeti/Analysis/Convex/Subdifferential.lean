@@ -590,17 +590,12 @@ theorem exists_mem_subdifferential_apply_eq {E F : Type*} [AddCommGroup E] [Modu
     (hq : q ∈ subdifferential B u x) (hpM : ‖p‖ ≤ M) (hqM : ‖q‖ ≤ M) (hpc : φ p ≤ c)
     (hcq : c ≤ φ q) :
     ∃ α ∈ subdifferential B u x, ‖α‖ ≤ M ∧ φ α = c := by
-  rcases eq_or_lt_of_le (hpc.trans hcq) with hpeq | hplt
-  · exact ⟨p, hp, hpM, le_antisymm hpc (hpeq ▸ hcq)⟩
-  set θ := (c - φ p) / (φ q - φ p)
-  have hden : 0 < φ q - φ p := sub_pos.2 hplt
-  have hθ0 : 0 ≤ θ := div_nonneg (sub_nonneg.2 hpc) hden.le
-  have h1θ : 0 ≤ 1 - θ := sub_nonneg.2 ((div_le_one hden).2 (by linarith))
-  refine ⟨(1 - θ) • p + θ • q, convex_subdifferential B u x hp hq h1θ hθ0 (by ring),
-    ?_, by simp only [map_add, map_smul, smul_eq_mul, θ]; field_simp [hden.ne']; ring⟩
-  exact ((norm_add_le _ _).trans_eq (by
-    rw [norm_smul, norm_smul, Real.norm_of_nonneg h1θ, Real.norm_of_nonneg hθ0])).trans
-    (by nlinarith)
+  have hconv : Convex ℝ (φ '' (subdifferential B u x ∩ Metric.closedBall 0 M)) :=
+    ((convex_subdifferential B u x).inter (convex_closedBall 0 M)).linear_image φ
+  obtain ⟨α, ⟨hα_sub, hαM⟩, hφα⟩ := hconv.ordConnected.out
+    (Set.mem_image_of_mem φ ⟨hp, mem_closedBall_zero_iff.2 hpM⟩)
+    (Set.mem_image_of_mem φ ⟨hq, mem_closedBall_zero_iff.2 hqM⟩) ⟨hpc, hcq⟩
+  exact ⟨α, hα_sub, mem_closedBall_zero_iff.1 hαM, hφα⟩
 
 /-- Inner-product specialization of `TauCeti.exists_mem_subdifferential_apply_eq`: if
 `p, q ∈ ∂u(x)` satisfy `‖p‖ ≤ M`, `‖q‖ ≤ M`, and `⟪p, e⟫ ≤ c ≤ ⟪q, e⟫`, then some

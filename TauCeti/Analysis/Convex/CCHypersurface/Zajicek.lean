@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Calculus.FDeriv.Defs
-public import Mathlib.MeasureTheory.Constructions.BorelSpace.Basic
 public import TauCeti.Analysis.Convex.CCHypersurface.Basic
 public import TauCeti.Analysis.Convex.Subdifferential
 import Mathlib.Analysis.Convex.Continuous
@@ -15,7 +14,8 @@ import Mathlib.Analysis.SpecificLimits.Basic
 import Mathlib.Data.Nat.Pairing
 import TauCeti.Analysis.Calculus.FDeriv.Basic
 import TauCeti.Analysis.Convex.Function.Topology
-import TauCeti.Analysis.Convex.MeasurableSubgradient
+import TauCeti.Analysis.Convex.Separation
+import TauCeti.Analysis.Convex.SubgradientImage
 import TauCeti.Analysis.InnerProductSpace.LinearIsometry
 import TauCeti.Analysis.InnerProductSpace.Projection.Basic
 
@@ -34,8 +34,8 @@ extended-real convex functions, and frontiers of convex sets.
   `TauCeti.exists_countable_isCCHypersurface_cover_not_subsingleton_subdifferential`,
   `TauCeti.exists_countable_isCCHypersurface_cover_mem_interior_not_differentiableAt_toReal`,
   `Convex.exists_countable_isCCHypersurface_cover_frontier` — countable `c - c` coverings.
-* `TauCeti.IsCCHypersurface.exists_convexOn_lipschitzWith_add_sub_two_mul_eq`,
-  `TauCeti.IsCCHypersurface.exists_convexOn_lipschitzWith_measurable_forall_add_inner_le_ne`,
+* `TauCeti.IsCCHypersurface.exists_convexOn_lipschitzWith_max_add_inner_eq`,
+  `TauCeti.IsCCHypersurface.exists_convexOn_lipschitzWith_add_sub_two_mul_eq`,
   `TauCeti.exists_convexOn_subset_not_differentiableAt_iff`,
   `TauCeti.exists_convexOn_subset_not_differentiableAt_iff_nat` — Zajíček's theorem.
 
@@ -51,7 +51,7 @@ public section
 
 noncomputable section
 
-open Set MeasureTheory Metric Submodule
+open Set Metric Submodule
 open scoped NNReal
 
 namespace TauCeti
@@ -144,22 +144,12 @@ theorem exists_countable_isCCHypersurface_cover_mem_interior_not_differentiableA
 private theorem exists_countable_isCCHypersurface_cover_closure_of_not_nonempty_interior {K : Set E}
     (hK : Convex ℝ K) (hint : ¬ (interior K).Nonempty) :
     ∃ C : Set (Set E), C.Countable ∧ (∀ s ∈ C, IsCCHypersurface s) ∧ closure K ⊆ ⋃₀ C := by
-  rcases K.eq_empty_or_nonempty with rfl | ⟨x₀, hx₀⟩
+  rcases K.eq_empty_or_nonempty with rfl | hKne
   · exact ⟨∅, countable_empty, by simp, by simp⟩
-  have hdir : (affineSpan ℝ K).direction ≠ ⊤ :=
-    mt (AffineSubspace.direction_eq_top_iff_of_nonempty ⟨x₀, subset_affineSpan ℝ K hx₀⟩).1
-      (mt hK.interior_nonempty_iff_affineSpan_eq_top.2 hint)
-  obtain ⟨v, hv_mem, hv0⟩ :=
-    Submodule.exists_mem_ne_zero_of_ne_bot (mt Submodule.orthogonal_eq_bot_iff.1 hdir)
-  let e : E := ‖v‖⁻¹ • v
-  have he : ‖e‖ = 1 := by simp [e, norm_smul, inv_mul_cancel₀ (norm_ne_zero_iff.2 hv0)]
-  refine ⟨{{x | inner ℝ x e = inner ℝ x₀ e}}, countable_singleton _,
-    by simpa using isCCHypersurface_setOf_inner_eq he _, ?_⟩
-  simpa using closure_minimal (fun x hx => by
-    rw [mem_ofPred_eq, ← sub_eq_zero, ← inner_sub_left]
-    exact (Submodule.mem_orthogonal _ _).1 (Submodule.smul_mem _ _ hv_mem) _
-      (AffineSubspace.vsub_mem_direction (subset_affineSpan ℝ K hx) (subset_affineSpan ℝ K hx₀)))
-    (isClosed_eq (by fun_prop) continuous_const)
+  · obtain ⟨e, c, he, hsub⟩ :=
+      hK.exists_norm_eq_one_closure_subset_setOf_inner_eq hKne (not_nonempty_iff_eq_empty.mp hint)
+    exact ⟨{{x | inner ℝ x e = c}}, countable_singleton _,
+      by simpa using isCCHypersurface_setOf_inner_eq he c, by simpa using hsub⟩
 
 /-- **Frontier of a convex set is covered by countably many `c - c` hypersurfaces.** For any convex
 subset `K` of a finite-dimensional real inner product space `E`, `frontier K` (and hence also
@@ -210,7 +200,13 @@ section Zajicek
 
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
 
-private theorem exists_lipschitz_branch_data {s : Set E} (hs : IsCCHypersurface s) (R : ℝ) :
+/-- **Lipschitz branch representation of a `c - c` hypersurface on a ball.** Given a `c - c`
+hypersurface `s ⊆ E` and `R : ℝ`, there exist a unit vector `e : E` and globally Lipschitz convex
+branches `f', g' : ↥(ℝ ∙ e)ᗮ → ℝ` such that `x ↦ max (f' (P x)) (g' (P x) + ⟪x, e⟫)` (where `P`
+is orthogonal projection onto `(ℝ ∙ e)ᗮ`) is convex and Lipschitz on `E`, and the two branches agree
+on `s ∩ closedBall 0 R`. -/
+theorem IsCCHypersurface.exists_convexOn_lipschitzWith_max_add_inner_eq {s : Set E}
+    (hs : IsCCHypersurface s) (R : ℝ) :
     ∃ (e : E) (_ : ‖e‖ = 1) (Lf Lg : ℝ≥0) (f' g' : ↥(ℝ ∙ e)ᗮ → ℝ),
       ConvexOn ℝ univ f' ∧ ConvexOn ℝ univ g' ∧ LipschitzWith Lf f' ∧ LipschitzWith Lg g' ∧
       ConvexOn ℝ univ (fun x : E => max (f' ((ℝ ∙ e)ᗮ.orthogonalProjectionOnto x))
@@ -253,7 +249,7 @@ theorem IsCCHypersurface.exists_convexOn_lipschitzWith_add_sub_two_mul_eq {s : S
       ∀ x ∈ s ∩ closedBall 0 R, ∀ t : ℝ, 0 ≤ t →
         ψ (x + t • e) + ψ (x - t • e) - 2 * ψ x = t := by
   obtain ⟨e, he, Lf, Lg, f', g', -, -, -, -, hconv₀, hlip₀, heq_on⟩ :=
-    exists_lipschitz_branch_data hs R
+    hs.exists_convexOn_lipschitzWith_max_add_inner_eq R
   let P := (ℝ ∙ e)ᗮ.orthogonalProjectionOnto
   let ψ : E → ℝ := fun x => max (f' (P x)) (g' (P x) + inner ℝ x e) - max (f' 0) (g' 0)
   refine ⟨max Lf (Lg + 1), e, he, ψ, hconv₀.add_const (-max (f' 0) (g' 0)), by simp [ψ, P],
@@ -269,51 +265,6 @@ theorem IsCCHypersurface.exists_convexOn_lipschitzWith_add_sub_two_mul_eq {s : S
     max_eq_right (le_add_of_nonneg_right ht),
     max_eq_left (sub_le_self _ ht), max_self]
   ring
-
-/-- **Borel measurable subgradient splitting along a `c - c` hypersurface.** Given a `c - c`
-hypersurface `s ⊆ E` and `R : ℝ`, there exist `K : ℝ≥0`, a `K`-Lipschitz convex `ψ : E → ℝ`, and
-Borel measurable maps `T₁, T₂ : E → E` bounded by `K` that are subgradients of `ψ` everywhere and
-satisfy `T₁ x ≠ T₂ x` at every `x ∈ s ∩ closedBall 0 R`. -/
-theorem IsCCHypersurface.exists_convexOn_lipschitzWith_measurable_forall_add_inner_le_ne
-    [MeasurableSpace E] [BorelSpace E] {s : Set E} (hs : IsCCHypersurface s) (R : ℝ) :
-    ∃ (K : ℝ≥0) (ψ : E → ℝ) (T₁ T₂ : E → E),
-      ConvexOn ℝ univ ψ ∧ LipschitzWith K ψ ∧ Measurable T₁ ∧ Measurable T₂ ∧
-      (∀ x z, ψ x + inner ℝ (z - x) (T₁ x) ≤ ψ z) ∧
-      (∀ x z, ψ x + inner ℝ (z - x) (T₂ x) ≤ ψ z) ∧
-      (∀ x, ‖T₁ x‖ ≤ K) ∧ (∀ x, ‖T₂ x‖ ≤ K) ∧
-      (∀ x ∈ s ∩ closedBall 0 R, T₁ x ≠ T₂ x) := by
-  obtain ⟨e, he, Lf, Lg, f', g', hf', hg', hLf', hLg', hconv, hlip, heq_on⟩ :=
-    exists_lipschitz_branch_data hs R
-  let P := (ℝ ∙ e)ᗮ.orthogonalProjectionOnto
-  obtain ⟨Gf, hGf_meas, hGf⟩ := hf'.exists_measurable_forall_add_inner_le isOpen_univ
-  obtain ⟨Gg, hGg_meas, hGg⟩ := hg'.exists_measurable_forall_add_inner_le isOpen_univ
-  have hsub₁ (x z : E) (hx : g' (P x) + inner ℝ x e ≤ f' (P x)) :
-      max (f' (P x)) (g' (P x) + inner ℝ x e) + inner ℝ (z - x) (Gf (P x) : E) ≤
-        max (f' (P z)) (g' (P z) + inner ℝ z e) := by
-    rw [max_eq_left hx, ← inner_orthogonalProjectionOnto_eq_of_mem_right, map_sub]
-    exact (hGf (P x) (mem_univ _) (P z) (mem_univ _)).trans (le_max_left _ _)
-  have hsub₂ (x z : E) (hx : f' (P x) ≤ g' (P x) + inner ℝ x e) :
-      max (f' (P x)) (g' (P x) + inner ℝ x e) + inner ℝ (z - x) ((Gg (P x) : E) + e) ≤
-        max (f' (P z)) (g' (P z) + inner ℝ z e) := by
-    rw [max_eq_right hx, inner_add_right, ← inner_orthogonalProjectionOnto_eq_of_mem_right,
-      map_sub, inner_sub_left z x e]
-    linarith [(add_le_add_left (hGg (P x) (mem_univ _) (P z) (mem_univ _)) (inner ℝ z e)).trans
-      (le_max_right (f' (P z)) _)]
-  obtain ⟨T₁, T₂, hT₁m, hT₂m, hT₁, hT₂, hTeq⟩ := exists_measurable_piecewise_subgradient_max
-    (hLf'.continuous.comp P.continuous).measurable
-    ((hLg'.continuous.comp P.continuous).add (by fun_prop)).measurable
-    (measurable_subtypeVal.comp (hGf_meas.comp P.measurable))
-    ((measurable_subtypeVal.comp (hGg_meas.comp P.measurable)).add measurable_const) hsub₁ hsub₂
-  refine ⟨max Lf (Lg + 1), _, T₁, T₂, hconv, hlip, hT₁m, hT₂m, hT₁, hT₂,
-    fun x => hlip.norm_le_of_forall_add_inner_le (hT₁ x),
-    fun x => hlip.norm_le_of_forall_add_inner_le (hT₂ x), fun x hx hEq => ?_⟩
-  obtain ⟨h₁, h₂⟩ := hTeq x (heq_on x hx).symm
-  have hin₁ : inner ℝ (T₁ x) e = 0 :=
-    h₁ ▸ Submodule.mem_orthogonal_singleton_iff_inner_left.mp (Gf (P x)).property
-  have hin₂ : inner ℝ (T₂ x) e = 1 := by
-    simp [h₂, inner_add_left,
-      Submodule.mem_orthogonal_singleton_iff_inner_left.mp (Gg (P x)).property, he]
-  linarith [congrArg (inner ℝ · e) hEq]
 
 private theorem exists_convexOn_subset_not_differentiableAt_of_seq (s : ℕ → Set E)
     (hs : ∀ n, IsCCHypersurface (s n)) :

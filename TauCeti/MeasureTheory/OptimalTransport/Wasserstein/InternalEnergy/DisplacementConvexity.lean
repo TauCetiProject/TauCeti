@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Convex.MongeAmpere.Interpolation
 public import TauCeti.MeasureTheory.OptimalTransport.Wasserstein.InternalEnergy.Basic
+import TauCeti.Analysis.Convex.CCHypersurface.Regular.SufficientConditions
 import TauCeti.Analysis.Convex.McCannCondition
 import TauCeti.MeasureTheory.Measure.Decomposition.Lebesgue
 import TauCeti.MeasureTheory.OptimalTransport.Brenier.Basic

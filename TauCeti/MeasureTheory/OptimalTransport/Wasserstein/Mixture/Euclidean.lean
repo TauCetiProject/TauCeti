@@ -15,11 +15,12 @@ On a finite-dimensional real inner product space `E`, strict convexity of the qu
 cost for a finite `c - c`-regular source (`TauCeti.IsCCRegular.transportCost_smul_add_smul_lt`)
 transfers directly to `ν ↦ W₂(μ, ν) ^ 2` on targets at finite `W₂` distance from `μ` via
 `W₂(μ, ν) ^ 2 = 2 * transportCost (‖x - y‖ ^ 2 / 2) μ ν`. In particular, via the sufficient
-conditions in `TauCeti.Analysis.Convex.CCHypersurface.Regular.Basic`, `ν ↦ W₂(μ, ν) ^ 2` is strictly
-convex on targets at finite `W₂` distance from `μ` whenever `μ` is finite and gives zero mass to
-globally Lipschitz graphs over hyperplanes, vanishes on Borel sets with `dimH A + 1 ≤ finrank ℝ E`
-or small sets (`dimH A ≤ finrank ℝ E - 1`, Agueh–Carlier §3.1), or is absolutely continuous with
-respect to an additive Haar measure.
+conditions in `TauCeti.Analysis.Convex.CCHypersurface.Regular.Basic` and
+`TauCeti.Analysis.Convex.CCHypersurface.Regular.SufficientConditions`, `ν ↦ W₂(μ, ν) ^ 2` is
+strictly convex on targets at finite `W₂` distance from `μ` whenever `μ` is finite and gives zero
+mass to globally Lipschitz graphs over hyperplanes, vanishes on Borel sets with
+`dimH A + 1 ≤ finrank ℝ E` or small sets (`dimH A ≤ finrank ℝ E - 1`, Agueh–Carlier §3.1), or is
+absolutely continuous with respect to an additive Haar measure.
 
 ## Main statements
 

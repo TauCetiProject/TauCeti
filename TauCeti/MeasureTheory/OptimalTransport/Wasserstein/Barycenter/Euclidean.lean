@@ -7,8 +7,10 @@ module
 
 public import Mathlib.Analysis.InnerProductSpace.PiL2
 public import Mathlib.Analysis.Normed.Lp.MeasurableSpace
+public import Mathlib.Topology.MetricSpace.HausdorffDimension
 public import TauCeti.MeasureTheory.OptimalTransport.Wasserstein.Barycenter.Uniqueness.Euclidean
 public import TauCeti.MeasureTheory.OptimalTransport.Wasserstein.PopulationBarycenter
+import TauCeti.Analysis.Convex.CCHypersurface.Regular.SufficientConditions
 import TauCeti.MeasureTheory.OptimalTransport.Wasserstein.FrechetMean
 
 /-!

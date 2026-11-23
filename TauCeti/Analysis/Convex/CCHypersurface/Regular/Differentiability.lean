@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.Calculus.FDeriv.Defs
 public import TauCeti.Analysis.Convex.CCHypersurface.Regular.Basic
 import TauCeti.Analysis.Convex.CCHypersurface.Zajicek
 import TauCeti.Analysis.Convex.EffectiveDomain
@@ -21,10 +22,11 @@ almost-everywhere differentiability of extended-real convex functions on their e
 
 * `TauCeti.isCCRegular_iff_forall_convexOn_ae_differentiableAt` — `IsCCRegular μ` iff every convex
   `u : E → ℝ` is differentiable `μ`-almost everywhere;
-* `TauCeti.isCCRegular_of_forall_convex_ae_differentiableAt` — sufficient condition from
-  almost-everywhere differentiability of extended-real convex functions;
 * `TauCeti.IsCCRegular.ae_eventually_ne_top_and_differentiableAt_toReal` — almost-everywhere
-  differentiability of extended-real convex functions on their effective domains.
+  differentiability of extended-real convex functions on their effective domains;
+* `TauCeti.isCCRegular_iff_forall_convex_ae_differentiableAt` — `IsCCRegular μ` iff every
+  extended-real function `u : E → EReal` with convex real epigraph has `u.toReal` differentiable
+  `μ`-almost everywhere on `{x | u x ≠ ⊤}`.
 
 ## References
 
@@ -60,18 +62,6 @@ theorem isCCRegular_iff_forall_convexOn_ae_differentiableAt {μ : Measure E} :
       ⟨{s}, countable_singleton s, by simpa, by simp⟩
     measure_mono_null hsub (ae_iff.1 (h u hu))⟩
 
-/-- **Extended-real convex differentiability implies `c - c`-regularity.** If every extended-real
-convex function on a finite-dimensional real inner product space (never `⊥`) has differentiable real
-representative `μ`-almost everywhere on its effective domain, then `μ` is `c - c`-regular. -/
-theorem isCCRegular_of_forall_convex_ae_differentiableAt {μ : Measure E}
-    (h : ∀ u : E → EReal, Convex ℝ {p : E × ℝ | u p.1 ≤ p.2} → (∀ x, u x ≠ ⊥) →
-      ∀ᵐ x ∂μ, u x ≠ ⊤ → DifferentiableAt ℝ (fun x' => (u x').toReal) x) :
-    IsCCRegular μ :=
-  isCCRegular_iff_forall_convexOn_ae_differentiableAt.2 fun v hv => by
-    simpa [EReal.toReal_coe] using
-      h (fun x => (v x : EReal)) (by simpa using convexOn_iff_convex_epigraph_ite.1 hv)
-        (fun _ => EReal.coe_ne_bot _)
-
 /-- **Almost-everywhere differentiability of extended-real convex functions against a
 `c - c`-regular measure.** By Zajíček's covering theorems, for any extended-real `u : E → EReal`
 with convex real epigraph and any `c - c`-regular `μ`, at `μ`-a.e. `x` with `u x ≠ ⊤`, `u ≠ ⊤` near
@@ -93,6 +83,20 @@ theorem IsCCRegular.ae_eventually_ne_top_and_differentiableAt_toReal {μ : Measu
     x hx₁ hx₂ hxD
   have hx_int : x ∈ interior D := by by_contra hni; exact hx₁ ⟨hxD, hni⟩
   exact ⟨mem_interior_iff_mem_nhds.1 hx_int, by by_contra hndiff; exact hx₂ ⟨hx_int, hndiff⟩⟩
+
+/-- **Extended-real differentiability characterization of `c - c`-regularity.** A measure `μ` on a
+finite-dimensional real inner product space `E` is `c - c`-regular iff for every extended-real
+function `u : E → EReal` with convex real epigraph (with no `⊥` exclusion), `x' ↦ (u x').toReal`
+is differentiable `μ`-almost everywhere on `{x | u x ≠ ⊤}`. -/
+theorem isCCRegular_iff_forall_convex_ae_differentiableAt {μ : Measure E} :
+    IsCCRegular μ ↔
+      ∀ u : E → EReal, Convex ℝ {p : E × ℝ | u p.1 ≤ p.2} →
+        ∀ᵐ x ∂μ, u x ≠ ⊤ → DifferentiableAt ℝ (fun x' => (u x').toReal) x :=
+  ⟨fun hμ _ hconv => (hμ.ae_eventually_ne_top_and_differentiableAt_toReal hconv).mono
+      fun _ hx htop => (hx htop).2,
+   fun h => isCCRegular_iff_forall_convexOn_ae_differentiableAt.2 fun v hv => by
+     simpa [EReal.toReal_coe] using
+       h (fun x => (v x : EReal)) (by simpa using convexOn_iff_convex_epigraph_ite.1 hv)⟩
 
 end Differentiability
 

@@ -22,9 +22,8 @@ theory out of general Wasserstein imports.
   transport cost of `‖x - y‖ ^ 2 / 2`.
 * `TauCeti.transportCost_norm_sub_sq_div_two_ne_top_of_wassersteinEDist_ne_top` — finite `W₂`
   distance implies finite quadratic transport cost for `‖x - y‖ ^ 2 / 2`.
-* `TauCeti.isCyclicallyMonotone_support_of_eLpNorm_eq` — a coupling realizing the quadratic
-  Wasserstein distance between laws with finite second moments has cyclically monotone support for
-  the cost `‖x - y‖ ^ 2 / 2`.
+* `TauCeti.isCyclicallyMonotone_support_of_eLpNorm_eq` — a coupling realizing finite quadratic
+  Wasserstein distance has cyclically monotone support for the cost `‖x - y‖ ^ 2 / 2`.
 -/
 
 public section
@@ -78,11 +77,10 @@ theorem wassersteinEDist_two_sq_eq_two_mul_transportCost (μ ν : Measure E) :
   exact edist_rpow_two_eq_two_mul_ofReal_norm_sub_sq_div_two z
 
 /-- **Optimal quadratic Wasserstein plans have cyclically monotone support.** If `π` is a coupling
-of a finite measure `μ` and a measure `ν`, both with finite second moments, whose quadratic cost
-realizes the quadratic Wasserstein distance, then its support is cyclically monotone for the cost
-`‖x - y‖ ^ 2 / 2`. -/
+of a finite measure `μ` and a measure `ν` at finite quadratic Wasserstein distance whose quadratic
+cost realizes `W₂(μ, ν)`, then its support is cyclically monotone for `‖x - y‖ ^ 2 / 2`. -/
 theorem isCyclicallyMonotone_support_of_eLpNorm_eq [IsFiniteMeasure μ] {π : Measure (E × E)}
-    (hμ : MemLp id 2 μ) (hν : MemLp id 2 ν) (hπ : IsCoupling π μ ν)
+    (hfin : wassersteinEDist 2 μ ν ≠ ∞) (hπ : IsCoupling π μ ν)
     (hW : eLpNorm (fun z : E × E ↦ edist z.1 z.2) 2 π = wassersteinEDist 2 μ ν) :
     IsCyclicallyMonotone (fun z : E × E ↦ ‖z.1 - z.2‖ ^ 2 / 2) π.support := by
   have hopt : IsOptimalCoupling (fun z : E × E ↦ ENNReal.ofReal (‖z.1 - z.2‖ ^ 2 / 2)) π μ ν :=
@@ -92,7 +90,7 @@ theorem isCyclicallyMonotone_support_of_eLpNorm_eq [IsFiniteMeasure μ] {π : Me
           ⟨hπ, hW⟩)
   exact (isCyclicallyMonotone_ofReal_iff fun _ ↦ by positivity).1
     (hopt.isCyclicallyMonotone_support continuous_ofReal_norm_sub_sq_div_two
-      (hπ.transportCost_norm_sub_sq_div_two_ne_top hμ hν))
+      (transportCost_norm_sub_sq_div_two_ne_top_of_wassersteinEDist_ne_top hfin))
 
 end NormedOptimal
 

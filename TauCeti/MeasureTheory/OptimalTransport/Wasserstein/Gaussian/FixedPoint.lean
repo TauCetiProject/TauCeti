@@ -11,6 +11,7 @@ public import TauCeti.MeasureTheory.OptimalTransport.MultiMarginal.Moments
 public import TauCeti.MeasureTheory.OptimalTransport.Wasserstein.Barycenter.Uniqueness.Euclidean
 public import TauCeti.MeasureTheory.OptimalTransport.Wasserstein.FrechetMean
 public import TauCeti.Probability.Moments.Covariance
+import TauCeti.Analysis.Convex.CCHypersurface.Regular.SufficientConditions
 import TauCeti.Analysis.Matrix.BuresFixedPoint
 import TauCeti.Analysis.Matrix.GeometricMean
 import TauCeti.MeasureTheory.Function.L2Space

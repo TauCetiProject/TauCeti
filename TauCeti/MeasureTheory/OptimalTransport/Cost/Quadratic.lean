@@ -144,31 +144,24 @@ theorem isOptimalCoupling_norm_sub_sq_div_two_of_edist_rpow_two
 theorem IsCoupling.transportCost_norm_sub_sq_div_two_ne_top {μ ν : Measure F}
     {σ : Measure (F × F)} (hσ : IsCoupling σ μ ν) (hμ : MemLp id 2 μ) (hν : MemLp id 2 ν) :
     transportCost (fun z : F × F => ENNReal.ofReal (‖z.1 - z.2‖ ^ 2 / 2)) μ ν ≠ ∞ := by
-  have hl {g : Measure F} (hg : MemLp id 2 g) : ∫⁻ x : F, ‖x‖ₑ ^ (2 : ℝ) ∂g < ⊤ := by
-    simpa only [ENNReal.toReal_ofNat, id_eq] using lintegral_rpow_eNorm_lt_top_of_eLpNorm_lt_top
-      two_ne_zero ENNReal.ofNat_ne_top hg.eLpNorm_lt_top
-  have hae₁ : AEMeasurable (fun x : F => ‖x‖ₑ ^ (2 : ℝ)) μ :=
-    hμ.aestronglyMeasurable.eNorm.pow_const _
-  have hae₂ : AEMeasurable (fun y : F => ‖y‖ₑ ^ (2 : ℝ)) ν :=
-    hν.aestronglyMeasurable.eNorm.pow_const _
-  have h1 : ∫⁻ z : F × F, ‖z.1‖ₑ ^ (2 : ℝ) ∂σ = ∫⁻ x : F, ‖x‖ₑ ^ (2 : ℝ) ∂μ :=
-    MeasurePreserving.lintegral_comp' hσ.measurePreserving_fst hae₁
-  have h2 : ∫⁻ z : F × F, ‖z.2‖ₑ ^ (2 : ℝ) ∂σ = ∫⁻ y : F, ‖y‖ₑ ^ (2 : ℝ) ∂ν :=
-    MeasurePreserving.lintegral_comp' hσ.measurePreserving_snd hae₂
-  have h1m : AEMeasurable (fun z : F × F => ‖z.1‖ₑ ^ (2 : ℝ)) σ :=
-    hae₁.comp_quasiMeasurePreserving hσ.measurePreserving_fst.quasiMeasurePreserving
-  refine ((transportCost_le_lintegral hσ _).trans_lt ?_).ne
-  calc ∫⁻ z : F × F, ENNReal.ofReal (‖z.1 - z.2‖ ^ 2 / 2) ∂σ
-      ≤ ∫⁻ z : F × F, (‖z.1‖ₑ ^ (2 : ℝ) + ‖z.2‖ₑ ^ (2 : ℝ)) ∂σ := by
-        refine lintegral_mono fun z => ?_
-        have hn (w : F) : (‖w‖ₑ ^ (2 : ℝ)) = ENNReal.ofReal (‖w‖ ^ 2) := by
-          rw [ENNReal.rpow_ofNat, ← ofReal_norm, ENNReal.ofReal_pow (norm_nonneg w)]
-        rw [hn, hn, ← ENNReal.ofReal_add (by positivity) (by positivity)]
-        exact ENNReal.ofReal_le_ofReal <| by
-          nlinarith [norm_sub_le z.1 z.2, norm_nonneg (z.1 - z.2), sq_nonneg (‖z.1‖ - ‖z.2‖)]
-    _ = ∫⁻ z : F × F, ‖z.1‖ₑ ^ (2 : ℝ) ∂σ + ∫⁻ z : F × F, ‖z.2‖ₑ ^ (2 : ℝ) ∂σ :=
-        lintegral_add_left' h1m _
-    _ < ⊤ := by rw [h1, h2]; exact ENNReal.add_lt_top.2 ⟨hl hμ, hl hν⟩
+  have hnorm {g : Measure F} (hg : MemLp id 2 g) : MemLp (fun x : F => ‖x‖) 2 g := by
+    have hae : AEStronglyMeasurable (fun x : F => ‖x‖) g := hg.aestronglyMeasurable.norm
+    simpa [MemLp, eLpNorm, eLpNorm', hae, hg.aestronglyMeasurable] using hg.eLpNorm_lt_top
+  have h1 := (hnorm hμ).comp_measurePreserving hσ.measurePreserving_fst
+  have h2 := (hnorm hν).comp_measurePreserving hσ.measurePreserving_snd
+  have hdiff : MemLp (fun z : F × F => ‖z.1 - z.2‖) 2 σ :=
+    (h1.add h2).mono
+      ((hμ.aestronglyMeasurable.comp_measurePreserving hσ.measurePreserving_fst).sub
+        (hν.aestronglyMeasurable.comp_measurePreserving hσ.measurePreserving_snd)).norm
+      (.of_forall fun z => by
+        simpa [Real.norm_of_nonneg (norm_nonneg _),
+          Real.norm_of_nonneg (by positivity : 0 ≤ ‖z.1‖ + ‖z.2‖)] using norm_sub_le z.1 z.2)
+  have hint : Integrable (fun z : F × F => ‖z.1 - z.2‖ ^ 2 / 2) σ := by
+    simpa [Real.norm_of_nonneg (norm_nonneg _)] using
+      (hdiff.integrable_norm_pow two_ne_zero).div_const 2
+  exact ((transportCost_le_lintegral hσ _).trans_lt
+    ((lintegral_ofReal_ne_top_iff_integrable hint.aestronglyMeasurable
+      (.of_forall fun _ => by positivity)).2 hint).lt_top).ne
 
 /-- **Equal-mass finite measures with finite second moments have finite quadratic transport cost.**
 -/
