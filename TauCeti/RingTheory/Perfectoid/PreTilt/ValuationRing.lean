@@ -47,8 +47,8 @@ valuation; here `V` is any `p`-adically complete domain.
   `x ∣ y`.
 * `PreTilt.instValuationRing`: the tilt of a `p`-adically complete valuation ring is a valuation
   ring.
-* `PreTilt.valueGroupMap_le_valueGroupMap_iff`, `PreTilt.valueGroupMap_injective`: the sharp map
-  on value groups is an order embedding.
+* `PreTilt.valueGroupMap_le_valueGroupMap_iff`, `PreTilt.valueGroupMap_injective`,
+  `PreTilt.valueGroupMap_inj`: the sharp map on value groups is an order embedding.
 
 ## References
 
@@ -168,10 +168,12 @@ noncomputable def valueGroupMap :
 @[simp]
 theorem valueGroupMap_valuation (z : K) :
     valueGroupMap V p K L (ValuationRing.valuation (PreTilt V p) K z) =
-      ValuationRing.valuation V L (untiltFraction V p K L z) :=
-  (rfl)
+      ValuationRing.valuation V L (untiltFraction V p K L z) := by
+  rw [ValuationRing.valuation_apply, ValuationRing.valuation_apply]
+  rfl
 
 /-- **The sharp map on value groups is an order embedding.** -/
+@[simp]
 theorem valueGroupMap_le_valueGroupMap_iff {a b : ValuationRing.ValueGroup (PreTilt V p) K} :
     valueGroupMap V p K L a ≤ valueGroupMap V p K L b ↔ a ≤ b := by
   obtain ⟨z, rfl⟩ := ValuationRing.valuation_surjective a
@@ -190,6 +192,13 @@ theorem valueGroupMap_le_valueGroupMap_iff {a b : ValuationRing.ValueGroup (PreT
 theorem valueGroupMap_injective : Function.Injective (valueGroupMap V p K L) :=
   fun _ _ h ↦ le_antisymm ((valueGroupMap_le_valueGroupMap_iff K L).mp h.le)
     ((valueGroupMap_le_valueGroupMap_iff K L).mp h.ge)
+
+/-- Two values in `Frac(V♭)ˣ / (V♭)ˣ` are equal exactly when their images under the sharp map
+on value groups are equal. -/
+@[simp]
+theorem valueGroupMap_inj {a b : ValuationRing.ValueGroup (PreTilt V p) K} :
+    valueGroupMap V p K L a = valueGroupMap V p K L b ↔ a = b :=
+  (valueGroupMap_injective K L).eq_iff
 
 end ValueGroup
 

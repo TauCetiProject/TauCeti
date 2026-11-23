@@ -230,9 +230,14 @@ namespace ValuationRing
 variable {A K : Type*} [CommRing A] [IsDomain A] [ValuationRing A] [Field K] [Algebra A K]
   [IsFractionRing A K]
 
+/-- The valuation of a valuation ring sends `z` to its class in the value group
+`Kˣ / Aˣ`. -/
+theorem valuation_apply (z : K) : valuation A K z = Quotient.mk'' z :=
+  rfl
+
 /-- Every element of the value group of a valuation ring is a value of its valuation. -/
 theorem valuation_surjective : Function.Surjective (valuation A K) :=
-  fun a ↦ Quotient.inductionOn' a fun z ↦ ⟨z, rfl⟩
+  fun a ↦ Quotient.inductionOn' a fun z ↦ ⟨z, (valuation_apply z).symm⟩
 
 /-- In a valuation ring `A` with fraction field `K`, the fraction `x / y` has value at most that of
 `x' / y'` exactly when `x' y` divides `x y'`. -/
