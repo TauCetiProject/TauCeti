@@ -49,6 +49,22 @@ instance powerSeriesScalarTower : IsScalarTower R R⟦X⟧ (HahnModule ℤ R V) 
   smul_assoc r p f := by
     rw [powerSeries_smul, powerSeries_smul, PowerSeries.coe_smul, smul_assoc]
 
+open HahnSeries in
+/-- The coefficient of `p X ^ a v` at `a + k` is the `k`-th coefficient of `p` times `v`. -/
+@[simp]
+theorem coeff_powerSeries_smul_single_add (p : R⟦X⟧) (a : ℤ) (v : V) (k : ℕ) :
+    ((of R).symm (p • of R (single a v))).coeff (a + k) = PowerSeries.coeff k p • v := by
+  rw [powerSeries_smul, ← one_smul R v, ← single_smul_single_zero, smul_smul, one_smul,
+    coeff_smul_single_zero, add_comm, coeff_mul_single_add, mul_one, ofPowerSeries_apply_coeff]
+
+open HahnSeries in
+/-- Multiplying by `X ^ k` shifts a monomial `X ^ a v` to `X ^ (a + k) v`. -/
+@[simp]
+theorem X_pow_smul_single (k : ℕ) (a : ℤ) (v : V) :
+    (PowerSeries.X ^ k : R⟦X⟧) • of R (single a v) = of R (single (a + k) v) := by
+  rw [powerSeries_smul, ofPowerSeries_X_pow, ← one_smul R v, ← single_smul_single_zero,
+    smul_smul, single_mul_single, one_mul, single_smul_single_zero, add_comm]
+
 end HahnModule
 
 namespace HahnModule
