@@ -8,8 +8,6 @@ module
 public import TauCeti.Geometry.Manifold.Projectivization.LineBundle
 public import TauCeti.Topology.VectorBundle.Orientation.Atlas
 
-import TauCeti.Geometry.Manifold.VectorBundle.Core.Scalar
-
 /-!
 # Orientability of the line bundles `𝒪(k)` on real projective space
 

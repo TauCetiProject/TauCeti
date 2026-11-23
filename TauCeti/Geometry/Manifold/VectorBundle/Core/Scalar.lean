@@ -22,8 +22,6 @@ functions is holomorphic exactly when its transition functions are holomorphic.
 
 * `VectorBundleCore.isContMDiff_iff_contMDiffOn_coordChange_one`: the `C^n` criterion for the
   scalar transition functions.
-* `VectorBundleCore.det_coordChangeL_localTriv`: the coordinate change between two local
-  trivializations has determinant the scalar transition function.
 
 ## References
 
@@ -51,14 +49,5 @@ theorem isContMDiff_iff_contMDiffOn_coordChange_one :
       (Z.contMDiffOn_coordChange IB i j)
   · exact ((ContinuousLinearMap.lsmul 𝕜 𝕜 : 𝕜 →L[𝕜] 𝕜 →L[𝕜] 𝕜).contMDiff.comp_contMDiffOn
       (h i j)).congr fun x _ ↦ by ext; simp
-
-/-- The coordinate change between the local trivializations `i` and `j` of a core with model
-fibre `𝕜`, as a linear equivalence of the model fibre, has determinant the scalar transition
-function `Z.coordChange i j x 1`. -/
-theorem det_coordChangeL_localTriv {i j : ι} {x : B} (hi : x ∈ Z.baseSet i)
-    (hj : x ∈ Z.baseSet j) :
-    LinearMap.det (((Z.localTriv i).coordChangeL 𝕜 (Z.localTriv j) x).toLinearEquiv :
-      𝕜 →ₗ[𝕜] 𝕜) = Z.coordChange i j x 1 :=
-  (LinearMap.det_ring _).trans (Z.localTriv_coordChange_eq i j ⟨hi, hj⟩ 1)
 
 end VectorBundleCore

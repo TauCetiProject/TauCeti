@@ -60,11 +60,6 @@ open Bundle Module Set TauCeti
 
 namespace OnePoint
 
-/-- The cardinality condition relating the index type `Fin 1` of orientations of the line `ℝ`
-to its dimension. -/
-private theorem card_fin_one_eq_finrank : Fintype.card (Fin 1) = finrank ℝ ℝ :=
-  (Fintype.card_fin 1).trans (finrank_self ℝ).symm
-
 /-- The domain of each preferred chart of `OnePoint ℝ` is the image of `ℝ` under the inverse
 chart, hence preconnected. -/
 private theorem isPreconnected_chart_source (x : OnePoint ℝ) :
@@ -94,7 +89,8 @@ private theorem isEmpty_vectorBundleOrientation_twistCore_of_odd {k : ℤ} (hk :
     simpa using hw
   -- The transition `w⁻ᵏ` from the affine to the inverted chart is `1` at `w = 1` and `-1` at
   -- `w = -1`.
-  refine VectorBundleOrientation.isEmpty_of_det_coordChangeL_pos_of_neg card_fin_one_eq_finrank
+  refine VectorBundleOrientation.isEmpty_of_det_coordChangeL_pos_of_neg
+    (finrank_eq_card_basis (Basis.singleton (Fin 1) ℝ)).symm
     ((twistCore k).localTriv ((0 : ℝ) : OnePoint ℝ)) ((twistCore k).localTriv ∞)
     (isPreconnected_chart_source _) (isPreconnected_chart_source _)
     (twistCore_localTriv_baseSet k _).ge (twistCore_localTriv_baseSet k _).ge (h₀ 1)
@@ -117,7 +113,7 @@ theorem nonempty_vectorBundleOrientation_twistCore_iff (k : ℤ) :
     exact (isEmpty_vectorBundleOrientation_twistCore_of_odd (Int.not_even_iff_odd.1 hk)).false o
   · -- The preferred charts form a positive atlas.
     exact ⟨(twistCore (𝕜 := ℝ) k).orientationOfPositiveAtlas (Basis.singleton (Fin 1) ℝ).orientation
-      card_fin_one_eq_finrank (S := univ)
+      (finrank_eq_card_basis (Basis.singleton (Fin 1) ℝ)).symm (S := univ)
       (fun x ↦ ⟨x, mem_univ _, (twistCore_baseSet k x).ge (mem_chart_source ℝ x)⟩)
       fun i _ j _ x ⟨hi, hj⟩ ↦ by
         rw [twistCore_baseSet] at hi hj
@@ -131,11 +127,12 @@ orientation local system of `𝒪(k)` is `ℤ/2`
 def twistedHomology₀TwistCoreAddEquivOfOdd {k : ℤ} (hk : Odd k) :
     LocalCoefficientSystem.twistedHomology.{0, 0, 0}
       (VectorBundleOrientationCover.signLocalSystem ℝ (twistCore (𝕜 := ℝ) k).Fiber ℤ
-        ((Fintype.card_fin 1).trans (finrank_self ℝ).symm)) 0 ≃+ ZMod 2 :=
+        (finrank_eq_card_basis (Basis.singleton (Fin 1) ℝ)).symm) 0 ≃+ ZMod 2 :=
   -- The projective line `OnePoint ℝ` is a connected one-dimensional manifold, hence locally
   -- path-connected.
   haveI : LocallyPathConnectedSpace (OnePoint ℝ) := ChartedSpace.locallyPathConnectedSpace ℝ _
-  (VectorBundleOrientationCover.twistedHomology₀EquivQuotientTwo card_fin_one_eq_finrank
+  (VectorBundleOrientationCover.twistedHomology₀EquivQuotientTwo
+    (finrank_eq_card_basis (Basis.singleton (Fin 1) ℝ)).symm
     (isEmpty_vectorBundleOrientation_twistCore_of_odd hk) (b := ((0 : ℝ) : OnePoint ℝ))
     (Basis.singleton (Fin 1) ℝ).orientation).toAddEquiv.trans
     (Int.quotientSpanNatEquivZMod 2).toAddEquiv
@@ -146,10 +143,10 @@ of `𝒪(k)` over `b`. -/
 theorem twistedHomology₀TwistCoreAddEquivOfOdd_ιTwistedHomology₀ {k : ℤ} (hk : Odd k)
     {b : OnePoint ℝ} (o : Orientation ℝ ((twistCore (𝕜 := ℝ) k).Fiber b) (Fin 1))
     (a : (VectorBundleOrientationCover.signLocalSystem ℝ (twistCore (𝕜 := ℝ) k).Fiber ℤ
-      ((Fintype.card_fin 1).trans (finrank_self ℝ).symm)).obj (FundamentalGroupoid.mk b)) :
+      (finrank_eq_card_basis (Basis.singleton (Fin 1) ℝ)).symm).obj (FundamentalGroupoid.mk b)) :
     twistedHomology₀TwistCoreAddEquivOfOdd hk (LocalCoefficientSystem.ιTwistedHomology₀ _ b a) =
       (VectorBundleOrientationCover.signLocalSystemFiberEquiv
-        ((Fintype.card_fin 1).trans (finrank_self ℝ).symm) o a : ℤ) := by
+        (finrank_eq_card_basis (Basis.singleton (Fin 1) ℝ)).symm o a : ℤ) := by
   have : LocallyPathConnectedSpace (OnePoint ℝ) := ChartedSpace.locallyPathConnectedSpace ℝ _
   rw [twistedHomology₀TwistCoreAddEquivOfOdd, AddEquiv.trans_apply, LinearEquiv.coe_toAddEquiv]
   exact (congrArg (Int.quotientSpanNatEquivZMod 2) <|
@@ -164,10 +161,11 @@ theorem twistedHomology₀TwistCoreAddEquivOfOdd_symm_intCast {k : ℤ} (hk : Od
     (twistedHomology₀TwistCoreAddEquivOfOdd hk).symm (r : ZMod 2) =
       LocalCoefficientSystem.ιTwistedHomology₀ _ b
         ((VectorBundleOrientationCover.signLocalSystemFiberEquiv
-          ((Fintype.card_fin 1).trans (finrank_self ℝ).symm) o).symm r) :=
-  (AddEquiv.symm_apply_eq _).2 (by
-    rw [twistedHomology₀TwistCoreAddEquivOfOdd_ιTwistedHomology₀ hk o,
-      LinearEquiv.apply_symm_apply])
+          (finrank_eq_card_basis (Basis.singleton (Fin 1) ℝ)).symm o).symm r) := by
+  have : LocallyPathConnectedSpace (OnePoint ℝ) := ChartedSpace.locallyPathConnectedSpace ℝ _
+  rw [twistedHomology₀TwistCoreAddEquivOfOdd, AddEquiv.symm_trans_apply]
+  exact (congrArg _ (RingHom.congr_fun (Int.quotientSpanNatEquivZMod_comp_castRingHom 2) r)).trans
+    (VectorBundleOrientationCover.twistedHomology₀EquivQuotientTwo_symm_mk _ _ _ o r)
 
 /-- **The constant coefficients give the wrong zeroth homology for the Möbius line.** For odd `k`,
 the zeroth homology of `OnePoint ℝ` with integer coefficients twisted by the orientation local
@@ -176,10 +174,11 @@ coefficients. -/
 theorem not_nonempty_twistedHomology₀_twistCore_addEquiv_int_of_odd {k : ℤ} (hk : Odd k) :
     ¬ Nonempty (LocalCoefficientSystem.twistedHomology.{0, 0, 0}
       (VectorBundleOrientationCover.signLocalSystem ℝ (twistCore (𝕜 := ℝ) k).Fiber ℤ
-        ((Fintype.card_fin 1).trans (finrank_self ℝ).symm)) 0 ≃+ ℤ) := fun ⟨e⟩ ↦
+        (finrank_eq_card_basis (Basis.singleton (Fin 1) ℝ)).symm) 0 ≃+ ℤ) := fun ⟨e⟩ ↦
   have : LocallyPathConnectedSpace (OnePoint ℝ) := ChartedSpace.locallyPathConnectedSpace ℝ _
   (isEmpty_vectorBundleOrientation_twistCore_of_odd hk).false
     ((VectorBundleOrientation.nonempty_iff_nonempty_twistedHomology₀_linearEquiv
-      card_fin_one_eq_finrank two_ne_zero).2 ⟨e.toIntLinearEquiv⟩).some
+      (finrank_eq_card_basis (Basis.singleton (Fin 1) ℝ)).symm two_ne_zero).2
+        ⟨e.toIntLinearEquiv⟩).some
 
 end OnePoint
