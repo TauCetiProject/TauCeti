@@ -50,8 +50,8 @@ complementary corner `1 - ρ 1` so that `Unitary.map` sends unitaries of `A` to 
 def unitizeStarMonoidHom (ρ : A →⋆ₙₐ[R] B) : A →⋆* B where
   toMonoidHom := MulHom.unitize (ρ : A →ₙ* B)
   map_star' a := by
-    change (MulHom.unitize (ρ : A →ₙ* B)) (star a) = star ((MulHom.unitize (ρ : A →ₙ* B)) a)
-    simp only [MulHom.unitize_apply, MulHom.coe_coe, star_add, star_sub, star_one, ← map_star]
+    simp only [OneHom.toFun_eq_coe, MonoidHom.toOneHom_coe, MulHom.unitize_apply, MulHom.coe_coe,
+      star_add, star_sub, star_one, ← map_star]
 
 /-- Forgetting `star` identifies `ρ.unitizeStarMonoidHom` with `MulHom.unitize`. -/
 @[simp]
@@ -63,7 +63,7 @@ theorem toMonoidHom_unitizeStarMonoidHom (ρ : A →⋆ₙₐ[R] B) :
 theorem unitizeStarMonoidHom_apply (ρ : A →⋆ₙₐ[R] B) (a : A) :
     ρ.unitizeStarMonoidHom a = ρ a + (1 - ρ 1) := by
   rw [← StarMonoidHom.coe_toMonoidHom, toMonoidHom_unitizeStarMonoidHom, MulHom.unitize_apply]
-  rfl
+  simp only [MulHom.coe_coe]
 
 /-- When `ρ 1 = 1`, `ρ.unitizeStarMonoidHom` agrees pointwise with `ρ`. -/
 theorem unitizeStarMonoidHom_apply_of_map_one {ρ : A →⋆ₙₐ[R] B} (hρ : ρ 1 = 1) (a : A) :

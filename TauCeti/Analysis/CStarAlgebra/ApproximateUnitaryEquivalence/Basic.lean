@@ -8,7 +8,6 @@ module
 public import Mathlib.Analysis.CStarAlgebra.Spectrum
 public import Mathlib.Algebra.Star.UnitaryStarAlgAut
 import TauCeti.Algebra.Star.MonoidHom
-import TauCeti.Algebra.Star.Unitary
 import TauCeti.Analysis.CStarAlgebra.Basic
 import TauCeti.Analysis.Normed.Ring.Basic
 

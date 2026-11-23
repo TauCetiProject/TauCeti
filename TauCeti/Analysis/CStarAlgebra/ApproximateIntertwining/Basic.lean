@@ -40,11 +40,17 @@ stagewise density (`exists_approx_of_denseSeed_subset`).
   `isApproximateCocone_forward` and `isApproximateCocone_backward`, uniqueness `equiv_unique` and
   `equiv_symm_unique`, and forward/backward tail estimates `norm_equiv_sub_le` and
   `norm_equiv_symm_sub_le`.
+* `TauCeti.IsApproximateIntertwining.exists_of_forall_finset_approx`: recursive zig-zag construction
+  of an approximate intertwining from finite-set approximation families.
+* `TauCeti.exists_starAlgEquiv_of_forall_finset_approx`: approximate intertwining `⋆`-isomorphism
+  from almost inverse families on separable C⋆-algebras.
 
 ## References
 
 * G. A. Elliott, *On the classification of C⋆-algebras of real rank zero*, J. Reine Angew. Math.
   443 (1993), Theorem 2.1.
+* E. Kirchberg and N. C. Phillips, *Embedding of exact C⋆-algebras in the Cuntz algebra `O₂`*,
+  J. reine angew. Math. 525 (2000), Lemma 0.6.
 * M. Rørdam, *Classification of Nuclear C⋆-Algebras*, Encyclopaedia of Mathematical Sciences 126,
   Springer (2002), §2.3, Proposition 2.3.2.
 -/
@@ -126,25 +132,6 @@ namespace IsApproximateCocone
 variable {α : ∀ n, A n →⋆ₙₐ[ℂ] A (n + 1)} {ι : ∀ n, A n →⋆ₙₐ[ℂ] C}
   {ξ : ∀ n, A n →⋆ₙₐ[ℂ] D} {F : ∀ n, Set (A n)} {τ : ℕ → ℝ}
 
-/-- Absolute-stage evaluation sequence `m ↦ ξ m (seqTransHom α h a)` (zero for `m < n`), avoiding
-dependent index casts when comparing elements from different stages. -/
-private noncomputable def evalAt (α : ∀ n, A n →⋆ₙₐ[ℂ] A (n + 1)) (ξ : ∀ n, A n →⋆ₙₐ[ℂ] D)
-    {n : ℕ} (a : A n) (m : ℕ) : D :=
-  if h : n ≤ m then ξ m (seqTransHom α h a) else 0
-
-private theorem evalAt_of_le {n m : ℕ} (h : n ≤ m) (a : A n) :
-    evalAt α ξ a m = ξ m (seqTransHom α h a) := by
-  simp [evalAt, h]
-
-private theorem evalAt_add (n k : ℕ) (a : A n) :
-    evalAt α ξ a (n + k) = ξ (n + k) (seqTransHom α (Nat.le_add_right n k) a) := by
-  simp [evalAt]
-
-private theorem evalAt_eventuallyEq_seqTransHom {m n : ℕ} (h : m ≤ n) (a : A m) :
-    evalAt α ξ (seqTransHom α h a) =ᶠ[atTop] evalAt α ξ a := by
-  filter_upwards [eventually_ge_atTop n] with k hk
-  rw [evalAt_of_le hk, evalAt_of_le (h.trans hk), seqTransHom_comp_apply]
-
 private theorem dist_step_le (hc : IsApproximateCocone α ξ F τ) {n : ℕ} {a : A n}
     (ha : a ∈ F n) (k : ℕ) :
     dist (ξ (n + k) (seqTransHom α (Nat.le_add_right n k) a))
@@ -158,90 +145,66 @@ private theorem cauchySeq_offset_of_mem (hc : IsApproximateCocone α ξ F τ) {n
   cauchySeq_of_dist_le_of_summable (fun k ↦ τ (n + k)) (hc.dist_step_le hx)
     (hc.summable.comp_injective (add_right_injective n))
 
-private theorem cauchySeq_evalAt_of_mem (hc : IsApproximateCocone α ξ F τ) {n : ℕ} {x : A n}
-    (hx : x ∈ F n) : CauchySeq (evalAt α ξ x) := by
-  have h : evalAt α ξ x ∘ (· + n) =
-      fun k ↦ ξ (n + k) (seqTransHom α (Nat.le_add_right n k) x) := by
-    ext k
-    rw [Function.comp_apply, Nat.add_comm k n, evalAt_add]
-  rw [CauchySeq, ← map_add_atTop_eq_nat n, map_map, h, ← CauchySeq]
-  exact hc.cauchySeq_offset_of_mem hx
-
-private theorem cauchySeq_evalAt (hc : IsApproximateCocone α ξ F τ) (n : ℕ) (a : A n) :
-    CauchySeq (evalAt α ξ a) := by
+private theorem cauchySeq_offset (hc : IsApproximateCocone α ξ F τ) (n : ℕ) (a : A n) :
+    CauchySeq (fun k ↦ ξ (n + k) (seqTransHom α (Nat.le_add_right n k) a)) := by
   rw [Metric.cauchySeq_iff]
   intro ε hε
   obtain ⟨k₀, x, hxF, hax⟩ := hc.approx n a (ε / 3) (by positivity)
   obtain ⟨N₀, hN₀⟩ :=
-    Metric.cauchySeq_iff.mp (hc.cauchySeq_evalAt_of_mem hxF) (ε / 3) (by positivity)
-  refine ⟨max (n + k₀) N₀, fun p hp q hq ↦ ?_⟩
-  have hclose (r : ℕ) (hr : max (n + k₀) N₀ ≤ r) :
-      dist (evalAt α ξ a r) (evalAt α ξ x r) < ε / 3 := by
-    have hnkr : n + k₀ ≤ r := (le_max_left _ _).trans hr
-    rw [evalAt_of_le ((Nat.le_add_right n k₀).trans hnkr), evalAt_of_le hnkr,
-      ← seqTransHom_comp_apply α (Nat.le_add_right n k₀) hnkr a, dist_eq_norm,
-      ← map_sub, ← map_sub]
+    Metric.cauchySeq_iff.mp (hc.cauchySeq_offset_of_mem hxF) (ε / 3) (by positivity)
+  refine ⟨k₀ + N₀, fun p hp q hq ↦ ?_⟩
+  have hcongr {p q : ℕ} (hp : n + k₀ ≤ p) (hq : n + k₀ ≤ q) (hpq : p = q) :
+      ξ p (seqTransHom α hp x) = ξ q (seqTransHom α hq x) := by
+    subst hpq
+    rfl
+  have hclose (r : ℕ) (hr : k₀ + N₀ ≤ r) :
+      dist (ξ (n + r) (seqTransHom α (Nat.le_add_right n r) a))
+        (ξ ((n + k₀) + (r - k₀)) (seqTransHom α (Nat.le_add_right (n + k₀) (r - k₀)) x)) <
+        ε / 3 := by
+    rw [hcongr (q := n + r) (Nat.le_add_right (n + k₀) (r - k₀)) (by omega) (by omega),
+      ← seqTransHom_comp_apply α (Nat.le_add_right n k₀) (by omega) a,
+      dist_eq_norm, ← map_sub, ← map_sub]
     exact (le_trans (NonUnitalStarAlgHom.norm_apply_le _ _)
       (NonUnitalStarAlgHom.norm_apply_le _ _)).trans_lt hax
   calc
-    dist (evalAt α ξ a p) (evalAt α ξ a q)
-      ≤ dist (evalAt α ξ a p) (evalAt α ξ x p) +
-        dist (evalAt α ξ x p) (evalAt α ξ x q) +
-        dist (evalAt α ξ x q) (evalAt α ξ a q) := dist_triangle4 _ _ _ _
+    dist (ξ (n + p) (seqTransHom α (Nat.le_add_right n p) a))
+        (ξ (n + q) (seqTransHom α (Nat.le_add_right n q) a))
+      ≤ dist (ξ (n + p) (seqTransHom α (Nat.le_add_right n p) a))
+          (ξ ((n + k₀) + (p - k₀)) (seqTransHom α (Nat.le_add_right (n + k₀) (p - k₀)) x)) +
+        dist (ξ ((n + k₀) + (p - k₀)) (seqTransHom α (Nat.le_add_right (n + k₀) (p - k₀)) x))
+          (ξ ((n + k₀) + (q - k₀)) (seqTransHom α (Nat.le_add_right (n + k₀) (q - k₀)) x)) +
+        dist (ξ ((n + k₀) + (q - k₀)) (seqTransHom α (Nat.le_add_right (n + k₀) (q - k₀)) x))
+          (ξ (n + q) (seqTransHom α (Nat.le_add_right n q) a)) := dist_triangle4 _ _ _ _
     _ < ε / 3 + ε / 3 + ε / 3 := add_lt_add (add_lt_add (hclose p hp)
-        (hN₀ p ((le_max_right _ _).trans hp) q ((le_max_right _ _).trans hq)))
+        (hN₀ (p - k₀) (by omega) (q - k₀) (by omega)))
         (by rw [dist_comm]; exact hclose q hq)
     _ = ε := by ring
 
-private noncomputable def stageLim (hc : IsApproximateCocone α ξ F τ) {n : ℕ} (a : A n) : D :=
-  (cauchySeq_tendsto_of_complete (hc.cauchySeq_evalAt n a)).choose
-
-private theorem tendsto_evalAt_stageLim (hc : IsApproximateCocone α ξ F τ) (n : ℕ) (a : A n) :
-    Tendsto (evalAt α ξ a) atTop (𝓝 (hc.stageLim a)) :=
-  (cauchySeq_tendsto_of_complete (hc.cauchySeq_evalAt n a)).choose_spec
-
 /-- Stagewise limit `⋆`-homomorphism `A n →⋆ₙₐ[ℂ] D` constructed from an approximate cocone. -/
-private noncomputable def stageHom (hc : IsApproximateCocone α ξ F τ) (n : ℕ) : A n →⋆ₙₐ[ℂ] D where
-  toFun a := hc.stageLim a
-  map_zero' := tendsto_nhds_unique (hc.tendsto_evalAt_stageLim n 0) <| by
-    refine tendsto_const_nhds.congr' ?_
-    filter_upwards [eventually_ge_atTop n] with m hm
-    simp [evalAt_of_le hm]
-  map_add' a b := by
-    refine tendsto_nhds_unique (hc.tendsto_evalAt_stageLim n (a + b))
-      (((hc.tendsto_evalAt_stageLim n a).add (hc.tendsto_evalAt_stageLim n b)).congr' ?_)
-    filter_upwards [eventually_ge_atTop n] with m hm
-    simp [evalAt_of_le hm]
-  map_mul' a b := by
-    refine tendsto_nhds_unique (hc.tendsto_evalAt_stageLim n (a * b))
-      (((hc.tendsto_evalAt_stageLim n a).mul (hc.tendsto_evalAt_stageLim n b)).congr' ?_)
-    filter_upwards [eventually_ge_atTop n] with m hm
-    simp [evalAt_of_le hm]
-  map_smul' c a := by
-    refine tendsto_nhds_unique (hc.tendsto_evalAt_stageLim n (c • a))
-      (((hc.tendsto_evalAt_stageLim n a).const_smul c).congr' ?_)
-    filter_upwards [eventually_ge_atTop n] with m hm
-    simp [evalAt_of_le hm]
-  map_star' a := by
-    refine tendsto_nhds_unique (hc.tendsto_evalAt_stageLim n (star a))
-      ((hc.tendsto_evalAt_stageLim n a).star.congr' ?_)
-    filter_upwards [eventually_ge_atTop n] with m hm
-    simp [evalAt_of_le hm, map_star]
-
-private theorem tendsto_evalAt_stageHom (hc : IsApproximateCocone α ξ F τ) (n : ℕ) (a : A n) :
-    Tendsto (evalAt α ξ a) atTop (𝓝 (hc.stageHom n a)) :=
-  hc.tendsto_evalAt_stageLim n a
+private noncomputable def stageHom (hc : IsApproximateCocone α ξ F τ) (n : ℕ) :
+    A n →⋆ₙₐ[ℂ] D :=
+  (NonUnitalStarAlgHom.exists_tendsto_of_cauchySeq
+    (f := fun k ↦ (ξ (n + k)).comp (seqTransHom α (Nat.le_add_right n k)))
+    dense_univ fun a _ ↦ hc.cauchySeq_offset n a).choose
 
 private theorem tendsto_stageHom (hc : IsApproximateCocone α ξ F τ) (n : ℕ) (a : A n) :
     Tendsto (fun k ↦ ξ (n + k) (seqTransHom α (Nat.le_add_right n k) a))
-      atTop (𝓝 (hc.stageHom n a)) := by
-  simpa only [Function.comp_def, id_eq, evalAt_add] using
-    (hc.tendsto_evalAt_stageHom n a).comp (tendsto_id.nonneg_add_atTop fun _ ↦ Nat.zero_le n)
+      atTop (𝓝 (hc.stageHom n a)) :=
+  (NonUnitalStarAlgHom.exists_tendsto_of_cauchySeq
+    (f := fun k ↦ (ξ (n + k)).comp (seqTransHom α (Nat.le_add_right n k)))
+    dense_univ fun a _ ↦ hc.cauchySeq_offset n a).choose_spec a
 
 private theorem stageHom_seqTransHom (hc : IsApproximateCocone α ξ F τ) {m n : ℕ} (h : m ≤ n)
-    (a : A m) : hc.stageHom n (seqTransHom α h a) = hc.stageHom m a :=
-  tendsto_nhds_unique (hc.tendsto_evalAt_stageHom n _)
-    ((hc.tendsto_evalAt_stageHom m a).congr' (evalAt_eventuallyEq_seqTransHom h a).symm)
+    (a : A m) : hc.stageHom n (seqTransHom α h a) = hc.stageHom m a := by
+  obtain ⟨d, rfl⟩ := Nat.exists_eq_add_of_le h
+  have hcongr {p q : ℕ} (hp : m ≤ p) (hq : m ≤ q) (hpq : p = q) :
+      ξ p (seqTransHom α hp a) = ξ q (seqTransHom α hq a) := by
+    subst hpq
+    rfl
+  refine tendsto_nhds_unique (hc.tendsto_stageHom (m + d) (seqTransHom α h a)) ?_
+  refine ((hc.tendsto_stageHom m a).comp (tendsto_add_atTop_nat d)).congr fun k ↦ ?_
+  rw [Function.comp_apply, seqTransHom_comp_apply]
+  exact hcongr _ _ (by omega)
 
 private theorem stageHom_comp (hc : IsApproximateCocone α ξ F τ) (n : ℕ) :
     (hc.stageHom (n + 1)).comp (α n) = hc.stageHom n := by
@@ -524,5 +487,121 @@ theorem norm_equiv_symm_sub_le (h : IsApproximateIntertwining α β φ ψ F G δ
 end IsApproximateIntertwining
 
 end Intertwining
+
+section ZigZag
+
+private structure ZigZagState {A B : ℕ → Type*} (I J : ℕ → Type*) (n : ℕ) where
+  i : I n
+  j : J n
+  F : Finset (A n)
+  G : Finset (B n)
+
+variable {A B : ℕ → Type*} [∀ n, NonUnitalCStarAlgebra (A n)] [∀ n, NonUnitalCStarAlgebra (B n)]
+  [∀ n, TopologicalSpace.SeparableSpace (A n)] [∀ n, TopologicalSpace.SeparableSpace (B n)]
+
+open Classical in
+private noncomputable def zigZagSeq
+    {α : ∀ n, A n →⋆ₙₐ[ℂ] A (n + 1)} {β : ∀ n, B n →⋆ₙₐ[ℂ] B (n + 1)}
+    {I J : ℕ → Type*} (j₀ : J 0)
+    (Φ : ∀ n, I n → A n →⋆ₙₐ[ℂ] B (n + 1)) (Ψ : ∀ n, J n → B n →⋆ₙₐ[ℂ] A n)
+    {δ ε : ℕ → ℝ}
+    (hΨΦ : ∀ n (i : I n) (F : Finset (A n)),
+      ∃ j : J (n + 1), ∀ a ∈ F, ‖Ψ (n + 1) j (Φ n i a) - α n a‖ ≤ δ n)
+    (hΦΨ : ∀ n (j : J n) (G : Finset (B n)),
+      ∃ i : I n, ∀ b ∈ G, ‖Φ n i (Ψ n j b) - β n b‖ ≤ ε n) :
+    ∀ n, ZigZagState (A := A) (B := B) I J n
+  | 0 =>
+    let G₀ : Finset (B 0) := denseSeed β 0
+    let F₀ : Finset (A 0) := G₀.image (Ψ 0 j₀) ∪ denseSeed α 0
+    let i₀ : I 0 := (hΦΨ 0 j₀ G₀).choose
+    ⟨i₀, j₀, F₀, G₀⟩
+  | n + 1 =>
+    let s := zigZagSeq j₀ Φ Ψ hΨΦ hΦΨ n
+    let G' : Finset (B (n + 1)) :=
+      s.G.image (β n) ∪ s.F.image (Φ n s.i) ∪ denseSeed β (n + 1)
+    let j' : J (n + 1) := (hΨΦ n s.i s.F).choose
+    let F' : Finset (A (n + 1)) :=
+      s.F.image (α n) ∪ G'.image (Ψ (n + 1) j') ∪ denseSeed α (n + 1)
+    let i' : I (n + 1) := (hΦΨ (n + 1) j' G').choose
+    ⟨i', j', F', G'⟩
+
+/-- **Generic zig-zag approximate intertwining from finite-set approximation families.** Given
+sequential systems `(A, α)` and `(B, β)` of separable C⋆-algebras and indexed stage-map families
+`Φ n : I n → A n →⋆ₙₐ[ℂ] B (n + 1)` and `Ψ n : J n → B n →⋆ₙₐ[ℂ] A n` such that every member of
+`Φ n` has an `ε`-left-inverse in `Ψ (n + 1)` and every member of `Ψ n` has a `δ`-left-inverse in
+`Φ n` on every finite set, an inductive zig-zag selects sequences `i n : I n`, `j n : J n` and
+propagating finite sets `F n`, `G n` forming an `IsApproximateIntertwining`. -/
+theorem IsApproximateIntertwining.exists_of_forall_finset_approx
+    {α : ∀ n, A n →⋆ₙₐ[ℂ] A (n + 1)} {β : ∀ n, B n →⋆ₙₐ[ℂ] B (n + 1)}
+    {I J : ℕ → Type*} (j₀ : J 0)
+    (Φ : ∀ n, I n → A n →⋆ₙₐ[ℂ] B (n + 1)) (Ψ : ∀ n, J n → B n →⋆ₙₐ[ℂ] A n)
+    {δ ε : ℕ → ℝ} (hδ : Summable δ) (hε : Summable ε)
+    (hΨΦ : ∀ n (i : I n) (F : Finset (A n)),
+      ∃ j : J (n + 1), ∀ a ∈ F, ‖Ψ (n + 1) j (Φ n i a) - α n a‖ ≤ δ n)
+    (hΦΨ : ∀ n (j : J n) (G : Finset (B n)),
+      ∃ i : I n, ∀ b ∈ G, ‖Φ n i (Ψ n j b) - β n b‖ ≤ ε n) :
+    ∃ (i : ∀ n, I n) (j : ∀ n, J n) (F : ∀ n, Finset (A n)) (G : ∀ n, Finset (B n)),
+      IsApproximateIntertwining α β (fun n ↦ Φ n (i n)) (fun n ↦ Ψ n (j n))
+        (fun n ↦ (F n : Set (A n))) (fun n ↦ (G n : Set (B n))) δ ε := by
+  classical
+  let s := zigZagSeq j₀ Φ Ψ hΨΦ hΦΨ
+  have hseedA (m : ℕ) : (denseSeed α m : Set (A m)) ⊆ (s m).F := by
+    intro x hx
+    cases m <;> simp [s, zigZagSeq, Finset.mem_coe.mp hx]
+  have hseedB (m : ℕ) : (denseSeed β m : Set (B m)) ⊆ (s m).G := by
+    intro x hx
+    cases m <;> simp [s, zigZagSeq, Finset.mem_coe.mp hx]
+  refine ⟨fun n ↦ (s n).i, fun n ↦ (s n).j, fun n ↦ (s n).F, fun n ↦ (s n).G, ?_⟩
+  refine
+    { mapsTo_α := fun n a ha ↦ by
+        simp only [Finset.mem_coe, s, zigZagSeq, Finset.mem_union] at ha ⊢
+        grind [Finset.mem_image_of_mem]
+      mapsTo_β := fun n b hb ↦ by
+        simp only [Finset.mem_coe, s, zigZagSeq, Finset.mem_union] at hb ⊢
+        grind [Finset.mem_image_of_mem]
+      mapsTo_φ := fun n a ha ↦ by
+        simp only [Finset.mem_coe, s, zigZagSeq, Finset.mem_union] at ha ⊢
+        grind [Finset.mem_image_of_mem]
+      mapsTo_ψ := fun n b hb ↦ by
+        cases n <;>
+          simp only [Finset.mem_coe, s, zigZagSeq, Finset.mem_union] at hb ⊢ <;>
+          grind [Finset.mem_image_of_mem]
+      approx_A := exists_approx_of_denseSeed_subset α hseedA
+      approx_B := exists_approx_of_denseSeed_subset β hseedB
+      norm_ψ_φ_sub_le := fun n a ha ↦ (hΨΦ n (s n).i (s n).F).choose_spec a ha
+      norm_φ_ψ_sub_le := fun n b hb ↦ by
+        cases n with
+        | zero => exact (hΦΨ 0 j₀ (denseSeed β 0)).choose_spec b hb
+        | succ n => exact (hΦΨ (n + 1) _ _).choose_spec b hb
+      summable_δ := hδ
+      summable_ε := hε }
+
+/-- **Approximate intertwining from almost inverse families.** Let `A` and `B` be separable,
+and let `Φ i : A → B` (`i : I`) and `Ψ j : B → A` (`j : J`) be families of
+`⋆`-homomorphisms such that each `Φ i` has an almost left inverse in the family `Ψ` and each
+`Ψ j` an almost left inverse in the family `Φ`, on every finite set and to every positive
+tolerance. Then some sequence `Φ (i n)` converges pointwise to a `⋆`-isomorphism `A ≃ B`. -/
+theorem exists_starAlgEquiv_of_forall_finset_approx {A B : Type*} [NonUnitalCStarAlgebra A]
+    [NonUnitalCStarAlgebra B] [TopologicalSpace.SeparableSpace A]
+    [TopologicalSpace.SeparableSpace B] {I J : Type*} [Nonempty I]
+    (Φ : I → A →⋆ₙₐ[ℂ] B) (Ψ : J → B →⋆ₙₐ[ℂ] A)
+    (hΨΦ : ∀ i (F : Finset A) (δ : ℝ), 0 < δ → ∃ j, ∀ a ∈ F, ‖Ψ j (Φ i a) - a‖ < δ)
+    (hΦΨ : ∀ j (G : Finset B) (δ : ℝ), 0 < δ → ∃ i, ∀ b ∈ G, ‖Φ i (Ψ j b) - b‖ < δ) :
+    ∃ (i : ℕ → I) (θ : A ≃⋆ₐ[ℂ] B), ∀ a, Tendsto (fun n ↦ Φ (i n) a) atTop (𝓝 (θ a)) := by
+  obtain ⟨j₀, -⟩ := hΨΦ (Classical.arbitrary I) ∅ 1 zero_lt_one
+  obtain ⟨i, _, _, _, hinter⟩ := IsApproximateIntertwining.exists_of_forall_finset_approx
+    (A := fun _ ↦ A) (B := fun _ ↦ B) (α := fun _ ↦ .id ℂ A) (β := fun _ ↦ .id ℂ B)
+    (I := fun _ ↦ I) (J := fun _ ↦ J) j₀ (fun _ ↦ Φ) (fun _ ↦ Ψ)
+    summable_geometric_two summable_geometric_two
+    (fun n i F ↦ let ⟨j, hj⟩ := hΨΦ i F ((1 / 2 : ℝ) ^ n) (by positivity)
+      ⟨j, fun a ha ↦ (hj a ha).le⟩)
+    (fun n j G ↦ let ⟨i, hi⟩ := hΦΨ j G ((1 / 2 : ℝ) ^ n) (by positivity)
+      ⟨i, fun b hb ↦ (hi b hb).le⟩)
+  refine ⟨i, hinter.equiv (IsSeqColimitCocone.const A) (IsSeqColimitCocone.const B), fun a ↦ ?_⟩
+  simpa only [IsSeqColimitCocone.const, seqTransHom_id, NonUnitalStarAlgHom.coe_id,
+    id_eq, Nat.zero_add] using
+    hinter.tendsto_equiv (IsSeqColimitCocone.const A) (IsSeqColimitCocone.const B) 0 a
+
+end ZigZag
 
 end TauCeti
