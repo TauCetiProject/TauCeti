@@ -124,21 +124,48 @@ theorem faithfulSMul_weightedEllipsoid_iff (ha : 0 < a) (hb : 0 < b) (hε : 0 < 
     (Subgroup.eq_bot_iff_forall _).2 fun u hu ↦ h u hu
   rw [Nat.Coprime, ← natCard_powMonoidHom_ker Circle (a.gcd b), hbot, Subgroup.card_bot]
 
-/-- **The ineffective kernel as a subgroup.** For positive weights and `ε > 0`, the subgroup of
-circle elements fixing every point of the ellipsoid is the group of `gcd(a, b)`-th roots of
-unity. -/
-theorem fixingSubgroup_univ_weightedEllipsoid (ha : 0 < a) (hb : 0 < b) (hε : 0 < ε) :
+/-- A point of the ellipsoid off the axis `z₁ = 0`, for a positive weight `a` and `ε > 0`. The
+weight `b` may vanish. -/
+private theorem exists_mem_weightedEllipsoid_fst_ne_zero (ha : 0 < a) (hε : 0 < ε) :
+    ∃ z ∈ weightedEllipsoid a b ε, z.1 ≠ 0 := by
+  have : (0 : ℝ) < a := Nat.cast_pos.2 ha
+  refine ⟨((√(2 * ε / a) : ℝ), 0), ?_,
+    Complex.ofReal_ne_zero.2 (Real.sqrt_ne_zero'.2 (by positivity))⟩
+  rw [mem_weightedEllipsoid, Complex.norm_real, Real.norm_eq_abs, sq_abs,
+    Real.sq_sqrt (by positivity)]
+  field_simp
+  simp
+
+/-- **The ineffective kernel as a subgroup.** For `ε > 0`, the subgroup of circle elements fixing
+every point of the ellipsoid is the group of `gcd(a, b)`-th roots of unity. -/
+theorem fixingSubgroup_univ_weightedEllipsoid (hε : 0 < ε) :
     fixingSubgroup Circle (univ : Set (weightedEllipsoid a b ε)) =
       (powMonoidHom (a.gcd b)).ker := by
   ext u
-  simp [mem_fixingSubgroup_iff, ← forall_smul_weightedEllipsoid_eq_self_iff ha hb hε]
+  simp only [mem_fixingSubgroup_iff, mem_univ, forall_const, MonoidHom.mem_ker,
+    powMonoidHom_apply, pow_gcd_eq_one, ← Subtype.coe_inj, coe_smul_weightedEllipsoid,
+    weightedRotation_eq_self_iff, Subtype.forall]
+  refine ⟨fun h ↦ ⟨?_, ?_⟩, fun h _ _ ↦ ⟨fun _ ↦ h.1, fun _ ↦ h.2⟩⟩
+  · rcases a.eq_zero_or_pos with rfl | ha
+    · exact pow_zero u
+    obtain ⟨z, hz, h₁⟩ := exists_mem_weightedEllipsoid_fst_ne_zero (b := b) ha hε
+    exact (h z hz).1 h₁
+  · rcases b.eq_zero_or_pos with rfl | hb
+    · exact pow_zero u
+    obtain ⟨z, hz, h₂⟩ := exists_mem_weightedEllipsoid_fst_ne_zero (b := a) hb hε
+    exact (h z.swap (swap_mem_weightedEllipsoid.2 hz)).2 h₂
 
-/-- **The ineffective kernel has order `gcd(a, b)`** for positive weights and `ε > 0`. -/
-theorem natCard_fixingSubgroup_univ_weightedEllipsoid (ha : 0 < a) (hb : 0 < b) (hε : 0 < ε) :
+/-- **The ineffective kernel has order `gcd(a, b)`** for `ε > 0`. For `a = b = 0` the kernel is
+the whole circle, whose cardinality is `0` as an infinite type. -/
+theorem natCard_fixingSubgroup_univ_weightedEllipsoid (hε : 0 < ε) :
     Nat.card (fixingSubgroup Circle (univ : Set (weightedEllipsoid a b ε))) = a.gcd b := by
-  have : NeZero (a.gcd b) := ⟨(Nat.gcd_pos_of_pos_left b ha).ne'⟩
-  rw [fixingSubgroup_univ_weightedEllipsoid ha hb hε]
-  exact natCard_powMonoidHom_ker Circle _
+  rw [fixingSubgroup_univ_weightedEllipsoid hε]
+  rcases (a.gcd b).eq_zero_or_pos with h | h
+  · have : Fact (0 < 2 * π) := ⟨two_pi_pos⟩
+    have : Infinite Circle := .of_injective _ (AddCircle.injective_toCircle two_pi_pos.ne')
+    simp [h]
+  · have : NeZero (a.gcd b) := ⟨h.ne'⟩
+    exact natCard_powMonoidHom_ker Circle _
 
 /-! ### The orbit space -/
 
