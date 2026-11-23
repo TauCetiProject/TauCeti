@@ -58,8 +58,9 @@ module `A` with `N`. When the `ι s` are idempotents, it is spanned over `A` by 
   `D (1 ⊗ x)`. Evaluating `D² = 0` at the generators `1 ⊗ x` gives the structure equation
   `d δ + δ * δ = 0`. Hence `D` is the box tensor differential of the type `D` structure
   `TauCeti.TypeDStructure.ofInducedDifferential`, the only one with the idempotents of `N`
-  (`TauCeti.TypeDStructure.existsUnique_idem_eq_and_boxDifferential_eq`). Over a ring of
-  characteristic two, the induced differential of `N` squares to zero and gives back `N`
+  (`TauCeti.TypeDStructure.existsUnique_idem_eq_and_boxDifferential_eq`,
+  `TauCeti.TypeDStructure.eq_ofInducedDifferential_iff`). When the induced differential of `N`
+  squares to zero, as it does over a ring of characteristic two, it gives back `N`
   (`TauCeti.TypeDStructure.ofInducedDifferential_inducedDifferential`).
 
 ## Main definitions
@@ -443,7 +444,7 @@ variable (N) in
 private noncomputable def entrywiseDifferential (hd : IsUngradedDGAlgebra d)
     (hι : ∀ s, d (ι s) = 0) : N.inducedModule →ₗ[R] N.inducedModule where
   toFun φ := ⟨fun x => d ((φ : X → A) x), mem_inducedModule_iff.mpr fun x => by
-    conv_rhs => rw [← φ.2 x]
+    conv_rhs => rw [← φ.property x]
     rw [hd.map_mul, hι, mul_zero, add_zero]⟩
   map_add' φ ψ := by ext; simp
   map_smul' r φ := by ext; simp
@@ -497,10 +498,10 @@ noncomputable def ofInducedDifferential [DecidableEq X] (hd : IsUngradedDGAlgebr
     TypeDStructure d ι X where
   idem := N.idem
   coeff := (inducedHomEquiv N N hidem).symm (leibnizDefect hd hι D hD)
-  idem_mul_coeff x y :=
-    (mem_morphisms_iff.mp ((inducedHomEquiv N N hidem).symm (leibnizDefect hd hι D hD)).2 x y).1
-  coeff_mul_idem x y :=
-    (mem_morphisms_iff.mp ((inducedHomEquiv N N hidem).symm (leibnizDefect hd hι D hD)).2 x y).2
+  idem_mul_coeff x y := (mem_morphisms_iff.mp
+    ((inducedHomEquiv N N hidem).symm (leibnizDefect hd hι D hD)).property x y).1
+  coeff_mul_idem x y := (mem_morphisms_iff.mp
+    ((inducedHomEquiv N N hidem).symm (leibnizDefect hd hι D hD)).property x y).2
   map_coeff_add_coeff_mul_coeff := by
     -- `D (D (1 ⊗ x)) = 0` is the row at `x` of `d δ + δ * δ`, since `D (1 ⊗ x)` is the row `δ x`.
     ext x y
@@ -531,22 +532,73 @@ theorem ofInducedDifferential_coeff (x y : X) :
       (D (N.generator hidem x) : X → A) y :=
   coe_inducedHomEquiv_symm_leibnizDefect hd hidem hι D hD x y
 
-/-- The box tensor differential of the type `D` structure of `D` is `D`. -/
+/-- The type `D` structure of `D` has the induced module of `N`. -/
 @[simp]
-theorem boxDifferential_ofInducedDifferential (φ : N.inducedModule) :
-    (N.ofInducedDifferential hd hidem hι D hD hDD).boxDifferential d φ = D φ := by
+theorem inducedModule_ofInducedDifferential :
+    (N.ofInducedDifferential hd hidem hι D hD hDD).inducedModule = N.inducedModule :=
+  (rfl)
+
+/-- The type `D` structure of `D` has the box tensor products of `N`. -/
+@[simp]
+theorem boxTensor_ofInducedDifferential {M : Type*} [AddCommGroup M] [Module R M]
+    [Module Aᵐᵒᵖ M] [SMulCommClass R Aᵐᵒᵖ M] :
+    (N.ofInducedDifferential hd hidem hι D hD hDD).boxTensor M = N.boxTensor M :=
+  SetLike.ext fun _ => by rw [mem_boxTensor_iff, mem_boxTensor_iff, ofInducedDifferential_idem]
+
+/-- The box tensor differential of the type `D` structure of `D` is `D`, on row vectors of the
+induced module of `N`. -/
+theorem boxDifferential_ofInducedDifferential_of_mem {φ : X → A} (hφ : φ ∈ N.inducedModule) :
+    (N.ofInducedDifferential hd hidem hι D hD hDD).boxDifferential d φ = D ⟨φ, hφ⟩ := by
   -- The coefficient matrix is by definition the morphism of the defect `D - d`.
   rw [boxDifferential_apply, coe_apply_eq_add_continuationMap hd hidem hι D hD]
   rfl
 
+/-- The box tensor differential of the type `D` structure of `D` is `D`. -/
+@[simp]
+theorem boxDifferential_ofInducedDifferential (φ : N.inducedModule) :
+    (N.ofInducedDifferential hd hidem hι D hD hDD).boxDifferential d φ = D φ :=
+  boxDifferential_ofInducedDifferential_of_mem hd hidem hι D hD hDD φ.property
+
+/-- The induced differential of the type `D` structure of `D` is `D`. Its `simp` priority is high
+so that it applies before `TauCeti.TypeDStructure.coe_inducedDifferential_apply` unfolds the
+induced differential. -/
+@[simp high]
+theorem coe_inducedDifferential_ofInducedDifferential
+    (φ : (N.ofInducedDifferential hd hidem hι D hD hDD).inducedModule) :
+    ((N.ofInducedDifferential hd hidem hι D hD hDD).inducedDifferential hd hι φ : X → A) =
+      D ⟨φ, inducedModule_ofInducedDifferential hd hidem hι D hD hDD ▸ φ.property⟩ :=
+  boxDifferential_ofInducedDifferential_of_mem hd hidem hι D hD hDD _
+
+/-- **The universal property of `ofInducedDifferential`**: it is the only type `D` structure with
+the idempotents of `N` whose box tensor differential is `D`. -/
+theorem eq_ofInducedDifferential_iff {N' : TypeDStructure d ι X} :
+    N' = N.ofInducedDifferential hd hidem hι D hD hDD ↔
+      N'.idem = N.idem ∧ ∀ φ : N.inducedModule, N'.boxDifferential d φ = D φ := by
+  refine ⟨?_, ?_⟩
+  · rintro rfl
+    exact ⟨rfl, boxDifferential_ofInducedDifferential hd hidem hι D hD hDD⟩
+  -- The coefficients of `N'` form the morphism whose map is the defect `D - d`.
+  rcases N' with ⟨idem', coeff', hl', hr', hs'⟩
+  rintro ⟨rfl, hN⟩
+  have hF : ⟨coeff', mem_morphisms_iff.mpr fun x y => ⟨hl' x y, hr' x y⟩⟩ =
+      (inducedHomEquiv N N hidem).symm (leibnizDefect hd hι D hD) := by
+    rw [LinearEquiv.eq_symm_apply, inducedHomEquiv_apply]
+    ext φ y
+    simp [leibnizDefect, entrywiseDifferential, ← hN, boxDifferential_apply]
+  exact TypeDStructure.ext rfl (congrArg Subtype.val hF)
+
 end OfInducedDifferential
 
-/-- The type `D` structure of the induced differential of `N` is `N`. -/
+/-- The type `D` structure of the induced differential of `N` is `N`. The induced differential
+squares to zero over a ring of characteristic two
+(`TauCeti.TypeDStructure.inducedDifferential_inducedDifferential`). -/
 @[simp]
-theorem ofInducedDifferential_inducedDifferential [CharP R 2] [DecidableEq X]
-    (hd : IsUngradedDGAlgebra d) (hidem : ∀ s, IsIdempotentElem (ι s)) (hι : ∀ s, d (ι s) = 0) :
-    N.ofInducedDifferential hd hidem hι (N.inducedDifferential hd hι)
-      (inducedDifferential_smul hd hι) (inducedDifferential_inducedDifferential hd hι) = N :=
+theorem ofInducedDifferential_inducedDifferential [DecidableEq X]
+    (hd : IsUngradedDGAlgebra d) (hidem : ∀ s, IsIdempotentElem (ι s)) (hι : ∀ s, d (ι s) = 0)
+    {hD : ∀ (b : A) φ, N.inducedDifferential hd hι (b • φ) =
+      d b • φ + b • N.inducedDifferential hd hι φ}
+    {hDD : ∀ φ, N.inducedDifferential hd hι (N.inducedDifferential hd hι φ) = 0} :
+    N.ofInducedDifferential hd hidem hι (N.inducedDifferential hd hι) hD hDD = N :=
   TypeDStructure.ext rfl (Matrix.ext fun x y => by
     rw [ofInducedDifferential_coeff, coe_inducedDifferential_generator hd hidem hι])
 
@@ -567,16 +619,9 @@ theorem existsUnique_idem_eq_and_boxDifferential_eq
     ∃! N' : TypeDStructure d ι X,
       N'.idem = N.idem ∧ ∀ φ : N.inducedModule, N'.boxDifferential d φ = D φ := by
   classical
-  refine ⟨N.ofInducedDifferential hd hidem hι D hD hDD,
-    ⟨rfl, boxDifferential_ofInducedDifferential hd hidem hι D hD hDD⟩, ?_⟩
-  -- Uniqueness: the coefficients of `N'` form the morphism whose map is the defect `D - d`.
-  rintro ⟨idem', coeff', hl', hr', hs'⟩ ⟨rfl, hN⟩
-  have hF : ⟨coeff', mem_morphisms_iff.mpr fun x y => ⟨hl' x y, hr' x y⟩⟩ =
-      (inducedHomEquiv N N hidem).symm (leibnizDefect hd hι D hD) := by
-    rw [LinearEquiv.eq_symm_apply, inducedHomEquiv_apply]
-    ext φ y
-    simp [leibnizDefect, entrywiseDifferential, ← hN, boxDifferential_apply]
-  exact TypeDStructure.ext rfl (congrArg Subtype.val hF)
+  exact ⟨N.ofInducedDifferential hd hidem hι D hD hDD,
+    (eq_ofInducedDifferential_iff hd hidem hι D hD hDD).mp rfl,
+    fun _ h => (eq_ofInducedDifferential_iff hd hidem hι D hD hDD).mpr h⟩
 
 end TypeDStructure
 
