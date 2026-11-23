@@ -58,8 +58,6 @@ converts such functionals back into tensors.
 * `CochainComplex.HomComplex.Cochain.tensor_comp_tensor`: the interchange law.
 * `TauCeti.linearHomComplexTensor_naturality_source` and
   `TauCeti.linearHomComplexTensor_naturality_target`: naturality.
-* `CochainComplex.leftUnitor_hom_f_zero_ιTensorObj_tmul`: on the degree-`0` summand of
-  `R[0] ⊗ R[0]`, the unitor `R[0] ⊗ R[0] ≅ R[0]` is the multiplication of `R`.
 
 ## References
 
@@ -331,39 +329,6 @@ lemma ιTensorObj_dualDistrib_v (g : Cochain B (𝟙_ _) i) (f : Cochain A (𝟙
 end Dual
 
 end CochainComplex.HomComplex.Cochain
-
-namespace CochainComplex
-
-open scoped TensorProduct
-
-variable {R : Type v} [CommRing R]
-
-/-- On the degree-`0` summand `R ⊗ R` of `R[0] ⊗ R[0]`, the left unitor of cochain complexes is
-the multiplication of `R`, after identifying the degree-`0` term of `R[0]` with `R`. -/
-lemma leftUnitor_hom_f_zero_ιTensorObj_tmul
-    (u w : (𝟙_ (CochainComplex (ModuleCat.{v} R) ℤ)).X 0) :
-    ((λ_ (𝟙_ (CochainComplex (ModuleCat.{v} R) ℤ))).hom.f 0).hom
-        ((HomologicalComplex.ιTensorObj (𝟙_ (CochainComplex (ModuleCat.{v} R) ℤ)) (𝟙_ _) 0 0 0
-          (zero_add 0)).hom (u ⊗ₜ w)) =
-      (HomologicalComplex.singleObjXSelf (.up ℤ) 0 (𝟙_ (ModuleCat.{v} R))).hom.hom u • w := by
-  set e := HomologicalComplex.singleObjXSelf (.up ℤ) 0 (𝟙_ (ModuleCat.{v} R))
-  have hu : u = e.hom.hom u • e.inv.hom 1 := by
-    rw [← map_smul, smul_eq_mul, mul_one]
-    exact (congrArg (fun φ => φ.hom u) e.hom_inv_id).symm
-  have hw : (HomologicalComplex.ιTensorObj (𝟙_ (CochainComplex (ModuleCat.{v} R) ℤ)) (𝟙_ _) 0 0 0
-      (zero_add 0)).hom (e.inv.hom 1 ⊗ₜ w) =
-        ((λ_ (𝟙_ (CochainComplex (ModuleCat.{v} R) ℤ))).inv.f 0).hom w := by
-    rw [HomologicalComplex.leftUnitor_inv_f]
-    simp only [ModuleCat.hom_comp, LinearMap.comp_apply,
-      ModuleCat.MonoidalCategory.leftUnitor_inv_apply,
-      ModuleCat.MonoidalCategory.whiskerRight_apply]
-    -- `ConcreteCategory.hom` and `ModuleCat.Hom.hom` agree on `ModuleCat`.
-    rfl
-  conv_lhs => rw [hu, ← TensorProduct.smul_tmul', map_smul, map_smul, hw]
-  exact congrArg _ <| Iso.inv_hom_id_apply
-    (HomologicalComplex.Hom.isoApp (λ_ (𝟙_ (CochainComplex (ModuleCat.{v} R) ℤ))) 0) w
-
-end CochainComplex
 
 namespace TauCeti
 

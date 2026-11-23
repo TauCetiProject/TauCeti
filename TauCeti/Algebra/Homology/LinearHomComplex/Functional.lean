@@ -9,6 +9,7 @@ public import TauCeti.Algebra.Homology.LinearHomComplex.Bidual
 public import TauCeti.Algebra.Homology.LinearHomComplex.Curry
 public import TauCeti.Algebra.Homology.LinearHomComplex.DualTensor
 public import TauCeti.Algebra.Homology.LinearHomComplex.Tensor
+public import TauCeti.Algebra.Homology.ModuleCat.Tensor
 
 /-!
 # Reading functionals on `A ⊗ B∨` as operators from `A` to `B`
@@ -143,17 +144,6 @@ section TensorDual
 
 variable (R) (A B : CochainComplex (ModuleCat.{v} R) ℤ)
 
-/-- **Reading the two dualities of `(A ⊗ B∨)∨` against each other.** The dual-tensor comparison
-`B ⊗ A∨ ⟶ Hom(A, B)` followed by the bidual map `j : B ⟶ B∨∨` is `j` on the first factor, then
-the comparison `B∨∨ ⊗ A∨ ⟶ (A ⊗ B∨)∨` and currying. -/
-theorem linearHomComplexDualTensor_comp_linearHomComplexPostcomp_bidualHom :
-    linearHomComplexDualTensor R A B ≫ linearHomComplexPostcomp R A (bidualHom B) =
-      bidualHom B ▷ linearHomComplex R A (𝟙_ _) ≫
-        linearHomComplexDualDistrib R A (linearDual R B) ≫
-          (linearHomComplexCurryIso A (linearDual R B) (𝟙_ _)).hom := by
-  rw [linearHomComplexDualDistrib_comp_linearHomComplexCurryIso_hom]
-  exact (linearHomComplexDualTensor_naturality_target A (bidualHom B)).symm
-
 variable [∀ p, Module.IsReflexive R (B.X p)]
 
 /-- **Functionals on `A ⊗ B∨` are operators from `A` to `B`.** When every term of `B` is
@@ -161,19 +151,9 @@ reflexive, currying `(A ⊗ B∨)∨ ≅ Hom(A, B∨∨)` followed by the invers
 bidual map `j : B ≅ B∨∨` is an isomorphism of complexes `(A ⊗ B∨)∨ ≅ Hom(A, B)`. On elements it
 is characterized by `TauCeti.linearDualXEquiv_linearHomComplexTensorDualIso_hom_f_apply`. -/
 noncomputable def linearHomComplexTensorDualIso :
-    linearDual R (A ⊗ linearDual R B) ≅ linearHomComplex R A B where
-  hom := (linearHomComplexCurryIso A (linearDual R B) (𝟙_ _)).hom ≫
-    linearHomComplexPostcomp R A (inv (bidualHom B))
-  inv := linearHomComplexPostcomp R A (bidualHom B) ≫
-    (linearHomComplexCurryIso A (linearDual R B) (𝟙_ _)).inv
-  hom_inv_id := by
-    rw [Category.assoc, ← Category.assoc (linearHomComplexPostcomp R A _),
-      ← linearHomComplexPostcomp_comp, IsIso.inv_hom_id, linearHomComplexPostcomp_id,
-      Category.id_comp, Iso.hom_inv_id]
-  inv_hom_id := by
-    rw [Category.assoc, ← Category.assoc (linearHomComplexCurryIso _ _ _).inv, Iso.inv_hom_id,
-      Category.id_comp, ← linearHomComplexPostcomp_comp, IsIso.hom_inv_id,
-      linearHomComplexPostcomp_id]
+    linearDual R (A ⊗ linearDual R B) ≅ linearHomComplex R A B :=
+  linearHomComplexCurryIso A (linearDual R B) (𝟙_ _) ≪≫
+    ((linearHomComplexFunctor R).obj (.op A)).mapIso (asIso (bidualHom B)).symm
 
 /-- `TauCeti.linearHomComplexTensorDualIso` is currying followed by postcomposition with the
 inverse of the bidual map. -/
@@ -243,9 +223,11 @@ theorem linearHomComplexDualTensor_eq_comp_linearHomComplexTensorDualIso_hom :
           (linearHomComplexTensorDualIso R A B).hom := by
   rw [linearHomComplexTensorDualIso_hom, ← Category.assoc, ← Category.assoc,
     Category.assoc _ _ (linearHomComplexCurryIso _ _ _).hom,
-    ← linearHomComplexDualTensor_comp_linearHomComplexPostcomp_bidualHom, Category.assoc,
-    ← linearHomComplexPostcomp_comp, IsIso.hom_inv_id, linearHomComplexPostcomp_id,
-    Category.comp_id]
+    linearHomComplexDualDistrib_comp_linearHomComplexCurryIso_hom,
+    -- The goal names `B∨∨` as `Hom(B∨, R[0])`, not as `linearDual R B∨`.
+    linearHomComplexDualTensor_naturality_target (B₂ := linearHomComplex R (linearDual R B) (𝟙_ _))
+      A (bidualHom B), Category.assoc, ← linearHomComplexPostcomp_comp, IsIso.hom_inv_id,
+    linearHomComplexPostcomp_id, Category.comp_id]
 
 /-- **Reading a functional through the dual of a tensor product.** When the comparison
 `B∨∨ ⊗ A∨ ⟶ (A ⊗ B∨)∨` is an isomorphism, for instance when `A` has finitely many nonzero terms,
