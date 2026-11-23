@@ -182,8 +182,8 @@ theorem shiftEquiv_symm_apply_val (lo hi h : Assignment Q K) (a b : V → K)
 theorem shiftEquiv_zero (lo hi : Assignment Q K) (a b : V → K) :
     (shiftEquiv lo hi 0 a b).trans
         (congr (sub_zero lo) (sub_zero hi)
-          (by funext x; simp only [Pi.sub_apply, excessAt_zero, sub_zero])
-          (by funext x; simp only [Pi.sub_apply, excessAt_zero, sub_zero])) =
+          (by simp only [excessAt_fun_zero, sub_zero])
+          (by simp only [excessAt_fun_zero, sub_zero])) =
       Equiv.refl (ExcessIntervalFlow lo hi a b) := by
   apply Equiv.ext
   intro f
@@ -195,14 +195,8 @@ theorem shiftEquiv_add (lo hi h k : Assignment Q K) (a b : V → K) :
     ((shiftEquiv lo hi h a b).trans
         (shiftEquiv (lo - h) (hi - h) k (a - excessAt h) (b - excessAt h))).trans
       (congr (sub_sub lo h k) (sub_sub hi h k)
-        (by
-          have hexcess : excessAt (h + k) = excessAt h + excessAt k :=
-            funext (excessAt_add h k)
-          simp only [hexcess, sub_sub])
-        (by
-          have hexcess : excessAt (h + k) = excessAt h + excessAt k :=
-            funext (excessAt_add h k)
-          simp only [hexcess, sub_sub])) =
+        (by simp only [excessAt_fun_add, sub_sub])
+        (by simp only [excessAt_fun_add, sub_sub])) =
       shiftEquiv lo hi (h + k) a b := by
   apply Equiv.ext
   intro f
@@ -262,7 +256,7 @@ theorem shiftEquiv_symm_apply_val (lo hi h : Assignment Q K) (b : V → K)
 theorem shiftEquiv_zero (lo hi : Assignment Q K) (b : V → K) :
     (shiftEquiv lo hi 0 b).trans
         (congr (sub_zero lo) (sub_zero hi)
-          (by funext x; simp only [Pi.sub_apply, excessAt_zero, sub_zero])) =
+          (by simp only [excessAt_fun_zero, sub_zero])) =
       Equiv.refl (ExcessFlow lo hi b) := by
   apply Equiv.ext
   intro f
@@ -273,10 +267,8 @@ theorem shiftEquiv_zero (lo hi : Assignment Q K) (b : V → K) :
 theorem shiftEquiv_add (lo hi h k : Assignment Q K) (b : V → K) :
     ((shiftEquiv lo hi h b).trans
         (shiftEquiv (lo - h) (hi - h) k (b - excessAt h))).trans
-      (congr (sub_sub lo h k) (sub_sub hi h k) (by
-          have hexcess : excessAt (h + k) = excessAt h + excessAt k :=
-            funext (excessAt_add h k)
-          simp only [hexcess, sub_sub])) =
+      (congr (sub_sub lo h k) (sub_sub hi h k)
+        (by simp only [excessAt_fun_add, sub_sub])) =
       shiftEquiv lo hi (h + k) b := by
   apply Equiv.ext
   intro f
