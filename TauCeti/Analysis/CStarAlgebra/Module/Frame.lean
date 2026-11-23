@@ -306,7 +306,7 @@ theorem isParsevalFrame_iff_inner_frameAnalysisCLM_frameAnalysisCLM {x : ι → 
 
 /-- Over any C⋆-algebra (possibly non-unital), a finite family `x` is a Parseval frame iff its Gram
 matrix is a star projection and its synthesis operator is surjective. -/
-theorem isParsevalFrame_iff_isStarProjection_gram_and_surjective_frameSynthesisCLM {x : ι → E} :
+theorem isParsevalFrame_iff_isStarProjection_gram_and_frameSynthesisCLM_surjective {x : ι → E} :
     IsParsevalFrame Aᵐᵒᵖ x ↔
       IsStarProjection (CStarMatrix.gram A x) ∧ Function.Surjective (frameSynthesisCLM A x) := by
   refine ⟨fun hx ↦ ⟨hx.isStarProjection_gram, fun z ↦ ⟨frameAnalysisCLM A x z,
@@ -497,7 +497,7 @@ theorem _root_.IsStarProjection.exists_isParsevalFrame_and_gram_eq {p : CStarMat
       ext i j; simp [x, u]
     rw [hU, CStarMatrix.gram_mulVecCLM_single_one, ← CStarMatrix.star_eq_conjTranspose,
       hp.isSelfAdjoint.star_eq, hp.isIdempotentElem.eq]
-  refine ⟨x, isParsevalFrame_iff_isStarProjection_gram_and_surjective_frameSynthesisCLM.mpr
+  refine ⟨x, isParsevalFrame_iff_isStarProjection_gram_and_frameSynthesisCLM_surjective.mpr
     ⟨hgram ▸ hp, fun z ↦ ?_⟩, hgram⟩
   obtain ⟨v, hv⟩ := (U z).property; refine ⟨v, U.toLinearEquiv.injective (Subtype.ext ?_)⟩
   rw [frameSynthesisCLM_apply, map_sum]; simp only [map_smul, LinearIsometryEquiv.coe_toLinearEquiv]
