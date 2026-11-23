@@ -26,8 +26,8 @@ standard coordinate vectors form the normalized fundamental basis
 germs by `LinearEquation.toSolutionGerms`; on a disc centred at `a` this is the linear equivalence
 `LinearEquation.solutionSpaceEquivSolutionGermsBall`, compatible with the disc initial-value
 theorem `LinearEquation.initialJetEquivBall`.
-`LinearEquation.IsSolutionNear.exists_disc_extension` extends a local solution at any point of a
-disc contained in the coefficient domain to a solution throughout that disc.
+`LinearEquation.IsSolutionNear.exists_isSolutionNear_eball` extends a local solution at any point of
+a disc of extended nonnegative radius contained in the coefficient domain throughout that disc.
 
 Solution germs are what analytic continuation of solutions transports along paths, and what
 global solutions on simply connected domains are assembled from.
@@ -40,6 +40,7 @@ global solutions on simply connected domains are assembled from.
 public noncomputable section
 
 open Filter Set Topology TopologicalSpace
+open scoped ENNReal
 
 namespace TauCeti.LinearEquation
 
@@ -325,16 +326,15 @@ theorem solutionSpaceEquivSolutionGermsBall_apply {z₀ : ℂ} {r : ℝ} (hr : 0
   rw [solutionSpaceEquivSolutionGermsBall, LinearEquiv.trans_apply, LinearEquiv.symm_apply_eq,
     initialJetGermEquiv_apply, initialJetGerm_toSolutionGerms, initialJetEquivBall_apply]
 
-/-- A local solution at any point of a disc inside the coefficient domain extends to a solution
-throughout the disc, with the same germ at that point. -/
-theorem IsSolutionNear.exists_disc_extension {a c : ℂ} {f : ℂ → ℂ} {r : ℝ}
+/-- A local solution at any point of a disc of extended nonnegative radius inside the coefficient
+domain extends throughout the disc, with the same germ at that point. The radius may be infinite. -/
+theorem IsSolutionNear.exists_isSolutionNear_eball {a c : ℂ} {f : ℂ → ℂ} {r : ℝ≥0∞}
     (hf : E.IsSolutionNear a f)
-    (hball : (⟨Metric.ball c r, Metric.isOpen_ball⟩ : Opens ℂ) ≤ U)
-    (ha : a ∈ Metric.ball c r) :
-    ∃ g : ℂ → ℂ, (∀ z ∈ Metric.ball c r, E.IsSolutionNear z g) ∧ g =ᶠ[𝓝 a] f := by
-  let V : Opens ℂ := ⟨Metric.ball c r, Metric.isOpen_ball⟩
-  have hV : (V : Set ℂ) = Metric.eball c (ENNReal.ofReal r) :=
-    Opens.coe_mk.trans Metric.eball_ofReal.symm
+    (hball : (⟨Metric.eball c r, Metric.isOpen_eball⟩ : Opens ℂ) ≤ U)
+    (ha : a ∈ Metric.eball c r) :
+    ∃ g : ℂ → ℂ, (∀ z ∈ Metric.eball c r, E.IsSolutionNear z g) ∧ g =ᶠ[𝓝 a] f := by
+  let V : Opens ℂ := ⟨Metric.eball c r, Metric.isOpen_eball⟩
+  have hV : (V : Set ℂ) = Metric.eball c r := rfl
   have haV : a ∈ V := Opens.mem_mk.mpr ha
   let E' := E.restrict hball
   let s := (E'.initialJetEquivOfEqEBall hV haV).symm (fun j ↦ iteratedDeriv j f a)

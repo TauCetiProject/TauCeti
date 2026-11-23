@@ -22,8 +22,8 @@ of the path.
 The subdivision `exists_monotone_Icc_subset_open_cover_unitInterval` splits the compact parameter
 interval into pieces whose images lie in discs inside the domain. The disc initial-value theorem
 `LinearEquation.initialJetEquivOfEqEBall` and germ uniqueness
-`LinearEquation.initialJetGerm_injective` supply
-`LinearEquation.IsSolutionNear.exists_disc_extension` to extend the germ across each piece.
+`LinearEquation.initialJetGermEquiv_symm_apply` supply
+`LinearEquation.IsSolutionNear.exists_isSolutionNear_eball` to extend the germ across each piece.
 `IsAnalyticContinuationAlong.union` glues the pieces.
 
 ## References
@@ -94,11 +94,14 @@ theorem IsSolutionNear.exists_isAnalyticContinuationAlong {γ : I → ℂ} {f : 
       obtain ⟨F, hF, hsol, hF0⟩ := ih
       obtain ⟨i, hi⟩ := htsub k
       have hak := hi ⟨le_rfl, htmono k.le_succ⟩
-      have hdisc : (⟨Metric.ball (γ i) (r i), Metric.isOpen_ball⟩ : Opens ℂ) ≤ U :=
-        SetLike.coe_subset_coe.mpr (hball i)
-      obtain ⟨g, hg, hga⟩ := (hsol (t k) le_rfl).exists_disc_extension hdisc hak
+      have hdisc :
+          (⟨Metric.eball (γ i) (ENNReal.ofReal (r i)), Metric.isOpen_eball⟩ : Opens ℂ) ≤ U := by
+        apply SetLike.coe_subset_coe.mp
+        simpa only [Opens.coe_mk, Metric.eball_ofReal] using hball i
+      obtain ⟨g, hg, hga⟩ := (hsol (t k) le_rfl).exists_isSolutionNear_eball hdisc
+        (by simpa only [Metric.eball_ofReal, mem_preimage] using hak)
       obtain ⟨G, hG, hGsol, hG0⟩ := continuation_step hγ (htmono k.le_succ) hF hsol
-        (fun u hu ↦ hg (γ u) (hi hu)) hga
+        (fun u hu ↦ hg (γ u) (by simpa only [Metric.eball_ofReal, mem_preimage] using hi hu)) hga
       exact ⟨G, hG, hGsol, hG0 ▸ hF0⟩
   obtain ⟨F, hF, hsol, hF0⟩ := hind m
   rw [hm m le_rfl] at hF hsol
@@ -118,15 +121,35 @@ end TauCeti.LinearEquation
 
 namespace TauCeti.IsAnalyticContinuationAlong
 
-/-- A continuation inside the coefficient domain of an analytic linear equation remains a local
-solution at every parameter time if its starting germ solves the equation. -/
-theorem isSolutionNear {U : Opens ℂ} {n : ℕ}
-    {E : LinearEquation U n} {F : I → ℂ → ℂ} {γ : I → ℂ}
-    (hF : IsAnalyticContinuationAlong F γ univ) (hγU : ∀ t, γ t ∈ U)
-    (hsol : E.IsSolutionNear (γ 0) (F 0)) (t : I) : E.IsSolutionNear (γ t) (F t) := by
-  obtain ⟨G, hG, hG0, hGsol⟩ := hsol.exists_isAnalyticContinuationAlong
-    (continuousOn_univ.mp hF.continuousOn) hγU
-  exact (hGsol t).congr (hG.eventuallyEq hF isPreconnected_univ (mem_univ 0)
-    (mem_univ t) hG0)
+/-- A continuation inside the coefficient domain of an analytic linear equation over a
+preconnected parameter set remains a local solution wherever its germ at one parameter solves the
+equation. -/
+theorem isSolutionNear {X : Type*} [TopologicalSpace X] {U : Opens ℂ} {n : ℕ}
+    {E : LinearEquation U n} {F : X → ℂ → ℂ} {γ : X → ℂ} {s : Set X}
+    (hF : IsAnalyticContinuationAlong F γ s) (hs : IsPreconnected s)
+    (hγU : MapsTo γ s U) {a b : X} (ha : a ∈ s) (hb : b ∈ s)
+    (hsol : E.IsSolutionNear (γ a) (F a)) : E.IsSolutionNear (γ b) (F b) := by
+  rw [LinearEquation.isSolutionNear_iff] at hsol ⊢
+  let R : X → ℂ → ℂ := fun t z ↦ iteratedDeriv n (F t) z +
+    ∑ j, HolomorphicFunctions.extend (E.coeff j) z * iteratedDeriv j (F t) z
+  have hderiv (t : X) (ht : t ∈ s) (k : ℕ) :
+      AnalyticAt ℂ (iteratedDeriv k (F t)) (γ t) := by
+    simpa only [iteratedDeriv_eq_iterate] using (hF.analyticAt t ht).iterated_deriv k
+  have hR : IsAnalyticContinuationAlong R γ s := by
+    refine ⟨hF.continuousOn, ?_, ?_⟩
+    · intro t ht
+      exact (hderiv t ht n).add (Finset.analyticAt_fun_sum _ fun j _ ↦
+        (HolomorphicFunctions.analyticOnNhd_extend (s := U) Subset.rfl (E.coeff j)
+          (γ t) (hγU ht)).mul (hderiv t ht j))
+    · intro t ht
+      filter_upwards [hF.locallyEq t ht] with u hu
+      filter_upwards [hu.eventuallyEq_nhds] with z hz
+      simp only [R, hz.iteratedDeriv_eq]
+  have hzero : R b =ᶠ[𝓝 (γ b)] 0 :=
+    hR.eventuallyEq (IsAnalyticContinuationAlong.const hF.continuousOn
+      (fun _ _ ↦ analyticAt_const)) hs ha hb (hsol.mono fun _ hz ↦ hz.2.2)
+  filter_upwards [U.isOpen.mem_nhds (hγU hb), (hF.analyticAt b hb).eventually_analyticAt,
+    hzero] with z hzU hzF hz
+  exact ⟨hzU, hzF, hz⟩
 
 end TauCeti.IsAnalyticContinuationAlong
