@@ -48,15 +48,6 @@ namespace TauCeti.LFunctions.AnalyticLFunctionData
 private theorem analyticAt_eval (Q : ℂ[X]) (s : ℂ) : AnalyticAt ℂ (fun z ↦ Q.eval z) s :=
   (AnalyticOnNhd.eval_polynomial Q) s trivial
 
-/-- Multiplying by a polynomial that does not vanish at `s` leaves the meromorphic order at `s`
-unchanged. -/
-private theorem meromorphicOrderAt_eval_mul_of_eval_ne_zero {Q : ℂ[X]} {f : ℂ → ℂ} {s : ℂ}
-    (hQ : Q.eval s ≠ 0) (hf : MeromorphicAt f s) :
-    meromorphicOrderAt (fun z ↦ Q.eval z * f z) s = meromorphicOrderAt f s := by
-  have hQa := analyticAt_eval Q s
-  rw [fun_meromorphicOrderAt_mul hQa.meromorphicAt hf,
-    hQa.meromorphicNFAt.meromorphicOrderAt_eq_zero_iff.mpr hQ, zero_add]
-
 variable (d : AnalyticLFunctionData) (P : ℂ[X])
 
 /-- The pole-cleared continued function: the removable extension of
@@ -101,7 +92,8 @@ theorem poleClearedContinuedL_eq_of_eval_ne_zero {s : ℂ} (hP : P.eval s ≠ 0)
   · exact poleClearedContinuedL_eq_of_analyticAt (hPa.mul (d.analyticAt_continuedL hs))
   · apply toMeromorphicNFOn_eq_self_on_compl (meromorphic_eval_mul_continuedL d P).meromorphicOn
     simp only [Set.mem_compl_iff, Set.mem_ofPred_eq]
-    rwa [meromorphicOrderAt_eval_mul_of_eval_ne_zero hP (d.meromorphic_continuedL s)]
+    rwa [show meromorphicOrderAt (fun z ↦ P.eval z * d.continuedL z) s = _ from
+      meromorphicOrderAt_mul_of_ne_zero hPa hP]
 
 /-- Clearing by `P ≠ 0` adds the root multiplicity of `P` to the meromorphic order. -/
 theorem meromorphicOrderAt_poleClearedContinuedL (hP : P ≠ 0) (s : ℂ) :
@@ -198,8 +190,9 @@ theorem orderLE_poleClearedContinuedL {A : ℝ} (hA : OrderLE d.entireCompletion
     have hpc := polarPolynomial_mul_continuedL_eventuallyEq hm s
     have hord : 0 ≤ meromorphicOrderAt d.continuedL s := by
       have h0 := (analyticAt_clearedProduct hE).meromorphicOrderAt_nonneg
-      rwa [← meromorphicOrderAt_congr hpc,
-        meromorphicOrderAt_eval_mul_of_eval_ne_zero hs (d.meromorphic_continuedL s)] at h0
+      rwa [← meromorphicOrderAt_congr hpc, show meromorphicOrderAt
+        (fun z ↦ d.polarPolynomial.eval z * d.continuedL z) s = _ from
+        meromorphicOrderAt_mul_of_ne_zero hQa hs] at h0
     have hc := d.analyticAt_continuedL hord
     have hval := (((hQa.mul hc).continuousAt.eventuallyEq_nhds_iff_eventuallyEq_nhdsNE
       (analyticAt_clearedProduct hE).continuousAt).mp hpc).eq_of_nhds
