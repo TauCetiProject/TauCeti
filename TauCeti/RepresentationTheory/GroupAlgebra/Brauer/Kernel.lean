@@ -25,19 +25,10 @@ from its stabilizer `Q = P ⊓ C_G(g) < P` (`TauCeti.coeff_relTrace_single_inf_c
 and induction on the support writes `x` as a sum of such traces. This direction uses neither the
 characteristic nor that `P` is a `p`-group.
 
-The Brauer projection of an element of `R[G]` invariant under conjugation by `N_G(P)` is again
-invariant under `N_G(P)`, which acts on `C_G(P)`
-(`TauCeti.coeff_brauerProjection_conj_of_mem_conjInvariants`). In particular the image of
-`Z(R[G])` lies in `R[C_G(P)]^{N_G(P)}`.
-
 ## Main results
 
 * `TauCeti.brauerProjection_relTrace_eq_zero`: `Br_P` kills `Tr_Q^P(a)` for `Q < P`.
-* `TauCeti.coeff_relTrace_single_inf_centralizer`: the relative trace of `g` from its
-  stabilizer in `P` is the sum of the `P`-conjugates of `g`, each once.
 * `TauCeti.ker_brauerHom`: `ker Br_P = ∑_{Q < P} R[G]^P_Q`.
-* `TauCeti.coeff_brauerProjection_conj_of_mem_conjInvariants`: `Br_P` of an element invariant
-  under conjugation by `N_G(P)`, for instance a central one, is invariant under `N_G(P)`.
 
 ## References
 
@@ -53,19 +44,6 @@ open MonoidAlgebra
 variable {R G : Type*} [CommSemiring R] [Group G]
 
 /-! ### Traces from proper subgroups lie in the kernel -/
-
-/-- The coefficient of `Tr_Q^P(a)` at an element of `C_G(P)` is `|P : Q|` times that of `a`. -/
-theorem coeff_relTrace_of_mem_centralizer {Q P : Subgroup G} [(Q.subgroupOf P).FiniteIndex]
-    (a : conjInvariants R Q) {c : G} (hc : c ∈ Subgroup.centralizer (P : Set G)) :
-    (relTrace R Q P a : MonoidAlgebra R G).coeff c =
-      (Q.subgroupOf P).index • (a : MonoidAlgebra R G).coeff c := by
-  classical
-  rw [coe_relTrace, coeff_sum]
-  simp only [Finsupp.finsetSum_apply, coeff_conjRepresentation]
-  have hconj (q : P) : (q : G)⁻¹ * c * q = c := by
-    rw [mul_assoc, ← Subgroup.mem_centralizer_iff.1 hc q q.property, inv_mul_cancel_left]
-  simp only [hconj, Finset.sum_const, Finset.card_univ, Subgroup.index_eq_card,
-    Fintype.card_eq_nat_card]
 
 /-- **The Brauer projection kills traces from proper subgroups.** For a `p`-subgroup `P` in
 characteristic `p` and `Q < P`, `Br_P(Tr_Q^P(a)) = 0`, since `|P : Q|` is a positive power of
@@ -83,49 +61,6 @@ theorem brauerProjection_relTrace_eq_zero {p : ℕ} [Fact p.Prime] [CharP R p] {
   ext c
   rw [coeff_brauerProjection, coeff_relTrace_of_mem_centralizer a c.property, nsmul_eq_mul, hp,
     zero_mul, coeff_zero, Finsupp.coe_zero, Pi.zero_apply]
-
-/-! ### Orbit sums are relative traces -/
-
-/-- `g` is fixed by conjugation by its stabilizer. -/
-theorem single_mem_conjInvariants_inf_centralizer (P : Subgroup G) (g : G) (r : R) :
-    single g r ∈ conjInvariants R (P ⊓ Subgroup.centralizer {g}) := by
-  rw [mem_conjInvariants_iff]
-  intro h hh
-  rw [conjRepresentation_single, (Subgroup.mem_centralizer_singleton_iff.1 hh.2).eq,
-    mul_inv_cancel_right]
-
-open scoped Classical in
-/-- **Orbit sums are relative traces.** The relative trace of `g` from its stabilizer
-`P ⊓ C_G(g)` to `P` has coefficient `r` on each `P`-conjugate of `g`, and `0` elsewhere. -/
-theorem coeff_relTrace_single_inf_centralizer [Finite G] (P : Subgroup G) (g : G) (r : R)
-    (h : G) :
-    (relTrace R (P ⊓ Subgroup.centralizer {g}) P
-        ⟨single g r, single_mem_conjInvariants_inf_centralizer P g r⟩ : MonoidAlgebra R G).coeff h =
-      if ∃ q ∈ P, q * g * q⁻¹ = h then r else 0 := by
-  classical
-  let : MulAction P G := MulAction.compHom G (MulAut.conj.comp P.subtype)
-  have hsmul (q : P) (a : G) : q • a = q * a * (q : G)⁻¹ := by
-    rw [MulAction.compHom_smul_def]
-    simp
-  have hstab : MulAction.stabilizer P g = (P ⊓ Subgroup.centralizer {g}).subgroupOf P := by
-    ext q
-    rw [MulAction.mem_stabilizer_iff, hsmul, Subgroup.mem_subgroupOf, Subgroup.mem_inf,
-      Subgroup.mem_centralizer_singleton_iff, mul_inv_eq_iff_eq_mul]
-    exact ⟨fun e => ⟨q.property, e⟩, fun e => e.2⟩
-  have := Fintype.ofFinite (MulAction.orbit P g)
-  let e := MulAction.orbitEquivQuotientStabilizer P g
-  have hs (x : MulAction.orbit P g) : ((e x).out : G) * g * ((e x).out : G)⁻¹ = x := by
-    rw [← hsmul, ← MulAction.orbitEquivQuotientStabilizer_symm_apply, QuotientGroup.out_eq',
-      e.symm_apply_apply]
-  have hbij : Function.Bijective
-      fun x => ((e x).out : P ⧸ (P ⊓ Subgroup.centralizer {g}).subgroupOf P) := by
-    rw [← hstab]
-    simpa only [QuotientGroup.out_eq'] using e.bijective
-  rw [relTrace_apply_eq_sum_of_bijective _ hbij, coeff_sum]
-  simp only [Finsupp.finsetSum_apply, conjRepresentation_single, hs, coeff_single,
-    Finsupp.single_apply]
-  rw [Finset.sum_set_coe (f := fun x => if x = h then r else 0), Finset.sum_ite_eq']
-  simp [MulAction.mem_orbit_iff, hsmul]
 
 /-! ### The kernel -/
 
@@ -224,21 +159,5 @@ theorem ker_brauerHom [Finite G] {p : ℕ} [Fact p.Prime] [CharP R p] {P : Subgr
     obtain ⟨a, rfl⟩ := (mem_relTraceIdeal_iff hQ.le).1 hy
     rw [RingHom.mem_ker, brauerHom_apply]
     exact brauerProjection_relTrace_eq_zero hP hQ a
-
-/-! ### The image of the centre -/
-
-/-- **The Brauer projection is invariant under the normalizer.** If `z` is fixed by conjugation
-by `H` and `n ∈ H` normalizes `P`, then `Br_P(z)` is fixed by conjugation by `n`, which acts on
-`C_G(P)`. For `H = G`, so `z` is central (`TauCeti.center_le_conjInvariants`), the image of
-`Z(R[G])` lies in `R[C_G(P)]^{N_G(P)}`. -/
-theorem coeff_brauerProjection_conj_of_mem_conjInvariants {P H : Subgroup G}
-    {z : MonoidAlgebra R G} (hz : z ∈ conjInvariants R H) {n : G} (hnH : n ∈ H)
-    (hn : n ∈ Subgroup.normalizer (P : Set G)) (c : Subgroup.centralizer (P : Set G)) :
-    (brauerProjection P z).coeff
-        ⟨n * c * n⁻¹, (Subgroup.normal_subgroupOf_iff (Subgroup.centralizer_le_normalizer _)).1
-          inferInstance (c : G) n c.property hn⟩ =
-      (brauerProjection P z).coeff c := by
-  rw [coeff_brauerProjection, coeff_brauerProjection]
-  exact mem_conjInvariants_iff_coeff.1 hz n hnH c
 
 end TauCeti
