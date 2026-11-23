@@ -48,6 +48,8 @@ compares the homology sequences of these short exact sequences.
   of bicomplexes.
 * `HomologicalComplex₂.isIso_totalAugmentation_single`: the total complex of a bicomplex with a
   single column is that column.
+* `HomologicalComplex₂.isIso_totalAugmentation_of_isZero`: the same for any bicomplex whose
+  columns `p + 1` vanish, augmented by an isomorphism.
 * `HomologicalComplex₂.rowZeroShortComplex`: the degreewise split short exact sequence
   `row 0 ⟶ Tot K ⟶ Tot (rowsSucc K)[1]`, where `HomologicalComplex₂.rowsSucc K` is the bicomplex
   of the rows `≥ 1` of `K`.
@@ -172,6 +174,25 @@ lemma total_map_totalAugmentation
   · obtain rfl : q = n := by simpa using h
     simp
   · simp
+
+/-- **A bicomplex concentrated in the column `0` has that column as its total complex.** If every
+column `p + 1` of `K` vanishes, the augmentation of the total complex by an isomorphism
+`ε : K.X 0 ≅ E` is an isomorphism. -/
+lemma isIso_totalAugmentation_of_isZero (hK : ∀ p q, IsZero ((K.X (p + 1)).X q)) [IsIso ε] :
+    IsIso (K.totalAugmentation ε hε) := by
+  -- The inverse in degree `n` is `ε⁻¹` followed by the inclusion of the summand `(K.X 0).X n`.
+  have (n : ℕ) : IsIso ((K.totalAugmentation ε hε).f n) := by
+    refine ⟨(inv ε).f n ≫ K.ιTotal (ComplexShape.down ℕ) 0 n n (by simp), ?_, ?_⟩
+    · refine total.hom_ext _ fun p q h ↦ ?_
+      rcases p with _ | p
+      · obtain rfl : q = n := by simpa using h
+        rw [ιTotal_totalAugmentation_f_zero_assoc, Category.comp_id,
+          ← HomologicalComplex.comp_f_assoc, IsIso.hom_inv_id, HomologicalComplex.id_f,
+          Category.id_comp]
+      · exact (hK p q).eq_of_src _ _
+    · rw [Category.assoc, ιTotal_totalAugmentation_f_zero, ← HomologicalComplex.comp_f,
+        IsIso.inv_hom_id, HomologicalComplex.id_f]
+  exact HomologicalComplex.Hom.isIso_of_components _
 
 section Single
 
