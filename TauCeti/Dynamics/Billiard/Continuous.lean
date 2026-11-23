@@ -8,28 +8,34 @@ module
 public import TauCeti.Dynamics.Billiard.Inverse
 public import Mathlib.Topology.Algebra.Group.Quotient
 import Mathlib.Analysis.Calculus.Deriv.Comp
-import Mathlib.Analysis.Calculus.Deriv.Slope
 import Mathlib.Analysis.Calculus.FDeriv.Linear
+import Mathlib.Analysis.Calculus.LocalExtr.Basic
 import Mathlib.Topology.Algebra.Module.FiniteDimension
 import Mathlib.Topology.Order.IntermediateValue
+import TauCeti.Analysis.Calculus.Deriv.Slope
 
 /-!
-# The billiard map of a `C¹` table is a homeomorphism
+# The billiard map is a homeomorphism
 
 Let `χ` be an arclength parametrization of the boundary of a strictly convex billiard table
 (`TauCeti.StrictConvexBilliardTable`), with period `L`, and let `B(s, v) = (t, w)` be its
-next-collision map on the strip `ℝ × (-1, 1)`. This file proves that when the unit tangent `χ'` is
-continuous, `B` is continuous on the strip
-(`TauCeti.StrictConvexBilliardTable.continuousOn_nextCollision`). Its inverse is `τ⁻¹ ∘ ι ∘ B ∘ ι`,
-with `ι(s, v) = (s, -v)` and `τ(s, v) = (s + L, v)`, so `B` is a homeomorphism of the strip
-(`TauCeti.StrictConvexBilliardTable.nextCollisionHomeomorph`), and the billiard map `β` it induces
-on the space of collision states `AddCircle L × (-1, 1)` is a homeomorphism
+next-collision map on the strip `ℝ × (-1, 1)`. This file proves that the unit tangent `χ'` is
+continuous (`TauCeti.StrictConvexBilliardTable.continuous_deriv`) and that `B` is continuous on the
+strip (`TauCeti.StrictConvexBilliardTable.continuousOn_nextCollision`). Its inverse is
+`τ⁻¹ ∘ ι ∘ B ∘ ι`, with `ι(s, v) = (s, -v)` and `τ(s, v) = (s + L, v)`, so `B` is a homeomorphism
+of the strip (`TauCeti.StrictConvexBilliardTable.nextCollisionHomeomorph`), and the billiard map `β`
+it induces on the space of collision states `AddCircle L × (-1, 1)` is a homeomorphism
 (`TauCeti.StrictConvexBilliardTable.billiardHomeomorph`).
 
-The proof of continuity uses only the transversality of the chord at its far end. For the state
-`x = (s, v)` with outgoing velocity `u(x)`, the next collision parameter `t₀` is the unique zero in
-`(s, s + L)` of `f_x(t) = ω(u(x), χ(t) - χ(s))`, where `ω` is the area form. Its derivative there
-is `ω(u(x), χ'(t₀)) = √(1 - w ^ 2) > 0`, since the chord is not tangent to the boundary at
+The unit tangent is continuous because strict convexity determines it: a cluster value `u` of `χ'`
+at `s` keeps the whole table weakly to its left, so `t ↦ ω(u, χ(t) - χ(s))` has a minimum at `s`,
+where `ω` is the area form. Its derivative `ω(u, χ'(s))` there vanishes, so `u = ±χ'(s)`, and the
+table cannot lie to the left of `-χ'(s)`.
+
+The proof of continuity of `B` uses only the transversality of the chord at its far end. For the
+state `x = (s, v)` with outgoing velocity `u(x)`, the next collision parameter `t₀` is the unique
+zero in `(s, s + L)` of `f_x(t) = ω(u(x), χ(t) - χ(s))`. Its derivative there is
+`ω(u(x), χ'(t₀)) = √(1 - w ^ 2) > 0`, since the chord is not tangent to the boundary at
 `χ(t₀)`. So `f_x` changes sign from negative to positive on any small interval `[a, b]` around
 `t₀`. Since `f_y(a)` and `f_y(b)` depend continuously on the state `y`, the same sign change holds
 for every nearby state, and the intermediate value theorem and the uniqueness of the next collision
@@ -37,6 +43,7 @@ put the next collision parameter of `y` in `(a, b)`. No second derivative of `χ
 
 ## Main results
 
+* `TauCeti.StrictConvexBilliardTable.continuous_deriv`: the unit tangent is continuous.
 * `TauCeti.StrictConvexBilliardTable.continuous_outgoingDir`: the outgoing velocity depends
   continuously on the state.
 * `TauCeti.StrictConvexBilliardTable.continuousAt_nextParam`,
@@ -75,16 +82,52 @@ namespace StrictConvexBilliardTable
 
 variable {o : Orientation ℝ E (Fin 2)} (χ : StrictConvexBilliardTable o)
 
+/-! ### Continuity of the unit tangent -/
+
+/-- The unit tangent `χ'` of a strictly convex table is continuous: a cluster value `u` of `χ'` at
+`s` keeps the whole table weakly to its left, `0 ≤ ω(u, χ(t) - χ(s))`, which forces `u = χ'(s)`. -/
+theorem continuous_deriv : Continuous (deriv χ) := by
+  have hnonneg : ∀ r t, 0 ≤ o.areaForm (deriv χ r) (χ t - χ r) := fun r t ↦ by
+    by_cases h : χ t = χ r
+    · simp [h]
+    · exact (χ.areaForm_pos r t h).le
+  refine continuous_iff_continuousAt.2 fun s ↦ continuousAt_iff_ultrafilter.2 fun g hg ↦ ?_
+  obtain ⟨u, hu, hgu⟩ := (isCompact_sphere (0 : E) 1).ultrafilter_le_nhds (g.map (deriv χ))
+    (le_principal_iff.2 (Ultrafilter.mem_map.2 (Eventually.of_forall fun r ↦ by
+      simp [χ.norm_deriv r])))
+  have hgu : Tendsto (deriv χ) g (𝓝 u) := hgu
+  rw [mem_sphere_zero_iff_norm] at hu
+  -- The limit `u` of the tangents keeps the whole table weakly to its left.
+  have hleft : ∀ t, 0 ≤ o.areaForm u (χ t - χ s) := fun t ↦
+    ge_of_tendsto ((o.areaForm'.continuous₂.tendsto (u, χ t - χ s)).comp
+      (hgu.prodMk_nhds ((tendsto_const_nhds.sub (χ.continuous.tendsto s)).mono_left hg)))
+      (Eventually.of_forall fun r ↦ hnonneg r t)
+  -- So `t ↦ ω(u, χ(t) - χ(s))` has a minimum at `s`, where its derivative `ω(u, χ'(s))` vanishes.
+  have hzero : o.areaForm u (deriv χ s) = 0 :=
+    IsLocalMin.hasDerivAt_eq_zero (f := fun t ↦ o.areaForm u (χ t - χ s))
+      (Eventually.of_forall fun t ↦ by simpa using hleft t)
+      ((o.areaForm u).toContinuousLinearMap.hasFDerivAt.comp_hasDerivAt s
+        ((χ.differentiableAt s).hasDerivAt.sub_const (χ s)))
+  have hinner : ⟪u, deriv χ s⟫ = 1 ∨ ⟪u, deriv χ s⟫ = -1 := by
+    simpa [hzero, hu, χ.norm_deriv s] using o.inner_sq_add_areaForm_sq u (deriv χ s)
+  rcases hinner with h | h
+  · rwa [← (inner_eq_one_iff_of_norm_eq_one hu (χ.norm_deriv s)).1 h]
+  · -- The opposite tangent `-χ'(s)` would put the rest of the table on its right.
+    rw [(inner_eq_neg_one_iff_of_norm_eq_one hu (χ.norm_deriv s)).1 h] at hleft
+    have ht : s + χ.period / 2 ∈ Ioo s (s + χ.period) :=
+      ⟨by linarith [χ.period_pos], by linarith [χ.period_pos]⟩
+    have h₁ := hleft (s + χ.period / 2)
+    simp only [map_neg, LinearMap.neg_apply, neg_nonneg] at h₁
+    exact absurd h₁ (χ.areaForm_pos s _ (χ.apply_ne_of_mem_Ioo ht)).not_ge
+
 /-! ### Continuity of the next-collision map on the strip -/
 
-/-- For a table with continuous unit tangent, the outgoing velocity `u(s, v)` depends continuously
-on the state `(s, v)`. -/
-theorem continuous_outgoingDir (hχ : Continuous (deriv χ)) :
-    Continuous fun x : ℝ × ℝ ↦ χ.outgoingDir x.1 x.2 := by
+/-- The outgoing velocity `u(s, v)` depends continuously on the state `(s, v)`. -/
+theorem continuous_outgoingDir : Continuous fun x : ℝ × ℝ ↦ χ.outgoingDir x.1 x.2 := by
   simp only [outgoingDir_def]
-  exact (continuous_snd.smul (hχ.comp continuous_fst)).add
+  exact (continuous_snd.smul (χ.continuous_deriv.comp continuous_fst)).add
     ((Real.continuous_sqrt.comp (continuous_const.sub (continuous_snd.pow 2))).smul
-      (o.rightAngleRotation.continuous.comp (hχ.comp continuous_fst)))
+      (o.rightAngleRotation.continuous.comp (χ.continuous_deriv.comp continuous_fst)))
 
 /-- The chord of a state `(s, v)` crosses the boundary transversally at its next collision
 parameter `t₀`: arbitrarily close to `t₀` there are parameters `a < t₀ < b` in `(s, s + L)` with
@@ -105,27 +148,21 @@ private theorem exists_areaForm_neg_pos_near_nextParam {s v ε : ℝ} (hv : v �
     rw [o.areaForm_swap, neg_pos]
     exact χ.areaForm_deriv_nextParam_outgoingDir_neg hv
   have hzero : f t₀ = 0 := χ.areaForm_outgoingDir_sub_nextParam hv
-  have hslope := (hasDerivAt_iff_tendsto_slope.1 hderiv).eventually (lt_mem_nhds hpos)
-  obtain ⟨a, ha, ha'⟩ := ((hslope.filter_mono (nhdsLT_le_nhdsNE t₀)).and
+  obtain ⟨a, ha, ha'⟩ := ((hderiv.hasDerivWithinAt.eventually_nhdsLT_lt_of_pos hpos).and
     (Ioo_mem_nhdsLT (max_lt (by linarith) ht₀.1 : max (t₀ - ε) s < t₀))).exists
-  obtain ⟨b, hb, hb'⟩ := ((hslope.filter_mono (nhdsGT_le_nhdsNE t₀)).and
+  obtain ⟨b, hb, hb'⟩ := ((hderiv.hasDerivWithinAt.eventually_nhdsGT_lt_of_pos hpos).and
     (Ioo_mem_nhdsGT (lt_min (by linarith) ht₀.2 : t₀ < min (t₀ + ε) (s + χ.period)))).exists
-  rw [slope_def_field, hzero, sub_zero] at ha hb
-  refine ⟨a, b, (le_max_right _ _).trans_lt ha'.1, (le_max_left _ _).trans_lt ha'.1, ha'.2,
-    hb'.1, hb'.2.trans_le (min_le_left _ _), hb'.2.trans_le (min_le_right _ _), ?_, ?_⟩
-  · by_contra hc
-    exact ha.not_ge (div_nonpos_of_nonneg_of_nonpos (not_lt.1 hc) (by linarith [ha'.2]))
-  · by_contra hc
-    exact hb.not_ge (div_nonpos_of_nonpos_of_nonneg (not_lt.1 hc) (by linarith [hb'.1]))
+  exact ⟨a, b, (le_max_right _ _).trans_lt ha'.1, (le_max_left _ _).trans_lt ha'.1, ha'.2,
+    hb'.1, hb'.2.trans_le (min_le_left _ _), hb'.2.trans_le (min_le_right _ _),
+    ha.trans_eq hzero, hzero.symm.trans_lt hb⟩
 
-/-- For a table with continuous unit tangent, the next collision parameter `t(s, v)` is continuous
-on the strip. -/
-theorem continuousAt_nextParam (hχ : Continuous (deriv χ)) {s v : ℝ} (hv : v ∈ Ioo (-1) 1) :
+/-- The next collision parameter `t(s, v)` is continuous on the strip. -/
+theorem continuousAt_nextParam {s v : ℝ} (hv : v ∈ Ioo (-1) 1) :
     ContinuousAt (fun x : ℝ × ℝ ↦ χ.nextParam x.1 x.2) (s, v) := by
   -- `f x t = ω(u(x), χ(t) - χ(x.1))` vanishes at the next collision parameter of `x`.
   let f : ℝ × ℝ → ℝ → ℝ := fun x t ↦ o.areaForm (χ.outgoingDir x.1 x.2) (χ t - χ x.1)
   have hf : ∀ t, Continuous fun x : ℝ × ℝ ↦ f x t := fun t ↦
-    (o.areaForm'.continuous₂.comp₂ (χ.continuous_outgoingDir hχ)
+    (o.areaForm'.continuous₂.comp₂ χ.continuous_outgoingDir
       (continuous_const.sub (χ.continuous.comp continuous_fst)))
   have hf' : ∀ x : ℝ × ℝ, Continuous (f x) := fun x ↦
     (LinearMap.continuous_of_finiteDimensional (o.areaForm (χ.outgoingDir x.1 x.2))).comp
@@ -147,122 +184,104 @@ theorem continuousAt_nextParam (hχ : Continuous (deriv χ)) {s v : ℝ} (hv : v
   rw [← heq, Real.dist_eq, abs_sub_lt_iff]
   constructor <;> linarith [ht.1, ht.2]
 
-/-- For a table with continuous unit tangent, the next tangential component `w(s, v)` is continuous
-on the strip. -/
-theorem continuousAt_nextTangential (hχ : Continuous (deriv χ)) {s v : ℝ} (hv : v ∈ Ioo (-1) 1) :
+/-- The next tangential component `w(s, v)` is continuous on the strip. -/
+theorem continuousAt_nextTangential {s v : ℝ} (hv : v ∈ Ioo (-1) 1) :
     ContinuousAt (fun x : ℝ × ℝ ↦ χ.nextTangential x.1 x.2) (s, v) := by
   simp only [nextTangential_def]
-  exact (χ.continuous_outgoingDir hχ).continuousAt.inner
-    (hχ.continuousAt.comp (χ.continuousAt_nextParam hχ hv))
+  exact χ.continuous_outgoingDir.continuousAt.inner
+    (χ.continuous_deriv.continuousAt.comp (χ.continuousAt_nextParam hv))
 
-/-- For a table with continuous unit tangent, the next-collision map is continuous on the strip
-`ℝ × (-1, 1)`. -/
-theorem continuousOn_nextCollision (hχ : Continuous (deriv χ)) :
-    ContinuousOn χ.nextCollision (univ ×ˢ Ioo (-1) 1) := by
+/-- The next-collision map is continuous on the strip `ℝ × (-1, 1)`. -/
+theorem continuousOn_nextCollision : ContinuousOn χ.nextCollision (univ ×ˢ Ioo (-1) 1) := by
   rintro ⟨s, v⟩ ⟨-, hv⟩
   rw [show χ.nextCollision = fun x ↦ (χ.nextParam x.1 x.2, χ.nextTangential x.1 x.2) from
     funext χ.nextCollision_apply]
-  exact ((χ.continuousAt_nextParam hχ hv).prodMk
-    (χ.continuousAt_nextTangential hχ hv)).continuousWithinAt
+  exact ((χ.continuousAt_nextParam hv).prodMk
+    (χ.continuousAt_nextTangential hv)).continuousWithinAt
 
 /-! ### The next-collision map and the billiard map are homeomorphisms -/
 
-/-- A map `ℝ × ℝ → ℝ × ℝ` that is continuous on the strip `ℝ × (-1, 1)` and sends it into itself
-is continuous as a map of the subtype `ℝ × (-1, 1)`. -/
-private theorem continuous_restrict_strip {f : ℝ × ℝ → ℝ × ℝ}
-    (hf : ContinuousOn f (univ ×ˢ Ioo (-1) 1))
-    (hmaps : ∀ x : ℝ × Ioo (-1 : ℝ) 1, (f (x.1, x.2)).2 ∈ Ioo (-1) 1) :
-    Continuous fun x : ℝ × Ioo (-1 : ℝ) 1 ↦
-      ((f (x.1, x.2)).1, (⟨(f (x.1, x.2)).2, hmaps x⟩ : Ioo (-1 : ℝ) 1)) := by
-  have hc : Continuous fun x : ℝ × Ioo (-1 : ℝ) 1 ↦ f (x.1, x.2) :=
-    hf.comp_continuous (continuous_fst.prodMk (continuous_subtype_val.comp continuous_snd))
-      fun x ↦ ⟨trivial, x.2.2⟩
-  exact (continuous_fst.comp hc).prodMk ((continuous_snd.comp hc).subtype_mk _)
-
-/-- For a table with continuous unit tangent, the next-collision map is continuous as a bijection
-of the strip. -/
-theorem continuous_nextCollisionEquiv (hχ : Continuous (deriv χ)) :
-    Continuous χ.nextCollisionEquiv := by
-  convert continuous_restrict_strip (χ.continuousOn_nextCollision hχ)
-    fun x ↦ by simpa using χ.nextTangential_mem_Ioo x.2.2 using 1
+/-- The next-collision map is continuous as a bijection of the strip. -/
+theorem continuous_nextCollisionEquiv : Continuous χ.nextCollisionEquiv := by
+  have hc : Continuous fun x : ℝ × Ioo (-1 : ℝ) 1 ↦ χ.nextCollision (x.1, x.2) :=
+    χ.continuousOn_nextCollision.comp_continuous
+      (continuous_fst.prodMk (continuous_subtypeVal.comp continuous_snd))
+      fun x ↦ ⟨trivial, x.2.property⟩
+  convert (continuous_fst.comp hc).prodMk ((continuous_snd.comp hc).subtype_mk
+    fun x ↦ χ.nextCollision_snd_mem_Ioo x.2.property) using 1
   funext x
   ext <;> simp
 
-/-- For a table with continuous unit tangent, the inverse `τ⁻¹ ∘ ι ∘ B ∘ ι` of the next-collision
-map is continuous. -/
-theorem continuous_nextCollisionEquiv_symm (hχ : Continuous (deriv χ)) :
-    Continuous χ.nextCollisionEquiv.symm := by
-  have hmaps : MapsTo (fun x : ℝ × ℝ ↦ (x.1, -x.2)) (univ ×ˢ Ioo (-1) 1) (univ ×ˢ Ioo (-1) 1) :=
-    fun x hx ↦ ⟨trivial, by linarith [hx.2.2], by linarith [hx.2.1]⟩
-  have hc : ContinuousOn
-      (fun x : ℝ × ℝ ↦ (χ.nextParam x.1 (-x.2) - χ.period, -χ.nextTangential x.1 (-x.2)))
-      (univ ×ˢ Ioo (-1) 1) := by
-    have := ((continuous_fst.sub (continuous_const (y := χ.period))).prodMk
-      continuous_snd.neg).comp_continuousOn ((χ.continuousOn_nextCollision hχ).comp
-        (continuous_fst.prodMk continuous_snd.neg).continuousOn hmaps)
-    convert this using 1
-    ext x <;> simp
-  convert continuous_restrict_strip hc fun x ↦ χ.neg_nextTangential_neg_mem_Ioo x.1 x.2 using 1
+/-- The inverse `τ⁻¹ ∘ ι ∘ B ∘ ι` of the next-collision map is continuous. -/
+theorem continuous_nextCollisionEquiv_symm : Continuous χ.nextCollisionEquiv.symm := by
+  let ι : Ioo (-1 : ℝ) 1 → Ioo (-1 : ℝ) 1 := fun v ↦
+    ⟨-v, by linarith [v.property.2], by linarith [v.property.1]⟩
+  have hι : Continuous ι := continuous_subtypeVal.neg.subtype_mk _
+  convert ((continuous_fst.sub (continuous_const (y := χ.period))).prodMk
+    (hι.comp continuous_snd)).comp
+      (χ.continuous_nextCollisionEquiv.comp (continuous_fst.prodMk (hι.comp continuous_snd)))
+    using 1
   funext x
-  ext <;> simp
+  ext <;> simp [ι]
 
-/-- For a table with continuous unit tangent, the next-collision map is a homeomorphism of the
-strip `ℝ × (-1, 1)`. -/
-def nextCollisionHomeomorph (hχ : Continuous (deriv χ)) :
-    ℝ × Ioo (-1 : ℝ) 1 ≃ₜ ℝ × Ioo (-1 : ℝ) 1 where
+/-- The next-collision map is a homeomorphism of the strip `ℝ × (-1, 1)`. -/
+def nextCollisionHomeomorph : ℝ × Ioo (-1 : ℝ) 1 ≃ₜ ℝ × Ioo (-1 : ℝ) 1 where
   toEquiv := χ.nextCollisionEquiv
-  continuous_toFun := χ.continuous_nextCollisionEquiv hχ
-  continuous_invFun := χ.continuous_nextCollisionEquiv_symm hχ
+  continuous_toFun := χ.continuous_nextCollisionEquiv
+  continuous_invFun := χ.continuous_nextCollisionEquiv_symm
 
 @[simp]
-theorem coe_nextCollisionHomeomorph (hχ : Continuous (deriv χ)) :
-    ⇑(χ.nextCollisionHomeomorph hχ) = χ.nextCollisionEquiv := by
+theorem nextCollisionHomeomorph_toEquiv :
+    χ.nextCollisionHomeomorph.toEquiv = χ.nextCollisionEquiv := by
   rfl
 
 @[simp]
-theorem coe_nextCollisionHomeomorph_symm (hχ : Continuous (deriv χ)) :
-    ⇑(χ.nextCollisionHomeomorph hχ).symm = χ.nextCollisionEquiv.symm := by
+theorem coe_nextCollisionHomeomorph : ⇑χ.nextCollisionHomeomorph = χ.nextCollisionEquiv := by
   rfl
 
-/-- For a table with continuous unit tangent, the billiard map of `AddCircle L × (-1, 1)` is
-continuous. -/
-theorem continuous_billiardMap (hχ : Continuous (deriv χ)) : Continuous χ.billiardMap := by
+@[simp]
+theorem coe_nextCollisionHomeomorph_symm :
+    ⇑χ.nextCollisionHomeomorph.symm = χ.nextCollisionEquiv.symm := by
+  rfl
+
+/-- The billiard map of `AddCircle L × (-1, 1)` is continuous. -/
+theorem continuous_billiardMap : Continuous χ.billiardMap := by
   have hq : IsOpenQuotientMap
       (Prod.map ((↑) : ℝ → AddCircle χ.period) (id : Ioo (-1 : ℝ) 1 → _)) :=
     QuotientAddGroup.isOpenQuotientMap_mk.prodMap IsOpenQuotientMap.id
   rw [← hq.continuous_comp_iff]
-  convert hq.continuous.comp (χ.continuous_nextCollisionEquiv hχ) using 1
+  convert hq.continuous.comp χ.continuous_nextCollisionEquiv using 1
   ext ⟨s, v⟩ <;> simp
 
-/-- For a table with continuous unit tangent, the inverse of the billiard map is continuous. -/
-theorem continuous_billiardMap_symm (hχ : Continuous (deriv χ)) :
-    Continuous χ.billiardMap.symm := by
-  have hq : IsOpenQuotientMap
-      (Prod.map ((↑) : ℝ → AddCircle χ.period) (id : Ioo (-1 : ℝ) 1 → _)) :=
-    QuotientAddGroup.isOpenQuotientMap_mk.prodMap IsOpenQuotientMap.id
-  rw [← hq.continuous_comp_iff]
-  convert hq.continuous.comp (χ.continuous_nextCollisionEquiv_symm hχ) using 1
-  ext ⟨s, v⟩
-  · simp only [comp_apply, Prod.map_apply, id, billiardMap_symm_coe, nextCollisionEquiv_symm_apply]
-    conv_rhs => rw [← AddCircle.coe_add_period, sub_add_cancel]
-  · simp
+/-- The inverse `ι ∘ β ∘ ι` of the billiard map is continuous. -/
+theorem continuous_billiardMap_symm : Continuous χ.billiardMap.symm := by
+  let ι : Ioo (-1 : ℝ) 1 → Ioo (-1 : ℝ) 1 := fun v ↦
+    ⟨-v, by linarith [v.property.2], by linarith [v.property.1]⟩
+  have hι : Continuous ι := continuous_subtypeVal.neg.subtype_mk _
+  convert (continuous_id.prodMap hι).comp
+    (χ.continuous_billiardMap.comp (continuous_id.prodMap hι)) using 1
+  funext ⟨θ, v⟩
+  induction θ using QuotientAddGroup.induction_on with | H s => ?_
+  ext <;> simp [ι]
 
-/-- For a table with continuous unit tangent, the billiard map is a homeomorphism of the space of
-collision states `AddCircle L × (-1, 1)`. -/
-def billiardHomeomorph (hχ : Continuous (deriv χ)) :
+/-- The billiard map is a homeomorphism of the space of collision states
+`AddCircle L × (-1, 1)`. -/
+def billiardHomeomorph :
     AddCircle χ.period × Ioo (-1 : ℝ) 1 ≃ₜ AddCircle χ.period × Ioo (-1 : ℝ) 1 where
   toEquiv := χ.billiardMap
-  continuous_toFun := χ.continuous_billiardMap hχ
-  continuous_invFun := χ.continuous_billiardMap_symm hχ
+  continuous_toFun := χ.continuous_billiardMap
+  continuous_invFun := χ.continuous_billiardMap_symm
 
 @[simp]
-theorem coe_billiardHomeomorph (hχ : Continuous (deriv χ)) :
-    ⇑(χ.billiardHomeomorph hχ) = χ.billiardMap := by
+theorem billiardHomeomorph_toEquiv : χ.billiardHomeomorph.toEquiv = χ.billiardMap := by
   rfl
 
 @[simp]
-theorem coe_billiardHomeomorph_symm (hχ : Continuous (deriv χ)) :
-    ⇑(χ.billiardHomeomorph hχ).symm = χ.billiardMap.symm := by
+theorem coe_billiardHomeomorph : ⇑χ.billiardHomeomorph = χ.billiardMap := by
+  rfl
+
+@[simp]
+theorem coe_billiardHomeomorph_symm : ⇑χ.billiardHomeomorph.symm = χ.billiardMap.symm := by
   rfl
 
 end StrictConvexBilliardTable
