@@ -352,18 +352,38 @@ theorem id_map_eq_zero [CharP R 2] {n : ℕ} (hn : n ≠ 0) : (id Mm).map n = 0 
 
 /-! ### Sums of morphisms -/
 
+variable (Mm Mm') in
+/-- The left-hand side of the relation of length `n` for a family of components `F`, as in the
+field `TauCeti.UngradedAInfinityRightModuleHom.stasheff`. -/
+private noncomputable def relationLHS
+    (F : (n : ℕ) → MultilinearMap (RingHom.id R) (fun _ : Fin n => A) (M →ₗ[R] M')) (n : ℕ)
+    (a : Fin n → A) (m : M) : M' :=
+  ∑ k : Fin (n + 1), F (n - k) (fun l => a ⟨k + l, by have := l.isLt; omega⟩)
+      (Mm.act k (fun l => a ⟨l, by have := l.isLt; have := k.isLt; omega⟩) m) +
+    ∑ k : Fin (n + 1), Mm'.act (n - k) (fun l => a ⟨k + l, by have := l.isLt; omega⟩)
+      (F k (fun l => a ⟨l, by have := l.isLt; have := k.isLt; omega⟩) m) +
+    ungradedStasheffDiff F d n a m + ungradedStasheffMul F n a m
+
+/-- Every term of the relations is additive in the components, so the left-hand side of a
+relation for `F + G` is the sum of those for `F` and `G`. -/
+private theorem relationLHS_add
+    (F G : (n : ℕ) → MultilinearMap (RingHom.id R) (fun _ : Fin n => A) (M →ₗ[R] M')) (n : ℕ)
+    (a : Fin n → A) (m : M) :
+    relationLHS Mm Mm' (fun n => F n + G n) n a m =
+      relationLHS Mm Mm' F n a m + relationLHS Mm Mm' G n a m := by
+  simp only [relationLHS, ungradedStasheffDiff_add, ungradedStasheffMul_add, add_apply,
+    LinearMap.add_apply, map_add, sum_add_distrib]
+  abel
+
 /-- The **sum** of two morphisms, componentwise: `(f + g)_{n+1} = f_{n+1} + g_{n+1}`. Every term
 of the relations is additive in the components, so the relations of `f + g` are the sums of
 those of `f` and `g`. -/
-instance : Add (UngradedAInfinityRightModuleHom Mm Mm') where
+@[no_expose] instance : Add (UngradedAInfinityRightModuleHom Mm Mm') where
   add f g :=
     { map := fun n => f.map n + g.map n
-      stasheff := fun n a m => by
-        convert congrArg₂ (· + ·) (f.stasheff n a m) (g.stasheff n a m) using 1
-        · rw [ungradedStasheffDiff_add, ungradedStasheffMul_add]
-          simp only [add_apply, LinearMap.add_apply, map_add, sum_add_distrib]
-          abel
-        · rw [add_zero] }
+      stasheff := fun n a m => (relationLHS_add f.map g.map n a m).trans <| by
+        rw [show relationLHS Mm Mm' f.map n a m = 0 from f.stasheff n a m,
+          show relationLHS Mm Mm' g.map n a m = 0 from g.stasheff n a m, add_zero] }
 
 @[simp]
 theorem add_map (f g : UngradedAInfinityRightModuleHom Mm Mm') (n : ℕ) :
@@ -427,12 +447,10 @@ theorem symm_map (H : Homotopy f g) : H.symm.map = H.map :=
 and `k`, over a ring of characteristic two: its defect is `(f + g) + (g + k) = f + k`. -/
 def trans [CharP R 2] (H : Homotopy f g) (H' : Homotopy g k) : Homotopy f k where
   map n := H.map n + H'.map n
-  stasheff n a m := by
-    convert congrArg₂ (· + ·) (H.stasheff n a m) (H'.stasheff n a m) using 1
-    · rw [ungradedStasheffDiff_add, ungradedStasheffMul_add]
-      simp only [add_apply, LinearMap.add_apply, map_add, sum_add_distrib]
-      abel
-    · rw [add_assoc, ← add_assoc (g.map n a m), add_self_eq_zero_of_charTwo R, zero_add]
+  stasheff n a m := (relationLHS_add H.map H'.map n a m).trans <| by
+    rw [show relationLHS Mm Mm' H.map n a m = _ from H.stasheff n a m,
+      show relationLHS Mm Mm' H'.map n a m = _ from H'.stasheff n a m, add_assoc,
+      ← add_assoc (g.map n a m), add_self_eq_zero_of_charTwo R, zero_add]
 
 @[simp]
 theorem trans_map [CharP R 2] (H : Homotopy f g) (H' : Homotopy g k) (n : ℕ) :
