@@ -19,8 +19,8 @@ open TopologicalSpace
 
 namespace TauCeti.HaarMeasureWithValues
 
-variable {G H : Type*} [Group G] [TopologicalSpace G] [IsTopologicalGroup G] [T2Space G]
-  [Group H] [TopologicalSpace H] [IsTopologicalGroup H] [T2Space H]
+variable {G H : Type*} [Group G] [TopologicalSpace G] [ContinuousMul G] [T2Space G]
+  [Group H] [TopologicalSpace H] [ContinuousMul H] [T2Space H]
 
 /-! ### Counting volumes -/
 
@@ -43,9 +43,7 @@ example (A : Type*) [Semiring A] (μ : HaarMeasureWithValues A G) :
 /-! ### Slices -/
 
 example (U : CompactOpens G) (V : CompactOpens H) {g : G} (hg : g ∈ U) :
-    (U ×ˢ V).slice g = V :=
-  CompactOpens.ext <| Set.ext fun h ↦ by
-    rw [SetLike.mem_coe, CompactOpens.mem_slice, ← SetLike.mem_coe, CompactOpens.coe_prod]
-    simp [hg]
+    (U ×ˢ V).slice g = V := by
+  simp [hg]
 
 end TauCeti.HaarMeasureWithValues
