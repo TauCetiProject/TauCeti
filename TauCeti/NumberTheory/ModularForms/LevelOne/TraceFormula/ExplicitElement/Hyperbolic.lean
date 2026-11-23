@@ -5,8 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.NumberTheory.ModularForms.LevelOne.TraceFormula.ExplicitElement.ClassNumber
+public import TauCeti.NumberTheory.ModularForms.LevelOne.TraceFormula.ExplicitElement.Basic
 import Mathlib.Tactic.LinearCombination
+import TauCeti.NumberTheory.ModularForms.LevelOne.TraceFormula.ExplicitElement.Translation
 
 /-!
 # The hyperbolic trace fibres of Popa–Zagier's element
@@ -40,7 +41,8 @@ Translation `M ↦ M + 1` preserves the sum over a fibre of positive determinant
 (`TauCeti.PopaZagier.finsum_weight_traceDetFiber_add_two`) and shifts both eigenvalues by `1`.
 If `t < 0`, the fibre sum vanishes
 (`TauCeti.PopaZagier.finsum_weight_traceDetFiber_eq_zero_of_trace_nonpos`). If `t > 0`,
-translating downwards reaches a fibre with `n + 1 ≤ t`, that is, with an eigenvalue in `(0, 1]`.
+translating downwards (`TauCeti.PopaZagier.exists_finsum_weight_traceDetFiber_eq`) reaches a fibre
+with `n + 1 ≤ t`, that is, with an eigenvalue in `(0, 1]`.
 There only the sum `T₁` contributes, and only through the matrices `(1 b; 0 n)` with `0 ≤ b < n`,
 which occur exactly when `t = n + 1`, that is when the eigenvalues are `1` and `n`.
 
@@ -193,30 +195,6 @@ private theorem finsum_weight_traceDetFiber_of_le (hn : 0 < n) (h : n + 1 ≤ t)
     by_contra hw
     exact ht (eq_of_weight_ne_zero hn h hD M.property hw).1
 
-/-- At positive trace, determinant and discriminant, the sum of the weights over a fibre equals
-the sum over a fibre with the same discriminant and an eigenvalue in `(0, 1]`. -/
-private theorem exists_finsum_weight_traceDetFiber_eq (ht : 0 < t) (hn : 0 < n)
-    (hD : 0 < t ^ 2 - 4 * n) :
-    ∃ t' n' : ℤ, t' ^ 2 - 4 * n' = t ^ 2 - 4 * n ∧ 0 < n' ∧ n' + 1 ≤ t' ∧
-      ∑ᶠ M : traceDetFiber (Fin 2) t n, weight M.val =
-        ∑ᶠ M : traceDetFiber (Fin 2) t' n', weight M.val := by
-  -- translate downwards while the determinant stays positive
-  induction hk : t.toNat using Nat.strong_induction_on generalizing t n with
-  | _ k ih =>
-    rcases le_or_gt (n + 1) t with h | h
-    · exact ⟨t, n, rfl, hn, h, rfl⟩
-    have hn' : 0 < n - t + 1 := by omega
-    -- both eigenvalues stay positive: a positive determinant forbids a trace `-1` or `0`
-    have ht' : 0 < t - 2 := by
-      by_contra! h'
-      have : t - 2 = -1 ∨ t - 2 = 0 := by omega
-      rcases this with _ | h' <;> nlinarith
-    have hstep := finsum_weight_traceDetFiber_add_two (t := t - 2) hn'
-    rw [show t - 2 + 2 = t by ring, show n - t + 1 + (t - 2) + 1 = n by ring] at hstep
-    obtain ⟨t', n', hD', hn'', h', e⟩ :=
-      ih _ (by omega) ht' hn' (by linear_combination hD) rfl
-    exact ⟨t', n', by linear_combination hD', hn'', h', hstep.trans e⟩
-
 /-! ### The hyperbolic fibres -/
 
 /-- **The split hyperbolic trace fibres of Popa–Zagier's element.** If `n > 0` and
@@ -230,7 +208,7 @@ theorem finsum_weight_traceDetFiber_of_discrim_eq_sq {u : ℤ} (hn : 0 < n) (hu 
   · rw [ite_eq_right (by omega)]
     exact finsum_weight_traceDetFiber_eq_zero_of_trace_nonpos ht (by linarith)
   rw [ite_eq_left ht]
-  obtain ⟨t', n', hD', hn', h', e⟩ := exists_finsum_weight_traceDetFiber_eq ht hn hD
+  obtain ⟨t', n', hD', hn', h', e⟩ := exists_finsum_weight_traceDetFiber_eq ht hn (by linarith)
   rw [e, finsum_weight_traceDetFiber_of_le hn' h' (hD' ▸ hD)]
   split_ifs with ht'
   · -- the eigenvalues are `1` and `n'`, so `u = n' - 1`
@@ -260,7 +238,7 @@ theorem finsum_weight_traceDetFiber_eq_zero_of_not_isSquare (hD : 4 * n ≤ t ^ 
   -- the discriminant is positive, since `0` is a square
   have hD₀ : 0 < t ^ 2 - 4 * n :=
     lt_of_le_of_ne (sub_nonneg.mpr hD) fun e ↦ h (e ▸ IsSquare.zero)
-  obtain ⟨t', n', hD', hn', h', e⟩ := exists_finsum_weight_traceDetFiber_eq ht hn hD₀
+  obtain ⟨t', n', hD', hn', h', e⟩ := exists_finsum_weight_traceDetFiber_eq ht hn hD
   rw [e, finsum_weight_traceDetFiber_of_le hn' h' (hD' ▸ hD₀)]
   split_ifs with ht'
   · subst ht'

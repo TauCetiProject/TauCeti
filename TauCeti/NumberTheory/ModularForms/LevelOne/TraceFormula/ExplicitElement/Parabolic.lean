@@ -5,7 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.NumberTheory.ModularForms.LevelOne.TraceFormula.ExplicitElement.ClassNumber
+public import TauCeti.NumberTheory.ModularForms.LevelOne.TraceFormula.ExplicitElement.Basic
+import TauCeti.NumberTheory.ModularForms.LevelOne.TraceFormula.ExplicitElement.Translation
 
 /-!
 # The repeated-root trace fibres of Popa–Zagier's element
@@ -74,25 +75,6 @@ private theorem finsum_weight_trace_two_det_one :
     exact hM (Subtype.ext (eq_one_of_det_one_trace_sq_four_weight_ne_zero M.val hd
       (by rw [ht]; norm_num) hw))
 
-private theorem finsum_weight_traceDetFiber_two_mul_sq_step {a : ℤ} (ha : a ≠ 0) :
-    ∑ᶠ M : traceDetFiber (Fin 2) (2 * (a + 1)) ((a + 1) ^ 2), weight M.val =
-      ∑ᶠ M : traceDetFiber (Fin 2) (2 * a) (a ^ 2), weight M.val := by
-  have ht : 2 * a + 2 = 2 * (a + 1) := by ring
-  have hn : a ^ 2 + 2 * a + 1 = (a + 1) ^ 2 := by ring
-  have h := finsum_weight_traceDetFiber_add_two (t := 2 * a) (sq_pos_of_ne_zero ha)
-  rw [ht, hn] at h
-  exact h
-
-/-- The discriminant-zero fibre with positive trace has total integer weight `2`. -/
-private theorem finsum_weight_traceDetFiber_two_mul_sq_of_pos {a : ℤ} (ha : 0 < a) :
-    ∑ᶠ M : traceDetFiber (Fin 2) (2 * a) (a ^ 2), weight M.val = 2 := by
-  have ha' : 1 ≤ a := by omega
-  clear ha
-  induction a, ha' using Int.leInduction with
-  | base => simpa using finsum_weight_trace_two_det_one
-  | succ a ha ih =>
-    exact (finsum_weight_traceDetFiber_two_mul_sq_step (by omega)).trans ih
-
 /-- **The repeated-root trace fibres of Popa–Zagier's element.** At zero discriminant, the total
 integer weight is `2` for positive trace and zero for nonpositive trace. The sum includes scalar
 and nonscalar matrices, not just conjugacy representatives. -/
@@ -102,10 +84,10 @@ theorem finsum_weight_traceDetFiber_of_discrim_eq_zero {t n : ℤ} (hdisc : t ^ 
   · rw [ite_eq_right (by omega)]
     exact finsum_weight_traceDetFiber_eq_zero_of_trace_nonpos ht (by linarith)
   rw [ite_eq_left ht]
-  have he : Even (t ^ 2) := ⟨2 * n, by linarith⟩
-  obtain ⟨a, ha⟩ := (Int.even_pow.mp he).1
-  obtain rfl : t = 2 * a := by omega
-  obtain rfl : n = a ^ 2 := by nlinarith
-  exact finsum_weight_traceDetFiber_two_mul_sq_of_pos (by omega)
+  obtain ⟨t', n', hD', hn', h', e⟩ :=
+    exists_finsum_weight_traceDetFiber_eq ht (by nlinarith) (by linarith)
+  obtain rfl : n' = 1 := by nlinarith
+  obtain rfl : t' = 2 := by nlinarith
+  exact e.trans finsum_weight_trace_two_det_one
 
 end TauCeti.PopaZagier
