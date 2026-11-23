@@ -73,6 +73,8 @@ as well.
   (`GenLoop.toCubeBoundaryPairHom_eq_cubeBoundaryPairHom`).
 * `GenLoop.hurewicz`: the Hurewicz class of a generalized loop, characterized by
   `GenLoop.hurewicz_comp_singularHomologyIsoOfSubsetSingleton_hom`.
+* `GenLoop.zmultiples_hurewicz_of_isIso`: a generalized loop whose integral Hurewicz class is an
+  isomorphism generates the integral homology.
 * `HomotopyGroup.hurewicz`: the Hurewicz map on homotopy classes.
 * `TauCeti.singularHomologyMap_cubeBoundaryPair_eq_add`: the pinch identity for maps of pairs out
   of the cube.
@@ -208,6 +210,18 @@ theorem hurewicz_map (f : C(X, Y)) (hf : f x = y) (p : Ω^ (Fin (n + 1)) X x) :
     singularHomologyIsoOfSubsetSingleton_hom_naturality R n f hf,
     hurewicz_comp_singularHomologyIsoOfSubsetSingleton_hom_assoc, toCubeBoundaryPairHom_map,
     TopPair.singularHomologyMap_comp]
+
+/-- **An invertible integral Hurewicz class generates**: if the integral Hurewicz class of a
+generalized loop `p` is an isomorphism `ℤ ≅ Hₘ₊₁(X; ℤ)`, then every class in `Hₘ₊₁(X; ℤ)` is an
+integer multiple of the Hurewicz class of `p`. -/
+theorem zmultiples_hurewicz_of_isIso {X : Type} [TopologicalSpace X] {x : X}
+    {m : ℕ} (p : Ω^ (Fin (m + 1)) X x) [IsIso (GenLoop.hurewicz (ModuleCat.of ℤ ℤ) p)] :
+    AddSubgroup.zmultiples ((GenLoop.hurewicz (ModuleCat.of ℤ ℤ) p).hom 1) = ⊤ := by
+  refine (AddSubgroup.eq_top_iff' _).2 fun b ↦ AddSubgroup.mem_zmultiples_iff.2
+    ⟨(inv (GenLoop.hurewicz (ModuleCat.of ℤ ℤ) p)).hom b, ?_⟩
+  -- The Hurewicz morphism `ℤ ⟶ Hₘ₊₁(X; ℤ)` is `ℤ`-linear, so it sends `k` to `k` times the image
+  -- of `1`.
+  rw [← map_zsmul, smul_eq_mul, mul_one, IsIso.inv_hom_id_apply]
 
 end GenLoop
 

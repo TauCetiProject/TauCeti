@@ -62,6 +62,9 @@ All results hold over an arbitrary field `K`, with no characteristic or finitene
   reconstruction of an element of `PresentedLieAlgebra R` from its three triangular projections.
 * `TauCeti.KacMoody.cartanElement_injective`: injectivity of `TauCeti.KacMoody.cartanElement`
   for a generalized Cartan matrix.
+* `TauCeti.KacMoody.cartanElement_coroot_ne_zero`, `TauCeti.KacMoody.positiveGenerator_ne_zero`,
+  and `TauCeti.KacMoody.negativeGenerator_ne_zero`: the simple coroots `hᵢ` and the generators
+  `eᵢ`, `fᵢ` are nonzero.
 * `TauCeti.KacMoody.engel_positiveGenerator_eq_top` and
   `TauCeti.KacMoody.engel_negativeGenerator_eq_top`: local nilpotence of `ad eᵢ` and `ad fᵢ`.
 * `TauCeti.KacMoody.linearIndependent_positiveGenerator` and
@@ -420,6 +423,12 @@ theorem cartanElement_injective (hA : A.IsGeneralizedCartan) :
     Function.Injective (cartanElement R) :=
   Function.HasLeftInverse.injective ⟨cartanProjection R hA, cartanProjection_cartanElement R hA⟩
 
+/-- For a generalized Cartan matrix `A`, the simple coroot `hᵢ` is nonzero in the presented
+Kac–Moody algebra. -/
+theorem cartanElement_coroot_ne_zero (hA : A.IsGeneralizedCartan) (i : I) :
+    cartanElement R (R.coroot i) ≠ 0 :=
+  (map_ne_zero_iff _ (cartanElement_injective R hA)).2 (R.coroot_linearIndependent.ne_zero i)
+
 theorem disjoint_negativeSubalgebra_range_cartanElement_sup_positiveSubalgebra
     (hA : A.IsGeneralizedCartan) :
     Disjoint (negativeSubalgebra R).toSubmodule
@@ -494,10 +503,14 @@ theorem linearIndependent_negativeGenerator (hA : A.IsGeneralizedCartan) :
   rw [hcomp] at h
   exact linearIndependent_neg_iff.mp h
 
+/-- For a generalized Cartan matrix `A`, the raising generator `eᵢ` is nonzero in the presented
+Kac–Moody algebra. -/
 theorem positiveGenerator_ne_zero (hA : A.IsGeneralizedCartan) (i : I) :
     positiveGenerator R i ≠ 0 :=
   (linearIndependent_positiveGenerator R hA).ne_zero i
 
+/-- For a generalized Cartan matrix `A`, the lowering generator `fᵢ` is nonzero in the presented
+Kac–Moody algebra. -/
 theorem negativeGenerator_ne_zero (hA : A.IsGeneralizedCartan) (i : I) :
     negativeGenerator R i ≠ 0 :=
   (linearIndependent_negativeGenerator R hA).ne_zero i

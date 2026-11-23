@@ -23,6 +23,8 @@ against any measure on `ℝ` whose polynomial moments are finite (up to the rele
   integrable when every monomial is;
 * `integrable_pow_of_ae_abs_le` — every monomial is integrable against a finite measure
   concentrated on a bounded interval, so such measures satisfy the moment hypothesis;
+* `integrable_pow_of_integrable_pow_two_mul` — against a finite measure, a finite moment of order
+  `2k` makes every moment of order at most `2k` finite;
 * `abs_integral_eval_sub_le` — a polynomial that approximates a bounded continuous function within
   `δ` on `[-M, M]` has integral within `δ` of that of the function, against a probability measure
   concentrated on `[-R, R]` with `R ≤ M`;
@@ -82,6 +84,15 @@ theorem integrable_pow_of_ae_abs_le [IsFiniteMeasure μ] {R : ℝ}
     filter_upwards [h] with x hx
     rw [norm_pow, Real.norm_eq_abs]
     exact pow_le_pow_left₀ (abs_nonneg x) hx n
+
+/-- On a finite measure, a finite moment of order `2k` makes every moment of order `n ≤ 2k`
+finite: the real-monomial case of Mathlib's `integrable_norm_pow_of_le`. Finiteness of the even
+moments alone therefore gives the moment hypothesis of the results above. -/
+theorem integrable_pow_of_integrable_pow_two_mul [IsFiniteMeasure μ] {k n : ℕ} (hn : n ≤ 2 * k)
+    (h : Integrable (fun x : ℝ ↦ x ^ (2 * k)) μ) : Integrable (fun x : ℝ ↦ x ^ n) μ :=
+  (integrable_norm_iff (by fun_prop)).1 <| by
+    simpa only [norm_pow, id] using integrable_norm_pow_of_le (f := id) aestronglyMeasurable_id hn
+      (by simpa only [id, Real.norm_eq_abs, (even_two_mul k).pow_abs] using h)
 
 /-- A real polynomial is in `L²` against any measure all of whose polynomial moments are finite.
 The square of a polynomial is again a polynomial, hence integrable by
