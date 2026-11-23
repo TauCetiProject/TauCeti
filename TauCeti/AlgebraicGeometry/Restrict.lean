@@ -7,6 +7,7 @@ module
 
 public import Mathlib.AlgebraicGeometry.Morphisms.IsIso
 public import Mathlib.AlgebraicGeometry.Morphisms.RingHomProperties
+import TauCeti.AlgebraicGeometry.Scheme.Opens
 
 /-!
 # Restricting local properties of scheme morphisms
@@ -38,10 +39,10 @@ global functions of the base change.
   of the target and an open `V` of the source equal to `f ⁻¹ᵁ U` is a pullback of `f`.
 * `AlgebraicGeometry.Scheme.Hom.isIso_morphismRestrict_of_isIso_comp`: if an open immersion `ι`
   contains `f ⁻¹ᵁ V` in its range and `(ι ≫ f) ∣_ V` is an isomorphism, so is `f ∣_ V`.
+* `AlgebraicGeometry.Scheme.Hom.existsUnique_apply_eq_of_isIso_morphismRestrict`: if `f` restricts
+  to an isomorphism over `U`, every point of `U` has a unique preimage under `f`.
 * `AlgebraicGeometry.HasRingHomProperty.resLE_iff`: for affine opens `V ⊆ f ⁻¹ᵁ U`, a property
   attached to a ring-hom property `Q` holds for `f.resLE U V` iff `Q` holds for `f.appLE U V`.
-* `AlgebraicGeometry.Scheme.Hom.congr_appLE`: equal morphisms induce the same maps
-  `Γ(Y, U) ⟶ Γ(X, V)`, whatever the proofs of `V ≤ f ⁻¹ᵁ U`.
 * `CategoryTheory.CommSq.appLE_app_topIso_hom`: in a commutative square over the inclusion of an
   open `U`, the two ways of pulling a function on `U` back to the source of the square agree.
 * `CategoryTheory.IsPullback.isIso_appLE`: in a pullback square of the inclusion of an open `U`
@@ -115,6 +116,21 @@ theorem Scheme.Hom.isIso_morphismRestrict_of_isIso_comp {Z : Scheme.{u}} (ι : Z
   -- `(ι ≫ f) ⁻¹ᵁ V` rather than `ι ⁻¹ᵁ f ⁻¹ᵁ V`, which instance search does not unfold.
   exact @IsIso.of_isIso_comp_left _ _ _ _ _ (ι ∣_ f ⁻¹ᵁ V) (f ∣_ V) _ h
 
+/-- If the restriction of `f` over `U` is an isomorphism, every point in `U` has a
+unique preimage in the whole source of `f`. -/
+theorem Scheme.Hom.existsUnique_apply_eq_of_isIso_morphismRestrict (U : Y.Opens)
+    [IsIso (f ∣_ U)] {x : Y} (hx : x ∈ U) : ∃! y : X, f y = x := by
+  have hf : Function.Bijective (f ∣_ U) := by
+    simpa only [Scheme.coe_homeoOfIso, asIso_hom] using
+      (Scheme.homeoOfIso (asIso (f ∣_ U))).bijective
+  obtain ⟨y, hy, huniq⟩ := hf.existsUnique ⟨x, hx⟩
+  refine ⟨y.val, (morphismRestrict_base_coe f U y).symm.trans (congrArg Subtype.val hy),
+    fun z hz ↦ ?_⟩
+  have hzU : z ∈ f ⁻¹ᵁ U := (Scheme.Hom.mem_preimage f).mpr (hz.symm ▸ hx)
+  have hz' : (f ∣_ U) ⟨z, hzU⟩ = ⟨x, hx⟩ :=
+    Subtype.ext ((morphismRestrict_base_coe f U ⟨z, hzU⟩).trans hz)
+  exact congrArg Subtype.val (huniq ⟨z, hzU⟩ hz')
+
 /-- Let `V ⊆ f⁻¹ U` with `U` and `V` affine, and let `P` be a morphism property attached to the
 ring-hom property `Q`. Then `P` holds for the restriction `V ⟶ U` of `f` iff `Q` holds for
 `f.appLE U V : Γ(Y, U) ⟶ Γ(X, V)`. -/
@@ -127,14 +143,6 @@ theorem HasRingHomProperty.resLE_iff (P : MorphismProperty Scheme.{u})
   rw [HasRingHomProperty.iff_of_isAffine (P := P)]
   exact (HasRingHomProperty.isLocal_ringHomProperty P).respectsIso.arrow_mk_iso_iff
     (arrowResLEAppIso f U V hVU)
-
-/-- Equal morphisms induce the same maps on sections `Γ(Y, U) ⟶ Γ(X, V)`. Unlike rewriting along
-`f = g`, this applies when the proofs of `V ≤ f ⁻¹ᵁ U` and of `V ≤ g ⁻¹ᵁ U` are unrelated. -/
-theorem Scheme.Hom.congr_appLE {g : X ⟶ Y} (e : f = g) (U : Y.Opens) (V : X.Opens) (hf hg) :
-    f.appLE U V hf = g.appLE U V hg := by
-  subst e
-  rfl
-
 
 /-- A square of open immersions identifying the source with the full inverse image
 of the target open identifies its top arrow with the restriction of the bottom arrow. -/
