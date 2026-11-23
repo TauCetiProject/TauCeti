@@ -17,7 +17,13 @@ import TauCeti.Analysis.Convex.Function.Basic
 A differentiable strictly convex function on an open set has a strict tangent inequality
 even at other points of its closure where the function remains convex.
 
-The proof follows the [KLS formalization](https://github.com/human-ai-mathematics/kls-lean/blob/e60bc39b18ef691263c66e2dba8d64726f18060d/formalization/FunctionalInequalities/Analysis/Convex/ContactMeasure.lean#L993).
+For a strictly convex function of one real variable, the tangent at any point of the domain where
+the function is differentiable within the domain lies strictly below the graph at every other
+point of the domain
+(`StrictConvexOn.mul_sub_lt_sub_of_hasDerivWithinAt`).
+
+The proof of `StrictConvexOn.fderiv_lt_sub_of_mem_closure` follows the
+[KLS formalization](https://github.com/human-ai-mathematics/kls-lean/blob/e60bc39b18ef691263c66e2dba8d64726f18060d/formalization/FunctionalInequalities/Analysis/Convex/ContactMeasure.lean#L993).
 -/
 
 public section
@@ -62,3 +68,16 @@ theorem StrictConvexOn.fderiv_lt_sub_of_mem_closure {S : Set E} {v : E → ℝ}
     AffineMap.lineMap_apply_zero] at hstrict
   dsimp only [A] at hchord
   linarith
+
+/-- The tangent of a strictly convex function of one real variable at a point `x` of its domain,
+taken with the derivative within the domain, lies strictly below its graph at every other point
+`y` of the domain. -/
+theorem StrictConvexOn.mul_sub_lt_sub_of_hasDerivWithinAt {S : Set ℝ} {g : ℝ → ℝ} {d x y : ℝ}
+    (hg : StrictConvexOn ℝ S g) (hx : x ∈ S) (hy : y ∈ S) (hxy : x ≠ y)
+    (hd : HasDerivWithinAt g d S x) : d * (y - x) < g y - g x := by
+  rcases hxy.lt_or_gt with h | h
+  · have hs := hg.lt_slope_of_hasDerivWithinAt hx hy h hd
+    rwa [slope_def_field, lt_div_iff₀ (sub_pos.2 h)] at hs
+  · have hs := hg.slope_lt_of_hasDerivWithinAt hy hx h hd
+    rw [slope_def_field, div_lt_iff₀ (sub_pos.2 h)] at hs
+    linarith

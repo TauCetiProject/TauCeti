@@ -5,8 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Complex.ThricePuncturedSphere.EndCoordinate
-public import TauCeti.Geometry.Symplectic.Floer.SignedEnd.Basic
+public import TauCeti.Analysis.Complex.ThricePuncturedSphere.End.Coordinate
 public import Mathlib.Analysis.SpecialFunctions.SmoothTransition
 public import Mathlib.Analysis.SpecialFunctions.Complex.CircleMap
 public import Mathlib.Geometry.Manifold.MFDeriv.Defs
@@ -48,8 +47,8 @@ Given a period-one Hamiltonian `H`, the perturbation `TauCeti.Floer.PSSPlane.per
 * `TauCeti.Floer.PSSPlane.perturbation_eq_zero_of_norm_le`: the perturbation vanishes on the
   closed pole disc `‖w‖ ≤ exp (2π)`, where the Morse incidence condition is imposed;
 * `TauCeti.Floer.PSSPlane.contMDiff_perturbation`: it is smooth on the whole of `ℂ × M`,
-  including across the pole, and its components in the real coordinates `ℝ × ℝ ≃ ℂ` are `C¹`
-  for a `C¹` Hamiltonian (`TauCeti.Floer.PSSPlane.contDiff_uncurry_perturbation`, and
+  including across the pole, and its components in the real coordinates `ℝ × ℝ ≃ ℂ` are `C^n`
+  for a `C^n` Hamiltonian (`TauCeti.Floer.PSSPlane.contDiff_uncurry_perturbation`, and
   `TauCeti.Floer.PSSPlane.contMDiff_uncurry_perturbation` for a manifold target);
 * `TauCeti.Floer.PSSPlane.perturbation_cylindricalEndLift`: its pullback along the end lift is the
   continuation datum `β(ε s - 1) H(t) dt` at every point of the cylinder;
@@ -58,14 +57,13 @@ Given a period-one Hamiltonian `H`, the perturbation `TauCeti.Floer.PSSPlane.per
   it is `H(t) dt`, so it agrees there with the Floer datum of the end;
 * `TauCeti.Floer.PSSPlane.endComponent_one` and `TauCeti.Floer.PSSPlane.endComponent_I`: its
   components in end coordinates are `K_s = 0` and `K_t = β(ε s - 1) H(t)`.
-* `TauCeti.Floer.PSSPlane.positiveEndHamiltonian` and
-  `TauCeti.Floer.PSSPlane.perturbation_eq_positive_positiveEndHamiltonian`: for either plane,
-  `p.perturbation H = positive.perturbation (p.positiveEndHamiltonian H)` where
-  `H'_p(t, x) = ε H(ε t, x)` (`TauCeti.Floer.PSSPlane.perturbation_negative` is the case
-  `p = negative`); correspondingly the end lift of the negative plane is that of the positive plane
-  composed with `z ↦ -z` (`TauCeti.Floer.PSSPlane.cylindricalEndLift_negative`), so the loops of
-  the negative plane are those of the positive plane traversed backwards
-  (`TauCeti.Floer.PSSPlane.cylindricalEndLift_negative_endSign_mul`).
+* `TauCeti.Floer.PSSPlane.perturbation_negative`: the perturbation of the negative plane given
+  by `H` is that of the positive plane given by the reversed Hamiltonian `-H(-t)`; correspondingly
+  the end lift of the negative plane is that of the positive plane composed with `z ↦ -z`
+  (`TauCeti.Floer.PSSPlane.cylindricalEndLift_negative`), so the loops of the negative plane are
+  those of the positive plane traversed backwards
+  (`TauCeti.Floer.PSSPlane.cylindricalEndLift_negative_endSign_mul`), and its angular coordinate
+  is the negative of that of the positive plane (`TauCeti.Floer.PSSPlane.im_endCoord_negative`).
 
 The angular coordinate is defined only modulo `1`, which is why `H` is required to have period
 one. Smoothness across the ray where it jumps reuses the corresponding statement for the end at
@@ -112,10 +110,6 @@ def endSign : PSSPlane → ℝ
 
 @[simp] theorem endSign_mul_endSign (p : PSSPlane) : p.endSign * p.endSign = 1 := by
   cases p <;> norm_num
-
-@[simp] theorem endSign_mul_endSign_mul (p : PSSPlane) (x : ℝ) :
-    p.endSign * (p.endSign * x) = x := by
-  rw [← mul_assoc, endSign_mul_endSign, one_mul]
 
 @[simp] theorem abs_endSign (p : PSSPlane) : |p.endSign| = 1 := by
   cases p <;> norm_num
@@ -273,6 +267,15 @@ theorem re_endCoord_cylindricalEndLift (p : PSSPlane) (z : ℂ) :
   obtain ⟨k, hk⟩ := p.exists_endCoord_cylindricalEndLift z
   simp [hk]
 
+/-- A family of period one in the angular coordinate takes the same value at the angular
+coordinate of the image of a cylinder point under the end lift as at the angular coordinate of the
+point itself. -/
+theorem apply_im_endCoord_cylindricalEndLift {α : Type*} {f : ℝ → α} (hf : Function.Periodic f 1)
+    (p : PSSPlane) (z : ℂ) : f (p.endCoord (p.cylindricalEndLift z)).im = f z.im := by
+  obtain ⟨k, hk⟩ := p.exists_endCoord_cylindricalEndLift z
+  rw [hk]
+  simpa using hf.int_mul k z.im
+
 /-- The norm of the image of a cylinder point is `exp (2π ε s)`. -/
 theorem norm_cylindricalEndLift (p : PSSPlane) (z : ℂ) :
     ‖p.cylindricalEndLift z‖ = Real.exp (2 * π * (p.endSign * z.re)) := by
@@ -291,7 +294,13 @@ theorem im_endCoord_eq_neg_endSign_mul (p : PSSPlane) (w : ℂ) :
     (p.endCoord w).im =
       -p.endSign * (ThricePuncturedSphere.Puncture.zero.endCoord w).im := by
   simp [im_endCoord, ThricePuncturedSphere.Puncture.im_endCoord, ← Complex.ofReal_ofNat,
-    Complex.arg_mul_real]
+    Complex.arg_mul_ofReal]
+  ring
+
+/-- The angular coordinate of the negative plane is the negative of that of the positive plane. -/
+theorem im_endCoord_negative (w : ℂ) :
+    (negative.endCoord w).im = -(positive.endCoord w).im := by
+  simp only [im_endCoord, endSign_negative, endSign_positive]
   ring
 
 section Periodic
@@ -401,65 +410,38 @@ theorem perturbation_negative (H : ℝ → M → ℝ) :
   congr 1
   ring
 
-/-- The Hamiltonian of a PSS plane in the positive end chart `positive.endChart`:
-`H'_p(t, x) = ε H(ε t, x)`. It is `H` on the positive plane and `(t, x) ↦ -H(-t, x)` on the
-negative plane. -/
-def positiveEndHamiltonian {X : Type*} (p : PSSPlane) (H : ℝ → X → ℝ) : ℝ → X → ℝ :=
-  signedHamiltonian p.endSign H
+/-- **Normalizing the Hamiltonian.** Adding a function `c` of time to the Hamiltonian adds the
+perturbation of the target-independent Hamiltonian `c`. -/
+theorem perturbation_add_const (p : PSSPlane) (H : ℝ → M → ℝ) (c : ℝ → ℝ) (w : ℂ) (x : M) :
+    p.perturbation (fun t y ↦ H t y + c t) w x =
+      p.perturbation H w x + p.perturbation (fun t (_ : M) ↦ c t) w x := by
+  simp only [perturbation_def, mul_add, add_smul]
 
-theorem positiveEndHamiltonian_eq_signedHamiltonian {X : Type*} (p : PSSPlane) (H : ℝ → X → ℝ) :
-    p.positiveEndHamiltonian H = signedHamiltonian p.endSign H :=
-  (rfl)
+/-- The perturbation of a target-independent Hamiltonian does not depend on the target point. -/
+theorem perturbation_const_target (p : PSSPlane) (c : ℝ → ℝ) (w : ℂ) (x y : M) :
+    p.perturbation (fun t (_ : M) ↦ c t) w x = p.perturbation (fun t (_ : M) ↦ c t) w y := by
+  simp only [perturbation_def]
 
-theorem positiveEndHamiltonian_def {X : Type*} (p : PSSPlane) (H : ℝ → X → ℝ) (t : ℝ) (x : X) :
-    p.positiveEndHamiltonian H t x = p.endSign * H (p.endSign * t) x :=
-  signedHamiltonian_apply p.endSign H t x
-
-@[simp]
-theorem positiveEndHamiltonian_positive {X : Type*} (H : ℝ → X → ℝ) :
-    positive.positiveEndHamiltonian H = H :=
-  signedHamiltonian_one H
-
-theorem positiveEndHamiltonian_negative {X : Type*} (H : ℝ → X → ℝ) :
-    negative.positiveEndHamiltonian H = fun t x ↦ -H (-t) x :=
-  signedHamiltonian_neg_one H
-
-@[simp]
-theorem positiveEndHamiltonian_positiveEndHamiltonian {X : Type*} (p : PSSPlane)
-    (H : ℝ → X → ℝ) :
-    p.positiveEndHamiltonian (p.positiveEndHamiltonian H) = H :=
-  signedHamiltonian_signedHamiltonian p.endSign_mul_endSign H
-
-/-- For either PSS plane, `p.perturbation H` equals `positive.perturbation` for
-`p.positiveEndHamiltonian H`. -/
-theorem perturbation_eq_positive_positiveEndHamiltonian (p : PSSPlane) (H : ℝ → M → ℝ) :
-    p.perturbation H = positive.perturbation (p.positiveEndHamiltonian H) := by
+/-- **Every PSS plane is the positive plane for a reflected Hamiltonian.** The perturbation of a
+PSS plane `p` with end sign `ε` given by `H` is the perturbation of the positive plane given by the
+Hamiltonian `ε H(ε t)`: this is `H` for the positive plane, and `-H(-t)` for the negative plane
+(`TauCeti.Floer.PSSPlane.perturbation_negative`). -/
+theorem perturbation_eq_positive (p : PSSPlane) (H : ℝ → M → ℝ) :
+    p.perturbation H = positive.perturbation (fun t x ↦ p.endSign * H (p.endSign * t) x) := by
   cases p
-  · simp
-  · rw [perturbation_negative, positiveEndHamiltonian_negative]
+  · simp only [endSign_positive, one_mul]
+  · simp only [endSign_negative, neg_one_mul, perturbation_negative]
 
-/-- A `1`-periodic map read with the signed time `t ↦ ε t` of a PSS plane is `1`-periodic. -/
-theorem periodic_comp_endSign_mul {α : Type*} (p : PSSPlane) {x : ℝ → α}
-    (hx : Function.Periodic x 1) : Function.Periodic (fun t ↦ x (p.endSign * t)) 1 :=
-  periodic_comp_mul_of_mul_self_eq_one p.endSign_mul_endSign hx
-
-/-- For a `1`-periodic Hamiltonian `H`, `p.positiveEndHamiltonian H` is `1`-periodic. -/
-theorem periodic_positiveEndHamiltonian {X : Type*} (p : PSSPlane) {H : ℝ → X → ℝ}
-    (hH : Function.Periodic H 1) : Function.Periodic (p.positiveEndHamiltonian H) 1 :=
-  periodic_signedHamiltonian p.endSign_mul_endSign hH
-
-/-- For a `C^n` Hamiltonian `H`, `p.positiveEndHamiltonian H` is `C^n`. -/
-theorem contDiff_uncurry_positiveEndHamiltonian {E : Type*} [NormedAddCommGroup E]
-    [NormedSpace ℝ E] (p : PSSPlane) {H : ℝ → E → ℝ} {n : WithTop ℕ∞}
-    (hH : ContDiff ℝ n (Function.uncurry H)) :
-    ContDiff ℝ n (Function.uncurry (p.positiveEndHamiltonian H)) :=
-  contDiff_uncurry_signedHamiltonian p.endSign hH
-
-/-- If each `H t` is differentiable, then each `p.positiveEndHamiltonian H t` is differentiable. -/
-theorem differentiable_positiveEndHamiltonian_apply {E : Type*} [NormedAddCommGroup E]
-    [NormedSpace ℝ E] (p : PSSPlane) {H : ℝ → E → ℝ} (hHd : ∀ t, Differentiable ℝ (H t))
-    (t : ℝ) : Differentiable ℝ (p.positiveEndHamiltonian H t) :=
-  differentiable_signedHamiltonian_apply p.endSign hHd t
+/-- The reflected Hamiltonian `ε H(ε t)` of a plane with end sign `ε`, for which the perturbation
+of the plane is that of the positive plane (`TauCeti.Floer.PSSPlane.perturbation_eq_positive`), is
+of period one when `H` is. -/
+theorem periodic_endSign_mul (p : PSSPlane) {H : ℝ → M → ℝ} (hH : Function.Periodic H 1) :
+    Function.Periodic (fun t x ↦ p.endSign * H (p.endSign * t) x) 1 := by
+  intro t
+  funext x
+  cases p
+  · simp only [endSign_positive, one_mul, hH t]
+  · simp only [endSign_negative, neg_one_mul, neg_add, ← sub_eq_add_neg, hH.sub_eq]
 
 variable {p : PSSPlane} {H : ℝ → M → ℝ}
 
@@ -580,24 +562,36 @@ theorem contMDiff_perturbation {n : ℕ∞} (hH : Function.Periodic H 1)
     exact (hβ.smul (p.contMDiffAt_comp_im_endCoord hH hHs hw₀ x)).smul hf
 
 /-- In the real coordinates `ℝ × ℝ ≃ ℂ` of the plane, the component of the perturbation of a PSS
-plane along a tangent vector `v` is `C¹` jointly in the domain point and the target point, for a
-period-one `C¹` Hamiltonian. -/
+plane along a tangent vector `v` is `C^n` jointly in the domain point and the target point, for a
+period-one `C^n` Hamiltonian. -/
 theorem contDiff_uncurry_perturbation {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V]
-    {H : ℝ → V → ℝ} (hH : Function.Periodic H 1) (hHs : ContDiff ℝ 1 (Function.uncurry H))
-    (v : ℂ) :
-    ContDiff ℝ 1
+    {n : ℕ∞} {H : ℝ → V → ℝ} (hH : Function.Periodic H 1)
+    (hHs : ContDiff ℝ n (Function.uncurry H)) (v : ℂ) :
+    ContDiff ℝ n
       (Function.uncurry fun z x ↦ p.perturbation H (Complex.equivRealProdCLM.symm z) x v) :=
   ((contMDiff_prod_modelWithCornersSelf_iff.1 (contMDiff_perturbation hH
       (contMDiff_prod_modelWithCornersSelf_iff.2 hHs.contMDiff))).contDiff.comp
     ((Complex.equivRealProdCLM.symm.contDiff.comp contDiff_fst).prodMk contDiff_snd)).clm_apply
     contDiff_const
 
+/-- In the end coordinates of the plane, the component of the perturbation of a PSS plane along a
+tangent vector `v` is `C^n` jointly in the domain point and the target point, for a period-one
+`C^n` Hamiltonian. -/
+theorem contDiff_uncurry_endComponent {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V]
+    {H : ℝ → V → ℝ} {n : ℕ∞} (hH : Function.Periodic H 1)
+    (hHs : ContDiff ℝ n (Function.uncurry H)) (v : ℂ) :
+    ContDiff ℝ n (Function.uncurry (p.endComponent H v)) := by
+  rw [endComponent_eq hH]
+  exact contDiff_const.mul ((smoothTransition.contDiff.comp
+    ((contDiff_const.mul (contDiff_fst.comp contDiff_fst)).sub contDiff_const)).mul
+    (hHs.comp ((contDiff_snd.comp contDiff_fst).prodMk contDiff_snd)))
+
 /-- In the real coordinates `ℝ × ℝ ≃ ℂ` of the plane, the component of the perturbation of a PSS
-plane along a tangent vector `v` is `C¹` jointly in the domain point and the point of the
-manifold, for a period-one `C¹` Hamiltonian. -/
-theorem contMDiff_uncurry_perturbation (hH : Function.Periodic H 1)
-    (hHs : ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) 1 (Function.uncurry H)) (v : ℂ) :
-    ContMDiff (𝓘(ℝ, ℝ × ℝ).prod I) 𝓘(ℝ) 1
+plane along a tangent vector `v` is `C^n` jointly in the domain point and the point of the
+manifold, for a period-one `C^n` Hamiltonian. -/
+theorem contMDiff_uncurry_perturbation {n : ℕ∞} (hH : Function.Periodic H 1)
+    (hHs : ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) n (Function.uncurry H)) (v : ℂ) :
+    ContMDiff (𝓘(ℝ, ℝ × ℝ).prod I) 𝓘(ℝ) n
       (Function.uncurry fun z x ↦ p.perturbation H (Complex.equivRealProdCLM.symm z) x v) :=
   ((contMDiff_perturbation hH hHs).comp
     ((Complex.equivRealProdCLM.symm.contDiff.contMDiff.comp contMDiff_fst).prodMk

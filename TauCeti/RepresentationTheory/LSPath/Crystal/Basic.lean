@@ -8,6 +8,7 @@ module
 public import TauCeti.LinearAlgebra.RootSystem.BaseChange.Basic
 public import TauCeti.RepresentationTheory.Crystal.Component
 public import TauCeti.RepresentationTheory.LSPath.StringLength
+public import TauCeti.RepresentationTheory.LSPath.Word
 
 import Mathlib.Tactic.Linarith
 import Mathlib.Tactic.Ring
@@ -106,6 +107,30 @@ theorem RootStep.of_raise_eq_some {i : b.support} {π π' : PLPath 𝕜 V}
 theorem RootStep.of_lower_eq_some {i : b.support} {π π' : PLPath 𝕜 V}
     (h : lower (F i) (f (P.root i)) π = some π') : RootStep b f F π π' :=
   ⟨i, Or.inr h⟩
+
+/-- An iterated simple-root raising step gives a finite walk of root steps. -/
+theorem reflTransGen_rootStep_of_raiseIter_eq_some {i : b.support} {n : ℕ} {π π' : PLPath 𝕜 V}
+    (h : raiseIter (F i) (f (P.root i)) n π = some π') :
+    ReflTransGen (RootStep b f F) π π' := by
+  induction n generalizing π with
+  | zero =>
+    simp only [raiseIter_zero, Option.some.injEq] at h
+    exact h ▸ .refl
+  | succ n ih =>
+    obtain ⟨ρ, hρ, h⟩ := Option.bind_eq_some_iff.mp (raiseIter_succ n π ▸ h)
+    exact .head (.of_raise_eq_some hρ) (ih h)
+
+/-- An iterated simple-root lowering step gives a finite walk of root steps. -/
+theorem reflTransGen_rootStep_of_lowerIter_eq_some {i : b.support} {n : ℕ} {π π' : PLPath 𝕜 V}
+    (h : lowerIter (F i) (f (P.root i)) n π = some π') :
+    ReflTransGen (RootStep b f F) π π' := by
+  induction n generalizing π with
+  | zero =>
+    simp only [lowerIter_zero, Option.some.injEq] at h
+    exact h ▸ .refl
+  | succ n ih =>
+    obtain ⟨ρ, hρ, h⟩ := Option.bind_eq_some_iff.mp (lowerIter_succ n π ▸ h)
+    exact .head (.of_lower_eq_some hρ) (ih h)
 
 /-- Because raising and lowering are partial inverses, `RootStep` is symmetric whenever the height
 forms agree with the simple coroots on `f(X)`. -/
@@ -226,43 +251,43 @@ section NormalCrystalOn
 variable {S T : Set (PLPath 𝕜 V)}
 
 private noncomputable def wtAux (hS : IsCrystalSet b f F S) (π : S) : X :=
-  (hS.endpoint_mem_range π.2).choose
+  (hS.endpoint_mem_range π.property).choose
 
 private theorem apply_wtAux (hS : IsCrystalSet b f F S) (π : S) :
-    f (wtAux hS π) = π.1.endpoint :=
-  (hS.endpoint_mem_range π.2).choose_spec
+    f (wtAux hS π) = π.val.endpoint :=
+  (hS.endpoint_mem_range π.property).choose_spec
 
 private noncomputable def εAux (hS : IsCrystalSet b f F S) (i : b.support) (π : S) : ℕ :=
-  (-(hS.exists_minHeight_eq_intCast π.2 i).choose).toNat
+  (-(hS.exists_minHeight_eq_intCast π.property i).choose).toNat
 
 private theorem cast_εAux (hS : IsCrystalSet b f F S) (i : b.support) (π : S) :
-    (εAux hS i π : 𝕜) = -π.1.minHeight (F i) := by
-  set z := (hS.exists_minHeight_eq_intCast π.2 i).choose
-  have hz : π.1.minHeight (F i) = z := (hS.exists_minHeight_eq_intCast π.2 i).choose_spec
+    (εAux hS i π : 𝕜) = -π.val.minHeight (F i) := by
+  set z := (hS.exists_minHeight_eq_intCast π.property i).choose
+  have hz : π.val.minHeight (F i) = z := (hS.exists_minHeight_eq_intCast π.property i).choose_spec
   have hnonpos : z ≤ 0 := by
-    have : (z : 𝕜) ≤ 0 := hz ▸ minHeight_nonpos (f := F i) π.1
+    have : (z : 𝕜) ≤ 0 := hz ▸ minHeight_nonpos (f := F i) π.val
     exact_mod_cast this
   have hnat : ((εAux hS i π : ℕ) : ℤ) = -z := Int.toNat_of_nonneg (neg_nonneg.mpr hnonpos)
   rw [hz, ← Int.cast_neg, ← hnat, Int.cast_natCast]
 
 private noncomputable def φAux (hS : IsCrystalSet b f F S) (i : b.support) (π : S) : ℕ :=
-  (P.coroot' i (wtAux hS π) - (hS.exists_minHeight_eq_intCast π.2 i).choose).toNat
+  (P.coroot' i (wtAux hS π) - (hS.exists_minHeight_eq_intCast π.property i).choose).toNat
 
 private theorem apply_endpoint_eq_coroot'_wtAux
     (hF : ∀ (i : b.support) (x : X), F i (f x) = (P.coroot' i x : 𝕜))
     (hS : IsCrystalSet b f F S) (i : b.support) (π : S) :
-    F i π.1.endpoint = (P.coroot' i (wtAux hS π) : 𝕜) := by
+    F i π.val.endpoint = (P.coroot' i (wtAux hS π) : 𝕜) := by
   rw [← apply_wtAux hS π, hF]
 
 private theorem cast_φAux (hF : ∀ (i : b.support) (x : X), F i (f x) = (P.coroot' i x : 𝕜))
     (hS : IsCrystalSet b f F S) (i : b.support) (π : S) :
-    (φAux hS i π : 𝕜) = F i π.1.endpoint - π.1.minHeight (F i) := by
-  set z := (hS.exists_minHeight_eq_intCast π.2 i).choose
-  have hz : π.1.minHeight (F i) = z := (hS.exists_minHeight_eq_intCast π.2 i).choose_spec
+    (φAux hS i π : 𝕜) = F i π.val.endpoint - π.val.minHeight (F i) := by
+  set z := (hS.exists_minHeight_eq_intCast π.property i).choose
+  have hz : π.val.minHeight (F i) = z := (hS.exists_minHeight_eq_intCast π.property i).choose_spec
   have hend := apply_endpoint_eq_coroot'_wtAux hF hS i π
   have hle : z ≤ P.coroot' i (wtAux hS π) := by
     have : (z : 𝕜) ≤ (P.coroot' i (wtAux hS π) : 𝕜) :=
-      hz ▸ hend ▸ minHeight_le_apply_endpoint (f := F i) π.1
+      hz ▸ hend ▸ minHeight_le_apply_endpoint (f := F i) π.val
     exact_mod_cast this
   have hnat : ((φAux hS i π : ℕ) : ℤ) = P.coroot' i (wtAux hS π) - z :=
     Int.toNat_of_nonneg (sub_nonneg.mpr hle)
@@ -321,89 +346,89 @@ variable {hf : Function.Injective f}
 /-- The realized weight of a path in `normalCrystalOn` is its endpoint. -/
 @[simp]
 theorem apply_normalCrystalOn_wt (π : S) :
-    f ((normalCrystalOn hf hF hS).wt π) = π.1.endpoint :=
+    f ((normalCrystalOn hf hF hS).wt π) = π.val.endpoint :=
   apply_wtAux hS π
 
 theorem normalCrystalOn_wt_eq_iff {π : S} {μ : X} :
-    (normalCrystalOn hf hF hS).wt π = μ ↔ π.1.endpoint = f μ := by
+    (normalCrystalOn hf hF hS).wt π = μ ↔ π.val.endpoint = f μ := by
   rw [← hf.eq_iff, apply_normalCrystalOn_wt, eq_comm]
 
 /-- **Normal-crystal raising string length**: `ε_i(π) = -min H_i(π)`. -/
 @[simp]
 theorem cast_normalCrystalOn_ε (i : b.support) (π : S) :
-    ((normalCrystalOn hf hF hS).ε i π : 𝕜) = -π.1.minHeight (F i) :=
+    ((normalCrystalOn hf hF hS).ε i π : 𝕜) = -π.val.minHeight (F i) :=
   cast_εAux hS i π
 
 /-- **Normal-crystal lowering string length**: `φ_i(π) = H_i(π)(1) - min H_i(π)`. -/
 @[simp]
 theorem cast_normalCrystalOn_φ (i : b.support) (π : S) :
-    ((normalCrystalOn hf hF hS).φ i π : 𝕜) = F i π.1.endpoint - π.1.minHeight (F i) :=
+    ((normalCrystalOn hf hF hS).φ i π : 𝕜) = F i π.val.endpoint - π.val.minHeight (F i) :=
   cast_φAux hF hS i π
 
 theorem normalCrystalOn_ε_eq_iff {i : b.support} {π : S} {n : ℕ} :
-    (normalCrystalOn hf hF hS).ε i π = n ↔ -π.1.minHeight (F i) = n := by
+    (normalCrystalOn hf hF hS).ε i π = n ↔ -π.val.minHeight (F i) = n := by
   rw [← Nat.cast_inj (R := 𝕜), cast_normalCrystalOn_ε]
 
 theorem normalCrystalOn_φ_eq_iff {i : b.support} {π : S} {n : ℕ} :
-    (normalCrystalOn hf hF hS).φ i π = n ↔ F i π.1.endpoint - π.1.minHeight (F i) = n := by
+    (normalCrystalOn hf hF hS).φ i π = n ↔ F i π.val.endpoint - π.val.minHeight (F i) = n := by
   rw [← Nat.cast_inj (R := 𝕜), cast_normalCrystalOn_φ]
 
 @[simp]
 theorem normalCrystalOn_e_eq_some_iff {i : b.support} {π π' : S} :
     (normalCrystalOn hf hF hS).e i π = some π' ↔
-      raise (F i) (f (P.root i)) π.1 = some π'.1 :=
+      raise (F i) (f (P.root i)) π.val = some π'.val :=
   Set.optionRestrict_eq_some_iff
 
 @[simp]
 theorem normalCrystalOn_f_eq_some_iff {i : b.support} {π π' : S} :
     (normalCrystalOn hf hF hS).f i π = some π' ↔
-      lower (F i) (f (P.root i)) π.1 = some π'.1 :=
+      lower (F i) (f (P.root i)) π.val = some π'.val :=
   Set.optionRestrict_eq_some_iff
 
 @[simp]
 theorem normalCrystalOn_e_eq_none_iff {i : b.support} {π : S} :
-    (normalCrystalOn hf hF hS).e i π = none ↔ raise (F i) (f (P.root i)) π.1 = none :=
+    (normalCrystalOn hf hF hS).e i π = none ↔ raise (F i) (f (P.root i)) π.val = none :=
   Set.optionRestrict_eq_none_iff
 
 @[simp]
 theorem normalCrystalOn_f_eq_none_iff {i : b.support} {π : S} :
-    (normalCrystalOn hf hF hS).f i π = none ↔ lower (F i) (f (P.root i)) π.1 = none :=
+    (normalCrystalOn hf hF hS).f i π = none ↔ lower (F i) (f (P.root i)) π.val = none :=
   Set.optionRestrict_eq_none_iff
 
 @[simp]
 theorem unattach_normalCrystalOn_e (i : b.support) (π : S) :
-    ((normalCrystalOn hf hF hS).e i π).unattach = raise (F i) (f (P.root i)) π.1 :=
+    ((normalCrystalOn hf hF hS).e i π).unattach = raise (F i) (f (P.root i)) π.val :=
   Set.unattach_optionRestrict π
 
 @[simp]
 theorem unattach_normalCrystalOn_f (i : b.support) (π : S) :
-    ((normalCrystalOn hf hF hS).f i π).unattach = lower (F i) (f (P.root i)) π.1 :=
+    ((normalCrystalOn hf hF hS).f i π).unattach = lower (F i) (f (P.root i)) π.val :=
   Set.unattach_optionRestrict π
 
 theorem normalCrystalOn_e_eq_iff {i : b.support} {π : S} {o : Option S} :
-    (normalCrystalOn hf hF hS).e i π = o ↔ raise (F i) (f (P.root i)) π.1 = o.unattach := by
+    (normalCrystalOn hf hF hS).e i π = o ↔ raise (F i) (f (P.root i)) π.val = o.unattach := by
   cases o <;> simp
 
 theorem normalCrystalOn_f_eq_iff {i : b.support} {π : S} {o : Option S} :
-    (normalCrystalOn hf hF hS).f i π = o ↔ lower (F i) (f (P.root i)) π.1 = o.unattach := by
+    (normalCrystalOn hf hF hS).f i π = o ↔ lower (F i) (f (P.root i)) π.val = o.unattach := by
   cases o <;> simp
 
 theorem normalCrystalOn_e_eq_map_iff {B : Type*} {i : b.support} {π : S} {o : Option B}
     {g : B → S} :
     (normalCrystalOn hf hF hS).e i π = o.map g ↔
-      raise (F i) (f (P.root i)) π.1 = o.map (fun x ↦ (g x).1) := by
+      raise (F i) (f (P.root i)) π.val = o.map (fun x ↦ (g x).val) := by
   rw [normalCrystalOn_e_eq_iff, Option.unattach, Option.map_map, Function.comp_def]
 
 theorem normalCrystalOn_f_eq_map_iff {B : Type*} {i : b.support} {π : S} {o : Option B}
     {g : B → S} :
     (normalCrystalOn hf hF hS).f i π = o.map g ↔
-      lower (F i) (f (P.root i)) π.1 = o.map (fun x ↦ (g x).1) := by
+      lower (F i) (f (P.root i)) π.val = o.map (fun x ↦ (g x).val) := by
   rw [normalCrystalOn_f_eq_iff, Option.unattach, Option.map_map, Function.comp_def]
 
 @[simp]
 theorem unattach_normalCrystalOn_eIter (i : b.support) (n : ℕ) (π : S) :
     ((normalCrystalOn hf hF hS).eIter i n π).unattach =
-      raiseIter (F i) (f (P.root i)) n π.1 := by
+      raiseIter (F i) (f (P.root i)) n π.val := by
   induction n generalizing π with
   | zero => simp
   | succ n ih => simp [NormalCrystal.eIter_succ, raiseIter_succ, ih]
@@ -411,15 +436,31 @@ theorem unattach_normalCrystalOn_eIter (i : b.support) (n : ℕ) (π : S) :
 @[simp]
 theorem unattach_normalCrystalOn_fIter (i : b.support) (n : ℕ) (π : S) :
     ((normalCrystalOn hf hF hS).fIter i n π).unattach =
-      lowerIter (F i) (f (P.root i)) n π.1 := by
+      lowerIter (F i) (f (P.root i)) n π.val := by
   induction n generalizing π with
   | zero => simp
   | succ n ih => simp [NormalCrystal.fIter_succ, lowerIter_succ, ih]
 
+@[simp]
+theorem unattach_normalCrystalOn_eWord (w : List b.support) (π : S) :
+    ((normalCrystalOn hf hF hS).eWord w π).unattach =
+      raiseWord F (fun i ↦ f (P.root i)) w π.val := by
+  induction w generalizing π with
+  | nil => simp
+  | cons i w ih => simp [NormalCrystal.eWord_cons, raiseWord_cons, ih]
+
+@[simp]
+theorem unattach_normalCrystalOn_fWord (w : List b.support) (π : S) :
+    ((normalCrystalOn hf hF hS).fWord w π).unattach =
+      lowerWord F (fun i ↦ f (P.root i)) w π.val := by
+  induction w generalizing π with
+  | nil => simp
+  | cons i w ih => simp [NormalCrystal.fWord_cons, lowerWord_cons, ih]
+
 /-- Adjacency in the crystal graph of `normalCrystalOn` is single-step root-operator adjacency. -/
 @[simp]
 theorem normalCrystalOn_graph_adj_iff {π π' : S} :
-    (normalCrystalOn hf hF hS).graph.Adj π π' ↔ RootStep b f F π.1 π'.1 := by
+    (normalCrystalOn hf hF hS).graph.Adj π π' ↔ RootStep b f F π.val π'.val := by
   rw [NormalCrystal.graph_adj_iff, rootStep_iff]
   refine exists_congr fun i ↦ or_congr normalCrystalOn_e_eq_some_iff ?_
   rw [normalCrystalOn_e_eq_some_iff, raise_eq_some_iff (apply_root_eq_two hF i)]
@@ -427,15 +468,15 @@ theorem normalCrystalOn_graph_adj_iff {π π' : S} :
 /-- Two paths in a crystal-admissible set lie in the same connected component of `normalCrystalOn`
 if and only if one is reachable from the other by a finite sequence of root steps. -/
 theorem normalCrystalOn_graph_reachable_iff (x y : S) :
-    (normalCrystalOn hf hF hS).graph.Reachable x y ↔ ReflTransGen (RootStep b f F) x.1 y.1 := by
+    (normalCrystalOn hf hF hS).graph.Reachable x y ↔ ReflTransGen (RootStep b f F) x.val y.val := by
   rw [SimpleGraph.reachable_iff_reflTransGen]
   constructor
   · intro h
     induction h with
     | refl => exact .refl
     | tail _ hadj ih => exact ih.tail (normalCrystalOn_graph_adj_iff.mp hadj)
-  · generalize hu : x.1 = u
-    generalize hv : y.1 = v
+  · generalize hu : x.val = u
+    generalize hv : y.val = v
     intro h
     induction h generalizing x y with
     | refl =>
@@ -443,21 +484,21 @@ theorem normalCrystalOn_graph_reachable_iff (x y : S) :
       exact .refl
     | tail hwalk hstep ih =>
       subst hu hv
-      let z : S := ⟨_, hS.mem_of_reflTransGen_rootStep hwalk x.2⟩
+      let z : S := ⟨_, hS.mem_of_reflTransGen_rootStep hwalk x.property⟩
       exact (ih x z rfl rfl).tail (normalCrystalOn_graph_adj_iff.mpr hstep)
 
 /-- Membership in the connected crystal component of `x` in `normalCrystalOn` is reachability from
 `x` by root steps. -/
 theorem mem_supp_connectedComponentMk_normalCrystalOn_iff (x y : S) :
     y ∈ ((normalCrystalOn hf hF hS).graph.connectedComponentMk x).supp ↔
-      ReflTransGen (RootStep b f F) x.1 y.1 := by
+      ReflTransGen (RootStep b f F) x.val y.val := by
   rw [SimpleGraph.ConnectedComponent.mem_supp_iff, SimpleGraph.ConnectedComponent.eq,
     SimpleGraph.reachable_comm, normalCrystalOn_graph_reachable_iff]
 
 /-- A path in a crystal-admissible set is highest-weight (annihilated by all simple-root raising
 operators) if and only if every simple-coroot minimum height vanishes. -/
 theorem forall_normalCrystalOn_e_eq_none_iff {π : S} :
-    (∀ i, (normalCrystalOn hf hF hS).e i π = none) ↔ ∀ i, π.1.minHeight (F i) = 0 := by
+    (∀ i, (normalCrystalOn hf hF hS).e i π = none) ↔ ∀ i, π.val.minHeight (F i) = 0 := by
   refine forall_congr' fun i ↦ ?_
   rw [← (normalCrystalOn hf hF hS).ε_eq_zero_iff, normalCrystalOn_ε_eq_iff, Nat.cast_zero,
     neg_eq_zero]
@@ -473,7 +514,7 @@ noncomputable def inclusionHom (hS : IsCrystalSet b f F S) (hT : IsCrystalSet b 
 
 @[simp]
 theorem inclusionHom_apply (hS : IsCrystalSet b f F S) (hT : IsCrystalSet b f F T) (hST : S ⊆ T)
-    (π : S) : (inclusionHom (hf := hf) (hF := hF) hS hT hST π).1 = π.1 :=
+    (π : S) : (inclusionHom (hf := hf) (hF := hF) hS hT hST π).val = π.val :=
   (rfl)
 
 @[simp]
@@ -584,7 +625,7 @@ noncomputable def embedHom {S : Set (PLPath 𝕜 V)} (hS : IsCrystalSet b f F S)
 
 @[simp]
 theorem embedHom_apply {S : Set (PLPath 𝕜 V)} (hS : IsCrystalSet b f F S) (π : S) :
-    (embedHom (hf := hf) (hF := hF) hS π).1 = π.1 :=
+    (embedHom (hf := hf) (hF := hF) hS π).val = π.val :=
   (rfl)
 
 /-- The **connected path crystal component** `B(π)` generated by an integral path `π` under all
@@ -636,7 +677,7 @@ noncomputable abbrev baseChangeNormalCrystal [Field 𝕜] [LinearOrder 𝕜] [Is
     NormalCrystal P b
       {π : PLPath 𝕜 (𝕜 ⊗[ℤ] X) |
         IsIntegralPath b (TensorProduct.mk ℤ 𝕜 X 1).toAddMonoidHom
-          (fun i ↦ (P.baseChange 𝕜).coroot' i.1) π} :=
+          (fun i ↦ (P.baseChange 𝕜).coroot' i.val) π} :=
   normalCrystal (P := P) (b := b) (P.tensorProduct_mk_injective 𝕜)
     fun i x ↦ by simp
 

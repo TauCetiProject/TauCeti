@@ -90,8 +90,7 @@ theorem mul_sub_exp_sub_one_eq_klFun_iff {x : ℝ} (hx : 0 ≤ x) (y : ℝ) :
   refine ⟨fun h ↦ ?_, fun h ↦ by rw [h, klFun_apply, log_exp]; ring⟩
   rw [klFun_apply] at h
   rcases hx.eq_or_lt with rfl | hx
-  · simp only [zero_mul, zero_sub, log_zero, mul_zero, zero_add] at h
-    exact absurd h (by linarith [exp_pos y])
+  · linarith [exp_pos y]
   · -- `x * (exp (y - log x) - 1 - (y - log x))` is the gap, which vanishes only at `y = log x`.
     by_contra hne
     have hyx : y - log x ≠ 0 := fun h0 ↦ hne (by rw [sub_eq_zero.1 h0, exp_log hx])
@@ -167,10 +166,11 @@ theorem integral_sub_integral_indicator_exp_sub_one_eq_toReal_klDiv_iff [IsFinit
       (μ.rnDeriv ν x).toReal * f x - (s.indicator (fun x ↦ exp (f x)) x - 1)) ν :=
     ((integrable_toReal_rnDeriv_mul_iff hμν).2 hf).sub (hef.sub (integrable_const 1))
   have hup := (integrable_klFun_rnDeriv_iff hμν).2 hllr
-  rw [klDiv_eq_integral_klFun, ite_eq_left ⟨hμν, hllr⟩,
-    ENNReal.toReal_ofReal (integral_nonneg fun _ ↦ klFun_nonneg ENNReal.toReal_nonneg),
-    integral_sub_integral_indicator_exp_sub_one_eq hμν hf hef, ← sub_eq_zero, ← neg_eq_zero,
-    neg_sub, ← integral_sub hup hlow, integral_eq_zero_iff_of_nonneg_ae
+  -- The gap `klFun ρ - (ρ f - (s.indicator (exp ∘ f) - 1))` is nonnegative, so it has zero
+  -- integral exactly when it vanishes `ν`-a.e.
+  rw [toReal_klDiv_eq_integral_klFun hμν,
+    integral_sub_integral_indicator_exp_sub_one_eq hμν hf hef, eq_comm, ← sub_eq_zero]
+  rw [← integral_sub hup hlow, integral_eq_zero_iff_of_nonneg_ae
       ((ae_mul_sub_indicator_exp_sub_one_le_klFun hs).mono fun _ hx ↦ sub_nonneg.2 hx)
       (hup.sub hlow)]
   have hdens : μ = ν.withDensity (fun x ↦ ENNReal.ofReal (s.indicator (fun x ↦ exp (f x)) x)) ↔
@@ -220,9 +220,7 @@ theorem ofReal_integral_sub_log_integral_exp_le_klDiv [IsProbabilityMeasure μ]
 theorem ofReal_mul_measureReal_sub_le_klDiv [IsFiniteMeasure μ] [IsFiniteMeasure ν] {s : Set α}
     (t : ℝ) : ENNReal.ofReal (t * μ.real s - (exp t - 1) * ν.real s) ≤ klDiv μ ν := by
   obtain ⟨u, -, hu, hμu, hνu⟩ := exists_measurable_superset₂ μ ν s
-  have hμu' : μ.real s = μ.real u := congrArg ENNReal.toReal hμu.symm
-  have hνu' : ν.real s = ν.real u := congrArg ENNReal.toReal hνu.symm
-  rw [hμu', hνu']
+  -- Test the bound on `u.indicator t`, whose exponential minus one is `u.indicator (exp t - 1)`.
   have hexp : (fun x ↦ exp (u.indicator (fun _ ↦ t) x) - 1) = u.indicator fun _ ↦ exp t - 1 := by
     ext x
     by_cases hx : x ∈ u <;> simp [hx]
@@ -231,16 +229,8 @@ theorem ofReal_mul_measureReal_sub_le_klDiv [IsFiniteMeasure μ] [IsFiniteMeasur
       (ae_of_all _ fun x ↦ by simp [← congrFun hexp x])
   have h := ofReal_integral_sub_integral_exp_sub_one_le_klDiv
     ((integrable_const (μ := μ) t).indicator hu) hef
-  rwa [hexp, integral_indicator_const _ hu, integral_indicator_const _ hu, smul_eq_mul,
-    smul_eq_mul, mul_comm (μ.real u), mul_comm (ν.real u)] at h
-
-/-- A bounded measurable function is integrable, and so is its exponential. -/
-private lemma integrable_and_integrable_exp [IsFiniteMeasure μ] (hf : Measurable f) {C : ℝ}
-    (hC : ∀ x, |f x| ≤ C) : Integrable f μ ∧ Integrable (fun x ↦ exp (f x)) μ :=
-  ⟨.of_bound hf.aestronglyMeasurable C (ae_of_all _ hC),
-    .of_bound hf.exp.aestronglyMeasurable (exp C) (ae_of_all _ fun x ↦ by
-      rw [Real.norm_eq_abs, abs_of_pos (exp_pos _)]
-      exact exp_le_exp.2 (le_of_abs_le (hC x)))⟩
+  -- The test integrals are `t μ(u)` and `(exp t - 1) ν(u)`, and `u` has the measures of `s`.
+  simpa [hexp, integral_indicator_const _ hu, measureReal_def, hμu, hνu, mul_comm] using h
 
 /-- Off the absolutely continuous case, the objectives along `n • 1_s`, for a `ν`-null measurable
 set `s` of positive `μ`-measure, are unbounded. -/
@@ -248,13 +238,10 @@ private lemma exists_seq_of_not_absolutelyContinuous [IsFiniteMeasure μ]
     (hμν : ¬ μ ≪ ν) :
     ∃ g : ℕ → α → ℝ, (∀ n, Measurable (g n)) ∧ (∀ n, ∃ C, ∀ x, |g n x| ≤ C) ∧
       klDiv μ ν ≤ ⨆ n, ENNReal.ofReal (∫ x, g n x ∂μ - ∫ x, (exp (g n x) - 1) ∂ν) := by
-  obtain ⟨s, hνs, hμs⟩ : ∃ s, ν s = 0 ∧ μ s ≠ 0 := by
-    simpa [Measure.AbsolutelyContinuous] using hμν
-  set t := toMeasurable ν s
-  have ht : MeasurableSet t := measurableSet_toMeasurable ν s
-  have hνt : ν t = 0 := (measure_toMeasurable s).trans hνs
-  have hμt : 0 < μ.real t := ENNReal.toReal_pos
-    (fun h ↦ hμs (measure_mono_null (subset_toMeasurable ν s) h)) (measure_ne_top μ t)
+  obtain ⟨t, ht, hνt, hμt⟩ : ∃ t, MeasurableSet t ∧ ν t = 0 ∧ μ t ≠ 0 := by
+    by_contra! h
+    exact hμν (.mk h)
+  replace hμt : 0 < μ.real t := ENNReal.toReal_pos hμt (measure_ne_top μ t)
   refine ⟨fun n ↦ t.indicator fun _ ↦ (n : ℝ), fun n ↦ measurable_const.indicator ht,
     fun n ↦ ⟨n, fun x ↦ ?_⟩, ?_⟩
   · by_cases hx : x ∈ t <;> simp [hx]
@@ -334,8 +321,11 @@ private lemma exists_seq_klDiv_le_iSup [IsFiniteMeasure μ] [IsFiniteMeasure ν]
     mul_log_sub_sub_one_nonneg (hρ0 x) (clamp_spec (ρ x) n).1 (clamp_spec (ρ x) n).2.1
   have hval : ∀ n, ENNReal.ofReal (∫ x, g n x ∂μ - ∫ x, (exp (g n x) - 1) ∂ν) =
       ∫⁻ x, ENNReal.ofReal (h n x) ∂ν := fun n ↦ by
-    obtain ⟨hgi, _⟩ := integrable_and_integrable_exp (μ := μ) (hgm n) (hgC n)
-    obtain ⟨-, hegi'⟩ := integrable_and_integrable_exp (μ := ν) (hgm n) (hgC n)
+    -- `g n` lies in `[-log (n + 1), log (n + 1)]`, so it and its exponential are integrable.
+    have hgi : Integrable (g n) μ :=
+      .of_mem_Icc _ _ (hgm n).aemeasurable (ae_of_all _ fun x ↦ abs_le.1 (hgC n x))
+    have hegi' : Integrable (fun x ↦ exp (g n x)) ν := .of_mem_Icc 0 _ (hgm n).exp.aemeasurable
+      (ae_of_all _ fun x ↦ ⟨(exp_pos _).le, exp_le_exp.2 (le_of_abs_le (hgC n x))⟩)
     have heq : (fun x ↦ ρ x * g n x - (exp (g n x) - 1)) = h n := by
       ext x
       simp only [h, g]
@@ -371,9 +361,12 @@ measurable functions `f`. -/
 theorem klDiv_eq_iSup_integral_sub_integral_exp_sub_one [IsFiniteMeasure μ] [IsFiniteMeasure ν] :
     klDiv μ ν = ⨆ (f : α → ℝ) (_ : Measurable f) (_ : ∃ C, ∀ x, |f x| ≤ C),
       ENNReal.ofReal (∫ x, f x ∂μ - ∫ x, (exp (f x) - 1) ∂ν) := by
+  -- A function with values in `[-C, C]` and its exponential, in `(0, exp C]`, are integrable.
   refine le_antisymm ?_ (iSup₂_le fun f hf ↦ iSup_le fun ⟨C, hC⟩ ↦
     ofReal_integral_sub_integral_exp_sub_one_le_klDiv
-      (integrable_and_integrable_exp hf hC).1 (integrable_and_integrable_exp hf hC).2)
+      (.of_mem_Icc (-C) C hf.aemeasurable (ae_of_all _ fun x ↦ abs_le.1 (hC x)))
+      (.of_mem_Icc 0 (exp C) hf.exp.aemeasurable
+        (ae_of_all _ fun x ↦ ⟨(exp_pos _).le, exp_le_exp.2 (le_of_abs_le (hC x))⟩)))
   obtain ⟨g, hgm, hgC, hle⟩ := exists_seq_klDiv_le_iSup (μ := μ) (ν := ν)
   exact hle.trans (iSup_le fun n ↦ le_iSup₂_of_le (g n) (hgm n) (le_iSup_of_le (hgC n) le_rfl))
 
@@ -383,23 +376,20 @@ theorem klDiv_eq_iSup_integral_sub_log_integral_exp [IsProbabilityMeasure μ]
     [IsProbabilityMeasure ν] :
     klDiv μ ν = ⨆ (f : α → ℝ) (_ : Measurable f) (_ : ∃ C, ∀ x, |f x| ≤ C),
       ENNReal.ofReal (∫ x, f x ∂μ - log (∫ x, exp (f x) ∂ν)) := by
+  -- The exponential of a function with values in `[-C, C]` has values in `(0, exp C]`.
+  have hexp {f : α → ℝ} (hf : Measurable f) {C : ℝ} (hC : ∀ x, |f x| ≤ C) :
+      Integrable (fun x ↦ exp (f x)) ν := .of_mem_Icc 0 (exp C) hf.exp.aemeasurable
+    (ae_of_all _ fun x ↦ ⟨(exp_pos _).le, exp_le_exp.2 (le_of_abs_le (hC x))⟩)
   refine le_antisymm ?_ (iSup₂_le fun f hf ↦ iSup_le fun ⟨C, hC⟩ ↦
     ofReal_integral_sub_log_integral_exp_le_klDiv
-      (integrable_and_integrable_exp hf hC).1 (integrable_and_integrable_exp hf hC).2)
+      (.of_mem_Icc (-C) C hf.aemeasurable (ae_of_all _ fun x ↦ abs_le.1 (hC x))) (hexp hf hC))
   rw [klDiv_eq_iSup_integral_sub_integral_exp_sub_one]
-  refine iSup₂_mono fun f hf ↦ iSup_mono fun ⟨C, hC⟩ ↦ ENNReal.ofReal_le_ofReal ?_
-  exact integral_sub_integral_exp_sub_one_le_integral_sub_log_integral_exp
-    (integrable_and_integrable_exp hf hC).2
+  exact iSup₂_mono fun f hf ↦ iSup_mono fun ⟨C, hC⟩ ↦ ENNReal.ofReal_le_ofReal
+    (integral_sub_integral_exp_sub_one_le_integral_sub_log_integral_exp (hexp hf hC))
 
 section Topological
 
 variable [TopologicalSpace α]
-
-/-- A bounded continuous function is integrable, and so is its exponential. -/
-private lemma integrable_and_integrable_exp_of_boundedContinuousFunction [OpensMeasurableSpace α]
-    [IsFiniteMeasure μ] (f : α →ᵇ ℝ) : Integrable f μ ∧ Integrable (fun x ↦ exp (f x)) μ :=
-  integrable_and_integrable_exp f.continuous.measurable fun x ↦
-    (Real.norm_eq_abs _).symm.trans_le (f.norm_coe_le_norm x)
 
 section Normal
 
@@ -414,27 +404,29 @@ private lemma exists_boundedContinuousFunction_le [IsFiniteMeasure μ] [IsFinite
     ∃ g : α →ᵇ ℝ, ∫ x, f x ∂μ - ∫ x, (exp (f x) - 1) ∂ν - ε ≤
       ∫ x, g x ∂μ - ∫ x, (exp (g x) - 1) ∂ν := by
   have hδ : 0 < ε / (1 + exp C) := by positivity
-  obtain ⟨g₀, hg₀, -⟩ :=
-    (integrable_and_integrable_exp (μ := μ + ν) hf hC).1.exists_boundedContinuous_integral_sub_le hδ
+  have hfi : Integrable f (μ + ν) :=
+    .of_mem_Icc (-C) C hf.aemeasurable (ae_of_all _ fun x ↦ abs_le.1 (hC x))
+  obtain ⟨g₀, hg₀, -⟩ := hfi.exists_boundedContinuous_integral_sub_le hδ
   set g : α →ᵇ ℝ := g₀ ⊓ BoundedContinuousFunction.const α C
   have hg : ∀ x, g x = min (g₀ x) C := fun x ↦ by simp [g]
+  have hgC : ∀ x, g x ≤ C := fun x ↦ (hg x).trans_le (min_le_right _ _)
   have hdist : ∀ x, |f x - g x| ≤ ‖f x - g₀ x‖ := fun x ↦ by
-    have := abs_min_sub_min_le_max (f x) C (g₀ x) C
-    rwa [sub_self, abs_zero, max_eq_left (abs_nonneg _), min_eq_left (le_of_abs_le (hC x)),
-      ← hg, ← Real.norm_eq_abs] at this
+    simpa [hg, min_eq_left (le_of_abs_le (hC x))] using abs_min_sub_min_le_max (f x) C (g₀ x) C
   have hexp : ∀ x, exp (g x) - exp (f x) ≤ exp C * ‖f x - g₀ x‖ := fun x ↦ by
     have h1 := mul_le_mul_of_nonneg_left (add_one_le_exp (f x - g x)) (exp_pos (g x)).le
     rw [exp_sub, mul_div_cancel₀ _ (exp_pos _).ne'] at h1
-    have h2 : exp (g x) ≤ exp C := exp_le_exp.2 ((hg x).trans_le (min_le_right _ _))
+    have h2 : exp (g x) ≤ exp C := exp_le_exp.2 (hgC x)
     have h3 := (le_abs_self (g x - f x)).trans ((abs_sub_comm _ _).trans_le (hdist x))
     nlinarith [exp_pos (g x), norm_nonneg (f x - g₀ x)]
-  -- Integrability of everything in sight.
-  obtain ⟨hfμ, -⟩ := integrable_and_integrable_exp (μ := μ) hf hC
-  obtain ⟨-, hefν⟩ := integrable_and_integrable_exp (μ := ν) hf hC
-  obtain ⟨hgμ, -⟩ := integrable_and_integrable_exp_of_boundedContinuousFunction (μ := μ) g
-  obtain ⟨-, hegν⟩ := integrable_and_integrable_exp_of_boundedContinuousFunction (μ := ν) g
-  have hD : Integrable (fun x ↦ ‖f x - g₀ x‖) (μ + ν) :=
-    ((integrable_and_integrable_exp hf hC).1.sub (g₀.integrable _)).norm
+  -- Integrability of everything in sight: `f` and `g` are bounded, and `exp f, exp g ≤ exp C`.
+  have hfμ := (integrable_add_measure.1 hfi).1
+  have hgμ := g.integrable μ
+  have hefν : Integrable (fun x ↦ exp (f x)) ν := .of_mem_Icc 0 (exp C) hf.exp.aemeasurable
+    (ae_of_all _ fun x ↦ ⟨(exp_pos _).le, exp_le_exp.2 (le_of_abs_le (hC x))⟩)
+  have hegν : Integrable (fun x ↦ exp (g x)) ν := .of_mem_Icc 0 (exp C)
+    g.continuous.measurable.exp.aemeasurable
+    (ae_of_all _ fun x ↦ ⟨(exp_pos _).le, exp_le_exp.2 (hgC x)⟩)
+  have hD : Integrable (fun x ↦ ‖f x - g₀ x‖) (μ + ν) := (hfi.sub (g₀.integrable _)).norm
   obtain ⟨hDμ, hDν⟩ := integrable_add_measure.1 hD
   rw [integral_add_measure hDμ hDν] at hg₀
   have hA : ∫ x, f x ∂μ - ∫ x, g x ∂μ ≤ ∫ x, ‖f x - g₀ x‖ ∂μ := by
@@ -450,8 +442,8 @@ private lemma exists_boundedContinuousFunction_le [IsFiniteMeasure μ] [IsFinite
       linarith [hexp x]
   have hDμ0 : 0 ≤ ∫ x, ‖f x - g₀ x‖ ∂μ := integral_nonneg fun _ ↦ norm_nonneg _
   have hDν0 : 0 ≤ ∫ x, ‖f x - g₀ x‖ ∂ν := integral_nonneg fun _ ↦ norm_nonneg _
-  have hε' : (1 + exp C) * (ε / (1 + exp C)) = ε := by field_simp
-  have h1 := mul_le_mul_of_nonneg_left hg₀ (by positivity : (0 : ℝ) ≤ 1 + exp C)
+  -- `hg₀` without its denominator: `(1 + exp C) * (∫ ‖f - g₀‖ ∂μ + ∫ ‖f - g₀‖ ∂ν) ≤ ε`.
+  have h1 := (le_div_iff₀' (by positivity)).1 hg₀
   have h2 := mul_nonneg (exp_pos C).le hDμ0
   exact ⟨g, by linarith⟩
 
@@ -461,9 +453,11 @@ space, when `μ + ν` is weakly regular: `klDiv μ ν` is the supremum of
 theorem klDiv_eq_iSup_boundedContinuousFunction_integral_sub_integral_exp_sub_one
     [IsFiniteMeasure μ] [IsFiniteMeasure ν] [(μ + ν).WeaklyRegular] :
     klDiv μ ν = ⨆ f : α →ᵇ ℝ, ENNReal.ofReal (∫ x, f x ∂μ - ∫ x, (exp (f x) - 1) ∂ν) := by
+  -- A bounded continuous `f` is integrable, and `exp f` has values in `(0, exp ‖f‖]`.
   refine le_antisymm ?_ (iSup_le fun f ↦ ofReal_integral_sub_integral_exp_sub_one_le_klDiv
-    (integrable_and_integrable_exp_of_boundedContinuousFunction f).1
-    (integrable_and_integrable_exp_of_boundedContinuousFunction f).2)
+    (f.integrable μ) (.of_mem_Icc 0 (exp ‖f‖) f.continuous.measurable.exp.aemeasurable
+      (ae_of_all _ fun x ↦ ⟨(exp_pos _).le,
+        exp_le_exp.2 ((Real.le_norm_self _).trans (f.norm_coe_le_norm x))⟩)))
   obtain ⟨g, hgm, hgC, hle⟩ := exists_seq_klDiv_le_iSup (μ := μ) (ν := ν)
   refine hle.trans (iSup_le fun n ↦ ENNReal.le_of_forall_pos_le_add fun ε hε _ ↦ ?_)
   obtain ⟨C, hC⟩ := hgC n
@@ -486,13 +480,15 @@ measures with weakly regular sum, `klDiv μ ν` is the supremum of
 theorem klDiv_eq_iSup_boundedContinuousFunction_integral_sub_log_integral_exp
     [IsProbabilityMeasure μ] [IsProbabilityMeasure ν] [(μ + ν).WeaklyRegular] :
     klDiv μ ν = ⨆ f : α →ᵇ ℝ, ENNReal.ofReal (∫ x, f x ∂μ - log (∫ x, exp (f x) ∂ν)) := by
-  refine le_antisymm ?_ (iSup_le fun f ↦ ofReal_integral_sub_log_integral_exp_le_klDiv
-    (integrable_and_integrable_exp_of_boundedContinuousFunction f).1
-    (integrable_and_integrable_exp_of_boundedContinuousFunction f).2)
+  -- The exponential of a bounded continuous `f` has values in `(0, exp ‖f‖]`.
+  have hexp (f : α →ᵇ ℝ) : Integrable (fun x ↦ exp (f x)) ν :=
+    .of_mem_Icc 0 (exp ‖f‖) f.continuous.measurable.exp.aemeasurable (ae_of_all _ fun x ↦
+      ⟨(exp_pos _).le, exp_le_exp.2 ((Real.le_norm_self _).trans (f.norm_coe_le_norm x))⟩)
+  refine le_antisymm ?_ (iSup_le fun f ↦
+    ofReal_integral_sub_log_integral_exp_le_klDiv (f.integrable μ) (hexp f))
   rw [klDiv_eq_iSup_boundedContinuousFunction_integral_sub_integral_exp_sub_one]
   exact iSup_mono fun f ↦ ENNReal.ofReal_le_ofReal
-    (integral_sub_integral_exp_sub_one_le_integral_sub_log_integral_exp
-      (integrable_and_integrable_exp_of_boundedContinuousFunction f).2)
+    (integral_sub_integral_exp_sub_one_le_integral_sub_log_integral_exp (hexp f))
 
 end Normal
 
@@ -506,13 +502,11 @@ theorem lowerSemicontinuous_klDiv_finiteMeasure :
   simp_rw [klDiv_eq_iSup_boundedContinuousFunction_integral_sub_integral_exp_sub_one]
   refine lowerSemicontinuous_iSup fun f ↦ Continuous.lowerSemicontinuous ?_
   -- `x ↦ exp (f x) - 1` is again bounded and continuous.
-  obtain ⟨e, he⟩ : ∃ e : α →ᵇ ℝ, ∀ x, e x = exp (f x) - 1 := by
-    refine ⟨.mkOfBound ⟨fun x ↦ exp (f x) - 1, by fun_prop⟩ (exp ‖f‖) fun x y ↦ ?_,
-      fun _ ↦ rfl⟩
-    have hb : ∀ x, exp (f x) ≤ exp ‖f‖ := fun x ↦ exp_le_exp.2
-      ((le_abs_self _).trans ((Real.norm_eq_abs _).symm.trans_le (f.norm_coe_le_norm x)))
-    simp only [ContinuousMap.coe_mk, Real.dist_eq]
-    exact abs_sub_le_iff.2 ⟨by linarith [hb x, exp_pos (f y)], by linarith [hb y, exp_pos (f x)]⟩
+  obtain ⟨e, he⟩ : ∃ e : α →ᵇ ℝ, ∀ x, e x = exp (f x) - 1 :=
+    ⟨.ofNormedAddCommGroup (fun x ↦ exp (f x) - 1) (by fun_prop) (exp ‖f‖) fun x ↦ by
+      have := exp_le_exp.2 ((Real.le_norm_self _).trans (f.norm_coe_le_norm x))
+      rw [Real.norm_eq_abs, abs_le]
+      constructor <;> linarith [exp_pos (f x), one_le_exp (norm_nonneg f)], fun _ ↦ rfl⟩
   simp_rw [← he]
   exact ENNReal.continuous_ofReal.comp
     (((FiniteMeasure.continuous_integral_boundedContinuousFunction f).comp continuous_fst).sub
@@ -560,8 +554,7 @@ theorem isTightMeasureSet_setOf_klDiv_le [IsFiniteMeasure ν] (hν : IsTightMeas
   have h3 : μ.real s ≤ ε.toReal := by
     rw [← div_div_cancel₀ (a := C.toReal + 1) (b := ε.toReal) hC1.ne', ← ht_def, le_div_iff₀ ht]
     linarith
-  rw [← ENNReal.ofReal_toReal hε', ← ENNReal.ofReal_toReal (measure_ne_top μ s)]
-  exact ENNReal.ofReal_le_ofReal h3
+  exact (ENNReal.toReal_le_toReal (measure_ne_top μ s) hε').1 h3
 
 end Tight
 

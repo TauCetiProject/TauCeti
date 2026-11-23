@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Symplectic.Floer.ExponentialDecay
 public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.End.Convergence
+import TauCeti.Algebra.Ring.Periodic
 import TauCeti.Analysis.SpecialFunctions.Exp.Bounds
 
 /-!
@@ -47,10 +48,12 @@ half-cylinder for the Hamiltonian `H'_q(t, x) = ±H_q(±t, x)`
 (`TauCeti.Floer.positiveEndHamiltonian`), asymptotic to the orbit `t ↦ y_q(±t)` of `H'_q`. The
 half-cylinder estimate `TauCeti.SymplecticForm.exists_pos_eventually_norm_sub_le_exp` asks the
 return map `Ψ'(1)` of the linearized equation `ζ' = S'_t ζ` along this orbit to have no nonzero
-fixed vector. Here `S'_{±t} = ±S_t`, where `S_t = dX_{H_{q,t}}(y_q(t))`, so `t ↦ ζ(±t)` turns a
-periodic solution of `ζ' = S'_t ζ` into one of `ζ' = S_t ζ`. Nondegeneracy of `y_q(0)` as a fixed
-point of the time-one map of `H_q` therefore gives the hypothesis
-(`TauCeti.SymplecticForm.eq_zero_of_dysonSeriesLeft_positiveEndHamiltonian_apply_eq_self`).
+fixed vector. On the input ends `H'_q = H_q`, and nondegeneracy of `y_q(0)` as a fixed point of
+the time-one map of `H_q` gives this directly
+(`TauCeti.SymplecticForm.eq_zero_of_dysonSeriesLeft_apply_eq_self`). On the output end `H'_q` is
+the reversed Hamiltonian `-H_q(-t)`, for which time reversal carries nondegeneracy over
+(`TauCeti.SymplecticForm.eq_zero_of_dysonSeriesLeft_reverse_apply_eq_self`); together these give
+`TauCeti.SymplecticForm.eq_zero_of_dysonSeriesLeft_positiveEndHamiltonian_apply_eq_self`.
 
 **`C¹` convergence.** In the positive end chart a cylindrical end is a finite-energy Floer
 half-cylinder for `H'_q` and the structure `J'_q(t, x) = J_q(±t, x)`
@@ -119,9 +122,15 @@ theorem eq_zero_of_dysonSeriesLeft_positiveEndHamiltonian_apply_eq_self {q : Pun
     {v : V} (hv : dysonSeriesLeft (fun t ↦ fderiv ℝ
       (ω.hamiltonianVectorField (positiveEndHamiltonian H q t)) (y (q.endSign * t))) 1 v = v) :
     v = 0 := by
-  rw [positiveEndHamiltonian_eq_signedHamiltonian] at hv
-  exact ω.eq_zero_of_dysonSeriesLeft_signedHamiltonian_apply_eq_self q.endSign_mul_self hL hHs hH hy
-    hyper hnd hv
+  rcases q.endSign_eq_one_or_eq_neg_one with h | h
+  · simp only [positiveEndHamiltonian_of_endSign_eq_one H h, h, one_mul] at hv
+    exact ω.eq_zero_of_dysonSeriesLeft_apply_eq_self hL hHs hy hnd hv
+  -- On the output end `H'_q` is the reversed Hamiltonian `-H_q(-t)`, with the orbit `t ↦ y(-t)`.
+  simp only [positiveEndHamiltonian_of_endSign_eq_neg_one H h, h, neg_one_mul] at hv
+  refine ω.eq_zero_of_dysonSeriesLeft_reverse_apply_eq_self hL hHs hH hyper.comp_neg
+    (fun t ↦ ω.hasDerivAt_comp_neg_of_hasDerivAt_hamiltonianVectorField_neg ?_)
+    (by simpa only [neg_zero] using hnd) hv
+  simpa only [Pi.neg_def, neg_neg] using hy (-t)
 
 /-- Read in the end chart at `(±s, t)`, the distance of the derivative of `u` from that of the
 stationary cylinder of `y` is the distance of the derivative of `u ∘ φ'_q` at `(s, ±t)` from that
@@ -135,9 +144,16 @@ private theorem norm_fderiv_comp_endChart_sub_smulRight (q : Puncture) (u : ℝ 
           (positiveEndHamiltonian H q (q.endSign * t)) (y (q.endSign * (q.endSign * t))))‖ := by
   have hz : q.endSign • ((q.endSign * s, t) : ℝ × ℝ) = (s, q.endSign * t) := by
     simp [← mul_assoc]
-  rw [fderiv_comp_endChart, hz, endSign_mul_endSign_mul,
-    positiveEndHamiltonian_eq_signedHamiltonian]
-  exact ω.norm_smul_sub_smulRight_hamiltonianVectorField q.endSign_mul_self _ (H q) (y t) t
+  rw [fderiv_comp_endChart, hz, hamiltonianVectorField_positiveEndHamiltonian_endSign_mul,
+    endSign_mul_endSign_mul]
+  -- The reflection `v ↦ ±v` multiplies both derivatives by the sign of the end.
+  have h : q.endSign • fderiv ℝ (u ∘ positiveEndChart q) (s, q.endSign * t) -
+      (ContinuousLinearMap.snd ℝ ℝ ℝ).smulRight (ω.hamiltonianVectorField (H q t) (y t)) =
+        q.endSign • (fderiv ℝ (u ∘ positiveEndChart q) (s, q.endSign * t) -
+          (ContinuousLinearMap.snd ℝ ℝ ℝ).smulRight
+            ((q.endSign • ω.hamiltonianVectorField (H q t)) (y t))) := by
+    ext <;> simp [smul_sub, smul_smul]
+  rw [h, norm_smul, Real.norm_eq_abs, abs_endSign, one_mul]
 
 /-- **The ends of a Floer pair of pants converge exponentially to nondegenerate orbits.** Let `K`
 be equal to `H_q(t) dt` beyond `T₀` on each end `q`, for `1`-periodic `C²` Hamiltonians `H_q`, and

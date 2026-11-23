@@ -127,9 +127,9 @@ private def compSpec (he : MeasurePreserving e μ ν) (hUW : (U : Set E) = e ⁻
     (k : ℕ) → {T : Wkp ν W p (k + 1) → Wkp μ U p (k + 1) //
       ∀ u, iteratedGradient k (T u) = pullbackLp he hUW k (iteratedGradient k u)}
   | 0 => ⟨fun u => compW1p he hUW u, gradient_compW1p he hUW⟩
-  | k + 1 => ⟨fun u => mk k ((compSpec he hUW k).1 (lowerOrder (k + 1) u))
+  | k + 1 => ⟨fun u => mk k ((compSpec he hUW k).val (lowerOrder (k + 1) u))
       (pullbackLp he hUW (k + 1) (iteratedGradient (k + 1) u)) (by
-        rw [(compSpec he hUW k).2]
+        rw [(compSpec he hUW k).property]
         have h := ((hasWeakFDerivOn_iteratedGradient k u).comp_continuousLinearEquiv
           e.toContinuousLinearEquiv he (hUW ▸ mapsTo_preimage e W)).clm_comp
           ((e.iteratedGradientCongr k).symm : IteratedGradient E' k →L[ℝ] IteratedGradient E k)
@@ -141,12 +141,12 @@ private def compSpec (he : MeasurePreserving e μ ν) (hUW : (U : Set E) = e ⁻
 
 private theorem lowerOrder_compSpec (he : MeasurePreserving e μ ν)
     (hUW : (U : Set E) = e ⁻¹' W) (k : ℕ) (u : Wkp ν W p (k + 2)) :
-    lowerOrder (k + 1) ((compSpec he hUW (k + 1)).1 u) =
-      (compSpec he hUW k).1 (lowerOrder (k + 1) u) :=
+    lowerOrder (k + 1) ((compSpec he hUW (k + 1)).val u) =
+      (compSpec he hUW k).val (lowerOrder (k + 1) u) :=
   lowerOrder_mk _ _ _ _
 
 private theorem value_compSpec (he : MeasurePreserving e μ ν) (hUW : (U : Set E) = e ⁻¹' W) :
-    ∀ (k : ℕ) (u : Wkp ν W p (k + 1)), value (k + 1) ((compSpec he hUW k).1 u) =
+    ∀ (k : ℕ) (u : Wkp ν W p (k + 1)), value (k + 1) ((compSpec he hUW k).val u) =
       Lp.compMeasurePreserving e (hUW ▸ he.restrict_preimage W.isOpen.measurableSet)
         (value (k + 1) u)
   | 0, u => (value_one (mu := μ) (Omega := U) (p := p) (compW1p he hUW u)).trans <| by
@@ -159,7 +159,7 @@ private theorem value_compSpec (he : MeasurePreserving e μ ν) (hUW : (U : Set 
     rw [value_succ (k + 1), lowerOrder_compSpec, value_compSpec he hUW k, value_succ (k + 1) u]
 
 private theorem norm_compSpec_le (he : MeasurePreserving e μ ν) (hUW : (U : Set E) = e ⁻¹' W) :
-    ∀ (k : ℕ) (u : Wkp ν W p (k + 1)), ‖(compSpec he hUW k).1 u‖ ≤ ‖u‖
+    ∀ (k : ℕ) (u : Wkp ν W p (k + 1)), ‖(compSpec he hUW k).val u‖ ≤ ‖u‖
   | 0, u => by
     -- `compSpec` at order one is `compW1p` by definition, and `Wkp ν W p 1` is `W1p ν W p`
     -- with the same norm; state the goal in `W1p` to apply its operator-norm bound.
@@ -173,7 +173,7 @@ private theorem norm_compSpec_le (he : MeasurePreserving e μ ν) (hUW : (U : Se
     rw [← pow_le_pow_iff_left₀ (norm_nonneg _) (norm_nonneg _) two_ne_zero,
       norm_sq_eq_norm_lowerOrder_sq_add_norm_iteratedGradient_sq_succ,
       norm_sq_eq_norm_lowerOrder_sq_add_norm_iteratedGradient_sq_succ k u,
-      lowerOrder_compSpec, (compSpec he hUW (k + 1)).2]
+      lowerOrder_compSpec, (compSpec he hUW (k + 1)).property]
     exact add_le_add (pow_le_pow_left₀ (norm_nonneg _) (norm_compSpec_le he hUW k _) 2)
       (pow_le_pow_left₀ (norm_nonneg _) (norm_pullbackLp_le he hUW _ _) 2)
 
@@ -182,7 +182,7 @@ private def compₗ (he : MeasurePreserving e μ ν) (hUW : (U : Set E) = e ⁻�
     (k : ℕ) → Wkp ν W p k →ₗ[ℝ] Wkp μ U p k
   | 0 => Lp.compMeasurePreservingₗ ℝ e (hUW ▸ he.restrict_preimage W.isOpen.measurableSet)
   | k + 1 =>
-    { toFun := (compSpec he hUW k).1
+    { toFun := (compSpec he hUW k).val
       map_add' u v := ext (k + 1) <| by
         rw [value_add, value_compSpec, value_compSpec, value_compSpec, value_add, map_add]
       map_smul' c u := ext (k + 1) <| by
@@ -221,7 +221,7 @@ private theorem compₗ_compₗ (he : MeasurePreserving e μ ν) (hUW : (U : Set
   rw [h1, Function.comp_apply, h2, Function.comp_apply, LinearIsometryEquiv.symm_apply_apply]
 
 private theorem compₗ_succ_apply (he : MeasurePreserving e μ ν) (hUW : (U : Set E) = e ⁻¹' W)
-    (k : ℕ) (u : Wkp ν W p (k + 1)) : compₗ he hUW (k + 1) u = (compSpec he hUW k).1 u :=
+    (k : ℕ) (u : Wkp ν W p (k + 1)) : compₗ he hUW (k + 1) u = (compSpec he hUW k).val u :=
   (rfl)
 
 /-- **Transport of `W^{k,p}` along a linear isometry.** If the linear isometry `e` carries `μ`
@@ -271,7 +271,7 @@ theorem iteratedGradient_compLinearIsometryEquiv_ae (he : MeasurePreserving e μ
     (hUW : (U : Set E) = e ⁻¹' W) (k : ℕ) (u : Wkp ν W p (k + 1)) :
     iteratedGradient k (compLinearIsometryEquiv he hUW (k + 1) u) =ᵐ[μ.restrict U]
       fun x => (e.iteratedGradientCongr k).symm (iteratedGradient k u (e x)) := by
-  rw [compLinearIsometryEquiv_apply, compₗ_succ_apply, (compSpec he hUW k).2]
+  rw [compLinearIsometryEquiv_apply, compₗ_succ_apply, (compSpec he hUW k).property]
   exact pullbackLp_ae he hUW k _
 
 /-- The transport commutes with forgetting the highest derivative. -/
