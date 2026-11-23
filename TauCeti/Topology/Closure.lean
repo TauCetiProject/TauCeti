@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Topology.Inseparable
 public import Mathlib.Topology.NhdsWithin
 
 /-!
@@ -42,6 +43,8 @@ into it.
   it.
 * `TauCeti.subset_closure_range_domRestrict_preimage`: the values of a family that lie in an open
   set contained in the closure of its range are dense in that set.
+* `Dense.mem_of_nonempty_interior_closure_singleton`: a dense set stable under generization
+  contains every point whose closure has nonempty interior.
 -/
 
 public section
@@ -105,3 +108,12 @@ theorem subset_closure_range_domRestrict_preimage {α : Type*} {c : α → X} {s
   exact fun x hx ↦ hs.inter_closure ⟨hx, h hx⟩
 
 end TauCeti
+
+/-- A dense set stable under generization contains every point whose closure has nonempty
+interior. -/
+theorem Dense.mem_of_nonempty_interior_closure_singleton
+    {X : Type*} [TopologicalSpace X] {s : Set X} (hd : Dense s)
+    (hs : StableUnderGeneralization s) {x : X} (hx : (interior (closure {x})).Nonempty) :
+    x ∈ s := by
+  obtain ⟨y, hys, hy⟩ := hd.exists_mem_open isOpen_interior hx
+  exact hs (specializes_iff_mem_closure.mpr (interior_subset hy)) hys
