@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Complex.CauchyRiemann.UniqueContinuation.VariableStructure
-import Mathlib.Analysis.InnerProductSpace.EuclideanDist
 import TauCeti.MeasureTheory.Function.RankOne
 
 /-!
@@ -35,10 +34,10 @@ zeros. This file proves that `ξ` has the zero structure of a holomorphic map:
 
 The inequality is turned into a linear equation `∂ₛξ + J ∂ₜξ + C ξ = 0` for the solution-dependent
 coefficient `C = -(∂ₛξ + J ∂ₜξ) ξ* / ‖ξ‖²`, the normalized rank-one operator
-`TauCeti.rankOneDivNormSq` for an auxiliary Euclidean structure on `V` (Mathlib's
-`toEuclidean`). This coefficient is measurable, sends `ξ` to `-(∂ₛξ + J ∂ₜξ)`, and is bounded by
-`M` up to the distortion of the Euclidean norm. The zero structure then follows from the
-variable-structure theorems of
+`TauCeti.rankOneDivNormSq` for an auxiliary Euclidean structure on `V`
+(`MeasureTheory.AEStronglyMeasurable.exists_clm_apply_eq`). This coefficient is measurable, sends
+`ξ` to `-(∂ₛξ + J ∂ₜξ)`, and is bounded by `M` up to the distortion of the Euclidean norm. The
+zero structure then follows from the variable-structure theorems of
 `TauCeti.Analysis.Complex.CauchyRiemann.UniqueContinuation.VariableStructure`.
 
 ## References
@@ -69,10 +68,6 @@ private theorem exists_coeff_of_norm_le (hΩ : IsOpen Ω) (hJ : ContinuousOn J �
     ∃ C : ℂ → V →L[ℝ] V, AEStronglyMeasurable C (volume.restrict Ω) ∧
       (∀ z ∈ Ω, ∃ M, ∀ᶠ w in 𝓝 z, ‖C w‖ ≤ M) ∧
       ∀ z ∈ Ω, fderiv ℝ ξ z 1 + J z (fderiv ℝ ξ z I) + C z (ξ z) = 0 := by
-  -- The rank-one coefficient is built in the Euclidean coordinates `T` and conjugated back.
-  let T := (toEuclidean : V ≃L[ℝ] EuclideanSpace ℝ (Fin (Module.finrank ℝ V)))
-  let c := (T.arrowCongr T : (V →L[ℝ] V) ≃L[ℝ] _)
-  have hc (A : _) (v : V) : c.symm A v = T.symm (A (T v)) := by simp [c]
   -- The Cauchy–Riemann operator of `ξ`, continuous on `Ω`.
   set D : ℂ → V := fun w ↦ fderiv ℝ ξ w 1 + J w (fderiv ℝ ξ w I)
   have hDc : ContinuousOn D Ω := by
@@ -85,40 +80,27 @@ private theorem exists_coeff_of_norm_le (hΩ : IsOpen Ω) (hJ : ContinuousOn J �
     have hz' := hΩ.mem_nhds hz
     exact isBigO_iff.1 <| (hDc.continuousAt hz').isBigO (F := ℝ) |>.trans
       ((hξ.continuousOn.continuousAt hz').isTheta (F := ℝ) h0).symm.isBigO
-  refine ⟨fun w ↦ c.symm (rankOneDivNormSq ℝ (-T (D w)) (T (ξ w))), ?_, fun z hz ↦ ?_,
-    fun z hz ↦ ?_⟩
-  · exact c.symm.continuous.comp_aestronglyMeasurable <|
-      (T.continuous.comp_continuousOn hDc).neg.aestronglyMeasurable hΩ.measurableSet
-      |>.rankOneDivNormSq
-      ((T.continuous.comp_continuousOn hξ.continuousOn).aestronglyMeasurable hΩ.measurableSet)
-  · -- `‖C w‖ ≤ ‖c⁻¹‖ ‖T (D w)‖ / ‖T (ξ w)‖`, and `‖D w‖ ≤ M ‖ξ w‖ ≤ M ‖T⁻¹‖ ‖T (ξ w)‖`.
+  -- At a zero of `ξ` in `Ω` the inequality forces `D = 0`.
+  have hD0 (z) (hz : z ∈ Ω) (h0 : ξ z = 0) : D z = 0 := by
     obtain ⟨M, hM⟩ := hb z hz
-    refine ⟨‖c.symm.toContinuousLinearMap‖ *
-      (‖T.toContinuousLinearMap‖ * |M| * ‖T.symm.toContinuousLinearMap‖),
-      hM.mono fun w hw ↦ (c.symm.toContinuousLinearMap.le_opNorm _).trans ?_⟩
+    simpa [h0] using hM.self_of_nhds
+  -- The rank-one coefficient carrying `ξ` to `-D` on `Ω`.
+  obtain ⟨c, hc0, C, hCm, hCx, hCn⟩ := AEStronglyMeasurable.exists_clm_apply_eq (𝕜 := ℝ)
+    (y := Ω.indicator (-D)) (x := ξ) (μ := volume.restrict Ω)
+    ((hDc.neg.aestronglyMeasurable hΩ.measurableSet).congr
+      (indicator_ae_eq_restrict hΩ.measurableSet.nullMeasurableSet).symm)
+    (hξ.continuousOn.aestronglyMeasurable hΩ.measurableSet) fun t h0 ↦ by
+      by_cases ht : t ∈ Ω
+      · simp [indicator_of_mem ht, hD0 t ht h0]
+      · exact indicator_of_notMem ht _
+  refine ⟨C, hCm, fun z hz ↦ ?_, fun z hz ↦ ?_⟩
+  · obtain ⟨M, hM⟩ := hb z hz
+    refine ⟨c * |M|, (hM.and (hΩ.mem_nhds hz)).mono fun w ⟨hw, hwΩ⟩ ↦ (hCn w).trans ?_⟩
     gcongr
-    rw [norm_rankOneDivNormSq, norm_neg]
-    rcases eq_or_ne ‖T (ξ w)‖ 0 with h0 | h0
-    · rw [h0, div_zero]
-      positivity
-    rw [div_le_iff₀ (lt_of_le_of_ne (norm_nonneg _) h0.symm)]
-    have hξT : ‖ξ w‖ ≤ ‖T.symm.toContinuousLinearMap‖ * ‖T (ξ w)‖ := by
-      simpa using T.symm.toContinuousLinearMap.le_opNorm (T (ξ w))
-    calc ‖T (D w)‖ ≤ ‖T.toContinuousLinearMap‖ * ‖D w‖ := T.toContinuousLinearMap.le_opNorm _
-      _ ≤ ‖T.toContinuousLinearMap‖ * (|M| * ‖ξ w‖) := by
-          gcongr
-          exact hw.trans (mul_le_mul_of_nonneg_right (le_abs_self M) (norm_nonneg _))
-      _ ≤ ‖T.toContinuousLinearMap‖ * (|M| * (‖T.symm.toContinuousLinearMap‖ * ‖T (ξ w)‖)) := by
-          gcongr
-      _ = _ := by ring
-  · beta_reduce
-    rw [hc]
-    rcases eq_or_ne (ξ z) 0 with h0 | h0
-    · -- At a zero of `ξ` the inequality forces `D z = 0`.
-      obtain ⟨M, hM⟩ := hb z hz
-      simpa [h0] using hM.self_of_nhds
-    · rw [rankOneDivNormSq_apply_self _ (by simpa using h0), map_neg, T.symm_apply_apply]
-      simp only [D, add_neg_cancel]
+    rw [indicator_of_mem hwΩ, Pi.neg_apply, norm_neg]
+    exact div_le_of_le_mul₀ (norm_nonneg _) (abs_nonneg _)
+      (hw.trans (mul_le_mul_of_nonneg_right (le_abs_self M) (norm_nonneg _)))
+  · rw [hCx z, indicator_of_mem hz, Pi.neg_apply, add_neg_cancel]
 
 /-- **Unique continuation for a Cauchy–Riemann differential inequality.** On a connected open set
 `Ω`, a `C¹` map `ξ` into a finite-dimensional real normed space with

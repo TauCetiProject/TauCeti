@@ -9,6 +9,7 @@ public import TauCeti.Analysis.MellinTransform
 public import TauCeti.NumberTheory.LFunctions.Theta.Mellin.Kernel
 public import TauCeti.NumberTheory.LFunctions.Theta.Surface.Volume
 public import TauCeti.NumberTheory.LSeries.FEPairWithLevel
+import TauCeti.Analysis.MellinTransform.Basic
 
 /-!
 # The Mellin pair of the theta kernel of a lattice

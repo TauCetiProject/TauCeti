@@ -8,14 +8,15 @@ module
 public import Mathlib.Algebra.Module.LinearMap.End
 public import Mathlib.Algebra.Module.Submodule.Range
 public import Mathlib.Algebra.Ring.Idempotent
+public import Mathlib.LinearAlgebra.Projection
 
 /-!
-# Ranges of orthogonal idempotent endomorphisms
+# Ranges of idempotent endomorphisms
 
 Two idempotent endomorphisms `P` and `Q` of a module with `P * Q = 0` and `Q * P = 0` split the
 range of their sum: the range of `P + Q` is the sum of the ranges of `P` and `Q`, and these ranges
 are independent. This is how ranks of spectral projections add over disjoint parts of the
-spectrum.
+spectrum. An idempotent corestricted to its range is the identity on that range.
 
 ## Main results
 
@@ -23,6 +24,9 @@ spectrum.
   ranges of `P` and `Q` meet only in `0`.
 * `IsIdempotentElem.range_add_of_mul_eq_zero`: if `P` and `Q` are idempotent with `Q * P = 0` and
   `P * Q = 0`, the range of `P + Q` is the sum of their ranges.
+* `LinearMap.IsIdempotentElem.rangeRestrict_coe`,
+  `LinearMap.IsIdempotentElem.rangeRestrict_apply_self`: an idempotent corestricted to its range
+  fixes its range and absorbs itself, `p.rangeRestrict (p y) = p.rangeRestrict y`.
 -/
 
 public section
@@ -60,3 +64,21 @@ theorem range_add_of_mul_eq_zero (hP : IsIdempotentElem P) (hQ : IsIdempotentEle
     simp [h₁, h₂]
 
 end IsIdempotentElem
+
+namespace LinearMap.IsIdempotentElem
+
+variable {R M : Type*} [Semiring R] [AddCommMonoid M] [Module R M] {p : M →ₗ[R] M}
+
+/-- An idempotent `p` corestricted to its range fixes the elements of its range. -/
+theorem rangeRestrict_coe (hp : IsIdempotentElem p) (y : LinearMap.range p) :
+    p.rangeRestrict y = y :=
+  -- `IsProj.codRestrict` of `p` onto its range is `p.rangeRestrict` up to proof irrelevance.
+  (isProj_range p hp).codRestrict_apply_cod y
+
+/-- An idempotent `p` corestricted to its range does not change when precomposed with `p`. -/
+theorem rangeRestrict_apply_self (hp : IsIdempotentElem p) (y : M) :
+    p.rangeRestrict (p y) = p.rangeRestrict y := by
+  ext
+  rw [LinearMap.codRestrict_apply, LinearMap.codRestrict_apply, ← mul_apply_eq_comp, hp.eq]
+
+end LinearMap.IsIdempotentElem

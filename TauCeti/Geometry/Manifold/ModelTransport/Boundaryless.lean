@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Geometry.Manifold.Diffeomorph
 public import Mathlib.Geometry.Manifold.IsManifold.InteriorBoundary
+import TauCeti.Geometry.Manifold.ExtChartAt
 
 /-!
 # Replacing a boundaryless model by its vector space
@@ -29,11 +30,11 @@ and monoid, additive monoid, group and additive group operations.
 `homeomorph_one`, `homeomorph_mul`, `homeomorph_inv` and their `symm` forms give the algebraic
 transport laws; `homeomorph_zero`, `homeomorph_add`, `homeomorph_neg` and their `symm` forms
 are their additive counterparts.
-`BoundarylessModel.isManifold_of_atlas_extend` and
-`BoundarylessModel.extChartAt_eq_of_chartAt_toPartialEquiv` compare arbitrary chosen extended
-atlases. `BoundarylessModel.diffeomorphOfExtChartAtEq` constructs the common identity
-transport from the extended-chart comparison and manifold boundarylessness;
-`coe_diffeomorphOfExtChartAtEq` and `coe_diffeomorphOfExtChartAtEq_symm` give its functions.
+`BoundarylessModel.isManifold_of_atlas_extend` gives manifold regularity of any chosen atlas of
+extended charts from a pairwise compatible family. `BoundarylessModel.diffeomorphOfExtChartAtEq`
+constructs the common identity transport from the extended-chart comparison and manifold
+boundarylessness; `coe_diffeomorphOfExtChartAtEq` and `coe_diffeomorphOfExtChartAtEq_symm` give
+its functions.
 
 ## References
 
@@ -207,27 +208,20 @@ section ComparedAtlases
 
 variable {M} [ChartedSpace H M] [ChartedSpace E (BoundarylessModel I M)]
 
-/-- A chosen vector-space atlas of extended original charts preserves manifold regularity. -/
-theorem isManifold_of_atlas_extend {n : ℕ∞ω} [IsManifold I n M]
-    (h : ∀ C ∈ atlas E (BoundarylessModel I M),
-      ∃ c : OpenPartialHomeomorph M H, c ∈ atlas H M ∧ C.toPartialEquiv = c.extend I) :
+omit [ChartedSpace H M] in
+/-- A chosen vector-space atlas on the copy is `C^n` when each of its charts extends a member of
+a family `s` of `H`-valued charts of `M` whose coordinate changes are pairwise `C^n`. No charted
+space structure on `M` is assumed. -/
+theorem isManifold_of_atlas_extend {n : ℕ∞ω} (s : Set (OpenPartialHomeomorph M H))
+    (hs : ∀ c ∈ s, ∀ d ∈ s, c.symm.trans d ∈ contDiffGroupoid n I)
+    (h : ∀ C ∈ atlas E (BoundarylessModel I M), ∃ c ∈ s, C.toPartialEquiv = c.extend I) :
     IsManifold 𝓘(𝕜, E) n (BoundarylessModel I M) where
   compatible := by
     intro C D hC hD
     obtain ⟨c, hc, hC⟩ := h C hC
     obtain ⟨d, hd, hD⟩ := h D hD
     exact (C.symm_trans_mem_contDiffGroupoid_iff_of_extend (I := I) (M := M) D c d hC hD n).2
-      ((contDiffGroupoid n I).compatible (M := M) hc hd)
-
-/-- Extending a preferred chart already equal to the original extended chart changes nothing. -/
-theorem extChartAt_eq_of_chartAt_toPartialEquiv
-    (h : ∀ x : BoundarylessModel I M,
-      (chartAt E x).toPartialEquiv = (chartAt H ((homeomorph I M).symm x)).extend I)
-    (x : BoundarylessModel I M) :
-    extChartAt 𝓘(𝕜, E) x = extChartAt I ((homeomorph I M).symm x) := by
-  rw [extChartAt, OpenPartialHomeomorph.extend, modelWithCornersSelf_partialEquiv,
-    PartialEquiv.trans_refl, h]
-  rfl
+      (hs c hc d hd)
 
 /-- Matching extended charts on a boundaryless manifold give the identity diffeomorphism. -/
 def diffeomorphOfExtChartAtEq [BoundarylessManifold I M]
@@ -432,8 +426,9 @@ theorem chartAt_symm_apply (z : BoundarylessModel I M) (v : E) :
 
 /-- The extended preferred chart is unchanged by the model transport. -/
 theorem extChartAt_eq (x : BoundarylessModel I M) :
-    extChartAt 𝓘(𝕜, E) x = extChartAt I ((homeomorph I M).symm x) :=
-  extChartAt_eq_of_chartAt_toPartialEquiv I (fun _ ↦ chart_toPartialEquiv I _) x
+    extChartAt 𝓘(𝕜, E) x = extChartAt I ((homeomorph I M).symm x) := by
+  simpa only [extChartAt, OpenPartialHomeomorph.extend_modelWithCornersSelf, chartAt_eq] using
+    chart_toPartialEquiv I (chartAt H ((homeomorph I M).symm x))
 
 /-- Membership in the maximal atlas is preserved by extending a chart to the vector space. -/
 @[simp]
@@ -453,9 +448,11 @@ theorem originalChart_mem_maximalAtlas_iff
 
 /-- Replacing a boundaryless model by its vector space preserves manifold regularity. -/
 instance {n : ℕ∞ω} [IsManifold I n M] : IsManifold 𝓘(𝕜, E) n (BoundarylessModel I M) := by
-  apply isManifold_of_atlas_extend I (M := M)
-  rintro C ⟨c, hc, hC⟩
-  rw [← hC]
+  apply isManifold_of_atlas_extend I (atlas H M) fun _ hc _ hd ↦
+    (contDiffGroupoid n I).compatible hc hd
+  intro C hC
+  rw [atlas_eq] at hC
+  obtain ⟨c, hc, rfl⟩ := hC
   exact ⟨c, hc, chart_toPartialEquiv I c⟩
 
 /-- The identity, as a diffeomorphism from the original model to the self-modelled copy. -/
@@ -499,28 +496,37 @@ theorem eventually_contMDiffAt_source_iff {n : ℕ∞ω} (f : M → N) (x : Boun
   simp only [contMDiffAt_source_iff]
   rw [← (homeomorph I M).symm.map_nhds_eq x, Filter.eventually_map]
 
+-- Source transport leaves the written map unchanged: the extended charts agree by
+-- extChartAt_eq, and the inverse identity homeomorphism has the identity as its function.
+private theorem writtenInExtChartAt_source (f : M → N) (x : BoundarylessModel I M) :
+    writtenInExtChartAt 𝓘(𝕜, E) J x (f ∘ (homeomorph I M).symm) =
+      writtenInExtChartAt I J ((homeomorph I M).symm x) f := by
+  funext v
+  simp only [writtenInExtChartAt, extChartAt_eq, comp_apply, homeomorph_symm_apply]
+  -- The sides now differ only in whether a point's carrier is written `M` or the copy.
+  rfl
+
 /-- Changing the source model preserves differentiability, even when no manifold regularity
 assumption is imposed on either atlas. -/
 @[simp]
 theorem mdifferentiableAt_source_iff (f : M → N) (x : BoundarylessModel I M) :
     MDifferentiableAt 𝓘(𝕜, E) J (f ∘ (homeomorph I M).symm) x ↔
       MDifferentiableAt I J f ((homeomorph I M).symm x) := by
-  rw [mdifferentiableAt_iff, mdifferentiableAt_iff]
-  simp only [writtenInExtChartAt, extChartAt_eq, I.range_eq_univ,
-    ModelWithCorners.range_eq_univ]
-  exact and_congr ((homeomorph I M).symm.comp_continuousAt_iff' f x) Iff.rfl
+  rw [mdifferentiableAt_iff, mdifferentiableAt_iff, writtenInExtChartAt_source, extChartAt_eq,
+    ModelWithCorners.range_eq_univ, ModelWithCorners.range_eq_univ]
+  refine and_congr ((homeomorph I M).symm.comp_continuousAt_iff' f x) ?_
+  rw [homeomorph_symm_apply]
 
--- The coordinate derivative is unchanged: both the written map and evaluation point agree
--- by extChartAt_eq, and both model ranges are univ. Keep this separate from tangent casts.
+-- The coordinate derivative is unchanged: the written maps agree, both model ranges are univ,
+-- and the evaluation points agree. Keep this separate from tangent casts.
 private theorem fderivWithin_writtenInExtChartAt_source (f : M → N)
     (x : BoundarylessModel I M) :
     fderivWithin 𝕜 (writtenInExtChartAt 𝓘(𝕜, E) J x (f ∘ (homeomorph I M).symm))
         (range 𝓘(𝕜, E)) (extChartAt 𝓘(𝕜, E) x x) =
       fderivWithin 𝕜 (writtenInExtChartAt I J ((homeomorph I M).symm x) f)
         (range I) (extChartAt I ((homeomorph I M).symm x) ((homeomorph I M).symm x)) := by
-  simp only [writtenInExtChartAt, extChartAt_eq, I.range_eq_univ,
-    ModelWithCorners.range_eq_univ]
-  rfl
+  rw [writtenInExtChartAt_source, extChartAt_eq, ModelWithCorners.range_eq_univ,
+    ModelWithCorners.range_eq_univ, homeomorph_symm_apply]
 
 /-- The source-side derivative comparison, with the tangent spaces identified explicitly
 through their common model vector space. No differentiability hypothesis is needed. -/

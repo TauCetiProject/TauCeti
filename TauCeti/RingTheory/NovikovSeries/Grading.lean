@@ -35,6 +35,10 @@ theory on a spherically monotone symplectic manifold, graded by twice the first 
   function `f`.
 * `TauCeti.NovikovSeries.gradeProj R N f i`: the homogeneous component of degree `i` of a
   series.
+* `TauCeti.NovikovSeries.gradeByCoeff N 𝒱 δ D`: for coefficients in a module `V` graded by `𝒱`
+  and a degree `δ` on the exponents, the series of degree `D`, those whose coefficient at `A` has
+  degree `D - δ A`. For `R` itself concentrated in degree `0` these are the pieces `gradeBy`
+  (`TauCeti.NovikovSeries.gradeByCoeff_ite_eq_gradeBy`).
 
 ## Main results
 
@@ -400,6 +404,44 @@ theorem ofAddMonoidAlgebra_mem_gradeBy_iff [CommSemiring R] [AddMonoid H] {N : H
       x ∈ AddMonoidAlgebra.gradeBy R f i := by
   simp only [mem_gradeBy_iff, AddMonoidAlgebra.mem_gradeBy_iff, subset_def, mem_support,
     coeff_ofAddMonoidAlgebra, Finset.mem_coe, Finsupp.mem_support_iff]
+
+section GradeByCoeff
+
+variable {Γ : Type*} [AddGroup Γ] [AddZeroClass H] {N : H →+ ℝ} [Semiring R] {V : Type*}
+  [AddCommMonoid V] [Module R V]
+
+variable (N) in
+/-- The Novikov series of degree `D` with coefficients in a graded module: for a grading `𝒱` of
+`V` and a degree `δ A` of the exponents, those `v` with `v_A ∈ 𝒱 (D - δ A)` for every `A`. For
+`V = R` concentrated in degree `0` these are the series supported on `δ⁻¹ {D}`
+(`TauCeti.NovikovSeries.gradeByCoeff_ite_eq_gradeBy`). -/
+def gradeByCoeff (𝒱 : Γ → Submodule R V) (δ : H → Γ) (D : Γ) :
+    Submodule R (NovikovSeries V H N) where
+  carrier := {v | ∀ A, v.coeff A ∈ 𝒱 (D - δ A)}
+  zero_mem' A := by simp
+  add_mem' hv hw A := by simpa using add_mem (hv A) (hw A)
+  smul_mem' c v hv A := by simpa using Submodule.smul_mem _ c (hv A)
+
+/-- A series has degree `D` exactly when each coefficient `v_A` has degree `D - δ A`. -/
+@[simp]
+theorem mem_gradeByCoeff {𝒱 : Γ → Submodule R V} {δ : H → Γ} {D : Γ}
+    {v : NovikovSeries V H N} : v ∈ gradeByCoeff N 𝒱 δ D ↔ ∀ A, v.coeff A ∈ 𝒱 (D - δ A) :=
+  Iff.rfl
+
+/-- For `R` itself concentrated in degree `0`, the series of degree `D` are those supported on
+the exponents of degree `D`, the pieces `TauCeti.NovikovSeries.gradeBy` of the Novikov ring. -/
+theorem gradeByCoeff_ite_eq_gradeBy [DecidableEq Γ] (δ : H → Γ) (D : Γ) :
+    gradeByCoeff N (fun k => if k = 0 then ⊤ else ⊥ : Γ → Submodule R R) δ D =
+      gradeBy R N δ D := by
+  ext v
+  simp only [mem_gradeByCoeff, mem_gradeBy_iff, Set.subset_def, mem_support, Set.mem_preimage,
+    Set.mem_singleton_iff, sub_eq_zero]
+  refine forall_congr' fun A => ?_
+  by_cases hA : D = δ A
+  · simp [hA]
+  · simp [hA, Ne.symm hA]
+
+end GradeByCoeff
 
 end NovikovSeries
 

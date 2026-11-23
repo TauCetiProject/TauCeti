@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Symplectic.Manifold.Prod
 public import TauCeti.Geometry.Symplectic.Manifold.AlmostComplex.ContMDiff
+public import TauCeti.Geometry.Symplectic.Manifold.JHolomorphic
 public import TauCeti.Geometry.Symplectic.StandardCompatible
 import TauCeti.Geometry.Manifold.VectorBundle.Hom
 import TauCeti.Topology.Algebra.Module.FiniteDimension
@@ -35,6 +36,16 @@ product two-form. When the vertical family also depends smoothly on a parameter,
 block structure (`TauCeti.SmoothAlmostComplexStructure.contMDiff_prodFamily_family`).
 Equivariance under a product map reduces to equivariance of its two blocks; for a translation
 and a monodromy map this is precisely the vertical seam equation.
+
+The smooth product `TauCeti.SmoothAlmostComplexStructure.prod` of two smooth almost complex
+structures is the block structure with a vertical block independent of the domain point. It is
+compatible with the product of two compatible forms
+(`TauCeti.SmoothAlmostComplexStructure.compatible_prod`), it is the finite-regularity product at
+every finite order (`TauCeti.SmoothAlmostComplexStructure.prod_toContMDiff`), and a map into the
+product is pseudoholomorphic for it exactly when both of its components are
+(`TauCeti.SmoothAlmostComplexStructure.isPseudoholomorphicAt_prod_iff`): the two projections are
+pseudoholomorphic, and the differential of a map into a product is the pair of the differentials
+of its components.
 
 ## References
 
@@ -512,5 +523,99 @@ theorem mfderiv_translation_prodFamily_iff (c : ℝ × ℝ) (g : M ≃ₘ⟮I', 
       fderiv_add_const, fderiv_fun_id, ContinuousLinearMap.id_apply,
       AlmostComplexStructure.fromTangentSpace_constSmooth_apply]
   exact and_iff_right hhorizontal
+
+end TauCeti.SmoothAlmostComplexStructure
+
+/-! ### The product of two smooth almost complex structures -/
+
+namespace TauCeti.SmoothAlmostComplexStructure
+
+variable {E H P F H' M : Type*}
+  [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+  [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
+  [TopologicalSpace P] [ChartedSpace H P] [IsManifold I ∞ P]
+  [NormedAddCommGroup F] [NormedSpace ℝ F] [FiniteDimensional ℝ F]
+  [TopologicalSpace H'] {I' : ModelWithCorners ℝ F H'}
+  [TopologicalSpace M] [ChartedSpace H' M] [IsManifold I' ∞ M]
+  (J : SmoothAlmostComplexStructure I P) (L : SmoothAlmostComplexStructure I' M)
+
+/-- The product `J × L` of smooth almost complex structures on `P` and `M`: the smooth almost
+complex structure on `P × M` acting by `J` on the first and by `L` on the second tangent component
+(`TauCeti.SmoothAlmostComplexStructure.prod_apply`). It is the block structure with the vertical
+family `(p, x) ↦ L_x`, independent of `p`. -/
+def prod : SmoothAlmostComplexStructure (I.prod I') (P × M) :=
+  prodFamily J (fun p ↦ L.almostComplexStructureAt p.2)
+    (by
+      simpa only [almostComplexStructureAt_toLinearMap,
+        LinearMap.toContinuousLinearMap_coe, Function.comp_def]
+        using L.toEndomorphism.contMDiff.comp (contMDiff_snd (I := I)))
+
+/-- The product structure acts componentwise under the canonical tangent identification. -/
+@[simp]
+theorem prod_apply (p : P × M) (v : TangentSpace (I.prod I') p) :
+    prod J L p v = (Manifold.tangentSpaceProdEquiv p).symm
+      (J p.1 (Manifold.tangentSpaceProdEquiv p v).1,
+        L p.2 (Manifold.tangentSpaceProdEquiv p v).2) := by
+  simp only [prod, prodFamily_apply, almostComplexStructureAt_apply]
+
+/-- Viewing the smooth product at finite regularity gives the finite-regularity product. -/
+@[simp]
+theorem prod_toContMDiff (n : ℕ∞) :
+    (prod J L).toContMDiff n =
+      ContMDiffAlmostComplexStructure.prod (J.toContMDiff n) (L.toContMDiff n) := by
+  ext p v
+  simp only [toContMDiff_apply, prod_apply, ContMDiffAlmostComplexStructure.prod_apply]
+
+variable {J L}
+
+/-- **Products of compatible pairs are compatible.** If `σ` is compatible with `J` and `τ` with
+`L`, the product form `pr₁^*σ + pr₂^*τ` is compatible with `J × L`. -/
+theorem compatible_prod {σ : SmoothTwoForm I P} {τ : SmoothTwoForm I' M} (hσ : σ.Compatible J)
+    (hτ : τ.Compatible L) : (σ.prod τ).Compatible (prod J L) :=
+  compatible_prodFamily J _ _ hσ hτ.isNondegenerate fun p ↦ hτ.compatibleAt p.2
+
+/-- The first projection `P × M → P` is pseudoholomorphic from `J × L` to `J`. -/
+theorem isPseudoholomorphic_fst_prod :
+    IsPseudoholomorphic (prod J L) J (Prod.fst : P × M → P) :=
+  isPseudoholomorphic_iff.2 fun p ↦
+    isPseudoholomorphicAt_of_hasMFDerivAt (hasMFDerivAt_fst (I := I) (I' := I') p) fun _ ↦ by
+      simp only [prod_apply, Manifold.tangentSpaceProdEquiv_apply,
+        Manifold.tangentSpaceProdEquiv_symm_apply]
+      -- `ContinuousLinearMap.fst` evaluates a pair to its component by definition.
+      rfl
+
+/-- The second projection `P × M → M` is pseudoholomorphic from `J × L` to `L`. -/
+theorem isPseudoholomorphic_snd_prod :
+    IsPseudoholomorphic (prod J L) L (Prod.snd : P × M → M) :=
+  isPseudoholomorphic_iff.2 fun p ↦
+    isPseudoholomorphicAt_of_hasMFDerivAt (hasMFDerivAt_snd (I := I) (I' := I') p) fun _ ↦ by
+      simp only [prod_apply, Manifold.tangentSpaceProdEquiv_apply,
+        Manifold.tangentSpaceProdEquiv_symm_apply]
+      -- `ContinuousLinearMap.snd` evaluates a pair to its component by definition.
+      rfl
+
+variable {E'' H'' C : Type*} [NormedAddCommGroup E''] [NormedSpace ℝ E''] [TopologicalSpace H'']
+  {I'' : ModelWithCorners ℝ E'' H''} [TopologicalSpace C] [ChartedSpace H'' C]
+  [IsManifold I'' ∞ C] {j : SmoothAlmostComplexStructure I'' C} {u : C → P × M} {c : C}
+
+/-- **Maps into a product.** A map `u : C → P × M` is pseudoholomorphic at `c` for `J × L` exactly
+when its components `pr₁ ∘ u` and `pr₂ ∘ u` are pseudoholomorphic at `c` for `J` and `L`. -/
+theorem isPseudoholomorphicAt_prod_iff :
+    IsPseudoholomorphicAt j (prod J L) u c ↔
+      IsPseudoholomorphicAt j J (Prod.fst ∘ u) c ∧ IsPseudoholomorphicAt j L (Prod.snd ∘ u) c := by
+  refine ⟨fun hu ↦ ⟨isPseudoholomorphic_fst_prod.isPseudoholomorphicAt _ |>.comp hu,
+    isPseudoholomorphic_snd_prod.isPseudoholomorphicAt _ |>.comp hu⟩, fun ⟨h₁, h₂⟩ ↦ ?_⟩
+  refine isPseudoholomorphicAt_of_hasMFDerivAt
+    (h₁.mdifferentiableAt.hasMFDerivAt.prodMk h₂.mdifferentiableAt.hasMFDerivAt) fun w ↦ ?_
+  simp only [prod_apply, Manifold.tangentSpaceProdEquiv_apply,
+    Manifold.tangentSpaceProdEquiv_symm_apply]
+  exact congrArg₂ Prod.mk (h₁.mfderiv_apply_commute w) (h₂.mfderiv_apply_commute w)
+
+/-- A map `u : C → P × M` is pseudoholomorphic for `J × L` exactly when its components are
+pseudoholomorphic for `J` and `L`. -/
+theorem isPseudoholomorphic_prod_iff :
+    IsPseudoholomorphic j (prod J L) u ↔
+      IsPseudoholomorphic j J (Prod.fst ∘ u) ∧ IsPseudoholomorphic j L (Prod.snd ∘ u) := by
+  simp only [isPseudoholomorphic_iff, isPseudoholomorphicAt_prod_iff, forall_and]
 
 end TauCeti.SmoothAlmostComplexStructure

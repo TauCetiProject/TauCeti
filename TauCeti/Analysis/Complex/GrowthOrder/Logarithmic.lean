@@ -6,9 +6,13 @@ Authors: OpenAI Codex
 module
 
 public import TauCeti.Analysis.Complex.GrowthOrder
+import Mathlib.Analysis.SpecialFunctions.Pow.Asymptotics
 
 /-!
-# Logarithmic-exponential bounds imply order at most one
+# Logarithmic growth bounds and complex order
+
+An eventual bound `log (1 + ‖f s‖) ≤ C (1 + ‖s‖) ^ A` gives `OrderLE f A` for arbitrary
+real `A` and `C`, without analyticity or continuity assumptions.
 
 A bound by `exp (C (1+‖s‖) log (2+‖s‖))` gives `OrderLE f 1`.
 This is the growth comparison used after estimating split Mellin integrals.
@@ -21,7 +25,10 @@ constant `2 |c| log n`.
 
 ## Main results
 
-* `TauCeti.orderLE_one_of_norm_le_exp_mul_log`: the bound gives order at most one.
+* `TauCeti.orderLE_of_eventually_log_one_add_norm_le_mul_rpow`: a logarithmic power bound
+  at infinity gives the corresponding order.
+* `TauCeti.orderLE_one_of_norm_le_exp_mul_log`: the logarithmic-exponential norm bound gives
+  order at most one.
 * `TauCeti.norm_le_exp_mul_log_of_norm_le_one_add`: transfer to a comparable argument.
 * `TauCeti.norm_comp_mul_add_le_exp_mul_log` and
   `TauCeti.exists_norm_comp_mul_add_le_exp_mul_log`: transfer across any affine substitution
@@ -29,6 +36,12 @@ constant `2 |c| log n`.
 * `TauCeti.norm_sub_le_exp_mul_log`: logarithmic-exponential bound for linear factors `s - w`.
 * `TauCeti.norm_natCast_cpow_ofReal_mul_le_exp_mul_log`: the bound for `n ^ (c s)`.
 * `TauCeti.norm_sum_mul_le_mul_exp_mul_log`: the bound for a finite linear combination.
+
+## References
+
+The logarithmic-power criterion extracts the growth-to-order step used in
+`Complex.Hadamard.summable_norm_inv_rpow_divisorZeroIndex₀_of_growth` in Matteo Cipollina's
+[PrimeNumberTheoremAnd summability development](https://github.com/TauCetiProject/PrimeNumberTheoremAnd/blob/fb80a640fb3f7ddc5b1c0ebd48494ad29cc83eb4/PrimeNumberTheoremAnd/Mathlib/Analysis/Complex/HadamardFactorization/Summability.lean).
 -/
 
 public section
@@ -36,6 +49,32 @@ public section
 open Real Filter Asymptotics Bornology Topology
 
 namespace TauCeti
+
+/-- An eventual logarithmic power bound gives the corresponding complex order. The exponent
+and coefficient may be arbitrary real numbers; no regularity assumption on `f` is needed.
+This is a sufficient criterion for the fixed exponent. -/
+theorem orderLE_of_eventually_log_one_add_norm_le_mul_rpow
+    {f : ℂ → ℂ} {A C : ℝ}
+    (hf : ∀ᶠ z in cobounded ℂ, log (1 + ‖f z‖) ≤ C * (1 + ‖z‖) ^ A) :
+    OrderLE f A := by
+  rw [orderLE_def]
+  intro B hAB
+  have hshift : (fun x : ℝ ↦ (1 + x) ^ A) =Θ[atTop] (fun x ↦ x ^ A) := by
+    apply ((isLittleO_const_id_atTop (1 : ℝ)).right_isTheta_add.symm).rpow
+    · filter_upwards [eventually_ge_atTop (0 : ℝ)] with x hx
+      exact add_nonneg zero_le_one hx
+    · exact eventually_ge_atTop (0 : ℝ)
+  have ho := (hshift.1.trans_isLittleO (isLittleO_rpow_rpow_atTop hAB)).const_mul_left C
+  refine IsBigO.of_bound 1 ?_
+  filter_upwards [hf, tendsto_norm_cobounded_atTop.eventually ho.eventuallyLE] with z hz hs
+  have hsmall : |C * (1 + ‖z‖) ^ A| ≤ ‖z‖ ^ B := by
+    simpa only [Function.comp_apply, Real.norm_eq_abs,
+      abs_of_nonneg (Real.rpow_nonneg (norm_nonneg z) B)] using hs
+  have hlog : log (1 + ‖f z‖) ≤ ‖z‖ ^ B :=
+    hz.trans ((le_abs_self _).trans hsmall)
+  have hnorm : ‖f z‖ ≤ exp (‖z‖ ^ B) :=
+    (le_add_of_nonneg_left zero_le_one).trans (Real.le_exp_of_log_le hlog)
+  simpa only [Real.norm_eq_abs, Real.abs_exp, one_mul] using hnorm
 
 /-- A global logarithmic-exponential norm bound implies order at most one. -/
 theorem orderLE_one_of_norm_le_exp_mul_log {f : ℂ → ℂ} {C : ℝ}

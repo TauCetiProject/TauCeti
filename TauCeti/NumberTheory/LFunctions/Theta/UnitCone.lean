@@ -8,6 +8,7 @@ module
 public import TauCeti.NumberTheory.LFunctions.Theta.GammaIntegral
 public import TauCeti.NumberTheory.LFunctions.Theta.Mellin.Pair
 public import TauCeti.NumberTheory.LFunctions.Theta.Surface.Cone
+import TauCeti.Analysis.MellinTransform.Basic
 import TauCeti.GroupTheory.Coset.Basic
 
 /-!

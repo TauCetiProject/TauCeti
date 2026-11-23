@@ -6,6 +6,7 @@ Authors: OpenAI Codex
 module
 
 public import TauCeti.Analysis.Complex.CanonicalProduct.LogDeriv
+public import TauCeti.Analysis.Complex.CanonicalProduct.Weighted
 public import TauCeti.Analysis.Meromorphic.Divisor
 import TauCeti.Analysis.Complex.Basic
 
@@ -221,30 +222,13 @@ theorem divisor_divisorProductOne :
     MeromorphicOn.divisor (divisorProductOne f) Set.univ = MeromorphicOn.divisor f Set.univ := by
   have h0 := (hf.analyticAt 0).notMem_divisor_support_of_ne_zero (U := Set.univ) hf0
   have hfa : AnalyticOnNhd ℂ f Set.univ := fun z _ ↦ hf.analyticAt z
-  have hpa : AnalyticOnNhd ℂ (divisorProductOne f) Set.univ :=
-    fun z _ ↦ (differentiable_divisorProductOne hsum).analyticAt z
   ext z
-  rw [MeromorphicOn.AnalyticOnNhd.divisor_apply hpa (Set.mem_univ z)]
-  by_cases hz : z ∈ (MeromorphicOn.divisor f Set.univ).support
-  · let ρ : (MeromorphicOn.divisor f Set.univ).support := ⟨z, hz⟩
-    have hinj : Function.Injective
-        (fun r : (MeromorphicOn.divisor f Set.univ).support ↦ (r : ℂ)⁻¹) := by
-      intro r t h
-      apply Subtype.ext
-      exact inv_inj.mp h
-    have ho := analyticOrderAt_tprod_weierstrassFactor_one_pow_of_injective
-      (fun r : (MeromorphicOn.divisor f Set.univ).support ↦ (r : ℂ)⁻¹)
-      (fun r ↦ (MeromorphicOn.divisor f Set.univ r).toNat) hsum (z := z) (i := ρ)
-      hinj (inv_mul_cancel₀ (coe_ne_zero_of_mem_divisor_support h0 ρ))
-    rw [← divisorProductOne_eq] at ho
-    rw [ho]
-    simpa only [ENat.map_natCast, WithTop.untop₀_coe] using
-      Int.toNat_of_nonneg (MeromorphicOn.AnalyticOnNhd.divisor_nonneg hfa z)
-  · have hdz : MeromorphicOn.divisor f Set.univ z = 0 := by
-      simpa only [Function.mem_support, not_not] using hz
-    rw [(hpa z trivial).analyticOrderAt_eq_zero.mpr
-      (divisorProductOne_ne_zero hsum (fun _ ↦ le_of_eq hdz)), hdz]
-    simp
+  rw [divisorProductOne_eq, divisor_tprod_weierstrassFactor_one_inv_mul_pow
+    (fun ρ ↦ (MeromorphicOn.divisor f Set.univ ρ).toNat)
+    (by simpa only [norm_inv, inv_pow, div_eq_mul_inv] using hsum) h0 z]
+  split_ifs with hz
+  · exact Int.toNat_of_nonneg (MeromorphicOn.AnalyticOnNhd.divisor_nonneg hfa z)
+  · exact (Function.notMem_support.mp hz).symm
 
 end TauCeti
 
