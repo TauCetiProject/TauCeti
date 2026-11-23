@@ -157,9 +157,9 @@ theorem coe_symm_realCliffordSpinProjectionZero_apply (n : ℕ) [NeZero n]
     ((QuadraticMap.matrixSpecialOrthogonalContinuousMulEquivRealCliffordForm n).symm
         (realCliffordSpinProjectionZero n g) : Matrix (Fin n) (Fin n) ℝ) i j =
       spinVectorAction (realCliffordForm n 0) g (Pi.single j 1) i := by
-  rw [QuadraticMap.matrixSpecialOrthogonalContinuousMulEquivRealCliffordForm_symm_coe,
-    LinearMap.toMatrix'_apply, LinearEquiv.coe_coe, realCliffordSpinProjectionZero_apply,
-    realCliffordSpinDoubleCoverZero_rightHom, coe_spinToSpecialOrthogonal_apply]
+  simp [QuadraticMap.matrixSpecialOrthogonalContinuousMulEquivRealCliffordForm_symm_coe,
+    LinearMap.toMatrix'_apply, realCliffordSpinProjectionZero_apply,
+    realCliffordSpinDoubleCoverZero_rightHom]
 
 /-- The Euclidean Spin projection acts on `EuclideanSpace ℝ (Fin n)` by
 `CliffordAlgebra.spinVectorAction` on coordinates. -/

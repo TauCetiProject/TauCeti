@@ -100,8 +100,7 @@ theorem coe_circleRotationLoop_apply {k : ℕ} (hk : 2 ≤ k) (z : Circle) (i j 
       if hij : (i : ℕ) < 2 ∧ (j : ℕ) < 2 then
         !![(z : ℂ).re, -(z : ℂ).im; (z : ℂ).im, (z : ℂ).re] ⟨i, hij.1⟩ ⟨j, hij.2⟩
       else (1 : Matrix (Fin k) (Fin k) ℝ) i j := by
-  rw [circleRotationLoop_apply, coe_stabilizeGL_apply, coe_unitsLeftMulMatrix,
-    Circle.toUnits_apply, Units.val_mk0, Algebra.leftMulMatrix_complex]
+  simp [circleRotationLoop_apply, coe_stabilizeGL_apply, Algebra.leftMulMatrix_complex]
 
 /-- The rotation loop takes the value `1` at the base point `1`. -/
 @[simp]
