@@ -84,7 +84,7 @@ lemma mapsTo_tensorHom_compl_singleton {V₁ V₂ W₁ W₂ : Type u} [Topologic
     (hg₁ : Set.MapsTo g₁ ({x₁}ᶜ : Set V₁) ({y₁}ᶜ : Set W₁))
     (hg₂ : Set.MapsTo g₂ ({x₂}ᶜ : Set V₂) ({y₂}ᶜ : Set W₂)) :
     Set.MapsTo (g₁ ⊗ₘ g₂) ({(x₁, x₂)}ᶜ : Set (V₁ × V₂)) ({(y₁, y₂)}ᶜ : Set (W₁ × W₂)) := by
-  rw [Set.compl_singleton_prod, Set.compl_singleton_prod]
+  rw [Set.compl_singleton_prodMk_eq_union, Set.compl_singleton_prodMk_eq_union]
   exact mapsTo_tensorHom_preimage_union g₁ g₂ hg₁ hg₂
 
 variable (X F : TopCat.{u})

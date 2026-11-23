@@ -9,6 +9,7 @@ public import Mathlib.CategoryTheory.Endomorphism
 public import TauCeti.AlgebraicTopology.Singular.Subdivision.Small.Basic
 public import TauCeti.AlgebraicTopology.Singular.Subdivision.Subcomplex
 public import TauCeti.AlgebraicTopology.Singular.Subspace
+import TauCeti.Topology.Category.TopCat.Subspace
 
 /-!
 # Singular chains subordinate to an open cover
@@ -175,6 +176,20 @@ lemma smallSingularSubcomplexMap_comp (f : X ⟶ Y) (g : Y ⟶ Z) (r : ι → κ
         Y.smallSingularSubcomplexMap V W g s hg := by
   ext n σ
   rfl
+
+/-- Restricting `f` to a set `A` lying in a member of the family `S` and then passing to the small
+singular subcomplex of `T` agrees with passing to the small singular subcomplex of `S` first and
+then mapping by `f`. -/
+@[reassoc]
+lemma toSmallSingularSubcomplex_comp_smallSingularSubcomplexMap (S : ι → Set X) (T : κ → Set Y)
+    (f : X ⟶ Y) (r : ι → κ) (hf : ∀ i, Set.MapsTo f (S i) (T (r i))) {A : Set X} {B : Set Y}
+    {i : ι} {j : κ} (hA : A ⊆ S i) (hB : B ⊆ T j) (hAB : Set.MapsTo f A B) :
+    toSmallSingularSubcomplex S hA ≫ X.smallSingularSubcomplexMap S T f r hf =
+      toSSet.map (ofHom ⟨hAB.restrict, f.hom.continuous.restrict hAB⟩) ≫
+        toSmallSingularSubcomplex T hB := by
+  rw [← cancel_mono (Y.smallSingularSubcomplex T).ι, Category.assoc, Category.assoc,
+    smallSingularSubcomplexMap_ι, toSmallSingularSubcomplex_ι_assoc, toSmallSingularSubcomplex_ι,
+    ← Functor.map_comp, ← Functor.map_comp, ofHom_subtypeVal_comp f hAB]
 
 /-- A chain map out of the singular chains of `X` vanishes on the chains of the singular simplices
 lying in some member of the family `U` as soon as it vanishes on the singular chains of each

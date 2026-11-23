@@ -112,7 +112,8 @@ theorem thomClassOfModel_prod (o₁ : VectorBundleOrientation F₁ E₁ (Fin m))
       (finrank ℝ F₂)) :
     (o₁.prod o₂ hm hn).thomClassOfModel (by rw [Fintype.card_fin, Module.finrank_prod, hm, hn])
         (ω₁.prod ω₂ hm hn)
-        (complSingletonPairCross K (0 : F₁) (0 : F₂) u μ _ _ _ Module.finrank_prod.symm g₁ g₂) =
+        (complSingletonPairCross K (0 : F₁) (0 : F₂) u μ _ _ _ Module.finrank_prod.symm
+          isOpen_compl_singleton isOpen_compl_singleton g₁ g₂) =
       thomPairCup K F₁ E₁ F₂ E₂ u μ _ _ _ Module.finrank_prod.symm
         (o₁.thomClassOfModel (by rw [Fintype.card_fin, hm]) ω₁ g₁)
         (o₂.thomClassOfModel (by rw [Fintype.card_fin, hn]) ω₂ g₂) := by
@@ -131,7 +132,8 @@ theorem thomClassOfModel_prod (o₁ : VectorBundleOrientation F₁ E₁ (Fin m))
     exists_singularCohomologyMap_fiberThomPairMap_thomClassOfModel o₂
       (by rw [Fintype.card_fin, hn]) ω₂ g₂ e₂ hb₂
   refine ⟨e₁.prod e₂, inferInstance, hb,
-    complSingletonPairCross K (0 : F₁) (0 : F₂) u μ _ _ _ Module.finrank_prod.symm g₁' g₂', ?_, ?_⟩
+    complSingletonPairCross K (0 : F₁) (0 : F₂) u μ _ _ _ Module.finrank_prod.symm
+      isOpen_compl_singleton isOpen_compl_singleton g₁' g₂', ?_, ?_⟩
   · -- The product trivialization reads the product orientation as the product of the readings,
     -- and reversing either factor reverses both the orientation and the product class.
     rw [prod_apply, Trivialization.mapOrientation_prod e₁ e₂ hb₁ hb₂ _ _ hm hn]
@@ -143,12 +145,13 @@ theorem thomClassOfModel_prod (o₁ : VectorBundleOrientation F₁ E₁ (Fin m))
         by simp only [complSingletonPairCross_def, map_neg, LinearMap.neg_apply]⟩
     · exact Or.inl ⟨Orientation.prod_neg_neg _ _ _ _,
         by simp only [complSingletonPairCross_def, map_neg, LinearMap.neg_apply, neg_neg]⟩
-  · have := FiberBundle.t1Space F₁ E₁ b
-    have := FiberBundle.t1Space F₂ E₂ b
-    rw [singularCohomologyMap_fiberThomPairMap_thomPairCup_eq_complSingletonPairCross, hr₁, hr₂,
+  · rw [singularCohomologyMap_fiberThomPairMap_thomPairCup, hr₁, hr₂,
       Trivialization.continuousLinearEquivAt_prod]
-    exact complSingletonPairCross_singularCohomologyMap_complZeroPairIso_hom K u μ
-      (e₁.continuousLinearEquivAt ℝ b hb₁) (e₂.continuousLinearEquivAt ℝ b hb₂) _ _ _ _ g₁' g₂'
+    exact (e₁.continuousLinearEquivAt ℝ b
+        hb₁).complSingletonPairCross_singularCohomologyMap_complZeroPairIso_hom
+      (e₂.continuousLinearEquivAt ℝ b hb₂) K u μ _ _ _ _
+      (isOpen_compl_zero_fiber F₁ b) (isOpen_compl_zero_fiber F₂ b)
+      isOpen_compl_singleton isOpen_compl_singleton g₁' g₂'
 
 /-- **The Euler class of a normalized class of a direct sum.** For orientations `o₁` and `o₂` of
 real vector bundles `E₁` and `E₂` over a common base, the Euler class of the class of the Thom pair
@@ -172,7 +175,8 @@ theorem eulerClass_thomClassOfModel_prod (o₁ : VectorBundleOrientation F₁ E�
     TauCeti.eulerClass R₃ K M₃ (F₁ × F₂) (E₁ ×ᵇ E₂) _
         ((o₁.prod o₂ hm hn).thomClassOfModel
           (by rw [Fintype.card_fin, Module.finrank_prod, hm, hn]) (ω₁.prod ω₂ hm hn)
-          (complSingletonPairCross K (0 : F₁) (0 : F₂) u μ _ _ _ Module.finrank_prod.symm g₁ g₂)) =
+          (complSingletonPairCross K (0 : F₁) (0 : F₂) u μ _ _ _ Module.finrank_prod.symm
+            isOpen_compl_singleton isOpen_compl_singleton g₁ g₂)) =
       (TopCat.of B).singularCup K u μ _ _ _ Module.finrank_prod.symm
         (TauCeti.eulerClass R₁ K M₁ F₁ E₁ _
           (o₁.thomClassOfModel (by rw [Fintype.card_fin, hm]) ω₁ g₁))
@@ -202,7 +206,7 @@ theorem isThomClass_thomClassOfModel_prod_of_linearEquiv_of_isIso
       ((o₁.prod o₂ hm hn).thomClassOfModel
         (by rw [Fintype.card_fin, Module.finrank_prod, hm, hn]) (ω₁.prod ω₂ hm hn)
         (complSingletonPairCross K (0 : F₁) (0 : F₂) u μ _ _ _ Module.finrank_prod.symm
-          g₁ g₂)) := by
+          isOpen_compl_singleton isOpen_compl_singleton g₁ g₂)) := by
   let : Module.Projective K R₃ :=
     .of_equiv ((asIso u).toLinearEquiv ≪≫ₗ TensorProduct.congr eR₁ eR₂ ≪≫ₗ
       TensorProduct.lid K K).symm
@@ -224,7 +228,8 @@ theorem isThomClass_thomClassOfModel_prod (o₁ : VectorBundleOrientation F₁ E
       ((o₁.prod o₂ hm hn).thomClassOfModel
         (by rw [Fintype.card_fin, Module.finrank_prod, hm, hn]) (ω₁.prod ω₂ hm hn)
         (complSingletonPairCross K (0 : F₁) (0 : F₂) (λ_ (ModuleCat.of K K)).inv
-          (λ_ (ModuleCat.of K K)).hom _ _ _ Module.finrank_prod.symm g₁ g₂)) :=
+          (λ_ (ModuleCat.of K K)).hom _ _ _ Module.finrank_prod.symm
+          isOpen_compl_singleton isOpen_compl_singleton g₁ g₂)) :=
   isThomClass_thomClassOfModel_prod_of_linearEquiv_of_isIso o₁ o₂ hm hn ω₁ ω₂
     (.refl K K) (.refl K K) (.refl K K) (.refl K K) hg₁ hg₂
 

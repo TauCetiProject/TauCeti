@@ -9,7 +9,7 @@ public import Mathlib.Algebra.Category.ModuleCat.Abelian
 public import Mathlib.Algebra.Homology.QuasiIso
 public import Mathlib.Algebra.Homology.ShortComplex.Abelian
 public import TauCeti.AlgebraicTopology.Singular.ModuleChains.Basic
-public import TauCeti.AlgebraicTopology.Singular.EilenbergZilber
+public import TauCeti.AlgebraicTopology.Singular.EilenbergZilber.Basic
 
 /-!
 # The simplicial cross product of singular chains with coefficients in a ring

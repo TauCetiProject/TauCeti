@@ -8,7 +8,7 @@ module
 public import TauCeti.Algebra.Homology.Bifunctor.Homotopy
 public import TauCeti.Algebra.Homology.Monoidal.Homology.Associativity
 public import TauCeti.Algebra.Homology.Monoidal.Homology.Braiding
-public import TauCeti.AlgebraicTopology.Singular.EilenbergZilber
+public import TauCeti.AlgebraicTopology.Singular.EilenbergZilber.Basic
 public import TauCeti.AlgebraicTopology.Singular.KoszulBraiding
 public import TauCeti.AlgebraicTopology.Singular.Reduced
 
@@ -171,16 +171,11 @@ lemma singularHomologyCross_naturality {X Y X' Y' : TopCat.{w}} (f : X ⟶ X') (
         singularHomologyCross X' Y' R S p q n h =
       singularHomologyCross X Y R S p q n h ≫
         ((singularHomologyFunctor C n).obj (R ⊗ S)).map (f ⊗ₘ g) := by
-  -- `Hₙ(f)` is by definition the homology of the induced chain map, so the statement is the
-  -- naturality of the algebraic cross product followed by that of the shuffle map.
-  have hsh : HomologicalComplex.tensorHom (SSet.chainComplexMap (toSSet.map f) R)
-      (SSet.chainComplexMap (toSSet.map g) S) ≫ shuffle X' Y' R S =
-        shuffle X Y R S ≫ SSet.chainComplexMap (toSSet.map (f ⊗ₘ g)) (R ⊗ S) :=
-    shuffle_naturality f g R S
-  have := homologyCross_naturality_assoc (SSet.chainComplexMap (toSSet.map f) R)
-    (SSet.chainComplexMap (toSSet.map g) S) p q n h (homologyMap (shuffle X' Y' R S) n)
-  rw [← homologyMap_comp, hsh, homologyMap_comp] at this
-  exact this.trans (Category.assoc _ _ _).symm
+  rw [singularHomologyCross_def, singularHomologyCross_def]
+  exact (homologyCross_comp_homologyMap_naturality (SSet.chainComplexMap (toSSet.map f) R)
+    (SSet.chainComplexMap (toSSet.map g) S) p q n h (shuffle X' Y' R S) (shuffle X Y R S)
+    (SSet.chainComplexMap (toSSet.map (f ⊗ₘ g)) (R ⊗ S)) (shuffle_naturality f g R S)).trans
+    (Category.assoc _ _ _).symm
 
 /-- **Naturality of the homology cross product** in both coefficient objects. -/
 @[reassoc]
@@ -202,17 +197,12 @@ lemma singularHomologyCross_coefficient_naturality (X Y : TopCat.{w}) {R S R' S'
         singularHomologyCross X Y R' S' p q n h =
       singularHomologyCross X Y R S p q n h ≫
         ((singularHomologyFunctor C n).map (φ ⊗ₘ ψ)).app (X ⊗ Y) := by
-  -- `Hₙ(-; φ)` is by definition the homology of the induced chain map, so the statement is the
-  -- naturality of the algebraic cross product followed by that of the shuffle map.
-  have hsh : HomologicalComplex.tensorHom (((SSet.chainComplexFunctor C).map φ).app (toSSet.obj X))
-      (((SSet.chainComplexFunctor C).map ψ).app (toSSet.obj Y)) ≫ shuffle X Y R' S' =
-        shuffle X Y R S ≫ ((SSet.chainComplexFunctor C).map (φ ⊗ₘ ψ)).app (toSSet.obj (X ⊗ Y)) :=
-    shuffle_coefficient_naturality X Y φ ψ
-  have := homologyCross_naturality_assoc (((SSet.chainComplexFunctor C).map φ).app (toSSet.obj X))
-    (((SSet.chainComplexFunctor C).map ψ).app (toSSet.obj Y)) p q n h
-    (homologyMap (shuffle X Y R' S') n)
-  rw [← homologyMap_comp, hsh, homologyMap_comp] at this
-  exact this.trans (Category.assoc _ _ _).symm
+  rw [singularHomologyCross_def, singularHomologyCross_def]
+  exact (homologyCross_comp_homologyMap_naturality
+    (((SSet.chainComplexFunctor C).map φ).app (toSSet.obj X))
+    (((SSet.chainComplexFunctor C).map ψ).app (toSSet.obj Y)) p q n h (shuffle X Y R' S')
+    (shuffle X Y R S) (((SSet.chainComplexFunctor C).map (φ ⊗ₘ ψ)).app (toSSet.obj (X ⊗ Y)))
+    (shuffle_coefficient_naturality X Y φ ψ)).trans (Category.assoc _ _ _).symm
 
 omit [CategoryWithHomology C] in
 /-- On chains, the shuffle product with a vertex `y`, weighted by `t : 𝟙_ C ⟶ S`, followed by the

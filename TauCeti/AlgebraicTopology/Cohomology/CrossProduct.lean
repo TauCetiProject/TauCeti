@@ -10,7 +10,7 @@ public import TauCeti.AlgebraicTopology.Cohomology.Kronecker
 public import TauCeti.AlgebraicTopology.Singular.CrossProduct.Basic
 
 public import TauCeti.AlgebraicTopology.Cohomology.Cup.Basic
-public import TauCeti.AlgebraicTopology.Singular.EilenbergZilber
+public import TauCeti.AlgebraicTopology.Singular.EilenbergZilber.Basic
 
 /-!
 # Cross products in singular cohomology

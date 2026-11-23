@@ -21,21 +21,18 @@ vector of `E₁ ⊕ E₂` has a nonzero first or second component, so the Thom p
 
 `Hᵖ(E₁, E₁₀) × H^q(E₂, E₂₀) ⟶ Hᵖ⁺^q(E₁ ⊕ E₂, (E₁ ⊕ E₂)₀)`,  `(a, b) ↦ p₁^* a ⌣ p₂^* b`
 
-(`TauCeti.thomPairCup`). On the fibre over a point `b` it is the same product for the vector
-spaces `E₁_b` and `E₂_b` (`TauCeti.singularCohomologyMap_fiberThomPairMap_thomPairCup`), and its
-Euler class is the cup product of the Euler classes
-(`TauCeti.eulerClass_thomPairCup`): the zero section of `E₁ ⊕ E₂` followed by `pᵢ` is the zero
-section of `Eᵢ`. For fibres with closed points, the restriction of `TauCeti.thomPairCup` to the
-fibre over `b` is the product `TauCeti.complSingletonPairCross` of local classes for `E₁_b` and
-`E₂_b` (`TauCeti.singularCohomologyMap_fiberThomPairMap_thomPairCup_eq_complSingletonPairCross`).
-No orientation is involved; the oriented form is in
+(`TauCeti.thomPairCup`). On the fibre over a point `b` it is the product
+`TauCeti.complSingletonPairCross` of the fibre restrictions for `E₁_b` and `E₂_b`
+(`TauCeti.singularCohomologyMap_fiberThomPairMap_thomPairCup`), and its Euler class is the cup
+product of the Euler classes (`TauCeti.eulerClass_thomPairCup`): the zero section of `E₁ ⊕ E₂`
+followed by `pᵢ` is the zero section of `Eᵢ`. No orientation is involved; the oriented form is in
 `TauCeti.Topology.VectorBundle.Orientation.Whitney`. These hold in any abelian monoidal category
 of coefficients.
 
-Over a commutative ring `K`, for `R₁, R₂, M₁, M₂ ≃ₗ[K] K` and isomorphisms `u, μ` (in particular
-scalar coefficients `ModuleCat.of K K` with standard unitors), `TauCeti.thomPairCup` produces a Thom
-class of `E₁ ⊕ E₂` iff both factors are Thom classes (`TauCeti.isThomClass_thomPairCup_iff`), giving
-unoriented Whitney formulas when `Subsingleton Kˣ`
+Over a commutative ring `K`, for `R₁, R₂, M₁, M₂ ≃ₗ[K] K` and isomorphisms `u, μ`,
+`TauCeti.thomPairCup` produces a Thom class of `E₁ ⊕ E₂` iff both factors are Thom classes
+(`TauCeti.isThomClass_thomPairCup_iff_of_linearEquiv_of_isIso`, with scalar-unitor specialization
+`TauCeti.isThomClass_thomPairCup_iff`), giving unoriented Whitney formulas when `Subsingleton Kˣ`
 (`TauCeti.IsThomClass.eq_thomPairCup_of_subsingleton_units`).
 
 ## Main definitions
@@ -47,14 +44,15 @@ unoriented Whitney formulas when `Subsingleton Kˣ`
 
 ## Main results
 
-* `TauCeti.singularCohomologyMap_fiberThomPairMap_thomPairCup` and
-  `TauCeti.singularCohomologyMap_fiberThomPairMap_thomPairCup_eq_complSingletonPairCross`: the
-  restriction of the product to a fibre.
+* `TauCeti.singularCohomologyMap_fiberThomPairMap_thomPairCup`: the restriction of the product to a
+  fibre is `TauCeti.complSingletonPairCross`.
 * `TauCeti.eulerClass_thomPairCup`: the Euler class of the product is the cup product of the
   Euler classes.
-* `TauCeti.isThomClass_thomPairCup_iff_of_linearEquiv_of_isIso`,
-  `TauCeti.isThomClass_thomPairCup_iff`, `TauCeti.IsThomClass.thomPairCup`: `thomPairCup` preserves
-  and reflects `TauCeti.IsThomClass` for `R₁, R₂, M₁, M₂ ≃ₗ[K] K` and isomorphisms `u`, `μ`.
+* `TauCeti.isThomClass_thomPairCup_iff_of_linearEquiv_of_isIso` and its scalar-unitor
+  specialization `TauCeti.isThomClass_thomPairCup_iff`: `thomPairCup` preserves and reflects
+  `TauCeti.IsThomClass` for `R₁, R₂, M₁, M₂ ≃ₗ[K] K` and isomorphisms `u`, `μ`.
+* `TauCeti.IsThomClass.thomPairCup_of_linearEquiv_of_isIso` and `TauCeti.IsThomClass.thomPairCup`:
+  `thomPairCup` preserves `TauCeti.IsThomClass`.
 * `TauCeti.IsThomClass.eq_thomPairCup_of_subsingleton_units`,
   `TauCeti.IsThomClass.eulerClass_eq_singularCup_of_subsingleton_units`: unoriented Whitney cases.
 
@@ -159,22 +157,19 @@ theorem thomPairCup_def (u : T ⟶ R ⊗ S) (μ : M ⊗ N ⟶ L) (p q n : ℕ) (
   (rfl)
 
 /-- **The product of Thom pair classes on a fibre.** Restricted to the fibre pair over `b`, the
-product of `a` and `a'` is the product, for the vector spaces `E₁_b` and `E₂_b`, of the
-restrictions of `a` and `a'` to the fibre pairs over `b`: the relative cup product of their
-pull-backs along the two projections of `E₁_b × E₂_b`. -/
+product of `a` and `a'` is the product `complSingletonPairCross` of the restrictions of `a` and `a'`
+to the fibre pairs over `b`. -/
 theorem singularCohomologyMap_fiberThomPairMap_thomPairCup (u : T ⟶ R ⊗ S) (μ : M ⊗ N ⟶ L)
     (p q n : ℕ) (h : p + q = n) (b : B) (a : (thomPair F₁ E₁).singularCohomology R k M p)
     (a' : (thomPair F₂ E₂).singularCohomology S k N q) :
     TopPair.singularCohomologyMap (fiberThomPairMap (F₁ × F₂) (E₁ ×ᵇ E₂) b) n
         (thomPairCup k F₁ E₁ F₂ E₂ u μ p q n h a a') =
-      TopCat.singularRelativeCupPullback k u μ
-        (TopCat.ofHom (ContinuousMap.fst : C(E₁ b × E₂ b, E₁ b)))
-        (TopCat.ofHom (ContinuousMap.snd : C(E₁ b × E₂ b, E₂ b)))
+      complSingletonPairCross k (0 : E₁ b) (0 : E₂ b) u μ p q n h
         (isOpen_compl_zero_fiber F₁ b) (isOpen_compl_zero_fiber F₂ b)
-        (Set.compl_singleton_prod (0 : E₁ b) (0 : E₂ b)).subset p q n h
         (TopPair.singularCohomologyMap (fiberThomPairMap F₁ E₁ b) p a)
         (TopPair.singularCohomologyMap (fiberThomPairMap F₂ E₂ b) q a') := by
-  rw [thomPairCup_def, fiberThomPairMap_eq_ofSubsetMap (F := F₁ × F₂) (E := E₁ ×ᵇ E₂),
+  rw [complSingletonPairCross_def, thomPairCup_def,
+    fiberThomPairMap_eq_ofSubsetMap (F := F₁ × F₂) (E := E₁ ×ᵇ E₂),
     fiberThomPairMap_eq_ofSubsetMap (F := F₁) (E := E₁),
     fiberThomPairMap_eq_ofSubsetMap (F := F₂) (E := E₂)]
   exact (TopCat.singularRelativeCupPullback_naturality k u μ
@@ -184,24 +179,9 @@ theorem singularCohomologyMap_fiberThomPairMap_thomPairCup (u : T ⟶ R ⊗ S) (
     (f₂' := totalSpaceProdSnd F₁ E₁ F₂ E₂) _ _ _
     (TopCat.ext fun _ ↦ rfl) (TopCat.ext fun _ ↦ rfl) (isOpen_compl_zero_fiber F₁ b)
     (isOpen_compl_zero_fiber F₂ b) (isOpen_zeroSectionCompl F₁ E₁)
-    (isOpen_zeroSectionCompl F₂ E₂) _ (Set.compl_singleton_prod (0 : E₁ b) (0 : E₂ b)).subset
+    (isOpen_zeroSectionCompl F₂ E₂) _
+    (Set.compl_singleton_prodMk_eq_union (0 : E₁ b) (0 : E₂ b)).subset
     (zeroSectionCompl_prod_subset F₁ E₁ F₂ E₂) p q n h a a').symm
-
-/-- **The product of Thom pair classes on a fibre with closed points.** When the fibres over `b`
-are T1 spaces, the restriction of the product of `a` and `a'` to the fibre pair over `b` is the
-product `complSingletonPairCross` of the restrictions of `a` and `a'` to the fibre pairs over
-`b`. -/
-theorem singularCohomologyMap_fiberThomPairMap_thomPairCup_eq_complSingletonPairCross
-    (u : T ⟶ R ⊗ S) (μ : M ⊗ N ⟶ L) (p q n : ℕ) (h : p + q = n) (b : B) [T1Space (E₁ b)]
-    [T1Space (E₂ b)] (a : (thomPair F₁ E₁).singularCohomology R k M p)
-    (a' : (thomPair F₂ E₂).singularCohomology S k N q) :
-    TopPair.singularCohomologyMap (fiberThomPairMap (F₁ × F₂) (E₁ ×ᵇ E₂) b) n
-        (thomPairCup k F₁ E₁ F₂ E₂ u μ p q n h a a') =
-      complSingletonPairCross k (0 : E₁ b) (0 : E₂ b) u μ p q n h
-        (TopPair.singularCohomologyMap (fiberThomPairMap F₁ E₁ b) p a)
-        (TopPair.singularCohomologyMap (fiberThomPairMap F₂ E₂ b) q a') := by
-  rw [complSingletonPairCross_def]
-  exact singularCohomologyMap_fiberThomPairMap_thomPairCup k u μ p q n h b a a'
 
 variable (F₁ E₁ F₂ E₂) in
 /-- The zero section of `E₁ ⊕ E₂` followed by the projection onto `E₁` is the zero section of
@@ -259,10 +239,10 @@ end ThomPairCup
 section IsThomClass
 
 variable {B : Type w} [TopologicalSpace B]
-  {F₁ : Type w} [NormedAddCommGroup F₁] [NormedSpace ℝ F₁] [FiniteDimensional ℝ F₁]
+  {F₁ : Type w} [NormedAddCommGroup F₁] [NormedSpace ℝ F₁]
   {E₁ : B → Type w} [TopologicalSpace (TotalSpace F₁ E₁)] [∀ b, AddCommMonoid (E₁ b)]
   [∀ b, Module ℝ (E₁ b)] [∀ b, TopologicalSpace (E₁ b)] [FiberBundle F₁ E₁] [VectorBundle ℝ F₁ E₁]
-  {F₂ : Type w} [NormedAddCommGroup F₂] [NormedSpace ℝ F₂] [FiniteDimensional ℝ F₂]
+  {F₂ : Type w} [NormedAddCommGroup F₂] [NormedSpace ℝ F₂]
   {E₂ : B → Type w} [TopologicalSpace (TotalSpace F₂ E₂)] [∀ b, AddCommMonoid (E₂ b)]
   [∀ b, Module ℝ (E₂ b)] [∀ b, TopologicalSpace (E₂ b)] [FiberBundle F₂ E₂] [VectorBundle ℝ F₂ E₂]
   {K : Type w} [CommRing K]
@@ -273,34 +253,59 @@ theorem isThomClass_thomPairCup_iff_of_linearEquiv_of_isIso
     {R₁ R₂ R₃ M₁ M₂ M₃ : ModuleCat.{w} K}
     (eR₁ : R₁ ≃ₗ[K] K) (eR₂ : R₂ ≃ₗ[K] K) (eM₁ : M₁ ≃ₗ[K] K) (eM₂ : M₂ ≃ₗ[K] K)
     {u : R₃ ⟶ R₁ ⊗ R₂} [IsIso u] {μ : M₁ ⊗ M₂ ⟶ M₃} [IsIso μ]
+    {h : Module.finrank ℝ F₁ + Module.finrank ℝ F₂ = Module.finrank ℝ (F₁ × F₂)}
     (a₁ : (thomPair F₁ E₁).singularCohomology R₁ K M₁ (Module.finrank ℝ F₁))
     (a₂ : (thomPair F₂ E₂).singularCohomology R₂ K M₂ (Module.finrank ℝ F₂)) :
     IsThomClass (F₁ × F₂) (E₁ ×ᵇ E₂)
-        (thomPairCup K F₁ E₁ F₂ E₂ u μ _ _ _ Module.finrank_prod.symm a₁ a₂) ↔
+        (thomPairCup K F₁ E₁ F₂ E₂ u μ _ _ _ h a₁ a₂) ↔
       IsThomClass F₁ E₁ a₁ ∧ IsThomClass F₂ E₂ a₂ := by
-  simp only [isThomClass_iff, (inferInstance : FiniteDimensional ℝ F₁),
-    (inferInstance : FiniteDimensional ℝ F₂), (inferInstance : FiniteDimensional ℝ (F₁ × F₂)),
-    true_and, ← forall_and]
-  refine forall_congr' fun b ↦ ?_
-  have := FiberBundle.t1Space F₁ E₁ b; have := FiberBundle.t1Space F₂ E₂ b
-  rw [singularCohomologyMap_fiberThomPairMap_thomPairCup_eq_complSingletonPairCross]
-  exact (
-span_singleton_complSingletonPairCross_eq_top_iff_of_linearEquiv_of_openPartialHomeomorph_of_isIso
-    eR₁ eR₂ eM₁ eM₂ (FiberBundle.homeomorphAt F₁ E₁ b).toOpenPartialHomeomorph
-    (mem_univ (0 : E₁ b)) (FiberBundle.homeomorphAt F₂ E₂ b).toOpenPartialHomeomorph
-    (mem_univ (0 : E₂ b)) Module.finrank_prod.symm _ _)
+  have hiff : ∀ [FiniteDimensional ℝ F₁] [FiniteDimensional ℝ F₂],
+      (∀ b, Submodule.span K {(TopPair.singularCohomologyMap
+          (fiberThomPairMap (F₁ × F₂) (E₁ ×ᵇ E₂) b) _
+          (thomPairCup K F₁ E₁ F₂ E₂ u μ _ _ _ h a₁ a₂))} = ⊤) ↔
+        (∀ b, Submodule.span K {TopPair.singularCohomologyMap (fiberThomPairMap F₁ E₁ b) _ a₁} =
+            ⊤) ∧
+          (∀ b, Submodule.span K {TopPair.singularCohomologyMap (fiberThomPairMap F₂ E₂ b) _ a₂} =
+            ⊤) := by
+    intro _ _
+    rw [← forall_and]
+    refine forall_congr' fun b ↦ ?_
+    have := FiberBundle.t1Space F₁ E₁ b; have := FiberBundle.t1Space F₂ E₂ b
+    rw [singularCohomologyMap_fiberThomPairMap_thomPairCup]
+    exact (
+  span_singleton_complSingletonPairCross_eq_top_iff_of_linearEquiv_of_openPartialHomeomorph_of_isIso
+      eR₁ eR₂ eM₁ eM₂ (FiberBundle.homeomorphAt F₁ E₁ b).toOpenPartialHomeomorph
+      (mem_univ (0 : E₁ b)) (FiberBundle.homeomorphAt F₂ E₂ b).toOpenPartialHomeomorph
+      (mem_univ (0 : E₂ b)) h _ _)
+  constructor
+  · intro hprod
+    obtain ⟨hfin, hfib⟩ := isThomClass_iff.1 hprod
+    have : FiniteDimensional ℝ (F₁ × F₂) := hfin
+    have : FiniteDimensional ℝ F₁ :=
+      FiniteDimensional.of_injective (LinearMap.inl ℝ F₁ F₂) LinearMap.inl_injective
+    have : FiniteDimensional ℝ F₂ :=
+      FiniteDimensional.of_injective (LinearMap.inr ℝ F₁ F₂) LinearMap.inr_injective
+    obtain ⟨ha₁, ha₂⟩ := hiff.1 hfib
+    exact ⟨isThomClass_iff.2 ⟨inferInstance, ha₁⟩, isThomClass_iff.2 ⟨inferInstance, ha₂⟩⟩
+  · rintro ⟨ha₁, ha₂⟩
+    obtain ⟨hfin₁, hfib₁⟩ := isThomClass_iff.1 ha₁
+    obtain ⟨hfin₂, hfib₂⟩ := isThomClass_iff.1 ha₂
+    have : FiniteDimensional ℝ F₁ := hfin₁
+    have : FiniteDimensional ℝ F₂ := hfin₂
+    exact isThomClass_iff.2 ⟨inferInstance, hiff.2 ⟨hfib₁, hfib₂⟩⟩
 
 /-- **The product of Thom pair classes is a Thom class iff both factors are Thom classes**, for
 standard unitor pairings of `ModuleCat K`. -/
 @[simp]
 theorem isThomClass_thomPairCup_iff
+    {h : Module.finrank ℝ F₁ + Module.finrank ℝ F₂ = Module.finrank ℝ (F₁ × F₂)}
     (a₁ : (thomPair F₁ E₁).singularCohomology (ModuleCat.of K K) K (ModuleCat.of K K)
       (Module.finrank ℝ F₁))
     (a₂ : (thomPair F₂ E₂).singularCohomology (ModuleCat.of K K) K (ModuleCat.of K K)
       (Module.finrank ℝ F₂)) :
     IsThomClass (F₁ × F₂) (E₁ ×ᵇ E₂)
         (thomPairCup K F₁ E₁ F₂ E₂ (λ_ (ModuleCat.of K K)).inv (λ_ (ModuleCat.of K K)).hom
-          _ _ _ Module.finrank_prod.symm a₁ a₂) ↔
+          _ _ _ h a₁ a₂) ↔
       IsThomClass F₁ E₁ a₁ ∧ IsThomClass F₂ E₂ a₂ :=
   isThomClass_thomPairCup_iff_of_linearEquiv_of_isIso (.refl K K) (.refl K K)
     (.refl K K) (.refl K K) a₁ a₂
@@ -314,8 +319,12 @@ theorem IsThomClass.thomPairCup_of_linearEquiv_of_isIso
     {a₁ : (thomPair F₁ E₁).singularCohomology R₁ K M₁ (Module.finrank ℝ F₁)}
     {a₂ : (thomPair F₂ E₂).singularCohomology R₂ K M₂ (Module.finrank ℝ F₂)}
     (ha₁ : IsThomClass F₁ E₁ a₁) (ha₂ : IsThomClass F₂ E₂ a₂) :
+    have := (isThomClass_iff.1 ha₁).1
+    have := (isThomClass_iff.1 ha₂).1
     IsThomClass (F₁ × F₂) (E₁ ×ᵇ E₂)
       (TauCeti.thomPairCup K F₁ E₁ F₂ E₂ u μ _ _ _ Module.finrank_prod.symm a₁ a₂) :=
+  have := (isThomClass_iff.1 ha₁).1
+  have := (isThomClass_iff.1 ha₂).1
   (isThomClass_thomPairCup_iff_of_linearEquiv_of_isIso eR₁ eR₂ eM₁ eM₂ a₁ a₂).2 ⟨ha₁, ha₂⟩
 
 /-- **The product of two Thom classes is a Thom class of the direct sum** over any `CommRing K`. -/
@@ -325,9 +334,13 @@ theorem IsThomClass.thomPairCup
     {a₂ : (thomPair F₂ E₂).singularCohomology (ModuleCat.of K K) K (ModuleCat.of K K)
       (Module.finrank ℝ F₂)}
     (ha₁ : IsThomClass F₁ E₁ a₁) (ha₂ : IsThomClass F₂ E₂ a₂) :
+    have := (isThomClass_iff.1 ha₁).1
+    have := (isThomClass_iff.1 ha₂).1
     IsThomClass (F₁ × F₂) (E₁ ×ᵇ E₂)
       (TauCeti.thomPairCup K F₁ E₁ F₂ E₂ (λ_ (ModuleCat.of K K)).inv (λ_ (ModuleCat.of K K)).hom
         _ _ _ Module.finrank_prod.symm a₁ a₂) :=
+  have := (isThomClass_iff.1 ha₁).1
+  have := (isThomClass_iff.1 ha₂).1
   (isThomClass_thomPairCup_iff a₁ a₂).2 ⟨ha₁, ha₂⟩
 
 /-- **Whitney product formula for unoriented Thom classes** when `Subsingleton Kˣ`. -/
@@ -340,8 +353,12 @@ theorem IsThomClass.eq_thomPairCup_of_subsingleton_units [Subsingleton Kˣ]
       (ModuleCat.of K K) (Module.finrank ℝ (F₁ × F₂))}
     (hu₁₂ : IsThomClass (F₁ × F₂) (E₁ ×ᵇ E₂) u₁₂)
     (hu₁ : IsThomClass F₁ E₁ u₁) (hu₂ : IsThomClass F₂ E₂ u₂) :
+    have := (isThomClass_iff.1 hu₁).1
+    have := (isThomClass_iff.1 hu₂).1
     u₁₂ = TauCeti.thomPairCup K F₁ E₁ F₂ E₂ (λ_ (ModuleCat.of K K)).inv
       (λ_ (ModuleCat.of K K)).hom _ _ _ Module.finrank_prod.symm u₁ u₂ :=
+  have : FiniteDimensional ℝ F₁ := (isThomClass_iff.1 hu₁).1
+  have : FiniteDimensional ℝ F₂ := (isThomClass_iff.1 hu₂).1
   (existsUnique_isThomClass_of_subsingleton_units K (F := F₁ × F₂) (E := E₁ ×ᵇ E₂)).unique
     hu₁₂ (hu₁.thomPairCup hu₂)
 
@@ -355,11 +372,15 @@ theorem IsThomClass.eulerClass_eq_singularCup_of_subsingleton_units [Subsingleto
       (ModuleCat.of K K) (Module.finrank ℝ (F₁ × F₂))}
     (hu₁₂ : IsThomClass (F₁ × F₂) (E₁ ×ᵇ E₂) u₁₂)
     (hu₁ : IsThomClass F₁ E₁ u₁) (hu₂ : IsThomClass F₂ E₂ u₂) :
+    have := (isThomClass_iff.1 hu₁).1
+    have := (isThomClass_iff.1 hu₂).1
     eulerClass (ModuleCat.of K K) K (ModuleCat.of K K) (F₁ × F₂) (E₁ ×ᵇ E₂) _ u₁₂ =
       (TopCat.of B).singularCup K (λ_ (ModuleCat.of K K)).inv (λ_ (ModuleCat.of K K)).hom
         _ _ _ Module.finrank_prod.symm
         (eulerClass (ModuleCat.of K K) K (ModuleCat.of K K) F₁ E₁ _ u₁)
         (eulerClass (ModuleCat.of K K) K (ModuleCat.of K K) F₂ E₂ _ u₂) :=
+  have := (isThomClass_iff.1 hu₁).1
+  have := (isThomClass_iff.1 hu₂).1
   (congrArg _ (hu₁₂.eq_thomPairCup_of_subsingleton_units hu₁ hu₂)).trans <|
     eulerClass_thomPairCup (R := ModuleCat.of K K) (M := ModuleCat.of K K) K F₁ E₁ F₂ E₂
       (λ_ (ModuleCat.of K K)).inv (λ_ (ModuleCat.of K K)).hom _ _ _ Module.finrank_prod.symm u₁ u₂

@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicTopology.Cohomology.CrossProduct
-public import TauCeti.AlgebraicTopology.Cohomology.MayerVietoris.Pair
+public import TauCeti.AlgebraicTopology.Cohomology.Small
 public import TauCeti.AlgebraicTopology.Singular.AlexanderWhitney.RelativeCup
 
 /-!
@@ -455,10 +455,7 @@ lemma singularRelativeCup_precomp {T' : C} (f : T' ⟶ T) (u : T ⟶ R ⊗ S)
     (a : (TopPair.ofSubset U).singularCohomology R k M p)
     (b : (TopPair.ofSubset V).singularCohomology S k N q) :
     singularRelativeCup k (f ≫ u) μ U V hU hV p q n h a b =
-      homologyMap
-        ((TauCeti.ChainComplex.linearYonedaFunctor k L).map
-          (((SSetPair.chainComplexFunctor C).map f).app
-            (TopPair.toSSetPair.obj (TopPair.ofSubset (U ∪ V)))).op) n
+      (TopPair.ofSubset (U ∪ V)).singularCohomologyChainCoefficientMap k L f n
         (singularRelativeCup k u μ U V hU hV p q n h a b) := by
   have := isIso_homologyMap_cochainComplexMap_smallSingularSubcomplexPairToUnion T' k L U V hU hV n
   apply (ModuleCat.mono_iff_injective (homologyMap (SSetPair.cochainComplexMap (R := T') (k := k)
@@ -466,6 +463,7 @@ lemma singularRelativeCup_precomp {T' : C} (f : T' ⟶ T) (u : T ⟶ R ⊗ S)
   rw [homologyMap_cochainComplexMap_singularRelativeCup,
     relativeAlexanderWhitneyDiagonal_comp U V f u, TauCeti.ChainComplex.cup_precomp,
     ← homologyMap_cochainComplexMap_singularRelativeCup k u μ U V hU hV,
+    TopPair.singularCohomologyChainCoefficientMap,
     ← TauCeti.ChainComplex.homologyMap_linearYonedaFunctor_map_comp_apply,
     ← ((SSetPair.chainComplexFunctor C).map f).naturality
       (smallSingularSubcomplexPairToUnion U V)]
@@ -481,10 +479,7 @@ lemma singularRelativeCup_eq_homologyMap_singularRelativeCup (u : T ⟶ R ⊗ S)
     (a : (TopPair.ofSubset U).singularCohomology R k M p)
     (b : (TopPair.ofSubset V).singularCohomology S k N q) :
     singularRelativeCup k u μ U V hU hV p q n h a b =
-      homologyMap
-        ((TauCeti.ChainComplex.linearYonedaFunctor k L).map
-          (((SSetPair.chainComplexFunctor C).map u).app
-            (TopPair.toSSetPair.obj (TopPair.ofSubset (U ∪ V)))).op) n
+      (TopPair.ofSubset (U ∪ V)).singularCohomologyChainCoefficientMap k L u n
         (singularRelativeCup k (𝟙 (R ⊗ S)) μ U V hU hV p q n h a b) := by
   simpa only [Category.comp_id] using
     singularRelativeCup_precomp k u (𝟙 (R ⊗ S)) μ U V hU hV p q n h a b

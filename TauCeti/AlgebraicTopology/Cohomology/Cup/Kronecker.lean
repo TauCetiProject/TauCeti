@@ -7,6 +7,7 @@ module
 
 public import TauCeti.AlgebraicTopology.Cohomology.Cup.Relative
 public import TauCeti.AlgebraicTopology.Singular.CrossProduct.Relative
+public import TauCeti.AlgebraicTopology.Singular.EilenbergZilber.Relative
 
 /-!
 # The Kronecker pairing of relative cross products and pulled-back cup products
@@ -64,10 +65,7 @@ private lemma homologyMap_comp_singularKronecker_singularRelativeCupPullback
     {v : R ⊗ S ⟶ T} {u : T ⟶ R ⊗ S} (hu : v ≫ u = 𝟙 (R ⊗ S)) (μ : M ⊗ N ⟶ L)
     (p q n : ℕ) (h : p + q = n) (a : (TopPair.ofSubset A).singularCohomology R k M p)
     (b : (TopPair.ofSubset B).singularCohomology S k N q) :
-    homologyMap (K := (TopPair.ofSubset (fst X Y ⁻¹' A ∪ snd X Y ⁻¹' B)).singularChainComplex
-          (R ⊗ S)) (L := (TopPair.ofSubset (fst X Y ⁻¹' A ∪ snd X Y ⁻¹' B)).singularChainComplex T)
-        (((SSetPair.chainComplexFunctor C).map v).app
-          (TopPair.toSSetPair.obj (TopPair.ofSubset (fst X Y ⁻¹' A ∪ snd X Y ⁻¹' B)))) n ≫
+    (TopPair.ofSubset (fst X Y ⁻¹' A ∪ snd X Y ⁻¹' B)).singularHomologyCoefficientMap v n ≫
       TopPair.singularHomologyMap (TopPair.ofSubsetMap (B := fst X Y ⁻¹' A ∪ snd X Y ⁻¹' B)
         (B' := Z) (𝟙 (X ⊗ Y)) fun _ hx ↦ hZ' hx) T n ≫
       (TopPair.ofSubset Z).singularKronecker (R := T) (M := L) k n
@@ -81,18 +79,14 @@ private lemma homologyMap_comp_singularKronecker_singularRelativeCupPullback
     (Category.comp_id _)).trans (TopPair.ofSubsetMap_id fun _ hx ↦ hx)
   have hidZ : TopPair.singularHomologyMap i₁ T n ≫ TopPair.singularHomologyMap i₂ T n = 𝟙 _ := by
     rw [← TopPair.singularHomologyMap_comp, hpair, TopPair.singularHomologyMap_id]
-  let ev := ((SSetPair.chainComplexFunctor C).map v).app (TopPair.toSSetPair.obj P)
-  let eu := ((SSetPair.chainComplexFunctor C).map u).app (TopPair.toSSetPair.obj P)
-  have hvu : homologyMap ev n ≫ homologyMap eu n = 𝟙 _ := by
-    rw [← homologyMap_comp]
-    simp [ev, eu, ← NatTrans.comp_app, ← (SSetPair.chainComplexFunctor C).map_comp, hu]
+  have hvu : P.singularHomologyCoefficientMap v n ≫ P.singularHomologyCoefficientMap u n = 𝟙 _ := by
+    rw [← P.singularHomologyCoefficientMap_comp, hu, P.singularHomologyCoefficientMap_id]
   rw [singularRelativeCupPullback_apply, TopPair.singularKronecker_naturality,
     ← Category.assoc (TopPair.singularHomologyMap i₁ T n), hidZ, Category.id_comp,
     singularRelativeCup_eq_homologyMap_singularRelativeCup,
-    ← TauCeti.singularRelativeCross_apply k X Y hA hB, TopPair.singularKronecker_def,
-    TopPair.singularKronecker_def]
-  exact (whisker_eq _ (TauCeti.ChainComplex.kronecker_naturality eu n _)).trans
-    ((Category.assoc _ _ _).symm.trans ((eq_whisker hvu _).trans (Category.id_comp _)))
+    ← TauCeti.singularRelativeCross_apply k X Y hA hB,
+    TopPair.singularKronecker_singularCohomologyChainCoefficientMap]
+  exact (Category.assoc _ _ _).symm.trans ((eq_whisker hvu _).trans (Category.id_comp _))
 
 variable [∀ (Z : C) (J : Type w), PreservesColimitsOfShape (Discrete J) (tensorLeft Z)]
   [∀ (Z : C) (J : Type w), PreservesColimitsOfShape (Discrete J) (tensorRight Z)]

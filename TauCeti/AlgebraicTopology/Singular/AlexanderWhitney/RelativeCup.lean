@@ -9,7 +9,7 @@ public import TauCeti.Algebra.Homology.Bifunctor.Basic
 public import TauCeti.AlgebraicTopology.Singular.AlexanderWhitney.Basic
 public import TauCeti.AlgebraicTopology.Singular.AlexanderWhitney.Relative
 public import TauCeti.AlgebraicTopology.Singular.KoszulBraiding
-public import TauCeti.AlgebraicTopology.Singular.MayerVietoris.Relative
+public import TauCeti.AlgebraicTopology.Singular.Subdivision.Small.Relative
 import TauCeti.CategoryTheory.Monoidal.Category
 
 /-!

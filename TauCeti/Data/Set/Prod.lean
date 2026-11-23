@@ -15,8 +15,8 @@ This file adds to Mathlib's API for graphs of functions over a set and for the f
 
 ## Main results
 
-* `Set.compl_singleton_prod`: the complement of `{(a, b)}` in `α × β` is the union of the
-  preimages of `{a}ᶜ` and `{b}ᶜ`.
+* `Set.compl_singleton_prodMk_eq_union`: the complement of `{(a, b)}` in `α × β` is the union of
+  the preimages of `{a}ᶜ` and `{b}ᶜ`.
 * `Set.graphOn_const`: the graph of a constant function over `s` is a horizontal slice `s ×ˢ {b}`.
 * `Function.Pullback.ext`: a point of the fibre product is determined by its two coordinates.
 * `Function.Pullback.fstPreimageEquiv`: the fibre of the projection `X ×_Y Z → X` over `x` is the
@@ -29,7 +29,7 @@ open Function
 
 /-- The complement of `{(a, b)}` in `α × β` is the union of the preimages of `{a}ᶜ` and `{b}ᶜ`
 under the two projections. -/
-theorem Set.compl_singleton_prod {α β : Type*} (a : α) (b : β) :
+theorem Set.compl_singleton_prodMk_eq_union {α β : Type*} (a : α) (b : β) :
     ({(a, b)}ᶜ : Set (α × β)) = Prod.fst ⁻¹' {a}ᶜ ∪ Prod.snd ⁻¹' {b}ᶜ := by
   rw [← Set.singleton_prod_singleton, Set.compl_prod_eq_union, Set.prod_univ, Set.univ_prod]
 

@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicTopology.SimplicialSet.EilenbergZilber
-public import TauCeti.AlgebraicTopology.Singular.Shuffle
+public import TauCeti.AlgebraicTopology.Singular.Shuffle.Basic
 public import Mathlib.Algebra.Homology.QuasiIso
 
 /-!

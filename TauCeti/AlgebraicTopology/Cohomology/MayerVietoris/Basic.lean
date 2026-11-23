@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicTopology.Cohomology.Basic
+public import TauCeti.AlgebraicTopology.Cohomology.Small
 public import TauCeti.AlgebraicTopology.Singular.MayerVietoris.Basic
 public import TauCeti.CategoryTheory.Limits.Shapes.Biproduct
 
@@ -307,53 +308,6 @@ lemma mayerVietorisCochainδ_congr {t₀ : X₁ ⟶ X₂} {l₀ : X₁ ⟶ X₃}
   rfl
 
 end SSet
-
-namespace TauCeti
-
-variable {C : Type u} [Category.{v} C] [HasCoproducts.{w} C] [Abelian C] (R : C)
-  (k : Type*) [Ring k] [Linear k C] (M : C)
-  {X : TopCat.{w}} {ι : Type*} (U : ι → Set X) (hU : ∀ i, IsOpen (U i))
-  (hcov : ⋃ i, U i = Set.univ)
-
-/-- The isomorphism on singular cohomology induced by restricting cochains to the chains
-subordinate to an open cover. It is dual to `TauCeti.smallSingularHomologyIso`. -/
-def smallSingularCohomologyIso (n : ℕ) :
-    X.singularCohomology R k M n ≅
-      (((X.smallSingularSubcomplex U : SSet).chainComplex R).linearYonedaObj k M).homology n :=
-  ((smallSingularChainHomotopyEquiv R U hU hcov).linearYonedaFunctorMap k M).toHomologyIso n
-
-/-- The small-chain cohomology isomorphism is the map induced by the inclusion of the singular
-simplices subordinate to the cover. -/
-@[simp]
-lemma smallSingularCohomologyIso_hom (n : ℕ) :
-    (smallSingularCohomologyIso R k M U hU hcov n).hom =
-      HomologicalComplex.homologyMap (SSet.cochainComplexMap (X.smallSingularSubcomplex U).ι)
-        n := by
-  simp [smallSingularCohomologyIso, HomotopyEquiv.toHomologyIso, SSet.cochainComplexMap]
-
-include hU hcov in
-/-- Restricting singular cochains to the chains subordinate to an open cover is a
-quasi-isomorphism, since the inclusion of those chains is a chain homotopy equivalence. -/
-theorem quasiIso_cochainComplexMap_smallSingularSubcomplex_ι :
-    QuasiIso (SSet.cochainComplexMap (R := R) (k := k) (M := M)
-      (X.smallSingularSubcomplex U).ι) := by
-  have := ((smallSingularChainHomotopyEquiv R U hU hcov).linearYonedaFunctorMap k M).quasiIso_hom
-  rwa [HomotopyEquiv.linearYonedaFunctorMap_hom, smallSingularChainHomotopyEquiv_hom] at this
-
-/-- The small-chain cohomology isomorphism is natural under maps carrying members of one cover
-into members of another. -/
-lemma smallSingularCohomologyIso_naturality {κ : Type*} {Y : TopCat.{w}} (V : κ → Set Y)
-    (f : X ⟶ Y) (r : ι → κ) (hf : ∀ i, Set.MapsTo f (U i) (V (r i))) (hV : ∀ j, IsOpen (V j))
-    (hcovV : ⋃ j, V j = Set.univ) (n : ℕ) :
-    TopCat.singularCohomologyMap f n ≫ (smallSingularCohomologyIso R k M U hU hcov n).hom =
-      (smallSingularCohomologyIso R k M V hV hcovV n).hom ≫
-        HomologicalComplex.homologyMap
-          (SSet.cochainComplexMap (X.smallSingularSubcomplexMap U V f r hf)) n := by
-  simp only [smallSingularCohomologyIso_hom, TopCat.singularCohomologyMap,
-    TopCat.singularCochainComplexMap, ← HomologicalComplex.homologyMap_comp,
-    ← SSet.cochainComplexMap_comp, TopCat.smallSingularSubcomplexMap_ι]
-
-end TauCeti
 
 namespace TopCat
 
