@@ -81,7 +81,8 @@ theorem ae_hasDerivAt_det_propagator_left (hP : IntegrableOn P (Icc a b)) (hs : 
   congr 1
   -- `trace (N(s, t) ∘ P(t) ∘ N(t, s)) = trace P(t)`, since `N(t, s) ∘ N(s, t) = 1`.
   rw [ContinuousLinearMap.traceCLM_comp_comp_of_comp_eq_id
-    (propagator_comp_propagator_swap hP ht' hs), traceCLM_apply]
+    ((propagator_comp_propagator_swap hP ht' hs).trans ContinuousLinearMap.one_def),
+    traceCLM_apply]
 
 /-- **Liouville's formula.** For a coefficient `P` integrable on `[a, b]` and `s, t ∈ [a, b]`,
 `det N_P(t, s) = exp (∫ u in s..t, trace (P u))`. -/

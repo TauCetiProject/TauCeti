@@ -285,7 +285,8 @@ theorem hasFDerivAt_det_of_comp_eq_one {A B : E →L[𝕜] E} (hAB : A ∘L B = 
     rw [← LinearMap.det_comp]
     congr 1
     ext x
-    exact (DFunLike.congr_fun hAB (f x)).symm
+    simp only [LinearMap.comp_apply, coe_coe, comp_apply]
+    rw [← comp_apply A B, hAB, one_apply_eq_self]
   · ext H
     simp
 
