@@ -325,30 +325,35 @@ theorem latticeConj_rationalToComplexLinearEquiv_tmul (hℚ : IsBaseChange ℚ �
   rw [hz z, hz ((starRingEnd ℂ) z), map_smul, map_smulₛₗ, map_smul,
     latticeConj_rationalToComplexLinearEquiv_one_tmul]
 
+/-- Lattice conjugation fixes the image in `Vℂ` of a rational vector. -/
+@[simp]
+theorem latticeConj_rationalToComplexMap (hℚ : IsBaseChange ℚ ιℚ) (hℂ : IsBaseChange ℂ ιℂ)
+    (x : Vℚ) : latticeConj hℂ (rationalToComplexMap hℚ ιℂ x) = rationalToComplexMap hℚ ιℂ x := by
+  rw [← rationalToComplexLinearEquiv_one_tmul hℚ hℂ,
+    latticeConj_rationalToComplexLinearEquiv_one_tmul]
+
 section RationalBasis
 
 attribute [local instance low] moduleRatOfComplex
 attribute [local instance] ratComplexScalarTower
 
 /-- The basis of the complexification `Vℂ` induced by a basis of the rational structure `Vℚ`. -/
-noncomputable def rationalBasis {d : ℕ} (hℚ : IsBaseChange ℚ ιℚ) (hℂ : IsBaseChange ℂ ιℂ)
-    (b : Module.Basis (Fin d) ℚ Vℚ) : Module.Basis (Fin d) ℂ Vℂ :=
+noncomputable def rationalBasis {ι : Type*} (hℚ : IsBaseChange ℚ ιℚ) (hℂ : IsBaseChange ℂ ιℂ)
+    (b : Module.Basis ι ℚ Vℚ) : Module.Basis ι ℂ Vℂ :=
   (isBaseChange_rationalToComplexMap hℚ hℂ).basis b
 
 /-- The induced basis consists of the images of the rational basis vectors. -/
 @[simp]
-theorem rationalBasis_apply {d : ℕ} (hℚ : IsBaseChange ℚ ιℚ) {hℂ : IsBaseChange ℂ ιℂ}
-    (b : Module.Basis (Fin d) ℚ Vℚ) (i : Fin d) :
+theorem rationalBasis_apply {ι : Type*} (hℚ : IsBaseChange ℚ ιℚ) {hℂ : IsBaseChange ℂ ιℂ}
+    (b : Module.Basis ι ℚ Vℚ) (i : ι) :
     rationalBasis hℚ hℂ b i = rationalToComplexMap hℚ ιℂ (b i) :=
   IsBaseChange.basis_apply _ _ i
 
 /-- The lattice conjugation fixes a basis induced by a rational basis. -/
-theorem latticeConjugation_rationalBasis {d : ℕ} (hℚ : IsBaseChange ℚ ιℚ)
-    {hℂ : IsBaseChange ℂ ιℂ} (b : Module.Basis (Fin d) ℚ Vℚ) (i : Fin d) :
+theorem latticeConjugation_rationalBasis {ι : Type*} (hℚ : IsBaseChange ℚ ιℚ)
+    {hℂ : IsBaseChange ℂ ιℂ} (b : Module.Basis ι ℚ Vℚ) (i : ι) :
     (latticeConjugation hℂ).toEquiv (rationalBasis hℚ hℂ b i) = rationalBasis hℚ hℂ b i := by
-  rw [rationalBasis_apply, latticeConjugation_toEquiv_apply,
-    ← rationalToComplexLinearEquiv_one_tmul hℚ hℂ,
-    latticeConj_rationalToComplexLinearEquiv_one_tmul]
+  simp
 
 end RationalBasis
 

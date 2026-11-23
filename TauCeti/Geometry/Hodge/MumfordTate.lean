@@ -87,13 +87,19 @@ theorem characterPiece_ofAdd (p : ℤ) :
     hs.characterPiece (Multiplicative.ofAdd (-p, p - n)) = hs.piece p := by
   simp [characterPiece, show -p + (p - n) = -n by ring]
 
+/-- The summand of a character off the line `a + b = -n` vanishes. -/
+@[simp]
+theorem characterPiece_of_ne {g : Multiplicative (ℤ × ℤ)} (h : g.toAdd.1 + g.toAdd.2 ≠ -n) :
+    hs.characterPiece g = ⊥ := by
+  simp [characterPiece, h]
+
 /-- The Hodge decomposition indexed by characters is an internal direct sum. -/
 theorem isInternal_characterPiece : DirectSum.IsInternal hs.characterPiece := by
   rw [DirectSum.isInternal_submodule_iff_iSupIndep_and_iSup_eq_top]
   have hline {g : Multiplicative (ℤ × ℤ)} (hg : hs.characterPiece g ≠ ⊥) :
       g.toAdd.1 + g.toAdd.2 = -n := by
     by_contra h
-    simp [characterPiece, h] at hg
+    exact hg (hs.characterPiece_of_ne h)
   refine ⟨iSupIndep_ne_bot.mp ?_, eq_top_iff.mpr ?_⟩
   · have hinj : Function.Injective
         fun g : {g // hs.characterPiece g ≠ ⊥} ↦ -(g : Multiplicative (ℤ × ℤ)).toAdd.1 := by
