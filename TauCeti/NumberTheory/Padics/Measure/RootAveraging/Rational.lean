@@ -8,9 +8,9 @@ module
 public import TauCeti.NumberTheory.Padics.Measure.RootAveraging.Integral
 public import Mathlib.RingTheory.Localization.FractionRing
 import Mathlib.Analysis.Normed.Ring.Finite
-import Mathlib.RingTheory.Polynomial.Cyclotomic.Roots
 import Mathlib.RingTheory.RootsOfUnity.AlgebraicallyClosed
 import TauCeti.NumberTheory.Cyclotomic.Irreducible
+import TauCeti.RingTheory.Polynomial.Cyclotomic.Roots
 
 /-!
 # Root averaging for integral rational series
@@ -107,6 +107,7 @@ private theorem map_sum_rootTranslation_mul_inverse {A B : Type*} [CommRing A] [
     map_pow, ← RingHom.comp_assoc, hc]
 
 private theorem mul_map_subst_psiSeries_eq_cyclotomic_sum
+    (hx : AdjoinRoot.root (Polynomial.cyclotomic p ℤ_[p]) ^ p = 1)
     (P Q : Polynomial ℤ_[p]) (hQ : IsUnit (Q.coeff 0))
     (F : ℤ_[p]⟦X⟧) (hF : (Q : ℤ_[p]⟦X⟧) * F = P) :
     let f := Polynomial.cyclotomic p ℤ_[p]
@@ -120,10 +121,7 @@ private theorem mul_map_subst_psiSeries_eq_cyclotomic_sum
   obtain ⟨ξ, hξ⟩ := HasEnoughRootsOfUnity.exists_isPrimitiveRoot ℂ_[p] p
   let f := Polynomial.cyclotomic p ℤ_[p]
   let j : ℤ_[p] →+* ℂ_[p] := (algebraMap ℚ_[p] ℂ_[p]).comp PadicInt.Coe.ringHom
-  have hξ₀ : (Polynomial.cyclotomic p ℂ_[p]).IsRoot ξ :=
-    (Polynomial.isRoot_cyclotomic_iff_charZero (Fact.out : p.Prime).pos).2 hξ
-  have hroot : f.eval₂ j ξ = 0 := by
-    rwa [← Polynomial.eval_map, Polynomial.map_cyclotomic]
+  have hroot : f.eval₂ j ξ = 0 := hξ.eval₂_cyclotomic j
   let e := AdjoinRoot.lift j ξ hroot
   have he : Function.Injective e := by
     refine (injective_iff_map_eq_zero e).2 fun x hx ↦ ?_
@@ -136,13 +134,10 @@ private theorem mul_map_subst_psiSeries_eq_cyclotomic_sum
       (Polynomial.cyclotomic.monic p ℤ_[p])).1
     rw [Polynomial.map_cyclotomic]
     refine (hirr.dvd_iff_aeval_eq_zero (b := ξ) ?_).1 ?_
-    · rwa [Polynomial.aeval_def, ← Polynomial.eval_map, Polynomial.map_cyclotomic]
+    · simpa only [Polynomial.aeval_def] using hξ.eval₂_cyclotomic (algebraMap ℚ_[p] ℂ_[p])
     · simpa only [Polynomial.aeval_def, Polynomial.eval₂_map] using heval
   have hc : e.comp (AdjoinRoot.of f) = j := AdjoinRoot.lift_comp_of hroot
   have hξe : e (AdjoinRoot.root f) = ξ := AdjoinRoot.lift_root hroot
-  have hx : AdjoinRoot.root f ^ p = 1 := by
-    apply he
-    simpa only [map_pow, map_one, hξe] using hξ.pow_eq_one
   dsimp only
   apply PowerSeries.map_injective e he
   rw [map_sum_rootTranslation_mul_inverse e _ hx P Q hQ, map_mul, map_natCast,
@@ -165,15 +160,15 @@ theorem mul_map_subst_psiSeries_eq_sum_mul_inverse (hζ : IsPrimitiveRoot ζ p)
     (p : R⟦X⟧) * PowerSeries.map j ((psiSeries p F).subst ((1 + X) ^ p - 1)) =
       ∑ i : Fin p, P.eval₂ (C.comp j) (C (ζ ^ (i : ℕ)) * (1 + X) - 1) *
         Ring.inverse (Q.eval₂ (C.comp j) (C (ζ ^ (i : ℕ)) * (1 + X) - 1)) := by
+  have hp : p.Prime := Fact.out
+  have : NeZero p := ⟨hp.ne_zero⟩
   have hx : AdjoinRoot.root (Polynomial.cyclotomic p ℤ_[p]) ^ p = 1 := by
-    have h := AdjoinRoot.mk_eq_zero.2 (Polynomial.cyclotomic.dvd_X_pow_sub_one p ℤ_[p])
-    simpa only [map_sub, map_pow, map_one, AdjoinRoot.mk_X, sub_eq_zero] using h
-  have hz : (Polynomial.cyclotomic p ℤ_[p]).eval₂ j ζ = 0 := by
-    simp only [Polynomial.cyclotomic_prime, Polynomial.eval₂_finsetSum]
-    simpa only [Polynomial.eval₂_pow, Polynomial.eval₂_X] using
-      hζ.geom_sum_eq_zero (Fact.out : p.Prime).one_lt
+    apply Polynomial.isRoot_of_unity_of_root_cyclotomic (Nat.mem_divisors_self p hp.ne_zero)
+    simpa only [Polynomial.map_cyclotomic] using
+      AdjoinRoot.isRoot_root (Polynomial.cyclotomic p ℤ_[p])
+  have hz := hζ.eval₂_cyclotomic j
   have h := congrArg (PowerSeries.map (AdjoinRoot.lift j ζ hz))
-    (mul_map_subst_psiSeries_eq_cyclotomic_sum P Q hQ F hF)
+    (mul_map_subst_psiSeries_eq_cyclotomic_sum hx P Q hQ F hF)
   simpa only [map_mul, map_natCast, ← RingHom.comp_apply, ← PowerSeries.map_comp,
     map_sum_rootTranslation_mul_inverse _ _ hx P Q hQ, AdjoinRoot.lift_comp_of,
     AdjoinRoot.lift_root] using h
