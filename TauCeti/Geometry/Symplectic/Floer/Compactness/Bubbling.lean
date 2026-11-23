@@ -11,6 +11,8 @@ public import TauCeti.Geometry.Symplectic.Floer.Rescaling.Manifold
 public import TauCeti.MeasureTheory.Integral.EnergyConcentration
 import TauCeti.Geometry.Manifold.ExtChartAt.ClosedBall
 import TauCeti.Topology.Compactness.Compact
+import TauCeti.Topology.UniformSpace.LocallyUniformConvergence
+import TauCeti.Topology.UniformSpace.UniformConvergence.Comp
 
 /-!
 # Floer solutions in a manifold converge off finitely many bubbling points
@@ -83,8 +85,26 @@ densities bound the derivatives of the coordinate expressions
 `C¹` convergence theorem for the coordinate Floer equation
 (`TauCeti.Floer.tendstoLocallyUniformlyOn_fderiv_of_stdComplexLineImag_sub`) applies.
 
-The energy of the limit, the bubbles at the points of `Z` and breaking along cylindrical ends are
-not treated here.
+The energy of the limit is accounted for at the bubbling points, as for a symplectic vector space in
+`TauCeti.Geometry.Symplectic.Floer.Compactness.Limit` and for solutions in a single symplectic chart
+in `TauCeti.Geometry.Symplectic.Floer.Compactness.Manifold`.
+
+* **The energy densities converge** (`tendstoLocallyUniformlyOn_floerEnergyDensity_of_mapsTo`).
+  Where maps into `K` converge through `e`, and in `C¹` in every chart at a point of `K`, their
+  Floer energy densities converge locally uniformly. In the chart at `α` the energy density of `w`
+  at `z` is `ω` read in the chart on the coordinates of `∂ₛw - X_{K_s}` and `∂ₜw - X_{K_t}`
+  (`TauCeti.SmoothTwoForm.floerEnergyDensity_eq_inChartAt_sub`), a continuous function of
+  `(z, χ (w z), d (χ ∘ w) z)` for `χ = extChartAt I α`, and the coordinate expressions converge
+  in `C¹` near each point (`IsCompact.exists_closedBall_tendstoUniformlyOn_extChartAt_comp`).
+* **Energy accounting** (in the namespace `TauCeti.SmoothTwoForm.IsNondegenerate`,
+  `exists_pos_forall_tendsto_setIntegral_floerEnergyDensity_ball_subseq_off_finset_of_mapsTo`).
+  Along a further subsequence every bubbling point `z` carries a mass `m z ≥ δ`: for small
+  `ε > 0` the energies of the discs `B_ε(z)` converge to `m z` plus the energy of `v` on the
+  punctured disc. The energy of `v` over `Ω \ Z` is finite and `∫_{Ω \ Z} ρ(v) + ∑ m z ≤ A`. This is
+  `TauCeti.exists_strictMono_tendsto_setIntegral_ball_and_setIntegral_add_sum_le_of_concentration`
+  applied to the energy densities, which are nonnegative because the structures are tamed.
+
+The bubbles at the points of `Z` and breaking along cylindrical ends are not treated here.
 
 ## References
 
@@ -682,5 +702,169 @@ theorem
   rintro y ⟨hy, hyα⟩
   obtain ⟨r, hr, -, -, -, hdconv, -⟩ := hloc hα hy hyα
   exact isOpen_ball.tendstoLocallyUniformlyOn_iff_forall_tendsto.1 hdconv y (mem_ball_self hr)
+
+
+omit [FiniteDimensional ℝ E] in
+/-- **The energy density is a continuous function of the jet in a chart.** If the Hamiltonian
+vector fields of `K_s` and `K_t` read in the chart at `α` are continuous on
+`U × (extChartAt I α).target`, there is a function `G`, continuous at every `(z, y, L)` at which
+`U × (extChartAt I α).target` is a neighbourhood of `(z, y)`, such that the Floer energy density
+of every map `w` differentiable at `z`, with `w z` in the chart source, is
+`G (z, χ (w z), d (χ ∘ w) z)` for `χ = extChartAt I α`. -/
+private theorem exists_forall_continuousAt_and_floerEnergyDensity_eq {α : M}
+    (hXs : ContinuousOn (ω.hamiltonianVectorFieldInChartAt α Ks) (U ×ˢ (extChartAt I α).target))
+    (hXt : ContinuousOn (ω.hamiltonianVectorFieldInChartAt α Kt) (U ×ˢ (extChartAt I α).target)) :
+    ∃ G : (ℝ × ℝ) × E × (ℝ × ℝ →L[ℝ] E) → ℝ,
+      (∀ p, U ×ˢ (extChartAt I α).target ∈ 𝓝 (p.1, p.2.1) → ContinuousAt G p) ∧
+      ∀ ⦃w : ℝ × ℝ → M⦄ ⦃z : ℝ × ℝ⦄, MDifferentiableAt 𝓘(ℝ, ℝ × ℝ) I w z →
+        w z ∈ (extChartAt I α).source → ω.floerEnergyDensity Ks Kt w z =
+          G (z, extChartAt I α (w z), fderiv ℝ (extChartAt I α ∘ w) z) := by
+  set Xs := ω.hamiltonianVectorFieldInChartAt α Ks
+  set Xt := ω.hamiltonianVectorFieldInChartAt α Kt
+  refine ⟨fun p ↦ ContinuousAlternatingMap.flatL ℝ E ℝ
+      (RoughForm.inChartAt (ω : RoughForm I M ℝ 2) α p.2.1)
+      (p.2.2 stdComplexLineReal - Xs (p.1, p.2.1)) (p.2.2 stdComplexLineImag - Xt (p.1, p.2.1)),
+    fun p hpn ↦ ?_, fun w z hw hwz ↦ ?_⟩
+  · have hq : Continuous fun p : (ℝ × ℝ) × E × (ℝ × ℝ →L[ℝ] E) ↦ (p.1, p.2.1) :=
+      continuous_fst.prodMk continuous_snd.fst
+    -- The two perturbed derivatives in the chart are continuous at `p`.
+    have hX {X : (ℝ × ℝ) × E → E} (hX : ContinuousOn X (U ×ˢ (extChartAt I α).target))
+        (v : ℝ × ℝ) :
+        ContinuousAt (fun p : (ℝ × ℝ) × E × (ℝ × ℝ →L[ℝ] E) ↦ p.2.2 v - X (p.1, p.2.1)) p :=
+      (continuous_snd.snd.clm_apply continuous_const).continuousAt.sub
+        (ContinuousAt.comp (g := X) (f := fun p : (ℝ × ℝ) × E × (ℝ × ℝ →L[ℝ] E) ↦ (p.1, p.2.1))
+          (hX.continuousAt hpn) hq.continuousAt)
+    have hω : ContinuousAt (fun p : (ℝ × ℝ) × E × (ℝ × ℝ →L[ℝ] E) ↦
+        ContinuousAlternatingMap.flatL ℝ E ℝ
+          (RoughForm.inChartAt (ω : RoughForm I M ℝ 2) α p.2.1)) p :=
+      (ContinuousAlternatingMap.flatL ℝ E ℝ).continuous.continuousAt.comp
+        (ContinuousAt.comp (f := fun p : (ℝ × ℝ) × E × (ℝ × ℝ →L[ℝ] E) ↦ p.2.1)
+          ((ω.isSmoothForm.continuousOn_inChartAt α).continuousAt
+            ((isOpen_extChartAt_target α).mem_nhds (mem_of_mem_nhds hpn).2))
+          continuous_snd.fst.continuousAt)
+    exact (hω.clm_apply (hX hXs _)).clm_apply (hX hXt _)
+  · rw [ω.floerEnergyDensity_eq_inChartAt_sub hw hwz]
+    exact (ContinuousAlternatingMap.flatL_apply_apply _ _ _).symm
+
+omit [FiniteDimensional ℝ E] [NormedSpace ℝ F] in
+/-- **The energy densities converge where maps converge in `C¹`.** Let the Hamiltonian vector
+fields of `K_s` and `K_t`, read in the chart at every point of a compact set `K ⊆ M`, be continuous
+on `U × (extChartAt I x).target`, and let `e : M → F` be continuous and injective on `K`. Let `uₙ`
+be differentiable and `v` be `C¹` on an open set `S ⊆ U`, with values in `K`, such that `uₙ → v` on
+`S` locally uniformly through `e`, and such that for every `α ∈ K` the derivatives of the
+coordinate expressions `extChartAt I α ∘ uₙ` converge to that of `extChartAt I α ∘ v` locally
+uniformly where `v` lies in the chart source. Then the Floer energy densities `ρ(uₙ)` converge to
+`ρ(v)` locally uniformly on `S`. No Floer equation is assumed. -/
+theorem tendstoLocallyUniformlyOn_floerEnergyDensity_of_mapsTo (hK : IsCompact K)
+    (hXs : ∀ x ∈ K,
+      ContinuousOn (ω.hamiltonianVectorFieldInChartAt x Ks) (U ×ˢ (extChartAt I x).target))
+    (hXt : ∀ x ∈ K,
+      ContinuousOn (ω.hamiltonianVectorFieldInChartAt x Kt) (U ×ˢ (extChartAt I x).target))
+    (he : ContinuousOn e K) (he_inj : InjOn e K) {S : Set (ℝ × ℝ)} (hS : IsOpen S) (hSU : S ⊆ U)
+    {u : ℕ → ℝ × ℝ → M} {v : ℝ × ℝ → M}
+    (hu : ∀ n, MDifferentiableOn 𝓘(ℝ, ℝ × ℝ) I (u n) S) (huK : ∀ n, MapsTo (u n) S K)
+    (hv : ContMDiffOn 𝓘(ℝ, ℝ × ℝ) I 1 v S) (hvK : MapsTo v S K)
+    (hconv : TendstoLocallyUniformlyOn (fun n ↦ e ∘ u n) (e ∘ v) atTop S)
+    (hdconv : ∀ α ∈ K, TendstoLocallyUniformlyOn (fun n ↦ fderiv ℝ (extChartAt I α ∘ u n))
+      (fderiv ℝ (extChartAt I α ∘ v)) atTop (S ∩ v ⁻¹' (extChartAt I α).source)) :
+    TendstoLocallyUniformlyOn (fun n ↦ ω.floerEnergyDensity Ks Kt (u n))
+      (ω.floerEnergyDensity Ks Kt v) atTop S := by
+  refine tendstoLocallyUniformlyOn_of_forall_exists_nhds fun y hy ↦ ?_
+  set χ := extChartAt I (v y)
+  obtain ⟨r, hr, N, hBS, hsrc, hjet, hc, hd⟩ :=
+    hK.exists_closedBall_tendstoUniformlyOn_extChartAt_comp he he_inj hS hu huK hv hvK hconv hy
+      (hdconv (v y) (hvK hy))
+  -- In the chart at `v y` the energy density is a continuous function `G` of the jet.
+  obtain ⟨G, hGc, hG⟩ := exists_forall_continuousAt_and_floerEnergyDensity_eq (ω := ω) (U := U)
+    (hXs (v y) (hvK hy)) (hXt (v y) (hvK hy))
+  have hGu := ((isCompact_closedBall y r).image_of_continuousOn hjet).comp_tendstoUniformlyOn
+    (g := G) (by
+      rintro _ ⟨z, hz, rfl⟩
+      exact hGc _ (mem_of_superset ((hS.prod (isOpen_extChartAt_target (v y))).mem_nhds
+        ⟨hBS hz, χ.map_source (hsrc z hz).1⟩) (prod_mono hSU subset_rfl)))
+    ((hc.prodMk_same hd).graph)
+  refine ⟨closedBall y r, mem_nhdsWithin_of_mem_nhds (closedBall_mem_nhds y hr), ?_⟩
+  rw [← map_add_atTop_eq_nat N, TauCeti.tendstoUniformlyOn_map_iff]
+  refine (hGu.congr (.of_forall fun n z hz ↦ ?_)).congr_right fun z hz ↦ ?_
+  · exact (hG ((hu (n + N)).mdifferentiableAt (hS.mem_nhds (hBS hz))) ((hsrc z hz).2 n)).symm
+  · exact (hG ((hv.mdifferentiableOn (by norm_num)).mdifferentiableAt (hS.mem_nhds (hBS hz)))
+      (hsrc z hz).1).symm
+
+namespace IsNondegenerate
+
+/-- **The energy of the limit and of the bubbling points.** In the situation of
+`IsNondegenerate.exists_pos_forall_tendstoLocallyUniformlyOn_fderiv_subseq_off_finset_of_mapsTo`,
+for Floer solutions in a manifold that need not stay in a single chart, a further subsequence `φ`
+attaches to every bubbling point `z ∈ Z` a mass `m z ≥ δ`: for every small `ε > 0` the Floer energy
+of `u_{φ n}` over the disc `B_ε(z)` converges to `m z` plus the energy of the limit `v` over the
+punctured disc. The energy densities of the `u_{φ n}` converge to that of `v` locally uniformly on
+`Ω \ Z`, the energy of `v` over `Ω \ Z` is finite, and together with the masses it is at most `A`,
+so no energy is created in the limit. -/
+theorem exists_pos_forall_tendsto_setIntegral_floerEnergyDensity_ball_subseq_off_finset_of_mapsTo
+    (hω : ω.IsNondegenerate) (hU : IsOpen U) (hDU : D ⊆ U) (hD : IsCompact D) (hK : IsCompact K)
+    (hJ : ∀ x ∈ K,
+      ContDiffOn ℝ 2 (Floer.almostComplexInChartAt I x J) (U ×ˢ (extChartAt I x).target))
+    (hXs : ∀ x ∈ K,
+      ContDiffOn ℝ 2 (ω.hamiltonianVectorFieldInChartAt x Ks) (U ×ˢ (extChartAt I x).target))
+    (hXt : ∀ x ∈ K,
+      ContDiffOn ℝ 2 (ω.hamiltonianVectorFieldInChartAt x Kt) (U ×ˢ (extChartAt I x).target))
+    (hJt : ∀ z ∈ D, ∀ y, (hω.symplecticFormAt y).Tames (J z y))
+    (he : ∀ x ∈ K, MDifferentiableAt I 𝓘(ℝ, F) e x) (he_inj : InjOn e K) {c B : ℝ} (hc : 0 < c)
+    (hJc : ∀ z ∈ D, ∀ x ∈ K, ∀ v,
+      c * ‖mvfderiv I e x v‖ ^ 2 ≤ hω.symplecticFormAt x v (J z x v))
+    (hBs : ∀ z ∈ D, ∀ x ∈ K, ‖mvfderiv I e x (ω.hamiltonianVectorField (Ks z) x)‖ ≤ B)
+    (hBt : ∀ z ∈ D, ∀ x ∈ K, ‖mvfderiv I e x (ω.hamiltonianVectorField (Kt z) x)‖ ≤ B) :
+    ∃ δ > 0, ∀ ⦃Ω : Set (ℝ × ℝ)⦄ ⦃u : ℕ → ℝ × ℝ → M⦄ ⦃A : ℝ⦄, IsOpen Ω → Ω ⊆ D →
+      (∀ k, ContMDiffOn 𝓘(ℝ, ℝ × ℝ) I (⊤ : ℕ∞) (u k) Ω) → (∀ k, MapsTo (u k) Ω K) →
+      (∀ k, ∀ y ∈ Ω, IsComplexLinearMap (AlmostComplexStructure.product ℝ) (J y (u k y))
+        (ω.perturbedMFDeriv Ks Kt (u k) y).toLinearMap) →
+      (∀ k, ContinuousOn (ω.floerEnergyDensity Ks Kt (u k)) Ω) →
+      (∀ k, IntegrableOn (ω.floerEnergyDensity Ks Kt (u k)) Ω) →
+      (∀ k, ∫ y in Ω, ω.floerEnergyDensity Ks Kt (u k) y ≤ A) →
+      ∃ (φ : ℕ → ℕ) (Z : Finset (ℝ × ℝ)) (v : ℝ × ℝ → M) (m : ℝ × ℝ → ℝ), StrictMono φ ∧
+        ↑Z ⊆ Ω ∧
+        (∀ z ∈ Z, ∀ r > 0, ∀ᶠ n in atTop,
+          δ ≤ ∫ y in ball z r ∩ Ω, ω.floerEnergyDensity Ks Kt (u (φ n)) y) ∧
+        ContMDiffOn 𝓘(ℝ, ℝ × ℝ) I 1 v (Ω \ ↑Z) ∧ MapsTo v (Ω \ ↑Z) K ∧
+        TendstoLocallyUniformlyOn (fun n ↦ e ∘ u (φ n)) (e ∘ v) atTop (Ω \ ↑Z) ∧
+        (∀ y ∈ Ω \ ↑Z, Tendsto (fun n ↦ u (φ n) y) atTop (𝓝 (v y))) ∧
+        (∀ α ∈ K, TendstoLocallyUniformlyOn (fun n ↦ fderiv ℝ (extChartAt I α ∘ u (φ n)))
+          (fderiv ℝ (extChartAt I α ∘ v)) atTop ((Ω \ ↑Z) ∩ v ⁻¹' (extChartAt I α).source)) ∧
+        (∀ y ∈ Ω \ ↑Z, IsComplexLinearMap (AlmostComplexStructure.product ℝ) (J y (v y))
+          (ω.perturbedMFDeriv Ks Kt v y).toLinearMap) ∧
+        TendstoLocallyUniformlyOn (fun n ↦ ω.floerEnergyDensity Ks Kt (u (φ n)))
+          (ω.floerEnergyDensity Ks Kt v) atTop (Ω \ ↑Z) ∧
+        IntegrableOn (ω.floerEnergyDensity Ks Kt v) (Ω \ ↑Z) ∧
+        (∀ z ∈ Z, δ ≤ m z) ∧
+        (∀ z ∈ Z, ∀ᶠ ε in 𝓝[>] 0,
+          Tendsto (fun n ↦ ∫ y in ball z ε, ω.floerEnergyDensity Ks Kt (u (φ n)) y) atTop
+            (𝓝 (m z + ∫ y in ball z ε \ {z}, ω.floerEnergyDensity Ks Kt v y))) ∧
+        (∫ y in Ω \ ↑Z, ω.floerEnergyDensity Ks Kt v y) + ∑ z ∈ Z, m z ≤ A := by
+  obtain ⟨δ, hδ, h1⟩ :=
+    hω.exists_pos_forall_tendstoLocallyUniformlyOn_fderiv_subseq_off_finset_of_mapsTo hU hDU hD hK
+      hJ hXs hXt hJt he he_inj hc hJc hBs hBt
+  refine ⟨δ, hδ, fun Ω u A hΩ hΩD hu huK hfl hcont hint hA ↦ ?_⟩
+  obtain ⟨φ, hφ, Z, hZΩ, -, hconc, -, v, hv, hvK, hconv, hpt, hdconv, hveq⟩ :=
+    h1 hΩ hΩD hu huK hfl hcont hint hA
+  have hS : IsOpen (Ω \ (Z : Set (ℝ × ℝ))) := hΩ.sdiff Z.finite_toSet.isClosed
+  have hnn (n : ℕ) (y : ℝ × ℝ) (hy : y ∈ Ω) : 0 ≤ ω.floerEnergyDensity Ks Kt (u (φ n)) y :=
+    floerEnergyDensity_nonneg hω (hJt y (hΩD hy) _) (hfl (φ n) y hy)
+  -- The energy densities converge locally uniformly off the bubbling points.
+  have hdens := tendstoLocallyUniformlyOn_floerEnergyDensity_of_mapsTo hK
+    (fun x hx ↦ (hXs x hx).continuousOn) (fun x hx ↦ (hXt x hx).continuousOn)
+    (fun x hx ↦ (he x hx).continuousAt.continuousWithinAt) he_inj hS
+    (sdiff_subset.trans (hΩD.trans hDU))
+    (fun n ↦ ((hu (φ n)).mono sdiff_subset).mdifferentiableOn (by simp))
+    (fun n ↦ (huK (φ n)).mono_left sdiff_subset) hv hvK hconv hdconv
+  -- The energy of `v` over `Ω \ Z` is finite, and the bubbling points carry masses at least `δ`.
+  obtain ⟨ψ, m, hψ, hint_v, hconcψ, hδm, hm, hmE⟩ :=
+    exists_strictMono_tendsto_setIntegral_ball_and_setIntegral_add_sum_le_of_concentration hΩ hZΩ
+      hnn (fun n ↦ hint (φ n)) (fun n ↦ hA (φ n)) hdens hconc
+  exact ⟨φ ∘ ψ, Z, v, m, hφ.comp hψ, hZΩ, hconcψ, hv, hvK,
+    hconv.comp_tendsto hψ.tendsto_atTop, fun y hy ↦ (hpt y hy).comp hψ.tendsto_atTop,
+    fun α hα ↦ (hdconv α hα).comp_tendsto hψ.tendsto_atTop, hveq,
+    hdens.comp_tendsto hψ.tendsto_atTop, hint_v, hδm, hm, hmE⟩
+
+end IsNondegenerate
 
 end TauCeti.SmoothTwoForm
