@@ -25,12 +25,6 @@ terminated, `qₙ ξ - pₙ = 0` and there is nothing to prove; rational `ξ` ne
 
 ## Main results
 
-* `Real.neg_one_pow_mul_sub_convergent_pos`: before termination, the error `ξ - pₙ / qₙ` has sign
-  `(-1) ^ n`.
-* `Real.neg_one_pow_mul_den_convergent_mul_sub_num_convergent_nonneg`: the error `qₙ ξ - pₙ` has
-  sign `(-1) ^ n` or vanishes.
-* `Real.num_convergent_mul_den_convergent_succ_sub`: the determinant identity for the reduced
-  convergents.
 * `Real.abs_den_convergent_mul_sub_num_convergent_le`: the best approximation property.
 * `Real.abs_den_convergent_mul_sub_num_convergent_le_norm`: the same, with the distance of
   `q ξ` to the nearest integer measured in `UnitAddCircle`.
@@ -46,64 +40,6 @@ open GenContFract
 open GenContFract (of)
 
 namespace Real
-
-/-- Before the continued fraction of `ξ` terminates, the error `ξ - pₙ / qₙ` of its `n`-th
-convergent has sign `(-1) ^ n`. -/
-theorem neg_one_pow_mul_sub_convergent_pos (ξ : ℝ) {n : ℕ} (hn : ¬(of ξ).TerminatedAt n) :
-    0 < (-1) ^ n * (ξ - ξ.convergent n) := by
-  obtain ⟨gp, hs⟩ : ∃ gp, (of ξ).s.get? n = some gp := Option.ne_none_iff_exists'.1 hn
-  obtain ⟨ifp', hstream', -⟩ := IntFractPair.exists_succ_get?_stream_of_gcf_of_get?_eq_some hs
-  obtain ⟨ifp, hstream, hfr, -⟩ := IntFractPair.succ_nth_stream_eq_some_iff.1 hstream'
-  have hB : 0 < ((of ξ).contsAux (n + 1)).b :=
-    (fib_le_of_contsAux_b (v := ξ) (n := n + 1)
-      (Or.inr (mt (terminated_stable (n.sub_le 1)) hn))).trans_lt'
-      (mod_cast Nat.fib_pos.2 n.succ_pos)
-  have hpB : 0 ≤ ((of ξ).contsAux n).b := zero_le_of_contsAux_b
-  have hfr' : 0 < ifp.fr⁻¹ :=
-    inv_pos.2 ((IntFractPair.nth_stream_fr_nonneg hstream).lt_of_ne' hfr)
-  rw [← Real.convs_eq_convergent, sub_convs_eq hstream, ite_eq_right hfr, mul_div_assoc', ← pow_add,
-    ← two_mul, pow_mul, neg_one_sq, one_pow]
-  positivity
-
-/-- The determinant identity `pₙ qₙ₊₁ - qₙ pₙ₊₁ = (-1) ^ (n + 1)` for the reduced convergents
-of `ξ`, before its continued fraction terminates. -/
-theorem num_convergent_mul_den_convergent_succ_sub (ξ : ℝ) {n : ℕ} (hn : ¬(of ξ).TerminatedAt n) :
-    (ξ.convergent n).num * (ξ.convergent (n + 1)).den -
-      (ξ.convergent n).den * (ξ.convergent (n + 1)).num = (-1) ^ (n + 1) := by
-  have h := (SimpContFract.of ξ).determinant hn
-  have h' : (of ξ).nums n * (of ξ).dens (n + 1) - (of ξ).dens n * (of ξ).nums (n + 1) =
-      (-1) ^ (n + 1) := h
-  rw [← Real.num_convergent, ← Real.num_convergent, ← Real.den_convergent,
-    ← Real.den_convergent] at h'
-  exact_mod_cast h'
-
-/-- Before the continued fraction of `ξ` terminates, `qₙ ξ - pₙ` has sign `(-1) ^ n`. -/
-theorem neg_one_pow_mul_den_convergent_mul_sub_num_convergent_pos (ξ : ℝ) {n : ℕ}
-    (hn : ¬(of ξ).TerminatedAt n) :
-    0 < (-1) ^ n * ((ξ.convergent n).den * ξ - (ξ.convergent n).num) := by
-  have hQ : ((ξ.convergent n).den : ℝ) ≠ 0 := mod_cast (ξ.convergent n).pos.ne'
-  have h := mul_pos (show (0 : ℝ) < (ξ.convergent n).den by positivity)
-    (neg_one_pow_mul_sub_convergent_pos ξ hn)
-  rw [Rat.cast_def] at h
-  convert h using 1
-  field_simp
-
-/-- The error `qₙ ξ - pₙ` vanishes once the continued fraction of `ξ` has terminated. -/
-theorem den_convergent_mul_sub_num_convergent_eq_zero (ξ : ℝ) {n : ℕ}
-    (hn : (of ξ).TerminatedAt n) :
-    (ξ.convergent n).den * ξ - (ξ.convergent n).num = 0 := by
-  have h := of_correctness_of_terminatedAt hn
-  rw [convs_eq_convergent, Rat.cast_def] at h
-  have hQ : ((ξ.convergent n).den : ℝ) ≠ 0 := mod_cast (ξ.convergent n).pos.ne'
-  have h' := (eq_div_iff hQ).1 h
-  linarith
-
-/-- The error `qₙ ξ - pₙ` has sign `(-1) ^ n` or vanishes. -/
-theorem neg_one_pow_mul_den_convergent_mul_sub_num_convergent_nonneg (ξ : ℝ) (n : ℕ) :
-    0 ≤ (-1) ^ n * ((ξ.convergent n).den * ξ - (ξ.convergent n).num) := by
-  by_cases hn : (of ξ).TerminatedAt n
-  · rw [den_convergent_mul_sub_num_convergent_eq_zero ξ hn, mul_zero]
-  · exact (neg_one_pow_mul_den_convergent_mul_sub_num_convergent_pos ξ hn).le
 
 /-- The best approximation property for a positive denominator `q < qₙ₊₁`. -/
 private theorem abs_den_convergent_mul_sub_num_convergent_le_of_pos (ξ : ℝ) (n : ℕ) {q : ℤ}
@@ -165,8 +101,8 @@ theorem abs_den_convergent_mul_sub_num_convergent_le (ξ : ℝ) (n : ℕ) {q : �
   rcases hq.lt_or_gt with h | h
   · have := abs_den_convergent_mul_sub_num_convergent_le_of_pos ξ n (q := -q) (by omega)
       (by omega) (-p)
-    rwa [show ((-q : ℤ) : ℝ) * ξ - ((-p : ℤ) : ℝ) = -(q * ξ - p) by push_cast; ring,
-      abs_neg] at this
+    have hneg : ((-q : ℤ) : ℝ) * ξ - ((-p : ℤ) : ℝ) = -(q * ξ - p) := by push_cast; ring
+    rwa [hneg, abs_neg] at this
   · exact abs_den_convergent_mul_sub_num_convergent_le_of_pos ξ n h (by omega) p
 
 /-- **Lagrange's best approximation property**, measured in `UnitAddCircle`: for `0 < q < qₙ₊₁`,
