@@ -166,14 +166,6 @@ def specialFiberNumericalType : NumericalType.{u} where
     (Cohomology (InvertibleSheaf.trivial (vanishingIdeal
       ⟨closure {((i : CodimensionOnePoint X) : X)}, isClosed_closure⟩).subscheme).obj 1)
 
-/-- The component index type of `specialFiberNumericalType` is the finite set of codimension-one
-points of `X` lying over the closed point. -/
-theorem specialFiberNumericalType_component :
-    (toBase.specialFiberNumericalType hX hη hC hπ hreg hconn).Component =
-      (toBase.finite_setOf_base_eq_closedPoint
-        (toBase.maximalIdeal_ne_bot_of_base_ne_closedPoint hη) hη).toFinset :=
-  rfl
-
 /-- A codimension-one point of `X` arises as a component of `specialFiberNumericalType` if and only
 if it maps to `closedPoint R`. -/
 theorem exists_specialFiberNumericalType_component_iff (x : CodimensionOnePoint X) :

@@ -252,6 +252,14 @@ theorem mem_ker_reducedSpecialFiberMultidegree_iff
   rw [reducedSpecialFiberMultidegree]
   exact toBase.mem_ker_componentMultidegreeLinear_iff hX hη h₀ h₁ c
 
+/-- Any nonzero-order torsion line-bundle class on `X_{s,red}` has zero multidegree, because
+multidegrees take values in the torsion-free group `Component → ℤ`. -/
+theorem reducedSpecialFiberMultidegree_eq_zero_of_zsmul_eq_zero
+    {c : Additive (LineBundleClass (reducedSpecialFiber R toBase))}
+    {n : ℤ} (hn : n ≠ 0) (hc : n • c = 0) :
+    toBase.reducedSpecialFiberMultidegree hX hη h₀ h₁ c = 0 :=
+  (smul_eq_zero.mp (by rw [← map_zsmul, hc, map_zero])).resolve_left hn
+
 /-- The **multidegree on the scheme-theoretic special fibre** `X_s`, sending `b` to its component
 degrees `deg_{κ_i}(b|_{C_i})`. -/
 def specialFiberMultidegreeOnFiber :
@@ -551,13 +559,14 @@ theorem mem_ker_specialFiberPicardSpecialization_iff
     rw [AddMonoidHom.mem_ker, specialFiberPicardSpecialization_pullback,
       Submodule.Quotient.mk_eq_zero, LinearMap.mem_range] at hb
     obtain ⟨v, hv⟩ := hb
-    let vert : LineBundleClass X := (toBase.verticalLineBundleLinear hX hη v).toMul
-    have hvert : pullback (genericFiberι R K toBase) vert = 1 :=
+    have hvert :
+        pullback (genericFiberι R K toBase) (toBase.verticalLineBundleLinear hX hη v).toMul = 1 :=
       (toBase.pullback_genericFiberι_eq_one_iff_of_isRegular K hX hη).mpr
         ⟨v, toBase.toMul_verticalLineBundleLinear_apply hX hη v⟩
-    refine ⟨a₀ * vert⁻¹, by simp [hvert], ?_⟩
-    rw [ofMul_mul, ofMul_inv, map_add, map_neg,
-      show Additive.ofMul vert = toBase.verticalLineBundleLinear hX hη v from ofMul_toMul _,
+    refine ⟨a₀ * (toBase.verticalLineBundleLinear hX hη v).toMul⁻¹,
+      by rw [LineBundleClass.pullback_mul, LineBundleClass.pullback_inv, hvert, inv_one, mul_one],
+      ?_⟩
+    rw [ofMul_mul, ofMul_inv, map_add, map_neg, ofMul_toMul,
       toBase.specialFiberMultidegree_verticalLineBundleLinear,
       ← Matrix.vecMulLinear_apply, hv, add_neg_cancel]
   · rw [← haK, AddMonoidHom.mem_ker, specialFiberPicardSpecialization_pullback, ha,

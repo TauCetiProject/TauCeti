@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Module.Torsion.Basic
-public import TauCeti.Algebra.Module.Torsion.Snake
+public import TauCeti.Algebra.Module.Torsion.Map
 
 /-!
 # `ZMod n`-linear restriction of additive homomorphisms to `n`-torsion

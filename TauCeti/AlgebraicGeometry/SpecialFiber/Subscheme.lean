@@ -314,7 +314,10 @@ theorem ker_reducedSpecialFiberι_le_vanishingIdeal_iff {Z : TopologicalSpace.Cl
     (reducedSpecialFiberι R toBase).ker ≤ Scheme.IdealSheafData.vanishingIdeal Z ↔
       (Z : Set X) ⊆ toBase ⁻¹' {closedPoint R} := by
   rw [ker_reducedSpecialFiberι, ← Scheme.IdealSheafData.le_support_iff_le_vanishingIdeal,
-    ← SetLike.coe_subset_coe, Scheme.IdealSheafData.coe_support_vanishingIdeal]; rfl
+    ← SetLike.coe_subset_coe, Scheme.IdealSheafData.coe_support_vanishingIdeal]
+  -- Unfolds `(⟨toBase ⁻¹' {closedPoint R}, _⟩ : Set X)` (`Closeds.coe_mk`) and
+  -- `↥(Spec (.of R)) ≡ PrimeSpectrum R`.
+  rfl
 
 /-- The ideal sheaf of the scheme-theoretic special fibre is contained in that of the reduced
 special fibre. -/

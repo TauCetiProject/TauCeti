@@ -6,9 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.Curves.StableReduction.NumericalType.RegularModel
-public import TauCeti.AlgebraicGeometry.Curves.StableReduction.Picard.Torsion.Basic
+public import TauCeti.AlgebraicGeometry.Curves.StableReduction.Picard.Rank
 public import TauCeti.AlgebraicGeometry.IntersectionNumber.Specialization
-public import TauCeti.AlgebraicGeometry.LineBundle.Torsion
 
 /-!
 # Multidegree, numerical Picard specialization, and vertical divisors on a regular model
@@ -24,25 +23,25 @@ Building on the constant-field multidegree homomorphisms `reducedSpecialFiberMul
 formula `specialFiberMultidegree_verticalLineBundleLinear` in
 `TauCeti.AlgebraicGeometry.IntersectionNumber.Specialization`, as well as
 `AlgebraicGeometry.Scheme.Hom.specialFiberWeight_dvd_intersectionNumber` and
-`AlgebraicGeometry.Scheme.Hom.verticalLineBundleLinear`, this module
-constructs the `ℤ`-linear specialization maps into `T.Pic`
-([Stacks, Definition 55.4.1 (Tag 0C7H)](https://stacks.math.columbia.edu/tag/0C7H)) and the
-`ZMod ℓ`-linear torsion specialization maps into `T.torsion ℓ` (which vanish identically for every
-`ℓ > 0` because multidegrees take values in the torsion-free group `T.Component → ℤ`).
+`AlgebraicGeometry.Scheme.Hom.verticalLineBundleLinear`, this module constructs the `ℤ`-linear
+specialization maps into `T.Pic`
+([Stacks, Definition 55.4.1 (Tag 0C7H)](https://stacks.math.columbia.edu/tag/0C7H)).
 
 On `X`, the vertical Cartier map `verticalLineBundleLinear` sending `v` to `∏ᵢ [𝒪_X(Cᵢ)] ^ vᵢ` has
 multidegree `v ᵥ* T.weightedIntersection`, yielding the kernel description
-`ker numericalPicLinear = ker specialFiberMultidegree ⊔ range verticalLineBundleLinear` as a
-consequence of `specialFiberMultidegree_comp_verticalLineBundleLinear` and `Submodule.comap_map_eq`,
-and showing that `ker verticalLineBundleLinear` has `ℤ`-rank `1` and is spanned by
-`T.multiplicity` whenever the component multiplicities are coprime (`gcd = 1`, in particular
-whenever some `m_{i₀} = 1`). Uniformizer-free `TauCeti.Model` counterparts for regular models over a
-discrete valuation ring live in `TauCeti.AlgebraicGeometry.Curves.StableReduction.Picard.Model`.
+`ker numericalPicLinear = ker specialFiberMultidegree ⊔ range verticalLineBundleLinear`
+([Stacks, Lemma 55.10.1 (Tag 0CDG)](https://stacks.math.columbia.edu/tag/0CDG)) as a consequence of
+`specialFiberMultidegree_comp_verticalLineBundleLinear` and `Submodule.comap_map_eq`, and showing
+that `ker verticalLineBundleLinear` has `ℤ`-rank `1` and is spanned by `T.multiplicity` whenever the
+component multiplicities are coprime (`gcd = 1`, in particular whenever some `m_{i₀} = 1`).
+Uniformizer-free `TauCeti.Model` counterparts for regular models over a discrete valuation ring live
+in `TauCeti.AlgebraicGeometry.Curves.StableReduction.Picard.Model`.
 
 ## References
 
-* [The Stacks Project, Definition 55.4.1 (Tag 0C7H)](https://stacks.math.columbia.edu/tag/0C7H) and
-  [Section 55.9 (Tag 0C5Y)](https://stacks.math.columbia.edu/tag/0C5Y).
+* [The Stacks Project, Definition 55.4.1 (Tag 0C7H)](https://stacks.math.columbia.edu/tag/0C7H),
+  [Section 55.9 (Tag 0C5Y)](https://stacks.math.columbia.edu/tag/0C5Y), and
+  [Lemma 55.10.1 (Tag 0CDG)](https://stacks.math.columbia.edu/tag/0CDG).
 -/
 
 public section
@@ -50,12 +49,10 @@ public section
 noncomputable section
 
 open CategoryTheory AlgebraicGeometry IsLocalRing Order Matrix
-open AddSubgroup (torsionBy)
 open TauCeti TauCeti.AlgebraicGeometry TauCeti.AlgebraicGeometry.Scheme.Modules
 open AlgebraicGeometry.Scheme.IdealSheafData (vanishingIdeal
   isEffectiveCartier_vanishingIdeal_closure_singleton_of_isRegular)
-open LineBundleClass (intersectionNumber pullbackLinearMap pullbackTorsionLinearMap
-  pullbackTorsionLinearEquiv)
+open LineBundleClass (intersectionNumber pullbackLinearMap)
 
 universe u
 
@@ -133,7 +130,7 @@ theorem totalDegree_specialFiberMultidegree (a : Additive (LineBundleClass X)) :
   exact toBase.specialFiberMultidegree_mul_specialFiberWeight hX hη
     toBase.specialFiberCohomologyFiniteDimensional_zero hC.finiteDimensional_one a j
 
-/-! ### Specialization to the numerical Picard group and its `ℓ`-torsion -/
+/-! ### Specialization to the numerical Picard group -/
 
 /-- **Numerical Picard specialization on `X_{s,red}`.** -/
 def reducedSpecialFiberNumericalPicLinear :
@@ -260,140 +257,6 @@ theorem degree_numericalPicLinear (a : Additive (LineBundleClass X)) :
   exact (NumericalType.degree_mk (T := 𝒯) _).trans
     (toBase.totalDegree_specialFiberMultidegree hX hη hC hπ hreg hconn a)
 
-/-- **`ZMod ℓ`-linear torsion specialization on `X_{s,red}`.** Since
-`reducedSpecialFiberMultidegree` takes values in the torsion-free group `(𝒯).Component → ℤ`, this
-map vanishes identically for every `ℓ > 0` (`reducedSpecialFiberNumericalPicTorsionMap_eq_zero`). -/
-def reducedSpecialFiberNumericalPicTorsionMap (ℓ : ℕ) :
-    torsionBy (Additive (LineBundleClass (reducedSpecialFiber R toBase))) (ℓ : ℤ) →ₗ[ZMod ℓ]
-      (𝒯).torsion ℓ :=
-  (toBase.reducedSpecialFiberNumericalPicLinear hX hη hC hπ hreg
-    hconn).toAddMonoidHom.torsionByZModLinearMap ℓ
-
-/-- **`ZMod ℓ`-linear torsion specialization on `X_s`.** Since `specialFiberMultidegreeOnFiber`
-takes values in the torsion-free group `(𝒯).Component → ℤ`, this map vanishes identically for every
-`ℓ > 0` (`specialFiberNumericalPicTorsionMap_eq_zero`). -/
-def specialFiberNumericalPicTorsionMap (ℓ : ℕ) :
-    torsionBy (Additive (LineBundleClass (specialFiber R toBase).left)) (ℓ : ℤ) →ₗ[ZMod ℓ]
-      (𝒯).torsion ℓ :=
-  (toBase.specialFiberNumericalPicLinear hX hη hC hπ hreg
-    hconn).toAddMonoidHom.torsionByZModLinearMap ℓ
-
-/-- **`ZMod ℓ`-linear torsion specialization on `X`.** Since `specialFiberMultidegree` takes
-values in the torsion-free group `(𝒯).Component → ℤ`, this map vanishes identically for every
-`ℓ > 0` (`numericalPicTorsionMap_eq_zero`). -/
-def numericalPicTorsionMap (ℓ : ℕ) :
-    torsionBy (Additive (LineBundleClass X)) (ℓ : ℤ) →ₗ[ZMod ℓ] (𝒯).torsion ℓ :=
-  (toBase.numericalPicLinear hX hη hC hπ hreg hconn).toAddMonoidHom.torsionByZModLinearMap ℓ
-
-/-- Underlying `Pic` value of `reducedSpecialFiberNumericalPicTorsionMap`. -/
-@[simp] lemma coe_reducedSpecialFiberNumericalPicTorsionMap_apply (ℓ : ℕ)
-    (a : torsionBy (Additive (LineBundleClass (reducedSpecialFiber R toBase))) (ℓ : ℤ)) :
-    (toBase.reducedSpecialFiberNumericalPicTorsionMap hX hη hC hπ hreg hconn ℓ a : (𝒯).Pic) =
-      toBase.reducedSpecialFiberNumericalPicLinear hX hη hC hπ hreg hconn a.val := by
-  rw [reducedSpecialFiberNumericalPicTorsionMap, AddMonoidHom.coe_torsionByZModLinearMap_apply,
-    LinearMap.toAddMonoidHom_coe]
-
-/-- Underlying `Pic` value of `specialFiberNumericalPicTorsionMap`. -/
-lemma coe_specialFiberNumericalPicTorsionMap_apply (ℓ : ℕ)
-    (a : torsionBy (Additive (LineBundleClass (specialFiber R toBase).left)) (ℓ : ℤ)) :
-    (toBase.specialFiberNumericalPicTorsionMap hX hη hC hπ hreg hconn ℓ a : (𝒯).Pic) =
-      toBase.specialFiberNumericalPicLinear hX hη hC hπ hreg hconn a.val := by
-  rw [specialFiberNumericalPicTorsionMap, AddMonoidHom.coe_torsionByZModLinearMap_apply,
-    LinearMap.toAddMonoidHom_coe]
-
-/-- Underlying `Pic` value of `numericalPicTorsionMap`. -/
-@[simp] lemma coe_numericalPicTorsionMap_apply (ℓ : ℕ)
-    (a : torsionBy (Additive (LineBundleClass X)) (ℓ : ℤ)) :
-    (toBase.numericalPicTorsionMap hX hη hC hπ hreg hconn ℓ a : (𝒯).Pic) =
-      toBase.numericalPicLinear hX hη hC hπ hreg hconn a.val := by
-  rw [numericalPicTorsionMap, AddMonoidHom.coe_torsionByZModLinearMap_apply,
-    LinearMap.toAddMonoidHom_coe]
-
-/-- For every `ℓ > 0` (`hℓ : ℓ ≠ 0`), `reducedSpecialFiberNumericalPicTorsionMap` vanishes
-identically because `reducedSpecialFiberMultidegree` takes values in the torsion-free group
-`(𝒯).Component → ℤ`. -/
-@[simp] theorem reducedSpecialFiberNumericalPicTorsionMap_eq_zero {ℓ : ℕ} (hℓ : ℓ ≠ 0) :
-    toBase.reducedSpecialFiberNumericalPicTorsionMap hX hη hC hπ hreg hconn ℓ = 0 := by
-  refine LinearMap.ext fun a ↦ Subtype.ext ?_
-  rw [coe_reducedSpecialFiberNumericalPicTorsionMap_apply,
-    reducedSpecialFiberNumericalPicLinear_apply, LinearMap.zero_apply, AddSubgroup.coe_zero]
-  have ha : (ℓ : ℤ) • a.val = 0 := a.property
-  have hmul : (ℓ : ℤ) • toBase.reducedSpecialFiberMultidegree hX hη
-      toBase.specialFiberCohomologyFiniteDimensional_zero
-      hC.finiteDimensional_one a.val = 0 := by
-    rw [← map_zsmul, ha, map_zero]
-  have hd : toBase.reducedSpecialFiberMultidegree hX hη
-      toBase.specialFiberCohomologyFiniteDimensional_zero
-      hC.finiteDimensional_one a.val = (0 : (𝒯).Component → ℤ) :=
-    (smul_eq_zero.mp hmul).resolve_left (Int.natCast_ne_zero.mpr hℓ)
-  exact (congrArg (Submodule.Quotient.mk (p := (𝒯).principalDivisors)) hd).trans
-    (Submodule.Quotient.mk_zero _)
-
-/-- `specialFiberNumericalPicTorsionMap` factors through torsion pullback to `X_{s,red}`. -/
-@[simp] lemma
-  reducedSpecialFiberNumericalPicTorsionMap_comp_pullback_reducedSpecialFiberToSpecialFiber
-    (ℓ : ℕ) : toBase.reducedSpecialFiberNumericalPicTorsionMap hX hη hC hπ hreg hconn ℓ ∘ₗ
-        pullbackTorsionLinearMap (reducedSpecialFiberToSpecialFiber R toBase) ℓ =
-      toBase.specialFiberNumericalPicTorsionMap hX hη hC hπ hreg hconn ℓ := by
-  rw [reducedSpecialFiberNumericalPicTorsionMap, specialFiberNumericalPicTorsionMap,
-    LineBundleClass.torsionByZModLinearMap_comp_pullbackTorsionLinearMap,
-    reducedSpecialFiberNumericalPicLinear_comp_pullbackLinearMap_reducedSpecialFiberToSpecialFiber]
-
-/-- `numericalPicTorsionMap` factors through torsion pullback along `X_s ⟶ X`. -/
-@[simp] lemma specialFiberNumericalPicTorsionMap_comp_pullbackTorsionLinearMap_specialFiberι
-    (ℓ : ℕ) : toBase.specialFiberNumericalPicTorsionMap hX hη hC hπ hreg hconn ℓ ∘ₗ
-        pullbackTorsionLinearMap (specialFiberι R toBase) ℓ =
-      toBase.numericalPicTorsionMap hX hη hC hπ hreg hconn ℓ := by
-  rw [specialFiberNumericalPicTorsionMap, numericalPicTorsionMap,
-    LineBundleClass.torsionByZModLinearMap_comp_pullbackTorsionLinearMap,
-    specialFiberNumericalPicLinear_comp_pullbackLinearMap_specialFiberι]
-
-/-- `numericalPicTorsionMap` factors through torsion pullback along `X_{s,red} ⟶ X`. -/
-@[simp] lemma
-  reducedSpecialFiberNumericalPicTorsionMap_comp_pullbackTorsionLinearMap_reducedSpecialFiberι
-    (ℓ : ℕ) : toBase.reducedSpecialFiberNumericalPicTorsionMap hX hη hC hπ hreg hconn ℓ ∘ₗ
-        pullbackTorsionLinearMap (reducedSpecialFiberι R toBase) ℓ =
-      toBase.numericalPicTorsionMap hX hη hC hπ hreg hconn ℓ := by
-  rw [reducedSpecialFiberNumericalPicTorsionMap, numericalPicTorsionMap,
-    LineBundleClass.torsionByZModLinearMap_comp_pullbackTorsionLinearMap,
-    reducedSpecialFiberNumericalPicLinear_comp_pullbackLinearMap_reducedSpecialFiberι]
-
-/-- For every `ℓ > 0` (`hℓ : ℓ ≠ 0`), `specialFiberNumericalPicTorsionMap` vanishes identically
-because `specialFiberMultidegreeOnFiber` takes values in the torsion-free group
-`(𝒯).Component → ℤ`. -/
-@[simp] theorem specialFiberNumericalPicTorsionMap_eq_zero {ℓ : ℕ} (hℓ : ℓ ≠ 0) :
-    toBase.specialFiberNumericalPicTorsionMap hX hη hC hπ hreg hconn ℓ = 0 := by
-  have hcomp :=
-    toBase.reducedSpecialFiberNumericalPicTorsionMap_comp_pullback_reducedSpecialFiberToSpecialFiber
-      hX hη hC hπ hreg hconn ℓ
-  rw [← hcomp,
-    toBase.reducedSpecialFiberNumericalPicTorsionMap_eq_zero hX hη hC hπ hreg hconn hℓ,
-    LinearMap.zero_comp]
-
-/-- For every `ℓ > 0` (`hℓ : ℓ ≠ 0`), `numericalPicTorsionMap` vanishes identically because
-`specialFiberMultidegree` takes values in the torsion-free group `(𝒯).Component → ℤ`. -/
-@[simp] theorem numericalPicTorsionMap_eq_zero {ℓ : ℕ} (hℓ : ℓ ≠ 0) :
-    toBase.numericalPicTorsionMap hX hη hC hπ hreg hconn ℓ = 0 := by
-  have hcomp :=
-    reducedSpecialFiberNumericalPicTorsionMap_comp_pullbackTorsionLinearMap_reducedSpecialFiberι
-      (toBase := toBase) hX hη hC hπ hreg hconn ℓ
-  rw [← hcomp,
-    toBase.reducedSpecialFiberNumericalPicTorsionMap_eq_zero hX hη hC hπ hreg hconn hℓ,
-    LinearMap.zero_comp]
-
-/-- When `X_s` is reduced, `specialFiberNumericalPicTorsionMap` factors through
-`LineBundleClass.pullbackTorsionLinearEquiv` along `X_{s,red} ≅ X_s`. -/
-theorem specialFiberNumericalPicTorsionMap_eq_comp_pullbackTorsionLinearEquiv
-    [IsReduced (specialFiber R toBase).left] (ℓ : ℕ) :
-    haveI := (isIso_reducedSpecialFiberToSpecialFiber_iff R toBase).mpr inferInstance
-    toBase.specialFiberNumericalPicTorsionMap hX hη hC hπ hreg hconn ℓ =
-      toBase.reducedSpecialFiberNumericalPicTorsionMap hX hη hC hπ hreg hconn ℓ ∘ₗ
-        (pullbackTorsionLinearEquiv
-          (asIso (reducedSpecialFiberToSpecialFiber R toBase)) ℓ).toLinearMap := by
-  have := (isIso_reducedSpecialFiberToSpecialFiber_iff R toBase).mpr inferInstance
-  rw [LineBundleClass.toLinearMap_pullbackTorsionLinearEquiv, asIso_hom,
-    reducedSpecialFiberNumericalPicTorsionMap_comp_pullback_reducedSpecialFiberToSpecialFiber]
-
 /-! ### Vertical Cartier divisors and kernel of numerical Picard specialization -/
 
 /-- The special-fibre weighted intersection matrix agrees with `(𝒯).weightedIntersection`. -/
@@ -412,6 +275,8 @@ theorem map_specialFiberMultidegree_range_verticalLineBundleLinear :
   rw [← LinearMap.range_comp, toBase.specialFiberMultidegree_comp_verticalLineBundleLinear,
     toBase.specialFiberWeightedIntersectionMatrix_eq_weightedIntersection hX hη hC hπ hreg hconn,
     NumericalType.principalDivisors_eq_range]
+  -- Unfolds `(𝒯).Component ≡ ↥(toBase.finite_setOf_base_eq_closedPoint _ hη).toFinset`
+  -- in the implicit domain type of `LinearMap.range` and `Matrix.vecMulLinear`.
   rfl
 
 /-- Every vertical combination of special-fibre components maps to `0` in `(𝒯).Pic`. -/
@@ -434,8 +299,9 @@ theorem map_specialFiberMultidegree_range_verticalLineBundleLinear :
   exact LinearMap.congr_fun
     (toBase.numericalPicLinear_comp_verticalLineBundleLinear hX hη hC hπ hreg hconn) v
 
-/-- **Kernel of `numericalPicLinear`**, deduced from the vertical multidegree formula and
-`Submodule.comap_map_eq`:
+/-- **Kernel of `numericalPicLinear`**
+([Stacks, Lemma 55.10.1 (Tag 0CDG)](https://stacks.math.columbia.edu/tag/0CDG)), deduced from the
+vertical multidegree formula and `Submodule.comap_map_eq`:
 `ker numericalPicLinear = ker specialFiberMultidegree ⊔ range verticalLineBundleLinear`. -/
 theorem ker_numericalPicLinear :
     LinearMap.ker (toBase.numericalPicLinear hX hη hC hπ hreg hconn) =
