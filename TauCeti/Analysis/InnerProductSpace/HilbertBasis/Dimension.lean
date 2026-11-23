@@ -5,11 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.SetTheory.Cardinal.Arithmetic
 public import TauCeti.Analysis.InnerProductSpace.HilbertBasis.Prod
 public import TauCeti.Analysis.InnerProductSpace.HilbertBasis.Reindex
 public import TauCeti.Analysis.InnerProductSpace.Orthonormal.Basic
 public import TauCeti.Analysis.Normed.Lp.Basic
+import TauCeti.Topology.Algebra.Module.Span
 
 /-!
 # Hilbert dimension and unitary classification of Hilbert spaces
@@ -43,7 +43,7 @@ the Hilbert dimension of `ℓ²(ι, 𝕜)` is `#ι` (up to universe lift), bound
 subspaces (`LinearIsometry.lift_hilbertDim_le`, `Submodule.hilbertDim_le`), agrees with
 `Module.finrank 𝕜 E` in finite dimension, is invariant under continuous linear equivalences
 (`ContinuousLinearEquiv.lift_hilbertDim_eq`, `ContinuousLinearEquiv.hilbertDim_eq`) via a
-density-character bound (`HilbertBasis.lift_mk_le_max_aleph0_of_denseRange`), is at most `ℵ₀` if
+density-character bound (`Orthonormal.lift_mk_le_max_aleph0_of_denseRange`), is at most `ℵ₀` if
 and only if `E` is separable (`TauCeti.hilbertDim_le_aleph0_iff`), equals `ℵ₀` if and only if `E`
 is separable and infinite-dimensional (`TauCeti.hilbertDim_eq_aleph0_iff`), and classifies Hilbert
 spaces over `𝕜` up to linear isometric equivalence
@@ -66,8 +66,8 @@ decompositions, and quotients by closed submodules (`TauCeti.hilbertDim_prodLp`,
   finite-dimensional iff the index type is finite, with `finrank 𝕜 E = Fintype.card ι`.
 * `Orthonormal.lift_mk_le`, `HilbertBasis.lift_mk_eq`: orthonormal cardinality bound and
   basis-cardinality invariance for `HilbertBasis`.
-* `HilbertBasis.lift_mk_le_max_aleph0_of_denseRange`: density-character bound for continuous maps
-  with dense range.
+* `Orthonormal.lift_mk_le_max_aleph0_of_denseRange`: density-character bound for continuous maps
+  with dense range out of a densely generated topological module.
 * `HilbertBasis.nonempty_linearIsometryEquiv_iff_lift_mk_eq`: unitary classification in terms of
   given Hilbert bases.
 * `TauCeti.hilbertDim`: the Hilbert dimension of a complete inner product space.
@@ -209,8 +209,9 @@ basis `c : HilbertBasis κ 𝕜 E`. -/
 theorem lift_mk_le {ι : Type u} {κ : Type v} {v : ι → E} (hv : Orthonormal 𝕜 v)
     (c : HilbertBasis κ 𝕜 E) :
     Cardinal.lift.{v} #ι ≤ Cardinal.lift.{u} #κ := by
+  have : CompleteSpace E := c.completeSpace
   have h := (hv.comp (Equiv.ulift : ULift.{v} ι ≃ ι) Equiv.ulift.injective).mk_le
-    (c.reindexOfRepr (Equiv.ulift.symm : κ ≃ ULift.{u} κ))
+    (c.reindex (Equiv.ulift.symm : κ ≃ ULift.{u} κ))
   rwa [Cardinal.mk_uLift, Cardinal.mk_uLift] at h
 
 end Orthonormal
@@ -265,32 +266,39 @@ theorem nonempty_linearIsometryEquiv_iff_nonempty_equiv {ι : Type u} {κ : Type
 
 end Cardinality
 
-/-- **Density-character bound.** If `f : E → F` is continuous with dense range, then any orthonormal
-family `v : κ → F` has index cardinality at most `max (#ι) ℵ₀` for any Hilbert basis `b` of
-`E`. -/
+end HilbertBasis
+
+namespace Orthonormal
+
+/-- **Density-character bound.** If `E` is a topological `𝕜`-module densely spanned by `w : ι → E`
+and `f : E → F` is continuous with dense range, then any orthonormal family `v : κ → F` has index
+cardinality at most `max (#ι) ℵ₀`. -/
 theorem lift_mk_le_max_aleph0_of_denseRange {𝕜 E F : Type*} {ι : Type u} {κ : Type v}
-    [RCLike 𝕜] [NormedAddCommGroup E] [InnerProductSpace 𝕜 E]
-    [SeminormedAddCommGroup F] [InnerProductSpace 𝕜 F]
-    (b : HilbertBasis ι 𝕜 E) {v : κ → F} (hv : Orthonormal 𝕜 v) {f : E → F}
+    [RCLike 𝕜] [AddCommMonoid E] [Module 𝕜 E] [TopologicalSpace E] [ContinuousAdd E]
+    [ContinuousSMul 𝕜 E] [SeminormedAddCommGroup F] [InnerProductSpace 𝕜 F]
+    {v : κ → F} (hv : Orthonormal 𝕜 v) {w : ι → E}
+    (hw : Dense (Submodule.span 𝕜 (Set.range w) : Set E)) {f : E → F}
     (hf : Continuous f) (hd : DenseRange f) :
     Cardinal.lift.{u} #κ ≤ max (Cardinal.lift.{v} #ι) ℵ₀ := by
+  classical
   have : ProperSpace 𝕜 := FiniteDimensional.proper_rclike 𝕜 𝕜
-  obtain ⟨s, hs_count, hs_dense⟩ := TopologicalSpace.exists_countable_dense 𝕜
-  obtain ⟨g, hg⟩ := hs_count.exists_eq_range hs_dense.nonempty
-  have hg_dense : DenseRange g := by simpa only [DenseRange, hg] using hs_dense
-  have hφ_dense := b.denseRange_finset_sum_smul hg_dense
-  have hfφ_dense : DenseRange (f ∘ fun t : Finset (ι × ℕ) ↦ ∑ p ∈ t, g p.2 • b p.1) := by
-    rw [DenseRange, Set.range_comp]
-    exact hd.dense_image hf hφ_dense
+  have hφ_dense := (TopologicalSpace.denseRange_denseSeq 𝕜).finset_sum_smul hw
+  have hfφ_dense : DenseRange (f ∘ fun t : Finset (ι × ℕ) ↦
+      ∑ p ∈ t, TopologicalSpace.denseSeq 𝕜 p.2 • w p.1) :=
+    hd.comp hφ_dense hf
   refine (hv.lift_mk_le_of_denseRange hfφ_dense).trans ?_
-  by_cases hι : Finite ι
-  · exact (Cardinal.lift_le_aleph0.2 Cardinal.mk_le_aleph0).trans (le_max_right _ _)
-  · have : Infinite ι := not_finite_iff_infinite.1 hι
-    have : Infinite (ι × ℕ) := inferInstance
-    rw [Cardinal.mk_finset_of_infinite, Cardinal.mk_prod, Cardinal.mk_nat]
-    simp
+  calc Cardinal.lift.{v} #(Finset (ι × ℕ))
+      ≤ Cardinal.lift.{v} #(List (ι × ℕ)) :=
+        Cardinal.lift_le.2 (Cardinal.mk_le_of_surjective List.toFinset_surjective)
+    _ ≤ Cardinal.lift.{v} (max ℵ₀ #(ι × ℕ)) :=
+        Cardinal.lift_le.2 (Cardinal.mk_list_le_max _)
+    _ = max ℵ₀ (Cardinal.lift.{v} #ι * ℵ₀) := by
+        simp [Cardinal.mk_prod]
+    _ ≤ max (Cardinal.lift.{v} #ι) ℵ₀ :=
+        max_le (le_max_right _ _)
+          ((Cardinal.mul_le_max (Cardinal.lift.{v} #ι) ℵ₀).trans (by simp))
 
-end HilbertBasis
+end Orthonormal
 
 namespace TauCeti
 
@@ -414,7 +422,7 @@ theorem nonempty_hilbertBasis_iff_lift_mk_eq {E : Type u} {ι : Type v}
   obtain ⟨w, b, -⟩ := exists_hilbertBasis 𝕜 E
   rw [b.hilbertDim_eq] at h
   obtain ⟨e⟩ := Cardinal.lift_mk_eq'.1 h
-  exact ⟨b.reindexOfRepr e.symm⟩
+  exact ⟨b.reindex e.symm⟩
 
 /-- Same-universe specialization of `TauCeti.nonempty_hilbertBasis_iff_lift_mk_eq`. -/
 theorem nonempty_hilbertBasis_iff_mk_eq {E ι : Type u}
@@ -576,7 +584,8 @@ theorem lift_hilbertDim_le_max_aleph0_of_denseRange {𝕜 : Type*} {E : Type u} 
   obtain ⟨_, bE, -⟩ := exists_hilbertBasis 𝕜 E
   obtain ⟨_, bF, -⟩ := exists_hilbertBasis 𝕜 F
   rw [bE.hilbertDim_eq, bF.hilbertDim_eq]
-  exact bE.lift_mk_le_max_aleph0_of_denseRange bF.orthonormal hf hd
+  exact bF.orthonormal.lift_mk_le_max_aleph0_of_denseRange
+    (Submodule.dense_iff_topologicalClosure_eq_top.2 bE.dense_span) hf hd
 
 end TauCeti
 
@@ -722,6 +731,7 @@ theorem hilbertDim_add_hilbertDim_orthogonal {E : Type u}
 
 /-- The quotient `E ⧸ K` by a closed submodule `K` of a Hilbert space `E` has the same Hilbert
 dimension as `Kᗮ`. -/
+@[simp]
 theorem hilbertDim_quotient_eq_orthogonal {E : Type u}
     [NormedAddCommGroup E] [InnerProductSpace 𝕜 E] [CompleteSpace E]
     (K : Submodule 𝕜 E) [IsClosed (K : Set E)] :
@@ -745,11 +755,8 @@ theorem hilbertDim_orthogonal_eq_of_finiteDimensional {E : Type u}
   have hK : TauCeti.hilbertDim 𝕜 K < ℵ₀ := TauCeti.hilbertDim_lt_aleph0_iff.2 inferInstance
   have hsum : TauCeti.hilbertDim 𝕜 K + TauCeti.hilbertDim 𝕜 Kᗮ = TauCeti.hilbertDim 𝕜 E :=
     K.hilbertDim_add_hilbertDim_orthogonal
-  have hKperp : ℵ₀ ≤ TauCeti.hilbertDim 𝕜 Kᗮ := by
-    by_contra h
-    push Not at h
-    exact hE (TauCeti.hilbertDim_lt_aleph0_iff.1 (hsum ▸ Cardinal.add_lt_aleph0 hK h))
-  rw [← hsum, Cardinal.add_eq_right hKperp (hK.le.trans hKperp)]
+  have hinf : ℵ₀ ≤ TauCeti.hilbertDim 𝕜 E := TauCeti.aleph0_le_hilbertDim_iff.2 hE
+  exact Cardinal.eq_of_add_eq_of_aleph0_le hsum (hK.trans_le hinf) hinf
 
 /-- A complete subspace of finite codimension (meaning finite-dimensional orthogonal complement) in
 an infinite-dimensional Hilbert space has the same Hilbert dimension as the ambient space. -/

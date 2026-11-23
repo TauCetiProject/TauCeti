@@ -7,8 +7,8 @@ module
 
 public import Mathlib.Algebra.Module.LinearMap.FiniteRange
 public import Mathlib.Analysis.InnerProductSpace.l2Space
+import TauCeti.Analysis.InnerProductSpace.Continuous
 import TauCeti.Topology.Algebra.InfiniteSum.Defs
-import TauCeti.Topology.Algebra.Module.Span
 
 /-!
 # Hilbert bases
@@ -18,9 +18,7 @@ element of a Hilbert basis of that subspace.  In particular, this lets Hilbert b
 orthogonal eigenspaces be assembled into a spectral basis of the ambient space.
 
 A space with a Hilbert basis is complete (`HilbertBasis.completeSpace`), and a vector orthogonal
-to every vector of a Hilbert basis is zero (`HilbertBasis.eq_zero_of_forall_inner_eq_zero`). Finite
-linear combinations of a Hilbert basis with coefficients from a dense set of scalars are dense
-(`HilbertBasis.denseRange_finset_sum_smul`).
+to every vector of a Hilbert basis is zero (`HilbertBasis.eq_zero_of_forall_inner_eq_zero`).
 
 It also expands the value of a continuous semilinear map in a Hilbert basis: the series
 `∑ᵢ σ ⟪bᵢ, x⟫ • T bᵢ` converges to `T x` (`HilbertBasis.hasSum_inner_smul_apply`). A continuous
@@ -74,8 +72,7 @@ theorem inner_eq_zero_of_forall_inner_eq_zero {K : Submodule 𝕜 E} (bK : Hilbe
 /-- A vector orthogonal to every vector of a Hilbert basis is zero. -/
 theorem eq_zero_of_forall_inner_eq_zero (b : HilbertBasis ι 𝕜 E) {x : E}
     (hx : ∀ i, ⟪b i, x⟫_𝕜 = 0) : x = 0 :=
-  b.repr.map_eq_zero_iff.1 <| lp.ext <| funext fun i ↦ by
-    rw [b.repr_apply_apply, hx i, lp.coeFn_zero, Pi.zero_apply]
+  (Submodule.dense_iff_topologicalClosure_eq_top.2 b.dense_span).eq_zero_of_forall_inner_eq_zero hx
 
 /-- A continuous semilinear map out of `E` sends every vector into a closed submodule that contains
 the images of all vectors of a Hilbert basis of `E`. -/
@@ -117,13 +114,6 @@ theorem ext_inner_apply {𝕜' κ F : Type*} [RCLike 𝕜'] [NormedAddCommGroup 
     {A B : E →SL[σ] F} (h : ∀ i j, ⟪c i, A (b j)⟫_𝕜' = ⟪c i, B (b j)⟫_𝕜') : A = B :=
   b.ext_continuousLinearMap fun j ↦ c.repr.injective <| lp.ext <| funext fun i ↦ by
     simp only [HilbertBasis.repr_apply_apply, h]
-
-/-- Finite linear combinations of a Hilbert basis with coefficients from a dense-range scalar map
-are dense in `E`. -/
-theorem denseRange_finset_sum_smul {α : Type*} (b : HilbertBasis ι 𝕜 E)
-    {g : α → 𝕜} (hg : DenseRange g) :
-    DenseRange (fun t : Finset (ι × α) ↦ ∑ p ∈ t, g p.2 • b p.1) :=
-  hg.finset_sum_smul (Submodule.dense_iff_topologicalClosure_eq_top.2 b.dense_span)
 
 /-- **Expansion of an operator in a Hilbert basis.** For a continuous semilinear map `T`, the
 series `∑ᵢ σ ⟪bᵢ, x⟫ • T bᵢ` converges to `T x`. No separation is assumed on the target, so this

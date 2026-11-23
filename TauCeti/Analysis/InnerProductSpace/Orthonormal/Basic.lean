@@ -96,17 +96,6 @@ theorem countable_support_inner_right (hv : Orthonormal 𝕜 v) (x : E) :
   apply hi
   rw [← inner_conj_symm, h0, map_zero]
 
-/-- Every orthonormal family in a separable inner product space is countable. -/
-theorem countable_of_separableSpace (hv : Orthonormal 𝕜 v)
-    [TopologicalSpace.SeparableSpace E] : Countable ι := by
-  have hr : 0 < √2 / 2 := by positivity
-  have hd : Pairwise (Function.onFun Disjoint fun i ↦ Metric.ball (v i) (√2 / 2)) := fun i j hij ↦
-    Metric.ball_disjoint_ball (by rw [add_halves, hv.dist_eq_sqrt_two hij])
-  exact hd.countable_of_isOpen_disjoint (fun _ ↦ Metric.isOpen_ball)
-    (fun i ↦ ⟨v i, Metric.mem_ball_self hr⟩)
-
-end
-
 /-- If `ψ : α → E` has dense range, then any orthonormal family `v : ι → E` has lifted index
 cardinality at most `#α`. -/
 theorem lift_mk_le_of_denseRange {𝕜 E : Type*} {ι : Type u} {α : Type v}
@@ -118,6 +107,18 @@ theorem lift_mk_le_of_denseRange {𝕜 E : Type*} {ι : Type u} {α : Type v}
     fun i j hij ↦ Metric.ball_disjoint_ball (by rw [add_halves, hv.dist_eq_sqrt_two hij])
   exact hd.lift_mk_le_of_isOpen_disjoint_of_denseRange (fun _ ↦ Metric.isOpen_ball)
     (fun i ↦ ⟨v i, Metric.mem_ball_self hr⟩) hψ
+
+/-- Every orthonormal family in a separable inner product space is countable. -/
+theorem countable_of_separableSpace (hv : Orthonormal 𝕜 v)
+    [TopologicalSpace.SeparableSpace E] : Countable ι := by
+  rcases isEmpty_or_nonempty E with hE | _
+  · have : IsEmpty ι := ⟨fun i ↦ hE.false (v i)⟩
+    infer_instance
+  · have h := hv.lift_mk_le_of_denseRange (TopologicalSpace.denseRange_denseSeq E)
+    rw [Cardinal.mk_nat, Cardinal.lift_aleph0, Cardinal.lift_le_aleph0] at h
+    exact Cardinal.mk_le_aleph0_iff.1 h
+
+end
 
 /-- Two distinct entries of an orthonormal family form an orthonormal pair. -/
 theorem pair {𝕜 E ι : Type*} [RCLike 𝕜] [SeminormedAddCommGroup E] [InnerProductSpace 𝕜 E]
