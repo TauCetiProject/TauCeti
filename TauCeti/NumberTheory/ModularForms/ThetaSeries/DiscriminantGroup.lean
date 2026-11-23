@@ -275,7 +275,6 @@ theorem thetaSeries_dual_eq_sum_iff_isIntegral_of_re_eq_zero [Fintype (Discrimin
       thetaSeries_eq_iff_eq_of_le_of_re_eq_zero le_sup_right hτ] at heq
     exact isIntegral_iff_le_dual.mpr (le_sup_left.trans_eq heq.symm)
   · exfalso
-    have : DiscreteTopology (dual L) := discreteTopology_dual_of_finite_discriminantGroup
     simp only [thetaCosetClass_eq_zero_of_not_discreteTopology L hL, Pi.zero_apply,
       Finset.sum_const_zero] at heq
     exact thetaSeries_ne_zero_of_re_eq_zero (dual L) hτ heq

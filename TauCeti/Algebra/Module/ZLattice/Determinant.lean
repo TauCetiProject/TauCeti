@@ -28,8 +28,7 @@ integral lattice, where `L ≤ L^∨`, it is the quotient `L^∨ ⧸ L`. By the 
 the inclusion `L^∨ ↪ L ⊔ L^∨` identifies `DiscriminantGroup L` with `(L ⊔ L^∨) ⧸ L`
 (`ZLattice.discriminantGroupEquivQuotientSup`), so whenever `DiscriminantGroup L` is finite the sum
 lattice `L ⊔ L^∨` is discrete if and only if `L` is (`ZLattice.discreteTopology_sup_dual_iff`) and
-the dual lattice `L^∨` is discrete
-(`ZLattice.discreteTopology_dual_of_finite_discriminantGroup`). For
+the dual lattice `L^∨` is discrete (`ZLattice.instDiscreteTopologyDualOfFinite`). For
 an integral lattice the discriminant group is finite of order `det L = [L^∨ : L]`
 (`ZLattice.IsIntegral.det_eq_card_discriminantGroup`); in particular `det L` is then a positive
 integer. Without integrality the discriminant group may be infinite — for `c ℤ ⊆ ℝ` with `c²`
@@ -71,8 +70,8 @@ diagonal (`Matrix.IsSymm.neg_one_pow_mul_det_modEq_zero_or_one`).
   is not integral.
 * `ZLattice.discreteTopology_sup_dual_iff`: when `DiscriminantGroup L` is finite, `L ⊔ L^∨` is
   discrete if and only if `L` is.
-* `ZLattice.discreteTopology_dual_of_finite_discriminantGroup`: when `DiscriminantGroup L` is
-  finite, `L^∨` is discrete.
+* `ZLattice.instDiscreteTopologyDualOfFinite`: when `DiscriminantGroup L` is finite, `L^∨` is
+  discrete.
 * `ZLattice.card_discriminantGroup_comap`: the order of the discriminant group is invariant under
   linear isometry equivalences.
 * `ZLattice.IsIntegral.det_eq_card_discriminantGroup`: for integral `L`, `det L = |L^∨ ⧸ L|`.
@@ -208,7 +207,7 @@ theorem discreteTopology_sup_dual_iff [Finite (DiscriminantGroup L)] :
 
 /-- When the discriminant group of `L` is finite, `L ⊓ L^∨` is an integral lattice of finite index
 in `L^∨`, so `L^∨` is discrete. -/
-theorem discreteTopology_dual_of_finite_discriminantGroup [Finite (DiscriminantGroup L)] :
+instance instDiscreteTopologyDualOfFinite [Finite (DiscriminantGroup L)] :
     DiscreteTopology (dual L) := by
   have hd_inf : DiscreteTopology ↥(L ⊓ dual L) :=
     (isIntegral_iff_le_dual.mpr (inf_le_right.trans (dual_anti inf_le_left))).discreteTopology
