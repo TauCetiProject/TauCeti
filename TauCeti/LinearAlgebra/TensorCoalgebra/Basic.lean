@@ -62,29 +62,29 @@ namespace TauCeti
 variable (R : Type uR) (M : Type uM) [CommSemiring R] [AddCommMonoid M] [Module R M]
 
 /-- The module of nonempty tensor words. -/
-abbrev ReducedTensorWords : Type _ := ⨁ n : {n : ℕ // 0 < n}, TensorPower R n.1 M
+abbrev ReducedTensorWords : Type _ := ⨁ n : {n : ℕ // 0 < n}, TensorPower R n.val M
 
 namespace ReducedTensorWords
 
 /-- Include a positive tensor power into reduced tensor words. -/
 noncomputable def of (n : {n : ℕ // 0 < n}) :
-    TensorPower R n.1 M →ₗ[R] ReducedTensorWords R M :=
-  DirectSum.lof R {n : ℕ // 0 < n} (fun n ↦ TensorPower R n.1 M) n
+    TensorPower R n.val M →ₗ[R] ReducedTensorWords R M :=
+  DirectSum.lof R {n : ℕ // 0 < n} (fun n ↦ TensorPower R n.val M) n
 
 /-- Inclusion into reduced tensor words is the direct-sum inclusion. -/
 theorem of_def (n : {n : ℕ // 0 < n}) :
-    of R M n = DirectSum.lof R {n : ℕ // 0 < n} (fun n ↦ TensorPower R n.1 M) n := (rfl)
+    of R M n = DirectSum.lof R {n : ℕ // 0 < n} (fun n ↦ TensorPower R n.val M) n := (rfl)
 
 /-- The positive tensor-power inclusions generate all reduced tensor words. -/
 theorem iSup_range_of : ⨆ n : {n : ℕ // 0 < n}, LinearMap.range (of R M n) = ⊤ := by
   simpa only [of, DirectSum.lof] using
     (DFinsupp.iSup_range_lsingle (R := R)
-      (M := fun n : {n : ℕ // 0 < n} ↦ TensorPower R n.1 M))
+      (M := fun n : {n : ℕ // 0 < n} ↦ TensorPower R n.val M))
 
 /-- Two linear maps out of reduced tensor words agree if they agree on pure tensor words. -/
 theorem linearMap_ext {N : Type uN} [AddCommMonoid N] [Module R N]
     {f g : ReducedTensorWords R M →ₗ[R] N}
-    (h : ∀ n (x : Fin n.1 → M),
+    (h : ∀ n (x : Fin n.val → M),
       f (of R M n (PiTensorProduct.tprod R x)) =
         g (of R M n (PiTensorProduct.tprod R x))) : f = g := by
   apply DirectSum.linearMap_ext R
@@ -105,8 +105,8 @@ theorem of_tprod_congr {k l : ℕ} (hk : 0 < k) (hkl : k = l) {u : Fin k → M}
 
 /-- Project reduced tensor words to a fixed positive tensor length. -/
 noncomputable def component (n : {n : ℕ // 0 < n}) :
-    ReducedTensorWords R M →ₗ[R] TensorPower R n.1 M :=
-  DirectSum.component R {n : ℕ // 0 < n} (fun n ↦ TensorPower R n.1 M) n
+    ReducedTensorWords R M →ₗ[R] TensorPower R n.val M :=
+  DirectSum.component R {n : ℕ // 0 < n} (fun n ↦ TensorPower R n.val M) n
 
 /-- Evaluating a reduced tensor word at a length agrees with its named component projection. -/
 @[simp]
@@ -115,20 +115,20 @@ theorem apply_eq_component (x : ReducedTensorWords R M) (n : {n : ℕ // 0 < n})
   DirectSum.apply_eq_component R x n
 
 @[simp]
-theorem component_of (n : {n : ℕ // 0 < n}) (x : TensorPower R n.1 M) :
+theorem component_of (n : {n : ℕ // 0 < n}) (x : TensorPower R n.val M) :
     component R M n (of R M n x) = x := by
   simp [component, of]
 
 /-- Reading off the component of a tensor word at its own length, presented by a second
 arithmetic expression for that length. -/
-theorem component_of_eq {m n : {k : ℕ // 0 < k}} (h : m = n) (z : TensorPower R m.1 M) :
+theorem component_of_eq {m n : {k : ℕ // 0 < k}} (h : m = n) (z : TensorPower R m.val M) :
     component R M n (of R M m z) = TensorPower.cast R M (congrArg Subtype.val h) z := by
   subst h
   rw [component_of, TensorPower.cast_refl, LinearEquiv.refl_apply]
 
 /-- Projecting an included tensor power vanishes when the two lengths differ. -/
 @[simp]
-theorem component_of_of_ne {m n : {n : ℕ // 0 < n}} (h : m ≠ n) (x : TensorPower R m.1 M) :
+theorem component_of_of_ne {m n : {n : ℕ // 0 < n}} (h : m ≠ n) (x : TensorPower R m.val M) :
     component R M n (of R M m x) = 0 := by
   simp [component, of, DirectSum.component.of, h]
 
@@ -137,31 +137,31 @@ theorem component_of_of_ne {m n : {n : ℕ // 0 < n}} (h : m ≠ n) (x : TensorP
 length. -/
 @[simp]
 theorem toModule_of {N : Type uN} [AddCommMonoid N] [Module R N]
-    (φ : ∀ n : {n : ℕ // 0 < n}, TensorPower R n.1 M →ₗ[R] N) (n : {n : ℕ // 0 < n})
-    (z : TensorPower R n.1 M) :
+    (φ : ∀ n : {n : ℕ // 0 < n}, TensorPower R n.val M →ₗ[R] N) (n : {n : ℕ // 0 < n})
+    (z : TensorPower R n.val M) :
     DirectSum.toModule R {n : ℕ // 0 < n} N φ (of R M n z) = φ n z := by
   simp [of]
 
 /-- Deconcatenation on words of one fixed length, summed over all nontrivial cuts. -/
 noncomputable def deconcatenationComponent (n : {n : ℕ // 0 < n}) :
-    TensorPower R n.1 M →ₗ[R] ReducedTensorWords R M ⊗[R] ReducedTensorWords R M :=
-  ∑ i : Fin (n.1 - 1),
+    TensorPower R n.val M →ₗ[R] ReducedTensorWords R M ⊗[R] ReducedTensorWords R M :=
+  ∑ i : Fin (n.val - 1),
     TensorProduct.map
-        (of R M ⟨i.1 + 1, by omega⟩)
-        (of R M ⟨n.1 - (i.1 + 1), by omega⟩) ∘ₗ
-      TensorPower.splitAt R M n.1 (i.1 + 1) (by omega)
+        (of R M ⟨i.val + 1, by omega⟩)
+        (of R M ⟨n.val - (i.val + 1), by omega⟩) ∘ₗ
+      TensorPower.splitAt R M n.val (i.val + 1) (by omega)
 
 /-- On a pure tensor, deconcatenation is the sum of its prefix--suffix cuts. -/
 @[simp]
-theorem deconcatenationComponent_tprod (n : {n : ℕ // 0 < n}) (x : Fin n.1 → M) :
+theorem deconcatenationComponent_tprod (n : {n : ℕ // 0 < n}) (x : Fin n.val → M) :
     deconcatenationComponent R M n (PiTensorProduct.tprod R x) =
-      ∑ i : Fin (n.1 - 1),
-        of R M ⟨i.1 + 1, by omega⟩
+      ∑ i : Fin (n.val - 1),
+        of R M ⟨i.val + 1, by omega⟩
             (PiTensorProduct.tprod R
-              (fun j : Fin (i.1 + 1) ↦ x (Fin.castLE (by omega) j))) ⊗ₜ[R]
-          of R M ⟨n.1 - (i.1 + 1), by omega⟩
+              (fun j : Fin (i.val + 1) ↦ x (Fin.castLE (by omega) j))) ⊗ₜ[R]
+          of R M ⟨n.val - (i.val + 1), by omega⟩
             (PiTensorProduct.tprod R
-              (fun j : Fin (n.1 - (i.1 + 1)) ↦ x ⟨i.1 + 1 + j.1, by omega⟩)) := by
+              (fun j : Fin (n.val - (i.val + 1)) ↦ x ⟨i.val + 1 + j.val, by omega⟩)) := by
   simp only [deconcatenationComponent, LinearMap.sum_apply, LinearMap.comp_apply,
     TensorPower.splitAt_tprod, TensorProduct.map_tmul]
 
@@ -174,7 +174,7 @@ noncomputable def deconcatenation :
   DirectSum.toModule R {n : ℕ // 0 < n} _ (deconcatenationComponent R M)
 
 @[simp]
-theorem deconcatenation_of (n : {n : ℕ // 0 < n}) (x : TensorPower R n.1 M) :
+theorem deconcatenation_of (n : {n : ℕ // 0 < n}) (x : TensorPower R n.val M) :
     deconcatenation R M (of R M n x) = deconcatenationComponent R M n x := by
   simp [deconcatenation, of]
 
@@ -198,14 +198,15 @@ It is zero when the requested block is empty or runs past the end of `x`; the in
 the definition is `0 < b` and `a + b ≤ n`. -/
 noncomputable def subword {n : ℕ} (x : Fin n → M) (a b : ℕ) : ReducedTensorWords R M :=
   if h : 0 < b ∧ a + b ≤ n then
-    of R M ⟨b, h.1⟩ (PiTensorProduct.tprod R fun j : Fin b ↦ x ⟨a + j.1, by have := j.isLt; omega⟩)
+    of R M ⟨b, h.1⟩ (PiTensorProduct.tprod R fun j : Fin b ↦ x ⟨a + j.val,
+        by have := j.isLt; omega⟩)
   else 0
 
 /-- On its intended range, a subword is the pure tensor of the selected block of letters. -/
 theorem subword_eq_of_tprod {n : ℕ} (x : Fin n → M) {a b : ℕ} (hb : 0 < b) (hab : a + b ≤ n) :
     subword R x a b =
       of R M ⟨b, hb⟩
-        (PiTensorProduct.tprod R fun j : Fin b ↦ x ⟨a + j.1, by have := j.isLt; omega⟩) := by
+        (PiTensorProduct.tprod R fun j : Fin b ↦ x ⟨a + j.val, by have := j.isLt; omega⟩) := by
   rw [subword, dite_eq_left ⟨hb, hab⟩]
 
 @[simp]
@@ -223,7 +224,7 @@ theorem of_tprod_eq_subword {n : ℕ} (hn : 0 < n) (x : Fin n → M) :
     of R M ⟨n, hn⟩ (PiTensorProduct.tprod R x) = subword R x 0 n := by
   rw [subword_eq_of_tprod R x hn (by omega)]
   congr 1
-  exact congrArg _ (funext fun j ↦ (congrArg x (Fin.ext (Nat.zero_add j.1))).symm)
+  exact congrArg _ (funext fun j ↦ (congrArg x (Fin.ext (Nat.zero_add j.val))).symm)
 
 /-- A block of length two is a two-letter word. -/
 theorem subword_two_eq {n : ℕ} (x : Fin n → M) {p : ℕ} (hp : p + 2 ≤ n) :
@@ -244,7 +245,7 @@ theorem subword_congr {n m : ℕ} (x : Fin n → M) (y : Fin m → M) {a a' b : 
   rcases Nat.eq_zero_or_pos b with rfl | hb
   · rw [subword_length_zero, subword_length_zero]
   · rw [subword_eq_of_tprod R x hb hab, subword_eq_of_tprod R y hb hab']
-    exact of_tprod_congr R M _ rfl fun j ↦ h j.1 j.isLt
+    exact of_tprod_congr R M _ rfl fun j ↦ h j.val j.isLt
 
 /-- A block of the tail of a tuple is the block one position further along the tuple. -/
 theorem subword_tail {n : ℕ} (z : Fin (n + 1) → M) (a b : ℕ) :
@@ -266,12 +267,12 @@ theorem deconcatenation_subword {n : ℕ} (x : Fin n → M) {a b : ℕ} :
     dsimp only [Subtype.val]
     let g := fun c ↦ subword R x a c ⊗ₜ[R] subword R x (a + c) (b - c)
     calc
-      _ = ∑ i : Fin (b - 1), g (i.1 + 1) := by
+      _ = ∑ i : Fin (b - 1), g (i.val + 1) := by
         refine Finset.sum_congr rfl fun i _ ↦ ?_
         have hi := i.isLt
         dsimp only [g]
-        rw [subword_eq_of_tprod R x (a := a) (b := i.1 + 1) (by omega) (by omega),
-          subword_eq_of_tprod R x (a := a + (i.1 + 1)) (b := b - (i.1 + 1))
+        rw [subword_eq_of_tprod R x (a := a) (b := i.val + 1) (by omega) (by omega),
+          subword_eq_of_tprod R x (a := a + (i.val + 1)) (b := b - (i.val + 1))
             (by omega) (by omega)]
         congr 1
         refine congrArg _ (congrArg _ (funext fun j ↦ congrArg x (Fin.ext ?_)))
@@ -316,21 +317,21 @@ variable (R : Type uR) (N : Type uN) [CommSemiring R] [AddCommMonoid N] [Module 
 /-- Prepend a letter to a reduced tensor word: `a` and `y₁ ⋯ y_k` give `a y₁ ⋯ y_k`. -/
 noncomputable def prepend : N →ₗ[R] ReducedTensorWords R N →ₗ[R] ReducedTensorWords R N :=
   (DirectSum.toModule R {n : ℕ // 0 < n} (N →ₗ[R] ReducedTensorWords R N) fun k ↦
-    ((TensorProduct.mk R (TensorPower R 1 N) (TensorPower R k.1 N)).compr₂
-        (of R N ⟨1 + k.1, by omega⟩ ∘ₗ (TensorPower.mulEquiv (R := R) (M := N)).toLinearMap) ∘ₗ
+    ((TensorProduct.mk R (TensorPower R 1 N) (TensorPower R k.val N)).compr₂
+        (of R N ⟨1 + k.val, by omega⟩ ∘ₗ (TensorPower.mulEquiv (R := R) (M := N)).toLinearMap) ∘ₗ
       (TauCeti.TensorPower.oneEquiv R N).symm.toLinearMap).flip).flip
 
 variable {R N}
 
 /-- Prepending a letter to a pure tensor word conses it onto the letters. -/
-theorem prepend_of_tprod (a : N) (k : {n : ℕ // 0 < n}) (y : Fin k.1 → N) :
+theorem prepend_of_tprod (a : N) (k : {n : ℕ // 0 < n}) (y : Fin k.val → N) :
     prepend R N a (of R N k (PiTensorProduct.tprod R y)) =
-      of R N ⟨k.1 + 1, by omega⟩ (PiTensorProduct.tprod R (Fin.cons a y)) := by
+      of R N ⟨k.val + 1, by omega⟩ (PiTensorProduct.tprod R (Fin.cons a y)) := by
   simp only [prepend, LinearMap.flip_apply, toModule_of, LinearMap.coe_comp, Function.comp_apply,
     LinearMap.compr₂_apply, TensorProduct.mk_apply, LinearEquiv.coe_coe,
     TauCeti.TensorPower.oneEquiv_symm_apply, ← TensorPower.gMul_def, TensorPower.tprod_mul_tprod,
     Fin.append_left_eq_cons]
-  exact of_tprod_congr R N _ (Nat.add_comm 1 k.1) fun _ ↦ rfl
+  exact of_tprod_congr R N _ (Nat.add_comm 1 k.val) fun _ ↦ rfl
 
 /-- Prepending a letter to a pure word of a natural-indexed string conses it onto the string. -/
 theorem prepend_of_tprod_cons (u : N) {n : ℕ} (hn : 0 < n) (z : ℕ → N) :
@@ -373,7 +374,7 @@ noncomputable def map (f : M →ₗ[R] N) : ReducedTensorWords R M →ₗ[R] Red
 
 /-- Mapping a homogeneous tensor word applies the tensor power of the map in the same length. -/
 @[simp]
-theorem map_of (f : M →ₗ[R] N) (n : {n : ℕ // 0 < n}) (x : TensorPower R n.1 M) :
+theorem map_of (f : M →ₗ[R] N) (n : {n : ℕ // 0 < n}) (x : TensorPower R n.val M) :
     ReducedTensorWords.map (R := R) f (of R M n x) =
       of R N n (PiTensorProduct.map (fun _ ↦ f) x) := by
   simp [map, of]
@@ -387,7 +388,7 @@ theorem component_map (f : M →ₗ[R] N) (n : {n : ℕ // 0 < n}) (x : ReducedT
   simp only [component, map, ← DirectSum.apply_eq_component, DirectSum.lmap_apply]
 
 /-- Mapping a pure tensor applies the map to each of its letters. -/
-theorem map_of_tprod (f : M →ₗ[R] N) (n : {n : ℕ // 0 < n}) (x : Fin n.1 → M) :
+theorem map_of_tprod (f : M →ₗ[R] N) (n : {n : ℕ // 0 < n}) (x : Fin n.val → M) :
     ReducedTensorWords.map (R := R) f (of R M n (PiTensorProduct.tprod R x)) =
       of R N n (PiTensorProduct.tprod R fun i ↦ f (x i)) := by
   simp

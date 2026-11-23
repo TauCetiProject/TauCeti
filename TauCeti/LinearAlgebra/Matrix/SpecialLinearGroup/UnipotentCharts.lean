@@ -43,7 +43,7 @@ variable {R : Type u} [CommRing R]
 
 /-- The first-column section on the chart where the upper-left coordinate is a unit. -/
 def upperLeftSection (a : Rˣ) (c : R) : SL(2, R) :=
-  ⟨!![(a : R), 0; c, (a⁻¹ : Rˣ)], by simp [Matrix.det_fin_two_of]⟩
+  .mk !![(a : R), 0; c, (a⁻¹ : Rˣ)] (by simp [Matrix.det_fin_two_of])
 
 /-- The matrix of the first section. -/
 @[simp]
@@ -54,7 +54,7 @@ theorem coe_upperLeftSection (a : Rˣ) (c : R) :
 
 /-- The first-column section on the chart where the lower-left coordinate is a unit. -/
 def lowerLeftSection (a : R) (c : Rˣ) : SL(2, R) :=
-  ⟨!![a, -(c⁻¹ : Rˣ); (c : R), 0], by simp [Matrix.det_fin_two_of]⟩
+  .mk !![a, -(c⁻¹ : Rˣ); (c : R), 0] (by simp [Matrix.det_fin_two_of])
 
 /-- The matrix of the second section. -/
 @[simp]
@@ -86,7 +86,7 @@ theorem upperLeftSection_mul_transvection_eq (g : SL(2, R)) (a : Rˣ)
     (ha : g 0 0 = a) :
     upperLeftSection a (g 1 0) * transvection (zero_ne_one : (0 : Fin 2) ≠ 1)
       ((a⁻¹ : Rˣ) * g 0 1) = g := by
-  have hdet := g.2
+  have hdet := g.property
   rw [Matrix.det_fin_two, ha] at hdet
   apply Subtype.ext
   rw [coe_upperLeftSection_mul_transvection]
@@ -102,7 +102,7 @@ theorem lowerLeftSection_mul_transvection_eq (g : SL(2, R)) (c : Rˣ)
     (hc : g 1 0 = c) :
     lowerLeftSection (g 0 0) c * transvection (zero_ne_one : (0 : Fin 2) ≠ 1)
       ((c⁻¹ : Rˣ) * g 1 1) = g := by
-  have hdet := g.2
+  have hdet := g.property
   rw [Matrix.det_fin_two, hc] at hdet
   apply Subtype.ext
   rw [coe_lowerLeftSection_mul_transvection]
@@ -207,7 +207,7 @@ theorem lowerLeftSection_eq_upperLeftSection_mul_transvection (a c : Rˣ) :
 theorem inv_mul_apply_one_one_eq_inv_mul_apply_zero_one_add (g : SL(2, R)) (a c : Rˣ)
     (ha : g 0 0 = a) (hc : g 1 0 = c) :
     (c⁻¹ : Rˣ) * g 1 1 = (a⁻¹ : Rˣ) * g 0 1 + (a⁻¹ : Rˣ) * (c⁻¹ : Rˣ) := by
-  have hdet := g.2
+  have hdet := g.property
   rw [Matrix.det_fin_two, ha, hc] at hdet
   linear_combination (↑(a⁻¹) : R) * (↑(c⁻¹) : R) * hdet -
     (↑(c⁻¹) : R) * g 1 1 * a.inv_mul + (↑(a⁻¹) : R) * g 0 1 * c.inv_mul

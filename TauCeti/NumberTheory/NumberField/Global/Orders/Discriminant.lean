@@ -104,8 +104,8 @@ theorem discr_ne_zero : O.discr ≠ 0 := by
 /-- An order is `ℤ`-linearly equivalent to its copy inside the maximal order. -/
 private def equivToRingOfIntegers :
     O.toSubalgebra ≃ₗ[ℤ] Subalgebra.toSubmodule O.toRingOfIntegers where
-  toFun x := ⟨⟨x, O.le_ringOfIntegers x.2⟩, O.mem_toRingOfIntegers.mpr x.2⟩
-  invFun y := ⟨((y : 𝓞 K) : K), O.mem_toRingOfIntegers.mp y.2⟩
+  toFun x := ⟨⟨x, O.le_ringOfIntegers x.property⟩, O.mem_toRingOfIntegers.mpr x.property⟩
+  invFun y := ⟨((y : 𝓞 K) : K), O.mem_toRingOfIntegers.mp y.property⟩
   map_add' _ _ := rfl
   map_smul' _ _ := rfl
   left_inv _ := rfl

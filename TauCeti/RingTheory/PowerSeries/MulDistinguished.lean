@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Normed.Monoid.MulUnit
 public import TauCeti.RingTheory.PowerSeries.GaussNorm
+import Mathlib.RingTheory.Polynomial.GaussNorm
 import TauCeti.Analysis.Normed.Ring.MulUnit
 import TauCeti.RingTheory.PowerSeries.CoeffProd
 import TauCeti.RingTheory.PowerSeries.GaussNorm.Estimates
@@ -49,7 +50,8 @@ extension.
   multiplicatively distinguished series multiplies the Gauss norm of a restricted series by the
   Gauss norm of the divisor.
 * `TauCeti.PowerSeries.gaussNorm_X_sub_C_mul`: in particular `‖(X - a) * q‖ = c * ‖q‖` at the
-  radius `c` when `‖a‖ ≤ c`.
+  radius `c` when `‖a‖ ≤ c`, and `TauCeti.PowerSeries.gaussNorm_X_sub_C_pow`:
+  `‖(X - a) ^ n‖ = c ^ n` for `0 ≤ c` and `‖a‖ ≤ c`.
 * `TauCeti.PowerSeries.isMulDistinguished_monomial` and
   `TauCeti.PowerSeries.isMulDistinguished_X_sub_C`: monomials with multiplicative-unit
   coefficient, and `X - b` for `b` in the closed disc of radius `c`.
@@ -266,6 +268,24 @@ theorem gaussNorm_X_sub_C_mul (hc : 0 < c) {a : R} (ha : ‖a‖ ≤ c)
     ⟨_, Set.forall_mem_range.mpr hupper⟩
   exact le_antisymm ((PowerSeries.gaussNorm_eq _ _ _).trans_le (ciSup_le hupper))
     (hlower.trans (PowerSeries.le_gaussNorm norm c _ hb _))
+
+/-- For `0 ≤ c` and `‖a‖ ≤ c`, the Gauss norm of `(X - a) ^ n` at `c` over an ultrametric normed
+ring with `‖1‖ = 1` is `c ^ n`. -/
+theorem gaussNorm_X_sub_C_pow [NormOneClass R] (hc : 0 ≤ c) {a : R} (ha : ‖a‖ ≤ c) (n : ℕ) :
+    ((PowerSeries.X - PowerSeries.C a) ^ n).gaussNorm norm c = c ^ n := by
+  rcases hc.eq_or_lt with rfl | hc
+  · obtain rfl : a = 0 := norm_le_zero_iff.mp ha
+    rw [map_zero, sub_zero, PowerSeries.X_pow_eq]
+    have h : (PowerSeries.monomial n (1 : R)).gaussNorm norm 0 = ‖(1 : R)‖ * 0 ^ n :=
+      PowerSeries.gaussNorm_monomial (v := normRingSeminorm R) (r := (1 : R)) le_rfl n
+    simpa using h
+  · induction n with
+    | zero =>
+      rw [pow_zero, pow_zero, ← map_one PowerSeries.C]
+      exact (PowerSeries.gaussNorm_C (v := normRingSeminorm R) (r := (1 : R)) hc.le).trans norm_one
+    | succ n ih =>
+      rw [pow_succ', gaussNorm_X_sub_C_mul hc ha
+        ((PowerSeries.IsRestricted.subring c).pow_mem (isRestricted_X_sub_C a) n), ih, pow_succ']
 
 end NormedRing
 

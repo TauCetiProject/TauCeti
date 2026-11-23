@@ -22,9 +22,11 @@ momentum `e` and carries the form `dt ∧ de`. Its two-form is the product
 `σ ⊕ (dt ∧ de)` (`TauCeti.SmoothTwoForm.extended`), which is symplectic when `σ` is. For the
 cotangent bundle `M = T*Q` of a configuration manifold this is the phase space `T*(Q × ℝ)` of
 time-dependent mechanics: `TauCeti.CotangentBundle.prodDiffeomorph` splits `T*(Q × ℝ)`
-symplectically as `T*Q × T*ℝ`, and here `T*ℝ` is written in its global coordinates `(t, e)`; the
-comparison of Tau Ceti's cotangent bundle of `ℝ` with this coordinate plane is not made in this
-file. This file is the manifold version of the linear model `TauCeti.SymplecticForm.extended` of
+symplectically as `T*Q × T*ℝ`, and here `T*ℝ` is written in its global coordinates `(t, e)`. The
+resulting symplectomorphism `T*(Q × ℝ) ≃ T*Q × (ℝ × ℝ)` is
+`TauCeti.CotangentBundle.prodRealDiffeomorph`, in
+`TauCeti.Geometry.Symplectic.Hamiltonian.ExtendedPhaseSpace.Cotangent`. This file is the manifold
+version of the linear model `TauCeti.SymplecticForm.extended` of
 `TauCeti.Geometry.Symplectic.Hamiltonian.ExtendedPhaseSpace`.
 
 The **extended Hamiltonian** `K(x, t, e) = e + H(t, x)` (`TauCeti.extendedHamiltonian`) is

@@ -64,10 +64,10 @@ variable {n : ℕ} (k : Fin (n + 1))
 the unit quaternions: `(v q)_k / ‖(v q)_k‖ = (v_k / ‖v_k‖) q`. -/
 private theorem sphereDirection_op_smul_apply (q : sphere (0 : ℍ) 1)
     (v : sphere (0 : PiLp 2 fun _ : Fin (n + 1) ↦ ℍ) 1) (hv : mk n v ∈ affineOpen k) :
-    sphereDirection 1 ((op q • v).1 k) = sphereDirection 1 (v.1 k) * q := by
-  have hv' : v.1 k ≠ 0 := (mk_mem_affineOpen_iff k v).1 hv
-  have h : (op q • v).1 k =
-      ‖v.1 k‖ • ((sphereDirection 1 (v.1 k) * q : sphere (0 : ℍ) 1) : ℍ) := by
+    sphereDirection 1 ((op q • v).val k) = sphereDirection 1 (v.val k) * q := by
+  have hv' : v.val k ≠ 0 := (mk_mem_affineOpen_iff k v).1 hv
+  have h : (op q • v).val k =
+      ‖v.val k‖ • ((sphereDirection 1 (v.val k) * q : sphere (0 : ℍ) 1) : ℍ) := by
     simp only [Sphere.coe_op_sphere_smul, PiLp.smul_apply, op_smul_eq_mul, unop_op,
       Metric.unitSphere.coe_mul, ← smul_mul_assoc, norm_smul_sphereDirection]
   rw [h, sphereDirection_smul_of_pos _ (norm_pos_iff.2 hv')]
@@ -76,16 +76,16 @@ private theorem sphereDirection_op_smul_apply (q : sphere (0 : ℍ) 1)
 `v_k ≠ 0`. -/
 private theorem continuousOn_sphereDirection_apply :
     ContinuousOn
-      (fun v : sphere (0 : PiLp 2 fun _ : Fin (n + 1) ↦ ℍ) 1 ↦ sphereDirection 1 (v.1 k))
+      (fun v : sphere (0 : PiLp 2 fun _ : Fin (n + 1) ↦ ℍ) 1 ↦ sphereDirection 1 (v.val k))
       (mk n ⁻¹' affineOpen k) := by
   -- On the chart the direction is the radial projection of a nowhere-zero coordinate.
   rw [continuousOn_iff_continuous_domRestrict]
-  refine (normalizeToSphere (fun v : mk n ⁻¹' affineOpen k ↦ v.1.1 k)
+  refine (normalizeToSphere (fun v : mk n ⁻¹' affineOpen k ↦ v.val.val k)
     ((PiLp.continuous_apply 2 (fun _ : Fin (n + 1) ↦ ℍ) k).comp
-      (continuous_subtype_val.comp continuous_subtype_val))
-    fun v ↦ (mk_mem_affineOpen_iff k v.1).1 v.2).continuous.congr fun v ↦ Subtype.ext ?_
+      (continuous_subtypeVal.comp continuous_subtypeVal))
+    fun v ↦ (mk_mem_affineOpen_iff k v.val).1 v.property).continuous.congr fun v ↦ Subtype.ext ?_
   rw [coe_normalizeToSphere_apply]
-  exact (coe_sphereDirection_of_ne_zero _ ((mk_mem_affineOpen_iff k v.1).1 v.2)).symm
+  exact (coe_sphereDirection_of_ne_zero _ ((mk_mem_affineOpen_iff k v.val).1 v.property)).symm
 
 /-- The **chart of the quaternionic Hopf fibration** over the affine open `{X_k ≠ 0}` of `HPⁿ`,
 with fibre the unit quaternions. It sends a unit vector `v` with `v_k ≠ 0` to
@@ -94,7 +94,7 @@ by the equivariant map `v ↦ v_k / ‖v_k‖`, read in the unit quaternions rat
 opposite group. -/
 def hopfTrivialization : Bundle.Trivialization (sphere (0 : ℍ) 1) (mk n) :=
   (orbitTrivialization (affineOpen k) (isOpen_affineOpen k)
-    (fun v ↦ op (sphereDirection 1 (v.1 k)))
+    (fun v ↦ op (sphereDirection 1 (v.val k)))
     (continuous_op.comp_continuousOn (continuousOn_sphereDirection_apply k))
     fun g v hv ↦ by
       rw [← op_unop g, sphereDirection_op_smul_apply k _ v hv, op_mul]).transFiberHomeomorph
@@ -110,7 +110,7 @@ theorem hopfTrivialization_baseSet : (hopfTrivialization (n := n) k).baseSet = a
 `k`th coordinate. -/
 @[simp]
 theorem hopfTrivialization_apply (v : sphere (0 : PiLp 2 fun _ : Fin (n + 1) ↦ ℍ) 1) :
-    hopfTrivialization k v = (mk n v, sphereDirection 1 (v.1 k)) := by
+    hopfTrivialization k v = (mk n v, sphereDirection 1 (v.val k)) := by
   refine (Bundle.Trivialization.transFiberHomeomorph_apply _ _ v).trans ?_
   exact congrArg (Prod.map id opHomeomorph.symm) (orbitTrivialization_apply v)
 
@@ -119,7 +119,7 @@ theorem hopfTrivialization_apply (v : sphere (0 : PiLp 2 fun _ : Fin (n + 1) ↦
 theorem hopfTrivialization_symm_apply_mk {v : sphere (0 : PiLp 2 fun _ : Fin (n + 1) ↦ ℍ) 1}
     (hv : mk n v ∈ affineOpen k) (q : sphere (0 : ℍ) 1) :
     (hopfTrivialization k).toOpenPartialHomeomorph.symm (mk n v, q) =
-      op ((sphereDirection 1 (v.1 k))⁻¹ * q) • v := by
+      op ((sphereDirection 1 (v.val k))⁻¹ * q) • v := by
   rw [op_mul, op_inv]
   exact orbitTrivialization_symm_apply_mk hv (op q)
 
@@ -161,14 +161,14 @@ def hopfFiberHomeomorph : sphere (0 : ℍ) 1 ≃ₜ mk n ⁻¹' {mk n v} :=
   have hb : Function.Bijective (orbitFiber v) := by
     refine ⟨fun q q' h ↦ ?_, fun w ↦ ?_⟩
     · -- Compare a nonzero coordinate of `v q = v q'` and cancel it on the left.
-      obtain ⟨j, hj⟩ : ∃ j, v.1 j ≠ 0 := by
+      obtain ⟨j, hj⟩ : ∃ j, v.val j ≠ 0 := by
         by_contra! h0
         exact ne_zero_of_mem_unit_sphere v (PiLp.ext h0)
-      have h' := congrArg (fun w : mk n ⁻¹' {mk n v} ↦ (w.1 : PiLp 2 fun _ ↦ ℍ) j) h
+      have h' := congrArg (fun w : mk n ⁻¹' {mk n v} ↦ (w.val : PiLp 2 fun _ ↦ ℍ) j) h
       simp only [orbitFiber, Sphere.coe_op_sphere_smul, PiLp.smul_apply, op_smul_eq_mul,
         unop_op] at h'
       exact Subtype.ext (mul_left_cancel₀ hj h')
-    · obtain ⟨q, hq⟩ := (mk_eq_mk_iff n w v).1 w.2
+    · obtain ⟨q, hq⟩ := (mk_eq_mk_iff n w v).1 w.property
       exact ⟨q, Subtype.ext (Subtype.ext (congrArg Subtype.val hq))⟩
   hc.homeoOfEquivCompactToT2 (f := Equiv.ofBijective _ hb)
 

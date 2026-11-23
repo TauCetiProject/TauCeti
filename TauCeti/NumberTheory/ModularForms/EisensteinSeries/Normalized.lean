@@ -86,9 +86,7 @@ theorem qExpansion_normalizedCharEisensteinSeriesMF_coeff (hk : 3 ≤ (k : ℤ))
     (qExpansion 1 (normalizedCharEisensteinSeriesMF psi phi hk huv)).coeff n =
       DirichletCharacter.twistedDivisorSum (k - 1) psi phi n := by
   let _ : NeZero v := NeZero.of_dvd ((dvd_mul_left v u).trans huv)
-  have hphiInv : (phi⁻¹).IsPrimitive := by
-    rw [DirichletCharacter.isPrimitive_def, DirichletCharacter.conductor_inv]
-    exact hphi
+  have hphiInv : (phi⁻¹).IsPrimitive := hphi.inv
   have hv : (v : ℂ) ≠ 0 := Nat.cast_ne_zero.mpr (NeZero.ne v)
   have hgauss := DirichletCharacter.gaussSum_ne_zero_of_isPrimitive hphiInv
     (isPrimitive_stdAddChar v)
@@ -163,8 +161,9 @@ theorem normalizedCharEisensteinSeriesMFRaise_eq_smul (hk : 3 ≤ (k : ℤ))
   let _ : NeZero (u * v) := NeZero.of_dvd (dvd_of_mul_left_dvd htuv)
   let _ : NeZero v := NeZero.of_dvd ((dvd_mul_left v u).trans
     ((dvd_mul_left (u * v) t).trans htuv))
-  rw [normalizedCharEisensteinSeriesMFRaise, normalizedCharEisensteinSeriesMF,
-    charEisensteinSeriesMFRaise_eq_levelRaise]
+  rw [normalizedCharEisensteinSeriesMFRaise]
+  dsimp only
+  rw [normalizedCharEisensteinSeriesMF, charEisensteinSeriesMFRaise_eq_levelRaise]
   simpa only [ModularForm.levelRaiseₗ_apply] using
     (ModularForm.levelRaiseₗ t (Gamma1_map_le_conjAct_scaleGL_of_dvd htuv)).map_smul
       (2 * (-2 * π * I) ^ k / ((k - 1).factorial * v ^ k) * gaussSum phi⁻¹ stdAddChar)⁻¹

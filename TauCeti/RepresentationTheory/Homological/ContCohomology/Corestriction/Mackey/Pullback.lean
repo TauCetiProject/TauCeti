@@ -79,7 +79,7 @@ and on the values of `κ`. -/
 private theorem explicitCor2_explicitMap2_congr [ContinuousMul G] [ContinuousMul H]
     {W₁ W₂ : Subgroup H} [W₁.FiniteIndex] [W₂.FiniteIndex] (hW : W₁ = W₂)
     (hW₁ : IsOpen (W₁ : Set H)) (hW₂ : IsOpen (W₂ : Set H)) (κ₁ : W₁ →ₜ* U) (κ₂ : W₂ →ₜ* U)
-    (hκ : ∀ x : W₁, (κ₁ x : G) = κ₂ ⟨x, hW ▸ x.2⟩) (g : M →+ N) (hg : Continuous g)
+    (hκ : ∀ x : W₁, (κ₁ x : G) = κ₂ ⟨x, hW ▸ x.property⟩) (g : M →+ N) (hg : Continuous g)
     (hg₁ : ∀ x m, g (κ₁ x • m) = x • g m) (hg₂ : ∀ x m, g (κ₂ x • m) = x • g m) (y : H2 U M) :
     explicitCor2 H N W₁ hW₁ (explicitMap2 U M W₁ N κ₁ g hg hg₁ y) =
       explicitCor2 H N W₂ hW₂ (explicitMap2 U M W₂ N κ₂ g hg hg₂ y) := by
@@ -124,7 +124,7 @@ private theorem explicitMap2_explicitMackeyTerm2 (R : Subgroup G) (φ' : H →�
   · ext h
     simp only [Rs, Subgroup.mem_comap, Subgroup.mem_subgroupOf, TauCeti.mem_mackeySubgroup_iff,
       MonoidHom.coe_ofClass, hψ]
-    exact and_iff_right (φ' h).2
+    exact and_iff_right (φ' h).property
   · simp [hψ]
 
 /-- **The Mackey formula along a continuous homomorphism** (NSW (1.5.6)): for a compatible pair

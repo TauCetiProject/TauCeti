@@ -7,13 +7,14 @@ module
 
 public import Mathlib.NumberTheory.ModularForms.LevelOne.GradedRing
 public import Mathlib.RingTheory.PowerSeries.Expand
+public import TauCeti.NumberTheory.ArithmeticFunction.Sigma.Evaluation
 public import TauCeti.NumberTheory.ArithmeticFunction.Sigma.Series
 public import TauCeti.NumberTheory.ModularForms.QExpansion.Basic
 
 import TauCeti.NumberTheory.ArithmeticFunction.Sigma.Congruence
-import TauCeti.NumberTheory.ModularForms.LevelOne.GradedRing
 import TauCeti.NumberTheory.ModularForms.QExpansion.Graded
 import TauCeti.NumberTheory.ModularForms.QExpansion.Order
+import TauCeti.RingTheory.PowerSeries.SubringCoeff
 
 /-!
 # Low-order `q`-expansion coefficients at level one
@@ -38,6 +39,9 @@ The Eisenstein coefficients are `240 σ₃(n)` and `-504 σ₅(n)` (Mathlib's
 * `TauCeti.ModularForm.qExpansion_E₄_eq`, `TauCeti.ModularForm.qExpansion_E₆_eq`: the
   `q`-expansions `E₄ = 1 + 240 ∑ σ₃(n) qⁿ` and `E₆ = 1 - 504 ∑ σ₅(n) qⁿ`, as images of integral
   power series.
+* `TauCeti.ModularForm.E_apply_eq_divisorSumAt`, `TauCeti.ModularForm.E₄_apply_eq_divisorSumAt`,
+  `TauCeti.ModularForm.E₆_apply_eq_divisorSumAt`: the values `E_k(z) = 1 - (2k / B_k) s_{k-1}(q)`,
+  `E₄(z) = 1 + 240 s₃(q)` and `E₆(z) = 1 - 504 s₅(q)` at `q = e^(2π i z)`.
 * `TauCeti.ModularForm.qExpansion_E_mem_range_map`: the `q`-expansion of a normalised Eisenstein
   series has rational coefficients.
 * `TauCeti.ModularForm.E₄_qExpansion_coeff_of_ne_zero`,
@@ -51,6 +55,11 @@ The Eisenstein coefficients are `240 σ₃(n)` and `-504 σ₅(n)` (Mathlib's
   of `Δ` is an integer.
 * `TauCeti.ModularForm.qExpansion_natCast_discriminant`: at period `N`, the expansion of `Δ` is
   its expansion at period `1` in the variable `qᴺ`, so it is `qᴺ + ⋯` with integer coefficients.
+* `TauCeti.ModularForm.mem_range_map_of_qExpansion_discriminant_mul_mem`: if `Δ Q` is the image
+  of a power series over a ring `R` under `R →+* ℂ`, then so is the power series `Q`.
+* `TauCeti.ModularForm.qExpansion_discriminantEquiv_mem_range`: dividing a level-one cusp form by
+  `Δ` preserves the property that its `q`-expansion is the image of a power series over a ring `R`
+  under `R →+* ℂ`.
 * `TauCeti.ModularForm.tendsto_discriminant_div_qParam_atImInfty`: `Δ / q → 1` at `i∞`.
 * `TauCeti.ModularForm.algebraicIndependent_qExpansion_E₄_E₆`: the `q`-expansions of `E₄` and
   `E₆` are algebraically independent over `ℂ`.
@@ -85,7 +94,7 @@ theorem qExpansion_E₄_eq :
     PowerSeries.coeff_ofNat_mul, PowerSeries.coeff_map, TauCeti.coeff_divisorSumSeries]
   rcases eq_or_ne m 0 with rfl | hm
   · simp
-  · simp [hm, bernoulli_four]
+  · simp [hm]
     norm_num
 
 /-- The `q`-expansion of `E₆` is `1 - 504 ∑ σ₅(n) qⁿ`. -/
@@ -97,8 +106,30 @@ theorem qExpansion_E₆_eq :
     PowerSeries.coeff_ofNat_mul, PowerSeries.coeff_map, TauCeti.coeff_divisorSumSeries]
   rcases eq_or_ne m 0 with rfl | hm
   · simp
-  · simp [hm, bernoulli_six]
+  · simp [hm]
     norm_num
+
+open scoped Real in
+/-- The value of the normalised Eisenstein series of even weight `k ≥ 4` at `z`, as the sum of its
+`q`-expansion at `q = e^(2π i z)`: `E_k(z) = 1 - (2k / B_k) s_{k-1}(q)`. -/
+theorem E_apply_eq_divisorSumAt {k : ℕ} (hk : 3 ≤ k) (hk2 : Even k) (z : ℍ) :
+    E hk z = 1 - 2 * k / bernoulli k *
+      TauCeti.divisorSumAt (k - 1) (Complex.exp (2 * π * Complex.I * z)) := by
+  simp only [q_expansion_bernoulli hk hk2 z, TauCeti.divisorSumAt_eq_tsum_pnat, zpow_natCast]
+
+open scoped Real in
+/-- The value `E₄(z) = 1 + 240 s₃(q)` of the `q`-expansion at `q = e^(2π i z)`. -/
+theorem E₄_apply_eq_divisorSumAt (z : ℍ) :
+    E₄ z = 1 + 240 * TauCeti.divisorSumAt 3 (Complex.exp (2 * π * Complex.I * z)) := by
+  rw [E₄, E_apply_eq_divisorSumAt _ ⟨2, rfl⟩, bernoulli_four]
+  norm_num
+
+open scoped Real in
+/-- The value `E₆(z) = 1 - 504 s₅(q)` of the `q`-expansion at `q = e^(2π i z)`. -/
+theorem E₆_apply_eq_divisorSumAt (z : ℍ) :
+    E₆ z = 1 - 504 * TauCeti.divisorSumAt 5 (Complex.exp (2 * π * Complex.I * z)) := by
+  rw [E₆, E_apply_eq_divisorSumAt _ ⟨3, rfl⟩, bernoulli_six]
+  norm_num
 
 /-- The `q²`-coefficient of `E₄` is `240 σ₃(2) = 2160`. -/
 theorem E₄_qExpansion_coeff_two : (qExpansion 1 E₄).coeff 2 = 2160 := by
@@ -263,6 +294,27 @@ section Period
 
 variable {N : ℕ} [NeZero N]
 
+/-- The expansion of a normalized Eisenstein series of weight `k ≥ 3` in the parameter of any
+positive integral period is the image of a power series over `K` under every ring homomorphism
+`φ : K →+* ℂ`. -/
+theorem qExpansion_natCast_E_mem_range_map {K : Type*} [Field K] (φ : K →+* ℂ) {k : ℕ}
+    (hk : 3 ≤ k) : qExpansion N (E hk) ∈ (PowerSeries.map φ).range := by
+  have hperiod : qExpansion N (E hk) =
+      PowerSeries.expand N (NeZero.ne N) (qExpansion 1 (E hk)) := by
+    simpa using TauCeti.qExpansion_nat_mul one_ne_zero (NeZero.pos N)
+      (SlashInvariantFormClass.periodic_comp_ofComplex (E hk) one_mem_strictPeriods_SL)
+      (ModularFormClass.analyticAt_cuspFunction_zero (E hk) one_pos one_mem_strictPeriods_SL)
+  obtain ⟨P, hP⟩ := qExpansion_E_mem_range_map φ hk
+  exact ⟨PowerSeries.expand N (NeZero.ne N) P, by rw [PowerSeries.map_expand, hP, hperiod]⟩
+
+/-- The normalized Eisenstein series has coefficients in every subfield of `ℂ`, also
+when expanded in the parameter of any positive integral period. -/
+theorem qExpansion_natCast_E_coeff_mem {K : Subfield ℂ} {k : ℕ} (hk : 3 ≤ k) (i : ℕ) :
+    (qExpansion N (E hk)).coeff i ∈ K := by
+  obtain ⟨P, hP⟩ := qExpansion_natCast_E_mem_range_map (N := N) K.subtype hk
+  rw [← hP, PowerSeries.coeff_map]
+  exact (P.coeff i).property
+
 /-- The expansion of `Δ` at period `N` is its expansion at period `1` in the variable `qᴺ`. -/
 theorem qExpansion_natCast_discriminant :
     qExpansion N discriminant =
@@ -304,6 +356,30 @@ theorem qExpansion_natCast_discriminant_coeff_mem {R : Subring ℂ} (i : ℕ) :
 
 end Period
 
+/-- If the `q`-expansion of `Δ` times a power series `Q` is the image of a power series over a
+ring `R` under `φ : R →+* ℂ`, then so is `Q`: the `q`-expansion of `Δ` has integer coefficients and
+is `q` times a power series with constant term `1`. -/
+theorem mem_range_map_of_qExpansion_discriminant_mul_mem {R : Type*} [Ring R] (φ : R →+* ℂ)
+    {Q : PowerSeries ℂ} (hQ : qExpansion 1 discriminant * Q ∈ (PowerSeries.map φ).range) :
+    Q ∈ (PowerSeries.map φ).range := by
+  rw [PowerSeries.mem_map_range] at hQ ⊢
+  refine PowerSeries.coeff_mem_of_coeff_mul_mem (m := 1) (D := qExpansion 1 discriminant)
+    (fun i hi ↦ by rw [Nat.lt_one_iff.1 hi, discriminant_qExpansion_coeff_zero])
+    discriminant_qExpansion_coeff_one (fun i ↦ ?_) (by simpa only [mul_comm] using hQ)
+  simpa using
+    qExpansion_natCast_discriminant_coeff_mem (N := 1) (R := φ.range) i
+
+/-- Dividing a level-one cusp form by `Δ` preserves the property that its `q`-expansion is
+the image of a power series over a ring `R` under `φ : R →+* ℂ`. -/
+theorem qExpansion_discriminantEquiv_mem_range {R : Type*} [Ring R] (φ : R →+* ℂ) {k : ℤ}
+    {g : CuspForm 𝒮ℒ k} (hg : qExpansion 1 g ∈ (PowerSeries.map φ).range) :
+    qExpansion 1 (CuspForm.discriminantEquiv g) ∈ (PowerSeries.map φ).range := by
+  have hΔg : qExpansion 1 discriminant * qExpansion 1 (CuspForm.discriminantEquiv g) =
+      qExpansion 1 g := by
+    rw [← CuspForm.coe_discriminant, ← ModularForm.qExpansion_mul_coe one_pos
+      one_mem_strictPeriods_SL, CuspForm.coe_discriminant, discriminant_mul_discriminantEquiv]
+  exact mem_range_map_of_qExpansion_discriminant_mul_mem φ (hΔg ▸ hg)
+
 /-- The discriminant is asymptotic to `q` at `i∞`: `Δ / q → 1`. -/
 theorem tendsto_discriminant_div_qParam_atImInfty :
     Tendsto (fun τ ↦ discriminant τ / Function.Periodic.qParam 1 τ) atImInfty (𝓝 1) := by
@@ -315,18 +391,15 @@ theorem tendsto_discriminant_div_qParam_atImInfty :
         one_mem_strictPeriods_SL).differentiableAt
       discriminant_qExpansion_coeff_zero
 
-/-- **Algebraic independence of the `q`-expansions of `E₄` and `E₆`.** Composing the injective
-evaluation `ModularForm.evalE₄E₆` (`TauCeti.ModularForm.evalE₄E₆_injective`) with the injective
-graded `q`-expansion homomorphism `ModularForm.qExpansionAlgHom` (`qExpansionAlgHom_injective`)
-shows that `qExpansion 1 E₄` and `qExpansion 1 E₆` are algebraically independent over `ℂ`. -/
+/-- **Algebraic independence of the `q`-expansions of `E₄` and `E₆`.** The level-one
+`q`-expansions `qExpansion 1 E₄` and `qExpansion 1 E₆` satisfy no nonzero polynomial relation
+over `ℂ`. -/
 theorem algebraicIndependent_qExpansion_E₄_E₆ :
     AlgebraicIndependent ℂ ![qExpansion 1 E₄, qExpansion 1 E₆] := by
-  rw [algebraicIndependent_iff_injective_aeval]
-  have hcomp : MvPolynomial.aeval ![qExpansion 1 E₄, qExpansion 1 E₆] =
-      (_root_.ModularForm.qExpansionAlgHom 1 one_pos one_mem_strictPeriods_SL).comp evalE₄E₆ := by
-    ext i
-    fin_cases i <;> simp
-  rw [hcomp, AlgHom.coe_comp]
-  exact (qExpansionAlgHom_injective one_pos one_mem_strictPeriods_SL).comp evalE₄E₆_injective
+  convert (AlgHom.algebraicIndependent_iff _
+    (qExpansionAlgHom_injective one_pos one_mem_strictPeriods_SL)).2 algebraicIndependent_E₄_E₆
+    using 1
+  funext i
+  fin_cases i <;> simp
 
 end TauCeti.ModularForm
