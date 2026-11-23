@@ -13,7 +13,7 @@ public import TauCeti.Topology.Algebra.PointTopology.Basic
 public import TauCeti.Topology.Algebra.PointTopology.Localization
 import Mathlib.Analysis.Calculus.FDeriv.Analytic
 import TauCeti.Analysis.Calculus.ImplicitFunctionData
-import TauCeti.LinearAlgebra.Matrix.Nonsingular.Inverse
+import TauCeti.LinearAlgebra.Matrix.MaximalMinor
 
 /-!
 # Local charts on the points of smooth algebras
