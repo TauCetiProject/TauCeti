@@ -8,6 +8,7 @@ module
 public import TauCeti.Geometry.Contact.Interpolation
 public import TauCeti.Geometry.Contact.StrictMoser
 import Mathlib.Analysis.SpecialFunctions.SmoothTransition
+import Mathlib.Topology.LocalAtTarget
 import TauCeti.Geometry.Contact.Pullback
 import TauCeti.Geometry.Manifold.DifferentialForm.Opens
 
@@ -223,13 +224,10 @@ private theorem exists_partialDiffeomorph_mpullback_eq_of_forall_pos
     rw [Manifold.mfderiv_subtype_val]; exact ContinuousLinearEquiv.bijective _
   -- The part of the slice over `V`.
   set T : TopologicalSpace.Opens S := ⟨ι ⁻¹' V, hV.preimage hι.continuous⟩
-  let ιW : T → W := fun σ ↦ ⟨ι σ, σ.property⟩
+  let ιW : T → W := (W : Set M).restrictPreimage ι
   have hdιW (σ : T) (w : TangentSpace J σ) : mfderiv J I ιW σ w = mfderiv J I ι σ w :=
     Manifold.mfderiv_apply_of_subtype_val_comp_eq (f := ιW) (A := ι) rfl w
-  have hrange : range ιW = Subtype.val ⁻¹' range ι := by
-    ext y
-    exact ⟨fun ⟨σ, hσ⟩ ↦ ⟨σ, congrArg Subtype.val hσ⟩,
-      fun ⟨σ, hσ⟩ ↦ ⟨⟨σ, mem_preimage.2 (hσ ▸ y.property)⟩, Subtype.ext hσ⟩⟩
+  have hrange : range ιW = Subtype.val ⁻¹' range ι := range_restrictPreimage _ ι
   -- Transversality: `β` kills the tangent images of the slice but not the Reeb vectors.
   have htr (s : ℝ) (hs : s ∈ Icc (0 : ℝ) 1) :
       IsTransverseAlong J (res α₀ + s • (res α₁ - res α₀)).reebVectorField ιW := by
@@ -251,7 +249,7 @@ private theorem exists_partialDiffeomorph_mpullback_eq_of_forall_pos
         exact hcV y y.property s hs)
       ((ContMDiff.subtypeVal_comp_iff W ιW).1 (hι.comp contMDiff_subtypeVal))
       (fun σ v w h ↦ himm σ (by rwa [hdιW, hdιW] at h))
-      ((Topology.IsInducing.subtypeVal.of_comp_iff).1 (hind.comp Topology.IsInducing.subtypeVal))
+      (hind.restrictPreimage _)
       (hrange ▸ hclosed.preimage continuous_subtypeVal) hdim htr
       (fun y hy ↦ hrange ▸ hKι hy)
       (fun y hy ↦ (coe_mpullback_subtype_val_apply α₁ y).trans
