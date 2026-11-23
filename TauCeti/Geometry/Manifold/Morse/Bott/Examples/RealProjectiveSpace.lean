@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.Group.Fin.Tuple
 public import TauCeti.AlgebraicTopology.Cellular.RealProjective.Homology
 public import TauCeti.AlgebraicTopology.Singular.Contractible
 public import TauCeti.Geometry.Manifold.Morse.Bott.Family
@@ -42,10 +43,11 @@ The hyperplane and the minimum, embedded as copies of `ℝℙᴺ⁻¹` and of th
 Morse–Bott family (`TauCeti.isMorseBottFamily_projectiveHyperplaneMomentFunction`). These are the
 general theorems `TauCeti.isNondegenerateCriticalSubmanifold_projectiveMomentFunction` and
 `TauCeti.isMorseBottFamily_projectiveMomentFunction` for the weights `1, …, 1, 0`. Since `ℝℙᴺ⁻¹`
-needs `N ≥ 1`, these three declarations are stated with ambient space `ℝℙᴺ⁺¹`, that is, with
-`N + 1` in place of `N`. The negative normal bundle of the hyperplane is its normal line bundle in
-`ℝℙᴺ`, the tautological line bundle of `ℝℙᴺ⁻¹`; for `N = 2` it is the Möbius line over the circle
-`ℝℙ¹`. This identification is background here and is not formalized in this file.
+needs `N ≥ 1`, every declaration of the section on the critical components is stated with ambient
+space `ℝℙᴺ⁺¹`, that is, with `N + 1` in place of `N`. The negative normal bundle of the
+hyperplane is its normal line bundle in `ℝℙᴺ`, the tautological line bundle of `ℝℙᴺ⁻¹`; for
+`N = 2` it is the Möbius line over the circle `ℝℙ¹`. This identification is background here and
+is not formalized in this file.
 
 Below the top level, every sublevel `{f ≤ c}` with `0 ≤ c < 1` lies in the affine chart where
 `v_N ≠ 0`, and in that chart it is the ball `{z | ‖z‖₂² / (1 + ‖z‖₂²) ≤ c}`, so it is contractible
@@ -74,14 +76,14 @@ so the integral formula cannot be stated with untwisted coefficients.
   `[e_N]` together with the hyperplane `{v_N = 0}`.
 * `TauCeti.projectiveHyperplaneMomentFunction_eq_one_iff`: the hyperplane is the level set
   `f⁻¹(1)`.
-* `TauCeti.range_projectiveHyperplaneEmbedding`: the embedding `[v] ↦ [v : 0]` of `ℝℙᴺ⁻¹` into
-  `ℝℙᴺ` has image the hyperplane.
-* `TauCeti.isNondegenerateCriticalSubmanifold_projectiveHyperplaneEmbedding`: the hyperplane is a
-  Morse–Bott critical submanifold.
+* `TauCeti.range_projectiveHyperplaneEmbedding`: the embedding `[v] ↦ [v : 0]` of `ℝℙᴺ` into
+  `ℝℙᴺ⁺¹` has image the hyperplane `{v_{N+1} = 0}`.
+* `TauCeti.isNondegenerateCriticalSubmanifold_projectiveHyperplaneEmbedding`: the hyperplane
+  `{v_{N+1} = 0}` of `ℝℙᴺ⁺¹` is a Morse–Bott critical submanifold.
 * `TauCeti.manifoldMorseIndex_projectiveHyperplaneMomentFunction_of_notMem_affineOpen`: the Morse
   index at every point of the hyperplane is `1`.
-* `TauCeti.isMorseBottFamily_projectiveHyperplaneMomentFunction`: the hyperplane and the minimum
-  exhibit the moment function as a Morse–Bott function.
+* `TauCeti.isMorseBottFamily_projectiveHyperplaneMomentFunction`: on `ℝℙᴺ⁺¹`, the hyperplane
+  `{v_{N+1} = 0}` and the minimum `[e_{N+1}]` exhibit the moment function as a Morse–Bott function.
 * `TauCeti.contractibleSpace_sublevel_projectiveHyperplaneMomentFunction`: the sublevels
   `{f ≤ c}` with `0 ≤ c < 1` are contractible.
 * `TauCeti.singularHomologyIsoSublevelPairProjectiveHyperplaneMomentFunction` and
@@ -231,16 +233,6 @@ section Components
 private noncomputable def hyperplaneCoord : (Fin (N + 1) → ℝ) →ₗ[ℝ] Fin (N + 2) → ℝ :=
   Function.ExtendByZero.linearMap ℝ ℝ Fin.castSucc
 
-private theorem hyperplaneCoord_apply (v : Fin (N + 1) → ℝ) :
-    hyperplaneCoord v = Fin.snoc v 0 := by
-  rw [← Fin.snoc_init_self (hyperplaneCoord v), hyperplaneCoord,
-    Function.ExtendByZero.init_linearMap_castSucc, Function.ExtendByZero.linearMap_castSucc_last]
-
-/-- Appending a coordinate to a nonzero vector gives a nonzero vector. -/
-private theorem snoc_ne_zero {v : Fin (N + 1) → ℝ} (hv : v ≠ 0) (t : ℝ) :
-    (Fin.snoc v t : Fin (N + 2) → ℝ) ≠ 0 := fun h ↦
-  hv (funext fun j ↦ by simpa using congrFun h j.castSucc)
-
 private theorem injective_hyperplaneCoord : Function.Injective (hyperplaneCoord (N := N)) :=
   Function.extend_injective (Fin.castSucc_injective _) 0
 
@@ -251,7 +243,7 @@ private theorem hyperplaneCoord_apply_of_ne (v : Fin (N + 1) → ℝ) {i : Fin (
   obtain rfl : i = Fin.last (N + 1) := by
     by_contra h
     simp [h] at hi
-  rw [hyperplaneCoord_apply, Fin.snoc_last]
+  exact Function.ExtendByZero.linearMap_castSucc_last ℝ v
 
 /-- Exactly `N + 1` coordinates of `ℝℙᴺ⁺¹` have weight `1`. -/
 private theorem ncard_weight_eq_one :
@@ -275,29 +267,23 @@ noncomputable def projectiveHyperplaneEmbedding :
 @[simp]
 theorem projectiveHyperplaneEmbedding_mk (v : Fin (N + 1) → ℝ) (hv : v ≠ 0) :
     projectiveHyperplaneEmbedding N (mk ℝ v hv) =
-      -- A `by` block keeps the private `snoc_ne_zero` out of this public statement.
-      mk ℝ (Fin.snoc v 0) (by exact snoc_ne_zero hv 0) := by
+      mk ℝ (Fin.snoc v 0) (Fin.snoc_ne_zero_iff.2 (.inl hv)) := by
   rw [projectiveHyperplaneEmbedding, SmoothEmbedding.ofIsSmoothEmbedding_apply, map_mk]
-  simp only [hyperplaneCoord_apply]
+  simp only [hyperplaneCoord, Function.ExtendByZero.linearMap_castSucc_apply]
 
 /-- The image of the hyperplane embedding is the hyperplane `{v_{N+1} = 0}`, the complement of the
 affine open where the last homogeneous coordinate is nonzero. -/
 theorem range_projectiveHyperplaneEmbedding :
     range (projectiveHyperplaneEmbedding N) = (affineOpen (Fin.last (N + 1)))ᶜ := by
+  rw [projectiveHyperplaneEmbedding, SmoothEmbedding.coe_ofIsSmoothEmbedding,
+    range_map_eq_criticalPoints_inter_preimage_projectiveMomentFunction _ injective_hyperplaneCoord
+      (fun v _ ↦ hyperplaneCoord_apply_of_ne v) ncard_weight_eq_one,
+    ← projectiveHyperplaneMomentFunction_def, criticalPoints_projectiveHyperplaneMomentFunction]
+  -- Inside the critical set, the level set `f⁻¹(1)` is the hyperplane.
   ext x
-  rw [mem_compl_iff]
-  constructor
-  · rintro ⟨y, rfl⟩
-    induction y using Projectivization.ind with | h v hv =>
-    rw [projectiveHyperplaneEmbedding_mk, mk_mem_affineOpen_iff, Fin.snoc_last, not_not]
-  · intro hx
-    induction x using Projectivization.ind with | h w hw =>
-    rw [mk_mem_affineOpen_iff, not_not] at hx
-    obtain ⟨u, rfl⟩ : ∃ u, w = Fin.snoc u 0 := ⟨Fin.init w, by rw [← hx, Fin.snoc_init_self]⟩
-    have hu : u ≠ 0 := by
-      rintro rfl
-      exact hw (funext fun j ↦ by induction j using Fin.lastCases <;> simp)
-    exact ⟨mk ℝ u hu, projectiveHyperplaneEmbedding_mk u hu⟩
+  simp only [mem_inter_iff, mem_insert_iff, mem_compl_iff, mem_preimage, mem_singleton_iff,
+    projectiveHyperplaneMomentFunction_eq_one_iff]
+  exact ⟨And.right, fun hx ↦ ⟨.inr hx, hx⟩⟩
 
 /-- **The critical hyperplane is a Morse–Bott critical submanifold.** The hyperplane
 `{v_{N+1} = 0}`, a copy of `ℝℙᴺ`, is a nondegenerate critical submanifold of the moment function
@@ -390,8 +376,9 @@ theorem projectiveHyperplaneCriticalComponent_false :
   (rfl)
 
 /-- **The moment function with weights `1, …, 1, 0` is a Morse–Bott function.** On `ℝℙᴺ⁺¹` its
-critical components are the critical hyperplane `{v_{N+1} = 0}`, a copy of `ℝℙᴺ` of index `1`,
-and the minimum `[e_{N+1}]`, a copy of `ℝℙ⁰` of index `0`. -/
+critical components are the critical hyperplane `{v_{N+1} = 0}`, a copy of `ℝℙᴺ`, and the minimum
+`[e_{N+1}]`, a copy of `ℝℙ⁰`. The index `1` along the hyperplane is
+`manifoldMorseIndex_projectiveHyperplaneMomentFunction_of_notMem_affineOpen`. -/
 theorem isMorseBottFamily_projectiveHyperplaneMomentFunction :
     IsMorseBottFamily (projectiveHyperplaneCriticalComponent N)
       (projectiveHyperplaneMomentFunction (N + 1)) :=
