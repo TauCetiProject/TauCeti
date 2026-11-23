@@ -7,9 +7,6 @@ module
 
 public import TauCeti.Condensed.Light.NullSequence.Basic
 public import TauCeti.Condensed.Light.InternalHom.Basic
-public import Mathlib.CategoryTheory.ObjectProperty.ContainsZero
-
-import Mathlib.CategoryTheory.Comma.Arrow
 
 /-!
 # Light solid modules
@@ -30,7 +27,9 @@ open CategoryTheory Category Limits MonoidalCategory LightCondensed
 
 open scoped ZeroObject
 
-namespace TauCeti
+namespace LightCondMod
+
+open TauCeti
 
 variable {R : Type u} [CommRing R]
 
@@ -40,27 +39,44 @@ noncomputable def lightSolidDifference (M : LightCondMod R) :
   𝟙 _ - (MonoidalClosed.pre (nullShift R)).app M
 
 /-- The characteristic equation of the internal null-sequence difference. -/
-lemma lightSolidDifference_eq (M : LightCondMod R) :
+lemma lightSolidDifference_def (M : LightCondMod R) :
     lightSolidDifference M = 𝟙 _ - (MonoidalClosed.pre (nullShift R)).app M := by rfl
 
-/-- A light condensed module is solid if its internal null-sequence difference is invertible. -/
-def IsLightSolid : ObjectProperty (LightCondMod R) := fun M ↦ IsIso (lightSolidDifference M)
-
-/-- The defining invertibility criterion for solidity. -/
-lemma isLightSolid_iff (M : LightCondMod R) :
-    IsLightSolid M ↔ IsIso (lightSolidDifference M) := by rfl
+/-- Evaluating a difference of light condensed module maps subtracts their evaluations. -/
+private lemma hom_app_sub_apply {R : Type u} [Ring R] {M N : LightCondMod R} (f g : M ⟶ N)
+    (S : LightProfinite.{u})
+    (s : M.obj.obj (Opposite.op S)) :
+    (f - g).hom.app (Opposite.op S) s =
+      f.hom.app (Opposite.op S) s - g.hom.app (Opposite.op S) s := by
+  have h := (sheafToPresheaf (coherentTopology LightProfinite.{u}) (ModuleCat R) ⋙
+    (evaluation _ _).obj (Opposite.op S)).map_sub (f := f) (g := g)
+  simpa only [Functor.comp_map, evaluation_obj_map, ObjectProperty.ι_map,
+    ModuleCat.hom_sub, LinearMap.sub_apply] using congrArg (fun h => h.hom s) h
 
 /-- On sections, the internal null-sequence difference subtracts the precomposition map. -/
+@[simp]
 lemma lightSolidDifference_app_apply (M : LightCondMod R) (S : LightProfinite.{u})
     (s : (nullSeq R ⟶[LightCondMod R] M).obj.obj (Opposite.op S)) :
     (lightSolidDifference M).hom.app (Opposite.op S) s =
       s - ((MonoidalClosed.pre (nullShift R)).app M).hom.app (Opposite.op S) s := by
-  change (((sheafToPresheaf (coherentTopology LightProfinite.{u}) (ModuleCat R)).map
-    (𝟙 _ - (MonoidalClosed.pre (nullShift R)).app M)).app (Opposite.op S)) s = _
-  rw [Functor.map_sub, NatTrans.app_sub, CategoryTheory.Functor.map_id, NatTrans.id_app]
-  change ((𝟙 _ - (((MonoidalClosed.pre (nullShift R)).app M).hom.app
-    (Opposite.op S))).hom) s = _
-  rw [ModuleCat.hom_sub, LinearMap.sub_apply, ModuleCat.hom_id, LinearMap.id_apply]
+  rw [lightSolidDifference_def, hom_app_sub_apply]
+  simp only [ObjectProperty.FullSubcategory.id_hom, NatTrans.id_app, ModuleCat.id_apply]
+
+/-- The null-sequence difference commutes with maps of the coefficient object. -/
+@[reassoc]
+lemma lightSolidDifference_naturality {M N : LightCondMod R} (f : M ⟶ N) :
+    lightSolidDifference M ≫ (ihom (nullSeq R)).map f =
+      (ihom (nullSeq R)).map f ≫ lightSolidDifference N := by
+  simp only [lightSolidDifference_def, Preadditive.sub_comp, Preadditive.comp_sub,
+    id_comp, comp_id, MonoidalClosed.pre_comm_ihom_map]
+
+end LightCondMod
+
+open TauCeti LightCondMod
+
+namespace LightCondensed
+
+variable {R : Type u} [CommRing R]
 
 /-- The tensor test equivalence sends the external difference to the internal difference. -/
 lemma tensorHomSectionsAddEquiv_sub_precomp (M : LightCondMod R) (S : LightProfinite.{u})
@@ -69,6 +85,19 @@ lemma tensorHomSectionsAddEquiv_sub_precomp (M : LightCondMod R) (S : LightProfi
       (lightSolidDifference M).hom.app (Opposite.op S)
         (tensorHomSectionsAddEquiv R (nullSeq R) M S g) := by
   rw [map_sub, tensorHomSectionsAddEquiv_precomp, lightSolidDifference_app_apply]
+
+end LightCondensed
+
+namespace TauCeti
+
+variable {R : Type u} [CommRing R]
+
+/-- A light condensed module is solid if its internal null-sequence difference is invertible. -/
+def IsLightSolid : ObjectProperty (LightCondMod R) := fun M ↦ IsIso (lightSolidDifference M)
+
+/-- The defining invertibility criterion for solidity. -/
+lemma isLightSolid_iff (M : LightCondMod R) :
+    IsLightSolid M ↔ IsIso (lightSolidDifference M) := by rfl
 
 /-- Solidity is equivalent to unique solvability of the difference equation on every test family. -/
 lemma isLightSolid_iff_bijective (M : LightCondMod R) :
@@ -92,20 +121,12 @@ lemma isLightSolid_iff_bijective (M : LightCondMod R) :
   · intro hs S
     exact (ConcreteCategory.isIso_iff_bijective _).mpr ((h S.unop).mpr (hs S.unop))
 
-/-- The null-sequence difference commutes with maps of the coefficient object. -/
-@[reassoc]
-lemma lightSolidDifference_naturality {M N : LightCondMod R} (f : M ⟶ N) :
-    lightSolidDifference M ≫ (ihom (nullSeq R)).map f =
-      (ihom (nullSeq R)).map f ≫ lightSolidDifference N := by
-  simp only [lightSolidDifference_eq, Preadditive.sub_comp, Preadditive.comp_sub,
-    id_comp, comp_id, MonoidalClosed.pre_comm_ihom_map]
-
 instance : (IsLightSolid (R := R)).IsClosedUnderIsomorphisms where
   of_iso e hM := by
-    let e' : Arrow.mk (lightSolidDifference _) ≅ Arrow.mk (lightSolidDifference _) :=
-      Arrow.isoMk ((ihom (nullSeq R)).mapIso e) ((ihom (nullSeq R)).mapIso e)
-        (lightSolidDifference_naturality e.hom).symm
-    exact (Arrow.isIso_iff_isIso_of_isIso e'.hom).mp hM
+    let difference : ihom (nullSeq R) ⟶ ihom (nullSeq R) :=
+      { app := lightSolidDifference
+        naturality _ _ f := (lightSolidDifference_naturality f).symm }
+    exact (NatTrans.isIso_app_iff_of_iso difference e).mp hM
 
 instance : (IsLightSolid (R := R)).ContainsZero where
   exists_zero := by

@@ -19,7 +19,24 @@ public section
 
 namespace LocallyConstant
 
-variable {T S M : Type*} [TopologicalSpace T] [TopologicalSpace S] [CompactSpace S]
+variable {T S M : Type*} [TopologicalSpace T] [TopologicalSpace S]
+
+/-- Uncurrying a locally constant family by evaluation on the two product coordinates. -/
+def uncurry (f : LocallyConstant T (LocallyConstant S M)) : LocallyConstant (T × S) M :=
+  ⟨fun p ↦ f p.1 p.2, by
+    refine (IsLocallyConstant.iff_eventually_eq _).2 fun p ↦ ?_
+    filter_upwards [Filter.Eventually.prod_nhds
+      (f.isLocallyConstant.eventually_eq p.1)
+      ((f p.1).isLocallyConstant.eventually_eq p.2)] with q hq
+    exact (congrArg (fun g : LocallyConstant S M ↦ g q.2) hq.1).trans hq.2⟩
+
+/-- Uncurrying evaluates the family at the first coordinate and then at the second coordinate. -/
+@[simp]
+theorem uncurry_apply (f : LocallyConstant T (LocallyConstant S M)) (p : T × S) :
+    uncurry f p = f p.1 p.2 := by
+  rfl
+
+variable [CompactSpace S]
 
 /-- Currying a locally constant function on a product with a compact second factor. -/
 def curryEquiv :
@@ -27,12 +44,7 @@ def curryEquiv :
   toFun f := ⟨fun t ↦ ⟨fun s ↦ f (t, s),
       f.isLocallyConstant.comp_continuous (continuous_const.prodMk continuous_id)⟩,
     IsLocallyConstant.of_uncurry_coe f.isLocallyConstant⟩
-  invFun f := ⟨fun p ↦ f p.1 p.2, by
-    refine (IsLocallyConstant.iff_eventually_eq _).2 fun p ↦ ?_
-    filter_upwards [Filter.Eventually.prod_nhds
-      (f.isLocallyConstant.eventually_eq p.1)
-      ((f p.1).isLocallyConstant.eventually_eq p.2)] with q hq
-    exact (congrArg (fun g : LocallyConstant S M ↦ g q.2) hq.1).trans hq.2⟩
+  invFun := uncurry
   left_inv _ := rfl
   right_inv _ := rfl
 

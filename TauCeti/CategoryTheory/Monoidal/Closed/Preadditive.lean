@@ -9,7 +9,6 @@ public import Mathlib.CategoryTheory.Monoidal.Closed.Braided
 public import Mathlib.CategoryTheory.Monoidal.Preadditive
 
 import Mathlib.CategoryTheory.Adjunction.Additive
-import Mathlib.CategoryTheory.Linear.Basic
 
 /-!
 # Biclosed preadditive categories are monoidal preadditive
@@ -68,10 +67,10 @@ noncomputable def tensorSwapCurryEquiv : (X ⊗ Y ⟶ Z) ≃+ (X ⟶ (Y ⟶[C] Z
 /-- The swapped currying comparison is currying after the inverse braiding. -/
 lemma tensorSwapCurryEquiv_apply (g : X ⊗ Y ⟶ Z) :
     tensorSwapCurryEquiv X Y Z g = curry ((β_ X Y).inv ≫ g) := by
-  change (ihom.adjunction Y).homAddEquiv X Z
-    (Linear.homCongr ℤ (β_ X Y) (Iso.refl Z) g) = _
-  rw [Adjunction.homAddEquiv_apply, Linear.homCongr_apply,
-    Iso.refl_hom, Category.comp_id, homEquiv_apply_eq]
+  unfold tensorSwapCurryEquiv
+  erw [AddEquiv.trans_apply, Adjunction.homAddEquiv_apply, LinearEquiv.coe_addEquiv_apply,
+    Linear.homCongr_apply]
+  simp only [Iso.refl_hom, Category.comp_id, homEquiv_apply_eq]
 
 /-- Precomposition in the first tensor factor becomes precomposition after swapped currying. -/
 lemma tensorSwapCurryEquiv_precomp {X' : C} (f : X' ⟶ X) (g : X ⊗ Y ⟶ Z) :

@@ -5,11 +5,10 @@ Authors: Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Condensed.Light.InternallyProjective
 public import TauCeti.Condensed.Light.Free
-public import Mathlib.Condensed.Light.Monoidal
 
 import Mathlib.CategoryTheory.Adjunction.Additive
-import Mathlib.CategoryTheory.Limits.Preserves.Shapes.Zero
 
 /-!
 # Additive sections of internal Hom
@@ -34,7 +33,7 @@ variable (R : Type u) [CommRing R]
 noncomputable def tensorHomSectionsAddEquiv (A B : LightCondMod R) (S : LightProfinite.{u}) :
     (A ⊗ (free R).obj S.toCondensed ⟶ B) ≃+
       (A ⟶[LightCondMod R] B).obj.obj (Opposite.op S) := by
-  letI : (tensorLeft A).Additive := show (tensorLeft A).Additive from
+  letI : (tensorLeft A).Additive :=
     preservesFiniteColimits_le_additiveFunctor _ _ _ inferInstance
   exact ((ihom.adjunction A).homAddEquiv _ _).trans S.freeModuleHomEquiv
 
@@ -44,7 +43,8 @@ lemma tensorHomSectionsAddEquiv_apply (A B : LightCondMod R) (S : LightProfinite
     tensorHomSectionsAddEquiv R A B S g = S.freeModuleHomEquiv (MonoidalClosed.curry g) := by
   let : (tensorLeft A).Additive :=
     preservesFiniteColimits_le_additiveFunctor _ _ _ inferInstance
-  simpa only [tensorHomSectionsAddEquiv, AddEquiv.trans_apply, MonoidalClosed.curry] using
+  simpa only [tensorHomSectionsAddEquiv, AddEquiv.trans_apply,
+    MonoidalClosed.homEquiv_apply_eq] using
     congrArg S.freeModuleHomEquiv ((ihom.adjunction A).homAddEquiv_apply _ _ g)
 
 /-- The inverse comparison evaluates a section as a free-object map and uncurries it. -/
@@ -54,7 +54,8 @@ lemma tensorHomSectionsAddEquiv_symm_apply (A B : LightCondMod R) (S : LightProf
       MonoidalClosed.uncurry (S.freeModuleHomEquiv.symm s) := by
   let : (tensorLeft A).Additive :=
     preservesFiniteColimits_le_additiveFunctor _ _ _ inferInstance
-  simpa only [tensorHomSectionsAddEquiv, AddEquiv.symm_trans_apply, MonoidalClosed.uncurry] using
+  simpa only [tensorHomSectionsAddEquiv, AddEquiv.symm_trans_apply,
+    MonoidalClosed.homEquiv_symm_apply_eq] using
     (ihom.adjunction A).homAddEquiv_symm_apply _ _ (S.freeModuleHomEquiv.symm s)
 
 /-- Precomposition in the first tensor factor acts by internal precomposition on sections. -/
@@ -64,6 +65,32 @@ lemma tensorHomSectionsAddEquiv_precomp {A A' B : LightCondMod R} (f : A' ⟶ A)
       ((MonoidalClosed.pre f).app B).hom.app (Opposite.op S)
         (tensorHomSectionsAddEquiv R A B S g) := by
   rw [tensorHomSectionsAddEquiv_apply, ← MonoidalClosed.curry_pre_app,
+    LightProfinite.freeModuleHomEquiv_postcomp, tensorHomSectionsAddEquiv_apply]
+
+/-- The additive comparison refines Mathlib's point comparison. -/
+lemma tensorHomSectionsAddEquiv_toEquiv (A B : LightCondMod R) (S : LightProfinite.{u}) :
+    (tensorHomSectionsAddEquiv R A B S).toEquiv = (ihomPoints R A B S).symm := by
+  ext g
+  exact (tensorHomSectionsAddEquiv_apply R A B S g).trans (by
+    rw [ihomPoints_symm_apply, LightProfinite.freeModuleHomEquiv_apply]
+    rfl)
+
+/-- Restricting the test object restricts the corresponding internal Hom section. -/
+lemma tensorHomSectionsAddEquiv_naturality {A B : LightCondMod R}
+    {S T : LightProfinite.{u}} (f : S ⟶ T)
+    (g : A ⊗ (free R).obj T.toCondensed ⟶ B) :
+    tensorHomSectionsAddEquiv R A B S
+        ((A ◁ (free R).map (lightProfiniteToLightCondSet.map f)) ≫ g) =
+      (A ⟶[LightCondMod R] B).obj.map f.op (tensorHomSectionsAddEquiv R A B T g) := by
+  rw [tensorHomSectionsAddEquiv_apply, MonoidalClosed.curry_natural_left,
+    LightProfinite.freeModuleHomEquiv_comp, tensorHomSectionsAddEquiv_apply]
+
+/-- Postcomposition applies the corresponding internal Hom coefficient map to sections. -/
+lemma tensorHomSectionsAddEquiv_postcomp {A B C : LightCondMod R} (f : B ⟶ C)
+    (S : LightProfinite.{u}) (g : A ⊗ (free R).obj S.toCondensed ⟶ B) :
+    tensorHomSectionsAddEquiv R A C S (g ≫ f) =
+      ((ihom A).map f).hom.app (Opposite.op S) (tensorHomSectionsAddEquiv R A B S g) := by
+  rw [tensorHomSectionsAddEquiv_apply, MonoidalClosed.curry_natural_right,
     LightProfinite.freeModuleHomEquiv_postcomp, tensorHomSectionsAddEquiv_apply]
 
 end LightCondensed

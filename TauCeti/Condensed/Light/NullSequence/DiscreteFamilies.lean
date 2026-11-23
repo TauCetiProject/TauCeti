@@ -35,75 +35,22 @@ local instance (S : LightProfinite.{u}) :
     (tensorLeft ((LightCondensed.free R).obj S.toCondensed)).Additive :=
   preservesFiniteColimits_le_additiveFunctor _ _ _ ⟨inferInstance⟩
 
-private lemma internalHomSectionsEquiv_map (M : ModuleCat.{u} R)
-    (S : LightProfinite.{u}) {T U : LightProfinite.{u}} (f : T ⟶ U)
-    (s : (((LightCondensed.free R).obj S.toCondensed ⟶[LightCondMod R]
-      (LightCondMod.LocallyConstant.functor R).obj M).obj.obj (op U))) :
-    internalHomSectionsEquiv M S T
-      (((LightCondensed.free R).obj S.toCondensed ⟶[LightCondMod R]
-        (LightCondMod.LocallyConstant.functor R).obj M).obj.map f.op s) =
-      ((LightCondMod.LocallyConstant.functor R).obj
-        (ModuleCat.of R (LocallyConstant S M))).obj.map f.op
-          (internalHomSectionsEquiv M S U s) := by
-  rw [internalHomSectionsEquiv_naturality]
-  let D := ModuleCat.of R (LocallyConstant S M)
-  have h : sectionsEquiv D T
-      (((LightCondMod.LocallyConstant.functor R).obj D).obj.map f.op
-        (internalHomSectionsEquiv M S U s)) =
-      (internalHomSectionsEquiv M S U s).comap f.hom.hom := by
-    apply LocallyConstant.ext
-    intro x
-    calc
-      _ = sectionsEquiv D U (internalHomSectionsEquiv M S U s) (f x) :=
-        sectionsEquiv_map_apply D f _ x
-      _ = internalHomSectionsEquiv M S U s (f x) :=
-        congrArg (fun q : LocallyConstant U (LocallyConstant S M) ↦ q (f x))
-          (sectionsEquiv_apply D U _)
-      _ = _ := rfl
-  exact h.symm.trans (sectionsEquiv_apply D T _)
-
 private noncomputable def nullSeqDiscreteHomEquiv (M : ModuleCat.{u} R)
     (S : LightProfinite.{u}) :
     (nullSeq R ⟶ ((LightCondensed.free R).obj S.toCondensed ⟶[LightCondMod R]
       (LightCondMod.LocallyConstant.functor R).obj M)) ≃+
     (nullSeq R ⟶ (LightCondMod.LocallyConstant.functor R).obj
-      (ModuleCat.of R (LocallyConstant S M))) := by
-  let N := ((LightCondensed.free R).obj S.toCondensed ⟶[LightCondMod R]
-    (LightCondMod.LocallyConstant.functor R).obj M)
-  let D := (LightCondMod.LocallyConstant.functor R).obj
-    (ModuleCat.of R (LocallyConstant S M))
-  let E := internalHomSectionsEquiv M S
-  have hn (s : N.obj.obj (op liftedSequence.{u})) :
-      E _ (N.obj.map inftyPoint.op s) = D.obj.map inftyPoint.op (E _ s) := by
-    exact internalHomSectionsEquiv_map M S inftyPoint s
-  have hm (s : N.obj.obj (op liftedSequence.{u})) :
-      s ∈ (N.obj.map inftyPoint.op).hom.toAddMonoidHom.ker ↔
-      E _ s ∈ (D.obj.map inftyPoint.op).hom.toAddMonoidHom.ker := by
-    -- Align the kernel-membership wrappers with the naturality equation for sections.
-    change N.obj.map inftyPoint.op s = 0 ↔ D.obj.map inftyPoint.op (E _ s) = 0
-    constructor
-    · intro hs
-      exact (hn s).symm.trans ((congrArg (E _) hs).trans (map_zero _))
-    · intro hs
-      apply (E _).injective
-      exact (hn s).trans (hs.trans (map_zero _).symm)
-  let e : (N.obj.map inftyPoint.op).hom.toAddMonoidHom.ker ≃+
-      (D.obj.map inftyPoint.op).hom.toAddMonoidHom.ker :=
-    { toEquiv := (E liftedSequence).toEquiv.subtypeEquiv hm
-      map_add' := fun s t ↦ Subtype.ext ((E _).map_add s.val t.val) }
-  exact (reducedLightFreeHomEquiv R (Under.mk inftyPoint) N).trans
-    (e.trans (reducedLightFreeHomEquiv R (Under.mk inftyPoint) D).symm)
+      (ModuleCat.of R (LocallyConstant S M))) :=
+  (Linear.homCongr ℤ (Iso.refl _) (internalHomDiscreteIso M S)).toAddEquiv
 
-private lemma nullSeqDiscreteHomEquiv_val (M : ModuleCat.{u} R)
+private lemma nullSeqDiscreteHomEquiv_apply (M : ModuleCat.{u} R)
     (S : LightProfinite.{u})
     (g : nullSeq R ⟶ ((LightCondensed.free R).obj S.toCondensed ⟶[LightCondMod R]
       (LightCondMod.LocallyConstant.functor R).obj M)) :
-    (reducedLightFreeHomEquiv R (Under.mk inftyPoint) _
-      (nullSeqDiscreteHomEquiv M S g)).val =
-      internalHomSectionsEquiv M S liftedSequence
-        (reducedLightFreeHomEquiv R (Under.mk inftyPoint) _ g).val := by
-  simp only [nullSeqDiscreteHomEquiv, AddEquiv.trans_apply, AddEquiv.apply_symm_apply]
-  rfl
+    nullSeqDiscreteHomEquiv M S g = g ≫ (internalHomDiscreteIso M S).hom := by
+  calc
+    _ = Linear.homCongr ℤ (Iso.refl _) (internalHomDiscreteIso M S) g := by rfl
+    _ = _ := by rw [Linear.homCongr_apply, Iso.refl_inv, Category.id_comp]
 
 private lemma nullSeqDiscreteHomEquiv_shift (M : ModuleCat.{u} R)
     (S : LightProfinite.{u})
@@ -111,11 +58,7 @@ private lemma nullSeqDiscreteHomEquiv_shift (M : ModuleCat.{u} R)
       (LightCondMod.LocallyConstant.functor R).obj M)) :
     nullSeqDiscreteHomEquiv M S (nullShift R ≫ g) =
       nullShift R ≫ nullSeqDiscreteHomEquiv M S g := by
-  apply (reducedLightFreeHomEquiv R (Under.mk inftyPoint) _).injective
-  apply Subtype.ext
-  rw [nullSeqDiscreteHomEquiv_val, reducedLightFreeHomEquiv_nullShift_val,
-    reducedLightFreeHomEquiv_nullShift_val, nullSeqDiscreteHomEquiv_val]
-  exact internalHomSectionsEquiv_map M S natShift _
+  simp only [nullSeqDiscreteHomEquiv_apply, Category.assoc]
 
 /-- Profinite families of discrete null sequences are uniformly finitely supported. -/
 noncomputable def nullSeqDiscreteTensorHomEquivFinsupp (M : ModuleCat.{u} R)
@@ -141,33 +84,21 @@ lemma nullSeqDiscreteTensorHomEquivFinsupp_apply (M : ModuleCat.{u} R)
               (toReducedLightFree R).app (Under.mk inftyPoint) ≫
             (β_ (nullSeq R) ((LightCondensed.free R).obj S.toCondensed)).inv ≫ g))
         (x, sequencePoint n) := by
-  -- Align the composed equivalence with the named coefficient equation for discrete null sequences.
-  change (ModuleCat.nullSeqHomEquivFinsupp (ModuleCat.of R (LocallyConstant S M))
-    (nullSeqDiscreteHomEquiv M S (tensorSwapCurryEquiv (nullSeq R)
-        ((LightCondensed.free R).obj S.toCondensed) _ g))) n x = _
-  rw [ModuleCat.nullSeqHomEquivFinsupp_apply]
-  rw [nullSeqDiscreteHomEquiv_val]
-  have hsec := sectionsEquiv_apply (ModuleCat.of R (LocallyConstant S M))
-    liftedSequence (internalHomSectionsEquiv M S liftedSequence
-      (reducedLightFreeHomEquiv R (Under.mk inftyPoint) _
-        (tensorSwapCurryEquiv (nullSeq R)
-          ((LightCondensed.free R).obj S.toCondensed) _ g)).val)
-  refine (congrArg (fun f : LocallyConstant liftedSequence (LocallyConstant S M) ↦
-    f (sequencePoint n) x) hsec).trans ?_
-  have hrep : liftedSequence.freeModuleHomEquiv.symm
-      (reducedLightFreeHomEquiv R (Under.mk inftyPoint) _
-        (tensorSwapCurryEquiv (nullSeq R)
-          ((LightCondensed.free R).obj S.toCondensed) _ g)).val =
-      (toReducedLightFree R).app (Under.mk inftyPoint) ≫
-        tensorSwapCurryEquiv (nullSeq R) ((LightCondensed.free R).obj S.toCondensed) _ g := by
-    rw [reducedLightFreeHomEquiv_apply_val]
-    exact AddEquiv.symm_apply_apply _ _
-  rw [internalHomSectionsEquiv_apply, internalHomProductEquiv_apply, hrep,
-    MonoidalClosed.uncurry_natural_left, tensorSwapCurryEquiv_apply,
+  simp only [nullSeqDiscreteTensorHomEquivFinsupp, AddEquiv.trans_apply]
+  rw [ModuleCat.nullSeqHomEquivFinsupp_apply, nullSeqDiscreteHomEquiv_apply,
+    reducedLightFreeHomEquiv_postcomp_val]
+  -- The reduced free section is indexed by the pointed test object's underlying space.
+  erw [internalHomDiscreteIso_hom_app_apply M S liftedSequence]
+  rw [internalHomSectionsEquiv_apply, internalHomProductEquiv_apply,
+    reducedLightFreeHomEquiv_apply_val]
+  erw [AddEquiv.symm_apply_apply liftedSequence.freeModuleHomEquiv]
+  rw [MonoidalClosed.uncurry_natural_left, tensorSwapCurryEquiv_apply,
     MonoidalClosed.uncurry_curry]
+  -- Only the presentation of the composite free functor differs.
   rfl
 
-/-- The family comparison sends the null-sequence difference to coefficientwise difference. -/
+/-- The family comparison sends the null-sequence difference to
+`a ↦ (n ↦ a n − a (n + 1))` on finitely supported sequences of locally constant coefficients. -/
 lemma nullSeqDiscreteTensorHomEquivFinsupp_difference (M : ModuleCat.{u} R)
     (S : LightProfinite.{u})
     (g : nullSeq R ⊗ (LightCondensed.free R).obj S.toCondensed ⟶

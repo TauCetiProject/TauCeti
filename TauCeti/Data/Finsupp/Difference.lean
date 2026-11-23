@@ -26,6 +26,7 @@ variable {A : Type*}
 noncomputable def tailSum [AddCommMonoid A] (f : ℕ →₀ A) : ℕ →₀ A :=
   f.sum (fun i a ↦ ∑ j ∈ Finset.Iic i, Finsupp.single j a)
 
+/-- The tail at `n` sums the coefficients at all supported indices `i ≥ n`, including `n`. -/
 @[simp]
 theorem tailSum_apply [AddCommMonoid A] (f : ℕ →₀ A) (n : ℕ) :
     tailSum f n = f.sum (fun i a ↦ if n ≤ i then a else 0) := by
@@ -40,6 +41,7 @@ theorem oneSubShift_apply [AddCommGroup A] (f : ℕ →₀ A) (n : ℕ) :
     oneSubShift f n = f n - f (n + 1) := by
   rfl
 
+/-- Taking differences of the finite tail sums recovers the original sequence. -/
 @[simp]
 theorem oneSubShift_tailSum [AddCommGroup A] (f : ℕ →₀ A) :
     oneSubShift (tailSum f) = f := by
@@ -65,14 +67,12 @@ theorem oneSubShift_injective [AddCommGroup A] :
     induction n with
     | zero => rfl
     | succ n ih => exact (hstep n).symm.trans ih
-  have hzero : f (f.support.sup id + 1) = 0 := by
-    apply notMem_support_iff.mp
-    intro hn
-    have hle : f.support.sup id + 1 ≤ f.support.sup id := Finset.le_sup (f := id) hn
-    omega
+  obtain ⟨k, hk⟩ := Infinite.exists_notMem_finset f.support
+  have hzero : f k = 0 := notMem_support_iff.mp hk
   ext n
-  exact (hconst n).trans ((hconst _).symm.trans hzero)
+  exact (hconst n).trans ((hconst k).symm.trans hzero)
 
+/-- Taking finite tail sums of the differences recovers the original finitely supported sequence. -/
 @[simp]
 theorem tailSum_oneSubShift [AddCommGroup A] (f : ℕ →₀ A) :
     tailSum (oneSubShift f) = f :=
