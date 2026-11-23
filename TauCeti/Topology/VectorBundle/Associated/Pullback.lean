@@ -58,14 +58,13 @@ theorem pullbackContinuousLinearEquiv_apply (x : B')
     (u : AssociatedBundle G ((f : B' → B) *ᵖ P) F x) :
     pullbackContinuousLinearEquiv 𝕜 f x u = pullbackEquiv f x u := by
   let p : P (f x) := (FiberBundle.homeomorphAt G P (f x)).symm 1
-  obtain ⟨w, rfl⟩ := (mkContinuousLinearEquiv 𝕜 G (P := (f : B' → B) *ᵖ P) (F := F) p).surjective u
-  -- Unfolding the composite, `[p, w]` is sent to `[p, w]`, as `pullbackEquiv` does.
-  exact (congrArg (mkContinuousLinearEquiv 𝕜 G (P := P) (F := F) p)
-    ((mkContinuousLinearEquiv 𝕜 G (P := (f : B' → B) *ᵖ P) (F := F) p).symm_apply_apply w)).trans
-      ((mkContinuousLinearEquiv_apply (𝕜 := 𝕜) (G := G) (P := P) (F := F) p w).trans
-        ((pullbackEquiv_mk f x p w).symm.trans (congrArg (pullbackEquiv f x)
-          (mkContinuousLinearEquiv_apply (𝕜 := 𝕜) (G := G) (P := (f : B' → B) *ᵖ P) (F := F)
-            p w).symm)))
+  let q : ((f : B' → B) *ᵖ P) x := p
+  obtain ⟨w, rfl⟩ := (mk_bijective (G := G) (P := (f : B' → B) *ᵖ P) (F := F) q).surjective u
+  rw [pullbackEquiv_mk]
+  -- Unfolding the composite, `[q, w]` is sent to `[p, w]`, as `pullbackEquiv` does.
+  change mkContinuousLinearEquiv 𝕜 G (P := P) (F := F) p
+      ((mkContinuousLinearEquiv 𝕜 G (P := (f : B' → B) *ᵖ P) (F := F) q).symm (mk G q w)) = _
+  simp [p]
 
 /-- The inverse continuous linear pullback comparison is the inverse of
 `TauCeti.AssociatedBundle.pullbackEquiv`. -/
