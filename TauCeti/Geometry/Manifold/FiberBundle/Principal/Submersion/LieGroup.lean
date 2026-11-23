@@ -26,13 +26,13 @@ orbits equal to the fibres of `p`:
   injectivity via exponential orbits
   (`ContMDiff.injective_mfderiv_op_smul_one_of_op_smul_eq_self_imp`, no `T2Space P` needed), and
   `finrank ℝ EP = finrank ℝ EB + finrank ℝ EG` on regular fibres via Sard's theorem
-  (`ContMDiff.finrank_sub_le_finrank_of_isRegularValue_of_surjective`), yielding
+  (`ContMDiff.finrank_sub_le_finrank_of_isRegularValue_of_surjOn_fiber`), yielding
   `range_mfderiv_op_smul_one_eq_ker_of_lieGroup` and principal bundle structures on `MapFiber p`.
 * **Local results (without surjectivity of `p`):** along a `C^n` local section `s` over open
   `U ⊆ B` on which the action is free, `sectionCoord` is `C^n` on `p ⁻¹' U`
   (`contMDiffOn_sectionCoord_of_lieGroup`), giving smooth equivariant section charts; similarly
   `actionDivisionOrOne` is `C^n` wherever `p` is a submersion
-  (`contMDiffWithinAt_actionDivision_of_lieGroup`).
+  (`contMDiffWithinAt_actionDivisionOrOne_of_lieGroup`).
 
 The Lindelöf hypothesis on `G` is essential (e.g. `ℝ → PUnit` under translation by discrete `ℝ`).
 
@@ -48,9 +48,10 @@ The Lindelöf hypothesis on `G` is essential (e.g. `ℝ → PUnit` under transla
   `toMapFiber_actionTrivializationOfSection_mem_trivializationAtlas_of_lieGroup`,
   `principalBundleOfSubmersionLieGroup`, `contMDiffFiberBundleOfSubmersionLieGroup`,
   `diffeomorphManifoldTotalSpaceOfSubmersionLieGroup`: Kolář–Michor–Slovák, Lemma 10.3.
-* `TauCeti.PrincipalBundle.contMDiffWithinAt_actionDivision_of_lieGroup`,
-  `contMDiffAt_actionDivision_of_lieGroup`, `contMDiffOn_actionDivision_of_lieGroup`,
-  `contMDiff_actionDivision_of_lieGroup`: `C^n` regularity of `actionDivisionOrOne` without
+* `TauCeti.PrincipalBundle.contMDiffWithinAt_actionDivisionOrOne_of_lieGroup`,
+  `contMDiffAt_actionDivisionOrOne_of_lieGroup`,
+  `contMDiffOn_actionDivisionOrOne_of_lieGroup`,
+  `contMDiff_actionDivisionOrOne_of_lieGroup`: `C^n` regularity of `actionDivisionOrOne` without
   surjectivity.
 
 ## References
@@ -109,7 +110,7 @@ theorem finrank_eq_add_finrank_of_isRegularValue_of_orbit_eq_fiber {n : ℕ∞ω
     refine le_trans ?_ (Submodule.finrank_mono (t := (mfderiv IP IB p x).ker) hle)
     exact ((LinearMap.finrank_range_of_inj hinj).trans (finrank_tangentSpace (1 : G))).ge
   have hker_dim := (hreg.isRegularPoint rfl).finrank_ker_mfderiv_add_finrank
-  have hle_EG := hp.finrank_sub_le_finrank_of_isRegularValue_of_surjective ⟨x, rfl⟩ hreg
+  have hle_EG := hp.finrank_sub_le_finrank_of_isRegularValue_of_surjOn_fiber ⟨x, rfl⟩ hreg
     (hsmul.comp (contMDiff_const.prodMk contMDiff_id))
     (fun g ↦ ((horbit (op g • x)).2 ⟨g, rfl⟩).symm)
     fun y hy ↦ (horbit y).1 hy.symm
@@ -338,49 +339,49 @@ with `P` modelled on a boundaryless model with corners (`[IP.Boundaryless]`), a 
 a Lindelöf `C^n` Lie group `G`, if `f₁, f₂ : M → P` are `C^n` within `s` at `x₀` with
 `p (f₁ x₀) = p (f₂ x₀)` and `∀ᶠ x in 𝓝[s] x₀, p (f₁ x) = p (f₂ x)`, then
 `x ↦ actionDivisionOrOne horbit (f₁ x) (f₂ x)` is `C^n` within `s` at `x₀`. -/
-theorem contMDiffWithinAt_actionDivision_of_lieGroup (hp : ContMDiff IP IB n p) {s : Set M}
+theorem contMDiffWithinAt_actionDivisionOrOne_of_lieGroup (hp : ContMDiff IP IB n p) {s : Set M}
     {x₀ : M} (hf₀ : p (f₁ x₀) = p (f₂ x₀)) (hf : ∀ᶠ x in 𝓝[s] x₀, p (f₁ x) = p (f₂ x))
     (hsub : IsSubmersionAt IP IB n p (f₁ x₀))
     (hf₁ : ContMDiffWithinAt IM IP n f₁ s x₀) (hf₂ : ContMDiffWithinAt IM IP n f₂ s x₀) :
     ContMDiffWithinAt IM IG n (fun x ↦ actionDivisionOrOne horbit (f₁ x) (f₂ x)) s x₀ := by
   obtain ⟨U, hU, hx₀U, σ, -, hσ_smooth, hσ⟩ := hsub.exists_contMDiffOn_section
-  exact hp.continuous.contMDiffWithinAt_actionDivision_of_section horbit hU
+  exact hp.continuous.contMDiffWithinAt_actionDivisionOrOne_of_section horbit hU
     (fun b _ ↦ hfree (σ b)) hσ
     (contMDiffOn_sectionCoord_of_lieGroup hn hsmul hp horbit hU hσ_smooth hσ
       (fun b _ ↦ hfree (σ b)))
     hf₀ hf hx₀U hf₁ hf₂
 
-/-- `ContMDiffAt` form of `contMDiffWithinAt_actionDivision_of_lieGroup`. -/
-theorem contMDiffAt_actionDivision_of_lieGroup (hp : ContMDiff IP IB n p) {x₀ : M}
+/-- `ContMDiffAt` form of `contMDiffWithinAt_actionDivisionOrOne_of_lieGroup`. -/
+theorem contMDiffAt_actionDivisionOrOne_of_lieGroup (hp : ContMDiff IP IB n p) {x₀ : M}
     (hf : ∀ᶠ x in 𝓝 x₀, p (f₁ x) = p (f₂ x))
     (hsub : IsSubmersionAt IP IB n p (f₁ x₀))
     (hf₁ : ContMDiffAt IM IP n f₁ x₀) (hf₂ : ContMDiffAt IM IP n f₂ x₀) :
     ContMDiffAt IM IG n (fun x ↦ actionDivisionOrOne horbit (f₁ x) (f₂ x)) x₀ :=
-  contMDiffWithinAt_actionDivision_of_lieGroup hn hsmul hfree horbit hp hf.self_of_nhds
+  contMDiffWithinAt_actionDivisionOrOne_of_lieGroup hn hsmul hfree horbit hp hf.self_of_nhds
     (nhdsWithin_univ x₀ ▸ hf) hsub hf₁ hf₂
 
-/-- `ContMDiffOn` form of `contMDiffWithinAt_actionDivision_of_lieGroup`. -/
-theorem contMDiffOn_actionDivision_of_lieGroup (hsub : IsSubmersion IP IB n p) {s : Set M}
+/-- `ContMDiffOn` form of `contMDiffWithinAt_actionDivisionOrOne_of_lieGroup`. -/
+theorem contMDiffOn_actionDivisionOrOne_of_lieGroup (hsub : IsSubmersion IP IB n p) {s : Set M}
     (hf : EqOn (p ∘ f₁) (p ∘ f₂) s)
     (hf₁ : ContMDiffOn IM IP n f₁ s) (hf₂ : ContMDiffOn IM IP n f₂ s) :
     ContMDiffOn IM IG n (fun x ↦ actionDivisionOrOne horbit (f₁ x) (f₂ x)) s :=
   have := FiniteDimensional.completeSpace ℝ EP
   have := FiniteDimensional.completeSpace ℝ EB
   have := FiniteDimensional.completeSpace ℝ EG
-  contMDiffOn_actionDivision (one_le_of_three_le hn) hsmul hfree horbit
+  contMDiffOn_actionDivisionOrOne (one_le_of_three_le hn) hsmul hfree horbit
     (injective_mfderiv_op_smul_one hn hsmul hfree)
     (fun x ↦ (range_mfderiv_op_smul_one_eq_ker_of_lieGroup hn hsmul hsub hfree horbit x).ge)
     hsub hf hf₁ hf₂
 
-/-- `ContMDiff` form of `contMDiffWithinAt_actionDivision_of_lieGroup`. -/
-theorem contMDiff_actionDivision_of_lieGroup (hsub : IsSubmersion IP IB n p)
+/-- `ContMDiff` form of `contMDiffWithinAt_actionDivisionOrOne_of_lieGroup`. -/
+theorem contMDiff_actionDivisionOrOne_of_lieGroup (hsub : IsSubmersion IP IB n p)
     (hf : ∀ x : M, p (f₁ x) = p (f₂ x))
     (hf₁ : ContMDiff IM IP n f₁) (hf₂ : ContMDiff IM IP n f₂) :
     ContMDiff IM IG n fun x ↦ actionDivisionOrOne horbit (f₁ x) (f₂ x) :=
   have := FiniteDimensional.completeSpace ℝ EP
   have := FiniteDimensional.completeSpace ℝ EB
   have := FiniteDimensional.completeSpace ℝ EG
-  contMDiff_actionDivision (one_le_of_three_le hn) hsmul hfree horbit
+  contMDiff_actionDivisionOrOne (one_le_of_three_le hn) hsmul hfree horbit
     (injective_mfderiv_op_smul_one hn hsmul hfree)
     (fun x ↦ (range_mfderiv_op_smul_one_eq_ker_of_lieGroup hn hsmul hsub hfree horbit x).ge)
     hsub hf hf₁ hf₂

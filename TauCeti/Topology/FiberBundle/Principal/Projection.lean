@@ -12,28 +12,32 @@ import TauCeti.GroupTheory.GroupAction.Stabilizer.Basic
 /-!
 # Principal bundle structures on fibres of an unbundled projection
 
-Given `f : E → B` and a right `G`-action on `E` whose orbits are the fibres
-(`∀ x y, f x = f y ↔ ∃ g, op g • x = y`), `f` is `G`-invariant; when the action is also free,
-`f x = f y` determines a unique `actionDivision horbit hxy : G` carrying `x` to `y`.
-If `f` is continuous, the right `G`-orbits equal the fibres of `f`
-(`∀ x y, f x = f y ↔ ∃ g, op g • x = y`), and `s : B → E` is a local section over open `U ⊆ B`
-along which the action is free (`∀ b ∈ U, ∀ g, op g • s b = s b → g = 1`) such that
-`sectionCoord horbit hs` is continuous on `f ⁻¹' U` and `(b, g) ↦ op g • s b` is continuous on
-`U ×ˢ univ`, then `s` defines an equivariant `Bundle.Trivialization G f` over `U`. Transporting a
-covering family along `Bundle.Trivialization.toMapFiber` equips `TauCeti.MapFiber f` with
-`PrincipalBundle G (MapFiber f)` (via `TauCeti.MapFiber.Atlas.principalBundle`) whose
-`PrincipalBundle.division` equals `actionDivision`.
+Given a continuous map `f : E → B` and a right `G`-action on `E` whose orbits are the fibres of
+`f` (`∀ x y, f x = f y ↔ ∃ g, op g • x = y`), `f` is `G`-invariant; when the action is also free,
+`f x = f y` determines a unique `actionDivision horbit hxy : G` carrying `x` to `y`. For a local
+section `s : B → E` over an open set `U ⊆ B` along which the action is free
+(`∀ b ∈ U, ∀ g, op g • s b = s b → g = 1`), if `sectionCoord horbit hs` is continuous on `f ⁻¹' U`
+and `(b, g) ↦ op g • s b` is continuous on `U ×ˢ univ`, then `s` defines an equivariant
+`Bundle.Trivialization G f` over `U` (`Continuous.actionTrivializationOfSection`). These section
+trivializations transport along `Bundle.Trivialization.toMapFiber` to equivariant trivializations
+of `TauCeti.MapFiber f` (`Continuous.isEquivariant_toMapFiber_actionTrivializationOfSection`), which
+feed `TauCeti.MapFiber.Atlas.principalBundle`.
 
 ## Main definitions and results
 
 * `TauCeti.PrincipalBundle.actionDivision`, `actionDivisionOrOne`, `actionDivision_eq_iff`,
-  `division_mapFiber_eq_actionDivision`: fibrewise torsor division, totalized fibre division, and
-  cocycle identities.
+  `actionDivision_self`, `actionDivision_op_smul_left`, `actionDivision_op_smul_right`,
+  `actionDivision_mul_actionDivision`, `inv_actionDivision`: fibrewise torsor division, totalized
+  fibre division, and its characterization, equivariance, and cocycle identities.
+* `TauCeti.PrincipalBundle.division_mapFiber_eq_actionDivision`: identifies the abstract
+  `PrincipalBundle.division` on `MapFiber f` with `actionDivision`.
 * `TauCeti.PrincipalBundle.sectionCoord`, `sectionCoord_eq_of_eqOn`,
   `Continuous.actionTrivializationOfSection`,
+  `Continuous.isEquivariant_toMapFiber_actionTrivializationOfSection`,
   `Continuous.actionTrivializationOfSection_eq_of_eqOn`,
-  `Continuous.actionTrivializationOfSection_coordChange`: fibre coordinate and equivariant
-  `Trivialization G f` determined by a local section `s` over open `U`.
+  `Continuous.actionTrivializationOfSection_coordChange`: fibre coordinate, equivariant
+  `Trivialization G f` determined by a local section `s` over open `U`, and its `MapFiber`
+  equivariance.
 
 ## References
 
@@ -266,7 +270,7 @@ theorem sectionCoord_of_mem {x : E} (hx : f x ∈ U) :
 
 /-- Outside `f ⁻¹' U`, `sectionCoord` defaults to `1`. -/
 @[simp]
-theorem sectionCoord_of_not_mem {x : E} (hx : f x ∉ U) :
+theorem sectionCoord_of_notMem {x : E} (hx : f x ∉ U) :
     sectionCoord horbit hs x = 1 := by simp [sectionCoord, hx]
 
 /-- Acting on `s (f x)` by `sectionCoord horbit hs x` recovers `x` for `x ∈ f ⁻¹' U`. -/
@@ -283,7 +287,7 @@ theorem sectionCoord_eq_of_eqOn {s₁ s₂ : B → E}
   by_cases hx : f x ∈ U
   · rw [sectionCoord_of_mem horbit hs₁ hx, sectionCoord_of_mem horbit hs₂ hx]
     exact actionDivision_section_congr horbit (hs₁ (f x) hx) (hs₂ (f x) hx) (hs_eq hx)
-  · rw [sectionCoord_of_not_mem horbit hs₁ hx, sectionCoord_of_not_mem horbit hs₂ hx]
+  · rw [sectionCoord_of_notMem horbit hs₁ hx, sectionCoord_of_notMem horbit hs₂ hx]
 
 end Coord
 
@@ -387,13 +391,18 @@ theorem _root_.Continuous.actionTrivializationOfSection_apply (x : E) :
     hf.actionTrivializationOfSection horbit hU hfree hs hcoord hsmul x =
       (f x, sectionCoord horbit hs x) := (rfl)
 
+private theorem actionTrivializationOfSection_toOpenPartialHomeomorph_symm_apply (q : B × G) :
+    (hf.actionTrivializationOfSection horbit hU hfree hs hcoord
+      hsmul).toOpenPartialHomeomorph.symm q =
+      by classical exact if q.1 ∈ U then op q.2 • s q.1 else Classical.choice ⟨s q.1⟩ :=
+  rfl
+
 /-- Partial-homeomorphism inverse of `Continuous.actionTrivializationOfSection` over `U`. -/
 @[simp]
 theorem _root_.Continuous.actionTrivializationOfSection_symm_apply {q : B × G} (hq : q.1 ∈ U) :
     (hf.actionTrivializationOfSection horbit hU hfree hs hcoord
       hsmul).toOpenPartialHomeomorph.symm q = op q.2 • s q.1 := by
-  classical
-  change (if q.1 ∈ U then op q.2 • s q.1 else Classical.choice ⟨s q.1⟩) = op q.2 • s q.1
+  rw [actionTrivializationOfSection_toOpenPartialHomeomorph_symm_apply]
   simp only [hq, ↓reduceIte]
 
 /-- Base set of `Continuous.actionTrivializationOfSection`. -/
@@ -430,12 +439,13 @@ theorem _root_.Continuous.actionTrivializationOfSection_eq_of_eqOn {s₁ s₂ : 
     · intro x
       exact Prod.ext rfl (sectionCoord_eq_of_eqOn horbit hs₁ hs₂ hs_eq x)
     · intro q
-      classical
-      change (if q.1 ∈ U then op q.2 • s₁ q.1 else Classical.choice ⟨s₁ q.1⟩) =
-        (if q.1 ∈ U then op q.2 • s₂ q.1 else Classical.choice ⟨s₂ q.1⟩)
       by_cases hq : q.1 ∈ U
-      · simp only [hq, ↓reduceIte, hs_eq hq]
-      · simp only [hq, ↓reduceIte]
+      · rw [hf.actionTrivializationOfSection_symm_apply horbit hU hfree₁ hs₁ hcoord₁ hsmul₁ hq,
+          hf.actionTrivializationOfSection_symm_apply horbit hU hfree₂ hs₂ hcoord₂ hsmul₂ hq,
+          hs_eq hq]
+      · rw [actionTrivializationOfSection_toOpenPartialHomeomorph_symm_apply,
+          actionTrivializationOfSection_toOpenPartialHomeomorph_symm_apply]
+        simp only [hq, ↓reduceIte]
     · rfl
   · rfl
 

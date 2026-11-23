@@ -47,7 +47,7 @@ case, which needs only first derivatives and allows boundary in the source, is
   manifold of smaller dimension is null.
 * `MDifferentiable.finrank_le_finrank_of_surjective`: a differentiable surjection from a Lindelöf
   manifold onto a nonempty manifold forces `dim N ≤ dim M`.
-* `ContMDiff.finrank_sub_le_finrank_of_isRegularValue_of_surjective`: a `C¹` surjection from a
+* `ContMDiff.finrank_sub_le_finrank_of_isRegularValue_of_surjOn_fiber`: a `C¹` map from a
   Lindelöf manifold onto a nonempty regular fibre forces `dim P - dim B ≤ dim M`.
 * `TauCeti.isNullSet_image_of_not_isRegularPoint_of_isInteriorPoint`: Sard's theorem on a set
   of interior critical points, for an arbitrary model with corners.
@@ -228,7 +228,7 @@ is `C¹` from a finite-dimensional real manifold `P` modelled on a boundaryless 
 to a finite-dimensional real manifold `B`, `c : B` is a regular value of `p` with nonempty fibre,
 and `θ : M → P` is a `C¹` map from a Lindelöf manifold surjecting onto `p ⁻¹' {c}`, then
 `finrank ℝ EP - finrank ℝ EB ≤ finrank ℝ EM`. -/
-theorem _root_.ContMDiff.finrank_sub_le_finrank_of_isRegularValue_of_surjective
+theorem _root_.ContMDiff.finrank_sub_le_finrank_of_isRegularValue_of_surjOn_fiber
     {EP : Type*} [NormedAddCommGroup EP] [NormedSpace ℝ EP] [FiniteDimensional ℝ EP]
     {HP : Type*} [TopologicalSpace HP] {IP : ModelWithCorners ℝ EP HP} [IP.Boundaryless]
     {P : Type*} [TopologicalSpace P] [ChartedSpace HP P] [IsManifold IP 1 P]
