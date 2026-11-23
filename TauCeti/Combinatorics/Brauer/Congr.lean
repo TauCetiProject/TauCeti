@@ -215,19 +215,20 @@ private theorem exists_congr_permToBrauer_one_orient_arc {D : BrauerDiagram k}
         (φ₀ (Sum.inl i₀) = x ∨ φ₀ (Sum.inr i₀) = x) ∧
         φ (Sum.inl i₀) = x ∧ φ (Sum.inr i₀) = y ∧
         ∀ j ≠ i₀, φ (Sum.inl j) = φ₀ (Sum.inl j) ∧ φ (Sum.inr j) = φ₀ (Sum.inr j) := by
-  have hpartner (z : Fin k ⊕ Fin k) : φ₀ z.swap = D.val (φ₀ z) := by
-    rw [← hφ₀, PerfectMatching.congr_val_apply_apply, permToBrauer_one_val_apply]
+  have hfram : D.IsFraming φ₀ := hφ₀
   rcases hsymm : φ₀.symm x with i₀ | i₀
   · have hx : φ₀ (Sum.inl i₀) = x := by rw [← hsymm, Equiv.apply_symm_apply]
-    exact ⟨φ₀, i₀, hφ₀, Or.inl hx, hx, (hpartner (Sum.inl i₀)).trans (hx ▸ h),
+    exact ⟨φ₀, i₀, hφ₀, Or.inl hx, hx, (hfram.val_apply (Sum.inl i₀)).symm.trans (hx ▸ h),
       fun _ _ => ⟨rfl, rfl⟩⟩
   · have hx : φ₀ (Sum.inr i₀) = x := by rw [← hsymm, Equiv.apply_symm_apply]
     let φ : Equiv.Perm (Fin k ⊕ Fin k) := φ₀ * Equiv.swap (Sum.inr i₀) (Sum.inl i₀)
-    have hφ : PerfectMatching.congr φ (permToBrauer 1) = D := by
-      rw [PerfectMatching.congr_mul, congr_swap_inr_inl_permToBrauer_one, hφ₀]
+    have hφ : D.IsFraming φ := by
+      dsimp only [φ]
+      rw [Equiv.swap_comm]
+      exact hfram.mul_swap_inl_inr i₀
     refine ⟨φ, i₀, hφ, Or.inr hx, ?_, ?_, fun j hj => ⟨?_, ?_⟩⟩
     · simp [φ, Equiv.Perm.mul_apply, hx]
-    · simpa [φ, Equiv.Perm.mul_apply, hx, ← h] using hpartner (Sum.inr i₀)
+    · simpa [φ, Equiv.Perm.mul_apply, hx, ← h] using (hfram.val_apply (Sum.inr i₀)).symm
     · rw [Equiv.Perm.mul_apply,
         Equiv.swap_apply_of_ne_of_ne Sum.inl_ne_inr (Sum.inl_injective.ne hj)]
     · rw [Equiv.Perm.mul_apply,

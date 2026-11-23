@@ -43,6 +43,8 @@ divides the identity diagram exactly when it is a permutation diagram
   `TauCeti.BrauerDiagram.propagatingNumber_add_two_le_iff`: otherwise it is at most `k - 2`.
 * `TauCeti.BrauerDiagram.propagatingNumber_eq_zero_iff`: it is `0` exactly for the diagrams built
   out of caps and cups alone.
+* `TauCeti.BrauerDiagram.propagatingNumber_capCup`: a cap-cup diagram propagates `k - 2` strands,
+  so the propagating number is not constant.
 * `TauCeti.BrauerDiagram.propagatingNumber_composeDiagram_le_left` and
   `TauCeti.BrauerDiagram.propagatingNumber_composeDiagram_le_right`: **stacking cannot raise the
   propagating number.**
@@ -241,10 +243,22 @@ theorem exists_composeDiagram_left_eq_permToBrauer_one_iff :
   rintro ⟨σ, rfl⟩
   exact ⟨permToBrauer σ⁻¹, by rw [composeDiagram_permToBrauer, inv_mul_cancel]⟩
 
+/-- **A cap-cup diagram loses exactly the two strands it bends**, so its propagating number is
+`k - 2`. -/
+@[simp]
+theorem propagatingNumber_capCup {a b : Fin k} (hab : a ≠ b) :
+    (capCup a b).propagatingNumber = k - 2 := by
+  have hsum := (capCup a b).propagatingNumber_add_card_bottomCap
+  rw [bottomCap_capCup hab, Finset.card_pair hab] at hsum
+  omega
+
 -- On two strands the identity diagram propagates both strands, so the bound
--- `propagatingNumber_le` is attained.
+-- `propagatingNumber_le` is attained, while a cap-cup diagram propagates nothing.
 example : (permToBrauer (1 : Equiv.Perm (Fin 2))).propagatingNumber = 2 :=
   propagatingNumber_permToBrauer 1
+
+example : (capCup (0 : Fin 2) 1).propagatingNumber = 0 := by
+  rw [propagatingNumber_capCup (by decide)]
 
 end BrauerDiagram
 
