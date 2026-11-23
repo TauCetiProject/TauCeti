@@ -8,6 +8,7 @@ module
 public import TauCeti.Geometry.Manifold.Flow.Basic
 import TauCeti.Geometry.Manifold.IntegralCurve.CompactSupport
 import TauCeti.Geometry.Manifold.IntegralCurve.BoundedSpeed
+import TauCeti.Geometry.Manifold.ExtChartAt
 import Mathlib.Geometry.Manifold.IntegralCurve.UniformTime
 
 /-!
@@ -194,8 +195,7 @@ theorem isCompleteVectorField_of_compactSpace [CompactSpace M]
   rw [isCompleteVectorField_iff_maximalIntegralCurveInterval]
   rcases isEmpty_or_nonempty M with hM | hM
   · exact fun x ↦ isEmptyElim x
-  have : FiniteDimensional ℝ E := FiniteDimensional.of_locallyCompact_manifold M I
-  have : CompleteSpace E := FiniteDimensional.completeSpace ℝ E
+  have := CompleteSpace.of_locallyCompact_manifold M I
   exact fun _ ↦ maximalIntegralCurveInterval_eq_univ_of_isCompact_of_mapsTo hv
     isCompact_univ fun _ _ ↦ mem_univ _
 

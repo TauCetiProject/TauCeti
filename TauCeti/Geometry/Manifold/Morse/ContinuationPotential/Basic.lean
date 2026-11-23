@@ -58,7 +58,9 @@ continuation potential of the coordinate expression of `f`, and the time derivat
 * `TauCeti.mem_criticalPoints_continuationPotential_iff_of_mem_Icc`: the critical points in the
   slab lie over critical points of `f₀` at `t = 0` and of `f₁` at `t = 1`;
   `TauCeti.mem_criticalPoints_continuationPotential_iff_of_mem_Icc_of_intervalBase` is the same
-  statement for a path independent of the time for `t < δ` and for `t > 1 - δ`.
+  statement for a path independent of the time for `t < δ` and for `t > 1 - δ`;
+  `TauCeti.finite_setOf_snd_eq_zero_or_one_and_fst_mem_criticalPoints`: these points are finitely
+  many when the critical points of `f₀` and `f₁` are.
 * `TauCeti.isManifoldNondegenerateCriticalPoint_continuationPotential_zero_iff` and
   `TauCeti.isManifoldNondegenerateCriticalPoint_continuationPotential_one_iff`: nondegeneracy at
   the two ends.
@@ -239,6 +241,22 @@ theorem mem_criticalPoints_continuationPotential_iff_of_mem_Icc_of_intervalBase 
   · exact deriv_prodMk_eq_zero_of_lt hf₀ (h ▸ hδ)
   · exact deriv_prodMk_eq_zero_of_gt hf₁ (by linarith)
   · exact absurd h hz'
+
+omit [I.Boundaryless] in
+/-- **The critical points on the two ends are finitely many.** The points `(p, 0)` and `(q, 1)` for
+critical points `p` of `f₀` and `q` of `f₁`, which by
+`TauCeti.mem_criticalPoints_continuationPotential_iff_of_mem_Icc_of_intervalBase` are the critical
+points of the continuation potential in the slab, form a finite set when these critical points are
+finitely many. -/
+theorem finite_setOf_snd_eq_zero_or_one_and_fst_mem_criticalPoints
+    (h₀ : (criticalPoints I fun x ↦ f (x, 0)).Finite)
+    (h₁ : (criticalPoints I fun x ↦ f (x, 1)).Finite) :
+    {z : M × ℝ | (z.2 = 0 ∨ z.2 = 1) ∧ z.1 ∈ criticalPoints I (fun x ↦ f (x, z.2))}.Finite := by
+  refine ((h₀.prod (finite_singleton (0 : ℝ))).union
+    (h₁.prod (finite_singleton (1 : ℝ)))).subset fun z ⟨h01, hz⟩ ↦ ?_
+  rcases h01 with h | h
+  · exact .inl ⟨by rwa [h] at hz, h⟩
+  · exact .inr ⟨by rwa [h] at hz, h⟩
 
 /-! ### Morse on the slab -/
 

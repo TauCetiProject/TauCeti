@@ -6,11 +6,12 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.Morse.ContinuationPotential.Basic
-public import TauCeti.Geometry.Manifold.Flow.InvariantSet
+public import TauCeti.Geometry.Manifold.IntegralCurve.GlobalFlow
 import TauCeti.Dynamics.Flow.Lyapunov
+import TauCeti.Geometry.Manifold.ExtChartAt
 import TauCeti.Geometry.Manifold.IntegralCurve.Monotone
-import TauCeti.Geometry.Manifold.MFDeriv.Curve
-import TauCeti.Topology.OmegaLimit
+import TauCeti.Geometry.Manifold.IntegralCurve.Prod
+import TauCeti.Topology.Order.OrderClosed
 
 /-!
 # Trajectories of a continuation field in the slab
@@ -43,7 +44,8 @@ are well behaved there.
 
 The convergence applies the Lyapunov argument of `Flow.exists_tendsto_atTop_of_antitone` and
 `Flow.exists_tendsto_atBot_of_antitone` to the flow of `V` on the compact slab
-(`TauCeti.globalFlowOn`), with `F` as the Lyapunov function.
+(`TauCeti.continuationSlabFlow`, an instance of `TauCeti.globalFlowOn`), with `F` as the Lyapunov
+function.
 
 ## Main results
 
@@ -61,6 +63,8 @@ The convergence applies the Lyapunov argument of `Flow.exists_tendsto_atTop_of_a
   level, the open slab or the slab through which they pass.
 * `TauCeti.strictMono_snd_maximalIntegralCurve_of_intervalBase`: the time increases along a
   trajectory in the open slab.
+* `TauCeti.continuationSlabFlow`: the flow of `V` on the slab, with
+  `TauCeti.coe_continuationSlabFlow_apply` identifying it with the maximal integral curves.
 * `TauCeti.exists_tendsto_maximalIntegralCurve_atTop_of_continuationPotential_of_snd_mem_Icc` and
   `TauCeti.exists_tendsto_maximalIntegralCurve_atBot_of_continuationPotential_of_snd_mem_Icc`: the
   trajectories through the slab converge to critical points of `f₀` or `f₁` on the end levels.
@@ -159,15 +163,6 @@ theorem _root_.IsMIntegralCurveOn.snd_mem_Icc_of_snd_mem_Icc_of_intervalBase
 
 /-! ### Completeness in the slab -/
 
-variable (I) in
-include I in
-/-- The model space of a nonempty compact manifold is complete, being finite-dimensional. -/
-private theorem completeSpace_of_compactSpace [T2Space M] [CompactSpace M] (x : M) :
-    CompleteSpace E := by
-  have : Nonempty M := ⟨x⟩
-  have : FiniteDimensional ℝ E := FiniteDimensional.of_locallyCompact_manifold M I
-  exact FiniteDimensional.completeSpace ℝ E
-
 section Complete
 
 variable [T2Space M] [IsManifold I 1 M] [BoundarylessManifold I M] [CompactSpace M]
@@ -178,19 +173,35 @@ variable [T2Space M] [IsManifold I 1 M] [BoundarylessManifold I M] [CompactSpace
   (hf₁ : ∀ x t, 1 - δ < t → f (x, t) = f (x, 1))
 include hv hV hδ hf₀ hf₁
 
+omit hV hδ hf₀ hf₁ in
+/-- **Trajectories trapped in a compact range of times.** Let `T` be a compact set of times such
+that an integral curve of `V` on an open preconnected set which meets `M × T` stays in it. Then the
+maximal integral curve of `V` through a point of `M × T` is defined for all time and stays in
+`M × T`, since it is confined to the compact set `M × T`. -/
+private theorem maximalIntegralCurveInterval_eq_univ_and_snd_mem {T : Set ℝ} (hT : IsCompact T)
+    (hinv : ∀ {γ : ℝ → M × ℝ} {s : Set ℝ}, IsMIntegralCurveOn γ V s → IsOpen s →
+      IsPreconnected s → ∀ {s₀ t : ℝ}, s₀ ∈ s → (γ s₀).2 ∈ T → t ∈ s → (γ t).2 ∈ T)
+    {z : M × ℝ} (hz : z.2 ∈ T) :
+    maximalIntegralCurveInterval V z = univ ∧ ∀ t, (maximalIntegralCurve V z t).2 ∈ T := by
+  have : Nonempty M := ⟨z.1⟩
+  have := CompleteSpace.of_locallyCompact_manifold M I
+  have h : ∀ t ∈ maximalIntegralCurveInterval V z, (maximalIntegralCurve V z t).2 ∈ T :=
+    fun _ ↦ hinv (isMIntegralCurveOn_maximalIntegralCurve hv) isOpen_maximalIntegralCurveInterval
+      isPreconnected_maximalIntegralCurveInterval
+      (zero_mem_maximalIntegralCurveInterval (v := V) (x := z) hv.contMDiffAt)
+      (by rwa [maximalIntegralCurve_zero])
+  have huniv := maximalIntegralCurveInterval_eq_univ_of_isCompact_of_mapsTo hv
+    (isCompact_univ.prod hT) fun t ht ↦ ⟨mem_univ _, h t ht⟩
+  exact ⟨huniv, fun t ↦ h t (huniv ▸ mem_univ t)⟩
+
 /-- **The trajectories through the slab are complete.** Let `M` be a compact boundaryless
 manifold and `V` a `C¹` continuation field for a path `f` independent of the time for `t < δ` and
 for `t > 1 - δ`. The maximal integral curve of `V` through a point of the slab `M × [0, 1]` is
 defined for all time. -/
 theorem maximalIntegralCurveInterval_eq_univ_of_snd_mem_Icc_of_intervalBase {z : M × ℝ}
-    (hz : z.2 ∈ Icc 0 1) : maximalIntegralCurveInterval V z = univ := by
-  have := completeSpace_of_compactSpace I z.1
-  have h0 := zero_mem_maximalIntegralCurveInterval (v := V) (x := z) hv.contMDiffAt
-  refine maximalIntegralCurveInterval_eq_univ_of_isCompact_of_mapsTo hv
-    (isCompact_univ.prod (isCompact_Icc (a := (0 : ℝ)) (b := 1))) fun t ht ↦ ⟨mem_univ _, ?_⟩
-  exact (isMIntegralCurveOn_maximalIntegralCurve hv).snd_mem_Icc_of_snd_mem_Icc_of_intervalBase
-    isOpen_maximalIntegralCurveInterval isPreconnected_maximalIntegralCurveInterval hV hδ hf₀ hf₁
-    h0 (by rwa [maximalIntegralCurve_zero]) ht
+    (hz : z.2 ∈ Icc 0 1) : maximalIntegralCurveInterval V z = univ :=
+  (maximalIntegralCurveInterval_eq_univ_and_snd_mem hv isCompact_Icc
+    (fun hγ hs hs' ↦ hγ.snd_mem_Icc_of_snd_mem_Icc_of_intervalBase hs hs' hV hδ hf₀ hf₁) hz).1
 
 /-- The maximal integral curve through a point of the slab is a global integral curve. -/
 private theorem isMIntegralCurveOn_univ_maximalIntegralCurve_of_intervalBase {z : M × ℝ}
@@ -199,23 +210,24 @@ private theorem isMIntegralCurveOn_univ_maximalIntegralCurve_of_intervalBase {z 
     (maximalIntegralCurveInterval_eq_univ_of_snd_mem_Icc_of_intervalBase hv hV hδ hf₀ hf₁
       hz)).isMIntegralCurveOn univ
 
-/-- **The trajectories through the source level stay in it.** Under the hypotheses of
-`TauCeti.maximalIntegralCurveInterval_eq_univ_of_snd_mem_Icc_of_intervalBase`, the maximal integral
-curve of `V` through a point of `M × {0}` stays in `M × {0}` for all time. -/
+omit hf₁ in
+/-- **The trajectories through the source level stay in it.** Let `M` be a compact boundaryless
+manifold and `V` a `C¹` continuation field for a path `f` independent of the time for `t < δ`. The
+maximal integral curve of `V` through a point of `M × {0}` stays in `M × {0}` for all time. -/
 theorem snd_maximalIntegralCurve_eq_zero_of_intervalBase {z : M × ℝ} (hz : z.2 = 0) (t : ℝ) :
     (maximalIntegralCurve V z t).2 = 0 :=
-  (isMIntegralCurveOn_univ_maximalIntegralCurve_of_intervalBase hv hV hδ hf₀ hf₁
-    (by simp [hz])).snd_eq_zero_of_snd_eq_zero_of_intervalBase isOpen_univ isPreconnected_univ hV
-    hδ hf₀ (mem_univ 0) (by rwa [maximalIntegralCurve_zero]) (mem_univ t)
+  (maximalIntegralCurveInterval_eq_univ_and_snd_mem hv isCompact_singleton
+    (fun hγ hs hs' ↦ hγ.snd_eq_zero_of_snd_eq_zero_of_intervalBase hs hs' hV hδ hf₀) hz).2 t
 
-/-- **The trajectories through the target level stay in it.** Under the hypotheses of
-`TauCeti.maximalIntegralCurveInterval_eq_univ_of_snd_mem_Icc_of_intervalBase`, the maximal integral
-curve of `V` through a point of `M × {1}` stays in `M × {1}` for all time. -/
+omit hf₀ in
+/-- **The trajectories through the target level stay in it.** Let `M` be a compact boundaryless
+manifold and `V` a `C¹` continuation field for a path `f` independent of the time for
+`t > 1 - δ`. The maximal integral curve of `V` through a point of `M × {1}` stays in `M × {1}` for
+all time. -/
 theorem snd_maximalIntegralCurve_eq_one_of_intervalBase {z : M × ℝ} (hz : z.2 = 1) (t : ℝ) :
     (maximalIntegralCurve V z t).2 = 1 :=
-  (isMIntegralCurveOn_univ_maximalIntegralCurve_of_intervalBase hv hV hδ hf₀ hf₁
-    (by simp [hz])).snd_eq_one_of_snd_eq_one_of_intervalBase isOpen_univ isPreconnected_univ hV
-    hδ hf₁ (mem_univ 0) (by rwa [maximalIntegralCurve_zero]) (mem_univ t)
+  (maximalIntegralCurveInterval_eq_univ_and_snd_mem hv isCompact_singleton
+    (fun hγ hs hs' ↦ hγ.snd_eq_one_of_snd_eq_one_of_intervalBase hs hs' hV hδ hf₁) hz).2 t
 
 /-- **The trajectories through the open slab stay in it.** Under the hypotheses of
 `TauCeti.maximalIntegralCurveInterval_eq_univ_of_snd_mem_Icc_of_intervalBase`, the maximal integral
@@ -232,9 +244,8 @@ theorem snd_maximalIntegralCurve_mem_Ioo_of_intervalBase {z : M × ℝ} (hz : z.
 curve of `V` through a point of the slab `M × [0, 1]` stays in the slab for all time. -/
 theorem snd_maximalIntegralCurve_mem_Icc_of_intervalBase {z : M × ℝ} (hz : z.2 ∈ Icc 0 1)
     (t : ℝ) : (maximalIntegralCurve V z t).2 ∈ Icc 0 1 :=
-  (isMIntegralCurveOn_univ_maximalIntegralCurve_of_intervalBase hv hV hδ hf₀ hf₁
-    hz).snd_mem_Icc_of_snd_mem_Icc_of_intervalBase isOpen_univ isPreconnected_univ hV hδ hf₀ hf₁
-    (mem_univ 0) (by rwa [maximalIntegralCurve_zero]) (mem_univ t)
+  (maximalIntegralCurveInterval_eq_univ_and_snd_mem hv isCompact_Icc
+    (fun hγ hs hs' ↦ hγ.snd_mem_Icc_of_snd_mem_Icc_of_intervalBase hs hs' hV hδ hf₀ hf₁) hz).2 t
 
 /-- **The time increases along a trajectory in the open slab.** Under the hypotheses of
 `TauCeti.maximalIntegralCurveInterval_eq_univ_of_snd_mem_Icc_of_intervalBase`, if
@@ -251,33 +262,11 @@ theorem strictMono_snd_maximalIntegralCurve_of_intervalBase
     linarith [hlt (maximalIntegralCurve V z t).1 _
       (snd_maximalIntegralCurve_mem_Ioo_of_intervalBase hv hV hδ hf₀ hf₁ hz t)]
 
-end Complete
-
-/-! ### The ends of the trajectories -/
-
-/-- The points `(p, 0)` and `(q, 1)` over the critical points `p` of `f₀` and `q` of `f₁` are
-finitely many if these critical points are. -/
-private theorem finite_setOf_mem_criticalPoints_of_snd_eq_zero_or_one
-    (h₀ : (criticalPoints I fun x ↦ f (x, 0)).Finite)
-    (h₁ : (criticalPoints I fun x ↦ f (x, 1)).Finite) :
-    {w : M × ℝ | (w.2 = 0 ∨ w.2 = 1) ∧ w.1 ∈ criticalPoints I (fun x ↦ f (x, w.2))}.Finite := by
-  refine ((h₀.prod (finite_singleton (0 : ℝ))).union
-    (h₁.prod (finite_singleton (1 : ℝ)))).subset fun w ⟨h01, hw⟩ ↦ ?_
-  rcases h01 with h | h
-  · exact .inl ⟨by rwa [h] at hw, h⟩
-  · exact .inr ⟨by rwa [h] at hw, h⟩
-
-section Ends
-
-variable [T2Space M] [IsManifold I 1 M] [I.Boundaryless] [CompactSpace M]
-
-/-- The flow of a continuation field on the slab `M × [0, 1]` of a compact manifold. -/
-private noncomputable abbrev slabFlow [CompleteSpace E]
-    (hv : ContMDiff (I.prod 𝓘(ℝ)) (I.prod 𝓘(ℝ)).tangent 1
-      (fun z ↦ (⟨z, V z⟩ : TangentBundle (I.prod 𝓘(ℝ)) (M × ℝ))))
-    (hV : ∀ z, (V z : E × ℝ).2 = C * z.2 * (1 - z.2 ^ 2) - deriv (fun s ↦ f (z.1, s)) z.2)
-    (hδ : 0 < δ) (hf₀ : ∀ x t, t < δ → f (x, t) = f (x, 0))
-    (hf₁ : ∀ x t, 1 - δ < t → f (x, t) = f (x, 1)) :
+/-- **The flow of a continuation field on the slab.** Let `M` be a compact boundaryless manifold
+and `V` a `C¹` continuation field for a path `f` independent of the time for `t < δ` and for
+`t > 1 - δ`. The trajectories of `V` through the slab `M × [0, 1]` are defined for all time and
+stay in the slab, so they form a flow of `ℝ` on the slab, although `V` need not be complete. -/
+noncomputable def continuationSlabFlow [CompleteSpace E] :
     Flow ℝ (univ ×ˢ Icc (0 : ℝ) 1 : Set (M × ℝ)) :=
   globalFlowOn V hv _
     (fun _ hz ↦ maximalIntegralCurveInterval_eq_univ_of_snd_mem_Icc_of_intervalBase hv hV hδ hf₀
@@ -285,9 +274,24 @@ private noncomputable abbrev slabFlow [CompleteSpace E]
     fun _ hz t ↦
       ⟨mem_univ _, snd_maximalIntegralCurve_mem_Icc_of_intervalBase hv hV hδ hf₀ hf₁ hz.2 t⟩
 
+/-- The flow of a continuation field on the slab is the maximal integral curve. -/
+@[simp]
+theorem coe_continuationSlabFlow_apply [CompleteSpace E] (t : ℝ)
+    (z : (univ ×ˢ Icc (0 : ℝ) 1 : Set (M × ℝ))) :
+    (continuationSlabFlow hv hV hδ hf₀ hf₁ t z : M × ℝ) = maximalIntegralCurve V z t :=
+  coe_globalFlowOn_apply hv _ _ t z
+
+end Complete
+
+/-! ### The ends of the trajectories -/
+
+section Ends
+
+variable [T2Space M] [IsManifold I 1 M] [I.Boundaryless] [CompactSpace M]
+
 /-- The Lyapunov properties of the continuation potential for the flow on the slab: it is antitone
 along every orbit, and the points along whose orbit it is constant are its critical points. -/
-private theorem slabFlow_lyapunov [CompleteSpace E]
+private theorem continuationSlabFlow_lyapunov [CompleteSpace E]
     (hv : ContMDiff (I.prod 𝓘(ℝ)) (I.prod 𝓘(ℝ)).tangent 1
       (fun z ↦ (⟨z, V z⟩ : TangentBundle (I.prod 𝓘(ℝ)) (M × ℝ))))
     (hf : MDifferentiable (I.prod 𝓘(ℝ)) 𝓘(ℝ) f)
@@ -297,29 +301,28 @@ private theorem slabFlow_lyapunov [CompleteSpace E]
     (hVF : ∀ z : M × ℝ, z.2 ∈ Icc 0 1 →
       z ∉ criticalPoints (I.prod 𝓘(ℝ)) (continuationPotential C f) →
         mvfderiv (I.prod 𝓘(ℝ)) (continuationPotential C f) z (V z) < 0) :
-    (∀ y, Antitone fun t ↦ continuationPotential C f (slabFlow hv hV hδ hf₀ hf₁ t y)) ∧
-      ∀ y, (∀ t, continuationPotential C f (slabFlow hv hV hδ hf₀ hf₁ t y) =
+    (∀ y, Antitone fun t ↦
+      continuationPotential C f (continuationSlabFlow hv hV hδ hf₀ hf₁ t y)) ∧
+      ∀ y, (∀ t, continuationPotential C f (continuationSlabFlow hv hV hδ hf₀ hf₁ t y) =
         continuationPotential C f y) →
           (y : M × ℝ) ∈ criticalPoints (I.prod 𝓘(ℝ)) (continuationPotential C f) := by
   have hF : MDifferentiable (I.prod 𝓘(ℝ)) 𝓘(ℝ) (continuationPotential C f) :=
     hf.continuationPotential
-  have hγ : ∀ y, IsMIntegralCurve (fun t ↦ (slabFlow hv hV hδ hf₀ hf₁ t y : M × ℝ)) V :=
+  have hγ : ∀ y,
+      IsMIntegralCurve (fun t ↦ (continuationSlabFlow hv hV hδ hf₀ hf₁ t y : M × ℝ)) V :=
     isMIntegralCurve_coe_globalFlowOn hv _ _
   refine ⟨fun y ↦ (hγ y).antitone_comp (fun t ↦ hF _) fun t ↦ ?_, fun y hy ↦ ?_⟩
   · -- `dF(V) ≤ 0`, as `dF(V) < 0` off the critical points of `F`.
-    by_cases hc : (slabFlow hv hV hδ hf₀ hf₁ t y : M × ℝ) ∈
+    by_cases hc : (continuationSlabFlow hv hV hδ hf₀ hf₁ t y : M × ℝ) ∈
       criticalPoints (I.prod 𝓘(ℝ)) (continuationPotential C f)
     · simp [mem_criticalPoints.1 hc]
-    · exact (hVF _ (slabFlow hv hV hδ hf₀ hf₁ t y).property.2 hc).le
+    · exact (hVF _ (continuationSlabFlow hv hV hδ hf₀ hf₁ t y).property.2 hc).le
   · -- Along the orbit `F` is constant, so its derivative `dF(V)` at `y` vanishes.
     by_contra hc
-    have hd := Manifold.hasDerivAt_comp_curve (hF _) (hγ y 0)
-    have horbit : (continuationPotential C f ∘ fun t ↦ (slabFlow hv hV hδ hf₀ hf₁ t y : M × ℝ)) =
-        fun _ ↦ continuationPotential C f y := funext hy
-    rw [horbit] at hd
-    have hy0 : (slabFlow hv hV hδ hf₀ hf₁ 0 y : M × ℝ) = y := by rw [Flow.map_zero_apply]
-    exact (hVF _ (slabFlow hv hV hδ hf₀ hf₁ 0 y).property.2 (by rwa [hy0])).ne
-      (hd.unique (hasDerivAt_const _ _))
+    have h := (hγ y).isMIntegralCurveAt 0
+      |>.mfderiv_apply_eq_zero_of_eventuallyEq_const (hF _) (.of_forall hy)
+    rw [Flow.map_zero_apply] at h
+    exact (hVF y y.property.2 hc).ne h
 
 /-- **Ends of the trajectories in the slab, relative to a finite set.** Let `l` be `atTop` or
 `atBot`. If the critical points of the continuation potential in the slab which are cluster points
@@ -341,14 +344,16 @@ private theorem exists_tendsto_maximalIntegralCurve_of_finite {l : Filter ℝ}
       w ∈ criticalPoints (I.prod 𝓘(ℝ)) (continuationPotential C f) →
         MapClusterPt w l (maximalIntegralCurve V z) → w ∈ S) :
     ∃ w ∈ S, Tendsto (maximalIntegralCurve V z) l (𝓝 w) := by
-  have := completeSpace_of_compactSpace I z.1
+  have : Nonempty M := ⟨z.1⟩
+  have := CompleteSpace.of_locallyCompact_manifold M I
   have : CompactSpace (univ ×ˢ Icc (0 : ℝ) 1 : Set (M × ℝ)) :=
     isCompact_iff_compactSpace.1 (isCompact_univ.prod isCompact_Icc)
-  obtain ⟨hanti, hrest⟩ := slabFlow_lyapunov hv hf hV hδ hf₀ hf₁ hVF
-  have hcoe : (fun t ↦ (slabFlow hv hV hδ hf₀ hf₁ t ⟨z, mem_univ _, hz⟩ : M × ℝ)) =
-      maximalIntegralCurve V z := funext fun t ↦ coe_globalFlowOn_apply hv _ _ t _
-  have hrest' : ∀ w, MapClusterPt w l (fun t ↦ slabFlow hv hV hδ hf₀ hf₁ t ⟨z, mem_univ _, hz⟩) →
-      (∀ t, continuationPotential C f (slabFlow hv hV hδ hf₀ hf₁ t w) =
+  obtain ⟨hanti, hrest⟩ := continuationSlabFlow_lyapunov hv hf hV hδ hf₀ hf₁ hVF
+  have hcoe : (fun t ↦ (continuationSlabFlow hv hV hδ hf₀ hf₁ t ⟨z, mem_univ _, hz⟩ : M × ℝ)) =
+      maximalIntegralCurve V z := funext fun t ↦ coe_continuationSlabFlow_apply hv hV hδ hf₀ hf₁ t _
+  have hrest' : ∀ w,
+      MapClusterPt w l (fun t ↦ continuationSlabFlow hv hV hδ hf₀ hf₁ t ⟨z, mem_univ _, hz⟩) →
+      (∀ t, continuationPotential C f (continuationSlabFlow hv hV hδ hf₀ hf₁ t w) =
         continuationPotential C f w) → (w : M × ℝ) ∈ S := fun w hw hc ↦
     hSc w w.property.2 (hrest w hc) (by
       rw [← hcoe]
@@ -356,12 +361,12 @@ private theorem exists_tendsto_maximalIntegralCurve_of_finite {l : Filter ℝ}
   have hg : Continuous fun y : (univ ×ˢ Icc (0 : ℝ) 1 : Set (M × ℝ)) ↦
       continuationPotential C f y := hf.continuationPotential.continuous.comp continuous_subtypeVal
   obtain ⟨w, hw, hlim⟩ : ∃ w ∈ Subtype.val ⁻¹' S,
-      Tendsto (fun t ↦ slabFlow hv hV hδ hf₀ hf₁ t ⟨z, mem_univ _, hz⟩) l (𝓝 w) := by
+      Tendsto (fun t ↦ continuationSlabFlow hv hV hδ hf₀ hf₁ t ⟨z, mem_univ _, hz⟩) l (𝓝 w) := by
     rcases hl with rfl | rfl
-    · exact Flow.exists_tendsto_atTop_of_antitone _ hg hanti
-        (hS.preimage Subtype.val_injective.injOn) _ hrest'
-    · exact Flow.exists_tendsto_atBot_of_antitone _ hg hanti
-        (hS.preimage Subtype.val_injective.injOn) _ hrest'
+    · exact Flow.exists_tendsto_atTop_of_antitone _ hg _ (hanti _)
+        (hS.preimage Subtype.val_injective.injOn) hrest'
+    · exact Flow.exists_tendsto_atBot_of_antitone _ hg _ (hanti _)
+        (hS.preimage Subtype.val_injective.injOn) hrest'
   refine ⟨w, hw, ?_⟩
   rw [← hcoe]
   exact (continuous_subtypeVal.tendsto w).comp hlim
@@ -389,7 +394,8 @@ theorem exists_tendsto_maximalIntegralCurve_atTop_of_continuationPotential_of_sn
     ∃ w : M × ℝ, (w.2 = 0 ∨ w.2 = 1) ∧ w.1 ∈ criticalPoints I (fun x ↦ f (x, w.2)) ∧
       Tendsto (maximalIntegralCurve V z) atTop (𝓝 w) := by
   obtain ⟨w, hw, hlim⟩ := exists_tendsto_maximalIntegralCurve_of_finite (.inl rfl) hv hf hV hδ
-    hf₀ hf₁ hVF (finite_setOf_mem_criticalPoints_of_snd_eq_zero_or_one h₀ h₁) hz fun w hw hc _ ↦
+    hf₀ hf₁ hVF (finite_setOf_snd_eq_zero_or_one_and_fst_mem_criticalPoints h₀ h₁) hz
+    fun w hw hc _ ↦
       (mem_criticalPoints_continuationPotential_iff_of_mem_Icc_of_intervalBase (hf w) hδ hf₀ hf₁
         hlt hw).1 hc
   exact ⟨w, hw.1, hw.2, hlim⟩
@@ -414,7 +420,8 @@ theorem exists_tendsto_maximalIntegralCurve_atBot_of_continuationPotential_of_sn
     ∃ w : M × ℝ, (w.2 = 0 ∨ w.2 = 1) ∧ w.1 ∈ criticalPoints I (fun x ↦ f (x, w.2)) ∧
       Tendsto (maximalIntegralCurve V z) atBot (𝓝 w) := by
   obtain ⟨w, hw, hlim⟩ := exists_tendsto_maximalIntegralCurve_of_finite (.inr rfl) hv hf hV hδ
-    hf₀ hf₁ hVF (finite_setOf_mem_criticalPoints_of_snd_eq_zero_or_one h₀ h₁) hz fun w hw hc _ ↦
+    hf₀ hf₁ hVF (finite_setOf_snd_eq_zero_or_one_and_fst_mem_criticalPoints h₀ h₁) hz
+    fun w hw hc _ ↦
       (mem_criticalPoints_continuationPotential_iff_of_mem_Icc_of_intervalBase (hf w) hδ hf₀ hf₁
         hlt hw).1 hc
   exact ⟨w, hw.1, hw.2, hlim⟩
@@ -447,8 +454,8 @@ theorem exists_tendsto_maximalIntegralCurve_atTop_of_continuationPotential_of_sn
           hlt hw).1 hc
       -- The time component increases, so it stays above `z.2 > 0` in forward time.
       have hle : z.2 ≤ w.2 := by
-        simpa only [maximalIntegralCurve_zero] using
-          hcl.ge_of_monotone_comp_atTop continuous_snd.continuousAt
+        simpa only [Function.comp_apply, maximalIntegralCurve_zero] using
+          (hcl.continuousAt_comp continuous_snd.continuousAt).ge_of_monotone_atTop
             (strictMono_snd_maximalIntegralCurve_of_intervalBase hv hV hδ hf₀ hf₁ hlt hz).monotone 0
       have h : w.2 = 1 := h01.resolve_left fun h ↦ by linarith [hz.1]
       exact ⟨by rwa [h] at hw1, h⟩
@@ -482,8 +489,8 @@ theorem exists_tendsto_maximalIntegralCurve_atBot_of_continuationPotential_of_sn
           hlt hw).1 hc
       -- The time component increases, so it stays below `z.2 < 1` in backward time.
       have hle : w.2 ≤ z.2 := by
-        simpa only [maximalIntegralCurve_zero] using
-          hcl.le_of_monotone_comp_atBot continuous_snd.continuousAt
+        simpa only [Function.comp_apply, maximalIntegralCurve_zero] using
+          (hcl.continuousAt_comp continuous_snd.continuousAt).le_of_monotone_atBot
             (strictMono_snd_maximalIntegralCurve_of_intervalBase hv hV hδ hf₀ hf₁ hlt hz).monotone 0
       have h : w.2 = 0 := h01.resolve_right fun h ↦ by linarith [hz.2]
       exact ⟨by rwa [h] at hw0, h⟩

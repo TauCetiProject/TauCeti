@@ -16,9 +16,9 @@ import TauCeti.Topology.OmegaLimit
 # Convergence of the orbits of a flow with a Lyapunov function
 
 Let `φ` be a flow of `ℝ` on a compact Hausdorff space and `g` a continuous function that is
-antitone along every orbit. Suppose that the cluster points of an orbit along whose own orbit `g`
-is constant are contained in a finite set `C`. Then the orbit converges, forward in time, to a point
-of `C`; the same holds backward in time.
+antitone along an orbit. Suppose that the cluster points of this orbit along whose own orbit `g` is
+constant are contained in a finite set `C`. Then the orbit converges, forward in time, to a point of
+`C`; the same holds backward in time.
 
 This is the topological core of the convergence of gradient-like flows: for the flow of a
 pseudo-gradient field adapted to a Morse function `f`, the function is `f` and `C` is the finite
@@ -118,12 +118,12 @@ end Limit
 
 variable [CompactSpace α] [T2Space α]
 
-/-- **The orbits of a flow with a Lyapunov function converge.** Let `g` be a continuous function,
-antitone along every orbit of a flow `φ` of `ℝ` on a compact Hausdorff space. If the cluster points
-of the forward orbit of `y` along whose own orbit `g` is constant are contained in a finite set `C`,
-the orbit of `y` converges forward in time to a point of `C`. -/
-theorem exists_tendsto_atTop_of_antitone (φ : Flow ℝ α) {g : α → ℝ} (hg : Continuous g)
-    (hanti : ∀ y, Antitone fun t ↦ g (φ t y)) {C : Set α} (hC : C.Finite) (y : α)
+/-- **The orbits of a flow with a Lyapunov function converge.** Let `g` be a continuous function
+on a compact Hausdorff space, antitone along the orbit of `y` under a flow `φ` of `ℝ`. If the
+cluster points of the forward orbit of `y` along whose own orbit `g` is constant are contained in a
+finite set `C`, the orbit of `y` converges forward in time to a point of `C`. -/
+theorem exists_tendsto_atTop_of_antitone (φ : Flow ℝ α) {g : α → ℝ} (hg : Continuous g) (y : α)
+    (hanti : Antitone fun t ↦ g (φ t y)) {C : Set α} (hC : C.Finite)
     (hrest : ∀ z, MapClusterPt z atTop (fun t ↦ φ t y) → (∀ t, g (φ t z) = g z) → z ∈ C) :
     ∃ x ∈ C, Tendsto (fun t ↦ φ t y) atTop (𝓝 x) := by
   set γ : ℝ → α := fun t ↦ φ t y
@@ -134,7 +134,7 @@ theorem exists_tendsto_atTop_of_antitone (φ : Flow ℝ α) {g : α → ℝ} (hg
     obtain ⟨m, -, hm⟩ := isCompact_univ.exists_isMinOn univ_nonempty hg.continuousOn
     exact ⟨g m, by rintro _ ⟨t, rfl⟩; exact hm (mem_univ _)⟩
   have hlim : Tendsto (fun t ↦ g (γ t)) atTop (𝓝 (⨅ t, g (γ t))) :=
-    tendsto_atTop_ciInf (hanti y) hbdd
+    tendsto_atTop_ciInf hanti hbdd
   set c := ⨅ t, g (γ t)
   -- `g` takes the value `c` at every cluster point of the orbit.
   have hval : ∀ z, MapClusterPt z atTop γ → g z = c := by
@@ -151,17 +151,19 @@ theorem exists_tendsto_atTop_of_antitone (φ : Flow ℝ α) {g : α → ℝ} (hg
     hγc.continuousOn (mapsTo_univ _ _) hC hsub
 
 /-- **The orbits of a flow with a Lyapunov function converge backward in time.** Let `g` be a
-continuous function, antitone along every orbit of a flow `φ` of `ℝ` on a compact Hausdorff space.
-If the cluster points of the backward orbit of `y` along whose own orbit `g` is constant are
+continuous function on a compact Hausdorff space, antitone along the orbit of `y` under a flow `φ`
+of `ℝ`. If the cluster points of the backward orbit of `y` along whose own orbit `g` is constant are
 contained in a finite set `C`, the orbit of `y` converges backward in time to a point of `C`. -/
-theorem exists_tendsto_atBot_of_antitone (φ : Flow ℝ α) {g : α → ℝ} (hg : Continuous g)
-    (hanti : ∀ y, Antitone fun t ↦ g (φ t y)) {C : Set α} (hC : C.Finite) (y : α)
+theorem exists_tendsto_atBot_of_antitone (φ : Flow ℝ α) {g : α → ℝ} (hg : Continuous g) (y : α)
+    (hanti : Antitone fun t ↦ g (φ t y)) {C : Set α} (hC : C.Finite)
     (hrest : ∀ z, MapClusterPt z atBot (fun t ↦ φ t y) → (∀ t, g (φ t z) = g z) → z ∈ C) :
     ∃ x ∈ C, Tendsto (fun t ↦ φ t y) atBot (𝓝 x) := by
   -- Apply the forward convergence to the reversed flow, along which `-g` is antitone.
-  obtain ⟨x, hx, hlim⟩ := exists_tendsto_atTop_of_antitone φ.reverse hg.neg
-    (fun y ↦ antitone_reverse_neg (hanti y)) hC y fun z hz hconst ↦ hrest z
-      (by rwa [← map_neg_atTop, ← mapClusterPt_comp]) fun t ↦ by
+  obtain ⟨x, hx, hlim⟩ := exists_tendsto_atTop_of_antitone φ.reverse hg.neg y
+    (antitone_reverse_neg hanti) hC fun z hz hconst ↦ hrest z
+      (by
+        rw [← map_neg_atTop, ← mapClusterPt_comp]
+        simpa only [Function.comp_def, _root_.Flow.reverse_apply] using hz) fun t ↦ by
         simpa only [_root_.Flow.reverse_apply, neg_neg, Pi.neg_apply, neg_inj] using hconst (-t)
   refine ⟨x, hx, ?_⟩
   simpa only [Function.comp_def, _root_.Flow.reverse_apply, neg_neg] using
