@@ -26,28 +26,22 @@ open scoped ContDiff Manifold
 
 namespace TauCeti
 
-variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
+variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
   [MeasurableSpace E] [BorelSpace E]
   {n : ℕ} [Fact (Module.finrank ℝ E = n + 1)]
 
 /-- Native Riemannian volume on the round unit sphere is invariant under negation. -/
 instance isNegInvariant_riemannianVolume_sphere :
+    letI := FiniteDimensional.of_fact_finrank_eq_succ (K := ℝ) (V := E) n
     (riemannianVolume (𝓡 n) (Metric.sphere (0 : E) 1)).IsNegInvariant := by
+  have := FiniteDimensional.of_fact_finrank_eq_succ (K := ℝ) (V := E) n
   let Φ := (LinearIsometryEquiv.neg ℝ (E := E)).unitSphereRiemannianIsometry
     (n := n) (k := n)
   have hΦ : (Φ : Metric.sphere (0 : E) 1 → Metric.sphere (0 : E) 1) = fun x => -x := by
     funext x
-    change Φ.toDiffeomorph x = -x
+    rw [← RiemannianIsometry.coe_toDiffeomorph Φ]
     rw [LinearIsometryEquiv.unitSphereRiemannianIsometry_toDiffeomorph]
     exact LinearIsometryEquiv.unitSphereDiffeomorph_neg_apply x
   exact ⟨by simpa only [Measure.neg_def, hΦ] using Φ.measurePreserving_riemannianVolume.map_eq⟩
-
-/-- An antipodal-odd function into a real normed space has zero integral for the native
-round-sphere volume. -/
-theorem integral_riemannianVolume_sphere_eq_zero_of_odd
-    {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
-    (φ : Metric.sphere (0 : E) 1 → F) (hodd : ∀ x, φ (-x) = -φ x) :
-    ∫ x, φ x ∂riemannianVolume (𝓡 n) (Metric.sphere (0 : E) 1) = 0 := by
-  exact MeasureTheory.integral_eq_zero_of_odd hodd
 
 end TauCeti
