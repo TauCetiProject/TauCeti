@@ -164,10 +164,7 @@ theorem conjStarAlgAut_diagonal_eq_iff {d : ι → R} (hd : Function.Injective d
   · intro h
     have hcomm : Commute (U : Matrix ι ι R) (diagonal d) := by
       rw [← h.diagonal_diag]
-      simp only [Commute, SemiconjBy, diagonal_mul_diagonal]
-      congr 1
-      funext i
-      exact mul_comm _ _
+      exact Matrix.commute_diagonal _ _
     rw [hcomm.eq]
     simp [Matrix.mul_assoc]
 
