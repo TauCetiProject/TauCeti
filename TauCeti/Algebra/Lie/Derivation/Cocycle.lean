@@ -82,20 +82,9 @@ instance [Module.Finite R M] : Module.Finite R D.ShearedModule :=
 
 instance : LieRingModule L D.ShearedModule where
   bracket x v := ofProd D (⁅x, ((ofProd D).symm v).1⁆ + ((ofProd D).symm v).2 • D x, 0)
-  add_lie x y v := by
-    apply (ofProd D).symm.injective
-    simp only [LinearEquiv.symm_apply_apply, map_add, add_lie, smul_add, Prod.mk_add_mk, add_zero]
-    abel_nf
-  lie_add x v w := by
-    apply (ofProd D).symm.injective
-    simp only [LinearEquiv.symm_apply_apply, map_add, Prod.fst_add, Prod.snd_add, lie_add,
-      add_smul, Prod.mk_add_mk, add_zero]
-    abel_nf
-  leibniz_lie x y v := by
-    apply (ofProd D).symm.injective
-    simp only [LinearEquiv.symm_apply_apply, map_add, lie_add, lie_smul, D.apply_lie_eq_sub,
-      zero_smul, add_zero, Prod.mk_add_mk, smul_sub, leibniz_lie x y ((ofProd D).symm v).1]
-    abel_nf
+  add_lie x y v := (ofProd D).symm.injective <| by simp [smul_add]; abel
+  lie_add x v w := (ofProd D).symm.injective <| by simp [add_smul]; abel
+  leibniz_lie x y v := (ofProd D).symm.injective <| by simp [D.apply_lie_eq_sub, smul_sub]; abel
 
 @[simp]
 lemma ofProd_symm_lie (x : L) (v : D.ShearedModule) :

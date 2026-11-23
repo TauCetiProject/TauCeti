@@ -72,19 +72,20 @@ private theorem nonempty_linearEquiv_of_prod_linearEquiv_of_isCompl [IsNoetheria
   have hcompl₂ : IsCompl Q₂ (K ⊔ Q₁) := by
     refine ⟨?_, codisjoint_iff.mpr ?_⟩
     · rw [sup_comm]
-      exact hd.symm.disjoint_sup_right_of_disjoint_sup_left (by rw [sup_comm, hs]; exact hQK.1)
+      exact hd.symm.disjoint_sup_right_of_disjoint_sup_left
+          (by rw [sup_comm, hs]; exact hQK.disjoint)
     · rw [← hQK.sup_eq_top, ← hs]
       ac_rfl
   have hcompl₁ : IsCompl Q₁ (K ⊔ Q₂) := by
     refine ⟨?_, codisjoint_iff.mpr ?_⟩
     · rw [sup_comm]
-      exact hd.disjoint_sup_right_of_disjoint_sup_left (by rw [hs]; exact hQK.1)
+      exact hd.disjoint_sup_right_of_disjoint_sup_left (by rw [hs]; exact hQK.disjoint)
     · rw [← hQK.sup_eq_top, ← hs]
       ac_rfl
   have hlt₁ : K < K ⊔ Q₁ :=
-    left_lt_sup.mpr fun h ↦ hQ₁0 ((hQK.1.mono_left hQ₁.le).eq_bot_of_le h)
+    left_lt_sup.mpr fun h ↦ hQ₁0 ((hQK.disjoint.mono_left hQ₁.le).eq_bot_of_le h)
   have hlt₂ : K < K ⊔ Q₂ :=
-    left_lt_sup.mpr fun h ↦ hQ₂0 ((hQK.1.mono_left hQ₂.le).eq_bot_of_le h)
+    left_lt_sup.mpr fun h ↦ hQ₂0 ((hQK.disjoint.mono_left hQ₂.le).eq_bot_of_le h)
   -- Split `Q ≃ Q₁ × Q₂` by the sum map, then cancel `Q₂` and afterwards `Q₁`.
   have hinj : Function.Injective (Q₁.subtype.coprod Q₂.subtype) := by
     rw [← LinearMap.ker_eq_bot, LinearMap.ker_coprod_of_disjoint_range] <;> simp [hd]

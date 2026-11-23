@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Analysis.Distribution.Sobolev
 import TauCeti.Analysis.Distribution.SchwartzSpace.Deriv
-import TauCeti.Analysis.Distribution.TemperedDistribution.LaplacianResolvent
 import TauCeti.Analysis.Distribution.TemperedDistribution.Lp
 import TauCeti.Analysis.Distribution.TemperedDistribution.TestFunction
 import TauCeti.Analysis.InnerProductSpace.Laplacian.Basic

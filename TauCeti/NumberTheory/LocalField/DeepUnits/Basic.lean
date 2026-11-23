@@ -70,7 +70,7 @@ theorem valuation_exp_sub_exp (hi : absoluteRamificationIndex K p < (p - 1) * i)
 theorem continuous_exp_maximalIdeal_pow (hi : absoluteRamificationIndex K p < (p - 1) * i) :
     Continuous fun x : (𝓂[K] ^ i : Ideal 𝒪[K]) => exp (x : K) := by
   have hc : Continuous fun x : (𝓂[K] ^ i : Ideal 𝒪[K]) => ((x : 𝒪[K]) : K) :=
-    continuous_subtype_val.comp continuous_subtype_val
+    continuous_subtypeVal.comp continuous_subtypeVal
   refine continuous_iff_continuousAt.2 fun x => ?_
   refine (IsValuativeTopology.hasBasis_nhds _).tendsto_right_iff.2 fun γ _ => ?_
   filter_upwards [(IsValuativeTopology.hasBasis_nhds _).tendsto_right_iff.1 (hc.tendsto x) γ
@@ -94,11 +94,11 @@ theorem log_mul_of_mem_unitFiltration (hi : absoluteRamificationIndex K p < (p -
 /-- The logarithm of a deep unit, as an element of `𝓂[K] ^ i`. -/
 private noncomputable def deepUnitLog (hi : absoluteRamificationIndex K p < (p - 1) * i)
     (u : unitFiltration K i) : (𝓂[K] ^ i : Ideal 𝒪[K]) :=
-  ⟨_, (exists_mem_maximalIdeal_pow_eq_log hi u.2).choose_spec.1⟩
+  ⟨_, (exists_mem_maximalIdeal_pow_eq_log hi u.property).choose_spec.1⟩
 
 private theorem coe_deepUnitLog (hi : absoluteRamificationIndex K p < (p - 1) * i)
     (u : unitFiltration K i) : ((deepUnitLog hi u : 𝒪[K]) : K) = log ((u : Kˣ) : K) :=
-  (exists_mem_maximalIdeal_pow_eq_log hi u.2).choose_spec.2
+  (exists_mem_maximalIdeal_pow_eq_log hi u.property).choose_spec.2
 
 /-- The exponential of an element of `𝓂[K] ^ i`, as a deep unit. -/
 private noncomputable def deepUnitExp (hi : absoluteRamificationIndex K p < (p - 1) * i)
@@ -120,7 +120,7 @@ noncomputable def deepUnitExpLogEquiv (hi : absoluteRamificationIndex K p < (p -
   invFun x := deepUnitExp hi x.toAdd
   left_inv u := by
     refine Subtype.ext (Units.ext ?_)
-    rw [coe_deepUnitExp, toAdd_ofAdd, coe_deepUnitLog, exp_log_of_mem_unitFiltration hi u.2]
+    rw [coe_deepUnitExp, toAdd_ofAdd, coe_deepUnitLog, exp_log_of_mem_unitFiltration hi u.property]
   right_inv x := by
     refine Multiplicative.toAdd.injective (Subtype.ext (Subtype.ext ?_))
     rw [toAdd_ofAdd, coe_deepUnitLog, coe_deepUnitExp, log_exp_of_mem_maximalIdeal_pow hi]
@@ -128,7 +128,7 @@ noncomputable def deepUnitExpLogEquiv (hi : absoluteRamificationIndex K p < (p -
     refine Multiplicative.toAdd.injective (Subtype.ext (Subtype.ext ?_))
     simp only [toAdd_mul, toAdd_ofAdd, Submodule.coe_add, Subring.coe_add, coe_deepUnitLog,
       Subgroup.coe_mul, Units.val_mul]
-    exact log_mul_of_mem_unitFiltration hi u.2 w.2
+    exact log_mul_of_mem_unitFiltration hi u.property w.property
   continuous_toFun := by
     have hi1 : 1 ≤ i := Nat.one_le_iff_ne_zero.2 (by rintro rfl; simp at hi)
     refine continuous_ofAdd.comp (Continuous.subtype_mk (Continuous.subtype_mk ?_ _) _)

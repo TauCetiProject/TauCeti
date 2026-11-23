@@ -36,18 +36,18 @@ namespace TauCeti.TypeALieIndex
 /-- The split weight torus of the represented type-A ambient group, in fundamental-weight
 coordinates. -/
 noncomputable def weightTorus (d : TypeALieIndex) :
-    (Fin d.1.rank → d.1.Closureˣ) →* d.AmbientGroup :=
-  SlStd.weightTorusPoints d.1.rank d.1.Closure
+    (Fin d.val.rank → d.val.Closureˣ) →* d.AmbientGroup :=
+  SlStd.weightTorusPoints d.val.rank d.val.Closure
 
 /-- The indexed torus is the standard carrier's weight torus, with unchanged coordinates. -/
 theorem weightTorus_def (d : TypeALieIndex) :
-    d.weightTorus = SlStd.weightTorusPoints d.1.rank d.1.Closure := (rfl)
+    d.weightTorus = SlStd.weightTorusPoints d.val.rank d.val.Closure := (rfl)
 
 /-- The character pullback of the indexed Frobenius agrees with the native datum Frobenius. -/
 theorem isCharacterMap_frobenius (d : TypeALieIndex) :
-    IsCharacterMap d.weightTorus d.frobenius d.1.datumFrobenius.weightMap := by
+    IsCharacterMap d.weightTorus d.frobenius d.val.datumFrobenius.weightMap := by
   rw [weightTorus_def, frobenius_def, ValidLieTypeIndex.datumFrobenius_weightMap,
-    d.1.fieldOrder_eq_characteristic_pow, ← Module.End.one_eq_id]
+    d.val.fieldOrder_eq_characteristic_pow, ← Module.End.one_eq_id]
   exact SlStd.isCharacterMap_frobenius _ _ _ _
 
 /-- The character pullback of the indexed graph automorphism is the inverse native datum
@@ -68,8 +68,8 @@ theorem isCharacterMap_graphAut (d : TypeALieIndex) :
     -- The constructor's rank is definitionally `rank`; reducing the dependent node type
     -- makes the carrier's nondependent reversal formula applicable.
     change IsCharacterMap
-      (SlStd.weightTorusPoints rank (ofTwistedA rank q hvalid).1.Closure)
-      (SlStd.graphAutomorphismPoints rank (ofTwistedA rank q hvalid).1.Closure).toMonoidHom
+      (SlStd.weightTorusPoints rank (ofTwistedA rank q hvalid).val.Closure)
+      (SlStd.graphAutomorphismPoints rank (ofTwistedA rank q hvalid).val.Closure).toMonoidHom
       (LinearEquiv.funCongrLeft ℤ ℤ (graphPermA rank)).toLinearMap
     have hperm : graphPermA rank = Fin.revPerm := Equiv.ext (graphPermA_apply rank)
     rw [hperm]
@@ -78,9 +78,9 @@ theorem isCharacterMap_graphAut (d : TypeALieIndex) :
 /-- The represented type-A Steinberg endomorphism has exactly the native root-datum Steinberg
 weight map as a character pullback, on both the linear and unitary families. -/
 theorem isCharacterMap_steinberg (d : TypeALieIndex) :
-    IsCharacterMap d.weightTorus d.steinberg d.1.datumSteinberg.weightMap := by
+    IsCharacterMap d.weightTorus d.steinberg d.val.datumSteinberg.weightMap := by
   rw [ValidLieTypeIndex.datumSteinberg_of_not_usesHalfFrobenius _
-      (LieTypeIndex.not_usesHalfFrobenius_of_isTypeA d.2),
+      (LieTypeIndex.not_usesHalfFrobenius_of_isTypeA d.property),
     steinberg_eq_graphAut_comp_frobenius, GraphTwistedIndex.datumSteinberg_weightMap]
   have h := d.isCharacterMap_graphAut.comp d.isCharacterMap_frobenius
   rw [ValidLieTypeIndex.datumFrobenius_weightMap, Module.End.mul_eq_comp] at h

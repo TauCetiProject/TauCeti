@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.TypeAHeckeAlgebra.Jimbo
+public import TauCeti.Algebra.TypeAHeckeAlgebra.Jimbo.Basic
 public import Mathlib.LinearAlgebra.Finsupp.VectorSpace
 public import Mathlib.LinearAlgebra.Dimension.Basic
 

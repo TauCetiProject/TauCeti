@@ -228,14 +228,14 @@ theorem hasFDerivAt_windingExp (d : ℤ) (F : CircleSobolev s ℂ) :
 /-- Multiplication by the unit `x^d e^F`, as a continuous linear automorphism of `H^s`. -/
 private def mulWindingExpEquiv (d : ℤ) (F : CircleSobolev s ℂ) :
     CircleSobolev s ℂ ≃L[ℂ] CircleSobolev s ℂ :=
-  .equivOfInverse (convolution hs.out (.mul ℂ ℂ) (windingExp d F))
+  .ofContinuousLinearMap (convolution hs.out (.mul ℂ ℂ) (windingExp d F))
     (convolution hs.out (.mul ℂ ℂ) (windingExp (-d) (-F)))
-    (fun G ↦ by
-      simp only [← mul_def]
-      rw [← mul_assoc, mul_comm (windingExp (-d) (-F)), windingExp_mul_windingExp_neg, one_mul])
-    (fun G ↦ by
-      simp only [← mul_def]
+    (ContinuousLinearMap.ext fun G ↦ by
+      simp only [ContinuousLinearMap.comp_apply, ContinuousLinearMap.id_apply, ← mul_def]
       rw [← mul_assoc, windingExp_mul_windingExp_neg, one_mul])
+    (ContinuousLinearMap.ext fun G ↦ by
+      simp only [ContinuousLinearMap.comp_apply, ContinuousLinearMap.id_apply, ← mul_def]
+      rw [← mul_assoc, mul_comm (windingExp (-d) (-F)), windingExp_mul_windingExp_neg, one_mul])
 
 /-- **The exponential coordinates are a local homeomorphism.** By the inverse function theorem,
 `F ↦ x^d e^F` restricts to a homeomorphism from a neighbourhood of each `F ∈ H^s` onto a

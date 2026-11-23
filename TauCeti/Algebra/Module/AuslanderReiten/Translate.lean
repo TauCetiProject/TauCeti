@@ -6,40 +6,37 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Module.AuslanderReiten.Transpose
-public import TauCeti.LinearAlgebra.Dual.RightAction
-public import TauCeti.Algebra.Module.Dual.Indecomposable
+public import TauCeti.RingTheory.MatlisDuality.Indecomposable
 
 /-!
 # The Auslander--Reiten translate
 
-For an algebra `A` over a commutative semiring `k`, the **duality** `D = Hom_k(-, k)` turns a right
-`A`-module into a left `A`-module, by `TauCeti.linearMapRightAction`.  This file applies that
-duality to the Auslander--Reiten transpose to define the **Auslander--Reiten translate**
+Let `A` be an algebra over a commutative ring `R`, and `E` an `R`-module.  The **Matlis dual**
+`D = Hom_R(-, E)` turns a right `A`-module into a left `A`-module (`TauCeti.MatlisDual`).  This file
+applies that duality to the Auslander--Reiten transpose to define the **Auslander--Reiten
+translate**
 
 `τ M = D (Tr M)`
 
-of a module `M` presented by a minimal projective presentation `P₁ → P₀ → M → 0`, the `k`-dual of
-the Auslander--Reiten transpose `TauCeti.AuslanderReitenTranspose` of that presentation.  The
+of a module `M` presented by a minimal projective presentation `P₁ → P₀ → M → 0`, the Matlis dual
+of the Auslander--Reiten transpose `TauCeti.AuslanderReitenTranspose` of that presentation.  The
 transpose is a right `A`-module, so the translate is a left `A`-module again, as `M` was.
+
+For an Artin algebra, `E` is an injective hull of `R ⧸ J(R)`; for an algebra over a field `k`, it is
+`k` itself, and `τ = Hom_k(Tr -, k)` is the classical translate.  Both are the one construction
+`TauCeti.AuslanderReitenTranslate R E`.
 
 The translate is attached to a *presentation*, not directly to `M`: like the transpose it is
 well defined only because a minimal projective presentation is unique up to isomorphism of the whole
 diagram.  `TauCeti.IsMinimalProjectivePresentation.nonempty_linearEquiv_auslanderReitenTranslate` is
 that statement, and it is what licenses the notation `τ M`.
 
-AR duality itself, and the bijection it yields from non-projective indecomposables to non-injective
-indecomposables with inverse `Tr D`, is **not proved here**: it needs finite-dimensional
-hypotheses and stable morphism spaces.
-
 ## Main definitions
 
-* `TauCeti.AuslanderReitenTranslate`: the `k`-dual `D (Tr)` of the Auslander--Reiten transpose of a
-  linear map `p₁ : P₁ → P₀`, carrying the resulting `A`-module structure.  It is the
+* `TauCeti.AuslanderReitenTranslate R E`: the Matlis dual `D (Tr)` of the Auslander--Reiten
+  transpose of a linear map `p₁ : P₁ → P₀`, carrying the resulting `A`-module structure.  It is the
   Auslander--Reiten translate of `M` when `p₁` is the first map of a minimal projective presentation
   of `M`.
-* `TauCeti.AuslanderReitenTranslate.linearEquiv`: the transport of the translate along an
-  isomorphism of transposes, contravariant by
-  `TauCeti.AuslanderReitenTranslate.linearEquiv_trans`.
 
 ## Main results
 
@@ -49,28 +46,24 @@ hypotheses and stable morphism spaces.
 * `TauCeti.IsMinimalProjectivePresentation.subsingleton_auslanderReitenTranslate_of_projective`: the
   translate of a projective module vanishes.
 * `TauCeti.IsMinimalProjectivePresentation.subsingleton_auslanderReitenTranslate_iff_projective`:
-  for a finitely generated left-hand source and a transpose projective over the base, the converse
-  holds too — **the translate vanishes exactly on the projective modules** — so that `τ` assigns a
+  for a finitely generated left-hand source and an injective cogenerator `E`, the converse holds
+  too — **the translate vanishes exactly on the projective modules** — so that `τ` assigns a
   nonzero module to every non-projective one.
-* `TauCeti.AuslanderReitenTranslate.isIndecomposableModule_iff`: when the transpose is reflexive
-  over a commutative base ring, the translate is indecomposable exactly when the transpose is.
+* The translate is the Matlis dual of the transpose, so
+  `TauCeti.MatlisDual.isIndecomposableModule_iff` shows that, when the transpose has finite length
+  over `R`, the translate is indecomposable exactly when the transpose is.
 
 ## Implementation notes
 
-`TauCeti.linearMapRightAction` is a plain ring homomorphism rather than a `Module` instance on every
-dual, for the reasons recorded in `TauCeti/LinearAlgebra/Dual/RightAction.lean`; the single
-`Module` instance built from it is the one on the translate, whose underlying transpose pins the
-right-module structure being dualized.
+The translate is a reducible abbreviation of `TauCeti.MatlisDual`, so that the whole Matlis duality
+API applies to it unchanged: its `A`-action is `TauCeti.MatlisDual.smul_apply`, its transport along
+an isomorphism of transposes is `TauCeti.MatlisDual.congrOp`, and biduality, faithfulness and the
+exchange of projectives and injectives are those of `TauCeti/RingTheory/MatlisDuality/`.  Over a
+field `k` the elements of `AuslanderReitenTranslate k k p₁` are `k`-linear functionals on the
+transpose through `TauCeti.MatlisDual.equivLinearMap`.
 
-The translate is a reducible abbreviation of the dual rather than a fresh type, so that its
-elements are literally `k`-linear functionals on the transpose and the whole `Module.Dual` API
-applies to it unchanged: extensionality, the dimension count `Subspace.dual_finrank_eq` and the
-finite-dimensionality of a dual are inherited verbatim and are not restated here.  Only the
-`A`-action is new, and it is described by the single lemma
-`TauCeti.AuslanderReitenTranslate.smul_apply`.
-
-The shorter name `arTranslate` is not used, so that it stays available for an *object-level*
-translate of a quiver representation, which needs the stable category and is not formalised here.
+The shorter name `arTranslate` is used for the translate of a *module*, `ModuleCat.arTranslate`,
+which chooses a minimal presentation.
 
 ## References
 
@@ -84,9 +77,9 @@ public section
 
 namespace TauCeti
 
-universe u v v' w w' x
+universe u v v' w w' x y
 
-variable {A : Type u} [Ring A] {k : Type x} [CommSemiring k] [Algebra k A]
+variable {A : Type u} [Ring A]
 
 section Translate
 
@@ -94,91 +87,21 @@ variable {P₀ : Type v} {P₁ : Type w} [AddCommMonoid P₀] [Module A P₀]
   [AddCommMonoid P₁] [Module A P₁]
 
 /-- The **Auslander--Reiten translate** `τ = D Tr` attached to a linear map `p₁ : P₁ → P₀`: the
-`k`-dual of its Auslander--Reiten transpose.  The transpose is a right `A`-module, so
-`TauCeti.linearMapRightAction` makes the translate a left `A`-module.
+Matlis dual `D_R = Hom_R(-, E)` of its Auslander--Reiten transpose.  The transpose is a right
+`A`-module, so its Matlis dual is a left `A`-module.
 
 When `p₁` is the first map of a minimal projective presentation `P₁ → P₀ → M → 0`, this is the
 Auslander--Reiten translate of `M`: no exactness or projectivity is needed to form it, and
 minimality enters only through
 `TauCeti.IsMinimalProjectivePresentation.nonempty_linearEquiv_auslanderReitenTranslate`, which shows
 that the result is then independent, up to equivalence, of the chosen presentation. -/
-abbrev AuslanderReitenTranslate (k : Type x) [CommSemiring k] [Algebra k A]
-    (p₁ : P₁ →ₗ[A] P₀) : Type _ :=
-  Module.Dual k (AuslanderReitenTranspose p₁)
-
-namespace AuslanderReitenTranslate
-
-variable {p₁ : P₁ →ₗ[A] P₀}
-
-instance : Module A (AuslanderReitenTranslate k p₁) :=
-  Module.compHom (Module.Dual k (AuslanderReitenTranspose p₁))
-    (linearMapRightAction k (AuslanderReitenTranspose p₁) k)
-
-/-- The `A`-action on the translate is precomposition with the right action on the transpose. -/
-@[simp]
-theorem smul_apply (a : A) (φ : AuslanderReitenTranslate k p₁)
-    (x : AuslanderReitenTranspose p₁) :
-    (a • φ) x = φ (MulOpposite.op a • x) :=
-  linearMapRightAction_apply_apply k (AuslanderReitenTranspose p₁) k a φ x
-
-/-- Scalars from `k` act on the translate through `A`, so the two actions on it are the layered
-ones: the `k`-action is the restriction of the `A`-action along the algebra map. -/
-instance : IsScalarTower k A (AuslanderReitenTranslate k p₁) :=
-  IsScalarTower.of_algebraMap_smul fun c φ => by ext x; simp
-
-variable {Q₀ : Type v'} {Q₁ : Type w'} [AddCommMonoid Q₀] [Module A Q₀]
-  [AddCommMonoid Q₁] [Module A Q₁]
-variable {q₁ : Q₁ →ₗ[A] Q₀}
-
-/-- An equivalence of transposes dualizes to an equivalence of translates, contravariantly: an
-`Aᵐᵒᵖ`-linear equivalence `Tr q₁ ≃ Tr p₁` sends a functional on `Tr p₁` to its composite with that
-equivalence. -/
-def linearEquiv (e : AuslanderReitenTranspose q₁ ≃ₗ[Aᵐᵒᵖ] AuslanderReitenTranspose p₁) :
-    AuslanderReitenTranslate k p₁ ≃ₗ[A] AuslanderReitenTranslate k q₁ :=
-  -- `LinearEquiv.dualMap` of the underlying `k`-linear equivalence, upgraded to the `A`-action that
-  -- the translates carry.
-  { (e.restrictScalars k).dualMap with
-    map_smul' := fun a φ => by
-      ext x
-      simp }
-
-@[simp]
-theorem linearEquiv_apply (e : AuslanderReitenTranspose q₁ ≃ₗ[Aᵐᵒᵖ] AuslanderReitenTranspose p₁)
-    (φ : AuslanderReitenTranslate k p₁) (x : AuslanderReitenTranspose q₁) :
-    linearEquiv (k := k) e φ x = φ (e x) := by
-  -- unfolding `linearEquiv` leaves `LinearEquiv.dualMap` of `e.restrictScalars k`, evaluated by
-  -- `LinearEquiv.dualMap_apply`
-  simp [linearEquiv, LinearEquiv.dualMap_apply]
-
-@[simp]
-theorem linearEquiv_symm (e : AuslanderReitenTranspose q₁ ≃ₗ[Aᵐᵒᵖ] AuslanderReitenTranspose p₁) :
-    (linearEquiv (k := k) e).symm = linearEquiv e.symm :=
-  LinearEquiv.ext fun ψ => DFunLike.congr_fun (LinearEquiv.dualMap_symm (f := e.restrictScalars k))
-    ψ
-
-/-- Transport along the identity equivalence of transposes is the identity. -/
-@[simp]
-theorem linearEquiv_refl :
-    linearEquiv (k := k) (LinearEquiv.refl Aᵐᵒᵖ (AuslanderReitenTranspose p₁)) =
-      LinearEquiv.refl A (AuslanderReitenTranslate k p₁) :=
-  LinearEquiv.ext fun φ =>
-    DFunLike.congr_fun (LinearEquiv.dualMap_refl (R := k) (M₁ := AuslanderReitenTranspose p₁)) φ
-
-/-- Dualizing is **contravariant**: transporting along a composite of equivalences of transposes is
-the composite of the transports in the reverse order. -/
-@[simp]
-theorem linearEquiv_trans {R₀ : Type*} {R₁ : Type*} [AddCommMonoid R₀] [Module A R₀]
-    [AddCommMonoid R₁] [Module A R₁] {r₁ : R₁ →ₗ[A] R₀}
-    (f : AuslanderReitenTranspose r₁ ≃ₗ[Aᵐᵒᵖ] AuslanderReitenTranspose q₁)
-    (e : AuslanderReitenTranspose q₁ ≃ₗ[Aᵐᵒᵖ] AuslanderReitenTranspose p₁) :
-    linearEquiv (k := k) (f.trans e) = (linearEquiv (k := k) e).trans (linearEquiv f) :=
-  LinearEquiv.ext fun φ =>
-    DFunLike.congr_fun
-      (LinearEquiv.dualMap_trans (f.restrictScalars k) (e.restrictScalars k)).symm φ
-
-end AuslanderReitenTranslate
+abbrev AuslanderReitenTranslate (R : Type x) [CommRing R] [Algebra R A] (E : Type y)
+    [AddCommGroup E] [Module R E] (p₁ : P₁ →ₗ[A] P₀) : Type _ :=
+  MatlisDual R E (AuslanderReitenTranspose p₁)
 
 end Translate
+
+variable {R : Type x} [CommRing R] [Algebra R A] {E : Type y} [AddCommGroup E] [Module R E]
 
 namespace IsMinimalProjectivePresentation
 
@@ -194,10 +117,10 @@ variable {p₁ : P₁ →ₗ[A] P₀} {p₀ : P₀ →ₗ[A] M}
 and the dual of a subsingleton is a subsingleton. -/
 theorem subsingleton_auslanderReitenTranslate_of_projective [Module.Projective A M]
     (h : IsMinimalProjectivePresentation p₁ p₀) :
-    Subsingleton (AuslanderReitenTranslate k p₁) :=
+    Subsingleton (AuslanderReitenTranslate R E p₁) :=
   let _ : Subsingleton (AuslanderReitenTranspose p₁) :=
     h.subsingleton_auslanderReitenTranspose_of_projective
-  inferInstance
+  (MatlisDual.equivLinearMap R E _).toEquiv.subsingleton
 
 end Projective
 
@@ -207,20 +130,21 @@ variable {P₁ : Type w} [AddCommGroup P₁] [Module A P₁]
 variable {p₁ : P₁ →ₗ[A] P₀} {p₀ : P₀ →ₗ[A] M}
 
 /-- **The Auslander--Reiten translate vanishes exactly on the projective modules**, for a
-minimal projective presentation with finitely generated left-hand source and a transpose that is
-projective over the base.  This is what makes `τ` a construction on the *non-projective* modules:
-it assigns a nonzero module to every module that is not projective.
+minimal projective presentation with finitely generated left-hand source and an injective `E`
+that receives a nonzero map from every simple `R`-module.  This is what makes `τ` a construction
+on the *non-projective* modules: it assigns a nonzero module to every module that is not
+projective.
 
-The projectivity of the transpose over `K` is what lets a vanishing translate imply projectivity
-of `M`, through `Module.subsingleton_dual_iff`; it is automatic when `K` is a field.  The
+No finiteness over `R` is needed: such an `E` is a cogenerator, so the Matlis dual of the
+transpose vanishes only when the transpose does (`TauCeti.subsingleton_matlisDual_iff`).  The
 implication the other way — a projective `M` has vanishing translate — is
 `TauCeti.IsMinimalProjectivePresentation.subsingleton_auslanderReitenTranslate_of_projective`, and
-needs neither hypothesis. -/
-theorem subsingleton_auslanderReitenTranslate_iff_projective (K : Type*) [CommSemiring K]
-    [Algebra K A] [Module.Projective K (AuslanderReitenTranspose p₁)] [Module.Finite A P₁]
-    (h : IsMinimalProjectivePresentation p₁ p₀) :
-    Subsingleton (AuslanderReitenTranslate K p₁) ↔ Module.Projective A M :=
-  (Module.subsingleton_dual_iff K).trans h.subsingleton_auslanderReitenTranspose_iff_projective
+needs no hypothesis on `E`. -/
+theorem subsingleton_auslanderReitenTranslate_iff_projective [Module.Injective R E]
+    [Small.{y} R] (hE : ∀ 𝔪 : Ideal R, 𝔪.IsMaximal → Nontrivial (R ⧸ 𝔪 →ₗ[R] E))
+    [Module.Finite A P₁] (h : IsMinimalProjectivePresentation p₁ p₀) :
+    Subsingleton (AuslanderReitenTranslate R E p₁) ↔ Module.Projective A M :=
+  (subsingleton_matlisDual_iff hE).trans h.subsingleton_auslanderReitenTranspose_iff_projective
 
 end Vanishing
 
@@ -237,29 +161,11 @@ equivalence, of the chosen minimal projective presentation of a module.  This is
 licenses writing `τ M` for a module `M`. -/
 theorem nonempty_linearEquiv_auslanderReitenTranslate (h : IsMinimalProjectivePresentation p₁ p₀)
     (h' : IsMinimalProjectivePresentation q₁ q₀) :
-    Nonempty (AuslanderReitenTranslate k p₁ ≃ₗ[A] AuslanderReitenTranslate k q₁) :=
-  (h'.nonempty_linearEquiv_auslanderReitenTranspose h).map AuslanderReitenTranslate.linearEquiv
+    Nonempty (AuslanderReitenTranslate R E p₁ ≃ₗ[A] AuslanderReitenTranslate R E q₁) :=
+  (h'.nonempty_linearEquiv_auslanderReitenTranspose h).map MatlisDual.congrOp
 
 end Comparison
 
 end IsMinimalProjectivePresentation
-
-namespace AuslanderReitenTranslate
-
-variable {P₀ : Type v} {P₁ : Type w} [AddCommGroup P₀] [Module A P₀]
-  [AddCommGroup P₁] [Module A P₁] (p₁ : P₁ →ₗ[A] P₀)
-
-/-- For a transpose reflexive over the base, the translate is indecomposable exactly when
-the transpose is. In particular this applies to finite-dimensional transposes over a field. -/
-@[simp]
-theorem isIndecomposableModule_iff (K : Type*) [CommRing K] [Algebra K A]
-    [Module.IsReflexive K (AuslanderReitenTranspose p₁)] :
-    IsIndecomposableModule A (AuslanderReitenTranslate K p₁) ↔
-      IsIndecomposableModule Aᵐᵒᵖ (AuslanderReitenTranspose p₁) :=
-  LinearEquiv.isIndecomposableModule_iff_of_dual (A := A)
-    (N := AuslanderReitenTranspose p₁) (Q := AuslanderReitenTranslate K p₁)
-    (LinearEquiv.refl K _) (fun a φ x ↦ smul_apply a φ x)
-
-end AuslanderReitenTranslate
 
 end TauCeti

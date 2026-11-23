@@ -9,6 +9,7 @@ public import Mathlib.RingTheory.RootsOfUnity.AlgebraicallyClosed
 public import TauCeti.NumberTheory.LocalField.FiniteExtension.IntermediateField
 public import TauCeti.NumberTheory.LocalField.Frobenius
 public import TauCeti.NumberTheory.LocalField.Unramified.Criterion
+import TauCeti.NumberTheory.LocalField.Unramified.BaseChange
 import TauCeti.RingTheory.RootsOfUnity.Adjoin
 
 /-!
@@ -57,8 +58,11 @@ of `TauCeti.finiteIntermediateFieldValuativeRel`.
   `TauCeti.isUnramified_unramifiedExtension`: it is unramified over `K`.
 * `TauCeti.finrank_unramifiedExtension_of_isPrimitiveRoot`,
   `TauCeti.finrank_unramifiedExtension`: it has degree `f` over `K`.
+* `TauCeti.natCard_algEquiv_unramifiedExtension`: its Galois group over `K` has cardinality `f`.
 * `IntermediateField.eq_unramifiedExtension_finrank`: every unramified intermediate field `E` of
   `Ω / K` is `unramifiedExtension K Ω [E : K]`.
+* `AlgHom.fieldRange_eq_unramifiedExtension`: the image of any `K`-embedding `ι : F →ₐ[K] Ω` of an
+  unramified extension `F / K` into `Ω` is `unramifiedExtension K Ω (inertiaDegree K F)`.
 * `TauCeti.existsUnique_isUnramified_finrank_eq`: for `f ≥ 1`, there is exactly one unramified
   intermediate field of `Ω / K` of degree `f`.
 
@@ -221,7 +225,7 @@ instance isGalois_unramifiedExtension (f : ℕ) : IsGalois K (unramifiedExtensio
   have hζ : IsPrimitiveRoot ((g : Ωˣ) : Ω) d :=
     IsPrimitiveRoot.coe_units_iff.2 (IsPrimitiveRoot.coe_submonoidClass_iff.2 (hg ▸ .orderOf g))
   have hζn : ((g : Ωˣ) : Ω) ^ n = 1 := by
-    rw [← Units.val_pow_eq_pow_val, (mem_rootsOfUnity n (g : Ωˣ)).1 g.2, Units.val_one]
+    rw [← Units.val_pow_eq_pow_val, (mem_rootsOfUnity n (g : Ωˣ)).1 g.property, Units.val_one]
   have hset : {x : Ω | x ^ n = 1} = {x | ∃ m ∈ ({d} : Set ℕ), m ≠ 0 ∧ x ^ m = 1} := by
     ext x
     simp only [Set.mem_ofPred_eq, Set.mem_singleton_iff, exists_eq_left]
@@ -345,7 +349,25 @@ theorem _root_.IntermediateField.eq_unramifiedExtension_finrank (E : Intermediat
   have hηΩ := hη.map_of_injective (f := E.val) E.val.injective
   refine (eq_of_le_of_finrank_eq ?_ (finrank_unramifiedExtension_of_isPrimitiveRoot hf hηΩ)).symm
   rw [unramifiedExtension_eq_adjoin_simple hf hηΩ, adjoin_simple_le_iff]
-  exact η.2
+  exact η.property
+
+variable {K Ω} in
+/-- **The image of an unramified extension.** For an unramified extension `F / K` of
+nonarchimedean local fields, the image of any `K`-embedding `ι : F →ₐ[K] Ω` into an extension `Ω`
+of `K` is `unramifiedExtension K Ω (inertiaDegree K F)`. -/
+theorem _root_.AlgHom.fieldRange_eq_unramifiedExtension {F : Type*} [Field F] [ValuativeRel F]
+    [TopologicalSpace F] [IsNonarchimedeanLocalField F] [Algebra K F] [ValuativeExtension K F]
+    [IsUnramified K F] (ι : F →ₐ[K] Ω) :
+    ι.fieldRange = unramifiedExtension K Ω (inertiaDegree K F) := by
+  have : Module.Finite K F := finite_of_valuativeExtension K F
+  have : Module.Finite K ι.fieldRange := Module.Finite.equiv ι.equivFieldRange.toLinearEquiv
+  let _ := finiteIntermediateFieldValuativeRel K Ω ι.fieldRange
+  let _ := finiteIntermediateFieldTopology K Ω ι.fieldRange
+  have := finiteIntermediateField_isNonarchimedeanLocalField K Ω ι.fieldRange
+  have := finiteIntermediateField_valuativeExtension K Ω ι.fieldRange
+  have : IsUnramified K ι.fieldRange := IsUnramified.of_algEquiv ι.equivFieldRange
+  rw [ι.fieldRange.eq_unramifiedExtension_finrank,
+    ← ι.equivFieldRange.toLinearEquiv.finrank_eq, IsUnramified.inertiaDegree_eq_finrank]
 
 section IsSepClosed
 
@@ -387,6 +409,12 @@ theorem finrank_unramifiedExtension {f : ℕ} (hf : f ≠ 0) :
     Module.finrank K (unramifiedExtension K Ω f) = f :=
   finrank_unramifiedExtension_of_isPrimitiveRoot hf
     (exists_isPrimitiveRoot_natCard_pow_sub_one (K := K) Ω hf).choose_spec
+
+variable {K Ω} in
+/-- **The Galois group of the unramified extension of degree `f` has cardinality `f`.** -/
+theorem natCard_algEquiv_unramifiedExtension {f : ℕ} (hf : f ≠ 0) :
+    Nat.card (unramifiedExtension K Ω f ≃ₐ[K] unramifiedExtension K Ω f) = f := by
+  rw [IsGalois.card_aut_eq_finrank, finrank_unramifiedExtension hf]
 
 /-- **Existence and uniqueness of unramified extensions.** For `f ≥ 1` there is exactly one
 intermediate field of `Ω / K` which is unramified of degree `f` over `K`, for its canonical
