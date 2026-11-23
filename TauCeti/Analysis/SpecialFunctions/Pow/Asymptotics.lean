@@ -27,8 +27,8 @@ On a seminormed group, as `‖s‖ → ∞`:
 * every power `‖s‖ ^ n` is `O(exp ‖s‖ ^ b)` whenever `0 < b`, and `o(exp (c ‖s‖))` whenever
   `0 < c`, so a polynomial weight turns `O(exp (-c ‖s‖))` decay into `O(exp (-a ‖s‖))` decay for
   every `a < c`;
-* `‖s‖ ^ a` is `o(‖s‖ ^ b)` whenever `a < b`, as is `x ^ a` against `x ^ b` for real `x → ∞`;
-  in particular `√‖s‖ = o(s)`.
+* `‖s‖ ^ a` is `o(‖s‖ ^ b)` whenever `a < b`, as is `x ^ a` against `x ^ b` for real `x → ∞`
+  (and `O(x ^ b)` whenever `a ≤ b`); in particular `√‖s‖ = o(s)`.
 
 These are the comparisons behind the order of growth of an entire function.
 
@@ -172,6 +172,13 @@ theorem isLittleO_rpow_rpow_atTop {a b : ℝ} (hab : a < b) :
     exact absurd h (Real.rpow_pos_of_pos hx b).ne'
   · filter_upwards [eventually_gt_atTop 0] with x hx
     rw [← Real.rpow_sub hx, neg_sub]
+
+/-- For `a ≤ b`, the real power `x ^ a` is `O(x ^ b)` as `x → ∞`. -/
+theorem isBigO_rpow_rpow_atTop_of_le {a b : ℝ} (hab : a ≤ b) :
+    (fun x : ℝ ↦ x ^ a) =O[atTop] fun x ↦ x ^ b := by
+  rcases eq_or_lt_of_le hab with rfl | hlt
+  · exact isBigO_refl _ _
+  · exact (isLittleO_rpow_rpow_atTop hlt).isBigO
 
 /-- For `a < b`, `‖s‖ ^ a` is `o(‖s‖ ^ b)` as `‖s‖ → ∞`. -/
 theorem isLittleO_norm_rpow_norm_rpow_cobounded {a b : ℝ} (hab : a < b) :

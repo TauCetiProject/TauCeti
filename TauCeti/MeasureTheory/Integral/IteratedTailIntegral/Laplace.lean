@@ -25,9 +25,10 @@ on `(0, ∞)`: the Abelian theorems assume that the exponentially weighted Lapla
 improper integrals `R ↦ ∫ t in 0..R, iteratedTailIntegral f m t` (`m ≤ n`) converge (not
 necessarily absolutely) as `R → ∞`.
 
-General real Laplace moment integrability, parametric differentiation, and the rescaled Abelian
-limit live in `TauCeti.Analysis.LaplaceTransform.Real`. Specializations to oscillatory functions
-satisfying `TauCeti.HasOscillatoryDecay` live in `TauCeti.Analysis.LaplaceTransform.Oscillatory`.
+General real Laplace moment integrability lives in `TauCeti.MeasureTheory.Integral.Exp.Decay`,
+while parametric differentiation and the rescaled Abelian limit live in
+`TauCeti.Analysis.LaplaceTransform.Real`. Specializations to oscillatory functions satisfying
+`TauCeti.HasOscillatoryDecay` live in `TauCeti.Analysis.LaplaceTransform.Oscillatory`.
 
 ## Main results
 

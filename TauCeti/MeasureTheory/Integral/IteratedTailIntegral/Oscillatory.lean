@@ -340,6 +340,13 @@ private theorem tendsto_and_hasOscillatoryDecay_one {c p α₀ : ℝ} {f : ℝ �
 
 namespace HasOscillatoryDecay
 
+/-- Positivity of the shifted damping exponent after `n + 1` tail integrals when `1 ≤ p` and
+`0 < α₀ + p - 1`. -/
+private theorem add_nat_mul_sub_one_pos {p α₀ : ℝ} (hp : 1 ≤ p) (hα : 0 < α₀ + p - 1) (n : ℕ) :
+    0 < (α₀ + n * (p - 1)) + p - 1 := by
+  have : 0 ≤ (n : ℝ) * (p - 1) := mul_nonneg (Nat.cast_nonneg n) (sub_nonneg.mpr hp)
+  linarith
+
 /-- **Oscillatory decay preservation under `iteratedTailIntegral`.** If `f` satisfies
 `HasOscillatoryDecay c p α₀ f` with `c ≠ 0`, `1 ≤ p`, and `0 < α₀ + p - 1`, then for every
 `n : ℕ`, `iteratedTailIntegral f n` satisfies `HasOscillatoryDecay c p (α₀ + n * (p - 1))` (and
@@ -350,14 +357,11 @@ theorem iteratedTailIntegral {c p α₀ : ℝ} {f : ℝ → ℝ}
     (hc : c ≠ 0) (hp : 1 ≤ p) (hα : 0 < α₀ + p - 1)
     (hf : HasOscillatoryDecay c p α₀ f) (n : ℕ) :
     HasOscillatoryDecay c p (α₀ + n * (p - 1)) (TauCeti.iteratedTailIntegral f n) := by
-  have hp0 : 0 < p := lt_of_lt_of_le zero_lt_one hp
   induction n with
   | zero => simpa only [Nat.cast_zero, zero_mul, add_zero, iteratedTailIntegral_zero] using hf
   | succ n ih =>
-    have hpos : 0 < (α₀ + n * (p - 1)) + p - 1 := by
-      have : 0 ≤ (n : ℝ) * (p - 1) := mul_nonneg (Nat.cast_nonneg n) (sub_nonneg.mpr hp)
-      linarith
-    have hstep := (tendsto_and_hasOscillatoryDecay_one hc hp0 hpos ih).2
+    have hstep := (tendsto_and_hasOscillatoryDecay_one hc (zero_lt_one.trans_le hp)
+      (add_nat_mul_sub_one_pos hp hα n) ih).2
     have hshift : (α₀ + n * (p - 1)) + p - 1 = α₀ + ↑(n + 1) * (p - 1) := by push_cast; ring
     rwa [← iteratedTailIntegral_succ, hshift] at hstep
 
@@ -373,12 +377,9 @@ theorem tendsto_intervalIntegral_iteratedTailIntegral {c p α₀ : ℝ} {f : ℝ
     (hf : HasOscillatoryDecay c p α₀ f) (n : ℕ) (x : ℝ) :
     Tendsto (fun R : ℝ ↦ ∫ t in x..R, TauCeti.iteratedTailIntegral f n t) atTop
       (𝓝 (TauCeti.iteratedTailIntegral f (n + 1) x)) := by
-  have hp0 : 0 < p := lt_of_lt_of_le zero_lt_one hp
-  have hpos : 0 < (α₀ + n * (p - 1)) + p - 1 := by
-    have : 0 ≤ (n : ℝ) * (p - 1) := mul_nonneg (Nat.cast_nonneg n) (sub_nonneg.mpr hp)
-    linarith
   simpa only [← iteratedTailIntegral_succ] using
-    (tendsto_and_hasOscillatoryDecay_one hc hp0 hpos (hf.iteratedTailIntegral hc hp hα n)).1 x
+    (tendsto_and_hasOscillatoryDecay_one hc (zero_lt_one.trans_le hp)
+      (add_nat_mul_sub_one_pos hp hα n) (hf.iteratedTailIntegral hc hp hα n)).1 x
 
 end HasOscillatoryDecay
 

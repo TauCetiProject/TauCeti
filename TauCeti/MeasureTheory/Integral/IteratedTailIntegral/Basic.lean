@@ -10,6 +10,7 @@ public import Mathlib.MeasureTheory.Integral.IntervalIntegral.Basic
 
 import TauCeti.MeasureTheory.Integral.IntegralEqImproper
 import TauCeti.MeasureTheory.Integral.IntervalIntegral.Basic
+import TauCeti.Topology.LimUnder
 
 /-!
 # Iterated improper tail integrals
@@ -60,11 +61,6 @@ namespace TauCeti
 
 open Filter MeasureTheory Set
 open scoped Topology Interval
-
-/-- Two eventually equal functions have equal `Filter.limUnder` limits. -/
-private theorem limUnder_congr {α β : Type*} {l : Filter α} [TopologicalSpace β] [Nonempty β]
-    {g₁ g₂ : α → β} (h : g₁ =ᶠ[l] g₂) : limUnder l g₁ = limUnder l g₂ := by
-  rw [limUnder, limUnder, Filter.map_congr h]
 
 section Basic
 

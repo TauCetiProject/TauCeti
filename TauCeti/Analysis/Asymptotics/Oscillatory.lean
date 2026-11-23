@@ -8,6 +8,8 @@ module
 public import Mathlib.Analysis.SpecialFunctions.Pow.Real
 public import Mathlib.Analysis.SpecialFunctions.Trigonometric.Basic
 
+import TauCeti.Analysis.SpecialFunctions.Pow.Asymptotics
+
 /-!
 # Oscillatory asymptotic decay
 
@@ -244,17 +246,12 @@ theorem of_asymptoticExpansion {c p α₀ : ℝ} {f : ℝ → ℝ} {β u v : ℕ
   rw [hasOscillatoryDecay_def]
   intro B
   obtain ⟨N, hN⟩ := (hβ_top.eventually_ge_atTop B).exists
-  have hrpow : (fun t : ℝ ↦ t ^ (-β N)) =O[atTop] fun t : ℝ ↦ t ^ (-B) := by
-    refine isBigO_iff.mpr ⟨1, ?_⟩
-    filter_upwards [eventually_ge_atTop (1 : ℝ)] with t ht
-    rw [Real.norm_of_nonneg (Real.rpow_nonneg (zero_le_one.trans ht) _),
-      Real.norm_of_nonneg (Real.rpow_nonneg (zero_le_one.trans ht) _), one_mul]
-    exact Real.rpow_le_rpow_of_exponent_le ht (neg_le_neg hN)
   refine ⟨N, fun i ↦ β i, fun i ↦ u i, fun i ↦ v i,
     fun t ↦ f t - ∑ m ∈ Finset.range N,
       (u m * (t ^ (-β m) * Real.cos (c * t ^ p)) +
         v m * (t ^ (-β m) * Real.sin (c * t ^ p))),
-    fun i ↦ hβ_ge i, (hexp N).trans hrpow, Eventually.of_forall fun t ↦ ?_⟩
+    fun i ↦ hβ_ge i, (hexp N).trans (isBigO_rpow_rpow_atTop_of_le (neg_le_neg hN)),
+    Eventually.of_forall fun t ↦ ?_⟩
   dsimp only
   rw [Fin.sum_univ_eq_sum_range (fun m ↦
     u m * (t ^ (-β m) * Real.cos (c * t ^ p)) + v m * (t ^ (-β m) * Real.sin (c * t ^ p)))]
@@ -266,14 +263,11 @@ theorem isBigO_rpow_neg {c p α₀ : ℝ} {f : ℝ → ℝ} (hf : HasOscillatory
     f =O[atTop] fun t : ℝ ↦ t ^ (-α₀) := by
   obtain ⟨k, α, u, v, r, hα, hr, heq⟩ := hasOscillatoryDecay_def.mp hf α₀
   have hmode (i : Fin k) (trig : ℝ → ℝ) (htrig : ∀ θ, |trig θ| ≤ 1) :
-      (fun t : ℝ ↦ t ^ (-α i) * trig (c * t ^ p)) =O[atTop] fun t : ℝ ↦ t ^ (-α₀) := by
-    refine isBigO_iff.mpr ⟨1, ?_⟩
-    filter_upwards [eventually_ge_atTop (1 : ℝ)] with t ht
-    have ht0 : 0 ≤ t := zero_le_one.trans ht
-    rw [norm_mul, Real.norm_eq_abs (trig _), Real.norm_of_nonneg (Real.rpow_nonneg ht0 _),
-      Real.norm_of_nonneg (Real.rpow_nonneg ht0 _), one_mul]
-    exact (mul_le_of_le_one_right (Real.rpow_nonneg ht0 _) (htrig _)).trans
-      (Real.rpow_le_rpow_of_exponent_le ht (neg_le_neg (hα i)))
+      (fun t : ℝ ↦ t ^ (-α i) * trig (c * t ^ p)) =O[atTop] fun t : ℝ ↦ t ^ (-α₀) :=
+    (isBigO_iff.mpr ⟨1, Eventually.of_forall fun t ↦ by
+      rw [norm_mul, Real.norm_eq_abs (trig _), one_mul]
+      exact mul_le_of_le_one_right (norm_nonneg _) (htrig _)⟩).trans
+      (isBigO_rpow_rpow_atTop_of_le (neg_le_neg (hα i)))
   exact (((IsBigO.sum (s := Finset.univ) fun i _ ↦
       ((hmode i Real.cos Real.abs_cos_le_one).const_mul_left (u i)).add
         ((hmode i Real.sin Real.abs_sin_le_one).const_mul_left (v i))).congr_left
