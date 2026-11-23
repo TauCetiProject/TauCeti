@@ -178,12 +178,30 @@ theorem tsupport_add_subset (s t : Cₛ^n⟮I; F, V⟯) :
   simp only [mem_union, not_or] at hx
   simp [s.eq_zero_of_notMem_tsupport hx.1, t.eq_zero_of_notMem_tsupport hx.2]
 
+section NormedAlgebraSupportBound
+
+variable {𝕜' : Type*} [NontriviallyNormedField 𝕜'] [NormedAlgebra 𝕜 𝕜']
+  [NormedSpace 𝕜' F] [IsScalarTower 𝕜 𝕜' F]
+  [∀ x, Module 𝕜' (V x)] [VectorBundle 𝕜' F V]
+
+/-- Constant extension-scalar multiplication does not enlarge closed support. -/
+theorem tsupport_smul_subset_of_normedAlgebra (c : 𝕜') (s : Cₛ^n⟮I; F, V⟯) :
+    (c • s).tsupport ⊆ s.tsupport := by
+  by_cases hc : c = 0
+  · subst hc
+    have h0 : (0 : 𝕜') • s = 0 := by
+      ext x
+      simp
+    rw [h0, tsupport_zero]
+    exact empty_subset _
+  · exact (tsupport_smul_of_normedAlgebra c s hc).subset
+
+end NormedAlgebraSupportBound
+
 /-- Constant scalar multiplication does not enlarge support. -/
 theorem tsupport_smul_subset (c : 𝕜) (s : Cₛ^n⟮I; F, V⟯) :
-    (c • s).tsupport ⊆ s.tsupport := by
-  apply (tsupport_subset_iff s.isClosed_tsupport).2
-  intro x hx
-  simp [s.eq_zero_of_notMem_tsupport hx]
+    (c • s).tsupport ⊆ s.tsupport :=
+  tsupport_smul_subset_of_normedAlgebra c s
 
 /-- Multiplication by a nonzero scalar preserves closed support. -/
 theorem tsupport_smul (c : 𝕜) (s : Cₛ^n⟮I; F, V⟯) (hc : c ≠ 0) :
@@ -375,13 +393,6 @@ section NormedAlgebraSupport
 variable {𝕜' : Type*} [NontriviallyNormedField 𝕜'] [NormedAlgebra 𝕜 𝕜']
   [NormedSpace 𝕜' F] [IsScalarTower 𝕜 𝕜' F]
   [∀ x, Module 𝕜' (V x)] [VectorBundle 𝕜' F V]
-
-/-- Constant extension-scalar multiplication does not enlarge closed support. -/
-theorem tsupport_smul_subset_of_normedAlgebra (c : 𝕜') (s : Cₛ^n⟮I; F, V⟯) :
-    (c • s).tsupport ⊆ s.tsupport := by
-  apply (tsupport_subset_iff s.isClosed_tsupport).2
-  intro x hx
-  rw [coe_smul_of_normedAlgebra, Pi.smul_apply, s.eq_zero_of_notMem_tsupport hx, smul_zero]
 
 /-- Constant extension-scalar multiplication preserves each fixed-support stage. -/
 theorem smul_mem_supportedIn_of_normedAlgebra (c : 𝕜') {K : Set M} {s : Cₛ^n⟮I; F, V⟯}

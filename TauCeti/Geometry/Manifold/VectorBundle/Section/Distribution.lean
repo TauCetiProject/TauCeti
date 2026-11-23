@@ -124,7 +124,8 @@ their base sets. Every covering family of smooth frames gives the same topology
 (`TauCeti.BundleTest.instTopologicalSpace_eq_compactlySupportedTopology`). -/
 instance instTopologicalSpace : TopologicalSpace (BundleTest I F V) :=
   compactlySupportedTopology (I := I) (n := ∞) (fun x : M ↦ trivializationAt F V x)
-    (fun x ↦ ⟨_, (trivializationAt F V x).open_baseSet⟩) fun _ ↦ subset_rfl
+    (fun x ↦ (trivializationAt F V x).baseSetOpens)
+    fun x ↦ (trivializationAt F V x).coe_baseSetOpens.subset
 
 end BundleTest
 
@@ -198,12 +199,13 @@ theorem instTopologicalSpace_eq_compactlySupportedTopology [LocallyCompactSpace 
     (U : ι → Opens M) (hU : ∀ i, (U i : Set M) ⊆ (e i).baseSet)
     (hcover : ∀ x : M, ∃ i, x ∈ U i) :
     instTopologicalSpace = compactlySupportedTopology (I := I) (n := ∞) e U hU :=
-  compactlySupportedTopology_eq_of_covers _ _ _ (fun x ↦ ⟨x, mem_baseSet_trivializationAt F V x⟩)
+  compactlySupportedTopology_eq_of_covers _ _ _
+    (fun x ↦ ⟨x, (trivializationAt F V x).mem_baseSetOpens.2 (mem_baseSet_trivializationAt F V x)⟩)
     e U hU hcover
 
 instance : T2Space (BundleTest I F V) :=
   t2Space_compactlySupportedTopology (I := I) (n := ∞) _ _ _
-    fun x ↦ ⟨x, mem_baseSet_trivializationAt F V x⟩
+    fun x ↦ ⟨x, (trivializationAt F V x).mem_baseSetOpens.2 (mem_baseSet_trivializationAt F V x)⟩
 
 instance : IsTopologicalAddGroup (BundleTest I F V) :=
   isTopologicalAddGroup_compactlySupportedTopology (I := I) (n := ∞) _ _ _
@@ -217,15 +219,18 @@ instance : LocallyConvexSpace ℝ (BundleTest I F V) :=
 /-- Evaluation of bundle tests at a point is continuous. -/
 theorem continuous_eval_const (x : M) : Continuous fun s : BundleTest I F V ↦ s x := by
   let := frameTopology (I := I) (n := ∞) (fun x : M ↦ trivializationAt F V x)
-    (fun x ↦ ⟨_, (trivializationAt F V x).open_baseSet⟩) fun _ ↦ subset_rfl
+    (fun x ↦ (trivializationAt F V x).baseSetOpens)
+    fun x ↦ (trivializationAt F V x).coe_baseSetOpens.subset
   exact (ContMDiffSection.continuous_eval_const _ _ _
-    (fun x ↦ ⟨x, mem_baseSet_trivializationAt F V x⟩) x).comp
+    (fun x ↦ ⟨x, (trivializationAt F V x).mem_baseSetOpens.2
+      (mem_baseSet_trivializationAt F V x)⟩) x).comp
     (continuous_val_compactlySupportedTopology (I := I) (n := ∞) _ _ _)
 
 /-- Every fixed-compact support stage includes continuously into the bundle tests. -/
 theorem continuous_ofSupportedIn (K : Compacts M) :
     letI := frameTopology (I := I) (n := ∞) (fun x : M ↦ trivializationAt F V x)
-      (fun x ↦ ⟨_, (trivializationAt F V x).open_baseSet⟩) fun _ ↦ subset_rfl
+      (fun x ↦ (trivializationAt F V x).baseSetOpens)
+      fun x ↦ (trivializationAt F V x).coe_baseSetOpens.subset
     Continuous (ofCompactlySupported I F V ∘ ofSupportedIn (I := I) (F := F) (V := V) K) :=
   ContMDiffSection.continuous_ofSupportedIn _ _ _ K
 
@@ -237,7 +242,8 @@ convex real topological vector space is continuous exactly when it is continuous
 fixed-compact support stage. -/
 theorem continuous_iff_continuous_comp (g : BundleTest I F V →ₗ[ℝ] G) :
     letI := frameTopology (I := I) (n := ∞) (fun x : M ↦ trivializationAt F V x)
-      (fun x ↦ ⟨_, (trivializationAt F V x).open_baseSet⟩) fun _ ↦ subset_rfl
+      (fun x ↦ (trivializationAt F V x).baseSetOpens)
+      fun x ↦ (trivializationAt F V x).coe_baseSetOpens.subset
     Continuous g ↔ ∀ K : Compacts M,
       Continuous (g ∘ ofCompactlySupported I F V ∘ ofSupportedIn (I := I) (F := F) (V := V) K) :=
   continuous_compactlySupportedTopology_iff _ _ _

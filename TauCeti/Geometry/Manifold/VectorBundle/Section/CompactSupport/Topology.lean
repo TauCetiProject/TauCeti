@@ -20,8 +20,11 @@ import TauCeti.Geometry.Manifold.VectorBundle.Section.ChartLocalization
 Compactly supported native bundle sections carry the final locally convex topology of their
 fixed-compact support stages. Each stage has the subspace topology of the compact derivative
 section topology. Linear maps (over `ℝ` or any `ℝ`-algebra) from this space into locally convex
-real topological vector spaces are continuous exactly when they are continuous on every stage.
-This is the fixed-support presentation of the topology used for bundle-valued tests.
+real topological vector spaces are continuous exactly when they are continuous on every stage
+(`ContMDiffSection.continuous_compactlySupportedTopology_iff`), and frame-continuous linear maps
+that preserve support inclusions are continuous for the corresponding test topologies
+(`ContMDiffSection.continuous_compactlySupportedTopology_of_tsupport_subset`). This is the
+fixed-support presentation of the topology used for bundle-valued tests.
 
 When the vector bundle also carries a compatible structure over a normed `ℝ`-algebra `𝕜'` (in
 particular `𝕜' = ℂ`), constant `𝕜'`-scalar multiplication is continuous on compactly supported
@@ -135,6 +138,44 @@ theorem continuous_compactlySupportedTopology_iff {𝕜 : Type*} [Semiring 𝕜]
     Continuous g ↔ ∀ K : Compacts M, Continuous (g ∘ ofSupportedIn K) := by
   let := frameTopology (I := I) (n := n) e U hU
   exact TauCeti.FinalLocallyConvexTopology.continuous_iff_continuous_comp _ g
+
+/-- A frame-continuous linear map between compactly supported section spaces that does not enlarge
+closed support is continuous for the corresponding fixed-compact inductive topologies. -/
+theorem continuous_compactlySupportedTopology_of_tsupport_subset
+    {F₁ : Type*} [NormedAddCommGroup F₁] [NormedSpace ℝ F₁]
+    {V₁ : M → Type*} [∀ x, AddCommGroup (V₁ x)] [∀ x, Module ℝ (V₁ x)]
+    [TopologicalSpace (TotalSpace F₁ V₁)] [∀ x, TopologicalSpace (V₁ x)]
+    [FiberBundle F₁ V₁] [VectorBundle ℝ F₁ V₁] [ContMDiffVectorBundle n F₁ V₁ I]
+    {F₂ : Type*} [NormedAddCommGroup F₂] [NormedSpace ℝ F₂]
+    {V₂ : M → Type*} [∀ x, AddCommGroup (V₂ x)] [∀ x, Module ℝ (V₂ x)]
+    [TopologicalSpace (TotalSpace F₂ V₂)] [∀ x, TopologicalSpace (V₂ x)]
+    [FiberBundle F₂ V₂] [VectorBundle ℝ F₂ V₂] [ContMDiffVectorBundle n F₂ V₂ I]
+    {ι₁ : Type*} (e₁ : ι₁ → Trivialization F₁ (π F₁ V₁)) [∀ i, MemTrivializationAtlas (e₁ i)]
+    (U₁ : ι₁ → Opens M) (hU₁ : ∀ i, (U₁ i : Set M) ⊆ (e₁ i).baseSet)
+    {ι₂ : Type*} (e₂ : ι₂ → Trivialization F₂ (π F₂ V₂)) [∀ i, MemTrivializationAtlas (e₂ i)]
+    (U₂ : ι₂ → Opens M) (hU₂ : ∀ i, (U₂ i : Set M) ⊆ (e₂ i).baseSet)
+    (T : compactlySupported I F₁ n V₁ →ₗ[ℝ] compactlySupported I F₂ n V₂)
+    (Tc : letI := frameTopology (I := I) (n := n) e₁ U₁ hU₁
+      letI := frameTopology (I := I) (n := n) e₂ U₂ hU₂
+      Cₛ^n⟮I; F₁, V₁⟯ →L[ℝ] Cₛ^n⟮I; F₂, V₂⟯)
+    (hcoe : ∀ s, (T s).val = Tc s.val)
+    (hsupp : ∀ s : Cₛ^n⟮I; F₁, V₁⟯, (Tc s).tsupport ⊆ s.tsupport) :
+    letI := compactlySupportedTopology (I := I) (n := n) e₁ U₁ hU₁
+    letI := compactlySupportedTopology (I := I) (n := n) e₂ U₂ hU₂
+    Continuous T := by
+  let _ := frameTopology (I := I) (n := n) e₁ U₁ hU₁
+  let _ := frameTopology (I := I) (n := n) e₂ U₂ hU₂
+  let _ := compactlySupportedTopology (I := I) (n := n) e₂ U₂ hU₂
+  let _ := isTopologicalAddGroup_compactlySupportedTopology (I := I) (n := n) e₂ U₂ hU₂
+  let _ := continuousSMul_compactlySupportedTopology (I := I) (n := n) e₂ U₂ hU₂
+  let _ := locallyConvexSpace_compactlySupportedTopology (I := I) (n := n) e₂ U₂ hU₂
+  refine (continuous_compactlySupportedTopology_iff e₁ U₁ hU₁ T).2 fun K ↦ ?_
+  have hstage : Continuous (fun s : supportedIn I F₁ n V₁ K ↦
+      (⟨Tc s.val, mem_supportedIn.2 ((hsupp s.val).trans (mem_supportedIn.1 s.property))⟩ :
+        supportedIn I F₂ n V₂ K)) :=
+    (Tc.continuous.comp continuous_subtypeVal).subtype_mk _
+  exact ((continuous_ofSupportedIn e₂ U₂ hU₂ K).comp hstage).congr fun s ↦
+    Subtype.ext (by simp [hcoe])
 
 /-- Forgetting compact support is continuous into the compact derivative section topology. -/
 theorem continuous_val_compactlySupportedTopology :
@@ -398,11 +439,10 @@ private def chartTestSectionInv (hc_univ : c.source = univ) :
       ((subset_univ _).trans hc_univ.symm.subset) ⟨s.val, mem_supportedIn.2 Subset.rfl⟩
   map_add' s₁ s₂ := by
     ext y
-    simp [t.chartReadTestFunction_apply]
-    split_ifs <;> simp
+    by_cases hy : y ∈ c.target <;> simp [t.chartReadTestFunction_apply, hy]
   map_smul' a s := by
     ext y
-    simp [t.chartReadTestFunction_apply]
+    by_cases hy : y ∈ c.target <;> simp [t.chartReadTestFunction_apply, hy]
 
 private theorem chartTestSectionInv_apply (hc_univ : c.source = univ)
     (s : compactlySupported I F n V) :
@@ -431,7 +471,8 @@ private theorem continuous_chartTestSectionInv (hc_univ : c.source = univ) :
   refine (t.continuous_chartReadTestFunction c hc_symm hct e U hU
     ((subset_univ _).trans hc_univ.symm.subset) fun x _ ↦ hcover x).congr fun s ↦ ?_
   ext y
-  simp [chartTestSectionInv_apply, t.chartReadTestFunction_apply]
+  simp only [Function.comp_apply, chartTestSectionInv_apply, t.chartReadTestFunction_apply,
+    ofSupportedIn_apply]
 
 /-- When a two-sided `C^n` chart `c` subordinate to a smooth bundle trivialization `t` has
 `c.source = univ`, extending native test functions by `t.chartTestSection` is a continuous linear
@@ -460,6 +501,14 @@ theorem chartTestSectionEquiv_apply [T2Space M] (hc : ContMDiffOn I 𝓘(ℝ, E)
       t.chartTestSection c hc hct φ :=
   (rfl)
 
+private theorem chartTestSectionEquiv_symm_apply [T2Space M]
+    (hc : ContMDiffOn I 𝓘(ℝ, E) n c c.source) (hc_univ : c.source = univ)
+    (s : compactlySupported I F n V) :
+    letI := compactlySupportedTopology (I := I) (n := n) e U hU
+    (t.chartTestSectionEquiv c hc_symm hct e U hU hcover hc hc_univ).symm s =
+      t.chartTestSectionInv c hc_symm hct hc_univ s :=
+  rfl
+
 /-- On the chart target, the inverse of `chartTestSectionEquiv` reads the section in `t` along
 `c.symm`. -/
 theorem chartTestSectionEquiv_symm_apply_of_mem [T2Space M]
@@ -469,6 +518,8 @@ theorem chartTestSectionEquiv_symm_apply_of_mem [T2Space M]
     (t.chartTestSectionEquiv c hc_symm hct e U hU hcover hc hc_univ).symm s y =
       t.continuousLinearMapAt ℝ (c.symm y) (s.val (c.symm y)) := by
   let := compactlySupportedTopology (I := I) (n := n) e U hU
+  rw [t.chartTestSectionEquiv_symm_apply c hc_symm hct e U hU hcover hc hc_univ s,
+    t.chartTestSectionInv_apply]
   exact t.chartReadTestFunction_apply_of_mem c hc_symm hct _ _ hy
 
 /-- Outside the chart target, the inverse of `chartTestSectionEquiv` vanishes. -/
@@ -479,6 +530,8 @@ theorem chartTestSectionEquiv_symm_apply_of_notMem [T2Space M]
     letI := compactlySupportedTopology (I := I) (n := n) e U hU
     (t.chartTestSectionEquiv c hc_symm hct e U hU hcover hc hc_univ).symm s y = 0 := by
   let := compactlySupportedTopology (I := I) (n := n) e U hU
+  rw [t.chartTestSectionEquiv_symm_apply c hc_symm hct e U hU hcover hc hc_univ s,
+    t.chartTestSectionInv_apply]
   exact t.chartReadTestFunction_apply_of_notMem c hc_symm hct _ _ hy
 
 end ChartTestSectionEquiv

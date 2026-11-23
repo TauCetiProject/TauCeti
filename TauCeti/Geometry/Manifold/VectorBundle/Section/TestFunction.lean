@@ -30,6 +30,7 @@ supported `C^n` cutoff `ρ` with `tsupport ρ ⊆ c.source` into
 `𝓓^{n}(⟨c.target, c.open_target⟩, F)` (`Bundle.Trivialization.chartCutoffTestFunction`).
 On a Hausdorff base when `c` is also forward `C^n`, extending these readings by zero recovers the
 original or localized section (`Bundle.Trivialization.chartTestSection_chartReadTestFunction`,
+`Bundle.Trivialization.chartReadTestFunction_chartTestSection`,
 `Bundle.Trivialization.chartTestSection_chartCutoffTestFunction`). Their continuity under frame
 covers lives in `TauCeti.Geometry.Manifold.VectorBundle.Section.ChartLocalization`.
 
@@ -431,29 +432,33 @@ def chartReadTestFunction {K : Compacts M} (hKc : (K : Set M) ⊆ c.source) :
   (TestFunction.ofSupportedInCLM ℝ hK't).toLinearMap.comp
     (t.chartReadSupportedIn c hc_symm hct hKc)
 
-/-- On the chart target, `chartReadTestFunction` reads the section in `t` along `c.symm`. -/
-theorem chartReadTestFunction_apply_of_mem {K : Compacts M} (hKc : (K : Set M) ⊆ c.source)
-    (s : supportedIn I F n V K) {y : E} (hy : y ∈ c.target) :
-    t.chartReadTestFunction c hc_symm hct hKc s y =
-      t.continuousLinearMapAt ℝ (c.symm y) (s.val (c.symm y)) :=
-  t.chartReadSupportedIn_apply_of_mem c hc_symm hct hKc s hy
-
-/-- Outside the chart target, `chartReadTestFunction` vanishes. -/
-@[simp]
-theorem chartReadTestFunction_apply_of_notMem {K : Compacts M} (hKc : (K : Set M) ⊆ c.source)
-    (s : supportedIn I F n V K) {y : E} (hy : y ∉ c.target) :
-    t.chartReadTestFunction c hc_symm hct hKc s y = 0 :=
-  t.chartReadSupportedIn_apply_of_notMem c hc_symm hct hKc s hy
-
 /-- Formula for `chartReadTestFunction` across all points of `E`. -/
 theorem chartReadTestFunction_apply {K : Compacts M} (hKc : (K : Set M) ⊆ c.source)
     (s : supportedIn I F n V K) (y : E) :
     t.chartReadTestFunction c hc_symm hct hKc s y =
       open scoped Classical in
       if y ∈ c.target then t.continuousLinearMapAt ℝ (c.symm y) (s.val (c.symm y)) else 0 := by
-  split_ifs with hy
-  · exact t.chartReadTestFunction_apply_of_mem c hc_symm hct hKc s hy
-  · exact t.chartReadTestFunction_apply_of_notMem c hc_symm hct hKc s hy
+  rw [chartReadTestFunction, LinearMap.comp_apply, ContinuousLinearMap.coe_coe,
+    TestFunction.coe_ofSupportedInCLM, TestFunction.coe_ofSupportedIn,
+    t.chartReadSupportedIn_apply c hc_symm hct hKc s y]
+
+/-- On the chart target, `chartReadTestFunction` reads the section in `t` along `c.symm`. -/
+theorem chartReadTestFunction_apply_of_mem {K : Compacts M} (hKc : (K : Set M) ⊆ c.source)
+    (s : supportedIn I F n V K) {y : E} (hy : y ∈ c.target) :
+    t.chartReadTestFunction c hc_symm hct hKc s y =
+      t.continuousLinearMapAt ℝ (c.symm y) (s.val (c.symm y)) := by
+  rw [t.chartReadTestFunction_apply]
+  split_ifs
+  rfl
+
+/-- Outside the chart target, `chartReadTestFunction` vanishes. -/
+@[simp]
+theorem chartReadTestFunction_apply_of_notMem {K : Compacts M} (hKc : (K : Set M) ⊆ c.source)
+    (s : supportedIn I F n V K) {y : E} (hy : y ∉ c.target) :
+    t.chartReadTestFunction c hc_symm hct hKc s y = 0 := by
+  rw [t.chartReadTestFunction_apply]
+  split_ifs
+  rfl
 
 /-- Extending `chartReadTestFunction` by zero recovers the original section supported in `K`. -/
 @[simp]
@@ -470,6 +475,24 @@ theorem chartTestSection_chartReadTestFunction [T2Space M]
       c.left_inv hx, t.symmL_continuousLinearMapAt (hct hx), ofSupportedIn_apply]
   · rw [t.chartTestSection_apply_of_notMem c hc hct _ hx, ofSupportedIn_apply]
     exact (s.val.eq_zero_of_notMem_tsupport fun h ↦ hx (hKc (mem_supportedIn.1 s.property h))).symm
+
+/-- Reading an extended test function supported in `c '' K` recovers the original test function. -/
+@[simp]
+theorem chartReadTestFunction_chartTestSection [T2Space M]
+    (hc : ContMDiffOn I 𝓘(ℝ, E) n c c.source) {K : Compacts M} (hKc : (K : Set M) ⊆ c.source)
+    (φ : 𝓓^{n}(⟨c.target, c.open_target⟩, F)) (hφ : tsupport φ ⊆ c '' (K : Set M)) :
+    t.chartReadTestFunction c hc_symm hct hKc
+        ⟨(t.chartTestSection c hc hct φ).val, by
+          refine mem_supportedIn.2 ((mem_supportedIn.1
+            (t.chartTestSection_mem_supportedIn c hc hct φ hφ)).trans ?_)
+          rintro x ⟨y, ⟨z, hz, rfl⟩, rfl⟩
+          simpa [c.left_inv (hKc hz)] using hz⟩ = φ := by
+  ext y
+  by_cases hy : y ∈ c.target
+  · rw [t.chartReadTestFunction_apply_of_mem c hc_symm hct hKc _ hy,
+      t.continuousLinearMapAt_chartTestSection c hc hct φ (c.map_target hy), c.right_inv hy]
+  · exact (t.chartReadTestFunction_apply_of_notMem c hc_symm hct hKc _ hy).trans
+      (φ.zero_on_compl hy).symm
 
 /-- Multiply an arbitrary `C^n` section by a compactly supported `C^n` cutoff `ρ` with
 `tsupport ρ ⊆ c.source` and read the localized section as a native test function on `c.target`. -/
@@ -489,7 +512,8 @@ theorem chartCutoffTestFunction_apply (ρ : C^n⟮I, M; ℝ⟯) (hρc : HasCompa
       if y ∈ c.target then
         ρ (c.symm y) • t.continuousLinearMapAt ℝ (c.symm y) (s (c.symm y))
       else 0 := by
-  simp [chartCutoffTestFunction, t.chartReadTestFunction_apply]
+  rw [chartCutoffTestFunction, LinearMap.comp_apply, t.chartReadTestFunction_apply,
+    LinearMap.codRestrict_apply, smulLinearMap_eq_smul, ContMDiffSection.smul_apply, map_smul]
 
 /-- On the chart target, `chartCutoffTestFunction` evaluates to the cutoff-weighted frame
 coordinates along `c.symm`. -/
@@ -497,15 +521,18 @@ theorem chartCutoffTestFunction_apply_of_mem (ρ : C^n⟮I, M; ℝ⟯) (hρc : H
     (hρs : _root_.tsupport ρ ⊆ c.source) (s : Cₛ^n⟮I; F, V⟯) {y : E} (hy : y ∈ c.target) :
     t.chartCutoffTestFunction c hc_symm hct ρ hρc hρs s y =
       ρ (c.symm y) • t.continuousLinearMapAt ℝ (c.symm y) (s (c.symm y)) := by
-  simp [chartCutoffTestFunction,
-    t.chartReadTestFunction_apply_of_mem c hc_symm hct (K := ⟨_root_.tsupport ρ, hρc⟩) hρs _ hy]
+  rw [t.chartCutoffTestFunction_apply]
+  split_ifs
+  rfl
 
 /-- Outside the chart target, `chartCutoffTestFunction` vanishes. -/
 @[simp]
 theorem chartCutoffTestFunction_apply_of_notMem (ρ : C^n⟮I, M; ℝ⟯) (hρc : HasCompactSupport ρ)
     (hρs : _root_.tsupport ρ ⊆ c.source) (s : Cₛ^n⟮I; F, V⟯) {y : E} (hy : y ∉ c.target) :
-    t.chartCutoffTestFunction c hc_symm hct ρ hρc hρs s y = 0 :=
-  t.chartReadTestFunction_apply_of_notMem c hc_symm hct hρs _ hy
+    t.chartCutoffTestFunction c hc_symm hct ρ hρc hρs s y = 0 := by
+  rw [t.chartCutoffTestFunction_apply]
+  split_ifs
+  rfl
 
 /-- Extending `chartCutoffTestFunction` by zero yields the localized section `ρ • s`. -/
 @[simp]

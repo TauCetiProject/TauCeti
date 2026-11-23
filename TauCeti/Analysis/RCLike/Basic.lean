@@ -6,6 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.RCLike.Basic
+import Mathlib.Analysis.RCLike.Lemmas
+import TauCeti.Topology.Algebra.Module.FiniteDimension
 
 /-!
 # Basic identities and norm bounds for `RCLike` fields
@@ -56,14 +58,8 @@ continuous multiplication by constant `K`-scalars upgrades to joint continuity o
 multiplication. -/
 theorem continuousSMul_of_continuousConstSMul {M : Type*} [AddCommMonoid M] [TopologicalSpace M]
     [ContinuousAdd M] [Module ℝ M] [ContinuousSMul ℝ M] [Module K M] [IsScalarTower ℝ K M]
-    [ContinuousConstSMul K M] : ContinuousSMul K M := by
-  refine ⟨Continuous.congr (f := fun p : K × M ↦ re p.1 • p.2 + im p.1 • (I • p.2))
-    (((continuous_re.comp continuous_fst).smul continuous_snd).add
-      ((continuous_im.comp continuous_fst).smul
-        ((continuous_const_smul (I : K)).comp continuous_snd)))
-    fun p ↦ ?_⟩
-  conv_rhs => rw [← re_add_im p.1]
-  rw [add_smul, mul_smul, algebraMap_smul K (re p.1), algebraMap_smul K (im p.1)]
+    [ContinuousConstSMul K M] : ContinuousSMul K M :=
+  TauCeti.continuousSMul_of_continuousConstSMul_of_finiteDimensional ℝ
 
 /-- The real part of any point in the open ball `Metric.ball z₀ δ` lies in
 `Set.Ioo (re z₀ - δ) (re z₀ + δ)`. -/

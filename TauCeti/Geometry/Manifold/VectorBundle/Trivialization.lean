@@ -71,12 +71,14 @@ section.
   trivialization's base set is open.
 * `TauCeti.contDiffOn_trivialization_comp_chart_symm_of_contMDiff`: the expression of a `C^n`
   section in a chart of the maximal atlas and an atlas trivialization is `C^n`.
-* `TauCeti.bundleChartAt`, `TauCeti.bundleChartAt_source`,
+* `TauCeti.bundleChartAt`, `TauCeti.bundleChartAt_source`, `TauCeti.bundleChartAt_target`,
+  `TauCeti.bundleChartAt_apply`, `TauCeti.bundleChartAt_symm_apply`,
   `TauCeti.mem_bundleChartAt_source`, `TauCeti.bundleChartAt_source_subset_baseSet`,
-  `TauCeti.contMDiffOn_bundleChartAt`, `TauCeti.contMDiffOn_bundleChartAt_symm`: on a
-  boundaryless manifold, a manifold chart at a point restricted to the base set of
-  `trivializationAt` and read in the model space, together with its source and two-sided `C^n`
-  regularity (adapted from the private `testChart` construction and companion lemmas formerly in
+  `TauCeti.contMDiffOn_bundleChartAt`, `TauCeti.contMDiffOn_bundleChartAt_symm`,
+  `TauCeti.exists_chart_source_subset_baseSet`: on a boundaryless manifold, a manifold chart at a
+  point restricted to the base set of `trivializationAt` and read in the model space, together with
+  its source, target, evaluation formulas, and two-sided `C^n` regularity (adapted from the private
+  `testChart` construction and companion lemmas formerly in
   `TauCeti.Geometry.Manifold.VectorBundle.Section.ChartLocalization`).
 -/
 
@@ -496,6 +498,30 @@ theorem bundleChartAt_source (x : M) :
   rw [bundleChartAt, OpenPartialHomeomorph.extendTrans_source,
     (chartAt H x).restr_source' _ (trivializationAt F V x).open_baseSet]
 
+/-- The target of `bundleChartAt I F V x`, read through `I` and `chartAt H x`. -/
+@[simp]
+theorem bundleChartAt_target (x : M) :
+    (bundleChartAt I F V x).target =
+      I.symm ⁻¹' ((chartAt H x).target ∩
+        (chartAt H x).symm ⁻¹' (trivializationAt F V x).baseSet) := by
+  rw [bundleChartAt, OpenPartialHomeomorph.extendTrans_target]
+  change I.symm ⁻¹' ((chartAt H x).toPartialEquiv.restr
+    (interior (trivializationAt F V x).baseSet)).target = _
+  rw [(trivializationAt F V x).open_baseSet.interior_eq, PartialEquiv.restr_target]
+  rfl
+
+/-- Forward evaluation of `bundleChartAt I F V x` in terms of `I` and `chartAt H x`. -/
+@[simp]
+theorem bundleChartAt_apply (x w : M) :
+    bundleChartAt I F V x w = I (chartAt H x w) := by
+  simp [bundleChartAt]
+
+/-- Inverse evaluation of `bundleChartAt I F V x` in terms of `chartAt H x` and `I`. -/
+@[simp]
+theorem bundleChartAt_symm_apply (x : M) (y : E) :
+    (bundleChartAt I F V x).symm y = (chartAt H x).symm (I.symm y) := by
+  simp [bundleChartAt]
+
 /-- Each point `x` belongs to the source of `bundleChartAt I F V x`. -/
 theorem mem_bundleChartAt_source (x : M) : x ∈ (bundleChartAt I F V x).source := by
   rw [bundleChartAt_source]
@@ -525,6 +551,32 @@ theorem contMDiffOn_bundleChartAt_symm {n : ℕ∞ω} [IsManifold I n M] (x : M)
     contDiff_id
 
 end BundleChartAt
+
+section ExistsChartSourceSubsetBaseSet
+
+open Set
+open scoped ContDiff
+
+variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
+  {E H M : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+  [TopologicalSpace H]
+  (F : Type*) [TopologicalSpace F]
+  (I : ModelWithCorners 𝕜 E H) [I.Boundaryless]
+  [TopologicalSpace M] [ChartedSpace H M]
+  (V : M → Type*) [∀ x, TopologicalSpace (V x)] [TopologicalSpace (TotalSpace F V)]
+  [FiberBundle F V]
+
+/-- On a manifold without boundary, every point `x` lies in the source of a smooth chart into the
+model space with smooth inverse, whose source lies in the base set of the trivialization at `x`. -/
+theorem exists_chart_source_subset_baseSet {n : ℕ∞ω} [IsManifold I n M] (x : M) :
+    ∃ c : OpenPartialHomeomorph M E, ContMDiffOn I 𝓘(𝕜, E) n c c.source ∧
+      ContMDiffOn 𝓘(𝕜, E) I n c.symm c.target ∧ c.source ⊆ (trivializationAt F V x).baseSet ∧
+      x ∈ c.source :=
+  ⟨TauCeti.bundleChartAt I F V x, TauCeti.contMDiffOn_bundleChartAt x,
+    TauCeti.contMDiffOn_bundleChartAt_symm x, TauCeti.bundleChartAt_source_subset_baseSet x,
+    TauCeti.mem_bundleChartAt_source x⟩
+
+end ExistsChartSourceSubsetBaseSet
 
 end TauCeti
 

@@ -15,7 +15,7 @@ import TauCeti.Analysis.Calculus.BumpFunction.FiniteDimension
 import TauCeti.Analysis.Calculus.FDeriv.Equiv
 import TauCeti.Analysis.Distribution.WaveFrontSet.Localization
 import TauCeti.Geometry.Manifold.LocalDiffeomorph.MFDeriv
-import TauCeti.Geometry.Manifold.VectorBundle.Section.ChartLocalization
+import TauCeti.Geometry.Manifold.VectorBundle.Trivialization
 import TauCeti.Topology.VectorBundle.Trivialization
 
 /-!
