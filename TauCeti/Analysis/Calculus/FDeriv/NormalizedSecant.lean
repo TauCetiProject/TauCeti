@@ -10,10 +10,10 @@ public import Mathlib.Analysis.Calculus.FDeriv.Defs
 /-!
 # Limits of rescaled secants under differentiation along a filter
 
-Suppose endpoint pairs tend along a derivative filter, their images agree on a common cofinal
-set, and their difference is a scalar scale times a convergent factor. If the scale is nonzero
-on that set, the derivative annihilates the limit of the factor. The scales need not be the
-lengths of the secants. In particular, both endpoints may approach a strict derivative point.
+Suppose endpoint pairs tend along a derivative filter, their images agree on a cofinal set,
+and their scalar-rescaled difference converges. The derivative annihilates that limit.
+The scalars are arbitrary and may vanish. In particular, both endpoints may approach a strict
+derivative point.
 -/
 
 public section
@@ -24,63 +24,50 @@ open scoped Topology
 variable {𝕜 E F ι : Type*} [NontriviallyNormedField 𝕜]
   [AddCommGroup E] [Module 𝕜 E] [TopologicalSpace E] [ContinuousSMul 𝕜 E] [ContinuousAdd E]
   [AddCommGroup F] [Module 𝕜 F] [TopologicalSpace F] [ContinuousSMul 𝕜 F]
-  [ContinuousNeg F] [T2Space F]
+  [T2Space F]
 
-/-- If endpoint pairs tend along a derivative filter and their images agree on a common cofinal
-set where their gap is a nonzero scalar times a convergent factor, the derivative annihilates
-the limit of that factor. This applies to ordinary and within-set derivatives when the second
-endpoint is fixed. -/
-theorem HasFDerivAtFilter.apply_eq_zero_of_tendsto_normalized_secant
+/-- If endpoint pairs tend along a derivative filter and their images agree on a cofinal set,
+the derivative annihilates any limit of their scalar-rescaled difference. This applies to
+ordinary and within-set derivatives when the second endpoint is fixed. -/
+theorem HasFDerivAtFilter.apply_eq_zero_of_tendsto_smul_sub
     {P : E → F} {L : E →L[𝕜] F} {s : Filter (E × E)} (hP : HasFDerivAtFilter P L s)
-    {l : Filter ι} {a b : ι → E} {c : ι → 𝕜} {v : ι → E} {w : E}
+    {l : Filter ι} {a b : ι → E} {r : ι → 𝕜} {w : E}
     (hab : Tendsto (fun i ↦ (a i, b i)) l s)
-    (hvalid : ∃ᶠ i in l, c i ≠ 0 ∧ a i - b i = c i • v i ∧
-      P (a i) = P (b i))
-    (hv : Tendsto v l (𝓝 w)) :
+    (hPeq : ∃ᶠ i in l, P (a i) = P (b i))
+    (hr : Tendsto (fun i ↦ r i • (a i - b i)) l (𝓝 w)) :
     L w = 0 := by
-  let good : Set ι := {i | c i ≠ 0 ∧ a i - b i = c i • v i ∧ P (a i) = P (b i)}
+  let := ContinuousNeg.of_continuousConstSMul 𝕜 F
+  let good : Set ι := {i | P (a i) = P (b i)}
   let l' : Filter ι := l ⊓ 𝓟 good
-  have : NeBot l' := frequently_iff_neBot.mp hvalid
-  have hgood : ∀ᶠ i in l',
-      c i ≠ 0 ∧ a i - b i = c i • v i ∧ P (a i) = P (b i) :=
+  have : NeBot l' := frequently_iff_neBot.mp hPeq
+  have hgood : ∀ᶠ i in l', P (a i) = P (b i) :=
     (eventually_mem_principal good).filter_mono inf_le_right
   let err : ι → F := fun i ↦ P (a i) - P (b i) - L (a i - b i)
   have ho : err =o[𝕜; l'] (fun i ↦ a i - b i) := by
     simpa only [err, Function.comp_def] using
       hP.isLittleOTVS.comp_tendsto (hab.mono_left inf_le_left)
-  have hscaled := ho.smul_left (fun i ↦ (c i)⁻¹)
-  have hscaledGap : (fun i ↦ (c i)⁻¹ • (a i - b i)) =ᶠ[l'] v :=
+  have hbound : (fun i ↦ r i • (a i - b i)) =O[𝕜; l'] (1 : ι → 𝕜) :=
+    (hr.mono_left inf_le_left).isBigOTVS_one 𝕜
+  have hlim : Tendsto (fun i ↦ r i • err i) l' (𝓝 0) :=
+    isLittleOTVS_one.mp ((ho.smul_left r).trans_isBigOTVS hbound)
+  have hscaledError : (fun i ↦ r i • err i) =ᶠ[l']
+      (fun i ↦ -L (r i • (a i - b i))) :=
     hgood.mono fun i hi ↦ by
-      simp only [hi.2.1, inv_smul_smul₀ hi.1]
-  have hbound : (fun i ↦ (c i)⁻¹ • (a i - b i)) =O[𝕜; l'] (1 : ι → 𝕜) :=
-    ((hv.mono_left inf_le_left).isBigOTVS_one 𝕜).congr' hscaledGap.symm
-      (EventuallyEq.rfl)
-  have hlim : Tendsto (fun i ↦ (c i)⁻¹ • err i) l' (𝓝 0) :=
-    isLittleOTVS_one.mp (hscaled.trans_isBigOTVS hbound)
-  have hzero' : ∀ᶠ i in l', P (a i) = P (b i) :=
-    hgood.mono fun i hi ↦ hi.2.2
-  have hscaledError : (fun i ↦ (c i)⁻¹ • err i) =ᶠ[l']
-      (fun i ↦ -L ((c i)⁻¹ • (a i - b i))) :=
-    hzero'.mono fun i hi ↦ by
       simp only [err, hi, sub_self, zero_sub, smul_neg, map_smul]
-  have heq : (fun i ↦ (c i)⁻¹ • err i) =ᶠ[l'] (fun i ↦ -L (v i)) :=
-    hscaledError.trans (hscaledGap.fun_comp fun z ↦ -L z)
-  have hlimv : Tendsto (fun i ↦ -L (v i)) l' (𝓝 (-L w)) :=
-    (L.continuous.tendsto w |>.comp (hv.mono_left inf_le_left)).neg
+  have hlimv : Tendsto (fun i ↦ -L (r i • (a i - b i))) l' (𝓝 (-L w)) :=
+    (L.continuous.tendsto w |>.comp (hr.mono_left inf_le_left)).neg
   have hw : -L w = 0 :=
-    tendsto_nhds_unique_of_frequently_eq hlimv hlim heq.symm.frequently
+    tendsto_nhds_unique_of_frequently_eq hlimv hlim hscaledError.symm.frequently
   exact neg_eq_zero.mp hw
 
-/-- If both endpoints tend to the strict derivative point and their images agree on a common
-cofinal set where the endpoint gap is a nonzero scalar times a convergent factor, the derivative
-annihilates the limit of that factor. The gap may be much smaller than the distances of the
-endpoints to the derivative point. -/
-theorem HasStrictFDerivAt.apply_eq_zero_of_tendsto_normalized_secant
+/-- If both endpoints tend to the strict derivative point and their images agree on a cofinal
+set, the derivative annihilates any limit of their scalar-rescaled difference. The gap may be
+much smaller than the distances of the endpoints to the derivative point. -/
+theorem HasStrictFDerivAt.apply_eq_zero_of_tendsto_smul_sub
     {P : E → F} {L : E →L[𝕜] F} {x : E} (hP : HasStrictFDerivAt P L x)
-    {l : Filter ι} {a b : ι → E} {c : ι → 𝕜} {v : ι → E} {w : E}
+    {l : Filter ι} {a b : ι → E} {r : ι → 𝕜} {w : E}
     (ha : Tendsto a l (𝓝 x)) (hb : Tendsto b l (𝓝 x))
-    (hvalid : ∃ᶠ i in l, c i ≠ 0 ∧ a i - b i = c i • v i ∧
-      P (a i) = P (b i))
-    (hv : Tendsto v l (𝓝 w)) :
+    (hPeq : ∃ᶠ i in l, P (a i) = P (b i))
+    (hr : Tendsto (fun i ↦ r i • (a i - b i)) l (𝓝 w)) :
     L w = 0 :=
-  HasFDerivAtFilter.apply_eq_zero_of_tendsto_normalized_secant hP (ha.prodMk_nhds hb) hvalid hv
+  HasFDerivAtFilter.apply_eq_zero_of_tendsto_smul_sub hP (ha.prodMk_nhds hb) hPeq hr
