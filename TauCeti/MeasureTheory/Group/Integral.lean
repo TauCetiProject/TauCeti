@@ -100,7 +100,7 @@ theorem setIntegral_ball_sub_eq_zero {E : Type*} [NormedAddCommGroup E] [NormedS
   simp only [add_sub_cancel_right]
   -- Restricted to the symmetric set `ball 0 R`, `μ` is still invariant under negation.
   have := Measure.isNegInvariant_restrict (μ := μ) (s := ball (0 : E) R) (by simp [neg_ball])
-  exact integral_eq_zero_of_odd (g := fun y : E ↦ y) fun _ ↦ rfl
+  exact integral_eq_zero_of_odd (g := fun y : E ↦ y) (Filter.Eventually.of_forall fun _ ↦ rfl)
 
 /-- For a measure invariant under right addition and under negation, such as an additive Haar
 measure on a finite-dimensional real normed space, the average of the identity over a ball of

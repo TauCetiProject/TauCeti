@@ -20,9 +20,15 @@ algebraically nondegenerate, and is normalized for a Markov trace; this makes no
 assertion.
 
 Under a tower map, the preimage of the later radical is contained in the earlier radical.
-The opposite inclusion, needed to induce forward maps of these quotients, is not asserted
-here: trace compatibility alone would not imply it. At the two scalar-character parameters,
-the finite radicals are exactly the kernels of the corresponding characters.
+Trace compatibility alone gives only this inclusion. For a Markov trace the two radicals
+correspond exactly: an element of the finite radical pairs to zero with the whole infinite
+algebra (`IsMarkovTrace.finiteRadical_eq_comap_traceRadical`), because the Markov rule
+`τ (x * (a * T n * b)) = z * τ (x * (a * b))` propagates the vanishing along the decomposition
+`Hₙ₊₂ = Hₙ₊₁ + Hₙ₊₁ Tₙ Hₙ₊₁`. Hence the finite radical is the preimage of the next one
+(`IsMarkovTrace.comap_finiteRadical_strandIncl`), and the tower maps descend to injective
+algebra maps of the quotients (`finiteQuotientStrandIncl`) compatible with the quotient traces.
+At the two scalar-character parameters, the finite radicals are exactly the kernels of the
+corresponding characters.
 
 ## References
 
@@ -123,6 +129,87 @@ theorem finiteQuotientTrace_nondegenerate (hτ : ∀ x y, τ (x * y) = τ (y * x
     (hx : ∀ y, finiteQuotientTrace hτ n (x * y) = 0) : x = 0 := by
   exact (τ ∘ₗ (toInfinite R q n).toLinearMap).quotientTrace_nondegenerate
     (τ.comp_algHom_mul_comm hτ (toInfinite R q n)) x hx
+
+/-- For a Markov trace, an element of the stage of the first `n` strands that pairs to zero with
+that stage lies in the trace radical: it pairs to zero with the whole infinite algebra. -/
+theorem IsMarkovTrace.mem_traceRadical_of_mem_stage (hτ : IsMarkovTrace z τ) {n : ℕ}
+    {x : InfiniteTypeAHeckeAlgebra R q} (hx : x ∈ stage R q n)
+    (h : ∀ y ∈ stage R q n, τ (x * y) = 0) : x ∈ τ.traceRadical hτ.map_mul_comm := by
+  -- Propagate the vanishing from each stage `m ≥ n` to the next.
+  have key : ∀ m, n ≤ m → ∀ y ∈ stage R q m, τ (x * y) = 0 := by
+    intro m hm
+    induction m, hm using Nat.le_induction with
+    | base => exact h
+    | succ m hnm ih =>
+      rcases m with _ | m
+      · rwa [stage_eq_bot_of_le_one le_rfl, ← stage_eq_bot_of_le_one (R := R) (q := q)
+          (n := 0) zero_le_one]
+      · have hP := toSubmodule_stage_add_two_le_iff
+          (P := LinearMap.ker (τ ∘ₗ LinearMap.mulLeft R x)) (n := m)
+        refine fun y hy ↦ hP.2 ⟨fun y hy ↦ ih y hy, fun a ha b hb ↦ ?_⟩ hy
+        rw [LinearMap.mem_ker, LinearMap.comp_apply, LinearMap.mulLeft_apply, ← mul_assoc,
+          ← mul_assoc, hτ.map_mul_T_mul (mul_mem (stage_mono hnm hx) ha) hb,
+          hτ.map_mul_comm, mul_assoc, ih _ (mul_mem ha hb), mul_zero]
+  refine (LinearMap.mem_traceRadical _ _).2 fun y ↦ ?_
+  obtain ⟨m, hy⟩ := exists_mem_stage y
+  exact key (max n m) (le_max_left n m) y (stage_mono (le_max_right n m) hy)
+
+/-- For a Markov trace, the finite radical is the preimage of the trace radical of the infinite
+algebra. For an arbitrary tracial functional only the inclusion `⊇` holds. -/
+theorem IsMarkovTrace.finiteRadical_eq_comap_traceRadical (hτ : IsMarkovTrace z τ) (n : ℕ) :
+    finiteRadical hτ.map_mul_comm n =
+      Ideal.comap (toInfinite R q n) (τ.traceRadical hτ.map_mul_comm) := by
+  refine le_antisymm (fun x hx ↦ ?_) ?_
+  · rw [mem_finiteRadical] at hx
+    refine Ideal.mem_comap.2 <| hτ.mem_traceRadical_of_mem_stage
+      (range_toInfinite (R := R) (q := q) (n := n) ▸ AlgHom.mem_range_self _ x) fun y hy ↦ ?_
+    rw [← range_toInfinite] at hy
+    obtain ⟨y, rfl⟩ := (AlgHom.mem_range _).1 hy
+    rw [← map_mul]
+    exact hx y
+  · rw [finiteRadical_def]
+    exact LinearMap.comap_traceRadical_le _ hτ.map_mul_comm (toInfinite R q n) rfl
+
+/-- For a Markov trace, the finite radical is exactly the preimage of the next finite radical
+under the tower map. -/
+theorem IsMarkovTrace.comap_finiteRadical_strandIncl (hτ : IsMarkovTrace z τ) (n : ℕ) :
+    Ideal.comap (strandIncl R q n) (finiteRadical hτ.map_mul_comm (n + 1)) =
+      finiteRadical hτ.map_mul_comm n := by
+  ext x
+  rw [hτ.finiteRadical_eq_comap_traceRadical, hτ.finiteRadical_eq_comap_traceRadical,
+    Ideal.mem_comap, Ideal.mem_comap, Ideal.mem_comap, toInfinite_strandIncl]
+
+/-- For a Markov trace, the tower map descends to an algebra map of the finite trace-radical
+quotients. It is injective (`finiteQuotientStrandIncl_injective`) and preserves the quotient
+traces (`finiteQuotientTrace_finiteQuotientStrandIncl`). -/
+def finiteQuotientStrandIncl (hτ : IsMarkovTrace z τ) (n : ℕ) :
+    TypeAHeckeAlgebra R q n ⧸ finiteRadical hτ.map_mul_comm n →ₐ[R]
+      TypeAHeckeAlgebra R q (n + 1) ⧸ finiteRadical hτ.map_mul_comm (n + 1) :=
+  Ideal.quotientMapₐ _ (strandIncl R q n) (hτ.comap_finiteRadical_strandIncl n).ge
+
+/-- The descended tower map sends the class of `x` to the class of its image under the tower
+map. -/
+@[simp]
+theorem finiteQuotientStrandIncl_mk (hτ : IsMarkovTrace z τ) (n : ℕ)
+    (x : TypeAHeckeAlgebra R q n) :
+    finiteQuotientStrandIncl hτ n (Ideal.Quotient.mk _ x) =
+      Ideal.Quotient.mk _ (strandIncl R q n x) := (rfl)
+
+/-- The descended tower map of a Markov trace is injective. -/
+theorem finiteQuotientStrandIncl_injective (hτ : IsMarkovTrace z τ) (n : ℕ) :
+    Function.Injective (finiteQuotientStrandIncl hτ n) :=
+  Ideal.quotientMap_injective' (H := (hτ.comap_finiteRadical_strandIncl n).ge)
+    (hτ.comap_finiteRadical_strandIncl n).le
+
+/-- The descended tower map preserves the quotient traces. -/
+@[simp]
+theorem finiteQuotientTrace_finiteQuotientStrandIncl (hτ : IsMarkovTrace z τ) (n : ℕ)
+    (x : TypeAHeckeAlgebra R q n ⧸ finiteRadical hτ.map_mul_comm n) :
+    finiteQuotientTrace hτ.map_mul_comm (n + 1) (finiteQuotientStrandIncl hτ n x) =
+      finiteQuotientTrace hτ.map_mul_comm n x := by
+  obtain ⟨x, rfl⟩ := Ideal.Quotient.mk_surjective x
+  rw [finiteQuotientStrandIncl_mk, finiteQuotientTrace_mk, finiteQuotientTrace_mk,
+    toInfinite_strandIncl]
 
 /-- At the index-character parameter, the finite radical is the kernel of that character
 pulled back to the finite presentation. -/
