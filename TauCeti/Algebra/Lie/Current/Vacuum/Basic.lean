@@ -82,6 +82,8 @@ base ring is an arbitrary commutative ring.
 * `TauCeti.CurrentAlgebra.eq_vacuumCoordinateAction`: it is the unique such map fixing the vacuum.
 * `TauCeti.CurrentAlgebra.vacuumPBWEquiv_mul`: the PBW identification intertwines left
   multiplication on `U(t⁻¹ L[t⁻¹])` with the action on the vacuum module.
+* `TauCeti.CurrentAlgebra.envelopingι_single_smul_vacuum_injective`: negative-mode creation on the
+  vacuum is injective.
 
 ## References
 
@@ -399,6 +401,16 @@ theorem vacuumPBWEquiv_mul (y y' : Uneg) :
     vacuumPBWEquiv Φ hΦ hΦs a (y * y') =
       negativeEnvelopingHom Φ hΦ hΦs a y • vacuumPBWEquiv Φ hΦ hΦs a y' := by
   simp [mul_smul]
+
+/-- Negative-mode creation on the vacuum is injective: for `m < 0`, `xₘ |0⟩ = 0` only when
+`x = 0`. -/
+theorem envelopingι_single_smul_vacuum_injective {m : ℤ} (hm : m < 0) :
+    Function.Injective fun x : L ↦
+      envelopingι c a (HahnSeries.single m (1 : K) ⊗ₜ[K] x) • vacuum Φ hΦ hΦs a := by
+  intro x y hxy
+  rw [← sub_eq_zero, ← sub_smul, ← map_sub, ← TensorProduct.tmul_sub,
+    smul_vacuum_eq_zero_iff, envelopingι_mem_orderLeftIdeal_iff Φ hΦ hΦs a le_rfl] at hxy
+  simpa [sub_eq_zero, coeff_tmul] using coeff_eq_zero_of_mem_orderSubmodule K L hxy hm
 
 end PBW
 

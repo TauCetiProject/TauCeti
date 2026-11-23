@@ -9,7 +9,7 @@ public import TauCeti.Algebra.Lie.Current.Sugawara.Basic
 
 import Mathlib.Topology.Algebra.InfiniteSum.Module
 import TauCeti.Algebra.BigOperators.Intervals
-import TauCeti.Topology.Algebra.InfiniteSum.Basic
+import TauCeti.Algebra.Lie.Current.Sugawara.Degree
 
 /-!
 # The Segal--Sugawara Virasoro relations
@@ -103,16 +103,16 @@ private theorem sugawaraMode_mul_normalOrderedSummand_sub_mul {c : K}
   have hsub₂ : m + (n - j) = m + n - j := by ring
   have hadd : m + j = j + m := add_comm m j
   have hlt : j + m < m ↔ j < 0 := by omega
+  rw [← Ring.lie_def,
+    ← LieAlgebra.ad_apply K (CompletedEnveloping Φ hΦ hΦs a) (sugawaraMode Φ hΦ hΦs a m),
+    ← coe_innerDerivation K, innerDerivation_sugawaraMode_of_eq_smul_killingForm h m,
+    SetLike.val_smul, LinearMap.smul_apply]
   simp only [normalOrderedSummand_apply, hsub₁, hlt]
-  by_cases hj : j < 0 <;> simp only [hj, ↓reduceIte, map_mul] <;>
-  · rw [← Ring.lie_def,
-      ← LieAlgebra.ad_apply K (CompletedEnveloping Φ hΦ hΦs a) (sugawaraMode Φ hΦ hΦs a m),
-      ← coe_innerDerivation K, derivationLieAlgebra.leibniz, coe_innerDerivation,
-      LieAlgebra.ad_apply, LieAlgebra.ad_apply, Ring.lie_def, Ring.lie_def,
-      ← neg_sub (toC ι[_, _] * _), ← neg_sub (toC ι[_, _] * _),
-      toCompletedEnveloping_mul_sugawaraMode_sub_mul_of_eq_smul_killingForm h,
-      toCompletedEnveloping_mul_sugawaraMode_sub_mul_of_eq_smul_killingForm h, hadd, hsub₂]
-    simp only [Int.cast_sub, neg_mul, mul_neg, smul_mul_assoc, mul_smul_comm]
+  by_cases hj : j < 0 <;> simp only [hj, ↓reduceIte, map_mul, derivationLieAlgebra.leibniz,
+    vectorFieldCompletedEnvelopingDerivation_neg, NegMemClass.coe_neg, LinearMap.neg_apply,
+    vectorFieldCompletedEnvelopingDerivation_single_add_one_envelopingι_single_tmul,
+    ← Int.cast_smul_eq_zsmul K, hadd, hsub₂] <;>
+  · simp only [Int.cast_sub, smul_neg, smul_mul_assoc, mul_smul_comm, smul_add, smul_smul]
     module
 
 omit [FiniteDimensional K L] [LieAlgebra.IsKilling K L] in
@@ -156,25 +156,38 @@ theorem sugawaraMode_mul_normalOrderedMode_sub_mul_of_eq_smul_killingForm {c : K
     (sugawaraMode Φ hΦ hΦs a m)).sub
     ((hasSum_normalOrderedMode n x y).mul_right (sugawaraMode Φ hΦ hΦs a m))
   simp only [sugawaraMode_mul_normalOrderedSummand_sub_mul h] at h₁
-  have hA₀ := (summable_smul_completedEnveloping
-    (summable_normalOrderedSummand Φ hΦ hΦs a m (m + n) x y)
-    (fun l : ℤ ↦ (1 - 2 * a * c) * -((l - m : ℤ) : K))).hasSum
+  have hA₀ : HasSum (fun l : ℤ ↦ ((1 - 2 * a * c) * -((l - m : ℤ) : K)) •
+      toC (normalOrderedSummand Φ hΦ hΦs a m (m + n) l x y))
+      (∑' l : ℤ, ((1 - 2 * a * c) * -((l - m : ℤ) : K)) •
+        toC (normalOrderedSummand Φ hΦ hΦs a m (m + n) l x y)) := by
+    simpa only [algebraMap_smul] using ((orderQuotientTower Φ hΦ hΦs a).summable_smul
+      (summable_normalOrderedSummand Φ hΦ hΦs a m (m + n) x y)
+      (fun l : ℤ ↦ algebraMap K UK ((1 - 2 * a * c) * -((l - m : ℤ) : K)))).hasSum
   have hA : HasSum (fun j : ℤ ↦ ((1 - 2 * a * c) * -(j : K)) •
       toC (normalOrderedSummand Φ hΦ hΦs a m (m + n) (j + m) x y))
       (∑' l : ℤ, ((1 - 2 * a * c) * -((l - m : ℤ) : K)) •
         toC (normalOrderedSummand Φ hΦ hΦs a m (m + n) l x y)) := by
     simpa only [Function.comp_def, Equiv.coe_addRight, add_sub_cancel_right] using
       (Equiv.addRight m).hasSum_iff.2 hA₀
-  have hB := (summable_smul_completedEnveloping
-    (summable_normalOrderedSummand Φ hΦ hΦs a 0 (m + n) x y)
-    (fun l : ℤ ↦ (1 - 2 * a * c) * (l - n : K))).hasSum
+  have hB : HasSum (fun l : ℤ ↦ ((1 - 2 * a * c) * (l - n : K)) •
+      toC (normalOrderedSummand Φ hΦ hΦs a 0 (m + n) l x y))
+      (∑' l : ℤ, ((1 - 2 * a * c) * (l - n : K)) •
+        toC (normalOrderedSummand Φ hΦ hΦs a 0 (m + n) l x y)) := by
+    simpa only [algebraMap_smul] using ((orderQuotientTower Φ hΦ hΦs a).summable_smul
+      (summable_normalOrderedSummand Φ hΦ hΦs a 0 (m + n) x y)
+      (fun l : ℤ ↦ algebraMap K UK ((1 - 2 * a * c) * (l - n : K)))).hasSum
   have hcomb := hA₀.add hB
   simp only [combined_normalOrderedSummand_eq] at hcomb
   let g (l : ℤ) : UK := ((m - l : ℤ) : K) • (ι[x, l] * ι[y, m + n - l] - ι[y, m + n - l] * ι[x, l])
+  have hite (s : Finset ℤ) :
+      HasSum (fun l ↦ toC (if l ∈ s then g l else 0)) (toC (∑ l ∈ s, g l)) := by
+    simpa only [← map_sum, Finset.sum_ite_mem, Finset.inter_self] using
+      hasSum_sum_of_ne_finset_zero (f := fun l ↦ toC (if l ∈ s then g l else 0))
+        (s := s) fun l hl ↦ by simp [hl]
   have h₂ := (((hasSum_normalOrderedMode (Φ := Φ) (hΦ := hΦ) (hΦs := hΦs) (a := a)
       (m + n) x y).const_smul ((1 - 2 * a * c) * (m - n : K))).add
-    ((hasSum_map_ite_mem toC (Finset.Ico 0 m) g).const_smul (1 - 2 * a * c))).sub
-    ((hasSum_map_ite_mem toC (Finset.Ico m 0) g).const_smul (1 - 2 * a * c))
+    ((hite (Finset.Ico 0 m)).const_smul (1 - 2 * a * c))).sub
+    ((hite (Finset.Ico m 0)).const_smul (1 - 2 * a * c))
   rw [h₁.unique (hA.add hB), hcomb.unique h₂, add_sub_assoc, ← smul_sub, ← map_sub,
     sum_Ico_sub_sum_Ico_sub_smul_envelopingι_mul_sub_mul x y m (m + n), map_sub, map_smul,
     smul_sub, smul_smul, AlgHom.commutes]
@@ -211,11 +224,10 @@ theorem sugawaraMode_mul_sugawaraMode_sub_mul_of_eq_smul_killingForm {c : K}
     rw [← map_sum, ← map_sum, ← TensorProduct.tmul_sum, sum_lie_killingDualBasis_eq_zero,
       TensorProduct.tmul_zero, map_zero, map_zero]
   have htr : ∑ i, Φ (b i) (killingDualBasis b i) = c * (Module.finrank K L : K) := by
-    have hi (i) : Φ (b i) (killingDualBasis b i) = c := by
-      rw [h, LinearMap.smul_apply, LinearMap.smul_apply, LieModule.traceForm_comm K L L,
-        LinearMap.BilinForm.apply_dualBasis_left hnd b i i]
-      simp
-    simp only [hi, Finset.sum_const, Finset.card_univ, Fintype.card_fin, nsmul_eq_mul, mul_comm c]
+    have htrace := LinearMap.BilinForm.sum_apply_dualBasis_eq_trace hnd b (LinearMap.id : L →ₗ[K] L)
+    simp only [LinearMap.id_coe, id_eq, LinearMap.trace_id] at htrace
+    simp only [h, LinearMap.smul_apply, smul_eq_mul, ← Finset.mul_sum]
+    rw [Finset.sum_congr rfl fun i _ ↦ LieModule.traceForm_comm K L L (b i) _, htrace]
   have hcent : ∑ i, algebraMap K (CompletedEnveloping Φ hΦ hΦs a)
       (if m + n = 0 then
         ((m ^ 3 - m) / 6 : ℤ) * (1 - 2 * a * c) * a * Φ (b i) (killingDualBasis b i) else 0) =
@@ -258,14 +270,9 @@ theorem sugawaraVirasoro_mul_sugawaraVirasoro_sub_mul [NeZero (2 : K)] [NeZero (
     norm_num at h23
     exact h23
   have hdiv6 : (((m ^ 3 - m) / 6 : ℤ) : K) = ((m : K) ^ 3 - m) / 6 := by
-    refine eq_div_of_mul_eq h6 ?_
-    have hZ : ((m ^ 3 - m) / 6 : ℤ) * 6 = m ^ 3 - m := by
-      have h6Z := Finset.six_mul_sum_Ico_zero_mul_sub_sub_sum_Ico_zero_mul_sub m
-      have hq := Int.eq_ediv_of_mul_eq_right (by decide : (6 : ℤ) ≠ 0) h6Z
-      linear_combination h6Z - 6 * hq
-    have hZK := congrArg (Int.cast : ℤ → K) hZ
-    push_cast at hZK
-    exact hZK
+    have hdvd : (6 : ℤ) ∣ m ^ 3 - m :=
+      ⟨_, (Finset.six_mul_sum_Ico_zero_mul_sub_sub_sum_Ico_zero_mul_sub m).symm⟩
+    simpa using Int.cast_div hdvd (by exact_mod_cast h6)
   rw [sugawaraVirasoro_def, sugawaraVirasoro_def, sugawaraVirasoro_def, smul_mul_smul_comm,
     smul_mul_smul_comm, ← smul_sub, sugawaraMode_mul_sugawaraMode_sub_mul_of_eq_smul_killingForm h,
     smul_sub, smul_smul, smul_smul]

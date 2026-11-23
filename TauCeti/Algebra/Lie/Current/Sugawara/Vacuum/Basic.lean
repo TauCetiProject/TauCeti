@@ -8,8 +8,6 @@ module
 public import TauCeti.Algebra.Lie.Current.Sugawara.Degree
 public import TauCeti.Algebra.Lie.Current.Vacuum.VectorField
 
-import TauCeti.Algebra.Lie.UniversalEnveloping.PBW.Embedding
-
 /-!
 # The Segal--Sugawara operators and quadratic state on the vacuum module
 
@@ -315,11 +313,7 @@ theorem not_forall_envelopingι_smul_sugawaraVacuum_eq_zero [Nontrivial L] {c : 
     (single_tmul_mem_orderSubmodule K L zero_le_one 1 z)
   rw [envelopingι_single_one_smul_sugawaraVacuum_of_eq_smul_killingForm h z, smul_eq_zero] at h1
   have hv0 : ι[z, -1] • vacuum Φ hΦ hΦs a = 0 := h1.resolve_left hc
-  rw [← negativeEnvelopingHom_ι_negativeSingle neg_one_lt_zero, ← vacuumPBWEquiv_apply,
-    EmbeddingLike.map_eq_zero_iff] at hv0
-  exact hz ((map_eq_zero_iff _ (negativeSingle_injective neg_one_lt_zero)).1
-    ((map_eq_zero_iff _ (TauCeti.UniversalEnvelopingAlgebra.ι_injective K
-      (negativeLieSubalgebra Φ hΦ hΦs))).1 hv0))
+  exact hz (envelopingι_single_smul_vacuum_injective neg_one_lt_zero (hv0.trans (by simp)))
 
 /-- **Away from the critical level, `S₋₂` does not lie in the completed center `Z(Û)`** when `L`
 is nontrivial. -/
