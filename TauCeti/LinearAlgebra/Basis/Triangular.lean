@@ -194,7 +194,7 @@ private theorem exists_injective_nat_lt_of_apply_lt [Finite ι] [Preorder α] (f
     Nat.mul_le_mul_left _ hrank
   rw [mul_add_one] at hmul
   have hi := (e i).isLt
-  dsimp only [g, r, finProdFinEquiv, Equiv.coe_fn_mk]
+  simp only [g, r, finProdFinEquiv_apply_val]
   omega
 
 /-- The determinant of a family `v` that is triangular with respect to a basis `b` along a map
