@@ -141,10 +141,9 @@ private theorem isInvertible_fderiv_inner_deriv_chordDir_comp_inr (hn : n ≠ 0)
     have h2 := χ.deriv_deriv_generatingFunction_left_neg hst
     rw [heq.deriv_eq, h1.deriv] at h2
     exact h2.ne
-  -- A linear map `ℝ →L[ℝ] ℝ` is multiplication by its value `c` at `1`, inverted by `c⁻¹`.
-  refine .of_inverse (g := c⁻¹ • ContinuousLinearMap.id ℝ ℝ)
-    (ContinuousLinearMap.ext_ring ?_) (ContinuousLinearMap.ext_ring ?_) <;>
-    simpa [c] using inv_mul_cancel₀ hc
+  -- A linear map `ℝ →L[ℝ] ℝ` is multiplication by its value `c` at `1`.
+  rw [ContinuousLinearMap.ext_ring (ContinuousLinearMap.toSpanSingleton_apply_one ℝ c).symm]
+  exact ContinuousLinearMap.isInvertible_toSpanSingleton_iff.2 hc
 
 /-- The next collision parameter `t(s, v)` is jointly continuous at a state `(s, v)` of the strip
 `ℝ × (-1, 1)` when `χ` is `C¹` at `s`. For `c` in the window `(s, s + L)`, the sign of
@@ -252,10 +251,9 @@ collision parameter `t(s, v)`, then the next-collision map `(s, v) ↦ (t, w)` i
 theorem contDiffAt_nextCollision {x : ℝ × ℝ} (hs : ContDiffAt ℝ (n + 1) χ x.1)
     (ht : ContDiffAt ℝ (n + 1) χ (χ.nextParam x.1 x.2)) (hx : x.2 ∈ Ioo (-1) 1) :
     ContDiffAt ℝ n χ.nextCollision x := by
-  rw [show χ.nextCollision = fun x ↦ (χ.nextParam x.1 x.2, χ.nextTangential x.1 x.2) from
-    funext χ.nextCollision_apply]
-  exact (χ.contDiffAt_nextParam hs (ht.of_le le_self_add) hx).prodMk
-    (χ.contDiffAt_nextTangential hs ht hx)
+  exact ((χ.contDiffAt_nextParam hs (ht.of_le le_self_add) hx).prodMk
+    (χ.contDiffAt_nextTangential hs ht hx)).congr_of_eventuallyEq
+      (.of_forall χ.nextCollision_apply)
 
 /-- **Smoothness of the billiard map.** If `χ` is `C^(n+1)`, the next-collision map
 `(s, v) ↦ (t, w)` is `C^n` on the strip `ℝ × (-1, 1)`. -/
