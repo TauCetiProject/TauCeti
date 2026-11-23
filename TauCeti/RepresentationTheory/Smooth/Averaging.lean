@@ -45,8 +45,8 @@ Bernstein's notes onto `V^U`.
 * `Representation.smoothAverage_comp_smoothAverage_subgroup`,
   `Representation.smoothAverage_subgroup_comp_smoothAverage`: for a compact subgroup `H` of
   invertible pro-order, `e_K e_H = e_H e_K = e_K`.
-* `Representation.smoothAverage_eq_averageMap`: for a finite discrete group of invertible order,
-  `e_K` is Mathlib's `Representation.averageMap`.
+* `Representation.smoothAverage_eq_averageMap`: for a finite group of invertible order (with any
+  topology for which `σ` is smooth), `e_K` is Mathlib's `Representation.averageMap`.
 
 ## References
 
@@ -301,16 +301,20 @@ theorem smoothAverage_subgroup_comp_smoothAverage (H : Subgroup K) [CompactSpace
 
 end Compact
 
-/-- For a finite discrete group of order invertible in `A`, the averaging projector is Mathlib's
-`Representation.averageMap`. -/
-theorem smoothAverage_eq_averageMap [Fintype K] [TopologicalSpace K] [DiscreteTopology K]
-    [Invertible (Fintype.card K : A)] (σ : Representation A K V)
+/-- For a finite group of order invertible in `A`, the averaging projector of a smooth
+representation is Mathlib's `Representation.averageMap`. The topology on the group need not be
+discrete. -/
+theorem smoothAverage_eq_averageMap [Fintype K] [TopologicalSpace K] [SeparatelyContinuousMul K]
+    [Invertible (Fintype.card K : A)] (σ : Representation A K V) [IsSmooth σ]
     (hK : TauCeti.HasUnitProOrder A K) : σ.smoothAverage hK = σ.averageMap := by
   ext v
   let _ := Fintype.ofFinite (K ⧸ (⊥ : Subgroup K))
-  rw [σ.smoothAverage_apply_of_le hK (isOpen_discrete ((⊥ : Subgroup K) : Set K)) bot_le,
-    averageMap_apply, Subgroup.index_bot, Nat.card_eq_fintype_card, Ring.inverse_invertible,
-    finsum_eq_sum_of_fintype]
+  have hu : IsUnit ((⊥ : Subgroup K).index : A) := by
+    rw [Subgroup.index_bot, Nat.card_eq_fintype_card]
+    exact isUnit_of_invertible _
+  rw [σ.smoothAverage_apply_of_le hK (IsSmooth.isOpen_stabilizer v) le_rfl,
+    ← smul_finsum_out_of_le σ bot_le hu le_rfl, averageMap_apply, Subgroup.index_bot,
+    Nat.card_eq_fintype_card, Ring.inverse_invertible, finsum_eq_sum_of_fintype]
   congr 1
   exact Fintype.sum_equiv (QuotientGroup.quotientBot (G := K)).toEquiv _ _ fun q ↦ by
     conv_rhs => rw [← QuotientGroup.out_eq' q]
