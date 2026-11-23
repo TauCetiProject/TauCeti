@@ -100,17 +100,14 @@ theorem apply_one_zero (g : SL2Borel R) :
 /-- The upper-triangular determinant-one matrix with diagonal entries `a`, `a⁻¹` and
 upper-right entry `b`. -/
 def mk (a : Rˣ) (b : R) : SL2Borel R :=
-  let M : Matrix (Fin 2) (Fin 2) R := !![(a : R), b; 0, ((a⁻¹ : Rˣ) : R)]
-  have hdet : M.det = 1 := by
-    rw [Matrix.det_fin_two]
-    simp [M]
-  ⟨⟨M, hdet⟩, mem_iff.mpr (by simp [M])⟩
+  ⟨.mk !![(a : R), b; 0, ((a⁻¹ : Rˣ) : R)] (by simp [Matrix.det_fin_two_of]),
+    mem_iff.mpr (by simp)⟩
 
 /-- The matrix underlying `mk a b`. -/
 @[simp]
 theorem coe_mk (a : Rˣ) (b : R) :
     (mk a b : Matrix (Fin 2) (Fin 2) R) = !![(a : R), b; 0, ((a⁻¹ : Rˣ) : R)] := by
-  rw [mk]
+  rw [mk, Matrix.SpecialLinearGroup.coe_mk]
 
 /-- Apply a ring homomorphism entrywise to an upper-triangular determinant-one matrix. -/
 def map {S : Type v} [CommRing S] (phi : R →+* S) : SL2Borel R →* SL2Borel S :=

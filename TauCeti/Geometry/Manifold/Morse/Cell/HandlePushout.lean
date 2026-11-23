@@ -6,10 +6,11 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Topology.Category.TopCat.Sphere
+public import TauCeti.AlgebraicTopology.Disk.Handle
 public import TauCeti.Geometry.Manifold.Morse.Cell.Attachment
 public import TauCeti.Topology.Category.TopCat.Pushout
 import Mathlib.CategoryTheory.Limits.Shapes.Pullback.IsPullback.Basic
-import TauCeti.AlgebraicTopology.Disk
+import TauCeti.AlgebraicTopology.Disk.Prod
 
 /-!
 # Handle attachment across a critical level as a pushout
@@ -43,6 +44,15 @@ product of closed balls in the coordinates `{j | j < k i}` and `{j | k i ≤ j}`
 are reindexed to the standard discs by relabelling the coordinates
 (`LinearIsometryEquiv.closedBallHomeomorphDisk`).
 
+The handle attachment recovers Milnor's cell attachment theorem. The core of the handle
+`𝔻 (k i) × 𝔻 (n - k i)` is the disc `𝔻 (k i) × {0}`, which meets the attaching region in the core
+sphere `∂𝔻 (k i) × {0}`, and a handle attachment deformation retracts onto the attachment of its
+cores (`CategoryTheory.IsPushout.exists_coreAttachment_deformation`). So `M_{c+ε}` is homotopy
+equivalent, relative to the image of `M_{c-ε}`, to `M_{c-ε}` with one cell of dimension `k i`
+attached along each core sphere `s ↦ α i (s, 0)`. These attaching spheres are embedded in the level
+`f⁻¹(c - ε)`, pairwise disjoint, and each extends to the embedding `α i` of
+`∂𝔻 (k i) × 𝔻 (n - k i)` into that level.
+
 ## Main results
 
 * `TauCeti.exists_isPushout_sublevel_handles`: for normal-form charts with disjoint sources around
@@ -53,6 +63,10 @@ are reindexed to the standard discs by relabelling the coordinates
   of index `λ` at each critical point of index `λ` on the level.
 * `TauCeti.IsMorse.exists_isPushout_sublevel_handle`: the theorem at a level with a single critical
   point, with a single handle attached.
+* `TauCeti.IsMorse.exists_coreAttachment_sublevel_deformation`: **Milnor's cell attachment theorem**
+  read off the handle attachment: `M_{c+ε}` deformation retracts onto the image of `M_{c-ε}` with
+  the cores of the handles attached along their core spheres, the image of the comparison map from
+  the cell attachment.
 
 ## References
 
@@ -334,6 +348,64 @@ theorem IsMorse.exists_isPushout_sublevel_handle (hf : IsMorse I f) {δ : ℝ} (
     (coproductUniqueIso _) (Iso.refl _) ?_ ?_ ?_ ?_, hemb default, hlev default, htop default,
     fun x hx ↦ hj x fun q ↦ Subsingleton.elim q default ▸ hx⟩
   all_goals rw [← Iso.inv_comp_eq]; simp
+
+/-- **Milnor's cell attachment theorem, from the handle attachment** (Milnor, Theorem 3.2 and
+Remark 3.3). Let `f` be a Morse function on a Hausdorff manifold of dimension `m` whose band
+`f⁻¹[c - δ, c + δ]` is compact, for some `0 < δ`, and write `M_a = {f ≤ a}` and `λ p` for the
+Morse index of `f` at a critical point `p`. Take the width `0 < ε ≤ δ` and the handle pushout
+square of `α p : ∂𝔻 (λ p) × 𝔻 (m - λ p) → M_{c-ε}`, `χ p : 𝔻 (λ p) × 𝔻 (m - λ p) → M_{c+ε}` and
+`j : M_{c-ε} → M_{c+ε}` with all the properties of
+`TauCeti.IsMorse.exists_isPushout_sublevel_handles`; moreover `j` is a closed embedding. Let `Q` be
+obtained from `M_{c-ε}` by attaching one cell `𝔻 (λ p)` for each critical point `p` on the level
+`f⁻¹(c)`, along the restriction `s ↦ α p (s, 0)` of `α p` to the core sphere, as a pushout in
+`TopCat` with legs `j'` and `χ' p`. Then the comparison map `Φ : Q → M_{c+ε}` restricts to `j` on
+`M_{c-ε}` and sends the `p`-th cell onto the core `x ↦ χ p (x, 0)` of the `p`-th handle, so its
+image is the image of `j` together with the handle cores. It has a left inverse `g` such that
+`Φ ∘ g` is homotopic to the identity of `M_{c+ε}` relative to that image. So `M_{c+ε}` is homotopy
+equivalent, relative to the image of `M_{c-ε}` under `j`, to `M_{c-ε}` with one cell of dimension
+`λ p` attached at each `p`, along pairwise disjoint spheres embedded in the level `f⁻¹(c - ε)`,
+each with the neighbourhood `α p (∂𝔻 (λ p) × 𝔻 (m - λ p))` in that level. Indices `0` and `m` are
+included. -/
+theorem IsMorse.exists_coreAttachment_sublevel_deformation (hf : IsMorse I f) {δ : ℝ}
+    (hδ : 0 < δ) (hcompact : IsCompact (f ⁻¹' Icc (c - δ) (c + δ))) :
+    ∃ ε, 0 < ε ∧ ε ≤ δ ∧
+      ∃ (α : ∀ p : ↥(criticalPoints I f ∩ f ⁻¹' {c}),
+          TopCat.of (TopCat.diskBoundary.{u} (manifoldMorseIndex I f p) ×
+            TopCat.disk.{u} (Module.finrank ℝ E - manifoldMorseIndex I f p)) ⟶
+          TopCat.of {x | f x ≤ c - ε})
+        (χ : ∀ p : ↥(criticalPoints I f ∩ f ⁻¹' {c}),
+          TopCat.of (TopCat.disk.{u} (manifoldMorseIndex I f p) ×
+            TopCat.disk.{u} (Module.finrank ℝ E - manifoldMorseIndex I f p)) ⟶
+          TopCat.of {x | f x ≤ c + ε})
+        (j : TopCat.of {x | f x ≤ c - ε} ⟶ TopCat.of {x | f x ≤ c + ε}),
+        IsPushout (Sigma.desc α) (Limits.Sigma.map fun p ↦ TopCat.ofHom
+            ((TopCat.diskBoundaryInclusion (manifoldMorseIndex I f p)).hom.prodMap
+              (ContinuousMap.id _)))
+          j (Sigma.desc χ) ∧
+        (∀ p, IsClosedEmbedding (α p)) ∧ Pairwise (Disjoint on fun p ↦ range (α p)) ∧
+        (∀ p s, f (α p s : M) = c - ε) ∧
+        (∀ p w, f (χ p w : M) = c + ε ↔ w.2 ∈ range
+          (TopCat.diskBoundaryInclusion (Module.finrank ℝ E - manifoldMorseIndex I f p))) ∧
+        (∀ x, (∀ p, x ∉ range (α p)) → (f (j x : M) = c + ε ↔ f (x : M) = c - ε)) ∧
+        IsClosedEmbedding j ∧
+        ∀ (Q : TopCat.{u}) (j' : TopCat.of {x | f x ≤ c - ε} ⟶ Q)
+          (χ' : ∀ p : ↥(criticalPoints I f ∩ f ⁻¹' {c}),
+            TopCat.disk.{u} (manifoldMorseIndex I f p) ⟶ Q),
+          IsPushout (Sigma.desc fun p ↦ TopCat.ofHom ((ContinuousMap.id _).prodMk
+              (ContinuousMap.const _ (diskCenter _))) ≫ α p)
+            (Limits.Sigma.map fun p ↦ TopCat.diskBoundaryInclusion (manifoldMorseIndex I f p))
+            j' (Sigma.desc χ') →
+          ∃ (Φ : Q ⟶ TopCat.of {x | f x ≤ c + ε}) (g : C(TopCat.of {x | f x ≤ c + ε}, Q)),
+            j' ≫ Φ = j ∧
+            (∀ p, χ' p ≫ Φ = TopCat.ofHom
+              ((ContinuousMap.id _).prodMk (ContinuousMap.const _ (diskCenter _))) ≫ χ p) ∧
+            range Φ = range j ∪ ⋃ p, range (fun x ↦ χ p (x, diskCenter _)) ∧
+            LeftInverse g Φ ∧ (ContinuousMap.id _).HomotopicRel (Φ.hom.comp g) (range Φ) := by
+  obtain ⟨ε, hε, hεδ, α, χ, j, hP, hemb, hdisj, hlev, htop, hbot⟩ :=
+    hf.exists_isPushout_sublevel_handles hδ hcompact
+  exact ⟨ε, hε, hεδ, α, χ, j, hP, hemb, hdisj, hlev, htop, hbot,
+    TopCat.isClosedEmbedding_of_isPushout_handles hP,
+    fun Q j' χ' hQ ↦ hP.exists_coreAttachment_deformation hQ⟩
 
 end HandlePushout
 
