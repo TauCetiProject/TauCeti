@@ -15,7 +15,7 @@ public import TauCeti.RingTheory.Iwasawa.MuInvariant
 import Mathlib.NumberTheory.Padics.RingHoms
 import Mathlib.RingTheory.Ideal.Norm.AbsNorm
 import TauCeti.RingTheory.DiscreteValuationRing.Basic
-import TauCeti.RingTheory.Iwasawa.CyclotomicGrowth
+import TauCeti.RingTheory.Iwasawa.Cyclotomic.Growth
 import TauCeti.RingTheory.Iwasawa.EulerQuotient
 import TauCeti.RingTheory.Length
 import TauCeti.RingTheory.Polynomial.Cyclotomic.PrimePow
