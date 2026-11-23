@@ -21,9 +21,12 @@ are (`DifferentiableAt.leftInverseAlong`, with `WithinAt`, `On` and global varia
 (`DifferentiableAt.id_sub_comp_leftInverseAlong` and its variants). The derivatives along a
 direction `v` are
 
-`∂ᵥ K = A⁻¹ (∂ᵥ P) Π - K (∂ᵥ L) K` (`DifferentiableAt.fderiv_leftInverseAlong`),
+`∂ᵥ K = A⁻¹ (∂ᵥ P) Π - K (∂ᵥ L) K` (`HasFDerivWithinAt.leftInverseAlong`,
+`HasFDerivAt.leftInverseAlong`, `DifferentiableAt.fderiv_leftInverseAlong`),
 
-`∂ᵥ Π = -Π (∂ᵥ L) K - L A⁻¹ (∂ᵥ P) Π` (`DifferentiableAt.fderiv_id_sub_comp_leftInverseAlong`).
+`∂ᵥ Π = -Π (∂ᵥ L) K - L A⁻¹ (∂ᵥ P) Π` (`HasFDerivWithinAt.id_sub_comp_leftInverseAlong`,
+`HasFDerivAt.id_sub_comp_leftInverseAlong`, `DifferentiableAt.fderiv_id_sub_comp_leftInverseAlong`).
+The differentiability lemmas for `K` are `fun_prop` rules.
 
 In a perturbative construction, `P` and its kernel `W` are often chosen once near a base parameter
 and then held fixed. Then `∂ᵥ P = 0` and the terms containing it vanish, and for a family of
@@ -48,9 +51,11 @@ variable {𝕜 X E F Y : Type*} [NontriviallyNormedField 𝕜]
   [NormedAddCommGroup F] [NormedSpace 𝕜 F]
   [NormedAddCommGroup Y] [NormedSpace 𝕜 Y]
   {L : X → E →L[𝕜] F} {P : X → F →L[𝕜] Y} {s : Set X} {x : X}
+  {L' : X →L[𝕜] E →L[𝕜] F} {P' : X →L[𝕜] F →L[𝕜] Y}
 
 /-- The left inverse along `ker (P x)` of a family `L x` is differentiable within a set at every
 parameter where both families are and `P x ∘ L x` is invertible. -/
+@[fun_prop]
 theorem DifferentiableWithinAt.leftInverseAlong (hL : DifferentiableWithinAt 𝕜 L s x)
     (hP : DifferentiableWithinAt 𝕜 P s x) (h : (P x ∘L L x).IsInvertible) :
     DifferentiableWithinAt 𝕜 (fun y ↦ (L y).leftInverseAlong (P y)) s x :=
@@ -59,6 +64,7 @@ theorem DifferentiableWithinAt.leftInverseAlong (hL : DifferentiableWithinAt �
 
 /-- The left inverse along `ker (P x)` of a family `L x` is differentiable at every parameter
 where both families are and `P x ∘ L x` is invertible. -/
+@[fun_prop]
 theorem DifferentiableAt.leftInverseAlong (hL : DifferentiableAt 𝕜 L x)
     (hP : DifferentiableAt 𝕜 P x) (h : (P x ∘L L x).IsInvertible) :
     DifferentiableAt 𝕜 (fun y ↦ (L y).leftInverseAlong (P y)) x :=
@@ -67,6 +73,7 @@ theorem DifferentiableAt.leftInverseAlong (hL : DifferentiableAt 𝕜 L x)
 
 /-- The left inverse along `ker (P x)` of a family `L x` is differentiable on a set on which both
 families are differentiable and every `P x ∘ L x` is invertible. -/
+@[fun_prop]
 theorem DifferentiableOn.leftInverseAlong (hL : DifferentiableOn 𝕜 L s)
     (hP : DifferentiableOn 𝕜 P s) (h : ∀ x ∈ s, (P x ∘L L x).IsInvertible) :
     DifferentiableOn 𝕜 (fun y ↦ (L y).leftInverseAlong (P y)) s :=
@@ -74,6 +81,7 @@ theorem DifferentiableOn.leftInverseAlong (hL : DifferentiableOn 𝕜 L s)
 
 /-- The left inverse along `ker (P x)` of a differentiable family `L x` is differentiable when `P`
 is differentiable and every `P x ∘ L x` is invertible. -/
+@[fun_prop]
 theorem Differentiable.leftInverseAlong (hL : Differentiable 𝕜 L) (hP : Differentiable 𝕜 P)
     (h : ∀ x, (P x ∘L L x).IsInvertible) :
     Differentiable 𝕜 (fun y ↦ (L y).leftInverseAlong (P y)) :=
@@ -114,6 +122,67 @@ theorem Differentiable.id_sub_comp_leftInverseAlong (hL : Differentiable 𝕜 L)
       (fun y ↦ ContinuousLinearMap.id 𝕜 F - L y ∘L (L y).leftInverseAlong (P y)) :=
   fun x ↦ (hL x).id_sub_comp_leftInverseAlong (hP x) (h x)
 
+/-- The derivative within a set of the left inverse `K = A⁻¹ P`, `A = P L`, of `L` along `ker P`
+at a parameter where `A` is invertible: along a direction `v`, it is
+`A⁻¹ (∂ᵥ P) (1 - L K) - K (∂ᵥ L) K`. -/
+theorem HasFDerivWithinAt.leftInverseAlong (hL : HasFDerivWithinAt L L' s x)
+    (hP : HasFDerivWithinAt P P' s x) (h : (P x ∘L L x).IsInvertible) :
+    HasFDerivWithinAt (fun y ↦ (L y).leftInverseAlong (P y))
+      ((compL 𝕜 F Y E (P x ∘L L x).inverse ∘L
+          (compL 𝕜 F F Y).flip (.id 𝕜 F - L x ∘L (L x).leftInverseAlong (P x))) ∘L P' -
+        (compL 𝕜 F F E ((L x).leftInverseAlong (P x)) ∘L
+          (compL 𝕜 F E F).flip ((L x).leftInverseAlong (P x))) ∘L L') s x := by
+  have hA := (hasFDerivAt_id (P x ∘L L x)).clm_inverse_of_completeSpace (𝕜 := 𝕜) h
+  simp only [leftInverseAlong_def]
+  refine ((hA.comp_hasFDerivWithinAt x (hP.clm_comp hL)).clm_comp hP).congr_fderiv ?_
+  ext v f
+  simp only [add_apply, sub_apply, neg_apply, coe_comp, Function.comp_apply, compL_apply,
+    flip_apply, id_apply, map_sub, map_add, bilinearRestrictScalars_apply_apply, _root_.id_eq]
+  abel
+
+/-- The derivative of the left inverse `K = A⁻¹ P`, `A = P L`, of `L` along `ker P` at a
+parameter where `A` is invertible: along a direction `v`, it is
+`A⁻¹ (∂ᵥ P) (1 - L K) - K (∂ᵥ L) K`. -/
+theorem HasFDerivAt.leftInverseAlong (hL : HasFDerivAt L L' x) (hP : HasFDerivAt P P' x)
+    (h : (P x ∘L L x).IsInvertible) :
+    HasFDerivAt (fun y ↦ (L y).leftInverseAlong (P y))
+      ((compL 𝕜 F Y E (P x ∘L L x).inverse ∘L
+          (compL 𝕜 F F Y).flip (.id 𝕜 F - L x ∘L (L x).leftInverseAlong (P x))) ∘L P' -
+        (compL 𝕜 F F E ((L x).leftInverseAlong (P x)) ∘L
+          (compL 𝕜 F E F).flip ((L x).leftInverseAlong (P x))) ∘L L') x :=
+  hasFDerivWithinAt_univ.1 <| hL.hasFDerivWithinAt.leftInverseAlong hP.hasFDerivWithinAt h
+
+/-- The derivative within a set of the Lyapunov–Schmidt projections `Π = 1 - L A⁻¹ P`, `A = P L`,
+at a parameter where `A` is invertible: along a direction `v`, it is
+`-Π (∂ᵥ L) A⁻¹ P - L A⁻¹ (∂ᵥ P) Π`. -/
+theorem HasFDerivWithinAt.id_sub_comp_leftInverseAlong (hL : HasFDerivWithinAt L L' s x)
+    (hP : HasFDerivWithinAt P P' s x) (h : (P x ∘L L x).IsInvertible) :
+    HasFDerivWithinAt
+      (fun y ↦ ContinuousLinearMap.id 𝕜 F - L y ∘L (L y).leftInverseAlong (P y))
+      (-((compL 𝕜 F F F (.id 𝕜 F - L x ∘L (L x).leftInverseAlong (P x)) ∘L
+          (compL 𝕜 F E F).flip ((L x).leftInverseAlong (P x))) ∘L L') -
+        (compL 𝕜 F E F (L x) ∘L compL 𝕜 F Y E (P x ∘L L x).inverse ∘L
+          (compL 𝕜 F F Y).flip (.id 𝕜 F - L x ∘L (L x).leftInverseAlong (P x))) ∘L P') s x := by
+  refine ((hL.clm_comp (hL.leftInverseAlong hP h)).const_sub (.id 𝕜 F)).congr_fderiv ?_
+  ext v f
+  simp only [add_apply, sub_apply, neg_apply, coe_comp, Function.comp_apply, compL_apply,
+    flip_apply, id_apply, map_sub]
+  abel
+
+/-- The derivative of the Lyapunov–Schmidt projections `Π = 1 - L A⁻¹ P`, `A = P L`, at a
+parameter where `A` is invertible: along a direction `v`, it is
+`-Π (∂ᵥ L) A⁻¹ P - L A⁻¹ (∂ᵥ P) Π`. -/
+theorem HasFDerivAt.id_sub_comp_leftInverseAlong (hL : HasFDerivAt L L' x)
+    (hP : HasFDerivAt P P' x) (h : (P x ∘L L x).IsInvertible) :
+    HasFDerivAt
+      (fun y ↦ ContinuousLinearMap.id 𝕜 F - L y ∘L (L y).leftInverseAlong (P y))
+      (-((compL 𝕜 F F F (.id 𝕜 F - L x ∘L (L x).leftInverseAlong (P x)) ∘L
+          (compL 𝕜 F E F).flip ((L x).leftInverseAlong (P x))) ∘L L') -
+        (compL 𝕜 F E F (L x) ∘L compL 𝕜 F Y E (P x ∘L L x).inverse ∘L
+          (compL 𝕜 F F Y).flip (.id 𝕜 F - L x ∘L (L x).leftInverseAlong (P x))) ∘L P') x :=
+  hasFDerivWithinAt_univ.1 <|
+    hL.hasFDerivWithinAt.id_sub_comp_leftInverseAlong hP.hasFDerivWithinAt h
+
 /-- The derivative of the left inverse `K = A⁻¹ P`, `A = P L`, of `L` along `ker P` for
 differentiable families, along a direction `v`, at a parameter where `A` is invertible:
 `∂ᵥ K = A⁻¹ (∂ᵥ P) (1 - L K) - K (∂ᵥ L) K`. -/
@@ -122,15 +191,8 @@ theorem DifferentiableAt.fderiv_leftInverseAlong (hL : DifferentiableAt 𝕜 L x
     fderiv 𝕜 (fun y ↦ (L y).leftInverseAlong (P y)) x v =
       (P x ∘L L x).inverse ∘L fderiv 𝕜 P x v ∘L (.id 𝕜 F - L x ∘L (L x).leftInverseAlong (P x)) -
         (L x).leftInverseAlong (P x) ∘L fderiv 𝕜 L x v ∘L (L x).leftInverseAlong (P x) := by
-  have hA : DifferentiableAt 𝕜 (fun y ↦ P y ∘L L y) x := hP.clm_comp hL
-  simp only [leftInverseAlong_def]
-  rw [fderiv_clm_comp (hA.clm_inverse_of_completeSpace h) hP]
-  simp only [add_apply, coe_comp, Function.comp_apply, compL_apply, flip_apply]
-  rw [hA.fderiv_clm_inverse h, fderiv_clm_comp hP hL]
-  ext f
-  simp only [add_apply, sub_apply, neg_apply, coe_comp, Function.comp_apply, compL_apply,
-    flip_apply, id_apply, map_sub, map_add]
-  abel
+  rw [(hL.hasFDerivAt.leftInverseAlong hP.hasFDerivAt h).fderiv]
+  simp only [sub_apply, coe_comp, Function.comp_apply, compL_apply, flip_apply]
 
 /-- The derivative of the Lyapunov–Schmidt projections `Π = 1 - L A⁻¹ P`, `A = P L`, of
 differentiable families along a direction `v`, at a parameter where `A` is invertible:
@@ -142,9 +204,5 @@ theorem DifferentiableAt.fderiv_id_sub_comp_leftInverseAlong (hL : Differentiabl
           (L x).leftInverseAlong (P x)) -
         L x ∘L (P x ∘L L x).inverse ∘L fderiv 𝕜 P x v ∘L
           (.id 𝕜 F - L x ∘L (L x).leftInverseAlong (P x)) := by
-  rw [fderiv_const_sub, fderiv_clm_comp hL (hL.leftInverseAlong hP h)]
-  simp only [neg_apply, add_apply, coe_comp, Function.comp_apply, compL_apply, flip_apply]
-  rw [hL.fderiv_leftInverseAlong hP h]
-  ext f
-  simp only [add_apply, sub_apply, neg_apply, coe_comp, Function.comp_apply, id_apply, map_sub]
-  abel
+  rw [(hL.hasFDerivAt.id_sub_comp_leftInverseAlong hP.hasFDerivAt h).fderiv]
+  simp only [sub_apply, neg_apply, coe_comp, Function.comp_apply, compL_apply, flip_apply]
