@@ -11,6 +11,7 @@ public import Mathlib.NumberTheory.Padics.Complex
 public import Mathlib.NumberTheory.Padics.RingHoms
 public import TauCeti.Topology.Algebra.Valued.ResidueField
 import Mathlib.Topology.Algebra.Valued.LocallyCompact
+import TauCeti.NumberTheory.Padics.Basic
 import TauCeti.Topology.Algebra.Valued.Integer
 
 /-!
@@ -64,14 +65,14 @@ theorem norm_coeff_minpoly_le_one {x : PadicAlgCl p} (hx : ‖x‖ ≤ 1) (n : �
 
 /-- The integers `ℤ_p` sit inside the valuation ring of `PadicAlgCl p`. -/
 noncomputable def padicIntToInteger (p : ℕ) [Fact p.Prime] : ℤ_[p] →+* 𝒪[PadicAlgCl p] :=
-  ((algebraMap ℚ_[p] (PadicAlgCl p)).comp (PadicInt.Coe.ringHom (p := p))).codRestrict _
-    fun x ↦ Valued.integer.mem_iff.2 (by simpa [norm_extends] using x.norm_le_one)
+  (TauCeti.padicIntAlgebraMap p (PadicAlgCl p)).codRestrict _
+    fun x ↦ Valued.integer.mem_iff.2 (TauCeti.norm_padicIntAlgebraMap_le_one norm_one.le x)
 
 /-- `PadicAlgCl.padicIntToInteger` is the inclusion `ℤ_p ⊆ ℚ_p ⊆ PadicAlgCl p`. -/
 @[simp]
 theorem coe_padicIntToInteger (x : ℤ_[p]) :
     (padicIntToInteger p x : PadicAlgCl p) = algebraMap ℚ_[p] (PadicAlgCl p) x :=
-  (rfl)
+  TauCeti.padicIntAlgebraMap_apply x
 
 /-- The prime `p` lies in the maximal ideal of `𝒪[PadicAlgCl p]`. -/
 theorem residue_natCast_p : residue 𝒪[PadicAlgCl p] (p : 𝒪[PadicAlgCl p]) = 0 :=
@@ -112,12 +113,12 @@ instance instIsAlgebraicZModResidueField : Algebra.IsAlgebraic (ZMod p) 𝓀[Pad
     (minpoly.monic (Algebra.IsIntegral.isIntegral _))
   have hQx : Q.eval₂ (padicIntToInteger p) x = 0 := by
     have hι : (𝒪[PadicAlgCl p]).subtype.comp (padicIntToInteger p) =
-        (algebraMap ℚ_[p] (PadicAlgCl p)).comp PadicInt.Coe.ringHom :=
-      RingHom.ext coe_padicIntToInteger
+        TauCeti.padicIntAlgebraMap p (PadicAlgCl p) :=
+      (rfl)
     apply Subring.subtype_injective
     have := minpoly.aeval ℚ_[p] (x : PadicAlgCl p)
     rw [← hQ, aeval_def, eval₂_map] at this
-    rw [map_zero, hom_eval₂, hι, Subring.subtype_apply, this]
+    rw [map_zero, hom_eval₂, hι, TauCeti.padicIntAlgebraMap_def, Subring.subtype_apply, this]
   have hcomp : (algebraMap (ZMod p) 𝓀[PadicAlgCl p]).comp PadicInt.toZMod =
       (residue 𝒪[PadicAlgCl p]).comp (padicIntToInteger p) :=
     RingHom.ext fun z ↦ (residue_padicIntToInteger z).symm

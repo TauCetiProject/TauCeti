@@ -86,10 +86,8 @@ theorem det_reduction_apply [Module.Free A M] (ρ : ContinuousRep Γ A M) (g : �
 /-- **Finite image.** Over a finite residue field, the reduction of a continuous representation
 takes only finitely many values. -/
 theorem finite_range_reduction [Finite (ResidueField A)] (ρ : ContinuousRep Γ A M) :
-    (Set.range (ρ.reduction : Γ → Module.End (ResidueField A) (ResidueField A ⊗[A] M))).Finite := by
+    (Set.range (ρ.reduction : Γ → Module.End (ResidueField A) (ResidueField A ⊗[A] M))).Finite :=
   have : Finite (ResidueField A ⊗[A] M) := Module.finite_of_finite (ResidueField A)
-  have : Finite (Module.End (ResidueField A) (ResidueField A ⊗[A] M)) :=
-    Module.finite_of_finite (ResidueField A)
-  exact Set.toFinite _
+  finite_range _
 
 end TauCeti.ContinuousRep
