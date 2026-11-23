@@ -47,8 +47,9 @@ value can vanish when a Gamma factor has a pole.
 * `Complex.eulerIntegral` — Euler's normalized integral representation.
 * `Complex.analyticOnNhd_eulerIntegral` — joint holomorphy in `(a, z)` on
   `{p | 1 - p.2 ∈ slitPlane}` when `0 < b.re < c.re`.
-* `Complex.eulerIntegral_neg_natCast` — agreement with `regularizedGaussHGFun (-n) b c z` at
-  every complex `z` when `0 < b.re < c.re` (DLMF 15.2.4).
+* `Complex.eulerIntegral_neg_natCast` — Euler-integral representation of the regularized
+  terminating polynomial `regularizedGaussHGFun (-n) b c z` (regularized form of DLMF 15.2.4) at
+  every complex `z` when `0 < b.re < c.re`.
 * `Complex.regularizedGaussHGFun_eq_eulerIntegral` — `𝐅(a, b; c; z) = eulerIntegral a b c z` on
   `‖z‖ < 1` when `0 < b.re < c.re` (DLMF 15.6.1).
 * `Complex.eulerIntegral_one` — `eulerIntegral a b c 1 = Γ(c - a - b) / (Γ(c - a) Γ(c - b))` when

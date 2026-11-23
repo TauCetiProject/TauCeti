@@ -6,6 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Complex.Convex
+import TauCeti.Algebra.Field.LinearFractional
+import TauCeti.Analysis.Complex.Basic
 
 /-!
 # Geometry of the complex slit plane
@@ -60,7 +62,8 @@ preserved under scaling by `[0, 1]`. So, for every `m`, the pullback
 * `TauCeti.mem_slitPlane_of_norm_one_sub_lt_one_add`,
   `TauCeti.div_mem_slitPlane_of_norm_sub_lt_add`
 * `TauCeti.div_mem_slitPlane_of_re_conj_mul_pos`
-* `TauCeti.re_pos_of_norm_sub_one_lt_one`, `TauCeti.one_sub_div_re_pos`
+* `TauCeti.re_pos_of_norm_sub_one_lt_one`, `TauCeti.one_sub_div_re_pos`,
+  `TauCeti.one_sub_inv_mem_slitPlane`
 * `TauCeti.div_mem_slitPlane_of_re_pos`, `…_of_re_neg`, `…_of_im_pos`, `…_of_im_neg`
 * `TauCeti.mul_mem_slitPlane_of_re_pos`
 * `TauCeti.ofReal_mul_mem_slitPlane`, `TauCeti.div_ofReal_mem_slitPlane`
@@ -172,11 +175,7 @@ theorem one_sub_div_re_pos {z z₀ : ℂ} (h : ‖z₀‖ < ‖z - z₀‖) :
     rw [hinv]
     exact re_pos_of_norm_sub_one_lt_one <| by
       rwa [add_sub_cancel_left, norm_div, div_lt_one hzz₀_pos]
-  have hne : (1 - z₀ / z)⁻¹ ≠ 0 := by
-    intro h0
-    simp [h0] at hinv_re
-  rw [← inv_inv (1 - z₀ / z), inv_re]
-  exact div_pos hinv_re (normSq_pos.mpr hne)
+  exact Complex.inv_re_pos.mp hinv_re
 
 /-- Two points in the right half-plane have their ratio in the slit plane. -/
 theorem div_mem_slitPlane_of_re_pos {z₁ z₂ : ℂ} (h₁ : 0 < z₁.re) (h₂ : 0 < z₂.re) :
@@ -190,6 +189,31 @@ theorem mul_mem_slitPlane_of_re_pos {z₁ z₂ : ℂ} (h₁ : 0 < z₁.re) (h₂
     rw [inv_re]
     exact div_pos h₂ (normSq_pos.mpr (by rintro rfl; simp at h₂))
   simpa using div_mem_slitPlane_of_re_pos hi h₁
+
+/-- Under the exterior condition `max ‖z₀‖ ‖z₀ - 1‖ < ‖z - z₀‖`, the inverse argument `z⁻¹`
+stays off the branch cut `[1, ∞)`, i.e., `1 - z⁻¹ ∈ Complex.slitPlane`. -/
+theorem one_sub_inv_mem_slitPlane {z z₀ : ℂ} (h : max ‖z₀‖ ‖z₀ - 1‖ < ‖z - z₀‖) :
+    1 - z⁻¹ ∈ slitPlane := by
+  by_cases hz₀ : z₀ = 0
+  · subst hz₀
+    have hz1 : 1 < ‖z‖ := by simpa using h
+    exact mem_slitPlane_iff.mpr (Or.inl (re_pos_of_norm_sub_one_lt_one
+      (by rw [sub_sub_cancel_left, norm_neg, norm_inv]; exact inv_lt_one_of_one_lt₀ hz1)))
+  · have h_ext : ‖z₀‖ < ‖z - z₀‖ := (le_max_left _ _).trans_lt h
+    have h_ext1 : ‖z₀ - 1‖ < ‖z - z₀‖ := (le_max_right _ _).trans_lt h
+    have hzz₀_pos : 0 < ‖z - z₀‖ := (norm_nonneg z₀).trans_lt h_ext
+    have hzz₀ : z ≠ z₀ := sub_ne_zero.mp (norm_pos_iff.mp hzz₀_pos)
+    have hz_ne : z ≠ 0 := by
+      rintro rfl
+      exact lt_irrefl ‖z₀‖ (by simpa only [zero_sub, norm_neg] using h_ext)
+    have hfact := one_sub_div_mul_one_sub_mul_inv_one_sub_div hz_ne hz₀ hzz₀ (1 : ℂ)
+    simp only [mul_one] at hfact
+    rw [← hfact]
+    refine mul_mem_slitPlane_of_re_pos (one_sub_div_re_pos h_ext) ?_
+    refine re_pos_of_norm_sub_one_lt_one ?_
+    rw [sub_sub_cancel_left, norm_neg, ← mul_one z₀⁻¹,
+      one_sub_inv_mul_mul_inv_one_sub_div hz₀ (1 : ℂ), norm_div, norm_sub_rev z₀ z]
+    exact (div_lt_one hzz₀_pos).mpr h_ext1
 
 /-- Two points in the left half-plane have their ratio in the slit plane. -/
 theorem div_mem_slitPlane_of_re_neg {z₁ z₂ : ℂ} (h₁ : z₁.re < 0) (h₂ : z₂.re < 0) :
