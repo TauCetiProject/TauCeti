@@ -63,6 +63,8 @@ reflection `θ ↦ -θ`.
 
 * `AddCircle.diffeotopyOfLift_final_apply_coe`: every orientation-preserving `C^n` diffeomorphism
   of the circle, `n ≠ 0`, presented by a lift, is the final map of a diffeotopy.
+* `AddCircle.exists_diffeotopyOfLift_apply_coe_eq`: every interpolation `x ↦ x + s * (F x - x)`,
+  `s ∈ [0, 1]`, is a time slice of this diffeotopy.
 * `Diffeomorph.exists_diffeotopy_final_eq_or_final_eq_comp_neg`: every `C^n` diffeomorphism `φ` of
   the circle, `n ≠ 0`, is the final map of a diffeotopy, or `φ ∘ (θ ↦ -θ)` is.
 * `AddCircle.collarDiffeomorphOfLift_apply_coe_of_nonpos` and
@@ -279,6 +281,19 @@ theorem diffeotopyOfLift_final_apply_coe (x : ℝ) :
     (diffeotopyOfLift hF hn hper hpos).final x = (F x : AddCircle T) := by
   rw [TauCeti.Diffeotopy.final_apply, diffeotopyOfLift_apply_coe, Set.Icc.coe_one, mul_one,
     Real.sin_pi_div_two, one_pow, one_mul, add_sub_cancel]
+
+/-- Every interpolation weight `s ∈ [0, 1]` occurs along the diffeotopy `diffeotopyOfLift`: at some
+time `t` it is the circle map with lift `x ↦ x + s * (F x - x)`. -/
+theorem exists_diffeotopyOfLift_apply_coe_eq {s : ℝ} (hs : s ∈ Icc (0 : ℝ) 1) :
+    ∃ t : I, ∀ x : ℝ, diffeotopyOfLift hF hn hper hpos (t, (x : AddCircle T)) =
+      ((x + s * (F x - x) : ℝ) : AddCircle T) := by
+  -- The weight rises continuously from `0` to `1`, so it takes the value `s`.
+  have hends : Icc (sinSqWeight 0) (sinSqWeight 1) = Icc 0 1 := by
+    simp [sinSqWeight]
+  obtain ⟨t, ht, hts⟩ := intermediate_value_Icc zero_le_one
+    (contDiff_sinSqWeight (n := 0)).continuous.continuousOn (hends ▸ hs)
+  refine ⟨⟨t, ht⟩, fun x ↦ ?_⟩
+  rw [diffeotopyOfLift_apply_coe, ← hts, sinSqWeight]
 
 end Interpolation
 
