@@ -64,9 +64,12 @@ functions; on sets, it is the degree of the computable sets.
 * `ComputablePred.oracle_turingReducible`: a computable set reduces to every oracle.
 * `Set.oracle_compl_turingEquivalent`, `Set.toAntisymmetrization_oracle_compl`: a set and its
   complement are Turing equivalent, and have the same degree.
-* `ManyOneEquiv.turingEquivalent_oracle`: many-one equivalent sets are Turing equivalent.
+* `ManyOneEquiv.turingEquivalent_oracle`, `ManyOneEquiv.toAntisymmetrization_oracle_eq`:
+  many-one equivalent sets are Turing equivalent, and have the same degree.
 * `Set.oracle_preimage_turingReducible`, `Set.oracle_preimage_turingEquivalent`,
-  `Set.oracle_image_turingEquivalent`: computable changes of presentation.
+  `Set.oracle_image_turingEquivalent`, `Set.toAntisymmetrization_oracle_preimage_equiv`,
+  `Set.toAntisymmetrization_oracle_image_equiv`: computable changes of presentation preserve
+  the degree.
 * `Set.oracle_inter_pairColumn_turingEquivalent`,
   `Set.toAntisymmetrization_oracle_inter_pairColumn`: the part of a set in a column is Turing
   equivalent to the corresponding section, and has the same degree.
@@ -269,6 +272,13 @@ theorem ManyOneEquiv.turingEquivalent_oracle {A B : Set ℕ} (h : ManyOneEquiv (
     TuringEquivalent A.oracle B.oracle :=
   ⟨h.1.turingReducible_oracle, h.2.turingReducible_oracle⟩
 
+/-- Many-one equivalent sets of naturals have the same Turing degree. -/
+theorem ManyOneEquiv.toAntisymmetrization_oracle_eq {A B : Set ℕ}
+    (h : ManyOneEquiv (· ∈ A) (· ∈ B)) :
+    toAntisymmetrization TuringReducible A.oracle =
+      toAntisymmetrization TuringReducible B.oracle :=
+  (toAntisymmetrization_eq TuringReducible _ _).2 h.turingEquivalent_oracle
+
 /-! ### Computable changes of presentation and columns -/
 
 namespace Set
@@ -284,11 +294,25 @@ theorem oracle_preimage_turingEquivalent (A : Set ℕ) {e : ℕ ≃ ℕ} (he : e
     TuringEquivalent (e ⁻¹' A).oracle A.oracle :=
   (ManyOneEquiv.of_equiv (p := (· ∈ A)) he).turingEquivalent_oracle
 
+/-- The preimage of a set under a computable permutation of the naturals has the degree of the
+set. -/
+theorem toAntisymmetrization_oracle_preimage_equiv (A : Set ℕ) {e : ℕ ≃ ℕ} (he : e.Computable) :
+    toAntisymmetrization TuringReducible (e ⁻¹' A).oracle =
+      toAntisymmetrization TuringReducible A.oracle :=
+  (toAntisymmetrization_eq TuringReducible _ _).2 (A.oracle_preimage_turingEquivalent he)
+
 /-- The image of a set under a computable permutation of the naturals is Turing equivalent to the
 set. -/
 theorem oracle_image_turingEquivalent (A : Set ℕ) {e : ℕ ≃ ℕ} (he : e.Computable) :
     TuringEquivalent (e '' A).oracle A.oracle :=
   e.image_eq_preimage_symm A ▸ A.oracle_preimage_turingEquivalent he.symm
+
+/-- The image of a set under a computable permutation of the naturals has the degree of the
+set. -/
+theorem toAntisymmetrization_oracle_image_equiv (A : Set ℕ) {e : ℕ ≃ ℕ} (he : e.Computable) :
+    toAntisymmetrization TuringReducible (e '' A).oracle =
+      toAntisymmetrization TuringReducible A.oracle :=
+  (toAntisymmetrization_eq TuringReducible _ _).2 (A.oracle_image_turingEquivalent he)
 
 /-- **Computable invariance of columns.** The part of a set lying in the column
 `e.pairColumn = {⟨x, e⟩ | x : ℕ}` is Turing equivalent to its `e`-th section
