@@ -417,6 +417,14 @@ theorem hamiltonianVectorField_add {x : M} (hf : MDifferentiableAt I 𝓘(ℝ) f
       σ.hamiltonianVectorField f x + σ.hamiltonianVectorField g x := by
   simp [hamiltonianVectorField_def, mvfderiv_add hf hg]
 
+/-- **The Leibniz rule for Hamiltonian vector fields**: `X_{fg} = f X_g + g X_f` at points where
+`f` and `g` are differentiable. -/
+theorem hamiltonianVectorField_mul {x : M} (hf : MDifferentiableAt I 𝓘(ℝ) f x)
+    (hg : MDifferentiableAt I 𝓘(ℝ) g x) :
+    σ.hamiltonianVectorField (f * g) x =
+      f x • σ.hamiltonianVectorField g x + g x • σ.hamiltonianVectorField f x := by
+  simp [hamiltonianVectorField_def, mvfderiv_mul hf hg]
+
 /-- The Hamiltonian vector field of `-f` is the opposite of that of `f`. -/
 @[simp]
 theorem hamiltonianVectorField_neg (x : M) :
