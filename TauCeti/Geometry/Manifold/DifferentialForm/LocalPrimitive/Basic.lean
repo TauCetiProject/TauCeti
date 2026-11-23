@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Analysis.Calculus.LocalPotentials
 public import TauCeti.Geometry.Manifold.DifferentialForm.MapCoeff
 public import TauCeti.Geometry.Manifold.MFDeriv.Constancy
 public import Mathlib.Geometry.Manifold.LocalDiffeomorph
@@ -58,16 +59,19 @@ manifolds and the period homomorphism of a closed `1`-form on the fundamental gr
   of primitives of `φ` is a primitive of `φ`.
 * `TauCeti.forall_exists_isPrimitiveOn_iff_of_openCover`: having local primitives is local on open
   covers, read on the open submanifolds.
-* `TauCeti.isPrimitiveOn_ofSubsingleton_iff`, `TauCeti.IsPrimitiveOn.hasFDerivAt_symm`: on a real
-  normed space, `IsPrimitiveOn` matches pointwise `HasFDerivAt` on an open set, and the derivative
-  of a differentiable covector field with a local primitive is symmetric.
+* `TauCeti.isPrimitiveOn_ofSubsingleton_iff`,
+  `TauCeti.HasLocalPotentials.forall_exists_isPrimitiveOn`,
+  `TauCeti.hasLocalPotentials_iff_forall_exists_isPrimitiveOn`,
+  `TauCeti.IsPrimitiveOn.hasFDerivAt_symm`: on a real normed space, `IsPrimitiveOn` matches
+  pointwise `HasFDerivAt` on an open set, connects with `TauCeti.HasLocalPotentials`, and the
+  derivative of a differentiable covector field with a local primitive is symmetric.
 * `TauCeti.PrimitiveSpace φ`: the space of points and values with the topology of local primitives.
 * `TauCeti.PrimitiveSpace.isCoveringMap_proj_of_forall_exists_isPrimitiveOn`: its projection is a
   covering map when `φ` has a primitive near every point.
 * `TauCeti.PrimitiveSpace.eventually_value_eq_add_const` and
-  `TauCeti.PrimitiveSpace.exists_isPrimitiveOn_eventually_value_eq_of_localPrimitives`: near each
-  parameter, a continuous map into `PrimitiveSpace φ` runs along the graph of a translate of a
-  local primitive.
+  `TauCeti.PrimitiveSpace.exists_isPrimitiveOn_eventually_value_eq_of_forall_exists_isPrimitiveOn`:
+  near each parameter, a continuous map into `PrimitiveSpace φ` runs along the graph of a translate
+  of a local primitive.
 
 ## References
 
@@ -433,6 +437,47 @@ theorem IsPrimitiveOn.hasFDerivAt_symm {α : E → E →L[ℝ] F} {A : E →L[�
   exact second_derivative_symmetric_of_eventually_of_real
     (Filter.eventually_of_mem (hg.1.mem_nhds hx) hg.2) hα v w
 
+/-- A covector field with local `C¹` potentials (`TauCeti.HasLocalPotentials`) has local
+primitives as a `1`-form on `E`. -/
+theorem HasLocalPotentials.forall_exists_isPrimitiveOn {s : Set E} {α : E → E →L[ℝ] F}
+    (hα : HasLocalPotentials s α) :
+    ∀ x ∈ s, ∃ (g : E → F) (U : Set E), x ∈ U ∧
+      IsPrimitiveOn (I := 𝓘(ℝ, E))
+        ((fun p ↦ ContinuousAlternatingMap.ofSubsingleton ℝ E F (0 : Fin 1) (α p)) :
+          RoughForm 𝓘(ℝ, E) E F 1) g U := by
+  intro x hx
+  obtain ⟨r, hr, -, g, -, hd⟩ := hasLocalPotentials_iff.mp hα x hx
+  exact ⟨g, Metric.ball x r, Metric.mem_ball_self hr,
+    isPrimitiveOn_ofSubsingleton_iff.mpr ⟨Metric.isOpen_ball, hd⟩⟩
+
+/-- On an open domain `s`, a continuous covector field `α : E → E →L[ℝ] F` has local `C¹`
+potentials (`TauCeti.HasLocalPotentials`) if and only if its associated `1`-form has local
+primitives at every point of `s`. -/
+theorem hasLocalPotentials_iff_forall_exists_isPrimitiveOn {s : Set E} {α : E → E →L[ℝ] F}
+    (hs : IsOpen s) (hα : ContinuousOn α s) :
+    HasLocalPotentials s α ↔
+      ∀ x ∈ s, ∃ (g : E → F) (U : Set E), x ∈ U ∧
+        IsPrimitiveOn (I := 𝓘(ℝ, E))
+          ((fun p ↦ ContinuousAlternatingMap.ofSubsingleton ℝ E F (0 : Fin 1) (α p)) :
+            RoughForm 𝓘(ℝ, E) E F 1) g U := by
+  refine ⟨HasLocalPotentials.forall_exists_isPrimitiveOn, fun h ↦
+    hasLocalPotentials_iff.mpr fun x hx ↦ ?_⟩
+  obtain ⟨g, U, hxU, hgU⟩ := h x hx
+  obtain ⟨hU, hd⟩ := isPrimitiveOn_ofSubsingleton_iff.mp hgU
+  obtain ⟨r, hr, hrs⟩ := Metric.isOpen_iff.mp (hU.inter hs) x ⟨hxU, hx⟩
+  have hbrU : Metric.ball x r ⊆ U := hrs.trans inter_subset_left
+  have hbrs : Metric.ball x r ⊆ s := hrs.trans inter_subset_right
+  have hd_ball : ∀ y ∈ Metric.ball x r, HasFDerivAt g (α y) y := fun y hy ↦ hd y (hbrU hy)
+  have hc_fderiv : ContinuousOn (fun y ↦ fderivWithin ℝ g (Metric.ball x r) y) (Metric.ball x r) :=
+    (hα.mono hbrs).congr fun y hy ↦ by
+      rw [(hd_ball y hy).differentiableAt.fderivWithin (Metric.isOpen_ball.uniqueDiffWithinAt hy),
+        (hd_ball y hy).fderiv]
+  have hg_c1 : ContDiffOn ℝ 1 g (Metric.ball x r) :=
+    contDiffOn_succ_of_fderivWithin
+      (fun y hy ↦ (hd_ball y hy).differentiableAt.differentiableWithinAt)
+      (by simp) (contDiffOn_zero.mpr hc_fderiv)
+  exact ⟨r, hr, hbrs, g, hg_c1, hd_ball⟩
+
 end NormedSpace
 
 /-! ### Uniqueness up to a constant -/
@@ -666,13 +711,27 @@ theorem isCoveringMap_proj_of_forall_exists_isPrimitiveOn [IsManifold I 1 M]
 
 /-- Near each parameter `t`, a continuous map `Γ` into `PrimitiveSpace φ`, for a form `φ` with
 local primitives, runs along the graph of a translate `g + c` of a local primitive `g` of `φ`. -/
-theorem exists_isPrimitiveOn_eventually_value_eq_of_localPrimitives
+theorem exists_isPrimitiveOn_eventually_value_eq_of_forall_exists_isPrimitiveOn
     (hφ : ∀ x : M, ∃ (g : M → F) (U : Set M), x ∈ U ∧ IsPrimitiveOn φ g U)
     {X : Type*} [TopologicalSpace X] {Γ : X → PrimitiveSpace φ} {t : X} (hΓ : ContinuousAt Γ t) :
     ∃ (g : M → F) (U : Set M), proj φ (Γ t) ∈ U ∧ IsPrimitiveOn φ g U ∧
       ∃ c : F, ∀ᶠ s in 𝓝 t, proj φ (Γ s) ∈ U ∧ value φ (Γ s) = g (proj φ (Γ s)) + c := by
   obtain ⟨g, U, hxU, hgU⟩ := hφ (proj φ (Γ t))
   exact ⟨g, U, hxU, hgU, _, eventually_value_eq_add_const hΓ hgU hxU⟩
+
+/-- A map `t ↦ graph φ (fun _ ↦ v t) (γ t)` into `PrimitiveSpace φ` is continuous when `γ` is
+continuous and, near each parameter `t₀`, `v` agrees with a translate of a local primitive of `φ`
+along `γ`. -/
+theorem continuous_graph_of_forall_exists_isPrimitiveOn_eventuallyEq [IsManifold I 1 M]
+    {X : Type*} [TopologicalSpace X] {γ : X → M} {v : X → F} (hγ : Continuous γ)
+    (hv : ∀ t₀ : X, ∃ (g : M → F) (U : Set M), γ t₀ ∈ U ∧ IsPrimitiveOn φ g U ∧
+      ∃ c : F, ∀ᶠ s in 𝓝 t₀, v s = g (γ s) + c) :
+    Continuous (fun t ↦ graph φ (fun _ ↦ v t) (γ t)) := by
+  refine continuous_iff_continuousAt.mpr fun t₀ ↦ ?_
+  obtain ⟨g, U, hxU, hgU, c, hc⟩ := hv t₀
+  exact continuousAt_of_eventually_value_eq
+    (by simp only [proj_graph]; exact hγ.continuousAt) (hgU.add_const c)
+    (by simpa only [proj_graph] using hxU) (by simpa only [value_graph, proj_graph] using hc)
 
 end PrimitiveSpace
 

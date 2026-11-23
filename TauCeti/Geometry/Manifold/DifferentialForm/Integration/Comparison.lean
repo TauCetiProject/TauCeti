@@ -47,26 +47,25 @@ theorem continuousPathIntegral_eq_pathIntegral [IsManifold I 1 M] [CompleteSpace
   have hint := hφ₀.intervalIntegrable_apply_curveVelocity hc
   let Γ (t : unitInterval) : PrimitiveSpace φ :=
     PrimitiveSpace.graph φ (fun _ ↦ pathIntegral φ c 0 t) (γ t)
-  have hΓ : Continuous Γ := continuous_iff_continuousAt.mpr fun t₀ ↦ by
-    obtain ⟨g, U, hxU, hgU⟩ := hφ (c t₀)
-    obtain ⟨δ, hδ, hball⟩ :=
-      Metric.isOpen_iff.mp (hgU.isOpen.preimage hc.continuous) (t₀ : ℝ) hxU
-    refine PrimitiveSpace.continuousAt_of_eventually_value_eq
-      (by simp only [Γ, PrimitiveSpace.proj_graph]; exact γ.continuous.continuousAt)
-      (hgU.add_const (pathIntegral φ c 0 t₀ - g (c t₀)))
-      (by simp only [Γ, PrimitiveSpace.proj_graph, hγ]; exact hxU) ?_
-    filter_upwards [continuous_subtypeVal.continuousAt.preimage_mem_nhds
-      (Metric.ball_mem_nhds (t₀ : ℝ) hδ)] with s hs
-    have hsub : uIcc (t₀ : ℝ) s ⊆ c ⁻¹' U := by
-      refine (Set.OrdConnected.uIcc_subset ?_ (Metric.mem_ball_self (x := (t₀ : ℝ)) hδ) hs).trans
-        hball
-      rw [Real.ball_eq_Ioo]
-      exact ordConnected_Ioo
-    simp only [PrimitiveSpace.value_graph, PrimitiveSpace.proj_graph, Γ, hγ]
-    rw [← pathIntegral_add_adjacent (hint 0 t₀) (hint t₀ s),
-      pathIntegral_eq_sub_of_isPrimitiveOn hgU (fun t _ ↦ (hc t).mdifferentiableAt one_ne_zero)
-        (fun t ht ↦ hsub ht) (hint t₀ s)]
-    abel
+  have hΓ : Continuous Γ :=
+    PrimitiveSpace.continuous_graph_of_forall_exists_isPrimitiveOn_eventuallyEq γ.continuous
+      fun t₀ ↦ by
+        obtain ⟨g, U, hxU, hgU⟩ := hφ (c t₀)
+        obtain ⟨δ, hδ, hball⟩ :=
+          Metric.isOpen_iff.mp (hgU.isOpen.preimage hc.continuous) (t₀ : ℝ) hxU
+        refine ⟨g, U, by simpa only [hγ] using hxU, hgU, pathIntegral φ c 0 t₀ - g (c t₀), ?_⟩
+        filter_upwards [continuous_subtypeVal.continuousAt.preimage_mem_nhds
+          (Metric.ball_mem_nhds (t₀ : ℝ) hδ)] with s hs
+        have hsub : uIcc (t₀ : ℝ) s ⊆ c ⁻¹' U := by
+          refine (Set.OrdConnected.uIcc_subset ?_ (Metric.mem_ball_self (x := (t₀ : ℝ)) hδ)
+            hs).trans hball
+          rw [Real.ball_eq_Ioo]
+          exact ordConnected_Ioo
+        simp only [hγ]
+        rw [← pathIntegral_add_adjacent (hint 0 t₀) (hint t₀ s),
+          pathIntegral_eq_sub_of_isPrimitiveOn hgU (fun t _ ↦ (hc t).mdifferentiableAt one_ne_zero)
+            (fun t ht ↦ hsub ht) (hint t₀ s)]
+        abel
   rw [continuousPathIntegral_eq_sub_of_lift hφ hΓ (fun t ↦ PrimitiveSpace.proj_graph (γ t))]
   simp [Γ]
 

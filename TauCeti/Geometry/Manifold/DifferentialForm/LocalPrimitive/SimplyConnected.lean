@@ -93,20 +93,6 @@ theorem exists_isPrimitiveOn_univ_and_eq_continuousPathIntegral_of_simplyConnect
   refine ⟨fun y ↦ g y + -g x₀, hg.add_const (-g x₀), add_neg_cancel _, fun x γ ↦ ?_⟩
   rw [continuousPathIntegral_eq_sub_of_isPrimitiveOn hφ hg γ (fun _ ↦ mem_univ _), sub_eq_add_neg]
 
-/-- A `1`-form with local primitives on a simply connected open subset `U` of a `C¹` manifold has
-a primitive on `U`. -/
-theorem exists_isPrimitiveOn_of_isSimplyConnected [IsManifold I 1 M]
-    {φ : RoughForm I M F 1} {U : Set M} (hU : IsOpen U) (hUsc : IsSimplyConnected U)
-    (hφ : ∀ x ∈ U, ∃ (g : M → F) (V : Set M), x ∈ V ∧ IsPrimitiveOn φ g V) :
-    ∃ g : M → F, IsPrimitiveOn φ g U := by
-  let U' : TopologicalSpace.Opens M := ⟨U, hU⟩
-  have : SimplyConnectedSpace U' := hUsc.simplyConnectedSpace
-  have hloc : ∀ x : U', ∃ (g : U' → F) (V : Set U'), x ∈ V ∧
-      IsPrimitiveOn (mpullback I I (Subtype.val : U' → M) φ) g V :=
-    (forall_exists_isPrimitiveOn_mpullback_subtypeVal_iff (U := U') φ).mpr hφ
-  obtain ⟨g, hg⟩ := exists_isPrimitiveOn_univ_of_simplyConnectedSpace hloc
-  exact ⟨Function.extend (Subtype.val : U' → M) g 0, by simpa [U'] using hg.of_mpullback_subtypeVal⟩
-
 /-- A `1`-form with local primitives on an open subset `U` of a `C¹` manifold has a primitive on
 `U` whenever every connected component of `U` is simply connected. -/
 theorem exists_isPrimitiveOn_of_isSimplyConnected_connectedComponentIn [IsManifold I 1 M]
@@ -147,5 +133,16 @@ theorem exists_isPrimitiveOn_of_isSimplyConnected_connectedComponentIn [IsManifo
   obtain ⟨g, hg⟩ :=
     (exists_isPrimitiveOn_univ_iff_forall_continuousPathIntegral_loop_eq_zero hloc).mpr hloop
   exact ⟨Function.extend (Subtype.val : U' → M) g 0, by simpa [U'] using hg.of_mpullback_subtypeVal⟩
+
+/-- A `1`-form with local primitives on a simply connected open subset `U` of a `C¹` manifold has
+a primitive on `U`. -/
+theorem exists_isPrimitiveOn_of_isSimplyConnected [IsManifold I 1 M]
+    {φ : RoughForm I M F 1} {U : Set M} (hU : IsOpen U) (hUsc : IsSimplyConnected U)
+    (hφ : ∀ x ∈ U, ∃ (g : M → F) (V : Set M), x ∈ V ∧ IsPrimitiveOn φ g V) :
+    ∃ g : M → F, IsPrimitiveOn φ g U :=
+  exists_isPrimitiveOn_of_isSimplyConnected_connectedComponentIn hU
+    (fun _ hx ↦
+      (hUsc.isPathConnected.isConnected.isPreconnected.connectedComponentIn hx).symm ▸ hUsc)
+    hφ
 
 end TauCeti
