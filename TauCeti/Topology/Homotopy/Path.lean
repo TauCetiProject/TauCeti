@@ -54,10 +54,6 @@ space of paths; it compares families of loops on spheres with products of loops 
 `Path.Homotopic.refl_of_forall_mem_of_nullhomotopic` is not from #38292; it was factored out of
 `AlgebraicTopology/SemilocallySimplyConnected/Basic.lean`.
 
-`Path.homotopic_of_continuous_cube` is the analogue of `Path.homotopic_of_continuous_square` one
-dimension up, for paths of paths. It is used by the smoothing of paths of loops in
-`Geometry/Manifold/SmoothApprox/PeriodicLoop.lean`.
-
 `Path.exists_monotone_range_subpath_subset` subdivides a path, by the Lebesgue number lemma on the
 unit interval, so that each consecutive subpath lies in a member of a given family of sets. It is
 used for the generation half of the groupoid van Kampen theorem in
@@ -345,21 +341,6 @@ theorem homotopic_of_continuous_square {a b : X} {p q : Path a b} (K : I × I �
        · rw [Set.mem_singleton_iff] at hs
          subst hs
          exact (hK_right t).trans p.target.symm }⟩
-
-/-- **A cube with prescribed faces is a homotopy of paths of paths.** A continuous map `Φ` on
-`I × I × I` that restricts to `P₀` at `τ = 0` and to `P₁` at `τ = 1`, to `p` and `q` along the
-faces `s = 0` and `s = 1`, and is constant along each of the faces `t = 0` and `t = 1`, exhibits
-the paths of paths `P₀` and `P₁` as homotopic. -/
-theorem homotopic_of_continuous_cube {a b : X} {p q : Path a b} {P₀ P₁ : Path p q}
-    (Φ : I × I × I → X) (hΦ : Continuous Φ) (h₀ : ∀ s t, Φ (0, s, t) = P₀ s t)
-    (h₁ : ∀ s t, Φ (1, s, t) = P₁ s t) (hl : ∀ τ t, Φ (τ, 0, t) = p t)
-    (hr : ∀ τ t, Φ (τ, 1, t) = q t) (hb : ∀ τ s, Φ (τ, s, 0) = a) (ht : ∀ τ s, Φ (τ, s, 1) = b) :
-    P₀.Homotopic P₁ :=
-  homotopic_of_continuous_square (fun r ↦ ⟨⟨fun t ↦ Φ (r.1, r.2, t), by fun_prop⟩, hb r.1 r.2,
-      ht r.1 r.2⟩)
-    (continuous_uncurry_iff.1 (hΦ.comp (by fun_prop))) (fun s ↦ Path.ext (funext (h₀ s)))
-    (fun s ↦ Path.ext (funext (h₁ s))) (fun τ ↦ Path.ext (funext (hl τ)))
-    (fun τ ↦ Path.ext (funext (hr τ)))
 
 /-- **A homotopy through closed paths is a square.** If the loop `γ₀` at `x` is homotopic to the
 loop `γ₁` at `y` through closed paths, then along the track `δ` of the base point,

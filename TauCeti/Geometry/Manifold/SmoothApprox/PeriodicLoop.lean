@@ -5,13 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-import Mathlib.Analysis.Calculus.BumpFunction.InnerProduct
-import Mathlib.Analysis.SpecialFunctions.SmoothTransition
-import Mathlib.Topology.Algebra.Order.Floor
 public import Mathlib.Topology.Homotopy.Path
 public import TauCeti.Geometry.Manifold.SmoothApprox
-import TauCeti.Algebra.Order.Floor.Ring
-import TauCeti.Topology.Homotopy.HomotopyGroup.LoopSpace
+import TauCeti.Geometry.Manifold.Instances.Icc.CollaredSmoothTransition
+import TauCeti.Topology.Algebra.Order.Floor
 import TauCeti.Topology.Homotopy.Path
 
 /-!
@@ -24,25 +21,27 @@ homotopic, relative to its endpoints, to the path of loops `s ↦ u (s, ·)` of 
 `u : ℝ × ℝ → M` that is `1`-periodic in its second coordinate, with `u (0, ·) = g₀` and
 `u (1, ·) = g₁`. The target need not be compact. For `n ≥ 2` such a `u` is a cylinder in the sense
 of `TauCeti.IsLoopCylinder`; the consequences for cylinders and caps are drawn in
-`Geometry/Symplectic/Hamiltonian/ContractibleAction/Smooth.lean`.
+`Geometry/Symplectic/Hamiltonian/ContractibleAction/Smooth.lean`, and those for raw caps in
+`Geometry/Symplectic/Floer/Cap/Smoothing.lean`.
 
-The proof smooths a continuous representative relative to a closed set, by the relative Whitney
-approximation theorem (`ContinuousMap.exists_contMDiff_homotopicRel_of_isCompact_closure_range`).
-A continuous path of loops is not smooth anywhere a priori, so its map of the square is first
-precomposed with a continuous self-map of the square, homotopic to the identity through maps
-preserving its boundary conditions. This reparametrization `G` is smooth on a neighbourhood of the
-complement `S` of the open square `(1/4, 3/4)²` within the strip `ℝ × [0, 1]`:
+The proof smooths a disc relative to its boundary, keeping the boundary values exactly. The path
+`P` is first replaced by a continuous map of the plane which is already smooth off a rectangle
+inside the unit square. Fix a smooth map `c` of `[0, 1]` onto itself which is `0` near `0` and `1`
+near `1` (`TauCeti.collaredSmoothTransition`), and its linear interpolation `τ_r = (1 - r) id + r c`
+with the identity (`TauCeti.collaredSmoothTransitionLineMap`). Then:
 
-* for `s ≤ 1/3` it stays at the loop `γ₀`, reparametrized by the smooth maps
-  `t ↦ t + c (χ(3t - 1) - t)` of `[0, 1]` fixing `0` and `1`, `χ` the smooth transition function,
-  with `c` rising smoothly from `0` to `1`; so there `G (s, t) = g₀ (…)` is a smooth function of
-  `(s, t)`;
-* for `c = 1` the reparametrization is locally constant near `t = 0` and `t = 1`, so for
-  `1/3 ≤ s ≤ 2/3` the path of loops is run with its loops collapsed near the seam, where `G = x`;
-* for `s ≥ 2/3` it stays at the loop `γ₁`, while `c` falls back to `0`, and `G (s, t) = g₁ (…)`.
+* near the edge `s = 0` the map is `g₀ ∘ τ_r`, with `r` rising smoothly from `0` to `1`;
+* near the edge `s = 1` it is `g₁ ∘ τ_r`, with `r` falling smoothly from `1` to `0`;
+* in between, it is `P` precomposed with `c` in the loop direction, so it is constant equal to `x`
+  near the seam `t ∈ ℤ`.
 
-The approximation `u₀` agrees with `G` on `S`, and `u (s, t) = u₀ (s, fract t)` is `C^n` and
-`1`-periodic, since near the seam lines `t ∈ ℤ` it equals the periodic map `G`.
+Its class is that of `P`: it is the image of the diagonal of the square of loops
+`(a, s) ↦ P (σ_a s) ∘ τ_{ρ_a s}`, whose edges `s = 0` and `s = 1` are `γ₀` and `γ₁`. The
+relative Whitney approximation theorem
+(`ContinuousMap.exists_contMDiff_homotopicRel_of_isCompact_closure_range`) then makes it smooth
+without changing it off the rectangle. The result is periodized in `t`;
+since the map is periodic near the seam, the periodization is still smooth
+(`TauCeti.apply_fract_snd_eventuallyEq`), and on the unit square it is the smoothed map.
 
 ## Main results
 
@@ -64,413 +63,387 @@ open scoped Manifold ContDiff Topology
 
 namespace TauCeti
 
-/-! ### The reparametrization of the square -/
+/-! ### Reparametrizations -/
 
-/-- The weight `c` of the slide, a smooth bump: `1` for `1/3 ≤ s ≤ 2/3`, and `0` for `s ≤ 1/6` and
-for `s ≥ 5/6`. -/
-private def slideWeight : ContDiffBump (1 / 2 : ℝ) :=
-  ⟨1 / 6, 1 / 3, by norm_num, by norm_num⟩
+section Reparam
 
-/-- The reparametrization `t ↦ t + c (χ(3t - 1) - t)` of the unit interval. For `c = 1` it is
-`0` on `[0, 1/3]` and `1` on `[2/3, 1]`. -/
-private def seamCollapse (c t : ℝ) : ℝ :=
-  t + c * (Real.smoothTransition (3 * t - 1) - t)
+/-- A smooth map of the line which is `0` up to `1/6` and `1` from `1/4` on. -/
+private def loopRamp (s : ℝ) : ℝ :=
+  Real.smoothTransition (12 * s - 2)
 
-/-- The radial coordinate `s ↦ 3 s - 1`, clamped to the unit interval. -/
-private def radial (s : ℝ) : unitInterval :=
-  projIcc 0 1 zero_le_one (3 * s - 1)
+private theorem loopRamp_of_le {s : ℝ} (hs : s ≤ 1 / 6) : loopRamp s = 0 :=
+  Real.smoothTransition.zero_of_nonpos (by linarith)
 
-private theorem continuous_radial : Continuous radial :=
-  continuous_projIcc.comp ((continuous_const.mul continuous_id).sub continuous_const)
+private theorem loopRamp_of_ge {s : ℝ} (hs : 1 / 4 ≤ s) : loopRamp s = 1 :=
+  Real.smoothTransition.one_of_one_le (by linarith)
 
-private theorem continuous_seamCollapse : Continuous fun p : ℝ × ℝ ↦ seamCollapse p.1 p.2 := by
-  unfold seamCollapse
-  have := Real.smoothTransition.continuous
-  fun_prop
+private theorem loopRamp_mem (s : ℝ) : loopRamp s ∈ Icc (0 : ℝ) 1 :=
+  ⟨Real.smoothTransition.nonneg _, Real.smoothTransition.le_one _⟩
 
-private theorem contDiff_seamCollapse {m : ℕ∞} :
-    ContDiff ℝ m fun p : ℝ × ℝ ↦ seamCollapse p.1 p.2 :=
-  contDiff_snd.add (contDiff_fst.mul ((Real.smoothTransition.contDiff.comp
-    ((contDiff_const.mul contDiff_snd).sub contDiff_const)).sub contDiff_snd))
+private theorem contDiff_loopRamp {n : ℕ∞} : ContDiff ℝ n loopRamp :=
+  Real.smoothTransition.contDiff.comp ((contDiff_const.mul contDiff_id).sub contDiff_const)
 
-private theorem slideWeight_of_le {s : ℝ} (hs : s ≤ 1 / 6) : slideWeight s = 0 :=
-  slideWeight.zero_of_le_dist <| by
-    rw [Real.dist_eq, abs_of_nonpos (by linarith)]
-    dsimp only [slideWeight]
-    linarith
+/-- The reparametrization `(s, t) ↦ τ_{r s} t` is `C^n` for a `C^n` weight `r`. -/
+private theorem contDiff_lineMap_comp {n : ℕ∞} {r : ℝ → ℝ} (hr : ContDiff ℝ n r) :
+    ContDiff ℝ n fun z : ℝ × ℝ ↦ collaredSmoothTransitionLineMap (r z.1) z.2 :=
+  (contDiff_collaredSmoothTransitionLineMap (WithTop.coe_le_coe.2 le_top)).comp
+    ((hr.comp contDiff_fst).prodMk contDiff_snd)
 
-private theorem slideWeight_of_ge {s : ℝ} (hs : 5 / 6 ≤ s) : slideWeight s = 0 :=
-  slideWeight.zero_of_le_dist <| by
-    rw [Real.dist_eq, abs_of_nonneg (by linarith)]
-    dsimp only [slideWeight]
-    linarith
+end Reparam
 
-private theorem slideWeight_of_mem {s : ℝ} (hs₁ : 1 / 3 ≤ s) (hs₂ : s ≤ 2 / 3) :
-    slideWeight s = 1 :=
-  slideWeight.one_of_mem_closedBall <| by
-    rw [Metric.mem_closedBall, Real.dist_eq, abs_le]
-    dsimp only [slideWeight]
-    constructor <;> linarith
+/-! ### A model of the path of loops which is smooth near the boundary of a rectangle -/
 
-private theorem slideWeight_mem (s : ℝ) : slideWeight s ∈ Icc (0 : ℝ) 1 :=
-  ⟨slideWeight.nonneg, slideWeight.le_one⟩
-
-private theorem radial_of_le {s : ℝ} (hs : s ≤ 1 / 3) : radial s = 0 :=
-  projIcc_of_le_left _ (by linarith)
-
-private theorem radial_of_ge {s : ℝ} (hs : 2 / 3 ≤ s) : radial s = 1 :=
-  projIcc_of_right_le _ (by linarith)
-
-private theorem seamCollapse_zero_left (t : ℝ) : seamCollapse 0 t = t := by
-  simp [seamCollapse]
-
-private theorem seamCollapse_zero_right (c : ℝ) : seamCollapse c 0 = 0 := by
-  rw [seamCollapse, Real.smoothTransition.zero_of_nonpos (by norm_num)]
-  ring
-
-private theorem seamCollapse_one_right (c : ℝ) : seamCollapse c 1 = 1 := by
-  rw [seamCollapse, Real.smoothTransition.one_of_one_le (by norm_num)]
-  ring
-
-/-- Near `t = 0` the reparametrization is the dilation `t ↦ (1 - c) t`. -/
-private theorem seamCollapse_of_le (c : ℝ) {t : ℝ} (ht : t ≤ 1 / 3) :
-    seamCollapse c t = (1 - c) * t := by
-  rw [seamCollapse, Real.smoothTransition.zero_of_nonpos (by linarith)]
-  ring
-
-/-- Near `t = 1` the reparametrization is the dilation `t ↦ 1 + (1 - c) (t - 1)`. -/
-private theorem seamCollapse_of_ge (c : ℝ) {t : ℝ} (ht : 2 / 3 ≤ t) :
-    seamCollapse c t = 1 + (1 - c) * (t - 1) := by
-  rw [seamCollapse, Real.smoothTransition.one_of_one_le (by linarith)]
-  ring
-
-/-- For `0 ≤ c ≤ 1` the reparametrization maps the unit interval to itself. -/
-private theorem seamCollapse_mem {c t : ℝ} (hc : c ∈ Icc (0 : ℝ) 1) (ht : t ∈ Icc (0 : ℝ) 1) :
-    seamCollapse c t ∈ Icc (0 : ℝ) 1 :=
-  (convex_Icc 0 1).add_smul_sub_mem ht
-    ⟨Real.smoothTransition.nonneg _, Real.smoothTransition.le_one _⟩ hc
-
-/-! ### Loops of the reparametrized square -/
+section Model
 
 variable {M : Type*} [TopologicalSpace M] {x : M} {γ₀ γ₁ : Path x x}
 
-/-- A loop `δ` that is `g` on the unit interval, evaluated at a parameter `r ∈ [0, 1]`. -/
-private theorem apply_projIcc {δ : Path x x} {g : ℝ → M} (hδ : ∀ t : unitInterval, δ t = g t)
-    {r : ℝ} (hr : r ∈ Icc (0 : ℝ) 1) : δ (projIcc 0 1 zero_le_one r) = g r := by
-  rw [hδ, projIcc_of_mem _ hr]
+/-- The model of the path of loops `P`, for periodic extensions `g₀`, `g₁` of its ends: `g₀`
+precomposed with `collaredSmoothTransitionLineMap (loopRamp s)` for `s ≤ 1/3`, `g₁` precomposed
+with `collaredSmoothTransitionLineMap (loopRamp (1 - s))` for `s > 2/3`, and in between `P`
+precomposed with `collaredSmoothTransition` in the loop direction, run three times as fast. It is
+smooth near the edges `s = 0` and `s = 1`, and equal to `x` near the seam in between. -/
+private def loopModel (g₀ g₁ : ℝ → M) (P : Path γ₀ γ₁) (z : ℝ × ℝ) : M :=
+  if z.1 ≤ 1 / 3 then g₀ (collaredSmoothTransitionLineMap (loopRamp z.1) z.2)
+  else if z.1 ≤ 2 / 3 then
+    P (projIcc 0 1 zero_le_one (3 * z.1 - 1)) (collaredSmoothTransitionUnit z.2)
+  else g₁ (collaredSmoothTransitionLineMap (loopRamp (1 - z.1)) z.2)
 
-/-- Near a seam line `t = n`, the loop `δ` reparametrized by `seamCollapse c` is
-`g ((1 - c) (t - n))`. -/
-private theorem apply_seamCollapse_fract {δ : Path x x} {g : ℝ → M} (hgp : Periodic g 1)
-    (hδ : ∀ t : unitInterval, δ t = g t) {c : ℝ} (hc : c ∈ Icc (0 : ℝ) 1) {n : ℤ} {t : ℝ}
-    (ht : |t - n| < 1 / 3) :
-    δ (projIcc 0 1 zero_le_one (seamCollapse c (Int.fract t))) = g ((1 - c) * (t - n)) := by
-  obtain ⟨ht₁, ht₂⟩ := abs_lt.1 ht
-  rcases le_or_gt (n : ℝ) t with htn | htn
-  · -- Just above the seam line, `fract t = t - n`.
-    rw [Int.fract, Int.floor_eq_iff.2 ⟨htn, by linarith⟩, seamCollapse_of_le _ (by linarith)]
-    have h₁ := mul_nonneg hc.1 (by linarith : (0 : ℝ) ≤ t - n)
-    have h₂ := mul_nonneg (sub_nonneg.2 hc.2) (by linarith : (0 : ℝ) ≤ t - n)
-    exact apply_projIcc hδ ⟨by nlinarith, by nlinarith⟩
-  · -- Just below the seam line, `fract t = t - (n - 1)`.
-    rw [Int.fract, (Int.floor_eq_iff (z := n - 1)).2 ⟨by push_cast; linarith,
-      by push_cast; linarith⟩, seamCollapse_of_ge _ (by push_cast; linarith)]
-    have e : (1 : ℝ) + (1 - c) * (t - ↑(n - 1) - 1) = (1 - c) * (t - n) + 1 := by
-      push_cast
-      ring
-    have h₁ := mul_nonneg hc.1 (by linarith : (0 : ℝ) ≤ n - t)
-    have h₂ := mul_nonneg (sub_nonneg.2 hc.2) (by linarith : (0 : ℝ) ≤ n - t)
-    rw [e, apply_projIcc hδ ⟨by nlinarith, by nlinarith⟩, hgp]
+variable {g₀ g₁ : ℝ → M} {P : Path γ₀ γ₁}
 
-/-- Near a seam line, every loop reparametrized by `seamCollapse 1` is at the base point. -/
-private theorem apply_seamCollapse_one_fract (δ : Path x x) {n : ℤ} {t : ℝ}
-    (ht : |t - n| < 1 / 3) : δ (projIcc 0 1 zero_le_one (seamCollapse 1 (Int.fract t))) = x := by
-  obtain ⟨ht₁, ht₂⟩ := abs_lt.1 ht
-  rcases le_or_gt (n : ℝ) t with htn | htn
-  · rw [Int.fract, Int.floor_eq_iff.2 ⟨htn, by linarith⟩, seamCollapse_of_le _ (by linarith),
-      sub_self, zero_mul, projIcc_eq_zero.2 le_rfl, δ.source]
-  · rw [Int.fract, (Int.floor_eq_iff (z := n - 1)).2 ⟨by push_cast; linarith,
-      by push_cast; linarith⟩, seamCollapse_of_ge _ (by push_cast; linarith), sub_self, zero_mul,
-      add_zero, projIcc_eq_one.2 le_rfl, δ.target]
+private theorem loopModel_of_le {z : ℝ × ℝ} (hz : z.1 ≤ 1 / 3) :
+    loopModel g₀ g₁ P z = g₀ (collaredSmoothTransitionLineMap (loopRamp z.1) z.2) := by
+  simp only [loopModel, hz, ↓reduceIte]
 
-/-- The reparametrized square of a path of loops `P`, extended `1`-periodically in `t`. -/
-private def reparamDisc (P : Path γ₀ γ₁) (z : ℝ × ℝ) : M :=
-  P (radial z.1) (projIcc 0 1 zero_le_one (seamCollapse (slideWeight z.1) (Int.fract z.2)))
+private theorem loopModel_of_mem {z : ℝ × ℝ} (hz₁ : 1 / 3 < z.1) (hz₂ : z.1 ≤ 2 / 3) :
+    loopModel g₀ g₁ P z =
+      P (projIcc 0 1 zero_le_one (3 * z.1 - 1)) (collaredSmoothTransitionUnit z.2) := by
+  simp only [loopModel, hz₁.not_ge, hz₂, ↓reduceIte]
 
-private theorem reparamDisc_fract (P : Path γ₀ γ₁) (s t : ℝ) :
-    reparamDisc P (s, Int.fract t) = reparamDisc P (s, t) := by
-  simp [reparamDisc, Int.fract_fract]
+private theorem loopModel_of_gt {z : ℝ × ℝ} (hz : 2 / 3 < z.1) :
+    loopModel g₀ g₁ P z = g₁ (collaredSmoothTransitionLineMap (loopRamp (1 - z.1)) z.2) := by
+  simp only [loopModel, (by linarith : ¬z.1 ≤ 1 / 3), hz.not_ge, ↓reduceIte]
 
-/-- On the strip `n ≤ t < n + 1` the reparametrized square is given without `fract`. -/
-private theorem reparamDisc_of_mem_Ico (P : Path γ₀ γ₁) (s : ℝ) {n : ℤ} {t : ℝ}
-    (ht : t ∈ Ico (n : ℝ) (n + 1)) :
-    reparamDisc P (s, t) =
-      P (radial s) (projIcc 0 1 zero_le_one (seamCollapse (slideWeight s) (t - n))) := by
-  rw [reparamDisc, Int.fract, Int.floor_eq_iff.2 ht]
+private theorem continuous_uncurry_path (P : Path γ₀ γ₁) :
+    Continuous fun q : unitInterval × unitInterval ↦ P q.1 q.2 :=
+  Path.continuous_uncurry_iff.2 P.continuous
 
-/-- On the unit square the reparametrized square is given without `fract`. -/
-private theorem reparamDisc_of_mem_Icc (P : Path γ₀ γ₁) (s : ℝ) {t : ℝ}
-    (ht : t ∈ Icc (0 : ℝ) 1) :
-    reparamDisc P (s, t) =
-      P (radial s) (projIcc 0 1 zero_le_one (seamCollapse (slideWeight s) t)) := by
-  rcases ht.2.lt_or_eq with ht' | rfl
-  · simpa using reparamDisc_of_mem_Ico P s (n := 0) ⟨by simpa using ht.1, by simpa using ht'⟩
-  · rw [reparamDisc, Int.fract_one, seamCollapse_zero_right, seamCollapse_one_right,
-      projIcc_eq_zero.2 le_rfl, projIcc_eq_one.2 le_rfl, (P (radial s)).source,
-      (P (radial s)).target]
+private theorem loopModel_zero (t : ℝ) : loopModel g₀ g₁ P (0, t) = g₀ t := by
+  rw [loopModel_of_le (by norm_num), loopRamp_of_le (by norm_num),
+    collaredSmoothTransitionLineMap_zero_left]
 
-variable {g₀ g₁ : ℝ → M}
+private theorem loopModel_one (t : ℝ) : loopModel g₀ g₁ P (1, t) = g₁ t := by
+  rw [loopModel_of_gt (by norm_num), sub_self, loopRamp_of_le (by norm_num),
+    collaredSmoothTransitionLineMap_zero_left]
 
-/-- Near a seam line `t = n` and for `s < 2/3` the reparametrized square is
-`g₀ ((1 - c) (t - n))`, with `c` the slide weight. -/
-private theorem reparamDisc_of_abs_sub_lt_left (hgp₀ : Periodic g₀ 1)
-    (hγ₀ : ∀ t : unitInterval, γ₀ t = g₀ t) (P : Path γ₀ γ₁) {s : ℝ} (hs : s < 2 / 3) {n : ℤ}
-    {t : ℝ} (ht : |t - n| < 1 / 3) :
-    reparamDisc P (s, t) = g₀ ((1 - slideWeight s) * (t - n)) := by
-  rcases le_or_gt s (1 / 3) with hs' | hs'
-  · rw [reparamDisc, radial_of_le hs', P.source]
-    exact apply_seamCollapse_fract hgp₀ hγ₀ (slideWeight_mem s) ht
-  · have hg₀ : g₀ 0 = x := by simpa using (hγ₀ 0).symm
-    rw [reparamDisc, slideWeight_of_mem hs'.le hs.le, apply_seamCollapse_one_fract _ ht, sub_self,
-      zero_mul, hg₀]
+/-- The open set on which the model is constant equal to the base point: the parts near the seam
+of the strip `1/4 < s < 3/4`. -/
+private def loopBaseSet : Set (ℝ × ℝ) :=
+  {z | 1 / 4 < z.1} ∩ {z | z.1 < 3 / 4} ∩ ({z | z.2 < 1 / 4} ∪ {z | 3 / 4 < z.2})
 
-/-- Near a seam line `t = n` and for `s > 1/3` the reparametrized square is
-`g₁ ((1 - c) (t - n))`, with `c` the slide weight. -/
-private theorem reparamDisc_of_abs_sub_lt_right (hgp₁ : Periodic g₁ 1)
-    (hγ₁ : ∀ t : unitInterval, γ₁ t = g₁ t) (P : Path γ₀ γ₁) {s : ℝ} (hs : 1 / 3 < s) {n : ℤ}
-    {t : ℝ} (ht : |t - n| < 1 / 3) :
-    reparamDisc P (s, t) = g₁ ((1 - slideWeight s) * (t - n)) := by
-  rcases le_or_gt (2 / 3) s with hs' | hs'
-  · rw [reparamDisc, radial_of_ge hs', P.target]
-    exact apply_seamCollapse_fract hgp₁ hγ₁ (slideWeight_mem s) ht
-  · have hg₁ : g₁ 0 = x := by simpa using (hγ₁ 0).symm
-    rw [reparamDisc, slideWeight_of_mem hs.le hs'.le, apply_seamCollapse_one_fract _ ht, sub_self,
-      zero_mul, hg₁]
+private theorem isOpen_loopBaseSet : IsOpen loopBaseSet :=
+  ((isOpen_lt continuous_const continuous_fst).inter
+    (isOpen_lt continuous_fst continuous_const)).inter
+    ((isOpen_lt continuous_snd continuous_const).union (isOpen_lt continuous_const continuous_snd))
 
-private theorem continuous_reparamDisc (P : Path γ₀ γ₁) : Continuous (reparamDisc P) := by
-  have h : Continuous (uncurry fun (z : ℝ × ℝ) (τ : ℝ) ↦
-      P (radial z.1) (projIcc 0 1 zero_le_one (seamCollapse (slideWeight z.1) τ))) :=
-    (P.continuous.comp (continuous_radial.comp (continuous_fst.comp continuous_fst))).eval
-      (continuous_projIcc.comp (continuous_seamCollapse.comp
-        ((slideWeight.continuous.comp (continuous_fst.comp continuous_fst)).prodMk
-          continuous_snd)))
-  refine h.continuousOn.comp_fract continuous_snd fun z ↦ ?_
-  rw [seamCollapse_zero_right, seamCollapse_one_right, projIcc_eq_zero.2 le_rfl,
-    projIcc_eq_one.2 le_rfl, Path.source, Path.target]
+/-- The open set near which the model is smooth: the strips `s < 1/3` and `s > 2/3`, and the set on
+which the model is the base point. -/
+private def loopSmoothSet : Set (ℝ × ℝ) :=
+  {z | z.1 < 1 / 3} ∪ {z | 2 / 3 < z.1} ∪ loopBaseSet
 
-/-- Along `s = 0` the reparametrized square is the periodic loop `g₀`. -/
-private theorem reparamDisc_zero_left (hgp₀ : Periodic g₀ 1)
-    (hγ₀ : ∀ t : unitInterval, γ₀ t = g₀ t) (P : Path γ₀ γ₁) (t : ℝ) :
-    reparamDisc P (0, t) = g₀ t := by
-  rw [reparamDisc, slideWeight_of_le (by norm_num), seamCollapse_zero_left,
-    radial_of_le (by norm_num), P.source, apply_projIcc hγ₀
-      (unitInterval.fract_mem t), hgp₀.apply_fract]
+private theorem isOpen_loopSmoothSet : IsOpen loopSmoothSet :=
+  ((isOpen_lt continuous_fst continuous_const).union
+    (isOpen_lt continuous_const continuous_fst)).union isOpen_loopBaseSet
 
-/-- Along `s = 1` the reparametrized square is the periodic loop `g₁`. -/
-private theorem reparamDisc_one_left (hgp₁ : Periodic g₁ 1)
-    (hγ₁ : ∀ t : unitInterval, γ₁ t = g₁ t) (P : Path γ₀ γ₁) (t : ℝ) :
-    reparamDisc P (1, t) = g₁ t := by
-  rw [reparamDisc, slideWeight_of_ge (by norm_num), seamCollapse_zero_left,
-    radial_of_ge (by norm_num), P.target, apply_projIcc hγ₁
-      (unitInterval.fract_mem t), hgp₁.apply_fract]
+variable (hγ₀ : ∀ t : unitInterval, γ₀ t = g₀ t) (hγ₁ : ∀ t : unitInterval, γ₁ t = g₁ t)
+include hγ₀ hγ₁
 
-/-- Along the seam the reparametrized square is at the base point `x`. -/
-private theorem reparamDisc_seam (P : Path γ₀ γ₁) (s : ℝ) {t : ℝ}
-    (ht : t = 0 ∨ t = 1) : reparamDisc P (s, t) = x := by
-  rcases ht with rfl | rfl
-  · rw [reparamDisc_of_mem_Icc P s ⟨le_rfl, zero_le_one⟩, seamCollapse_zero_right,
-      projIcc_eq_zero.2 le_rfl, (P _).source]
-  · rw [reparamDisc_of_mem_Icc P s ⟨zero_le_one, le_rfl⟩, seamCollapse_one_right,
-      projIcc_eq_one.2 le_rfl, (P _).target]
+private theorem apply_zero_eq_base : g₀ 0 = x ∧ g₁ 0 = x :=
+  ⟨by rw [← Icc.coe_zero, ← hγ₀, γ₀.source], by rw [← Icc.coe_zero, ← hγ₁, γ₁.source]⟩
 
-/-- A path of loops is homotopic to the path of loops of its reparametrized square. The homotopy
-moves the radial coordinate linearly from `s` to `3 s - 1` and the reparametrization weight
-linearly from `0` to `c`. -/
-private theorem homotopic_reparamDisc (P P' : Path γ₀ γ₁)
-    (hP' : ∀ s t : unitInterval, P' s t = reparamDisc P (s, t)) : P.Homotopic P' := by
-  have hw : Continuous fun q : unitInterval × unitInterval × unitInterval ↦
-      ((q.1 : ℝ) * slideWeight q.2.1, (q.2.2 : ℝ)) :=
-    (continuous_subtypeVal.comp continuous_fst |>.mul
-      (slideWeight.continuous.comp (continuous_subtypeVal.comp
-        (continuous_fst.comp continuous_snd)))).prodMk
-      (continuous_subtypeVal.comp (continuous_snd.comp continuous_snd))
-  refine Path.homotopic_of_continuous_cube
-    (fun q ↦ P (projIcc 0 1 zero_le_one ((1 - q.1) * q.2.1 + q.1 * (3 * q.2.1 - 1)))
-      (projIcc 0 1 zero_le_one (seamCollapse (q.1 * slideWeight q.2.1) q.2.2)))
-    ((P.continuous.comp (continuous_projIcc.comp (by fun_prop))).eval
-      (continuous_projIcc.comp (continuous_seamCollapse.comp hw))) ?_ ?_ ?_ ?_ ?_ ?_
-  · intro s t
-    simp [seamCollapse_zero_left]
-  · intro s t
-    rw [hP', reparamDisc_of_mem_Icc P s ⟨t.property.1, t.property.2⟩]
-    simp [radial]
-  · intro τ t
-    have hτ : projIcc (0 : ℝ) 1 zero_le_one ((1 - τ) * 0 + τ * (3 * 0 - 1)) = 0 :=
-      projIcc_of_le_left _ (by nlinarith [τ.property.1])
-    dsimp only
-    rw [Icc.coe_zero, hτ, slideWeight_of_le (by norm_num), mul_zero, seamCollapse_zero_left,
-      projIcc_val, P.source]
-  · intro τ t
-    have hτ : projIcc (0 : ℝ) 1 zero_le_one ((1 - τ) * 1 + τ * (3 * 1 - 1)) = 1 :=
-      projIcc_of_right_le _ (by nlinarith [τ.property.1])
-    dsimp only
-    rw [Icc.coe_one, hτ, slideWeight_of_ge (by norm_num), mul_zero, seamCollapse_zero_left,
-      projIcc_val, P.target]
-  · intro τ s
-    simp only [Icc.coe_zero, seamCollapse_zero_right, projIcc_eq_zero.2 le_rfl, Path.source]
-  · intro τ s
-    simp only [Icc.coe_one, seamCollapse_one_right, projIcc_eq_one.2 le_rfl, Path.target]
+private theorem apply_one_eq_base : g₀ 1 = x ∧ g₁ 1 = x :=
+  ⟨by rw [← Icc.coe_one, ← hγ₀, γ₀.target], by rw [← Icc.coe_one, ← hγ₁, γ₁.target]⟩
 
-/-- The complement `S` of the open square `(1/4, 3/4)²` in the strip `ℝ × [0, 1]`: the set
-relative to which the reparametrized square is smoothed. -/
-private def frame : Set (ℝ × ℝ) :=
-  (univ ×ˢ Icc 0 1) \ (Ioo (1 / 4) (3 / 4) ×ˢ Ioo (1 / 4) (3 / 4))
+private theorem loopModel_eq_of_mem (s t : unitInterval) :
+    loopModel g₀ g₁ P (s, t) = P (projIcc 0 1 zero_le_one (3 * s - 1))
+      (collaredSmoothTransitionLineMapUnit
+        (projIcc 0 1 zero_le_one (min (loopRamp s) (loopRamp (1 - s)))) t) := by
+  rcases le_or_gt (s : ℝ) (1 / 3) with hs | hs
+  · have h : loopRamp s ≤ loopRamp (1 - s) :=
+      (loopRamp_mem _).2.trans (loopRamp_of_ge (by linarith)).ge
+    simp [loopModel_of_le (z := ((s : ℝ), (t : ℝ))) hs, min_eq_left h,
+      projIcc_of_mem _ (loopRamp_mem s), projIcc_eq_zero.2 (by linarith : 3 * (s : ℝ) - 1 ≤ 0),
+      hγ₀, coe_collaredSmoothTransitionLineMapUnit]
+  rcases le_or_gt (s : ℝ) (2 / 3) with hs' | hs'
+  · rw [loopRamp_of_ge (by linarith), loopRamp_of_ge (by linarith), min_self,
+      projIcc_eq_one.2 le_rfl, collaredSmoothTransitionLineMapUnit_one_left,
+      loopModel_of_mem hs hs']
+  · have h : loopRamp (1 - s) ≤ loopRamp s :=
+      (loopRamp_mem _).2.trans (loopRamp_of_ge (by linarith)).ge
+    simp [loopModel_of_gt (z := ((s : ℝ), (t : ℝ))) hs', min_eq_right h,
+      projIcc_of_mem _ (loopRamp_mem (1 - s)),
+      projIcc_eq_one.2 (by linarith : 1 ≤ 3 * (s : ℝ) - 1), hγ₁,
+      coe_collaredSmoothTransitionLineMapUnit]
 
-private theorem isClosed_frame : IsClosed frame :=
-  (isClosed_univ.prod isClosed_Icc).sdiff (isOpen_Ioo.prod isOpen_Ioo)
+private theorem continuous_loopModel (hg₀ : Continuous g₀) (hg₁ : Continuous g₁) :
+    Continuous (loopModel g₀ g₁ P) := by
+  have hr₀ : Continuous fun z : ℝ × ℝ ↦ collaredSmoothTransitionLineMap (loopRamp z.1) z.2 :=
+    (contDiff_lineMap_comp (n := 0) contDiff_loopRamp).continuous
+  have hr₁ : Continuous fun z : ℝ × ℝ ↦ collaredSmoothTransitionLineMap (loopRamp (1 - z.1)) z.2 :=
+    (contDiff_lineMap_comp (n := 0)
+      (contDiff_loopRamp.comp (contDiff_const.sub contDiff_id))).continuous
+  have hs : Continuous fun z : ℝ × ℝ ↦ projIcc (0 : ℝ) 1 zero_le_one (3 * z.1 - 1) :=
+    continuous_projIcc.comp ((continuous_const.mul continuous_fst).sub continuous_const)
+  have hP : Continuous fun z : ℝ × ℝ ↦
+      P (projIcc 0 1 zero_le_one (3 * z.1 - 1)) (collaredSmoothTransitionUnit z.2) :=
+    (continuous_uncurry_path P).comp
+      (hs.prodMk (continuous_collaredSmoothTransitionUnit.comp continuous_snd))
+  refine Continuous.if_le (hg₀.comp hr₀)
+    (Continuous.if_le hP (hg₁.comp hr₁) continuous_fst continuous_const fun z hz ↦ ?_)
+    continuous_fst continuous_const fun z hz ↦ ?_
+  · rw [hz, projIcc_eq_one.2 (by norm_num), P.target, hγ₁, loopRamp_of_ge (by norm_num),
+      collaredSmoothTransitionLineMap_one_left, coe_collaredSmoothTransitionUnit_eq]
+  · simp only [hz, (by norm_num : (1 : ℝ) / 3 ≤ 2 / 3), ↓reduceIte]
+    rw [loopRamp_of_ge (by norm_num), projIcc_eq_zero.2 (by norm_num),
+      P.source, hγ₀, collaredSmoothTransitionLineMap_one_left, coe_collaredSmoothTransitionUnit_eq]
 
-private theorem mem_frame_of_fst {s t : ℝ} (hs : s ∉ Ioo (1 / 4 : ℝ) (3 / 4))
-    (ht : t ∈ Icc (0 : ℝ) 1) : (s, t) ∈ frame :=
-  ⟨⟨mem_univ _, ht⟩, fun h ↦ hs h.1⟩
+/-- The model is `x` near the seam for `1/4 < s < 3/4`. -/
+private theorem loopModel_eq_base {z : ℝ × ℝ} (hz₁ : 1 / 4 < z.1) (hz₂ : z.1 < 3 / 4)
+    (ht : z.2 ≤ 1 / 4 ∨ 3 / 4 ≤ z.2) : loopModel g₀ g₁ P z = x := by
+  obtain ⟨h₀, h₀'⟩ := apply_zero_eq_base hγ₀ hγ₁
+  obtain ⟨h₁, h₁'⟩ := apply_one_eq_base hγ₀ hγ₁
+  rcases le_or_gt z.1 (1 / 3) with hs | hs
+  · rcases ht with ht | ht
+    · simp [loopModel_of_le hs, loopRamp_of_ge hz₁.le, collaredSmoothTransition_eq_zero_of_le ht,
+        h₀]
+    · simp [loopModel_of_le hs, loopRamp_of_ge hz₁.le, collaredSmoothTransition_eq_one_of_ge ht,
+        h₁]
+  rcases le_or_gt z.1 (2 / 3) with hs' | hs'
+  · rcases ht with ht | ht
+    · simp [loopModel_of_mem hs hs', collaredSmoothTransitionUnit_eq_zero_of_le ht]
+    · simp [loopModel_of_mem hs hs', collaredSmoothTransitionUnit_eq_one_of_ge ht]
+  · have hr : loopRamp (1 - z.1) = 1 := loopRamp_of_ge (by linarith)
+    rcases ht with ht | ht
+    · simp [loopModel_of_gt hs', hr, collaredSmoothTransition_eq_zero_of_le ht, h₀']
+    · simp [loopModel_of_gt hs', hr, collaredSmoothTransition_eq_one_of_ge ht, h₁']
 
-private theorem mem_frame_of_snd {s t : ℝ} (ht : t ∈ Icc (0 : ℝ) 1)
-    (ht' : t ∉ Ioo (1 / 4 : ℝ) (3 / 4)) : (s, t) ∈ frame :=
-  ⟨⟨mem_univ _, ht⟩, fun h ↦ ht' h.2⟩
+private theorem loopModel_seam_zero (s : ℝ) : loopModel g₀ g₁ P (s, 0) = x := by
+  rcases le_or_gt s (1 / 3) with hs | hs
+  · rw [loopModel_of_le hs, collaredSmoothTransitionLineMap_zero_right,
+      (apply_zero_eq_base hγ₀ hγ₁).1]
+  rcases le_or_gt s (2 / 3) with hs' | hs'
+  · rw [loopModel_of_mem hs hs', collaredSmoothTransitionUnit_eq_zero_of_le (by norm_num),
+      Path.source]
+  · rw [loopModel_of_gt hs', collaredSmoothTransitionLineMap_zero_right,
+      (apply_zero_eq_base hγ₀ hγ₁).2]
 
-/-- Points of the frame lie in the region where the reparametrized square is smooth. -/
-private theorem frame_subset :
-    frame ⊆ {z | z.1 < 1 / 3 ∨ 2 / 3 < z.1 ∨ ∃ n : ℤ, |z.2 - n| < 1 / 3} := by
-  rintro ⟨s, t⟩ ⟨⟨-, ht₀, ht₁⟩, hz⟩
-  simp only [mem_prod, mem_Ioo, not_and_or, not_lt] at hz
-  simp only [mem_ofPred_eq]
-  rcases le_or_gt s (1 / 4) with hs | hs
-  · exact Or.inl (by linarith)
-  rcases le_or_gt (3 / 4) s with hs' | hs'
-  · exact Or.inr (Or.inl (by linarith))
-  refine Or.inr (Or.inr ?_)
-  rcases hz with ((hz | hz) | (hz | hz))
-  · linarith
-  · linarith
-  · exact ⟨0, by rw [Int.cast_zero, sub_zero, abs_lt]; constructor <;> linarith⟩
-  · exact ⟨1, by rw [Int.cast_one, abs_lt]; constructor <;> linarith⟩
+private theorem loopModel_seam_one (s : ℝ) : loopModel g₀ g₁ P (s, 1) = x := by
+  rcases le_or_gt s (1 / 3) with hs | hs
+  · rw [loopModel_of_le hs, collaredSmoothTransitionLineMap_one_right,
+      (apply_one_eq_base hγ₀ hγ₁).1]
+  rcases le_or_gt s (2 / 3) with hs' | hs'
+  · rw [loopModel_of_mem hs hs', collaredSmoothTransitionUnit_eq_one_of_ge (by norm_num),
+      Path.target]
+  · rw [loopModel_of_gt hs', collaredSmoothTransitionLineMap_one_right,
+      (apply_one_eq_base hγ₀ hγ₁).2]
 
-/-- Near a seam line `t = n`, `(s, fract t)` lies in the frame. -/
-private theorem mem_frame_fract {s t : ℝ} {n : ℤ} (ht : |t - n| < 1 / 4) :
-    (s, Int.fract t) ∈ frame := by
-  obtain ⟨ht₁, ht₂⟩ := abs_lt.1 ht
-  refine mem_frame_of_snd (unitInterval.fract_mem t) fun h ↦ ?_
-  rcases le_or_gt (n : ℝ) t with htn | htn
-  · rw [Int.fract, Int.floor_eq_iff.2 ⟨htn, by linarith⟩] at h
-    linarith [h.1]
-  · rw [Int.fract, (Int.floor_eq_iff (z := n - 1)).2 ⟨by push_cast; linarith,
-      by push_cast; linarith⟩] at h
-    push_cast at h
-    linarith [h.2]
+omit hγ₀ hγ₁ in
+/-- The model is periodic in `t` near the seam. -/
+private theorem loopModel_add_one (hgp₀ : Periodic g₀ 1) (hgp₁ : Periodic g₁ 1) (s : ℝ) {t : ℝ}
+    (ht₀ : -1 / 4 ≤ t) (ht₁ : t ≤ 1 / 4) :
+    loopModel g₀ g₁ P (s, t + 1) = loopModel g₀ g₁ P (s, t) := by
+  rcases le_or_gt s (1 / 3) with hs | hs
+  · rw [loopModel_of_le hs, loopModel_of_le hs, collaredSmoothTransitionLineMap_add_one _ ht₀ ht₁,
+      hgp₀]
+  rcases le_or_gt s (2 / 3) with hs' | hs'
+  · rw [loopModel_of_mem hs hs', loopModel_of_mem hs hs',
+      collaredSmoothTransitionUnit_eq_one_of_ge (by linarith),
+      collaredSmoothTransitionUnit_eq_zero_of_le ht₁, Path.source, Path.target]
+  · rw [loopModel_of_gt hs', loopModel_of_gt hs',
+      collaredSmoothTransitionLineMap_add_one _ ht₀ ht₁, hgp₁]
 
-/-- Two paths of loops whose maps of the square are homotopic relative to the frame are
-homotopic. -/
-private theorem homotopic_of_homotopicRel {P₀ P₁ : Path γ₀ γ₁} {f₀ f₁ : C(ℝ × ℝ, M)}
-    (h : f₀.HomotopicRel f₁ frame) (h₀ : ∀ s t : unitInterval, P₀ s t = f₀ (s, t))
-    (h₁ : ∀ s t : unitInterval, P₁ s t = f₁ (s, t)) : P₀.Homotopic P₁ := by
-  obtain ⟨H⟩ := h
-  have hH {τ : unitInterval} {s t : unitInterval} (hz : ((s : ℝ), (t : ℝ)) ∈ frame) :
-      H (τ, ((s : ℝ), (t : ℝ))) = P₀ s t := (H.eq_fst τ hz).trans (h₀ s t).symm
-  have h0 : ((0 : unitInterval) : ℝ) ∉ Ioo (1 / 4 : ℝ) (3 / 4) := by norm_num
-  have h1 : ((1 : unitInterval) : ℝ) ∉ Ioo (1 / 4 : ℝ) (3 / 4) := by norm_num
-  refine Path.homotopic_of_continuous_cube (fun q ↦ H (q.1, ((q.2.1 : ℝ), (q.2.2 : ℝ))))
-    (H.continuous.comp (by fun_prop)) (fun s t ↦ (H.apply_zero _).trans (h₀ s t).symm)
-    (fun s t ↦ (H.apply_one _).trans (h₁ s t).symm) (fun τ t ↦ ?_) (fun τ t ↦ ?_)
-    (fun τ s ↦ ?_) (fun τ s ↦ ?_)
-  · rw [hH (mem_frame_of_fst h0 ⟨t.property.1, t.property.2⟩), P₀.source]
-  · rw [hH (mem_frame_of_fst h1 ⟨t.property.1, t.property.2⟩), P₀.target]
-  · rw [hH (mem_frame_of_snd ⟨le_rfl, zero_le_one⟩ h0), (P₀ s).source]
-  · rw [hH (mem_frame_of_snd ⟨zero_le_one, le_rfl⟩ h1), (P₀ s).target]
+private theorem contMDiffOn_loopModel {E H : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+    [TopologicalSpace H] {I : ModelWithCorners ℝ E H} [ChartedSpace H M] {n : ℕ∞}
+    (hg₀ : ContMDiff 𝓘(ℝ, ℝ) I n g₀) (hg₁ : ContMDiff 𝓘(ℝ, ℝ) I n g₁) :
+    ContMDiffOn 𝓘(ℝ, ℝ × ℝ) I n (loopModel g₀ g₁ P) loopSmoothSet := by
+  rintro z ((hz | hz) | hz)
+  · have h : loopModel g₀ g₁ P =ᶠ[𝓝 z] fun w : ℝ × ℝ ↦
+        g₀ (collaredSmoothTransitionLineMap (loopRamp w.1) w.2) := by
+      filter_upwards [(isOpen_lt continuous_fst continuous_const).mem_nhds hz] with w hw
+      exact loopModel_of_le (le_of_lt hw)
+    exact ((hg₀.comp (contDiff_lineMap_comp contDiff_loopRamp).contMDiff).contMDiffAt
+      |>.congr_of_eventuallyEq h).contMDiffWithinAt
+  · have h : loopModel g₀ g₁ P =ᶠ[𝓝 z] fun w : ℝ × ℝ ↦
+        g₁ (collaredSmoothTransitionLineMap (loopRamp (1 - w.1)) w.2) := by
+      filter_upwards [(isOpen_lt continuous_const continuous_fst).mem_nhds hz] with w hw
+      exact loopModel_of_gt hw
+    exact ((hg₁.comp (contDiff_lineMap_comp
+      (contDiff_loopRamp.comp (contDiff_const.sub contDiff_id))).contMDiff).contMDiffAt
+      |>.congr_of_eventuallyEq h).contMDiffWithinAt
+  · have h : loopModel g₀ g₁ P =ᶠ[𝓝 z] fun _ ↦ x := by
+      filter_upwards [isOpen_loopBaseSet.mem_nhds hz] with w ⟨⟨hw₁, hw₂⟩, hw⟩
+      exact loopModel_eq_base hγ₀ hγ₁ hw₁ hw₂ (hw.imp le_of_lt le_of_lt)
+    exact (contMDiffAt_const.congr_of_eventuallyEq h).contMDiffWithinAt
 
-variable {E H : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace H]
-  {I : ModelWithCorners ℝ E H} [ChartedSpace H M] {n : ℕ∞}
+/-- The path in the loop space traced by the model on the unit square. -/
+private def loopModelPath (hg₀ : Continuous g₀) (hg₁ : Continuous g₁) : Path γ₀ γ₁ :=
+  Path.ofContinuousFamily (fun s t : unitInterval ↦ loopModel g₀ g₁ P (s, t))
+    ((continuous_loopModel hγ₀ hγ₁ hg₀ hg₁).comp
+      (continuous_subtypeVal.prodMap continuous_subtypeVal))
+    (fun s ↦ by rw [Icc.coe_zero, loopModel_seam_zero hγ₀ hγ₁])
+    (fun s ↦ by rw [Icc.coe_one, loopModel_seam_one hγ₀ hγ₁])
+    (fun t ↦ by rw [Icc.coe_zero, loopModel_zero, hγ₀])
+    (fun t ↦ by rw [Icc.coe_one, loopModel_one, hγ₁])
 
-/-- A map agreeing near `z` with `(s, t) ↦ g ((1 - c) (t - m))`, `c` the slide weight, is `C^n`
-at `z`. -/
-private theorem contMDiffAt_of_eqOn_seam {g : ℝ → M} (hg : ContMDiff 𝓘(ℝ, ℝ) I n g)
-    {f : ℝ × ℝ → M} {z : ℝ × ℝ} {U : Set (ℝ × ℝ)} (hU : U ∈ 𝓝 z) {m : ℤ}
-    (hf : ∀ w ∈ U, f w = g ((1 - slideWeight w.1) * (w.2 - m))) :
-    ContMDiffAt 𝓘(ℝ, ℝ × ℝ) I n f z :=
-  (hg.comp ((contDiff_const.sub (slideWeight.contDiff.comp contDiff_fst)).mul
-    (contDiff_snd.sub contDiff_const)).contMDiff).contMDiffAt.congr_of_eventuallyEq
-    (eventuallyEq_of_mem hU hf)
+private theorem loopModelPath_apply (hg₀ : Continuous g₀) (hg₁ : Continuous g₁)
+    (s t : unitInterval) :
+    loopModelPath (P := P) hγ₀ hγ₁ hg₀ hg₁ s t = loopModel g₀ g₁ P (s, t) :=
+  Path.ofContinuousFamily_apply _ _ _ _ _ _ s t
 
-/-- Off the seam lines, where the radial coordinate is constant at `r`, the reparametrized square
-is the loop `P r` reparametrized smoothly. -/
-private theorem contMDiffAt_reparamDisc_of_radial {g : ℝ → M} (hg : ContMDiff 𝓘(ℝ, ℝ) I n g)
-    (P : Path γ₀ γ₁) {r : unitInterval} (hr : ∀ t : unitInterval, P r t = g t) {V : Set ℝ}
-    (hV : IsOpen V) (hVr : ∀ s ∈ V, radial s = r) {z : ℝ × ℝ} (hz : z.1 ∈ V) {m : ℤ}
-    (h : z.2 ∈ Ioo (m : ℝ) (m + 1)) : ContMDiffAt 𝓘(ℝ, ℝ × ℝ) I n (reparamDisc P) z := by
-  have hev : reparamDisc P =ᶠ[𝓝 z] fun w ↦ g (seamCollapse (slideWeight w.1) (w.2 - m)) := by
-    filter_upwards [(hV.preimage continuous_fst).mem_nhds hz,
-      (isOpen_Ioo.preimage continuous_snd).mem_nhds h] with w hw₁ hw₂
-    rw [reparamDisc_of_mem_Ico P w.1 (Ioo_subset_Ico_self hw₂), hVr _ hw₁]
-    exact apply_projIcc hr (seamCollapse_mem (slideWeight_mem _)
-      ⟨by linarith [hw₂.1], by linarith [hw₂.2]⟩)
-  refine ContMDiffAt.congr_of_eventuallyEq ?_ hev
-  exact (hg.comp (contDiff_seamCollapse.comp ((slideWeight.contDiff.comp contDiff_fst).prodMk
-    (contDiff_snd.sub contDiff_const))).contMDiff).contMDiffAt
+/-- The model has the class of `P`: it is the image of the diagonal of the square of loops
+`(a, s) ↦ P (σ_a s) ∘ τ_{ρ_a s}`, whose edges `s = 0` and `s = 1` are `γ₀` and `γ₁`. -/
+private theorem homotopic_loopModelPath (hg₀ : Continuous g₀) (hg₁ : Continuous g₁) :
+    P.Homotopic (loopModelPath (P := P) hγ₀ hγ₁ hg₀ hg₁) := by
+  -- The square `(a, s) ↦ P (σ_a s) ∘ τ_{ρ_a s}`, with `(ρ_a, σ_a)` interpolating linearly between
+  -- `(0, s)` and the parameters `(min (loopRamp s) (loopRamp (1 - s)), 3 s - 1)` of the model.
+  set σ : unitInterval × unitInterval → unitInterval := fun q ↦
+    projIcc 0 1 zero_le_one ((1 - q.1) * q.2 + q.1 * (3 * q.2 - 1))
+  set ρ : unitInterval × unitInterval → unitInterval := fun q ↦
+    projIcc 0 1 zero_le_one (q.1 * min (loopRamp q.2) (loopRamp (1 - q.2)))
+  have hσ : Continuous σ := continuous_projIcc.comp (by fun_prop)
+  have hρ : Continuous ρ := continuous_projIcc.comp
+    ((continuous_subtypeVal.comp continuous_fst).mul
+      ((contDiff_loopRamp (n := 0)).continuous.comp (continuous_subtypeVal.comp continuous_snd)
+        |>.min ((contDiff_loopRamp (n := 0)).continuous.comp
+          (continuous_const.sub (continuous_subtypeVal.comp continuous_snd)))))
+  let K := Path.continuousFamily (x₀ := x) (x₁ := x)
+    (fun (q : unitInterval × unitInterval) (t : unitInterval) ↦
+      P (σ q) (collaredSmoothTransitionLineMapUnit (ρ q) t))
+    ((continuous_uncurry_path P).comp ((hσ.comp continuous_fst).prodMk
+      (continuous_collaredSmoothTransitionLineMapUnit.comp
+        ((hρ.comp continuous_fst).prodMk continuous_snd))))
+    (fun q ↦ by simp only [collaredSmoothTransitionLineMapUnit_zero_right, Path.source])
+    (fun q ↦ by simp only [collaredSmoothTransitionLineMapUnit_one_right, Path.target])
+  refine Path.homotopic_of_continuous_square K K.continuous (fun s ↦ ?_) (fun s ↦ ?_)
+    (fun a ↦ ?_) (fun a ↦ ?_) <;> refine Path.ext (funext fun t ↦ ?_) <;>
+    rw [Path.continuousFamily_apply]
+  · have h₁ : σ (0, s) = s := by simp [σ]
+    have h₂ : ρ (0, s) = 0 := by simp [ρ]
+    rw [h₁, h₂, collaredSmoothTransitionLineMapUnit_zero_left]
+  · have h₁ : σ (1, s) = projIcc 0 1 zero_le_one (3 * (s : ℝ) - 1) := by simp [σ]
+    have h₂ : ρ (1, s) =
+        projIcc 0 1 zero_le_one (min (loopRamp s) (loopRamp (1 - s))) := by simp [ρ]
+    rw [h₁, h₂, loopModelPath_apply, loopModel_eq_of_mem hγ₀ hγ₁]
+  · have h₁ : σ (a, 0) = 0 := by
+      simp only [σ, Icc.coe_zero, mul_zero, zero_add, zero_sub]
+      rw [projIcc_of_le_left _ (by nlinarith [a.property.1]), Icc.mk_zero]
+    have h₂ : ρ (a, 0) = 0 := by
+      simp [ρ, loopRamp_of_le (by norm_num : (0 : ℝ) ≤ 1 / 6),
+        loopRamp_of_ge (by norm_num : (1 / 4 : ℝ) ≤ 1)]
+    rw [h₁, h₂, collaredSmoothTransitionLineMapUnit_zero_left, P.source]
+  · have h₁ : σ (a, 1) = 1 := by
+      simp only [σ, Icc.coe_one]
+      rw [projIcc_of_right_le _ (by nlinarith [a.property.1]), Icc.mk_one]
+    have h₂ : ρ (a, 1) = 0 := by
+      simp [ρ, loopRamp_of_le (by norm_num : (0 : ℝ) ≤ 1 / 6),
+        loopRamp_of_ge (by norm_num : (1 / 4 : ℝ) ≤ 1)]
+    rw [h₁, h₂, collaredSmoothTransitionLineMapUnit_zero_left, P.target]
 
-/-- The reparametrized square is `C^n` for `s < 1/3`, for `s > 2/3`, and near the seam lines. -/
-private theorem contMDiffAt_reparamDisc (hg₀ : ContMDiff 𝓘(ℝ, ℝ) I n g₀) (hgp₀ : Periodic g₀ 1)
-    (hγ₀ : ∀ t : unitInterval, γ₀ t = g₀ t) (hg₁ : ContMDiff 𝓘(ℝ, ℝ) I n g₁)
-    (hgp₁ : Periodic g₁ 1) (hγ₁ : ∀ t : unitInterval, γ₁ t = g₁ t) (P : Path γ₀ γ₁)
-    {z : ℝ × ℝ} (hz : z.1 < 1 / 3 ∨ 2 / 3 < z.1 ∨ ∃ m : ℤ, |z.2 - m| < 1 / 3) :
-    ContMDiffAt 𝓘(ℝ, ℝ × ℝ) I n (reparamDisc P) z := by
-  -- Near a seam line, the square is `g₀ ((1 - c) (t - m))` or `g₁ ((1 - c) (t - m))`.
-  have hseam {m : ℤ} (hm : |z.2 - m| < 1 / 3) :
-      ContMDiffAt 𝓘(ℝ, ℝ × ℝ) I n (reparamDisc P) z := by
-    have ho : IsOpen {w : ℝ × ℝ | |w.2 - m| < 1 / 3} := isOpen_lt (by fun_prop) continuous_const
-    rcases lt_or_ge z.1 (2 / 3) with hs | hs
-    · exact contMDiffAt_of_eqOn_seam hg₀
-        (((isOpen_lt continuous_fst continuous_const).inter ho).mem_nhds ⟨hs, hm⟩)
-        fun w hw ↦ reparamDisc_of_abs_sub_lt_left hgp₀ hγ₀ P hw.1 hw.2
-    · exact contMDiffAt_of_eqOn_seam hg₁
-        (((isOpen_lt continuous_const continuous_fst).inter ho).mem_nhds
-          ⟨(by linarith : (1 : ℝ) / 3 < z.1), hm⟩)
-        fun w hw ↦ reparamDisc_of_abs_sub_lt_right hgp₁ hγ₁ P hw.1 hw.2
-  have hfloor : |z.2 - ⌊z.2⌋| < 1 / 3 ∨ z.2 ∈ Ioo (⌊z.2⌋ : ℝ) (⌊z.2⌋ + 1) :=
-    (eq_floor_or_mem_Ioo z.2).imp_left fun h ↦ by rw [← h, sub_self, abs_zero]; norm_num
-  rcases hz with hz | hz | ⟨m, hm⟩
-  · -- For `s < 1/3` the square is `γ₀`, reparametrized smoothly.
-    refine hfloor.elim hseam fun h ↦ contMDiffAt_reparamDisc_of_radial hg₀ P
-      (fun t ↦ by rw [P.source, hγ₀]) isOpen_Iio (fun s hs ↦ radial_of_le (le_of_lt hs)) hz h
-  · -- For `s > 2/3` the square is `γ₁`, reparametrized smoothly.
-    refine hfloor.elim hseam fun h ↦ contMDiffAt_reparamDisc_of_radial hg₁ P
-      (fun t ↦ by rw [P.target, hγ₁]) isOpen_Ioi (fun s hs ↦ radial_of_ge (le_of_lt hs)) hz h
-  · exact hseam hm
-
-/-- If `u₀` is `C^n` and agrees with the reparametrized square on the frame, then its periodic
-extension `(s, t) ↦ u₀ (s, fract t)` from the strip `ℝ × [0, 1)` is `C^n`: near the seam lines it
-is the reparametrized square, and between them it is a translate of `u₀`. -/
-private theorem contMDiff_comp_fract (hg₀ : ContMDiff 𝓘(ℝ, ℝ) I n g₀) (hgp₀ : Periodic g₀ 1)
-    (hγ₀ : ∀ t : unitInterval, γ₀ t = g₀ t) (hg₁ : ContMDiff 𝓘(ℝ, ℝ) I n g₁)
-    (hgp₁ : Periodic g₁ 1) (hγ₁ : ∀ t : unitInterval, γ₁ t = g₁ t) (P : Path γ₀ γ₁)
-    {u₀ : ℝ × ℝ → M} (hu₀ : ContMDiff 𝓘(ℝ, ℝ × ℝ) I n u₀)
-    (hframe : ∀ z ∈ frame, u₀ z = reparamDisc P z) :
-    ContMDiff 𝓘(ℝ, ℝ × ℝ) I n fun z : ℝ × ℝ ↦ u₀ (z.1, Int.fract z.2) := by
-  intro z
-  rcases eq_floor_or_mem_Ioo z.2 with h | h
-  · have hz : |z.2 - ⌊z.2⌋| < 1 / 4 := by rw [← h, sub_self, abs_zero]; norm_num
-    have ho : IsOpen {w : ℝ × ℝ | |w.2 - ⌊z.2⌋| < 1 / 4} :=
-      isOpen_lt (continuous_snd.sub continuous_const).abs continuous_const
-    have hev : (fun w : ℝ × ℝ ↦ u₀ (w.1, Int.fract w.2)) =ᶠ[𝓝 z] reparamDisc P := by
-      filter_upwards [ho.mem_nhds hz] with w hw
-      rw [hframe _ (mem_frame_fract hw), reparamDisc_fract]
-    exact (contMDiffAt_reparamDisc hg₀ hgp₀ hγ₀ hg₁ hgp₁ hγ₁ P
-      (Or.inr (Or.inr ⟨⌊z.2⌋, by linarith⟩))).congr_of_eventuallyEq hev
-  · have hev : (fun w : ℝ × ℝ ↦ u₀ (w.1, Int.fract w.2)) =ᶠ[𝓝 z]
-        fun w ↦ u₀ (w.1, w.2 - ⌊z.2⌋) := by
-      filter_upwards [(isOpen_Ioo.preimage continuous_snd).mem_nhds h] with w hw
-      rw [Int.fract, Int.floor_eq_iff.2 ⟨hw.1.le, hw.2⟩]
-    exact (hu₀.comp (contDiff_fst.prodMk (contDiff_snd.sub contDiff_const)).contMDiff
-      ).contMDiffAt.congr_of_eventuallyEq hev
+end Model
 
 /-! ### Smooth representatives -/
+
+section Smoothing
+
+/-- The complement of a rectangle inside the unit square: the closed set on which the smoothing
+of the model keeps its values. -/
+private def loopFixedSet : Set (ℝ × ℝ) :=
+  (Ioo (3 / 10 : ℝ) (7 / 10) ×ˢ Ioo (1 / 5 : ℝ) (4 / 5))ᶜ
+
+private theorem isClosed_loopFixedSet : IsClosed loopFixedSet :=
+  (isOpen_Ioo.prod isOpen_Ioo).isClosed_compl
+
+private theorem mem_loopFixedSet_of_fst {z : ℝ × ℝ} (h : z.1 ≤ 3 / 10 ∨ 7 / 10 ≤ z.1) :
+    z ∈ loopFixedSet := by
+  rintro ⟨⟨h₁, h₂⟩, -⟩
+  rcases h with h | h <;> linarith
+
+private theorem mem_loopFixedSet_of_snd {z : ℝ × ℝ} (h : z.2 ≤ 1 / 5 ∨ 4 / 5 ≤ z.2) :
+    z ∈ loopFixedSet := by
+  rintro ⟨-, ⟨h₁, h₂⟩⟩
+  rcases h with h | h <;> linarith
+
+private theorem loopFixedSet_subset : loopFixedSet ⊆ loopSmoothSet := by
+  intro z hz
+  rcases lt_or_ge z.1 (1 / 3) with h₁ | h₁
+  · exact Or.inl (Or.inl h₁)
+  rcases lt_or_ge (2 / 3) z.1 with h₂ | h₂
+  · exact Or.inl (Or.inr h₂)
+  refine Or.inr ⟨⟨(by linarith : (1 / 4 : ℝ) < z.1), (by linarith : z.1 < 3 / 4)⟩, ?_⟩
+  by_contra h
+  simp only [mem_union, mem_ofPred_eq, not_or, not_lt] at h
+  exact hz ⟨⟨by linarith, by linarith⟩, ⟨by linarith [h.1], by linarith [h.2]⟩⟩
+
+variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace H]
+  {I : ModelWithCorners ℝ E H} [TopologicalSpace M] [ChartedSpace H M] {x : M} {γ₀ γ₁ : Path x x}
+  {g₀ g₁ : ℝ → M} {n : ℕ∞}
+
+/-- The periodization in `t` of a `C^n` map `G` which agrees with the model off a rectangle
+inside the unit square is `C^n`: near the seam the model, hence `G`, is periodic. -/
+private theorem contMDiff_periodize (hgp₀ : Periodic g₀ 1) (hgp₁ : Periodic g₁ 1)
+    {P : Path γ₀ γ₁} {G : ℝ × ℝ → M} (hG : ContMDiff 𝓘(ℝ, ℝ × ℝ) I n G)
+    (hGf : ∀ z ∈ loopFixedSet, G z = loopModel g₀ g₁ P z) :
+    ContMDiff 𝓘(ℝ, ℝ × ℝ) I n fun z : ℝ × ℝ ↦ G (z.1, Int.fract z.2) := fun z ↦
+  ((hG.comp (contDiff_fst.prodMk (contDiff_snd.sub contDiff_const)).contMDiff)
+    z).congr_of_eventuallyEq
+    (apply_fract_snd_eventuallyEq (ε := 1 / 5) (by norm_num) (fun s t ht₀ ht₁ ↦ by
+      rw [hGf _ (mem_loopFixedSet_of_snd (Or.inr (by linarith))),
+        hGf _ (mem_loopFixedSet_of_snd (Or.inl (by linarith))),
+        loopModel_add_one hgp₀ hgp₁ s (by linarith) (by linarith)]) z)
+
+/-- A homotopy, relative to the complement of a rectangle inside the unit square, from the model
+to a map `G` gives a homotopy of paths in the loop space from the model path to every path of
+loops given on the unit square by the periodization of `G`. -/
+private theorem homotopic_loopModelPath_of_homotopyRel (hγ₀ : ∀ t : unitInterval, γ₀ t = g₀ t)
+    (hγ₁ : ∀ t : unitInterval, γ₁ t = g₁ t) (hc₀ : Continuous g₀) (hc₁ : Continuous g₁)
+    {P : Path γ₀ γ₁} {G : C(ℝ × ℝ, M)}
+    (R : (⟨loopModel g₀ g₁ P, continuous_loopModel hγ₀ hγ₁ hc₀ hc₁⟩ : C(ℝ × ℝ, M)).HomotopyRel G
+      loopFixedSet)
+    {P' : Path γ₀ γ₁} (hP' : ∀ s t : unitInterval, P' s t = G (s, Int.fract (t : ℝ))) :
+    (loopModelPath (P := P) hγ₀ hγ₁ hc₀ hc₁).Homotopic P' := by
+  have hR : Continuous fun q : (unitInterval × unitInterval) × unitInterval ↦
+      R (q.1.1, ((q.1.2 : ℝ), (q.2 : ℝ))) :=
+    R.continuous.comp ((continuous_fst.comp continuous_fst).prodMk
+      ((continuous_subtypeVal.comp (continuous_snd.comp continuous_fst)).prodMk
+        (continuous_subtypeVal.comp continuous_snd)))
+  let K := Path.continuousFamily (x₀ := x) (x₁ := x)
+    (fun (q : unitInterval × unitInterval) (t : unitInterval) ↦ R (q.1, ((q.2 : ℝ), (t : ℝ)))) hR
+    (fun q ↦ by
+      rw [Icc.coe_zero]
+      exact (R.eq_fst _ (mem_loopFixedSet_of_snd (Or.inl (by norm_num)))).trans
+        (loopModel_seam_zero hγ₀ hγ₁ _))
+    (fun q ↦ by
+      rw [Icc.coe_one]
+      exact (R.eq_fst _ (mem_loopFixedSet_of_snd (Or.inr (by norm_num)))).trans
+        (loopModel_seam_one hγ₀ hγ₁ _))
+  refine Path.homotopic_of_continuous_square K K.continuous (fun s ↦ ?_) (fun s ↦ ?_)
+    (fun a ↦ ?_) (fun a ↦ ?_) <;> refine Path.ext (funext fun t ↦ ?_) <;>
+    rw [Path.continuousFamily_apply]
+  · rw [loopModelPath_apply]
+    exact R.apply_zero _
+  · -- At `t = 1` the periodization reads `G` at `t = 0`, where both values are `x`.
+    rw [R.apply_one, hP']
+    rcases eq_or_lt_of_le t.property.2 with h | h
+    · rw [h, Int.fract_one,
+        ← R.fst_eq_snd (x := ((s : ℝ), 1)) (mem_loopFixedSet_of_snd (Or.inr (by norm_num))),
+        ← R.fst_eq_snd (x := ((s : ℝ), 0)) (mem_loopFixedSet_of_snd (Or.inl (by norm_num)))]
+      exact (loopModel_seam_one hγ₀ hγ₁ _).trans (loopModel_seam_zero hγ₀ hγ₁ _).symm
+    · rw [Int.fract_eq_self.2 ⟨t.property.1, h⟩]
+  · rw [Icc.coe_zero]
+    exact (R.eq_fst _ (mem_loopFixedSet_of_fst (Or.inl (by norm_num)))).trans
+      ((loopModel_zero t).trans (hγ₀ t).symm)
+  · rw [Icc.coe_one]
+    exact (R.eq_fst _ (mem_loopFixedSet_of_fst (Or.inr (by norm_num)))).trans
+      ((loopModel_one t).trans (hγ₁ t).symm)
 
 variable [FiniteDimensional ℝ E] [I.Boundaryless] [IsManifold I ∞ M] [T2Space M]
 
@@ -486,63 +459,52 @@ theorem exists_contMDiff_periodic_homotopic (hg₀ : ContMDiff 𝓘(ℝ, ℝ) I 
     ∃ u : ℝ × ℝ → M, ContMDiff 𝓘(ℝ, ℝ × ℝ) I n u ∧ (∀ z : ℝ × ℝ, u (z.1, z.2 + 1) = u z) ∧
       (∀ t, u (0, t) = g₀ t) ∧ (∀ t, u (1, t) = g₁ t) ∧
       ∃ P' : Path γ₀ γ₁, (∀ s t : unitInterval, P' s t = u (s, t)) ∧ P'.Homotopic P := by
-  -- Reparametrize the square of `P`, so that it is smooth near the frame.
-  let G : C(ℝ × ℝ, M) := ⟨reparamDisc P, continuous_reparamDisc P⟩
-  have hU : {z : ℝ × ℝ | z.1 < 1 / 3 ∨ 2 / 3 < z.1 ∨ ∃ m : ℤ, |z.2 - m| < 1 / 3} ∈ 𝓝ˢ frame := by
-    have h₁ : IsOpen {z : ℝ × ℝ | z.1 < 1 / 3} := isOpen_lt continuous_fst continuous_const
-    have h₂ : IsOpen {z : ℝ × ℝ | 2 / 3 < z.1} := isOpen_lt continuous_const continuous_fst
-    have h₃ : IsOpen {z : ℝ × ℝ | ∃ m : ℤ, |z.2 - m| < 1 / 3} := by
-      simp only [ofPred_exists]
-      exact isOpen_iUnion fun m ↦ isOpen_lt (by fun_prop) continuous_const
-    exact (h₁.union (h₂.union h₃)).mem_nhdsSet.2 frame_subset
-  -- Each value of `G` is by definition a value of `P` on the square.
-  have hcpt : IsCompact (closure (range G)) :=
-    (isCompact_range (Path.continuous_uncurry_iff.2 P.continuous)).closure_of_subset
-      (range_subset_iff.2 fun _ ↦ ⟨(_, _), rfl⟩)
-  -- Smooth it relative to the frame, and extend the result periodically from `ℝ × [0, 1)`.
-  obtain ⟨u₀, hu₀, hGu₀⟩ := G.exists_contMDiff_homotopicRel_of_isCompact_closure_range
-    (I := 𝓘(ℝ, ℝ × ℝ)) n hcpt isClosed_frame hU fun z hz ↦
-      (contMDiffAt_reparamDisc hg₀ hgp₀ hγ₀ hg₁ hgp₁ hγ₁ P hz).contMDiffWithinAt
-  have hframe (z : ℝ × ℝ) (hz : z ∈ frame) : u₀ z = reparamDisc P z :=
-    (hGu₀.fst_eq_snd hz).symm
-  have hseam (s : ℝ) : u₀ (s, 0) = x := by
-    rw [hframe _ (mem_frame_of_snd ⟨le_rfl, zero_le_one⟩ (by norm_num)),
-      reparamDisc_seam P s (Or.inl rfl)]
-  let u : ℝ × ℝ → M := fun z ↦ u₀ (z.1, Int.fract z.2)
-  have hu_left (t : ℝ) : u (0, t) = g₀ t := by
+  have hc₀ := hg₀.continuous
+  have hc₁ := hg₁.continuous
+  let f : C(ℝ × ℝ, M) := ⟨loopModel g₀ g₁ P, continuous_loopModel hγ₀ hγ₁ hc₀ hc₁⟩
+  -- The model takes values in the images of `g₀`, `g₁` and `P`, so its image is relatively
+  -- compact.
+  have hK : IsCompact (closure (range f)) := by
+    refine (((hgp₀.compact_of_continuous one_ne_zero hc₀).union
+      (hgp₁.compact_of_continuous one_ne_zero hc₁)).union
+      (isCompact_range (continuous_uncurry_path P))).closure_of_subset ?_
+    rintro _ ⟨z, rfl⟩
+    rcases le_or_gt z.1 (1 / 3) with h | h
+    · exact Or.inl (Or.inl ⟨_, (loopModel_of_le h).symm⟩)
+    rcases le_or_gt z.1 (2 / 3) with h' | h'
+    · exact Or.inr ⟨(_, _), (loopModel_of_mem h h').symm⟩
+    · exact Or.inl (Or.inr ⟨_, (loopModel_of_gt h').symm⟩)
+  -- Smooth the model relative to the complement of a rectangle inside the unit square.
+  obtain ⟨G, hG, ⟨R⟩⟩ := f.exists_contMDiff_homotopicRel_of_isCompact_closure_range
+    (I := 𝓘(ℝ, ℝ × ℝ)) (J := I) n hK isClosed_loopFixedSet
+    (isOpen_loopSmoothSet.mem_nhdsSet.2 loopFixedSet_subset)
+    (contMDiffOn_loopModel hγ₀ hγ₁ hg₀ hg₁)
+  have hGf (z : ℝ × ℝ) (hz : z ∈ loopFixedSet) : G z = loopModel g₀ g₁ P z :=
+    (R.fst_eq_snd hz).symm
+  -- Periodize the smoothing in `t`.
+  let u : ℝ × ℝ → M := fun z ↦ G (z.1, Int.fract z.2)
+  have hu : ContMDiff 𝓘(ℝ, ℝ × ℝ) I n u := contMDiff_periodize hgp₀ hgp₁ hG hGf
+  have hu₀ (t : ℝ) : u (0, t) = g₀ t := by
     simp only [u]
-    rw [hframe _ (mem_frame_of_fst (by norm_num) (unitInterval.fract_mem t)), reparamDisc_fract,
-      reparamDisc_zero_left hgp₀ hγ₀]
-  have hu_right (t : ℝ) : u (1, t) = g₁ t := by
+    rw [hGf _ (mem_loopFixedSet_of_fst (Or.inl (by norm_num))), loopModel_zero, hgp₀.apply_fract]
+  have hu₁ (t : ℝ) : u (1, t) = g₁ t := by
     simp only [u]
-    rw [hframe _ (mem_frame_of_fst (by norm_num) (unitInterval.fract_mem t)), reparamDisc_fract,
-      reparamDisc_one_left hgp₁ hγ₁]
-  have hu_seam (s : ℝ) {t : ℝ} (ht : t = 0 ∨ t = 1) : u (s, t) = x := by
-    rcases ht with rfl | rfl
-    · simpa [u] using hseam s
-    · simpa [u] using hseam s
-  have hu_eq (s t : unitInterval) : u (s, t) = u₀ (s, t) := by
-    rcases t.property.2.lt_or_eq with ht | ht
-    · simp only [u, Int.fract_eq_self.2 ⟨t.property.1, ht⟩]
-    · rw [hu_seam s (Or.inr ht), ht, hframe _ (mem_frame_of_snd ⟨zero_le_one, le_rfl⟩
-        (by norm_num)), reparamDisc_seam P s (Or.inr rfl)]
-  have hu := contMDiff_comp_fract hg₀ hgp₀ hγ₀ hg₁ hgp₁ hγ₁ P hu₀ hframe
-  refine ⟨u, hu, fun z ↦ by simp [u, Int.fract_add_one], hu_left, hu_right, ?_⟩
-  -- The path of loops of `u` is homotopic to that of `G` by smoothing, and so to `P`.
+    rw [hGf _ (mem_loopFixedSet_of_fst (Or.inr (by norm_num))), loopModel_one, hgp₁.apply_fract]
+  have hseam₀ (s : ℝ) : u (s, 0) = x := by
+    simp only [u, Int.fract_zero]
+    rw [hGf _ (mem_loopFixedSet_of_snd (Or.inl (by norm_num))), loopModel_seam_zero hγ₀ hγ₁]
+  have hseam₁ (s : ℝ) : u (s, 1) = x := by
+    simp only [u, Int.fract_one]
+    rw [hGf _ (mem_loopFixedSet_of_snd (Or.inl (by norm_num))), loopModel_seam_zero hγ₀ hγ₁]
   let Pu : Path γ₀ γ₁ := Path.ofContinuousFamily (fun s t ↦ u (s, t))
-    (hu.continuous.comp (by fun_prop)) (fun s ↦ hu_seam s (Or.inl rfl))
-    (fun s ↦ hu_seam s (Or.inr rfl)) (fun t ↦ (hu_left t).trans (hγ₀ t).symm)
-    (fun t ↦ (hu_right t).trans (hγ₁ t).symm)
-  let PG : Path γ₀ γ₁ := Path.ofContinuousFamily (fun s t ↦ G (s, t)) (by fun_prop)
-    (fun s ↦ reparamDisc_seam P s (Or.inl rfl)) (fun s ↦ reparamDisc_seam P s (Or.inr rfl))
-    (fun t ↦ (reparamDisc_zero_left hgp₀ hγ₀ P t).trans (hγ₀ t).symm)
-    (fun t ↦ (reparamDisc_one_left hgp₁ hγ₁ P t).trans (hγ₁ t).symm)
-  refine ⟨Pu, fun s t ↦ Path.ofContinuousFamily_apply _ _ _ _ _ _ s t, ?_⟩
-  have hPG : P.Homotopic PG :=
-    homotopic_reparamDisc P PG fun s t ↦ Path.ofContinuousFamily_apply _ _ _ _ _ _ s t
-  have hPu : PG.Homotopic Pu :=
-    homotopic_of_homotopicRel hGu₀ (fun s t ↦ Path.ofContinuousFamily_apply _ _ _ _ _ _ s t)
-      fun s t ↦ (Path.ofContinuousFamily_apply _ _ _ _ _ _ s t).trans (hu_eq s t)
-  exact (hPG.trans hPu).symm
+    (hu.continuous.comp (by fun_prop)) (fun s ↦ by rw [Icc.coe_zero, hseam₀])
+    (fun s ↦ by rw [Icc.coe_one, hseam₁]) (fun t ↦ by rw [Icc.coe_zero, hu₀, hγ₀])
+    (fun t ↦ by rw [Icc.coe_one, hu₁, hγ₁])
+  have hPu (s t : unitInterval) : Pu s t = u (s, t) := Path.ofContinuousFamily_apply _ _ _ _ _ _ s t
+  exact ⟨u, hu, fun z ↦ by simp only [u, Int.fract_add_one], hu₀, hu₁, Pu, hPu,
+    ((homotopic_loopModelPath hγ₀ hγ₁ hc₀ hc₁).trans
+      (homotopic_loopModelPath_of_homotopyRel hγ₀ hγ₁ hc₀ hc₁ R hPu)).symm⟩
+
+end Smoothing
 
 end TauCeti
