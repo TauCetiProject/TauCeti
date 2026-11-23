@@ -87,15 +87,6 @@ variable {w : Fin 3 → ℝ} {a : ℤ → ℝ} (R : Type) [Ring R]
 
 /-! ### Sublevel pairs and triples -/
 
-/-- Under a monotone sequence separating the weights, the last sublevel `{f ≤ a 3}` of the moment
-function on `ℝℙ²` is all of `ℝℙ²`. -/
-private def sublevelThreeHomeomorph (ha : Monotone a)
-    (hcut : ∀ k : Fin 3, w k ∈ Ioo (a k) (a ((k : ℕ) + 1))) :
-    {x : ℙ ℝ (Fin 3 → ℝ) | projectiveMomentFunction ℝ w x ≤ a 3} ≃ₜ ℙ ℝ (Fin 3 → ℝ) :=
-  (Homeomorph.setCongr (eq_univ_of_forall fun x ↦ projectiveMomentFunction_le
-      (fun i ↦ ((hcut i).2.trans_le (ha (by have := i.isLt; omega))).le) x)).trans
-    (Homeomorph.Set.univ _)
-
 /-- The sublevel pair `({f ≤ a 3}, {f ≤ a 1})` of the moment function on `ℝℙ²`. -/
 private abbrev pairOneThree (w : Fin 3 → ℝ) (ha : Monotone a) : TopPair :=
   TopPair.ofInclusion (X := TopCat.of (ℙ ℝ (Fin 3 → ℝ)))
@@ -115,7 +106,8 @@ private def singularHomologyPairOneThreeIso (ha : Monotone a)
       (ModuleCat.of R R)).mapIso
         (TopCat.isoOfHomeo
           (X := TopCat.of {x : ℙ ℝ (Fin 3 → ℝ) | projectiveMomentFunction ℝ w x ≤ a 3})
-          (sublevelThreeHomeomorph ha hcut))
+          (sublevelHomeomorphUniv fun x ↦ projectiveMomentFunction_le
+            (fun i ↦ ((hcut i).2.trans_le (ha (by have := i.isLt; omega))).le) x))
 
 /-- `H₂({f ≤ a 3}, {f ≤ a 1}; R) = 0` when right multiplication by `2` is injective on `R`. -/
 private theorem isZero_singularHomology_pairOneThree_two (ha : Monotone a)
