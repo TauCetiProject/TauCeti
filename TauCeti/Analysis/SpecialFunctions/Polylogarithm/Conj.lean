@@ -55,6 +55,7 @@ namespace TauCeti.Polylog
 
 /-- Nonpositive weights commute with complex conjugation at every point, including the
 totalised value at the pole `1`. -/
+@[simp]
 theorem polylog_neg_nat_conj (r : ℕ) (z : ℂ) :
     polylog (-(r : ℤ)) (conj z) = conj (polylog (-(r : ℤ)) z) := by
   suffices h : conj ∘ polylog (-(r : ℤ)) ∘ conj = polylog (-(r : ℤ)) by
