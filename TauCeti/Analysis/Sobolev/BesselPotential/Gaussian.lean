@@ -11,7 +11,7 @@ import TauCeti.Analysis.Distribution.SchwartzSpace.Basic
 import TauCeti.Analysis.SpecialFunctions.Gaussian.Harmonic
 
 /-!
-# The space `H^{1,2}(ℝ)`: the `2π` witness
+# The `H^{1,2}(ℝ)` norm of a Gaussian
 
 A computation on Gaussians on the real line tests the identification of Mathlib's
 Bessel-potential space `H^{1,2}(ℝ)` with the weak-derivative space `W^{1,2}(ℝ)`.
@@ -26,9 +26,8 @@ For the Gaussian `g(x) = exp(-b x²)`, `0 < Re b`, the squared `L²` norms of `g
 `TauCeti.norm_toLp_lineDerivOp_one_gaussian_sq`), so `‖g‖²_{H^{1,2}}` is
 `√(π / (2 Re b)) (1 + |b|² / (4π² Re b))`
 (`TauCeti.norm_toBesselPotentialSpaceCLM_one_gaussian_sq`), whereas the sum of the squared `L²`
-norms of `g` and `g'` is `√(π / (2 Re b)) (1 + |b|² / Re b)`
-(`TauCeti.norm_toLp_gaussian_sq_add_norm_toLp_lineDerivOp_one_gaussian_sq`). The two norms are
-equivalent, with constants `1` and `(2π)²` on the derivative term, but not equal.
+norms of `g` and `g'` is `√(π / (2 Re b)) (1 + |b|² / Re b)`. The two norms are equivalent, with
+constants `1` and `(2π)²` on the derivative term, but not equal.
 
 ## References
 
@@ -56,18 +55,6 @@ theorem norm_toBesselPotentialSpaceCLM_one_gaussian_sq {b : ℂ} (hb : 0 < b.re)
     Finset.univ_unique, Finset.sum_singleton, ← SchwartzMap.norm_toLp_sq, norm_toLp_gaussian_sq,
     norm_toLp_lineDerivOp_one_gaussian_sq]
   field_simp
-  ring
-
-/-- **The `W^{1,2}` norm of a Gaussian.** For `g(x) = exp(-b x²)` on `ℝ`, `0 < Re b`,
-`‖g‖²_{L²} + ‖g'‖²_{L²} = √(π / (2 Re b)) (1 + |b|² / Re b)`. Compared with
-`TauCeti.norm_toBesselPotentialSpaceCLM_one_gaussian_sq`, the derivative term carries the factor
-`(2π)²`. -/
-theorem norm_toLp_gaussian_sq_add_norm_toLp_lineDerivOp_one_gaussian_sq {b : ℂ}
-    (hb : 0 < b.re) :
-    ‖(SchwartzMap.gaussian (V := ℝ) hb).toLp 2‖ ^ 2 +
-        ‖(∂_{(1 : ℝ)} (SchwartzMap.gaussian (V := ℝ) hb : 𝓢(ℝ, ℂ))).toLp 2‖ ^ 2 =
-      √(π / (2 * b.re)) * (1 + ‖b‖ ^ 2 / b.re) := by
-  rw [norm_toLp_gaussian_sq, norm_toLp_lineDerivOp_one_gaussian_sq]
   ring
 
 end TauCeti
