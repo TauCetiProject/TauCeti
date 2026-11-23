@@ -235,7 +235,8 @@ theorem repeatedGaussianIntegral_one (z : ℂ) :
   have hp (t : ℝ) : HasDerivAt (fun t : ℝ => (t : ℂ) ^ 0 / (0 ! : ℕ)) 0 t := by
     simpa using hasDerivAt_const t (1 : ℂ)
   have h := integral_Ioi_mul_cexp_eq 0 z hp (by simp)
-  simp at h
+  simp only [zero_mul, integral_zero, CharP.cast_eq_zero, zero_add, one_mul, pow_zero,
+    Nat.factorial_zero, Nat.cast_one, ne_eq, one_ne_zero, not_false_eq_true, div_self] at h
   linear_combination -h
 
 /-- The three-term recurrence `(n + 2) Hh_{n+2}(z) = Hh_n(z) - z Hh_{n+1}(z)`. -/
@@ -252,7 +253,8 @@ theorem repeatedGaussianIntegral_add_two (n : ℕ) (z : ℂ) :
   have h := integral_Ioi_mul_cexp_eq (n + 1) z hp
     (integrableOn_repeatedGaussianIntegral_integrand n z)
   rw [← repeatedGaussianIntegral_def] at h
-  simp at h
+  simp only [Nat.cast_add, Nat.cast_one, ne_eq, Nat.add_eq_zero_iff, one_ne_zero, and_false,
+    not_false_eq_true, zero_pow, zero_div, zero_mul, sub_zero] at h
   linear_combination -h
 
 /-- `Hh₀′(z) = -e^{-z²/2}`. -/
@@ -414,7 +416,7 @@ theorem iteratedDeriv_re_repeatedGaussianIntegral (n k : ℕ) :
     iteratedDeriv_repeatedGaussianIntegral]
   funext x
   -- The sign `(-1)ᵏ` is the cast of a real number.
-  have hs : (-1 : ℂ) ^ k = (((-1 : ℝ) ^ k : ℝ) : ℂ) := by push_cast; rfl
+  have hs : (-1 : ℂ) ^ k = (((-1 : ℝ) ^ k : ℝ) : ℂ) := by push_cast; ring
   rw [hs, Complex.re_ofReal_mul]
 
 /-- The weighted function `e^{z²/2} Hh_n(z)` has derivative `-(n + 1) e^{z²/2} Hh_{n+1}(z)`. -/
@@ -481,7 +483,7 @@ theorem iteratedDeriv_exp_mul_re_repeatedGaussianIntegral (n k : ℕ) :
   -- The coefficient `(-1)ᵏ (n + k)!/n!` is the cast of a real number.
   have hc : (-1 : ℂ) ^ k * ((n + k) ! / n ! : ℂ) =
       (((-1) ^ k * ((n + k) ! / n ! : ℝ) : ℝ) : ℂ) := by
-    push_cast; rfl
+    push_cast; ring
   rw [hc, Complex.re_ofReal_mul]
 
 /-- The value at the origin `Hh_n(0) = 2^{(n-1)/2} Γ((n + 1)/2) / n!`. -/
