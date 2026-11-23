@@ -12,7 +12,7 @@ public import Mathlib.MeasureTheory.Measure.Lebesgue.Complex
 public import Mathlib.Analysis.SpecialFunctions.Trigonometric.Basic
 import TauCeti.MeasureTheory.Integral.NormRpow
 import TauCeti.MeasureTheory.Measure.Haar.NormedSpace
-import Mathlib.MeasureTheory.Measure.Lebesgue.VolumeOfBalls
+import TauCeti.MeasureTheory.Measure.Lebesgue.VolumeOfBalls
 import TauCeti.MeasureTheory.Function.Lp.Translation
 
 /-!
@@ -94,7 +94,7 @@ theorem integral_norm_sub_inv_closedBall {R : ℝ} (hR : 0 ≤ R) (w : ℂ) :
     (∫ z in closedBall w R, ‖z - w‖⁻¹) = 2 * Real.pi * R := by
   rw [volume.restrict_closedBall_eq_restrict_ball w R]
   have h := TauCeti.integral_norm_sub_rpow_ball (mu := volume) (s := -1) (by simp) hR w
-  norm_num [Complex.finrank_real_complex, measureReal_def, Complex.volume_ball] at h
+  norm_num [Complex.finrank_real_complex, Complex.volume_real_ball 0 zero_le_one] at h
   simpa only [Real.rpow_neg_one, norm_sub_rev, Real.rpow_one, div_one] using h
 
 /-- A pole in a concentric output disk of radius `R` contributes at most `2π(r + R)`

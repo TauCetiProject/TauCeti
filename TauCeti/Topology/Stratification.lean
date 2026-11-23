@@ -173,7 +173,7 @@ lemma mem_inf_parts {u : Set X} :
     u ∈ (S ⊓ T).parts ↔ u.Nonempty ∧ ∃ s ∈ S.parts, ∃ t ∈ T.parts, s ∩ t = u := by
   classical
   rw [toFinpartition_inf, Finpartition.parts_inf, Finset.mem_erase, Finset.mem_image,
-    ← nonempty_iff_ne_empty.symm.eq]
+    ← ne_empty_iff_nonempty.eq]
   simp only [Finset.mem_product, Prod.exists]
   exact and_congr_right' ⟨fun ⟨s, t, ⟨hs, ht⟩, h⟩ ↦ ⟨s, hs, t, ht, h⟩,
     fun ⟨s, hs, t, ht, h⟩ ↦ ⟨s, t, ⟨hs, ht⟩, h⟩⟩
@@ -203,7 +203,7 @@ lemma mem_ofErase_parts {parts : Finset (Set X)}
     {isLocallyClosed : ∀ s ∈ parts, IsLocallyClosed s} {s : Set X} :
     s ∈ (ofErase parts disjoint sUnion_parts isLocallyClosed).parts ↔ s.Nonempty ∧ s ∈ parts := by
   classical
-  simp [ofErase, nonempty_iff_ne_empty]
+  simp [ofErase, ← ne_empty_iff_nonempty]
 
 /-- The pullback of a stratification along a continuous map: its strata are the nonempty
 preimages of the strata. -/

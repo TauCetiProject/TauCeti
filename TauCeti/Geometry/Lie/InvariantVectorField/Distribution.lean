@@ -43,6 +43,8 @@ vector fields of brackets in `S` (`TauCeti.mlieBracket_sum_smul_mem`).
   exactly when its translate to the identity lies in `S`.
 * `TauCeti.map_mfderiv_mul_left_mulInvariantDistribution`: the distribution is invariant under
   left translation.
+* `TauCeti.finrank_mulInvariantDistribution`: the distribution has the dimension of `S` at every
+  point.
 * `TauCeti.isDistributionFrameOn_mulInvariantDistribution`: the invariant vector fields of a basis
   of `S` form a global frame, so (`TauCeti.isContMDiffDistribution_mulInvariantDistribution`) when
   `S` is finite-dimensional and multiplication is `C^n`, the distribution is `C^m` of rank
@@ -133,6 +135,14 @@ theorem map_mfderiv_mul_left_mulInvariantDistribution (h g : G) :
   · rintro ⟨w, hw, rfl⟩
     exact ⟨_, ⟨w, hw, rfl⟩, mfderiv_mul_left_mulInvariantVectorField h g w⟩
 
+/-- The left-invariant distribution of `S` has the dimension of `S` at every point. -/
+theorem finrank_mulInvariantDistribution (g : G) :
+    finrank 𝕜 (mulInvariantDistribution S g) = finrank 𝕜 S :=
+  -- Left translation is injective on `GroupLieAlgebra I G`: translating back to `1` inverts it.
+  ((Submodule.equivMapOfInjective _
+    (LeftInverse.injective fun w ↦ mfderiv_inv_mul_mulInvariantVectorField (I := I) w g)
+      S).finrank_eq).symm
+
 end Translation
 
 section Frame
@@ -188,22 +198,25 @@ private theorem sum_smul_mulInvariantVectorField_apply {ι : Type*} (s : Finset 
   simp only [Finset.sum_apply, Pi.smul_apply', mulInvariantVectorField, map_sum, map_smul]
   rfl
 
-section Involutive
-
-variable [LieGroup I (minSmoothness 𝕜 3) G]
-
 /-- If the left-invariant distribution of `S` is involutive, then `S` is closed under the bracket:
 the bracket of two elements of `S` is the value at the identity of the bracket of the invariant
-vector fields they generate. -/
-theorem lie_mem_of_isInvolutiveDistribution_mulInvariantDistribution
+vector fields they generate. Only `C^2` multiplication is needed, so that the invariant fields are
+`C^1`. -/
+theorem lie_mem_of_isInvolutiveDistribution_mulInvariantDistribution [ContMDiffMul I 2 G]
     (hD : IsInvolutiveDistribution I (mulInvariantDistribution S)) {v w : GroupLieAlgebra I G}
     (hv : v ∈ S) (hw : w ∈ S) : ⁅v, w⁆ ∈ S := by
-  have h := hD.mlieBracket_mem isOpen_univ
-    (mdifferentiable_mulInvariantVectorField v).mdifferentiableOn
-    (mdifferentiable_mulInvariantVectorField w).mdifferentiableOn
+  have hd (u : GroupLieAlgebra I G) :
+      MDiff (fun g ↦ (mulInvariantVectorField u g : TangentBundle I G)) :=
+    ((contMDiff_mulInvariantVectorField_modelSpace (I := I) (G := G) (m := 1) (n := 2)
+      (by norm_num)).comp (contMDiff_const.prodMk contMDiff_id)).mdifferentiable one_ne_zero
+  have h := hD.mlieBracket_mem isOpen_univ (hd v).mdifferentiableOn (hd w).mdifferentiableOn
     (fun g _ ↦ mulInvariantVectorField_mem_mulInvariantDistribution hv g)
     (fun g _ ↦ mulInvariantVectorField_mem_mulInvariantDistribution hw g) (mem_univ 1)
   rwa [mulInvariantDistribution_one] at h
+
+section Involutive
+
+variable [LieGroup I (minSmoothness 𝕜 3) G]
 
 /-- **The left-invariant distribution of a Lie subalgebra is involutive.** If a subspace `S` of the
 Lie algebra of `G` is closed under the bracket, then its left-invariant distribution is
@@ -247,16 +260,20 @@ theorem isInvolutiveDistribution_mulInvariantDistribution [CompleteSpace 𝕜]
       ((hY x hx).mdifferentiableAt (hU.mem_nhds hx)).leftMaurerCartanEval
   rw [(expand hVD).mlieBracket_vectorField_eq (expand hWD)]
   refine mlieBracket_sum_smul_mem (fun i _ ↦ mdifferentiableAt_mulInvariantVectorField _)
-    (fun i _ ↦ mulInvariantVectorField_mem_mulInvariantDistribution (b i).2 x)
+    (fun i _ ↦ mulInvariantVectorField_mem_mulInvariantDistribution (b i).property x)
     (fun i _ j _ ↦ ?_) (fun i _ ↦ hcoeff hV i) (fun i _ ↦ hcoeff hW i)
   rw [← mulInvariantVector_mlieBracket, ← GroupLieAlgebra.bracket_def]
-  exact mulInvariantVectorField_mem_mulInvariantDistribution (hS _ (b i).2 _ (b j).2) x
+  exact mulInvariantVectorField_mem_mulInvariantDistribution (hS _ (b i).property _
+      (b j).property) x
 
 /-- The left-invariant distribution of a subspace `S` of the Lie algebra is involutive exactly when
 `S` is closed under the bracket, that is, when `S` is a Lie subalgebra. -/
 theorem isInvolutiveDistribution_mulInvariantDistribution_iff [CompleteSpace 𝕜]
     [FiniteDimensional 𝕜 E] :
     IsInvolutiveDistribution I (mulInvariantDistribution S) ↔ ∀ v ∈ S, ∀ w ∈ S, ⁅v, w⁆ ∈ S :=
+  have : ContMDiffMul I 2 G :=
+    ContMDiffMul.of_le (n := minSmoothness 𝕜 3)
+      ((by norm_num : (2 : ℕ∞ω) ≤ 3).trans le_minSmoothness)
   ⟨fun hD _ hv _ hw ↦ lie_mem_of_isInvolutiveDistribution_mulInvariantDistribution hD hv hw,
     isInvolutiveDistribution_mulInvariantDistribution⟩
 

@@ -85,7 +85,7 @@ def congrChartAt {c c' : ChartedSpace H M} (h : c.chartAt = c'.chartAt)
     o.modelOrientation o.card_eq (fun α x ↦ o.sign α (castSource α x)) ?_ ?_
   · intro α
     exact (o.locallyConstant_sign α).comp_continuous
-      (continuous_subtype_val.subtype_mk _)
+      (continuous_subtypeVal.subtype_mk _)
   · intro α β x hα hβ
     have hα' : x ∈ (c.chartAt α).source := by rw [h]; exact hα
     have hβ' : x ∈ (c.chartAt β).source := by rw [h]; exact hβ
@@ -456,7 +456,7 @@ def ofVectorBundleOrientation (model : _root_.Orientation ℝ E ι)
     have hx : x.val ∈ (trivializationAt E (TangentSpace I) α).baseSet := by
       rw [TangentBundle.trivializationAt_baseSet (I := I)]; exact x.property
     have he := o.eventually_mapOrientation_eq hι (trivializationAt E (TangentSpace I) α) hx
-    have hp := (continuous_subtype_val.tendsto x).eventually he
+    have hp := (continuous_subtypeVal.tendsto x).eventually he
     filter_upwards [hp] with y hy
     rw [hy (by
       rw [TangentBundle.trivializationAt_baseSet (I := I)]
@@ -553,7 +553,8 @@ theorem ext_of_orientationAt {o o' : OrientationLift I M ι}
 /-- Equality of the induced tangent orientations identifies precisely the diagonal flip. -/
 theorem eq_or_eq_flip_of_orientationAt {o o' : OrientationLift I M ι}
     (h : ∀ x, o.orientationAt x = o'.orientationAt x) : o = o' ∨ o = o'.flip := by
-  rcases _root_.Orientation.eq_or_eq_neg o.modelOrientation o'.modelOrientation o.card_eq
+  rcases _root_.Orientation.eq_or_eq_neg o.modelOrientation o'.modelOrientation
+      (Nat.card_eq_fintype_card.trans o.card_eq)
     with hm | hm
   · exact .inl (ext_of_orientationAt hm h)
   · exact .inr (ext_of_orientationAt hm (by simpa using h))

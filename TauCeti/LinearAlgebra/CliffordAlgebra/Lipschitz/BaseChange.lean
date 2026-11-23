@@ -96,7 +96,7 @@ the scalar unit given by the image of `a`. -/
 @[simp]
 theorem lipschitzGroupBaseChange_scalarUnits (hQ : ∃ v, IsUnit (Q v)) (a : Rˣ) :
     lipschitzGroupBaseChange (A := A) Q (scalarUnits Q hQ a) =
-      scalarUnits (Q.baseChange A) (QuadraticForm.exists_isUnit_baseChange_apply A hQ)
+      scalarUnits (Q.baseChange A) (QuadraticForm.exists_isUnit_baseChange (A := A) hQ)
         (Units.map (algebraMap R A) a) := by
   ext
   simp [IsScalarTower.algebraMap_apply R A (CliffordAlgebra (Q.baseChange A))]
@@ -105,7 +105,7 @@ theorem lipschitzGroupBaseChange_scalarUnits (hQ : ∃ v, IsUnit (Q v)) (a : Rˣ
 induced by `algebraMap`. -/
 theorem lipschitzGroupBaseChange_comp_scalarUnits (hQ : ∃ v, IsUnit (Q v)) :
     (lipschitzGroupBaseChange (A := A) Q).comp (scalarUnits Q hQ) =
-      (scalarUnits (Q.baseChange A) (QuadraticForm.exists_isUnit_baseChange_apply A hQ)).comp
+      (scalarUnits (Q.baseChange A) (QuadraticForm.exists_isUnit_baseChange (A := A) hQ)).comp
         (Units.map (algebraMap R A)) :=
   MonoidHom.ext (lipschitzGroupBaseChange_scalarUnits Q hQ)
 

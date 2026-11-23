@@ -158,7 +158,7 @@ theorem equivOfIsometry_toEven_smul_mem_eigenspace_complexVolume
       (Algebra.lsmul ℂ ℂ E (complexVolume Q₁ o')).eigenspace μ := by
   refine smul_mem_eigenspace_complexVolume_of_mem_even o' ?_ hψ
   rw [← even_toSubmodule, Subalgebra.mem_toSubmodule, equivOfIsometry_apply]
-  exact map_mem_even _ (toEven (Q.baseChange ℂ) x).2
+  exact map_mem_even _ (toEven (Q.baseChange ℂ) x).property
 
 /-- **The label of the restricted half-spinors**: for `n` odd and `V ⊕ ℝ` oriented by
 `(e₁, …, eₙ, e₀)`, the volume element `ω_ℂ` of `V` acts through `ψ` by `-μ` on the
@@ -209,7 +209,7 @@ theorem eigenspaceComplexVolumeAction_complexVolume (hn : Odd n)
     eigenspaceComplexVolumeAction (E := E) hQ₁ o' μ (complexVolume Q o) = algebraMap ℂ _ (-μ) := by
   ext ψ
   rw [coe_eigenspaceComplexVolumeAction_apply,
-    equivOfIsometry_toEven_complexVolume_smul hQ₁ o o' hn b hb hQb ho' ψ.2]
+    equivOfIsometry_toEven_complexVolume_smul hQ₁ o o' hn b hb hQb ho' ψ.property]
   simp
 
 /-- **Putting `e₀` first interchanges the labels**: for `n` odd and `V ⊕ ℝ` oriented by
@@ -224,7 +224,7 @@ theorem eigenspaceComplexVolumeAction_complexVolume_of_cons (hn : Odd n)
         (finCongr (add_comm 1 n)))).toBasis.orientation = o') (μ : ℂ) :
     eigenspaceComplexVolumeAction (E := E) hQ₁ o' μ (complexVolume Q o) = algebraMap ℂ _ μ := by
   ext ψ
-  have hψ := ψ.2
+  have hψ := ψ.property
   simp only [Module.End.mem_eigenspace_iff, Algebra.lsmul_coe] at hψ
   rw [coe_eigenspaceComplexVolumeAction_apply,
     equivOfIsometry_toEven_complexVolume_of_cons hQ₁ o o' hn b hb hQb ho', hψ]

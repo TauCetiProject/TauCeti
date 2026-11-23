@@ -9,7 +9,7 @@ public import Mathlib.CategoryTheory.Groupoid
 public import Mathlib.Combinatorics.Quiver.Subquiver
 public import Mathlib.CategoryTheory.ObjectProperty.ClosedUnderIsomorphisms
 public import Mathlib.CategoryTheory.ObjectProperty.FullSubcategory
-public import TauCeti.Topology.IsLocalHomeomorph
+public import TauCeti.Topology.IsLocalHomeomorph.Basic
 public import TauCeti.Topology.Maps.Proper.Basic
 public import TauCeti.Combinatorics.Quiver.Prefunctor
 
@@ -181,20 +181,21 @@ instance instSecondCountableTopologyTotalFullSubcategory
 composition is. -/
 theorem continuous_comp_fullSubcategory
     (hc : Continuous fun p : {p : Quiver.Total C × Quiver.Total C // p.1.right = p.2.left} ↦
-      (⟨p.1.1.left, p.1.2.right, p.1.1.hom ≫ eqToHom p.2 ≫ p.1.2.hom⟩ : Quiver.Total C)) :
+      (⟨p.val.1.left, p.val.2.right, p.val.1.hom ≫ eqToHom p.property ≫ p.val.2.hom⟩ : Quiver.Total
+          C)) :
     Continuous fun p : {p : Quiver.Total P.FullSubcategory × Quiver.Total P.FullSubcategory //
         p.1.right = p.2.left} ↦
-      (⟨p.1.1.left, p.1.2.right, p.1.1.hom ≫ eqToHom p.2 ≫ p.1.2.hom⟩ :
+      (⟨p.val.1.left, p.val.2.right, p.val.1.hom ≫ eqToHom p.property ≫ p.val.2.hom⟩ :
         Quiver.Total P.FullSubcategory) := by
   let ι := fun a : Quiver.Total P.FullSubcategory ↦
     (⟨a.left.obj, a.right.obj, a.hom.hom⟩ : Quiver.Total C)
   let g := fun p : {p : Quiver.Total P.FullSubcategory × Quiver.Total P.FullSubcategory //
       p.1.right = p.2.left} ↦
-    (⟨(ι p.1.1, ι p.1.2), congrArg ObjectProperty.FullSubcategory.obj p.2⟩ :
+    (⟨(ι p.val.1, ι p.val.2), congrArg ObjectProperty.FullSubcategory.obj p.property⟩ :
       {p : Quiver.Total C × Quiver.Total C // p.1.right = p.2.left})
   have hι : Continuous ι := isEmbedding_total_fullSubcategory.continuous
-  have hg : Continuous g := ((hι.comp (continuous_fst.comp continuous_subtype_val)).prodMk
-    (hι.comp (continuous_snd.comp continuous_subtype_val))).subtype_mk _
+  have hg : Continuous g := ((hι.comp (continuous_fst.comp continuous_subtypeVal)).prodMk
+    (hι.comp (continuous_snd.comp continuous_subtypeVal))).subtype_mk _
   refine isEmbedding_total_fullSubcategory.continuous_iff.mpr ?_
   convert hc.comp hg using 1
   funext ⟨⟨⟨x, y, f⟩, ⟨y', z, f'⟩⟩, h⟩

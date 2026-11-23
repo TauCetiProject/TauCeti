@@ -188,7 +188,7 @@ theorem picToClassGroup_surjective : Function.Surjective O.picToClassGroup := by
 /-- The conductor modulus has no real places, so it prescribes no signs. -/
 private theorem conductorModulus_signs_eq_one (s : O.conductorModulus.infinitePart → ℤˣ) :
     s = 1 :=
-  funext fun w => absurd w.2 (by simp)
+  funext fun w => absurd w.property (by simp)
 
 /-- The residue units modulo the conductor, identified with the residue units modulo the finite
 part of the conductor modulus. -/
@@ -302,8 +302,8 @@ theorem mem_orderResidueUnits_iff {u : (𝓞 K ⧸ O.conductor)ˣ} :
     (O.toRingOfIntegers.val : O.toRingOfIntegers →+* 𝓞 K) le_rfl
   constructor
   · rintro ⟨v, rfl⟩
-    obtain ⟨γ, hγ⟩ := Ideal.Quotient.mk_surjective v.1
-    refine ⟨γ, γ.2, ?_⟩
+    obtain ⟨γ, hγ⟩ := Ideal.Quotient.mk_surjective v.val
+    refine ⟨γ, γ.property, ?_⟩
     rw [Units.coe_map, ← hγ]
     exact Ideal.quotientMap_mk ..
   · rintro ⟨β, hβ, hu⟩
@@ -341,7 +341,7 @@ theorem comap_orderResidueUnits :
     have h₂ := O.mem_toRingOfIntegers_of_mk_eq hβ' h'
     refine ⟨⟨⟨ε, h₁⟩, ⟨_, h₂⟩, Subtype.ext ε.mul_inv, Subtype.ext ε.inv_mul⟩, Units.ext rfl⟩
   · rintro ⟨w, rfl⟩
-    exact O.mem_orderResidueUnits_iff.mpr ⟨_, (w : O.toRingOfIntegers).2, rfl⟩
+    exact O.mem_orderResidueUnits_iff.mpr ⟨_, (w : O.toRingOfIntegers).property, rfl⟩
 
 /-- A residue unit of the order has trivial Picard class: it is the residue of a generator in `O`
 of an ideal prime to the conductor. -/

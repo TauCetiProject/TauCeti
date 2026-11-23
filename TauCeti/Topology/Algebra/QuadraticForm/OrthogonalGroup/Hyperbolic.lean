@@ -86,7 +86,7 @@ theorem continuous_hyperbolicTorusEquiv_symm : Continuous (hyperbolicTorusEquiv 
     (LinearMap.proj 0).comp (LinearMap.applyₗ ![1, 1])
   have hφ : Continuous φ := IsModuleTopology.continuous_of_linearMap φ
   have hcoe := continuous_linearEquiv_iff.mp
-    (continuous_subtype_val (p := (· ∈ specialOrthogonalGroup (hyperbolicPlane R))))
+    (continuous_subtypeVal (p := (· ∈ specialOrthogonalGroup (hyperbolicPlane R))))
   refine Units.continuous_iff.mpr ⟨(hφ.comp hcoe.1).congr fun g ↦ ?_,
     (hφ.comp hcoe.2).congr fun g ↦ ?_⟩
   · simp [φ, coe_hyperbolicTorusEquiv_symm_apply]

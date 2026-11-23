@@ -10,9 +10,9 @@ public import Mathlib.Logic.Equiv.Set
 /-!
 # Fibres of a map over a base
 
-For `p : E → X`, the fibre of `p` over `x` is the set `p ⁻¹' {x}`. This file collects the two
-elementary constructions on such fibres that the covering-space development uses. Neither needs a
-topology, so both are stated for a bare function and a bare equivalence; a `ContinuousMap` or a
+For `p : E → X`, the fibre of `p` over `x` is the set `p ⁻¹' {x}`. This file collects the
+elementary constructions on such fibres that the covering-space development uses. None needs a
+topology, so they are stated for bare functions and equivalences; a `ContinuousMap` or a
 `Homeomorph` is applied through its underlying function or equivalence.
 
 * `Function.fiberMap`: a map `f : E → F` commuting with the projections to `X` restricts to the
@@ -25,7 +25,12 @@ topology, so both are stated for a bare function and a bare equivalence; a `Cont
 
 * `Function.mapsTo_fiber`: a map over `X` sends each fibre into the corresponding fibre.
 * `Function.fiberMap`: the restriction of a map over `X` to the fibre over `x`.
+* `Function.bijective_fiberMap_of_comp_eq`: a map of double covers, intertwining the involutions
+  exchanging the two points of each fibre, is a bijection on every fibre.
 * `Equiv.compFiberEquiv`: the relabelling of fibres under an equivalence of bases.
+* `Equiv.fiberEquivOfPreimage`: an equivalence onto the preimage of a subset, commuting with
+  projections, identifies the fibres over points of that subset. This transfers sheet counts
+  from local models to a map defined by gluing.
 -/
 
 public section
@@ -66,9 +71,84 @@ theorem fiberMap_comp_apply (f : E → F) (g : F → G) (hf : q ∘ f = p) (hg :
       fiberMap g hg x (fiberMap f hf x e) :=
   (Subtype.map_comp f (mapsTo_fiber f hf x) g (mapsTo_fiber g hg x)).symm
 
+/-- An involution over the base restricts to an involution of each fibre. -/
+theorem fiberMap_fiberMap_of_involutive {f : E → E} (hff : Involutive f) (hf : p ∘ f = p)
+    (x : X) (e : p ⁻¹' {x}) :
+    fiberMap f hf x (fiberMap f hf x e) = e :=
+  Subtype.ext (by simp only [fiberMap_apply_coe]; exact hff e)
+
+/-- An involution over the base is injective on each fibre. -/
+theorem injective_fiberMap_of_involutive {f : E → E} (hff : Involutive f) (hf : p ∘ f = p)
+    (x : X) : Injective (fiberMap f hf x) :=
+  LeftInverse.injective (fiberMap_fiberMap_of_involutive hff hf x)
+
+/-- A map over the base without fixed points has no fixed points on any fibre. -/
+theorem fiberMap_ne_self {f : E → E} (hfix : ∀ e, f e ≠ e) (hf : p ∘ f = p) (x : X)
+    (e : p ⁻¹' {x}) : fiberMap f hf x e ≠ e :=
+  fun h ↦ hfix e ((fiberMap_apply_coe f hf x e).symm.trans (congrArg Subtype.val h))
+
+/-- A map over `X` intertwining maps `σ` and `τ` over `X` intertwines their restrictions to each
+fibre. -/
+theorem fiberMap_fiberMap_of_comp_eq {σ : E → E} {τ : F → F} {f : E → F} (hσ : p ∘ σ = p)
+    (hτ : q ∘ τ = q) (hf : q ∘ f = p) (hfστ : f ∘ σ = τ ∘ f) {x : X} (e : p ⁻¹' {x}) :
+    fiberMap f hf x (fiberMap σ hσ x e) = fiberMap τ hτ x (fiberMap f hf x e) :=
+  Subtype.ext (by simp only [fiberMap_apply_coe]; exact congrFun hfστ e)
+
+/-- A map of double covers is a bijection on every fibre. Let `σ` and `τ` be maps over `X` whose
+fibres are the pairs `{e, σ e}` and `{e, τ e}`, with `τ` fixed-point free, and let the fibres of
+`p` be nonempty. Then a map over `X` intertwining `σ` and `τ` is a bijection on every fibre. -/
+theorem bijective_fiberMap_of_comp_eq {σ : E → E} {τ : F → F} {f : E → F} (hσ : p ∘ σ = p)
+    (hf : q ∘ f = p) (hfστ : f ∘ σ = τ ∘ f) (hfixτ : ∀ e, τ e ≠ e)
+    (hfib : ∀ e e', p e' = p e → e' = e ∨ e' = σ e)
+    (hfibτ : ∀ e e', q e' = q e → e' = e ∨ e' = τ e) (hsurj : Surjective p) (x : X) :
+    Bijective (fiberMap f hf x) := by
+  refine ⟨fun d₁ d₂ h ↦ ?_, fun e' ↦ ?_⟩
+  · have h' : f d₁ = f d₂ := by
+      simpa only [fiberMap_apply_coe] using congrArg Subtype.val h
+    rcases hfib d₁ d₂ (d₂.property.trans d₁.property.symm) with h₂ | h₂
+    · exact Subtype.ext h₂.symm
+    · -- Otherwise `f d₂ = f (σ d₁) = τ (f d₁)` would be a fixed point of `τ`.
+      have : f d₂ = τ (f d₁) := by rw [h₂]; exact congrFun hfστ d₁
+      exact (hfixτ (f d₁) (this.symm.trans h'.symm)).elim
+  · obtain ⟨d, hd⟩ := hsurj x
+    have hfd : q (f d) = x := (congrFun hf d).trans hd
+    rcases hfibτ (f d) e' (e'.property.trans hfd.symm) with h | h
+    · exact ⟨⟨d, hd⟩, Subtype.ext (by rw [fiberMap_apply_coe]; exact h.symm)⟩
+    · refine ⟨⟨σ d, (congrFun hσ d).trans hd⟩, Subtype.ext ?_⟩
+      rw [fiberMap_apply_coe, h]
+      exact congrFun hfστ d
+
 end Function
 
 namespace Equiv
+
+/-- An equivalence onto `p ⁻¹' U` that commutes with the projections identifies the fibres over
+each `y ∈ U`. No topology or finiteness assumption is needed. -/
+def fiberEquivOfPreimage {A X Y : Type*} {p : X → Y} {q : A → Y} {U : Set Y}
+    (k : A ≃ p ⁻¹' U) (hk : ∀ a, p (k a).val = q a) {y : Y} (hy : y ∈ U) :
+    q ⁻¹' {y} ≃ p ⁻¹' {y} :=
+  (k.subtypeEquiv (p := fun a ↦ q a = y) (q := fun x ↦ p x.val = y)
+    (fun a ↦ by rw [hk a])).trans
+    (subtypeSubtypeEquivSubtype (p := fun x ↦ p x ∈ U) (q := fun x ↦ p x = y)
+      fun hx ↦ hx.symm ▸ hy)
+
+@[simp]
+theorem fiberEquivOfPreimage_apply_coe {A X Y : Type*} {p : X → Y} {q : A → Y}
+    {U : Set Y} (k : A ≃ p ⁻¹' U) (hk : ∀ a, p (k a).val = q a) {y : Y}
+    (hy : y ∈ U) (a : q ⁻¹' {y}) :
+    (k.fiberEquivOfPreimage hk hy a : X) = (k a).val :=
+  (rfl)
+
+@[simp]
+theorem fiberEquivOfPreimage_symm_apply_coe {A X Y : Type*} {p : X → Y} {q : A → Y}
+    {U : Set Y} (k : A ≃ p ⁻¹' U) (hk : ∀ a, p (k a).val = q a) {y : Y}
+    (hy : y ∈ U) (x : p ⁻¹' {y}) :
+    ((k.fiberEquivOfPreimage hk hy).symm x : A) =
+      k.symm ⟨x, by
+        have hx : p x = y := x.property
+        rw [Set.mem_preimage, hx]
+        exact hy⟩ :=
+  (rfl)
 
 variable {E X Y : Type*} {p : E → X}
 

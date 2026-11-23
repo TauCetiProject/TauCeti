@@ -53,12 +53,12 @@ private theorem coe_radical_smul (i : V) (n : ℕ) (c : k) (x : R i n) :
 
 /-- Right multiplication by the volume maps the vertex projective to its second radical power. -/
 noncomputable def zigzagProjectiveMulVolume (i : V) : R i 0 →ₗ[Z] R i 2 where
-  toFun x := ⟨⟨(x.1 : Z) * zigzagVolume k G i,
+  toFun x := ⟨⟨(x.val : Z) * zigzagVolume k G i,
     (mem_zigzagProjective_iff k G).2 (by
       rw [mul_assoc, zigzagVolume_mul_zigzagMk_vertexIdempotent])⟩,
     (mem_zigzagProjectiveRadicalPower_two_iff hns i _).2 (by
       -- Remove the projective subtype before rewriting its underlying algebra product.
-      change (x.1 : Z) * zigzagVolume k G i ∈ zigzagVolumeSpan k G
+      change (x.val : Z) * zigzagVolume k G i ∈ zigzagVolumeSpan k G
       rw [mul_zigzagVolume hns]
       exact (zigzagVolumeSpan k G).smul_mem _ (zigzagVolume_mem_zigzagVolumeSpan i))⟩
   map_add' x y := Subtype.ext (Subtype.ext (add_mul _ _ _))
@@ -68,10 +68,10 @@ noncomputable def zigzagProjectiveMulVolume (i : V) : R i 0 →ₗ[Z] R i 2 wher
 @[simp]
 theorem zigzagProjectiveMulVolume_apply (i : V) (x : R i 0) :
     ((zigzagProjectiveMulVolume k G hns i x : P i) : Z) =
-      zigzagProjectiveHeadCoeff k G i x.1 • zigzagVolume k G i := by
+      zigzagProjectiveHeadCoeff k G i x.val • zigzagVolume k G i := by
   -- Expose the underlying multiplication, without depending on subtype proof terms.
-  change (x.1 : Z) * zigzagVolume k G i =
-    zigzagProjectiveHeadCoeff k G i x.1 • zigzagVolume k G i
+  change (x.val : Z) * zigzagVolume k G i =
+    zigzagProjectiveHeadCoeff k G i x.val • zigzagVolume k G i
   rw [mul_zigzagVolume hns, zigzagProjectiveHeadCoeff_apply,
     zigzagTrivialCoeff_apply_eq_repr hns, Module.Basis.coord_apply]
 
@@ -86,12 +86,12 @@ private theorem zigzagProjectiveMulVolume_ker (i : V) :
   · intro hx
     have hc := congrArg (fun y : R i 2 => ((y : P i) : Z)) hx
     rw [zigzagProjectiveMulVolume_apply] at hc
-    have hz : zigzagProjectiveHeadCoeff k G i x.1 = 0 :=
+    have hz : zigzagProjectiveHeadCoeff k G i x.val = 0 :=
       (smul_eq_zero.mp hc).resolve_right hv
-    have hm : x.1 ∈ LinearMap.ker (zigzagProjectiveHeadCoeff k G i) := hz
+    have hm : x.val ∈ LinearMap.ker (zigzagProjectiveHeadCoeff k G i) := hz
     rwa [hk] at hm
   · intro hx
-    have hz : zigzagProjectiveHeadCoeff k G i x.1 = 0 := by
+    have hz : zigzagProjectiveHeadCoeff k G i x.val = 0 := by
       apply LinearMap.mem_ker.mp
       rw [hk]
       exact hx
@@ -104,10 +104,10 @@ private theorem zigzagProjectiveMulVolume_ker (i : V) :
 theorem zigzagProjectiveMulVolume_surjective (i : V) :
     Function.Surjective (zigzagProjectiveMulVolume k G hns i) := by
   intro x
-  have hx : x.1 ∈ zigzagProjectiveVolumeLine k G i := by
+  have hx : x.val ∈ zigzagProjectiveVolumeLine k G i := by
     rw [← restrictScalars_zigzagProjectiveRadicalPower_two_eq_volumeLine hns]
-    exact x.2
-  obtain ⟨c, hc⟩ := (mem_zigzagProjectiveVolumeLine_iff k G i x.1).1 hx
+    exact x.property
+  obtain ⟨c, hc⟩ := (mem_zigzagProjectiveVolumeLine_iff k G i x.val).1 hx
   refine ⟨⟨c • zigzagProjectiveGenerator k G i, by simp⟩, ?_⟩
   apply Subtype.ext
   apply Subtype.ext
@@ -128,7 +128,7 @@ noncomputable def zigzagProjectiveHeadEquivSocle (i : V) : H i 0 ≃ₗ[Z] R i 2
 @[simp]
 theorem zigzagProjectiveHeadEquivSocle_mk (i : V) (x : R i 0) :
     (((zigzagProjectiveHeadEquivSocle k G hns i (Submodule.Quotient.mk x) : R i 2) :
-      P i) : Z) = zigzagProjectiveHeadCoeff k G i x.1 • zigzagVolume k G i := by
+      P i) : Z) = zigzagProjectiveHeadCoeff k G i x.val • zigzagVolume k G i := by
   simp only [zigzagProjectiveHeadEquivSocle, LinearEquiv.trans_apply,
     Submodule.quotEquivOfEq_mk, LinearMap.quotKerEquivOfSurjective_apply_mk,
     zigzagProjectiveMulVolume_apply]
@@ -145,14 +145,14 @@ private theorem coe_socleVector (i : V) :
   coe_zigzagProjectiveVolume k G i
 
 private theorem coord_vertex_of_mem_radical (i : V) (x : R i 1) (j : V) :
-    (zigzagBasis k G hns).coord (.inl j) (x.1 : Z) = 0 := by
+    (zigzagBasis k G hns).coord (.inl j) (x.val : Z) = 0 := by
   exact (mem_zigzagPositiveSpan_iff hns).1
-    ((mem_zigzagProjectiveRadicalPower_one_iff hns i x.1).1 x.2) j
+    ((mem_zigzagProjectiveRadicalPower_one_iff hns i x.val).1 x.property) j
 
 private theorem coord_dart_of_ne (i : V) (x : P i) (d : G.Dart) (hd : d.fst ≠ i) :
     (zigzagBasis k G hns).coord (.inr (.inl d)) (x : Z) = 0 := by
   classical
-  have hfix := (mem_zigzagProjective_iff k G).1 x.2
+  have hfix := (mem_zigzagProjective_iff k G).1 x.property
   have hm := zigzagBasis_coord_dart_mul hns d (x : Z) (zigzagVertexIdempotent k G i)
   rw [hfix] at hm
   have he : zigzagVertexIdempotent k G i = zigzagBasis k G hns (.inl i) := by
@@ -162,9 +162,9 @@ private theorem coord_dart_of_ne (i : V) (x : P i) (d : G.Dart) (hd : d.fst ≠ 
     Sum.inl.injEq, Ne.symm hd, add_zero] using hm
 
 private noncomputable def middleToSocles (i : V) :
-    R i 1 →ₗ[Z] ((j : G.neighborSet i) → R j.1 2) where
-  toFun x j := (zigzagBasis k G hns).coord (.inr (.inl ⟨(i, j.1), j.2⟩))
-    (x.1 : Z) • socleVector k G hns j.1
+    R i 1 →ₗ[Z] ((j : G.neighborSet i) → R j.val 2) where
+  toFun x j := (zigzagBasis k G hns).coord (.inr (.inl ⟨(i, j.val), j.property⟩))
+    (x.val : Z) • socleVector k G hns j.val
   map_add' x y := by
     ext j
     simp only [Submodule.coe_add, map_add, add_smul, Pi.add_apply]
@@ -183,8 +183,8 @@ private noncomputable def middleToSocles (i : V) :
 
 private theorem middleToSocles_apply (i : V) (x : R i 1) (j : G.neighborSet i) :
     middleToSocles k G hns i x j =
-      (zigzagBasis k G hns).coord (.inr (.inl ⟨(i, j.1), j.2⟩)) (x.1 : Z) •
-        socleVector k G hns j.1 :=
+      (zigzagBasis k G hns).coord (.inr (.inl ⟨(i, j.val), j.property⟩)) (x.val : Z) •
+        socleVector k G hns j.val :=
   (rfl)
 
 private theorem middleToSocles_ker (i : V) :
@@ -193,50 +193,50 @@ private theorem middleToSocles_ker (i : V) :
   rw [LinearMap.mem_ker]
   constructor
   · intro hx
-    apply (mem_zigzagProjectiveRadicalPower_two_iff hns i x.1).2
+    apply (mem_zigzagProjectiveRadicalPower_two_iff hns i x.val).2
     apply (mem_zigzagVolumeSpan_iff hns).2
     refine ⟨coord_vertex_of_mem_radical k G hns i x, fun d => ?_⟩
     rcases eq_or_ne d.fst i with hdi | hdi
     · let j : G.neighborSet i := ⟨d.snd, hdi ▸ d.adj⟩
-      have hj := congrArg (fun f => ((f j : P j.1) : Z)) hx
+      have hj := congrArg (fun f => ((f j : P j.val) : Z)) hx
       rw [middleToSocles_apply, coe_radical_smul,
         coe_socleVector] at hj
       simp only [Pi.zero_apply, Submodule.coe_zero] at hj
-      have hvol := zigzagVolume_ne_zero k G j.2.symm
+      have hvol := zigzagVolume_ne_zero k G j.property.symm
       have hz := (smul_eq_zero.mp hj).resolve_right hvol
       convert hz using 1
       exact congrArg (fun e : G.Dart =>
-        (zigzagBasis k G hns).coord (.inr (.inl e)) (x.1 : Z)) (by
+        (zigzagBasis k G hns).coord (.inr (.inl e)) (x.val : Z)) (by
           apply SimpleGraph.Dart.ext
           exact Prod.ext hdi rfl)
-    · exact coord_dart_of_ne k G hns i x.1 d hdi
+    · exact coord_dart_of_ne k G hns i x.val d hdi
   · intro hx
     have hc := (mem_zigzagVolumeSpan_iff hns).1
-      ((mem_zigzagProjectiveRadicalPower_two_iff hns i x.1).1 hx)
+      ((mem_zigzagProjectiveRadicalPower_two_iff hns i x.val).1 hx)
     funext j
     rw [middleToSocles_apply, Module.Basis.coord_apply, hc.2, zero_smul]
     rfl
 
 private noncomputable def radicalArrow (i : V) (j : G.neighborSet i) : R i 1 :=
-  ⟨⟨zigzagMk k G (ofArrow (arrow G j.2)), (mem_zigzagProjective_iff k G).2
-      (zigzagMk_ofArrow_mul_vertexIdempotent k G ⟨(i, j.1), j.2⟩)⟩,
+  ⟨⟨zigzagMk k G (ofArrow (arrow G j.property)), (mem_zigzagProjective_iff k G).2
+      (zigzagMk_ofArrow_mul_vertexIdempotent k G ⟨(i, j.val), j.property⟩)⟩,
     (mem_zigzagProjectiveRadicalPower_one_iff hns i _).2
-      (zigzagMk_ofArrow_mem_zigzagPositiveSpan ⟨(i, j.1), j.2⟩)⟩
+      (zigzagMk_ofArrow_mem_zigzagPositiveSpan ⟨(i, j.val), j.property⟩)⟩
 
 open scoped Classical in
 private theorem middleToSocles_radicalArrow (i : V) (j l : G.neighborSet i) :
     middleToSocles k G hns i (radicalArrow k G hns i j) l =
-      if j = l then socleVector k G hns l.1 else 0 := by
+      if j = l then socleVector k G hns l.val else 0 := by
   classical
   rw [middleToSocles_apply]
   have ha : (((radicalArrow k G hns i j : R i 1) : P i) : Z) =
-      zigzagBasis k G hns (.inr (.inl ⟨(i, j.1), j.2⟩)) := by
+      zigzagBasis k G hns (.inr (.inl ⟨(i, j.val), j.property⟩)) := by
     simp [radicalArrow]
   rw [ha, zigzagBasis_coord_apply]
   by_cases h : j = l
   · subst l
     simp
-  · have hd : (⟨(i, j.1), j.2⟩ : G.Dart) ≠ ⟨(i, l.1), l.2⟩ := by
+  · have hd : (⟨(i, j.val), j.property⟩ : G.Dart) ≠ ⟨(i, l.val), l.property⟩ := by
       intro hd
       exact h (Subtype.ext (congrArg (fun d : G.Dart => d.snd) hd))
     simp [h, hd]
@@ -247,11 +247,11 @@ private theorem middleToSocles_surjective (i : V) :
   let _ := Fintype.ofFinite (G.neighborSet i)
   intro y
   have hy (j : G.neighborSet i) :
-      ∃ c : k, c • socleVector k G hns j.1 = y j := by
-    have hj : (y j : P j.1) ∈ zigzagProjectiveVolumeLine k G j.1 := by
+      ∃ c : k, c • socleVector k G hns j.val = y j := by
+    have hj : (y j : P j.val) ∈ zigzagProjectiveVolumeLine k G j.val := by
       rw [← restrictScalars_zigzagProjectiveRadicalPower_two_eq_volumeLine hns]
-      exact (y j).2
-    obtain ⟨c, hc⟩ := (mem_zigzagProjectiveVolumeLine_iff k G j.1 _).1 hj
+      exact (y j).property
+    obtain ⟨c, hc⟩ := (mem_zigzagProjectiveVolumeLine_iff k G j.val _).1 hj
     exact ⟨c, Subtype.ext hc⟩
   choose c hc using hy
   refine ⟨∑ j, c j • radicalArrow k G hns i j, ?_⟩
@@ -264,11 +264,11 @@ private theorem middleToSocles_surjective (i : V) :
 /-- The middle Loewy layer of `P_i` is the product of the simple heads at its neighbours.
 The isomorphism sends an outgoing arrow to the generator of the head at its target. -/
 noncomputable def zigzagProjectiveMiddleEquivNeighborHeads (i : V) :
-    H i 1 ≃ₗ[Z] ((j : G.neighborSet i) → H j.1 0) :=
+    H i 1 ≃ₗ[Z] ((j : G.neighborSet i) → H j.val 0) :=
   ((Submodule.quotEquivOfEq _ _ (middleToSocles_ker k G hns i).symm).trans
     ((middleToSocles k G hns i).quotKerEquivOfSurjective
       (middleToSocles_surjective k G hns i))).trans
-    (LinearEquiv.piCongrRight fun j => (zigzagProjectiveHeadEquivSocle k G hns j.1).symm)
+    (LinearEquiv.piCongrRight fun j => (zigzagProjectiveHeadEquivSocle k G hns j.val).symm)
 
 /-- The distinguished generator of the simple head of the vertex projective. -/
 noncomputable def zigzagProjectiveHeadGenerator (i : V) : H i 0 :=
@@ -292,11 +292,11 @@ socle, is the coefficient of the outgoing arrow `i → j` times the volume at `j
 @[simp]
 theorem zigzagProjectiveMiddleEquivNeighborHeads_mk (i : V) (x : R i 1)
     (j : G.neighborSet i) :
-    (((zigzagProjectiveHeadEquivSocle k G hns j.1
+    (((zigzagProjectiveHeadEquivSocle k G hns j.val
       (zigzagProjectiveMiddleEquivNeighborHeads k G hns i (Submodule.Quotient.mk x) j) :
-      R j.1 2) : P j.1) : Z) =
-        (zigzagBasis k G hns).coord (.inr (.inl ⟨(i, j.1), j.2⟩)) (x.1 : Z) •
-          zigzagVolume k G j.1 := by
+      R j.val 2) : P j.val) : Z) =
+        (zigzagBasis k G hns).coord (.inr (.inl ⟨(i, j.val), j.property⟩)) (x.val : Z) •
+          zigzagVolume k G j.val := by
   simp only [zigzagProjectiveMiddleEquivNeighborHeads, LinearEquiv.trans_apply,
     Submodule.quotEquivOfEq_mk, LinearMap.quotKerEquivOfSurjective_apply_mk,
     LinearEquiv.piCongrRight_apply, LinearEquiv.apply_symm_apply,
@@ -308,12 +308,12 @@ open scoped Classical in
 theorem zigzagProjectiveMiddleEquivNeighborHeads_arrow (i : V) (j l : G.neighborSet i) :
     zigzagProjectiveMiddleEquivNeighborHeads k G hns i
         (zigzagProjectiveMiddleArrow k G hns i j) l =
-      if j = l then zigzagProjectiveHeadGenerator k G l.1 else 0 := by
-  apply (zigzagProjectiveHeadEquivSocle k G hns l.1).injective
-  have hgen : zigzagProjectiveHeadEquivSocle k G hns l.1
-      (zigzagProjectiveHeadGenerator k G l.1) = socleVector k G hns l.1 := by
+      if j = l then zigzagProjectiveHeadGenerator k G l.val else 0 := by
+  apply (zigzagProjectiveHeadEquivSocle k G hns l.val).injective
+  have hgen : zigzagProjectiveHeadEquivSocle k G hns l.val
+      (zigzagProjectiveHeadGenerator k G l.val) = socleVector k G hns l.val := by
     apply Subtype.ext
-    exact zigzagProjectiveHeadEquivSocle_generator k G hns l.1
+    exact zigzagProjectiveHeadEquivSocle_generator k G hns l.val
   simp only [zigzagProjectiveMiddleArrow, zigzagProjectiveMiddleEquivNeighborHeads,
     LinearEquiv.trans_apply, Submodule.quotEquivOfEq_mk,
     LinearMap.quotKerEquivOfSurjective_apply_mk, LinearEquiv.piCongrRight_apply,
@@ -341,7 +341,7 @@ theorem zigzagProjectiveHead_smul (i : V) (z : Z) (x : H i 0) :
   rw [coe_radical_smul]
   have hx : (e x : P i) ∈ zigzagProjectiveVolumeLine k G i := by
     rw [← restrictScalars_zigzagProjectiveRadicalPower_two_eq_volumeLine hns]
-    exact (e x).2
+    exact (e x).property
   obtain ⟨c, hc⟩ := (mem_zigzagProjectiveVolumeLine_iff k G i _).1 hx
   have hcoe := congrArg (fun y : P i => (y : Z)) hc
   rw [coe_projective_smul, coe_zigzagProjectiveVolume] at hcoe
