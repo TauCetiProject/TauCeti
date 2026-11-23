@@ -25,16 +25,15 @@ surjective functor reflecting isomorphisms whose continuous object map becomes o
 projecting to the target's isomorphism classes induces a homeomorphism
 (`CategoryTheory.Functor.isHomeomorph_isomorphismClasses_map`).
 
-When the quotient projection `Quotient.mk (isIsomorphicSetoid D)` is an open map—for instance,
-when `D` is a groupoid with continuous source and open target—an open object map already induces
-an open map on isomorphism classes (`CategoryTheory.Functor.isOpenMap_isomorphismClasses_map`),
-even if the functor is not surjective on objects. When `F.obj` is also continuous, fullness and
-reflection of isomorphisms give an open embedding
-(`CategoryTheory.Functor.isOpenEmbedding_isomorphismClasses_map`), essential surjectivity gives
-an open quotient map (`CategoryTheory.Functor.isOpenQuotientMap_isomorphismClasses_map_of_essSurj`),
-and combining both gives a coarse homeomorphism via `isomorphismClassesHomeomorph` and properness
-(`CategoryTheory.Functor.isProperMap_isomorphismClasses_map_of_essSurj`) without requiring
-surjectivity on objects.
+More generally, a functor whose object map becomes open after projecting to the target's
+isomorphism classes induces an open map on isomorphism classes
+(`CategoryTheory.Functor.isOpenMap_isomorphismClasses_map`), even if it is not surjective on
+objects. When the quotient projection `Quotient.mk (isIsomorphicSetoid D)` is an open map—for
+instance, when `D` is a groupoid with continuous source and open target—a continuous open object
+map gives an open embedding (`CategoryTheory.Functor.isOpenEmbedding_isomorphismClasses_map`) when
+`F` is full and reflects isomorphisms, and an open quotient map
+(`CategoryTheory.Functor.isOpenQuotientMap_isomorphismClasses_map_of_essSurj`) when `F` is
+essentially surjective.
 A full functor reflecting isomorphisms whose object map is continuous and closed, with range
 closed under isomorphisms, induces a closed embedding
 (`CategoryTheory.Functor.isClosedEmbedding_isomorphismClasses_map`).
@@ -111,6 +110,15 @@ theorem isClosedEmbedding_isomorphismClasses_map (F : C ⥤ D) [F.Full] [F.Refle
   · rintro ⟨x, hx, rfl⟩
     exact ⟨_, hx, hφ x⟩
 
+/-- A functor whose object map becomes open after projecting to the isomorphism classes of `D`
+induces an open map on isomorphism classes, without requiring surjectivity on objects. -/
+theorem isOpenMap_isomorphismClasses_map (F : C ⥤ D)
+    (hF' : IsOpenMap (Quotient.mk (isIsomorphicSetoid D) ∘ F.obj)) :
+    IsOpenMap (X := Quotient (isIsomorphicSetoid C))
+      (Y := Quotient (isIsomorphicSetoid D)) (isomorphismClasses.map F.toCatHom) :=
+  IsOpenMap.of_comp continuous_quotient_mk' (Quotient.mk_surjective (s := isIsomorphicSetoid C))
+    (F.isomorphismClasses_map_comp_mk.symm ▸ hF')
+
 /-- A full, essentially surjective functor reflecting isomorphisms induces a homeomorphism of
 isomorphism classes when its object map is continuous and becomes open after projecting to the
 isomorphism classes of `D`. Unlike `isQuotientMap_isomorphismClasses_map`, the object map need not
@@ -124,14 +132,7 @@ theorem isHomeomorph_isomorphismClasses_map (F : C ⥤ D) [F.Full] [F.ReflectsIs
     IsHomeomorph (X := Quotient (isIsomorphicSetoid C))
       (Y := Quotient (isIsomorphicSetoid D)) (isomorphismClasses.map F.toCatHom) where
   continuous := F.continuous_isomorphismClasses_map hF
-  isOpenMap W hW := by
-    set φ : Quotient (isIsomorphicSetoid C) → Quotient (isIsomorphicSetoid D) :=
-      ⇑(isomorphismClasses.map F.toCatHom)
-    have hφ (x : C) : φ (Quotient.mk _ x) = Quotient.mk _ (F.obj x) := F.isomorphismClasses_map_mk x
-    -- The image of `W` is the image of its preimage in `C` under the projected object map.
-    rw [← Quotient.mk_surjective.image_preimage W, Set.image_image]
-    simp only [hφ]
-    exact hF' _ (hW.preimage continuous_quotient_mk')
+  isOpenMap := F.isOpenMap_isomorphismClasses_map hF'
   bijective := ⟨F.isomorphismClasses_map_injective, F.isomorphismClasses_map_surjective⟩
 
 /-- A full functor reflecting isomorphisms, for instance a fully faithful functor, whose induced map
@@ -226,15 +227,6 @@ theorem isProperMap_isomorphismClasses_map (F : C ⥤ D) [F.Full] [F.ReflectsIso
 
 section OpenTarget
 
-/-- When the quotient projection on `D` is open, a functor with open object map induces an open
-map on isomorphism classes, without requiring surjectivity on objects. -/
-theorem isOpenMap_isomorphismClasses_map (F : C ⥤ D) (hFo : IsOpenMap F.obj)
-    (hq : IsOpenMap (Quotient.mk (isIsomorphicSetoid D))) :
-    IsOpenMap (X := Quotient (isIsomorphicSetoid C))
-      (Y := Quotient (isIsomorphicSetoid D)) (isomorphismClasses.map F.toCatHom) :=
-  IsOpenMap.of_comp continuous_quotient_mk' (Quotient.mk_surjective (s := isIsomorphicSetoid C))
-    (F.isomorphismClasses_map_comp_mk.symm ▸ hq.comp hFo)
-
 /-- A full functor reflecting isomorphisms whose object map is continuous and open, into a target
 with open quotient projection, induces an open embedding on isomorphism classes. -/
 theorem isOpenEmbedding_isomorphismClasses_map (F : C ⥤ D) [F.Full] [F.ReflectsIsomorphisms]
@@ -243,7 +235,7 @@ theorem isOpenEmbedding_isomorphismClasses_map (F : C ⥤ D) [F.Full] [F.Reflect
     IsOpenEmbedding (X := Quotient (isIsomorphicSetoid C))
       (Y := Quotient (isIsomorphicSetoid D)) (isomorphismClasses.map F.toCatHom) :=
   .of_continuous_injective_isOpenMap (F.continuous_isomorphismClasses_map hF)
-    F.isomorphismClasses_map_injective (F.isOpenMap_isomorphismClasses_map hFo hq)
+    F.isomorphismClasses_map_injective (F.isOpenMap_isomorphismClasses_map (hq.comp hFo))
 
 /-- An essentially surjective functor with continuous open object map, into a target with open
 quotient projection, induces an open quotient map on isomorphism classes. -/
@@ -253,17 +245,7 @@ theorem isOpenQuotientMap_isomorphismClasses_map_of_essSurj (F : C ⥤ D) [F.Ess
     IsOpenQuotientMap (X := Quotient (isIsomorphicSetoid C))
       (Y := Quotient (isIsomorphicSetoid D)) (isomorphismClasses.map F.toCatHom) :=
   ⟨F.isomorphismClasses_map_surjective, F.continuous_isomorphismClasses_map hF,
-    F.isOpenMap_isomorphismClasses_map hFo hq⟩
-
-/-- An essentially surjective full functor reflecting isomorphisms, with continuous open object map
-into a target with open quotient projection, induces a proper map on isomorphism classes. -/
-theorem isProperMap_isomorphismClasses_map_of_essSurj (F : C ⥤ D) [F.Full] [F.EssSurj]
-    [F.ReflectsIsomorphisms] (hF : Continuous F.obj) (hFo : IsOpenMap F.obj)
-    (hq : IsOpenMap (Quotient.mk (isIsomorphicSetoid D))) :
-    IsProperMap (X := Quotient (isIsomorphicSetoid C))
-      (Y := Quotient (isIsomorphicSetoid D)) (isomorphismClasses.map F.toCatHom) :=
-  F.isProperMap_isomorphismClasses_map
-    (F.isOpenQuotientMap_isomorphismClasses_map_of_essSurj hF hFo hq).isQuotientMap
+    F.isOpenMap_isomorphismClasses_map (hq.comp hFo)⟩
 
 end OpenTarget
 

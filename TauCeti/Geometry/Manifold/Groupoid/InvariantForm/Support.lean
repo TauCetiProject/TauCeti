@@ -597,9 +597,9 @@ theorem isProperMap_isomorphismClasses_map_of_etale (Φ : C ⥤ D) [Φ.Full] [Φ
     (hΦ : IsLocalDiffeomorph I I' ∞ Φ.obj) :
     IsProperMap (X := Quotient (isIsomorphicSetoid C))
       (Y := Quotient (isIsomorphicSetoid D)) (isomorphismClasses.map Φ.toCatHom) :=
-  Φ.isProperMap_isomorphismClasses_map_of_essSurj hΦ.contMDiff.continuous hΦ.isOpenMap
-    (@TauCeti.isOpenQuotientMap_isomorphismClassesMk _ Groupoid.ofIsGroupoid _ _
-      hs'.contMDiff.continuous ht'.isOpenMap).isOpenMap
+  (Φ.isHomeomorph_isomorphismClasses_map hΦ.contMDiff.continuous
+    ((@TauCeti.isOpenQuotientMap_isomorphismClassesMk _ Groupoid.ofIsGroupoid _ _
+      hs'.contMDiff.continuous ht'.isOpenMap).isOpenMap.comp hΦ.isOpenMap)).isProperMap
 
 /-- Descent of an invariant form along an étale refinement transports its coarse support by the
 induced map on isomorphism classes. -/
@@ -958,13 +958,18 @@ theorem Quiver.exists_mpullback_notMem_compactlySupportedInvariantForms_of_not_c
       mpullback_ofFunction, mpullback_ofFunction]; rfl
   refine ⟨φ, by rwa [Quiver.compactlySupportedInvariantForms_eq_invariantForms],
     fun hmem ↦ hnc ⟨?_⟩⟩
-  have huniv : (SmoothForm.mpullback f hf φ).coarseTSupport = Set.univ :=
-    Set.eq_univ_iff_forall.mpr <| Quotient.ind fun x ↦
-      subset_closure ⟨x, subset_tsupport (α := E [⋀^Fin 0]→L[ℝ] V) _ fun h0 ↦ hv <| by
-        have hp : ((SmoothForm.mpullback f hf φ).val x : E [⋀^Fin 0]→L[ℝ] V) 0 = v := by
-          rw [SmoothForm.coe_mpullback, hφ_coe, mpullback_ofFunction]
-          exact RoughForm.ofFunction_apply (I := I) (fun _ ↦ v) x 0
-        exact hp.symm.trans (congrArg (· 0) h0), rfl⟩
+  have huniv : (SmoothForm.mpullback f hf φ).coarseTSupport = Set.univ := by
+    have hc : ContinuousAlternatingMap.constOfIsEmpty ℝ E (Fin 0) v ≠ 0 :=
+      fun h ↦ hv <| by simpa using congrArg (· 0) h
+    have hconst : (RoughForm.ofFunction I ((fun _ ↦ v) ∘ f) : C → E [⋀^Fin 0]→L[ℝ] V) =
+        fun _ ↦ ContinuousAlternatingMap.constOfIsEmpty ℝ E (Fin 0) v := by
+      funext x
+      exact ContinuousAlternatingMap.ext fun u ↦
+        (RoughForm.ofFunction_apply (I := I) _ x u).trans
+          (ContinuousAlternatingMap.constOfIsEmpty_apply ℝ E (Fin 0) v u).symm
+    rw [SmoothForm.coarseTSupport_def, SmoothForm.coe_mpullback, hφ_coe, mpullback_ofFunction,
+      RoughForm.coarseTSupport_def, hconst, _root_.tsupport, Function.support_const hc,
+      closure_univ, Set.image_univ_of_surjective Quotient.mk_surjective, closure_univ]
   exact huniv ▸ hmem.2
 
 end TauCeti
