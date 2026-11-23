@@ -248,12 +248,6 @@ theorem homDensity_eq_homDensityFin_of_apply_eq_ite {Ω : Type*} [Fintype Ω] [N
   have hcomap : ∀ i j, W.comap e he.measurable (uniformOn Set.univ) i j =
       if (G.comap e).Adj i j then 1 else 0 := fun i j => by
     simpa only [Graphon.comap_apply, SimpleGraph.comap_adj] using hW (e i) (e j)
-  have hcard : Nat.card (F →g G.comap e) = Nat.card (F →g G) :=
-    Nat.card_congr
-      { toFun := fun φ => ⟨e ∘ φ, fun h => φ.map_rel h⟩
-        invFun := fun φ => ⟨e.symm ∘ φ, fun h => by simpa using φ.map_rel h⟩
-        left_inv := fun φ => RelHom.ext fun v => e.symm_apply_apply (φ v)
-        right_inv := fun φ => RelHom.ext fun v => e.apply_symm_apply (φ v) }
   calc homDensity F W
       = homDensity F (W.comap e he.measurable (uniformOn Set.univ)) :=
         (homDensity_comap F W he).symm
@@ -266,8 +260,9 @@ theorem homDensity_eq_homDensityFin_of_apply_eq_ite {Ω : Type*} [Fintype Ω] [N
         simp
     _ = homDensityFin F G := by
         rw [integral_indicator_one (Finset.measurableSet _), Finset.uniformOn_univ_real_finset,
-          ← F.card_hom_eq_card_filter_adjPreserving (G.comap e), hcard, homDensityFin_def,
-          Fintype.card_fun, Fintype.card_fin, Nat.cast_pow]
+          ← F.card_hom_eq_card_filter_adjPreserving (G.comap e),
+          Nat.card_congr (SimpleGraph.Iso.refl.homCongr (SimpleGraph.Iso.comap e G)),
+          homDensityFin_def, Fintype.card_fun, Fintype.card_fin, Nat.cast_pow]
 
 /-- **Finite-graph compatibility on the uniform finite carrier `Fin m`.** The graphon
 homomorphism density of `F` in the graphon of `G` on `Fin m` is the finite homomorphism density of
