@@ -44,16 +44,16 @@ theorem I_pow_two_mul (k : ℕ) : I ^ (2 * k) = (-1 : ℂ) ^ k := by
   rw [pow_mul, I_sq]
 
 /-- The imaginary part of `I ^ (2 * k) * w` is `(-1 : ℝ) ^ k * w.im`. -/
+@[simp↓]
 theorem im_I_pow_two_mul_mul (k : ℕ) (w : ℂ) :
     (I ^ (2 * k) * w).im = (-1 : ℝ) ^ k * w.im := by
-  rw [I_pow_two_mul k, ← ofReal_one, ← ofReal_neg, ← ofReal_pow, mul_im,
-    ofReal_re, ofReal_im, zero_mul, add_zero]
+  rw [I_pow_two_mul, ← ofReal_one, ← ofReal_neg, ← ofReal_pow, im_ofReal_mul]
 
 /-- The imaginary part of `I ^ (2 * k + 1) * w` is `(-1 : ℝ) ^ k * w.re`. -/
+@[simp↓]
 theorem im_I_pow_two_mul_add_one_mul (k : ℕ) (w : ℂ) :
     (I ^ (2 * k + 1) * w).im = (-1 : ℝ) ^ k * w.re := by
-  rw [pow_succ, I_pow_two_mul k, ← ofReal_one, ← ofReal_neg, ← ofReal_pow,
-    mul_assoc, mul_im, ofReal_re, ofReal_im, I_mul_im, I_mul_re]
-  ring
+  rw [pow_succ, mul_assoc, I_pow_two_mul, ← ofReal_one, ← ofReal_neg, ← ofReal_pow,
+    im_ofReal_mul, I_mul_im]
 
 end Complex

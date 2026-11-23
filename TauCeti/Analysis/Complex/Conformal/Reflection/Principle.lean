@@ -11,6 +11,7 @@ public import TauCeti.Analysis.Complex.Conformal.Removability.Basic
 
 import Mathlib.Analysis.Analytic.IsolatedZeros
 import Mathlib.Analysis.Complex.CauchyIntegral
+import TauCeti.Analysis.Complex.RealIdentity
 import TauCeti.Analysis.Complex.UpperHalfPlane.Topology
 import TauCeti.Analysis.Complex.VerticalStrip.Basic
 
@@ -164,23 +165,6 @@ theorem exists_lt_lt_ne_zero_of_ne_zero {x r : ℝ} (hr : 0 < r)
     abs_of_pos (half_pos hr)])
   exact ⟨y₁, y₂, by linarith, by linarith, by linarith, by linarith, hy₁, hy₂⟩
 
-/-- A holomorphic function on a preconnected open set `Ω` meeting the real axis at `x` that
-vanishes on `Ω ∩ ℝ` vanishes identically on `Ω`. -/
-private theorem eqOn_zero_of_differentiableOn_of_zero_on_real_axis {Ω : Set ℂ}
-    (hΩopen : IsOpen Ω) (hΩconn : IsPreconnected Ω) {x : ℝ} (hx : (x : ℂ) ∈ Ω)
-    (hFd : DifferentiableOn ℂ f Ω) (hzero : ∀ z ∈ Ω, z.im = 0 → f z = 0) :
-    EqOn f 0 Ω := by
-  have hreal : ∀ᶠ t : ℝ in 𝓝[≠] x, f t = 0 := by
-    filter_upwards [nhdsWithin_le_nhds <| continuous_ofReal.continuousAt.preimage_mem_nhds
-      (hΩopen.mem_nhds hx)] with t ht
-    exact hzero _ ht (ofReal_im t)
-  have hmap : Tendsto ((↑) : ℝ → ℂ) (𝓝[≠] x) (𝓝[≠] (x : ℂ)) :=
-    tendsto_nhdsWithin_of_tendsto_nhds_of_eventually_within _
-      (continuous_ofReal.tendsto x |>.mono_left nhdsWithin_le_nhds)
-      (eventually_nhdsWithin_of_forall fun t ht => by simpa using ht)
-  exact (hFd.analyticOnNhd hΩopen).eqOn_zero_of_preconnected_of_frequently_eq_zero hΩconn
-    hx (hmap.frequently hreal.frequently)
-
 /-- **Boundary uniqueness on the real axis.** On a preconnected conjugation-symmetric open set
 `Ω` meeting the real axis, a function continuous on the closed upper part, holomorphic on the
 open upper part and vanishing on the real axis vanishes on the whole closed upper part. -/
@@ -192,7 +176,7 @@ theorem eqOn_zero_of_zero_on_real_axis {Ω : Set ℂ} (hΩopen : IsOpen Ω) (hΩ
     EqOn f 0 (Ω ∩ {z : ℂ | 0 ≤ z.im}) := by
   obtain ⟨F, hFd, hFf, -⟩ := exists_differentiableOn_eqOn_conj_of_symmetric hΩopen hΩ hcont
     hholo fun z hz hz0 => by rw [hzero z hz hz0, zero_im]
-  have hF0 := eqOn_zero_of_differentiableOn_of_zero_on_real_axis hΩopen hΩconn hx hFd
+  have hF0 := hFd.eqOn_zero_of_zero_on_real_axis hΩopen hΩconn hx
     fun z hz hz0 => (hFf ⟨hz, hz0.ge⟩).trans (hzero z hz hz0)
   exact fun z hz => (hFf hz).symm.trans (hF0 hz.1)
 
@@ -258,11 +242,10 @@ theorem apply_conj_eq_conj_of_real_on_axis {Ω : Set ℂ} (hΩopen : IsOpen Ω)
     f ((starRingEnd ℂ) z) = (starRingEnd ℂ) (f z) := by
   let G : ℂ → ℂ := fun w => f w - (starRingEnd ℂ) (f ((starRingEnd ℂ) w))
   have hG0 : EqOn G 0 Ω :=
-    eqOn_zero_of_differentiableOn_of_zero_on_real_axis hΩopen hΩconn hx
-      (hf.sub (differentiableOn_conj_conj_of_symmetric hΩ hf))
-      fun w hw hw0 => by
-        dsimp only [G]
-        rw [Complex.conj_eq_iff_im.mpr hw0, Complex.conj_eq_iff_im.mpr (hreal w hw hw0), sub_self]
+    (hf.sub (differentiableOn_conj_conj_of_symmetric hΩ hf)).eqOn_zero_of_zero_on_real_axis
+      hΩopen hΩconn hx fun w hw hw0 => by
+        rw [Pi.sub_apply, Complex.conj_eq_iff_im.mpr hw0,
+          Complex.conj_eq_iff_im.mpr (hreal w hw hw0), sub_self]
   have h0 : f z = (starRingEnd ℂ) (f ((starRingEnd ℂ) z)) := sub_eq_zero.mp (hG0 hz)
   simpa only [starRingEnd_self_apply] using (congrArg (starRingEnd ℂ) h0).symm
 

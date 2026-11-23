@@ -26,6 +26,7 @@ decays like `exp (-t)` at `+∞`, and for `t > 0` it is the geometric series
 
 * `Real.exp_sub_one_ne_zero`: `exp t - 1 ≠ 0` for `t ≠ 0`, so `g` is defined away from `0`.
 * `Real.exp_sub_one_eq_one_sub_exp_neg_mul`: `exp t - 1 = (1 - exp (-t)) * exp t`.
+* `Real.one_sub_exp_neg_mul_exp_le_exp_sub_one`: `(1 - exp (-s)) * exp t ≤ exp t - 1` for `s ≤ t`.
 * `Real.hasDerivAt_inv_exp_sub_one`: `g' = -(g + g²)` away from `0`.
 * `Real.isBigO_inv_exp_sub_one`: `g(t) = O(exp (-t))` as `t → ∞`.
 * `Real.hasSum_exp_neg_nat_succ_mul`: `g(t) = ∑_{k ≥ 0} exp (-((k + 1) t))` for `t > 0`.
@@ -45,6 +46,12 @@ theorem exp_sub_one_ne_zero {t : ℝ} (ht : t ≠ 0) : exp t - 1 ≠ 0 :=
 theorem exp_sub_one_eq_one_sub_exp_neg_mul (t : ℝ) :
     exp t - 1 = (1 - exp (-t)) * exp t := by
   rw [sub_mul, one_mul, ← exp_add, neg_add_cancel, exp_zero]
+
+/-- For `s ≤ t`, `(1 - exp (-s)) * exp t ≤ exp t - 1`. -/
+theorem one_sub_exp_neg_mul_exp_le_exp_sub_one {s t : ℝ} (hst : s ≤ t) :
+    (1 - exp (-s)) * exp t ≤ exp t - 1 := by
+  rw [exp_sub_one_eq_one_sub_exp_neg_mul t]
+  gcongr
 
 /-- The derivative of `g = (exp t - 1)⁻¹` is `-(g + g²)`. -/
 theorem hasDerivAt_inv_exp_sub_one {t : ℝ} (ht : t ≠ 0) :

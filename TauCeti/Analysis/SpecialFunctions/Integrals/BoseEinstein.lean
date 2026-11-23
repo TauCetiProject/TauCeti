@@ -46,7 +46,7 @@ Abel–Plana summation formula.
 * `TauCeti.integral_Ioi_pow_div_exp_mul_sub_one`: closed form at odd integer exponents `2 * s - 1`
   in terms of `bernoulli (2 * s)`.
 * `TauCeti.integral_Ioi_pow_div_exp_two_pi_mul_sub_one` and
-  `TauCeti.integral_Ioi_div_exp_two_pi_mul_sub_one`: specializations to `c = 2 * π`.
+  `TauCeti.integral_Ioi_self_div_exp_two_pi_mul_sub_one`: specializations to `c = 2 * π`.
 
 ## References
 
@@ -67,14 +67,9 @@ open scoped Nat Topology
 private theorem hasSum_rpow_mul_exp_neg_mul {p c y : ℝ} (hc : 0 < c) (hy : 0 < y) :
     HasSum (fun n : ℕ => y ^ (p - 1) * exp (-(c * (n + 1) * y)))
       (y ^ (p - 1) / (exp (c * y) - 1)) := by
-  have hcy : 0 < c * y := mul_pos hc hy
-  have hr1 : exp (-(c * y)) < 1 := exp_lt_one_iff.mpr (neg_lt_zero.mpr hcy)
-  convert (hasSum_geometric_of_lt_one (exp_pos _).le hr1).mul_left
-    (y ^ (p - 1) * exp (-(c * y))) using 1
-  · ext n; rw [← exp_natCast_mul, mul_assoc (y ^ (p - 1)), ← exp_add]; ring_nf
-  · symm
-    rw [div_eq_mul_inv, exp_sub_one_eq_one_sub_exp_neg_mul (c * y), mul_inv, ← exp_neg]
-    ring
+  convert (Real.hasSum_exp_neg_nat_succ_mul (mul_pos hc hy)).mul_left (y ^ (p - 1)) using 1
+  · ext n; ring_nf
+  · rw [div_eq_mul_inv]
 
 /-- For `p > 1` and `c > 0`, the Bose–Einstein integrand `y ^ (p - 1) / (exp (c * y) - 1)` is
 integrable on `(0, ∞)`. -/
@@ -106,10 +101,8 @@ theorem integrableOn_rpow_div_exp_mul_sub_one {p c : ℝ} (hp : 1 < p) (hc : 0 <
     refine htop_major.mono' (hmeas.mono_set (Ioi_subset_Ioi zero_le_one)) ?_
     filter_upwards [ae_restrict_mem measurableSet_Ioi] with y hy
     have hy0 : 0 < y := zero_lt_one.trans hy
-    have hden_ge : (1 - exp (-c)) * exp (c * y) ≤ exp (c * y) - 1 := by
-      rw [exp_sub_one_eq_one_sub_exp_neg_mul (c * y)]
-      gcongr
-      nlinarith [hy.le]
+    have hden_ge : (1 - exp (-c)) * exp (c * y) ≤ exp (c * y) - 1 :=
+      one_sub_exp_neg_mul_exp_le_exp_sub_one (le_mul_of_one_le_right hc.le hy.le)
     have hden_pos : 0 < exp (c * y) - 1 := sub_pos.mpr (one_lt_exp_iff.mpr (mul_pos hc hy0))
     rw [Real.norm_eq_abs, abs_of_nonneg (div_nonneg (rpow_nonneg hy0.le _) hden_pos.le)]
     refine (div_le_div_of_nonneg_left (rpow_nonneg hy0.le _) (mul_pos h1exp (exp_pos _))
@@ -224,7 +217,7 @@ theorem integral_Ioi_pow_div_exp_two_pi_mul_sub_one {s : ℕ} (hs : 1 ≤ s) :
 
 /-- The first odd moment (`s = 1`) for the Abel–Plana kernel:
 `∫ y in Ioi 0, y / (exp (2 * π * y) - 1) = 1 / 24`. -/
-theorem integral_Ioi_div_exp_two_pi_mul_sub_one :
+theorem integral_Ioi_self_div_exp_two_pi_mul_sub_one :
     ∫ y in Ioi (0 : ℝ), y / (exp (2 * π * y) - 1) = 1 / 24 := by
   have h := integral_Ioi_pow_div_exp_two_pi_mul_sub_one (s := 1) le_rfl
   rw [bernoulli_two] at h

@@ -294,18 +294,17 @@ private theorem tendsto_integral_abelPlanaUpper_atTop {f : ℂ → ℂ} {a n : �
         ⟨by simp [z, hx.1.le], by simp [z, hx.2]⟩).le
       rwa [hz_im, dist_zero_right, norm_mul, Complex.norm_real,
         Real.norm_of_nonneg (Real.exp_pos _).le] at h
-    have hden_ge : Real.exp (2 * π * T) - 1 ≤ ‖cexp (-2 * π * I * z) - 1‖ := by
-      simpa [Complex.norm_exp, z] using norm_sub_norm_le (cexp (-2 * π * I * z)) 1
-    have hden_pos : 0 < Real.exp (2 * π * T) - 1 :=
-      sub_pos.mpr (Real.one_lt_exp_iff.mpr (by positivity))
-    have h1T : 1 - Real.exp (-(2 * π)) ≤ 1 - Real.exp (-(2 * π * T)) :=
-      sub_le_sub_left (Real.exp_le_exp.mpr (by nlinarith [Real.pi_pos])) 1
+    have hden_ge : (1 - Real.exp (-(2 * π))) * Real.exp (2 * π * T) ≤
+        ‖cexp (-2 * π * I * z) - 1‖ :=
+      (Real.one_sub_exp_neg_mul_exp_le_exp_sub_one
+        (le_mul_of_one_le_right Real.two_pi_pos.le hT1)).trans
+        (by simpa [Complex.norm_exp, z] using norm_sub_norm_le (cexp (-2 * π * I * z)) 1)
     rw [abelPlanaUpper, norm_div]
     calc
-      ‖f z‖ / ‖cexp (-2 * π * I * z) - 1‖ ≤ ‖f z‖ / (Real.exp (2 * π * T) - 1) := by gcongr
-      _ = (‖f z‖ * Real.exp (-(2 * π * T))) / (1 - Real.exp (-(2 * π * T))) := by
-        rw [Real.exp_sub_one_eq_one_sub_exp_neg_mul (2 * π * T), div_mul_eq_div_div_swap,
-          div_eq_mul_inv ‖f z‖, ← Real.exp_neg]
+      ‖f z‖ / ‖cexp (-2 * π * I * z) - 1‖
+          ≤ ‖f z‖ / ((1 - Real.exp (-(2 * π))) * Real.exp (2 * π * T)) := by gcongr
+      _ = (‖f z‖ * Real.exp (-(2 * π * T))) / (1 - Real.exp (-(2 * π))) := by
+        rw [div_mul_eq_div_div_swap, div_eq_mul_inv ‖f z‖, ← Real.exp_neg]
       _ ≤ (δ * (1 - Real.exp (-(2 * π))) / ((n : ℝ) - a + 1)) / (1 - Real.exp (-(2 * π))) := by
         gcongr
       _ = δ / ((n : ℝ) - a + 1) := by field_simp
@@ -330,6 +329,16 @@ private theorem mul_integral_div_neg_two_pi_I_mul_linear (c d u z₀ : ℂ) {a�
     exact integral_congr fun _ _ => by rw [div_mul_eq_div_div, div_eq_mul_inv]; ring
   rw [hrew, integral_inv_linear_mul_eq_log_sub hslit]
 
+/-- Evaluates the shared corner-cancelled logarithm difference `(c / (-2πi)) * (log ε - log (ε i))`
+to `c / 4`. -/
+private theorem mul_log_sub_log_mul_I (c : ℂ) {ε : ℝ} (hε : 0 < ε) :
+    (c / (-2 * π * I)) * (Complex.log ε - Complex.log (ε * I)) = c / 4 := by
+  rw [Complex.log_ofReal_mul hε I_ne_zero, Complex.ofReal_log hε.le, Complex.log_I,
+    sub_add_cancel_left]
+  have : (π : ℂ) ≠ 0 := ofReal_ne_zero.mpr Real.pi_ne_zero
+  have : (I : ℂ) ≠ 0 := I_ne_zero
+  field_simp; ring
+
 /-- Exact evaluation of the singular model for the upper-right quarter-box indent. -/
 private theorem upperRightCap_model (c : ℂ) {ε : ℝ} (hε : 0 < ε) :
     (∫ t in (0 : ℝ)..ε, c / (-2 * π * I * ((t : ℂ) + ε * I))) -
@@ -340,12 +349,8 @@ private theorem upperRightCap_model (c : ℂ) {ε : ℝ} (hε : 0 < ε) :
   have h2 := mul_integral_div_neg_two_pi_I_mul_linear c I 1 ε (a₀ := 0) (b₀ := ε)
     fun y _ => Complex.mem_slitPlane_iff.mpr (Or.inl (by simp [hε]))
   simp only [one_mul, ofReal_zero, zero_mul, add_zero] at h2
-  rw [h1, h2, ← mul_sub, sub_sub_sub_cancel_left,
-    Complex.log_ofReal_mul hε I_ne_zero, Complex.ofReal_log hε.le, Complex.log_I,
-    sub_add_cancel_left]
-  have : (π : ℂ) ≠ 0 := ofReal_ne_zero.mpr Real.pi_ne_zero
-  have : (I : ℂ) ≠ 0 := I_ne_zero
-  field_simp; ring
+  rw [h1, h2, ← mul_sub, sub_sub_sub_cancel_left]
+  exact mul_log_sub_log_mul_I c hε
 
 /-- Exact evaluation of the singular model for the upper-left quarter-box indent, using the rotated
 branch `w ↦ log (-i * w)` on the second quadrant. -/
@@ -368,12 +373,8 @@ private theorem upperLeftCap_model (c : ℂ) {ε : ℝ} (hε : 0 < ε) :
     fun y _ => Complex.mem_slitPlane_iff.mpr (Or.inr (by rw [hrot2]; simp [hε.ne']))
   rw [hrot2, hrot2] at h2
   simp only [ofReal_zero, zero_add] at h2
-  rw [h1, h2, ← mul_add, sub_add_sub_cancel,
-    Complex.log_ofReal_mul hε I_ne_zero, Complex.ofReal_log hε.le, Complex.log_I,
-    sub_add_cancel_left]
-  have : (π : ℂ) ≠ 0 := ofReal_ne_zero.mpr Real.pi_ne_zero
-  have : (I : ℂ) ≠ 0 := I_ne_zero
-  field_simp; ring
+  rw [h1, h2, ← mul_add, sub_add_sub_cancel]
+  exact mul_log_sub_log_mul_I c hε
 
 /-- Near an integer `k` in the strip `S`, `‖w‖ * ‖g₊(k + w) - f(k) / (-2πiw)‖ → 0` as `w → 0`. -/
 private theorem tendsto_norm_mul_abelPlanaUpper_sub {f : ℂ → ℂ} {S : Set ℂ} {k : ℤ}
@@ -490,6 +491,36 @@ private theorem tendsto_abelPlanaUpper_cap {f : ℂ → ℂ} {S : Set ℂ} {k : 
   filter_upwards [self_mem_nhdsWithin] with ε (hε : 0 < ε)
   linear_combination -(hmodel hε)
 
+/-- Side estimate for a horizontal quarter-box segment `t ↦ t + ε i` (`t ∈ [a₀ ε, b₀ ε]`) near
+an integer `k` inside `verticalClosedStrip a n`. -/
+private theorem abelPlanaUpper_horizSeg {a n k : ℤ} {a₀ b₀ : ℝ → ℝ}
+    (hseg : ∀ ε ∈ Ioo (0 : ℝ) 1, b₀ ε - a₀ ε = ε ∧
+      ∀ t ∈ Icc (a₀ ε) (b₀ ε), |t| ≤ ε ∧ (a : ℝ) ≤ (k : ℝ) + t ∧ (k : ℝ) + t ≤ n) :
+    ∀ ε ∈ Ioo (0 : ℝ) 1, b₀ ε - a₀ ε = ε ∧ Continuous (fun t : ℝ => (t : ℂ) + ε * I) ∧
+      ∀ t ∈ Icc (a₀ ε) (b₀ ε), ε ≤ ‖(t : ℂ) + ε * I‖ ∧ ‖(t : ℂ) + ε * I‖ ≤ 2 * ε ∧
+        (k : ℂ) + ((t : ℂ) + ε * I) ∈ Complex.HadamardThreeLines.verticalClosedStrip a n := by
+  intro ε hε
+  obtain ⟨hlen, hbd⟩ := hseg ε hε
+  refine ⟨hlen, by fun_prop, fun t ht => ?_⟩
+  obtain ⟨ht_abs, hlo_re, hhi_re⟩ := hbd t ht
+  obtain ⟨hlo, hhi⟩ := Complex.norm_bounds_of_abs_re_le_of_abs_im_le ((t : ℂ) + ε * I) ε
+    (by simpa using ht_abs) (by simp [abs_of_pos hε.1]) (Or.inr (by simp [abs_of_pos hε.1]))
+  exact ⟨hlo, hhi, ⟨by simpa using hlo_re, by simpa using hhi_re⟩⟩
+
+/-- Side estimate for a vertical quarter-box segment `y ↦ x ε + y i` (`y ∈ [0, ε]`) near an
+integer `k` inside `verticalClosedStrip a n`. -/
+private theorem abelPlanaUpper_vertSeg {a n k : ℤ} {x : ℝ → ℝ}
+    (hseg : ∀ ε ∈ Ioo (0 : ℝ) 1, |x ε| = ε ∧ (a : ℝ) ≤ (k : ℝ) + x ε ∧ (k : ℝ) + x ε ≤ n) :
+    ∀ ε ∈ Ioo (0 : ℝ) 1, ε - 0 = ε ∧ Continuous (fun y : ℝ => (x ε : ℂ) + y * I) ∧
+      ∀ y ∈ Icc (0 : ℝ) ε, ε ≤ ‖(x ε : ℂ) + y * I‖ ∧ ‖(x ε : ℂ) + y * I‖ ≤ 2 * ε ∧
+        (k : ℂ) + ((x ε : ℂ) + y * I) ∈ Complex.HadamardThreeLines.verticalClosedStrip a n := by
+  intro ε hε
+  obtain ⟨hx_abs, hlo_re, hhi_re⟩ := hseg ε hε
+  refine ⟨sub_zero ε, by fun_prop, fun y hy => ?_⟩
+  obtain ⟨hlo, hhi⟩ := Complex.norm_bounds_of_abs_re_le_of_abs_im_le ((x ε : ℂ) + y * I) ε
+    (by simp [hx_abs]) (by simp [abs_of_nonneg hy.1, hy.2]) (Or.inl (by simp [hx_abs]))
+  exact ⟨hlo, hhi, ⟨by simpa using hlo_re, by simpa using hhi_re⟩⟩
+
 /-- Quarter-box limit `upperRightCap f j ε → f j / 4` as `ε → 0⁺` for `j ∈ [a, n)`. -/
 private theorem tendsto_upperRightCap {f : ℂ → ℂ} {a n j : ℤ} (hj : j ∈ Finset.Ico a n)
     (hcont : ContinuousOn f (Complex.HadamardThreeLines.verticalClosedStrip a n)) :
@@ -500,18 +531,11 @@ private theorem tendsto_upperRightCap {f : ℂ → ℂ} {a n j : ℤ} (hj : j �
   have hjS : (j : ℂ) ∈ Complex.HadamardThreeLines.verticalClosedStrip a n :=
     ⟨by simpa using hja', by simp; linarith⟩
   have hcap := tendsto_abelPlanaUpper_cap hjS hcont (σ := -I)
-    (a₁ := fun _ => 0) (b₁ := fun ε => ε) (γ₁ := fun ε t => (t : ℂ) + ε * I)
-    (a₂ := fun _ => 0) (b₂ := fun ε => ε) (γ₂ := fun ε y => (ε : ℂ) + y * I)
-    (fun ε ⟨hε0, hε1⟩ => ⟨sub_zero ε, by fun_prop, fun t ht => by
-      obtain ⟨hlo, hhi⟩ := Complex.norm_bounds_of_abs_re_le_of_abs_im_le ((t : ℂ) + ε * I) ε
-        (by simp [abs_of_nonneg ht.1, ht.2]) (by simp [abs_of_pos hε0])
-        (Or.inr (by simp [abs_of_pos hε0]))
-      exact ⟨hlo, hhi, ⟨by simp; linarith [ht.1], by simp; linarith [ht.2]⟩⟩⟩)
-    (fun ε ⟨hε0, hε1⟩ => ⟨sub_zero ε, by fun_prop, fun y hy => by
-      obtain ⟨hlo, hhi⟩ := Complex.norm_bounds_of_abs_re_le_of_abs_im_le ((ε : ℂ) + y * I) ε
-        (by simp [abs_of_pos hε0]) (by simp [abs_of_nonneg hy.1, hy.2])
-        (Or.inl (by simp [abs_of_pos hε0]))
-      exact ⟨hlo, hhi, ⟨by simp; linarith, by simp; linarith⟩⟩⟩)
+    (abelPlanaUpper_horizSeg (a₀ := fun _ => 0) (b₀ := fun ε => ε) fun ε ⟨_, hε1⟩ =>
+      ⟨sub_zero ε, fun t ht =>
+        ⟨by simp [abs_of_nonneg ht.1, ht.2], by linarith [ht.1], by linarith [ht.2]⟩⟩)
+    (abelPlanaUpper_vertSeg (x := fun ε => ε) fun ε ⟨hε0, hε1⟩ =>
+      ⟨abs_of_pos hε0, by linarith, by linarith⟩)
     fun {ε} hε => by simpa [sub_eq_add_neg, neg_mul] using upperRightCap_model (f j) hε
   simpa only [upperRightCap, sub_eq_add_neg, neg_mul, add_assoc] using hcap
 
@@ -526,20 +550,13 @@ private theorem tendsto_upperLeftCap {f : ℂ → ℂ} {a n j : ℤ} (hj : j ∈
   have hkS : (k : ℂ) ∈ Complex.HadamardThreeLines.verticalClosedStrip a n :=
     ⟨by simp; linarith, by simpa using hkn'⟩
   have hcap := tendsto_abelPlanaUpper_cap hkS hcont (σ := I)
-    (a₁ := fun ε => -ε) (b₁ := fun _ => 0) (γ₁ := fun ε t => (t : ℂ) + ε * I)
-    (a₂ := fun _ => 0) (b₂ := fun ε => ε) (γ₂ := fun ε y => -(ε : ℂ) + y * I)
-    (fun ε ⟨hε0, hε1⟩ => ⟨by ring, by fun_prop, fun t ht => by
-      obtain ⟨hlo, hhi⟩ := Complex.norm_bounds_of_abs_re_le_of_abs_im_le ((t : ℂ) + ε * I) ε
-        (by simp [abs_of_nonpos ht.2]; linarith [ht.1]) (by simp [abs_of_pos hε0])
-        (Or.inr (by simp [abs_of_pos hε0]))
-      exact ⟨hlo, hhi, ⟨by simp; linarith [ht.1], by simp; linarith [ht.2]⟩⟩⟩)
-    (fun ε ⟨hε0, hε1⟩ => ⟨sub_zero ε, by fun_prop, fun y hy => by
-      obtain ⟨hlo, hhi⟩ := Complex.norm_bounds_of_abs_re_le_of_abs_im_le (-(ε : ℂ) + y * I) ε
-        (by simp [abs_of_pos hε0]) (by simp [abs_of_nonneg hy.1, hy.2])
-        (Or.inl (by simp [abs_of_pos hε0]))
-      exact ⟨hlo, hhi, ⟨by simp; linarith, by simp; linarith⟩⟩⟩)
-    fun {ε} hε => upperLeftCap_model (f k) hε
-  simpa only [upperLeftCap, k, sub_eq_add_neg, add_assoc] using hcap
+    (abelPlanaUpper_horizSeg (a₀ := fun ε => -ε) (b₀ := fun _ => 0) fun ε ⟨_, hε1⟩ =>
+      ⟨by ring, fun t ht =>
+        ⟨by rw [abs_of_nonpos ht.2]; linarith [ht.1], by linarith [ht.1], by linarith [ht.2]⟩⟩)
+    (abelPlanaUpper_vertSeg (x := fun ε => -ε) fun ε ⟨hε0, hε1⟩ =>
+      ⟨by rw [abs_neg, abs_of_pos hε0], by linarith, by linarith⟩)
+    fun {ε} hε => by simpa only [Complex.ofReal_neg] using upperLeftCap_model (f k) hε
+  simpa only [upperLeftCap, k, sub_eq_add_neg, Complex.ofReal_neg, add_assoc] using hcap
 
 /-- Shrinking the punctured unit subintervals `[j + ε, j + 1 - ε]` to `[j, j + 1]` recovers
 `- ∫_a^n f` as `ε → 0⁺`. -/

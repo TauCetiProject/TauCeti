@@ -375,7 +375,7 @@ example {a n : ℤ} (han : a ≤ n) :
     rw [setIntegral_congr_fun measurableSet_Ioi
       (fun y _ => by rw [him_sq]; ring : EqOn _
         (fun y => (2 * (k : ℝ)) * (y / (Real.exp (2 * π * y) - 1))) (Ioi 0)),
-      integral_const_mul, integral_Ioi_div_exp_two_pi_mul_sub_one]
+      integral_const_mul, integral_Ioi_self_div_exp_two_pi_mul_sub_one]
     ring
   have hmain := sum_Icc_eq_abelPlana (f := fun z : ℂ => z ^ 2) han
     (differentiable_id.pow 2).differentiableOn (continuous_id.pow 2).continuousOn
@@ -439,7 +439,7 @@ example {a n : ℤ} (han : a < n) :
     simpa [g] using (mul_eq_zero.mp h0).resolve_left (by norm_num [Nat.factorial])
   have hint_a :
       ∫ y in Ioi (0 : ℝ), ((a : ℂ) + y * I).im / (Real.exp (2 * π * y) - 1) = 1 / 24 := by
-    simpa using integral_Ioi_div_exp_two_pi_mul_sub_one
+    simpa using integral_Ioi_self_div_exp_two_pi_mul_sub_one
   have hint_ab : ∫ x in (a : ℝ)..n, (x : ℂ) = ((n : ℂ) ^ 2 - a ^ 2) / 2 := by
     rw [intervalIntegral.integral_ofReal, integral_id]; push_cast; ring
   have hb2 : (bernoulli 2 : ℂ) = 1 / 6 := by
