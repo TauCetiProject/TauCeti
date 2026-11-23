@@ -599,28 +599,6 @@ private theorem jacobi_root_root_root_of_ne (hB : B.PosDef) (hdiag : ∀ i, Even
       simp
   · simp [rootOf_of_notMem hdm]
 
-omit [LinearOrder I] in
-/-- If `a + b = 0` for two vectors of the norm-two shell, then adding `c` of the shell to `b`
-(respectively to `a`) stays in the shell exactly when `a` pairs with `c` to `1` (respectively
-`-1`). -/
-private theorem add_mem_normTwoShell_iff_of_add_eq_zero (hS : B.IsSymm)
-    {a b c : I → ℤ} (hab : a + b = 0) (ha : a ∈ B.normTwoShell) (hb : b ∈ B.normTwoShell)
-    (hc : c ∈ B.normTwoShell) :
-    (b + c ∈ B.normTwoShell ↔ a ⬝ᵥ B *ᵥ c = 1) ∧ (c + a ∈ B.normTwoShell ↔ a ⬝ᵥ B *ᵥ c = -1) := by
-  have hbv : b = -a := eq_neg_of_add_eq_zero_right hab
-  refine ⟨?_, ?_⟩
-  · rw [hS.add_mem_normTwoShell_iff hb hc, hbv, neg_dotProduct, neg_inj]
-  · rw [hS.add_mem_normTwoShell_iff hc ha, hS.dotProduct_mulVec_comm]
-
-omit [LinearOrder I] in
-/-- Two vectors of the norm-two shell, neither equal nor opposite, pair to `-1`, `0` or `1`. -/
-private theorem dotProduct_mulVec_cases (hB : B.PosDef) {a c : B.normTwoShell}
-    (hne : (a : I → ℤ) ≠ c) (hopp : (a : I → ℤ) ≠ -c) :
-    (a : I → ℤ) ⬝ᵥ B *ᵥ c = -1 ∨ (a : I → ℤ) ⬝ᵥ B *ᵥ c = 0 ∨ (a : I → ℤ) ⬝ᵥ B *ᵥ c = 1 := by
-  have hle := hB.dotProduct_mulVec_le_one a.property c.property hne
-  have hge := hB.neg_one_le_dotProduct_mulVec a.property c.property hopp
-  omega
-
 /-- The Jacobi identity for three root vectors, the first two of which are opposite. -/
 private theorem jacobi_root_root_root_of_add_eq_zero (hB : B.PosDef) (hdiag : ∀ i, Even (B i i))
     {a b c : B.normTwoShell} (hab : (a : I → ℤ) + b = 0) (hca : c ≠ a) (hcb : c ≠ b) :
@@ -634,10 +612,12 @@ private theorem jacobi_root_root_root_of_add_eq_zero (hB : B.PosDef) (hdiag : �
   have hca' : (c : I → ℤ) + a ≠ 0 := fun h ↦
     hcb (Subtype.ext ((eq_neg_of_add_eq_zero_left h).trans hbv.symm))
   -- The pairing `d = ⟪a, c⟫` lies in `{-1, 0, 1}` and decides which of the two sums is a root.
-  have hcases := dotProduct_mulVec_cases hB (Subtype.coe_injective.ne hca.symm) fun h ↦
-    hcb (Subtype.ext (by rw [hbv, h, neg_neg]))
-  obtain ⟨hmbc, hmca⟩ :=
-    add_mem_normTwoShell_iff_of_add_eq_zero hS hab a.property b.property c.property
+  have hcases := hB.dotProduct_mulVec_cases a.property c.property
+    (Subtype.coe_injective.ne hca.symm) fun h ↦ hcb (Subtype.ext (by rw [hbv, h, neg_neg]))
+  have hmbc : (b : I → ℤ) + c ∈ B.normTwoShell ↔ (a : I → ℤ) ⬝ᵥ B *ᵥ c = 1 := by
+    rw [hS.add_mem_normTwoShell_iff b.property c.property, hbv, neg_dotProduct, neg_inj]
+  have hmca : (c : I → ℤ) + a ∈ B.normTwoShell ↔ (a : I → ℤ) ⬝ᵥ B *ᵥ c = -1 := by
+    rw [hS.add_mem_normTwoShell_iff c.property a.property, hS.dotProduct_mulVec_comm]
   have pca := even_orderedSignForm_add_orderedSignForm_swap_sub B hS hdiag c a
   rw [Int.even_iff, hS.dotProduct_mulVec_comm] at pca
   -- Since `a + b = 0`, both nonzero double brackets land on the root `c`.
