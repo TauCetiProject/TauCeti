@@ -7,17 +7,17 @@ module
 
 public import TauCeti.Geometry.Manifold.Quotient.BundleMap
 public import TauCeti.Geometry.Manifold.VectorBundle.Dual
-public import TauCeti.Topology.VectorBundle.Dual.OrbitRelQuotient
+import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.OrbitRelQuotient
 
 /-!
 # Compatibility of quotient bundle descent with dual bundles
 
 For vector bundles over `M ⧸ G`, quotient descent preserves `C^m` regularity (`m ≤ n`) for dual
 evaluation (`ContMDiff.orbitRelQuotientLift_dual_apply`) and fibrewise transpose maps
-(`ContMDiff.section_dualMap_orbitRelQuotientRec`,
-`TauCeti.contMDiff_totalSpaceMap_dualMap_orbitRelQuotientRec_iff`,
-`TauCeti.exists_bundleDiffeomorph_dualMap_orbitRelQuotientRec_iff`), building on
-`TauCeti.Topology.VectorBundle.Dual.OrbitRelQuotient`.
+(`ContMDiff.section_dual_precomp_orbitRelQuotientRec`,
+`TauCeti.contMDiff_totalSpaceMap_dual_precomp_orbitRelQuotientRec_iff`,
+`TauCeti.exists_bundleDiffeomorph_dual_precomp_orbitRelQuotientRec_iff`), building on
+`TauCeti.Topology.Algebra.Module.ContinuousLinearMap.OrbitRelQuotient`.
 
 ## References
 * John M. Lee, *Introduction to Smooth Manifolds*, 2nd ed., Chapters 10, 11, and 21.
@@ -73,7 +73,7 @@ variable {F₁ F₂ : Type*} [NormedAddCommGroup F₁] [NormedSpace 𝕜 F₁]
 
 /-- If an invariant Hom-bundle family `φ` is `C^m` upstairs (`m ≤ n`), the descent of its fibrewise
 dual (transpose) family is a `C^m` section of the dual Hom bundle on `M ⧸ G`. -/
-theorem _root_.ContMDiff.section_dualMap_orbitRelQuotientRec
+theorem _root_.ContMDiff.section_dual_precomp_orbitRelQuotientRec
     (hφ_smooth : ContMDiff I (I.prod 𝓘(𝕜, F₁ →L[𝕜] F₂)) m (fun x ↦ TotalSpace.mk' (F₁ →L[𝕜] F₂)
       (E := fun q ↦ V₁ q →L[𝕜] V₂ q) (Quotient.mk (MulAction.orbitRel G M) x) (φ x)))
     (hφ : ∀ (g : G) (x : M), φ (g • x) ≍ φ x) (hm : m ≤ n) :
@@ -83,7 +83,7 @@ theorem _root_.ContMDiff.section_dualMap_orbitRelQuotientRec
         (V := fun q ↦ StrongDual 𝕜 (V₂ q) →L[𝕜] StrongDual 𝕜 (V₁ q))
         (fun x ↦ ContinuousLinearMap.precomp 𝕜 (φ x))
         (MulAction.apply_smul_heq (fun _ A ↦ ContinuousLinearMap.precomp 𝕜 A) hφ) q)) :=
-  (contMDiff_section_orbitRelQuotientRec_iff hm).2 hφ_smooth.clm_bundle_dualMap
+  (contMDiff_section_orbitRelQuotientRec_iff hm).2 hφ_smooth.clm_bundle_dual_precomp
 
 section FiniteRank
 
@@ -92,7 +92,7 @@ variable [CompleteSpace 𝕜] [FiniteDimensional 𝕜 F₁] [FiniteDimensional �
 
 /-- In finite dimensions over a complete field, the descended dual linear family induces a `C^m`
 map of dual total spaces (`m ≤ n`) iff `φ` is a `C^m` section of the pulled-back Hom bundle. -/
-theorem contMDiff_totalSpaceMap_dualMap_orbitRelQuotientRec_iff (hm : m ≤ n) :
+theorem contMDiff_totalSpaceMap_dual_precomp_orbitRelQuotientRec_iff (hm : m ≤ n) :
     ContMDiff (I.prod 𝓘(𝕜, StrongDual 𝕜 F₂)) (I.prod 𝓘(𝕜, StrongDual 𝕜 F₁)) m
         (fun p : TotalSpace (StrongDual 𝕜 F₂) (fun q ↦ StrongDual 𝕜 (V₂ q)) ↦ TotalSpace.mk'
           (StrongDual 𝕜 F₁) (E := fun q ↦ StrongDual 𝕜 (V₁ q)) p.proj
@@ -103,13 +103,13 @@ theorem contMDiff_totalSpaceMap_dualMap_orbitRelQuotientRec_iff (hm : m ≤ n) :
       ContMDiff I (I.prod 𝓘(𝕜, F₁ →L[𝕜] F₂)) m (fun x ↦ (TotalSpace.mk' (F₁ →L[𝕜] F₂) x (φ x) :
         TotalSpace (F₁ →L[𝕜] F₂) (⇑(⟨Quotient.mk _, continuous_quotient_mk'⟩ :
           C(M, MulAction.orbitRel.Quotient G M)) *ᵖ (fun q ↦ V₁ q →L[𝕜] V₂ q)))) := by
-  conv_lhs => enter [4, p]; rw [← dualMap_orbitRelQuotientRec hφ]
-  rw [contMDiff_totalSpaceMap_dualMap_iff, contMDiff_totalSpaceMap_orbitRelQuotientRec_iff hm]
+  conv_lhs => enter [4, p]; rw [← dual_precomp_orbitRelQuotientRec hφ]
+  rw [contMDiff_totalSpaceMap_dual_precomp_iff, contMDiff_totalSpaceMap_orbitRelQuotientRec_iff hm]
 
 /-- In finite dimensions over a complete field, the descended dual linear family underlies a `C^m`
 diffeomorphism of dual total spaces (`m ≤ n`) iff `φ` is a `C^m` section of the pulled-back Hom
 bundle and every upstairs fibre map `φ x` is bijective. -/
-theorem exists_bundleDiffeomorph_dualMap_orbitRelQuotientRec_iff (hm : m ≤ n) :
+theorem exists_bundleDiffeomorph_dual_precomp_orbitRelQuotientRec_iff (hm : m ≤ n) :
     (∃ Φ : TotalSpace (StrongDual 𝕜 F₂) (fun q ↦ StrongDual 𝕜 (V₂ q)) ≃ₘ^m⟮
         I.prod 𝓘(𝕜, StrongDual 𝕜 F₂), I.prod 𝓘(𝕜, StrongDual 𝕜 F₁)⟯
         TotalSpace (StrongDual 𝕜 F₁) (fun q ↦ StrongDual 𝕜 (V₁ q)),
@@ -122,8 +122,9 @@ theorem exists_bundleDiffeomorph_dualMap_orbitRelQuotientRec_iff (hm : m ≤ n) 
           TotalSpace (F₁ →L[𝕜] F₂) (⇑(⟨Quotient.mk _, continuous_quotient_mk'⟩ :
             C(M, MulAction.orbitRel.Quotient G M)) *ᵖ (fun q ↦ V₁ q →L[𝕜] V₂ q)))) ∧
         ∀ x, Function.Bijective (φ x) := by
-  conv_lhs => enter [1, Φ, 2, p]; rw [← dualMap_orbitRelQuotientRec hφ]
-  rw [exists_bundleDiffeomorph_dualMap_iff, exists_bundleDiffeomorph_orbitRelQuotientRec_iff hm]
+  conv_lhs => enter [1, Φ, 2, p]; rw [← dual_precomp_orbitRelQuotientRec hφ]
+  rw [exists_bundleDiffeomorph_dual_precomp_iff,
+    exists_bundleDiffeomorph_orbitRelQuotientRec_iff hm]
 
 end FiniteRank
 

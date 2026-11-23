@@ -8,7 +8,6 @@ module
 public import Mathlib.Algebra.Group.Action.Sigma
 public import Mathlib.Algebra.Group.Action.Sum
 public import Mathlib.Algebra.Group.Action.TypeTags
-public import Mathlib.Data.Bundle
 public import Mathlib.GroupTheory.GroupAction.Quotient
 public import Mathlib.GroupTheory.GroupAction.SubMulAction
 public import Mathlib.GroupTheory.GroupAction.Transitive
@@ -84,9 +83,7 @@ This file records small generic additions to Mathlib's `MulAction.orbitRel.Quoti
   acting-group map is surjective; its image consists of the orbits meeting the image upstairs.
   Both non-dependent and dependent descent are natural along it
   (`MulActionHom.orbitRelQuotientLift_comp_orbitRelQuotientMap`,
-  `MulActionHom.orbitRelQuotientRec_orbitRelQuotientMap_apply`,
-  `MulActionHom.pullbackOrbitSection`, `MulActionHom.orbitRelQuotientRec_pullbackOrbitSection`,
-  `MulActionHom.lift_pullbackOrbitSection`).
+  `MulActionHom.orbitRelQuotientRec_orbitRelQuotientMap_apply`).
 * `SubMulAction.orbitRelQuotientMap`: for an `H`-invariant subset `S` of `X`, the map
   `S / H → X / G` sending an `H`-orbit to its `G`-orbit; it is injective when `S` is a slice for
   `H`, that is when every element of `G` carrying a point of `S` into `S` lies in `H`
@@ -1290,50 +1287,6 @@ theorem orbitRelQuotientRec_orbitRelQuotientMap_apply
   exact eq_of_heq <| (congr_arg_heq (MulAction.orbitRelQuotientRec t ht)
     (orbitRelQuotientMap_mk φ x)).trans <|
     (heq_of_eq (MulAction.orbitRelQuotientRec_mk (φ x))).trans (ht' x).symm
-
-section PullbackSection
-
-open Bundle
-
-variable {G' M' G M : Type*} [Group G'] [MulAction G' M'] [Group G] [MulAction G M]
-  {σ : G' → G} (ψ : M' →ₑ[σ] M) {V : MulAction.orbitRel.Quotient G M → Type*}
-  (t : ∀ x : M, V (Quotient.mk (MulAction.orbitRel G M) x))
-
-/-- Pullback of an upstairs family `t : ∀ x : M, V ⟦x⟧` along a `σ`-equivariant map
-`ψ : M' →ₑ[σ] M`, viewed as an upstairs family on `M'` for `ψ.orbitRelQuotientMap *ᵖ V`. -/
-def pullbackOrbitSection (x' : M') :
-    (ψ.orbitRelQuotientMap *ᵖ V) (Quotient.mk (MulAction.orbitRel G' M') x') :=
-  cast (congrArg V (ψ.orbitRelQuotientMap_mk x').symm) (t (ψ x'))
-
-/-- `ψ.pullbackOrbitSection t x'` is heterogeneously equal to `t (ψ x')`. -/
-@[simp] theorem pullbackOrbitSection_heq (x' : M') :
-    ψ.pullbackOrbitSection t x' ≍ t (ψ x') := cast_heq _ _
-
-variable {t}
-
-/-- If `t` is `G`-invariant, `ψ.pullbackOrbitSection t` is `G'`-invariant. -/
-theorem pullbackOrbitSection_smul_heq
-    (ht : ∀ (g : G) (x : M), t (g • x) ≍ t x) (g' : G') (x' : M') :
-    ψ.pullbackOrbitSection t (g' • x') ≍ ψ.pullbackOrbitSection t x' :=
-  ψ.smul_heq_of_comp_orbitRelQuotientMap ht (ψ.pullbackOrbitSection_heq t) g' x'
-
-/-- **Section descent commutes with equivariant pullback.** Descending `ψ.pullbackOrbitSection t`
-to `M' ⧸ G'` produces the pullback along `ψ.orbitRelQuotientMap` of the descent on `M ⧸ G`. -/
-theorem orbitRelQuotientRec_pullbackOrbitSection
-    (ht : ∀ (g : G) (x : M), t (g • x) ≍ t x) (q' : MulAction.orbitRel.Quotient G' M') :
-    MulAction.orbitRelQuotientRec (V := ψ.orbitRelQuotientMap *ᵖ V)
-        (ψ.pullbackOrbitSection t) (ψ.pullbackOrbitSection_smul_heq ht) q' =
-      MulAction.orbitRelQuotientRec t ht (ψ.orbitRelQuotientMap q') :=
-  (ψ.orbitRelQuotientRec_orbitRelQuotientMap_apply ht (ψ.pullbackOrbitSection_heq t) q').symm
-
-/-- Lifting `ψ.pullbackOrbitSection t x'` to `TotalSpace F V` recovers `(⟦ψ x'⟧, t (ψ x'))`. -/
-@[simp] theorem lift_pullbackOrbitSection (F : Type*) (t) (x' : M') :
-    Pullback.lift ψ.orbitRelQuotientMap (TotalSpace.mk' F (E := ψ.orbitRelQuotientMap *ᵖ V)
-        (Quotient.mk (MulAction.orbitRel G' M') x') (ψ.pullbackOrbitSection t x')) =
-      TotalSpace.mk' F (Quotient.mk (MulAction.orbitRel G M) (ψ x')) (t (ψ x')) :=
-  TotalSpace.mk_cast (ψ.orbitRelQuotientMap_mk x').symm (t (ψ x'))
-
-end PullbackSection
 
 end MulActionHom
 

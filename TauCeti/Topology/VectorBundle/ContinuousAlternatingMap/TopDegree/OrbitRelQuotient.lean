@@ -6,15 +6,15 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.GroupAction.OrbitRelQuotient
-public import TauCeti.Topology.VectorBundle.ContinuousAlternatingMap.TopDegree
-import TauCeti.Topology.VectorBundle.Determinant.OrbitRelQuotient
+public import TauCeti.Topology.VectorBundle.ContinuousAlternatingMap.TopDegree.Basic
+import TauCeti.Topology.Algebra.Module.Determinant.OrbitRelQuotient
 
 /-!
 # Orbit-quotient descent for top-degree alternating forms
 
 Pointwise compatibility of `MulAction.orbitRelQuotientRec` with top-degree alternating-form
 pullbacks along fibrewise endomorphisms
-(`TauCeti.bundleTopForm_compContinuousLinearMap_orbitRelQuotientRec_eq_det_smul`).
+(`TauCeti.compContinuousLinearMap_orbitRelQuotientRec_eq_det_smul`).
 -/
 
 public section
@@ -26,7 +26,7 @@ namespace TauCeti
 /-- On the top-degree scalar alternating line bundle (`Fintype.card ι = Module.finrank 𝕜 F`) over
 `M ⧸ G`, pulling back a descended top form along a descended endomorphism multiplies the form by
 the descended scalar determinant `MulAction.orbitRelQuotientLift (fun x ↦ (φ x).det) ...`. -/
-theorem bundleTopForm_compContinuousLinearMap_orbitRelQuotientRec_eq_det_smul
+theorem compContinuousLinearMap_orbitRelQuotientRec_eq_det_smul
     {G M 𝕜 ι F : Type*} [Group G] [MulAction G M] [TopologicalSpace M]
     [NontriviallyNormedField 𝕜] [Fintype ι] [NormedAddCommGroup F] [NormedSpace 𝕜 F]
     [FiniteDimensional 𝕜 F] {V : MulAction.orbitRel.Quotient G M → Type*}
@@ -43,6 +43,6 @@ theorem bundleTopForm_compContinuousLinearMap_orbitRelQuotientRec_eq_det_smul
       MulAction.orbitRelQuotientLift (fun x ↦ (φ x).det)
         (MulAction.apply_smul_eq (fun _ (A : _ →L[𝕜] _) ↦ A.det) hφ) q •
         MulAction.orbitRelQuotientRec (V := fun q ↦ V q [⋀^ι]→L[𝕜] 𝕜) α hα q := by
-  rw [bundleTopForm_compContinuousLinearMap_eq_det_smul hrank, det_orbitRelQuotientRec]
+  rw [fiber_compContinuousLinearMap_eq_det_smul hrank, det_orbitRelQuotientRec]
 
 end TauCeti

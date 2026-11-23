@@ -9,7 +9,7 @@ public import Mathlib.Topology.Algebra.Module.Determinant
 public import TauCeti.Algebra.GroupAction.OrbitRelQuotient
 
 /-!
-# Orbit-quotient descent for bundle endomorphism determinants
+# Orbit-quotient descent for continuous linear endomorphism determinants
 
 Pointwise compatibility of `MulAction.orbitRelQuotientRec` with fibrewise endomorphism
 determinants (`TauCeti.det_orbitRelQuotientRec`).

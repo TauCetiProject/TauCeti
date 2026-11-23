@@ -29,8 +29,8 @@ built from a smooth bilinear tensor field without repeating a coordinate computa
 
 Fibrewise domain pullback `ContinuousAlternatingMap.compContinuousLinearMap` along a `C^n`
 Hom-bundle section preserves `C^n` regularity of alternating-map sections
-(`ContMDiffWithinAt.continuousAlternatingMap_comp_clm`), with the arity-factorial condition
-required only at the analytic order `ω`.
+(`ContMDiffWithinAt.continuousAlternatingMap_bundle_compContinuousLinearMap`), with the
+arity-factorial condition required only at the analytic order `ω`.
 
 The coordinate-change proof follows Floris van Doorn's smooth Hom-bundle construction
 in `Mathlib.Geometry.Manifold.VectorBundle.Hom`, using the topological alternating-map
@@ -227,7 +227,7 @@ variable {𝕜 ι EB EM HB HM B M F₁ F₂ F₃ : Type*} [NontriviallyNormedFie
 
 /-- Pulling back a `C^n` section of an alternating-map bundle along a `C^n` Hom-bundle section over
 the same base map `b` preserves `C^n` regularity within `s` at `x`. -/
-theorem ContMDiffWithinAt.continuousAlternatingMap_comp_clm
+theorem ContMDiffWithinAt.continuousAlternatingMap_bundle_compContinuousLinearMap
     (hα : ContMDiffWithinAt IM (IB.prod 𝓘(𝕜, F₂ [⋀^ι]→L[𝕜] F₃)) n (fun y ↦ TotalSpace.mk'
       (F₂ [⋀^ι]→L[𝕜] F₃) (E := fun z ↦ V₂ z [⋀^ι]→L[𝕜] V₃ z) (b y) (α y)) s x)
     (hA : ContMDiffWithinAt IM (IB.prod 𝓘(𝕜, F₁ →L[𝕜] F₂)) n
@@ -259,7 +259,7 @@ theorem ContMDiffWithinAt.continuousAlternatingMap_comp_clm
 
 /-- Pulling back a `C^n` section of an alternating-map bundle along a `C^n` Hom-bundle section at
 `x` is `C^n` at `x`. -/
-theorem ContMDiffAt.continuousAlternatingMap_comp_clm
+theorem ContMDiffAt.continuousAlternatingMap_bundle_compContinuousLinearMap
     (hα : ContMDiffAt IM (IB.prod 𝓘(𝕜, F₂ [⋀^ι]→L[𝕜] F₃)) n (fun y ↦ TotalSpace.mk'
       (F₂ [⋀^ι]→L[𝕜] F₃) (E := fun z ↦ V₂ z [⋀^ι]→L[𝕜] V₃ z) (b y) (α y)) x)
     (hA : ContMDiffAt IM (IB.prod 𝓘(𝕜, F₁ →L[𝕜] F₂)) n
@@ -269,11 +269,11 @@ theorem ContMDiffAt.continuousAlternatingMap_comp_clm
     ContMDiffAt IM (IB.prod 𝓘(𝕜, F₁ [⋀^ι]→L[𝕜] F₃)) n (fun y ↦ TotalSpace.mk'
       (F₁ [⋀^ι]→L[𝕜] F₃) (E := fun z ↦ V₁ z [⋀^ι]→L[𝕜] V₃ z) (b y)
       ((α y).compContinuousLinearMap (A y))) x :=
-  ContMDiffWithinAt.continuousAlternatingMap_comp_clm hα hA hn
+  ContMDiffWithinAt.continuousAlternatingMap_bundle_compContinuousLinearMap hα hA hn
 
 /-- Pulling back a `C^n` section of an alternating-map bundle along a `C^n` Hom-bundle section on
 `s` is `C^n` on `s`. -/
-theorem ContMDiffOn.continuousAlternatingMap_comp_clm
+theorem ContMDiffOn.continuousAlternatingMap_bundle_compContinuousLinearMap
     (hα : ContMDiffOn IM (IB.prod 𝓘(𝕜, F₂ [⋀^ι]→L[𝕜] F₃)) n (fun y ↦ TotalSpace.mk'
       (F₂ [⋀^ι]→L[𝕜] F₃) (E := fun z ↦ V₂ z [⋀^ι]→L[𝕜] V₃ z) (b y) (α y)) s)
     (hA : ContMDiffOn IM (IB.prod 𝓘(𝕜, F₁ →L[𝕜] F₂)) n
@@ -283,11 +283,11 @@ theorem ContMDiffOn.continuousAlternatingMap_comp_clm
     ContMDiffOn IM (IB.prod 𝓘(𝕜, F₁ [⋀^ι]→L[𝕜] F₃)) n (fun y ↦ TotalSpace.mk'
       (F₁ [⋀^ι]→L[𝕜] F₃) (E := fun z ↦ V₁ z [⋀^ι]→L[𝕜] V₃ z) (b y)
       ((α y).compContinuousLinearMap (A y))) s :=
-  fun y hy ↦ (hα y hy).continuousAlternatingMap_comp_clm (hA y hy) hn
+  fun y hy ↦ (hα y hy).continuousAlternatingMap_bundle_compContinuousLinearMap (hA y hy) hn
 
 /-- Pulling back a `C^n` section of an alternating-map bundle along a `C^n` Hom-bundle section is
 `C^n`. -/
-theorem ContMDiff.continuousAlternatingMap_comp_clm
+theorem ContMDiff.continuousAlternatingMap_bundle_compContinuousLinearMap
     (hα : ContMDiff IM (IB.prod 𝓘(𝕜, F₂ [⋀^ι]→L[𝕜] F₃)) n (fun y ↦ TotalSpace.mk'
       (F₂ [⋀^ι]→L[𝕜] F₃) (E := fun z ↦ V₂ z [⋀^ι]→L[𝕜] V₃ z) (b y) (α y)))
     (hA : ContMDiff IM (IB.prod 𝓘(𝕜, F₁ →L[𝕜] F₂)) n
@@ -297,6 +297,6 @@ theorem ContMDiff.continuousAlternatingMap_comp_clm
     ContMDiff IM (IB.prod 𝓘(𝕜, F₁ [⋀^ι]→L[𝕜] F₃)) n (fun y ↦ TotalSpace.mk'
       (F₁ [⋀^ι]→L[𝕜] F₃) (E := fun z ↦ V₁ z [⋀^ι]→L[𝕜] V₃ z) (b y)
       ((α y).compContinuousLinearMap (A y))) :=
-  fun y ↦ (hα y).continuousAlternatingMap_comp_clm (hA y) hn
+  fun y ↦ (hα y).continuousAlternatingMap_bundle_compContinuousLinearMap (hA y) hn
 
 end AlternatingPullback

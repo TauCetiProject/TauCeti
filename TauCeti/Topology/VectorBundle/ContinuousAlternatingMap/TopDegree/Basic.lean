@@ -8,7 +8,6 @@ module
 public import Mathlib.Topology.Algebra.Module.Alternating.Basic
 public import Mathlib.Topology.Algebra.Module.Determinant
 public import Mathlib.Topology.VectorBundle.FiniteDimensional
-public import Mathlib.Topology.VectorBundle.Hom
 import TauCeti.Topology.Algebra.Module.Alternating.TopDegree
 
 /-!
@@ -17,7 +16,7 @@ import TauCeti.Topology.Algebra.Module.Alternating.TopDegree
 In top degree (`Fintype.card ι = Module.finrank 𝕜 F`), pulling back any scalar-valued top-degree
 continuous alternating form in a fibre of a finite-rank vector bundle along a fibre endomorphism
 multiplies the form by the endomorphism's determinant
-(`TauCeti.bundleTopForm_compContinuousLinearMap_eq_det_smul`).
+(`TauCeti.fiber_compContinuousLinearMap_eq_det_smul`).
 -/
 
 public section
@@ -35,7 +34,7 @@ variable {𝕜 ι B F : Type*} [NontriviallyNormedField 𝕜] [Fintype ι] [Topo
 /-- On a finite-rank vector bundle `V` of model rank `Fintype.card ι`, pulling back any scalar
 top-degree alternating form in the fibre `V x [⋀^ι]→L[𝕜] 𝕜` along a continuous linear endomorphism
 `A : V x →L[𝕜] V x` multiplies the form by `A.det`. -/
-theorem bundleTopForm_compContinuousLinearMap_eq_det_smul
+theorem fiber_compContinuousLinearMap_eq_det_smul
     (h : Fintype.card ι = Module.finrank 𝕜 F) {x : B}
     (α : V x [⋀^ι]→L[𝕜] 𝕜) (A : V x →L[𝕜] V x) :
     α.compContinuousLinearMap A = A.det • α := by

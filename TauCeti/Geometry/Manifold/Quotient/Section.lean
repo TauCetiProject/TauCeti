@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Manifold.Quotient.Descent
 public import TauCeti.Geometry.Manifold.VectorBundle.Pullback
+public import TauCeti.Topology.VectorBundle.Pullback.OrbitRelQuotient
 
 /-!
 # Descending sections of bundles to quotient manifolds

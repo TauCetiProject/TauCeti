@@ -11,8 +11,10 @@ public import TauCeti.Topology.VectorBundle.Pullback
 /-!
 # Orbit-quotient descent for pullback vector bundles
 
-Compatibility of `MulAction.orbitRelQuotientRec` with `Bundle.Pullback.lift` for equivariantly
-pulled-back linear bundle-map families
+Equivariant pullbacks of upstairs sections along `MulActionHom.orbitRelQuotientMap`
+(`MulActionHom.pullbackOrbitSection`, `MulActionHom.orbitRelQuotientRec_pullbackOrbitSection`,
+`MulActionHom.lift_pullbackOrbitSection`), and compatibility of `MulAction.orbitRelQuotientRec`
+with `Bundle.Pullback.lift` for equivariantly pulled-back linear bundle-map families
 (`MulActionHom.lift_totalSpaceMap_pullbackOrbitSection_orbitRelQuotientRec`).
 -/
 
@@ -21,6 +23,50 @@ public section
 open Bundle TauCeti
 
 namespace MulActionHom
+
+section PullbackSection
+
+variable {G' M' G M : Type*} [Group G'] [MulAction G' M'] [Group G] [MulAction G M]
+  {σ : G' → G} (ψ : M' →ₑ[σ] M) {V : MulAction.orbitRel.Quotient G M → Type*}
+  (t : ∀ x : M, V (Quotient.mk (MulAction.orbitRel G M) x))
+
+/-- Pullback of an upstairs family `t : ∀ x : M, V ⟦x⟧` along a `σ`-equivariant map
+`ψ : M' →ₑ[σ] M`, viewed as an upstairs family on `M'` for `ψ.orbitRelQuotientMap *ᵖ V`. -/
+def pullbackOrbitSection (x' : M') :
+    (ψ.orbitRelQuotientMap *ᵖ V) (Quotient.mk (MulAction.orbitRel G' M') x') :=
+  cast (congrArg V (ψ.orbitRelQuotientMap_mk x').symm) (t (ψ x'))
+
+/-- `ψ.pullbackOrbitSection t x'` is heterogeneously equal to `t (ψ x')`. -/
+@[simp] theorem pullbackOrbitSection_heq (x' : M') :
+    ψ.pullbackOrbitSection t x' ≍ t (ψ x') := cast_heq _ _
+
+variable {t}
+
+/-- If `t` is `G`-invariant, `ψ.pullbackOrbitSection t` is `G'`-invariant. -/
+theorem pullbackOrbitSection_smul_heq
+    (ht : ∀ (g : G) (x : M), t (g • x) ≍ t x) (g' : G') (x' : M') :
+    ψ.pullbackOrbitSection t (g' • x') ≍ ψ.pullbackOrbitSection t x' :=
+  ψ.smul_heq_of_comp_orbitRelQuotientMap ht (ψ.pullbackOrbitSection_heq t) g' x'
+
+/-- **Section descent commutes with equivariant pullback.** Descending `ψ.pullbackOrbitSection t`
+to `M' ⧸ G'` produces the pullback along `ψ.orbitRelQuotientMap` of the descent on `M ⧸ G`. -/
+theorem orbitRelQuotientRec_pullbackOrbitSection
+    (ht : ∀ (g : G) (x : M), t (g • x) ≍ t x) (q' : MulAction.orbitRel.Quotient G' M') :
+    MulAction.orbitRelQuotientRec (V := ψ.orbitRelQuotientMap *ᵖ V)
+        (ψ.pullbackOrbitSection t) (ψ.pullbackOrbitSection_smul_heq ht) q' =
+      MulAction.orbitRelQuotientRec t ht (ψ.orbitRelQuotientMap q') :=
+  (ψ.orbitRelQuotientRec_orbitRelQuotientMap_apply ht (ψ.pullbackOrbitSection_heq t) q').symm
+
+/-- Lifting `ψ.pullbackOrbitSection t x'` to `TotalSpace F V` recovers `(⟦ψ x'⟧, t (ψ x'))`. -/
+@[simp] theorem lift_pullbackOrbitSection (F : Type*) (t) (x' : M') :
+    Pullback.lift ψ.orbitRelQuotientMap (TotalSpace.mk' F (E := ψ.orbitRelQuotientMap *ᵖ V)
+        (Quotient.mk (MulAction.orbitRel G' M') x') (ψ.pullbackOrbitSection t x')) =
+      TotalSpace.mk' F (Quotient.mk (MulAction.orbitRel G M) (ψ x')) (t (ψ x')) :=
+  TotalSpace.mk_cast (ψ.orbitRelQuotientMap_mk x').symm (t (ψ x'))
+
+end PullbackSection
+
+section TotalSpaceMap
 
 variable {G M G' M' 𝕜 F₁ F₂ : Type*} [Group G] [MulAction G M] [Group G'] [MulAction G' M']
   [Semiring 𝕜] {V W : MulAction.orbitRel.Quotient G M → Type*}
@@ -46,5 +92,7 @@ theorem lift_totalSpaceMap_pullbackOrbitSection_orbitRelQuotientRec
   congrArg (fun T : V (ψ.orbitRelQuotientMap p.proj) →L[𝕜] W (ψ.orbitRelQuotientMap p.proj) ↦
       TotalSpace.mk' F₂ (ψ.orbitRelQuotientMap p.proj) (T p.snd))
     (ψ.orbitRelQuotientRec_pullbackOrbitSection (V := fun q ↦ V q →L[𝕜] W q) hφ p.proj)
+
+end TotalSpaceMap
 
 end MulActionHom

@@ -18,11 +18,12 @@ import TauCeti.Topology.Algebra.Module.FiniteDimension
 For a vector bundle `V` over `B`, Mathlib realizes `StrongDual 𝕜 (V x)` as the Hom bundle into
 `Bundle.Trivial B 𝕜`. Thus evaluating a `C^n` covector field on a `C^n` vector field is `C^n`
 (`ContMDiffWithinAt.dual_bundle_apply`), and fibrewise precomposition gives `C^n` regularity of
-fibrewise dual (transpose) maps (`ContMDiffWithinAt.clm_bundle_dualMap`). In finite rank over a
-complete field, this upgrades to an equivalence (`TauCeti.contMDiffWithinAt_clm_bundle_dualMap_iff`,
-`TauCeti.contMDiff_clm_bundle_dualMap_iff`, `TauCeti.contMDiff_totalSpaceMap_dualMap_iff`),
-inducing dual bundle diffeomorphisms (`TauCeti.bundleDualDiffeomorph`,
-`TauCeti.exists_bundleDiffeomorph_dualMap_iff`).
+fibrewise dual (transpose) maps (`ContMDiffWithinAt.clm_bundle_dual_precomp`). In finite rank over a
+complete field, this upgrades to an equivalence
+(`TauCeti.contMDiffWithinAt_clm_bundle_dual_precomp_iff`,
+`TauCeti.contMDiff_clm_bundle_dual_precomp_iff`,
+`TauCeti.contMDiff_totalSpaceMap_dual_precomp_iff`), inducing dual bundle diffeomorphisms
+(`TauCeti.bundleDualDiffeomorph`, `TauCeti.exists_bundleDiffeomorph_dual_precomp_iff`).
 
 ## References
 * John M. Lee, *Introduction to Smooth Manifolds*, 2nd ed., Chapters 10–11.
@@ -98,7 +99,7 @@ section
 variable {b : M → B} {s : Set M} {x : M} {A : ∀ y, V₁ (b y) →L[𝕜] V₂ (b y)}
 
 /-- Fibrewise dual (transpose) of a `C^n` Hom-bundle section is `C^n` within `s` at `x`. -/
-theorem ContMDiffWithinAt.clm_bundle_dualMap
+theorem ContMDiffWithinAt.clm_bundle_dual_precomp
     (hA : ContMDiffWithinAt IM (IB.prod 𝓘(𝕜, F₁ →L[𝕜] F₂)) n (fun y ↦ TotalSpace.mk'
       (F₁ →L[𝕜] F₂) (E := fun z ↦ V₁ z →L[𝕜] V₂ z) (b y) (A y)) s x) :
     ContMDiffWithinAt IM (IB.prod 𝓘(𝕜, StrongDual 𝕜 F₂ →L[𝕜] StrongDual 𝕜 F₁)) n (fun y ↦
@@ -107,31 +108,31 @@ theorem ContMDiffWithinAt.clm_bundle_dualMap
   hA.clm_bundle_precomp (F₃ := 𝕜) (Trivial B 𝕜)
 
 /-- Fibrewise dual (transpose) of a Hom-bundle section `C^n` at `x` is `C^n` at `x`. -/
-theorem ContMDiffAt.clm_bundle_dualMap
+theorem ContMDiffAt.clm_bundle_dual_precomp
     (hA : ContMDiffAt IM (IB.prod 𝓘(𝕜, F₁ →L[𝕜] F₂)) n (fun y ↦ TotalSpace.mk'
       (F₁ →L[𝕜] F₂) (E := fun z ↦ V₁ z →L[𝕜] V₂ z) (b y) (A y)) x) :
     ContMDiffAt IM (IB.prod 𝓘(𝕜, StrongDual 𝕜 F₂ →L[𝕜] StrongDual 𝕜 F₁)) n (fun y ↦
       TotalSpace.mk' (StrongDual 𝕜 F₂ →L[𝕜] StrongDual 𝕜 F₁) (E := fun z ↦
         StrongDual 𝕜 (V₂ z) →L[𝕜] StrongDual 𝕜 (V₁ z)) (b y) (.precomp 𝕜 (A y))) x :=
-  ContMDiffWithinAt.clm_bundle_dualMap hA
+  ContMDiffWithinAt.clm_bundle_dual_precomp hA
 
 /-- Fibrewise dual (transpose) of a Hom-bundle section `C^n` on `s` is `C^n` on `s`. -/
-theorem ContMDiffOn.clm_bundle_dualMap
+theorem ContMDiffOn.clm_bundle_dual_precomp
     (hA : ContMDiffOn IM (IB.prod 𝓘(𝕜, F₁ →L[𝕜] F₂)) n (fun y ↦ TotalSpace.mk'
       (F₁ →L[𝕜] F₂) (E := fun z ↦ V₁ z →L[𝕜] V₂ z) (b y) (A y)) s) :
     ContMDiffOn IM (IB.prod 𝓘(𝕜, StrongDual 𝕜 F₂ →L[𝕜] StrongDual 𝕜 F₁)) n (fun y ↦
       TotalSpace.mk' (StrongDual 𝕜 F₂ →L[𝕜] StrongDual 𝕜 F₁) (E := fun z ↦
         StrongDual 𝕜 (V₂ z) →L[𝕜] StrongDual 𝕜 (V₁ z)) (b y) (.precomp 𝕜 (A y))) s :=
-  fun y hy ↦ (hA y hy).clm_bundle_dualMap
+  fun y hy ↦ (hA y hy).clm_bundle_dual_precomp
 
 /-- Fibrewise dual (transpose) of a `C^n` Hom-bundle section is `C^n`. -/
-theorem ContMDiff.clm_bundle_dualMap
+theorem ContMDiff.clm_bundle_dual_precomp
     (hA : ContMDiff IM (IB.prod 𝓘(𝕜, F₁ →L[𝕜] F₂)) n (fun y ↦ TotalSpace.mk'
       (F₁ →L[𝕜] F₂) (E := fun z ↦ V₁ z →L[𝕜] V₂ z) (b y) (A y))) :
     ContMDiff IM (IB.prod 𝓘(𝕜, StrongDual 𝕜 F₂ →L[𝕜] StrongDual 𝕜 F₁)) n (fun y ↦
       TotalSpace.mk' (StrongDual 𝕜 F₂ →L[𝕜] StrongDual 𝕜 F₁) (E := fun z ↦
         StrongDual 𝕜 (V₂ z) →L[𝕜] StrongDual 𝕜 (V₁ z)) (b y) (.precomp 𝕜 (A y))) :=
-  fun y ↦ (hA y).clm_bundle_dualMap
+  fun y ↦ (hA y).clm_bundle_dual_precomp
 
 end
 
@@ -143,14 +144,14 @@ variable [CompleteSpace 𝕜] [FiniteDimensional 𝕜 F₂]
 
 /-- Over a complete field with finite-dimensional target model fibre `F₂`, a Hom-bundle section
 along `b` is `C^n` within `s` at `x` iff its fibrewise dual (transpose) section is. -/
-theorem contMDiffWithinAt_clm_bundle_dualMap_iff {b : M → B}
+theorem contMDiffWithinAt_clm_bundle_dual_precomp_iff {b : M → B}
     {A : ∀ y, V₁ (b y) →L[𝕜] V₂ (b y)} {s : Set M} {x : M} :
     ContMDiffWithinAt IM (IB.prod 𝓘(𝕜, StrongDual 𝕜 F₂ →L[𝕜] StrongDual 𝕜 F₁)) n (fun y ↦
         TotalSpace.mk' (StrongDual 𝕜 F₂ →L[𝕜] StrongDual 𝕜 F₁) (E := fun z ↦
           StrongDual 𝕜 (V₂ z) →L[𝕜] StrongDual 𝕜 (V₁ z)) (b y) (.precomp 𝕜 (A y))) s x ↔
       ContMDiffWithinAt IM (IB.prod 𝓘(𝕜, F₁ →L[𝕜] F₂)) n (fun y ↦ TotalSpace.mk'
         (F₁ →L[𝕜] F₂) (E := fun z ↦ V₁ z →L[𝕜] V₂ z) (b y) (A y)) s x := by
-  refine ⟨fun hdual ↦ ?_, ContMDiffWithinAt.clm_bundle_dualMap⟩
+  refine ⟨fun hdual ↦ ?_, ContMDiffWithinAt.clm_bundle_dual_precomp⟩
   rw [contMDiffWithinAt_hom_bundle] at hdual ⊢
   refine ⟨hdual.1, ?_⟩
   let _ : NormedAddCommGroup (StrongDual 𝕜 (StrongDual 𝕜 F₂)) := inferInstance
@@ -182,20 +183,20 @@ theorem contMDiffWithinAt_clm_bundle_dualMap_iff {b : M → B}
 
 /-- Over a complete field with finite-dimensional target model fibre `F₂`, a Hom-bundle section
 along `b` is `C^n` iff its fibrewise dual (transpose) section is `C^n`. -/
-theorem contMDiff_clm_bundle_dualMap_iff {b : M → B} {A : ∀ y, V₁ (b y) →L[𝕜] V₂ (b y)} :
+theorem contMDiff_clm_bundle_dual_precomp_iff {b : M → B} {A : ∀ y, V₁ (b y) →L[𝕜] V₂ (b y)} :
     ContMDiff IM (IB.prod 𝓘(𝕜, StrongDual 𝕜 F₂ →L[𝕜] StrongDual 𝕜 F₁)) n (fun y ↦
         TotalSpace.mk' (StrongDual 𝕜 F₂ →L[𝕜] StrongDual 𝕜 F₁) (E := fun z ↦
           StrongDual 𝕜 (V₂ z) →L[𝕜] StrongDual 𝕜 (V₁ z)) (b y) (.precomp 𝕜 (A y))) ↔
       ContMDiff IM (IB.prod 𝓘(𝕜, F₁ →L[𝕜] F₂)) n
         (fun y ↦ TotalSpace.mk' (F₁ →L[𝕜] F₂) (E := fun z ↦ V₁ z →L[𝕜] V₂ z) (b y) (A y)) :=
   forall_congr' fun x ↦ by simpa only [← contMDiffWithinAt_univ] using
-    contMDiffWithinAt_clm_bundle_dualMap_iff (s := univ) (x := x)
+    contMDiffWithinAt_clm_bundle_dual_precomp_iff (s := univ) (x := x)
 
 variable [FiniteDimensional 𝕜 F₁]
 
 /-- In finite dimensions over a complete field, the total-space map induced by the fibrewise dual
 of `ψ : ∀ x, V₁ x →L[𝕜] V₂ x` is `C^n` iff the total-space map induced by `ψ` is `C^n`. -/
-theorem contMDiff_totalSpaceMap_dualMap_iff (ψ : ∀ x, V₁ x →L[𝕜] V₂ x) :
+theorem contMDiff_totalSpaceMap_dual_precomp_iff (ψ : ∀ x, V₁ x →L[𝕜] V₂ x) :
     ContMDiff (IB.prod 𝓘(𝕜, StrongDual 𝕜 F₂)) (IB.prod 𝓘(𝕜, StrongDual 𝕜 F₁)) n
         (fun p : TotalSpace (StrongDual 𝕜 F₂) (fun x ↦ StrongDual 𝕜 (V₂ x)) ↦ TotalSpace.mk'
           (StrongDual 𝕜 F₁) (E := fun x ↦ StrongDual 𝕜 (V₁ x)) p.proj
@@ -204,7 +205,7 @@ theorem contMDiff_totalSpaceMap_dualMap_iff (ψ : ∀ x, V₁ x →L[𝕜] V₂ 
         (fun p : TotalSpace F₁ V₁ ↦ TotalSpace.mk' F₂ p.proj (ψ p.proj p.snd)) := by
   rw [← contMDiff_hom_bundle_iff (IB := IB) (fun x ↦ ContinuousLinearMap.precomp 𝕜 (ψ x)),
     ← contMDiff_hom_bundle_iff (IB := IB) ψ]
-  exact contMDiff_clm_bundle_dualMap_iff (b := id)
+  exact contMDiff_clm_bundle_dual_precomp_iff (b := id)
 
 /-- `C^n` diffeomorphism of dual total spaces induced by a family of fibrewise continuous linear
 equivalences with `C^n` total-space map. -/
@@ -214,8 +215,9 @@ def bundleDualDiffeomorph (e : ∀ x, V₁ x ≃L[𝕜] V₂ x)
     TotalSpace (StrongDual 𝕜 F₂) (fun x ↦ StrongDual 𝕜 (V₂ x)) ≃ₘ^n⟮
       IB.prod 𝓘(𝕜, StrongDual 𝕜 F₂), IB.prod 𝓘(𝕜, StrongDual 𝕜 F₁)⟯
       TotalSpace (StrongDual 𝕜 F₁) (fun x ↦ StrongDual 𝕜 (V₁ x)) :=
-  bundleDiffeomorph (bundleDualEquiv e) <| ((contMDiff_totalSpaceMap_dualMap_iff (IB := IB) (n := n)
-    (fun x ↦ (e x).toContinuousLinearMap)).2 he).congr fun _ ↦ by simp
+  bundleDiffeomorph (bundleDualEquiv e) <|
+    ((contMDiff_totalSpaceMap_dual_precomp_iff (IB := IB) (n := n)
+      (fun x ↦ (e x).toContinuousLinearMap)).2 he).congr fun _ ↦ by simp
 
 /-- Evaluation of `bundleDualDiffeomorph`. -/
 @[simp] theorem bundleDualDiffeomorph_apply (e : ∀ x, V₁ x ≃L[𝕜] V₂ x)
@@ -229,7 +231,7 @@ def bundleDualDiffeomorph (e : ∀ x, V₁ x ≃L[𝕜] V₂ x)
 /-- In finite dimensions over a complete field, the fibrewise dual of `ψ : ∀ x, V₁ x →L[𝕜] V₂ x`
 underlies a `C^n` diffeomorphism of dual total spaces iff `ψ` underlies a `C^n` diffeomorphism of
 the original total spaces. -/
-theorem exists_bundleDiffeomorph_dualMap_iff (ψ : ∀ x, V₁ x →L[𝕜] V₂ x) :
+theorem exists_bundleDiffeomorph_dual_precomp_iff (ψ : ∀ x, V₁ x →L[𝕜] V₂ x) :
     (∃ Φ : TotalSpace (StrongDual 𝕜 F₂) (fun x ↦ StrongDual 𝕜 (V₂ x)) ≃ₘ^n⟮
         IB.prod 𝓘(𝕜, StrongDual 𝕜 F₂), IB.prod 𝓘(𝕜, StrongDual 𝕜 F₁)⟯
         TotalSpace (StrongDual 𝕜 F₁) (fun x ↦ StrongDual 𝕜 (V₁ x)),
@@ -239,7 +241,7 @@ theorem exists_bundleDiffeomorph_dualMap_iff (ψ : ∀ x, V₁ x →L[𝕜] V₂
         ⇑Ψ = fun p ↦ TotalSpace.mk' F₂ p.proj (ψ p.proj p.snd) := by
   rw [exists_bundleDiffeomorph_iff (fun x ↦ (ContinuousLinearMap.precomp 𝕜 (ψ x) :
       StrongDual 𝕜 (V₂ x) →L[𝕜] StrongDual 𝕜 (V₁ x))),
-    exists_bundleDiffeomorph_iff ψ, contMDiff_totalSpaceMap_dualMap_iff]
+    exists_bundleDiffeomorph_iff ψ, contMDiff_totalSpaceMap_dual_precomp_iff]
   refine and_congr_right fun _ ↦ forall_congr' fun x ↦ ?_
   let e₁ := (trivializationAt F₁ V₁ x).continuousLinearEquivAt 𝕜 x
     (mem_baseSet_trivializationAt F₁ V₁ x)

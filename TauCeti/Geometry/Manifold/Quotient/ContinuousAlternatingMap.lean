@@ -67,7 +67,7 @@ theorem _root_.ContMDiff.section_compContinuousLinearMap_orbitRelQuotientRec
         (MulAction.apply₂_smul_heq (fun _ (f : _ [⋀^ι]→L[𝕜] _) (T : _ →L[𝕜] _) ↦
           f.compContinuousLinearMap T) hα hA) q)) :=
   (contMDiff_section_orbitRelQuotientRec_iff hm).2
-    (hα_smooth.continuousAlternatingMap_comp_clm hA_smooth hfact)
+    (hα_smooth.continuousAlternatingMap_bundle_compContinuousLinearMap hA_smooth hfact)
 
 end Manifold
 
