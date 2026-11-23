@@ -101,21 +101,8 @@ theorem cartanMatrixRat_apply (i : Fin 2) (a b : Fin 7) :
 /-- The rational matrices satisfy the type-`G₂` Serre relations. -/
 theorem isSerreSystemRat :
     TauCeti.IsSerreSystem ℚ CartanMatrix.G₂ cartanMatrixRat raisingMatrixRat
-      loweringMatrixRat := by
-  have h := isSerreSystem.map (matrixIntCastLieHom ℚ)
-  have hH : matrixIntCastLieHom ℚ ∘ cartanMatrix = cartanMatrixRat := rfl
-  have hE : matrixIntCastLieHom ℚ ∘ raisingMatrix = raisingMatrixRat := rfl
-  have hF : matrixIntCastLieHom ℚ ∘ loweringMatrix = loweringMatrixRat := rfl
-  rw [hH, hE, hF] at h
-  refine { h with
-    ad_pow_lie_E_E := ?_
-    ad_pow_lie_F_F := ?_ }
-  · intro i j
-    rw [← ad_pow_apply_eq_ad_pow_apply ℤ ℚ]
-    exact h.ad_pow_lie_E_E i j
-  · intro i j
-    rw [← ad_pow_apply_eq_ad_pow_apply ℤ ℚ]
-    exact h.ad_pow_lie_F_F i j
+      loweringMatrixRat :=
+  (isSerreSystem.map (matrixIntCastLieHom ℚ)).changeScalars
 
 /-- At each simple node, the three rational matrices form an `sl₂` triple. -/
 theorem isSl2TripleRat (i : Fin 2) :

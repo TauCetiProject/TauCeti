@@ -34,10 +34,9 @@ matrix `A` kills exactly `|det A|` points of the torus `ι → AddCircle p`, for
 (`Matrix.natCard_ker_smulVecHom`): when `det A ≠ 0` the kernel is `A⁻¹ (p ℤⁱ) / p ℤⁱ`, isomorphic to
 `ℤⁱ / A ℤⁱ`, and when `det A = 0` it contains a circle and is infinite, `Nat.card` then taking the
 junk value `0`. For a `1 × 1` matrix `n` this is the count `AddCircle.natCard_torsionBy` of the
-`n`-torsion of the circle. Applied to `Aⁿ - 1`, it counts the points of period `n` of the
-toral automorphism induced by `A`.
+`n`-torsion of the circle. Applied to `1 - A`, it counts the fixed points of the toral
+automorphism induced by `A` (`AddCircle.nat_card_fixedPoints_generalLinearGroup_smul`).
 -/
-
 
 public section
 

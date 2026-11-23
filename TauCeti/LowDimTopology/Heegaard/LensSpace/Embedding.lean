@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Group.AddChar
+public import TauCeti.Algebra.Group.AddChar.Basic
 public import TauCeti.Analysis.Complex.Circle
 public import TauCeti.Analysis.Complex.RootsOfUnity.Circle
 public import TauCeti.Analysis.Normed.Lp.ProdLp.Sphere
@@ -184,7 +184,7 @@ theorem range_leftCover (e : ℤ) :
   · rintro ⟨y, rfl⟩
     simp only [mem_ofPred_eq, coe_leftCover_apply_zero, coe_leftCover_apply_one, norm_smul,
       norm_mul, Circle.norm_coe, mul_one]
-    exact mul_le_of_le_one_right (norm_nonneg _) (mem_closedBall_zero_iff.1 y.1.2)
+    exact mul_le_of_le_one_right (norm_nonneg _) (mem_closedBall_zero_iff.1 y.1.property)
   · refine ⟨(twist e).symm (sphereProdFstLeHomeomorph ℂ ℂ
       ⟨(EuclideanSpace.finTwoEquivProd ℂ).unitSphereIsometryEquiv x, by simpa using hx⟩), ?_⟩
     ext1
@@ -200,7 +200,7 @@ theorem range_rightCover (e : ℤ) :
   · rintro ⟨y, rfl⟩
     simp only [mem_ofPred_eq, coe_rightCover_apply_zero, coe_rightCover_apply_one, norm_smul,
       norm_mul, Circle.norm_coe, mul_one]
-    exact mul_le_of_le_one_right (norm_nonneg _) (mem_closedBall_zero_iff.1 y.1.2)
+    exact mul_le_of_le_one_right (norm_nonneg _) (mem_closedBall_zero_iff.1 y.1.property)
   · refine ⟨(twist e).symm (sphereProdSndLeHomeomorph ℂ ℂ
       ⟨(EuclideanSpace.finTwoEquivProd ℂ).unitSphereIsometryEquiv x, by simpa using hx⟩).swap, ?_⟩
     ext1
@@ -295,14 +295,14 @@ theorem norm_eq_one_of_leftEmbedding_eq_rightEmbedding {e e' : ℤ} (he : (e : Z
   simp only [norm_lensRotation_apply, coe_leftCover_apply_zero, coe_leftCover_apply_one,
     coe_rightCover_apply_zero, coe_rightCover_apply_one, norm_smul, norm_inv, Real.norm_eq_abs,
     abs_of_nonneg (Real.sqrt_nonneg _), norm_mul, Circle.norm_coe, mul_one] at h0 h1
-  have hx : ‖(x.1 : ℂ)‖ ≤ 1 := mem_closedBall_zero_iff.1 x.1.2
+  have hx : ‖(x.1 : ℂ)‖ ≤ 1 := mem_closedBall_zero_iff.1 x.1.property
   have hsx : 0 < (√(1 + ‖(x.1 : ℂ)‖ ^ 2))⁻¹ := inv_pos.2 (Real.sqrt_pos.2 (by positivity))
   -- With `c u` the scale of `u`, `c u' = c u ‖u‖` and `c u' ‖u'‖ = c u`, so `‖u‖ ‖u'‖ = 1`.
   have huv : ‖(x.1 : ℂ)‖ * ‖(y.1 : ℂ)‖ = 1 := by
     rw [h0, mul_assoc] at h1
     exact (mul_eq_left₀ hsx.ne').1 h1
   rw [powCore_apply]
-  nlinarith [norm_nonneg (x.1 : ℂ), mem_closedBall_zero_iff.1 y.1.2]
+  nlinarith [norm_nonneg (x.1 : ℂ), mem_closedBall_zero_iff.1 y.1.property]
 
 end LensSpace
 

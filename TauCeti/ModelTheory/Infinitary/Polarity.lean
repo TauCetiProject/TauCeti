@@ -49,6 +49,9 @@ distinct relation symbols of opposite polarity.
 
 * `FirstOrder.Language.BoundedFormulaInf.relationsInSigned_union_not`: occurrences at opposite
   polarities together recover `BoundedFormulaInf.relationsIn`.
+* `FirstOrder.Language.BoundedFormulaInf.relationsIn_subset_inter_of_relationsInSigned_subset`:
+  signed occurrence bounds at both polarities give the unsigned occurrence bound, which is how
+  Craig's relation bound follows from Lyndon's.
 * `FirstOrder.Language.BoundedFormulaInf.relationsInSigned_countable`: at a countable branching
   carrier, each signed occurrence set is countable.
 * `FirstOrder.Language.BoundedFormulaInf.realize_mono_of_agreeOn_functionsIn` and
@@ -256,6 +259,21 @@ theorem relationsInSigned_union_not (s : Bool) (φ : L.BoundedFormulaInf ι α n
     simp only [relationsInSigned_iSup, relationsIn_iSup, ← Set.iUnion_union_distrib, ih]
   | iInf φs ih =>
     simp only [relationsInSigned_iInf, relationsIn_iInf, ← Set.iUnion_union_distrib, ih]
+
+/-- If every positive occurrence in `θ` is a positive occurrence in both `φ` and `ψ`, and every
+negative occurrence in `θ` is a negative occurrence in both, then every relation symbol occurring in
+`θ` occurs in both `φ` and `ψ`. This recovers the unsigned relation bound of Craig interpolation
+from the two signed bounds of Lyndon interpolation. -/
+theorem relationsIn_subset_inter_of_relationsInSigned_subset {θ φ ψ : L.BoundedFormulaInf ι α n}
+    (hpos : θ.relationsInSigned true ⊆ φ.relationsInSigned true ∩ ψ.relationsInSigned true)
+    (hneg : θ.relationsInSigned false ⊆ φ.relationsInSigned false ∩ ψ.relationsInSigned false) :
+    θ.relationsIn ⊆ φ.relationsIn ∩ ψ.relationsIn := by
+  rw [← relationsInSigned_union_not true θ]
+  exact Set.union_subset
+    (hpos.trans (Set.inter_subset_inter (relationsInSigned_subset_relationsIn true φ)
+      (relationsInSigned_subset_relationsIn true ψ)))
+    (hneg.trans (Set.inter_subset_inter (relationsInSigned_subset_relationsIn false φ)
+      (relationsInSigned_subset_relationsIn false ψ)))
 
 /-- A biconditional uses both arguments in both polarities, so its signed occurrences at either
 polarity are all relation symbols occurring in either side. -/
@@ -671,7 +689,7 @@ theorem relationsInSigned_restrictSymbols {F : Set (Σ k, L.Functions k)}
     {R : Set (Σ k, L.Relations k)} (s : Bool) (φ : L.BoundedFormulaInf ι α n)
     (hF : φ.functionsIn ⊆ F) (hR : φ.relationsIn ⊆ R) :
     (φ.restrictSymbols hF hR).relationsInSigned s =
-      (fun r : Σ k, (symbSublang F R).Relations k => (⟨r.1, r.2.1⟩ : Σ k, L.Relations k)) ⁻¹'
+      (fun r : Σ k, (symbSublang F R).Relations k => (⟨r.1, r.2.val⟩ : Σ k, L.Relations k)) ⁻¹'
         φ.relationsInSigned s := by
   have h := (symbSublangIncl F R).preimage_relationsInSigned_onBoundedFormulaInf
     (fun _ => (symbSublangIncl_injective F R).onRelation) s (φ.restrictSymbols hF hR)

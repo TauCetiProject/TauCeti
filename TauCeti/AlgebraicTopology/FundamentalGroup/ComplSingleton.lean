@@ -11,6 +11,7 @@ public import Mathlib.LinearAlgebra.Dimension.Basic
 public import TauCeti.AlgebraicTopology.FundamentalGroup.VanKampen.Basic
 import TauCeti.AlgebraicTopology.FundamentalGroup.BasepointChange
 import TauCeti.Geometry.Manifold.Connected
+import TauCeti.GroupTheory.Coprod.Basic
 import TauCeti.Topology.Closure
 import TauCeti.Topology.OpenPartialHomeomorph.SimplyConnected
 
@@ -80,11 +81,6 @@ theorem fundamentalGroup_map_subtypeVal_compl_singleton_bijective_of_mem_nhds {p
   have : SimplyConnectedSpace B := hBsc.simplyConnectedSpace
   -- The van Kampen map `π₁(X \ {p}, z) ∗ π₁(B, z) → π₁(X, z)` is bijective and its second factor
   -- is trivial, so its restriction to the first factor, the inclusion-induced map, is bijective.
-  have hinl : Function.Bijective (Monoid.Coprod.inl : FundamentalGroup ({p}ᶜ : Set X) ⟨z, hzp⟩ →*
-      Monoid.Coprod _ (FundamentalGroup B ⟨z, hzB⟩)) :=
-    (MonoidHom.toMulEquiv Monoid.Coprod.fst Monoid.Coprod.inl
-      (Monoid.Coprod.hom_ext rfl (MonoidHom.ext fun g ↦ by simp [Subsingleton.elim g 1]))
-      Monoid.Coprod.fst_comp_inl).symm.bijective
   have hz : Function.Bijective
       (FundamentalGroup.map (ContinuousMap.subtypeVal ({p}ᶜ : Set X)) ⟨z, hzp⟩) := by
     have heq : ⇑(FundamentalGroup.map (ContinuousMap.subtypeVal ({p}ᶜ : Set X)) ⟨z, hzp⟩) =
@@ -92,7 +88,7 @@ theorem fundamentalGroup_map_subtypeVal_compl_singleton_bijective_of_mem_nhds {p
       funext fun g ↦ (vanKampenLift_apply_inl {p}ᶜ B z hzp hzB).symm
     rw [heq]
     exact (vanKampenLift_bijective (interior_compl_singleton_union_interior_eq_univ hp hB) hX
-      hBsc.isPathConnected hAB hzp hzB).comp hinl
+      hBsc.isPathConnected hAB hzp hzB).comp Monoid.Coprod.inl_bijective
   have : PathConnectedSpace ({p}ᶜ : Set X) := isPathConnected_iff_pathConnectedSpace.1 hX
   exact FundamentalGroup.map_bijective_of_path _ (PathConnectedSpace.somePath _ x) hz
 
