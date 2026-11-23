@@ -497,6 +497,11 @@ theorem littlewoodPaleyLowPass_def (j : ℕ) :
     littlewoodPaleyLowPass F φ j = ∑ k ∈ Finset.range j, littlewoodPaleyBlock F φ k :=
   (rfl)
 
+/-- `Sⱼ u` is the sum `∑_{k < j} Δₖ u` of the Littlewood–Paley blocks of `u`. -/
+theorem littlewoodPaleyLowPass_apply (j : ℕ) (u : 𝓢'(E, F)) :
+    littlewoodPaleyLowPass F φ j u = ∑ k ∈ Finset.range j, littlewoodPaleyBlock F φ k u := by
+  rw [littlewoodPaleyLowPass_def, _root_.sum_apply]
+
 @[simp]
 theorem littlewoodPaleyLowPass_zero : littlewoodPaleyLowPass F φ 0 = 0 := by
   simp [littlewoodPaleyLowPass_def]

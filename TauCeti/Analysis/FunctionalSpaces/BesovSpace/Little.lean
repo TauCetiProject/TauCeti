@@ -239,7 +239,7 @@ theorem mem_littleBesov_of_toDistr_eq {v : BesovSpace F φ s p ∞}
   set h : 𝓢(E, F) := ∑ j ∈ Finset.range (M + 1),
     SchwartzMap.fourierMultiplierCLM F (fun ξ ↦ (φ.inhomogeneousLittlewoodPaley j ξ : ℂ)) g
   obtain ⟨r, hr, hrw⟩ := hK M (w - g.toLp p (volume : Measure E))
-  rw [littlewoodPaleyLowPass_def, _root_.sum_apply] at hr
+  rw [littlewoodPaleyLowPass_apply] at hr
   have hrh : (r : 𝓢'(E, F)) = w - h := by
     rw [← hr, Lp.toTemperedDistribution_sub, Lp.toTemperedDistribution_toLp_eq]
     simp only [map_sub, Finset.sum_sub_distrib, h, map_sum,
@@ -272,7 +272,7 @@ theorem mem_littleBesov_of_tendsto {u : BesovSpace F φ s p ∞}
     (Eventually.of_forall fun N ↦ ?_)
   -- `S_N u` is a band-limited `Lᵖ` limit of Schwartz functions.
   have hvw : (partialSumCLM F φ s p ∞ N u).toDistr = (u.lowPass N : 𝓢'(E, F)) := by
-    rw [toDistr_partialSumCLM, coe_lowPass]
+    rw [toDistr_partialSumCLM, coe_lowPass, littlewoodPaleyLowPass_apply]
   exact mem_littleBesov_of_toDistr_eq hvw (lowPass_mem_closure_range_toLp hblock N)
     fun k hk ↦ hL u N k hk
 

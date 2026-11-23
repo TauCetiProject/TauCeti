@@ -76,39 +76,6 @@ namespace TemperedDistribution
 
 variable (φ : ContDiffBump (0 : E))
 
-omit [CompleteSpace F] in
-/-- Against a Schwartz function `ψ`, the products `a · b` and `f · g` of bounded functions differ by
-at most `‖b‖_∞ ∫ |ψ| |a - f| + ‖f‖_∞ ∫ |ψ| ‖b - g‖`, from
-`a · b - f · g = (a - f) · b + f · (b - g)`. -/
-private theorem eNorm_integral_smul_sub_integral_smul_le (ψ : 𝓢(E, ℂ))
-    (a f : Lp ℂ ∞ (volume : Measure E)) (b g : Lp F ∞ (volume : Measure E)) :
-    ‖(∫ x, ψ x • (a • b : Lp F ∞ volume) x) - ∫ x, ψ x • (f • g : Lp F ∞ volume) x‖ₑ ≤
-      ‖b‖ₑ * (∫⁻ x, ‖ψ x‖ₑ * ‖a x - f x‖ₑ) + ‖f‖ₑ * ∫⁻ x, ‖ψ x‖ₑ * ‖b x - g x‖ₑ := by
-  have hint : ∀ u : Lp F ∞ (volume : Measure E), Integrable (fun x ↦ ψ x • u x) :=
-    fun u ↦ ψ.integrable.smul_of_top_left (Lp.memLp u)
-  have hm : AEMeasurable (fun x ↦ ‖ψ x‖ₑ * ‖a x - f x‖ₑ) :=
-    ψ.continuous.eNorm.aemeasurable.mul
-      ((Lp.aestronglyMeasurable _).sub (Lp.aestronglyMeasurable _)).eNorm
-  rw [← integral_sub (hint _) (hint _), ← lintegral_const_mul' _ _ eNorm_ne_top,
-    ← lintegral_const_mul' _ _ eNorm_ne_top, ← lintegral_add_left' (hm.const_mul _)]
-  refine (eNorm_integral_le_lintegral_eNorm _).trans (lintegral_mono_ae ?_)
-  filter_upwards [Lp.coeFn_lpSMul (r := ∞) a b, Lp.coeFn_lpSMul (r := ∞) f g,
-    Lp.ae_norm_le_norm_top b, Lp.ae_norm_le_norm_top f] with x hab hfg hb hf
-  rw [← smul_sub, eNorm_smul, hab, hfg, Pi.smul_apply', Pi.smul_apply']
-  have hsplit : a x • b x - f x • g x = (a x - f x) • b x + f x • (b x - g x) := by
-    rw [sub_smul, smul_sub]
-    abel
-  have hb' : ‖b x‖ₑ ≤ ‖b‖ₑ := eNorm_le_iff_norm_le.2 hb
-  have hf' : ‖f x‖ₑ ≤ ‖f‖ₑ := eNorm_le_iff_norm_le.2 hf
-  calc ‖ψ x‖ₑ * ‖a x • b x - f x • g x‖ₑ
-      ≤ ‖ψ x‖ₑ * (‖a x - f x‖ₑ * ‖b‖ₑ + ‖f‖ₑ * ‖b x - g x‖ₑ) := by
-        rw [hsplit]
-        gcongr
-        refine (eNorm_add_le _ _).trans ?_
-        rw [eNorm_smul, eNorm_smul]
-        gcongr
-    _ = ‖b‖ₑ * (‖ψ x‖ₑ * ‖a x - f x‖ₑ) + ‖f‖ₑ * (‖ψ x‖ₑ * ‖b x - g x‖ₑ) := by ring
-
 /-- `S_{j+1}` averages against the dilates of `𝓕⁻ φ` by `2^{-j} → 0`, so it converges to the
 identity in `L¹` against the weight `ψ`: if `u ∈ L^∞` and `Sⱼ u = cⱼ ∈ L^∞`, then
 `∫ |ψ| ‖c_{j+1} - u‖ → 0`. -/
@@ -154,7 +121,7 @@ theorem tendsto_toTemperedDistribution_smul_of_littlewoodPaleyLowPass_eq
   refine tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds hlim (fun _ ↦ bot_le)
     fun j ↦ ?_
   rw [eDist_eq_eNorm_sub]
-  refine (eNorm_integral_smul_sub_integral_smul_le ψ _ f _ g).trans ?_
+  refine (TauCeti.eNorm_integral_smul_sub_integral_smul_le ψ.integrable _ f _ g).trans ?_
   gcongr
   exact hbC _
 
