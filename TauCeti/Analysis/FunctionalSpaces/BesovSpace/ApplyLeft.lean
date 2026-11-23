@@ -217,15 +217,15 @@ def applyLeftEquiv {A : E → F →L[ℂ] G} {B : E → G →L[ℂ] F} (hA : A.H
     (hBA : ∀ x, B x ∘L A x = ContinuousLinearMap.id ℂ F)
     (hAB : ∀ x, A x ∘L B x = ContinuousLinearMap.id ℂ G) :
     BesovSpace F φ s p q ≃L[ℂ] BesovSpace G φ s p q :=
-  ContinuousLinearEquiv.equivOfInverse (applyLeftCLM φ s p q A hA hbdA)
+  ContinuousLinearEquiv.ofContinuousLinearMap (applyLeftCLM φ s p q A hA hbdA)
     (applyLeftCLM φ s p q B hB hbdB)
-    (fun u ↦ ext (by
-      rw [toDistr_applyLeftCLM, toDistr_applyLeftCLM,
-        TemperedDistribution.applyLeftCLM_applyLeftCLM hB hA, funext hBA,
+    (ContinuousLinearMap.ext fun u ↦ ext (by
+      rw [ContinuousLinearMap.comp_apply, ContinuousLinearMap.id_apply, toDistr_applyLeftCLM,
+        toDistr_applyLeftCLM, TemperedDistribution.applyLeftCLM_applyLeftCLM hA hB, funext hAB,
         TemperedDistribution.applyLeftCLM_id, ContinuousLinearMap.id_apply]))
-    (fun u ↦ ext (by
-      rw [toDistr_applyLeftCLM, toDistr_applyLeftCLM,
-        TemperedDistribution.applyLeftCLM_applyLeftCLM hA hB, funext hAB,
+    (ContinuousLinearMap.ext fun u ↦ ext (by
+      rw [ContinuousLinearMap.comp_apply, ContinuousLinearMap.id_apply, toDistr_applyLeftCLM,
+        toDistr_applyLeftCLM, TemperedDistribution.applyLeftCLM_applyLeftCLM hB hA, funext hBA,
         TemperedDistribution.applyLeftCLM_id, ContinuousLinearMap.id_apply]))
 
 @[simp]
