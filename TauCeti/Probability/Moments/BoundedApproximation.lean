@@ -27,7 +27,7 @@ open scoped Topology ENNReal NNReal
 
 namespace TauCeti.Probability
 
-variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [CompleteSpace E]
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   [MeasurableSpace E] [BorelSpace E] {μ : Measure E} [IsProbabilityMeasure μ]
 
 /-- A centered law with unit second absolute moment admits bounded, centered, unit second

@@ -202,7 +202,7 @@ theorem variance_second_spectralMoment_le
 /-- On a finite measure space, the second spectral moment concentrates around its integral (its
 mean when `P` is a probability measure) if the squared coordinate norms are square-integrable,
 pairwise uncorrelated, and have uniformly bounded variances. -/
-theorem measure_second_spectralMoment_sub_mean_ge [IsFiniteMeasure P]
+theorem measure_second_spectralMoment_sub_integral_ge [IsFiniteMeasure P]
     (n : ℕ) {V : ℝ}
     (hcov : Pairwise fun i j ↦ cov[wignerCoordinateSquare ξ η (n + 1) i,
       wignerCoordinateSquare ξ η (n + 1) j; P] = 0)
@@ -214,7 +214,7 @@ theorem measure_second_spectralMoment_sub_mean_ge [IsFiniteMeasure P]
       ∫ ω, (∫ x, x ^ 2 ∂((wignerMatrix ξ η (n + 1) ω).spectralMeasure
         (wignerMatrix_isHermitian ξ η ω (n + 1)) : Measure ℝ)) ∂P|} ≤
       ENNReal.ofReal ((8 * V / (n + 1 : ℝ) ^ 2) / ε ^ 2) := by
-  have h := measure_weighted_coordinate_sum_sub_mean_ge (s := Finset.univ)
+  have h := measure_weighted_coordinate_sum_sub_integral_ge (s := Finset.univ)
     (fun i ↦ (n + 1 : ℝ)⁻¹ ^ 2 * wignerCoordinateWeight (n + 1) i)
     (fun i _ ↦ hmem i) (hcov.set_pairwise _) hε
   have hbound := ENNReal.ofReal_le_ofReal (div_le_div_of_nonneg_right
@@ -225,7 +225,7 @@ theorem measure_second_spectralMoment_sub_mean_ge [IsFiniteMeasure P]
 /-- Second-moment fluctuations around the integral vanish in measure for triangular arrays on
 varying finite measure spaces whose squared coordinate norms are square-integrable, pairwise
 uncorrelated, and have uniformly bounded variances. -/
-theorem tendsto_second_spectralMoment_sub_mean_probability
+theorem tendsto_measure_second_spectralMoment_sub_integral_ge
     {Ω : ℕ → Type*} [∀ n, MeasurableSpace (Ω n)]
     {P : (n : ℕ) → Measure (Ω n)} [∀ n, IsFiniteMeasure (P n)]
     {ξ : (n : ℕ) → StrictUpper → Ω n → ℂ}
@@ -249,7 +249,7 @@ theorem tendsto_second_spectralMoment_sub_mean_probability
   exact tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds
     (by simpa only [ENNReal.ofReal_zero] using ENNReal.tendsto_ofReal hreal)
     (fun _ ↦ bot_le)
-    (fun n ↦ measure_second_spectralMoment_sub_mean_ge n (hcov n) (hmem n) (hvar n) hε)
+    (fun n ↦ measure_second_spectralMoment_sub_integral_ge n (hcov n) (hmem n) (hvar n) hε)
 
 /-- The variance bound applies in particular when the Wigner coordinates of the corner are jointly
 independent. -/
@@ -278,7 +278,7 @@ theorem measure_second_spectralMoment_sub_mean_ge_of_independent_coordinates
         (wignerMatrix_isHermitian ξ η ω (n + 1)) : Measure ℝ)) ∂P|} ≤
       ENNReal.ofReal ((8 * V / (n + 1 : ℝ) ^ 2) / ε ^ 2) := by
   have := hindep.isProbabilityMeasure
-  exact measure_second_spectralMoment_sub_mean_ge n
+  exact measure_second_spectralMoment_sub_integral_ge n
     (fun i j hij ↦ (wignerCoordinateSquare_pairwise_independent hindep hij).covariance_eq_zero
       (hmem i) (hmem j)) hmem hvar hε
 
@@ -301,7 +301,7 @@ theorem tendsto_second_spectralMoment_sub_mean_probability_of_independent_coordi
         (wignerMatrix_isHermitian (ξ n) (η n) ω (n + 1)) : Measure ℝ)) ∂P n|})
       atTop (𝓝 0) := by
   have := fun n ↦ (hindep n).isProbabilityMeasure
-  exact tendsto_second_spectralMoment_sub_mean_probability
+  exact tendsto_measure_second_spectralMoment_sub_integral_ge
     (fun n i j hij ↦
       (wignerCoordinateSquare_pairwise_independent (hindep n) hij).covariance_eq_zero
         (hmem n i) (hmem n j))

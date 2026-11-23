@@ -54,7 +54,7 @@ measure is a probability measure) tends to zero in measure when the variances te
   `TauCeti.Probability.evariance_prod_le`: product-variance bounds for averages and products.
 * `TauCeti.Probability.variance_weighted_coordinate_sum`,
   `TauCeti.Probability.variance_weighted_coordinate_sum_of_covariance_eq_zero` and
-  `TauCeti.Probability.measure_weighted_coordinate_sum_sub_mean_ge`: variance and Chebyshev
+  `TauCeti.Probability.measure_weighted_coordinate_sum_sub_integral_ge`: variance and Chebyshev
   bounds for weighted sums of square-integrable variables that are pairwise independent or
   pairwise uncorrelated.
 * `TauCeti.Probability.tendsto_measure_abs_sub_integral_ge_of_tendsto_variance`: vanishing
@@ -281,7 +281,7 @@ theorem variance_weighted_coordinate_sum_of_covariance_eq_zero {Ω ι : Type*} [
 
 /-- Chebyshev's bound for a weighted sum of pairwise uncorrelated square-integrable variables on a
 finite measure space. -/
-theorem measure_weighted_coordinate_sum_sub_mean_ge {Ω ι : Type*} [MeasurableSpace Ω]
+theorem measure_weighted_coordinate_sum_sub_integral_ge {Ω ι : Type*} [MeasurableSpace Ω]
     {P : Measure Ω} [IsFiniteMeasure P] {X : ι → Ω → ℝ} {s : Finset ι} (a : ι → ℝ)
     (hX : ∀ i ∈ s, MemLp (X i) 2 P)
     (hcov : (s : Set ι).Pairwise fun i j ↦ cov[X i, X j; P] = 0) {ε : ℝ} (hε : 0 < ε) :

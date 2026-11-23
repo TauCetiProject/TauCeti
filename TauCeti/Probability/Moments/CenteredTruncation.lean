@@ -19,8 +19,8 @@ import TauCeti.MeasureTheory.Function.Lp.DominatedConvergence
 the integral of the truncated variable. It is a measurable function of `X`, so it preserves
 independence. On a probability space it is bounded by `2R`. On a finite measure space, when `X`
 is almost everywhere strongly measurable, it has every finite absolute moment.
-Its integral is zero when `P` is a probability measure, `X` is almost everywhere strongly
-measurable, and the target space is complete.
+Its integral is zero when `P` is a probability measure and `X` is almost everywhere strongly
+measurable.
 For a square-integrable variable `X` on a probability space with values in a real inner product
 space, the mean-square error of approximating `X - ∫ X` by the centered truncation of `X` is
 bounded by the second moment of `X` outside that ball. On a finite measure space with values in
@@ -109,20 +109,20 @@ theorem norm_centeredTruncation_le (R : ℝ≥0) (ω : Ω) :
       (norm_integral_le_of_norm_le_const (μ := P) (f := {ω | ‖X ω‖ ≤ R}.indicator X)
         (.of_forall (norm_indicator_setOf_norm_le_le X R.coe_nonneg))))
 
-variable [CompleteSpace E]
-
 /-- The bounded approximation has expectation zero. -/
 @[simp] theorem _root_.MeasureTheory.AEStronglyMeasurable.integral_centeredTruncation
     (hX : AEStronglyMeasurable X P) (R : ℝ≥0) :
     ∫ ω, centeredTruncation X P R ω ∂P = 0 := by
-  have hi : Integrable ({ω | ‖X ω‖ ≤ R}.indicator X) P :=
-    Integrable.of_bound
-      (hX.indicator₀ (nullMeasurableSet_le hX.norm.aemeasurable aemeasurable_const))
-      R (.of_forall (norm_indicator_setOf_norm_le_le X R.coe_nonneg))
-  rw [centeredTruncation_def, integral_sub hi (integrable_const _)]
-  simp
+  by_cases hE : CompleteSpace E
+  · have hi : Integrable ({ω | ‖X ω‖ ≤ R}.indicator X) P :=
+      Integrable.of_bound
+        (hX.indicator₀ (nullMeasurableSet_le hX.norm.aemeasurable aemeasurable_const))
+        R (.of_forall (norm_indicator_setOf_norm_le_le X R.coe_nonneg))
+    rw [centeredTruncation_def, integral_sub hi (integrable_const _)]
+    simp
+  · exact integral_of_not_completeSpace hE
 
-omit [IsProbabilityMeasure P] [CompleteSpace E] in
+omit [IsProbabilityMeasure P] in
 /-- Subtracting the centered truncation of `X` from `X - ∫ X` gives the discarded part of
 `X` minus its integral, with the cutoff applied to `‖X‖`. -/
 theorem _root_.MeasureTheory.Integrable.sub_integral_sub_centeredTruncation_eq
@@ -141,7 +141,6 @@ theorem _root_.MeasureTheory.Integrable.sub_integral_sub_centeredTruncation_eq
     centeredTruncation_def]
   exact sub_sub_sub_comm ..
 
-omit [CompleteSpace E] in
 /-- On a probability space, the mean norm of the difference between `X - ∫ X` and its centered
 truncation is at most twice the norm integral over the region where `‖X‖` exceeds the cutoff. -/
 theorem _root_.MeasureTheory.Integrable.integral_norm_sub_integral_sub_centeredTruncation_le
@@ -238,8 +237,8 @@ section FiniteMeasure
 variable [NormedSpace ℝ E] [IsFiniteMeasure P]
 
 /-- On a finite measure space, let `X` be almost everywhere strongly measurable but not
-square-integrable. Then the displayed squared-error Bochner integral of its centered truncation,
-shifted by any constant, is `0` by convention: the shifted error is not square-integrable either. -/
+square-integrable. Then for any constant `c`, the error in approximating `X - c` by the centered
+truncation of `X` is outside `L²`, so its squared-norm Bochner integral is `0` by convention. -/
 theorem AEStronglyMeasurable.integral_norm_sub_sub_centeredTruncation_sq_eq_zero_of_not_memLp
     (hX : AEStronglyMeasurable X P) (hL : ¬MemLp X 2 P) (c : E) (R : ℝ≥0) :
     ∫ ω, ‖X ω - c - TauCeti.Probability.centeredTruncation X P R ω‖ ^ 2 ∂P = 0 := by
@@ -261,19 +260,12 @@ theorem MemLp.tendsto_toLp_centeredTruncation {p : ℝ≥0∞} [Fact (1 ≤ p)] 
       atTop (𝓝 ((hX.sub (memLp_const _)).toLp (fun ω ↦ X ω - ∫ y, X y ∂P))) := by
   by_cases hp : p = ∞
   · subst hp
-    have htop : eLpNormEssSup X P ≠ ∞ := by
-      rw [← eLpNorm_exponent_top hX.aestronglyMeasurable]
-      exact hX.eLpNorm_lt_top.ne
     refine tendsto_const_nhds.congr' ?_
-    filter_upwards [eventually_ge_atTop (eLpNormEssSup X P).toNNReal] with R hR
+    filter_upwards [eventually_ge_atTop (lpNorm X ∞ P).toNNReal] with R hR
     have hcut : {ω | ‖X ω‖ ≤ (R : ℝ)}.indicator X =ᵐ[P] X := by
-      filter_upwards [ae_le_eLpNormEssSup (f := X) (μ := P)] with ω hω
-      have hle : ‖X ω‖ ≤ (R : ℝ) := by
-        have hle' : ‖X ω‖ₑ ≤ (R : ℝ≥0∞) :=
-          hω.trans ((ENNReal.coe_toNNReal htop).symm.trans_le (ENNReal.coe_le_coe.mpr hR))
-        rw [← ofReal_norm, ← ENNReal.ofReal_coe_nnreal] at hle'
-        exact (ENNReal.ofReal_le_ofReal_iff R.coe_nonneg).mp hle'
-      exact indicator_of_mem hle X
+      filter_upwards [ae_le_lpNorm_exponent_top hX] with ω hω
+      exact indicator_of_mem
+        (hω.trans ((Real.le_coe_toNNReal _).trans (NNReal.coe_le_coe.mpr hR))) X
     have hEq : TauCeti.Probability.centeredTruncation X P R =ᵐ[P] fun ω ↦ X ω - ∫ y, X y ∂P := by
       rw [centeredTruncation_def, integral_congr_ae hcut]
       exact hcut.mono fun ω hω ↦ by simp only [hω]
@@ -285,7 +277,7 @@ theorem MemLp.tendsto_toLp_centeredTruncation {p : ℝ≥0∞} [Fact (1 ≤ p)] 
         (fun R ↦ .of_forall fun ω ↦ by dsimp only [T]; split_ifs <;> simp)
         (.of_forall fun ω ↦ tendsto_const_nhds.congr' ?_)
       filter_upwards [eventually_ge_atTop ‖X ω‖₊] with R hR
-      simp only [T, show ‖X ω‖ ≤ (R : ℝ) from hR, ↓reduceIte]
+      simp only [T, ← coe_nnNorm, NNReal.coe_le_coe.mpr hR, ↓reduceIte]
     have hm : Tendsto (fun R : ℝ≥0 ↦ ∫ ω, T R ω ∂P) atTop (𝓝 (∫ ω, X ω ∂P)) :=
       (hX.integrable Fact.out).tendsto_integral_ite_norm_le.comp
         (NNReal.tendsto_coe_atTop.mpr tendsto_id)
