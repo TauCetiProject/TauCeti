@@ -7,12 +7,16 @@ module
 
 public import TauCeti.Analysis.Matrix.Cartan
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.MaximalCompact
-import Mathlib.LinearAlgebra.BilinearForm.Orthogonal
+import Mathlib.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Commute
+import Mathlib.Analysis.InnerProductSpace.Projection.Basic
+import TauCeti.Algebra.Ring.Idempotent.Basic
+import TauCeti.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Projection
 import TauCeti.Analysis.Matrix.Frobenius
 import TauCeti.Analysis.Matrix.Mostow
 import TauCeti.Analysis.Normed.Algebra.Exponential
 import TauCeti.Geometry.Lie.Subgroup.CartanChart
 import TauCeti.Geometry.Lie.Subgroup.Units
+import TauCeti.Topology.Algebra.Group.Connected
 
 /-!
 # The Cartan decomposition of a closed matrix group stable under conjugate transpose
@@ -36,8 +40,9 @@ subalgebra stable under `Y ↦ Yᴴ`.
 * Split `X = X₁ + Z` orthogonally for the real inner product `re (trace (A * Bᴴ))`, with
   `X₁ ∈ 𝔥` and `Z ⊥ 𝔥` both Hermitian. The commutator of `Z` with `Y ∈ 𝔥` lies in `𝔥` and is
   orthogonal to `𝔥`, so `Z` commutes with `𝔥`; in particular `exp Z = exp (-X₁) * p ∈ H`.
-* Let `P_c` be the spectral projections of `Z`. On the centralizer of `Z` the function
-  `Λ g = ∑ c, c * log ‖det (P_c * g + 1 - P_c)‖` is a continuous homomorphism to `ℝ`, and
+* Let `P_c = cfc ({c}.indicator 1) Z` be the spectral projections of `Z`. On the centralizer of
+  `Z` the function `Λ g = ∑ c, c * log ‖det (P_c * g + 1 - P_c)‖` is a continuous homomorphism to
+  `ℝ`, and
   `Λ (exp (t Y)) = t * re (trace (Z * Y))` for `Y` commuting with `Z`. It vanishes on the
   exponential lines of `𝔥`, so its kernel, a closed subgroup whose Lie algebra contains `𝔥`,
   contains the connected group `H` (`TauCeti.Lie.le_of_lieSubalgebraOfSubgroup_le`). Hence
@@ -55,7 +60,7 @@ subgroup of `GL(2, ℝ)` stable under transpose, which contains no other point o
   element of `H` lies in `H`.
 * `Matrix.GeneralLinearGroup.cartanHomeomorphOfIsClosed`: the homeomorphism
   `K_H × 𝔭_H ≃ₜ H`, `(k, X) ↦ k * exp X`, with `val_cartanHomeomorphOfIsClosed_apply`.
-* `Matrix.GeneralLinearGroup.cartan_polar_decomposition`: every `g ∈ H` is uniquely
+* `Matrix.GeneralLinearGroup.existsUnique_unitary_mul_exp_of_isClosed`: every `g ∈ H` is uniquely
   `k * exp X` with `k ∈ K_H` and `X ∈ 𝔭_H`.
 * `Matrix.GeneralLinearGroup.maximal_isCompact_unitarySubgroup_subgroupOf_of_isClosed`: `K_H` is
   a maximal compact subgroup of `H`.
@@ -79,67 +84,56 @@ namespace Matrix.GeneralLinearGroup
 
 variable {n 𝕜 : Type*} [RCLike 𝕜] [Fintype n] [DecidableEq n]
 
-/-! ### Auxiliary matrix facts -/
 
-section Aux
+/-! ### Orthogonal splitting for the real trace pairing -/
 
-/-- The norm of the exponential of a scalar is the real exponential of its real part. -/
-private theorem norm_exp_eq (w : 𝕜) : ‖NormedSpace.exp w‖ = Real.exp (RCLike.re w) := by
-  have hconj : (starRingEnd 𝕜) (NormedSpace.exp w) = NormedSpace.exp ((starRingEnd 𝕜) w) :=
-    NormedSpace.map_exp _ RCLike.continuous_conj w
-  have hsq : (‖NormedSpace.exp w‖ : 𝕜) ^ 2 = ((Real.exp (RCLike.re w) ^ 2 : ℝ) : 𝕜) := by
-    rw [← RCLike.mul_conj, hconj, ← NormedSpace.exp_add, RCLike.add_conj, ← Real.exp_natCast_mul,
-      ← RCLike.exp_ofReal]
-    push_cast
-    ring_nf
-  have h := congrArg RCLike.re hsq
-  rw [← RCLike.ofReal_pow, RCLike.ofReal_re, RCLike.ofReal_re] at h
-  exact (pow_left_inj₀ (norm_nonneg _) (Real.exp_pos _).le two_ne_zero).1 h
+section Orthogonal
+
+open scoped InnerProductSpace Matrix.Norms.Frobenius
 
 omit [DecidableEq n] in
-/-- The real part of `trace (A * Aᴴ)` vanishes only for `A = 0`. -/
-private theorem re_trace_mul_conjTranspose_self_eq_zero {A : Matrix n n 𝕜}
-    (h : RCLike.re (A * Aᴴ).trace = 0) : A = 0 := by
-  rw [re_trace_mul_conjTranspose_self] at h
-  ext i j
-  have hi := (Finset.sum_eq_zero_iff_of_nonneg fun i _ ↦
-    Finset.sum_nonneg fun j _ ↦ sq_nonneg ‖A i j‖).1 h i (Finset.mem_univ _)
-  have hij := (Finset.sum_eq_zero_iff_of_nonneg fun j _ ↦ sq_nonneg ‖A i j‖).1 hi j
-    (Finset.mem_univ _)
-  simpa using hij
+/-- A Hermitian matrix splits as `X₁ + Z` with `X₁` Hermitian in a real subspace `V` stable under
+the conjugate transpose and `Z` Hermitian and orthogonal to `V` for `re (trace (A * B))`. -/
+private theorem exists_add_orthogonal {V : Submodule ℝ (Matrix n n 𝕜)}
+    (hV : ∀ Y ∈ V, star Y ∈ V) {X : Matrix n n 𝕜} (hX : X.IsHermitian) :
+    ∃ X₁ ∈ V, ∃ Z : Matrix n n 𝕜, Z.IsHermitian ∧ X = X₁ + Z ∧
+      ∀ W ∈ V, RCLike.re (Z * W).trace = 0 := by
+  -- Split `X` orthogonally for the real Frobenius inner product `re (trace (Aᴴ * B))`.
+  let := Matrix.frobeniusNormedAddCommGroup (m := n) (n := n) (α := 𝕜)
+  let : InnerProductSpace ℝ (Matrix n n 𝕜) := Matrix.frobeniusInnerProductSpace
+  have hinner (A B : Matrix n n 𝕜) : ⟪A, B⟫_ℝ = RCLike.re (Aᴴ * B).trace := by
+    rw [frobenius_inner_def, ← frobenius_inner_eq_trace_conjTranspose_mul, frobenius_inner_def,
+      map_sum]
+    exact Finset.sum_congr rfl fun i _ ↦ by rw [map_sum]; rfl
+  obtain ⟨X₀, hX₀, Z₀, hZ₀, hsum⟩ := V.exists_add_mem_mem_orthogonal X
+  -- `Z₀ ⊥ V` gives `re (trace (Z₀ * W)) = 0` and `re (trace (Z₀ᴴ * W)) = 0` for `W ∈ V`.
+  have horth (W : Matrix n n 𝕜) (hW : W ∈ V) : RCLike.re (Z₀ * W).trace = 0 := by
+    have h := Submodule.inner_right_of_mem_orthogonal (hV W hW) hZ₀
+    rwa [hinner, star_eq_conjTranspose, conjTranspose_conjTranspose, trace_mul_comm] at h
+  have horth' (W : Matrix n n 𝕜) (hW : W ∈ V) : RCLike.re (Z₀ᴴ * W).trace = 0 := by
+    have h := Submodule.inner_left_of_mem_orthogonal hW hZ₀
+    rwa [hinner] at h
+  refine ⟨(1 / 2 : ℝ) • (X₀ + star X₀), V.smul_mem _ (V.add_mem hX₀ (hV _ hX₀)),
+    (1 / 2 : ℝ) • (Z₀ + Z₀ᴴ), ?_, ?_, fun W hW ↦ ?_⟩
+  · simp [IsHermitian, conjTranspose_smul, add_comm]
+  · have hX' : X = (1 / 2 : ℝ) • (X + Xᴴ) := by
+      rw [hX.eq, ← two_smul ℝ X, smul_smul]
+      norm_num
+    rw [hX', hsum, conjTranspose_add, star_eq_conjTranspose, ← smul_add]
+    congr 1
+    abel
+  · rw [Matrix.smul_mul, trace_smul, add_mul, trace_add, RCLike.smul_re, map_add, horth W hW,
+      horth' W hW, add_zero, mul_zero]
 
-/-- For an idempotent `P`, the map `g ↦ P * g + 1 - P` is multiplicative on the matrices
-commuting with `P`. -/
-private theorem idem_mul_idem {P g h : Matrix n n 𝕜} (hP : P * P = P) (hg : Commute P g) :
-    (P * g + 1 - P) * (P * h + 1 - P) = P * (g * h) + 1 - P := by
-  have h1 : P * g * P = P * g := by rw [mul_assoc, ← hg.eq, ← mul_assoc, hP]
-  have : (P * g + 1 - P) * (P * h + 1 - P) =
-      P * g * P * h + P * g - P * g * P + P * h - P * P * h + 1 - P - P + P * P := by
-    noncomm_ring
-  rw [this, h1, hP]
-  noncomm_ring
+end Orthogonal
 
-/-- For an idempotent `P` commuting with `A`, the exponential of `P * A` is `exp A` on the range of
-`P` and the identity on the range of `1 - P`. -/
-private theorem exp_idem_mul {P A : Matrix n n 𝕜} (hP : P * P = P) (hPA : Commute P A) :
-    NormedSpace.exp (P * A) = P * NormedSpace.exp A + 1 - P := by
-  have hpow (k : ℕ) : (P * A) ^ (k + 1) = P * A ^ (k + 1) := by
-    rw [hPA.mul_pow, IsIdempotentElem.pow_succ_eq k hP]
-  open scoped Matrix.Norms.L2Operator in
-  have h := ((NormedSpace.exp_series_hasSum_exp' (𝕂 := 𝕜) A).mul_left P).update 0 1
-  have hf : Function.update (fun k ↦ P * ((k.factorial⁻¹ : 𝕜) • A ^ k)) 0 1 =
-      fun k ↦ (k.factorial⁻¹ : 𝕜) • (P * A) ^ k := by
-    funext k
-    rcases k with _ | k
-    · simp
-    · simp [hpow]
-  rw [hf] at h
-  open scoped Matrix.Norms.L2Operator in
-  rw [(NormedSpace.exp_series_hasSum_exp' (𝕂 := 𝕜) (P * A)).unique h]
-  simp only [Nat.factorial_zero, Nat.cast_one, inv_one, pow_zero, one_smul, mul_one]
-  abel
+/-! In the rest of the file, `Matrix n n 𝕜` carries the `ℓ²` operator norm, a complete normed
+`ℝ`-algebra, so that its group of units has the Lie group structure and exponential of
+`TauCeti.expUnit`. -/
 
-end Aux
+open scoped Matrix.Norms.L2Operator
+
+attribute [local instance] Matrix.l2OpNormedAlgebraReal TauCeti.normedAlgebraRatOfReal
 
 /-! ### A character of the centralizer of a Hermitian matrix -/
 
@@ -147,99 +141,47 @@ section Character
 
 variable {Z : Matrix n n 𝕜} (hZ : Z.IsHermitian)
 
-/-- The spectral projection of the Hermitian matrix `Z` for the real number `c`: the orthogonal
-projection onto the eigenspace of `c`, which is `0` unless `c` is an eigenvalue. -/
-private def specProj (c : ℝ) : Matrix n n 𝕜 :=
-  (hZ.eigenvectorUnitary : Matrix n n 𝕜) *
-    diagonal (fun i ↦ if hZ.eigenvalues i = c then 1 else 0) *
-      star (hZ.eigenvectorUnitary : Matrix n n 𝕜)
+/-- The spectral projections `cfc ({c}.indicator 1) Z` of the Hermitian matrix `Z`, weighted by
+the eigenvalues `c`, sum to `Z`. -/
+private theorem sum_smul_cfc_indicator :
+    ∑ c ∈ Finset.univ.image hZ.eigenvalues, c • cfc (Set.indicator {c} (1 : ℝ → ℝ)) Z = Z := by
+  have hspec := hZ.spectrum_real_eq_range_eigenvalues
+  have hc (f : ℝ → ℝ) : ContinuousOn f (spectrum ℝ Z) :=
+    (hspec ▸ Set.finite_range hZ.eigenvalues).continuousOn f
+  calc ∑ c ∈ Finset.univ.image hZ.eigenvalues, c • cfc (Set.indicator {c} (1 : ℝ → ℝ)) Z
+      = cfc (∑ c ∈ Finset.univ.image hZ.eigenvalues,
+          fun x ↦ c * Set.indicator {c} (1 : ℝ → ℝ) x) Z := by
+        rw [cfc_sum _ _ _ fun c _ ↦ hc _]
+        exact Finset.sum_congr rfl fun c _ ↦ (cfc_const_mul c _ Z (hc _)).symm
+    _ = cfc (fun x : ℝ ↦ x) Z := cfc_congr fun x hx ↦ by
+        obtain ⟨i, rfl⟩ := hspec ▸ hx
+        simp [Set.indicator_apply]
+    _ = Z := cfc_id' ℝ Z hZ.isSelfAdjoint
 
-private theorem specProj_mul_self (c : ℝ) : specProj hZ c * specProj hZ c = specProj hZ c := by
-  have hUU : star (hZ.eigenvectorUnitary : Matrix n n 𝕜) * hZ.eigenvectorUnitary = 1 :=
-    Unitary.star_mul_self_of_mem hZ.eigenvectorUnitary.property
-  simp only [specProj, mul_assoc]
-  rw [← mul_assoc (star (hZ.eigenvectorUnitary : Matrix n n 𝕜)), hUU, one_mul,
-    ← mul_assoc (diagonal _), diagonal_mul_diagonal]
-  congr 3
-  funext i
-  split_ifs <;> simp
+/-- A matrix commuting with `Z` commutes with its spectral projections. -/
+private theorem commute_cfc_indicator {g : Matrix n n 𝕜} (hg : Commute g Z) (c : ℝ) :
+    Commute g (cfc (Set.indicator {c} (1 : ℝ → ℝ)) Z) :=
+  (Commute.cfc_real hg.symm _).symm
 
-private theorem sum_smul_specProj :
-    ∑ c ∈ Finset.univ.image hZ.eigenvalues, (c : 𝕜) • specProj hZ c = Z := by
-  set U : Matrix n n 𝕜 := (hZ.eigenvectorUnitary : Matrix n n 𝕜)
-  have hspec := hZ.spectral_theorem
-  rw [Unitary.conjStarAlgAut_apply] at hspec
-  have hdiag : ∑ c ∈ Finset.univ.image hZ.eigenvalues,
-      (c : 𝕜) • diagonal (fun i ↦ if hZ.eigenvalues i = c then (1 : 𝕜) else 0) =
-        diagonal (RCLike.ofReal ∘ hZ.eigenvalues) := by
-    ext i j
-    rw [Matrix.sum_apply]
-    by_cases hij : i = j
-    · subst hij
-      simp only [Matrix.smul_apply, diagonal_apply_eq, smul_eq_mul, mul_ite, mul_one, mul_zero,
-        Function.comp_apply]
-      rw [Finset.sum_ite_eq (Finset.univ.image hZ.eigenvalues) (hZ.eigenvalues i)]
-      simp
-    · simp [diagonal_apply_ne _ hij]
-  calc ∑ c ∈ Finset.univ.image hZ.eigenvalues, (c : 𝕜) • specProj hZ c
-      = U * (∑ c ∈ Finset.univ.image hZ.eigenvalues,
-          (c : 𝕜) • diagonal (fun i ↦ if hZ.eigenvalues i = c then (1 : 𝕜) else 0)) *
-            star U := by
-        rw [Finset.mul_sum, Finset.sum_mul]
-        simp [specProj, U]
-    _ = Z := by rw [hdiag]; exact hspec.symm
+omit hZ in
+private theorem isIdempotentElem_cfc_indicator (c : ℝ) :
+    IsIdempotentElem (cfc (Set.indicator {c} (1 : ℝ → ℝ)) Z) :=
+  (TauCeti.isStarProjection_cfc_indicator Z {c}).isIdempotentElem
 
-private theorem commute_specProj {g : Matrix n n 𝕜} (hg : Commute g Z) (c : ℝ) :
-    Commute g (specProj hZ c) := by
-  set U : Matrix n n 𝕜 := (hZ.eigenvectorUnitary : Matrix n n 𝕜)
-  set d := hZ.eigenvalues
-  have hUU : star U * U = 1 := Unitary.star_mul_self_of_mem hZ.eigenvectorUnitary.property
-  have hUU' : U * star U = 1 := Unitary.mul_star_self_of_mem hZ.eigenvectorUnitary.property
-  have hD : star U * Z * U = diagonal (RCLike.ofReal ∘ d) := by
-    have h := hZ.conjStarAlgAut_star_eigenvectorUnitary
-    rwa [Unitary.conjStarAlgAut_apply, Unitary.coe_star, star_star] at h
-  set h := star U * g * U
-  have hg' : g = U * h * star U := by
-    simp only [h, ← mul_assoc, hUU', one_mul]
-    rw [mul_assoc, hUU', mul_one]
-  -- In the eigenbasis, `h` commutes with the diagonal matrix of eigenvalues.
-  have hhD : h * diagonal (RCLike.ofReal ∘ d) = diagonal (RCLike.ofReal ∘ d) * h := by
-    rw [← hD]
-    simp only [h, mul_assoc]
-    rw [← mul_assoc U (star U), hUU', one_mul, ← mul_assoc U (star U), hUU', one_mul,
-      ← mul_assoc g Z, hg.eq, mul_assoc Z g]
-  have hentry (i j : n) (hij : d i ≠ d j) : h i j = 0 := by
-    have := congrArg (fun M ↦ M i j) hhD
-    simp only [mul_diagonal, diagonal_mul, Function.comp_apply] at this
-    have hne : (d j : 𝕜) - d i ≠ 0 := sub_ne_zero.2 (by exact_mod_cast hij.symm)
-    have : h i j * ((d j : 𝕜) - d i) = 0 := by rw [mul_sub, this]; ring
-    exact (mul_eq_zero.1 this).resolve_right hne
-  have hcomm : h * diagonal (fun i ↦ if d i = c then (1 : 𝕜) else 0) =
-      diagonal (fun i ↦ if d i = c then (1 : 𝕜) else 0) * h := by
-    ext i j
-    simp only [mul_diagonal, diagonal_mul]
-    by_cases hi : d i = c <;> by_cases hj : d j = c
-    · simp [hi, hj]
-    · simp [hi, hj, hentry i j (by rw [hi]; exact Ne.symm hj)]
-    · simp [hi, hj, hentry i j (by rw [hj]; exact hi)]
-    · simp [hi, hj]
-  change g * specProj hZ c = specProj hZ c * g
-  simp only [specProj]
-  rw [hg']
-  simp only [mul_assoc]
-  rw [← mul_assoc (star U) U, hUU, one_mul, ← mul_assoc (star U) U, hUU, one_mul,
-    ← mul_assoc h, hcomm, mul_assoc]
-
+omit hZ in
 /-- The character `Λ g = ∑ c, c * log ‖det (P_c * g + 1 - P_c)‖` of the centralizer of `Z`, where
-`P_c` are the spectral projections of `Z`. -/
+`P_c = cfc ({c}.indicator 1) Z` are the spectral projections of `Z`. -/
 private def charFun (g : Matrix n n 𝕜) : ℝ :=
   ∑ c ∈ Finset.univ.image hZ.eigenvalues,
-    c * Real.log ‖(specProj hZ c * g + 1 - specProj hZ c).det‖
+    c * Real.log ‖(cfc (Set.indicator {c} (1 : ℝ → ℝ)) Z * g + 1 -
+      cfc (Set.indicator {c} (1 : ℝ → ℝ)) Z).det‖
 
-private theorem det_specProj_mul_ne_zero {g : GL n 𝕜} (hg : Commute (g : Matrix n n 𝕜) Z)
-    (c : ℝ) : (specProj hZ c * g + 1 - specProj hZ c).det ≠ 0 := by
-  have h := idem_mul_idem (h := ((g⁻¹ : GL n 𝕜) : Matrix n n 𝕜)) (specProj_mul_self hZ c)
-    (commute_specProj hZ hg c).symm
+private theorem det_cfc_indicator_mul_ne_zero {g : GL n 𝕜} (hg : Commute (g : Matrix n n 𝕜) Z)
+    (c : ℝ) :
+    (cfc (Set.indicator {c} (1 : ℝ → ℝ)) Z * g + 1 -
+      cfc (Set.indicator {c} (1 : ℝ → ℝ)) Z).det ≠ 0 := by
+  have h := (isIdempotentElem_cfc_indicator (Z := Z) c).mul_add_one_sub_mul_mul_add_one_sub
+    (commute_cfc_indicator hg c).symm ((g⁻¹ : GL n 𝕜) : Matrix n n 𝕜)
   rw [Units.mul_inv, mul_one, add_sub_cancel_left] at h
   have := congrArg Matrix.det h
   rw [det_mul, det_one] at this
@@ -250,19 +192,20 @@ private theorem charFun_mul {g h : GL n 𝕜} (hg : Commute (g : Matrix n n 𝕜
     charFun hZ ((g : Matrix n n 𝕜) * h) = charFun hZ g + charFun hZ h := by
   simp only [charFun, ← Finset.sum_add_distrib, ← mul_add]
   refine Finset.sum_congr rfl fun c _ ↦ ?_
-  rw [← idem_mul_idem (specProj_mul_self hZ c) (commute_specProj hZ hg c).symm, det_mul,
-    norm_mul, Real.log_mul (norm_ne_zero_iff.2 (det_specProj_mul_ne_zero hZ hg c))
-      (norm_ne_zero_iff.2 (det_specProj_mul_ne_zero hZ hh c))]
+  rw [← (isIdempotentElem_cfc_indicator c).mul_add_one_sub_mul_mul_add_one_sub
+      (commute_cfc_indicator hg c).symm, det_mul, norm_mul,
+    Real.log_mul (norm_ne_zero_iff.2 (det_cfc_indicator_mul_ne_zero hg c))
+      (norm_ne_zero_iff.2 (det_cfc_indicator_mul_ne_zero hh c))]
 
 private theorem charFun_exp {M : Matrix n n 𝕜} (hM : Commute M Z) :
     charFun hZ (NormedSpace.exp M) = RCLike.re (Z * M).trace := by
-  have h (c : ℝ) : specProj hZ c * NormedSpace.exp M + 1 - specProj hZ c =
-      NormedSpace.exp (specProj hZ c * M) :=
-    (exp_idem_mul (specProj_mul_self hZ c) (commute_specProj hZ hM c).symm).symm
-  simp only [charFun, h, det_exp, norm_exp_eq, Real.log_exp]
-  conv_rhs => rw [← sum_smul_specProj hZ]
-  simp only [Finset.sum_mul, trace_sum, map_sum, smul_mul_assoc, trace_smul, smul_eq_mul,
-    RCLike.re_ofReal_mul]
+  have h (c : ℝ) : cfc (Set.indicator {c} (1 : ℝ → ℝ)) Z * NormedSpace.exp M + 1 -
+      cfc (Set.indicator {c} (1 : ℝ → ℝ)) Z =
+      NormedSpace.exp (cfc (Set.indicator {c} (1 : ℝ → ℝ)) Z * M) :=
+    ((isIdempotentElem_cfc_indicator c).exp_mul (commute_cfc_indicator hM c).symm).symm
+  simp only [charFun, h, det_exp, RCLike.norm_exp, Real.log_exp]
+  conv_rhs => rw [← sum_smul_cfc_indicator hZ]
+  simp only [Finset.sum_mul, trace_sum, map_sum, smul_mul_assoc, trace_smul, RCLike.smul_re]
 
 /-- The kernel of the character `charFun` on the centralizer of `Z`. -/
 private def charSubgroup : Subgroup (GL n 𝕜) where
@@ -285,7 +228,8 @@ private theorem isClosed_charSubgroup : IsClosed (charSubgroup hZ : Set (GL n �
   have hcont : ContinuousOn (fun g : GL n 𝕜 ↦ charFun hZ g)
       {g : GL n 𝕜 | Commute (g : Matrix n n 𝕜) Z} := by
     refine continuousOn_finsetSum _ fun c _ ↦ ContinuousOn.mul continuousOn_const ?_
-    refine ContinuousOn.log ?_ fun g hg ↦ norm_ne_zero_iff.2 (det_specProj_mul_ne_zero hZ hg c)
+    refine ContinuousOn.log ?_ fun g hg ↦
+      norm_ne_zero_iff.2 (det_cfc_indicator_mul_ne_zero hg c)
     exact (((continuous_const.mul Units.continuous_val).add continuous_const).sub
       continuous_const).matrix_det.norm.continuousOn
   exact hcont.preimage_isClosed_of_isClosed hC isClosed_singleton
@@ -298,82 +242,54 @@ section LieAlgebra
 
 attribute [local instance 100] LieRing.ofAssociativeRing
 
-/-- The exponential of a matrix, as an invertible matrix. -/
-private def expGL (Y : Matrix n n 𝕜) : GL n 𝕜 :=
-  (Matrix.isUnit_exp Y).unit
-
-private theorem coe_expGL (Y : Matrix n n 𝕜) : (expGL Y : Matrix n n 𝕜) = NormedSpace.exp Y :=
-  IsUnit.unit_spec _
-
-private theorem expGL_neg (Y : Matrix n n 𝕜) : expGL (-Y) = (expGL Y)⁻¹ := by
-  refine eq_inv_of_mul_eq_one_left (Units.ext ?_)
-  rw [Units.val_mul, coe_expGL, coe_expGL, ← Matrix.exp_add_of_commute _ _ (Commute.neg_left
-    (Commute.refl Y)), neg_add_cancel, NormedSpace.exp_zero, Units.val_one]
-
 variable {H : Subgroup (GL n 𝕜)}
-
-attribute [local instance] TauCeti.normedAlgebraRatOfReal in
-open scoped Matrix.Norms.L2Operator in
-/-- For a closed subgroup, the exponential lines staying in it are the elements of its abstract
-Lie algebra, read in matrix coordinates. -/
-private theorem forall_expGL_mem_iff (hH : IsClosed (H : Set (GL n 𝕜))) (Y : Matrix n n 𝕜) :
-    letI := Matrix.l2OpNormedAlgebraReal (n := n) (𝕜 := 𝕜)
-    (∀ t : ℝ, expGL (t • Y) ∈ H) ↔
-      (TauCeti.Lie.unitsLieAlgebraLieEquiv (R := Matrix n n 𝕜)).symm Y ∈
-        TauCeti.Lie.lieSubalgebraOfSubgroup (I := 𝓘(ℝ, Matrix n n 𝕜)) H := by
-  let := Matrix.l2OpNormedAlgebraReal (n := n) (𝕜 := 𝕜)
-  rw [TauCeti.Lie.unitsLieAlgebraLieEquiv_symm_mem_lieSubalgebraOfSubgroup_iff hH]
-  have h (t : ℝ) : TauCeti.expUnit (t • Y) = expGL (t • Y) :=
-    Units.ext ((TauCeti.expUnit_coe _).trans (coe_expGL _).symm)
-  simp only [h]
 
 /-- The Lie algebra `{Y | ∀ t, exp (t Y) ∈ H}` of a closed subgroup of `GL n 𝕜`, as a real
 subspace of the matrices. -/
 private def lieAlg (hH : IsClosed (H : Set (GL n 𝕜))) : Submodule ℝ (Matrix n n 𝕜) where
-  carrier := {Y | ∀ t : ℝ, expGL (t • Y) ∈ H}
-  zero_mem' t := by
-    convert H.one_mem
-    exact Units.ext (by simp [coe_expGL])
+  carrier := {Y | ∀ t : ℝ, TauCeti.expUnit (t • Y) ∈ H}
+  zero_mem' t := by simp
   add_mem' {Y W} hY hW := by
-    let := Matrix.l2OpNormedAlgebraReal (n := n) (𝕜 := 𝕜)
-    refine (forall_expGL_mem_iff hH (Y + W)).2 ?_
+    refine (TauCeti.Lie.unitsLieAlgebraLieEquiv_symm_mem_lieSubalgebraOfSubgroup_iff hH
+      (Y + W)).1 ?_
     rw [map_add]
-    exact add_mem ((forall_expGL_mem_iff hH Y).1 hY) ((forall_expGL_mem_iff hH W).1 hW)
+    exact add_mem
+      ((TauCeti.Lie.unitsLieAlgebraLieEquiv_symm_mem_lieSubalgebraOfSubgroup_iff hH Y).2 hY)
+      ((TauCeti.Lie.unitsLieAlgebraLieEquiv_symm_mem_lieSubalgebraOfSubgroup_iff hH W).2 hW)
   smul_mem' c Y hY t := by simpa [smul_smul] using hY (t * c)
 
-private theorem mem_lieAlg (hH : IsClosed (H : Set (GL n 𝕜))) {Y : Matrix n n 𝕜} :
-    Y ∈ lieAlg hH ↔ ∀ t : ℝ, expGL (t • Y) ∈ H :=
-  Iff.rfl
+/-- Membership in `lieAlg` is membership in the abstract Lie algebra of `H`, read in matrix
+coordinates. -/
+private theorem mem_lieAlg_iff (hH : IsClosed (H : Set (GL n 𝕜))) (Y : Matrix n n 𝕜) :
+    Y ∈ lieAlg hH ↔ (TauCeti.Lie.unitsLieAlgebraLieEquiv (R := Matrix n n 𝕜)).symm Y ∈
+      TauCeti.Lie.lieSubalgebraOfSubgroup (I := 𝓘(ℝ, Matrix n n 𝕜)) H :=
+  (TauCeti.Lie.unitsLieAlgebraLieEquiv_symm_mem_lieSubalgebraOfSubgroup_iff hH Y).symm
 
 /-- The Lie algebra of a closed subgroup is closed under the commutator. -/
 private theorem commutator_mem_lieAlg (hH : IsClosed (H : Set (GL n 𝕜))) {Y W : Matrix n n 𝕜}
     (hY : Y ∈ lieAlg hH) (hW : W ∈ lieAlg hH) : Y * W - W * Y ∈ lieAlg hH := by
-  let := Matrix.l2OpNormedAlgebraReal (n := n) (𝕜 := 𝕜)
-  have := LieSubalgebra.lie_mem _ ((forall_expGL_mem_iff hH Y).1 hY)
-    ((forall_expGL_mem_iff hH W).1 hW)
+  have := LieSubalgebra.lie_mem _ ((mem_lieAlg_iff hH Y).1 hY) ((mem_lieAlg_iff hH W).1 hW)
   rw [← LieEquiv.map_lie, Ring.lie_def] at this
-  exact (forall_expGL_mem_iff hH _).2 this
+  exact (mem_lieAlg_iff hH _).2 this
 
-open scoped Matrix.Norms.L2Operator in
 /-- A closed connected subgroup lies in every closed subgroup whose Lie algebra contains its own. -/
 private theorem le_of_lieAlg_le (hH : IsClosed (H : Set (GL n 𝕜)))
     (hconn : IsPreconnected (H : Set (GL n 𝕜))) {L : Subgroup (GL n 𝕜)}
     (hL : IsClosed (L : Set (GL n 𝕜))) (h : lieAlg hH ≤ lieAlg hL) : H ≤ L := by
-  let := Matrix.l2OpNormedAlgebraReal (n := n) (𝕜 := 𝕜)
   refine TauCeti.Lie.le_of_lieSubalgebraOfSubgroup_le (I := 𝓘(ℝ, Matrix n n 𝕜)) hH hconn hL
     fun x hx ↦ ?_
   rw [← (TauCeti.Lie.unitsLieAlgebraLieEquiv (R := Matrix n n 𝕜)).symm_apply_apply x] at hx ⊢
-  exact (forall_expGL_mem_iff hL _).1 (h ((forall_expGL_mem_iff hH _).2 hx))
+  exact (mem_lieAlg_iff hL _).1 (h ((mem_lieAlg_iff hH _).2 hx))
 
 /-- The Lie algebra of a subgroup is invariant under conjugation by the subgroup. -/
 private theorem conj_mem_lieAlg (hH : IsClosed (H : Set (GL n 𝕜))) {g : GL n 𝕜} (hg : g ∈ H)
     {Y : Matrix n n 𝕜} (hY : Y ∈ lieAlg hH) :
     (g : Matrix n n 𝕜) * Y * ((g⁻¹ : GL n 𝕜) : Matrix n n 𝕜) ∈ lieAlg hH := fun t ↦ by
-  have : expGL (t • ((g : Matrix n n 𝕜) * Y * ((g⁻¹ : GL n 𝕜) : Matrix n n 𝕜))) =
-      g * expGL (t • Y) * g⁻¹ := by
+  have : TauCeti.expUnit (t • ((g : Matrix n n 𝕜) * Y * ((g⁻¹ : GL n 𝕜) : Matrix n n 𝕜))) =
+      g * TauCeti.expUnit (t • Y) * g⁻¹ := by
     refine Units.ext ?_
-    rw [coe_expGL, Units.val_mul, Units.val_mul, coe_expGL, ← Matrix.exp_units_conj,
-      Matrix.mul_smul, Matrix.smul_mul]
+    rw [TauCeti.expUnit_coe, Units.val_mul, Units.val_mul, TauCeti.expUnit_coe,
+      ← Matrix.exp_units_conj, Matrix.mul_smul, Matrix.smul_mul]
   rw [this]
   exact H.mul_mem (H.mul_mem hg (hY t)) (H.inv_mem hg)
 
@@ -381,10 +297,10 @@ private theorem conj_mem_lieAlg (hH : IsClosed (H : Set (GL n 𝕜))) {g : GL n 
 private theorem star_mem_lieAlg (hH : IsClosed (H : Set (GL n 𝕜)))
     (hstar : ∀ g ∈ H, star g ∈ H) {Y : Matrix n n 𝕜} (hY : Y ∈ lieAlg hH) :
     star Y ∈ lieAlg hH := fun t ↦ by
-  have : expGL (t • star Y) = star (expGL (t • Y)) := by
+  have : TauCeti.expUnit (t • star Y) = star (TauCeti.expUnit (t • Y)) := by
     refine Units.ext ?_
-    rw [coe_expGL, Units.coe_star, coe_expGL, star_eq_conjTranspose, star_eq_conjTranspose,
-      ← Matrix.exp_conjTranspose, conjTranspose_smul, star_trivial]
+    rw [TauCeti.expUnit_coe, Units.coe_star, TauCeti.expUnit_coe, star_eq_conjTranspose,
+      star_eq_conjTranspose, ← Matrix.exp_conjTranspose, conjTranspose_smul, star_trivial]
   rw [this]
   exact hstar _ (hY t)
 
@@ -394,62 +310,21 @@ end LieAlgebra
 
 section Line
 
-omit [DecidableEq n] in
-/-- A Hermitian matrix splits as `X₁ + Z` with `X₁` Hermitian in a real subspace `V` stable under
-the conjugate transpose and `Z` Hermitian and orthogonal to `V` for `re (trace (A * B))`. -/
-private theorem exists_add_orthogonal {V : Submodule ℝ (Matrix n n 𝕜)}
-    (hV : ∀ Y ∈ V, star Y ∈ V) {X : Matrix n n 𝕜} (hX : X.IsHermitian) :
-    ∃ X₁ ∈ V, ∃ Z : Matrix n n 𝕜, Z.IsHermitian ∧ X = X₁ + Z ∧
-      ∀ W ∈ V, RCLike.re (Z * W).trace = 0 := by
-  let B : LinearMap.BilinForm ℝ (Matrix n n 𝕜) :=
-    LinearMap.mk₂ ℝ (fun A C ↦ RCLike.re (A * Cᴴ).trace)
-      (fun A A' C ↦ by simp [add_mul]) (fun c A C ↦ by simp [RCLike.real_smul_eq_coe_mul])
-      (fun A C C' ↦ by simp [mul_add]) (fun c A C ↦ by simp [RCLike.real_smul_eq_coe_mul])
-  have hB (A C : Matrix n n 𝕜) : B A C = RCLike.re (A * Cᴴ).trace := rfl
-  have hsymm (A C : Matrix n n 𝕜) : B C A = B A C := by
-    rw [hB, hB, show C * Aᴴ = (A * Cᴴ)ᴴ by simp [conjTranspose_mul], trace_conjTranspose,
-      RCLike.star_def, RCLike.conj_re]
-  have hrefl : B.IsRefl := fun A C h ↦ by rwa [hsymm]
-  have hcompl : IsCompl V (B.orthogonal V) := by
-    refine (LinearMap.BilinForm.isCompl_orthogonal_iff_disjoint hrefl).2 ?_
-    refine Submodule.disjoint_def.2 fun A hA hA' ↦ re_trace_mul_conjTranspose_self_eq_zero ?_
-    exact hA' A hA
-  obtain ⟨X₀, hX₀, Z₀, hZ₀, hsum⟩ := Submodule.mem_sup.1 (hcompl.sup_eq_top ▸ Submodule.mem_top :
-    X ∈ V ⊔ B.orthogonal V)
-  -- `Z₀ ⊥ V` gives `re (trace (Z₀ * W)) = 0` and `re (trace (Z₀ᴴ * W)) = 0` for `W ∈ V`.
-  have horth (W : Matrix n n 𝕜) (hW : W ∈ V) : RCLike.re (Z₀ * W).trace = 0 := by
-    have h : B (star W) Z₀ = 0 := hZ₀ (star W) (hV W hW)
-    rwa [hsymm, hB, star_eq_conjTranspose, conjTranspose_conjTranspose] at h
-  have horth' (W : Matrix n n 𝕜) (hW : W ∈ V) : RCLike.re (Z₀ᴴ * W).trace = 0 := by
-    have h : B W Z₀ = 0 := hZ₀ W hW
-    rwa [hB, trace_mul_comm] at h
-  refine ⟨(1 / 2 : ℝ) • (X₀ + star X₀), V.smul_mem _ (V.add_mem hX₀ (hV _ hX₀)),
-    (1 / 2 : ℝ) • (Z₀ + Z₀ᴴ), ?_, ?_, fun W hW ↦ ?_⟩
-  · simp [IsHermitian, conjTranspose_smul, add_comm]
-  · have hX' : X = (1 / 2 : ℝ) • (X + Xᴴ) := by
-      rw [hX.eq, ← two_smul ℝ X, smul_smul]
-      norm_num
-    rw [hX', ← hsum, conjTranspose_add, star_eq_conjTranspose, ← smul_add]
-    congr 1
-    abel
-  · rw [Matrix.smul_mul, trace_smul, add_mul, trace_add, RCLike.smul_re, map_add, horth W hW,
-      horth' W hW, add_zero, mul_zero]
-
 variable {H : Subgroup (GL n 𝕜)}
 
 /-- **The character argument.** Let `H` be a closed connected subgroup and `Z` a Hermitian matrix
 commuting with the Lie algebra of `H` and orthogonal to it. If `exp Z ∈ H` then `Z = 0`. -/
-private theorem eq_zero_of_expGL_mem (hH : IsClosed (H : Set (GL n 𝕜)))
+private theorem eq_zero_of_expUnit_mem (hH : IsClosed (H : Set (GL n 𝕜)))
     (hconn : IsPreconnected (H : Set (GL n 𝕜))) {Z : Matrix n n 𝕜} (hZ : Z.IsHermitian)
     (hcomm : ∀ Y ∈ lieAlg hH, Commute Y Z) (horth : ∀ Y ∈ lieAlg hH, RCLike.re (Z * Y).trace = 0)
-    (hZH : expGL Z ∈ H) : Z = 0 := by
+    (hZH : TauCeti.expUnit Z ∈ H) : Z = 0 := by
   have hle : H ≤ charSubgroup hZ := le_of_lieAlg_le hH hconn (isClosed_charSubgroup hZ)
-    fun Y hY t ↦ ⟨by rw [coe_expGL]; exact ((hcomm Y hY).smul_left t).exp_left, by
-      rw [coe_expGL, charFun_exp hZ ((hcomm Y hY).smul_left t), mul_smul_comm, trace_smul,
-        RCLike.smul_re, horth Y hY, mul_zero]⟩
+    fun Y hY t ↦ ⟨by rw [TauCeti.expUnit_coe]; exact ((hcomm Y hY).smul_left t).exp_left, by
+      rw [TauCeti.expUnit_coe, charFun_exp hZ ((hcomm Y hY).smul_left t), mul_smul_comm,
+        trace_smul, RCLike.smul_re, horth Y hY, mul_zero]⟩
   have h := (hle hZH).2
-  rw [coe_expGL, charFun_exp hZ (Commute.refl Z)] at h
-  refine re_trace_mul_conjTranspose_self_eq_zero ?_
+  rw [TauCeti.expUnit_coe, charFun_exp hZ (Commute.refl Z)] at h
+  refine re_trace_mul_conjTranspose_self_eq_zero_iff.1 ?_
   rwa [hZ.eq]
 
 /-- **The line through a positive element of a closed connected group.** Let `H` be a closed
@@ -457,12 +332,12 @@ connected subgroup of `GL n 𝕜` stable under the conjugate transpose. If `exp 
 Hermitian `X`, then `X` lies in the Lie algebra of `H`. -/
 private theorem mem_lieAlg_of_isPreconnected (hH : IsClosed (H : Set (GL n 𝕜)))
     (hstar : ∀ g ∈ H, star g ∈ H) (hconn : IsPreconnected (H : Set (GL n 𝕜)))
-    {X : Matrix n n 𝕜} (hX : X.IsHermitian) (hXH : expGL X ∈ H) : X ∈ lieAlg hH := by
+    {X : Matrix n n 𝕜} (hX : X.IsHermitian) (hXH : TauCeti.expUnit X ∈ H) : X ∈ lieAlg hH := by
   -- Mostow's lemma: the commutator with `X` preserves the Lie algebra.
   have hXcomm (Y : Matrix n n 𝕜) (hY : Y ∈ lieAlg hH) : X * Y - Y * X ∈ lieAlg hH := by
     refine hX.commutator_mem_of_exp_mul_mul_exp_neg_mem (fun Y hY ↦ ?_) hY
     have := conj_mem_lieAlg hH hXH hY
-    rwa [← expGL_neg, coe_expGL, coe_expGL] at this
+    rwa [← TauCeti.expUnit_neg, TauCeti.expUnit_coe, TauCeti.expUnit_coe] at this
   obtain ⟨X₁, hX₁, Z, hZ, rfl, horth⟩ := exists_add_orthogonal (fun _ ↦ star_mem_lieAlg hH hstar) hX
   -- `Z` commutes with the Lie algebra: the commutator lies in it and is orthogonal to it.
   have hcomm (Y : Matrix n n 𝕜) (hY : Y ∈ lieAlg hH) : Commute Y Z := by
@@ -478,42 +353,18 @@ private theorem mem_lieAlg_of_isPreconnected (hH : IsClosed (H : Set (GL n 𝕜)
         simp only [A]
         noncomm_ring
       rwa [hAW, trace_add, trace_sub, Matrix.mul_assoc Y, trace_mul_comm Y, sub_self, add_zero]
-    have h0 := re_trace_mul_conjTranspose_self_eq_zero
+    have h0 := re_trace_mul_conjTranspose_self_eq_zero_iff.1
       (hAorth _ (star_mem_lieAlg hH hstar hA))
     exact (sub_eq_zero.1 h0).symm
   -- Hence `exp Z = exp (-X₁) * exp X` lies in `H`, and the character argument gives `Z = 0`.
-  have hZH : expGL Z ∈ H := by
-    have : expGL Z = (expGL X₁)⁻¹ * expGL (X₁ + Z) := by
-      refine Units.ext ?_
-      rw [Units.val_mul, ← expGL_neg, coe_expGL, coe_expGL, coe_expGL,
-        ← Matrix.exp_add_of_commute (-X₁) (X₁ + Z)
-          ((Commute.refl X₁).neg_left.add_right (hcomm X₁ hX₁).neg_left), neg_add_cancel_left]
+  have hZH : TauCeti.expUnit Z ∈ H := by
+    have : TauCeti.expUnit Z = (TauCeti.expUnit X₁)⁻¹ * TauCeti.expUnit (X₁ + Z) := by
+      rw [← TauCeti.expUnit_neg, ← TauCeti.expUnit_add_of_commute
+        ((Commute.refl X₁).neg_left.add_right (hcomm X₁ hX₁).neg_left), neg_add_cancel_left]
     rw [this]
     exact H.mul_mem (H.inv_mem (by simpa using hX₁ 1)) hXH
-  rw [eq_zero_of_expGL_mem hH hconn hZ hcomm horth hZH, add_zero]
+  rw [eq_zero_of_expUnit_mem hH hconn hZ hcomm horth hZH, add_zero]
   exact hX₁
-
-/-- Some positive power of an element of a topological group with finitely many components lies
-in the identity component. -/
-private theorem exists_pow_mem_connectedComponent_one {G : Type*} [TopologicalSpace G] [Group G]
-    [IsTopologicalGroup G] [Finite (ConnectedComponents G)] (p : G) :
-    ∃ m : ℕ, 0 < m ∧ p ^ m ∈ connectedComponent (1 : G) := by
-  have key (i j : ℕ) (hij : i < j)
-      (h : ConnectedComponents.mk (p ^ i) = ConnectedComponents.mk (p ^ j)) :
-      ∃ m : ℕ, 0 < m ∧ p ^ m ∈ connectedComponent (1 : G) := by
-    refine ⟨j - i, Nat.sub_pos_of_lt hij, ?_⟩
-    have hj : p ^ j ∈ connectedComponent (p ^ i) :=
-      ConnectedComponents.coe_eq_coe.1 h ▸ mem_connectedComponent
-    have hsub := (Homeomorph.mulLeft (p ^ i)⁻¹).continuous.image_connectedComponent_subset
-      (p ^ i) ⟨p ^ j, hj, rfl⟩
-    simp only [Homeomorph.coe_mulLeft, inv_mul_cancel] at hsub
-    convert hsub using 1
-    rw [eq_inv_mul_iff_mul_eq, ← pow_add, Nat.add_sub_cancel' hij.le]
-  obtain ⟨i, j, hij, h⟩ :=
-    Finite.exists_ne_map_eq_of_infinite fun k : ℕ ↦ ConnectedComponents.mk (p ^ k)
-  rcases hij.lt_or_gt with hij | hij
-  · exact key i j hij h
-  · exact key j i hij h.symm
 
 variable (H) in
 /-- The identity component of a subgroup of `GL n 𝕜`, as a subgroup of `GL n 𝕜`. -/
@@ -529,7 +380,7 @@ under the conjugate transpose, with finitely many connected components. If `exp 
 Hermitian `X`, then `X` lies in the Lie algebra of `H`. -/
 private theorem mem_lieAlg_of_finite (hH : IsClosed (H : Set (GL n 𝕜)))
     (hstar : ∀ g ∈ H, star g ∈ H) (hfin : Finite (ConnectedComponents H)) {X : Matrix n n 𝕜}
-    (hX : X.IsHermitian) (hXH : expGL X ∈ H) : X ∈ lieAlg hH := by
+    (hX : X.IsHermitian) (hXH : TauCeti.expUnit X ∈ H) : X ∈ lieAlg hH := by
   -- Pass to the identity component, which is closed, connected and stable under `star`.
   have hc : IsClosed (identityComponent H : Set (GL n 𝕜)) := by
     rw [coe_identityComponent]
@@ -547,12 +398,13 @@ private theorem mem_lieAlg_of_finite (hH : IsClosed (H : Set (GL n 𝕜)))
     exact Subgroup.mem_map.2 ⟨f h, hsub ⟨h, hh, rfl⟩, rfl⟩
   have hle : identityComponent H ≤ H := Subgroup.map_subtype_le _
   -- Some power `exp (m X)` lies in the identity component.
-  obtain ⟨m, hm, hmem⟩ := exists_pow_mem_connectedComponent_one (⟨expGL X, hXH⟩ : H)
-  have hpow : expGL ((m : ℝ) • X) ∈ identityComponent H := by
-    have : expGL ((m : ℝ) • X) = expGL X ^ m := by
+  obtain ⟨m, hm, hmem⟩ :=
+    TauCeti.exists_pow_mem_connectedComponentOfOne (⟨TauCeti.expUnit X, hXH⟩ : H)
+  have hpow : TauCeti.expUnit ((m : ℝ) • X) ∈ identityComponent H := by
+    have : TauCeti.expUnit ((m : ℝ) • X) = TauCeti.expUnit X ^ m := by
       refine Units.ext ?_
-      rw [coe_expGL, Units.val_pow_eq_pow_val, coe_expGL, Nat.cast_smul_eq_nsmul,
-        Matrix.exp_nsmul]
+      rw [TauCeti.expUnit_coe, Units.val_pow_eq_pow_val, TauCeti.expUnit_coe,
+        Nat.cast_smul_eq_nsmul, Matrix.exp_nsmul]
     rw [this]
     exact Subgroup.mem_map.2 ⟨_, hmem, rfl⟩
   have hmX : ((m : ℝ) • X).IsHermitian := by
@@ -579,12 +431,10 @@ theorem exists_mem_coe_eq_exp_smul_of_isClosed (hH : IsClosed (H : Set (GL n �
     (hstar : ∀ g ∈ H, star g ∈ H) (hfin : Finite (ConnectedComponents H)) {X : Matrix n n 𝕜}
     (hX : X.IsHermitian) {g : GL n 𝕜} (hg : g ∈ H) (hgX : (g : Matrix n n 𝕜) = NormedSpace.exp X)
     (t : ℝ) : ∃ h ∈ H, (h : Matrix n n 𝕜) = NormedSpace.exp (t • X) := by
-  have hXH : expGL X ∈ H := by
+  have hXH : TauCeti.expUnit X ∈ H := by
     convert hg
-    exact Units.ext (by rw [coe_expGL, hgX])
-  exact ⟨_, mem_lieAlg_of_finite hH hstar hfin hX hXH t, coe_expGL _⟩
-
-attribute [local instance] TauCeti.normedAlgebraRatOfReal
+    exact Units.ext (by rw [TauCeti.expUnit_coe, hgX])
+  exact ⟨_, mem_lieAlg_of_finite hH hstar hfin hX hXH t, TauCeti.expUnit_coe _⟩
 
 variable (H) in
 /-- **The Cartan decomposition of a closed matrix group stable under the conjugate transpose.**
@@ -598,10 +448,6 @@ def cartanHomeomorphOfIsClosed (hH : IsClosed (H : Set (GL n 𝕜)))
     {k : unitaryGroup n 𝕜 // Unitary.toUnits k ∈ H} ×
         {X : selfAdjoint (Matrix n n 𝕜) // ∀ t : ℝ,
           ∃ h ∈ H, (h : Matrix n n 𝕜) = NormedSpace.exp (t • (X : Matrix n n 𝕜))} ≃ₜ H := by
-  -- The general statement needs a complete normed `ℝ`-algebra with an isometric functional
-  -- calculus, which `Matrix n n 𝕜` is for the scoped `ℓ²` operator norm.
-  open scoped Matrix.Norms.L2Operator in
-  let := Matrix.l2OpNormedAlgebraReal (n := n) (𝕜 := 𝕜)
   have hline (x : Matrix n n 𝕜) : (∀ t : ℝ, TauCeti.expUnit (t • x) ∈ H) ↔
       ∀ t : ℝ, ∃ h ∈ H, (h : Matrix n n 𝕜) = NormedSpace.exp (t • x) := by
     refine ⟨fun h t ↦ ⟨_, h t, TauCeti.expUnit_coe _⟩, fun h t ↦ ?_⟩
@@ -631,9 +477,7 @@ theorem val_cartanHomeomorphOfIsClosed_apply (hH : IsClosed (H : Set (GL n 𝕜)
     ((cartanHomeomorphOfIsClosed H hH hstar hfin p : GL n 𝕜) : Matrix n n 𝕜) =
       (p.1 : Matrix n n 𝕜) *
         NormedSpace.exp ((p.2 : selfAdjoint (Matrix n n 𝕜)) : Matrix n n 𝕜) := by
-  open scoped Matrix.Norms.L2Operator in
-  let := Matrix.l2OpNormedAlgebraReal (n := n) (𝕜 := 𝕜)
-  exact Subgroup.val_cartanHomeomorph_apply _ _ _
+  simp [cartanHomeomorphOfIsClosed]
 
 /-- The unitary factor of the Cartan decomposition of `g ∈ H` is the polar unitary factor of
 `g`. -/
@@ -642,9 +486,7 @@ theorem coe_cartanHomeomorphOfIsClosed_symm_apply_fst (hH : IsClosed (H : Set (G
     (hstar : ∀ g ∈ H, star g ∈ H) (hfin : Finite (ConnectedComponents H)) (g : H) :
     (((cartanHomeomorphOfIsClosed H hH hstar hfin).symm g).1 : unitaryGroup n 𝕜) =
       (g : GL n 𝕜).polarUnitary := by
-  open scoped Matrix.Norms.L2Operator in
-  let := Matrix.l2OpNormedAlgebraReal (n := n) (𝕜 := 𝕜)
-  exact Subgroup.coe_cartanHomeomorph_symm_apply_fst _ _ _
+  simp [cartanHomeomorphOfIsClosed]
 
 /-- The Hermitian factor of the Cartan decomposition of `g ∈ H` is the logarithm of `√(gᴴ g)`. -/
 @[simp]
@@ -653,15 +495,13 @@ theorem coe_cartanHomeomorphOfIsClosed_symm_apply_snd (hH : IsClosed (H : Set (G
     ((((cartanHomeomorphOfIsClosed H hH hstar hfin).symm g).2 : selfAdjoint (Matrix n n 𝕜)) :
         Matrix n n 𝕜) =
       cfc Real.log (CFC.sqrt (star ((g : GL n 𝕜) : Matrix n n 𝕜) * (g : GL n 𝕜))) := by
-  open scoped Matrix.Norms.L2Operator in
-  let := Matrix.l2OpNormedAlgebraReal (n := n) (𝕜 := 𝕜)
-  exact Subgroup.coe_cartanHomeomorph_symm_apply_snd _ _ _
+  simp [cartanHomeomorphOfIsClosed, CFC.log]
 
 /-- **The global Cartan decomposition** `H = K_H exp 𝔭_H` of a closed subgroup `H` of `GL n 𝕜`
 stable under the conjugate transpose, with finitely many connected components: every `g ∈ H`
 factors uniquely as `k * exp X` with `k` a unitary element of `H` and `X` a Hermitian matrix with
 `exp (t X) ∈ H` for every real `t`. -/
-theorem cartan_polar_decomposition (hH : IsClosed (H : Set (GL n 𝕜)))
+theorem existsUnique_unitary_mul_exp_of_isClosed (hH : IsClosed (H : Set (GL n 𝕜)))
     (hstar : ∀ g ∈ H, star g ∈ H) (hfin : Finite (ConnectedComponents H)) {g : GL n 𝕜}
     (hg : g ∈ H) :
     ∃! p : {k : unitaryGroup n 𝕜 // Unitary.toUnits k ∈ H} ×

@@ -10,6 +10,7 @@ public import Mathlib.Algebra.Ring.Idempotent
 import Mathlib.Algebra.Algebra.Basic
 import Mathlib.Tactic.Abel
 import Mathlib.Tactic.LinearCombination
+import Mathlib.Tactic.NoncommRing
 import Mathlib.Tactic.Ring
 
 /-!
@@ -36,6 +37,8 @@ projections `3⁻¹ • (1 + u + u ^ 2)` built from the generators of a cubic qu
 
 * `IsIdempotentElem.mul_add_one_sub_mul`: elements of the form `e x + (1 - e) y` multiply
   componentwise.
+* `IsIdempotentElem.mul_add_one_sub_mul_mul_add_one_sub`: for an idempotent `p` of any ring,
+  `x ↦ p * x + 1 - p` is multiplicative on the elements commuting with `p`.
 * `IsIdempotentElem.two_mul_sub_one_mul_self`: `(2 p - 1) * (2 p - 1) = 1`.
 * `TauCeti.one_add_mul_self_of_mul_self_eq_one`: if `u * u = 1`, then
   `(1 + u) * (1 + u) = (1 + u) + (1 + u)`.
@@ -70,6 +73,17 @@ end CommRing
 section Ring
 
 variable {R : Type*} [Ring R] {p : R}
+
+/-- For an idempotent `p` commuting with `x`, the map `x ↦ p * x + 1 - p` is multiplicative:
+`p * x + 1 - p` acts as `x` on the range of `p` and as the identity on the range of `1 - p`. -/
+theorem mul_add_one_sub_mul_mul_add_one_sub (hp : IsIdempotentElem p) {x : R} (hx : Commute p x)
+    (y : R) : (p * x + 1 - p) * (p * y + 1 - p) = p * (x * y) + 1 - p := by
+  have h1 : p * x * p = p * x := by rw [mul_assoc, ← hx.eq, ← mul_assoc, hp.eq]
+  have : (p * x + 1 - p) * (p * y + 1 - p) =
+      p * x * p * y + p * x - p * x * p + p * y - p * p * y + 1 - p - p + p * p := by
+    noncomm_ring
+  rw [this, h1, hp.eq]
+  noncomm_ring
 
 /-- For an idempotent `p`, `2 p - 1` squares to `1`. -/
 theorem two_mul_sub_one_mul_self (hp : IsIdempotentElem p) : (2 * p - 1) * (2 * p - 1) = 1 := by

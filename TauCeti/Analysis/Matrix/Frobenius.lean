@@ -24,7 +24,8 @@ and the inner product together.
 ## Main declarations
 
 * `Matrix.re_trace_mul_conjTranspose_self` — the real trace of `X * Xᴴ` is the sum of the
-  squared entry norms.
+  squared entry norms, and it vanishes only for `X = 0`
+  (`Matrix.re_trace_mul_conjTranspose_self_eq_zero_iff`).
 * `Matrix.frobeniusInnerProductSpace` — the Frobenius inner product, compatible with
   `Matrix.frobeniusSeminormedAddCommGroup`.
 * `Matrix.frobenius_inner_def` — the inner product is the sum of the entrywise inner products.
@@ -58,6 +59,16 @@ theorem re_trace_mul_conjTranspose_self (X : Matrix m n 𝕜) :
   simp [Matrix.trace, Matrix.diag, Matrix.mul_apply, Matrix.conjTranspose_apply,
     RCLike.star_def, RCLike.mul_conj]
 
+open scoped ComplexOrder in
+/-- The real part of the trace of `X * Xᴴ` vanishes only for `X = 0`. -/
+theorem re_trace_mul_conjTranspose_self_eq_zero_iff {X : Matrix m n 𝕜} :
+    RCLike.re (X * X.conjTranspose).trace = 0 ↔ X = 0 := by
+  rw [← trace_mul_conjTranspose_self_eq_zero_iff]
+  refine ⟨fun h ↦ ?_, fun h ↦ by rw [h, map_zero]⟩
+  have hc : starRingEnd 𝕜 (X * X.conjTranspose).trace = (X * X.conjTranspose).trace := by
+    rw [← RCLike.star_def, ← trace_conjTranspose, conjTranspose_mul, conjTranspose_conjTranspose]
+  rw [← RCLike.conj_eq_iff_re.1 hc, h, RCLike.ofReal_zero]
+
 section Def
 
 variable [SeminormedAddCommGroup E] [InnerProductSpace 𝕜 E]
@@ -67,7 +78,7 @@ in an inner product space, compatible with the Frobenius norm of
 `Matrix.frobeniusSeminormedAddCommGroup`. Not declared as a global instance because there are
 several natural choices of norm on matrices; it is available through
 `open scoped Matrix.Norms.Frobenius`. -/
-@[instance_reducible]
+@[expose, instance_reducible]
 def frobeniusInnerProductSpace :
     letI : SeminormedAddCommGroup (Matrix m n E) := frobeniusSeminormedAddCommGroup
     InnerProductSpace 𝕜 (Matrix m n E) :=

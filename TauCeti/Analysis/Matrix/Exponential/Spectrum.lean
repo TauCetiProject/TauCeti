@@ -6,10 +6,12 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.CStarAlgebra.Matrix
+public import Mathlib.Analysis.Matrix.Spectrum
 public import Mathlib.Analysis.Normed.Algebra.MatrixExponential
 public import TauCeti.Analysis.Normed.Operator.Exponential
 import Mathlib.Analysis.Normed.Algebra.Spectrum
 import TauCeti.Analysis.Matrix.L2OpNorm
+import TauCeti.Analysis.Normed.Algebra.Exponential
 import TauCeti.Analysis.SpecialFunctions.Complex.Exp.EqOne
 import TauCeti.LinearAlgebra.Matrix.OfReal
 
@@ -38,6 +40,9 @@ such an eigenvalue forces `ν ∈ 2π i ℤ`, respectively `ν ∈ π i (2 ℤ +
   has no eigenvalue `1`; `Matrix.isUnit_exp_sub_one_real` is the real case.
 * `Matrix.isUnit_exp_add_one`: if a complex matrix `Y` has `‖Y‖ < π`, then `exp Y` has no
   eigenvalue `-1`; `Matrix.isUnit_exp_add_one_real` is the real case.
+* `Matrix.IsHermitian.star_eigenvectorUnitary_mul_exp_smul_mul_eigenvectorUnitary`: in a unitary
+  eigenbasis of a Hermitian matrix `X`, `exp (c • X)` is the diagonal matrix of the
+  `exp (c * d i)` for the eigenvalues `d i` of `X`.
 -/
 
 public section
@@ -115,5 +120,30 @@ theorem isUnit_exp_add_one_real {Y : Matrix m m ℝ} (hYπ : ‖Y‖ < Real.pi) 
   rw [← isUnit_map_ofReal_iff, Matrix.map_add _ Complex.ofReal_add,
     Matrix.map_one _ Complex.ofReal_zero Complex.ofReal_one, ← exp_map_ofReal]
   exact isUnit_exp_add_one (by rwa [l2_opNorm_map_ofReal])
+
+namespace IsHermitian
+
+variable {𝕜 : Type*} [RCLike 𝕜]
+
+/-- In a unitary eigenbasis of a Hermitian matrix `X`, the exponential of `c • X` is the diagonal
+matrix of the `exp (c * d i)`, for the eigenvalues `d i` of `X`. -/
+theorem star_eigenvectorUnitary_mul_exp_smul_mul_eigenvectorUnitary {X : Matrix m m 𝕜}
+    (hX : X.IsHermitian) (c : ℝ) :
+    star (hX.eigenvectorUnitary : Matrix m m 𝕜) * NormedSpace.exp (c • X) *
+        hX.eigenvectorUnitary =
+      diagonal fun i ↦ (Real.exp (c * hX.eigenvalues i) : 𝕜) := by
+  have h := exp_units_conj' (Unitary.toUnits hX.eigenvectorUnitary) (c • X)
+  have hinv : ((Unitary.toUnits hX.eigenvectorUnitary)⁻¹ : (Matrix m m 𝕜)ˣ) =
+      star (hX.eigenvectorUnitary : Matrix m m 𝕜) :=
+    Units.inv_eq_of_mul_eq_one_left (Unitary.star_mul_self_of_mem hX.eigenvectorUnitary.property)
+  have hD := hX.conjStarAlgAut_star_eigenvectorUnitary
+  rw [Unitary.conjStarAlgAut_apply, Unitary.coe_star, star_star] at hD
+  simp only [hinv, Unitary.val_toUnits_apply, Matrix.mul_smul, Matrix.smul_mul, hD] at h
+  rw [← h, ← diagonal_smul, exp_diagonal]
+  congr 1
+  funext i
+  simp [RCLike.real_smul_eq_coe_mul, ← RCLike.exp_ofReal]
+
+end IsHermitian
 
 end Matrix

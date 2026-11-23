@@ -8,7 +8,7 @@ module
 public import Mathlib.Analysis.Matrix.Spectrum
 public import Mathlib.Analysis.Normed.Algebra.MatrixExponential
 import Mathlib.LinearAlgebra.Lagrange
-import TauCeti.Analysis.Normed.Algebra.Exponential
+import TauCeti.Analysis.Matrix.Exponential.Spectrum
 
 /-!
 # Mostow's lemma on positive conjugations
@@ -30,6 +30,8 @@ whole line through it.
 
 ## Main results
 
+* `Matrix.sub_smul_mem_of_exp_sub_smul_mem`: the diagonal form, for matrices with entries in any
+  real vector space.
 * `Matrix.IsHermitian.commutator_mem_of_exp_mul_mul_exp_neg_mem`: Mostow's lemma.
 
 ## References
@@ -47,46 +49,28 @@ open NormedSpace
 
 namespace Matrix
 
-variable {n 𝕜 : Type*} [Fintype n] [DecidableEq n] [RCLike 𝕜]
+variable {n : Type*}
 
-omit [Fintype n] [DecidableEq n] in
-/-- Entrywise multiplication by a real matrix of weights, as a real algebra homomorphism from the
-weights to the real linear endomorphisms of `Matrix n n 𝕜`. -/
-private def weightEnd : (n → n → ℝ) →ₐ[ℝ] Module.End ℝ (Matrix n n 𝕜) where
+/-- Entrywise scaling by a real matrix of weights, as a real algebra homomorphism from the weights
+to the real linear endomorphisms of `Matrix n n E`. -/
+private def weightEnd {E : Type*} [AddCommGroup E] [Module ℝ E] :
+    (n → n → ℝ) →ₐ[ℝ] Module.End ℝ (Matrix n n E) where
   toFun r :=
-    { toFun Y := of fun i j ↦ (r i j : 𝕜) * Y i j
-      map_add' Y Z := by ext i j; simp [mul_add]
-      map_smul' c Y := by ext i j; simp [RCLike.real_smul_eq_coe_mul]; ring }
+    { toFun Y := of fun i j ↦ r i j • Y i j
+      map_add' Y Z := by ext i j; simp [smul_add]
+      map_smul' c Y := by ext i j; simp [smul_comm (r i j) c] }
   map_one' := by ext Y i j; simp
-  map_mul' r s := by ext Y i j; simp [mul_assoc]
+  map_mul' r s := by ext Y i j; simp [mul_smul]
   map_zero' := by ext Y i j; simp
-  map_add' r s := by ext Y i j; simp [add_mul]
-  commutes' c := by ext Y i j; simp [RCLike.real_smul_eq_coe_mul]
+  map_add' r s := by ext Y i j; simp [add_smul]
+  commutes' c := by ext Y i j; simp
 
-omit [Fintype n] [DecidableEq n] in
-private theorem weightEnd_apply (r : n → n → ℝ) (Y : Matrix n n 𝕜) :
-    weightEnd (𝕜 := 𝕜) r Y = of fun i j ↦ (r i j : 𝕜) * Y i j :=
-  (rfl)
-
-/-- A polynomial in an endomorphism maps every subspace that the endomorphism maps into itself
-into itself. -/
-private theorem aeval_apply_mem {M : Type*} [AddCommGroup M] [Module ℝ M] {W : Submodule ℝ M}
-    {f : Module.End ℝ M} (hf : ∀ y ∈ W, f y ∈ W) (q : Polynomial ℝ) {y : M} (hy : y ∈ W) :
-    Polynomial.aeval f q y ∈ W := by
-  have hpow (k : ℕ) : (f ^ k) y ∈ W := by
-    induction k with
-    | zero => simpa using hy
-    | succ k ih => rw [pow_succ']; exact hf _ ih
-  rw [Polynomial.aeval_eq_sum_range, LinearMap.sum_apply]
-  exact W.sum_mem fun k _ ↦ W.smul_mem _ (hpow k)
-
-omit [Fintype n] [DecidableEq n] in
-/-- **Mostow's lemma in a diagonal basis.** If multiplying the entry `(i, j)` by
-`exp (d i - d j)` maps a real subspace of matrices into itself, so does multiplying it by
-`d i - d j`. -/
-theorem sub_mul_mem_of_exp_sub_mul_mem [Finite n] (d : n → ℝ) {W : Submodule ℝ (Matrix n n 𝕜)}
-    (hW : ∀ Y ∈ W, (of fun i j ↦ (Real.exp (d i - d j) : 𝕜) * Y i j) ∈ W) {Y : Matrix n n 𝕜}
-    (hY : Y ∈ W) : (of fun i j ↦ ((d i - d j : ℝ) : 𝕜) * Y i j) ∈ W := by
+/-- **Mostow's lemma in a diagonal basis.** If scaling the entry `(i, j)` by `exp (d i - d j)` maps
+a real subspace of matrices into itself, so does scaling it by `d i - d j`. -/
+theorem sub_smul_mem_of_exp_sub_smul_mem [Finite n] {E : Type*} [AddCommGroup E] [Module ℝ E]
+    (d : n → ℝ) {W : Submodule ℝ (Matrix n n E)}
+    (hW : ∀ Y ∈ W, (of fun i j ↦ Real.exp (d i - d j) • Y i j) ∈ W) {Y : Matrix n n E}
+    (hY : Y ∈ W) : (of fun i j ↦ (d i - d j) • Y i j) ∈ W := by
   classical
   have := Fintype.ofFinite n
   let r : n → n → ℝ := fun i j ↦ Real.exp (d i - d j)
@@ -98,28 +82,13 @@ theorem sub_mul_mem_of_exp_sub_mul_mem [Finite n] (d : n → ℝ) {W : Submodule
     have hmem : r i j ∈ s := Finset.mem_image.2 ⟨(i, j), Finset.mem_univ _, rfl⟩
     exact (Lagrange.eval_interpolate_at_node (v := id) Real.log (Set.injOn_id _) hmem).trans
       (Real.log_exp _)
-  have h := aeval_apply_mem (f := weightEnd (𝕜 := 𝕜) r) (fun Y hY ↦ hW Y hY) q hY
-  rwa [Polynomial.aeval_algHom_apply, hq, weightEnd_apply] at h
+  have h := Polynomial.aeval_apply_smul_mem_of_le_comap hY q (weightEnd (E := E) r)
+    fun Y hY ↦ hW Y hY
+  rwa [Polynomial.aeval_algHom_apply, hq] at h
 
 namespace IsHermitian
 
-/-- In a unitary eigenbasis of a Hermitian matrix `X`, the exponential of `c • X` is the diagonal
-matrix of the `exp (c * d i)`, for the eigenvalues `d i` of `X`. -/
-private theorem star_mul_exp_smul_mul {X : Matrix n n 𝕜} (hX : X.IsHermitian) (c : ℝ) :
-    star (hX.eigenvectorUnitary : Matrix n n 𝕜) * NormedSpace.exp (c • X) *
-        hX.eigenvectorUnitary =
-      diagonal fun i ↦ (Real.exp (c * hX.eigenvalues i) : 𝕜) := by
-  have h := exp_units_conj' (Unitary.toUnits hX.eigenvectorUnitary) (c • X)
-  have hinv : ((Unitary.toUnits hX.eigenvectorUnitary)⁻¹ : (Matrix n n 𝕜)ˣ) =
-      star (hX.eigenvectorUnitary : Matrix n n 𝕜) :=
-    Units.inv_eq_of_mul_eq_one_left (Unitary.star_mul_self_of_mem hX.eigenvectorUnitary.property)
-  have hD := hX.conjStarAlgAut_star_eigenvectorUnitary
-  rw [Unitary.conjStarAlgAut_apply, Unitary.coe_star, star_star] at hD
-  simp only [hinv, Unitary.val_toUnits_apply, Matrix.mul_smul, Matrix.smul_mul, hD] at h
-  rw [← h, ← diagonal_smul, exp_diagonal]
-  congr 1
-  funext i
-  simp [RCLike.real_smul_eq_coe_mul, ← RCLike.exp_ofReal]
+variable [Fintype n] [DecidableEq n] {𝕜 : Type*} [RCLike 𝕜]
 
 /-- **Mostow's lemma.** Let `X` be a Hermitian matrix. If conjugation by the positive definite
 matrix `exp X` maps a real subspace `W` of matrices into itself, then so does the commutator
@@ -143,26 +112,27 @@ theorem commutator_mem_of_exp_mul_mul_exp_neg_mem {X : Matrix n n 𝕜} (hX : X.
     exact h
   -- The transported subspace is preserved by the transported conjugation.
   have hW' : ∀ Z ∈ W.map (e : Matrix n n 𝕜 →ₗ[ℝ] Matrix n n 𝕜),
-      (of fun i j ↦ (Real.exp (d i - d j) : 𝕜) * Z i j) ∈
+      (of fun i j ↦ Real.exp (d i - d j) • Z i j) ∈
         W.map (e : Matrix n n 𝕜 →ₗ[ℝ] Matrix n n 𝕜) := by
     intro Z hZ
     obtain ⟨Z₀, hZ₀, rfl⟩ := Submodule.mem_map.1 hZ
     refine Submodule.mem_map.2 ⟨_, hW Z₀ hZ₀, ?_⟩
-    have h1 := star_mul_exp_smul_mul hX 1
-    have h2 := star_mul_exp_smul_mul hX (-1)
+    have h1 := hX.star_eigenvectorUnitary_mul_exp_smul_mul_eigenvectorUnitary 1
+    have h2 := hX.star_eigenvectorUnitary_mul_exp_smul_mul_eigenvectorUnitary (-1)
     simp only [one_smul, one_mul, neg_smul, neg_mul] at h1 h2
     simp only [LinearEquiv.coe_coe]
     rw [he_mul, he_mul, he, he (NormedSpace.exp (-X)), h1, h2]
     ext i j
-    simp [diagonal_mul, mul_diagonal, d, Real.exp_sub, div_eq_mul_inv, Real.exp_neg]
+    simp [diagonal_mul, mul_diagonal, d, Real.exp_sub, div_eq_mul_inv, Real.exp_neg,
+      RCLike.real_smul_eq_coe_mul]
     ring
-  have h := sub_mul_mem_of_exp_sub_mul_mem d hW' (Submodule.mem_map_of_mem hY)
+  have h := sub_smul_mem_of_exp_sub_smul_mem d hW' (Submodule.mem_map_of_mem hY)
   rw [Submodule.mem_map_equiv] at h
   convert h using 1
   apply e.injective
   rw [LinearEquiv.apply_symm_apply, map_sub, he_mul, he_mul, hD]
   ext i j
-  simp [diagonal_mul, mul_diagonal, sub_mul, RCLike.algebraMap_eq_ofReal, mul_comm]
+  simp [diagonal_mul, mul_diagonal, sub_mul, RCLike.real_smul_eq_coe_mul, mul_comm]
 
 end IsHermitian
 
