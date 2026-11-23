@@ -50,7 +50,12 @@ functions are smooth (`contDiffAt_tsum_of_eventually_eq_zero`); in particular th
 `Σₙ f (x, t + n)` of a `C^k` map compactly supported in `E × (0, 1)` is a `C^k` map of period one
 in `t` (`TauCeti.exists_contDiff_periodic_eventuallyEq`). A compactly supported `C¹`
 function is bounded and Hölder continuous with every exponent at most one
-(`ContDiff.exists_holderWith_and_norm_le_of_hasCompactSupport`).
+(`ContDiff.exists_holderWith_and_norm_le_of_hasCompactSupport`); for a `C³` function one constant
+bounds it, its first two derivatives and their Hölder constants uniformly over all translates
+(`ContDiff.exists_forall_holderWith_translate_and_norm_le_of_hasCompactSupport`). In particular,
+for radii `ρ < R` the translates of one cutoff give cutoffs between `closedBall x₀ ρ` and
+`ball x₀ R` about every centre `x₀` with such a common constant
+(`TauCeti.exists_forall_contDiff_cutoff_holderWith_and_norm_le`).
 
 It also provides radial cutoffs between two concentric closed balls of radii `r < R` whose gradient
 is at most `c / (R - r)` and whose second derivative is at most `c / (R - r)²` for a universal
@@ -337,6 +342,66 @@ theorem _root_.ContDiff.exists_holderWith_and_norm_le_of_hasCompactSupport [Norm
   exact ⟨_, h₀.of_le_of_le (holderWith_one.2 hK) zero_le hα,
     fun x => (hB' x).trans (by exact_mod_cast le_max_left _ _)⟩
 
+/-- A compactly supported `C³` function has one constant `Z` which bounds it and its first and
+second derivatives, together with their `α`-Hölder constants for an exponent `α ≤ 1`, for all of
+its translates `x ↦ φ (x - x₀)` at once. -/
+theorem _root_.ContDiff.exists_forall_holderWith_translate_and_norm_le_of_hasCompactSupport
+    [NormedSpace ℝ E] {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] {φ : E → F}
+    (hφ : ContDiff ℝ 3 φ) (hc : HasCompactSupport φ) {α : ℝ≥0} (hα : α ≤ 1) :
+    ∃ Z : ℝ≥0, ∀ x₀ : E,
+      (HolderWith Z α (fun x => φ (x - x₀)) ∧
+        HolderWith Z α (fderiv ℝ fun x => φ (x - x₀)) ∧
+        HolderWith Z α (fderiv ℝ (fderiv ℝ fun x => φ (x - x₀)))) ∧
+      ∀ x, ‖φ (x - x₀)‖ ≤ Z ∧ ‖fderiv ℝ (fun x => φ (x - x₀)) x‖ ≤ Z ∧
+        ‖fderiv ℝ (fderiv ℝ fun x => φ (x - x₀)) x‖ ≤ Z := by
+  obtain ⟨C₀, h₀, b₀⟩ :=
+    (hφ.of_le (by norm_num)).exists_holderWith_and_norm_le_of_hasCompactSupport hc hα
+  obtain ⟨C₁, h₁, b₁⟩ := ContDiff.exists_holderWith_and_norm_le_of_hasCompactSupport
+    (hφ.fderiv_right (m := 1) (by norm_num)) (hc.fderiv (𝕜 := ℝ)) hα
+  obtain ⟨C₂, h₂, b₂⟩ := ((hφ.fderiv_right (m := 2) (by norm_num)).fderiv_right (m := 1)
+    le_rfl).exists_holderWith_and_norm_le_of_hasCompactSupport
+      ((hc.fderiv (𝕜 := ℝ)).fderiv (𝕜 := ℝ)) hα
+  refine ⟨C₀ + C₁ + C₂, fun x₀ => ?_⟩
+  have hD1 : fderiv ℝ (fun x => φ (x - x₀)) = fun x => fderiv ℝ φ (x - x₀) :=
+    funext fun _ => fderiv_comp_sub x₀
+  have hD2 : fderiv ℝ (fderiv ℝ fun x => φ (x - x₀)) =
+      fun x => fderiv ℝ (fderiv ℝ φ) (x - x₀) := by
+    rw [hD1]
+    exact funext fun _ => fderiv_comp_sub x₀
+  have hle₀ : C₀ ≤ C₀ + C₁ + C₂ := le_add_right (le_add_right le_rfl)
+  have hle₁ : C₁ ≤ C₀ + C₁ + C₂ := le_add_right le_add_self
+  have hle₂ : C₂ ≤ C₀ + C₁ + C₂ := le_add_self
+  rw [hD2, hD1]
+  -- Translation preserves extended distances.
+  exact ⟨⟨fun x y => by simpa only [edist_sub_right] using (h₀.mono hle₀) (x - x₀) (y - x₀),
+    fun x y => by simpa only [edist_sub_right] using (h₁.mono hle₁) (x - x₀) (y - x₀),
+    fun x y => by simpa only [edist_sub_right] using (h₂.mono hle₂) (x - x₀) (y - x₀)⟩, fun x =>
+    ⟨(b₀ _).trans (by exact_mod_cast hle₀), (b₁ _).trans (by exact_mod_cast hle₁),
+      (b₂ _).trans (by exact_mod_cast hle₂)⟩⟩
+
+/-- For radii `ρ < R` and an exponent `α ≤ 1` there are smooth cutoffs `ζ x₀`, one about every
+centre `x₀`, each equal to one on a neighbourhood of `closedBall x₀ ρ` and supported in
+`ball x₀ R`, with one constant `Z` which bounds all of them and their first two derivatives,
+together with their `α`-Hölder constants. They are the translates of one cutoff about the origin. -/
+theorem exists_forall_contDiff_cutoff_holderWith_and_norm_le [NormedSpace ℝ E]
+    [FiniteDimensional ℝ E] {ρ R : ℝ} (hρR : ρ < R) {α : ℝ≥0} (hα : α ≤ 1) :
+    ∃ (ζ : E → E → ℝ) (Z : ℝ≥0), ∀ x₀ : E, ContDiff ℝ ∞ (ζ x₀) ∧
+      Metric.closedBall x₀ ρ ⊆ interior (ζ x₀ ⁻¹' {1}) ∧ tsupport (ζ x₀) ⊆ Metric.ball x₀ R ∧
+      (HolderWith Z α (ζ x₀) ∧ HolderWith Z α (fderiv ℝ (ζ x₀)) ∧
+        HolderWith Z α (fderiv ℝ (fderiv ℝ (ζ x₀)))) ∧
+      ∀ x, ‖ζ x₀ x‖ ≤ Z ∧ ‖fderiv ℝ (ζ x₀) x‖ ≤ Z ∧ ‖fderiv ℝ (fderiv ℝ (ζ x₀)) x‖ ≤ Z := by
+  obtain ⟨ζ₀, hζ₀, -, hζ₀1, hζ₀c, hζ₀s⟩ := (isCompact_closedBall (0 : E) ρ).exists_contDiff_cutoff
+    Metric.isOpen_ball (Metric.closedBall_subset_ball hρR)
+  obtain ⟨Z, hZ⟩ :=
+    (hζ₀.of_le (by norm_cast)).exists_forall_holderWith_translate_and_norm_le_of_hasCompactSupport
+      hζ₀c hα
+  refine ⟨fun x₀ x => ζ₀ (x - x₀), Z, fun x₀ => ⟨hζ₀.comp (contDiff_id.sub contDiff_const),
+    fun x hx => ?_, fun x hx => ?_, hZ x₀⟩⟩
+  · exact preimage_interior_subset_interior_preimage (continuous_id.sub continuous_const)
+      (hζ₀1 (by simpa [dist_eq_norm] using hx))
+  · simpa [dist_eq_norm] using hζ₀s (tsupport_comp_subset_preimage ζ₀
+      (continuous_id.sub continuous_const) hx)
+
 /-- A compact-exhaustion term in an open set admits a smooth cutoff supported in the interior of
 the next term. In infinite dimension compact sets have empty interior (Riesz), so every term of
 the exhaustion is empty and the zero function is such a cutoff. -/
@@ -395,7 +460,7 @@ private theorem exists_cutoffs_shift [NormedSpace ℝ E] {L V : ℕ → Set E} {
 nonnegative, telescope to `eta' N`, and have support in `V (j + 1)` away from `L (j - 1)`. -/
 private theorem exists_telescoping_cutoff_differences [NormedSpace ℝ E] {L V : ℕ → Set E}
     {eta' : ℕ → E → ℝ}
-    (hL0 : L 0 = ∅) (hVL : ∀ n, V n ⊆ L n) (hVmono : Monotone V)
+    (hL0 : L 0 = ∅) (hVL : ∀ n, V n ⊆ L n)
     (heta'0 : eta' 0 = 0) (heta'_smooth : ∀ n, ContDiff ℝ ∞ (eta' n))
     (heta'_cpt : ∀ n, HasCompactSupport (eta' n)) (heta'_range : ∀ n x, eta' n x ∈ Icc (0 : ℝ) 1)
     (heta'_ts : ∀ n, tsupport (eta' n) ⊆ V n)
@@ -406,9 +471,12 @@ private theorem exists_telescoping_cutoff_differences [NormedSpace ℝ E] {L V :
   have one_of_mem : ∀ {f : E → ℝ} {y : E}, y ∈ interior (f ⁻¹' {1}) → f y = 1 := fun h => by
     simpa only [mem_preimage, mem_singleton_iff] using interior_subset h
   let zeta : ℕ → E → ℝ := fun j x => eta' (j + 1) x - eta' j x
+  -- `eta' (j + 1) = 1` on `V j ⊆ L j`, so `tsupport (eta' j) ⊆ tsupport (eta' (j + 1))`
   have hzeta_ts : ∀ j, tsupport (zeta j) ⊆ V (j + 1) := fun j =>
-    (tsupport_sub _ _).trans
-      (union_subset (heta'_ts (j + 1)) ((heta'_ts j).trans (hVmono j.le_succ)))
+    (tsupport_sub _ _).trans <| union_subset (heta'_ts (j + 1)) fun x hx =>
+      heta'_ts (j + 1) <| subset_tsupport _ <| by
+        rw [mem_support, one_of_mem (heta'_one j (j + 1) j.lt_succ_self (hVL j (heta'_ts j hx)))]
+        exact one_ne_zero
   -- `zeta j` vanishes near `L (j - 1)`, where both cutoffs equal one
   have hzeta_L : ∀ j, ∀ x ∈ L (j - 1), x ∉ tsupport (zeta j) := fun j x hx => by
     cases j with
@@ -466,7 +534,6 @@ theorem _root_.IsOpen.exists_contDiff_decomposition_cutoff [NormedSpace ℝ E]
   have hVopen : ∀ n, IsOpen (V n) := fun n => hU.isOpenMap_subtypeVal _ isOpen_interior
   have hVL : ∀ n, V n ⊆ L n := fun n => image_mono interior_subset
   have hLmono : Monotone L := fun m n hmn => image_mono (K.subset hmn)
-  have hVmono : Monotone V := fun m n hmn => image_mono (interior_mono (K.subset hmn))
   have hVsub : ∀ n, V n ⊆ U := fun n => by
     rintro _ ⟨y, -, rfl⟩
     exact y.property
@@ -481,7 +548,7 @@ theorem _root_.IsOpen.exists_contDiff_decomposition_cutoff [NormedSpace ℝ E]
   obtain ⟨eta', heta'0, heta'_smooth, heta'_cpt, heta'_range, heta'_ts, heta'_one⟩ :=
     exists_cutoffs_shift (L := L) (V := V) heta heta_range heta_one heta_cpt heta_ts hLmono
   obtain ⟨zeta, hzeta_smooth, hzeta_cpt, hU, hzeta_nonneg, hsum⟩ :=
-    exists_telescoping_cutoff_differences hL0 hVL hVmono heta'0 heta'_smooth heta'_cpt
+    exists_telescoping_cutoff_differences hL0 hVL heta'0 heta'_smooth heta'_cpt
       heta'_range heta'_ts heta'_one
   -- cutoffs equal to one on `tsupport (zeta j)` and supported away from `L (j - 1)`
   choose chi hchi_smooth _ hchi_one hchi_cpt hchi_ts using fun j =>
@@ -892,19 +959,23 @@ variable {G : Type*} [NormedSpace ℝ E] [NormedAddCommGroup G]
 
 /-- **Cutoff derivative against decaying data.** Let `χ` equal `1` on the closed ball of radius
 `R` about the origin and `0` outside radius `2 R`, with `‖Dχ‖ ≤ A`. If `‖x‖ ‖u x‖ ≤ M` for
-`‖x‖ ≥ R`, then `‖Dχ‖ ‖u‖` is at most `A (M / R)` on the closed ball of radius `2 R` and vanishes
-outside it. -/
-theorem norm_fderiv_mul_norm_le_indicator {χ : E → ℝ} {u : E → G} {R A M : ℝ} (hR : 0 < R)
+`R ≤ ‖x‖ ≤ 2 R`, then `‖Dχ‖ ‖u‖` is at most `A (M / R)` on the closed ball of radius `2 R` and
+vanishes outside it. -/
+theorem norm_fderiv_mul_norm_le_indicator {χ : E → ℝ} {u : E → G} {R A M : ℝ}
     (hM : 0 ≤ M) (hχ1 : ∀ x ∈ closedBall (0 : E) R, χ x = 1)
     (hχ0 : ∀ x, 2 * R < dist x 0 → χ x = 0) (hA : ∀ x, ‖fderiv ℝ χ x‖ ≤ A)
-    (hu : ∀ x : E, R ≤ ‖x‖ → ‖x‖ * ‖u x‖ ≤ M) (x : E) :
+    (hu : ∀ x : E, R ≤ ‖x‖ → ‖x‖ ≤ 2 * R → ‖x‖ * ‖u x‖ ≤ M) (x : E) :
     ‖fderiv ℝ χ x‖ * ‖u x‖ ≤ (closedBall (0 : E) (2 * R)).indicator (fun _ ↦ A * (M / R)) x := by
   have hA0 : 0 ≤ A := (norm_nonneg _).trans (hA 0)
   -- Off the annulus `R ≤ ‖x‖ ≤ 2 R` the cutoff is locally constant, so `Dχ x = 0`.
   have hzero : fderiv ℝ χ x = 0 → ‖fderiv ℝ χ x‖ * ‖u x‖ ≤
       (closedBall (0 : E) (2 * R)).indicator (fun _ ↦ A * (M / R)) x := fun h ↦ by
     rw [h, norm_zero, zero_mul]
-    exact Set.indicator_nonneg (fun _ _ ↦ by positivity) x
+    by_cases hx : x ∈ closedBall (0 : E) (2 * R)
+    · have : 0 ≤ R := by linarith [mem_closedBall_zero_iff.1 hx, norm_nonneg x]
+      rw [Set.indicator_of_mem hx]
+      positivity
+    · rw [Set.indicator_of_notMem hx]
   rcases lt_or_ge ‖x‖ R with hx | hx
   · refine hzero ?_
     have hev : χ =ᶠ[𝓝 x] fun _ ↦ (1 : ℝ) := by
@@ -920,11 +991,29 @@ theorem norm_fderiv_mul_norm_le_indicator {χ : E → ℝ} {u : E → G} {R A M 
       exact hχ0 y hy
     rw [hev.fderiv_eq, fderiv_const_apply]
   rw [Set.indicator_of_mem (mem_closedBall_zero_iff.2 hx')]
+  have hR0 : 0 ≤ R := by linarith [norm_nonneg x]
+  rcases hR0.eq_or_lt with rfl | hR
+  · -- `R = 0`: the cutoff is `1` at the origin and `0` elsewhere, so it has no derivative there
+    rw [div_zero, mul_zero]
+    have hx0 : x = 0 := norm_le_zero_iff.1 (by linarith)
+    subst hx0
+    have : fderiv ℝ χ 0 = 0 := by
+      rcases subsingleton_or_nontrivial E with hE | hE
+      · exact ContinuousLinearMap.ext fun v ↦ by simp [Subsingleton.elim v 0]
+      · refine fderiv_zero_of_not_differentiableAt fun hd ↦ ?_
+        have h1 : Filter.Tendsto χ (𝓝[≠] (0 : E)) (𝓝 (χ 0)) :=
+          hd.continuousAt.tendsto.mono_left nhdsWithin_le_nhds
+        have h0 : Filter.Tendsto χ (𝓝[≠] (0 : E)) (𝓝 0) :=
+          tendsto_const_nhds.congr' <| eventually_nhdsWithin_of_forall fun y hy ↦
+            (hχ0 y (by simpa using mem_compl_singleton_iff.1 hy)).symm
+        have := tendsto_nhds_unique h1 h0
+        simp [hχ1 0 (mem_closedBall_self le_rfl)] at this
+    simp [this]
   have hux : ‖u x‖ ≤ M / R := by
     rw [le_div_iff₀ hR]
     calc ‖u x‖ * R ≤ ‖u x‖ * ‖x‖ := by gcongr
       _ = ‖x‖ * ‖u x‖ := mul_comm _ _
-      _ ≤ M := hu x hx
+      _ ≤ M := hu x hx hx'
   exact mul_le_mul (hA x) hux (norm_nonneg _) hA0
 
 end CutoffDecay
@@ -936,20 +1025,21 @@ namespace ContDiffBump
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
 
 /-- The space-time cut-off `(t, x) ↦ χ (s • x) * φ (t, x)` of a function vanishing outside the time
-interval `(a, b)` has compact support, as soon as `χ` vanishes outside `ball 0 (s * R)`. -/
+interval `(a, b)` has compact support, for every nonzero scale `s`. -/
 theorem hasCompactSupport_cutoff_mul [FiniteDimensional ℝ E] {a b : ℝ} {φ : ℝ × E → ℝ}
-    (χ : ContDiffBump (0 : E)) {s R : ℝ} (hs : 0 < s) (hR : χ.rOut ≤ s * R)
+    (χ : ContDiffBump (0 : E)) {s : ℝ} (hs : s ≠ 0)
     (hzero : ∀ q : ℝ × E, q.1 ∉ Ioo a b → φ q = 0) :
     HasCompactSupport fun q : ℝ × E ↦ χ (s • q.2) * φ q := by
+  have hs' : 0 < ‖s‖ := norm_pos_iff.2 hs
   refine HasCompactSupport.intro ((isCompact_Icc (a := a) (b := b)).prod
-    (isCompact_closedBall (0 : E) R)) fun q hq ↦ ?_
+    (isCompact_closedBall (0 : E) (χ.rOut / ‖s‖))) fun q hq ↦ ?_
   by_cases ht : q.1 ∈ Icc a b
-  · have hx : R < ‖q.2‖ := by
+  · have hx : χ.rOut / ‖s‖ < ‖q.2‖ := by
       by_contra hle
       exact hq ⟨ht, by simpa using not_lt.1 hle⟩
     have : χ (s • q.2) = 0 := χ.zero_of_le_dist <| by
-      rw [dist_zero_right, norm_smul, Real.norm_of_nonneg hs.le]
-      exact hR.trans (mul_le_mul_of_nonneg_left hx.le hs.le)
+      rw [dist_zero_right, norm_smul]
+      exact ((div_lt_iff₀ hs').1 hx).le.trans_eq (mul_comm _ _)
     simp [this]
   · simp [hzero q fun h ↦ ht (Ioo_subset_Icc_self h)]
 

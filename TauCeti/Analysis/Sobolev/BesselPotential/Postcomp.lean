@@ -29,7 +29,8 @@ Hilbert-space values with Plancherel's theorem transfer to any finite-dimensiona
 * `BesselPotentialSpace.postcomp`: the operator `H^{s,p}(E, F) →L[ℂ] H^{s,p}(E, G)` induced by
   `L : F →L[ℂ] G`.
 * `SchwartzMap.toBesselPotentialSpaceCLM_postcompCLM`: on Schwartz functions it is
-  `u ↦ L ∘ u`.
+  `u ↦ L ∘ u`, and `BesselPotentialSpace.toDistr_postcomp`: on tempered distributions it applies
+  `L` to the values.
 * `BesselPotentialSpace.toDistribution_toDistr_postcomp`: as a distribution on an open set, `L u`
   is `L` applied to the values of `u`.
 * `BesselPotentialSpace.sum_postcomp_toSpanSingleton_coord`: for a basis `(e_j)` of a
@@ -37,6 +38,8 @@ Hilbert-space values with Plancherel's theorem transfer to any finite-dimensiona
   `∑ⱼ e_j (c_j u)`.
 * `TemperedDistribution.MemSobolev.postcomp`: applying `L` to the values of a tempered
   distribution in `H^{s,p}(E, F)` gives one in `H^{s,p}(E, G)`.
+* `TemperedDistribution.memSobolev_iff_forall_postcomp_coord`: for finite-dimensional `F`,
+  membership in `H^{s,p}(E, F)` is tested on the coordinates in a basis.
 * `TemperedDistribution.MemSobolev.compLp`: applying `L` to the values of an `Lᵖ` function in
   `H^{s,p}` gives an `Lᵖ` function in `H^{s,p}`.
 -/
@@ -82,6 +85,12 @@ theorem toDistr_postcomp_apply (L : F →L[ℂ] G) (f : H^{s, p}(E, F)) (φ : �
     (postcomp E s p L f).toDistr φ = L (f.toDistr φ) :=
   (rfl)
 
+/-- As a tempered distribution, `L f` is `L` applied to the values of `f`. -/
+theorem toDistr_postcomp (L : F →L[ℂ] G) (f : H^{s, p}(E, F)) :
+    (postcomp E s p L f).toDistr = PointwiseConvergenceCLM.postcomp _ L f.toDistr := by
+  ext φ
+  rw [toDistr_postcomp_apply, PointwiseConvergenceCLM.postcomp_apply_apply]
+
 /-- Restricting `L ∘ f` to a distribution on `Ω` applies `L` to the values of the restriction
 of `f`. -/
 theorem toDistribution_toDistr_postcomp {Ω : TopologicalSpace.Opens E} (L : F →L[ℂ] G)
@@ -117,12 +126,32 @@ distribution `f` lies in `H^{s,p}(E, F)`, then `φ ↦ L (f φ)` lies in `H^{s,p
 theorem TemperedDistribution.MemSobolev.postcomp {s : ℝ} {p : ℝ≥0∞} [Fact (1 ≤ p)]
     {f : 𝓢'(E, F)} (hf : MemSobolev s p f) (L : F →L[ℂ] G) :
     MemSobolev s p (PointwiseConvergenceCLM.postcomp _ L f) := by
-  have h : (BesselPotentialSpace.postcomp E s p L hf.toBesselPotentialSpace).toDistr =
-      PointwiseConvergenceCLM.postcomp _ L f := by
-    ext φ
-    rw [BesselPotentialSpace.toDistr_postcomp_apply, MemSobolev.toBesselPotentialSpace_toDistr,
-      PointwiseConvergenceCLM.postcomp_apply_apply]
+  have h := BesselPotentialSpace.toDistr_postcomp L hf.toBesselPotentialSpace
+  rw [MemSobolev.toBesselPotentialSpace_toDistr] at h
   exact h ▸ BesselPotentialSpace.memSobolev_toDistr _
+
+/-- **`H^{s,p}` is tested on coordinates.** For a basis `(e_j)` of a finite-dimensional `F` with
+coordinate functionals `(c_j)`, a tempered distribution `f` with values in `F` lies in
+`H^{s,p}(E, F)` exactly when each coordinate `φ ↦ c_j (f φ)` lies in `H^{s,p}(E, ℂ)`. -/
+theorem TemperedDistribution.memSobolev_iff_forall_postcomp_coord [FiniteDimensional ℂ F]
+    {ι : Type*}
+    (b : Module.Basis ι ℂ F) {s : ℝ} {p : ℝ≥0∞} [Fact (1 ≤ p)] {f : 𝓢'(E, F)} :
+    MemSobolev s p f ↔
+      ∀ j, MemSobolev s p
+        (PointwiseConvergenceCLM.postcomp _ (b.coord j).toContinuousLinearMap f) := by
+  refine ⟨fun hf j ↦ hf.postcomp _, fun h ↦ ?_⟩
+  have := FiniteDimensional.fintypeBasisIndex b
+  -- `f` is the sum of its coordinates times the basis vectors.
+  have hf : f = ∑ j, PointwiseConvergenceCLM.postcomp _
+      (ContinuousLinearMap.toSpanSingleton ℂ (b j))
+        (PointwiseConvergenceCLM.postcomp _ (b.coord j).toContinuousLinearMap f) := by
+    ext φ
+    simp only [_root_.sum_apply, PointwiseConvergenceCLM.postcomp_apply_apply,
+      ContinuousLinearMap.toSpanSingleton_apply]
+    exact (b.sum_repr (f φ)).symm
+  rw [hf]
+  exact Finset.sum_induction _ (MemSobolev s p) (fun _ _ ↦ MemSobolev.add)
+    (memSobolev_fun_zero E _ s p) fun j _ ↦ (h j).postcomp _
 
 /-- On Schwartz functions, the operator induced by `L` on `H^{s,p}` is `u ↦ L ∘ u`. -/
 theorem SchwartzMap.toBesselPotentialSpaceCLM_postcompCLM {s : ℝ} {p : ℝ≥0∞} [Fact (1 ≤ p)]
