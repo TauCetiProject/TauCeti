@@ -7,6 +7,8 @@ module
 
 public import TauCeti.MeasureTheory.Measure.Haar.RestrictedProduct
 
+import TauCeti.Algebra.BigOperators.Finprod
+
 /-!
 # Changing finitely many local normalizations of a restricted Haar product
 
@@ -36,12 +38,6 @@ variable {ι : Type*} [Countable ι] [DecidableEq ι]
   (B : ∀ i, K i) [Fact (∀ i, IsOpen (B i : Set (G i)))]
   (μ : ∀ i, Measure (G i)) [∀ i, (μ i).IsHaarMeasure] (hμB : ∀ᶠ i in cofinite, μ i (B i) = 1)
   (μ' : ∀ i, Measure (G i)) [∀ i, (μ' i).IsHaarMeasure] (hμ'B : ∀ᶠ i in cofinite, μ' i (B i) = 1)
-
-omit [Countable ι] in
-/-- The finitary product of a function supported at one index is its value there. -/
-private theorem finprod_mulSingle (j : ι) (a : ℝ≥0) :
-    ∏ᶠ i, (Pi.mulSingle j a : ι → ℝ≥0) i = a :=
-  (finprod_eq_single _ j fun _ hi ↦ by simp [hi]).trans (by simp)
 
 omit [DecidableEq ι] in
 /-- Unit local scalars preserve the restricted Haar product. -/

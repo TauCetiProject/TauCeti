@@ -15,6 +15,7 @@ public import TauCeti.Topology.Algebra.Group.Basic
 public import TauCeti.Topology.Algebra.RestrictedProduct.Congr.Basic
 public import TauCeti.Topology.Algebra.RestrictedProduct.Principal
 public import TauCeti.Topology.Bases
+import TauCeti.Algebra.BigOperators.Finprod
 import TauCeti.MeasureTheory.Group.Arithmetic
 import TauCeti.MeasureTheory.Group.ModularCharacter
 import TauCeti.MeasureTheory.Group.OpenSubgroup.Basic
@@ -475,15 +476,13 @@ theorem restrictedHaar_eq_finprod_smul (μ' : ∀ i, Measure (G i)) [∀ i, (μ'
     simpa [hμ' i, hi] using isOpen_univ.measure_pos (μ' i) univ_nonempty
   have := IsHaarMeasure.nnreal_smul (restrictedHaar B μ hμB) hc0
   refine (restrictedHaar_unique B μ' hμ'B fun C _ hCB ↦ ?_).symm
-  have hc : Function.HasFiniteMulSupport c :=
-    (eventually_cofinite.mp hc1).subset fun i hi h ↦ Function.mem_mulSupport.mp hi h
+  have hc : Function.HasFiniteMulSupport c := hasFiniteMulSupport_iff_eventually_eq_one.mpr hc1
   have hcoe : ((∏ᶠ i, c i : ℝ≥0) : ℝ≥0∞) = ∏ᶠ i, (c i : ℝ≥0∞) := map_finprod ENNReal.ofNNRealHom hc
   have hfin : Function.HasFiniteMulSupport fun i ↦ μ i (C i) :=
-    (eventually_cofinite.mp (hCB.and hμB)).subset fun i hi h ↦
-      Function.mem_mulSupport.mp hi (by rw [h.1, h.2])
+    hasFiniteMulSupport_iff_eventually_eq_one.mpr <| (hCB.and hμB).mono fun i h ↦ by rw [h.1, h.2]
   rw [coe_nnreal_smul_apply, restrictedHaar_box_eq_finprod B μ hμB hCB, hcoe,
-    ← finprod_mul_distrib ((eventually_cofinite.mp hc1).subset fun i hi h ↦
-      Function.mem_mulSupport.mp hi (by rw [h, ENNReal.coe_one])) hfin]
+    ← finprod_mul_distrib (f := fun i ↦ (c i : ℝ≥0∞))
+      (hc.subset (Function.mulSupport_comp_subset ENNReal.coe_one c)) hfin]
   exact finprod_congr fun i ↦ by rw [hμ' i, coe_nnreal_smul_apply]
 
 /-- `restrictedHaar` is a regular measure on `Πʳ i, [G i, B i]`. -/
