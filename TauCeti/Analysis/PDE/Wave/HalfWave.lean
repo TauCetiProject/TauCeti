@@ -91,6 +91,21 @@ theorem adjoint_halfWavePropagator (t : ℝ) :
 theorem norm_halfWavePropagator_le (t : ℝ) : ‖halfWavePropagator (E := E) F t‖ ≤ 1 :=
   norm_phasePropagator_le _ t
 
+/-- If the symbol `m` is bounded by `B` almost everywhere, then `‖W₊(t) T_m‖ ≤ B`. -/
+theorem norm_halfWavePropagator_comp_fourierMultiplierCLM_le {m : Lp ℂ ∞ (volume : Measure E)}
+    {B : ℝ} (hm : ∀ᵐ ξ ∂volume, ‖m ξ‖ ≤ B) (t : ℝ) :
+    ‖halfWavePropagator F t ∘L Lp.fourierMultiplierCLM F m‖ ≤ B := by
+  calc _ ≤ ‖halfWavePropagator (E := E) F t‖ * ‖Lp.fourierMultiplierCLM F m‖ :=
+        ContinuousLinearMap.opNorm_comp_le _ _
+    _ ≤ 1 * B := by
+        gcongr
+        · exact norm_halfWavePropagator_le _
+        · -- `volume` on `E` is nonzero, so the bound is attained somewhere and `B ≥ 0`.
+          have ⟨_, hξ⟩ := hm.exists
+          exact (Lp.norm_fourierMultiplierCLM_le m).trans
+            (Lp.norm_le_of_ae_bound_top ((norm_nonneg _).trans hξ) hm)
+    _ = B := one_mul B
+
 /-- `W₊(t)` commutes with every `L²` Fourier multiplier. -/
 theorem halfWavePropagator_comp_fourierMultiplierCLM (t : ℝ) (m : Lp ℂ ∞ (volume : Measure E)) :
     halfWavePropagator F t ∘L Lp.fourierMultiplierCLM F m =
