@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.PDE.Parabolic.Holder.Trace
-import TauCeti.Probability.Finance.Pricing.LogSpot
+import TauCeti.Analysis.Calculus.Deriv.Second
 import TauCeti.Analysis.SpecialFunctions.Log.Deriv
 
 /-!
@@ -238,8 +238,9 @@ theorem abs_mul_deriv_weightedLogSpotPrice_le (u : ParabolicC2HolderSpace α ℝ
       gcongr
     _ ≤ _ := by nlinarith [norm_nonneg (valueL u)]
 
-/-- Both the reconstructed price and its dollar-delta exposure `s ∂ₛC(s, t)` are controlled by the
-parabolic `C^{2+α,1+α/2}` norm of `u`, uniformly on `(0, ∞) × [a, b]`. -/
+/-- Both the reconstructed price `C = weightedLogSpotPrice u` and its dollar-delta exposure
+`s ∂ₛC(s, t)` satisfy the explicit linear-growth bound
+`|C(s, t)| + |s ∂ₛC(s, t)| ≤ 2 ‖u‖ (1 + s)` on `(0, ∞) × [a, b]`. -/
 theorem abs_weightedLogSpotPrice_add_abs_mul_deriv_le (u : ParabolicC2HolderSpace α ℝ ℝ hab)
     {s : ℝ} (hs : 0 < s) {t : ℝ} (ht' : t ∈ Icc a b) :
     |weightedLogSpotPrice u s t| + |s * deriv (fun x ↦ weightedLogSpotPrice u x t) s| ≤

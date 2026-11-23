@@ -35,10 +35,9 @@ Specialized to market volatility `σ(s, t)` and a time-only `(α / 2)`-Hölder s
   on `slab t₀ t₁`, with quantitative norm bounds exported by
   `TauCeti.Finance.norm_logSpotHalfVarianceHolder_le` and
   `TauCeti.Finance.norm_shortRateHolder_le`.
-* `TauCeti.Finance.pde_weightedLogSpotPrice_eq_zero_of_logSpotHalfVarianceHolder` (in
-  `TauCeti.Probability.Finance.Pricing.Operator`) transports pointwise vanishing of the weighted
-  residual for those market coefficient fields to the closed-slab spot pricing equation (with
-  `derivWithin`) on `(0, ∞) × [t₀, t₁]`.
+* `TauCeti.Finance.pde_weightedLogSpotPrice_eq_zero_of_logSpotHalfVarianceHolder` transports
+  pointwise vanishing of the weighted residual for those market coefficient fields to the
+  closed-slab spot pricing equation (with `derivWithin`) on `(0, ∞) × [t₀, t₁]`.
 * `TauCeti.Finance.eq_weightedLogSpotPrice_of_pde_eq_zero_of_terminal_eq` (in
   `TauCeti.Probability.Finance.Pricing.Comparison.WeightedLogSpot`) proves that every competitor
   jointly continuous on the closed positive-spot slab `(0, ∞) × [t₀, t₁]` with linear growth
@@ -56,9 +55,10 @@ Specialized to market volatility `σ(s, t)` and a time-only `(α / 2)`-Hölder s
   and interior classical PDEs (`TauCeti.Finance.pde_weightedLogSpotPrice_marketPriceProfile`,
   `TauCeti.Finance.pde_weightedLogSpotPrice_marketPriceProfile_of_mem_Ioo`), and uniqueness in the
   linear-growth classical class
-  (`TauCeti.Finance.eq_weightedLogSpotPrice_marketPriceProfile_of_pde_eq_zero_of_terminal_eq`).
-  Joint continuity and linear-growth bounds for `weightedLogSpotPrice (marketPriceProfile ...)`
-  follow directly from the general `TauCeti.Finance.weightedLogSpotPrice` API.
+  (`TauCeti.Finance.eq_weightedLogSpotPrice_marketPriceProfile_of_pde_eq_zero_of_terminal_eq`),
+  while `TauCeti.Finance.weightedLogSpotPrice_marketPriceProfile_spec` collects the classical
+  regularity, PDE, terminal payoff, price-and-dollar-delta linear-growth bound, and uniqueness
+  guarantees for `weightedLogSpotPrice (marketPriceProfile ...)` in one market-facing theorem.
 
 ## References
 
@@ -106,6 +106,29 @@ theorem existsUnique_pde_weightedLogSpotPrice_eq_zero (hα₀ : 0 < α) (hα₁ 
   exact and_congr (pde_weightedLogSpotPrice_eq_zero_iff hα₁.le a r v)
     (weightedLogSpotPrice_slice_iff v ⟨t₁, right_mem_Icc.2 ht.le⟩ hg)
 
+/-- For the market coefficient fields `logSpotHalfVarianceHolder` and `shortRateHolder`, vanishing
+of the weighted pricing residual at `(log s, t)` on the closed slab `(0, ∞) × [t₀, t₁]` implies
+the closed-slab spot pricing equation (with within-slab `derivWithin`, one-sided at the endpoints
+`t₀` and `t₁`) at `(s, t)`. -/
+theorem pde_weightedLogSpotPrice_eq_zero_of_logSpotHalfVarianceHolder
+    (hα₀ : 0 < α) (hα₁ : α ≤ 1)
+    {σ : ℝ → ℝ → ℝ} {r : ℝ → ℝ} {M H_r : ℝ≥0}
+    (hσ_bdd : ∀ y, ∀ t ∈ Icc t₀ t₁, |σ (exp y) t| ≤ M)
+    (hσ_hol : MemHolder α (fun p : slab (E := ℝ) t₀ t₁ ↦
+      σ (exp (p : ParabolicSpaceTime ℝ).space) (slabTime p)))
+    (hr_hol : HolderOnWith H_r (α / 2) r (Icc t₀ t₁))
+    (u : ParabolicC2HolderSpace α ℝ ℝ ht) {s : ℝ} (hs : 0 < s) (t : Icc t₀ t₁)
+    (hPu : weightedLogSpotPricingOperatorL hα₁
+        (logSpotHalfVarianceHolder hα₀ σ hσ_bdd hσ_hol) (shortRateHolder hα₀ r hr_hol) u
+        (slabMk (log s) t) = 0) :
+    derivWithin (weightedLogSpotPrice u s) (Icc t₀ t₁) t +
+        σ s t ^ 2 * s ^ 2 / 2 * deriv (deriv fun x ↦ weightedLogSpotPrice u x t) s +
+        r t * (s * deriv (fun x ↦ weightedLogSpotPrice u x t) s -
+          weightedLogSpotPrice u s t) = 0 := by
+  have hW := pde_weightedLogSpotPrice_eq_zero hα₁ u hs t (a₀ := σ s t ^ 2 / 2) (r₀ := r t) hPu
+    (by simp [exp_log hs]) (by simp)
+  rwa [div_mul_eq_mul_div] at hW
+
 /-- **Weighted log-spot solution profile for the market pricing PDE.** Given `0 < α < 1`,
 `t₀ < t₁`, a uniformly elliptic (`0 < δ ≤ σ(s, t)²`), bounded (`|σ(e^y, t)| ≤ M`), parabolically
 `α`-Hölder volatility `(y, t) ↦ σ(e^y, t)`, an `(α / 2)`-Hölder short rate `r` on `[t₀, t₁]`,
@@ -141,27 +164,42 @@ variable (hα₀ : 0 < α) (hα₁ : α < 1) (ht : t₀ < t₁)
   (hr_hol : HolderOnWith H_r (α / 2) r (Icc t₀ t₁))
   (g : CkHolderSpace 2 α ℝ ℝ)
 
+/-- Equation lemma expressing `marketPriceProfile` as the inverse terminal-data isomorphism
+applied to `(0, g)`. -/
+theorem marketPriceProfile_def :
+    marketPriceProfile hα₀ hα₁ ht hδ hσ_low hσ_bdd hσ_hol hr_hol g =
+      (weightedLogSpotTerminalDataCLE hα₀ hα₁ ht
+        (logSpotHalfVarianceHolder hα₀ σ hσ_bdd hσ_hol) (shortRateHolder hα₀ r hr_hol)
+        ⟨δ / 2, half_pos hδ, fun p ↦ by
+          rw [logSpotHalfVarianceHolder_apply]
+          exact div_le_div_of_nonneg_right (hσ_low (exp_pos _) (slabTime p).property)
+            zero_le_two⟩).symm (0, g) :=
+  (rfl)
+
 /-- The weighted log-spot residual of `marketPriceProfile` vanishes everywhere on the slab. -/
 @[simp]
 theorem weightedLogSpotPricingOperatorL_marketPriceProfile :
     weightedLogSpotPricingOperatorL hα₁.le
         (logSpotHalfVarianceHolder hα₀ σ hσ_bdd hσ_hol) (shortRateHolder hα₀ r hr_hol)
-        (marketPriceProfile hα₀ hα₁ ht hδ hσ_low hσ_bdd hσ_hol hr_hol g) = 0 :=
-  weightedLogSpotPricingOperatorL_weightedLogSpotTerminalDataCLE_symm_apply (0, g)
+        (marketPriceProfile hα₀ hα₁ ht hδ hσ_low hσ_bdd hσ_hol hr_hol g) = 0 := by
+  rw [marketPriceProfile_def]
+  exact weightedLogSpotPricingOperatorL_weightedLogSpotTerminalDataCLE_symm_apply (0, g)
 
 /-- The terminal spatial trace of `marketPriceProfile` at `t₁` is `g`. -/
 @[simp]
 theorem spatialTrace_marketPriceProfile :
     (marketPriceProfile hα₀ hα₁ ht hδ hσ_low hσ_bdd hσ_hol hr_hol g).spatialTrace
-      ⟨t₁, right_mem_Icc.2 ht.le⟩ = g :=
-  spatialTrace_weightedLogSpotTerminalDataCLE_symm_apply (0, g)
+      ⟨t₁, right_mem_Icc.2 ht.le⟩ = g := by
+  rw [marketPriceProfile_def]
+  exact spatialTrace_weightedLogSpotTerminalDataCLE_symm_apply (0, g)
 
 /-- At time `t₁`, `marketPriceProfile` evaluates to `g y` at `(y, t₁)`. -/
 @[simp]
 theorem marketPriceProfile_apply_slabMk_right (y : ℝ) :
     marketPriceProfile hα₀ hα₁ ht hδ hσ_low hσ_bdd hσ_hol hr_hol g
-      (slabMk y ⟨t₁, right_mem_Icc.2 ht.le⟩) = g y :=
-  weightedLogSpotTerminalDataCLE_symm_apply_slabMk_right (0, g) y
+      (slabMk y ⟨t₁, right_mem_Icc.2 ht.le⟩) = g y := by
+  rw [marketPriceProfile_def]
+  exact weightedLogSpotTerminalDataCLE_symm_apply_slabMk_right (0, g) y
 
 /-- **Terminal payoff of the reconstructed market price.** If `g y = h (exp y) / (1 + exp y)`,
 then the reconstructed price `weightedLogSpotPrice (marketPriceProfile ...)` attains `h s` at
@@ -241,6 +279,71 @@ theorem eq_weightedLogSpotPrice_marketPriceProfile_of_pde_eq_zero_of_terminal_eq
     (fun y ↦ by rw [marketPriceProfile_apply_slabMk_right, hg])
     hC_cont hC_growth hC_cd hC_diff
     (fun s hs t ht' ↦ by simpa only [div_mul_eq_mul_div] using hC_pde hs ht') hC_term
+
+/-- **Market specification for the reconstructed spot price.** For `C := weightedLogSpotPrice u`
+with `u := marketPriceProfile hα₀ hα₁ ht hδ hσ_low hσ_bdd hσ_hol hr_hol g` and terminal payoff
+`h` satisfying `g y = h (exp y) / (1 + exp y)`, `C` enjoys joint continuity of `C`, `∂ₛC`, `∂ₛ²C`,
+and within-slab `∂ₜC` on `(0, ∞) × [t₀, t₁]`, twice continuous spot differentiability on
+`(0, ∞) × [t₀, t₁]` and interior time differentiability on `(0, ∞) × (t₀, t₁)`, solves both the
+closed-slab `derivWithin` and interior classical pricing PDEs, attains `h` at `t₁`, satisfies the
+price-and-dollar-delta linear-growth bound `|C(s, t)| + |s ∂ₛC(s, t)| ≤ 2 ‖u‖ (1 + s)`, and
+is the unique solution in the linear-growth classical class. -/
+theorem weightedLogSpotPrice_marketPriceProfile_spec {h : ℝ → ℝ}
+    (hg : ∀ y, g y = h (exp y) / (1 + exp y)) :
+    let u := marketPriceProfile hα₀ hα₁ ht hδ hσ_low hσ_bdd hσ_hol hr_hol g
+    ContinuousOn (Function.uncurry (weightedLogSpotPrice u)) (Ioi 0 ×ˢ Icc t₀ t₁) ∧
+      ContinuousOn (fun p : ℝ × ℝ ↦ deriv (fun s ↦ weightedLogSpotPrice u s p.2) p.1)
+        (Ioi 0 ×ˢ Icc t₀ t₁) ∧
+      ContinuousOn (fun p : ℝ × ℝ ↦ deriv (deriv fun s ↦ weightedLogSpotPrice u s p.2) p.1)
+        (Ioi 0 ×ˢ Icc t₀ t₁) ∧
+      ContinuousOn (fun p : ℝ × ℝ ↦ derivWithin (weightedLogSpotPrice u p.1) (Icc t₀ t₁) p.2)
+        (Ioi 0 ×ˢ Icc t₀ t₁) ∧
+      (∀ ⦃s⦄, 0 < s → ∀ ⦃t⦄, t ∈ Icc t₀ t₁ →
+        ContDiffAt ℝ 2 (fun x ↦ weightedLogSpotPrice u x t) s) ∧
+      (∀ ⦃s⦄, 0 < s → ∀ ⦃t⦄, t ∈ Ioo t₀ t₁ → DifferentiableAt ℝ (weightedLogSpotPrice u s) t) ∧
+      (∀ ⦃s⦄, 0 < s → ∀ ⦃t⦄, t ∈ Icc t₀ t₁ →
+        derivWithin (weightedLogSpotPrice u s) (Icc t₀ t₁) t +
+            σ s t ^ 2 * s ^ 2 / 2 * deriv (deriv fun x ↦ weightedLogSpotPrice u x t) s +
+            r t * (s * deriv (fun x ↦ weightedLogSpotPrice u x t) s -
+              weightedLogSpotPrice u s t) = 0) ∧
+      (∀ ⦃s⦄, 0 < s → ∀ ⦃t⦄, t ∈ Ioo t₀ t₁ →
+        deriv (weightedLogSpotPrice u s) t +
+            σ s t ^ 2 * s ^ 2 / 2 * deriv (deriv fun x ↦ weightedLogSpotPrice u x t) s +
+            r t * (s * deriv (fun x ↦ weightedLogSpotPrice u x t) s -
+              weightedLogSpotPrice u s t) = 0) ∧
+      (∀ ⦃s⦄, 0 < s → weightedLogSpotPrice u s t₁ = h s) ∧
+      (∀ ⦃s⦄, 0 < s → ∀ ⦃t⦄, t ∈ Icc t₀ t₁ →
+        |weightedLogSpotPrice u s t| + |s * deriv (fun x ↦ weightedLogSpotPrice u x t) s| ≤
+          2 * ‖u‖ * (1 + s)) ∧
+      ∀ (C : ℝ → ℝ → ℝ) (A : ℝ),
+        ContinuousOn (Function.uncurry C) (Ioi 0 ×ˢ Icc t₀ t₁) →
+        (∀ ⦃s⦄, 0 < s → ∀ ⦃t⦄, t ∈ Icc t₀ t₁ → |C s t| ≤ A * (1 + s)) →
+        (∀ ⦃s⦄, 0 < s → ∀ ⦃t⦄, t ∈ Ioo t₀ t₁ → ContDiffAt ℝ 2 (fun x ↦ C x t) s) →
+        (∀ ⦃s⦄, 0 < s → ∀ ⦃t⦄, t ∈ Ioo t₀ t₁ → DifferentiableAt ℝ (fun τ ↦ C s τ) t) →
+        (∀ ⦃s⦄, 0 < s → ∀ ⦃t⦄, t ∈ Ioo t₀ t₁ →
+          deriv (fun τ ↦ C s τ) t + σ s t ^ 2 * s ^ 2 / 2 * deriv (deriv fun x ↦ C x t) s +
+            r t * (s * deriv (fun x ↦ C x t) s - C s t) = 0) →
+        (∀ ⦃s⦄, 0 < s → C s t₁ = h s) →
+        ∀ ⦃s⦄, 0 < s → ∀ ⦃t⦄, t ∈ Icc t₀ t₁ → C s t = weightedLogSpotPrice u s t :=
+  ⟨(continuousOn_weightedLogSpotPrice _).mono (prod_mono_right (subset_univ _)),
+    continuousOn_deriv_weightedLogSpotPrice_spot _,
+    continuousOn_deriv_deriv_weightedLogSpotPrice_spot _,
+    continuousOn_derivWithin_weightedLogSpotPrice_time _,
+    fun _ hs t ht' ↦ (contDiffOn_weightedLogSpotPrice _ ⟨t, ht'⟩).contDiffAt (Ioi_mem_nhds hs),
+    fun s _ _ ht' ↦ differentiableAt_weightedLogSpotPrice_time _ s ht',
+    fun _ hs _ ht' ↦
+      pde_weightedLogSpotPrice_marketPriceProfile hα₀ hα₁ ht hδ hσ_low hσ_bdd hσ_hol hr_hol g hs
+        ht',
+    fun _ hs _ ht' ↦
+      pde_weightedLogSpotPrice_marketPriceProfile_of_mem_Ioo hα₀ hα₁ ht hδ hσ_low hσ_bdd hσ_hol
+        hr_hol g hs ht',
+    fun _ hs ↦
+      weightedLogSpotPrice_marketPriceProfile_terminal hα₀ hα₁ ht hδ hσ_low hσ_bdd hσ_hol hr_hol g
+        hg hs,
+    fun _ hs _ ht' ↦ abs_weightedLogSpotPrice_add_abs_mul_deriv_le _ hs ht',
+    fun _ _ hCc hCg hCcd hCd hCpde hCt ↦
+      eq_weightedLogSpotPrice_marketPriceProfile_of_pde_eq_zero_of_terminal_eq hα₀ hα₁ ht hδ hσ_low
+        hσ_bdd hσ_hol hr_hol g hg _ hCc hCg hCcd hCd hCpde hCt⟩
 
 end MarketPriceProfile
 

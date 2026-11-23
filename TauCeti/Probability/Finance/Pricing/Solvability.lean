@@ -225,18 +225,6 @@ theorem exists_norm_weightedLogSpotTerminalDataCLE_symm_le {α : ℝ≥0} (hα�
     (weightedLogSpotFirstOrderCoeff hα₁.le a r) (weightedLogSpotZerothOrderCoeff hα₁.le r)
     (realSecondOrderCoeff_ellipticity ha) h2 h1 h0
 
-/-- Unfolding `weightedLogSpotTerminalDataCLE` shows its inverse continuous linear map is
-definitionally that of `realTerminalDataCLE` on the assembled weighted coefficients. -/
-private theorem weightedLogSpotTerminalDataCLE_symm_eq {α : ℝ≥0} {t₀ t₁ : ℝ} (hα₀ : 0 < α)
-    (hα₁ : α < 1) (ht : t₀ < t₁) (a r : HolderSpace α (slab (E := ℝ) t₀ t₁) ℝ)
-    {δ : ℝ} (hδ : 0 < δ) (ha : ∀ p, δ ≤ a p) :
-    (weightedLogSpotTerminalDataCLE hα₀ hα₁ ht a r ⟨δ, hδ, ha⟩).symm.toContinuousLinearMap =
-      (realTerminalDataCLE hα₀ hα₁ ht (realSecondOrderCoeff a)
-        (weightedLogSpotFirstOrderCoeff hα₁.le a r)
-        (weightedLogSpotZerothOrderCoeff hα₁.le r)
-        ⟨δ, hδ, realSecondOrderCoeff_ellipticity ha⟩).symm.toContinuousLinearMap :=
-  rfl
-
 /-- **Lipschitz dependence of the weighted log-spot solution operator on `(a, r)`.** Under the
 bounds of `exists_norm_weightedLogSpotTerminalDataCLE_symm_le`, the solution operators for `(a, r)`
 and `(a', r')` differ in operator norm by at most `C (‖a - a'‖ + ‖r - r'‖)`. -/
@@ -286,9 +274,7 @@ theorem exists_norm_weightedLogSpotTerminalDataCLE_symm_sub_le {α : ℝ≥0} (h
         (2 + 2 * L) * (‖a - a'‖ + ‖r - r'‖) := by
     have hL : 0 ≤ L := norm_nonneg _
     nlinarith [norm_nonneg (a - a'), norm_nonneg (r - r')]
-  refine le_of_eq_of_le ?_ ((hmid.trans (mul_le_mul_of_nonneg_left hsum hC)).trans_eq (by ring))
-  rw [weightedLogSpotTerminalDataCLE_symm_eq hα₀ hα₁ ht a r hδ ha,
-    weightedLogSpotTerminalDataCLE_symm_eq hα₀ hα₁ ht a' r' hδ ha']
+  convert (hmid.trans (mul_le_mul_of_nonneg_left hsum hC)).trans_eq (mul_assoc _ _ _).symm <;> rfl
 
 end TerminalDataCLE
 

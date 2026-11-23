@@ -95,9 +95,14 @@ private theorem evalCoord_sub {G : Type*} [NormedAddCommGroup G] [NormedSpace �
 private theorem norm_evalCoord_le {G : Type*} [NormedAddCommGroup G] [NormedSpace ℝ G]
     (A : HolderSpace α (slab (E := ℝ) a b) (G →L[ℝ] ℝ)) {w : G} (hw : ‖w‖ ≤ 1) :
     ‖evalCoord A w‖ ≤ ‖A‖ := by
-  have h : ‖ContinuousLinearMap.apply ℝ ℝ w‖ ≤ 1 :=
-    ContinuousLinearMap.opNorm_le_bound _ zero_le_one fun f ↦
-      (f.le_opNorm w).trans (by nlinarith [norm_nonneg f])
+  have h : ‖ContinuousLinearMap.apply ℝ ℝ w‖ ≤ 1 := by
+    let : SeminormedAddCommGroup ((G →L[ℝ] ℝ) →L[ℝ] ℝ) := inferInstance
+    let : NormedSpace ℝ ((G →L[ℝ] ℝ) →L[ℝ] ℝ) := inferInstance
+    rw [ContinuousLinearMap.apply]
+    have hflip : ‖(ContinuousLinearMap.id ℝ (G →L[ℝ] ℝ)).flip‖ ≤ 1 := by
+      rw [ContinuousLinearMap.opNorm_flip]
+      exact ContinuousLinearMap.norm_id_le
+    exact (ContinuousLinearMap.le_of_opNorm_le _ hflip w).trans ((one_mul _).trans_le hw)
   have hL := (HolderSpace.compLeftL (α := α)
     (X := slab (E := EuclideanSpace ℝ (Fin 1)) a b)
     (ContinuousLinearMap.apply ℝ ℝ w)).le_of_opNorm_le
@@ -357,6 +362,25 @@ theorem isInvertible_backwardParabolicOperatorL_prod_spatialTraceL_real (hα₀ 
   (realTerminalDataCLE_toContinuousLinearMap (hα₀ := hα₀) (hα₁ := hα₁) (ht := ht)
     (hA := ⟨lam, hlam, hA⟩)).symm ▸ ContinuousLinearMap.isInvertible_equiv
 
+/-- Application-level conjugacy between the line solution operator and the `ℝ¹` Euclidean solution
+operator. -/
+private theorem realTerminalDataCLE_symm_apply {t₀ t₁ : ℝ} (hα₀ : 0 < α) (hα₁ : α < 1)
+    (ht : t₀ < t₁) (A : HolderSpace α (slab (E := ℝ) t₀ t₁) ((ℝ →L[ℝ] ℝ →L[ℝ] ℝ) →L[ℝ] ℝ))
+    (B : HolderSpace α (slab (E := ℝ) t₀ t₁) ((ℝ →L[ℝ] ℝ) →L[ℝ] ℝ))
+    (C : HolderSpace α (slab (E := ℝ) t₀ t₁) (ℝ →L[ℝ] ℝ))
+    (hA : ∃ lam : ℝ, 0 < lam ∧ ∀ p, lam ≤ A p (ContinuousLinearMap.mul ℝ ℝ))
+    (d : HolderSpace α (slab (E := ℝ) t₀ t₁) ℝ × CkHolderSpace 2 α ℝ ℝ) :
+    (realTerminalDataCLE hα₀ hα₁ ht A B C hA).symm d =
+      (compSpatialLIE α ℝ ht coord).symm
+        ((euclideanTerminalDataCLE hα₀ hα₁ ht
+          (fun _ _ ↦ evalCoord A (ContinuousLinearMap.mul ℝ ℝ))
+          (fun _ ↦ evalCoord B (ContinuousLinearMap.id ℝ ℝ)) (evalCoord C 1)
+          (hA.imp fun _ ⟨hlam, h⟩ ↦ ⟨hlam, evalCoord_ellipticity h⟩)).symm
+          (dataEquiv (α := α) t₀ t₁ d)) := by
+  rw [realTerminalDataCLE, ContinuousLinearEquiv.symm_trans_apply,
+    ContinuousLinearEquiv.symm_trans_apply]
+  rfl
+
 /-- Conjugacy between the line solution operator and the `ℝ¹` Euclidean solution operator. -/
 private theorem realTerminalDataCLE_symm_eq {t₀ t₁ : ℝ} (hα₀ : 0 < α) (hα₁ : α < 1) (ht : t₀ < t₁)
     (A : HolderSpace α (slab (E := ℝ) t₀ t₁) ((ℝ →L[ℝ] ℝ →L[ℝ] ℝ) →L[ℝ] ℝ))
@@ -369,14 +393,8 @@ private theorem realTerminalDataCLE_symm_eq {t₀ t₁ : ℝ} (hα₀ : 0 < α) 
           (fun _ _ ↦ evalCoord A (ContinuousLinearMap.mul ℝ ℝ))
           (fun _ ↦ evalCoord B (ContinuousLinearMap.id ℝ ℝ)) (evalCoord C 1)
           (hA.imp fun _ ⟨hlam, h⟩ ↦ ⟨hlam, evalCoord_ellipticity h⟩)).symm.toContinuousLinearMap ∘L
-        (dataEquiv (α := α) t₀ t₁ : _ →L[ℝ] _) := by
-  refine ContinuousLinearMap.ext fun d ↦ ParabolicC2HolderSpace.ext fun p ↦ ?_
-  change (realTerminalDataCLE hα₀ hα₁ ht A B C hA).symm d p = _
-  rw [realTerminalDataCLE, ContinuousLinearEquiv.symm_trans_apply,
-    ContinuousLinearEquiv.symm_trans_apply]
-  simp only [LinearIsometryEquiv.toContinuousLinearEquiv_symm,
-    ContinuousLinearEquiv.symm_symm, LinearIsometryEquiv.coe_toContinuousLinearEquiv,
-    ContinuousLinearMap.coe_comp, ContinuousLinearEquiv.coe_coe, Function.comp_apply]
+        (dataEquiv (α := α) t₀ t₁ : _ →L[ℝ] _) :=
+  ContinuousLinearMap.ext (realTerminalDataCLE_symm_apply hα₀ hα₁ ht A B C hA)
 
 /-- **Uniform Schauder estimate for the terminal-value problem on the line.** For `0 < α < 1`,
 an ellipticity constant `lam > 0`, a bound `K` on the Hölder norms of the coefficients and a bound

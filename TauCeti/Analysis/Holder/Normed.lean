@@ -118,18 +118,18 @@ theorem ofBoundedContinuousFunction_toBoundedContinuousFunction (f : HolderSpace
     ofBoundedContinuousFunction f.toBoundedContinuousFunction f.memHolder = f :=
   (rfl)
 
-/-- An `α`-Hölder function on a compact metric space (`0 < α`), as a bounded `α`-Hölder
+/-- A continuous `α`-Hölder function on a compact metric space, as a bounded `α`-Hölder
 function. -/
-def ofHolderWithOfCompact [CompactSpace X] (hγ : 0 < α) (g : X → Y) {H : ℝ≥0}
+def ofHolderWithOfCompact [CompactSpace X] (g : X → Y) (hg_cont : Continuous g) {H : ℝ≥0}
     (hg : HolderWith H α g) : HolderSpace α X Y :=
-  ofBoundedContinuousFunction (BoundedContinuousFunction.mkOfCompact ⟨g, hg.continuous hγ⟩) <|
+  ofBoundedContinuousFunction (BoundedContinuousFunction.mkOfCompact ⟨g, hg_cont⟩) <|
     HolderWith.memHolder (C := H) fun x y ↦ by
       simpa only [BoundedContinuousFunction.mkOfCompact_apply, ContinuousMap.coe_mk] using hg x y
 
 /-- Evaluation of `ofHolderWithOfCompact` at a point of the domain. -/
 @[simp]
-theorem ofHolderWithOfCompact_apply [CompactSpace X] (hγ : 0 < α) (g : X → Y) {H : ℝ≥0}
-    (hg : HolderWith H α g) (x : X) : ofHolderWithOfCompact hγ g hg x = g x := (rfl)
+theorem ofHolderWithOfCompact_apply [CompactSpace X] (g : X → Y) (hg_cont : Continuous g) {H : ℝ≥0}
+    (hg : HolderWith H α g) (x : X) : ofHolderWithOfCompact g hg_cont hg x = g x := (rfl)
 
 /-- Two Hölder-space elements are equal when they agree pointwise. -/
 @[ext]
@@ -692,6 +692,11 @@ theorem compIsometryEquivLIE_apply (g : X' ≃ᵢ X) (f : HolderSpace α X Y) (x
 @[simp]
 theorem compIsometryEquivLIE_symm (g : X' ≃ᵢ X) :
     (compIsometryEquivLIE α Y g).symm = compIsometryEquivLIE α Y g.symm := (rfl)
+
+/-- Precomposing with an isometric equivalence agrees with `compLipschitzL` for its Lipschitz
+constant `1`. -/
+theorem compIsometryEquivLIE_eq_compLipschitzL (g : X' ≃ᵢ X) (f : HolderSpace α X Y) :
+    compIsometryEquivLIE α Y g f = compLipschitzL g g.isometry.lipschitzWith f := (rfl)
 
 end compHolder
 

@@ -286,17 +286,6 @@ def euclideanTerminalDataCLE {t₀ t₁ : ℝ} (hα₀ : 0 < α) (hα₁ : α < 
     (LinearMap.range_eq_top.2 hbij.2)
 
 omit [DecidableEq ι] in
-private theorem compIsometryEquivLIE_slabTimeReverse_eq_compLipschitzL
-    {t₀ t₁ : ℝ} {T : ℝ≥0} (hT : (T : ℝ) = t₁ - t₀)
-    (f : HolderSpace α (slab (E := EuclideanSpace ℝ ι) t₀ t₁) ℝ) :
-    HolderSpace.compIsometryEquivLIE α ℝ
-        (slabTimeReverse (E := EuclideanSpace ℝ ι) t₁ (sub_self t₁).symm hT) f =
-      HolderSpace.compLipschitzL _
-        (slabTimeReverse (E := EuclideanSpace ℝ ι) t₁ (sub_self t₁).symm hT).isometry.lipschitzWith
-        f :=
-  HolderSpace.ext fun p ↦ by simp
-
-omit [DecidableEq ι] in
 /-- Signed data reversal `(f, g) ↦ (-f ∘ R, g)` transporting terminal-value data on `ℝⁿ × [t₀, t₁]`
 to initial-value data on `ℝⁿ × [0, T]` for `T = t₁ - t₀`. -/
 def terminalDataReverseL {t₀ t₁ : ℝ} {T : ℝ≥0} (hT : (T : ℝ) = t₁ - t₀) :
@@ -410,7 +399,7 @@ theorem timeReverseLIE_euclideanTerminalDataCLE_symm_apply
         (terminalDataReverseL hT d) := by
   rw [ContinuousLinearEquiv.eq_symm_apply, euclideanInitialDataCLE_apply,
     terminalDataReverseL_apply]
-  simp_rw [compIsometryEquivLIE_slabTimeReverse_eq_compLipschitzL]
+  simp_rw [HolderSpace.compIsometryEquivLIE_eq_compLipschitzL]
   rw [euclideanParabolicOperatorL_timeReverseLIE, spatialTrace_timeReverseLIE_left,
     euclideanBackwardParabolicOperatorL_euclideanTerminalDataCLE_symm_apply,
     spatialTrace_euclideanTerminalDataCLE_symm_apply]

@@ -32,11 +32,12 @@ coefficient regularity (such as parabolic Hölder continuity). By contrast, comp
 uniqueness holds in the linear-growth spot class—equivalently, for bounded weighted log-spot
 profiles `u / (1 + e^y)`—for bounded, possibly degenerate coefficients (`a ≥ 0`) without uniform
 ellipticity or coefficient regularity (`TauCeti.Finance.eq_of_pde_eq_of_terminal_eq`). The
-identities proved here need none of these: they are pointwise, require differentiability of the
-first spatial derivative at the point (together with local first-order differentiability near the
-point for `TauCeti.Finance.pde_comp_exp_div_one_add_exp`), and hold for arbitrary real `a` and `r`
-(including `a = 0`), which may be the values `σ(s, t)² / 2` and `r(t)` of a local half-variance and
-a time-dependent rate at the point under consideration.
+identities proved here need none of these: they are pointwise, require differentiability of Lean's
+totalized first spatial `deriv` at the point (together with local first-order differentiability
+near the point for `TauCeti.Finance.pde_comp_exp_div_one_add_exp`, since differentiability of the
+totalized `deriv` alone does not give classical regularity), and hold for arbitrary real `a` and
+`r` (including `a = 0`), which may be the values `σ(s, t)² / 2` and `r(t)` of a local
+half-variance and a time-dependent rate at the point under consideration.
 
 Both directions of the change of variables are stated: `TauCeti.Finance.pde_comp_log` transports a
 function of the log-spot to a function of the spot, and `TauCeti.Finance.pde_comp_exp` a function
@@ -77,11 +78,13 @@ namespace TauCeti.Finance
 variable {s y : ℝ}
 
 /-- **The pricing equation in log-spot coordinates.** For `C(s, t) = u(log s, t)` at a spot
-`s ≠ 0` such that the first `y`-derivative `deriv (fun y => u y t)` is differentiable at `log s`
-(second spatial differentiability), the pricing operator `C_t + a s² C_ss + r (s C_s - C)` equals
-the log-spot operator `u_t + a u_yy + (r - a) u_y - r u` at `y = log s`. The half-variance `a`
-(for instance `σ² / 2`) and the rate `r` are arbitrary reals, so they may be the values of a local
-half-variance and a time-dependent rate at `(s, t)`. -/
+`s ≠ 0` such that Lean's totalized first `y`-derivative `deriv (fun y => u y t)` is
+differentiable at `log s` (without assuming classical `C²` regularity of `u`, in contrast to the
+local first-order differentiability additionally assumed by `pde_comp_exp_div_one_add_exp`), the
+pricing operator `C_t + a s² C_ss + r (s C_s - C)` equals the log-spot operator
+`u_t + a u_yy + (r - a) u_y - r u` at `y = log s`. The half-variance `a` (for instance `σ² / 2`)
+and the rate `r` are arbitrary reals, so they may be the values of a local half-variance and a
+time-dependent rate at `(s, t)`. -/
 theorem pde_comp_log {u : ℝ → ℝ → ℝ} {t : ℝ} (a r : ℝ)
     (hu' : DifferentiableAt ℝ (deriv fun y => u y t) (log s)) (hs : s ≠ 0) :
     deriv (fun t' => u (log s) t') t +
@@ -94,8 +97,9 @@ theorem pde_comp_log {u : ℝ → ℝ → ℝ} {t : ℝ} (a r : ℝ)
   linear_combination a * h₂ + r * h₁
 
 /-- **The pricing equation in log-spot coordinates.** For a function `C(s, t)` of the spot whose
-first spot derivative `deriv (fun x => C x t)` is differentiable at `e^y` (second spatial
-differentiability) and `u(y, t) = C(e^y, t)`, the log-spot operator
+totalized first spot derivative `deriv (fun x => C x t)` is differentiable at `e^y` (without
+assuming classical `C²` regularity, unlike the additional local first-order differentiability
+assumed by `pde_comp_exp_div_one_add_exp`) and `u(y, t) = C(e^y, t)`, the log-spot operator
 `u_t + a u_yy + (r - a) u_y - r u` at `y` equals the pricing operator
 `C_t + a s² C_ss + r (s C_s - C)` at the spot `s = e^y`. The half-variance `a` (for instance
 `σ² / 2`) and the rate `r` are arbitrary reals, so they may be the values of a local half-variance

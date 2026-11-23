@@ -135,8 +135,8 @@ def shortRateHolder (hα₀ : 0 < α) (r : ℝ → ℝ) {H : ℝ≥0}
     (hr : HolderOnWith H (α / 2) r (Icc t₀ t₁)) :
     HolderSpace α (slab (E := ℝ) t₀ t₁) ℝ :=
   HolderSpace.compSlabTimeL
-    (HolderSpace.ofHolderWithOfCompact (div_pos hα₀ two_pos) (fun t : Icc t₀ t₁ ↦ r t)
-      hr.holderWith)
+    (HolderSpace.ofHolderWithOfCompact (fun t : Icc t₀ t₁ ↦ r t)
+      (hr.holderWith.continuous (div_pos hα₀ two_pos)) hr.holderWith)
 
 /-- Evaluation of `shortRateHolder` at a slab point gives `r` at its time coordinate. -/
 @[simp]
@@ -144,8 +144,8 @@ theorem shortRateHolder_apply (hα₀ : 0 < α) (r : ℝ → ℝ) {H : ℝ≥0}
     (hr : HolderOnWith H (α / 2) r (Icc t₀ t₁)) (p : slab (E := ℝ) t₀ t₁) :
     shortRateHolder hα₀ r hr p = r (slabTime p) := by
   rw [shortRateHolder, HolderSpace.compSlabTimeL_apply]
-  exact HolderSpace.ofHolderWithOfCompact_apply (div_pos hα₀ two_pos) (fun t : Icc t₀ t₁ ↦ r t)
-    hr.holderWith (slabTime p)
+  exact HolderSpace.ofHolderWithOfCompact_apply (fun t : Icc t₀ t₁ ↦ r t)
+    (hr.holderWith.continuous (div_pos hα₀ two_pos)) hr.holderWith (slabTime p)
 
 /-- Norm bound for `shortRateHolder`: if `|r(t)| ≤ M` (`0 ≤ M`) and `r` is `H`-Hölder of exponent
 `α / 2` on `[t₀, t₁]`, then `shortRateHolder` has Hölder-space norm at most `M + H`. -/
@@ -153,11 +153,11 @@ theorem norm_shortRateHolder_le (hα₀ : 0 < α) (r : ℝ → ℝ) {M : ℝ} (h
     (hbdd : ∀ t ∈ Icc t₀ t₁, |r t| ≤ M) {H : ℝ≥0} (hr : HolderOnWith H (α / 2) r (Icc t₀ t₁)) :
     ‖shortRateHolder hα₀ r hr‖ ≤ M + H := by
   let g : HolderSpace (α / 2) (Icc t₀ t₁) ℝ :=
-    HolderSpace.ofHolderWithOfCompact (div_pos hα₀ two_pos) (fun t : Icc t₀ t₁ ↦ r t)
-      hr.holderWith
+    HolderSpace.ofHolderWithOfCompact (fun t : Icc t₀ t₁ ↦ r t)
+      (hr.holderWith.continuous (div_pos hα₀ two_pos)) hr.holderWith
   have hg : ∀ t : Icc t₀ t₁, g t = r t := fun t ↦
-    HolderSpace.ofHolderWithOfCompact_apply (div_pos hα₀ two_pos) (fun t : Icc t₀ t₁ ↦ r t)
-      hr.holderWith t
+    HolderSpace.ofHolderWithOfCompact_apply (fun t : Icc t₀ t₁ ↦ r t)
+      (hr.holderWith.continuous (div_pos hα₀ two_pos)) hr.holderWith t
   have hpoint : ∀ t : Icc t₀ t₁, ‖g t‖ ≤ M := fun t ↦ by
     rw [hg, Real.norm_eq_abs]
     exact hbdd t.val t.property
