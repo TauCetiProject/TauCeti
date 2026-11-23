@@ -141,14 +141,6 @@ default `i₀`. For `2 s`-separated points the balls are pairwise disjoint, so t
 noncomputable def ballIndex (θ : ι → Y) (s : ℝ) (i₀ : ι) (y : Y) : ι :=
   Function.extend (fun p : Σ i, ball (θ i) s ↦ (p.2 : Y)) Sigma.fst (fun _ ↦ i₀) y
 
-/-- For `2 s`-separated points, the open balls of radius `s` around them meet only when they are
-equal. -/
-private theorem eq_of_mem_ball_of_mem_ball {θ : ι → Y} {s : ℝ}
-    (hθ : ∀ i j, i ≠ j → 2 * s ≤ dist (θ i) (θ j)) {y : Y} {i j : ι}
-    (hi : y ∈ ball (θ i) s) (hj : y ∈ ball (θ j) s) : i = j := by
-  by_contra hij
-  exact Disjoint.ne_of_mem (pairwise_disjoint_ball_of_two_mul_le_dist hθ hij) hi hj rfl
-
 /-- A point lying in some ball lies in the ball of its index, with no separation hypothesis. -/
 theorem mem_ball_ballIndex {θ : ι → Y} {s : ℝ} (i₀ : ι) {y : Y} (h : ∃ i, y ∈ ball (θ i) s) :
     y ∈ ball (θ (ballIndex θ s i₀ y)) s := by
@@ -162,10 +154,9 @@ theorem mem_ball_ballIndex {θ : ι → Y} {s : ℝ} (i₀ : ι) {y : Y} (h : �
 /-- A point in the ball around `θ i` has index `i`. -/
 theorem ballIndex_eq_of_mem_ball {θ : ι → Y} {s : ℝ}
     (hθ : ∀ i j, i ≠ j → 2 * s ≤ dist (θ i) (θ j)) (i₀ : ι) {y : Y} {i : ι}
-    (hy : y ∈ ball (θ i) s) : ballIndex θ s i₀ y = i := by
-  have hf : (Sigma.fst : (Σ i, ball (θ i) s) → ι).FactorsThrough fun p ↦ (p.2 : Y) :=
-    fun a b (h : (a.2 : Y) = b.2) ↦ eq_of_mem_ball_of_mem_ball hθ a.2.property (h ▸ b.2.property)
-  exact hf.extend_apply _ ⟨i, y, hy⟩
+    (hy : y ∈ ball (θ i) s) : ballIndex θ s i₀ y = i :=
+  (Subtype.val_injective.comp (Set.sigmaToiUnion_injective _
+    (pairwise_disjoint_ball_of_two_mul_le_dist hθ))).extend_apply _ _ ⟨i, y, hy⟩
 
 /-- A point in no ball has the default index. -/
 @[simp]
@@ -184,7 +175,7 @@ theorem ballIndex_eq_iff {θ : ι → Y} {s : ℝ} (hθ : ∀ i j, i ≠ j → 2
     rw [ballIndex_eq_of_mem_ball hθ i₀ hj]
     refine ⟨fun h ↦ .inl (h ▸ hj), ?_⟩
     rintro (hi | ⟨-, hno⟩)
-    · exact eq_of_mem_ball_of_mem_ball hθ hj hi
+    · exact (ballIndex_eq_of_mem_ball hθ i₀ hj).symm.trans (ballIndex_eq_of_mem_ball hθ i₀ hi)
     · exact (hno j hj).elim
   · push Not at hy
     simp [hy, eq_comm]
