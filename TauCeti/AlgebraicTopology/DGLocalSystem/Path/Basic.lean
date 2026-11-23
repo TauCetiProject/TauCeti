@@ -20,10 +20,11 @@ on paths from `a` to `b`.
 
 This identifies the right-module homology of the path carrier used for basepoint change. The
 left loop-chain action is in `TauCeti.AlgebraicTopology.DGLocalSystem.Path.Bimodule`, and
-basepoint change itself in `TauCeti.AlgebraicTopology.DGLocalSystem.Path.BasepointChange`; it
-is an equivalence of derived categories, shown in
-`TauCeti.AlgebraicTopology.DGLocalSystem.Path.Equivalence`. Homotopy invariance is the existing
-cubical-chain comparison theorem; no homology calculation is repeated here.
+basepoint change itself in `TauCeti.AlgebraicTopology.DGLocalSystem.Path.BasepointChange`. For
+points in the same path component, the functor it induces on derived categories is an
+equivalence, shown in `TauCeti.AlgebraicTopology.DGLocalSystem.Path.Equivalence`. Homotopy
+invariance is the existing cubical-chain comparison theorem; no homology calculation is repeated
+here.
 
 The chain objects and maps allow independent universes for the space and coefficient ring.
 The quasi-isomorphism statements require a shared universe, as in the cubical-chain
