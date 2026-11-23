@@ -334,14 +334,12 @@ theorem toLp_ofSmooth_ae_eq (u : C^∞⟮I, M; ℝ⟯) :
   exact ContinuousMap.coeFn_toLp (p := 2) (𝕜 := ℝ) _ _
 
 /-- **Smooth functions embed into `H¹(M)`.** Two smooth functions with the same image in `H¹(M)`
-agree almost everywhere, hence everywhere, since the Riemannian volume charges every nonempty open
+have the same class in `L²(M)`, hence agree, since the Riemannian volume charges every nonempty open
 set. -/
 theorem ofSmooth_injective : Function.Injective (ofSmooth (I := I) (M := M)) := fun u v huv ↦ by
-  have hu := toLp_ofSmooth_ae_eq u
-  rw [huv] at hu
-  exact ContMDiffMap.ext <| congrFun <|
-    Measure.eq_of_ae_eq (hu.symm.trans (toLp_ofSmooth_ae_eq v)) (map_continuous u)
-      (map_continuous v)
+  have h : (u : C(M, ℝ)) = v := ContinuousMap.toLp_injective (p := 2) (𝕜 := ℝ)
+    (riemannianVolume I M) (by simpa only [toLp_ofSmooth] using congrArg toLp huv)
+  exact ContMDiffMap.ext fun x ↦ DFunLike.congr_fun h x
 
 /-- On a nonempty manifold, `H¹(M)` is nontrivial: the constant function `1` is nonzero, since its
 integral is the positive total volume. -/
