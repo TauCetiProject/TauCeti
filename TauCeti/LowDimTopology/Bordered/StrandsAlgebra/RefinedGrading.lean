@@ -509,10 +509,6 @@ diagrams of refined grading `g`. -/
 def gradedPart (g : StrandGradingGroup α) : Submodule R (StrandsAlgebra R α) :=
   gradedPartBy R ψ.grading g
 
-theorem gradedPart_def (g : StrandGradingGroup α) :
-    ψ.gradedPart R g = gradedPartBy R ψ.grading g :=
-  (rfl)
-
 variable {R}
 
 /-- The part of refined grading `g` is the part of degree `g` for the function `ψ.grading`. -/

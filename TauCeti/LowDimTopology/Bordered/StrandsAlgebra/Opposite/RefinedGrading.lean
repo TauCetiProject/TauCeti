@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.Group.Subgroup.Map
 public import TauCeti.LowDimTopology.Bordered.StrandsAlgebra.Opposite.Basic
 public import TauCeti.LowDimTopology.Bordered.StrandsAlgebra.RefinedGrading
 
@@ -46,7 +47,7 @@ Reversing twice gives back the original data up to the identification `α ≃o �
 * `TauCeti.StrandGradingGroup.matchedMap`, `TauCeti.StrandGradingGroup.matchedReverse`,
   `TauCeti.StrandGradingGroup.matchedRev`: the restrictions of relabelling and reversal to the
   groups `G' ⊓ matchedSubgroup M`, the last being the anti-isomorphism `G(Z) ≃ G(-Z)ᵒᵖ`. They are
-  `MulEquiv.subgroupMap` followed by the identification of the image
+  `TauCeti.Subgroup.congrOfMapEq` applied to the identification of the image
   (`TauCeti.StrandGradingGroup.map_gPrime_inf_matchedSubgroup`,
   `TauCeti.StrandGradingGroup.map_reverse_gPrime_inf_matchedSubgroup`).
 * `TauCeti.MatchedGradingRefinement.map`, `TauCeti.MatchedGradingRefinement.reverse`,
@@ -143,7 +144,8 @@ theorem map_gPrime_inf_matchedSubgroup (e : α ≃o γ) (hM : ∀ i, M' (e i) = 
 /-- Reversal maps `G' ⊓ matchedSubgroup M` onto the opposite of the group of the same matching on
 the reversed order. -/
 theorem map_reverse_gPrime_inf_matchedSubgroup :
-    (gPrime ⊓ matchedSubgroup M).map (reverse (α := α)).toMonoidHom =
+    (gPrime ⊓ matchedSubgroup M).map
+        (reverse (α := α) : StrandGradingGroup α →* (StrandGradingGroup αᵒᵈ)ᵐᵒᵖ) =
       (gPrime ⊓ matchedSubgroup (M ∘ ofDual)).op := by
   ext g
   obtain ⟨g, rfl⟩ := reverse.surjective g
@@ -153,13 +155,13 @@ theorem map_reverse_gPrime_inf_matchedSubgroup :
 the groups `G' ⊓ matchedSubgroup M` and `G' ⊓ matchedSubgroup M'`. -/
 def matchedMap (e : α ≃o γ) (hM : ∀ i, M' (e i) = M i) :
     ↥(gPrime ⊓ matchedSubgroup M) ≃* ↥(gPrime ⊓ matchedSubgroup M') :=
-  ((map e).subgroupMap _).trans (MulEquiv.subgroupCongr (map_gPrime_inf_matchedSubgroup e hM))
+  Subgroup.congrOfMapEq (map e) (map_gPrime_inf_matchedSubgroup e hM)
 
 @[simp]
 theorem coe_matchedMap (e : α ≃o γ) (hM : ∀ i, M' (e i) = M i)
     (g : ↥(gPrime ⊓ matchedSubgroup M)) :
     (matchedMap e hM g : StrandGradingGroup γ) = map e g :=
-  (rfl)
+  Subgroup.coe_congrOfMapEq_apply _ _ g
 
 variable (M) in
 /-- **Orientation reversal of the refined grading group.** Reversal restricts to an
@@ -167,15 +169,14 @@ anti-isomorphism from `G' ⊓ matchedSubgroup M` onto the opposite of the group 
 on the reversed order. -/
 def matchedReverse :
     ↥(gPrime ⊓ matchedSubgroup M) ≃* (↥(gPrime ⊓ matchedSubgroup (M ∘ ofDual)))ᵐᵒᵖ :=
-  ((reverse.subgroupMap _).trans
-    (MulEquiv.subgroupCongr map_reverse_gPrime_inf_matchedSubgroup)).trans
+  (Subgroup.congrOfMapEq reverse map_reverse_gPrime_inf_matchedSubgroup).trans
     (Subgroup.mopMulEquivOp _).symm
 
 @[simp]
 theorem coe_unop_matchedReverse (g : ↥(gPrime ⊓ matchedSubgroup M)) :
     ((matchedReverse M g).unop : StrandGradingGroup αᵒᵈ) =
-      (reverse (g : StrandGradingGroup α)).unop :=
-  (rfl)
+      (reverse (g : StrandGradingGroup α)).unop := by
+  simp [matchedReverse]
 
 variable (M) in
 /-- **`G(Z) ≅ G(-Z)ᵒᵖ`.** For a matching `M` of `{1, …, n}`, the orientation reversal
@@ -319,7 +320,7 @@ theorem mapAlgEquiv_mem_gradedPart_iff (e : α ≃o γ) (hM : ∀ i, M' (e i) = 
     (ψ : MatchedGradingRefinement M s₀) {g : StrandGradingGroup α} {x : StrandsAlgebra R α} :
     mapAlgEquiv e x ∈ (ψ.map e hM).gradedPart R (StrandGradingGroup.map e g) ↔
       x ∈ ψ.gradedPart R g := by
-  rw [gradedPart_def, gradedPart_def]
+  rw [gradedPart_eq_gradedPartBy, gradedPart_eq_gradedPartBy]
   exact mem_gradedPartBy_iff_of_basis (mapAlgEquiv e).toLinearEquiv (mapEquiv e)
     (StrandGradingGroup.map e).injective (fun φ ↦ by simp [mapAlgEquiv_of])
     (fun φ ↦ by simp)
@@ -332,7 +333,7 @@ theorem unop_reverseAlgEquiv_mem_gradedPart_iff (ψ : MatchedGradingRefinement M
     {g : StrandGradingGroup α} {x : StrandsAlgebra R α} :
     (reverseAlgEquiv x).unop ∈ ψ.reverse.gradedPart R (StrandGradingGroup.reverse g).unop ↔
       x ∈ ψ.gradedPart R g := by
-  rw [gradedPart_def, gradedPart_def]
+  rw [gradedPart_eq_gradedPartBy, gradedPart_eq_gradedPartBy]
   exact mem_gradedPartBy_iff_of_basis
     (reverseAlgEquiv.toLinearEquiv.trans (opLinearEquiv R).symm) reverseEquiv
     (unop_injective.comp StrandGradingGroup.reverse.injective) (fun φ ↦ by simp)
@@ -346,12 +347,8 @@ theorem unop_revAlgEquiv_mem_gradedPart_iff {n : ℕ} {M : Fin n → β}
     {x : StrandsAlgebra R (Fin n)} :
     (revAlgEquiv n x).unop ∈ ψ.rev.gradedPart R (StrandGradingGroup.rev n g).unop ↔
       x ∈ ψ.gradedPart R g := by
-  rw [gradedPart_def, gradedPart_def]
-  exact mem_gradedPartBy_iff_of_basis
-    ((revAlgEquiv n).toLinearEquiv.trans (opLinearEquiv R).symm)
-    (reverseEquiv.trans (mapEquiv Fin.revOrderIso))
-    (unop_injective.comp (StrandGradingGroup.rev n).injective) (fun φ ↦ by simp)
-    (fun φ ↦ by simp)
+  rw [unop_revAlgEquiv_apply, rev, unop_rev_apply, mapAlgEquiv_mem_gradedPart_iff,
+    unop_reverseAlgEquiv_mem_gradedPart_iff]
 
 /-- The relabelling isomorphism of matched subalgebras carries the part of refined grading `g`
 onto the part of the relabelled refined grading. -/

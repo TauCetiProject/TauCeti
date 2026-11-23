@@ -117,8 +117,7 @@ product.
   own grading only (`TauCeti.StrandsAlgebra.of_mem_gradedPart_iff`).
 * `TauCeti.StrandsAlgebra.iSupIndep_gradedPart`, `TauCeti.StrandsAlgebra.isInternal_gradedPart`:
   the graded parts are independent, so over a ring the algebra is their internal direct sum.
-* `TauCeti.StrandsAlgebra.mem_gradedPartBy_iff_of_basis`,
-  `TauCeti.StrandsAlgebra.mem_gradedPart_iff_of_basis`: a linear isomorphism of strands algebras
+* `TauCeti.StrandsAlgebra.mem_gradedPartBy_iff_of_basis`: a linear isomorphism of strands algebras
   given by a bijection of diagrams that transforms gradings by an injective map carries graded parts
   onto graded parts.
 
@@ -1088,17 +1087,6 @@ theorem mem_gradedPart {g : StrandGradingGroup α} {x : StrandsAlgebra R α} :
 theorem gradedPart_eq_span (g : StrandGradingGroup α) :
     gradedPart R g = Submodule.span R (of '' {φ | φ.grading = g}) :=
   gradedPartBy_eq_span _ g
-
-/-- A linear isomorphism of strands algebras given on basis elements by a bijection of diagrams
-which transforms gradings by an injective map `F` carries the part of grading `g` onto the part of
-grading `F g`. -/
-theorem mem_gradedPart_iff_of_basis {β : Type*} [LinearOrder β] [Fintype β]
-    (L : StrandsAlgebra R α ≃ₗ[R] StrandsAlgebra R β)
-    (E : StrandDiagram α ≃ StrandDiagram β) {F : StrandGradingGroup α → StrandGradingGroup β}
-    (hF : F.Injective) (hL : ∀ φ, L (of φ) = of (E φ)) (hE : ∀ φ, (E φ).grading = F φ.grading)
-    {g : StrandGradingGroup α} {x : StrandsAlgebra R α} :
-    L x ∈ gradedPart R (F g) ↔ x ∈ gradedPart R g :=
-  mem_gradedPartBy_iff_of_basis L E hF hL hE
 
 /-- A strand diagram lies in the part of grading `g` exactly when its grading is `g`. -/
 theorem of_mem_gradedPart_iff [Nontrivial R] {φ : StrandDiagram α} {g : StrandGradingGroup α} :
