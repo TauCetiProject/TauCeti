@@ -9,6 +9,7 @@ public import TauCeti.RingTheory.AdicCompletion.Algebra
 public import Mathlib.RingTheory.Localization.Away.Basic
 public import TauCeti.RingTheory.AdicCompletion.Regular
 public import TauCeti.RingTheory.AdicCompletion.Iterated
+public import TauCeti.RingTheory.Regular.Pair
 import Mathlib.Tactic.LinearCombination
 import Mathlib.Algebra.Module.LocalizedModule.IsLocalization
 import TauCeti.Algebra.Module.LocalizedModule.Regular

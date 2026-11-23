@@ -135,6 +135,44 @@ theorem matrixMutation_involutive (row : K ↪ I) (k : K) :
     Function.Involutive fun B ↦ matrixMutation row B k :=
   fun B ↦ matrixMutation_matrixMutation row B k
 
+/-- Mutations in two directions with zero entries between them commute, for any rectangular
+integer matrix, including matrices with nonzero diagonal. -/
+theorem matrixMutation_matrixMutation_comm (row : K ↪ I) (B : Matrix I K ℤ) (k l : K)
+    (hkl : B (row k) l = 0) (hlk : B (row l) k = 0) :
+    matrixMutation row (matrixMutation row B k) l =
+      matrixMutation row (matrixMutation row B l) k := by
+  by_cases h : k = l
+  · subst l
+    rfl
+  have hrow : row k ≠ row l := row.injective.ne h
+  have rk (j : K) : matrixMutation row B l (row k) j = B (row k) j :=
+    matrixMutation_apply_of_apply_col_eq_zero hrow hkl j
+  have ck (i : I) : matrixMutation row B l i k = B i k :=
+    matrixMutation_apply_of_apply_row_eq_zero h hlk i
+  have rl (j : K) : matrixMutation row B k (row l) j = B (row l) j :=
+    matrixMutation_apply_of_apply_col_eq_zero (Ne.symm hrow) hlk j
+  have cl (i : I) : matrixMutation row B k i l = B i l :=
+    matrixMutation_apply_of_apply_row_eq_zero (Ne.symm h) hkl i
+  ext i j
+  conv_lhs => rw [matrixMutation_apply]
+  conv_rhs => rw [matrixMutation_apply]
+  simp only [rk, ck, rl, cl]
+  by_cases hik : i = row k
+  · subst i
+    by_cases hj : j = l <;> simp [matrixMutation_apply, hrow, hkl, hj]
+  by_cases hil : i = row l
+  · subst i
+    by_cases hj : j = k <;> simp [matrixMutation_apply, Ne.symm hrow, hlk, hj]
+  by_cases hjk : j = k
+  · subst j
+    simp [matrixMutation_apply, h, hik, hil, hlk]
+  by_cases hjl : j = l
+  · subst j
+    simp [matrixMutation_apply, Ne.symm h, hik, hil, hkl]
+  simp only [hik, hil, hjk, hjl, false_or, ite_false]
+  rw [matrixMutation_apply_of_ne hik hjk, matrixMutation_apply_of_ne hil hjl]
+  ring
+
 /-- Mutation commutes with negation of the matrix. -/
 @[simp]
 theorem matrixMutation_neg (row : K ↪ I) (B : Matrix I K ℤ) (k : K) :
@@ -150,9 +188,11 @@ theorem matrixMutation_neg (row : K ↪ I) (B : Matrix I K ℤ) (k : K) :
 /-- Mutation commutes with injective restriction and relabelling of the rows and columns, along
 maps compatible with the mutable embeddings. -/
 theorem matrixMutation_submatrix [DecidableEq I'] [DecidableEq K'] {row' : K' ↪ I'}
-    {f : I' → I} {g : K' → K} (hf : Function.Injective f) (hg : Function.Injective g)
+    {f : I' → I} {g : K' → K} (hf : Function.Injective f)
     (h : ∀ k, f (row' k) = row (g k)) (B : Matrix I K ℤ) (k : K') :
     matrixMutation row' (B.submatrix f g) k = (matrixMutation row B (g k)).submatrix f g := by
+  have hg : Function.Injective g := fun _ _ hk ↦
+    row'.injective (hf (by rw [h, h, hk]))
   ext i j
   have hi : i = row' k ↔ f i = row (g k) := by rw [← h, hf.eq_iff]
   simp only [matrixMutation_apply, submatrix_apply, h, hi, hg.eq_iff]
@@ -162,7 +202,39 @@ matrix is the mutation of the principal block as a square matrix. -/
 theorem matrixMutation_refl_submatrix_row (row : K ↪ I) (B : Matrix I K ℤ) (k : K) :
     matrixMutation (Function.Embedding.refl K) (B.submatrix row id) k =
       (matrixMutation row B k).submatrix row id :=
-  matrixMutation_submatrix row.injective Function.injective_id (fun _ ↦ rfl) B k
+  matrixMutation_submatrix row.injective (fun _ ↦ rfl) B k
+
+/-- A mutated column is supported on the union of its old support and the old support of
+the mutation column. No skew-symmetrizability hypothesis is needed. -/
+theorem support_matrixMutation_subset (row : K ↪ I) (B : Matrix I K ℤ) (k l : K) :
+    (Function.support fun i ↦ matrixMutation row B k i l) ⊆
+      (Function.support fun i ↦ B i l) ∪ Function.support fun i ↦ B i k := by
+  intro i hi
+  by_contra h
+  simp only [Set.mem_union, Function.mem_support, not_or, not_not] at h
+  exact hi (by simp [matrixMutation_apply, h.1, h.2])
+
+/-- A row vanishes after matrix mutation exactly when it vanished before mutation. -/
+@[simp]
+theorem matrixMutation_row_eq_zero_iff (row : K ↪ I) (B : Matrix I K ℤ) (k : K) (i : I) :
+    (∀ l, matrixMutation row B k i l = 0) ↔ ∀ l, B i l = 0 := by
+  have hz (C : Matrix I K ℤ) (h : ∀ l, C i l = 0) :
+      ∀ l, matrixMutation row C k i l = 0 := by
+    intro l
+    simp [matrixMutation_apply, h]
+  exact ⟨fun h ↦ by simpa using hz (matrixMutation row B k) h, hz B⟩
+
+/-- No finite sequence of matrix mutations creates or removes a nonzero row. -/
+@[simp]
+theorem foldl_matrixMutation_row_eq_zero_iff (row : K ↪ I) (B : Matrix I K ℤ)
+    (w : List K) (i : I) :
+    (∀ l, w.foldl (matrixMutation row) B i l = 0) ↔ ∀ l, B i l = 0 := by
+  induction w generalizing B with
+  | nil => rfl
+  | cons k w ih =>
+    simpa only [List.foldl_cons] using
+      (ih (matrixMutation row B k)).trans (matrixMutation_row_eq_zero_iff row B k i)
+
 
 end matrixMutation
 
@@ -241,6 +313,17 @@ protected theorem _root_.Matrix.IsSkewSymmetrizer.matrixMutation (h : B.IsSkewSy
 
 end square
 
+/-- Matrix mutation preserves skew-symmetry of the principal block of a rectangular matrix. -/
+theorem matrixMutation_skew [DecidableEq I] [DecidableEq K] {row : K ↪ I} {B : Matrix I K ℤ}
+    (hB : ∀ i j, B (row i) j = -B (row j) i) (k : K) :
+    ∀ i j, matrixMutation row B k (row i) j = -matrixMutation row B k (row j) i := by
+  have hs : (B.submatrix row id).IsSkewSymmetrizer (fun _ ↦ 1) :=
+    ⟨fun _ ↦ by decide, fun i j ↦ by simpa using hB i j⟩
+  have hm := hs.matrixMutation k
+  rw [matrixMutation_refl_submatrix_row] at hm
+  intro i j
+  simpa using hm.mul_apply i j
+
 /-- The matrix with rows `(0, 1)` and `(-2, 0)` is negated by mutation in its first direction. -/
 example :
     matrixMutation (Function.Embedding.refl (Fin 2)) !![0, 1; -2, 0] 0 = -!![0, 1; -2, 0] := by
@@ -272,6 +355,33 @@ theorem mutation_matrix (k : K) : (B.mutation k).matrix = matrixMutation row B.m
 theorem mutation_symmetrizer (k : K) : (B.mutation k).symmetrizer = B.symmetrizer :=
   (rfl)
 
+/-- Taking the underlying matrix commutes with a finite sequence of mutations. -/
+@[simp]
+theorem foldl_mutation_matrix (w : List K) :
+    (w.foldl (fun C k ↦ C.mutation k) B).matrix = w.foldl (matrixMutation row) B.matrix :=
+  (List.foldl_hom (fun C : ExchangeMatrix row ↦ C.matrix)
+    (l := w) (init := B) (fun _ _ ↦ rfl)).symm
+
+/-- Finite mutation sequences retain the chosen principal symmetrizer. -/
+@[simp]
+theorem foldl_mutation_symmetrizer (w : List K) :
+    (w.foldl (fun C k ↦ C.mutation k) B).symmetrizer = B.symmetrizer := by
+  induction w generalizing B with
+  | nil => rfl
+  | cons k w ih => simpa only [List.foldl_cons, mutation_symmetrizer] using ih (B.mutation k)
+
+/-- A row of an exchange matrix vanishes after mutation exactly when it vanished before. -/
+theorem mutation_row_eq_zero_iff (k : K) (i : I) :
+    (∀ l, (B.mutation k).matrix i l = 0) ↔ ∀ l, B.matrix i l = 0 := by
+  simpa only [mutation_matrix] using matrixMutation_row_eq_zero_iff row B.matrix k i
+
+/-- Finite mutation sequences preserve and reflect zero rows of arbitrary exchange matrices.
+The simp normal form is supplied by `foldl_mutation_matrix` and the raw matrix row-zero law. -/
+theorem foldl_mutation_row_eq_zero_iff (w : List K) (i : I) :
+    (∀ l, (w.foldl (fun C k ↦ C.mutation k) B).matrix i l = 0) ↔
+      ∀ l, B.matrix i l = 0 := by
+  simpa only [foldl_mutation_matrix] using foldl_matrixMutation_row_eq_zero_iff row B.matrix w i
+
 /-- Mutating an exchange matrix twice in the same direction gives back the original exchange
 matrix. -/
 @[simp]
@@ -283,17 +393,28 @@ theorem mutation_involutive (k : K) :
     Function.Involutive fun B : ExchangeMatrix row ↦ B.mutation k :=
   fun B ↦ B.mutation_mutation k
 
+/-- Mutations at nonadjacent mutable indices commute. A single zero entry suffices because
+the principal block is skew-symmetrizable. -/
+theorem mutation_mutation_comm {row : K ↪ I} (B : ExchangeMatrix row) (k l : K)
+    (hkl : B.matrix (row k) l = 0) : (B.mutation k).mutation l = (B.mutation l).mutation k := by
+  ext : 1
+  · simp only [mutation_matrix]
+    exact matrixMutation_matrixMutation_comm row B.matrix k l hkl
+      ((B.isSkewSymmetrizer.apply_eq_zero_iff).mp hkl)
+  · simp
+
 /-- Mutation of exchange matrices commutes with injective restriction and relabelling of the
 rows and columns. -/
 theorem submatrix_mutation [DecidableEq I'] [DecidableEq K'] {row' : K' ↪ I'} {f : I' → I}
-    {g : K' → K} (hf : Function.Injective f) (hg : Function.Injective g)
+    {g : K' → K} (hf : Function.Injective f)
     (h : ∀ k, f (row' k) = row (g k)) (k : K') :
     (B.mutation (g k)).submatrix f g h = (B.submatrix f g h).mutation k := by
   ext : 1
-  · simp [matrixMutation_submatrix hf hg h]
+  · simp [matrixMutation_submatrix hf h]
   · simp
 
 /-- Mutation commutes with passage to the principal block. -/
+@[simp]
 theorem principal_mutation (k : K) : (B.mutation k).principal = B.principal.mutation k := by
   ext : 1 <;> simp [matrixMutation_refl_submatrix_row]
 
@@ -303,7 +424,7 @@ theorem mutation_reindex [DecidableEq I'] [DecidableEq K'] {row' : K' ↪ I'} (e
     (reindex eI eK h B).mutation (eK k) = reindex eI eK h (B.mutation k) := by
   have h' (k : K') : eI.symm (row' k) = row (eK.symm k) := by simp [Equiv.symm_apply_eq, h]
   ext : 1
-  · simp [matrixMutation_submatrix eI.symm.injective eK.symm.injective h']
+  · simp [matrixMutation_submatrix eI.symm.injective h']
   · simp
 
 section sum

@@ -72,7 +72,7 @@ form of an even nondegenerate lattice. -/
 @[simp]
 theorem gaussSign_discriminantQuadraticModule_restrictFull (L : IntegralLattice V)
     [L.IsNondegenerate] (hL : L.IsEven) (N : Submodule ℤ V) (hN : N ≤ L.carrier)
-    [N.IsLattice ℚ] :
+    [N.IsFullLattice ℚ] :
     ((L.restrictFull N hN).discriminantQuadraticModule (isEven_restrictFull hL N hN)).gaussSign =
       (L.discriminantQuadraticModule hL).gaussSign := by
   set K := L.restrictFull N hN

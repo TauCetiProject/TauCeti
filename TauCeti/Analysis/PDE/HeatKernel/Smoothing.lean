@@ -201,7 +201,7 @@ theorem exists_contDiff_ae_eq_heatSemigroup {p : ℝ≥0∞} [Fact (1 ≤ p)]
     ∃ u : E → F, ContDiff ℝ (⊤ : ℕ∞) u ∧
       (heatSemigroup hp t f : E → F) =ᵐ[volume] u :=
   -- The first half-step makes the datum essentially bounded, the second smooths it.
-  ⟨_, contDiff_heatKernel_convolution (by positivity) (Lp.aestronglyMeasurable _)
+  ⟨_, contDiff_heatKernel_convolution (by positivity)
     (ae_norm_heatSemigroup_le hp (by positivity) f),
     heatSemigroup_ae_eq_convolution_heatSemigroup_half hp ht f⟩
 
@@ -225,8 +225,7 @@ theorem exists_eLpNorm_iteratedFDeriv_le_of_ae_eq_heatSemigroup (m : ℕ) :
   have hbound := ae_norm_heatSemigroup_le hp (NNReal.coe_ne_zero.1 hs.ne') f
   -- `u` is the smooth function `K_s ⋆ g`, two continuous functions being equal almost everywhere.
   have hug : u = heatKernel (s : ℝ) ⋆ (g : E → F) :=
-    (Continuous.ae_eq_iff_eq volume hu (contDiff_heatKernel_convolution hs
-      (Lp.aestronglyMeasurable g) hbound).continuous).1
+    (Continuous.ae_eq_iff_eq volume hu (contDiff_heatKernel_convolution hs hbound).continuous).1
       (hfu.symm.trans (heatSemigroup_ae_eq_convolution_heatSemigroup_half hp ht f))
   -- The semigroup is a contraction, so `‖g‖_p ≤ ‖f‖_p`.
   have hgf : eLpNorm (g : E → F) p volume ≤ eLpNorm f p volume := by
@@ -264,9 +263,7 @@ theorem exists_eLpNorm_laplacian_le_of_ae_eq_heatSemigroup :
     exact (hw.of_le (by norm_cast)).continuous_laplacian.aestronglyMeasurable
   -- Pointwise, `‖Δ u‖ ≤ dim E * ‖D² u‖`.
   have hpt : ∀ᵐ x ∂volume, ‖Δ u x‖ ≤ Module.finrank ℝ E * ‖iteratedFDeriv ℝ 2 u x‖ :=
-    ae_of_all _ fun x => by
-      have h := norm_laplacian_le u x
-      rwa [← norm_iteratedFDeriv_one, norm_iteratedFDeriv_fderiv] at h
+    ae_of_all _ fun x => norm_laplacian_le_norm_iteratedFDeriv_two u x
   grw [eLpNorm_le_mul_eLpNorm_of_ae_le_mul hΔ hpt p, hD, ← mul_assoc, ← ENNReal.ofReal_mul
     (by positivity), mul_assoc]
 

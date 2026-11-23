@@ -187,20 +187,6 @@ theorem vermaCentralCharacter_slTwoOmegaCenter
   rw [← lift_hcProjection, hcProjection_slTwoOmegaCenter]
   simp
 
-/-- The value of a linear form at `h` is its pairing with the coroot of the simple root. -/
-theorem coroot'_slTwoRootIndex (lam : Module.Dual K (slTwoDiagonalCartan K)) :
-    (IsKilling.rootSystem (slTwoDiagonalCartan K)).coroot' (slTwoRootIndex K) lam =
-      lam (slTwoCartanGenerator K) := by
-  rw [rootSystem_coroot'_apply, IsKilling.rootSystem_coroot_apply, coe_slTwoRootIndex,
-    coroot_slTwoRoot]
-
-/-- The value of the Weyl vector at `h` is `1`. -/
-@[simp]
-theorem weylVector_slTwoCartanGenerator :
-    weylVector (IsKilling.rootSystem (slTwoDiagonalCartan K)) (slTwoPositiveBase K)
-      (slTwoCartanGenerator K) = 1 := by
-  rw [← coroot'_slTwoRootIndex, coroot'_weylVector _ _ slTwoRootIndex_mem_support]
-
 /-- `χ_n(Ω) = n (n + 2)`, the central character at the highest weight `n`. -/
 theorem vermaCentralCharacter_slTwoWeight_natCast (n : ℕ) :
     vermaCentralCharacter (slTwoPositiveBase K) (slTwoWeight (n : K)) (slTwoOmegaCenter K) =

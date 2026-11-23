@@ -9,36 +9,58 @@ public import Mathlib.RepresentationTheory.Continuous.Basic
 public import Mathlib.Topology.Algebra.Algebra
 public import Mathlib.Topology.Algebra.ContinuousMonoidHom
 public import Mathlib.Topology.Algebra.Module.ModuleTopology
+public import TauCeti.LinearAlgebra.Dual.FiniteProjective
 public import TauCeti.RepresentationTheory.BaseChange
+public import TauCeti.RepresentationTheory.Charpoly
 public import TauCeti.RepresentationTheory.LinearCharacter.Basic
+public import TauCeti.Topology.Algebra.Module.ModuleTopology
 
 /-!
 # Jointly continuous representations
 
-A *continuous representation* of a topological monoid `Γ` on a topological `A`-module `M`, in the
-sense used for Galois representations, is a linear representation `Γ →* End_A M` whose action map
-`Γ × M → M` is jointly continuous. This is stronger than asking each operator to be continuous,
-which is what Mathlib's `ContRepresentation` records: for instance the multiplication action of
-`ℤ_ℓˣ` on `ℚ_ℓ` with the discrete topology has continuous operators but is not jointly
+A *continuous representation* of a monoid `Γ` with a topology on an `A`-module `M` with a topology,
+in the sense used for Galois representations, is a linear representation `Γ →* End_A M` whose
+action map `Γ × M → M` is jointly continuous. This is stronger than asking each operator to be
+continuous, which is what Mathlib's `ContRepresentation` records: for instance the multiplication
+action of `ℤ_ℓˣ` on `ℚ_ℓ` with the discrete topology has continuous operators but is not jointly
 continuous. This file packages such an action as `TauCeti.ContinuousRep Γ A M` and develops the
-elementary operations needed to build integral models of `ℓ`-adic representations: isomorphisms,
-the line attached to a continuous character, and extension of scalars.
+elementary operations needed to build integral models of `ℓ`-adic representations: morphisms and
+isomorphisms, the trivial representation, products, invariant submodules and quotients, the line
+attached to a continuous character, extension of scalars, and the contragredient representation.
+Forgetting joint continuity is injective, and its image in Mathlib's `ContRepresentation`
+consists of the jointly continuous actions.
 
 The typical module is a finite module `M` over a topological ring `A`, carrying its module
 topology (`IsModuleTopology A M`). Over such modules every linear map is continuous, so an
 equivariant linear equivalence is automatically an isomorphism of continuous representations
-(`TauCeti.ContinuousRep.Iso.ofEquiv`). Extension of scalars along a continuous ring map `A → B`
-gives `B ⊗[A] M` its `B`-module topology; the base-changed action is again jointly continuous
-because a finite generating family of `M` presents `B ⊗[A] M` as an open quotient of `Bⁿ`,
-on which the action is an explicit continuous formula.
+(`TauCeti.ContinuousRep.Iso.ofEquiv`), and an intertwining map is automatically a morphism
+(`TauCeti.ContinuousRep.Hom.ofIntertwiningMap`). Joint continuity on such a module can be checked
+on the orbits of a finite generating family
+(`IsModuleTopology.continuous_linearMap_apply_iff_of_span_eq_top`) or, on a free module, on the
+matrix coefficients in a basis (`TauCeti.ContinuousRep.continuous_toMatrix` and its converse
+`TauCeti.ModuleTopology.continuous_linearMap_apply_iff_continuous_toMatrix`). Extension of
+scalars along a continuous ring map `A → B` gives `B ⊗[A] M` its `B`-module topology; the
+base-changed action is again jointly continuous because the tensors `1 ⊗ m` of a finite
+generating family of `M` generate `B ⊗[A] M` and have continuous orbits.
+Likewise, a group acting on a finite projective module acts jointly continuously on its linear
+dual with the module topology: a finite dual basis writes each functional through its values on
+finitely many vectors.
 
 ## Main definitions
 
 * `TauCeti.ContinuousRep Γ A M`: a representation of `Γ` on `M` whose action is jointly
   continuous.
 * `TauCeti.ContinuousRep.toContRepresentation`: the underlying Mathlib `ContRepresentation`.
+* `TauCeti.ContinuousRep.trivial`: the trivial representation.
+* `TauCeti.ContinuousRep.subrepresentation`: restriction to an invariant submodule with the
+  subspace topology.
+* `TauCeti.ContinuousRep.quotient`: descent to the quotient by an invariant submodule with the
+  quotient topology.
+* `TauCeti.ContinuousRep.prod`: the componentwise action on a product.
+* `TauCeti.ContinuousRep.Hom`: equivariant continuous linear maps, with `id` and `comp`;
+  `TauCeti.ContinuousRep.Hom.ofIntertwiningMap` builds one from an intertwining map.
 * `TauCeti.ContinuousRep.Iso`: equivariant continuous linear equivalences, with `refl`, `symm`
-  and `trans`.
+  and `trans`, and their underlying morphisms `TauCeti.ContinuousRep.Iso.toHom`.
 * `TauCeti.ContinuousRep.ofCharacter`: the rank-one representation of a continuous character
   `Γ →ₜ* Aˣ`.
 * `TauCeti.ContinuousRep.baseChange`: extension of scalars `B ⊗[A] M` along a continuous
@@ -49,22 +71,50 @@ on which the action is an explicit continuous formula.
   along `A → C`.
 * `TauCeti.ContinuousRep.baseChangeOfCharacterIso`: the base change of a character line is the
   line of the character composed with `Aˣ → Bˣ`.
+* `TauCeti.ContinuousRep.dual`: the contragredient representation on `Module.Dual A M`, using
+  `Representation.dual`.
 
 ## Main results
 
 * `TauCeti.ContinuousRep.continuous_apply`: each operator of a continuous representation is
   continuous.
+* `TauCeti.ContinuousRep.toContRepresentation_injective` and
+  `TauCeti.ContinuousRep.range_toContRepresentation`: a continuous representation is determined
+  by its operators, and the Mathlib continuous representations arising this way are those with
+  jointly continuous action.
+* `TauCeti.ContinuousRep.continuous_toMatrix`: the matrix coefficients in a finite basis are
+  continuous.
 * `TauCeti.ContinuousRep.nonempty_iso_ofCharacter_iff`: two character lines are isomorphic
   exactly when the characters agree.
+* `TauCeti.ContinuousRep.Iso.charpoly_apply_eq` and
+  `TauCeti.ContinuousRep.charpoly_ofCharacter_apply`: on finite free carriers the characteristic
+  polynomial `(ρ g).charpoly` is an isomorphism invariant, and it is `X - χ g` on the line of `χ`.
 * `TauCeti.ContinuousRep.baseChangeTransIso_trans_baseChangeTransIso`: the two identifications
   of a threefold scalar extension `A → B → C → D` with the extension along `A → D` agree.
 
 ## Implementation notes
 
+`TauCeti.ContinuousRep.Hom` and `TauCeti.ContinuousRep.Iso` are stated over a semiring, for
+arbitrary topologies on the carriers. Mathlib's `ContIntertwiningMap` and
+`ContRepresentation.Equiv` are attached to `ContRepresentation`, which asks for a ring and
+topological additive groups.
+
 The topology on a base change `B ⊗[A] M` is an instance argument together with
 `IsModuleTopology B (B ⊗[A] M)`, as for any module topology in Mathlib, so a consumer may supply
 `moduleTopology B (B ⊗[A] M)` or any topology known to coincide with it. Only finiteness of `M`
-is needed for the base-changed action to be continuous; projectivity plays no role here.
+is needed for the base-changed action to be continuous; projectivity plays no role here. The
+topology on the dual `Module.Dual A M` is supplied the same way; there `M` is finite projective.
+
+When the target ring is `B = ℤ`, whatever `A` is, this runs into Mathlib's `ℤ`-module diamond on
+tensor products: written in a statement, `[IsModuleTopology ℤ (ℤ ⊗[A] M)]` elaborates with the
+additive group's `ℤ`-action, while `TauCeti.ContinuousRep.baseChange` asks for it with the tensor
+product's left action `TensorProduct.leftHasSMul`. The two actions agree, but not at instance
+transparency, so `ρ.baseChange ℤ` fails to synthesize the hypothesis, and so does every declaration
+here that extends scalars to `ℤ`, such as `baseChangeSelfIso` for `A = ℤ`. The same happens when
+the topology is given as `moduleTopology ℤ (ℤ ⊗[A] M)`. Installing `TensorProduct.leftHasSMul` as
+a local `SMul ℤ (ℤ ⊗[A] M)` instance before forming `moduleTopology ℤ (ℤ ⊗[A] M)` or stating
+`[IsModuleTopology ℤ (ℤ ⊗[A] M)]` avoids this. Extending scalars from `A = ℤ` to another ring,
+such as `ℚ`, does not meet this diamond.
 
 ## References
 
@@ -77,8 +127,10 @@ open scoped TensorProduct
 
 namespace TauCeti
 
-/-- **A jointly continuous representation.** A linear representation of the topological monoid
-`Γ` on the topological `A`-module `M` whose action map `Γ × M → M` is continuous. -/
+/-- **A jointly continuous representation.** A linear representation of the monoid `Γ` with a
+topology on the `A`-module `M` with a topology, whose action map `Γ × M → M` is continuous. The
+structure assumes no further compatibility of the topologies with the algebraic structure
+(`A` carries no topology here); the declarations that need more state it themselves. -/
 structure ContinuousRep (Γ A M : Type*) [Monoid Γ] [TopologicalSpace Γ] [Semiring A]
     [AddCommMonoid M] [Module A M] [TopologicalSpace M] where
   /-- The underlying linear representation. -/
@@ -140,6 +192,86 @@ theorem continuous_apply (ρ : ContinuousRep Γ A M) (g : Γ) : Continuous (ρ g
 theorem continuous_orbit (ρ : ContinuousRep Γ A M) (x : M) : Continuous fun g => ρ g x := by
   fun_prop
 
+variable (Γ A M) in
+/-- **The trivial continuous representation**: every element of `Γ` acts as the identity of
+`M`. -/
+def trivial : ContinuousRep Γ A M where
+  toRepresentation := Representation.trivial A Γ M
+  continuous_action := continuous_snd
+
+@[simp]
+theorem toRepresentation_trivial :
+    (trivial Γ A M).toRepresentation = Representation.trivial A Γ M :=
+  (rfl)
+
+@[simp]
+theorem trivial_apply (g : Γ) (x : M) : trivial Γ A M g x = x :=
+  (rfl)
+
+section Subquotient
+
+/-- Restriction to an invariant submodule, with its inherited topology. -/
+def subrepresentation (ρ : ContinuousRep Γ A M) (W : Submodule A M)
+    (hW : ∀ g, ∀ x ∈ W, ρ g x ∈ W) : ContinuousRep Γ A W where
+  toRepresentation := ρ.toRepresentation.subrepresentation W hW
+  continuous_action := (ρ.continuous_action.comp
+    (continuous_fst.prodMk (continuous_subtypeVal.comp continuous_snd))).subtype_mk _
+
+@[simp]
+theorem toRepresentation_subrepresentation (ρ : ContinuousRep Γ A M) (W : Submodule A M)
+    (hW : ∀ g, ∀ x ∈ W, ρ g x ∈ W) :
+    (ρ.subrepresentation W hW).toRepresentation = ρ.toRepresentation.subrepresentation W hW :=
+  (rfl)
+
+@[simp]
+theorem coe_subrepresentation_apply (ρ : ContinuousRep Γ A M) (W : Submodule A M)
+    (hW : ∀ g, ∀ x ∈ W, ρ g x ∈ W) (g : Γ) (x : W) :
+    (ρ.subrepresentation W hW g x : M) = ρ g x :=
+  (rfl)
+
+variable {R V : Type*} [Ring R] [AddCommGroup V] [Module R V] [TopologicalSpace V]
+
+/-- Descent to the quotient by an invariant submodule, with its quotient topology. -/
+def quotient [ContinuousAdd V] (ρ : ContinuousRep Γ R V) (W : Submodule R V)
+    (hW : ∀ g, ∀ x ∈ W, ρ g x ∈ W) : ContinuousRep Γ R (V ⧸ W) where
+  toRepresentation := ρ.toRepresentation.quotient W hW
+  continuous_action := by
+    rw [← (IsOpenQuotientMap.id.prodMap W.isOpenQuotientMap_mkQ).continuous_comp_iff]
+    exact W.continuous_mkQ.comp ρ.continuous_action
+
+@[simp]
+theorem toRepresentation_quotient [ContinuousAdd V] (ρ : ContinuousRep Γ R V)
+    (W : Submodule R V) (hW : ∀ g, ∀ x ∈ W, ρ g x ∈ W) :
+    (ρ.quotient W hW).toRepresentation = ρ.toRepresentation.quotient W hW :=
+  (rfl)
+
+@[simp]
+theorem quotient_apply_mk [ContinuousAdd V] (ρ : ContinuousRep Γ R V)
+    (W : Submodule R V) (hW : ∀ g, ∀ x ∈ W, ρ g x ∈ W) (g : Γ) (x : V) :
+    ρ.quotient W hW g (Submodule.Quotient.mk x) = Submodule.Quotient.mk (ρ g x) :=
+  (rfl)
+
+end Subquotient
+
+section Constructions
+
+/-- **The product of two continuous representations**: `Γ` acts componentwise on `M × N`, with
+the product topology. -/
+noncomputable def prod (ρ : ContinuousRep Γ A M) (σ : ContinuousRep Γ A N) :
+    ContinuousRep Γ A (M × N) where
+  toRepresentation := ρ.toRepresentation.prod σ.toRepresentation
+  -- `Representation.prod` acts on `(x, y)` by `(ρ g x, σ g y)` by definition, and is stated with
+  -- `LinearMap.prodMap`, which `fun_prop` does not unfold.
+  continuous_action := show Continuous fun p : Γ × (M × N) => (ρ p.1 p.2.1, σ p.1 p.2.2) by
+    fun_prop
+
+@[simp]
+theorem prod_apply (ρ : ContinuousRep Γ A M) (σ : ContinuousRep Γ A N) (g : Γ) (x : M × N) :
+    ρ.prod σ g x = (ρ g x.1, σ g x.2) :=
+  (rfl)
+
+end Constructions
+
 section ContRepresentation
 
 variable {R V : Type*} [Ring R] [AddCommGroup V] [Module R V] [TopologicalSpace V]
@@ -158,7 +290,48 @@ theorem toContRepresentation_apply (ρ : ContinuousRep Γ R V) (g : Γ) (x : V) 
     ρ.toContRepresentation g x = ρ g x :=
   (rfl)
 
+/-- **A jointly continuous representation is determined by its operators.** -/
+theorem toContRepresentation_injective :
+    Function.Injective (toContRepresentation : ContinuousRep Γ R V → ContRepresentation R Γ V) :=
+  fun ρ σ h => ext fun g x => by simpa using congr($h g x)
+
+/-- **The image of the forgetful map to `ContRepresentation`.** A Mathlib continuous
+representation, whose operators are merely continuous, comes from a jointly continuous
+representation exactly when its action map `Γ × V → V` is continuous. -/
+theorem range_toContRepresentation :
+    Set.range (toContRepresentation : ContinuousRep Γ R V → ContRepresentation R Γ V) =
+      {π | Continuous fun p : Γ × V => π p.1 p.2} := by
+  ext π
+  -- `ContRepresentation.toRepresentation` is an abbreviation, so `π.toRepresentation g x` is
+  -- `π g x` by `rfl`, both in `hπ` and in the comparison of operators.
+  refine ⟨?_, fun hπ => ⟨⟨π.toRepresentation, hπ⟩, ?_⟩⟩
+  · rintro ⟨ρ, rfl⟩
+    exact ρ.continuous_action
+  · exact DFunLike.ext _ _ fun g => ContinuousLinearMap.ext fun x => (rfl)
+
+variable (Γ R V) in
+@[simp]
+theorem toContRepresentation_trivial :
+    (trivial Γ R V).toContRepresentation = ContRepresentation.trivial R Γ V :=
+  (rfl)
+
 end ContRepresentation
+
+section Matrix
+
+variable {R V ι : Type*} [CommRing R] [TopologicalSpace R] [IsTopologicalSemiring R]
+  [AddCommGroup V] [Module R V] [TopologicalSpace V] [IsModuleTopology R V] [Fintype ι]
+  [DecidableEq ι]
+
+/-- **The matrix coefficients of a continuous representation are continuous.** In a finite basis
+`b` of a module with its module topology, `g ↦ LinearMap.toMatrix b b (ρ g)` is continuous.
+Conversely, by `TauCeti.ModuleTopology.continuous_linearMap_apply_iff_continuous_toMatrix`, a
+linear representation whose matrix coefficients are continuous is jointly continuous. -/
+theorem continuous_toMatrix (ρ : ContinuousRep Γ R V) (b : Module.Basis ι R V) :
+    Continuous fun g => LinearMap.toMatrix b b (ρ g) :=
+  (ModuleTopology.continuous_linearMap_apply_iff_continuous_toMatrix b b ρ).1 ρ.continuous_action
+
+end Matrix
 
 /-- **An isomorphism of continuous representations**: an equivariant linear equivalence that is
 a homeomorphism. -/
@@ -274,6 +447,31 @@ theorem apply_symm_apply (e : Iso ρ σ) (y : N) : e (e.symm y) = y :=
   e.right_inv y
 
 @[simp]
+theorem symm_symm (e : Iso ρ σ) : e.symm.symm = e :=
+  ext fun x ↦ e.symm.injective <|
+    (e.symm.apply_symm_apply x).trans (e.symm_apply_apply x).symm
+
+@[simp]
+theorem refl_symm : (refl ρ).symm = refl ρ :=
+  ext fun _ ↦ (rfl)
+
+@[simp]
+theorem trans_refl (e : Iso ρ σ) : e.trans (refl σ) = e :=
+  ext fun _ ↦ (rfl)
+
+@[simp]
+theorem refl_trans (e : Iso ρ σ) : (refl ρ).trans e = e :=
+  ext fun _ ↦ (rfl)
+
+@[simp]
+theorem self_trans_symm (e : Iso ρ σ) : e.trans e.symm = refl ρ :=
+  ext e.symm_apply_apply
+
+@[simp]
+theorem symm_trans_self (e : Iso ρ σ) : e.symm.trans e = refl σ :=
+  ext e.apply_symm_apply
+
+@[simp]
 theorem toRepresentationEquiv_refl :
     (refl ρ).toRepresentationEquiv = .refl ρ.toRepresentation :=
   (rfl)
@@ -306,6 +504,178 @@ theorem toContinuousLinearEquiv_trans (e : Iso ρ σ) (f : Iso σ τ) :
 
 end Iso
 
+/-- **A morphism of continuous representations**: an equivariant continuous linear map. -/
+structure Hom (ρ : ContinuousRep Γ A M) (σ : ContinuousRep Γ A N) extends
+    toIntertwiningMap : ρ.toRepresentation.IntertwiningMap σ.toRepresentation,
+    toContinuousLinearMap : M →L[A] N
+
+/-- The intertwining map of linear representations underlying a morphism of continuous
+representations. -/
+add_decl_doc Hom.toIntertwiningMap
+
+/-- The continuous linear map underlying a morphism of continuous representations. -/
+add_decl_doc Hom.toContinuousLinearMap
+
+namespace Hom
+
+variable {ρ : ContinuousRep Γ A M} {σ : ContinuousRep Γ A N} {τ : ContinuousRep Γ A P}
+
+instance : FunLike (Hom ρ σ) M N where
+  coe f := f.toFun
+  coe_injective f f' h := by
+    rcases f with ⟨f, _⟩
+    rcases f' with ⟨f', _⟩
+    congr
+    exact Representation.IntertwiningMap.ext (LinearMap.ext (congrFun h))
+
+instance : ContinuousLinearMapClass (Hom ρ σ) A M N where
+  map_add f := f.map_add'
+  map_smulₛₗ f := f.map_smul'
+  map_continuous f := f.cont
+
+@[simp]
+theorem coe_toIntertwiningMap (f : Hom ρ σ) : ⇑f.toIntertwiningMap = f :=
+  (rfl)
+
+theorem coe_toContinuousLinearMap (f : Hom ρ σ) : ⇑f.toContinuousLinearMap = f :=
+  (rfl)
+
+@[ext]
+theorem ext {f f' : Hom ρ σ} (h : ∀ x, f x = f' x) : f = f' :=
+  DFunLike.ext _ _ h
+
+/-- A morphism of continuous representations is determined by its underlying intertwining map. -/
+theorem toIntertwiningMap_injective :
+    Function.Injective (toIntertwiningMap : Hom ρ σ → ρ.toRepresentation.IntertwiningMap _) :=
+  fun _ _ h => ext fun x => congr($h x)
+
+/-- **A morphism of continuous representations is equivariant.** -/
+theorem isIntertwining (f : Hom ρ σ) (g : Γ) (x : M) : f (ρ g x) = σ g (f x) :=
+  Representation.IntertwiningMap.isIntertwining _ _ f.toIntertwiningMap g x
+
+section ofIntertwiningMap
+
+variable [TopologicalSpace A] [IsModuleTopology A M] [ContinuousAdd N] [ContinuousSMul A N]
+
+/-- **Automatic continuity of morphisms.** When `M` carries its module topology and `N` is a
+topological module, every intertwining map of the underlying linear representations is a
+morphism of continuous representations. -/
+def ofIntertwiningMap (f : ρ.toRepresentation.IntertwiningMap σ.toRepresentation) : Hom ρ σ where
+  toIntertwiningMap := f
+  cont := IsModuleTopology.continuous_of_linearMap f.toLinearMap
+
+@[simp]
+theorem ofIntertwiningMap_apply (f : ρ.toRepresentation.IntertwiningMap σ.toRepresentation)
+    (x : M) : ofIntertwiningMap f x = f x :=
+  (rfl)
+
+@[simp]
+theorem toIntertwiningMap_ofIntertwiningMap
+    (f : ρ.toRepresentation.IntertwiningMap σ.toRepresentation) :
+    (ofIntertwiningMap f).toIntertwiningMap = f :=
+  (rfl)
+
+@[simp]
+theorem ofIntertwiningMap_toIntertwiningMap (f : Hom ρ σ) :
+    ofIntertwiningMap f.toIntertwiningMap = f :=
+  (rfl)
+
+end ofIntertwiningMap
+
+variable (ρ) in
+/-- The identity morphism of a continuous representation. -/
+def id : Hom ρ ρ where
+  toIntertwiningMap := .id ρ.toRepresentation
+  cont := continuous_id
+
+/-- The composition of two morphisms of continuous representations. -/
+def comp (f : Hom σ τ) (f' : Hom ρ σ) : Hom ρ τ where
+  toIntertwiningMap := f.toIntertwiningMap.comp f'.toIntertwiningMap
+  cont := f.cont.comp f'.cont
+
+@[simp]
+theorem id_apply (x : M) : id ρ x = x :=
+  (rfl)
+
+@[simp]
+theorem comp_apply (f : Hom σ τ) (f' : Hom ρ σ) (x : M) : f.comp f' x = f (f' x) :=
+  (rfl)
+
+@[simp]
+theorem toIntertwiningMap_id : (id ρ).toIntertwiningMap = .id ρ.toRepresentation :=
+  (rfl)
+
+@[simp]
+theorem toIntertwiningMap_comp (f : Hom σ τ) (f' : Hom ρ σ) :
+    (f.comp f').toIntertwiningMap = f.toIntertwiningMap.comp f'.toIntertwiningMap :=
+  (rfl)
+
+@[simp]
+theorem toContinuousLinearMap_id : (id ρ).toContinuousLinearMap = .id A M :=
+  (rfl)
+
+@[simp]
+theorem toContinuousLinearMap_comp (f : Hom σ τ) (f' : Hom ρ σ) :
+    (f.comp f').toContinuousLinearMap = f.toContinuousLinearMap.comp f'.toContinuousLinearMap :=
+  (rfl)
+
+@[simp]
+theorem id_comp (f : Hom ρ σ) : (id σ).comp f = f :=
+  ext fun _ => (rfl)
+
+@[simp]
+theorem comp_id (f : Hom ρ σ) : f.comp (id ρ) = f :=
+  ext fun _ => (rfl)
+
+theorem comp_assoc {Q : Type*} [AddCommMonoid Q] [Module A Q] [TopologicalSpace Q]
+    {υ : ContinuousRep Γ A Q} (f : Hom τ υ) (f' : Hom σ τ) (f'' : Hom ρ σ) :
+    (f.comp f').comp f'' = f.comp (f'.comp f'') :=
+  ext fun _ => (rfl)
+
+end Hom
+
+namespace Iso
+
+variable {ρ : ContinuousRep Γ A M} {σ : ContinuousRep Γ A N}
+
+/-- The morphism underlying an isomorphism of continuous representations. -/
+def toHom (e : Iso ρ σ) : Hom ρ σ where
+  toIntertwiningMap := e.toRepresentationEquiv.toIntertwiningMap
+  cont := e.continuous_toFun
+
+@[simp]
+theorem coe_toHom (e : Iso ρ σ) : ⇑e.toHom = e :=
+  (rfl)
+
+@[simp]
+theorem toIntertwiningMap_toHom (e : Iso ρ σ) :
+    e.toHom.toIntertwiningMap = e.toRepresentationEquiv.toIntertwiningMap :=
+  (rfl)
+
+@[simp]
+theorem toContinuousLinearMap_toHom (e : Iso ρ σ) :
+    e.toHom.toContinuousLinearMap = e.toContinuousLinearEquiv.toContinuousLinearMap :=
+  (rfl)
+
+@[simp]
+theorem toHom_refl : (refl ρ).toHom = Hom.id ρ :=
+  Hom.ext fun _ => (rfl)
+
+@[simp]
+theorem toHom_trans {τ : ContinuousRep Γ A P} (e : Iso ρ σ) (f : Iso σ τ) :
+    (e.trans f).toHom = f.toHom.comp e.toHom :=
+  Hom.ext fun _ => (rfl)
+
+@[simp]
+theorem symm_toHom_comp_toHom (e : Iso ρ σ) : e.symm.toHom.comp e.toHom = Hom.id ρ :=
+  Hom.ext fun x => e.symm_apply_apply x
+
+@[simp]
+theorem toHom_comp_symm_toHom (e : Iso ρ σ) : e.toHom.comp e.symm.toHom = Hom.id σ :=
+  Hom.ext fun y => e.apply_symm_apply y
+
+end Iso
+
 end Basic
 
 section ofCharacter
@@ -334,6 +704,11 @@ theorem toRepresentation_ofCharacter (χ : Γ →ₜ* Aˣ) :
 theorem toRepresentation_ofCharacter_one :
     (ofCharacter (1 : Γ →ₜ* Aˣ)).toRepresentation = Representation.trivial A Γ A :=
   Representation.ofLinearCharacter_one
+
+/-- The trivial character gives the trivial continuous representation on `A`. -/
+@[simp]
+theorem ofCharacter_one : ofCharacter (1 : Γ →ₜ* Aˣ) = trivial Γ A A :=
+  ext fun g a => by simp
 
 /-- **Two character lines are isomorphic exactly when the characters agree.** -/
 @[simp]
@@ -368,22 +743,16 @@ private theorem continuous_baseChange_action (ρ : ContinuousRep Γ A M) :
       map_add' := TensorProduct.tmul_add 1
       map_smul' a x := by simp [TensorProduct.tmul_smul, algebraMap_smul] }
   have hι : Continuous ι := IsModuleTopology.continuous_of_linearMapₛₗ (continuous_algebraMap A B) ι
-  -- A finite generating family `m` of `M` presents `B ⊗[A] M` as the open quotient
-  -- `b ↦ ∑ i, b i • (1 ⊗ m i)` of `Bⁿ`; through that quotient the action is
-  -- `(g, b) ↦ ∑ i, b i • (1 ⊗ ρ g (m i))`.
-  let q := Fintype.linearCombination B fun i => (1 : B) ⊗ₜ[A] m i
-  have hq : IsOpenQuotientMap q := by
-    refine IsModuleTopology.isOpenQuotientMap_of_surjective (LinearMap.range_eq_top.mp ?_)
+  -- The family `1 ⊗ m i` spans `B ⊗[A] M`, and its orbits `g ↦ 1 ⊗ ρ g (m i)` are continuous.
+  have hspan : Submodule.span B (Set.range fun i => (1 : B) ⊗ₜ[A] m i) = ⊤ := by
     have hrange : (Set.range fun i => (1 : B) ⊗ₜ[A] m i) =
         TensorProduct.mk A B M 1 '' Set.range m :=
       Set.range_comp (TensorProduct.mk A B M 1) m
-    rw [Fintype.range_linearCombination, hrange, ← Submodule.baseChange_span, hm,
-      Submodule.baseChange_top]
-  refine ((IsOpenQuotientMap.id.prodMap hq).continuous_comp_iff).mp ?_
-  have hF : Continuous fun p : Γ × (Fin n → B) => ∑ i, p.2 i • ι (ρ p.1 (m i)) := by
-    fun_prop
-  refine hF.congr fun p => ?_
-  simp [q, ι, Fintype.linearCombination_apply, Representation.baseChange_apply]
+    rw [hrange, ← Submodule.baseChange_span, hm, Submodule.baseChange_top]
+  refine (IsModuleTopology.continuous_linearMap_apply_iff_of_span_eq_top
+    (Representation.baseChange B ρ.toRepresentation) hspan).2 fun i => ?_
+  refine (hι.comp (ρ.continuous_orbit (m i))).congr fun g => ?_
+  simp [ι, Representation.baseChange_apply]
 
 /-- **Extension of scalars of a continuous representation** along a continuous coefficient map
 `A → B`, for a finite module `M` with its module topology. The action on `B ⊗[A] M` is
@@ -548,6 +917,88 @@ theorem baseChangeOfCharacterIso_tmul (χ : Γ →ₜ* Aˣ) (b : B) (a : A) :
   TensorProduct.AlgebraTensorModule.rid_tmul B a b
 
 end BaseChangeOfCharacter
+
+section Dual
+
+variable {Γ A M : Type*} [Group Γ] [TopologicalSpace Γ] [ContinuousInv Γ]
+  [CommRing A] [TopologicalSpace A] [IsTopologicalRing A]
+  [AddCommGroup M] [Module A M] [TopologicalSpace M] [IsModuleTopology A M]
+  [Module.Finite A M] [Module.Projective A M]
+  [TopologicalSpace (Module.Dual A M)] [IsModuleTopology A (Module.Dual A M)]
+
+/-- The contragredient action on the dual of a finite projective module is jointly continuous
+for the module topology on `Module.Dual A M`. -/
+private theorem continuous_dual_action (ρ : ContinuousRep Γ A M) :
+    Continuous fun p : Γ × Module.Dual A M => ρ.toRepresentation.dual p.1 p.2 := by
+  -- A finite dual basis `x = ∑ j, φ j x • b j` writes every functional `ψ` as
+  -- `∑ j, ψ (b j) • φ j`, and the coefficients of `ψ ∘ ρ g⁻¹` are continuous in `(g, ψ)`.
+  obtain ⟨n, b, φ, hb⟩ := exists_sum_dual_smul_eq (R := A) (M := M)
+  have := IsModuleTopology.toContinuousAdd A (Module.Dual A M)
+  have := IsModuleTopology.toContinuousSMul A (Module.Dual A M)
+  have hev : Continuous fun p : Module.Dual A M × M => p.1 p.2 :=
+    IsModuleTopology.continuous_bilinear_of_finite_right (LinearMap.id : Module.Dual A M →ₗ[A] _)
+  have h : Continuous fun p : Γ × Module.Dual A M => ∑ j, p.2 (ρ p.1⁻¹ (b j)) • φ j :=
+    continuous_finsetSum _ fun j _ ↦ (hev.comp (continuous_snd.prodMk
+      ((ρ.continuous_orbit (b j)).comp continuous_fst.inv))).smul continuous_const
+  refine h.congr fun p ↦ LinearMap.ext fun x ↦ ?_
+  conv_rhs => rw [← hb x]
+  simp [Module.Dual.transpose_apply, mul_comm]
+
+/-- **The contragredient representation** of a continuous representation on a finite projective
+module: `Γ` acts on `Module.Dual A M` by `g • ψ = ψ ∘ ρ g⁻¹`, jointly continuously for the module
+topology on the dual. -/
+def dual (ρ : ContinuousRep Γ A M) : ContinuousRep Γ A (Module.Dual A M) where
+  toRepresentation := ρ.toRepresentation.dual
+  continuous_action := continuous_dual_action ρ
+
+@[simp]
+theorem toRepresentation_dual (ρ : ContinuousRep Γ A M) :
+    ρ.dual.toRepresentation = ρ.toRepresentation.dual :=
+  (rfl)
+
+/-- The contragredient action is the transpose of the inverse action. -/
+theorem dual_apply (ρ : ContinuousRep Γ A M) (g : Γ) :
+    ρ.dual g = Module.Dual.transpose (R := A) (ρ g⁻¹) :=
+  (rfl)
+
+/-- The contragredient action evaluated at a vector. -/
+@[simp]
+theorem dual_apply_apply (ρ : ContinuousRep Γ A M) (g : Γ) (ψ : Module.Dual A M) (x : M) :
+    ρ.dual g ψ x = ψ (ρ g⁻¹ x) :=
+  (rfl)
+
+end Dual
+
+section Charpoly
+
+open Polynomial
+
+variable {Γ A M N : Type*} [Monoid Γ] [TopologicalSpace Γ] [CommRing A]
+  [AddCommGroup M] [Module A M] [TopologicalSpace M] [Module.Free A M] [Module.Finite A M]
+  [AddCommGroup N] [Module A N] [TopologicalSpace N] [Module.Free A N] [Module.Finite A N]
+
+/-- **Isomorphic continuous representations have the same characteristic polynomials.** -/
+theorem Iso.charpoly_apply_eq {ρ : ContinuousRep Γ A M} {σ : ContinuousRep Γ A N}
+    (e : Iso ρ σ) (g : Γ) : (ρ g).charpoly = (σ g).charpoly :=
+  e.toRepresentationEquiv.charpoly_apply_eq g
+
+variable (Γ A M) in
+/-- In the trivial representation every element acts with characteristic polynomial
+`(X - 1) ^ rank`. -/
+@[simp]
+theorem charpoly_trivial_apply (g : Γ) :
+    (trivial Γ A M g).charpoly = (X - 1) ^ Module.finrank A M :=
+  Representation.charpoly_trivial_apply A Γ M g
+
+/-- **The characteristic polynomial of a character line.** The element `g` acts on
+`ofCharacter χ` with characteristic polynomial `X - χ g`; the contragredient action would give
+`X - (χ g)⁻¹` instead. -/
+@[simp]
+theorem charpoly_ofCharacter_apply [TopologicalSpace A] [ContinuousMul A] (χ : Γ →ₜ* Aˣ)
+    (g : Γ) : (ofCharacter χ g).charpoly = X - C (χ g : A) :=
+  Representation.charpoly_ofLinearCharacter_apply (χ : Γ →* Aˣ) g
+
+end Charpoly
 
 end ContinuousRep
 

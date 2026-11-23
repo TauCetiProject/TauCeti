@@ -24,7 +24,10 @@ with charts in its model space it is read in the preferred chart itself
 (`TauCeti.mtangentConeAt_eq_tangentConeAt_chartAt`); read in any other chart around `y`, it is
 carried onto the tangent cone in that chart by the derivative of the transition map
 (`TauCeti.image_mtangentConeAt_eq_tangentConeAt`). The velocity of an integral curve that stays
-in `s` lies in it (`IsMIntegralCurveAt.mem_mtangentConeAt`).
+in `s` lies in it (`IsMIntegralCurveAt.mem_mtangentConeAt`), and the derivative of a map within
+`s` carries it into the tangent cone of the image of `s`
+(`HasMFDerivWithinAt.mapsTo_mtangentConeAt`), so a map with surjective derivative carries
+transverse sets to transverse sets (`HasMFDerivAt.span_mtangentConeAt_image_sup_eq_top`).
 
 For a manifold modelled on a vector space `E` with charts in `E`, a chart of the maximal atlas that
 flattens `s` onto a closed linear subspace `L` near `y` makes the span of the tangent cone the
@@ -55,12 +58,18 @@ at `y`.
   chart.
 * `IsMIntegralCurveAt.mem_mtangentConeAt`: the velocity of an integral curve lies in the tangent
   cone of every set the curve stays in.
+* `HasMFDerivWithinAt.mapsTo_mtangentConeAt`: the derivative of a map within a set maps the
+  tangent cone of the set into the tangent cone of its image.
+* `HasMFDerivAt.span_mtangentConeAt_image_sup_eq_top`: a map with surjective derivative carries
+  transverse sets to transverse sets.
 * `TauCeti.image_mtangentConeAt_eq_tangentConeAt`: read in another chart, the tangent cone is
   carried onto the tangent cone in that chart by the derivative of the transition map.
 * `TauCeti.tangentConeAt_preimage_symm_eq`: read in a chart that flattens a set onto a closed
   subspace `L`, the tangent cone of the set is `L`.
 * `TauCeti.map_mtangentConeAt_eq_zero`: a linear map that vanishes on a set read in a chart kills
   its tangent cone carried into that chart.
+* `TauCeti.IsSliceChart.span_mtangentConeAt_eq_comap`: the tangent space of a flattened set is the
+  preimage of the model subspace under the differential of the slice chart.
 * `TauCeti.IsSliceChart.finrank_span_mtangentConeAt`: the tangent space of a flattened set has the
   dimension of the model subspace.
 * `TauCeti.exists_isSliceChart_inter_of_span_mtangentConeAt_sup_eq_top`: a transverse intersection
@@ -145,6 +154,71 @@ theorem IsMIntegralCurveAt.mem_mtangentConeAt {E H M : Type*} [NormedAddCommGrou
         by simp⟩
   rw [TauCeti.mtangentConeAt_def]
   exact this
+
+/-- **The differential maps tangent cones into tangent cones.** If `f` has derivative `f'` at `x`
+within `s`, then `f'` maps the tangent cone of `s` at `x` into the tangent cone of `f '' s` at
+`f x`. This is the manifold form of `HasFDerivWithinAt.mapsTo_tangent_cone`. -/
+theorem HasMFDerivWithinAt.mapsTo_mtangentConeAt {𝕜 E H M E' H' M' : Type*}
+    [NontriviallyNormedField 𝕜] [NormedAddCommGroup E] [NormedSpace 𝕜 E] [TopologicalSpace H]
+    {I : ModelWithCorners 𝕜 E H} [TopologicalSpace M] [ChartedSpace H M] [NormedAddCommGroup E']
+    [NormedSpace 𝕜 E'] [TopologicalSpace H'] {I' : ModelWithCorners 𝕜 E' H'} [TopologicalSpace M']
+    [ChartedSpace H' M'] {f : M → M'} {s : Set M} {x : M}
+    {f' : TangentSpace I x →L[𝕜] TangentSpace I' (f x)} (h : HasMFDerivWithinAt I I' f s x f') :
+    MapsTo f' (TauCeti.mtangentConeAt I s x : Set E)
+      (TauCeti.mtangentConeAt I' (f '' s) (f x) : Set E') := by
+  let φ := extChartAt I x
+  let ψ := extChartAt I' (f x)
+  let S := φ.symm ⁻¹' s ∩ range I
+  -- Near `φ x`, the points of `S` are sent by `f ∘ φ.symm` into the source of `ψ`.
+  let T := φ.symm ⁻¹' (f ⁻¹' ψ.source)
+  have hT : 𝓝[S] (φ x) = 𝓝[S ∩ T] (φ x) :=
+    nhdsWithin_restrict'' S <| extChartAt_preimage_mem_nhdsWithin <|
+      h.1.preimage_mem_nhdsWithin (extChartAt_source_mem_nhds (f x))
+  have himage : writtenInExtChartAt I I' x f '' (S ∩ T) ⊆ ψ.symm ⁻¹' (f '' s) ∩ range I' := by
+    rintro _ ⟨w, ⟨⟨hws, -⟩, hwT⟩, rfl⟩
+    exact ⟨⟨φ.symm w, hws, (ψ.left_inv hwT).symm⟩,
+      extChartAt_target_subset_range (f x) (ψ.map_source hwT)⟩
+  have hx : writtenInExtChartAt I I' x f (φ x) = ψ (f x) := by
+    simp only [writtenInExtChartAt, Function.comp_apply, φ, ψ, extChartAt_to_inv]
+  intro v hv
+  rw [TauCeti.mtangentConeAt_def, tangentConeAt_congr hT] at hv
+  rw [TauCeti.mtangentConeAt_def, ← hx]
+  have hmaps := (h.2.mono inter_subset_left).mapsTo_tangent_cone hv
+  -- The chart derivative in `h.2` is `f'` conjugated by the casts `tangentSpaceCastModel`,
+  -- which are the identity map, so it sends `v` to `f' v`.
+  have hcast : ((tangentSpaceCastModel I' (f x) : TangentSpace I' (f x) →L[𝕜] E') ∘L f' ∘L
+      ((tangentSpaceCastModel I x).symm : E →L[𝕜] TangentSpace I x)) v = f' v := rfl
+  rw [hcast] at hmaps
+  exact tangentConeAt_mono himage hmaps
+
+/-- **Surjective differentials carry transverse sets to transverse sets.** If `f` has a surjective
+derivative `f'` at `x`, and the tangent cones of `s` and `t` at `x` span the tangent space, then
+the tangent cones of `f '' s` and `f '' t` at `f x` span the tangent space. For instance, a
+diffeomorphism carries a transverse intersection to a transverse intersection. -/
+theorem HasMFDerivAt.span_mtangentConeAt_image_sup_eq_top {𝕜 E H M E' H' M' : Type*}
+    [NontriviallyNormedField 𝕜] [NormedAddCommGroup E] [NormedSpace 𝕜 E] [TopologicalSpace H]
+    {I : ModelWithCorners 𝕜 E H} [TopologicalSpace M] [ChartedSpace H M] [NormedAddCommGroup E']
+    [NormedSpace 𝕜 E'] [TopologicalSpace H'] {I' : ModelWithCorners 𝕜 E' H'} [TopologicalSpace M']
+    [ChartedSpace H' M'] {f : M → M'} {x : M}
+    {f' : TangentSpace I x →L[𝕜] TangentSpace I' (f x)} (hf : HasMFDerivAt I I' f x f')
+    (hf' : Function.Surjective f') {s t : Set M}
+    (h : Submodule.span 𝕜 (TauCeti.mtangentConeAt I s x) ⊔
+      Submodule.span 𝕜 (TauCeti.mtangentConeAt I t x) = ⊤) :
+    Submodule.span 𝕜 (TauCeti.mtangentConeAt I' (f '' s) (f x)) ⊔
+      Submodule.span 𝕜 (TauCeti.mtangentConeAt I' (f '' t) (f x)) = ⊤ := by
+  -- The tangent spaces are the model spaces, so `f'` is a linear map `E → E'`.
+  let F : E →ₗ[𝕜] E' := f'.toLinearMap
+  -- The derivative maps the span of the tangent cone of a set into that of its image.
+  have hmap (u : Set M) : (Submodule.span 𝕜 (TauCeti.mtangentConeAt I u x)).map F ≤
+      Submodule.span 𝕜 (TauCeti.mtangentConeAt I' (f '' u) (f x)) := by
+    rw [Submodule.map_span]
+    exact Submodule.span_mono hf.hasMFDerivWithinAt.mapsTo_mtangentConeAt.image_subset
+  have hF : (⊤ : Submodule 𝕜 E).map F = ⊤ := by
+    rw [Submodule.map_top]
+    exact LinearMap.range_eq_top.2 hf'
+  refine eq_top_iff.2 (hF.symm.le.trans ?_)
+  rw [← h, Submodule.map_sup]
+  exact sup_le_sup (hmap s) (hmap t)
 
 namespace TauCeti
 
@@ -284,6 +358,24 @@ theorem IsSliceChart.finrank_span_mtangentConeAt (hn : n ≠ 0)
   obtain ⟨A, hA⟩ := exists_hasFDerivAt_symm_trans hn (IsManifold.chart_mem_maximalAtlas y) hq hy'
   rw [mtangentConeAt_eq_tangentConeAt_chartAt]
   exact he.finrank_span_tangentConeAt hL hy' (chartAt_self_mem_preimage hys) hA
+
+/-- **The tangent space of a flattened set, read in the slice chart.** If a chart `q` of the
+maximal atlas flattens `s` onto a closed subspace `L` near a point `y` of `s`, then the span of the
+tangent cone of `s` at `y` is the preimage of `L` under the differential of `q` at `y`; the tangent
+cone is already this subspace. -/
+theorem IsSliceChart.span_mtangentConeAt_eq_comap (hn : n ≠ 0)
+    (hq : q ∈ IsManifold.maximalAtlas 𝓘(𝕜, E) n M) (hs : IsSliceChart q (L : Set E) s)
+    (hL : IsClosed (L : Set E)) (hy : y ∈ q.source) (hys : y ∈ s) :
+    Submodule.span 𝕜 (mtangentConeAt 𝓘(𝕜, E) s y) =
+      L.comap (mfderiv 𝓘(𝕜, E) 𝓘(𝕜, E) q y).toLinearMap := by
+  obtain ⟨hy', -, -, -⟩ := isSliceChart_chartAt_symm_trans hq hs hy
+  obtain ⟨A, hA⟩ := exists_hasFDerivAt_symm_trans hn (IsManifold.chart_mem_maximalAtlas y) hq hy'
+  have himg := image_mtangentConeAt_eq_tangentConeAt (s := s) hy hA
+  rw [tangentConeAt_preimage_symm_eq hs hL hy hys] at himg
+  rw [OpenPartialHomeomorph.coe_trans] at hA
+  rw [(hasMFDerivAt_iff_hasFDerivAt_comp_chartAt_symm.2 hA).mfderiv,
+    ← A.injective.preimage_image (mtangentConeAt 𝓘(𝕜, E) s y), himg]
+  exact Submodule.span_eq (L.comap ((A : E →L[𝕜] E) : E →ₗ[𝕜] E))
 
 /-- **Sets flattened by one chart onto spanning subspaces are transverse.** If a single chart `q`
 of the maximal atlas flattens `s₁` onto a closed subspace `L₁` and `s₂` onto a closed subspace

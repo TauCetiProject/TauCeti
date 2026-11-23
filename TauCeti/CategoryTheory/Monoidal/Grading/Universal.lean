@@ -107,7 +107,7 @@ def liftEquiv :
     {d : SimpleClasses C → G //
       ∀ (S T U : SimpleClasses C) (f : U.repr ⟶ S.repr ⊗ T.repr),
         f ≠ 0 → d U = d S * d T} ≃ (universalGradingGroup C →* G) where
-  toFun d := lift d.1 d.2
+  toFun d := lift d.val d.property
   invFun f := ⟨fun S ↦ f (degree S), fun S T U g hg ↦ by
     dsimp only
     rw [degree_mul S T U g hg, map_mul]⟩
@@ -116,12 +116,12 @@ def liftEquiv :
 
 /-- The universal-property equivalence sends a degree assignment to its extension. -/
 @[simp]
-theorem liftEquiv_apply (d) : (liftEquiv (C := C) (G := G)) d = lift d.1 d.2 := (rfl)
+theorem liftEquiv_apply (d) : (liftEquiv (C := C) (G := G)) d = lift d.val d.property := (rfl)
 
 /-- The inverse universal-property equivalence restricts a homomorphism to simple degrees. -/
 @[simp]
 theorem liftEquiv_symm_apply (f : universalGradingGroup C →* G) (S : SimpleClasses C) :
-    ((liftEquiv (C := C) (G := G)).symm f).1 S = f (degree S) := (rfl)
+    ((liftEquiv (C := C) (G := G)).symm f).val S = f (degree S) := (rfl)
 
 end universalGradingGroup
 

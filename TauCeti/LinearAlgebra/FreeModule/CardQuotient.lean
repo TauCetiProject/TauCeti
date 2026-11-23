@@ -7,6 +7,7 @@ module
 
 public import TauCeti.RingTheory.DiscreteValuationRing.Basic
 public import Mathlib.RingTheory.Ideal.Norm.AbsNorm
+import TauCeti.LinearAlgebra.Determinant.Basic
 
 /-!
 # The index of the image of an endomorphism of a free module over a PID
@@ -53,9 +54,8 @@ theorem card_quotient_range_eq_card_quotient_span_det {f : M →ₗ[R] M} (hf : 
     Nat.card (M ⧸ range f) = Nat.card (R ⧸ Ideal.span {f.det}) := by
   classical
   let b := Module.Free.chooseBasis R M
-  have hinj : Function.Injective f :=
-    ker_eq_bot.mp (not_ne_iff.mp (mt det_eq_zero_iff_ker_ne_bot.mpr hf))
-  let e : M ≃ₗ[R] range f := LinearEquiv.ofInjective f hinj
+  let e : M ≃ₗ[R] range f := LinearEquiv.ofInjective f
+    (injective_of_det_mem_nonZeroDivisors (mem_nonZeroDivisors_of_ne_zero hf))
   have h : finrank R (range f) = finrank R M := e.finrank_eq.symm
   let a := smithNormalFormCoeffs b h
   let b' := smithNormalFormTopBasis b h
@@ -87,13 +87,17 @@ theorem card_quotient_range_eq_card_quotient_span_det {f : M →ₗ[R] M} (hf : 
         rw [Ideal.prod_span_singleton, ← Ideal.span_singleton_eq_span_singleton.mpr hassoc,
           hnorm hf]
 
-omit [IsPrincipalIdealRing R] in
+omit [IsPrincipalIdealRing R] [Module.Free R M] [Module.Finite R M] in
 /-- **An endomorphism with vanishing determinant has infinite cokernel.** Over an infinite domain,
 if `det f = 0` then `M ⧸ range f` is infinite. Together with
-`card_quotient_range_eq_card_quotient_span_det`, over an infinite principal ideal domain the
-cokernel of `f` is finite exactly when `det f ≠ 0` and `R ⧸ (det f)` is finite. -/
+`card_quotient_range_eq_card_quotient_span_det`, for a finite free module `M` over an infinite
+principal ideal domain the cokernel of `f` is finite exactly when `det f ≠ 0` and `R ⧸ (det f)` is
+finite. -/
 theorem infinite_quotient_range_of_det_eq_zero [Infinite R] {f : M →ₗ[R] M} (hf : f.det = 0) :
     Infinite (M ⧸ range f) := by
+  -- A vanishing determinant is not `1`, so `M` is finite and free.
+  have := LinearMap.finite_of_det_ne_one (f := f) (by simp [hf])
+  have := LinearMap.free_of_det_ne_one (f := f) (by simp [hf])
   -- The kernel of `f` is nonzero, so by rank-nullity the cokernel has positive rank, and the
   -- multiples of an element of positive rank are pairwise distinct.
   have hker : 0 < Module.rank R (ker f) := by
