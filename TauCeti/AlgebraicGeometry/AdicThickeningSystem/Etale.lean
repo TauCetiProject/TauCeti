@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicGeometry.AdicThickeningSystem.Basic
+public import TauCeti.AlgebraicGeometry.AdicThickeningSystem.FormalCompletion
 public import TauCeti.AlgebraicGeometry.Morphisms.Etale.UniversalHomeomorphism
 import Mathlib.AlgebraicGeometry.Morphisms.FormallyUnramified
 
@@ -15,7 +15,9 @@ import Mathlib.AlgebraicGeometry.Morphisms.FormallyUnramified
 A morphism between étale schemes on the initial level of an adic thickening system extends
 uniquely to a compatible family of morphisms on all infinitesimal levels. More generally, only
 the target needs to be étale over the base system. Isomorphisms on the initial level extend to
-isomorphisms when both systems are étale over the base.
+isomorphisms when both systems are étale over the base. In particular, the morphism of formal
+completions induced by an étale morphism of schemes along the inverse image ideal sheaf is étale
+at every level (`AlgebraicGeometry.Scheme.formalCompletion.etale_map_app`).
 
 These results construct the compatible infinitesimal morphisms used in formal comparison for
 finite étale covers. They do not assert algebraization: recovering a morphism of schemes from
@@ -246,3 +248,13 @@ theorem isoOfEtale_trans {W : AdicThickeningSystem.{u}}
   apply eq_isoOfEtale <;> simp
 
 end TauCeti.AlgebraicGeometry.AdicThickeningSystem
+
+namespace AlgebraicGeometry.Scheme.formalCompletion
+
+/-- The morphism of formal completions induced by an étale morphism `f : X ⟶ Y`, for the inverse
+image of an ideal sheaf on `Y`, is étale at every level. -/
+instance etale_map_app {X Y : Scheme.{u}} {J : Y.IdealSheafData} (f : X ⟶ Y) [Etale f] (n : ℕ) :
+    Etale ((map (I := J.comap f) f le_rfl).app n) :=
+  MorphismProperty.of_isPullback (P := @Etale) (isPullback_map_app f rfl n) ‹_›
+
+end AlgebraicGeometry.Scheme.formalCompletion

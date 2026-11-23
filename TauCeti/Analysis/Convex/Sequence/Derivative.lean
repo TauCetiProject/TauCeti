@@ -16,7 +16,8 @@ At a finite face of a convex height sequence, the supporting value is affine on
 each side of the face slope in a sufficiently small interval. Its left derivative
 is minus the absolute left endpoint, and its right derivative is minus the absolute
 right endpoint. The supporting value is differentiable exactly when the face is a
-singleton.
+singleton. In particular the endpoints of a finite face are determined by the supporting values
+near its slope.
 
 The statements allow unbounded finite domains. Finiteness of the face provides a
 strict gap to each adjacent finite slope; no conclusion is asserted at an infinite
@@ -138,6 +139,26 @@ theorem differentiableAt_supportingValue_toReal_iff (hf : IsFiniteFace h σ l u)
     exact_mod_cast neg_injective (hleft.trans hright.symm)
   · rintro rfl
     exact (hf.hasDerivAt_supportingValue_toReal hh).differentiableAt
+
+/-- The endpoints of a finite face are determined by the supporting values near its slope: if
+two convex height sequences have the same supporting values near `σ`, their finite faces of
+slope `σ` have the same endpoints. -/
+theorem eq_of_eventuallyEq_supportingValue {h' : ℕ → WithTop ℝ} {l' u' : ℕ}
+    (hf : IsFiniteFace h σ l u) (hh : IsConvexSeq h) (hf' : IsFiniteFace h' σ l' u')
+    (hh' : IsConvexSeq h') (heq : supportingValue h' =ᶠ[𝓝 σ] supportingValue h) :
+    l' = l ∧ u' = u := by
+  have hreal : (fun τ => (supportingValue h' τ).toReal) =ᶠ[𝓝 σ]
+      fun τ => (supportingValue h τ).toReal :=
+    heq.mono fun τ hτ => congrArg EReal.toReal hτ
+  have hl := (uniqueDiffWithinAt_Iic σ).eq_deriv _
+    (hf'.hasDerivWithinAt_supportingValue_toReal_left hh')
+    ((hf.hasDerivWithinAt_supportingValue_toReal_left hh).congr_of_eventuallyEq
+      (hreal.filter_mono nhdsWithin_le_nhds) hreal.self_of_nhds)
+  have hu := (uniqueDiffWithinAt_Ici σ).eq_deriv _
+    (hf'.hasDerivWithinAt_supportingValue_toReal_right hh')
+    ((hf.hasDerivWithinAt_supportingValue_toReal_right hh).congr_of_eventuallyEq
+      (hreal.filter_mono nhdsWithin_le_nhds) hreal.self_of_nhds)
+  exact ⟨by exact_mod_cast neg_injective hl, by exact_mod_cast neg_injective hu⟩
 
 end IsFiniteFace
 end TauCeti

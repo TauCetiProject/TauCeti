@@ -116,7 +116,7 @@ def cechDoubleComplex : HomologicalComplex₂ C (ComplexShape.down ℕ) (Complex
 /-- The inclusion of the summand `C(U_s; R)` into the column `p` of the Čech double complex, for a
 set `s = {i₀ < ⋯ < iₚ}` of `p + 1` indices. -/
 def cechDoubleComplexι {p : ℕ} (s : {s : Finset ι // #s = p + 1}) :
-    (cechSingularChains U R).obj (op s.1) ⟶ (cechDoubleComplex U R).X p :=
+    (cechSingularChains U R).obj (op s.val) ⟶ (cechDoubleComplex U R).X p :=
   (cechSingularChains U R).orderedCechComplexι s
 
 /-- The summand inclusions `TauCeti.cechDoubleComplexι` exhibit the column `p` of the Čech double
@@ -137,7 +137,7 @@ def isColimitCechDoubleComplexXCofan (p q : ℕ) :
 /-- The morphism out of the column `p` of the Čech double complex given on each summand
 `C(U_s; R)`. -/
 def cechDoubleComplexDesc {p : ℕ} {A : ChainComplex C ℕ}
-    (f : ∀ s : {s : Finset ι // #s = p + 1}, (cechSingularChains U R).obj (op s.1) ⟶ A) :
+    (f : ∀ s : {s : Finset ι // #s = p + 1}, (cechSingularChains U R).obj (op s.val) ⟶ A) :
     (cechDoubleComplex U R).X p ⟶ A :=
   (cechSingularChains U R).orderedCechComplexDesc f
 
@@ -145,7 +145,7 @@ def cechDoubleComplexDesc {p : ℕ} {A : ChainComplex C ℕ}
 `C(U_s; R)`. -/
 @[reassoc (attr := simp)]
 lemma ι_cechDoubleComplexDesc {p : ℕ} {A : ChainComplex C ℕ}
-    (f : ∀ s : {s : Finset ι // #s = p + 1}, (cechSingularChains U R).obj (op s.1) ⟶ A)
+    (f : ∀ s : {s : Finset ι // #s = p + 1}, (cechSingularChains U R).obj (op s.val) ⟶ A)
     (s : {s : Finset ι // #s = p + 1}) :
     cechDoubleComplexι U R s ≫ cechDoubleComplexDesc U R f = f s :=
   (cechSingularChains U R).ι_orderedCechComplexDesc f s
@@ -172,10 +172,11 @@ lemma cechDoubleComplex_X_X_hom_ext {p q : ℕ} {A : C}
 @[reassoc]
 lemma ι_cechDoubleComplex_d {p : ℕ} (s : {s : Finset ι // #s = p + 1 + 1}) :
     cechDoubleComplexι U R s ≫ (cechDoubleComplex U R).d (p + 1) p =
-      ∑ i : s.1, ((-1 : ℤ) ^ #{j ∈ s.1 | j < i.1}) •
-        (cechSingularChains U R).map (homOfLE (s.1.erase_subset i.1)).op ≫
+      ∑ i : s.val, ((-1 : ℤ) ^ #{j ∈ s.val | j < i.val}) •
+        (cechSingularChains U R).map (homOfLE (s.val.erase_subset i.val)).op ≫
           cechDoubleComplexι U R
-            ⟨s.1.erase i, by rw [Finset.card_erase_of_mem i.2, s.2, Nat.add_sub_cancel]⟩ :=
+            ⟨s.val.erase i, by rw [Finset.card_erase_of_mem i.property, s.property,
+                Nat.add_sub_cancel]⟩ :=
   (cechSingularChains U R).ι_orderedCechComplex_d s
 
 /-- The horizontal differential of the Čech double complex in singular degree `q`, on the summand
@@ -183,10 +184,11 @@ of `s = {i₀ < ⋯ < iₚ₊₁}`: the component in degree `q` of `TauCeti.ι_c
 @[reassoc]
 lemma cechDoubleComplexι_f_comp_d_f {p : ℕ} (s : {s : Finset ι // #s = p + 1 + 1}) (q : ℕ) :
     (cechDoubleComplexι U R s).f q ≫ ((cechDoubleComplex U R).d (p + 1) p).f q =
-      ∑ i : s.1, ((-1 : ℤ) ^ #{j ∈ s.1 | j < i.1}) •
-        ((cechSingularChains U R).map (homOfLE (s.1.erase_subset i.1)).op).f q ≫
+      ∑ i : s.val, ((-1 : ℤ) ^ #{j ∈ s.val | j < i.val}) •
+        ((cechSingularChains U R).map (homOfLE (s.val.erase_subset i.val)).op).f q ≫
           (cechDoubleComplexι U R
-            ⟨s.1.erase i, by rw [Finset.card_erase_of_mem i.2, s.2, Nat.add_sub_cancel]⟩).f q := by
+            ⟨s.val.erase i, by rw [Finset.card_erase_of_mem i.property, s.property,
+                Nat.add_sub_cancel]⟩).f q := by
   rw [← HomologicalComplex.comp_f, ι_cechDoubleComplex_d]
   simp only [← HomologicalComplex.Hom.fAddMonoidHom_apply, map_sum, map_zsmul]
   simp only [HomologicalComplex.Hom.fAddMonoidHom_apply, HomologicalComplex.comp_f]
@@ -196,7 +198,7 @@ summand. -/
 @[reassoc]
 lemma cechDoubleComplexι_f_comp_d {p : ℕ} (s : {s : Finset ι // #s = p + 1}) (q : ℕ) :
     (cechDoubleComplexι U R s).f (q + 1) ≫ ((cechDoubleComplex U R).X p).d (q + 1) q =
-      ((cechSingularChains U R).obj (op s.1)).d (q + 1) q ≫ (cechDoubleComplexι U R s).f q :=
+      ((cechSingularChains U R).obj (op s.val)).d (q + 1) q ≫ (cechDoubleComplexι U R s).f q :=
   (cechDoubleComplexι U R s).comm (q + 1) q
 
 /-- The Čech double complex of a cover by finitely many open sets vanishes from the column of the
@@ -217,7 +219,7 @@ def cechAugmentation :
 @[reassoc (attr := simp)]
 lemma ι_cechAugmentation (s : {s : Finset ι // #s = 0 + 1}) :
     cechDoubleComplexι U R s ≫ cechAugmentation U R =
-      ((singularChainComplexFunctor C).obj R).map (Opens.inclusion' (s.1.inf U)) := by
+      ((singularChainComplexFunctor C).obj R).map (Opens.inclusion' (s.val.inf U)) := by
   rw [← cechSingularChains_map_comp_inclusion']
   exact (cechSingularChains U R).ι_orderedCechAugmentation_assoc s _
 
@@ -259,7 +261,7 @@ lemma cechDoubleComplexι_f_ιTotal_cechTotalAugmentation_f (s : {s : Finset ι 
     (cechDoubleComplexι U R s).f q ≫
         (cechDoubleComplex U R).ιTotal (ComplexShape.down ℕ) 0 q q (zero_add q) ≫
           (cechTotalAugmentation U R).f q =
-      (((singularChainComplexFunctor C).obj R).map (Opens.inclusion' (s.1.inf U))).f q := by
+      (((singularChainComplexFunctor C).obj R).map (Opens.inclusion' (s.val.inf U))).f q := by
   rw [ιTotal_cechTotalAugmentation_f_zero, ← HomologicalComplex.comp_f, ι_cechAugmentation]
 
 /-- The augmentation of the total complex vanishes on the columns `p + 1`. -/

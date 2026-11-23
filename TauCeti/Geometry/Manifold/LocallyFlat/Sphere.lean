@@ -121,8 +121,8 @@ theorem IsLocallyFlat.isBicollared_of_not_isPreconnected_compl_range {n : ℕ} (
     IsBicollared f :=
   haveI := ChartedSpace.locallyConnectedSpace (EuclideanSpace ℝ (Fin n))
     (sphere (0 : EuclideanSpace ℝ (Fin (n + 1))) 1)
-  haveI := connectedSpace_euclideanSphere (m := n + 1) (by omega)
-  haveI := connectedSpace_euclideanSphere (m := n + 2) (by omega)
+  haveI := connectedSpace_euclideanSphere (ι := Fin (n + 1)) (by rw [Fintype.card_fin]; omega)
+  haveI := connectedSpace_euclideanSphere (ι := Fin (n + 2)) (by rw [Fintype.card_fin]; omega)
   hf.isLocallyBicollared.isBicollared_of_not_isPreconnected_compl_range hf.injective hsep
 
 end TauCeti

@@ -153,7 +153,7 @@ theorem intervalIntegral_deriv_smul_eq_analyticRemainder_add_sum
   have hcont : ContinuousOn γ (uIcc a b) := hγ.continuousOn
   have hderiv : IntervalIntegrable (fun t => deriv γ t) volume a b := hγ.intervalIntegrable_deriv
   have hne : ∀ s : S, ∀ t ∈ uIcc a b, γ t ≠ (s : ℂ) := fun s t ht h_eq =>
-    hoff t ht (h_eq ▸ Finset.mem_coe.mpr s.2)
+    hoff t ht (h_eq ▸ Finset.mem_coe.mpr s.property)
   have hpol_cont : ∀ s : S, ContinuousOn (fun t => decomp.polarPart s (γ t)) (uIcc a b) :=
     fun s => ContinuousOn.congr
       (continuousOn_finsetSum Finset.univ fun k _ => continuousOn_const.div

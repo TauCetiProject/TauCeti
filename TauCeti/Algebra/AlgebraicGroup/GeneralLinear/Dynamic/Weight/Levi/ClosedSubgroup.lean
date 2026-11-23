@@ -94,7 +94,7 @@ theorem quotientPointsHom_weightLeviClosedSubgroupPointsIso_inv_app_apply (w : F
     (hl : l.comp φ.hom = weightCocharacter (R := R) w)
     (A : CommAlgCat.{v} R) (g : Cocharacter.levi A l) :
     CommHopfAlgCat.quotientPointsHom K ((weightLeviDefiningHopfIdeal R w).map φ.hom) A
-      ((weightLeviClosedSubgroupPointsIso w φ hφ l hl).inv.app A g) = g.1 := by
+      ((weightLeviClosedSubgroupPointsIso w φ hφ l hl).inv.app A g) = g.val := by
   unfold weightLeviClosedSubgroupPointsIso
   exact Cocharacter.quotientPointsHom_leviClosedSubgroupPointsIso_inv_app_apply φ hφ l _
     (fun _ g ↦ by rw [hl]; exact mem_weightLeviDefiningPointsSubgroup_iff (R := R) w g) A g

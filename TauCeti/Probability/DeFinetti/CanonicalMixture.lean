@@ -150,7 +150,7 @@ theorem deFinettiEquiv_symm_eq_deFinettiMeasure {μ : Measure Ω} [IsProbability
     (hρ : ((ρ : ProbabilityMeasure (ℕ → α)) : Measure (ℕ → α)) = pathLaw μ X) :
     deFinettiEquiv.symm ρ = deFinettiMeasure μ X := by
   have hX : Exchangeable μ X :=
-    (exchangeable_iff_exchangeableLaw_pathLaw fun n => (hX_meas n).aemeasurable).2 (hρ ▸ ρ.2)
+    (exchangeable_iff_exchangeableLaw_pathLaw fun n => (hX_meas n).aemeasurable).2 (hρ ▸ ρ.property)
   exact deFinettiEquiv_symm_eq
     (by rw [hρ, Measure.deFinettiBarycenter_def]
         exact pathLaw_eq_bind_infinitePi_deFinettiMeasure_of_exchangeable hX hX_meas)

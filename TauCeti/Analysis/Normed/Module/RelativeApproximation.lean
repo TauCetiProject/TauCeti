@@ -36,7 +36,7 @@ theorem exists_antilipschitzWith_domRestrict_of_approx {𝕜 U V 𝓕 : Type*}
     (happ : ∀ x ∈ p, ∀ y ∈ p, ‖f x - f y - A (x - y)‖ ≤ δ * ‖A (x - y)‖) :
     ∃ L : ℝ≥0, AntilipschitzWith L (p.domRestrict f) := by
   rcases p.eq_empty_or_nonempty with rfl | hp
-  · exact ⟨1, fun x ↦ x.2.elim⟩
+  · exact ⟨1, fun x ↦ x.property.elim⟩
   obtain ⟨c, -, hAc⟩ := (A : U →ₗ[𝕜] V).injective_iff_antilipschitz.mp (hA hp)
   -- `hAc` is stated for the coercion of `A` to a linear map; transport it to `A` itself.
   rw [LinearMap.coe_ofClass] at hAc

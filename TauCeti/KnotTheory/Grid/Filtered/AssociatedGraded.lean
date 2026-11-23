@@ -63,7 +63,7 @@ private theorem sub_topPart_mem {a : ℤ} {c : GridChainMinus R n}
       G.alexanderFiltration R (a - 1) := by
   rw [mem_alexanderFiltration] at hc ⊢
   intro x e he
-  rw [Finsupp.sub_apply, MvPolynomial.mem_support_iff, coeff_sub,
+  rw [Finsupp.sub_apply, MvPolynomial.mem_support_iff, AddMonoidAlgebra.coeff_sub_apply,
     G.coeff_decompose_alexanderChainMinusGrading] at he
   by_cases h : G.alexanderℤ x - (e.degree : ℤ) = a
   · simp [h] at he
@@ -177,7 +177,7 @@ theorem coeff_alexanderFiltrationGradedEquiv_mk (a : ℤ) (c : G.alexanderFiltra
 noncomputable def alexanderFiltrationGradedDifferential (a : ℤ) :
     G.alexanderFiltrationGradedPiece R a →ₗ[MvPolynomial (Fin n) R]
       G.alexanderFiltrationGradedPiece R a :=
-  let d := (G.1.filteredDifferential R).restrict
+  let d := (G.val.filteredDifferential R).restrict
     (fun _ hc => G.filteredDifferential_mem_alexanderFiltration R hc)
   Submodule.mapQ _ _ d (fun _ hc => G.filteredDifferential_mem_alexanderFiltration R hc)
 
@@ -187,7 +187,7 @@ rectangle-counting differential. -/
 theorem alexanderFiltrationGradedDifferential_mk (a : ℤ) (c : G.alexanderFiltration R a) :
     G.alexanderFiltrationGradedDifferential R a (Submodule.Quotient.mk c) =
       Submodule.Quotient.mk
-        (⟨G.1.filteredDifferential R c,
+        (⟨G.val.filteredDifferential R c,
           G.filteredDifferential_mem_alexanderFiltration R c.property⟩ :
             G.alexanderFiltration R a) := by rfl
 
@@ -197,7 +197,7 @@ unblocked differential restricted to the Alexander-homogeneous piece. -/
 theorem alexanderFiltrationGradedEquiv_differential (a : ℤ)
     (q : G.alexanderFiltrationGradedPiece R a) :
     G.alexanderFiltrationGradedEquiv R a (G.alexanderFiltrationGradedDifferential R a q) =
-      ⟨G.1.unblockedDifferential R (G.alexanderFiltrationGradedEquiv R a q),
+      ⟨G.val.unblockedDifferential R (G.alexanderFiltrationGradedEquiv R a q),
         G.unblockedDifferential_mem_alexanderChainMinusPiece
           (G.alexanderFiltrationGradedEquiv R a q).property⟩ := by
   obtain ⟨c, rfl⟩ := (G.alexanderFiltrationGradedEquiv R a).symm.surjective q
@@ -218,7 +218,7 @@ theorem alexanderFiltrationGradedDifferential_comp_self_eq_zero [CharP R 2] (a :
   | _ c =>
     rw [LinearMap.comp_apply, alexanderFiltrationGradedDifferential_mk,
       alexanderFiltrationGradedDifferential_mk]
-    have hd := LinearMap.congr_fun (G.1.filteredDifferential_comp_self_eq_zero R) c
+    have hd := LinearMap.congr_fun (G.val.filteredDifferential_comp_self_eq_zero R) c
     simp only [LinearMap.comp_apply, LinearMap.zero_apply] at hd
     simp [hd]
 
