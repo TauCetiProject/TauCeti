@@ -174,11 +174,7 @@ theorem exists_homotopicRel_comp_id_of_surjective_singularHomologyMap {Q : Type}
     sphere (0 : EuclideanSpace ℝ (Fin (n + 3))) 1) := a
   have hδ : (A.comp c).comp s x = x := by simp [A, ha]
   have hδδ := homotopicRel_comp_self_id_of_surjective_singularHomologyMap hδ (by
-    have hcomp : ⇑(singularHomologyMap ℤ (n + 2) ((A.comp c).comp s)) =
-        singularHomologyMap ℤ (n + 2) A ∘ singularHomologyMap ℤ (n + 2) (c.comp s) := by
-      funext z
-      simp only [ContinuousMap.comp_assoc, Function.comp_apply, singularHomologyMap_comp]
-    rw [hcomp]
+    rw [ContinuousMap.comp_assoc, singularHomologyMap_comp', LinearMap.coe_comp]
     exact (a.toHomotopyEquiv.bijective_singularHomologyMap ℤ (n + 2)).2.comp h)
   -- Then `r = δ ∘ a ∘ c` is a pointed left homotopy inverse of `s`: `r ∘ s = δ ∘ δ`.
   exact ⟨((A.comp c).comp s).comp (A.comp c), by simp [A, ha], hδδ⟩

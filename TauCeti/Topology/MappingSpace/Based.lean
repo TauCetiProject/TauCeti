@@ -25,10 +25,10 @@ with the quotient map.
 * `TauCeti.BasedMap.map`: the map `Map_*(B, X) → Map_*(B, Y)` induced by a based map `X → Y`,
   continuous by `TauCeti.BasedMap.continuous_map`; `TauCeti.BasedMap.mapContinuousMap` bundles it
   as a continuous map.
-* `TauCeti.BasedMap.homotopic_map_of_homotopicRel`: maps homotopic relative to the basepoint
-  induce homotopic maps of based mapping spaces.
 * `TauCeti.BasedMap.lift`: the universal lift of a family of maps whose value at the basepoint is
   fixed, with `TauCeti.BasedMap.lift_unique` its uniqueness.
+* `TauCeti.BasedMap.homotopic_map_of_homotopicRel`: maps homotopic relative to the basepoint
+  induce homotopic maps of based mapping spaces.
 * `TauCeti.BasedMap.homeomorphGenLoop`: `Map_*(B, X) ≃ₜ Ω^ N X x` for a Hausdorff quotient `B` of
   the cube collapsing exactly the boundary to the basepoint, with
   `TauCeti.BasedMap.homeomorphGenLoop_apply` its action: precomposition with the quotient map.
@@ -99,25 +99,6 @@ theorem coe_mapContinuousMap (g : C(X, Y)) (hg : g x = y) :
     ⇑(mapContinuousMap (B := B) (b₀ := b₀) g hg) = map g hg :=
   (rfl)
 
-/-- **Homotopy invariance of based mapping spaces.** Maps `g, g' : X → Y` that are homotopic
-relative to `x` induce homotopic maps `Map_*(B, X) → Map_*(B, Y)`: postcompose with the homotopy,
-which fixes `x` throughout. This needs evaluation `Map(B, X) × B → X` to be continuous, through
-`LocallyCompactPair B X`, which holds for instance when `B` is locally compact. -/
-theorem homotopic_map_of_homotopicRel [LocallyCompactPair B X] {g g' : C(X, Y)} (hg : g x = y)
-    (hg' : g' x = y) (H : g.HomotopicRel g' {x}) :
-    ContinuousMap.Homotopic
-      (mapContinuousMap (B := B) (b₀ := b₀) g hg) (mapContinuousMap g' hg') := by
-  obtain ⟨F⟩ := H
-  refine ⟨{
-    toFun := fun p ↦ ⟨⟨fun b ↦ F (p.fst, p.snd.val b), by fun_prop⟩, by
-      simp [p.snd.property, F.eq_fst p.fst (Set.mem_singleton x), hg]⟩
-    continuous_toFun := continuous_induced_rng.2
-      (ContinuousMap.continuous_of_continuous_uncurry _
-        (show Continuous fun z : (I × BasedMap B X b₀ x) × B ↦ F (z.fst.fst, z.fst.snd.val z.snd) by
-          fun_prop))
-    map_zero_left := fun f ↦ Subtype.ext (ContinuousMap.ext fun b ↦ by simp)
-    map_one_left := fun f ↦ Subtype.ext (ContinuousMap.ext fun b ↦ by simp) }⟩
-
 end Map
 
 section Lift
@@ -152,6 +133,30 @@ theorem lift_unique (f : C(Y, C(B, X))) (hf : ∀ y, f y b₀ = x) (g : C(Y, Bas
   exact DFunLike.congr_fun hg y
 
 end Lift
+
+section Homotopy
+
+variable {B X Y : Type*} [TopologicalSpace B] [TopologicalSpace X] [TopologicalSpace Y]
+  {b₀ : B} {x : X} {y : Y}
+
+/-- **Homotopy invariance of based mapping spaces.** Maps `g, g' : X → Y` that are homotopic
+relative to `x` induce homotopic maps `Map_*(B, X) → Map_*(B, Y)`: postcompose with the homotopy,
+which fixes `x` throughout. This needs evaluation `Map(B, X) × B → X` to be continuous, through
+`LocallyCompactPair B X`, which holds for instance when `B` is locally compact. -/
+theorem homotopic_map_of_homotopicRel [LocallyCompactPair B X] {g g' : C(X, Y)} (hg : g x = y)
+    (hg' : g' x = y) (H : g.HomotopicRel g' {x}) :
+    ContinuousMap.Homotopic
+      (mapContinuousMap (B := B) (b₀ := b₀) g hg) (mapContinuousMap g' hg') := by
+  obtain ⟨F⟩ := H
+  -- Postcomposing with `F` is a continuous family of maps `B → Y`, based since `F` fixes `x`.
+  refine ⟨{
+    toContinuousMap := lift (ContinuousMap.curry
+      ⟨fun z : (I × BasedMap B X b₀ x) × B ↦ F (z.fst.fst, z.fst.snd.val z.snd), by fun_prop⟩)
+      fun p ↦ by simp [p.snd.property, F.eq_fst p.fst (Set.mem_singleton x), hg]
+    map_zero_left := fun f ↦ Subtype.ext (ContinuousMap.ext fun b ↦ by simp)
+    map_one_left := fun f ↦ Subtype.ext (ContinuousMap.ext fun b ↦ by simp) }⟩
+
+end Homotopy
 
 variable {N B X : Type*} [TopologicalSpace B] [TopologicalSpace X] {x : X}
   (q : C(N → I, B)) (b₀ : B) (hb : ∀ z ∈ Cube.boundary N, q z = b₀)
