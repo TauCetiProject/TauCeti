@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RepresentationTheory.Continuous.TopRep.Products
-public import Mathlib.RepresentationTheory.Homological.ContCohomology.Functoriality
 public import TauCeti.Topology.Category.TopCat.MappingSpace
 public import Mathlib.Topology.Category.TopCat.ULift
 
@@ -17,8 +16,6 @@ The invariants functor is right adjoint to the trivial-action functor, and hence
 limits. This is the topological counterpart of Mathlib's `Rep.invariantsAdjunction`.
 For a locally compact group, `coind₁Functor` also preserves limits because its underlying
 topological space is the compact-open mapping space, a right adjoint on `TopCat`.
-Each degree of the coinduced resolution, packaged as `TopRep.resolutionFunctor`, consequently
-preserves limits as well.
 -/
 
 public section
@@ -91,20 +88,6 @@ instance : (invariantsFunctor (k := R) (G := G) :
   (invariantsAdjunction R G).isRightAdjoint
 
 variable [TopologicalSpace G] [IsTopologicalGroup G]
-
-/-- The functor taking a representation to a fixed degree of its coinduced resolution. -/
-@[expose, simps -isSimp obj map]
-def resolutionFunctor (n : ℕ) :
-    TopRep.{max v w} R G ⥤ TopRep.{max v w} R G where
-  obj X := resolutionX X n
-  map f := _root_.ContinuousCohomology.resolutionMap (ContinuousMonoidHom.id G) f n
-  map_id X := _root_.ContinuousCohomology.resolutionMap_id X n
-  map_comp f g := _root_.ContinuousCohomology.resolutionMap_comp
-    (ContinuousMonoidHom.id G) (ContinuousMonoidHom.id G) f g n
-
-attribute [simp] resolutionFunctor_obj
--- Let the generic functor laws simplify identities and composites first.
-attribute [simp low] resolutionFunctor_map
 
 private def coind₁FunctorCompForgetIsoApp (X : TopRep.{w} R G) :
     TopCat.of C(G, X.V) ≅ TopCat.of C(ULift.{w} G, ULift.{v} X.V) :=
@@ -188,29 +171,5 @@ instance coind₁Functor_preservesLimitsOfSize [UnivLE.{t₂, w}] :
 instance (priority := low) coind₁Functor_preservesLimits :
     PreservesLimits (coind₁Functor.{u, v, max v w} R G) :=
   coind₁Functor_preservesLimitsOfSize.{u, v, max v w, max v w, max v w} R G
-
-/-- Each degree of the coinduced resolution preserves limits over a locally compact group. -/
-instance resolutionFunctor_preservesLimitsOfSize [UnivLE.{t₂, max v w}] (n : ℕ) :
-    PreservesLimitsOfSize.{t₁, t₂} (resolutionFunctor.{u, v, w} R G n) := by
-  induction n with
-  | zero =>
-    have e : 𝟭 (TopRep.{max v w} R G) ≅ resolutionFunctor R G 0 :=
-      NatIso.ofComponents (fun _ ↦ Iso.refl _) (fun f ↦ by
-        -- In degree zero the resolution and its map are the original representation and map.
-        change f ≫ 𝟙 _ = 𝟙 _ ≫ f
-        simp only [Category.comp_id, Category.id_comp])
-    exact preservesLimits_of_natIso e
-  | succ n ih =>
-    have := ih
-    have e : resolutionFunctor R G n ⋙ coind₁Functor R G ≅
-        resolutionFunctor R G (n + 1) :=
-      NatIso.ofComponents (fun _ ↦ Iso.refl _) (fun f ↦ by
-        let g := _root_.ContinuousCohomology.resolutionMap (ContinuousMonoidHom.id G) f n
-        -- Expose the map of the coinduction abbrev and the successor resolution map.
-        change ofHom (ContRepresentation.coind₁Map g.hom) ≫ 𝟙 _ =
-          𝟙 _ ≫ ofHom (ContRepresentation.coind₁ResMap (ContinuousMonoidHom.id G) g.hom)
-        simp only [Category.comp_id, Category.id_comp]
-        exact (congrArg ofHom (ContRepresentation.coind₁ResMap_id _)).symm)
-    exact preservesLimits_of_natIso e
 
 end TopRep

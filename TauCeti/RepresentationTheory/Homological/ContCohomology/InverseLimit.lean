@@ -22,6 +22,8 @@ Use `CategoryTheory.Limits.preservesLimitIso` for the comparison and
 This is the cochain comparison underlying the inverse-limit discussion in K. Rubin,
 *Euler Systems*, Appendix B, §2. We use Mathlib's homogeneous cochains, constructed by iterated
 coinduction and invariants, and the compact-open mapping-space adjunction.
+The degree functors of the coinduced resolution, packaged as `TopRep.resolutionFunctor`,
+preserve limits as well.
 -/
 
 public section
@@ -30,7 +32,54 @@ noncomputable section
 
 open CategoryTheory Limits TopRep
 
-universe u v w₁ w₂
+universe u v w t₁ t₂ w₁ w₂
+
+namespace TopRep
+
+variable (R : Type u) [Ring R] [TopologicalSpace R]
+  (G : Type v) [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
+
+/-- The functor taking a representation to a fixed degree of its coinduced resolution. -/
+@[expose, simps -isSimp obj map]
+def resolutionFunctor (n : ℕ) :
+    TopRep.{max v w} R G ⥤ TopRep.{max v w} R G where
+  obj X := resolutionX X n
+  map f := _root_.ContinuousCohomology.resolutionMap (ContinuousMonoidHom.id G) f n
+  map_id X := _root_.ContinuousCohomology.resolutionMap_id X n
+  map_comp f g := _root_.ContinuousCohomology.resolutionMap_comp
+    (ContinuousMonoidHom.id G) (ContinuousMonoidHom.id G) f g n
+
+attribute [simp] resolutionFunctor_obj
+-- Let the generic functor laws simplify identities and composites first.
+attribute [simp low] resolutionFunctor_map
+
+variable [LocallyCompactSpace G]
+
+/-- Each degree of the coinduced resolution preserves limits over a locally compact group. -/
+instance resolutionFunctor_preservesLimitsOfSize [UnivLE.{t₂, max v w}] (n : ℕ) :
+    PreservesLimitsOfSize.{t₁, t₂} (resolutionFunctor.{u, v, w} R G n) := by
+  induction n with
+  | zero =>
+    have e : 𝟭 (TopRep.{max v w} R G) ≅ resolutionFunctor R G 0 :=
+      NatIso.ofComponents (fun _ ↦ Iso.refl _) (fun f ↦ by
+        -- In degree zero the resolution and its map are the original representation and map.
+        change f ≫ 𝟙 _ = 𝟙 _ ≫ f
+        simp only [Category.comp_id, Category.id_comp])
+    exact preservesLimits_of_natIso e
+  | succ n ih =>
+    have := ih
+    have e : resolutionFunctor R G n ⋙ coind₁Functor R G ≅
+        resolutionFunctor R G (n + 1) :=
+      NatIso.ofComponents (fun _ ↦ Iso.refl _) (fun f ↦ by
+        let g := _root_.ContinuousCohomology.resolutionMap (ContinuousMonoidHom.id G) f n
+        -- Expose the map of the coinduction abbrev and the successor resolution map.
+        change ofHom (ContRepresentation.coind₁Map g.hom) ≫ 𝟙 _ =
+          𝟙 _ ≫ ofHom (ContRepresentation.coind₁ResMap (ContinuousMonoidHom.id G) g.hom)
+        simp only [Category.comp_id, Category.id_comp]
+        exact (congrArg ofHom (ContRepresentation.coind₁ResMap_id _)).symm)
+    exact preservesLimits_of_natIso e
+
+end TopRep
 
 namespace TauCeti.ContinuousCohomology
 
