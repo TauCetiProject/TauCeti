@@ -48,7 +48,7 @@ theorem map_coe_equivIco_volume (a : ℝ) :
     (volume : Measure (AddCircle T)).map (fun θ ↦ (equivIco T a θ : ℝ)) =
       volume.restrict (Ico a (a + T)) := by
   have hm : Measurable fun θ ↦ (equivIco T a θ : ℝ) :=
-    measurable_subtype_coe.comp (measurableEquivIco T a).measurable
+    measurable_subtypeVal.comp (measurableEquivIco T a).measurable
   have hproj : (volume.restrict (Ico a (a + T))).map ((↑) : ℝ → AddCircle T) = volume := by
     rw [Measure.restrict_congr_set Ico_ae_eq_Ioc]
     exact (AddCircle.measurePreserving_mk T a).map_eq
@@ -67,7 +67,7 @@ theorem volume_preimage_coe_eq_zero_iff {s : Set (AddCircle T)} :
     have hemb : MeasurableEmbedding (equivIoc T 0) := (measurableEquivIoc T 0).measurableEmbedding
     have h1 := (measurePreserving_equivIoc (T := T) (a := 0)).measure_preimage_emb hemb
       ((equivIoc T 0).symm ⁻¹' s)
-    rw [(MeasurableEmbedding.subtype_coe measurableSet_Ioc).comap_apply,
+    rw [(MeasurableEmbedding.subtypeVal measurableSet_Ioc).comap_apply,
       Equiv.preimage_symm_preimage] at h1
     refine nonpos_iff_eq_zero.1 (h1.trans_le (h ▸ measure_mono ?_))
     -- the inverse of `equivIoc` is the quotient map, so the lift of `y` is `y` itself
@@ -91,7 +91,7 @@ theorem map_coe_equivIco_withDensity_haarAddCircle (a : ℝ) {f : AddCircle T �
       (volume.restrict (Ico a (a + T))).withDensity
         (fun x : ℝ ↦ (ENNReal.ofReal T)⁻¹ * f x) := by
   have hemb : MeasurableEmbedding fun θ : AddCircle T ↦ (equivIco T a θ : ℝ) :=
-    (MeasurableEmbedding.subtype_coe measurableSet_Ico).comp
+    (MeasurableEmbedding.subtypeVal measurableSet_Ico).comp
       (measurableEquivIco T a).measurableEmbedding
   have hvol : (haarAddCircle : Measure (AddCircle T)) =
       (ENNReal.ofReal T)⁻¹ • volume := by
@@ -143,7 +143,7 @@ theorem map_coe_withDensity {f : ℝ → ℝ≥0∞} (hf : Measurable f) :
   rw [← lintegral_tsum hmeas]
   refine setLIntegral_congr_fun measurableSet_Ioc fun x _ ↦ ?_
   have hx (γ : (AddSubgroup.zmultiples T).op) : ((γ +ᵥ x : ℝ) : AddCircle T) = x :=
-    QuotientAddGroup.mk_add_of_mem x γ.2
+    QuotientAddGroup.mk_add_of_mem x γ.property
   by_cases h : (x : AddCircle T) ∈ A
   · simp [indicator, hx, h, QuotientAddGroup.automorphize_mk]
   · simp [indicator, hx, h]

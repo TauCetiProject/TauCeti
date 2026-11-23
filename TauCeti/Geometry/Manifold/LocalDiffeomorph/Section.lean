@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Manifold.LocalDiffeomorph.Injective
 public import TauCeti.Topology.MetricSpace.InjectiveNeighborhood
+import TauCeti.Geometry.Manifold.LocalDiffeomorph.Basic
 
 /-!
 # Assembling local diffeomorphisms near a section
@@ -21,6 +22,8 @@ of the ambient source is needed to define the inverse outside its target.
 step for normal-exponential coordinates: the section is the zero section of the normal
 bundle and the retraction is its bundle projection. The conclusion supplies a smooth
 inverse on one neighbourhood of the entire embedded submanifold.
+`TauCeti.exists_partialDiffeomorph_near_section_of_isLocalDiffeomorphAt` needs local
+invertibility only along the section, and also keeps the target inside a prescribed open set.
 
 The construction uses `Topology.IsInducing.exists_injOn_neighborhood_section` for global
 injectivity and `IsLocalDiffeomorphOn.partialDiffeomorphOfInjOn` for the smooth inverse.
@@ -66,3 +69,46 @@ theorem exists_partialDiffeomorph_near_section (hf : IsLocalDiffeomorphOn I J n 
   · rw [partialDiffeomorphOfInjOn_target, partialDiffeomorphOfInjOn_source]
 
 end IsLocalDiffeomorphOn
+
+namespace TauCeti
+
+variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
+  {E F : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+  [NormedAddCommGroup F] [NormedSpace 𝕜 F]
+  {H G : Type*} [TopologicalSpace H] [TopologicalSpace G]
+  {I : ModelWithCorners 𝕜 E H} {J : ModelWithCorners 𝕜 F G}
+  {M N B : Type*} [TopologicalSpace M] [ChartedSpace H M]
+  [TopologicalSpace N] [ChartedSpace G N] [TopologicalSpace B]
+  [TopologicalSpace.PseudoMetrizableSpace M] [TopologicalSpace.PseudoMetrizableSpace N]
+  [Nonempty M] {n : ℕ∞ω} {f : M → N} {s : B → M} {O : Set M} {O' : Set N}
+
+/-- A map which is a local diffeomorphism at every point of a continuous retraction section,
+and whose restriction to the section induces the base topology, is a partial diffeomorphism on
+a neighbourhood of the whole section. The source stays inside a prescribed open neighbourhood
+`O` of the section, the target inside a prescribed open neighbourhood `O'` of its image, and the
+forward map is unchanged. -/
+theorem exists_partialDiffeomorph_near_section_of_isLocalDiffeomorphAt
+    (hf : ∀ b, IsLocalDiffeomorphAt I J n f (s b)) (hO : IsOpen O) (hsO : range s ⊆ O)
+    (hO' : IsOpen O') (hsO' : range (f ∘ s) ⊆ O') (hs : Continuous s)
+    (π : M → B) (hπ : Continuous π) (hsect : LeftInverse π s)
+    (hind : Topology.IsInducing (f ∘ s)) :
+    ∃ Φ : PartialDiffeomorph I J M N n, range s ⊆ Φ.source ∧ Φ.source ⊆ O ∧
+      Φ.target ⊆ O' ∧ Φ.target = f '' Φ.source ∧ ⇑Φ = f := by
+  -- Restrict to the open set of points of `O` near which `f` is a local diffeomorphism and which
+  -- `f` sends into `O'`.
+  let U := {p | IsLocalDiffeomorphAt I J n f p}
+  have hU : IsOpen U := isOpen_iff_mem_nhds.mpr fun _ hp ↦ hp.eventually
+  let S := (U ∩ O) ∩ f ⁻¹' O'
+  have hS : IsOpen S := ContinuousOn.isOpen_inter_preimage
+    (fun _ hp ↦ hp.1.contMDiffAt.continuousAt.continuousWithinAt) (hU.inter hO) hO'
+  have hsS : range s ⊆ S := range_subset_iff.2 fun b ↦
+    ⟨⟨hf b, hsO (mem_range_self b)⟩, hsO' (mem_range_self b)⟩
+  have hlocal : IsLocalDiffeomorphOn I J n f S := fun p ↦ p.property.1.1
+  obtain ⟨Φ, hsΦ, hΦS, htarget, hΦ⟩ :=
+    hlocal.exists_partialDiffeomorph_near_section hS hsS hs π hπ hsect hind
+  refine ⟨Φ, hsΦ, fun _ hp ↦ (hΦS hp).1.2, ?_, htarget, hΦ⟩
+  rw [htarget]
+  rintro _ ⟨p, hp, rfl⟩
+  exact (hΦS hp).2
+
+end TauCeti

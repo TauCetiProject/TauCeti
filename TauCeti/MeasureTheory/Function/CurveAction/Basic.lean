@@ -156,6 +156,12 @@ theorem Icc_add_natCast_mul_subset_Icc (a : ℝ) {h : ℝ} (hh : 0 ≤ h) {k N :
   rw [Nat.cast_succ] at hsucc
   exact Icc_subset_Icc (add_natCast_mul_mem_Icc a hh hk.le).1 hsucc.2
 
+/-- The last node `a + N * ((b - a) / N)` of the uniform grid of `[a, b]` with `N` cells is `b`. -/
+theorem add_natCast_mul_sub_div_natCast_self (a b : ℝ) {N : ℕ} (hN : 0 < N) :
+    a + N * ((b - a) / N) = b := by
+  rw [mul_div_cancel₀ _ (Nat.cast_ne_zero.2 hN.ne')]
+  ring
+
 /-- The `p`-action over `[a, a + n * h]` is the sum of the actions over the cells
 `[a + k * h, a + (k + 1) * h]` of the uniform grid of step `h`. -/
 theorem curveAction_eq_sum_range (p : ℝ) (γ : ℝ → X) (a h : ℝ) (n : ℕ) :

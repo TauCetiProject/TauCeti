@@ -133,7 +133,7 @@ theorem coe_toCoind_symm (f : coind G U A) :
     ⇑((toCoind G U A).symm f) = (f : G → A) := rfl
 
 /-- The underlying function of an element of `Coind_U^G A` lies in `TauCeti.coind`. -/
-theorem coe_mem (f : DiscreteCoind G U A) : ⇑f ∈ coind G U A := (toCoind G U A f).2
+theorem coe_mem (f : DiscreteCoind G U A) : ⇑f ∈ coind G U A := (toCoind G U A f).property
 
 /-- An element of `Coind_U^G A` is locally constant. -/
 theorem isLocallyConstant (f : DiscreteCoind G U A) : IsLocallyConstant ⇑f :=
@@ -298,7 +298,7 @@ theorem continuous_smul_const (f : DiscreteCoind G U A) : Continuous fun r : R =
   by_cases h : (fun r : R => r • f) ⁻¹' {y} = ∅
   · rw [h]
     exact isOpen_empty
-  · obtain ⟨r₀, hr₀⟩ := Set.nonempty_iff_ne_empty.mpr h
+  · obtain ⟨r₀, hr₀⟩ := Set.ne_empty_iff_nonempty.mp h
     have hy : r₀ • f = y := hr₀
     rw [← hy]
     have hrange : (Set.range f).Finite := f.isLocallyConstant.range_finite
@@ -520,13 +520,13 @@ private theorem singleFun_mul [DecidablePred (· ∈ U)] (g : G) (a : A) (u : U)
     (if h : (u : G) * x * g⁻¹ ∈ U then (⟨(u : G) * x * g⁻¹, h⟩ : U) • a else 0) =
       u • if h : x * g⁻¹ ∈ U then (⟨x * g⁻¹, h⟩ : U) • a else 0 := by
   by_cases hx : x * g⁻¹ ∈ U
-  · have hux : (u : G) * x * g⁻¹ ∈ U := by rw [mul_assoc]; exact U.mul_mem u.2 hx
+  · have hux : (u : G) * x * g⁻¹ ∈ U := by rw [mul_assoc]; exact U.mul_mem u.property hx
     simp only [hx, hux, dite_true, ← mul_smul]
     congr 1
     ext
     simp [mul_assoc]
   · have hux : (u : G) * x * g⁻¹ ∉ U := fun h =>
-      hx (by simpa [mul_assoc] using U.mul_mem (U.inv_mem u.2) h)
+      hx (by simpa [mul_assoc] using U.mul_mem (U.inv_mem u.property) h)
     simp only [hx, hux, dite_false, smul_zero]
 
 variable (G U A) in
@@ -584,7 +584,7 @@ theorem single_mul (u : U) (g : G) (a : A) :
   · rw [single_apply_of_notMem hU _ hx, single_apply_of_notMem hU a]
     intro h
     apply hx
-    have := U.mul_mem h u.2
+    have := U.mul_mem h u.property
     rwa [mul_inv_rev, ← mul_assoc, inv_mul_cancel_right] at this
 
 /-- Right translation moves the support of a single: `g' • single g a = single (g * g'⁻¹) a`. -/
@@ -616,7 +616,7 @@ theorem trace_map_single (f : A →ₗ[R] M) (hf : ∀ (u : U) (a : A), f (u •
   rw [hg, map_smul, _root_.map_smul, trace_apply,
     Finset.sum_eq_single_of_mem ((1 : G) : G ⧸ U) (Finset.mem_univ _)]
   · have h1 : ((1 : G) : G ⧸ U).out⁻¹ ∈ U := by
-      simpa using QuotientGroup.eq.1 (QuotientGroup.out_eq' ((1 : G) : G ⧸ U))
+      simp
     have := single_apply_mul hU 1 a ⟨_, h1⟩
     rw [mul_one] at this
     rw [map_apply, this, hf, Subgroup.smul_def, smul_smul]
@@ -665,7 +665,7 @@ def conj (g : G) (hVU : V ≤ U.map (MulAut.conj g).toMonoidHom) :
     ((f.isLocallyConstant.comp_continuous (continuous_const_mul g⁻¹)).comp (g • ·))
     fun v x => by
       -- `g⁻¹ (v x) = (g⁻¹ v g) (g⁻¹ x)` with `g⁻¹ v g ∈ U`, and `g (g⁻¹ v g) = v g`.
-      have hv := Subgroup.mem_map_equiv.1 (hVU v.2)
+      have hv := Subgroup.mem_map_equiv.1 (hVU v.property)
       rw [MulAut.conj_symm_apply] at hv
       have hx : g⁻¹ * ((v : G) * x) = ((⟨g⁻¹ * v * g, hv⟩ : U) : G) * (g⁻¹ * x) := by
         simp [mul_assoc]

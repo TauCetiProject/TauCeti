@@ -601,7 +601,7 @@ private theorem exists_eqvGen_midpointSubdivision
     ∃ hs₅ : (((poly.insertVertex i (midpoint ℝ (poly i) c)).insertVertex i.succ
         (midpoint ℝ c (poly (finRotate n i)))).insertVertex i.succ.castSucc c).IsSimple ℝ,
       Relation.EqvGen r ⟨_, _, hs₁⟩ ⟨_, _, hs₅⟩ := by
-  have E := Relation.EqvGen.is_equivalence r
+  have E := Relation.EqvGen.equivalence r
   -- The sides of the triangle `abc` of the move are at most `2 * δ`.
   have hpts := h.triangle_points
   have hab : dist (poly i) (poly (finRotate n i)) ≤ 2 * δ := by simpa [hpts] using hδ 0 1
@@ -673,7 +673,7 @@ private theorem eqvGen_deltaMove_of_halves {r : SimplePolygon ℝ P → SimplePo
   -- Following the module docstring, the simple polygons `⟨_, _, hs₁⟩, …, ⟨_, _, hs₇⟩` lead from
   -- `⋯ a b ⋯` to `⋯ a c b ⋯` through the four triangles of the midpoint subdivision of `abc`;
   -- consecutive ones are related by a subdivision or a Δ-move, in one direction or the other.
-  have E := Relation.EqvGen.is_equivalence r
+  have E := Relation.EqvGen.equivalence r
   -- The polygon `⋯ a m_ab b ⋯`, from which the four Δ-moves lead to `⋯ a m_ac c m_cb b ⋯`.
   have hs₁ : (poly.insertVertex i (midpoint ℝ (poly i) (poly (finRotate n i)))).IsSimple ℝ := by
     have := hp.insertVertex_edgePath i (s := (1 / 2 : ℝ)) ⟨by norm_num, by norm_num⟩
