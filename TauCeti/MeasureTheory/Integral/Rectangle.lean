@@ -192,7 +192,7 @@ theorem setIntegral_Icc_prod_eq_of_forall_fst_notMem_eq_zero {X : Type*} [Measur
 
 /-- The translate by `(L, 0)` of a point lies in the strip `[c + L, d + L] × I` exactly when the
 point lies in `[c, d] × I`. -/
-private theorem preimage_add_fst_Icc_prod (c d L : ℝ) (I : Set ℝ) :
+theorem preimage_add_fst_Icc_prod (c d L : ℝ) (I : Set ℝ) :
     (· + (L, 0) : ℝ × ℝ → ℝ × ℝ) ⁻¹' (Icc (c + L) (d + L) ×ˢ I) = Icc c d ×ˢ I := by
   ext z
   simp only [mem_preimage, mem_prod, mem_Icc, Prod.fst_add, Prod.snd_add, add_zero]
