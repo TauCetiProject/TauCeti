@@ -289,10 +289,10 @@ theorem pde_weightedLogSpotPrice_eq_zero_iff (v : ParabolicC2HolderSpace α ℝ 
   · intro hv s hs t
     rw [pde_weightedLogSpotPrice_eq_mul hα a r v hs t, hv, HolderSpace.zero_apply, mul_zero]
 
-/-- For any price `C` represented on `(0, ∞) × [t₀, t₁]` by `C(e^y, s) = (1 + e^y) v(y, s)` for
-`v ∈ C_b^{2+α,1+α/2}`, the spot regularity is forced by the representation and the constructed
-operator equals the spot pricing equation (with within-slab time derivative `derivWithin`,
-one-sided at the endpoints `t₀` and `t₁`) divided by `1 + e^x`. See
+/-- For any price `C` represented on `(0, ∞) × [t₀, t₁]` by `C(e^y, t) = (1 + e^y) v(y, t)` for
+`v ∈ C_b^{2+α,1+α/2}`, the spot regularity is forced by the representation and at `(x, t)` the
+constructed operator equals the spot pricing equation at `(e^x, t)` (with within-slab time
+derivative `derivWithin`, one-sided at the endpoints `t₀` and `t₁`) divided by `1 + e^x`. See
 `pde_weightedLogSpotPrice_eq_mul` for the specialization to `weightedLogSpotPrice v`, and
 `pde_weightedLogSpotPrice_eq_mul_of_mem_Ioo` for the interior ordinary time derivative. -/
 theorem weightedLogSpotPricingOperatorL_eq_spot

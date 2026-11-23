@@ -68,9 +68,6 @@ parabolically `α`-Hölder field on `E × [a, b]`.
 * `TauCeti.ParabolicSpaceTime.timeEHolderNorm_le_timeEHolderNorm_add_spaceEHolderNorm`,
   `TauCeti.ParabolicSpaceTime.timeEHolderNorm_le_eHolderNorm_add_eHolderNorm`: control of the
   temporal seminorm of the spatial gradient.
-* `TauCeti.ParabolicSpaceTime.holderWith_slab_of_norm_le_of_lipschitzWith_of_holderOnWith` and
-  `TauCeti.ParabolicSpaceTime.memHolder_slab_of_norm_le_of_lipschitzWith_of_holderOnWith`:
-  quantitative and qualitative parabolic Hölder criteria from slice bounds.
 * `TauCeti.HolderSpace.compSlabSpaceL`: a Hölder field on space as a time-independent parabolic
   Hölder field on a slab, with `TauCeti.HolderSpace.norm_compSlabSpaceL_apply_le`: this does not
   increase the norm.
@@ -338,66 +335,6 @@ theorem memHolder_slab_iff {α : ℝ≥0} {v : slab (E := E) a b → F} :
     (timeEHolderNorm_div_two_le_eHolderNorm α v).trans_lt h⟩, fun h => ?_⟩
   exact (eHolderNorm_le_spaceEHolderNorm_add_timeEHolderNorm α v).trans_lt
     (ENNReal.add_lt_top.2 h)
-
-end TauCeti.ParabolicSpaceTime
-
-namespace TauCeti.ParabolicSpaceTime
-
-/-- A field on `E × [a, b]` that is uniformly bounded by `M`, uniformly `L`-Lipschitz in `x` on
-every time slice `t ∈ [a, b]`, and uniformly `H`-Hölder of exponent `α / 2` in `t` on `[a, b]` for
-every `x` is parabolically `α`-Hölder on `slab a b` with constant `L + 2 * M + H` (`α ≤ 1`). -/
-theorem holderWith_slab_of_norm_le_of_lipschitzWith_of_holderOnWith {E F : Type*}
-    [PseudoMetricSpace E] [SeminormedAddCommGroup F] {a b : ℝ} {α : ℝ≥0} (hα : α ≤ 1)
-    {f : E → ℝ → F} {M L H : ℝ≥0} (hbdd : ∀ x, ∀ t ∈ Icc a b, ‖f x t‖ ≤ M)
-    (hlip : ∀ t ∈ Icc a b, LipschitzWith L (fun x ↦ f x t))
-    (htime : ∀ x, HolderOnWith H (α / 2) (f x) (Icc a b)) :
-    HolderWith (L + 2 * M + H) α
-      (fun p : slab (E := E) a b ↦ f (p : ParabolicSpaceTime E).space (slabTime p)) := by
-  intro p q
-  obtain ⟨x, t, rfl⟩ : ∃ x t, slabMk x t = p := ⟨_, _, slabMk_space_slabTime p⟩
-  obtain ⟨y, s, rfl⟩ : ∃ y s, slabMk y s = q := ⟨_, _, slabMk_space_slabTime q⟩
-  have hslice := ((hlip t t.property).lipschitzOnWith (s := univ)).holderOnWith_of_norm_le
-    (M := M) (fun z _ ↦ hbdd z t t.property) hα
-  have hspace : edist x y ^ (α : ℝ) ≤ edist (slabMk x t) (slabMk y s) ^ (α : ℝ) := by
-    gcongr
-    simpa only [space_slabMk, Subtype.edist_eq] using
-      edist_space_le (slabMk x t : ParabolicSpaceTime E) (slabMk y s)
-  have htime_edist : edist t s ^ ((α / 2 : ℝ≥0) : ℝ) ≤
-      edist (slabMk x t) (slabMk y s) ^ (α : ℝ) := by
-    rw [← edist_slabMk_same_space_rpow y t s]
-    gcongr
-    rw [edist_slabMk, edist_slabMk, edist_self, zero_add]
-    exact le_add_self
-  have htr : edist (f (slabMk x t : ParabolicSpaceTime E).space (slabTime (slabMk x t)))
-      (f (slabMk y s : ParabolicSpaceTime E).space (slabTime (slabMk y s))) =
-      edist (f x t) (f y s) := by
-    simp only [space_slabMk, slabTime_slabMk]
-  rw [htr]
-  calc edist (f x t) (f y s)
-      ≤ edist (f x t) (f y t) + edist (f y t) (f y s) := edist_triangle _ _ _
-    _ ≤ ((L + 2 * M : ℝ≥0) : ℝ≥0∞) * edist x y ^ (α : ℝ) +
-          (H : ℝ≥0∞) * edist t s ^ ((α / 2 : ℝ≥0) : ℝ) := by
-        gcongr
-        · exact hslice x (mem_univ x) y (mem_univ y)
-        · simpa only [Set.domRestrict_apply] using (htime y).holderWith t s
-    _ ≤ ((L + 2 * M : ℝ≥0) : ℝ≥0∞) * edist (slabMk x t) (slabMk y s) ^ (α : ℝ) +
-          (H : ℝ≥0∞) * edist (slabMk x t) (slabMk y s) ^ (α : ℝ) := by
-        gcongr
-    _ = ((L + 2 * M + H : ℝ≥0) : ℝ≥0∞) * edist (slabMk x t) (slabMk y s) ^ (α : ℝ) := by
-        push_cast
-        ring
-
-/-- A field on `E × [a, b]` that is uniformly bounded, uniformly Lipschitz in `x` on every time
-slice `t ∈ [a, b]`, and uniformly `(α / 2)`-Hölder in `t` on `[a, b]` for every `x` is
-parabolically `α`-Hölder on `slab a b` (`α ≤ 1`). -/
-theorem memHolder_slab_of_norm_le_of_lipschitzWith_of_holderOnWith {E F : Type*}
-    [PseudoMetricSpace E] [SeminormedAddCommGroup F] {a b : ℝ} {α : ℝ≥0} (hα : α ≤ 1)
-    {f : E → ℝ → F} {M L H : ℝ≥0} (hbdd : ∀ x, ∀ t ∈ Icc a b, ‖f x t‖ ≤ M)
-    (hlip : ∀ t ∈ Icc a b, LipschitzWith L (fun x ↦ f x t))
-    (htime : ∀ x, HolderOnWith H (α / 2) (f x) (Icc a b)) :
-    MemHolder α
-      (fun p : slab (E := E) a b ↦ f (p : ParabolicSpaceTime E).space (slabTime p)) :=
-  (holderWith_slab_of_norm_le_of_lipschitzWith_of_holderOnWith hα hbdd hlip htime).memHolder
 
 end TauCeti.ParabolicSpaceTime
 

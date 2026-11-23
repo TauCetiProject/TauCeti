@@ -118,7 +118,7 @@ theorem ofBoundedContinuousFunction_toBoundedContinuousFunction (f : HolderSpace
     ofBoundedContinuousFunction f.toBoundedContinuousFunction f.memHolder = f :=
   (rfl)
 
-/-- A `γ`-Hölder function on a compact metric space (`0 < γ`), as a bounded `γ`-Hölder
+/-- An `α`-Hölder function on a compact metric space (`0 < α`), as a bounded `α`-Hölder
 function. -/
 def ofHolderWithOfCompact [CompactSpace X] (hγ : 0 < α) (g : X → Y) {H : ℝ≥0}
     (hg : HolderWith H α g) : HolderSpace α X Y :=

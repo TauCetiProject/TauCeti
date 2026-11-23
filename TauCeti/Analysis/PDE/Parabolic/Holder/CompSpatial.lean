@@ -272,9 +272,9 @@ theorem compSpatialCLE_symm_apply (e : E ≃L[ℝ] E') (v : ParabolicC2HolderSpa
 private theorem norm_compSpatialL_apply_le_of_norm_le_one {e : E →L[ℝ] E'} (he : ‖e‖ ≤ 1)
     (u : ParabolicC2HolderSpace α E' F hab) :
     ‖compSpatialL α F hab e u‖ ≤ ‖u‖ := by
-  have h := (compSpatialL α F hab e).le_of_opNorm_le (norm_compSpatialL_le_one α F hab he) u
-  rw [one_mul] at h
-  convert h using 0
+  rw [compSpatialL_eq_compSpatial]
+  refine (norm_compSpatial_le e u).trans_eq ?_
+  rw [max_eq_right he, one_pow, Real.one_rpow, one_mul, one_mul]
 
 private theorem compSpatialCLE_toLinearEquiv_apply (e : E ≃ₗᵢ[ℝ] E')
     (u : ParabolicC2HolderSpace α E' F hab) :

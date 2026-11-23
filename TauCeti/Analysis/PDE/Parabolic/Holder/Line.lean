@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Analysis.PDE.Parabolic.Holder.Solvability
 import TauCeti.Analysis.Matrix.QuadraticBounds
-import TauCeti.Analysis.Normed.Lp.PiLp
 import TauCeti.Analysis.Normed.Operator.Banach
 import TauCeti.Analysis.Normed.Operator.LinearIsometryEquiv.Prod
 
@@ -65,9 +64,13 @@ section Transport
 
 variable {a b : ℝ} {hab : a < b}
 
-/-- The isometric coordinate `x ↦ x 0` of `ℝ¹ = EuclideanSpace ℝ (Fin 1)`. -/
+/-- The isometric coordinate of `ℝ¹ = EuclideanSpace ℝ (Fin 1)` onto `ℝ`. -/
 private abbrev coord : EuclideanSpace ℝ (Fin 1) ≃ₗᵢ[ℝ] ℝ :=
-  PiLp.equivOfUniqueLIE 2 ℝ fun _ : Fin 1 ↦ ℝ
+  (OrthonormalBasis.singleton (Fin 1) ℝ).repr.symm
+
+private theorem coord_single (i : Fin 1) : coord (EuclideanSpace.single i 1) = 1 :=
+  (OrthonormalBasis.repr_symm_single (OrthonormalBasis.singleton (Fin 1) ℝ) i).trans
+    (OrthonormalBasis.singleton_apply i)
 
 /-- The scalar field `p ↦ A (x₀ p, t) w` on the slab over `ℝ¹`, for a coefficient field `A` on the
 slab over the line and a fixed argument `w`. -/
@@ -120,7 +123,7 @@ private theorem spatialFDerivL_compSpatialLIE_coord_single
     (i : Fin 1) :
     spatialFDerivL (compSpatialLIE α ℝ hab coord u) p (EuclideanSpace.single i 1) =
       spatialFDerivL u (slabSpaceMap coord p) 1 := by
-  simp [compSpatialLIE_apply, spatialFDerivL_compSpatialL]
+  simp [compSpatialLIE_apply, spatialFDerivL_compSpatialL, coord_single]
 
 private theorem spatialSecondFDerivL_compSpatialLIE_coord_single
     (u : ParabolicC2HolderSpace α ℝ ℝ hab) (p : slab (E := EuclideanSpace ℝ (Fin 1)) a b)
@@ -128,7 +131,7 @@ private theorem spatialSecondFDerivL_compSpatialLIE_coord_single
     spatialSecondFDerivL (compSpatialLIE α ℝ hab coord u) p
         (EuclideanSpace.single i 1) (EuclideanSpace.single j 1) =
       spatialSecondFDerivL u (slabSpaceMap coord p) 1 1 := by
-  simp [compSpatialLIE_apply, spatialSecondFDerivL_compSpatialL]
+  simp [compSpatialLIE_apply, spatialSecondFDerivL_compSpatialL, coord_single]
 
 private theorem timeDerivL_compSpatialLIE_coord (u : ParabolicC2HolderSpace α ℝ ℝ hab) :
     timeDerivL (compSpatialLIE α ℝ hab coord u) =
@@ -366,8 +369,14 @@ private theorem realTerminalDataCLE_symm_eq {t₀ t₁ : ℝ} (hα₀ : 0 < α) 
           (fun _ _ ↦ evalCoord A (ContinuousLinearMap.mul ℝ ℝ))
           (fun _ ↦ evalCoord B (ContinuousLinearMap.id ℝ ℝ)) (evalCoord C 1)
           (hA.imp fun _ ⟨hlam, h⟩ ↦ ⟨hlam, evalCoord_ellipticity h⟩)).symm.toContinuousLinearMap ∘L
-        (dataEquiv (α := α) t₀ t₁ : _ →L[ℝ] _) :=
-  ContinuousLinearMap.ext fun d ↦ by simp [realTerminalDataCLE]
+        (dataEquiv (α := α) t₀ t₁ : _ →L[ℝ] _) := by
+  refine ContinuousLinearMap.ext fun d ↦ ParabolicC2HolderSpace.ext fun p ↦ ?_
+  change (realTerminalDataCLE hα₀ hα₁ ht A B C hA).symm d p = _
+  rw [realTerminalDataCLE, ContinuousLinearEquiv.symm_trans_apply,
+    ContinuousLinearEquiv.symm_trans_apply]
+  simp only [LinearIsometryEquiv.toContinuousLinearEquiv_symm,
+    ContinuousLinearEquiv.symm_symm, LinearIsometryEquiv.coe_toContinuousLinearEquiv,
+    ContinuousLinearMap.coe_comp, ContinuousLinearEquiv.coe_coe, Function.comp_apply]
 
 /-- **Uniform Schauder estimate for the terminal-value problem on the line.** For `0 < α < 1`,
 an ellipticity constant `lam > 0`, a bound `K` on the Hölder norms of the coefficients and a bound
@@ -434,6 +443,9 @@ theorem exists_norm_realTerminalDataCLE_symm_sub_le (hα₀ : 0 < α) (hα₁ : 
       (norm_evalCoord_le (C₀ - C₀') norm_one.le)
   calc _ ≤ C * (‖evalCoord (A - A') (ContinuousLinearMap.mul ℝ ℝ)‖ +
           ‖evalCoord (B - B') (ContinuousLinearMap.id ℝ ℝ)‖ + ‖evalCoord (C₀ - C₀') 1‖) := by
+        -- The goal and `hmid` differ only in the definitionally equal product topology instances
+        -- on `C_b^{α,α/2} × C_b^{2,α}` (`instTopologicalSpaceProd` vs the product uniform
+        -- structure's topology), which `exact hmid` fails to unify.
         convert hmid using 1
     _ ≤ C * (‖A - A'‖ + ‖B - B'‖ + ‖C₀ - C₀'‖) := mul_le_mul_of_nonneg_left hδ hC
 

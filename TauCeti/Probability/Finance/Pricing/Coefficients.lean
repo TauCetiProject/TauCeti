@@ -35,6 +35,26 @@ open scoped NNReal BoundedContinuousFunction
 
 variable {α : ℝ≥0} {t₀ t₁ : ℝ}
 
+private def logSpotVolBCF (hα₀ : 0 < α) (σ : ℝ → ℝ → ℝ) {M : ℝ}
+    (hbdd : ∀ y, ∀ t ∈ Icc t₀ t₁, |σ (exp y) t| ≤ M)
+    (hσ : MemHolder α (fun p : slab (E := ℝ) t₀ t₁ ↦
+      σ (exp (p : ParabolicSpaceTime ℝ).space) (slabTime p))) :
+    slab (E := ℝ) t₀ t₁ →ᵇ ℝ :=
+  BoundedContinuousFunction.ofNormedAddCommGroup
+    (fun p : slab (E := ℝ) t₀ t₁ ↦ σ (exp (p : ParabolicSpaceTime ℝ).space) (slabTime p))
+    (hσ.holderWith.continuous hα₀) M fun p ↦ by
+      simpa only [Real.norm_eq_abs] using hbdd _ _ (slabTime p).property
+
+@[simp]
+private theorem logSpotVolBCF_apply (hα₀ : 0 < α) (σ : ℝ → ℝ → ℝ) {M : ℝ}
+    (hbdd : ∀ y, ∀ t ∈ Icc t₀ t₁, |σ (exp y) t| ≤ M)
+    (hσ : MemHolder α (fun p : slab (E := ℝ) t₀ t₁ ↦
+      σ (exp (p : ParabolicSpaceTime ℝ).space) (slabTime p)))
+    (p : slab (E := ℝ) t₀ t₁) :
+    logSpotVolBCF hα₀ σ hbdd hσ p =
+      σ (exp (p : ParabolicSpaceTime ℝ).space) (slabTime p) :=
+  congrFun (BoundedContinuousFunction.coe_ofNormedAddCommGroup _ _ _ _) p
+
 /-- The log-spot half-variance field `a(y, t) = σ(e^y, t)² / 2` as an element of
 `HolderSpace α (slab t₀ t₁) ℝ`, built from a bounded parabolically `α`-Hölder volatility
 (`0 < α`). -/
@@ -43,14 +63,12 @@ def logSpotHalfVarianceHolder (hα₀ : 0 < α) (σ : ℝ → ℝ → ℝ) {M : 
     (hσ : MemHolder α (fun p : slab (E := ℝ) t₀ t₁ ↦
       σ (exp (p : ParabolicSpaceTime ℝ).space) (slabTime p))) :
     HolderSpace α (slab (E := ℝ) t₀ t₁) ℝ :=
-  let f : slab (E := ℝ) t₀ t₁ → ℝ := fun p ↦
-    σ (exp (p : ParabolicSpaceTime ℝ).space) (slabTime p)
-  let σB : slab (E := ℝ) t₀ t₁ →ᵇ ℝ := BoundedContinuousFunction.ofNormedAddCommGroup f
-    (hσ.holderWith.continuous hα₀) M fun p ↦ by
-      simpa only [f, Real.norm_eq_abs] using hbdd _ _ (slabTime p).property
-  have hcoe : (σB : slab (E := ℝ) t₀ t₁ → ℝ) = f :=
-    BoundedContinuousFunction.coe_ofNormedAddCommGroup _ _ _ _
-  (2⁻¹ : ℝ) • (HolderSpace.ofBoundedContinuousFunction σB (hcoe.symm ▸ hσ)) ^ 2
+  have hcoe : (logSpotVolBCF hα₀ σ hbdd hσ : slab (E := ℝ) t₀ t₁ → ℝ) =
+      fun p : slab (E := ℝ) t₀ t₁ ↦
+        σ (exp (p : ParabolicSpaceTime ℝ).space) (slabTime p) :=
+    funext (logSpotVolBCF_apply hα₀ σ hbdd hσ)
+  (2⁻¹ : ℝ) • (HolderSpace.ofBoundedContinuousFunction (logSpotVolBCF hα₀ σ hbdd hσ)
+    (hcoe.symm ▸ hσ)) ^ 2
 
 /-- Evaluation of `logSpotHalfVarianceHolder` at a slab point gives `σ(e^y, t)² / 2`. -/
 @[simp]
@@ -61,16 +79,8 @@ theorem logSpotHalfVarianceHolder_apply (hα₀ : 0 < α) (σ : ℝ → ℝ → 
     (p : slab (E := ℝ) t₀ t₁) :
     logSpotHalfVarianceHolder hα₀ σ hbdd hσ p =
       σ (exp (p : ParabolicSpaceTime ℝ).space) (slabTime p) ^ 2 / 2 := by
-  rw [logSpotHalfVarianceHolder, HolderSpace.smul_apply, HolderSpace.pow_apply,
-    HolderSpace.ofBoundedContinuousFunction_apply]
-  have hcoe : ∀ q : slab (E := ℝ) t₀ t₁,
-      BoundedContinuousFunction.ofNormedAddCommGroup
-        (fun p : slab (E := ℝ) t₀ t₁ ↦ σ (exp (p : ParabolicSpaceTime ℝ).space) (slabTime p))
-        (hσ.holderWith.continuous hα₀) M
-        (fun p ↦ by simpa only [Real.norm_eq_abs] using hbdd _ _ (slabTime p).property) q =
-      σ (exp (q : ParabolicSpaceTime ℝ).space) (slabTime q) :=
-    congrFun (BoundedContinuousFunction.coe_ofNormedAddCommGroup _ _ _ _)
-  rw [hcoe, smul_eq_mul]
+  simp only [logSpotHalfVarianceHolder, HolderSpace.smul_apply, HolderSpace.pow_apply,
+    HolderSpace.ofBoundedContinuousFunction_apply, logSpotVolBCF_apply, smul_eq_mul]
   ring
 
 /-- Norm bound for `logSpotHalfVarianceHolder`: if `|σ(e^y, t)| ≤ M` (`0 ≤ M`) and

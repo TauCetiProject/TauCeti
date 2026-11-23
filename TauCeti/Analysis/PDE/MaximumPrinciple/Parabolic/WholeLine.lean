@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Analysis.PDE.MaximumPrinciple.Parabolic.WholeSpace
 import TauCeti.Analysis.Calculus.IteratedFDeriv.CompContinuousLinearEquiv
-import TauCeti.Analysis.Normed.Lp.PiLp
 import TauCeti.LinearAlgebra.Matrix.ToQuadraticForm
 
 /-!
@@ -61,7 +60,7 @@ variable {a b c : ℝ → ℝ → ℝ} {u v : ℝ → ℝ → ℝ} {T Lam β γ 
 
 /-- The coordinate of the one-dimensional Euclidean space. -/
 private abbrev coord : EuclideanSpace ℝ (Fin 1) ≃L[ℝ] ℝ :=
-  (PiLp.equivOfUniqueLIE 2 ℝ fun _ : Fin 1 ↦ ℝ).toContinuousLinearEquiv
+  PiLp.equivOfUnique 2 ℝ fun _ : Fin 1 ↦ ℝ
 
 /-- Pulled back to `EuclideanSpace ℝ (Fin 1)`, the second-order part of the one-dimensional
 operator is the second-order part of the `n`-dimensional operator with the `1 × 1` diffusion matrix
@@ -74,8 +73,7 @@ private theorem sum_mul_fderiv_fderiv_add_fderiv_comp_coord (f : ℝ → ℝ) (A
       fderiv ℝ (f ∘ coord) z (EuclideanSpace.single 0 B) =
       A * deriv (deriv f) (coord z) + B * deriv f (coord z) := by
   rw [coord.comp_right_fderiv]
-  simp_rw [coord.fderiv_fderiv_comp_right_apply]
-  simp
+  simp [coord.fderiv_fderiv_comp_right_apply]
 
 /-- **The comparison principle for parabolic equations on the whole line.** Let
 `P u = ∂ₜu - a ∂ₓ²u - b ∂ₓu - c u`, where for `0 < t < T` the coefficients satisfy

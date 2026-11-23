@@ -194,24 +194,17 @@ private theorem norm_weightedCoeffs_le {α : ℝ≥0} {t₀ t₁ : ℝ} (hα : �
       ‖weightedLogSpotFirstOrderCoeff hα a r‖ ≤ (weightedCoeffBound hα K : ℝ) ∧
       ‖weightedLogSpotZerothOrderCoeff hα r‖ ≤ (weightedCoeffBound hα K : ℝ) := by
   set L : ℝ := ‖logOneAddExpGrad hα‖
+  have hL : 0 ≤ L := norm_nonneg _
   have hK : (weightedCoeffBound hα K : ℝ) = K + K + 2 * K * L + K * (1 + L) := by
     simp [weightedCoeffBound, L]
-  have h2 : ‖realSecondOrderCoeff a‖ ≤ (weightedCoeffBound hα K : ℝ) := by
-    refine (norm_realSecondOrderCoeff_le a).trans (hak.trans ?_)
-    rw [hK]
-    have hL : 0 ≤ L := norm_nonneg _
-    nlinarith [K.coe_nonneg]
-  have h1 : ‖weightedLogSpotFirstOrderCoeff hα a r‖ ≤ (weightedCoeffBound hα K : ℝ) := by
-    refine (norm_weightedLogSpotFirstOrderCoeff_le hα a r).trans ?_
-    rw [hK]
-    have hL : 0 ≤ L := norm_nonneg _
-    nlinarith [K.coe_nonneg]
-  have h0 : ‖weightedLogSpotZerothOrderCoeff hα r‖ ≤ (weightedCoeffBound hα K : ℝ) := by
-    refine (norm_weightedLogSpotZerothOrderCoeff_le hα r).trans ?_
-    rw [hK]
-    have hL : 0 ≤ L := norm_nonneg _
-    nlinarith [K.coe_nonneg]
-  exact ⟨h2, h1, h0⟩
+  have h2 : ‖realSecondOrderCoeff a‖ ≤ K := (norm_realSecondOrderCoeff_le a).trans hak
+  have h1 : ‖weightedLogSpotFirstOrderCoeff hα a r‖ ≤ K + K + 2 * K * L :=
+    (norm_weightedLogSpotFirstOrderCoeff_le hα a r).trans (by gcongr)
+  have h0 : ‖weightedLogSpotZerothOrderCoeff hα r‖ ≤ K * (1 + L) :=
+    (norm_weightedLogSpotZerothOrderCoeff_le hα r).trans (by gcongr)
+  refine ⟨h2.trans ?_, h1.trans ?_, h0.trans ?_⟩ <;>
+    · rw [hK]
+      nlinarith [K.coe_nonneg]
 
 /-- **Uniform Schauder estimate for the weighted log-spot terminal-value problem.** For `0 < α < 1`,
 `0 < δ`, a coefficient bound `K` and a horizon bound `T₀`, the solution operators of the weighted
@@ -231,6 +224,18 @@ theorem exists_norm_weightedLogSpotTerminalDataCLE_symm_le {α : ℝ≥0} (hα�
   exact hest ht hTT₀ (realSecondOrderCoeff a)
     (weightedLogSpotFirstOrderCoeff hα₁.le a r) (weightedLogSpotZerothOrderCoeff hα₁.le r)
     (realSecondOrderCoeff_ellipticity ha) h2 h1 h0
+
+/-- Unfolding `weightedLogSpotTerminalDataCLE` shows its inverse continuous linear map is
+definitionally that of `realTerminalDataCLE` on the assembled weighted coefficients. -/
+private theorem weightedLogSpotTerminalDataCLE_symm_eq {α : ℝ≥0} {t₀ t₁ : ℝ} (hα₀ : 0 < α)
+    (hα₁ : α < 1) (ht : t₀ < t₁) (a r : HolderSpace α (slab (E := ℝ) t₀ t₁) ℝ)
+    {δ : ℝ} (hδ : 0 < δ) (ha : ∀ p, δ ≤ a p) :
+    (weightedLogSpotTerminalDataCLE hα₀ hα₁ ht a r ⟨δ, hδ, ha⟩).symm.toContinuousLinearMap =
+      (realTerminalDataCLE hα₀ hα₁ ht (realSecondOrderCoeff a)
+        (weightedLogSpotFirstOrderCoeff hα₁.le a r)
+        (weightedLogSpotZerothOrderCoeff hα₁.le r)
+        ⟨δ, hδ, realSecondOrderCoeff_ellipticity ha⟩).symm.toContinuousLinearMap :=
+  rfl
 
 /-- **Lipschitz dependence of the weighted log-spot solution operator on `(a, r)`.** Under the
 bounds of `exists_norm_weightedLogSpotTerminalDataCLE_symm_le`, the solution operators for `(a, r)`
@@ -282,7 +287,8 @@ theorem exists_norm_weightedLogSpotTerminalDataCLE_symm_sub_le {α : ℝ≥0} (h
     have hL : 0 ≤ L := norm_nonneg _
     nlinarith [norm_nonneg (a - a'), norm_nonneg (r - r')]
   refine le_of_eq_of_le ?_ ((hmid.trans (mul_le_mul_of_nonneg_left hsum hC)).trans_eq (by ring))
-  dsimp only [weightedLogSpotTerminalDataCLE]
+  rw [weightedLogSpotTerminalDataCLE_symm_eq hα₀ hα₁ ht a r hδ ha,
+    weightedLogSpotTerminalDataCLE_symm_eq hα₀ hα₁ ht a' r' hδ ha']
 
 end TerminalDataCLE
 
