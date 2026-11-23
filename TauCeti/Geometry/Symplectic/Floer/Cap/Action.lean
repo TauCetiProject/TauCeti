@@ -78,9 +78,11 @@ The sign in the recapping law comes from the orientation of the torsor of raw ca
 measures the disc from its centre to `γ`. With the orientation of the disc, gluing a sphere `B` to
 `D` is `(-B) +ᵥ D`, and the law reads `A_H(γ, B # D) = ω(B) + A_H(γ, D)`.
 
-That the integral of a closed form over spheres factors through their Hurewicz classes in
-`H₂(M; ℤ)` is not proved here: the descent takes a homomorphism `ω` on `H₂(M; ℤ)` together with
-its agreement with the sphere integral `TauCeti.sphereIntegralHom`.
+The descent takes a homomorphism `ω` on `H₂(M; ℤ)` together with its agreement with the sphere
+integral `TauCeti.sphereIntegralHom` as inputs. Such an `ω` exists for every closed `C¹` two-form,
+since the integral over spheres factors through their Hurewicz classes in `H₂(M; ℤ)`
+(`TauCeti.exists_addMonoidHom_hurewiczIntHom_eq_sphereIntegralHom` in
+`TauCeti/Geometry/Manifold/SmoothSingular/Sphere.lean`).
 
 ## Main definitions
 

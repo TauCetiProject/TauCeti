@@ -30,6 +30,11 @@ Applied to reciprocal distances, these inequalities dominate logarithmic singula
 inverse-square-root kernels. Their integrals control dyadic averages and the choice of circles
 in Hadamard minimum-modulus estimates.
 
+`Real.sq_log_mul_exp_one_le_sixteen_mul_sqrt` squares `e y ≤ exp y` (`Real.exp_one_mul_le_exp`)
+at `y = log x / 4`: since `L² e^{−L/2}` peaks at `L = 4` with value `16 / e²`, the square of the
+logarithm is at most `16 √x / e²` for `x ≥ 1`. This bounds the prime powers that are not primes
+in explicit prime-counting estimates.
+
 ## Main results
 
 * `Real.log_four_le_two`: `log 4 ≤ 2`.
@@ -38,6 +43,7 @@ in Hadamard minimum-modulus estimates.
 * `Real.abs_log_le_two_mul_one_sub`: `|log x| ≤ 2 (1 - x)` for `1 / 2 ≤ x ≤ 1`.
 * `Real.neg_log_le_sqrt_two_div`: `-log x ≤ sqrt (2 / x)` for every nonnegative real `x`.
 * `Real.posLog_le_sqrt_two_mul_abs`: `posLog x ≤ sqrt (2 * |x|)` for every real `x`.
+* `Real.sq_log_mul_exp_one_le_sixteen_mul_sqrt`: `(log x · e)² ≤ 16 √x` for `x ≥ 1`.
 * `Real.mul_log_natCast_div_le_log_of_pow_le_mul_pow`: a logarithmic bound from a
   cross-multiplied comparison of natural powers.
 -/
@@ -105,6 +111,17 @@ theorem posLog_le_sqrt_two_mul_abs (x : ℝ) : Real.posLog x ≤ Real.sqrt (2 * 
   refine max_le (Real.sqrt_nonneg _) ?_
   simpa only [Real.log_inv, neg_neg, div_inv_eq_mul, Real.log_abs] using
     (neg_log_le_sqrt_two_div (inv_nonneg.mpr (abs_nonneg x)))
+
+/-- For `x ≥ 1`, `(log x · e)² ≤ 16 √x`: the maximum of `L² e^{−L/2}` is `16/e²`, at `L = 4`. -/
+theorem sq_log_mul_exp_one_le_sixteen_mul_sqrt {x : ℝ} (hx : 1 ≤ x) :
+    (log x * exp 1) ^ 2 ≤ 16 * √x := by
+  have hsqrt : √x = exp (log x / 4) ^ 2 := by
+    rw [sqrt_eq_iff_mul_self_eq_of_pos (by positivity), ← pow_add, ← exp_natCast_mul,
+      show ((2 + 2 : ℕ) : ℝ) * (log x / 4) = log x by push_cast; ring, exp_log (by linarith)]
+  have h := pow_le_pow_left₀ (by have := log_nonneg hx; positivity)
+    (exp_one_mul_le_exp (x := log x / 4)) 2
+  rw [hsqrt]
+  nlinarith
 
 /-- An upper bound on a power of a ratio of natural numbers gives a logarithmic bound
 with any nonnegative coefficient at most the exponent, including when the ratio is zero. -/
