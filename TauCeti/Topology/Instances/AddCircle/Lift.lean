@@ -45,7 +45,9 @@ the circle is either strictly monotone of degree one or strictly antitone of deg
 * `AddCircle.exists_int_forall_add_period_eq_of_lift`: a continuous lift has an integer degree
   `d`, and then shifts integer multiples of the period by multiples of `d * T`
   (`AddCircle.lift_add_int_mul_of_degree`, stated for any real increment per period).
-  `AddCircle.exists_continuous_lift_add_period_eq` gives a continuous lift with its degree.
+  `AddCircle.exists_continuous_lift_add_period_eq` gives a continuous lift with its degree, and
+  `AddCircle.eq_and_exists_forall_eq_add_of_lift`: two continuous lifts of the same map have the
+  same degree.
 * `AddCircle.add_mul_sub_add_period`: for any weight `c`, the interpolation
   `x ↦ x + c * (F x - x)` between the identity and a lift `F` is again a lift.
 * `AddCircle.periodic_sub_of_lift`, `AddCircle.periodic_sub_int_mul_of_lift`: the displacement
@@ -158,6 +160,18 @@ theorem exists_continuous_lift_add_period_eq (hφ : Continuous φ) :
   obtain ⟨F, hF, hf⟩ := exists_continuous_lift hφ
   obtain ⟨d, hd⟩ := exists_int_forall_add_period_eq_of_lift hF hf
   exact ⟨F, d, hF, hf, hd⟩
+
+/-- **Comparing two lifts.** Two continuous lifts `F₁` and `F₂` of the same circle map, of
+degrees `d₁` and `d₂`, have the same degree and differ by a constant. -/
+theorem eq_and_exists_forall_eq_add_of_lift (hT : T ≠ 0) {F₁ F₂ : ℝ → ℝ} {d₁ d₂ : ℤ}
+    (h₁ : Continuous F₁) (h₂ : Continuous F₂) (h : ∀ x, (F₁ x : AddCircle T) = F₂ x)
+    (hd₁ : ∀ x, F₁ (x + T) = F₁ x + d₁ * T) (hd₂ : ∀ x, F₂ (x + T) = F₂ x + d₂ * T) :
+    d₁ = d₂ ∧ ∃ c : ℝ, ∀ x, F₁ x = F₂ x + c := by
+  obtain ⟨c, hc⟩ := exists_forall_eq_add_of_lift h₁ h₂ h
+  refine ⟨?_, c, hc⟩
+  have h₀ := hd₁ 0
+  rw [hc, hc, hd₂] at h₀
+  exact_mod_cast mul_right_cancel₀ hT (by linarith : (d₁ : ℝ) * T = d₂ * T)
 
 /-- A continuous lift `G` of the inverse of a homeomorphism `φ` of the circle, composed with a
 continuous lift `F` of `φ`, lifts the identity, so it is a translation: `G (F x) = x + c`. -/

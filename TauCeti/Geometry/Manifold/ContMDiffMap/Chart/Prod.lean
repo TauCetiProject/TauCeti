@@ -5,8 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Geometry.Manifold.Algebra.SmoothFunctions
 public import TauCeti.Geometry.Manifold.ContMDiffMap.Chart.Evaluation
 import TauCeti.Geometry.Manifold.ContMDiffMap.Basic
+import TauCeti.Geometry.Manifold.ContMDiffMap.Chart.Comp
 
 /-!
 # Continuity of pairing in the manifold weak Whitney topology
@@ -29,6 +31,9 @@ compactness argument over the compact set of a derivative test gives continuity.
 * `ContMDiffMap.iteratedFDerivWithin_extChartAt_prodMk`: a coordinate derivative of a pair of maps,
   read in the product chart, is the pair of the coordinate derivatives.
 * `ContMDiffMap.continuous_prodMk_manifoldWeakWhitney`: pairing is jointly continuous.
+* `ContMDiffMap.continuous_div_manifoldWeakWhitney_of_lieGroup`,
+  `ContMDiffMap.continuous_sub_manifoldWeakWhitney_of_lieAddGroup`: pointwise division of maps
+  into a Lie group, and subtraction of maps into an additive Lie group, are jointly continuous.
 
 The weak topology is treated in M. Hirsch, *Differential Topology*, GTM 33, Chapter 2, §1.
 -/
@@ -72,9 +77,8 @@ theorem iteratedFDerivWithin_extChartAt_prodMk (f : C^n⟮I, M; J, N⟯)
     funext v
     simp only [extChartAt_prod, Function.comp_apply, prodMk_apply, PartialEquiv.prod_coe]
   rw [heq, iteratedFDerivWithin_prodMk (f.contDiffWithinAt_extChartAt hw hf)
-    (g.contDiffWithinAt_extChartAt hw hg) (uniqueDiffOn_extChartAt_target x) hw hm,
-    ContinuousMultilinearMap.prodL_apply, Equiv.toFun_as_coe,
-    ContinuousMultilinearMap.prodEquiv_apply]
+    (g.contDiffWithinAt_extChartAt hw hg) (uniqueDiffOn_extChartAt_target x) hw hm]
+  simp
 
 /-- The local form of continuity of pairing: a coordinate derivative test passed by the pair of
 `f₀` and `g₀` at a chart point is passed near that point by the pair of `f` and `g` for all `f`
@@ -136,5 +140,25 @@ theorem continuous_prodMk_manifoldWeakWhitney :
     ((mem_chartJetSet.mp h₀) w hw).1 hm (hV.mem_nhds ((mem_chartJetSet.mp h₀) w hw).2)
   rw [nhds_prod_eq]
   exact (tendsto_id.prodMap (map_nhds_subtypeVal w).le).eventually h
+
+/-- Pointwise division of `C^n` maps into a Lie group is jointly continuous for the manifold weak
+Whitney topologies, provided the models of the source and of the Lie group are locally compact:
+it is pairing followed by composition with the division `ContMDiffMap.fst / ContMDiffMap.snd`.
+For vector-valued maps, `ContMDiffMap.continuous_sub_manifoldWeakWhitney` needs no local
+compactness. -/
+@[to_additive
+/-- Pointwise subtraction of `C^n` maps into an additive Lie group is jointly continuous for the
+manifold weak Whitney topologies, provided the models of the source and of the Lie group are
+locally compact: it is pairing followed by composition with the subtraction
+`ContMDiffMap.fst - ContMDiffMap.snd`. For vector-valued maps,
+`ContMDiffMap.continuous_sub_manifoldWeakWhitney` needs no local compactness. -/]
+theorem continuous_div_manifoldWeakWhitney_of_lieGroup [LocallyCompactSpace F] {L : Type*}
+    [TopologicalSpace L] [ChartedSpace G L] [Group L] [LieGroup J n L] :
+    Continuous (fun p : C^n⟮I, M; J, L⟯ × C^n⟮I, M; J, L⟯ ↦ p.1 / p.2) := by
+  refine (continuous_comp_manifoldWeakWhitney.comp
+    ((continuous_const (y := (fst / snd : C^n⟮J.prod J, L × L; J, L⟯))).prodMk
+      continuous_prodMk_manifoldWeakWhitney)).congr fun p ↦
+      ContMDiffMap.ext fun x ↦ ?_
+  simp
 
 end ContMDiffMap

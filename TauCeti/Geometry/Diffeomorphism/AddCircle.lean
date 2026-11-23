@@ -34,7 +34,7 @@ difference `θ ↦ f θ - f₀ θ`. This small lift is obtained by composing wit
 section of `ℝ → AddCircle T` near `0` (`AddCircle.exists_contMDiff_coe_eq_of_norm_lt`), so near
 `f₀` the straightening is built from pointwise operations and composition with fixed smooth maps,
 which are continuous
-(`ContMDiffMap.continuous_prodMk_manifoldWeakWhitney`,
+(`ContMDiffMap.continuous_sub_manifoldWeakWhitney_of_lieAddGroup`,
 `ContMDiffMap.continuous_comp_manifoldWeakWhitney`). The section is only `C^∞`, so the regularity
 is `n ≤ ∞`.
 
@@ -110,22 +110,13 @@ private theorem deviation_apply_coe (f : C^n⟮𝓘(ℝ), AddCircle T; 𝓘(ℝ)
     {F : ℝ → ℝ} (hF : Continuous F) (hf : ∀ x : ℝ, f x = F x) {d : ℤ}
     (hd : ∀ x, F (x + T) = F x + d * T) (x : ℝ) :
     deviation f x = F x - d * x - F 0 := by
-  -- Compare with the lift chosen in the definition.
-  suffices key : ∀ (F₀ : ℝ → ℝ) (d₀ : ℤ), Continuous F₀ → (∀ x : ℝ, f x = F₀ x) →
-      (∀ x, F₀ (x + T) = F₀ x + d₀ * T) → deviation f x = F₀ x - d₀ * x - F₀ 0 →
-        deviation f x = F x - d * x - F 0 by
-    obtain ⟨hF₀, hf₀, hd₀⟩ :=
-      (exists_continuous_lift_add_period_eq (map_continuous f)).choose_spec.choose_spec
-    exact key _ _ hF₀ hf₀ hd₀ (by
-      rw [deviation, ContMDiffMap.coeFn_mk, Function.Periodic.lift_coe, Function.comp_apply])
-  intro F₀ d₀ hF₀ hf₀ hd₀ hdev
-  obtain ⟨c, hc⟩ := exists_forall_eq_add_of_lift (T := T) hF hF₀ fun x ↦ by rw [← hf, hf₀]
-  -- The two lifts differ by a constant, so they have the same degree.
-  have hdd : d = d₀ := by
-    have h := hd 0
-    rw [hc, hc, hd₀] at h
-    exact_mod_cast mul_right_cancel₀ (Fact.out : 0 < T).ne' (by linarith : (d : ℝ) * T = d₀ * T)
-  rw [hdev, hc, hc, hdd]
+  obtain ⟨hF₀, hf₀, hd₀⟩ :=
+    (exists_continuous_lift_add_period_eq (map_continuous f)).choose_spec.choose_spec
+  -- `F` and the lift chosen in the definition have the same degree and differ by a constant.
+  obtain ⟨hdd, c, hc⟩ := eq_and_exists_forall_eq_add_of_lift (Fact.out : 0 < T).ne' hF hF₀
+    (fun x ↦ by rw [← hf, hf₀]) hd hd₀
+  rw [deviation, ContMDiffMap.coeFn_mk, Function.Periodic.lift_coe, Function.comp_apply, hc, hc,
+    hdd]
   ring
 
 /-! ### The straightening homotopy of circle maps -/
@@ -214,14 +205,13 @@ private theorem continuous_deviation :
       C^n⟮𝓘(ℝ), AddCircle T; ℝ⟯) := by
   obtain ⟨s, hs, δ, hδ, hsec⟩ := exists_contMDiff_coe_eq_of_norm_lt (T := T)
   let σ : C^n⟮𝓘(ℝ), AddCircle T; ℝ⟯ := ⟨s, hs.of_le (by exact_mod_cast le_top)⟩
+  have hσ : ⇑σ = s := ContMDiffMap.coeFn_mk _ _
   refine continuous_iff_continuousAt.2 fun f₀ ↦ ?_
   -- Near `f₀` the deviation is given by pointwise operations, composition and evaluation.
-  have hdiff : Continuous fun f : C^n⟮𝓘(ℝ), AddCircle T; 𝓘(ℝ), AddCircle T⟯ ↦
-      σ.comp (ContMDiffMap.comp (ContMDiffMap.fst - ContMDiffMap.snd) (f.prodMk f₀)) :=
+  have hdiff : Continuous fun f : C^n⟮𝓘(ℝ), AddCircle T; 𝓘(ℝ), AddCircle T⟯ ↦ σ.comp (f - f₀) :=
     ContMDiffMap.continuous_comp_manifoldWeakWhitney.comp (continuous_const.prodMk
-      (ContMDiffMap.continuous_comp_manifoldWeakWhitney.comp (continuous_const.prodMk
-        (ContMDiffMap.continuous_prodMk_manifoldWeakWhitney.comp
-          (continuous_id.prodMk continuous_const)))))
+      (ContMDiffMap.continuous_sub_manifoldWeakWhitney_of_lieAddGroup.comp
+        (continuous_id.prodMk continuous_const)))
   have hconst : Continuous fun f : C^n⟮𝓘(ℝ), AddCircle T; 𝓘(ℝ), AddCircle T⟯ ↦
       (ContMDiffMap.const (s (f 0 - f₀ 0)) : C^n⟮𝓘(ℝ), AddCircle T; ℝ⟯) :=
     ContMDiffMap.continuous_const_manifoldWeakWhitney.comp
@@ -233,28 +223,21 @@ private theorem continuous_deviation :
   refine ContMDiffMap.ext fun θ ↦ ?_
   rw [deviation_apply_eq_of_norm_sub_lt hs.continuous hsec
     (fun θ ↦ by rw [← dist_eq_norm]; exact hf θ trivial)]
-  simp only [Pi.sub_apply, Pi.add_apply, ContMDiffMap.coe_sub, ContMDiffMap.coe_add,
-    ContMDiffMap.comp_apply, ContMDiffMap.prodMk_apply, ContMDiffMap.fst_apply,
-    ContMDiffMap.snd_apply, ContMDiffMap.const_apply]
-  simp only [σ, ContMDiffMap.coeFn_mk]
+  simp [ContMDiffMap.comp_apply, hσ]
 
 /-- **Straightening is continuous** jointly in the time and the circle map, for the weak Whitney
 topology. -/
 theorem continuous_straighten :
     Continuous fun p : ℝ × C^n⟮𝓘(ℝ), AddCircle T; 𝓘(ℝ), AddCircle T⟯ ↦ straighten p.1 p.2 := by
   let q : C^n⟮𝓘(ℝ), ℝ; 𝓘(ℝ), AddCircle T⟯ := ⟨(↑), contMDiff_coe T n⟩
+  have hq : ⇑q = ((↑) : ℝ → AddCircle T) := ContMDiffMap.coeFn_mk _ _
   have h : Continuous fun p : ℝ × C^n⟮𝓘(ℝ), AddCircle T; 𝓘(ℝ), AddCircle T⟯ ↦
-      ContMDiffMap.comp (ContMDiffMap.fst - ContMDiffMap.snd)
-        (p.2.prodMk (q.comp (p.1 • deviation p.2))) :=
-    ContMDiffMap.continuous_comp_manifoldWeakWhitney.comp (continuous_const.prodMk
-      (ContMDiffMap.continuous_prodMk_manifoldWeakWhitney.comp (continuous_snd.prodMk
-        (ContMDiffMap.continuous_comp_manifoldWeakWhitney.comp (continuous_const.prodMk
-          (continuous_fst.smul (continuous_deviation.comp continuous_snd)))))))
+      p.2 - q.comp (p.1 • deviation p.2) :=
+    ContMDiffMap.continuous_sub_manifoldWeakWhitney_of_lieAddGroup.comp (continuous_snd.prodMk
+      (ContMDiffMap.continuous_comp_manifoldWeakWhitney.comp (continuous_const.prodMk
+        (continuous_fst.smul (continuous_deviation.comp continuous_snd)))))
   refine h.congr fun p ↦ ContMDiffMap.ext fun θ ↦ ?_
-  rw [ContMDiffMap.comp_apply, ContMDiffMap.coe_sub, Pi.sub_apply, ContMDiffMap.fst_apply,
-    ContMDiffMap.snd_apply, ContMDiffMap.prodMk_apply, ContMDiffMap.comp_apply,
-    ContMDiffMap.coe_smul, Pi.smul_apply, smul_eq_mul, straighten_apply]
-  simp only [q, ContMDiffMap.coeFn_mk]
+  simp [ContMDiffMap.comp_apply, straighten_apply, hq]
 
 /-! ### Straightening circle diffeomorphisms -/
 
@@ -371,12 +354,21 @@ variable (T n) in
 def isometryDiffeomorphs : Set (AddCircle T ≃ₘ^n⟮𝓘(ℝ), 𝓘(ℝ)⟯ AddCircle T) :=
   {f | ∃ (a : AddCircle T) (e : ℤ), e * e = 1 ∧ ∀ θ, f θ = a + e • θ}
 
+/-- A circle diffeomorphism is one of the isometries exactly when it is `θ ↦ a + e • θ` for some
+`a` and some `e = ±1`. -/
+@[simp]
+theorem mem_isometryDiffeomorphs {f : AddCircle T ≃ₘ^n⟮𝓘(ℝ), 𝓘(ℝ)⟯ AddCircle T} :
+    f ∈ isometryDiffeomorphs T n ↔
+      ∃ (a : AddCircle T) (e : ℤ), e * e = 1 ∧ ∀ θ, f θ = a + e • θ :=
+  Iff.rfl
+
 /-- **The straightening retraction** of `Diff(AddCircle T)` onto its isometries: a circle
 diffeomorphism `f` goes to the isometry `θ ↦ f 0 + d • θ`, where `d = ±1` is the degree of a
 continuous lift of `f` (`AddCircle.straightenDiffeomorph_one_apply`). -/
 def straighteningRetraction (hn : n ≠ 0) :
     C(AddCircle T ≃ₘ^n⟮𝓘(ℝ), 𝓘(ℝ)⟯ AddCircle T, isometryDiffeomorphs T n) where
-  toFun f := ⟨straightenDiffeomorph hn 1 f, exists_straightenDiffeomorph_one_eq_add_zsmul hn f⟩
+  toFun f := ⟨straightenDiffeomorph hn 1 f,
+    mem_isometryDiffeomorphs.2 (exists_straightenDiffeomorph_one_eq_add_zsmul hn f)⟩
   continuous_toFun := ((continuous_straightenDiffeomorph hn).comp
     (continuous_const.prodMk continuous_id)).subtype_mk _
 
@@ -392,7 +384,7 @@ isometries. -/
 @[simp]
 theorem straighteningRetraction_coe (hn : n ≠ 0) (f : isometryDiffeomorphs T n) :
     straighteningRetraction hn f = f := by
-  obtain ⟨_, _, _, hf⟩ := f.property
+  obtain ⟨_, _, _, hf⟩ := mem_isometryDiffeomorphs.1 f.property
   exact Subtype.ext (straightenDiffeomorph_of_forall_eq_add_zsmul hn 1 hf)
 
 /-- **The diffeomorphism group of the circle deformation retracts onto its isometries.** The
@@ -406,8 +398,10 @@ def straighteningHomotopy (hn : n ≠ 0) :
   toFun p := straightenDiffeomorph hn p.1 p.2
   continuous_toFun := continuous_straightenDiffeomorph hn
   map_zero_left := straightenDiffeomorph_zero hn
-  map_one_left _ := rfl
-  prop' t _ := fun ⟨_, _, _, hf⟩ ↦ straightenDiffeomorph_of_forall_eq_add_zsmul hn t hf
+  map_one_left f := (coe_straighteningRetraction_apply hn f).symm
+  prop' t f hf := by
+    obtain ⟨_, _, _, hf⟩ := mem_isometryDiffeomorphs.1 hf
+    exact straightenDiffeomorph_of_forall_eq_add_zsmul hn t hf
 
 /-- The straightening homotopy at time `t` is the straightened diffeomorphism. -/
 @[simp]
