@@ -19,7 +19,7 @@ public noncomputable section
 
 namespace TauCeti.TwistedMonoidAlgebra
 
-variable {R M G : Type*} [CommSemiring R] [Monoid M] [Monoid G]
+variable {R M G : Type*} [CommSemiring R] [MulOne M] [Monoid G]
   (α : G → G → Rˣ) [IsFactorSet α] (f : M →* G)
 
 /-- The twisted subalgebra spanned by the basis indices in a monoid image. -/
@@ -65,23 +65,31 @@ theorem mem_supported_iff (x : twistedMonoidAlgebra R G α) :
   rw [← Subalgebra.mem_toSubmodule, supported_toSubmodule, hRange]
   exact Module.Basis.mem_span_image _
 
+/-- A scalar multiple of an ambient monomial lies in the supported algebra exactly when
+the coefficient vanishes or the index belongs to the source image. -/
+@[simp]
+theorem smul_of_mem_supported_iff (r : R) (g : G) :
+    r • (of g : twistedMonoidAlgebra R G α) ∈ supported α f ↔ r = 0 ∨ g ∈ Set.range f := by
+  classical
+  rw [mem_supported_iff]
+  simp only [map_smul, repr_of, Finsupp.smul_single, smul_eq_mul, mul_one]
+  by_cases hr : r = 0 <;> simp [hr]
+
+/-- An ambient monomial belongs to the supported algebra when its index belongs to the
+source image or the scalar semiring is trivial. -/
+@[simp]
+theorem of_mem_supported_iff (g : G) :
+    (of g : twistedMonoidAlgebra R G α) ∈ supported α f ↔ (1 : R) = 0 ∨ g ∈ Set.range f := by
+  simpa only [one_smul] using smul_of_mem_supported_iff α f 1 g
+
 private def supportedModuleEquiv :
     Submodule.span R (Set.range fun m ↦ (of (f m) : twistedMonoidAlgebra R G α)) ≃ₗ[R]
       supported α f :=
-  (LinearEquiv.ofEq _ _ (supported_toSubmodule α f).symm).trans
-    (supported α f).toSubmoduleEquiv
+  LinearEquiv.ofEq _ _ (supported_toSubmodule α f).symm
 
 private theorem coe_supportedModuleEquiv (x) :
-    (supportedModuleEquiv α f x : twistedMonoidAlgebra R G α) = x := by
-  have h := LinearEquiv.coe_ofEq_apply
-    (rfl : (supported α f).toSubmodule = (supported α f).toSubmodule)
-    (LinearEquiv.ofEq _ _ (supported_toSubmodule α f).symm x)
-  have h' : (supportedModuleEquiv α f x : twistedMonoidAlgebra R G α) =
-      (LinearEquiv.ofEq _ _ (supported_toSubmodule α f).symm x :
-        (supported α f).toSubmodule) := by
-    simpa only [supportedModuleEquiv, LinearEquiv.trans_apply,
-      Subalgebra.toSubmoduleEquiv] using h
-  exact h'.trans (LinearEquiv.coe_ofEq_apply _ _)
+    (supportedModuleEquiv α f x : twistedMonoidAlgebra R G α) = x :=
+  LinearEquiv.coe_ofEq_apply (supported_toSubmodule α f).symm x
 
 /-- The image monomials form a basis of the supported subalgebra when the index map is injective. -/
 def supportedBasis (hf : Function.Injective f) : Module.Basis M R (supported α f) :=
@@ -117,42 +125,43 @@ theorem supportedBasis_mul (hf : Function.Injective f) (a b : M) :
 theorem supportedBasis_repr_apply (hf : Function.Injective f) (x : supported α f) (m : M) :
     (supportedBasis α f hf).repr x m =
       (basis R G α).repr (x : twistedMonoidAlgebra R G α) (f m) := by
-  have h : ((Finsupp.lapply m).comp (supportedBasis α f hf).repr.toLinearMap :
-      supported α f →ₗ[R] R) =
-      (Finsupp.lapply (f m)).comp ((basis R G α).repr.toLinearMap.comp
-        (supported α f).toSubmodule.subtype) := by
-    apply (supportedBasis α f hf).ext
+  let F := (Finsupp.lcomapDomain (R := R) f hf).comp
+    ((basis R G α).repr.toLinearMap.comp (supported α f).val.toLinearMap)
+  have h : (supportedBasis α f hf).repr.toLinearMap = F := by
+    apply Module.Basis.repr_eq_iff.mpr
     intro n
-    simp only [LinearMap.comp_apply, Finsupp.lapply_apply, LinearEquiv.coe_coe,
-      Subalgebra.toSubmodule_subtype]
-    -- The subalgebra inclusion is the ambient subtype coercion.
-    change _ = (basis R G α).repr (supportedBasis α f hf n : twistedMonoidAlgebra R G α) (f m)
-    rw [Module.Basis.repr_self, coe_supportedBasis_apply, repr_of]
-    classical
-    simp only [Finsupp.single_apply, hf.eq_iff]
-  exact LinearMap.congr_fun h x
+    simp only [F, LinearMap.comp_apply, AlgHom.toLinearMap_apply, Subalgebra.val_apply,
+      LinearEquiv.coe_coe, coe_supportedBasis_apply, repr_of, Finsupp.lcomapDomain_apply,
+      Finsupp.comapDomain_single]
+  simpa only [F, LinearMap.comp_apply, AlgHom.toLinearMap_apply, Subalgebra.val_apply,
+    LinearEquiv.coe_coe, Finsupp.lcomapDomain_apply, Finsupp.comapDomain_apply] using
+      congrArg (fun c : M →₀ R ↦ c m) (LinearMap.congr_fun h x)
 
 /-- The factor set pulled back along a monoid homomorphism. -/
 abbrev pullbackFactorSet (a b : M) : Rˣ := α (f a) (f b)
 
-instance : IsFactorSet (pullbackFactorSet α f) := IsFactorSet.comp f α
+section Equiv
+
+variable {N : Type*} [Monoid N] (g : N →* G)
+
+instance : IsFactorSet (pullbackFactorSet α g) := IsFactorSet.comp g α
 
 /-- Pullback along an injective monoid map identifies the twisted algebra with its supported
 ambient subalgebra. -/
-def supportedEquiv (hf : Function.Injective f) :
-    twistedMonoidAlgebra R M (pullbackFactorSet α f) ≃ₐ[R] supported α f := by
-  let g := lift (α := pullbackFactorSet α f) (supportedBasis α f hf)
-    (supportedBasis_one α f hf) (supportedBasis_mul α f hf)
-  let e := (basis R M (pullbackFactorSet α f)).equiv (supportedBasis α f hf) (Equiv.refl M)
-  have he : g.toLinearMap = e.toLinearMap := by
-    apply (basis R M (pullbackFactorSet α f)).ext
+def supportedEquiv (hf : Function.Injective g) :
+    twistedMonoidAlgebra R N (pullbackFactorSet α g) ≃ₐ[R] supported α g := by
+  let F := lift (α := pullbackFactorSet α g) (supportedBasis α g hf)
+    (supportedBasis_one α g hf) (supportedBasis_mul α g hf)
+  let e := (basis R N (pullbackFactorSet α g)).equiv (supportedBasis α g hf) (Equiv.refl N)
+  have he : F.toLinearMap = e.toLinearMap := by
+    apply (basis R N (pullbackFactorSet α g)).ext
     intro m
     dsimp only [e, AlgHom.toLinearMap_apply, LinearEquiv.coe_coe]
     rw [Module.Basis.equiv_apply]
-    simp only [basis_apply, g, lift_of, Equiv.refl_apply]
-  apply AlgEquiv.ofBijective g
+    simp only [basis_apply, F, lift_of, Equiv.refl_apply]
+  apply AlgEquiv.ofBijective F
   have hb : Function.Bijective e := e.bijective
-  have hfun : (g : _ → _) = e := by
+  have hfun : (F : _ → _) = e := by
     funext x
     have hx := LinearMap.congr_fun he x
     simpa only [AlgHom.toLinearMap_apply, LinearEquiv.coe_coe] using hx
@@ -160,8 +169,16 @@ def supportedEquiv (hf : Function.Injective f) :
 
 /-- The supported equivalence sends each source basis element to the restricted basis vector. -/
 @[simp]
-theorem supportedEquiv_of (hf : Function.Injective f) (m : M) :
-    supportedEquiv α f hf (of m) = supportedBasis α f hf m := by
+theorem supportedEquiv_of (hf : Function.Injective g) (m : N) :
+    supportedEquiv α g hf (of m) = supportedBasis α g hf m := by
   simp only [supportedEquiv, AlgEquiv.ofBijective_apply, lift_of]
+
+/-- The inverse supported equivalence sends each restricted basis vector to its source monomial. -/
+@[simp]
+theorem supportedEquiv_symm_basis (hf : Function.Injective g) (m : N) :
+    (supportedEquiv α g hf).symm (supportedBasis α g hf m) = of m := by
+  rw [← supportedEquiv_of α g hf m, AlgEquiv.symm_apply_apply]
+
+end Equiv
 
 end TauCeti.TwistedMonoidAlgebra

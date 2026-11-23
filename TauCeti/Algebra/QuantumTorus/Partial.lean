@@ -40,13 +40,19 @@ namespace TauCeti.QuantumTorus
 variable {R L I : Type*} [CommSemiring R] [AddCommGroup L] {u : Rˣ}
   {Λ : LinearMap.BilinForm ℤ L} {b : Module.Basis I ℤ L} {S T : Set I}
 
-private noncomputable def partiallyLaurentIndex (b : Module.Basis I ℤ L) (S : Set I) :
+/-- Map a permitted coordinate exponent to its multiplicatively tagged lattice vector. -/
+noncomputable def partiallyLaurentIndex (b : Module.Basis I ℤ L) (S : Set I) :
     Multiplicative (LaurentRing.nonnegOutside S) →* Multiplicative L :=
   AddMonoidHom.toMultiplicative
     (b.repr.symm.toLinearMap.toAddMonoidHom.comp (LaurentRing.nonnegOutside S).subtype)
 
-private theorem partiallyLaurentIndex_toAdd (a : Multiplicative (LaurentRing.nonnegOutside S)) :
-    (partiallyLaurentIndex b S a).toAdd = b.repr.symm (a.toAdd : I →₀ ℤ) := rfl
+/-- Removing the multiplicative tag recovers the vector in the chosen lattice basis. -/
+@[simp]
+theorem partiallyLaurentIndex_toAdd (a : Multiplicative (LaurentRing.nonnegOutside S)) :
+    (partiallyLaurentIndex b S a).toAdd = b.repr.symm (a.toAdd : I →₀ ℤ) := by
+  simp only [partiallyLaurentIndex, AddMonoidHom.coe_toMultiplicative, Function.comp_apply,
+    AddMonoidHom.comp_apply, LinearMap.toAddMonoidHom_coe, LinearEquiv.coe_toLinearMap,
+    AddSubmonoid.subtype_apply, toAdd_ofAdd]
 
 private theorem partiallyLaurentIndex_injective :
     Function.Injective (partiallyLaurentIndex b S) := by
@@ -56,13 +62,16 @@ private theorem partiallyLaurentIndex_injective :
   apply b.repr.symm.injective
   simpa only [partiallyLaurentIndex_toAdd] using congrArg Multiplicative.toAdd h
 
-private theorem basis_eq_reindex : basis u Λ =
-    (TwistedMonoidAlgebra.basis R (Multiplicative L) (factorSet u Λ)).reindex
-      Multiplicative.toAdd := by
-  apply DFunLike.ext
-  intro a
-  simp only [basis_apply, Module.Basis.reindex_apply, TwistedMonoidAlgebra.basis_apply,
-    Multiplicative.toAdd_symm_eq, monomial_def]
+private theorem partiallyLaurentIndex_ofAdd (a : LaurentRing.nonnegOutside S) :
+    partiallyLaurentIndex b S (Multiplicative.ofAdd a) =
+      Multiplicative.ofAdd (b.repr.symm (a : I →₀ ℤ)) := by
+  apply Multiplicative.toAdd.injective
+  simp only [partiallyLaurentIndex_toAdd, toAdd_ofAdd]
+
+private theorem of_partiallyLaurentIndex (a : Multiplicative (LaurentRing.nonnegOutside S)) :
+    (TwistedMonoidAlgebra.of (partiallyLaurentIndex b S a) : QuantumTorus R L u Λ) =
+      monomial u Λ (b.repr.symm (a.toAdd : I →₀ ℤ)) := by
+  rw [monomial_def, ← partiallyLaurentIndex_toAdd, ofAdd_toAdd]
 
 private theorem mem_range_partiallyLaurentIndex_iff (a : Multiplicative L) :
     a ∈ Set.range (partiallyLaurentIndex b S) ↔ ∀ i ∉ S, 0 ≤ b.repr a.toAdd i := by
@@ -88,15 +97,12 @@ theorem partiallyLaurent_toSubmodule :
       Submodule.span R ((fun a ↦ monomial u Λ (b.repr.symm a)) ''
         (LaurentRing.nonnegOutside S : Set (I →₀ ℤ))) := by
   rw [partiallyLaurent, TwistedMonoidAlgebra.supported_toSubmodule]
-  have hMonomial (a : Multiplicative (LaurentRing.nonnegOutside S)) :
-      (TwistedMonoidAlgebra.of (partiallyLaurentIndex b S a) : QuantumTorus R L u Λ) =
-        monomial u Λ (b.repr.symm (a.toAdd : I →₀ ℤ)) := by
-    rw [monomial_def, ← partiallyLaurentIndex_toAdd, ofAdd_toAdd]
   have hComp : (fun a : Multiplicative (LaurentRing.nonnegOutside S) ↦
       monomial u Λ (b.repr.symm (a.toAdd : I →₀ ℤ))) =
         (fun a : LaurentRing.nonnegOutside S ↦ monomial u Λ (b.repr.symm a)) ∘
           Multiplicative.toAdd := rfl
-  simp only [hMonomial, hComp, Multiplicative.toAdd.surjective.range_comp, Set.image_eq_range]
+  simp only [of_partiallyLaurentIndex, hComp, Multiplicative.toAdd.surjective.range_comp,
+    Set.image_eq_range]
   rfl
 
 /-- Membership is support on lattice exponents with nonnegative coordinates outside `S`. -/
@@ -118,10 +124,9 @@ theorem mem_partiallyLaurent_iff (f : QuantumTorus R L u Λ) :
 @[simp]
 theorem smul_monomial_mem_partiallyLaurent_iff (r : R) (a : L) :
     r • monomial u Λ a ∈ partiallyLaurent u Λ b S ↔ r = 0 ∨ ∀ i ∉ S, 0 ≤ b.repr a i := by
-  classical
-  rw [mem_partiallyLaurent_iff]
-  simp only [map_smul, basis_repr_monomial, Finsupp.smul_single, smul_eq_mul, mul_one]
-  by_cases hr : r = 0 <;> simp [hr]
+  rw [partiallyLaurent, monomial_def, TwistedMonoidAlgebra.smul_of_mem_supported_iff,
+    mem_range_partiallyLaurentIndex_iff]
+  rfl
 
 /-- A normalized monomial is permitted if its coordinates are allowed or its scalars are trivial. -/
 @[simp]
@@ -130,20 +135,6 @@ theorem monomial_mem_partiallyLaurent_iff (a : L) :
       (1 : R) = 0 ∨ ∀ i ∉ S, 0 ≤ b.repr a i := by
   simpa only [one_smul] using smul_monomial_mem_partiallyLaurent_iff
     (u := u) (Λ := Λ) (b := b) 1 a
-
-/-- A scalar monomial at a bundled permitted exponent has no remaining coordinate condition. -/
-theorem smul_monomial_mem_partiallyLaurent (r : R) (a : LaurentRing.nonnegOutside S) :
-    r • monomial u Λ (b.repr.symm (a : I →₀ ℤ)) ∈ partiallyLaurent u Λ b S := by
-  apply (smul_monomial_mem_partiallyLaurent_iff r _).mpr
-  right
-  simpa only [LinearEquiv.apply_symm_apply] using
-    (LaurentRing.mem_nonnegOutside.mp a.property)
-
-/-- A normalized monomial at a bundled permitted exponent belongs to the mixed algebra. -/
-theorem monomial_mem_partiallyLaurent (a : LaurentRing.nonnegOutside S) :
-    monomial u Λ (b.repr.symm (a : I →₀ ℤ)) ∈ partiallyLaurent u Λ b S := by
-  simpa only [one_smul] using
-    (smul_monomial_mem_partiallyLaurent (u := u) (Λ := Λ) (b := b) 1 a)
 
 /-- Enlarging the inverted set enlarges the mixed quantum Laurent subalgebra. -/
 theorem partiallyLaurent_mono (hST : S ⊆ T) :
@@ -162,9 +153,9 @@ theorem partiallyLaurent_univ : partiallyLaurent u Λ b (Set.univ : Set I) = ⊤
 theorem partiallyLaurent_le_iff (A : Subalgebra R (QuantumTorus R L u Λ)) :
     partiallyLaurent u Λ b S ≤ A ↔ ∀ a : LaurentRing.nonnegOutside S,
       monomial u Λ (b.repr.symm (a : I →₀ ℤ)) ∈ A := by
-  rw [← Subalgebra.toSubmodule.le_iff_le, partiallyLaurent_toSubmodule,
-    Submodule.span_le, Set.image_eq_range, Set.range_subset_iff]
-  exact forall_congr' fun _ ↦ Subalgebra.mem_toSubmodule A
+  rw [partiallyLaurent, TwistedMonoidAlgebra.supported_le_iff]
+  exact Multiplicative.toAdd.forall_congr' fun a ↦ by
+    rw [of_partiallyLaurentIndex, Multiplicative.toAdd_symm_eq, toAdd_ofAdd]
 
 /-- Permitted normalized monomials form a basis in the chosen lattice coordinates. -/
 noncomputable def partiallyLaurentBasis (u : Rˣ) (Λ : LinearMap.BilinForm ℤ L)
@@ -173,19 +164,23 @@ noncomputable def partiallyLaurentBasis (u : Rˣ) (Λ : LinearMap.BilinForm ℤ 
   (TwistedMonoidAlgebra.supportedBasis (factorSet u Λ) (partiallyLaurentIndex b S)
     partiallyLaurentIndex_injective).reindex Multiplicative.toAdd
 
+private theorem partiallyLaurentBasis_eq_supportedBasis (a : LaurentRing.nonnegOutside S) :
+    partiallyLaurentBasis u Λ b S a =
+      TwistedMonoidAlgebra.supportedBasis (factorSet u Λ) (partiallyLaurentIndex b S)
+        partiallyLaurentIndex_injective (Multiplicative.ofAdd a) := by
+  have h := (TwistedMonoidAlgebra.supportedBasis (factorSet u Λ) (partiallyLaurentIndex b S)
+    partiallyLaurentIndex_injective).reindex_apply Multiplicative.toAdd a
+  rw [Multiplicative.toAdd_symm_eq] at h
+  exact h
+
 /-- The restricted basis has the same ambient normalized monomials. -/
 @[simp]
 theorem coe_partiallyLaurentBasis_apply (a : LaurentRing.nonnegOutside S) :
     (partiallyLaurentBasis u Λ b S a : QuantumTorus R L u Λ) =
       monomial u Λ (b.repr.symm (a : I →₀ ℤ)) := by
-  let hb := TwistedMonoidAlgebra.supportedBasis (factorSet u Λ) (partiallyLaurentIndex b S)
-    partiallyLaurentIndex_injective
-  have h := hb.reindex_apply Multiplicative.toAdd a
-  calc
-    _ = (hb (Multiplicative.ofAdd a) : QuantumTorus R L u Λ) := congrArg Subtype.val h
-    _ = _ := by
-      simp only [hb, TwistedMonoidAlgebra.coe_supportedBasis_apply, monomial_def]
-      rfl
+  simpa only [TwistedMonoidAlgebra.coe_supportedBasis_apply, of_partiallyLaurentIndex,
+    toAdd_ofAdd] using congrArg Subtype.val (partiallyLaurentBasis_eq_supportedBasis (u := u)
+      (Λ := Λ) (b := b) a)
 
 /-- Restricted basis coordinates are the ambient quantum coefficients in the chosen basis. -/
 @[simp]
@@ -200,7 +195,8 @@ theorem partiallyLaurentBasis_repr_apply (f : partiallyLaurent u Λ b S)
     _ = hb.repr x (Multiplicative.ofAdd a) := hb.repr_reindex_apply x Multiplicative.toAdd a
     _ = _ := by
       simp only [hb, TwistedMonoidAlgebra.supportedBasis_repr_apply, basis_eq_reindex,
-        Module.Basis.repr_reindex_apply, Multiplicative.toAdd_symm_eq]
+        Module.Basis.repr_reindex_apply, Multiplicative.toAdd_symm_eq,
+        partiallyLaurentIndex_ofAdd]
       rfl
 
 /-- Increasing the inverted set preserves each permitted basis vector intrinsically. -/
@@ -216,9 +212,8 @@ theorem inclusion_partiallyLaurentBasis (hST : S ⊆ T) (a : LaurentRing.nonnegO
 /-- The zero coordinate of the restricted basis is the algebra unit. -/
 @[simp]
 theorem partiallyLaurentBasis_zero : partiallyLaurentBasis u Λ b S 0 = 1 := by
-  apply Subtype.ext
-  simp only [coe_partiallyLaurentBasis_apply, ZeroMemClass.coe_zero,
-    map_zero, monomial_zero, Subalgebra.coe_one]
+  rw [partiallyLaurentBasis_eq_supportedBasis]
+  exact TwistedMonoidAlgebra.supportedBasis_one _ _ partiallyLaurentIndex_injective
 
 /-- Restricted basis multiplication retains the ambient twist and adds its coordinate indices. -/
 @[simp]
@@ -226,25 +221,24 @@ theorem partiallyLaurentBasis_mul (a c : LaurentRing.nonnegOutside S) :
     partiallyLaurentBasis u Λ b S a * partiallyLaurentBasis u Λ b S c =
       (u ^ (Λ (b.repr.symm (a : I →₀ ℤ)) (b.repr.symm (c : I →₀ ℤ))) : Rˣ).val •
         partiallyLaurentBasis u Λ b S (a + c) := by
-  apply Subtype.ext
-  simp only [Subalgebra.coe_mul, Subalgebra.coe_smul, coe_partiallyLaurentBasis_apply,
-    monomial_mul_monomial, AddSubmonoid.coe_add, map_add]
+  rw [partiallyLaurentBasis_eq_supportedBasis, partiallyLaurentBasis_eq_supportedBasis,
+    partiallyLaurentBasis_eq_supportedBasis]
+  have h := TwistedMonoidAlgebra.supportedBasis_mul (factorSet u Λ) (partiallyLaurentIndex b S)
+    partiallyLaurentIndex_injective (Multiplicative.ofAdd a) (Multiplicative.ofAdd c)
+  simp only [factorSet_apply, partiallyLaurentIndex_toAdd, toAdd_ofAdd, ← ofAdd_add] at h
+  exact h
 
 /-- The original factor set restricted to the permitted coordinate monoid. -/
-noncomputable def partiallyLaurentFactorSet (u : Rˣ) (Λ : LinearMap.BilinForm ℤ L)
-    (b : Module.Basis I ℤ L) (S : Set I)
-    (a c : Multiplicative (LaurentRing.nonnegOutside S)) : Rˣ :=
-  factorSet u Λ (partiallyLaurentIndex b S a) (partiallyLaurentIndex b S c)
+noncomputable abbrev partiallyLaurentFactorSet (u : Rˣ) (Λ : LinearMap.BilinForm ℤ L)
+    (b : Module.Basis I ℤ L) (S : Set I) :=
+  TwistedMonoidAlgebra.pullbackFactorSet (factorSet u Λ) (partiallyLaurentIndex b S)
 
 /-- The restricted factor set evaluates the form on the corresponding lattice vectors. -/
-@[simp]
 theorem partiallyLaurentFactorSet_apply (a c : Multiplicative (LaurentRing.nonnegOutside S)) :
     partiallyLaurentFactorSet u Λ b S a c =
       u ^ (Λ (b.repr.symm (a.toAdd : I →₀ ℤ)) (b.repr.symm (c.toAdd : I →₀ ℤ))) := by
-  simp only [partiallyLaurentFactorSet, factorSet_apply, partiallyLaurentIndex_toAdd]
-
-instance : IsFactorSet (partiallyLaurentFactorSet u Λ b S) :=
-  IsFactorSet.comp (partiallyLaurentIndex b S) (factorSet u Λ)
+  simp only [partiallyLaurentFactorSet, TwistedMonoidAlgebra.pullbackFactorSet,
+    factorSet_apply, partiallyLaurentIndex_toAdd]
 
 /-- The mixed algebra is the twisted monoid algebra on its permitted coordinate indices. -/
 noncomputable def partiallyLaurentEquiv (u : Rˣ) (Λ : LinearMap.BilinForm ℤ L)
@@ -261,15 +255,8 @@ theorem partiallyLaurentEquiv_of (a : Multiplicative (LaurentRing.nonnegOutside 
       partiallyLaurentBasis u Λ b S a.toAdd := by
   have h := TwistedMonoidAlgebra.supportedEquiv_of (factorSet u Λ)
     (partiallyLaurentIndex b S) partiallyLaurentIndex_injective a
-  have hb : partiallyLaurentBasis u Λ b S a.toAdd =
-      TwistedMonoidAlgebra.supportedBasis (factorSet u Λ) (partiallyLaurentIndex b S)
-        partiallyLaurentIndex_injective a := by
-    have hReindex := (TwistedMonoidAlgebra.supportedBasis (factorSet u Λ)
-      (partiallyLaurentIndex b S) partiallyLaurentIndex_injective).reindex_apply
-        Multiplicative.toAdd a.toAdd
-    rw [Multiplicative.toAdd_symm_eq, ofAdd_toAdd] at hReindex
-    exact hReindex
-  exact h.trans hb.symm
+  rw [partiallyLaurentBasis_eq_supportedBasis, ofAdd_toAdd]
+  exact h
 
 /-- The inverse realization sends each permitted basis vector to its twisted basis element. -/
 @[simp]
@@ -369,5 +356,13 @@ theorem partiallyLaurentUntwistedEquiv_basis (h : ∀ a c, u ^ (Λ a c) = 1)
     untwistedEquiv_monomial, AddMonoidAlgebra.domCongr_single, LinearEquiv.coe_toAddEquiv,
     LinearEquiv.coe_addEquiv_apply, LinearEquiv.apply_symm_apply,
     LaurentRing.coe_partiallyLaurentBasis_apply]
+
+/-- The inverse untwisting comparison preserves the permitted coordinate index. -/
+@[simp]
+theorem partiallyLaurentUntwistedEquiv_symm_basis (h : ∀ a c, u ^ (Λ a c) = 1)
+    (a : LaurentRing.nonnegOutside S) :
+    (partiallyLaurentUntwistedEquiv u Λ b h S).symm (LaurentRing.partiallyLaurentBasis R S a) =
+      partiallyLaurentBasis u Λ b S a := by
+  rw [← partiallyLaurentUntwistedEquiv_basis h a, AlgEquiv.symm_apply_apply]
 
 end TauCeti.QuantumTorus
