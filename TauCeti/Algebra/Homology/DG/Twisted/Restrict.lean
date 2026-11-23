@@ -33,6 +33,16 @@ and `y ∉ S`; then `S` spans a subcomplex, and its complement a quotient comple
   (`TauCeti.ContinuationCocycle.restrictSubcomplex`), and its continuation morphism carries the
   subcomplex of `S` into the subcomplex of `S'`
   (`TauCeti.ContinuationCocycle.ofRestrict_continuationHom_comp`).
+* Dually, if `ν` never enters `T'` from outside `T`, it restricts to a continuation cocycle between
+  the quotient complexes (`TauCeti.ContinuationCocycle.restrictQuotient`), and the projections
+  commute with the continuation morphisms
+  (`TauCeti.ContinuationCocycle.toRestrict_continuationHom_comp`).
+* Restriction is functorial: it sends the Kronecker cocycle to the Kronecker cocycle
+  (`TauCeti.ContinuationCocycle.restrict_refl`) and composites to composites
+  (`TauCeti.ContinuationCocycle.restrict_comp`), in particular for subcomplexes and quotients.
+* A parametrized cocycle between continuation cocycles restricts in the same way
+  (`TauCeti.ParametrizedCocycle.restrict`, `TauCeti.ParametrizedCocycle.restrictSubcomplex`,
+  `TauCeti.ParametrizedCocycle.restrictQuotient`).
 
 In Floer theory the generators carry an action `act : P → ℝ`, and the twisted differential does
 not raise it: `m x y = 0` whenever `act x < act y`. The statements below allow actions in any
@@ -45,8 +55,15 @@ short exact sequences, the algebraic input of the long exact sequence of Proposi
 reference. A continuation cocycle which raises the action by at most `δ`, `ν x y = 0` whenever
 `act x + δ < act' y`, restricts from the generators of action `< a` to those of action `< a + δ`
 (`TauCeti.ContinuationCocycle.actionSublevel`), the algebraic part of the filtration estimate of
-Proposition 3.22 of the reference; for `δ = 0` it preserves the action filtration. Such bounds
-add under composition (`TauCeti.ContinuationCocycle.comp_ν_eq_zero_of_add_lt`).
+Proposition 3.22 of the reference; for `δ = 0` it preserves the action filtration. It also
+restricts from the generators of action `≥ a` to those of action `≥ a + δ`
+(`TauCeti.ContinuationCocycle.actionSuperlevel`), and a parametrized cocycle which raises the
+action by at most `δ` restricts to both (`TauCeti.ParametrizedCocycle.actionSublevel`,
+`TauCeti.ParametrizedCocycle.actionSuperlevel`). Such bounds add under composition
+(`TauCeti.ContinuationCocycle.comp_ν_eq_zero_of_add_lt`), and the action sublevels and
+superlevels of a composite at levels `a` and `a + δ₁ + δ₂` are the composites of those at levels
+`a` and `a + δ₁` (`TauCeti.ContinuationCocycle.actionSublevel_comp`,
+`TauCeti.ContinuationCocycle.actionSuperlevel_comp`).
 
 ## References
 
@@ -62,6 +79,13 @@ open CategoryTheory MulOpposite
 namespace TauCeti
 
 universe uR uA uM uP
+
+/-- If `f` vanishes from `S` to outside `S'`, it vanishes from outside the complement `T` of `S`
+to the complement `T'` of `S'`. -/
+theorem apply_eq_zero_of_compl {P Q X : Type*} [Zero X] {f : P → Q → X} {S T : Set P}
+    {S' T' : Set Q} (hf : ∀ x y, x ∈ S → y ∉ S' → f x y = 0) (hST : ∀ x, x ∈ T ↔ x ∉ S)
+    (hST' : ∀ x, x ∈ T' ↔ x ∉ S') : ∀ x y, x ∉ T → y ∈ T' → f x y = 0 :=
+  fun x y hx hy ↦ hf x y (not_not.1 ((hST x).not.1 hx)) ((hST' y).1 hy)
 
 /-! ### Restriction of twisting and continuation cocycles -/
 
@@ -110,7 +134,7 @@ theorem mul_eq_zero_of_forall_eq_zero' {T : Set P} (hT : ∀ x y, x ∉ T → y 
 outside. -/
 theorem forall_eq_zero_of_compl {S T : Set P} (hS : ∀ x y, x ∈ S → y ∉ S → m.m x y = 0)
     (hST : ∀ x, x ∈ T ↔ x ∉ S) : ∀ x y, x ∉ T → y ∈ T → m.m x y = 0 :=
-  fun x y hx hy ↦ hS x y (not_not.1 ((hST x).not.1 hx)) ((hST y).1 hy)
+  apply_eq_zero_of_compl hS hST hST
 
 end TwistingCocycle
 
@@ -194,6 +218,38 @@ theorem restrict_ν (ν : ContinuationCocycle mP mQ) (S : Set P) [DecidablePred 
     (h₂ : ∀ x z y, x ∈ S → z ∉ S' → y ∈ S' → ν.ν x z * mQ.m z y = 0) (x : S) (y : S') :
     (ν.restrict S hS S' hS' h₁ h₂).ν x y = ν.ν x y :=
   (rfl)
+
+omit [GradedAlgebra 𝒜] [DecidableEq P] in
+/-- The **restriction of a continuation cocycle to quotient complexes.** For sets `T ⊆ P` and
+`T' ⊆ Q` of generators which the twisted differentials never enter from outside, and a
+continuation cocycle `ν : mP → mQ` which never enters `T'` from outside `T`, `ν x y = 0` for
+`x ∉ T` and `y ∈ T'`, the entries of `ν` from `T` to `T'` form a continuation cocycle between the
+restrictions of `mP` and `mQ` to `T` and `T'`. -/
+def restrictQuotient (ν : ContinuationCocycle mP mQ) (T : Set P) [DecidablePred (· ∈ T)]
+    (hT : ∀ x y, x ∉ T → y ∈ T → mP.m x y = 0) (T' : Set Q) [DecidablePred (· ∈ T')]
+    (hT' : ∀ x y, x ∉ T' → y ∈ T' → mQ.m x y = 0)
+    (hν : ∀ x y, x ∉ T → y ∈ T' → ν.ν x y = 0) :
+    ContinuationCocycle (mP.restrict T (mP.mul_eq_zero_of_forall_eq_zero' hT))
+      (mQ.restrict T' (mQ.mul_eq_zero_of_forall_eq_zero' hT')) :=
+  ν.restrict T _ T' _ (fun _ z y _ hz hy ↦ by rw [hν z y hz hy, mul_zero])
+    (fun _ z y _ hz hy ↦ by rw [hT' z y hz hy, mul_zero])
+
+omit [GradedAlgebra 𝒜] [DecidableEq P] in
+@[simp]
+theorem restrictQuotient_ν (ν : ContinuationCocycle mP mQ) (T : Set P) [DecidablePred (· ∈ T)]
+    (hT : ∀ x y, x ∉ T → y ∈ T → mP.m x y = 0) (T' : Set Q) [DecidablePred (· ∈ T')]
+    (hT' : ∀ x y, x ∉ T' → y ∈ T' → mQ.m x y = 0)
+    (hν : ∀ x y, x ∉ T → y ∈ T' → ν.ν x y = 0) (x : T) (y : T') :
+    (ν.restrictQuotient T hT T' hT' hν).ν x y = ν.ν x y :=
+  (rfl)
+
+omit [GradedAlgebra 𝒜] [DecidableEq P] in
+/-- If `ν` never leaves the subcomplexes of `S` and `S'`, it never enters their complements `T` and
+`T'` from outside. -/
+theorem forall_eq_zero_of_compl (ν : ContinuationCocycle mP mQ) {S T : Set P} {S' T' : Set Q}
+    (hν : ∀ x y, x ∈ S → y ∉ S' → ν.ν x y = 0) (hST : ∀ x, x ∈ T ↔ x ∉ S)
+    (hST' : ∀ x, x ∈ T' ↔ x ∉ S') : ∀ x y, x ∉ T → y ∈ T' → ν.ν x y = 0 :=
+  apply_eq_zero_of_compl hν hST hST'
 
 end ContinuationCocycle
 
@@ -432,6 +488,28 @@ theorem ofRestrict_comp :
       rw [hν x z x.property hz, zero_mul]]
   simp [Matrix.one_apply]
 
+/-- **Continuation maps commute with the projections onto quotient complexes.** If `ν` never
+enters `T'` from outside `T`, the projection onto the quotient complex of `T` followed by the
+restriction of `ν` is `ν` followed by the projection onto the quotient complex of `T'`. -/
+theorem toRestrict_comp (T : Set P) [DecidablePred (· ∈ T)]
+    (hT : ∀ x y, x ∉ T → y ∈ T → mP.m x y = 0) (T' : Set Q) [DecidablePred (· ∈ T')]
+    (hT' : ∀ x y, x ∉ T' → y ∈ T' → mQ.m x y = 0)
+    (hν : ∀ x y, x ∉ T → y ∈ T' → ν.ν x y = 0) :
+    (toRestrict mP h.map_one_eq_zero T hT).comp h (ν.restrictQuotient T hT T' hT' hν) =
+      ν.comp h (toRestrict mQ h.map_one_eq_zero T' hT') := by
+  ext x y
+  simp only [comp_ν, Matrix.mul_apply, Matrix.of_apply, toRestrict_ν, restrictQuotient_ν]
+  rw [Finset.sum_eq_single_of_mem (y : Q) (Finset.mem_univ _) fun z _ hz ↦ by
+    rw [Matrix.one_apply_ne hz, mul_zero], Matrix.one_apply_eq, mul_one]
+  -- Both sides are `ν x y` when `x ∈ T`, and both vanish otherwise.
+  by_cases hx : x ∈ T
+  · rw [Finset.sum_eq_single_of_mem (⟨x, hx⟩ : T) (Finset.mem_univ _) fun z _ hz ↦ by
+      rw [Matrix.one_apply_ne fun h ↦ hz (Subtype.ext h.symm), zero_mul]]
+    simp
+  · rw [hν x y hx y.property]
+    exact Finset.sum_eq_zero fun z _ ↦ by
+      rw [Matrix.one_apply_ne fun h ↦ hx (by rw [h]; exact z.property), zero_mul]
+
 variable {ℳ : ℤ → Submodule R M} [DirectSum.Decomposition ℳ]
   [SetLike.GradedSMul (InternalGrading.ofDecomposition 𝒜).opposite.piece ℳ] {dM : M →ₗ[R] M}
   (hM : IsDGRightModule h ℳ dM)
@@ -446,9 +524,236 @@ theorem ofRestrict_continuationHom_comp :
         (ofRestrict mQ h.map_one_eq_zero S' hS').continuationHom hM := by
   rw [← continuationHom_comp, ← continuationHom_comp, ofRestrict_comp h ν S hS S' hS' hν]
 
+/-- **The continuation morphism commutes with the projections onto quotient complexes**, when `ν`
+never enters `T'` from outside `T`: the square of twisted cochain complexes formed by the two
+projections, the continuation morphism of `ν` and that of its restriction commutes. -/
+@[reassoc]
+theorem toRestrict_continuationHom_comp (T : Set P) [DecidablePred (· ∈ T)]
+    (hT : ∀ x y, x ∉ T → y ∈ T → mP.m x y = 0) (T' : Set Q) [DecidablePred (· ∈ T')]
+    (hT' : ∀ x y, x ∉ T' → y ∈ T' → mQ.m x y = 0)
+    (hν : ∀ x y, x ∉ T → y ∈ T' → ν.ν x y = 0) :
+    (toRestrict mP h.map_one_eq_zero T hT).continuationHom hM ≫
+        (ν.restrictQuotient T hT T' hT' hν).continuationHom hM =
+      ν.continuationHom hM ≫ (toRestrict mQ h.map_one_eq_zero T' hT').continuationHom hM := by
+  rw [← continuationHom_comp, ← continuationHom_comp, toRestrict_comp h ν T hT T' hT' hν]
+
 end ContinuationCocycle
 
 end ContinuationSubcomplex
+
+/-! ### Functoriality of restriction -/
+
+section Functoriality
+
+variable {R : Type uR} {A : Type uA} [CommRing R] [Ring A] [Algebra R A]
+  {P Q W : Type uP} {ind : P → ℤ} {indQ : Q → ℤ} {indW : W → ℤ} [Fintype P] [Fintype Q]
+  [Fintype W] {𝒜 : ℤ → Submodule R A} {d : A →ₗ[R] A}
+  {mP : TwistingCocycle 𝒜 d P ind} {mQ : TwistingCocycle 𝒜 d Q indQ}
+  {mW : TwistingCocycle 𝒜 d W indW}
+
+namespace ContinuationCocycle
+
+variable [GradedAlgebra 𝒜]
+
+/-- The restriction of the Kronecker cocycle is the Kronecker cocycle. -/
+@[simp]
+theorem restrict_refl [DecidableEq P] (hd : d 1 = 0) (S : Set P) [DecidablePred (· ∈ S)]
+    (hS : ∀ x y z, x ∈ S → z ∈ S → y ∉ S → mP.m x y * mP.m y z = 0)
+    (h₁ : ∀ x z y, x ∈ S → z ∉ S → y ∈ S → mP.m x z * (refl hd mP).ν z y = 0)
+    (h₂ : ∀ x z y, x ∈ S → z ∉ S → y ∈ S → (refl hd mP).ν x z * mP.m z y = 0) :
+    (refl hd mP).restrict S hS S hS h₁ h₂ = refl hd _ := by
+  ext x y
+  simp [Matrix.one_apply, Subtype.ext_iff]
+
+/-- The restriction of the Kronecker cocycle to a subcomplex is the Kronecker cocycle. -/
+@[simp]
+theorem restrictSubcomplex_refl [DecidableEq P] (hd : d 1 = 0) (S : Set P)
+    [DecidablePred (· ∈ S)] (hS : ∀ x y, x ∈ S → y ∉ S → mP.m x y = 0)
+    (hν : ∀ x y, x ∈ S → y ∉ S → (refl hd mP).ν x y = 0) :
+    (refl hd mP).restrictSubcomplex S hS S hS hν = refl hd _ :=
+  restrict_refl hd S _ _ _
+
+/-- The restriction of the Kronecker cocycle to a quotient complex is the Kronecker cocycle. -/
+@[simp]
+theorem restrictQuotient_refl [DecidableEq P] (hd : d 1 = 0) (T : Set P) [DecidablePred (· ∈ T)]
+    (hT : ∀ x y, x ∉ T → y ∈ T → mP.m x y = 0)
+    (hν : ∀ x y, x ∉ T → y ∈ T → (refl hd mP).ν x y = 0) :
+    (refl hd mP).restrictQuotient T hT T hT hν = refl hd _ :=
+  restrict_refl hd T _ _ _
+
+variable (h : IsDGAlgebra 𝒜 d)
+
+/-- **Restriction is functorial**: if no product `ν₁ x z * ν₂ z y` with `x ∈ S₁` and `y ∈ S₃`
+passes outside `S₂`, the restriction of the composite is the composite of the restrictions. -/
+theorem restrict_comp (ν₁ : ContinuationCocycle mP mQ) (ν₂ : ContinuationCocycle mQ mW)
+    (S₁ : Set P) [DecidablePred (· ∈ S₁)]
+    (hS₁ : ∀ x y z, x ∈ S₁ → z ∈ S₁ → y ∉ S₁ → mP.m x y * mP.m y z = 0)
+    (S₂ : Set Q) [DecidablePred (· ∈ S₂)]
+    (hS₂ : ∀ x y z, x ∈ S₂ → z ∈ S₂ → y ∉ S₂ → mQ.m x y * mQ.m y z = 0)
+    (S₃ : Set W) [DecidablePred (· ∈ S₃)]
+    (hS₃ : ∀ x y z, x ∈ S₃ → z ∈ S₃ → y ∉ S₃ → mW.m x y * mW.m y z = 0)
+    (h₁₁ : ∀ x z y, x ∈ S₁ → z ∉ S₁ → y ∈ S₂ → mP.m x z * ν₁.ν z y = 0)
+    (h₁₂ : ∀ x z y, x ∈ S₁ → z ∉ S₂ → y ∈ S₂ → ν₁.ν x z * mQ.m z y = 0)
+    (h₂₁ : ∀ x z y, x ∈ S₂ → z ∉ S₂ → y ∈ S₃ → mQ.m x z * ν₂.ν z y = 0)
+    (h₂₂ : ∀ x z y, x ∈ S₂ → z ∉ S₃ → y ∈ S₃ → ν₂.ν x z * mW.m z y = 0)
+    (h₁ : ∀ x z y, x ∈ S₁ → z ∉ S₁ → y ∈ S₃ → mP.m x z * (ν₁.comp h ν₂).ν z y = 0)
+    (h₂ : ∀ x z y, x ∈ S₁ → z ∉ S₃ → y ∈ S₃ → (ν₁.comp h ν₂).ν x z * mW.m z y = 0)
+    (hν : ∀ x z y, x ∈ S₁ → z ∉ S₂ → y ∈ S₃ → ν₁.ν x z * ν₂.ν z y = 0) :
+    (ν₁.comp h ν₂).restrict S₁ hS₁ S₃ hS₃ h₁ h₂ =
+      (ν₁.restrict S₁ hS₁ S₂ hS₂ h₁₁ h₁₂).comp h (ν₂.restrict S₂ hS₂ S₃ hS₃ h₂₁ h₂₂) := by
+  ext x y
+  simp only [restrict_ν, comp_ν, Matrix.mul_apply, Matrix.of_apply]
+  -- The intermediate generators outside `S₂` contribute nothing.
+  exact Finset.sum_congr_set S₂ _ _ (fun _ _ ↦ rfl) fun z hz ↦ hν x z y x.property hz y.property
+
+/-- If `ν₁` never leaves the subcomplexes of `S₁` and `S₂` and `ν₂` those of `S₂` and `S₃`, then
+their composite never leaves the subcomplexes of `S₁` and `S₃`. -/
+theorem comp_ν_eq_zero_of_forall_eq_zero (ν₁ : ContinuationCocycle mP mQ)
+    (ν₂ : ContinuationCocycle mQ mW) {S₁ : Set P} {S₂ : Set Q} {S₃ : Set W}
+    (hν₁ : ∀ x y, x ∈ S₁ → y ∉ S₂ → ν₁.ν x y = 0) (hν₂ : ∀ x y, x ∈ S₂ → y ∉ S₃ → ν₂.ν x y = 0) :
+    ∀ x y, x ∈ S₁ → y ∉ S₃ → (ν₁.comp h ν₂).ν x y = 0 := by
+  intro x y hx hy
+  rw [comp_ν, Matrix.mul_apply]
+  refine Finset.sum_eq_zero fun z _ ↦ ?_
+  by_cases hz : z ∈ S₂
+  · simp [hν₂ z y hz hy]
+  · simp [hν₁ x z hx hz]
+
+/-- **Restriction to subcomplexes is functorial**: the restriction of a composite is the composite
+of the restrictions. -/
+theorem restrictSubcomplex_comp (ν₁ : ContinuationCocycle mP mQ) (ν₂ : ContinuationCocycle mQ mW)
+    (S₁ : Set P) [DecidablePred (· ∈ S₁)] (hS₁ : ∀ x y, x ∈ S₁ → y ∉ S₁ → mP.m x y = 0)
+    (S₂ : Set Q) [DecidablePred (· ∈ S₂)] (hS₂ : ∀ x y, x ∈ S₂ → y ∉ S₂ → mQ.m x y = 0)
+    (S₃ : Set W) [DecidablePred (· ∈ S₃)] (hS₃ : ∀ x y, x ∈ S₃ → y ∉ S₃ → mW.m x y = 0)
+    (hν₁ : ∀ x y, x ∈ S₁ → y ∉ S₂ → ν₁.ν x y = 0) (hν₂ : ∀ x y, x ∈ S₂ → y ∉ S₃ → ν₂.ν x y = 0)
+    (hν : ∀ x y, x ∈ S₁ → y ∉ S₃ → (ν₁.comp h ν₂).ν x y = 0) :
+    (ν₁.comp h ν₂).restrictSubcomplex S₁ hS₁ S₃ hS₃ hν =
+      (ν₁.restrictSubcomplex S₁ hS₁ S₂ hS₂ hν₁).comp h
+        (ν₂.restrictSubcomplex S₂ hS₂ S₃ hS₃ hν₂) :=
+  -- The intermediate generators outside `S₂` contribute nothing, since `ν₁` never leaves `S₂`.
+  restrict_comp h ν₁ ν₂ S₁ _ S₂ _ S₃ _ _ _ _ _ _ _ fun x z _ hx hz _ ↦ by
+    rw [hν₁ x z hx hz, zero_mul]
+
+/-- **Restriction to quotient complexes is functorial**: the restriction of a composite is the
+composite of the restrictions. -/
+theorem restrictQuotient_comp (ν₁ : ContinuationCocycle mP mQ) (ν₂ : ContinuationCocycle mQ mW)
+    (T₁ : Set P) [DecidablePred (· ∈ T₁)] (hT₁ : ∀ x y, x ∉ T₁ → y ∈ T₁ → mP.m x y = 0)
+    (T₂ : Set Q) [DecidablePred (· ∈ T₂)] (hT₂ : ∀ x y, x ∉ T₂ → y ∈ T₂ → mQ.m x y = 0)
+    (T₃ : Set W) [DecidablePred (· ∈ T₃)] (hT₃ : ∀ x y, x ∉ T₃ → y ∈ T₃ → mW.m x y = 0)
+    (hν₁ : ∀ x y, x ∉ T₁ → y ∈ T₂ → ν₁.ν x y = 0) (hν₂ : ∀ x y, x ∉ T₂ → y ∈ T₃ → ν₂.ν x y = 0)
+    (hν : ∀ x y, x ∉ T₁ → y ∈ T₃ → (ν₁.comp h ν₂).ν x y = 0) :
+    (ν₁.comp h ν₂).restrictQuotient T₁ hT₁ T₃ hT₃ hν =
+      (ν₁.restrictQuotient T₁ hT₁ T₂ hT₂ hν₁).comp h
+        (ν₂.restrictQuotient T₂ hT₂ T₃ hT₃ hν₂) :=
+  -- The intermediate generators outside `T₂` contribute nothing, since `ν₂` never enters `T₃`
+  -- from outside `T₂`.
+  restrict_comp h ν₁ ν₂ T₁ _ T₂ _ T₃ _ _ _ _ _ _ _ fun _ z y _ hz hy ↦ by
+    rw [hν₂ z y hz hy, mul_zero]
+
+end ContinuationCocycle
+
+end Functoriality
+
+/-! ### Restriction of parametrized cocycles -/
+
+section Parametrized
+
+variable {R : Type uR} {A : Type uA} [CommRing R] [Ring A] [Algebra R A]
+  {P Q : Type uP} {ind : P → ℤ} {indQ : Q → ℤ} [Fintype P] [Fintype Q]
+  {𝒜 : ℤ → Submodule R A} {d : A →ₗ[R] A}
+  {mP : TwistingCocycle 𝒜 d P ind} {mQ : TwistingCocycle 𝒜 d Q indQ}
+
+namespace ParametrizedCocycle
+
+variable {ν₀ ν₁ : ContinuationCocycle mP mQ}
+
+/-- The **restriction of a parametrized cocycle** `η` between `ν₀` and `ν₁` to sets `S ⊆ P` and
+`S' ⊆ Q` of generators, provided that no product in the parametrized equation between generators
+of `S` and `S'` passes outside them: its entries are those of `η` from `S` to `S'`, a parametrized
+cocycle between the restrictions of `ν₀` and `ν₁`. -/
+def restrict (η : ParametrizedCocycle ν₀ ν₁) (S : Set P) [DecidablePred (· ∈ S)]
+    (hS : ∀ x y z, x ∈ S → z ∈ S → y ∉ S → mP.m x y * mP.m y z = 0)
+    (S' : Set Q) [DecidablePred (· ∈ S')]
+    (hS' : ∀ x y z, x ∈ S' → z ∈ S' → y ∉ S' → mQ.m x y * mQ.m y z = 0)
+    (h₀₁ : ∀ x z y, x ∈ S → z ∉ S → y ∈ S' → mP.m x z * ν₀.ν z y = 0)
+    (h₀₂ : ∀ x z y, x ∈ S → z ∉ S' → y ∈ S' → ν₀.ν x z * mQ.m z y = 0)
+    (h₁₁ : ∀ x z y, x ∈ S → z ∉ S → y ∈ S' → mP.m x z * ν₁.ν z y = 0)
+    (h₁₂ : ∀ x z y, x ∈ S → z ∉ S' → y ∈ S' → ν₁.ν x z * mQ.m z y = 0)
+    (hη₁ : ∀ x z y, x ∈ S → z ∉ S → y ∈ S' → mP.m x z * η.h z y = 0)
+    (hη₂ : ∀ x z y, x ∈ S → z ∉ S' → y ∈ S' → η.h x z * mQ.m z y = 0) :
+    ParametrizedCocycle (ν₀.restrict S hS S' hS' h₀₁ h₀₂) (ν₁.restrict S hS S' hS' h₁₁ h₁₂) where
+  h x y := η.h x y
+  mem_graded x y := η.mem_graded x y
+  parametrized x y := by
+    rw [η.parametrized]
+    simp only [ContinuationCocycle.restrict_ν, TwistingCocycle.restrict_m]
+    -- The generators outside `S` and `S'` contribute nothing to either sum.
+    congr 1
+    · congr 1
+      exact Finset.sum_congr_set S _ _ (fun _ _ ↦ rfl) fun z hz ↦ by
+        rw [hη₁ x z y x.property hz y.property, smul_zero]
+    · exact Finset.sum_congr_set S' _ _ (fun _ _ ↦ rfl) fun z hz ↦ by
+        rw [hη₂ x z y x.property hz y.property, smul_zero]
+
+@[simp]
+theorem restrict_h (η : ParametrizedCocycle ν₀ ν₁) (S : Set P) [DecidablePred (· ∈ S)]
+    (hS : ∀ x y z, x ∈ S → z ∈ S → y ∉ S → mP.m x y * mP.m y z = 0)
+    (S' : Set Q) [DecidablePred (· ∈ S')]
+    (hS' : ∀ x y z, x ∈ S' → z ∈ S' → y ∉ S' → mQ.m x y * mQ.m y z = 0)
+    (h₀₁ : ∀ x z y, x ∈ S → z ∉ S → y ∈ S' → mP.m x z * ν₀.ν z y = 0)
+    (h₀₂ : ∀ x z y, x ∈ S → z ∉ S' → y ∈ S' → ν₀.ν x z * mQ.m z y = 0)
+    (h₁₁ : ∀ x z y, x ∈ S → z ∉ S → y ∈ S' → mP.m x z * ν₁.ν z y = 0)
+    (h₁₂ : ∀ x z y, x ∈ S → z ∉ S' → y ∈ S' → ν₁.ν x z * mQ.m z y = 0)
+    (hη₁ : ∀ x z y, x ∈ S → z ∉ S → y ∈ S' → mP.m x z * η.h z y = 0)
+    (hη₂ : ∀ x z y, x ∈ S → z ∉ S' → y ∈ S' → η.h x z * mQ.m z y = 0) (x : S) (y : S') :
+    (η.restrict S hS S' hS' h₀₁ h₀₂ h₁₁ h₁₂ hη₁ hη₂).h x y = η.h x y :=
+  (rfl)
+
+/-- The **restriction of a parametrized cocycle to subcomplexes.** If the parametrized cocycle `η`
+between `ν₀` and `ν₁` never leaves the subcomplexes of `S` and `S'`, `η.h x y = 0` for `x ∈ S` and
+`y ∉ S'`, its entries between them form a parametrized cocycle between the restrictions of `ν₀`
+and `ν₁`. -/
+def restrictSubcomplex (η : ParametrizedCocycle ν₀ ν₁) (S : Set P) [DecidablePred (· ∈ S)]
+    (hS : ∀ x y, x ∈ S → y ∉ S → mP.m x y = 0) (S' : Set Q) [DecidablePred (· ∈ S')]
+    (hS' : ∀ x y, x ∈ S' → y ∉ S' → mQ.m x y = 0) (hν₀ : ∀ x y, x ∈ S → y ∉ S' → ν₀.ν x y = 0)
+    (hν₁ : ∀ x y, x ∈ S → y ∉ S' → ν₁.ν x y = 0) (hη : ∀ x y, x ∈ S → y ∉ S' → η.h x y = 0) :
+    ParametrizedCocycle (ν₀.restrictSubcomplex S hS S' hS' hν₀)
+      (ν₁.restrictSubcomplex S hS S' hS' hν₁) :=
+  η.restrict S _ S' _ _ _ _ _ (fun x z _ hx hz _ ↦ by rw [hS x z hx hz, zero_mul])
+    (fun x z _ hx hz _ ↦ by rw [hη x z hx hz, zero_mul])
+
+@[simp]
+theorem restrictSubcomplex_h (η : ParametrizedCocycle ν₀ ν₁) (S : Set P) [DecidablePred (· ∈ S)]
+    (hS : ∀ x y, x ∈ S → y ∉ S → mP.m x y = 0) (S' : Set Q) [DecidablePred (· ∈ S')]
+    (hS' : ∀ x y, x ∈ S' → y ∉ S' → mQ.m x y = 0) (hν₀ : ∀ x y, x ∈ S → y ∉ S' → ν₀.ν x y = 0)
+    (hν₁ : ∀ x y, x ∈ S → y ∉ S' → ν₁.ν x y = 0) (hη : ∀ x y, x ∈ S → y ∉ S' → η.h x y = 0)
+    (x : S) (y : S') : (η.restrictSubcomplex S hS S' hS' hν₀ hν₁ hη).h x y = η.h x y :=
+  (rfl)
+
+/-- The **restriction of a parametrized cocycle to quotient complexes.** If the parametrized
+cocycle `η` between `ν₀` and `ν₁` never enters `T'` from outside `T`, `η.h x y = 0` for `x ∉ T`
+and `y ∈ T'`, its entries between them form a parametrized cocycle between the restrictions of
+`ν₀` and `ν₁`. -/
+def restrictQuotient (η : ParametrizedCocycle ν₀ ν₁) (T : Set P) [DecidablePred (· ∈ T)]
+    (hT : ∀ x y, x ∉ T → y ∈ T → mP.m x y = 0) (T' : Set Q) [DecidablePred (· ∈ T')]
+    (hT' : ∀ x y, x ∉ T' → y ∈ T' → mQ.m x y = 0) (hν₀ : ∀ x y, x ∉ T → y ∈ T' → ν₀.ν x y = 0)
+    (hν₁ : ∀ x y, x ∉ T → y ∈ T' → ν₁.ν x y = 0) (hη : ∀ x y, x ∉ T → y ∈ T' → η.h x y = 0) :
+    ParametrizedCocycle (ν₀.restrictQuotient T hT T' hT' hν₀)
+      (ν₁.restrictQuotient T hT T' hT' hν₁) :=
+  η.restrict T _ T' _ _ _ _ _ (fun _ z y _ hz hy ↦ by rw [hη z y hz hy, mul_zero])
+    (fun _ z y _ hz hy ↦ by rw [hT' z y hz hy, mul_zero])
+
+@[simp]
+theorem restrictQuotient_h (η : ParametrizedCocycle ν₀ ν₁) (T : Set P) [DecidablePred (· ∈ T)]
+    (hT : ∀ x y, x ∉ T → y ∈ T → mP.m x y = 0) (T' : Set Q) [DecidablePred (· ∈ T')]
+    (hT' : ∀ x y, x ∉ T' → y ∈ T' → mQ.m x y = 0) (hν₀ : ∀ x y, x ∉ T → y ∈ T' → ν₀.ν x y = 0)
+    (hν₁ : ∀ x y, x ∉ T → y ∈ T' → ν₁.ν x y = 0) (hη : ∀ x y, x ∉ T → y ∈ T' → η.h x y = 0)
+    (x : T) (y : T') : (η.restrictQuotient T hT T' hT' hν₀ hν₁ hη).h x y = η.h x y :=
+  (rfl)
+
+end ParametrizedCocycle
+
+end Parametrized
 
 /-! ### Action windows -/
 
@@ -484,7 +789,36 @@ theorem m_eq_zero_of_mem_setOf_lt {a : Γ} :
     ∀ x y, x ∈ {x | act x < a} → y ∉ {x | act x < a} → m.m x y = 0 :=
   fun x y hx hy ↦ hm x y (lt_of_lt_of_le hx (not_lt.1 hy))
 
+/-- If the twisted differential does not raise the action, it never enters the generators of
+action `≥ a` from outside. -/
+theorem m_eq_zero_of_notMem_setOf_le {a : Γ} :
+    ∀ x y, x ∉ {x | a ≤ act x} → y ∈ {x | a ≤ act x} → m.m x y = 0 :=
+  fun x y hx hy ↦ m.m_eq_zero_of_mem_setOf_lt hm x y (not_le.1 hx) (not_lt.2 hy)
+
 end TwistingCocycle
+
+section Shift
+
+variable [AddCommGroup Γ] [LinearOrder Γ] [IsOrderedAddMonoid Γ] {actP : P → Γ} {actQ : Q → Γ}
+  {X : Type*} [Zero X] {f : P → Q → X} {δ : Γ}
+
+omit [Fintype P] [Fintype Q] in
+/-- If `f x y = 0` whenever `actP x + δ < actQ y`, then `f` vanishes from the generators of
+action `< a` to those of action `≥ a + δ`. -/
+theorem apply_eq_zero_of_mem_setOf_lt (hf : ∀ x y, actP x + δ < actQ y → f x y = 0) {a : Γ} :
+    ∀ x y, x ∈ {x | actP x < a} → y ∉ {x | actQ x < a + δ} → f x y = 0 :=
+  fun x y hx hy ↦ hf x y <| by
+    calc actP x + δ < a + δ := add_lt_add_left hx δ
+      _ ≤ actQ y := not_lt.1 hy
+
+omit [Fintype P] [Fintype Q] in
+/-- If `f x y = 0` whenever `actP x + δ < actQ y`, then `f` vanishes from outside the generators
+of action `≥ a` to those of action `≥ a + δ`. -/
+theorem apply_eq_zero_of_notMem_setOf_le (hf : ∀ x y, actP x + δ < actQ y → f x y = 0)
+    {a : Γ} : ∀ x y, x ∉ {x | a ≤ actP x} → y ∈ {x | a + δ ≤ actQ x} → f x y = 0 :=
+  fun x y hx hy ↦ apply_eq_zero_of_mem_setOf_lt hf x y (not_le.1 hx) (not_lt.2 hy)
+
+end Shift
 
 namespace ContinuationCocycle
 
@@ -497,9 +831,14 @@ generators of action `< a + δ` from those of action `< a`. -/
 theorem ν_eq_zero_of_mem_setOf_lt (ν : ContinuationCocycle mP mQ) {δ : Γ}
     (hν : ∀ x y, actP x + δ < actQ y → ν.ν x y = 0) {a : Γ} :
     ∀ x y, x ∈ {x | actP x < a} → y ∉ {x | actQ x < a + δ} → ν.ν x y = 0 :=
-  fun x y hx hy ↦ hν x y <| by
-    calc actP x + δ < a + δ := add_lt_add_left hx δ
-      _ ≤ actQ y := not_lt.1 hy
+  apply_eq_zero_of_mem_setOf_lt hν
+
+/-- If the continuation cocycle `ν` raises the action by at most `δ`, it never enters the
+generators of action `≥ a + δ` from outside those of action `≥ a`. -/
+theorem ν_eq_zero_of_notMem_setOf_le (ν : ContinuationCocycle mP mQ) {δ : Γ}
+    (hν : ∀ x y, actP x + δ < actQ y → ν.ν x y = 0) {a : Γ} :
+    ∀ x y, x ∉ {x | a ≤ actP x} → y ∈ {x | a + δ ≤ actQ x} → ν.ν x y = 0 :=
+  apply_eq_zero_of_notMem_setOf_le hν
 
 variable (ν : ContinuationCocycle mP mQ) (hmP : ∀ x y, actP x < actP y → mP.m x y = 0)
   (hmQ : ∀ x y, actQ x < actQ y → mQ.m x y = 0) {δ : Γ}
@@ -536,7 +875,100 @@ theorem actionSublevel_eq_restrictSubcomplex :
         (ν.ν_eq_zero_of_mem_setOf_lt hν) :=
   (rfl)
 
+/-- **The action superlevel of a continuation map.** If the twisted differentials of `mP` and `mQ`
+do not raise the actions and the continuation cocycle `ν` raises the action by at most `δ`, then
+`ν` restricts to a continuation cocycle from the quotient complex of the generators of action
+`≥ a` to that of the generators of action `≥ a + δ`. It is a
+`TauCeti.ContinuationCocycle.restrictQuotient`
+(`TauCeti.ContinuationCocycle.actionSuperlevel_eq_restrictQuotient`). -/
+def actionSuperlevel :
+    ContinuationCocycle
+      (mP.restrict {x | a ≤ actP x}
+        (mP.mul_eq_zero_of_forall_eq_zero' (mP.m_eq_zero_of_notMem_setOf_le hmP)))
+      (mQ.restrict {x | a + δ ≤ actQ x}
+        (mQ.mul_eq_zero_of_forall_eq_zero' (mQ.m_eq_zero_of_notMem_setOf_le hmQ))) :=
+  ν.restrictQuotient _ (mP.m_eq_zero_of_notMem_setOf_le hmP) _
+    (mQ.m_eq_zero_of_notMem_setOf_le hmQ) (ν.ν_eq_zero_of_notMem_setOf_le hν)
+
+@[simp]
+theorem actionSuperlevel_ν (x : {x | a ≤ actP x}) (y : {x | a + δ ≤ actQ x}) :
+    (ν.actionSuperlevel hmP hmQ hν a).ν x y = ν.ν x y :=
+  (rfl)
+
+/-- The action superlevel of `ν` is its restriction to the quotient complexes of generators of
+action `≥ a` and `≥ a + δ`. -/
+theorem actionSuperlevel_eq_restrictQuotient :
+    ν.actionSuperlevel hmP hmQ hν a =
+      ν.restrictQuotient {x | a ≤ actP x} (mP.m_eq_zero_of_notMem_setOf_le hmP)
+        {x | a + δ ≤ actQ x} (mQ.m_eq_zero_of_notMem_setOf_le hmQ)
+        (ν.ν_eq_zero_of_notMem_setOf_le hν) :=
+  (rfl)
+
+/-- **Action sublevels compose.** If `ν` raises the action by at most `δ` and `ν₂` by at most
+`δ₂`, the action sublevel of `ν` at level `a` followed by that of `ν₂` at level `a + δ` is the
+restriction of their composite to the generators of action `< a` and `< a + δ + δ₂`. -/
+theorem actionSublevel_comp [GradedAlgebra 𝒜] (h : IsDGAlgebra 𝒜 d)
+    (ν₂ : ContinuationCocycle mQ mS) (hmS : ∀ x y, actS x < actS y → mS.m x y = 0) {δ₂ : Γ}
+    (hν₂ : ∀ x y, actQ x + δ₂ < actS y → ν₂.ν x y = 0)
+    (hνν₂ : ∀ x y, x ∈ {x | actP x < a} → y ∉ {x | actS x < a + δ + δ₂} →
+      (ν.comp h ν₂).ν x y = 0) :
+    (ν.actionSublevel hmP hmQ hν a).comp h (ν₂.actionSublevel hmQ hmS hν₂ (a + δ)) =
+      (ν.comp h ν₂).restrictSubcomplex {x | actP x < a} (mP.m_eq_zero_of_mem_setOf_lt hmP)
+        {x | actS x < a + δ + δ₂} (mS.m_eq_zero_of_mem_setOf_lt hmS) hνν₂ :=
+  (restrictSubcomplex_comp h ν ν₂ _ _ _ _ _ _ (ν.ν_eq_zero_of_mem_setOf_lt hν)
+    (ν₂.ν_eq_zero_of_mem_setOf_lt hν₂) hνν₂).symm
+
+/-- **Action superlevels compose.** If `ν` raises the action by at most `δ` and `ν₂` by at most
+`δ₂`, the action superlevel of `ν` at level `a` followed by that of `ν₂` at level `a + δ` is the
+restriction of their composite to the generators of action `≥ a` and `≥ a + δ + δ₂`. -/
+theorem actionSuperlevel_comp [GradedAlgebra 𝒜] (h : IsDGAlgebra 𝒜 d)
+    (ν₂ : ContinuationCocycle mQ mS) (hmS : ∀ x y, actS x < actS y → mS.m x y = 0) {δ₂ : Γ}
+    (hν₂ : ∀ x y, actQ x + δ₂ < actS y → ν₂.ν x y = 0)
+    (hνν₂ : ∀ x y, x ∉ {x | a ≤ actP x} → y ∈ {x | a + δ + δ₂ ≤ actS x} →
+      (ν.comp h ν₂).ν x y = 0) :
+    (ν.actionSuperlevel hmP hmQ hν a).comp h (ν₂.actionSuperlevel hmQ hmS hν₂ (a + δ)) =
+      (ν.comp h ν₂).restrictQuotient {x | a ≤ actP x} (mP.m_eq_zero_of_notMem_setOf_le hmP)
+        {x | a + δ + δ₂ ≤ actS x} (mS.m_eq_zero_of_notMem_setOf_le hmS) hνν₂ :=
+  (restrictQuotient_comp h ν ν₂ _ _ _ _ _ _ (ν.ν_eq_zero_of_notMem_setOf_le hν)
+    (ν₂.ν_eq_zero_of_notMem_setOf_le hν₂) hνν₂).symm
+
 end ContinuationCocycle
+
+namespace ParametrizedCocycle
+
+variable [AddCommGroup Γ] [LinearOrder Γ] [IsOrderedAddMonoid Γ]
+  {mP : TwistingCocycle 𝒜 d P ind} {mQ : TwistingCocycle 𝒜 d Q indQ} {actP : P → Γ}
+  {actQ : Q → Γ} (hmP : ∀ x y, actP x < actP y → mP.m x y = 0)
+  (hmQ : ∀ x y, actQ x < actQ y → mQ.m x y = 0) {δ : Γ} {ν₀ ν₁ : ContinuationCocycle mP mQ}
+  (hν₀ : ∀ x y, actP x + δ < actQ y → ν₀.ν x y = 0)
+  (hν₁ : ∀ x y, actP x + δ < actQ y → ν₁.ν x y = 0) (η : ParametrizedCocycle ν₀ ν₁)
+  (hη : ∀ x y, actP x + δ < actQ y → η.h x y = 0) (a : Γ)
+
+/-- The restriction of a parametrized cocycle which raises the action by at most `δ` to the
+generators of action `< a` and `< a + δ`, a parametrized cocycle between the action sublevels. -/
+def actionSublevel :
+    ParametrizedCocycle (ν₀.actionSublevel hmP hmQ hν₀ a) (ν₁.actionSublevel hmP hmQ hν₁ a) :=
+  η.restrictSubcomplex _ _ _ _ _ _ (apply_eq_zero_of_mem_setOf_lt hη)
+
+@[simp]
+theorem actionSublevel_h (x : {x | actP x < a}) (y : {x | actQ x < a + δ}) :
+    (η.actionSublevel hmP hmQ hν₀ hν₁ hη a).h x y = η.h x y :=
+  (rfl)
+
+/-- The restriction of a parametrized cocycle which raises the action by at most `δ` to the
+generators of action `≥ a` and `≥ a + δ`, a parametrized cocycle between the action
+superlevels. -/
+def actionSuperlevel :
+    ParametrizedCocycle (ν₀.actionSuperlevel hmP hmQ hν₀ a)
+      (ν₁.actionSuperlevel hmP hmQ hν₁ a) :=
+  η.restrictQuotient _ _ _ _ _ _ (apply_eq_zero_of_notMem_setOf_le hη)
+
+@[simp]
+theorem actionSuperlevel_h (x : {x | a ≤ actP x}) (y : {x | a + δ ≤ actQ x}) :
+    (η.actionSuperlevel hmP hmQ hν₀ hν₁ hη a).h x y = η.h x y :=
+  (rfl)
+
+end ParametrizedCocycle
 
 end Action
 
@@ -558,6 +990,7 @@ namespace TwistingCocycle
 /-- **The action short complex.** If the twisted differential does not raise the action, the
 inclusion of the twisted complex on the generators of action `< a` followed by the projection
 onto the twisted complex on the generators of action `≥ a`. -/
+@[expose]
 noncomputable def actionShortComplex :
     ShortComplex (CochainComplex (ModuleCat.{max uP uM} R) ℤ) :=
   m.restrictShortComplex hM {x | act x < a} {x | a ≤ act x} (m.m_eq_zero_of_mem_setOf_lt hm)
