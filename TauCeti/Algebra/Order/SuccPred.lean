@@ -5,9 +5,12 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Group.Prod
 public import Mathlib.Algebra.Order.Archimedean.Defs
 public import Mathlib.Algebra.Order.Group.OrderIso
+public import Mathlib.Algebra.Order.Group.Synonym
 public import Mathlib.Order.SuccPred.Basic
+public import TauCeti.Order.SuccPred.Prod
 import Mathlib.Algebra.Order.Monoid.Unbundled.Pow
 import TauCeti.Order.SuccPred.Basic
 
@@ -23,7 +26,9 @@ function `1`, which is not the least positive element when `n ≥ 2`.
 
 Consequently, a linearly ordered commutative monoid with a successor order fails to be
 `Archimedean` if and only if some element exceeds all finite multiples `n • succ 0`
-(`TauCeti.Order.not_archimedean_iff_exists_forall_nsmul_succ_zero_lt`).
+(`TauCeti.Order.not_archimedean_iff_exists_forall_nsmul_succ_zero_lt`). On a lexicographic product
+`α ×ₗ β`, any element with positive first coordinate exceeds every `n • succ 0`
+(`TauCeti.Order.nsmul_succ_zero_lt_toLex_of_pos`).
 -/
 
 public section
@@ -74,5 +79,17 @@ theorem not_archimedean_iff_exists_forall_nsmul_succ_zero_lt
   · have h01 : (0 : α) < succ 0 := lt_succ_self_of_lt (by simpa using ht 0)
     obtain ⟨n, hn⟩ := h.arch t h01
     exact (ht n).not_ge hn
+
+/-- Any positive first coordinate in `α ×ₗ β` strictly exceeds every finite multiple of the least
+positive element `succ 0`. -/
+theorem nsmul_succ_zero_lt_toLex_of_pos {α β : Type*} [AddMonoid α] [Preorder α]
+    [AddMonoid β] [Preorder β] [SuccOrder β] [NoMaxOrder β] {a : α} (ha : 0 < a)
+    (b : β) (n : ℕ) :
+    n • succ (0 : α ×ₗ β) < toLex (a, b) := by
+  have hfst : (ofLex (n • succ (0 : α ×ₗ β))).1 = 0 := by
+    induction n with
+    | zero => simp
+    | succ n ih => simp [succ_nsmul, ih]
+  exact Prod.Lex.lt_iff.2 (.inl (by rw [hfst, ofLex_toLex]; exact ha))
 
 end TauCeti.Order
