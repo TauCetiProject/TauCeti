@@ -9,6 +9,7 @@ public import Mathlib.RingTheory.AdicCompletion.RingHom
 public import TauCeti.RingTheory.Deformation.ArtinLocalAlg
 public import TauCeti.RingTheory.Length
 public import TauCeti.RingTheory.LocalRing.Quotient
+import TauCeti.RingTheory.AdicCompletion.AlgHom
 import TauCeti.RingTheory.AdicCompletion.Nilpotent
 
 /-!
@@ -129,6 +130,11 @@ theorem augmentation_eq_zero_iff {A : CompleteLocalAlg Λ k} {a : A.obj.left} :
     A.augmentation a = 0 ↔ a ∈ maximalIdeal A.obj.left := by
   rw [← RingHom.mem_ker, ker_augmentation]
 
+/-- An element of an object of `\hat{C}_Λ` is a unit exactly when its augmentation is nonzero. -/
+theorem isUnit_iff_augmentation_ne_zero {A : CompleteLocalAlg Λ k} {a : A.obj.left} :
+    IsUnit a ↔ A.augmentation a ≠ 0 := by
+  rw [Ne, augmentation_eq_zero_iff, mem_maximalIdeal, mem_nonunits_iff, not_not]
+
 /-- Morphisms of `\hat{C}_Λ` are determined by their underlying `Λ`-algebra maps. -/
 @[ext]
 theorem hom_ext {A B : CompleteLocalAlg Λ k} {f g : A ⟶ B}
@@ -150,10 +156,8 @@ theorem augmentation_hom_apply {A B : CompleteLocalAlg Λ k} (f : A ⟶ B) (a : 
 /-- Every morphism of `\hat{C}_Λ` is a local homomorphism. -/
 instance isLocalHom {A B : CompleteLocalAlg Λ k} (f : A ⟶ B) : IsLocalHom f.hom.left.hom where
   map_nonunit a ha := by
-    rw [← not_not (a := IsUnit a), ← mem_nonunits_iff, ← mem_maximalIdeal,
-      ← augmentation_eq_zero_iff, ← augmentation_hom_apply f, augmentation_eq_zero_iff,
-      mem_maximalIdeal, mem_nonunits_iff, not_not]
-    exact ha
+    rw [isUnit_iff_augmentation_ne_zero, augmentation_hom_apply] at ha
+    exact isUnit_iff_augmentation_ne_zero.mpr ha
 
 /-- The object of `\hat{C}_Λ` given by a complete Noetherian local `Λ`-algebra `A` and a surjective
 `Λ`-algebra map `π : A → k`. -/
@@ -334,28 +338,28 @@ theorem truncationMap_surjective {m n : ℕ} (h : m ≤ n) :
 /-- The transition morphism from a truncation to itself is the identity. -/
 @[simp]
 theorem truncationMap_refl (n : ℕ) : A.truncationMap le_rfl = 𝟙 (A.truncation n) := by
-  ext x
-  obtain ⟨a, rfl⟩ := Ideal.Quotient.mk_surjective x
-  rw [truncationMap_hom_left_hom_mk, CategoryTheory.ObjectProperty.FullSubcategory.id_hom,
-    Over.id_left, CommAlgCat.hom_id]
-  exact (AlgHom.id_apply _).symm
+  ext : 1
+  exact (ArtinLocalAlg.homMk'_hom_left_hom _ _).trans (Ideal.Quotient.factorₐ_refl _)
 
 /-- Transition morphisms between truncations compose. -/
 @[reassoc (attr := simp)]
 theorem truncationMap_comp_truncationMap {l m n : ℕ} (hlm : l ≤ m) (hmn : m ≤ n) :
     A.truncationMap hmn ≫ A.truncationMap hlm = A.truncationMap (hlm.trans hmn) := by
-  ext x
-  obtain ⟨a, rfl⟩ := Ideal.Quotient.mk_surjective x
-  exact (congrArg _ (A.truncationMap_hom_left_hom_mk hmn a)).trans
-    ((A.truncationMap_hom_left_hom_mk hlm a).trans (A.truncationMap_hom_left_hom_mk _ a).symm)
+  ext : 1
+  exact ((congrArg₂ AlgHom.comp (ArtinLocalAlg.homMk'_hom_left_hom _ _)
+    (ArtinLocalAlg.homMk'_hom_left_hom _ _)).trans (Ideal.Quotient.factorₐ_comp (R₁ := Λ)
+      (Ideal.pow_le_pow_right (I := maximalIdeal A.obj.left) (Nat.succ_le_succ hmn))
+      (Ideal.pow_le_pow_right (Nat.succ_le_succ hlm)))).trans
+    (ArtinLocalAlg.homMk'_hom_left_hom _ _).symm
 
 /-- The quotient morphisms of `A` are compatible with the transition morphisms. -/
 @[reassoc (attr := simp)]
 theorem toTruncation_comp_truncationMap {m n : ℕ} (h : m ≤ n) :
     A.toTruncation n ≫ (toCompleteLocalAlg Λ k).map (A.truncationMap h) = A.toTruncation m := by
-  ext a
-  exact (congrArg _ (A.toTruncation_hom_left_hom_apply n a)).trans
-    ((A.truncationMap_hom_left_hom_mk h a).trans (A.toTruncation_hom_left_hom_apply m a).symm)
+  ext : 1
+  exact (congrArg₂ AlgHom.comp (ArtinLocalAlg.homMk'_hom_left_hom _ _)
+    (homMk'_hom_left_hom _ _)).trans (Ideal.Quotient.factorₐ_comp_mk (R₁ := Λ)
+      (Ideal.pow_le_pow_right (I := maximalIdeal A.obj.left) (Nat.succ_le_succ h)))
 
 /-- The tower `⋯ ⟶ A ⧸ 𝔪_A ^ 3 ⟶ A ⧸ 𝔪_A ^ 2 ⟶ A ⧸ 𝔪_A = k` of truncations of `A` in `C_Λ`. -/
 -- Exposed so that its objects and maps are the truncations and transition morphisms by
@@ -383,42 +387,6 @@ end Truncation
 
 section Limit
 
-section Lift
-
-variable {R B : Type*} [CommRing R] [Algebra Λ R] (I : Ideal R) [CommRing B] [Algebra Λ B]
-  (g : ∀ n : ℕ, B →ₐ[Λ] R ⧸ I ^ (n + 1))
-  (hg : ∀ {m n : ℕ} (h : m ≤ n),
-    (Ideal.Quotient.factorₐ Λ (Ideal.pow_le_pow_right (I := I) (Nat.succ_le_succ h))).comp (g n) =
-      g m)
-
-include hg in
-/-- A family of algebra maps to the quotients `R ⧸ I ^ (n + 1)`, compatible with the transitions,
-gives a family to the quotients `R ⧸ I ^ n`, compatible as in `IsAdicComplete.liftAlgHom`. -/
-private theorem factorₐ_comp_factorₐ_comp {m n : ℕ} (h : m ≤ n) :
-    (Ideal.Quotient.factorₐ Λ (Ideal.pow_le_pow_right (I := I) h)).comp
-        ((Ideal.Quotient.factorₐ Λ (Ideal.pow_le_pow_right n.le_succ)).comp (g n)) =
-      (Ideal.Quotient.factorₐ Λ (Ideal.pow_le_pow_right m.le_succ)).comp (g m) := by
-  ext x
-  rw [← hg h, AlgHom.comp_apply, AlgHom.comp_apply, AlgHom.comp_apply, AlgHom.comp_apply]
-  obtain ⟨a, ha⟩ := Ideal.Quotient.mk_surjective (g n x)
-  simp only [← ha, Ideal.Quotient.factorₐ_apply, Ideal.Quotient.factor_mk]
-
-variable [IsAdicComplete I R]
-
-/-- The algebra map to an adically complete ring assembled from compatible algebra maps to its
-quotients `R ⧸ I ^ (n + 1)`. -/
-private noncomputable def liftSucc : B →ₐ[Λ] R :=
-  IsAdicComplete.liftAlgHom I
-    (fun n ↦ (Ideal.Quotient.factorₐ Λ (Ideal.pow_le_pow_right n.le_succ)).comp (g n))
-    (factorₐ_comp_factorₐ_comp I g hg)
-
-private theorem mk_liftSucc (n : ℕ) (x : B) :
-    Ideal.Quotient.mk (I ^ (n + 1)) (liftSucc I g hg x) = g n x := by
-  rw [liftSucc, IsAdicComplete.mk_liftAlgHom _ _ (factorₐ_comp_factorₐ_comp I g hg),
-    AlgHom.comp_apply, ← hg n.le_succ, AlgHom.comp_apply]
-
-end Lift
-
 variable {A} {B : CompleteLocalAlg Λ k} (s : Cone (A.truncationDiagram ⋙ toCompleteLocalAlg Λ k))
 
 /-- The leg at level `n` of a cone over the tower of truncations of `A`, as an algebra map to
@@ -440,12 +408,12 @@ private theorem coneLeg_compatible {m n : ℕ} (h : m ≤ n) :
 /-- The algebra map from the vertex of a cone over the tower of truncations of `A` to `A`,
 assembled from its legs by completeness of `A`. -/
 private noncomputable def coneLift : s.pt.obj.left →ₐ[Λ] A.obj.left :=
-  liftSucc (maximalIdeal A.obj.left) (coneLeg s) (coneLeg_compatible s)
+  IsAdicComplete.liftAlgHomSucc (maximalIdeal A.obj.left) (coneLeg s) (coneLeg_compatible s)
 
 private theorem mk_coneLift (n : ℕ) (x : s.pt.obj.left) :
     Ideal.Quotient.mk (maximalIdeal A.obj.left ^ (n + 1)) (coneLift s x) =
       (s.π.app (.op n)).hom.left.hom x :=
-  mk_liftSucc _ _ _ n x
+  IsAdicComplete.mk_liftAlgHomSucc _ _ _ n x
 
 variable (A) in
 /-- **Every object of `\hat{C}_Λ` is the limit of its truncations.** A compatible family of
@@ -481,23 +449,10 @@ section Factorization
 `A`: it is local, and the maximal ideal of the Artinian target is nilpotent. -/
 theorem exists_maximalIdeal_pow_le_ker {B : ArtinLocalAlg Λ k}
     (f : A ⟶ (toCompleteLocalAlg Λ k).obj B) :
-    ∃ n, maximalIdeal A.obj.left ^ (n + 1) ≤ RingHom.ker f.hom.left.hom := by
-  -- The underlying map of `f`, with target the underlying ring of `B`.
-  let φ : A.obj.left →ₐ[Λ] B.obj.left := f.hom.left.hom
-  obtain ⟨n, hn⟩ : IsNilpotent (maximalIdeal B.obj.left) := by
-    rw [← ringJacobson_eq_maximalIdeal]
-    exact IsArtinianRing.isNilpotent_jacobson _
-  have hle : maximalIdeal A.obj.left ≤ (maximalIdeal B.obj.left).comap φ := fun a ha ↦ by
-    rw [Ideal.mem_comap, ← ArtinLocalAlg.augmentation_eq_zero_iff]
-    exact (DFunLike.congr_fun (augmentation_toCompleteLocalAlg_obj B).symm _).trans
-      ((augmentation_hom_apply f a).trans (augmentation_eq_zero_iff.mpr ha))
-  have hker : maximalIdeal A.obj.left ^ (n + 1) ≤ RingHom.ker φ := by
-    refine (Ideal.pow_le_pow_right n.le_succ).trans ?_
-    calc maximalIdeal A.obj.left ^ n
-        ≤ ((maximalIdeal B.obj.left).comap φ) ^ n := Ideal.pow_right_mono hle n
-      _ ≤ (maximalIdeal B.obj.left ^ n).comap φ := Ideal.le_comap_pow _ n
-      _ = RingHom.ker φ := by rw [hn, Ideal.zero_eq_bot, RingHom.ker_eq_comap_bot]
-  exact ⟨n, hker⟩
+    ∃ n, maximalIdeal A.obj.left ^ (n + 1) ≤ RingHom.ker f.hom.left.hom :=
+  have : IsArtinianRing ((toCompleteLocalAlg Λ k).obj B).obj.left := B.property.isArtinianRing
+  TauCeti.IsLocalRing.exists_maximalIdeal_pow_le_ker
+    (f.hom.left.hom : A.obj.left →+* ((toCompleteLocalAlg Λ k).obj B).obj.left)
 
 /-- **Factorization through a truncation.** A morphism of `\hat{C}_Λ` from `A` to an object of `C_Λ`
 factors through the quotient morphism to some truncation `A ⧸ 𝔪_A ^ (n + 1)`. -/

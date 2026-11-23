@@ -43,6 +43,8 @@ residue field extension, whose degree is then the rank of a finite free `S`.
   `IsLocalRing.finrank_quotient_map`.
 * `TauCeti.IsLocalRing.isLocalRing_quotient_maximalIdeal_pow`: the truncation `R ⧸ 𝔪_R ^ (n + 1)`
   of a local ring is a local ring.
+* `TauCeti.IsLocalRing.exists_maximalIdeal_pow_le_ker`: a local homomorphism to an Artinian local
+  ring kills a power of the maximal ideal of the source.
 -/
 
 public section
@@ -236,5 +238,19 @@ Noetherian or completeness hypothesis is needed. -/
 instance isLocalRing_quotient_maximalIdeal_pow (n : ℕ) :
     IsLocalRing (R ⧸ maximalIdeal R ^ (n + 1)) :=
   .of_surjective' _ Ideal.Quotient.mk_surjective
+
+/-- A local homomorphism from a local ring `R` to an Artinian local ring kills a power of the
+maximal ideal of `R`, as the maximal ideal of the target is nilpotent. So it factors through a
+truncation `R ⧸ 𝔪_R ^ (n + 1)`. -/
+theorem exists_maximalIdeal_pow_le_ker {S : Type*} [CommRing S] [IsLocalRing S] [IsArtinianRing S]
+    (f : R →+* S) [IsLocalHom f] : ∃ n, maximalIdeal R ^ (n + 1) ≤ RingHom.ker f := by
+  obtain ⟨n, hn⟩ : IsNilpotent (maximalIdeal S) := by
+    rw [← ringJacobson_eq_maximalIdeal]
+    exact IsArtinianRing.isNilpotent_jacobson _
+  refine ⟨n, (Ideal.pow_le_pow_right n.le_succ).trans ?_⟩
+  calc maximalIdeal R ^ n
+      ≤ ((maximalIdeal S).comap f) ^ n := Ideal.pow_right_mono (maximalIdeal_comap f).ge n
+    _ ≤ (maximalIdeal S ^ n).comap f := Ideal.le_comap_pow _ n
+    _ = RingHom.ker f := by rw [hn, Ideal.zero_eq_bot, RingHom.ker_eq_comap_bot]
 
 end TauCeti.IsLocalRing
