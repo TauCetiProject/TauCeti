@@ -61,25 +61,6 @@ theorem unitPeriodMatrixSubgroup_neg_one_one_two_eq_top :
   exact mem_unitPeriodMatrixSubgroup_iff.mpr
     ⟨u, by rw [unitPeriodMatrixHom_apply, hu, MulEquiv.apply_symm_apply]⟩
 
-/-- Transport `unitPeriodMatrixSubgroup a' b' N = ⊤` along equal discriminants using the
-residue-unit quotient identification `residueUnitsQuotientPeriodMatrixEquiv`. -/
-private theorem unitPeriodMatrixSubgroup_eq_top_of_discr_eq {a b a' b' : ℤ} {N : ℕ}
-    (hd : discr a b = discr a' b') (htop : unitPeriodMatrixSubgroup a' b' N = ⊤) :
-    unitPeriodMatrixSubgroup a b N = ⊤ := by
-  obtain ⟨e⟩ := nonempty_algEquiv_int_iff.mpr hd
-  let φ :=
-    (residueUnitsQuotientPeriodMatrixEquiv (RingEquiv.refl (QuadraticAlgebra ℤ a b)) N).symm.trans
-      (residueUnitsQuotientPeriodMatrixEquiv e.toRingEquiv N)
-  rw [eq_top_iff]
-  rintro M -
-  rw [← QuotientGroup.eq_one_iff]
-  apply φ.injective
-  rw [map_one]
-  obtain ⟨M', hM'⟩ := QuotientGroup.mk_surjective
-    (φ (M : periodMatrixGroup (a : ZMod N) (b : ZMod N) ⧸ unitPeriodMatrixSubgroup a b N))
-  rw [← hM', QuotientGroup.eq_one_iff, htop]
-  trivial
-
 /-- For any quadratic algebra of discriminant `-4`, the reduced global-unit subgroup at level `2`
 is the entire multiplication-matrix group. -/
 @[simp]

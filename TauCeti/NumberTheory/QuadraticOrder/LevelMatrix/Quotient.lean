@@ -28,9 +28,10 @@ this induces a canonical group isomorphism (`residueUnitsQuotientPeriodMatrixEqu
 When `discr a b < -4`, the only integral units of `ℤ[ω]` are `±1`
 (`units_eq_one_or_neg_one_of_discr_lt_neg_four`), so `unitPeriodMatrixSubgroup a b N` collapses to
 the scalar sign subgroup `Subgroup.zpowers (-1)` (`unitPeriodMatrixSubgroup_eq_zpowers_neg_one`).
-For the level-`2` specializations (including the Gaussian and Eisenstein exceptions), see
-`TauCeti.NumberTheory.QuadraticOrder.LevelMatrix.Two.Quotient`; for the level-`3` unipotent coset
-representatives over `(a, b) = (0, 0)` in `ZMod 3`, see
+For equal discriminants, `unitPeriodMatrixSubgroup_eq_top_of_discr_eq` transports surjectivity
+(`= ⊤`) across models. For the level-`2` specializations (including the Gaussian and Eisenstein
+exceptions), see `TauCeti.NumberTheory.QuadraticOrder.LevelMatrix.Two.Quotient`; for the level-`3`
+unipotent coset representatives over `(a, b) = (0, 0)` in `ZMod 3`, see
 `TauCeti.NumberTheory.QuadraticOrder.LevelMatrix.Three`.
 
 ## References
@@ -212,5 +213,24 @@ theorem periodMatrixQuotientEquivZpowersNegOne_mk {a b : ℤ} {N : ℕ} {a' b' :
     periodMatrixQuotientEquivZpowersNegOne hd ha hb M =
       (⟨(M : GL (Fin 2) (ZMod N)), by rw [ha, hb]; exact M.property⟩ :
         periodMatrixGroup (a : ZMod N) (b : ZMod N)) := (rfl)
+
+/-- Transport `unitPeriodMatrixSubgroup a' b' N = ⊤` along equal discriminants using the
+residue-unit quotient identification `residueUnitsQuotientPeriodMatrixEquiv`. -/
+theorem unitPeriodMatrixSubgroup_eq_top_of_discr_eq {a b a' b' : ℤ} {N : ℕ}
+    (hd : discr a b = discr a' b') (htop : unitPeriodMatrixSubgroup a' b' N = ⊤) :
+    unitPeriodMatrixSubgroup a b N = ⊤ := by
+  obtain ⟨e⟩ := nonempty_algEquiv_int_iff.mpr hd
+  let φ :=
+    (residueUnitsQuotientPeriodMatrixEquiv (RingEquiv.refl (QuadraticAlgebra ℤ a b)) N).symm.trans
+      (residueUnitsQuotientPeriodMatrixEquiv e.toRingEquiv N)
+  rw [eq_top_iff]
+  rintro M -
+  rw [← QuotientGroup.eq_one_iff]
+  apply φ.injective
+  rw [map_one]
+  obtain ⟨M', hM'⟩ := QuotientGroup.mk_surjective
+    (φ (M : periodMatrixGroup (a : ZMod N) (b : ZMod N) ⧸ unitPeriodMatrixSubgroup a b N))
+  rw [← hM', QuotientGroup.eq_one_iff, htop]
+  trivial
 
 end QuadraticAlgebra
