@@ -14,22 +14,20 @@ public import TauCeti.AlgebraicGeometry.VectorBundle.TotalSpace
 Let `i : X ⟶ Y` be an immersion with conormal sheaf `I/I²`. Its normal sheaf is the relative
 spectrum `N_X Y = Spec_X (Sym (I/I²))` (`AlgebraicGeometry.Scheme.Hom.normalSheafOver`). When
 `I/I²` is finite locally free, as it is for a regular immersion, `N_X Y` is the vector bundle whose
-sheaf of sections is the normal sheaf `(I/I²)^∨`: it is the geometric total space
+sheaf of sections is the dual conormal sheaf `(I/I²)^∨`: it is the geometric total space
 `𝕍((I/I²)^∨) = Spec_X (Sym (I/I²)^∨∨)` of `(I/I²)^∨` (`totalSpaceScheme`), by finite locally free
 biduality `I/I² ≅ (I/I²)^∨∨` (`FiniteLocallyFreeSheaf.evalIso`). This is Fulton's normal bundle.
 
 Consequently, for a scheme `q : T ⟶ X` over `X`, morphisms `T ⟶ N_X Y` over `X` are the global
-sections of `q^* ((I/I²)^∨)` (`normalSheafHomEquiv`).
+sections of the pullback `q^* ((I/I²)^∨)` of the dual conormal sheaf (`normalSheafHomEquiv`).
 
 ## Main declarations
 
 * `AlgebraicGeometry.Scheme.Hom.normalSheafOverIsoTotalSpaceScheme`: if the conormal sheaf of `i`
   is the finite locally free sheaf `E`, the normal sheaf `Spec_X (Sym (I/I²))` is the total space
   of `E^∨`, as affine schemes over `X`.
-* `AlgebraicGeometry.Scheme.Hom.normalSheafIsoTotalSpace`: the same isomorphism of schemes,
-  compatible with the projections to `X` (`normalSheafIsoTotalSpace_hom_comp`).
-* `AlgebraicGeometry.Scheme.Hom.normalSheafHomEquiv`: points of the normal bundle over `X` are
-  sections of the pullback of the normal sheaf `E^∨`.
+* `AlgebraicGeometry.Scheme.Hom.normalSheafHomEquiv`: points of the normal sheaf over `X` are
+  sections of the pullback of the dual conormal sheaf `E^∨`.
 
 ## References
 
@@ -70,33 +68,10 @@ theorem normalSheafOverIsoTotalSpaceScheme_def (E : FiniteLocallyFreeSheaf X)
       ((symmetricAlgebra X).mapIso ((toQuasicoherent X).mapIso (evalIso E).symm ≪≫ e)).op :=
   (rfl)
 
-/-- If the conormal sheaf of `i` is the finite locally free sheaf `E`, the normal sheaf `N_X Y` is
-isomorphic, as a scheme, to the total space of `E^∨`. -/
-def normalSheafIsoTotalSpace (E : FiniteLocallyFreeSheaf X)
-    (e : (toQuasicoherent X).obj E ≅ i.conormal) :
-    i.normalSheaf ≅ ((totalSpaceScheme X).obj (dual E)).left :=
-  (MorphismProperty.Over.forget _ _ X ⋙ Over.forget X).mapIso
-    (i.normalSheafOverIsoTotalSpaceScheme E e)
-
-/-- The scheme isomorphism of the normal sheaf with the total space of `E^∨` is the underlying
-morphism of the isomorphism of affine schemes over `X`. -/
-theorem normalSheafIsoTotalSpace_hom (E : FiniteLocallyFreeSheaf X)
-    (e : (toQuasicoherent X).obj E ≅ i.conormal) :
-    (i.normalSheafIsoTotalSpace E e).hom = (i.normalSheafOverIsoTotalSpaceScheme E e).hom.left :=
-  (rfl)
-
-/-- The isomorphism of the normal sheaf with the total space of `E^∨` lies over `X`. -/
-@[reassoc (attr := simp)]
-theorem normalSheafIsoTotalSpace_hom_comp (E : FiniteLocallyFreeSheaf X)
-    (e : (toQuasicoherent X).obj E ≅ i.conormal) :
-    (i.normalSheafIsoTotalSpace E e).hom ≫ ((totalSpaceScheme X).obj (dual E)).hom =
-      i.normalSheafToBase :=
-  Over.w (i.normalSheafOverIsoTotalSpaceScheme E e).hom.toCommaMorphism
-
-/-- **Points of the normal bundle are sections of the normal sheaf.** If the conormal sheaf of
-`i` is the finite locally free sheaf `E`, then for a scheme `q : T ⟶ X` over `X`, morphisms
-`T ⟶ N_X Y` over `X` are global sections `𝒪_T ⟶ q^* E^∨` of the pullback of the normal sheaf
-`E^∨`. -/
+/-- **Points of the normal sheaf are sections of the dual conormal sheaf.** If the conormal sheaf
+of `i` is the finite locally free sheaf `E`, then for a scheme `q : T ⟶ X` over `X`, morphisms
+`T ⟶ N_X Y` over `X` are global sections `𝒪_T ⟶ q^* E^∨` of the pullback of the dual conormal
+sheaf `E^∨`. -/
 def normalSheafHomEquiv (E : FiniteLocallyFreeSheaf X)
     (e : (toQuasicoherent X).obj E ≅ i.conormal) (T : Over X) :
     (T ⟶ (MorphismProperty.Over.forget _ _ X).obj i.normalSheafOver) ≃
@@ -105,14 +80,23 @@ def normalSheafHomEquiv (E : FiniteLocallyFreeSheaf X)
     ((MorphismProperty.Over.forget _ _ X).mapIso (i.normalSheafOverIsoTotalSpaceScheme E e))).trans
     (totalSpaceHomEquiv (dual E) T)
 
-/-- The section of a point `t : T ⟶ N_X Y` is the section of its image in the total space of
-`E^∨`. -/
+/-- The section of a `T`-point `t : T ⟶ N_X Y` over `X` is the section of its image in the total
+space of `E^∨`. -/
 theorem normalSheafHomEquiv_apply (E : FiniteLocallyFreeSheaf X)
     (e : (toQuasicoherent X).obj E ≅ i.conormal) (T : Over X)
     (t : T ⟶ (MorphismProperty.Over.forget _ _ X).obj i.normalSheafOver) :
     i.normalSheafHomEquiv E e T t = totalSpaceHomEquiv (dual E) T
       (t ≫ (MorphismProperty.Over.forget _ _ X).map
         (i.normalSheafOverIsoTotalSpaceScheme E e).hom) := by
+  simp [normalSheafHomEquiv]
+
+/-- The `T`-point over `X` of a section `s` of `q^* E^∨` is the point of the total space of `E^∨`
+given by `s`, followed by the inverse of the comparison isomorphism. -/
+theorem normalSheafHomEquiv_symm_apply (E : FiniteLocallyFreeSheaf X)
+    (e : (toQuasicoherent X).obj E ≅ i.conormal) (T : Over X)
+    (s : 𝟙_ T.left.Modules ⟶ (Scheme.Modules.pullback T.hom).obj (dual E).obj) :
+    (i.normalSheafHomEquiv E e T).symm s = (totalSpaceHomEquiv (dual E) T).symm s ≫
+      (MorphismProperty.Over.forget _ _ X).map (i.normalSheafOverIsoTotalSpaceScheme E e).inv := by
   simp [normalSheafHomEquiv]
 
 end
