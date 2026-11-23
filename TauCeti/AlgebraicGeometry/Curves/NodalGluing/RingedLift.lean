@@ -92,7 +92,7 @@ the chart source minus the flags is an open set on which the quotient map is inj
 private theorem exists_chartAt_section {y : Σ i, X i} (hy : y ∉ flagPointSet d) :
     ∃ (U : Opens (GluedCurve d)) (g : (sheafedSpace 𝓘(ℂ) d).presheaf.obj (op U)),
       Quotient.mk _ y ∈ U ∧ ∀ (p : Σ i, X i) (hp : Quotient.mk (gluedRelSetoid d) p ∈ U),
-        (quotientSheafSectionsEquiv 𝓘(ℂ) _ U g).1 ⟨p, hp⟩ = chartAt ℂ y p := by
+        (quotientSheafSectionsEquiv 𝓘(ℂ) _ U g).val ⟨p, hp⟩ = chartAt ℂ y p := by
   set S : Set (Σ i, X i) := (chartAt ℂ y).source ∩ (flagPointSet d)ᶜ
   have hSopen : IsOpen S :=
     (chartAt ℂ y).open_source.inter (flagPointSet_finite d).isClosed.isOpen_compl
@@ -108,10 +108,10 @@ private theorem exists_chartAt_section {y : Σ i, X i} (hy : y ∉ flagPointSet 
     rw [← SetLike.mem_coe, Opens.coe_mk, ← Set.mem_preimage, hsat]
   let χ : (holomorphicStructureSheaf 𝓘(ℂ) (Σ i, X i)).obj.obj
       (op ((Opens.map (TopCat.quotientMk (gluedRelSetoid d))).obj U)) :=
-    ofMDifferentiable (fun p ↦ chartAt ℂ y p.1) fun p ↦
+    ofMDifferentiable (fun p ↦ chartAt ℂ y p.val) fun p ↦
       ((mdifferentiableAt_of_mem_maximalAtlas (IsManifold.chart_mem_maximalAtlas y)
-        ((hmemU p.1).mp p.2).1).comp p
-        (contMDiff_subtype_val (n := 1).mdifferentiable one_ne_zero p))
+        ((hmemU p.val).mp p.property).1).comp p
+        (contMDiff_subtypeVal (n := 1).mdifferentiable one_ne_zero p))
   have hχ : χ ∈ quotientSectionSubring 𝓘(ℂ) (gluedRelSetoid d) U := by
     rw [quotientSectionSubring_eq_top_of_injOn]
     · trivial
@@ -121,7 +121,7 @@ private theorem exists_chartAt_section {y : Σ i, X i} (hy : y ∉ flagPointSet 
     (hmemU y).mpr ⟨mem_chart_source ℂ y, hy⟩, fun p hp ↦ ?_⟩
   rw [RingEquiv.apply_symm_apply]
   exact ofMDifferentiable_apply (fun p : (Opens.map (TopCat.quotientMk (gluedRelSetoid d))).obj U ↦
-    chartAt ℂ y p.1) _ ⟨p, hp⟩
+    chartAt ℂ y p.val) _ ⟨p, hp⟩
 
 /-- The normalization lift of an isomorphism of nodal sheafed spaces fixing the constants is
 holomorphic away from the flag points: a chart coordinate at the image point is a section of
@@ -148,11 +148,11 @@ private theorem mdifferentiableOn_liftHomeomorph (φ : sheafedSpace 𝓘(ℂ) d 
     rw [Opens.mem_map, Opens.mem_map, TopCat.quotientMk_apply, ← hL]
     exact hyU
   have hdiff : ContMDiffAt 𝓘(ℂ) 𝓘(ℂ) ω (fun p : (Opens.map (TopCat.quotientMk
-      (gluedRelSetoid d))).obj ((Opens.map φ.hom.hom.base).obj U) ↦ chartAt ℂ (L x) (L p.1))
+      (gluedRelSetoid d))).obj ((Opens.map φ.hom.hom.base).obj U) ↦ chartAt ℂ (L x) (L p.val))
       ⟨x, hxU⟩ :=
     (holomorphicStructureSheaf.contMDiff _).contMDiffAt.congr_of_eventuallyEq
-      (.of_forall fun p ↦ ((quotientSheafSectionsEquiv_app_apply φ.hom hφ U g p (L p.1)
-        (hL p.1)).trans (hg _ _)).symm)
+      (.of_forall fun p ↦ ((quotientSheafSectionsEquiv_app_apply φ.hom hφ U g p (L p.val)
+        (hL p.val)).trans (hg _ _)).symm)
   rw [mdifferentiableAt_iff_target, extChartAt_coe, modelWithCornersSelf_coe]
   exact ⟨L.continuous.continuousAt,
     ((contMDiffAt_subtype_iff (x := ⟨x, hxU⟩)).mp hdiff).mdifferentiableAt (by simp)⟩
@@ -203,7 +203,7 @@ theorem sheafedSpaceHom_ofSheafedSpaceIso :
     refine ((sheafedSpace_map_apply 𝓘(ℂ) d _ _ x).trans
       (pullbackSection_apply _ U g _)).trans ?_
     rw [quotientSheafSectionsEquiv_app_apply φ.hom hφ U g x _
-      (mk_ofSheafedSpaceIso (φ := φ) (hφ := hφ) x.1)]
+      (mk_ofSheafedSpaceIso (φ := φ) (hφ := hφ) x.val)]
 
 /-- **Descent undoes lifting.** The lifted isomorphism induces `φ` itself. -/
 @[simp]

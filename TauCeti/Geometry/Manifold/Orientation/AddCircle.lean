@@ -119,14 +119,14 @@ instance instOrientable : Orientable 𝓘(ℝ) (AddCircle p) :=
 /-- The **positive orientation** of `AddCircle p`: the orientation on which the nowhere-vanishing
 time form `dt_p` is positive. -/
 protected def orientation : Manifold.Orientation 𝓘(ℝ) (AddCircle p) (Fin 1) :=
-  Manifold.Orientation.ofTopForm (Module.finrank_self ℝ) (timeForm p).1
+  Manifold.Orientation.ofTopForm (Module.finrank_self ℝ) (timeForm p).val
     ((timeForm p).isSmoothForm.of_le zero_le) (timeForm_apply_ne_zero p)
 
 /-- A tangent basis of `AddCircle p` is positive for `AddCircle.orientation p` exactly when the
 time form is positive on it. -/
 theorem orientation_eq_orientationAt_orientation_iff {x : AddCircle p}
     (b : Module.Basis (Fin 1) ℝ (TangentSpace 𝓘(ℝ) x)) :
-    b.orientation = (AddCircle.orientation p).orientationAt x ↔ 0 < (timeForm p).1 x b :=
+    b.orientation = (AddCircle.orientation p).orientationAt x ↔ 0 < (timeForm p).val x b :=
   Manifold.Orientation.orientation_eq_orientationAt_ofTopForm_iff _ _ _ b
 
 /-- At every point of `AddCircle p`, whose tangent spaces are read as `ℝ` through the local real

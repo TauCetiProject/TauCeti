@@ -208,7 +208,7 @@ private theorem exists_fieldTwo_row (hF : Fintype.card F = 2) (i : GL2CharacterP
         map_one, map_one, Units.val_one]
     · rw [GL2CuspidalVirtualCharacter_apply_gl2NonSplitTorusHom _ _ hout]
       simp only [hF, map_pow, Units.val_pow_eq_pow_val,
-        fieldTwo_cuspidal_value hF hu hout θ.1 θ.2]
+        fieldTwo_cuspidal_value hF hu hout θ.val θ.property]
       norm_num
 
 /-- The full character table of `GL₂(𝔽₂)`: for any quadratic extension, an enumeration of

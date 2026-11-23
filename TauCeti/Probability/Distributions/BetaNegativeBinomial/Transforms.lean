@@ -59,7 +59,7 @@ theorem hasSum_mgf_id_map_cast_betaNegativeBinomialMeasure (hr : 0 ≤ r) (ha : 
     · trivial
     · exact ht.resolve_left hr0
   have hi : Integrable (fun k : ℕ ↦ Real.exp t ^ k) (betaNegativeBinomialMeasure r a b) := by
-    simpa only [Function.comp_def, id_eq, mul_comm t, Real.exp_nat_mul] using
+    simpa only [Function.comp_def, id_eq, mul_comm t, Real.exp_natCast_mul] using
       (MeasurableEmbedding.natCast.integrable_map_iff.mp hdom)
   rw [mgf_id_map_natCast]
   simpa only [betaNegativeBinomialMeasure_real_singleton hr ha hb] using

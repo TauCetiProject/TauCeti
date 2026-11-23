@@ -58,9 +58,9 @@ theorem twistedProd_def (σ : SmoothTwoForm I M) (τ : SmoothTwoForm J N) :
 @[simp]
 theorem twistedProd_apply (σ : SmoothTwoForm I M) (τ : SmoothTwoForm J N)
     (p : M × N) (v : Fin 2 → TangentSpace (I.prod J) p) :
-    (twistedProd σ τ).1 p v =
-      σ.1 p.1 (fun i ↦ (Manifold.tangentSpaceProdEquiv p (v i)).1) -
-      τ.1 p.2 (fun i ↦ (Manifold.tangentSpaceProdEquiv p (v i)).2) := by
+    (twistedProd σ τ).val p v =
+      σ.val p.1 (fun i ↦ (Manifold.tangentSpaceProdEquiv p (v i)).1) -
+      τ.val p.2 (fun i ↦ (Manifold.tangentSpaceProdEquiv p (v i)).2) := by
   simp only [Manifold.tangentSpaceProdEquiv_apply]
   simp only [twistedProd_def, sub_eq_add_neg, SmoothForm.add_toRoughForm,
     SmoothForm.neg_toRoughForm, Pi.add_apply, Pi.neg_apply,

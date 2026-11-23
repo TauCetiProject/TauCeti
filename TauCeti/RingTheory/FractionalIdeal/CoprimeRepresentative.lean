@@ -89,10 +89,12 @@ theorem exists_coeIdeal_eq_spanSingleton_mul_and_sup_eq_top (J : (FractionalIdea
   -- `y P * x P = r P ∉ P`.
   let ι := {P : Ideal R // P.IsMaximal ∧ 𝔞 ≤ P}
   have : Fintype ι := @Fintype.ofFinite _ h𝔞.to_subtype
-  choose y hy x hx r hr hrP using fun P : ι => exists_mem_inv_exists_mem_mul_notMem J P.2.1.ne_top
+  choose y hy x hx r hr hrP using fun P : ι => exists_mem_inv_exists_mem_mul_notMem J
+      P.property.1.ne_top
   -- Chinese remainder theorem: `e P ≡ 1` modulo `P` and `e P ≡ 0` modulo every other `Q`.
   have hcop : Pairwise (Function.onFun IsCoprime fun P : ι => (P : Ideal R)) := fun P Q hPQ =>
-    Ideal.isCoprime_iff_sup_eq.mpr (P.2.1.coprime_of_ne Q.2.1 (Subtype.coe_injective.ne hPQ))
+    Ideal.isCoprime_iff_sup_eq.mpr (P.property.1.coprime_of_ne Q.property.1
+        (Subtype.coe_injective.ne hPQ))
   choose e he using fun P : ι => Ideal.exists_forall_sub_mem_ideal hcop (Pi.single P 1)
   -- The element `a = ∑ e P * y P` of `J⁻¹` satisfies `a * x P ∉ P` for every `P`.
   set a : K := ∑ Q, algebraMap R K (e Q) * y Q
@@ -111,7 +113,7 @@ theorem exists_coeIdeal_eq_spanSingleton_mul_and_sup_eq_top (J : (FractionalIdea
       have : ∑ Q, e Q * t Q - t P = ∑ Q, (e Q - (Pi.single Q 1 : ι → R) P) * t Q := by
         simp [sub_mul, Pi.single_apply]
       exact this ▸ sum_mem fun Q _ => Ideal.mul_mem_right _ _ (he Q P)
-    simpa [htP] using P.1.sub_mem hsP hsub
+    simpa [htP] using P.val.sub_mem hsP hsub
   obtain ⟨I, hI⟩ := hint ha
   obtain ⟨P, hP, h𝔞P⟩ := Ideal.exists_le_maximal 𝔞 htop
   obtain ⟨s, hs, hsP⟩ := hax ⟨P, hP, h𝔞P⟩

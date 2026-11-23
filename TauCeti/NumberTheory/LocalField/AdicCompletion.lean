@@ -13,8 +13,9 @@ import TauCeti.Topology.Algebra.UniformRing
 # Completing a local field at its maximal ideal
 
 A nonarchimedean local field is already complete for the adic valuation of the maximal ideal of
-its valuation ring. Thus its canonical map to that adic completion is bijective. This allows
-results stated over Dedekind adic completions to be transported back to the original local field.
+its valuation ring. Thus its canonical map to that adic completion is bijective, and so is the
+map from its valuation ring to the ring of integers of the completion. This allows results stated
+over Dedekind adic completions to be transported back to the original local field.
 -/
 
 public section
@@ -45,5 +46,33 @@ theorem bijective_algebraMap_adicCompletion_maximalPrime :
   apply IsDedekindDomain.HeightOneSpectrum.adicCompletion.ext
   rw [IsDedekindDomain.HeightOneSpectrum.algebraMap_adicCompletion_toCompletion]
   simpa [UniformSpace.Completion.algebraMap_def, WithVal.algebraMap_right_apply] using hy
+
+/-- The valuation ring of a local field maps bijectively to the ring of integers of the adic
+completion at its maximal ideal. -/
+theorem bijective_algebraMap_adicCompletionIntegers_maximalPrime :
+    Function.Bijective (algebraMap (valuation K).valuationSubring
+      ((maximalPrime K).adicCompletionIntegers K)) := by
+  set u := maximalPrime K
+  have hcomp (a : (valuation K).valuationSubring) :
+      ((algebraMap _ (u.adicCompletionIntegers K) a : u.adicCompletionIntegers K) :
+        u.adicCompletion K) = algebraMap K (u.adicCompletion K) a := by
+    rw [IsDedekindDomain.HeightOneSpectrum.algebraMap_adicCompletionIntegers_apply,
+      ValuationSubring.algebraMap_apply,
+      IsDedekindDomain.HeightOneSpectrum.algebraMap_adicCompletion, Function.comp_apply,
+      Algebra.algebraMap_self_apply]
+  have hb := bijective_algebraMap_adicCompletion_maximalPrime K
+  refine ⟨fun a b h ↦ Subtype.ext (hb.1 (by rw [← hcomp, ← hcomp, h])), fun x ↦ ?_⟩
+  obtain ⟨y, hy⟩ := hb.2 x
+  -- `y` is integral, since its image `x` is
+  have hy1 : u.valuation K y ≤ 1 := by
+    have hy' := hy
+    rw [IsDedekindDomain.HeightOneSpectrum.algebraMap_adicCompletion, Function.comp_apply,
+      Algebra.algebraMap_self_apply] at hy'
+    rw [← u.valuedAdicCompletion_eq_valuation', hy']
+    exact x.property
+  have hy2 : y ∈ (valuation K).valuationSubring := by
+    rw [← valuationSubring_valuation_maximalPrime K]
+    exact hy1
+  exact ⟨⟨y, hy2⟩, Subtype.ext ((hcomp _).trans hy)⟩
 
 end TauCeti

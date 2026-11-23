@@ -24,8 +24,8 @@ This is the chain-level counterpart of Mathlib's `CategoryTheory.Idempotents.Kar
 construction it follows: the idempotents are split at the level of Hom complexes rather than only
 in an underlying category.  Applied to a pretriangulated envelope it is the candidate DG model of
 an idempotent completion, as for perfect derived categories.  Only closed idempotents are split
-here; `H⁰` of the envelope is compared with the idempotent completion of `H⁰`, where idempotents
-are only idempotent up to homotopy, in `TauCeti.CategoryTheory.DG.Karoubi.HomotopyCategory`.
+here; `H⁰` of the envelope is compared with the idempotent completion of `H⁰` in
+`TauCeti.CategoryTheory.DG.Karoubi.HomotopyCategory`.
 
 The embedding `X ↦ (X, 1)` is a DG functor which is an isomorphism on every Hom complex, hence
 quasi-fully faithful.  Every object of the envelope is a retract, in the category `Z⁰` of closed
@@ -39,6 +39,9 @@ of the envelope splits: `Z⁰` of the envelope is idempotent complete.
 * `TauCeti.DGKaroubi.instDGCategory`: the DG category structure.
 * `TauCeti.DGKaroubi.dgHomVal` and `TauCeti.DGKaroubi.dgHomMk`: the underlying morphism of `C`
   of a morphism of the envelope, and the morphism of the envelope with a given underlying one.
+* `TauCeti.DGKaroubi.homProj` and `TauCeti.DGKaroubi.homComplexRetract`: the projection
+  `f ↦ p ≫ f ≫ q`, and the Hom complex from `P = (X, p)` to `Q = (Y, q)` as a retract of the Hom
+  complex from `X` to `Y`.
 * `TauCeti.DGKaroubi.toDGKaroubi`: the embedding `X ↦ (X, 1)`.
 * `TauCeti.DGKaroubi.closedHomMk`: the closed degree-zero morphism of the envelope with a given
   underlying morphism, and `TauCeti.DGKaroubi.closedHom_ext` its extensionality lemma.
@@ -124,12 +127,8 @@ theorem d_mem_homSubmodule {P Q : DGKaroubi R C} {i j : ℤ} {f : DGHom R i P.X 
   by_cases hij : i + 1 = j
   · subst hij
     refine ⟨?_, ?_⟩
-    · have key := dgDifferential_dgComp R P.p f (zero_add i)
-      rw [hf.1, P.dgDifferential_p, zero_dgComp, zero_add, Int.negOnePow_zero, one_smul] at key
-      exact key.symm
-    · have key := dgDifferential_dgComp R f Q.p (add_zero i)
-      rw [hf.2, Q.dgDifferential_p, dgComp_zero, smul_zero, add_zero] at key
-      exact key.symm
+    · rw [← dgDifferential_dgComp_of_dgDifferential_eq_zero_left R P.dgDifferential_p, hf.1]
+    · rw [← dgDifferential_dgComp_of_dgDifferential_eq_zero_right R f Q.dgDifferential_p, hf.2]
   · rw [(dgHomComplex R P.X Q.X).shape i j hij]
     exact zero_mem _
 
@@ -148,7 +147,7 @@ private noncomputable def dHom (P Q : DGKaroubi R C) (i j : ℤ) :
   ((dgHomComplex R P.X Q.X).d i j).hom.restrict fun _ hf ↦ d_mem_homSubmodule hf
 
 private theorem dHom_apply (P Q : DGKaroubi R C) (i j : ℤ) (f : homSubmodule P Q i) :
-    (dHom P Q i j f).1 = ((dgHomComplex R P.X Q.X).d i j).hom f.1 :=
+    (dHom P Q i j f).val = ((dgHomComplex R P.X Q.X).d i j).hom f.val :=
   (rfl)
 
 private theorem dHom_eq_zero (P Q : DGKaroubi R C) {i j : ℤ}
@@ -176,11 +175,12 @@ private noncomputable def homComplex (P Q : DGKaroubi R C) :
 /-- Composition of morphisms of the Karoubi envelope, computed in `C`. -/
 private noncomputable def comp {P Q S : DGKaroubi R C} (p q n : ℤ) (h : p + q = n) :
     homSubmodule P Q p →ₗ[R] homSubmodule Q S q →ₗ[R] homSubmodule P S n :=
-  LinearMap.mk₂ R (fun f g ↦ ⟨dgComp R f.1 g.1 h, dgComp_mem_homSubmodule f.2 g.2 h⟩)
-    (fun f f' g ↦ Subtype.ext (add_dgComp R f.1 f'.1 g.1 h))
-    (fun r f g ↦ Subtype.ext (smul_dgComp R r f.1 g.1 h))
-    (fun f g g' ↦ Subtype.ext (dgComp_add R f.1 g.1 g'.1 h))
-    (fun r f g ↦ Subtype.ext (dgComp_smul R r f.1 g.1 h))
+  LinearMap.mk₂ R (fun f g ↦ ⟨dgComp R f.val g.val h, dgComp_mem_homSubmodule f.property g.property
+      h⟩)
+    (fun f f' g ↦ Subtype.ext (add_dgComp R f.val f'.val g.val h))
+    (fun r f g ↦ Subtype.ext (smul_dgComp R r f.val g.val h))
+    (fun f g g' ↦ Subtype.ext (dgComp_add R f.val g.val g'.val h))
+    (fun r f g ↦ Subtype.ext (dgComp_smul R r f.val g.val h))
 
 variable (R C) in
 /-- The **Hom-complex data of the DG Karoubi envelope**: the subcomplexes of morphisms absorbing
@@ -190,10 +190,10 @@ noncomputable def homComplexData : DGCategoryData R (DGKaroubi R C) where
   hom := homComplex
   comp := comp
   id P := ⟨P.p, p_mem_homSubmodule P⟩
-  d_comp h f g := Subtype.ext (dgDifferential_dgComp R f.1 g.1 h)
-  comp_assoc hpq hqr h f g k := Subtype.ext (dgComp_assoc R f.1 g.1 k.1 hpq hqr h)
-  id_comp g := Subtype.ext g.2.1
-  comp_id f := Subtype.ext f.2.2
+  d_comp h f g := Subtype.ext (dgDifferential_dgComp R f.val g.val h)
+  comp_assoc hpq hqr h f g k := Subtype.ext (dgComp_assoc R f.val g.val k.val hpq hqr h)
+  id_comp g := Subtype.ext g.property.1
+  comp_id f := Subtype.ext f.property.2
 
 /-- **The DG Karoubi envelope is a differential graded category.** -/
 noncomputable instance instDGCategory : DGCategory R (DGKaroubi R C) :=
@@ -213,20 +213,20 @@ noncomputable def dgHomVal {P Q : DGKaroubi R C} (n : ℤ) :
   (homSubmodule P Q n).subtype ∘ₗ (dgHomEquiv P Q n).toLinearMap
 
 theorem dgHomVal_apply {P Q : DGKaroubi R C} {n : ℤ} (f : DGHom R n P Q) :
-    dgHomVal n f = (dgHomEquiv P Q n f).1 :=
+    dgHomVal n f = (dgHomEquiv P Q n f).val :=
   (rfl)
 
 /-- The morphism of the Karoubi envelope determined by a morphism absorbing the idempotents has
 that morphism as its underlying morphism. -/
 @[simp]
 theorem dgHomVal_dgHomEquiv_symm_apply {P Q : DGKaroubi R C} {n : ℤ}
-    (f : homSubmodule P Q n) : dgHomVal n ((dgHomEquiv P Q n).symm f) = f.1 :=
+    (f : homSubmodule P Q n) : dgHomVal n ((dgHomEquiv P Q n).symm f) = f.val :=
   (rfl)
 
 /-- The underlying morphism of a morphism of the Karoubi envelope absorbs both idempotents. -/
 theorem dgHomVal_mem {P Q : DGKaroubi R C} {n : ℤ} (f : DGHom R n P Q) :
     dgHomVal n f ∈ homSubmodule P Q n :=
-  (dgHomEquiv P Q n f).2
+  (dgHomEquiv P Q n f).property
 
 @[simp]
 theorem p_dgComp_dgHomVal {P Q : DGKaroubi R C} {n : ℤ} (f : DGHom R n P Q) :
@@ -309,6 +309,124 @@ theorem dgHomMk_dgComp {P Q S : DGKaroubi R C} {p q n : ℤ} (f : DGHom R p P.X 
 /-- The idempotent of `P`, as an endomorphism of `P`, is the identity of `P`. -/
 theorem dgHomMk_p (P : DGKaroubi R C) : dgHomMk P.p (p_mem_homSubmodule P) = dgId R P :=
   dgHom_ext (by rw [dgHomVal_dgHomMk, dgHomVal_dgId])
+
+/-! ### The Hom complex as a retract -/
+
+/-- The morphism `p ≫ f ≫ q` absorbs both idempotents. -/
+theorem p_dgComp_dgComp_p_mem_homSubmodule (P Q : DGKaroubi R C) {n : ℤ}
+    (f : DGHom R n P.X Q.X) :
+    dgComp R P.p (dgComp R f Q.p (add_zero n)) (zero_add n) ∈ homSubmodule P Q n := by
+  refine mem_homSubmodule.2 ⟨?_, ?_⟩
+  · rw [← dgComp_assoc R P.p P.p _ (zero_add 0) (zero_add n) (by omega), P.idem]
+  · rw [dgComp_assoc R P.p _ Q.p (zero_add n) (add_zero n) (by omega),
+      dgComp_assoc R f Q.p Q.p (add_zero n) (zero_add 0) (by omega), Q.idem]
+
+/-- The differential commutes with `f ↦ p ≫ f ≫ q`, since `p` and `q` are closed of degree
+zero. -/
+theorem dgDifferential_p_dgComp_dgComp_p (P Q : DGKaroubi R C) {n : ℤ}
+    (f : DGHom R n P.X Q.X) :
+    dgDifferential R n (dgComp R P.p (dgComp R f Q.p (add_zero n)) (zero_add n)) =
+      dgComp R P.p (dgComp R (dgDifferential R n f) Q.p (add_zero (n + 1))) (zero_add (n + 1)) := by
+  rw [dgDifferential_dgComp_of_dgDifferential_eq_zero_left R P.dgDifferential_p,
+    dgDifferential_dgComp_of_dgDifferential_eq_zero_right R f Q.dgDifferential_p]
+
+/-- The projection `f ↦ p ≫ f ≫ q` from the morphisms of degree `n` between the underlying
+objects onto the morphisms of degree `n` of the Karoubi envelope. -/
+noncomputable def homProj (P Q : DGKaroubi R C) (n : ℤ) :
+    DGHom R n P.X Q.X →ₗ[R] DGHom R n P Q where
+  toFun f := dgHomMk _ (p_dgComp_dgComp_p_mem_homSubmodule P Q f)
+  map_add' f g := dgHom_ext <| by simp only [dgHomVal_dgHomMk, add_dgComp, dgComp_add, map_add]
+  map_smul' r f := dgHom_ext <| by
+    simp only [dgHomVal_dgHomMk, smul_dgComp, dgComp_smul, map_smul, RingHom.id_apply]
+
+/-- The underlying morphism of the projection of `f` is `p ≫ f ≫ q`. -/
+@[simp]
+theorem dgHomVal_homProj (P Q : DGKaroubi R C) {n : ℤ} (f : DGHom R n P.X Q.X) :
+    dgHomVal n (homProj P Q n f) = dgComp R P.p (dgComp R f Q.p (add_zero n)) (zero_add n) :=
+  dgHomVal_dgHomMk _ _
+
+/-- The projection `f ↦ p ≫ f ≫ q` is the identity on morphisms of the Karoubi envelope. -/
+@[simp]
+theorem homProj_dgHomVal {P Q : DGKaroubi R C} {n : ℤ} (f : DGHom R n P Q) :
+    homProj P Q n (dgHomVal n f) = f :=
+  dgHom_ext <| by rw [dgHomVal_homProj, dgHomVal_dgComp_p, p_dgComp_dgHomVal]
+
+/-- The projection `f ↦ p ≫ f ≫ q` commutes with the differential. -/
+@[simp]
+theorem homProj_dgDifferential (P Q : DGKaroubi R C) {n : ℤ} (f : DGHom R n P.X Q.X) :
+    homProj P Q (n + 1) (dgDifferential R n f) = dgDifferential R n (homProj P Q n f) :=
+  dgHom_ext <| by
+    rw [dgHomVal_dgDifferential, dgHomVal_homProj, dgHomVal_homProj,
+      dgDifferential_p_dgComp_dgComp_p]
+
+/-- **The Hom complex of the Karoubi envelope is a retract of the Hom complex of the underlying
+objects.**  The inclusion takes a morphism to its underlying morphism, and the retraction is the
+projection `f ↦ p ≫ f ≫ q`. -/
+noncomputable def homComplexRetract (P Q : DGKaroubi R C) :
+    Retract (dgHomComplex R P Q) (dgHomComplex R P.X Q.X) where
+  i :=
+    { f n := ModuleCat.ofHom (dgHomVal n)
+      comm' n m hnm := by
+        obtain rfl : n + 1 = m := hnm
+        ext f
+        -- Both sides unfold to the differential of the Hom complexes applied as linear maps.
+        exact (dgHomVal_dgDifferential f).symm }
+  r :=
+    { f n := ModuleCat.ofHom (homProj P Q n)
+      comm' n m hnm := by
+        obtain rfl : n + 1 = m := hnm
+        ext f
+        -- Both sides unfold to the differential of the Hom complexes applied as linear maps.
+        exact (homProj_dgDifferential P Q f).symm }
+  retract := by
+    ext n f
+    exact homProj_dgHomVal f
+
+/-- The inclusion of `homComplexRetract P Q` takes a morphism to its underlying morphism. -/
+@[simp]
+theorem homComplexRetract_i_f_apply (P Q : DGKaroubi R C) {n : ℤ} (f : DGHom R n P Q) :
+    ((homComplexRetract P Q).i.f n).hom f = dgHomVal n f :=
+  (rfl)
+
+/-- The retraction of `homComplexRetract P Q` is the projection `f ↦ p ≫ f ≫ q`. -/
+@[simp]
+theorem homComplexRetract_r_f_apply (P Q : DGKaroubi R C) {n : ℤ} (f : DGHom R n P.X Q.X) :
+    ((homComplexRetract P Q).r.f n).hom f = homProj P Q n f :=
+  (rfl)
+
+/-! ### Closed morphisms of degree zero -/
+
+/-- The idempotent of an object of the Karoubi envelope is closed of degree zero. -/
+theorem p_mem_dgCycles (P : DGKaroubi R C) : P.p ∈ dgCycles R P.X P.X :=
+  (mem_dgCycles R).2 P.dgDifferential_p
+
+/-- The underlying morphism of a closed morphism of degree zero of the Karoubi envelope is
+closed. -/
+theorem dgHomVal_mem_dgCycles {P Q : DGKaroubi R C} {f : DGHom R 0 P Q}
+    (hf : f ∈ dgCycles R P Q) : dgHomVal 0 f ∈ dgCycles R P.X Q.X :=
+  homComplexRetract_i_f_apply P Q f ▸ map_mem_dgCycles R (homComplexRetract P Q).i hf
+
+/-- A morphism of degree zero of the Karoubi envelope is closed exactly when its underlying
+morphism is closed in `C`. -/
+theorem dgHomVal_mem_dgCycles_iff {P Q : DGKaroubi R C} {f : DGHom R 0 P Q} :
+    dgHomVal 0 f ∈ dgCycles R P.X Q.X ↔ f ∈ dgCycles R P Q := by
+  rw [mem_dgCycles, mem_dgCycles, ← dgHomVal_dgDifferential,
+    dgHomVal_injective.eq_iff' (map_zero _)]
+
+/-- **A closed morphism of the Karoubi envelope is a boundary exactly when its underlying morphism
+is a boundary in `C`.**  If `dgHomVal f = d h`, then `f = d (homProj h)`. -/
+theorem dgHomVal_mem_dgBoundaries_iff {P Q : DGKaroubi R C} {f : DGHom R 0 P Q} :
+    dgHomVal 0 f ∈ dgBoundaries R P.X Q.X ↔ f ∈ dgBoundaries R P Q := by
+  refine ⟨fun hf ↦ ?_, fun hf ↦ ?_⟩
+  · obtain ⟨h, hh⟩ := (mem_dgBoundaries R).1 hf
+    exact (mem_dgBoundaries R).2 ⟨homProj P Q (-1) h, by rw [← homProj_dgDifferential]; simp [hh]⟩
+  · obtain ⟨h, rfl⟩ := (mem_dgBoundaries R).1 hf
+    exact (mem_dgBoundaries R).2 ⟨dgHomVal (-1) h, (dgHomVal_dgDifferential h).symm⟩
+
+/-- The projection `f ↦ p ≫ f ≫ q` of a closed morphism of degree zero is closed. -/
+theorem homProj_mem_dgCycles {P Q : DGKaroubi R C} {f : DGHom R 0 P.X Q.X}
+    (hf : f ∈ dgCycles R P.X Q.X) : homProj P Q 0 f ∈ dgCycles R P Q :=
+  homComplexRetract_r_f_apply P Q f ▸ map_mem_dgCycles R (homComplexRetract P Q).r hf
 
 /-! ### The embedding -/
 
@@ -428,7 +546,7 @@ theorem closedHomMk_comp {P Q S : DGKaroubi R C} (f : DGHom R 0 P.X Q.X)
     (hg : g ∈ homSubmodule Q S 0) (hdg : dgDifferential R 0 g = 0) :
     closedHomMk f hf hdf ≫ closedHomMk g hg hdg =
       closedHomMk (dgComp R f g (zero_add 0)) (dgComp_mem_homSubmodule hf hg _)
-        (by rw [dgDifferential_dgComp, hdf, hdg, zero_dgComp, dgComp_zero, smul_zero, add_zero]) :=
+        (by rw [dgDifferential_dgComp_of_dgDifferential_eq_zero_left R hdf, hdg, dgComp_zero]) :=
   closedHom_ext <| by
     rw [dgHomVal_dgClosedHom_comp, dgHomVal_dgClosedHom_closedHomMk,
       dgHomVal_dgClosedHom_closedHomMk, dgHomVal_dgClosedHom_closedHomMk]
