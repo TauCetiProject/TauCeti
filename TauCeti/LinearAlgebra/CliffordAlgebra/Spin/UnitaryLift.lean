@@ -144,7 +144,7 @@ private theorem det_spinCOfPair (p : unitary ℍ[ℝ] × Circle) :
   apply Circle.ext
   rw [spinCOfPair_apply, spinCGroup.det_mk, UnitaryGroup.coe_detCircle,
     Quaternion.coe_unitaryProdCircleToUnitaryGroup_apply, det_smul,
-    Quaternion.det_toComplexMatrix, (Quaternion.mem_unitary_iff_normSq_eq_one _).mp p.1.2]
+    Quaternion.det_toComplexMatrix, (Quaternion.mem_unitary_iff_normSq_eq_one _).mp p.1.property]
   simp
 
 /-! ### Complex coordinates in a frame and the lift -/

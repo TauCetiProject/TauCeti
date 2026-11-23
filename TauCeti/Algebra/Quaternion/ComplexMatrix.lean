@@ -365,7 +365,8 @@ noncomputable def unitaryProdCircleToUnitaryGroup :
     unitary ℍ[ℝ] × Circle →* Matrix.unitaryGroup (Fin 2) ℂ where
   toFun p := ⟨(p.2 : ℂ) • toComplexMatrix (p.1 : ℍ[ℝ]),
     Unitary.smul_mem_of_mem p.2.coe_mem_unitary
-      (Matrix.specialUnitaryGroup_le_unitaryGroup (mem_specialUnitaryGroup_toComplexMatrix p.1.2))⟩
+      (Matrix.specialUnitaryGroup_le_unitaryGroup
+        (mem_specialUnitaryGroup_toComplexMatrix p.1.property))⟩
   map_one' := Subtype.ext (by simp)
   map_mul' p q := Subtype.ext (by
     simp only [Prod.fst_mul, Prod.snd_mul, Submonoid.coe_mul, Circle.coe_mul, map_mul]
