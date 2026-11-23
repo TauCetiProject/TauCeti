@@ -275,10 +275,12 @@ theorem satisfiesStrongMTW_norm_sub_sq_div_two_iff {U V : Set F} (hU : U.Nonempt
   obtain ⟨ζ, hζ⟩ := exists_linearIndependent_pair_of_one_lt_rank hF hξ
   -- Project `ζ` onto the subspace orthogonal to `ξ`; the result is nonzero and orthogonal to `ξ`.
   set ζ' := (ℝ ∙ ξ)ᗮ.starProjection ζ with hζ'_eq
+  -- `ζ'` vanishes only on `(ℝ ∙ ξ)ᗮᗮ = ℝ ∙ ξ`, which does not contain `ζ`.
   have hζ' : ζ' ≠ 0 := fun h0 ↦ by
-    rw [hζ'_eq, Submodule.starProjection_orthogonal_val, sub_eq_zero,
-      Submodule.starProjection_singleton] at h0
-    exact (LinearIndependent.pair_iff' hξ).1 hζ _ h0.symm
+    rw [hζ'_eq, Submodule.starProjection_apply_eq_zero_iff, Submodule.orthogonal_orthogonal,
+      Submodule.mem_span_singleton] at h0
+    obtain ⟨a, ha⟩ := h0
+    exact (LinearIndependent.pair_iff' hξ).1 hζ a ha
   have hξζ' : innerSL ℝ ζ' ξ = 0 :=
     Submodule.mem_orthogonal_singleton_iff_inner_left.1 ((ℝ ∙ ξ)ᗮ.starProjection_apply_mem ζ)
   have hη : innerSL ℝ ζ' ≠ 0 := by

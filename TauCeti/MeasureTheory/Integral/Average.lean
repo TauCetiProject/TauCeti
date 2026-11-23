@@ -124,14 +124,16 @@ applied to an integrable function that is almost everywhere at least `a`.
   `TauCeti.setIntegral_norm_sub_setAverage_sq_le_setIntegral_norm_sub_sq`: in an inner product
   space the square mean oscillation about a constant splits orthogonally, so the average is the
   best constant, with no loss.
-* `TauCeti.setIntegral_norm_sub_starProjection_setAverage_sq_le`: among the constants in a
-  subspace `K` over `ℝ` or `ℂ`, the projection of the average onto `K` is the best constant.
+* `TauCeti.setIntegral_norm_sub_starProjection_setAverage_sq_le`: for `f` almost everywhere
+  strongly measurable on a set `s` of finite measure and a subspace `K` over `ℝ` or `ℂ` that admits
+  an orthogonal projection, the projection of the average onto `K` is the best constant in `K`.
 * `TauCeti.setIntegral_norm_sub_setAverage_sq_le_add_of_subset`: the decay of the square mean
   oscillation from `t` to `s ⊆ t` passes from a comparison function `H` to `f`.
 * `TauCeti.setIntegral_norm_sub_starProjection_setAverage_sq_le_of_subset`,
-  `TauCeti.setIntegral_norm_sub_inner_setAverage_div_smul_sq_le_of_subset`: among the constants in
-  `K`, or the real multiples of `ν`, the integrated squared error on `s` of the projection of the
-  average of `f` over `s ⊆ t` is at most the integrated squared error on `t` of any of them.
+  `TauCeti.setIntegral_norm_sub_inner_setAverage_div_smul_sq_le_of_subset`: for `s ⊆ t` with
+  `μ t < ∞` and `f` square integrable on `t`, among the constants in `K`, or the real multiples of
+  `ν`, the integrated squared error on `s` of the projection of the average of `f` over `s` is at
+  most the integrated squared error on `t` of any of them.
 * `TauCeti.setIntegral_norm_sub_toLp_fst_setAverage_sq_le`: for a function with values in the
   Euclidean product `ℝ × E`, the best constant of the form `(c, 0)`.
 * `TauCeti.sq_setAverage_norm_le_setAverage_norm_sq`: Jensen's inequality

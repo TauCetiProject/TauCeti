@@ -27,7 +27,8 @@ vector followed by a linearly independent family in its orthogonal complement is
 independent.
 
 In a seminormed inner product space, the explicit projection `z - (⟪ν, z⟫ / ‖ν‖²) ν` is orthogonal
-to `ν` and does not increase norms. In a normed space it is `z - (𝕜 ∙ ν).starProjection z`.
+to `ν` and does not increase norms. In a normed space it is `z - (𝕜 ∙ ν).starProjection z`, and a
+linear map `ℓ` takes the projection of `a` onto the line `𝕜 ∙ ν` to `⟪ν, a⟫ • ℓ (ν / ‖ν‖²)`.
 
 For a family of subspaces `K x` of a finite-dimensional real inner product space whose orthogonal
 projections are continuous at `x₀`, projecting linearly independent vectors of `K x₀` onto `K x`
@@ -49,8 +50,7 @@ same side of the orthogonal hyperplane is transitive, and `⟪P x, y⟫² = ⟪P
 
 The orthogonal complement `Kᗮ` has the dimension of the quotient `E ⧸ K`. A linear isometry
 equivalence `e` carries the projection onto `K` to the projection onto its image:
-`⟪P_{e K} (e x), e y⟫ = ⟪P_K x, y⟫`. A linear map `ℓ` takes the projection of `a` onto a line
-`𝕜 ∙ ν` to `⟪ν, a⟫ • ℓ (ν / ‖ν‖²)`.
+`⟪P_{e K} (e x), e y⟫ = ⟪P_K x, y⟫`.
 
 Since the kernel of `P_V` is `Vᗮ`, the projection `P_V` is injective on `U` exactly when no
 nonzero vector of `U` is orthogonal to `V`. In that case the rank of `U` is at most that of
@@ -101,6 +101,8 @@ AIQ-Kitware DKPS formalization (Apache-2.0; Jon Crall and GPT-6).
 * `TauCeti.inner_sub_div_norm_sq_smul_self_eq_zero`, `TauCeti.norm_sub_div_norm_sq_smul_self_le`:
   the explicit projection `z - (⟪ν, z⟫ / ‖ν‖²) ν` is orthogonal to `ν` and does not increase
   norms, in a seminormed inner product space.
+* `TauCeti.apply_starProjection_singleton`: a linear map `ℓ` at the projection onto the line
+  `𝕜 ∙ ν` is `⟪ν, a⟫ • ℓ (ν / ‖ν‖²)`.
 * `TauCeti.eventually_linearIndependent_starProjection_apply`,
   `TauCeti.eventually_linearIndependent_and_span_starProjection`: projected bases of a
   continuously varying family of subspaces stay linearly independent, and stay bases under a
@@ -129,8 +131,6 @@ AIQ-Kitware DKPS formalization (Apache-2.0; Jon Crall and GPT-6).
 * `Submodule.finrank_orthogonal_eq_finrank_quotient`: `dim Kᗮ = dim (E ⧸ K)`.
 * `Submodule.inner_starProjection_map_apply`: `⟪P_{e K} (e x), e y⟫ = ⟪P_K x, y⟫` for a linear
   isometry equivalence `e`.
-* `Submodule.apply_starProjection_singleton`: a linear map `ℓ` at the projection onto the line
-  `𝕜 ∙ ν` is `⟪ν, a⟫ • ℓ (ν / ‖ν‖²)`.
 * `Submodule.injOn_starProjection_iff_disjoint`: `P_V` is injective on `U` if and only if
   `U ⊓ Vᗮ = ⊥`.
 * `Submodule.rank_le_of_disjoint_orthogonal`: if `U ⊓ Vᗮ = ⊥`, then `rank U ≤ rank V`.
@@ -471,13 +471,6 @@ theorem inner_starProjection_map_apply {E' : Type*} [NormedAddCommGroup E']
       ⟪K.starProjection x, y⟫_𝕜 := by
   rw [starProjection_map_apply, e.symm_apply_apply, e.inner_map_map]
 
-/-- A linear map at the projection of `a` onto the line `𝕜 ∙ ν` is
-`⟪ν, a⟫ • ℓ (ν / ‖ν‖²)`. -/
-theorem apply_starProjection_singleton {M F : Type*} [AddCommMonoid M] [Module 𝕜 M]
-    [FunLike F E M] [LinearMapClass F 𝕜 E M] (ℓ : F) (ν a : E) :
-    ℓ ((𝕜 ∙ ν).starProjection a) = ⟪ν, a⟫_𝕜 • ℓ (((‖ν‖ : 𝕜) ^ 2)⁻¹ • ν) := by
-  rw [starProjection_singleton, RCLike.ofReal_pow, div_eq_mul_inv, ← smul_smul, map_smul]
-
 section Real
 
 variable {F : Type*} [NormedAddCommGroup F] [InnerProductSpace ℝ F]
@@ -614,6 +607,13 @@ theorem norm_sub_div_norm_sq_smul_self_le (z ν : E) :
 end Seminormed
 
 variable {𝕜 E : Type*} [RCLike 𝕜] [NormedAddCommGroup E] [InnerProductSpace 𝕜 E]
+
+/-- A linear map at the projection of `a` onto the line `𝕜 ∙ ν` is
+`⟪ν, a⟫ • ℓ (ν / ‖ν‖²)`. -/
+theorem apply_starProjection_singleton {M F : Type*} [AddCommMonoid M] [Module 𝕜 M]
+    [FunLike F E M] [LinearMapClass F 𝕜 E M] (ℓ : F) (ν a : E) :
+    ℓ ((𝕜 ∙ ν).starProjection a) = ⟪ν, a⟫_𝕜 • ℓ (((‖ν‖ : 𝕜) ^ 2)⁻¹ • ν) := by
+  rw [Submodule.starProjection_singleton, RCLike.ofReal_pow, div_eq_mul_inv, ← smul_smul, map_smul]
 
 /-- Fewer than `dim E` vectors have a common nonzero orthogonal vector: the orthogonal complement
 of their span is nontrivial. -/

@@ -81,7 +81,7 @@ theorem sum_apply_mul_inner_sub_sum_apply_mul_inner_starProjection {F : Type*} [
   -- The two sums are `ℓ a` and `ℓ (P a)`, and `a - P a` is the projection of `a` onto `𝕜 ∙ ν`.
   rw [b.sum_apply_mul_inner, b.sum_apply_mul_inner_starProjection, ← map_sub,
     Submodule.starProjection_orthogonal_val (K := 𝕜 ∙ ν), sub_sub_cancel,
-    Submodule.apply_starProjection_singleton, smul_eq_mul, mul_comm]
+    TauCeti.apply_starProjection_singleton, smul_eq_mul, mul_comm]
 
 /-- The vectors of an orthonormal basis have unit length, so `∑ i, ⟪b i, b i⟫ = card ι`. -/
 theorem sum_inner_self (b : OrthonormalBasis ι 𝕜 E) : ∑ i, ⟪b i, b i⟫_𝕜 = Fintype.card ι := by
@@ -133,7 +133,7 @@ theorem bilin_eq_inner_mul_sum_add_sum_sum_inner_starProjection (u : Orthonormal
     simp only [← Finset.mul_sum, v.sum_apply_mul_inner]
     simpa only [LinearMap.flip_apply, mul_comm] using
       u.sum_apply_mul_inner_starProjection (B.flip w) (𝕜 ∙ ν)ᗮ g
-  have hν := Submodule.apply_starProjection_singleton (B.flip w) ν g
+  have hν := TauCeti.apply_starProjection_singleton (B.flip w) ν g
   simp only [LinearMap.flip_apply, smul_eq_mul] at hν
   rw [v.sum_apply_mul_inner, hP, ← hν, ← LinearMap.add_apply, ← map_add,
     (𝕜 ∙ ν).starProjection_add_starProjection_orthogonal g]
