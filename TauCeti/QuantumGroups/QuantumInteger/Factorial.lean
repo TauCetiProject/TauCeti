@@ -285,8 +285,9 @@ theorem quantumDividedPower_mem_graded {ι S : Type*} [AddMonoid ι]
   rw [quantumDividedPower_def]
   exact SMulMemClass.smul_mem _ (SetLike.pow_mem_graded n hx)
 
-/-- The quantum divided power of a homogeneous direct-sum injection `DirectSum.of` lies in the
-scaled degree `n • c`. -/
+/-- The `n`-th quantum divided power of a homogeneous direct-sum injection
+`DirectSum.of (fun c => 𝒜 c) c x` equals the direct-sum injection of the underlying divided power
+`quantumDividedPower u (x : A) n` into degree `n • c`. -/
 @[simp]
 theorem quantumDividedPower_of {Γ : Type*} [AddMonoid Γ] [DecidableEq Γ]
     {𝒜 : Γ → Submodule K A} [SetLike.GradedMonoid 𝒜]

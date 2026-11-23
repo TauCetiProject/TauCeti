@@ -10,6 +10,7 @@ public import Mathlib.RingTheory.GradedAlgebra.AlgHom
 public import Mathlib.RingTheory.GradedAlgebra.Basic
 public import TauCeti.QuantumGroups.QuantizedEnvelopingAlgebra.Basic
 public import TauCeti.RingTheory.GradedAlgebra.Generators
+public import TauCeti.RingTheory.GradedAlgebra.Rescale
 
 import Mathlib.Algebra.Ring.Action.ConjAct
 import TauCeti.Algebra.DirectSum.Internal
@@ -86,6 +87,8 @@ theorem gradedPiece_def (D : CartanDatum ι X Y) (q : K) (c : ι →₀ ℤ) :
 
 variable {D : CartanDatum ι X Y} {q : K}
 
+/-- The product of a generator list `l` lies in `gradedPiece D q c` when the sum of its formal
+generator degrees equals `c`. -/
 theorem word_mem_gradedPiece {c : ι →₀ ℤ} {l : List (Generator ι Y)}
     (hl : (l.map generatorDegree).sum = c) :
     (l.map (generator D q)).prod ∈ gradedPiece D q c :=
@@ -276,6 +279,51 @@ theorem mul_k_of_mem_gradedPiece {c : ι →₀ ℤ} (y : Y)
     ← mul_assoc (k D q (-y)), h, mul_smul_comm]
 
 end Pieces
+
+section RescaleChar
+
+variable {ι K : Type*} [Field K]
+
+/-- The additive character `c ↦ ∏ i ∈ c.support, (s i : K) ^ c i` on `ι →₀ ℤ` induced by a family
+of unit scalars `s : ι → Kˣ`, bundled as a monoid homomorphism `(ι → Kˣ) →* AddChar (ι →₀ ℤ) K`. -/
+noncomputable def rescaleChar : (ι → Kˣ) →* AddChar (ι →₀ ℤ) K where
+  toFun s :=
+    (Units.coeHom K).compAddChar
+      (AddChar.toAddMonoidHomEquiv.symm
+        (Finsupp.linearCombination ℤ (fun i => Additive.ofMul (s i))).toAddMonoidHom)
+  map_one' := by
+    ext c
+    simp [Finsupp.linearCombination_apply]
+  map_mul' s t := by
+    ext c
+    simp only [MonoidHom.compAddChar_apply, Function.comp_apply,
+      AddChar.toAddMonoidHomEquiv_symm_apply, LinearMap.toAddMonoidHom_coe,
+      Finsupp.linearCombination_apply, Finsupp.sum, toMul_sum, toMul_zsmul, toMul_ofMul,
+      Pi.mul_apply, mul_zpow, Finset.prod_mul_distrib, mul_apply]
+    simp only [map_mul, map_prod, map_zpow, Units.coeHom_apply]
+
+/-- Evaluating `rescaleChar s` at `c : ι →₀ ℤ` gives the finite product
+`∏ i ∈ c.support, (s i : K) ^ c i`. -/
+theorem rescaleChar_apply (s : ι → Kˣ) (c : ι →₀ ℤ) :
+    rescaleChar s c = ∏ i ∈ c.support, (s i : K) ^ c i := by
+  simp only [rescaleChar, MonoidHom.coe_mk, OneHom.coe_mk, MonoidHom.compAddChar_apply,
+    Function.comp_apply, AddChar.toAddMonoidHomEquiv_symm_apply, LinearMap.toAddMonoidHom_coe,
+    Finsupp.linearCombination_apply, Finsupp.sum, toMul_sum, toMul_zsmul, toMul_ofMul,
+    map_prod, map_zpow, Units.coeHom_apply]
+
+/-- On a basis vector `Finsupp.single i 1`, `rescaleChar s` evaluates to `(s i : K)`. -/
+@[simp]
+theorem rescaleChar_single (s : ι → Kˣ) (i : ι) :
+    rescaleChar s (Finsupp.single i 1) = s i := by
+  simp [rescaleChar, Finsupp.linearCombination_single]
+
+/-- On `-Finsupp.single i 1`, `rescaleChar s` evaluates to `(s i : K)⁻¹`. -/
+@[simp]
+theorem rescaleChar_neg_single (s : ι → Kˣ) (i : ι) :
+    rescaleChar s (-Finsupp.single i 1) = (s i : K)⁻¹ := by
+  simp [rescaleChar, Finsupp.linearCombination_single]
+
+end RescaleChar
 
 section GradedAlgebra
 
@@ -471,46 +519,32 @@ theorem coe_decompose_map {X' Y' : Type*} [AddCommGroup X'] [AddCommGroup Y']
   (GradedRingHom.map_directSumDecompose (gradedPiece D q) (gradedPiece D' q)
     (mapGradedAlgHom φ q).toGradedRingHom).symm
 
-/-- Diagonal rescaling `rescale D q s` as a graded `K`-algebra endomorphism on `gradedPiece D q`. -/
-noncomputable def rescaleGradedAlgHom (D : CartanDatum ι X Y) (q : K) (s : ι → Kˣ) :
-    gradedPiece D q →ₐᵍ[K] gradedPiece D q where
-  __ := (rescale D q s).toAlgHom
-  map_mem hx := rescale_mem_gradedPiece s hx
-
-/-- The underlying `K`-algebra homomorphism of `rescaleGradedAlgHom D q s` is
-`(rescale D q s).toAlgHom`. -/
+/-- The underlying `K`-algebra homomorphism of
+`TauCeti.GradedAlgebra.rescale (gradedPiece D q) (rescaleChar s)` is `(rescale D q s).toAlgHom`. -/
 @[simp]
-theorem rescaleGradedAlgHom_toAlgHom (D : CartanDatum ι X Y) (q : K) (s : ι → Kˣ) :
-    (rescaleGradedAlgHom D q s).toAlgHom = (rescale D q s).toAlgHom :=
-  (rfl)
+theorem gradedAlgebraRescale_toAlgHom (D : CartanDatum ι X Y) (q : K) (s : ι → Kˣ) :
+    (TauCeti.GradedAlgebra.rescale (gradedPiece D q) (rescaleChar s)).toAlgHom =
+      (rescale D q s).toAlgHom := by
+  ext i
+  · simp [TauCeti.GradedAlgebra.rescale_of_mem _ _ (e_mem_gradedPiece i)]
+  · simp [TauCeti.GradedAlgebra.rescale_of_mem _ _ (f_mem_gradedPiece i)]
+  · simp [TauCeti.GradedAlgebra.rescale_of_mem _ _ (k_mem_gradedPiece i)]
 
-/-- Evaluating `rescaleGradedAlgHom D q s` agrees with `rescale D q s`. -/
+/-- Evaluating `TauCeti.GradedAlgebra.rescale (gradedPiece D q) (rescaleChar s)` agrees with
+`rescale D q s`. -/
 @[simp]
-theorem rescaleGradedAlgHom_apply (D : CartanDatum ι X Y) (q : K) (s : ι → Kˣ)
-    (x : QuantizedEnvelopingAlgebra D q) :
-    rescaleGradedAlgHom D q s x = rescale D q s x :=
-  (rfl)
+theorem gradedAlgebraRescale_apply (s : ι → Kˣ) (x : QuantizedEnvelopingAlgebra D q) :
+    TauCeti.GradedAlgebra.rescale (gradedPiece D q) (rescaleChar s) x = rescale D q s x :=
+  AlgHom.congr_fun (gradedAlgebraRescale_toAlgHom D q s) x
 
-/-- Rescaling by the constant-`1` family is the identity graded algebra endomorphism. -/
+/-- Diagonal rescaling `rescale D q s` multiplies the degree-`c` homogeneous component of `x` by
+`∏ i ∈ c.support, (s i : K) ^ c i`. -/
 @[simp]
-theorem rescaleGradedAlgHom_one (D : CartanDatum ι X Y) (q : K) :
-    rescaleGradedAlgHom D q 1 = GradedAlgHom.id K (gradedPiece D q) :=
-  GradedAlgHom.coe_toAlgHom_injective (by ext <;> simp)
-
-/-- Rescaling by the pointwise product `s * t` equals the composite of the two graded algebra
-endomorphisms. -/
-theorem rescaleGradedAlgHom_mul (D : CartanDatum ι X Y) (q : K) (s t : ι → Kˣ) :
-    rescaleGradedAlgHom D q (s * t) =
-      (rescaleGradedAlgHom D q s).comp (rescaleGradedAlgHom D q t) :=
-  GradedAlgHom.coe_toAlgHom_injective (by ext <;> simp [smul_smul, mul_comm])
-
-/-- `rescale D q s` commutes with homogeneous projections onto `gradedPiece D q`. -/
-@[simp]
-theorem coe_decompose_rescale (s : ι → Kˣ) (x : QuantizedEnvelopingAlgebra D q) (c : ι →₀ ℤ) :
-    (decompose (gradedPiece D q) (rescale D q s x) c : QuantizedEnvelopingAlgebra D q) =
-      rescale D q s (decompose (gradedPiece D q) x c : QuantizedEnvelopingAlgebra D q) :=
-  (GradedRingHom.map_directSumDecompose (gradedPiece D q) (gradedPiece D q)
-    (rescaleGradedAlgHom D q s).toGradedRingHom).symm
+theorem decompose_rescale (s : ι → Kˣ) (x : QuantizedEnvelopingAlgebra D q) (c : ι →₀ ℤ) :
+    decompose (gradedPiece D q) (rescale D q s x) c =
+      (∏ i ∈ c.support, (s i : K) ^ c i) • decompose (gradedPiece D q) x c := by
+  simp only [← gradedAlgebraRescale_apply, TauCeti.GradedAlgebra.decompose_rescale,
+    rescaleChar_apply]
 
 /-- The degree-`c` component of `chevalleyInvolution D q x` is the image of the degree-`(-c)`
 component of `x`. -/
@@ -529,4 +563,21 @@ theorem coe_decompose_chevalleyInvolution (x : QuantizedEnvelopingAlgebra D q) (
   simpa only [AddMonoidHom.coe_ofClass] using h.symm
 
 end GradedAlgebra
+
+section HomogeneousRescale
+
+variable {ι X Y K : Type*} [AddCommGroup X] [AddCommGroup Y] [Field K]
+  {D : CartanDatum ι X Y} {q : K}
+
+/-- On any homogeneous element `x ∈ gradedPiece D q c`, diagonal rescaling `rescale D q s` acts
+by multiplication by `∏ i ∈ c.support, (s i : K) ^ c i`. -/
+theorem rescale_of_mem_gradedPiece (s : ι → Kˣ) {c : ι →₀ ℤ}
+    {x : QuantizedEnvelopingAlgebra D q} (hx : x ∈ gradedPiece D q c) :
+    rescale D q s x = (∏ i ∈ c.support, (s i : K) ^ c i) • x := by
+  classical
+  rw [← gradedAlgebraRescale_apply,
+    TauCeti.GradedAlgebra.rescale_of_mem (gradedPiece D q) (rescaleChar s) hx, rescaleChar_apply]
+
+end HomogeneousRescale
+
 end TauCeti.QuantizedEnvelopingAlgebra

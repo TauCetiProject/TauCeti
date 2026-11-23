@@ -121,7 +121,8 @@ theorem serreSum_mem_graded {A Γ S : Type*} [Semiring A] [Algebra K A] [AddComm
 
 /-- For any family of submodules `𝒜 : Γ → Submodule K A` forming a `SetLike.GradedMonoid` over a
 commutative additive monoid `Γ`, the quantum Serre combination of direct-sum injections
-`DirectSum.of (fun c' => 𝒜 c') (c l) (x l)` lies in degree `D.serreLength i j • c i + c j`. -/
+`DirectSum.of (fun c' => 𝒜 c') (c l) (x l)` equals the direct-sum injection of the underlying
+`serreSum` into degree `D.serreLength i j • c i + c j`. -/
 @[simp]
 theorem serreSum_of {A Γ : Type*} [Semiring A] [Algebra K A] [AddCommMonoid Γ] [DecidableEq Γ]
     {𝒜 : Γ → Submodule K A} [SetLike.GradedMonoid 𝒜]
