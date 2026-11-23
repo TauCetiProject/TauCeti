@@ -5,16 +5,12 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.CharP.Lemmas
-public import Mathlib.RingTheory.RegularLocalRing.Defs
-public import Mathlib.RingTheory.RingHom.Flat
 public import TauCeti.RingTheory.RegularLocalRing.Frobenius
 import Mathlib.RingTheory.KrullDimension.Field
 import TauCeti.Algebra.CharP.Frobenius.Flat
 import TauCeti.Algebra.CharP.Lemmas
 import TauCeti.RingTheory.AdicCompletion.Flat.Frobenius
 import TauCeti.RingTheory.AdicCompletion.LocalRing
-import TauCeti.RingTheory.Flat.ProjectiveDimension
 import TauCeti.RingTheory.KrullDimension.PowerSeries
 import TauCeti.RingTheory.LocalRing.CoefficientField
 import TauCeti.RingTheory.Perfect.IsPRadical

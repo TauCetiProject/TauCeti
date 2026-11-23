@@ -52,11 +52,8 @@ variable {R S : Type*} [CommRing R] [CommRing S] [Algebra R S]
 theorem flat_localRingHom_iff (p : Ideal R) [p.IsPrime] (q : Ideal S) [q.IsPrime]
     (h : p = q.comap (algebraMap R S)) :
     (localRingHom p q (algebraMap R S) h).Flat ↔ Module.Flat R (Localization.AtPrime q) := by
-  rw [← RingHom.Flat.comp_algebraMap_isLocalization_iff p.primeCompl]
-  have hcomp : (localRingHom p q (algebraMap R S) h).comp (algebraMap R (Localization.AtPrime p)) =
-      algebraMap R (Localization.AtPrime q) := by
-    ext r
-    simp [localRingHom_to_map, IsScalarTower.algebraMap_apply R S (Localization.AtPrime q)]
-  rw [hcomp, RingHom.flat_algebraMap_iff]
+  rw [← RingHom.Flat.comp_algebraMap_isLocalization_iff p.primeCompl, Localization.localRingHom,
+    IsLocalization.map_comp, ← IsScalarTower.algebraMap_eq R S (Localization.AtPrime q),
+    RingHom.flat_algebraMap_iff]
 
 end Localization

@@ -87,6 +87,7 @@ theorem ringKrullDim_of_isNoetherianRing_of_finite [IsNoetherianRing R] [Finite 
 
 /-- **The dimension of a multivariate power series ring.** Over a Noetherian ring `R`, the Krull
 dimension of `MvPowerSeries σ R` is `dim R + ENat.card σ`. -/
+@[simp low]
 theorem ringKrullDim_of_isNoetherianRing [IsNoetherianRing R] :
     ringKrullDim (MvPowerSeries σ R) = ringKrullDim R + ENat.card σ := by
   rcases subsingleton_or_nontrivial R with _ | _
@@ -101,7 +102,9 @@ theorem ringKrullDim_of_isNoetherianRing [IsNoetherianRing R] :
     have hle (n : ℕ) : (n : WithBot ℕ∞) ≤ ringKrullDim (MvPowerSeries σ R) := by
       let e : Fin n ↪ σ := Fin.valEmbedding.trans (Infinite.natEmbedding σ)
       have hsurj : Function.Surjective (killCompl (R := R) e).toRingHom :=
-        Function.RightInverse.surjective (killCompl_rename_app (e := e))
+        Function.RightInverse.surjective (g := rename e) fun p ↦ by
+          simpa only [AlgHom.toRingHom_eq_coe, AlgHom.coe_toRingHom] using
+            killCompl_rename_app (e := e) p
       calc (n : WithBot ℕ∞)
         _ = 0 + (n : WithBot ℕ∞) := (zero_add _).symm
         _ ≤ ringKrullDim R + Nat.card (Fin n) := by

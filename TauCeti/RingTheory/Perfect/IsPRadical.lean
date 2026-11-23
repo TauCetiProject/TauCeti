@@ -28,6 +28,9 @@ for the empty scheme.
 * `IsPRadical.isIntegral`: a `p`-radical ring map is integral.
 * `IsPRadical.bijective_comp`: if `p = 0` in `K` and `M` is a perfect ring, then precomposition
   with a `p`-radical map `i : K →+* L` is a bijection `(L →+* M) → (K →+* M)`.
+* `PerfectRing.mem_range_lift_iff`: an element lies in the image of a perfection lift along a
+  `p`-radical map from a perfect source iff some `p ^ n`-th power lies in the image of the base
+  map.
 * `PerfectRing.surjective_lift_iff`: a lift along a `p`-radical map from a perfect source is
   surjective iff every target element has a `p ^ n`-th power in the image of the base map.
 * `PerfectRing.surjective_lift_comp`: a surjective ring homomorphism induces a surjective map
@@ -67,17 +70,18 @@ theorem bijective_comp [hp : Fact p.Prime] (hK : (p : K) = 0) [PerfectRing M p] 
         map_mul' _ _ := Subsingleton.elim _ _
         map_zero' := rfl
         map_add' _ _ := Subsingleton.elim _ _ }, RingHom.ext fun _ ↦ Subsingleton.elim _ _⟩
-  -- Any ring map `K →+* M` forces `p = 0` in `M`.
-  have hM (j : K →+* M) : CharP M p :=
+  -- Any ring map `K →+* M` forces `p = 0` in `K` and `M`.
+  have hKchar (j : K →+* M) : Nontrivial K ∧ CharP K p :=
     have : Nontrivial K := j.domain_nontrivial
-    have : CharP K p := (CharP.charP_iff_prime_eq_zero hp.out).2 hK
+    ⟨‹_›, (CharP.charP_iff_prime_eq_zero hp.out).2 hK⟩
+  have hM (j : K →+* M) : CharP M p :=
+    have ⟨_, _⟩ := hKchar j
     j.charP_of_prime p hp.out
   refine ⟨fun f g hfg ↦ ?_, fun j ↦ ?_⟩
   · have := hM (f.comp i)
     exact IsPRadical.injective_comp_of_perfect M i p hfg
   have := hM j
-  have : Nontrivial K := j.domain_nontrivial
-  have : CharP K p := (CharP.charP_iff_prime_eq_zero hp.out).2 hK
+  obtain ⟨_, _⟩ := hKchar j
   -- `L` is nonzero: otherwise `1` lies in the kernel of `i`, so `1` would be `p`-nilpotent.
   have : Nontrivial L := by
     refine (subsingleton_or_nontrivial L).resolve_left fun _ ↦ ?_
@@ -89,6 +93,23 @@ theorem bijective_comp [hp : Fact p.Prime] (hK : (p : K) = 0) [PerfectRing M p] 
 
 end IsPRadical
 
+/-- **Pointwise image of a perfection lift**: if `i : K →+* L` is `p`-radical with `L` perfect and
+`L'` is perfect, then an element `z : L'` lies in the image of `PerfectRing.lift i g p` if and
+only if some `p ^ n`-th power of `z` lies in the image of `g`. -/
+theorem PerfectRing.mem_range_lift_iff {K L L' : Type*} [CommRing K] [CommRing L] [CommRing L']
+    (i : K →+* L) (g : K →+* L') (p : ℕ) [ExpChar K p] [ExpChar L p] [PerfectRing L p]
+    [IsPRadical i p] [ExpChar L' p] [PerfectRing L' p] (z : L') :
+    z ∈ Set.range (PerfectRing.lift i g p) ↔ ∃ (n : ℕ) (a : K), g a = z ^ p ^ n := by
+  refine ⟨fun ⟨x, hx⟩ ↦ ?_, fun ⟨n, a, ha⟩ ↦ ?_⟩
+  · obtain ⟨n, a, ha⟩ := IsPRadical.pow_mem i p x
+    exact ⟨n, a, by
+      simpa only [PerfectRing.lift_comp_apply, map_pow, hx] using
+        congrArg (PerfectRing.lift i g p) ha⟩
+  · obtain ⟨x, hx⟩ := (bijective_iterateFrobenius L p n).2 (i a)
+    refine ⟨x, (bijective_iterateFrobenius L' p n).1 ?_⟩
+    simp only [iterateFrobenius_def] at hx ⊢
+    rw [← map_pow, hx, PerfectRing.lift_comp_apply, ha]
+
 /-- **Surjectivity of a perfection lift**: if `i : K →+* L` is `p`-radical with `L` perfect and
 `L'` is perfect, then `PerfectRing.lift i g p` is surjective if and only if every element of `L'`
 has a `p ^ n`-th power in the image of `g`. -/
@@ -96,18 +117,8 @@ theorem PerfectRing.surjective_lift_iff {K L L' : Type*} [CommRing K] [CommRing 
     (i : K →+* L) (g : K →+* L') (p : ℕ) [ExpChar K p] [ExpChar L p] [PerfectRing L p]
     [IsPRadical i p] [ExpChar L' p] [PerfectRing L' p] :
     Function.Surjective (PerfectRing.lift i g p) ↔
-      ∀ z : L', ∃ (n : ℕ) (a : K), g a = z ^ p ^ n := by
-  refine ⟨fun h z ↦ ?_, fun h z ↦ ?_⟩
-  · obtain ⟨x, hx⟩ := h z
-    obtain ⟨n, a, ha⟩ := IsPRadical.pow_mem i p x
-    refine ⟨n, a, ?_⟩
-    rw [← PerfectRing.lift_comp_apply i g p a, ha, map_pow, hx]
-  · obtain ⟨n, a, ha⟩ := h z
-    refine ⟨(iterateFrobeniusEquiv L p n).symm (i a), ?_⟩
-    have hpow : i a = ((iterateFrobeniusEquiv L p n).symm (i a)) ^ p ^ n := by
-      rw [← iterateFrobeniusEquiv_def, RingEquiv.apply_symm_apply]
-    rw [PerfectRing.lift_apply i g p _ n a hpow, ha, ← iterateFrobeniusEquiv_def,
-      RingEquiv.symm_apply_apply]
+      ∀ z : L', ∃ (n : ℕ) (a : K), g a = z ^ p ^ n :=
+  forall_congr' fun z ↦ PerfectRing.mem_range_lift_iff i g p z
 
 /-- **Perfect closures preserve surjections**: if `f : K →+* K'` is surjective and `i : K →+* L`,
 `j : K' →+* L'` are perfect closures, then the induced map `L →+* L'` is surjective. -/
