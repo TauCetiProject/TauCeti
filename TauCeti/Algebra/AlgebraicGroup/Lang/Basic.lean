@@ -137,7 +137,7 @@ theorem toConv_comp_twistedLangAlgHom {A : Type w} [CommSemiring A] [Algebra K A
     toConv (x.ofConv.comp (twistedLangAlgHom φ a)) =
       x * AlgHom.mapValue (Algebra.ofId K A) a * (BialgHom.mapDomain φ x)⁻¹ := by
   have hmap := congrArg (AlgHom.mapValue (H := H) x.ofConv) (toConv_twistedLangAlgHom φ a)
-  rw [map_mul, map_mul, map_inv, WithConv.mapValue_algebraOfId] at hmap
+  rw [map_mul, map_mul, map_inv, AlgHom.mapValue_mapValue_ofId] at hmap
   simpa only [AlgHom.mapValue_apply, ofConv_toConv, AlgHom.comp_id, toConv_ofConv,
     BialgHom.mapDomain_apply] using hmap
 

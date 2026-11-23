@@ -104,7 +104,8 @@ theorem exists_mem_pow_sub_mem_pow_succ {I : Ideal R} {J : Ideal S} (f : R →+*
     (hcot : ∀ y ∈ J, ∃ x ∈ I, y - f x ∈ J ^ 2) :
     ∀ n : ℕ, ∀ y ∈ J ^ n, ∃ x ∈ I ^ n, y - f x ∈ J ^ (n + 1)
   | 0, y, _ => by
-    obtain ⟨x, hx⟩ := Ideal.exists_sub_mem_of_surjective_quotientMap hquot y
+    obtain ⟨x, hx⟩ := Ideal.exists_sub_mem_of_surjective_quotient_mk_comp
+      (hquot.comp Ideal.Quotient.mk_surjective) y
     exact ⟨x, by simp, by simpa using hx⟩
   | 1, y, hy => by
     simpa only [pow_one] using hcot y (by simpa only [pow_one] using hy)
