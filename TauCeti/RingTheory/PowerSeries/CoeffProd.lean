@@ -54,6 +54,8 @@ commutative ring.
   `X ^ (n + 1)` do not affect the `n`-th coefficient of a finite product.
 * `PowerSeries.coeff_prod_sum_type`: the coefficients of a product over `σ ⊕ τ` of mapped factors
   are a convolution over the antidiagonal.
+* `PowerSeries.coeff_prod_eq_sum_sym`: the `n`-th coefficient of a finite product `∏ i ∈ s, f i`
+  expressed as a sum over `s.sym n`.
 * `PowerSeries.coeff_one_prod_sum_one_sub_X_pow_mul_two`: twice the linear coefficient of
   `∏_{i ∈ s} ∑_{j < dᵢ} (1 - X) ^ j` is `-(∏ dᵢ) ∑ (dᵢ - 1)`.
 -/
@@ -108,6 +110,30 @@ theorem coeff_prod_sum_type {A B : Type*} [CommSemiring A] [CommSemiring B] {σ 
     coeff n (∏ k, h k) = ∑ p ∈ antidiagonal n,
       φ (coeff p.1 (∏ i, f i)) * ψ (coeff p.2 (∏ j, g j)) := by
   simp only [Fintype.prod_sum_type, hf, hg, ← map_prod, coeff_mul, coeff_map]
+
+private theorem map_sym_eq_piAntidiag_apply [DecidableEq ι] (n : ℕ) (k : Sym ι n) (i : ι) :
+    (⟨fun m a ↦ m.val.count a, Multiset.count_injective.comp Sym.coe_injective⟩ :
+        Sym ι n ↪ (ι → ℕ)) k i =
+      Multiset.count i (k : Multiset ι) := by
+  simp only [Function.Embedding.coeFn_mk, Sym.val_eq_coe]
+
+/-- **Symmetric-power expansion of a product coefficient.** The `n`-th coefficient of a finite
+product `∏ i ∈ s, f i` is the sum over `k ∈ s.sym n` of the product of the `Multiset.count i k`-th
+coefficients of the factors `f i`. -/
+theorem coeff_prod_eq_sum_sym [DecidableEq ι] (s : Finset ι) (f : ι → R⟦X⟧) (n : ℕ) :
+    coeff n (∏ i ∈ s, f i) =
+      ∑ k ∈ s.sym n, ∏ i ∈ s, coeff (Multiset.count i (k : Multiset ι)) (f i) := by
+  calc coeff n (∏ i ∈ s, f i)
+      = ∑ l ∈ s.finsuppAntidiag n, ∏ i ∈ s, coeff (l i) (f i) :=
+        coeff_prod f n s
+    _ = ∑ l ∈ s.piAntidiag n, ∏ i ∈ s, coeff (l i) (f i) := by
+        rw [Finset.finsuppAntidiag, Finset.sum_map,
+          ← Finset.sum_attach (s.piAntidiag n) (fun l ↦ ∏ i ∈ s, coeff (l i) (f i))]
+        simp
+    _ = ∑ k ∈ s.sym n, ∏ i ∈ s, coeff (Multiset.count i (k : Multiset ι)) (f i) := by
+        rw [← Finset.map_sym_eq_piAntidiag, Finset.sum_map]
+        refine sum_congr rfl fun k _ ↦ prod_congr rfl fun i _ ↦ ?_
+        rw [map_sym_eq_piAntidiag_apply]
 
 section Ring
 

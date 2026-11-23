@@ -212,10 +212,16 @@ noncomputable def mapOfSpanSingleton (hI : DividedPowers I) (f : A →+* B)
     rw [← mul_assoc, principalDpow_mul, principalDpow_mul, mul_pow, mul_assoc]
   mul_dpow {m n z} hz := by
     obtain ⟨b, rfl⟩ := exists_mul_map_of_mem_span_singleton f hIx hz
-    rw [principalDpow_mul, principalDpow_mul, principalDpow_mul,
-      mul_mul_mul_comm, ← pow_add, ← map_mul, hI.mul_dpow (mem_of_eq_span_singleton hIx),
-      map_mul, map_natCast]
-    ring
+    simp only [principalDpow_mul]
+    have hmul : f (hI.dpow m x) * f (hI.dpow n x) =
+        ((m + n).choose m : B) * f (hI.dpow (m + n) x) := by
+      rw [← map_mul, hI.mul_dpow (mem_of_eq_span_singleton hIx), map_mul, map_natCast]
+    calc (b ^ m * f (hI.dpow m x)) * (b ^ n * f (hI.dpow n x))
+        = b ^ m * b ^ n * (f (hI.dpow m x) * f (hI.dpow n x)) := by ring
+      _ = b ^ m * b ^ n * (((m + n).choose m : B) * f (hI.dpow (m + n) x)) := by rw [hmul]
+      _ = ((m + n).choose m : B) * (b ^ (m + n) * f (hI.dpow (m + n) x)) := by
+          rw [pow_add]
+          ring
   dpow_comp {m n z} hn hz := by
     obtain ⟨b, rfl⟩ := exists_mul_map_of_mem_span_singleton f hIx hz
     obtain ⟨a, ha⟩ := exists_dpow_eq_mul hI hIx hn
@@ -239,13 +245,17 @@ noncomputable def mapOfSpanSingleton (hI : DividedPowers I) (f : A →+* B)
       _ = (Nat.uniformBell m n : B) * principalDpow hI f hIx (m * n) (b * f x) := by
           rw [principalDpow_mul]
 
+private theorem mapOfSpanSingleton_dpow (hI : DividedPowers I) (f : A →+* B)
+    {x : A} (hIx : I = Ideal.span {x}) :
+    (hI.mapOfSpanSingleton f hIx).dpow = principalDpow hI f hIx :=
+  rfl
+
 /-- The formula for `DividedPowers.mapOfSpanSingleton` on a multiple `b * f x` of the generator. -/
 @[simp]
 theorem mapOfSpanSingleton_dpow_mul (hI : DividedPowers I) (f : A →+* B)
     {x : A} (hIx : I = Ideal.span {x}) (b : B) (n : ℕ) :
     (hI.mapOfSpanSingleton f hIx).dpow n (b * f x) = b ^ n * f (hI.dpow n x) := by
-  rw [mapOfSpanSingleton]
-  exact principalDpow_mul hI f hIx b n
+  rw [mapOfSpanSingleton_dpow, principalDpow_mul]
 
 /-- `f` is a divided power morphism from `(I, hI)` to `(I.map f, hI.mapOfSpanSingleton f hIx)`. -/
 theorem isDPMorphism_mapOfSpanSingleton (hI : DividedPowers I) (f : A →+* B)
@@ -330,8 +340,8 @@ theorem extensionCoeff_empty {ι : Type*} [DecidableEq ι] (hI : DividedPowers I
 theorem extensionCoeff_singleton {ι : Type*} [DecidableEq ι] (hI : DividedPowers I) (f : A →+* B)
     (n : ℕ) (i : ι) (b : ι → B) (x : ι → A) :
     extensionCoeff hI f n {i} b x = b i ^ n * f (hI.dpow n (x i)) := by
-  rw [extensionCoeff_def, Finset.sym_singleton, sum_singleton, prod_singleton]
-  simp [Sym.replicate]
+  rw [extensionCoeff_def, Finset.sym_singleton, sum_singleton, prod_singleton,
+    Sym.coe_replicate, Multiset.count_replicate_self]
 
 /-- In positive degree, `extensionCoeff` of elements in `I` lies in `I.map f`. -/
 theorem extensionCoeff_mem {ι : Type*} [DecidableEq ι] (hI : DividedPowers I) (f : A →+* B)
@@ -380,22 +390,6 @@ private theorem constantCoeff_rescale_map_exp (hI : DividedPowers I) (f : A →+
   rw [← PowerSeries.coeff_zero_eq_constantCoeff_apply, coeff_rescale_map_exp, pow_zero, one_mul,
     hI.dpow_zero hx, map_one]
 
-private theorem coeff_prod_eq_sum_sym {R ι : Type*} [CommSemiring R] [DecidableEq ι]
-    (s : Finset ι) (g : ι → PowerSeries R) (n : ℕ) :
-    PowerSeries.coeff n (∏ i ∈ s, g i) =
-      ∑ k ∈ s.sym n, ∏ i ∈ s, PowerSeries.coeff (Multiset.count i k) (g i) := by
-  calc PowerSeries.coeff n (∏ i ∈ s, g i)
-      = ∑ l ∈ s.finsuppAntidiag n, ∏ i ∈ s, PowerSeries.coeff (l i) (g i) :=
-        PowerSeries.coeff_prod g n s
-    _ = ∑ l ∈ s.piAntidiag n, ∏ i ∈ s, PowerSeries.coeff (l i) (g i) := by
-        rw [Finset.finsuppAntidiag, Finset.sum_map,
-          ← Finset.sum_attach (s.piAntidiag n)
-            (fun l ↦ ∏ i ∈ s, PowerSeries.coeff (l i) (g i))]
-        simp
-    _ = ∑ k ∈ s.sym n, ∏ i ∈ s, PowerSeries.coeff (Multiset.count i k) (g i) := by
-        rw [← Finset.map_sym_eq_piAntidiag, Finset.sum_map]
-        rfl
-
 /-- `extensionCoeff hI f n s b x` is the `n`-th coefficient of the finite product of rescaled mapped
 exponentials `∏ i ∈ s, rescale (b i) (map f (hI.exp (x i)))`. -/
 theorem extensionCoeff_eq_coeff_prod {ι : Type*} [DecidableEq ι] (hI : DividedPowers I)
@@ -403,7 +397,7 @@ theorem extensionCoeff_eq_coeff_prod {ι : Type*} [DecidableEq ι] (hI : Divided
     extensionCoeff hI f n s b x =
       PowerSeries.coeff n
         (∏ i ∈ s, PowerSeries.rescale (b i) (PowerSeries.map f (hI.exp (x i)))) := by
-  rw [coeff_prod_eq_sum_sym, extensionCoeff_def]
+  rw [PowerSeries.coeff_prod_eq_sum_sym, extensionCoeff_def]
   refine sum_congr rfl fun k _ ↦ prod_congr rfl fun i _ ↦ ?_
   rw [coeff_rescale_map_exp]
 
@@ -637,10 +631,14 @@ private noncomputable def flatAdditivePowers (hI : DividedPowers I) (B : Type*) 
       exact prod_congr rfl fun i _ ↦ by rw [mul_comm a (c i), PowerSeries.rescale_rescale]
     rw [hprod, PowerSeries.coeff_rescale]
 
+private theorem flatAdditivePowers_dpow [Module.Flat A B] (hI : DividedPowers I) :
+    (flatAdditivePowers hI B).dpow = flatDpow hI B :=
+  rfl
+
 private theorem flatAdditivePowers_dpow_algebraMap [Module.Flat A B] (hI : DividedPowers I)
     (n : ℕ) {x : A} (hx : x ∈ I) :
     (flatAdditivePowers hI B).dpow n (algebraMap A B x) = algebraMap A B (hI.dpow n x) := by
-  dsimp only [flatAdditivePowers]
+  rw [flatAdditivePowers_dpow]
   have h := flatDpow_sum (B := B) hI n (s := {()}) (fun _ ↦ (1 : B)) (x := fun _ ↦ x)
     (fun _ _ ↦ hx)
   simpa only [sum_singleton, one_mul, extensionCoeff_singleton, one_pow] using h
@@ -712,9 +710,11 @@ theorem isDPMorphism_mapOfFlat_iff [Module.Flat A B] {C : Type*} [CommSemiring C
 
 /-- Transitivity of flat extension for a tower of flat algebras `A → B → C`. -/
 theorem mapOfFlat_comp_dpow {C : Type*} [CommRing C] [Algebra B C] [Algebra A C]
-    [IsScalarTower A B C] [Module.Flat A B] [Module.Flat B C] [Module.Flat A C]
+    [IsScalarTower A B C] [Module.Flat A B] [Module.Flat B C]
     (hI : DividedPowers I) (n : ℕ) (c : C) :
-    ((hI.mapOfFlat B).mapOfFlat C).dpow n c = (hI.mapOfFlat C).dpow n c := by
+    ((hI.mapOfFlat B).mapOfFlat C).dpow n c =
+      (@mapOfFlat _ _ _ hI C _ _ (Module.Flat.trans A B C)).dpow n c := by
+  have : Module.Flat A C := Module.Flat.trans A B C
   have hId : (I.map (algebraMap A B)).map (algebraMap B C) = I.map (algebraMap A C) := by
     rw [Ideal.map_map, ← IsScalarTower.algebraMap_eq A B C]
   have hcomp : IsDPMorphism hI ((hI.mapOfFlat B).mapOfFlat C) (algebraMap A C) := by
@@ -727,11 +727,12 @@ theorem mapOfFlat_comp_dpow {C : Type*} [CommRing C] [Algebra B C] [Algebra A C]
 Mathlib's `DividedPowers.ofRingEquiv`. -/
 theorem mapOfFlat_eq_ofRingEquiv [Module.Flat A B] (hI : DividedPowers I)
     (e : A ≃+* B) (he : (e : A →+* B) = algebraMap A B) :
-    hI.mapOfFlat B = hI.ofRingEquiv (e := e) (by rw [← he]; rfl) := by
+    hI.mapOfFlat B = hI.ofRingEquiv (e := e) (by rw [← he, Ideal.map_coe]) := by
   symm
   rw [eq_mapOfFlat_iff]
   refine ⟨le_rfl, fun {n} a _ ↦ ?_⟩
-  have ha : ∀ x : A, algebraMap A B x = e x := fun x ↦ by rw [← he]; rfl
+  have ha : ∀ x : A, algebraMap A B x = e x := fun x ↦ by
+    rw [← he, RingEquiv.coe_toRingHom]
   rw [ha a, ha (hI.dpow n a), DividedPowers.ofRingEquiv_dpow_apply]
 
 /-- When `I = Ideal.span {x}` is principal, `mapOfFlat` coincides with `mapOfSpanSingleton`. -/
@@ -804,9 +805,22 @@ theorem mapOfIsLocalization_dpow_mk' (hI : DividedPowers I) (S : Submonoid A) (B
     (hI.mapOfIsLocalization S B).dpow n (IsLocalization.mk' B x s) =
       IsLocalization.mk' B (hI.dpow n x) (s ^ n) := by
   have : Module.Flat A B := IsLocalization.flat B S
-  rw [mapOfIsLocalization_eq_mapOfFlat, IsLocalization.mk'_eq_mul_mk'_one, mul_comm,
-    mapOfFlat_dpow_mul hI n _ hx, ← IsLocalization.mk'_pow, one_pow, mul_comm,
-    ← IsLocalization.mk'_eq_mul_mk'_one]
+  have hmk : IsLocalization.mk' B x s = IsLocalization.mk' B 1 s * algebraMap A B x := by
+    rw [IsLocalization.mk'_eq_mul_mk'_one]
+    ring
+  have hpow : (IsLocalization.mk' B 1 s) ^ n = IsLocalization.mk' B 1 (s ^ n) := by
+    rw [← IsLocalization.mk'_pow, one_pow]
+  calc (hI.mapOfIsLocalization S B).dpow n (IsLocalization.mk' B x s)
+      = (hI.mapOfFlat B).dpow n (IsLocalization.mk' B 1 s * algebraMap A B x) := by
+        rw [mapOfIsLocalization_eq_mapOfFlat, hmk]
+    _ = (IsLocalization.mk' B 1 s) ^ n * algebraMap A B (hI.dpow n x) :=
+        mapOfFlat_dpow_mul hI n _ hx
+    _ = IsLocalization.mk' B (hI.dpow n x) (s ^ n) := by
+        have hmul : IsLocalization.mk' B (hI.dpow n x) (s ^ n) =
+            algebraMap A B (hI.dpow n x) * IsLocalization.mk' B 1 (s ^ n) :=
+          IsLocalization.mk'_eq_mul_mk'_one (hI.dpow n x) (s ^ n)
+        rw [hpow, hmul]
+        ring
 
 end Localization
 
