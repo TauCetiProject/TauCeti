@@ -10,12 +10,12 @@ public import Mathlib.FieldTheory.Galois.IsGaloisGroup
 public import Mathlib.NumberTheory.NumberField.CMField
 
 /-!
-# CM or totally real fields via the complex conjugations of an algebraic closure of `ℚ`
+# CM or totally real fields via the complex conjugations of a normal extension of `ℚ`
 
-Let `Ω` be an algebraic closure of `ℚ`. A *complex conjugation* of `Ω` is an automorphism `c`
-of `Ω` such that `ι ∘ c = conj ∘ ι` for some embedding `ι : Ω →+* ℂ`; that is,
-`ComplexEmbedding.IsConj ι c`. Every embedding has exactly one such `c`, and the set
-`complexConjugations Ω` of all of them is stable under conjugation by `Gal(Ω/ℚ)`.
+Let `Ω` be a normal extension of `ℚ`, such as an algebraic closure of `ℚ`. A *complex
+conjugation* of `Ω` is an automorphism `c` of `Ω` such that `ι ∘ c = conj ∘ ι` for some embedding
+`ι : Ω →+* ℂ`; that is, `ComplexEmbedding.IsConj ι c`. Every embedding has exactly one such `c`,
+and the set `complexConjugations Ω` of all of them is stable under conjugation by `Gal(Ω/ℚ)`.
 
 The main result is Milne's characterization of CM fields by complex conjugations: a field `F`,
 algebraic over `ℚ`, with an embedding `τ : F →+* Ω`, is totally real or CM if and only if every
@@ -30,7 +30,7 @@ real, and Mathlib's `NumberField.IsCMField.complexConj F` if `F` is CM.
 ## Main results
 
 * `TauCeti.NumberField.exists_isConj`: every embedding `Ω →+* ℂ` has a complex conjugation.
-* `TauCeti.NumberField.mul_inv_mul_mem_complexConjugations`: the set of complex conjugations is
+* `TauCeti.NumberField.inv_mul_mul_mem_complexConjugations`: the set of complex conjugations is
   stable under conjugation.
 * `TauCeti.NumberField.apply_eq_of_isTotallyReal` and
   `TauCeti.NumberField.apply_eq_complexConj_of_isCMField`: the action of a complex conjugation on
@@ -85,12 +85,18 @@ end General
 
 variable (Ω : Type*) [Field Ω] [CharZero Ω]
 
-/-- The **complex conjugations** of an algebraic closure `Ω` of `ℚ`: the automorphisms
+/-- The **complex conjugations** of a field `Ω` of characteristic zero: the automorphisms
 `c = ι⁻¹ ∘ conj ∘ ι` for the embeddings `ι : Ω →+* ℂ`, stated as `ι ∘ c = conj ∘ ι`. -/
 def complexConjugations : Set Gal(Ω/ℚ) :=
   {c | ∃ ι : Ω →+* ℂ, IsConj ι c}
 
 variable {Ω}
+
+/-- `c` is a complex conjugation exactly when it is the conjugation of some embedding
+`ι : Ω →+* ℂ`. -/
+theorem mem_complexConjugations_iff {c : Gal(Ω/ℚ)} :
+    c ∈ complexConjugations Ω ↔ ∃ ι : Ω →+* ℂ, IsConj ι c :=
+  Iff.rfl
 
 /-- A complex conjugation is an involution. -/
 theorem mul_self_of_mem_complexConjugations {c : Gal(Ω/ℚ)} (hc : c ∈ complexConjugations Ω) :
@@ -107,7 +113,7 @@ theorem apply_apply_of_mem_complexConjugations {c : Gal(Ω/ℚ)} (hc : c ∈ com
 
 /-- The set of complex conjugations is stable under conjugation by `Gal(Ω/ℚ)`: if `c` is the
 conjugation of `ι`, then `g⁻¹ c g` is the conjugation of `ι ∘ g`. -/
-theorem mul_inv_mul_mem_complexConjugations {c : Gal(Ω/ℚ)} (hc : c ∈ complexConjugations Ω)
+theorem inv_mul_mul_mem_complexConjugations {c : Gal(Ω/ℚ)} (hc : c ∈ complexConjugations Ω)
     (g : Gal(Ω/ℚ)) : g⁻¹ * c * g ∈ complexConjugations Ω := by
   obtain ⟨ι, hι⟩ := hc
   exact ⟨_, hι.comp g⟩
@@ -132,16 +138,22 @@ theorem apply_eq_complexConj_of_isCMField {F : Type*} [Field F] [CharZero F]
   rw [hι.eq]
   exact (IsCMField.complexEmbedding_complexConj F (ι.comp τ) x).symm
 
-/-- If products of two complex conjugations fix `τ(F)`, then all complex conjugations agree on
-`τ(F)`. -/
-theorem apply_eq_apply_of_forall_mul {F : Type*} [Field F] {τ : F →+* Ω}
-    (h : ∀ c₁ ∈ complexConjugations Ω, ∀ c₂ ∈ complexConjugations Ω, ∀ x, c₁ (c₂ (τ x)) = τ x)
-    {c₁ c₂ : Gal(Ω/ℚ)} (hc₁ : c₁ ∈ complexConjugations Ω) (hc₂ : c₂ ∈ complexConjugations Ω)
-    (x : F) : c₁ (τ x) = c₂ (τ x) := by
-  conv_lhs => rw [← h c₁ hc₁ c₂ hc₂ x]
+/-- If `c₁ c₂` fixes `y` for a complex conjugation `c₁`, then `c₁` and `c₂` agree on `y`. -/
+theorem apply_eq_apply_of_apply_apply_eq {c₁ c₂ : Gal(Ω/ℚ)} (hc₁ : c₁ ∈ complexConjugations Ω)
+    {y : Ω} (h : c₁ (c₂ y) = y) : c₁ y = c₂ y := by
+  conv_lhs => rw [← h]
   exact apply_apply_of_mem_complexConjugations hc₁ _
 
-variable [IsAlgClosure ℚ Ω]
+/-- **Extension of complex embeddings.** For an embedding `τ : F →+* Ω` into an algebraic
+extension of `ℚ`, every embedding `φ : F →+* ℂ` factors as `ι ∘ τ` for some `ι : Ω →+* ℂ`. -/
+theorem exists_comp_eq [Algebra.IsAlgebraic ℚ Ω] {F : Type*} [Field F] [CharZero F]
+    (τ : F →+* Ω) (φ : F →+* ℂ) : ∃ ι : Ω →+* ℂ, ι.comp τ = φ := by
+  let := τ.toAlgebra
+  have : IsScalarTower ℚ F Ω := .of_algebraMap_eq (R := ℚ) (S := F) (A := Ω) fun x ↦ by simp
+  have : Algebra.IsAlgebraic F Ω := Algebra.IsAlgebraic.tower_top (K := ℚ) F
+  exact ⟨ComplexEmbedding.lift Ω φ, ComplexEmbedding.lift_comp_algebraMap Ω φ⟩
+
+variable [Normal ℚ Ω]
 
 /-- **Every embedding of `Ω` into `ℂ` has a complex conjugation.** The image of `Ω` in `ℂ` is
 normal over `ℚ`, hence stable under complex conjugation. -/
@@ -157,17 +169,6 @@ theorem complexConjugations_nonempty : (complexConjugations Ω).Nonempty :=
   let ι : Ω →ₐ[ℚ] ℂ := IsAlgClosed.lift
   (exists_isConj ι.toRingHom).imp fun _ hc ↦ ⟨_, hc⟩
 
-/-- **Extension of complex embeddings.** For an embedding `τ : F →+* Ω`, every embedding
-`φ : F →+* ℂ` factors as `ι ∘ τ` for some `ι : Ω →+* ℂ`. -/
-theorem exists_comp_eq {F : Type*} [Field F] [CharZero F] (τ : F →+* Ω) (φ : F →+* ℂ) :
-    ∃ ι : Ω →+* ℂ, ι.comp τ = φ := by
-  let := τ.toAlgebra
-  let := φ.toAlgebra
-  have : IsScalarTower ℚ F Ω := .of_algebraMap_eq (R := ℚ) (S := F) (A := Ω) fun x ↦ by simp
-  have : Algebra.IsAlgebraic F Ω := Algebra.IsAlgebraic.tower_top (K := ℚ) F
-  exact ⟨(IsAlgClosed.lift : Ω →ₐ[F] ℂ).toRingHom, RingHom.ext fun x ↦
-    (IsAlgClosed.lift : Ω →ₐ[F] ℂ).commutes x⟩
-
 variable {F : Type*} [Field F] [CharZero F]
 
 /-- If products of two complex conjugations fix `τ(F)`, then every complex conjugation maps
@@ -176,16 +177,16 @@ theorem apply_mem_fieldRange_of_forall_mul {τ : F →+* Ω}
     (h : ∀ c₁ ∈ complexConjugations Ω, ∀ c₂ ∈ complexConjugations Ω, ∀ x, c₁ (c₂ (τ x)) = τ x)
     {c : Gal(Ω/ℚ)} (hc : c ∈ complexConjugations Ω) (x : F) :
     c (τ x) ∈ τ.toRatAlgHom.fieldRange := by
-  rw [← InfiniteGalois.fixedField_fixingSubgroup τ.toRatAlgHom.fieldRange]
-  intro ⟨g, hg⟩
-  have hgx : g (τ x) = τ x := hg ⟨τ x, x, rfl⟩
+  have : IsGalois ℚ Ω := ⟨⟩
+  rw [← InfiniteGalois.fixedField_fixingSubgroup τ.toRatAlgHom.fieldRange,
+    IntermediateField.mem_fixedField_iff]
+  intro g hg
+  have hgx : g (τ x) = τ x := (IntermediateField.mem_fixingSubgroup_iff _ _).mp hg _ ⟨x, rfl⟩
+  have hginv : g⁻¹ (τ x) = τ x := g.symm_apply_eq.mpr hgx.symm
   have hc' : g * c * g⁻¹ ∈ complexConjugations Ω := by
-    simpa using mul_inv_mul_mem_complexConjugations hc g⁻¹
-  change g (c (τ x)) = c (τ x)
-  have := apply_eq_apply_of_forall_mul h hc' hc x
-  rw [AlgEquiv.mul_apply, AlgEquiv.mul_apply, ← hgx, ← AlgEquiv.mul_apply g⁻¹ g, inv_mul_cancel,
-    AlgEquiv.one_apply, hgx] at this
-  exact this
+    simpa using inv_mul_mul_mem_complexConjugations hc g⁻¹
+  simpa [AlgEquiv.mul_apply, hginv] using
+    apply_eq_apply_of_apply_apply_eq hc' (h _ hc' _ hc x)
 
 /-- The automorphism of `F` through which a complex conjugation `c` acts on `τ(F)`, when it maps
 `τ(F)` into itself. -/
@@ -202,7 +203,7 @@ private noncomputable def restrictOfApplyMem (τ : F →+* Ω) {c : Gal(Ω/ℚ)}
     simp [hs, apply_apply_of_mem_complexConjugations hc]
   AlgEquiv.ofAlgHom s s hss hss
 
-omit [IsAlgClosure ℚ Ω] in
+omit [Normal ℚ Ω] in
 private theorem apply_restrictOfApplyMem (τ : F →+* Ω) {c : Gal(Ω/ℚ)}
     (hc : c ∈ complexConjugations Ω) (hmem : ∀ x, c (τ x) ∈ τ.toRatAlgHom.fieldRange) (x : F) :
     τ (restrictOfApplyMem τ hc hmem x) = c (τ x) :=
@@ -230,8 +231,8 @@ theorem isTotallyReal_or_isCMField_iff (τ : F →+* Ω) :
       obtain ⟨ι, rfl⟩ := exists_comp_eq τ φ
       obtain ⟨c, hc⟩ := exists_isConj ι
       refine RingHom.ext fun x ↦ ?_
-      change star (ι (τ x)) = ι (τ (s x))
-      rw [hs', apply_eq_apply_of_forall_mul h hc₀ ⟨ι, hc⟩, hc.eq]
+      simp only [conjugate_coe_eq, RingHom.comp_apply, RingHom.coe_coe, hs']
+      rw [apply_eq_apply_of_apply_apply_eq hc₀ (h _ hc₀ _ ⟨ι, hc⟩ x), hc.eq, Complex.star_def]
     by_cases hs1 : s = 1
     · left
       exact ⟨fun w ↦ isReal_iff.mpr (isConj_one_iff.mp (hs1 ▸ hs _))⟩
