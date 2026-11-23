@@ -71,9 +71,11 @@ L-function `Grossencharacter.lFunctionC` is the canonical meromorphic continuati
   `raySubgroup 𝔪 = ⊤`.
 * `TauCeti.LFunctions.Grossencharacter.badPrimes_unitaryWeight`: the bad primes of the unitary
   weight of a presentation are the primes in the support of `𝔪`.
-* `TauCeti.LFunctions.Grossencharacter.isGood_unitaryWeight_iff_of_finitePart_eq_top`,
+* `TauCeti.LFunctions.Grossencharacter.isGood_unitaryWeight_iff`,
+  `TauCeti.LFunctions.Grossencharacter.isGood_unitaryWeight_iff_of_finitePart_eq_top`,
   `TauCeti.LFunctions.Grossencharacter.isGood_unitaryWeight_modulus_one_iff`: an ideal is good for
-  the unitary weight of a presentation with trivial finite modulus part iff it is nonzero.
+  the unitary weight of a presentation iff it is coprime to the modulus (and iff nonzero when the
+  finite part is trivial).
 * `TauCeti.LFunctions.Grossencharacter.unitaryWeight_eq_mul`: multiplying underlying Hecke
   characters at the same modulus multiplies their unitary ideal weights.
 * `TauCeti.LFunctions.Grossencharacter.isAlgebraic`: the presented Hecke character is algebraic.
@@ -182,6 +184,12 @@ theorem unitaryWeight_apply_of_dvd (χ : Grossencharacter K 𝔪) {v : HeightOne
   χ.unitaryWeight_eq_zero _ fun h ↦
     (Modulus.isCoprimeTo_iff.mp h).2 v ((𝔪.mem_support_iff v).mpr hv) dvd_rfl
 
+private theorem exists_unit_valued_eq_exp_neg_one (v : HeightOneSpectrum (𝓞 K)) :
+    ∃ u : (v.adicCompletion K)ˣ, Valued.v (u : v.adicCompletion K) = WithZero.exp (-1) := by
+  have : Finite (𝓞 K ⧸ v.asIdeal) := Ring.HasFiniteQuotients.finiteQuotient v.ne_bot
+  obtain ⟨u, hu⟩ := TauCeti.exists_isUniformizer (v.adicCompletion K)
+  exact ⟨u, v.isUniformizer_iff_valued_eq_exp_neg_one.mp hu⟩
+
 /-- **The bad primes of the unitary weight of a presentation are the primes dividing the
 modulus**: at a prime `v ∣ 𝔪` the weight vanishes, and at every prime `v ∤ 𝔪` it is a local
 component of the unitary part at a uniformizer and hence nonzero. -/
@@ -191,23 +199,24 @@ theorem badPrimes_unitaryWeight (χ : Grossencharacter K 𝔪) :
   rw [MultiplicativeIdealWeight.mem_badPrimes, SetLike.mem_coe, 𝔪.mem_support_iff v]
   refine ⟨fun h0 ↦ ?_, fun hv ↦ χ.unitaryWeight_apply_of_dvd hv⟩
   by_contra hv
-  have : Finite (𝓞 K ⧸ v.asIdeal) := Ring.HasFiniteQuotients.finiteQuotient v.ne_bot
-  obtain ⟨u, hu⟩ := TauCeti.exists_isUniformizer (v.adicCompletion K)
-  have hu' := v.isUniformizer_iff_valued_eq_exp_neg_one.mp hu
-  rw [χ.unitaryWeight_apply v hv u hu'] at h0
+  obtain ⟨u, hu⟩ := exists_unit_valued_eq_exp_neg_one v
+  rw [χ.unitaryWeight_apply v hv u hu] at h0
   exact Units.ne_zero _ h0
+
+/-- An ideal is good for the unitary weight of a presentation at `𝔪` if and only if it is coprime
+to `𝔪`. -/
+theorem isGood_unitaryWeight_iff (χ : Grossencharacter K 𝔪) (I : Ideal (𝓞 K)) :
+    χ.unitaryWeight.val.IsGood I ↔ 𝔪.IsCoprimeTo I := by
+  simp only [MultiplicativeIdealWeight.IsGood, χ.badPrimes_unitaryWeight, Ideal.isPrimeTo_iff,
+    Modulus.isCoprimeTo_iff, Finset.mem_coe]
 
 /-- An ideal is good for the unitary weight of a presentation at a modulus with trivial finite part
 if and only if the ideal is nonzero. -/
 theorem isGood_unitaryWeight_iff_of_finitePart_eq_top (χ : Grossencharacter K 𝔪)
     (h : 𝔪.finitePart = ⊤) (I : Ideal (𝓞 K)) :
     χ.unitaryWeight.val.IsGood I ↔ I ≠ ⊥ := by
-  have hsupp : 𝔪.support = ∅ := by
-    ext v
-    rw [Modulus.mem_support_iff, h]
-    simpa only [Finset.notMem_empty, iff_false, ← Ideal.one_eq_top] using v.prime.not_dvd_one
-  rw [MultiplicativeIdealWeight.IsGood, χ.badPrimes_unitaryWeight, hsupp, Finset.coe_empty,
-    Ideal.isPrimeTo_empty]
+  simp [χ.isGood_unitaryWeight_iff, Modulus.isCoprimeTo_iff,
+    Modulus.support_eq_empty_of_finitePart_eq_top h]
 
 /-- For a presentation at `Modulus.one K`, an ideal is good for the unitary weight if and only if
 it is nonzero. -/
@@ -247,11 +256,9 @@ theorem unitaryWeight_eq_mul {ξ χ ψ : Grossencharacter K 𝔪}
   by_cases hv : v.asIdeal ∣ 𝔪.finitePart
   · rw [ξ.unitaryWeight_apply_of_dvd hv, χ.unitaryWeight_apply_of_dvd hv,
       ψ.unitaryWeight_apply_of_dvd hv, mul_zero]
-  · have : Finite (𝓞 K ⧸ v.asIdeal) := Ring.HasFiniteQuotients.finiteQuotient v.ne_bot
-    obtain ⟨u, hu⟩ := TauCeti.exists_isUniformizer (v.adicCompletion K)
-    have hu' := v.isUniformizer_iff_valued_eq_exp_neg_one.mp hu
-    rw [ξ.unitaryWeight_apply v hv u hu', χ.unitaryWeight_apply v hv u hu',
-      ψ.unitaryWeight_apply v hv u hu', h, HeckeCharacter.unitaryPart_mul,
+  · obtain ⟨u, hu⟩ := exists_unit_valued_eq_exp_neg_one v
+    rw [ξ.unitaryWeight_apply v hv u hu, χ.unitaryWeight_apply v hv u hu,
+      ψ.unitaryWeight_apply v hv u hu, h, HeckeCharacter.unitaryPart_mul,
       HeckeCharacter.finiteComponent_mul, ContinuousMonoidHom.mul_apply, Units.val_mul]
 
 /-- **A presentation is determined by its Hecke character.** The infinity type is determined on
@@ -266,10 +273,7 @@ theorem ext {χ ψ : Grossencharacter K 𝔪} (h : χ.toHeckeCharacter = ψ.toHe
     refine Subtype.ext (MultiplicativeIdealWeight.ext_heightOneSpectrum fun v ↦ ?_)
     by_cases hv : v.asIdeal ∣ 𝔪.finitePart
     · rw [χ.unitaryWeight_apply_of_dvd hv, ψ.unitaryWeight_apply_of_dvd hv]
-    · -- Compare the two weights at a uniformizer of `K_v`.
-      have : Finite (𝓞 K ⧸ v.asIdeal) := Ring.HasFiniteQuotients.finiteQuotient v.ne_bot
-      obtain ⟨u, hu⟩ := TauCeti.exists_isUniformizer (v.adicCompletion K)
-      have hu := v.isUniformizer_iff_valued_eq_exp_neg_one.mp hu
+    · obtain ⟨u, hu⟩ := exists_unit_valued_eq_exp_neg_one v
       rw [χ.unitaryWeight_apply v hv u hu, ψ.unitaryWeight_apply v hv u hu, h]
   cases χ
   cases ψ

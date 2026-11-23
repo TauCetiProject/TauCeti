@@ -33,7 +33,9 @@ This explicit nonreal value has two consequences:
 
 ## Main results
 
-* `TauCeti.LFunctions.unitaryWeight_angularGrossencharacter_two_add_toInteger`: explicit value
+* `TauCeti.LFunctions.unitaryWeight_angularGrossencharacter_two_add_toInteger_of_embedding_eq_I`,
+  `TauCeti.LFunctions.unitaryWeight_angularGrossencharacter_two_add_toInteger_of_embedding_eq_neg_I`
+  and `TauCeti.LFunctions.unitaryWeight_angularGrossencharacter_two_add_toInteger`: explicit value
   `((3 + 4i) / 5) ^ (± 2 * k)` at `(2 + hζ.toInteger)`.
 * `TauCeti.LFunctions.im_unitaryWeight_angularGrossencharacter_two_add_toInteger_ne_zero`: for
   `k ≠ 0`, the ideal value at `(2 + hζ.toInteger)` has nonzero imaginary part.
@@ -83,6 +85,42 @@ private theorem unitaryWeight_angularGrossencharacter_apply_sq {F : Type*} [Fiel
   rw [UnitaryIdealWeight.val_pow, MultiplicativeIdealWeight.pow_apply _ (by decide)] at hp
   simpa only [Nat.cast_ofNat] using hp
 
+/-- **Value of `angularGrossencharacter F k` at `(2 + i)` when `w.val.embedding ζ = i`**:
+for a primitive fourth root of unity `ζ ∈ F` sent to `Complex.I` by `w.val.embedding`, the
+unitary weight at `Ideal.span {2 + hζ.toInteger}` equals `((3 + 4i) / 5) ^ (2 * k)`. -/
+theorem unitaryWeight_angularGrossencharacter_two_add_toInteger_of_embedding_eq_I {F : Type*}
+    [Field F] [NumberField F] [IsCyclotomicExtension {4} ℚ F] {ζ : F}
+    (hζ : IsPrimitiveRoot ζ 4) (k : ℤ) {w : {w : InfinitePlace F // w.IsComplex}}
+    (hτ : w.val.embedding ζ = Complex.I) :
+    (angularGrossencharacter F k).unitaryWeight.val (Ideal.span {(2 : 𝓞 F) + hζ.toInteger}) =
+      (((3 : ℂ) + 4 * Complex.I) / 5) ^ (2 * k) := by
+  rw [unitaryWeight_angularGrossencharacter_span_singleton k w
+    (two_add_toInteger_ne_zero_of_four hζ)]
+  have hτα : w.val.embedding (((2 : 𝓞 F) + hζ.toInteger : 𝓞 F) : F) = 2 + Complex.I := by
+    simp [RingOfIntegers.coe_eq_algebraMap, map_ofNat, hζ.coe_toInteger, hτ]
+  have hconj : starRingEnd ℂ (2 + Complex.I) = 2 - Complex.I := by
+    simp [map_ofNat, sub_eq_add_neg]
+  rw [hτα, hconj, GaussianRationals.two_add_I_div_two_sub_I]
+
+/-- **Value of `angularGrossencharacter F k` at `(2 + i)` when `w.val.embedding ζ = -i`**:
+for a primitive fourth root of unity `ζ ∈ F` sent to `-Complex.I` by `w.val.embedding`, the
+unitary weight at `Ideal.span {2 + hζ.toInteger}` equals `((3 + 4i) / 5) ^ (-(2 * k))`. -/
+theorem unitaryWeight_angularGrossencharacter_two_add_toInteger_of_embedding_eq_neg_I {F : Type*}
+    [Field F] [NumberField F] [IsCyclotomicExtension {4} ℚ F] {ζ : F}
+    (hζ : IsPrimitiveRoot ζ 4) (k : ℤ) {w : {w : InfinitePlace F // w.IsComplex}}
+    (hτ : w.val.embedding ζ = -Complex.I) :
+    (angularGrossencharacter F k).unitaryWeight.val (Ideal.span {(2 : 𝓞 F) + hζ.toInteger}) =
+      (((3 : ℂ) + 4 * Complex.I) / 5) ^ (-(2 * k)) := by
+  rw [unitaryWeight_angularGrossencharacter_span_singleton k w
+    (two_add_toInteger_ne_zero_of_four hζ)]
+  have hτα : w.val.embedding (((2 : 𝓞 F) + hζ.toInteger : 𝓞 F) : F) = 2 - Complex.I := by
+    simp [RingOfIntegers.coe_eq_algebraMap, map_ofNat, hζ.coe_toInteger, hτ, sub_eq_add_neg]
+  have hconj : starRingEnd ℂ (2 - Complex.I) = 2 + Complex.I := by
+    simp [map_ofNat]
+  have h2I_inv : (2 - Complex.I) / (2 + Complex.I) = (((3 : ℂ) + 4 * Complex.I) / 5)⁻¹ := by
+    rw [← GaussianRationals.two_add_I_div_two_sub_I, inv_div]
+  rw [hτα, hconj, h2I_inv, inv_zpow, ← zpow_neg]
+
 /-- **Value of `angularGrossencharacter F k` at `(2 + i)`**: for a primitive fourth root of unity
 `ζ ∈ F`, the unitary weight at `Ideal.span {2 + hζ.toInteger}` is `((3 + 4i) / 5) ^ (2 * k)` or
 `((3 + 4i) / 5) ^ (-(2 * k))` according to which square root of `-1` the chosen embedding
@@ -94,26 +132,12 @@ theorem unitaryWeight_angularGrossencharacter_two_add_toInteger {F : Type*} [Fie
       (angularGrossencharacter F k).unitaryWeight.val (Ideal.span {(2 : 𝓞 F) + hζ.toInteger}) =
         (((3 : ℂ) + 4 * Complex.I) / 5) ^ (-(2 * k)) := by
   let w := complexPlaceFour F
-  rw [unitaryWeight_angularGrossencharacter_span_singleton k w
-    (two_add_toInteger_ne_zero_of_four hζ)]
-  set τ := w.val.embedding
-  have hτI : τ (hζ.toInteger : F) = Complex.I ∨ τ (hζ.toInteger : F) = -Complex.I :=
-    Complex.isPrimitiveRoot_four_iff.mp
-      (by simpa [RingOfIntegers.coe_eq_algebraMap, hζ.coe_toInteger] using
-        hζ.map_of_injective τ.injective)
-  have hτα_sum : τ (((2 : 𝓞 F) + hζ.toInteger : 𝓞 F) : F) = 2 + τ (hζ.toInteger : F) := by
-    simp only [RingOfIntegers.coe_eq_algebraMap, map_add, map_ofNat]
-  rcases hτI with hI | hnegI
-  · left
-    have hconj : starRingEnd ℂ (2 + Complex.I) = 2 - Complex.I := by
-      simp [map_ofNat, sub_eq_add_neg]
-    rw [hτα_sum, hI, hconj, GaussianRationals.two_add_I_div_two_sub_I]
-  · right
-    have hconj : starRingEnd ℂ (2 - Complex.I) = 2 + Complex.I := by
-      simp [map_ofNat]
-    have h2I_inv : (2 - Complex.I) / (2 + Complex.I) = (((3 : ℂ) + 4 * Complex.I) / 5)⁻¹ := by
-      rw [← GaussianRationals.two_add_I_div_two_sub_I, inv_div]
-    rw [hτα_sum, hnegI, ← sub_eq_add_neg, hconj, h2I_inv, inv_zpow, ← zpow_neg]
+  rcases Complex.isPrimitiveRoot_four_iff.mp (hζ.map_of_injective w.val.embedding.injective) with
+    hI | hnegI
+  · exact Or.inl
+      (unitaryWeight_angularGrossencharacter_two_add_toInteger_of_embedding_eq_I hζ k hI)
+  · exact Or.inr
+      (unitaryWeight_angularGrossencharacter_two_add_toInteger_of_embedding_eq_neg_I hζ k hnegI)
 
 /-- **Nonreal value at `(2 + i)`**: for `k ≠ 0`, `angularGrossencharacter F k` takes a nonreal
 value at `(2 + hζ.toInteger)`. -/
@@ -148,9 +172,14 @@ theorem unitaryWeight_angularGrossencharacter_two_add_toInteger_eq_inv_prod {F :
     [NumberField F] [IsCyclotomicExtension {4} ℚ F] {ζ : F} (hζ : IsPrimitiveRoot ζ 4) (k : ℤ) :
     (angularGrossencharacter F k).unitaryWeight.val (Ideal.span {(2 : 𝓞 F) + hζ.toInteger}) =
       (∏ τ : F →+* ℂ, τ (2 + ζ) ^ (angularGrossencharacter F k).infinityType τ)⁻¹ := by
-  simpa [RingOfIntegers.coe_eq_algebraMap, map_add, map_ofNat, hζ.coe_toInteger] using
-    unitaryWeight_angularGrossencharacter_span_singleton_eq_inv_prod k
-      (two_add_toInteger_ne_zero_of_four hζ)
+  let x : Fˣ := Units.mk0 (2 + ζ)
+    (by simpa [RingOfIntegers.coe_eq_algebraMap, map_ofNat, hζ.coe_toInteger] using
+      RingOfIntegers.coe_ne_zero_iff.mpr (two_add_toInteger_ne_zero_of_four hζ))
+  have hcompat := (angularGrossencharacter F k).compatibility_inv_of_idealShift_eq_zero
+    (idealShift_angularGrossencharacter F k) x (isCongrOne_one x)
+    ((2 : 𝓞 F) + hζ.toInteger)
+    (by simp [x, map_ofNat, hζ.coe_toInteger])
+  simpa [x] using hcompat
 
 /-- **Sign check at `2 + i` (negative half)**: for `k ≠ 0`, the ideal value of
 `angularGrossencharacter F k` at `(2 + ζ)` is **not** equal to the uninverted archimedean monomial

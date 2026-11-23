@@ -372,8 +372,8 @@ theorem unitaryWeight_angularGrossencharacter_span_singleton_eq_inv_prod {F : Ty
     (angularGrossencharacter F k).unitaryWeight.val (Ideal.span {α}) =
       (∏ τ : F →+* ℂ, τ (α : F) ^ (angularGrossencharacter F k).infinityType τ)⁻¹ := by
   let x : Fˣ := Units.mk0 (algebraMap (𝓞 F) F α) (RingOfIntegers.coe_ne_zero_iff.mpr hα)
-  have hcompat := (angularGrossencharacter F k).compatibility_inv x (isCongrOne_one x) α rfl
-  simpa [idealShift_angularGrossencharacter, x] using hcompat
+  exact (angularGrossencharacter F k).compatibility_inv_of_idealShift_eq_zero
+    (idealShift_angularGrossencharacter F k) x (isCongrOne_one x) α rfl
 
 open Classical in
 /-- **Ideal-side value on principal ideals**: for any nonzero `α ∈ 𝓞 F` and the complex place `w`
@@ -389,12 +389,11 @@ theorem unitaryWeight_angularGrossencharacter_span_singleton {F : Type*} [Field 
   have huniv : (Finset.univ : Finset (F →+* ℂ)) =
       {w4.val.embedding, ComplexEmbedding.conjugate w4.val.embedding} := by
     ext τ
-    simpa using w4.val.embedding_eq_or_eq_conjugate τ
+    simpa using w4.val.embedding_eq_or_eq_conjugate (Subsingleton.elim (InfinitePlace.mk τ) _)
   rw [unitaryWeight_angularGrossencharacter_span_singleton_eq_inv_prod k hα, huniv,
     Finset.prod_pair w4.property.embedding_ne_conjugate,
     infinityType_angularGrossencharacter_embedding, infinityType_angularGrossencharacter_conjugate,
-    ComplexEmbedding.conjugate_coe_eq, mul_inv, ← zpow_neg, neg_neg, ← zpow_neg, div_eq_mul_inv,
-    mul_zpow, inv_zpow, zpow_neg]
+    ComplexEmbedding.conjugate_coe_eq, zpow_neg, ← div_eq_inv_mul, inv_div, div_zpow]
 
 /-- **Hecke's angular characters of `ℚ(i)` exist**: for each `k : ℤ` there is an unramified
 presentation whose algebraic infinity type has exponent `-(2 * k)` at an embedding `τ : F →+* ℂ`
@@ -425,7 +424,8 @@ theorem eq_angularGrossencharacter_iff {F : Type*} [Field F] [NumberField F]
   · rintro ⟨h1, h2⟩
     apply Grossencharacter.ext_of_infinityType_eq (raySubgroup_one_eq_top F)
     ext σ
-    rcases w.val.embedding_eq_or_eq_conjugate σ with rfl | rfl
+    rcases w.val.embedding_eq_or_eq_conjugate (Subsingleton.elim (InfinitePlace.mk σ) _) with
+      rfl | rfl
     · exact h1.trans (infinityType_angularGrossencharacter_embedding k w).symm
     · exact h2.trans (infinityType_angularGrossencharacter_conjugate k w).symm
 
@@ -502,7 +502,8 @@ theorem angularGrossencharacter_zero (F : Type*) [Field F] [NumberField F]
     angularGrossencharacter F 0 = Grossencharacter.ofRayClassCharacter 1 := by
   apply Grossencharacter.ext_of_infinityType_eq (raySubgroup_one_eq_top F)
   ext σ
-  rcases (complexPlaceFour F).val.embedding_eq_or_eq_conjugate σ with rfl | rfl
+  rcases (complexPlaceFour F).val.embedding_eq_or_eq_conjugate
+      (Subsingleton.elim (InfinitePlace.mk σ) _) with rfl | rfl
   · simp [infinityType_angularGrossencharacter_embedding 0 (complexPlaceFour F)]
   · simp [infinityType_angularGrossencharacter_conjugate 0 (complexPlaceFour F)]
 
@@ -519,12 +520,14 @@ theorem unitaryWeight_angularGrossencharacter_zero (F : Type*) [Field F] [Number
   simp
 
 /-- Negating the angular index `k` inverts the presentation (`Grossencharacter.inverse`). -/
+@[simp]
 theorem angularGrossencharacter_neg (F : Type*) [Field F] [NumberField F]
     [IsCyclotomicExtension {4} ℚ F] (k : ℤ) :
     angularGrossencharacter F (-k) = (angularGrossencharacter F k).inverse := by
   apply Grossencharacter.ext_of_infinityType_eq (raySubgroup_one_eq_top F)
   ext σ
-  rcases (complexPlaceFour F).val.embedding_eq_or_eq_conjugate σ with rfl | rfl
+  rcases (complexPlaceFour F).val.embedding_eq_or_eq_conjugate
+      (Subsingleton.elim (InfinitePlace.mk σ) _) with rfl | rfl
   · simp [infinityType_angularGrossencharacter_embedding _ (complexPlaceFour F)]
   · simp [infinityType_angularGrossencharacter_conjugate _ (complexPlaceFour F)]
 
@@ -535,7 +538,8 @@ theorem infinityType_angularGrossencharacter_add (F : Type*) [Field F] [NumberFi
       (angularGrossencharacter F j).infinityType +
         (angularGrossencharacter F k).infinityType := by
   ext σ
-  rcases (complexPlaceFour F).val.embedding_eq_or_eq_conjugate σ with rfl | rfl
+  rcases (complexPlaceFour F).val.embedding_eq_or_eq_conjugate
+      (Subsingleton.elim (InfinitePlace.mk σ) _) with rfl | rfl
   · simp only [Pi.add_apply, infinityType_angularGrossencharacter_embedding _ (complexPlaceFour F)]
     ring
   · simp only [Pi.add_apply, infinityType_angularGrossencharacter_conjugate _ (complexPlaceFour F)]
@@ -547,24 +551,14 @@ theorem toHeckeCharacter_angularGrossencharacter_add (F : Type*) [Field F] [Numb
     (angularGrossencharacter F (j + k)).toHeckeCharacter =
       (angularGrossencharacter F j).toHeckeCharacter *
         (angularGrossencharacter F k).toHeckeCharacter := by
-  refine ContinuousMonoidHom.ext fun c ↦ Units.ext ?_
+  refine ContinuousMonoidHom.ext fun c ↦ ?_
   obtain ⟨y, rfl⟩ :=
     (ideleCongruenceToClassHom_surjective_iff (Modulus.one F)).mpr (raySubgroup_one_eq_top F) c
-  simp only [ContinuousMonoidHom.mul_apply, Units.val_mul,
-    toHeckeCharacter_angularGrossencharacter_def,
-    coe_angularHeckeCharacter_ideleCongruenceToClassHom]
-  have hz :
-      ((complexPlaceFour F).val.ideleComplexCoord (complexPlaceFour F).property
-          (y : IdeleGroup (𝓞 F) F) : ℂ) ≠ 0 :=
-    Units.ne_zero _
-  have hdiv :
-      ((complexPlaceFour F).val.ideleComplexCoord (complexPlaceFour F).property
-          (y : IdeleGroup (𝓞 F) F) : ℂ) /
-          (‖((complexPlaceFour F).val.ideleComplexCoord (complexPlaceFour F).property
-            (y : IdeleGroup (𝓞 F) F) : ℂ)‖ : ℂ) ≠ 0 :=
-    div_ne_zero hz (Complex.ofReal_ne_zero.mpr (norm_ne_zero_iff.mpr hz))
+  simp only [ContinuousMonoidHom.mul_apply, toHeckeCharacter_angularGrossencharacter_def,
+    angularHeckeCharacter_ideleCongruenceToClassHom, angularIdeleArchChar,
+    ContinuousMonoidHom.coe_comp, Function.comp_apply, ContinuousMonoidHom.zpow_apply]
   have hexp : -(4 * (j + k)) = -(4 * j) + -(4 * k) := by ring
-  rw [hexp, zpow_add₀ hdiv]
+  rw [hexp, zpow_add]
 
 /-- Adding angular indices multiplies the unitary ideal weights. -/
 theorem unitaryWeight_angularGrossencharacter_add (F : Type*) [Field F] [NumberField F]

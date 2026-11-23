@@ -231,6 +231,40 @@ theorem NumberField.InfinitePlace.continuous_ideleInfiniteCoord (w : InfinitePla
     Continuous (w.ideleInfiniteCoord : IdeleGroup R K → w.Completionˣ) :=
   ((continuous_apply w).comp continuous_fst).units_map _
 
+/-- The infinite coordinates of an idele concentrated at a finite place are trivial. -/
+@[simp]
+theorem NumberField.InfinitePlace.ideleInfiniteCoord_ofAdicCompletion
+    (w : InfinitePlace K) (v : HeightOneSpectrum R)
+    (u : (v.adicCompletion K)ˣ) :
+    w.ideleInfiniteCoord (IdeleGroup.ofAdicCompletion R K v u) = 1 :=
+  Units.ext <| by
+    rw [InfinitePlace.coe_ideleInfiniteCoord]
+    rfl
+
+/-- At its own place, the infinite coordinate of an idele concentrated at an infinite place `w`
+is the given unit of `K_w`. -/
+@[simp]
+theorem NumberField.InfinitePlace.ideleInfiniteCoord_ofCompletion_self
+    (w : InfinitePlace K) (u : w.Completionˣ) :
+    w.ideleInfiniteCoord (IdeleGroup.ofCompletion R K w u) = u :=
+  Units.ext <| by
+    classical
+    rw [InfinitePlace.coe_ideleInfiniteCoord]
+    exact (InfiniteAdeleRing.ofCompletion_apply w u w).trans (Pi.mulSingle_eq_same _ _)
+
+/-- Away from its own place, the infinite coordinates of an idele concentrated at an infinite
+place are trivial. -/
+@[simp]
+theorem NumberField.InfinitePlace.ideleInfiniteCoord_ofCompletion_of_ne
+    (w' : InfinitePlace K) {w : InfinitePlace K} (h : w' ≠ w)
+    (u : w.Completionˣ) :
+    w'.ideleInfiniteCoord (IdeleGroup.ofCompletion R K w u) = 1 :=
+  Units.ext <| by
+    classical
+    rw [InfinitePlace.coe_ideleInfiniteCoord]
+    exact (InfiniteAdeleRing.ofCompletion_apply w u w').trans
+      (Pi.mulSingle_eq_of_ne h _)
+
 /-- The continuous homomorphism extracting the complex coordinate of an idele at a complex place
 `w` as a unit in `ℂˣ`, via `continuousMulEquivComplexOfIsComplex hw`. -/
 def NumberField.InfinitePlace.ideleComplexCoord {w : InfinitePlace K} (hw : w.IsComplex) :
@@ -267,11 +301,9 @@ theorem NumberField.InfinitePlace.ideleComplexCoord_ofCompletion_self {w : Infin
     w.ideleComplexCoord (R := R) hw (IdeleGroup.ofCompletion R K w u) =
       Units.mapContinuousMulEquiv (Completion.continuousMulEquivComplexOfIsComplex hw) u := by
   apply Units.ext
-  classical
-  rw [coe_ideleComplexCoord, coe_ideleInfiniteCoord, Units.mapContinuousMulEquiv_apply,
-    Units.coe_map]
-  exact congrArg (Completion.continuousMulEquivComplexOfIsComplex hw)
-    ((InfiniteAdeleRing.ofCompletion_apply w u w).trans (Pi.mulSingle_eq_same _ _))
+  rw [coe_ideleComplexCoord, ideleInfiniteCoord_ofCompletion_self,
+    Units.mapContinuousMulEquiv_apply, Units.coe_map]
+  rfl
 
 /-- On an idele concentrated at a different infinite place `w' ≠ w`, the complex coordinate at `w`
 is `1`. -/
@@ -280,11 +312,8 @@ theorem NumberField.InfinitePlace.ideleComplexCoord_ofCompletion_of_ne {w w' : I
     (hw : w.IsComplex) (h : w ≠ w') (u : w'.Completionˣ) :
     w.ideleComplexCoord (R := R) hw (IdeleGroup.ofCompletion R K w' u) = 1 := by
   apply Units.ext
-  classical
-  rw [coe_ideleComplexCoord, coe_ideleInfiniteCoord, Units.val_one]
-  exact (congrArg (Completion.continuousMulEquivComplexOfIsComplex hw)
-    ((InfiniteAdeleRing.ofCompletion_apply w' u w).trans (Pi.mulSingle_eq_of_ne h _))).trans
-    (map_one _)
+  rw [coe_ideleComplexCoord, ideleInfiniteCoord_ofCompletion_of_ne _ h, Units.val_one,
+    Units.val_one, map_one]
 
 /-- On an idele concentrated at a finite place `v`, the complex coordinate at `w` is `1`. -/
 @[simp]
@@ -292,8 +321,8 @@ theorem NumberField.InfinitePlace.ideleComplexCoord_ofAdicCompletion {w : Infini
     (hw : w.IsComplex) (v : HeightOneSpectrum R) (u : (v.adicCompletion K)ˣ) :
     w.ideleComplexCoord (R := R) hw (IdeleGroup.ofAdicCompletion R K v u) = 1 := by
   apply Units.ext
-  rw [coe_ideleComplexCoord, coe_ideleInfiniteCoord, Units.val_one]
-  exact map_one _
+  rw [coe_ideleComplexCoord, ideleInfiniteCoord_ofAdicCompletion, Units.val_one, Units.val_one,
+    map_one]
 
 /-- **Ideles are determined by their coordinates**: two ideles with the same coordinate at every
 infinite and finite place are equal. -/
