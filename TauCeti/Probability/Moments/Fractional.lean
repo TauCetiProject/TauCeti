@@ -49,14 +49,12 @@ theorem lintegral_rpow_mul_sub_re_charFun (hq : 0 < q) (hq2 : q < 2) :
     have hcos : Integrable (fun x : ℝ ↦ cos (t * x)) μ :=
       (integrable_const (1 : ℝ)).mono' (by fun_prop)
         (ae_of_all _ fun x ↦ by simpa using abs_cos_le_one (t * x))
-    have hchar : ∫ x, cos (t * x) ∂μ = (charFun μ t).re := by
-      simpa using integral_cos_mul_sub_eq_re (μ := μ) 0 t
     have hint : Integrable (fun x : ℝ ↦ t ^ (-(q + 1)) * (1 - cos (t * x))) μ :=
       ((integrable_const (1 : ℝ)).sub hcos).const_mul _
     rw [← ofReal_integral_eq_lintegral_ofReal hint
       (ae_of_all _ fun x ↦ mul_nonneg (rpow_nonneg ht.le _) (hnonneg t x)),
       integral_const_mul, integral_sub (integrable_const _) hcos,
-      integral_const, smul_eq_mul, mul_one, hchar]
+      integral_const, smul_eq_mul, mul_one, integral_cos_mul_eq_re t]
   calc
     _ = ∫⁻ t in Ioi (0 : ℝ), ∫⁻ x,
         ENNReal.ofReal (t ^ (-(q + 1)) * (1 - cos (t * x))) ∂μ := by

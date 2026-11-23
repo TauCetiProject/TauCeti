@@ -8,6 +8,7 @@ module
 public import Mathlib.MeasureTheory.Measure.CharacteristicFunction.Basic
 import TauCeti.Analysis.Bochner.CharFun.Basic
 import TauCeti.Analysis.SpecialFunctions.Integrals.Trigonometric.Fejer
+import TauCeti.Analysis.SpecialFunctions.Trigonometric.Sinc
 import TauCeti.MeasureTheory.Integral.OddSymmetric
 
 /-!
@@ -20,6 +21,11 @@ centre, so it bounds the Lévy concentration function `sup_v μ (closedBall v ε
 characteristic function decays on `[-ε⁻¹, ε⁻¹]` therefore puts little mass on every interval of
 length `2 ε`. This is the analytic input of small-ball estimates for sums of independent random
 variables, whose characteristic function is a product.
+
+The proof smooths `μ` with the Fejér kernel `T / 2 * sinc (T * (x - v) / 2) ^ 2`. Its integral
+against `μ` is the oriented interval integral from `0` to `T`, weighted by `1 - t / T`, of the
+real part of the characteristic function rotated by the phase `-t * v`
+(`MeasureTheory.integral_mul_sinc_sq_eq_integral_re_charFun`).
 
 ## References
 
@@ -40,10 +46,11 @@ namespace MeasureTheory
 
 variable {μ : Measure ℝ} [IsFiniteMeasure μ]
 
-/-- The integral of the kernel `T / 2 * sinc (T * (x - v) / 2) ^ 2` against `μ` equals the
-integral over `[0, T]`, weighted by `1 - t / T`, of the real part of the characteristic function
-of `μ` at `t` after rotation by the phase `-t * v`. -/
-private theorem integral_mul_sinc_sq_eq (v T : ℝ) :
+/-- For all real `v` and `T`, the integral of the Fejér kernel `T / 2 * sinc (T * (x - v) / 2) ^ 2`
+against a finite measure `μ` on `ℝ` equals the oriented interval integral `∫ t in 0..T`, weighted
+by `1 - t / T`, of the real part of the characteristic function of `μ` at `t` after rotation by
+the phase `-t * v`. -/
+theorem integral_mul_sinc_sq_eq_integral_re_charFun (v T : ℝ) :
     ∫ x, T / 2 * sinc (T * (x - v) / 2) ^ 2 ∂μ =
       ∫ t in 0..T, (1 - t / T) * (cexp (↑(-(t * v)) * I) * charFun μ t).re := by
   -- Fubini's theorem, swapping the interval integral with the integral against `μ` through
@@ -98,7 +105,8 @@ theorem measureReal_closedBall_le_integral_norm_charFun (v : ℝ) {ε : ℝ} (h�
   have hK_int : Integrable K μ :=
     Integrable.of_bound (by fun_prop) (T / 2) (ae_of_all _ fun x ↦ by
       rw [Real.norm_of_nonneg (by positivity)]
-      exact TauCeti.mul_sinc_sq_le_div_two hT₀.le _)
+      exact mul_le_of_le_one_right (by positivity)
+        ((sq_le_one_iff_abs_le_one _).2 (abs_sinc_le_one _)))
   have hsymm : ∫ t in -T..T, ‖charFun μ t‖ = 2 * ∫ t in 0..T, ‖charFun μ t‖ := by
     rw [intervalIntegral.integral_eq_two_smul_of_even (fun t ↦ by
       rw [charFun_neg, Complex.norm_conj]), smul_eq_mul]
@@ -114,7 +122,7 @@ theorem measureReal_closedBall_le_integral_norm_charFun (v : ℝ) {ε : ℝ} (h�
         refine mul_le_mul_of_nonneg_left ?_ (by positivity)
         exact setIntegral_le_integral hK_int (ae_of_all _ fun x ↦ by positivity)
     _ ≤ 4 / T * ∫ t in 0..T, ‖charFun μ t‖ := by
-        rw [integral_mul_sinc_sq_eq v T]
+        rw [integral_mul_sinc_sq_eq_integral_re_charFun v T]
         gcongr
         exact integral_one_sub_div_mul_re_le hT₀ v
     _ = 2 * ε * ∫ t in -T..T, ‖charFun μ t‖ := by
