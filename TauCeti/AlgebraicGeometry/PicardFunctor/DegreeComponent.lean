@@ -12,6 +12,7 @@ public import TauCeti.AlgebraicGeometry.PicardFunctor.Fppf
 public import TauCeti.AlgebraicGeometry.PicardFunctor.PicZero.BaseChange
 public import TauCeti.AlgebraicGeometry.PicardFunctor.PicZero.Fppf
 public import TauCeti.AlgebraicGeometry.PicardFunctor.SheafPoints
+public import TauCeti.CategoryTheory.Sites.Whiskering
 
 /-!
 # Degree components of the relative Picard fppf sheaf
@@ -251,13 +252,6 @@ end GeometricPoint
 
 section Component
 
-/-- An fppf sheaf of abelian groups, such as the relative Picard fppf sheaf, is a sheaf of sets. -/
-private lemma isSheaf_obj_comp_forget
-    (F : Sheaf (Scheme.fppfTopology.over S) AddCommGrpCat.{u + 1}) :
-    Presieve.IsSheaf (Scheme.fppfTopology.over S) (F.obj ⋙ forget AddCommGrpCat) :=
-  (isSheaf_iff_isSheaf_of_type _ _).1 ((Presheaf.isSheaf_iff_isSheaf_forget _ _
-    (forget AddCommGrpCat)).1 F.property)
-
 /-- **The degree-`d` component `Picᵈ_{X/S}`** of the relative Picard fppf sheaf of `f : X ⟶ S`:
 at a test scheme `T`, the sections whose fibre degree is `d` at every geometric point
 `Spec K ⟶ T`. It is a subsheaf (`isSheaf_relativePicardDegreeFppfSubfunctor`).
@@ -303,7 +297,8 @@ splits over it. -/
 theorem isSheaf_relativePicardDegreeFppfSubfunctor (d : ℤ) :
     Presieve.IsSheaf (Scheme.fppfTopology.over S)
       (relativePicardDegreeFppfSubfunctor f d).toFunctor := by
-  rw [Subfunctor.isSheaf_iff _ (isSheaf_obj_comp_forget (relativePicardFppfSheaf f))]
+  rw [Subfunctor.isSheaf_iff _
+    ((relativePicardFppfSheaf f).isSheaf_obj_comp (forget AddCommGrpCat))]
   intro T σ hσ K _ _ ξ
   let ι : Over.mk (ξ ≫ T.unop.hom) ⟶ T.unop := Over.homMk ξ
   -- The covering sieve pulled back to the geometric point is maximal, so it contains `ι`.
@@ -341,11 +336,7 @@ theorem eq_of_mem_relativePicardDegreeFppfSubfunctor_obj {d e : ℤ} {T : (Over 
     (hd : σ ∈ (relativePicardDegreeFppfSubfunctor f d).obj T)
     (he : σ ∈ (relativePicardDegreeFppfSubfunctor f e).obj T) : d = e := by
   obtain ⟨x⟩ := ‹Nonempty T.unop.left›
-  -- A geometric point over `x`, through an algebraic closure of its residue field.
-  let ξ : Spec (.of (AlgebraicClosure (T.unop.left.residueField x))) ⟶ T.unop.left :=
-    Spec.map (CommRingCat.ofHom (algebraMap (T.unop.left.residueField x)
-      (AlgebraicClosure (T.unop.left.residueField x)))) ≫ T.unop.left.fromSpecResidueField x
-  exact (hd _ ξ).symm.trans (he _ ξ)
+  exact (hd _ (T.unop.left.fromSpecAlgebraicClosure x)).symm.trans (he _ _)
 
 variable [IsProper f] [SmoothOfRelativeDimension 1 f] [GeometricallyConnected f]
 
@@ -422,7 +413,7 @@ private lemma isSheaf_range_relativePicardDegreeZeroFppfSheafι :
     have := (NatTrans.mono_iff_mono_app _).1 this
     exact NatTrans.mono_of_mono_app _
   exact Presieve.isSheaf_iso _ (asIso (Subfunctor.toRange _))
-    (isSheaf_obj_comp_forget (relativePicardDegreeZeroFppfSheaf f))
+    ((relativePicardDegreeZeroFppfSheaf f).isSheaf_obj_comp (forget AddCommGrpCat))
 
 /-- A section of `Pic⁰_{X/S}` that is the class of a line bundle lies in the image of the
 degree-zero Picard sheaf. -/
@@ -451,7 +442,7 @@ image the degree-zero component `relativePicardDegreeFppfSubfunctor f 0`. -/
 theorem range_relativePicardDegreeZeroFppfSheafι :
     Subfunctor.range (Functor.whiskerRight (relativePicardDegreeZeroFppfSheafι f).hom
       (forget AddCommGrpCat)) = relativePicardDegreeFppfSubfunctor f 0 := by
-  have hF := isSheaf_obj_comp_forget (relativePicardFppfSheaf f)
+  have hF := (relativePicardFppfSheaf f).isSheaf_obj_comp (forget AddCommGrpCat)
   apply le_antisymm
   · -- A section of the image is fppf-locally the image of a degree-zero presheaf section.
     rintro T _ ⟨ρ, rfl⟩
