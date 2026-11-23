@@ -371,8 +371,9 @@ private theorem exists_eq_some_comp_inr (he₁ : Injective e₁) :
       hj.extend_apply (fun v ↦ some (e₂ (inversion 0 1 v.val))) (fun _ ↦ none) ⟨v, hv⟩
   have hf' : ∀ x, (¬ ∃ v ≠ 0, e₁ v = x.val) → f x = none := fun x hx ↦
     Function.extend_apply' _ _ _ fun ⟨⟨v, hv⟩, h⟩ ↦ hx ⟨v, hv, h⟩
-  exact ⟨lift f (fun y ↦ some y.val) fun v hv _ _ ↦ hf _ v hv rfl, fun y ↦ rfl,
-    fun x v hv hx ↦ hf x v hv hx, hf'⟩
+  exact ⟨lift f (fun y ↦ some y.val) fun v hv _ _ ↦ hf _ v hv rfl, fun y ↦ lift_inr ..,
+    fun x v hv hx ↦ (lift_inl ..).trans (hf x v hv hx),
+    fun x hx ↦ (lift_inl ..).trans (hf' x hx)⟩
 
 /-- If the second ball is injective, the first punctured summand embeds into the connected sum:
 this is the mirror image of `exists_eq_some_comp_inr`, where a point `e₂ w` of the second summand is
@@ -384,7 +385,7 @@ private theorem exists_eq_some_comp_inl (he₂ : Injective e₂) :
   have hj : Injective j := he₂.comp Subtype.val_injective
   let g : puncture e₂ → Option M :=
     fun y ↦ Function.extend j (fun w ↦ some (e₁ (inversion 0 1 w.val))) (fun _ ↦ none) y.val
-  refine ⟨lift (fun x ↦ some x.val) g fun v hv _ hy ↦ ?_, fun x ↦ rfl⟩
+  refine ⟨lift (fun x ↦ some x.val) g fun v hv _ hy ↦ ?_, fun x ↦ lift_inl ..⟩
   have hv' : inversion (0 : E) 1 v ≠ 0 := fun h ↦ hv ((inversion_eq_center one_ne_zero).1 h)
   simpa [g, inversion_inversion (0 : E) one_ne_zero] using
     (hj.extend_apply (fun w ↦ some (e₁ (inversion 0 1 w.val))) (fun _ ↦ none)
