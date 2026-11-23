@@ -257,11 +257,8 @@ theorem exists_contDiff_returnDerivative_add_smul_eq_exp_smul
             Real.exp a • returnDerivative (I := 𝓘(ℝ, E)) v g T₀ 0 := by
   obtain ⟨r, hr, hrv⟩ := Metric.eventually_nhds_iff_ball.1 (hvu.and hN)
   -- The orbit is not a rest point, so the field near `0` is a nonzero constant.
-  have hu : u ≠ 0 := by
-    rintro rfl
-    have h := flowOf_eq_of_isMIntegralCurve hv
-      (isMIntegralCurve_const (v := v) (x := (0 : E)) (hrv 0 (mem_ball_self hr)).1) (T₀ / 2)
-    exact hmin (T₀ / 2) ⟨by positivity, by linarith⟩ h
+  have hu : u ≠ 0 :=
+    (hrv 0 (mem_ball_self hr)).1 ▸ apply_ne_zero_of_forall_flowOf_ne (I := 𝓘(ℝ, E)) hv hT₀ hmin
   obtain ⟨ℓ, hℓ⟩ := SeparatingDual.exists_eq_one (R := ℝ) hu
   -- The flow box contains the axis segment `[0, σ] • u`, and `σ < T₀`; the dilation acts across
   -- `[s₀, s₁] ⊆ (0, σ)`.
