@@ -10,6 +10,7 @@ public import Mathlib.Analysis.Normed.Group.Basic
 public import Mathlib.Analysis.SpecialFunctions.Pow.Real
 import Mathlib.Analysis.Normed.Module.Convex
 import TauCeti.Analysis.SpecialFunctions.Pow.Bounds
+import TauCeti.Analysis.SpecialFunctions.Pow.Scaling
 
 /-!
 # Peetre's inequality for the Japanese bracket
