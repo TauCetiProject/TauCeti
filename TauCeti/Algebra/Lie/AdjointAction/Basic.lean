@@ -45,8 +45,8 @@ For an ideal, adjoint nilpotence also passes back to the ambient Lie algebra
 * `TauCeti.LieAlgebra.ad_pow_eq_sum` and `TauCeti.LieAlgebra.ad_pow_apply`: the
   iterated-commutator expansion of `ad R A a ^ n`, at operator level and evaluated.
 * `TauCeti.LieAlgebra.ad_eq_zero_iff_mem_center`: `ad R A a` vanishes exactly on the centre.
-* `TauCeti.LieAlgebra.isNilpotent_ad_of_isNilpotent_sub_of_mem_center`: a central element plus a
-  nilpotent element has nilpotent adjoint action.
+* `IsNilpotent.ad_of_sub_of_mem_center`: a central element plus a nilpotent element has nilpotent
+  adjoint action.
 * `LieSubalgebra.isSemisimple_ad_of_isSemisimple_ad`: an element of a Lie subalgebra that is
   ad-semisimple in the ambient Lie algebra is ad-semisimple in the subalgebra.
 * `LieIdeal.isNilpotent_ad_iff`: an element of an ideal is ad-nilpotent in the ideal exactly when
@@ -112,7 +112,7 @@ theorem ad_eq_zero_iff_mem_center (a : A) :
 
 /-- Shifting by a central element does not change the adjoint action, so a central element plus a
 nilpotent element of an associative algebra has nilpotent adjoint action. -/
-theorem isNilpotent_ad_of_isNilpotent_sub_of_mem_center {a z : A} (h : IsNilpotent (a - z))
+theorem _root_.IsNilpotent.ad_of_sub_of_mem_center {a z : A} (h : IsNilpotent (a - z))
     (hz : z ∈ Subalgebra.center R A) : IsNilpotent (LieAlgebra.ad R A a) := by
   have hz' : LieAlgebra.ad R A z = 0 := (ad_eq_zero_iff_mem_center z).mpr hz
   simpa [hz'] using LieAlgebra.ad_nilpotent_of_nilpotent (R := R) h
