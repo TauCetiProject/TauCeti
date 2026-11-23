@@ -68,12 +68,12 @@ namespace IntegralLattice
 canonical rationalization equivalence. -/
 @[simp]
 theorem form_rationalizationEquiv (L : IntegralLattice V) (x y : ℚ ⊗[ℤ] L) :
-    L.form (Submodule.rationalizationEquiv L.carrier x)
-        (Submodule.rationalizationEquiv L.carrier y) =
+    L.form (Submodule.rationalizationEquiv (K := ℚ) L.carrier x)
+        (Submodule.rationalizationEquiv (K := ℚ) L.carrier y) =
       L.integralForm.baseChange ℚ x y := by
-  let h := Submodule.isBaseChange_subtype L.carrier
+  let h := Submodule.isBaseChange_subtype (K := ℚ) L.carrier
   -- The generic equivalence is opaque across modules; identify it by its pure-tensor equation.
-  have he : Submodule.rationalizationEquiv L.carrier = h.equiv := by
+  have he : Submodule.rationalizationEquiv (K := ℚ) L.carrier = h.equiv := by
     apply LinearEquiv.ext
     intro t
     induction t using TensorProduct.inductionOn with
@@ -89,7 +89,7 @@ theorem form_rationalizationEquiv (L : IntegralLattice V) (x y : ℚ ⊗[ℤ] L)
 ambient rational form. -/
 noncomputable def rationalizationIsometry (L : IntegralLattice V) :
     (L.integralForm.baseChange ℚ).IsometryEquiv L.form where
-  toLinearEquiv := Submodule.rationalizationEquiv L.carrier
+  toLinearEquiv := Submodule.rationalizationEquiv (K := ℚ) L.carrier
   map_app' := L.form_rationalizationEquiv
 
 /-- Evaluating the rationalization isometry on a tensor product element coincides with the
@@ -97,7 +97,7 @@ rationalization equivalence. -/
 -- BilinForm.IsometryEquiv has no toLinearEquiv lemma; definition unfolding is canonical.
 @[simp]
 theorem rationalizationIsometry_apply (L : IntegralLattice V) (x : ℚ ⊗[ℤ] L) :
-    L.rationalizationIsometry x = Submodule.rationalizationEquiv L.carrier x := by
+    L.rationalizationIsometry x = Submodule.rationalizationEquiv (K := ℚ) L.carrier x := by
   rfl
 
 /-- Evaluating the inverse rationalization isometry coincides with the inverse rationalization
@@ -105,7 +105,8 @@ equivalence. -/
 -- BilinForm.IsometryEquiv has no symm_toLinearEquiv lemma; definition unfolding is canonical.
 @[simp]
 theorem rationalizationIsometry_symm_apply (L : IntegralLattice V) (y : V) :
-    L.rationalizationIsometry.symm y = (Submodule.rationalizationEquiv L.carrier).symm y := by
+    L.rationalizationIsometry.symm y =
+      (Submodule.rationalizationEquiv (K := ℚ) L.carrier).symm y := by
   rfl
 
 section AbstractIntegralForm
@@ -207,7 +208,7 @@ equivalence returns the vector one started from. -/
 @[simp]
 theorem rationalizationEquiv_baseChange_carrierEquiv
     (B : LinearMap.BilinForm ℤ M) (hB : B.IsSymm) (x : ℚ ⊗[ℤ] M) :
-    Submodule.rationalizationEquiv (ofIntegralForm B hB).carrier
+    Submodule.rationalizationEquiv (K := ℚ) (ofIntegralForm B hB).carrier
         (LinearEquiv.baseChange ℤ ℚ M _ (carrierEquiv B hB) x) = x := by
   induction x using TensorProduct.inductionOn with
   | add x y hx hy => simp only [map_add, hx, hy]
@@ -221,7 +222,8 @@ equivalence and then rationalizing is the identity on the original rationalizati
 theorem carrierEquiv_baseChange_trans_rationalizationEquiv
     (B : LinearMap.BilinForm ℤ M) (hB : B.IsSymm) :
     (LinearEquiv.baseChange ℤ ℚ M (ofIntegralForm B hB) (carrierEquiv B hB)).trans
-      (Submodule.rationalizationEquiv (ofIntegralForm B hB).carrier) = LinearEquiv.refl ℚ _ :=
+      (Submodule.rationalizationEquiv (K := ℚ) (ofIntegralForm B hB).carrier) =
+        LinearEquiv.refl ℚ _ :=
   LinearEquiv.ext (rationalizationEquiv_baseChange_carrierEquiv B hB)
 
 end ofIntegralForm

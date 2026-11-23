@@ -38,11 +38,11 @@ variable {𝕜 : Type*} [Field 𝕜] {r N : ℕ}
 coordinate space indexed by `r` rather than by the subspace's dimension. -/
 noncomputable def pluckerMap (V : finiteGrassmannian 𝕜 r N) :
     Projectivization 𝕜 (Set.powersetCard (Fin N) r → 𝕜) :=
-  cast (congrArg (fun n ↦ Projectivization 𝕜 (Set.powersetCard (Fin N) n → 𝕜)) V.2)
-    V.1.relativePluckerPoint
+  cast (congrArg (fun n ↦ Projectivization 𝕜 (Set.powersetCard (Fin N) n → 𝕜)) V.property)
+    V.val.relativePluckerPoint
 
 /-- The fixed-rank Plücker map is computed by the maximal minors of any basis. -/
-theorem pluckerMap_eq_mk (V : finiteGrassmannian 𝕜 r N) (b : Module.Basis (Fin r) 𝕜 V.1) :
+theorem pluckerMap_eq_mk (V : finiteGrassmannian 𝕜 r N) (b : Module.Basis (Fin r) 𝕜 V.val) :
     pluckerMap V = Projectivization.mk 𝕜 (plucker fun i ↦ (b i : Fin N → 𝕜))
       ((plucker_ne_zero_iff _).2 b.linearIndependent_coe_basis) := by
   rcases V with ⟨V, hV⟩
@@ -53,12 +53,12 @@ theorem pluckerMap_eq_mk (V : finiteGrassmannian 𝕜 r N) (b : Module.Basis (Fi
 @[simp]
 theorem pluckerMap_frameSpan (f : finiteFullRankFrame 𝕜 r N) :
     pluckerMap (frameSpan f) =
-      Projectivization.mk 𝕜 (plucker f.1) ((plucker_ne_zero_iff _).2 f.2) := by
-  let b := Module.finBasisOfFinrankEq 𝕜 (frameSpan f).1 (frameSpan f).2
+      Projectivization.mk 𝕜 (plucker f.val) ((plucker_ne_zero_iff _).2 f.property) := by
+  let b := Module.finBasisOfFinrankEq 𝕜 (frameSpan f).val (frameSpan f).property
   rw [pluckerMap_eq_mk _ b]
-  apply (mk_plucker_eq_mk_plucker_iff b.linearIndependent_coe_basis f.2).2
+  apply (mk_plucker_eq_mk_plucker_iff b.linearIndependent_coe_basis f.property).2
   simpa only [coe_frameSpan] using
-    (Submodule.span_range_subtype_eq_top_iff _ fun i ↦ (b i).2).1 b.span_eq
+    (Submodule.span_range_subtype_eq_top_iff _ fun i ↦ (b i).property).1 b.span_eq
 
 /-- The Plücker point determines the subspace. -/
 theorem pluckerMap_injective :
@@ -68,7 +68,8 @@ theorem pluckerMap_injective :
   obtain ⟨g, rfl⟩ := frameSpan_surjective W
   apply Subtype.ext
   simp only [coe_frameSpan]
-  exact (mk_plucker_eq_mk_plucker_iff f.2 g.2).1 (by simpa only [pluckerMap_frameSpan] using h)
+  exact (mk_plucker_eq_mk_plucker_iff f.property g.property).1
+      (by simpa only [pluckerMap_frameSpan] using h)
 
 variable [TopologicalSpace 𝕜] [IsTopologicalRing 𝕜]
 
@@ -80,9 +81,9 @@ theorem continuous_pluckerMap :
   apply isQuotientMap_frameSpan.continuous_iff.2
   simpa only [Function.comp_def, pluckerMap_frameSpan] using
     Projectivization.continuous_mk
-      (continuous_plucker.comp (continuous_subtype_val :
-        Continuous fun f : finiteFullRankFrame 𝕜 r N ↦ f.1))
-      (fun f ↦ (plucker_ne_zero_iff _).2 f.2)
+      (continuous_plucker.comp (continuous_subtypeVal :
+        Continuous fun f : finiteFullRankFrame 𝕜 r N ↦ f.val))
+      (fun f ↦ (plucker_ne_zero_iff _).2 f.property)
 
 /-- Finite Grassmannians over Hausdorff topological fields are Hausdorff.
 In particular, this applies over the real and complex numbers. -/

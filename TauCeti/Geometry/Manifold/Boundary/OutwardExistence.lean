@@ -52,7 +52,7 @@ private theorem local_extension_outward {x : (𝓡∂ (n + 1)).boundary M}
   have hext : tangentCoordChange (𝓡∂ (n + 1)) y x y (g y) = v₀ := by
     have hvalue : (trivializationAt (EuclideanSpace ℝ (Fin (n + 1)))
         (TangentSpace (𝓡∂ (n + 1))) (x : M) ⟨(x : M), v₀⟩).2 = v₀ := by
-      rw [TangentBundle.trivializationAt_apply_tangentCoordChange]
+      rw [TangentBundle.trivializationAt_snd_eq_tangentCoordChange]
       rw [tangentCoordChange_self (x := (x : M))
         (mem_extChartAt_source (I := 𝓡∂ (n + 1)) (x : M))]
     have hcoord : (trivializationAt (EuclideanSpace ℝ (Fin (n + 1)))
@@ -65,7 +65,7 @@ private theorem local_extension_outward {x : (𝓡∂ (n + 1)).boundary M}
         rw [Trivialization.apply_mk_symm _ (by
           rwa [TangentBundle.trivializationAt_baseSet])]
       exact hcoord'.trans hvalue
-    exact (TangentBundle.trivializationAt_apply_tangentCoordChange
+    exact (TangentBundle.trivializationAt_snd_eq_tangentCoordChange
       (x := (x : M)) (y := y) (g y)).symm.trans hcoord
   rw [hext]
   simp [v₀]

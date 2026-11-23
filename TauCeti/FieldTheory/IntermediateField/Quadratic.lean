@@ -98,7 +98,7 @@ theorem exists_add_mul_of_mem_sup_adjoin_sq {F : IntermediateField K L} {x : L}
   rw [hpb, Polynomial.eq_X_add_C_of_natDegree_le_one hfle,
     IntermediateField.adjoin.powerBasis_gen] at hf
   refine ⟨algebraMap F L (f.coeff 0), algebraMap F L (f.coeff 1),
-    (f.coeff 0).2, (f.coeff 1).2, ?_⟩
+    (f.coeff 0).property, (f.coeff 1).property, ?_⟩
   have hfeq := congrArg (Subtype.val (p := (· ∈ adjoin F {x}))) hf
   rw [AdjoinSimple.coe_aeval_gen_apply] at hfeq
   simp only [Polynomial.aeval_add, Polynomial.aeval_mul, Polynomial.aeval_C,
@@ -124,7 +124,7 @@ theorem _root_.IntermediateField.finrank_adjoin_simple_eq_two_of_sq_mem_notMem
   refine (minpoly_natDegree_le_two_of_sq_mem hx2).antisymm ?_
   apply (minpoly.two_le_natDegree_iff hx_int).mpr
   rintro ⟨y, hy⟩
-  exact hxF (hy ▸ y.2)
+  exact hxF (hy ▸ y.property)
 
 /-- If `x² ∈ F` but `x ∉ F`, then adjoining `x` doubles the degree:
 `[F ⊔ K⟮x⟯ : K] = 2 · [F : K]`. -/
@@ -191,6 +191,22 @@ theorem _root_.Finset.finrank_adjoin_eq_two_pow_card [DecidableEq L] (t : Finset
     rw [Finset.coe_insert, Set.insert_eq, IntermediateField.adjoin_union, sup_comm,
       (IntermediateField.adjoin K (u : Set L)).finrank_sup_adjoin_simple_eq_mul_two hx2 hxnot,
       ih hsq' hnot', Finset.card_insert_of_notMem hxu, pow_succ]
+
+/-- **A square root lies in the base field exactly when its radicand is a square.** If
+`x ^ 2 = a` for some `a ∈ K`, then `K(x) = K` if and only if `a` is a square in `K`: a square
+`r ^ 2` gives `x = r` or `x = -r`, and conversely `x ∈ K` squares to `a`. This is the counterpart
+of `finrank_adjoin_simple_eq_two_of_not_isSquare`. -/
+theorem adjoin_simple_eq_bot_iff_isSquare {a : K} {x : L} (hx : x ^ 2 = algebraMap K L a) :
+    IntermediateField.adjoin K {x} = ⊥ ↔ IsSquare a := by
+  rw [IntermediateField.adjoin_simple_eq_bot_iff, IntermediateField.mem_bot]
+  constructor
+  · rintro ⟨r, rfl⟩
+    exact ⟨r, (algebraMap K L).injective (by rw [← hx, map_mul, sq])⟩
+  · rintro ⟨r, rfl⟩
+    have hxr : x ^ 2 = algebraMap K L r ^ 2 := by rw [hx, sq, map_mul]
+    rcases sq_eq_sq_iff_eq_or_eq_neg.mp hxr with h | h
+    · exact ⟨r, h.symm⟩
+    · exact ⟨-r, by rw [map_neg, h]⟩
 
 /-- **Same square class from a shared simple quadratic field.** Let `x` and `y` be square roots of
 `a` and `c` in a field extension `L / K` with `2 ≠ 0`. If the simple extensions `K(x)` and `K(y)`

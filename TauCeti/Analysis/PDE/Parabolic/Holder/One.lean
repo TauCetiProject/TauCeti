@@ -152,7 +152,7 @@ private def toJetL : ParabolicC1HolderSpace α E F a b →L[ℝ] Jet α E F a b 
 private theorem isJetGraph_toJetL (f : ParabolicC1HolderSpace α E F a b) :
     IsJetGraph (toJetL f) :=
   -- `toJetL` is the submodule inclusion, so its value is the underlying jet of `f`.
-  f.2
+  f.property
 
 private theorem norm_toJetL (f : ParabolicC1HolderSpace α E F a b) : ‖toJetL f‖ = ‖f‖ :=
   Submodule.norm_coe f
@@ -456,7 +456,7 @@ private theorem eHolderNorm_le (hα : α ≤ 1) (f : ParabolicC1HolderSpace α E
           HolderSpace.toBoundedContinuousFunction_apply, coe_nnNorm] using
           (spatialFDerivL f).toBoundedContinuousFunction.norm_coe_le_norm _
     · -- The slab is empty.
-      exact spaceEHolderNorm_le_iff.2 fun t ↦ absurd (t.2.1.trans t.2.2) hab.not_ge
+      exact spaceEHolderNorm_le_iff.2 fun t ↦ absurd (t.property.1.trans t.property.2) hab.not_ge
   have hD : ∀ p q, dist (f p) (f q) ≤ ((2 * ‖valueL f‖₊ : ℝ≥0) : ℝ) := fun p q ↦ by
     simpa using (valueL f).dist_le_two_norm p q
   have h := eHolderNorm_le_of_spaceEHolderNorm_le_of_timeEHolderNorm_le hspace

@@ -46,8 +46,8 @@ variable {S : Type*} [SetLike S V] [AddSubgroupClass S V]
 /-- An additive automorphism of `V` that restricts to a bijection of an additive subgroup `M`,
 viewed as an integral linear automorphism of `M`. -/
 def invariantRestrict (θ : V ≃+ V) (M : S) (hθ : ∀ v, θ v ∈ M ↔ v ∈ M) : M ≃ₗ[ℤ] M where
-  toFun v := ⟨θ v, (hθ v).2 v.2⟩
-  invFun v := ⟨θ.symm v, (hθ _).1 (by rw [θ.apply_symm_apply]; exact v.2)⟩
+  toFun v := ⟨θ v, (hθ v).2 v.property⟩
+  invFun v := ⟨θ.symm v, (hθ _).1 (by rw [θ.apply_symm_apply]; exact v.property)⟩
   left_inv v := Subtype.ext (θ.symm_apply_apply _)
   right_inv v := Subtype.ext (θ.apply_symm_apply _)
   map_add' v w := Subtype.ext (map_add θ _ _)

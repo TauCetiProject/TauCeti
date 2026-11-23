@@ -72,7 +72,7 @@ private theorem isUnit_of_notMem_supp_presentationLimitStalkValuation {x : spa A
   -- `a` does not vanish at the point of `Spa (A⟨p⟩, A_p⁺)` over `x`
   have ha : (Presentation.completionLocObjCommRingCatIso p).hom a ∉
       supp ((spaCompletedLocalizationHomeomorph P Aplus hP p.num p.den _
-        p.hasDenominatorPower).symm ⟨x, mem_spaBasicOpen.mp hx⟩).1 := by
+        p.hasDenominatorPower).symm ⟨x, mem_spaBasicOpen.mp hx⟩).val := by
     refine fun hmem ↦ ht ?_
     have hle : (rationalLocalizationPoint hP p x hx).toValuativeRel.vle a 0 := by
       rw [rationalLocalizationPoint_def, comap_vle, map_zero]

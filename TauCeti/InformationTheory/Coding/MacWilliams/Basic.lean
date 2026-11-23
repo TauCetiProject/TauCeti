@@ -196,7 +196,7 @@ theorem aeval_macWilliams_identity
     ext i
     fin_cases i <;> simp
   have heval := congrArg (aeval ![x, y]) h
-  simpa only [map_mul, map_natCast, aeval_eq_bind₁, aeval_bind₁, hvec] using heval
+  simpa only [map_mul, map_natCast, comp_aeval_apply, hvec] using heval
 
 end TauCeti
 

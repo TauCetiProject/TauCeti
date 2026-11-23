@@ -168,7 +168,8 @@ theorem summable_expSeries_of_mem_maximalIdeal_pow {i : ℕ}
     simp [hx, Nat.ne_zero_of_lt hn]
   · obtain ⟨π, hπ⟩ := IsDiscreteValuationRing.exists_irreducible (R := 𝒪[K])
     have hxval : valuation K (x : K) ≤ valuation K (π : K) ^ i :=
-      (Set.ext_iff.mp (hπ.maximalIdeal_pow_eq_setOfPred_le_v_coe_pow (valuation K) i) x).mp x.2
+      (Set.ext_iff.mp (hπ.maximalIdeal_pow_eq_setOfPred_le_v_coe_pow
+          (valuation K) i) x).mp x.property
     have hxi : (i : ℤ) ≤ (normalizedValuation K (Units.mk0 (x : K) hx)).toAdd :=
       (le_toAdd_normalizedValuation_iff_valuation_le_zpow
         (normalizedValuation_irreducible hπ) (i : ℤ) (Units.mk0 (x : K) hx)).mpr
@@ -237,7 +238,7 @@ theorem hasSum_coeff_rescale_exp_of_mem_maximalIdeal_pow {i : ℕ}
       (exp ((z : K) * x)) := by
   have := FinitePadicExtension.charZero K p
   have h := hasSum_exp_of_mem_maximalIdeal_pow
-    (⟨z * (x : 𝒪[K]), Ideal.mul_mem_left _ _ x.2⟩ : (𝓂[K] ^ i : Ideal 𝒪[K])) hi
+    (⟨z * (x : 𝒪[K]), Ideal.mul_mem_left _ _ x.property⟩ : (𝓂[K] ^ i : Ideal 𝒪[K])) hi
   simpa only [Subring.coe_mul, PowerSeries.coeff_rescale, PowerSeries.coeff_exp,
     one_div, mul_one, map_inv₀, map_natCast, mul_pow, div_eq_mul_inv, mul_comm, mul_left_comm,
     mul_assoc] using h

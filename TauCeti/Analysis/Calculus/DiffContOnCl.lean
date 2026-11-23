@@ -9,7 +9,10 @@ public import Mathlib.Analysis.Calculus.DiffContOnCl
 public import Mathlib.Analysis.Calculus.FDeriv.Prod
 
 /-!
-# Maps to a finite product that are differentiable on a domain and continuous on its closure
+# Maps that are differentiable on a domain and continuous on its closure
+
+Precomposing with multiplication by a scalar `a` with `‖a‖ ≤ 1` preserves being differentiable on
+the ball `ball 0 R` and continuous on its closure (`DiffContOnCl.comp_const_mul`).
 
 A map `Φ : E → Π i, F' i` is differentiable on `s` and continuous on `closure s` exactly when each
 coordinate is (`TauCeti.diffContOnCl_pi`). The assembly lemma
@@ -56,3 +59,14 @@ theorem forall_exists_diffContOnCl_iff [Fintype ι] {s t b : Set E} (P : ι → 
     exact ⟨fun z => u z i, diffContOnCl_pi.mp hu i, fun w hw => hb w hw i, rfl⟩
 
 end TauCeti
+
+/-- Precomposing with multiplication by `a`, for `‖a‖ ≤ 1`, preserves being differentiable on the
+ball `ball 0 R` and continuous on its closure. -/
+theorem DiffContOnCl.comp_const_mul {𝕜 E : Type*} [NontriviallyNormedField 𝕜]
+    [NormedAddCommGroup E] [NormedSpace 𝕜 E] {f : 𝕜 → E} {R : ℝ}
+    (hf : DiffContOnCl 𝕜 f (Metric.ball 0 R)) {a : 𝕜} (ha : ‖a‖ ≤ 1) :
+    DiffContOnCl 𝕜 (fun z ↦ f (a * z)) (Metric.ball 0 R) :=
+  hf.comp ((differentiable_id.const_mul a).diffContOnCl) fun z hz ↦ by
+    rw [mem_ball_zero_iff] at hz ⊢
+    rw [norm_mul]
+    exact (mul_le_of_le_one_left (norm_nonneg z) ha).trans_lt hz

@@ -76,7 +76,7 @@ theorem bijective_of_depth_of_addCommGroup
     exact not_surjective (LinearMap.range_eq_top.mp range_top)
   let : Nontrivial (N ⧸ map.range) := Submodule.Quotient.nontrivial_iff.mpr range_ne_top
   obtain ⟨prime, associated⟩ := associatedPrimes.nonempty R (N ⧸ map.range)
-  let : prime.IsPrime := associated.1
+  let : prime.IsPrime := associated.toIsPrime
   have depth_zero :=
     (TauCeti.depth_localizedModule_eq_zero_iff (p := prime)).mpr associated
   let localizedMap := LocalizedModule.map prime.primeCompl map

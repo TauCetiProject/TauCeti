@@ -44,13 +44,14 @@ namespace TauCeti
 open Set ParabolicSpaceTime ParabolicC2HolderSpace InnerProductSpace Laplacian
 open scoped NNReal
 
-variable {E F : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
-  [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E]
-  [NormedAddCommGroup F] [NormedSpace ℝ F] [CompleteSpace F]
-  {α T : ℝ≥0} {hT : (0 : ℝ) < T}
-
 attribute [local instance] instNormedAddCommGroupContinuousLinearMapRealId
   instNormedSpaceRealContinuousLinearMapId
+
+section InitialData
+
+variable {E F : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
+  [FiniteDimensional ℝ E] [NormedAddCommGroup F] [NormedSpace ℝ F]
+  {α T : ℝ≥0} {hT : (0 : ℝ) < T}
 
 /-- The heat equation's forcing and initial trace as a bounded linear data operator. -/
 def heatInitialDataL (hα : α ≤ 1) (hT : (0 : ℝ) < T) :
@@ -58,14 +59,12 @@ def heatInitialDataL (hα : α ≤ 1) (hT : (0 : ℝ) < T) :
       HolderSpace α (slab (E := E) 0 T) F × CkHolderSpace 2 α E F :=
   initialDataL hα (HolderSpace.const traceL) 0 0
 
-omit [MeasurableSpace E] [BorelSpace E] [CompleteSpace F] in
 /-- The heat data operator specializes the general initial-data operator to the heat
 coefficients. -/
 theorem heatInitialDataL_eq_initialDataL (hα : α ≤ 1) (hT : (0 : ℝ) < T) :
     heatInitialDataL (E := E) (F := F) hα hT =
       initialDataL hα (HolderSpace.const (traceL (E := E) (F := F))) 0 0 := (rfl)
 
-omit [MeasurableSpace E] [BorelSpace E] [CompleteSpace F] in
 /-- The first component is `∂ₜu - Δu`, with the recorded one-sided derivatives at endpoints. -/
 @[simp]
 theorem heatInitialDataL_fst_apply (hα : α ≤ 1) (u : ParabolicC2HolderSpace α E F hT)
@@ -74,12 +73,20 @@ theorem heatInitialDataL_fst_apply (hα : α ≤ 1) (u : ParabolicC2HolderSpace 
       Δ (fun x ↦ u (slabMk x (slabTime p))) (p : ParabolicSpaceTime E).space := by
   simp [heatInitialDataL, laplacian_eq_traceL, u.fderiv_fderiv_eq]
 
-omit [MeasurableSpace E] [BorelSpace E] [CompleteSpace F] in
 /-- The second component is the initial spatial trace. -/
 @[simp]
 theorem heatInitialDataL_snd (hα : α ≤ 1) (u : ParabolicC2HolderSpace α E F hT) :
     (heatInitialDataL hα hT u).2 = u.spatialTrace ⟨0, left_mem_Icc.2 hT.le⟩ := by
   simp [heatInitialDataL]
+
+end InitialData
+
+section Solution
+
+variable {E F : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
+  [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E]
+  [NormedAddCommGroup F] [NormedSpace ℝ F] [CompleteSpace F]
+  {α T : ℝ≥0} {hT : (0 : ℝ) < T}
 
 /-- The solution operator for forcing and initial data, in that order: the Duhamel potential
 of the forcing plus the Cauchy potential of the initial datum. -/
@@ -122,9 +129,11 @@ theorem heatInitialDataL_comp_heatSolutionL (hα₀ : 0 < α) (hα₁ : α < 1) 
       ContinuousLinearMap.id ℝ _ := by
   exact ContinuousLinearMap.ext (heatInitialDataL_heatSolutionL hα₀ hα₁)
 
+end Solution
+
 section Euclidean
 
-variable {ι : Type*} [Fintype ι]
+variable {α T : ℝ≥0} {hT : (0 : ℝ) < T} {ι : Type*} [Fintype ι]
 
 variable [DecidableEq ι] in
 /-- The coordinate identity identifies the first data component with the existing Euclidean
@@ -165,18 +174,18 @@ def heatInitialDataCLE (hα₀ : 0 < α) (hα₁ : α < 1) (hT : (0 : ℝ) < T) 
     ParabolicC2HolderSpace α (EuclideanSpace ℝ ι) ℝ hT ≃L[ℝ]
       HolderSpace α (slab (E := EuclideanSpace ℝ ι) 0 T) ℝ ×
         CkHolderSpace 2 α (EuclideanSpace ℝ ι) ℝ :=
-  ContinuousLinearEquiv.equivOfInverse (heatInitialDataL hα₁.le hT) (heatSolutionL hα₀ hα₁ hT)
-    (Function.RightInverse.leftInverse_of_injective
-      (heatInitialDataL_heatSolutionL (E := EuclideanSpace ℝ ι) (F := ℝ) (hT := hT) hα₀ hα₁)
-      (heatInitialDataL_injective hα₁.le))
-    (heatInitialDataL_heatSolutionL hα₀ hα₁)
+  ContinuousLinearEquiv.ofContinuousLinearMap (heatInitialDataL hα₁.le hT)
+    (heatSolutionL hα₀ hα₁ hT)
+    (ContinuousLinearMap.ext (heatInitialDataL_heatSolutionL hα₀ hα₁))
+    (ContinuousLinearMap.ext fun _ ↦ heatInitialDataL_injective hα₁.le
+      (heatInitialDataL_heatSolutionL hα₀ hα₁ _))
 
 /-- The forward isomorphism is the forcing-and-initial-trace operator. -/
 @[simp]
 theorem heatInitialDataCLE_apply (hα₀ : 0 < α) (hα₁ : α < 1)
     (u : ParabolicC2HolderSpace α (EuclideanSpace ℝ ι) ℝ hT) :
     heatInitialDataCLE (ι := ι) hα₀ hα₁ hT u = heatInitialDataL hα₁.le hT u := by
-  rw [heatInitialDataCLE, ContinuousLinearEquiv.equivOfInverse_apply]
+  rw [heatInitialDataCLE, ContinuousLinearEquiv.coe_ofContinuousLinearMap]
 
 /-- The inverse isomorphism is the constructed heat solution operator. -/
 @[simp]

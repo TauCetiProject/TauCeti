@@ -189,7 +189,7 @@ def kerPointMapEquivInvariants [DecidableEq K] (f : Hom W₁.toAffine W₂.toAff
   let ι : f.pointMapHom.ker →+ H0 (AbsoluteGaloisGroup K) f.KerCoeff :=
     { toFun P := ⟨⟨W₁.basePointCoeff P, by
         rw [AddMonoidHom.mem_ker, AddMonoidHom.coe_ofClass,
-          pointCoeffMap_basePointCoeff, (Hom.mem_ker_pointMapHom_iff _ _).1 P.2, map_zero]⟩,
+          pointCoeffMap_basePointCoeff, (Hom.mem_ker_pointMapHom_iff _ _).1 P.property, map_zero]⟩,
         (FixedPoints.mem_addSubgroup _ _ _).2 fun σ ↦ Subtype.ext (W₁.smul_basePointCoeff σ P)⟩
       map_zero' := by ext; simp
       map_add' _ _ := by ext; simp }
@@ -201,14 +201,14 @@ def kerPointMapEquivInvariants [DecidableEq K] (f : Hom W₁.toAffine W₂.toAff
   intro P
   obtain ⟨Q, hQ⟩ := W₁.basePointEquivInvariants.surjective
     ⟨P.val.val, (FixedPoints.mem_addSubgroup _ _ _).2
-      fun σ ↦ congrArg Subtype.val ((FixedPoints.mem_addSubgroup _ _ _).1 P.2 σ)⟩
+      fun σ ↦ congrArg Subtype.val ((FixedPoints.mem_addSubgroup _ _ _).1 P.property σ)⟩
   have hQ : W₁.basePointCoeff Q = P.val.val := by
     simpa only [coe_basePointEquivInvariants] using congrArg Subtype.val hQ
   have hker : Q ∈ f.pointMapHom.ker := by
     apply (Hom.mem_ker_pointMapHom_iff _ _).2
     apply W₂.basePointCoeff_injective
     rw [map_zero, ← pointCoeffMap_basePointCoeff, hQ]
-    exact P.val.2
+    exact P.val.property
   exact ⟨⟨Q, hker⟩, Subtype.ext (Subtype.ext hQ)⟩
 
 /-- The kernel-invariant equivalence is the usual inclusion of rational points into `E(Kˢ)`. -/
