@@ -225,30 +225,37 @@ noncomputable def stopAtExit (t : ℝ≥0) (x : α) : α :=
 
 variable {ϕ P} {x : α} {t : ℝ≥0}
 
+/-- The stopped flow runs for the time `min t (exitTime x)`. -/
+theorem stopAtExit_eq : ϕ.stopAtExit P t x = ϕ (min (t : ℝ≥0∞) (ϕ.exitTime P x)).toReal x := by
+  rw [stopAtExit, ENNReal.truncateToReal]
+
 /-- The time `min t (exitTime x)` for which the stopped flow runs is at most the exit time. -/
-theorem ofReal_truncateToReal_exitTime_le (t : ℝ≥0∞) :
+theorem ofReal_truncateToReal_exitTime_le (t : ℝ≥0) :
     ENNReal.ofReal (ENNReal.truncateToReal t (ϕ.exitTime P x)) ≤ ϕ.exitTime P x := by
-  rw [ENNReal.truncateToReal]
-  exact ENNReal.ofReal_toReal_le.trans (min_le_right _ _)
+  rcases le_total (ϕ.exitTime P x) t with h | h
+  · rw [ENNReal.truncateToReal_eq_toReal ENNReal.coe_ne_top h]
+    exact ENNReal.ofReal_toReal_le
+  · refine (ENNReal.ofReal_le_ofReal (ENNReal.truncateToReal_le ENNReal.coe_ne_top)).trans ?_
+    simpa using h
 
 /-- Stopping the flow at time `0` does nothing. -/
 @[simp]
 theorem stopAtExit_zero : ϕ.stopAtExit P 0 x = x := by
-  simp [stopAtExit, ENNReal.truncateToReal]
+  simp [stopAtExit_eq]
 
 /-- The stopped flow fixes the points of exit time zero. -/
 theorem stopAtExit_of_exitTime_eq_zero (h : ϕ.exitTime P x = 0) : ϕ.stopAtExit P t x = x := by
-  simp [stopAtExit, ENNReal.truncateToReal, h]
+  simp [stopAtExit_eq, h]
 
 /-- For times at most the exit time, the stopped flow is the flow. -/
 theorem stopAtExit_of_le_exitTime (h : (t : ℝ≥0∞) ≤ ϕ.exitTime P x) :
     ϕ.stopAtExit P t x = ϕ t x := by
-  simp [stopAtExit, ENNReal.truncateToReal, min_eq_left h]
+  simp [stopAtExit_eq, min_eq_left h]
 
 /-- For times at least the exit time, the stopped flow is the flow at the exit time. -/
 theorem stopAtExit_of_exitTime_le (h : ϕ.exitTime P x ≤ t) :
     ϕ.stopAtExit P t x = ϕ (ϕ.exitTime P x).toReal x := by
-  simp [stopAtExit, ENNReal.truncateToReal, min_eq_right h]
+  rw [stopAtExit, ENNReal.truncateToReal_eq_toReal ENNReal.coe_ne_top h]
 
 /-- The stopped flow maps a closed set `P` into itself. -/
 theorem mapsTo_stopAtExit (hP : IsClosed P) (t : ℝ≥0) : MapsTo (ϕ.stopAtExit P t) P P :=
@@ -310,7 +317,7 @@ theorem homotopicRel_stopAtExitMap (hP : IsClosed P) (hτ : ContinuousOn (ϕ.exi
             map_one_left := fun x ↦ by ext; simp [hT, stopAtExit]
             prop' := fun u x hx ↦ by
               ext
-              simp [hT, ENNReal.truncateToReal, hL x hx] }⟩
+              simp [hT, ENNReal.truncateToReal_eq_toReal ENNReal.coe_ne_top, hL x hx] }⟩
 
 end StopAtExit
 
