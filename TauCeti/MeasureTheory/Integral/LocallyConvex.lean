@@ -363,6 +363,7 @@ theorem _root_.Seminorm.apply_compactIntegral_le (p : Seminorm ℝ E) (hp : Cont
   have := fineFilter_neBot (K := K)
   refine le_of_tendsto_of_tendsto' ((hp.tendsto _).comp (tendsto_riemannSum f))
     (tendsto_riemannSum_integral ⟨fun x ↦ p (f x), hp.comp f.continuous⟩) fun P ↦ ?_
+  rw [Function.comp_apply, riemannSum, riemannSum]
   refine (Finset.le_sum_of_subadditive p (map_zero p).le (map_add_le_add p) _ _).trans
     (Finset.sum_le_sum fun i _ ↦ ?_)
   simp [map_smul_eq_mul, Real.norm_of_nonneg measureReal_nonneg]
