@@ -454,11 +454,11 @@ variable [CompleteSpace F] {w' : ℝ → ℝ}
   {hmem : ∀ i, ∀ v ∈ K i, MemLp (endTail w (χ i) A v) 2}
 
 omit [Fact (1 ≤ p)] [∀ i, FiniteDimensional ℝ (K i)] [CompleteSpace F] in
-/-- Multiplying the path `u = exp (-w) • ξ + ∑ i, χ i • v i` of a pair `(ξ, v)` back by `exp w`
-after removing the cutoff extensions recovers `ξ`. -/
-private theorem exp_smul_exp_neg_smul_add_sub (x S : F) (s : ℝ) :
-    Real.exp (w s) • (Real.exp (-w s) • x + S - S) = x := by
-  rw [add_sub_cancel_right, smul_smul, ← Real.exp_add, add_neg_cancel, Real.exp_zero, one_smul]
+/-- Multiplying by `exp t` and then by `exp (-t)` cancels: this converts between the weighted
+difference `ξ` of a pair `(ξ, v)` and its path `u = exp (-w) • ξ + ∑ i, χ i • v i`. -/
+private theorem exp_neg_smul_exp_smul (t : ℝ) (y : F) :
+    Real.exp (-t) • Real.exp t • y = y := by
+  rw [smul_smul, ← Real.exp_add, neg_add_cancel, Real.exp_zero, one_smul]
 
 omit [∀ i, FiniteDimensional ℝ (K i)] in
 variable (w χ) in
@@ -511,7 +511,8 @@ private theorem freeEndpointEval_mem (hA : Continuous A) (hw : ∀ s, HasDerivAt
         (ae_restrict_of_ae (prev_ae_eq_toZeroAtInfty ENNReal.ofNat_ne_top ξ))
   convert hξ using 1
   funext s
-  exact exp_smul_exp_neg_smul_add_sub _ _ s
+  simp only [freeEndpointEval_apply, add_sub_cancel_right]
+  simpa only [neg_neg] using exp_neg_smul_exp_smul (-w s) _
 
 /-- A kernel element with zero evaluation vanishes: its solution has zero initial value, hence
 vanishes, and its free endpoint variables are zero. -/
@@ -549,6 +550,15 @@ private def kerFreeEndpointEval (hA : Continuous A) (hw : ∀ s, HasDerivAt w (w
     ((trajectoryOperator AL).coprod (endTailL w χ A hmem)).ker).codRestrict _
     fun q ↦ freeEndpointEval_mem hA hw hw' hχ hAL q.property
 
+private theorem kerFreeEndpointEval_apply (hA : Continuous A)
+    (hw : ∀ s, HasDerivAt w (w' s) s) (hw' : Continuous w') (hχ : ∀ i, ContDiff ℝ 1 (χ i))
+    (hAL : AL =ᵐ[volume.restrict ((⊤ : Opens ℝ) : Set ℝ)]
+      fun s ↦ A s - w' s • ContinuousLinearMap.id ℝ F)
+    (q : ((trajectoryOperator AL).coprod (endTailL w χ A hmem)).ker) :
+    (kerFreeEndpointEval hA hw hw' hχ hAL q : F × Π i, K i) = freeEndpointEval w χ q := by
+  unfold kerFreeEndpointEval
+  exact (LinearMap.codRestrict_apply _ _ q).trans (LinearMap.domRestrict_apply _ _ _)
+
 private theorem bijective_kerFreeEndpointEval (hA : Continuous A)
     (hw : ∀ s, HasDerivAt w (w' s) s) (hw' : Continuous w') (hχ : ∀ i, ContDiff ℝ 1 (χ i))
     (hAL : AL =ᵐ[volume.restrict ((⊤ : Opens ℝ) : Set ℝ)]
@@ -559,7 +569,7 @@ private theorem bijective_kerFreeEndpointEval (hA : Continuous A)
       (congrArg Subtype.val he)
   · obtain ⟨⟨x, v⟩, hy⟩ := y
     -- Unification of these membership and existence statements against their uses is slow, so
-    -- their implicit arguments are given and the existential is used through `choose`.
+    -- their implicit arguments are given and the existential is destructured by `obtain`.
     have hy' := (mem_weightedAsymptoticSolutions (A := A) (w := w) (K := K) (χ := χ)
       (q := (x, v))).1 hy
     obtain ⟨u, hu0, hu, hv⟩ := hy'
@@ -577,10 +587,8 @@ private theorem bijective_kerFreeEndpointEval (hA : Continuous A)
           ((continuous_iff_continuousAt.2 fun s ↦ (hu s).continuousAt).sub
             (continuous_finsetSum _ fun i _ ↦ (hχ i).continuous.smul continuous_const)))
         (by simpa using hξ)
-    change freeEndpointEval w χ (ξ, v) = (x, v)
-    rw [freeEndpointEval_apply]
-    simp only [hc, smul_smul, ← Real.exp_add, neg_add_cancel, Real.exp_zero, one_smul,
-      sub_add_cancel]
+    rw [kerFreeEndpointEval_apply, freeEndpointEval_apply]
+    simp only [hc, exp_neg_smul_exp_smul, sub_add_cancel]
     exact Prod.ext hu0 rfl
 
 /-- **The kernel of the extended operator is the space of solutions with weighted asymptotics.**
@@ -608,8 +616,8 @@ theorem kerCoprodEndTailLEquiv_apply (hA : Continuous A) (hw : ∀ s, HasDerivAt
     (kerCoprodEndTailLEquiv hA hw hw' hχ hAL q : F × Π i, K i) =
       (Real.exp (-w 0) • toZeroAtInfty ENNReal.ofNat_ne_top q.val.1 0 +
         ∑ i, χ i 0 • (q.val.2 i : F), q.val.2) := by
-  rw [kerCoprodEndTailLEquiv, LinearEquiv.ofBijective_apply]
-  exact freeEndpointEval_apply _
+  rw [kerCoprodEndTailLEquiv, LinearEquiv.ofBijective_apply, kerFreeEndpointEval_apply,
+    freeEndpointEval_apply]
 
 /-- The kernel of the extended operator has the dimension of the space of solutions with weighted
 asymptotics. -/
