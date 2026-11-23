@@ -80,7 +80,8 @@ its bundled tensor-product `AlgEquiv` form (over the valuation rings as well as 
   `TauCeti.Place.completionSemilocalEquiv_integralCompletionSemilocalToField`, and
   `TauCeti.Place.integralCompletionSemilocalToField_injective`: compatibility of the integral and
   field semilocal equivalences.
-* `TauCeti.Place.completionEmbedding_norm_of_moduleFinite` and
+* `TauCeti.Place.completionEmbedding_norm_of_moduleFinite`,
+  `TauCeti.Place.completionEmbedding_norm_of_isSeparable`, and
   `TauCeti.Place.completionEmbedding_norm`: **the norm formula**
   `N_{F'/F} x = ∏_{P' ∣ P} N_{F̂'_{P'}/F̂_P} x`.
 * `TauCeti.Place.completionEmbedding_trace_of_moduleFinite`,
@@ -805,12 +806,25 @@ section NormTraceSpecializations
 
 variable [FiniteDimensional F F'] [Algebra.IsIntegral k k'] (k') (P : Place k F)
 
+/-- **The norm formula**: for a finite separable extension `F' / F` whose constant field
+extension `k' / k` is integral and a place `P` of `F`, the norm of `x ∈ F'` over `F` is, in the
+completion at `P`, the product of the norms of `x` over the completions `F̂'_{P'} / F̂_P` at the
+places `P'` above `P`. For an algebraic function field `F / k` separability is not needed; that is
+`TauCeti.Place.completionEmbedding_norm`. -/
+theorem completionEmbedding_norm_of_isSeparable [Algebra.IsSeparable F F'] (x : F') :
+    P.completionEmbedding (Algebra.norm F x) =
+      ∏ᶠ P' : {P' : Place k' F' // P'.restrict k F = P},
+        (letI := P.completionExtensionAlgebra P'.val P'.property
+        Algebra.norm P.Completion (P'.val.completionEmbedding x)) :=
+  completionEmbedding_norm_of_moduleFinite k' P x
+
 /-- **The norm formula**: for an algebraic function field `F / k`, a finite extension `F' / F`
 whose constant field extension `k' / k` is integral and a place `P` of `F`, the norm of `x ∈ F'`
 over `F` is, in the completion at `P`, the product of the norms of `x` over the completions
-`F̂'_{P'} / F̂_P` at the places `P'` above `P`, with no separability hypothesis. For a separable
-`F' / F` over an arbitrary base field, use `TauCeti.Place.completionEmbedding_norm_of_moduleFinite`
-directly. -/
+`F̂'_{P'} / F̂_P` at the places `P'` above `P`. No separability hypothesis is needed, neither on
+`F' / F` nor on the residue field extensions. For a separable `F' / F` this holds without assuming
+that `F / k` is a function field; that is `TauCeti.Place.completionEmbedding_norm_of_isSeparable`.
+-/
 theorem completionEmbedding_norm (hF : IsFunctionField k F) (x : F') :
     P.completionEmbedding (Algebra.norm F x) =
       ∏ᶠ P' : {P' : Place k' F' // P'.restrict k F = P},

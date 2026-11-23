@@ -7,7 +7,6 @@ module
 
 public import Mathlib.GroupTheory.SpecificGroups.Cyclic
 
-import Mathlib.Logic.Equiv.Fintype
 import TauCeti.Algebra.Order.BigOperators.Sum.Min
 
 /-!
@@ -88,25 +87,6 @@ theorem exists_equiv_exponents_of_pi_pow_addEquiv {b : ℕ} (hb : 1 < b)
     exact not_infinite_iff_finite.mp fun _ ↦ not_finite ((j : κ) → ZMod (b ^ e' j))
   let := Fintype.ofFinite ι
   let := Fintype.ofFinite κ
-  have hsum := sum_min_eq_of_pi_pow_addEquiv hb e e' f
-  have hcard (k : ℕ) : Fintype.card {i // e i = k} = Fintype.card {j // e' j = k} := by
-    cases k with
-    | zero =>
-      have : IsEmpty {i // e i = 0} := ⟨fun i ↦ (he i.val).ne' i.property⟩
-      have : IsEmpty {j // e' j = 0} := ⟨fun j ↦ (he' j.val).ne' j.property⟩
-      simp
-    | succ k =>
-      -- The multiplicity of the exponent `k + 1` is a second difference of `k ↦ ∑ i, min k (e i)`.
-      have hk (n : ℕ) : k < n ∧ n < k + 1 + 1 ↔ n = k + 1 := by omega
-      have h := sum_min_add_sum_min_eq univ e (by omega : k < k + 1 + 1)
-      have h' := sum_min_add_sum_min_eq univ e' (by omega : k < k + 1 + 1)
-      simp only [hk, Nat.add_sub_cancel] at h h'
-      rw [Fintype.card_subtype, Fintype.card_subtype]
-      have := hsum k
-      have := hsum (k + 1)
-      have := hsum (k + 1 + 1)
-      omega
-  exact ⟨.ofFiberEquiv fun k ↦ Fintype.equivOfCardEq (hcard k),
-    fun i ↦ (Equiv.ofFiberEquiv_map _ i).symm⟩
+  exact Fintype.exists_equiv_of_forall_sum_min_eq he he' (sum_min_eq_of_pi_pow_addEquiv hb e e' f)
 
 end ZMod

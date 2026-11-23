@@ -14,25 +14,29 @@ import all Mathlib.Geometry.Manifold.LocalDiffeomorph
 /-!
 # Differentials of diffeomorphisms
 
-The differentials of a diffeomorphism and its inverse undo each other, and the differential of a
-diffeomorphism undoes the pullback of vector fields along it.
+The differentials of a diffeomorphism and its inverse undo each other, so the differential is
+nonzero wherever the tangent space is nontrivial, and the differential of a diffeomorphism undoes
+the pullback of vector fields along it.
 Differentiability at a point is also preserved by precomposition and postcomposition with a
 diffeomorphism, so the chain rule for such compositions holds without differentiability
-assumptions, injectivity of the differential is preserved by precomposition and postcomposition,
-and the tangent images of a map, the ranges of its differentials, are unchanged by precomposition
-with a diffeomorphism and are mapped by the differential under postcomposition.
+assumptions, including for maps conjugated by a diffeomorphism near a point, injectivity of the
+differential is preserved by precomposition and postcomposition, and the tangent images of a map,
+the ranges of its differentials, are unchanged by precomposition with a diffeomorphism and are
+mapped by the differential under postcomposition.
 These facts support inverse isometries, calibrated immersions, and transport of curve
 differentiability through diffeomorphisms. The underlying equivalence of a diffeomorphism viewed as
 a partial diffeomorphism is also characterized, for composition with partial coordinates, and
 pulling back a `C^m` maximal-atlas chart along a `C^n` diffeomorphism (`m ≤ n`) preserves
 membership in the maximal `C^m` atlas (`Diffeomorph.trans_mem_maximalAtlas`,
 `Diffeomorph.trans_mem_maximalAtlas_iff`).
+The linear map underlying the differential of a diffeomorphism viewed as a linear equivalence
+(`Diffeomorph.mfderivToContinuousLinearEquiv_toLinearMap`) is the differential.
 -/
 
 public section
 
-open Bundle Manifold
-open scoped ContDiff Manifold
+open Bundle Manifold Filter
+open scoped ContDiff Manifold Topology
 
 variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
   {E : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E]
@@ -98,6 +102,15 @@ theorem mfderiv_symm_apply_mfderiv_apply (h : M ≃ₘ^n⟮I, J⟯ N) (hn : n �
   have hh := mfderiv_apply_mfderiv_symm_apply h.symm hn (h x) v
   rw [hss, h.symm_apply_apply] at hh
   exact hh
+
+/-- The differential of a diffeomorphism at a point with a nontrivial tangent space is nonzero. -/
+theorem mfderiv_ne_zero (h : M ≃ₘ^n⟮I, J⟯ N) (hn : n ≠ 0) {x : M}
+    [Nontrivial (TangentSpace J (h x))] : mfderiv I J h x ≠ 0 := by
+  intro h0
+  obtain ⟨v, hv⟩ := exists_ne (0 : TangentSpace J (h x))
+  have hv' := h.mfderiv_apply_mfderiv_symm_apply hn x v
+  rw [h0] at hv'
+  exact hv (hv'.symm.trans (zero_apply _))
 
 /-- The differential of a diffeomorphism maps the pullback of a vector field at `x` to the value
 of the field at `h x`. -/
@@ -177,6 +190,13 @@ theorem mdifferentiableAt_comp_diffeomorph_iff (h : M ≃ₘ^n⟮I, J⟯ N) (hn 
   · intro hf
     exact hf.comp x (h.mdifferentiable hn x)
 
+/-- The linear map underlying the differential of a diffeomorphism, viewed as a linear equivalence,
+is the differential. -/
+theorem mfderivToContinuousLinearEquiv_toLinearMap (h : M ≃ₘ^n⟮I, J⟯ N) (hn : n ≠ 0) (x : M) :
+    (h.mfderivToContinuousLinearEquiv hn x).toLinearEquiv.toLinearMap =
+      (mfderiv I J h x).toLinearMap :=
+  congrArg ContinuousLinearMap.toLinearMap (h.mfderivToContinuousLinearEquiv_coe hn)
+
 section TangentImage
 
 variable {E' : Type*} [NormedAddCommGroup E'] [NormedSpace 𝕜 E']
@@ -214,6 +234,24 @@ theorem mvfderiv_comp_diffeomorph (h : M ≃ₘ^n⟮I, J⟯ N) (hn : n ≠ 0) (f
   rw [mvfderiv, mvfderiv, h.mfderiv_comp_diffeomorph hn, ContinuousLinearMap.comp_assoc,
     Function.comp_apply]
 
+/-- The linear equivalence `Diffeomorph.mfderivToContinuousLinearEquiv` acts on tangent vectors
+by the differential. -/
+@[simp]
+theorem mfderivToContinuousLinearEquiv_apply (h : M ≃ₘ^n⟮I, J⟯ N) (hn : n ≠ 0) (x : M)
+    (v : TangentSpace I x) : h.mfderivToContinuousLinearEquiv hn x v = mfderiv I J h x v := by
+  rw [← ContinuousLinearEquiv.coe_coe, h.mfderivToContinuousLinearEquiv_coe hn]
+
+/-- **Chain rule for conjugation by a diffeomorphism.** If `h ∘ f` and `g ∘ h` agree near `x`,
+then `dg_(h x) ∘ dh_x = dh_(f x) ∘ df_x`. No differentiability of `f` or `g` is assumed. -/
+theorem mfderiv_apply_mfderiv_of_comp_eventuallyEq (h : M ≃ₘ^n⟮I, J⟯ N) (hn : n ≠ 0)
+    {f : M → M} {g : N → N} {x : M} (hfg : h ∘ f =ᶠ[𝓝 x] g ∘ h) (v : TangentSpace I x) :
+    mfderiv J J g (h x) (mfderiv I J h x v) = mfderiv I J h (f x) (mfderiv I I f x v) := by
+  have h₁ := h.mfderiv_diffeomorph_comp (K := I) hn f x
+  have h₂ := h.mfderiv_comp_diffeomorph (K := J) hn g x
+  have h₃ := congrArg (· v) (hfg.mfderiv_eq (I := I) (I' := J))
+  simp only [h₁, h₂, ContinuousLinearMap.comp_apply] at h₃
+  exact h₃.symm
+
 /-- Postcomposition with a diffeomorphism maps tangent images by its differential: the range of
 the differential of `h ∘ f` at `x` is the image of the range of the differential of `f` under the
 linear equivalence `dh`, `Diffeomorph.mfderivToContinuousLinearEquiv`.
@@ -222,11 +260,8 @@ theorem range_mfderiv_diffeomorph_comp (h : M ≃ₘ^n⟮I, J⟯ N) (hn : n ≠ 
     LinearMap.range (mfderiv K J (h ∘ f) x).toLinearMap =
       (LinearMap.range (mfderiv K I f x).toLinearMap).map
         (h.mfderivToContinuousLinearEquiv hn (f x)).toLinearEquiv.toLinearMap := by
-  have hder : (h.mfderivToContinuousLinearEquiv hn (f x)).toLinearEquiv.toLinearMap =
-      (mfderiv I J h (f x)).toLinearMap :=
-    congrArg ContinuousLinearMap.toLinearMap (h.mfderivToContinuousLinearEquiv_coe hn (x := f x))
   rw [h.mfderiv_diffeomorph_comp hn, ContinuousLinearMap.toLinearMap_comp, LinearMap.range_comp,
-    hder]
+    h.mfderivToContinuousLinearEquiv_toLinearMap hn]
 
 /-- Precomposition with a diffeomorphism does not change tangent images: the range of the
 differential of `f ∘ h` at `x` is the range of the differential of `f` at `h x`. No

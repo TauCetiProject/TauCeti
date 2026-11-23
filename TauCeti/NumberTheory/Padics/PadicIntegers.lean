@@ -40,6 +40,8 @@ This is the shape in which the exponent vector of a relator of a free pro-`p` gr
   series `∑ₙ pⁿ aₙ` converges in `ℤ_p` (`PadicInt.summable_pow_mul`) and the powers `‖p‖ ^ n`
   tend to zero along the cofinite filter (`PadicInt.tendsto_norm_p_pow_cofinite`,
   `PadicInt.tendsto_norm_p_pow_mul_cofinite`).
+* `PadicInt.not_isOpen_singleton_zero`, `PadicInt.not_isOpen_singleton_one_multiplicative`: `ℤ_p`
+  is not discrete, as a ring or as the group `Multiplicative ℤ_[p]`.
 * `PadicInt.isUnit_one_add_of_dvd`: `1 + x` is a unit of `ℤ_[p]` whenever `p ∣ x`.
 * `PadicInt.isUnit_of_dvd_one_sub_sq`: `d` is a unit of `ℤ_[p]` whenever `p ∣ 1 - d ^ 2`.
 * `PadicInt.isUnit_two`: `2` is a unit of `ℤ_[p]` for odd `p`.
@@ -55,6 +57,7 @@ This is the shape in which the exponent vector of a relator of a free pro-`p` gr
   `w i₀ = 1` at some index `i₀`.
 * `PadicInt.norm_smul_of_isUnit`: a unit of `ℤ_[p]` acts isometrically on every module with
   contractive scalar action.
+* `PadicInt.norm_smul_le_norm`: scalars in `ℤ_p` do not increase norms.
 * `PadicInt.norm_algebraMap_le_one`: a `p`-adic integer has norm at most `1` in every normed
   field extension of `ℚ_p`.
 * `PadicInt.not_isUnit_iff_dvd`: the nonunits of `ℤ_[p]` are the multiples of `p`; in
@@ -71,6 +74,7 @@ This is the shape in which the exponent vector of a relator of a free pro-`p` gr
   exactly when they are associated in every `ℤ_[p]`.
 * `Int.ideal_eq_iff_forall_map_padicInt_eq`: two ideals of `ℤ` are equal exactly when their
   extensions to every `ℤ_[p]` agree.
+* `Padic.norm_mul_zpow_neg_valuation`: `‖x p ^ (-v(x))‖ = 1` for nonzero `x : ℚ_[p]`.
 * `Padic.exists_eq_zpow_valuation_mul`: every nonzero `x : ℚ_[p]` is `p ^ v(x)` times a unit of
   `ℤ_[p]`.
 * `Padic.valuation_p_zpow_mul`: multiplying a nonzero `x : ℚ_[p]` by `p ^ α` adds `α` to its
@@ -80,6 +84,7 @@ This is the shape in which the exponent vector of a relator of a free pro-`p` gr
 * `Padic.inv_natCast_le_norm_natCast`: the `p`-adic norm of a natural number `m` is at least
   `1 / m`.
 * `Padic.norm_natCast_eq_zpow`: the `p`-adic norm of a positive integer `m` is `p ^ (-v_p(m))`.
+* `Padic.zpow_neg_le_norm_natCast_iff`: `p ^ (-k) ≤ ‖m‖` exactly when `p ^ (k + 1) ∤ m`.
 * `PadicInt.compactSpace_units`, `PadicInt.totallyDisconnectedSpace_units`: `ℤ_[p]ˣ` is a
   profinite group.
 
@@ -116,6 +121,20 @@ theorem tendsto_norm_p_pow_cofinite :
     Filter.Tendsto (fun n : ℕ ↦ ‖(p : ℤ_[p])‖ ^ n) Filter.cofinite (nhds 0) := by
   rw [Nat.cofinite_eq_atTop]
   exact tendsto_pow_atTop_nhds_zero_of_lt_one (norm_nonneg _) norm_p_lt_one
+
+/-- The singleton `{0}` is not open in `ℤ_p`: the powers of `p` are nonzero and tend to `0`. -/
+theorem not_isOpen_singleton_zero : ¬IsOpen ({0} : Set ℤ_[p]) := fun h ↦ by
+  obtain ⟨n, hn⟩ := ((tendsto_pow_atTop_nhds_zero_of_norm_lt_one norm_p_lt_one).eventually
+    (h.mem_nhds rfl)).exists
+  exact pow_ne_zero n (Nat.cast_ne_zero.mpr (Fact.out : p.Prime).ne_zero) hn
+
+/-- The identity is not an isolated point of the additive group of `ℤ_p`, written multiplicatively
+as `Multiplicative ℤ_[p]`. -/
+theorem not_isOpen_singleton_one_multiplicative : ¬IsOpen ({1} : Set (Multiplicative ℤ_[p])) :=
+  fun h ↦ not_isOpen_singleton_zero <| by
+    convert h.preimage continuous_ofAdd
+    ext x
+    simp
 
 /-- On `ι × ℕ` with `ι` finite, the weights `‖p‖ ^ j * C` tend to zero along the cofinite
 filter. -/
@@ -178,6 +197,11 @@ theorem norm_smul_of_isUnit {E : Type*} [SeminormedAddGroup E] [MulActionWithZer
   calc ‖e‖ = ‖((u⁻¹ : ℤ_[p]ˣ) : ℤ_[p]) • (u : ℤ_[p]) • e‖ := by
         rw [smul_smul, Units.inv_mul, one_smul]
     _ ≤ ‖(u : ℤ_[p]) • e‖ := (norm_smul_le _ _).trans_eq (by rw [h1, one_mul])
+
+/-- Scalars in `ℤ_p` do not increase norms, since they all have norm at most `1`. -/
+theorem norm_smul_le_norm {E : Type*} [SeminormedAddGroup E] [MulActionWithZero ℤ_[p] E]
+    [IsBoundedSMul ℤ_[p] E] (r : ℤ_[p]) (e : E) : ‖r • e‖ ≤ ‖e‖ :=
+  (norm_smul_le r e).trans (mul_le_of_le_one_left (norm_nonneg e) (norm_le_one r))
 
 /-- A `p`-adic integer has norm at most `1` in every normed field extension of `ℚ_p`. -/
 theorem norm_algebraMap_le_one {K : Type*} [NormedField K] [NormedAlgebra ℚ_[p] K] (y : ℤ_[p]) :
@@ -326,15 +350,18 @@ namespace Padic
 
 variable {p : ℕ} [Fact p.Prime]
 
+/-- Dividing a nonzero `p`-adic number by `p ^ v(x)` gives an element of norm one. -/
+theorem norm_mul_zpow_neg_valuation {x : ℚ_[p]} (hx : x ≠ 0) :
+    ‖x * (p : ℚ_[p]) ^ (-x.valuation)‖ = 1 := by
+  have hp : (p : ℝ) ≠ 0 := Nat.cast_ne_zero.mpr (Fact.out : p.Prime).ne_zero
+  rw [norm_mul, norm_zpow, Padic.norm_p, Padic.norm_eq_zpow_neg_valuation hx, inv_zpow',
+    neg_neg, ← zpow_add₀ hp, neg_add_cancel, _root_.zpow_zero]
+
 /-- Every nonzero `p`-adic number is `p ^ v(x)` times a unit of `ℤ_[p]`. -/
 theorem exists_eq_zpow_valuation_mul {x : ℚ_[p]} (hx : x ≠ 0) :
     ∃ u : ℤ_[p]ˣ, x = (p : ℚ_[p]) ^ x.valuation * u := by
   have hp : (p : ℚ_[p]) ≠ 0 := Nat.cast_ne_zero.mpr (Fact.out : p.Prime).ne_zero
-  have hy : ‖x * (p : ℚ_[p]) ^ (-x.valuation)‖ = 1 := by
-    have hp' : (p : ℝ) ≠ 0 := Nat.cast_ne_zero.mpr (Fact.out : p.Prime).ne_zero
-    rw [norm_mul, norm_zpow, Padic.norm_p, Padic.norm_eq_zpow_neg_valuation hx, inv_zpow',
-      neg_neg, ← zpow_add₀ hp', neg_add_cancel, _root_.zpow_zero]
-  refine ⟨PadicInt.mkUnits hy, ?_⟩
+  refine ⟨PadicInt.mkUnits (norm_mul_zpow_neg_valuation hx), ?_⟩
   rw [PadicInt.mkUnits_eq, mul_left_comm, ← zpow_add₀ hp, add_neg_cancel, _root_.zpow_zero, mul_one]
 
 /-- Multiplying a nonzero `x : ℚ_[p]` by `p ^ α` adds `α` to its valuation. -/
@@ -368,5 +395,16 @@ theorem norm_natCast_eq_zpow {m : ℕ} (hm : m ≠ 0) :
     ‖(m : ℚ_[p])‖ = (p : ℝ) ^ (-(padicValNat p m : ℤ)) := by
   rw [Nat.padicValNat_def, Padic.norm_eq_zpow_neg_valuation (by exact_mod_cast hm),
     Padic.valuation_natCast]
+
+/-- The `p`-adic norm of a natural number `m` is at least `p ^ (-k)` exactly when `p ^ (k + 1)`
+does not divide `m`. -/
+theorem zpow_neg_le_norm_natCast_iff {m k : ℕ} :
+    (p : ℝ) ^ (-(k : ℤ)) ≤ ‖(m : ℚ_[p])‖ ↔ ¬p ^ (k + 1) ∣ m := by
+  have hp : (1 : ℝ) < p := by exact_mod_cast (Fact.out : p.Prime).one_lt
+  rcases eq_or_ne m 0 with rfl | hm
+  · simpa using pow_pos (zero_lt_one.trans hp) k
+  rw [Padic.norm_eq_zpow_neg_valuation (Nat.cast_ne_zero.2 hm), Padic.valuation_natCast,
+    zpow_le_zpow_iff_right₀ hp, neg_le_neg_iff, multiplicity_dvd_iff_le hm]
+  omega
 
 end Padic

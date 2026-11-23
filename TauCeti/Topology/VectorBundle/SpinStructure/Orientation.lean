@@ -118,18 +118,11 @@ theorem toFrame_op_smul (s : SpinStructure F E n) (g : realCliffordSpinGroupZero
           specialOrthogonalGroup (EuclideanSpace ℝ (Fin n))) :
         unitary (EuclideanSpace ℝ (Fin n) →L[ℝ] EuclideanSpace ℝ (Fin n))) • s.toFrame p := by
   obtain ⟨x, p⟩ := p
-  obtain ⟨φ₀, hq₀⟩ := s.exists_toFrame_eq_mk ⟨x, p⟩
-  obtain ⟨φ₁, hq₁⟩ := s.exists_toFrame_eq_mk ⟨x, op g • p⟩
-  set u : unitary (EuclideanSpace ℝ (Fin n) →L[ℝ] EuclideanSpace ℝ (Fin n)) :=
-    (realCliffordSpinToEuclideanSpecialOrthogonal n g).val
-  rw [TotalSpace.smul_mk, hq₀, hq₁,
-    OrthonormalFrameBundle.eq_mk_of_proj_eq (op u • (⟨x, φ₀⟩ : OrthonormalFrameBundle ℝ F E _))
-      (OrthonormalFrameBundle.proj_smul _ _)]
-  refine OrthonormalFrameBundle.mk_eq_mk_iff.2 (LinearIsometryEquiv.ext fun w ↦ ?_)
-  have hw := s.toFrame_smul_spinVectorAction x p g w.ofLp
-  rw [WithLp.toLp_ofLp, hq₀, hq₁] at hw
-  rw [TotalSpace.mk_inj.1 hw, OrthonormalFrameBundle.frame_smul_apply, unop_op,
-    realCliffordSpinToEuclideanSpecialOrthogonal_apply_apply]
+  refine OrthonormalFrameBundle.ext_totalSpaceMk fun v ↦ ?_
+  rw [TotalSpace.smul_mk, s.toFrame_smul_spinVectorAction, OrthonormalFrameBundle.frame_smul_apply,
+    unop_op, realCliffordSpinToEuclideanSpecialOrthogonal_apply_apply, WithLp.ofLp_toLp]
+  -- The two sides differ only in the base point, and acting on a frame keeps its base point.
+  rfl
 
 section NegOne
 
@@ -611,9 +604,9 @@ theorem range_toFrame_eq_orientedFrames (s : SpinStructure F E n)
     Set.range s.toFrame = OrthonormalFrameBundle.orientedFrames (s.orientation o) o := by
   refine Subset.antisymm (range_subset_iff.2 (s.toFrame_mem_orientedFrames o)) fun q hq ↦ ?_
   obtain ⟨p₀⟩ := s.nonempty_P q.proj
-  obtain ⟨u, hu, huq⟩ := OrthonormalFrameBundle.exists_mem_specialOrthogonalGroup_smul_eq
-    (Fact.out : Fintype.card (Fin n) = Module.finrank ℝ (EuclideanSpace ℝ (Fin n)))
-    (s.toFrame_mem_orientedFrames o ⟨q.proj, p₀⟩) hq (s.proj_toFrame ⟨q.proj, p₀⟩)
+  obtain ⟨u, hu, huq⟩ := OrthonormalFrameBundle.SMulMemIff.exists_mem_smul_eq
+    (H := specialOrthogonalGroup _) (s.toFrame_mem_orientedFrames o ⟨q.proj, p₀⟩) hq
+    (s.proj_toFrame ⟨q.proj, p₀⟩)
   obtain ⟨g, hg⟩ := realCliffordSpinToEuclideanSpecialOrthogonal_surjective n ⟨u, hu⟩
   refine ⟨op g • ⟨q.proj, p₀⟩, ?_⟩
   rw [s.toFrame_op_smul, hg, huq]
