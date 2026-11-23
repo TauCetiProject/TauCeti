@@ -53,7 +53,6 @@ the `Lᵖ` norm of `f` on `t` is at most that of `ψ • f`
   norm suffices).
 * `MeasureTheory.eLpNorm_restrict_biUnion_finset_rpow_le`: subadditivity of the `p`-th power of
   `eLpNorm` over a finite union, for `0 < p < ∞` (including `p < 1`).
-* `MeasureTheory.eLpNorm_restrict_rpow_le_sum_of_subset_iUnion`: the same over a finite cover.
 * `MeasureTheory.eLpNorm_restrict_le_card_rpow_mul_of_subset_biUnion`: finite-cover `eLpNorm` bound
   `‖f‖_{Lᵖ(s)} ≤ card(t) ^ (1 / p) * B` from uniform bounds `≤ B` on the pieces.
 * `MeasureTheory.MemLp.restrict_of_eLpNorm_le_add`: `MemLp` transfer to a subset `S ⊆ U` from a
@@ -163,20 +162,6 @@ theorem eLpNorm_restrict_biUnion_finset_rpow_le {α ε ι : Type*} [MeasurableSp
             eLpNorm f p (μ.restrict (⋃ i ∈ t, s i)) ^ p.toReal :=
           eLpNorm_add_measure_rpow_le f _ _
       _ ≤ _ := by gcongr
-
-/-- **Subadditivity of the `p`-th power of `eLpNorm` over a finite cover.** For `0 < p < ∞`, the
-`p`-th power of the `Lᵖ` seminorm of `f` on a set covered by finitely many sets is at most the sum
-of the `p`-th powers of its `Lᵖ` seminorms on the pieces. -/
-theorem eLpNorm_restrict_rpow_le_sum_of_subset_iUnion {α ε ι : Type*} [MeasurableSpace α]
-    [TopologicalSpace ε] [ENorm ε] [TopologicalSpace.PseudoMetrizableSpace ε] [Fintype ι]
-    {p : ℝ≥0∞} {μ : Measure α} (f : α → ε) (hp0 : p ≠ 0) (hp : p ≠ ∞) {s : Set α}
-    {t : ι → Set α} (hs : s ⊆ ⋃ i, t i) :
-    eLpNorm f p (μ.restrict s) ^ p.toReal ≤ ∑ i, eLpNorm f p (μ.restrict (t i)) ^ p.toReal := by
-  have hr : 0 < p.toReal := ENNReal.toReal_pos hp0 hp
-  refine (ENNReal.rpow_le_rpow
-    (eLpNorm_mono_measure f (Measure.restrict_mono_set μ hs)) hr.le).trans ?_
-  simpa only [Finset.mem_univ, Set.iUnion_true] using
-    eLpNorm_restrict_biUnion_finset_rpow_le (μ := μ) f hp0 hp Finset.univ t
 
 /-- **Finite-cover bound for `eLpNorm`.** For `0 < p < ∞`, if `s` is covered by the sets
 `u i`, `i ∈ t`, and `‖f‖_{Lᵖ(u i)} ≤ B` for every `i ∈ t`, then

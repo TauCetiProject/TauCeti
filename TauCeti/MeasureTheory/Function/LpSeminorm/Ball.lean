@@ -312,12 +312,19 @@ theorem _root_.MeasureTheory.Measure.exists_mem_ball_norm_le_rpow_neg_mul_toReal
       (eLpNorm f (ENNReal.ofReal p) (mu.restrict (ball x₀ r))).toReal := by
     rw [Real.rpow_neg hmr.le, inv_mul_eq_div, le_div_iff₀' (Real.rpow_pos_of_pos hmr _)]
     exact hreal
-  refine ⟨w, hw, hinv.trans_eq ?_⟩
   have hvol : mu.real (ball x₀ r) = r ^ finrank ℝ E * mu.real (ball 0 1) := by
     rw [measureReal_def, mu.addHaar_ball_of_pos x₀ hr, ENNReal.toReal_mul,
       ENNReal.toReal_ofReal (by positivity), ← measureReal_def]
-  rw [hvol, Real.mul_rpow (by positivity) measureReal_nonneg, ← Real.rpow_natCast r,
-    ← Real.rpow_mul hr.le, show (finrank ℝ E : ℝ) * -p⁻¹ = -((finrank ℝ E : ℝ) / p) by ring]
-  ring
+  have hexp : (finrank ℝ E : ℝ) * -p⁻¹ = -((finrank ℝ E : ℝ) / p) := by ring
+  have hpow : mu.real (ball x₀ r) ^ (-p⁻¹) =
+      mu.real (ball (0 : E) 1) ^ (-p⁻¹) * r ^ (-((finrank ℝ E : ℝ) / p)) :=
+    calc mu.real (ball x₀ r) ^ (-p⁻¹)
+        = (r ^ finrank ℝ E * mu.real (ball (0 : E) 1)) ^ (-p⁻¹) := by rw [hvol]
+      _ = (r ^ (finrank ℝ E : ℝ)) ^ (-p⁻¹) * mu.real (ball (0 : E) 1) ^ (-p⁻¹) := by
+          rw [Real.mul_rpow (by positivity) measureReal_nonneg, Real.rpow_natCast]
+      _ = mu.real (ball (0 : E) 1) ^ (-p⁻¹) * r ^ (-((finrank ℝ E : ℝ) / p)) := by
+          rw [← Real.rpow_mul hr.le, hexp, mul_comm]
+  refine ⟨w, hw, hinv.trans_eq ?_⟩
+  rw [hpow, mul_assoc]
 
 end TauCeti

@@ -72,9 +72,6 @@ derivative is the sum of their `(1 - n / p)`-Hölder continuous coordinates.
   closure in `Ω`.
 * `TauCeti.Wkp.continuousOn_preciseRepresentative`: the precise representative of
   `u ∈ W^{2,p}(Ω)`, `n < 2 p`, is continuous on `Ω`.
-* `TauCeti.Wkp.preciseRepresentative_le_of_ae_le`, `TauCeti.Wkp.le_preciseRepresentative_of_ae_le`:
-  almost everywhere comparison against a continuous function on an open subset of `Ω` transfers
-  pointwise to the precise representative.
 * `TauCeti.Wkp.abs_preciseRepresentative_le`: an almost-everywhere bound `|u| ≤ M` on an open
   subset of `Ω` holds at every point for the precise representative.
 * `TauCeti.Wkp.exists_holderOnWith_preciseRepresentative_of_isCompact_of_lt_finrank`: it is
@@ -204,33 +201,6 @@ theorem Wkp.continuousOn_preciseRepresentative (hp : (finrank ℝ E : ℝ≥0∞
     fun z hz => preciseRepresentative_congr_ae_nhds (V.isOpen.mem_nhds hz) hw
   exact (((W1p.continuousOn_preciseRepresentative hq w).congr heq.symm).continuousAt
     (V.isOpen.mem_nhds hxV)).continuousWithinAt
-
-/-- If `u ∈ W^{2,p}(Ω)` with `n < 2 p` satisfies `u ≤ g` almost everywhere on an open subset `U ⊆ Ω`
-and `g` is continuous on `U`, then its precise representative satisfies `u* ≤ g` everywhere on
-`U`. -/
-theorem Wkp.preciseRepresentative_le_of_ae_le (hp : (finrank ℝ E : ℝ≥0∞) < 2 * p)
-    (u : Wkp mu Omega p 2) {U : Set E} (hU : IsOpen U) (hUΩ : U ⊆ Omega) {g : E → ℝ}
-    (hg : ContinuousOn g U) (hle : ∀ᵐ x ∂mu.restrict U, Wkp.value 2 u x ≤ g x) :
-    ∀ x ∈ U, preciseRepresentative mu (Wkp.value 2 u) x ≤ g x := by
-  have hae := (Wkp.ae_eq_preciseRepresentative 2 u).filter_mono
-    (ae_mono (Measure.restrict_mono hUΩ le_rfl))
-  refine ((Wkp.continuousOn_preciseRepresentative hp u).mono hUΩ).le_of_ae_le
-    (μ := mu) hU hg ?_
-  filter_upwards [hae, hle] with x hx h
-  exact hx ▸ h
-
-/-- If `u ∈ W^{2,p}(Ω)` with `n < 2 p` satisfies `g ≤ u` almost everywhere on an open subset `U ⊆ Ω`
-and `g` is continuous on `U`, then its precise representative satisfies `g ≤ u*` everywhere on
-`U`. -/
-theorem Wkp.le_preciseRepresentative_of_ae_le (hp : (finrank ℝ E : ℝ≥0∞) < 2 * p)
-    (u : Wkp mu Omega p 2) {U : Set E} (hU : IsOpen U) (hUΩ : U ⊆ Omega) {g : E → ℝ}
-    (hg : ContinuousOn g U) (hle : ∀ᵐ x ∂mu.restrict U, g x ≤ Wkp.value 2 u x) :
-    ∀ x ∈ U, g x ≤ preciseRepresentative mu (Wkp.value 2 u) x := by
-  have hae := (Wkp.ae_eq_preciseRepresentative 2 u).filter_mono
-    (ae_mono (Measure.restrict_mono hUΩ le_rfl))
-  refine hg.le_of_ae_le (μ := mu) hU ((Wkp.continuousOn_preciseRepresentative hp u).mono hUΩ) ?_
-  filter_upwards [hae, hle] with x hx h
-  exact hx ▸ h
 
 /-- **Pointwise bounds on the continuous representative.** If `n < 2 p`, where `n` is the
 dimension, and `u ∈ W^{2,p}(Ω)` satisfies `|u| ≤ M` almost everywhere on an open set `U ⊆ Ω`, then

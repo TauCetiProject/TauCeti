@@ -7,6 +7,7 @@ module
 
 public import Mathlib.MeasureTheory.Function.LpSeminorm.ChebyshevMarkov
 import Mathlib.MeasureTheory.Integral.Average
+import TauCeti.Analysis.SpecialFunctions.Pow.NNReal
 import TauCeti.MeasureTheory.Function.LpSeminorm.Lintegral
 
 /-!
@@ -45,12 +46,6 @@ section PointSelection
 
 variable {α ε : Type*} [MeasurableSpace α] {μ : Measure α} [TopologicalSpace ε] [ContinuousENorm ε]
 
-private theorem mul_le_of_rpow_le_div {a b c : ℝ≥0∞} {r : ℝ} (hr : 0 < r)
-    (hc0 : c ≠ 0) (hc : c ≠ ∞) (h : a ^ r ≤ b ^ r / c) : c ^ r⁻¹ * a ≤ b := by
-  rw [← ENNReal.rpow_le_rpow_iff hr, ENNReal.mul_rpow_of_nonneg _ _ hr.le,
-    ENNReal.rpow_inv_rpow hr.ne', mul_comm]
-  exact (ENNReal.le_div_iff_mul_le (Or.inl hc0) (Or.inl hc)).1 h
-
 /-- **Chebyshev point selection in `Lᵖ`.** On a nonzero finite measure space, a function in `Lᵖ` for
 `0 < p < ∞` satisfies `(μ Set.univ) ^ (1 / p) ‖f x‖ₑ ≤ ‖f‖_{Lᵖ(μ)}` on a set of positive measure
 (in particular, at some point). -/
@@ -63,7 +58,7 @@ theorem MemLp.frequently_measure_univ_rpow_mul_enorm_le_eLpNorm {f : α → ε} 
   have hpos := measure_le_laverage_pos hμ0 (hf.aestronglyMeasurable.eNorm.pow_const p.toReal)
   rw [laverage_eq, lintegral_rpow_enorm_eq_eLpNorm_rpow hp0 hp hf.aestronglyMeasurable] at hpos
   refine frequently_ae_iff.2 fun h0 ↦ hpos.ne' (measure_mono_null (fun x hx ↦ ?_) h0)
-  exact mul_le_of_rpow_le_div hpr hμ0' hμ hx
+  exact (ENNReal.rpow_inv_mul_le_iff_rpow_le_div hpr hμ0' hμ).2 hx
 
 /-- **Chebyshev point selection on a set in `Lᵖ`.** On a set `s` of positive finite measure, a
 function in `Lᵖ(μ.restrict s)` for `0 < p < ∞` satisfies `(μ s) ^ (1 / p) ‖f x‖ₑ ≤ ‖f‖_{Lᵖ(s)}`
@@ -76,7 +71,7 @@ theorem MemLp.exists_mem_measure_rpow_mul_enorm_le_eLpNorm {f : α → ε} {p : 
   obtain ⟨x, hxs, hx⟩ := exists_le_setLAverage hμ0 hμ
     (hf.aestronglyMeasurable.eNorm.pow_const p.toReal)
   rw [setLAverage_eq, lintegral_rpow_enorm_eq_eLpNorm_rpow hp0 hp hf.aestronglyMeasurable] at hx
-  exact ⟨x, hxs, mul_le_of_rpow_le_div hpr hμ0 hμ hx⟩
+  exact ⟨x, hxs, (ENNReal.rpow_inv_mul_le_iff_rpow_le_div hpr hμ0 hμ).2 hx⟩
 
 end PointSelection
 
