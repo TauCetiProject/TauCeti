@@ -195,9 +195,8 @@ theorem isWeakHomotopyEquivalence_withGeneratedByTopology_counit_compHaus
 theorem isWeakHomotopyEquivalence_generatedByCounit
     [∀ n : ℕ, IsGeneratedBy G (Fin n → I)] (X : TopCat.{u}) :
     ((GeneratedByTopCat.adjCounit (X := G)).app X).hom.IsWeakHomotopyEquivalence := by
-  -- Align the categorical source with the explicit generated-topology carrier.
-  simpa only [GeneratedByTopCat.adjCounit_app_hom] using!
-    isWeakHomotopyEquivalence_withGeneratedByTopology_counit G (X := X)
+  rw [GeneratedByTopCat.adjCounit_app_hom]
+  exact isWeakHomotopyEquivalence_withGeneratedByTopology_counit G
 
 /-- Compact generation preserves path components and every based homotopy group, even for
 spaces whose original topology is not compactly generated. The test-space universe is

@@ -344,32 +344,10 @@ variable (Y Z : GeneratedByTopCat.{v} G)
 `TopCat` is the generated-topology counit on `Y × Z`. -/
 theorem prodComparison_toTopCat :
     CartesianMonoidalCategory.prodComparison toTopCat Y Z =
-      (adjCounit (X := G)).app (Y.obj ⊗ Z.obj) := by
-  apply CartesianMonoidalCategory.hom_ext
-  · rw [CartesianMonoidalCategory.prodComparison_fst]
-    ext p
-    calc
-      (toTopCat.map (CartesianMonoidalCategory.fst Y Z)) p
-        = (WithGeneratedByTopology.equiv (X := G) (Y := Y × Z) p).1 := fst_apply Y Z p
-      _ = ((adjCounit (X := G)).app (Y.obj ⊗ Z.obj) p).1 :=
-          congrArg Prod.fst (adjCounit_app_apply G (Y.obj ⊗ Z.obj) p).symm
-      _ = CartesianMonoidalCategory.fst (toTopCat.obj Y) (toTopCat.obj Z)
-            ((adjCounit (X := G)).app (Y.obj ⊗ Z.obj) p) := (TopCat.fst_apply _).symm
-      _ = ((adjCounit (X := G)).app (Y.obj ⊗ Z.obj) ≫
-            CartesianMonoidalCategory.fst (toTopCat.obj Y) (toTopCat.obj Z)) p :=
-          (CategoryTheory.comp_apply _ _ _).symm
-  · rw [CartesianMonoidalCategory.prodComparison_snd]
-    ext p
-    calc
-      (toTopCat.map (CartesianMonoidalCategory.snd Y Z)) p
-        = (WithGeneratedByTopology.equiv (X := G) (Y := Y × Z) p).2 := snd_apply Y Z p
-      _ = ((adjCounit (X := G)).app (Y.obj ⊗ Z.obj) p).2 :=
-          congrArg Prod.snd (adjCounit_app_apply G (Y.obj ⊗ Z.obj) p).symm
-      _ = CartesianMonoidalCategory.snd (toTopCat.obj Y) (toTopCat.obj Z)
-            ((adjCounit (X := G)).app (Y.obj ⊗ Z.obj) p) := (TopCat.snd_apply _).symm
-      _ = ((adjCounit (X := G)).app (Y.obj ⊗ Z.obj) ≫
-            CartesianMonoidalCategory.snd (toTopCat.obj Y) (toTopCat.obj Z)) p :=
-          (CategoryTheory.comp_apply _ _ _).symm
+      (adjCounit (X := G)).app (Y.obj ⊗ Z.obj) :=
+  TopCat.ext fun p ↦ (TopCat.prodComparison_apply toTopCat Y Z p).trans <|
+    ((Prod.ext (fst_apply Y Z p) (snd_apply Y Z p)).trans (Prod.eta _)).trans
+      (adjCounit_app_apply G (Y.obj ⊗ Z.obj) p).symm
 
 @[simp]
 theorem prodComparison_toTopCat_apply (p : ↑(Y ⊗ Z)) :

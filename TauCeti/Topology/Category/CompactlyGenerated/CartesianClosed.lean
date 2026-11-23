@@ -292,31 +292,11 @@ compact-generation counit on `X × Y`. -/
 theorem prodComparison_compactlyGeneratedToTop :
     CartesianMonoidalCategory.prodComparison compactlyGeneratedToTop.{u, w} X Y =
       adj.{u, w}.counit.app (X.toTop ⊗ Y.toTop) := by
-  apply CartesianMonoidalCategory.hom_ext
-  · rw [CartesianMonoidalCategory.prodComparison_fst]
-    ext p
-    have h1 : (compactlyGeneratedToTop.map (CartesianMonoidalCategory.fst X Y)) p = p.1 :=
-      fst_apply X Y p
-    have h2 : (adj.{u, w}.counit.app (X.toTop ⊗ Y.toTop) p).1 = p.1 :=
-      congrArg Prod.fst (adjCounit_app_apply.{u, w} (X.toTop ⊗ Y.toTop) p)
-    have h3 : (adj.{u, w}.counit.app (X.toTop ⊗ Y.toTop) ≫
-        CartesianMonoidalCategory.fst (compactlyGeneratedToTop.obj X)
-          (compactlyGeneratedToTop.obj Y)) p =
-        (adj.{u, w}.counit.app (X.toTop ⊗ Y.toTop) p).1 :=
-      (CategoryTheory.comp_apply _ _ p).trans (TopCat.fst_apply _)
-    exact h1.trans (h2.symm.trans h3.symm)
-  · rw [CartesianMonoidalCategory.prodComparison_snd]
-    ext p
-    have h1 : (compactlyGeneratedToTop.map (CartesianMonoidalCategory.snd X Y)) p = p.2 :=
-      snd_apply X Y p
-    have h2 : (adj.{u, w}.counit.app (X.toTop ⊗ Y.toTop) p).2 = p.2 :=
-      congrArg Prod.snd (adjCounit_app_apply.{u, w} (X.toTop ⊗ Y.toTop) p)
-    have h3 : (adj.{u, w}.counit.app (X.toTop ⊗ Y.toTop) ≫
-        CartesianMonoidalCategory.snd (compactlyGeneratedToTop.obj X)
-          (compactlyGeneratedToTop.obj Y)) p =
-        (adj.{u, w}.counit.app (X.toTop ⊗ Y.toTop) p).2 :=
-      (CategoryTheory.comp_apply _ _ p).trans (TopCat.snd_apply _)
-    exact h1.trans (h2.symm.trans h3.symm)
+  refine TopCat.ext fun p ↦
+    (TopCat.prodComparison_apply compactlyGeneratedToTop.{u, w} X Y p).trans ?_
+  rw [adj_counit]
+  exact ((Prod.ext (fst_apply X Y p) (snd_apply X Y p)).trans (Prod.eta _)).trans
+    (adjCounit_app_apply.{u, w} (X.toTop ⊗ Y.toTop) p).symm
 
 @[simp]
 theorem prodComparison_compactlyGeneratedToTop_apply (p : ↑(X ⊗ Y)) :
@@ -403,9 +383,12 @@ ordinary product `X × Y` is continuous into the convenient product `X ⊗ Y`. -
 theorem continuous_toCompactlyGeneratedProd {A : Type*} [TopologicalSpace A]
     [UCompactlyGeneratedSpace.{u} A] {X Y : CompactlyGenerated.{u, w}}
     {g : A → ↑(X ⊗ Y)} (hg : Continuous fun a ↦ ((g a).1, (g a).2)) :
-    Continuous g :=
-  ((⟨fun a ↦ ((g a).1, (g a).2), hg⟩ : C(A, X × Y)).toCompactlyGenerated.{u}.continuous.comp
-    (counitHomeomorph.{u} (TopCat.of A)).symm.continuous).congr fun _ ↦ rfl
+    Continuous g := by
+  refine ((⟨fun a ↦ ((g a).1, (g a).2), hg⟩ : C(A, X × Y)).toCompactlyGenerated.{u}.continuous.comp
+    (counitHomeomorph.{u} (TopCat.of A)).symm.continuous).congr fun a ↦ ?_
+  rw [Function.comp_apply, ContinuousMap.toCompactlyGenerated_apply, ContinuousMap.coe_mk,
+    counitHomeomorph_symm_apply]
+  exact Prod.eta (g a)
 
 /-! ### Cartesian closed structure -/
 

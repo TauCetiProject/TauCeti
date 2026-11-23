@@ -36,6 +36,14 @@ theorem fst_apply {X Y : TopCat.{u}} (p : ↑(X ⊗ Y)) : fst X Y p = p.1 := (rf
 @[simp]
 theorem snd_apply {X Y : TopCat.{u}} (p : ↑(X ⊗ Y)) : snd X Y p = p.2 := (rfl)
 
+/-- The product comparison morphism `prodComparison F X Y` into `TopCat` evaluates pointwise to
+the pair `(F.map (fst X Y) p, F.map (snd X Y) p)`. -/
+@[simp]
+theorem prodComparison_apply {C : Type*} [Category* C] [CartesianMonoidalCategory C]
+    (F : C ⥤ TopCat.{u}) (X Y : C) (p : F.obj (X ⊗ Y)) :
+    prodComparison F X Y p = ((F.map (fst X Y) p, F.map (snd X Y) p) : ↑(F.obj X ⊗ F.obj Y)) :=
+  TopCat.lift_apply
+
 variable (X F : TopCat.{u})
 
 /-- The inclusion `f ↦ (x, f)` of the fibre `F` over `x : X` into the product `X × F`. -/
