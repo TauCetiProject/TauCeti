@@ -189,6 +189,7 @@ theorem hattoriStallingsTrace_singleOneSMulLinearMap_eq_card_centralizer_nsmul
       (centralizerEnd_apply hPG γ _)]
 
 /-- **`G`-conjugation invariance of `centralizerGroupTrace`.** -/
+@[simp]
 theorem centralizerGroupTrace_conjNonneg (k : G) (γ : nonnegSubmonoid deg) :
     centralizerGroupTrace Λ ι deg hker hPG (conjNonneg ι deg k γ) =
       centralizerGroupTrace Λ ι deg hker hPG γ := by
@@ -432,6 +433,7 @@ theorem centralizerProjectiveGroupTrace_eq_projectiveGroupTrace (γ : nonnegSubm
     centralizerGroupTrace_eq_hattoriStallingsGroupTrace hPG γ hPZ u_Z huZ]
 
 /-- **`G`-conjugation invariance of `centralizerProjectiveGroupTrace`.** -/
+@[simp]
 theorem centralizerProjectiveGroupTrace_conjNonneg (k : G) (γ : nonnegSubmonoid deg) :
     centralizerProjectiveGroupTrace A ι deg hker hPG (conjNonneg ι deg k γ) =
       centralizerProjectiveGroupTrace A ι deg hker hPG γ := by

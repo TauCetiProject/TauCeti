@@ -439,13 +439,12 @@ end TwoModules
 theorem projectiveGroupTrace_smul (a : A) (u : Module.End A[G] P) :
     projectiveGroupTrace A G P (a • u) = a * projectiveGroupTrace A G P u := by simp
 
+section
+attribute [local instance low] TauCeti.BalancedExtension.moduleBase
+
 /-- Scalar extension of `projectiveGroupTrace` along `φ : A →+* B`. -/
 @[simp] theorem projectiveGroupTrace_balancedExtension_mapRingHom {B : Type*} [CommRing B]
-    (φ : A →+* B)
-    [Module B (TauCeti.BalancedExtension (mapRingHom G φ) P)]
-    [IsScalarTower B B[G] (TauCeti.BalancedExtension (mapRingHom G φ) P)]
-    [SMulCommClass B[G] B (TauCeti.BalancedExtension (mapRingHom G φ) P)]
-    (u : Module.End A[G] P) :
+    (φ : A →+* B) (u : Module.End A[G] P) :
     projectiveGroupTrace B G (TauCeti.BalancedExtension (mapRingHom G φ) P)
         (TauCeti.BalancedExtension.map (mapRingHom G φ) u) =
       φ (projectiveGroupTrace A G P u) := by
@@ -456,14 +455,12 @@ theorem projectiveGroupTrace_smul (a : A) (u : Module.End A[G] P) :
     {H Q : Type*} [Group H] [AddCommGroup Q] [Module A Q] [Module A[H] Q]
     [IsScalarTower A A[H] Q] [SMulCommClass A[H] A Q]
     [Module.Finite A[H] Q] [Module.Projective A[H] Q]
-    {p : H →* G} (hp : Function.Injective p)
-    [Module A (TauCeti.BalancedExtension (mapDomainRingHom A p) Q)]
-    [IsScalarTower A A[G] (TauCeti.BalancedExtension (mapDomainRingHom A p) Q)]
-    [SMulCommClass A[G] A (TauCeti.BalancedExtension (mapDomainRingHom A p) Q)]
-    (u : Module.End A[H] Q) :
+    {p : H →* G} (hp : Function.Injective p) (u : Module.End A[H] Q) :
     projectiveGroupTrace A G (TauCeti.BalancedExtension (mapDomainRingHom A p) Q)
         (TauCeti.BalancedExtension.map (mapDomainRingHom A p) u) =
       projectiveGroupTrace A H Q u := by simp [projectiveGroupTrace_apply, hp]
+
+end
 
 /-- Subgroup restriction multiplies `projectiveGroupTrace` by `[G : H]`. -/
 theorem projectiveGroupTrace_eq_index_mul (H : Subgroup G)

@@ -651,6 +651,24 @@ theorem tensorProductEquiv_symm_tmul (s : S) (p : P) :
     (tensorProductEquiv R S P).symm (s ⊗ₜ[R] p) = tmul (algebraMap R S) s p := by
   rw [LinearEquiv.symm_apply_eq, tensorProductEquiv_tmul]
 
+/-- `tensorProductEquiv` intertwines `BalancedExtension.map` with `LinearMap.baseChange`. -/
+@[simp]
+theorem tensorProductEquiv_map {P' : Type*} [AddCommGroup P'] [Module R P']
+    (g : P →ₗ[R] P') (x : BalancedExtension (algebraMap R S) P) :
+    tensorProductEquiv R S P' (map (algebraMap R S) g x) =
+      g.baseChange S (tensorProductEquiv R S P x) := by
+  induction x using induction_on with
+  | tmul s p => simp
+  | add x y hx hy => simp [hx, hy]
+
+/-- Naturality square identifying `BalancedExtension.map` with `LinearMap.baseChange` under
+`tensorProductEquiv`. -/
+theorem tensorProductEquiv_comp_map {P' : Type*} [AddCommGroup P'] [Module R P']
+    (g : P →ₗ[R] P') :
+    (tensorProductEquiv R S P').toLinearMap ∘ₗ map (algebraMap R S) g =
+      g.baseChange S ∘ₗ (tensorProductEquiv R S P).toLinearMap :=
+  hom_ext fun p ↦ by simp
+
 end TensorProduct
 
 end BalancedExtension

@@ -311,10 +311,11 @@ theorem hattoriStallingsTrace_baseChange {S : Type*} [Ring S] [Algebra R S]
     hattoriStallingsTrace S (TensorProduct R S M) (f.baseChange S) =
       TauCeti.cyclicQuotientRingHomMap (algebraMap R S) (hattoriStallingsTrace R M f) := by
   let e := BalancedExtension.tensorProductEquiv R S M
-  have hconj : e.conjRingEquiv (BalancedExtension.map (algebraMap R S) f) = f.baseChange S :=
-    LinearMap.ext fun x ↦ x.inductionOn
-      (fun s m ↦ by simp [e])
-      fun _ _ hx hy ↦ by rw [map_add, map_add, hx, hy]
+  have hconj : e.conjRingEquiv (BalancedExtension.map (algebraMap R S) f) = f.baseChange S := by
+    apply LinearMap.ext; intro x
+    exact LinearMap.congr_fun
+      (BalancedExtension.tensorProductEquiv_comp_map R S M f) (e.symm x) |>.trans
+      (by simp [e])
   rw [← hconj, hattoriStallingsTrace_conj, hattoriStallingsTrace_balancedExtension_map]
 
 end LinearMap
