@@ -38,8 +38,10 @@ result is the canonical linear graph shear.
 For a function of a scalar first variable, the partial derivatives along the coordinate lines
 `s ↦ (s, b)` and `t ↦ (a, t)` are its derivative applied to `(1, 0)` and `(0, 1)`. The same holds
 one order higher for the first derivative, and more generally along any line `r ↦ p + r • q`.
-A function whose partial derivative in the first variable vanishes everywhere is constant along
-every horizontal line; on a union `ℝ × T` of horizontal lines, the converse holds as well.
+A function differentiable everywhere whose partial derivative in the first variable vanishes
+everywhere is constant along every horizontal line. For a function differentiable at every point
+of a union `ℝ × T` of horizontal lines, the partial derivative vanishes on `ℝ × T` exactly when
+the function is constant along each of these lines.
 
 The product `η (t) * u (t, x)` of a function of time and a function of time and space has the
 expected derivative, with a norm bound in terms of bounds on the factors and their derivatives
@@ -54,12 +56,13 @@ expected derivative, with a norm bound in terms of bounds on the factors and the
 * `TauCeti.hasDerivAt_fderiv_apply_fst`, `TauCeti.hasDerivAt_fderiv_apply_snd`: the partial
   derivatives of a first partial derivative.
 * `TauCeti.hasDerivAt_fderiv_apply_line`: the derivative of a first derivative along a line.
-* `TauCeti.apply_eq_apply_zero_of_fderiv_fst_eq_zero`: a function with vanishing partial
-  derivative in its real first variable is constant along horizontal lines.
+* `TauCeti.apply_eq_apply_zero_of_fderiv_fst_eq_zero`: a differentiable function with vanishing
+  partial derivative in its real first variable is constant along horizontal lines.
 * `TauCeti.eq_zero_of_fderiv_fst_eq_zero_of_tendsto`: such a function which decays as `s → +∞`
   along each horizontal line vanishes.
-* `TauCeti.fderiv_fst_eqOn_zero_iff`: on `ℝ × T`, the partial derivative in the real first
-  variable vanishes exactly when the function is constant along horizontal lines.
+* `TauCeti.fderiv_fst_eqOn_zero_iff`: for a function differentiable at every point of `ℝ × T`,
+  the partial derivative in the real first variable vanishes on `ℝ × T` exactly when the function
+  is constant along the horizontal lines through `T`.
 * `TauCeti.fderiv_comp_fst_add_comp_snd`: the same for the totalized derivative.
 * `TauCeti.fderiv_comp_fst_add_comp_snd_eq_zero_iff`: a separated sum of differentiable functions
   is critical at `(a, b)` exactly when both summands are critical at `a` and `b`.
