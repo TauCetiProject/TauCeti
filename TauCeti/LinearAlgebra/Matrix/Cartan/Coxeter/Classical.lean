@@ -121,7 +121,8 @@ private lemma matPA_mul_reflMatrix (n : ℕ) (i : Fin n) :
       permMatrixHom (Equiv.swap (⟨i.val, by omega⟩ : Fin (n + 1)) ⟨i.val + 1, by omega⟩) *
         matPA n := by
   ext r j
-  rw [mul_reflMatrix_apply, permMatrixHom_swap_mul_apply, Equiv.swap_apply_def]
+  rw [mul_reflMatrix_apply, permMatrixHom_apply, Equiv.Perm.permMatrix, Equiv.Perm.inv_def,
+    PEquiv.toMatrix_mul_apply, Equiv.toPEquiv_apply, Equiv.symm_swap, Equiv.swap_apply_def]
   have := r.isLt; have := j.isLt; have := i.isLt
   simp only [matPA, CartanMatrix.A, Matrix.of_apply, apply_ite Fin.val, Fin.ext_iff]
   split_ifs <;> omega
@@ -245,8 +246,9 @@ private lemma matPB_mul_reflMatrix (n : ℕ) (i : Fin n) :
   rw [mul_reflMatrix_apply]
   have := r.isLt; have := j.isLt; have := i.isLt
   by_cases hi : i.val + 1 < n
-  · rw [reflCoordB, dite_eq_left_of_eq_true (eq_true hi), permMatrixHom_swap_mul_apply,
-      Equiv.swap_apply_def]
+  · rw [reflCoordB, dite_eq_left_of_eq_true (eq_true hi), permMatrixHom_apply,
+      Equiv.Perm.permMatrix, Equiv.Perm.inv_def, PEquiv.toMatrix_mul_apply, Equiv.toPEquiv_apply,
+      Equiv.symm_swap, Equiv.swap_apply_def]
     simp only [matPB, CartanMatrix.B, Matrix.of_apply, apply_ite Fin.val, Fin.ext_iff]
     split_ifs <;> omega
   · rw [reflCoordB, dite_eq_right_of_eq_false (eq_false hi), Matrix.diagonal_mul]
@@ -261,7 +263,8 @@ private lemma matPB_mul_coxeterElement {n : ℕ} (hn : 1 ≤ n) :
   rw [prod_finRange_succ_adjSwap (reflCoordB (m + 1)) fun i => by
     simp [reflCoordB, Nat.add_lt_add_right i.isLt 1]; rfl]
   ext r j
-  rw [permMatrixHom_mul_apply]
+  rw [permMatrixHom_apply, Equiv.Perm.permMatrix, Equiv.Perm.inv_def, PEquiv.toMatrix_mul_apply,
+    Equiv.toPEquiv_apply]
   rcases eq_or_ne r 0 with rfl | hr
   · rw [Fin.finRotate_symm_zero]
     have := j.isLt
@@ -405,8 +408,9 @@ private lemma lastReflD_mul_apply {n : ℕ} (hn : 2 ≤ n) {κ : Type*} (M : Mat
       if r.val + 1 = n then -M ⟨n - 2, by omega⟩ j
       else if r.val + 2 = n then -M ⟨n - 1, by omega⟩ j
       else M r j := by
-  rw [lastReflD, Matrix.mul_assoc, negLastTwo, Matrix.diagonal_mul,
-    permMatrixHom_swap_mul_apply, Equiv.swap_apply_def]
+  rw [lastReflD, Matrix.mul_assoc, negLastTwo, Matrix.diagonal_mul, permMatrixHom_apply,
+    Equiv.Perm.permMatrix, Equiv.Perm.inv_def, PEquiv.toMatrix_mul_apply, Equiv.toPEquiv_apply,
+    Equiv.symm_swap, Equiv.swap_apply_def]
   have := r.isLt
   simp only [Fin.ext_iff]
   split_ifs <;> simp <;> omega
@@ -415,11 +419,11 @@ private lemma lastReflD_eq_swap_mul_diag {n : ℕ} (hn : 2 ≤ n) :
     lastReflD hn =
       permMatrixHom (Equiv.swap ⟨n - 2, by omega⟩ ⟨n - 1, by omega⟩) * negLastTwo n := by
   ext r j
-  rw [lastReflD, negLastTwo, Matrix.diagonal_mul, permMatrixHom_swap_mul_apply,
-    ← Matrix.mul_one (permMatrixHom (Equiv.swap _ _)), permMatrixHom_swap_mul_apply,
-    Equiv.swap_apply_def, Matrix.diagonal_apply]
+  rw [lastReflD, negLastTwo, Matrix.diagonal_mul, Matrix.mul_diagonal, permMatrixHom_apply,
+    Equiv.Perm.permMatrix, Equiv.Perm.inv_def, PEquiv.toMatrix_toPEquiv_eq,
+    Matrix.submatrix_apply, id_eq, Matrix.one_apply, Equiv.symm_swap, Equiv.swap_apply_def]
   have := r.isLt; have := j.isLt
-  simp only [Matrix.one_apply, apply_ite Fin.val, Fin.ext_iff]
+  simp only [apply_ite Fin.val, Fin.ext_iff]
   split_ifs <;> omega
 
 /-- Coordinate simple reflections of type `Dₙ`. -/
@@ -432,8 +436,9 @@ private lemma matPD_mul_reflMatrix {n : ℕ} (hn : 2 ≤ n) (i : Fin n) :
   rw [mul_reflMatrix_apply]
   have := r.isLt; have := j.isLt; have := i.isLt
   by_cases hi : i.val + 1 < n
-  · rw [reflCoordD, dite_eq_left_of_eq_true (eq_true hi), permMatrixHom_swap_mul_apply,
-      Equiv.swap_apply_def, cartanMatrixD_apply_of_lt hi j]
+  · rw [reflCoordD, dite_eq_left_of_eq_true (eq_true hi), permMatrixHom_apply,
+      Equiv.Perm.permMatrix, Equiv.Perm.inv_def, PEquiv.toMatrix_mul_apply, Equiv.toPEquiv_apply,
+      Equiv.symm_swap, Equiv.swap_apply_def, cartanMatrixD_apply_of_lt hi j]
     by_cases hj : j.val + 1 < n
     · rcases eq_or_ne j i with rfl | hji
       · simp only [↓reduceIte, matPD, Matrix.of_apply, hi, apply_ite Fin.val, Fin.ext_iff]
@@ -470,10 +475,12 @@ private lemma permMatrixHom_finRotate_mul_lastReflD {m : ℕ} (hm : 1 ≤ m) :
     split_ifs with hx
     · subst hx; rw [Fin.finRotate_symm_zero, Fin.val_last]
     · exact coe_finRotate_symm_of_ne_zero hx
-  rw [lastReflD_eq_swap_mul_diag]
+  rw [lastReflD_eq_swap_mul_diag, ← Matrix.mul_assoc]
   ext r j
-  rw [permMatrixHom_mul_apply, permMatrixHom_swap_mul_apply, Equiv.swap_apply_def,
-    negLastTwo, Matrix.diagonal_apply]
+  rw [negLastTwo, Matrix.mul_diagonal, permMatrixHom_apply, Equiv.Perm.permMatrix,
+    Equiv.Perm.inv_def, PEquiv.toMatrix_toPEquiv_mul, Matrix.submatrix_apply, id_eq,
+    permMatrixHom_apply, Equiv.Perm.permMatrix, Equiv.Perm.inv_def, PEquiv.toMatrix_toPEquiv_eq,
+    Matrix.submatrix_apply, id_eq, Matrix.one_apply, Equiv.symm_swap, Equiv.swap_apply_def]
   refine Fin.lastCases ?_ (fun r₀ => ?_) r <;> refine Fin.lastCases ?_ (fun j₀ => ?_) j <;>
     simp only [modelDSucc, Matrix.reindex_apply, Matrix.submatrix_apply, blockModelD,
       finSumFinEquiv_symm_last, finSumFinEquiv_symm_apply_castSucc,

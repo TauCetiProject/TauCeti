@@ -18,7 +18,7 @@ import TauCeti.LinearAlgebra.Matrix.Charpoly.Cyclic
 Provides:
 * Nonnegative weighted sums of permutation matrices (`Matrix.weight_le_sum_permMatrix`,
   `Matrix.sum_smul_permMatrix_apply_eq_zero_iff`).
-* Basis-vector and row actions of `Matrix.permMatrixHom`, and products of adjacent-swap matrices
+* Basis-vector action of `Matrix.permMatrixHom`, and products of adjacent-swap matrices
   (`Matrix.prod_finRange_permMatrixHom_adjSwap`, `Matrix.prod_finRange_succ_adjSwap`).
 * The signed `n`-cycle matrix `Matrix.negCycleMatrix`, its basis action, `n`-th power `-1`,
   characteristic polynomial `X^n + 1`, and multiplicative order `2 * n`.
@@ -88,24 +88,8 @@ section PermMatrixHom
 theorem permMatrixHom_mulVec_single {κ R : Type*} [Fintype κ] [DecidableEq κ] [Semiring R]
     (σ : Equiv.Perm κ) (j : κ) :
     (permMatrixHom σ : Matrix κ κ R) *ᵥ Pi.single j 1 = Pi.single (σ j) 1 := by
-  ext i
-  rw [mulVec_single_one, col_apply, permMatrixHom_apply, Equiv.Perm.permMatrix,
-    PEquiv.toMatrix_toPEquiv_apply]
-  simp [Pi.single_apply, Equiv.eq_symm_apply, eq_comm]
-
-/-- Left-multiplying `M` by `permMatrixHom σ` permutes the rows of `M` by `σ.symm`. -/
-theorem permMatrixHom_mul_apply {κ₁ κ₂ R : Type*} [Fintype κ₁] [DecidableEq κ₁] [Semiring R]
-    (σ : Equiv.Perm κ₁) (M : Matrix κ₁ κ₂ R) (r : κ₁) (j : κ₂) :
-    ((permMatrixHom σ : Matrix κ₁ κ₁ R) * M) r j = M (σ.symm r) j := by
-  rw [permMatrixHom_apply, Equiv.Perm.permMatrix, PEquiv.toMatrix_toPEquiv_mul,
-    Matrix.submatrix_apply, id_eq, Equiv.Perm.inv_def]
-
-/-- Left-multiplying `M` by the swap matrix `permMatrixHom (Equiv.swap a b)` exchanges rows `a`
-and `b`. -/
-theorem permMatrixHom_swap_mul_apply {κ₁ κ₂ R : Type*} [Fintype κ₁] [DecidableEq κ₁] [Semiring R]
-    (a b : κ₁) (M : Matrix κ₁ κ₂ R) (r : κ₁) (j : κ₂) :
-    ((permMatrixHom (Equiv.swap a b) : Matrix κ₁ κ₁ R) * M) r j = M (Equiv.swap a b r) j := by
-  rw [permMatrixHom_mul_apply, Equiv.symm_swap]
+  rw [permMatrixHom_apply, Equiv.Perm.permMatrix, Equiv.Perm.inv_def,
+    PEquiv.toMatrix_toPEquiv_mulVec σ.symm (Pi.single j 1), Pi.single_comp_equiv, Equiv.symm_symm]
 
 /-- The product of the first `k` adjacent-swap permutation matrices `(0, 1), …, (k - 1, k)` on
 `Fin N` is `permMatrixHom (Fin.cycleRange k)`. -/

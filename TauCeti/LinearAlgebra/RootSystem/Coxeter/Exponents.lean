@@ -180,6 +180,8 @@ lemma lt_coxeterNumber_of_mem_exponents {t : DynkinType} (ht : t.Valid) {e : ℕ
 /-- **Every residue `< h` coprime to the Coxeter number `h` is an exponent of `t`.** -/
 theorem mem_exponents_of_coprime {t : DynkinType} (ht : t.Valid) {e : ℕ}
     (he : e < t.coxeterNumber) (hcop : e.Coprime t.coxeterNumber) : e ∈ t.exponents := by
+  have hfilter : ∀ h, e < h → e.Coprime h → e ∈ (List.range h).filter (Nat.Coprime · h) :=
+    fun _ hlt hc => List.mem_filter.mpr ⟨List.mem_range.mpr hlt, decide_eq_true hc⟩
   cases t with
   | A n =>
     have hn : 1 ≤ n := valid_A.mp ht
@@ -200,31 +202,31 @@ theorem mem_exponents_of_coprime {t : DynkinType} (ht : t.Valid) {e : ℕ}
     exact Or.inl ⟨e / 2, List.mem_range.mpr (by omega), by omega⟩
   | E6 =>
     simp only [coxeterNumber_E6] at he hcop
-    have hsub : ∀ x ∈ (List.range 12).filter (Nat.Coprime · 12), x ∈ E6.exponents := by decide
-    exact hsub e (List.mem_filter.mpr ⟨List.mem_range.mpr he, decide_eq_true hcop⟩)
+    exact (by decide : ∀ x ∈ (List.range 12).filter (Nat.Coprime · 12), x ∈ E6.exponents) e
+      (hfilter 12 he hcop)
   | E7 =>
     simp only [coxeterNumber_E7] at he hcop
-    have hsub : ∀ x ∈ (List.range 18).filter (Nat.Coprime · 18), x ∈ E7.exponents := by decide
-    exact hsub e (List.mem_filter.mpr ⟨List.mem_range.mpr he, decide_eq_true hcop⟩)
+    exact (by decide : ∀ x ∈ (List.range 18).filter (Nat.Coprime · 18), x ∈ E7.exponents) e
+      (hfilter 18 he hcop)
   | E8 =>
     simp only [coxeterNumber_E8] at he hcop
-    have hsub : ∀ x ∈ (List.range 30).filter (Nat.Coprime · 30), x ∈ E8.exponents := by decide
-    exact hsub e (List.mem_filter.mpr ⟨List.mem_range.mpr he, decide_eq_true hcop⟩)
+    rw [exponents_E8_eq_filter]
+    exact hfilter 30 he hcop
   | F4 =>
     simp only [coxeterNumber_F4] at he hcop
-    have hsub : ∀ x ∈ (List.range 12).filter (Nat.Coprime · 12), x ∈ F4.exponents := by decide
-    exact hsub e (List.mem_filter.mpr ⟨List.mem_range.mpr he, decide_eq_true hcop⟩)
+    rw [exponents_F4_eq_filter]
+    exact hfilter 12 he hcop
   | G2 =>
     simp only [coxeterNumber_G2] at he hcop
-    have hsub : ∀ x ∈ (List.range 6).filter (Nat.Coprime · 6), x ∈ G2.exponents := by decide
-    exact hsub e (List.mem_filter.mpr ⟨List.mem_range.mpr he, decide_eq_true hcop⟩)
+    rw [exponents_G2_eq_filter]
+    exact hfilter 6 he hcop
 
 /-- `1` is always an exponent of a valid Dynkin type. -/
-lemma one_mem_exponents {t : DynkinType} (ht : t.Valid) : 1 ∈ t.exponents :=
+@[simp high] lemma one_mem_exponents {t : DynkinType} (ht : t.Valid) : 1 ∈ t.exponents :=
   mem_exponents_of_coprime ht (two_le_coxeterNumber ht) (Nat.coprime_one_left _)
 
 /-- `h - 1` is always an exponent of a valid Dynkin type. -/
-lemma coxeterNumber_sub_one_mem_exponents {t : DynkinType} (ht : t.Valid) :
+@[simp high] lemma coxeterNumber_sub_one_mem_exponents {t : DynkinType} (ht : t.Valid) :
     t.coxeterNumber - 1 ∈ t.exponents := by
   have h2 := two_le_coxeterNumber ht
   refine mem_exponents_of_coprime ht (by omega) ?_
@@ -246,11 +248,11 @@ lemma le_coxeterNumber_of_mem_degrees {t : DynkinType} (ht : t.Valid) {d : ℕ}
 
 /-- `2` is always a fundamental degree of a valid Dynkin type (corresponding to the invariant
 quadratic form). -/
-lemma two_mem_degrees {t : DynkinType} (ht : t.Valid) : 2 ∈ t.degrees :=
+@[simp high] lemma two_mem_degrees {t : DynkinType} (ht : t.Valid) : 2 ∈ t.degrees :=
   mem_degrees_iff.mpr ⟨1, one_mem_exponents ht, rfl⟩
 
 /-- The Coxeter number `h` is always a fundamental degree of a valid Dynkin type. -/
-lemma coxeterNumber_mem_degrees {t : DynkinType} (ht : t.Valid) :
+@[simp high] lemma coxeterNumber_mem_degrees {t : DynkinType} (ht : t.Valid) :
     t.coxeterNumber ∈ t.degrees := by
   have h2 := two_le_coxeterNumber ht
   exact mem_degrees_iff.mpr ⟨t.coxeterNumber - 1, coxeterNumber_sub_one_mem_exponents ht, by omega⟩
