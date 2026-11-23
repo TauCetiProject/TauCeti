@@ -68,12 +68,11 @@ theorem measurableSet_cylinder [MeasurableSpace A] [MeasurableSingletonClass A] 
   rw [cylinder_eq_cylinder_singleton]
   exact MeasurableSet.cylinder _ (measurableSet_singleton _)
 
-/-- The cylinder sets form a π-system. -/
-theorem isPiSystem_cylinder :
-    IsPiSystem {C : Set (G → A) | ∃ (U : Finset G) (x : G → A), C = FullShift.cylinder U x} := by
-  classical
-  rintro _ ⟨U, x, rfl⟩ _ ⟨V, y, rfl⟩ ⟨z, hzx, hzy⟩
-  refine ⟨U ∪ V, z, ?_⟩
+/-- The intersection of two cylinder sets is the cylinder set, on the union of their supports, of
+any configuration that lies in both. -/
+theorem cylinder_inter_cylinder [DecidableEq G] {U V : Finset G} {x y z : G → A}
+    (hzx : ∀ i ∈ U, z i = x i) (hzy : ∀ i ∈ V, z i = y i) :
+    FullShift.cylinder U x ∩ FullShift.cylinder V y = FullShift.cylinder (U ∪ V) z := by
   ext w
   simp only [mem_inter_iff, FullShift.mem_cylinder, Finset.mem_union]
   constructor
@@ -84,16 +83,24 @@ theorem isPiSystem_cylinder :
     exact ⟨fun j hj => (hw j (Or.inl hj)).trans (hzx j hj),
       fun j hj => (hw j (Or.inr hj)).trans (hzy j hj)⟩
 
+/-- The cylinder set of a configuration on a union is the intersection of its cylinder sets. -/
+theorem cylinder_union [DecidableEq G] (U V : Finset G) (x : G → A) :
+    FullShift.cylinder (U ∪ V) x = FullShift.cylinder U x ∩ FullShift.cylinder V x :=
+  (cylinder_inter_cylinder (fun _ _ => rfl) fun _ _ => rfl).symm
+
+/-- The cylinder sets form a π-system. -/
+theorem isPiSystem_cylinder :
+    IsPiSystem {C : Set (G → A) | ∃ (U : Finset G) (x : G → A), C = FullShift.cylinder U x} := by
+  classical
+  rintro _ ⟨U, x, rfl⟩ _ ⟨V, y, rfl⟩ ⟨z, hzx, hzy⟩
+  exact ⟨U ∪ V, z, cylinder_inter_cylinder hzx hzy⟩
+
 /-- The cylinder sets of a fixed configuration form a π-system. -/
 theorem isPiSystem_cylinder_fixed (x : G → A) :
     IsPiSystem {C : Set (G → A) | ∃ U : Finset G, C = FullShift.cylinder U x} := by
   classical
   rintro _ ⟨U, rfl⟩ _ ⟨V, rfl⟩ -
-  refine ⟨U ∪ V, ?_⟩
-  ext w
-  simp only [mem_inter_iff, FullShift.mem_cylinder, Finset.mem_union]
-  exact ⟨fun ⟨hU, hV⟩ i hi => hi.elim (hU i) (hV i),
-    fun h => ⟨fun i hi => h i (Or.inl hi), fun i hi => h i (Or.inr hi)⟩⟩
+  exact ⟨U ∪ V, (cylinder_union U V x).symm⟩
 
 end SymbolicDynamics.FullShift
 
@@ -109,7 +116,7 @@ variable {I S : Type*} [TopologicalSpace S] [DiscreteTopology S] {X : Set (I →
 theorem isClopen_preimage_cylinder (s : Finset I) (t : Set (s → S)) :
     IsClopen ((↑) ⁻¹' cylinder (α := fun _ : I => S) s t : Set X) := by
   have h : IsClopen (cylinder (α := fun _ : I => S) s t) :=
-    (isClopen_discrete t).preimage (continuous_pi fun i => continuous_apply (i : I))
+    (isClopen_discrete t).preimage (Finset.continuous_restrict s)
   exact h.preimage continuous_subtypeVal
 
 omit [TopologicalSpace S] [DiscreteTopology S] in
