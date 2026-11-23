@@ -412,19 +412,18 @@ end UnitalAlgebraic
 
 section Unital
 
-section SynthesisUnital
-
-variable {A ι E : Type*} [Fintype ι] [CStarAlgebra A] [PartialOrder A] [StarOrderedRing A]
-  [SeminormedAddCommGroup E] [NormedSpace ℂ E] [Module Aᵐᵒᵖ E] [CStarModule Aᵐᵒᵖ E]
-
-@[simp] theorem coe_frameSynthesisLinearMap (x : ι → E) :
+@[simp] theorem coe_frameSynthesisLinearMap {A ι E : Type*} [Fintype ι] [CStarAlgebra A]
+    [PartialOrder A] [StarOrderedRing A] [SeminormedAddCommGroup E] [NormedSpace ℂ E]
+    [Module Aᵐᵒᵖ E] [CStarModule Aᵐᵒᵖ E] (x : ι → E) :
     ⇑(frameSynthesisLinearMap A x) = ⇑(frameSynthesisCLM A x) := by funext v; simp
 
-theorem frameSynthesisCLM_single_one [DecidableEq ι] (x : ι → E) (i : ι) :
+theorem frameSynthesisCLM_single_one {A ι E : Type*} [Fintype ι] [CStarAlgebra A]
+    [PartialOrder A] [StarOrderedRing A] [SeminormedAddCommGroup E] [NormedSpace ℂ E]
+    [SMul Aᵐᵒᵖ E] [CStarModule Aᵐᵒᵖ E] [DecidableEq ι] (x : ι → E) (i : ι) :
     frameSynthesisCLM A x ((WithCStarModule.equiv Aᵐᵒᵖ (ι → A)).symm (Pi.single i (1 : A))) =
-      x i := (coe_frameSynthesisLinearMap (A := A) x ▸ frameSynthesisLinearMap_single_one x i)
-
-end SynthesisUnital
+      x i := by
+  let _ := CStarModule.module Aᵐᵒᵖ E
+  exact coe_frameSynthesisLinearMap (A := A) x ▸ frameSynthesisLinearMap_single_one x i
 
 variable {A ι E : Type*} [CStarAlgebra A] [PartialOrder A] [StarOrderedRing A]
   [SeminormedAddCommGroup E] [NormedSpace ℂ E] [Module Aᵐᵒᵖ E] [CStarModule Aᵐᵒᵖ E]
