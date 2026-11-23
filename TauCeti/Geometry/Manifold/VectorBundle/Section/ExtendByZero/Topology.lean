@@ -1,0 +1,969 @@
+/-
+Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: The Tau Ceti contributors
+-/
+module
+
+public import TauCeti.Geometry.Manifold.VectorBundle.Section.ExtendByZero
+public import TauCeti.Geometry.Manifold.VectorBundle.Section.SmulLeft
+public import TauCeti.Geometry.Manifold.VectorBundle.Section.Map.Basic
+import TauCeti.Geometry.Manifold.ContMDiff.Subtype
+
+/-!
+# Open extension of native bundle tests
+
+Extension by zero is continuous on fixed compact-support stages and for their native final
+locally convex topology. The construction works for all supported regularities on the raw
+section carriers. On native smooth bundle tests it gives continuous linear extension maps,
+compact-convergence transposes, nested-open laws and the universal-open equivalence.
+-/
+
+public noncomputable section
+
+open Bundle Set TopologicalSpace Topology ContMDiffSection
+open scoped Manifold ContDiff TauCeti.ManifoldWeakWhitney CompactConvergenceCLM
+
+namespace ContMDiffSection
+
+variable {E H M F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+  [LocallyCompactSpace E] [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
+  [TopologicalSpace M] [ChartedSpace H M] [T2Space M]
+  [NormedAddCommGroup F] [NormedSpace ℝ F]
+  {V : M → Type*} [∀ x, AddCommGroup (V x)] [∀ x, Module ℝ (V x)]
+  [∀ x, TopologicalSpace (V x)] [TopologicalSpace (TotalSpace F V)]
+  [FiberBundle F V] [VectorBundle ℝ F V] {n : ℕ∞ω}
+  [ContMDiffVectorBundle n F V I] [IsManifold I n M]
+  {U D : Opens M} (e : Trivialization F (π F V)) [MemTrivializationAtlas e]
+  (hD : (D : Set M) ⊆ e.baseSet)
+  {P : Type*} [TopologicalSpace P]
+
+/-- A fixed compact support lets pulled-back frame continuity extend across the boundary by zero. -/
+theorem continuous_extended_frame_of_fixed_support
+    (K : Compacts U)
+    (s : P → compactlySupported I F n
+      ((⟨Subtype.val, continuous_subtypeVal⟩ : C(U, M)) *ᵖ V))
+    (hK : ∀ p, (s p).val.tsupport ⊆ K) :
+    let c : C(U, M) := ⟨Subtype.val, continuous_subtypeVal⟩
+    letI : ContMDiffVectorBundle n F (c *ᵖ V) I :=
+      ContMDiffVectorBundle.pullback F V I ⟨_, contMDiff_subtypeVal⟩
+    let DU := Opens.comap c D
+    let hDU : (DU : Set U) ⊆ (e.pullback c).baseSet := fun _ hx ↦ hD hx
+    Continuous (fun p ↦ (e.pullback c).frameCoordinates hDU (s p).val) →
+      Continuous (fun p ↦ e.frameCoordinates hD (extendByZero (s p))) := by
+  intro c DU hDU hs
+  let : ContMDiffVectorBundle n F (c *ᵖ V) I :=
+    ContMDiffVectorBundle.pullback F V I ⟨_, contMDiff_subtypeVal⟩
+  have hL : IsClosed (Subtype.val '' (K : Set U) : Set M) :=
+    (K.isCompact.image continuous_subtypeVal).isClosed
+  let d : C(D, M) := ⟨Subtype.val, continuous_subtypeVal⟩
+  let W : Bool → Opens D := fun b ↦
+    bif b then Opens.comap d U else Opens.comap d ⟨(Subtype.val '' (K : Set U))ᶜ, hL.isOpen_compl⟩
+  have hW : ∀ x : D, ∃ b, x ∈ W b := by
+    intro x
+    by_cases hx : (x : M) ∈ U
+    · exact ⟨true, hx⟩
+    · exact ⟨false, fun ⟨y, _, hyx⟩ ↦ hx (hyx ▸ y.property : d x ∈ U)⟩
+  apply ContMDiffMap.continuous_of_forall_continuous_restrict W hW
+  intro b
+  cases b with
+  | false =>
+    convert continuous_const (y := (0 : C^n⟮I, W false; 𝓘(ℝ, F), F⟯)) using 1
+    funext p
+    ext x
+    have hx : ((x : D) : M) ∉ (extendByZero (s p)).tsupport := by
+      rw [tsupport_extendByZero]
+      exact fun hm ↦ x.property (image_mono (hK p) hm)
+    rw [ContMDiffMap.restrict_apply, Trivialization.frameCoordinates_apply,
+      eq_zero_of_notMem_tsupport _ hx,
+      ← e.continuousLinearMapAt_apply_of_mem (R := ℝ) (hD (x : D).property), map_zero]
+    simp
+  | true =>
+    let j : C^n⟮I, W true; I, DU⟯ :=
+      ⟨fun x ↦ ⟨⟨((x : D) : M), x.property⟩, (x : D).property⟩,
+        (TauCeti.ContMDiff.subtypeVal_comp_iff DU _).mp
+          ((TauCeti.ContMDiff.subtypeVal_comp_iff U _).mp (by
+            change ContMDiff I I n (fun x : W true ↦ ((x : D) : M))
+            exact contMDiff_subtypeVal.comp contMDiff_subtypeVal))⟩
+    have h := ContMDiffMap.continuous_comp_manifoldWeakWhitney.comp
+      (hs.prodMk (continuous_const (y := j)))
+    apply h.congr
+    intro p
+    ext x
+    simp only [Function.comp_apply, ContMDiffMap.restrict_apply,
+      ContMDiffMap.comp_apply, Trivialization.frameCoordinates_apply]
+    erw [Trivialization.frameCoordinates_apply, Trivialization.pullback_apply,
+      extendByZero_apply_of_mem (s p)
+      (⟨((x : D) : M), x.property⟩ : U)]
+    rfl
+
+variable {ι : Type*} (es : ι → Trivialization F (π F V))
+  [∀ i, MemTrivializationAtlas (es i)] (A : ι → Opens M)
+  (hA : ∀ i, (A i : Set M) ⊆ (es i).baseSet)
+
+/-- Extension by zero is continuous from each fixed-support stage in a covering frame family. -/
+theorem continuous_extendByZero_ofSupportedIn (K : Compacts U) :
+    let c : C(U, M) := ⟨Subtype.val, continuous_subtypeVal⟩
+    letI : ContMDiffVectorBundle n F (c *ᵖ V) I :=
+      ContMDiffVectorBundle.pullback F V I ⟨_, contMDiff_subtypeVal⟩
+    let eU := fun i ↦ (es i).pullback c
+    let AU := fun i ↦ Opens.comap c (A i)
+    let hAU : ∀ i, (AU i : Set U) ⊆ (eU i).baseSet := fun i _ hx ↦ hA i hx
+    letI := frameTopology (I := I) (n := n) eU AU hAU
+    letI := frameTopology (I := I) (n := n) es A hA
+    Continuous (fun s : supportedIn I F n (c *ᵖ V) K ↦
+      extendByZero (ofSupportedIn K s)) := by
+  let c : C(U, M) := ⟨Subtype.val, continuous_subtypeVal⟩
+  let : ContMDiffVectorBundle n F (c *ᵖ V) I :=
+    ContMDiffVectorBundle.pullback F V I ⟨_, contMDiff_subtypeVal⟩
+  let eU := fun i ↦ (es i).pullback c
+  let AU := fun i ↦ Opens.comap c (A i)
+  let hAU : ∀ i, (AU i : Set U) ⊆ (eU i).baseSet := fun i _ hx ↦ hA i hx
+  let := frameTopology (I := I) (n := n) eU AU hAU
+  let := frameTopology (I := I) (n := n) es A hA
+  apply (continuous_frameTopology_iff_frameCoordinates es A hA).2
+  intro i
+  apply continuous_extended_frame_of_fixed_support (es i) (hA i) K
+    (fun s ↦ ofSupportedIn K s) (fun s ↦ by
+      rw [ofSupportedIn_apply]
+      exact mem_supportedIn.mp s.property)
+  have hc : Continuous (fun s : supportedIn I F n (c *ᵖ V) K ↦
+      (ofSupportedIn K s).val) := by
+    simpa only [ofSupportedIn_apply] using
+      (continuous_subtypeVal : Continuous (fun s : supportedIn I F n (c *ᵖ V) K ↦ s.val))
+  exact (continuous_frameCoordinates eU AU hAU i).comp hc
+
+/-- Extension by zero is continuous for the final locally convex topologies of covering frames. -/
+theorem continuous_extendByZero_compactlySupported :
+    let c : C(U, M) := ⟨Subtype.val, continuous_subtypeVal⟩
+    letI : ContMDiffVectorBundle n F (c *ᵖ V) I :=
+      ContMDiffVectorBundle.pullback F V I ⟨_, contMDiff_subtypeVal⟩
+    let eU := fun i ↦ (es i).pullback c
+    let AU := fun i ↦ Opens.comap c (A i)
+    let hAU : ∀ i, (AU i : Set U) ⊆ (eU i).baseSet := fun i _ hx ↦ hA i hx
+    letI := compactlySupportedTopology (I := I) (n := n) eU AU hAU
+    letI := compactlySupportedTopology (I := I) (n := n) es A hA
+    Continuous (extendByZeroLinearMap (I := I) (F := F) (n := n) (V := V) (U := U)) := by
+  let c : C(U, M) := ⟨Subtype.val, continuous_subtypeVal⟩
+  let : ContMDiffVectorBundle n F (c *ᵖ V) I :=
+    ContMDiffVectorBundle.pullback F V I ⟨_, contMDiff_subtypeVal⟩
+  let eU := fun i ↦ (es i).pullback c
+  let AU := fun i ↦ Opens.comap c (A i)
+  let hAU : ∀ i, (AU i : Set U) ⊆ (eU i).baseSet := fun i _ hx ↦ hA i hx
+  let := frameTopology (I := I) (n := n) eU AU hAU
+  let := frameTopology (I := I) (n := n) es A hA
+  let := compactlySupportedTopology (I := I) (n := n) eU AU hAU
+  let := compactlySupportedTopology (I := I) (n := n) es A hA
+  let := isTopologicalAddGroup_compactlySupportedTopology (I := I) (n := n) es A hA
+  let := continuousSMul_compactlySupportedTopology (I := I) (n := n) es A hA
+  let := locallyConvexSpace_compactlySupportedTopology (I := I) (n := n) es A hA
+  apply (continuous_compactlySupportedTopology_iff eU AU hAU
+    (extendByZeroLinearMap (I := I) (F := F) (n := n) (V := V) (U := U))).2
+  intro K
+  let L : Compacts M := K.map Subtype.val continuous_subtypeVal
+  let g : supportedIn I F n (c *ᵖ V) K → supportedIn I F n V L := fun s ↦
+    ⟨extendByZero (ofSupportedIn K s), by
+      rw [mem_supportedIn, tsupport_extendByZero, ofSupportedIn_apply]
+      exact image_mono (mem_supportedIn.mp s.property)⟩
+  have hg : Continuous g :=
+    (continuous_extendByZero_ofSupportedIn es A hA K).subtype_mk _
+  convert (continuous_ofSupportedIn (I := I) (n := n) es A hA L).comp hg using 1
+  funext s
+  apply Subtype.ext
+  simp only [Function.comp_apply, ofSupportedIn_apply]
+  change (extendByZeroLinearMap (ofSupportedIn K s)).val = _
+  erw [extendByZeroLinearMap_apply]
+
+variable [ContMDiffVectorBundle ∞ F V I] [IsManifold I ∞ M]
+
+/-- Extend a compactly supported section from one open subset to a larger open subset. -/
+def extendByZeroToOpenLinearMap (h : U ≤ D) :
+    compactlySupported I F n ((⟨Subtype.val, continuous_subtypeVal⟩ : C(U, M)) *ᵖ V) →ₗ[ℝ]
+      compactlySupported I F n ((⟨Subtype.val, continuous_subtypeVal⟩ : C(D, M)) *ᵖ V) := by
+  let L := (restrictLinearMap I F n V D).comp
+    ((compactlySupported I F n V).subtype.comp
+      (extendByZeroLinearMap (I := I) (F := F) (n := n) (V := V) (U := U)))
+  refine L.codRestrict (compactlySupported I F n
+    ((⟨Subtype.val, continuous_subtypeVal⟩ : C(D, M)) *ᵖ V)) ?_
+  intro s
+  change (restrictLinearMap I F n V D) (extendByZeroLinearMap s).val ∈ _
+  erw [restrictLinearMap_apply]
+  apply restrict_mem_compactlySupported (extendByZeroLinearMap s)
+  erw [extendByZeroLinearMap_apply, tsupport_extendByZero]
+  rintro _ ⟨u, _, rfl⟩
+  exact h u.property
+
+omit [LocallyCompactSpace E] [ContMDiffVectorBundle n F V I] [IsManifold I n M]
+  [ContMDiffVectorBundle ∞ F V I] [IsManifold I ∞ M] in
+/-- The underlying section is the restriction of the ambient extension by zero. -/
+theorem extendByZeroToOpenLinearMap_val (h : U ≤ D)
+    (s : compactlySupported I F n ((⟨Subtype.val, continuous_subtypeVal⟩ : C(U, M)) *ᵖ V)) :
+    (extendByZeroToOpenLinearMap h s).val = (extendByZero s).restrict D := by
+  change (restrictLinearMap I F n V D) (extendByZeroLinearMap s).val = _
+  erw [restrictLinearMap_apply, extendByZeroLinearMap_apply]
+
+omit [LocallyCompactSpace E] [ContMDiffVectorBundle n F V I] [IsManifold I n M]
+  [ContMDiffVectorBundle ∞ F V I] [IsManifold I ∞ M] in
+/-- The support of an intermediate extension is the image of its original support. -/
+theorem tsupport_extendByZeroToOpenLinearMap (h : U ≤ D)
+    (s : compactlySupported I F n ((⟨Subtype.val, continuous_subtypeVal⟩ : C(U, M)) *ᵖ V)) :
+    (extendByZeroToOpenLinearMap h s).val.tsupport = (Opens.inclusion h) '' s.val.tsupport := by
+  rw [extendByZeroToOpenLinearMap_val, tsupport_restrict, tsupport_extendByZero]
+  ext x
+  constructor
+  · rintro ⟨u, hu, heq⟩
+    exact ⟨u, hu, Subtype.ext heq⟩
+  · rintro ⟨u, hu, rfl⟩
+    exact ⟨u, hu, rfl⟩
+
+omit [LocallyCompactSpace E] [ContMDiffVectorBundle n F V I] [IsManifold I n M]
+  [ContMDiffVectorBundle ∞ F V I] [IsManifold I ∞ M] in
+/-- Extension along the identity inclusion preserves the section. -/
+theorem extendByZeroToOpenLinearMap_refl
+    (s : compactlySupported I F n ((⟨Subtype.val, continuous_subtypeVal⟩ : C(U, M)) *ᵖ V)) :
+    extendByZeroToOpenLinearMap (V := V) le_rfl s = s := by
+  apply Subtype.ext
+  rw [extendByZeroToOpenLinearMap_val]
+  exact restrict_extendByZero s
+
+omit [LocallyCompactSpace E] [ContMDiffVectorBundle n F V I] [IsManifold I n M]
+  [ContMDiffVectorBundle ∞ F V I] [IsManifold I ∞ M] in
+/-- Intermediate extension followed by ambient extension is ambient extension. -/
+theorem extendByZero_extendByZeroToOpenLinearMap (h : U ≤ D)
+    (s : compactlySupported I F n ((⟨Subtype.val, continuous_subtypeVal⟩ : C(U, M)) *ᵖ V)) :
+    extendByZero (extendByZeroToOpenLinearMap h s) = extendByZero s := by
+  have hs : (extendByZero s).tsupport ⊆ D := by
+    rw [tsupport_extendByZero]
+    rintro _ ⟨u, _, rfl⟩
+    exact h u.property
+  let t : compactlySupported I F n V := ⟨extendByZero s, extendByZero_mem_compactlySupported s⟩
+  have he := extendByZero_restrict t hs
+  refine (congrArg extendByZero ?_).trans he
+  apply Subtype.ext
+  exact extendByZeroToOpenLinearMap_val h s
+
+omit [LocallyCompactSpace E] [ContMDiffVectorBundle n F V I] [IsManifold I n M]
+  [ContMDiffVectorBundle ∞ F V I] [IsManifold I ∞ M] in
+/-- Extension through nested open subsets composes. -/
+theorem extendByZeroToOpenLinearMap_comp {D' : Opens M} (h : U ≤ D) (h' : D ≤ D')
+    (s : compactlySupported I F n ((⟨Subtype.val, continuous_subtypeVal⟩ : C(U, M)) *ᵖ V)) :
+    extendByZeroToOpenLinearMap h' (extendByZeroToOpenLinearMap h s) =
+      extendByZeroToOpenLinearMap (h.trans h') s := by
+  apply Subtype.ext
+  rw [extendByZeroToOpenLinearMap_val, extendByZeroToOpenLinearMap_val]
+  rw [extendByZero_extendByZeroToOpenLinearMap]
+
+omit [ContMDiffVectorBundle ∞ F V I] [IsManifold I ∞ M] in
+/-- Intermediate extension is continuous for the native final frame topologies. -/
+theorem continuous_extendByZeroToOpenLinearMap (h : U ≤ D) :
+    let cU : C(U, M) := ⟨Subtype.val, continuous_subtypeVal⟩
+    let cD : C(D, M) := ⟨Subtype.val, continuous_subtypeVal⟩
+    letI : ContMDiffVectorBundle n F (cU *ᵖ V) I :=
+      ContMDiffVectorBundle.pullback F V I ⟨_, contMDiff_subtypeVal⟩
+    letI : ContMDiffVectorBundle n F (cD *ᵖ V) I :=
+      ContMDiffVectorBundle.pullback F V I ⟨_, contMDiff_subtypeVal⟩
+    let eU := fun i ↦ (es i).pullback cU
+    let eD := fun i ↦ (es i).pullback cD
+    let AU := fun i ↦ Opens.comap cU (A i)
+    let AD := fun i ↦ Opens.comap cD (A i)
+    let hAU : ∀ i, (AU i : Set U) ⊆ (eU i).baseSet := fun i _ hx ↦ hA i hx
+    let hAD : ∀ i, (AD i : Set D) ⊆ (eD i).baseSet := fun i _ hx ↦ hA i hx
+    letI := compactlySupportedTopology (I := I) (n := n) eU AU hAU
+    letI := compactlySupportedTopology (I := I) (n := n) eD AD hAD
+    Continuous (extendByZeroToOpenLinearMap (I := I) (F := F) (n := n) (V := V) h) := by
+  let cU : C(U, M) := ⟨Subtype.val, continuous_subtypeVal⟩
+  let cD : C(D, M) := ⟨Subtype.val, continuous_subtypeVal⟩
+  let : ContMDiffVectorBundle n F (cU *ᵖ V) I :=
+    ContMDiffVectorBundle.pullback F V I ⟨_, contMDiff_subtypeVal⟩
+  let : ContMDiffVectorBundle n F (cD *ᵖ V) I :=
+    ContMDiffVectorBundle.pullback F V I ⟨_, contMDiff_subtypeVal⟩
+  let eU := fun i ↦ (es i).pullback cU
+  let eD := fun i ↦ (es i).pullback cD
+  let AU := fun i ↦ Opens.comap cU (A i)
+  let AD := fun i ↦ Opens.comap cD (A i)
+  let hAU : ∀ i, (AU i : Set U) ⊆ (eU i).baseSet := fun i _ hx ↦ hA i hx
+  let hAD : ∀ i, (AD i : Set D) ⊆ (eD i).baseSet := fun i _ hx ↦ hA i hx
+  let := frameTopology (I := I) (n := n) eU AU hAU
+  let := frameTopology (I := I) (n := n) es A hA
+  let := frameTopology (I := I) (n := n) eD AD hAD
+  let := compactlySupportedTopology (I := I) (n := n) eU AU hAU
+  let := compactlySupportedTopology (I := I) (n := n) eD AD hAD
+  let := isTopologicalAddGroup_compactlySupportedTopology (I := I) (n := n) eD AD hAD
+  let := continuousSMul_compactlySupportedTopology (I := I) (n := n) eD AD hAD
+  let := locallyConvexSpace_compactlySupportedTopology (I := I) (n := n) eD AD hAD
+  apply (continuous_compactlySupportedTopology_iff eU AU hAU (extendByZeroToOpenLinearMap h)).2
+  intro K
+  let L : Compacts D := K.map (Opens.inclusion h) (continuous_subtypeVal.subtype_mk _)
+  have hg0 : Continuous (fun s : supportedIn I F n (cU *ᵖ V) K ↦
+      (extendByZeroToOpenLinearMap h (ofSupportedIn K s)).val) :=
+    by
+      have hc := (continuous_restrict_frameTopology (I := I) (n := n) es A hA D).comp
+        (continuous_extendByZero_ofSupportedIn (I := I) (n := n) es A hA K)
+      apply hc.congr
+      intro s
+      exact (extendByZeroToOpenLinearMap_val h (ofSupportedIn K s)).symm
+  let g : supportedIn I F n (cU *ᵖ V) K → supportedIn I F n (cD *ᵖ V) L := fun s ↦
+    ⟨(extendByZeroToOpenLinearMap h (ofSupportedIn K s)).val, by
+      rw [mem_supportedIn, tsupport_extendByZeroToOpenLinearMap, ofSupportedIn_apply]
+      exact image_mono (mem_supportedIn.mp s.property)⟩
+  have hg : Continuous g := hg0.subtype_mk _
+  convert (continuous_ofSupportedIn (I := I) (n := n) eD AD hAD L).comp hg using 1
+  funext s
+  apply Subtype.ext
+  simp only [Function.comp_apply, ofSupportedIn_apply, g]
+
+/-- Restriction to the universal open subset on compactly supported sections. -/
+def restrictUnivLinearMap : compactlySupported I F n V →ₗ[ℝ]
+    compactlySupported I F n
+      ((⟨Subtype.val, continuous_subtypeVal⟩ : C((⊤ : Opens M), M)) *ᵖ V) := by
+  let L := (restrictLinearMap I F n V (⊤ : Opens M)).comp (compactlySupported I F n V).subtype
+  refine L.codRestrict _ (fun s ↦ ?_)
+  change (restrictLinearMap I F n V ⊤) s.val ∈ _
+  erw [restrictLinearMap_apply]
+  exact restrict_mem_compactlySupported s (U := (⊤ : Opens M)) (Set.subset_univ _)
+
+omit [LocallyCompactSpace E] [ContMDiffVectorBundle n F V I] [IsManifold I n M]
+  [ContMDiffVectorBundle ∞ F V I] [IsManifold I ∞ M] [T2Space M] in
+/-- The underlying universal-open restriction is ordinary section restriction. -/
+theorem restrictUnivLinearMap_val (s : compactlySupported I F n V) :
+    (restrictUnivLinearMap (I := I) (F := F) (n := n) s).val = s.val.restrict ⊤ := by
+  change (restrictLinearMap I F n V ⊤) s.val = _
+  erw [restrictLinearMap_apply]
+
+omit [ContMDiffVectorBundle ∞ F V I] [IsManifold I ∞ M] in
+omit [T2Space M] in
+/-- Restriction to the universal open is continuous for the final frame topology. -/
+theorem continuous_restrictUniv_compactlySupported :
+    let U : Opens M := ⊤
+    let c : C(U, M) := ⟨Subtype.val, continuous_subtypeVal⟩
+    letI : ContMDiffVectorBundle n F (c *ᵖ V) I :=
+      ContMDiffVectorBundle.pullback F V I ⟨_, contMDiff_subtypeVal⟩
+    let eU := fun i ↦ (es i).pullback c
+    let AU := fun i ↦ Opens.comap c (A i)
+    let hAU : ∀ i, (AU i : Set U) ⊆ (eU i).baseSet := fun i _ hx ↦ hA i hx
+    letI := compactlySupportedTopology (I := I) (n := n) es A hA
+    letI := compactlySupportedTopology (I := I) (n := n) eU AU hAU
+    Continuous (restrictUnivLinearMap (I := I) (F := F) (n := n) (V := V)) := by
+  intro U c eU AU hAU
+  let : ContMDiffVectorBundle n F (c *ᵖ V) I :=
+    ContMDiffVectorBundle.pullback F V I ⟨_, contMDiff_subtypeVal⟩
+  let := frameTopology (I := I) (n := n) es A hA
+  let := frameTopology (I := I) (n := n) eU AU hAU
+  let := compactlySupportedTopology (I := I) (n := n) es A hA
+  let := compactlySupportedTopology (I := I) (n := n) eU AU hAU
+  let := isTopologicalAddGroup_compactlySupportedTopology (I := I) (n := n) eU AU hAU
+  let := continuousSMul_compactlySupportedTopology (I := I) (n := n) eU AU hAU
+  let := locallyConvexSpace_compactlySupportedTopology (I := I) (n := n) eU AU hAU
+  apply (continuous_compactlySupportedTopology_iff es A hA _).2
+  intro K
+  let L : Compacts U :=
+    ⟨c ⁻¹' (K : Set M), (Homeomorph.Set.univ M).isCompact_preimage.mpr K.isCompact⟩
+  let g : supportedIn I F n V K → supportedIn I F n (c *ᵖ V) L := fun s ↦
+    ⟨s.val.restrict U, by
+      rw [mem_supportedIn, tsupport_restrict]
+      exact preimage_mono (mem_supportedIn.mp s.property)⟩
+  have hg : Continuous g :=
+    ((continuous_restrict_frameTopology es A hA U).comp continuous_subtypeVal).subtype_mk _
+  convert (continuous_ofSupportedIn (I := I) (n := n) eU AU hAU L).comp hg using 1
+  funext s
+  apply Subtype.ext
+  simp only [Function.comp_apply, ofSupportedIn_apply]
+  erw [restrictUnivLinearMap_val, ofSupportedIn_apply]
+
+section Coefficients
+variable {G : Type*} [NormedAddCommGroup G] [NormedSpace ℝ G]
+  {W : M → Type*} [∀ x, AddCommGroup (W x)] [∀ x, Module ℝ (W x)]
+  [∀ x, TopologicalSpace (W x)] [TopologicalSpace (TotalSpace G W)]
+  [FiberBundle G W] [VectorBundle ℝ G W]
+
+omit [LocallyCompactSpace E] [ContMDiffVectorBundle ∞ F V I] [IsManifold I ∞ M] in
+omit [ContMDiffVectorBundle n F V I] [IsManifold I n M] in
+/-- Extension by zero commutes with a smooth fibrewise linear coefficient map. -/
+theorem extendByZero_mapCompactlySupported (φ : ∀ x, V x →ₗ[ℝ] W x)
+    (hφ : ContMDiff (I.prod 𝓘(ℝ, F)) (I.prod 𝓘(ℝ, G)) n
+      (fun p : TotalSpace F V ↦ (⟨p.proj, φ p.proj p.snd⟩ : TotalSpace G W))) :
+    let c : C^n⟮I, U; I, M⟯ := ⟨Subtype.val, contMDiff_subtypeVal⟩
+    let hφU := Pullback.contMDiff_fiberwise (fun x v ↦ φ x v) hφ c c.contMDiff
+    ∀ s : compactlySupported I F n (c *ᵖ V),
+      extendByZero (mapCompactlySupported (I := I) (F := F) (G := G)
+        (V := c *ᵖ V) (W := c *ᵖ W) (fun x ↦ φ x.val) hφU s) =
+      mapLinearMap φ hφ (extendByZero s) := by
+  intro c hφU s
+  ext x
+  rw [mapLinearMap_apply]
+  by_cases hx : x ∈ U
+  · erw [extendByZero_apply_of_mem _ (⟨x, hx⟩ : U), extendByZero_apply_of_mem s (⟨x, hx⟩ : U)]
+    erw [coe_mapCompactlySupported, mapLinearMap_apply]
+    rfl
+  · erw [extendByZero_apply_of_notMem _ hx, extendByZero_apply_of_notMem s hx, map_zero]
+
+end Coefficients
+end ContMDiffSection
+
+namespace TauCeti.BundleTest
+
+variable {E H M F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+  [LocallyCompactSpace E] [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
+  [TopologicalSpace M] [ChartedSpace H M] [T2Space M]
+  [NormedAddCommGroup F] [NormedSpace ℝ F]
+  {V : M → Type*} [∀ x, AddCommGroup (V x)] [∀ x, Module ℝ (V x)]
+  [∀ x, TopologicalSpace (V x)] [TopologicalSpace (TotalSpace F V)]
+  [FiberBundle F V] [VectorBundle ℝ F V]
+  [ContMDiffVectorBundle ∞ F V I] [IsManifold I ∞ M] {U D : Opens M}
+
+-- This local proof is the existing smooth pullback instance at the canonical open inclusion.
+-- It supplies no new globally registered instance or additional hypothesis.
+local instance openPullbackSmooth (U : Opens M) :
+    ContMDiffVectorBundle ∞ F ((⟨Subtype.val, continuous_subtypeVal⟩ : C(U, M)) *ᵖ V) I :=
+  ContMDiffVectorBundle.pullback F V I ⟨_, contMDiff_subtypeVal⟩
+
+/-- Continuous linear extension by zero on native smooth bundle tests. -/
+def extendByZeroCLM :
+    let c : C(U, M) := ⟨Subtype.val, continuous_subtypeVal⟩
+    TauCeti.BundleTest I F (c *ᵖ V) →L[ℝ] TauCeti.BundleTest I F V := by
+  let c : C(U, M) := ⟨Subtype.val, continuous_subtypeVal⟩
+  let L : TauCeti.BundleTest I F (c *ᵖ V) →ₗ[ℝ] TauCeti.BundleTest I F V :=
+    (TauCeti.BundleTest.ofCompactlySupported I F V).toLinearMap.comp
+      ((extendByZeroLinearMap (I := I) (F := F) (n := ∞) (V := V) (U := U)).comp
+        (TauCeti.BundleTest.ofCompactlySupported I F (c *ᵖ V)).symm.toLinearMap)
+  refine ⟨L, ?_⟩
+  let e : M → Trivialization F (π F V) := fun x ↦ trivializationAt F V x
+  let A : M → Opens M := fun x ↦ ⟨(e x).baseSet, (e x).open_baseSet⟩
+  let hA : ∀ i, (A i : Set M) ⊆ (e i).baseSet := fun _ ↦ subset_rfl
+  let eU := fun i ↦ (e i).pullback c
+  let AU := fun i ↦ Opens.comap c (A i)
+  let hAU : ∀ i, (AU i : Set U) ⊆ (eU i).baseSet := fun i _ hx ↦ hA i hx
+  have hcover : ∀ x : U, ∃ i, x ∈ AU i :=
+    fun x ↦ ⟨(x : M), mem_baseSet_trivializationAt F V (x : M)⟩
+  erw [TauCeti.BundleTest.instTopologicalSpace_eq_compactlySupportedTopology eU AU hAU hcover]
+  exact continuous_extendByZero_compactlySupported (I := I) (n := ∞) e A hA
+
+/-- Native extension commutes with the compactly supported section representation. -/
+theorem extendByZeroCLM_ofCompactlySupported :
+    let c : C(U, M) := ⟨Subtype.val, continuous_subtypeVal⟩
+    ∀ s : compactlySupported I F ∞ (c *ᵖ V),
+      extendByZeroCLM (I := I) (F := F) (V := V) (ofCompactlySupported I F (c *ᵖ V) s) =
+        ofCompactlySupported I F V (extendByZeroLinearMap s) := by
+  intros
+  rfl
+
+/-- Extension on native tests agrees with extension on compactly supported sections. -/
+theorem extendByZeroCLM_apply :
+    let c : C(U, M) := ⟨Subtype.val, continuous_subtypeVal⟩
+    ∀ (s : TauCeti.BundleTest I F (c *ᵖ V)) (x : M),
+      extendByZeroCLM (I := I) (F := F) (V := V) s x =
+        extendByZero ((TauCeti.BundleTest.ofCompactlySupported I F (c *ᵖ V)).symm s) x := by
+  intro c s x
+  change (extendByZeroLinearMap ((ofCompactlySupported I F (c *ᵖ V)).symm s)).val x = _
+  erw [extendByZeroLinearMap_apply]
+
+/-- Extension vanishes outside the open subset. -/
+theorem extendByZeroCLM_apply_of_notMem :
+    let c : C(U, M) := ⟨Subtype.val, continuous_subtypeVal⟩
+    ∀ (s : TauCeti.BundleTest I F (c *ᵖ V)) {x : M}, x ∉ U →
+      extendByZeroCLM (I := I) (F := F) (V := V) s x = 0 := by
+  intro c s x hx
+  rw [extendByZeroCLM_apply]
+  exact extendByZero_apply_of_notMem _ hx
+
+/-- Extension on the open subset is the original test, viewed in the ambient fibre. -/
+theorem extendByZeroCLM_apply_of_mem :
+    let c : C(U, M) := ⟨Subtype.val, continuous_subtypeVal⟩
+    ∀ (s : TauCeti.BundleTest I F (c *ᵖ V)) (x : U),
+      extendByZeroCLM (I := I) (F := F) (V := V) s (x : M) =
+        (Pullback.lift c (TotalSpace.mk' F x (s x))).snd := by
+  intro c s x
+  rw [extendByZeroCLM_apply]
+  erw [extendByZero_apply_of_mem _ x]
+  rfl
+
+/-- The closed support of the extension is the image of the original closed support. -/
+theorem tsupport_extendByZeroCLM :
+    let c : C(U, M) := ⟨Subtype.val, continuous_subtypeVal⟩
+    ∀ (s : TauCeti.BundleTest I F (c *ᵖ V)),
+      closure {x : M | extendByZeroCLM (I := I) (F := F) (V := V) s x ≠ 0} =
+        Subtype.val '' closure {x : U | s x ≠ 0} := by
+  intro c s
+  simp only [extendByZeroCLM_apply]
+  simpa only [tsupport_def] using
+    (tsupport_extendByZero ((ofCompactlySupported I F (c *ᵖ V)).symm s))
+
+/-- Extension commutes with multiplication by an ambient smooth scalar function. -/
+theorem extendByZeroCLM_smulLeftCLM :
+    let c : C(U, M) := ⟨Subtype.val, continuous_subtypeVal⟩
+    ∀ (f : C^∞⟮I, M; ℝ⟯) (s : TauCeti.BundleTest I F (c *ᵖ V)),
+      extendByZeroCLM (I := I) (F := F) (V := V)
+        (TauCeti.BundleTest.smulLeftCLM (f.restrict U) s) =
+      TauCeti.BundleTest.smulLeftCLM f (extendByZeroCLM (I := I) (F := F) (V := V) s) := by
+  intro c f s
+  apply TauCeti.BundleTest.ext
+  intro x
+  rw [TauCeti.BundleTest.smulLeftCLM_apply]
+  by_cases hx : x ∈ U
+  · erw [extendByZeroCLM_apply_of_mem _ (⟨x, hx⟩ : U),
+      extendByZeroCLM_apply_of_mem s (⟨x, hx⟩ : U), TauCeti.BundleTest.smulLeftCLM_apply]
+    erw [Pullback.lift_snd, Pullback.lift_snd, ContMDiffMap.restrict_apply]
+    rfl
+  · rw [extendByZeroCLM_apply_of_notMem _ hx, extendByZeroCLM_apply_of_notMem _ hx,
+      smul_zero]
+
+section Dual
+variable {W : Type*} [AddCommGroup W] [Module ℝ W] [TopologicalSpace W]
+  [IsTopologicalAddGroup W] [ContinuousConstSMul ℝ W]
+
+/-- Restriction on compact-convergence duals, transposed from test extension. -/
+def restrictDualCLM :
+    let c : C(U, M) := ⟨Subtype.val, continuous_subtypeVal⟩
+    (TauCeti.BundleTest I F V →L_c[ℝ] W) →L[ℝ]
+      TauCeti.BundleTest I F (c *ᵖ V) →L_c[ℝ] W := by
+  let _c : C(U, M) := ⟨Subtype.val, continuous_subtypeVal⟩
+  exact (extendByZeroCLM (I := I) (F := F) (V := V) (U := U)).precompCompactConvergenceCLM W
+
+/-- Dual restriction pairs with a test by pairing against its extension. -/
+theorem restrictDualCLM_apply :
+    let c : C(U, M) := ⟨Subtype.val, continuous_subtypeVal⟩
+    ∀ (T : TauCeti.BundleTest I F V →L_c[ℝ] W) (s : TauCeti.BundleTest I F (c *ᵖ V)),
+      restrictDualCLM T s = T (extendByZeroCLM (I := I) (F := F) (V := V) s) := by
+  intros
+  rfl
+
+/-- Restriction of a point mass outside the open subset is zero. -/
+theorem restrictDualCLM_delta_of_notMem :
+    let _c : C(U, M) := ⟨Subtype.val, continuous_subtypeVal⟩
+    ∀ (x : M) (ℓ : V x →L[ℝ] W), x ∉ U →
+      restrictDualCLM (I := I) (F := F) (V := V) (U := U) (TauCeti.BundleTest.delta x ℓ) = 0 := by
+  intro _c x ℓ hx
+  apply ContinuousLinearMap.ext
+  intro s
+  erw [restrictDualCLM_apply, TauCeti.BundleTest.delta_apply,
+    extendByZeroCLM_apply_of_notMem s hx, map_zero]
+  rfl
+
+/-- Restriction of a point mass inside the open subset is the corresponding point mass. -/
+theorem restrictDualCLM_delta_of_mem :
+    let c : C(U, M) := ⟨Subtype.val, continuous_subtypeVal⟩
+    ∀ (x : U) (ℓ : V (x : M) →L[ℝ] W),
+      restrictDualCLM (I := I) (F := F) (V := V) (U := U) (TauCeti.BundleTest.delta (x : M) ℓ) =
+        TauCeti.BundleTest.delta (I := I) (F := F) x (show (c *ᵖ V) x →L[ℝ] W from ℓ) := by
+  intro c x ℓ
+  apply ContinuousLinearMap.ext
+  intro s
+  erw [restrictDualCLM_apply, TauCeti.BundleTest.delta_apply,
+    extendByZeroCLM_apply_of_mem s x, TauCeti.BundleTest.delta_apply]
+  rfl
+
+/-- Dual restriction commutes with multiplication by smooth functions. -/
+theorem restrictDualCLM_smulLeftDualCLM :
+    let _c : C(U, M) := ⟨Subtype.val, continuous_subtypeVal⟩
+    ∀ (f : C^∞⟮I, M; ℝ⟯) (T : TauCeti.BundleTest I F V →L_c[ℝ] W),
+      restrictDualCLM (I := I) (F := F) (V := V) (U := U)
+        (TauCeti.BundleTest.smulLeftDualCLM f T) =
+      TauCeti.BundleTest.smulLeftDualCLM (f.restrict U)
+        (restrictDualCLM (I := I) (F := F) (V := V) (U := U) T) := by
+  intro _c f T
+  apply ContinuousLinearMap.ext
+  intro s
+  calc
+    _ = TauCeti.BundleTest.smulLeftDualCLM f T
+        (extendByZeroCLM (I := I) (F := F) (V := V) s) := restrictDualCLM_apply _ _
+    _ = T (TauCeti.BundleTest.smulLeftCLM f
+        (extendByZeroCLM (I := I) (F := F) (V := V) s)) := smulLeftDualCLM_apply _ _ _
+    _ = T (extendByZeroCLM (I := I) (F := F) (V := V)
+        (TauCeti.BundleTest.smulLeftCLM (f.restrict U) s)) :=
+      congrArg T (extendByZeroCLM_smulLeftCLM (I := I) (F := F) (V := V) f s).symm
+    _ = restrictDualCLM (I := I) (F := F) (V := V) T (smulLeftCLM (f.restrict U) s) :=
+      (restrictDualCLM_apply _ _).symm
+    _ = _ := (smulLeftDualCLM_apply _ _ _).symm
+
+end Dual
+/-- Continuous linear extension of native tests to a larger open subset. -/
+def inclusionCLM (h : U ≤ D) :
+    let cU : C(U, M) := ⟨Subtype.val, continuous_subtypeVal⟩
+    let cD : C(D, M) := ⟨Subtype.val, continuous_subtypeVal⟩
+    TauCeti.BundleTest I F (cU *ᵖ V) →L[ℝ] TauCeti.BundleTest I F (cD *ᵖ V) := by
+  let cU : C(U, M) := ⟨Subtype.val, continuous_subtypeVal⟩
+  let cD : C(D, M) := ⟨Subtype.val, continuous_subtypeVal⟩
+  let L : TauCeti.BundleTest I F (cU *ᵖ V) →ₗ[ℝ] TauCeti.BundleTest I F (cD *ᵖ V) :=
+    (TauCeti.BundleTest.ofCompactlySupported I F (cD *ᵖ V)).toLinearMap.comp
+      ((extendByZeroToOpenLinearMap (I := I) (F := F) (n := ∞) (V := V) h).comp
+        (TauCeti.BundleTest.ofCompactlySupported I F (cU *ᵖ V)).symm.toLinearMap)
+  refine ⟨L, ?_⟩
+  let e : M → Trivialization F (π F V) := fun x ↦ trivializationAt F V x
+  let B : M → Opens M := fun x ↦ ⟨(e x).baseSet, (e x).open_baseSet⟩
+  let hB : ∀ i, (B i : Set M) ⊆ (e i).baseSet := fun _ ↦ subset_rfl
+  let eU := fun i ↦ (e i).pullback cU
+  let eD := fun i ↦ (e i).pullback cD
+  let BU := fun i ↦ Opens.comap cU (B i)
+  let BD := fun i ↦ Opens.comap cD (B i)
+  let hBU : ∀ i, (BU i : Set U) ⊆ (eU i).baseSet := fun i _ hx ↦ hB i hx
+  let hBD : ∀ i, (BD i : Set D) ⊆ (eD i).baseSet := fun i _ hx ↦ hB i hx
+  have hcoverU : ∀ x : U, ∃ i, x ∈ BU i :=
+    fun x ↦ ⟨(x : M), mem_baseSet_trivializationAt F V (x : M)⟩
+  have hcoverD : ∀ x : D, ∃ i, x ∈ BD i :=
+    fun x ↦ ⟨(x : M), mem_baseSet_trivializationAt F V (x : M)⟩
+  erw [TauCeti.BundleTest.instTopologicalSpace_eq_compactlySupportedTopology eU BU hBU hcoverU,
+    TauCeti.BundleTest.instTopologicalSpace_eq_compactlySupportedTopology eD BD hBD hcoverD]
+  exact continuous_extendByZeroToOpenLinearMap (I := I) (n := ∞) e B hB h
+
+/-- Native intermediate extension agrees with raw compact-support extension. -/
+theorem inclusionCLM_ofCompactlySupported (h : U ≤ D)
+    (s : compactlySupported I F ∞ ((⟨Subtype.val, continuous_subtypeVal⟩ : C(U, M)) *ᵖ V)) :
+    inclusionCLM (I := I) (F := F) (V := V) h
+      (TauCeti.BundleTest.ofCompactlySupported I F _ s) =
+      TauCeti.BundleTest.ofCompactlySupported I F _ (extendByZeroToOpenLinearMap h s) := by
+  rfl
+
+/-- Native test extension along the identity inclusion is the identity. -/
+theorem inclusionCLM_refl :
+    let _cU : C(U, M) := ⟨Subtype.val, continuous_subtypeVal⟩
+    inclusionCLM (I := I) (F := F) (V := V) (U := U) le_rfl =
+      ContinuousLinearMap.id ℝ _ := by
+  dsimp only
+  apply ContinuousLinearMap.ext
+  intro s
+  obtain ⟨t, rfl⟩ := (TauCeti.BundleTest.ofCompactlySupported I F
+    ((⟨Subtype.val, continuous_subtypeVal⟩ : C(U, M)) *ᵖ V)).surjective s
+  erw [inclusionCLM_ofCompactlySupported, extendByZeroToOpenLinearMap_refl]
+  rfl
+
+/-- Native test extension through nested opens composes. -/
+theorem inclusionCLM_comp {D' : Opens M} (h : U ≤ D) (h' : D ≤ D') :
+    let _cU : C(U, M) := ⟨Subtype.val, continuous_subtypeVal⟩
+    let _cD : C(D, M) := ⟨Subtype.val, continuous_subtypeVal⟩
+    let _cDprime : C(D', M) := ⟨Subtype.val, continuous_subtypeVal⟩
+    (inclusionCLM (I := I) (F := F) (V := V) h').comp
+      (inclusionCLM (I := I) (F := F) (V := V) h) =
+      inclusionCLM (I := I) (F := F) (V := V) (h.trans h') := by
+  dsimp only
+  apply ContinuousLinearMap.ext
+  intro s
+  obtain ⟨t, rfl⟩ := (TauCeti.BundleTest.ofCompactlySupported I F
+    ((⟨Subtype.val, continuous_subtypeVal⟩ : C(U, M)) *ᵖ V)).surjective s
+  change TauCeti.BundleTest.ofCompactlySupported I F
+    ((⟨Subtype.val, continuous_subtypeVal⟩ : C(D', M)) *ᵖ V)
+    (extendByZeroToOpenLinearMap h' (extendByZeroToOpenLinearMap h t)) =
+      TauCeti.BundleTest.ofCompactlySupported I F _ (extendByZeroToOpenLinearMap (h.trans h') t)
+  exact congrArg (TauCeti.BundleTest.ofCompactlySupported I F _)
+    (extendByZeroToOpenLinearMap_comp h h' t)
+
+/-- Ambient extension is unchanged by inserting an intermediate open subset. -/
+theorem extendByZeroCLM_inclusionCLM (h : U ≤ D) :
+    let _cU : C(U, M) := ⟨Subtype.val, continuous_subtypeVal⟩
+    let _cD : C(D, M) := ⟨Subtype.val, continuous_subtypeVal⟩
+    (extendByZeroCLM (I := I) (F := F) (V := V) (U := D)).comp
+      (inclusionCLM (I := I) (F := F) (V := V) h) =
+      extendByZeroCLM (I := I) (F := F) (V := V) (U := U) := by
+  dsimp only
+  apply ContinuousLinearMap.ext
+  intro s
+  obtain ⟨t, rfl⟩ := (TauCeti.BundleTest.ofCompactlySupported I F
+    ((⟨Subtype.val, continuous_subtypeVal⟩ : C(U, M)) *ᵖ V)).surjective s
+  erw [ContinuousLinearMap.comp_apply, inclusionCLM_ofCompactlySupported]
+  change TauCeti.BundleTest.ofCompactlySupported I F V
+    (extendByZeroLinearMap (extendByZeroToOpenLinearMap h t)) =
+      TauCeti.BundleTest.ofCompactlySupported I F V (extendByZeroLinearMap t)
+  congr 1
+  apply Subtype.ext
+  erw [extendByZeroLinearMap_apply, extendByZeroLinearMap_apply]
+  exact extendByZero_extendByZeroToOpenLinearMap h t
+
+section NestedDual
+variable {W : Type*} [AddCommGroup W] [Module ℝ W] [TopologicalSpace W]
+  [IsTopologicalAddGroup W] [ContinuousConstSMul ℝ W]
+
+/-- The compact-convergence transpose of intermediate native test extension. -/
+def restrictDualToOpenCLM (h : U ≤ D) :
+    let cU : C(U, M) := ⟨Subtype.val, continuous_subtypeVal⟩
+    let cD : C(D, M) := ⟨Subtype.val, continuous_subtypeVal⟩
+    (TauCeti.BundleTest I F (cD *ᵖ V) →L_c[ℝ] W) →L[ℝ]
+      (TauCeti.BundleTest I F (cU *ᵖ V) →L_c[ℝ] W) := by
+  dsimp only
+  exact (inclusionCLM (I := I) (F := F) (V := V) h).precompCompactConvergenceCLM W
+
+/-- Dual restriction along the identity inclusion is the identity. -/
+theorem restrictDualToOpenCLM_refl :
+    let cU : C(U, M) := ⟨Subtype.val, continuous_subtypeVal⟩
+    ∀ μ : TauCeti.BundleTest I F (cU *ᵖ V) →L_c[ℝ] W,
+      restrictDualToOpenCLM (I := I) (F := F) (V := V) le_rfl μ = μ := by
+  dsimp only
+  intro μ
+  apply ContinuousLinearMap.ext
+  intro s
+  change μ (inclusionCLM (I := I) (F := F) (V := V) le_rfl s) = μ s
+  rw [inclusionCLM_refl, ContinuousLinearMap.id_apply]
+
+/-- Dual restriction through nested opens composes. -/
+theorem restrictDualToOpenCLM_comp {D' : Opens M} (h : U ≤ D) (h' : D ≤ D') :
+    let _cU : C(U, M) := ⟨Subtype.val, continuous_subtypeVal⟩
+    let _cD : C(D, M) := ⟨Subtype.val, continuous_subtypeVal⟩
+    let cDprime : C(D', M) := ⟨Subtype.val, continuous_subtypeVal⟩
+    ∀ μ : TauCeti.BundleTest I F (cDprime *ᵖ V) →L_c[ℝ] W,
+      restrictDualToOpenCLM (I := I) (F := F) (V := V) h
+        (restrictDualToOpenCLM (I := I) (F := F) (V := V) h' μ) =
+      restrictDualToOpenCLM (I := I) (F := F) (V := V) (h.trans h') μ := by
+  dsimp only
+  intro μ
+  apply ContinuousLinearMap.ext
+  intro s
+  change μ (inclusionCLM h' (inclusionCLM h s)) =
+    μ (inclusionCLM (h.trans h') s)
+  exact congrArg μ (congrArg (fun L ↦ L s) (inclusionCLM_comp (I := I) (F := F) (V := V) h h'))
+
+end NestedDual
+
+/-- Continuous linear restriction of native tests to the universal open subset. -/
+def restrictUnivCLM :
+    let U : Opens M := ⊤
+    let c : C(U, M) := ⟨Subtype.val, continuous_subtypeVal⟩
+    TauCeti.BundleTest I F V →L[ℝ] TauCeti.BundleTest I F (c *ᵖ V) := by
+  intro U c
+  let L := (TauCeti.BundleTest.ofCompactlySupported I F (c *ᵖ V)).toLinearMap.comp
+    ((restrictUnivLinearMap (I := I) (F := F) (n := ∞) (V := V)).comp
+      (TauCeti.BundleTest.ofCompactlySupported I F V).symm.toLinearMap)
+  refine ⟨L, ?_⟩
+  let e : M → Trivialization F (π F V) := fun x ↦ trivializationAt F V x
+  let B : M → Opens M := fun x ↦ ⟨(e x).baseSet, (e x).open_baseSet⟩
+  let hB : ∀ i, (B i : Set M) ⊆ (e i).baseSet := fun _ ↦ subset_rfl
+  let eU := fun i ↦ (e i).pullback c
+  let BU := fun i ↦ Opens.comap c (B i)
+  let hBU : ∀ i, (BU i : Set U) ⊆ (eU i).baseSet := fun i _ hx ↦ hB i hx
+  have hcover : ∀ x : U, ∃ i, x ∈ BU i := fun x ↦ ⟨x.val, mem_baseSet_trivializationAt F V x.val⟩
+  erw [TauCeti.BundleTest.instTopologicalSpace_eq_compactlySupportedTopology eU BU hBU hcover]
+  exact continuous_restrictUniv_compactlySupported (I := I) (n := ∞) e B hB
+
+omit [T2Space M] in
+/-- Universal-open restriction commutes with the compact-support representation. -/
+theorem restrictUnivCLM_ofCompactlySupported :
+    let U : Opens M := ⊤
+    let c : C(U, M) := ⟨Subtype.val, continuous_subtypeVal⟩
+    ∀ s : compactlySupported I F ∞ V,
+      restrictUnivCLM (I := I) (F := F) (V := V) (ofCompactlySupported I F V s) =
+        ofCompactlySupported I F (c *ᵖ V) (restrictUnivLinearMap s) := by
+  intros
+  rfl
+
+/-- Extension and restriction identify native tests on the universal open with ambient tests. -/
+def univCLE :
+    let U : Opens M := ⊤
+    let c : C(U, M) := ⟨Subtype.val, continuous_subtypeVal⟩
+    TauCeti.BundleTest I F (c *ᵖ V) ≃L[ℝ] TauCeti.BundleTest I F V := by
+  intro U c
+  refine
+    { toLinearEquiv :=
+        { toLinearMap := (extendByZeroCLM (I := I) (F := F) (V := V) (U := U)).toLinearMap
+          invFun := restrictUnivCLM (I := I) (F := F) (V := V)
+          left_inv := ?_
+          right_inv := ?_ }
+      continuous_toFun := (extendByZeroCLM (I := I) (F := F) (V := V) (U := U)).continuous
+      continuous_invFun := (restrictUnivCLM (I := I) (F := F) (V := V)).continuous }
+  · intro s
+    obtain ⟨t, rfl⟩ := (ofCompactlySupported I F (c *ᵖ V)).surjective s
+    change restrictUnivCLM (I := I) (F := F) (V := V)
+      (extendByZeroCLM (I := I) (F := F) (V := V) (U := ⊤)
+        (ofCompactlySupported I F (c *ᵖ V) t)) = ofCompactlySupported I F (c *ᵖ V) t
+    erw [extendByZeroCLM_ofCompactlySupported (I := I) (F := F) (V := V) (U := ⊤),
+      restrictUnivCLM_ofCompactlySupported (I := I) (F := F) (V := V)]
+    congr 1
+    apply Subtype.ext
+    erw [restrictUnivLinearMap_val, extendByZeroLinearMap_apply]
+    exact restrict_extendByZero t
+  · intro s
+    obtain ⟨t, rfl⟩ := (ofCompactlySupported I F V).surjective s
+    change extendByZeroCLM (I := I) (F := F) (V := V) (U := ⊤)
+      (restrictUnivCLM (I := I) (F := F) (V := V) (ofCompactlySupported I F V t)) =
+      ofCompactlySupported I F V t
+    erw [restrictUnivCLM_ofCompactlySupported (I := I) (F := F) (V := V),
+      extendByZeroCLM_ofCompactlySupported (I := I) (F := F) (V := V) (U := ⊤)]
+    congr 1
+    apply Subtype.ext
+    erw [extendByZeroLinearMap_apply]
+    refine (congrArg extendByZero ?_).trans (extendByZero_restrict t (Set.subset_univ _))
+    apply Subtype.ext
+    exact restrictUnivLinearMap_val t
+
+/-- The universal-open equivalence extends native tests by zero. -/
+theorem univCLE_toContinuousLinearMap :
+    (univCLE (I := I) (F := F) (V := V)).toContinuousLinearMap =
+      extendByZeroCLM (I := I) (F := F) (V := V) (U := ⊤) := by
+  rfl
+
+/-- Intermediate extension evaluates to the original test at points of the smaller open. -/
+theorem inclusionCLM_apply_of_mem (h : U ≤ D) :
+    let cU : C(U, M) := ⟨Subtype.val, continuous_subtypeVal⟩
+    let _cD : C(D, M) := ⟨Subtype.val, continuous_subtypeVal⟩
+    ∀ (s : TauCeti.BundleTest I F (cU *ᵖ V)) (u : U),
+      inclusionCLM (I := I) (F := F) (V := V) h s (Opens.inclusion h u) =
+        (Pullback.lift cU (TotalSpace.mk' F u (s u))).snd := by
+  intro cU _cD s u
+  obtain ⟨t, rfl⟩ := (ofCompactlySupported I F (cU *ᵖ V)).surjective s
+  erw [inclusionCLM_ofCompactlySupported (I := I) (F := F) (V := V) h]
+  change (extendByZeroToOpenLinearMap h t).val (Opens.inclusion h u) = _
+  erw [extendByZeroToOpenLinearMap_val, ContMDiffSection.restrict_apply,
+    extendByZero_apply_of_mem, Pullback.lift_snd]
+  simp only [LinearEquiv.symm_apply_apply]
+  rfl
+
+section Localization
+variable {N G : Type*} [TopologicalSpace N] [ChartedSpace H N] [T2Space N]
+  [IsManifold I ∞ N] [NormedAddCommGroup G] [NormedSpace ℝ G]
+  {Z : N → Type*} [∀ x, AddCommGroup (Z x)] [∀ x, Module ℝ (Z x)]
+  [∀ x, TopologicalSpace (Z x)] [TopologicalSpace (TotalSpace G Z)]
+  [FiberBundle G Z] [VectorBundle ℝ G Z] [ContMDiffVectorBundle ∞ G Z I]
+  (T : TauCeti.BundleTest I G Z →L[ℝ] TauCeti.BundleTest I F V) (q : C(N, U))
+  (hT : ∀ s, closure {x : M | T s x ≠ 0} ⊆
+    Subtype.val '' q '' closure {x : N | s x ≠ 0})
+
+private def relocalizeLinearMap : TauCeti.BundleTest I G Z →ₗ[ℝ]
+    compactlySupported I F ∞ ((⟨Subtype.val, continuous_subtypeVal⟩ : C(U, M)) *ᵖ V) := by
+  let L := (restrictLinearMap I F ∞ V U).comp
+    ((compactlySupported I F ∞ V).subtype.comp
+      ((TauCeti.BundleTest.ofCompactlySupported I F V).symm.toLinearMap.comp T.toLinearMap))
+  refine L.codRestrict _ ?_
+  intro s
+  change (restrictLinearMap I F ∞ V U)
+    ((TauCeti.BundleTest.ofCompactlySupported I F V).symm (T s)).val ∈ _
+  erw [restrictLinearMap_apply]
+  apply restrict_mem_compactlySupported ((TauCeti.BundleTest.ofCompactlySupported I F V).symm (T s))
+  rw [tsupport_def]
+  rintro x hx
+  rcases hT s hx with ⟨u, ⟨y, _, rfl⟩, rfl⟩
+  exact (q y).property
+
+omit [LocallyCompactSpace E] [T2Space M] [T2Space N] in
+private theorem relocalizeLinearMap_val (s : TauCeti.BundleTest I G Z) :
+    (relocalizeLinearMap T q hT s).val =
+      ((TauCeti.BundleTest.ofCompactlySupported I F V).symm (T s)).val.restrict U := by
+  change (restrictLinearMap I F ∞ V U)
+    ((TauCeti.BundleTest.ofCompactlySupported I F V).symm (T s)).val = _
+  erw [restrictLinearMap_apply]
+
+private def relocalizeStageLinearMap (K : Compacts N) : supportedIn I G ∞ Z K →ₗ[ℝ]
+    supportedIn I F ∞ ((⟨Subtype.val, continuous_subtypeVal⟩ : C(U, M)) *ᵖ V)
+      (K.map q q.continuous) := by
+  let L := (relocalizeLinearMap T q hT).comp
+    ((TauCeti.BundleTest.ofCompactlySupported I G Z).toLinearMap.comp (ofSupportedIn K))
+  let A := (compactlySupported I F ∞
+    ((⟨Subtype.val, continuous_subtypeVal⟩ : C(U, M)) *ᵖ V)).subtype.comp L
+  refine A.codRestrict _ ?_
+  intro s
+  rw [mem_supportedIn]
+  change (relocalizeLinearMap T q hT
+    (TauCeti.BundleTest.ofCompactlySupported I G Z (ofSupportedIn K s))).val.tsupport ⊆ _
+  rw [relocalizeLinearMap_val, tsupport_restrict, tsupport_def]
+  intro u hu
+  rcases hT (TauCeti.BundleTest.ofCompactlySupported I G Z (ofSupportedIn K s)) hu with
+    ⟨u', ⟨y, hy, rfl⟩, heq⟩
+  refine ⟨y, (mem_supportedIn.mp s.property) ?_, Subtype.ext heq⟩
+  simpa only [LinearEquiv.symm_apply_apply, ofSupportedIn_apply, tsupport_def] using hy
+
+omit [LocallyCompactSpace E] [T2Space M] [T2Space N] in
+private theorem relocalizeStageLinearMap_val (K : Compacts N)
+    (s : supportedIn I G ∞ Z K) :
+    (relocalizeStageLinearMap T q hT K s).val =
+      (relocalizeLinearMap T q hT
+        (TauCeti.BundleTest.ofCompactlySupported I G Z (ofSupportedIn K s))).val := by
+  simp only [relocalizeStageLinearMap, LinearMap.codRestrict_apply, LinearMap.comp_apply,
+    Submodule.subtype_apply, LinearEquiv.coe_toLinearMap]
+
+omit [T2Space M] [T2Space N] in
+private theorem continuous_relocalizeStageLinearMap (K : Compacts N) :
+    let c : C(U, M) := ⟨Subtype.val, continuous_subtypeVal⟩
+    let eU := fun x : M ↦ (trivializationAt F V x).pullback c
+    let AU := fun x : M ↦ Opens.comap c ⟨(trivializationAt F V x).baseSet,
+      (trivializationAt F V x).open_baseSet⟩
+    let hAU : ∀ x, (AU x : Set U) ⊆ (eU x).baseSet := fun _ ↦ subset_rfl
+    let eN := fun x : N ↦ trivializationAt G Z x
+    let AN := fun x : N ↦ (⟨(eN x).baseSet, (eN x).open_baseSet⟩ : Opens N)
+    let hAN : ∀ x, (AN x : Set N) ⊆ (eN x).baseSet := fun _ ↦ subset_rfl
+    letI := frameTopology (I := I) (n := ∞) eN AN hAN
+    letI := frameTopology (I := I) (n := ∞) eU AU hAU
+    Continuous (relocalizeStageLinearMap T q hT K) := by
+  intro c eU AU hAU eN AN hAN
+  let := frameTopology (I := I) (n := ∞) eN AN hAN
+  let := frameTopology (I := I) (n := ∞) eU AU hAU
+  let eM := fun x : M ↦ trivializationAt F V x
+  let AM := fun x : M ↦ (⟨(eM x).baseSet, (eM x).open_baseSet⟩ : Opens M)
+  let hAM : ∀ x, (AM x : Set M) ⊆ (eM x).baseSet := fun _ ↦ subset_rfl
+  let := frameTopology (I := I) (n := ∞) eM AM hAM
+  have hf : Continuous (fun t : TauCeti.BundleTest I F V ↦
+      ((TauCeti.BundleTest.ofCompactlySupported I F V).symm t).val) :=
+    continuous_val_compactlySupportedTopology eM AM hAM
+  have hh := (continuous_restrict_frameTopology eM AM hAM U).comp
+    (hf.comp (T.continuous.comp
+      (TauCeti.BundleTest.continuous_ofSupportedIn (I := I) (F := G) (V := Z) K)))
+  have hv : Continuous (fun s : supportedIn I G ∞ Z K ↦
+      (relocalizeStageLinearMap T q hT K s).val) := by
+    apply hh.congr
+    intro s
+    exact ((relocalizeStageLinearMap_val T q hT K s).trans
+      (relocalizeLinearMap_val T q hT _)).symm
+  exact hv.subtype_mk _
+
+/-- Localize a continuous native test operator whose supports lie in a controlled open image. -/
+def localizeCLM :
+    let c : C(U, M) := ⟨Subtype.val, continuous_subtypeVal⟩
+    TauCeti.BundleTest I G Z →L[ℝ] TauCeti.BundleTest I F (c *ᵖ V) := by
+  intro c
+  let L := (TauCeti.BundleTest.ofCompactlySupported I F (c *ᵖ V)).toLinearMap.comp
+    (relocalizeLinearMap T q hT)
+  refine ⟨L, ?_⟩
+  let eN := fun x : N ↦ trivializationAt G Z x
+  let AN := fun x : N ↦ (⟨(eN x).baseSet, (eN x).open_baseSet⟩ : Opens N)
+  let hAN : ∀ x, (AN x : Set N) ⊆ (eN x).baseSet := fun _ ↦ subset_rfl
+  let eM := fun x : M ↦ trivializationAt F V x
+  let AM := fun x : M ↦ (⟨(eM x).baseSet, (eM x).open_baseSet⟩ : Opens M)
+  let eU := fun x : M ↦ (eM x).pullback c
+  let AU := fun x : M ↦ Opens.comap c (AM x)
+  let hAU : ∀ x, (AU x : Set U) ⊆ (eU x).baseSet := fun _ ↦ subset_rfl
+  let := frameTopology (I := I) (n := ∞) eN AN hAN
+  let := frameTopology (I := I) (n := ∞) eU AU hAU
+  have hcover : ∀ x : U, ∃ i, x ∈ AU i := fun x ↦ ⟨x.val, mem_baseSet_trivializationAt F V x.val⟩
+  apply (TauCeti.BundleTest.continuous_iff_continuous_comp (I := I) (F := G) (V := Z) L).2
+  intro K
+  have hi : Continuous (TauCeti.BundleTest.ofCompactlySupported I F (c *ᵖ V) ∘
+      ofSupportedIn (I := I) (F := F) (n := ∞) (V := c *ᵖ V) (K.map q q.continuous)) := by
+    erw [TauCeti.BundleTest.instTopologicalSpace_eq_compactlySupportedTopology eU AU hAU hcover]
+    exact ContMDiffSection.continuous_ofSupportedIn (I := I) (n := ∞) eU AU hAU _
+  convert hi.comp (continuous_relocalizeStageLinearMap T q hT K) using 1
+  funext s
+  apply TauCeti.BundleTest.ext
+  intro u
+  change (relocalizeLinearMap T q hT
+    (TauCeti.BundleTest.ofCompactlySupported I G Z (ofSupportedIn K s))).val u = _
+  erw [ofSupportedIn_apply, relocalizeStageLinearMap_val]
+
+omit [T2Space M] [T2Space N] in
+/-- Localization agrees with the original operator at every point of the open subset. -/
+theorem localizeCLM_apply :
+    ∀ (s : TauCeti.BundleTest I G Z) (u : U), localizeCLM T q hT s u = T s (u : M) := by
+  intro s u
+  change (relocalizeLinearMap T q hT s).val u = _
+  erw [relocalizeLinearMap_val, ContMDiffSection.restrict_apply]
+
+omit [T2Space N] in
+/-- Re-extending a controlled localization recovers the original native test operator. -/
+theorem extendByZeroCLM_localizeCLM :
+    ∀ s : TauCeti.BundleTest I G Z,
+      extendByZeroCLM (I := I) (F := F) (V := V) (U := U) (localizeCLM T q hT s) = T s := by
+  intro s
+  let c : C(U, M) := ⟨Subtype.val, continuous_subtypeVal⟩
+  change extendByZeroCLM (I := I) (F := F) (V := V) (U := U)
+    (TauCeti.BundleTest.ofCompactlySupported I F (c *ᵖ V) (relocalizeLinearMap T q hT s)) = T s
+  erw [extendByZeroCLM_ofCompactlySupported]
+  apply (TauCeti.BundleTest.ofCompactlySupported I F V).symm.injective
+  simp only [LinearEquiv.symm_apply_apply]
+  apply Subtype.ext
+  erw [extendByZeroLinearMap_apply]
+  let t := (TauCeti.BundleTest.ofCompactlySupported I F V).symm (T s)
+  have hs : t.val.tsupport ⊆ U := by
+    rw [tsupport_def]
+    rintro x hx
+    rcases hT s hx with ⟨u, ⟨y, _, rfl⟩, rfl⟩
+    exact (q y).property
+  refine (congrArg extendByZero ?_).trans (extendByZero_restrict t hs)
+  apply Subtype.ext
+  exact relocalizeLinearMap_val T q hT s
+
+end Localization
+
+end TauCeti.BundleTest
