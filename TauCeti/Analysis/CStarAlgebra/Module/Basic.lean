@@ -55,10 +55,10 @@ Riesz theorem.
   `‖⟪y, z⟫_A x‖ ≤ ‖x‖ ‖y‖ ‖z‖`.
 * `TauCeti.CStarModule.inner_self_le_of_norm_smul_le`,
   `TauCeti.CStarModule.inner_map_map_le_of_norm_le`, `CStarModule.inner_map_map_le_norm_sq_smul`:
-  two-vector Paschke inequality `⟪y, y⟫_A ≤ C ^ 2 • ⟪x, x⟫_A` from `∀ a : A, ‖a x‖` bounds on
-  `‖a y‖`, Paschke's inequality `⟪T x, T x⟫_A ≤ C ^ 2 • ⟪x, x⟫_A` for any action-preserving
-  function with pointwise norm bound `‖T x‖ ≤ C * ‖x‖`, and its bounded operator specialization
-  `⟪T x, T x⟫_A ≤ ‖T‖ ^ 2 • ⟪x, x⟫_A`.
+  two-vector Paschke inequality `⟪y, y⟫_A ≤ C ^ 2 • ⟪x, x⟫_A` from
+  `∀ a : A, ‖a • y‖ ≤ C * ‖a • x‖`, Paschke's inequality `⟪T x, T x⟫_A ≤ C ^ 2 • ⟪x, x⟫_A` for
+  any action-preserving function with pointwise norm bound `‖T x‖ ≤ C * ‖x‖`, and its bounded
+  operator specialization `⟪T x, T x⟫_A ≤ ‖T‖ ^ 2 • ⟪x, x⟫_A`.
 * `CStarModule.tendsto_smul`: the action is essential, `e x → x` along an approximate unit.
 * `CStarModule.star_unop_inner_mul_unop_inner_le`: the Cauchy–Schwarz inequality
   `⟨x, y⟩_A⋆ ⟨x, y⟩_A ≤ ‖x‖² ⟨y, y⟩_A` for right modules.

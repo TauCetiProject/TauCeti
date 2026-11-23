@@ -81,7 +81,7 @@ finite Parseval frame if and only if `E` is finitely generated and projective as
 -/
 theorem exists_isParsevalFrame_iff_finite_projective {A E : Type*}
     [CStarAlgebra A] [PartialOrder A] [StarOrderedRing A]
-    [NormedAddCommGroup E] [NormedSpace ℂ E] [CompleteSpace E] [Module Aᵐᵒᵖ E]
+    [SeminormedAddCommGroup E] [NormedSpace ℂ E] [CompleteSpace E] [Module Aᵐᵒᵖ E]
     [CStarModule Aᵐᵒᵖ E] : (∃ (n : ℕ) (x : Fin n → E), IsParsevalFrame Aᵐᵒᵖ x) ↔
       Module.Finite Aᵐᵒᵖ E ∧ Module.Projective Aᵐᵒᵖ E := by
   refine ⟨fun ⟨_, _, hx⟩ ↦ ⟨hx.finite, hx.projective⟩, fun ⟨_, _⟩ ↦ ?_⟩
@@ -125,7 +125,7 @@ section FiniteProjectiveMaps
 open TauCeti.CStarModule
 
 variable {A E F : Type*} [CStarAlgebra A] [PartialOrder A] [StarOrderedRing A]
-  [NormedAddCommGroup E] [NormedSpace ℂ E] [CompleteSpace E] [Module Aᵐᵒᵖ E]
+  [SeminormedAddCommGroup E] [NormedSpace ℂ E] [CompleteSpace E] [Module Aᵐᵒᵖ E]
   [CStarModule Aᵐᵒᵖ E] [Module.Finite Aᵐᵒᵖ E] [Module.Projective Aᵐᵒᵖ E]
 
 /-- Every right `A`-linear map out of a complete finitely generated projective right Hilbert
@@ -138,7 +138,7 @@ theorem LinearMap.exists_isAdjointPair_of_finite_projective
   obtain ⟨_, x, hx⟩ := exists_isParsevalFrame_iff_finite_projective.mpr ⟨‹_›, ‹_›⟩
   exact ⟨frameAdjoint Aᵐᵒᵖ x T, hx.isAdjointPair_frameAdjoint T⟩
 
-variable [NormedAddCommGroup F] [NormedSpace ℂ F] [CompleteSpace F] [Module Aᵐᵒᵖ F]
+variable [SeminormedAddCommGroup F] [NormedSpace ℂ F] [CompleteSpace F] [Module Aᵐᵒᵖ F]
   [CStarModule Aᵐᵒᵖ F]
 
 /-- For a complete finitely generated projective right Hilbert `A`-module `E` and any complete

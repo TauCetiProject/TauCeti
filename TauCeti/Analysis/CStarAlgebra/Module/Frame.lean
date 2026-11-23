@@ -582,8 +582,8 @@ theorem continuous_of_finite_pi_cstarModule {ι : Type*} [Finite ι]
 
 end FreeSource
 
-variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E] [Module Aᵐᵒᵖ E] [CStarModule Aᵐᵒᵖ E]
-  [CompleteSpace E]
+variable {E : Type*} [SeminormedAddCommGroup E] [NormedSpace ℂ E] [Module Aᵐᵒᵖ E]
+  [CStarModule Aᵐᵒᵖ E] [CompleteSpace E]
 
 /-- If `f : C⋆ᵐᵒᵈ(Aᵐᵒᵖ, ι → A) →ₗ[Aᵐᵒᵖ] E` and `g : E →ₗ[Aᵐᵒᵖ] C⋆ᵐᵒᵈ(Aᵐᵒᵖ, ι → A)` satisfy
 `f ∘ₗ g = .id` on a complete right Hilbert `A`-module `E`, then `g` is continuous. -/
@@ -595,6 +595,8 @@ theorem continuous_rightInverse_of_comp_eq_id_of_finite_pi_cstarModule {ι : Typ
   have : IsScalarTower ℂ Aᵐᵒᵖ E := CStarModule.isScalarTower Aᵐᵒᵖ E
   have : IsScalarTower ℂ Aᵐᵒᵖ C⋆ᵐᵒᵈ(Aᵐᵒᵖ, ι → A) := CStarModule.isScalarTower _ _
   have hfg_apply (z : E) : f (g z) = z := LinearMap.congr_fun hfg z
+  let : NormedAddCommGroup E := NormedAddCommGroup.ofSeparation fun x ↦
+    (CStarModule.norm_zero_iff Aᵐᵒᵖ x).mp
   refine (g.restrictScalars ℂ).continuous_of_isClosed_graph ?_
   rw [show ((g.restrictScalars ℂ).graph : Set (E × C⋆ᵐᵒᵈ(Aᵐᵒᵖ, ι → A))) =
       {p : E × C⋆ᵐᵒᵈ(Aᵐᵒᵖ, ι → A) | f p.2 = p.1 ∧ (g ∘ₗ f) p.2 = p.2} from Set.ext fun ⟨x, y⟩ ↦ by
@@ -607,11 +609,16 @@ theorem continuous_rightInverse_of_comp_eq_id_of_finite_pi_cstarModule {ι : Typ
 
 private theorem isStrictlyPositive_gram_splitting {ι : Type*} [Fintype ι] [DecidableEq ι]
     (f : C⋆ᵐᵒᵈ(Aᵐᵒᵖ, ι → A) →ₗ[Aᵐᵒᵖ] E) (g : E →ₗ[Aᵐᵒᵖ] C⋆ᵐᵒᵈ(Aᵐᵒᵖ, ι → A))
-    (hfg : f ∘ₗ g = LinearMap.id) : IsStrictlyPositive (CStarMatrix.gram A fun i : ι ↦
+    (hfg : f ∘ₗ g = LinearMap.id) :
+    let : NormedAddCommGroup E := NormedAddCommGroup.ofSeparation fun x ↦
+      (CStarModule.norm_zero_iff Aᵐᵒᵖ x).mp
+    IsStrictlyPositive (CStarMatrix.gram A fun i : ι ↦
       (WithCStarModule.equiv Aᵐᵒᵖ (E × C⋆ᵐᵒᵈ(Aᵐᵒᵖ, ι → A))).symm
         (f ((WithCStarModule.equiv Aᵐᵒᵖ (ι → A)).symm (Pi.single i (1 : A))),
           (WithCStarModule.equiv Aᵐᵒᵖ (ι → A)).symm (Pi.single i (1 : A)) -
             g (f ((WithCStarModule.equiv Aᵐᵒᵖ (ι → A)).symm (Pi.single i (1 : A)))))) := by
+  let : NormedAddCommGroup E := NormedAddCommGroup.ofSeparation fun x ↦
+    (CStarModule.norm_zero_iff Aᵐᵒᵖ x).mp
   have : IsScalarTower ℂ Aᵐᵒᵖ E := CStarModule.isScalarTower Aᵐᵒᵖ E
   have : IsScalarTower ℂ Aᵐᵒᵖ C⋆ᵐᵒᵈ(Aᵐᵒᵖ, ι → A) := CStarModule.isScalarTower _ _
   let gL : E →L[ℂ] C⋆ᵐᵒᵈ(Aᵐᵒᵖ, ι → A) :=
@@ -654,6 +661,8 @@ theorem exists_isParsevalFrame_of_comp_eq_id {ι : Type*} [Fintype ι]
     (f : C⋆ᵐᵒᵈ(Aᵐᵒᵖ, ι → A) →ₗ[Aᵐᵒᵖ] E) (g : E →ₗ[Aᵐᵒᵖ] C⋆ᵐᵒᵈ(Aᵐᵒᵖ, ι → A))
     (hfg : f ∘ₗ g = LinearMap.id) : ∃ x : ι → E, IsParsevalFrame Aᵐᵒᵖ x := by
   classical
+  let : NormedAddCommGroup E := NormedAddCommGroup.ofSeparation fun x ↦
+    (CStarModule.norm_zero_iff Aᵐᵒᵖ x).mp
   let e := fun i : ι ↦ (WithCStarModule.equiv Aᵐᵒᵖ (ι → A)).symm (Pi.single i (1 : A))
   let h : C⋆ᵐᵒᵈ(Aᵐᵒᵖ, ι → A) →ₗ[Aᵐᵒᵖ] C⋆ᵐᵒᵈ(Aᵐᵒᵖ, E × C⋆ᵐᵒᵈ(Aᵐᵒᵖ, ι → A)) :=
     (WithCStarModule.linearEquiv Aᵐᵒᵖ Aᵐᵒᵖ _).symm.toLinearMap ∘ₗ f.prod (LinearMap.id - g ∘ₗ f)
@@ -783,8 +792,8 @@ theorem IsParsevalFrame.commute_polarMatrix_gram {x : ι → E} (hx : IsParseval
 end PolarAlg
 
 variable {A ι E F : Type*} [Fintype ι] [CStarAlgebra A] [PartialOrder A] [StarOrderedRing A]
-  [NormedAddCommGroup E] [NormedSpace ℂ E] [Module Aᵐᵒᵖ E] [CStarModule Aᵐᵒᵖ E]
-  [NormedAddCommGroup F] [NormedSpace ℂ F] [Module Aᵐᵒᵖ F] [CStarModule Aᵐᵒᵖ F]
+  [SeminormedAddCommGroup E] [NormedSpace ℂ E] [Module Aᵐᵒᵖ E] [CStarModule Aᵐᵒᵖ E]
+  [SeminormedAddCommGroup F] [NormedSpace ℂ F] [Module Aᵐᵒᵖ F] [CStarModule Aᵐᵒᵖ F]
 
 private theorem frameSynthesis_mulVec_comp_eq_id [DecidableEq ι] {x : ι → E}
     (hx : IsParsevalFrame Aᵐᵒᵖ x) {M N : CStarMatrix ι ι A} (hMN : M * N = 1)
@@ -809,6 +818,8 @@ in `CStarMatrix ι ι A`. -/
 theorem IsParsevalFrame.isStrictlyPositive_polarMatrix [DecidableEq ι] {x : ι → E}
     (hx : IsParsevalFrame Aᵐᵒᵖ x) (T : E ≃ₗ[Aᵐᵒᵖ] F) :
     IsStrictlyPositive (polarMatrix A x T) := by
+  let : NormedAddCommGroup F := NormedAddCommGroup.ofSeparation fun z ↦
+    (CStarModule.norm_zero_iff Aᵐᵒᵖ z).mp
   let e := fun i : ι ↦ (WithCStarModule.equiv Aᵐᵒᵖ (ι → A)).symm (Pi.single i (1 : A))
   let f : C⋆ᵐᵒᵈ(Aᵐᵒᵖ, ι → A) →ₗ[Aᵐᵒᵖ] F := T.toLinearMap ∘ₗ frameSynthesisLinearMap A x
   let g : F →ₗ[Aᵐᵒᵖ] C⋆ᵐᵒᵈ(Aᵐᵒᵖ, ι → A) := frameAnalysisLinearMap A x ∘ₗ T.symm.toLinearMap
