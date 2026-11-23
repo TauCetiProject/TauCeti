@@ -43,7 +43,9 @@ Simple ideals are the atoms of the lattice of Lie ideals, as in Mathlib's
   direct sum of ideals assemble into a Cartan involution.
 * `LieAlgebra.IsSemisimple.isInternal_atoms`: a semisimple Lie algebra is the internal direct sum
   of its simple ideals, so `LieEquiv.ofIsInternal` applies to them.
-* `LieAlgebra.forall_killingForm_neg_iff`: a simple ideal lies in the compact ideal exactly when
+* `LieAlgebra.forall_killingForm_neg_iff`: on a Lie ideal, the Killing form of `L` is negative
+  definite exactly when the ideal's own Killing form is.
+* `LieAlgebra.le_compactIdeal_iff_of_isAtom`: a simple ideal lies in the compact ideal exactly when
   it is a compact Lie algebra, that is, its own Killing form is negative definite.
 * `LieAlgebra.isCompl_compactIdeal_noncompactIdeal`: a semisimple Lie algebra is the direct sum of
   its compact and noncompact ideals.
@@ -332,8 +334,9 @@ theorem noncompactIdeal_def : noncompactIdeal K L =
 variable {K L}
 
 /-- On a Lie ideal of a finite-dimensional Lie algebra, the Killing form of `L` is negative
-definite exactly when the Killing form of the ideal is: a simple ideal is in the compact ideal
-exactly when it is a compact Lie algebra. -/
+definite exactly when the Killing form of the ideal is. For a simple ideal of a semisimple Lie
+algebra, `LieAlgebra.le_compactIdeal_iff_of_isAtom` turns this into membership in the compact
+ideal. -/
 theorem forall_killingForm_neg_iff [FiniteDimensional K L] (I : LieIdeal K L) :
     (∀ x ∈ I, x ≠ 0 → killingForm K L x x < 0) ↔
       ∀ x : I, x ≠ 0 → killingForm K I x x < 0 := by
@@ -362,6 +365,19 @@ theorem isCompl_compactIdeal_noncompactIdeal [IsSemisimple K L] :
     congr 1
     ext I
     simp only [Set.mem_union, Set.mem_ofPred_eq, ← and_or_left, or_not, and_true]
+
+/-- **A simple ideal lies in the compact ideal exactly when it is a compact Lie algebra**: in a
+finite-dimensional semisimple Lie algebra, an atom `I` satisfies `I ≤ compactIdeal K L` exactly
+when its own Killing form is negative definite. -/
+theorem le_compactIdeal_iff_of_isAtom [FiniteDimensional K L] [IsSemisimple K L]
+    {I : LieIdeal K L} (hI : IsAtom I) :
+    I ≤ compactIdeal K L ↔ ∀ x : I, x ≠ 0 → killingForm K I x x < 0 := by
+  rw [← forall_killingForm_neg_iff]
+  refine ⟨fun hle ↦ ?_, fun h ↦ compactIdeal_def K L ▸ le_sSup ⟨hI, h⟩⟩
+  by_contra h
+  have hle' : I ≤ noncompactIdeal K L := noncompactIdeal_def K L ▸ le_sSup ⟨hI, h⟩
+  exact hI.1 (eq_bot_iff.mpr ((isCompl_compactIdeal_noncompactIdeal (K := K) (L := L)).disjoint
+    hle hle'))
 
 end LieAlgebra
 
