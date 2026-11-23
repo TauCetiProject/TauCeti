@@ -7,8 +7,8 @@ module
 
 public import Mathlib.CategoryTheory.Galois.Decomposition
 public import Mathlib.CategoryTheory.Galois.IsFundamentalgroup
+public import TauCeti.CategoryTheory.Galois.Connected
 public import TauCeti.CategoryTheory.Galois.Topology
-public import TauCeti.CategoryTheory.Galois.Transport
 
 /-!
 # Surjectivity and injectivity of homomorphisms of fundamental groups
@@ -42,8 +42,6 @@ stabiliser of a point `y` of the fibre of some `P.obj Y`. The connected componen
 
 ## Main results
 
-* `CategoryTheory.PreGaloisCategory.FiberFunctor.isConnected_of_isPretransitive`: an object whose
-  fibre is nonempty, with `Aut F` acting transitively on it, is connected.
 * `CategoryTheory.PreGaloisCategory.mapAut_whiskeringLeft_surjective_iff`: the homomorphism
   `Aut F →* Aut (P ⋙ F)` is surjective if and only if `P` preserves connectedness.
 * `CategoryTheory.PreGaloisCategory.mapAut_whiskeringLeft_injective_iff`: the homomorphism
@@ -67,24 +65,6 @@ namespace PreGaloisCategory
 open Limits
 
 variable {C : Type u₁} [Category.{u₂} C] {D : Type u₃} [Category.{u₄} D]
-
-/-- An object whose fibre under a fibre functor `F` is nonempty, and on which `Aut F` acts
-transitively, is connected. Mathlib's `FiberFunctor.isPretransitive_of_isConnected` is the
-converse. -/
-theorem FiberFunctor.isConnected_of_isPretransitive [PreGaloisCategory C] (F : C ⥤ FintypeCat.{w})
-    [FiberFunctor F] (X : C) [Nonempty (F.obj X)] [MulAction.IsPretransitive (Aut F) (F.obj X)] :
-    IsConnected X where
-  notInitial h := not_initial_of_inhabited F (Classical.arbitrary (F.obj X)) h
-  noTrivialComponent Z i _ hZ := by
-    obtain ⟨z⟩ := (not_initial_iff_fiber_nonempty F Z).mp hZ
-    have hinj : Function.Injective (F.map i) :=
-      ConcreteCategory.injective_of_mono_of_preservesPullback (F.map i)
-    have hsurj : Function.Surjective (F.map i) := fun x ↦ by
-      obtain ⟨σ, hσ⟩ := MulAction.exists_smul_eq (Aut F) (F.map i z) x
-      exact ⟨σ • z, by rw [← mulAction_naturality, hσ]⟩
-    have : IsIso (F.map i) :=
-      (ConcreteCategory.isIso_iff_bijective (F.map i)).mpr ⟨hinj, hsurj⟩
-    exact isIso_of_reflects_iso i F
 
 variable [GaloisCategory C] [GaloisCategory D] (P : D ⥤ C) (F : C ⥤ FintypeCat.{w})
   [FiberFunctor F]
