@@ -388,7 +388,7 @@ theorem exists_mul_sphereAttachingChain_add_cubicalChainDifferential_eq
     · have : SimplyConnectedSpace Sph :=
         simplyConnectedSpace_sphere_of_lt_finrank (by simp [finrank_euclideanSpace, h]) 0
           zero_le_one
-      obtain ⟨w, hw⟩ := mem_range_boundary_of_augment_eq_zero
+      obtain ⟨w, hw⟩ := loopZeroChain_mem_range_boundary_of_augment_eq_zero
         (by rwa [loopChainAugmentation_def, cubicalChainAugmentation_eq_augment] at hε)
       exact ⟨0, cubicalChainLof _ k 1 w, map_zero _, by
         rw [zero_mul, zero_add, cubicalChainDifferential_lof_succ, hw]⟩

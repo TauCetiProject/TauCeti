@@ -34,7 +34,7 @@ structure. `loopHomologyZeroAlgEquiv` identifies it with the group algebra, and
 with the homology operations. The projection `loopZeroChainToGroupAlgebra` of zero chains is
 surjective, and its kernel is exactly the boundaries (`loopZeroChainToGroupAlgebra_eq_zero_iff`).
 When the fundamental group is trivial, every zero chain of augmentation zero is a boundary
-(`mem_range_boundary_of_augment_eq_zero`).
+(`loopZeroChain_mem_range_boundary_of_augment_eq_zero`).
 This supplies the algebraic bridge from loop chains to classical
 local coefficients. References: W. S. Massey, *Singular Homology Theory*,
 Chapter VII; Barraud--Damian--Humilière--Oancea, *Floer homology with DG coefficients*, §2.2,
@@ -237,7 +237,7 @@ theorem loopZeroChainToGroupAlgebra_eq_zero_iff
 /-- **A zero chain of Moore loops of augmentation zero is a boundary when the fundamental group is
 trivial**, for instance over a simply connected space: the Moore loops then form a path connected
 space. -/
-theorem mem_range_boundary_of_augment_eq_zero [Subsingleton (FundamentalGroup X x)]
+theorem loopZeroChain_mem_range_boundary_of_augment_eq_zero [Subsingleton (FundamentalGroup X x)]
     {a : NormalizedCubicalChain (MooreLoopSpace X x) R 0}
     (ha : NormalizedCubicalChain.augment (MooreLoopSpace X x) R a = 0) :
     a ∈ LinearMap.range (NormalizedCubicalChain.boundary (MooreLoopSpace X x) R 0) := by
