@@ -113,7 +113,7 @@ theorem prefixSum_duplicateAt_le {M : Type*} [AddCommMonoid M] {L : ℕ} (a : M)
   rw [prefixSum_eq_sum_castLE (by omega), prefixSum_eq_sum_castLE (by omega)]
   refine Finset.sum_congr rfl fun i _ ↦ ?_
   have hi : (Fin.castLE (by omega) i : Fin (L + 1)) = (Fin.castLE (by omega) i : Fin L).castSucc :=
-    rfl
+    Fin.ext (by simp)
   rw [hi, duplicateAt_castSucc_of_lt a z (i := Fin.castLE (by omega) i)
     (Fin.lt_def.2 (by simp; omega))]
 
@@ -127,16 +127,17 @@ theorem prefixSum_duplicateAt_succ_ge {M : Type*} [AddCommMonoid M] {L : ℕ} (j
   | base =>
     intro _
     rw [prefixSum_succ (by omega), prefixSum_duplicateAt_le a j z le_rfl]
-    have hj_cast : (⟨j.val, by omega⟩ : Fin (L + 1)) = j.castSucc := rfl
+    have hj_cast : (⟨j.val, by omega⟩ : Fin (L + 1)) = j.castSucc := Fin.ext (by simp)
     rw [hj_cast, duplicateAt_castSucc]
   | succ q hjq ih =>
     intro hq₂
     rw [prefixSum_succ (by omega), ih (by omega), prefixSum_succ (by omega)]
     rcases eq_or_lt_of_le hjq with rfl | hlt
     · rw [Fin.eta, hzj]
-      have hj_succ : (⟨j.val + 1, by omega⟩ : Fin (L + 1)) = j.succ := rfl
+      have hj_succ : (⟨j.val + 1, by omega⟩ : Fin (L + 1)) = j.succ := Fin.ext (by simp)
       rw [hj_succ, duplicateAt_succ, add_right_comm]
-    · have hq_succ : (⟨q + 1, by omega⟩ : Fin (L + 1)) = (⟨q, by omega⟩ : Fin L).succ := rfl
+    · have hq_succ : (⟨q + 1, by omega⟩ : Fin (L + 1)) = (⟨q, by omega⟩ : Fin L).succ :=
+        Fin.ext (by simp)
       rw [hq_succ, duplicateAt_succ_of_gt a z (i := ⟨q, by omega⟩) (Fin.lt_def.2 hlt),
         add_right_comm]
 
