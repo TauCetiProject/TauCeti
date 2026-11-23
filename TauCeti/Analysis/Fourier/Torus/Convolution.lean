@@ -55,11 +55,10 @@ variable {d : Type*} [Fintype d] {E : Type*} [NormedAddCommGroup E] [NormedSpace
 theorem convolution_mFourier_apply (n : d → ℤ) (f : UnitAddTorus d → E) (x : UnitAddTorus d) :
     (⇑(mFourier n) ⋆[ContinuousLinearMap.lsmul ℂ ℂ, volume] f) x =
       mFourier n x • mFourierCoeff f n := by
-  rw [convolution_def, mFourierCoeff_eq_integral_volume, ← integral_smul]
-  rw [← integral_sub_left_eq_self _ volume x]
+  rw [convolution_def, mFourierCoeff_eq_integral_volume, ← integral_smul,
+    ← integral_sub_left_eq_self _ volume x]
   congr 1 with t
-  rw [ContinuousLinearMap.lsmul_apply, sub_sub_cancel, smul_smul, sub_eq_add_neg,
-    mFourier_apply_add, mFourier_apply_neg]
+  rw [ContinuousLinearMap.lsmul_apply, sub_sub_cancel, smul_smul, mFourier_apply_sub]
 
 /-- **Convolution with a trigonometric polynomial** is the Fourier multiplier with its finitely
 supported coefficients: for integrable `f`,
