@@ -133,22 +133,23 @@ namespace TopPair
 variable (P : TopPair.{u}) {k : Type u} [CommRing k] {Y : TopCat.{u}} (p₀ : P.fst ⟶ Y) (n : ℕ)
   (φ : (P.singularCochainComplex (ModuleCat.of k k) k (ModuleCat.of k k)).cycles n)
 
-/-- The relative cocycle `φ` pulled back to a cochain of the ambient space. -/
-private def pulledCochain :
-    ((TopCat.toSSet.obj P.fst).chainComplex (𝟙_ (ModuleCat.{u} k))).X n ⟶ 𝟙_ (ModuleCat k) :=
-  (P.singularChainComplexπ (ModuleCat.of k k)).f n ≫
-    (P.singularCochainComplex (ModuleCat.of k k) k (ModuleCat.of k k)).iCycles n φ
+/-- The relative cocycle `φ` pulled back to a cocycle of the ambient space along the quotient onto
+the relative chains. -/
+private def pulledCocycle :
+    (((TopCat.toSSet.obj P.fst).chainComplex (𝟙_ (ModuleCat.{u} k))).linearYonedaObj k
+      (𝟙_ (ModuleCat.{u} k))).cycles n :=
+  HomologicalComplex.cyclesMap ((ChainComplex.linearYonedaFunctor k (ModuleCat.of k k)).map
+    (P.singularChainComplexπ (ModuleCat.of k k)).op) n φ
 
-/-- The pulled-back cochain is a cocycle. -/
-private theorem d_comp_pulledCochain :
-    ((TopCat.toSSet.obj P.fst).chainComplex (𝟙_ (ModuleCat.{u} k))).d (n + 1) n ≫
-      pulledCochain P n φ = 0 :=
-  -- the quotient map onto the relative chains is a chain map, and `φ` is a relative cocycle
-  (Category.assoc _ _ _).symm.trans ((congrArg (· ≫ _)
-    ((P.singularChainComplexπ (ModuleCat.of k k)).comm (n + 1) n).symm).trans
-      ((Category.assoc _ _ _).trans ((congrArg ((P.singularChainComplexπ
-        (ModuleCat.of k k)).f (n + 1) ≫ ·)
-          (ChainComplex.d_comp_linearYonedaObj_iCycles n (n + 1) φ)).trans Limits.comp_zero)))
+/-- The pulled-back cocycle is the precomposition of `φ` with the quotient onto the relative
+chains: `ChainComplex.iCycles_cyclesMap_linearYonedaFunctor_map_apply`, stated with the coefficients
+`𝟙_ (ModuleCat k)` of the cap product, where the general lemma does not rewrite. -/
+private theorem iCycles_pulledCocycle :
+    (((TopCat.toSSet.obj P.fst).chainComplex (𝟙_ (ModuleCat.{u} k))).linearYonedaObj k
+      (𝟙_ (ModuleCat.{u} k))).iCycles n (pulledCocycle P n φ) =
+      (P.singularChainComplexπ (ModuleCat.of k k)).f n ≫
+        (P.singularCochainComplex (ModuleCat.of k k) k (ModuleCat.of k k)).iCycles n φ :=
+  ChainComplex.iCycles_cyclesMap_linearYonedaFunctor_map_apply _ n φ
 
 /-- Capping a singular `(q + n)`-chain of the ambient space with the pulled-back cocycle and pushing
 forward along `p₀`. -/
@@ -157,30 +158,8 @@ private def capComponent (q : ℕ) :
   ChainComplex.capChain k (P.fst.alexanderWhitneyDiagonal (λ_ (ModuleCat.of k k)).inv)
     ((TopCat.toSSet.obj P.fst).chainComplexPairing (λ_ (ModuleCat.of k k)).hom ≫
       SSet.chainComplexMap (TopCat.toSSet.map p₀) (ModuleCat.of k k)) n q (q + n) (by omega)
-    (pulledCochain P n φ)
-
-/-- The boundary formula for `capComponent`: `∂(x ⌢ φ) = (-1)^n ∂x ⌢ φ`, after the push-forward. -/
-private theorem capComponent_comp_d (q : ℕ) :
-    capComponent P p₀ n φ (q + 1) ≫ ((singularChains k).obj Y).d (q + 1) q =
-      ((-1 : ℤ) ^ n) • (((singularChains k).obj P.fst).d (q + 1 + n) (q + n) ≫
-        capComponent P p₀ n φ q) := by
-  -- the boundary formula, read in a total degree `m` which is `q + 1 + n` up to `omega`
-  have key (m : ℕ) (hm : n + (q + 1) = m) :
-      ChainComplex.capChain k (P.fst.alexanderWhitneyDiagonal (λ_ (ModuleCat.of k k)).inv)
-          ((TopCat.toSSet.obj P.fst).chainComplexPairing (λ_ (ModuleCat.of k k)).hom ≫
-            SSet.chainComplexMap (TopCat.toSSet.map p₀) (ModuleCat.of k k)) n (q + 1) m hm
-          (pulledCochain P n φ) ≫ ((singularChains k).obj Y).d (q + 1) q =
-        ((-1 : ℤ) ^ n) • (((singularChains k).obj P.fst).d m (q + n) ≫
-          capComponent P p₀ n φ q) := by
-    obtain rfl : m = q + n + 1 := by omega
-    have := ChainComplex.capChain_comp_d (k := k)
-      (P.fst.alexanderWhitneyDiagonal (λ_ (ModuleCat.of k k)).inv)
-      ((TopCat.toSSet.obj P.fst).chainComplexPairing (λ_ (ModuleCat.of k k)).hom ≫
-        SSet.chainComplexMap (TopCat.toSSet.map p₀) (ModuleCat.of k k)) n q (q + n) (by omega)
-      (pulledCochain P n φ)
-    rw [d_comp_pulledCochain, map_zero, sub_zero] at this
-    exact this
-  exact key (q + 1 + n) (by omega)
+    ((((TopCat.toSSet.obj P.fst).chainComplex (𝟙_ (ModuleCat.{u} k))).linearYonedaObj k
+      (𝟙_ (ModuleCat.{u} k))).iCycles n (pulledCocycle P n φ))
 
 /-- On the image of a singular chain of the ambient space, `TopPair.pushforwardCapChainMap` in
 degree `q + n` is `(-1)^(n q)` times `capComponent`. -/
@@ -202,6 +181,7 @@ private theorem singularChainComplexπ_f_pushforwardCapChainMap_f (q : ℕ) :
     (𝟙 _) (𝟙 _) (singularChainComplexπ_alexanderWhitneyDiagonal P _) (by simp) n q (q + n)
     (by omega) ((P.singularCochainComplex (ModuleCat.of k k) k (ModuleCat.of k k)).iCycles n φ)
   rw [HomologicalComplex.id_f, Category.comp_id] at h₁
+  rw [capComponent, iCycles_pulledCocycle]
   -- the ambient chains of `P` appear in two forms which agree only after unfolding, so the steps
   -- are assembled in term mode rather than by rewriting
   exact (congrArg ((P.singularChainComplexπ (ModuleCat.of k k)).f (q + n) ≫ ·)
@@ -240,8 +220,12 @@ private theorem capComponent_smul {G : Type u} [Group G] [MulAction G P.fst]
     simp only [SSet.chainComplexMap, ← Functor.map_comp, hp]
   have hψ : (SSet.chainComplexMap (TopCat.toSSet.map
       (TopCat.ofHom ⟨(g • · : P.fst → P.fst), continuous_const_smul g⟩)) (ModuleCat.of k k)).f n ≫
-        pulledCochain P n φ = (χ g : k) • pulledCochain P n φ :=
-    hφ g
+        (((TopCat.toSSet.obj P.fst).chainComplex (𝟙_ (ModuleCat.{u} k))).linearYonedaObj k
+          (𝟙_ (ModuleCat.{u} k))).iCycles n (pulledCocycle P n φ) =
+      (χ g : k) • (((TopCat.toSSet.obj P.fst).chainComplex (𝟙_ (ModuleCat.{u} k))).linearYonedaObj
+          k (𝟙_ (ModuleCat.{u} k))).iCycles n (pulledCocycle P n φ) := by
+    rw [iCycles_pulledCocycle]
+    exact hφ g
   have := ChainComplex.capChain_naturality (k := k)
     (P.fst.alexanderWhitneyDiagonal (λ_ (ModuleCat.of k k)).inv)
     ((TopCat.toSSet.obj P.fst).chainComplexPairing (λ_ (ModuleCat.of k k)).hom ≫
@@ -259,9 +243,16 @@ private theorem capComponent_smul {G : Type u} [Group G] [MulAction G P.fst]
       (TopCat.ofHom ⟨(g • · : Y → Y), continuous_const_smul g⟩)) (ModuleCat.of k k))
     (TopCat.alexanderWhitneyDiagonal_naturality _ _) (by
       rw [Category.assoc, hc, ← Category.assoc, ← SSet.chainComplexPairing_naturality,
-        Category.assoc]) n q (q + n) (by omega) (pulledCochain P n φ)
-  rw [hψ, map_smul, Linear.smul_comp] at this
-  exact this.symm
+        Category.assoc]) n q (q + n) (by omega)
+    ((((TopCat.toSSet.obj P.fst).chainComplex (𝟙_ (ModuleCat.{u} k))).linearYonedaObj k
+      (𝟙_ (ModuleCat.{u} k))).iCycles n (pulledCocycle P n φ))
+  rw [hψ] at this
+  -- `χ g` acts on the pulled-back cocycle through the module of cochains, which agrees with the
+  -- module structure of the domain of the cap product only after unfolding, so the linearity step
+  -- is closed by a term
+  refine this.symm.trans ?_
+  rw [← Linear.smul_comp]
+  exact congrArg (· ≫ _) (map_smul _ _ _)
 
 /-- The cap product `capComponent` with the sign `(-1)^(n q)` of `TopPair.pushforwardCapChainMap`
 in degree `q + n`. -/
@@ -269,13 +260,22 @@ private def signedCapComponent (q : ℕ) :
     ((singularChains k).obj P.fst).X (q + n) ⟶ ((singularChains k).obj Y).X q :=
   ((-1 : ℤ) ^ (n * q)) • capComponent P p₀ n φ q
 
-/-- The sign-corrected cap products commute with the boundaries. -/
+/-- The sign-corrected cap products commute with the boundaries: they are the components of the
+chain map `TauCeti.ChainComplex.capChainMap` of the cocycle `φ` pulled back to the ambient space. -/
 private theorem signedCapComponent_comp_d (q : ℕ) :
     signedCapComponent P p₀ n φ (q + 1) ≫ ((singularChains k).obj Y).d (q + 1) q =
       ((singularChains k).obj P.fst).d (q + 1 + n) (q + n) ≫ signedCapComponent P p₀ n φ q := by
-  rw [signedCapComponent, signedCapComponent, Preadditive.zsmul_comp, capComponent_comp_d,
-    Preadditive.comp_zsmul, smul_smul, ← pow_add,
-    show n * (q + 1) + n = n * q + 2 * n by ring, pow_add, (even_two_mul n).neg_one_pow, mul_one]
+  have h := (ChainComplex.capChainMap k
+    (P.fst.alexanderWhitneyDiagonal (λ_ (ModuleCat.of k k)).inv)
+    ((TopCat.toSSet.obj P.fst).chainComplexPairing (λ_ (ModuleCat.of k k)).hom ≫
+      SSet.chainComplexMap (TopCat.toSSet.map p₀) (ModuleCat.of k k)) n
+    (pulledCocycle P n φ)).comm (q + 1 + n) (q + n)
+  rw [ChainComplex.capChainMap_f _ _ n (q + 1) _ rfl, ChainComplex.capChainMap_f _ _ n q _ rfl,
+    HomologicalComplex.extend_d_eq _ _ (ComplexShape.embeddingDownNatAdd_f n (q + 1))
+      (ComplexShape.embeddingDownNatAdd_f n q)] at h
+  simp only [Category.assoc, Iso.inv_hom_id_assoc] at h
+  simp only [← Category.assoc] at h
+  exact (Iso.cancel_iso_inv_right _ _ _).1 h
 
 variable {P p₀ n φ} in
 /-- The sign-corrected cap products with a semi-invariant cocycle are semi-invariant:
