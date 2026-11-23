@@ -103,6 +103,7 @@ theorem integralTopForm_fubiniStudyForm :
 gives the Riemann sphere measure `1`: in the affine chart it is Lebesgue measure with density
 `ρ(z) = 1 / (π (1 + |z|²)²)`, which integrates to one (`OnePoint.integral_fubiniStudyDensity`),
 and the remaining point `∞` is null. -/
+@[simp]
 theorem measure_fubiniStudyForm_univ {m : MeasurableSpace (OnePoint ℂ)}
     [BorelSpace (OnePoint ℂ)] :
     RoughForm.measure fubiniStudyForm.val (univ : Set (OnePoint ℂ)) = 1 := by

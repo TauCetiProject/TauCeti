@@ -651,6 +651,7 @@ attribute [local instance] finrank_euclideanSpace_fin_succ_fact Complex.finrank_
 /-- **The area of the two-sphere is `4π`.** The measure `|vol|` of the outward-normal area form of
 the unit sphere of an oriented three-dimensional inner product space gives the whole sphere
 measure `4π`. -/
+@[simp]
 theorem _root_.Orientation.measure_sphereVolumeForm_univ :
     RoughForm.measure o.sphereVolumeForm.val (univ : Set (sphere (0 : E) 1)) =
       ENNReal.ofReal (4 * Real.pi) := by

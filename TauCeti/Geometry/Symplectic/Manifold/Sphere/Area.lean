@@ -21,7 +21,8 @@ Liouville measure (`Orientation.liouvilleMeasure_sphereVolumeForm_univ`). Rescal
 `r` gives Liouville measure `4π |r|` (`Orientation.liouvilleMeasure_smul_sphereVolumeForm_univ`).
 
 For the unit sphere of `ℝ³` the volume form is the area form `σ_x(v, w) = x ⬝ (v × w)`
-(`TauCeti.sphereAreaForm_eq_sphereVolumeForm`), so these results give its areas `4π` and `4π |r|`.
+(`TauCeti.sphereAreaForm_eq_sphereVolumeForm`), so these results give its areas `4π` and `4π |r|`:
+after rewriting with that identity, `simp` evaluates the area `4π`.
 The Duistermaat–Heckman measure of its height function
 (`TauCeti.duistermaatHeckmanMeasure_sphereAreaForm_height`) gives the same area `4π`
 independently.
@@ -52,6 +53,7 @@ variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [Fact (fin
 /-- **The Liouville measure of the two-sphere is `4π`.** The volume form of the unit sphere of an
 oriented three-dimensional inner product space, regarded as a symplectic form, has total Liouville
 measure `4π`. -/
+@[simp]
 theorem _root_.Orientation.liouvilleMeasure_sphereVolumeForm_univ
     (o : Orientation ℝ E (Fin (2 + 1))) :
     SmoothTwoForm.liouvilleMeasure 1 o.sphereVolumeForm (univ : Set (sphere (0 : E) 1)) =
@@ -68,7 +70,7 @@ theorem _root_.Orientation.liouvilleMeasure_smul_sphereVolumeForm_univ
       ENNReal.ofReal (4 * Real.pi * |r|) := by
   have h : SmoothTwoForm.liouvilleMeasure 1 (r • o.sphereVolumeForm)
       (univ : Set (sphere (0 : E) 1)) = ENNReal.ofReal |r| * ENNReal.ofReal (4 * Real.pi) := by
-    simp [o.liouvilleMeasure_sphereVolumeForm_univ]
+    simp
   rw [h, ← ENNReal.ofReal_mul (abs_nonneg r), mul_comm]
 
 end Orientation
