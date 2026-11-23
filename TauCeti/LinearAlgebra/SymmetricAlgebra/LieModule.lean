@@ -51,6 +51,10 @@ functions `S(L*)^L` with the Weyl-invariant polynomial functions on a Cartan sub
   each homogeneous degree.
 * `TauCeti.SymmetricAlgebra.mem_lieInvariants_iff_mem_maxTrivSubmodule`: the invariants are the
   maximal trivial submodule of the Lie module `S(M)`.
+* `TauCeti.SymmetricAlgebra.ι_mem_lieInvariants_iff` and
+  `TauCeti.SymmetricAlgebra.ι_mem_lieInvariants_iff_apply_lie_eq_zero`: the invariants of degree
+  one are the generators of the vectors killed by `L`, and on `M*` the linear functions vanishing
+  on all brackets.
 * `TauCeti.SymmetricAlgebra.decompose_mem_lieInvariants_iff`: an element is invariant exactly when
   all of its homogeneous components are.
 * `LieModuleEquiv.map_lieInvariants`: a Lie module equivalence carries the invariants
@@ -187,10 +191,20 @@ theorem mem_lieInvariants_iff_mem_maxTrivSubmodule {p : S} :
   rw [mem_lieInvariants, LieModule.mem_maxTrivSubmodule]
   simp only [lie_eq_lieModuleDerivation]
 
-/-- The generator `ι m` of a vector `m` killed by `L` is invariant. -/
-theorem ι_mem_lieInvariants {m : M} (hm : ∀ x : L, ⁅x, m⁆ = 0) :
-    ι R M m ∈ lieInvariants R L M :=
-  mem_lieInvariants.mpr fun x ↦ by simp [hm x]
+/-- The generator `ι m` is invariant exactly when the vector `m` is killed by `L`. -/
+@[simp]
+theorem ι_mem_lieInvariants_iff {m : M} :
+    ι R M m ∈ lieInvariants R L M ↔ ∀ x : L, ⁅x, m⁆ = 0 := by
+  simp only [mem_lieInvariants, lieModuleDerivation_ι,
+    map_eq_zero_iff _ (_root_.SymmetricAlgebra.ι_injective R M)]
+
+/-- A linear function on `M` is killed by the contragredient action, so that its generator is an
+invariant polynomial function on `M` of degree one, exactly when it vanishes on all brackets
+`⁅x, m⁆`. For `M = L` these are the linear functions vanishing on `⁅L, L⁆`. -/
+theorem ι_mem_lieInvariants_iff_apply_lie_eq_zero {φ : Module.Dual R M} :
+    ι R (Module.Dual R M) φ ∈ lieInvariants R L (Module.Dual R M) ↔
+      ∀ (x : L) (m : M), φ ⁅x, m⁆ = 0 := by
+  simp [LinearMap.ext_iff]
 
 /-- **The invariants are graded**: an element of the symmetric algebra is invariant exactly when
 each of its homogeneous components is. -/

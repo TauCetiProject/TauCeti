@@ -93,8 +93,8 @@ variable {n : ℤ} (hn : (n : K) ≠ 0)
 /-- The divisor of the auxiliary function of the lift attached to `R`. -/
 private abbrev liftDivisor (R : (W⁄K).toAffine.Point) : Divisor K (W⁄K).toAffine.FunctionField :=
   weilPairingDivisor (W⁄K) (psiFunctionField_ne_zero (W⁄K) hn) (-(n • R)) -
-    (WeilDivisor.ofPoint ((W⁄K).toAffine.pointEquivDegreeOnePlace (-(n • n • R))).1 -
-      WeilDivisor.ofPoint ((W⁄K).toAffine.pointEquivDegreeOnePlace 0).1)
+    (WeilDivisor.ofPoint ((W⁄K).toAffine.pointEquivDegreeOnePlace (-(n • n • R))).val -
+      WeilDivisor.ofPoint ((W⁄K).toAffine.pointEquivDegreeOnePlace 0).val)
 
 /-- `[n]^* (-n R) - [n]^* (O) - ((-n² R) - (O))` is principal: its sum is `n² (-R) + n² R = O`. -/
 private theorem exists_principal_eq_liftDivisor (R : (W⁄K).toAffine.Point) :
@@ -129,8 +129,8 @@ private theorem principal_lift {f : (W⁄K).toAffine.FunctionFieldˣ} {R : (W⁄
   have hgal : Multiplicative.toAdd (W.divisorGaloisAction σ) (liftDivisor W hn R) =
       weilPairingDivisor (W⁄K) (psiFunctionField_ne_zero (W⁄K) hn)
           (Multiplicative.toAdd (W.pointGaloisAction σ) (-(n • R))) -
-        (WeilDivisor.ofPoint ((W⁄K).toAffine.pointEquivDegreeOnePlace (-(n • n • R))).1 -
-          WeilDivisor.ofPoint ((W⁄K).toAffine.pointEquivDegreeOnePlace 0).1) := by
+        (WeilDivisor.ofPoint ((W⁄K).toAffine.pointEquivDegreeOnePlace (-(n • n • R))).val -
+          WeilDivisor.ofPoint ((W⁄K).toAffine.pointEquivDegreeOnePlace 0).val) := by
     rw [liftDivisor, map_sub, map_sub, divisorGaloisAction_weilPairingDivisor W σ hn,
       divisorGaloisAction_ofPoint, divisorGaloisAction_ofPoint,
       placeGaloisAction_pointEquivDegreeOnePlace, placeGaloisAction_pointEquivDegreeOnePlace,

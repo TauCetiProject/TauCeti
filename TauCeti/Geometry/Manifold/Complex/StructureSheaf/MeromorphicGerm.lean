@@ -100,7 +100,7 @@ theorem exists_toMeromorphicGerms_eq_iff {f : ℂ → ℂ} (hf : MeromorphicAt f
 germ exactly when it has a limit along the punctured neighbourhoods of `a`. -/
 theorem mem_range_toMeromorphicGerms_iff_exists_tendsto {φ : meromorphicGerms ℂ a} :
     φ ∈ (toMeromorphicGerms a).range ↔ ∃ c, (φ : Germ (𝓝[≠] a) ℂ).Tendsto (𝓝 c) := by
-  obtain ⟨f, hf, hφ⟩ := mem_meromorphicGerms_iff.1 φ.2
+  obtain ⟨f, hf, hφ⟩ := mem_meromorphicGerms_iff.1 φ.property
   simp_rw [← hφ, Germ.coe_tendsto, tendsto_nhds_iff_meromorphicOrderAt_nonneg hf,
     ← exists_toMeromorphicGerms_eq_iff hf, hφ, RingHom.mem_range, Subtype.ext_iff]
 
@@ -112,7 +112,7 @@ theorem exists_eq_toMeromorphicGerms_div (φ : meromorphicGerms ℂ a) :
     ∃ (h p : (holomorphicStructureSheaf 𝓘(ℂ) ℂ).presheaf.stalk a) (n : ℕ),
       (toMeromorphicGerms a p : Germ (𝓝[≠] a) ℂ) = (fun z ↦ (z - a) ^ n : ℂ → ℂ) ∧
         φ = toMeromorphicGerms a h / toMeromorphicGerms a p := by
-  obtain ⟨f, ⟨n, hn⟩, hφ⟩ := mem_meromorphicGerms_iff.1 φ.2
+  obtain ⟨f, ⟨n, hn⟩, hφ⟩ := mem_meromorphicGerms_iff.1 φ.property
   obtain ⟨h, hh⟩ := exists_toMeromorphicGerms_eq_of_analyticAt hn
   have hpa : AnalyticAt ℂ (fun z ↦ (z - a) ^ n) a := by fun_prop
   obtain ⟨p, hp⟩ := exists_toMeromorphicGerms_eq_of_analyticAt hpa

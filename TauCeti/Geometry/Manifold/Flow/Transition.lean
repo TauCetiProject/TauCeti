@@ -39,6 +39,18 @@ which makes their fixed-point and derivative data independent of these choices.
 None of these statements assumes that `T₀` is the least period or that the return branch is the
 first return to the section.
 
+A variation `w` of `v` supported in a flow box around an arc of the trajectory from `p` to
+`q = flowOf w T₁ p` changes a transition only across that box: if `w = v` on an open set
+containing the trajectory of `v` from `q` onwards, so in particular near `q`, the transition of
+`w` at time `T₁ + T₂` is the transition of `w` across the box followed by the unchanged transition
+of `v` from the section through `q` (`TauCeti.flowTransition_eventuallyEq_comp_of_eqOn`), and its
+derivative factors accordingly (`TauCeti.mfderiv_flowTransition_eq_comp_of_eqOn`). For a closed
+orbit of `v` through `p` and a variation `w` agreeing with `v` along the orbit (so that
+`q = flowOf v T₁ p`), that trajectory returns to `p`, so the box lies around an interior arc of
+the orbit from `p` to `q`, and `w = v` near `p`, near `q` and near the arc from `q` back to `p`.
+This is how the return map of a closed orbit is modified by flow-box variations in the proof of
+the Kupka–Smale theorem.
+
 ## Main results
 
 * `TauCeti.flowHittingTime_add_flowHittingTime_eventuallyEq`: hitting times add.
@@ -52,11 +64,15 @@ first return to the section.
   transitions conjugate return germs.
 * `TauCeti.flowTransition_iterate_eventuallyEq`,
   `TauCeti.flowTransition_comp_iterate_eventuallyEq`: iterates of return germs.
+* `TauCeti.flowTransition_eventuallyEq_comp_of_eqOn`,
+  `TauCeti.mfderiv_flowTransition_eq_comp_of_eqOn`: a transition of `w` whose last leg runs
+  where `w = v` factors through the transition of `v` along that leg.
 
 ## References
 
 * J. Palis, W. de Melo, *Geometric Theory of Dynamical Systems*, Springer 1982, Chapter 3, §1
-  (the Poincaré maps of a closed orbit at different sections are conjugate).
+  (the Poincaré maps of a closed orbit at different sections are conjugate), §§3–4 (local
+  perturbations of closed orbits in the proof of the Kupka–Smale theorem).
 -/
 
 public section
@@ -271,5 +287,57 @@ theorem flowTransition_comp_iterate_eventuallyEq (k : ℕ) :
       ((flowTransition_iterate_eventuallyEq hv hQ hq' hg' hg'v hk).comp_tendsto hh).symm
 
 end Return
+
+section Locality
+
+variable {w : (x : M) → TangentSpace I x} {U : Set M} {T₁ T₂ : ℝ}
+  (hw : CMDiff 1 (fun y ↦ (⟨y, w y⟩ : TangentBundle I M))) (hU : IsOpen U) (hvw : EqOn w v U)
+  (hT₁ : (T₁, p) ∈ flowDomain w) (hq : flowOf w T₁ p = q)
+  (hg' : ContMDiffAt I 𝓘(ℝ) 1 g' q) (hg'w : mvfderiv I g' q (w q) ≠ 0)
+  (hT₂ : (T₂, q) ∈ flowDomain v) (hTU : MapsTo (fun s ↦ flowOf v s q) (uIcc 0 T₂) U)
+  (hg : ContMDiffAt I 𝓘(ℝ) 1 g (flowOf v T₂ q))
+  (hgv : mvfderiv I g (flowOf v T₂ q) (v (flowOf v T₂ q)) ≠ 0)
+include hw hU hvw hT₁ hq hg' hg'w hT₂ hTU hg hgv
+
+/-- **A transition whose last leg runs where the fields agree.** Let the flow of `w` carry `p` to
+`q` at time `T₁`, and let `w` agree with `v` on an open set containing the trajectory of `q`
+under `v` from time `0` to time `T₂`. Then near `p` the transition of `w` at time `T₁ + T₂` to a
+section through `flowOf v T₂ q` is the transition of `w` to a section through `q` followed by the
+transition of `v` from there.
+
+For a closed orbit of `v` through `p` with return time `T₁ + T₂`, and a variation `w` of `v`
+agreeing with `v` on the orbit and supported in a flow box around an interior arc of the orbit
+from `p` to `q`, disjoint from a neighbourhood of the arc from `q` back to `p` (so `w = v` near
+`p` and near `q`), this expresses the return germ of `w` as the transition of `w` across the box
+followed by the unchanged transition of `v` back to the section through `p`. -/
+theorem flowTransition_eventuallyEq_comp_of_eqOn :
+    flowTransition w g (T₁ + T₂) p =ᶠ[𝓝 p] flowTransition v g T₂ q ∘ flowTransition w g' T₁ p := by
+  obtain ⟨hT₂w, hrw⟩ := flowOf_eq_of_eqOn hv hw hU hvw hT₂ hTU
+  have hwr : w (flowOf v T₂ q) = v (flowOf v T₂ q) := hvw (hTU right_mem_uIcc)
+  have hh : Tendsto (flowTransition w g' T₁ p) (𝓝 p) (𝓝 q) := by
+    simpa only [flowTransition_self, hq] using
+      (continuousAt_flowTransition hw hT₁ (by rwa [hq]) (by rwa [hq])).tendsto
+  refine (flowTransition_comp_eventuallyEq hw hT₁ hq hg' hg'w hT₂w hrw (hrw ▸ hg)
+    (by rwa [hwr]) |>.symm).trans ?_
+  exact (flowTransition_eventuallyEq_of_eqOn hv hw hU hvw hT₂ hTU hg hgv).comp_tendsto hh
+
+/-- **The derivative of a transition whose last leg runs where the fields agree.** Under the
+hypotheses of `TauCeti.flowTransition_eventuallyEq_comp_of_eqOn`, the derivative at `p` of the
+transition of `w` at time `T₁ + T₂` is the derivative of the transition of `w` to the section
+through `q` followed by the derivative at `q` of the transition of `v` from there. For a closed
+orbit of `v` this computes the linearized return map of a flow-box variation `w`. -/
+theorem mfderiv_flowTransition_eq_comp_of_eqOn :
+    mfderiv I I (flowTransition w g (T₁ + T₂) p) p =
+      mfderiv I I (flowTransition v g T₂ q) q ∘L mfderiv I I (flowTransition w g' T₁ p) p := by
+  have hh := mdifferentiableAt_flowTransition hw hT₁ (by rwa [hq]) (by rwa [hq])
+  have hh' := mdifferentiableAt_flowTransition hv hT₂ hg hgv
+  have hcomp :=
+    flowTransition_eventuallyEq_comp_of_eqOn hv hw hU hvw hT₁ hq hg' hg'w hT₂ hTU hg hgv
+  ext u
+  -- The cast between the tangent spaces at the two equal values of the maps is the identity.
+  exact (DFunLike.congr_fun hcomp.mfderiv_eq u).trans
+    (mfderiv_comp_apply_of_eq p hh' hh (by rw [flowTransition_self, hq]) u)
+
+end Locality
 
 end TauCeti

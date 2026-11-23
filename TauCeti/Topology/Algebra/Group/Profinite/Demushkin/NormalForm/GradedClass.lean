@@ -68,10 +68,12 @@ open scoped commutatorElement
 
 universe u
 
+/-! ### The words lie in `λ_1` -/
+
+section Membership
+
 variable {p : ℕ} [Fact p.Prime] {H : Type u} [Group H] [TopologicalSpace H] [IsTopologicalGroup H]
   [CompactSpace H] [TotallyDisconnectedSpace H]
-
-/-! ### The words lie in `λ_1` -/
 
 /-- For `p ∣ q`, the `q ≠ 2` normal-form word lies in `λ_1`. -/
 theorem demushkinWordNeTwo_mem_pLowerCentralSeries_one {q : ℕ} (hq : p ∣ q) (n : ℕ) (x : ℕ → H) :
@@ -79,30 +81,29 @@ theorem demushkinWordNeTwo_mem_pLowerCentralSeries_one {q : ℕ} (hq : p ∣ q) 
   rw [pLowerCentralSeries_one_eq_proPFrattini Fact.out]
   exact demushkinWordNeTwo_mem_proPFrattini Fact.out hq n x
 
-omit [Fact p.Prime] in
 /-- For `f ≥ 1`, the `q = 2`, `n` odd normal-form word lies in `λ_1`. -/
 theorem demushkinWordTwoOdd_mem_pLowerCentralSeries_one {f : ℕ} (hf : 0 < f) (n : ℕ) (x : ℕ → H) :
     demushkinWordTwoOdd f n x ∈ pLowerCentralSeries 2 H 1 := by
   rw [pLowerCentralSeries_one_eq_proPFrattini Nat.prime_two]
   exact demushkinWordTwoOdd_mem_proPFrattini hf n x
 
-omit [Fact p.Prime] in
 /-- The `q = 2`, `n` odd normal-form word at level `f = ∞` lies in `λ_1`. -/
 theorem demushkinWordTwoOddTop_mem_pLowerCentralSeries_one (n : ℕ) (x : ℕ → H) :
     demushkinWordTwoOddTop n x ∈ pLowerCentralSeries 2 H 1 := by
   rw [pLowerCentralSeries_one_eq_proPFrattini Nat.prime_two]
   exact demushkinWordTwoOddTop_mem_proPFrattini n x
 
-omit [Fact p.Prime] in
 /-- For `a` even and `f ≥ 1`, the `q = 2`, `n` even normal-form word lies in `λ_1`. -/
 theorem demushkinWordTwoEven_mem_pLowerCentralSeries_one {a f : ℕ} (ha : 2 ∣ a) (hf : 0 < f)
     (n : ℕ) (x : ℕ → H) : demushkinWordTwoEven a f n x ∈ pLowerCentralSeries 2 H 1 := by
   rw [pLowerCentralSeries_one_eq_proPFrattini Nat.prime_two]
   exact demushkinWordTwoEven_mem_proPFrattini ha hf n x
 
+end Membership
+
 /-! ### The classes of commutators and of the words -/
 
-omit [Fact p.Prime] [CompactSpace H] [TotallyDisconnectedSpace H] in
+variable {p : ℕ} {H : Type u} [Group H] [TopologicalSpace H] [IsTopologicalGroup H] in
 /-- **The class of a Labute commutator** `(x, y) = x⁻¹ y⁻¹ x y` in `gr_1(H)` is the bracket of the
 classes of `x` and `y`: it is the group commutator `⁅x⁻¹, y⁻¹⁆`, and the bracket is bilinear. -/
 theorem gradedMk_labuteComm (x y : H) (h : labuteComm x y ∈ pLowerCentralSeries p H 1) :
@@ -115,12 +116,15 @@ theorem gradedMk_labuteComm (x y : H) (h : labuteComm x y ∈ pLowerCentralSerie
   rw [this, ← gradedBracket_gradedMkZero, gradedMkZero_inv, gradedMkZero_inv, map_neg, map_neg,
     AddMonoidHom.neg_apply, neg_neg]
 
-omit [Fact p.Prime] [Group H] [TopologicalSpace H] [IsTopologicalGroup H] [CompactSpace H]
-  [TotallyDisconnectedSpace H] in
 private theorem list_sum_map_range {M : Type*} [AddCommMonoid M] (f : ℕ → M) (N : ℕ) :
     ((List.range N).map f).sum = ∑ a ∈ Finset.range N, f a := by
   rw [Finset.sum_eq_multiset_sum, Finset.range_val, ← Multiset.coe_range, Multiset.map_coe,
     Multiset.sum_coe]
+
+section GradedClass
+
+variable {p : ℕ} [Fact p.Prime] {H : Type u} [Group H] [TopologicalSpace H] [IsTopologicalGroup H]
+  [CompactSpace H] [TotallyDisconnectedSpace H]
 
 /-- The class in `gr_1(H)` of a product of Labute commutators is the sum of the brackets. -/
 theorem gradedMk_list_prod_labuteComm (N : ℕ) (a b : ℕ → H)
@@ -165,7 +169,6 @@ theorem gradedMk_demushkinWordNeTwo {q : ℕ} (hq : p ∣ q) (n : ℕ) (x : ℕ 
       ⟨x 0 ^ (p * c), h1⟩ * ⟨_, h2⟩ := Subtype.ext (demushkinWordNeTwo_def _ _ _)
   rw [this, gradedMk_mul, gradedMk_pow_mul, gradedMk_list_prod_labuteComm]
 
-omit [Fact p.Prime] in
 /-- **The class of the `q = 2`, `n` odd normal-form word** `x₁² x₂^{2^f} (x₂, x₃) ⋯ (x_{n-1}, x_n)`
 in `gr_1`, for `f ≥ 1`: `π ξ₁ + 2^{f-1} π ξ₂ + [ξ₂, ξ₃] + ⋯ + [ξ_{n-1}, ξ_n]`. The factor
 `x₂^{2^f}` contributes `π ξ₂` when `f = 1` and nothing when `f ≥ 2`, being then a fourth power,
@@ -203,7 +206,6 @@ theorem gradedMk_demushkinWordTwoOdd {f : ℕ} (hf : 0 < f) (n : ℕ) (x : ℕ �
   rw [this, gradedMk_mul, gradedMk_mul, gradedMk_pow_mul, gradedMk_pow_mul,
     gradedMk_list_prod_labuteComm, one_nsmul]
 
-omit [Fact p.Prime] in
 /-- **The class of the `q = 2`, `n` odd normal-form word at level `f = ∞`**
 `x₁² (x₂, x₃) ⋯ (x_{n-1}, x_n)` in `gr_1`: `π ξ₁ + [ξ₂, ξ₃] + ⋯ + [ξ_{n-1}, ξ_n]`. -/
 theorem gradedMk_demushkinWordTwoOddTop (n : ℕ) (x : ℕ → H) :
@@ -230,7 +232,6 @@ theorem gradedMk_demushkinWordTwoOddTop (n : ℕ) (x : ℕ → H) :
       exact demushkinWordTwoOddTop_def n x)
   rw [this, gradedMk_mul, gradedMk_pow_mul, gradedMk_list_prod_labuteComm, one_nsmul]
 
-omit [Fact p.Prime] in
 /-- **For `f ≥ 2` the odd word and the odd word at `f = ∞` have the same class in `gr_1`**: the
 factor `x₂^{2^f}` is a fourth power and lies in `λ_2`. This is the sense in which
 `x₁² (x₂, x₃) ⋯ (x_{n-1}, x_n)` is the normal form of `x₁² x₂^{2^f} (x₂, x₃) ⋯ (x_{n-1}, x_n)`
@@ -251,7 +252,6 @@ theorem gradedMk_demushkinWordTwoOdd_eq_gradedMk_demushkinWordTwoOddTop {f : ℕ
   -- `rw [add_zero]` fails on the dependent index `gradedPiece 2 H (0 + 1)`.
   simp
 
-omit [Fact p.Prime] in
 /-- **The class of the `q = 2`, `n` even normal-form word**
 `x₁^{2+a} (x₁, x₂) x₃^{2^f} (x₃, x₄) ⋯ (x_{n-1}, x_n)` in `gr_1`, for `a` even and `f ≥ 1`:
 `(1 + a/2) π ξ₁ + [ξ₁, ξ₂] + 2^{f-1} π ξ₃ + [ξ₃, ξ₄] + ⋯ + [ξ_{n-1}, ξ_n]`. For `4 ∣ a` and `f ≥ 2`
@@ -324,5 +324,7 @@ theorem gradedMk_demushkinWordTwoEven_eq_gradedMk_demushkinWordNeTwo {a f : ℕ}
     gradedMk_demushkinWordNeTwo ((Nat.dvd_add_right dvd_rfl).2 ha), hsum, h2,
     Nat.add_div_left a two_pos, add_comm (a / 2) 1]
   abel
+
+end GradedClass
 
 end TauCeti
