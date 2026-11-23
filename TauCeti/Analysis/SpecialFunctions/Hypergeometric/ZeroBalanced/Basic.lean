@@ -14,7 +14,7 @@ import TauCeti.Analysis.Analytic.Binomial
 import TauCeti.Analysis.Complex.NegNatTopology
 import TauCeti.Analysis.SpecialFunctions.Gamma.Analytic
 import TauCeti.Analysis.SpecialFunctions.Gamma.Basic
-import TauCeti.Analysis.SpecialFunctions.Gamma.Digamma.Analytic
+import TauCeti.Analysis.SpecialFunctions.Gamma.Digamma
 import TauCeti.Analysis.SpecialFunctions.Gamma.Digamma.Bounds
 import TauCeti.Analysis.SpecialFunctions.Hypergeometric.Ordinary.Basic
 
