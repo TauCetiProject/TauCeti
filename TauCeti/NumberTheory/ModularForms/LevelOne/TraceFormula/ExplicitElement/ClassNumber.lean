@@ -31,7 +31,7 @@ class-number terms `P_{w+2}(t, n) H(4 n - t²)` of the Eichler–Selberg trace f
 
 ## Main results
 
-* `TauCeti.PopaZagier.finsum_weight_traceDetFiber_add_two`: for `n > 0`, the weights of the
+* `TauCeti.PopaZagier.finsum_weight_traceDetFiber_add_two`: for `n ≠ 0`, the weights of the
   matrices of trace `t + 2` and determinant `n + t + 1` have the same sum as those of trace `t`
   and determinant `n`.
 * `TauCeti.PopaZagier.finsum_weight_traceDetFiber_eq_neg_twelve_mul_hurwitzClassNumber`: the
@@ -325,15 +325,15 @@ private theorem sum_pairTerm (n t : ℤ) :
   rw [Finset.sum_add_distrib, ← hswap] at hsum
   omega
 
-/-- **Translation by the identity.** For `n > 0`, the weights of the matrices of trace `t + 2`
+/-- **Translation by the identity.** For `n ≠ 0`, the weights of the matrices of trace `t + 2`
 and determinant `n + t + 1` have the same sum as those of trace `t` and determinant `n`.
 
 The translation `M ↦ M + 1` is a bijection between these matrices, it fixes the discriminant
 `t² - 4 n`, and its effect on the weights cancels in total. -/
-theorem finsum_weight_traceDetFiber_add_two (hn : 0 < n) :
+theorem finsum_weight_traceDetFiber_add_two (hn : n ≠ 0) :
     ∑ᶠ M : traceDetFiber (Fin 2) (t + 2) (n + t + 1), weight M.val =
       ∑ᶠ M : traceDetFiber (Fin 2) t n, weight M.val := by
-  obtain ⟨h₁, e₁⟩ := finsum_corr₁ (t := t) hn.ne'
+  obtain ⟨h₁, e₁⟩ := finsum_corr₁ (t := t) hn
   obtain ⟨h₂, e₂⟩ := finsum_corr₂ (t := t) (n := n)
   obtain ⟨h₃, e₃⟩ := finsum_corr₃ (t := t) (n := n)
   obtain ⟨h₄, e₄⟩ := finsum_corr₄ (t := t) (n := n)
@@ -601,7 +601,7 @@ theorem finsum_weight_traceDetFiber_eq_neg_twelve_mul_hurwitzClassNumber {D : �
       · exact finsum_weight_of_le h ht'
       have hD : (0 : ℤ) < D := by exact_mod_cast NeZero.pos D
       have hpos : 0 < n - t + 1 := by nlinarith [sq_nonneg (t - 2)]
-      have hstep := finsum_weight_traceDetFiber_add_two (t := t - 2) hpos
+      have hstep := finsum_weight_traceDetFiber_add_two (t := t - 2) hpos.ne'
       have hn' : n - t + 1 + (t - 2) + 1 = n := by ring
       rw [sub_add_cancel, hn'] at hstep
       rw [hstep]

@@ -94,7 +94,7 @@ theorem finsum_weight_traceDetFiber_eq_zero_of_neg (ht : t < 0) (hD : 4 * n ≤ 
   rcases le_or_gt n 0 with hn | hn
   · exact finsum_weight_traceDetFiber_of_nonpos hn
   -- translate upwards to the fibre `(t + 2, n + t + 1)`, of smaller determinant
-  rw [← finsum_weight_traceDetFiber_add_two hn]
+  rw [← finsum_weight_traceDetFiber_add_two hn.ne']
   have ht₂ : t ≤ -2 := by nlinarith
   rcases (show t + 2 < 0 ∨ t + 2 = 0 by omega) with ht' | ht'
   · exact ih _ (by omega) ht' (by nlinarith) rfl
@@ -312,7 +312,7 @@ theorem finsum_weight_traceDetFiber_eq_zero_of_not_isSquare (hD : 4 * n ≤ t ^ 
     exact hsq ⟨n - 1, by ring⟩
   -- translate downwards to the fibre `(t - 2, n - t + 1)`, of smaller positive determinant
   have hpos : 0 < n - t + 1 := by omega
-  have hstep := finsum_weight_traceDetFiber_add_two (t := t - 2) hpos
+  have hstep := finsum_weight_traceDetFiber_add_two (t := t - 2) hpos.ne'
   rw [sub_add_cancel, show n - t + 1 + (t - 2) + 1 = n by ring] at hstep
   rw [hstep]
   have ht₂ : 2 ≤ t := by nlinarith

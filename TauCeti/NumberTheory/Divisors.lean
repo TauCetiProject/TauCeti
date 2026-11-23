@@ -20,7 +20,8 @@ import Mathlib.Tactic.NormNum
 # Divisor equivalences, factor pairs, and shifted-index sums
 
 For `N ≠ 0`, the divisors `d` of `N` with `a = N + d` (respectively `a = N - d`) are at most one,
-and such a divisor exists exactly when `a - N` divides `N` (respectively `N - a` divides `a`).
+and such a divisor exists exactly when `N < a` and `a - N ∣ N` (respectively `a < N` and
+`N - a ∣ a`).
 These lemmas evaluate the corresponding indicator products (and sums) over `N.divisors`.
 
 The products over divisors in this file are stated for commutative monoids (commutative groups
@@ -95,44 +96,30 @@ theorem prod_divisors_filter_dvd {m n : ℕ} (h : m ∣ n) (f : ℕ → M) :
 theorem prod_divisors_ite_eq_add {N : ℕ} (hN : N ≠ 0) (a : ℕ) (f : ℕ → M) :
     ∏ d ∈ N.divisors, (if a = N + d then f d else 1) =
       if N < a ∧ a - N ∣ N then f (a - N) else 1 := by
-  split_ifs with h
-  · rw [Finset.prod_eq_single (a - N)]
-    · rw [ite_eq_left (by omega)]
-    · intro d _ hd
-      rw [ite_eq_right (by omega)]
-    · intro h'
-      exact absurd (Nat.mem_divisors.mpr ⟨h.2, hN⟩) h'
-  · refine Finset.prod_eq_one fun d hd ↦ ite_eq_right fun ha ↦ h ⟨?_, ?_⟩
-    · have := Nat.pos_of_mem_divisors hd
-      omega
-    · have had : a - N = d := by omega
-      rw [had]
-      exact Nat.dvd_of_mem_divisors hd
+  -- On positive `d`, the guard `a = N + d` says `d = a - N`.
+  rw [Finset.prod_congr rfl fun d hd ↦ if_congr (Q := a - N = d)
+    (by have := Nat.pos_of_mem_divisors hd; omega) rfl rfl, Finset.prod_ite_eq]
+  refine if_congr ⟨fun h ↦ ⟨?_, Nat.dvd_of_mem_divisors h⟩,
+    fun h ↦ Nat.mem_divisors.mpr ⟨h.2, hN⟩⟩ rfl rfl
+  have := Nat.pos_of_mem_divisors h
+  omega
 
 /-- The product over the divisors `d` of `N` of `f d` restricted to `a = N - d`. -/
 @[to_additive /-- The sum over the divisors `d` of `N` of `f d` restricted to `a = N - d`. -/]
 theorem prod_divisors_ite_eq_sub {N : ℕ} (a : ℕ) (f : ℕ → M) :
     ∏ d ∈ N.divisors, (if a = N - d then f d else 1) =
       if a < N ∧ N - a ∣ a then f (N - a) else 1 := by
-  split_ifs with h
-  · rw [Finset.prod_eq_single (N - a)]
-    · rw [ite_eq_left (by omega)]
-    · intro d hd hne
-      have := Nat.divisor_le hd
-      rw [ite_eq_right (by omega)]
-    · refine fun h' ↦ absurd (Nat.mem_divisors.mpr ⟨?_, by omega⟩) h'
-      have h'' := Nat.dvd_add_self_right.mpr h.2
-      rwa [Nat.add_sub_cancel' h.1.le] at h''
-  · refine Finset.prod_eq_one fun d hd ↦ ite_eq_right fun ha ↦ h ⟨?_, ?_⟩
-    · have := Nat.pos_of_mem_divisors hd
-      have := Nat.divisor_le hd
-      omega
-    · have := Nat.divisor_le hd
-      have had : N - a = d := by omega
-      have hN' : N = a + d := by omega
-      rw [had]
-      have h' := Nat.dvd_of_mem_divisors hd
-      rwa [hN', Nat.dvd_add_self_right] at h'
+  -- On divisors `0 < d ≤ N`, the guard `a = N - d` says `d = N - a`.
+  rw [Finset.prod_congr rfl fun d hd ↦ if_congr (Q := N - a = d)
+    (by have := Nat.pos_of_mem_divisors hd; have := Nat.divisor_le hd; omega) rfl rfl,
+    Finset.prod_ite_eq]
+  refine if_congr ?_ rfl rfl
+  rw [Nat.mem_divisors]
+  -- `N = a + (N - a)` once `a < N`, so `N - a ∣ N` exactly when `N - a ∣ a`.
+  by_cases ha : a < N
+  · rw [← Nat.dvd_add_self_right (n := a), Nat.add_sub_cancel' ha.le]
+    simp [ha, (Nat.zero_lt_of_lt ha).ne']
+  · simp [ha, Nat.sub_eq_zero_of_le (not_lt.mp ha)]
 
 /-- Regrouping a product over the factor pairs `(a, b)` of `n ≠ 0`, restricted to `a ∣ m`, by
 the divisors `d` of `gcd(m, n)`: the pair `(d, n / d)` contributes `f d (m * n / d ^ 2)`, since
@@ -146,8 +133,8 @@ theorem prod_divisorsAntidiagonal_ite_dvd {n : ℕ} (hn : n ≠ 0) (m : ℕ) (f 
   rw [Nat.prod_divisorsAntidiagonal fun a b ↦ if a ∣ m then f a (b * (m / a)) else 1,
     ← Finset.prod_filter]
   have hs : {a ∈ n.divisors | a ∣ m} = (m.gcd n).divisors := by
-    ext a
-    simp [Nat.dvd_gcd_iff, hn, Nat.gcd_eq_zero_iff, and_comm]
+    rw [← Nat.divisors_filter_dvd_of_dvd hn (Nat.gcd_dvd_right m n)]
+    exact Finset.filter_congr fun a ha ↦ by simp [Nat.dvd_gcd_iff, Nat.dvd_of_mem_divisors ha]
   rw [hs]
   refine Finset.prod_congr rfl fun a ha ↦ ?_
   have ha' := Nat.dvd_gcd_iff.mp (Nat.dvd_of_mem_divisors ha)
@@ -433,7 +420,7 @@ theorem prod_pnatMulDvdAnd_eq_prod_dite_pow_card_divisors {A : Type*} [CommMonoi
     exact Fintype.prod_equiv ((Equiv.subtypeSubtypeEquivSubtypeInter _
       fun p : ℕ+ × ℕ+ ↦ P p.1).symm.trans (Equiv.subtypeEquivRight fun _ ↦ by simp)) _ _
         fun _ ↦ rfl
-  · split_ifs <;> simp
+  · simp only [dite_pow, one_pow]
 
 end TauCeti
 
