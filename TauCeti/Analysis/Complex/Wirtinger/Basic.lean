@@ -19,8 +19,8 @@ import Mathlib.Analysis.Calculus.FDeriv.Symmetric
 import Mathlib.Analysis.SpecialFunctions.ExpDeriv
 
 import Mathlib.Analysis.Calculus.FDeriv.Pow
+import TauCeti.Analysis.Calculus.FDeriv.Comp
 import TauCeti.Analysis.Calculus.FDeriv.OfReal
-import TauCeti.Analysis.Calculus.FDeriv.RestrictScalars
 import TauCeti.Analysis.Normed.Module.RCLike.Basic
 import TauCeti.LinearAlgebra.Complex.Module
 import TauCeti.Topology.Algebra.Module.Equiv.RestrictScalars

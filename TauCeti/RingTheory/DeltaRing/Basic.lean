@@ -207,6 +207,13 @@ theorem delta_neg (x : A) : delta p (-x) = -delta p x - addCorrection p x (-x) :
 theorem delta_one_add_one : delta p (1 + 1 : A) = addCorrection p 1 1 := by
   simp [delta_add]
 
+/-- If `δ x = 0`, then `δ (x ^ n) = 0` for every `n`. -/
+theorem delta_pow_eq_zero {x : A} (hx : delta p x = 0) (n : ℕ) :
+    delta p (x ^ n) = 0 := by
+  induction n with
+  | zero => simp
+  | succ n ih => rw [pow_succ, delta_mul, ih, hx]; ring
+
 end Basic
 
 section Subsingleton
