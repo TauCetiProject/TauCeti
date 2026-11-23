@@ -18,8 +18,10 @@ finiteness hypothesis and no field base is needed.
 Combined with a finiteness or flatness input this gives the trivial-kernel criteria for closed
 immersions in `Kernel/Finite.lean` and `Kernel/ClosedImmersion.lean`.
 
-## Main declaration
+## Main declarations
 
+* `TauCeti.CommHopfAlgCat.mapPointsFunctor_app_injective_of_kernelHopfIdeal_eq_augmentation`:
+  trivial kernel gives injectivity on points over every algebra.
 * `TauCeti.CommHopfAlgCat.epi_ofHom_of_kernelHopfIdeal_eq_augmentation`: trivial kernel gives an
   epimorphism of coordinate rings.
 
@@ -38,20 +40,25 @@ universe u v
 
 variable {R : Type u} [CommRing R] {H K : _root_.CommHopfAlgCat.{v} R}
 
+/-- A homomorphism of affine groups with trivial scheme-theoretic kernel is injective on points
+over every algebra. -/
+theorem mapPointsFunctor_app_injective_of_kernelHopfIdeal_eq_augmentation (f : H ⟶ K)
+    (hker : kernelHopfIdeal f = HopfIdeal.augmentation R K) (A : CommAlgCat.{v} R) :
+    Function.Injective ((CommHopfAlgCat.Hom.mapPointsFunctor f).app A) := by
+  rw [injective_iff_map_eq_one]
+  intro g hg
+  erw [CommHopfAlgCat.Hom.mapPointsFunctor_app_apply] at hg
+  have hmem := (mapPointsFunctor_app_eq_one_iff f A g).mp hg
+  rw [hker] at hmem
+  exact eq_one_of_mem_quotientPointsSubgroup_augmentation K A hmem
+
 /-- A homomorphism of affine groups with trivial scheme-theoretic kernel is a monomorphism of
 affine schemes: its coordinate map is an epimorphism of commutative rings. The kernel is tested
 on all algebras, so this sees infinitesimal kernels. -/
 theorem epi_ofHom_of_kernelHopfIdeal_eq_augmentation (f : H ⟶ K)
     (hker : kernelHopfIdeal f = HopfIdeal.augmentation R K) :
     Epi (CommRingCat.ofHom f.hom.toAlgHom.toRingHom) := by
-  have hinj (A : CommAlgCat.{v} R) :
-      Function.Injective ((CommHopfAlgCat.Hom.mapPointsFunctor f).app A) := by
-    rw [injective_iff_map_eq_one]
-    intro g hg
-    erw [CommHopfAlgCat.Hom.mapPointsFunctor_app_apply] at hg
-    have hmem := (mapPointsFunctor_app_eq_one_iff f A g).mp hg
-    rw [hker] at hmem
-    exact eq_one_of_mem_quotientPointsSubgroup_augmentation K A hmem
+  have hinj := mapPointsFunctor_app_injective_of_kernelHopfIdeal_eq_augmentation f hker
   refine ⟨fun {A} g h hgh ↦ ?_⟩
   let : Algebra R A := (g.hom.comp (algebraMap R K)).toAlgebra
   let g' : K →ₐ[R] A := ⟨g.hom, fun _ ↦ rfl⟩
