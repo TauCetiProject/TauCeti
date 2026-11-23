@@ -15,6 +15,14 @@ import TauCeti.RingTheory.LaurentSeries.Multiplication
 This file records slope-`m` and uniform lower support bounds on the inner Laurent coefficients of
 power series in `(R⸨X⸩)⟦X⟧` under multiplication and powers.
 
+Pairing a slope-`m` lower support bound on a series `G₁` (vanishing below `q`-degree `a * m` in
+`t`-degree `a`, preserved under multiplication and powers) with a uniform lower support bound on
+the positive `t`-coefficients of a series `G₂` with constant term `1` (preserved under positive
+powers) lets readers discard high Laurent-degree tails at any fixed bidegree `(k, r)`:
+`coeff_coeff_mul_eq_left_of_lt_mul` shows `[q ^ r t ^ k] (G₁ * G₂) = [q ^ r t ^ k] G₁` whenever
+`r < k * m + N` and `m ≤ 0`, as used in the integrality proof for the plethystic exponential
+(`PowerSeries.exists_map_eq_plethysticExp`).
+
 ## Main results
 
 * `PowerSeries.coeff_coeff_one_eq_zero_of_lt_mul`: `[q ^ s t ^ a] 1 = 0` for `s < a * m`.
@@ -22,6 +30,9 @@ power series in `(R⸨X⸩)⟦X⟧` under multiplication and powers.
   multiplication.
 * `PowerSeries.coeff_coeff_pow_eq_zero_of_lt_mul`: slope-`m` lower vanishing is preserved by
   powers.
+* `PowerSeries.coeff_coeff_pow_eq_zero_of_lt_of_constantCoeff_eq_zero`: uniform lower vanishing
+  below `q`-degree `N` (`0 ≤ N`) on positive `t`-coefficients, when `constantCoeff = 0`, is
+  preserved by positive powers.
 * `PowerSeries.coeff_coeff_mul_eq_left_of_lt_mul`: multiplying a slope-`m` bounded series `G₁` by a
   series `G₂` with constant term `1` and positive `t`-coefficients vanishing below `q`-degree `N`
   preserves `[q ^ r t ^ k] G₁` whenever `r < k * m + N` and `m ≤ 0`.
@@ -62,6 +73,31 @@ theorem coeff_coeff_pow_eq_zero_of_lt_mul {R : Type*} [Semiring R] {m : ℤ} {G 
   induction n with
   | zero => simpa using coeff_coeff_one_eq_zero_of_lt_mul (R := R) (m := m)
   | succ n ih => rw [pow_succ]; exact coeff_coeff_mul_eq_zero_of_lt_mul ih hG
+
+/-- If `G : (R⸨X⸩)⟦X⟧` has zero `t`-constant coefficient and every positive `t`-coefficient
+vanishes below `q`-degree `N ≥ 0`, then every positive `t`-coefficient of `G ^ d` (`1 ≤ d`)
+vanishes below `q`-degree `N`. -/
+theorem coeff_coeff_pow_eq_zero_of_lt_of_constantCoeff_eq_zero {R : Type*} [Semiring R]
+    {G : (R⸨X⸩)⟦X⟧} {N : ℤ} (hN : 0 ≤ N) (hG0 : constantCoeff G = 0)
+    (hG : ∀ a, 1 ≤ a → ∀ s < N, (coeff a G).coeff s = 0) :
+    ∀ d, 1 ≤ d → ∀ a, 1 ≤ a → ∀ s < N, (coeff a (G ^ d)).coeff s = 0 := by
+  intro d hd
+  induction d with
+  | zero => omega
+  | succ d ih =>
+    rcases d with _ | d
+    · simpa using hG
+    · intro a _ s hs
+      rw [pow_succ, coeff_mul, HahnSeries.coeff_sum]
+      refine Finset.sum_eq_zero fun x _ ↦ ?_
+      rcases eq_or_ne x.1 0 with h1 | h1
+      · rw [h1, coeff_zero_eq_constantCoeff_apply, map_pow, hG0,
+          zero_pow (Nat.succ_ne_zero d), zero_mul, HahnSeries.coeff_zero]
+      · rcases eq_or_ne x.2 0 with h2 | h2
+        · rw [h2, coeff_zero_eq_constantCoeff_apply, hG0, mul_zero, HahnSeries.coeff_zero]
+        · exact LaurentSeries.coeff_mul_eq_zero_of_lt
+            (ih (Nat.succ_pos d) x.1 (Nat.pos_of_ne_zero h1))
+            (hG x.2 (Nat.pos_of_ne_zero h2)) (by omega)
 
 /-- Multiplying a slope-`m` bounded series `G₁` by a series `G₂` with constant term `1` and
 positive `t`-coefficients vanishing below `N` preserves `[q ^ r t ^ k]` whenever

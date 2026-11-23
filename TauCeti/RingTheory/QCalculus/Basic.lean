@@ -5,25 +5,27 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Polynomial.Derivative
 public import Mathlib.RingTheory.PowerSeries.Derivative
-import Mathlib.Algebra.Polynomial.Eval.Degree
+public import TauCeti.Algebra.Polynomial.QDerivative
 import Mathlib.Algebra.Ring.GeomSum
 import Mathlib.Tactic.Ring
 
 /-!
-# Finite q-calculus and Jackson derivatives
+# Power-series Jackson derivatives
 
-This file develops the algebraic finite `q`-calculus toolkit over arbitrary commutative
-(semi)rings, without any division or invertibility assumptions:
+This file develops the Jackson `q`-derivative and adapted Jackson `q`-derivative on formal power
+series over arbitrary commutative (semi)rings, without any division or invertibility assumptions:
 
-* `Polynomial.jacksonDeriv q` and `Polynomial.adaptedJacksonDeriv q`:
-  `D_q (X ^ n) = [n]_q X ^ (n - 1)` and `D'_q = (1 - q) D_q` on `A[X]`.
-* `PowerSeries.jacksonDeriv q` / `PowerSeries.adaptedJacksonDeriv q`: the same operators on `A⟦X⟧`,
-  compatible with polynomial coercion.
+* `PowerSeries.jacksonDeriv q`: `D_q (X ^ n) = [n]_q X ^ (n - 1)` on `A⟦X⟧`, agreeing with
+  `Polynomial.qDerivative q` on polynomials and specializing at `q = 1` to `d⁄dX`.
+* `PowerSeries.adaptedJacksonDeriv q`: `D'_q = (1 - q) D_q` on `A⟦X⟧`, agreeing with
+  `Polynomial.adaptedJacksonDeriv q` on polynomials.
 
-All identities are proved directly at the coefficient level over arbitrary commutative (semi)rings,
-holding in positive characteristic and at roots of unity without inverting `1 - q`.
+Both operators hold over arbitrary commutative (semi)rings, including positive characteristic and
+roots of unity without inverting `1 - q`. Mathematically, the Jackson derivative characterizes the
+normalized `q`-exponential `jacksonExp` via `D_q f = f`, while the adapted derivative satisfies
+`X * D'_q f = f - f(q X)` and thereby yields the shift equation `(1 - t) U_q(t) = U_q(q t)` for
+the reciprocal `q`-Pochhammer series (`D'_q f = f`).
 
 ## References
 
@@ -37,104 +39,6 @@ public section
 
 open Finset
 open scoped Polynomial PowerSeries
-
-/-! ### Polynomial Jackson derivative -/
-
-namespace Polynomial
-
-section Semiring
-
-variable {A B : Type*} [CommSemiring A] [CommSemiring B]
-
-/-- The **Jackson `q`-derivative** on polynomials, sending `X ^ n` to `[n]_q X ^ (n - 1)` where
-`[n]_q = ∑_{i < n} q ^ i`. -/
-noncomputable def jacksonDeriv (q : A) : A[X] →ₗ[A] A[X] :=
-  lsum fun i ↦ monomial (i - 1) ∘ₗ LinearMap.mulLeft A (∑ j ∈ range i, q ^ j)
-
-/-- Coefficient formula for `Polynomial.jacksonDeriv`:
-`(D_q p).coeff n = [n + 1]_q * p.coeff (n + 1)`. -/
-@[simp] theorem coeff_jacksonDeriv (q : A) (p : A[X]) (n : ℕ) :
-    (jacksonDeriv q p).coeff n = (∑ i ∈ range (n + 1), q ^ i) * p.coeff (n + 1) := by
-  rw [jacksonDeriv, lsum_apply, sum_def, finsetSum_coeff, Finset.sum_eq_single (n + 1)]
-  · simp
-  · rintro (_ | i) _ hi
-    · simp
-    · simp [coeff_monomial, Nat.succ_inj.ne.mp hi]
-  · intro h; simp [notMem_support_iff.mp h]
-
-@[simp] theorem jacksonDeriv_C (q a : A) : jacksonDeriv q (C a) = 0 := by ext n; simp
-
-@[simp] theorem jacksonDeriv_X (q : A) : jacksonDeriv q (X : A[X]) = 1 := by
-  ext (_ | n) <;> simp [coeff_X, coeff_one]
-
-/-- `D_q (X ^ (n + 1)) = C ([n + 1]_q) * X ^ n`. -/
-@[simp] theorem jacksonDeriv_X_pow_succ (q : A) (n : ℕ) :
-    jacksonDeriv q (X ^ (n + 1) : A[X]) = C (∑ i ∈ range (n + 1), q ^ i) * X ^ n := by
-  ext k; rw [coeff_jacksonDeriv, coeff_X_pow, coeff_C_mul_X_pow]; by_cases h : k = n <;> simp [h]
-
-/-- At `q = 1`, the Jackson derivative is the ordinary polynomial derivative. -/
-@[simp] theorem jacksonDeriv_one : jacksonDeriv (1 : A) = derivative := by
-  ext p n; simp [coeff_derivative, mul_comm]
-
-/-- The Jackson derivative commutes with coefficient ring homomorphisms. -/
-theorem map_jacksonDeriv (φ : A →+* B) (q : A) (p : A[X]) :
-    (jacksonDeriv q p).map φ = jacksonDeriv (φ q) (p.map φ) := by
-  ext n; simp [coeff_map, map_sum]
-
-end Semiring
-
-section Ring
-
-variable {A B : Type*} [CommRing A] [CommRing B]
-
-/-- The **adapted Jackson `q`-derivative** `D'_q = (1 - q) D_q` on polynomials, sending `X ^ n` to
-`(1 - q ^ n) X ^ (n - 1)`. -/
-noncomputable def adaptedJacksonDeriv (q : A) : A[X] →ₗ[A] A[X] :=
-  (1 - q) • jacksonDeriv q
-
-/-- Unfolding definition of `Polynomial.adaptedJacksonDeriv`. -/
-theorem adaptedJacksonDeriv_apply (q : A) (p : A[X]) :
-    adaptedJacksonDeriv q p = (1 - q) • jacksonDeriv q p :=
-  (rfl)
-
-/-- Coefficient formula for `Polynomial.adaptedJacksonDeriv`:
-`(D'_q p).coeff n = (1 - q ^ (n + 1)) * p.coeff (n + 1)`. -/
-@[simp] theorem coeff_adaptedJacksonDeriv (q : A) (p : A[X]) (n : ℕ) :
-    (adaptedJacksonDeriv q p).coeff n = (1 - q ^ (n + 1)) * p.coeff (n + 1) := by
-  rw [adaptedJacksonDeriv_apply, Algebra.smul_def, algebraMap_eq, coeff_C_mul, coeff_jacksonDeriv,
-    ← mul_assoc, mul_neg_geom_sum]
-
-@[simp] theorem adaptedJacksonDeriv_C (q a : A) : adaptedJacksonDeriv q (C a) = 0 := by
-  simp [adaptedJacksonDeriv_apply]
-
-@[simp] theorem adaptedJacksonDeriv_X (q : A) : adaptedJacksonDeriv q (X : A[X]) = C (1 - q) := by
-  simp [adaptedJacksonDeriv_apply, Algebra.smul_def]
-
-/-- `D'_q (X ^ (n + 1)) = C (1 - q ^ (n + 1)) * X ^ n`. -/
-@[simp] theorem adaptedJacksonDeriv_X_pow_succ (q : A) (n : ℕ) :
-    adaptedJacksonDeriv q (X ^ (n + 1) : A[X]) = C (1 - q ^ (n + 1)) * X ^ n := by
-  ext k
-  rw [coeff_adaptedJacksonDeriv, coeff_X_pow, coeff_C_mul_X_pow]
-  by_cases h : k = n <;> simp [h]
-
-/-- At `q = 1`, the adapted Jackson derivative vanishes identically. -/
-@[simp] theorem adaptedJacksonDeriv_one : adaptedJacksonDeriv (1 : A) = 0 := by ext p n; simp
-
-/-- The adapted Jackson derivative commutes with coefficient ring homomorphisms. -/
-theorem map_adaptedJacksonDeriv (φ : A →+* B) (q : A) (p : A[X]) :
-    (adaptedJacksonDeriv q p).map φ = adaptedJacksonDeriv (φ q) (p.map φ) := by
-  ext n; simp [coeff_map]
-
-/-- Difference identity: `X * D'_q p = p - p(q X)`. -/
-theorem X_mul_adaptedJacksonDeriv (q : A) (p : A[X]) :
-    X * adaptedJacksonDeriv q p = p - p.comp (C q * X) := by
-  ext (_ | n)
-  · simp [comp_C_mul_X_coeff]
-  · simp only [coeff_X_mul, coeff_adaptedJacksonDeriv, coeff_sub, comp_C_mul_X_coeff]; ring
-
-end Ring
-
-end Polynomial
 
 /-! ### Power-series Jackson derivative -/
 
@@ -167,9 +71,10 @@ noncomputable def jacksonDeriv (q : A) : A⟦X⟧ →ₗ[A] A⟦X⟧ where
     jacksonDeriv q (X ^ (n + 1) : A⟦X⟧) = C (∑ i ∈ range (n + 1), q ^ i) * X ^ n := by
   ext k; rw [coeff_jacksonDeriv, coeff_X_pow, coeff_C_mul_X_pow]; by_cases h : k = n <;> simp [h]
 
-/-- `PowerSeries.jacksonDeriv` agrees with `Polynomial.jacksonDeriv` on polynomials. -/
+/-- `PowerSeries.jacksonDeriv` agrees with `Polynomial.qDerivative` on polynomials. -/
 @[simp] theorem jacksonDeriv_coe (q : A) (p : A[X]) :
-    jacksonDeriv q (p : A⟦X⟧) = (Polynomial.jacksonDeriv q p : A⟦X⟧) := by ext n; simp
+    jacksonDeriv q (p : A⟦X⟧) = (Polynomial.qDerivative q p : A⟦X⟧) := by
+  ext n; simp [Polynomial.coeff_qDerivative, mul_comm]
 
 /-- At `q = 1`, the Jackson derivative is the ordinary power-series derivative. -/
 @[simp] theorem jacksonDeriv_one (f : A⟦X⟧) : jacksonDeriv (1 : A) f = d⁄dX f := by
@@ -277,27 +182,3 @@ theorem X_mul_adaptedJacksonDeriv (q : A) (f : A⟦X⟧) :
 end Ring
 
 end PowerSeries
-
-/-! ### Polynomial twisted Leibniz rules via power-series embedding -/
-
-namespace Polynomial
-
-/-- **Twisted Leibniz rule** for the polynomial Jackson derivative:
-`D_q (p * r) = D_q p * r + p(q X) * D_q r`. -/
-theorem jacksonDeriv_mul {A : Type*} [CommSemiring A] (q : A) (p r : A[X]) :
-    jacksonDeriv q (p * r) = jacksonDeriv q p * r + p.comp (C q * X) * jacksonDeriv q r := by
-  apply coe_injective
-  have hcomp : ((p.comp (C q * X) : A[X]) : A⟦X⟧) = PowerSeries.rescale q (p : A⟦X⟧) := by
-    ext n; simp only [coeff_coe, comp_C_mul_X_coeff, PowerSeries.coeff_rescale]; exact mul_comm _ _
-  rw [← PowerSeries.jacksonDeriv_coe, coe_mul, PowerSeries.jacksonDeriv_mul,
-    PowerSeries.jacksonDeriv_coe, PowerSeries.jacksonDeriv_coe, ← hcomp, coe_add, coe_mul,
-    coe_mul]
-
-/-- **Twisted Leibniz rule** for the polynomial adapted Jackson derivative:
-`D'_q (p * r) = D'_q p * r + p(q X) * D'_q r`. -/
-theorem adaptedJacksonDeriv_mul {A : Type*} [CommRing A] (q : A) (p r : A[X]) :
-    adaptedJacksonDeriv q (p * r) =
-      adaptedJacksonDeriv q p * r + p.comp (C q * X) * adaptedJacksonDeriv q r := by
-  simp only [adaptedJacksonDeriv_apply, jacksonDeriv_mul, smul_add, smul_mul_assoc, mul_smul_comm]
-
-end Polynomial
