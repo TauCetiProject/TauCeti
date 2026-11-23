@@ -21,17 +21,20 @@ with uniformly bounded variances is needed, with no independence between matrice
 sizes. For unit off-diagonal second absolute moments and a common diagonal second moment, the mean
 tends to one, so the second empirical spectral moment tends almost surely to one.
 
-For general order `k`, under independent centered entries in `L^(2k)` for both entry families with
+For each order `k`, under independent centered entries in `L^(2k)` for both entry families with
 uniformly bounded `2k`-th absolute moments, the `O((n + 1)⁻²)` variance bound from
-`TauCeti.Probability.RandomMatrix.SpectralMoment.Variance` gives almost-sure vanishing of all
-empirical spectral moment fluctuations (including for sequences of corner arrays with no
-independence assumed across matrix sizes, and simultaneously for all `k` when both entry families
-lie in `L^(2k)` with uniformly bounded `2k`-th absolute moments at every order). Combined with the
-`O((n + 1)⁻¹/²)` expected odd-moment bound, every odd empirical spectral moment converges almost
-surely to zero; combined with the general expected-moment convergence in
-`TauCeti.Probability.RandomMatrix.SpectralMoment.Expected`, every `k`-th empirical spectral moment
+`TauCeti.Probability.RandomMatrix.SpectralMoment.Variance` gives almost-sure vanishing of the
+fluctuations of the `k`-th empirical spectral moment (including for sequences of corner arrays with
+no independence assumed across matrix sizes). Combined with the `O((n + 1)⁻¹/²)` expected
+odd-moment bound, each `(2m + 1)`-st empirical spectral moment converges almost surely to zero
+under `(4m + 2)`-nd moment bounds; combined with the general expected-moment convergence in
+`TauCeti.Probability.RandomMatrix.SpectralMoment.Expected`, the `k`-th empirical spectral moment
 converges almost surely to `∫ x, x ^ k ∂semicircleReal 0 s` under common off-diagonal second
-absolute moment `s`.
+absolute moment `s`. When both entry families lie in `L^(2k)` with uniformly bounded `2k`-th
+absolute moments at every order `k`, the fluctuations and odd-moment limits vanish almost surely
+simultaneously for all orders on a single full-measure event (and, under common off-diagonal second
+absolute moment `s`, all `k`-th empirical spectral moments simultaneously converge almost surely to
+`∫ x, x ^ k ∂semicircleReal 0 s`).
 
 ## Main results
 

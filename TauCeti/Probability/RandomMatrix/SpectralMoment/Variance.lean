@@ -327,17 +327,25 @@ theorem tendsto_integral_pow_spectralMeasure_wignerMatrix_sub_mean_probability
       ∫ ω', (∫ x, x ^ k ∂((wignerMatrix (ξ n) (η n) (n + 1) ω').spectralMeasure
         (wignerMatrix_isHermitian (ξ n) (η n) ω' (n + 1)) : Measure ℝ)) ∂P n|})
       atTop (𝓝 0) := by
-  have hlim : Tendsto (fun n : ℕ ↦
-      ENNReal.ofReal ((2 * (k : ℝ) ^ (2 * k) * B / (n + 1 : ℝ) ^ 2) / ε ^ 2)) atTop (𝓝 0) := by
-    rw [← ENNReal.ofReal_zero]
-    refine ENNReal.tendsto_ofReal ?_
-    simpa using ((tendsto_const_nhds.div_atTop
+  have (n : ℕ) : IsProbabilityMeasure (P n) := (hindep n).isProbabilityMeasure
+  have hmem (n : ℕ) : MemLp (fun ω ↦ ∫ x, x ^ k
+      ∂((wignerMatrix (ξ n) (η n) (n + 1) ω).spectralMeasure
+        (wignerMatrix_isHermitian (ξ n) (η n) ω (n + 1)) : Measure ℝ)) 2 (P n) :=
+    memLp_integral_pow_spectralMeasure_wignerMatrix (p := 2) (fun _ ↦ inferInstance) n
+      (fun ij hij ↦ by simpa only [Nat.cast_mul, Nat.cast_ofNat] using hξp n ij hij)
+      (fun i hi ↦ by simpa only [Nat.cast_mul, Nat.cast_ofNat] using hηp n i hi)
+  have hlim : Tendsto (fun n : ℕ ↦ 2 * (k : ℝ) ^ (2 * k) * B / (n + 1 : ℝ) ^ 2) atTop (𝓝 0) := by
+    simpa using tendsto_const_nhds.div_atTop
       ((tendsto_pow_atTop two_ne_zero).comp
-        (tendsto_natCast_atTop_atTop.atTop_add tendsto_const_nhds))).div_const (ε ^ 2))
-  exact tendsto_of_tendsto_of_tendsto_of_le_of_le' tendsto_const_nhds hlim
-    (.of_forall fun _ ↦ bot_le)
-    (.of_forall fun n ↦ measure_integral_pow_spectralMeasure_wignerMatrix_sub_mean_ge
-      (hindep n) (hξzero n) (hηzero n) (hξp n) (hηp n) (hξ n) (hη n) hε)
+        (tendsto_natCast_atTop_atTop.atTop_add tendsto_const_nhds))
+  have hvar : Tendsto (fun n ↦ Var[fun ω ↦ ∫ x, x ^ k
+      ∂((wignerMatrix (ξ n) (η n) (n + 1) ω).spectralMeasure
+        (wignerMatrix_isHermitian (ξ n) (η n) ω (n + 1)) : Measure ℝ); P n]) atTop (𝓝 0) :=
+    tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds hlim
+      (fun n ↦ variance_nonneg _ _)
+      (fun n ↦ variance_integral_pow_spectralMeasure_wignerMatrix_le
+        (hindep n) (hξzero n) (hηzero n) (hξp n) (hηp n) (hξ n) (hη n))
+  exact tendsto_measure_abs_sub_integral_ge_of_tendsto_variance hmem hvar hε
 
 private theorem tendsto_measure_abs_sub_ge_of_tendsto_integral
     {Ω : ℕ → Type*} [∀ n, MeasurableSpace (Ω n)]
