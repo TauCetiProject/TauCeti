@@ -12,6 +12,7 @@ public import TauCeti.AlgebraicGeometry.Morphisms.FiniteType.Over
 public import TauCeti.CategoryTheory.Sites.DenseSubsite.InducedTopology
 
 import Mathlib.CategoryTheory.MorphismProperty.CommaSites
+import TauCeti.AlgebraicGeometry.Sites.Zariski.FiniteType
 import TauCeti.CategoryTheory.MorphismProperty.Over
 import TauCeti.CategoryTheory.Sites.CoverPreserving
 
@@ -154,55 +155,6 @@ lemma finiteTypeHTopology_le_iff
         (Sieve.generate_mono ((Presieve.singleton_le_iff (f i)).mpr ⟨i⟩))
         (hP (f i) (hf i).1 (hf i).2)
 
-private lemma exists_finiteType_zariski_refinement (S : Scheme.{u}) [QuasiSeparatedSpace S]
-    {X : S.FiniteType} {ι : Type v} (Y : ι → Over S)
-    (f : ∀ i, Y i ⟶ ((MorphismProperty.Over.forget _ ⊤ S).obj X))
-    (hR : (∀ x : X.left, ∃ i, x ∈ Set.range (f i).left) ∧
-      ∀ i, IsOpenImmersion (f i).left) :
-    ∃ r : Presieve X,
-      r.map (MorphismProperty.Over.forget (@LocallyOfFiniteType ⊓ @QuasiCompact) ⊤ S) ∈
-      (hPrecoverage.over S) ((MorphismProperty.Over.forget _ ⊤ S).obj X) ∧
-        r.map (MorphismProperty.Over.forget (@LocallyOfFiniteType ⊓ @QuasiCompact) ⊤ S) ≤
-          (Sieve.generate (Presieve.ofArrows Y f)).arrows := by
-  -- The affine refinement comparison uses an index universe containing the scheme universe.
-  let 𝒰 : OpenCover.{max u v} X.left :=
-    Cover.mkOfCovers (ULift.{u} ι) (fun i ↦ (Y i.down).left)
-      (fun i ↦ (f i.down).left)
-      (fun x ↦ by obtain ⟨i, y, hy⟩ := hR.1 x; exact ⟨⟨i⟩, y, hy⟩)
-      (fun i ↦ hR.2 i.down)
-  let 𝒜 := OpenCover.affineRefinement.{u, max u v} 𝒰
-  let ρ := OpenCover.fromAffineRefinement.{u, v} 𝒰
-  let Z (j : 𝒜.openCover.I₀) : S.FiniteType :=
-    letI : IsAffine (𝒜.openCover.X j) := isAffine_affineOpenCover X.left 𝒜 j
-    FiniteType.mk (𝒜.openCover.f j ≫ X.hom)
-  let g (j : 𝒜.openCover.I₀) : Z j ⟶ X :=
-    MorphismProperty.Over.homMk (𝒜.openCover.f j) rfl
-  refine ⟨Presieve.ofArrows Z g, ?_, ?_⟩
-  · have hgen : Presieve.ofArrows Z g ∈ S.finiteTypeHPrecoverage X := by
-      rw [ofArrows_mem_finiteTypeHPrecoverage_iff]
-      exact Or.inl ((ofArrows_mem_precoverage_iff _).mp 𝒜.openCover.mem₀)
-    rwa [finiteTypeHPrecoverage_def, Precoverage.comap_comp,
-      Precoverage.mem_comap_iff] at hgen
-  · have haffine : Sieve.overEquiv _
-        (Sieve.ofArrows
-          (fun j ↦ (MorphismProperty.Over.forget _ ⊤ S).obj (Z j))
-          (fun j ↦ (MorphismProperty.Over.forget _ ⊤ S).map (g j))) =
-        𝒜.openCover.sieve₀ := by
-      rw [Sieve.overEquiv_ofArrows]
-      dsimp only [MorphismProperty.Over.forget, MorphismProperty.Comma.forget, Z, g,
-        Over.left, Over.Hom.left, FiniteType.mk, MorphismProperty.Over.mk,
-        MorphismProperty.Over.homMk, MorphismProperty.Comma.Hom.hom, Over.homMk,
-        CostructuredArrow.homMk, PreZeroHypercover.sieve₀]
-    have hcover : 𝒰.sieve₀ = Sieve.ofArrows (fun i ↦ (Y i).left) (fun i ↦ (f i).left) := by
-      let f₀ (i : ι) : (Y i).left ⟶ X.left := (f i).left
-      dsimp only [𝒰, PreZeroHypercover.sieve₀, Cover.mkOfCovers]
-      exact congrArg Sieve.generate (Presieve.ofArrows_comp_eq_of_surjective
-        f₀ ULift.down_surjective)
-    rw [Presieve.map_ofArrows, ← Sieve.generate_le_iff]
-    apply (Sieve.overEquiv _).le_iff_le.mp
-    rw [haffine, Sieve.overEquiv_ofArrows, ← hcover]
-    exact ρ.sieve₀_le_sieve₀
-
 private lemma exists_finiteType_proper_refinement (S : Scheme.{u}) {X : S.FiniteType}
     {Y : Over S} (f : Y ⟶ ((MorphismProperty.Over.forget _ ⊤ S).obj X))
     (hp : IsProper f.left ∧ Surjective f.left) :
@@ -248,7 +200,13 @@ private lemma exists_finiteType_h_refinement (S : Scheme.{u}) [QuasiSeparatedSpa
     ofArrows_mem_hPrecoverage_iff] at hR
   simp only [Over.forget_map] at hR
   rcases hR with hR | ⟨⟨i⟩, hR⟩
-  · exact exists_finiteType_zariski_refinement S Y f hR
+  · have hZ : Presieve.ofArrows Y f ∈ (zariskiPrecoverage.over S) _ := by
+      rw [Precoverage.mem_comap_iff, Presieve.map_ofArrows, ofArrows_mem_precoverage_iff]
+      exact hR
+    obtain ⟨r, hr, hle⟩ := S.exists_finiteType_zariski_refinement hZ
+    refine ⟨r, ?_, hle⟩
+    rw [hPrecoverage_def]
+    exact Or.inl hr
   · obtain ⟨r, hr, hle⟩ := exists_finiteType_proper_refinement S (f i) (hR i)
     exact ⟨r, hr, hle.trans (Sieve.generate_mono
       (by rw [Presieve.singleton_le_iff]; exact ⟨i⟩))⟩
@@ -275,15 +233,9 @@ private lemma finiteType_h_refine_generators (S : Scheme.{u}) [QuasiSeparatedSpa
     T ∈ ((hPrecoverage.over S).toCoverage.toPrecoverage.comap F).toGrothendieck X ∧
       T.functorPushforward F ∈ (hPrecoverage.over S).toCoverage.toGrothendieck _ := by
   obtain ⟨Q, hQ, hle⟩ := exists_finiteType_h_refinement S hR
-  let F := MorphismProperty.Over.forget (@LocallyOfFiniteType ⊓ @QuasiCompact) ⊤ S
-  have hle' : Sieve.generate Q ≤ (Sieve.generate R).functorPullback F := by
-    rw [Sieve.generate_le_iff]
-    exact fun Z g hg ↦ hle _ _ ⟨hg⟩
-  refine ⟨GrothendieckTopology.superset_covering _ hle'
-    (Precoverage.generate_mem_toGrothendieck hQ), ?_⟩
-  apply GrothendieckTopology.superset_covering _ (Sieve.functorPushforward_monotone F X hle')
-  rw [← Sieve.generate_map_eq_functorPushforward]
-  exact Coverage.Saturate.of _ _ hQ
+  exact Coverage.functorPullback_mem_and_functorPushforward_mem_of_refinement
+    (hPrecoverage.over S).toCoverage
+    (MorphismProperty.Over.forget (@LocallyOfFiniteType ⊓ @QuasiCompact) ⊤ S) hQ hle
 
 /-- Over a quasi-separated base, the generated finite-type h-topology equals the topology
 restricted from the big h-site of schemes over the base. -/

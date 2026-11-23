@@ -27,6 +27,8 @@ comap generator, `Coverage.comapOfRefineGenerators` supplies a coverage with thi
 ## Main results
 
 * `Coverage.comapOfRefineGenerators`: the comap coverage under generator refinements.
+* `Coverage.functorPullback_mem_and_functorPushforward_mem_of_refinement`: a comap generator
+  refining an ambient sieve gives covering pullback and pushforward.
 * `Coverage.functorPullback_mem_toGrothendieck_comap_of_refine_generators`: a pulled-back
   ambient cover is covering for the generated comap topology.
 * `Coverage.locallyCoverDense_of_refine_generators`: covering pushforwards of pulled-back
@@ -84,6 +86,23 @@ theorem comapOfRefineGenerators_toPrecoverage [F.Full] [F.Faithful]
       ∃ Q ∈ (K.toPrecoverage.comap F) X, Q.map F ≤ (Sieve.generate R).arrows) :
     (K.comapOfRefineGenerators F refineGen).toPrecoverage = K.toPrecoverage.comap F := by
   rfl
+
+/-- A comap generator refining an ambient sieve makes its functor pullback covering in the
+comap topology and the pushforward of that pullback covering in the ambient topology.
+No fullness or faithfulness assumption on the functor is required. -/
+theorem functorPullback_mem_and_functorPushforward_mem_of_refinement
+    {X : C} {Q : Presieve X} {T : Sieve (F.obj X)}
+    (hQ : Q ∈ (K.toPrecoverage.comap F) X) (hle : Q.map F ≤ T.arrows) :
+    T.functorPullback F ∈ (K.toPrecoverage.comap F).toGrothendieck X ∧
+      (T.functorPullback F).functorPushforward F ∈ K.toGrothendieck (F.obj X) := by
+  have hle' : Sieve.generate Q ≤ T.functorPullback F := by
+    rw [Sieve.generate_le_iff]
+    exact Presieve.map_le_iff_le_functorPullback.mp hle
+  refine ⟨GrothendieckTopology.superset_covering _ hle'
+    (Precoverage.generate_mem_toGrothendieck hQ), ?_⟩
+  apply GrothendieckTopology.superset_covering _ (Sieve.functorPushforward_monotone F X hle')
+  rw [← Sieve.generate_map_eq_functorPushforward]
+  exact Coverage.Saturate.of _ _ hQ
 
 /-- An ambient covering sieve pulled back along an arrow from `F.obj X` and then along `F`
 covers for the generated comap topology if the pullbacks of generators at image objects cover.
