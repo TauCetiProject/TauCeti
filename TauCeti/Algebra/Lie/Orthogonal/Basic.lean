@@ -165,8 +165,7 @@ theorem star_indefiniteDiagonal [StarRing R] :
   isHermitian_indefiniteDiagonal
 
 open Matrix in
-/-- The indefinite orthogonal Lie algebra `𝔰𝔬(p, q)` is closed under transpose: from
-`Xᵀ J = -J X` and `J * J = 1` it follows that `X J = -J Xᵀ`. -/
+/-- The indefinite orthogonal Lie algebra `𝔰𝔬(p, q)` is closed under transpose. -/
 theorem transpose_mem_so' {X : Matrix (p ⊕ q) (p ⊕ q) R} (hX : X ∈ so' p q R) :
     Xᵀ ∈ so' p q R := by
   rw [so', mem_skewAdjointMatricesLieSubalgebra, mem_skewAdjointMatricesSubmodule,

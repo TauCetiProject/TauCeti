@@ -164,9 +164,21 @@ theorem involutive_restrictNegConjTranspose :
     Function.Involutive (restrictNegConjTranspose L hL) :=
   fun X ↦ Subtype.ext (by simp)
 
-/-- For `X` in a real Lie subalgebra closed under conjugate transpose,
-`-B(X, -Xᴴ) = tr(ad X ∘ ad Xᴴ)`, and `ad Xᴴ` is the adjoint of `ad X` for `Re tr(X Yᴴ)`; so
-`B(X, -Xᴴ) < 0` unless `X` is central. -/
+/-- Applying `X ↦ -Xᴴ` twice gives back `X`. -/
+@[simp]
+theorem restrictNegConjTranspose_restrictNegConjTranspose (X : L) :
+    restrictNegConjTranspose L hL (restrictNegConjTranspose L hL X) = X :=
+  involutive_restrictNegConjTranspose L hL X
+
+/-- The inverse of `X ↦ -Xᴴ` is itself. -/
+@[simp]
+theorem symm_restrictNegConjTranspose :
+    (restrictNegConjTranspose L hL).symm = restrictNegConjTranspose L hL :=
+  LieEquiv.ext fun X ↦ (restrictNegConjTranspose L hL).symm_apply_eq.mpr
+    (involutive_restrictNegConjTranspose L hL X).symm
+
+/-- For a real Lie subalgebra `L` closed under conjugate transpose, `B(X, -Xᴴ) < 0` for every
+noncentral `X` in `L`. -/
 private theorem killingForm_restrictNegConjTranspose_neg (x : L) (hx : x ∉ center ℝ L) :
     killingForm ℝ L x (restrictNegConjTranspose L hL x) < 0 := by
   let x' : L := ⟨(x : Matrix n n 𝕜)ᴴ, hL _ x.property⟩
@@ -181,8 +193,8 @@ private theorem killingForm_restrictNegConjTranspose_neg (x : L) (hx : x ∉ cen
   have hadj : LinearMap.IsAdjointPair P P (ad ℝ L x) (ad ℝ L x') := fun y z ↦ by
     simp only [ad_apply, hP, LieSubalgebra.coe_bracket]
     exact reTraceForm_lie_apply _ _ _
-  have hne : ad ℝ L x ≠ 0 := fun h ↦ hx <| (LieModule.mem_maxTrivSubmodule ℝ L L x).mpr fun y ↦ by
-    rw [← neg_eq_zero, lie_skew, ← ad_apply ℝ, h, LinearMap.zero_apply]
+  have hne : ad ℝ L x ≠ 0 := by
+    rwa [Ne, ← LieHom.mem_ker, ad_ker_eq_self_module_ker, self_module_ker_eq_center]
   rw [hθ, map_neg, killingForm_apply_apply, ← Module.End.mul_eq_comp, neg_lt_zero]
   exact (LinearMap.BilinForm.trace_mul_nonneg_of_isAdjointPair P hsymm hpos hadj).lt_of_ne'
     ((LinearMap.BilinForm.trace_mul_eq_zero_iff_of_isAdjointPair P hsymm hpos hadj).not.mpr hne)
