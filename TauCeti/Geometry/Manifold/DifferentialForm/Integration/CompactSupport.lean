@@ -32,12 +32,13 @@ variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [Topological
   {I : ModelWithCorners ℝ E H} [TopologicalSpace M] [ChartedSpace H M]
   {k : ℕ}
 
-/-- The signed chart coefficient is supported within the coordinate image of the form support. -/
+/-- The signed chart coefficient is supported within the coordinate image of
+`(extChartAt I α).source ∩ tsupport φ`. -/
 theorem support_signedInChartAt_subset (φ : RoughForm I M ℝ k)
     (b : Module.Basis (Fin k) ℝ E) (α : M)
     (σ : {x : M // x ∈ (extChartAt I α).source} → ℤˣ) :
     Function.support (φ.signedInChartAt b α σ) ⊆ (extChartAt I α) ''
-    (_root_.tsupport (α := E [⋀^Fin _]→L[ℝ] ℝ) φ) := by
+      ((extChartAt I α).source ∩ _root_.tsupport (α := E [⋀^Fin _]→L[ℝ] ℝ) φ) := by
   classical
   intro y hy
   have hnonzero := Function.mem_support.mp hy
@@ -49,7 +50,9 @@ theorem support_signedInChartAt_subset (φ : RoughForm I M ℝ k)
         rw [inChartAt_apply, hf]
         rfl
       rw [signedInChartAt_apply, dite_eq_left ht, hz, mul_zero]
-    exact ⟨(extChartAt I α).symm y, _root_.subset_tsupport (α := E [⋀^Fin _]→L[ℝ] ℝ) φ hf,
+    exact ⟨(extChartAt I α).symm y,
+      ⟨(extChartAt I α).map_target ht,
+        _root_.subset_tsupport (α := E [⋀^Fin _]→L[ℝ] ℝ) φ hf⟩,
       (extChartAt I α).right_inv ht⟩
   · exact False.elim (hnonzero (by rw [signedInChartAt_apply, dite_eq_right ht]))
 
@@ -166,7 +169,7 @@ theorem integrable_signedInChartAt (φ : RoughForm I M ℝ k)
     ⊆ (extChartAt I α).target :=
     (image_mono hs).trans (extChartAt I α).image_source_eq_target.subset
   exact (integrableOn_iff_integrable_of_support_subset
-    (φ.support_signedInChartAt_subset b α σ)).mp
+    ((φ.support_signedInChartAt_subset b α σ).trans (image_mono inter_subset_right))).mp
       ((φ.continuousOn_signedInChartAt b α σ hσ hφ).mono htarget |>.integrableOn_compact hK)
 
 /-- Chart-supported top forms have the same actual signed coefficient integral in
@@ -194,13 +197,13 @@ theorem integral_signedInChartAt_eq_of_tsupport_subset [IsManifold I 1 M]
       ∫ y, φ.signedInChartAt b α σα y ∂μ :=
     setIntegral_eq_integral_of_forall_compl_eq_zero fun y hy ↦ by
       by_contra hn
-      exact hy ((image_mono hsub)
+      exact hy ((image_mono (inter_subset_right.trans hsub))
         (φ.support_signedInChartAt_subset b α σα (Function.mem_support.mpr hn)))
   have hβ : (∫ y in (extChartAt I β) '' U, φ.signedInChartAt b β σβ y ∂μ) =
       ∫ y, φ.signedInChartAt b β σβ y ∂μ :=
     setIntegral_eq_integral_of_forall_compl_eq_zero fun y hy ↦ by
       by_contra hn
-      exact hy ((image_mono hsub)
+      exact hy ((image_mono (inter_subset_right.trans hsub))
         (φ.support_signedInChartAt_subset b β σβ (Function.mem_support.mpr hn)))
   exact hα.symm.trans
     ((φ.signedInChartAt_changeChart b α β σα σβ (s := U) Subset.rfl hm hσ μ).1.trans hβ)
@@ -228,9 +231,12 @@ theorem integrable_signedInChartAt_iff_of_tsupport_subset [IsManifold I 1 M]
       (I := I) (isOpen_extChartAt_source (I := I) β) α
   have ht := (φ.signedInChartAt_changeChart b α β σα σβ (s := U) Subset.rfl hm hσ μ).2
   rw [integrableOn_iff_integrable_of_support_subset
-      ((φ.support_signedInChartAt_subset b α σα).trans (image_mono hsub)),
+      ((φ.support_signedInChartAt_subset b α σα).trans
+        (image_mono (inter_subset_right.trans hsub))),
     integrableOn_iff_integrable_of_support_subset
-      ((φ.support_signedInChartAt_subset b β σβ).trans (image_mono hsub))] at ht
+      ((φ.support_signedInChartAt_subset b β σβ).trans
+        (image_mono (inter_subset_right.trans hsub)))]
+    at ht
   exact ht
 
 end TauCeti.RoughForm

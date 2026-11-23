@@ -56,7 +56,7 @@ theorem IsSmoothForm.integrableTopForm (hφ : IsSmoothForm I n φ)
         (fun γ ↦ φ.signedInChartAt b γ (fun _ ↦ 1)) b.addHaar
         (fun γ ↦ φ.continuousOn_signedInChartAt b γ (fun _ ↦ 1) continuous_const
           (hφ.continuousOn_inChartAt γ)) α
-        (φ.support_signedInChartAt_one_subset b α) fun γ u hu hsource ↦
+        (φ.support_signedInChartAt_subset b α (fun _ ↦ 1)) fun γ u hu hsource ↦
         (φ.integrableOn_signedInChartAt_one_changeChart b α γ (s := (extChartAt I α).source ∩ u)
           (fun _ hx ↦ ⟨hx.1, hsource hx.2⟩)
           (hu.measurableSet_image_extChartAt_source_inter α) b.addHaar).mpr⟩

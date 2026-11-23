@@ -11,6 +11,7 @@ public import TauCeti.Geometry.Manifold.Riemannian.VolumeDensity.Total
 public import TauCeti.Geometry.Manifold.Riemannian.VolumeForm
 import TauCeti.Geometry.Manifold.DifferentialForm.Integration.Operations
 import TauCeti.Geometry.Manifold.DifferentialForm.Integration.Regularity
+import TauCeti.MeasureTheory.MeasurableSpace.Disjointed
 
 /-!
 # Integrating against the Riemannian volume form
@@ -174,10 +175,9 @@ theorem integralTopForm_smul_riemannianVolumeForm
     hφ.integrableTopForm (hc.of_isClosed_subset isClosed_closure hsupp) b
   -- Compute both integrals on the disjointed pieces of a chart cover of the support of `f`.
   let c := ChartCover.choose I hc
-  have hmeas (i : Fin c.n) : MeasurableSet (c.piece i) := by
-    rw [ChartCover.piece_eq_disjointed, disjointed_apply, Finset.sup_set_eq_biUnion]
-    exact (c.isOpen_domain i).measurableSet.diff
-      (Finset.measurableSet_biUnion _ fun j _ ↦ (c.isOpen_domain j).measurableSet)
+  have hmeas (i : Fin c.n) : MeasurableSet (c.piece i) :=
+    c.piece_eq_disjointed i ▸
+      measurableSet_disjointed (fun j ↦ (c.isOpen_domain j).measurableSet) i
   rw [integralTopForm_eq_chartCover_integral l φ hi b c hsupp, ChartCover.integral_eq_sum,
     Finset.mul_sum,
     ← setIntegral_eq_integral_of_forall_compl_eq_zero (s := ⋃ i, c.piece i) fun x hx ↦

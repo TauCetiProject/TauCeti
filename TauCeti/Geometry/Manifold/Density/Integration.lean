@@ -12,6 +12,7 @@ public import TauCeti.Geometry.Manifold.ExtChartAt.Cover
 public import Mathlib.Topology.PartitionOfUnity
 import TauCeti.Topology.PartitionOfUnity.Basic
 import TauCeti.Topology.Algebra.Support
+import TauCeti.MeasureTheory.Integral.Bochner.Density
 
 /-!
 # Orientation-free integration of densities on manifolds
@@ -78,13 +79,16 @@ public theorem RoughDensity.integrableDensity_of_open_cover [MeasurableSpace E] 
     (hlocal : ∀ i, IntegrableOn (μ.coeffInChartAt b (β i))
       ((extChartAt I (β i)) '' u i) b.addHaar) : IntegrableDensity μ :=
   have : FiniteDimensional ℝ E := Module.Finite.of_basis b
-  (integrableDensity_iff μ).mpr ⟨hc, ⟨b⟩, fun b' α ↦
-    (μ.integrable_coeffInChartAt_basis_iff b b' α).mpr <|
-      integrable_of_open_cover_extChartAt hc (μ.coeffInChartAt b) b.addHaar β u hu hcover hlocal α
-        (μ.support_coeffInChartAt_subset b α) fun i ↦
-        (μ.coeffInChartAt_changeChart b α (β i) (s := (extChartAt I α).source ∩ u i)
-          (fun _ hx ↦ ⟨hx.1, by simpa only [extChartAt_source] using hsource i hx.2⟩)
-          ((hu i).measurableSet_image_extChartAt_source_inter α) b.addHaar).2.mpr⟩
+  (integrableDensity_iff μ).mpr ⟨hc, ⟨b⟩, fun b' α ↦ by
+    rw [funext (μ.coeffInChartAt_eq_indicator_apply b' α)]
+    refine (b.integrable_density_apply_iff b'
+      ((extChartAt I α).target.indicator (μ.inChartAt α))).mpr ?_
+    rw [← funext (μ.coeffInChartAt_eq_indicator_apply b α)]
+    exact integrable_of_open_cover_extChartAt hc (μ.coeffInChartAt b) b.addHaar β u hu hcover hlocal
+      α (μ.support_coeffInChartAt_subset b α) fun i ↦
+      (μ.coeffInChartAt_changeChart b α (β i) (s := (extChartAt I α).source ∩ u i)
+        (fun _ hx ↦ ⟨hx.1, by simpa only [extChartAt_source] using hsource i hx.2⟩)
+        ((hu i).measurableSet_image_extChartAt_source_inter α) b.addHaar).2.mpr⟩
 
 /-- A compactly supported rough density supported in one preferred chart is integrable iff its
 coefficient in that chart and one model basis is Haar-integrable. -/
@@ -190,14 +194,17 @@ public theorem RoughDensity.integrableDensity_of_continuousOn_inChartAt [IsManif
   have : FiniteDimensional ℝ E := Module.Finite.of_basis b
   let : MeasurableSpace E := borel E; have : BorelSpace E := ⟨rfl⟩
   let : LocallyCompactSpace H := I.locallyCompactSpace
-  exact (integrableDensity_iff μ).mpr ⟨hc, ⟨b⟩, fun b' α ↦
-    (μ.integrable_coeffInChartAt_basis_iff b b' α).mpr <|
-      integrable_of_continuousOn_extChartAt hc (μ.coeffInChartAt b) b.addHaar
-        (fun γ ↦ μ.continuousOn_coeffInChartAt b γ (hμ γ)) α
-        (μ.support_coeffInChartAt_subset b α) fun γ u hu hsource ↦
-        (μ.coeffInChartAt_changeChart b α γ (s := (extChartAt I α).source ∩ u)
-          (fun _ hx ↦ ⟨hx.1, hsource hx.2⟩)
-          (hu.measurableSet_image_extChartAt_source_inter α) b.addHaar).2.mpr⟩
+  exact (integrableDensity_iff μ).mpr ⟨hc, ⟨b⟩, fun b' α ↦ by
+    rw [funext (μ.coeffInChartAt_eq_indicator_apply b' α)]
+    refine (b.integrable_density_apply_iff b'
+      ((extChartAt I α).target.indicator (μ.inChartAt α))).mpr ?_
+    rw [← funext (μ.coeffInChartAt_eq_indicator_apply b α)]
+    exact integrable_of_continuousOn_extChartAt hc (μ.coeffInChartAt b) b.addHaar
+      (fun γ ↦ μ.continuousOn_coeffInChartAt b γ (hμ γ)) α
+      (μ.support_coeffInChartAt_subset b α) fun γ u hu hsource ↦
+      (μ.coeffInChartAt_changeChart b α γ (s := (extChartAt I α).source ∩ u)
+        (fun _ hx ↦ ⟨hx.1, hsource hx.2⟩)
+        (hu.measurableSet_image_extChartAt_source_inter α) b.addHaar).2.mpr⟩
 
 /-- Every compactly supported continuous section of `TauCeti.DensityBundle` is integrable. -/
 public theorem RoughDensity.integrableDensity_of_continuous_section
@@ -244,7 +251,10 @@ private theorem densityCoverIntegral_basis_eq {s : Set M} (b b' : Basis (Fin m) 
     (μ : RoughDensity I M m) (c : ChartCover I s) :
     c.integral (μ.coeffInChartAt b) b.addHaar = c.integral (μ.coeffInChartAt b') b'.addHaar := by
   rw [ChartCover.integral_eq_sum, ChartCover.integral_eq_sum]
-  exact Finset.sum_congr rfl fun i _ ↦ μ.setIntegral_coeffInChartAt_basis_eq b b' (c.center i) _
+  refine Finset.sum_congr rfl fun i _ ↦ ?_
+  simp_rw [fun d ↦ funext (μ.coeffInChartAt_eq_indicator_apply d (c.center i))]
+  exact b.setIntegral_density_apply_eq b'
+    ((extChartAt I (c.center i)).target.indicator (μ.inChartAt (c.center i))) _
 
 private theorem densityCoverIntegral_eq [IsManifold I 1 M] (μ : RoughDensity I M m)
     (hi : IntegrableDensity μ) (b : Basis (Fin m) ℝ E) {s t : Set M} (c : ChartCover I s)
@@ -526,7 +536,6 @@ public theorem integralDensity_zeroDim (μ : RoughDensity I M 0) :
     ⟨s.card, α, fun i ↦ {α i},
       fun i ↦ extChartAt_source_zeroDim (I := I) (α i) ▸ isOpen_extChartAt_source (α i),
       fun i ↦ (extChartAt_source_zeroDim (I := I) (α i)).ge,
-      fun _ ↦ singleton_nonempty _,
       by rw [TauCeti.tsupport_eq_support (show M → Density E 0 from μ)]
          exact fun x hx ↦ mem_iUnion.mpr ⟨e ⟨x, hfin.mem_toFinset.mpr hx⟩, by simp [α]⟩⟩
   rw [integralDensity_eq_chartCover_integral μ ((integrableDensity_zeroDim_iff μ).mpr hfin) b c

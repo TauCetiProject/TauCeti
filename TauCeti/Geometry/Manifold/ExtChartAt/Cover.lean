@@ -14,11 +14,11 @@ import Mathlib.MeasureTheory.Function.Jacobian
 /-!
 # Finite open chart covers and disjointed cover integrals
 
-`TauCeti.ChartCover I s` packages a finite cover of `s ⊆ M` by nonempty open subsets of preferred
-extended chart sources, with filtering construction (`ofFinite`), choice (`choose`), disjointed
-chart-measurable pieces (`piece`), chart prepending (`cons`, `center_cons_zero`,
-`center_cons_succ`, `piece_cons_zero`, `piece_cons_succ`), Bochner cover integrals (`integral`,
-`integral_cons`, `integral_eq`, `integral_eq_integral_of_ae_support`), overlap Jacobian invariance
+`TauCeti.ChartCover I s` packages a finite cover of `s ⊆ M` by open subsets of preferred extended
+chart sources, with choice (`choose`), disjointed chart-measurable pieces (`piece`), chart
+prepending (`cons`, `center_cons_zero`, `center_cons_succ`, `piece_cons_zero`, `piece_cons_succ`),
+Bochner cover integrals (`integral`, `integral_cons`, `integral_eq`,
+`integral_eq_integral_of_ae_support`), overlap Jacobian invariance
 (`extChartAt_coordChange_setIntegral_and_integrableOn`), `integrable_of_open_cover_extChartAt`,
 and `integrable_of_continuousOn_extChartAt`.
 -/
@@ -35,8 +35,7 @@ namespace TauCeti
 variable {𝕜 E H M : Type*} [NontriviallyNormedField 𝕜] [NormedAddCommGroup E] [NormedSpace 𝕜 E]
   [TopologicalSpace H] {I : ModelWithCorners 𝕜 E H} [TopologicalSpace M] [ChartedSpace H M]
 
-/-- A finite open cover of `s ⊆ M` by nonempty open sets inside preferred extended chart
-sources. -/
+/-- A finite open cover of `s ⊆ M` by open sets inside preferred extended chart sources. -/
 structure ChartCover (I : ModelWithCorners 𝕜 E H) (s : Set M) where
   /-- Number of charts in the cover. -/
   n : ℕ
@@ -48,37 +47,18 @@ structure ChartCover (I : ModelWithCorners 𝕜 E H) (s : Set M) where
   isOpen_domain : ∀ i, IsOpen (domain i)
   /-- Each covering set lies inside its preferred extended chart source. -/
   domain_subset : ∀ i, domain i ⊆ (extChartAt I (center i)).source
-  /-- Each covering set is nonempty. -/
-  domain_nonempty : ∀ i, (domain i).Nonempty
   /-- The open sets cover `s`. -/
   covers : s ⊆ ⋃ i, domain i
 
 namespace ChartCover
-
-/-- Construct a chart cover from any finite family of open subsets of preferred extended chart
-sources covering `s`, filtering out empty domains. -/
-def ofFinite {ι : Type*} [Fintype ι] {s : Set M} (center : ι → M) (domain : ι → Set M)
-    (isOpen_domain : ∀ i, IsOpen (domain i))
-    (domain_subset : ∀ i, domain i ⊆ (extChartAt I (center i)).source)
-    (covers : s ⊆ ⋃ i, domain i) : ChartCover I s :=
-  letI := Classical.decPred fun i : ι ↦ (domain i).Nonempty
-  let t : Finset ι := Finset.univ.filter fun i ↦ (domain i).Nonempty
-  let q : Fin t.card → ι := fun i ↦ (t.equivFin.symm i).val
-  ⟨t.card, fun i ↦ center (q i), fun i ↦ domain (q i),
-    fun i ↦ isOpen_domain (q i), fun i ↦ domain_subset (q i),
-    fun i ↦ (Finset.mem_filter.mp (t.equivFin.symm i).property).2,
-    fun x hx ↦ by
-      obtain ⟨j, hj⟩ := mem_iUnion.mp (covers hx)
-      exact mem_iUnion.mpr ⟨t.equivFin ⟨j, Finset.mem_filter.mpr ⟨Finset.mem_univ j, ⟨x, hj⟩⟩⟩,
-        by simpa only [q, Equiv.symm_apply_apply] using hj⟩⟩
 
 /-- Choose a finite open chart cover of a compact subset when `H` is locally compact. -/
 def choose (I : ModelWithCorners 𝕜 E H) [LocallyCompactSpace H] {s : Set M} (hc : IsCompact s) :
     ChartCover I s :=
   let h := exists_finite_precompact_chart_cover (I := I) hc
   let hp := h.choose_spec.choose_spec.choose_spec.choose_spec
-  ofFinite h.choose_spec.choose h.choose_spec.choose_spec.choose
-    (fun i ↦ (hp.1 i).1) (fun i ↦ (hp.1 i).2.1) hp.2
+  ⟨h.choose, h.choose_spec.choose, h.choose_spec.choose_spec.choose,
+    fun i ↦ (hp.1 i).1, fun i ↦ (hp.1 i).2.1, hp.2⟩
 
 /-- The `i`-th disjointed piece of a chart cover. -/
 def piece {s : Set M} (c : ChartCover I s) (i : Fin c.n) : Set M := disjointed c.domain i
@@ -104,7 +84,6 @@ theorem pairwise_disjoint {s : Set M} (c : ChartCover I s) :
 @[reducible, expose] def cons {s : Set M} (c : ChartCover I s) (x₀ : M) : ChartCover I s :=
   ⟨c.n + 1, Fin.cons x₀ c.center, Fin.cons (extChartAt I x₀).source c.domain,
     Fin.cases (isOpen_extChartAt_source x₀) c.isOpen_domain, Fin.cases Subset.rfl c.domain_subset,
-    Fin.cases ⟨x₀, mem_extChartAt_source x₀⟩ c.domain_nonempty,
     c.covers.trans (iUnion_subset fun i ↦ subset_iUnion_of_subset i.succ (by simp))⟩
 
 /-- The first chart center after prepending `x₀` is `x₀`. -/
@@ -133,10 +112,9 @@ variable [MeasurableSpace E] [OpensMeasurableSpace E]
 
 /-- Every disjointed piece of a chart cover is chart measurable. -/
 theorem isChartMeasurable_piece {s : Set M} (c : ChartCover I s) (i : Fin c.n) :
-    IsChartMeasurable I (c.piece i) := by
-  rw [piece, disjointed_apply, Finset.sup_set_eq_biUnion]
-  exact (c.isOpen_domain i).isChartMeasurable.diff
-    (isOpen_biUnion fun j _ ↦ c.isOpen_domain j).isChartMeasurable
+    IsChartMeasurable I (c.piece i) :=
+  disjointedRec (fun _ _ ht ↦ ht.diff (c.isOpen_domain _).isChartMeasurable)
+    (c.isOpen_domain i).isChartMeasurable
 
 /-- The coordinate image of each disjointed piece in its preferred chart is measurable. -/
 theorem measurableSet_image_piece {s : Set M} (c : ChartCover I s) (i : Fin c.n) :

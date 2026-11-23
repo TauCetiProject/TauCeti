@@ -8,7 +8,7 @@ module
 public import TauCeti.Geometry.Manifold.Density.Basic
 public import TauCeti.Geometry.Manifold.VectorBundle.Density
 public import TauCeti.LinearAlgebra.Density.Pullback
-public import TauCeti.MeasureTheory.Integral.Bochner.Density
+public import TauCeti.MeasureTheory.Measure.Haar.OfBasis
 public import TauCeti.Geometry.Manifold.DifferentialForm.Integration.Chart.Basic
 public import TauCeti.Geometry.Manifold.Orientation.Lift
 import TauCeti.Geometry.Manifold.MFDeriv.Chart.Basic
@@ -325,34 +325,6 @@ theorem integrable_coeffInChartAt [MeasurableSpace E] [OpensMeasurableSpace E]
       (hc.image_of_continuousOn ((continuousOn_extChartAt α).mono hs))
 
 variable [MeasurableSpace E] [BorelSpace E]
-
-/-- Integrability of `coeffInChartAt` against `b.addHaar` is independent of `b`. -/
-theorem integrable_coeffInChartAt_basis_iff (μ : RoughDensity I M m) (b b' : Basis (Fin m) ℝ E)
-    (α : M) : Integrable (μ.coeffInChartAt b' α) b'.addHaar ↔
-      Integrable (μ.coeffInChartAt b α) b.addHaar := by
-  simp_rw [fun c ↦ funext (μ.coeffInChartAt_eq_indicator_apply c α)]
-  exact b.integrable_density_apply_iff b' ((extChartAt I α).target.indicator (μ.inChartAt α))
-
-/-- Set integrability of `coeffInChartAt` against `b.addHaar` is independent of `b`. -/
-theorem integrableOn_coeffInChartAt_basis_iff (μ : RoughDensity I M m) (b b' : Basis (Fin m) ℝ E)
-    (α : M) (s : Set E) : IntegrableOn (μ.coeffInChartAt b' α) s b'.addHaar ↔
-      IntegrableOn (μ.coeffInChartAt b α) s b.addHaar := by
-  simp_rw [fun c ↦ funext (μ.coeffInChartAt_eq_indicator_apply c α)]
-  exact b.integrableOn_density_apply_iff b' ((extChartAt I α).target.indicator (μ.inChartAt α)) s
-
-/-- The normalized Haar integral of `coeffInChartAt` is independent of `b`. -/
-theorem integral_coeffInChartAt_basis_eq (μ : RoughDensity I M m) (b b' : Basis (Fin m) ℝ E)
-    (α : M) : (∫ y, μ.coeffInChartAt b α y ∂b.addHaar) =
-      ∫ y, μ.coeffInChartAt b' α y ∂b'.addHaar := by
-  simp_rw [fun c ↦ funext (μ.coeffInChartAt_eq_indicator_apply c α)]
-  exact b.integral_density_apply_eq b' ((extChartAt I α).target.indicator (μ.inChartAt α))
-
-/-- The normalized Haar set integral of `coeffInChartAt` is independent of `b`. -/
-theorem setIntegral_coeffInChartAt_basis_eq (μ : RoughDensity I M m) (b b' : Basis (Fin m) ℝ E)
-    (α : M) (s : Set E) : (∫ y in s, μ.coeffInChartAt b α y ∂b.addHaar) =
-      ∫ y in s, μ.coeffInChartAt b' α y ∂b'.addHaar := by
-  simp_rw [fun c ↦ funext (μ.coeffInChartAt_eq_indicator_apply c α)]
-  exact b.setIntegral_density_apply_eq b' ((extChartAt I α).target.indicator (μ.inChartAt α)) s
 
 /-- On a measurable overlap piece, both the Haar set integral and integrability of `coeffInChartAt`
 are invariant under change of chart, with no orientation compatibility. -/
