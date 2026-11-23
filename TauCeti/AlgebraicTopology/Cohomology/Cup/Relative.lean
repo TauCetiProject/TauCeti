@@ -331,7 +331,7 @@ theorem singularCup_gradedComm (P : TopPair.{w})
   subst hu hμ
   rw [singularCup_def, ← TauCeti.ChainComplex.cup_eq_of_homotopy
       (H := P.rightAlexanderWhitneyDiagonalKoszulBraidingHomotopy u),
-    TauCeti.ChainComplex.cup_tensorBraiding_hom]
+    ChainComplex.cup_tensorBraiding_hom]
 
 end GradedComm
 

@@ -25,10 +25,10 @@ pairing. No commutativity is asserted for the Alexander–Whitney diagonal itsel
 
 ## Main results
 
-* `TauCeti.ChainComplex.tensorBraiding_hom_f_comp_tensorCochain`: signed tensor-cochain
+* `ChainComplex.tensorBraiding_hom_f_comp_tensorCochain`: signed tensor-cochain
   interchange in every output degree.
-* `TauCeti.ChainComplex.cupCochain_tensorBraiding_hom`: signed cup-cochain interchange.
-* `TauCeti.ChainComplex.cup_tensorBraiding_hom`: signed interchange on cohomology.
+* `ChainComplex.cupCochain_tensorBraiding_hom`: signed cup-cochain interchange.
+* `ChainComplex.cup_tensorBraiding_hom`: signed interchange on cohomology.
 
 ## References
 
@@ -40,9 +40,9 @@ public section
 
 noncomputable section
 
-open CategoryTheory Limits MonoidalCategory HomologicalComplex
+open CategoryTheory Limits MonoidalCategory HomologicalComplex TauCeti.ChainComplex
 
-namespace TauCeti.ChainComplex
+namespace ChainComplex
 
 variable {C : Type*} [Category* C] [Preadditive C] [MonoidalCategory C]
   [MonoidalPreadditive C]
@@ -106,4 +106,4 @@ lemma cup_tensorBraiding_hom {E : ChainComplex C ℕ} {M N P : C} (k : Type*) [C
   simp only [iCycles_cupCycles, map_zsmul]
   exact cupCochain_tensorBraiding_hom A B k D μ h _ _
 
-end TauCeti.ChainComplex
+end ChainComplex
