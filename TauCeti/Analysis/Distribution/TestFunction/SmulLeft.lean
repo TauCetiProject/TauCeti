@@ -7,11 +7,10 @@ module
 
 public import Mathlib.Analysis.Distribution.TemperateGrowth
 public import TauCeti.Analysis.Distribution.TestFunction.ExtDeriv
-import TauCeti.Analysis.Calculus.BumpFunction.Cutoff
 import TauCeti.Analysis.Calculus.BumpFunction.FiniteDimension
 import TauCeti.Analysis.Calculus.ContDiff.Bounds
 import TauCeti.Analysis.Calculus.DifferentialForm.Basic
-import TauCeti.Analysis.Distribution.TestFunction.LineDeriv
+import TauCeti.Analysis.Distribution.TestFunction.Basic
 
 /-!
 # Smooth multiplication of test forms and the Leibniz rule for currents
@@ -209,6 +208,21 @@ open Set
 
 variable [FiniteDimensional ℝ E] {f g : E → ℝ}
 
+/-- A globally `C^n` function that agrees with `g` near the compact set `K ⊆ Ω`. -/
+private noncomputable def extendOn (hg : ContDiffOn ℝ n g Ω) {K : Compacts E}
+    (hK : (K : Set E) ⊆ Ω) : E → ℝ :=
+  (hg.exists_contDiff_eventuallyEq_on_isCompact K.isCompact Ω.isOpen hK).choose
+
+private theorem contDiff_extendOn (hg : ContDiffOn ℝ n g Ω) {K : Compacts E}
+    (hK : (K : Set E) ⊆ Ω) : ContDiff ℝ n (extendOn hg hK) :=
+  (hg.exists_contDiff_eventuallyEq_on_isCompact K.isCompact Ω.isOpen hK).choose_spec.1
+
+private theorem extendOn_eventuallyEq (hg : ContDiffOn ℝ n g Ω) {K : Compacts E}
+    (hK : (K : Set E) ⊆ Ω) {x : E} (hx : x ∈ (K : Set E)) : extendOn hg hK =ᶠ[nhds x] g := by
+  obtain ⟨-, -, -, -, h⟩ :=
+    (hg.exists_contDiff_eventuallyEq_on_isCompact K.isCompact Ω.isOpen hK).choose_spec
+  exact h x hx
+
 /-- **Multiplication by a function `C^n` on `Ω`**, `φ ↦ g φ`, as a continuous linear map on the
 `C^n` test functions on `Ω`. Nothing is required of `g` off `Ω`; when `g` is `C^n` on all of `E`
 this is `TestFunction.smulLeftCLM` (`TestFunction.smulLeftCLMOfContDiffOn_eq_smulLeftCLM`). On the
@@ -217,16 +231,13 @@ with `g` near `K`. -/
 noncomputable def smulLeftCLMOfContDiffOn (hg : ContDiffOn ℝ n g Ω) :
     𝓓^{n}(Ω, F) →L[ℝ] 𝓓^{n}(Ω, F) :=
   TestFunction.limitCLM ℝ (fun φ ↦ (exists_coe_eq_smul_of_contDiffOn hg φ).choose)
-    (fun K hK ↦ smulLeftCLM (hg.exists_contDiff_eventuallyEq_on_isCompact K.isCompact Ω.isOpen
-      hK).choose_spec.1 ∘L ofSupportedInCLM ℝ hK)
+    (fun K hK ↦ smulLeftCLM (contDiff_extendOn hg hK) ∘L ofSupportedInCLM ℝ hK)
     (fun K hK φ ↦ by
       ext x
       rw [ContinuousLinearMap.comp_apply, smulLeftCLM_apply,
-        (exists_coe_eq_smul_of_contDiffOn hg _).choose_spec]
+        (exists_coe_eq_smul_of_contDiffOn hg _).choose_spec, coe_ofSupportedInCLM]
       by_cases hx : x ∈ (K : Set E)
-      · rw [((hg.exists_contDiff_eventuallyEq_on_isCompact K.isCompact Ω.isOpen
-          hK).choose_spec.2.2.2.2 x hx).eq_of_nhds]
-        rfl
+      · rw [(extendOn_eventuallyEq hg hK hx).eq_of_nhds, coe_ofSupportedIn]
       · simp [φ.zero_on_compl hx])
 
 @[simp]
@@ -252,6 +263,20 @@ theorem smulLeftCLMOfContDiffOn_eq_smulLeftCLM (hg : ContDiff ℝ n g) :
   ext φ x
   simp
 
+/-- Multiplication by a function `C^n` on `Ω` is additive in the multiplier. -/
+theorem smulLeftCLMOfContDiffOn_add (hf : ContDiffOn ℝ n f Ω) (hg : ContDiffOn ℝ n g Ω) :
+    (smulLeftCLMOfContDiffOn (hf.add hg) : 𝓓^{n}(Ω, F) →L[ℝ] 𝓓^{n}(Ω, F)) =
+      smulLeftCLMOfContDiffOn hf + smulLeftCLMOfContDiffOn hg := by
+  ext φ x
+  simp [add_smul]
+
+/-- Multiplication by a function `C^n` on `Ω` is homogeneous in the multiplier. -/
+theorem smulLeftCLMOfContDiffOn_smul (hf : ContDiffOn ℝ n f Ω) (c : ℝ) :
+    (smulLeftCLMOfContDiffOn (hf.const_smul c) : 𝓓^{n}(Ω, F) →L[ℝ] 𝓓^{n}(Ω, F)) =
+      c • smulLeftCLMOfContDiffOn hf := by
+  ext φ x
+  simp [smul_smul]
+
 /-- Multiplying by two functions `C^n` on `Ω` in turn is multiplying by their product. -/
 @[simp]
 theorem smulLeftCLMOfContDiffOn_smulLeftCLMOfContDiffOn (hf : ContDiffOn ℝ n f Ω)
@@ -263,6 +288,7 @@ theorem smulLeftCLMOfContDiffOn_smulLeftCLMOfContDiffOn (hf : ContDiffOn ℝ n f
 
 /-- Multiplication by a function `C^n` on `Ω` commutes with extending test functions from
 `Ω' ≤ Ω` to `Ω`. -/
+@[simp]
 theorem smulLeftCLMOfContDiffOn_monoCLM (hg : ContDiffOn ℝ n g Ω) (h : Ω' ≤ Ω)
     (φ : 𝓓^{n}(Ω', F)) :
     smulLeftCLMOfContDiffOn hg (monoCLM ℝ φ : 𝓓^{n}(Ω, F)) =
