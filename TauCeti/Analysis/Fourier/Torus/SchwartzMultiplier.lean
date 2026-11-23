@@ -102,7 +102,8 @@ private theorem summable_smul_mFourier (σ : 𝓢(EuclideanSpace ℝ d, ℂ)) :
 private def periodicKernel (σ : 𝓢(EuclideanSpace ℝ d, ℂ)) : C(UnitAddTorus d, ℂ) :=
   ∑' n : d → ℤ, σ (latticePoint n) • mFourier n
 
-private theorem periodicKernel_apply (σ : 𝓢(EuclideanSpace ℝ d, ℂ)) (z : UnitAddTorus d) :
+private theorem _root_.UnitAddTorus.periodicKernel_apply (σ : 𝓢(EuclideanSpace ℝ d, ℂ))
+    (z : UnitAddTorus d) :
     periodicKernel σ z = ∑' n : d → ℤ, σ (latticePoint n) * mFourier n z := by
   rw [periodicKernel, ← ContinuousMap.tsum_apply (summable_smul_mFourier σ)]
   simp only [ContinuousMap.smul_apply, smul_eq_mul]
@@ -124,7 +125,7 @@ private theorem eLpNorm_periodicKernel_le (σ : 𝓢(EuclideanSpace ℝ d, ℂ))
 /-- The integral of `eₙ(t) f(x - t)` over the torus is `eₙ(x) f̂(n)`: the convolution identity
 `UnitAddTorus.convolution_mFourier_apply` for the Haar probability measure used here, which is the
 volume on the torus. -/
-private theorem integral_mFourier_mul_sub (f : UnitAddTorus d → ℂ) (n : d → ℤ)
+private theorem _root_.UnitAddTorus.integral_mFourier_mul_sub (f : UnitAddTorus d → ℂ) (n : d → ℤ)
     (x : UnitAddTorus d) :
     ∫ t, mFourier n t * f (x - t) = mFourier n x * mFourierCoeff f n := by
   have h := convolution_mFourier_apply n f x
@@ -136,7 +137,8 @@ variable (σ : 𝓢(EuclideanSpace ℝ d, ℂ)) {m : ℓ^∞(d → ℤ, ℂ)}
 
 /-- The convolution of the periodic kernel with an `L²` function `f` is the absolutely convergent
 Fourier series `∑ₙ σ(n) f̂(n) eₙ`. -/
-private theorem periodicKernel_convolution_apply (f : L²(UnitAddTorus d)) (x : UnitAddTorus d) :
+private theorem _root_.UnitAddTorus.periodicKernel_convolution_apply (f : L²(UnitAddTorus d))
+    (x : UnitAddTorus d) :
     (periodicKernel σ ⋆[ContinuousLinearMap.mul ℂ ℂ, volume] f) x =
       ∑' n : d → ℤ, σ (latticePoint n) * mFourierCoeff f n * mFourier n x := by
   have hf : Integrable (fun t ↦ f (x - t)) := ((Lp.memLp f).integrable one_le_two).comp_sub_left x
