@@ -76,9 +76,7 @@ include Hf HY
 noncomputable def fiberEquivOfIsAlgClosed (y' : Y') (hy : IsClosed {gY y'})
     (hfib : ∀ x : X, f x = gY y' → IsClosed {x}) :
     {x' : X' // f' x' = y'} ≃ {x : X // f x = gY y'} := by
-  have HX : IsPullback gX (X' ↘ Spec (.of L)) (X ↘ Spec (.of k))
-      (Spec.map (CommRingCat.ofHom (algebraMap k L))) := by
-    simpa only [comp_over] using Hf.paste_vert HY
+  have HX := TauCeti.AlgebraicGeometry.isPullback_over_of_isPullback Hf HY
   refine Equiv.ofBijective (fun x' ↦ ⟨gX x'.val, by
       rw [← Scheme.Hom.comp_apply, Hf.w, Scheme.Hom.comp_apply, x'.property]⟩) ⟨?_, ?_⟩
   · rintro ⟨x'₁, hx'₁⟩ ⟨x'₂, hx'₂⟩ h

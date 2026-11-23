@@ -20,6 +20,8 @@ This file relates `Ideal.ramificationIdx` at a prime to local rings:
   `(maximalIdeal S).ramificationIdx R`.
 * `Ideal.ramificationIdx_maximalIdeal_localization`,
   `Ideal.ramificationIdx_maximalIdeal_localization_of_liesOver`: localization invariance.
+* `Ideal.ramificationIdx_eq_of_isLocalHom_square`: horizontal invariance in a local-ring square
+  with vertical ramification indices `1` (flatness only on `A → B`).
 -/
 
 public section
@@ -86,5 +88,32 @@ theorem ramificationIdx_maximalIdeal_localization_of_liesOver {R S : Type*} [Com
         (Localization.AtPrime p) = q.ramificationIdx R := by
   rw [IsLocalRing.ramificationIdx_maximalIdeal_of_isLocalHom, ramificationIdx_eq p q,
     ← Localization.AtPrime.map_eq_maximalIdeal, Ideal.map_map, ← IsScalarTower.algebraMap_eq]
+
+/-- **Comparison of ramification indices in a square of local rings.** Suppose `R → S → B` and
+`R → A → B` commute, `S, A, B` are local rings, `S → B` and `A → B` are local homomorphisms, `A → B`
+is flat, `(maximalIdeal B).ramificationIdx A = 1`, and `(maximalIdeal S).ramificationIdx R = 1`.
+Then `(maximalIdeal B).ramificationIdx S = (maximalIdeal A).ramificationIdx R`, with no flatness
+assumption on `R → A` or `S → B`. -/
+theorem ramificationIdx_eq_of_isLocalHom_square {R S A B : Type*} [CommRing R] [CommRing S]
+    [CommRing A] [CommRing B] [IsLocalRing S] [IsLocalRing A] [IsLocalRing B]
+    [Algebra R S] [Algebra R A] [Algebra R B] [Algebra S B] [Algebra A B]
+    [IsScalarTower R S B] [IsScalarTower R A B]
+    [IsLocalHom (algebraMap S B)] [IsLocalHom (algebraMap A B)] [Module.Flat A B]
+    (hAB : (IsLocalRing.maximalIdeal B).ramificationIdx A = 1)
+    (hRS : (IsLocalRing.maximalIdeal S).ramificationIdx R = 1) :
+    (IsLocalRing.maximalIdeal B).ramificationIdx S =
+      (IsLocalRing.maximalIdeal A).ramificationIdx R := by
+  have : (IsLocalRing.maximalIdeal B).LiesOver (IsLocalRing.maximalIdeal A) :=
+    ⟨(IsLocalRing.maximalIdeal_comap (algebraMap A B)).symm⟩
+  have hunder : (IsLocalRing.maximalIdeal B).under S = IsLocalRing.maximalIdeal S :=
+    IsLocalRing.maximalIdeal_comap (algebraMap S B)
+  have hBS : (IsLocalRing.maximalIdeal B).ramificationIdx S =
+      (IsLocalRing.maximalIdeal B).ramificationIdx R := by
+    rw [IsLocalRing.ramificationIdx_maximalIdeal_of_isLocalHom,
+      IsLocalRing.ramificationIdx_maximalIdeal, ← Ideal.under_under (B := S), hunder,
+      IsScalarTower.algebraMap_eq R S B, ← Ideal.map_map,
+      IsLocalRing.ramificationIdx_maximalIdeal_eq_one_iff.mp hRS]
+  rw [hBS, ramificationIdx_tower (R := R) (IsLocalRing.maximalIdeal A)
+    (IsLocalRing.maximalIdeal B), hAB, mul_one]
 
 end Ideal

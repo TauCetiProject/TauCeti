@@ -11,7 +11,6 @@ public import TauCeti.RingTheory.RamificationInertia.Bijective
 public import TauCeti.RingTheory.RamificationInertia.DiscreteValuationRing
 public import TauCeti.RingTheory.RamificationInertia.Localization
 public import TauCeti.RingTheory.RamificationInertia.QuasiFinite
-import TauCeti.RingTheory.RamificationInertia.BaseChange
 
 /-!
 # The ramification index of a morphism at a point
@@ -282,7 +281,12 @@ theorem ramificationIdxAt_eq_of_commSq_of_eq_one {X' Y' : Scheme.{u}} {gX : X' �
   have hsq : f.stalkMap (gX x') ≫ gX.stalkMap x' =
       (eR ≫ gY.stalkMap (f' x')) ≫ f'.stalkMap x' := by
     rw [← Scheme.Hom.stalkMap_comp, Scheme.Hom.stalkMap_congr_hom _ _ w x',
-      Scheme.Hom.stalkMap_comp, Category.assoc]; rfl
+      Scheme.Hom.stalkMap_comp, Category.assoc]
+    -- `(gX ≫ f) x'` is definitionally `f (gX x')` and `(f' ≫ gY) x'` is definitionally
+    -- `gY (f' x')`, so `eR = stalkCongr (.of_eq hw)` matches the `stalkCongr (.of_eq _)`
+    -- introduced by `stalkMap_congr_hom` by proof irrelevance of `Eq` (no Mathlib lemma
+    -- equates two `stalkCongr (.of_eq _)` terms across different equality proofs).
+    rfl
   have : IsScalarTower R R' S := .of_algebraMap_eq' rfl
   have : IsScalarTower R A B := .of_algebraMap_eq' rfl
   have : IsScalarTower R S B := .of_algebraMap_eq' (congrArg CommRingCat.Hom.hom hsq)

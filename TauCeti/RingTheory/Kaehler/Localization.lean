@@ -37,6 +37,8 @@ differentials commute with base change and localization:
   localizes their image in the target differential module.
 * `TauCeti.KaehlerDifferential.mem_range_map_iff_forall_isMaximal`: membership in the global
   image can be checked using any family of maximal localizations.
+* `TauCeti.KaehlerDifferential.linearMap_eq_of_D_algebraMap`: `Aₘ`-linear maps out of
+  `Ω[Aₘ⁄R]` agree once they agree on `D R Aₘ (algebraMap A Aₘ x)`.
 * `TauCeti.KaehlerDifferential.atPrimePushoutEquiv`: base change and localization of Kähler
   differentials at a prime in a pushout `B = S ⊗[R] A`, with pure-tensor formula
   `TauCeti.KaehlerDifferential.atPrimePushoutEquiv_tmul_D`.
@@ -124,6 +126,24 @@ end Maximal
 
 end Localization
 
+/-- Two `Aₘ`-linear maps out of `Ω[Aₘ⁄R]` agree everywhere once they agree on
+`D R Aₘ (algebraMap A Aₘ x)` for all `x : A`. -/
+theorem linearMap_eq_of_D_algebraMap {R A Aₘ N : Type*}
+    [CommRing R] [CommRing A] [CommRing Aₘ] [Algebra R A] [Algebra A Aₘ] [Algebra R Aₘ]
+    [IsScalarTower R A Aₘ] (M : Submonoid A) [IsLocalization M Aₘ]
+    [AddCommGroup N] [Module Aₘ N] {f g : Ω[Aₘ⁄R] →ₗ[Aₘ] N}
+    (h : ∀ x : A, f (D R Aₘ (algebraMap A Aₘ x)) = g (D R Aₘ (algebraMap A Aₘ x))) :
+    f = g := by
+  let : Module A N := Module.compHom N (algebraMap A Aₘ)
+  have : IsScalarTower A Aₘ N := IsScalarTower.of_algebraMap_smul fun _ _ ↦ rfl
+  have : IsLocalizedModule M (LinearMap.id : N →ₗ[A] N) := isLocalizedModule_id M N Aₘ
+  have hfg : f.restrictScalars A = g.restrictScalars A := by
+    apply IsLocalizedModule.linearMap_ext M (map R R A Aₘ) (LinearMap.id : N →ₗ[A] N)
+    apply LinearMap.ext_on (span_range_derivation R A)
+    rintro _ ⟨x, rfl⟩
+    simpa [map_D] using h x
+  exact LinearMap.ext fun ω ↦ LinearMap.congr_fun hfg ω
+
 section Pushout
 
 variable (R S A : Type*) {B : Type*} [CommRing R] [CommRing S] [CommRing A] [CommRing B]
@@ -149,24 +169,6 @@ def atPrimePushoutEquiv (q : Ideal B) [q.IsPrime] :
     AlgebraTensorModule.congr (LinearEquiv.refl Bq Bq)
       (KaehlerDifferential.tensorKaehlerEquiv R S A B) ≪≫ₗ
     KaehlerDifferential.tensorKaehlerEquivOfFormallyEtale S B Bq
-
-/-- Two `Aₘ`-linear maps out of `Ω[Aₘ⁄R]` agree everywhere once they agree on
-`D R Aₘ (algebraMap A Aₘ x)` for all `x : A`. -/
-private theorem linearMap_eq_of_D_algebraMap {R A Aₘ N : Type*}
-    [CommRing R] [CommRing A] [CommRing Aₘ] [Algebra R A] [Algebra A Aₘ] [Algebra R Aₘ]
-    [IsScalarTower R A Aₘ] (M : Submonoid A) [IsLocalization M Aₘ]
-    [AddCommGroup N] [Module Aₘ N] {f g : Ω[Aₘ⁄R] →ₗ[Aₘ] N}
-    (h : ∀ x : A, f (D R Aₘ (algebraMap A Aₘ x)) = g (D R Aₘ (algebraMap A Aₘ x))) :
-    f = g := by
-  let : Module A N := Module.compHom N (algebraMap A Aₘ)
-  have : IsScalarTower A Aₘ N := IsScalarTower.of_algebraMap_smul fun _ _ ↦ rfl
-  have : IsLocalizedModule M (LinearMap.id : N →ₗ[A] N) := isLocalizedModule_id M N Aₘ
-  have hfg : f.restrictScalars A = g.restrictScalars A := by
-    apply IsLocalizedModule.linearMap_ext M (map R R A Aₘ) (LinearMap.id : N →ₗ[A] N)
-    apply LinearMap.ext_on (span_range_derivation R A)
-    rintro _ ⟨x, rfl⟩
-    simpa [map_D] using h x
-  exact LinearMap.ext fun ω ↦ LinearMap.congr_fun hfg ω
 
 /-- Evaluating `atPrimePushoutEquiv` on a pure tensor `b ⊗ₜ D R A_p a`. -/
 @[simp]

@@ -54,8 +54,9 @@ theorem isUnramifiedAt_iff_of_isPushout_of_flat (q : Ideal B) [q.IsPrime]
       Module.Flat (Localization.AtPrime (q.under A)) (Localization.AtPrime q)) :
     IsUnramifiedAt S q ↔ IsUnramifiedAt R (q.under A) := by
   let := Localization.AtPrime.algebraOfLiesOver (q.under A) q
+  have : Module.Flat (Localization.AtPrime (q.under A)) (Localization.AtPrime q) := hflat
   have : Module.FaithfullyFlat (Localization.AtPrime (q.under A)) (Localization.AtPrime q) :=
-    @Module.FaithfullyFlat.of_flat_of_isLocalHom _ _ _ _ _ _ _ hflat _
+    Module.FaithfullyFlat.of_flat_of_isLocalHom
   rw [IsUnramifiedAt, IsUnramifiedAt, Algebra.formallyUnramified_iff,
     Algebra.formallyUnramified_iff,
     ← (TauCeti.KaehlerDifferential.atPrimePushoutEquiv R S A q).subsingleton_congr,
@@ -76,7 +77,9 @@ variable (R S A B) in
 in `Algebra.unramifiedLocus S B`. -/
 theorem preimage_unramifiedLocus_subset_of_isPushout :
     PrimeSpectrum.comap (algebraMap A B) ⁻¹' unramifiedLocus R A ⊆ unramifiedLocus S B :=
-  fun q hq ↦ @IsUnramifiedAt.of_isPushout R S A B _ _ _ _ _ _ _ _ _ _ _ _ q.asIdeal q.isPrime hq
+  fun q hq ↦
+    have : IsUnramifiedAt R (q.asIdeal.under A) := hq
+    IsUnramifiedAt.of_isPushout R A q.asIdeal
 
 variable (R S A B) in
 /-- Under a flat base change `B = S ⊗[R] A`, the unramified locus of `B` over `S` is the preimage

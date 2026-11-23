@@ -32,7 +32,8 @@ In any pullback square `gY : Y' ⟶ Y` over `b : S' ⟶ S`, the preimage `gY ⁻
 section `s` is the range of a compatible lifted section `s'`
 (`preimage_range_section_of_isPullback`, specialized to `baseChangeSection` and to closed rational
 points over field extensions in `preimage_range_section_eq_range_baseChangeSection` and
-`preimage_singleton_section_closedPoint_of_isPullback`).
+`preimage_singleton_section_closedPoint_of_isPullback`), and any pullback square of `S`-schemes
+above it is itself a pullback over `b` (`isPullback_over_of_isPullback`).
 -/
 
 public section
@@ -296,6 +297,16 @@ theorem preimage_singleton_section_closedPoint_of_isPullback {k L : Type u} [Fie
   exact preimage_range_section_of_isPullback H hs hs'p hs'g
 
 end SectionPullback
+
+/-- Pasting a pullback square `Hf : IsPullback gX f' f gY` of morphisms over `S` and `S'` with a
+pullback square `HY : IsPullback gY (Y' ↘ S') (Y ↘ S) b` identifies `X'` as a pullback of `X`
+along `b`. -/
+theorem isPullback_over_of_isPullback {S S' X Y X' Y' : Scheme.{u}} {gX : X' ⟶ X}
+    {f' : X' ⟶ Y'} {f : X ⟶ Y} {gY : Y' ⟶ Y} {b : S' ⟶ S} [X.Over S] [Y.Over S]
+    [X'.Over S'] [Y'.Over S'] [f.IsOver S] [f'.IsOver S']
+    (Hf : IsPullback gX f' f gY) (HY : IsPullback gY (Y' ↘ S') (Y ↘ S) b) :
+    IsPullback gX (X' ↘ S') (X ↘ S) b := by
+  simpa only [comp_over] using Hf.paste_vert HY
 
 end AlgebraicGeometry
 end TauCeti

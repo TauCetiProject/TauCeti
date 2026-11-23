@@ -27,6 +27,16 @@ universe u
 
 namespace AlgebraicGeometry.Scheme.Hom
 
+/-- `f.residueFieldMap x` acts on residues via `f.stalkMap x`. -/
+private theorem residueFieldMap_residue {X Y : Scheme.{u}} (f : X ⟶ Y) (x : X)
+    (a : Y.presheaf.stalk (f x)) :
+    ((f.residueFieldMap x).hom (IsLocalRing.residue _ a) :
+        IsLocalRing.ResidueField (X.presheaf.stalk x)) =
+      IsLocalRing.residue _ ((f.stalkMap x).hom a) :=
+  -- `Hom.residueFieldMap f x` is defined as
+  -- `CommRingCat.ofHom (IsLocalRing.ResidueField.map (f.stalkMap x).hom)`.
+  (rfl)
+
 /-- **Pointwise criterion for the ramification locus.** For `f` locally of finite type,
 `x ∉ f.ramificationLocus` iff `f.ramificationIdxAt x = 1` and `κ(x) / κ(f x)` is separable. -/
 theorem notMem_ramificationLocus_iff_ramificationIdxAt_eq_one_and_isSeparable
@@ -40,13 +50,19 @@ theorem notMem_ramificationLocus_iff_ramificationIdxAt_eq_one_and_isSeparable
   have : IsLocalHom (algebraMap R S) := inferInstanceAs (IsLocalHom (f.stalkMap x).hom)
   have : Algebra.EssFiniteType R S :=
     RingHom.essFiniteType_algebraMap.mp (LocallyOfFiniteType.stalkMap f x)
+  have halg : (f.residueFieldMap x).hom.toAlgebra =
+      (inferInstance : Algebra (ResidueField R) (ResidueField S)) := by
+    apply Algebra.algebra_ext
+    intro r
+    obtain ⟨a, rfl⟩ := IsLocalRing.residue_surjective r
+    change ((f.residueFieldMap x).hom (IsLocalRing.residue R a) : ResidueField S) =
+      algebraMap (ResidueField R) (ResidueField S) (IsLocalRing.residue R a)
+    rw [residueFieldMap_residue, ResidueField.algebraMap_residue, RingHom.algebraMap_toAlgebra]
   have hsep : Algebra.IsSeparable (ResidueField R) (ResidueField S) ↔
       letI := (f.residueFieldMap x).hom.toAlgebra
-      Algebra.IsSeparable (Y.residueField (f x)) (X.residueField x) := by
-    constructor <;> intro h <;>
-    · convert! h
-      exact Algebra.algebra_ext _ _ fun r ↦
-        let ⟨_, hr⟩ := IsLocalRing.residue_surjective r; hr ▸ rfl
+      Algebra.IsSeparable (Y.residueField (f x)) (X.residueField x) :=
+    iff_of_eq (congrArg (fun inst ↦ @Algebra.IsSeparable (ResidueField R) (ResidueField S) _ _ inst)
+      halg.symm)
   rw [mem_ramificationLocus_iff, not_not, RingHom.FormallyUnramified,
     ← RingHom.algebraMap_toAlgebra (f.stalkMap x).hom,
     Algebra.FormallyUnramified.iff_map_maximalIdeal_eq, hsep, ramificationIdxAt_def,

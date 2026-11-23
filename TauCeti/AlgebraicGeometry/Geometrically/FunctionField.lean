@@ -7,6 +7,7 @@ module
 
 public import Mathlib.AlgebraicGeometry.Geometrically.Integral
 public import Mathlib.RingTheory.TensorProduct.Nontrivial
+public import TauCeti.AlgebraicGeometry.Morphisms.Flat.Basic
 public import TauCeti.AlgebraicGeometry.Pullback.SpecMap
 public import TauCeti.AlgebraicGeometry.Scheme.BaseAlgebra
 public import TauCeti.FieldTheory.AlgebraicClosure
@@ -186,6 +187,43 @@ theorem isIntegrallyClosedIn_of_constantCompositum_eq_top {K : Type u} [Field K]
   exact isIntegrallyClosedIn_functionField_of_geometricallyIntegral.of_ringEquiv
     (RingEquiv.refl K) e.toRingEquiv e.commutes
 
+/-- Embed `R` into `Y.functionField` across an affine open chart `ι : Spec R ⟶ Y` of an integral
+scheme `Y`, transporting the fraction-field structure and relating `Spec.map (ofHom α) ≫ ι` to the
+generic-point stalk map `Y.fromSpecStalk (genericPoint Y)`. -/
+private lemma isFractionRing_of_isOpenImmersion_spec {R : Type u} [CommRing R] [IsDomain R]
+    {Y : Scheme.{u}} [IsIntegral Y] (ι : Spec (.of R) ⟶ Y) [IsOpenImmersion ι] :
+    ∃ α : R →+* Y.functionField,
+      (letI := α.toAlgebra; IsFractionRing R Y.functionField) ∧
+      Spec.map (CommRingCat.ofHom α) ≫ ι = Y.fromSpecStalk (genericPoint Y) := by
+  have : IsDominant ι := isDominant_iff_genericPoint_eq.mpr (genericPoint_eq_of_isOpenImmersion ι)
+  let R' := CommRingCat.of R
+  let φ₀ : R' ⟶ (Spec R').functionField := StructureSheaf.toStalk R' (genericPoint (Spec R'))
+  let e : (Spec R').functionField ≃+* Y.functionField :=
+    (asIso ι.functionFieldMap).symm.commRingCatIsoToRingEquiv
+  let α : R →+* Y.functionField := e.toRingHom.comp φ₀.hom
+  -- Express `CommRingCat.ofHom α` categorically as `φ₀ ≫ inv ι.functionFieldMap`.
+  have hα_eq : CommRingCat.ofHom α = φ₀ ≫ inv ι.functionFieldMap := by
+    apply CommRingCat.hom_ext
+    rw [CommRingCat.hom_ofHom, CommRingCat.hom_comp]
+    exact congrArg (·.comp φ₀.hom)
+      ((Iso.commRingCatIsoToRingEquiv_toRingHom (asIso ι.functionFieldMap).symm).trans
+        (by rw [Iso.symm_hom, asIso_inv]))
+  -- Identify `Spec.map (ofHom α) ≫ ι` with the generic-point stalk map of `Y`.
+  have hSpecα : Spec.map (CommRingCat.ofHom α) ≫ ι = Y.fromSpecStalk (genericPoint Y) := by
+    have hφ₀ : Spec.map φ₀ = (Spec R').fromSpecStalk (genericPoint (Spec R')) :=
+      (_root_.AlgebraicGeometry.Spec.fromSpecStalk_eq' R' (genericPoint (Spec R'))).symm
+    rw [hα_eq, Spec.map_comp_assoc, reassoc_of% hφ₀, ← ι.SpecMap_functionFieldMap_fromSpecStalk,
+      Spec.map_inv, IsIso.inv_hom_id_assoc]
+  -- Transport `IsFractionRing R' (Spec R').functionField` across `e`.
+  let : Algebra R' (Spec R').functionField := φ₀.hom.toAlgebra
+  let : Algebra R' Y.functionField := α.toAlgebra
+  have : IsFractionRing R' (Spec R').functionField := functionField_isFractionRing_of_affine R'
+  exact ⟨α, IsFractionRing.of_algEquiv (R := R') (K := (Spec R').functionField)
+    (L := Y.functionField) (AlgEquiv.ofRingEquiv (f := e) fun _ ↦ by
+      -- `algebraMap R' (Spec R').functionField` is `φ₀.hom` via our local `Algebra` instance,
+      -- and `algebraMap R' Y.functionField` is `α = e ∘ φ₀.hom`.
+      simp only [RingHom.algebraMap_toAlgebra]; rfl), hSpecα⟩
+
 section ArbitraryExtension
 
 variable {K : Type u} [Field K] [Algebra k K] {Y : Scheme.{u}} [Y.Over (Spec (.of K))] {g : Y ⟶ X}
@@ -249,35 +287,16 @@ private lemma exists_chart_to_baseChange_functionField {U : X.Opens} (hU : IsAff
       (∀ c : K, α (1 ⊗ₜ[k] c) = algebraMap K Y.functionField c) := by
   have := GeometricallyIntegral.geometrically_isIntegral _ _ _ H
   have := isDominant_of_isPullback_spec H
-  let A := Γ(X, U); let R := CommRingCat.of (A ⊗[k] K)
+  let A := Γ(X, U)
+  -- Base change the affine chart `U` to an affine open chart `ι : Spec (A ⊗[k] K) ⟶ Y`.
   obtain ⟨ι, _, hιg, hιK⟩ := exists_isOpenImmersion_tensorProduct_chart H hU hw
-  have : IsIntegral (Spec R) := isIntegral_of_isOpenImmersion ι
-  have hDomR : IsDomain R := (affine_isIntegral_iff R).mp this
-  have : IsDominant ι := isDominant_iff_genericPoint_eq.mpr (genericPoint_eq_of_isOpenImmersion ι)
-  let φ₀ : R ⟶ (Spec R).functionField := StructureSheaf.toStalk R (genericPoint (Spec R))
-  let e : (Spec R).functionField ≃+* Y.functionField :=
-    (asIso ι.functionFieldMap).symm.commRingCatIsoToRingEquiv
-  let α : (A ⊗[k] K) →+* Y.functionField := e.toRingHom.comp φ₀.hom
-  have hα_eq : CommRingCat.ofHom α = φ₀ ≫ inv ι.functionFieldMap := by
-    apply CommRingCat.hom_ext
-    rw [CommRingCat.hom_ofHom, CommRingCat.hom_comp]
-    exact congrArg (·.comp φ₀.hom)
-      ((Iso.commRingCatIsoToRingEquiv_toRingHom (asIso ι.functionFieldMap).symm).trans
-        (by rw [Iso.symm_hom, asIso_inv]))
-  have hSpecα : Spec.map (CommRingCat.ofHom α) ≫ ι = Y.fromSpecStalk (genericPoint Y) := by
-    have hφ₀ : Spec.map φ₀ = (Spec R).fromSpecStalk (genericPoint (Spec R)) :=
-      (_root_.AlgebraicGeometry.Spec.fromSpecStalk_eq' R (genericPoint (Spec R))).symm
-    rw [hα_eq, Spec.map_comp_assoc, reassoc_of% hφ₀, ← ι.SpecMap_functionFieldMap_fromSpecStalk,
-      Spec.map_inv, IsIso.inv_hom_id_assoc]
-  let _ : Algebra (A ⊗[k] K) (Spec R).functionField := φ₀.hom.toAlgebra
-  let _ : Algebra (A ⊗[k] K) Y.functionField := α.toAlgebra
-  refine ⟨hDomR, α,
-      @IsFractionRing.of_algEquiv (A ⊗[k] K) _ (Spec R).functionField Y.functionField _
-        φ₀.hom.toAlgebra _ α.toAlgebra (functionField_isFractionRing_of_affine R)
-        (AlgEquiv.ofRingEquiv (f := e) fun a ↦ by
-          simp only [RingHom.algebraMap_toAlgebra]; rfl),
-      fun a ↦ ?_, fun c ↦ ?_⟩
-  · have hxU : genericPoint X ∈ U :=
+  have : IsIntegral (Spec (.of (A ⊗[k] K))) := isIntegral_of_isOpenImmersion ι
+  have hDomR : IsDomain (A ⊗[k] K) := (affine_isIntegral_iff (.of (A ⊗[k] K))).mp this
+  -- Transport `IsFractionRing` from `Spec (A ⊗[k] K)` to `Y.functionField`.
+  obtain ⟨α, hFrac, hSpecα⟩ := isFractionRing_of_isOpenImmersion_spec ι
+  refine ⟨hDomR, α, hFrac, fun a ↦ ?_, fun c ↦ ?_⟩
+  · -- Compatibility with `g.functionFieldMap` on the left factor `A`.
+    have hxU : genericPoint X ∈ U :=
       ((genericPoint_spec X).mem_open_set_iff U.isOpen).mpr (by simpa using ‹Nonempty U›)
     have h1 : Spec.map (CommRingCat.ofHom Algebra.TensorProduct.includeLeftRingHom ≫
         CommRingCat.ofHom α) ≫ hU.fromSpec =
@@ -287,7 +306,8 @@ private lemma exists_chart_to_baseChange_functionField {U : X.Opens} (hU : IsAff
         ← hU.fromSpecStalk_eq_fromSpecStalk hxU, IsAffineOpen.fromSpecStalk,
         Scheme.germToFunctionField]
     exact congr($(Spec.map_injective ((cancel_mono hU.fromSpec).mp h1)) a)
-  · have h2 : Spec.map (CommRingCat.ofHom
+  · -- Compatibility with `algebraMap K Y.functionField` on the right factor `K`.
+    have h2 : Spec.map (CommRingCat.ofHom
         (Algebra.TensorProduct.includeRight : K →ₐ[k] A ⊗[k] K).toRingHom ≫
         CommRingCat.ofHom α) = Spec.map (CommRingCat.ofHom (algebraMap K Y.functionField)) := by
       rw [Spec.map_comp, ← hιK, ← Category.assoc, hSpecα,
@@ -323,29 +343,9 @@ theorem isFractionRing_functionField_tensorProduct_of_isPullback :
           (algebraMap A X.functionField a ⊗ₜ[k] c) :=
         (functionFieldTensorToBaseChange_tmul H (algebraMap A X.functionField a) c).symm
 
-/-- For any field extension `K / k`, `K(Y)` is generated as a field by `k(X)` and `K`. -/
-theorem constantCompositum_functionField_eq_top_of_isPullback :
-    haveI := GeometricallyIntegral.geometrically_isIntegral _ _ _ H
-    haveI := isDominant_of_isPullback_spec H
-    letI : Algebra X.functionField Y.functionField := g.functionFieldMap.hom.toAlgebra
-    constantCompositum X.functionField K Y.functionField = ⊤ := by
-  have := GeometricallyIntegral.geometrically_isIntegral _ _ _ H
-  have := isDominant_of_isPullback_spec H
-  let _ : Algebra K (X.functionField ⊗[k] K) := Algebra.TensorProduct.rightAlgebra
-  let _ : Algebra X.functionField Y.functionField := g.functionFieldMap.hom.toAlgebra
-  let _ : Algebra (X.functionField ⊗[k] K) Y.functionField :=
-    (functionFieldTensorToBaseChange H).toRingHom.toAlgebra
-  have : IsScalarTower X.functionField (X.functionField ⊗[k] K) Y.functionField :=
-    .of_algebraMap_eq fun _ ↦ by simp [RingHom.algebraMap_toAlgebra]
-  have : IsScalarTower K (X.functionField ⊗[k] K) Y.functionField :=
-    .of_algebraMap_eq fun _ ↦ by simp [RingHom.algebraMap_toAlgebra]
-  have : IsFractionRing (X.functionField ⊗[k] K) Y.functionField :=
-    isFractionRing_functionField_tensorProduct_of_isPullback H
-  rw [constantCompositum_def]
-  exact adjoin_range_right_eq_top_of_isFractionRing_tensorProduct (k := k)
-
-/-- For any field extension `K / k`, `K` and `k(X)` are linearly disjoint over `k` in `K(Y)`. -/
-theorem linearDisjoint_functionField_of_isPullback :
+/-- Shared tower setup for `constantCompositum_functionField_eq_top_of_isPullback` and
+`linearDisjoint_functionField_of_isPullback`. -/
+private theorem constantCompositum_and_linearDisjoint_functionField_of_isPullback :
     haveI := GeometricallyIntegral.geometrically_isIntegral _ _ _ H
     haveI := isDominant_of_isPullback_spec H
     letI : Algebra X.functionField Y.functionField := g.functionFieldMap.hom.toAlgebra
@@ -354,7 +354,8 @@ theorem linearDisjoint_functionField_of_isPullback :
     haveI : IsScalarTower k K Y.functionField := .of_algebraMap_eq fun _ ↦ rfl
     haveI : IsScalarTower k X.functionField Y.functionField :=
       .of_algebraMap_eq fun c ↦ (functionFieldMap_baseChange_algebraMap H c).symm
-    (IsScalarTower.toAlgHom k K Y.functionField).fieldRange.LinearDisjoint X.functionField := by
+    constantCompositum X.functionField K Y.functionField = ⊤ ∧
+      (IsScalarTower.toAlgHom k K Y.functionField).fieldRange.LinearDisjoint X.functionField := by
   have := GeometricallyIntegral.geometrically_isIntegral _ _ _ H
   have := isDominant_of_isPullback_spec H
   let _ : Algebra K (X.functionField ⊗[k] K) := Algebra.TensorProduct.rightAlgebra
@@ -377,8 +378,31 @@ theorem linearDisjoint_functionField_of_isPullback :
         ← IsScalarTower.algebraMap_apply k X.functionField Y.functionField]
   have : IsFractionRing (X.functionField ⊗[k] K) Y.functionField :=
     isFractionRing_functionField_tensorProduct_of_isPullback H
-  exact linearDisjoint_of_isFractionRing_tensorProduct
-    (k := k) (F := X.functionField) (K := K) (Q := Y.functionField)
+  refine ⟨?_, linearDisjoint_of_isFractionRing_tensorProduct
+      (k := k) (F := X.functionField) (K := K) (Q := Y.functionField)⟩
+  rw [constantCompositum_def]
+  exact adjoin_range_right_eq_top_of_isFractionRing_tensorProduct (k := k)
+
+/-- For any field extension `K / k`, `K(Y)` is generated as a field by `k(X)` and `K`. -/
+theorem constantCompositum_functionField_eq_top_of_isPullback :
+    haveI := GeometricallyIntegral.geometrically_isIntegral _ _ _ H
+    haveI := isDominant_of_isPullback_spec H
+    letI : Algebra X.functionField Y.functionField := g.functionFieldMap.hom.toAlgebra
+    constantCompositum X.functionField K Y.functionField = ⊤ :=
+  (constantCompositum_and_linearDisjoint_functionField_of_isPullback H).1
+
+/-- For any field extension `K / k`, `K` and `k(X)` are linearly disjoint over `k` in `K(Y)`. -/
+theorem linearDisjoint_functionField_of_isPullback :
+    haveI := GeometricallyIntegral.geometrically_isIntegral _ _ _ H
+    haveI := isDominant_of_isPullback_spec H
+    letI : Algebra X.functionField Y.functionField := g.functionFieldMap.hom.toAlgebra
+    letI : Algebra k Y.functionField :=
+      ((algebraMap K Y.functionField).comp (algebraMap k K)).toAlgebra
+    haveI : IsScalarTower k K Y.functionField := .of_algebraMap_eq fun _ ↦ rfl
+    haveI : IsScalarTower k X.functionField Y.functionField :=
+      .of_algebraMap_eq fun c ↦ (functionFieldMap_baseChange_algebraMap H c).symm
+    (IsScalarTower.toAlgHom k K Y.functionField).fieldRange.LinearDisjoint X.functionField :=
+  (constantCompositum_and_linearDisjoint_functionField_of_isPullback H).2
 
 end ArbitraryExtension
 

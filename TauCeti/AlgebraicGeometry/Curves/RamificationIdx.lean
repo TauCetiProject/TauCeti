@@ -76,8 +76,7 @@ theorem ramificationIdxAt_eq_of_isPullback_of_isCurveOver_of_formallyUnramified_
       (by simpa [mem_ramificationLocus_iff] using hfu'),
       f.ramificationIdxAt_eq_one_of_notMem_ramificationLocus
       (by simpa [mem_ramificationLocus_iff] using hfu)]
-  · have hxcl := TauCeti.AlgebraicGeometry.Scheme.isClosed_singleton_of_ne_genericPoint
-      (Scheme.IsCurveOver.topologicalKrullDim_eq_one k).le hgen
+  · have hxcl := Scheme.IsCurveOver.isClosed_singleton_of_ne_genericPoint (k := k) hgen
     exact ramificationIdxAt_eq_of_isPullback_of_isClosed Hf HY hxcl
       (by simpa only [Set.image_singleton] using f.isClosedMap _ hxcl)
 
@@ -102,12 +101,9 @@ theorem ramificationIdxAt_curveFiberEquivOfIsAlgClosed [IsAlgClosed k] [IsDomina
     (y' : Y') (hy : gY y' ≠ genericPoint Y) (x' : {x' : X' // f' x' = y'}) :
     f'.ramificationIdxAt x'.val =
       f.ramificationIdxAt (curveFiberEquivOfIsAlgClosed Hf HY y' hy x').val := by
-  have hycl := TauCeti.AlgebraicGeometry.Scheme.isClosed_singleton_of_ne_genericPoint
-    (Scheme.IsCurveOver.topologicalKrullDim_eq_one k).le hy
+  have hycl := Scheme.IsCurveOver.isClosed_singleton_of_ne_genericPoint (k := k) hy
   have hfib : ∀ x : X, f x = gY y' → IsClosed {x} := fun _ hx ↦
-    TauCeti.AlgebraicGeometry.Scheme.isClosed_singleton_of_ne_genericPoint
-      (Scheme.IsCurveOver.topologicalKrullDim_eq_one k).le fun hgen ↦
-        hy (hx ▸ hgen ▸ f.genericPoint_eq_of_isDominant)
+    Scheme.IsCurveOver.isClosed_singleton_of_map_ne_genericPoint (k := k) f (hx ▸ hy)
   simpa only [fiberEquivOfIsAlgClosed_coe, curveFiberEquivOfIsAlgClosed_coe] using
     ramificationIdxAt_fiberEquivOfIsAlgClosed Hf HY y' hycl hfib x'
 

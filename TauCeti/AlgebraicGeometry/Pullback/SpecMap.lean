@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.AlgebraicGeometry.Pullbacks
-public import TauCeti.AlgebraicGeometry.Morphisms.Flat.Basic
+import Mathlib.AlgebraicGeometry.PullbackCarrier
 import Mathlib.RingTheory.TensorProduct.Pi
 
 /-!
@@ -43,9 +43,6 @@ with model `Spec (ι → F)` and compatibility with both pullback projections.
   with explicit projections and range.
 * `TauCeti.AlgebraicGeometry.exists_isOpenImmersion_spec_tensorProduct_at_of_isPullback`: pointwise
   affine chart extraction on a pullback square with projected prime identification.
-* `TauCeti.AlgebraicGeometry.isDominant_of_isPullback_spec` and
-  `TauCeti.AlgebraicGeometry.isDominant_of_baseChange`: dominance of base-change projections and
-  base-changed dominant morphisms along field extensions.
 * `TauCeti.AlgebraicGeometry.pullbackSpecIsoOfAlgEquiv`: an algebra equivalence
   identifies an affine base change over its new base.
 * `CategoryTheory.IsPullback.exists_split`: a scheme split over a commutative ring stays split
@@ -153,31 +150,6 @@ theorem exists_isOpenImmersion_spec_tensorProduct_at_of_isPullback
   refine ⟨ι, hι, q, Spec.map φR q, rfl, h₁, h₂,
     by simpa only [Scheme.Hom.comp_apply] using congrArg (fun k : _ ⟶ X ↦ k q) h₂,
     (congrArg PrimeSpectrum.asIdeal (Spec.map_apply φR q)).trans (PrimeSpectrum.comap_asIdeal _ q)⟩
-
-/-- The projection from the base change along any field extension `K / k` is dominant. -/
-theorem isDominant_of_isPullback_spec {k K : Type u} [Field k] [Field K] [Algebra k K]
-    {X Y : Scheme.{u}} [X.Over (Spec (.of k))] [Y.Over (Spec (.of K))] {g : Y ⟶ X}
-    (H : IsPullback g (Y ↘ Spec (.of K)) (X ↘ Spec (.of k))
-      (Spec.map (CommRingCat.ofHom (algebraMap k K)))) :
-    IsDominant g :=
-  have : Surjective g := MorphismProperty.of_isPullback (P := @Surjective) H.flip inferInstance
-  inferInstance
-
-/-- The base change of a dominant `k`-morphism between irreducible `k`-schemes along any field
-extension `K / k` is dominant. -/
-theorem isDominant_of_baseChange {k K : Type u} [Field k] [Field K] [Algebra k K]
-    {X₁ X₂ X₁' X₂' : Scheme.{u}} [X₁.Over (Spec (.of k))] [X₂.Over (Spec (.of k))]
-    [X₁'.Over (Spec (.of K))] [X₂'.Over (Spec (.of K))] [IrreducibleSpace X₁] [IrreducibleSpace X₂]
-    {f : X₁ ⟶ X₂} [f.IsOver (Spec (.of k))] [IsDominant f]
-    {g₁ : X₁' ⟶ X₁} {g₂ : X₂' ⟶ X₂} {f' : X₁' ⟶ X₂'} [f'.IsOver (Spec (.of K))]
-    (H₁ : IsPullback g₁ (X₁' ↘ Spec (.of K)) (X₁ ↘ Spec (.of k))
-      (Spec.map (CommRingCat.ofHom (algebraMap k K))))
-    (H₂ : IsPullback g₂ (X₂' ↘ Spec (.of K)) (X₂ ↘ Spec (.of k))
-      (Spec.map (CommRingCat.ofHom (algebraMap k K))))
-    (hf' : f' ≫ g₂ = g₁ ≫ f) :
-    IsDominant f' :=
-  have : Flat g₂ := MorphismProperty.of_isPullback (P := @Flat) H₂.flip inferInstance
-  IsDominant.of_isPullback_of_flat (IsPullback.of_bot (by simpa [comp_over] using H₁) hf'.symm H₂)
 
 /-- An algebraic identification of a base-changed algebra induces an isomorphism over the
 new affine base. No finiteness or étaleness assumptions are needed for this transport. -/

@@ -106,9 +106,7 @@ theorem ramificationIdxAt_eq_of_isPullback_of_isSeparable_residueField {x' : X'}
     (hsepX : Algebra.IsSeparable k (X.residueField (gX x')))
     (hsepY : Algebra.IsSeparable k (Y.residueField (f (gX x')))) :
     f'.ramificationIdxAt x' = f.ramificationIdxAt (gX x') := by
-  have HX : IsPullback gX (X' ↘ Spec (.of L)) (X ↘ Spec (.of k))
-      (Spec.map (CommRingCat.ofHom (algebraMap k L))) := by
-    simpa only [comp_over] using Hf.paste_vert HY
+  have HX := TauCeti.AlgebraicGeometry.isPullback_over_of_isPullback Hf HY
   have : Flat gX := MorphismProperty.of_isPullback (P := @Flat) HX.flip inferInstance
   have hw : gY (f' x') = f (gX x') := by rw [← Scheme.Hom.comp_apply, ← Hf.w, Scheme.Hom.comp_apply]
   exact ramificationIdxAt_eq_of_commSq_of_eq_one Hf.w x' (Flat.stalkMap gX x')

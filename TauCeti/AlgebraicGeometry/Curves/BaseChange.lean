@@ -79,11 +79,8 @@ If `f : X ⟶ Y` is a dominant `k`-morphism of curves over an algebraically clos
 noncomputable def curveFiberEquivOfIsAlgClosed (y' : Y') (hy : gY y' ≠ genericPoint Y) :
     {x' : X' // f' x' = y'} ≃ {x : X // f x = gY y'} :=
   fiberEquivOfIsAlgClosed Hf HY y'
-    (TauCeti.AlgebraicGeometry.Scheme.isClosed_singleton_of_ne_genericPoint
-      (Scheme.IsCurveOver.topologicalKrullDim_eq_one k).le hy)
-    fun _ hx ↦ TauCeti.AlgebraicGeometry.Scheme.isClosed_singleton_of_ne_genericPoint
-      (Scheme.IsCurveOver.topologicalKrullDim_eq_one k).le fun hgen ↦
-        hy (hx ▸ hgen ▸ f.genericPoint_eq_of_isDominant)
+    (Scheme.IsCurveOver.isClosed_singleton_of_ne_genericPoint (k := k) hy)
+    fun _ hx ↦ Scheme.IsCurveOver.isClosed_singleton_of_map_ne_genericPoint (k := k) f (hx ▸ hy)
 
 /-- `curveFiberEquivOfIsAlgClosed` acts on underlying points via the projection `gX`. -/
 @[simp]
