@@ -12,6 +12,7 @@ public import Mathlib.NumberTheory.NumberField.InfinitePlace.TotallyRealComplex
 public import Mathlib.RingTheory.QuadraticAlgebra
 public import TauCeti.NumberTheory.NumberField.QuadraticAlgebra
 import TauCeti.NumberTheory.LSeries.Quadratic.Siegel
+import TauCeti.NumberTheory.Multiquadratic.Quadratic.Discriminant
 import TauCeti.NumberTheory.NumberField.ClassNumber.RingEquiv
 import TauCeti.NumberTheory.NumberField.Quadratic.DedekindZeta
 import TauCeti.NumberTheory.NumberField.Quadratic.InfinitePlace
@@ -42,18 +43,17 @@ bounded or prescribed class number.
 * `TauCeti.NumberField.imaginary_discr_bounded_of_classNumber_le`: for every `B` there is `C` with
   `|disc K| ≤ C` whenever `h(K) ≤ B`.
 * `TauCeti.NumberField.exists_le_classNumber_of_le_abs_discr`: `h(K) → ∞` as `|disc K| → ∞`.
-* `TauCeti.NumberField.exists_finset_neg_squarefree_algEquiv_of_classNumber_le`: exact finite
-  classification of imaginary quadratic fields with `h(K) ≤ B` by negative squarefree radicands.
 * `TauCeti.NumberField.finite_neg_squarefree_of_classNumber_le` and
   `TauCeti.NumberField.finite_neg_squarefree_of_classNumber_eq`: finiteness of negative squarefree
   radicands `d` with `classNumber ℚ(√d) ≤ B` or `= B`.
+* `TauCeti.NumberField.exists_finset_neg_squarefree_algEquiv_of_classNumber_le`: exact finite
+  classification of imaginary quadratic fields with `h(K) ≤ B` by negative squarefree radicands.
 * `TauCeti.NumberField.finite_neg_isFundamentalDiscr_of_classNumber_le` and
   `TauCeti.NumberField.finite_neg_isFundamentalDiscr_of_classNumber_eq`: finiteness of negative
   fundamental discriminants `D` with `classNumber ℚ(√D) ≤ B` or `= B`.
-* `TauCeti.NumberField.classNumber_quadraticAlgebra_discr_eq`,
-  `TauCeti.NumberField.finite_neg_discr_of_classNumber_le`, and
-  `TauCeti.NumberField.finite_neg_discr_of_classNumber_eq`: identification with abstract quadratic
-  fields `K : Type u` and finiteness of their negative discriminants.
+* `TauCeti.NumberField.finite_neg_discr_of_classNumber_le` and
+  `TauCeti.NumberField.finite_neg_discr_of_classNumber_eq`: finiteness of negative discriminants of
+  abstract quadratic fields `K : Type u` with bounded or prescribed class number.
 
 ## References
 
@@ -144,6 +144,32 @@ private theorem neg_le_ceil_of_classNumber_le {B : ℕ} {C : ℝ}
       (le_max_left C 0).trans (by simpa using Nat.le_ceil (max C 0))
   exact_mod_cast hle
 
+/-- **Finiteness of negative squarefree radicands with bounded class number.** For every `B : ℕ`,
+only finitely many negative squarefree integers `d` satisfy
+`classNumber (QuadraticAlgebra ℚ d 0) ≤ B`. -/
+theorem finite_neg_squarefree_of_classNumber_le (B : ℕ) :
+    {d : ℤ | d < 0 ∧ Squarefree d ∧
+      ∃ (_ : Fact (¬ IsSquare d)), classNumber (QuadraticAlgebra ℚ (d : ℚ) 0) ≤ B}.Finite := by
+  obtain ⟨C, hC⟩ := imaginary_discr_bounded_of_classNumber_le.{0} B
+  refine (Set.finite_Icc (-(⌈max C 0⌉₊ : ℤ)) 0).subset fun d ⟨hneg, hsf, hns, hB⟩ ↦ ?_
+  have : Fact (¬ IsSquare d) := hns
+  have hdiscr : (-d : ℤ) ≤ |discr (QuadraticAlgebra ℚ (d : ℚ) 0)| := by
+    by_cases hd4 : d % 4 = 1
+    · rw [QuadraticAlgebra.discr_eq_of_mod_four_eq_one hsf hd4, abs_of_neg hneg]
+    · rw [QuadraticAlgebra.discr_eq_four_mul_of_mod_four_ne_one hsf hd4, abs_of_neg (by omega)]
+      omega
+  have hM := neg_le_ceil_of_classNumber_le hC hneg hdiscr hB
+  exact ⟨by omega, hneg.le⟩
+
+/-- **Finite fibers of the imaginary quadratic class number on radicands.** For every `B : ℕ`,
+only finitely many negative squarefree integers `d` satisfy
+`classNumber (QuadraticAlgebra ℚ d 0) = B`. -/
+theorem finite_neg_squarefree_of_classNumber_eq (B : ℕ) :
+    {d : ℤ | d < 0 ∧ Squarefree d ∧
+      ∃ (_ : Fact (¬ IsSquare d)), classNumber (QuadraticAlgebra ℚ (d : ℚ) 0) = B}.Finite :=
+  (finite_neg_squarefree_of_classNumber_le B).subset
+    fun _ ⟨hneg, hsf, hns, hB⟩ ↦ ⟨hneg, hsf, hns, hB.le⟩
+
 /-- **Finiteness of imaginary quadratic fields of bounded class number up to isomorphism.** For
 every `B : ℕ` there exists a finite set `S` consisting precisely of the negative squarefree
 integers `d` with `classNumber (QuadraticAlgebra ℚ d 0) ≤ B`, such that every totally complex
@@ -157,52 +183,14 @@ theorem exists_finset_neg_squarefree_algEquiv_of_classNumber_le (B : ℕ) :
         finrank ℚ K = 2 → classNumber K ≤ B →
         ∃ d ∈ S, Nonempty (K ≃ₐ[ℚ] QuadraticAlgebra ℚ (d : ℚ) 0) := by
   classical
-  obtain ⟨C, hC⟩ := imaginary_discr_bounded_of_classNumber_le.{0} B
-  set M : ℤ := (⌈max C 0⌉₊ : ℤ)
-  set S : Finset ℤ := (Finset.Icc (-M) (-1)).filter fun d ↦
-    Squarefree d ∧ ∃ (_ : Fact (¬ IsSquare d)), classNumber (QuadraticAlgebra ℚ (d : ℚ) 0) ≤ B
-  have hS_iff : ∀ d : ℤ, d ∈ S ↔ d < 0 ∧ Squarefree d ∧
-      ∃ (_ : Fact (¬ IsSquare d)), classNumber (QuadraticAlgebra ℚ (d : ℚ) 0) ≤ B := by
-    intro d
-    refine ⟨fun hd ↦ ?_, fun ⟨hneg, hsf, hns, hB⟩ ↦ ?_⟩
-    · obtain ⟨hIcc, hsf, hB⟩ := Finset.mem_filter.mp hd
-      exact ⟨by linarith [(Finset.mem_Icc.mp hIcc).2], hsf, hB⟩
-    · have : Fact (¬ IsSquare d) := hns
-      have hdiscr : (-d : ℤ) ≤ |discr (QuadraticAlgebra ℚ (d : ℚ) 0)| := by
-        by_cases hd4 : d % 4 = 1
-        · rw [QuadraticAlgebra.discr_eq_of_mod_four_eq_one hsf hd4, abs_of_neg hneg]
-        · rw [QuadraticAlgebra.discr_eq_four_mul_of_mod_four_ne_one hsf hd4, abs_of_neg (by omega)]
-          omega
-      have hM : -d ≤ M := neg_le_ceil_of_classNumber_le hC hneg hdiscr hB
-      exact Finset.mem_filter.mpr
-        ⟨Finset.mem_Icc.mpr ⟨by omega, by omega⟩, hsf, hns, hB⟩
-  refine ⟨S, hS_iff, fun K _ _ _ hK hB ↦ ?_⟩
-  obtain ⟨θ, d, hmin, _, hsf, hneg⟩ :=
-    exists_minpoly_eq_X_sq_sub_C_and_adjoin_eq_top_of_isTotallyComplex hK
-  obtain ⟨φ⟩ := nonempty_algEquiv_quadraticAlgebra hK hmin
+  have hfin := finite_neg_squarefree_of_classNumber_le B
+  refine ⟨hfin.toFinset, fun d ↦ hfin.mem_toFinset, fun K _ _ _ hK hB ↦ ?_⟩
+  obtain ⟨d, ⟨hneg, hsf, ⟨φ⟩⟩, -⟩ := existsUnique_neg_squarefree_algEquiv hK
   have hns : Fact (¬ IsSquare d) := ⟨not_isSquare_of_neg hneg⟩
   have hB' : classNumber (QuadraticAlgebra ℚ (d : ℚ) 0) ≤ B := by
     rw [φ.symm.toRingEquiv.classNumber_eq]
     exact hB
-  exact ⟨d, (hS_iff d).mpr ⟨hneg, hsf, hns, hB'⟩, ⟨φ⟩⟩
-
-/-- **Finiteness of negative squarefree radicands with bounded class number.** For every `B : ℕ`,
-only finitely many negative squarefree integers `d` satisfy
-`classNumber (QuadraticAlgebra ℚ d 0) ≤ B`. -/
-theorem finite_neg_squarefree_of_classNumber_le (B : ℕ) :
-    {d : ℤ | d < 0 ∧ Squarefree d ∧
-      ∃ (_ : Fact (¬ IsSquare d)), classNumber (QuadraticAlgebra ℚ (d : ℚ) 0) ≤ B}.Finite := by
-  obtain ⟨S, hS, _⟩ := exists_finset_neg_squarefree_algEquiv_of_classNumber_le.{0} B
-  exact S.finite_toSet.subset fun d hd ↦ (hS d).mpr hd
-
-/-- **Finite fibers of the imaginary quadratic class number on radicands.** For every `B : ℕ`,
-only finitely many negative squarefree integers `d` satisfy
-`classNumber (QuadraticAlgebra ℚ d 0) = B`. -/
-theorem finite_neg_squarefree_of_classNumber_eq (B : ℕ) :
-    {d : ℤ | d < 0 ∧ Squarefree d ∧
-      ∃ (_ : Fact (¬ IsSquare d)), classNumber (QuadraticAlgebra ℚ (d : ℚ) 0) = B}.Finite :=
-  (finite_neg_squarefree_of_classNumber_le B).subset
-    fun _ ⟨hneg, hsf, hns, hB⟩ ↦ ⟨hneg, hsf, hns, hB.le⟩
+  exact ⟨d, hfin.mem_toFinset.mpr ⟨hneg, hsf, hns, hB'⟩, ⟨φ⟩⟩
 
 /-- **Finiteness of negative fundamental discriminants with bounded class number.** For every
 `B : ℕ`, only finitely many negative fundamental discriminants `D` satisfy
@@ -227,22 +215,6 @@ theorem finite_neg_isFundamentalDiscr_of_classNumber_eq (B : ℕ) :
   (finite_neg_isFundamentalDiscr_of_classNumber_le B).subset
     fun _ ⟨hneg, hD, hns, hB⟩ ↦ ⟨hneg, hD, hns, hB.le⟩
 
-/-- **Class number agreement with the discriminant model.** Any quadratic number field `K` is
-`ℚ`-isomorphic to `QuadraticAlgebra ℚ (discr K) 0`, so their class numbers agree. -/
-theorem classNumber_quadraticAlgebra_discr_eq {K : Type u} [Field K] [NumberField K]
-    (hK : finrank ℚ K = 2) :
-    ∃ (_ : Fact (¬ IsSquare (discr K))),
-      classNumber (QuadraticAlgebra ℚ ((discr K : ℤ) : ℚ) 0) = classNumber K := by
-  have hfd := isFundamentalDiscr_discr hK
-  have hD1 : discr K ≠ 1 := fun h ↦ by
-    have := NumberField.abs_discr_gt_two (K := K) (by omega)
-    rw [h] at this
-    norm_num at this
-  have hns : Fact (¬ IsSquare (discr K)) :=
-    ⟨Rat.isSquare_intCast_iff.not.mp (hfd.not_isSquare_rat hD1)⟩
-  obtain ⟨δ, hδ⟩ := exists_sq_eq_discr hK
-  exact ⟨hns, (TauCeti.QuadraticOrder.algEquivOfSqrt (discr K) δ hδ hK).toRingEquiv.classNumber_eq⟩
-
 /-- **Finiteness of negative discriminants of imaginary quadratic fields of bounded class number.**
 For every `B : ℕ`, only finitely many negative integers `D` arise as `discr K` for a quadratic
 number field `K : Type u` with `classNumber K ≤ B`. -/
@@ -253,7 +225,10 @@ theorem finite_neg_discr_of_classNumber_le (B : ℕ) :
   refine (finite_neg_isFundamentalDiscr_of_classNumber_le B).subset
     fun D ⟨hneg, K, _, _, hK, hDK, hB⟩ ↦ ?_
   have hfd : Int.IsFundamentalDiscr D := hDK ▸ isFundamentalDiscr_discr hK
-  obtain ⟨hns, heq⟩ := classNumber_quadraticAlgebra_discr_eq hK
+  have hns : Fact (¬ IsSquare (discr K)) := ⟨not_isSquare_discr hK⟩
+  obtain ⟨φ⟩ := nonempty_algEquiv_quadraticAlgebra_discr hK
+  have heq : classNumber (QuadraticAlgebra ℚ ((discr K : ℤ) : ℚ) 0) = classNumber K :=
+    φ.symm.toRingEquiv.classNumber_eq
   subst hDK
   exact ⟨hneg, hfd, hns, heq ▸ hB⟩
 

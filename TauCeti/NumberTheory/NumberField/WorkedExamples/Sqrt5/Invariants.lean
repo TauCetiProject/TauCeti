@@ -102,8 +102,8 @@ theorem discr_eq_five (hmin : minpoly ℤ θ = X ^ 2 - X - 1)
 /-- `ℚ(√5)` is totally real: its discriminant `5` is positive. -/
 theorem isTotallyReal (hmin : minpoly ℤ θ = X ^ 2 - X - 1)
     (hgen : Algebra.adjoin ℚ {(θ : K)} = ⊤) : IsTotallyReal K :=
-  IsTotallyReal.of_zero_lt_discr (by rw [discr_eq_five hmin hgen]; norm_num)
-    (by rw [finrank_eq_two hmin hgen]; norm_num)
+  (isTotallyReal_iff_zero_lt_discr (by rw [finrank_eq_two hmin hgen]; norm_num)).mpr
+    (by rw [discr_eq_five hmin hgen]; norm_num)
 
 /-- `ℚ(√5)` has no complex place. -/
 theorem nrComplexPlaces_eq_zero (hmin : minpoly ℤ θ = X ^ 2 - X - 1)

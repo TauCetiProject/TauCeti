@@ -60,9 +60,10 @@ equivalent to a nonarchimedean absolute value.
   form, the number of complex places is even exactly when the discriminant is positive; hence
   `nrComplexPlaces_eq_zero_of_zero_lt_discr` (degree less than `4`),
   `nrComplexPlaces_eq_one_of_discr_lt_zero` (degree less than `6`),
-  `NumberField.IsTotallyReal.of_zero_lt_discr`, and
+  `NumberField.IsTotallyReal.zero_lt_discr` (all degrees),
+  `NumberField.isTotallyReal_iff_zero_lt_discr` (degree less than `4`), and
   `NumberField.isTotallyComplex_iff_discr_lt_zero` (degree `2`) read the signature off the sign of
-  the discriminant in low degree.
+  the discriminant.
 * `NumberField.InfinitePlace.finrank_sub_nrRealPlaces_div_two_eq_nrComplexPlaces`: halving the
   degree less the real places counts the complex places, for any number field.
 * `NumberField.InfinitePlace.embedding_of_isReal_comap`: the real embedding of a restricted real
@@ -236,10 +237,22 @@ theorem InfinitePlace.nrComplexPlaces_eq_one_of_discr_lt_zero (hd : discr K < 0)
     (mt (InfinitePlace.even_nrComplexPlaces_iff_zero_lt_discr K).mp hd.not_gt)
   omega
 
-/-- A number field of degree less than `4` with positive discriminant is totally real. -/
-theorem IsTotallyReal.of_zero_lt_discr (hd : 0 < discr K) (hK : Module.finrank ℚ K < 4) :
-    IsTotallyReal K :=
-  nrComplexPlaces_eq_zero_iff.mp (InfinitePlace.nrComplexPlaces_eq_zero_of_zero_lt_discr hd hK)
+variable (K) in
+/-- **A totally real number field has positive discriminant.** It has zero (hence even) complex
+infinite places, so Brill's parity theorem gives `0 < discr K`. -/
+theorem IsTotallyReal.zero_lt_discr [IsTotallyReal K] : 0 < discr K :=
+  (InfinitePlace.even_nrComplexPlaces_iff_zero_lt_discr K).mp (by
+    rw [IsTotallyReal.nrComplexPlaces_eq_zero]
+    exact Even.zero)
+
+/-- **A number field of degree less than `4` is totally real iff its discriminant is positive.**
+A totally real field always has positive discriminant (`IsTotallyReal.zero_lt_discr`), and in
+degree less than `4` a positive discriminant forces `nrComplexPlaces K = 0`. -/
+theorem isTotallyReal_iff_zero_lt_discr (hK : Module.finrank ℚ K < 4) :
+    IsTotallyReal K ↔ 0 < discr K :=
+  ⟨fun _ ↦ IsTotallyReal.zero_lt_discr K,
+    fun hd ↦ nrComplexPlaces_eq_zero_iff.mp
+      (InfinitePlace.nrComplexPlaces_eq_zero_of_zero_lt_discr hd hK)⟩
 
 /-- **A quadratic field is totally complex if and only if its discriminant is negative.** By Brill's
 parity theorem, a degree-`2` number field has `nrComplexPlaces K = 1` (hence `nrRealPlaces K = 0`)
