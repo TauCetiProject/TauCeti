@@ -16,10 +16,8 @@ product space `E` with symmetric limits `A±` at `±∞`. Multiplication by `exp
 trajectory operator `D_A u = u' + A u` on the weighted spaces `{u | exp w • u ∈ W^{1,2}}` to the
 unweighted trajectory operator `D_{A - w'}` (see `TauCeti.Analysis.ODE.EnergyEstimate.Weighted`).
 When the slope `w'` tends to `δ±` at `±∞`, the limits of `A - w'` are `A± - δ±`, which are
-invertible when `δ±` is not an eigenvalue of `A±`. The weighted operator is Fredholm exactly for
-these non-exceptional weights
-(`TauCeti.WeakDerivStep.isFredholm_trajectoryOperator_sub_smul_id_iff`), and this file computes
-its index:
+invertible when `δ±` is not an eigenvalue of `A±`. For these non-exceptional weights the weighted
+operator is Fredholm, and this file computes its index:
 
 `ind D_{A - w'} = n_{< δ⁻}(A⁻) - n_{< δ⁺}(A⁺)`,
 
@@ -64,8 +62,6 @@ of the two slopes `±δ` crosses the simple eigenvalue `a` of the limits.
 
 In the namespace `TauCeti.WeakDerivStep`:
 
-* `isFredholm_trajectoryOperator_sub_smul_id_iff`: `D_{A - c}` is Fredholm exactly when the limits
-  `δ±` of the slope `c` are not eigenvalues of `A±`.
 * `isFredholm_trajectoryOperator_sub_smul_id`: `D_{A - c}` is Fredholm for slopes `c` with
   non-exceptional limits `δ±`.
 * `index_trajectoryOperator_sub_smul_id_eq_finrank_pointSpectralSubspace_sub_finrank`: the index of
@@ -106,36 +102,6 @@ namespace TauCeti.WeakDerivStep
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
   {A : ℝ → E →L[ℝ] E} {Aminus Aplus : E →L[ℝ] E}
 
-/-- **The weighted trajectory operator is Fredholm exactly at non-exceptional weights.** Let `A`
-be a continuous family of operators on a finite-dimensional real inner product space with symmetric
-limits `A±` at `±∞`, and let `c` be a continuous slope tending to `δ±` at `±∞`. Then the
-trajectory operator `u ↦ u' + (A - c) u` from `W^{1,2}(ℝ, E)` to `L²(ℝ, E)` is Fredholm if and
-only if `δ⁻` is not an eigenvalue of `A⁻` and `δ⁺` is not an eigenvalue of `A⁺`. For `c = w'`
-this operator is the conjugate of `D_A` on the spaces weighted by `exp w`. -/
-theorem isFredholm_trajectoryOperator_sub_smul_id_iff
-    (hA : Continuous A) (hsymminus : (Aminus : E →ₗ[ℝ] E).IsSymmetric)
-    (hsymplus : (Aplus : E →ₗ[ℝ] E).IsSymmetric)
-    (hbot : Tendsto A atBot (𝓝 Aminus)) (htop : Tendsto A atTop (𝓝 Aplus))
-    {c : ℝ → ℝ} (hc : Continuous c) {δminus δplus : ℝ}
-    (hcbot : Tendsto c atBot (𝓝 δminus)) (hctop : Tendsto c atTop (𝓝 δplus))
-    (BL : Lp (E →L[ℝ] E) ∞ (volume.restrict ((⊤ : Opens ℝ) : Set ℝ)))
-    (hBL : BL =ᵐ[volume.restrict ((⊤ : Opens ℝ) : Set ℝ)]
-      fun s ↦ A s - c s • ContinuousLinearMap.id ℝ E) :
-    (trajectoryOperator (p := 2) BL).IsFredholm ↔
-      ¬Module.End.HasEigenvalue (Aminus : E →ₗ[ℝ] E) δminus ∧
-        ¬Module.End.HasEigenvalue (Aplus : E →ₗ[ℝ] E) δplus := by
-  -- The shifted limits `A± - δ±` are symmetric, and `T - δ • id` is injective exactly when its
-  -- kernel, the eigenspace of `T` at `δ`, vanishes.
-  have hinj (T : E →L[ℝ] E) (δ : ℝ) :
-      Function.Injective (T - δ • ContinuousLinearMap.id ℝ E) ↔
-        ¬Module.End.HasEigenvalue (T : E →ₗ[ℝ] E) δ := by
-    rw [Module.End.hasEigenvalue_iff, not_not, Module.End.eigenspace_def, LinearMap.ker_eq_bot]
-    rfl
-  rw [isFredholm_trajectoryOperator_iff (hA.sub (hc.smul continuous_const))
-    (isSymmetric_sub_smul_id hsymminus (conj_trivial δminus))
-    (isSymmetric_sub_smul_id hsymplus (conj_trivial δplus))
-    (hbot.sub (hcbot.smul_const _)) (htop.sub (hctop.smul_const _)) BL hBL, hinj, hinj]
-
 /-- **The weighted trajectory operator is Fredholm.** Let `A` be a continuous family of operators
 on a finite-dimensional real inner product space with symmetric limits `A±` at `±∞`, and let `c`
 be a continuous slope tending to `δ±` at `±∞`, where `δ±` is not an eigenvalue of `A±`. Then the
@@ -152,9 +118,14 @@ theorem isFredholm_trajectoryOperator_sub_smul_id
     (BL : Lp (E →L[ℝ] E) ∞ (volume.restrict ((⊤ : Opens ℝ) : Set ℝ)))
     (hBL : BL =ᵐ[volume.restrict ((⊤ : Opens ℝ) : Set ℝ)]
       fun s ↦ A s - c s • ContinuousLinearMap.id ℝ E) :
-    (trajectoryOperator (p := 2) BL).IsFredholm :=
-  (isFredholm_trajectoryOperator_sub_smul_id_iff hA hsymminus hsymplus hbot htop hc hcbot hctop
-    BL hBL).2 ⟨hδminus, hδplus⟩
+    (trajectoryOperator (p := 2) BL).IsFredholm := by
+  -- The shifted limits `A± - δ±` are symmetric, and injective since `δ±` is not an eigenvalue.
+  exact (isFredholm_trajectoryOperator_iff (hA.sub (hc.smul continuous_const))
+    (isSymmetric_sub_smul_id hsymminus (conj_trivial δminus))
+    (isSymmetric_sub_smul_id hsymplus (conj_trivial δplus))
+    (hbot.sub (hcbot.smul_const _)) (htop.sub (hctop.smul_const _)) BL hBL).2
+    ⟨LinearMap.ker_eq_bot.1 (ker_sub_smul_id_eq_bot_of_not_hasEigenvalue hδminus),
+      LinearMap.ker_eq_bot.1 (ker_sub_smul_id_eq_bot_of_not_hasEigenvalue hδplus)⟩
 
 /-- **The index on exponentially weighted spaces.** Let `A` be a continuous family of operators on
 a finite-dimensional real inner product space with symmetric limits `A±` at `±∞`, and let `c` be
