@@ -33,7 +33,7 @@ The proof uses three further results, in more basic modules.
 `TauCeti.perimeter_diff_le_of_frontier_inter_subset`: if an open set `G` contains `∂s ∩ V`, then
 `P(s \ G; V) ≤ P(G; V)`. `TauCeti.exists_finset_ball_cover_sum_rpow_lt_of_isCompact`, in any
 metric space: a compact set `A` is covered by finitely many arbitrarily small open balls
-`B(xᵢ, ρᵢ)` with `∑ ρᵢ ^ d` arbitrarily close to `μH[d] A`. And
+`B(xᵢ, ρᵢ)` with `∑ ρᵢ ^ d < c` for any `c > μH[d] A`. And
 `TauCeti.ae_eq_interior_of_hausdorffMeasure_frontier_inter_ne_top`: a set whose frontier has
 finite `μH[n - 1]` measure in `Ω` agrees almost everywhere in `Ω` with its interior.
 
@@ -41,9 +41,10 @@ finite `μH[n - 1]` measure in `Ω` agrees almost everywhere in `Ω` with its in
 
 When `Hⁿ⁻¹(∂s ∩ Ω)` is finite, the frontier is Lebesgue null in `Ω`, so `s` may be replaced by its
 interior. Fix an open set `V` with compact closure in `Ω`. Cover the compact set `∂s ∩ closure V`
-by finitely many open balls `B(xᵢ, ρᵢ)` of radii at most `δ` with `∑ ρᵢ ^ (n - 1)` close to
-`μH[n - 1](∂s ∩ closure V)`, and let `G` be their union. The set `s \ G` is empty on `G` and on the
-exterior of `s`, and agrees with `Gᶜ` on the interior of `s`; these three open sets cover `V`.
+by finitely many open balls `B(xᵢ, ρᵢ)` of radii at most `δ` with `∑ ρᵢ ^ (n - 1) < c` for a
+chosen `c > μH[n - 1](∂s ∩ closure V)`, and let `G` be their union. The set `s \ G` is empty on
+`G` and on the exterior of `s`, and agrees with `Gᶜ` on the interior of `s`; these three open sets
+cover `V`.
 Hence `P(s \ G; V) ≤ P(G) ≤ ∑ n μ(B(0, 1)) ρᵢ ^ (n - 1)`. As `δ → 0` the volume of `G` tends to
 zero, so `s \ G → s` in measure, and lower semicontinuity of the perimeter bounds `P(s; V)`.
 

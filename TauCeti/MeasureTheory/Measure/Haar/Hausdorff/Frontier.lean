@@ -16,7 +16,8 @@ finite `(n - 1)`-dimensional Hausdorff measure inside an open set `Ω` agrees al
 `Ω`, for every additive Haar measure, with its interior
 (`TauCeti.ae_eq_interior_of_hausdorffMeasure_frontier_inter_ne_top`): a set of finite `μH[n - 1]`
 measure has `μH[n]` measure zero, and `μH[n]` is an additive Haar measure. In particular such a set
-is null-measurable in `Ω` (`TauCeti.nullMeasurableSet_of_hausdorffMeasure_frontier_inter_ne_top`).
+is null-measurable in `Ω`, by Mathlib's `nullMeasurableSet_of_null_frontier` for the restricted
+measure.
 -/
 
 public section
@@ -39,17 +40,7 @@ theorem ae_eq_interior_of_hausdorffMeasure_frontier_inter_ne_top (hn : finrank �
     (hausdorffMeasure_zero_or_top (Nat.cast_lt.2 (Nat.sub_lt (Nat.pos_of_ne_zero hn) one_pos))
       _).resolve_right h
   have hnull : μ (frontier s ∩ Ω) = 0 := absolutelyContinuous_isAddHaarMeasure μ _ hH
-  refine ae_eq_set.2 ⟨?_, by simp [sdiff_eq_empty.2 interior_subset]⟩
-  rw [Measure.restrict_apply' Ω.isOpen.measurableSet]
-  exact measure_mono_null (inter_subset_inter_left _
-    (sdiff_subset_sdiff_left subset_closure)) hnull
-
-/-- A set whose frontier has finite `μH[n - 1]` measure in an open set `Ω` is null-measurable in
-`Ω`, in positive dimension `n`. -/
-theorem nullMeasurableSet_of_hausdorffMeasure_frontier_inter_ne_top (hn : finrank ℝ E ≠ 0)
-    (h : μH[((finrank ℝ E - 1 : ℕ) : ℝ)] (frontier s ∩ Ω) ≠ ∞) :
-    NullMeasurableSet s (μ.restrict Ω) :=
-  isOpen_interior.measurableSet.nullMeasurableSet.congr
-    (ae_eq_interior_of_hausdorffMeasure_frontier_inter_ne_top μ hn h).symm
+  refine (interior_ae_eq_of_null_frontier ?_).symm
+  rwa [Measure.restrict_apply' Ω.isOpen.measurableSet]
 
 end TauCeti

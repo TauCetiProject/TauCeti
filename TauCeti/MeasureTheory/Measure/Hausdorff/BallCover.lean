@@ -9,7 +9,7 @@ public import Mathlib.MeasureTheory.Measure.Hausdorff
 import TauCeti.Analysis.SpecialFunctions.Pow.NNReal
 
 /-!
-# Finite covers by small balls with almost minimal `d`-dimensional sum
+# Finite covers by small balls with `d`-dimensional sum below a bound
 
 In a metric space, a compact set `A` with `μH[d] A < c` is covered, for every `δ > 0`, by finitely
 many open balls of radii in `(0, δ]` whose radii have `d`-th powers summing to less than `c`
@@ -30,7 +30,7 @@ open scoped ENNReal NNReal Topology
 
 variable {X : Type*} [MetricSpace X] [MeasurableSpace X] [BorelSpace X]
 
-/-- **Finite covers by small balls with almost minimal `d`-dimensional sum.** A compact set `A`
+/-- **Finite covers by small balls with `d`-dimensional sum below a bound.** A compact set `A`
 with `μH[d] A < c` is covered, for every `δ > 0`, by finitely many open balls `ball x ρ`, indexed
 by a finite set `T` of pairs `(x, ρ)`, with `0 < ρ ≤ δ` and `∑ ρ ^ d < c`. -/
 theorem exists_finset_ball_cover_sum_rpow_lt_of_isCompact {A : Set X} (hA : IsCompact A)
