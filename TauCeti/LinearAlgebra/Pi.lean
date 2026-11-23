@@ -169,6 +169,26 @@ public theorem infinite_pi_of_infinite {R ι : Type*} [Semiring R] [Nontrivial R
   have := congrFun ha i
   simp [hij] at this
 
+/-- The coordinate-equality hyperplane `{v : ι → R | v a = v b}`. -/
+public def coordEq (R : Type*) [Ring R] {ι : Type*} (a b : ι) : Submodule R (ι → R) :=
+  LinearMap.ker ((LinearMap.proj a : (ι → R) →ₗ[R] R) - LinearMap.proj b)
+
+@[simp]
+public theorem mem_coordEq_iff {R ι : Type*} [Ring R] (a b : ι) (v : ι → R) :
+    v ∈ coordEq R a b ↔ v a = v b := by
+  simp [coordEq, sub_eq_zero]
+
+/-- Distinct pairs of indices define distinct coordinate-equality hyperplanes over a nontrivial
+ring (up to swapping the pair). -/
+public theorem eq_or_eq_of_coordEq_eq {R ι : Type*} [Ring R] [Nontrivial R] {a b c d : ι}
+    (hcd : c ≠ d) (heq : coordEq R a b = coordEq R c d) : c = a ∨ c = b := by
+  classical
+  by_contra! hneither
+  have hmem : Pi.single c (1 : R) ∈ coordEq R a b := by
+    rw [mem_coordEq_iff, Pi.single_eq_of_ne hneither.1.symm, Pi.single_eq_of_ne hneither.2.symm]
+  rw [heq, mem_coordEq_iff, Pi.single_eq_same, Pi.single_eq_of_ne hcd.symm] at hmem
+  exact one_ne_zero hmem
+
 end Submodule
 
 namespace LinearEquiv

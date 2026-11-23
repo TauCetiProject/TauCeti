@@ -6,7 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.BigOperators.Group.Finset.Basic
+public import Mathlib.Algebra.Order.Monoid.Defs
 public import Mathlib.Algebra.Order.Monoid.Unbundled.Basic
+public import Mathlib.Data.Fintype.Fin
+import Mathlib.Algebra.Order.BigOperators.Group.Finset
 
 /-!
 # Comparing two sums when one index set dominates the other
@@ -20,7 +23,9 @@ pairing of the two sets, since any bijection between them compares the weights t
 `TauCeti.sum_lt_sum_image_sdiff` is the form in which the comparison is used. A map `σ` that
 permutes a finite set `X` but does not map a part `A` of it to itself must move some point of `A`
 out of `A`; if `A` carries the larger weights, the image of the complementary part `X \ A`
-therefore weighs strictly more than `X \ A` itself.
+therefore weighs strictly more than `X \ A` itself. Similarly,
+`TauCeti.sum_lt_sum_image_castLE_of_strictAnti` shows that among all `j`-element subsets of a type
+strictly antitone-ordered along `x : Fin n ≃ S`, the prefix `j` elements uniquely maximize the sum.
 
 The weights take values in an additive commutative monoid preordered so that addition is strictly
 monotone. This is weaker than the ordered cancellative monoids of Mathlib's
@@ -81,5 +86,30 @@ theorem sum_lt_sum_image_sdiff {α : Type*} [DecidableEq α] (f : α → M) {X A
     ← Finset.sum_sdiff (Finset.inter_subset_right (s₁ := X \ A) (s₂ := X \ A.image σ)),
     Finset.sdiff_inter_self_left, Finset.sdiff_inter_self_right]
   exact add_lt_add_left hlt' _
+
+/-- **Among all `j`-element subsets of a strictly antitone enumeration, the initial `j` elements
+uniquely maximize the sum.** -/
+theorem sum_lt_sum_image_castLE_of_strictAnti {S N : Type*} [DecidableEq S]
+    [AddCommMonoid N] [PartialOrder N] [IsOrderedCancelAddMonoid N]
+    (f : S → N) {n : ℕ} (x : Fin n ≃ S) (hx : StrictAnti (f ∘ x))
+    {j : ℕ} (hj : j ≤ n) {T : Finset S} (hT : T.card = j)
+    (hne : T ≠ Finset.univ.image fun k : Fin j => x (Fin.castLE hj k)) :
+    ∑ i ∈ T, f i < ∑ i ∈ Finset.univ.image fun k : Fin j => x (Fin.castLE hj k), f i := by
+  set T₀ : Finset S := Finset.univ.image fun k : Fin j => x (Fin.castLE hj k)
+  have hT₀_card : T₀.card = j := by
+    rw [Finset.card_image_of_injective _ (fun _ _ h => Fin.castLE_injective hj (x.injective h)),
+      Finset.card_univ, Fintype.card_fin]
+  have hnonempty : (T₀ \ T).Nonempty := by
+    refine Finset.sdiff_nonempty.mpr fun h => hne ?_
+    exact (Finset.eq_of_subset_of_card_le h (by rw [hT, hT₀_card])).symm
+  rw [← Finset.sum_sdiff_lt_sum_sdiff]
+  refine sum_lt_sum_of_forall_lt f f (Finset.card_sdiff_comm (hT.trans hT₀_card.symm)) hnonempty ?_
+  intro b hb a ha
+  rw [Finset.mem_sdiff] at ha hb
+  obtain ⟨k, -, rfl⟩ := Finset.mem_image.mp hb.1
+  have ha_ge : j ≤ (x.symm a : ℕ) := by
+    by_contra! hlt
+    exact ha.2 (Finset.mem_image.mpr ⟨⟨x.symm a, hlt⟩, Finset.mem_univ _, x.apply_symm_apply a⟩)
+  simpa using hx (Fin.lt_def.mpr (lt_of_lt_of_le k.isLt ha_ge))
 
 end TauCeti

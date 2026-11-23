@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.RingTheory.MvPolynomial.PermInvariant
+public import TauCeti.RingTheory.MvPolynomial.PermInvariant.Basic
 public import TauCeti.RingTheory.MvPolynomial.SAGBI.Basic
 
 /-!
@@ -19,14 +19,17 @@ exponents, so its leading exponent `e` is the largest exponent of its orbit: ren
 its orbit, the orbit sum `TauCeti.MvPolynomial.orbitSum R G e` is monic with leading exponent `e`.
 
 Hence, over coefficients without zero divisors, the leading exponents of the invariant subalgebra
-`TauCeti.MvPolynomial.permInvariants R G` are exactly the exponents that are largest in their orbits
-(`MonomialOrder.mem_leadingExponents_permInvariants_iff`), and the orbit sums form a SAGBI basis of
-the invariant subalgebra for every monomial order (`MonomialOrder.isSAGBIBasis_range_orbitSum`).
-When `σ` is nonempty and `R` is nontrivial, this orbit-sum SAGBI basis is infinite. Over a field,
-the invariant subalgebra has a finite SAGBI basis exactly when the monoid of orbit-maximal exponents
-is finitely generated
-(`MonomialOrder.exists_finite_isSAGBIBasis_iff_fg`); this is the monoid through which finite SAGBI
-bases of permutation invariants are classified.
+`TauCeti.MvPolynomial.permInvariants R G` are the exponents that are largest in their orbits
+(`MonomialOrder.mem_leadingExponents_permInvariants_iff`), forming the additive submonoid
+`MonomialOrder.maxOrbitExponents m G` (`MonomialOrder.leadingExponents_permInvariants_eq`), and
+the orbit sums form a SAGBI basis of the invariant subalgebra for every monomial order
+(`MonomialOrder.isSAGBIBasis_range_orbitSum`). When `σ` is nonempty and `R` is nontrivial, this
+orbit-sum SAGBI basis is infinite. Over a field, the invariant subalgebra has a finite SAGBI basis
+exactly when `m.maxOrbitExponents G` is finitely generated.
+
+## Main definitions
+
+* `MonomialOrder.maxOrbitExponents`: the additive submonoid of `m`-maximal orbit exponents.
 
 ## Main results
 
@@ -34,8 +37,9 @@ bases of permutation invariants are classified.
   invariant polynomial is the largest exponent of its orbit.
 * `MonomialOrder.degree_orbitSum`, `MonomialOrder.monic_orbitSum`: the orbit sum of an
   orbit-maximal exponent is monic with that leading exponent.
-* `MonomialOrder.mem_leadingExponents_permInvariants_iff`: the leading exponents of the invariant
-  subalgebra are the orbit-maximal exponents.
+* `MonomialOrder.mem_leadingExponents_permInvariants_iff` and
+  `MonomialOrder.leadingExponents_permInvariants_eq`: the leading exponents of the invariant
+  subalgebra are the orbit-maximal exponents `m.maxOrbitExponents G`.
 * `MonomialOrder.isSAGBIBasis_range_orbitSum`: the orbit sums form a SAGBI basis of the invariant
   subalgebra.
 
@@ -113,6 +117,29 @@ theorem mem_leadingExponents_permInvariants_iff [NoZeroDivisors R] [Nontrivial R
     orbitSum_mem_permInvariants e, orbitSum_ne_zero, m.degree_orbitSum he⟩⟩
   obtain ⟨f, hf, -, rfl⟩ := mem_leadingExponents_iff.1 h
   exact fun g hg ↦ m.toSyn_mapDomain_degree_le_of_mem_permInvariants hf hg
+
+/-- The additive submonoid of exponent vectors `d : σ →₀ ℕ` that are `m`-maximal in their
+`G`-orbit. -/
+def maxOrbitExponents (m : MonomialOrder σ) (G : Subgroup (Equiv.Perm σ)) : AddSubmonoid (σ →₀ ℕ)
+    where
+  carrier := {d | ∀ g ∈ G, d.mapDomain g ≼[m] d}
+  zero_mem' g _ := by simp
+  add_mem' {a b} ha hb g hg := by
+    rw [Finsupp.mapDomain_add, map_add, map_add]
+    exact add_le_add (ha g hg) (hb g hg)
+
+@[simp]
+theorem mem_maxOrbitExponents_iff (m : MonomialOrder σ) (G : Subgroup (Equiv.Perm σ))
+    (d : σ →₀ ℕ) :
+    d ∈ m.maxOrbitExponents G ↔ ∀ g ∈ G, d.mapDomain g ≼[m] d :=
+  Iff.rfl
+
+/-- The leading-exponent monoid of `permInvariants R G` is `m.maxOrbitExponents G`. -/
+theorem leadingExponents_permInvariants_eq (m : MonomialOrder σ)
+    (G : Subgroup (Equiv.Perm σ)) [Finite G] (R : Type*) [CommSemiring R] [NoZeroDivisors R]
+    [Nontrivial R] :
+    m.leadingExponents (permInvariants R G) = m.maxOrbitExponents G :=
+  AddSubmonoid.ext fun _ => m.mem_leadingExponents_permInvariants_iff
 
 variable (R G) in
 /-- The orbit sums form a SAGBI basis of the invariant subalgebra of a permutation group, for

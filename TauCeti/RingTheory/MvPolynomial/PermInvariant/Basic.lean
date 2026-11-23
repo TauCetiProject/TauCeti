@@ -30,7 +30,7 @@ the distinct orbits form a basis of the invariant subalgebra over any commutativ
 This basis is the input to the SAGBI theory of permutation invariants: for a monomial order the
 leading term of an orbit sum is the monomial of the largest exponent in its orbit, which describes
 the leading-exponent monoid of the invariant subalgebra
-(`TauCeti.RingTheory.MvPolynomial.SAGBI.PermInvariant`).
+(`TauCeti.RingTheory.MvPolynomial.PermInvariant.LeadingExponents`).
 
 ## Main definitions
 

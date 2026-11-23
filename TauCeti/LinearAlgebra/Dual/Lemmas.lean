@@ -60,8 +60,8 @@ space contains such a family, which gives coordinates on the space.
   basis of `ker f`.
 * `Module.Dual.span_sup_inf_ker_ne_top`: if `ker φ₁ ≠ ker φ₂` both avoid `p`, then
   `span K {p} ⊔ (ker φ₁ ⊓ ker φ₂) ≠ ⊤`.
-* `Module.Dual.exists_perturb_pos_and_notMem`: perturb a point along a line avoiding finitely many
-  proper submodules while preserving finitely many strict linear inequalities.
+* `TauCeti.exists_forall_pos_and_forall_notMem`: find a point preserving finitely many strict
+  linear inequalities while avoiding finitely many proper submodules.
 * `Module.Dual.span_range_comp_eq_top_of_injective`: pulling a spanning family of forms back along
   an injective linear map still spans the dual.
 * `Submodule.exists_dual_ker_eq_of_finrank_quotient_eq_one`: every codimension-one subspace
@@ -356,6 +356,10 @@ theorem span_range_proj {R ι : Type*} [CommSemiring R] [Finite ι] :
     simp
   rw [h, Basis.span_eq]
 
+end Module.Dual
+
+namespace TauCeti
+
 section OrderedField
 
 variable {K V : Type*} [Field K] [LinearOrder K] [IsStrictOrderedRing K]
@@ -364,8 +368,8 @@ variable {K V : Type*} [Field K] [LinearOrder K] [IsStrictOrderedRing K]
 /-- Perturb a point `q` along a direction avoiding a finite family of proper submodules so that
 finitely many strictly positive linear conditions are preserved while avoiding every submodule in
 the family. -/
-theorem exists_perturb_pos_and_notMem (q : V) (L : Finset (Dual K V)) (hL : ∀ φ ∈ L, 0 < φ q)
-    (ℬ : Finset (Submodule K V)) (hℬ : ∀ S ∈ ℬ, S ≠ ⊤) :
+theorem exists_forall_pos_and_forall_notMem (q : V) (L : Finset (Module.Dual K V))
+    (hL : ∀ φ ∈ L, 0 < φ q) (ℬ : Finset (Submodule K V)) (hℬ : ∀ S ∈ ℬ, S ≠ ⊤) :
     ∃ q' : V, (∀ φ ∈ L, 0 < φ q') ∧ (∀ S ∈ ℬ, q' ∉ S) := by
   classical
   obtain ⟨v, hv⟩ := Submodule.exists_forall_notMem_of_forall_ne_top
@@ -405,7 +409,7 @@ theorem exists_perturb_pos_and_notMem (q : V) (L : Finset (Dual K V)) (hL : ∀ 
 
 end OrderedField
 
-end Module.Dual
+end TauCeti
 
 namespace Submodule
 

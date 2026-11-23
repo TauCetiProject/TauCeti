@@ -10,6 +10,8 @@ public import Mathlib.Algebra.Order.Group.Int
 public import Mathlib.Algebra.Order.Sub.Unbundled.Basic
 public import Mathlib.Data.Fintype.Card
 public import Mathlib.Data.Fin.SuccPred
+import Mathlib.Algebra.BigOperators.Intervals
+import Mathlib.Order.Interval.Finset.Fin
 
 /-!
 # Antitone functions on `Fin`
@@ -26,8 +28,8 @@ ordered subtraction monoid (e.g. `ℕ`) as a sum of upper-tail weights.
 
 * `Fin.exists_antitone_castSucc_eq_succ_iff_mem`: a decreasing `w : Fin (n + 1) → ℤ` with
   `w i.castSucc = w i.succ` exactly for `i ∈ S`.
-* `Fin.antitone_eq_sum_filter_le`: every antitone function `c : Fin r → M` equals the upper-tail
-  sum `∑ k ∈ Finset.univ.filter (i ≤ ·), w k` of adjacent differences.
+* `Fin.exists_forall_eq_sum_filter_le_of_antitone`: every antitone function `c : Fin r → M`
+  equals the upper-tail sum `∑ k ∈ Finset.univ.filter (i ≤ ·), w k` of adjacent differences.
 -/
 
 public section
@@ -63,41 +65,35 @@ theorem exists_antitone_castSucc_eq_succ_iff_mem {n : ℕ} (S : Set (Fin n)) :
 
 /-- Telescoping an antitone function on `Fin r` into a monoid with ordered subtraction as a sum of
 upper-tail weights. -/
-theorem antitone_eq_sum_filter_le {M : Type*} [AddCommMonoid M] [PartialOrder M]
+theorem exists_forall_eq_sum_filter_le_of_antitone {M : Type*} [AddCommMonoid M] [PartialOrder M]
     [ExistsAddOfLE M] [AddLeftMono M] [Sub M] [OrderedSub M] {r : ℕ}
     (c : Fin r → M) (hc : Antitone c) :
     ∃ w : Fin r → M, ∀ i : Fin r,
       c i = ∑ k ∈ Finset.univ.filter (fun k : Fin r => i ≤ k), w k := by
-  refine ⟨fun k => if h : (k : ℕ) + 1 < r then c k - c ⟨k + 1, h⟩ else c k, fun i => ?_⟩
-  suffices ∀ n (i : Fin r), r - 1 - (i : ℕ) = n →
-      c i = ∑ k ∈ Finset.univ.filter (fun k : Fin r => i ≤ k),
-        if h : (k : ℕ) + 1 < r then c k - c ⟨k + 1, h⟩ else c k from
+  let w : Fin r → M := fun k => if h : (k : ℕ) + 1 < r then c k - c ⟨k + 1, h⟩ else c k
+  refine ⟨w, fun i => ?_⟩
+  simp_rw [Finset.filter_le_eq_Ici]
+  suffices ∀ n (i : Fin r), r - 1 - (i : ℕ) = n → c i = ∑ k ∈ Finset.Ici i, w k from
     this (r - 1 - (i : ℕ)) i rfl
   intro n
   induction n with
   | zero =>
     intro i hi
-    have hfilt : Finset.univ.filter (fun k : Fin r => i ≤ k) = {i} := by
-      ext k
-      simp only [Finset.mem_filter, Finset.mem_univ, true_and, Finset.mem_singleton, Fin.le_def,
-        Fin.ext_iff]
-      omega
     have hlast : ¬ (i : ℕ) + 1 < r := by omega
-    rw [hfilt, Finset.sum_singleton]
-    simp [hlast]
+    have hIoi : Finset.Ioi i = ∅ :=
+      Finset.Ioi_eq_empty.mpr fun j hij => Fin.le_def.mpr (by omega)
+    rw [← Finset.add_sum_Ioi_eq_sum_Ici, hIoi, Finset.sum_empty, add_zero]
+    simp [w, hlast]
   | succ m ih =>
     intro i hi
     have hlt : (i : ℕ) + 1 < r := by omega
     let i' : Fin r := ⟨i + 1, hlt⟩
-    have hfilt : Finset.univ.filter (fun k : Fin r => i ≤ k) =
-        insert i (Finset.univ.filter (fun k : Fin r => i' ≤ k)) := by
+    have hIoi : Finset.Ioi i = Finset.Ici i' := by
       ext k
-      simp only [Finset.mem_filter, Finset.mem_univ, true_and, Finset.mem_insert, Fin.le_def,
-        Fin.ext_iff, i']
-      omega
-    rw [hfilt, Finset.sum_insert (by simp [Fin.le_def, i'])]
-    simp only [hlt, ↓reduceDIte]
-    rw [← ih i' (by simp only [i']; omega)]
+      rw [Finset.mem_Ioi, Finset.mem_Ici, Fin.lt_def, Fin.le_def]
+      exact Nat.succ_le_iff
+    rw [← Finset.add_sum_Ioi_eq_sum_Ici, hIoi, ← ih i' (by simp only [i']; omega)]
+    simp only [w, hlt, ↓reduceDIte]
     exact (tsub_add_cancel_of_le (hc (Fin.le_def.mpr (by simp)))).symm
 
 end Fin

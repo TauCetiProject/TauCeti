@@ -6,13 +6,15 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Data.Fin.Tuple.Sort
+public import Mathlib.SetTheory.Cardinal.Finite
+import Mathlib.SetTheory.Cardinal.NatCard
 
 /-!
 # Strictly antitone sequences indexed by `Fin n`
 
 A sequence `f : Fin n → α` is strictly antitone when it strictly decreases along the indices.  This
-file records three facts about such sequences, used for beta-numbers of Young diagrams and the Pieri
-rule for Schur polynomials.
+file records four facts about such sequences, used for beta-numbers of Young diagrams, the Pieri
+rule for Schur polynomials, and decreasing enumerations of finite orbits.
 
 Over `ℕ` a strictly antitone sequence drops by at least one at each step, so it drops by at least
 the index gap: `StrictAnti.add_sub_le_nat`.  This is what makes a strictly decreasing sequence of
@@ -22,7 +24,9 @@ by all of `ℕ` is `StrictMono.add_le_nat`.
 Over any linear order, an *injective* sequence becomes strictly antitone after precomposition with
 Mathlib's decreasing sort `Tuple.sortDesc` (`Function.Injective.strictAnti_sortDesc`), and over any
 partial order a permutation with this property is unique (`StrictAnti.perm_eq`): sorting into
-decreasing order is possible and unambiguous.
+decreasing order is possible and unambiguous. Any finite type with an injective key into a linear
+order therefore admits a strictly antitone equivalence `Fin (Nat.card S) ≃ S`
+(`Finite.exists_equiv_fin_strictAnti`).
 
 ## Main results
 
@@ -31,6 +35,8 @@ decreasing order is possible and unambiguous.
 * `Function.Injective.strictAnti_sortDesc`: `Tuple.sortDesc` sorts an injective sequence into
   strictly decreasing order.
 * `StrictAnti.perm_eq`: the sorting permutation is unique.
+* `Finite.exists_equiv_fin_strictAnti`: any finite type with an injective key into a linear order
+  admits a strictly antitone enumeration `Fin (Nat.card S) ≃ S`.
 -/
 
 public section
@@ -61,3 +67,12 @@ theorem StrictAnti.perm_eq [PartialOrder α] {f : Fin n → α} {τ₁ τ₂ : P
     (h₁ : StrictAnti (f ∘ τ₁)) (h₂ : StrictAnti (f ∘ τ₂)) : τ₁ = τ₂ :=
   Equiv.ext <| congrFun <| ((τ₁.injective_comp f).mp h₁.injective).comp_left
     (Tuple.unique_antitone h₁.antitone h₂.antitone)
+
+/-- **Decreasing enumeration of a finite type.** Any finite type `S` equipped with an injective
+key `k : S → α` into a linear order admits a bijection `e : Fin (Nat.card S) ≃ S` making
+`k ∘ e` strictly antitone. -/
+theorem Finite.exists_equiv_fin_strictAnti {S : Type*} [Finite S] [LinearOrder α]
+    {k : S → α} (hk : Function.Injective k) :
+    ∃ e : Fin (Nat.card S) ≃ S, StrictAnti (k ∘ e) := by
+  let e₀ : Fin (Nat.card S) ≃ S := (Finite.equivFin S).symm
+  exact ⟨(Tuple.sortDesc (k ∘ e₀)).trans e₀, (hk.comp e₀.injective).strictAnti_sortDesc⟩

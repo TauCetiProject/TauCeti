@@ -9,6 +9,7 @@ public import Mathlib.Algebra.Order.Field.Basic
 public import Mathlib.Data.Finset.Max
 public import Mathlib.Order.Interval.Set.Defs
 public import TauCeti.LinearAlgebra.AffineSpace.AffineMap
+import Mathlib.Analysis.Convex.Segment
 import Mathlib.Tactic.FieldSimp
 import Mathlib.Tactic.Linarith
 import Mathlib.Tactic.Ring
@@ -18,7 +19,10 @@ import Mathlib.Tactic.Ring
 
 An affine function `g` on a linearly ordered field, positive at `a`, stays positive on `[a, b]`
 until its first zero, and vanishes there only
-(`AffineMap.exists_forall_pos_iff_lt_of_pos`).
+(`AffineMap.exists_forall_pos_iff_lt_of_pos`). Similarly, `AffineMap.lineMap u v` stays
+nonnegative at the endpoints of an interval containing a positive interior point whenever it has no
+zeros on the open interval
+(`AffineMap.lineMap_nonneg_endpoints_of_pos_of_forall_ne_zero`).
 
 Finitely many affine functions of a nonnegative parameter, all initially positive and at least
 one decreasing, have a common positive exit parameter. All functions are nonnegative exactly
@@ -29,6 +33,10 @@ up to that parameter and strictly positive exactly before it. The proof uses
 
 * `AffineMap.exists_forall_pos_iff_lt_of_pos`: the threshold `z > a` such that, on `[a, b]`, an
   affine function positive at `a` is positive exactly before `z` and vanishes exactly at `z`.
+* `AffineMap.lineMap_nonneg_left_of_pos_of_forall_ne_zero` and
+  `AffineMap.lineMap_nonneg_endpoints_of_pos_of_forall_ne_zero`: sign preservation on an open
+  interval `(a, b)` for `AffineMap.lineMap u v` when it is positive at an interior point and never
+  vanishes on `(a, b)`.
 * `Finset.exists_pos_forall_nonneg_add_mul_iff`: the positive exit parameter for a finite
   family of initially positive affine functions, at least one of which decreases.
 
@@ -73,6 +81,35 @@ theorem exists_forall_pos_iff_lt_of_pos (g : k →ᵃ[k] k) {a b : k} (hab : a <
     · exact absurd h (not_le.2 (hpos hab.le))
     · exact ⟨⟨fun _ ↦ by linarith [hs.2], fun _ ↦ hpos hs.1⟩,
         ⟨fun h ↦ ((hpos hs.1).ne' h).elim, fun h ↦ by linarith [hs.2]⟩⟩
+
+/-- One-sided affine sign preservation at the left endpoint of `(a, m]` for
+`AffineMap.lineMap u v`. -/
+theorem lineMap_nonneg_left_of_pos_of_forall_ne_zero {a m u v : k} (ham : a < m)
+    (hm : 0 < lineMap u v m) (hno : ∀ t ∈ Ioo a m, lineMap u v t ≠ 0) :
+    0 ≤ lineMap u v a := by
+  by_contra! hlt
+  have hmem : (0 : k) ∈ (lineMap u v) '' openSegment k a m := by
+    rw [image_openSegment, openSegment_eq_Ioo (hlt.trans hm)]
+    exact ⟨hlt, hm⟩
+  obtain ⟨t, ht, hzero⟩ := hmem
+  rw [openSegment_eq_Ioo ham] at ht
+  exact hno t ht hzero
+
+/-- Affine sign preservation for `AffineMap.lineMap u v`: if `lineMap u v` is strictly positive at
+an interior point `m ∈ (a, b)` and never vanishes on `(a, b)`, then `0 ≤ lineMap u v a` and
+`0 ≤ lineMap u v b`. -/
+theorem lineMap_nonneg_endpoints_of_pos_of_forall_ne_zero {a m b u v : k} (ham : a < m)
+    (hmb : m < b) (hm : 0 < lineMap u v m) (hno : ∀ t ∈ Ioo a b, lineMap u v t ≠ 0) :
+    0 ≤ lineMap u v a ∧ 0 ≤ lineMap u v b := by
+  refine ⟨lineMap_nonneg_left_of_pos_of_forall_ne_zero ham hm
+    fun t ht ↦ hno t ⟨ht.1, ht.2.trans hmb⟩, ?_⟩
+  by_contra! hlt
+  have hmem : (0 : k) ∈ (lineMap u v) '' openSegment k m b := by
+    rw [image_openSegment, openSegment_symm, openSegment_eq_Ioo (hlt.trans hm)]
+    exact ⟨hlt, hm⟩
+  obtain ⟨t, ht, hzero⟩ := hmem
+  rw [openSegment_eq_Ioo hmb] at ht
+  exact hno t ⟨ham.trans ht.1, ht.2⟩ hzero
 
 end AffineMap
 
