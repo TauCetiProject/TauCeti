@@ -279,6 +279,15 @@ theorem gradedSymmetricAlgebraXOneIso_hom (F : QuasicoherentSheaf X) :
         (SheafOfModules.symmetricPowerOneIso X.sheaf).hom.app F.obj :=
   (rfl)
 
+/-- The inverse of `gradedSymmetricAlgebraXOneIso` is the identification `F ≅ Sym¹ F`, followed
+by the identification of `Sym¹ F` with the degree-one component. -/
+@[simp]
+theorem gradedSymmetricAlgebraXOneIso_inv (F : QuasicoherentSheaf X) :
+    (gradedSymmetricAlgebraXOneIso F).inv =
+      (SheafOfModules.symmetricPowerOneIso X.sheaf).inv.app F.obj ≫
+        eqToHom (gradedSymmetricAlgebra_obj_obj_X F 1).symm :=
+  (rfl)
+
 /-- The graded symmetric algebra functor is faithful: a morphism of quasicoherent sheaves is
 recovered from its action in degree one. -/
 instance : (gradedSymmetricAlgebra X).Faithful :=

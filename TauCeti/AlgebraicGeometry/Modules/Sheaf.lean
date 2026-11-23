@@ -169,7 +169,7 @@ theorem _root_.AlgebraicGeometry.Scheme.Modules.Hom.epi_of_forall_exists_surject
     refine ⟨U ⊓ V, homOfLE inf_le_left, ⟨r • M.presheaf.map (homOfLE inf_le_right).op s, ?_⟩,
       ⟨hx, hxV⟩⟩
     refine (f.app_smul r _).trans ((congrArg (r • ·) ?_).trans hr)
-    exact (PresheafOfModules.naturality_apply f.val (homOfLE inf_le_right).op s)
+    exact f.naturality_apply (homOfLE inf_le_right) s
   exact (toSheaf X).epi_of_epi_map (Sheaf.epi_of_isLocallySurjective _)
 
 /-- A morphism of `𝒪_X`-modules is an isomorphism as soon as it is one on the sections over the

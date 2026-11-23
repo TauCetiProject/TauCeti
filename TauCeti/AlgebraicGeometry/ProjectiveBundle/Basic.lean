@@ -226,7 +226,7 @@ instance epi_universalQuotient : Epi (universalQuotient S E) := by
   have hres : (twistingSheaf S E 1).obj.presheaf.map i.op ((universalQuotient S E).app _
       (Scheme.Hom.pullbackSectionsLE _ E _ _ hV e)) = (universalQuotient S E).app W
         (Scheme.Hom.pullbackSectionsLE _ E _ _ (i.le.trans hV) e) :=
-    (PresheafOfModules.naturality_apply (universalQuotient S E).val i.op _).symm.trans
+    ((universalQuotient S E).naturality_apply i _).symm.trans
       (congrArg _ (Scheme.Hom.presheaf_map_pullbackSectionsLE _ E _ _ hV i e))
   obtain ⟨r, hr⟩ := surjective_smul_universalQuotient_app_pullbackSectionsLE S E U e i.le
     (i.le.trans hV) t
