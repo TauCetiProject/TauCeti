@@ -40,6 +40,10 @@ isomorphism exactly when `V(I)` is already one.
 
 The results on affine blowups are in the namespace `TauCeti.AlgebraicGeometry`.
 
+* `comap_affineBlowupι_ofIdealTop_map`: pulling back `V(K)` on `Spec R` to the chart
+  `Spec R[I/a]` gives `V(K · R[I/a])`.
+* `comap_affineBlowupι_ofIdealTop_span_singleton`: pulling back a principal ideal `V(c)` on
+  `Spec R` to the chart `Spec R[I/a]` gives the principal ideal of `c` in `R[I/a]`.
 * `comap_affineBlowupι_eq_ofIdealTop`: on the chart `Spec R[I/a]`, the exceptional divisor is cut
   out by the single equation `a`.
 * `isEffectiveCartier_comap_toSpecZero_reesAlgebra`: the exceptional divisor of the blowup is an
@@ -90,6 +94,29 @@ open _root_.AlgebraicGeometry Scheme.IdealSheafData
 
 variable {R : Type u} [CommRing R] {I : Ideal R}
 
+/-- Pulling back the ideal sheaf of `K ≤ R` along the blowup chart
+`Spec R[I/a] ⟶ Proj R[It] ⟶ Spec R` gives the ideal sheaf of `K · R[I/a]`. -/
+theorem comap_affineBlowupι_ofIdealTop_map {a : R} (S : Type u) [CommRing S] [Algebra R S]
+    [IsLocalization.Away a S] (ha : a ∈ I) (K : Ideal R) :
+    (ofIdealTop (K.map (Scheme.ΓSpecIso (.of R)).inv.hom)).comap
+        (affineBlowupι S ha ≫ Proj.toSpecZero (grade I) ≫
+          Spec.map (gradeZeroEquiv I).toCommRingCatIso.hom) =
+      ofIdealTop ((K.map (algebraMap R (I.affineBlowup a S))).map
+        (Scheme.ΓSpecIso (.of _)).inv.hom) := by
+  rw [affineBlowupι_toSpecZero, comap_ofIdealTop_map_ΓSpecIso_inv, CommRingCat.hom_ofHom]
+
+/-- Pulling back the principal ideal sheaf of `c : R` along the blowup chart
+`Spec R[I/a] ⟶ Proj R[It] ⟶ Spec R` gives the principal ideal sheaf of `c` in `R[I/a]`. -/
+theorem comap_affineBlowupι_ofIdealTop_span_singleton {a : R} (S : Type u) [CommRing S]
+    [Algebra R S] [IsLocalization.Away a S] (ha : a ∈ I) (c : R) :
+    (ofIdealTop ((Ideal.span {c}).map (Scheme.ΓSpecIso (.of R)).inv.hom)).comap
+        (affineBlowupι S ha ≫ Proj.toSpecZero (grade I) ≫
+          Spec.map (gradeZeroEquiv I).toCommRingCatIso.hom) =
+      ofIdealTop (Ideal.span
+        {(Scheme.ΓSpecIso (.of _)).inv (algebraMap R (I.affineBlowup a S) c)}) := by
+  rw [comap_affineBlowupι_ofIdealTop_map, Ideal.map_span, Set.image_singleton, Ideal.map_span,
+    Set.image_singleton]
+
 /-- **The exceptional divisor on an affine chart.** For `a ∈ I`, the inverse image of the centre
 `V(I)` on the chart `Spec R[I/a] ⟶ Proj R[It]` is the zero scheme of the single function `a`. -/
 theorem comap_affineBlowupι_eq_ofIdealTop {a : R} (S : Type u) [CommRing S] [Algebra R S]
@@ -99,9 +126,8 @@ theorem comap_affineBlowupι_eq_ofIdealTop {a : R} (S : Type u) [CommRing S] [Al
           Spec.map (gradeZeroEquiv I).toCommRingCatIso.hom) =
       ofIdealTop (Ideal.span
         {(Scheme.ΓSpecIso (.of _)).inv (algebraMap R (I.affineBlowup a S) a)}) := by
-  rw [affineBlowupι_toSpecZero, comap_ofIdealTop, Ideal.map_map, ← CommRingCat.hom_comp,
-    ← Scheme.ΓSpecIso_inv_naturality, CommRingCat.hom_comp, ← Ideal.map_map, CommRingCat.hom_ofHom,
-    Ideal.map_algebraMap_affineBlowup (S := S) ha, Ideal.map_span, Set.image_singleton]
+  rw [comap_affineBlowupι_ofIdealTop_map, Ideal.map_algebraMap_affineBlowup (S := S) ha,
+    Ideal.map_span, Set.image_singleton]
 
 variable (I) in
 /-- **The exceptional divisor is an effective Cartier divisor.** The inverse image of the centre
@@ -183,9 +209,7 @@ theorem isEffectiveCartier_comap_ofIdealTop_span_singleton_toSpecZero_reesAlgebr
   refine ⟨_, inferInstance, affineBlowupι (Localization.Away a) ha, inferInstance, hx,
     (Scheme.ΓSpecIso _).inv (algebraMap R (I.affineBlowup a (Localization.Away a)) b),
     Scheme.isSMulRegular_ΓSpecIso_inv hreg, ?_⟩
-  rw [← comap_comp, affineBlowupι_toSpecZero, comap_ofIdealTop_map_ΓSpecIso_inv,
-    CommRingCat.hom_ofHom, Ideal.map_span, Set.image_singleton, Ideal.map_span,
-    Set.image_singleton]
+  rw [← comap_comp, comap_affineBlowupι_ofIdealTop_span_singleton]
 
 end TauCeti.AlgebraicGeometry
 
