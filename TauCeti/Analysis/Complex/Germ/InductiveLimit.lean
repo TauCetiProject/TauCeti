@@ -11,8 +11,7 @@ public import TauCeti.Analysis.Complex.CauchyIntegralPolydisc
 public import TauCeti.Analysis.LocallyConvex.CompactInductiveLimit
 public import Mathlib.Analysis.LocallyConvex.StrongTopology
 import Mathlib.Analysis.Calculus.IteratedDeriv.Lemmas
-import Mathlib.Analysis.Complex.Liouville
-import Mathlib.Analysis.Complex.TaylorSeries
+import TauCeti.Topology.MetricSpace.Thickening
 
 /-!
 # Holomorphic germs along a compact set as an inductive limit
@@ -29,8 +28,8 @@ A sequence of open neighbourhoods `U n` of `K` is a *stage sequence*
 (`TauCeti.IsGermStageSequence`) when each `closure (U (n + 1))` is compact and contained in `U n`,
 every connected component of each `U n` meets `K`, and every open neighbourhood of `K` contains
 some `U n`. Every compact set has stage sequences inside any given neighbourhood
-(`TauCeti.exists_isGermStageSequence`), for instance the thickenings of `K`. Along a stage
-sequence:
+(`TauCeti.exists_isGermStageSequence`), from its shrinking neighbourhood bases
+(`IsCompact.exists_hasAntitoneBasis_nhdsSet`). Along a stage sequence:
 
 * the restrictions `H^∞(U n) → H^∞(U (n + 1))` are compact by Montel's theorem and the germ maps
   `H^∞(U n) → A[K]` are injective by the identity theorem;
@@ -41,8 +40,8 @@ sequence:
 Continuous functionals separate the points of `A[K]`: for `x ∈ K` and `v ∈ V`, the `n`-th
 derivative at `0` of `t ↦ g (x + t • v)` is a continuous linear functional
 (`TauCeti.HolomorphicGermSpace.iteratedLineDeriv`), by the Cauchy estimates on each `H^∞(U)`,
-and a germ all of whose jets at the points of `K` vanish is zero by Taylor expansion. In
-particular `A[K]` is Hausdorff.
+and a germ all of whose jets at the points of `K` vanish is zero, since a bounded holomorphic
+function with vanishing jets at a point vanishes near it. In particular `A[K]` is Hausdorff.
 
 The theory of compact inductive limits in `TauCeti.Analysis.LocallyConvex.CompactInductiveLimit`
 then applies along any stage sequence, and so for every compact `K` it gives:
@@ -72,8 +71,7 @@ open Filter Metric Set Topology TopologicalSpace
 namespace TauCeti
 
 open BoundedHolomorphicFunctions
-open holomorphicGerms (ofFun exists_ofFun_eq ofFun_eq_of_eqOn ofFun_eq_zero_iff ofFun_add
-  ofFun_smul)
+open holomorphicGerms (ofFun ofFun_eq_of_eqOn ofFun_eq_zero_iff ofFun_add ofFun_smul)
 
 variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℂ V]
 
@@ -128,6 +126,12 @@ theorem coe_equivHolomorphicGerms (g : HolomorphicGermSpace K) :
 theorem toGerm_equivHolomorphicGerms_symm (g : holomorphicGerms K) :
     toGerm (equivHolomorphicGerms.symm g) = g :=
   (rfl)
+
+/-- Every element of `A[K]` is the germ of a function analytic near `K`. -/
+private theorem exists_ofFun_eq (g : HolomorphicGermSpace K) :
+    ∃ (f : V → ℂ) (hf : AnalyticOnNhd ℂ f K), equivHolomorphicGerms.symm (ofFun f hf) = g := by
+  obtain ⟨f, hf, hfg⟩ := holomorphicGerms.exists_ofFun_eq (equivHolomorphicGerms g)
+  exact ⟨f, hf, by rw [hfg, LinearEquiv.symm_apply_apply]⟩
 
 variable [FiniteDimensional ℂ V]
 
@@ -255,42 +259,34 @@ private theorem analyticAt_line {f : V → ℂ} (hf : AnalyticOnNhd ℂ f K) (hx
     AnalyticAt ℂ (fun t : ℂ => f (x + t • v)) 0 :=
   (hf x hx).comp_of_eq (analyticAt_const.add (analyticAt_id.smul analyticAt_const)) (by simp)
 
+/-- The `n`-th derivative at `0` of `t ↦ g (x + t • v)` for a germ `g`. -/
+private def lineDeriv (hx : x ∈ K) (v : V) (n : ℕ) (g : HolomorphicGermSpace K) : ℂ :=
+  Germ.liftOn (toGerm g) (fun f => iteratedDeriv n (fun t : ℂ => f (x + t • v)) 0)
+    fun _ _ h => iteratedLineDeriv_congr hx v n h
+
+omit [FiniteDimensional ℂ V] in
+private theorem lineDeriv_ofFun (hx : x ∈ K) (v : V) (n : ℕ) {f : V → ℂ}
+    (hf : AnalyticOnNhd ℂ f K) :
+    lineDeriv hx v n (equivHolomorphicGerms.symm (ofFun f hf)) =
+      iteratedDeriv n (fun t : ℂ => f (x + t • v)) 0 := by
+  rw [lineDeriv, toGerm_equivHolomorphicGerms_symm, holomorphicGerms.coe_ofFun]
+  -- `Germ.liftOn` on the germ of a function is the defining formula applied to that function.
+  rfl
+
 /-- The `n`-th derivative at `0` of `t ↦ g (x + t • v)`, as a linear functional on germs. -/
 private def iteratedLineDerivₗ (hx : x ∈ K) (v : V) (n : ℕ) :
     HolomorphicGermSpace K →ₗ[ℂ] ℂ where
-  toFun g := Germ.liftOn (toGerm g)
-    (fun f => iteratedDeriv n (fun t : ℂ => f (x + t • v)) 0)
-    fun _ _ h => iteratedLineDeriv_congr hx v n h
+  toFun := lineDeriv hx v n
   map_add' g g' := by
-    obtain ⟨f, hf, hfg⟩ := exists_ofFun_eq (equivHolomorphicGerms g)
-    obtain ⟨f', hf', hfg'⟩ := exists_ofFun_eq (equivHolomorphicGerms g')
-    rw [← equivHolomorphicGerms.symm_apply_apply g, ← equivHolomorphicGerms.symm_apply_apply g',
-      ← hfg, ← hfg', ← map_add, ← ofFun_add]
-    simp only [toGerm_equivHolomorphicGerms_symm, holomorphicGerms.coe_ofFun]
-    -- `Germ.liftOn` on the germ of a function is the defining formula applied to that function.
-    change iteratedDeriv n ((fun t : ℂ => f (x + t • v)) + fun t : ℂ => f' (x + t • v)) 0 =
-      iteratedDeriv n (fun t : ℂ => f (x + t • v)) 0 +
-        iteratedDeriv n (fun t : ℂ => f' (x + t • v)) 0
-    exact iteratedDeriv_add (analyticAt_line hf hx v).contDiffAt
+    obtain ⟨f, hf, rfl⟩ := exists_ofFun_eq g
+    obtain ⟨f', hf', rfl⟩ := exists_ofFun_eq g'
+    rw [← map_add, ← ofFun_add, lineDeriv_ofFun, lineDeriv_ofFun, lineDeriv_ofFun]
+    exact iteratedDeriv_fun_add (analyticAt_line hf hx v).contDiffAt
       (analyticAt_line hf' hx v).contDiffAt
   map_smul' c g := by
-    obtain ⟨f, hf, hfg⟩ := exists_ofFun_eq (equivHolomorphicGerms g)
-    rw [← equivHolomorphicGerms.symm_apply_apply g, ← hfg, ← map_smul, ← ofFun_smul]
-    simp only [toGerm_equivHolomorphicGerms_symm, holomorphicGerms.coe_ofFun]
-    -- `Germ.liftOn` on the germ of a function is the defining formula applied to that function.
-    change iteratedDeriv n (c • fun t : ℂ => f (x + t • v)) 0 =
-      c • iteratedDeriv n (fun t : ℂ => f (x + t • v)) 0
-    exact iteratedDeriv_const_smul (analyticAt_line hf hx v).contDiffAt c
-
-omit [FiniteDimensional ℂ V] in
-private theorem iteratedLineDerivₗ_ofFun (hx : x ∈ K) (v : V) (n : ℕ) {f : V → ℂ}
-    (hf : AnalyticOnNhd ℂ f K) :
-    iteratedLineDerivₗ hx v n (equivHolomorphicGerms.symm (ofFun f hf)) =
-      iteratedDeriv n (fun t : ℂ => f (x + t • v)) 0 := by
-  rw [iteratedLineDerivₗ, LinearMap.coe_mk, AddHom.coe_mk, toGerm_equivHolomorphicGerms_symm,
-    holomorphicGerms.coe_ofFun]
-  -- `Germ.liftOn` on the germ of a function is the defining formula applied to that function.
-  rfl
+    obtain ⟨f, hf, rfl⟩ := exists_ofFun_eq g
+    rw [← map_smul, ← ofFun_smul, lineDeriv_ofFun, lineDeriv_ofFun]
+    exact iteratedDeriv_fun_const_smul_field c _
 
 /-- The **jet functional** at a point `x ∈ K` in direction `v`: the continuous linear functional
 on `A[K]` sending a germ `g` to the `n`-th complex derivative at `0` of `t ↦ g (x + t • v)`. Its
@@ -303,15 +299,15 @@ def iteratedLineDeriv (hx : x ∈ K) (v : V) (n : ℕ) : StrongDual ℂ (Holomor
     refine (continuous_iff_continuous_comp_ofBounded _).2 fun U h => ?_
     refine (BoundedHolomorphicFunctions.iteratedLineDeriv (E := ℂ) ⟨x, h hx⟩ v n).continuous.congr
       fun f => ?_
-    rw [Function.comp_apply, ofBounded_apply, iteratedLineDerivₗ_ofFun,
-      BoundedHolomorphicFunctions.iteratedLineDeriv_apply]
+    rw [Function.comp_apply, ofBounded_apply, BoundedHolomorphicFunctions.iteratedLineDeriv_apply]
+    exact (lineDeriv_ofFun hx v n _).symm
 
 @[simp]
 theorem iteratedLineDeriv_ofFun (hx : x ∈ K) (v : V) (n : ℕ) {f : V → ℂ}
     (hf : AnalyticOnNhd ℂ f K) :
     iteratedLineDeriv hx v n (equivHolomorphicGerms.symm (ofFun f hf)) =
       iteratedDeriv n (fun t : ℂ => f (x + t • v)) 0 :=
-  iteratedLineDerivₗ_ofFun hx v n hf
+  lineDeriv_ofFun hx v n hf
 
 @[simp]
 theorem iteratedLineDeriv_ofBounded (hx : x ∈ K) (v : V) (n : ℕ) {U : Opens V} (h : K ⊆ U)
@@ -323,25 +319,27 @@ theorem iteratedLineDeriv_ofBounded (hx : x ∈ K) (v : V) (n : ℕ) {U : Opens 
 /-- A germ along `K` all of whose jets at the points of `K` vanish is zero. -/
 theorem eq_zero_of_forall_iteratedLineDeriv_eq_zero {g : HolomorphicGermSpace K}
     (h : ∀ (x : V) (hx : x ∈ K) (v : V) (n : ℕ), iteratedLineDeriv hx v n g = 0) : g = 0 := by
-  obtain ⟨f, hf, hfg⟩ := exists_ofFun_eq (equivHolomorphicGerms g)
-  rw [← equivHolomorphicGerms.symm_apply_apply g, ← hfg] at h ⊢
+  have := FiniteDimensional.proper_rclike ℂ V
+  obtain ⟨f, hf, rfl⟩ := exists_ofFun_eq g
   refine (LinearEquiv.map_eq_zero_iff _).2 <|
     (ofFun_eq_zero_iff hf).2 (eventually_nhdsSet_iff_forall.2 fun x hx => ?_)
+  -- On a small ball `B` around `x`, `f` is a bounded holomorphic function whose jets at `x`
+  -- vanish, so it vanishes near `x`.
   obtain ⟨ε, hε, hfε⟩ := Metric.eventually_nhds_iff_ball.1 (hf x hx).eventually_analyticAt
-  filter_upwards [ball_mem_nhds x (half_pos hε)] with w hw
-  -- On the disc of radius `2`, `t ↦ f (x + t • (w - x))` is holomorphic with vanishing Taylor
-  -- coefficients at `0`, so its value at `1`, which is `f w`, vanishes.
-  have hφ : DifferentiableOn ℂ (fun t : ℂ => f (x + t • (w - x))) (ball 0 2) := by
-    intro t ht
-    refine ((hfε _ ?_).differentiableAt.comp t (by fun_prop)).differentiableWithinAt
-    rw [mem_ball, dist_zero_right] at ht
-    rw [mem_ball, dist_eq_norm] at hw
-    rw [mem_ball, dist_eq_norm, add_sub_cancel_left, norm_smul]
-    nlinarith [norm_nonneg t, norm_nonneg (w - x)]
-  have key := Complex.taylorSeries_eq_on_ball' (z := 1) (by norm_num [mem_ball]) hφ
-  have hzero (n : ℕ) : iteratedDeriv n (fun t : ℂ => f (x + t • (w - x))) 0 = 0 := by
-    simpa using h x hx (w - x) n
-  simpa [hzero] using key.symm
+  have hcl (z : V) (hz : z ∈ closedBall x (ε / 2)) : AnalyticAt ℂ f z :=
+    hfε z (closedBall_subset_ball (half_lt_self hε) hz)
+  obtain ⟨C, hC⟩ := (isCompact_closedBall x (ε / 2)).exists_bound_of_continuousOn
+    fun z hz => (hcl z hz).continuousAt.continuousWithinAt
+  let B : Opens V := ⟨ball x (ε / 2), isOpen_ball⟩
+  have hB := extend_eventuallyEq_zero_of_forall_iteratedLineDeriv_eq_zero
+    (⟨x, mem_ball_self (half_pos hε)⟩ : B)
+    (f := of B f (fun z hz => (hcl z (ball_subset_closedBall hz)).differentiableAt
+      |>.differentiableWithinAt) C fun z hz => hC z (ball_subset_closedBall hz))
+    fun v n => (BoundedHolomorphicFunctions.iteratedLineDeriv_of ..).trans <| by
+      simpa using h x hx v n
+  filter_upwards [hB, ball_mem_nhds x (half_pos hε)] with z hz hzB
+  rw [extend_apply _ ⟨z, hzB⟩] at hz
+  exact (of_apply _ _ _ _ _).symm.trans hz
 
 /-- Continuous linear functionals separate the points of `A[K]`. -/
 instance : SeparatingDual ℂ (HolomorphicGermSpace K) :=
@@ -370,30 +368,17 @@ structure IsGermStageSequence (K : Set V) (U : ℕ → Opens V) : Prop where
     ∀ x ∈ U n, (connectedComponentIn (U n : Set V) x ∩ K).Nonempty
   exists_subset {W : Set V} : IsOpen W → K ⊆ W → ∃ n, (U n : Set V) ⊆ W
 
-/-- Every compact set has a stage sequence inside any open neighbourhood, namely a sequence of
-thickenings. -/
+/-- Every compact set has a stage sequence inside any open neighbourhood, namely a shrinking
+neighbourhood basis (`IsCompact.exists_hasAntitoneBasis_nhdsSet`). -/
 theorem exists_isGermStageSequence [ProperSpace V] {K W : Set V} (hK : IsCompact K)
     (hW : IsOpen W) (hKW : K ⊆ W) :
     ∃ U : ℕ → Opens V, IsGermStageSequence K U ∧ (U 0 : Set V) ⊆ W := by
-  obtain ⟨δ, hδ, hδW⟩ := hK.exists_thickening_subset_open hW hKW
-  have hlt (n : ℕ) : δ / ((n + 1 : ℕ) + 1 : ℝ) < δ / ((n : ℝ) + 1) :=
-    div_lt_div_of_pos_left hδ (by positivity) (by push_cast; linarith)
-  refine ⟨fun n => ⟨thickening (δ / ((n : ℝ) + 1)) K, isOpen_thickening⟩,
-    ⟨fun n => self_subset_thickening (by positivity) K, fun n => ?_, fun n => ?_,
-      fun n x hx => ?_, fun {W'} hW' hKW' => ?_⟩, by simpa using hδW⟩
-  · exact hK.cthickening.of_isClosed_subset isClosed_closure
-      (closure_thickening_subset_cthickening _ _)
-  · exact (closure_thickening_subset_cthickening _ _).trans
-      (cthickening_subset_thickening' (by positivity) (hlt n) K)
-  · obtain ⟨y, hy, hxy⟩ := mem_thickening_iff.1 hx
-    exact ⟨y, (convex_ball y _).isPreconnected.subset_connectedComponentIn (mem_ball.2 hxy)
-      (ball_subset_thickening hy _) (mem_ball_self (dist_nonneg.trans_lt hxy)), hy⟩
-  · obtain ⟨ε, hε, hεW⟩ := hK.exists_thickening_subset_open hW' hKW'
-    obtain ⟨n, hn⟩ := exists_nat_one_div_lt (div_pos hε hδ)
-    refine ⟨n, (thickening_mono ?_ K).trans hεW⟩
-    calc δ / ((n : ℝ) + 1) = δ * (1 / ((n : ℝ) + 1)) := by ring
-      _ ≤ δ * (ε / δ) := by gcongr
-      _ = ε := by field_simp
+  obtain ⟨U, hbasis, h0, hU⟩ := hK.exists_hasAntitoneBasis_nhdsSet hW hKW
+  exact ⟨fun n => ⟨U n, (hU n).1⟩,
+    ⟨fun n => subset_of_mem_nhdsSet (hbasis.mem n), fun n => (hU (n + 1)).2.1,
+      fun n => (hU n).2.2.1, fun n => (hU n).2.2.2,
+      fun hW' hKW' => hbasis.mem_iff.1 (hW'.mem_nhdsSet.2 hKW')⟩,
+    subset_closure.trans h0⟩
 
 namespace IsGermStageSequence
 
@@ -420,8 +405,7 @@ theorem ofBounded_injective (n : ℕ) : Function.Injective (ofBounded (hU.subset
 /-- Every germ along `K` is the germ of a bounded holomorphic function on some stage. -/
 theorem exists_ofBounded_eq (g : HolomorphicGermSpace K) :
     ∃ n, ∃ f : boundedHolomorphicFunctions ℂ (U n), ofBounded (hU.subset n) f = g := by
-  obtain ⟨f, hf, hfg⟩ := exists_ofFun_eq (equivHolomorphicGerms g)
-  rw [← equivHolomorphicGerms.symm_apply_apply g, ← hfg]
+  obtain ⟨f, hf, rfl⟩ := exists_ofFun_eq g
   obtain ⟨n, hn⟩ := hU.exists_subset (isOpen_analyticAt ℂ f) hf
   have hcl : closure (U (n + 1) : Set V) ⊆ {z | AnalyticAt ℂ f z} :=
     (hU.closure_subset n).trans hn

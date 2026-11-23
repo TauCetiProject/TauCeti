@@ -22,10 +22,10 @@ spectra.
 
 We construct evaluation and restriction homomorphisms and characterize units by nonvanishing on
 `s`; the inverse of a unit is represented by the pointwise reciprocal. For `s ⊆ ℂ` we also
-construct composition homomorphisms, and a germ vanishes at a point `x ∈ s` exactly when it is
-divisible by `z - x`. The spectrum of a represented germ is exactly the image of `s`, and the
-coordinate germ has spectrum `s`. No compactness or nonemptiness is needed; at the empty set the
-germ algebra is the zero algebra.
+construct composition homomorphisms, show that a germ vanishes at a point `x ∈ s` exactly when it
+is divisible by `z - x`, and show that the spectrum of a represented germ is exactly the image of
+`s`, so the coordinate germ has spectrum `s`. No compactness or nonemptiness is needed; at the
+empty set the germ algebra is the zero algebra.
 
 The construction uses Mathlib's `AnalyticOnNhd.congr'` for independence of representatives
 and `Filter.Germ` (including `Filter.Germ.compTendsto'`) for the quotient, its pointwise
