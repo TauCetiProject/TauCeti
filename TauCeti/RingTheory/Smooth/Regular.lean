@@ -5,10 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.RingTheory.Localization.LocalizationLocalization
 public import Mathlib.RingTheory.RegularLocalRing.Polynomial
 public import Mathlib.RingTheory.Smooth.Flat
-public import Mathlib.RingTheory.Smooth.Locus
 public import Mathlib.RingTheory.Smooth.StandardSmoothOfFree
 public import TauCeti.RingTheory.Kaehler.FormallyEtale
 public import TauCeti.RingTheory.RegularLocalRing.Flat
@@ -130,10 +128,15 @@ namespace Excellence
 regular locus of `B`: the local ring `B_q` is essentially of finite type and formally smooth over
 the regular local ring `R_p`, so it is regular by `TauCeti.IsRegularLocalRing.of_formallySmooth`. -/
 theorem mem_regularLocus_of_mem_smoothLocus [Algebra.EssFiniteType R S] {q : PrimeSpectrum S}
-    [IsRegularLocalRing (Localization.AtPrime (q.asIdeal.under R))]
+    (hp : PrimeSpectrum.comap (algebraMap R S) q ∈ regularLocus R)
     (hq : q ∈ Algebra.smoothLocus R S) : q ∈ regularLocus S := by
   rw [Algebra.smoothLocus, Set.mem_ofPred_eq] at hq
   let p := q.asIdeal.under R
+  have : IsLocalization.AtPrime (Localization.AtPrime p)
+      (PrimeSpectrum.comap (algebraMap R S) q).asIdeal := by
+    simp only [PrimeSpectrum.comap_asIdeal]
+    infer_instance
+  have := (mem_regularLocus_iff_of_isLocalization (Localization.AtPrime p)).mp hp
   let := Localization.AtPrime.algebraOfLiesOver p q.asIdeal
   have : Algebra.FormallySmooth (Localization.AtPrime p) (Localization.AtPrime q.asIdeal) :=
     .of_restrictScalars R _ _
@@ -145,7 +148,7 @@ theorem mem_regularLocus_of_mem_smoothLocus [Algebra.EssFiniteType R S] {q : Pri
 its regular locus. -/
 theorem smoothLocus_subset_regularLocus [IsRegularRing R] [Algebra.EssFiniteType R S] :
     Algebra.smoothLocus R S ⊆ regularLocus S :=
-  fun _ ↦ mem_regularLocus_of_mem_smoothLocus
+  fun _ ↦ mem_regularLocus_of_mem_smoothLocus (mem_regularLocus.mpr inferInstance)
 
 end Excellence
 

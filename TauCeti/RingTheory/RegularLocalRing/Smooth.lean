@@ -151,7 +151,8 @@ theorem mem_regularLocus_iff_mem_smoothLocus (k : Type*) [Field k] [Algebra k B]
     [Algebra.EssFiniteType k B] {q : PrimeSpectrum B}
     [Algebra.FormallySmooth k (ResidueField (Localization.AtPrime q.asIdeal))] :
     q ∈ regularLocus B ↔ q ∈ Algebra.smoothLocus k B := by
-  refine ⟨fun hq ↦ ?_, mem_regularLocus_of_mem_smoothLocus⟩
+  refine ⟨fun hq ↦ ?_,
+    mem_regularLocus_of_mem_smoothLocus (mem_regularLocus.mpr inferInstance)⟩
   have := mem_regularLocus.mp hq
   rw [Algebra.smoothLocus, Set.mem_ofPred_eq]
   exact formallySmooth_of_isRegularLocalRing

@@ -6,8 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.FieldTheory.Perfect
-public import Mathlib.RingTheory.EssentialFiniteness
-public import Mathlib.RingTheory.Spectrum.Prime.Topology
 public import TauCeti.RingTheory.RegularLocalRing.Locus
 import TauCeti.RingTheory.RegularLocalRing.Smooth
 
@@ -30,6 +28,7 @@ for instance `ℚ[x, y] ⧸ (y ^ 2 - x ^ 3)`, has open regular locus.
 
 * `TauCeti.Excellence.IsJ2 R`: `R` is Noetherian and every finite type `R`-algebra has open regular
   locus; `TauCeti.Excellence.isJ2_iff` unfolds it.
+* `TauCeti.Excellence.IsJ2.isOpen_regularLocus`: a J-2 ring has open regular locus.
 * `TauCeti.Excellence.IsJ2.isOpen_regularLocus_of_essFiniteType`: an algebra essentially of finite
   type over a J-2 ring, in any universe, has open regular locus.
 * `TauCeti.Excellence.IsJ2.of_essFiniteType`: an algebra essentially of finite type over a J-2
@@ -95,6 +94,10 @@ theorem isOpen_regularLocus_of_finiteType [IsJ2 R] [Algebra.FiniteType R B] :
   have hQ := forall_isOpen_regularLocus (R := R) Q inferInstance
   rw [← regularLocus_ringEquiv (Ideal.quotientKerAlgEquivOfSurjective hf).toRingEquiv]
   exact hQ.preimage (PrimeSpectrum.continuous_comap _)
+
+/-- A J-2 ring has open regular locus. -/
+theorem isOpen_regularLocus [IsJ2 R] : IsOpen (regularLocus R) :=
+  isOpen_regularLocus_of_finiteType (R := R)
 
 /-- An algebra essentially of finite type over a J-2 ring has open regular locus: it is a
 localization of an algebra of finite type, and its regular locus is the preimage of that of the
