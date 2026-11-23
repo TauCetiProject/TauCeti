@@ -88,22 +88,23 @@ private theorem continuous_undoTime {X : Type*} [TopologicalSpace X] {f g : X �
 private theorem coe_undoTime (u s : I) :
     (undoTime u s : ℝ) = min (min (3 * (s : ℝ)) ((3 - 3 * s) / 2)) (1 - u) := by
   have h₀ : 0 ≤ min (min (3 * (s : ℝ)) ((3 - 3 * s) / 2)) (1 - u) :=
-    le_min (le_min (by linarith [s.2.1]) (by linarith [s.2.2])) (by linarith [u.2.2])
+    le_min (le_min (by linarith [s.property.1]) (by linarith [s.property.2]))
+      (by linarith [u.property.2])
   have h₁ : min (min (3 * (s : ℝ)) ((3 - 3 * s) / 2)) (1 - u) ≤ 1 :=
-    (min_le_right _ _).trans (by linarith [u.2.1])
+    (min_le_right _ _).trans (by linarith [u.property.1])
   rw [undoTime, coe_projIcc, min_eq_right h₁, max_eq_right h₀]
 
 private theorem undoTime_zero_right (u : I) : undoTime u 0 = 0 :=
   Subtype.ext ((coe_undoTime u 0).trans (by
     rw [Icc.coe_zero, mul_zero, sub_zero, min_eq_left (by norm_num : (0 : ℝ) ≤ 3 / 2)]
-    exact min_eq_left (by linarith [u.2.2])))
+    exact min_eq_left (by linarith [u.property.2])))
 
 /-- On the disc of radius `1/4`, the factor `4` keeps a point in the unit disc. -/
 private theorem four_smul_mem_closedBall {n : ℕ}
     (v : closedBall (0 : EuclideanSpace ℝ (Fin n)) (1 / 4)) :
     (4 : ℝ) • (v : EuclideanSpace ℝ (Fin n)) ∈ closedBall (0 : EuclideanSpace ℝ (Fin n)) 1 := by
   rw [mem_closedBall_zero_iff, norm_smul, Real.norm_of_nonneg (by norm_num)]
-  linarith [mem_closedBall_zero_iff.1 v.2]
+  linarith [mem_closedBall_zero_iff.1 v.property]
 
 include hχ₁ in
 /-- On the `i`-th family of discs, stage `u` of the contraction: `x ↦ 4x` into the `i`-th cell on
@@ -121,8 +122,8 @@ private def undoCell (i : ι) : C((I × P) × TopCat.disk.{u} (k i), fiberwiseCe
       (fiberwiseCellAttachmentIncl α₁).hom.continuous.comp (by fun_prop)⟩
     fun q θ ↦ by
       -- On the seam the time vanishes, and `K i` starts at `χ₁ i`, which is `α₁ i` on the sphere.
-      have hθ : (ULift.up ⟨(4 : ℝ) • (1 / 4 : ℝ) • θ.down.1, four_smul_mem_closedBall
-          ⟨(1 / 4 : ℝ) • θ.down.1, TopCat.smul_diskBoundary_mem_closedBall (by norm_num) θ⟩⟩ :
+      have hθ : (ULift.up ⟨(4 : ℝ) • (1 / 4 : ℝ) • θ.down.val, four_smul_mem_closedBall
+          ⟨(1 / 4 : ℝ) • θ.down.val, TopCat.smul_diskBoundary_mem_closedBall (by norm_num) θ⟩⟩ :
             TopCat.disk.{u} (k i)) = TopCat.diskBoundaryInclusion (k i) θ :=
         ULift.ext (Subtype.ext (by
           simp only [smul_smul, TopCat.coe_diskBoundaryInclusion_apply_down]
@@ -132,25 +133,25 @@ private def undoCell (i : ι) : C((I × P) × TopCat.disk.{u} (k i), fiberwiseCe
       rw [hθ, fiberwiseCellAttachmentCell_diskBoundaryInclusion]
 
 private theorem undoCell_of_norm_le (i : ι) (u : I) (p : P) {w v : TopCat.disk.{u} (k i)}
-    (hw : ‖w.down.1‖ ≤ 1 / 4) (hv : v.down.1 = (4 : ℝ) • w.down.1) :
+    (hw : ‖w.down.val‖ ≤ 1 / 4) (hv : v.down.val = (4 : ℝ) • w.down.val) :
     undoCell α₁ χ₀ χ₁ hχ₁ K hK i ((u, p), w) = fiberwiseCellAttachmentCell α₁ i (p, v) := by
   rw [undoCell, TopCat.discGlue_apply_of_norm_le _ _ _ _ _ hw]
   exact congrArg (fun v ↦ fiberwiseCellAttachmentCell α₁ i (p, v))
     (ULift.ext (Subtype.ext hv.symm))
 
 private theorem undoCell_of_le_norm (i : ι) (u : I) (p : P) {w : TopCat.disk.{u} (k i)}
-    (hw : 1 / 4 ≤ ‖w.down.1‖) {t : I}
-    (ht : (t : ℝ) = min (min (4 * ‖w.down.1‖ - 1) (2 - 2 * ‖w.down.1‖)) (1 - u))
-    {s : TopCat.diskBoundary.{u} (k i)} (hs : s.down.1 = ‖w.down.1‖⁻¹ • w.down.1) :
+    (hw : 1 / 4 ≤ ‖w.down.val‖) {t : I}
+    (ht : (t : ℝ) = min (min (4 * ‖w.down.val‖ - 1) (2 - 2 * ‖w.down.val‖)) (1 - u))
+    {s : TopCat.diskBoundary.{u} (k i)} (hs : s.down.val = ‖w.down.val‖⁻¹ • w.down.val) :
     undoCell α₁ χ₀ χ₁ hχ₁ K hK i ((u, p), w) =
       fiberwiseCellAttachmentIncl α₁
         (p, ⟨K i (t, (p, TopCat.diskBoundaryInclusion (k i) s)), hK i t p s⟩) := by
   have ha := TopCat.add_one_sub_mul_annulusParam (by norm_num : (1 / 4 : ℝ) ≤ 1) hw
   have ht' : undoTime u (TopCat.annulusParam (1 / 4) w) = t := by
     refine Subtype.ext ((coe_undoTime _ _).trans (ht ▸ ?_))
-    have h₁ : (3 - 3 * (TopCat.annulusParam (1 / 4) w : ℝ)) / 2 = 2 - 2 * ‖w.down.1‖ := by
+    have h₁ : (3 - 3 * (TopCat.annulusParam (1 / 4) w : ℝ)) / 2 = 2 - 2 * ‖w.down.val‖ := by
       linarith
-    have h₂ : 3 * (TopCat.annulusParam (1 / 4) w : ℝ) = 4 * ‖w.down.1‖ - 1 := by linarith
+    have h₂ : 3 * (TopCat.annulusParam (1 / 4) w : ℝ) = 4 * ‖w.down.val‖ - 1 := by linarith
     rw [h₁, h₂]
   have hs' : TopCat.annulusDir (by norm_num) ⟨w, hw⟩ = s :=
     ULift.ext (Subtype.ext ((TopCat.coe_annulusDir _ _).trans hs.symm))
@@ -167,7 +168,7 @@ private theorem undoCell_diskBoundaryInclusion (i : ι) (u : I) (p : P)
       fiberwiseCellAttachmentIncl α₁ (p, α₁ i (p, s)) := by
   rw [undoCell_of_le_norm α₁ χ₀ χ₁ hχ₁ K hK i u p (t := 0) (s := s)
     (by rw [TopCat.norm_diskBoundaryInclusion]; norm_num)
-    (by rw [TopCat.norm_diskBoundaryInclusion, Icc.coe_zero]; norm_num [u.2.2])
+    (by rw [TopCat.norm_diskBoundaryInclusion, Icc.coe_zero]; norm_num [u.property.2])
     (by rw [TopCat.norm_diskBoundaryInclusion, inv_one, one_smul,
       TopCat.coe_diskBoundaryInclusion_apply_down])]
   exact congrArg (fun a ↦ fiberwiseCellAttachmentIncl α₁ (p, a))
@@ -177,7 +178,7 @@ private theorem undoCell_diskBoundaryInclusion (i : ι) (u : I) (p : P)
 private theorem fiberwiseCellAttachmentProj_undoCell (i : ι) (u : I) (p : P)
     (w : TopCat.disk.{u} (k i)) :
     fiberwiseCellAttachmentProj α₁ (undoCell α₁ χ₀ χ₁ hχ₁ K hK i ((u, p), w)) = p := by
-  rcases le_total ‖w.down.1‖ (1 / 4) with hw | hw
+  rcases le_total ‖w.down.val‖ (1 / 4) with hw | hw
   · rw [undoCell, TopCat.discGlue_apply_of_norm_le _ _ _ _ _ hw]
     exact fiberwiseCellAttachmentProj_fiberwiseCellAttachmentCell α₁ i _
   · rw [undoCell, TopCat.discGlue_apply_of_le_norm _ _ _ _ _ hw]
@@ -294,30 +295,30 @@ private theorem undoCell_zero (i : ι) (p : P) (w : TopCat.disk.{u} (k i)) :
         (fiberwiseCellReattachment α₀ α₁ χ₀ χ₁ hχ₀ hχ₁ (fun _ ↦ ContinuousMap.snd)
           (mapsTo_snd k) K hK (fiberwiseCellAttachmentCell α₁ i (p, w))) := by
   set v := TopCat.reattachmentRadial w
-  rcases le_total ‖w.down.1‖ (1 / 2) with hw | hw
+  rcases le_total ‖w.down.val‖ (1 / 2) with hw | hw
   · -- The first reattachment map sends `w` to the point `v = 2w` of the `i`-th cell.
-    have hv : v.down.1 = (2 : ℝ) • w.down.1 := TopCat.coe_reattachmentRadial_of_norm_le hw
-    have hvn : ‖v.down.1‖ = 2 * ‖w.down.1‖ := by
+    have hv : v.down.val = (2 : ℝ) • w.down.val := TopCat.coe_reattachmentRadial_of_norm_le hw
+    have hvn : ‖v.down.val‖ = 2 * ‖w.down.val‖ := by
       rw [hv, norm_smul, Real.norm_of_nonneg zero_le_two]
     rw [fiberwiseCellReattachment_fiberwiseCellAttachmentCell_of_norm_le (hw := hw) (hv := hv)]
     simp only [ContinuousMap.snd_apply]
-    rcases le_total ‖w.down.1‖ (1 / 4) with hw' | hw'
+    rcases le_total ‖w.down.val‖ (1 / 4) with hw' | hw'
     · -- On the disc of radius `1/4` both maps are `w ↦ 4w`.
-      have hv' : (TopCat.reattachmentRadial v).down.1 = (2 : ℝ) • v.down.1 :=
+      have hv' : (TopCat.reattachmentRadial v).down.val = (2 : ℝ) • v.down.val :=
         TopCat.coe_reattachmentRadial_of_norm_le (by rw [hvn]; linarith)
       rw [fiberwiseCellReattachment_fiberwiseCellAttachmentCell_of_norm_le (w := v)
         (hw := by rw [hvn]; linarith) (hv := hv'),
         undoCell_of_norm_le α₁ χ₀ χ₁ hχ₁ K hK i 0 p hw' (by rw [hv', hv, smul_smul]; norm_num)]
       simp only [ContinuousMap.snd_apply]
     · -- On the annulus `1/4 ≤ ‖w‖ ≤ 1/2` the reverse homotopy is read at time `2 - 4‖w‖`.
-      have hvn' : 1 / 2 ≤ ‖v.down.1‖ := by rw [hvn]; linarith
+      have hvn' : 1 / 2 ≤ ‖v.down.val‖ := by rw [hvn]; linarith
       rw [fiberwiseCellReattachment_fiberwiseCellAttachmentCell_of_le_norm' (w := v) (hw := hvn'),
         undoCell_of_le_norm α₁ χ₀ χ₁ hχ₁ K hK i 0 p hw' (t := σ (TopCat.reattachmentTime v))
           (s := TopCat.annulusDir (by norm_num) ⟨v, hvn'⟩)
         (by
           rw [coe_symm_eq, TopCat.coe_reattachmentTime_of_le_norm hvn', hvn, Icc.coe_zero, sub_zero,
-            min_eq_left (show 4 * ‖w.down.1‖ - 1 ≤ 2 - 2 * ‖w.down.1‖ by linarith),
-            min_eq_left (show 4 * ‖w.down.1‖ - 1 ≤ 1 by linarith)]
+            min_eq_left (show 4 * ‖w.down.val‖ - 1 ≤ 2 - 2 * ‖w.down.val‖ by linarith),
+            min_eq_left (show 4 * ‖w.down.val‖ - 1 ≤ 1 by linarith)]
           ring)
         (by rw [TopCat.coe_annulusDir, hvn, hv, smul_smul]; congr 1; field_simp)]
       exact congrArg (fun a ↦ fiberwiseCellAttachmentIncl α₁ (p, a))
@@ -330,16 +331,16 @@ private theorem undoCell_zero (i : ι) (p : P) (w : TopCat.disk.{u} (k i)) :
         (s := TopCat.annulusDir (by norm_num) ⟨w, hw⟩)
         (by
           rw [TopCat.coe_reattachmentTime_of_le_norm hw, Icc.coe_zero, sub_zero,
-            min_eq_right (show 2 - 2 * ‖w.down.1‖ ≤ 4 * ‖w.down.1‖ - 1 by linarith),
-            min_eq_left (show 2 - 2 * ‖w.down.1‖ ≤ 1 by linarith)]) (TopCat.coe_annulusDir _ _)]
+            min_eq_right (show 2 - 2 * ‖w.down.val‖ ≤ 4 * ‖w.down.val‖ - 1 by linarith),
+            min_eq_left (show 2 - 2 * ‖w.down.val‖ ≤ 1 by linarith)]) (TopCat.coe_annulusDir _ _)]
 
 /-- At the end of the contraction, `TauCeti.undoCell` is the radial push of the `i`-th cell. -/
 private theorem undoCell_one (i : ι) (p : P) (w : TopCat.disk.{u} (k i)) :
     undoCell α₁ χ₀ χ₁ hχ₁ K hK i ((1, p), w) =
       radialPushMap α₁ (fiberwiseCellAttachmentCell α₁ i (p, w)) := by
-  have hw₁ : ‖w.down.1‖ ≤ 1 := mem_closedBall_zero_iff.1 w.down.2
+  have hw₁ : ‖w.down.val‖ ≤ 1 := mem_closedBall_zero_iff.1 w.down.property
   rw [radialPushMap_fiberwiseCellAttachmentCell]
-  rcases le_total ‖w.down.1‖ (1 / 4) with hw | hw
+  rcases le_total ‖w.down.val‖ (1 / 4) with hw | hw
   · exact undoCell_of_norm_le α₁ χ₀ χ₁ hχ₁ K hK i 1 p hw (by
       rw [TopCat.coe_diskRadialPush_one_of_norm_le _ hw]; norm_num)
   · have hpush : TopCat.diskRadialPush (k i) (by norm_num : (0 : ℝ) ≤ 1 / 4) (1, w) =
@@ -482,7 +483,7 @@ private theorem fiberwiseCellReattachment_eq_comp_fiberwiseCellAttachmentReparam
       fiberwiseCellAttachmentReparam_fiberwiseCellAttachmentIncl]
   obtain ⟨p, w⟩ := x
   rw [ConcreteCategory.comp_apply]
-  rcases le_total ‖w.down.1‖ (1 / 2) with hw | hw
+  rcases le_total ‖w.down.val‖ (1 / 2) with hw | hw
   · have hv := TopCat.coe_reattachmentRadial_of_norm_le hw
     rw [fiberwiseCellReattachment_fiberwiseCellAttachmentCell_of_norm_le (hw := hw) (hv := hv),
       fiberwiseCellReattachment_fiberwiseCellAttachmentCell_of_norm_le (hw := hw) (hv := hv),

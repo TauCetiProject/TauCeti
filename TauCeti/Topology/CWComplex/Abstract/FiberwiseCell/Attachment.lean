@@ -317,21 +317,6 @@ theorem fiberwiseCellAttachment_induction {motive : fiberwiseCellAttachment α �
   · obtain ⟨i, x, rfl⟩ := mem_iUnion.1 hy
     exact h i x
 
-/-- A map `I × ((P × A) ∪_α ⨆ᵢ (P × D^{k i})) → W` glued by
-`TauCeti.fiberwiseCellAttachmentCylinderDesc` from maps over `P`, for a map `π : W → P`, lies
-over `P`. -/
-theorem apply_fiberwiseCellAttachmentCylinderDesc {W : Type u} [TopologicalSpace W] (π : W → P)
-    (L : C(I × (P × A), W)) (C : ∀ i, C(I × (P × TopCat.disk.{u} (k i)), W))
-    (hC : ∀ i t p s, C i (t, (p, TopCat.diskBoundaryInclusion (k i) s)) = L (t, (p, α i (p, s))))
-    (hL : ∀ t x, π (L (t, x)) = x.1) (hCP : ∀ i t x, π (C i (t, x)) = x.1) (t : I)
-    (y : fiberwiseCellAttachment α) :
-    π (fiberwiseCellAttachmentCylinderDesc α L C hC (t, y)) = fiberwiseCellAttachmentProj α y :=
-  fiberwiseCellAttachment_induction α
-    (fun x ↦ by rw [fiberwiseCellAttachmentCylinderDesc_fiberwiseCellAttachmentIncl, hL,
-      fiberwiseCellAttachmentProj_fiberwiseCellAttachmentIncl])
-    (fun i x ↦ by rw [fiberwiseCellAttachmentCylinderDesc_fiberwiseCellAttachmentCell, hCP,
-      fiberwiseCellAttachmentProj_fiberwiseCellAttachmentCell]) y
-
 /-- A map `I × ((P × A) ∪_α ⨆ᵢ (P × D^{k i})) → (P × A') ∪_β ⨆ⱼ (P × D^{k' j})` glued by
 `TauCeti.fiberwiseCellAttachmentCylinderDesc` from maps over `P` lies over `P`. -/
 theorem fiberwiseCellAttachmentProj_fiberwiseCellAttachmentCylinderDesc {Y' : Type u}
@@ -345,7 +330,11 @@ theorem fiberwiseCellAttachmentProj_fiberwiseCellAttachmentCylinderDesc {Y' : Ty
     (y : fiberwiseCellAttachment α) :
     fiberwiseCellAttachmentProj β (fiberwiseCellAttachmentCylinderDesc α L C hC (t, y)) =
       fiberwiseCellAttachmentProj α y :=
-  apply_fiberwiseCellAttachmentCylinderDesc α _ L C hC hL hCP t y
+  fiberwiseCellAttachment_induction α
+    (fun x ↦ by rw [fiberwiseCellAttachmentCylinderDesc_fiberwiseCellAttachmentIncl, hL,
+      fiberwiseCellAttachmentProj_fiberwiseCellAttachmentIncl])
+    (fun i x ↦ by rw [fiberwiseCellAttachmentCylinderDesc_fiberwiseCellAttachmentCell, hCP,
+      fiberwiseCellAttachmentProj_fiberwiseCellAttachmentCell]) y
 
 section Comparison
 
@@ -506,7 +495,7 @@ theorem fiberwiseCellReattachment_fiberwiseCellAttachmentCell_of_norm_le (i : ι
 `K i` at the time `TopCat.reattachmentTime x = 2 - 2‖x‖` and the direction
 `TopCat.annulusDir x = x/‖x‖`, read in `P × A`. -/
 theorem fiberwiseCellReattachment_fiberwiseCellAttachmentCell_of_le_norm' (i : ι) (p : P)
-    {w : TopCat.disk.{u} (k i)} (hw : 1 / 2 ≤ ‖w.down.1‖) :
+    {w : TopCat.disk.{u} (k i)} (hw : 1 / 2 ≤ ‖w.down.val‖) :
     fiberwiseCellReattachment α₀ α₁ χ₀ χ₁ hχ₀ hχ₁ h hh K hK
         (fiberwiseCellAttachmentCell α₁ i (p, w)) =
       fiberwiseCellAttachmentIncl α₀ (p, ⟨K i (TopCat.reattachmentTime w,
