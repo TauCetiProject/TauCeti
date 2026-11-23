@@ -130,7 +130,7 @@ holomorphic function on `V`. -/
 theorem mem_throughCompact_iff {K : Compacts ℂ} {V : Opens ℂ}
     {f : holomorphicSections (V ⊓ K.toCloseds.compl)} :
     f ∈ throughCompact K V ↔ ∃ g ∈ holomorphicSections V, EqOn g f ((V : Set ℂ) \ K) := by
-  refine ⟨fun ⟨g, hg⟩ => ⟨g, g.2, fun z hz => ?_⟩, fun ⟨g, hg, hgf⟩ => ⟨⟨g, hg⟩, ?_⟩⟩
+  refine ⟨fun ⟨g, hg⟩ => ⟨g, g.property, fun z hz => ?_⟩, fun ⟨g, hg, hgf⟩ => ⟨⟨g, hg⟩, ?_⟩⟩
   · rw [← hg, coe_holomorphicRestrict,
       indicator_of_mem (Compacts.mem_inf_compl_toCloseds.mpr hz)]
   · refine Subtype.ext (funext fun z => ?_)
@@ -138,7 +138,7 @@ theorem mem_throughCompact_iff {K : Compacts ℂ} {V : Opens ℂ}
     · rw [coe_holomorphicRestrict, indicator_of_mem hz]
       exact hgf (Compacts.mem_inf_compl_toCloseds.mp hz)
     · rw [coe_holomorphicRestrict, indicator_of_notMem hz]
-      exact ((mem_holomorphicSections_iff.mp f.2).2 z hz).symm
+      exact ((mem_holomorphicSections_iff.mp f.property).2 z hz).symm
 
 /-- The map `O₀(ℂ ∖ K) → O(V ∖ K) / O(V)` sending a function to the class of its restriction. -/
 def vanishingAtInfinityToQuotient (K : Compacts ℂ) (V : Opens ℂ) :
@@ -151,7 +151,7 @@ def vanishingAtInfinityToQuotient (K : Compacts ℂ) (V : Opens ℂ) :
 theorem vanishingAtInfinityToQuotient_apply (K : Compacts ℂ) (V : Opens ℂ)
     (h : vanishingAtInfinitySections K) :
     vanishingAtInfinityToQuotient K V h = Submodule.Quotient.mk (holomorphicRestrict inf_le_right
-      ⟨h, vanishingAtInfinitySections_le_holomorphicSections K h.2⟩) :=
+      ⟨h, vanishingAtInfinitySections_le_holomorphicSections K h.property⟩) :=
   (rfl)
 
 /-- A function in `O₀(ℂ ∖ K)` whose restriction to `V ∖ K` extends across `K` is zero. -/
@@ -161,7 +161,7 @@ theorem vanishingAtInfinityToQuotient_injective {K : Compacts ℂ} {V : Opens �
   rw [vanishingAtInfinityToQuotient_apply, Submodule.Quotient.mk_eq_zero,
     mem_throughCompact_iff] at hh
   obtain ⟨g, hg, hgh⟩ := hh
-  obtain ⟨hd, hK, hlim⟩ := of_mem_vanishingAtInfinitySections h.2
+  obtain ⟨hd, hK, hlim⟩ := of_mem_vanishingAtInfinitySections h.property
   have hzero := K.isCompact.eqOn_zero_of_eqOn_of_tendsto_cocompact V.isOpen hKV
     (mem_holomorphicSections_iff.mp hg).1 hd hlim fun z hz => (hgh hz).trans
       (by rw [coe_holomorphicRestrict,
@@ -177,7 +177,7 @@ theorem vanishingAtInfinityToQuotient_surjective {K : Compacts ℂ} {V : Opens �
   intro q
   induction q using Submodule.Quotient.induction_on with
   | H f =>
-    obtain ⟨hfd, -⟩ := mem_holomorphicSections_iff.mp f.2
+    obtain ⟨hfd, -⟩ := mem_holomorphicSections_iff.mp f.property
     obtain ⟨g, h, hg, hh, hlim, hfgh⟩ :=
       K.isCompact.exists_eqOn_add_tendsto_cocompact V.isOpen hKV hfd
     refine ⟨⟨_, indicator_mem_vanishingAtInfinitySections hh hlim⟩, ?_⟩
@@ -220,7 +220,7 @@ theorem vanishingAtInfinityEquiv_symm_mk_apply {K : Compacts ℂ} {V : Opens ℂ
     (vanishingAtInfinityEquiv hKV).apply_symm_apply _
   rw [vanishingAtInfinityToQuotient_apply, Submodule.Quotient.eq, mem_throughCompact_iff] at hq
   obtain ⟨g, hg, hgf⟩ := hq
-  obtain ⟨hd, -, hlim⟩ := of_mem_vanishingAtInfinitySections h.2
+  obtain ⟨hd, -, hlim⟩ := of_mem_vanishingAtInfinitySections h.property
   -- `f = -g + h` on `V ∖ K`, so `h` is the singular part of `f`.
   have hfgh : EqOn f ((fun z => -g z) + (h : ℂ → ℂ)) ((V : Set ℂ) \ K) := fun z hz => by
     have hz' := hgf hz
@@ -303,7 +303,7 @@ theorem vanishingAtInfinityToHyperfunction_apply (K : Compacts ℝ) (U : Opens �
     (h : vanishingAtInfinitySections (ofRealCompacts K)) :
     vanishingAtInfinityToHyperfunction K U h =
       Submodule.Quotient.mk (holomorphicRestrict (nonRealOpen_le_compl_ofRealCompacts K)
-        ⟨h, vanishingAtInfinitySections_le_holomorphicSections _ h.2⟩) :=
+        ⟨h, vanishingAtInfinitySections_le_holomorphicSections _ h.property⟩) :=
   (rfl)
 
 /-- The hyperfunction class of a function in `O₀(ℂ ∖ K)` is compatible with restriction. -/
@@ -322,7 +322,7 @@ theorem vanishingAtInfinityToHyperfunction_injective {K : Compacts ℝ} {U : Ope
   rw [vanishingAtInfinityToHyperfunction_apply, Submodule.Quotient.mk_eq_zero,
     mem_throughReal_iff] at hh
   obtain ⟨g, hg, hgh⟩ := hh
-  obtain ⟨hd, hK, hlim⟩ := of_mem_vanishingAtInfinitySections h.2
+  obtain ⟨hd, hK, hlim⟩ := of_mem_vanishingAtInfinitySections h.property
   -- The extension `g` agrees with `h` on `W(U) ∖ K`, the real points being limits of non-real ones.
   have hgh' : EqOn g h (complexNeighborhood U ⊓ (ofRealCompacts K).toCloseds.compl :) :=
     eqOn_inf_of_eqOn_nonRealOpen (mem_holomorphicSections_iff.mp hg).1.continuousOn
@@ -345,7 +345,7 @@ theorem range_vanishingAtInfinityToHyperfunction {K : Compacts ℝ} {U : Opens �
   refine le_antisymm ?_ fun q hq => ?_
   · -- A function holomorphic off `K` extends across `U ∖ K`, where `W(U ∖ K) = W(U) ∖ K`.
     rintro _ ⟨h, rfl⟩
-    obtain ⟨hd, -, -⟩ := of_mem_vanishingAtInfinitySections h.2
+    obtain ⟨hd, -, -⟩ := of_mem_vanishingAtInfinitySections h.property
     rw [LinearMap.mem_ker, oneDimBoundaryRestrict_vanishingAtInfinityToHyperfunction,
       vanishingAtInfinityToHyperfunction_apply, Submodule.Quotient.mk_eq_zero,
       mem_throughReal_iff]
