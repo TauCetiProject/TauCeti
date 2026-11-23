@@ -193,8 +193,7 @@ lemma mk_tensorProduct_trivial_left (P : RigidifiedLineBundle s) :
   refine ⟨InvertibleSheaf.tensorProductObjIso _ _ ≪≫ λ_ P.lineBundle.obj, ?_⟩
   simp only [Iso.trans_hom, tensorIso_hom, Functor.mapIso_hom, asIso_hom, Functor.map_comp,
     Category.assoc, ← Scheme.Modules.pullback_η]
-  rw [δ_comp_η_tensorHom_assoc, ← leftUnitor_inv_naturality_assoc, Iso.inv_hom_id,
-    Category.comp_id]
+  rw [δ_comp_η_tensorHom_comp_leftUnitor_hom]
 
 /-- The tensor product of a rigidified line bundle with its dual is isomorphic to the canonically
 rigidified trivial line bundle. -/
