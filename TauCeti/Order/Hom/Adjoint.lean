@@ -91,13 +91,13 @@ theorem leftAdjoint_eq_of_galoisConnection {f : α →o β} (hf : f ⊤ = ⊤) {
 end LeftAdjoint
 
 @[simp]
-theorem leftAdjoint_id {α : Type*} [LinearOrder α] [Fintype α] [OrderTop α] [DecidableLE α] :
+theorem leftAdjoint_id {α : Type*} [LinearOrder α] [Fintype α] [OrderTop α] :
     (OrderHom.id : α →o α).leftAdjoint rfl = OrderHom.id :=
   leftAdjoint_eq_of_galoisConnection rfl GaloisConnection.id
 
+@[simp]
 theorem leftAdjoint_comp {α β γ : Type*} [LinearOrder α] [Fintype α] [OrderTop α]
-    [LinearOrder β] [Fintype β] [OrderTop β] [DecidableLE β]
-    [Preorder γ] [OrderTop γ] [DecidableLE γ]
+    [LinearOrder β] [Fintype β] [OrderTop β] [Preorder γ] [OrderTop γ] [DecidableLE γ]
     {f : α →o β} (hf : f ⊤ = ⊤) {g : β →o γ} (hg : g ⊤ = ⊤)
     (hgf : (g.comp f) ⊤ = ⊤ := (congrArg g hf).trans hg) :
     (g.comp f).leftAdjoint hgf = (f.leftAdjoint hf).comp (g.leftAdjoint hg) :=
@@ -109,32 +109,15 @@ section RightAdjoint
 variable {α β : Type*} [Preorder α] [OrderBot α] [DecidableLE α]
   [LinearOrder β] [Fintype β] [OrderBot β]
 
-private def rightAdjointFun (g : β →o α) (hg : g ⊥ = ⊥) (x : α) : β :=
-  (Finset.univ.filter (fun y : β ↦ g y ≤ x)).max'
-    ⟨⊥, Finset.mem_filter.mpr ⟨Finset.mem_univ _, hg ▸ bot_le⟩⟩
-
-private theorem rightAdjointFun_gc (g : β →o α) (hg : g ⊥ = ⊥) :
-    GaloisConnection g (rightAdjointFun g hg) := by
-  intro y x
-  constructor
-  · intro h
-    exact Finset.le_max' (Finset.univ.filter fun z : β ↦ g z ≤ x) y
-      (Finset.mem_filter.mpr ⟨Finset.mem_univ _, h⟩)
-  · intro h
-    have hmem := Finset.max'_mem (Finset.univ.filter (fun z : β ↦ g z ≤ x))
-      ⟨⊥, Finset.mem_filter.mpr ⟨Finset.mem_univ _, hg ▸ bot_le⟩⟩
-    exact (g.monotone h).trans (Finset.mem_filter.mp hmem).2
-
 /-- The right adjoint `α →o β` of a bottom-preserving monotone map `g : β →o α` from a finite
 linear order `β` with bottom into a preorder `α` with bottom and decidable `≤`. -/
-def rightAdjoint (g : β →o α) (hg : g ⊥ = ⊥) : α →o β where
-  toFun := rightAdjointFun g hg
-  monotone' := (rightAdjointFun_gc g hg).monotone_u
+def rightAdjoint (g : β →o α) (hg : g ⊥ = ⊥) : α →o β :=
+  OrderHom.dual.symm ((OrderHom.dual g).leftAdjoint hg)
 
 /-- The Galois connection `g ⊣ g.rightAdjoint hg`. -/
 theorem galoisConnection_rightAdjoint (g : β →o α) (hg : g ⊥ = ⊥) :
     GaloisConnection g (g.rightAdjoint hg) :=
-  rightAdjointFun_gc g hg
+  ((OrderHom.dual g).galoisConnection_leftAdjoint hg).dual
 
 @[simp]
 theorem le_rightAdjoint_iff (g : β →o α) (hg : g ⊥ = ⊥) {y : β} {x : α} :
@@ -144,33 +127,35 @@ theorem le_rightAdjoint_iff (g : β →o α) (hg : g ⊥ = ⊥) {y : β} {x : α
 @[simp]
 theorem rightAdjoint_top [OrderTop α] [OrderTop β] (g : β →o α) (hg : g ⊥ = ⊥) :
     g.rightAdjoint hg ⊤ = ⊤ :=
-  (g.galoisConnection_rightAdjoint hg).u_top
+  (OrderHom.dual g).leftAdjoint_bot hg
 
 /-- Uniqueness of `OrderHom.rightAdjoint` from a Galois connection. -/
 theorem rightAdjoint_eq_of_galoisConnection {g : β →o α} (hg : g ⊥ = ⊥) {r : α →o β}
     (hr : GaloisConnection g r) : g.rightAdjoint hg = r :=
-  OrderHom.ext _ _ <| funext fun _ ↦
-    (g.galoisConnection_rightAdjoint hg).u_unique hr fun _ ↦ rfl
+  OrderHom.dual.symm_apply_eq.mpr <|
+    leftAdjoint_eq_of_galoisConnection hg hr.dual
 
 end RightAdjoint
 
 @[simp]
-theorem rightAdjoint_id {β : Type*} [LinearOrder β] [Fintype β] [OrderBot β] [DecidableLE β] :
+theorem rightAdjoint_id {β : Type*} [LinearOrder β] [Fintype β] [OrderBot β] :
     (OrderHom.id : β →o β).rightAdjoint rfl = OrderHom.id :=
-  rightAdjoint_eq_of_galoisConnection rfl GaloisConnection.id
+  OrderHom.dual.symm_apply_eq.mpr leftAdjoint_id
 
-theorem rightAdjoint_comp {α β γ : Type*} [LinearOrder α] [Fintype α] [OrderBot α] [DecidableLE α]
+@[simp]
+theorem rightAdjoint_comp {α β γ : Type*} [LinearOrder α] [Fintype α] [OrderBot α]
     [LinearOrder β] [Fintype β] [OrderBot β] [Preorder γ] [OrderBot γ] [DecidableLE γ]
     {g : β →o α} (hg : g ⊥ = ⊥) {h : α →o γ} (hh : h ⊥ = ⊥)
     (hhg : (h.comp g) ⊥ = ⊥ := (congrArg h hg).trans hh) :
     (h.comp g).rightAdjoint hhg = (g.rightAdjoint hg).comp (h.rightAdjoint hh) :=
-  rightAdjoint_eq_of_galoisConnection hhg <|
-    (g.galoisConnection_rightAdjoint hg).compose (h.galoisConnection_rightAdjoint hh)
+  (OrderHom.dual.symm_apply_eq.mpr
+    (leftAdjoint_comp (f := OrderHom.dual g) hg (g := OrderHom.dual h) hh hhg)).trans
+    (OrderHom.symm_dual_comp _ _)
 
 section Inverse
 
-variable {α β : Type*} [LinearOrder α] [Fintype α] [BoundedOrder α] [DecidableLE α]
-  [LinearOrder β] [Fintype β] [BoundedOrder β] [DecidableLE β]
+variable {α β : Type*} [LinearOrder α] [Fintype α] [BoundedOrder α]
+  [LinearOrder β] [Fintype β] [BoundedOrder β]
 
 @[simp]
 theorem rightAdjoint_leftAdjoint (f : α →o β) (hf : f ⊤ = ⊤)

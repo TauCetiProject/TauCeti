@@ -5,13 +5,16 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-import Mathlib.Order.Fin.Basic
+public import Mathlib.Data.Fin.SuccPred
+public import Mathlib.Order.Fin.Basic
+public import Mathlib.Order.GaloisConnection.Defs
 
 /-!
 # Order characterizations on `Fin`
 
 This file characterizes elements of `Fin (k + 1)` by how they sit relative to the embedded indices
-`i'.castSucc` (`i' : Fin k`).
+`i'.castSucc` (`i' : Fin k`), and records the Galois connections between codegeneracy
+(`Fin.predAbove`) and coface (`Fin.succAbove`) maps.
 
 ## Main results
 
@@ -20,6 +23,8 @@ This file characterizes elements of `Fin (k + 1)` by how they sit relative to th
   below every `i'` with `j ≤ i'.castSucc`.
 * `Fin.eq_iff_forall_castSucc_lt_and_le`: two indices `r, j : Fin (k + 1)` are equal if and only
   if they determine the same order cut on the embedded indices `i'.castSucc` (`i' : Fin k`).
+* `Fin.galoisConnection_predAbove_castSucc_succAbove`: `i.predAbove ⊣ i.castSucc.succAbove`.
+* `Fin.galoisConnection_succ_succAbove_predAbove`: `i.succ.succAbove ⊣ i.predAbove`.
 -/
 
 public section
@@ -72,5 +77,35 @@ theorem eq_iff_forall_castSucc_lt_and_le {k : ℕ} {r j : Fin (k + 1)} :
       replace hlt := lt_of_not_ge hlt
       let i' : Fin k := ⟨r.val, by omega⟩
       exact (lt_irrefl r) (hlow i' hlt)
+
+/-- For `i : Fin (n + 1)`, the codegeneracy map `i.predAbove` is left adjoint to the coface map
+`i.castSucc.succAbove`. -/
+theorem galoisConnection_predAbove_castSucc_succAbove {n : ℕ} (i : Fin (n + 1)) :
+    GaloisConnection i.predAbove i.castSucc.succAbove := by
+  intro x y
+  rcases le_or_gt x i.castSucc with hx | hx
+  · rw [Fin.predAbove_of_le_castSucc i x hx]
+    simp only [Fin.succAbove, Fin.le_def, Fin.lt_def, Fin.val_castSucc, Fin.coe_castPred] at hx ⊢
+    split_ifs <;> simp only [Fin.val_castSucc, Fin.val_succ] at *
+    omega
+  · rw [Fin.predAbove_of_castSucc_lt i x hx]
+    simp only [Fin.succAbove, Fin.le_def, Fin.lt_def, Fin.val_castSucc, Fin.val_pred] at hx ⊢
+    split_ifs <;> simp only [Fin.val_castSucc, Fin.val_succ] at *
+    all_goals omega
+
+/-- For `i : Fin (n + 1)`, the coface map `i.succ.succAbove` is left adjoint to the codegeneracy
+map `i.predAbove`. -/
+theorem galoisConnection_succ_succAbove_predAbove {n : ℕ} (i : Fin (n + 1)) :
+    GaloisConnection i.succ.succAbove i.predAbove := by
+  intro y x
+  rcases le_or_gt x i.castSucc with hx | hx
+  · rw [Fin.predAbove_of_le_castSucc i x hx]
+    simp only [Fin.succAbove, Fin.le_def, Fin.lt_def, Fin.val_castSucc, Fin.coe_castPred] at hx ⊢
+    split_ifs <;> simp only [Fin.val_castSucc, Fin.val_succ] at *
+    omega
+  · rw [Fin.predAbove_of_castSucc_lt i x hx]
+    simp only [Fin.succAbove, Fin.le_def, Fin.lt_def, Fin.val_castSucc, Fin.val_pred] at hx ⊢
+    split_ifs <;> simp only [Fin.val_castSucc, Fin.val_succ] at *
+    all_goals omega
 
 end Fin
