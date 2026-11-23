@@ -154,20 +154,6 @@ private theorem inv_mul_dyadicDilate_invCutoff_mul {j : ℤ} {ξ : E}
 
 variable [MeasurableSpace E] [BorelSpace E]
 
-/-- An operator with `‖T f‖_r ≤ K ‖f‖_r` costs at most the factor `K` in every mixed norm
-`L^p_t L^r_x`. -/
-private theorem eLpNorm_eLpNorm_apply_le
-    (T : Lp ℂ 2 (volume : Measure E) →L[ℂ] Lp ℂ 2 (volume : Measure E)) {K r : ℝ≥0∞}
-    (hT : ∀ f, eLpNorm (T f) r volume ≤ K * eLpNorm f r volume)
-    {F : ℝ → Lp ℂ 2 (volume : Measure E)} (hF : AEStronglyMeasurable F) {p : ℝ≥0∞} (hp : 0 < p) :
-    eLpNorm (fun s ↦ eLpNorm (T (F s)) r volume) p volume ≤
-      K * eLpNorm (fun s ↦ eLpNorm (F s) r volume) p volume :=
-  calc _ ≤ eLpNorm (fun s ↦ K * eLpNorm (F s) r volume) p volume :=
-      eLpNorm_mono_eNorm ((T.continuous.comp_aestronglyMeasurable
-        hF).aemeasurable_eLpNorm_Lp .rfl r).aestronglyMeasurable fun s ↦ by
-        simpa only [eNorm_eq_self] using hT (F s)
-    _ = _ := eLpNorm_const_mul_ennreal_of_pos hp
-
 /-! ### The decomposition of `D⁻¹ sin(τD)` -/
 
 omit [MeasurableSpace E] [BorelSpace E] in
@@ -908,8 +894,8 @@ theorem exists_lintegral_lintegral_enorm_inner_waveSinPropagator_sub_littlewoodP
   have hr : 1 ≤ r' := ENNReal.HolderConjugate.one_le r' r
   have hYF : eLpNorm (fun s ↦ eLpNorm (Y s) r' volume) p volume ≤
       KP * (K * eLpNorm (fun s ↦ eLpNorm (F s) r' volume) p volume) :=
-    (eLpNorm_eLpNorm_apply_le _
-      (fun f ↦ φ.eLpNorm_fourierMultiplierCLM_littlewoodPaley_le hm f hr) hMF hp).trans
+    (eLpNorm_eLpNorm_apply_le (Lp.fourierMultiplierCLM ℂ m).continuous
+      (fun f ↦ φ.eLpNorm_fourierMultiplierCLM_littlewoodPaley_le hm f hr) hMF).trans
       (by gcongr; exact φ.eLpNorm_eLpNorm_dyadicMultiplier_le φ.invCutoff j hF hp hr)
   have hK : (K.toNNReal : ℝ≥0∞) = K := ENNReal.coe_toNNReal
     (φ.memLp_fourierInv_dyadicDilate φ.invCutoff 0 1).eLpNorm_ne_top
