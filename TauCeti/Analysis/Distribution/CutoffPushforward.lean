@@ -462,13 +462,13 @@ theorem IsLocallyNormal.isNormal_comp_cutoffHomotopyPullbackCLM [FiniteDimension
   obtain ⟨ψ, -, hψ1, -⟩ := TestFunction.exists_cutoff_tsupport_subset (n := (⊤ : ℕ∞))
     χ.hasCompactSupport.isCompact Ω.isOpen χ.tsupport_subset le_rfl
   have heq : T ∘L (cutoffHomotopyPullbackCLM χ hH : 𝓓(Ω', E' [⋀^Fin (k + 1)]→L[ℝ] F) →L[ℝ] _) =
-      (T ∘L smulLeftCLM χ.contDiff) ∘L cutoffHomotopyPullbackCLM ψ hH := by
+      (T ∘L TestFunction.smulLeftCLM χ.contDiff) ∘L cutoffHomotopyPullbackCLM ψ hH := by
     ext ω
     refine congrArg T (TestFunction.ext fun x ↦ ?_)
     by_cases hx : x ∈ tsupport χ
-    · simp [smulLeftCLM_apply, hψ1.self_of_nhdsSet x hx]
-    · simp [smulLeftCLM_apply, image_eq_zero_of_notMem_tsupport hx]
-  have hsub : dsupport (T ∘L smulLeftCLM χ.contDiff) ⊆ tsupport χ := by
+    · simp [TestFunction.smulLeftCLM_apply, hψ1.self_of_nhdsSet x hx]
+    · simp [TestFunction.smulLeftCLM_apply, image_eq_zero_of_notMem_tsupport hx]
+  have hsub : dsupport (T ∘L TestFunction.smulLeftCLM χ.contDiff) ⊆ tsupport χ := by
     rw [ContinuousLinearMap.coe_comp]
     exact (dsupport_comp_smulLeftCLM_subset T χ.contDiff).trans inter_subset_left
   rw [heq]
