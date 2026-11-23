@@ -9,7 +9,6 @@ public import Mathlib.Analysis.Convex.Join
 public import Mathlib.Basic.Real.Basic
 public import Mathlib.Geometry.Convex.ConvexSpace.Barycenter
 public import Mathlib.Geometry.Convex.ConvexSpace.CompactSpaceStdSimplex
-public import Mathlib.Topology.Algebra.Ring.Real
 public import Mathlib.Topology.Order.Compact
 public import Mathlib.Analysis.Normed.Group.Constructions
 public import Mathlib.Analysis.Normed.Group.Real
@@ -57,8 +56,8 @@ likewise separated by at least `(card ι)⁻¹`.
   into a standard simplex preserves coordinate sums.
 * `TauCeti.stdSimplexBoundary`, `TauCeti.isCompact_stdSimplexBoundary`: the relative boundary of
   the standard simplex, the points with some vanishing coordinate, and its compactness.
-* `TauCeti.mem_convexHull_pi_single_iff`: membership in the face of the standard simplex spanned
-  by a set of vertices, in coordinates.
+* `TauCeti.mem_convexHull_pi_single_iff`: the face of the standard simplex spanned by a set of
+  vertices consists of the points of the simplex whose coordinates vanish off that set.
 * `TauCeti.norm_sub_le_one_of_mem_convexHull_pi_single`: points of faces of the standard
   simplex are within distance one.
 * `TauCeti.exists_mem_convexHull_inter_norm_sub_le`: a point `x` of one coordinate face has a
@@ -132,6 +131,21 @@ theorem apply_lt_one_of_mem_range_weights {R : Type*} [Semiring R] [PartialOrder
   have hle := sum_le_sum_of_subset_of_nonneg hij' fun k _ _ => s.weights_nonneg k
   rw [sum_pair hij.symm, htotal] at hle
   exact (lt_add_of_pos_right _ hxj).trans_le hle
+
+/-- The weight vector of a convex combination of two points of the standard simplex lies on the
+segment between their weight vectors. -/
+theorem weights_convexCombPair_mem_segment {R : Type*} [Semiring R] [PartialOrder R]
+    [IsStrictOrderedRing R] {ι : Type*} {p q : R} (hp : 0 ≤ p) (hq : 0 ≤ q) (hpq : p + q = 1)
+    (u v : StdSimplex R ι) :
+    ⇑(convexCombPair p q hp hq hpq u v).weights ∈ segment R ⇑u.weights ⇑v.weights :=
+  ⟨p, q, hp, hq, hpq, by simp⟩
+
+/-- A point of the standard simplex with no weight away from `x` is the vertex `x`. -/
+theorem eq_single_of_forall_ne_weights_eq_zero {R : Type*} [Semiring R] [PartialOrder R]
+    [IsStrictOrderedRing R] {ι : Type*} {w : StdSimplex R ι} {x : ι}
+    (h : ∀ y ≠ x, w.weights y = 0) : w = single x :=
+  support_weights_eq_singleton.mp <| w.support_weights_nonempty.subset_singleton_iff.mp
+    fun y hy => mem_singleton.mpr <| by_contra fun hyx => Finsupp.mem_support_iff.mp hy (h y hyx)
 
 end Convexity.StdSimplex
 
@@ -228,34 +242,46 @@ theorem convexHull_pi_single_subset_range_toFun_comp_weights [Semiring R] [Parti
   obtain ⟨i, _, rfl⟩ := hi
   exact ⟨⟨.single i 1, by simp, by simp⟩, Finsupp.single_eq_pi_single i 1⟩
 
-variable [Fintype ι]
-
-/-- Membership in a face of the standard simplex is nonnegativity, total mass one,
-and vanishing of the coordinates outside the face. The empty face has empty convex hull. -/
+/-- Membership in a face of the standard simplex, the convex hull of a set of vertices
+`Pi.single i 1`, is membership in the standard simplex together with vanishing of the coordinates
+outside the face. The empty face has empty convex hull. -/
 @[simp]
-theorem mem_convexHull_pi_single_iff [Field R] [LinearOrder R] [IsStrictOrderedRing R]
+theorem mem_convexHull_pi_single_iff [Semifield R] [LinearOrder R] [IsStrictOrderedRing R]
     [DecidableEq ι] {s : Set ι} {x : ι → R} :
     x ∈ convexHull R ((fun i : ι => Pi.single i (1 : R)) '' s) ↔
-      (∀ i, 0 ≤ x i) ∧ (∑ i, x i = 1) ∧ ∀ i ∉ s, x i = 0 := by
+      x ∈ (range fun t : StdSimplex R ι => ⇑t.weights) ∧ ∀ i ∉ s, x i = 0 := by
   constructor
   · intro hx
-    have hsimplex : (∀ i, 0 ≤ x i) ∧ ∑ i, x i = 1 :=
-      StdSimplex.mem_range_toFun_comp_weights_iff.1
-        (convexHull_pi_single_subset_range_toFun_comp_weights s hx)
-    refine ⟨hsimplex.1, hsimplex.2, fun i hi => ?_⟩
+    refine ⟨convexHull_pi_single_subset_range_toFun_comp_weights s hx, fun i hi => ?_⟩
     apply convexHull_min (fun _ hz => ?_) (convex_hyperplane (LinearMap.proj i).isLinear 0) hx
     obtain ⟨j, hj, rfl⟩ := hz
     simp [ne_of_mem_of_not_mem hj hi]
-  · rintro ⟨hnonneg, hsum, hsupp⟩
+  · rintro ⟨⟨t, rfl⟩, hsupp⟩
     classical
-    have hmem (i : ι) (hi : x i ≠ 0) : i ∈ s := by_contra fun his => hi (hsupp i his)
-    have hsums : ∑ i ∈ univ with i ∈ s, x i = 1 := by
-      rw [sum_filter_of_ne fun i _ => hmem i, hsum]
-    have hrepr : ∑ i ∈ univ with i ∈ s, x i • Pi.single i (1 : R) = x := by
-      rw [sum_filter_of_ne fun i _ hi => hmem i (left_ne_zero_of_smul hi), ← pi_eq_sum_univ']
-    rw [← hrepr]
-    exact (convex_convexHull R _).sum_mem (fun i _ => hnonneg i) hsums
-      (fun i hi => subset_convexHull R _ ⟨i, (mem_filter.mp hi).2, rfl⟩)
+    -- Split off one vertex at a time, by induction on the number of vertices carrying weight.
+    induction hn : #t.weights.support using Nat.strong_induction_on generalizing t with
+    | _ n ih =>
+    obtain ⟨a, ha⟩ := t.support_weights_nonempty
+    have has : a ∈ s := by_contra fun h => Finsupp.mem_support_iff.mp ha (hsupp a h)
+    have hva : (Pi.single a 1 : ι → R) ∈ convexHull R ((fun i : ι => Pi.single i (1 : R)) '' s) :=
+      subset_convexHull R _ ⟨a, has, rfl⟩
+    by_cases hs' : ∃ j ∈ ({a}ᶜ : Set ι), t.weights j ≠ 0
+    · -- `t` lies on the segment from the vertex `a` to its restriction away from `a`.
+      rw [← t.convexCombPair_restrict_restrict_compl {a} ⟨a, rfl, Finsupp.mem_support_iff.mp ha⟩
+        hs']
+      refine (convex_convexHull R _).segment_subset ?_ ?_
+        (StdSimplex.weights_convexCombPair_mem_segment ..)
+      · simpa [Finsupp.single_eq_pi_single] using hva
+      · refine ih _ ?_ _ (fun j hj => ?_) rfl
+        · rw [← hn, StdSimplex.support_weights_restrict]
+          exact card_lt_card (filter_ssubset.mpr ⟨a, ha, by simp⟩)
+        · exact Finsupp.notMem_support_iff.mp (by simp [hsupp j hj])
+    · -- Otherwise `t` is the vertex `a`.
+      push Not at hs'
+      simpa [StdSimplex.eq_single_of_forall_ne_weights_eq_zero hs', Finsupp.single_eq_pi_single]
+        using hva
+
+variable [Fintype ι]
 
 section Faces
 
@@ -278,9 +304,10 @@ theorem apply_le_norm_sub_of_notMem_inter {s t : Set ι} {x y : ι → ℝ}
     (hx : x ∈ convexHull ℝ ((fun i : ι => Pi.single i (1 : ℝ)) '' s))
     (hy : y ∈ convexHull ℝ ((fun i : ι => Pi.single i (1 : ℝ)) '' t)) {i : ι}
     (hi : i ∉ s ∩ t) : x i ≤ ‖x - y‖ := by
-  obtain ⟨hnonneg, -, hsupp⟩ := mem_convexHull_pi_single_iff.mp hx
+  obtain ⟨hxS, hsupp⟩ := mem_convexHull_pi_single_iff.mp hx
+  have hnonneg := (StdSimplex.mem_range_toFun_comp_weights_iff.mp hxS).1
   by_cases his : i ∈ s
-  · have hyi := (mem_convexHull_pi_single_iff.mp hy).2.2 i fun hit => hi ⟨his, hit⟩
+  · have hyi := (mem_convexHull_pi_single_iff.mp hy).2 i fun hit => hi ⟨his, hit⟩
     simpa [hyi, abs_of_nonneg (hnonneg i)] using norm_le_pi_norm (x - y) i
   · rw [hsupp i his]
     exact norm_nonneg _
@@ -295,7 +322,8 @@ theorem exists_mem_convexHull_inter_norm_sub_le {σ τ : Finset ι} {x y : ι �
     ∃ z ∈ convexHull ℝ ((fun i : ι => Pi.single i (1 : ℝ)) '' (σ ∩ τ : Finset ι)),
       ‖x - z‖ ≤ (Fintype.card ι : ℝ) * ‖x - y‖ := by
   obtain ⟨v, hv⟩ := hστ
-  obtain ⟨hnonneg, hsum, -⟩ := mem_convexHull_pi_single_iff.mp hx
+  obtain ⟨hnonneg, hsum⟩ := StdSimplex.mem_range_toFun_comp_weights_iff.mp
+    (convexHull_pi_single_subset_range_toFun_comp_weights _ hx)
   -- Keep the coordinates in `σ ∩ τ`, and move every other coordinate to the vertex `v`.
   let r (i : ι) := if i ∈ σ ∩ τ then i else v
   have hr (i : ι) : r i ∈ σ ∩ τ := by
@@ -331,7 +359,8 @@ theorem one_le_card_mul_norm_sub_of_disjoint {σ τ : Finset ι} {x y : ι → �
     (hστ : Disjoint σ τ) :
     1 ≤ (Fintype.card ι : ℝ) * ‖x - y‖ := by
   calc
-    1 = ∑ i, x i := (mem_convexHull_pi_single_iff.mp hx).2.1.symm
+    1 = ∑ i, x i := (StdSimplex.mem_range_toFun_comp_weights_iff.mp
+        (convexHull_pi_single_subset_range_toFun_comp_weights _ hx)).2.symm
     _ ≤ ∑ _i : ι, ‖x - y‖ := sum_le_sum fun i _ => apply_le_norm_sub_of_notMem_inter hx hy
         fun hi => disjoint_left.mp hστ hi.1 hi.2
     _ = (Fintype.card ι : ℝ) * ‖x - y‖ := by simp
@@ -421,42 +450,29 @@ theorem convexJoin_facet_stdSimplex_single [Semifield R] [LinearOrder R] [IsStri
     (StdSimplex.convex_range_toFun_comp_weights R ι)) ?_
   rintro _ ⟨w, rfl⟩
   dsimp only
-  have hnonneg (j : ι) : 0 ≤ w.weights.erase i j := by
-    rw [Finsupp.erase_apply]
-    split_ifs
-    exacts [le_rfl, w.weights_nonneg j]
-  -- The weight `m` away from `i` and the weight at `i` add up to one.
-  obtain ⟨m, hm⟩ : ∃ m, ((w.weights.erase i).sum fun _ r => r) = m := ⟨_, rfl⟩
-  have hmi : m + w.weights i = 1 := by
-    rw [← hm, ← w.total]
-    conv_rhs => rw [← Finsupp.erase_add_single i w.weights]
-    rw [Finsupp.sum_add_index' (fun _ => rfl) fun _ _ _ => rfl, Finsupp.sum_single_index rfl]
-  rcases (hm ▸ Finsupp.sum_nonneg' hnonneg : 0 ≤ m).eq_or_lt with hm0 | hmpos
+  classical
+  by_cases hwi : w.weights i = 0
+  · -- `w` already lies on the facet.
+    exact subset_convexJoin_left (Set.singleton_nonempty _) ⟨mem_range_self w, hwi⟩
+  by_cases hs : ∃ j ∈ ({i}ᶜ : Set ι), w.weights j ≠ 0
+  · -- `w` lies on the segment from its restriction away from `i` to the vertex.
+    rw [← w.convexCombPair_restrict_restrict_compl {i} ⟨i, rfl, hwi⟩ hs]
+    have hv : ⇑(w.restrict {i} ⟨i, rfl, hwi⟩).weights ∈ ({Pi.single i 1} : Set (ι → R)) := by
+      simp [Finsupp.single_eq_pi_single]
+    have hf : ⇑(w.restrict {i}ᶜ hs).weights ∈
+        {y ∈ range fun s : StdSimplex R ι => ⇑s.weights | y i = 0} :=
+      ⟨mem_range_self _, Finsupp.notMem_support_iff.mp (by simp)⟩
+    refine segment_subset_convexJoin hf hv ?_
+    rw [segment_symm]
+    exact StdSimplex.weights_convexCombPair_mem_segment ..
   · -- With no weight away from `i`, `w` is the vertex.
-    have hwi : ⇑w.weights = Pi.single i 1 := funext fun j => by
-      have hi : w.weights i = 1 := by rw [← hmi, ← hm0, zero_add]
-      rcases eq_or_ne j i with rfl | hj
-      · simp [hi]
-      · rw [Pi.single_eq_of_ne hj]
-        exact ((w.weights_nonneg j).eq_of_not_lt fun h =>
-          (StdSimplex.apply_lt_one_of_mem_range_weights ⟨w, rfl⟩ hj h).ne hi).symm
+    push Not at hs
     obtain ⟨j, hj⟩ := exists_ne i
-    rw [hwi]
     have hj' : (Pi.single j 1 : ι → R) ∈
         {y ∈ range fun s : StdSimplex R ι => ⇑s.weights | y i = 0} :=
       ⟨⟨StdSimplex.single j, Finsupp.single_eq_pi_single j 1⟩, by simp [hj.symm]⟩
+    rw [StdSimplex.eq_single_of_forall_ne_weights_eq_zero hs, StdSimplex.weights_single,
+      Finsupp.single_eq_pi_single]
     exact subset_convexJoin_right ⟨_, hj'⟩ (mem_singleton _)
-  · -- Otherwise `w` lies at parameter `w i` on the segment to the vertex from the facet point
-    -- given by the renormalised weights away from `i`.
-    obtain ⟨v, hv⟩ : ∃ v : StdSimplex R ι, v.weights = m⁻¹ • w.weights.erase i :=
-      ⟨⟨_, fun j => by simpa using mul_nonneg (inv_nonneg.mpr hmpos.le) (hnonneg j), by
-        rw [Finsupp.sum_smul_index fun _ => rfl, ← Finsupp.mul_sum, hm,
-          inv_mul_cancel₀ hmpos.ne']⟩, rfl⟩
-    refine mem_convexJoin.mpr ⟨⇑v.weights, ⟨⟨v, rfl⟩, by simp [hv]⟩, _, rfl, m, w.weights i,
-      hmpos.le, w.weights_nonneg i, hmi, ?_⟩
-    ext j
-    rcases eq_or_ne j i with rfl | hj
-    · simp [hv]
-    · simp [hv, Finsupp.erase_ne hj, Pi.single_eq_of_ne hj, hmpos.ne']
 
 end TauCeti
