@@ -7,10 +7,8 @@ module
 
 public import Mathlib.LinearAlgebra.Matrix.Cartan.Basic
 public import TauCeti.LinearAlgebra.FiniteBilinearModule.Cyclic
-public import TauCeti.LinearAlgebra.IntegralLattice.Discriminant.Cardinality
 public import TauCeti.LinearAlgebra.IntegralLattice.Level
 public import TauCeti.LinearAlgebra.IntegralLattice.PosDef.Minimum
-public import TauCeti.LinearAlgebra.IntegralLattice.Signature
 public import TauCeti.LinearAlgebra.IntegralLattice.StandardCoordinates
 import TauCeti.LinearAlgebra.RootSystem.FiniteType.Dynkin
 
@@ -155,22 +153,14 @@ theorem mem_typeE₆RootLattice_carrier_iff (x : Fin 6 → ℚ) :
   rw [typeE₆RootLattice]
   exact mem_ofGramMatrix_basisFun_carrier_iff _ _ x
 
-/-- The determinant of the type `E₆` Cartan matrix is nonzero. -/
-private theorem det_cartanMatrixE₆_ne_zero : (CartanMatrix.E 6).det ≠ 0 := by
-  rw [CartanMatrix.E₆_det]
-  norm_num
-
-/-- The type `E₆` root lattice is nondegenerate because its Cartan matrix is nonsingular. -/
-instance instIsNondegenerateTypeE₆RootLattice :
-    typeE₆RootLattice.IsNondegenerate := by
-  rw [typeE₆RootLattice]
-  refine isNondegenerate_ofGramMatrix _ _ _ ?_
-  convert det_cartanMatrixE₆_ne_zero
-
 /-- **The type `E₆` root lattice is positive definite**, its Gram matrix being the positive
 definite Cartan matrix of the type. -/
 theorem isPosDef_typeE₆RootLattice : typeE₆RootLattice.IsPosDef :=
   (isPosDef_ofGramMatrix_iff _ _ _).mpr posDef_map_intCast_cartanMatrix_E6
+
+/-- The type `E₆` root lattice is nondegenerate, being positive definite. -/
+instance instIsNondegenerateTypeE₆RootLattice : typeE₆RootLattice.IsNondegenerate :=
+  ⟨(isPosDef_iff_isPosSemidef_and_nondegenerate _).mp isPosDef_typeE₆RootLattice |>.2⟩
 
 /-- The type `E₆` root lattice is even: every diagonal Cartan entry is `2`. -/
 theorem isEven_typeE₆RootLattice : typeE₆RootLattice.IsEven := by
@@ -205,6 +195,8 @@ private def typeE₆WeightCoeff : Fin 6 → ℤ := ![4, 3, 5, 6, 4, 2]
 def typeE₆MinusculeWeight : Fin 6 → ℚ :=
   fun j ↦ (typeE₆WeightCoeff j : ℚ) / 3
 
+/-- The simple-root coordinates of the minuscule weight `ϖ₁` of type `E₆`:
+`(4, 3, 5, 6, 4, 2) / 3`. -/
 @[simp]
 theorem typeE₆MinusculeWeight_apply (j : Fin 6) :
     typeE₆MinusculeWeight j =
@@ -263,6 +255,8 @@ theorem typeE₆MinusculeWeight_mem_dualCarrier :
 noncomputable def typeE₆MinusculeWeightDual : typeE₆RootLattice.dualCarrier :=
   ⟨typeE₆MinusculeWeight, typeE₆MinusculeWeight_mem_dualCarrier⟩
 
+/-- The minuscule weight `ϖ₁` of type `E₆`, read as an element of the dual lattice, has the same
+coordinates. -/
 @[simp]
 theorem coe_typeE₆MinusculeWeightDual :
     (typeE₆MinusculeWeightDual : Fin 6 → ℚ) = typeE₆MinusculeWeight := by
@@ -329,6 +323,8 @@ noncomputable def typeE₆DiscriminantGroupEquiv :
     (fun x ↦ by rw [zmultiples_typeE₆MinusculeWeightClass_eq_top]; exact AddSubgroup.mem_top x)
     natCard_discriminantGroup_typeE₆RootLattice
 
+/-- Under `typeE₆DiscriminantGroupEquiv`, `1 : ZMod 3` maps to the class of the minuscule weight
+`ϖ₁` of type `E₆`. -/
 @[simp]
 theorem typeE₆DiscriminantGroupEquiv_apply_one :
     typeE₆DiscriminantGroupEquiv 1 = typeE₆MinusculeWeightClass :=
@@ -436,22 +432,14 @@ theorem mem_typeE₇RootLattice_carrier_iff (x : Fin 7 → ℚ) :
   rw [typeE₇RootLattice]
   exact mem_ofGramMatrix_basisFun_carrier_iff _ _ x
 
-/-- The determinant of the type `E₇` Cartan matrix is nonzero. -/
-private theorem det_cartanMatrixE₇_ne_zero : (CartanMatrix.E 7).det ≠ 0 := by
-  rw [CartanMatrix.E₇_det]
-  norm_num
-
-/-- The type `E₇` root lattice is nondegenerate because its Cartan matrix is nonsingular. -/
-instance instIsNondegenerateTypeE₇RootLattice :
-    typeE₇RootLattice.IsNondegenerate := by
-  rw [typeE₇RootLattice]
-  refine isNondegenerate_ofGramMatrix _ _ _ ?_
-  convert det_cartanMatrixE₇_ne_zero
-
 /-- **The type `E₇` root lattice is positive definite**, its Gram matrix being the positive
 definite Cartan matrix of the type. -/
 theorem isPosDef_typeE₇RootLattice : typeE₇RootLattice.IsPosDef :=
   (isPosDef_ofGramMatrix_iff _ _ _).mpr posDef_map_intCast_cartanMatrix_E7
+
+/-- The type `E₇` root lattice is nondegenerate, being positive definite. -/
+instance instIsNondegenerateTypeE₇RootLattice : typeE₇RootLattice.IsNondegenerate :=
+  ⟨(isPosDef_iff_isPosSemidef_and_nondegenerate _).mp isPosDef_typeE₇RootLattice |>.2⟩
 
 /-- The type `E₇` root lattice is even: every diagonal Cartan entry is `2`. -/
 theorem isEven_typeE₇RootLattice : typeE₇RootLattice.IsEven := by
@@ -486,6 +474,7 @@ private def typeE₇WeightCoeff : Fin 7 → ℤ := ![2, 3, 4, 6, 5, 4, 3]
 def typeE₇MinusculeWeight : Fin 7 → ℚ :=
   fun j ↦ (typeE₇WeightCoeff j : ℚ) / 2
 
+/-- The coordinates of the minuscule weight of `E₇`: `(2, 3, 4, 6, 5, 4, 3) / 2`. -/
 @[simp]
 theorem typeE₇MinusculeWeight_apply (j : Fin 7) :
     typeE₇MinusculeWeight j =
@@ -544,6 +533,8 @@ theorem typeE₇MinusculeWeight_mem_dualCarrier :
 noncomputable def typeE₇MinusculeWeightDual : typeE₇RootLattice.dualCarrier :=
   ⟨typeE₇MinusculeWeight, typeE₇MinusculeWeight_mem_dualCarrier⟩
 
+/-- The minuscule weight of `E₇`, read as an element of the dual lattice, has the same
+coordinates. -/
 @[simp]
 theorem coe_typeE₇MinusculeWeightDual :
     (typeE₇MinusculeWeightDual : Fin 7 → ℚ) = typeE₇MinusculeWeight := by
@@ -610,6 +601,7 @@ noncomputable def typeE₇DiscriminantGroupEquiv :
     (fun x ↦ by rw [zmultiples_typeE₇MinusculeWeightClass_eq_top]; exact AddSubgroup.mem_top x)
     natCard_discriminantGroup_typeE₇RootLattice
 
+/-- The generator `1` of `ℤ/2` corresponds to the class of the minuscule weight of `E₇`. -/
 @[simp]
 theorem typeE₇DiscriminantGroupEquiv_apply_one :
     typeE₇DiscriminantGroupEquiv 1 = typeE₇MinusculeWeightClass :=
@@ -704,8 +696,8 @@ open _root_.Matrix in
 Cartan norm. -/
 theorem norm_typeE₈RootLattice_intCast (v : Fin 8 → ℤ) :
     typeE₈RootLattice.norm (fun j ↦ (v j : ℚ)) =
-      (((v ᵥ* CartanMatrix.E 8) ⬝ᵥ v : ℤ) : ℚ) := by
-  exact norm_ofGramMatrix_basisFun_intCast _ _ v
+      (((v ᵥ* CartanMatrix.E 8) ⬝ᵥ v : ℤ) : ℚ) :=
+  norm_ofGramMatrix_basisFun_intCast _ _ v
 
 open _root_.Matrix in
 /-- The rational form of two integer vectors in simple-root coordinates is their integral Cartan
@@ -756,22 +748,14 @@ theorem mem_typeE₈RootLattice_carrier_iff (x : Fin 8 → ℚ) :
   rw [typeE₈RootLattice]
   exact mem_ofGramMatrix_basisFun_carrier_iff _ _ x
 
-/-- The determinant of the type `E₈` Cartan matrix is nonzero. -/
-private theorem det_cartanMatrixE₈_ne_zero : (CartanMatrix.E 8).det ≠ 0 := by
-  rw [CartanMatrix.E₈_det]
-  norm_num
-
-/-- The type `E₈` root lattice is nondegenerate because its Cartan matrix is nonsingular. -/
-instance instIsNondegenerateTypeE₈RootLattice :
-    typeE₈RootLattice.IsNondegenerate := by
-  rw [typeE₈RootLattice]
-  refine isNondegenerate_ofGramMatrix _ _ _ ?_
-  convert det_cartanMatrixE₈_ne_zero
-
 /-- **The type `E₈` root lattice is positive definite**, its Gram matrix being the positive
 definite Cartan matrix of the type. -/
 theorem isPosDef_typeE₈RootLattice : typeE₈RootLattice.IsPosDef :=
   (isPosDef_ofGramMatrix_iff _ _ _).mpr posDef_map_intCast_cartanMatrix_E8
+
+/-- The type `E₈` root lattice is nondegenerate, being positive definite. -/
+instance instIsNondegenerateTypeE₈RootLattice : typeE₈RootLattice.IsNondegenerate :=
+  ⟨(isPosDef_iff_isPosSemidef_and_nondegenerate _).mp isPosDef_typeE₈RootLattice |>.2⟩
 
 /-- The type `E₈` root lattice is even: every diagonal Cartan entry is `2`. -/
 theorem isEven_typeE₈RootLattice : typeE₈RootLattice.IsEven := by

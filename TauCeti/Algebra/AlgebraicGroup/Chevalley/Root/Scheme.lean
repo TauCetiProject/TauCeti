@@ -200,7 +200,7 @@ theorem chevalleyRootSubgroupToToral_simpleIndex_comp_ι (i : Fin t.rank) :
       kostantRootSubgroup (t.lieBasis ht).rootGenerator (t.lieBasis ht).h
         ρ M hM (.inl i) (hnil (.inl i)) b := by
   rw [chevalleyRootSubgroupToToral_comp_ι]
-  exact kostantRootSubgroup_congr _ _ _ _ _ _ _ _ _ _ _ _ (by simp)
+  exact kostantRootSubgroup_eq_of_operator_eq _ _ _ _ _ _ _ _ _ _ _ _ _ _ (by simp)
 
 /-- At a negative simple root, including the all-root morphism into `GLₙ` gives the
 original negative-simple-root Kostant subgroup. -/
@@ -212,7 +212,7 @@ theorem chevalleyRootSubgroupToToral_reflectionPerm_simpleIndex_comp_ι (i : Fin
       kostantRootSubgroup (t.lieBasis ht).rootGenerator (t.lieBasis ht).h
         ρ M hM (.inr i) (hnil (.inr i)) b := by
   rw [chevalleyRootSubgroupToToral_comp_ι]
-  exact kostantRootSubgroup_congr _ _ _ _ _ _ _ _ _ _ _ _ (by simp)
+  exact kostantRootSubgroup_eq_of_operator_eq _ _ _ _ _ _ _ _ _ _ _ _ _ _ (by simp)
 
 end Toral
 

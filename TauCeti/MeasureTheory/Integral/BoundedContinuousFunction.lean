@@ -5,84 +5,89 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.MeasureTheory.Function.L1Space.Integrable
 public import Mathlib.MeasureTheory.Integral.Bochner.Basic
 public import Mathlib.Topology.ContinuousMap.Bounded.Normed
-import Mathlib.MeasureTheory.Integral.DominatedConvergence
-import Mathlib.Topology.Instances.RealVectorSpace
 
 /-!
-# Pairing bounded continuous functions with an integrable weight
+# Integrating bounded continuous functions against an integrable weight
 
-For an integrable `ψ : X → 𝕜` and a bounded continuous `u : X →ᵇ F`, the product `ψ • u` is
-integrable (`MeasureTheory.Integrable.smul_boundedContinuousFunction`), and the pairing
-`u ↦ ∫ ψ • u` is additive and homogeneous
-(`TauCeti.integral_smul_boundedContinuousFunction_add`,
-`TauCeti.integral_smul_boundedContinuousFunction_sub`,
-`TauCeti.integral_smul_boundedContinuousFunction_smul`) and continuous for the supremum norm on
-`X →ᵇ F` (`TauCeti.continuous_integral_smul_boundedContinuousFunction`). This is what lets an
-identity between such pairings pass to uniform limits; for instance, the pairs `(f, g)` with
-`∫ Δφ • f = ∫ φ • g` for all test functions `φ` form a closed set of pairs of bounded continuous
-functions.
+On a space `α` with a measure `μ`, where `α` or `F` is second-countable, a bounded continuous
+function `u : α →ᵇ F` times an integrable scalar weight `w` is integrable, and the integral
+`∫ w • u ∂μ` depends Lipschitz continuously on `u` for the supremum norm, with constant
+`∫ ‖w‖ ∂μ` (`MeasureTheory.Integrable.lipschitzWith_integral_smul`); it is also additive and
+homogeneous in `u` (`MeasureTheory.Integrable.integral_smul_boundedContinuousFunction_add`,
+`MeasureTheory.Integrable.integral_smul_boundedContinuousFunction_sub`,
+`MeasureTheory.integral_smul_boundedContinuousFunction_smul`). The space need not
+be compact, and the measure need not be finite. This is what lets an integral identity against a
+fixed weight pass to uniform limits, for instance from smooth functions to all bounded uniformly
+continuous ones in a distributional identity tested against a compactly supported function.
 -/
 
 public section
 
-open BoundedContinuousFunction Filter Metric
+namespace MeasureTheory
 
-variable {X 𝕜 F : Type*} [TopologicalSpace X] [MeasurableSpace X] [OpensMeasurableSpace X]
-  [NormedField 𝕜] [NormedAddCommGroup F] [NormedSpace 𝕜 F] [SecondCountableTopologyEither X F]
-  {μ : MeasureTheory.Measure X} {ψ : X → 𝕜}
+open scoped BoundedContinuousFunction
 
-/-- The product of an integrable function with a bounded continuous function is integrable. -/
-theorem MeasureTheory.Integrable.smul_boundedContinuousFunction (hψ : Integrable ψ μ)
-    (u : X →ᵇ F) : Integrable (fun x ↦ ψ x • u x) μ :=
-  hψ.smul_bdd ‖u‖ u.continuous.aestronglyMeasurable (ae_of_all _ u.norm_coe_le_norm)
+variable {α 𝕜 F : Type*} [TopologicalSpace α] [MeasurableSpace α] [OpensMeasurableSpace α]
+  {μ : Measure α} [NormedRing 𝕜] [NormedAddCommGroup F] [SecondCountableTopologyEither α F]
+  [Module 𝕜 F] [IsBoundedSMul 𝕜 F] {w : α → 𝕜}
 
-namespace TauCeti
+/-- A bounded continuous function times an integrable scalar weight is integrable. -/
+theorem _root_.BoundedContinuousFunction.integrable_smul (u : α →ᵇ F) (hw : Integrable w μ) :
+    Integrable (fun x ↦ w x • u x) μ :=
+  hw.smul_of_top_left (memLp_top_of_bound u.continuous.aestronglyMeasurable ‖u‖
+    (ae_of_all _ u.norm_coe_le_norm))
 
-open MeasureTheory
+variable [NormedSpace ℝ F]
 
-/-- Pairing with an integrable function is additive in the bounded continuous function. -/
-theorem integral_smul_boundedContinuousFunction_add [NormedSpace ℝ F] (hψ : Integrable ψ μ)
-    (u v : X →ᵇ F) :
-    ∫ x, ψ x • (u + v) x ∂μ = (∫ x, ψ x • u x ∂μ) + ∫ x, ψ x • v x ∂μ := by
+/-- **Integration against an integrable weight is Lipschitz in the supremum norm.** For an
+integrable scalar weight `w`, the map `u ↦ ∫ w • u ∂μ` on bounded continuous functions is
+Lipschitz with constant `∫ ‖w‖ ∂μ`. -/
+theorem Integrable.lipschitzWith_integral_smul (hw : Integrable w μ) :
+    LipschitzWith (∫ x, ‖w x‖ ∂μ).toNNReal fun u : α →ᵇ F ↦ ∫ x, w x • u x ∂μ := by
+  refine LipschitzWith.of_dist_le_mul fun u v ↦ ?_
+  rw [dist_eq_norm, ← integral_sub (u.integrable_smul hw) (v.integrable_smul hw), dist_eq_norm,
+    Real.coe_toNNReal _ (integral_nonneg fun _ ↦ norm_nonneg _), ← integral_mul_const]
+  refine norm_integral_le_of_norm_le (hw.norm.mul_const _) (ae_of_all _ fun x ↦ ?_)
+  rw [← smul_sub]
+  exact (norm_smul_le _ _).trans
+    (mul_le_mul_of_nonneg_left ((u - v).norm_coe_le_norm x) (norm_nonneg _))
+
+/-- Integration against an integrable weight is continuous in the supremum norm. -/
+theorem Integrable.continuous_integral_smul (hw : Integrable w μ) :
+    Continuous fun u : α →ᵇ F ↦ ∫ x, w x • u x ∂μ :=
+  hw.lipschitzWith_integral_smul.continuous
+
+/-- Integration against an integrable weight is additive in the bounded continuous function. -/
+theorem Integrable.integral_smul_boundedContinuousFunction_add (hw : Integrable w μ)
+    (u v : α →ᵇ F) : ∫ x, w x • (u + v) x ∂μ = (∫ x, w x • u x ∂μ) + ∫ x, w x • v x ∂μ := by
   simp only [add_apply, smul_add]
-  exact integral_add (hψ.smul_boundedContinuousFunction u) (hψ.smul_boundedContinuousFunction v)
+  exact integral_add (u.integrable_smul hw) (v.integrable_smul hw)
 
-/-- Pairing with an integrable function commutes with subtraction of bounded continuous
+/-- Integration against an integrable weight commutes with subtraction of bounded continuous
 functions. -/
-theorem integral_smul_boundedContinuousFunction_sub [NormedSpace ℝ F] (hψ : Integrable ψ μ)
-    (u v : X →ᵇ F) :
-    ∫ x, ψ x • (u - v) x ∂μ = (∫ x, ψ x • u x ∂μ) - ∫ x, ψ x • v x ∂μ := by
+theorem Integrable.integral_smul_boundedContinuousFunction_sub (hw : Integrable w μ)
+    (u v : α →ᵇ F) : ∫ x, w x • (u - v) x ∂μ = (∫ x, w x • u x ∂μ) - ∫ x, w x • v x ∂μ := by
   simp only [sub_apply, smul_sub]
-  exact integral_sub (hψ.smul_boundedContinuousFunction u) (hψ.smul_boundedContinuousFunction v)
+  exact integral_sub (u.integrable_smul hw) (v.integrable_smul hw)
 
-omit [OpensMeasurableSpace X] [SecondCountableTopologyEither X F] in
-/-- Pairing with a function is homogeneous in the bounded continuous function. -/
-theorem integral_smul_boundedContinuousFunction_smul [NormedSpace ℝ F] (c : 𝕜) (u : X →ᵇ F) :
-    ∫ x, ψ x • (c • u) x ∂μ = c • ∫ x, ψ x • u x ∂μ := by
+end MeasureTheory
+
+namespace MeasureTheory
+
+open scoped BoundedContinuousFunction
+
+variable {α 𝕜 F : Type*} [TopologicalSpace α] [MeasurableSpace α] {μ : Measure α}
+  [NormedField 𝕜] [NormedAddCommGroup F] [NormedSpace 𝕜 F] [NormedSpace ℝ F] {w : α → 𝕜}
+
+/-- Integration against a scalar weight is homogeneous in the bounded continuous function. -/
+theorem integral_smul_boundedContinuousFunction_smul (c : 𝕜) (u : α →ᵇ F) :
+    ∫ x, w x • (c • u) x ∂μ = c • ∫ x, w x • u x ∂μ := by
   -- Scaling by `c` is continuous and additive, hence `ℝ`-linear.
   have : SMulCommClass ℝ 𝕜 F := ⟨fun r c' y ↦
     (map_real_smul (DistribSMul.toAddMonoidHom F c') (continuous_const_smul c') r y).symm⟩
-  simp only [smul_apply, smul_comm (ψ _) c]
+  simp only [smul_apply, smul_comm (w _) c]
   exact integral_smul c _
 
-/-- Pairing with an integrable function is continuous on bounded continuous functions with the
-supremum norm. -/
-theorem continuous_integral_smul_boundedContinuousFunction [NormedSpace ℝ F]
-    (hψ : Integrable ψ μ) : Continuous fun u : X →ᵇ F ↦ ∫ x, ψ x • u x ∂μ := by
-  refine continuous_iff_continuousAt.2 fun u₀ ↦ continuousAt_of_dominated
-    (Eventually.of_forall fun u ↦ (hψ.smul_boundedContinuousFunction u).aestronglyMeasurable) ?_
-    (hψ.norm.mul_const (‖u₀‖ + 1))
-    (ae_of_all _ fun x ↦ (continuous_const.smul (continuous_eval_const x)).continuousAt)
-  filter_upwards [ball_mem_nhds u₀ one_pos] with u hu
-  refine ae_of_all _ fun x ↦ ?_
-  rw [norm_smul]
-  have hu' : ‖u‖ ≤ ‖u₀‖ + 1 := by
-    have := norm_le_norm_add_norm_sub' u u₀
-    rw [← dist_eq_norm] at this
-    linarith [mem_ball.1 hu]
-  exact mul_le_mul_of_nonneg_left ((u.norm_coe_le_norm x).trans hu') (norm_nonneg _)
-
-end TauCeti
+end MeasureTheory

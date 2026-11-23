@@ -39,8 +39,10 @@ holds in every dimension, including dimension `0`.
 
 ## Main results
 
-* `TauCeti.abs_inChartAt_riemannianVolumeForm`: the coefficient of the volume form in a chart is
-  the chart volume density up to sign.
+* `TauCeti.abs_inChartAt_riemannianVolumeForm` and
+  `TauCeti.signBasis_mul_signedInChartAt_smul_riemannianVolumeForm`: in a chart, the coefficient of
+  the volume form is the chart volume density up to sign, and the signed coefficient of `f dV`
+  against the model-basis sign is `√(det g) f`.
 * `TauCeti.measure_riemannianVolumeForm`: the measure `|dV|` of the volume form is the Riemannian
   volume measure.
 * `TauCeti.integralTopForm_smul_riemannianVolumeForm`: `∫_M f dV = ∫ f d(vol_g)` for continuous
@@ -105,7 +107,7 @@ theorem abs_inChartAt_riemannianVolumeForm (o : Manifold.Orientation I M (Fin m)
 
 /-- The chart integrand of `f dV`: in the chart at `α`, the signed coefficient of `f dV`, with the
 sign of the model basis, is `√(det g) f`, the integrand of the Riemannian measure in that chart. -/
-private theorem signBasis_mul_signedInChartAt_smul_riemannianVolumeForm
+theorem signBasis_mul_signedInChartAt_smul_riemannianVolumeForm
     (l : Manifold.OrientationLift I M (Fin m)) (σ : Fin (finrank ℝ E) ≃ Fin m) (f : M → ℝ)
     (α : M) {x : M} (hx : x ∈ (extChartAt I α).source) :
     (Orientation.signBasis l.modelOrientation ((finBasis ℝ E).reindex σ) : ℝ) *

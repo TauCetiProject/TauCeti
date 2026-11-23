@@ -81,8 +81,8 @@ variable (C : Type u) [Category.{v} C] [HasColimits.{v} C] [HasProducts.{v} C]
 stalks of `F` at the points of the fiber of `f` over `y`. Its coordinate at `x` is the pushforward
 stalk map `(f_* F)_{f x} ⟶ F_x`, transported along `f x = y`. -/
 def fiberStalkMap (f : X ⟶ Y) (F : X.Presheaf C) (y : Y) :
-    (f _* F).stalk y ⟶ ∏ᶜ fun x : { x : X // f x = y } ↦ F.stalk x.1 :=
-  Pi.lift fun x ↦ eqToHom (congrArg (f _* F).stalk x.2.symm) ≫ F.stalkPushforward C f x.1
+    (f _* F).stalk y ⟶ ∏ᶜ fun x : { x : X // f x = y } ↦ F.stalk x.val :=
+  Pi.lift fun x ↦ eqToHom (congrArg (f _* F).stalk x.property.symm) ≫ F.stalkPushforward C f x.val
 
 variable {C}
 
@@ -91,7 +91,7 @@ transported along `f x = y`. -/
 @[reassoc]
 theorem fiberStalkMap_π (f : X ⟶ Y) (F : X.Presheaf C) (y : Y) (x : { x : X // f x = y }) :
     fiberStalkMap C f F y ≫ Pi.π _ x =
-      eqToHom (congrArg (f _* F).stalk x.2.symm) ≫ F.stalkPushforward C f x.1 := by
+      eqToHom (congrArg (f _* F).stalk x.property.symm) ≫ F.stalkPushforward C f x.val := by
   simp [fiberStalkMap]
 
 /-- `fiberStalkMap` sends the germ at `y` of a section of `f_* F` over `U`, that is, of a section
@@ -100,7 +100,7 @@ of `F` over `f⁻¹(U)`, to its germs at the points of the fiber over `y`. -/
 theorem germ_fiberStalkMap_π (f : X ⟶ Y) (F : X.Presheaf C) {y : Y} (U : Opens Y) (hy : y ∈ U)
     (x : { x : X // f x = y }) :
     (f _* F).germ U y hy ≫ fiberStalkMap C f F y ≫ Pi.π _ x =
-      F.germ ((Opens.map f).obj U) x.1 (by simpa [x.2] using hy) := by
+      F.germ ((Opens.map f).obj U) x.val (by simpa [x.property] using hy) := by
   obtain ⟨x, rfl⟩ := x
   simp [fiberStalkMap_π]
 
@@ -108,7 +108,7 @@ theorem germ_fiberStalkMap_π (f : X ⟶ Y) (F : X.Presheaf C) {y : Y} (U : Open
 @[reassoc]
 theorem fiberStalkMap_naturality (f : X ⟶ Y) {F G : X.Presheaf C} (α : F ⟶ G) (y : Y) :
     (stalkFunctor C y).map ((pushforward C f).map α) ≫ fiberStalkMap C f G y =
-      fiberStalkMap C f F y ≫ Limits.Pi.map fun x ↦ (stalkFunctor C x.1).map α := by
+      fiberStalkMap C f F y ≫ Limits.Pi.map fun x ↦ (stalkFunctor C x.val).map α := by
   refine Pi.hom_ext _ _ fun x ↦ ?_
   obtain ⟨x, rfl⟩ := x
   have hF := fiberStalkMap_π f F (f x) ⟨x, rfl⟩
@@ -120,7 +120,7 @@ theorem fiberStalkMap_naturality (f : X ⟶ Y) {F G : X.Presheaf C} (α : F ⟶ 
   refine ((Category.assoc _ _ _).trans (congrArg _ hG)).trans
     ((TauCeti.Topology.stalkPushforward_naturality f α x).trans ?_)
   exact ((Category.assoc _ _ _).trans ((congrArg _
-    (Pi.map_π (fun x' : { x' : X // f x' = f x } ↦ (stalkFunctor C x'.1).map α) ⟨x, rfl⟩)).trans
+    (Pi.map_π (fun x' : { x' : X // f x' = f x } ↦ (stalkFunctor C x'.val).map α) ⟨x, rfl⟩)).trans
     ((Category.assoc _ _ _).symm.trans (congrArg (· ≫ (stalkFunctor C x).map α) hF)))).symm
 
 /-- For the identity map, the coordinate of `fiberStalkMap` at the unique point `x` of the fiber
@@ -136,7 +136,7 @@ theorem fiberStalkMap_id_π (F : X.Presheaf C) (x : X) :
 /-- For the identity map, `fiberStalkMap` is an isomorphism: the fiber over `x` is `{x}`. -/
 instance isIso_fiberStalkMap_id (F : X.Presheaf C) (x : X) :
     IsIso (fiberStalkMap C (𝟙 X) F x) := by
-  let : Unique { x' : X // (𝟙 X) x' = x } := ⟨⟨⟨x, rfl⟩⟩, fun x' ↦ Subtype.ext x'.2⟩
+  let : Unique { x' : X // (𝟙 X) x' = x } := ⟨⟨⟨x, rfl⟩⟩, fun x' ↦ Subtype.ext x'.property⟩
   have h : fiberStalkMap C (𝟙 X) F x ≫ (productUniqueIso _).hom = 𝟙 _ := by
     rw [productUniqueIso_hom]; exact fiberStalkMap_id_π F x
   have : IsIso (fiberStalkMap C (𝟙 X) F x ≫ (productUniqueIso _).hom) := h ▸ IsIso.id _
@@ -147,7 +147,7 @@ unique point `x` of the fiber over `x`. -/
 @[simp]
 theorem inv_fiberStalkMap_id (F : X.Presheaf C) (x : X) :
     inv (fiberStalkMap C (𝟙 X) F x) =
-      Pi.π (fun x' : { x' : X // (𝟙 X) x' = x } ↦ F.stalk x'.1) ⟨x, rfl⟩ :=
+      Pi.π (fun x' : { x' : X // (𝟙 X) x' = x } ↦ F.stalk x'.val) ⟨x, rfl⟩ :=
   IsIso.inv_eq_of_hom_inv_id (fiberStalkMap_id_π F x)
 
 /-- The coordinate of `fiberStalkMap` for a composite `f ≫ g` at a point `x` of the fiber over `z`
@@ -157,8 +157,8 @@ for `g` applied to `f_* F`. -/
 theorem fiberStalkMap_comp_π (f : X ⟶ Y) (g : Y ⟶ Z) (F : X.Presheaf C) (z : Z)
     (x : { x : X // (f ≫ g) x = z }) :
     fiberStalkMap C (f ≫ g) F z ≫ Pi.π _ x =
-      fiberStalkMap C g (f _* F) z ≫ Pi.π _ ⟨f x.1, x.2⟩ ≫ fiberStalkMap C f F (f x.1) ≫
-        Pi.π _ ⟨x.1, rfl⟩ := by
+      fiberStalkMap C g (f _* F) z ≫ Pi.π _ ⟨f x.val, x.property⟩ ≫ fiberStalkMap C f F (f x.val) ≫
+        Pi.π _ ⟨x.val, rfl⟩ := by
   obtain ⟨x, rfl⟩ := x
   rw [fiberStalkMap_π, fiberStalkMap_π_assoc, fiberStalkMap_π]
   simp only [hom_comp, ContinuousMap.comp_apply, eqToHom_refl, stalkPushforward.comp,
@@ -174,9 +174,10 @@ coordinate `(f x, x)` to the coordinate `x`. -/
 theorem fiberStalkMap_comp (f : X ⟶ Y) (g : Y ⟶ Z) (F : X.Presheaf C) (z : Z) :
     fiberStalkMap C (f ≫ g) F z =
       fiberStalkMap C g (f _* F) z ≫
-        Limits.Pi.map (fun y : { y : Y // g y = z } ↦ fiberStalkMap C f F y.1) ≫
-          Pi.map' (fun x : { x : X // (f ≫ g) x = z } ↦ (⟨f x.1, x.2⟩ : { y : Y // g y = z }))
-            fun x ↦ Pi.π (fun x' : { x' : X // f x' = f x.1 } ↦ F.stalk x'.1) ⟨x.1, rfl⟩ :=
+        Limits.Pi.map (fun y : { y : Y // g y = z } ↦ fiberStalkMap C f F y.val) ≫
+          Pi.map' (fun x : { x : X // (f ≫ g) x = z } ↦ (⟨f x.val, x.property⟩ :
+              { y : Y // g y = z }))
+            fun x ↦ Pi.π (fun x' : { x' : X // f x' = f x.val } ↦ F.stalk x'.val) ⟨x.val, rfl⟩ :=
   -- The two sides start at the stalks of `(f ≫ g) _* F` and of `g _* (f _* F)`, which agree only up
   -- to unfolding; extensionality is taken at the latter, so that the right side can be rewritten.
   Pi.hom_ext (X := (g _* (f _* F)).stalk z) _ _ fun x ↦ by
@@ -198,11 +199,11 @@ theorem fiberStalkMap_injective (F : X.Sheaf C) {f : X ⟶ Y} (hf : IsClosedMap 
   obtain ⟨V, hyV, t, rfl⟩ := (f _* F.presheaf).exists_germ_eq b
   -- At each point `x` of the fiber the two sections agree on a neighbourhood `W x` of `x`.
   have hgerm (x : { x : X // f x = y }) :
-      F.presheaf.germ ((Opens.map f).obj U) x.1 (by simpa [x.2] using hyU) s =
-        F.presheaf.germ ((Opens.map f).obj V) x.1 (by simpa [x.2] using hyV) t := by
+      F.presheaf.germ ((Opens.map f).obj U) x.val (by simpa [x.property] using hyU) s =
+        F.presheaf.germ ((Opens.map f).obj V) x.val (by simpa [x.property] using hyV) t := by
     simpa using congrArg
-      (ConcreteCategory.hom (Pi.π (fun x : { x : X // f x = y } ↦ F.presheaf.stalk x.1) x)) hab
-  choose W hxW iU iV heq using fun x ↦ F.presheaf.germ_eq x.1 _ _ s t (hgerm x)
+      (ConcreteCategory.hom (Pi.π (fun x : { x : X // f x = y } ↦ F.presheaf.stalk x.val) x)) hab
+  choose W hxW iU iV heq using fun x ↦ F.presheaf.germ_eq x.val _ _ s t (hgerm x)
   -- Since `f` is closed, `y` has an open neighbourhood `V'` whose preimage lies in `⨆ x, W x`.
   obtain ⟨V', hV', hV'o, hyV'⟩ := eventually_nhds_iff.mp <| hf.eventually_nhds_fiber
     (p := (· ∈ ⨆ x, W x)) y fun x hx ↦ (⨆ x, W x).isOpen.mem_nhds <|
@@ -225,17 +226,17 @@ theorem fiberStalkMap_surjective [T2Space X] (F : X.Sheaf C) {f : X ⟶ Y} (hf :
   -- Represent each coordinate of `g` by a section over a neighbourhood of its point, and choose
   -- pairwise disjoint open neighbourhoods `D x` of the fiber points.
   choose W hxW t ht using fun x : { x : X // f x = y } ↦
-    F.presheaf.exists_germ_eq (Pi.π (fun x : { x : X // f x = y } ↦ F.presheaf.stalk x.1) x g)
+    F.presheaf.exists_germ_eq (Pi.π (fun x : { x : X // f x = y } ↦ F.presheaf.stalk x.val) x g)
   obtain ⟨D, hD, hdisj⟩ := hfin.t2_separation
   let O (x : { x : X // f x = y }) : Opens X := W x ⊓ ⟨D x, (hD x).2⟩
-  have hxO (x : { x : X // f x = y }) : x.1 ∈ O x := ⟨hxW x, (hD x).1⟩
+  have hxO (x : { x : X // f x = y }) : x.val ∈ O x := ⟨hxW x, (hD x).1⟩
   let t' (x : { x : X // f x = y }) := F.presheaf.map (homOfLE inf_le_left : O x ⟶ W x).op (t x)
   -- Sections over pairwise disjoint opens are compatible, so they glue over `⨆ x, O x`.
   have hcompat : IsCompatible F.presheaf O t' := by
     intro i j
     obtain rfl | hij := eq_or_ne i j
     · rfl
-    have hD : Disjoint (D i) (D j) := hdisj i.2 j.2 fun h ↦ hij (Subtype.ext h)
+    have hD : Disjoint (D i) (D j) := hdisj i.property j.property fun h ↦ hij (Subtype.ext h)
     exact section_ext F _ _ _ fun z hz ↦ (Set.disjoint_left.mp hD hz.1.2 hz.2.2).elim
   obtain ⟨s, hs, -⟩ := F.existsUnique_gluing O t' hcompat
   -- Since `f` is closed, `y` has an open neighbourhood `V` whose preimage lies in `⨆ x, O x`.
@@ -247,7 +248,7 @@ theorem fiberStalkMap_surjective [T2Space X] (F : X.Sheaf C) {f : X ⟶ Y} (hf :
   refine (Concrete.productEquiv _).injective (funext fun x ↦ ?_)
   rw [Concrete.productEquiv_apply_apply, Concrete.productEquiv_apply_apply, ← ht x,
     germ_fiberStalkMap_π_apply, germ_res_apply]
-  simpa [t'] using congrArg (F.presheaf.germ (O x) x.1 (hxO x)) (hs x)
+  simpa [t'] using congrArg (F.presheaf.germ (O x) x.val (hxO x)) (hs x)
 
 include instCC in
 /-- For a closed map `f` from a Hausdorff space with finite fiber over `y`, the canonical map from

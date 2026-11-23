@@ -89,7 +89,7 @@ def intAddMulOrder : NumberFieldOrder K where
     have h : intAddMulSubalgebra K f ≤ integralClosure ℤ K := by
       rintro _ ⟨a, y, rfl⟩
       exact add_mem (Subalgebra.algebraMap_mem _ a)
-        (mul_mem (Subalgebra.natCast_mem _ f) y.2)
+        (mul_mem (Subalgebra.natCast_mem _ f) y.property)
     have : Module.Finite ℤ (integralClosure ℤ K) := inferInstanceAs (Module.Finite ℤ (𝓞 K))
     exact Module.Finite.of_injective (Subalgebra.inclusion h).toLinearMap
       (Subalgebra.inclusion_injective h)
@@ -278,7 +278,7 @@ def quotientIntAddMulOrderEquiv :
   have hsurj : Function.Surjective ψ := by
     intro q
     obtain ⟨x, rfl⟩ := Ideal.Quotient.mk_surjective q
-    obtain ⟨a, y, hxy⟩ := mem_toRingOfIntegers_intAddMulOrder.mp x.2
+    obtain ⟨a, y, hxy⟩ := mem_toRingOfIntegers_intAddMulOrder.mp x.property
     exact ⟨a, by rw [eq_intCast, mk_eq_intCast hxy]⟩
   have hker : RingHom.ker ψ = Ideal.span {(f : ℤ)} := by
     ext a

@@ -83,6 +83,12 @@ variable {E F : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
   [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E]
   [NormedAddCommGroup F] [NormedSpace ℝ F] [CompleteSpace F]
 
+/-- The Laplacian of a test function is integrable. -/
+private theorem integrable_laplacian (φ : 𝓓(⊤, ℝ)) :
+    Integrable (Δ (φ : E → ℝ)) := by
+  simpa using φ.integrable_laplacian_smul (u := fun _ : E ↦ (1 : ℝ))
+    ((locallyIntegrable_const 1).locallyIntegrableOn _)
+
 omit [CompleteSpace F] in
 /-- The pairs `(f, g)` of bounded uniformly continuous functions with `Δ f = g` in the sense of
 distributions form a closed set. -/
@@ -93,10 +99,9 @@ private theorem isClosed_setOf_forall_integral_laplacian_smul_eq :
     (locallyIntegrable_const 1).locallyIntegrableOn _
   simp only [ofPred_forall]
   exact isClosed_iInter fun φ ↦ isClosed_eq
-    ((continuous_integral_smul_boundedContinuousFunction (φ.integrable_laplacian H)).comp
-      (continuous_subtype_val.comp continuous_fst))
-    ((continuous_integral_smul_boundedContinuousFunction (φ.integrable H)).comp
-      (continuous_subtype_val.comp continuous_snd))
+    ((integrable_laplacian φ).continuous_integral_smul.comp
+      (continuous_subtypeVal.comp continuous_fst))
+    ((φ.integrable H).continuous_integral_smul.comp (continuous_subtypeVal.comp continuous_snd))
 
 /-- **The heat generator is a restriction of the distributional Laplacian.** If `f` lies in the
 domain of the generator `A` of the heat semigroup on `BUC` and `g = A f`, then
@@ -139,7 +144,7 @@ theorem eq_zero_of_forall_integral_laplacian_smul_eq_smul {w : E →ᵇ F} {c : 
     have hvs : ContDiff ℝ ∞ v := hρc.contDiff_convolution_left (lsmul ℝ ℝ) hρ hwl
     have hvb : ∀ m : ℕ, ∀ x, ‖iteratedFDeriv ℝ m v x‖ ≤
         ‖w‖ * ∫ y, ‖iteratedFDeriv ℝ m ρ y‖ := fun m x ↦
-      hρc.norm_iteratedFDeriv_convolution_left_le (hρ.of_le (by simp)) hwl w.norm_coe_le_norm x
+      hρc.norm_iteratedFDeriv_convolution_left_le hρ le_top hwl w.norm_coe_le_norm x
     have hvu : UniformContinuous v :=
       (hρc.lipschitzWith_convolution_left (hρ.of_le (by simp)) hwl
         w.norm_coe_le_norm).uniformContinuous
@@ -213,10 +218,10 @@ theorem mem_graph_generator_heatSemigroupBUC_iff {f g : uniformContinuousSubmodu
       (locallyIntegrable_const 1).locallyIntegrableOn _
     have hφ : Integrable (φ : E → ℝ) := φ.integrable H
     rw [one_smul, Submodule.coe_sub,
-      integral_smul_boundedContinuousFunction_sub (φ.integrable_laplacian H),
-      integral_smul_boundedContinuousFunction_sub hφ, hfg φ, hh' φ, hAh, Submodule.coe_sub,
-      Submodule.coe_sub, integral_smul_boundedContinuousFunction_sub hφ,
-      integral_smul_boundedContinuousFunction_sub hφ]
+      (integrable_laplacian φ).integral_smul_boundedContinuousFunction_sub,
+      hφ.integral_smul_boundedContinuousFunction_sub, hfg φ, hh' φ, hAh, Submodule.coe_sub,
+      Submodule.coe_sub, hφ.integral_smul_boundedContinuousFunction_sub,
+      hφ.integral_smul_boundedContinuousFunction_sub]
     abel
   have hfh : f = h := sub_eq_zero.1 (Subtype.ext hw)
   refine (LinearPMap.mem_graph_iff _).mpr ⟨⟨h, hh⟩, hfh.symm, ?_⟩

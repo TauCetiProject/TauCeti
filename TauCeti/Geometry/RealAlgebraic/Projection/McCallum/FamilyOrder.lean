@@ -47,7 +47,7 @@ nonzero. The product order need only be controlled on sections: on sectors, ever
 member has ambient order zero. -/
 theorem orderAt_eq_of_prod_delineation (hB : F.IsSquarefreeBasis B)
     (hS : IsPreconnected S)
-    (D : TauCeti.Delineation fun (b : B) (x : S) ↦ b.1.map (MvPolynomial.eval x.1))
+    (D : TauCeti.Delineation fun (b : B) (x : S) ↦ b.val.map (MvPolynomial.eval x.val))
     (hfiber : ∀ b ∈ B, ∀ x ∈ S, b.map (MvPolynomial.eval x) ≠ 0)
     (hcontent : ∀ f ∈ F, ∀ x ∈ S, ∀ y ∈ S,
       f.content.orderAt x = f.content.orderAt y)
