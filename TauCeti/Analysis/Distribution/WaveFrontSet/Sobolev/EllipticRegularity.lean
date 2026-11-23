@@ -30,9 +30,10 @@ for every real `s` and every distribution `T`, where `Char(P)` is the set
 vanishes. So `P T` is microlocally `H^s` at a noncharacteristic `(x, ξ)` exactly when `T` is
 microlocally `H^(s + M)` there, and an elliptic operator shifts the `H^s` wave front set exactly
 by its order: `WF_s(P T) = WF_(s + M)(T)`. For the Laplacian this is
-`WF_s(Δ T) = WF_(s + 2)(T)` (`Distribution.sobolevWaveFrontSet_laplacianCLM`). Projecting to the
-base gives local elliptic regularity `P T ∈ H^s_loc ⇒ T ∈ H^(s + M)_loc` on open subsets of `E`,
-for distributions of arbitrary order. This is the `H^s` refinement of `Distribution.waveFrontSet_subset_waveFrontSet_sum_smul_iteratedLineDerivOp_union`.
+`WF_s(Δ T) = WF_(s + 2)(T)` (`Distribution.sobolevWaveFrontSet_laplacianCLM`). Projecting to
+the base gives local elliptic regularity `P T ∈ H^s_loc ⇒ T ∈ H^(s + M)_loc` on open subsets
+of `E`, for distributions of arbitrary order. This is the `H^s` refinement of
+`Distribution.waveFrontSet_subset_waveFrontSet_sum_smul_iteratedLineDerivOp_union`.
 
 ## The argument
 
