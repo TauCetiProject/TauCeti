@@ -5,18 +5,15 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.MonoidAlgebra.MapDomain
+public import TauCeti.Algebra.MonoidAlgebra.Center
 public import TauCeti.RepresentationTheory.GroupAlgebra.Block
 
 /-!
 # Scalar extension of blocks
 
 A ring homomorphism `f : R →+* S` of commutative semirings induces the ring homomorphism
-`MonoidAlgebra.mapRingHom G f : R[G] →+* S[G]` applying `f` to the coefficients. It carries the
-centre of `R[G]` into the centre of `S[G]` (`MonoidAlgebra.mapRingHom_mem_center`), because
-`S[G]` is spanned over its central scalars `S` by the elements `of S G g`, the images of the
-`of R G g`.
-The restriction is `MonoidAlgebra.centerMapRingHom G f : Z(R[G]) →+* Z(S[G])`.
+`MonoidAlgebra.centerMapRingHom G f : Z(R[G]) →+* Z(S[G])` of centres
+(`TauCeti.Algebra.MonoidAlgebra.Center`).
 
 The image of a block idempotent of `R[G]` is a central idempotent of `S[G]`, hence a sum of blocks
 of `S[G]` whenever `1` is a sum of orthogonal blocks of `S[G]`
@@ -28,14 +25,8 @@ Artinian `S` and a finite `G` such a family exists
 single block: along `𝔽₂ ⊆ 𝔽₄`, the block `r + r²` of `𝔽₂[C₃]` splits into the two blocks
 `1 + α² r + α r²` and `1 + α r + α² r²` of `𝔽₄[C₃]`, where `α² + α + 1 = 0`.
 
-## Main definitions
-
-* `MonoidAlgebra.centerMapRingHom G f`: the ring homomorphism `Z(R[G]) →+* Z(S[G])` induced by
-  `f : R →+* S`.
-
 ## Main results
 
-* `MonoidAlgebra.mapRingHom_mem_center`: the coefficient map preserves centrality.
 * `TauCeti.exists_centerMapRingHom_eq_sum`: the image of a central idempotent of `R[G]`, in
   particular of a block idempotent, is a sum of members of any complete orthogonal family of
   block idempotents of `S[G]`.
@@ -50,39 +41,6 @@ single block: along `𝔽₂ ⊆ 𝔽₄`, the block `r + r²` of `𝔽₂[C₃]
 -/
 
 public section
-
-namespace MonoidAlgebra
-
-variable {R S : Type*} (G : Type*) [CommSemiring R] [CommSemiring S] [Monoid G]
-
-/-- **The coefficient map preserves centrality.** For `f : R →+* S` and `x` in the centre of
-`R[G]`, the image of `x` in `S[G]` is central: it commutes with the scalars `S`, which are central,
-and with each `single g 1`, the image of the element `single g 1` of `R[G]`. -/
-theorem mapRingHom_mem_center (f : R →+* S) {x : R[G]}
-    (hx : x ∈ Subalgebra.center R R[G]) :
-    mapRingHom G f x ∈ Subalgebra.center S S[G] := by
-  rw [Subalgebra.mem_center_iff] at hx ⊢
-  intro y
-  induction y using MonoidAlgebra.induction_linear with
-  | zero => simp
-  | add y z hy hz => rw [add_mul, mul_add, hy, hz]
-  | single g s =>
-    have hg : of S G g = mapRingHom G f (of R G g) := by simp
-    rw [single_eq_algebraMap_mul_of, mul_assoc, Algebra.left_comm, hg, ← map_mul, ← map_mul, hx]
-
-/-- The ring homomorphism `Z(R[G]) →+* Z(S[G])` of centres induced by a ring homomorphism
-`f : R →+* S`: the restriction of `MonoidAlgebra.mapRingHom G f`. -/
-noncomputable def centerMapRingHom (f : R →+* S) :
-    Subalgebra.center R R[G] →+* Subalgebra.center S S[G] :=
-  ((mapRingHom G f).comp (Subalgebra.center R R[G]).toSubsemiring.subtype).codRestrict
-    (Subalgebra.center S S[G]).toSubsemiring fun x ↦ mapRingHom_mem_center G f x.property
-
-@[simp]
-theorem coe_centerMapRingHom (f : R →+* S) (x : Subalgebra.center R R[G]) :
-    (centerMapRingHom G f x : S[G]) = mapRingHom G f x := by
-  simp [centerMapRingHom]
-
-end MonoidAlgebra
 
 namespace TauCeti
 
