@@ -113,28 +113,9 @@ def normalContMDiffRiemannianMetric (f : SmoothEmbedding I J n M N)
   intro x
   let e := trivializationAt P (fun x => f.NormalSpace x hn) x
   let b := Module.Basis.ofVectorSpace ℝ P
-  let e' := trivializationAt (P →L[ℝ] ℝ) (fun x => f.NormalSpace x hn →L[ℝ] ℝ) x
-  let eℝ := trivializationAt ℝ (Bundle.Trivial M ℝ) x
-  have he' : e'.baseSet = e.baseSet := by simp [e', e]
-  let A (y : M) : f.NormalSpace y hn →L[ℝ] f.NormalSpace y hn →L[ℝ] ℝ :=
-    (f.normalRiemannianMetric hn).inner y
-  have : ∀ y, IsTopologicalAddGroup (f.NormalSpace y hn →L[ℝ] ℝ) := fun y => inferInstance
-  have : ∀ y, ContinuousSMul ℝ (f.NormalSpace y hn →L[ℝ] ℝ) := fun y => inferInstance
   -- Test the bilinear field on two copies of a local normal frame.
-  have hform : ContMDiffOn I (I.prod 𝓘(ℝ, P →L[ℝ] P →L[ℝ] ℝ)) m
-      (fun y => (⟨y, A y⟩ : TotalSpace (P →L[ℝ] P →L[ℝ] ℝ)
-        (fun y => f.NormalSpace y hn →L[ℝ] f.NormalSpace y hn →L[ℝ] ℝ))) e.baseSet := by
-    apply TauCeti.Manifold.contMDiffOn_hom_of_localFrame
-      (I := I) (n := m) (V := fun x => f.NormalSpace x hn)
-      (V' := fun x => f.NormalSpace x hn →L[ℝ] ℝ) (F' := P →L[ℝ] ℝ)
-      (e := e) (e' := e') b (J := I) (f := fun y => y) (u := e.baseSet)
-      contMDiffOn_id (fun y hy => ⟨hy, he' ▸ hy⟩)
-    intro i
-    apply TauCeti.Manifold.contMDiffOn_hom_of_localFrame
-      (I := I) (n := m) (V := fun x => f.NormalSpace x hn)
-      (V' := Bundle.Trivial M ℝ) (F' := ℝ) (e := e) (e' := eℝ) b (J := I)
-      (f := fun y => y) (u := e.baseSet) contMDiffOn_id (fun y hy => ⟨hy, by simp [eℝ]⟩)
-    intro j
+  have hform := TauCeti.Manifold.contMDiffOn_bilinear_of_localFrame (I := I) (n := m) b
+    (e := e) subset_rfl (A := (f.normalRiemannianMetric hn).inner) fun i j ↦ by
     -- Orthogonal representatives of the frame sections are smooth ambient tangent fields.
     have hi := (f.contMDiff_normalRepresentative hn hm hdim).comp_contMDiffOn
       (e.contMDiffOn_localFrame_baseSet m b i)
@@ -147,10 +128,7 @@ def normalContMDiffRiemannianMetric (f : SmoothEmbedding I J n M N)
         (F := V) (b := fun y => f y)
         (v := fun y => f.normalRepresentative y hn (e.localFrame b i y))
         (w := fun y => f.normalRepresentative y hn (e.localFrame b j y)) hi hj
-    intro y hy
-    apply Bundle.contMDiffWithinAt_totalSpace_iff.mpr
-    refine ⟨contMDiffWithinAt_id, ?_⟩
-    simpa [A, Trivial.fiberBundle_trivializationAt'] using hpair y hy
+    simpa using hpair
   exact hform.contMDiffAt (e.open_baseSet.mem_nhds (mem_baseSet_trivializationAt _ _ x))
 
 /-- The smooth normal metric has the same inner products as the fibrewise normal metric. -/
