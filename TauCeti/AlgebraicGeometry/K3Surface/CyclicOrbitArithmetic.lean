@@ -227,7 +227,7 @@ theorem IsK3CyclicOrbitData.restrict {n : ℕ} {a : ℕ → ℕ}
         refine Finset.sum_congr rfl fun m hm ↦ ?_
         obtain ⟨hmn, rfl⟩ := Finset.mem_filter.1 hm
         rw [Nat.gcd_assoc, Nat.gcd_eq_right (Nat.dvd_of_mem_divisors hd'),
-          ← Nat.div_gcd_mul_div_lcm (Nat.dvd_of_mem_divisors hmn) hd hd0]
+          ← Nat.div_gcd_mul_div_lcm (Nat.dvd_of_mem_divisors hmn) hd]
         ring
     _ = ∑ m ∈ n.divisors, n / m * a m * (m.gcd d' ^ 2 - 1) :=
         Finset.sum_fiberwise_of_maps_to
@@ -238,9 +238,11 @@ theorem IsK3CyclicOrbitData.restrict {n : ℕ} {a : ℕ → ℕ}
 /-- The fixed-point counts of the subgroup of order `d`, computed from its orbit counts
 `cyclicSubgroupOrbitCount n a d`, agree with those of the whole group: for `e ∣ d`, the subgroup of
 order `e` fixes the same points either way. -/
-theorem cyclicFixedPointCount_cyclicSubgroupOrbitCount {n : ℕ} (a : ℕ → ℕ) (hn : n ≠ 0) {d e : ℕ}
+theorem cyclicFixedPointCount_cyclicSubgroupOrbitCount {n : ℕ} (a : ℕ → ℕ) {d e : ℕ}
     (hd : d ∣ n) (he : e ∣ d) :
     cyclicFixedPointCount d (cyclicSubgroupOrbitCount n a d) e = cyclicFixedPointCount n a e := by
+  rcases eq_or_ne n 0 with rfl | hn
+  · simp [cyclicFixedPointCount_def, cyclicSubgroupOrbitCount_def]
   have hd0 : d ≠ 0 := ne_zero_of_dvd_ne_zero hn hd
   rw [cyclicFixedPointCount_def, cyclicFixedPointCount_def, Finset.sum_filter, Finset.sum_filter]
   calc ∑ f ∈ d.divisors, (if e ∣ f then d / f * cyclicSubgroupOrbitCount n a d f else 0)
@@ -253,7 +255,7 @@ theorem cyclicFixedPointCount_cyclicSubgroupOrbitCount {n : ℕ} (a : ℕ → �
         · refine Finset.sum_congr rfl fun m hm ↦ ?_
           obtain ⟨hmn, rfl⟩ := Finset.mem_filter.1 hm
           rw [ite_eq_left (hef.trans (Nat.gcd_dvd_left m d)), ← mul_assoc,
-            Nat.div_gcd_mul_div_lcm (Nat.dvd_of_mem_divisors hmn) hd hd0]
+            Nat.div_gcd_mul_div_lcm (Nat.dvd_of_mem_divisors hmn) hd]
         · refine (Finset.sum_eq_zero fun m hm ↦ ?_).symm
           obtain ⟨-, rfl⟩ := Finset.mem_filter.1 hm
           exact ite_eq_right fun hem ↦ hef (Nat.dvd_gcd hem he)
