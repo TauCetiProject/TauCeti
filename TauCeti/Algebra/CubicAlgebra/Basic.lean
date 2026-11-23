@@ -16,8 +16,9 @@ To a binary cubic form `f(u, v) = a u³ + b u² v + c u v² + d v³` over a comm
 recorded as Mathlib's `P = ⟨a, b, c, d⟩ : Cubic R`, attach the free rank-three commutative
 `R`-algebra `P.CubicAlgebra` with basis `1, ω, θ` and multiplication table
 `ωθ = -ad`, `ω² = -ac + bω - aθ`, `θ² = -bd + dω - cθ`.
-This is the free (globally trivialized) case of the Delone–Faddeev–Gan–Gross–Savin
-correspondence between binary cubic forms and cubic algebras, in the sign convention of Wood. No
+This is the forward construction `P ↦ P.CubicAlgebra` in the free (globally trivialized) case of
+the Delone–Faddeev–Gan–Gross–Savin correspondence between binary cubic forms and cubic algebras,
+in the sign convention of Wood. No
 division by `2` or `3` is used, so the construction works over every commutative ring, including
 `𝔽₂`, `𝔽₃` and `ℤ`. Locally free cubic algebras over a Dedekind domain are glued from these free
 pieces.
@@ -45,6 +46,12 @@ algebra with the invariant of its binary cubic form.
 * `Cubic.CubicAlgebra.trace_apply`: `Tr(x₀ + x₁ω + x₂θ) = 3x₀ + bx₁ - cx₂`.
 * `Cubic.CubicAlgebra.discr_basis`: the discriminant of `1, ω, θ` is `Cubic.discr P`.
 
+## Implementation notes
+
+The structure and its additive and scalar instances follow the layout of Mathlib's
+`QuadraticAlgebra` (`Mathlib.Algebra.QuadraticAlgebra.Defs`): each instance is stated under the
+least structure on `R` it needs, and the multiplication starts at `CommRing R`.
+
 ## References
 
 * M. M. Wood, *Parametrizing quartic algebras over an arbitrary base*, Algebra & Number Theory
@@ -61,7 +68,7 @@ namespace Cubic
 `1, ω, θ` and multiplication `ωθ = -ad`, `ω² = -ac + bω - aθ`, `θ² = -bd + dω - cθ`. An element is
 recorded by its coordinates `re`, `imω`, `imθ`. -/
 @[ext]
-structure CubicAlgebra {R : Type*} [CommRing R] (P : Cubic R) where
+structure CubicAlgebra {R : Type*} (P : Cubic R) where
   /-- The coefficient of `1`. -/
   re : R
   /-- The coefficient of `ω`. -/
@@ -71,7 +78,7 @@ structure CubicAlgebra {R : Type*} [CommRing R] (P : Cubic R) where
 
 namespace CubicAlgebra
 
-variable {R : Type*} [CommRing R] {P : Cubic R}
+variable {R S T : Type*} {P : Cubic R}
 
 /-- The equivalence between the cubic algebra and `R × R × R`, by coordinates. -/
 @[simps]
@@ -81,114 +88,27 @@ def equivProd (P : Cubic R) : P.CubicAlgebra ≃ R × R × R where
 
 instance [Nontrivial R] : Nontrivial P.CubicAlgebra := (equivProd P).nontrivial
 
-instance : Zero P.CubicAlgebra := ⟨⟨0, 0, 0⟩⟩
-instance : One P.CubicAlgebra := ⟨⟨1, 0, 0⟩⟩
-instance : Add P.CubicAlgebra := ⟨fun x y ↦ ⟨x.re + y.re, x.imω + y.imω, x.imθ + y.imθ⟩⟩
-instance : Neg P.CubicAlgebra := ⟨fun x ↦ ⟨-x.re, -x.imω, -x.imθ⟩⟩
-instance : Sub P.CubicAlgebra := ⟨fun x y ↦ ⟨x.re - y.re, x.imω - y.imω, x.imθ - y.imθ⟩⟩
-
-instance {S : Type*} [SMul S R] : SMul S P.CubicAlgebra :=
-  ⟨fun s x ↦ ⟨s • x.re, s • x.imω, s • x.imθ⟩⟩
-
-/-- Multiplication by the table `ωθ = -ad`, `ω² = -ac + bω - aθ`, `θ² = -bd + dω - cθ`. -/
-instance : Mul P.CubicAlgebra :=
-  ⟨fun x y ↦
-    ⟨x.re * y.re - P.a * P.c * (x.imω * y.imω) - P.a * P.d * (x.imω * y.imθ + x.imθ * y.imω) -
-        P.b * P.d * (x.imθ * y.imθ),
-      x.re * y.imω + x.imω * y.re + P.b * (x.imω * y.imω) + P.d * (x.imθ * y.imθ),
-      x.re * y.imθ + x.imθ * y.re - P.a * (x.imω * y.imω) - P.c * (x.imθ * y.imθ)⟩⟩
-
 section Coordinates
 
 variable (x y : P.CubicAlgebra)
 
+section Zero
+
+variable [Zero R]
+
+instance : Zero P.CubicAlgebra := ⟨⟨0, 0, 0⟩⟩
+
 @[simp] theorem re_zero : (0 : P.CubicAlgebra).re = 0 := rfl
 @[simp] theorem imω_zero : (0 : P.CubicAlgebra).imω = 0 := rfl
 @[simp] theorem imθ_zero : (0 : P.CubicAlgebra).imθ = 0 := rfl
+
+variable [One R]
+
+instance : One P.CubicAlgebra := ⟨⟨1, 0, 0⟩⟩
+
 @[simp] theorem re_one : (1 : P.CubicAlgebra).re = 1 := rfl
 @[simp] theorem imω_one : (1 : P.CubicAlgebra).imω = 0 := rfl
 @[simp] theorem imθ_one : (1 : P.CubicAlgebra).imθ = 0 := rfl
-@[simp] theorem re_add : (x + y).re = x.re + y.re := rfl
-@[simp] theorem imω_add : (x + y).imω = x.imω + y.imω := rfl
-@[simp] theorem imθ_add : (x + y).imθ = x.imθ + y.imθ := rfl
-@[simp] theorem re_neg : (-x).re = -x.re := rfl
-@[simp] theorem imω_neg : (-x).imω = -x.imω := rfl
-@[simp] theorem imθ_neg : (-x).imθ = -x.imθ := rfl
-@[simp] theorem re_sub : (x - y).re = x.re - y.re := rfl
-@[simp] theorem imω_sub : (x - y).imω = x.imω - y.imω := rfl
-@[simp] theorem imθ_sub : (x - y).imθ = x.imθ - y.imθ := rfl
-
-@[simp] theorem re_smul {S : Type*} [SMul S R] (s : S) : (s • x).re = s • x.re := rfl
-@[simp] theorem imω_smul {S : Type*} [SMul S R] (s : S) : (s • x).imω = s • x.imω := rfl
-@[simp] theorem imθ_smul {S : Type*} [SMul S R] (s : S) : (s • x).imθ = s • x.imθ := rfl
-
-@[simp]
-theorem re_mul : (x * y).re = x.re * y.re - P.a * P.c * (x.imω * y.imω) -
-    P.a * P.d * (x.imω * y.imθ + x.imθ * y.imω) - P.b * P.d * (x.imθ * y.imθ) := rfl
-
-@[simp]
-theorem imω_mul : (x * y).imω =
-    x.re * y.imω + x.imω * y.re + P.b * (x.imω * y.imω) + P.d * (x.imθ * y.imθ) := rfl
-
-@[simp]
-theorem imθ_mul : (x * y).imθ =
-    x.re * y.imθ + x.imθ * y.re - P.a * (x.imω * y.imω) - P.c * (x.imθ * y.imθ) := rfl
-
-end Coordinates
-
-instance : AddCommGroup P.CubicAlgebra := by
-  refine (equivProd P).injective.addCommGroup _ rfl (fun _ _ ↦ rfl) (fun _ ↦ rfl) (fun _ _ ↦ rfl)
-    (fun _ _ ↦ ?_) (fun _ _ ↦ ?_) <;> ext <;> simp
-
-/-- The additive equivalence between the cubic algebra and `R × R × R`. -/
-def addEquivProd (P : Cubic R) : P.CubicAlgebra ≃+ R × R × R :=
-  { equivProd P with map_add' := fun _ _ ↦ rfl }
-
-instance {S : Type*} [Semiring S] [Module S R] : Module S P.CubicAlgebra :=
-  (addEquivProd P).injective.module S (addEquivProd P).toAddMonoidHom fun _ _ ↦ rfl
-
-instance : AddCommGroupWithOne P.CubicAlgebra where
-  natCast n := ⟨n, 0, 0⟩
-  natCast_zero := by ext <;> simp
-  natCast_succ n := by ext <;> simp
-  intCast n := ⟨n, 0, 0⟩
-  intCast_ofNat n := by ext; exacts [Int.cast_natCast n, rfl, rfl]
-  intCast_negSucc n := by ext; exacts [Int.cast_negSucc n, neg_zero.symm, neg_zero.symm]
-
-@[simp, norm_cast] theorem re_natCast (n : ℕ) : (n : P.CubicAlgebra).re = n := rfl
-@[simp, norm_cast] theorem imω_natCast (n : ℕ) : (n : P.CubicAlgebra).imω = 0 := rfl
-@[simp, norm_cast] theorem imθ_natCast (n : ℕ) : (n : P.CubicAlgebra).imθ = 0 := rfl
-@[simp, norm_cast] theorem re_intCast (n : ℤ) : (n : P.CubicAlgebra).re = n := rfl
-@[simp, norm_cast] theorem imω_intCast (n : ℤ) : (n : P.CubicAlgebra).imω = 0 := rfl
-@[simp, norm_cast] theorem imθ_intCast (n : ℤ) : (n : P.CubicAlgebra).imθ = 0 := rfl
-
-/-- The multiplication table is commutative and associative, with unit `1`. -/
-instance instCommRing : CommRing P.CubicAlgebra where
-  left_distrib _ _ _ := by ext <;> simp <;> ring
-  right_distrib _ _ _ := by ext <;> simp <;> ring
-  zero_mul _ := by ext <;> simp
-  mul_zero _ := by ext <;> simp
-  mul_assoc _ _ _ := by ext <;> simp <;> ring
-  one_mul _ := by ext <;> simp
-  mul_one _ := by ext <;> simp
-  mul_comm _ _ := by ext <;> simp <;> ring
-
-instance instAlgebra {S : Type*} [CommSemiring S] [Algebra S R] : Algebra S P.CubicAlgebra where
-  algebraMap :=
-    { toFun s := ⟨algebraMap S R s, 0, 0⟩
-      map_one' := by ext <;> simp
-      map_zero' := by ext <;> simp
-      map_mul' x y := by ext <;> simp
-      map_add' x y := by ext <;> simp }
-  smul_def' s x := by ext <;> simp [Algebra.smul_def]
-  commutes' s x := by ext <;> simp [mul_comm]
-
-@[simp] theorem re_algebraMap (r : R) : (algebraMap R P.CubicAlgebra r).re = r := rfl
-@[simp] theorem imω_algebraMap (r : R) : (algebraMap R P.CubicAlgebra r).imω = 0 := rfl
-@[simp] theorem imθ_algebraMap (r : R) : (algebraMap R P.CubicAlgebra r).imθ = 0 := rfl
-
-theorem algebraMap_injective : Function.Injective (algebraMap R P.CubicAlgebra) :=
-  fun _ _ h ↦ congr_arg re h
 
 variable (P) in
 /-- The basis vector `ω`. -/
@@ -204,6 +124,214 @@ def θ : P.CubicAlgebra := ⟨0, 0, 1⟩
 @[simp] theorem re_θ : (θ P).re = 0 := rfl
 @[simp] theorem imω_θ : (θ P).imω = 0 := rfl
 @[simp] theorem imθ_θ : (θ P).imθ = 1 := rfl
+
+end Zero
+
+instance [Add R] : Add P.CubicAlgebra :=
+  ⟨fun x y ↦ ⟨x.re + y.re, x.imω + y.imω, x.imθ + y.imθ⟩⟩
+
+instance [Neg R] : Neg P.CubicAlgebra := ⟨fun x ↦ ⟨-x.re, -x.imω, -x.imθ⟩⟩
+
+instance [Sub R] : Sub P.CubicAlgebra :=
+  ⟨fun x y ↦ ⟨x.re - y.re, x.imω - y.imω, x.imθ - y.imθ⟩⟩
+
+@[simp] theorem re_add [Add R] : (x + y).re = x.re + y.re := rfl
+@[simp] theorem imω_add [Add R] : (x + y).imω = x.imω + y.imω := rfl
+@[simp] theorem imθ_add [Add R] : (x + y).imθ = x.imθ + y.imθ := rfl
+@[simp] theorem re_neg [Neg R] : (-x).re = -x.re := rfl
+@[simp] theorem imω_neg [Neg R] : (-x).imω = -x.imω := rfl
+@[simp] theorem imθ_neg [Neg R] : (-x).imθ = -x.imθ := rfl
+@[simp] theorem re_sub [Sub R] : (x - y).re = x.re - y.re := rfl
+@[simp] theorem imω_sub [Sub R] : (x - y).imω = x.imω - y.imω := rfl
+@[simp] theorem imθ_sub [Sub R] : (x - y).imθ = x.imθ - y.imθ := rfl
+
+section SMul
+
+variable [SMul S R] [SMul T R]
+
+instance : SMul S P.CubicAlgebra := ⟨fun s x ↦ ⟨s • x.re, s • x.imω, s • x.imθ⟩⟩
+
+instance [SMul S T] [IsScalarTower S T R] : IsScalarTower S T P.CubicAlgebra where
+  smul_assoc _ _ _ := by ext <;> exact smul_assoc _ _ _
+
+instance [SMulCommClass S T R] : SMulCommClass S T P.CubicAlgebra where
+  smul_comm _ _ _ := by ext <;> exact smul_comm _ _ _
+
+@[simp] theorem re_smul (s : S) : (s • x).re = s • x.re := rfl
+@[simp] theorem imω_smul (s : S) : (s • x).imω = s • x.imω := rfl
+@[simp] theorem imθ_smul (s : S) : (s • x).imθ = s • x.imθ := rfl
+
+end SMul
+
+end Coordinates
+
+instance [AddMonoid R] : AddMonoid P.CubicAlgebra :=
+  (equivProd P).injective.addMonoid _ rfl (fun _ _ ↦ rfl) (fun _ _ ↦ rfl)
+
+instance [AddCommMonoid R] : AddCommMonoid P.CubicAlgebra :=
+  (equivProd P).injective.addCommMonoid _ rfl (fun _ _ ↦ rfl) (fun _ _ ↦ rfl)
+
+instance [AddCommGroup R] : AddCommGroup P.CubicAlgebra :=
+  (equivProd P).injective.addCommGroup _ rfl (fun _ _ ↦ rfl) (fun _ ↦ rfl) (fun _ _ ↦ rfl)
+    (fun _ _ ↦ rfl) (fun _ _ ↦ rfl)
+
+instance [Monoid S] [MulAction S R] : MulAction S P.CubicAlgebra where
+  one_smul _ := by ext <;> simp
+  mul_smul _ _ _ := by ext <;> simp [mul_smul]
+
+instance [Monoid S] [AddMonoid R] [DistribMulAction S R] : DistribMulAction S P.CubicAlgebra where
+  smul_zero _ := by ext <;> simp
+  smul_add _ _ _ := by ext <;> simp
+
+instance [Semiring S] [AddCommMonoid R] [Module S R] : Module S P.CubicAlgebra where
+  add_smul _ _ _ := by ext <;> simp [add_smul]
+  zero_smul _ := by ext <;> simp
+
+section AddCommMonoidWithOne
+
+variable [AddCommMonoidWithOne R]
+
+instance : AddCommMonoidWithOne P.CubicAlgebra where
+  natCast n := ⟨n, 0, 0⟩
+  natCast_zero := by ext <;> simp
+  natCast_succ n := by ext <;> simp
+
+@[simp, norm_cast] theorem re_natCast (n : ℕ) : (n : P.CubicAlgebra).re = n := rfl
+@[simp, norm_cast] theorem imω_natCast (n : ℕ) : (n : P.CubicAlgebra).imω = 0 := rfl
+@[simp, norm_cast] theorem imθ_natCast (n : ℕ) : (n : P.CubicAlgebra).imθ = 0 := rfl
+
+@[simp]
+theorem re_ofNat (n : ℕ) [n.AtLeastTwo] : (ofNat(n) : P.CubicAlgebra).re = ofNat(n) := rfl
+
+@[simp]
+theorem imω_ofNat (n : ℕ) [n.AtLeastTwo] : (ofNat(n) : P.CubicAlgebra).imω = 0 := rfl
+
+@[simp]
+theorem imθ_ofNat (n : ℕ) [n.AtLeastTwo] : (ofNat(n) : P.CubicAlgebra).imθ = 0 := rfl
+
+end AddCommMonoidWithOne
+
+section AddCommGroupWithOne
+
+variable [AddCommGroupWithOne R]
+
+instance : AddCommGroupWithOne P.CubicAlgebra where
+  intCast n := ⟨n, 0, 0⟩
+  intCast_ofNat n := by ext; exacts [Int.cast_natCast n, rfl, rfl]
+  intCast_negSucc n := by ext; exacts [Int.cast_negSucc n, neg_zero.symm, neg_zero.symm]
+
+@[simp, norm_cast] theorem re_intCast (n : ℤ) : (n : P.CubicAlgebra).re = n := rfl
+@[simp, norm_cast] theorem imω_intCast (n : ℤ) : (n : P.CubicAlgebra).imω = 0 := rfl
+@[simp, norm_cast] theorem imθ_intCast (n : ℤ) : (n : P.CubicAlgebra).imθ = 0 := rfl
+
+end AddCommGroupWithOne
+
+section Semiring
+
+variable [Semiring R]
+
+variable (P) in
+/-- The coordinate linear equivalence with `Fin 3 → R`, in the order `1, ω, θ`. -/
+def linearEquivTuple : P.CubicAlgebra ≃ₗ[R] (Fin 3 → R) where
+  toFun x := ![x.re, x.imω, x.imθ]
+  invFun v := ⟨v 0, v 1, v 2⟩
+  map_add' x y := by ext i; fin_cases i <;> simp
+  map_smul' r x := by ext i; fin_cases i <;> simp
+  left_inv x := by simp
+  right_inv v := by ext i; fin_cases i <;> simp
+
+@[simp]
+theorem linearEquivTuple_apply (x : P.CubicAlgebra) :
+    linearEquivTuple P x = ![x.re, x.imω, x.imθ] := rfl
+
+@[simp]
+theorem linearEquivTuple_symm_apply (v : Fin 3 → R) :
+    (linearEquivTuple P).symm v = ⟨v 0, v 1, v 2⟩ := rfl
+
+variable (P) in
+/-- The basis `1, ω, θ` of the cubic algebra. -/
+noncomputable def basis : Module.Basis (Fin 3) R P.CubicAlgebra :=
+  .ofEquivFun (linearEquivTuple P)
+
+@[simp] theorem basis_zero : basis P 0 = 1 := by ext <;> simp [basis]
+@[simp] theorem basis_one : basis P 1 = ω P := by ext <;> simp [basis, ω]
+@[simp] theorem basis_two : basis P 2 = θ P := by ext <;> simp [basis, θ]
+
+@[simp]
+theorem basis_repr (x : P.CubicAlgebra) : (basis P).repr x = ![x.re, x.imω, x.imθ] := by
+  ext i; fin_cases i <;> simp [basis]
+
+instance : Module.Free R P.CubicAlgebra := .of_basis (basis P)
+instance : Module.Finite R P.CubicAlgebra := .of_basis (basis P)
+
+theorem finrank_eq_three [StrongRankCondition R] : Module.finrank R P.CubicAlgebra = 3 := by
+  simp [Module.finrank_eq_card_basis (basis P)]
+
+end Semiring
+
+variable [CommRing R]
+
+/-- Multiplication by the table `ωθ = -ad`, `ω² = -ac + bω - aθ`, `θ² = -bd + dω - cθ`. -/
+instance : Mul P.CubicAlgebra :=
+  ⟨fun x y ↦
+    ⟨x.re * y.re - P.a * P.c * (x.imω * y.imω) - P.a * P.d * (x.imω * y.imθ + x.imθ * y.imω) -
+        P.b * P.d * (x.imθ * y.imθ),
+      x.re * y.imω + x.imω * y.re + P.b * (x.imω * y.imω) + P.d * (x.imθ * y.imθ),
+      x.re * y.imθ + x.imθ * y.re - P.a * (x.imω * y.imω) - P.c * (x.imθ * y.imθ)⟩⟩
+
+section Mul
+
+variable (x y : P.CubicAlgebra)
+
+@[simp]
+theorem re_mul : (x * y).re = x.re * y.re - P.a * P.c * (x.imω * y.imω) -
+    P.a * P.d * (x.imω * y.imθ + x.imθ * y.imω) - P.b * P.d * (x.imθ * y.imθ) := rfl
+
+@[simp]
+theorem imω_mul : (x * y).imω =
+    x.re * y.imω + x.imω * y.re + P.b * (x.imω * y.imω) + P.d * (x.imθ * y.imθ) := rfl
+
+@[simp]
+theorem imθ_mul : (x * y).imθ =
+    x.re * y.imθ + x.imθ * y.re - P.a * (x.imω * y.imω) - P.c * (x.imθ * y.imθ) := rfl
+
+end Mul
+
+/-- The multiplication table is commutative and associative, with unit `1`. -/
+instance instCommRing : CommRing P.CubicAlgebra where
+  left_distrib _ _ _ := by ext <;> simp <;> ring
+  right_distrib _ _ _ := by ext <;> simp <;> ring
+  zero_mul _ := by ext <;> simp
+  mul_zero _ := by ext <;> simp
+  mul_assoc _ _ _ := by ext <;> simp <;> ring
+  one_mul _ := by ext <;> simp
+  mul_one _ := by ext <;> simp
+  mul_comm _ _ := by ext <;> simp <;> ring
+
+instance instAlgebra [CommSemiring S] [Algebra S R] : Algebra S P.CubicAlgebra where
+  algebraMap :=
+    { toFun s := ⟨algebraMap S R s, 0, 0⟩
+      map_one' := by ext <;> simp
+      map_zero' := by ext <;> simp
+      map_mul' x y := by ext <;> simp
+      map_add' x y := by ext <;> simp }
+  smul_def' s x := by ext <;> simp [Algebra.smul_def]
+  commutes' s x := by ext <;> simp [mul_comm]
+
+section AlgebraMap
+
+variable [CommSemiring S] [Algebra S R] (s : S)
+
+@[simp]
+theorem re_algebraMap : (algebraMap S P.CubicAlgebra s).re = algebraMap S R s := rfl
+
+@[simp] theorem imω_algebraMap : (algebraMap S P.CubicAlgebra s).imω = 0 := rfl
+@[simp] theorem imθ_algebraMap : (algebraMap S P.CubicAlgebra s).imθ = 0 := rfl
+
+end AlgebraMap
+
+theorem algebraMap_injective : Function.Injective (algebraMap R P.CubicAlgebra) :=
+  fun _ _ h ↦ congr_arg re h
 
 /-- Every element is `x₀ + x₁ ω + x₂ θ` in its coordinates. -/
 theorem algebraMap_add_smul_ω_add_smul_θ (x : P.CubicAlgebra) :
@@ -264,44 +392,15 @@ theorem lift_ω : lift ω' θ' hωθ hωω hθθ (ω P) = ω' := by
 theorem lift_θ : lift ω' θ' hωθ hωω hθθ (θ P) = θ' := by
   simp [lift_apply]
 
+end Lift
+
 /-- Algebra maps out of the cubic algebra are determined by the images of `ω` and `θ`. -/
 @[ext]
-theorem algHom_ext {f g : P.CubicAlgebra →ₐ[R] A} (hω : f (ω P) = g (ω P))
-    (hθ : f (θ P) = g (θ P)) : f = g := by
+theorem algHom_ext {A : Type*} [Semiring A] [Algebra R A] {f g : P.CubicAlgebra →ₐ[R] A}
+    (hω : f (ω P) = g (ω P)) (hθ : f (θ P) = g (θ P)) : f = g := by
   ext x
   rw [← algebraMap_add_smul_ω_add_smul_θ x]
   simp [hω, hθ]
-
-end Lift
-
-variable (P) in
-/-- The coordinate linear equivalence with `Fin 3 → R`, in the order `1, ω, θ`. -/
-def linearEquivTuple : P.CubicAlgebra ≃ₗ[R] (Fin 3 → R) where
-  toFun x := ![x.re, x.imω, x.imθ]
-  invFun v := ⟨v 0, v 1, v 2⟩
-  map_add' x y := by ext i; fin_cases i <;> simp
-  map_smul' r x := by ext i; fin_cases i <;> simp
-  left_inv x := by simp
-  right_inv v := by ext i; fin_cases i <;> simp
-
-variable (P) in
-/-- The basis `1, ω, θ` of the cubic algebra. -/
-noncomputable def basis : Module.Basis (Fin 3) R P.CubicAlgebra :=
-  .ofEquivFun (linearEquivTuple P)
-
-@[simp] theorem basis_zero : basis P 0 = 1 := by ext <;> simp [basis, linearEquivTuple]
-@[simp] theorem basis_one : basis P 1 = ω P := by ext <;> simp [basis, linearEquivTuple, ω]
-@[simp] theorem basis_two : basis P 2 = θ P := by ext <;> simp [basis, linearEquivTuple, θ]
-
-@[simp]
-theorem basis_repr (x : P.CubicAlgebra) : (basis P).repr x = ![x.re, x.imω, x.imθ] := by
-  ext i; fin_cases i <;> simp [basis, linearEquivTuple]
-
-instance : Module.Free R P.CubicAlgebra := .of_basis (basis P)
-instance : Module.Finite R P.CubicAlgebra := .of_basis (basis P)
-
-theorem finrank_eq_three [Nontrivial R] : Module.finrank R P.CubicAlgebra = 3 := by
-  simp [Module.finrank_eq_card_basis (basis P)]
 
 /-- The trace of `x₀ + x₁ ω + x₂ θ` is `3 x₀ + b x₁ - c x₂`. -/
 theorem trace_apply (x : P.CubicAlgebra) :
@@ -310,6 +409,10 @@ theorem trace_apply (x : P.CubicAlgebra) :
   simp only [Algebra.leftMulMatrix_eq_repr_mul, basis_zero, basis_one, basis_two, basis_repr]
   simp
   ring
+
+@[simp]
+theorem trace_one : Algebra.trace R P.CubicAlgebra 1 = 3 := by
+  simp [trace_apply]
 
 @[simp]
 theorem trace_ω : Algebra.trace R P.CubicAlgebra (ω P) = P.b := by
@@ -321,6 +424,7 @@ theorem trace_θ : Algebra.trace R P.CubicAlgebra (θ P) = -P.c := by
 
 /-- **The discriminant of a cubic algebra is the discriminant of its form.** The trace-form
 discriminant of the basis `1, ω, θ` is `Cubic.discr P = b²c² - 4ac³ - 4b³d - 27a²d² + 18abcd`. -/
+@[simp]
 theorem discr_basis : Algebra.discr R (basis P) = P.discr := by
   rw [Algebra.discr_def, Matrix.det_fin_three]
   simp only [Algebra.traceMatrix_apply, Algebra.traceForm_apply, basis_zero, basis_one,
@@ -331,7 +435,7 @@ theorem discr_basis : Algebra.discr R (basis P) = P.discr := by
 /-! ### The split form -/
 
 /-- The form `uv(u - v)`, with coefficients `⟨0, 1, -1, 0⟩`. -/
-abbrev splitForm (R : Type*) [CommRing R] : Cubic R := ⟨0, 1, -1, 0⟩
+abbrev splitForm (R : Type*) [Zero R] [One R] [Neg R] : Cubic R := ⟨0, 1, -1, 0⟩
 
 /-- For the form `uv(u - v)` the table reads `ωθ = 0`, `ω² = ω`, `θ² = θ`: the cubic algebra is
 `R × R × R`, through the three characters sending `(ω, θ)` to `(0, 0)`, `(1, 0)` and `(0, 1)`. -/
@@ -349,6 +453,10 @@ def splitAlgEquiv : (splitForm R).CubicAlgebra ≃ₐ[R] R × R × R :=
 @[simp]
 theorem splitAlgEquiv_apply (x : (splitForm R).CubicAlgebra) :
     splitAlgEquiv x = (x.re, x.re + x.imω, x.re + x.imθ) := rfl
+
+@[simp]
+theorem splitAlgEquiv_symm_apply (v : R × R × R) :
+    (splitAlgEquiv (R := R)).symm v = ⟨v.1, v.2.1 - v.1, v.2.2 - v.1⟩ := rfl
 
 end CubicAlgebra
 
