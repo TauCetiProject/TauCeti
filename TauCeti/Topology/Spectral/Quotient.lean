@@ -418,8 +418,7 @@ theorem isLocallySpectralSpace_quotient_of_isOpenMap (hX : IsLocallySpectralSpac
     spectralSpace_quotient_of_isOpenMap (hR.isProConstructible_comap hWo)
       (hWo.isOpenMap_fst_comap hs_open)
   let e := hWo.quotientComapHomeomorphImage hq_open
-  have : CompactSpace (Quotient.mk r '' W) := e.compactSpace
-  exact ⟨Quotient.mk r '' W, hq_open W hWo, ⟨x, hxW, rfl⟩, e.symm.isOpenEmbedding.spectralSpace⟩
+  exact ⟨Quotient.mk r '' W, hq_open W hWo, ⟨x, hxW, rfl⟩, e.spectralSpace⟩
 
 /-- **Scholze, *Étale cohomology of diamonds*, Lemma 2.10** (local map assertion): if `X` is
 locally spectral, `{q : X × X | r q.1 q.2}` is locally pro-constructible in `X × X`, and the first
@@ -480,22 +479,5 @@ theorem quasiSeparatedSpace_quotient_of_isOpenMap (hX : IsLocallySpectralSpace X
       exact ⟨⟨x₁, hx₁W, rfl⟩, ⟨x₂, hx₂W, (Quotient.sound hr).symm⟩⟩
   rw [heq]
   exact hPc.image (continuous_quot_mk.comp (continuous_fst.comp continuous_subtypeVal))
-
-/-! ### Global spectral dot-notation wrapper -/
-
-section GlobalSpectral
-
-variable [SpectralSpace X] {r : Setoid X}
-
-/-- On a spectral space, the `r`-saturation of a pro-constructible subset along a pro-constructible
-equivalence relation is pro-constructible. -/
-theorem IsProConstructible.preimage_image_quotientMk {s : Set X} (hs : IsProConstructible s)
-    (hR : IsProConstructible {q : X × X | r q.1 q.2}) :
-    IsProConstructible (Quotient.mk r ⁻¹' (Quotient.mk r '' s)) :=
-  isLocallyProConstructible_iff_isProConstructible.mp <|
-    hs.isLocallyProConstructible.preimage_image_quotientMk SpectralSpace.isLocallySpectralSpace
-      hR.isLocallyProConstructible hR.isSpectralMap_fst
-
-end GlobalSpectral
 
 end TauCeti

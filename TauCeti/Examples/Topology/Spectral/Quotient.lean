@@ -271,7 +271,7 @@ example :
       hs_gen,
     fun hspec ↦ ?_⟩
   have hf_surj : Function.Surjective f := fun y ↦ ⟨pure y, ultrafilter_extend_pure id y⟩
-  have hf_quot : IsQuotientMap f := f.continuous.isClosedMap.isQuotientMap f.continuous hf_surj
+  have hf_quot : IsQuotientMap f := IsQuotientMap.of_surjective_continuous hf_surj f.continuous
   have : SpectralSpace unitInterval := hf_quot.homeomorph.spectralSpace
   exact zero_ne_one ((subsingleton_of_preconnected_totallyDisconnected (α := unitInterval)).elim
     0 1)
