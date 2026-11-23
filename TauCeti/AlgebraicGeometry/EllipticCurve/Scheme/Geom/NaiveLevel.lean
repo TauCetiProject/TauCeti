@@ -97,6 +97,9 @@ The group law on points of `E` is written multiplicatively, following `EllipticC
   `[Γ₁(N)]` condition, as `kP` missing the zero section for `0 < k < N`.
 * `TauCeti.AlgebraicGeometry.EllipticCurveGeom.isFiberwiseInjective_zmod_prod_iff`: the naive
   `[Γ(N)]` condition, as `aP + bQ` missing the zero section for `(a, b) ≠ 0`.
+* `TauCeti.AlgebraicGeometry.EllipticCurveGeom.isFiberwiseInjective_zmod_two_prod_iff`: the naive
+  `[Γ(2)]` condition, as `P` and `Q` missing the zero section and `Q` differing from `P` at every
+  point.
 * `TauCeti.AlgebraicGeometry.EllipticCurveGeom.isFiberwiseInjective_zmod_three_prod_iff`: the naive
   `[Γ(3)]` condition, as `P` and `Q` missing the zero section and `Q` differing from `±P` at every
   point.
@@ -432,6 +435,29 @@ theorem isFiberwiseInjective_zmod_prod_iff {N : ℕ} [NeZero N]
     simp
   simp only [hφ, isFiberwiseInjective_iff, ne_eq, ← ofAdd_eq_one]
   exact ⟨fun h a b ↦ h _, fun h z ↦ h z.toAdd.1 z.toAdd.2⟩
+
+/-- **The naive `[Γ(2)]` condition.** A homomorphism `φ : (ℤ/2ℤ)² →* E(S)`, given by the pair of
+`S`-points `P = φ (1, 0)` and `Q = φ (0, 1)` of `E[2]`, is injective on every fibre exactly when
+`P` and `Q` miss the zero section and `Q` differs from `P` at every point of `S`: the three
+nonzero elements of `(ℤ/2ℤ)²` are `(1, 0)`, `(0, 1)` and `(1, 1) = (0, 1) - (1, 0)`. -/
+theorem isFiberwiseInjective_zmod_two_prod_iff
+    {φ : Multiplicative (ZMod 2 × ZMod 2) →* (𝟙_ (Over S) ⟶ Over.mk E.structureMap)} :
+    E.IsFiberwiseInjective φ ↔
+      (∀ s, (φ (.ofAdd (1, 0))).left s ≠ E.zero s) ∧
+        (∀ s, (φ (.ofAdd (0, 1))).left s ≠ E.zero s) ∧
+        ∀ s, (φ (.ofAdd (0, 1))).left s ≠ (φ (.ofAdd (1, 0))).left s := by
+  rw [isFiberwiseInjective_iff_forall_residueField]
+  simp only [← forall_and]
+  refine forall_congr' fun s ↦ ?_
+  set ψ := (pointsPullback (E.isPullback_baseChange (S.fromSpecResidueField s)) (by simp)).comp φ
+  have hsub : (.ofAdd (1, 1) : Multiplicative (ZMod 2 × ZMod 2)) =
+      .ofAdd (0, 1) / .ofAdd (1, 0) := by
+    decide
+  have hψ (a b) : ψ a = ψ b ↔ (φ a).left s = (φ b).left s :=
+    pointsPullback_fromSpecResidueField_eq_iff _ _ s
+  rw [injective_zmod_two_prod_iff, hsub, map_div, ne_eq, ne_eq, ne_eq, div_eq_one,
+    ← map_one ψ, hψ, hψ, hψ]
+  simp [map_one]
 
 /-- **The naive `[Γ(3)]` condition.** A homomorphism `φ : (ℤ/3ℤ)² →* E(S)`, given by the pair of
 `S`-points `P = φ (1, 0)` and `Q = φ (0, 1)` of `E[3]`, is injective on every fibre exactly when
