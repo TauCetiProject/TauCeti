@@ -39,6 +39,8 @@ is exactly the character through which the diagonal torus rescales that subgroup
   indexed by the type `C` root indices.
 * `TauCeti.Symplectic.diagonalRootDatum`: the type `Cₘ` root datum on the lattices of the diagonal
   torus.
+* `TauCeti.soOddRootDatum`: its dual, the root datum of `SO_{2m+1}` relative to its diagonal
+  torus.
 
 ## Main results
 
@@ -672,5 +674,18 @@ theorem diagonalTorusPoints_mul_rootSubgroupPoints_mul_inv_eq_root (r : RootSubg
 end Points
 
 end Symplectic
+
+section SOOdd
+
+universe u
+
+/-- **The root datum of `SO_{2n+1}`** relative to its diagonal torus: the dual of the root datum
+of `Sp₂ₙ`, with roots `±εᵢ`, `±εᵢ ± εⱼ` and coroots `±2εᵢ∨`, `±εᵢ∨ ± εⱼ∨`. -/
+noncomputable abbrev soOddRootDatum (n : ℕ) :
+    RootDatum (GLSymplecticFin.RootSubgroupIndex n) (ULift.{u} (Fin n) → ℤ)
+      (ULift.{u} (Fin n) →₀ ℤ) :=
+  (Symplectic.diagonalRootDatum.{u} n).flip
+
+end SOOdd
 
 end TauCeti
