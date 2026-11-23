@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.CharP.Frobenius
-public import Mathlib.Algebra.CharP.Lemmas
 public import Mathlib.Algebra.Field.Subfield.Basic
 public import Mathlib.Algebra.Group.Fin.Basic
 public import Mathlib.Algebra.Polynomial.Basic
@@ -14,7 +13,6 @@ public import Mathlib.Data.Fin.VecNotation
 public import Mathlib.LinearAlgebra.LinearIndependent.Defs
 public import TauCeti.Data.Nat.Prime.Basic
 import Mathlib.Algebra.CharP.Algebra
-import Mathlib.Data.Finsupp.Option
 import Mathlib.LinearAlgebra.Span.Basic
 import TauCeti.Algebra.Polynomial.PowChar
 import TauCeti.Data.Finsupp.MapDomain
@@ -93,6 +91,13 @@ theorem pMonomial_single_one (hp : 1 < p) (b : ι → M) (i : ι) :
 theorem pMonomial_eq_fintype_prod [Fintype ι] (b : ι → M) (e : ι →₀ Fin p) :
     pMonomial p b e = ∏ i, b i ^ (e i : ℕ) :=
   Finsupp.prod_fintype _ _ fun _ ↦ pow_zero _
+
+/-- Reindexing `pMonomial` along `Finsupp.equivFunOnFinite.symm` gives the finite-product family
+indexed by `ι → Fin p`. -/
+theorem pMonomial_comp_equivFunOnFinite_symm [Fintype ι] (b : ι → M) :
+    (fun e : ι → Fin p ↦ ∏ i, b i ^ (e i : ℕ)) =
+      pMonomial p b ∘ Finsupp.equivFunOnFinite.symm := funext fun e ↦ by
+  simpa using (pMonomial_eq_fintype_prod p b (Finsupp.equivFunOnFinite.symm e)).symm
 
 /-- Reindexing along an injective map corresponds to `Finsupp.mapDomain` on exponents. -/
 theorem pMonomial_comp_of_injective (b : ι → M) {f : ι' → ι} (hf : Function.Injective f)
@@ -176,13 +181,14 @@ def IsPIndependent (p : ℕ) {k : Type*} [Field k] [ExpChar k p] {ι : Type*} (b
   LinearIndependent (frobenius k p).fieldRange (pMonomial p b)
 
 /-- Unfolding `IsPIndependent` as linear independence of the `p`-monomials over `k ^ p`. -/
-theorem isPIndependent_iff [NeZero p] (b : ι → k) :
-    IsPIndependent p b ↔ LinearIndependent (frobenius k p).fieldRange (pMonomial p b) :=
+theorem isPIndependent_iff (b : ι → k) :
+    IsPIndependent p b ↔
+      LinearIndependent (frobenius k p).fieldRange (@pMonomial p ⟨expChar_ne_zero k p⟩ _ _ _ b) :=
   Iff.rfl
 
 /-- Unfold `IsPIndependent` to linear independence of the `p`-monomials over `k ^ p`. -/
-theorem IsPIndependent.linearIndependent [NeZero p] {b : ι → k} (hb : IsPIndependent p b) :
-    LinearIndependent (frobenius k p).fieldRange (pMonomial p b) :=
+theorem IsPIndependent.linearIndependent {b : ι → k} (hb : IsPIndependent p b) :
+    LinearIndependent (frobenius k p).fieldRange (@pMonomial p ⟨expChar_ne_zero k p⟩ _ _ _ b) :=
   hb
 
 /-- For a finite index type, `IsPIndependent` is linear independence of `e ↦ ∏ i, b i ^ e i`
@@ -191,10 +197,7 @@ theorem isPIndependent_iff_fintype [Fintype ι] (b : ι → k) :
     IsPIndependent p b ↔
       LinearIndependent (frobenius k p).fieldRange (fun e : ι → Fin p ↦ ∏ i, b i ^ (e i : ℕ)) := by
   have : NeZero p := ⟨expChar_ne_zero k p⟩
-  have heq : (fun e : ι → Fin p ↦ ∏ i, b i ^ (e i : ℕ)) =
-      pMonomial p b ∘ Finsupp.equivFunOnFinite.symm := funext fun e ↦ by
-    simpa using (pMonomial_eq_fintype_prod p b (Finsupp.equivFunOnFinite.symm e)).symm
-  rw [heq, IsPIndependent, linearIndependent_equiv]
+  rw [pMonomial_comp_equivFunOnFinite_symm, IsPIndependent, linearIndependent_equiv]
 
 /-- Composing a `p`-independent family with an injective map preserves `p`-independence. -/
 theorem IsPIndependent.comp {b : ι → k} (hb : IsPIndependent p b) {f : ι' → ι}

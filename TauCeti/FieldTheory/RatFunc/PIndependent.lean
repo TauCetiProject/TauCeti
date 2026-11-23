@@ -6,9 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.FieldTheory.Frobenius.PIndependent
-public import TauCeti.FieldTheory.FunctionField.Differential.Kaehler
 public import TauCeti.FieldTheory.RatFunc.Valuation
 import TauCeti.Algebra.CharP.Two
+import TauCeti.FieldTheory.RatFunc.Kaehler
+import TauCeti.FieldTheory.RatFunc.Transcendental
 
 /-!
 # Two independent nonsquares in a rational function field

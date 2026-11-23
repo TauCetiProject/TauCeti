@@ -42,8 +42,8 @@ private theorem isScalarTower_frobeniusRange {p : ℕ} {R k : Type*} [CommRing R
     IsScalarTower R (frobenius k p).fieldRange k := by
   let := algebraFrobeniusRange hR
   refine IsScalarTower.of_algebraMap_eq fun r ↦ ?_
-  change algebraMap R k r = ((algebraMap R (frobenius k p).fieldRange r) : k)
-  rw [RingHom.algebraMap_toAlgebra, RingHom.codRestrict_apply]
+  rw [Algebra.algebraMap_ofSubsemiring_apply, RingHom.algebraMap_toAlgebra,
+    RingHom.codRestrict_apply]
 
 variable (p : ℕ) [Fact p.Prime] (R k : Type*) [CommRing R] [Field k] [ExpChar k p] [Algebra R k]
 

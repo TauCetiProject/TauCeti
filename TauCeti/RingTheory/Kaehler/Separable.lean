@@ -9,6 +9,7 @@ public import Mathlib.FieldTheory.Perfect
 public import Mathlib.RingTheory.Etale.Field
 import TauCeti.LinearAlgebra.Dimension.FinrankOne
 import Mathlib.RingTheory.Algebraic.Integral
+import TauCeti.RingTheory.Derivation.IntermediateField
 
 /-!
 # Kähler differentials of separable elements
@@ -92,15 +93,10 @@ theorem isSeparable_left_or_right_of_adjoin_eq_top {R E₁ E₂ : Type*} [CommRi
     of_not_not fun hy ↦ hsep.1 (isSeparable_of_finrank_kaehlerDifferential_eq_one h hy)
   have h₂ (y : E₂) : D R F (algebraMap E₂ F y) = 0 :=
     of_not_not fun hy ↦ hsep.2 (isSeparable_of_finrank_kaehlerDifferential_eq_one h hy)
-  have hD (y : F) : D R F y = 0 := by
-    have hy : y ∈ IntermediateField.adjoin E₁ (Set.range (algebraMap E₂ F)) :=
-      htop.symm ▸ IntermediateField.mem_top
-    induction hy using IntermediateField.adjoin_induction with
-    | mem z hz => obtain ⟨a, rfl⟩ := hz; exact h₂ a
-    | algebraMap a => exact h₁ a
-    | add a b _ _ ha hb => simp [map_add, ha, hb]
-    | mul a b _ _ ha hb => simp [Derivation.leibniz, ha, hb]
-    | inv a _ ha => simp [Derivation.leibniz_inv, ha]
+  have hD (y : F) : D R F y = 0 := (Submodule.mem_bot F).mp <|
+    (D R F).map_mem_of_mem_adjoin (⊥ : Submodule F Ω[F⁄R]) h₁
+      (by rintro _ ⟨a, rfl⟩; exact (Submodule.mem_bot F).mpr (h₂ a))
+      (htop.symm ▸ IntermediateField.mem_top)
   have hzero : (⊤ : Submodule F Ω[F⁄R]) = ⊥ := by
     rw [← span_range_derivation R F, Submodule.span_eq_bot]
     rintro _ ⟨y, rfl⟩

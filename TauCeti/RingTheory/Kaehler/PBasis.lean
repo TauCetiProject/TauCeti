@@ -35,11 +35,17 @@ formula `[k : k ^ p] = p ^ dim_k Ω[k⁄R]` when `[k : k ^ p]` is finite.
 
 ## Main results
 
+* `TauCeti.IsPBasis.derivationEquiv_symm_apply_basis`: the inverse of `derivationEquiv` takes
+  prescribed values on `b`.
 * `TauCeti.IsPBasis.coordDerivation_eq_dualDerivation`: `hb.coordDerivation j` is the derivation
   dual to `hb.kaehlerBasis` over `k ^ p`.
 * `TauCeti.isPIndependent_of_linearIndependent_D`,
   `TauCeti.isPIndependent_iff_linearIndependent_D`: a family is `p`-independent iff its
   differentials are linearly independent over `k`.
+* `TauCeti.IsPIndependent.mem_adjoin_fieldRange_frobenius_iff_D_mem_span`: for a `p`-independent
+  family `b`, `x ∈ k ^ p(range b)` iff `D R k x` lies in the `k`-span of `{D R k (b i)}`.
+* `TauCeti.adjoin_fieldRange_frobenius_eq_top_iff_span_D`: `k ^ p(range b) = k` iff
+  `{D R k (b i)}` spans `Ω[k⁄R]`.
 * `TauCeti.isPBasis_iff_linearIndependent_and_span_D`: a family is a `p`-basis iff its
   differentials form a `k`-basis of `Ω[k⁄R]`.
 * `TauCeti.D_eq_zero_iff_mem_fieldRange_frobenius`: `D R k x = 0 ↔ x ∈ (frobenius k p).fieldRange`.
@@ -118,14 +124,13 @@ theorem IsPBasis.derivationEquiv_apply {b : ι → k} (hb : IsPBasis p b)
 /-- The inverse map of `IsPBasis.derivationEquiv` constructs the unique derivation taking prescribed
 values on the `p`-basis `b`. -/
 @[simp]
-theorem IsPBasis.derivationEquiv_symm_apply {b : ι → k} (hb : IsPBasis p b)
+theorem IsPBasis.derivationEquiv_symm_apply_basis {b : ι → k} (hb : IsPBasis p b)
     (hR : ∀ r : R, algebraMap R k r ∈ (frobenius k p).fieldRange)
     {M : Type*} [AddCommGroup M] [Module R M] [Module k M] [IsScalarTower R k M]
     (v : ι → M) (i : ι) :
     ((hb.derivationEquiv hR).symm v) (b i) = v i := by
-  dsimp [IsPBasis.derivationEquiv]
-  rw [KaehlerDifferential.linearMapEquivDerivation_apply_apply, ← hb.kaehlerBasis_apply hR i,
-    Module.Basis.constr_basis]
+  rw [← hb.derivationEquiv_apply hR ((hb.derivationEquiv hR).symm v) i,
+    LinearEquiv.apply_symm_apply]
 
 /-- If the Kähler differentials `{D R k (b i)}` are linearly independent over `k`, then `b` is
 `p`-independent (without requiring the image of `R` to lie in `k ^ p`). -/
@@ -158,6 +163,50 @@ theorem isPIndependent_iff_linearIndependent_D
   rw [hcoe]
   exact (ht.kaehlerBasis hR).linearIndependent.comp f hf
 
+/-- For a `p`-independent family `b : ι → k`, an element `x : k` lies in `k ^ p(range b)` if and
+only if its differential `D R k x` lies in the `k`-linear span of `{D R k (b i)}`, for any base
+ring `R` whose image lies in `k ^ p`. -/
+theorem IsPIndependent.mem_adjoin_fieldRange_frobenius_iff_D_mem_span {b : ι → k}
+    (hb : IsPIndependent p b) (hR : ∀ r : R, algebraMap R k r ∈ (frobenius k p).fieldRange)
+    {x : k} :
+    x ∈ IntermediateField.adjoin (frobenius k p).fieldRange (Set.range b) ↔
+      D R k x ∈ Submodule.span k (Set.range fun i ↦ D R k (b i)) := by
+  refine ⟨(D R k).map_mem_span_of_mem_adjoin b, fun hmem ↦ ?_⟩
+  by_contra hx
+  have hopt : IsPIndependent p (Option.elim' x b) := (isPIndependent_option_iff hb x).mpr hx
+  have hopt_lin : LinearIndependent k (fun o ↦ D R k (Option.elim' x b o)) :=
+    (isPIndependent_iff_linearIndependent_D hR _).mp hopt
+  have hnotmem := hopt_lin.notMem_span_image (s := Set.range Option.some) (x := none) (by simp)
+  rw [← Set.range_comp'] at hnotmem
+  simp only [Option.elim'_some, Option.elim'_none] at hnotmem
+  exact hnotmem hmem
+
+/-- A family `b : ι → k` generates `k` over `k ^ p` if and only if its Kähler differentials
+`{D R k (b i)}` span `Ω[k⁄R]`, for any base ring `R` whose image lies in `k ^ p`. -/
+theorem adjoin_fieldRange_frobenius_eq_top_iff_span_D
+    (hR : ∀ r : R, algebraMap R k r ∈ (frobenius k p).fieldRange) (b : ι → k) :
+    IntermediateField.adjoin (frobenius k p).fieldRange (Set.range b) = ⊤ ↔
+      Submodule.span k (Set.range fun i ↦ D R k (b i)) = ⊤ := by
+  constructor
+  · intro hadj
+    rw [eq_top_iff, ← span_range_derivation R k, Submodule.span_le]
+    rintro _ ⟨x, rfl⟩
+    exact (D R k).map_mem_span_of_mem_adjoin b (hadj.symm ▸ IntermediateField.mem_top)
+  · intro hspan
+    obtain ⟨t, -, -, ht_ind, hadj_t⟩ :=
+      exists_isPIndependent_subset_adjoin_eq (p := p) (Set.empty_subset (Set.range b))
+        (isPIndependent_empty _)
+    have hspan_t : Submodule.span k (Set.range fun y : t ↦ D R k y) = ⊤ := by
+      rw [eq_top_iff, ← hspan, Submodule.span_le]
+      rintro _ ⟨i, rfl⟩
+      rw [SetLike.mem_coe, ← ht_ind.mem_adjoin_fieldRange_frobenius_iff_D_mem_span hR,
+        Subtype.range_coe, hadj_t]
+      exact IntermediateField.subset_adjoin _ _ ⟨i, rfl⟩
+    rw [eq_top_iff]
+    intro x _
+    rw [← hadj_t, ← Subtype.range_coe (s := t)]
+    exact (ht_ind.mem_adjoin_fieldRange_frobenius_iff_D_mem_span hR).mpr (hspan_t.symm ▸ ⟨⟩)
+
 /-- A family in a field `k` of prime characteristic `p` is a `p`-basis if and only if its
 Kähler differentials over `R` are linearly independent and span `Ω[k⁄R]`, for any base ring `R`
 whose image lies in `k ^ p`. -/
@@ -166,25 +215,8 @@ theorem isPBasis_iff_linearIndependent_and_span_D
     IsPBasis p b ↔
       LinearIndependent k (fun i ↦ D R k (b i)) ∧
         Submodule.span k (Set.range fun i ↦ D R k (b i)) = ⊤ := by
-  constructor
-  · intro hb
-    have hcoe : (fun i ↦ D R k (b i)) = ⇑(hb.kaehlerBasis hR) :=
-      funext fun i ↦ (hb.kaehlerBasis_apply hR i).symm
-    rw [hcoe]
-    exact ⟨(hb.kaehlerBasis hR).linearIndependent, (hb.kaehlerBasis hR).span_eq⟩
-  · rintro ⟨hlin, hspan⟩
-    have hind : IsPIndependent p b := isPIndependent_of_linearIndependent_D hlin
-    refine (isPBasis_iff b).mpr ⟨hind, (span_range_pMonomial_eq_top_iff b).mpr ?_⟩
-    rw [eq_top_iff]
-    intro x _
-    by_contra hx
-    have hopt : IsPIndependent p (Option.elim' x b) := (isPIndependent_option_iff hind x).mpr hx
-    have hopt_lin : LinearIndependent k (fun o ↦ D R k (Option.elim' x b o)) :=
-      (isPIndependent_iff_linearIndependent_D hR _).mp hopt
-    have hnotmem := hopt_lin.notMem_span_image (s := Set.range Option.some) (x := none) (by simp)
-    rw [← Set.range_comp', show (fun i ↦ D R k (Option.elim' x b (Option.some i))) =
-      fun i ↦ D R k (b i) from rfl, hspan] at hnotmem
-    exact hnotmem Submodule.mem_top
+  rw [isPBasis_iff_isPIndependent_and_adjoin_eq_top, isPIndependent_iff_linearIndependent_D hR,
+    adjoin_fieldRange_frobenius_eq_top_iff_span_D hR]
 
 /-- In a field `k` of prime characteristic `p`, the kernel of the universal derivation
 `D R k : k → Ω[k⁄R]` is the Frobenius subfield `k ^ p`, for any base ring `R` whose image lies in
@@ -192,18 +224,12 @@ theorem isPBasis_iff_linearIndependent_and_span_D
 theorem D_eq_zero_iff_mem_fieldRange_frobenius
     (hR : ∀ r : R, algebraMap R k r ∈ (frobenius k p).fieldRange) (x : k) :
     D R k x = 0 ↔ x ∈ (frobenius k p).fieldRange := by
-  refine ⟨fun hx ↦ ?_, (D R k).map_eq_zero_of_mem_fieldRange_frobenius⟩
-  by_contra hnot
-  have hnot_adjoin :
-      x ∉ IntermediateField.adjoin (frobenius k p).fieldRange
-        (Set.range (Empty.elim : Empty → k)) := by
-    rw [Set.range_eq_empty, IntermediateField.adjoin_empty, IntermediateField.mem_bot]
-    rintro ⟨c, hc⟩
-    exact hnot (hc ▸ c.property)
-  have hopt : IsPIndependent p (Option.elim' x (Empty.elim : Empty → k)) :=
-    (isPIndependent_option_iff (isPIndependent_empty _) x).mpr hnot_adjoin
-  have hlin := (isPIndependent_iff_linearIndependent_D hR _).mp hopt
-  exact hlin.ne_zero none (by simpa using hx)
+  have h := (isPIndependent_empty (p := p) (Empty.elim : Empty → k))
+    |>.mem_adjoin_fieldRange_frobenius_iff_D_mem_span hR (x := x)
+  simp only [Set.range_eq_empty, IntermediateField.adjoin_empty, IntermediateField.mem_bot,
+    Submodule.span_empty, Submodule.mem_bot] at h
+  exact ⟨fun hx ↦ (h.mpr hx).elim fun c hc ↦ hc ▸ c.property,
+    fun hx ↦ h.mp ⟨⟨x, hx⟩, rfl⟩⟩
 
 /-- **Finiteness criterion for differentials**: without assuming `[k : k ^ p]` finite, `Ω[k⁄R]` is
 finite-dimensional over `k` if and only if `k` is finite-dimensional over its Frobenius subfield
@@ -263,7 +289,7 @@ theorem IsPBasis.coordDerivation_eq_dualDerivation {b : ι → k} (hb : IsPBasis
     hb.coordDerivation j =
       (hb.kaehlerBasis (fun c : (frobenius k p).fieldRange ↦ c.property)).dualDerivation j := by
   classical
-  refine hb.derivation_ext fun i ↦ ?_
+  refine Derivation.ext_of_adjoin_fieldRange_frobenius_eq_top hb.adjoin_eq_top fun i ↦ ?_
   rw [(hb.kaehlerBasis fun c : (frobenius k p).fieldRange ↦
     c.property).dualDerivation_apply_of_kaehlerD_eq
       (fun m ↦ (hb.kaehlerBasis_apply (fun c ↦ c.property) m).symm)]

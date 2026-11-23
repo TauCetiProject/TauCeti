@@ -22,17 +22,18 @@ element outside the subfield `F^p` of Frobenius powers is separating.  Consequen
 which the order of `x` is not divisible by `p` certifies that `x` is separating.
 
 A separating parameter exists over a perfect field, which makes the Kähler differentials `Ω[F⁄k]`
-one-dimensional; in positive characteristic, the degree–dimension formula
-`TauCeti.finrank_fieldRange_frobenius_eq_pow_finrank_kaehlerDifferential` then gives
+one-dimensional; in positive characteristic, the finiteness criterion
+`TauCeti.finiteDimensional_kaehlerDifferential_iff` and the degree–dimension formula
+`TauCeti.finrank_fieldRange_frobenius_eq_pow_finrank_kaehlerDifferential` then give
 `[F : F^p] = p`. Combined with `TauCeti.D_eq_zero_iff_mem_fieldRange_frobenius` for the kernel
 identification `ker (D k F) = F^p` and the differential separability criterion, this characterizes
-separating elements as the elements outside `F^p`.
+separating elements in positive characteristic as the elements outside `F^p`.
 
 ## Main results
 
 * `TauCeti.IsFunctionField.finrank_fieldRange_frobenius`: `[F : F^p] = p`.
-* `TauCeti.IsFunctionField.isSeparable_adjoin_iff_notMem_fieldRange_frobenius`: `x` is separating
-  exactly when it lies outside `F^p`.
+* `TauCeti.IsFunctionField.isSeparable_adjoin_iff_notMem_fieldRange_frobenius`: in prime
+  characteristic `p`, `x` is separating exactly when it lies outside `F^p`.
 * `TauCeti.IsFunctionField.transcendental_and_isSeparable_adjoin_of_notMem_fieldRange_frobenius`:
   an element outside `F^p` is transcendental and separating.
 * `TauCeti.IsFunctionField.exists_pow_eq_and_adjoin_eq_top_of_finrank_prime_of_not_isSeparable`:

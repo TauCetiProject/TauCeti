@@ -11,12 +11,9 @@ public import Mathlib.FieldTheory.PerfectClosure
 public import Mathlib.RingTheory.AlgebraicIndependent.TranscendenceBasis
 public import TauCeti.RingTheory.Kaehler.PBasis
 import Mathlib.FieldTheory.IsPerfectClosure
-import Mathlib.FieldTheory.RatFunc.AsPolynomial
-import Mathlib.RingTheory.Etale.Kaehler
-import Mathlib.RingTheory.Kaehler.Polynomial
 import Mathlib.RingTheory.TensorProduct.IsBaseChangeFree
 import TauCeti.FieldTheory.Frobenius.Range
-import TauCeti.FieldTheory.FunctionField.Differential.Kaehler
+import TauCeti.FieldTheory.RatFunc.Kaehler
 
 /-!
 # Examples of `p`-bases and Kähler differentials in prime characteristic
