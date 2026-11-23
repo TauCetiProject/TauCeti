@@ -50,7 +50,9 @@ globular cell onto a side of an arbitrary cell replaces that boundary edge by an
 * `TauCeti.StrictDoubleCategory.HorizontalIso` and `TauCeti.StrictDoubleCategory.VerticalIso`:
   invertible globular cells.
 * `TauCeti.StrictDoubleCategory.changeTop`, `changeBottom`, `changeLeft` and `changeRight`:
-  replacing a boundary of a cell along an invertible globular cell.
+  replacing a boundary of a cell along an invertible globular cell, with
+  `vComp_changeBottom_changeTop` and `hComp_changeRight_changeLeft` showing that changing a
+  shared edge on both sides leaves a pasting unchanged.
 
 ## References
 
@@ -426,6 +428,31 @@ theorem changeRight_eqToIso (h : (⟨r⟩ : D.VerticalGlobular b d) = ⟨r'⟩) 
     D.changeRight (eqToIso h) α = α.cast rfl rfl rfl (congrArg HorizontalGlobular.edge h) :=
   (D.transpose.changeBottom_eqToIso h α).trans
     (DoubleCategoryStruct.transpose_cast D.toDoubleCategoryStruct _ _ _ _ _)
+
+/-- Changing the edge shared by two vertically pasted cells along the same invertible globular
+cell, at the bottom of the upper cell and at the top of the lower cell, does not change their
+vertical pasting. -/
+@[simp]
+theorem vComp_changeBottom_changeTop {x y : O} {s : Edge H x y} {n : Edge V c x}
+    {t : Edge V d y} (e : D.HorizontalIso q q') (α : D.Cell p q l r) (β : D.Cell q s n t) :
+    D.vComp (D.changeBottom e α) (D.changeTop e β) = D.vComp α β := by
+  have he := congrArg HorizontalGlobular.Hom.cell e.hom_inv_id
+  rw [HorizontalGlobular.comp_cell, HorizontalGlobular.id_cell, Cell.cast_eq_iff] at he
+  have h := D.vComp_assoc e.hom.cell e.inv.cell β
+  rw [he, vComp_cast_top, vId_vComp, Cell.cast_cast, eq_comm, Cell.cast_eq_iff,
+    Cell.cast_cast] at h
+  rw [changeBottom_def, changeTop_def, vComp_cast_top, vComp_cast_bottom, vComp_assoc, h,
+    vComp_cast_bottom]
+  simp only [Cell.cast_cast, Cell.cast_rfl]
+
+/-- Changing the edge shared by two horizontally pasted cells along the same invertible globular
+cell, on the right of the left cell and on the left of the right cell, does not change their
+horizontal pasting. -/
+@[simp]
+theorem hComp_changeRight_changeLeft {x y : O} {s : Edge H b x} {t : Edge H d y}
+    {n : Edge V x y} (e : D.VerticalIso r r') (α : D.Cell p q l r) (β : D.Cell s t r n) :
+    D.hComp (D.changeRight e α) (D.changeLeft e β) = D.hComp α β :=
+  D.transpose.vComp_changeBottom_changeTop e α β
 
 end BoundaryChange
 
