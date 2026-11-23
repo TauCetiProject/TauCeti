@@ -147,9 +147,7 @@ theorem _root_.MonoidHom.eq_one_of_mem_of_isCompact {H : Type*} [Group H] [Topol
   have hbdd (x : H) (hx : x ∈ K) : ¬ 1 < f x := fun h1 => by
     obtain ⟨n, hn⟩ := pow_unbounded_of_one_lt M h1
     exact hn.not_ge <| hM ⟨x ^ n, K.pow_mem hx n, map_pow _ _ _⟩
-  -- `f k` is a unit, since `f k * f k⁻¹ = f 1 = 1`
-  have hpos : 0 < f k := pos_iff_ne_zero.mpr fun h0 => zero_ne_one <| by
-    rw [← map_one f, ← mul_inv_cancel k, map_mul, h0, zero_mul]
+  have hpos : 0 < f k := pos_iff_ne_zero.mpr ((Group.isUnit k).map f).ne_zero
   refine le_antisymm (not_lt.mp (hbdd k hk)) (not_lt.mp fun h => hbdd k⁻¹ (K.inv_mem hk) ?_)
   rw [map_inv]
   exact one_lt_inv_iff₀.mpr ⟨hpos, h⟩
