@@ -124,7 +124,8 @@ Morse-theoretic definitions that use them.
   `TauCeti.sum_mul_fderiv_fderiv_apply_add_fderiv_apply_mul_eq_zero_of_sum_sq_eventuallyEq_const`:
   the first and second derivatives of a partition of unity by squares, `∑ₐ Jₐ²` constant.
 * `TauCeti.fderiv_fderiv_mul_apply_of_tsupport_subset`: the second-order product rule with a
-  cutoff, at every point.
+  cutoff, at every point of a set whose intersection with the support of the cutoff lies where
+  both factors are `C²`.
 * `TauCeti.fderiv_fderiv_apply_eq_smul_iteratedDeriv`: in one variable the second derivative is
   the second iterated derivative.
 * `TauCeti.isInvertible_fderiv_fderiv_iff_iteratedDeriv_two_ne_zero`: in one variable the second
@@ -689,23 +690,22 @@ theorem sum_mul_fderiv_fderiv_apply_add_fderiv_apply_mul_eq_zero_of_sum_sq_event
   exact Finset.sum_congr rfl fun a _ ↦ by ring
 
 /-- **The second-order product rule for a cutoff.** If `f` and `g` are `C²` on an open set `s`
-containing the topological support of `f`, then the second-order product rule
-`D²(f g)(v, w) = f D²g(v, w) + g D²f(v, w) + Df(v) Dg(w) + Dg(v) Df(w)` holds at every point:
-off `s` both sides vanish, whatever `f` and `g` are there. -/
-theorem fderiv_fderiv_mul_apply_of_tsupport_subset {f g : E → 𝕜} {s : Set E} (hs : IsOpen s)
-    (hf : ContDiffOn 𝕜 2 f s) (hfs : tsupport f ⊆ s) (hg : ContDiffOn 𝕜 2 g s) (x v w : E) :
+containing the points of a set `t` in the topological support of `f`, then the second-order product
+rule `D²(f g)(v, w) = f D²g(v, w) + g D²f(v, w) + Df(v) Dg(w) + Dg(v) Df(w)` holds at every point of
+`t`: off the support of `f` both sides vanish, whatever `f` and `g` are there. With `t` the whole
+space this is the rule at every point, for `f` supported in `s`. -/
+theorem fderiv_fderiv_mul_apply_of_tsupport_subset {f g : E → 𝕜} {s t : Set E} (hs : IsOpen s)
+    (hf : ContDiffOn 𝕜 2 f s) (hfs : t ∩ tsupport f ⊆ s) (hg : ContDiffOn 𝕜 2 g s) {x : E}
+    (hx : x ∈ t) (v w : E) :
     fderiv 𝕜 (fderiv 𝕜 (f * g)) x v w =
       f x * fderiv 𝕜 (fderiv 𝕜 g) x v w + g x * fderiv 𝕜 (fderiv 𝕜 f) x v w +
         fderiv 𝕜 f x v * fderiv 𝕜 g x w + fderiv 𝕜 g x v * fderiv 𝕜 f x w := by
-  by_cases hx : x ∈ s
-  · exact fderiv_fderiv_mul_apply (hf.contDiffAt (hs.mem_nhds hx)) (hg.contDiffAt (hs.mem_nhds hx))
-      v w
-  · have hfx : x ∉ tsupport f := fun h => hx (hfs h)
-    have hfgx : x ∉ tsupport (fderiv 𝕜 (f * g)) := fun h =>
-      hfx ((tsupport_fderiv_subset 𝕜).trans tsupport_mul_subset_left h)
-    have hf'x : x ∉ tsupport (fderiv 𝕜 f) := fun h => hfx (tsupport_fderiv_subset 𝕜 h)
-    simp [image_eq_zero_of_notMem_tsupport hfx, fderiv_of_notMem_tsupport 𝕜 hfx,
-      fderiv_of_notMem_tsupport 𝕜 hfgx, fderiv_of_notMem_tsupport 𝕜 hf'x]
+  by_cases hxf : x ∈ tsupport f
+  · have hxs := hs.mem_nhds (hfs ⟨hx, hxf⟩)
+    exact fderiv_fderiv_mul_apply (hf.contDiffAt hxs) (hg.contDiffAt hxs) v w
+  · have hfgx : x ∉ tsupport (f * g) := fun h => hxf (tsupport_mul_subset_left h)
+    simp [image_eq_zero_of_notMem_tsupport hxf, fderiv_of_notMem_tsupport 𝕜 hxf,
+      fderiv_fderiv_of_notMem_tsupport hxf, fderiv_fderiv_of_notMem_tsupport hfgx]
 
 /-- The second derivative of a function of one variable is its second iterated derivative:
 `D²φ(t)(a, b) = (a b) • φ''(t)`. -/

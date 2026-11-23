@@ -42,6 +42,9 @@ Hessian of a function with continuous second derivative supported in a closed ba
 partial derivatives along an orthonormal basis bounded by `B`, is at most the `1/p`-th power of the
 measure of the ball times `(card ι)² B`
 (`MeasureTheory.Measure.toReal_eLpNorm_iteratedFDeriv_two_le_of_support_subset_closedBall`).
+The same bound holds for the `Lᵖ` norm on a measurable set `s` when the second derivative is only
+continuous and bounded on `s`:
+`MeasureTheory.Measure.toReal_eLpNorm_restrict_iteratedFDeriv_two_le_of_support_subset_closedBall`.
 
 The iterated derivatives of order at most `k` of a compactly supported `C^k` function are in every
 `Lᵖ`, also when evaluated on fixed directions (`ContDiff.memLp_iteratedFDeriv_of_hasCompactSupport`,
@@ -157,16 +160,42 @@ end Thickening
 
 section InnerHessian
 
+variable {E ι : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
+  [MeasurableSpace E] [BorelSpace E] (μ : Measure E) [μ.IsAddHaarMeasure] [Fintype ι]
+
+/-- The `Lᵖ` norm on a measurable set `s` of the second derivative of a function `w` on a
+finite-dimensional real inner product space with an additive Haar measure `μ` is at most
+`μ (closedBall 0 R) ^ (1/p) * (card ι) ^ 2 * B`, when the second derivative of `w` is continuous on
+`s` and supported in the closed ball `closedBall x₀ R`, and all its second partial derivatives along
+an orthonormal basis `b` are bounded on `s` by `B ≥ 0`. -/
+theorem toReal_eLpNorm_restrict_iteratedFDeriv_two_le_of_support_subset_closedBall
+    (b : OrthonormalBasis ι ℝ E) {w : E → ℝ} {s : Set E} (hs : MeasurableSet s)
+    (hw : ContinuousOn (iteratedFDeriv ℝ 2 w) s) {x₀ : E} {R B : ℝ} {p : ℝ≥0∞}
+    (hsupp : Function.support (iteratedFDeriv ℝ 2 w) ⊆ closedBall x₀ R) (hB₀ : 0 ≤ B)
+    (hB : ∀ x ∈ s, ∀ i j, |fderiv ℝ (fderiv ℝ w) x (b i) (b j)| ≤ B) :
+    (eLpNorm (iteratedFDeriv ℝ 2 w) p (μ.restrict s)).toReal ≤
+      (μ (closedBall (0 : E) R)).toReal ^ p.toReal⁻¹ * ((Fintype.card ι : ℝ) ^ 2 * B) := by
+  have hnorm (x : E) (hx : x ∈ s) :
+      ‖iteratedFDeriv ℝ 2 w x‖ ≤ (Fintype.card ι : ℝ) ^ 2 * B := by
+    refine (iteratedFDeriv ℝ 2 w x).opNorm_le_card_sq_mul_of_norm_apply_le b (B := B) fun i j => ?_
+    simpa [iteratedFDeriv_two_apply] using hB x hx i j
+  have hle : μ.restrict s (closedBall x₀ R) ≤ μ (closedBall (0 : E) R) :=
+    (Measure.restrict_apply_le _ _).trans (Measure.addHaar_closedBall_center μ x₀ R).le
+  refine (ENNReal.toReal_mono (ENNReal.mul_ne_top (ENNReal.rpow_ne_top_of_nonneg (by positivity)
+    measure_closedBall_lt_top.ne) ENNReal.ofReal_ne_top)
+    ((eLpNorm_le_of_ae_bound_of_support_subset (hw.aestronglyMeasurable hs) hsupp
+      ((ae_restrict_iff' hs).2 (ae_of_all _ hnorm))).trans
+      (mul_le_mul_left (ENNReal.rpow_le_rpow hle (by positivity)) _))).trans (le_of_eq ?_)
+  rw [ENNReal.toReal_mul, ← ENNReal.toReal_rpow, ENNReal.toReal_ofReal (by positivity)]
+
 /-- The `Lᵖ` norm of the second derivative of a function `w` with continuous second derivative on a
 finite-dimensional real inner product space with an additive Haar measure `μ` is at most
 `μ (closedBall 0 R) ^ (1/p) * (card ι) ^ 2 * B`, when the second derivative of `w` is supported in
 the closed ball `closedBall x₀ R` and all its second partial derivatives along an orthonormal basis
 `b` are bounded by `B`. Only the second derivative needs to be supported there, so `w` itself may be
 nonzero outside. -/
-theorem toReal_eLpNorm_iteratedFDeriv_two_le_of_support_subset_closedBall
-    {E ι : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
-    [MeasurableSpace E] [BorelSpace E] (μ : Measure E) [μ.IsAddHaarMeasure]
-    [Fintype ι] [Nonempty ι] (b : OrthonormalBasis ι ℝ E) {w : E → ℝ}
+theorem toReal_eLpNorm_iteratedFDeriv_two_le_of_support_subset_closedBall [Nonempty ι]
+    (b : OrthonormalBasis ι ℝ E) {w : E → ℝ}
     (hw : Continuous (iteratedFDeriv ℝ 2 w)) {x₀ : E} {R B : ℝ} {p : ℝ≥0∞}
     (hsupp : Function.support (iteratedFDeriv ℝ 2 w) ⊆ closedBall x₀ R)
     (hB : ∀ x i j, |fderiv ℝ (fderiv ℝ w) x (b i) (b j)| ≤ B) :
@@ -174,15 +203,9 @@ theorem toReal_eLpNorm_iteratedFDeriv_two_le_of_support_subset_closedBall
       (μ (closedBall (0 : E) R)).toReal ^ p.toReal⁻¹ * ((Fintype.card ι : ℝ) ^ 2 * B) := by
   have hB₀ : 0 ≤ B :=
     (abs_nonneg _).trans (hB 0 (Classical.arbitrary ι) (Classical.arbitrary ι))
-  have hnorm (x : E) : ‖iteratedFDeriv ℝ 2 w x‖ ≤ (Fintype.card ι : ℝ) ^ 2 * B := by
-    refine (iteratedFDeriv ℝ 2 w x).opNorm_le_card_sq_mul_of_norm_apply_le b (B := B) fun i j => ?_
-    simpa [iteratedFDeriv_two_apply] using hB x i j
-  refine (ENNReal.toReal_mono (ENNReal.mul_ne_top (ENNReal.rpow_ne_top_of_nonneg (by positivity)
-    measure_closedBall_lt_top.ne) ENNReal.ofReal_ne_top) (eLpNorm_le_of_ae_bound_of_support_subset
-    hw.aestronglyMeasurable hsupp (ae_of_all _ hnorm))).trans
-    (le_of_eq ?_)
-  rw [ENNReal.toReal_mul, ← ENNReal.toReal_rpow, ENNReal.toReal_ofReal (by positivity),
-    Measure.addHaar_closedBall_center]
+  simpa only [Measure.restrict_univ] using
+    toReal_eLpNorm_restrict_iteratedFDeriv_two_le_of_support_subset_closedBall μ b
+      MeasurableSet.univ hw.continuousOn hsupp hB₀ fun x _ => hB x
 
 end InnerHessian
 
