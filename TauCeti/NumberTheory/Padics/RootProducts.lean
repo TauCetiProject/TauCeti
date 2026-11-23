@@ -8,10 +8,11 @@ module
 public import Mathlib.Algebra.Polynomial.Splits
 public import Mathlib.Analysis.Normed.Module.Basic
 public import Mathlib.NumberTheory.Padics.PadicNumbers
+import Mathlib.Algebra.Polynomial.Lifts
 import Mathlib.Analysis.Normed.Algebra.Ultra
 import Mathlib.Analysis.SpecificLimits.Basic
-import Mathlib.NumberTheory.Padics.RingHoms
 import TauCeti.Analysis.Normed.Group.Ultra
+import TauCeti.NumberTheory.Padics.Polynomial
 import TauCeti.RingTheory.Polynomial.Factors
 
 /-!
@@ -28,7 +29,8 @@ hypothesis are the `ℓ`-adic absolute values of the degree of `F(α)` and of th
 The test polynomials extend from `ℤ[X]` to every `G ∈ ℚ_ℓ[X]`
 (`Polynomial.norm_prod_aroots_aeval_eq_of_forall_int`): the constant test `ℓ` shows that `P` and
 `Q` have equally many roots, so the identity is invariant under scaling `G` to `ℓˢ G` with
-integral coefficients, and `ℓˢ G` is a coefficientwise limit of integral polynomials. Then for a
+integral coefficients, and `ℓˢ G` is a coefficientwise limit of integral polynomials
+(`Polynomial.exists_seq_int_tendsto_aeval_map_coe`). Then for a
 monic irreducible `f` and large `k` the test polynomial `f + ℓᵏ` has values of norm `ℓ⁻ᵏ` at the
 roots of `f` and unchanged norms elsewhere, so comparing `k` with `k + 1` shows that `P` and `Q`
 have equally many roots at which `f` vanishes. By
@@ -57,29 +59,6 @@ namespace Polynomial
 section Padic
 
 variable {ℓ : ℕ} [Fact ℓ.Prime] {L : Type*} [NormedField L] [NormedAlgebra ℚ_[ℓ] L]
-
-/-- A polynomial with coefficients in `ℤ_ℓ` is the coefficientwise limit of integral
-polynomials, so its values at every point of `L` are limits of values of integral polynomials. -/
-private lemma exists_seq_int_tendsto_aeval {G : ℚ_[ℓ][X]} (hG : ∀ i, ‖G.coeff i‖ ≤ 1) :
-    ∃ F : ℕ → ℤ[X], ∀ r : L, Tendsto (fun N ↦ aeval r (F N)) atTop (𝓝 (aeval r G)) := by
-  -- Natural numbers approximate the coefficients of `G` to precision `1 / (N + 1)`.
-  have happr (N i : ℕ) : ∃ n : ℕ, ‖G.coeff i - n‖ < 1 / (N + 1) := by
-    obtain ⟨n, hn⟩ := PadicInt.denseRange_natCast.exists_dist_lt
-      (⟨G.coeff i, (PadicInt.mem_subring_iff ℓ).2 (hG i)⟩ : ℤ_[ℓ]) Nat.one_div_pos_of_nat
-    exact ⟨n, (dist_eq_norm _ _).symm.trans_lt hn⟩
-  choose z hz using happr
-  refine ⟨fun N ↦ ∑ i ∈ Finset.range (G.natDegree + 1), C (z N i : ℤ) * X ^ i, fun r ↦ ?_⟩
-  rw [aeval_eq_sum_range]
-  simp only [map_sum]
-  refine tendsto_finsetSum _ fun i _ ↦ ?_
-  have hc : Tendsto (fun N ↦ (z N i : ℚ_[ℓ])) atTop (𝓝 (G.coeff i)) := by
-    rw [tendsto_iff_norm_sub_tendsto_zero]
-    refine squeeze_zero (fun _ ↦ norm_nonneg _) (fun N ↦ ?_)
-      tendsto_one_div_add_atTop_nhds_zero_nat
-    rw [norm_sub_rev]
-    exact (hz N i).le
-  simpa [Algebra.smul_def] using
-    (((continuous_algebraMap ℚ_[ℓ] L).tendsto _).comp hc).mul_const (r ^ i)
 
 /-- **Extension to `ℓ`-adic test polynomials.** Suppose that the roots `aᵢ` of `P` and `bⱼ` of `Q`
 in a normed extension field `L` of `ℚ_ℓ` satisfy `|∏ᵢ F(aᵢ)| = |∏ⱼ F(bⱼ)|` for every
@@ -115,7 +94,11 @@ theorem norm_prod_aroots_aeval_eq_of_forall_int {P Q : ℚ_[ℓ][X]}
         (Finset.mem_range.2 (Nat.lt_succ_of_le hi))) (pow_nonneg ht0.le s)
     · simp [coeff_eq_zero_of_natDegree_lt (not_le.1 hi)]
   -- Integral approximations of `ℓˢ G` give the identity for `ℓˢ G` in the limit.
-  obtain ⟨F, hF⟩ := exists_seq_int_tendsto_aeval (L := L) hG'
+  have hlift : C ((ℓ : ℚ_[ℓ]) ^ s) * G ∈ lifts (PadicInt.Coe.ringHom (p := ℓ)) :=
+    (lifts_iff_coeff_lifts _).2 fun i ↦ ⟨⟨_, (PadicInt.mem_subring_iff ℓ).2 (hG' i)⟩, rfl⟩
+  obtain ⟨G', hG'map⟩ := (mem_lifts _).1 hlift
+  obtain ⟨F, hF⟩ := exists_seq_int_tendsto_aeval_map_coe (L := L) G'
+  rw [hG'map] at hF
   have hlim (A : Multiset L) : Tendsto (fun N ↦ ‖(A.map fun a ↦ aeval a (F N)).prod‖) atTop
       (𝓝 ((t ^ s) ^ A.card * ‖(A.map fun a ↦ aeval a G).prod‖)) := by
     have hscale : ‖(A.map fun a ↦ aeval a (C ((ℓ : ℚ_[ℓ]) ^ s) * G)).prod‖ =
@@ -196,15 +179,20 @@ theorem eq_of_forall_norm_prod_aroots_aeval_eq {P Q : ℚ_[ℓ][X]} (hP : P.Moni
       hm a (Multiset.mem_toFinset.2 (Multiset.mem_add.2 (Or.inr ha)))
     rw [← prod_norm_aeval_add_C_pow _ hmP, ← prod_norm_aeval_add_C_pow _ hmQ]
     exact norm_prod_aroots_aeval_eq_of_forall_int h _
-  -- Comparing `k` with `k + 1` gives `ℓ^{-c_P} = ℓ^{-c_Q}`.
+  -- Dividing the comparison at `k + 1` by the one at `k` gives `ℓ^{-c_P} = ℓ^{-c_Q}`.
   set CP := (((P.aroots L).filter fun a ↦ aeval a f ≠ 0).map fun a ↦ ‖aeval a f‖).prod
   have hCP : 0 < CP := Multiset.prod_pos fun x hx ↦ by
     obtain ⟨a, ha, rfl⟩ := Multiset.mem_map.1 hx
     exact norm_pos_iff.2 (Multiset.mem_filter.1 ha).2
   have h0 := hcomp k hk
-  have h1 := hcomp (k + 1) hk1
-  rw [pow_succ, mul_pow, mul_pow, mul_comm (_ ^ _) (t ^ _), mul_comm (_ ^ _) (t ^ _), mul_assoc,
-    mul_assoc, ← h0] at h1
+  -- Since `ℓ^{-(k+1)} = ℓ⁻¹ ℓ^{-k}`, the comparison at `k + 1` is `ℓ^{-c}` times that at `k`.
+  have h1 : t ^ ((P.aroots L).filter fun a ↦ aeval a f = 0).card *
+        ((t ^ k) ^ ((P.aroots L).filter fun a ↦ aeval a f = 0).card * CP) =
+      t ^ ((Q.aroots L).filter fun a ↦ aeval a f = 0).card *
+        ((t ^ k) ^ ((Q.aroots L).filter fun a ↦ aeval a f = 0).card *
+          (((Q.aroots L).filter fun a ↦ aeval a f ≠ 0).map fun a ↦ ‖aeval a f‖).prod) := by
+    simpa only [pow_succ', mul_pow, mul_assoc] using hcomp (k + 1) hk1
+  rw [← h0] at h1
   exact pow_right_injective₀ ht0 ht1.ne
     (mul_right_cancel₀ (mul_pos (pow_pos (pow_pos ht0 k) _) hCP).ne' h1)
 

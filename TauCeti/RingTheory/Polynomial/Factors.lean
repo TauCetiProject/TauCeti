@@ -55,10 +55,11 @@ for the Chinese Remainder decomposition of `K[X] ⧸ (f)` into the fields `K[X] 
   many linear normalized factors as distinct roots.
 * `Polynomial.monic_squarefree_normalizedFactors_prod`: a product of distinct monic irreducible
   polynomials is monic and squarefree, and its normalized factors are those polynomials.
-* `Polynomial.filter_aroots_aeval_eq_zero`: the roots of `g` in an extension field at which a
-  monic irreducible `p` vanishes are the roots of `p`, repeated with the multiplicity of `p` in
-  the normalized factorization of `g`.
-* `Polynomial.card_filter_aroots_aeval_eq_zero`: their number, for `g` split over the extension.
+* `Polynomial.filter_aroots_eq_count_normalizedFactors_nsmul_aroots`: the roots of `g` in an
+  extension field at which a monic irreducible `p` vanishes are the roots of `p`, repeated with the
+  multiplicity of `p` in the normalized factorization of `g`.
+* `Polynomial.card_filter_aroots_eq_count_normalizedFactors_mul_natDegree`: their number, for `g`
+  split over the extension.
 * `Polynomial.Monic.eq_of_forall_card_filter_aroots_eq`: monic polynomials which split over an
   extension are equal if every monic irreducible polynomial vanishes at equally many of their
   roots there.
@@ -320,7 +321,8 @@ variable {L : Type*} [Field L] [Algebra K L] [DecidableEq L]
 /-- The roots in `L` of `g`, counted with multiplicity, at which a monic irreducible `p` vanishes
 are the roots of `p`, each repeated as often as `p` occurs in the normalized factorization of
 `g`. -/
-theorem filter_aroots_aeval_eq_zero (g : K[X]) {p : K[X]} (hp : Irreducible p) (hpm : p.Monic) :
+theorem filter_aroots_eq_count_normalizedFactors_nsmul_aroots (g : K[X]) {p : K[X]}
+    (hp : Irreducible p) (hpm : p.Monic) :
     (g.aroots L).filter (fun a ↦ aeval a p = 0) = (normalizedFactors g).count p • p.aroots L := by
   rcases eq_or_ne g 0 with rfl | hg
   · simp
@@ -354,11 +356,11 @@ theorem filter_aroots_aeval_eq_zero (g : K[X]) {p : K[X]} (hp : Irreducible p) (
 /-- If `g` splits over `L`, the number of its roots in `L`, counted with multiplicity, at which a
 monic irreducible `p` vanishes is the multiplicity of `p` in the normalized factorization of `g`
 times the degree of `p`. -/
-theorem card_filter_aroots_aeval_eq_zero {g p : K[X]} (hs : (g.map (algebraMap K L)).Splits)
-    (hp : Irreducible p) (hpm : p.Monic) :
+theorem card_filter_aroots_eq_count_normalizedFactors_mul_natDegree {g p : K[X]}
+    (hs : (g.map (algebraMap K L)).Splits) (hp : Irreducible p) (hpm : p.Monic) :
     ((g.aroots L).filter fun a ↦ aeval a p = 0).card =
       (normalizedFactors g).count p * p.natDegree := by
-  rw [filter_aroots_aeval_eq_zero g hp hpm, Multiset.card_nsmul]
+  rw [filter_aroots_eq_count_normalizedFactors_nsmul_aroots g hp hpm, Multiset.card_nsmul]
   rcases eq_or_ne g 0 with rfl | hg
   · simp
   by_cases hpg : p ∈ normalizedFactors g
@@ -382,8 +384,8 @@ theorem Monic.eq_of_forall_card_filter_aroots_eq {g₁ g₂ : K[X]} (hg₁ : g�
     ext p
     by_cases hp : Irreducible p ∧ p.Monic
     · have := h p hp.1 hp.2
-      rw [card_filter_aroots_aeval_eq_zero hs₁ hp.1 hp.2,
-        card_filter_aroots_aeval_eq_zero hs₂ hp.1 hp.2] at this
+      rw [card_filter_aroots_eq_count_normalizedFactors_mul_natDegree hs₁ hp.1 hp.2,
+        card_filter_aroots_eq_count_normalizedFactors_mul_natDegree hs₂ hp.1 hp.2] at this
       exact Nat.eq_of_mul_eq_mul_right hp.1.natDegree_pos this
     · have hnot {g : K[X]} (hg : g ≠ 0) : p ∉ normalizedFactors g := fun hm ↦
         hp ⟨((Polynomial.mem_normalizedFactors_iff hg).1 hm).1,
