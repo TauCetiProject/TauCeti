@@ -279,13 +279,11 @@ theorem isTwoSidedHypersurface_of_vectorBundleOrientation {f : K} (hf : ContMDif
   -- The unit vector of `ν_f x` positive for `o x`.
   have hex (x : M) : ∃ (w : orthogonalNormalSpace I J f x) (hw : w ≠ 0), ‖w‖ = 1 ∧
       (FiniteDimensional.basisSingleton (Fin 1) (hline x) w hw).orientation = o x := by
-    obtain ⟨U, -, hxU, τ, -, hτf, hτ₁⟩ :=
-      exists_contMDiffOn_unit_orthogonalNormalSpace hf hinj hm hr x
-    have hw₁ : ‖(⟨τ x, hτf x⟩ : orthogonalNormalSpace I J f x)‖ = 1 := hτ₁ x hxU
-    have hw₀ : (⟨τ x, hτf x⟩ : orthogonalNormalSpace I J f x) ≠ 0 :=
-      norm_ne_zero_iff.1 (hw₁.trans_ne one_ne_zero)
+    have := Module.nontrivial_of_finrank_eq_succ (hline x)
+    obtain ⟨w, hw₁⟩ := exists_norm_eq (orthogonalNormalSpace I J f x) zero_le_one
+    have hw₀ : w ≠ 0 := norm_ne_zero_iff.1 (hw₁.trans_ne one_ne_zero)
     rcases Module.Basis.orientation_eq_or_eq_neg
-      (FiniteDimensional.basisSingleton (Fin 1) (hline x) _ hw₀) (o x) with h | h
+      (FiniteDimensional.basisSingleton (Fin 1) (hline x) w hw₀) (o x) with h | h
     · exact ⟨_, hw₀, hw₁, h.symm⟩
     · exact ⟨_, neg_ne_zero.2 hw₀, (norm_neg _).trans hw₁,
         by rw [orientation_basisSingleton_neg, h]⟩
