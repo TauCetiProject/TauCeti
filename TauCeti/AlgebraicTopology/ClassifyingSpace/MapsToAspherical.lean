@@ -19,16 +19,17 @@ import TauCeti.Topology.Homotopy.HomotopyGroup.WeakHomotopyEquivalence
 /-!
 # Maps from a space of CW type into an aspherical space
 
-Let `X` be a path-connected space of CW type with a base point `x`, and `Y` an aspherical space
-with base point `y`. Every homomorphism `φ : π₁(X, x) →* π₁(Y, y)` is induced by a continuous map
-`f : X → Y` up to a change of base point: there is a path `γ` from `f x` to `y` such that the map
-induced by `f`, followed by the change of base point along `γ`, is `φ`
-(`TauCeti.IsAspherical.exists_continuousMap_fundamentalGroupMulEquivOfPath_map_eq`). This is the
-existence half of Hatcher's Proposition 1B.9 before the base point is moved; `x` is an arbitrary
-point, and `X` and `Y` lie in independent universes. When `{x}` has the homotopy extension
-property in `X`, a homotopy of `f` with trace `γ` at `x` ends at a map sending `x` to `y` and
-inducing `φ` (`ContinuousMap.Homotopy.fundamentalGroupMulEquivOfPath_evalAt_map`), which is the
-existence half of Proposition 1B.9 itself.
+Let `X` be a path-connected space of CW type with a base point `x`, and `Y` a space whose higher
+homotopy groups at `y` vanish, such as an aspherical space. Every homomorphism
+`φ : π₁(X, x) →* π₁(Y, y)` is induced by a continuous map `f : X → Y` up to a change of base point:
+there is a path `γ` from `f x` to `y` such that the map induced by `f`, followed by the change of
+base point along `γ`, is `φ`
+(`exists_continuousMap_fundamentalGroupMulEquivOfPath_map_eq_of_subsingleton_homotopyGroup`).
+This is the existence half of Hatcher's Proposition 1B.9 before the base point is moved; `x` is an
+arbitrary point, and `X` and `Y` lie in independent universes. When `{x}` has the homotopy
+extension property in `X`, a homotopy of `f` with trace `γ` at `x` ends at a map sending `x` to
+`y` and inducing `φ` (`ContinuousMap.Homotopy.fundamentalGroupMulEquivOfPath_evalAt_map`), which
+is the existence half of Proposition 1B.9 itself.
 
 First `X` is replaced by a homotopy equivalent CW complex, which is Hausdorff. The map then
 factors through the cellular classifying space `C` of a presentation of `π₁(X, x)`. Killing the
@@ -44,9 +45,9 @@ cellular model, `X'` and `Y` are lifted to a common universe with `ULift`; `X` i
 
 ## Main results
 
-* `TauCeti.IsAspherical.exists_continuousMap_fundamentalGroupMulEquivOfPath_map_eq`: every
-  homomorphism from `π₁(X, x)` to the fundamental group of an aspherical space is induced by a map,
-  up to a change of base point in the target.
+* `exists_continuousMap_fundamentalGroupMulEquivOfPath_map_eq_of_subsingleton_homotopyGroup`: every
+  homomorphism from `π₁(X, x)` to the fundamental group of a space with vanishing higher
+  homotopy groups is induced by a map, up to a change of base point in the target.
 
 ## References
 
@@ -64,11 +65,12 @@ universe u v
 
 namespace TauCeti
 
-/-- The case of `TauCeti.IsAspherical.exists_continuousMap_fundamentalGroupMulEquivOfPath_map_eq`
+/-- The case of
+`TauCeti.exists_continuousMap_fundamentalGroupMulEquivOfPath_map_eq_of_subsingleton_homotopyGroup`
 for a Hausdorff `X` and with `Y` in the universe `max u v`, where the cellular model of `π₁(X, x)`
 and the lifted space `X'` live. -/
-private theorem IsAspherical.exists_continuousMap_fundamentalGroupMulEquivOfPath_map_eq_max
-    {Y : Type (max u v)} [TopologicalSpace Y] {y : Y} (hY : IsAspherical Y y)
+private theorem exists_continuousMap_fundamentalGroupMulEquivOfPath_map_eq_max
+    {Y : Type (max u v)} [TopologicalSpace Y] {y : Y} (hY : ∀ k, 2 ≤ k → Subsingleton (π_ k Y y))
     {X : Type u} [TopologicalSpace X] [T2Space X] [CWType X] [PathConnectedSpace X] (x : X)
     (φ : FundamentalGroup X x →* FundamentalGroup Y y) :
     ∃ (f : C(X, Y)) (γ : Path (f x) y),
@@ -100,32 +102,27 @@ private theorem IsAspherical.exists_continuousMap_fundamentalGroupMulEquivOfPath
   obtain ⟨ψ₀⟩ := hC.nonempty_fundamentalGroupMulEquiv
   let ψ := ψ₀.trans MulEquiv.ulift
   have := hC.isAspherical.pathConnectedSpace
-  have hgt {W : Type (max u v)} [TopologicalSpace W] {w : W} (hW : IsAspherical W w) :
-      ∀ k, 2 ≤ k → Subsingleton (π_ k W w) := fun k hk ↦ by
-    obtain ⟨n, rfl⟩ := Nat.exists_eq_add_of_le' hk
-    exact hW.subsingleton_homotopyGroup n
   -- The weak homotopy equivalence `e : C → ULift X'` inducing `ιπ ∘ ψ`, and `g : C → Y`
   -- inducing `φ ∘ ψ`.
-  obtain ⟨e, he, heπ⟩ := exists_mapOfEq_cellularClassifyingSpace R (hgt hZ) (ψ.trans ιπ).toMonoidHom
-  have heW : e.IsWeakHomotopyEquivalence :=
-    (hC.isAspherical.isWeakHomotopyEquivalence_iff hZ he).2 (heπ ▸ (ψ.trans ιπ).bijective)
-  obtain ⟨g, hg, hgπ⟩ := exists_mapOfEq_cellularClassifyingSpace R (hgt hY)
-    (φ.comp ψ.toMonoidHom)
+  obtain ⟨e, he, heπ, heW⟩ :=
+    exists_isWeakHomotopyEquivalence_mapOfEq_cellularClassifyingSpace R hZ (ψ.trans ιπ)
+  obtain ⟨g, hg, hgπ⟩ := exists_mapOfEq_cellularClassifyingSpace R hY (φ.comp ψ.toMonoidHom)
   -- The lift `ℓ : X → C` of `ι` through `e`; then `g ∘ ℓ` induces `φ ∘ ιπ⁻¹ ∘ ι_* = φ`.
   obtain ⟨ℓ, ⟨H⟩⟩ := heW.exists_comp_homotopic ι
   obtain ⟨γ, hγ⟩ := H.exists_path_fundamentalGroupMulEquivOfPath_map_comp_eq_mapOfEq he hg rfl
     (φ.comp ιπ.symm.toMonoidHom) (MonoidHom.ext fun a ↦ by simp [heπ, hgπ])
   exact ⟨g.comp ℓ, γ, fun a ↦ (hγ a).trans (congrArg φ (ιπ.symm_apply_apply a))⟩
 
-/-- **Homomorphisms into the fundamental group of an aspherical space are induced by maps, up to a
-change of base point** (the existence half of Hatcher, Proposition 1B.9, before the base point is
-moved). Let `X` be a path-connected space of CW type, such as a path-connected Hausdorff CW
-complex, with an arbitrary base point `x`, and let `Y` be aspherical at `y`. For every
+/-- **Homomorphisms into the fundamental group of a space with vanishing higher homotopy groups
+are induced by maps, up to a change of base point** (the existence half of Hatcher, Proposition
+1B.9, before the base point is moved). Let `X` be a path-connected space of CW type, such as a
+path-connected Hausdorff CW complex, with an arbitrary base point `x`, and let the homotopy groups
+`π_k(Y, y)` vanish for `k ≥ 2`, as they do when `Y` is aspherical at `y`. For every
 homomorphism `φ : π₁(X, x) →* π₁(Y, y)` there are a continuous map `f : X → Y` and a path `γ` from
 `f x` to `y` such that the map induced by `f`, followed by the change of base point along `γ`, is
 `φ`. The spaces `X` and `Y` lie in independent universes. -/
-theorem IsAspherical.exists_continuousMap_fundamentalGroupMulEquivOfPath_map_eq
-    {Y : Type v} [TopologicalSpace Y] {y : Y} (hY : IsAspherical Y y)
+theorem exists_continuousMap_fundamentalGroupMulEquivOfPath_map_eq_of_subsingleton_homotopyGroup
+    {Y : Type v} [TopologicalSpace Y] {y : Y} (hY : ∀ k, 2 ≤ k → Subsingleton (π_ k Y y))
     {X : Type u} [TopologicalSpace X] [CWType X] [PathConnectedSpace X] (x : X)
     (φ : FundamentalGroup X x →* FundamentalGroup Y y) :
     ∃ (f : C(X, Y)) (γ : Path (f x) y),
@@ -141,14 +138,14 @@ theorem IsAspherical.exists_continuousMap_fundamentalGroupMulEquivOfPath_map_eq
   let up : C(Y, ULift.{u} Y) := eY
   let down : C(ULift.{u} Y, Y) := eY.symm
   have hdown : down.comp up = ContinuousMap.id Y := ContinuousMap.ext fun _ ↦ rfl
-  obtain ⟨f, γ, hγ⟩ := IsAspherical.exists_continuousMap_fundamentalGroupMulEquivOfPath_map_eq_max
-    ((eY.isWeakHomotopyEquivalence.isAspherical_iff y).1 hY) (e.toFun x)
+  obtain ⟨f, γ, hγ⟩ := exists_continuousMap_fundamentalGroupMulEquivOfPath_map_eq_max
+    (fun k hk ↦ (HomotopyGroup.homeomorphEquiv eY y).subsingleton_congr.1 (hY k hk)) (e.toFun x)
     ((mapOfEq up (rfl : up y = up y)).comp (φ.comp eπ.symm.toMonoidHom))
   refine ⟨down.comp (f.comp e.toFun), γ.map down.continuous, fun a ↦ ?_⟩
   have h := map_fundamentalGroupMulEquivOfPath down γ (map f (e.toFun x) (eπ a))
-  rw [hγ, MonoidHom.comp_apply, MonoidHom.comp_apply, MulEquiv.coe_toMonoidHom,
-    eπ.symm_apply_apply, ← mapOfEq_rfl down] at h
-  rw [map_comp, map_comp, MonoidHom.comp_apply, MonoidHom.comp_apply]
+  simp only [hγ, MonoidHom.comp_apply, MulEquiv.coe_toMonoidHom, MulEquiv.symm_apply_apply] at h
+  rw [← mapOfEq_rfl down] at h
+  simp only [map_comp, MonoidHom.comp_apply]
   exact h.symm.trans (mapOfEq_mapOfEq_of_comp_eq_id down up rfl rfl hdown (φ a))
 
 end TauCeti
