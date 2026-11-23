@@ -17,26 +17,37 @@ is an inner product on `V`. Its norm `√(re (a u u))` is equivalent to the norm
 
 `c * ‖u‖ ^ 2 ≤ re (a u u) ≤ ‖a‖ * ‖u‖ ^ 2`.
 
-The **energy space** of `a` is `V` equipped with this inner product. Variational spectral theory
-works in it: the eigenvectors of a form are orthogonal for its energy inner product, and expansions
-in them converge in the energy norm. Since the two norms are equivalent, the energy space has the
-same topology as `V`, and it is complete when `V` is.
+The **energy space** of `a` is `V` equipped with this inner product. It is the setting in which
+variational spectral theory proves, under additional spectral hypotheses, that eigenvectors are
+orthogonal for the energy inner product and that expansions in them converge in the energy norm.
+Since the two norms are equivalent, the energy space has the same topology as `V`, and it is
+complete when `V` is.
+
+Formally, the form supplies an `InnerProductSpace.Core` on the type synonym, and Mathlib's
+`InnerProductSpace.Core.toNormedAddCommGroup` and `InnerProductSpace.ofCore` supply its normed
+group and inner product space instances.
 
 ## Main declarations
 
-* `TauCeti.CoerciveHermitianForm 𝕜 V`: a bounded Hermitian sesquilinear form on `V` with a
-  positive coercivity constant. The constant is a proposition, so the structure is determined
-  by its form (`TauCeti.CoerciveHermitianForm.ext`).
-* `TauCeti.CoerciveHermitianForm.EnergySpace a`: a copy of `V` with the inner product `a`, a
+In the formulas below, `a` is a bundled `TauCeti.CoerciveHermitianForm` and `a.form` is its
+underlying sesquilinear form.
+
+* `TauCeti.CoerciveHermitianForm 𝕜 V`: a bounded Hermitian sesquilinear form on `V` together with
+  the existence of a positive coercivity constant. The existence is a proposition and no
+  particular constant is stored, so the structure is determined by its form
+  (`TauCeti.CoerciveHermitianForm.ext`).
+* `TauCeti.CoerciveHermitianForm.EnergySpace a`: a copy of `V` with the inner product `a.form`, a
   `NormedAddCommGroup` and an `InnerProductSpace 𝕜`, complete when `V` is.
 * `TauCeti.CoerciveHermitianForm.toEnergySpace a : V ≃L[𝕜] a.EnergySpace`: the identity of `V`,
-  with `⟪a.toEnergySpace u, a.toEnergySpace v⟫_𝕜 = a u v`
+  with `⟪a.toEnergySpace u, a.toEnergySpace v⟫_𝕜 = a.form u v`
   (`TauCeti.CoerciveHermitianForm.inner_toEnergySpace`) and the two-sided norm bounds
   `TauCeti.CoerciveHermitianForm.sqrt_mul_norm_le_norm_toEnergySpace` and
   `TauCeti.CoerciveHermitianForm.norm_toEnergySpace_le`.
+* `TauCeti.CoerciveHermitianForm.toEnergySpace_eq_toDual_symm_iff`: on a Banach space, `u` solves
+  `a.form u v = ℓ v` for every `v` exactly when `a.toEnergySpace u` is the Riesz representative,
+  in the energy space, of `ℓ` pulled back along `a.toEnergySpace.symm`.
 * `TauCeti.CoerciveHermitianForm.toEnergySpace_solutionOfFunctional`: when `V` is a Hilbert
-  space, the Lax–Milgram solution of `a u v = ℓ v` is the Riesz representative of `ℓ` in the
-  energy space.
+  space, the Lax–Milgram solution of `a.form u v = ℓ v` is mapped to that Riesz representative.
 
 ## References
 
@@ -101,8 +112,9 @@ instance : Module 𝕜 a.EnergySpace := inferInstanceAs (Module 𝕜 V)
 /-- The identity of `V`, as a linear equivalence onto the energy space. -/
 private def toEnergySpaceₗ : V ≃ₗ[𝕜] a.EnergySpace := LinearEquiv.refl 𝕜 V
 
-/-- The inner product core of the energy space: the form `a`, read on the underlying vectors of
-`V`. -/
+/-- The inner product core of the energy space: the form `a.form`, read on the underlying vectors
+of `V`. It only builds the instances below; use `inner_toEnergySpace` and `inner_eq_form` to
+compute the resulting inner product. -/
 @[instance_reducible]
 def innerProductCore : InnerProductSpace.Core 𝕜 a.EnergySpace where
   inner x y := a.form (a.toEnergySpaceₗ.symm x) (a.toEnergySpaceₗ.symm y)
@@ -116,101 +128,113 @@ def innerProductCore : InnerProductSpace.Core 𝕜 a.EnergySpace where
   definite x hx := by
     simpa using hx
 
+/-- The energy norm on `a.EnergySpace`, `x ↦ √(re (a.form x x))`, built from the inner product
+core by Mathlib's `InnerProductSpace.Core.toNormedAddCommGroup`. It is not the norm of `V`. -/
 instance : NormedAddCommGroup a.EnergySpace := a.innerProductCore.toNormedAddCommGroup
 
+/-- The inner product of `a.EnergySpace` is the form `a.form`, transported to the type synonym,
+built from the inner product core by Mathlib's `InnerProductSpace.ofCore`. -/
 instance : InnerProductSpace 𝕜 a.EnergySpace := InnerProductSpace.ofCore a.innerProductCore.toCore
 
-/-- The inner product of the energy space is, by definition, the `inner` field of
-`innerProductCore`. -/
-private theorem inner_eq_form_toEnergySpaceₗ_symm (x y : a.EnergySpace) :
-    ⟪x, y⟫_𝕜 = a.form (a.toEnergySpaceₗ.symm x) (a.toEnergySpaceₗ.symm y) :=
+/-- The energy norm of the image of `u` is, by definition, `√(re (a.form u u))`. -/
+private theorem norm_toEnergySpaceₗ (u : V) : ‖a.toEnergySpaceₗ u‖ = √(re (a.form u u)) :=
   (rfl)
 
-private theorem inner_toEnergySpaceₗ (u v : V) :
-    ⟪a.toEnergySpaceₗ u, a.toEnergySpaceₗ v⟫_𝕜 = a.form u v := by
-  rw [inner_eq_form_toEnergySpaceₗ_symm, LinearEquiv.symm_apply_apply,
-    LinearEquiv.symm_apply_apply]
-
-private theorem norm_toEnergySpaceₗ_sq (u : V) :
-    ‖a.toEnergySpaceₗ u‖ ^ 2 = re (a.form u u) := by
-  rw [@norm_sq_eq_re_inner 𝕜, inner_toEnergySpaceₗ]
-
 private theorem norm_toEnergySpaceₗ_le (u : V) : ‖a.toEnergySpaceₗ u‖ ≤ √‖a.form‖ * ‖u‖ := by
-  refine le_of_sq_le_sq ?_ (by positivity)
-  rw [norm_toEnergySpaceₗ_sq, mul_pow, Real.sq_sqrt (norm_nonneg a.form)]
+  rw [norm_toEnergySpaceₗ, ← Real.sqrt_sq (norm_nonneg u), ← Real.sqrt_mul' _ (sq_nonneg _)]
+  refine Real.sqrt_le_sqrt ?_
   calc re (a.form u u) ≤ ‖a.form u u‖ := re_le_norm _
     _ ≤ ‖a.form‖ * ‖u‖ * ‖u‖ := a.form.le_opNorm₂ u u
     _ = ‖a.form‖ * ‖u‖ ^ 2 := by ring
 
-private theorem sqrt_mul_norm_le_norm_toEnergySpaceₗ {c : ℝ}
-    (hcoer : ∀ u, c * ‖u‖ ^ 2 ≤ re (a.form u u)) (u : V) :
-    √c * ‖u‖ ≤ ‖a.toEnergySpaceₗ u‖ := by
-  rcases le_or_gt c 0 with hc | hc
-  · rw [Real.sqrt_eq_zero'.mpr hc, zero_mul]
-    exact norm_nonneg _
-  refine le_of_sq_le_sq ?_ (norm_nonneg _)
-  rw [norm_toEnergySpaceₗ_sq, mul_pow, Real.sq_sqrt hc.le]
-  exact hcoer u
+private theorem sqrt_mul_norm_le_norm_toEnergySpaceₗ {c : ℝ} (u : V)
+    (h : c * ‖u‖ ^ 2 ≤ re (a.form u u)) : √c * ‖u‖ ≤ ‖a.toEnergySpaceₗ u‖ := by
+  rw [norm_toEnergySpaceₗ, ← Real.sqrt_sq (norm_nonneg u), ← Real.sqrt_mul' _ (sq_nonneg _)]
+  exact Real.sqrt_le_sqrt h
 
-private theorem norm_toEnergySpaceₗ_symm_le {c : ℝ} (hc : 0 < c)
-    (hcoer : ∀ u, c * ‖u‖ ^ 2 ≤ re (a.form u u)) (x : a.EnergySpace) :
+private theorem norm_toEnergySpaceₗ_symm_le {c : ℝ} (hc : 0 < c) (x : a.EnergySpace)
+    (h : c * ‖a.toEnergySpaceₗ.symm x‖ ^ 2 ≤
+      re (a.form (a.toEnergySpaceₗ.symm x) (a.toEnergySpaceₗ.symm x))) :
     ‖a.toEnergySpaceₗ.symm x‖ ≤ (√c)⁻¹ * ‖x‖ := by
   rw [le_inv_mul_iff₀ (Real.sqrt_pos.mpr hc)]
-  simpa using a.sqrt_mul_norm_le_norm_toEnergySpaceₗ hcoer (a.toEnergySpaceₗ.symm x)
+  simpa using a.sqrt_mul_norm_le_norm_toEnergySpaceₗ _ h
 
 /-- The identity of `V`, as a continuous linear equivalence onto the energy space of `a`. It is
 continuous in both directions because the energy norm is equivalent to the norm of `V`. -/
 def toEnergySpace : V ≃L[𝕜] a.EnergySpace :=
   a.toEnergySpaceₗ.toContinuousLinearEquivOfBounds √‖a.form‖ (√a.exists_coercive.choose)⁻¹
     a.norm_toEnergySpaceₗ_le
-    (a.norm_toEnergySpaceₗ_symm_le a.exists_coercive.choose_spec.1
-      a.exists_coercive.choose_spec.2)
+    fun x ↦ a.norm_toEnergySpaceₗ_symm_le a.exists_coercive.choose_spec.1 x
+      (a.exists_coercive.choose_spec.2 _)
+
+/-- `a.toEnergySpace` applies the underlying linear equivalence `toEnergySpaceₗ`. -/
+private theorem toEnergySpace_apply (u : V) : a.toEnergySpace u = a.toEnergySpaceₗ u := rfl
+
+/-- The inverse of `a.toEnergySpace` applies the inverse of `toEnergySpaceₗ`. -/
+private theorem toEnergySpace_symm_apply (x : a.EnergySpace) :
+    a.toEnergySpace.symm x = a.toEnergySpaceₗ.symm x := rfl
 
 /-- The energy inner product of two vectors of `V` is the value of the form on them. -/
 @[simp]
 theorem inner_toEnergySpace (u v : V) :
     ⟪a.toEnergySpace u, a.toEnergySpace v⟫_𝕜 = a.form u v :=
-  a.inner_toEnergySpaceₗ u v
+  (rfl)
 
 /-- The inner product of the energy space, in terms of the underlying vectors of `V`. -/
 theorem inner_eq_form (x y : a.EnergySpace) :
     ⟪x, y⟫_𝕜 = a.form (a.toEnergySpace.symm x) (a.toEnergySpace.symm y) := by
-  rw [← inner_toEnergySpace, ContinuousLinearEquiv.apply_symm_apply,
-    ContinuousLinearEquiv.apply_symm_apply]
+  simpa only [ContinuousLinearEquiv.apply_symm_apply] using
+    a.inner_toEnergySpace (a.toEnergySpace.symm x) (a.toEnergySpace.symm y)
 
-/-- The squared energy norm of `u` is the diagonal value `re (a u u)`. -/
-theorem norm_toEnergySpace_sq (u : V) : ‖a.toEnergySpace u‖ ^ 2 = re (a.form u u) :=
-  a.norm_toEnergySpaceₗ_sq u
+/-- The squared energy norm of `u` is the diagonal value `re (a.form u u)`. -/
+theorem norm_toEnergySpace_sq (u : V) : ‖a.toEnergySpace u‖ ^ 2 = re (a.form u u) := by
+  rw [@norm_sq_eq_re_inner 𝕜, inner_toEnergySpace]
 
-/-- The energy norm of `u` is `√(re (a u u))`. -/
+/-- The energy norm of `u` is `√(re (a.form u u))`. -/
 theorem norm_toEnergySpace (u : V) : ‖a.toEnergySpace u‖ = √(re (a.form u u)) := by
   rw [← norm_toEnergySpace_sq, Real.sqrt_sq (norm_nonneg _)]
 
-/-- **Upper energy bound.** The energy norm is at most `√‖a‖` times the norm of `V`. -/
-theorem norm_toEnergySpace_le (u : V) : ‖a.toEnergySpace u‖ ≤ √‖a.form‖ * ‖u‖ :=
-  a.norm_toEnergySpaceₗ_le u
+/-- **Upper energy bound.** The energy norm is at most `√‖a.form‖` times the norm of `V`. -/
+theorem norm_toEnergySpace_le (u : V) : ‖a.toEnergySpace u‖ ≤ √‖a.form‖ * ‖u‖ := by
+  rw [toEnergySpace_apply]
+  exact a.norm_toEnergySpaceₗ_le u
 
-/-- **Lower energy bound.** If `c * ‖u‖ ^ 2 ≤ re (a u u)` for every `u`, then the energy norm is
-at least `√c` times the norm of `V`. -/
-theorem sqrt_mul_norm_le_norm_toEnergySpace {c : ℝ} (hcoer : ∀ u, c * ‖u‖ ^ 2 ≤ re (a.form u u))
-    (u : V) : √c * ‖u‖ ≤ ‖a.toEnergySpace u‖ :=
-  a.sqrt_mul_norm_le_norm_toEnergySpaceₗ hcoer u
+/-- **Lower energy bound.** If `c * ‖u‖ ^ 2 ≤ re (a.form u u)`, then the energy norm of `u` is
+at least `√c` times its norm in `V`. -/
+theorem sqrt_mul_norm_le_norm_toEnergySpace {c : ℝ} (u : V)
+    (h : c * ‖u‖ ^ 2 ≤ re (a.form u u)) : √c * ‖u‖ ≤ ‖a.toEnergySpace u‖ := by
+  rw [toEnergySpace_apply]
+  exact a.sqrt_mul_norm_le_norm_toEnergySpaceₗ u h
 
-/-- The operator norm of `a.toEnergySpace` is at most `√‖a‖`. -/
+/-- The operator norm of `a.toEnergySpace` is at most `√‖a.form‖`. -/
 theorem opNorm_toEnergySpace_le : ‖(a.toEnergySpace : V →L[𝕜] a.EnergySpace)‖ ≤ √‖a.form‖ :=
   ContinuousLinearMap.opNorm_le_bound _ (Real.sqrt_nonneg _) a.norm_toEnergySpace_le
 
-/-- If `c * ‖u‖ ^ 2 ≤ re (a u u)` for every `u`, with `c > 0`, then the inverse of
+/-- If `c * ‖u‖ ^ 2 ≤ re (a.form u u)` for every `u`, with `c > 0`, then the inverse of
 `a.toEnergySpace` has operator norm at most `(√c)⁻¹`. -/
 theorem opNorm_toEnergySpace_symm_le {c : ℝ} (hc : 0 < c)
     (hcoer : ∀ u, c * ‖u‖ ^ 2 ≤ re (a.form u u)) :
     ‖(a.toEnergySpace.symm : a.EnergySpace →L[𝕜] V)‖ ≤ (√c)⁻¹ :=
-  ContinuousLinearMap.opNorm_le_bound _ (by positivity) (a.norm_toEnergySpaceₗ_symm_le hc hcoer)
+  ContinuousLinearMap.opNorm_le_bound _ (by positivity) fun x ↦ by
+    rw [ContinuousLinearEquiv.coe_coe, toEnergySpace_symm_apply]
+    exact a.norm_toEnergySpaceₗ_symm_le hc x (hcoer _)
 
 /-- The energy space of a coercive Hermitian form on a Banach space is a Hilbert space. -/
 instance [CompleteSpace V] : CompleteSpace a.EnergySpace :=
   (completeSpace_congr (e := a.toEnergySpace.toEquiv) a.toEnergySpace.isUniformEmbedding).mp
     inferInstance
+
+/-- **Variational equations through the Riesz map of the energy space.** On a Banach space `V`,
+`u` solves `a.form u v = ℓ v` for every `v` if and only if `a.toEnergySpace u` is the Riesz
+representative, in the energy space, of `ℓ` pulled back along `a.toEnergySpace.symm`. -/
+theorem toEnergySpace_eq_toDual_symm_iff [CompleteSpace V] (ℓ : StrongDual 𝕜 V) (u : V) :
+    a.toEnergySpace u = (InnerProductSpace.toDual 𝕜 a.EnergySpace).symm
+        (ℓ.comp (a.toEnergySpace.symm : a.EnergySpace →L[𝕜] V)) ↔
+      ∀ v, a.form u v = ℓ v := by
+  refine ⟨fun h v ↦ ?_, fun h ↦ ext_inner_right 𝕜 fun x ↦ ?_⟩
+  · simp [← inner_toEnergySpace, h, InnerProductSpace.toDual_symm_apply]
+  · obtain ⟨v, rfl⟩ := a.toEnergySpace.surjective x
+    simp [h, InnerProductSpace.toDual_symm_apply]
 
 /-! ### Comparison with the Lax–Milgram solution map -/
 
@@ -226,17 +250,15 @@ theorem isUnit_continuousLinearMapOfBilin :
   InnerProductSpace.isUnit_continuousLinearMapOfBilin_of_coercive a.form hc hcoer
 
 /-- **The Lax–Milgram solution is a Riesz representative.** On a Hilbert space `V`, the solution
-`u` of `a u v = ℓ v` for every `v` is, in the energy space, the Riesz representative of `ℓ`. -/
+`u` of `a.form u v = ℓ v` for every `v` is mapped by `a.toEnergySpace` to the Riesz
+representative, in the energy space, of `ℓ` pulled back along `a.toEnergySpace.symm`. -/
 theorem toEnergySpace_solutionOfFunctional (ℓ : StrongDual 𝕜 V) :
     a.toEnergySpace
         (InnerProductSpace.solutionOfFunctional a.form a.isUnit_continuousLinearMapOfBilin ℓ) =
       (InnerProductSpace.toDual 𝕜 a.EnergySpace).symm
-        (ℓ.comp (a.toEnergySpace.symm : a.EnergySpace →L[𝕜] V)) := by
-  refine ext_inner_right 𝕜 fun x ↦ ?_
-  rw [InnerProductSpace.toDual_symm_apply, ← a.toEnergySpace.apply_symm_apply x,
-    inner_toEnergySpace, InnerProductSpace.apply_solutionOfFunctional_eq,
-    ContinuousLinearMap.comp_apply, ContinuousLinearEquiv.coe_coe,
-    ContinuousLinearEquiv.symm_apply_apply]
+        (ℓ.comp (a.toEnergySpace.symm : a.EnergySpace →L[𝕜] V)) :=
+  (a.toEnergySpace_eq_toDual_symm_iff ℓ _).mpr
+    (InnerProductSpace.apply_solutionOfFunctional_eq a.form _ ℓ)
 
 end LaxMilgram
 
