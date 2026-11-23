@@ -28,7 +28,7 @@ their continued `L`-functions, meromorphic orders, divisors, and zero counts:
   `LFunction_toDirichletCharacter_ratDirichletEquiv_symm` and
   `LFunction_toDirichletCharacter_ofDirichletCharacter` identify
   `((ratDirichletEquiv N _).symm χ).toDirichletCharacter.LFunction` with `χ.LFunction` and
-  `(ofDirichletCharacter χ).character.toDirichletCharacter.LFunction` with
+  `(ofDirichletCharacter χ).toDirichletCharacter.LFunction` with
   `χ.primitiveCharacter.LFunction`.
 
 ## Main results
@@ -141,18 +141,16 @@ theorem LFunction_toDirichletCharacter_ratDirichletEquiv_symm {N : ℕ} [NeZero 
       MulEquiv.apply_symm_apply])
 
 /-- For any complex Dirichlet character `χ` (primitive or imprimitive), the Dirichlet `L`-function
-of `(PrimitiveRayClassCharacter.ofDirichletCharacter χ).character` is
+of `PrimitiveRayClassCharacter.ofDirichletCharacter χ` is
 `χ.primitiveCharacter.LFunction`. -/
 @[simp]
 theorem LFunction_toDirichletCharacter_ofDirichletCharacter {N : ℕ} [NeZero N]
     (χ : DirichletCharacter ℂ N) :
-    (PrimitiveRayClassCharacter.ofDirichletCharacter χ).character.toDirichletCharacter.LFunction =
+    (PrimitiveRayClassCharacter.ofDirichletCharacter χ).toDirichletCharacter.LFunction =
       χ.primitiveCharacter.LFunction :=
   LFunction_eq_of_changeLevel_eq
     (PrimitiveRayClassCharacter.absNorm_conductor_ofDirichletCharacter χ)
-    (by
-      rw [← PrimitiveRayClassCharacter.toDirichletCharacter_def]
-      exact PrimitiveRayClassCharacter.changeLevel_toDirichletCharacter_ofDirichletCharacter χ)
+    (PrimitiveRayClassCharacter.changeLevel_toDirichletCharacter_ofDirichletCharacter χ)
 
 /-- **At every complex point `s`, `heckeLFunctionC ((ratDirichletEquiv N _).symm χ)` has the same
 punctured germ as `χ.LFunction`.** -/

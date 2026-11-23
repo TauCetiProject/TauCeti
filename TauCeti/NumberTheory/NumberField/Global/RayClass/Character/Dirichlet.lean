@@ -462,9 +462,9 @@ theorem isPrimitive_iff_of_infinitePart_ne_empty (h : 𝔪.infinitePart ≠ ∅)
   refine ⟨fun hinf h0 ↦ h (hinf ▸ h0), fun hne ↦ ?_⟩
   obtain ⟨w, hw⟩ := Finset.ne_empty_iff_nonempty.mp hne
   obtain ⟨v, hv⟩ := Finset.ne_empty_iff_nonempty.mp h
-  ext u
-  exact ⟨fun _ ↦ Subtype.ext (Subsingleton.elim u.val v.val) ▸ hv,
-    fun _ ↦ Subtype.ext (Subsingleton.elim u.val w.val) ▸ hw⟩
+  rw [Finset.coe_eq_singleton.mp (Set.subsingleton_of_subsingleton.eq_singleton_of_mem hw),
+    Finset.coe_eq_singleton.mp (Set.subsingleton_of_subsingleton.eq_singleton_of_mem hv),
+    Subsingleton.elim w v]
 
 end ArbitraryModulus
 

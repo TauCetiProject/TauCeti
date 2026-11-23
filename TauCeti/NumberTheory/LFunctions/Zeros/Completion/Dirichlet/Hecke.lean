@@ -52,7 +52,7 @@ theorem zeroCount_dirichletData_entireCompletion_eq_heckeLFunctionC_inter
       zeroCount (heckeLFunctionC ψ.character) univ (R ∩ {s | s.re ∈ Ioo 0 1}) := by
   rw [zeroCount_dirichletData_entireCompletion_eq_LFunction_inter
       ψ.toDirichletCharacter ψ.isPrimitive_toDirichletCharacter R,
-    PrimitiveRayClassCharacter.toDirichletCharacter_def, ← zeroCount_heckeLFunctionC_eq_LFunction]
+    ← zeroCount_heckeLFunctionC_eq_LFunction]
 
 /-- **For every primitive Dirichlet character `χ` (including the principal character mod `1`), the
 zero count of `(dirichletData χ hχ).entireCompletion` on `R` equals the zero count of the Hecke

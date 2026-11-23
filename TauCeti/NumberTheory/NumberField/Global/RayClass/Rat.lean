@@ -519,9 +519,7 @@ theorem eq_ratModulus_of_infinitePart_ne_empty {𝔪 : Modulus ℚ}
     𝔪 = ratModulus (Ideal.absNorm 𝔪.finitePart) (NeZero.ne _) := by
   refine Modulus.ext (Rat.RingOfIntegers.ideal_span_absNorm_eq_self 𝔪.finitePart).symm ?_
   obtain ⟨w, hw⟩ := Finset.ne_empty_iff_nonempty.mp h
-  ext v
-  simp only [ratModulus_infinitePart, Finset.mem_singleton]
-  exact ⟨fun _ ↦ Subtype.ext (Subsingleton.elim _ _),
-    fun _ ↦ Subtype.ext (Subsingleton.elim v.val w.val) ▸ hw⟩
+  rw [ratModulus_infinitePart, Subsingleton.elim ⟨Rat.infinitePlace, Rat.isReal_infinitePlace⟩ w]
+  exact Finset.coe_eq_singleton.mp (Set.subsingleton_of_subsingleton.eq_singleton_of_mem hw)
 
 end TauCeti.GlobalNumberFields

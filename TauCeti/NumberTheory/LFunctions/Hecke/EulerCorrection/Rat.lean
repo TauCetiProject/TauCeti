@@ -96,8 +96,7 @@ theorem eulerCorrection_character_of {𝔪 : Modulus ℚ} (η : RayClassCharacte
           η.toDirichletCharacter.conductor.primeFactors,
         (1 - η.toDirichletCharacter.primitiveCharacter p * (p : ℂ) ^ (-s)) := by
   rw [RayClassCharacter.eulerCorrection_eq_prod_sdiff_primeFactors]
-  refine Finset.prod_congr ?_ fun p _ ↦ by
-    rw [← toDirichletCharacter_def, toDirichletCharacter_of_natCast]
+  refine Finset.prod_congr ?_ fun p _ ↦ by simp only [toDirichletCharacter_of_natCast]
   rw [conductor_of, ← RayClassCharacter.conductor_toDirichletCharacter]
 
 /-- For `χ : DirichletCharacter ℂ N`, the deleted Euler correction from `ofDirichletCharacter χ`
@@ -110,7 +109,7 @@ theorem eulerCorrection_ofDirichletCharacter {N : ℕ} [NeZero N] (χ : Dirichle
         (1 - χ.primitiveCharacter p * (p : ℂ) ^ (-s)) := by
   rw [RayClassCharacter.eulerCorrection_eq_prod_sdiff_primeFactors]
   refine Finset.prod_congr ?_ fun p _ ↦ by
-    rw [← toDirichletCharacter_def, toDirichletCharacter_ofDirichletCharacter_natCast]
+    simp only [toDirichletCharacter_ofDirichletCharacter_natCast]
   rw [absNorm_ratModulus_finitePart, absNorm_conductor_ofDirichletCharacter]
 
 end LFunctions.PrimitiveRayClassCharacter

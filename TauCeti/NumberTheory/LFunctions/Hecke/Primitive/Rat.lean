@@ -46,7 +46,7 @@ open GlobalNumberFields
 
 /-- **The primitive Dirichlet character attached to a bundled primitive ray class character of
 `ℚ`**, of level `Ideal.absNorm ψ.conductor.finitePart`. -/
-def toDirichletCharacter (ψ : PrimitiveRayClassCharacter ℚ) :
+abbrev toDirichletCharacter (ψ : PrimitiveRayClassCharacter ℚ) :
     DirichletCharacter ℂ (Ideal.absNorm ψ.conductor.finitePart) :=
   ψ.character.toDirichletCharacter
 
@@ -59,7 +59,6 @@ theorem isPrimitive_toDirichletCharacter (ψ : PrimitiveRayClassCharacter ℚ) :
   rw [DirichletCharacter.isPrimitive_def, toDirichletCharacter_def,
     RayClassCharacter.conductor_toDirichletCharacter, ψ.conductor_character]
 
-@[simp]
 theorem toDirichletCharacter_eq_one_iff (ψ : PrimitiveRayClassCharacter ℚ) :
     ψ.toDirichletCharacter = 1 ↔ ψ = 1 := by
   refine ⟨fun h ↦ ?_, fun h ↦ h ▸ map_one _⟩
@@ -136,7 +135,6 @@ theorem ofDirichletCharacter_toDirichletCharacter {𝔪 : Modulus ℚ} (η : Ray
   rw [ofDirichletCharacter_def, RayClassCharacter.toDirichletCharacter_def,
     MulEquiv.symm_apply_apply, of_induced]
 
-@[simp]
 theorem ofDirichletCharacter_primitive_toDirichletCharacter (ψ : PrimitiveRayClassCharacter ℚ) :
     ofDirichletCharacter ψ.toDirichletCharacter = ψ := by
   rw [toDirichletCharacter_def, ofDirichletCharacter_toDirichletCharacter, of_character]
