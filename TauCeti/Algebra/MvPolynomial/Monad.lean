@@ -18,6 +18,8 @@ after a change of generators of a finitely generated algebra.
 
 * `MvPolynomial.totalDegree_bind₁_le`: if every `f i` has total degree at most `D`, then
   `aeval f p` has total degree at most `p.totalDegree * D`.
+* `MvPolynomial.eval_aeval`, `MvPolynomial.exists_eval_comp`: evaluating an `aeval`-substituted
+  polynomial and closure of polynomial-witnessed maps under composition.
 -/
 
 public section
@@ -42,5 +44,24 @@ theorem totalDegree_bind₁_le {f : σ → MvPolynomial τ R} {D : ℕ}
         Finset.sum_le_sum fun i _ ↦ (totalDegree_pow _ _).trans (Nat.mul_le_mul_left _ (hf i))
     _ = (s.sum fun _ e ↦ e) * D := by rw [Finsupp.sum, Finset.sum_mul]
     _ ≤ p.totalDegree * D := Nat.mul_le_mul_right _ (le_totalDegree hs)
+
+/-- Evaluating an `aeval`-substituted polynomial at `w` evaluates the outer polynomial at the
+evaluations of the substituted polynomials at `w`. -/
+theorem eval_aeval (w : σ → R) (Q : τ → MvPolynomial σ R) (P : MvPolynomial τ R) :
+    eval w (aeval Q P) = eval (fun k ↦ eval w (Q k)) P := by
+  simpa [aeval_eq_eval] using comp_aeval_apply Q (aeval w) P
+
+/-- **Composition of polynomial-witnessed maps.** If `Φ : (τ → R) → R` is given by a multivariate
+polynomial and every coordinate of `Ψ : (σ → R) → τ → R` is given by a multivariate polynomial,
+then `fun w ↦ Φ (Ψ w)` is given by a multivariate polynomial. -/
+theorem exists_eval_comp {Φ : (τ → R) → R} {Ψ : (σ → R) → τ → R}
+    (hΦ : ∃ P : MvPolynomial τ R, ∀ y, Φ y = eval y P)
+    (hΨ : ∀ k, ∃ Q : MvPolynomial σ R, ∀ w, Ψ w k = eval w Q) :
+    ∃ P : MvPolynomial σ R, ∀ w, Φ (Ψ w) = eval w P := by
+  choose Q hQ using hΨ
+  obtain ⟨P, hP⟩ := hΦ
+  refine ⟨aeval Q P, fun w ↦ ?_⟩
+  rw [hP (Ψ w), eval_aeval]
+  exact congrArg (fun x ↦ eval x P) (funext fun k ↦ hQ k w)
 
 end MvPolynomial

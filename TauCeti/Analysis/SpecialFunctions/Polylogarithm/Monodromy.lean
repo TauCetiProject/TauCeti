@@ -16,6 +16,7 @@ import Mathlib.Analysis.Complex.HasPrimitives
 import Mathlib.Analysis.Complex.RemovableSingularity
 import Mathlib.Analysis.SpecialFunctions.Complex.Analytic
 import Mathlib.Analysis.SpecialFunctions.Complex.LogDeriv
+import TauCeti.Algebra.MvPolynomial.Monad
 import TauCeti.Analysis.Complex.Conformal.Continuation.Log
 import TauCeti.Analysis.Complex.SlitPlane
 import TauCeti.GroupTheory.GroupAction.Closure
@@ -146,14 +147,6 @@ theorem exists_mvPolynomial_polylogMonodromy (N : ℕ)
     ∃ P : MvPolynomial (Fin (N + 1)) ℂ, ∀ w, polylogMonodromy N g w i = MvPolynomial.eval w P := by
   let HasPoly (Φ : (Fin (N + 1) → ℂ) → Fin (N + 1) → ℂ) : Prop :=
     ∀ j, ∃ P : MvPolynomial (Fin (N + 1)) ℂ, ∀ w, Φ w j = MvPolynomial.eval w P
-  have hcomp : ∀ {Φ Ψ}, HasPoly Φ → HasPoly Ψ → HasPoly (Φ ∘ Ψ) := fun {Φ Ψ} hΦ hΨ j => by
-    choose Q hQ using hΨ; obtain ⟨P, hP⟩ := hΦ j; refine ⟨MvPolynomial.aeval Q P, fun w => ?_⟩
-    have hQw : (fun k => MvPolynomial.eval w (Q k)) = Ψ w := funext fun k => (hQ k w).symm
-    simp only [MvPolynomial.eval] at hQw hP ⊢
-    have hcomp_id : (MvPolynomial.eval₂Hom (RingHom.id ℂ) w).comp
-        (algebraMap ℂ (MvPolynomial (Fin (N + 1)) ℂ)) = RingHom.id ℂ := by
-      ext c; simp
-    rw [Function.comp_apply, hP, MvPolynomial.map_aeval, hcomp_id, hQw]
   refine Subgroup.closure_induction'' (p := fun x _ => HasPoly (polylogMonodromy N x))
     (by rintro _ (rfl | rfl) <;>
           simp only [polylogMonodromy_periph0_eq, polylogMonodromy_periph1_eq]
@@ -162,7 +155,9 @@ theorem exists_mvPolynomial_polylogMonodromy (N : ℕ)
           simp only [polylogMonodromy_periph0_inv_eq, polylogMonodromy_periph1_inv_eq]
         exacts [exists_mvPolynomial_shiftLog N _, exists_mvPolynomial_shiftPolylog N _])
     (fun j => ⟨MvPolynomial.X j, by simp⟩)
-    (fun _ _ _ _ ihx ihy => by simpa [MonoidHom.map_mul, Equiv.Perm.coe_mul] using hcomp ihx ihy)
+    (fun _ _ _ _ ihx ihy j => by
+      simpa [MonoidHom.map_mul, Equiv.Perm.coe_mul] using
+        MvPolynomial.exists_eval_comp (ihx j) ihy)
     (closure_periph0_periph1 ▸ Subgroup.mem_top g) i
 
 /-- Pointwise complex analyticity of `polylogMonodromy N g` at `w`. -/
@@ -295,13 +290,10 @@ private theorem exists_isAnalyticContinuationAlong_li1_γ1 :
     ∃ f : I → ℂ → ℂ, IsAnalyticContinuationAlong f (fun t => (γ1 t : ℂ)) univ ∧
       f 0 = polylog 1 ∧ ∀ z, f 1 z = polylog 1 z - 2 * Real.pi * Complex.I := by
   obtain ⟨l, hl, hl0, hl1⟩ := exists_isAnalyticContinuationAlong_log_γ0
-  refine ⟨fun t z => -l t (1 - z), ⟨(continuous_subtypeVal.comp γ1.continuous).continuousOn,
-    fun t _ => (((one_sub_coe_γ1 t).symm ▸ hl.analyticAt t (mem_univ t)).comp
-      (analyticAt_const.sub analyticAt_id)).neg, fun t _ => ?_⟩, ?_, fun z => ?_⟩
-  · filter_upwards [hl.locallyEq t (mem_univ t)] with u hu
-    have hcont : ContinuousAt (fun z : ℂ => 1 - z) (γ1 u : ℂ) :=
-      continuousAt_const.sub continuousAt_id
-    filter_upwards [hcont.eventually ((one_sub_coe_γ1 u).symm ▸ hu)] with z hz; simp [hz]
+  refine ⟨fun t z => -l t (1 - z),
+    ((hl.congr_path fun t _ => one_sub_coe_γ1 t).comp_analyticAt
+      (continuous_subtypeVal.comp γ1.continuous).continuousOn
+      fun _ _ => analyticAt_const.sub analyticAt_id).neg, ?_, fun z => ?_⟩
   · ext z; simp [hl0]
   · simp [hl1]; ring
 

@@ -12,6 +12,7 @@ import Mathlib.Analysis.Calculus.MeanValue
 import Mathlib.Analysis.Complex.HasPrimitives
 import Mathlib.Analysis.SpecialFunctions.Complex.Analytic
 import Mathlib.Analysis.SpecialFunctions.Complex.LogDeriv
+import TauCeti.Analysis.Complex.BranchLogRoot
 import TauCeti.Analysis.Complex.SlitPlane
 import TauCeti.Analysis.SpecialFunctions.Exp.Periodic
 
@@ -270,20 +271,12 @@ end IsPolylogTowerGerm
 private theorem exists_analyticOnNhd_ball_zero {w : ℂ} {r : ℝ} (h0 : 0 ∉ ball w r) (c₀ : ℂ)
     (hexp₀ : Complex.exp c₀ = w) : ∃ G : ℂ → Fin 1 → ℂ, AnalyticOnNhd ℂ G (ball w r) ∧
       G w = (fun _ => c₀) ∧ ∀ z ∈ ball w r, IsPolylogTowerGerm 0 G z := by
-  have hw0 : w ≠ 0 := hexp₀ ▸ Complex.exp_ne_zero c₀
-  have hrw : r ≤ ‖w‖ := by simpa [mem_ball, dist_zero_left] using h0
-  have hslit : ∀ z ∈ ball w r, z / w ∈ Complex.slitPlane := fun z hz =>
-    Complex.ball_one_subset_slitPlane <| by
-      rw [mem_ball, dist_eq_norm, div_sub_one hw0, norm_div, div_lt_one (norm_pos_iff.mpr hw0)]
-      exact (by simpa [mem_ball, dist_eq_norm] using hz : ‖z - w‖ < r).trans_le hrw
-  let G : ℂ → Fin 1 → ℂ := fun z _ => c₀ + Complex.log (z / w)
-  have hGan : AnalyticOnNhd ℂ G (ball w r) := fun z hz => AnalyticAt.pi fun _ =>
-    analyticAt_const.add ((analyticAt_id.div analyticAt_const hw0).clog (hslit z hz))
-  have hexp : ∀ z ∈ ball w r, Complex.exp (G z 0) = z := fun z hz => by
-    rw [Complex.exp_add, hexp₀, Complex.exp_log (div_ne_zero (fun h => h0 (h ▸ hz)) hw0),
-      mul_div_cancel₀ _ hw0]
-  refine ⟨G, hGan, by ext i; fin_cases i; simp [G, div_self hw0],
-    fun z hz => ⟨hGan z hz, eventually_of_mem (isOpen_ball.mem_nhds hz) hexp, fun i => i.elim0⟩⟩
+  obtain ⟨L, hLan, hLw, hLexp⟩ := analyticOnNhd_id.exists_eqOn_exp_comp_ball
+    (fun z hz h => h0 (h ▸ hz)) hexp₀
+  let G : ℂ → Fin 1 → ℂ := fun z _ => L z
+  have hGan : AnalyticOnNhd ℂ G (ball w r) := fun z hz => AnalyticAt.pi fun _ => hLan z hz
+  refine ⟨G, hGan, by ext i; simp [G, hLw], fun z hz =>
+    ⟨hGan z hz, eventually_of_mem (isOpen_ball.mem_nhds hz) fun _ hu => hLexp hu, fun i => i.elim0⟩⟩
 
 private theorem exists_analyticOnNhd_ball_succ {M : ℕ} {w : ℂ} {r : ℝ} (h0 : 0 ∉ ball w r)
     (h1 : 1 ∉ ball w r) {G' : ℂ → Fin (M + 1) → ℂ} (hG'an : AnalyticOnNhd ℂ G' (ball w r))

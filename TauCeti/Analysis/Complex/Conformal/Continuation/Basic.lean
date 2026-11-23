@@ -123,8 +123,9 @@ the abstract theorem to it.
   **closed** parameter sets, and an initial-segment continuation extends across `[t₁, t₂]` by any
   continuation over `[t₁, t₂]` matching its terminal germ.
 * `TauCeti.IsAnalyticContinuationAlong.deriv`, `.add`, `.mul`, `.neg`, `.sub`, `.pow`,
-  `.analyticAt_comp`, `.eval`, `.pi`, `.castLE` — continuations are closed under the germ-wise
-  operations, analytic post-composition, and finite-product projection, assembly, and truncation.
+  `.analyticAt_comp`, `.comp_analyticAt`, `.eval`, `.pi`, `.castLE` — continuations are closed
+  under the germ-wise operations, analytic post- and pre-composition, and finite-product projection,
+  assembly, and truncation.
 * `TauCeti.IsAnalyticContinuationAlong.reparam` — a continuation transports along any
   reparametrisation of the path by a continuous map into its parameter set, of which restriction
   to a smaller parameter set (`TauCeti.IsAnalyticContinuationAlong.mono`) is the identity case.
@@ -137,9 +138,10 @@ the abstract theorem to it.
   `TauCeti.continuesAlong_iff_exists`, `TauCeti.ContinuesInside.continuesAlong` and
   `TauCeti.ContinuesInside.of_forall`.
 * `TauCeti.ContinuesAlong.add`, `.mul`, `.neg`, `.sub`, `.pow`, `.deriv`,
-  `.analyticOnNhd_univ_comp`, `.eval`, `.pi` and their `TauCeti.ContinuesInside` counterparts —
-  continuability of a germ is inherited by sums, products, differences, powers, derivatives,
-  entire post-composition, and finite products.
+  `.analyticOnNhd_univ_comp`, `.comp_analyticAt`, `.eval`, `.pi`, `.castLE` and their
+  `TauCeti.ContinuesInside` counterparts (with `.comp_analyticOnNhd`) — continuability of a germ
+  is inherited by sums, products, differences, powers, derivatives, analytic post- and
+  pre-composition, and finite-product projection, assembly, and truncation.
 
 ## References
 
@@ -391,6 +393,18 @@ theorem analyticAt_comp {F : Type*} [NormedAddCommGroup F] [NormedSpace ℂ F]
   analyticAt t ht := (hΦ t ht).comp (hf.analyticAt t ht)
   locallyEq t ht := (hf.locallyEq t ht).mono fun _ hu => hu.fun_comp Φ
 
+/-- **Continuations pull back along analytic argument maps.** Precomposing each carried function
+`f t` with a map `ψ : ℂ → ℂ` analytic at `γ t` turns a continuation along `ψ ∘ γ` into a
+continuation along `γ`. -/
+theorem comp_analyticAt {ψ : ℂ → ℂ} (hf : IsAnalyticContinuationAlong f (ψ ∘ γ) s)
+    (hγ : ContinuousOn γ s) (hψ : ∀ t ∈ s, AnalyticAt ℂ ψ (γ t)) :
+    IsAnalyticContinuationAlong (fun t z => f t (ψ z)) γ s where
+  continuousOn := hγ
+  analyticAt t ht := (hf.analyticAt t ht).comp (f := ψ) (hψ t ht)
+  locallyEq t ht := by
+    filter_upwards [hf.locallyEq t ht, self_mem_nhdsWithin] with u hu hus
+    exact (hψ u hus).continuousAt.eventually hu
+
 /-- Evaluating a finite-product continuation at coordinate `i` yields a continuation. -/
 theorem eval {ι : Type*} [Fintype ι] {F : ι → Type*}
     [∀ i, NormedAddCommGroup (F i)] [∀ i, NormedSpace ℂ (F i)]
@@ -569,6 +583,14 @@ theorem analyticOnNhd_univ_comp {F : Type*} [NormedAddCommGroup F] [NormedSpace 
   let ⟨f, hf, hf0⟩ := h
   ⟨fun t z => Φ (f t z), hf.analyticAt_comp fun _ _ => hΦ _ (Set.mem_univ _), hf0.fun_comp Φ⟩
 
+/-- Pulling back a continuable germ along an argument map analytic at the path points preserves
+`ContinuesAlong`. -/
+theorem comp_analyticAt {ψ : ℂ → ℂ} (h : ContinuesAlong f₀ (ψ ∘ c)) (hc : Continuous c)
+    (hψ : ∀ x, AnalyticAt ℂ ψ (c x)) : ContinuesAlong (f₀ ∘ ψ) c :=
+  let ⟨f, hf, hf0⟩ := h
+  ⟨fun t z => f t (ψ z), hf.comp_analyticAt hc.continuousOn fun t _ => hψ t,
+    (hψ 0).continuousAt.eventually hf0⟩
+
 /-- Evaluating a finite-product-valued germ at coordinate `i` preserves continuability along `c`. -/
 theorem eval {ι : Type*} [Fintype ι] {F : ι → Type*}
     [∀ i, NormedAddCommGroup (F i)] [∀ i, NormedSpace ℂ (F i)]
@@ -584,6 +606,16 @@ theorem pi {ι : Type*} [Fintype ι] {F : ι → Type*}
   choose f hf hf0 using h
   exact ⟨fun t z i => f i t z, .pi hc.continuousOn hf,
     (eventually_all.mpr hf0).mono fun _ hz => funext hz⟩
+
+/-- Truncating a `Fin n`-indexed continuable germ along `Fin.castLE h` preserves
+`ContinuesAlong`. -/
+theorem castLE {m n : ℕ} (h : m ≤ n) {F : Fin n → Type*}
+    [∀ i, NormedAddCommGroup (F i)] [∀ i, NormedSpace ℂ (F i)]
+    {f₀ : ℂ → ∀ i, F i} (hf₀ : ContinuesAlong f₀ c) :
+    ContinuesAlong (fun z (i : Fin m) => f₀ z (Fin.castLE h i)) c :=
+  let ⟨f, hf, hf0⟩ := hf₀
+  ⟨fun t z i => f t z (Fin.castLE h i), hf.castLE h,
+    hf0.mono fun _ hz => funext fun i => congrFun hz (Fin.castLE h i)⟩
 
 end ContinuesAlong
 
@@ -682,6 +714,15 @@ theorem analyticOnNhd_univ_comp {F : Type*} [NormedAddCommGroup F] [NormedSpace 
     ContinuesInside (Φ ∘ f₀) U z₀ :=
   of_forall fun _ hc hcU hc0 => (H.continuesAlong hc hcU hc0).analyticOnNhd_univ_comp hΦ
 
+/-- Pulling back a germ continuing in `V` along a map `ψ : ℂ → ℂ` analytic on `U` and mapping `U`
+into `V` preserves `ContinuesInside`. -/
+theorem comp_analyticOnNhd {V : Set ℂ} {ψ : ℂ → ℂ} (H : ContinuesInside f₀ V (ψ z₀))
+    (hψ : AnalyticOnNhd ℂ ψ U) (hmaps : Set.MapsTo ψ U V) :
+    ContinuesInside (f₀ ∘ ψ) U z₀ :=
+  of_forall fun _ hc hcU hc0 =>
+    (H.continuesAlong (hψ.continuousOn.comp_continuous hc hcU) (fun x => hmaps (hcU x))
+      (hc0 ▸ rfl)).comp_analyticAt hc fun x => hψ _ (hcU x)
+
 /-- Evaluating a finite-product-valued germ at coordinate `i` preserves `ContinuesInside`. -/
 theorem eval {ι : Type*} [Fintype ι] {F : ι → Type*}
     [∀ i, NormedAddCommGroup (F i)] [∀ i, NormedSpace ℂ (F i)]
@@ -695,6 +736,14 @@ theorem pi {ι : Type*} [Fintype ι] {F : ι → Type*}
     {f₀ : ℂ → ∀ i, F i} (H : ∀ i, ContinuesInside (fun z => f₀ z i) U z₀) :
     ContinuesInside f₀ U z₀ :=
   of_forall fun _ hc hcU hc0 => .pi hc fun i => (H i).continuesAlong hc hcU hc0
+
+/-- Truncating a `Fin n`-indexed continuable germ along `Fin.castLE h` preserves
+`ContinuesInside`. -/
+theorem castLE {m n : ℕ} (h : m ≤ n) {F : Fin n → Type*}
+    [∀ i, NormedAddCommGroup (F i)] [∀ i, NormedSpace ℂ (F i)]
+    {f₀ : ℂ → ∀ i, F i} (H : ContinuesInside f₀ U z₀) :
+    ContinuesInside (fun z (i : Fin m) => f₀ z (Fin.castLE h i)) U z₀ :=
+  of_forall fun _ hc hcU hc0 => (H.continuesAlong hc hcU hc0).castLE h
 
 end ContinuesInside
 
