@@ -107,7 +107,7 @@ theorem twistedCubicalChainConstantEquiv_comp_ofCube {n : ℕ} (c : SingularCube
 theorem twistedCubicalChainConstantEquiv_boundary (n : ℕ) :
     (twistedCubicalChainConstantEquiv R X n).toLinearMap ∘ₗ
         TwistedCubicalChain.boundary ((constantFunctor X).obj (ModuleCat.of R R)) n =
-      CubicalChain.boundary X R n ∘ₗ
+      CubicalChain.boundary X R R n ∘ₗ
         (twistedCubicalChainConstantEquiv R X (n + 1)).toLinearMap := by
   refine TwistedCubicalChain.hom_ext fun c ↦ LinearMap.ext fun a ↦ ?_
   simp only [LinearMap.coe_comp, Function.comp_apply, LinearEquiv.coe_coe,

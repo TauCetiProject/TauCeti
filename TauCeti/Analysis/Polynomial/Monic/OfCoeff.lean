@@ -7,10 +7,12 @@ module
 
 public import TauCeti.RingTheory.Polynomial.Monic.OfCoeff
 public import Mathlib.Analysis.Polynomial.CauchyBound
+public import Mathlib.Analysis.Calculus.ContDiff.Operations
+public import Mathlib.Algebra.Polynomial.Derivative
 import Mathlib.Analysis.Normed.Group.Constructions
 
 /-!
-# A root bound in monic coefficient coordinates
+# A root bound and smooth coefficients in monic coefficient coordinates
 
 A root of `TauCeti.Polynomial.monicOfCoeff c` has norm strictly less than
 `‖c‖ + 1`. Thus locally bounded coefficient tuples give locally bounded roots,
@@ -19,6 +21,11 @@ singularities of analytic root branches.
 
 The estimate specializes Mathlib's `Polynomial.IsRoot.norm_lt_cauchyBound`
 (Daniel Weber's formalization of Cauchy's root bound) to the finite coefficient tuple.
+
+Over a nontrivially normed field, every coefficient of `monicOfCoeff c` and of its derivative is
+a smooth function of `c` (`TauCeti.Polynomial.contDiff_coeff_monicOfCoeff`,
+`TauCeti.Polynomial.contDiff_coeff_derivative_monicOfCoeff`): it is a coordinate of `c`, the
+constant `1` or `0`, or such a coordinate times a constant.
 -/
 
 public section
@@ -52,5 +59,33 @@ theorem continuousOn_eval_monicOfCoeff {R B : Type*} [CommSemiring R]
   simp_rw [eval_monicOfCoeff]
   exact (hr.pow d).add (continuousOn_finsetSum _ fun i _ =>
     (continuousOn_pi.1 hc i).mul (hr.pow i.val))
+
+section ContDiff
+
+variable {𝕜 : Type*} [NontriviallyNormedField 𝕜] {d : ℕ} {n : WithTop ℕ∞}
+
+/-- Each coefficient of the monic polynomial with lower coefficients `c` depends smoothly on `c`. -/
+theorem contDiff_coeff_monicOfCoeff (k : ℕ) :
+    ContDiff 𝕜 n fun c : Fin d → 𝕜 ↦ (monicOfCoeff c).coeff k := by
+  rcases lt_trichotomy k d with hk | rfl | hk
+  · have h (c : Fin d → 𝕜) : (monicOfCoeff c).coeff k = c ⟨k, hk⟩ :=
+      coeff_monicOfCoeff c ⟨k, hk⟩
+    simp_rw [h]
+    exact contDiff_apply 𝕜 (fun _ : Fin d ↦ 𝕜) ⟨k, hk⟩
+  · simp_rw [coeff_monicOfCoeff_self]
+    exact contDiff_const
+  · have h (c : Fin d → 𝕜) : (monicOfCoeff c).coeff k = 0 :=
+      coeff_eq_zero_of_natDegree_lt (by rwa [natDegree_monicOfCoeff])
+    simp_rw [h]
+    exact contDiff_const
+
+/-- Each coefficient of the derivative of the monic polynomial with lower coefficients `c`
+depends smoothly on `c`. -/
+theorem contDiff_coeff_derivative_monicOfCoeff (k : ℕ) :
+    ContDiff 𝕜 n fun c : Fin d → 𝕜 ↦ (monicOfCoeff c).derivative.coeff k := by
+  simp_rw [coeff_derivative]
+  exact (contDiff_coeff_monicOfCoeff (k + 1)).mul contDiff_const
+
+end ContDiff
 
 end TauCeti.Polynomial

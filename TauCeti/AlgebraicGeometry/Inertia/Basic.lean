@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicGeometry.AffineScheme
+public import TauCeti.AlgebraicGeometry.AffineScheme.Basic
 public import TauCeti.AlgebraicGeometry.ResidueField
 
 /-!
@@ -136,8 +136,8 @@ residue field map of `σ g⁻¹`, which fixes `x`. On values of global functions
 `g • a = (σ g⁻¹)^*(a)` of `G` on `Γ(X, ⊤)` (`residueAction_Γevaluation`). -/
 noncomputable def residueAction (x : X) : decomposition σ x →* RingAut (X.residueField x) where
   toFun g :=
-    { toFun := residueFieldHom σ (inv_mem g.2)
-      invFun := residueFieldHom σ g.2
+    { toFun := residueFieldHom σ (inv_mem g.property)
+      invFun := residueFieldHom σ g.property
       left_inv a := by
         rw [← CommRingCat.comp_apply, residueFieldHom_inv_comp, CommRingCat.id_apply]
       right_inv a := by
@@ -157,12 +157,12 @@ noncomputable def residueAction (x : X) : decomposition σ x →* RingAut (X.res
 source `κ(σ g⁻¹ x)` identified with `κ(x)`. -/
 theorem residueAction_apply {x : X} (g : decomposition σ x) (a : X.residueField x) :
     residueAction σ x g a =
-      ((X.residueFieldCongr (mem_decomposition_iff.mp (inv_mem g.2))).inv ≫
+      ((X.residueFieldCongr (mem_decomposition_iff.mp (inv_mem g.property))).inv ≫
         (σ (g : G)⁻¹).asIso.hom.residueFieldMap x) a :=
   (rfl)
 
 private theorem residueAction_eq_one_iff {x : X} (g : decomposition σ x) :
-    residueAction σ x g = 1 ↔ residueFieldHom σ (inv_mem g.2) = 𝟙 _ := by
+    residueAction σ x g = 1 ↔ residueFieldHom σ (inv_mem g.property) = 𝟙 _ := by
   refine ⟨fun h ↦ ?_, fun h ↦ ?_⟩
   · ext a
     exact congr($h a)

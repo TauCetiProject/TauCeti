@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.InnerProductSpace.Calculus
 public import Mathlib.Analysis.InnerProductSpace.GramMatrix
+import TauCeti.Analysis.InnerProductSpace.Gram.ChangeOfFamily
 
 /-!
 # Gram determinants of pairs
@@ -17,8 +18,9 @@ The Gram determinant of two vectors, with inner products valued in a commutative
 denominator in the definition of sectional curvature.
 
 The results here specialize Mathlib's general Gram-matrix API to a pair, exposing the explicit
-formula without introducing a second notion of Gram determinant.  The real Gram determinant
-`‖u‖² ‖v‖² - ⟪u, v⟫²` of a pair is also differentiated as a function of the pair
+formula without introducing a second notion of Gram determinant, and record invariance of the
+`2 × 2` Gram matrix of a pair under linear isometries (`LinearIsometry.gram_pair`).  The real Gram
+determinant `‖u‖² ‖v‖² - ⟪u, v⟫²` of a pair is also differentiated as a function of the pair
 (`TauCeti.hasStrictFDerivAt_sq_sub_inner_sq`); in mechanics it is the squared angular momentum
 `ℓ² = ‖q‖² ‖p‖² - ⟪q, p⟫²` of a phase-space point `(q, p)`.  Replacing the pair by
 `(a q + b p, c q + d p)` multiplies it by `(a d - b c)²`
@@ -28,6 +30,20 @@ formula without introducing a second notion of Gram determinant.  The real Gram 
 public section
 
 open scoped InnerProductSpace Matrix
+
+namespace LinearIsometry
+
+variable {𝕜 E F : Type*} [RCLike 𝕜] [SeminormedAddCommGroup E] [InnerProductSpace 𝕜 E]
+  [SeminormedAddCommGroup F] [InnerProductSpace 𝕜 F] (l : E →ₗᵢ[𝕜] F)
+
+/-- A linear isometry preserves the `2 × 2` Gram matrix of a pair. -/
+@[simp]
+theorem gram_pair (u v : E) : Matrix.gram 𝕜 ![l u, l v] = Matrix.gram 𝕜 ![u, v] := by
+  have hcomp : (![l u, l v] : Fin 2 → F) = l ∘ ![u, v] :=
+    funext <| Fin.forall_fin_two.mpr ⟨rfl, rfl⟩
+  rw [hcomp, l.gram_comp]
+
+end LinearIsometry
 
 namespace Matrix
 

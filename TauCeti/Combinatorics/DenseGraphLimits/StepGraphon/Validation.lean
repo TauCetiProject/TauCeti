@@ -119,7 +119,7 @@ theorem fine_parts : fine.parts = {{0}, {1}, {2}} := by
   have hn : ({0}ᶜ : Set (Fin 3)) ≠ ∅ := Set.Nonempty.ne_empty ⟨1, by simp⟩
   rw [fine, Finpartition.parts_inf, coarse_parts, Finpartition.parts_bipartition]
   simp [Finset.product_eq_biUnion, h1, h02, Ne.symm hn,
-    Set.empty_ne_singleton, Finset.erase_insert_of_ne, Finset.insert_comm, Finset.pair_comm]
+    Finset.erase_insert_of_ne, Finset.insert_comm, Finset.pair_comm]
 
 private theorem stepGraphonAvg_adjacency_apply
     (P : Finpartition (univ : Set (Fin 3))) {p q : P.parts} {i j : Fin 3}

@@ -160,7 +160,7 @@ theorem add_mul_norm_le_norm_comp_add_comp {α β : ℝ}
   set S := (fun v ↦ ‖X v‖) '' Metric.sphere (0 : F) 1
   have hSup : sSup S = ‖X‖ := X.sSup_sphere_eq_norm
   have hne : S.Nonempty := by
-    refine Set.nonempty_iff_ne_empty.mpr fun h ↦ hX.ne ?_
+    refine Set.ne_empty_iff_nonempty.mp fun h ↦ hX.ne ?_
     rw [← hSup, h, Real.sSup_empty]
   have hbdd : BddAbove S := by
     refine ⟨‖X‖, ?_⟩

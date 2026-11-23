@@ -6,14 +6,16 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.TemperleyLieb.JonesWenzl
+public import TauCeti.Algebra.TemperleyLieb.NormalForm
 
 /-!
 # The single-clasp recursion
 
 The linear Jones–Wenzl recursion expands `f_(n+2)` as the included `f_(n+1)` multiplied by
-the sum of `1` and weighted descending generator words `e_n … e_i`. Thus every summand contains
-only one copy of the smaller projection, in contrast to Wenzl's quadratic recursion.
-This is the form used to compute coefficients by removing one cap at a time.
+the sum of `1` and weighted descending generator words `e_n … e_i`
+(`TauCeti.TemperleyLieb.descBlock`). Thus every summand contains only one copy of the smaller
+projection, in contrast to Wenzl's quadratic recursion. This is the form used to compute
+coefficients by removing one cap at a time.
 
 The coefficients are `(-1)^(n+1-i) [i+1] / [n+2]`, with zero-based generator indices.
 Division means `Ring.inverse`. Only `[1], …, [n+1]` need to be units for the identity;
@@ -32,55 +34,11 @@ public section
 
 namespace TauCeti.TemperleyLieb
 
-variable {R : Type*}
-
-section Words
-
-variable [CommSemiring R] (δ : R)
-
-/-- The descending generator word `e_n e_(n-1) … e_i` on `n + 2` strands. -/
-def descendingWord : (n : ℕ) → Fin (n + 1) → TemperleyLieb R δ (n + 2)
-  | 0, i => e δ i
-  | n + 1, i => Fin.lastCases (e δ (Fin.last (n + 1)))
-      (fun j ↦ e δ (Fin.last (n + 1)) * strandIncl (descendingWord n j)) i
-
-/-- On two strands the descending word is the only generator. -/
-@[simp]
-theorem descendingWord_zero : descendingWord δ 0 0 = e δ 0 := by
-  rw [descendingWord]
-
-/-- The descending word starting at the last generator has length one. -/
-@[simp]
-theorem descendingWord_last (n : ℕ) :
-    descendingWord δ n (Fin.last n) = e δ (Fin.last n) := by
-  cases n <;> simp [descendingWord]
-
-/-- A descending word starting before the last generator prepends that generator. -/
-@[simp]
-theorem descendingWord_castSucc (n : ℕ) (j : Fin (n + 1)) :
-    descendingWord δ (n + 1) j.castSucc =
-      e δ (Fin.last (n + 1)) * strandIncl (descendingWord δ n j) := by
-  simp [descendingWord]
-
-/-- A descending word either consists of its last generator, or prepends that generator
-to a descending word on one fewer strand. This equation applies to arbitrary indices,
-including indices written as numerals. -/
-theorem descendingWord_succ (n : ℕ) (i : Fin (n + 2)) :
-    descendingWord δ (n + 1) i =
-      if h : i = Fin.last (n + 1) then e δ i
-      else e δ (Fin.last (n + 1)) *
-        strandIncl (descendingWord δ n ⟨i.val, Fin.val_lt_last h⟩) := by
-  induction i using Fin.lastCases with
-  | last => simp [descendingWord]
-  | cast j => simp [descendingWord]
-
-end Words
-
-variable [CommRing R] {δ : R}
+variable {R : Type*} [CommRing R] {δ : R}
 
 private noncomputable def singleClaspSum (δ : R) (n : ℕ) : TemperleyLieb R δ (n + 2) :=
   ∑ i : Fin (n + 1), ((-1 : R) ^ (n + 1 - i.val) * qInt R δ (i.val + 1)) •
-    descendingWord δ n i
+    descBlock δ (Fin.last n) i
 
 private theorem singleClaspSum_zero : singleClaspSum δ 0 = -e δ 0 := by
   simp [singleClaspSum]
@@ -90,18 +48,21 @@ private theorem singleClaspSum_succ (n : ℕ) :
       -(qInt R δ (n + 2) • e δ (Fin.last (n + 1))) -
         e δ (Fin.last (n + 1)) * strandIncl (singleClaspSum δ n) := by
   rw [singleClaspSum, Fin.sum_univ_castSucc]
-  simp only [descendingWord_succ, Fin.castSucc_ne_last, dite_false, dite_true,
-    Fin.val_castSucc, Fin.val_last]
+  have hblock (i : Fin (n + 1)) :
+      descBlock (R := R) (n := n + 3) δ (Fin.last (n + 1)) i.castSucc =
+        e δ (Fin.last (n + 1)) * strandIncl (descBlock δ (Fin.last n) i) := by
+    rw [strandIncl_descBlock]
+    exact (e_mul_descBlock_of_succ_eq δ
+      (Fin.castSucc_le_castSucc_iff.2 (Fin.le_last i)) (by simp)).symm
   have hsign (i : Fin (n + 1)) :
       ((-1 : R) ^ (n + 1 + 1 - i.val) * qInt R δ (i.val + 1)) =
         -((-1 : R) ^ (n + 1 - i.val) * qInt R δ (i.val + 1)) := by
     have hi : n + 1 + 1 - i.val = (n + 1 - i.val) + 1 := by omega
     rw [hi, pow_succ]
     ring
-  simp_rw [hsign]
-  simp only [singleClaspSum, map_sum, map_smul, Finset.mul_sum, neg_smul,
-    Finset.sum_neg_distrib, mul_smul_comm, Nat.add_sub_cancel_left, pow_one,
-    neg_mul, one_mul]
+  simp only [descBlock_self, hblock, Fin.val_castSucc, Fin.val_last, hsign, singleClaspSum,
+    map_sum, map_smul, Finset.mul_sum, neg_smul, Finset.sum_neg_distrib, mul_smul_comm,
+    Nat.add_sub_cancel_left, pow_one, neg_mul, one_mul]
   abel
 
 private theorem jonesWenzl_add_two_eq_add_smul_aux :
@@ -157,7 +118,7 @@ theorem jonesWenzl_add_two_eq_strandIncl_mul (n : ℕ)
     jonesWenzl δ (n + 2) = strandIncl (jonesWenzl δ (n + 1)) *
       (1 + ∑ i : Fin (n + 1),
         ((-1 : R) ^ (n + 1 - i.val) * qInt R δ (i.val + 1) *
-          Ring.inverse (qInt R δ (n + 2))) • descendingWord δ n i) := by
+          Ring.inverse (qInt R δ (n + 2))) • descBlock δ (Fin.last n) i) := by
   rw [jonesWenzl_add_two_eq_add_smul_aux n h]
   simp only [singleClaspSum, mul_add, mul_one, Finset.mul_sum, Finset.smul_sum,
     mul_smul_comm, smul_smul]

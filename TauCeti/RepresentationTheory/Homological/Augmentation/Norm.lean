@@ -68,7 +68,7 @@ private theorem span_range_sumElim_eq_top {B : Rep ℤ Q}
     {s : Finset B}
     (hs : Submodule.span ℤ (s : Set B) = LinearMap.ker π.hom.toLinearMap) :
     Submodule.span (MonoidAlgebra ℤ Q)
-      (Set.range (Sum.elim x fun k : s ↦ B.ρ.asModuleEquiv.symm k.1)) = ⊤ := by
+      (Set.range (Sum.elim x fun k : s ↦ B.ρ.asModuleEquiv.symm k.val)) = ⊤ := by
   classical
   -- Use the associated module's scalar instance for the linear-equivalence transport.
   let : Module ℤ B.ρ.asModule := B.ρ.instModuleAsModule
@@ -106,7 +106,7 @@ private theorem span_range_sumElim_eq_top {B : Rep ℤ Q}
   have hmem := Submodule.mem_map_of_mem (f := B.ρ.asModuleEquiv.symm.toLinearMap) hm
   rw [Submodule.map_span] at hmem
   have hle : B.ρ.asModuleEquiv.symm '' (s : Set B) ⊆
-      Set.range (Sum.elim x fun k : s ↦ B.ρ.asModuleEquiv.symm k.1) := by
+      Set.range (Sum.elim x fun k : s ↦ B.ρ.asModuleEquiv.symm k.val) := by
     rintro _ ⟨y, hy, rfl⟩
     exact ⟨Sum.inr ⟨y, hy⟩, rfl⟩
   have hmem' := Submodule.span_le_restrictScalars ℤ (MonoidAlgebra ℤ Q) _ hmem
@@ -193,15 +193,15 @@ theorem norm_eq_zero_of_ker_le_coinvariantsKer [Fintype Q] (B : Rep ℤ Q)
     hπ.comp B.ρ.asModuleEquiv.surjective
   choose x hx using fun i ↦ hπM (singleSub ℤ Q 1 (σ i))
   simp only [Function.comp_apply] at hx
-  let b : ι ⊕ s → B.ρ.asModule := Sum.elim x fun k ↦ B.ρ.asModuleEquiv.symm k.1
+  let b : ι ⊕ s → B.ρ.asModule := Sum.elim x fun k ↦ B.ρ.asModuleEquiv.symm k.val
   let e : ι ⊕ s → MonoidAlgebra ℤ Q := Sum.elim (fun i ↦ (orderOf (σ i) : MonoidAlgebra ℤ Q)) 1
   have he (j : ι ⊕ s) :
       e j • b j ∈ RingHom.ker ε • (⊤ : Submodule (MonoidAlgebra ℤ Q) B.ρ.asModule) := by
     rcases j with i | k
     · exact orderOf_smul_mem_ker_augmentation_smul_top π hkerI (σ i) (hx i)
-    · have hk : π.hom k.1 = 0 :=
-        LinearMap.mem_ker.mp (hs ▸ Submodule.subset_span k.2)
-      simpa [e, b] using hkerI (B.ρ.asModuleEquiv.symm k.1) (by simpa using hk)
+    · have hk : π.hom k.val = 0 :=
+        LinearMap.mem_ker.mp (hs ▸ Submodule.subset_span k.property)
+      simpa [e, b] using hkerI (B.ρ.asModuleEquiv.symm k.val) (by simpa using hk)
   -- The determinant trick gives `γ ≡ ∏ ord(σ i) = |Q|` modulo `I` killing `B`.
   obtain ⟨γ, hγI, hγ⟩ := Submodule.exists_sub_prod_mem_and_smul_eq_zero (RingHom.ker ε)
     (span_range_sumElim_eq_top π hσ hx hs) e he
