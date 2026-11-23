@@ -9,7 +9,6 @@ public import Mathlib.Analysis.PSeries
 public import Mathlib.Analysis.SpecialFunctions.Gamma.Beta
 public import Mathlib.Analysis.SpecialFunctions.Log.Summable
 public import Mathlib.Analysis.SpecialFunctions.Trigonometric.DerivHyp
-import Mathlib.Analysis.SpecialFunctions.Trigonometric.Cotangent
 import TauCeti.Analysis.Complex.Basic
 
 /-!
@@ -29,16 +28,13 @@ monotonicity of `|Γ(x + iy)| / Γ(x)` in `x > 0`, and the values of `|Γ|²` on
   `0 < x ≤ x′`.
 * `Real.norm_Gamma_mul_I_sq`: `|Γ(iy)|² = π / (y sinh(πy))` (DLMF 5.4.3).
 * `TauCeti.norm_Gamma_one_add_mul_I_sq`: `|Γ(1 + iy)|² = πy / sinh(πy)` for `y ≠ 0`.
-* `TauCeti.hasProd_one_add_sq_div_succ_sq`: `∏_{k ≥ 1} (1 + y²/k²) = sinh(πy)/(πy)` for
-  `y ≠ 0`.
 
 ## Implementation notes
 
 The partial products of 5.8.3 are exactly `|GammaSeq x n / GammaSeq (x + iy) n|²`, so the
 product follows from Euler's limit `Complex.GammaSeq_tendsto_Gamma`. The values on vertical
 lines come from the reflection formula `Complex.Gamma_mul_Gamma_one_sub` and
-`Γ(conj z) = conj Γ(z)`. The product for `sinh(πy)/(πy)` is Euler's sine product
-`euler_sineTerm_tprod` at `z = iy`.
+`Γ(conj z) = conj Γ(z)`.
 
 The proofs of DLMF 5.8.3 and 5.4.3 are adapted from the lean-DLMF project
 (<https://github.com/bjbraams/lean-DLMF>), files `DLMF/Gamma/Products.lean` and
@@ -93,7 +89,7 @@ theorem hasProd_Gamma_norm_quotient {x : ℝ} (hx : ∀ n : ℕ, x ≠ -(n : ℝ
   have hlim : Tendsto (fun n : ℕ => ‖GammaSeq x n / GammaSeq (x + y * I) n‖ ^ 2)
       atTop (𝓝 (‖Gamma x / Gamma (x + y * I)‖ ^ 2)) :=
     (((GammaSeq_tendsto_Gamma _).div (GammaSeq_tendsto_Gamma _)
-      (Gamma_ne_zero (ofReal_add_mul_I_ne_neg_natCast hx y))).norm).pow 2
+      (Gamma_ne_zero fun k h => hx k (by simpa using congrArg re h))).norm).pow 2
   have hval : ‖Gamma x / Gamma (x + y * I)‖ ^ 2 =
       Real.Gamma x ^ 2 / ‖Gamma ((x : ℂ) + y * I)‖ ^ 2 := by
     rw [Gamma_ofReal, norm_div, norm_real, Real.norm_eq_abs, div_pow, sq_abs]
@@ -166,20 +162,5 @@ theorem norm_Gamma_one_add_mul_I_sq {y : ℝ} (hy : y ≠ 0) :
   rw [add_comm, Gamma_add_one _ (mul_ne_zero hy' I_ne_zero), norm_mul, mul_pow,
     Real.norm_Gamma_mul_I_sq y, norm_mul, norm_I, mul_one, norm_real, Real.norm_eq_abs, sq_abs]
   field_simp
-
-/-- The case `x = 1` of DLMF 5.8.3: `∏_{k ≥ 1} (1 + y²/k²) = sinh(πy)/(πy)` for real `y ≠ 0`,
-indexed from `k = 0` as `∏_{k ≥ 0} (1 + y²/(1 + k)²)`. -/
-theorem hasProd_one_add_sq_div_succ_sq {y : ℝ} (hy : y ≠ 0) :
-    HasProd (fun k : ℕ => 1 + y ^ 2 / (1 + k) ^ 2) (Real.sinh (π * y) / (π * y)) := by
-  have hyI : (y : ℂ) * I ≠ 0 := mul_ne_zero (ofReal_ne_zero.mpr hy) I_ne_zero
-  have h := (multipliable_sineTerm (y * I)).hasProd
-  rw [euler_sineTerm_tprod hyI] at h
-  rw [← (isometry_ofReal.isEmbedding.isInducing (f := ofRealHom)).hasProd_iff]
-  convert h using 1
-  · ext k
-    simp [sineTerm, mul_pow, add_comm]
-  · rw [show (π : ℂ) * (y * I) = ((π * y : ℝ) : ℂ) * I by push_cast; ring, sin_mul_I]
-    simp
-    field_simp
 
 end TauCeti
