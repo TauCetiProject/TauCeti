@@ -35,7 +35,7 @@ algebras without choosing an integer lift of the grading.
   the action on the even and odd pieces.
 * `TauCeti.gradeInvolution_mem_iff`, `TauCeti.isHomogeneous_gradeInvolution`, and
   `TauCeti.decompose_gradeInvolution`: piece invariance and homogeneous component action.
-* `TauCeti.LinearMap.IsHomogeneous.gradeInvolution_apply`: parity-homogeneous linear maps
+* `LinearMap.IsHomogeneous.gradeInvolution_apply`: parity-homogeneous linear maps
   intertwine grade involutions up to sign.
 * `TauCeti.gradeInvolution_gradeInvolution`, `TauCeti.gradeInvolution_symm`, and
   `TauCeti.gradeInvolution_trans_self`: involutivity and self-composition identities.
@@ -228,7 +228,7 @@ theorem gradeInvolution_comp_proj (i : ZMod 2) :
 
 /-- A parity-homogeneous linear map of degree `j` intertwines the grade involutions up to the sign
 `(-1) ^ j`. -/
-theorem LinearMap.IsHomogeneous.gradeInvolution_apply
+theorem _root_.LinearMap.IsHomogeneous.gradeInvolution_apply
     {R₁ R₂ S A B : Type*} [CommSemiring R₁] [CommSemiring R₂] [Semiring S]
     [Ring A] [Ring B] [Algebra R₁ A] [Algebra R₂ B] [Module S A] [Module S B]
     {𝒜 : ZMod 2 → Submodule R₁ A} {ℬ : ZMod 2 → Submodule R₂ B}
