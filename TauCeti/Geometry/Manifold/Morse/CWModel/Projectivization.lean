@@ -22,23 +22,23 @@ makes projective space homotopy equivalent to a finite CW complex with one cell 
 `dim_ℝ 𝕜 * k` for each `k ≤ n` and no other cells
 (`TauCeti.exists_finite_cwComplex_homotopyEquiv_projectivization`): one cell in each dimension
 `0, …, n` for `ℝℙⁿ`, and one cell in each even dimension `0, 2, …, 2n` for `ℂℙⁿ`. For `ℂℙⁿ`
-this cell count is also stated as a comparison with the standard CW structure
-(`TauCeti.exists_cwComplex_homotopyEquiv_projectivization_complex`); the statement here covers
-`ℝℙⁿ` as well.
+this cell count is compared with the standard CW structure in
+`TauCeti.exists_cwComplex_homotopyEquiv_projectivization_complex`.
 
 On `ℂℙⁿ` the critical points have the even indices `0, 2, …, 2n`, so no two of them have indices
 differing by one, and the lacunary principle for Morse functions
 (`TauCeti.IsMorse.nonempty_singularHomology_iso_sigma_of_forall_ne_add_one`) makes the singular
-homology free on the critical points. With coefficients `R` in any abelian category with
-coproducts, for instance `R = ℤ`, this gives `H₂ᵢ(ℂℙⁿ; R) ≅ R` for `i ≤ n`
-(`TauCeti.nonempty_singularHomology_projectivization_complex_iso`) and `Hₘ(ℂℙⁿ; R) = 0` for odd `m`
-and for `m > 2n` (`TauCeti.isZero_singularHomology_projectivization_complex_of_odd`,
-`TauCeti.isZero_singularHomology_projectivization_complex_of_lt`). This is the same answer as the
-cellular computation `TauCeti.ComplexProjectiveSpace.singularHomologyIso` for the standard CW
-structure `TauCeti.ComplexProjectiveSpace.cwComplex` on the quotient model of `ℂℙⁿ`, here obtained
-on the projectivization itself from the moment function. The isomorphisms are stated as `Nonempty`
-because the lacunary principle they come from is: it reads the homology through a CW model whose
-existence is only asserted.
+homology free on the critical points: with coefficients `R` in any abelian category with
+coproducts, for instance `R = ℤ`, `Hₘ(ℂℙⁿ; R)` is the coproduct of one copy of `R` for each `k ≤ n`
+with `2 * k = m` (`TauCeti.nonempty_singularHomology_projectivization_complex_iso_sigma`). This is
+the same answer as the cellular computation (`TauCeti.ComplexProjectiveSpace.singularHomologyIso`,
+`TauCeti.ComplexProjectiveSpace.isZero_singularHomology_of_odd`,
+`TauCeti.ComplexProjectiveSpace.isZero_singularHomology_of_lt`) for the standard CW structure
+`TauCeti.ComplexProjectiveSpace.cwComplex` on the quotient model of `ℂℙⁿ`, which is homeomorphic to
+the projectivization (`TauCeti.ComplexProjectiveSpace.homeomorphProjectivization`); here it is
+obtained on the projectivization itself from the moment function. The isomorphism is stated as
+`Nonempty` because the lacunary principle it comes from is: it reads the homology through a CW
+model whose existence is only asserted.
 
 ## Main results
 
@@ -47,10 +47,6 @@ existence is only asserted.
   `dim_ℝ 𝕜 * k = m`.
 * `TauCeti.nonempty_singularHomology_projectivization_complex_iso_sigma`: `Hₘ(ℂℙⁿ; R)` is the
   coproduct of one copy of `R` for each `k ≤ n` with `2 * k = m`.
-* `TauCeti.nonempty_singularHomology_projectivization_complex_iso`,
-  `TauCeti.isZero_singularHomology_projectivization_complex_of_odd` and
-  `TauCeti.isZero_singularHomology_projectivization_complex_of_lt`: `H₂ᵢ(ℂℙⁿ; R) ≅ R` for
-  `i ≤ n`, and the other homology vanishes.
 
 ## References
 
@@ -143,39 +139,6 @@ theorem nonempty_singularHomology_projectivization_complex_iso_sigma (m : ℕ) :
   let c := (criticalPointsIndexEquiv (𝕜 := ℂ) hw m).symm.trans
     (Equiv.subtypeEquivRight fun k ↦ by rw [Complex.finrank_real_complex])
   exact ⟨e ≪≫ Sigma.whiskerEquiv c fun _ ↦ Iso.refl R⟩
-
-/-- **The even-degree homology of `ℂℙⁿ`.** For `i ≤ n` and coefficients `R` in any abelian
-category with coproducts, `H₂ᵢ(ℂℙⁿ; R) ≅ R`. -/
-theorem nonempty_singularHomology_projectivization_complex_iso {i : ℕ} (hi : i ≤ n) :
-    Nonempty (((AlgebraicTopology.singularHomologyFunctor A (2 * i)).obj R).obj
-        (TopCat.of (ℙ ℂ (Fin (n + 1) → ℂ))) ≅ R) := by
-  obtain ⟨e⟩ := nonempty_singularHomology_projectivization_complex_iso_sigma n R (2 * i)
-  have : Unique {k : Fin (n + 1) // 2 * (k : ℕ) = 2 * i} :=
-    { default := ⟨⟨i, by omega⟩, rfl⟩
-      uniq := fun k ↦ Subtype.ext (Fin.ext (by have := k.property; simp; omega)) }
-  exact ⟨e ≪≫ coproductUniqueIso _⟩
-
-/-- The homology of `ℂℙⁿ` vanishes in every degree `m` that is not `2 * k` for some `k ≤ n`. -/
-private theorem isZero_singularHomology_projectivization_complex_of_forall_ne {m : ℕ}
-    (hm : ∀ k : Fin (n + 1), 2 * (k : ℕ) ≠ m) :
-    IsZero (((AlgebraicTopology.singularHomologyFunctor A m).obj R).obj
-      (TopCat.of (ℙ ℂ (Fin (n + 1) → ℂ)))) := by
-  obtain ⟨e⟩ := nonempty_singularHomology_projectivization_complex_iso_sigma n R m
-  have : IsEmpty {k : Fin (n + 1) // 2 * (k : ℕ) = m} := ⟨fun k ↦ hm k.val k.property⟩
-  exact ((IsZero.iff_id_eq_zero _).2 (Sigma.hom_ext _ _ isEmptyElim)).of_iso e
-
-/-- **The odd-degree homology of `ℂℙⁿ` vanishes.** `Hₘ(ℂℙⁿ; R) = 0` for odd `m`. -/
-theorem isZero_singularHomology_projectivization_complex_of_odd {m : ℕ} (hm : Odd m) :
-    IsZero (((AlgebraicTopology.singularHomologyFunctor A m).obj R).obj
-      (TopCat.of (ℙ ℂ (Fin (n + 1) → ℂ)))) :=
-  isZero_singularHomology_projectivization_complex_of_forall_ne n R fun k hk ↦
-    Nat.not_even_iff_odd.2 hm (by rw [← hk]; exact even_two_mul _)
-
-/-- The homology of `ℂℙⁿ` vanishes above degree `2n`. -/
-theorem isZero_singularHomology_projectivization_complex_of_lt {m : ℕ} (hm : 2 * n < m) :
-    IsZero (((AlgebraicTopology.singularHomologyFunctor A m).obj R).obj
-      (TopCat.of (ℙ ℂ (Fin (n + 1) → ℂ)))) :=
-  isZero_singularHomology_projectivization_complex_of_forall_ne n R fun k hk ↦ by omega
 
 end Complex
 

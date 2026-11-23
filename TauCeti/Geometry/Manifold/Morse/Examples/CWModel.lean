@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Geometry.Manifold.Morse.CWModel.Proper
 public import TauCeti.Geometry.Manifold.Morse.Examples.QuadraticWell
-public import TauCeti.Geometry.Manifold.Morse.Projectivization
+public import TauCeti.Geometry.Manifold.Morse.CWModel.Projectivization
 public import TauCeti.Geometry.Manifold.Morse.Sphere.Basic
 public import TauCeti.Topology.CWComplex.Classical.ComplexProjective
 import TauCeti.Analysis.Calculus.Morse.NormSq
@@ -28,9 +28,10 @@ points, and the empty manifold.
   with one `0`-cell, one `n`-cell and no other cells
   (`TauCeti.exists_cwComplex_homotopyEquiv_sphere`).
 * **Complex projective space.** The moment function `[z] ↦ (∑ⱼ j |zⱼ|²) / ∑ⱼ |zⱼ|²` on `ℂℙⁿ` has
-  one critical point of each even index `0, 2, …, 2n` and no others
-  (`TauCeti.criticalCount_projectiveMomentFunction_complex`), so its CW model has, in every
-  dimension, as many cells as the standard CW structure on `ℂℙⁿ`
+  one critical point of each even index `0, 2, …, 2n` and no others, so its CW model has one cell
+  in each even dimension up to `2n` and no others
+  (`TauCeti.exists_finite_cwComplex_homotopyEquiv_projectivization`). In every dimension it
+  therefore has as many cells as the standard CW structure on `ℂℙⁿ`
   (`TauCeti.ComplexProjectiveSpace.cwComplex`), one in each even dimension up to `2n`
   (`TauCeti.exists_cwComplex_homotopyEquiv_projectivization_complex`).
 * **The real line.** The function `x ↦ x²` on `ℝ` has the single critical point `0`, of index `0`,
@@ -125,10 +126,7 @@ theorem exists_cwComplex_homotopyEquiv_projectivization_complex (n : ℕ) :
       RelCWComplex.Finite (univ : Set X) ∧ Nonempty (X ≃ₕ ℙ ℂ (Fin (n + 1) → ℂ)) ∧
         ∀ m, Nonempty (cell (univ : Set X) m ≃ cell (univ : Set (ComplexProjectiveSpace n)) m) := by
   let := ComplexProjectiveSpace.cwComplex n
-  have hw : Function.Injective fun i : Fin (n + 1) ↦ ((i : ℕ) : ℝ) :=
-    Nat.cast_injective.comp Fin.val_injective
-  obtain ⟨X, _, _, _, hfin, he, hcell⟩ :=
-    (isMorse_projectiveMomentFunction (𝕜 := ℂ) hw).exists_finite_cwComplex_homotopyEquiv
+  obtain ⟨X, _, _, _, hfin, he, hcell⟩ := exists_finite_cwComplex_homotopyEquiv_projectivization ℂ n
   refine ⟨X, _, ‹_›, ‹_›, hfin, he, fun m ↦ ?_⟩
   obtain ⟨c⟩ := hcell m
   have := hfin.finite_cell m
@@ -136,9 +134,14 @@ theorem exists_cwComplex_homotopyEquiv_projectivization_complex (n : ℕ) :
   -- Both cell types are finite, with one element in each even dimension up to `2n`.
   refine Finite.card_eq.1 ?_
   rw [ComplexProjectiveSpace.nat_card_cell_cwComplex, Nat.card_congr c,
-    natCard_sep_criticalPoints_manifoldMorseIndex_eq_toNat_criticalCount,
-    criticalCount_projectiveMomentFunction_complex hw]
-  split_ifs <;> simp
+    Complex.finrank_real_complex]
+  split_ifs with h
+  · obtain ⟨⟨i, rfl⟩, hi⟩ := h
+    exact Nat.card_eq_one_iff_exists.2 ⟨⟨⟨i, by omega⟩, by simp; omega⟩,
+      fun k ↦ Subtype.ext (Fin.ext (show (k.val : ℕ) = i by have := k.property; omega))⟩
+  · have : IsEmpty {k : Fin (n + 1) // 2 * (k : ℕ) = m} :=
+      ⟨fun k ↦ h ⟨⟨k, by omega⟩, by have := k.val.isLt; omega⟩⟩
+    exact Nat.card_of_isEmpty
 
 /-! ### The real line -/
 
