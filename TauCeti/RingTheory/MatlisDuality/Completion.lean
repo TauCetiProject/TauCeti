@@ -26,7 +26,7 @@ with no finiteness hypothesis on `κ`:
 * An `R̂`-module `N` is finitely generated over `R̂` if and only if `Hom_{R̂}(N, E)` is Artinian
   over `R` (`TauCeti.IsInjectiveEnvelope.finite_adicCompletion_iff_isArtinian_linearMap`),
   and evaluation gives `N ≃ₗ[R̂] ((N →ₗ[R̂] E) →ₗ[R] E)`
-  (`TauCeti.IsInjectiveEnvelope.evalEquivAdicCompletionOfFinite`).
+  (`TauCeti.IsInjectiveEnvelope.evalEquivOfFiniteOverAdicCompletion`).
 * Conversely, for an Artinian `R`-module `M`, `Hom_R(M, E)` is finitely generated over `R̂` and
   evaluation gives `M ≃ₗ[R] ((M →ₗ[R] E) →ₗ[R̂] E)`
   (`TauCeti.IsInjectiveEnvelope.adicCompletionEvalEquivOfIsArtinian`).
@@ -97,7 +97,7 @@ theorem finite_adicCompletion_iff_isArtinian_linearMap :
 /-- Evaluation identifies a finitely generated `R̂`-module `N` with the `R`-linear Matlis dual of
 its completion-linear Matlis dual `Hom_{R̂}(N, E)`. -/
 @[stacks 0EGL]
-def evalEquivAdicCompletionOfFinite
+def evalEquivOfFiniteOverAdicCompletion
     [Module.Finite (_root_.AdicCompletion (maximalIdeal R) R) N] :
     letI := AdicCompletion.torsionModule hι.mem_primaryComponent
     haveI := AdicCompletion.torsionModule_isScalarTower hι.mem_primaryComponent
@@ -112,31 +112,49 @@ def evalEquivAdicCompletionOfFinite
       (mem_primaryComponent_maximalIdeal_of_isArtinian (R := R))
 
 @[simp]
-theorem evalEquivAdicCompletionOfFinite_apply_apply
+theorem evalEquivOfFiniteOverAdicCompletion_apply_apply
     [Module.Finite (_root_.AdicCompletion (maximalIdeal R) R) N] (x : N)
     (f : letI := AdicCompletion.torsionModule hι.mem_primaryComponent
          N →ₗ[_root_.AdicCompletion (maximalIdeal R) R] E) :
-    hι.evalEquivAdicCompletionOfFinite N x f = f x := by
+    hι.evalEquivOfFiniteOverAdicCompletion N x f = f x := by
   let := AdicCompletion.torsionModule hι.mem_primaryComponent
   have := AdicCompletion.torsionModule_isScalarTower hι.mem_primaryComponent
   have := hι.isArtinian_linearMap_of_finite_adicCompletion N
-  simp [evalEquivAdicCompletionOfFinite]
+  simp [evalEquivOfFiniteOverAdicCompletion]
 
 @[simp]
-theorem evalEquivAdicCompletionOfFinite_symm_apply_apply
+theorem evalEquivOfFiniteOverAdicCompletion_symm_apply_apply
     [Module.Finite (_root_.AdicCompletion (maximalIdeal R) R) N]
     (φ : letI := AdicCompletion.torsionModule hι.mem_primaryComponent
          haveI := AdicCompletion.torsionModule_isScalarTower hι.mem_primaryComponent
          (N →ₗ[_root_.AdicCompletion (maximalIdeal R) R] E) →ₗ[R] E)
     (f : letI := AdicCompletion.torsionModule hι.mem_primaryComponent
          N →ₗ[_root_.AdicCompletion (maximalIdeal R) R] E) :
-    f ((hι.evalEquivAdicCompletionOfFinite N).symm φ) = φ f := by
+    f ((hι.evalEquivOfFiniteOverAdicCompletion N).symm φ) = φ f := by
   let := AdicCompletion.torsionModule hι.mem_primaryComponent
   have : IsScalarTower R (_root_.AdicCompletion (maximalIdeal R) R) E :=
     AdicCompletion.torsionModule_isScalarTower hι.mem_primaryComponent
-  simpa only [evalEquivAdicCompletionOfFinite_apply_apply] using
+  simpa only [evalEquivOfFiniteOverAdicCompletion_apply_apply] using
     congrArg (fun ψ : (N →ₗ[_root_.AdicCompletion (maximalIdeal R) R] E) →ₗ[R] E ↦ ψ f)
-      ((hι.evalEquivAdicCompletionOfFinite N).apply_symm_apply φ)
+      ((hι.evalEquivOfFiniteOverAdicCompletion N).apply_symm_apply φ)
+
+/-- Naturality of `evalEquivOfFiniteOverAdicCompletion` with respect to `R̂`-linear maps. -/
+theorem evalEquivOfFiniteOverAdicCompletion_comp
+    {N₁ : Type*} [AddCommGroup N₁] [Module (_root_.AdicCompletion (maximalIdeal R) R) N₁]
+    [Module.Finite (_root_.AdicCompletion (maximalIdeal R) R) N₁]
+    {N₂ : Type*} [AddCommGroup N₂] [Module (_root_.AdicCompletion (maximalIdeal R) R) N₂]
+    [Module.Finite (_root_.AdicCompletion (maximalIdeal R) R) N₂]
+    (φ : N₁ →ₗ[_root_.AdicCompletion (maximalIdeal R) R] N₂) :
+    letI := AdicCompletion.torsionModule hι.mem_primaryComponent
+    haveI := AdicCompletion.torsionModule_isScalarTower hι.mem_primaryComponent
+    (hι.evalEquivOfFiniteOverAdicCompletion N₂).toLinearMap.comp φ =
+      (((φ.lcomp (_root_.AdicCompletion (maximalIdeal R) R) E).restrictScalars R).lcomp
+        (_root_.AdicCompletion (maximalIdeal R) R) E).comp
+        (hι.evalEquivOfFiniteOverAdicCompletion N₁).toLinearMap := by
+  let := AdicCompletion.torsionModule hι.mem_primaryComponent
+  have := AdicCompletion.torsionModule_isScalarTower hι.mem_primaryComponent
+  ext x g
+  simp [lcomp_apply']
 
 end FiniteOverCompletion
 
@@ -181,6 +199,19 @@ theorem adicCompletionEvalEquivOfIsArtinian_symm_apply_apply
     congrArg
       (fun ψ : (M →ₗ[R] E) →ₗ[_root_.AdicCompletion (maximalIdeal R) R] E ↦ ψ f)
       ((hι.adicCompletionEvalEquivOfIsArtinian M).apply_symm_apply φ)
+
+/-- Naturality of `adicCompletionEvalEquivOfIsArtinian` with respect to `R`-linear maps. -/
+theorem adicCompletionEvalEquivOfIsArtinian_comp
+    {M₁ : Type*} [AddCommGroup M₁] [Module R M₁] [IsArtinian R M₁]
+    {M₂ : Type*} [AddCommGroup M₂] [Module R M₂] [IsArtinian R M₂]
+    (φ : M₁ →ₗ[R] M₂) :
+    letI := AdicCompletion.torsionModule hι.mem_primaryComponent
+    (hι.adicCompletionEvalEquivOfIsArtinian M₂).toLinearMap.comp φ =
+      ((φ.lcomp (_root_.AdicCompletion (maximalIdeal R) R) E).lcomp R E).comp
+        (hι.adicCompletionEvalEquivOfIsArtinian M₁).toLinearMap := by
+  let := AdicCompletion.torsionModule hι.mem_primaryComponent
+  ext m g
+  simp [lcomp_apply']
 
 end ArtinianOverBase
 
@@ -230,6 +261,24 @@ theorem adicCompletionEquivDoubleDualOfFinite_symm_apply_apply
   simpa only [adicCompletionEquivDoubleDualOfFinite_apply_apply] using
     congrArg (fun ψ : (N →ₗ[R] E) →ₗ[R] E ↦ ψ f)
       ((hι.adicCompletionEquivDoubleDualOfFinite N).apply_symm_apply φ)
+
+/-- Naturality of `adicCompletionEquivDoubleDualOfFinite` with respect to `R`-linear maps, using
+the induced completion map `AdicCompletion.map`. -/
+theorem adicCompletionEquivDoubleDualOfFinite_comp
+    {N₁ : Type*} [AddCommGroup N₁] [Module R N₁] [Module.Finite R N₁]
+    {N₂ : Type*} [AddCommGroup N₂] [Module R N₂] [Module.Finite R N₂]
+    (φ : N₁ →ₗ[R] N₂) :
+    letI := AdicCompletion.torsionModule hι.mem_primaryComponent
+    haveI := AdicCompletion.torsionModule_isScalarTower hι.mem_primaryComponent
+    (hι.adicCompletionEquivDoubleDualOfFinite N₂).toLinearMap.comp
+      (_root_.AdicCompletion.map (maximalIdeal R) φ) =
+      ((φ.lcomp R E).lcomp (_root_.AdicCompletion (maximalIdeal R) R) E).comp
+        (hι.adicCompletionEquivDoubleDualOfFinite N₁).toLinearMap := by
+  let := AdicCompletion.torsionModule hι.mem_primaryComponent
+  have := AdicCompletion.torsionModule_isScalarTower hι.mem_primaryComponent
+  refine _root_.AdicCompletion.linearMap_ext_of_finite (maximalIdeal R) fun x ↦ ?_
+  ext g
+  simp [_root_.AdicCompletion.map_of, lcomp_apply']
 
 end DoubleDualCompletion
 

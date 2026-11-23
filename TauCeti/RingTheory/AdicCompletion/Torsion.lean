@@ -11,6 +11,7 @@ public import TauCeti.RingTheory.AdicCompletion.AlgHom
 public import TauCeti.RingTheory.AdicCompletion.Finite
 import TauCeti.Algebra.Module.Torsion.ScalarAction
 import TauCeti.RingTheory.AdicCompletion.Algebra
+import TauCeti.RingTheory.AdicCompletion.Noetherian
 
 /-!
 # The completion action on ideal-power-torsion modules
@@ -32,6 +33,11 @@ through a scalar from `R`, the `AdicCompletion I R`-submodules and `R`-submodule
 `I`-power-torsion module coincide (`TauCeti.AdicCompletion.torsionSubmoduleOrderIso`), so
 Artinianness and essentiality of submodules are preserved when passing between `R`
 and `AdicCompletion I R`.
+
+When `R` is Noetherian, Artin–Rees on ideals of `AdicCompletion I R` implies that any
+`AdicCompletion I R`-linear map from an ideal of `AdicCompletion I R` into an `I`-power-torsion
+module factors through a finite quotient `R ⧸ I ^ m`
+(`TauCeti.AdicCompletion.exists_ker_evalₐ_le_ker_of_torsionModule`).
 
 For a finite `R`-module `N`, `TauCeti.AdicCompletion.torsionLiftEquiv` identifies `R`-linear maps
 `N → M` with completion-linear maps `AdicCompletion I N → M`; its inverse is restriction along
@@ -388,8 +394,8 @@ theorem map_adicCompletion_smul_of_mem_primaryComponent {R : Type*} [CommRing R]
     intro m
     rw [← f.map_smul, hn m, f.map_zero]
   obtain ⟨r, hr⟩ := AdicCompletion.exists_sub_algebraMap_mem_map_pow fg n a
-  rw [Submodule.smul_eq_of_sub_algebraMap_mem_map hn hr,
-    Submodule.smul_eq_of_sub_algebraMap_mem_map hfn hr, f.map_smul]
+  rw [TauCeti.smul_eq_of_sub_algebraMap_mem_map hn hr,
+    TauCeti.smul_eq_of_sub_algebraMap_mem_map hfn hr, f.map_smul]
 
 end LinearMap
 
@@ -510,5 +516,49 @@ theorem isEssential_restrictScalars_torsionModule_iff
     rw [map_inf, e.apply_symm_apply, hN, map_bot]
 
 end SubmoduleLattice
+
+section Noetherian
+
+variable {R : Type*} [CommRing R] [IsNoetherianRing R] {I : Ideal R}
+  {M : Type*} [AddCommGroup M] [Module R M]
+  (hM : ∀ x : M, x ∈ Ideal.primaryComponent M I)
+
+/-- By Artin–Rees on ideals of the Noetherian completion `R̂`, any `R̂`-linear map out of an ideal
+`𝔟` of `R̂` into an `I`-power-torsion module vanishes on `𝔟 ⊓ I ^ m R̂` for some `m : ℕ`. -/
+theorem exists_ker_evalₐ_le_ker_of_torsionModule
+    (𝔟 : Ideal (_root_.AdicCompletion I R))
+    (g : letI := torsionModule hM; 𝔟 →ₗ[_root_.AdicCompletion I R] M) :
+    letI := torsionModule hM
+    haveI := torsionModule_isScalarTower hM
+    ∃ m : ℕ, LinearMap.ker ((evalₐ I m).toLinearMap ∘ₗ 𝔟.subtype.restrictScalars R) ≤
+      LinearMap.ker (g.restrictScalars R) := by
+  let A := _root_.AdicCompletion I R
+  let := torsionModule hM
+  have := torsionModule_isScalarTower hM
+  let IA : Ideal A := I.map (algebraMap R A)
+  have hfg : I.FG := IsNoetherian.noetherian I
+  obtain ⟨n, hn⟩ := IA.exists_forall_mem_torsionBySet_pow_of_mem_primaryComponent g
+    fun b ↦ I.mem_primaryComponent_map_of_mem (hM (g b))
+  obtain ⟨k, hk⟩ := IA.exists_pow_inf_eq_pow_smul (M := A) 𝔟
+  refine ⟨n + k, fun b hb ↦ ?_⟩
+  have hm : IA ^ (n + k) ⊓ 𝔟 ≤ IA ^ n • 𝔟 := by
+    have hmk := hk (n + k) (Nat.le_add_left k n)
+    simp only [smul_eq_mul, Ideal.mul_top, Nat.add_sub_cancel_right] at hmk
+    exact hmk.le.trans (Submodule.smul_mono le_rfl inf_le_right)
+  have hbm : (b : A) ∈ IA ^ (n + k) := by
+    rw [← Ideal.map_pow, ← ker_evalₐ_eq_map_pow hfg (n + k)]
+    exact hb
+  have hmem : (b : A) ∈ (LinearMap.ker g).map 𝔟.subtype := by
+    refine Submodule.smul_le.mpr ?_ (hm ⟨hbm, b.property⟩)
+    intro a ha c hc
+    have hac : (⟨a * c, 𝔟.mul_mem_left a hc⟩ : 𝔟) = a • ⟨c, hc⟩ := Subtype.ext rfl
+    refine ⟨⟨a * c, 𝔟.mul_mem_left a hc⟩, ?_, rfl⟩
+    rw [SetLike.mem_coe, LinearMap.mem_ker, hac, map_smul]
+    exact (Submodule.mem_torsionBySet_iff _ _).mp (hn ⟨c, hc⟩) ⟨a, ha⟩
+  rcases hmem with ⟨⟨w, hw⟩, hgw, hw_eq⟩
+  have hbw : b = ⟨w, hw⟩ := Subtype.ext hw_eq.symm
+  exact hbw ▸ hgw
+
+end Noetherian
 
 end TauCeti.AdicCompletion

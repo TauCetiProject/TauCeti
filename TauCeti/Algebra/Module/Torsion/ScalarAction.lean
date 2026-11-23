@@ -21,9 +21,9 @@ for a scalar `c : k`, then `a` acts as `c` on every vector fixed by `f`, and if
   `c` when `a * f ≡ c • f` modulo `J`.
 * `Module.IsTorsionBySet.smul_smul_eq_smul_smul`: `f • a • x = c • f • x` when
   `f * a ≡ c • f` modulo `J`.
-* `Submodule.map_le_ker_toSpanSingleton_of_mem_torsionBySet`: an ideal of `k` killing `x` pushes
+* `TauCeti.map_le_ker_toSpanSingleton_of_mem_torsionBySet`: an ideal of `k` killing `x` pushes
   forward to `I.map (algebraMap k A)` killing `x`.
-* `Submodule.smul_eq_of_sub_algebraMap_mem_map`: for an element killed by an ideal `I` of `k`,
+* `TauCeti.smul_eq_of_sub_algebraMap_mem_map`: for an element killed by an ideal `I` of `k`,
   any `a : A` congruent to `algebraMap k A c` modulo `I.map (algebraMap k A)` acts as `c`.
 -/
 
@@ -52,7 +52,7 @@ theorem smul_smul_eq_smul_smul (hN : Module.IsTorsionBySet A N J) {f a : A} {c :
 
 end Module.IsTorsionBySet
 
-namespace Submodule
+namespace TauCeti
 
 /-- In a module over a `k`-algebra `A`, if `x` is killed by an ideal `I` of `k`, then
 `I.map (algebraMap k A)` lies in the kernel of `a ↦ a • x`. -/
@@ -77,4 +77,4 @@ theorem smul_eq_of_sub_algebraMap_mem_map {k A N : Type*} [CommSemiring k] [Ring
     map_le_ker_toSpanSingleton_of_mem_torsionBySet hx ha
   rwa [sub_smul, algebraMap_smul, sub_eq_zero] at hzero
 
-end Submodule
+end TauCeti
