@@ -135,7 +135,7 @@ theorem IsRankOneDiscrete.generator_eq_exp_neg_one_of_valueGroup_eq_top
     IsRankOneDiscrete.generator v = Units.mk0 (WithZero.exp (-1)) WithZero.exp_ne_zero := by
   rw [← IsRankOneDiscrete.valueGroup_genLTOne_eq_generator]
   exact (LinearOrderedCommGroup.Subgroup.genLTOne_unique _ (Units.val_lt_val.mp <| by simp)
-    (TauCeti.zpowers_mk0_exp_neg_one.trans hv.symm)).symm
+    (TauCeti.zpowers_mk0_exp_neg_one_eq_top.trans hv.symm)).symm
 
 /-- **Uniformizers are the elements of order one** for a discrete `ℤᵐ⁰`-valuation with full value
 group: the generator below `1` of its value group is then `exp (-1)`. The valuation need not attain
@@ -299,7 +299,7 @@ the units of `ℤᵐ⁰`, and on a division ring a valuation attaining a generat
 theorem surjective_of_map_eq_exp_neg_one (v : _root_.Valuation F ℤᵐ⁰) {t : F}
     (ht : v t = WithZero.exp (-1)) : Function.Surjective v :=
   (v : F →*₀ ℤᵐ⁰).surjective_of_mem_range_of_zpowers_eq_top ⟨t, ht⟩
-    TauCeti.zpowers_mk0_exp_neg_one
+    TauCeti.zpowers_mk0_exp_neg_one_eq_top
 
 end DivisionRing
 

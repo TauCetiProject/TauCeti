@@ -25,7 +25,7 @@ prime.
 ## Main results
 
 * `TauCeti.lt_one_iff_le_exp_neg_one`: `t < 1 ↔ t ≤ exp (-1)`.
-* `TauCeti.zpowers_mk0_exp_neg_one`: `exp (-1)` generates the units of `ℤᵐ⁰`.
+* `TauCeti.zpowers_mk0_exp_neg_one_eq_top`: `exp (-1)` generates the units of `ℤᵐ⁰`.
 * `TauCeti.eq_one_of_exp_neg_one_le_sq`: an integral value whose square is at least `exp (-1)`
   is `1`.
 * `TauCeti.eq_one_and_forall_eq_one_of_exp_neg_one_le_prod`: in a weighted product of integral
@@ -58,7 +58,7 @@ theorem lt_one_iff_le_exp_neg_one {t : ℤᵐ⁰} : t < 1 ↔ t ≤ exp (-1) := 
 /-- `exp (-1)` generates the units of `ℤᵐ⁰`: under `WithZero.unitsWithZeroEquiv`, its inverse
 corresponds to the generator `Multiplicative.ofAdd (1 : ℤ)` of `Multiplicative ℤ`. -/
 @[simp]
-theorem zpowers_mk0_exp_neg_one :
+theorem zpowers_mk0_exp_neg_one_eq_top :
     Subgroup.zpowers (Units.mk0 (exp (-1) : ℤᵐ⁰) exp_ne_zero) = ⊤ := by
   rw [← Subgroup.zpowers_inv]
   exact unitsWithZeroEquiv.zpowers_eq_top_of_apply_eq_ofAdd_one
