@@ -6,8 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.Matrix.Kronecker
-public import TauCeti.Algebra.Algebra.CyclicQuotient
 public import TauCeti.Combinatorics.SimpleGraph.Copy
+public import TauCeti.LinearAlgebra.Matrix.Trace.CyclicQuotient
 public import TauCeti.RepresentationTheory.Quiver.PathAlgebra.OfArrows
 public import TauCeti.RepresentationTheory.Quiver.Preprojective.Signless.GraphGrading
 public import TauCeti.RepresentationTheory.Quiver.Zigzag.Signless
