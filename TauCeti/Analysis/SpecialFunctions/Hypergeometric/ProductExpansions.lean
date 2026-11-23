@@ -333,9 +333,9 @@ private theorem norm_bcGenCoeff_le_pochhammer_gamma {a b c : ℂ} {N M : ℕ} {C
   have hfac := bc_factorial_ratio_le s j k
   have hsjk : s + j + k = s + m := add_assoc s j k
   have h2sjk : 2 * s + j + k = 2 * s + m := add_assoc (2 * s) j k
+  have hfac_inv (n : ℕ) : ‖((n ! : ℂ))⁻¹‖ = (n ! : ℝ)⁻¹ := by rw [norm_inv, norm_natCast]
   rw [bcGenCoeff, hsjk, h2sjk, div_eq_mul_inv]
-  simp only [mul_inv, norm_mul, norm_inv, norm_natCast]
-  rw [← norm_inv (Gamma _), ← norm_inv (Gamma _)]
+  simp only [mul_inv, norm_mul, hfac_inv]
   calc ‖(ascPochhammer ℂ (s + m)).eval a‖ * ‖(ascPochhammer ℂ (s + m)).eval b‖ *
         ‖(ascPochhammer ℂ s).eval (c - a)‖ * ‖(ascPochhammer ℂ s).eval (c - b)‖ *
         ((s ! : ℝ)⁻¹ * ‖(Gamma (c + s))⁻¹‖ * (j ! : ℝ)⁻¹ * (k ! : ℝ)⁻¹ *
@@ -502,8 +502,8 @@ private theorem differentiableOn_tsum_bcTerm (a b c : ℂ) {ζ : ℂ} (hζ : ‖
         (fun z : ℂ ↦ regularizedGaussHGFun (a + s) (b + s) (c + 2 * s) (z + ζ - z * ζ)) z :=
       (analyticAt_regularizedGaussHGFun _ _ _ (hzV.2.trans hr_lt)).differentiableAt.comp z
         (by fun_prop)
-    exact (((differentiableAt_const _).mul ((differentiableAt_id.mul
-      (differentiableAt_const ζ)).pow s)).mul hcomp).differentiableWithinAt
+    simp only [bcTerm, bcPref]
+    exact ((by fun_prop : DifferentiableAt ℂ _ z).mul hcomp).differentiableWithinAt
   exact ((hdiffV z₀ hz₀V).differentiableAt (hV_open.mem_nhds hz₀V)).differentiableWithinAt
 
 private theorem norm_snd_lt_one_of_add_norm_mul_sub_lt_one {z ζ : ℂ}
@@ -549,8 +549,8 @@ private theorem summable_norm_bcDoubleTerm (a b c : ℂ) {z ζ : ℂ}
   have hprod := Summable.mul_of_nonneg hs_sum hj_col (fun _ ↦ by positivity)
     (fun j ↦ tsum_nonneg fun _ ↦ by positivity)
   refine Summable.of_nonneg_of_le (fun _ ↦ norm_nonneg _) (fun ⟨s, j⟩ ↦ ?_) hprod
-  simpa [bcDoubleTerm, r₁, r₂] using
-    norm_bcGenTerm_le (u := z * ζ) (v := ζ * (1 - z)) hz1 hbound s j (hk_row j)
+  simp only [bcDoubleTerm]
+  exact norm_bcGenTerm_le (u := z * ζ) (v := ζ * (1 - z)) hz1 hbound s j (hk_row j)
 
 private theorem bcDoubleTerm_antidiag_eq (a b c z ζ : ℂ) {n s : ℕ} (hsn : s ≤ n) :
     bcDoubleTerm a b c z ζ (s, n - s) =
