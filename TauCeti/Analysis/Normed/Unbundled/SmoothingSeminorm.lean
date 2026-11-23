@@ -42,8 +42,8 @@ This file also records three comparison principles for `smoothingFun`:
 
 * `RingHom.smoothingFun_map_le_of_le_mul`: a multiplicative bound through a ring homomorphism gives
   a contractive bound on smoothings.
-* `RingSeminorm.smoothingFun_add_le_of_map_one_le_one`: subadditivity of `smoothingFun μ` under
-  `μ 1 ≤ 1`, without nonarchimedeanity.
+* `RingSeminorm.smoothingFun_add_le`: subadditivity of `smoothingFun μ` on a commutative ring,
+  without `μ 1 ≤ 1` or nonarchimedeanity.
 * `RingSeminorm.tendsto_smoothingFun`: `μ (x ^ n) ^ (1 / n)` tends to `smoothingFun μ x` for every
   ring seminorm `μ` on a commutative ring.
 * `RingSeminorm.isPowMul_smoothing`, `RingSeminorm.smoothing_one_eq_one`,
@@ -71,22 +71,19 @@ private theorem tendsto_rpow_one_div_atTop {D : ℝ} (hD : 0 < D) :
 
 variable {R S : Type*} [CommRing R] [CommRing S]
 
-namespace RingHom
-
-/-- **Smoothing absorbs multiplicative constants.** If `ν (φ x) ≤ C * μ x` for a ring
-homomorphism `φ : R →+* S` and every `x`, then the smoothing of `ν` at `φ x` is at most the
-smoothing of `μ` at `x`, whatever the constant `C`. Only `μ` needs `μ 1 ≤ 1`, so that its
-smoothing is a limit. -/
-theorem smoothingFun_map_le_of_le_mul {μ : RingSeminorm R} {ν : RingSeminorm S} (φ : R →+* S)
-    (hμ1 : μ 1 ≤ 1) {C : ℝ} (h : ∀ x, ν (φ x) ≤ C * μ x) (x : R) :
+/-- Core multiplicative-constant absorption lemma for `smoothingFun`, parameterized by a convergence
+witness for `smoothingSeminormSeq μ x`. -/
+private theorem smoothingFun_map_le_of_le_mul_of_tendsto {μ : RingSeminorm R} {ν : RingSeminorm S}
+    (φ : R →+* S) {x : R}
+    (htend : Tendsto (smoothingSeminormSeq μ x) atTop (𝓝 (smoothingFun μ x)))
+    {C : ℝ} (h : ∀ y, ν (φ y) ≤ C * μ y) :
     smoothingFun ν (φ x) ≤ smoothingFun μ x := by
   -- Replace `C` by a positive constant `D`, so that `D ^ (1 / n) → 1`.
   set D := max C 1
   have hD : 0 < D := zero_lt_one.trans_le (le_max_right _ _)
   have hlim : Tendsto (fun n : ℕ ↦ D ^ (1 / n : ℝ) * smoothingSeminormSeq μ x n) atTop
       (𝓝 (smoothingFun μ x)) := by
-    simpa using (tendsto_rpow_one_div_atTop hD).mul
-      (tendsto_smoothingFun_of_map_one_le_one μ hμ1 x)
+    simpa using (tendsto_rpow_one_div_atTop hD).mul htend
   refine ge_of_tendsto hlim (eventually_atTop.2 ⟨1, fun n hn ↦ ?_⟩)
   calc smoothingFun ν (φ x) ≤ ν (φ x ^ n) ^ (1 / n : ℝ) :=
         smoothingFun_le ν (φ x) ⟨n, hn⟩
@@ -96,8 +93,6 @@ theorem smoothingFun_map_le_of_le_mul {μ : RingSeminorm R} {ν : RingSeminorm S
         exact (h _).trans (mul_le_mul_of_nonneg_right (le_max_left _ _) (apply_nonneg μ _))
     _ = D ^ (1 / n : ℝ) * smoothingSeminormSeq μ x n :=
         Real.mul_rpow hD.le (apply_nonneg μ _)
-
-end RingHom
 
 namespace RingSeminorm
 
@@ -152,10 +147,8 @@ private theorem pow_add_le_of_forall_pow_le (μ : RingSeminorm R) {x y : R} {Cx 
         ring
     _ = Cx * Cy * (a + b) ^ n := by rw [← add_pow]
 
-/-- **Subadditivity of `smoothingFun` on commutative rings.** For any ring seminorm `μ` with
-`μ 1 ≤ 1` on a commutative ring, `smoothingFun μ` satisfies the triangle inequality, without
-assuming `IsNonarchimedean μ`. -/
-theorem smoothingFun_add_le_of_map_one_le_one (μ : RingSeminorm R) (hμ1 : μ 1 ≤ 1) (x y : R) :
+private theorem smoothingFun_add_le_of_map_one_le_one (μ : RingSeminorm R) (hμ1 : μ 1 ≤ 1)
+    (x y : R) :
     smoothingFun μ (x + y) ≤ smoothingFun μ x + smoothingFun μ y := by
   refine le_of_forall_pos_le_add fun ε hε ↦ ?_
   set a := smoothingFun μ x + ε / 2
@@ -215,8 +208,9 @@ private theorem le_mul_boundedSeminorm (μ : RingSeminorm R) (x : R) :
 private theorem smoothingFun_eq_boundedSeminorm (μ : RingSeminorm R) (x : R) :
     smoothingFun μ x = smoothingFun μ.boundedSeminorm x := by
   refine le_antisymm ?_ ?_
-  · exact (RingHom.id R).smoothingFun_map_le_of_le_mul μ.boundedSeminorm_one_le
-      μ.le_mul_boundedSeminorm x
+  · exact smoothingFun_map_le_of_le_mul_of_tendsto (RingHom.id R)
+      (tendsto_smoothingFun_of_map_one_le_one μ.boundedSeminorm μ.boundedSeminorm_one_le x)
+      μ.le_mul_boundedSeminorm
   · refine le_ciInf fun n ↦ (smoothingFun_le μ.boundedSeminorm x n).trans ?_
     gcongr
     exact μ.boundedSeminorm_le _
@@ -329,13 +323,32 @@ theorem smoothing_eq_zero_of_isNilpotent (μ : RingSeminorm R) {x : R} (hx : IsN
     rw [← μ.isPowMul_smoothing x (Nat.le_add_left 1 m), hm1, map_zero]
   exact eq_zero_of_pow_eq_zero hpow
 
+/-- **Subadditivity of `smoothingFun` on commutative rings.** For any ring seminorm `μ` on a
+commutative ring, `smoothingFun μ` satisfies the triangle inequality, without assuming `μ 1 ≤ 1`
+or `IsNonarchimedean μ`. -/
+theorem smoothingFun_add_le (μ : RingSeminorm R) (x y : R) :
+    smoothingFun μ (x + y) ≤ smoothingFun μ x + smoothingFun μ y :=
+  map_add_le_add μ.smoothing x y
+
 end RingSeminorm
+
+namespace RingHom
+
+/-- **Smoothing absorbs multiplicative constants.** If `ν (φ x) ≤ C * μ x` for a ring
+homomorphism `φ : R →+* S` and every `x`, then the smoothing of `ν` at `φ x` is at most the
+smoothing of `μ` at `x`, whatever the constant `C`. -/
+theorem smoothingFun_map_le_of_le_mul {μ : RingSeminorm R} {ν : RingSeminorm S} (φ : R →+* S)
+    {C : ℝ} (h : ∀ x, ν (φ x) ≤ C * μ x) (x : R) :
+    smoothingFun ν (φ x) ≤ smoothingFun μ x :=
+  smoothingFun_map_le_of_le_mul_of_tendsto φ (μ.tendsto_smoothingFun x) h
+
+end RingHom
 
 namespace TauCeti
 
 /-- **Exact scaling passes to the smoothing.** If multiplication by `c` scales `μ` by the factor
 `s ≥ 0`, then it scales the smoothing of `μ` by the same factor. -/
-theorem smoothingFun_mul_eq_mul_of_forall {μ : RingSeminorm R} (hμ1 : μ 1 ≤ 1) {c : R} {s : ℝ}
+theorem smoothingFun_mul_eq_mul_of_forall {μ : RingSeminorm R} {c : R} {s : ℝ}
     (hs : 0 ≤ s) (h : ∀ y, μ (c * y) = s * μ y) (x : R) :
     smoothingFun μ (c * x) = s * smoothingFun μ x := by
   have hpow (n : ℕ) (y : R) : μ (c ^ n * y) = s ^ n * μ y := by
@@ -343,8 +356,8 @@ theorem smoothingFun_mul_eq_mul_of_forall {μ : RingSeminorm R} (hμ1 : μ 1 ≤
     | zero => simp
     | succ n ih => rw [pow_succ', mul_assoc, h, ih, ← mul_assoc, pow_succ']
   refine tendsto_nhds_unique_of_eventuallyEq
-    (tendsto_smoothingFun_of_map_one_le_one μ hμ1 (c * x))
-    ((tendsto_smoothingFun_of_map_one_le_one μ hμ1 x).const_mul s)
+    (μ.tendsto_smoothingFun (c * x))
+    ((μ.tendsto_smoothingFun x).const_mul s)
     (eventually_atTop.2 ⟨1, fun n hn ↦ ?_⟩)
   have hn0 : n ≠ 0 := Nat.one_le_iff_ne_zero.mp hn
   simp only [smoothingSeminormSeq, mul_pow, hpow, one_div]
@@ -352,15 +365,12 @@ theorem smoothingFun_mul_eq_mul_of_forall {μ : RingSeminorm R} (hμ1 : μ 1 ≤
 
 /-- **The smoothing of a power of a seminorm is the power of the smoothing.** If `ν x = μ x ^ t`
 for every `x`, with `t > 0`, then `smoothingFun ν x = smoothingFun μ x ^ t`. -/
-theorem smoothingFun_eq_rpow_of_forall {μ ν : RingSeminorm R} (hμ1 : μ 1 ≤ 1) {t : ℝ}
+theorem smoothingFun_eq_rpow_of_forall {μ ν : RingSeminorm R} {t : ℝ}
     (ht : 0 < t) (h : ∀ x, ν x = μ x ^ t) (x : R) :
     smoothingFun ν x = smoothingFun μ x ^ t := by
-  have hν1 : ν 1 ≤ 1 := by
-    rw [h]
-    exact Real.rpow_le_one (apply_nonneg μ _) hμ1 ht.le
   refine tendsto_nhds_unique_of_eventuallyEq
-    (tendsto_smoothingFun_of_map_one_le_one ν hν1 x)
-    ((tendsto_smoothingFun_of_map_one_le_one μ hμ1 x).rpow_const (Or.inr ht.le))
+    (ν.tendsto_smoothingFun x)
+    ((μ.tendsto_smoothingFun x).rpow_const (Or.inr ht.le))
     (Eventually.of_forall fun n ↦ ?_)
   simp only [smoothingSeminormSeq, h, ← Real.rpow_mul (apply_nonneg μ _), mul_comm t]
 

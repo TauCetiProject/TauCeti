@@ -98,7 +98,7 @@ theorem isNonarchimedean_spectralSeminorm : IsNonarchimedean (spectralSeminorm d
 theorem spectralSeminorm_zpow_mul (k : ℤ) (x : A) :
     spectralSeminorm d (((d.pseudoUniformizer ^ k : Aˣ) : A) * x) =
       d.radius ^ k * spectralSeminorm d x :=
-  smoothingFun_mul_eq_mul_of_forall (tateNorm_one_le d) (zpow_nonneg d.radius_pos.le k)
+  smoothingFun_mul_eq_mul_of_forall (zpow_nonneg d.radius_pos.le k)
     (tateNorm_zpow_mul d k) x
 
 /-- Multiplication by `ϖ ^ n`, `n ∈ ℕ`, scales the spectral seminorm exactly by `r ^ n`. -/
@@ -127,8 +127,8 @@ theorem spectralSeminorm_eq_of_ringOfDefinition (d' : TateNormDatum A)
   have h₂ (y : A) : tateNorm d' y ≤ C * tateNorm d y := by
     simpa only [tateNorm_apply, ← hϖ, ← hr] using (hC y).2
   ext x
-  exact le_antisymm ((RingHom.id A).smoothingFun_map_le_of_le_mul (tateNorm_one_le d') h₁ x)
-    ((RingHom.id A).smoothingFun_map_le_of_le_mul (tateNorm_one_le d) h₂ x)
+  exact le_antisymm ((RingHom.id A).smoothingFun_map_le_of_le_mul h₁ x)
+    ((RingHom.id A).smoothingFun_map_le_of_le_mul h₂ x)
 
 /-- **Changing the radius.** For two norm data with the same pseudouniformiser and radii `r` and
 `r'`, the spectral seminorm for `r'` is the spectral seminorm for `r` raised to the power
@@ -140,7 +140,7 @@ theorem spectralSeminorm_rpow (d' : TateNormDatum A)
   let d₁ : TateNormDatum A :=
     { d' with radius := d.radius, radius_pos := d.radius_pos, radius_lt_one := d.radius_lt_one }
   rw [spectralSeminorm_eq_of_ringOfDefinition d d₁ hϖ rfl]
-  refine smoothingFun_eq_rpow_of_forall (tateNorm_one_le d₁)
+  refine smoothingFun_eq_rpow_of_forall
     (div_pos_of_neg_of_neg (Real.log_neg d'.radius_pos d'.radius_lt_one)
       (Real.log_neg d.radius_pos d.radius_lt_one)) (fun y ↦ ?_) x
   rw [tateNorm_apply, tateNorm_apply, tateGauge_rpow d₁.one_lt_radius_inv d'.one_lt_radius_inv,
@@ -232,7 +232,7 @@ theorem spectralSeminorm_map_le {B : Type*} [CommRing B] [TopologicalSpace B]
     (hA₀ : ∀ x ∈ d.ringOfDefinition, φ x ∈ d'.ringOfDefinition)
     (hϖ : φ d.pseudoUniformizer = d'.pseudoUniformizer) (hr : d'.radius = d.radius) (x : A) :
     spectralSeminorm d' (φ x) ≤ spectralSeminorm d x :=
-  φ.smoothingFun_map_le_of_le_mul (tateNorm_one_le d) (C := 1)
+  φ.smoothingFun_map_le_of_le_mul (C := 1)
     (fun y ↦ by simpa using tateNorm_map_le d d' φ hA₀ hϖ hr y) x
 
 end TauCeti.Huber
