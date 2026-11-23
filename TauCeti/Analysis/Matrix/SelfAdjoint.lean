@@ -6,16 +6,11 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Matrix.Frobenius
+public import TauCeti.Algebra.BigOperators.Finset.Pairs
 public import Mathlib.Algebra.Star.UnitaryStarAlgAut
-public import Mathlib.Analysis.InnerProductSpace.Subspace
-public import Mathlib.Analysis.Matrix.MeasurableSpace
-public import Mathlib.Analysis.RCLike.Lemmas
 public import Mathlib.LinearAlgebra.Matrix.FiniteDimensional
-public import Mathlib.LinearAlgebra.Matrix.Hermitian
-public import Mathlib.MeasureTheory.Constructions.BorelSpace.Basic
-public import Mathlib.MeasureTheory.Measure.Haar.InnerProductSpace
-public import Mathlib.Topology.Algebra.Module.FiniteDimension
 public import Mathlib.Topology.UniformSpace.Matrix
+import TauCeti.Topology.Algebra.Module.Determinant
 
 /-!
 # Frobenius geometry and unitary conjugation on self-adjoint matrix subspaces
@@ -23,22 +18,26 @@ public import Mathlib.Topology.UniformSpace.Matrix
 For `[RCLike 𝕜]`, `selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) 𝕜)` is the real symmetric
 subspace at `𝕜 = ℝ` and the complex Hermitian subspace at `𝕜 = ℂ`. This file equips it uniformly
 over `𝕜` with the ambient Frobenius norm and real inner product `⟪A, B⟫ = RCLike.re tr(B * A)` on
-the subtype uniformity, and builds `Matrix.UnitaryGroup.selfAdjointConj` as a real linear isometry
-equivalence preserving `volume`.
+the subtype uniformity, builds `Matrix.UnitaryGroup.selfAdjointConj` as a real linear isometry
+equivalence, and reads the subspace in real diagonal and strict upper coordinates. The Borel
+structure and `volume` live in `TauCeti.MeasureTheory.Measure.SelfAdjointMatrix.Basic`.
 
 ## Main declarations
 
 * `TauCeti.selfAdjointMatrixNormedAddCommGroup`, `TauCeti.selfAdjointMatrixInnerProductSpace`.
 * `selfAdjoint.coe_inner`, `selfAdjoint.isHermitian_coe`, `selfAdjoint.conjTranspose_coe`,
   `selfAdjoint.inner_eq_rclike_re_trace_mul`, `selfAdjoint.norm_sq_eq_rclike_re_trace_sq`.
-* `Matrix.UnitaryGroup.selfAdjointConj`, `measurePreserving_selfAdjointConj_volume`.
+* `Matrix.UnitaryGroup.selfAdjointConj`.
+* `TauCeti.selfAdjointCoordinates` reads the real diagonal and strict upper entries.
+* `TauCeti.selfAdjointDiagonal` embeds real diagonal entries as a self-adjoint diagonal matrix.
+* `TauCeti.unitaryConjCoordinates` expresses unitary conjugation in these coordinates.
 -/
 
 public section
 
 noncomputable section
 
-open MeasureTheory Module
+open Module
 open scoped ComplexConjugate Matrix RealInnerProductSpace
 
 namespace TauCeti
@@ -102,14 +101,10 @@ theorem selfAdjointMatrixCompleteSpace :
     ContinuousENorm (selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) 𝕜)) :=
   ESeminormedAddMonoid.toContinuousENorm
 
-/-- Borel measurable structure on the self-adjoint matrix subspace over `𝕜`. -/
-theorem selfAdjointMatrixBorelSpace [MeasurableSpace 𝕜] [BorelSpace 𝕜] :
-    BorelSpace (selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) 𝕜)) := Subtype.borelSpace _
-
 namespace SelfAdjointMatrix
 attribute [scoped instance] selfAdjointMatrixNormedAddCommGroup selfAdjointMatrixInnerProductSpace
   selfAdjointMatrixIsUniformAddGroup selfAdjointMatrixSecondCountableTopology
-  selfAdjointMatrixCompleteSpace selfAdjointMatrixContinuousENorm selfAdjointMatrixBorelSpace
+  selfAdjointMatrixCompleteSpace selfAdjointMatrixContinuousENorm
 end SelfAdjointMatrix
 end instances
 end TauCeti
@@ -206,6 +201,12 @@ theorem selfAdjointConj_mul (U V : Matrix.unitaryGroup (Fin p) 𝕜) :
       Unitary.conjStarAlgAut_apply, Unitary.coe_star, star_eq_conjTranspose] using
       Unitary.conjStarAlgAut_mul_apply (S := ℝ) U V (A : Matrix (Fin p) (Fin p) 𝕜)
 
+/-- Conjugating by a product applies the two conjugations in turn. -/
+theorem selfAdjointConj_mul_apply (U V : Matrix.unitaryGroup (Fin p) 𝕜)
+    (A : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) 𝕜)) :
+    selfAdjointConj (U * V) A = selfAdjointConj U (selfAdjointConj V A) := by
+  rw [selfAdjointConj_mul, LinearIsometryEquiv.trans_apply]
+
 /-- Conjugating by `U⁻¹` is the inverse linear isometry equivalence. -/
 @[simp] theorem selfAdjointConj_inv (U : Matrix.unitaryGroup (Fin p) 𝕜) :
     selfAdjointConj U⁻¹ = (selfAdjointConj U).symm :=
@@ -215,9 +216,165 @@ theorem selfAdjointConj_mul (U V : Matrix.unitaryGroup (Fin p) 𝕜) :
 
 end Algebra
 
-/-- Unitary conjugation preserves Frobenius `volume` on the self-adjoint matrix subspace. -/
-theorem measurePreserving_selfAdjointConj_volume {𝕜 : Type*} [RCLike 𝕜] [MeasurableSpace 𝕜]
-    [BorelSpace 𝕜] {p : ℕ} (U : Matrix.unitaryGroup (Fin p) 𝕜) :
-    MeasurePreserving (selfAdjointConj U) volume volume := (selfAdjointConj U).measurePreserving
-
 end Matrix.UnitaryGroup
+
+namespace TauCeti
+
+open Matrix
+
+variable {n : ℕ} {𝕜 : Type*} [RCLike 𝕜]
+
+/-- Real diagonal coordinates paired with strict upper-triangular entries. -/
+abbrev SelfAdjointCoordinates (n : ℕ) (𝕜 : Type*) := (Fin n → ℝ) × (FinStrictUpper n → 𝕜)
+
+/-- Read the real parts of the diagonal and the entries strictly above it. -/
+def selfAdjointCoordinatesLinearMap :
+    Matrix (Fin n) (Fin n) 𝕜 →L[ℝ] SelfAdjointCoordinates n 𝕜 :=
+  LinearMap.toContinuousLinearMap
+    { toFun := fun A ↦ (fun i ↦ RCLike.re (A i i), fun ij ↦ A ij.val.1 ij.val.2)
+      map_add' := fun A B ↦ by ext <;> simp
+      map_smul' := fun c A ↦ by ext <;> simp [RCLike.smul_re] }
+
+/-- The diagonal coordinate is the real part of the corresponding diagonal entry. -/
+@[simp] theorem selfAdjointCoordinatesLinearMap_fst (A : Matrix (Fin n) (Fin n) 𝕜) (i : Fin n) :
+    (selfAdjointCoordinatesLinearMap A).1 i = RCLike.re (A i i) := (rfl)
+
+/-- The second component reads the corresponding strict upper entry. -/
+@[simp] theorem selfAdjointCoordinatesLinearMap_snd (A : Matrix (Fin n) (Fin n) 𝕜)
+    (ij : FinStrictUpper n) :
+    (selfAdjointCoordinatesLinearMap A).2 ij = A ij.val.1 ij.val.2 := (rfl)
+
+/-- On the self-adjoint subspace, the real diagonal and strict upper coordinates
+determine the matrix by conjugate reflection. -/
+def selfAdjointCoordinates :
+    selfAdjoint.submodule ℝ (Matrix (Fin n) (Fin n) 𝕜) ≃L[ℝ] SelfAdjointCoordinates n 𝕜 :=
+  LinearEquiv.toContinuousLinearEquiv
+    { selfAdjointCoordinatesLinearMap.toLinearMap.comp (selfAdjoint.submodule ℝ _).subtype with
+      invFun := fun x ↦ ⟨Matrix.of fun i j ↦
+        if hij : i < j then x.2 ⟨(i, j), hij⟩
+        else if hji : j < i then star (x.2 ⟨(j, i), hji⟩)
+        else (x.1 i : 𝕜), by
+          refine Matrix.IsHermitian.ext fun i j ↦ ?_
+          rcases lt_trichotomy i j with h | rfl | h
+          · simp [h, h.not_gt]
+          · simp
+          · simp [h, h.not_gt]⟩
+      left_inv := fun A ↦ Subtype.ext (by
+        ext i j
+        rcases lt_trichotomy i j with h | rfl | h
+        · simp [h]
+        · simpa using RCLike.conj_eq_iff_re.mp ((selfAdjoint.isHermitian_coe A).apply i i)
+        · simpa [h, h.not_gt] using (selfAdjoint.isHermitian_coe A).apply i j)
+      right_inv := fun x ↦ by
+        apply Prod.ext
+        · funext i
+          simp
+        · funext ij
+          simp [ij.property] }
+
+/-- Evaluating the self-adjoint coordinate equivalence uses the ambient coordinate map. -/
+theorem selfAdjointCoordinates_apply
+    (A : selfAdjoint.submodule ℝ (Matrix (Fin n) (Fin n) 𝕜)) :
+    selfAdjointCoordinates A = selfAdjointCoordinatesLinearMap (A : Matrix (Fin n) (Fin n) 𝕜) :=
+  (rfl)
+
+/-- The inverse coordinate map restores the real diagonal. -/
+@[simp] theorem coe_selfAdjointCoordinates_symm_apply_diag
+    (x : SelfAdjointCoordinates n 𝕜) (i : Fin n) :
+    (selfAdjointCoordinates.symm x : Matrix (Fin n) (Fin n) 𝕜) i i = (x.1 i : 𝕜) := by
+  simp [selfAdjointCoordinates]
+
+/-- The inverse coordinate map reads a strict upper entry from the second component. -/
+@[simp] theorem coe_selfAdjointCoordinates_symm_apply_of_lt
+    (x : SelfAdjointCoordinates n 𝕜) {i j : Fin n} (h : i < j) :
+    (selfAdjointCoordinates.symm x : Matrix (Fin n) (Fin n) 𝕜) i j = x.2 ⟨(i, j), h⟩ := by
+  simp [selfAdjointCoordinates, h]
+
+/-- The lower entries of the inverse coordinate map are conjugate reflections. -/
+@[simp] theorem coe_selfAdjointCoordinates_symm_apply_of_gt
+    (x : SelfAdjointCoordinates n 𝕜) {i j : Fin n} (h : j < i) :
+    (selfAdjointCoordinates.symm x : Matrix (Fin n) (Fin n) 𝕜) i j = star (x.2 ⟨(j, i), h⟩) := by
+  simp [selfAdjointCoordinates, h, h.not_gt]
+
+/-- The self-adjoint diagonal matrix with the given real diagonal entries, as the matrix whose
+diagonal coordinates are these entries and whose strict upper coordinates vanish. -/
+def selfAdjointDiagonal :
+    (Fin n → ℝ) →L[ℝ] selfAdjoint.submodule ℝ (Matrix (Fin n) (Fin n) 𝕜) :=
+  selfAdjointCoordinates.symm.toContinuousLinearMap.comp
+    (ContinuousLinearMap.inl ℝ (Fin n → ℝ) (FinStrictUpper n → 𝕜))
+
+/-- The self-adjoint diagonal has the given diagonal coordinates and no strict upper ones. -/
+@[simp] theorem selfAdjointCoordinates_selfAdjointDiagonal (d : Fin n → ℝ) :
+    selfAdjointCoordinates (selfAdjointDiagonal (𝕜 := 𝕜) d) = (d, 0) :=
+  selfAdjointCoordinates.apply_symm_apply _
+
+/-- Ambient matrix formula for the self-adjoint diagonal. -/
+@[simp] theorem coe_selfAdjointDiagonal (d : Fin n → ℝ) :
+    (selfAdjointDiagonal (𝕜 := 𝕜) d : Matrix (Fin n) (Fin n) 𝕜) = diagonal fun i ↦ (d i : 𝕜) := by
+  ext i j
+  rcases lt_trichotomy i j with h | rfl | h
+  · simp [selfAdjointDiagonal, h, h.ne]
+  · simp [selfAdjointDiagonal]
+  · simp [selfAdjointDiagonal, h, h.ne']
+
+/-- The coordinates of a unitary conjugate read the ambient conjugated matrix. -/
+theorem selfAdjointCoordinates_selfAdjointConj (U : unitaryGroup (Fin n) 𝕜)
+    (A : selfAdjoint.submodule ℝ (Matrix (Fin n) (Fin n) 𝕜)) :
+    selfAdjointCoordinates (UnitaryGroup.selfAdjointConj U A) =
+      selfAdjointCoordinatesLinearMap (Unitary.conjStarAlgAut ℝ _ U A.val) := by
+  rw [selfAdjointCoordinates_apply, UnitaryGroup.coe_selfAdjointConj_apply,
+    Unitary.conjStarAlgAut_apply, star_eq_conjTranspose]
+
+/-- Coordinate change induced by conjugation with a unitary frame. -/
+def unitaryConjCoordinates (U : unitaryGroup (Fin n) 𝕜) :
+    SelfAdjointCoordinates n 𝕜 ≃L[ℝ] SelfAdjointCoordinates n 𝕜 :=
+  selfAdjointCoordinates.symm.trans
+    ((UnitaryGroup.selfAdjointConj U).toLinearEquiv.toContinuousLinearEquiv.trans
+      selfAdjointCoordinates)
+
+/-- The conjugation in self-adjoint matrix coordinates has absolute determinant one. -/
+theorem abs_det_unitaryConjCoordinates (U : unitaryGroup (Fin n) 𝕜) :
+    |(unitaryConjCoordinates U).toContinuousLinearMap.det| = 1 := by
+  let T := UnitaryGroup.selfAdjointConj U
+  -- Conjugating the real linear isometry by a coordinate equivalence preserves its determinant.
+  rw [unitaryConjCoordinates, ← ContinuousLinearEquiv.comp_coe, ← ContinuousLinearEquiv.comp_coe,
+    ContinuousLinearMap.comp_assoc, ContinuousLinearMap.det_conj, ContinuousLinearMap.det,
+    ContinuousLinearEquiv.toLinearMap_toContinuousLinearMap,
+    LinearEquiv.toLinearEquiv_toContinuousLinearEquiv]
+  -- In an orthonormal basis the isometry has an orthogonal matrix, whose determinant is a unit.
+  let b := stdOrthonormalBasis ℝ (selfAdjoint.submodule ℝ (Matrix (Fin n) (Fin n) 𝕜))
+  rw [← LinearMap.det_toMatrix b.toBasis, ← Real.norm_eq_abs]
+  exact CStarRing.norm_of_mem_unitary (det_of_mem_unitary (T.toMatrix_mem_unitaryGroup b b))
+
+/-- The unitary coordinate change reads the coordinates of the unitary conjugate of the
+self-adjoint matrix with the given coordinates. -/
+theorem unitaryConjCoordinates_apply (U : unitaryGroup (Fin n) 𝕜) (x : SelfAdjointCoordinates n 𝕜) :
+    unitaryConjCoordinates U x =
+      selfAdjointCoordinatesLinearMap
+        (Unitary.conjStarAlgAut ℝ _ U
+          (selfAdjointCoordinates.symm x : Matrix (Fin n) (Fin n) 𝕜)) := by
+  rw [unitaryConjCoordinates, ContinuousLinearEquiv.trans_apply, ContinuousLinearEquiv.trans_apply,
+    LinearEquiv.coe_toContinuousLinearEquiv', LinearIsometryEquiv.coe_toLinearEquiv,
+    selfAdjointCoordinates_selfAdjointConj]
+
+/-- Conjugating the coordinates of a self-adjoint matrix gives the coordinates of its
+unitary conjugate. -/
+@[simp] theorem unitaryConjCoordinates_selfAdjointCoordinates
+    (U : unitaryGroup (Fin n) 𝕜) (A : selfAdjoint.submodule ℝ (Matrix (Fin n) (Fin n) 𝕜)) :
+    unitaryConjCoordinates U (selfAdjointCoordinates A) =
+      selfAdjointCoordinates (UnitaryGroup.selfAdjointConj U A) := by
+  rw [unitaryConjCoordinates, ContinuousLinearEquiv.trans_apply,
+    ContinuousLinearEquiv.symm_apply_apply, ContinuousLinearEquiv.trans_apply,
+    LinearEquiv.coe_toContinuousLinearEquiv', LinearIsometryEquiv.coe_toLinearEquiv]
+
+/-- The unitary coordinate change of the coordinates of a unitary conjugate reads the
+coordinates of the conjugate by the product of the two frames. -/
+theorem unitaryConjCoordinates_selfAdjointCoordinatesLinearMap_conjStarAlgAut
+    (U V : unitaryGroup (Fin n) 𝕜) (A : selfAdjoint.submodule ℝ (Matrix (Fin n) (Fin n) 𝕜)) :
+    unitaryConjCoordinates U
+        (selfAdjointCoordinatesLinearMap (Unitary.conjStarAlgAut ℝ _ V A.val)) =
+      selfAdjointCoordinatesLinearMap (Unitary.conjStarAlgAut ℝ _ (U * V) A.val) := by
+  rw [← selfAdjointCoordinates_selfAdjointConj, unitaryConjCoordinates_selfAdjointCoordinates,
+    ← UnitaryGroup.selfAdjointConj_mul_apply, selfAdjointCoordinates_selfAdjointConj]
+
+end TauCeti
