@@ -8,7 +8,7 @@ module
 public import Mathlib.FieldTheory.IsAlgClosed.Basic
 public import Mathlib.RingTheory.IntegralClosure.IntegrallyClosed
 
-import TauCeti.RingTheory.Ideal.IdempotentFG
+import TauCeti.RingTheory.Ideal.Idempotent.FG
 
 /-!
 # Idempotence of radical ideals over algebraically closed fields

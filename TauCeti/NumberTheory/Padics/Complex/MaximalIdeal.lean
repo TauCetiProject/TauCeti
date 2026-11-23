@@ -39,6 +39,6 @@ theorem not_fg_maximalIdeal : ¬ (maximalIdeal 𝓞_ℂ_[p]).FG := by
   have h : 𝓞_ℂ_[p].toSubring = _ := Subring.ext fun x ↦
     PadicComplexInt.mem_iff_norm_le_one.trans Valued.integer.mem_iff.symm
   let e : 𝓞_ℂ_[p] ≃+* _ := RingEquiv.subringCongr h
-  exact map_maximalIdeal_of_surjective e.toRingHom e.surjective ▸ hfg.map e.toRingHom
+  exact map_ringEquiv_maximalIdeal e ▸ hfg.map e.toRingHom
 
 end TauCeti.PadicComplexInt

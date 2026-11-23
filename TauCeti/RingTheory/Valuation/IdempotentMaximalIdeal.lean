@@ -18,8 +18,8 @@ Conversely, a nonzero idempotent maximal ideal cannot be finitely generated. Thi
 algebraic input for almost mathematics over nondiscrete valuation rings; no rank or
 completeness assumption is needed.
 
-Both results are stated for a nontrivial commutative ring whose elements are totally ordered by
-divisibility (a `PreValuationRing`); valuation domains are the main example. They need no domain
+Both results are stated for a nontrivial commutative ring in which any two elements are comparable
+by divisibility (a `PreValuationRing`); valuation domains are the main example. They need no domain
 assumption, so they also cover such rings with zero divisors.
 
 ## References
@@ -36,8 +36,8 @@ namespace TauCeti.ValuationRing
 
 variable {V : Type*} [CommRing V] [Nontrivial V] [PreValuationRing V]
 
-/-- The maximal ideal of a nontrivial ring whose elements are totally ordered by divisibility,
-such as a valuation ring, is idempotent when it is not finitely generated. -/
+/-- The maximal ideal of a nontrivial commutative ring in which any two elements are comparable by
+divisibility, such as a valuation ring, is idempotent when it is not finitely generated. -/
 theorem isIdempotentElem_maximalIdeal_of_not_fg (hfg : ¬ (maximalIdeal V).FG) :
     IsIdempotentElem (maximalIdeal V) := by
   apply le_antisymm Ideal.mul_le_left
@@ -55,9 +55,9 @@ theorem isIdempotentElem_maximalIdeal_of_not_fg (hfg : ¬ (maximalIdeal V).FG) :
     exact hxy ((notMem_maximalIdeal.mp hz).mul_right_dvd.mpr dvd_rfl)
   exact Ideal.mul_mem_mul hy hz
 
-/-- A nonzero maximal ideal of a nontrivial ring whose elements are totally ordered by
-divisibility, such as a valuation ring, is idempotent exactly when it is not finitely generated.
-The nonzero assumption excludes the maximal ideal of a field. -/
+/-- A nonzero maximal ideal of a nontrivial commutative ring in which any two elements are
+comparable by divisibility, such as a valuation ring, is idempotent exactly when it is not finitely
+generated. The nonzero assumption excludes the maximal ideal of a field. -/
 theorem isIdempotentElem_maximalIdeal_iff (hne : maximalIdeal V ≠ ⊥) :
     IsIdempotentElem (maximalIdeal V) ↔ ¬ (maximalIdeal V).FG := by
   refine ⟨fun hi hfg ↦ hne ?_, isIdempotentElem_maximalIdeal_of_not_fg⟩
