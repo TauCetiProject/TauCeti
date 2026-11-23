@@ -393,16 +393,14 @@ that of `δ₁(δ x z)`: `δ¹(y ⊗ x) = δ¹₁(y) ⊗ x + ∑_z δ¹₂(y, δ
 theorem boxCoeff_eq_add_of_coeff_eq_zero (hP : ∀ k, 2 ≤ k → P.coeff k = 0) (y y' : Y) (x z : X) :
     P.boxCoeff N (y, x) (y', z) =
       (if x = z then P.coeff 0 ![] y y' else 0) + P.coeff 1 ![N.coeff x z] y y' := by
-  rw [P.boxCoeff_eq_sum N (K := 2) (fun k hk x x' => by
-      rw [hP k hk, map_zero, LinearMap.zero_apply]),
-    Finset.sum_range_succ, Finset.sum_range_one, N.iteratedCoeff_zero, N.iteratedCoeff_one,
-    PiTensorProduct.lift.tprod]
-  congr 1
-  · split_ifs
-    · rw [PiTensorProduct.lift.tprod, Subsingleton.elim Fin.elim0 ![]]
-    · rw [map_zero, Matrix.zero_apply]
-  · rw [show (fun _ : Fin 1 => N.coeff x z) = ![N.coeff x z] from
-      funext fun l => by rw [Fin.fin_one_eq_zero l]; rfl]
+  have hK : ∀ k, 2 ≤ k → ∀ x x', PiTensorProduct.lift (P.coeff k) (N.iteratedCoeff k x x') = 0 :=
+    fun k hk _ _ => by rw [hP k hk, map_zero, LinearMap.zero_apply]
+  have hvec : (fun _ : Fin 1 => N.coeff x z) = ![N.coeff x z] :=
+    funext fun l => by rw [Fin.fin_one_eq_zero l, Matrix.cons_val_zero]
+  rw [P.boxCoeff_eq_sum N hK]
+  simp only [Finset.sum_range_succ, Finset.sum_range_zero, zero_add, N.iteratedCoeff_zero,
+    N.iteratedCoeff_one, PiTensorProduct.lift.tprod, hvec, apply_ite, Matrix.ite_apply, map_zero,
+    Matrix.zero_apply, Subsingleton.elim Fin.elim0 ![]]
 
 /-- **The coefficients of `P ⊠ N` increase a height.** Suppose that the coefficients of `N`
 strictly increase a height `h` on its generators and that those of `δ¹₁` of `P` strictly increase
