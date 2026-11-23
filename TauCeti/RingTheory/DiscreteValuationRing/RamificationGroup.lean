@@ -612,30 +612,37 @@ theorem isPGroup_ramificationGroupGraded_natCast_succ (p : ℕ) [CharP (ResidueF
   exact (isPGroup_unitFiltrationGraded_succ B p n).of_injective _
     (ramificationGroupGradedToUnitFiltrationGraded_injective A (n + 1) hϖ)
 
-/-- **Every positive-depth ramification group `G_i` (`i > 0`) is a `p`-group** for the residue
-characteristic `p`, whenever the residue extension is separable, the action is faithful, and `G_0`
-is finite; in particular the wild inertia group `G_1` is a `p`-group. -/
-theorem isPGroup_ramificationGroup (p : ℕ) [CharP (ResidueField B) p] [FaithfulSMul G B]
-    [Finite (ramificationGroup G B 0)] {i : ℤ} (hi : 0 < i) :
-    IsPGroup p (ramificationGroup G B i) := by
+omit A [Algebra A B] [IsLocalHom (algebraMap A B)] [SMulCommClass G A B]
+  [Algebra.IsSeparable (ResidueField A) (ResidueField B)] in
+private theorem ramificationGroup_induction_down [FaithfulSMul G B]
+    [Finite (ramificationGroup G B 0)] (P : Subgroup G → Prop) (hbot : P ⊥)
+    (hstep : ∀ n : ℕ, P (ramificationGroup G B (((n + 1 : ℕ) : ℤ) + 1)) →
+      P (ramificationGroup G B ((n + 1 : ℕ) : ℤ)))
+    {i : ℤ} (hi : 0 < i) : P (ramificationGroup G B i) := by
   obtain ⟨N, hN⟩ := exists_forall_ramificationGroup_eq_bot G B
-  suffices ∀ n ≤ max N i, 0 < n → IsPGroup p (ramificationGroup G B n) from
+  suffices ∀ n ≤ max N i, 0 < n → P (ramificationGroup G B n) from
     this i (le_max_right N i) hi
   intro n hn
   induction n, hn using Int.leInductionDown with
   | base =>
     intro _
     rw [hN _ (le_max_left N i)]
-    exact IsPGroup.of_bot
+    exact hbot
   | pred n _ ih =>
     intro hn1
-    have hsucc := ih (by omega)
     obtain ⟨j, hj⟩ : ∃ j : ℕ, n - 1 = ((j + 1 : ℕ) : ℤ) := ⟨(n - 2).toNat, by omega⟩
     rw [hj]
-    refine IsPGroup.of_subgroup_of_quotient ?_
-      (isPGroup_ramificationGroupGraded_natCast_succ G A B p j)
-    rw [show ((j + 1 : ℕ) : ℤ) + 1 = n by omega]
-    exact hsucc.comap_subtype
+    exact hstep j (by rw [show ((j + 1 : ℕ) : ℤ) + 1 = n by omega]; exact ih (by omega))
+
+/-- **Every positive-depth ramification group `G_i` (`i > 0`) is a `p`-group** for the residue
+characteristic `p`, whenever the residue extension is separable, the action is faithful, and `G_0`
+is finite; in particular the wild inertia group `G_1` is a `p`-group. -/
+theorem isPGroup_ramificationGroup (p : ℕ) [CharP (ResidueField B) p] [FaithfulSMul G B]
+    [Finite (ramificationGroup G B 0)] {i : ℤ} (hi : 0 < i) :
+    IsPGroup p (ramificationGroup G B i) :=
+  ramificationGroup_induction_down G B (IsPGroup p ·) IsPGroup.of_bot (fun j hsucc ↦
+    IsPGroup.of_subgroup_of_quotient hsucc.comap_subtype
+      (isPGroup_ramificationGroupGraded_natCast_succ G A B p j)) hi
 
 /-- **Wild inertia is the Sylow `p`-subgroup of inertia**: in prime residue characteristic `p`,
 under separable residue extension, faithful action, and finite inertia `G_0`, the first
@@ -739,28 +746,17 @@ finite. -/
 theorem ramificationGroup_eq_bot_of_charZero [CharZero (ResidueField B)] [FaithfulSMul G B]
     [Finite (ramificationGroup G B 0)] {i : ℤ} (hi : 0 < i) :
     ramificationGroup G B i = ⊥ := by
-  obtain ⟨N, hN⟩ := exists_forall_ramificationGroup_eq_bot G B
-  suffices ∀ n ≤ max N i, 0 < n → ramificationGroup G B n = ⊥ from
-    this i (le_max_right N i) hi
-  intro n hn
-  induction n, hn using Int.leInductionDown with
-  | base => exact fun _ ↦ hN _ (le_max_left N i)
-  | pred n _ ih =>
-    intro hn1
-    have hsucc : ramificationGroup G B n = ⊥ := ih (by omega)
-    obtain ⟨j, hj⟩ : ∃ j : ℕ, n - 1 = ((j + 1 : ℕ) : ℤ) := ⟨(n - 2).toNat, by omega⟩
-    rw [hj]
-    have : Finite (ramificationGroup G B ((j + 1 : ℕ) : ℤ)) :=
-      Finite.of_injective
-        (Subgroup.inclusion (ramificationGroup_antitone G B (Int.natCast_nonneg (j + 1))))
-        (Subgroup.inclusion_injective _)
-    have hq : Subsingleton (RamificationGroupGraded G B ((j + 1 : ℕ) : ℤ)) :=
-      subsingleton_ramificationGroupGraded_natCast_succ_of_charZero G A B j
-    rw [RamificationGroupGraded, show ((j + 1 : ℕ) : ℤ) + 1 = n by omega, hsucc,
-      Subgroup.bot_subgroupOf] at hq
-    have : Subsingleton (ramificationGroup G B ((j + 1 : ℕ) : ℤ)) :=
-      QuotientGroup.quotientBot.symm.injective.subsingleton
-    exact Subgroup.eq_bot_of_subsingleton _
+  refine ramificationGroup_induction_down G B (· = ⊥) rfl (fun j hsucc ↦ ?_) hi
+  have : Finite (ramificationGroup G B ((j + 1 : ℕ) : ℤ)) :=
+    Finite.of_injective
+      (Subgroup.inclusion (ramificationGroup_antitone G B (Int.natCast_nonneg (j + 1))))
+      (Subgroup.inclusion_injective _)
+  have hq : Subsingleton (RamificationGroupGraded G B ((j + 1 : ℕ) : ℤ)) :=
+    subsingleton_ramificationGroupGraded_natCast_succ_of_charZero G A B j
+  rw [RamificationGroupGraded, hsucc, Subgroup.bot_subgroupOf] at hq
+  have : Subsingleton (ramificationGroup G B ((j + 1 : ℕ) : ℤ)) :=
+    QuotientGroup.quotientBot.symm.injective.subsingleton
+  exact Subgroup.eq_bot_of_subsingleton _
 
 /-- **In residue characteristic zero, the wild inertia group `G_1` is trivial**, whenever the
 residue extension is separable, the action is faithful, and `G_0` is finite. -/

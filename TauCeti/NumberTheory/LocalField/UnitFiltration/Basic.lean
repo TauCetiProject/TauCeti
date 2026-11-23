@@ -305,26 +305,10 @@ theorem unitFiltrationToIntegerUnits_injective (i : ℕ) :
 /-- The `i`-th step `U(K,i)` of the unit filtration of a local field `K`, identified with
 `TauCeti.IsLocalRing.unitFiltration 𝒪[K] i` inside `𝒪[K]ˣ`. -/
 def unitFiltrationEquivInteger (i : ℕ) :
-    unitFiltration K i ≃* TauCeti.IsLocalRing.unitFiltration 𝒪[K] i where
-  toFun x := ⟨unitFiltrationToIntegerUnits i x, by
-    obtain ⟨u, hu, hux⟩ := Subgroup.mem_map.mp x.property
-    have hEq : unitFiltrationToIntegerUnits i x = u :=
-      Units.map_injective Subtype.val_injective <| by
-        rw [hux]
-        exact unitsMap_subtype_unitFiltrationToIntegerUnits i x
-    exact hEq ▸ hu⟩
-  invFun u := ⟨Units.map (Subring.subtype 𝒪[K]).toMonoidHom (u : 𝒪[K]ˣ),
-    Subgroup.mem_map_of_mem _ u.property⟩
-  left_inv x := Subtype.ext (unitsMap_subtype_unitFiltrationToIntegerUnits i x)
-  right_inv u := Subtype.ext (Units.ext (Subtype.ext rfl))
-  map_mul' x y := Subtype.ext (map_mul (unitFiltrationToIntegerUnits i) x y)
-
-/-- Viewing `x ∈ U(K,i)` in `TauCeti.IsLocalRing.unitFiltration 𝒪[K] i` gives the same unit of
-`𝒪[K]` as `unitFiltrationToIntegerUnits`. -/
-@[simp]
-theorem coe_unitFiltrationEquivInteger (i : ℕ) (x : unitFiltration K i) :
-    (unitFiltrationEquivInteger i x : 𝒪[K]ˣ) = unitFiltrationToIntegerUnits i x :=
-  (rfl)
+    unitFiltration K i ≃* TauCeti.IsLocalRing.unitFiltration 𝒪[K] i :=
+  (Subgroup.equivMapOfInjective (TauCeti.IsLocalRing.unitFiltration 𝒪[K] i)
+    (Units.map (Subring.subtype 𝒪[K]).toMonoidHom)
+    (Units.map_injective Subtype.val_injective)).symm
 
 /-- Viewing `u ∈ TauCeti.IsLocalRing.unitFiltration 𝒪[K] i` in `U(K,i)` maps `u` along the
 integer-ring inclusion `𝒪[K]ˣ →* Kˣ`. -/
@@ -333,7 +317,18 @@ theorem coe_unitFiltrationEquivInteger_symm (i : ℕ)
     (u : TauCeti.IsLocalRing.unitFiltration 𝒪[K] i) :
     ((unitFiltrationEquivInteger (K := K) i).symm u : Kˣ) =
       Units.map (Subring.subtype 𝒪[K] : 𝒪[K] →* K) (u : 𝒪[K]ˣ) :=
-  (rfl)
+  Subgroup.coe_equivMapOfInjective_apply (TauCeti.IsLocalRing.unitFiltration 𝒪[K] i)
+    (Units.map (Subring.subtype 𝒪[K]).toMonoidHom)
+    (Units.map_injective Subtype.val_injective) u
+
+/-- Viewing `x ∈ U(K,i)` in `TauCeti.IsLocalRing.unitFiltration 𝒪[K] i` gives the same unit of
+`𝒪[K]` as `unitFiltrationToIntegerUnits`. -/
+@[simp]
+theorem coe_unitFiltrationEquivInteger (i : ℕ) (x : unitFiltration K i) :
+    (unitFiltrationEquivInteger i x : 𝒪[K]ˣ) = unitFiltrationToIntegerUnits i x := by
+  apply Units.map_injective (f := (Subring.subtype 𝒪[K] : 𝒪[K] →* K)) Subtype.val_injective
+  rw [unitsMap_subtype_unitFiltrationToIntegerUnits, ← coe_unitFiltrationEquivInteger_symm]
+  exact congrArg Subtype.val ((unitFiltrationEquivInteger i).symm_apply_apply x)
 
 /-- The unit filtration separates points: an element lying in every step is `1`. -/
 theorem iInf_unitFiltration : ⨅ i, unitFiltration K i = ⊥ := by
@@ -431,6 +426,9 @@ theorem unitFiltrationGradedZeroEquivResidueFieldUnits_mk (x : unitFiltration K 
     unitFiltrationGradedEquivInteger_mk,
     TauCeti.IsLocalRing.coe_unitFiltrationGradedZeroEquivResidueFieldUnits_mk,
     coe_unitFiltrationEquivInteger, ValuationSubring.coe_unitGroupToResidueFieldUnits_apply]
+  -- The valuation subring of `K` is built on `𝒪[K]`, `unitFiltrationToIntegerUnits 0 x` is
+  -- definitionally the underlying unit of `𝒪[K]`, and both residue maps are the quotient by
+  -- the same maximal ideal, so the two sides agree by unfolding.
   rfl
 
 -- Not a `simp` lemma: `unitFiltrationGradedZeroEquivResidueFieldUnits_mk` rewrites its left-hand

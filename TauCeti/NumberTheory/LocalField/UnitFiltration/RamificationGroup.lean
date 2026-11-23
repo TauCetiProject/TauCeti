@@ -97,6 +97,8 @@ private theorem exists_separableBaseRing.{u, v} (G : Type v) [Group G] (L : Type
   let E : Subring 𝒪[L] :=
     (RingHom.pi (MulSemiringAction.toRingHom G 𝒪[L])).eqLocus (RingHom.pi fun _ ↦ RingHom.id 𝒪[L])
   have hAE : A = E := Subring.ext fun _ ↦ funext_iff.symm
+  -- `A` is the same subring as the equalizer `E`, and `algebraMap A 𝒪[L]` is definitionally
+  -- `A.subtype`, so `IsLocalHom` and `IsLocalRing` transport along `hAE`.
   have : IsLocalHom (algebraMap A 𝒪[L]) := hAE ▸ inferInstanceAs (IsLocalHom E.subtype)
   have : IsLocalRing A := hAE ▸ RingHom.isLocalRing_eqLocus _ _
   have : Finite (ResidueField A) :=
@@ -159,13 +161,23 @@ def uniformizerRatio (hϖ : Irreducible ϖ) (σ : ramificationGroup G 𝒪[L] (i
   (unitFiltrationEquivInteger i).symm
     (TauCeti.IsDiscreteValuationRing.uniformizerRatio i hϖ σ)
 
+-- Oriented toward `uniformizerRatio` so `coe_uniformizerRatio` remains in `simp`-normal form.
+@[simp]
+private theorem unitFiltrationEquivInteger_symm_uniformizerRatio (hϖ : Irreducible ϖ)
+    (σ : ramificationGroup G 𝒪[L] (i : ℤ)) :
+    (unitFiltrationEquivInteger i).symm
+        (TauCeti.IsDiscreteValuationRing.uniformizerRatio i hϖ σ) =
+      uniformizerRatio i hϖ σ :=
+  rfl
+
 @[simp]
 theorem coe_uniformizerRatio (hϖ : Irreducible ϖ) (σ : ramificationGroup G 𝒪[L] (i : ℤ)) :
     ((uniformizerRatio i hϖ σ : Lˣ) : L) = (σ : G) • (ϖ : L) / (ϖ : L) := by
   have hϖ0 : (ϖ : L) ≠ 0 := fun h ↦ hϖ.ne_zero (Subtype.ext h)
   apply mul_left_cancel₀ hϖ0
-  rw [mul_div_cancel₀ _ hϖ0, uniformizerRatio, coe_unitFiltrationEquivInteger_symm,
-    Units.coe_map, MonoidHom.coe_ofClass, Subring.coe_subtype, ← Subring.coe_mul,
+  rw [mul_div_cancel₀ _ hϖ0, ← unitFiltrationEquivInteger_symm_uniformizerRatio,
+    coe_unitFiltrationEquivInteger_symm, Units.coe_map, MonoidHom.coe_ofClass,
+    Subring.coe_subtype, ← Subring.coe_mul,
     TauCeti.IsDiscreteValuationRing.mul_coe_uniformizerRatio, coe_smul_integer]
 
 /-- For `σ` in the `i`-th ramification group and `ϖ` a uniformizer, the ratio `σ ϖ / ϖ` lies in
@@ -215,7 +227,7 @@ theorem ramificationGroupToUnitFiltrationGraded_apply (hϖ : Irreducible ϖ)
     (σ : ramificationGroup G 𝒪[L] (i : ℤ)) :
     ramificationGroupToUnitFiltrationGraded i hϖ σ =
       QuotientGroup.mk (uniformizerRatio i hϖ σ) := by
-  simp [ramificationGroupToUnitFiltrationGraded, uniformizerRatio]
+  simp [ramificationGroupToUnitFiltrationGraded]
 
 /-- The quotient homomorphism does not depend on the choice of uniformizer: two uniformizers
 differ by a unit of `𝒪[L]`, and `σ` moves that unit inside `U(L,i+1)`. -/
@@ -255,7 +267,9 @@ theorem mem_ramificationGroup_one_of_valuation_pow_sub_one_lt_one (hϖ : Irreduc
   have hcoe :
       (((TauCeti.IsDiscreteValuationRing.uniformizerRatio 0 hϖ ⟨σ, hσ⟩ : 𝒪[L]ˣ) : 𝒪[L]) : L) =
         σ • (ϖ : L) / (ϖ : L) := by
-    simpa [uniformizerRatio] using coe_uniformizerRatio (i := 0) hϖ ⟨σ, hσ⟩
+    rw [← coe_uniformizerRatio (i := 0) hϖ ⟨σ, hσ⟩,
+      ← unitFiltrationEquivInteger_symm_uniformizerRatio, coe_unitFiltrationEquivInteger_symm,
+      Units.coe_map, MonoidHom.coe_ofClass, Subring.coe_subtype]
   simpa [hcoe] using h
 
 /-- For `σ` in the inertia group `G_0` fixing an element `b` of valuation `v(a) ^ n`, the `n`-th
@@ -337,7 +351,7 @@ theorem ramificationGroupGradedToUnitFiltrationGraded_mk (hϖ : Irreducible ϖ)
     (σ : ramificationGroup G 𝒪[L] (i : ℤ)) :
     ramificationGroupGradedToUnitFiltrationGraded i hϖ (QuotientGroup.mk σ) =
       QuotientGroup.mk (uniformizerRatio i hϖ σ) := by
-  simp [ramificationGroupGradedToUnitFiltrationGraded, uniformizerRatio]
+  simp [ramificationGroupGradedToUnitFiltrationGraded]
 
 /-- **The quotient embeddings are injective.** -/
 theorem ramificationGroupGradedToUnitFiltrationGraded_injective (hϖ : Irreducible ϖ) :
