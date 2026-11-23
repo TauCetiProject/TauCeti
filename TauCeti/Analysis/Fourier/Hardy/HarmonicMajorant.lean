@@ -272,13 +272,6 @@ theorem isLeast_harmonic_majorant_zero :
 
 /-! ### Holomorphic functions with a harmonic majorant -/
 
-/-- The disk function of the Hardy function with coefficient sequence `a ∈ ℓ²` is the power series
-`∑ n, a n * w ^ n`. -/
-theorem diskFunction_hardyBasis_repr_symm (a : lp (fun _ : ℕ ↦ ℂ) 2) (w : ℂ) :
-    (hardyBasis.repr.symm a).diskFunction w = ∑' n, a n * w ^ n := by
-  rw [diskFunction_def]
-  exact tsum_congr fun n ↦ by rw [← hardyBasis_repr, LinearIsometryEquiv.apply_symm_apply]
-
 variable {F : ℂ → ℂ}
 
 /-- A holomorphic function on the open unit disk is the sum there of its Taylor series at the
