@@ -121,6 +121,9 @@ AIQ-Kitware DKPS formalization (Apache-2.0; Jon Crall and GPT-6).
   `LinearMap.comp_starProjection_ker`,
   `LinearMap.adjoint_comp_starProjection_orthogonal_range`,
   `LinearMap.normalPart`, `LinearMap.normalPart_def`,
+  `LinearMap.normalPart_zero`, `LinearMap.normalPart_add`, `LinearMap.normalPart_neg`,
+  `LinearMap.normalPart_sub`, `LinearMap.normalPart_smul`, `LinearMap.normalPart_normalPart`,
+  `LinearMap.normalPart_self`,
   `LinearMap.adjoint_comp_normalPart`, `LinearMap.comp_adjoint_normalPart`,
   `LinearMap.finrank_range_sub_starProjection_comp_le`,
   `LinearMap.finrank_range_sub_normalPart_le`,
@@ -206,21 +209,27 @@ theorem _root_.LinearMap.finrank_range_sub_starProjection_comp_le {F : Type*}
       Module.finrank 𝕜 Wᗮ + Module.finrank 𝕜 Kᗮ := by
   set T₁ : E →ₗ[𝕜] F := Wᗮ.starProjection.toLinearMap ∘ₗ Δ
   set T₂ : E →ₗ[𝕜] F := W.starProjection.toLinearMap ∘ₗ Δ ∘ₗ Kᗮ.starProjection.toLinearMap
+  have hW : LinearMap.id = W.starProjection.toLinearMap + Wᗮ.starProjection.toLinearMap :=
+    congrArg ContinuousLinearMap.toLinearMap
+      Submodule.id_eq_sum_starProjection_self_orthogonalComplement
+  have hK : LinearMap.id = K.starProjection.toLinearMap + Kᗮ.starProjection.toLinearMap :=
+    congrArg ContinuousLinearMap.toLinearMap
+      Submodule.id_eq_sum_starProjection_self_orthogonalComplement
   have hdecomp :
       Δ - W.starProjection.toLinearMap ∘ₗ Δ ∘ₗ K.starProjection.toLinearMap = T₁ + T₂ := by
-    ext x
-    have hW := W.starProjection_add_starProjection_orthogonal (Δ x)
-    have hK := K.starProjection_add_starProjection_orthogonal x
-    have hWK : W.starProjection (Δ x) =
-        W.starProjection (Δ (K.starProjection x)) +
-          W.starProjection (Δ (Kᗮ.starProjection x)) := by
-      conv_lhs => rw [← hK, map_add, map_add]
-    calc (Δ - W.starProjection.toLinearMap ∘ₗ Δ ∘ₗ K.starProjection.toLinearMap) x
-        = Δ x - W.starProjection (Δ (K.starProjection x)) := rfl
-      _ = Wᗮ.starProjection (Δ x) + W.starProjection (Δ (Kᗮ.starProjection x)) := by
-          conv_lhs => rw [← hW, hWK]
-          abel
-      _ = (T₁ + T₂) x := rfl
+    have hΔ : Δ = W.starProjection.toLinearMap ∘ₗ Δ + Wᗮ.starProjection.toLinearMap ∘ₗ Δ := by
+      conv_lhs => rw [← LinearMap.id_comp Δ, hW, LinearMap.add_comp]
+    have hWΔ : W.starProjection.toLinearMap ∘ₗ Δ =
+        W.starProjection.toLinearMap ∘ₗ Δ ∘ₗ K.starProjection.toLinearMap +
+          W.starProjection.toLinearMap ∘ₗ Δ ∘ₗ Kᗮ.starProjection.toLinearMap := by
+      conv_lhs =>
+        rw [← LinearMap.comp_id (W.starProjection.toLinearMap ∘ₗ Δ), hK, LinearMap.comp_add]
+        simp only [LinearMap.comp_assoc]
+    conv_lhs =>
+      arg 1
+      rw [hΔ, hWΔ]
+    rw [add_assoc, add_sub_cancel_left]
+    exact add_comm T₂ T₁
   rw [hdecomp]
   have h1 : Module.finrank 𝕜 (LinearMap.range T₁) ≤ Module.finrank 𝕜 Wᗮ := by
     calc Module.finrank 𝕜 (LinearMap.range T₁)
@@ -233,7 +242,7 @@ theorem _root_.LinearMap.finrank_range_sub_starProjection_comp_le {F : Type*}
     (Submodule.finrank_add_le_finrank_add_finrank _ _)).trans (Nat.add_le_add h1 h2)
 
 /-- The canonical normal part `P_{(range Θ)ᗮ} Δ P_{ker Θ}` of `Δ` with respect to `Θ`. -/
-@[expose] def _root_.LinearMap.normalPart {F : Type*} [NormedAddCommGroup F] [InnerProductSpace 𝕜 F]
+def _root_.LinearMap.normalPart {F : Type*} [NormedAddCommGroup F] [InnerProductSpace 𝕜 F]
     (Θ Δ : E →ₗ[𝕜] F) [(LinearMap.range Θ)ᗮ.HasOrthogonalProjection]
     [(LinearMap.ker Θ).HasOrthogonalProjection] : E →ₗ[𝕜] F :=
   (LinearMap.range Θ)ᗮ.starProjection.toLinearMap ∘ₗ Δ ∘ₗ
@@ -247,7 +256,68 @@ theorem _root_.LinearMap.normalPart_def {F : Type*} [NormedAddCommGroup F] [Inne
     Θ.normalPart Δ =
       (LinearMap.range Θ)ᗮ.starProjection.toLinearMap ∘ₗ Δ ∘ₗ
         (LinearMap.ker Θ).starProjection.toLinearMap :=
-  rfl
+  (rfl)
+
+/-- The canonical normal part of `0` is `0`. -/
+@[simp]
+theorem _root_.LinearMap.normalPart_zero {F : Type*} [NormedAddCommGroup F]
+    [InnerProductSpace 𝕜 F] (Θ : E →ₗ[𝕜] F) [(LinearMap.range Θ)ᗮ.HasOrthogonalProjection]
+    [(LinearMap.ker Θ).HasOrthogonalProjection] :
+    Θ.normalPart 0 = 0 := by
+  simp only [LinearMap.normalPart_def, LinearMap.zero_comp, LinearMap.comp_zero]
+
+/-- The canonical normal part is additive in the perturbation. -/
+@[simp]
+theorem _root_.LinearMap.normalPart_add {F : Type*} [NormedAddCommGroup F]
+    [InnerProductSpace 𝕜 F] (Θ Δ₁ Δ₂ : E →ₗ[𝕜] F)
+    [(LinearMap.range Θ)ᗮ.HasOrthogonalProjection] [(LinearMap.ker Θ).HasOrthogonalProjection] :
+    Θ.normalPart (Δ₁ + Δ₂) = Θ.normalPart Δ₁ + Θ.normalPart Δ₂ := by
+  simp only [LinearMap.normalPart_def, LinearMap.add_comp, LinearMap.comp_add]
+
+/-- The canonical normal part commutes with negation in the perturbation. -/
+@[simp]
+theorem _root_.LinearMap.normalPart_neg {F : Type*} [NormedAddCommGroup F]
+    [InnerProductSpace 𝕜 F] (Θ Δ : E →ₗ[𝕜] F)
+    [(LinearMap.range Θ)ᗮ.HasOrthogonalProjection] [(LinearMap.ker Θ).HasOrthogonalProjection] :
+    Θ.normalPart (-Δ) = -Θ.normalPart Δ := by
+  simp only [LinearMap.normalPart_def, LinearMap.neg_comp, LinearMap.comp_neg]
+
+/-- The canonical normal part commutes with subtraction in the perturbation. -/
+@[simp]
+theorem _root_.LinearMap.normalPart_sub {F : Type*} [NormedAddCommGroup F]
+    [InnerProductSpace 𝕜 F] (Θ Δ₁ Δ₂ : E →ₗ[𝕜] F)
+    [(LinearMap.range Θ)ᗮ.HasOrthogonalProjection] [(LinearMap.ker Θ).HasOrthogonalProjection] :
+    Θ.normalPart (Δ₁ - Δ₂) = Θ.normalPart Δ₁ - Θ.normalPart Δ₂ := by
+  simp only [LinearMap.normalPart_def, LinearMap.sub_comp, LinearMap.comp_sub]
+
+/-- The canonical normal part commutes with scalar multiplication in the perturbation. -/
+@[simp]
+theorem _root_.LinearMap.normalPart_smul {F : Type*} [NormedAddCommGroup F]
+    [InnerProductSpace 𝕜 F] (Θ : E →ₗ[𝕜] F) (c : 𝕜) (Δ : E →ₗ[𝕜] F)
+    [(LinearMap.range Θ)ᗮ.HasOrthogonalProjection] [(LinearMap.ker Θ).HasOrthogonalProjection] :
+    Θ.normalPart (c • Δ) = c • Θ.normalPart Δ := by
+  simp only [LinearMap.normalPart_def, LinearMap.smul_comp, LinearMap.comp_smul]
+
+/-- The canonical normal part operation `Δ ↦ Θ.normalPart Δ` is idempotent. -/
+@[simp]
+theorem _root_.LinearMap.normalPart_normalPart {F : Type*} [NormedAddCommGroup F]
+    [InnerProductSpace 𝕜 F] (Θ Δ : E →ₗ[𝕜] F)
+    [(LinearMap.range Θ)ᗮ.HasOrthogonalProjection] [(LinearMap.ker Θ).HasOrthogonalProjection] :
+    Θ.normalPart (Θ.normalPart Δ) = Θ.normalPart Δ := by
+  have hW : (LinearMap.range Θ)ᗮ.starProjection.toLinearMap ∘ₗ
+      (LinearMap.range Θ)ᗮ.starProjection.toLinearMap =
+      (LinearMap.range Θ)ᗮ.starProjection.toLinearMap :=
+    (Module.End.mul_eq_comp _ _).symm.trans
+      (ContinuousLinearMap.IsIdempotentElem.toLinearMap
+        (LinearMap.range Θ)ᗮ.isIdempotentElem_starProjection).eq
+  have hK : (LinearMap.ker Θ).starProjection.toLinearMap ∘ₗ
+      (LinearMap.ker Θ).starProjection.toLinearMap =
+      (LinearMap.ker Θ).starProjection.toLinearMap :=
+    (Module.End.mul_eq_comp _ _).symm.trans
+      (ContinuousLinearMap.IsIdempotentElem.toLinearMap
+        (LinearMap.ker Θ).isIdempotentElem_starProjection).eq
+  simp only [LinearMap.normalPart_def, LinearMap.comp_assoc]
+  rw [hK, ← LinearMap.comp_assoc, hW]
 
 /-- For a target map `Θ`, the canonical tangent part `Δ - Θ.normalPart Δ` has rank at most
 `2 * rank Θ`. -/
@@ -734,6 +804,13 @@ theorem comp_starProjection_ker (Θ : E →ₗ[𝕜] F) [Θ.ker.HasOrthogonalPro
   ext x
   exact mem_ker.mp ((ker Θ).starProjection_apply_mem x)
 
+/-- The canonical normal part of `Θ` with respect to itself is `0`. -/
+@[simp]
+theorem normalPart_self {F' : Type*} [NormedAddCommGroup F'] [InnerProductSpace 𝕜 F']
+    (Θ : E →ₗ[𝕜] F') [(range Θ)ᗮ.HasOrthogonalProjection] [(ker Θ).HasOrthogonalProjection] :
+    Θ.normalPart Θ = 0 := by
+  simp only [normalPart_def, comp_starProjection_ker, comp_zero]
+
 section Adjoint
 
 variable {F' : Type*} [NormedAddCommGroup F'] [InnerProductSpace 𝕜 F']
@@ -747,11 +824,13 @@ theorem adjoint_comp_starProjection_orthogonal_range (Θ : E →ₗ[𝕜] F') :
   exact orthogonal_range Θ
 
 /-- The canonical normal part `Θ.normalPart Δ` satisfies `Θ† (Θ.normalPart Δ) = 0`. -/
+@[simp]
 theorem adjoint_comp_normalPart (Θ Δ : E →ₗ[𝕜] F') :
     adjoint Θ ∘ₗ Θ.normalPart Δ = 0 := by
   rw [normalPart_def, ← comp_assoc, adjoint_comp_starProjection_orthogonal_range, zero_comp]
 
 /-- The canonical normal part `Θ.normalPart Δ` satisfies `Θ (Θ.normalPart Δ)† = 0`. -/
+@[simp]
 theorem comp_adjoint_normalPart (Θ Δ : E →ₗ[𝕜] F') :
     Θ ∘ₗ adjoint (Θ.normalPart Δ) = 0 := by
   rw [normalPart_def]

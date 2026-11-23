@@ -5,7 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.InnerProductSpace.UnitarilyInvariantSeminorm.Schatten
+public import TauCeti.Analysis.InnerProductSpace.UnitarilyInvariantSeminorm.Frobenius
+public import TauCeti.Analysis.InnerProductSpace.UnitarilyInvariantSeminorm.OpNorm
 
 import TauCeti.Analysis.InnerProductSpace.Polar.Finite
 import TauCeti.Analysis.InnerProductSpace.Trace.Free
@@ -26,8 +27,8 @@ seminorm `‖·‖₁` in exact duality:
 * **Orthogonal additivity**: when `A† B = 0` and `A B† = 0` (orthogonal column and row spaces),
   the polar partial isometries `U_A`, `U_B` inherit the same two-sided orthogonality, so
   `‖U_A + U_B‖ = max ‖U_A‖ ‖U_B‖ ≤ 1` by
-  `TauCeti.UnitarilyInvariantSeminorm.opNorm_add_eq_max_of_orthogonal` and trace duality yields
-  `‖A + B‖₁ = ‖A‖₁ + ‖B‖₁`.
+  `TauCeti.UnitarilyInvariantSeminorm.opNorm_add_eq_max_of_twoSidedOrthogonal` and trace duality
+  yields `‖A + B‖₁ = ‖A‖₁ + ‖B‖₁`.
 * **Low-rank tangent–normal decomposition**: for any subspaces `W ≤ F` and `K ≤ E`, decomposing
   `Δ = Δ₁ + Δ₂` with normal part `Δ₂ = P_W Δ P_K` and tangent part `Δ₁ = Δ - Δ₂` gives
   `rank Δ₁ ≤ dim Wᗮ + dim Kᗮ`, trace orthogonality `tr (Δ₁† Δ₂) = 0`, and therefore
@@ -48,9 +49,9 @@ seminorm `‖·‖₁` in exact duality:
 * `TauCeti.UnitarilyInvariantSeminorm.exists_nuclear_le_one_trace_adjoint_comp_eq_opNorm`,
   `TauCeti.UnitarilyInvariantSeminorm.opNorm_eq_iSup_norm_trace_adjoint_comp`:
   attainment and variational formula for the operator norm.
-* `TauCeti.UnitarilyInvariantSeminorm.nuclear_add_of_orthogonal`:
+* `TauCeti.UnitarilyInvariantSeminorm.nuclear_add_of_twoSidedOrthogonal`:
   `‖A + B‖₁ = ‖A‖₁ + ‖B‖₁` whenever `A† B = 0` and `A B† = 0`.
-* `TauCeti.UnitarilyInvariantSeminorm.nuclear_add_sub_le_nuclear_add_of_orthogonal`,
+* `TauCeti.UnitarilyInvariantSeminorm.nuclear_add_sub_le_nuclear_add_of_twoSidedOrthogonal`,
   `TauCeti.UnitarilyInvariantSeminorm.nuclear_sub_starProjection_comp_le`,
   `TauCeti.UnitarilyInvariantSeminorm.nuclear_sub_normalPart_le`,
   `TauCeti.UnitarilyInvariantSeminorm.nuclear_add_normalPart_sub_le_nuclear_add`:
@@ -83,7 +84,7 @@ variable {𝕜 E F : Type*} [RCLike 𝕜]
 /-- **Trace duality**: `‖tr (A† B)‖ ≤ ‖A‖ ‖B‖₁`. -/
 theorem norm_trace_adjoint_comp_le_opNorm_mul_nuclear (A B : E →ₗ[𝕜] F) :
     ‖LinearMap.trace 𝕜 E (LinearMap.adjoint A ∘ₗ B)‖ ≤ opNorm 𝕜 E F A * nuclear 𝕜 E F B := by
-  rw [LinearMap.trace_adjoint_comp_eq_sum_singularValues A B, nuclear_apply,
+  rw [LinearMap.trace_adjoint_comp_eq_sum_singularValues_mul_inner A B, nuclear_apply,
     ← B.sum_fin_singularValues (fun s ↦ s) rfl, Finset.mul_sum]
   refine (norm_sum_le _ _).trans (Finset.sum_le_sum fun i _ ↦ ?_)
   have hσ : 0 ≤ B.singularValues i := B.singularValues_nonneg _
@@ -125,13 +126,7 @@ theorem exists_opNorm_le_one_trace_adjoint_comp_eq_nuclear (B : E →ₗ[𝕜] F
   · rw [B.adjoint_polarFactor_comp, LinearMap.trace_eq_sum_inner _ B.rightSingularBasis,
       nuclear_apply, ← B.sum_fin_singularValues (fun s ↦ s) rfl, RCLike.ofReal_sum]
     refine Finset.sum_congr rfl fun i _ ↦ ?_
-    have hsqrt : B.operatorAbs (B.rightSingularBasis i) =
-        ((√(B.singularValues i ^ 2) : ℝ) : 𝕜) • B.rightSingularBasis i := by
-      rw [← (LinearMap.isPositive_adjoint_comp_self B).sqrt_isPositive.eq_operatorAbs
-        (LinearMap.isPositive_adjoint_comp_self B).sqrt_sq]
-      exact (LinearMap.isPositive_adjoint_comp_self B).sqrt_apply_of_apply_eq_smul
-        (B.adjoint_comp_self_rightSingularBasis i)
-    rw [hsqrt, Real.sqrt_sq (B.singularValues_nonneg _), inner_smul_right,
+    rw [LinearMap.operatorAbs_rightSingularBasis, inner_smul_right,
       orthonormal_iff_ite.mp B.rightSingularBasis.orthonormal i i]
     simp
 
@@ -167,8 +162,8 @@ theorem nuclear_rankOne (u : F) (v : E) :
     (Module.rank_eq_one_iff_finrank_eq_one.mp (InnerProductSpace.rank_rankOne hu hv)).le
   have hclm :
       LinearMap.toContinuousLinearMap (InnerProductSpace.rankOne 𝕜 u v).toLinearMap =
-        InnerProductSpace.rankOne 𝕜 u v :=
-    ContinuousLinearMap.ext fun _ ↦ rfl
+        InnerProductSpace.rankOne 𝕜 u v := by
+    rw [← LinearMap.coe_toContinuousLinearMap_symm, LinearEquiv.apply_symm_apply]
   rw [← LinearMap.kyFanSum_eq_nuclear _ hrank, LinearMap.kyFanSum_def, Finset.sum_range_one,
     ← LinearMap.norm_toContinuousLinearMap_eq_singularValues_zero, hclm,
     InnerProductSpace.norm_rankOne]
@@ -193,11 +188,9 @@ theorem exists_nuclear_le_one_trace_adjoint_comp_eq_opNorm (A : E →ₗ[𝕜] F
           (InnerProductSpace.rankOne 𝕜
             (LinearMap.adjoint A (A.leftSingularVector i₀))
             (A.rightSingularBasis i₀)).toLinearMap := by
-        ext x
-        simp only [B, LinearMap.coe_comp, Function.comp_apply, LinearMap.adjoint_leftSingularVector,
-          map_smul, smul_apply, ContinuousLinearMap.toLinearMap_smul, LinearMap.smul_apply,
-          ContinuousLinearMap.coe_coe, InnerProductSpace.rankOne_apply]
-        rw [smul_comm]
+        rw [← LinearMap.coe_toContinuousLinearMap (LinearMap.adjoint A),
+          ← ContinuousLinearMap.toLinearMap_comp, InnerProductSpace.comp_rankOne]
+        rfl
       rw [hcomp]
       simp only [InnerProductSpace.trace_rankOne, A.adjoint_leftSingularVector i₀,
         inner_smul_right, orthonormal_iff_ite.mp A.rightSingularBasis.orthonormal i₀ i₀, ↓reduceIte,
@@ -227,7 +220,7 @@ theorem opNorm_eq_iSup_norm_trace_adjoint_comp (A : E →ₗ[𝕜] F) :
 
 /-- **Orthogonal additivity of the nuclear seminorm**: if `A† B = 0` and `A B† = 0`,
 then `‖A + B‖₁ = ‖A‖₁ + ‖B‖₁`. -/
-theorem nuclear_add_of_orthogonal {A B : E →ₗ[𝕜] F}
+theorem nuclear_add_of_twoSidedOrthogonal {A B : E →ₗ[𝕜] F}
     (h₁ : LinearMap.adjoint A ∘ₗ B = 0) (h₂ : A ∘ₗ LinearMap.adjoint B = 0) :
     nuclear 𝕜 E F (A + B) = nuclear 𝕜 E F A + nuclear 𝕜 E F B := by
   refine le_antisymm (map_add_le_add _ A B) ?_
@@ -249,7 +242,7 @@ theorem nuclear_add_of_orthogonal {A B : E →ₗ[𝕜] F}
       simpa [LinearMap.adjoint_comp] using congrArg LinearMap.adjoint h₁
     exact LinearMap.adjoint_comp_eq_zero_of_range_le h₁' hV_rng le_rfl
   have hUV_norm : opNorm 𝕜 E F (U + V) ≤ 1 := by
-    rw [opNorm_add_eq_max_of_orthogonal hUV₁ hUV₂]
+    rw [opNorm_add_eq_max_of_twoSidedOrthogonal hUV₁ hUV₂]
     exact max_le hU_norm hV_norm
   have htr : LinearMap.trace 𝕜 E (LinearMap.adjoint (U + V) ∘ₗ (A + B)) =
       ((nuclear 𝕜 E F A + nuclear 𝕜 E F B : ℝ) : 𝕜) := by
@@ -270,7 +263,7 @@ theorem nuclear_add_of_orthogonal {A B : E →ₗ[𝕜] F}
 /-- **Nuclear-norm decomposability inequality**: whenever `Θ` and `Δ₂` are two-sided orthogonal
 (`Θ† Δ₂ = 0` and `Θ Δ₂† = 0`), any split `Δ = Δ₁ + Δ₂` satisfies
 `‖Θ‖₁ + ‖Δ₂‖₁ - ‖Δ₁‖₁ ≤ ‖Θ + (Δ₁ + Δ₂)‖₁`. -/
-theorem nuclear_add_sub_le_nuclear_add_of_orthogonal {Θ Δ₁ Δ₂ : E →ₗ[𝕜] F}
+theorem nuclear_add_sub_le_nuclear_add_of_twoSidedOrthogonal {Θ Δ₁ Δ₂ : E →ₗ[𝕜] F}
     (h₁ : LinearMap.adjoint Θ ∘ₗ Δ₂ = 0) (h₂ : Θ ∘ₗ LinearMap.adjoint Δ₂ = 0) :
     nuclear 𝕜 E F Θ + nuclear 𝕜 E F Δ₂ - nuclear 𝕜 E F Δ₁ ≤
       nuclear 𝕜 E F (Θ + (Δ₁ + Δ₂)) := by
@@ -278,7 +271,7 @@ theorem nuclear_add_sub_le_nuclear_add_of_orthogonal {Θ Δ₁ Δ₂ : E →ₗ[
     have h := le_map_add_map_sub (nuclear 𝕜 E F) (Θ + Δ₂) (Θ + (Δ₁ + Δ₂))
     have hdiff : Θ + Δ₂ - (Θ + (Δ₁ + Δ₂)) = -Δ₁ := by abel
     rwa [hdiff, map_neg_eq_map] at h
-  linarith [nuclear_add_of_orthogonal h₁ h₂]
+  linarith [nuclear_add_of_twoSidedOrthogonal h₁ h₂]
 
 /-- The nuclear seminorm of the tangent part `Δ - P_W Δ P_K` is bounded by
 `√(dim Wᗮ + dim Kᗮ) ‖Δ‖_F`. -/
@@ -313,7 +306,7 @@ theorem nuclear_add_normalPart_sub_le_nuclear_add (Θ Δ : E →ₗ[𝕜] F) :
     nuclear 𝕜 E F Θ + nuclear 𝕜 E F (Θ.normalPart Δ) - nuclear 𝕜 E F (Δ - Θ.normalPart Δ) ≤
       nuclear 𝕜 E F (Θ + Δ) := by
   simpa only [sub_add_cancel] using
-    nuclear_add_sub_le_nuclear_add_of_orthogonal
+    nuclear_add_sub_le_nuclear_add_of_twoSidedOrthogonal
       (Δ₁ := Δ - Θ.normalPart Δ)
       (LinearMap.adjoint_comp_normalPart Θ Δ)
       (LinearMap.comp_adjoint_normalPart Θ Δ)
@@ -343,7 +336,7 @@ theorem exists_lowRank_decomposition {r : ℕ} {Θ : E →ₗ[𝕜] F}
     (Θ.finrank_range_sub_normalPart_le Δ).trans (Nat.mul_le_mul_left 2 hΘ),
     LinearMap.adjoint_comp_normalPart Θ Δ,
     LinearMap.comp_adjoint_normalPart Θ Δ,
-    Θ.trace_adjoint_comp_eq_zero_sub_normalPart Δ,
+    Θ.trace_adjoint_sub_normalPart_comp_normalPart_eq_zero Δ,
     nuclear_add_normalPart_sub_le_nuclear_add Θ Δ, hnuc⟩
 
 end TauCeti.UnitarilyInvariantSeminorm

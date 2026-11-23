@@ -36,9 +36,9 @@ trace pairing `tr (A† B)`.
 * `LinearMap.forall_orthonormal_sum_re_inner_iff_forall_re_trace`: the same statement for a
   condition on the real parts `∑ᵢ re ⟪T wᵢ, wᵢ⟫` of the diagonal sums and the real parts of the
   traces.
-* `LinearMap.trace_adjoint_comp_eq_zero_sub_starProjection_comp`,
-  `LinearMap.trace_adjoint_comp_eq_zero_sub_normalPart`: trace orthogonality of the tangent–normal
-  projection split.
+* `LinearMap.trace_adjoint_sub_starProjection_comp_eq_zero`,
+  `LinearMap.trace_adjoint_sub_normalPart_comp_normalPart_eq_zero`: trace orthogonality of the
+  tangent–normal projection split.
 -/
 
 public section
@@ -118,7 +118,7 @@ variable {F : Type*} [NormedAddCommGroup F] [InnerProductSpace 𝕜 F]
 
 /-- The tangent part `Δ - P_W Δ P_K` and the normal part `P_W Δ P_K` are orthogonal for the
 Hilbert–Schmidt trace pairing: `tr ((Δ - P_W Δ P_K)† (P_W Δ P_K)) = 0`. -/
-theorem trace_adjoint_comp_eq_zero_sub_starProjection_comp (Δ : E →ₗ[𝕜] F) (W : Submodule 𝕜 F)
+theorem trace_adjoint_sub_starProjection_comp_eq_zero (Δ : E →ₗ[𝕜] F) (W : Submodule 𝕜 F)
     (K : Submodule 𝕜 E) :
     trace 𝕜 E
       (adjoint (Δ - W.starProjection.toLinearMap ∘ₗ Δ ∘ₗ K.starProjection.toLinearMap) ∘ₗ
@@ -131,30 +131,30 @@ theorem trace_adjoint_comp_eq_zero_sub_starProjection_comp (Δ : E →ₗ[𝕜] 
     (ContinuousLinearMap.IsIdempotentElem.toLinearMap W.isIdempotentElem_starProjection).eq
   have hPK_idem : PK ∘ₗ PK = PK := (Module.End.mul_eq_comp PK PK).symm.trans
     (ContinuousLinearMap.IsIdempotentElem.toLinearMap K.isIdempotentElem_starProjection).eq
-  have hΔ₂ : adjoint (PW ∘ₗ Δ ∘ₗ PK) ∘ₗ (PW ∘ₗ Δ ∘ₗ PK) = PK ∘ₗ adjoint Δ ∘ₗ PW ∘ₗ Δ ∘ₗ PK := by
-    calc adjoint (PW ∘ₗ Δ ∘ₗ PK) ∘ₗ (PW ∘ₗ Δ ∘ₗ PK)
-        = PK ∘ₗ adjoint Δ ∘ₗ (PW ∘ₗ PW) ∘ₗ Δ ∘ₗ PK := by
+  set Δ₂ : E →ₗ[𝕜] F := PW ∘ₗ Δ ∘ₗ PK
+  -- `B ↦ P_W B P_K` is self-adjoint for the Hilbert–Schmidt trace pairing.
+  have hself (A B : E →ₗ[𝕜] F) :
+      trace 𝕜 E (adjoint A ∘ₗ (PW ∘ₗ B ∘ₗ PK)) =
+        trace 𝕜 E (adjoint (PW ∘ₗ A ∘ₗ PK) ∘ₗ B) := by
+    calc trace 𝕜 E (adjoint A ∘ₗ (PW ∘ₗ B ∘ₗ PK))
+        = trace 𝕜 E ((adjoint A ∘ₗ PW ∘ₗ B) ∘ₗ PK) := by simp only [comp_assoc]
+      _ = trace 𝕜 E (PK ∘ₗ (adjoint A ∘ₗ PW ∘ₗ B)) := trace_comp_comm' _ _
+      _ = trace 𝕜 E (adjoint (PW ∘ₗ A ∘ₗ PK) ∘ₗ B) := by
           simp only [adjoint_comp, hPW_adj, hPK_adj, comp_assoc]
-      _ = PK ∘ₗ adjoint Δ ∘ₗ PW ∘ₗ Δ ∘ₗ PK := by rw [hPW_idem]
-  have htr : trace 𝕜 E (adjoint Δ ∘ₗ (PW ∘ₗ Δ ∘ₗ PK)) =
-      trace 𝕜 E (adjoint (PW ∘ₗ Δ ∘ₗ PK) ∘ₗ (PW ∘ₗ Δ ∘ₗ PK)) := by
-    calc trace 𝕜 E (adjoint Δ ∘ₗ (PW ∘ₗ Δ ∘ₗ PK))
-        = trace 𝕜 E ((adjoint Δ ∘ₗ PW ∘ₗ Δ) ∘ₗ PK) := by simp only [comp_assoc]
-      _ = trace 𝕜 E (PK ∘ₗ (adjoint Δ ∘ₗ PW ∘ₗ Δ)) := trace_comp_comm' _ _
-      _ = trace 𝕜 E ((PK ∘ₗ PK) ∘ₗ (adjoint Δ ∘ₗ PW ∘ₗ Δ)) := by rw [hPK_idem]
-      _ = trace 𝕜 E (PK ∘ₗ (PK ∘ₗ adjoint Δ ∘ₗ PW ∘ₗ Δ)) := by simp only [comp_assoc]
-      _ = trace 𝕜 E ((PK ∘ₗ adjoint Δ ∘ₗ PW ∘ₗ Δ) ∘ₗ PK) := trace_comp_comm' _ _
-      _ = trace 𝕜 E (adjoint (PW ∘ₗ Δ ∘ₗ PK) ∘ₗ (PW ∘ₗ Δ ∘ₗ PK)) := by
-          rw [hΔ₂]; simp only [comp_assoc]
+  have hidem : PW ∘ₗ Δ₂ ∘ₗ PK = Δ₂ := by
+    simp only [Δ₂, comp_assoc]
+    rw [hPK_idem, ← comp_assoc, hPW_idem]
+  have htr : trace 𝕜 E (adjoint Δ ∘ₗ Δ₂) = trace 𝕜 E (adjoint Δ₂ ∘ₗ Δ₂) := by
+    conv_lhs => rw [← hidem, hself]
   rw [map_sub, sub_comp, map_sub, htr, sub_self]
 
 /-- The canonical tangent part `Δ - Θ.normalPart Δ` and normal part `Θ.normalPart Δ` are
 orthogonal for the Hilbert–Schmidt trace pairing:
 `tr ((Δ - Θ.normalPart Δ)† (Θ.normalPart Δ)) = 0`. -/
-theorem trace_adjoint_comp_eq_zero_sub_normalPart (Θ Δ : E →ₗ[𝕜] F) :
+theorem trace_adjoint_sub_normalPart_comp_normalPart_eq_zero (Θ Δ : E →ₗ[𝕜] F) :
     trace 𝕜 E (adjoint (Δ - Θ.normalPart Δ) ∘ₗ Θ.normalPart Δ) = 0 := by
   rw [normalPart_def]
-  exact Δ.trace_adjoint_comp_eq_zero_sub_starProjection_comp (range Θ)ᗮ (ker Θ)
+  exact Δ.trace_adjoint_sub_starProjection_comp_eq_zero (range Θ)ᗮ (ker Θ)
 
 end NormalPart
 

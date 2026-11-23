@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.InnerProductSpace.UnitarilyInvariantSeminorm.Nuclear
 public import TauCeti.Analysis.Matrix.EuclideanLin
 public import TauCeti.Analysis.Matrix.Frobenius
+import TauCeti.Analysis.Matrix.L2OpNorm
 
 /-!
 # Matrix nuclear-norm trace duality, orthogonal additivity, and low-rank decomposition
@@ -38,7 +39,7 @@ orthogonality is `⟪Δ₁, Δ₂⟫_𝕜 = 0`).
 * `Matrix.exists_l2_opNorm_le_one_trace_conjTranspose_mul_eq_nuclear`,
   `Matrix.exists_nuclear_le_one_trace_conjTranspose_mul_eq_l2_opNorm`:
   attainment of matrix trace duality for both the nuclear norm and the `ℓ²` operator norm.
-* `Matrix.nuclear_toEuclideanLin_add_of_orthogonal`:
+* `Matrix.nuclear_toEuclideanLin_add_of_twoSidedOrthogonal`:
   `‖A + B‖₁ = ‖A‖₁ + ‖B‖₁` whenever `Aᴴ * B = 0` and `A * Bᴴ = 0`.
 * `Matrix.exists_lowRank_decomposition`:
   Wainwright's low-rank tangent–normal decomposition for matrices of rank at most `r`.
@@ -150,7 +151,7 @@ end TraceDuality
 
 /-- **Orthogonal additivity of the matrix nuclear norm**: if `Aᴴ * B = 0` and `A * Bᴴ = 0`, then
 `‖A + B‖₁ = ‖A‖₁ + ‖B‖₁`. -/
-theorem nuclear_toEuclideanLin_add_of_orthogonal {A B : Matrix m n 𝕜}
+theorem nuclear_toEuclideanLin_add_of_twoSidedOrthogonal {A B : Matrix m n 𝕜}
     (h₁ : Aᴴ * B = 0) (h₂ : A * Bᴴ = 0) :
     nuclear 𝕜 (EuclideanSpace 𝕜 n) (EuclideanSpace 𝕜 m) (A + B).toEuclideanLin =
       nuclear 𝕜 (EuclideanSpace 𝕜 n) (EuclideanSpace 𝕜 m) A.toEuclideanLin +
@@ -161,7 +162,7 @@ theorem nuclear_toEuclideanLin_add_of_orthogonal {A B : Matrix m n 𝕜}
   have h₂' : A.toEuclideanLin ∘ₗ LinearMap.adjoint B.toEuclideanLin = 0 := by
     rw [← toEuclideanLin_mul_conjTranspose, h₂, map_zero]
   rw [map_add]
-  exact nuclear_add_of_orthogonal h₁' h₂'
+  exact nuclear_add_of_twoSidedOrthogonal h₁' h₂'
 
 section LowRankDecomposition
 
@@ -186,41 +187,26 @@ theorem exists_lowRank_decomposition {r : ℕ} {Θ : Matrix m n 𝕜}
       nuclear 𝕜 (EuclideanSpace 𝕜 n) (EuclideanSpace 𝕜 m) Δ₁.toEuclideanLin ≤
         √(2 * (r : ℝ)) * ‖Δ‖ := by
   classical
-  let Δ₂ : Matrix m n 𝕜 := Θ.normalPart Δ
-  let Δ₁ : Matrix m n 𝕜 := Δ - Δ₂
-  have hrank : Δ₁.rank ≤ 2 * r := by
-    rw [rank_eq_finrank_range_toEuclideanLin, map_sub, toEuclideanLin_normalPart]
-    refine (Θ.toEuclideanLin.finrank_range_sub_normalPart_le Δ.toEuclideanLin).trans ?_
-    rw [← rank_eq_finrank_range_toEuclideanLin]
-    exact Nat.mul_le_mul_left 2 hΘ
-  have h1 : Θᴴ * Δ₂ = 0 := by
-    apply toEuclideanLin.injective
-    rw [toEuclideanLin_conjTranspose_mul, map_zero, toEuclideanLin_normalPart]
-    exact LinearMap.adjoint_comp_normalPart Θ.toEuclideanLin Δ.toEuclideanLin
-  have h2 : Θ * Δ₂ᴴ = 0 := by
-    apply toEuclideanLin.injective
-    rw [toEuclideanLin_mul_conjTranspose, map_zero, toEuclideanLin_normalPart]
-    exact LinearMap.comp_adjoint_normalPart Θ.toEuclideanLin Δ.toEuclideanLin
-  have htr : ⟪Δ₁, Δ₂⟫_𝕜 = 0 := by
-    rw [frobenius_inner_eq_trace_conjTranspose_mul, ← trace_adjoint_comp_toEuclideanLin, map_sub,
-      toEuclideanLin_normalPart]
-    exact Θ.toEuclideanLin.trace_adjoint_comp_eq_zero_sub_normalPart Δ.toEuclideanLin
-  have hdec :
-      nuclear 𝕜 (EuclideanSpace 𝕜 n) (EuclideanSpace 𝕜 m) Θ.toEuclideanLin +
-          nuclear 𝕜 (EuclideanSpace 𝕜 n) (EuclideanSpace 𝕜 m) Δ₂.toEuclideanLin -
-          nuclear 𝕜 (EuclideanSpace 𝕜 n) (EuclideanSpace 𝕜 m) Δ₁.toEuclideanLin ≤
-        nuclear 𝕜 (EuclideanSpace 𝕜 n) (EuclideanSpace 𝕜 m) (Θ + Δ).toEuclideanLin := by
-    rw [map_sub, map_add, toEuclideanLin_normalPart]
-    exact nuclear_add_normalPart_sub_le_nuclear_add Θ.toEuclideanLin Δ.toEuclideanLin
-  have hnuc :
-      nuclear 𝕜 (EuclideanSpace 𝕜 n) (EuclideanSpace 𝕜 m) Δ₁.toEuclideanLin ≤
-        √(2 * (r : ℝ)) * ‖Δ‖ := by
-    rw [map_sub, toEuclideanLin_normalPart, ← frobenius_toEuclideanLin Δ]
-    refine (nuclear_sub_normalPart_le Θ.toEuclideanLin Δ.toEuclideanLin).trans ?_
-    refine mul_le_mul_of_nonneg_right (Real.sqrt_le_sqrt ?_) (apply_nonneg _ _)
-    rw [← rank_eq_finrank_range_toEuclideanLin]
-    gcongr
-  exact ⟨Δ₁, Δ₂, sub_add_cancel Δ Δ₂, hrank, h1, h2, htr, hdec, hnuc⟩
+  obtain ⟨L₁, L₂, hsum, hrank, h1, h2, htr, hdec, hnuc⟩ :=
+    TauCeti.UnitarilyInvariantSeminorm.exists_lowRank_decomposition
+      (rank_eq_finrank_range_toEuclideanLin Θ ▸ hΘ) Δ.toEuclideanLin
+  refine ⟨toEuclideanLin.symm L₁, toEuclideanLin.symm L₂, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
+  · rw [← map_add, hsum, toEuclideanLin.symm_apply_apply]
+  · rw [rank_eq_finrank_range_toEuclideanLin, LinearEquiv.apply_symm_apply]
+    exact hrank
+  · apply toEuclideanLin.injective
+    rw [toEuclideanLin_conjTranspose_mul, map_zero, LinearEquiv.apply_symm_apply]
+    exact h1
+  · apply toEuclideanLin.injective
+    rw [toEuclideanLin_mul_conjTranspose, map_zero, LinearEquiv.apply_symm_apply]
+    exact h2
+  · rw [frobenius_inner_eq_trace_conjTranspose_mul, ← trace_adjoint_comp_toEuclideanLin,
+      LinearEquiv.apply_symm_apply, LinearEquiv.apply_symm_apply]
+    exact htr
+  · rw [LinearEquiv.apply_symm_apply, LinearEquiv.apply_symm_apply, map_add]
+    exact hdec
+  · rw [LinearEquiv.apply_symm_apply, ← frobenius_toEuclideanLin Δ]
+    exact hnuc
 
 end LowRankDecomposition
 
