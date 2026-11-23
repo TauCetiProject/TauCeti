@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicTopology.Singular.LocalHomology.Linear
+public import TauCeti.AlgebraicTopology.Singular.LocalHomology.Orientation.Linear
 public import TauCeti.RepresentationTheory.BaseChange
 public import TauCeti.RepresentationTheory.Continuous.Intertwining
 public import TauCeti.RepresentationTheory.Dual
@@ -38,29 +38,6 @@ noncomputable section
 open CategoryTheory Module TensorProduct
 
 universe w v u
-
-namespace TauCeti
-
-variable (E : Type w) [NormedAddCommGroup E] [NormedSpace ℝ E]
-
-/-- The integral orientation module of a real normed space: its local homology at the origin
-in degree `dim E`. -/
-abbrev orientationModule :=
-  localHomology (A := ModuleCat.{w} ℤ) (ModuleCat.of ℤ (ULift.{w} ℤ)) ({0} : Set E)
-    (finrank ℝ E)
-
-instance orientationModule.instInvertible [FiniteDimensional ℝ E] :
-    Module.Invertible ℤ (orientationModule E) :=
-  Module.Invertible.congr (localHomologySingletonLinearEquiv (ModuleCat.of ℤ (ULift.{w} ℤ))
-    rfl ULift.moduleEquiv (0 : E)).symm
-
-/-- The integral orientation module has rank one, also for a zero-dimensional space. -/
-@[simp]
-theorem finrank_orientationModule [FiniteDimensional ℝ E] :
-    finrank ℤ (orientationModule E) = 1 :=
-  Module.Invertible.finrank_eq_one ℤ (orientationModule E)
-
-end TauCeti
 
 namespace Representation
 
