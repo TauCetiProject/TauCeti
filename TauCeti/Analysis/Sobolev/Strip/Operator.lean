@@ -52,11 +52,11 @@ each geometry supplies its own semi-Fredholm estimate and its own Rellich theore
 * **Families.** Along a family of coefficient fields continuous in `L^∞` on a preconnected set,
   whose realizations on a complete subspace of `L²` jets all have finite-dimensional kernel and
   closed range, Fredholmness and the index are constant once one member is Fredholm
-  (`TauCeti.StripSobolev.isFredholm_and_index_eq_of_isPreconnected`). Continuity in `L^∞`
-  follows from uniform closeness of continuous fields on the strip
-  (`TauCeti.StripSobolev.tendsto_eLpNorm_sub_of_forall_dist_lt`). This is the abstract
+  (`TauCeti.StripSobolev.isFredholm_and_index_eq_of_isPreconnected`). This is the abstract
   stability `ContinuousOn.isFredholm_of_isPreconnected`, which needs the target `L²` space to be a
-  Hilbert space, so `W` is an inner product space there.
+  Hilbert space, so `W` is an inner product space there. Continuity in `L^∞` follows from uniform
+  closeness of continuous fields on the strip
+  (`TauCeti.StripSobolev.tendsto_eLpNorm_sub_of_forall_dist_lt`).
 
 ## References
 
