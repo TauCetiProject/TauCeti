@@ -43,6 +43,8 @@ sequence of a filtered space.
   morphism vanishes and `Hⁿ(X, B)` splits as a binary biproduct.
 * `TauCeti.TopTriple.isIso_singularCohomologyMap_totalToOuter_of_isZero`: if `Hⁿ(A, B)` vanishes,
   and so does `Hⁿ⁻¹(A, B)` when `n > 0`, restriction `Hⁿ(X, A) ⟶ Hⁿ(X, B)` is an isomorphism.
+* `TauCeti.TopTriple.isIso_singularCohomologyMap_innerToTotal_of_isZero`: if `Hⁿ(X, A)` and
+  `Hⁿ⁺¹(X, A)` vanish, restriction `Hⁿ(X, B) ⟶ Hⁿ(A, B)` is an isomorphism.
 
 ## References
 
@@ -165,6 +167,19 @@ theorem isIso_singularCohomologyMap_totalToOuter_of_isZero (n : ℕ)
         (T.singularCochainComplexShortComplex R k M).f 0 (by simp)
     | succ m =>
       exact (T.singularCohomology_exact_outer R k M m (m + 1)).mono_g ((hm m rfl).eq_of_src _ _)
+  exact isIso_of_mono_of_epi _
+
+/-- **Removing an acyclic outer pair**: if `Hⁿ(X, A)` and `Hⁿ⁺¹(X, A)` vanish, then restriction
+`Hⁿ(X, B) ⟶ Hⁿ(A, B)` is an isomorphism. This is the cohomology form of
+`TauCeti.TopTriple.isIso_singularHomologyMap_innerToTotal_of_isZero`. -/
+theorem isIso_singularCohomologyMap_innerToTotal_of_isZero (n : ℕ)
+    (hn : IsZero ((outerPair.obj T).singularCohomology R k M n))
+    (hn' : IsZero ((outerPair.obj T).singularCohomology R k M (n + 1))) :
+    IsIso (TopPair.singularCohomologyMap (R := R) (k := k) (M := M) (innerToTotal.app T) n) := by
+  have : Mono (TopPair.singularCohomologyMap (R := R) (k := k) (M := M) (innerToTotal.app T) n) :=
+    (T.singularCohomology_exact_total R k M n).mono_g (hn.eq_of_src _ _)
+  have : Epi (TopPair.singularCohomologyMap (R := R) (k := k) (M := M) (innerToTotal.app T) n) :=
+    (T.singularCohomology_exact_inner R k M n (n + 1)).epi_f (hn'.eq_of_tgt _ _)
   exact isIso_of_mono_of_epi _
 
 end TopTriple

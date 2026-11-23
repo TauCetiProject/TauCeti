@@ -18,7 +18,8 @@ scaled outer product of two coordinate vectors as a matrix unit,
 `Matrix.one_add_single_mul_one_add_single_of_ne` multiplies two elementary matrices `1 + c Eᵢⱼ`
 and `1 + d Eₖₗ` with `j ≠ k`, whose cross term vanishes, and `Matrix.one_add_single_mul_apply`
 describes left multiplication of an arbitrary matrix by `1 + c Eᵢⱼ`.
-`LinearMap.apply_eq_sum_sum_smul_single` expands a linear map on matrices along the matrix units.
+`LinearMap.apply_eq_sum_sum_smul_single` expands a linear map on matrices along the matrix units,
+and `Matrix.submodule_eq_top_of_single_one_mem` shows that the matrix units span all matrices.
 
 `Matrix.singleNonUnitalAlgHom` bundles the diagonal corner `x ↦ Matrix.single r r x` as a nonunital
 algebra homomorphism, accompanied by column, row, and entry matrix-unit identities valid without
@@ -76,6 +77,18 @@ public theorem LinearMap.apply_eq_sum_sum_smul_single {ι κ R M : Type*} [Finty
   simp only [map_sum]
   refine Finset.sum_congr rfl fun i _ => Finset.sum_congr rfl fun j _ => ?_
   rw [← map_smul, Matrix.smul_single, smul_eq_mul, mul_one]
+
+/-- A submodule of `Matrix m n R` that contains every matrix unit `single i j 1` is `⊤`. -/
+public theorem Matrix.submodule_eq_top_of_single_one_mem {m n R : Type*} [Finite m] [Finite n]
+    [DecidableEq m] [DecidableEq n] [Semiring R] {S : Submodule R (Matrix m n R)}
+    (h : ∀ i j, Matrix.single i j (1 : R) ∈ S) : S = ⊤ := by
+  have := Fintype.ofFinite m
+  have := Fintype.ofFinite n
+  refine eq_top_iff.mpr fun A _ => ?_
+  rw [Matrix.matrix_eq_sum_single A]
+  refine S.sum_mem fun i _ => S.sum_mem fun j _ => ?_
+  rw [← mul_one (A i j), ← smul_eq_mul, ← Matrix.smul_single]
+  exact S.smul_mem _ (h i j)
 
 /-- Transposition does not preserve all products of square matrices over a nontrivial semiring
 when there are at least two indices. -/

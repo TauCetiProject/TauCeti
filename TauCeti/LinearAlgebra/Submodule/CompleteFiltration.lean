@@ -40,8 +40,14 @@ perturbation lemma for complete filtered contractions, where the series need not
 * `Module.End.ringInverse_one_add_apply_sub_sum_mem`: when `1 + T` is invertible, its inverse
   is the limit of the partial geometric sums, with an explicit rate of convergence.
 * `Module.End.ringInverse_one_add_apply_mem`: the inverse preserves the filtration.
+* `TauCeti.IsCompleteFiltration.comp_sub_right`: delaying a complete filtration by `d` steps,
+  `n ↦ F (n - d)`, keeps it complete and separated.
 * `TauCeti.IsCompleteFiltration.surjOn`: a map sending a complete filtration into a separated one
   compatibly, and surjective on the associated graded modules, maps `F 0` onto `G 0`.
+* `TauCeti.IsCompleteFiltration.of_eq_bot`: a decreasing filtration reaching `⊥` is complete and
+  separated.
+* `TauCeti.IsCompleteFiltration.pi`: a product of complete separated filtrations, filtered
+  coordinatewise, is complete and separated.
 * `TauCeti.IsCompleteFiltration.comap`: the preimage of a complete filtration under an injection
   whose range contains `F 0` is complete.
 * `TauCeti.isCompleteFiltration_pi`: the filtration of a product `∀ i, E i` by vanishing of the
@@ -123,6 +129,30 @@ theorem comp_add_right (d : ℕ) : IsCompleteFiltration fun n ↦ F (n + d) wher
       · simp [Nat.sub_eq_zero_of_le hn, Nat.sub_eq_zero_of_le hn.le]
       · simpa [Nat.sub_add_comm hn, Nat.sub_add_cancel hn] using hx (n - d)
     exact ⟨L, fun n ↦ by simpa using hL (n + d)⟩
+
+/-- **Delaying a complete filtration.** Repeating the first term of a complete separated
+filtration `d` more times, `n ↦ F (n - d)`, gives a complete separated filtration. -/
+theorem comp_sub_right (d : ℕ) : IsCompleteFiltration fun n ↦ F (n - d) where
+  antitone _ _ h := hF.antitone (Nat.sub_le_sub_right h d)
+  eq_zero_of_forall_mem x hx := hF.eq_zero_of_forall_mem x fun n ↦ by simpa using hx (n + d)
+  exists_limit x hx := by
+    -- The tail `n ↦ x (n + d)` converges for `F`; up to step `d` the terms agree modulo `F 0`.
+    obtain ⟨L, hL⟩ := hF.exists_limit (fun n ↦ x (n + d)) fun n ↦ by
+      simpa [Nat.add_right_comm n 1 d] using hx (n + d)
+    refine ⟨L, fun n ↦ ?_⟩
+    rcases Nat.lt_or_ge n d with hn | hn
+    · have hxn : ∀ m, n ≤ m → m ≤ d → x m - x n ∈ F 0 := fun m hnm ↦ by
+        induction m, hnm using Nat.le_induction with
+        | base => simp
+        | succ m _ ih =>
+          intro hm
+          have h := hx m
+          rw [Nat.sub_eq_zero_of_le (by omega)] at h
+          simpa using add_mem h (ih (by omega))
+      rw [Nat.sub_eq_zero_of_le hn.le]
+      simpa using add_mem (hL 0) (hxn d hn.le le_rfl)
+    · obtain ⟨m, rfl⟩ := Nat.exists_eq_add_of_le' hn
+      simpa using hL m
 
 /-- **Complete filtrations pull back along linear equivalences.** If `F` is a complete separated
 filtration of `M` and `e : N ≃ₗ[R] M`, the preimages of the `F n` form a complete separated
@@ -254,25 +284,57 @@ end TauCeti.IsCompleteFiltration
 
 namespace TauCeti
 
+/-- **Filtrations reaching zero are complete.** A decreasing filtration with `F N = ⊥` for some
+`N` is complete and separated: a sequence with `x (n + 1) - x n ∈ F n` is constant from step `N`
+on, and its value there is a limit. -/
+theorem IsCompleteFiltration.of_eq_bot {F : ℕ → Submodule R M} (hF : Antitone F) {N : ℕ}
+    (hN : F N = ⊥) : IsCompleteFiltration F where
+  antitone := hF
+  eq_zero_of_forall_mem x hx := by simpa [hN] using hx N
+  exists_limit x hx := by
+    -- The differences `x m - x n` for `n ≤ m` lie in `F n`.
+    have hsub : ∀ n m, n ≤ m → x m - x n ∈ F n := fun n m hnm ↦ by
+      induction m, hnm using Nat.le_induction with
+      | base => simp
+      | succ m hnm ih =>
+        simpa using add_mem (hF hnm (hx m)) ih
+    refine ⟨x N, fun n ↦ ?_⟩
+    rcases le_total n N with hn | hn
+    · exact hsub n N hn
+    · have h := hsub N n hn
+      rw [hN, Submodule.mem_bot, sub_eq_zero] at h
+      simp [h]
+
+/-- **Products of complete filtrations are complete.** If each `E i` carries a complete separated
+filtration `F i`, then the product `∀ i, E i` filtered coordinatewise, by `∏ i, F i n`, is
+complete and separated. -/
+theorem IsCompleteFiltration.pi {ι : Type*} {E : ι → Type*} [∀ i, AddCommGroup (E i)]
+    [∀ i, Module R (E i)] {F : ∀ i, ℕ → Submodule R (E i)}
+    (hF : ∀ i, IsCompleteFiltration (F i)) :
+    IsCompleteFiltration fun n ↦ Submodule.pi Set.univ fun i ↦ F i n where
+  antitone _ _ h _ hx :=
+    Submodule.mem_pi.2 fun i _ ↦ (hF i).antitone h (Submodule.mem_pi.1 hx i trivial)
+  eq_zero_of_forall_mem x hx := funext fun i ↦
+    (hF i).eq_zero_of_forall_mem (x i) fun n ↦ Submodule.mem_pi.1 (hx n) i trivial
+  exists_limit x hx := by
+    choose L hL using fun i ↦
+      (hF i).exists_limit (fun n ↦ x n i) fun n ↦ Submodule.mem_pi.1 (hx n) i trivial
+    exact ⟨L, fun n ↦ Submodule.mem_pi.2 fun i _ ↦ hL i n⟩
+
 /-- **Weight filtrations of products are complete.**  Let `w` assign a weight to each factor of
 the product `∀ i, E i`.  The filtration whose `n`-th term consists of the families vanishing in
-every coordinate of weight below `n` is complete and separated: a limit is read off one
-coordinate at a time, the `i`-th coordinate of a Cauchy sequence being constant from step
-`w i + 1` on. -/
+every coordinate of weight below `n` is complete and separated: it is the product of the
+coordinate filtrations `n ↦ if w i < n then ⊥ else ⊤`, each of which reaches `⊥`. -/
 theorem isCompleteFiltration_pi {ι : Type*} {E : ι → Type*} [∀ i, AddCommGroup (E i)]
     [∀ i, Module R (E i)] (w : ι → ℕ) (F : ℕ → Submodule R (∀ i, E i))
-    (hF : ∀ n x, x ∈ F n ↔ ∀ i, w i < n → x i = 0) : IsCompleteFiltration F where
-  antitone n m hnm x hx := (hF n x).2 fun i hi ↦ (hF m x).1 hx i (hi.trans_le hnm)
-  eq_zero_of_forall_mem x hx := funext fun i ↦ (hF _ x).1 (hx (w i + 1)) i (Nat.lt_succ_self _)
-  exists_limit x hx := by
-    -- From step `w i + 1` on, the `i`-th coordinate of `x` no longer changes.
-    have hconst (i : ι) (n : ℕ) (hn : w i + 1 ≤ n) : x n i = x (w i + 1) i := by
-      induction n, hn using Nat.le_induction with
-      | base => rfl
-      | succ n hn ih =>
-        rw [← ih, ← sub_eq_zero, ← Pi.sub_apply]
-        exact (hF n _).1 (hx n) i (by omega)
-    refine ⟨fun i ↦ x (w i + 1) i, fun n ↦ (hF n _).2 fun i hi ↦ ?_⟩
-    rw [Pi.sub_apply, hconst i n (by omega), sub_self]
+    (hF : ∀ n x, x ∈ F n ↔ ∀ i, w i < n → x i = 0) : IsCompleteFiltration F := by
+  have hG : ∀ i, IsCompleteFiltration fun n ↦ (if w i < n then ⊥ else ⊤ : Submodule R (E i)) :=
+    fun i ↦ .of_eq_bot (N := w i + 1) (fun m n hmn ↦ by
+      split_ifs <;> first | exact bot_le | exact le_top | omega) (by simp)
+  convert IsCompleteFiltration.pi hG with n
+  ext x
+  simp only [hF, Submodule.mem_pi, Set.mem_univ, true_implies]
+  refine forall_congr' fun i ↦ ?_
+  split_ifs with h <;> simp [h]
 
 end TauCeti

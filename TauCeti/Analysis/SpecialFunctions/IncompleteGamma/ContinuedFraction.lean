@@ -9,7 +9,7 @@ public import TauCeti.Algebra.ContinuedFractions.ReductionOfOrder
 public import TauCeti.Analysis.SpecialFunctions.IncompleteGamma.Lower
 import TauCeti.Analysis.SpecialFunctions.Hypergeometric.Kummer.Contiguous
 import TauCeti.Analysis.SpecialFunctions.Hypergeometric.Kummer.Limit
-import TauCeti.Analysis.SpecificLimits.Normed
+import TauCeti.Analysis.Asymptotics.Sum.Divergence
 
 /-!
 # The continued fraction of Tricomi's incomplete Gamma function
@@ -667,7 +667,7 @@ theorem tendsto_norm_sum_tricomiContFractSol_atTop {a z : ℂ} (ha : ∀ k : ℕ
     Tendsto (fun n => ‖∑ m ∈ Ico N n,
       (-1) ^ m * (∏ j ∈ Icc 1 m, tricomiContFractNum a z j) /
         (tricomiContFractSol a z m * tricomiContFractSol a z (m + 1))‖) atTop atTop := by
-  refine TauCeti.tendsto_norm_sum_Ico_atTop_of_eventually_mul_norm_le (c := 3) (by norm_num)
+  refine TauCeti.tendsto_norm_sum_Ico_atTop_of_mul_norm_le (c := 3) (by norm_num)
     (eventually_three_mul_norm_le_tricomiTerm ha hz) (Eventually.frequently ?_) N
   have hfne := eventually_tricomiContFractSol_ne_zero ha hz
   filter_upwards [hfne, (tendsto_add_atTop_nat 1).eventually hfne] with m hfm hfm1
