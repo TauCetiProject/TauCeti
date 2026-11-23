@@ -7,8 +7,7 @@ module
 
 public import Mathlib.RingTheory.SimpleRing.Basic
 public import TauCeti.Analysis.CStarAlgebra.Calkin
-import Mathlib.RingTheory.SimpleRing.Congr
-import TauCeti.Algebra.CentralSimple.End
+import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.FiniteDimensional
 
 /-!
 # Sanity checks for compact-operator ideals and the Calkin algebra
@@ -40,17 +39,6 @@ example : CStarAlgebra (TauCeti.CalkinAlgebra H) := inferInstance
 end
 
 section
-
-/-- On a nontrivial finite-dimensional Hausdorff topological vector space over a complete
-nontrivially normed field, the endomorphism ring `V →L[𝕜] V` is simple. -/
-local instance instIsSimpleRingContinuousLinearMap {𝕜 V : Type*} [NontriviallyNormedField 𝕜]
-    [CompleteSpace 𝕜] [AddCommGroup V] [Module 𝕜 V] [TopologicalSpace V] [T2Space V]
-    [IsTopologicalAddGroup V] [ContinuousSMul 𝕜 V] [FiniteDimensional 𝕜 V] [Nontrivial V] :
-    IsSimpleRing (V →L[𝕜] V) := by
-  let e : Module.End 𝕜 V ≃+* (V →L[𝕜] V) :=
-    { LinearMap.toContinuousLinearMap (𝕜 := 𝕜) (E := V) (F' := V) with
-      map_mul' := fun _ _ ↦ rfl }
-  exact IsSimpleRing.of_ringEquiv e (IsSimpleRing.moduleEnd_of_field 𝕜 V)
 
 -- Sanity checks on finite-dimensional complex Euclidean spaces.
 example (d : ℕ) : ContinuousLinearMap.compactIdeal ℂ (EuclideanSpace ℂ (Fin d)) = ⊤ :=

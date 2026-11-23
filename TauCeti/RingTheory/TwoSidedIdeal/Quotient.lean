@@ -161,11 +161,9 @@ protected theorem eq {I : TwoSidedIdeal A} {x y : A} :
 
 /-- The quotient `A ⧸ I` is a subsingleton if and only if `I = ⊤`. -/
 protected theorem subsingleton_iff {I : TwoSidedIdeal A} :
-    Subsingleton (A ⧸ I) ↔ I = ⊤ :=
-  (QuotientAddGroup.subsingleton_iff (N := AddSubgroup.ofClass I)).trans <| by
-    rw [← SetLike.coe_set_eq, AddSubgroup.coe_ofClass, AddSubgroup.coe_top,
-      Set.eq_univ_iff_forall, SetLike.ext_iff]
-    simp only [SetLike.mem_coe, mem_top, iff_true]
+    Subsingleton (A ⧸ I) ↔ I = ⊤ := by
+  rw [subsingleton_iff_forall_eq (0 : A ⧸ I), Quotient.forall]
+  simp [eq_zero_iff_mem, eq_top_iff, IsConcreteLE.le_iff]
 
 /-- The quotient `A ⧸ I` is nontrivial if and only if `I ≠ ⊤`. -/
 protected theorem nontrivial_iff {I : TwoSidedIdeal A} :

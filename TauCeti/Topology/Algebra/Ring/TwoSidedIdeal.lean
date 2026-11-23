@@ -148,6 +148,13 @@ theorem topologicalClosure_le_iff (I J : TwoSidedIdeal A) (hJ : IsClosed (J : Se
       rw [← SetLike.coe_subset_coe, coe_topologicalClosure]
       exact closure_minimal h hJ⟩
 
+/-- For a unital topological ring, passing from a two-sided ideal to its underlying left ideal
+commutes with taking topological closure. -/
+@[simp]
+theorem asIdeal_topologicalClosure {R : Type*} [Ring R] [TopologicalSpace R] [IsTopologicalRing R]
+    (I : TwoSidedIdeal R) : I.topologicalClosure.asIdeal = I.asIdeal.closure :=
+  SetLike.coe_injective (by simp)
+
 end TopologicalClosure
 
 section ClosedKer

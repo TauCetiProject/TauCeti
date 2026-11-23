@@ -56,11 +56,7 @@ variable {R : Type*} [NormedRing R] [HasSummableGeomSeries R]
 series is proper. -/
 theorem topologicalClosure_ne_top {I : TwoSidedIdeal R} (hI : I ≠ ⊤) :
     I.topologicalClosure ≠ ⊤ := by
-  have hset : (I.asIdeal.closure : Set R) = I.topologicalClosure := by
-    rw [Ideal.coe_closure, I.coe_asIdeal, I.coe_topologicalClosure]
-  have hcl : I.asIdeal.closure = I.topologicalClosure.asIdeal :=
-    SetLike.coe_injective (hset.trans I.topologicalClosure.coe_asIdeal.symm)
-  rw [ne_eq, ← one_mem_iff, ← mem_asIdeal, ← hcl, ← Ideal.ne_top_iff_one]
+  rw [ne_eq, ← one_mem_iff, ← mem_asIdeal, asIdeal_topologicalClosure, ← Ideal.ne_top_iff_one]
   exact I.asIdeal.closure_ne_top
     ((Ideal.ne_top_iff_one _).mpr (by rwa [mem_asIdeal, one_mem_iff]))
 

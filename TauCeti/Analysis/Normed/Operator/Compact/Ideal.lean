@@ -302,31 +302,6 @@ end ContinuousLinearMap
 
 section RankOneAndSimplicity
 
-namespace InnerProductSpace
-
-/-- Every rank-one operator is compact. -/
-theorem isCompactOperator_rankOne {𝕜 E F : Type*} [RCLike 𝕜]
-    [SeminormedAddCommGroup E] [NormedSpace 𝕜 E]
-    [SeminormedAddCommGroup F] [InnerProductSpace 𝕜 F] (x : E) (y : F) :
-    IsCompactOperator (rankOne 𝕜 x y) := by
-  rw [rankOne_def']
-  exact (isCompactOperator_of_locallyCompactSpace_rng
-    (ContinuousLinearMap.toSpanSingleton 𝕜 x)).comp_clm _
-
-end InnerProductSpace
-
-namespace TauCeti
-
-/-- Every normalized rank-one operator `TauCeti.rankOneDivNormSq 𝕜 y x` is compact. -/
-theorem isCompactOperator_rankOneDivNormSq {𝕜 E F : Type*} [RCLike 𝕜]
-    [NormedAddCommGroup E] [InnerProductSpace 𝕜 E]
-    [NormedAddCommGroup F] [NormedSpace 𝕜 F] (y : F) (x : E) :
-    IsCompactOperator (rankOneDivNormSq 𝕜 y x) := by
-  rw [rankOneDivNormSq_def]
-  exact (InnerProductSpace.isCompactOperator_rankOne y x).smul _
-
-end TauCeti
-
 namespace ContinuousLinearMap
 
 variable {𝕜 H : Type*} [RCLike 𝕜] [NormedAddCommGroup H] [InnerProductSpace 𝕜 H]
@@ -426,8 +401,11 @@ theorem ContinuousLinearMap.compactIdeal_lt_separableRangeIdeal (hH : ¬ Separab
   have : CompleteSpace U :=
     (Submodule.span 𝕜 (Set.range v)).isClosed_topologicalClosure.completeSpace_coe
   have hmem_sep : U.starProjection ∈ separableRangeIdeal 𝕜 H := by
-    rw [mem_separableRangeIdeal, ← ContinuousLinearMap.coe_coe, ← LinearMap.coe_range,
-      U.range_starProjection, Submodule.topologicalClosure_coe]
+    have hrange : Set.range U.starProjection = closure (Submodule.span 𝕜 (Set.range v)) := by
+      ext x
+      exact ⟨fun ⟨y, hy⟩ ↦ hy ▸ Submodule.coe_mem (U.orthogonalProjectionOnto y),
+        fun hx ↦ ⟨x, U.starProjection_eq_self_iff.mpr hx⟩⟩
+    rw [mem_separableRangeIdeal, hrange]
     exact (Set.countable_range v).isSeparable.span.closure
   have hmem_cpt : IsCompactOperator U.starProjection :=
     mem_compactIdeal.mp (heq.symm ▸ hmem_sep)

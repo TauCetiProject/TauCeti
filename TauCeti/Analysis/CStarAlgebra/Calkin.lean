@@ -48,8 +48,8 @@ and the Banach-ring simplicity criterion (`TauCeti.Analysis.Normed.Ring.Simple`)
   classification of closed two-sided ideals of `H →L[ℂ] H` and its equivalence with
   `SeparableSpace H`.
 * `TauCeti.CalkinAlgebra`: the quotient `(H →L[ℂ] H) ⧸ ContinuousLinearMap.compactIdeal ℂ H`, with
-  quotient projection `TauCeti.CalkinAlgebra.mk` and essential-norm formula
-  `TauCeti.CalkinAlgebra.norm_mk_eq`.
+  quotient projection `TauCeti.CalkinAlgebra.mk` (`mk_surjective`, `mk_eq_zero_iff`,
+  `mk_eq_mk_iff`, `ker_mk`) and essential-norm formula `TauCeti.CalkinAlgebra.norm_mk_eq`.
 * `TauCeti.CalkinAlgebra.subsingleton_iff_finiteDimensional`,
   `TauCeti.CalkinAlgebra.nontrivial_iff_not_finiteDimensional`,
   `TauCeti.CalkinAlgebra.eq_bot_or_eq_top_of_isClosed`,
@@ -159,6 +159,27 @@ variable {H : Type*} [NormedAddCommGroup H] [InnerProductSpace ℂ H] [CompleteS
 abbrev mk : (H →L[ℂ] H) →⋆ₐ[ℂ] CalkinAlgebra H :=
   TwoSidedIdeal.Quotient.mkUnitalStarAlgHom (ContinuousLinearMap.compactIdeal ℂ H)
 
+/-- The canonical quotient map `CalkinAlgebra.mk` is surjective. -/
+theorem mk_surjective : Function.Surjective (mk (H := H)) :=
+  TwoSidedIdeal.Quotient.mkUnitalStarAlgHom_surjective (ContinuousLinearMap.compactIdeal ℂ H)
+
+/-- An operator maps to zero in the Calkin algebra if and only if it is compact. -/
+-- Not `@[simp]`: `mk` is an `abbrev`, so `simp` already reduces `mk T = 0` via
+-- `TwoSidedIdeal.Quotient.mkUnitalStarAlgHom_apply`, `eq_zero_iff_mem`, and `mem_compactIdeal`.
+theorem mk_eq_zero_iff {T : H →L[ℂ] H} : mk T = 0 ↔ IsCompactOperator T := by
+  simp [TwoSidedIdeal.Quotient.eq_zero_iff_mem]
+
+/-- Two operators have the same image in the Calkin algebra if and only if their difference is
+compact. -/
+theorem mk_eq_mk_iff {S T : H →L[ℂ] H} : mk S = mk T ↔ IsCompactOperator (S - T) := by
+  rw [← sub_eq_zero, ← map_sub, mk_eq_zero_iff]
+
+/-- The kernel of `CalkinAlgebra.mk` is the ideal of compact operators. -/
+-- Not `@[simp]`: `mk` is an `abbrev`, so `simp` already reduces `TwoSidedIdeal.ker mk` via
+-- `TwoSidedIdeal.Quotient.ker_mkUnitalStarAlgHom`.
+theorem ker_mk : TwoSidedIdeal.ker (mk (H := H)) = ContinuousLinearMap.compactIdeal ℂ H :=
+  TwoSidedIdeal.Quotient.ker_mkUnitalStarAlgHom (ContinuousLinearMap.compactIdeal ℂ H)
+
 /-- **Essential norm formula.** The norm of `mk T` in `CalkinAlgebra H` is the infimum of
 `‖T + K‖` over all compact operators `K : H →L[ℂ] H`. -/
 theorem norm_mk_eq (T : H →L[ℂ] H) :
@@ -198,7 +219,6 @@ infinite-dimensional. -/
 theorem isSimpleRing_iff :
     IsSimpleRing (CalkinAlgebra H) ↔ SeparableSpace H ∧ ¬ FiniteDimensional ℂ H := by
   refine ⟨fun h ↦ ?_, fun ⟨_, hinf⟩ ↦ isSimpleRing hinf⟩
-  have : IsSimpleRing (CalkinAlgebra H) := h
   refine ⟨?_, nontrivial_iff_not_finiteDimensional.mp inferInstance⟩
   by_contra hsep
   let e := TwoSidedIdeal.Quotient.idealCorrespondence (ContinuousLinearMap.compactIdeal ℂ H)

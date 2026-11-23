@@ -6,6 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.InnerProductSpace.LinearMap
+public import Mathlib.Analysis.Normed.Operator.Compact.Basic
+import Mathlib.Analysis.RCLike.Lemmas
 
 /-!
 # Rank-one operators normalized at a vector
@@ -23,7 +25,9 @@ of McDuff–Salamon's Theorem 2.3.5.
 
 Sandwiching any continuous linear map `T` with `T x ≠ 0` between `rankOneDivNormSq 𝕜 u (T x)` and
 `rankOne 𝕜 x v` recovers `rankOne 𝕜 u v` (`ContinuousLinearMap.rankOneDivNormSq_comp_comp_rankOne`,
-`ContinuousLinearMap.rankOneDivNormSq_mul_mul_rankOne`).
+`ContinuousLinearMap.rankOneDivNormSq_mul_mul_rankOne`). Both `rankOne` and `rankOneDivNormSq`
+are compact operators (`InnerProductSpace.isCompactOperator_rankOne`,
+`TauCeti.isCompactOperator_rankOneDivNormSq`).
 
 Over the reals, the symmetric operator `u ↦ ⟪a, u⟫ b + ⟪b, u⟫ a` sends a nonzero `a` to a vector
 pairing positively with a nonzero `b` (`TauCeti.inner_rankOne_add_rankOne_apply_pos`). This
@@ -85,7 +89,27 @@ theorem norm_rankOneDivNormSq (y : F) (x : E) :
     abs_of_nonneg (norm_nonneg x), norm_rankOne]
   field_simp [norm_ne_zero_iff.mpr hx]
 
+/-- Every normalized rank-one operator `TauCeti.rankOneDivNormSq 𝕜 y x` is compact. -/
+theorem isCompactOperator_rankOneDivNormSq (y : F) (x : E) :
+    IsCompactOperator (rankOneDivNormSq 𝕜 y x) := by
+  rw [rankOneDivNormSq_def, InnerProductSpace.rankOne_def']
+  exact ((isCompactOperator_of_locallyCompactSpace_rng
+    (ContinuousLinearMap.toSpanSingleton 𝕜 y)).comp_clm _).smul _
+
 end TauCeti
+
+namespace InnerProductSpace
+
+/-- Every rank-one operator is compact. -/
+theorem isCompactOperator_rankOne {𝕜 E F : Type*} [RCLike 𝕜]
+    [SeminormedAddCommGroup E] [NormedSpace 𝕜 E]
+    [SeminormedAddCommGroup F] [InnerProductSpace 𝕜 F] (x : E) (y : F) :
+    IsCompactOperator (rankOne 𝕜 x y) := by
+  rw [rankOne_def']
+  exact (isCompactOperator_of_locallyCompactSpace_rng
+    (ContinuousLinearMap.toSpanSingleton 𝕜 x)).comp_clm _
+
+end InnerProductSpace
 
 namespace ContinuousLinearMap
 
