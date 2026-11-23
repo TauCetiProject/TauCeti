@@ -261,7 +261,7 @@ theorem squareBoundaryDegree_mul_of_continuous (hΓ' : Continuous Γ') :
 private def squareSeam : Set (Fin 2 → I) := {y | (y 0 : ℝ) = 1 / 2}
 
 /-- Two points of the square agree when their coordinates agree as real numbers. -/
-theorem square_ext {y z : Fin 2 → I} (h₀ : (y 0 : ℝ) = z 0) (h₁ : (y 1 : ℝ) = z 1) :
+private theorem square_ext {y z : Fin 2 → I} (h₀ : (y 0 : ℝ) = z 0) (h₁ : (y 1 : ℝ) = z 1) :
     y = z := by
   ext i
   fin_cases i

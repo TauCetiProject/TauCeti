@@ -26,6 +26,11 @@ with no finiteness assumption on the vertex types; `Convexity.StdSimplex.continu
 bundles it as a continuous map. This makes affine simplices, such as the simplices of a
 barycentric subdivision, available as continuous maps between topological standard simplices.
 
+The facet of the standard simplex `Δⁿ⁺¹` opposite the vertex `j` is included by
+`Convexity.StdSimplex.faceInclusion j : C(Δⁿ, Δⁿ⁺¹)`, the vertex map `j.succAbove`, and composites
+of facet inclusions agree when the composites of their vertex maps do
+(`Convexity.StdSimplex.faceInclusion_comp_faceInclusion`).
+
 The prefix sums `TauCeti.prefixSum N x.weights` of the weights depend continuously on a point `x`
 of `StdSimplex R (Fin n)` (`Convexity.StdSimplex.continuous_prefixSum_weights`).
 
@@ -142,5 +147,33 @@ metrizable via `t2Space` whenever `R` is metrizable). -/
 instance pseudoMetrizableSpace [Finite M] [TopologicalSpace.PseudoMetrizableSpace R] :
     TopologicalSpace.PseudoMetrizableSpace (StdSimplex R M) :=
   (isEmbedding_toFun_comp_weights R M).isInducing.pseudoMetrizableSpace
+
+section Facets
+
+/-- The inclusion of the facet of the standard simplex opposite the vertex `j`. -/
+noncomputable def faceInclusion {n : ℕ} (j : Fin (n + 2)) :
+    C(StdSimplex R (Fin (n + 1)), StdSimplex R (Fin (n + 2))) :=
+  ⟨map j.succAbove, continuous_map R _⟩
+
+/-- The facet inclusion is the simplex vertex map. -/
+@[simp]
+lemma faceInclusion_apply {n : ℕ} (j : Fin (n + 2)) (z : StdSimplex R (Fin (n + 1))) :
+    faceInclusion j z = z.map j.succAbove :=
+  (rfl)
+
+/-- The facet inclusion sends the vertex `k` to the vertex `j.succAbove k`. -/
+lemma faceInclusion_single {n : ℕ} (j : Fin (n + 2)) (k : Fin (n + 1)) :
+    faceInclusion j (single (R := R) k) = single (j.succAbove k) :=
+  map_single _ _
+
+/-- Two composites of facet inclusions agree when the composites of the vertex maps do. -/
+lemma faceInclusion_comp_faceInclusion {n : ℕ} {i j' : Fin (n + 2)} {j i' : Fin (n + 3)}
+    (h : j.succAbove ∘ i.succAbove = i'.succAbove ∘ j'.succAbove) :
+    (faceInclusion (R := R) j).comp (faceInclusion i) =
+      (faceInclusion i').comp (faceInclusion j') := by
+  ext1 z
+  simp only [ContinuousMap.comp_apply, faceInclusion_apply, ← map_comp, h]
+
+end Facets
 
 end Convexity.StdSimplex

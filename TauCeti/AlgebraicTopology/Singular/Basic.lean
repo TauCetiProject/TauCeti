@@ -11,6 +11,7 @@ public import Mathlib.AlgebraicTopology.SimplicialSet.Nonempty
 public import Mathlib.AlgebraicTopology.SimplicialSet.TopAdj
 public import Mathlib.AlgebraicTopology.SingularHomology.Basic
 public import Mathlib.Algebra.Homology.ShortComplex.ModuleCat
+public import TauCeti.Geometry.Convex.ConvexSpace.Topology
 
 /-!
 # Singular chain complexes
@@ -49,34 +50,6 @@ open scoped Simplicial
 
 universe w v u
 
-namespace Convexity.StdSimplex
-
-/-- The inclusion of the facet of the standard simplex opposite the vertex `j`. Its value is
-exposed, so that a family over the simplex restricts to the facet definitionally. -/
-@[expose] def faceInclusion {n : ℕ} (j : Fin (n + 2)) :
-    C(StdSimplex ℝ (Fin (n + 1)), StdSimplex ℝ (Fin (n + 2))) :=
-  ⟨map j.succAbove, continuous_map ℝ _⟩
-
-/-- The facet inclusion is the simplex vertex map. -/
-@[simp]
-lemma faceInclusion_apply {n : ℕ} (j : Fin (n + 2)) (z : StdSimplex ℝ (Fin (n + 1))) :
-    faceInclusion j z = z.map j.succAbove :=
-  (rfl)
-
-/-- The facet inclusion sends the vertex `k` to the vertex `j.succAbove k`. -/
-lemma faceInclusion_single {n : ℕ} (j : Fin (n + 2)) (k : Fin (n + 1)) :
-    faceInclusion j (single k) = single (j.succAbove k) :=
-  map_single _ _
-
-/-- Two composites of facet inclusions agree when the composites of the vertex maps do. -/
-lemma faceInclusion_comp_faceInclusion {n : ℕ} {i j' : Fin (n + 2)} {j i' : Fin (n + 3)}
-    (h : j.succAbove ∘ i.succAbove = i'.succAbove ∘ j'.succAbove) :
-    (faceInclusion j).comp (faceInclusion i) = (faceInclusion i').comp (faceInclusion j') := by
-  ext1 z
-  simp only [ContinuousMap.comp_apply, faceInclusion_apply, ← map_comp, h]
-
-end Convexity.StdSimplex
-
 namespace ContinuousMap
 
 open Convexity
@@ -92,7 +65,7 @@ def simplexFace {Y : Type*} [TopologicalSpace Y] {n : ℕ}
 lemma simplexFace_apply {Y : Type*} [TopologicalSpace Y] {n : ℕ}
     (s : C(StdSimplex ℝ (Fin (n + 2)), Y)) (j : Fin (n + 2))
     (x : StdSimplex ℝ (Fin (n + 1))) : s.simplexFace j x = s (x.map j.succAbove) := by
-  rfl
+  rw [simplexFace, comp_apply, StdSimplex.faceInclusion_apply]
 
 /-- Facet restriction commutes with postcomposition of continuous maps. -/
 @[simp]
@@ -257,8 +230,9 @@ lemma toSSetObjEquiv_symm_δ {X : TopCat.{w}} {n : ℕ}
       (X.toSSetObjEquiv _).symm (s.simplexFace j) := by
   -- Native `δ` is the simplicial map of `SimplexCategory.δ`; naturality identifies its map.
   change (TopCat.toSSet.obj X).map (SimplexCategory.δ j).op _ = _
-  simpa only [ContinuousMap.simplexFace, Convexity.StdSimplex.faceInclusion,
-    SimplexCategory.coe_δ] using
+  have h : s.simplexFace j = s.comp ⟨_, Convexity.StdSimplex.continuous_map ℝ j.succAbove⟩ :=
+    ContinuousMap.ext (s.simplexFace_apply j)
+  simpa only [h, SimplexCategory.coe_δ] using
     (TopCat.toSSetObjEquiv_symm_naturality (SimplexCategory.δ j) s)
 
 variable {C : Type u} [Category.{v} C] [Preadditive C] [HasCoproducts.{w} C]

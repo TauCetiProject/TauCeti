@@ -10,6 +10,7 @@ public import TauCeti.AlgebraicTopology.Homotopy.Hurewicz.Square
 public import TauCeti.Topology.VectorBundle.Complex.Clutching
 import TauCeti.Geometry.Convex.ConvexSpace.ContractibleSpaceStdSimplex
 import TauCeti.Geometry.Convex.ConvexSpace.LocallyPathConnectedSpaceStdSimplex
+import TauCeti.Topology.Circle.Degree.StdSimplex
 
 /-!
 # Clutching numbers factor through the Hurewicz map
@@ -73,59 +74,13 @@ noncomputable section
 
 open AlgebraicTopology Bundle CategoryTheory Convexity Real Set Topology
 open Convexity.StdSimplex (faceInclusion)
+open Circle (sweptAngle sweptAngle_eq_sub exp_sweptAngle exists_sweptAngle_eq_sub sweptAngle_mul
+  sweptAngle_comp_symm)
 open scoped unitInterval Topology.Homotopy
 
 namespace TauCeti
 
 namespace ChernCocycle
-
-/-! ### Swept angles -/
-
-open Classical in
-/-- The angle swept by a map `w : I → Circle`, as the difference `θ 1 - θ 0` of a continuous lift
-`θ`, when `w` is continuous; `0` otherwise. -/
-private def sweptAngle (w : I → Circle) : ℝ :=
-  if h : Continuous w then Circle.angleChange ⟨⟨w, h⟩, rfl, rfl⟩ else 0
-
-private theorem sweptAngle_eq_sub {w : I → Circle} (hw : Continuous w) {θ : I → ℝ}
-    (hθ : Continuous θ) (hθw : ∀ t, Circle.exp (θ t) = w t) : sweptAngle w = θ 1 - θ 0 := by
-  rw [sweptAngle, dite_eq_left hw]
-  exact Circle.angleChange_eq_sub _ hθ hθw
-
-private theorem exp_sweptAngle {w : I → Circle} (hw : Continuous w) :
-    Circle.exp (sweptAngle w) = w 1 / w 0 := by
-  rw [sweptAngle, dite_eq_left hw, Circle.exp_angleChange]
-
-/-- The angle swept by a continuous map is the change of one of its continuous lifts. -/
-private theorem exists_sweptAngle_eq_sub {w : I → Circle} (hw : Continuous w) :
-    ∃ θ : I → ℝ, Continuous θ ∧ (∀ t, Circle.exp (θ t) = w t) ∧ sweptAngle w = θ 1 - θ 0 := by
-  obtain ⟨θ, hθ⟩ := Circle.exists_lift (⟨⟨w, hw⟩, rfl, rfl⟩ : Path (w 0) (w 1))
-  exact ⟨θ, θ.continuous, hθ, sweptAngle_eq_sub hw θ.continuous hθ⟩
-
-private theorem sweptAngle_mul {w w' : I → Circle} (hw : Continuous w) (hw' : Continuous w') :
-    sweptAngle (w * w') = sweptAngle w + sweptAngle w' := by
-  rw [sweptAngle, sweptAngle, sweptAngle, dite_eq_left hw, dite_eq_left hw',
-    dite_eq_left (hw.mul hw')]
-  exact Circle.angleChange_mul (⟨⟨w, hw⟩, rfl, rfl⟩ : Path (w 0) (w 1))
-    (⟨⟨w', hw'⟩, rfl, rfl⟩ : Path (w' 0) (w' 1))
-
-/-- A continuous map from the standard `2`-simplex to the circle sweeps no total angle around
-the boundary of the simplex: it lifts to `ℝ`, and the swept angles of the edges telescope. -/
-private theorem sum_sweptAngle_faces (g : C(StdSimplex ℝ (Fin 3), Circle)) :
-    ∑ i : Fin 3, (-1 : ℝ) ^ (i : ℕ) *
-      sweptAngle (fun t ↦ g (faceInclusion i (StdSimplex.homeomorphI.symm t))) = 0 := by
-  obtain ⟨G, ⟨-, hG⟩, -⟩ := Circle.isCoveringMap_exp.existsUnique_continuousMap_lifts g
-    (StdSimplex.single 0) (Complex.arg (g (StdSimplex.single 0))) (Circle.exp_arg _)
-  have hface (i : Fin 3) :
-      sweptAngle (fun t ↦ g (faceInclusion i (StdSimplex.homeomorphI.symm t))) =
-      G (StdSimplex.single (i.succAbove 1)) - G (StdSimplex.single (i.succAbove 0)) := by
-    have hc : Continuous fun t ↦ faceInclusion i (StdSimplex.homeomorphI.symm t) :=
-      (faceInclusion i).continuous.comp StdSimplex.homeomorphI.symm.continuous
-    rw [sweptAngle_eq_sub (w := fun t ↦ g _) (g.continuous.comp hc) (θ := fun t ↦ G _)
-      (G.continuous.comp hc) fun t ↦ congr_fun hG _]
-    simp [StdSimplex.homeomorphI_symm_one, StdSimplex.homeomorphI_symm_zero]
-  simp only [Fin.sum_univ_three, hface]
-  simp [Fin.succAbove]
 
 /-! ### Frames at points and along simplices -/
 
@@ -177,11 +132,9 @@ omit [FiniteDimensional ℂ F] [∀ x, IsTopologicalAddGroup (E x)] [∀ x, Cont
 /-- Comparing a frame with the frame of a point through an intermediate frame `Ψ`. -/
 private theorem vertexValue_eq_mul {B : Type*} (s : B → X) (Φ Ψ : ∀ y, F ≃L[ℂ] E (s y)) (y : B) :
     vertexValue s Φ y =
-      vertexValue s Ψ y * ((Ψ y).trans (Φ y).symm).normalizedDet := by
-  rw [vertexValue, vertexValue, ← ContinuousLinearEquiv.normalizedDet_trans]
-  congr 1
-  ext v
-  simp
+      vertexValue s Ψ y * ((Ψ y).trans (Φ y).symm).normalizedDet :=
+  (ContinuousLinearEquiv.normalizedDet_trans_symm_mul_trans (pointFrame F (s y)) (Ψ y)
+    (Φ y).symm).symm
 
 private theorem exp_edgeAngle (s : C(StdSimplex ℝ (Fin 2), X)) {Φ : ∀ z, F ≃L[ℂ] E (s z)}
     (hΦ : Continuous fun q : StdSimplex ℝ (Fin 2) × F ↦ TotalSpace.mk' F (s q.1) (Φ q.1 q.2)) :
@@ -220,10 +173,8 @@ private theorem edgeAngle_eq_add (s : C(StdSimplex ℝ (Fin 2), X)) {Φ Φ' : �
       fun t ↦ ((Φ (StdSimplex.homeomorphI.symm t)).trans
         (Φ' (StdSimplex.homeomorphI.symm t)).symm).normalizedDet := by
     funext t
-    rw [Pi.mul_apply, ← ContinuousLinearEquiv.normalizedDet_trans]
-    congr 1
-    ext v
-    simp
+    rw [Pi.mul_apply]
+    exact (ContinuousLinearEquiv.normalizedDet_trans_symm_mul_trans _ _ _).symm
   rw [edgeAngle, edgeAngle, hmul, sweptAngle_mul hw hg]
   ring
 
@@ -270,7 +221,7 @@ private theorem triangleAngle_eq (s : C(StdSimplex ℝ (Fin 3), X)) {Φ Φ' : �
     (hΦ : Continuous fun q : StdSimplex ℝ (Fin 3) × F ↦ TotalSpace.mk' F (s q.1) (Φ q.1 q.2))
     (hΦ' : Continuous fun q : StdSimplex ℝ (Fin 3) × F ↦ TotalSpace.mk' F (s q.1) (Φ' q.1 q.2)) :
     triangleAngle s Φ' = triangleAngle s Φ := by
-  have h0 := sum_sweptAngle_faces
+  have h0 := Circle.sum_sweptAngle_faceInclusion_eq_zero
     ⟨fun y ↦ ((Φ y).trans (Φ' y).symm).normalizedDet, continuous_normalizedDet_trans_symm hΦ' hΦ⟩
   simp only [ContinuousMap.coe_mk] at h0
   have he (i : Fin 3) := edgeAngle_eq_add (s.comp (faceInclusion i))
@@ -347,7 +298,8 @@ private theorem clutchingCochain_d (c : ((singularChains ℤ).obj (TopCat.of X))
   -- The faces of a singular simplex are its restrictions to the facets.
   have hδ (j : Fin 4) : (TopCat.of X).toSSetObjEquiv _ ((TopCat.toSSet.obj (TopCat.of X)).δ j τ) =
       τ'.comp (faceInclusion j) :=
-    ContinuousMap.ext fun z ↦ TopCat.toSSetObjEquiv_δ_apply τ j z
+    ContinuousMap.ext fun z ↦ (TopCat.toSSetObjEquiv_δ_apply τ j z).trans
+      (congrArg τ' (StdSimplex.faceInclusion_apply j z).symm)
   rw [LinearMap.comp_apply, singularChains_d_simplexChain (n := 2), map_sum, LinearMap.zero_apply]
   simp only [map_zsmul, clutchingCochain, chainsDesc_simplexChain_one, hδ, smul_eq_mul]
   have h : ((∑ j : Fin 4, (-1 : ℤ) ^ (j : ℕ) * triangleNumber F E (τ'.comp (faceInclusion j)) :
@@ -417,56 +369,6 @@ private theorem vertexValue_eq_clutchingFunction {B : Type*} {s : B → X} (Φ :
   rintro z rfl A hm
   rw [← ContinuousLinearEquiv.normalizedDet_symm]
   rfl
-
-/-- The angle swept along a reversed path is the negative of the angle along the path. -/
-private theorem sweptAngle_comp_symm {w : I → Circle} (hw : Continuous w) :
-    sweptAngle (fun t ↦ w (σ t)) = -sweptAngle w := by
-  obtain ⟨θ, hθ, hθw, hsw⟩ := exists_sweptAngle_eq_sub hw
-  rw [hsw, sweptAngle_eq_sub (w := fun t ↦ w (σ t)) (hw.comp unitInterval.continuous_symm)
-    (hθ.comp unitInterval.continuous_symm) fun t ↦ hθw (σ t)]
-  simp
-
-/-! ### The triangulated cycle of a sphere -/
-
-/-- The weight of the vertex `j` vanishes on the facet opposite `j`. -/
-private theorem weights_faceMap_self {n : ℕ} (j : Fin (n + 2)) (z : StdSimplex ℝ (Fin (n + 1))) :
-    (faceInclusion j z).weights j = 0 :=
-  StdSimplex.weights_map_succAbove_self j z
-
-/-- The weights of a point of the facet of `Δ²` opposite `j`, at the parameter `t` of the facet. -/
-private theorem weights_faceMap_homeomorphI_symm {j k : Fin 3} {i : Fin 2}
-    (h : j.succAbove i = k) (t : I) :
-    (faceInclusion j (StdSimplex.homeomorphI.symm t)).weights k =
-      (StdSimplex.homeomorphI.symm t).weights i :=
-  StdSimplex.weights_map_succAbove_of_eq h _
-
-private theorem squareLowerTriangle_faceMap_two (t : I) :
-    squareLowerTriangle (faceInclusion 2 (StdSimplex.homeomorphI.symm t)) = ![t, 0] := by
-  refine square_ext ?_ ?_ <;> simp only [squareLowerTriangle_apply_zero,
-    squareLowerTriangle_apply_one, weights_faceMap_self,
-    weights_faceMap_homeomorphI_symm (j := 2) (i := 1) (k := 1) rfl,
-    StdSimplex.homeomorphI_symm_weights_one] <;> simp
-
-private theorem squareLowerTriangle_faceMap_zero (t : I) :
-    squareLowerTriangle (faceInclusion 0 (StdSimplex.homeomorphI.symm t)) = ![1, t] := by
-  refine square_ext ?_ ?_ <;> simp only [squareLowerTriangle_apply_zero,
-    squareLowerTriangle_apply_one, weights_faceMap_homeomorphI_symm (j := 0) (i := 0) (k := 1) rfl,
-    weights_faceMap_homeomorphI_symm (j := 0) (i := 1) (k := 2) rfl,
-    StdSimplex.homeomorphI_symm_weights_zero, StdSimplex.homeomorphI_symm_weights_one] <;> simp
-
-private theorem squareUpperTriangle_faceMap_zero (t : I) :
-    squareUpperTriangle (faceInclusion 0 (StdSimplex.homeomorphI.symm t)) = ![σ t, 1] := by
-  refine square_ext ?_ ?_ <;> simp only [squareUpperTriangle_apply_zero,
-    squareUpperTriangle_apply_one, weights_faceMap_homeomorphI_symm (j := 0) (i := 0) (k := 1) rfl,
-    weights_faceMap_homeomorphI_symm (j := 0) (i := 1) (k := 2) rfl,
-    StdSimplex.homeomorphI_symm_weights_zero, StdSimplex.homeomorphI_symm_weights_one] <;> simp
-
-private theorem squareUpperTriangle_faceMap_one (t : I) :
-    squareUpperTriangle (faceInclusion 1 (StdSimplex.homeomorphI.symm t)) = ![0, t] := by
-  refine square_ext ?_ ?_ <;> simp only [squareUpperTriangle_apply_zero,
-    squareUpperTriangle_apply_one, weights_faceMap_self,
-    weights_faceMap_homeomorphI_symm (j := 1) (i := 1) (k := 2) rfl,
-    StdSimplex.homeomorphI_symm_weights_one] <;> simp
 
 /-! ### The value on the triangulated cycle of a sphere -/
 
@@ -585,16 +487,18 @@ private theorem clutchingCochain_squareChain {x : X} (p : Ω^ (Fin 2) X x) :
   -- The diagonal faces of the two triangles of the square agree.
   have hdiag : squareLowerTriangle.comp (faceInclusion 1) =
       squareUpperTriangle.comp (faceInclusion 2) :=
-    ContinuousMap.ext squareLowerTriangle_map_succAbove_one
+    ContinuousMap.ext fun z ↦ by
+      simpa only [ContinuousMap.comp_apply, StdSimplex.faceInclusion_apply] using
+        squareLowerTriangle_map_succAbove_one z
   rw [← hdiag,
     edgeAngle_comp_of_mem_boundary p hφ (squareUpperTriangle.comp (faceInclusion 0))
-      (g := fun t ↦ ![σ t, 1]) squareUpperTriangle_faceMap_zero fun t ↦ ⟨1, Or.inr rfl⟩,
+      (g := fun t ↦ ![σ t, 1]) squareUpperTriangle_faceInclusion_zero fun t ↦ ⟨1, Or.inr rfl⟩,
     edgeAngle_comp_of_mem_boundary p hφ (squareUpperTriangle.comp (faceInclusion 1))
-      (g := fun t ↦ ![0, t]) squareUpperTriangle_faceMap_one fun t ↦ ⟨0, Or.inl rfl⟩] at hm₂
+      (g := fun t ↦ ![0, t]) squareUpperTriangle_faceInclusion_one fun t ↦ ⟨0, Or.inl rfl⟩] at hm₂
   rw [edgeAngle_comp_of_mem_boundary p hφ (squareLowerTriangle.comp (faceInclusion 0))
-      (g := fun t ↦ ![1, t]) squareLowerTriangle_faceMap_zero fun t ↦ ⟨0, Or.inr rfl⟩,
+      (g := fun t ↦ ![1, t]) squareLowerTriangle_faceInclusion_zero fun t ↦ ⟨0, Or.inr rfl⟩,
     edgeAngle_comp_of_mem_boundary p hφ (squareLowerTriangle.comp (faceInclusion 2))
-      (g := fun t ↦ ![t, 0]) squareLowerTriangle_faceMap_two fun t ↦ ⟨1, Or.inl rfl⟩] at hm₁
+      (g := fun t ↦ ![t, 0]) squareLowerTriangle_faceInclusion_two fun t ↦ ⟨1, Or.inl rfl⟩] at hm₁
   have hdeg := clutchingNumber_mul_two_pi_eq p hφ
   rw [GenLoop.squareChain_def, map_sub, map_add, map_nsmul, clutchingCochain_simplexMapChain,
     clutchingCochain_simplexMapChain, clutchingCochain_simplexMapChain]

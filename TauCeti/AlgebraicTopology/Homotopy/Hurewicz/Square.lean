@@ -10,6 +10,7 @@ public import TauCeti.AlgebraicTopology.Singular.ModuleChains.Basic
 public import TauCeti.Algebra.Homology.ModuleCat.Basic
 public import TauCeti.Topology.Homotopy.GenLoop.Map
 public import TauCeti.Geometry.Convex.ConvexSpace.Defs
+public import TauCeti.Geometry.Convex.ConvexSpace.PathConnectedSpaceStdSimplex
 
 /-!
 # Hurewicz classes of squares as triangulated cycles
@@ -123,6 +124,67 @@ theorem squareLowerTriangle_map_succAbove_one (z : StdSimplex ℝ (Fin 2)) :
     simp only [Fin.zero_eta, Fin.mk_one, squareLowerTriangle_apply_zero,
       squareUpperTriangle_apply_zero, squareLowerTriangle_apply_one, squareUpperTriangle_apply_one,
       StdSimplex.weights_map_succAbove_self, h₁, h₂, zero_add, add_zero]
+
+/-- The face of the lower triangle opposite the vertex `(1, 1)` is the bottom edge `t ↦ (t, 0)`
+of the square, parametrized through `StdSimplex.homeomorphI`. -/
+theorem squareLowerTriangle_faceInclusion_two (t : I) :
+    squareLowerTriangle (StdSimplex.faceInclusion 2 (StdSimplex.homeomorphI.symm t)) = ![t, 0] := by
+  have h₁ := StdSimplex.weights_map_succAbove_of_eq (j := 2) (i := 1) (k := 1) (by decide)
+    (StdSimplex.homeomorphI.symm t)
+  rw [StdSimplex.faceInclusion_apply]
+  funext j
+  apply Subtype.ext
+  fin_cases j <;>
+    simp only [Fin.zero_eta, Fin.mk_one, squareLowerTriangle_apply_zero,
+      squareLowerTriangle_apply_one, StdSimplex.weights_map_succAbove_self, h₁,
+      StdSimplex.homeomorphI_symm_weights_one] <;> simp
+
+/-- The face of the lower triangle opposite the vertex `(0, 0)` is the right edge `t ↦ (1, t)` of
+the square, parametrized through `StdSimplex.homeomorphI`. -/
+theorem squareLowerTriangle_faceInclusion_zero (t : I) :
+    squareLowerTriangle (StdSimplex.faceInclusion 0 (StdSimplex.homeomorphI.symm t)) = ![1, t] := by
+  have h₁ := StdSimplex.weights_map_succAbove_of_eq (j := 0) (i := 0) (k := 1) (by decide)
+    (StdSimplex.homeomorphI.symm t)
+  have h₂ := StdSimplex.weights_map_succAbove_of_eq (j := 0) (i := 1) (k := 2) (by decide)
+    (StdSimplex.homeomorphI.symm t)
+  rw [StdSimplex.faceInclusion_apply]
+  funext j
+  apply Subtype.ext
+  fin_cases j <;>
+    simp only [Fin.zero_eta, Fin.mk_one, squareLowerTriangle_apply_zero,
+      squareLowerTriangle_apply_one, h₁, h₂, StdSimplex.homeomorphI_symm_weights_zero,
+      StdSimplex.homeomorphI_symm_weights_one] <;> simp
+
+/-- The face of the upper triangle opposite the vertex `(0, 0)` is the reversed top edge
+`t ↦ (1 - t, 1)` of the square, parametrized through `StdSimplex.homeomorphI`. -/
+theorem squareUpperTriangle_faceInclusion_zero (t : I) :
+    squareUpperTriangle (StdSimplex.faceInclusion 0 (StdSimplex.homeomorphI.symm t)) =
+      ![σ t, 1] := by
+  have h₁ := StdSimplex.weights_map_succAbove_of_eq (j := 0) (i := 0) (k := 1) (by decide)
+    (StdSimplex.homeomorphI.symm t)
+  have h₂ := StdSimplex.weights_map_succAbove_of_eq (j := 0) (i := 1) (k := 2) (by decide)
+    (StdSimplex.homeomorphI.symm t)
+  rw [StdSimplex.faceInclusion_apply]
+  funext j
+  apply Subtype.ext
+  fin_cases j <;>
+    simp only [Fin.zero_eta, Fin.mk_one, squareUpperTriangle_apply_zero,
+      squareUpperTriangle_apply_one, h₁, h₂, StdSimplex.homeomorphI_symm_weights_zero,
+      StdSimplex.homeomorphI_symm_weights_one] <;> simp
+
+/-- The face of the upper triangle opposite the vertex `(1, 1)` is the left edge `t ↦ (0, t)` of
+the square, parametrized through `StdSimplex.homeomorphI`. -/
+theorem squareUpperTriangle_faceInclusion_one (t : I) :
+    squareUpperTriangle (StdSimplex.faceInclusion 1 (StdSimplex.homeomorphI.symm t)) = ![0, t] := by
+  have h₂ := StdSimplex.weights_map_succAbove_of_eq (j := 1) (i := 1) (k := 2) (by decide)
+    (StdSimplex.homeomorphI.symm t)
+  rw [StdSimplex.faceInclusion_apply]
+  funext j
+  apply Subtype.ext
+  fin_cases j <;>
+    simp only [Fin.zero_eta, Fin.mk_one, squareUpperTriangle_apply_zero,
+      squareUpperTriangle_apply_one, StdSimplex.weights_map_succAbove_self, h₂,
+      StdSimplex.homeomorphI_symm_weights_one] <;> simp
 
 /-- A point of the square with a coordinate equal to `0` or `1` lies on its boundary. -/
 private theorem mem_boundary_of_coord {y : I^(Fin 2)} (j : Fin 2)

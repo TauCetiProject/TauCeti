@@ -32,10 +32,12 @@ lemma homeomorphI_apply_eq_mk (w : StdSimplex ℝ (Fin 2)) :
   Subtype.ext (homeomorphI_apply_coe w)
 
 /-- The last weight of the point of the standard `1`-simplex of parameter `t` is `t`. -/
+@[simp]
 lemma homeomorphI_symm_weights_one (t : unitInterval) : (homeomorphI.symm t).weights 1 = t := by
   rw [← homeomorphI_apply_coe, Homeomorph.apply_symm_apply]
 
 /-- The first weight of the point of the standard `1`-simplex of parameter `t` is `1 - t`. -/
+@[simp]
 lemma homeomorphI_symm_weights_zero (t : unitInterval) :
     (homeomorphI.symm t).weights 0 = 1 - t := by
   rw [← homeomorphI_symm_weights_one t, ← total_fin_two (homeomorphI.symm t)]
