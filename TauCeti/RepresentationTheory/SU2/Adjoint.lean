@@ -13,7 +13,6 @@ public import TauCeti.RepresentationTheory.SU2.Basic
 public import TauCeti.Topology.Algebra.ContinuousMonoidHom.QuotientKerEquiv
 import TauCeti.LinearAlgebra.Matrix.CrossProduct
 import TauCeti.LinearAlgebra.Matrix.OrthogonalGroup.Basic
-import TauCeti.LinearAlgebra.Matrix.SpecialOrthogonalGroup.Orbit
 import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.Real.Basic
 import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.Real.Three
 import TauCeti.LinearAlgebra.QuadraticForm.SpecialOrthogonal.WeightedSumSquares
@@ -81,8 +80,6 @@ The Pauli map is a covering map (`TauCeti.SU2.isCoveringMap_toSO3`).
 * `TauCeti.SU2.toSO3_mulVec_single_two_eq_self_iff`: the rotation `toSO3 g` fixes the north pole
   `(0, 0, 1)` exactly when `g` lies in the maximal torus.
 * `TauCeti.SU2.toSO3_surjective`: `SU(2) → SO(3)` is surjective.
-* `TauCeti.SU2.exists_toSO3_mulVec_eq_iff`: the rotations `toSO3 g` act transitively on the
-  spheres of `ℝ³`.
 * `TauCeti.SU2.isCoveringMap_toSO3`: the Pauli map is a covering map.
 
 ## References
@@ -490,16 +487,6 @@ theorem toSO3_surjective : Function.Surjective toSO3 := by
     Subtype.ext ((pauliRotation_eq_iff _).mpr fun x => ?_)⟩
   rw [Submonoid.coe_inclusion, pauli_eq_smul_toComplexMatrix, pauli_eq_smul_toComplexMatrix,
     ← hsx, realSpinThreeEquivSpecialUnitary_action, mul_smul_comm, smul_mul_assoc]
-
-/-- **`SU(2)` acts transitively on the spheres of `ℝ³` through `SO(3)`**: a rotation `toSO3 g`
-carries `n` to `m` for some `g` exactly when `m ⬝ᵥ m = n ⬝ᵥ n`. -/
-theorem exists_toSO3_mulVec_eq_iff {n m : Fin 3 → ℝ} :
-    (∃ g : SU2, (toSO3 g : Matrix (Fin 3) (Fin 3) ℝ) *ᵥ n = m) ↔ m ⬝ᵥ m = n ⬝ᵥ n := by
-  refine ⟨fun ⟨g, hg⟩ ↦ hg ▸ mem_orthogonalGroup_iff_dotProduct_mulVec.mp (toSO3 g).property.1 n n,
-    fun h ↦ ?_⟩
-  obtain ⟨A, hA⟩ := exists_specialOrthogonalGroup_mulVec_eq (by simp) h.symm
-  obtain ⟨g, rfl⟩ := toSO3_surjective A
-  exact ⟨g, hA⟩
 
 /-- The double cover `SU(2) → SO(3)` is continuous. -/
 theorem continuous_toSO3 : Continuous toSO3 := by
