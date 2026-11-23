@@ -291,6 +291,26 @@ theorem ofLatticeEquiv_latticeEquiv (T : N ≃+ N') :
     (ofLatticeEquiv h h' T).latticeEquiv = T := (rfl)
 
 variable (h) in
+/-- The identity of the lattice induces the identity equivalence. -/
+@[simp]
+theorem ofLatticeEquiv_refl : ofLatticeEquiv h h (AddEquiv.refl N) = refl h := by
+  ext x; simp
+
+variable (h h') in
+/-- Inverting the lattice isomorphism inverts the induced equivalence. -/
+@[simp]
+theorem ofLatticeEquiv_symm (T : N ≃+ N') :
+    (ofLatticeEquiv h h' T).symm = ofLatticeEquiv h' h T.symm := (rfl)
+
+variable (h h' h'') in
+/-- Composing lattice isomorphisms composes the induced equivalences. This is not a simp lemma
+because the intermediate lattice does not occur on the left-hand side. -/
+theorem ofLatticeEquiv_trans (T : N ≃+ N') (T' : N' ≃+ N'') :
+    ofLatticeEquiv h h'' (T.trans T') =
+      (ofLatticeEquiv h h' T).trans (ofLatticeEquiv h' h'' T') := by
+  ext x; simp [← LinearMap.comp_apply]
+
+variable (h) in
 /-- Translation by a vector, acting trivially on the integral lattice. -/
 def constVAdd (v : V) : IntegralAffineEquiv h h where
   toAffineEquiv := AffineEquiv.constVAdd ℝ V v
