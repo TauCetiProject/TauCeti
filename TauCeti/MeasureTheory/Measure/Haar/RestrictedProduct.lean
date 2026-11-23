@@ -15,6 +15,7 @@ public import TauCeti.Topology.Algebra.Group.Basic
 public import TauCeti.Topology.Algebra.RestrictedProduct.Congr.Basic
 public import TauCeti.Topology.Algebra.RestrictedProduct.Principal
 public import TauCeti.Topology.Bases
+import TauCeti.Algebra.BigOperators.Finprod
 import TauCeti.MeasureTheory.Group.Arithmetic
 import TauCeti.MeasureTheory.Group.ModularCharacter
 import TauCeti.MeasureTheory.Group.OpenSubgroup.Basic
@@ -68,6 +69,7 @@ groups is unimodular (`RestrictedProduct.modularCharacter_eq_one`).
   `TauCeti.eq_restrictedHaar_of_box`, `TauCeti.comap_levelMonoidHom_restrictedHaar`,
   `TauCeti.measurePreserving_restrictedHaar_levelMonoidHom`, `TauCeti.restrictedHaar_box`,
   `TauCeti.restrictedHaar_box_eq_finprod`, `TauCeti.restrictedHaar_box_self`,
+  `TauCeti.restrictedHaar_eq_finprod_smul`,
   `TauCeti.regular_restrictedHaar`, `TauCeti.isLocallyFiniteMeasure_restrictedHaar`,
   `TauCeti.sigmaFinite_restrictedHaar`, `TauCeti.isMulRightInvariant_restrictedHaar`,
   `TauCeti.isInvInvariant_restrictedHaar`,
@@ -454,6 +456,34 @@ measure `∏ᶠ i, μ i (B i)`. -/]
 theorem restrictedHaar_box_self :
     restrictedHaar B μ hμB (box fun i ↦ (B i : Set (G i))) = ∏ᶠ i, μ i (B i) :=
   restrictedHaar_box_eq_finprod B μ hμB (.of_forall fun _ ↦ rfl)
+
+/-- **Change of local normalizations.** If `μ' i = c i • μ i` for scalars `c i : ℝ≥0`, where both
+families are normalized cofinitely, then `restrictedHaar` for `μ'` is `∏ᶠ i, c i` times
+`restrictedHaar` for `μ`. The scalars are nonzero because `μ' i` is a Haar measure, and equal to
+`1` cofinitely because both families are normalized on `B i` cofinitely. -/
+@[to_additive restrictedAddHaar_eq_finprod_smul
+/-- **Change of local normalizations.** If `μ' i = c i • μ i` for scalars `c i : ℝ≥0`, where both
+families are normalized cofinitely, then `restrictedAddHaar` for `μ'` is `∏ᶠ i, c i` times
+`restrictedAddHaar` for `μ`. -/]
+theorem restrictedHaar_eq_finprod_smul (μ' : ∀ i, Measure (G i)) [∀ i, (μ' i).IsHaarMeasure]
+    (hμ'B : ∀ᶠ i in cofinite, μ' i (B i) = 1) (c : ι → ℝ≥0) (hμ' : ∀ i, μ' i = c i • μ i) :
+    restrictedHaar B μ' hμ'B = (∏ᶠ i, c i) • restrictedHaar B μ hμB := by
+  have hc1 : ∀ᶠ i in cofinite, c i = 1 := by
+    filter_upwards [hμB, hμ'B] with i h h'
+    rw [hμ' i, coe_nnreal_smul_apply, h, mul_one] at h'
+    exact_mod_cast h'
+  have hc0 : ∏ᶠ i, c i ≠ 0 := finprod_ne_zero fun i hi ↦ by
+    simpa [hμ' i, hi] using isOpen_univ.measure_pos (μ' i) univ_nonempty
+  have := IsHaarMeasure.nnreal_smul (restrictedHaar B μ hμB) hc0
+  refine (restrictedHaar_unique B μ' hμ'B fun C _ hCB ↦ ?_).symm
+  have hc : Function.HasFiniteMulSupport c := hasFiniteMulSupport_iff_eventually_eq_one.mpr hc1
+  have hcoe : ((∏ᶠ i, c i : ℝ≥0) : ℝ≥0∞) = ∏ᶠ i, (c i : ℝ≥0∞) := map_finprod ENNReal.ofNNRealHom hc
+  have hfin : Function.HasFiniteMulSupport fun i ↦ μ i (C i) :=
+    hasFiniteMulSupport_iff_eventually_eq_one.mpr <| (hCB.and hμB).mono fun i h ↦ by rw [h.1, h.2]
+  rw [coe_nnreal_smul_apply, restrictedHaar_box_eq_finprod B μ hμB hCB, hcoe,
+    ← finprod_mul_distrib (f := fun i ↦ (c i : ℝ≥0∞))
+      (hc.subset (Function.mulSupport_comp_subset ENNReal.coe_one c)) hfin]
+  exact finprod_congr fun i ↦ by rw [hμ' i, coe_nnreal_smul_apply]
 
 /-- `restrictedHaar` is a regular measure on `Πʳ i, [G i, B i]`. -/
 @[to_additive /-- `restrictedAddHaar` is a regular measure on `Πʳ i, [G i, B i]`. -/]
