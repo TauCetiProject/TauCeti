@@ -102,13 +102,9 @@ theorem dagger_comp_asHom_comp_mono (g : X ⟶ Y) {a b : End X} (hab : a ≤ b) 
 `(‖g‖ ^ 2) • End.of (f ≫ dagger f)`. -/
 theorem comp_dagger_self_comp_le (f : X ⟶ Y) (g : Y ⟶ Z) :
     End.of ((f ≫ g) ≫ dagger (f ≫ g)) ≤ (‖g‖ ^ 2) • End.of (f ≫ dagger f) := by
-  obtain ⟨h, hh⟩ := CStarCategory.exists_self_comp_dagger_eq g
-  have hnorm : ‖End.of h‖ ^ 2 = ‖g‖ ^ 2 := by
-    rw [End.norm_of, ← CStarCategory.norm_self_comp_dagger, ← hh,
-      CStarCategory.norm_self_comp_dagger]
   have hle : End.of (g ≫ dagger g) ≤ algebraMap ℝ (End Y) (‖g‖ ^ 2) := by
-    rw [hh, ← hnorm]
-    exact CStarAlgebra.star_mul_le_algebraMap_norm_sq (End.of h)
+    simpa only [End.norm_of, CStarCategory.norm_self_comp_dagger] using
+      (self_comp_dagger_nonneg g).isSelfAdjoint.le_algebraMap_norm_self
   have hcong := comp_asHom_comp_dagger_mono f hle
   have hlhs : End.of (f ≫ (End.of (g ≫ dagger g)).asHom ≫ dagger f) =
       End.of ((f ≫ g) ≫ dagger (f ≫ g)) := by
@@ -182,6 +178,8 @@ theorem ofSpectrumNonneg {C : Type u} [Category.{v} C] [Preadditive C] [Linear �
       intro x hx
       simpa using spectrum_nonneg f (spectrum.algebraMap_mem ℂ hx)
     obtain ⟨b, hb⟩ := CStarAlgebra.nonneg_iff_eq_star_mul_self.mp hpos
-    exact ⟨b.asHom, congrArg End.asHom hb⟩
+    have hmem := congrArg End.asHom hb
+    simp only [End.mul_asHom, End.star_asHom] at hmem
+    exact ⟨b.asHom, hmem⟩
 
 end TauCeti.CStarCategory

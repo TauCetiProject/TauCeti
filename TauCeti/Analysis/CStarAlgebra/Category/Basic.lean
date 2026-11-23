@@ -131,10 +131,6 @@ theorem norm_add_le (f g : X ⟶ Y) : ‖f + g‖ ≤ ‖f‖ + ‖g‖ :=
 @[simp] theorem norm_neg (f : X ⟶ Y) : ‖-f‖ = ‖f‖ := by
   simpa using norm_smul (-1 : ℂ) f
 
-/-- Hom norms satisfy the triangle inequality for subtraction. -/
-theorem norm_sub_le (f g : X ⟶ Y) : ‖f - g‖ ≤ ‖f‖ + ‖g‖ := by
-  simpa [sub_eq_add_neg, norm_neg] using norm_add_le f (-g)
-
 /-- The dagger of a C*-category is isometric. -/
 @[simp] theorem norm_dagger (f : X ⟶ Y) : ‖dagger f‖ = ‖f‖ := by
   -- `‖f‖² ≤ ‖f ≫ dagger f‖ ≤ ‖f‖ ‖dagger f‖` gives `‖f‖ ≤ ‖dagger f‖`, for `f` and `dagger f`.
@@ -189,6 +185,7 @@ theorem norm_comp_dagger_le_polarization (f g : X ⟶ Y) :
     ‖f ≫ dagger g‖ ≤
       (4 : ℝ)⁻¹ * (‖f + g‖ ^ 2 + ‖f - g‖ ^ 2 +
         ‖f + Complex.I • g‖ ^ 2 + ‖f - Complex.I • g‖ ^ 2) := by
+  let := normedAddCommGroup X X
   rw [comp_dagger_eq_polarization f g, norm_smul]
   have h4 : ‖(4 : ℂ)⁻¹‖ = (4 : ℝ)⁻¹ := by norm_num
   rw [h4]
@@ -204,7 +201,7 @@ theorem norm_comp_dagger_le_polarization (f g : X ⟶ Y) :
           (‖(f + Complex.I • g) ≫ dagger (f + Complex.I • g)‖ +
             ‖(f - Complex.I • g) ≫ dagger (f - Complex.I • g)‖) := by
         rw [norm_smul, Complex.norm_I, one_mul]
-        exact add_le_add (norm_sub_le _ _) (norm_sub_le _ _)
+        exact add_le_add (_root_.norm_sub_le _ _) (_root_.norm_sub_le _ _)
     _ = ‖f + g‖ ^ 2 + ‖f - g‖ ^ 2 +
           ‖f + Complex.I • g‖ ^ 2 + ‖f - Complex.I • g‖ ^ 2 := by
         simp only [norm_self_comp_dagger, add_assoc]
@@ -218,9 +215,7 @@ theorem norm_eq_zero_or_one_of_idempotent_of_dagger {p : X ⟶ X}
     calc
       ‖p‖ ^ 2 = ‖p ≫ dagger p‖ := (norm_self_comp_dagger p).symm
       _ = ‖p‖ := by rw [hsa, hp]
-  by_cases h0 : ‖p‖ = 0
-  · exact Or.inl h0
-  · exact Or.inr (mul_left_cancel₀ h0 (by simpa [sq] using hsq))
+  exact eq_zero_or_one_of_sq_eq_self hsq
 
 /-- A nonzero self-adjoint idempotent has norm `1`. -/
 theorem norm_eq_one_of_idempotent_of_dagger {p : X ⟶ X}
@@ -231,10 +226,6 @@ theorem norm_eq_one_of_idempotent_of_dagger {p : X ⟶ X}
 theorem norm_le_one_of_idempotent_of_dagger {p : X ⟶ X}
     (hp : p ≫ p = p) (hsa : dagger p = p) : ‖p‖ ≤ 1 := by
   rcases norm_eq_zero_or_one_of_idempotent_of_dagger hp hsa with h | h <;> linarith
-
-/-- The norm of an identity arrow is idempotent under squaring. -/
-private theorem sq_norm_id (X : C) : ‖𝟙 X‖ ^ 2 = ‖𝟙 X‖ := by
-  simpa using (norm_self_comp_dagger (𝟙 X)).symm
 
 /-- The identity arrow of any object in a C*-category has norm `0` or `1`. -/
 theorem norm_id_eq_zero_or_one (X : C) : ‖(𝟙 X : X ⟶ X)‖ = 0 ∨ ‖(𝟙 X : X ⟶ X)‖ = 1 :=
@@ -289,16 +280,22 @@ theorem norm_id_zero_object [Limits.HasZeroObject C] :
 /-- Pre-composing with an arrow satisfying `dagger u ≫ u = 𝟙 Y` preserves norms. -/
 theorem norm_comp_of_dagger_comp_id {u : X ⟶ Y} (hu : dagger u ≫ u = 𝟙 Y) (g : Y ⟶ Z) :
     ‖u ≫ g‖ = ‖g‖ := by
-  rw [← sq_eq_sq₀ (norm_nonneg _) (norm_nonneg _), ← norm_dagger_comp_self,
-    ← norm_dagger_comp_self g, dagger_comp, Category.assoc, ← Category.assoc (dagger u) u g,
-    hu, Category.id_comp]
+  refine (sq_eq_sq₀ (norm_nonneg _) (norm_nonneg _)).mp ?_
+  have hcomp : dagger (u ≫ g) ≫ (u ≫ g) = dagger g ≫ g := by
+    calc
+      dagger (u ≫ g) ≫ (u ≫ g) = dagger g ≫ (dagger u ≫ u) ≫ g := by
+        simp only [dagger_comp, Category.assoc]
+      _ = dagger g ≫ g := by rw [hu, Category.id_comp]
+  rw [← norm_dagger_comp_self, hcomp, norm_dagger_comp_self]
 
 /-- Post-composing with an arrow satisfying `u ≫ dagger u = 𝟙 X` preserves norms. -/
 theorem norm_comp_of_comp_dagger_id {u : X ⟶ Y} (hu : u ≫ dagger u = 𝟙 X) (f : W ⟶ X) :
     ‖f ≫ u‖ = ‖f‖ := by
-  rw [← sq_eq_sq₀ (norm_nonneg _) (norm_nonneg _), ← norm_self_comp_dagger,
-    ← norm_self_comp_dagger f, dagger_comp, Category.assoc, ← Category.assoc u (dagger u),
-    hu, Category.id_comp]
+  calc
+    ‖f ≫ u‖ = ‖dagger (f ≫ u)‖ := (norm_dagger _).symm
+    _ = ‖dagger u ≫ dagger f‖ := by rw [dagger_comp]
+    _ = ‖dagger f‖ := norm_comp_of_dagger_comp_id (by rw [dagger_dagger]; exact hu) (dagger f)
+    _ = ‖f‖ := norm_dagger f
 
 /-- Pre-composing with a unitary arrow preserves norms. -/
 @[simp] theorem _root_.TauCeti.IsUnitary.norm_comp_left {u : X ⟶ Y} (hu : IsUnitary u)
@@ -314,12 +311,10 @@ theorem norm_comp_of_comp_dagger_id {u : X ⟶ Y} (hu : u ≫ dagger u = 𝟙 X)
 is a zero object). -/
 theorem _root_.TauCeti.IsUnitary.norm_eq_norm_id {u : X ⟶ Y} (hu : IsUnitary u) :
     ‖u‖ = ‖(𝟙 X : X ⟶ X)‖ := by
-  have hsq : ‖u‖ ^ 2 = ‖(𝟙 X : X ⟶ X)‖ ^ 2 := by
-    calc
-      ‖u‖ ^ 2 = ‖u ≫ dagger u‖ := (norm_self_comp_dagger u).symm
-      _ = ‖(𝟙 X : X ⟶ X)‖ := by rw [hu.hom_dagger_id]
-      _ = ‖(𝟙 X : X ⟶ X)‖ ^ 2 := (sq_norm_id X).symm
-  exact (sq_eq_sq₀ (norm_nonneg _) (norm_nonneg _)).mp hsq
+  calc
+    ‖u‖ = ‖dagger u‖ := (norm_dagger u).symm
+    _ = ‖u ≫ dagger u‖ := (hu.norm_comp_left (dagger u)).symm
+    _ = ‖(𝟙 X : X ⟶ X)‖ := by rw [hu.hom_dagger_id]
 
 /-- Every unitary arrow is a contraction (`‖u‖ ≤ 1`). -/
 theorem _root_.TauCeti.IsUnitary.norm_le_one {u : X ⟶ Y} (hu : IsUnitary u) : ‖u‖ ≤ 1 :=
@@ -486,21 +481,6 @@ instance instPartialOrder : PartialOrder (End X) := CStarAlgebra.spectralOrder (
 /-- The order of `End X` is the C*-algebra order. -/
 instance instStarOrderedRing : StarOrderedRing (End X) :=
   CStarAlgebra.spectralOrderedRing (End X)
-
-/-- In the endomorphism C*-algebra of a zero object, `‖(1 : End X)‖ = 0`. -/
-theorem _root_.CategoryTheory.Limits.IsZero.norm_one_end (hX : Limits.IsZero X) :
-    ‖(1 : End X)‖ = 0 :=
-  hX.norm_id
-
-/-- The unit of `End X` has norm `0` precisely when `X` is a zero object. -/
-theorem norm_one_eq_zero_iff_isZero (X : C) :
-    ‖(1 : End X)‖ = 0 ↔ Limits.IsZero X :=
-  (CStarCategory.isZero_iff_norm_id_eq_zero X).symm
-
-/-- An object is nonzero precisely when the unit of `End X` has norm `1`. -/
-theorem norm_one_eq_one_iff_not_isZero (X : C) :
-    ‖(1 : End X)‖ = 1 ↔ ¬ Limits.IsZero X :=
-  (CStarCategory.not_isZero_iff_norm_id_eq_one X).symm
 
 /-- For an arrow `f` out of `X`, the endomorphism `f†f`, that is `f ≫ dagger f`, is
 positive in the C*-algebra `End X`. -/

@@ -125,23 +125,19 @@ variable (F : C ⥤ D) (R : Type w) [Semiring R]
 /-- A fully faithful linear dagger functor induces a star-algebra equivalence on endomorphism
 algebras over any `Semiring R`. -/
 noncomputable def mapEndStarAlgEquiv (X : C) :
-    End X ≃⋆ₐ[R] End (F.obj X) where
-  __ := RingEquiv.ofBijective (F.mapEndRingHom X) <| by
-    have heq : (F.mapEndRingHom X : End X → End (F.obj X)) =
-        ((End.homEquiv (X := X)).trans
-          (((Functor.FullyFaithful.ofFullyFaithful F).homEquiv).trans
-            (End.homEquiv (X := F.obj X)).symm)) := by
-      funext a
-      exact End.ext (F.mapEndRingHom_apply_asHom X a)
-    rw [heq]
-    exact Equiv.bijective _
-  map_smul' r f := by ext; simp [RingEquiv.coe_ofBijective]
-  map_star' f := by ext; simp [RingEquiv.coe_ofBijective]
+    End X ≃⋆ₐ[R] End (F.obj X) :=
+  have hbij : Function.Bijective (F.mapEndRingHom X) :=
+    ⟨fun _ _ hab => End.ext <| F.map_injective <| by
+      simpa only [mapEndRingHom_apply_asHom] using congrArg End.asHom hab,
+     F.mapEndRingHom_surjective X⟩
+  { __ := RingEquiv.ofBijective (F.mapEndRingHom X) hbij
+    map_smul' r f := by ext; simp [RingEquiv.coe_ofBijective]
+    map_star' f := by ext; simp [RingEquiv.coe_ofBijective] }
 
 /-- Forward evaluation of `CategoryTheory.Functor.mapEndStarAlgEquiv` on underlying arrows. -/
 @[simp, grind =] theorem mapEndStarAlgEquiv_apply_asHom (X : C) (f : End X) :
-    (F.mapEndStarAlgEquiv R X f).asHom = F.map f.asHom := by
-  simp [mapEndStarAlgEquiv, RingEquiv.coe_ofBijective]
+    (F.mapEndStarAlgEquiv R X f).asHom = F.map f.asHom :=
+  F.mapEndRingHom_apply_asHom X f
 
 /-- Inverse evaluation of `CategoryTheory.Functor.mapEndStarAlgEquiv` on underlying arrows. -/
 @[simp, grind =] theorem mapEndStarAlgEquiv_symm_apply_asHom (X : C) (g : End (F.obj X)) :

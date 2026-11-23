@@ -9,6 +9,7 @@ public import Mathlib.Analysis.Normed.Operator.Bilinear
 public import Mathlib.Analysis.Normed.Operator.LinearIsometry
 public import TauCeti.Analysis.CStarAlgebra.Category.Basic
 import Mathlib.Analysis.Normed.Operator.BoundedLinearMaps
+import TauCeti.CategoryTheory.Linear.Endomorphism
 
 /-!
 # Continuous linear maps, isometries, and closed subspaces on Hom spaces
@@ -165,26 +166,34 @@ theorem norm_rightCompCLM_le (X : C) (g : Y ⟶ Z) : ‖rightCompCLM X g‖ ≤ 
 
 /-- Post-composition `(Z ⟶ Y) →L[ℂ] (Z ⟶ Z)` by `g : Y ⟶ Z` has operator norm equal to `‖g‖`. -/
 @[simp] theorem norm_rightCompCLM_self (g : Y ⟶ Z) : ‖rightCompCLM Z g‖ = ‖g‖ := by
-  refine le_antisymm (norm_rightCompCLM_le Z g) ?_
-  by_cases hg : ‖g‖ = 0
-  · simp [hg]
-  · have hpos : 0 < ‖g‖ := lt_of_le_of_ne (norm_nonneg g) (Ne.symm hg)
-    refine le_of_mul_le_mul_right ?_ hpos
-    calc
-      ‖g‖ * ‖g‖ = ‖rightCompCLM Z g (dagger g)‖ := by
-        rw [rightCompCLM_apply, norm_dagger_comp_self, sq]
-      _ ≤ ‖rightCompCLM Z g‖ * ‖dagger g‖ := (rightCompCLM Z g).le_opNorm (dagger g)
-      _ = ‖rightCompCLM Z g‖ * ‖g‖ := by rw [norm_dagger]
+  have hcomp : rightCompCLM Z g =
+      ((daggerLinearIsometryEquiv Z Z : (Z ⟶ Z) →SL[starRingEnd ℂ] (Z ⟶ Z)).comp
+        ((leftCompCLM Z (dagger g)).comp
+          (daggerLinearIsometryEquiv Z Y : (Z ⟶ Y) →SL[starRingEnd ℂ] (Y ⟶ Z)))) := by
+    ext f
+    simp [rightCompCLM_apply, leftCompCLM_apply]
+  rw [hcomp, ContinuousLinearMap.opNorm_linearIsometryEquiv_comp,
+    ContinuousLinearMap.opNorm_comp_linearIsometryEquiv, norm_leftCompCLM_self, norm_dagger]
 
 /-- The right-annihilator `{g : Y ⟶ Z | f ≫ g = 0}` of `f : X ⟶ Y` is closed in `Y ⟶ Z`. -/
 theorem isClosed_rightAnnihilator (Z : C) (f : X ⟶ Y) :
-    IsClosed {g : Y ⟶ Z | f ≫ g = 0} :=
-  (leftCompCLM Z f).isClosed_ker
+    IsClosed {g : Y ⟶ Z | f ≫ g = 0} := by
+  have hset : {g : Y ⟶ Z | f ≫ g = 0} = ((leftCompCLM Z f).ker : Set (Y ⟶ Z)) := by
+    ext g
+    simp only [Set.mem_ofPred_eq, SetLike.mem_coe, LinearMap.mem_ker,
+      ContinuousLinearMap.coe_coe, leftCompCLM_apply]
+  rw [hset]
+  exact (leftCompCLM Z f).isClosed_ker
 
 /-- The left-annihilator `{f : X ⟶ Y | f ≫ g = 0}` of `g : Y ⟶ Z` is closed in `X ⟶ Y`. -/
 theorem isClosed_leftAnnihilator (X : C) (g : Y ⟶ Z) :
-    IsClosed {f : X ⟶ Y | f ≫ g = 0} :=
-  (rightCompCLM X g).isClosed_ker
+    IsClosed {f : X ⟶ Y | f ≫ g = 0} := by
+  have hset : {f : X ⟶ Y | f ≫ g = 0} = ((rightCompCLM X g).ker : Set (X ⟶ Y)) := by
+    ext f
+    simp only [Set.mem_ofPred_eq, SetLike.mem_coe, LinearMap.mem_ker,
+      ContinuousLinearMap.coe_coe, rightCompCLM_apply]
+  rw [hset]
+  exact (rightCompCLM X g).isClosed_ker
 
 /-- The space of intertwiners `{h : X ⟶ Y | a ≫ h = h ≫ b}` between endomorphisms `a` and `b`
 is closed in `X ⟶ Y`. -/
@@ -215,8 +224,7 @@ variable {C : Type u} [Category.{v} C] [Preadditive C] [Linear ℂ C]
 
 /-- Bundling endomorphism arrows preserves distance. -/
 @[simp] theorem dist_of {X : C} (f g : X ⟶ X) : dist (End.of f) (End.of g) = dist f g := by
-  rw [dist_eq_norm, dist_eq_norm, ← End.norm_of (f - g)]
-  rfl
+  rw [dist_eq_norm, dist_eq_norm, ← End.of_sub, End.norm_of]
 
 /-- `End.asHom` and `End.of` form a `ℂ`-linear isometric equivalence between `End X` and
 `X ⟶ X` (with its norm-induced structure). -/
