@@ -36,10 +36,11 @@ Then the boundary action is the integral of the pulled-back one-form `i^* λ` al
 (`TauCeti.SymplecticForm.pathIntegral_mpullback_radialPrimitive_eq_integral`), and for a
 nonconstant tame holomorphic disc this integral is positive
 (`TauCeti.SymplecticForm.pathIntegral_mpullback_radialPrimitive_pos`). When `c` is moreover a
-closed `C¹` loop, `c(-π) = c(π)`, this integral is a period of `i^* λ`, so `i^* λ` is not the
-differential of a `C¹` function on `N`. Equivalently, if `i^* λ = dh` for a `C¹` function `h` on
-`N`, for instance when `i` is an exact Lagrangian embedding, then every tame holomorphic disc whose
-boundary lifts along `i` to a closed `C¹` loop in `N` is constant
+closed `C¹` loop, `c(-π) = c(π)`, and `i` is differentiable, this integral is a period of
+`i^* λ`, so `i^* λ` is not the differential of a `C¹` function on `N`. Equivalently, if
+`i^* λ = dh` for a `C¹` function `h` on `N`, for instance when `i` is an exact Lagrangian
+embedding, then every tame holomorphic disc whose boundary lifts along `i` to a closed `C¹` loop in
+`N` is constant
 (`TauCeti.SymplecticForm.exists_eqOn_const_of_mpullback_radialPrimitive_eq_mextDeriv`).
 This is the step by which Gromov's theorem, that a compact Lagrangian submanifold of `ℂⁿ` bounds a
 nonconstant holomorphic disc, shows that `ℂⁿ` contains no compact exact Lagrangian submanifold.
@@ -163,9 +164,9 @@ theorem pathIntegral_mpullback_radialPrimitive_eq_integral (hb : 0 ≤ b)
 /-- **Nonconstant holomorphic discs have positive boundary period.** If a nonconstant
 holomorphic disc, with target structure tamed by `ω` along its image, has its boundary loop
 lifted along `i : N → V` to a curve `c` in `N` over one turn `θ ∈ [-π, π]`, then the integral of
-`i^* λ` along `c` over that turn is positive. When `c(-π) = c(π)`, this rules out
-`i^* λ = dh` for a `C¹` function `h` on `N`
-(`TauCeti.SymplecticForm.exists_eqOn_const_of_mpullback_radialPrimitive_eq_mextDeriv`). -/
+`i^* λ` along `c` over that turn is positive. When `c` is moreover a closed `C¹` loop,
+`c(-π) = c(π)`, and `i` is differentiable, this rules out `i^* λ = dh` for a `C¹` function `h` on
+`N` (`TauCeti.SymplecticForm.exists_eqOn_const_of_mpullback_radialPrimitive_eq_mextDeriv`). -/
 theorem pathIntegral_mpullback_radialPrimitive_pos
     (hu : ∀ z ∈ ball z₀ b, ContDiffAt ℝ 2 u z) (hu₁ : ContDiffOn ℝ 1 u (closedBall z₀ b))
     (hhol : ∀ z ∈ ball z₀ b,
@@ -178,8 +179,8 @@ theorem pathIntegral_mpullback_radialPrimitive_pos
     0 < pathIntegral (mpullback I' 𝓘(ℝ, V) i ω.radialPrimitive.val) c (-π) π := by
   rcases le_or_gt b 0 with hb | hb
   · -- A closed disc of nonpositive radius is at most a point.
-    exact absurd ⟨u z₀, fun _ hz ↦ congrArg u (dist_le_zero.mp ((mem_closedBall.mp hz).trans hb))⟩
-      hne
+    exact absurd
+      (Function.IsConstOn.of_subsingleton (subsingleton_closedBall z₀ hb) u).exists_eqOn_const hne
   rw [pathIntegral_mpullback_radialPrimitive_eq_integral hb.le hu hu₁ hi hc hbd,
     ω.integral_fderiv_apply_ball_eq_pathIntegral_radialPrimitive z₀ hb.le hu hu₁]
   exact (pathIntegral_radialPrimitive_circleMap_nonneg hb.le hu hu₁ hhol htame).lt_of_ne
@@ -205,7 +206,7 @@ theorem exists_eqOn_const_of_mpullback_radialPrimitive_eq_mextDeriv
     ∃ x, EqOn u (fun _ ↦ x) (closedBall z₀ b) := by
   rcases le_or_gt b 0 with hb | hb
   · -- A closed disc of nonpositive radius is at most a point.
-    exact ⟨u z₀, fun _ hz ↦ congrArg u (dist_le_zero.mp ((mem_closedBall.mp hz).trans hb))⟩
+    exact (Function.IsConstOn.of_subsingleton (subsingleton_closedBall z₀ hb) u).exists_eqOn_const
   refine (pathIntegral_radialPrimitive_circleMap_eq_zero_iff hb.le hu hu₁ hhol htame).mp ?_
   rw [pathIntegral_congr_of_eqOn_uIoo (γ' := i ∘ c) fun θ hθ ↦
       hbd θ (uIoo_subset_uIcc_self hθ),

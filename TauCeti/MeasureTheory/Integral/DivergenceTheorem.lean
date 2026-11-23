@@ -57,6 +57,8 @@ on the real axis.
   closed upper half-annulus, for a map that is `C²` up to the diameter.
 * `ContinuousLinearMap.integral_bilinear_fderiv_sub_ball`: the formula on an open disc, for a map
   that is `C²` inside and `C¹` up to the boundary circle.
+* `TauCeti.integrableOn_ball_comp_fderiv_of_contDiffOn`: for a map that is `C¹` on a closed disc,
+  continuous functions of its derivative are integrable on the open disc.
 -/
 
 public section
@@ -143,6 +145,22 @@ theorem _root_.ContinuousLinearMap.integral_bilinear_fderiv_sub_annulus
   simpa [bilinearPullbackOneForm, ContinuousAlternatingMap.compContinuousLinearMap_apply,
     Function.comp_def, smul_smul] using h
 
+omit [NormedSpace ℝ W] in
+/-- If `u` is `C¹` on the closed disc `‖z - z₀‖ ≤ b`, then for every continuous `F` the function
+`z ↦ F (Du z)` is integrable on the open disc: the differential of `u` extends continuously to the
+closed disc. -/
+theorem integrableOn_ball_comp_fderiv_of_contDiffOn {F : (ℂ →L[ℝ] V) → W} (hF : Continuous F)
+    {u : ℂ → V} {z₀ : ℂ} {b : ℝ} (hu : ContDiffOn ℝ 1 u (Metric.closedBall z₀ b)) :
+    IntegrableOn (fun z ↦ F (fderiv ℝ u z)) (Metric.ball z₀ b) := by
+  rcases le_or_gt b 0 with hb | hb
+  · simp [Metric.ball_eq_empty.mpr hb]
+  have hDu := hu.continuousOn_fderivWithin (uniqueDiffOn_closedBall z₀ hb) le_rfl
+  refine (((hF.comp_continuousOn hDu).integrableOn_compact (isCompact_closedBall z₀ b)).mono_set
+    Metric.ball_subset_closedBall).congr_fun (fun z hz ↦ ?_) measurableSet_ball
+  -- On the open disc the derivative within the closed disc is the derivative.
+  rw [Function.comp_apply, fderivWithin_of_mem_nhds
+    (mem_of_superset (Metric.isOpen_ball.mem_nhds hz) Metric.ball_subset_closedBall)]
+
 /-- **Green's formula on a disc with `C¹` boundary values.** For a map which is `C²` on the open
 disc `‖z - z₀‖ < b` and `C¹` up to its boundary circle, the integral over the open disc of the
 alternating part of a bilinear pairing of its derivatives is the integral of `B u (∂_θ u)` along
@@ -161,8 +179,7 @@ theorem _root_.ContinuousLinearMap.integral_bilinear_fderiv_sub_ball
   set K := Metric.closedBall z₀ b
   set Du := fderivWithin ℝ u K
   have hDu : ContinuousOn Du K :=
-    hu₁.continuousOn_fderivWithin (uniqueDiffOn_convex (convex_closedBall z₀ b)
-      (by rw [interior_closedBall z₀ hb.ne']; exact Metric.nonempty_ball.mpr hb)) le_rfl
+    hu₁.continuousOn_fderivWithin (uniqueDiffOn_closedBall z₀ hb) le_rfl
   -- Inside the disc, `Du` is the derivative of `u`.
   have hK (w : ℂ) (hw : w ∈ Metric.ball z₀ b) : K ∈ 𝓝 w :=
     mem_of_superset (Metric.isOpen_ball.mem_nhds hw) Metric.ball_subset_closedBall
@@ -181,16 +198,10 @@ theorem _root_.ContinuousLinearMap.integral_bilinear_fderiv_sub_ball
   have hd (z : ℂ) (hz : z ∈ Metric.ball z₀ b) : extDeriv ω z ![1, I] =
       B (fderiv ℝ u z 1) (fderiv ℝ u z I) - B (fderiv ℝ u z I) (fderiv ℝ u z 1) := by
     rw [(heq z hz).extDeriv_eq, extDeriv_bilinearPullbackOneForm_apply B (hu z hz)]
-  have hdω : ContinuousOn (fun z ↦ B (Du z 1) (Du z I) - B (Du z I) (Du z 1)) K :=
-    ((B.continuous.comp_continuousOn (hDu.clm_apply continuousOn_const)).clm_apply
-      (hDu.clm_apply continuousOn_const)).sub
-      ((B.continuous.comp_continuousOn (hDu.clm_apply continuousOn_const)).clm_apply
-        (hDu.clm_apply continuousOn_const))
   have hint : IntegrableOn (fun z ↦ extDeriv ω z ![1, I]) (Metric.ball z₀ b) :=
-    ((hdω.integrableOn_compact (isCompact_closedBall z₀ b)).mono_set
-      Metric.ball_subset_closedBall).congr_fun (fun z hz ↦ by
-        rw [hd z hz]
-        simp only [Du, fderivWithin_of_mem_nhds (hK z hz)]) measurableSet_ball
+    (integrableOn_ball_comp_fderiv_of_contDiffOn
+      (F := fun L ↦ B (L 1) (L I) - B (L I) (L 1)) (by fun_prop) hu₁).congr_fun
+      (fun z hz ↦ (hd z hz).symm) measurableSet_ball
   have h := integral_extDeriv_ball hb.le
     (fun z hz ↦ (contDiffAt_bilinearPullbackOneForm B (hu z hz)).congr_of_eventuallyEq (heq z hz))
     hω hint

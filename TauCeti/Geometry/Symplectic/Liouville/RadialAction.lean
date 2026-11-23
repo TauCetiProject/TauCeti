@@ -9,8 +9,7 @@ public import TauCeti.Geometry.Manifold.DifferentialForm.Integration.Path
 public import TauCeti.Geometry.Symplectic.Complex.Line
 public import TauCeti.Geometry.Symplectic.Liouville.Radial
 public import Mathlib.Analysis.SpecialFunctions.Complex.CircleMap
-import Mathlib.Analysis.SpecialFunctions.Integrals.Basic
-import Mathlib.MeasureTheory.Integral.CircleIntegral
+import TauCeti.Analysis.Green.Examples.CurveArea.SignedArea
 
 /-!
 # The action of the radial primitive
@@ -69,18 +68,11 @@ primitive is `(x dy - y dx) / 2`, the line integral around the circle of radius 
 theorem pathIntegral_radialPrimitive_stdComplexSymplecticForm_circleMap (z₀ : ℂ) (r : ℝ) :
     pathIntegral stdComplexSymplecticForm.radialPrimitive.val (circleMap z₀ r) (-π) π =
       π * r ^ 2 := by
+  -- The action of the radial primitive of the standard area form is the signed area.
   rw [SymplecticForm.pathIntegral_radialPrimitive]
-  have h (θ : ℝ) : stdComplexSymplecticForm (circleMap z₀ r θ) (deriv (circleMap z₀ r) θ) =
-      r ^ 2 + (z₀.re * r * Real.cos θ + z₀.im * r * Real.sin θ) := by
-    simp [deriv_circleMap, circleMap, Complex.exp_re, Complex.exp_im]
-    linear_combination r ^ 2 * Real.sin_sq_add_cos_sq θ
-  simp only [h]
-  rw [intervalIntegral.integral_add intervalIntegrable_const
-      ((Continuous.intervalIntegrable (by fun_prop)) _ _),
-    intervalIntegral.integral_add ((Continuous.intervalIntegrable (by fun_prop)) _ _)
-      ((Continuous.intervalIntegrable (by fun_prop)) _ _), intervalIntegral.integral_const_mul,
-    intervalIntegral.integral_const_mul, integral_cos, integral_sin,
-    intervalIntegral.integral_const, smul_eq_mul, Real.sin_neg, Real.cos_neg, Real.sin_pi]
-  ring
+  simp only [stdComplexSymplecticForm_apply]
+  rw [inv_mul_eq_div, ← signedArea_def]
+  have h := signedArea_circleMap z₀ r (-π)
+  rwa [show -π + 2 * π = π by ring] at h
 
 end TauCeti

@@ -207,23 +207,9 @@ theorem integral_fderiv_apply_closedBall (ω : SymplecticForm V) {u : ℂ → V}
 its differential extends continuously to the closed disc. -/
 theorem integrableOn_fderiv_apply_ball_of_contDiffOn (ω : SymplecticForm V) {u : ℂ → V} (z₀ : ℂ)
     {b : ℝ} (hu : ContDiffOn ℝ 1 u (Metric.closedBall z₀ b)) :
-    IntegrableOn (fun z ↦ ω (fderiv ℝ u z 1) (fderiv ℝ u z I)) (Metric.ball z₀ b) := by
-  rcases le_or_gt b 0 with hb | hb
-  · simp [Metric.ball_eq_empty.mpr hb]
-  have hK : UniqueDiffOn ℝ (Metric.closedBall z₀ b) :=
-    uniqueDiffOn_convex (convex_closedBall z₀ b)
-      (by rw [interior_closedBall z₀ hb.ne']; exact Metric.nonempty_ball.mpr hb)
-  have hDu := hu.continuousOn_fderivWithin hK le_rfl
-  have hc : ContinuousOn (fun z ↦ ω (fderivWithin ℝ u (Metric.closedBall z₀ b) z 1)
-      (fderivWithin ℝ u (Metric.closedBall z₀ b) z I)) (Metric.closedBall z₀ b) :=
-    ω.continuousOn_apply_comp (hDu.clm_apply continuousOn_const)
-      (hDu.clm_apply continuousOn_const)
-  refine ((hc.integrableOn_compact (isCompact_closedBall z₀ b)).mono_set
-    Metric.ball_subset_closedBall).congr_fun (fun z hz ↦ ?_) measurableSet_ball
-  -- On the open disc the derivative within the closed disc is the derivative.
-  dsimp only
-  rw [fderivWithin_of_mem_nhds
-    (mem_of_superset (Metric.isOpen_ball.mem_nhds hz) Metric.ball_subset_closedBall)]
+    IntegrableOn (fun z ↦ ω (fderiv ℝ u z 1) (fderiv ℝ u z I)) (Metric.ball z₀ b) :=
+  integrableOn_ball_comp_fderiv_of_contDiffOn (F := fun L ↦ ω (L 1) (L I))
+    (ω.continuous_apply_comp (by fun_prop) (by fun_prop)) hu
 
 /-- **Stokes' formula on a disc with `C¹` boundary values.** For a map which is `C²` on the open
 disc `‖z - z₀‖ < b` and `C¹` up to its boundary circle, the integral over the open disc of the
