@@ -50,8 +50,8 @@ reindexing, and for a block-diagonal matrix with an even block `A` and an odd bl
 * `Matrix.halfDet_transpose_mul_mul`: `halfDet (Pᵀ * A * P) = det P ^ 2 * halfDet A`.
 * `Matrix.halfDet_add_sub_transpose`: `halfDet (A + (Z - Zᵀ)) = halfDet A`.
 * `Matrix.halfDet_submatrix_equiv_self`: `halfDet` is invariant under reindexing.
-* `Matrix.halfDet_fromBlocks_zero`: `halfDet (fromBlocks A 0 0 D) = det (A + Aᵀ) * halfDet D`
-  for `A` of even size.
+* `Matrix.halfDet_fromBlocks_zero₁₂_zero₂₁`:
+  `halfDet (fromBlocks A 0 0 D) = det (A + Aᵀ) * halfDet D` for `A` of even size.
 * `Matrix.halfDet_unique`, `Matrix.halfDet_fin_three`: the formulas in sizes one and three.
 
 ## References
@@ -90,7 +90,7 @@ theorem det_eq_zero_of_isSymm_of_diag_eq_zero {R : Type*} [CommRing R] [CharP R 
 `2`. -/
 theorem two_dvd_det_mvPolynomialX_add_transpose (hι : Odd (Fintype.card ι)) :
     (2 : MvPolynomial (ι × ι) ℤ) ∣ (mvPolynomialX ι ι ℤ + (mvPolynomialX ι ι ℤ)ᵀ).det := by
-  have h2 : (2 : MvPolynomial (ι × ι) ℤ) = C 2 := rfl
+  have h2 : (2 : MvPolynomial (ι × ι) ℤ) = C 2 := (map_ofNat C 2).symm
   rw [h2, C_dvd_iff_map_hom_eq_zero (Int.castRingHom (ZMod 2)) 2
     (fun r => by simpa using ZMod.intCast_zmod_eq_zero_iff_dvd r 2), RingHom.map_det]
   refine det_eq_zero_of_isSymm_of_diag_eq_zero hι ?_ fun i => ?_
@@ -220,7 +220,7 @@ theorem halfDet_submatrix_equiv_self (e : κ ≃ ι) (A : Matrix ι ι R) :
 
 /-- For `A` of even size and `D` of odd size, the half-determinant of the block-diagonal matrix
 `fromBlocks A 0 0 D` is `det (A + Aᵀ) * halfDet D`. -/
-theorem halfDet_fromBlocks_zero (hι : Even (Fintype.card ι)) (hκ : Odd (Fintype.card κ))
+theorem halfDet_fromBlocks_zero₁₂_zero₂₁ (hι : Even (Fintype.card ι)) (hκ : Odd (Fintype.card κ))
     (A : Matrix ι ι R) (D : Matrix κ κ R) :
     (fromBlocks A 0 0 D).halfDet = (A + Aᵀ).det * D.halfDet := by
   have hικ : Odd (Fintype.card (ι ⊕ κ)) := by

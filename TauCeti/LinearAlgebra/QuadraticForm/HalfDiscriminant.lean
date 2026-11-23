@@ -41,8 +41,6 @@ nondegenerate although its polar form is zero.
 
 ## Main results
 
-* `LinearMap.BilinForm.exists_toMatrix_eq_sub_transpose_of_toQuadraticMap_eq_zero`: a bilinear
-  form with zero quadratic form has a Gram matrix of the form `Z - Zᵀ`.
 * `QuadraticForm.halfDiscr_eq_halfDet`: `disc'(q)` computed from any bilinear form `B`
   with `B(x, x) = q(x)`.
 * `QuadraticForm.two_mul_halfDiscr`: `2 disc'(q) = disc(q)` in odd rank.
@@ -64,33 +62,6 @@ nondegenerate although its polar form is zero.
 public section
 
 open Module Matrix
-
-namespace LinearMap.BilinForm
-
-open LinearMap (BilinForm)
-
-variable {R M ι : Type*} [CommRing R] [AddCommGroup M] [Module R M] [Fintype ι] [DecidableEq ι]
-
-/-- A bilinear form with zero quadratic form has a Gram matrix of the form `Z - Zᵀ`. -/
-theorem exists_toMatrix_eq_sub_transpose_of_toQuadraticMap_eq_zero (b : Basis ι R M)
-    {D : BilinForm R M} (hD : D.toQuadraticMap = 0) :
-    ∃ Z : Matrix ι ι R, D.toMatrix b = Z - Zᵀ := by
-  let : LinearOrder ι := LinearOrder.lift' (Fintype.equivFin ι) (Fintype.equivFin ι).injective
-  have hdiag (i : ι) : D (b i) (b i) = 0 := by
-    rw [← LinearMap.BilinMap.toQuadraticMap_apply, hD]
-    simp
-  have hanti (i j : ι) : D (b i) (b j) + D (b j) (b i) = 0 := by
-    have h := LinearMap.BilinMap.polar_toQuadraticMap (B := D) (b i) (b j)
-    rw [hD] at h
-    simpa [QuadraticMap.polar] using h.symm
-  refine ⟨of fun i j => if i < j then D (b i) (b j) else 0, ?_⟩
-  ext i j
-  rcases lt_trichotomy i j with h | rfl | h
-  · simp [toMatrix_apply, Function.swap, h, h.not_gt]
-  · simp [toMatrix_apply, hdiag]
-  · simp [toMatrix_apply, Function.swap, h, h.not_gt, eq_neg_of_add_eq_zero_left (hanti i j)]
-
-end LinearMap.BilinForm
 
 namespace QuadraticForm
 
@@ -124,9 +95,10 @@ theorem halfDiscr_eq_halfDet {q : QuadraticForm R M} (b : Basis ι R M) {B : Bil
   by_cases hι : Odd (Fintype.card ι)
   · have := Module.Free.of_basis b
     have hB' := (LinearMap.BilinMap.toQuadraticMap_surjective (N := R) q).choose_spec
-    obtain ⟨Z, hZ⟩ := LinearMap.BilinForm.exists_toMatrix_eq_sub_transpose_of_toQuadraticMap_eq_zero
-      b (D := B - (LinearMap.BilinMap.toQuadraticMap_surjective q).choose) (by
-        rw [LinearMap.BilinMap.toQuadraticMap_sub, hB, hB', sub_self])
+    obtain ⟨Z, hZ⟩ := BilinForm.exists_toMatrix_eq_sub_transpose_of_isAlt b
+      (D := B - (LinearMap.BilinMap.toQuadraticMap_surjective q).choose)
+      (LinearMap.BilinMap.toQuadraticMap_eq_zero.mp (by
+        rw [LinearMap.BilinMap.toQuadraticMap_sub, hB, hB', sub_self]))
     rw [halfDiscr, ← halfDet_add_sub_transpose hι _ Z, ← hZ, ← map_add]
     congr 2
     abel

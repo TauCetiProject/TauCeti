@@ -65,8 +65,8 @@ theorem isDiscrNondegenerate_splitOddForm : IsDiscrNondegenerate (splitOddForm K
       fromBlocks (fromBlocks 0 1 0 0) 0 0 (of fun _ _ => 1) := by
     ext ((i | i) | i) ((j | j) | j) <;>
       simp [b, B, LinearMap.BilinForm.toMatrix_apply, Matrix.one_apply, Pi.single_apply]
-  rw [hM, halfDet_fromBlocks_zero (by simp) (by simp), halfDet_unique, fromBlocks_transpose,
-    fromBlocks_add]
+  rw [hM, halfDet_fromBlocks_zero₁₂_zero₂₁ (by simp) (by simp), halfDet_unique,
+    fromBlocks_transpose, fromBlocks_add]
   simpa using isUnit_neg_one.pow n
 
 end TauCeti
