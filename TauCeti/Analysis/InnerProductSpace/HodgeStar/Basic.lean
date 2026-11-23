@@ -344,10 +344,8 @@ theorem inner_ιMulti_twoVectorContraction_add_hodgeStar (hkk : 2 + 2 = finrank 
   have hss : innerₗ V s s = 1 := by
     rw [innerₗ_apply_apply, real_inner_self_eq_norm_sq, hs, one_pow]
   -- The contraction `s ⌟ F` is a one-form, the image of the vector `a`.
-  have hιa : ExteriorAlgebra.ι ℝ a = contractLeft (innerₗ V s) (F : ExteriorAlgebra ℝ V) := by
-    rw [ha, TauCeti.twoVectorContraction_apply]
-    exact TauCeti.ExteriorAlgebra.ι_ιInv_of_mem_exteriorPower_one
-      (TauCeti.ExteriorAlgebra.contractLeft_mem_exteriorPower (innerₗ V s) (n := 1) F.property)
+  have hιa : ExteriorAlgebra.ι ℝ a = contractLeft (innerₗ V s) (F : ExteriorAlgebra ℝ V) :=
+    TauCeti.ι_twoVectorContraction F s
   -- In dimension four, `F ∧ F` is twice `F ∧ (s ∧ a)`.
   have hwedge : exteriorPower.wedge ℝ V 2 2 F F =
       2 • exteriorPower.wedge ℝ V 2 2 F (ιMulti ℝ 2 ![s, a]) := by
