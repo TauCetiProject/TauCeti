@@ -88,12 +88,26 @@ end Sections
 
 /-- Restricting the unit sheaf of modules to the slice site over `X` yields the unit sheaf of
 modules on the slice site. -/
--- Exposed so downstream unit-compatibility proofs can unfold this `Iso.refl`.
-@[expose]
 def _root_.SheafOfModules.overFunctorUnitIso (R : Sheaf J RingCat.{u}) (X : C) :
     _root_.SheafOfModules.unit (R.over X) ≅
       (_root_.SheafOfModules.overFunctor.{u} R X).obj (_root_.SheafOfModules.unit R) :=
   Iso.refl _
+
+/-- On sections over `Y`, `(overFunctorUnitIso R X).hom` is the identity. -/
+@[simp]
+theorem _root_.SheafOfModules.overFunctorUnitIso_hom_val_app (R : Sheaf J RingCat.{u}) (X : C)
+    (Y : (Over X)ᵒᵖ) (x : (R.over X).obj.obj Y) :
+    (_root_.SheafOfModules.overFunctorUnitIso R X).hom.val.app Y x = x := by
+  unfold _root_.SheafOfModules.overFunctorUnitIso
+  rfl
+
+/-- On sections over `Y`, `(overFunctorUnitIso R X).inv` is the identity. -/
+@[simp]
+theorem _root_.SheafOfModules.overFunctorUnitIso_inv_val_app (R : Sheaf J RingCat.{u}) (X : C)
+    (Y : (Over X)ᵒᵖ) (x : (R.over X).obj.obj Y) :
+    (_root_.SheafOfModules.overFunctorUnitIso R X).inv.val.app Y x = x := by
+  unfold _root_.SheafOfModules.overFunctorUnitIso
+  rfl
 
 end SheafOfModules
 

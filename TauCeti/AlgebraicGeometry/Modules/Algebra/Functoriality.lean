@@ -8,6 +8,7 @@ module
 public import TauCeti.AlgebraicGeometry.Modules.Algebra.RegularFunctions
 public import TauCeti.AlgebraicGeometry.Modules.GlobalSections
 public import TauCeti.AlgebraicGeometry.RelativeSpec.Basic
+import TauCeti.CategoryTheory.Adjunction.Mates
 
 /-!
 # Functoriality of the algebra of regular functions

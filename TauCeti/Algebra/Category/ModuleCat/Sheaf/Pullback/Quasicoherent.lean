@@ -144,6 +144,7 @@ theorem QuasicoherentData.pullback_presentation_generators_I {M : SheafOfModules
     Presentation.map_generators_I]
 
 /-- Typed projection of the relation index type of `(q.pullback φ).presentation i`. -/
+@[simp]
 theorem QuasicoherentData.pullback_presentation_relations_I {M : SheafOfModules.{u} S}
     (q : QuasicoherentData.{w} (R := S) M)
     (φ : S ⟶ ((Opens.map f).sheafPushforwardContinuous RingCat.{u}

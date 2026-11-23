@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Category.ModuleCat.Sheaf.Restriction.Free
+public import TauCeti.Algebra.Category.ModuleCat.Sheaf.Restriction.Unit
 
 /-!
 # Restriction and slice-site pullback of sheaves of modules on ringed spaces
