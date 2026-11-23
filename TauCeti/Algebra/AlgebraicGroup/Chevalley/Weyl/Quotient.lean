@@ -53,41 +53,31 @@ private def residueIdeal [Nontrivial A] : Ideal A :=
 private instance residueIdeal_isMaximal [Nontrivial A] : (residueIdeal A).IsMaximal :=
   (Ideal.exists_maximal A).choose_spec
 
-private def ResidueField [Nontrivial A] : Type _ :=
-  A ⧸ residueIdeal A
+attribute [local instance] Ideal.Quotient.field
 
-private instance residueFieldField [Nontrivial A] : Field (ResidueField A) :=
-  Ideal.Quotient.field (residueIdeal A)
-
-private def residueQuotMk [Nontrivial A] : A →+* ResidueField A where
-  toFun := Ideal.Quotient.mk (residueIdeal A)
-  map_one' := rfl
-  map_mul' _ _ := rfl
-  map_zero' := rfl
-  map_add' _ _ := rfl
+private def residueQuotMk [Nontrivial A] : A →+* A ⧸ residueIdeal A :=
+  Ideal.Quotient.mk (residueIdeal A)
 
 private def residueHom [Nontrivial A] : N →* (t.simplyConnectedRootDatum ht).weylGroup :=
-  (D.weylProjection (ResidueField A)).comp (D.weylSubgroupMap A (residueQuotMk A))
-
-private theorem residueHom_apply [Nontrivial A] (g : N) :
-    D.residueHom A g =
-      D.weylProjection (ResidueField A) (D.weylSubgroupMap A (residueQuotMk A) g) :=
-  rfl
+  (D.weylProjection (A ⧸ residueIdeal A)).comp (D.weylSubgroupMap A (residueQuotMk A))
 
 private theorem residueHom_torusPoints [Nontrivial A] (s : Fin t.rank → Aˣ)
     (hx : D.torusPoints A s ∈ N) :
     D.residueHom A ⟨D.torusPoints A s, hx⟩ = 1 := by
-  rw [D.residueHom_apply A, D.weylSubgroupMap_torusPoints, D.weylProjection_torusPoints]
+  dsimp only [residueHom, MonoidHom.comp_apply]
+  rw [D.weylSubgroupMap_torusPoints, D.weylProjection_torusPoints]
 
 private theorem residueHom_simpleWeylLift [Nontrivial A] (i : Fin t.rank) :
     D.residueHom A (D.simpleWeylLift A i) =
       RootPairing.weylGroup.ofIdx (t.simplyConnectedRootDatum ht) (t.simpleIndex ht i) := by
-  rw [D.residueHom_apply A, D.weylSubgroupMap_simpleWeylLift, D.weylProjection_simpleWeylLift]
+  dsimp only [residueHom, MonoidHom.comp_apply]
+  rw [D.weylSubgroupMap_simpleWeylLift, D.weylProjection_simpleWeylLift]
 
 private theorem residueHom_weylElement [Nontrivial A] (γ : Fin t.numRoots) (s : Aˣ) :
     D.residueHom A ⟨D.weylElement γ A s, D.weylElement_mem_weylSubgroup γ A s⟩ =
       RootPairing.weylGroup.ofIdx (t.simplyConnectedRootDatum ht) γ := by
-  rw [D.residueHom_apply A, D.weylSubgroupMap_weylElement, D.weylProjection_weylElement]
+  dsimp only [residueHom, MonoidHom.comp_apply]
+  rw [D.weylSubgroupMap_weylElement, D.weylProjection_weylElement]
 
 private theorem residueHom_surjective [Nontrivial A] :
     Function.Surjective (D.residueHom A) := by

@@ -187,16 +187,8 @@ theorem weylWord_mem_range_torusPoints_of_geckWeylWordProd_eq_one (A : Type v) [
     · rw [List.concat_eq_append, geckWeylWordProd_append, geckWeylWordProd_cons,
         geckWeylWordProd_nil, mul_one] at hl'
       have hl₁ :
-          t.geckWeylWordProd ht l₁ = RootPairing.weylGroup.ofIdx P (t.simpleIndex ht k) := by
-        calc
-          t.geckWeylWordProd ht l₁
-              = t.geckWeylWordProd ht l₁ *
-                  (RootPairing.weylGroup.ofIdx P (t.simpleIndex ht k) *
-                    RootPairing.weylGroup.ofIdx P (t.simpleIndex ht k)) := by
-                rw [RootPairing.weylGroup.ofIdx_mul_self, mul_one]
-          _ = (t.geckWeylWordProd ht l₁ * RootPairing.weylGroup.ofIdx P (t.simpleIndex ht k)) *
-                RootPairing.weylGroup.ofIdx P (t.simpleIndex ht k) := (mul_assoc _ _ _).symm
-          _ = RootPairing.weylGroup.ofIdx P (t.simpleIndex ht k) := by rw [hl', one_mul]
+          t.geckWeylWordProd ht l₁ = RootPairing.weylGroup.ofIdx P (t.simpleIndex ht k) :=
+        (eq_inv_of_mul_eq_one_left hl').trans (RootPairing.weylGroup.ofIdx_inv_eq P _)
       have hkpos : b.IsPos (t.simpleIndex ht k) := by
         rw [← mem_posRoots, ← posRoots_rationalRootSystem]
         exact simpleIndex_mem_posRoots k

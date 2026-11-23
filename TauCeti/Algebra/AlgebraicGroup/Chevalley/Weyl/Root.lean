@@ -180,6 +180,30 @@ theorem weylElement_mem_weylSubgroup (γ : Fin t.numRoots) (A : Type v) [CommRin
       (Subgroup.mul_mem _ (D.weylElement_simpleIndex_one_mem_weylSubgroup A i) (hk _))
       (Subgroup.inv_mem _ (D.weylElement_simpleIndex_one_mem_weylSubgroup A i))
 
+private theorem weylElement_simpleIndex_subgroup_eq (i : Fin t.rank)
+    (A : Type v) [CommRing A] (s : Aˣ) :
+    (⟨D.weylElement (t.simpleIndex ht i) A s, D.weylElement_mem_weylSubgroup _ A s⟩ :
+        D.weylSubgroup A) =
+      ⟨D.torusPoints A (D.simpleCorootParameter i A s),
+        D.torusPoints_mem_weylSubgroup A _⟩ *
+        D.simpleWeylLift A i :=
+  Subtype.ext (by
+    simpa only [Subgroup.coe_mul, D.coe_simpleWeylLift] using
+      D.weylElement_simpleIndex_eq_torusPoints_mul A i s)
+
+private theorem weylElement_reflectionPerm_subgroup_eq (i : Fin t.rank) (γ : Fin t.numRoots)
+    (A : Type v) [CommRing A] (s : Aˣ) :
+    (⟨D.weylElement ((t.simplyConnectedRootDatum ht).reflectionPerm (t.simpleIndex ht i) γ) A s,
+        D.weylElement_mem_weylSubgroup _ A s⟩ : D.weylSubgroup A) =
+      D.simpleWeylLift A i *
+        ⟨D.weylElement γ A ((Units.map (Int.castRingHom A).toMonoidHom
+          (t.chevalleyWeylSign ht (t.simpleIndex ht i) γ))⁻¹ * s),
+          D.weylElement_mem_weylSubgroup γ A _⟩ *
+        (D.simpleWeylLift A i)⁻¹ :=
+  Subtype.ext (by
+    simpa only [Subgroup.coe_mul, Subgroup.coe_inv, D.coe_simpleWeylLift] using
+      D.weylElement_reflectionPerm_eq_conj i γ A s)
+
 /-- Scalar extension on the Weyl subgroup sends Steinberg's Weyl element `n_γ(s)` to `n_γ(f s)`. -/
 -- Concrete Dynkin-type rules can normalize root indices inside `Subtype.mk` before matching.
 @[simp↓]
@@ -210,30 +234,12 @@ theorem weylProjection_weylElement (k : Type v) [Field k] (γ : Fin t.numRoots) 
         RootPairing.weylGroup.ofIdx (t.simplyConnectedRootDatum ht) γ)
     (fun γ hγ s => ?_) (fun γ j hγ hj s => ?_)
   · obtain ⟨i, rfl⟩ := exists_simpleIndex_eq_of_mem_support hγ
-    have hsub :
-        (⟨D.weylElement (t.simpleIndex ht i) k s,
-            D.weylElement_mem_weylSubgroup _ k s⟩ : D.weylSubgroup k) =
-          ⟨D.torusPoints k (D.simpleCorootParameter i k s),
-            D.torusPoints_mem_weylSubgroup k _⟩ *
-          D.simpleWeylLift k i :=
-      Subtype.ext (by
-        simpa only [Subgroup.coe_mul, D.coe_simpleWeylLift] using
-          D.weylElement_simpleIndex_eq_torusPoints_mul k i s)
-    rw [hsub, map_mul, D.weylProjection_torusPoints, one_mul,
-      D.weylProjection_simpleWeylLift]
+    rw [D.weylElement_simpleIndex_subgroup_eq i k s, map_mul,
+      D.weylProjection_torusPoints, one_mul, D.weylProjection_simpleWeylLift]
   · obtain ⟨i, rfl⟩ := exists_simpleIndex_eq_of_mem_support hj
-    rw [t.reflectionPerm_rationalRootSystem ht]
-    have hsub :
-        (⟨D.weylElement
-            ((t.simplyConnectedRootDatum ht).reflectionPerm (t.simpleIndex ht i) γ) k s,
-            D.weylElement_mem_weylSubgroup _ k s⟩ : D.weylSubgroup k) =
-          D.simpleWeylLift k i *
-          ⟨D.weylElement γ k _, D.weylElement_mem_weylSubgroup γ k _⟩ *
-          (D.simpleWeylLift k i)⁻¹ :=
-      Subtype.ext (by
-        simpa only [Subgroup.coe_mul, Subgroup.coe_inv, D.coe_simpleWeylLift] using
-          D.weylElement_reflectionPerm_eq_conj i γ k s)
-    rw [hsub, map_mul, map_mul, map_inv, D.weylProjection_simpleWeylLift, hγ,
+    rw [t.reflectionPerm_rationalRootSystem ht,
+      D.weylElement_reflectionPerm_subgroup_eq i γ k s,
+      map_mul, map_mul, map_inv, D.weylProjection_simpleWeylLift, hγ,
       ← RootPairing.weylGroup.ofIdx_weylGroupToPerm_eq_conj,
       RootPairing.weylGroupToPerm_ofIdx_apply]
 
