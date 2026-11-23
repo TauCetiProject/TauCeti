@@ -164,14 +164,11 @@ theorem _root_.TopCat.Hom.nullhomotopic_iff_singularHomologyMap_eq_zero {n : ℕ
     (pathConnectedSpace_iff_subsingleton_homotopyGroup_zero z).2 (hZ 0 (by omega))
   have hZ' : ∀ k < n + 2, Subsingleton (HomotopyGroup (Fin k) Z z') := fun k hk ↦
     subsingleton_homotopyGroup_of_pathConnectedSpace (hZ k hk)
-  obtain ⟨ε, hε⟩ := exists_singularHomologyMap_diskBoundaryMap_eq_units_smul_hurewicz (n + 1)
-  -- By the Hurewicz theorem at `z'`, a class vanishes exactly when its Hurewicz class does.
-  have key (a : HomotopyGroup (Fin (n + 2)) Z z') :
-      (ε : ℤ) • HomotopyGroup.hurewiczAddEquiv hZ' (Additive.ofMul a) = 0 ↔ a = 1 := by
-    rw [← ofMul_eq_zero, ← (HomotopyGroup.hurewiczAddEquiv hZ').map_eq_zero_iff]
-    generalize HomotopyGroup.hurewiczAddEquiv hZ' (Additive.ofMul a) = y
-    rcases Int.units_eq_one_or ε with rfl | rfl <;> simp
-  rw [← hp, hε, ← HomotopyGroup.hurewiczAddEquiv_ofMul_mk hZ']
-  exact (HomotopyGroup.mk_eq_one_iff_nullhomotopic_diskBoundaryMap p).symm.trans (key _).symm
+  -- The attaching sphere vanishes exactly when its Hurewicz class does, and by the Hurewicz
+  -- theorem at `z'` that happens exactly when the class of `p` is trivial.
+  rw [← hp, ← Submodule.mem_bot ℤ, GenLoop.singularHomologyMap_diskBoundaryMap_mem_iff,
+    Submodule.mem_bot, ← HomotopyGroup.hurewiczAddEquiv_ofMul_mk hZ', AddEquiv.map_eq_zero_iff]
+  exact (HomotopyGroup.mk_eq_one_iff_nullhomotopic_diskBoundaryMap p).symm.trans
+    (ofMul_eq_zero (A := HomotopyGroup (Fin (n + 2)) Z z')).symm
 
 end TauCeti

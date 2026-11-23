@@ -31,8 +31,10 @@ killing chosen homotopy classes by cell attachment.
 
 ## Main results
 
-* `TauCeti.exists_cellAttachmentIncl_comp_eq_iff_nullhomotopic`: a map extends over the attached
-  cells exactly when it makes every attaching map null-homotopic.
+* `HomotopicalAlgebra.AttachCells.exists_comp_eq_iff_nullhomotopic`: a map extends along a
+  categorical attachment of disks exactly when it makes every attaching map null-homotopic.
+* `TauCeti.exists_cellAttachmentIncl_comp_eq_iff_nullhomotopic`: the same criterion for the
+  concrete cell attachment `TauCeti.cellAttachment φ`.
 
 ## References
 
@@ -156,6 +158,27 @@ theorem cellAttachment_attachingMap_nullhomotopic
   exact (TopCat.Hom.nullhomotopic_iff_exists_diskBoundaryInclusion_comp_eq _).2
     ⟨_, (cellAttachment_boundary φ i).symm⟩
 
+/-- **A map extends over attached cells exactly when it kills their attaching maps.** If
+`j : X ⟶ X'` attaches `n`-disks in the sense of Mathlib's categorical `AttachCells`, a map
+`f : X ⟶ Y` extends along `j` if and only if every attaching map followed by `f` is
+null-homotopic. -/
+theorem _root_.HomotopicalAlgebra.AttachCells.exists_comp_eq_iff_nullhomotopic.{w}
+    {X' : TopCat.{u}} {j : X ⟶ X'}
+    (c : AttachCells.{w} (TopCat.RelativeCWComplex.basicCell n) j) (f : X ⟶ Y) :
+    (∃ F : X' ⟶ Y, j ≫ F = f) ↔ ∀ i, (c.cofan₁.inj i ≫ c.g₁ ≫ f).hom.Nullhomotopic := by
+  constructor
+  · rintro ⟨F, rfl⟩ i
+    refine (TopCat.Hom.nullhomotopic_iff_exists_diskBoundaryInclusion_comp_eq _).2
+      ⟨c.cell i ≫ F, ?_⟩
+    rw [c.isPushout.w_assoc, c.hm_assoc, c.cell_def, Category.assoc]
+  · intro h
+    choose F hF using fun i ↦
+      (TopCat.Hom.nullhomotopic_iff_exists_diskBoundaryInclusion_comp_eq _).1 (h i)
+    refine ⟨c.isPushout.desc f (Cofan.IsColimit.desc c.isColimit₂ F) ?_,
+      c.isPushout.inl_desc ..⟩
+    refine Cofan.IsColimit.hom_ext c.isColimit₁ _ _ fun i ↦ ?_
+    rw [c.hm_assoc, Cofan.IsColimit.fac, ← hF i]
+
 /-- **A map extends over attached cells exactly when it kills their attaching maps.** A map
 `f : X ⟶ Y` extends over the space obtained by attaching cells along the maps `φ i` if and only if
 every attaching map `φ i` followed by `f` is null-homotopic. -/
@@ -163,12 +186,10 @@ theorem exists_cellAttachmentIncl_comp_eq_iff_nullhomotopic
     (φ : ι → (TopCat.diskBoundary n ⟶ X)) (f : X ⟶ Y) :
     (∃ F : cellAttachment φ ⟶ Y, cellAttachmentIncl φ ≫ F = f) ↔
       ∀ i, (φ i ≫ f).hom.Nullhomotopic := by
-  constructor
-  · rintro ⟨F, rfl⟩ i
-    simpa using (cellAttachment_attachingMap_nullhomotopic φ i).comp_right F.hom
-  · intro h
-    choose F hF using fun i ↦
-      (TopCat.Hom.nullhomotopic_iff_exists_diskBoundaryInclusion_comp_eq _).1 (h i)
-    exact ⟨cellAttachmentLift φ f F fun i ↦ (hF i).symm, cellAttachmentIncl_lift ..⟩
+  -- The attaching maps of `cellAttachmentAttachCells φ` are the maps `φ i`.
+  have hφ (i : ι) : (cellAttachmentAttachCells φ).cofan₁.inj i ≫
+      (cellAttachmentAttachCells φ).g₁ = φ i := Sigma.ι_comp_desc φ i
+  rw [(cellAttachmentAttachCells φ).exists_comp_eq_iff_nullhomotopic f]
+  exact forall_congr' fun (i : ι) ↦ by rw [← Category.assoc, hφ i]
 
 end TauCeti

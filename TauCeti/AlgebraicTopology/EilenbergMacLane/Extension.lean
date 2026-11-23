@@ -37,8 +37,9 @@ without assuming that `ψ` is surjective.
   (`TauCeti.EilenbergMacLane.exists_killHomotopyGroupsIncl_comp_eq_and_isWeakHomotopyEquivalence`).
 
 So every `K(G, n + 2)` space receiving such a map from the wedge is weakly equivalent to the
-model. Unlike the uniqueness theorems of `TauCeti.AlgebraicTopology.EilenbergMacLane.Uniqueness`,
-which build a suitable map on the wedge themselves, these statements extend a prescribed map `f`.
+model. These statements extend a prescribed map `f`; the uniqueness theorems of
+`TauCeti.AlgebraicTopology.EilenbergMacLane.Uniqueness` apply them to a map on the wedge that they
+construct.
 
 ## Main results
 
@@ -85,7 +86,7 @@ theorem nullhomotopic_relationAttach_comp {z : Z}
   -- The relation sphere is null-homologous after `f`, hence null-homotopic.
   (TopCat.Hom.nullhomotopic_iff_singularHomologyMap_eq_zero hZ _).2 <| by
     rw [Functor.map_comp, ModuleCat.hom_comp, LinearMap.comp_apply]
-    exact hf _ r.property
+    exact hf _ (LinearMap.mem_ker.2 r.property)
 
 /-- **Extension over the presentation complex.** If the homotopy groups `πₖ(Z, z)` vanish for every
 `k < n + 2`, a map `f : W → Z` from the wedge of spheres extends over the presentation complex
@@ -126,20 +127,20 @@ theorem bijective_homotopyGroupMap_of_ker_eq {z : Z}
     refine ⟨(injective_iff_map_eq_zero _).2 fun y hy ↦ ?_,
       Function.Surjective.of_comp (g := (H.map ι).hom) hsurj⟩
     obtain ⟨w, rfl⟩ := surjective_singularHomologyMap_cellAttachmentIncl (relationAttach A n ψ) ℤ y
-    have hw : w ∈ LinearMap.ker ((H.map F).hom ∘ₗ (H.map ι).hom) := hy
+    have hw : w ∈ LinearMap.ker ((H.map F).hom ∘ₗ (H.map ι).hom) :=
+      LinearMap.mem_ker.2 (by rw [LinearMap.comp_apply]; exact hy)
     rw [hker, ← ker_singularHomologyMap_presentation A n ψ] at hw
-    exact hw
+    exact LinearMap.mem_ker.1 hw
   -- The Hurewicz isomorphisms of `Y` and `Z` intertwine the maps induced by `F`.
   let hY := HomotopyGroup.hurewiczAddEquiv (subsingleton_homotopyGroup_presentation A n ψ)
   let hZ' := HomotopyGroup.hurewiczAddEquiv hZ
   have hcomm : (hZ' ∘ Additive.ofMul) ∘ HomotopyGroup.map (N := Fin (n + 2)) F.hom hFz =
       (H.map F).hom ∘ (hY ∘ Additive.ofMul) := by
     funext a
-    simp only [Function.comp_apply, HomotopyGroup.hurewiczAddEquiv_apply,
-      HomotopyGroup.hurewiczHom_apply, toMul_ofMul, HomotopyGroup.hurewicz_map,
-      ModuleCat.hom_comp, LinearMap.comp_apply, hY, hZ', TopCat.ofHom_hom]
-    -- The Hurewicz naturality is stated in degree `n + 1 + 1`, which is `n + 2` by definition.
-    rfl
+    have h := HomotopyGroup.hurewiczAddEquiv_naturality
+      (subsingleton_homotopyGroup_presentation A n ψ) hZ F.hom hFz (Additive.ofMul a)
+    rw [TopCat.ofHom_hom, toMul_ofMul] at h
+    exact h.symm
   have h := (hH.comp (hY.bijective.comp Additive.ofMul.bijective))
   rw [← hcomm] at h
   exact (Function.Bijective.of_comp_iff' (hZ'.bijective.comp Additive.ofMul.bijective) _).1 h
@@ -168,11 +169,8 @@ theorem exists_killHomotopyGroupsIncl_comp_eq_and_isWeakHomotopyEquivalence {G :
   obtain ⟨F₁, hF₁⟩ :=
     (exists_cellAttachmentIncl_comp_eq_iff (hZ' (f (sphereWedgeBase A (n + 2)))) f).2 fun h hh ↦ by
       rw [← hker] at hh
-      exact hh
+      exact LinearMap.mem_ker.1 hh
   -- The extension is bijective on `πₙ₊₂`, so it extends to a weak equivalence out of the model.
-  have : PathConnectedSpace (presentation A n ψ) :=
-    (pathConnectedSpace_iff_subsingleton_homotopyGroup_zero (presentationBase A n ψ)).2
-      (subsingleton_homotopyGroup_presentation A n ψ 0 (by omega))
   obtain ⟨F, hF, hweq⟩ := F₁.exists_killHomotopyGroupsIncl_comp_eq_and_isWeakHomotopyEquivalence
     (fun k _ hk ↦ subsingleton_homotopyGroup_presentation A n ψ k hk) (hZ.of_basepoint _)
     (bijective_homotopyGroupMap_of_ker_eq (hZ' _) F₁ rfl (hF₁ ▸ hker) (hF₁ ▸ hsurj))
