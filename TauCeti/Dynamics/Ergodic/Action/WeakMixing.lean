@@ -120,6 +120,22 @@ theorem isWeaklyMixing_of_subsingleton [Subsingleton X] [IsZeroOrProbabilityMeas
 
 end MeasureTheory.Measure
 
+/-- **Weak mixing passes to factors**: the pushforward of a weakly mixing measure along an
+equivariant measurable map is weakly mixing, as `ErgodicSMul.map` is for ergodicity. -/
+theorem MeasureTheory.Measure.IsWeaklyMixing.map {X Y : Type*} [MeasurableSpace X]
+    [MeasurableSpace Y] [AddAction ℝ X] [AddAction ℝ Y] [MeasurableConstVAdd ℝ Y]
+    {μ : Measure X} {f : X → Y} (h : μ.IsWeaklyMixing) (hf : Measurable f)
+    (hfg : ∀ (t : ℝ) x, f (t +ᵥ x) = t +ᵥ f x) : (μ.map f).IsWeaklyMixing := by
+  intro A B hA hB
+  have key : ∀ t : ℝ,
+      f ⁻¹' ((fun y => t +ᵥ y) ⁻¹' A ∩ B) = (fun x => t +ᵥ x) ⁻¹' (f ⁻¹' A) ∩ f ⁻¹' B :=
+    fun t => by ext x; simp [hfg]
+  have hm (t : ℝ) : MeasurableSet ((fun y : Y => t +ᵥ y) ⁻¹' A ∩ B) :=
+    (measurable_const_vadd t hA).inter hB
+  have := h (f ⁻¹' A) (f ⁻¹' B) (hf hA) (hf hB)
+  simpa only [measureReal_def, Measure.map_apply hf (hm _), Measure.map_apply hf hA,
+    Measure.map_apply hf hB, key] using this
+
 namespace MeasurableEmbedding
 
 variable {X Y : Type*} [MeasurableSpace X] [MeasurableSpace Y] [AddAction ℝ X] [AddAction ℝ Y]
