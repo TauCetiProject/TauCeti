@@ -26,7 +26,9 @@ mutable and on the frozen rows; a square matrix is mutated along `Function.Embed
 
 This file defines the operation on plain matrices, proves that it is an involution and that it
 commutes with negation, with passage to submatrices (in particular to the principal block and
-along reindexing), and with block diagonal sums. It then shows that a skew-symmetrizer of a
+along reindexing), and with block diagonal sums. Mutation also commutes with zero extension
+of the frozen boundary and acts factorwise on amalgamations along shared frozen vertices.
+It then shows that a skew-symmetrizer of a
 square matrix is still one after mutation, so mutation acts on exchange matrices.
 
 ## Main definitions
@@ -48,6 +50,11 @@ square matrix is still one after mutation, so mutation acts on exchange matrices
 * `TauCeti.ExchangeMatrix.submatrix_mutation`, `TauCeti.ExchangeMatrix.principal_mutation`,
   `TauCeti.ExchangeMatrix.mutation_reindex`, `TauCeti.ExchangeMatrix.mutation_sum_inl`,
   `TauCeti.ExchangeMatrix.mutation_sum_inr`: the same compatibilities for exchange matrices.
+
+* `TauCeti.ExchangeMatrix.mutation_extendFrozen`: mutation commutes with zero extension
+  of the frozen boundary.
+* `TauCeti.ExchangeMatrix.mutation_amalgamate`: mutation acts in its selected amalgamated
+  factor and fixes the other factors.
 
 ## References
 
