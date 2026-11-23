@@ -7,6 +7,8 @@ module
 
 public import Mathlib.GroupTheory.DoubleCoset
 public import Mathlib.GroupTheory.Index
+import Mathlib.Tactic.Group
+import TauCeti.Algebra.Group.Subgroup.Pointwise
 
 /-!
 # Double-coset covers certified by generator transitions
@@ -16,6 +18,9 @@ cover the actual ambient group. Here coverage follows from an identity cell and 
 under generators and their inverses. Transitions are checked on `h * w` for `h ∈ H`, so a
 transition proof may use subgroup normal forms instead of listing all ambient elements.
 The counting map allows any chosen representatives of `H ⧸ (w H w⁻¹).subgroupOf H`.
+When the representatives `xᵢ ∈ P` of `T \ P / Q` meet each double coset exactly once, the map
+`(i, t) ↦ t xᵢ` from the cosets of `T ∩ xᵢQxᵢ⁻¹` in `T` to `P ⧸ Q` is a bijection
+(`Subgroup.bijective_sigma_quotient_mul_of_existsUnique_doubleCoset`).
 
 The resulting index bound is the sum of these intersection indices. Neither the ambient
 group nor the subgroup is assumed finite, and double-coset representatives may repeat.
@@ -79,6 +84,40 @@ theorem surjective_sigma_quotient_mul_of_doubleCoset_cover
   refine ⟨⟨i, c⟩, ?_⟩
   rw [← QuotientGroup.out_eq' q, QuotientGroup.eq, hab]
   simpa [mul_assoc] using H.mul_mem hm hb
+
+/-- **A transversal adapted to the double cosets `T \ P / Q`.** For subgroups `T ≤ P` and `Q`,
+and elements `xᵢ ∈ P` meeting each double coset `T x Q` in `P` exactly once, the elements `t xᵢ`,
+for `t` running over the chosen representatives of `T ⧸ (T ∩ xᵢQxᵢ⁻¹)`, enumerate `P ⧸ (Q ∩ P)`
+bijectively. -/
+theorem bijective_sigma_quotient_mul_of_existsUnique_doubleCoset {T Q P : Subgroup G}
+    (hTP : T ≤ P) (x : ι → P) (hx : ∀ y ∈ P, ∃! i, y ∈ DoubleCoset.doubleCoset (x i : G) T Q) :
+    Function.Bijective (fun p : Σ i, T ⧸ (MulAut.conj (x i : G) • Q).subgroupOf T ↦
+      ((⟨(p.2.out : G) * x p.1, P.mul_mem (hTP p.2.out.property) (x p.1).property⟩ : P) :
+        P ⧸ Q.subgroupOf P)) := by
+  refine ⟨fun ⟨i, j⟩ ⟨i', j'⟩ h => ?_, fun c => ?_⟩
+  · rw [QuotientGroup.eq, mem_subgroupOf] at h
+    simp only [coe_mul, InvMemClass.coe_inv, mul_inv_rev] at h
+    have hi : i' = i := by
+      refine (hx _ (x i').property).unique (DoubleCoset.mem_doubleCoset_self _ _ _) ?_
+      refine DoubleCoset.mem_doubleCoset.2 ⟨(j'.out : G)⁻¹ * j.out,
+        T.mul_mem (T.inv_mem j'.out.property) j.out.property, _, h, ?_⟩
+      group
+    subst hi
+    refine Sigma.ext rfl (heq_of_eq ?_)
+    rw [← QuotientGroup.out_eq' j, ← QuotientGroup.out_eq' j', QuotientGroup.eq,
+      mem_subgroupOf, TauCeti.mem_conj_smul]
+    simpa [mul_assoc] using h
+  · obtain ⟨i, hi, -⟩ := hx _ c.out.property
+    obtain ⟨t, ht, q, hq, hy⟩ := DoubleCoset.mem_doubleCoset.1 hi
+    let j : T ⧸ (MulAut.conj (x i : G) • Q).subgroupOf T := (⟨t, ht⟩ : T)
+    have hj : (x i : G)⁻¹ * ((j.out : G)⁻¹ * t) * x i ∈ Q := by
+      have := QuotientGroup.eq.1 (QuotientGroup.out_eq' j)
+      rwa [mem_subgroupOf, TauCeti.mem_conj_smul] at this
+    refine ⟨⟨i, j⟩, ?_⟩
+    rw [← QuotientGroup.out_eq' c, QuotientGroup.eq, mem_subgroupOf]
+    simp only [coe_mul, InvMemClass.coe_inv, mul_inv_rev, hy]
+    convert Q.mul_mem hj hq using 1
+    group
 
 /-- A finite double-coset cover with finite intersection indices proves finite index in the
 actual ambient group, without assuming that ambient group finite. -/

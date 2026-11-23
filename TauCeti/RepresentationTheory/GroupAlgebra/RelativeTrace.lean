@@ -9,8 +9,12 @@ public import Mathlib.Algebra.MonoidAlgebra.Basic
 public import Mathlib.Algebra.Algebra.Subalgebra.Centralizer
 public import Mathlib.GroupTheory.DoubleCoset
 public import Mathlib.Algebra.Group.Subgroup.Pointwise
+public import TauCeti.GroupTheory.DoubleCoset.Finite
+public import TauCeti.GroupTheory.Index.Basic
 public import TauCeti.RepresentationTheory.RelativeNorm
+import TauCeti.Algebra.Group.Subgroup.Pointwise
 import TauCeti.GroupTheory.Coset.Basic
+import TauCeti.GroupTheory.DoubleCoset.Cover
 
 /-!
 # Relative traces in a group algebra
@@ -59,8 +63,9 @@ are described through them.
 * `TauCeti.relTraceIdeal_mono`, `TauCeti.relTraceIdeal_self`: `R[G]^P_S ≤ R[G]^P_Q` for
   `S ≤ Q ≤ P`, and `R[G]^P_P = R[G]^P`.
 * `TauCeti.conjInvariantsEquiv_relTrace`: `g Tr_Q^P(a) g⁻¹ = Tr_{gQg⁻¹}^{gPg⁻¹}(g a g⁻¹)`.
-* `TauCeti.relTrace_eq_sum_relTrace_conj`, `TauCeti.relTrace_eq_sum_doubleCoset`: the Mackey
-  formula `Tr_Q^P(a) = ∑_{TxQ} Tr_{T ∩ xQx⁻¹}^T(x a x⁻¹)` for `T ≤ P`, over any system of
+* `TauCeti.inclusion_relTrace_eq_sum_relTrace_conj`,
+  `TauCeti.inclusion_relTrace_eq_sum_doubleCoset`: the Mackey formula
+  `Tr_Q^P(a) = ∑_{TxQ} Tr_{T ∩ xQx⁻¹}^T(x a x⁻¹)` in `R[G]^T` for `T ≤ P`, over any system of
   double coset representatives and over the double coset quotient.
 
 ## References
@@ -364,14 +369,13 @@ theorem conjRepresentation_mem_conjInvariants (g : G) {H : Subgroup G} {x : Mono
     conjRepresentation R G g x ∈ conjInvariants R (MulAut.conj g • H) := by
   rw [mem_conjInvariants_iff] at hx ⊢
   intro h hh
-  rw [Subgroup.mem_pointwise_smul_iff_inv_smul_mem, MulAut.smul_def, MulAut.conj_inv_apply] at hh
-  have := hx _ hh
+  have := hx _ ((mem_conj_smul g H h).1 hh)
   rw [← mul_apply_eq_comp, ← map_mul, show h * g = g * (g⁻¹ * h * g) by group, map_mul,
     mul_apply_eq_comp, this]
 
 variable (R) in
 /-- Conjugation by `g` as an algebra isomorphism `R[G]^H ≃ R[G]^{gHg⁻¹}`, `x ↦ g x g⁻¹`. -/
-@[expose] noncomputable def conjInvariantsEquiv (g : G) (H : Subgroup G) :
+noncomputable def conjInvariantsEquiv (g : G) (H : Subgroup G) :
     conjInvariants R H ≃ₐ[R] conjInvariants R (MulAut.conj g • H) where
   toFun x := ⟨conjRepresentation R G g x, conjRepresentation_mem_conjInvariants g x.property⟩
   invFun y := ⟨conjRepresentation R G g⁻¹ y, by
@@ -389,17 +393,16 @@ variable (R) in
 @[simp]
 theorem coe_conjInvariantsEquiv (g : G) (H : Subgroup G) (x : conjInvariants R H) :
     (conjInvariantsEquiv R g H x : MonoidAlgebra R G) = conjRepresentation R G g x :=
-  rfl
+  (rfl)
 
-/-- Conjugating both subgroups preserves the relative index, so `Tr_{gQg⁻¹}^{gPg⁻¹}` is defined
-whenever `Tr_Q^P` is. -/
-instance instFiniteIndexSubgroupOfConjSMul {Q P : Subgroup G} [(Q.subgroupOf P).FiniteIndex]
-    (g : G) : ((MulAut.conj g • Q).subgroupOf (MulAut.conj g • P)).FiniteIndex :=
-  ⟨by
-    rw [← Subgroup.relIndex, Subgroup.relIndex_pointwise_smul]
-    exact Subgroup.FiniteIndex.index_ne_zero⟩
+/-- The inverse of `R[G]^H ≃ R[G]^{gHg⁻¹}` is conjugation by `g⁻¹`. -/
+@[simp]
+theorem coe_conjInvariantsEquiv_symm (g : G) (H : Subgroup G)
+    (y : conjInvariants R (MulAut.conj g • H)) :
+    ((conjInvariantsEquiv R g H).symm y : MonoidAlgebra R G) = conjRepresentation R G g⁻¹ y :=
+  (rfl)
 
-attribute [local instance] Subgroup.fintypeQuotientOfFiniteIndex
+attribute [local instance] Subgroup.fintypeQuotientOfFiniteIndex Fintype.ofFinite
 
 /-- **Conjugation of relative traces.** `g Tr_Q^P(a) g⁻¹ = Tr_{gQg⁻¹}^{gPg⁻¹}(g a g⁻¹)` (Webb,
 Lemma 11.3.1, p. 194). -/
@@ -424,47 +427,18 @@ theorem conjInvariantsEquiv_relTrace (g : G) {Q P : Subgroup G} [(Q.subgroupOf P
 `xᵢ ∈ P` representing each double coset `T x Q` in `P` exactly once,
 `Tr_Q^P(a) = ∑ᵢ Tr_{T ∩ xᵢQxᵢ⁻¹}^T(xᵢ a xᵢ⁻¹)` in `R[G]^T` (Webb, Lemma 11.3.1, p. 194). Here
 `Tr_{xQx⁻¹}^T` is the relative trace from `T ∩ xQx⁻¹`, applied to the `xQx⁻¹`-fixed element
-`x a x⁻¹`. -/
-theorem relTrace_eq_sum_relTrace_conj {T Q P : Subgroup G} [(Q.subgroupOf P).FiniteIndex]
-    (hTP : T ≤ P) {ι : Type*} [Fintype ι] (x : ι → P)
-    (hx : ∀ y ∈ P, ∃! i, y ∈ DoubleCoset.doubleCoset (x i : G) T Q)
-    [∀ i, ((MulAut.conj (x i : G) • Q).subgroupOf T).FiniteIndex] (a : conjInvariants R Q) :
+`x a x⁻¹`; `T ∩ xQx⁻¹` has finite index in `T` by `Subgroup.finiteIndex_conj_smul_subgroupOf`. -/
+theorem inclusion_relTrace_eq_sum_relTrace_conj {T Q P : Subgroup G}
+    [(Q.subgroupOf P).FiniteIndex] (hTP : T ≤ P) {ι : Type*} [Fintype ι] (x : ι → P)
+    (hx : ∀ y ∈ P, ∃! i, y ∈ DoubleCoset.doubleCoset (x i : G) T Q) (a : conjInvariants R Q) :
     Subalgebra.inclusion (conjInvariants_anti hTP) (relTrace R Q P a) =
-      ∑ i, relTrace R (MulAut.conj (x i : G) • Q) T (conjInvariantsEquiv R (x i : G) Q a) := by
-  -- Conjugation by `x` moves `t ∈ T` into `Q` exactly when `t ∈ xQx⁻¹`.
-  have hconj : ∀ (z : G) (t : G), t ∈ MulAut.conj z • Q ↔ z⁻¹ * t * z ∈ Q := fun z t => by
-    rw [Subgroup.mem_pointwise_smul_iff_inv_smul_mem, MulAut.smul_def, MulAut.conj_inv_apply]
-  -- The elements `t x_i`, for `t` running over `T / (T ∩ x_i Q x_i⁻¹)`, form a transversal.
-  let s : (Σ i, T ⧸ (MulAut.conj (x i : G) • Q).subgroupOf T) → P :=
-    fun j => ⟨(j.2.out : G) * x j.1, P.mul_mem (hTP j.2.out.property) (x j.1).property⟩
-  have hs : Function.Bijective fun j => (s j : P ⧸ Q.subgroupOf P) := by
-    refine ⟨fun ⟨i, j⟩ ⟨i', j'⟩ h => ?_, fun c => ?_⟩
-    · rw [QuotientGroup.eq, Subgroup.mem_subgroupOf] at h
-      simp only [s, Subgroup.coe_mul, InvMemClass.coe_inv, mul_inv_rev] at h
-      have hi : i' = i := by
-        refine (hx _ (x i').property).unique (DoubleCoset.mem_doubleCoset_self _ _ _) ?_
-        refine DoubleCoset.mem_doubleCoset.2 ⟨(j'.out : G)⁻¹ * j.out,
-          T.mul_mem (T.inv_mem j'.out.property) j.out.property, _, h, ?_⟩
-        group
-      subst hi
-      refine Sigma.ext rfl (heq_of_eq ?_)
-      rw [← QuotientGroup.out_eq' j, ← QuotientGroup.out_eq' j', QuotientGroup.eq,
-        Subgroup.mem_subgroupOf, hconj]
-      simpa [mul_assoc] using h
-    · obtain ⟨i, hi, -⟩ := hx _ c.out.property
-      obtain ⟨t, ht, q, hq, hy⟩ := DoubleCoset.mem_doubleCoset.1 hi
-      let j : T ⧸ (MulAut.conj (x i : G) • Q).subgroupOf T := (⟨t, ht⟩ : T)
-      have hj : (j.out : G)⁻¹ * t ∈ MulAut.conj (x i : G) • Q := by
-        have := QuotientGroup.eq.1 (QuotientGroup.out_eq' j)
-        rwa [Subgroup.mem_subgroupOf] at this
-      refine ⟨⟨i, j⟩, ?_⟩
-      rw [← QuotientGroup.out_eq' c, QuotientGroup.eq, Subgroup.mem_subgroupOf]
-      simp only [s, Subgroup.coe_mul, InvMemClass.coe_inv, mul_inv_rev, hy]
-      rw [hconj] at hj
-      convert Q.mul_mem hj hq using 1
-      group
+      ∑ i, haveI := Subgroup.finiteIndex_conj_smul_subgroupOf Q hTP (x i).property
+        relTrace R (MulAut.conj (x i : G) • Q) T (conjInvariantsEquiv R (x i : G) Q a) := by
+  have := fun i => Subgroup.finiteIndex_conj_smul_subgroupOf Q hTP (x i).property
   ext1
-  rw [Subalgebra.coe_inclusion, relTrace_apply_eq_sum_of_bijective s hs, Fintype.sum_sigma]
+  rw [Subalgebra.coe_inclusion, relTrace_apply_eq_sum_of_bijective _
+    (Subgroup.bijective_sigma_quotient_mul_of_existsUnique_doubleCoset hTP x hx),
+    Fintype.sum_sigma]
   push_cast
   refine Finset.sum_congr rfl fun i _ => ?_
   rw [coe_relTrace]
@@ -473,17 +447,16 @@ theorem relTrace_eq_sum_relTrace_conj {T Q P : Subgroup G} [(Q.subgroupOf P).Fin
 
 /-- **The Mackey formula over the double cosets.** For subgroups `T` and `Q` of `P`,
 `Tr_Q^P(a) = ∑_{TxQ ⊆ P} Tr_{T ∩ xQx⁻¹}^T(x a x⁻¹)` in `R[G]^T`, summed over the double cosets
-`T \ P / Q` with their chosen representatives `x` (Webb, Lemma 11.3.1, p. 194). -/
-theorem relTrace_eq_sum_doubleCoset {T Q P : Subgroup G} [(Q.subgroupOf P).FiniteIndex]
-    (hTP : T ≤ P) [Fintype (DoubleCoset.Quotient (T.subgroupOf P : Set P) (Q.subgroupOf P))]
-    [∀ q : DoubleCoset.Quotient (T.subgroupOf P : Set P) (Q.subgroupOf P),
-      ((MulAut.conj (q.out : G) • Q).subgroupOf T).FiniteIndex]
-    (a : conjInvariants R Q) :
+`T \ P / Q`, finite by `TauCeti.finite_doubleCosetQuotient`, with their chosen representatives `x`
+(Webb, Lemma 11.3.1, p. 194). -/
+theorem inclusion_relTrace_eq_sum_doubleCoset {T Q P : Subgroup G} [(Q.subgroupOf P).FiniteIndex]
+    (hTP : T ≤ P) (a : conjInvariants R Q) :
     Subalgebra.inclusion (conjInvariants_anti hTP) (relTrace R Q P a) =
       ∑ q : DoubleCoset.Quotient (T.subgroupOf P : Set P) (Q.subgroupOf P),
+        haveI := Subgroup.finiteIndex_conj_smul_subgroupOf Q hTP q.out.property
         relTrace R (MulAut.conj (q.out : G) • Q) T (conjInvariantsEquiv R (q.out : G) Q a) := by
-  refine relTrace_eq_sum_relTrace_conj (ι := DoubleCoset.Quotient (T.subgroupOf P : Set P)
-    (Q.subgroupOf P)) hTP (fun q => Quotient.out q) (fun y hy => ?_) a
+  refine inclusion_relTrace_eq_sum_relTrace_conj (ι := DoubleCoset.Quotient
+    (T.subgroupOf P : Set P) (Q.subgroupOf P)) hTP (fun q => Quotient.out q) (fun y hy => ?_) a
   refine ⟨DoubleCoset.mk _ _ ⟨y, hy⟩, ?_, fun q hq => ?_⟩
   · obtain ⟨t, ht, k, hk, he⟩ := DoubleCoset.mem_doubleCoset.1
       ((DoubleCoset.mem_quotToDoubleCoset_iff (DoubleCoset.mk (T.subgroupOf P) (Q.subgroupOf P)
