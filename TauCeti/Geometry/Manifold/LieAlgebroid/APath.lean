@@ -24,7 +24,7 @@ The base path of an `A`-path is `C²` (`TauCeti.LieAlgebroid.IsAPath.contMDiffOn
 `A`-paths to `A`-paths of the tangent algebroid (`TauCeti.LieAlgebroid.IsAPath.anchor`). For the
 tangent algebroid the anchor is the identity, so its `A`-paths are exactly the velocity lifts of
 `C²` paths (`TauCeti.LieAlgebroid.isAPath_tangent_iff` and
-`TauCeti.LieAlgebroid.isAPath_curveVelocityLiftWithin`).
+`TauCeti.LieAlgebroid.isAPath_curveVelocityLiftWithin_iff`).
 
 ## Main definitions
 
@@ -33,20 +33,23 @@ tangent algebroid the anchor is the identity, so its `A`-paths are exactly the v
 
 ## Main results
 
-* `TauCeti.LieAlgebroid.isAPath_iff_eqOn`: a `C¹` path is an `A`-path exactly when the velocity
-  lift of its base path is its anchor on `[0, 1]`; only values on `[0, 1]` matter
-  (`TauCeti.LieAlgebroid.IsAPath.congr`).
-* `TauCeti.LieAlgebroid.isAPath_zero`: the constant zero path at a point is an `A`-path.
+* `TauCeti.LieAlgebroid.isAPath_iff_curveVelocityLiftWithin_eqOn`: a `C¹` path is an `A`-path
+  exactly when the velocity lift of its base path is its anchor on `[0, 1]`; only values on
+  `[0, 1]` matter (`TauCeti.LieAlgebroid.isAPath_congr`).
+* `TauCeti.LieAlgebroid.isAPath_const_iff`: a constant path is an `A`-path exactly when its value
+  lies in the kernel of the anchor; in particular the constant zero path at a point is one
+  (`TauCeti.LieAlgebroid.isAPath_zero`).
 * `TauCeti.LieAlgebroid.IsAPath.contMDiffOn_proj`: the base path of an `A`-path is `C²`.
 * `TauCeti.LieAlgebroid.IsAPath.reparam`: reparametrising by a `C²` self-map `φ` of `[0, 1]`,
   `t ↦ φ'(t) • a(φ(t))`, gives an `A`-path; in particular the reversal `t ↦ -a(1 - t)` is one
   (`TauCeti.LieAlgebroid.IsAPath.reverse`).
 * `TauCeti.LieAlgebroid.IsAPath.anchor`: the anchor of an `A`-path is an `A`-path of the tangent
   algebroid.
-* `TauCeti.LieAlgebroid.isAPath_tangent_iff`: the `A`-paths of the tangent algebroid are the `C¹`
-  paths of tangent vectors which agree on `[0, 1]` with the velocity lifts of their base paths.
-* `TauCeti.LieAlgebroid.isAPath_curveVelocityLiftWithin`: the velocity lift of a `C²` path is an
-  `A`-path of the tangent algebroid.
+* `TauCeti.LieAlgebroid.isAPath_tangent_iff`: the `A`-paths of the tangent algebroid are the paths
+  of tangent vectors with `C²` base path which agree on `[0, 1]` with the velocity lifts of their
+  base paths.
+* `TauCeti.LieAlgebroid.isAPath_curveVelocityLiftWithin_iff`: the velocity lift of a path is an
+  `A`-path of the tangent algebroid exactly when the path is `C²`.
 
 ## References
 
@@ -87,19 +90,25 @@ structure IsAPath (a : ℝ → TotalSpace F V) : Prop where
     A.anchor (a t).proj (a t).snd =
       Manifold.curveVelocityWithin I (fun s ↦ (a s).proj) (Icc 0 1) t
 
-/-- The constant path at the zero vector over a point is an `A`-path: its base path is constant
-and the anchor of zero vanishes. -/
-theorem isAPath_zero (x : M) : A.IsAPath fun _ ↦ (⟨x, 0⟩ : TotalSpace F V) where
-  contMDiffOn := contMDiffOn_const
-  anchor_eq t _ := by
-    rw [Manifold.curveVelocityWithin_const, map_zero]
+/-- A constant path is an `A`-path exactly when its value lies in the kernel of the anchor: its
+base path is constant, so has zero velocity. -/
+@[simp]
+theorem isAPath_const_iff (p : TotalSpace F V) :
+    A.IsAPath (fun _ ↦ p) ↔ A.anchor p.proj p.snd = 0 :=
+  ⟨fun ha ↦ by simpa using ha.anchor_eq 0 (left_mem_Icc.2 zero_le_one),
+    fun h ↦ ⟨contMDiffOn_const, fun _ _ ↦ by rw [Manifold.curveVelocityWithin_const, h]⟩⟩
+
+/-- The constant path at the zero vector over a point is an `A`-path. -/
+theorem isAPath_zero (x : M) : A.IsAPath fun _ ↦ (⟨x, 0⟩ : TotalSpace F V) :=
+  (A.isAPath_const_iff _).2 (map_zero _)
 
 namespace IsAPath
 
 variable {A} {a : ℝ → TotalSpace F V}
 
-/-- The base path of an `A`-path is `C¹` on `[0, 1]`. -/
-theorem contMDiffOn_proj_one (ha : A.IsAPath a) :
+/-- The base path of an `A`-path is `C¹` on `[0, 1]`. This is the first step towards
+`TauCeti.LieAlgebroid.IsAPath.contMDiffOn_proj`. -/
+private theorem contMDiffOn_proj_one (ha : A.IsAPath a) :
     ContMDiffOn 𝓘(ℝ) I 1 (fun t ↦ (a t).proj) (Icc 0 1) :=
   (contMDiff_proj V).comp_contMDiffOn ha.contMDiffOn
 
@@ -131,7 +140,7 @@ end IsAPath
 
 /-- A `C¹` path is an `A`-path exactly when, on `[0, 1]`, the velocity lift of its base path is
 its anchor. -/
-theorem isAPath_iff_eqOn {a : ℝ → TotalSpace F V} :
+theorem isAPath_iff_curveVelocityLiftWithin_eqOn {a : ℝ → TotalSpace F V} :
     A.IsAPath a ↔ ContMDiffOn 𝓘(ℝ) (I.prod 𝓘(ℝ, F)) 1 a (Icc 0 1) ∧
       EqOn (Manifold.curveVelocityLiftWithin I (fun t ↦ (a t).proj) (Icc 0 1))
         (fun t ↦ (⟨(a t).proj, A.anchor (a t).proj (a t).snd⟩ : TangentBundle I M)) (Icc 0 1) := by
@@ -146,8 +155,9 @@ namespace IsAPath
 variable {A} {a b : ℝ → TotalSpace F V}
 
 /-- Being an `A`-path depends only on the values on `[0, 1]`. -/
-theorem congr (ha : A.IsAPath a) (hab : EqOn a b (Icc 0 1)) : A.IsAPath b := by
-  refine (isAPath_iff_eqOn A).2 ⟨ha.contMDiffOn.congr fun t ht ↦ (hab ht).symm, fun t ht ↦ ?_⟩
+theorem congr (ha : A.IsAPath a) (hba : EqOn b a (Icc 0 1)) : A.IsAPath b := by
+  have hab : EqOn a b (Icc 0 1) := hba.symm
+  refine (isAPath_iff_curveVelocityLiftWithin_eqOn A).2 ⟨ha.contMDiffOn.congr hba, fun t ht ↦ ?_⟩
   -- The base paths agree on `[0, 1]`, so their velocity lifts within `[0, 1]` agree there.
   have hproj : (fun s ↦ (a s).proj) =ᶠ[nhdsWithin t (Icc 0 1)] fun s ↦ (b s).proj :=
     Filter.eventually_of_mem self_mem_nhdsWithin fun s hs ↦ congrArg TotalSpace.proj (hab hs)
@@ -155,6 +165,17 @@ theorem congr (ha : A.IsAPath a) (hab : EqOn a b (Icc 0 1)) : A.IsAPath b := by
     ha.curveVelocityLiftWithin_eqOn ht]
   exact congrArg (fun p : TotalSpace F V ↦
     (⟨p.proj, A.anchor p.proj p.snd⟩ : TangentBundle I M)) (hab ht)
+
+end IsAPath
+
+/-- Being an `A`-path depends only on the values on `[0, 1]`. -/
+theorem isAPath_congr {a b : ℝ → TotalSpace F V} (hab : EqOn a b (Icc 0 1)) :
+    A.IsAPath a ↔ A.IsAPath b :=
+  ⟨fun ha ↦ ha.congr hab.symm, fun hb ↦ hb.congr hab⟩
+
+namespace IsAPath
+
+variable {A} {a : ℝ → TotalSpace F V}
 
 /-- **Reparametrisation of `A`-paths.** If `φ` is `C²` on `[0, 1]` and maps `[0, 1]` into itself,
 then `t ↦ φ'(t) • a(φ(t))` is an `A`-path, where `φ'` is the derivative within `[0, 1]`. -/
@@ -194,33 +215,35 @@ section Tangent
 
 variable [FiniteDimensional ℝ E]
 
-/-- The `A`-paths of the tangent algebroid are the `C¹` paths of tangent vectors which agree on
-`[0, 1]` with the velocity lifts of their base paths. -/
+/-- **The velocity lift of a path is an `A`-path of the tangent algebroid exactly when the path is
+`C²`.** The velocity is taken within `[0, 1]`. -/
+@[simp]
+theorem isAPath_curveVelocityLiftWithin_iff {γ : ℝ → M} :
+    (tangent I M).IsAPath (Manifold.curveVelocityLiftWithin I γ (Icc 0 1)) ↔
+      ContMDiffOn 𝓘(ℝ) I 2 γ (Icc 0 1) :=
+  ⟨fun h ↦ by simpa only [Manifold.curveVelocityLiftWithin_proj] using h.contMDiffOn_proj,
+    fun hγ ↦ (isAPath_iff_curveVelocityLiftWithin_eqOn _).2
+      ⟨hγ.contMDiffOn_curveVelocityLiftWithin (by norm_num)
+        (uniqueDiffOn_Icc zero_lt_one).uniqueMDiffOn, fun _ _ ↦ by
+          simp only [Manifold.curveVelocityLiftWithin_proj, tangent_anchor_apply]⟩⟩
+
+/-- The `A`-paths of the tangent algebroid are the paths of tangent vectors with `C²` base path
+which agree on `[0, 1]` with the velocity lifts of their base paths. -/
 theorem isAPath_tangent_iff {a : ℝ → TangentBundle I M} :
     (tangent I M).IsAPath a ↔
-      ContMDiffOn 𝓘(ℝ) (I.prod 𝓘(ℝ, E)) 1 a (Icc 0 1) ∧
-        EqOn a (Manifold.curveVelocityLiftWithin I (fun t ↦ (a t).proj) (Icc 0 1)) (Icc 0 1) := by
-  refine ⟨fun ha ↦ ⟨ha.contMDiffOn, fun t ht ↦ ?_⟩,
-    fun ⟨h₁, h₂⟩ ↦ ⟨h₁, fun t ht ↦ ?_⟩⟩
-  · rw [Manifold.curveVelocityLiftWithin_apply, ← ha.anchor_eq t ht, tangent_anchor_apply]
-  · rw [tangent_anchor_apply]
-    exact (congrArg TotalSpace.snd (h₂ ht)).trans (Manifold.curveVelocityLiftWithin_snd _ _ _)
-
-/-- **The velocity lift of a `C²` path is an `A`-path of the tangent algebroid.** The velocity is
-taken within `[0, 1]`. -/
-theorem isAPath_curveVelocityLiftWithin {γ : ℝ → M} (hγ : ContMDiffOn 𝓘(ℝ) I 2 γ (Icc 0 1)) :
-    (tangent I M).IsAPath (Manifold.curveVelocityLiftWithin I γ (Icc 0 1)) :=
-  isAPath_tangent_iff.2 ⟨hγ.contMDiffOn_curveVelocityLiftWithin (by norm_num)
-    (uniqueDiffOn_Icc zero_lt_one).uniqueMDiffOn,
-    fun _ _ ↦ by simp only [Manifold.curveVelocityLiftWithin_proj]⟩
+      ContMDiffOn 𝓘(ℝ) I 2 (fun t ↦ (a t).proj) (Icc 0 1) ∧
+        EqOn a (Manifold.curveVelocityLiftWithin I (fun t ↦ (a t).proj) (Icc 0 1)) (Icc 0 1) :=
+  ⟨fun ha ↦ ⟨ha.contMDiffOn_proj, fun _ ht ↦ by
+      simpa only [tangent_anchor_apply] using (ha.curveVelocityLiftWithin_eqOn ht).symm⟩,
+    fun ⟨h₁, h₂⟩ ↦ (isAPath_curveVelocityLiftWithin_iff.2 h₁).congr h₂⟩
 
 /-- **The anchor carries `A`-paths to `A`-paths of the tangent algebroid**: the anchor of an
 `A`-path is the velocity lift of its base path. -/
 theorem IsAPath.anchor {A : LieAlgebroid I F V} {a : ℝ → TotalSpace F V} (ha : A.IsAPath a) :
     (tangent I M).IsAPath fun t ↦
       (⟨(a t).proj, A.anchor (a t).proj (a t).snd⟩ : TangentBundle I M) :=
-  isAPath_tangent_iff.2
-    ⟨ha.contMDiffOn_anchor, fun _ ht ↦ (ha.curveVelocityLiftWithin_eqOn ht).symm⟩
+  (isAPath_curveVelocityLiftWithin_iff.2 ha.contMDiffOn_proj).congr
+    fun _ ht ↦ (ha.curveVelocityLiftWithin_eqOn ht).symm
 
 end Tangent
 
