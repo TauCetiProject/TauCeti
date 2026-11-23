@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.Matrix.Block
+public import Mathlib.GroupTheory.OrderOfElement
 
 /-!
 # Block matrix identities
@@ -35,6 +36,8 @@ segments. In particular, it applies to weight-space blocks of arbitrary dimensio
 A matrix on a finite index type is indecomposable exactly when its transpose is, because reversing
 a chain of nonzero entries of one gives a chain of nonzero entries of the other.
 
+A block-diagonal matrix with blocks `A` and `-1` has the order of `A` when that order is even.
+
 ## Main results
 
 * `Matrix.toBlocks₁₁_eq_submatrix`, `Matrix.toBlocks₁₂_eq_submatrix`,
@@ -55,6 +58,8 @@ a chain of nonzero entries of one gives a chain of nonzero entries of the other.
 * `Matrix.forall_isUnit_det_toSquareBlockProp_le_mul_mul_iff`: preservation of the test on
   every leading block.
 * `Matrix.isIndecomposable_transpose`: a matrix is indecomposable exactly when its transpose is.
+* `Matrix.orderOf_fromBlocks_zero_zero_neg_one`: `fromBlocks A 0 0 (-1)` has the order of `A`
+  when that order is even.
 
 ## References
 
@@ -234,5 +239,15 @@ public theorem forall_isUnit_det_toSquareBlockProp_le_mul_mul_iff
     fun _ _ hji hi => hji.trans hi
 
 end LeadingBlocks
+
+/-- **A block-diagonal matrix with blocks `A` and `-1` has the order of `A`** when that order is
+even. -/
+public theorem orderOf_fromBlocks_zero_zero_neg_one {m o R : Type*} [Fintype m] [DecidableEq m]
+    [Fintype o] [DecidableEq o] [Ring R] {A : Matrix m m R} (hA : 2 ∣ orderOf A) :
+    orderOf (fromBlocks A 0 0 (-1 : Matrix o o R)) = orderOf A := by
+  refine orderOf_eq_orderOf_iff.2 fun k => ?_
+  rw [fromBlocks_diagonal_pow, ← fromBlocks_one, fromBlocks_inj]
+  refine ⟨fun h => h.1, fun hk => ⟨hk, rfl, rfl, ?_⟩⟩
+  exact (even_iff_two_dvd.2 (hA.trans (orderOf_dvd_of_pow_eq_one hk))).neg_one_pow
 
 end Matrix

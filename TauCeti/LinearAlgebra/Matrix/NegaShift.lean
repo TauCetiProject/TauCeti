@@ -7,7 +7,6 @@ module
 
 public import Mathlib.LinearAlgebra.Matrix.Charpoly.Basic
 public import Mathlib.GroupTheory.OrderOfElement
-public import Mathlib.Data.Matrix.Block
 import TauCeti.LinearAlgebra.Matrix.Charpoly.Companion
 
 /-!
@@ -18,9 +17,6 @@ The negacyclic shift `Matrix.negaShift R n` on `Rⁿ` sends `eᵢ ↦ eᵢ₊₁
 for `n ≥ 1` it has order `2n` as soon as `-1 ≠ 1` (`Matrix.orderOf_negaShift`). Up to relabelling it
 is the companion matrix of `Xⁿ + 1`, which is therefore its characteristic polynomial
 (`Matrix.charpoly_negaShift`).
-
-A block-diagonal matrix with blocks `A` and `-1` has the order of `A` when that order is even
-(`Matrix.orderOf_fromBlocks_zero_zero_neg_one`).
 
 Over `ℤ` the negacyclic shift is the Coxeter element of type `Bₙ` in the `ε`-model.
 -/
@@ -110,16 +106,6 @@ theorem orderOf_negaShift {n : ℕ} (hn : 1 ≤ n) (hR : (-1 : R) ≠ 1) :
     simp only [Fin.val_zero, Matrix.one_apply, Fin.ext_iff] at this
     rw [ite_eq_right (show j ≠ 0 by omega)] at this
     split_ifs at this <;> first | omega | exact absurd this (by simp)
-
-/-- **A block-diagonal matrix with blocks `A` and `-1` has the order of `A`** when that order is
-even. -/
-theorem orderOf_fromBlocks_zero_zero_neg_one {m o : Type*} [Fintype m] [DecidableEq m] [Fintype o]
-    [DecidableEq o] {A : Matrix m m R} (hA : 2 ∣ orderOf A) :
-    orderOf (fromBlocks A 0 0 (-1 : Matrix o o R)) = orderOf A := by
-  refine orderOf_eq_orderOf_iff.2 fun k => ?_
-  rw [fromBlocks_diagonal_pow, ← fromBlocks_one, fromBlocks_inj]
-  refine ⟨fun h => h.1, fun hk => ⟨hk, rfl, rfl, ?_⟩⟩
-  exact (even_iff_two_dvd.2 (hA.trans (orderOf_dvd_of_pow_eq_one hk))).neg_one_pow
 
 end Ring
 

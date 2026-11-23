@@ -47,18 +47,9 @@ def bExponents (n : ℕ) : List ℕ := (List.range n).map fun k => 2 * k + 1
 /-- The exponents `1, 3, …, 2n - 3` and `n - 1` of `Dₙ`, as a list with multiplicity. -/
 def dExponents (n : ℕ) : List ℕ := bExponents (n - 1) ++ [n - 1]
 
-theorem aExponents_def (n : ℕ) : aExponents n = (List.range n).map (· + 1) := by
-  rw [aExponents]
-
-theorem bExponents_def (n : ℕ) : bExponents n = (List.range n).map fun k => 2 * k + 1 := by
-  rw [bExponents]
-
-theorem dExponents_def (n : ℕ) : dExponents n = bExponents (n - 1) ++ [n - 1] := by
-  rw [dExponents]
-
 /-- The exponents of `D_{n+1}` are those of `B_n` followed by `n`. -/
 theorem dExponents_succ (n : ℕ) : dExponents (n + 1) = bExponents n ++ [n] := by
-  rw [dExponents_def, Nat.add_sub_cancel]
+  rw [dExponents, Nat.add_sub_cancel]
 
 @[simp]
 theorem length_aExponents (n : ℕ) : (aExponents n).length = n := by simp [aExponents]
@@ -118,8 +109,8 @@ odd numbers below `2n - 2`, so twice when `n` is positive and even. -/
 theorem count_dExponents (n e : ℕ) :
     (dExponents n).count e = (bExponents (n - 1)).count e + if e = n - 1 then 1 else 0 := by
   by_cases h : e = n - 1
-  · simp [dExponents_def, h]
-  · simp [dExponents_def, h, Ne.symm h]
+  · simp [dExponents, h]
+  · simp [dExponents, h, Ne.symm h]
 
 /-- **The roots of `(X^{n-1} + 1)(X + 1)`** are `exp (2πi e / (2n - 2))` over the exponents of
 `Dₙ`, with multiplicity. -/

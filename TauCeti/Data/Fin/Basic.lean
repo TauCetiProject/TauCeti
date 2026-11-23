@@ -150,6 +150,7 @@ range, so the value is a `dite` rather than a plain application.
   read off the value.
 * `TauCeti.sum_ite_val_add`: a sum against the indicator of `b = k + j` picks out the summand at
   `b - j`, or vanishes when there is no such index.
+* `TauCeti.sum_ite_val_eq`: a sum against the indicator of `k = c` picks out the summand at `c`.
 * `TauCeti.finSigmaFinEquiv_lt_finSigmaFinEquiv_iff`: listing blocks consecutively orders their
   entries lexicographically.
 * `TauCeti.exists_foldl_eq_of_parent`: a decreasing parent table gives paths from its root.
@@ -1174,6 +1175,14 @@ theorem sum_ite_val_add {M : Type*} [AddCommMonoid M] {n : ℕ} (f : Fin n → M
     intro k _
     have := k.isLt
     exact ite_eq_right (by omega)
+
+/-- **An indicator picks out one summand.** Summing `f` over `Fin n` against the indicator of
+`k = c`, for a valid index `c < n`, gives `f` at `c`. -/
+theorem sum_ite_val_eq {M : Type*} [AddCommMonoid M] {n : ℕ} (f : Fin n → M) {c : ℕ}
+    (hc : c < n) : ∑ k : Fin n, (if (k : ℕ) = c then f k else 0) = f ⟨c, hc⟩ := by
+  rw [Finset.sum_eq_single ⟨c, hc⟩ (fun k _ hk => ite_eq_right fun h => hk (Fin.ext h))
+    (by simp)]
+  exact ite_eq_left rfl
 
 open _root_.Finset in
 /-- Listing blocks of sizes `d 0, …, d (k - 1)` consecutively, `finSigmaFinEquiv` orders the

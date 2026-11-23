@@ -10,6 +10,7 @@ public import TauCeti.LinearAlgebra.Matrix.Permutation
 public import TauCeti.LinearAlgebra.Matrix.Permutation.Coxeter
 public import TauCeti.Data.List.OneDegenerateOrder
 import Mathlib.LinearAlgebra.Matrix.NonsingularInverse
+import TauCeti.Data.Fin.Basic
 import TauCeti.GroupTheory.Perm.OrbitCount.FinRotate
 
 /-!
@@ -74,11 +75,8 @@ theorem epsALeftInv_mul_epsA : epsALeftInv n * epsA n = 1 := by
   ext i k
   simp only [epsALeftInv_apply, epsA_apply, Matrix.mul_apply, Matrix.one_apply, mul_sub,
     mul_ite, mul_one, mul_zero, Finset.sum_sub_distrib]
-  rw [Finset.sum_eq_single k.castSucc (fun a _ ha =>
-      ite_eq_right_iff.2 fun h => absurd (Fin.ext (by simpa using h)) ha) (by simp),
-    Finset.sum_eq_single k.succ (fun a _ ha =>
-      ite_eq_right_iff.2 fun h => absurd (Fin.ext (by simpa using h)) ha) (by simp)]
-  simp only [Fin.val_castSucc, Fin.val_succ, ite_true, Fin.ext_iff]
+  rw [sum_ite_val_eq _ (Nat.lt_succ_of_lt k.isLt), sum_ite_val_eq _ (Nat.succ_lt_succ k.isLt)]
+  simp only [Fin.ext_iff]
   split_ifs <;> omega
 
 /-- Row sums of `epsA`: they telescope. -/
@@ -148,14 +146,11 @@ theorem orderOf_coxeterElement_A (n : ℕ) :
   have hfix : ∀ k, permMatrixHom (R := ℤ) (finRotate (n + 1)) ^ k * epsA n = epsA n →
       finRotate (n + 1) ^ k = 1 := fun k h =>
     eq_one_of_permMatrixHom_mul_epsA (by rwa [map_pow])
-  have hrot : orderOf (permMatrixHom (R := ℤ) (finRotate (n + 1))) =
-      orderOf (finRotate (n + 1)) := orderOf_eq_orderOf_iff.2 fun k =>
-    ⟨fun h => hfix k (by rw [h, Matrix.one_mul]), fun h => by rw [← map_pow, h, map_one]⟩
   rw [orderOf_eq_orderOf_of_mul_eq_mul epsA_mul_coxeterElement
       (fun k h => mul_right_injective_of_inv _ _ epsALeftInv_mul_epsA
         (h.trans (Matrix.mul_one _).symm))
       (fun k h => by rw [← map_pow, hfix k h, map_one]),
-    hrot, orderOf_finRotate (Nat.succ_ne_zero n)]
+    Equiv.Perm.orderOf_permMatrixHom, orderOf_finRotate (Nat.succ_ne_zero n)]
 
 /-- The path `0, 1, …, n - 1` is a one-degenerate order of the Dynkin diagram of type `Aₙ`. -/
 theorem isOneDegenerateOrder_A (n : ℕ) :

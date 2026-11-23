@@ -8,7 +8,8 @@ module
 public import TauCeti.LinearAlgebra.Matrix.Cartan.Coxeter.Classical.B
 public import Mathlib.Data.Matrix.Block
 public import Mathlib.Logic.Equiv.Fin.Basic
-import Mathlib.LinearAlgebra.Matrix.Nonsingular
+import TauCeti.Data.Fin.Basic
+import TauCeti.LinearAlgebra.Matrix.Block
 import Mathlib.LinearAlgebra.Matrix.Reindex
 
 /-!
@@ -52,34 +53,15 @@ private def flipPair (m : ℕ) : Matrix (Fin (m + 3)) (Fin (m + 3)) ℤ :=
 private theorem flipPair_mul_apply {k : Type*} (M : Matrix (Fin (m + 3)) k ℤ) (a : Fin (m + 3))
     (j : k) :
     (flipPair m * M) a j =
-      if a.val = m + 1 then -M (Fin.last (m + 2)) j
+      if a.val = m + 1 then -M ⟨m + 2, by omega⟩ j
       else if a.val = m + 2 then -M ⟨m + 1, by omega⟩ j else M a j := by
-  rw [Matrix.mul_apply]
+  simp only [Matrix.mul_apply, flipPair, Matrix.of_apply, ite_mul, neg_one_mul, one_mul, zero_mul]
   by_cases h1 : a.val = m + 1
-  · rw [Finset.sum_eq_single (Fin.last (m + 2))]
-    · simp [flipPair, h1]
-    · intro c _ hc
-      have : c.val ≠ m + 2 := fun h => hc (Fin.ext h)
-      simp only [flipPair, Matrix.of_apply]
-      split_ifs <;> simp_all
-      omega
-    · simp
+  · simp [h1, sum_ite_val_eq]
   · by_cases h2 : a.val = m + 2
-    · rw [Finset.sum_eq_single ⟨m + 1, by omega⟩]
-      · simp [flipPair, h2]
-      · intro c _ hc
-        have : c.val ≠ m + 1 := fun h => hc (Fin.ext h)
-        simp only [flipPair, Matrix.of_apply]
-        split_ifs <;> simp_all
-        omega
-      · simp
-    · rw [Finset.sum_eq_single a]
-      · simp only [flipPair, Matrix.of_apply, h1, h2, false_and, ite_false, true_and]
-        rw [ite_eq_left (by omega), one_mul]
-      · intro c _ hc
-        simp only [flipPair, Matrix.of_apply]
-        split_ifs <;> simp_all
-      · simp
+    · simp [h2, sum_ite_val_eq]
+    · have := a.isLt
+      simp [h1, h2, show a.val < m + 1 by omega]
 
 
 /-- The fork reflection `s_{n-1}` of type `Dₙ` is the signed swap of the last two coordinates. -/
@@ -88,7 +70,7 @@ private theorem epsD_mul_reflMatrix_last (i : Fin (m + 3)) (hi : i.val = m + 2) 
   ext a j
   rw [mul_reflMatrix_apply, flipPair_mul_apply]
   have h2 : ¬ (m + 3 ≤ 2) := by omega
-  simp only [epsD_apply, CartanMatrix.D, Matrix.of_apply, Fin.ext_iff, Fin.val_last, hi, h2,
+  simp only [epsD_apply, CartanMatrix.D, Matrix.of_apply, Fin.ext_iff, hi, h2,
     ite_false, lt_irrefl, or_true, and_true]
   split_ifs <;> omega
 
@@ -96,7 +78,7 @@ private theorem epsD_mul_reflMatrix_last (i : Fin (m + 3)) (hi : i.val = m + 2) 
 `ε_{n-1} ↦ -ε_{n-2}`** in the `ε`-model. -/
 theorem epsD_mul_reflMatrix_last_apply (i : Fin (m + 3)) (hi : i.val = m + 2) (a j : Fin (m + 3)) :
     (epsD m * reflMatrix (CartanMatrix.D (m + 3)) i) a j =
-      if a.val = m + 1 then -epsD m (Fin.last (m + 2)) j
+      if a.val = m + 1 then -epsD m ⟨m + 2, by omega⟩ j
       else if a.val = m + 2 then -epsD m ⟨m + 1, by omega⟩ j else epsD m a j := by
   rw [epsD_mul_reflMatrix_last i hi, flipPair_mul_apply]
 
@@ -236,17 +218,9 @@ private theorem mul_epsD_apply {l : Type*} (Z : Matrix l (Fin (m + 3)) ℤ) (i :
   simp only [Matrix.mul_apply, epsD_apply]
   split_ifs with hk
   · simp only [mul_sub, mul_ite, mul_one, mul_zero, Finset.sum_sub_distrib]
-    rw [Finset.sum_eq_single k (fun a _ ha => ite_eq_right_iff.2 fun h => absurd (Fin.ext h) ha)
-        (by simp),
-      Finset.sum_eq_single ⟨k.val + 1, by omega⟩
-        (fun a _ ha => ite_eq_right_iff.2 fun h => absurd (Fin.ext h) ha) (by simp),
-      ite_eq_left rfl, ite_eq_left rfl]
+    rw [sum_ite_val_eq _ k.isLt, sum_ite_val_eq _ (by omega : k.val + 1 < m + 3)]
   · simp only [mul_add, mul_ite, mul_one, mul_zero, Finset.sum_add_distrib]
-    rw [Finset.sum_eq_single ⟨m + 1, by omega⟩
-        (fun a _ ha => ite_eq_right_iff.2 fun h => absurd (Fin.ext h) ha) (by simp),
-      Finset.sum_eq_single (⟨m + 2, by omega⟩ : Fin (m + 3))
-        (fun a _ ha => ite_eq_right_iff.2 fun h => absurd (Fin.ext h) ha) (by simp),
-      ite_eq_left rfl, ite_eq_left rfl]
+    rw [sum_ite_val_eq _ (by omega : m + 1 < m + 3), sum_ite_val_eq _ (by omega : m + 2 < m + 3)]
 
 /-- Twice the rational inverse of `epsD m` (its adjugate, since `epsD m` has determinant `2`). Row
 `i` holds the coordinates of `2 εⱼ` on the simple roots: `εⱼ = αⱼ + ⋯ + α_{n-3} +

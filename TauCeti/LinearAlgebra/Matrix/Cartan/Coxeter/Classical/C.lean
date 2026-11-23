@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.LinearAlgebra.Matrix.Cartan.Coxeter.Classical.B
-import Mathlib.LinearAlgebra.Matrix.Nonsingular
 
 /-!
 # The Coxeter element of type `Cₙ` has order `2n`

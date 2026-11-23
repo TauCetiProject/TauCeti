@@ -38,17 +38,18 @@ theorem mul_prod_map_eq_prod_map_mul {ι : Type*} {f : ι → Matrix n n R}
     {g : ι → Matrix m m R} (h : ∀ i, E * f i = g i * E) (l : List ι) :
     E * (l.map f).prod = (l.map g).prod * E := by
   induction l with
-  | nil => rw [List.map_nil, List.prod_nil, List.map_nil, List.prod_nil, Matrix.mul_one,
-      Matrix.one_mul]
-  | cons i l ih => rw [List.map_cons, List.prod_cons, ← Matrix.mul_assoc, h, Matrix.mul_assoc, ih,
-      ← Matrix.mul_assoc, List.map_cons, List.prod_cons]
+  | nil => simp
+  | cons i l ih =>
+    simp only [List.map_cons, List.prod_cons, ← Matrix.mul_assoc, h]
+    simp only [Matrix.mul_assoc, ih]
 
 /-- An intertwining `E * A = B * E` passes to powers. -/
 theorem mul_pow_eq_pow_mul_of_mul_eq_mul (h : E * A = B * E) (k : ℕ) : E * A ^ k = B ^ k * E := by
   induction k with
-  | zero => rw [pow_zero, pow_zero, Matrix.mul_one, Matrix.one_mul]
-  | succ k ih => rw [pow_succ, ← Matrix.mul_assoc, ih, Matrix.mul_assoc, h, ← Matrix.mul_assoc,
-      ← pow_succ]
+  | zero => simp
+  | succ k ih =>
+    simp only [pow_succ, ← Matrix.mul_assoc, ih]
+    simp only [Matrix.mul_assoc, h]
 
 /-- **Intertwined matrices have the same order**, as long as the intertwiner detects the powers
 of each of them that are the identity. -/

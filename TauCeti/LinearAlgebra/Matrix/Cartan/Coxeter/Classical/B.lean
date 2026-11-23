@@ -8,7 +8,6 @@ module
 public import TauCeti.LinearAlgebra.Matrix.Cartan.Coxeter.Classical.A
 public import TauCeti.LinearAlgebra.Matrix.NegaShift
 public import Mathlib.LinearAlgebra.Matrix.NonsingularInverse
-import Mathlib.LinearAlgebra.Matrix.Nonsingular
 
 /-!
 # The Coxeter element of type `Bₙ` has order `2n`
