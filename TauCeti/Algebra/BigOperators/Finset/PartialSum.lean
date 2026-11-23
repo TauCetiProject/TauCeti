@@ -11,6 +11,7 @@ public import Mathlib.Algebra.Order.BigOperators.Group.Finset
 public import Mathlib.Data.Fin.Tuple.Basic
 import Mathlib.Algebra.BigOperators.Fin
 import Mathlib.Algebra.BigOperators.Pi
+import Mathlib.Algebra.Order.Group.Int
 import Mathlib.Data.Fin.Rev
 
 /-!
@@ -42,6 +43,8 @@ This file contains basic facts about finite partial sums.
   distributive scalar actions commute with prefix sums.
 * `TauCeti.prefixSum_le_of_sum_le`: a tuple with smaller total sum and larger tail has smaller
   prefix sums.
+* `TauCeti.prefixSum_eq_min_of_antitone`: the prefix sums of a weakly decreasing `0`/`1` tuple
+  are `min k (∑ i, x i)`.
 * `TauCeti.eq_zero_of_forall_sum_Iic_eq_zero`: a function on a locally finite order whose sums
   over all lower intervals `Iic k` vanish is zero.
 -/
@@ -241,6 +244,36 @@ theorem prefixSum_append_zero {m : ℕ} (k : ℕ) (x : Fin n → M) :
   simp [prefixSum, sum_filter, Fin.sum_univ_add]
 
 end PrefixSum
+
+/-- A weakly decreasing tuple with entries in `{0, 1}` is `1` on an initial segment and `0` after
+it, so its prefix sum of length `k` is `min k (∑ i, x i)`. -/
+theorem prefixSum_eq_min_of_antitone {n : ℕ} {x : Fin n → ℤ} (hx : Antitone x)
+    (h01 : ∀ i, 0 ≤ x i ∧ x i ≤ 1) (k : ℕ) : prefixSum k x = min (k : ℤ) (∑ i, x i) := by
+  have hone : prefixSum k (fun _ : Fin n ↦ (1 : ℤ)) = min k n := by
+    simpa using prefixSum_eq_sum_range (n := n) k fun _ ↦ (1 : ℤ)
+  have hle : prefixSum k x ≤ min k n := hone ▸ prefixSum_mono k fun i ↦ (h01 i).2
+  have hS : prefixSum k x ≤ ∑ i, x i :=
+    sum_le_sum_of_subset_of_nonneg (filter_subset _ _) fun i _ _ ↦ (h01 i).1
+  by_cases h : ∃ i : Fin n, (i : ℕ) < k ∧ x i = 0
+  · -- After a zero entry every entry vanishes, so the prefix sum is the total sum.
+    obtain ⟨i, hik, hi⟩ := h
+    have heq : prefixSum k x = ∑ i, x i := by
+      refine (prefixSum_def k x).trans (sum_filter_of_ne fun j _ hj ↦ ?_)
+      by_contra hjk
+      have := hx (Fin.le_def.mpr (by omega) : i ≤ j)
+      have := h01 j
+      omega
+    rw [← heq]
+    omega
+  · -- Otherwise the first `min k n` entries are all `1`.
+    simp only [not_exists, not_and] at h
+    have h1 : prefixSum k x = prefixSum k (fun _ : Fin n ↦ (1 : ℤ)) :=
+      prefixSum_congr fun i hi ↦ by have := h i hi; have := h01 i; omega
+    rcases le_or_gt n k with hnk | hkn
+    · rw [prefixSum_of_le hnk] at hle ⊢
+      omega
+    · rw [h1, hone] at hS ⊢
+      omega
 
 /-- **A function all of whose sums over the lower intervals `Iic k` vanish is zero.** The index
 type is any partial order whose lower intervals are finite, such as `Fin n` or `ℕ`. -/
