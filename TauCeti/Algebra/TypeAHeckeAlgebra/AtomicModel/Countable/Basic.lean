@@ -8,39 +8,19 @@ module
 public import Mathlib.Analysis.Normed.Ring.InfiniteSum
 public import TauCeti.Algebra.TypeAHeckeAlgebra.AtomicModel.NormBounds
 import Mathlib.Topology.Algebra.InfiniteSum.Ring
+import TauCeti.Algebra.BigOperators.Ring.Finset
 import TauCeti.Analysis.Normed.Ring.InfiniteSum
 
 /-!
 # Countable atomic models and finite exhaustion
 
 For a linearly ordered alphabet `ι` and an absolutely summable weight family `p : ι → R` in a
-complete normed commutative ring `R`, the matrix entries of `signedChecked pos q x` are uniformly
-bounded (`TauCeti.TypeAHeckeAlgebra.exists_norm_signedChecked_single_apply_le`), so the diagonal
-series converges absolutely and defines `TauCeti.TypeAHeckeAlgebra.countableAtomicTrace`. It is
-invariant under dropping zero-weight letters
-(`TauCeti.TypeAHeckeAlgebra.countableAtomicTrace_subtype_eq_of_eq_zero`,
-`TauCeti.TypeAHeckeAlgebra.countableAtomicTrace_subtype_ne_zero`).
-
-Exhaustion by finite `atomicTrace`s (`TauCeti.TypeAHeckeAlgebra.tendsto_atomicTrace_finset`) passes
-traciality and scaling on `1` and `strandIncl` to countable alphabets.
-
-## Main definitions
-
-* `TauCeti.TypeAHeckeAlgebra.countableAtomicTrace`: the weighted diagonal series trace on
-  `TypeAHeckeAlgebra R q n` for an absolutely summable weight family.
-
-## Main results
-
-* `TauCeti.TypeAHeckeAlgebra.countableAtomicTrace_eq_atomicTrace`: agreement with `atomicTrace` on
-  finite alphabets.
-* `TauCeti.TypeAHeckeAlgebra.countableAtomicTrace_subtype_eq_of_eq_zero` and
-  `TauCeti.TypeAHeckeAlgebra.countableAtomicTrace_subtype_ne_zero`: invariance under dropping
-  zero-weight letters.
-* `TauCeti.TypeAHeckeAlgebra.tendsto_atomicTrace_finset`: exhaustion by finite sub-alphabets.
-* `TauCeti.TypeAHeckeAlgebra.countableAtomicTrace_mul_comm`,
-  `TauCeti.TypeAHeckeAlgebra.countableAtomicTrace_one`, and
-  `TauCeti.TypeAHeckeAlgebra.countableAtomicTrace_strandIncl`: traciality, value at `1`, and
-  behaviour under adding a last strand.
+complete normed commutative ring `R`, `TauCeti.TypeAHeckeAlgebra.countableAtomicTrace` sums the
+weighted diagonal entries of `signedChecked pos q x`. It agrees with `atomicTrace` on finite
+alphabets (`countableAtomicTrace_eq_atomicTrace`), is invariant under dropping zero-weight letters
+(`countableAtomicTrace_subtype_eq_of_eq_zero`, `countableAtomicTrace_subtype_ne_zero`), and
+approximates by finite sub-alphabets (`tendsto_atomicTrace_finset`), yielding traciality and
+scaling on `1` and `strandIncl`.
 
 ## References
 
@@ -113,7 +93,10 @@ theorem countableAtomicTrace_subtype_eq_of_eq_zero (P : ι → Prop) (p : ι →
       (f := fun w : Fin n → ι ↦ signedChecked pos q x (single w 1) w * ∏ i, p (w i))
       fun w hw ↦ by
         by_contra hrange
-        exact hw (by dsimp only; rw [prod_eq_zero_of_notMem_range_subtype p P hp hrange, mul_zero])
+        exact hw (by
+          dsimp only
+          rw [Finset.prod_eq_zero_of_not_forall Finset.univ P hp (w := w) fun hP ↦
+            hrange ⟨fun i ↦ ⟨w i, hP i (Finset.mem_univ _)⟩, rfl⟩, mul_zero])
   rw [← htsum]
   refine tsum_congr fun w ↦ ?_
   rw [signedChecked_strictMono_single_apply pos q (fun a : {a : ι // P a} ↦ pos a)

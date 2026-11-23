@@ -49,28 +49,6 @@ geometric models on `r + 1` positive letters with weights proportional to `1, Q,
 (`TauCeti.InfiniteTypeAHeckeAlgebra.ocneanuTrace_mul_eigenprojection_geometric`) is positive
 (`TauCeti.InfiniteTypeAHeckeAlgebra.ocneanuTrace_star_mul_self_nonneg_geometric`).
 
-## Main results
-
-* `TauCeti.TypeAHeckeAlgebra.signedChecked_star_single_apply`: the signed checked representation
-  carries the real-parameter involution to the conjugate transpose in the word basis.
-* `TauCeti.TypeAHeckeAlgebra.signedChecked_star_mul_single_apply`: the matrix coefficients of
-  `star x * y` in the word basis as Hermitian pairings.
-* `TauCeti.TypeAHeckeAlgebra.signedChecked_star_mul_self_single_apply`,
-  `TauCeti.TypeAHeckeAlgebra.signedChecked_star_mul_self_single_apply_nonneg`, and
-  `TauCeti.TypeAHeckeAlgebra.signedChecked_single_apply_eq_zero_of_star_mul_self`: diagonal
-  sum-of-squares formula, nonnegativity, and column vanishing without finiteness of the alphabet.
-* `TauCeti.TypeAHeckeAlgebra.atomicTrace_star` and `TauCeti.TypeAHeckeAlgebra.star_atomicTrace`:
-  star compatibility of finite atomic traces.
-* `TauCeti.TypeAHeckeAlgebra.atomicTrace_star_mul_self_nonneg`: **positivity of atomic traces**
-  with nonnegative weights.
-* `TauCeti.InfiniteTypeAHeckeAlgebra.map_star_mul_self_nonneg_of_eq_atomicTrace`: a linear
-  functional on the infinite algebra restricting to atomic traces with nonnegative weights is
-  positive.
-* `TauCeti.InfiniteTypeAHeckeAlgebra.ocneanuTrace_star_mul_self_nonneg_of_atomic`: an Ocneanu
-  trace realized by an atomic model with nonnegative weights is positive.
-* `TauCeti.InfiniteTypeAHeckeAlgebra.ocneanuTrace_star_mul_self_nonneg_geometric`: the Ocneanu
-  traces of the geometric atomic models are positive.
-
 ## References
 
 * Yu. A. Neretin, *Some remarks on traces on the infinite-dimensional Iwahori–Hecke algebra*,

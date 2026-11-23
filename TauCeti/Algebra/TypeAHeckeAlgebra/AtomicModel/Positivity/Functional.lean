@@ -15,11 +15,6 @@ import Mathlib.Analysis.Complex.Order
 For nonnegative weights `p : ι → ℂ` on a finite linearly ordered alphabet and a real nonzero
 parameter `q : ℂˣ`, the finite atomic trace `TauCeti.TypeAHeckeAlgebra.atomicTrace pos q p n` is
 bundled as a `StarPositiveFunctional` (`TauCeti.TypeAHeckeAlgebra.atomicPositiveFunctional`).
-
-## Main definitions
-
-* `TauCeti.TypeAHeckeAlgebra.atomicPositiveFunctional`: the complex finite atomic trace bundled as
-  a `StarPositiveFunctional`.
 -/
 
 public section

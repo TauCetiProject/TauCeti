@@ -14,14 +14,9 @@ import TauCeti.Algebra.Order.Star.Basic
 
 For a finite atomic model `TauCeti.TypeAHeckeAlgebra.atomicTrace pos q p n` with strictly positive
 weights `p : ι → R` over a `StarOrderedRing` without zero divisors, the null space and trace
-radical coincide with `RingHom.ker (signedChecked pos q)`.
-
-## Main results
-
-* `TauCeti.TypeAHeckeAlgebra.atomicTrace_star_mul_self_eq_zero_iff`: null space of a strictly
-  positive finite atomic trace.
-* `TauCeti.TypeAHeckeAlgebra.traceRadical_atomicTrace_eq_ker_signedChecked`: the trace radical of
-  a strictly positive finite atomic trace is `RingHom.ker (signedChecked pos q)`.
+radical coincide with `RingHom.ker (signedChecked pos q)`
+(`TauCeti.TypeAHeckeAlgebra.atomicTrace_star_mul_self_eq_zero_iff`,
+`TauCeti.TypeAHeckeAlgebra.traceRadical_atomicTrace_eq_ker_signedChecked`).
 -/
 
 public section

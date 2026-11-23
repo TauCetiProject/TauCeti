@@ -21,18 +21,6 @@ letter `b`, `countableAtomicTrace` satisfies the corresponding Markov rule and a
 Ocneanu trace on every finite stage
 (`TauCeti.TypeAHeckeAlgebra.countableAtomicTrace_eq_ocneanuTrace_of_leftSlice`,
 `TauCeti.TypeAHeckeAlgebra.countableAtomicTrace_eq_ocneanuTrace_of_rightSlice`).
-
-## Main results
-
-* `TauCeti.TypeAHeckeAlgebra.countableAtomicTrace_tailIncl`: scaling under adding a first strand.
-* `TauCeti.TypeAHeckeAlgebra.countableAtomicTrace_castAdd_mul_natAdd`: separated-block
-  multiplicativity.
-* `TauCeti.TypeAHeckeAlgebra.countableAtomicTrace_T_zero_mul_tailIncl` and
-  `TauCeti.TypeAHeckeAlgebra.countableAtomicTrace_eq_ocneanuTrace_of_leftSlice`: countable
-  first-site Markov rule and Ocneanu identification.
-* `TauCeti.TypeAHeckeAlgebra.countableAtomicTrace_strandIncl_mul_T_last` and
-  `TauCeti.TypeAHeckeAlgebra.countableAtomicTrace_eq_ocneanuTrace_of_rightSlice`: countable
-  last-site Markov rule and Ocneanu identification.
 -/
 
 public section

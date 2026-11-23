@@ -7,27 +7,19 @@ module
 
 public import Mathlib.Order.Sum.Order
 public import TauCeti.Algebra.TypeAHeckeAlgebra.AtomicModel.Countable.Slice
+public import TauCeti.Analysis.SpecificLimits.TwoSidedGeometric
 import Mathlib.Algebra.Order.Field.Basic
 import Mathlib.Tactic.FieldSimp
 import Mathlib.Tactic.LinearCombination
 import TauCeti.Algebra.Ring.Units
-import TauCeti.Analysis.SpecificLimits.TwoSidedGeometric
 
 /-!
 # Countable geometric models on Wenzl's continuous interval
 
 For real nonzero `q : ℂˣ` with `Q = q ^ 2 > 0`, writing `z = q * η - q⁻¹ * (1 - η)` gives
 `q * z = (1 + Q) * η - 1`. We construct the countable two-sided geometric atomic models on
-`ℕ ⊕ₗ ℕᵒᵈ` realizing every parameter `η` in Wenzl's continuous interval:
-
-* **For `1 < Q`** (`wenzlGtOnePos`, `wenzlGtOneWeight`): positive letters on `ℕ` followed by
-  negative letters on `ℕᵒᵈ`, realizing the Ocneanu trace for any `η`
-  (`countableAtomicTrace_wenzlGtOneWeight_eq_ocneanuTrace`), nonnegative on
-  `[1 / (1 + Q), Q / (1 + Q)]` (`wenzlGtOneWeight_nonneg`).
-* **For `0 < Q < 1`** (`wenzlLtOnePos`, `wenzlLtOneWeight`): negative letters on `ℕ` followed by
-  positive letters on `ℕᵒᵈ`, realizing the Ocneanu trace for any `η`
-  (`countableAtomicTrace_wenzlLtOneWeight_eq_ocneanuTrace`), nonnegative on
-  `[Q / (1 + Q), 1 / (1 + Q)]` (`wenzlLtOneWeight_nonneg`).
+`ℕ ⊕ₗ ℕᵒᵈ` realizing every parameter `η` in Wenzl's continuous interval (`wenzlGtOneWeight` for
+`1 < Q` and `wenzlLtOneWeight` for `0 < Q < 1`).
 
 ## References
 
@@ -90,10 +82,13 @@ theorem not_wenzlGtOnePos_inr (k : ℕᵒᵈ) : ¬ wenzlGtOnePos (Sum.inrₗ k) 
 /-- Real geometric weights on `ℕ ⊕ₗ ℕᵒᵈ` for `1 < Q` and projection parameter `η`:
 `((1 + Q) * η - 1) / Q ^ (k + 1)` on positive letters `Sum.inlₗ k` and
 `(Q - (1 + Q) * η) / Q ^ (k + 1)` on negative letters `Sum.inrₗ (toDual k)`. -/
-noncomputable def wenzlGtOneWeight (Q η : ℝ) (a : ℕ ⊕ₗ ℕᵒᵈ) : ℝ :=
-  match ofLex a with
-  | Sum.inl k => ((1 + Q) * η - 1) * Q⁻¹ * (Q⁻¹) ^ k
-  | Sum.inr k => (Q - (1 + Q) * η) * Q⁻¹ * (Q⁻¹) ^ ofDual k
+noncomputable def wenzlGtOneWeight (Q η : ℝ) : ℕ ⊕ₗ ℕᵒᵈ → ℝ :=
+  twoSidedGeom (((1 + Q) * η - 1) * Q⁻¹) ((Q - (1 + Q) * η) * Q⁻¹) Q⁻¹
+
+/-- Expressing `wenzlGtOneWeight` as a `twoSidedGeom` family. -/
+theorem wenzlGtOneWeight_eq_twoSidedGeom (Q η : ℝ) :
+    wenzlGtOneWeight Q η =
+      twoSidedGeom (((1 + Q) * η - 1) * Q⁻¹) ((Q - (1 + Q) * η) * Q⁻¹) Q⁻¹ := (rfl)
 
 /-- Value of `wenzlGtOneWeight` on a left-branch letter `Sum.inlₗ k`. -/
 @[simp]
@@ -106,12 +101,6 @@ theorem wenzlGtOneWeight_inl (Q η : ℝ) (k : ℕ) :
 theorem wenzlGtOneWeight_inr (Q η : ℝ) (k : ℕᵒᵈ) :
     wenzlGtOneWeight Q η (Sum.inrₗ k) = (Q - (1 + Q) * η) * Q⁻¹ * (Q⁻¹) ^ ofDual k := by
   simp [wenzlGtOneWeight]
-
-private theorem wenzlGtOneWeight_eq_twoSidedGeom (Q η : ℝ) :
-    wenzlGtOneWeight Q η =
-      twoSidedGeom (((1 + Q) * η - 1) * Q⁻¹) ((Q - (1 + Q) * η) * Q⁻¹) Q⁻¹ := by
-  ext a
-  obtain ⟨k | k, rfl⟩ := toLex.surjective a <;> simp
 
 /-- For `1 < Q` and `η ∈ [1 / (1 + Q), Q / (1 + Q)]`, `wenzlGtOneWeight Q η` is nonnegative. -/
 theorem wenzlGtOneWeight_nonneg {Q : ℝ} (hQ : 1 < Q) {η : ℝ}
@@ -184,10 +173,12 @@ theorem not_wenzlLtOnePos_inl (k : ℕ) : ¬ wenzlLtOnePos (Sum.inlₗ k) := by 
 @[simp] theorem wenzlLtOnePos_inr (k : ℕᵒᵈ) : wenzlLtOnePos (Sum.inrₗ k) := by simp [wenzlLtOnePos]
 
 /-- Real geometric weights on `ℕ ⊕ₗ ℕᵒᵈ` for `0 < Q < 1` and projection parameter `η`. -/
-noncomputable def wenzlLtOneWeight (Q η : ℝ) (a : ℕ ⊕ₗ ℕᵒᵈ) : ℝ :=
-  match ofLex a with
-  | Sum.inl k => (1 - (1 + Q) * η) * Q ^ k
-  | Sum.inr k => ((1 + Q) * η - Q) * Q ^ ofDual k
+noncomputable def wenzlLtOneWeight (Q η : ℝ) : ℕ ⊕ₗ ℕᵒᵈ → ℝ :=
+  twoSidedGeom (1 - (1 + Q) * η) ((1 + Q) * η - Q) Q
+
+/-- Expressing `wenzlLtOneWeight` as a `twoSidedGeom` family. -/
+theorem wenzlLtOneWeight_eq_twoSidedGeom (Q η : ℝ) :
+    wenzlLtOneWeight Q η = twoSidedGeom (1 - (1 + Q) * η) ((1 + Q) * η - Q) Q := (rfl)
 
 /-- Value of `wenzlLtOneWeight` on a left-branch letter `Sum.inlₗ k`. -/
 @[simp]
@@ -199,11 +190,6 @@ theorem wenzlLtOneWeight_inl (Q η : ℝ) (k : ℕ) :
 theorem wenzlLtOneWeight_inr (Q η : ℝ) (k : ℕᵒᵈ) :
     wenzlLtOneWeight Q η (Sum.inrₗ k) = ((1 + Q) * η - Q) * Q ^ ofDual k := by
   simp [wenzlLtOneWeight]
-
-private theorem wenzlLtOneWeight_eq_twoSidedGeom (Q η : ℝ) :
-    wenzlLtOneWeight Q η = twoSidedGeom (1 - (1 + Q) * η) ((1 + Q) * η - Q) Q := by
-  ext a
-  obtain ⟨k | k, rfl⟩ := toLex.surjective a <;> simp
 
 /-- For `0 < Q < 1` and `η ∈ [Q / (1 + Q), 1 / (1 + Q)]`, `wenzlLtOneWeight Q η` is nonnegative. -/
 theorem wenzlLtOneWeight_nonneg {Q : ℝ} (hQ0 : 0 < Q) {η : ℝ}

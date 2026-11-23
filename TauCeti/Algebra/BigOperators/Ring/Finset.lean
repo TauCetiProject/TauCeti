@@ -32,6 +32,9 @@ over all triples, `(#s₀ * #s₁ * #s₂) * (p * q * r)`, as a sum of three one
 
 ## Restricting a weighted sum to the points in a set
 
+`Finset.prod_eq_zero_of_not_forall` shows that a finite product of `p (w i)` vanishes when `p`
+vanishes off `P` and some `w i` fails `P`.
+
 `Finset.sum_filter_mem_mul_eq`: when the weight `w` vanishes outside a set `U`, the weighted sum
 `∑ s ∈ S, w s * r s` only sees the points of `S` lying in `U`.
 -/
@@ -82,6 +85,15 @@ theorem sum_sum_sum_mul_sub_eq {α β γ R : Type*} [CommRing R] (a : α → β 
 end TauCeti
 
 namespace Finset
+
+/-- If `p` vanishes outside `P` and `w` takes some value outside `P` on `s`, then
+`∏ i ∈ s, p (w i) = 0`. -/
+theorem prod_eq_zero_of_not_forall {α β R : Type*} [CommMonoidWithZero R] (s : Finset α)
+    (P : β → Prop) {p : β → R} (hp : ∀ a, ¬ P a → p a = 0) {w : α → β}
+    (hw : ¬ ∀ i ∈ s, P (w i)) : ∏ i ∈ s, p (w i) = 0 := by
+  push Not at hw
+  obtain ⟨i, his, hi⟩ := hw
+  exact prod_eq_zero his (hp (w i) hi)
 
 /-- If the weight `w` vanishes outside `U`, then the weighted sum over the points of `S` lying in
 `U` is the weighted sum over all of `S`. -/

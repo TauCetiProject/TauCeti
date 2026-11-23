@@ -9,6 +9,7 @@ public import TauCeti.Algebra.TypeAHeckeAlgebra.AtomicModel.Countable.Basic
 public import TauCeti.Algebra.TypeAHeckeAlgebra.AtomicModel.CycleWord.Analytic
 import Mathlib.Analysis.Normed.Group.Tannery
 import Mathlib.Topology.Algebra.InfiniteSum.Order
+import TauCeti.Analysis.SpecificLimits.Normed
 
 /-!
 # Cycle-word generating products for countable atomic models
@@ -16,22 +17,9 @@ import Mathlib.Topology.Algebra.InfiniteSum.Order
 This file lifts the finite cycle-word results to countable alphabets with absolutely summable
 weights: the signed power sum evaluation at `Q = 1`
 (`TauCeti.TypeAHeckeAlgebra.countableAtomicTrace_cycleWord_of_sq_eq_one`), the exponential norm
-bound (`TauCeti.TypeAHeckeAlgebra.norm_countableAtomicTrace_cycleWord_le`) obtained from finite
-exhaustion and `TauCeti.TypeAHeckeAlgebra.norm_atomicTrace_cycleWord_le`, and the infinite
+bound (`TauCeti.TypeAHeckeAlgebra.norm_countableAtomicTrace_cycleWord_le`), and the infinite
 cycle-trace generating product (`TauCeti.TypeAHeckeAlgebra.countableAtomicTrace_cycleWord_hasProd`)
 over any complete normed field `K`.
-
-## Main results
-
-* `TauCeti.TypeAHeckeAlgebra.summable_signed_pow_mul_pow`: absolute summability of signed power
-  sums `(if pos a then 1 else -1) ^ m * p a ^ (m + 1)`.
-* `TauCeti.TypeAHeckeAlgebra.countableAtomicTrace_cycleWord_of_sq_eq_one`: countable cycle-word
-  trace at `Q = 1`.
-* `TauCeti.TypeAHeckeAlgebra.norm_countableAtomicTrace_cycleWord_le`: norm bound on countable
-  cycle-word traces.
-* `TauCeti.TypeAHeckeAlgebra.summable_norm_countableAtomicTrace_cycleWord_mul_pow` and
-  `TauCeti.TypeAHeckeAlgebra.countableAtomicTrace_cycleWord_hasProd`: convergence and infinite
-  product formula for the countable cycle-trace generating function.
 -/
 
 public section
@@ -92,8 +80,9 @@ theorem summable_norm_countableAtomicTrace_cycleWord_mul_pow {K : Type*} [Normed
     (hx : max 1 (max ‖(q : K) ^ 2‖ ‖(q : K) ^ 2 - 1‖) * (∑' a, ‖p a‖) * ‖x‖ < 1) :
     Summable fun m : ℕ ↦
       ‖countableAtomicTrace pos q p hp (m + 1) (cycleWord q (m + 1)) * x ^ (m + 1)‖ :=
-  summable_norm_mul_pow_of_le (by positivity) (tsum_nonneg fun _ ↦ norm_nonneg _) hx
-    (norm_countableAtomicTrace_cycleWord_le pos q p hp)
+  summable_norm_mul_pow_succ_of_le (by positivity) (tsum_nonneg fun _ ↦ norm_nonneg _) hx
+    fun m ↦ by
+      simpa only [norm_one, one_mul] using norm_countableAtomicTrace_cycleWord_le pos q p hp m
 
 /-- **Countable cycle-trace generating product** over any complete normed field `K` on the disk
 `max 1 (max ‖Q‖ ‖Q - 1‖) * (∑' a, ‖p a‖) * ‖x‖ < 1` (`Q = q ^ 2`). -/
@@ -111,7 +100,7 @@ theorem countableAtomicTrace_cycleWord_hasProd {K : Type*} [NormedField K]
   refine ⟨summable_norm_countableAtomicTrace_cycleWord_mul_pow pos q p hp hx, ?_⟩
   set M : ℝ := max 1 (max ‖(q : K) ^ 2‖ ‖(q : K) ^ 2 - 1‖)
   set S : ℝ := ∑' a, ‖p a‖
-  have hS0 : 0 ≤ S := tsum_nonneg fun _ ↦ norm_nonneg _
+  have _ : 0 ≤ S := tsum_nonneg fun _ ↦ norm_nonneg _
   have hs_le (s : Finset ι) : ∑ a : s, ‖p a‖ ≤ S := by
     rw [Finset.univ_eq_attach, s.sum_attach fun a ↦ ‖p a‖]
     exact hp.sum_le_tsum s fun _ _ ↦ norm_nonneg _
@@ -120,11 +109,15 @@ theorem countableAtomicTrace_cycleWord_hasProd {K : Type*} [NormedField K]
         x ^ (m + 1)) atTop
       (𝓝 (∑' m : ℕ, countableAtomicTrace pos q p hp (m + 1) (cycleWord q (m + 1)) *
         x ^ (m + 1))) :=
-    tendsto_tsum_of_dominated_convergence (summable_cycleWordMajorant (by positivity) hS0 hx)
+    tendsto_tsum_of_dominated_convergence
+      ((summable_geometric_of_lt_one (by positivity) hx).mul_left (S * ‖x‖))
       (fun m ↦ (tendsto_atomicTrace_finset pos q p hp (m + 1) (cycleWord q (m + 1))).mul_const _)
-      (Eventually.of_forall fun s m ↦ norm_mul_pow_le_cycleWordMajorant
-        ((norm_atomicTrace_cycleWord_le _ q _ m).trans
-          (by have := hs_le s; gcongr; exact Finset.sum_nonneg fun _ _ ↦ norm_nonneg _)))
+      (Eventually.of_forall fun s m ↦ norm_mul_pow_succ_le (M := M) (S := S) <|
+        (norm_atomicTrace_cycleWord_le _ q _ m).trans (by
+          simp only [norm_one, one_mul]
+          exact mul_le_mul_of_nonneg_left
+            (pow_le_pow_left₀ (Finset.sum_nonneg fun _ _ ↦ norm_nonneg _) (hs_le s) _)
+            (by positivity)))
   refine (tendsto_const_nhds.add (hdom.const_mul _)).congr fun s ↦ ?_
   have hxs : M * (∑ a : s, ‖p a‖) * ‖x‖ < 1 :=
     (mul_le_mul_of_nonneg_right (mul_le_mul_of_nonneg_left (hs_le s) (by positivity))

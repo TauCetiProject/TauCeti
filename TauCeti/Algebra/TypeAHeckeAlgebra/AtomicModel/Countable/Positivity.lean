@@ -16,14 +16,6 @@ Exhaustion by finite sub-alphabets passes star compatibility
 `TauCeti.TypeAHeckeAlgebra.countableAtomicTrace_star`) and `⋆`-positivity for nonnegative weights
 (`TauCeti.TypeAHeckeAlgebra.countableAtomicTrace_star_mul_self_nonneg`) from finite atomic traces
 to countable atomic traces.
-
-## Main results
-
-* `TauCeti.TypeAHeckeAlgebra.star_countableAtomicTrace` and
-  `TauCeti.TypeAHeckeAlgebra.countableAtomicTrace_star`: star compatibility of countable atomic
-  traces.
-* `TauCeti.TypeAHeckeAlgebra.countableAtomicTrace_star_mul_self_nonneg`: positivity of countable
-  atomic traces with nonnegative weights.
 -/
 
 public section

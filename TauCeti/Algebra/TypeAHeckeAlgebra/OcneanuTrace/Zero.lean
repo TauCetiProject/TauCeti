@@ -79,8 +79,7 @@ theorem ocneanuTrace_zero_star_mul_self_nonneg {R : Type*} [CommRing R] [Partial
     [StarRing R] [StarOrderedRing R] {q : Rˣ} [Fact (IsSelfAdjoint (q : R))]
     (x : InfiniteTypeAHeckeAlgebra R q) :
     0 ≤ ocneanuTrace R q 0 (star x * x) := by
-  obtain ⟨n, hx⟩ := exists_mem_stage x
-  rw [← TypeAHeckeAlgebra.range_toInfinite, AlgHom.mem_range] at hx; obtain ⟨y, rfl⟩ := hx
+  obtain ⟨n, y, rfl⟩ := exists_toInfinite_eq x
   rw [← TypeAHeckeAlgebra.toInfinite_star, ← map_mul,
     ← TypeAHeckeAlgebra.canonicalTrace_eq_ocneanuTrace_zero (permCoxeterSystem n),
     TypeAHeckeAlgebra.canonicalTrace_star_mul]
@@ -91,8 +90,7 @@ theorem ocneanuTrace_zero_star_mul_self_nonneg {R : Type*} [CommRing R] [Partial
 theorem ocneanuTrace_zero_star_mul_self_eq_zero_iff {𝕜 : Type*} [RCLike 𝕜] {q : 𝕜ˣ}
     [Fact (IsSelfAdjoint (q : 𝕜))] (x : InfiniteTypeAHeckeAlgebra 𝕜 q) :
     ocneanuTrace 𝕜 q 0 (star x * x) = 0 ↔ x = 0 := by
-  obtain ⟨n, hx⟩ := exists_mem_stage x
-  rw [← TypeAHeckeAlgebra.range_toInfinite, AlgHom.mem_range] at hx; obtain ⟨y, rfl⟩ := hx
+  obtain ⟨n, y, rfl⟩ := exists_toInfinite_eq x
   rw [← TypeAHeckeAlgebra.toInfinite_star, ← map_mul,
     ← TypeAHeckeAlgebra.canonicalTrace_eq_ocneanuTrace_zero (permCoxeterSystem n),
     TypeAHeckeAlgebra.canonicalTrace_star_mul_self_eq_zero_iff,

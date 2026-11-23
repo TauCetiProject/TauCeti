@@ -16,11 +16,6 @@ For nonnegative summable weights `p : ι → ℂ` on a linearly ordered alphabet
 parameter `q : ℂˣ`, the countable atomic trace
 `TauCeti.TypeAHeckeAlgebra.countableAtomicTrace pos q p hp n` is bundled as a
 `StarPositiveFunctional` (`TauCeti.TypeAHeckeAlgebra.countableAtomicPositiveFunctional`).
-
-## Main definitions
-
-* `TauCeti.TypeAHeckeAlgebra.countableAtomicPositiveFunctional`: the complex countable atomic trace
-  bundled as a `StarPositiveFunctional`.
 -/
 
 public section

@@ -6,19 +6,18 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.BigOperators.Group.Finset.Sigma
+public import Mathlib.Order.Sum.Order
+public import Mathlib.Topology.Algebra.InfiniteSum.Constructions
 public import Mathlib.Topology.Algebra.InfiniteSum.Defs
 
 /-!
-# Grouping infinite products over finite fibers
+# Infinite products and sums over finite fibers and lexicographic sums
 
-This file supplements Mathlib's results on infinite products and sums with the grouping of a
-product or sum indexed by `β × γ`, for a finite type `γ`, into the products or sums over its
-finite fibers, with no hypothesis on the topology of the target.
-
-## Main results
-
-* `HasProd.prod_fiberwise_of_fintype`, `HasSum.sum_fiberwise_of_fintype`: a family on `β × γ` for
-  a finite type `γ` has the same product (sum) as the products (sums) of its finite fibers.
+This file supplements Mathlib's results on infinite products and sums with:
+* `HasProd.prod_fiberwise_of_fintype`, `HasSum.sum_fiberwise_of_fintype`: grouping over `β × γ`
+  for finite `γ`.
+* `HasProd.sumLex`, `HasSum.sumLex`, `Multipliable.sumLex`, `Summable.sumLex`,
+  `Multipliable.tprod_sumLex`, `Summable.tsum_sumLex`: splitting over `ι ⊕ₗ κ`.
 -/
 
 public section
@@ -39,3 +38,25 @@ theorem HasProd.prod_fiberwise_of_fintype {β γ E : Type*} [CommMonoid E] [Topo
     exact Finset.mem_product.2 ⟨hT (Finset.mem_image_of_mem _ hx), Finset.mem_univ _⟩
   rw [HasProd, SummationFilter.unconditional_filter] at hf ⊢
   exact (hf.comp h).congr fun T ↦ by simp [Finset.prod_product]
+
+/-- An infinite product over `ι ⊕ₗ κ` splits into its two summands. -/
+@[to_additive /-- An infinite sum over `ι ⊕ₗ κ` splits into its two summands. -/]
+theorem HasProd.sumLex {ι κ M : Type*} [CommMonoid M] [TopologicalSpace M] [ContinuousMul M]
+    {f : ι ⊕ₗ κ → M} {a b : M} (hf : HasProd (fun i ↦ f (Sum.inlₗ i)) a)
+    (hg : HasProd (fun k ↦ f (Sum.inrₗ k)) b) : HasProd f (a * b) :=
+  toLex.hasProd_iff.mp (HasProd.sum (f := f ∘ toLex) hf hg)
+
+/-- A family on `ι ⊕ₗ κ` is multipliable when both branches are multipliable. -/
+@[to_additive /-- A family on `ι ⊕ₗ κ` is summable when both branches are summable. -/]
+theorem Multipliable.sumLex {ι κ M : Type*} [CommMonoid M] [TopologicalSpace M] [ContinuousMul M]
+    {f : ι ⊕ₗ κ → M} (hf : Multipliable fun i ↦ f (Sum.inlₗ i))
+    (hg : Multipliable fun k ↦ f (Sum.inrₗ k)) : Multipliable f :=
+  ⟨_, hf.hasProd.sumLex hg.hasProd⟩
+
+/-- Evaluating an infinite product over `ι ⊕ₗ κ` as the product of its two branches. -/
+@[to_additive /-- Evaluating an infinite sum over `ι ⊕ₗ κ` as the sum of its two branches. -/]
+theorem Multipliable.tprod_sumLex {ι κ M : Type*} [CommMonoid M] [TopologicalSpace M]
+    [ContinuousMul M] [T2Space M] {f : ι ⊕ₗ κ → M}
+    (hf : Multipliable fun i ↦ f (Sum.inlₗ i)) (hg : Multipliable fun k ↦ f (Sum.inrₗ k)) :
+    ∏' x, f x = (∏' i, f (Sum.inlₗ i)) * ∏' k, f (Sum.inrₗ k) :=
+  (hf.hasProd.sumLex hg.hasProd).tprod_eq

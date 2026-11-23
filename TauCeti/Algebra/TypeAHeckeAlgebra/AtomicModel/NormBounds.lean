@@ -15,11 +15,6 @@ import TauCeti.Analysis.Normed.Module.Finsupp
 Over any normed commutative ring `R`, the matrix entries `signedChecked pos q x (single w 1) u`
 of an element `x` of the type-A Hecke algebra are uniformly bounded over all words `w, u`
 (`TauCeti.TypeAHeckeAlgebra.exists_norm_signedChecked_single_apply_le`).
-
-## Main results
-
-* `TauCeti.TypeAHeckeAlgebra.exists_norm_signedChecked_single_apply_le`: uniform matrix-entry
-  bound for `signedChecked`.
 -/
 
 public section

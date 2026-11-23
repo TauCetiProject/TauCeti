@@ -19,13 +19,6 @@ Over `ℂ`, the cycle-trace infinite products of the countable two-sided geometr
 `(1 + (Q - (1 + Q) * η) * x) / (1 - ((1 + Q) * η - 1) * x)`
 (`TauCeti.TypeAHeckeAlgebra.wenzlGtOneWeight_cycleWord_hasProd`,
 `TauCeti.TypeAHeckeAlgebra.wenzlLtOneWeight_cycleWord_hasProd`).
-
-## Main results
-
-* `TauCeti.TypeAHeckeAlgebra.wenzlGtOneWeight_cycleWord_hasProd`: telescoping infinite product on
-  `Q * ‖x‖ < 1` for `1 < Q`.
-* `TauCeti.TypeAHeckeAlgebra.wenzlLtOneWeight_cycleWord_hasProd`: telescoping infinite product on
-  `‖x‖ < 1` for `0 < Q < 1`.
 -/
 
 public section

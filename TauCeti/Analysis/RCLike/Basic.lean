@@ -23,6 +23,8 @@ public import Mathlib.Analysis.RCLike.Basic
 * `RCLike.re_mem_Ioo_of_mem_ball`: for `z ∈ Metric.ball z₀ δ`,
   `re z ∈ Set.Ioo (re z₀ - δ) (re z₀ + δ)`.
 * `RCLike.norm_I_le_one`: `‖I‖ ≤ 1`, uniformly over `ℝ` (where `I = 0`) and `ℂ` (where `‖I‖ = 1`).
+* `RCLike.pos_of_ofReal_eq_sq_of_isSelfAdjoint`: the square of a nonzero self-adjoint scalar is
+  a positive real.
 -/
 
 public section
@@ -71,6 +73,14 @@ theorem re_mem_Ioo_of_mem_ball {z z₀ : K} {δ : ℝ} (hz : z ∈ Metric.ball z
     re z ∈ Set.Ioo (re z₀ - δ) (re z₀ + δ) := by
   simpa only [Real.ball_eq_Ioo, NNReal.coe_one, one_mul] using
     lipschitzWith_re.mapsTo_ball one_ne_zero z₀ δ hz
+
+/-- If `z ≠ 0` in an `RCLike` field is self-adjoint and `z ^ 2` equals the real scalar `(Q : K)`,
+then `0 < Q`. -/
+theorem pos_of_ofReal_eq_sq_of_isSelfAdjoint {z : K} (hz : z ≠ 0) (hs : IsSelfAdjoint z)
+    {Q : ℝ} (hQ : (Q : K) = z ^ 2) : 0 < Q := by
+  have hre : (re z : K) = z := conj_eq_iff_re.mp hs.star_eq
+  rw [ofReal_injective (hQ.trans ((congrArg (· ^ 2) hre.symm).trans (ofReal_pow _ 2).symm))]
+  exact sq_pos_of_ne_zero fun h0 ↦ hz (by rw [← hre, h0, ofReal_zero])
 
 end RCLike
 

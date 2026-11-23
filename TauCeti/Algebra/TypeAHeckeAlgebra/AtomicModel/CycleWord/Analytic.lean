@@ -8,31 +8,18 @@ module
 public import Mathlib.Analysis.Normed.Field.Basic
 public import TauCeti.Algebra.TypeAHeckeAlgebra.AtomicModel.CycleWord.NormBounds
 import Mathlib.Analysis.SpecificLimits.Basic
+import TauCeti.Analysis.SpecificLimits.Normed
 import TauCeti.RingTheory.PowerSeries.EvalAt
 
 /-!
 # Analytic evaluation of finite cycle-trace generating functions
 
 For a finite linearly ordered alphabet `ι` and weights `p : ι → R` over a normed commutative ring,
-`TauCeti.TypeAHeckeAlgebra.norm_atomicTrace_cycleWord_le` bounds the finite atomic trace of the
-cycle word `cycleWord q (m + 1)` directly by summing the diagonal word bounds. Over a complete
-normed field `K`, `TauCeti.TypeAHeckeAlgebra.atomicTrace_cycleWord_generating_eval` evaluates the
-formal generating identity `TauCeti.TypeAHeckeAlgebra.atomicTrace_cycleWord_generating_function` on
-the disk `max 1 (max ‖q ^ 2‖ ‖q ^ 2 - 1‖) * (∑ a, ‖p a‖) * ‖x‖ < 1`, without depending on
-countable trace positivity or GNS constructions.
-
-## Main results
-
-* `TauCeti.TypeAHeckeAlgebra.norm_atomicTrace_cycleWord_le`: norm bound on finite cycle-word atomic
-  traces.
-* `TauCeti.TypeAHeckeAlgebra.norm_mul_pow_le_cycleWordMajorant`,
-  `TauCeti.TypeAHeckeAlgebra.summable_cycleWordMajorant`, and
-  `TauCeti.TypeAHeckeAlgebra.summable_norm_mul_pow_of_le`: shared geometric majorant and
-  summability helpers for cycle-trace generating series.
-* `TauCeti.TypeAHeckeAlgebra.summable_norm_atomicTrace_cycleWord_mul_pow`: absolute summability of
-  the finite cycle-trace generating series on the convergence disk.
-* `TauCeti.TypeAHeckeAlgebra.atomicTrace_cycleWord_generating_eval`: analytic evaluation of the
-  finite cycle-trace generating function.
+`TauCeti.TypeAHeckeAlgebra.norm_atomicTrace_cycleWord_le` bounds the finite atomic trace of
+`cycleWord q (m + 1)`. Over a complete normed field `K`,
+`TauCeti.TypeAHeckeAlgebra.summable_norm_atomicTrace_cycleWord_mul_pow` and
+`TauCeti.TypeAHeckeAlgebra.atomicTrace_cycleWord_generating_eval` establish absolute summability
+and evaluate the formal generating identity on the convergence disk.
 -/
 
 public section
@@ -63,38 +50,13 @@ theorem norm_atomicTrace_cycleWord_le {R : Type*} [NormedCommRing R] {ι : Type*
         rw [← Fintype.prod_sum (fun (_ : Fin (m + 1)) a ↦ ‖p a‖), Finset.prod_const,
           Finset.card_univ, Fintype.card_fin]
 
-/-- Shared geometric majorant bound for cycle-trace generating series: if
-`‖t‖ ≤ ‖(1 : K)‖ * M ^ m * S ^ (m + 1)`, then
-`‖t * x ^ (m + 1)‖ ≤ (S * ‖x‖) * (M * S * ‖x‖) ^ m`. -/
-theorem norm_mul_pow_le_cycleWordMajorant {K : Type*} [NormedField K] {t : K} {M S : ℝ}
-    {x : K} {m : ℕ} (ht : ‖t‖ ≤ ‖(1 : K)‖ * M ^ m * S ^ (m + 1)) :
-    ‖t * x ^ (m + 1)‖ ≤ (S * ‖x‖) * (M * S * ‖x‖) ^ m := by
-  rw [norm_mul, norm_pow]
-  refine (mul_le_mul_of_nonneg_right ht (pow_nonneg (norm_nonneg x) _)).trans ?_
-  rw [norm_one, one_mul]
-  exact le_of_eq (by ring)
-
-/-- Summability of the geometric majorant `(S * ‖x‖) * (M * S * ‖x‖) ^ m` when `M * S * ‖x‖ < 1`. -/
-theorem summable_cycleWordMajorant {K : Type*} [NormedField K] {M S : ℝ} (hM : 0 ≤ M)
-    (hS : 0 ≤ S) {x : K} (hx : M * S * ‖x‖ < 1) :
-    Summable fun m : ℕ ↦ (S * ‖x‖) * (M * S * ‖x‖) ^ m :=
-  (summable_geometric_of_lt_one (by positivity) hx).mul_left (S * ‖x‖)
-
-/-- Shared geometric summability criterion for cycle-trace generating series. -/
-theorem summable_norm_mul_pow_of_le {K : Type*} [NormedField K] {f : ℕ → K} {M S : ℝ}
-    (hM : 0 ≤ M) (hS : 0 ≤ S) {x : K} (hx : M * S * ‖x‖ < 1)
-    (hf : ∀ m, ‖f m‖ ≤ ‖(1 : K)‖ * M ^ m * S ^ (m + 1)) :
-    Summable fun m : ℕ ↦ ‖f m * x ^ (m + 1)‖ :=
-  (summable_cycleWordMajorant hM hS hx).of_nonneg_of_le (fun _ ↦ norm_nonneg _)
-    fun m ↦ norm_mul_pow_le_cycleWordMajorant (hf m)
-
 /-- Absolute summability of the finite cycle-trace generating series on the convergence disk. -/
 theorem summable_norm_atomicTrace_cycleWord_mul_pow {K : Type*} [NormedField K] {ι : Type*}
     [LinearOrder ι] [Fintype ι] (pos : ι → Prop) [DecidablePred pos] (q : Kˣ) (p : ι → K)
     {x : K} (hx : max 1 (max ‖(q : K) ^ 2‖ ‖(q : K) ^ 2 - 1‖) * (∑ a, ‖p a‖) * ‖x‖ < 1) :
     Summable fun m : ℕ ↦ ‖atomicTrace pos q p (m + 1) (cycleWord q (m + 1)) * x ^ (m + 1)‖ :=
-  summable_norm_mul_pow_of_le (by positivity) (Finset.sum_nonneg fun _ _ ↦ norm_nonneg _) hx
-    (norm_atomicTrace_cycleWord_le pos q p)
+  summable_norm_mul_pow_succ_of_le (by positivity) (Finset.sum_nonneg fun _ _ ↦ norm_nonneg _) hx
+    fun m ↦ by simpa only [norm_one, one_mul] using norm_atomicTrace_cycleWord_le pos q p m
 
 private theorem eval_denom_ne_zero {K : Type*} [NormedField K] {ι : Type*} [Fintype ι]
     (pos : ι → Prop) [DecidablePred pos] (q : Kˣ) (p : ι → K) {x : K}

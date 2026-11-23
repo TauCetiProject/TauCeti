@@ -12,6 +12,7 @@ public import TauCeti.LinearAlgebra.Finsupp.ProductDensity
 import Mathlib.Algebra.Ring.GeomSum
 import Mathlib.Tactic.LinearCombination
 import Mathlib.Tactic.Module
+import TauCeti.Algebra.BigOperators.Ring.Finset
 import TauCeti.Data.Fin.Tuple.Basic
 
 /-!
@@ -60,18 +61,12 @@ Positivity is not considered: everything here is algebraic, over any commutative
 * `TauCeti.TypeAHeckeAlgebra.signedChecked_comp_eq_of_forall_T`: a map of Hecke algebras and a
   linear map of word spaces intertwining the representations on generators intertwine them
   everywhere.
-* `TauCeti.TypeAHeckeAlgebra.signedChecked_comp_lmapDomain_strictMono` and
-  `TauCeti.TypeAHeckeAlgebra.signedChecked_strictMono_single_apply`: alphabet embedding invariance
-  under strictly monotone sign-preserving maps.
-* `TauCeti.TypeAHeckeAlgebra.signedChecked_strandIncl_mul_T_last_single_snoc_apply`: the diagonal
-  matrix entry of `strandIncl x * T n` at a `Fin.snoc` word.
-* `TauCeti.TypeAHeckeAlgebra.atomicTrace_mul_comm`, `TauCeti.TypeAHeckeAlgebra.atomicTrace_one`
-  and `TauCeti.TypeAHeckeAlgebra.atomicTrace_strandIncl`: the atomic trace is tracial, its value
-  at `1`, and its behaviour under adding a strand.
-* `TauCeti.TypeAHeckeAlgebra.atomicTrace_strandIncl_mul_T_last`: the Markov rule.
-* `TauCeti.TypeAHeckeAlgebra.atomicTrace_subtype_eq_of_eq_zero` and
-  `TauCeti.TypeAHeckeAlgebra.atomicTrace_subtype_ne_zero`: invariance under dropping
-  zero-weight letters.
+* `TauCeti.TypeAHeckeAlgebra.atomicTrace_mul_comm`, `TauCeti.TypeAHeckeAlgebra.atomicTrace_one`,
+  `TauCeti.TypeAHeckeAlgebra.atomicTrace_strandIncl`, and
+  `TauCeti.TypeAHeckeAlgebra.atomicTrace_subtype_eq_of_eq_zero`: trace, scaling, and zero-weight
+  dropping invariance (`signedChecked_comp_lmapDomain_strictMono`).
+* `TauCeti.TypeAHeckeAlgebra.atomicTrace_strandIncl_mul_T_last`: the Markov rule
+  (`signedChecked_strandIncl_mul_T_last_single_snoc_apply`).
 * `TauCeti.TypeAHeckeAlgebra.atomicTrace_eq_ocneanuTrace`: **the atomic trace is the Ocneanu
   trace.**
 
@@ -366,18 +361,6 @@ theorem atomicTrace_eq_ocneanuTrace {z : R} (hp : ∑ a, p a = 1)
     (fun _ _ ↦ by rw [atomicTrace_strandIncl, hp, mul_one]) (fun _ ↦ atomicTrace_mul_comm pos q p)
     (fun _ ↦ atomicTrace_strandIncl_mul_T_last pos q p hz) n x
 
-omit [LinearOrder ι] [Fintype ι] in
-/-- If `w : Fin n → ι` is not in the range of `(Subtype.val ∘ ·)` on
-`Fin n → {a : ι // P a}` and `p` vanishes outside `P`, then the product weight `∏ i, p (w i)` is
-zero. -/
-theorem prod_eq_zero_of_notMem_range_subtype (P : ι → Prop)
-    (hp : ∀ a, ¬ P a → p a = 0) {w : Fin n → ι}
-    (hw : w ∉ Set.range (fun (u : Fin n → {a : ι // P a}) ↦ Subtype.val ∘ u)) :
-    ∏ i, p (w i) = 0 := by
-  have hnot : ¬ ∀ i, P (w i) := fun hP ↦ hw ⟨fun i ↦ ⟨w i, hP i⟩, rfl⟩
-  obtain ⟨i, hi⟩ := not_forall.mp hnot
-  exact Finset.prod_eq_zero (Finset.mem_univ i) (hp (w i) hi)
-
 omit [Fintype ι] in
 /-- Restricting the alphabet of a finite atomic model to a predicate outside which all weights
 vanish does not change `atomicTrace`. -/
@@ -393,8 +376,9 @@ theorem atomicTrace_subtype_eq_of_eq_zero [Finite ι] (P : ι → Prop)
         signedChecked pos q x (single w 1) w * ∏ i, p (w i)) =
       ∑ w : Fin n → ι, signedChecked pos q x (single w 1) w * ∏ i, p (w i) := by
     refine Finset.sum_subset (Finset.subset_univ _) fun w _ hw ↦ ?_
-    rw [prod_eq_zero_of_notMem_range_subtype p P hp fun ⟨u, hu⟩ ↦
-      hw (Finset.mem_image.mpr ⟨u, Finset.mem_univ _, hu⟩), mul_zero]
+    rw [Finset.prod_eq_zero_of_not_forall Finset.univ P hp fun hP ↦
+      hw (Finset.mem_image.mpr ⟨fun i ↦ ⟨w i, hP i (Finset.mem_univ _)⟩, Finset.mem_univ _, rfl⟩),
+      mul_zero]
   rw [← hsub, Finset.sum_image (Subtype.val_injective.comp_left.injOn)]
   refine Finset.sum_congr rfl fun w _ ↦ ?_
   rw [signedChecked_strictMono_single_apply pos q (fun a : {a : ι // P a} ↦ pos a)

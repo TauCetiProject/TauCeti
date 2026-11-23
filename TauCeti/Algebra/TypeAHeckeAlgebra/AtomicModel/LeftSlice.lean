@@ -29,20 +29,6 @@ geometric weights (`TauCeti.TypeAHeckeAlgebra.atomicTrace_geometric_leftSlice_eq
 negative geometric weights (`TauCeti.TypeAHeckeAlgebra.atomicTrace_negGeometric_eq`) realize both
 halves `a_(±(r + 1))(Q)` of Wenzl's discrete series.
 
-## Main results
-
-* `TauCeti.TypeAHeckeAlgebra.signedChecked_tailIncl_mapDomain_cons`,
-  `TauCeti.TypeAHeckeAlgebra.signedChecked_tailIncl_single_cons_apply_cons`, and
-  `TauCeti.TypeAHeckeAlgebra.signedChecked_tailIncl_mul_T_zero_single_cons_apply`: action and
-  first-crossing diagonal entries of `tailIncl`.
-* `TauCeti.TypeAHeckeAlgebra.atomicTrace_tailIncl` and
-  `TauCeti.TypeAHeckeAlgebra.atomicTrace_T_zero_mul_tailIncl`: first-site scaling and Markov rule.
-* `TauCeti.TypeAHeckeAlgebra.atomicTrace_eq_ocneanuTrace_of_leftSlice`: Ocneanu identification from
-  a scalar left slice.
-* `TauCeti.TypeAHeckeAlgebra.atomicTrace_geometric_leftSlice_eq` and
-  `TauCeti.TypeAHeckeAlgebra.atomicTrace_negGeometric_eq`: finite positive and negative geometric
-  realizations in first-site order.
-
 ## References
 
 * Yu. A. Neretin, *Some remarks on traces on the infinite-dimensional Iwahori–Hecke algebra*,

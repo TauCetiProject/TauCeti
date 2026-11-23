@@ -17,14 +17,9 @@ import TauCeti.Algebra.Order.Star.Basic
 For a countable atomic model `TauCeti.TypeAHeckeAlgebra.countableAtomicTrace pos q p hp n` with
 strictly positive weights `p : ι → R` over a complete normed `StarOrderedRing` with
 `OrderClosedTopology` and no zero divisors, the null space and trace radical coincide with
-`RingHom.ker (signedChecked pos q)`.
-
-## Main results
-
-* `TauCeti.TypeAHeckeAlgebra.countableAtomicTrace_star_mul_self_eq_zero_iff`: null space of a
-  strictly positive countable atomic trace.
-* `TauCeti.TypeAHeckeAlgebra.traceRadical_countableAtomicTrace_eq_ker_signedChecked`: the trace
-  radical of a strictly positive countable atomic trace is `RingHom.ker (signedChecked pos q)`.
+`RingHom.ker (signedChecked pos q)`
+(`TauCeti.TypeAHeckeAlgebra.countableAtomicTrace_star_mul_self_eq_zero_iff`,
+`TauCeti.TypeAHeckeAlgebra.traceRadical_countableAtomicTrace_eq_ker_signedChecked`).
 -/
 
 public section

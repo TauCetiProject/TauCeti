@@ -14,11 +14,6 @@ public import TauCeti.Algebra.TypeAHeckeAlgebra.AtomicModel.CycleWord.Basic
 Over any normed commutative ring `R`, the diagonal entry of the cycle word `cycleWord q (m + 1)` in
 `signedChecked pos q` grows at most exponentially with base `max 1 (max ‖q ^ 2‖ ‖q ^ 2 - 1‖)`
 (`TauCeti.TypeAHeckeAlgebra.norm_signedChecked_cycleWord_single_apply_le`).
-
-## Main results
-
-* `TauCeti.TypeAHeckeAlgebra.norm_signedChecked_cycleWord_single_apply_le`: sharp diagonal norm
-  bound on cycle words.
 -/
 
 public section

@@ -61,17 +61,11 @@ whenever `Q ≠ 0, 1`, and its value at `Q = 1` is the removable limit.
   particular `a_(l - 2) = a_(-2)` when `Q ^ l = 1`.
 * `TauCeti.wenzlParam_neg_natCast_eq_sum`: for the normalized geometric weights
   `p_i = Q ^ i / [r]_Q`, `i < r`, the sum `∑ i < j, p_i * p_j` is `a_(-r)(Q)`.
-* `TauCeti.mem_wenzlPositiveSet_iff`, `TauCeti.wenzlParam_mem_wenzlPositiveSet`,
-  `TauCeti.mem_wenzlPositiveSet_of_mem_Icc_of_one_le`,
-  `TauCeti.mem_wenzlPositiveSet_of_mem_Icc_of_le_one`, `TauCeti.wenzlPositiveSet_inv`, and
-  `TauCeti.one_sub_mem_wenzlPositiveSet_iff`: membership and symmetries of `wenzlPositiveSet Q`.
+* `TauCeti.wenzlPositiveSet_inv` and `TauCeti.one_sub_mem_wenzlPositiveSet_iff`: symmetries of
+  `wenzlPositiveSet Q` (`mem_wenzlPositiveSet_iff`, `wenzlParam_mem_wenzlPositiveSet`).
 * `TauCeti.mul_wenzlParam_natCast_sub` and `TauCeti.mul_wenzlParam_neg_natCast_sub`: converting
-  the positive and negative discrete projection parameters `a_(±(r + 1))(q ^ 2)` to their Markov
-  parameters.
-* `TauCeti.InfiniteTypeAHeckeAlgebra.ocneanuTrace_mul_eigenprojection_geometric` and
-  `TauCeti.InfiniteTypeAHeckeAlgebra.ocneanuTrace_mul_eigenprojection_negGeometric`: the Ocneanu
-  traces realized by the atomic models on `r + 1` positive or negative letters with geometric
-  weights have projection parameters `a_(r + 1)(q ^ 2)` and `a_(-(r + 1))(q ^ 2)`.
+  `a_(±(r + 1))(q ^ 2)` to their Markov parameters, identifying the geometric Ocneanu traces
+  (`ocneanuTrace_mul_eigenprojection_geometric`, `ocneanuTrace_mul_eigenprojection_negGeometric`).
 
 ## References
 
