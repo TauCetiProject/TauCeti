@@ -361,7 +361,8 @@ theorem hasSum_quantizationKernel_littlewoodPaleyPiece (a : Symbol n V W m)
   refine HasSum.const_smul _ ?_
   -- The kernel integrals of the pieces are summable in norm, since `m - 2N + n < 0`.
   obtain ⟨C, -, hC⟩ :=
-    a.exists_integral_norm_frequencyLaplacianPow_littlewoodPaleyPiece_le φ isCompact_singleton N
+    a.exists_integral_norm_coefficient_frequencyLaplacianPow_littlewoodPaleyPiece_le φ
+      isCompact_singleton N
   set g : ℕ → CoordinateSpace n × CoordinateSpace n → V →L[ℂ] W :=
     fun j => (frequencyLaplacianPow N (a.littlewoodPaleyPiece φ j)).coefficient
   have hF_int (j : ℕ) :
@@ -376,9 +377,9 @@ theorem hasSum_quantizationKernel_littlewoodPaleyPiece (a : Symbol n V W m)
   have hF_sum : Summable fun j => ∫ ζ, ‖𝐞 ⟪ζ, x - y⟫ • g j (x, (2 * π) • ζ)‖ := by
     refine Summable.of_nonneg_of_le (fun j => integral_nonneg fun _ => norm_nonneg _)
       (fun j => ?_) ((hgeo.mul_left C).mul_left ((2 * π) ^ n)⁻¹)
-    rw [integral_norm_quantizationKernel_integrand, finrank_euclideanSpace_fin]
+    rw [integral_norm_quantizationKernel_integrand (g j), finrank_euclideanSpace_fin]
     gcongr
-    exact hC j x rfl
+    exact hC j x (Set.mem_singleton x)
   convert hasSum_integral_of_summable_integral_norm hF_int hF_sum using 1
   · exact funext fun j => quantizationKernel_def _ _ _
   rw [quantizationKernel_def]

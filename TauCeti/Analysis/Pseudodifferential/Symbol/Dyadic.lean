@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Analysis.Calculus.BumpFunction.LittlewoodPaley
 public import TauCeti.Analysis.Pseudodifferential.Symbol.Basic
-import TauCeti.Analysis.Normed.Module.Ball
 
 /-!
 # Littlewood–Paley decomposition of symbols
@@ -53,8 +52,8 @@ the pieces with constants independent of `j`.
   positions in a compact set, for any symbol.
 * `TauCeti.Symbol.hasSum_coefficient_frequencyLaplacianPow_littlewoodPaleyPiece`: the frequency
   Laplacian powers `Δ_ξ^N aⱼ` of the pieces sum to `Δ_ξ^N a`.
-* `TauCeti.Symbol.exists_integral_norm_frequencyLaplacianPow_littlewoodPaleyPiece_le`: the
-  integrated estimates `∫ ‖Δ_ξ^N aⱼ(x, ξ)‖ dξ ≤ C (2^j) ^ (m - 2N + n)` on compact sets of
+* `TauCeti.Symbol.exists_integral_norm_coefficient_frequencyLaplacianPow_littlewoodPaleyPiece_le`:
+  the integrated estimates `∫ ‖Δ_ξ^N aⱼ(x, ξ)‖ dξ ≤ C (2^j) ^ (m - 2N + n)` on compact sets of
   positions. Together these give the Littlewood–Paley decomposition of the kernel of a symbol off
   the diagonal, where it is computed from `Δ_ξ^N a`.
 
@@ -264,7 +263,7 @@ private theorem exists_norm_mixedDeriv_littlewoodPaleyPiece_le_two_pow_of_le (a 
 /-- A function bounded by `C (2^j) ^ μ` and vanishing outside the ball of radius `2^j φ.rOut`
 satisfies `∫ ‖f ξ‖ dξ ≤ C φ.rOut ^ n v (2^j) ^ (μ + n)`, where `v` is the volume of the unit
 ball. -/
-private theorem integral_norm_le_of_norm_le_of_eq_zero {E : Type*} [NormedAddCommGroup E]
+theorem integral_norm_le_of_norm_le_of_eq_zero {E : Type*} [NormedAddCommGroup E]
     {f : CoordinateSpace n → E} {C μ : ℝ} (j : ℕ) (hf : ∀ ξ, ‖f ξ‖ ≤ C * ((2 : ℝ) ^ j) ^ μ)
     (hf0 : ∀ ξ ∉ closedBall (0 : CoordinateSpace n) (2 ^ j * φ.rOut), f ξ = 0) :
     ∫ ξ, ‖f ξ‖ ≤ C * φ.rOut ^ n * (volume : Measure (CoordinateSpace n)).real (ball 0 1) *
@@ -353,7 +352,7 @@ theorem hasSum_coefficient_frequencyLaplacianPow_littlewoodPaleyPiece (a : Symbo
   · rw [← hsum.eq_of_nhds, map_sum, coefficient_sum, Finset.sum_apply]
     refine hasSum_sum_of_ne_finset_zero fun j hj =>
       coefficient_frequencyLaplacianPow_eq_zero_of_isOpen isOpen_ball x (fun η hη => ?_) N hξ
-    rw [coefficient_littlewoodPaleyPiece, φ.inhomogeneousLittlewoodPaley_eq_zero_of_norm_le_of_lt
+    rw [coefficient_littlewoodPaleyPiece, φ.inhomogeneousLittlewoodPaley_eq_zero_of_lt_of_norm_le
       (by simpa using hj) (mem_ball_zero_iff.1 hη).le, zero_smul]
   · filter_upwards [isOpen_ball.mem_nhds hξ] with η hη
     simp only [coefficient_sum, Finset.sum_apply, coefficient_littlewoodPaleyPiece,
@@ -385,8 +384,8 @@ private theorem exists_norm_mixedDeriv_frequencyLaplacianPow_le {μ : ℝ} (b : 
 /-- **Integrated dyadic estimates for the frequency Laplacians of the pieces.** For a symbol of
 order `m` and a compact set `K` of positions, `∫ ‖Δ_ξ^N aⱼ(x, ξ)‖ dξ ≤ C (2^j) ^ (m - 2N + n)` for
 `x ∈ K`, uniformly in `j`. -/
-theorem exists_integral_norm_frequencyLaplacianPow_littlewoodPaleyPiece_le (a : Symbol n V W m)
-    {K : Set (CoordinateSpace n)} (hK : IsCompact K) (N : ℕ) :
+theorem exists_integral_norm_coefficient_frequencyLaplacianPow_littlewoodPaleyPiece_le
+    (a : Symbol n V W m) {K : Set (CoordinateSpace n)} (hK : IsCompact K) (N : ℕ) :
     ∃ C, 0 ≤ C ∧ ∀ (j : ℕ), ∀ x ∈ K,
       ∫ ξ, ‖(frequencyLaplacianPow N (a.littlewoodPaleyPiece φ j)).coefficient (x, ξ)‖ ≤
         C * ((2 : ℝ) ^ j) ^ (m - 2 * N + n) := by

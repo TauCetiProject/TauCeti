@@ -69,7 +69,7 @@ derivative bounds; it localizes operators to the frequencies of a single block.
 * `ContDiffBump.inhomogeneousLittlewoodPaley`: the inhomogeneous partition `ψ₀ = φ, ψ₁, ψ₂, …`.
 * `ContDiffBump.hasSum_inhomogeneousLittlewoodPaley`: `∑ⱼ ψⱼ ξ = 1` for every `ξ`.
 * `ContDiffBump.sum_inhomogeneousLittlewoodPaley_range_eq_one_of_norm_le` and
-  `ContDiffBump.inhomogeneousLittlewoodPaley_eq_zero_of_norm_le_of_lt`: on the ball of radius
+  `ContDiffBump.inhomogeneousLittlewoodPaley_eq_zero_of_lt_of_norm_le`: on the ball of radius
   `2^N φ.rIn`, `∑_{j ≤ N} ψⱼ = 1` and `ψⱼ = 0` for `j > N`.
 * `ContDiffBump.inhomogeneousLittlewoodPaley_neg`: the pieces `ψⱼ` are even.
 * `ContDiffBump.inhomogeneousLittlewoodPaley_dilate`: the partition of the dilation
@@ -575,7 +575,7 @@ theorem sum_inhomogeneousLittlewoodPaley_range_eq_one_of_norm_le {N : ℕ} {ξ :
 
 /-- **Finite cutoff.** On the closed ball of radius `2^N φ.rIn`, every piece `ψⱼ` with `N < j`
 vanishes. -/
-theorem inhomogeneousLittlewoodPaley_eq_zero_of_norm_le_of_lt {N j : ℕ} (hj : N < j) {ξ : E}
+theorem inhomogeneousLittlewoodPaley_eq_zero_of_lt_of_norm_le {N j : ℕ} (hj : N < j) {ξ : E}
     (hξ : ‖ξ‖ ≤ 2 ^ N * φ.rIn) : φ.inhomogeneousLittlewoodPaley j ξ = 0 := by
   obtain ⟨k, rfl⟩ : ∃ k, j = k + 1 := Nat.exists_eq_add_one.2 (by omega)
   exact φ.inhomogeneousLittlewoodPaley_succ_eq_zero_of_norm_le (hξ.trans
@@ -589,7 +589,7 @@ theorem hasSum_inhomogeneousLittlewoodPaley (ξ : E) :
   have hN' : ‖ξ‖ ≤ 2 ^ N * φ.rIn := ((div_lt_iff₀ φ.rIn_pos).1 hN).le
   rw [← φ.sum_inhomogeneousLittlewoodPaley_range_eq_one_of_norm_le hN']
   exact hasSum_sum_of_ne_finset_zero fun j hj =>
-    φ.inhomogeneousLittlewoodPaley_eq_zero_of_norm_le_of_lt (by simpa using hj) hN'
+    φ.inhomogeneousLittlewoodPaley_eq_zero_of_lt_of_norm_le (by simpa using hj) hN'
 
 omit [NormedAddCommGroup E] [NormedSpace ℝ E] [HasContDiffBump E] in
 /-- Explicit overlap width between the inhomogeneous Littlewood–Paley partitions of `φ` and `φ'`:

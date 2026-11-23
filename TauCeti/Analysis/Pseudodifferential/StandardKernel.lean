@@ -228,42 +228,21 @@ private theorem IsUniform.exists_integral_norm_coefficient_littlewoodPaleyPiece_
           (a.littlewoodPaleyPiece φ j).coefficient (x', ξ)‖ ≤
         G * ((2 : ℝ) ^ j) ^ (m + n) * ‖x - x'‖ := by
   obtain ⟨G, hG0, hG⟩ := ha.exists_norm_fderiv_coefficient_littlewoodPaleyPiece_le φ
-  set v := (volume : Measure (CoordinateSpace n)).real (ball 0 1)
-  refine ⟨G * φ.rOut ^ n * v, by have := φ.rOut_pos; positivity, fun j x x' ↦ ?_⟩
-  set R := (2 : ℝ) ^ j * φ.rOut
-  have hR : 0 ≤ R := by have := φ.rOut_pos; positivity
-  set c := G * ((2 : ℝ) ^ j) ^ m * ‖x - x'‖
-  -- The increment is at most `c` by the mean value theorem, and vanishes off the ball of radius
-  -- `R` that carries the piece.
-  have hle (ξ : CoordinateSpace n) : ‖(a.littlewoodPaleyPiece φ j).coefficient (x, ξ) -
-      (a.littlewoodPaleyPiece φ j).coefficient (x', ξ)‖ ≤
-        (closedBall (0 : CoordinateSpace n) R).indicator (fun _ ↦ c) ξ := by
-    by_cases hξ : ξ ∈ closedBall (0 : CoordinateSpace n) R
-    · rw [indicator_of_mem hξ]
-      have hd : Differentiable ℝ fun w ↦ (a.littlewoodPaleyPiece φ j).coefficient (w, ξ) :=
-        ((a.littlewoodPaleyPiece φ j).contDiff_coefficient_slice ξ).differentiable (by simp)
-      exact convex_univ.norm_image_sub_le_of_norm_fderiv_le (fun w _ ↦ hd w)
-        (fun w _ ↦ hG j w ξ) (mem_univ x') (mem_univ x)
-    · rw [indicator_of_notMem hξ]
-      have hξ' : R ≤ ‖ξ‖ := by
-        rw [mem_closedBall_zero_iff, not_le] at hξ
-        exact hξ.le
-      rw [a.coefficient_littlewoodPaleyPiece_eq_zero_of_le_norm φ x hξ',
-        a.coefficient_littlewoodPaleyPiece_eq_zero_of_le_norm φ x' hξ', sub_self, norm_zero]
-  have hint : Integrable ((closedBall (0 : CoordinateSpace n) R).indicator fun _ ↦ c) :=
-    (integrableOn_const (measure_closedBall_lt_top (x := (0 : CoordinateSpace n))).ne
-      ).integrable_indicator measurableSet_closedBall
-  calc ∫ ξ, ‖(a.littlewoodPaleyPiece φ j).coefficient (x, ξ) -
-        (a.littlewoodPaleyPiece φ j).coefficient (x', ξ)‖
-      ≤ ∫ ξ, (closedBall (0 : CoordinateSpace n) R).indicator (fun _ ↦ c) ξ :=
-        integral_mono_of_nonneg (Eventually.of_forall fun _ ↦ norm_nonneg _) hint
-          (Eventually.of_forall hle)
-    _ = R ^ n * v * c := by
-        rw [integral_indicator_const _ measurableSet_closedBall,
-          Measure.addHaar_real_closedBall _ _ hR, finrank_euclideanSpace_fin, smul_eq_mul]
-    _ = G * φ.rOut ^ n * v * ((2 : ℝ) ^ j) ^ (m + n) * ‖x - x'‖ := by
-        rw [Real.rpow_add (by positivity), Real.rpow_natCast, mul_pow]
-        ring
+  refine ⟨G * φ.rOut ^ n * (volume : Measure (CoordinateSpace n)).real (ball 0 1),
+    by have := φ.rOut_pos; positivity, fun j x x' ↦ ?_⟩
+  -- The increment is at most `G (2^j)^m ‖x - x'‖` by the mean value theorem, and vanishes off the
+  -- ball of radius `2^j φ.rOut` that carries the piece.
+  refine (integral_norm_le_of_norm_le_of_eq_zero φ j (C := G * ‖x - x'‖) (μ := m)
+    (fun ξ ↦ ?_) fun ξ hξ ↦ ?_).trans_eq (by ring)
+  · have hd : Differentiable ℝ fun w ↦ (a.littlewoodPaleyPiece φ j).coefficient (w, ξ) :=
+      ((a.littlewoodPaleyPiece φ j).contDiff_coefficient_slice ξ).differentiable (by simp)
+    exact (convex_univ.norm_image_sub_le_of_norm_fderiv_le (fun w _ ↦ hd w)
+      (fun w _ ↦ hG j w ξ) (mem_univ x') (mem_univ x)).trans_eq (by ring)
+  · have hξ' : (2 : ℝ) ^ j * φ.rOut ≤ ‖ξ‖ := by
+      rw [mem_closedBall_zero_iff, not_le] at hξ
+      exact hξ.le
+    rw [a.coefficient_littlewoodPaleyPiece_eq_zero_of_le_norm φ x hξ',
+      a.coefficient_littlewoodPaleyPiece_eq_zero_of_le_norm φ x' hξ', sub_self]
 
 /-- **Increments of the piece kernels in the first variable.** For a uniform symbol `a` of order
 `m`, `‖K_{aⱼ}(x, y) - K_{aⱼ}(x', y)‖ ≤ D (2^j)^(m + n + 1) ‖x - x'‖`. -/
