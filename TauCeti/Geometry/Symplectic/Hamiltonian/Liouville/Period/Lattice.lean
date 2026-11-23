@@ -88,8 +88,6 @@ here. Its model, for a lattice spanned by global closed one-forms, is
   `IsLagrangianTorusFibration.isZLattice_periodLattice`,
   `IsLagrangianTorusFibration.finrank_periodLattice`: the period lattice is a full lattice in
   `T*_b B`, of rank `dim B`. The first two are instances.
-* `IsLagrangianTorusFibration.compactSpace_quotient_periodLattice`: the quotient `T*_b B / Λ_b` is
-  compact. This is an instance.
 
 All in the namespace `TauCeti.SmoothTwoForm.IsNondegenerate`.
 
@@ -451,18 +449,14 @@ theorem mfderiv_fiberAction_apply (x : π ⁻¹' {b}) (α β : F →L[ℝ] ℝ) 
       σ.hamiltonianVectorField (g ∘ π) (h.fiberAction hσc b α x) := by
   set w := h.dualCoord b β
   have hy : π (h.fiberAction hσc b α x) = b := (h.fiberAction hσc b α x).property
-  have hcoord (i : Fin (finrank ℝ F)) (z : M) :
-      MDifferentiableAt I 𝓘(ℝ) (fun y ↦ w i * (h.coord b ∘ π) y i) z :=
-    ((contMDiff_pi_module_iff.1 (h.contMDiff_coord_comp b) i).mdifferentiableAt
-      (by simp)).const_smul (w i)
   have hd : MDifferentiableAt J 𝓘(ℝ) (fun c ↦ w ⬝ᵥ h.coord b c) b :=
     (((LinearMap.toContinuousLinearMap (dotProductEquiv ℝ (Fin (finrank ℝ F)) w)).contMDiff.comp
       (h.coord_spec b).1) b).mdifferentiableAt (by simp)
   rw [(h.hasMFDerivAt_fiberAction_apply hσc b x α).mfderiv]
   -- The velocity is the Hamiltonian vector of `w ⬝ᵥ (coord ∘ π)`, and `d(w ⬝ᵥ coord)_b = β`.
   refine ((⟨hσc, hσ⟩ : σ.IsSymplectic).mfderiv_hamiltonianFlowAction_apply _ _ _ x _ w).trans <|
-    (Finset.sum_congr rfl fun i _ ↦ (hamiltonianVectorField_const_smul (w i) _).symm).trans
-    ((hamiltonianVectorField_fun_sum fun i _ ↦ hcoord i _).symm.trans ?_)
+    (hamiltonianVectorField_dotProduct (fun i ↦ (contMDiff_pi_module_iff.1
+      (h.contMDiff_coord_comp b) i).mdifferentiableAt (by simp)) w).symm.trans ?_
   exact hamiltonianVectorField_comp_eq_of_mvfderiv_eq (g := fun c ↦ w ⬝ᵥ h.coord b c)
     (x := (h.fiberAction hσc b α x : M))
     (h.mdifferentiableAt _) (by rw [hy]; exact hd) (by rw [hy]; exact hg)
@@ -647,13 +641,5 @@ theorem quotientPeriodLatticeHomeomorph_mk (x : π ⁻¹' {b}) (α : F →L[ℝ]
       ContinuousLinearEquiv.toContinuousAddEquiv_coe, coe_fiberAction, hamiltonianFlowActionComp]
     -- `Homeomorph.setCongr` does not change the underlying point.
     exact IsSymplectic.coe_quotientHamiltonianFlowStabilizerHomeomorph_mk _ _ _ _ _ _ _
-
-/-- **The quotient `T*_b B / Λ_b` is compact**, being homeomorphic to the compact fibre over `b`
-(`quotientPeriodLatticeHomeomorph`). -/
-instance compactSpace_quotient_periodLattice :
-    CompactSpace ((F →L[ℝ] ℝ) ⧸ h.periodLattice hσc b) := by
-  obtain ⟨x⟩ := (h.isConnected_preimage_singleton b).nonempty.to_subtype
-  have := isCompact_iff_compactSpace.1 (h.isCompact_preimage_singleton b)
-  exact (h.quotientPeriodLatticeHomeomorph hσc b x).symm.compactSpace
 
 end TauCeti.SmoothTwoForm.IsNondegenerate.IsLagrangianTorusFibration

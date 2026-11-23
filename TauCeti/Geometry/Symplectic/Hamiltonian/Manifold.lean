@@ -202,7 +202,7 @@ public section
 noncomputable section
 
 open Bundle
-open scoped ContDiff Manifold Topology
+open scoped ContDiff Manifold Matrix Topology
 
 namespace TauCeti
 
@@ -443,6 +443,17 @@ theorem hamiltonianVectorField_fun_sum {ι : Type*} {s : Finset ι} {F : ι → 
     σ.hamiltonianVectorField (fun y ↦ ∑ i ∈ s, F i y) x =
       ∑ i ∈ s, σ.hamiltonianVectorField (F i) x := by
   simp only [hamiltonianVectorField_def, mvfderiv_fun_sum hF, map_sum]
+
+/-- The Hamiltonian vector field of a dot product `v ⬝ᵥ F = ∑ i, vᵢ Fᵢ` with constant
+coefficients is the combination `∑ i, vᵢ X_{Fᵢ}` of the Hamiltonian vector fields of the
+components. -/
+theorem hamiltonianVectorField_dotProduct {ι : Type*} [Fintype ι] {F : M → ι → ℝ} {x : M}
+    (hF : ∀ i, MDifferentiableAt I 𝓘(ℝ) (F · i) x) (v : ι → ℝ) :
+    σ.hamiltonianVectorField (fun y ↦ v ⬝ᵥ F y) x =
+      ∑ i, v i • σ.hamiltonianVectorField (F · i) x := by
+  rw [show (fun y ↦ v ⬝ᵥ F y) = fun y ↦ ∑ i, v i * F y i from funext fun y ↦ by rw [dotProduct],
+    hamiltonianVectorField_fun_sum (F := fun i y ↦ v i * F y i) fun i _ ↦ (hF i).const_smul (v i)]
+  exact Finset.sum_congr rfl fun i _ ↦ hamiltonianVectorField_const_smul (v i) _
 
 /-- At fixed `x`, the derivative in the real coefficient of `f + t • g`, read in the model
 space of the tangent fiber, is the Hamiltonian vector of `g` at `x`. -/
