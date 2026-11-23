@@ -122,8 +122,8 @@ theorem narrowTwoRank_le_ncard_ramifiedPrimes_sub_one
       Nat.card (Subgroup.closure
         ((fun p ↦ NumberField.NarrowClassGroup.mk0 (Q p)) '' (↑s : Set ℕ))) := by
     refine Nat.card_le_card_of_injective
-      (fun C => ⟨C.1, hscoe.symm ▸ NumberField.NarrowClassGroup.mem_closure_of_sq_eq_one hmin hgen
-        hprime hover C.2⟩) ?_
+      (fun C => ⟨C.val, hscoe.symm ▸ NumberField.NarrowClassGroup.mem_closure_of_sq_eq_one hmin hgen
+        hprime hover C.property⟩) ?_
     intro a b h
     exact Subtype.ext (Subtype.mk_eq_mk.mp h)
   have hbound := hinj.trans

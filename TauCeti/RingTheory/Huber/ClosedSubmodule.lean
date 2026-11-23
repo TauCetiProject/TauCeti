@@ -111,7 +111,7 @@ theorem isClosed_of_module_finite_topologicalClosure (N : Submodule A V)
     exact ⟨fun ⟨⟨_, _⟩, hw, hwz⟩ ↦ hwz ▸ hw, fun hz ↦ ⟨⟨z, N.le_topologicalClosure hz⟩, hz, rfl⟩⟩
   have hdense : Dense (N' : Set N.topologicalClosure) := fun x ↦ by
     rw [closure_subtype, himg, ← N.topologicalClosure_coe]
-    exact x.2
+    exact x.property
   -- `N' = ⊤` inside the closure says exactly that the closure is contained in `N`.
   have hle : N.topologicalClosure ≤ N :=
     Submodule.comap_subtype_eq_top.mp (eq_top_of_dense_of_module_finite N' hdense)

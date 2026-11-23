@@ -327,19 +327,19 @@ theorem existsUnique_flagEchelon (i : Fin n) :
     have hφ : Function.Injective φ := by
       rw [← LinearMap.ker_eq_bot, LinearMap.ker_eq_bot']
       intro x hx
-      refine Subtype.ext (b.eq_zero_of_repr_flagPivots_eq_zero x.2.1 fun j hj ↦ ?_)
+      refine Subtype.ext (b.eq_zero_of_repr_flagPivots_eq_zero x.property.1 fun j hj ↦ ?_)
       by_cases hji : j.castSucc < i.succ
       · simpa [φ] using congr_fun hx ⟨j, mem_filter.mpr ⟨hj, hji⟩⟩
-      · exact hlt x.2.2 hji
+      · exact hlt x.property.2 hji
     have hrank : finrank K ↥(W ⊓ b.flag i.succ) = finrank K (T → K) := by
       rw [finrank_inf_flag, finrank_fintype_fun_eq_card, Fintype.card_coe]
     obtain ⟨x, hx⟩ :=
       ((LinearMap.injective_iff_surjective_of_finrank_eq_finrank hrank).mp hφ)
         fun j : T ↦ Finsupp.single i 1 (j : Fin n)
-    refine ⟨x, x.2, fun j hj ↦ ?_⟩
+    refine ⟨x, x.property, fun j hj ↦ ?_⟩
     by_cases hji : j.castSucc < i.succ
     · simpa [φ] using congr_fun hx ⟨j, mem_filter.mpr ⟨hj, hji⟩⟩
-    · rw [hlt x.2.2 hji, Finsupp.single_eq_of_ne]
+    · rw [hlt x.property.2 hji, Finsupp.single_eq_of_ne]
       rintro rfl
       exact hji Fin.castSucc_lt_succ
   · rw [← sub_eq_zero]
@@ -466,7 +466,7 @@ with `b.flagPivots W = S`, is in bijection with the affine space `K ^ S.echelonF
 subspace corresponds to the free entries of its reduced echelon basis. -/
 noncomputable def flagCellEquiv (S : Finset (Fin n)) :
     {W : Submodule K V // b.flagPivots W = S} ≃ (S.echelonFreeEntries → K) where
-  toFun W x := b.repr (b.flagEchelon W x.1.1) x.1.2
+  toFun W x := b.repr (b.flagEchelon W x.val.1) x.val.2
   invFun a := ⟨span K (Set.range fun s : S ↦ b.echelonRow S a s), flagPivots_span_echelonRow S a⟩
   left_inv := by
     rintro ⟨W, rfl⟩
@@ -476,11 +476,11 @@ noncomputable def flagCellEquiv (S : Finset (Fin n)) :
     refine b.repr.injective (Finsupp.ext fun j ↦ ?_)
     by_cases hj : j ∈ b.flagPivots W
     · rw [repr_echelonRow_of_mem _ _ hj, repr_flagEchelon _ hj]
-    rw [repr_echelonRow, ite_eq_right (fun h : j = s ↦ hj (h ▸ s.2))]
+    rw [repr_echelonRow, ite_eq_right (fun h : j = s ↦ hj (h ▸ s.property))]
     split_ifs with h
     · rfl
     · have hsj : (s : Fin n) < j := lt_of_not_ge fun hjs ↦ h (mem_echelonFreeEntries.mpr
-        ⟨s.2, lt_of_le_of_ne hjs fun h' : j = s ↦ hj (h' ▸ s.2), hj⟩)
+        ⟨s.property, lt_of_le_of_ne hjs fun h' : j = s ↦ hj (h' ▸ s.property), hj⟩)
       exact ((b.mem_flag_iff_repr_eq_zero.mp (b.flagEchelon_mem_flag W s)) j
         (Fin.succ_le_castSucc_iff.mpr hsj)).symm
   right_inv a := by
@@ -495,7 +495,7 @@ noncomputable def flagCellEquiv (S : Finset (Fin n)) :
 
 @[simp]
 theorem flagCellEquiv_apply (S : Finset (Fin n)) (W : {W : Submodule K V // b.flagPivots W = S})
-    (x : S.echelonFreeEntries) : b.flagCellEquiv S W x = b.repr (b.flagEchelon W x.1.1) x.1.2 :=
+    (x : S.echelonFreeEntries) : b.flagCellEquiv S W x = b.repr (b.flagEchelon W x.val.1) x.val.2 :=
   (rfl)
 
 @[simp]

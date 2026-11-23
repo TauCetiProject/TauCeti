@@ -192,7 +192,7 @@ theorem exists_contMDiffSection_mem_strictInwardTangentCone [FiniteDimensional �
   rw [mem_strictInwardTangentCone_iff_tangentCoordChange hy]
   convert hyw
   calc tangentCoordChange I y x₀ y (tangentSpaceCastModel I y (e.symm y w))
-      = (e ⟨y, e.symm y w⟩).2 := (TangentBundle.trivializationAt_apply_tangentCoordChange _).symm
+      = (e ⟨y, e.symm y w⟩).2 := (TangentBundle.trivializationAt_snd_eq_tangentCoordChange _).symm
     _ = w := by rw [e.apply_mk_symm (hsource ▸ hy)]
 
 end TauCeti

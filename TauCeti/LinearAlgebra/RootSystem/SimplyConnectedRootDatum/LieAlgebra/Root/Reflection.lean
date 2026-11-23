@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.LieAlgebra.Root.Subgroup
-import TauCeti.RingTheory.Nilpotent.ChevalleyCommutator
 
 /-!
 # Weyl representatives at every root

@@ -156,17 +156,26 @@ section Conditional
 variable {β : Type*} [MeasurableSpace β]
 
 omit [StandardBorelSpace α] [Nonempty α] in
+/-- Pairing the base point with independent noise of law `ρ` and applying a measurable map `f`
+gives, at `b`, the image of `ρ` under `f (b, ·)`. -/
+theorem _root_.ProbabilityTheory.Kernel.map_id_prod_const_apply
+    {ξ : Type*} [MeasurableSpace ξ] (ρ : Measure ξ) [SFinite ρ] (f : β × ξ → α)
+    (hf : Measurable f) (b : β) :
+    (Kernel.id ×ₖ Kernel.const β ρ).map f b = ρ.map (fun e => f (b, e)) := by
+  rw [Kernel.map_apply _ hf, Kernel.prod_apply, Kernel.id_apply, Kernel.const_apply,
+    Measure.dirac_prod, Measure.map_map hf measurable_prodMk_left]
+  rfl
+
+omit [StandardBorelSpace α] [Nonempty α] in
 /-- A kernel whose fibres are the laws of a jointly measurable family under an s-finite noise
 measure is s-finite. -/
 theorem _root_.ProbabilityTheory.Kernel.isSFiniteKernel_of_map_eq
     {ξ : Type*} [MeasurableSpace ξ] (κ : Kernel β α) (ρ : Measure ξ) [SFinite ρ]
     (f : β → ξ → α) (hf : Measurable (Function.uncurry f)) (hmap : ∀ b, ρ.map (f b) = κ b) :
     IsSFiniteKernel κ := by
-  have hκ : κ = Kernel.map (Kernel.deterministic id measurable_id ×ₖ Kernel.const β ρ)
-      (Function.uncurry f) := by
+  have hκ : κ = Kernel.map (Kernel.id ×ₖ Kernel.const β ρ) (Function.uncurry f) := by
     ext1 b
-    rw [Kernel.map_apply _ hf, Kernel.prod_apply, Kernel.deterministic_apply, Kernel.const_apply,
-      Measure.dirac_prod, Measure.map_map hf measurable_prodMk_left, ← hmap b]
+    rw [Kernel.map_id_prod_const_apply ρ _ hf, ← hmap b]
     rfl
   exact hκ ▸ inferInstance
 

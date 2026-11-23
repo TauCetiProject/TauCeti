@@ -7,27 +7,33 @@ module
 
 public import Mathlib.Analysis.Normed.Group.Completion
 import Mathlib.Algebra.Algebra.Bilinear
+import Mathlib.Algebra.Module.BigOperators
+import Mathlib.Algebra.Order.Sub.Unbundled.Basic
 import Mathlib.Analysis.Normed.Group.InfiniteSum
 import Mathlib.Analysis.Normed.Ring.InfiniteSum
 public import Mathlib.Analysis.Normed.Group.Ultra
 public import Mathlib.Analysis.Normed.Module.Basic
-public import Mathlib.Analysis.Normed.Operator.ContinuousLinearMap
+public import Mathlib.Analysis.Normed.Operator.Basic
 public import Mathlib.LinearAlgebra.BilinearMap
 public import Mathlib.Topology.Algebra.InfiniteSum.Nonarchimedean
 public import Mathlib.Topology.Algebra.InfiniteSum.Module
 public import Mathlib.Topology.Algebra.InfiniteSum.GroupCompletion
+public import TauCeti.Algebra.Order.Antidiag.Prod
 public import TauCeti.Topology.MetricSpace.Ultra.Completion
 import TauCeti.Data.Int.MulPred
 
 /-!
-# Bounded bilinear maps and infinite sums in ultrametric normed modules
+# Bounded bilinear maps and infinite sums in normed and ultrametric modules
 
 A map bounded by a product of norms takes two cofinite-null families to a cofinite-null family
 on the product index. In a complete ultrametric target this gives summability; when the map is
 bilinear, passage to the completion gives double-sum and Cauchy-product identities without
-completeness. In the sum identities, the bilinear map is inferred from its norm bound.
-The scalar ring need not carry a norm, and neither source module needs to be
-complete or ultrametric. The double-sum argument follows `HasSum.mul_eq` in
+completeness, either in an ultrametric target or for norm-summable families in any seminormed target
+(`TauCeti.hasSum_bilinear_of_summable_norm`,
+`TauCeti.hasSum_sum_bilinear_antidiagonal_of_summable_norm`,
+`TauCeti.hasSum_sum_bilinear_range_of_summable_norm`). In the sum identities, the bilinear map is
+inferred from its norm bound. The scalar ring need not carry a norm, and neither source module needs
+to be complete or ultrametric. The double-sum argument follows `HasSum.mul_eq` in
 `Mathlib.Topology.Algebra.InfiniteSum.Ring`, with bounded bilinear maps in place of multiplication.
 Over an additive group index, such as the exponents of bilateral Laurent series, the fibres of
 addition are infinite; in a complete target they can still be summed, which gives the Cauchy
@@ -40,7 +46,12 @@ the scalar action. If the action is moreover a module structure, then completene
 passing to the completion shows that the double sum of two families with sums `a` and `b` is
 `a • b`, and grouping it by the antidiagonals of an additive index type gives the corresponding
 Cauchy-product formula. The `tsum` forms of these identities assume the module is Hausdorff
-(stated as `T0Space`, which is equivalent for seminormed groups).
+(stated as `T0Space`, which is equivalent for seminormed groups). Without any ultrametric
+hypothesis, the product double sum also holds whenever both series are summable in norm
+(`HasSum.smul_of_summable_norm`). Over a canonically ordered index type with ordered subtraction
+and finite initial intervals `Finset.Iic`, grouping by addition fibers gives weighted norm
+summability (`TauCeti.summable_norm_sum_smul_Iic_mul`) and the `Finset.Iic` Cauchy-product
+`HasSum` identity (`HasSum.sum_smul_Iic_of_summable_norm`).
 
 The joint-decay statement is stronger than continuity of scalar multiplication at zero: cofinite
 decay on a product index requires all but finitely many pairs to be small.
@@ -57,6 +68,10 @@ absolutely, and over a complete ultrametric normed field whenever both series co
 a field the Cauchy product of two convergent bilateral series converges to the product of their
 sums, its moments `∑ n h(n)` and `∑ (n (n - 1) / 2) h(n)` obey the Leibniz rule, and multipliers
 of norm at most one preserve summability.
+
+Specializing the norm-summable bilinear Cauchy products to continuous-linear-map evaluation gives
+`HasSum.sum_clm_apply_antidiagonal_of_summable_norm` and
+`HasSum.sum_clm_apply_range_of_summable_norm` without any ultrametric or completeness hypothesis.
 -/
 
 public section
@@ -135,28 +150,50 @@ variable {B : E →ₗ[R] F →ₗ[R] G} {C : ℝ}
 
 include hB
 
-/-- A bounded bilinear map commutes with two sums in an ultrametric target,
-with the sum taken over the product index. -/
-theorem hasSum_bilinear_of_nonarchimedean
-    {f : ι → E} {g : κ → F} {a : E} {b : F} (hf : HasSum f a) (hg : HasSum g b) :
+omit [IsUltrametricDist G] in
+private theorem hasSum_bilinear_of_summable_toCompl
+    {f : ι → E} {g : κ → F} {a : E} {b : F} (hf : HasSum f a) (hg : HasSum g b)
+    (hfg : Summable fun ij : ι × κ ↦ UniformSpace.Completion.toCompl (B (f ij.1) (g ij.2))) :
     HasSum (fun ij : ι × κ ↦ B (f ij.1) (g ij.2)) (B a b) := by
   let c := UniformSpace.Completion.toCompl (α := G)
-  have hbound (x : E) (y : F) : ‖c (B x y)‖ ≤ C * ‖x‖ * ‖y‖ := by
-    simpa only [c, UniformSpace.Completion.toCompl_apply, UniformSpace.Completion.norm_coe]
-      using hB x y
-  have hfg := summable_bilinear_of_nonarchimedean (fun x y ↦ c (B x y)) hbound
-    hf.summable hg.summable
-  have hright (x : E) : HasSum (fun j ↦ c (B x (g j))) (c (B x b)) := by
-    exact ((B x |>.mkContinuous (C * ‖x‖) (hB x)).hasSum hg).map c
+  have hright (x : E) : HasSum (fun j ↦ c (B x (g j))) (c (B x b)) :=
+    ((B x |>.mkContinuous (C * ‖x‖) (hB x)).hasSum hg).map c
       UniformSpace.Completion.continuous_toCompl
-  have hleft : HasSum (fun i ↦ c (B (f i) b)) (c (B a b)) := by
-    exact ((B.flip b |>.mkContinuous (C * ‖b‖)
+  have hleft : HasSum (fun i ↦ c (B (f i) b)) (c (B a b)) :=
+    ((B.flip b |>.mkContinuous (C * ‖b‖)
       (fun x ↦ by simpa only [LinearMap.flip_apply, mul_right_comm] using hB x b)).hasSum hf).map
       c UniformSpace.Completion.continuous_toCompl
   have hsum : HasSum (fun ij : ι × κ ↦ c (B (f ij.1) (g ij.2))) (c (B a b)) :=
     (hleft.unique (hfg.hasSum.prod_fiberwise (fun i ↦ hright (f i)))) ▸ hfg.hasSum
   rw [← hasSum_iff_hasSum_compl]
   simpa only [Function.comp_def, c, UniformSpace.Completion.toCompl_apply] using hsum
+
+/-- A bounded bilinear map commutes with two sums in an ultrametric target,
+with the sum taken over the product index. -/
+theorem hasSum_bilinear_of_nonarchimedean
+    {f : ι → E} {g : κ → F} {a : E} {b : F} (hf : HasSum f a) (hg : HasSum g b) :
+    HasSum (fun ij : ι × κ ↦ B (f ij.1) (g ij.2)) (B a b) := by
+  refine hasSum_bilinear_of_summable_toCompl hB hf hg ?_
+  refine summable_bilinear_of_nonarchimedean (C := C)
+    (fun x y ↦ UniformSpace.Completion.toCompl (B x y)) (fun x y ↦ ?_) hf.summable hg.summable
+  simpa only [UniformSpace.Completion.toCompl_apply, UniformSpace.Completion.norm_coe] using hB x y
+
+omit [IsUltrametricDist G] in
+/-- A bounded bilinear map commutes with two norm-summable infinite sums, with the sum taken over
+the product index. Neither source module nor the target needs to be complete. -/
+theorem hasSum_bilinear_of_summable_norm
+    {f : ι → E} {g : κ → F} {a : E} {b : F} (hf : HasSum f a) (hg : HasSum g b)
+    (hfn : Summable fun i ↦ ‖f i‖) (hgn : Summable fun j ↦ ‖g j‖) :
+    HasSum (fun ij : ι × κ ↦ B (f ij.1) (g ij.2)) (B a b) := by
+  refine hasSum_bilinear_of_summable_toCompl hB hf hg ?_
+  let C' : ℝ := max C 0
+  refine .of_norm_bounded
+    ((hfn.mul_left C').mul_of_nonneg hgn
+      (fun i ↦ mul_nonneg (le_max_right C 0) (norm_nonneg (f i)))
+      (fun j ↦ norm_nonneg (g j))) fun ij ↦ ?_
+  rw [UniformSpace.Completion.toCompl_apply, UniformSpace.Completion.norm_coe]
+  exact (hB (f ij.1) (g ij.2)).trans (mul_le_mul_of_nonneg_right
+    (mul_le_mul_of_nonneg_right (le_max_left C 0) (norm_nonneg _)) (norm_nonneg _))
 
 /-- Evaluating a bounded bilinear map on two infinite sums equals its double sum. -/
 theorem bilinear_tsum_tsum_of_nonarchimedean [T0Space G]
@@ -174,6 +211,17 @@ theorem hasSum_sum_bilinear_antidiagonal_of_nonarchimedean
     HasSum (fun n ↦ ∑ ij ∈ Finset.antidiagonal n, B (f ij.1) (g ij.2)) (B a b) := by
   have hsigma := Finset.HasAntidiagonal.sigmaAntidiagonalEquivProd.hasSum_iff.mpr
     (hasSum_bilinear_of_nonarchimedean hB hf hg)
+  exact hsigma.sigma fun n ↦ Finset.hasSum (Finset.antidiagonal n)
+    fun ij ↦ B (f ij.1) (g ij.2)
+
+omit [IsUltrametricDist G] in
+/-- Grouping a norm-summable bilinear double sum by antidiagonals preserves its sum. -/
+theorem hasSum_sum_bilinear_antidiagonal_of_summable_norm
+    {f : A → E} {g : A → F} {a : E} {b : F} (hf : HasSum f a) (hg : HasSum g b)
+    (hfn : Summable fun n ↦ ‖f n‖) (hgn : Summable fun n ↦ ‖g n‖) :
+    HasSum (fun n ↦ ∑ ij ∈ Finset.antidiagonal n, B (f ij.1) (g ij.2)) (B a b) := by
+  have hsigma := Finset.HasAntidiagonal.sigmaAntidiagonalEquivProd.hasSum_iff.mpr
+    (hasSum_bilinear_of_summable_norm hB hf hg hfn hgn)
   exact hsigma.sigma fun n ↦ Finset.hasSum (Finset.antidiagonal n)
     fun ij ↦ B (f ij.1) (g ij.2)
 
@@ -208,6 +256,16 @@ theorem hasSum_sum_bilinear_range_of_nonarchimedean
   simp_rw [← Finset.Nat.sum_antidiagonal_eq_sum_range_succ fun k l ↦ B (f k) (g l)]
   exact hasSum_sum_bilinear_antidiagonal_of_nonarchimedean hB hf hg
 
+omit [IsUltrametricDist G] in
+/-- The natural-number bilinear Cauchy product of two norm-summable sequences sums to the image of
+the two sums. -/
+theorem hasSum_sum_bilinear_range_of_summable_norm
+    {f : ℕ → E} {g : ℕ → F} {a : E} {b : F} (hf : HasSum f a) (hg : HasSum g b)
+    (hfn : Summable fun n ↦ ‖f n‖) (hgn : Summable fun n ↦ ‖g n‖) :
+    HasSum (fun n ↦ ∑ k ∈ Finset.range (n + 1), B (f k) (g (n - k))) (B a b) := by
+  simp_rw [← Finset.Nat.sum_antidiagonal_eq_sum_range_succ fun k l ↦ B (f k) (g l)]
+  exact hasSum_sum_bilinear_antidiagonal_of_summable_norm hB hf hg hfn hgn
+
 /-- The natural-number bilinear Cauchy-product formula. -/
 theorem bilinear_tsum_tsum_eq_tsum_sum_range_of_nonarchimedean
     [T0Space G] {f : ℕ → E} {g : ℕ → F}
@@ -236,6 +294,56 @@ theorem _root_.Filter.Tendsto.smul_cofinite_nhds_zero [SeminormedAddGroup R] [Se
     Tendsto (fun ij : α × β ↦ f ij.1 • g ij.2) cofinite (𝓝 0) :=
   tendsto_bilinear_cofinite_nhds_zero (· • ·) (C := 1)
     norm_smul_le_one_mul hf hg
+
+section Iic
+
+variable {Γ : Type*} [AddCommSemigroup Γ] [PartialOrder Γ] [CanonicallyOrderedAdd Γ]
+  [Sub Γ] [OrderedSub Γ] [AddLeftReflectLE Γ] [LocallyFiniteOrderBot Γ]
+
+/-- Under a bounded scalar action and a nonnegative submultiplicative weight `w`, weighted norm
+summability of two families implies weighted norm summability of their Cauchy convolution over
+`Finset.Iic`. -/
+theorem summable_norm_sum_smul_Iic_mul [SeminormedAddGroup R] [SeminormedAddCommGroup M]
+    [SMulZeroClass R M] [IsBoundedSMul R M] {f : Γ → R} {g : Γ → M} {w : Γ → ℝ}
+    (hf : Summable fun k ↦ ‖f k‖ * w k) (hg : Summable fun l ↦ ‖g l‖ * w l)
+    (hw₀ : ∀ n, 0 ≤ w n) (hw : ∀ k l, w (k + l) ≤ w k * w l) :
+    Summable fun n ↦ ‖∑ k ∈ Finset.Iic n, f k • g (n - k)‖ * w n := by
+  have hmajor : Summable fun n : Γ ↦
+      ∑ k ∈ Finset.Iic n, (‖f k‖ * w k) * (‖g (n - k)‖ * w (n - k)) := by
+    have hsigma := (Finset.sigmaIicEquivProd (α := Γ)).summable_iff.mpr
+      (hf.mul_of_nonneg hg (fun k ↦ mul_nonneg (norm_nonneg _) (hw₀ k))
+        (fun l ↦ mul_nonneg (norm_nonneg _) (hw₀ l)))
+    convert hsigma.sigma' (fun _ ↦ (hasSum_fintype _).summable) with n
+    simp [tsum_fintype, ← Finset.sum_coe_sort (Finset.Iic n)]
+  refine hmajor.of_nonneg_of_le (fun n ↦ mul_nonneg (norm_nonneg _) (hw₀ n)) fun n ↦ ?_
+  have hsum_le : ‖∑ k ∈ Finset.Iic n, f k • g (n - k)‖ ≤
+      ∑ k ∈ Finset.Iic n, ‖f k‖ * ‖g (n - k)‖ :=
+    (norm_sum_le (Finset.Iic n) fun k ↦ f k • g (n - k)).trans
+      (Finset.sum_le_sum fun k _ ↦ norm_smul_le (f k) (g (n - k)))
+  calc ‖∑ k ∈ Finset.Iic n, f k • g (n - k)‖ * w n
+      ≤ (∑ k ∈ Finset.Iic n, ‖f k‖ * ‖g (n - k)‖) * w n :=
+        mul_le_mul_of_nonneg_right hsum_le (hw₀ n)
+    _ = ∑ k ∈ Finset.Iic n, ‖f k‖ * ‖g (n - k)‖ * w n := Finset.sum_mul _ _ _
+    _ ≤ ∑ k ∈ Finset.Iic n, (‖f k‖ * w k) * (‖g (n - k)‖ * w (n - k)) := by
+        refine Finset.sum_le_sum fun k hk ↦ ?_
+        have hwk : w n ≤ w k * w (n - k) :=
+          (congrArg w (add_tsub_cancel_of_le (Finset.mem_Iic.1 hk)).symm).trans_le (hw k (n - k))
+        calc ‖f k‖ * ‖g (n - k)‖ * w n
+            ≤ ‖f k‖ * ‖g (n - k)‖ * (w k * w (n - k)) :=
+              mul_le_mul_of_nonneg_left hwk (mul_nonneg (norm_nonneg _) (norm_nonneg _))
+          _ = (‖f k‖ * w k) * (‖g (n - k)‖ * w (n - k)) := by ring
+
+/-- Under a bounded scalar action, the `Finset.Iic` Cauchy convolution of two norm-summable
+families is norm-summable. -/
+theorem summable_norm_sum_smul_Iic_of_summable_norm [SeminormedAddGroup R]
+    [SeminormedAddCommGroup M] [SMulZeroClass R M] [IsBoundedSMul R M]
+    {f : Γ → R} {g : Γ → M} (hf : Summable fun k ↦ ‖f k‖) (hg : Summable fun l ↦ ‖g l‖) :
+    Summable fun n ↦ ‖∑ k ∈ Finset.Iic n, f k • g (n - k)‖ := by
+  simpa only [mul_one] using summable_norm_sum_smul_Iic_mul (w := fun _ ↦ 1)
+    (by simpa only [mul_one] using hf) (by simpa only [mul_one] using hg)
+    (fun _ ↦ zero_le_one) (fun _ _ ↦ by simp)
+
+end Iic
 
 variable [SeminormedAddCommGroup M] [IsUltrametricDist M]
 
@@ -280,6 +388,40 @@ private theorem norm_lsmul_le (r : R) (m : M) :
     ‖(Algebra.lsmul ℤ ℤ M : R →ₐ[ℤ] Module.End ℤ M).toLinearMap r m‖ ≤
       1 * ‖r‖ * ‖m‖ := by
   simpa only [AlgHom.toLinearMap_apply, Algebra.lsmul_apply, one_mul] using norm_smul_le r m
+
+omit [IsUltrametricDist M] in
+/-- Scalar multiplication distributes over two absolutely summable `HasSum` series in a seminormed
+module with a bounded scalar action, without requiring completeness of `M`. -/
+theorem _root_.HasSum.smul_of_summable_norm {α β : Type*} {f : α → R} {g : β → M} {a : R}
+    {b : M} (hf : HasSum f a) (hg : HasSum g b)
+    (hf_norm : Summable fun i ↦ ‖f i‖) (hg_norm : Summable fun j ↦ ‖g j‖) :
+    HasSum (fun ij : α × β ↦ f ij.1 • g ij.2) (a • b) := by
+  classical
+  have habs : Summable fun ij : α × β ↦ ‖f ij.1 • g ij.2‖ :=
+    Summable.of_nonneg_of_le (fun _ ↦ norm_nonneg _) (fun _ ↦ norm_smul_le _ _)
+      (hf_norm.mul_of_nonneg hg_norm (fun _ ↦ norm_nonneg _) (fun _ ↦ norm_nonneg _))
+  refine hasSum_of_subseq_of_summable habs (p := atTop)
+    (s := fun s : Finset α × Finset β ↦ s.1 ×ˢ s.2) tendsto_finsetProd_atTop ?_
+  have hrect (s : Finset α × Finset β) :
+      ∑ ij ∈ s.1 ×ˢ s.2, f ij.1 • g ij.2 = (∑ i ∈ s.1, f i) • (∑ j ∈ s.2, g j) := by
+    rw [Finset.sum_product, Finset.sum_smul]
+    exact Finset.sum_congr rfl fun i _ ↦ (Finset.smul_sum (r := f i) (s := s.2) (f := g)).symm
+  simp_rw [hrect, ← prod_atTop_atTop_eq]
+  exact (hf.comp tendsto_fst).smul (hg.comp tendsto_snd)
+
+omit [IsUltrametricDist M] in
+/-- Cauchy-product `HasSum` over `Finset.Iic` for two unconditionally and norm-summable families
+under a bounded module action, without assuming completeness of the module. -/
+theorem _root_.HasSum.sum_smul_Iic_of_summable_norm {Γ : Type*} [AddCommSemigroup Γ]
+    [PartialOrder Γ] [CanonicallyOrderedAdd Γ] [Sub Γ] [OrderedSub Γ] [AddLeftReflectLE Γ]
+    [LocallyFiniteOrderBot Γ] {f : Γ → R} {g : Γ → M} {a : R} {b : M}
+    (hf : HasSum f a) (hg : HasSum g b)
+    (hf_norm : Summable fun k ↦ ‖f k‖) (hg_norm : Summable fun l ↦ ‖g l‖) :
+    HasSum (fun n ↦ ∑ k ∈ Finset.Iic n, f k • g (n - k)) (a • b) := by
+  have hsigma := (Finset.sigmaIicEquivProd (α := Γ)).hasSum_iff.mpr
+    (hf.smul_of_summable_norm hg hf_norm hg_norm)
+  exact hsigma.sigma fun n ↦ by
+    simpa [Function.comp_def] using Finset.hasSum (Finset.Iic n) fun k ↦ f k • g (n - k)
 
 /-- Scalar multiplication distributes over two infinite sums in an ultrametric normed module. -/
 theorem _root_.HasSum.smul_of_nonarchimedean {α β : Type*} {f : α → R} {g : β → M} {a : R}
@@ -452,14 +594,66 @@ theorem _root_.HasSum.intCast_mul_sub_one_ediv_two_mul_tsum_mul_sub {f g : ℤ �
 
 end Laurent
 
+/-- In a complete ultrametric normed group with a bounded scalar action, a cofinitely null family
+scaled by multipliers of norm at most one is summable. -/
+theorem summable_smul_of_tendsto_of_norm_le_one [SeminormedAddGroup R] [SMulZeroClass R M]
+    [IsBoundedSMul R M] [CompleteSpace M] {ι : Type*} {f : ι → M}
+    (hf : Tendsto f cofinite (𝓝 0)) {c : ι → R} (hc : ∀ i, ‖c i‖ ≤ 1) :
+    Summable fun i ↦ c i • f i := by
+  refine NonarchimedeanAddGroup.summable_of_tendsto_cofinite_zero
+    (squeeze_zero_norm (fun i ↦ ?_) (tendsto_zero_iff_norm_tendsto_zero.mp hf))
+  exact (norm_smul_le _ _).trans (mul_le_of_le_one_left (norm_nonneg _) (hc i))
+
 /-- A family obtained from a summable one by multipliers of norm at most one is summable. -/
 theorem summable_mul_of_norm_le_one {R ι : Type*} [SeminormedRing R] [IsUltrametricDist R]
     [CompleteSpace R] {f c : ι → R} (hf : Summable f) (hc : ∀ i, ‖c i‖ ≤ 1) :
     Summable (fun i ↦ c i * f i) := by
-  refine NonarchimedeanAddGroup.summable_of_tendsto_cofinite_zero
-    (squeeze_zero_norm (fun i ↦ ?_) (by simpa using hf.tendsto_cofinite_zero.norm))
-  exact (norm_mul_le _ _).trans (mul_le_of_le_one_left (norm_nonneg _) (hc i))
+  simpa only [smul_eq_mul] using
+    summable_smul_of_tendsto_of_norm_le_one hf.tendsto_cofinite_zero hc
 
 end TauCeti
+
+section OperatorCauchyProduct
+
+open scoped BigOperators
+
+variable {𝕜 E F : Type*} [NontriviallyNormedField 𝕜]
+  [SeminormedAddCommGroup E] [NormedSpace 𝕜 E]
+  [SeminormedAddCommGroup F] [NormedSpace 𝕜 F]
+
+/-- The antidiagonal Cauchy product of a norm-summable family of continuous linear maps and a
+norm-summable family of vectors sums to the limit operator applied to the limit vector. Neither
+space needs to be complete. -/
+theorem HasSum.sum_clm_apply_antidiagonal_of_summable_norm
+    {A : Type*} [Add A] [Finset.HasAntidiagonal A]
+    {f : A → E →L[𝕜] F} {g : A → E} {T : E →L[𝕜] F} {v : E}
+    (hf : HasSum f T) (hg : HasSum g v)
+    (hfn : Summable fun n ↦ ‖f n‖) (hgn : Summable fun n ↦ ‖g n‖) :
+    HasSum (fun n ↦ ∑ kl ∈ Finset.antidiagonal n, f kl.1 (g kl.2)) (T v) := by
+  have h := TauCeti.hasSum_sum_bilinear_antidiagonal_of_summable_norm
+    (R := 𝕜) (B := ContinuousLinearMap.coeLM 𝕜) (C := 1)
+    (fun S x ↦ by
+      simpa only [ContinuousLinearMap.coeLM_apply, ContinuousLinearMap.coe_coe, one_mul] using
+        S.le_opNorm x)
+    hf hg hfn hgn
+  simpa only [ContinuousLinearMap.coeLM_apply, ContinuousLinearMap.coe_coe] using h
+
+/-- The `Finset.range (n + 1)` Cauchy product `∑_{k=0}^n f_k(g_{n-k})` of a norm-summable sequence
+of continuous linear maps and a norm-summable sequence of vectors sums to `T v`. Neither space
+needs to be complete. -/
+theorem HasSum.sum_clm_apply_range_of_summable_norm
+    {f : ℕ → E →L[𝕜] F} {g : ℕ → E} {T : E →L[𝕜] F} {v : E}
+    (hf : HasSum f T) (hg : HasSum g v)
+    (hfn : Summable fun n ↦ ‖f n‖) (hgn : Summable fun n ↦ ‖g n‖) :
+    HasSum (fun n ↦ ∑ k ∈ Finset.range (n + 1), f k (g (n - k))) (T v) := by
+  have h := TauCeti.hasSum_sum_bilinear_range_of_summable_norm
+    (R := 𝕜) (B := ContinuousLinearMap.coeLM 𝕜) (C := 1)
+    (fun S x ↦ by
+      simpa only [ContinuousLinearMap.coeLM_apply, ContinuousLinearMap.coe_coe, one_mul] using
+        S.le_opNorm x)
+    hf hg hfn hgn
+  simpa only [ContinuousLinearMap.coeLM_apply, ContinuousLinearMap.coe_coe] using h
+
+end OperatorCauchyProduct
 
 end
