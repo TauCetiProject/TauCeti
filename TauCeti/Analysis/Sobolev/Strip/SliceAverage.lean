@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Analysis.Sobolev.JetOperator
 public import TauCeti.Analysis.Sobolev.Strip.Basic
-import TauCeti.MeasureTheory.Integral.Prod
+import Mathlib.MeasureTheory.Integral.Prod
 import TauCeti.MeasureTheory.Measure.Lebesgue.Basic
 
 /-!
@@ -41,13 +41,6 @@ open MeasureTheory Set Filter
 open scoped ENNReal
 
 namespace TauCeti.StripSobolev
-
-/-- An almost everywhere statement about the first coordinate `s` holds almost everywhere on the
-strip. -/
-theorem ae_stripMeasure_of_ae_fst {p : ℝ → Prop} (h : ∀ᵐ s, p s) :
-    ∀ᵐ z ∂stripMeasure, p z.1 := by
-  rw [stripMeasure_eq_prod]
-  exact ae_of_ae_fst h
 
 variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [NormedAddCommGroup F]
   [NormedSpace ℝ F] {f g : ℝ × ℝ → E}
@@ -146,13 +139,6 @@ theorem memLp_sliceAverage (hf : MemLp f 2 stripMeasure) :
     MemLp (sliceAverage f) 2 stripMeasure :=
   memLp_iff.2 ((eLpNorm_sliceAverage_le hf.aestronglyMeasurable).trans_lt (memLp_iff.1 hf))
 
-omit [NormedSpace ℝ E] in
-/-- Almost every slice of a square integrable section on the strip is integrable over `[0, 1]`. -/
-theorem ae_intervalIntegrable_slice (hf : MemLp f 2 stripMeasure) :
-    ∀ᵐ s, IntervalIntegrable (fun t ↦ f (s, t)) volume 0 1 := by
-  filter_upwards [ae_integrable_slice hf] with s hs
-  exact (intervalIntegrable_iff_integrableOn_Icc_of_le zero_le_one).2 hs
-
 /-- Sections that agree almost everywhere on the strip have slice averages that agree almost
 everywhere on the strip. -/
 theorem sliceAverage_congr_ae (h : f =ᵐ[stripMeasure] g) :
@@ -179,7 +165,7 @@ theorem sliceAverage_smul (c : ℝ) (f : ℝ × ℝ → E) : sliceAverage (c •
   exact intervalIntegral.integral_smul c _
 
 /-- The slice average as a bounded operator on `L²` of the strip, of norm at most `1`
-(`TauCeti.StripSobolev.norm_sliceAverageLp_le`): the projection onto the sections that do not
+(`TauCeti.StripSobolev.opNorm_sliceAverageLp_le`): the projection onto the sections that do not
 depend on `t`, the zero Fourier mode. -/
 def sliceAverageLp : Lp E 2 stripMeasure →L[ℝ] Lp E 2 stripMeasure :=
   LinearMap.mkContinuous
@@ -200,22 +186,32 @@ def sliceAverageLp : Lp E 2 stripMeasure →L[ℝ] Lp E 2 stripMeasure :=
       exact ENNReal.toReal_mono (Lp.eLpNorm_ne_top x)
         (eLpNorm_sliceAverage_le (Lp.memLp x).aestronglyMeasurable)
 
+/-- The `L²` slice average of `x` is the class of the slice average of a representative of `x`. -/
+theorem sliceAverageLp_apply (x : Lp E 2 stripMeasure) :
+    sliceAverageLp x = (memLp_sliceAverage (Lp.memLp x)).toLp _ := by
+  rw [sliceAverageLp, LinearMap.mkContinuous_apply, LinearMap.coe_mk, AddHom.coe_mk]
+
 /-- The `L²` slice average is represented by the slice average of a representative. -/
 theorem coeFn_sliceAverageLp (x : Lp E 2 stripMeasure) :
-    sliceAverageLp x =ᵐ[stripMeasure] sliceAverage x :=
-  MemLp.coeFn_toLp (memLp_sliceAverage (Lp.memLp x))
+    sliceAverageLp x =ᵐ[stripMeasure] sliceAverage x := by
+  rw [sliceAverageLp_apply]
+  exact MemLp.coeFn_toLp _
 
 /-- The `L²` slice average of the class of a square integrable section is the class of its slice
 average. -/
 theorem sliceAverageLp_toLp (hf : MemLp f 2 stripMeasure) :
-    sliceAverageLp (hf.toLp f) = (memLp_sliceAverage hf).toLp _ :=
-  MemLp.toLp_congr (memLp_sliceAverage (Lp.memLp _)) (memLp_sliceAverage hf)
-    (sliceAverage_congr_ae hf.coeFn_toLp)
+    sliceAverageLp (hf.toLp f) = (memLp_sliceAverage hf).toLp _ := by
+  rw [sliceAverageLp_apply]
+  exact MemLp.toLp_congr _ _ (sliceAverage_congr_ae hf.coeFn_toLp)
+
+/-- The `L²` slice average has operator norm at most `1`. -/
+theorem opNorm_sliceAverageLp_le : ‖(sliceAverageLp : Lp E 2 stripMeasure →L[ℝ] _)‖ ≤ 1 := by
+  unfold sliceAverageLp
+  exact LinearMap.mkContinuous_norm_le _ zero_le_one _
 
 /-- The slice average does not increase the `L²` norm. -/
-theorem norm_sliceAverageLp_le (x : Lp E 2 stripMeasure) : ‖sliceAverageLp x‖ ≤ ‖x‖ := by
-  simpa using (sliceAverageLp (E := E)).le_of_opNorm_le
-    (LinearMap.mkContinuous_norm_le _ zero_le_one _) x
+theorem norm_sliceAverageLp_le (x : Lp E 2 stripMeasure) : ‖sliceAverageLp x‖ ≤ ‖x‖ :=
+  ((sliceAverageLp (E := E)).le_of_opNorm_le opNorm_sliceAverageLp_le x).trans_eq (one_mul _)
 
 /-- The `L²` slice average is idempotent. -/
 @[simp]
