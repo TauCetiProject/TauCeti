@@ -68,7 +68,7 @@ example {E : Type*} [AddCommGroup E] [Module (𝓞 K) E] [Module.Finite (𝓞 K)
     (h.quotient (Submodule.span (𝓞 K) {e₁ + e₂})).norm σ (1 ⊗ₜ Submodule.Quotient.mk e₁) =
       √2⁻¹ := by
   set F := Submodule.span (𝓞 K) {e₁ + e₂}
-  have h₂₁ : h.form σ (1 ⊗ₜ e₂) (1 ⊗ₜ e₁) = 0 := by rw [← h.conj_form, h₁₂, map_zero]
+  have h₂₁ : h.form σ (1 ⊗ₜ e₂) (1 ⊗ₜ e₁) = 0 := h.form_eq_zero_symm.mp h₁₂
   have hF (w : Codomain σ ⊗[𝓞 K] F) :
       ∃ c : ℂ, F.subtype.baseChange (Codomain σ) w = c • (1 ⊗ₜ (e₁ + e₂)) := by
     induction w using TensorProduct.inductionOn with
@@ -82,7 +82,7 @@ example {E : Type*} [AddCommGroup E] [Module (𝓞 K) E] [Module.Finite (𝓞 K)
       obtain ⟨b, hb⟩ := h₂
       exact ⟨a + b, by rw [map_add, ha, hb, add_smul]⟩
   set v : Codomain σ ⊗[𝓞 K] E := (2⁻¹ : ℂ) • (1 ⊗ₜ e₁ - 1 ⊗ₜ e₂)
-  have hv : h.IsOrthogonalFiber F σ v := fun w ↦ by
+  have hv : h.IsOrthogonalFiber F σ v := h.isOrthogonalFiber_iff F |>.mpr fun w ↦ by
     obtain ⟨c, hc⟩ := hF w
     simp only [hc, v, TensorProduct.tmul_add, map_smul, map_sub, map_add, LinearMap.map_smulₛₗ₂,
       LinearMap.add_apply, h₁₁, h₂₂, h₁₂, h₂₁]

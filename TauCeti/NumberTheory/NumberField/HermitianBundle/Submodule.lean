@@ -13,7 +13,6 @@ public import Mathlib.RingTheory.Flat.TorsionFree
 
 import Mathlib.Analysis.InnerProductSpace.Projection.Basic
 import Mathlib.LinearAlgebra.TensorProduct.RightExactness
-import Mathlib.RingTheory.Flat.Localization
 
 /-!
 # Sub-bundles and quotients of hermitian vector bundles
@@ -26,21 +25,20 @@ Let `K` be a number field and `h` a hermitian metric on an `𝓞 K`-module `E`. 
   `f_σ` stay injective (`ℂ` is flat over `𝓞 K`).
 * `E ⧸ F` carries the **quotient metric**: its complex fibre `(E ⧸ F)_σ = E_σ ⧸ F_σ` is identified
   with the orthogonal complement of `F_σ` in `E_σ`, and `h_σ` is restricted to it. The norm of a
-  class is the smallest norm of its lifts (`norm_quotient_baseChange_mkQ_le`).
+  class is the norm of its orthogonal lift (`norm_quotient_baseChange_mkQ`), and at most the norm
+  of any lift (`norm_quotient_baseChange_mkQ_le`).
 
 When `E` is a hermitian vector bundle, `F` is finitely generated projective, and so is `E ⧸ F` when
 `F` is saturated, that is, `E ⧸ F` is torsion-free; both are then hermitian vector bundles.
 
 ## Main definitions
 
-* `TauCeti.HermitianMetric.fiberConj`: complex conjugation `c ⊗ x ↦ conj c ⊗ x` from the complex
-  fibre at `σ` to the one at `conj σ`; it is antiunitary (`form_fiberConj`).
 * `TauCeti.HermitianMetric.comap`: the pullback of a metric along an injective linear map.
 * `TauCeti.HermitianMetric.quotientLift`: the identification of the complex fibre of `E ⧸ F` with
   the orthogonal complement of the fibre of `F`, as a section of the projection.
 * `TauCeti.HermitianMetric.quotient`: the quotient metric on `E ⧸ F`.
-* `TauCeti.HermitianBundle.sub`, `TauCeti.HermitianBundle.quotient`: the hermitian vector bundles
-  on a submodule, and on the quotient by a saturated submodule.
+* `TauCeti.HermitianBundle.ofSubmodule`, `TauCeti.HermitianBundle.quotient`: the hermitian vector
+  bundles on a submodule, and on the quotient by a saturated submodule.
 
 ## References
 
@@ -62,87 +60,9 @@ variable {E F : Type*} [AddCommGroup E] [Module (𝓞 K) E] [AddCommGroup F] [Mo
 
 namespace HermitianMetric
 
-/-! ### Complex conjugation of fibres -/
-
-/-- Complex conjugation `ℂ → ℂ` from `Codomain σ` to `Codomain (conj σ)`; it is `𝓞 K`-linear
-since `conj (σ a * z) = (conj σ) a * conj z`. -/
-def codomainConj (σ : K →+* ℂ) : Codomain σ →ₗ[𝓞 K] Codomain (conjugate σ) where
-  toFun z := (Codomain.equiv (conjugate σ)).symm (conj (Codomain.equiv σ z))
-  map_add' z w := by simp only [map_add]
-  map_smul' a z := by
-    apply (Codomain.equiv (conjugate σ)).injective
-    simp only [AlgEquiv.apply_symm_apply, Algebra.smul_def, map_mul, RingHom.id_apply,
-      Codomain.equiv_algebraMap_ringOfIntegers, conjugate_coe_eq]
-
-/-- `codomainConj σ` is complex conjugation. -/
-@[simp]
-theorem equiv_codomainConj (σ : K →+* ℂ) (z : Codomain σ) :
-    Codomain.equiv (conjugate σ) (codomainConj σ z) = conj (Codomain.equiv σ z) :=
-  AlgEquiv.apply_symm_apply _ _
-
-variable (E) in
-/-- Complex conjugation `c ⊗ x ↦ conj c ⊗ x` from the complex fibre `E_σ` to `E_{conj σ}`: it
-fixes the vectors `1 ⊗ x` of `E` and is conjugate-linear (`fiberConj_smul`). -/
-def fiberConj (σ : K →+* ℂ) :
-    Codomain σ ⊗[𝓞 K] E →ₗ[𝓞 K] Codomain (conjugate σ) ⊗[𝓞 K] E :=
-  (codomainConj σ).rTensor E
-
-@[simp]
-theorem fiberConj_tmul (σ : K →+* ℂ) (c : Codomain σ) (x : E) :
-    fiberConj E σ (c ⊗ₜ x) = codomainConj σ c ⊗ₜ x :=
-  (rfl)
-
-theorem fiberConj_one_tmul (σ : K →+* ℂ) (x : E) :
-    fiberConj E σ ((1 : Codomain σ) ⊗ₜ x) = 1 ⊗ₜ x := by
-  rw [fiberConj_tmul]
-  congr 1
-  apply (Codomain.equiv (conjugate σ)).injective
-  simp
-
-/-- Complex conjugation of fibres is conjugate-linear. -/
-theorem fiberConj_smul (σ : K →+* ℂ) (c : ℂ) (u : Codomain σ ⊗[𝓞 K] E) :
-    fiberConj E σ (c • u) = conj c • fiberConj E σ u := by
-  induction u using TensorProduct.inductionOn with
-  | add u v hu hv => rw [smul_add, map_add, hu, hv, map_add, smul_add]
-  | tmul d x =>
-    rw [TensorProduct.smul_tmul', fiberConj_tmul, fiberConj_tmul, TensorProduct.smul_tmul']
-    congr 1
-    apply (Codomain.equiv (conjugate σ)).injective
-    simp
-
-/-- Complex conjugation of fibres commutes with the complexification of linear maps. -/
-theorem fiberConj_baseChange (σ : K →+* ℂ) (f : F →ₗ[𝓞 K] E) (u : Codomain σ ⊗[𝓞 K] F) :
-    fiberConj E σ (f.baseChange (Codomain σ) u) =
-      f.baseChange (Codomain (conjugate σ)) (fiberConj F σ u) := by
-  induction u using TensorProduct.inductionOn with
-  | add u v hu hv => simp only [map_add, hu, hv]
-  | tmul d x => simp
-
 variable (h : HermitianMetric K E)
 
-/-- Complex conjugation of fibres is antiunitary: the form at `conj σ` of the conjugates
-of `u, v` is `conj h_σ(u, v)`. -/
-theorem form_fiberConj (σ : K →+* ℂ) (u v : Codomain σ ⊗[𝓞 K] E) :
-    h.form (conjugate σ) (fiberConj E σ u) (fiberConj E σ v) = conj (h.form σ u v) := by
-  induction u using TensorProduct.inductionOn with
-  | add u₁ u₂ h₁ h₂ => simp only [map_add, LinearMap.add_apply, h₁, h₂]
-  | tmul c x =>
-    induction v using TensorProduct.inductionOn with
-    | add v₁ v₂ h₁ h₂ => simp only [map_add, h₁, h₂]
-    | tmul d y =>
-      rw [fiberConj_tmul, fiberConj_tmul, h.form_tmul_tmul, h.form_tmul_tmul σ c d,
-        equiv_codomainConj, equiv_codomainConj, h.form_conjugate_tmul, map_mul, map_mul,
-        Complex.conj_conj]
-
 /-! ### Pulling back along injective maps -/
-
-/-- The complexification `f_σ` of an injective `𝓞 K`-linear map is injective, since `ℂ` is flat
-over `𝓞 K`. -/
-theorem baseChange_injective [NumberField K] (σ : K →+* ℂ) {f : F →ₗ[𝓞 K] E}
-    (hf : Function.Injective f) : Function.Injective (f.baseChange (Codomain σ)) := by
-  have : Module.Flat (𝓞 K) (Codomain σ) := Module.Flat.trans (𝓞 K) K (Codomain σ)
-  rw [LinearMap.baseChange_eq_lTensor]
-  exact Module.Flat.lTensor_preserves_injective_linearMap f hf
 
 /-- The **pullback** of a hermitian metric `h` on `E` along an injective `𝓞 K`-linear map
 `f : F → E`: the form at `σ` is `h_σ(f_σ u, f_σ v)`, where `f_σ` is the complexification of `f`.
@@ -154,7 +74,7 @@ def comap [NumberField K] (f : F →ₗ[𝓞 K] E) (hf : Function.Injective f) :
   isSymm_form σ := LinearMap.isSymm_def.mpr fun u v ↦ (h.isSymm_form σ).eq _ _
   form_self_pos σ u hu := by
     refine h.form_self_pos σ (u := f.baseChange (Codomain σ) u) fun h0 ↦ hu ?_
-    exact baseChange_injective σ hf (h0.trans (map_zero _).symm)
+    exact Codomain.baseChange_injective σ hf (h0.trans (map_zero _).symm)
   form_conjugate_tmul σ x y := by
     simp only [LinearMap.compl₂_apply, LinearMap.comp_apply, LinearMap.restrictScalars_apply,
       LinearMap.baseChange_tmul, h.form_conjugate_tmul]
@@ -177,8 +97,7 @@ theorem comap_form_tmul [NumberField K] (f : F →ₗ[𝓞 K] E) (hf : Function.
 theorem norm_comap [NumberField K] (f : F →ₗ[𝓞 K] E) (hf : Function.Injective f)
     (σ : K →+* ℂ) (u : Codomain σ ⊗[𝓞 K] F) :
     (h.comap f hf).norm σ u = h.norm σ (f.baseChange (Codomain σ) u) := by
-  rw [norm_def, norm_def]
-  rfl
+  rw [norm_def, norm_def, comap_form_apply]
 
 /-! ### The quotient metric -/
 
@@ -197,8 +116,13 @@ private theorem baseChange_mkQ_surjective (σ : K →+* ℂ) :
   exact LinearMap.lTensor_surjective _ (Submodule.mkQ_surjective F')
 
 /-- A vector `v` of `E_σ` is `h_σ`-orthogonal to the fibre `F_σ` of a submodule. -/
-@[expose] def IsOrthogonalFiber (σ : K →+* ℂ) (v : Codomain σ ⊗[𝓞 K] E) : Prop :=
+def IsOrthogonalFiber (σ : K →+* ℂ) (v : Codomain σ ⊗[𝓞 K] E) : Prop :=
   ∀ w : Codomain σ ⊗[𝓞 K] F', h.form σ (F'.subtype.baseChange (Codomain σ) w) v = 0
+
+theorem isOrthogonalFiber_iff {σ : K →+* ℂ} {v : Codomain σ ⊗[𝓞 K] E} :
+    h.IsOrthogonalFiber F' σ v ↔
+      ∀ w : Codomain σ ⊗[𝓞 K] F', h.form σ (F'.subtype.baseChange (Codomain σ) w) v = 0 :=
+  Iff.rfl
 
 /-- Vectors orthogonal to `F_σ` with the same image in `(E ⧸ F)_σ` are equal. -/
 theorem eq_of_isOrthogonalFiber {σ : K →+* ℂ} {v v' : Codomain σ ⊗[𝓞 K] E}
@@ -285,7 +209,8 @@ theorem quotientLift_fiberConj (σ : K →+* ℂ) (u : Codomain σ ⊗[𝓞 K] (
 
 /-- The **quotient metric** on `E ⧸ F`: the complex fibre `(E ⧸ F)_σ` is identified with the
 orthogonal complement of `F_σ` in `E_σ` by `quotientLift`, and carries the restriction of `h_σ`.
-The norm of a class is the smallest norm of its lifts (`norm_quotient_baseChange_mkQ_le`). -/
+The norm of a class is the smallest norm of its lifts (`norm_quotient_baseChange_mkQ`,
+`norm_quotient_baseChange_mkQ_le`). -/
 def quotient : HermitianMetric K (E ⧸ F') where
   form σ := ((h.form σ).comp (h.quotientLift F' σ)).compl₂ (h.quotientLift F' σ)
   isSymm_form σ := LinearMap.isSymm_def.mpr fun u v ↦ (h.isSymm_form σ).eq _ _
@@ -308,27 +233,22 @@ theorem quotient_form_baseChange_mkQ {σ : K →+* ℂ} {v v' : Codomain σ ⊗[
       (F'.mkQ.baseChange (Codomain σ) v') = h.form σ v v' := by
   rw [quotient_form_apply, h.quotientLift_eq F' hv, h.quotientLift_eq F' hv']
 
-/-- The quotient norm of the class of `v` is at most the norm of `v`, with equality for `v`
-orthogonal to `F_σ`: the quotient norm is the distance from `v` to `F_σ`. -/
+/-- The quotient norm of the class of `v` is at most the norm of `v`. The lifts orthogonal to
+`F_σ` attain it (`norm_quotient_baseChange_mkQ`). -/
 theorem norm_quotient_baseChange_mkQ_le (σ : K →+* ℂ) (v : Codomain σ ⊗[𝓞 K] E) :
     (h.quotient F').norm σ (F'.mkQ.baseChange (Codomain σ) v) ≤ h.norm σ v := by
   set u := h.quotientLift F' σ (F'.mkQ.baseChange (Codomain σ) v)
   obtain ⟨w, hw⟩ := (exact_baseChange F' σ (v - u)).1
     (by rw [map_sub, h.baseChange_mkQ_quotientLift, sub_self])
-  have horth : h.form σ (F'.subtype.baseChange (Codomain σ) w) u = 0 :=
-    h.isOrthogonalFiber_quotientLift F' σ (F'.mkQ.baseChange (Codomain σ) v) w
-  have horth' : h.form σ u (F'.subtype.baseChange (Codomain σ) w) = 0 := by
-    rw [← h.conj_form, horth, map_zero]
+  have horth : h.form σ u (F'.subtype.baseChange (Codomain σ) w) = 0 :=
+    h.form_eq_zero_symm.mp (h.isOrthogonalFiber_quotientLift F' σ _ w)
   have hv : v = u + F'.subtype.baseChange (Codomain σ) w := by rw [hw, add_sub_cancel]
-  have key : (h.norm σ v) ^ 2 =
-      (h.norm σ u) ^ 2 + (h.norm σ (F'.subtype.baseChange (Codomain σ) w)) ^ 2 := by
-    rw [h.norm_sq, h.norm_sq, h.norm_sq, hv]
-    simp only [map_add, LinearMap.add_apply, horth, horth', add_zero, zero_add, Complex.add_re]
   rw [norm_def, quotient_form_apply, ← norm_def]
   refine (pow_le_pow_iff_left₀ (h.norm_nonneg σ u) (h.norm_nonneg σ v) two_ne_zero).mp ?_
-  rw [key]
+  rw [hv, h.norm_add_sq_eq_norm_sq_add_norm_sq_of_form_eq_zero horth]
   exact le_add_of_nonneg_right (sq_nonneg _)
 
+/-- On a lift `v` orthogonal to `F_σ`, the quotient norm of its class is `‖v‖_σ`. -/
 theorem norm_quotient_baseChange_mkQ {σ : K →+* ℂ} {v : Codomain σ ⊗[𝓞 K] E}
     (hv : h.IsOrthogonalFiber F' σ v) :
     (h.quotient F').norm σ (F'.mkQ.baseChange (Codomain σ) v) = h.norm σ v := by
@@ -343,14 +263,15 @@ variable [NumberField K] (Ē : HermitianBundle K) (F : Submodule (𝓞 K) Ē)
 /-- The **sub-bundle** of a hermitian vector bundle `Ē` on an `𝓞 K`-submodule `F`, with the
 restricted metric. It is a hermitian vector bundle: `F` is finitely generated since `𝓞 K` is
 Noetherian, and projective since it is torsion-free over the Dedekind domain `𝓞 K`. -/
-@[expose] def sub : HermitianBundle K where
+@[expose] def ofSubmodule : HermitianBundle K where
   carrier := F
   isProjective :=
     have : Module.FinitePresentation (𝓞 K) F := Module.finitePresentation_of_finite _ _
     Module.Flat.projective_of_finitePresentation
   metric := Ē.metric.comap F.subtype F.injective_subtype
 
-theorem sub_metric : (Ē.sub F).metric = Ē.metric.comap F.subtype F.injective_subtype :=
+theorem ofSubmodule_metric :
+    (Ē.ofSubmodule F).metric = Ē.metric.comap F.subtype F.injective_subtype :=
   (rfl)
 
 /-- The **quotient bundle** `Ē ⧸ F` of a hermitian vector bundle by a saturated submodule `F`
