@@ -291,41 +291,48 @@ theorem eq_renewalArrivalMeasure_toNNReal_occurrenceGap {μ : Measure ℝ≥0}
   rw [hseq]
   exact hμ.eq_occurrenceTimeMeasure
 
-/-- For a locally finite counting measure on `ℝ≥0` having at least one finite occurrence strictly
-after `t`, the mass of `[0, t]` equals the extended renewal count of its `ℝ≥0` interarrival-gap
-representatives on the canonical space `Measure ℝ≥0`. -/
+/-- For a counting measure on `ℝ≥0` having at least one finite occurrence strictly after `t`,
+the mass of `[0, t]` equals the extended renewal count of its `ℝ≥0` interarrival-gap
+representatives on the canonical space `Measure ℝ≥0`. No global local finiteness is required,
+including when `μ` explodes after `t`. -/
 theorem apply_Iic_eq_renewalCount_toNNReal_occurrenceGap {μ : Measure ℝ≥0}
-    [IsLocallyFiniteMeasure μ] (hμ : μ.IsIntegerValued)
-    {t : ℝ≥0} (hfin : ∃ n, t < (μ.occurrenceTime n).toNNReal) :
+    (hμ : μ.IsIntegerValued) {t : ℝ≥0} (hfin : ∃ n, t < (μ.occurrenceTime n).toNNReal) :
     μ (Iic t) =
       renewalCount (fun n (ν : Measure ℝ≥0) => (ν.occurrenceGap n).toNNReal) t μ := by
   obtain ⟨n, hn⟩ := hfin
   have hn_ne : μ.occurrenceTime n ≠ ∞ := fun h => by simp [h] at hn
+  have ht_lt : (t : ℝ≥0∞) < μ.occurrenceTime n := by
+    rw [← ENNReal.coe_toNNReal hn_ne, ENNReal.coe_lt_coe]
+    exact hn
+  obtain ⟨u, htu, hun⟩ := ENNReal.lt_iff_exists_nnreal_btwn.1 ht_lt
+  have htu' : t < u := ENNReal.coe_lt_coe.1 htu
+  have hu_lt : μ (Iic u) < (n + 1 : ℝ≥0∞) :=
+    lt_of_not_ge fun hle => hun.not_ge (μ.occurrenceTime_le_of_le hle)
+  have hu_ne : μ (Iic u) ≠ ∞ := (hu_lt.trans (by simp)).ne
+  have ht_lt_top : μ (Iic t) < ∞ :=
+    (measure_mono (Iic_subset_Iic.2 htu'.le)).trans_lt (lt_top_iff_ne_top.mpr hu_ne)
+  obtain ⟨m, hm⟩ := hμ.exists_eq_natCast measurableSet_Iic ht_lt_top
+  have hk_iff (k : ℕ) : μ.occurrenceTime k ≤ t ↔ k < m := by
+    rw [μ.occurrenceTime_le_iff_of_measure_Iic_ne_top k t ⟨u, htu', hu_ne⟩, hm]
+    exact_mod_cast Nat.succ_le_iff
+  have hmn : m ≤ n := not_lt.1 fun hnm => ht_lt.not_ge ((hk_iff n).2 hnm)
+  have hm_ne : μ.occurrenceTime m ≠ ∞ :=
+    ne_top_of_le_ne_top hn_ne (μ.monotone_occurrenceTime hmn)
   let T : ℕ → Measure ℝ≥0 → ℝ≥0 := fun i ν => (ν.occurrenceGap i).toNNReal
-  calc
-    μ (Iic t) = occurrenceTimeMeasure μ.occurrenceTime (Iic t) := by
-      conv_lhs => rw [hμ.eq_occurrenceTimeMeasure]
-    _ = ∑' k, if μ.occurrenceTime k ≤ t then (1 : ℝ≥0∞) else 0 := occurrenceTimeMeasure_Iic _ t
-    _ = ∑' k, if arrival T (k + 1) μ ≤ t then (1 : ℝ≥0∞) else 0 := by
-      refine tsum_congr fun k => ?_
-      have hiff : μ.occurrenceTime k ≤ (t : ℝ≥0∞) ↔ arrival T (k + 1) μ ≤ t := by
-        rcases le_or_gt k n with hkn | hnk
-        · have hk_ne : μ.occurrenceTime k ≠ ∞ :=
-            ne_top_of_le_ne_top hn_ne (μ.monotone_occurrenceTime hkn)
-          rw [arrival_toNNReal_occurrenceGap hk_ne, ← ENNReal.coe_le_coe,
-            ENNReal.coe_toNNReal hk_ne]
-        · have hlt_time : (t : ℝ≥0∞) < μ.occurrenceTime k := by
-            have hnt : (t : ℝ≥0∞) < μ.occurrenceTime n := by
-              rw [← ENNReal.coe_toNNReal hn_ne, ENNReal.coe_lt_coe]
-              exact hn
-            exact hnt.trans_le (μ.monotone_occurrenceTime hnk.le)
-          have hlt_arr : t < arrival T (k + 1) μ := by
-            have hna : t < arrival T (n + 1) μ := by
-              rwa [arrival_toNNReal_occurrenceGap hn_ne]
-            exact hna.trans_le (monotone_arrival T μ (Nat.succ_le_succ hnk.le))
-          simp [hlt_time.not_ge, hlt_arr.not_ge]
-      simp [hiff]
-    _ = renewalCount T t μ := (renewalCount_def T t μ).symm
+  have harr_le : arrival T m μ ≤ t := by
+    cases m with
+    | zero => simp
+    | succ k =>
+      have hk_ne : μ.occurrenceTime k ≠ ∞ :=
+        ne_top_of_le_ne_top hm_ne (μ.monotone_occurrenceTime (Nat.le_succ k))
+      rw [arrival_toNNReal_occurrenceGap hk_ne, ← ENNReal.coe_le_coe,
+        ENNReal.coe_toNNReal hk_ne]
+      exact (hk_iff k).2 (Nat.lt_succ_self k)
+  have harr_lt : t < arrival T (m + 1) μ := by
+    rw [arrival_toNNReal_occurrenceGap hm_ne, ← ENNReal.coe_lt_coe,
+      ENNReal.coe_toNNReal hm_ne]
+    exact lt_of_not_ge ((hk_iff m).not.2 (lt_irrefl m))
+  exact hm.trans (renewalCount_eq_natCast_iff.2 ⟨harr_le, harr_lt⟩).symm
 
 /-- For a locally finite counting measure on `ℝ≥0` whose occurrence times are all finite, the
 mass of `[0, t]` equals the natural-valued renewal count of its `ℝ≥0` interarrival-gap

@@ -260,6 +260,26 @@ theorem occurrenceGap_restrict_Iic (μ : Measure ℝ≥0) [IsLocallyFiniteMeasur
   occurrenceGap_restrict_Iic_of_measure_Iic_ne_top μ b n
     ⟨b + 1, lt_add_one b, (measure_Iic_lt_top (μ := μ)).ne⟩
 
+/-- For a counting measure that is finite on some larger closed window `[0, u]` with `u > s`,
+the initial gap exceeds `s` exactly when `[0, s]` contains no occurrences. No global local
+finiteness is required. -/
+theorem IsIntegerValued.lt_occurrenceGap_zero_iff_of_measure_Iic_ne_top {μ : Measure ℝ≥0}
+    (hμ : μ.IsIntegerValued) (s : ℝ≥0) (hfin : ∃ u > s, μ (Iic u) ≠ ∞) :
+    (s : ℝ≥0∞) < μ.occurrenceGap 0 ↔ μ (Iic s) = 0 := by
+  rw [occurrenceGap_zero, ← not_le,
+    μ.occurrenceTime_le_iff_of_measure_Iic_ne_top 0 s hfin, Nat.cast_zero, zero_add]
+  exact ⟨fun h => by_contra fun hne => h (hμ.one_le_apply hne), fun h => by simp [h]⟩
+
+/-- For a counting measure that is finite on some positive closed window `[0, u]`, the first
+gap is positive if and only if there is no occurrence at zero. Empty configurations satisfy both
+sides, and no global local finiteness is required. -/
+theorem IsIntegerValued.occurrenceGap_zero_pos_iff_of_measure_Iic_ne_top {μ : Measure ℝ≥0}
+    (hμ : μ.IsIntegerValued) (hfin : ∃ u > (0 : ℝ≥0), μ (Iic u) ≠ ∞) :
+    0 < μ.occurrenceGap 0 ↔ μ {0} = 0 := by
+  have hIic : Iic (0 : ℝ≥0) = {0} := by rw [← bot_eq_zero, Iic_bot]
+  simpa only [ENNReal.coe_zero, hIic] using
+    hμ.lt_occurrenceGap_zero_iff_of_measure_Iic_ne_top 0 hfin
+
 section LocallyFinite
 
 open TauCeti.Probability
@@ -283,16 +303,16 @@ theorem IsIntegerValued.occurrenceGap_inj [IsLocallyFiniteMeasure ν]
 /-- For a locally finite counting measure, the initial gap exceeds `s` exactly when `[0, s]`
 contains no occurrences. -/
 theorem IsIntegerValued.lt_occurrenceGap_zero_iff (hμ : μ.IsIntegerValued) (s : ℝ≥0) :
-    (s : ℝ≥0∞) < μ.occurrenceGap 0 ↔ μ (Iic s) = 0 := by
-  rw [occurrenceGap_zero, ← not_le, μ.occurrenceTime_le_iff 0 s, Nat.cast_zero, zero_add]
-  exact ⟨fun h => by_contra fun hne => h (hμ.one_le_apply hne), fun h => by simp [h]⟩
+    (s : ℝ≥0∞) < μ.occurrenceGap 0 ↔ μ (Iic s) = 0 :=
+  hμ.lt_occurrenceGap_zero_iff_of_measure_Iic_ne_top s
+    ⟨s + 1, lt_add_one s, (measure_Iic_lt_top (μ := μ)).ne⟩
 
 /-- For a locally finite counting measure, the first gap is positive if and only if there is
 no occurrence at zero. Empty configurations satisfy both sides. -/
 theorem IsIntegerValued.occurrenceGap_zero_pos_iff (hμ : μ.IsIntegerValued) :
-    0 < μ.occurrenceGap 0 ↔ μ {0} = 0 := by
-  have hIic : Iic (0 : ℝ≥0) = {0} := by rw [← bot_eq_zero, Iic_bot]
-  simpa only [ENNReal.coe_zero, hIic] using hμ.lt_occurrenceGap_zero_iff 0
+    0 < μ.occurrenceGap 0 ↔ μ {0} = 0 :=
+  hμ.occurrenceGap_zero_pos_iff_of_measure_Iic_ne_top
+    ⟨1, zero_lt_one, (measure_Iic_lt_top (μ := μ)).ne⟩
 
 /-- For a locally finite counting measure, simplicity (every singleton has mass at most one)
 is equivalent to positivity of every interarrival gap after the first. Finite configurations
