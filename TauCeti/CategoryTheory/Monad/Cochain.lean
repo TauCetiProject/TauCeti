@@ -288,12 +288,8 @@ lemma cochainComplexAugmentation_naturality_left {X X' : C} (f : X' ⟶ X) (Y : 
     G.cochainComplexAugmentation k X Y ≫ ((G.cochainComplex k).map f.op).app Y =
       (CochainComplex.single₀ (ModuleCat k)).map (ModuleCat.ofHom (Linear.leftComp k Y f)) ≫
         G.cochainComplexAugmentation k X' Y := by
-  apply (CochainComplex.fromSingle₀Equiv _ _).injective
-  apply Subtype.ext
-  rw [CochainComplex.fromSingle₀Equiv_apply_coe, CochainComplex.fromSingle₀Equiv_apply_coe]
-  rw [HomologicalComplex.comp_f, HomologicalComplex.comp_f, CochainComplex.single₀_map_f_zero,
-    cochainComplexAugmentation_f_zero, cochainComplexAugmentation_f_zero]
-  exact G.cochainAugmentation_naturality_left k f Y
+  apply HomologicalComplex.from_single_hom_ext
+  simpa using G.cochainAugmentation_naturality_left k f Y
 
 /-- The cochain augmentation is natural in the coefficient object. -/
 @[reassoc]
@@ -301,11 +297,7 @@ lemma cochainComplexAugmentation_naturality_right (X : C) {Y Y' : C} (g : Y ⟶ 
     G.cochainComplexAugmentation k X Y ≫ ((G.cochainComplex k).obj (op X)).map g =
       (CochainComplex.single₀ (ModuleCat k)).map (ModuleCat.ofHom (Linear.rightComp k X g)) ≫
         G.cochainComplexAugmentation k X Y' := by
-  apply (CochainComplex.fromSingle₀Equiv _ _).injective
-  apply Subtype.ext
-  rw [CochainComplex.fromSingle₀Equiv_apply_coe, CochainComplex.fromSingle₀Equiv_apply_coe]
-  rw [HomologicalComplex.comp_f, HomologicalComplex.comp_f, CochainComplex.single₀_map_f_zero,
-    cochainComplexAugmentation_f_zero, cochainComplexAugmentation_f_zero]
-  exact G.cochainAugmentation_naturality_right k X g
+  apply HomologicalComplex.from_single_hom_ext
+  simpa using G.cochainAugmentation_naturality_right k X g
 
 end CategoryTheory.Comonad
