@@ -52,7 +52,7 @@ place of `(2 r) ^ k`, are in `TauCeti.Geometry.Euclidean.Volume.Measure`.
   `MeasureTheory.Measure.mul_hausdorffMeasure_le_measure`: a measure whose upper density is at
   least `c` on `A` dominates `c • μH[d]` on `A`.
 * `MeasureTheory.Measure.frequently_ofReal_div_mul_rpow_le_measure_closedBall`: a lower bound
-  `c ρ ^ d ≤ μ (closedBall y ρ)` for all radii `0 < ρ ≤ ρ₀` gives the density bound
+  `c ρ ^ d ≤ μ (closedBall y ρ)` for arbitrarily small radii `ρ > 0` gives the density bound
   `(c / 2 ^ d) (2 r) ^ d ≤ μ (closedBall y r)` for arbitrarily small `r`.
 * `MeasureTheory.Measure.isLocallyFiniteMeasure_restrict_hausdorffMeasure` and
   `MeasureTheory.Measure.isLocallyFiniteMeasure_restrict_hausdorffMeasure_of_ofReal_mul_pow_le`:
@@ -268,24 +268,22 @@ theorem mul_hausdorffMeasure_le_measure (μ : Measure X) [μ.OuterRegular] {d : 
   exact (mul_hausdorffMeasure_le_measure_of_isOpen μ hU hAU h).trans_lt hUb
 
 omit [BorelSpace X] in
-/-- **Rescaling a lower bound on the measures of balls.** If `c ρ ^ d ≤ μ (closedBall y ρ)` for
-every radius `0 < ρ ≤ ρ₀`, then arbitrarily small radii `r > 0` have
+/-- **Rescaling a lower bound on the measures of balls.** If arbitrarily small radii `ρ > 0`
+have `c ρ ^ d ≤ μ (closedBall y ρ)`, then arbitrarily small radii `r > 0` have
 `(c / 2 ^ d) (2 r) ^ d ≤ μ (closedBall y r)`, the form of a lower density bound used in
 `MeasureTheory.Measure.mul_hausdorffMeasure_le_measure_of_isOpen`. -/
-theorem frequently_ofReal_div_mul_rpow_le_measure_closedBall {μ : Measure X} {y : X} {c ρ₀ : ℝ}
-    {d : ℕ} (hρ₀ : 0 < ρ₀)
-    (h : ∀ ρ, 0 < ρ → ρ ≤ ρ₀ → ENNReal.ofReal (c * ρ ^ d) ≤ μ (closedBall y ρ)) :
+theorem frequently_ofReal_div_mul_rpow_le_measure_closedBall {μ : Measure X} {y : X} {c : ℝ}
+    {d : ℕ} (h : ∃ᶠ ρ in 𝓝[>] 0, ENNReal.ofReal (c * ρ ^ d) ≤ μ (closedBall y ρ)) :
     ∃ᶠ r in 𝓝[>] 0,
       ENNReal.ofReal (c / 2 ^ d) * ENNReal.ofReal (2 * r) ^ (d : ℝ) ≤ μ (closedBall y r) := by
-  refine Eventually.frequently ?_
-  filter_upwards [Ioc_mem_nhdsGT hρ₀] with ρ hρ
-  have h2ρ : 0 ≤ 2 * ρ := by linarith [hρ.1]
+  refine (h.and_eventually self_mem_nhdsWithin).mono fun ρ ⟨hρ, (hρ0 : 0 < ρ)⟩ => ?_
+  have h2ρ : 0 ≤ 2 * ρ := by linarith
   have hscale : c / 2 ^ d * (2 * ρ) ^ d = c * ρ ^ d := by
     rw [mul_pow]
     field_simp
   rw [ENNReal.rpow_natCast, ← ENNReal.ofReal_pow h2ρ, ← ENNReal.ofReal_mul' (pow_nonneg h2ρ d),
     hscale]
-  exact h ρ hρ.1 hρ.2
+  exact hρ
 
 /-- **Locally finite Hausdorff measure from a local density bound.** Let `μ` be locally finite.
 If every point has a neighbourhood `V` and a constant `c ≠ 0` such that at every point `y` of
@@ -320,7 +318,8 @@ theorem isLocallyFiniteMeasure_restrict_hausdorffMeasure_of_ofReal_mul_pow_le (�
   refine isLocallyFiniteMeasure_restrict_hausdorffMeasure μ fun x ↦ ?_
   obtain ⟨U, hU, c, hc, ρ₀, hρ₀, hdens⟩ := h x
   exact ⟨U, hU, ENNReal.ofReal (c / 2 ^ d), (ENNReal.ofReal_pos.2 (by positivity)).ne',
-    fun y hy ↦ frequently_ofReal_div_mul_rpow_le_measure_closedBall hρ₀ (hdens y hy)⟩
+    fun y hy ↦ frequently_ofReal_div_mul_rpow_le_measure_closedBall <| Eventually.frequently <|
+      eventually_of_mem (Ioc_mem_nhdsGT hρ₀) fun ρ hρ ↦ hdens y hy ρ hρ.1 hρ.2⟩
 
 /-- **Upper density comparison for Hausdorff measure.** If at every point `x` of `A` all small
 closed balls satisfy `μ (closedBall x r) ≤ c (2 r) ^ d`, where `c ≠ 0, ∞`, then

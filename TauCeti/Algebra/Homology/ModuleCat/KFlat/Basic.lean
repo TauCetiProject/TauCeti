@@ -8,6 +8,7 @@ module
 public import TauCeti.Algebra.Homology.Monoidal.KFlat.Basic
 public import Mathlib.Algebra.Category.ModuleCat.Monoidal.Closed
 public import Mathlib.RingTheory.Flat.Basic
+public import Mathlib.CategoryTheory.Monoidal.Closed.Braided
 import TauCeti.Algebra.Category.ModuleCat.AB
 import Mathlib.RingTheory.Flat.CategoryTheory
 
