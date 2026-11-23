@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.Complex.Fuchsian.LevelOne.Basic
 public import TauCeti.NumberTheory.ModularForms.CongruenceSubgroups.Basic
 public import TauCeti.NumberTheory.LegendreSymbol.QuadraticCongruence
+import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Transvection.FinTwo
 
 /-!
 # The elliptic points of `Γ₀(N)`
@@ -101,7 +102,7 @@ private theorem IsRatio.mul_left {x : ZMod N} {g γ : SL(2, ℤ)} (hg : g ∈ Ga
 
 /-- The lower-triangular matrix `[1, 0; x, 1]`, whose residue is `x`. -/
 private def lowerRep (x : ZMod N) : SL(2, ℤ) :=
-  ⟨!![1, 0; (x.cast : ℤ), 1], by simp [det_fin_two_of]⟩
+  Matrix.SpecialLinearGroup.transvection (one_ne_zero : (1 : Fin 2) ≠ 0) (x.cast : ℤ)
 
 private theorem isRatio_lowerRep (x : ZMod N) : IsRatio x (lowerRep x) := by
   simp [IsRatio, lowerRep]

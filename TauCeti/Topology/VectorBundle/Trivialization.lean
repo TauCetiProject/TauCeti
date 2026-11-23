@@ -35,13 +35,22 @@ For scalar coordinates `q : F ≃L[𝕜] 𝕜` of a rank-one model,
 `Bundle.Trivialization.scalarCoordChange` computes the actual scalar transition. Its
 application, nonvanishing, identity and cocycle laws follow from the native linear changes.
 
-More generally, any linear trivialization sends a vector over its base set to a nonzero vector
-exactly when the vector is nonzero (`Bundle.Trivialization.snd_apply_ne_zero_iff`), and likewise
+The fibre coordinate of a continuous section in any trivialization is continuous on its base set
+(`Bundle.Trivialization.continuousOn_snd_apply_mk`).
+
+Any linear trivialization sends a vector over its base set to a nonzero vector
+exactly when the vector is nonzero (`Bundle.Trivialization.snd_apply_ne_zero_iff`,
+`Bundle.Trivialization.snd_apply_eq_zero_iff`), and likewise
 for its inverse over the base set (`Bundle.Trivialization.symm_apply_ne_zero_iff`); both commute
 with scalar multiplication over the base set (`Bundle.Trivialization.snd_apply_mk_smul`,
-`Bundle.Trivialization.symm_apply_smul`). Over the base set, its fibrewise linear inverse
-`e.symmₗ R b` is the inverse of the fibrewise linear equivalence
-(`Bundle.Trivialization.coe_linearEquivAt_symm`), hence injective
+`Bundle.Trivialization.symm_apply_smul`). Near a point whose image under a map continuous there
+lies in the base set, a linear pretrivialization, in particular a linear trivialization, carries a
+fibrewise operation on sections along that map to an operation on their coordinates, provided every
+linear equivalence from a fibre to the model fibre carries the first operation to the second; the
+sum and the difference are examples
+(`Bundle.Pretrivialization.snd_apply_mk_op_eventuallyEq_and_eq`). Over the base set, the
+fibrewise linear inverse `e.symmₗ R b` of a linear trivialization is the inverse of the fibrewise
+linear equivalence (`Bundle.Trivialization.coe_linearEquivAt_symm`), hence injective
 (`Bundle.Trivialization.symmₗ_injective`). For two linear
 trivializations whose base sets contain `b`, the fibre equivalence `E_b ≃ F` of the second is that
 of the first followed by the coordinate change from the first to the second
@@ -96,6 +105,36 @@ noncomputable section
 open Bundle
 open scoped Topology
 
+namespace Bundle.Pretrivialization
+
+variable {B : Type*} [TopologicalSpace B] (R : Type*) [Semiring R] {F : Type*} [TopologicalSpace F]
+  [AddCommMonoid F] [Module R F] {E : B → Type*} [∀ b, AddCommMonoid (E b)] [∀ b, Module R (E b)]
+  (e : Pretrivialization F (π F E)) [e.IsLinear R]
+
+/-- Let `e` be a pretrivialization that is linear on the fibres, such as a linear trivialization
+read through `Bundle.Trivialization.toPretrivialization`, and `b` a map continuous at `x₀` within
+`u`, with `b x₀` in the base set of `e`. For a fibrewise operation `op` that every linear
+equivalence `E y ≃ₗ[R] F` carries to `opF`, the `e`-coordinate of `op (s x) (t x)` is `opF` of the
+`e`-coordinates of `s x` and `t x`, both for `x` near `x₀` within `u` and at `x₀` itself. Only
+linear equivalences are needed because over the base set `e` is the linear equivalence
+`e.linearEquivAt R`. No topology on the total space is needed. This is the coordinate step in the
+regularity of fibrewise sums and differences of sections along a map. -/
+theorem snd_apply_mk_op_eventuallyEq_and_eq {X : Type*} [TopologicalSpace X] {b : X → B}
+    {s t : ∀ x, E (b x)} {u : Set X} {x₀ : X} {op : ∀ y, E y → E y → E y} {opF : F → F → F}
+    (hop : ∀ y (g : E y ≃ₗ[R] F) v w, g (op y v w) = opF (g v) (g w))
+    (hb : ContinuousWithinAt b u x₀) (hx₀ : b x₀ ∈ e.baseSet) :
+    (fun x ↦ (e ⟨b x, op (b x) (s x) (t x)⟩).2) =ᶠ[𝓝[u] x₀]
+        (fun x ↦ opF (e ⟨b x, s x⟩).2 (e ⟨b x, t x⟩).2) ∧
+      (e ⟨b x₀, op (b x₀) (s x₀) (t x₀)⟩).2 = opF (e ⟨b x₀, s x₀⟩).2 (e ⟨b x₀, t x₀⟩).2 := by
+  have key {y : B} (hy : y ∈ e.baseSet) (v w : E y) :
+      (e ⟨y, op y v w⟩).2 = opF (e ⟨y, v⟩).2 (e ⟨y, w⟩).2 := by
+    simpa only [linearEquivAt_apply] using hop y (e.linearEquivAt R y hy) v w
+  refine ⟨?_, key hx₀ _ _⟩
+  filter_upwards [hb.preimage_mem_nhdsWithin (e.open_baseSet.mem_nhds hx₀)] with x hx
+  exact key hx _ _
+
+end Bundle.Pretrivialization
+
 namespace Bundle.Trivialization
 
 variable {B : Type*} [TopologicalSpace B] {F : Type*} [TopologicalSpace F] {E : B → Type*}
@@ -140,6 +179,14 @@ theorem homeomorphTrivial_symm_apply (he : e.baseSet = Set.univ)
     (e.homeomorphTrivial he).symm w = e.toPartialHomeomorph.symm (w.proj, w.snd) := by
   rfl
 
+/-- The fibre coordinate of a continuous section in a trivialization is continuous on the base
+set of the trivialization. -/
+theorem continuousOn_snd_apply_mk {s : ∀ b, E b}
+    (hs : Continuous fun b ↦ TotalSpace.mk' F b (s b)) :
+    ContinuousOn (fun b ↦ (e (TotalSpace.mk' F b (s b))).2) e.baseSet :=
+  continuous_snd.comp_continuousOn
+    (e.continuousOn.comp hs.continuousOn fun _ hb ↦ e.mem_source.2 hb)
+
 section Linear
 
 variable (R : Type*) [Semiring R] {F : Type*} [TopologicalSpace F] [AddCommMonoid F] [Module R F]
@@ -152,6 +199,13 @@ vector is nonzero. -/
 theorem snd_apply_ne_zero_iff {v : TotalSpace F E} (hv : v.proj ∈ e.baseSet) :
     (e v).2 ≠ 0 ↔ v.snd ≠ 0 := by
   simpa only [linearEquivAt_apply] using (e.linearEquivAt R v.proj hv).map_ne_zero_iff
+
+include R in
+/-- A linear trivialization sends a vector over its base set to zero exactly when the vector is
+zero. -/
+theorem snd_apply_eq_zero_iff {v : TotalSpace F E} (hv : v.proj ∈ e.baseSet) :
+    (e v).2 = 0 ↔ v.snd = 0 :=
+  not_iff_not.1 (e.snd_apply_ne_zero_iff R hv)
 
 include R in
 /-- Over its base set, the inverse of a linear trivialization sends a vector of the model fibre to

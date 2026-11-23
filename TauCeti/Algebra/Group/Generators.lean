@@ -27,7 +27,7 @@ Results are given for both Mathlib's `Submodule.spanFinrank` over `ℤ` and `Add
 Mathlib's convention `Submodule.spanFinrank` is `0` for a group that is not finitely generated, so
 for such factors the `spanFinrank` statement holds by that convention only; the `AddGroup.rank`
 statements assume finitely generated factors (`AddGroup.FG`). Combining this with
-`AddGroup.rank_pi_zmod_of_dvd` yields the closed formula `AddGroup.rank_prod_zmod` for the
+`AddGroup.rank_pi_zmod` yields the closed formula `AddGroup.rank_prod_zmod` for the
 generator rank of `ZMod m × ZMod n` (and its prime-power specialization
 `AddGroup.rank_prod_zmod_prime_pow`).
 -/
@@ -166,7 +166,7 @@ theorem rank_pi_eq_sup_of_coprime_card {ι : Type*} [Fintype ι] (M : ι → Typ
     [∀ i, AddCommGroup (M i)] [∀ i, AddGroup.FG (M i)]
     (hcop : Pairwise fun i j ↦ (Nat.card (M i)).Coprime (Nat.card (M j))) :
     AddGroup.rank (∀ i, M i) = Finset.univ.sup (fun i ↦ AddGroup.rank (M i)) := by
-  simp_rw [AddGroup.rank_eq_spanFinrank_top]
+  simp_rw [AddGroup.rank_eq_spanFinrank]
   exact TauCeti.AddCommGroup.spanFinrank_pi_eq_sup_of_coprime_card M hcop
 
 private def prodAddEquivPiBool.{u} (F : Bool → Type u) [∀ b, AddCommGroup (F b)] :
@@ -230,7 +230,7 @@ theorem rank_prod_zmod (m n : ℕ) :
       · exact hp_dvd.trans (Nat.gcd_dvd_left m n)
     have e : (ZMod m × ZMod n) ≃+ ∀ b : Bool, ZMod (cond b m n) :=
       prodAddEquivPiBool (fun b : Bool ↦ ZMod (cond b m n))
-    rw [AddGroup.rank_congr e, AddGroup.rank_pi_zmod_of_dvd hp hdvd, Fintype.card_bool]
+    rw [AddGroup.rank_congr e, AddGroup.rank_pi_zmod _ hp hdvd, Fintype.card_bool]
 
 /-- For prime `p` and `k₁, k₂ > 0`, `ZMod (p ^ k₁) × ZMod (p ^ k₂)` has generator rank `2`. -/
 theorem rank_prod_zmod_prime_pow {p k₁ k₂ : ℕ} (hp : p.Prime) (hk₁ : 0 < k₁) (hk₂ : 0 < k₂) :

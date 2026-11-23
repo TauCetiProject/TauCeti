@@ -7,45 +7,52 @@ module
 
 public import Mathlib.Algebra.Field.ZMod
 public import Mathlib.Algebra.Module.SpanRank
+public import Mathlib.Data.ZMod.Basic
 public import Mathlib.GroupTheory.Rank
 public import Mathlib.GroupTheory.SpecificGroups.Cyclic
 public import Mathlib.LinearAlgebra.Dimension.Free
+public import TauCeti.Algebra.Module.SpanRank
 public import TauCeti.GroupTheory.Finiteness
 import Mathlib.Algebra.EuclideanDomain.Int
 import Mathlib.LinearAlgebra.Basis.VectorSpace
 import Mathlib.LinearAlgebra.Dimension.Constructions
-import TauCeti.Algebra.Module.SpanRank
 
 /-!
 # Generator rank of groups and abelian groups
 
 This file develops basic properties of `Group.rank` and `AddGroup.rank`, the minimal number of
-generators of a finitely generated group:
+generators of a finitely generated group (Nikulin's length `l(M)` when `M` is finite):
 
 * Cyclic groups have generator rank at most `1` (`1` when nontrivial); conversely, a finitely
   generated group is cyclic if and only if its generator rank is at most `1`.
 * Generator rank is subadditive on binary and finite indexed products (`Group.rank_prod_le`,
   `Group.rank_pi_le`) and on joins of finitely generated subgroups (`Subgroup.rank_sup_le`).
 * On a finitely generated abelian group `M`, `AddGroup.rank M` agrees with the `ℤ`-submodule
-  generator number `(⊤ : Submodule ℤ M).spanFinrank` (`AddGroup.rank_eq_spanFinrank_top`).
+  generator number `(⊤ : Submodule ℤ M).spanFinrank` (`AddGroup.rank_eq_spanFinrank`), and over
+  a quotient ring `R` of `ℤ` with `(⊤ : Submodule R M).spanFinrank`
+  (`AddGroup.rank_eq_spanFinrank_of_intCast_surjective`).
 * On a finitely generated free module over a ring `R` with the strong rank condition and
-  surjective `ℤ → R`, `AddGroup.rank M = finrank R M` (`AddGroup.rank_eq_finrank_of_surjective`),
-  in particular for `R = ℤ` (`AddGroup.rank_eq_finrank`) and nontrivial `R = ZMod n`
-  (`AddGroup.rank_eq_finrank_zmod`).
+  surjective `Int.cast : ℤ → R`, `AddGroup.rank M = finrank R M`
+  (`AddGroup.rank_eq_finrank_of_intCast_surjective`), in particular for `R = ℤ`
+  (`AddGroup.rank_eq_finrank`) and nontrivial `R = ZMod n` (`AddGroup.rank_eq_finrank_zmod`).
 * Generator ranks of cyclic groups `ZMod n` (`AddGroup.rank_zmod`, `AddGroup.rank_zmod_prime_pow`)
   and finite products `∀ i, ZMod (m i)` with a common prime divisor
-  (`AddGroup.rank_pi_zmod_of_dvd`, `AddGroup.rank_pi_zmod_prime_pow`).
+  (`AddGroup.rank_pi_zmod`, `AddGroup.rank_pi_zmod_prime_pow`).
 
 ## Main statements
 
 * `Group.rank_le_one_iff_isCyclic`, `AddGroup.rank_le_one_iff_isAddCyclic`
 * `Group.rank_prod_le`, `Group.rank_pi_le`
-* `AddGroup.rank_eq_spanFinrank_top`
-* `AddGroup.rank_eq_finrank_of_surjective`, `AddGroup.rank_eq_finrank`,
+* `AddGroup.rank_eq_spanFinrank`, `AddGroup.rank_eq_spanFinrank_of_intCast_surjective`
+* `AddGroup.rank_eq_finrank_of_intCast_surjective`, `AddGroup.rank_eq_finrank`,
   `AddGroup.rank_eq_finrank_zmod`
-* `AddGroup.rank_zmod`, `AddGroup.rank_zmod_prime_pow`, `AddGroup.rank_pi_zmod_of_dvd`,
+* `AddGroup.rank_zmod`, `AddGroup.rank_zmod_prime_pow`, `AddGroup.rank_pi_zmod`,
   `AddGroup.rank_pi_zmod_prime_pow`
 * `Subgroup.rank_sup_le`, `AddSubgroup.rank_sup_le`
+
+## References
+
+* V. V. Nikulin, *Integral symmetric bilinear forms and some of their applications*, §1.1.
 -/
 
 public section
@@ -135,44 +142,53 @@ theorem rank_pi_le {ι : Type*} [Fintype ι] (G : ι → Type*) [∀ i, Group (G
 
 end Group
 
+variable {M : Type*} [AddCommGroup M]
+
 namespace AddGroup
 
 open Module
 
-/-- On a finitely generated abelian group `M`, `AddGroup.rank M` agrees with the `ℤ`-submodule
-generator number `(⊤ : Submodule ℤ M).spanFinrank`. -/
-theorem rank_eq_spanFinrank_top (M : Type*) [AddCommGroup M] [AddGroup.FG M] :
+variable (M) in
+/-- The least number of generators of a finitely generated abelian group, Mathlib's
+`AddGroup.rank`, is its least number of generators as a `ℤ`-module, Mathlib's
+`Submodule.spanFinrank`. -/
+theorem rank_eq_spanFinrank [AddGroup.FG M] :
     AddGroup.rank M = (⊤ : Submodule ℤ M).spanFinrank := by
   classical
-  have : Module.Finite ℤ M := Module.Finite.iff_addGroup_fg.mpr inferInstance
-  have hfg : (⊤ : Submodule ℤ M).FG := Module.Finite.fg_top
+  have h (s : Set M) : AddSubgroup.closure s = ⊤ ↔ Submodule.span ℤ s = ⊤ := by
+    rw [← Submodule.span_int_eq_addSubgroupClosure, ← Submodule.toAddSubgroup_inj,
+      Submodule.top_toAddSubgroup]
   apply le_antisymm
-  · obtain ⟨S, hScard, hS⟩ := hfg.exists_span_finset_card_eq_spanFinrank
-    refine (AddGroup.rank_le (S := S) ?_).trans_eq hScard
-    rw [← Submodule.span_int_eq_addSubgroupClosure, hS, Submodule.top_toAddSubgroup]
-  · obtain ⟨S, hScard, hS⟩ := AddGroup.rank_spec M
-    have hspan : Submodule.span ℤ (S : Set M) = ⊤ :=
-      Submodule.toAddSubgroup_injective
-        (by rw [Submodule.span_int_eq_addSubgroupClosure, hS, Submodule.top_toAddSubgroup])
-    rw [← hspan, ← hScard]
-    exact (Submodule.spanFinrank_span_le_ncard_of_finite S.finite_toSet).trans_eq
-      (Set.ncard_coe_finset S)
+  · obtain ⟨S, -, hS⟩ := AddGroup.rank_spec M
+    have hfg : (⊤ : Submodule ℤ M).FG := ⟨S, (h _).mp hS⟩
+    obtain ⟨S, hcard, hS⟩ := hfg.exists_span_finset_card_eq_spanFinrank
+    exact hcard ▸ AddGroup.rank_le ((h _).mpr hS)
+  · obtain ⟨S, hcard, hS⟩ := AddGroup.rank_spec M
+    rw [← (h _).mp hS, ← hcard, ← Set.ncard_coe_finset]
+    exact Submodule.spanFinrank_span_le_ncard_of_finite S.finite_toSet
 
-/-- On a finitely generated free module over a ring `R` with the strong rank condition and
-surjective `Int.cast : ℤ → R`, the additive generator rank equals `Module.finrank R M`. -/
-theorem rank_eq_finrank_of_surjective {R : Type*} [Ring R] [StrongRankCondition R]
-    (hR : Function.Surjective (Int.cast : ℤ → R)) (M : Type*) [AddCommGroup M]
-    [Module R M] [AddGroup.FG M] [Module.Free R M] :
+/-- Over a ring `R` that is a quotient of `ℤ`, such as `ZMod n`, the least number of generators
+of a finitely generated `R`-module as an abelian group is its least number of generators as an
+`R`-module. -/
+theorem rank_eq_spanFinrank_of_intCast_surjective (R : Type*) [Ring R] [Module R M]
+    (hR : Function.Surjective (Int.cast : ℤ → R)) [AddGroup.FG M] :
+    AddGroup.rank M = (⊤ : Submodule R M).spanFinrank := by
+  rw [rank_eq_spanFinrank, ← Submodule.spanFinrank_restrictScalars_eq (R := ℤ) (S := R)
+    (by simpa using hR), Submodule.restrictScalars_top]
+
+/-- Over a ring `R` with the strong rank condition that is a quotient of `ℤ`, such as `ℤ` or a
+prime field `ZMod p`, a free `R`-module that is finitely generated as an abelian group needs
+exactly `finrank R M` generators. -/
+theorem rank_eq_finrank_of_intCast_surjective (R : Type*) [Ring R] [StrongRankCondition R]
+    [Module R M] [Module.Free R M] (hR : Function.Surjective (Int.cast : ℤ → R)) [AddGroup.FG M] :
     AddGroup.rank M = finrank R M := by
-  rw [rank_eq_spanFinrank_top, Module.finrank_eq_spanFinrank_of_free,
-    ← Submodule.restrictScalars_top (R := R) ℤ]
-  exact Submodule.spanFinrank_restrictScalars_eq hR (⊤ : Submodule R M)
+  rw [rank_eq_spanFinrank_of_intCast_surjective R hR, Module.finrank_eq_spanFinrank_of_free]
 
-/-- The minimal number of generators of a finitely generated free abelian group equals its
-`ℤ`-module `finrank`. -/
-theorem rank_eq_finrank (M : Type*) [AddCommGroup M] [AddGroup.FG M] [Module.Free ℤ M] :
+variable (M) in
+/-- A finitely generated free abelian group needs exactly `finrank ℤ M` generators. -/
+theorem rank_eq_finrank [AddGroup.FG M] [Module.Free ℤ M] :
     AddGroup.rank M = finrank ℤ M :=
-  rank_eq_finrank_of_surjective (R := ℤ) Function.surjective_id M
+  rank_eq_finrank_of_intCast_surjective ℤ (fun n ↦ ⟨n, Int.cast_id⟩)
 
 /-- On a finitely generated free module over a nontrivial ring `ZMod n`, the additive generator rank
 equals `Module.finrank (ZMod n) V`. In particular, for prime `p`, the additive generator rank of a
@@ -185,7 +201,7 @@ theorem rank_eq_finrank_zmod {n : ℕ} [Nontrivial (ZMod n)] (V : Type*) [AddCom
     · exact inferInstanceAs (StrongRankCondition ℤ)
     · have : NeZero n := ⟨hn⟩
       infer_instance
-  exact rank_eq_finrank_of_surjective ZMod.intCast_surjective V
+  exact rank_eq_finrank_of_intCast_surjective (ZMod n) ZMod.intCast_surjective
 
 /-- The trivial cyclic group `ZMod 1` has generator rank `0`. -/
 @[simp]
@@ -211,34 +227,36 @@ theorem rank_zmod_prime_pow {p k : ℕ} (hp : p.Prime) (hk : 0 < k) :
     AddGroup.rank (ZMod (p ^ k)) = 1 :=
   rank_zmod_of_ne_one (Nat.one_lt_pow hk.ne' hp.one_lt).ne'
 
-/-- A finite indexed product `∀ i, ZMod (m i)` whose moduli share a common prime divisor `p` has
-generator rank `Fintype.card ι`. -/
-theorem rank_pi_zmod_of_dvd {ι : Type*} [Fintype ι] {m : ι → ℕ} {p : ℕ} (hp : p.Prime)
-    (hdvd : ∀ i, p ∣ m i) :
-    AddGroup.rank (∀ i, ZMod (m i)) = Fintype.card ι := by
+/-- A product of cyclic groups `ℤ/nᵢ` whose orders share a prime factor `p` needs exactly as many
+generators as it has factors: it is a quotient of `ℤ^ι`, and it maps onto the
+`𝔽_p`-vector space `(ℤ/p)^ι`. -/
+theorem rank_pi_zmod {ι : Type*} [Fintype ι] (n : ι → ℕ) {p : ℕ}
+    (hp : p.Prime) (hn : ∀ i, p ∣ n i) : AddGroup.rank (∀ i, ZMod (n i)) = Fintype.card ι := by
   have : Fact p.Prime := ⟨hp⟩
-  refine le_antisymm ?_ ?_
-  · calc AddGroup.rank (∀ i, ZMod (m i))
-        ≤ ∑ i, AddGroup.rank (ZMod (m i)) := AddGroup.rank_pi_le (fun i ↦ ZMod (m i))
-      _ ≤ ∑ _i : ι, 1 := Finset.sum_le_sum fun i _ ↦ AddGroup.rank_le_one_of_isAddCyclic _
-      _ = Fintype.card ι := by simp
-  · let f : (∀ i, ZMod (m i)) →+ (ι → ZMod p) :=
-      AddMonoidHom.pi fun i ↦
-        (ZMod.castHom (hdvd i) (ZMod p)).toAddMonoidHom.comp (Pi.evalAddMonoidHom _ i)
-    have hf : Function.Surjective f := fun y ↦ by
-      choose x hx using fun i ↦ ZMod.castHom_surjective (hdvd i) (y i)
-      exact ⟨x, funext hx⟩
-    calc Fintype.card ι
-        = finrank (ZMod p) (ι → ZMod p) := (Module.finrank_fintype_fun_eq_card (ZMod p)).symm
-      _ = AddGroup.rank (ι → ZMod p) := (rank_eq_finrank_zmod (ι → ZMod p)).symm
-      _ ≤ AddGroup.rank (∀ i, ZMod (m i)) := AddGroup.rank_le_of_surjective f hf
+  apply le_antisymm
+  · -- `ℤ^ι` maps onto the product
+    let f : (ι → ℤ) →+ ∀ i, ZMod (n i) :=
+      AddMonoidHom.pi fun i ↦ (Int.castAddHom (ZMod (n i))).comp (Pi.evalAddMonoidHom _ i)
+    refine (AddGroup.rank_le_of_surjective f
+      (Function.Surjective.piMap fun i ↦ ZMod.intCast_surjective)).trans_eq ?_
+    rw [rank_eq_finrank, Module.finrank_fintype_fun_eq_card]
+  · -- reduction modulo `p` maps the product onto `(ℤ/p)^ι`
+    let f : (∀ i, ZMod (n i)) →+ (ι → ZMod p) :=
+      AddMonoidHom.pi fun i ↦ (ZMod.castHom (hn i) (ZMod p)).toAddMonoidHom.comp
+        (Pi.evalAddMonoidHom (fun i ↦ ZMod (n i)) i)
+    have hf : Function.Surjective f :=
+      Function.Surjective.piMap fun i ↦ ZMod.castHom_surjective (hn i)
+    calc Fintype.card ι = AddGroup.rank (ι → ZMod p) := by
+          rw [rank_eq_finrank_of_intCast_surjective (ZMod p) ZMod.intCast_surjective,
+            Module.finrank_fintype_fun_eq_card]
+      _ ≤ AddGroup.rank (∀ i, ZMod (n i)) := AddGroup.rank_le_of_surjective f hf
 
 /-- A finite indexed product `∀ i, ZMod (p ^ k i)` of nontrivial `p`-power cyclic groups has
 generator rank `Fintype.card ι`. -/
 theorem rank_pi_zmod_prime_pow {p : ℕ} (hp : p.Prime) {ι : Type*} [Fintype ι] (k : ι → ℕ)
     (hk : ∀ i, 0 < k i) :
     AddGroup.rank (∀ i, ZMod (p ^ k i)) = Fintype.card ι :=
-  rank_pi_zmod_of_dvd hp fun i ↦ dvd_pow_self p (hk i).ne'
+  rank_pi_zmod _ hp fun i ↦ dvd_pow_self p (hk i).ne'
 
 end AddGroup
 
