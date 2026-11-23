@@ -9,6 +9,7 @@ public import Mathlib.Geometry.Convex.ConvexSpace.Barycenter
 public import Mathlib.Topology.Category.TopCat.ULift
 public import TauCeti.AlgebraicTopology.SimplicialObject.GeometricRealization.Skeleton
 public import TauCeti.AlgebraicTopology.SimplicialSet.Discrete
+public import TauCeti.AlgebraicTopology.SimplicialSet.Realization.PiZero
 public import TauCeti.AlgebraicTopology.SimplicialSet.TopAdj
 public import TauCeti.AlgebraicTopology.SimplicialSet.ULift
 public import TauCeti.AlgebraicTopology.TopologicalSimplex
@@ -51,25 +52,9 @@ section Points
 
 variable {X : SSet.{u}}
 
-/-- The point of `|X|` given by a vertex `x` of `X` via `(sSetTopAdj.unit.app X).app _ x`. -/
-noncomputable def toTopPoint {X : SSet.{u}} (x : X _⦋0⦌) : |X| :=
-  TopCat.toSSetObj₀Equiv ((sSetTopAdj.unit.app X).app _ x)
-
 lemma toTopPoint_def {X : SSet.{u}} (x : X _⦋0⦌) :
-    toTopPoint x = TopCat.toSSetObj₀Equiv ((sSetTopAdj.unit.app X).app _ x) :=
-  (rfl)
-
-/-- The realization of a map sends the point of a vertex to the point of its image. -/
-@[simp] lemma toTop_map_toTopPoint {X Y : SSet.{u}} (f : X ⟶ Y) (x : X _⦋0⦌) :
-    toTop.map f (toTopPoint x) = toTopPoint (f.app _ x) := by
-  have h := ConcreteCategory.congr_hom (NatTrans.congr_app (sSetTopAdj.unit.naturality f) _) x
-  dsimp at h
-  rw [toTopPoint, toTopPoint, h, TauCeti.TopCat.toSSetObj₀Equiv_toSSet_map_app]
-
-/-- `toTopPoint` agrees with `toTopObjMk` at any point of `StdSimplex ℝ (Fin 1)`. -/
-lemma toTopPoint_eq_toTopObjMk (x : X _⦋0⦌) (w : StdSimplex ℝ (Fin 1)) :
-    toTopPoint x = toTopObjMk x w := by
-  rw [toTopPoint_def, toTopObjMk_def, TopCat.toSSetObj₀Equiv_apply, Subsingleton.elim default w]
+    toTopPoint x = TopCat.toSSetObj₀Equiv ((sSetTopAdj.unit.app X).app _ x) := by
+  rw [toTopPoint_eq_toTopObjMk x default, toTopObjMk_def, TopCat.toSSetObj₀Equiv_apply]
 
 /-- On a `0`-simplex, `toTopObjMk` is independent of the coordinates and equals `toTopPoint`. -/
 @[simp] lemma toTopObjMk_zero (x : X _⦋0⦌) (w : StdSimplex ℝ (Fin 1)) :
@@ -264,14 +249,6 @@ lemma exists_toTopObjMk {X : SSet.{u}} (p : |X|) :
   rw [← toTopIsoGeometricRealization_inv_ι x t, ht, ← ConcreteCategory.comp_apply,
     Iso.hom_inv_id, TopCat.id_app]
 
-/-- Every point of `|X|` can be joined by a path in `|X|` to the realization of a vertex of
-`X`. -/
-lemma exists_joined_toTopPoint {X : SSet.{u}} (p : |X|) :
-    ∃ x : X _⦋0⦌, Joined (toTopPoint x) p := by
-  obtain ⟨n, s, w, rfl⟩ := exists_toTopObjMk p
-  exact ⟨X.map (SimplexCategory.const ⦋0⦌ ⦋n⦌ 0).op s, by
-    rw [← toTopObjMk_single]; exact (PathConnectedSpace.joined _ w).map (continuous_toTopObjMk s)⟩
-
 /-- The geometric realization `|X|` is nonempty if and only if `X` has a `0`-simplex. -/
 @[simp] lemma nonempty_toTop_iff (X : SSet.{u}) : Nonempty |X| ↔ X.Nonempty :=
   ⟨fun ⟨p⟩ ↦ let ⟨_, x, _, _⟩ := exists_toTopObjMk p; .mk x, fun ⟨x⟩ ↦ ⟨toTopPoint x⟩⟩
@@ -279,11 +256,6 @@ lemma exists_joined_toTopPoint {X : SSet.{u}} (p : |X|) :
 /-- The geometric realization `|X|` is empty if and only if `X` has no `0`-simplices. -/
 @[simp] lemma isEmpty_toTop_iff (X : SSet.{u}) : IsEmpty |X| ↔ IsEmpty (X _⦋0⦌) := by
   rw [← not_nonempty_iff, nonempty_toTop_iff, SSet.Nonempty, not_nonempty_iff]
-
-instance isEmpty_toTop (X : SSet.{u}) [IsEmpty (X _⦋0⦌)] : IsEmpty |X| :=
-  (isEmpty_toTop_iff X).2 ‹_›
-
-instance nonempty_toTop (X : SSet.{u}) [X.Nonempty] : Nonempty |X| := (nonempty_toTop_iff X).2 ‹_›
 
 /-- An open cell point of `|X|`: a dimension `dim`, a nondegenerate `dim`-simplex of `X`, and an
 interior point of `StdSimplex ℝ (Fin (dim + 1))`. -/
