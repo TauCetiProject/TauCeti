@@ -6,9 +6,11 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.InnerProductSpace.Harmonic.Constructions
+public import Mathlib.MeasureTheory.Constructions.BorelSpace.Complex
 
 import Mathlib.Analysis.InnerProductSpace.Calculus
 import Mathlib.Analysis.SpecialFunctions.Log.Deriv
+import Mathlib.MeasureTheory.Function.SpecialFunctions.Basic
 
 /-!
 # The planar Newtonian kernel away from its pole
@@ -29,6 +31,7 @@ and scaling API used when the kernel is integrated against a source to form a Ne
 ## Main declarations
 
 * `TauCeti.planarNewtonianKernel`: the logarithmic kernel for `-Δ` on `ℂ`.
+* `TauCeti.measurable_planarNewtonianKernel`: `G` is measurable.
 * `TauCeti.harmonicAt_planarNewtonianKernel`: harmonicity away from the origin.
 * `TauCeti.harmonicAt_planarNewtonianKernel_sub`: harmonicity of a kernel with pole `a`.
 * `AnalyticAt.harmonicAt_planarNewtonianKernel`: harmonicity of `G ∘ f` for analytic `f` off the
@@ -64,6 +67,12 @@ def planarNewtonianKernel (z : ℂ) : ℝ :=
 theorem planarNewtonianKernel_def (z : ℂ) :
     planarNewtonianKernel z = -(2 * Real.pi)⁻¹ * Real.log ‖z‖ := by
   rw [planarNewtonianKernel]
+
+/-- The planar Newtonian kernel is measurable. -/
+@[fun_prop]
+theorem measurable_planarNewtonianKernel : Measurable planarNewtonianKernel := by
+  rw [funext planarNewtonianKernel_def]
+  fun_prop
 
 @[simp]
 theorem planarNewtonianKernel_zero : planarNewtonianKernel 0 = 0 := by

@@ -290,7 +290,7 @@ theorem not_homotopic_morseAttachingMap_doubleWellChart_doubleWellNegChart :
   have ha : 0 < √(1 - 1 / √2) := Real.sqrt_pos.2 <| sub_pos.2 <|
     (div_lt_one (by positivity)).2 (Real.lt_sqrt zero_le_one |>.2 (by norm_num))
   let γ : unitInterval → ℝ := fun t ↦ (H (t, s₁) : ℝ)
-  have hγ : Continuous γ := continuous_subtype_val.comp (H.continuous.comp (by fun_prop))
+  have hγ : Continuous γ := continuous_subtypeVal.comp (H.continuous.comp (by fun_prop))
   have h0 : γ 0 = √(1 - 1 / √2) := by
     simp only [γ, ContinuousMap.Homotopy.apply_zero]
     rw [coe_morseAttachingMap_doubleWellChart_apply, hs₁, one_mul]
@@ -302,7 +302,7 @@ theorem not_homotopic_morseAttachingMap_doubleWellChart_doubleWellNegChart :
     exact ⟨by linarith, ha.le⟩
   obtain ⟨t, ht⟩ := intermediate_value_univ 1 0 hγ h01
   -- The value of the homotopy at `(t, s₁)` lies in the sublevel `{doubleWell ≤ 1/2}`.
-  have hmem : doubleWell (H (t, s₁) : ℝ) ≤ 1 - 1 / 2 := (H (t, s₁)).2
+  have hmem : doubleWell (H (t, s₁) : ℝ) ≤ 1 - 1 / 2 := (H (t, s₁)).property
   have ht0 : (H (t, s₁) : ℝ) = 0 := ht
   rw [ht0, doubleWell_def] at hmem
   norm_num at hmem

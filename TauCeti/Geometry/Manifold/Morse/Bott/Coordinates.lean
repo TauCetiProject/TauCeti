@@ -149,7 +149,8 @@ theorem contMDiff_normalHessian_apply_self {k : ℕ∞ω} [IsManifold I (k + 2) 
     haveI : IsManifold J 1 S := .of_le (n := k + 1) le_add_self
     letI := i.normalSpaceFiberBundle hn hdim
     ContMDiff (J.prod 𝓘(ℝ, P)) 𝓘(ℝ) k
-      fun x : TotalSpace P (fun s ↦ i.NormalSpace s hn) ↦ h.normalHessian hn x.proj x.2 x.2 := by
+      fun x : TotalSpace P (fun s ↦ i.NormalSpace s hn) ↦ h.normalHessian hn x.proj x.snd x.snd
+          := by
   have : IsManifold I 2 M := .of_le (n := k + 2) le_add_self
   have : IsManifold I 1 M := .of_le (n := k + 2) (one_le_two.trans le_add_self)
   have : IsManifold J 1 S := .of_le (n := k + 1) le_add_self

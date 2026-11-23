@@ -26,9 +26,18 @@ Iterates of a derivation remain linear over the scalars, so they commute with fi
 linear combinations. On products they satisfy the general Leibniz rule
 `Dⁿ (a * b) = ∑ (n choose i) Dⁱ a Dⁿ⁻ⁱ b`.
 
+The derivative of the total inverse `Ring.inverse a` is `-(Ring.inverse a) ^ 2 • D a`, as for
+`⅟a`; for instance a derivation kills the inverse of every invertible natural number. Hence, if
+`D x = 1`, the divided power `x ^ (j + 1) / (j + 1)!` differentiates to `x ^ j / j!` whenever
+`(j + 1)!` is a unit.
+
 An element whose derivative is a unit is squarefree, since a square factor `x * x` of `a` makes
 `x` divide `D a`. This detects squarefreeness of a polynomial from a partial derivative that is a
 unit, without factoring it.
+
+A derivation over any scalars `S` which vanishes on the image of `R` is `R`-linear
+(`Derivation.ofMapAlgebraMap`). An `R`-algebra isomorphism `e : A ≃ₐ[R] B` transports a derivation
+`D` of `A` to the derivation `e ∘ D ∘ e⁻¹` of `B` (`Derivation.conjAlgEquiv`).
 
 ## Main results
 
@@ -40,7 +49,12 @@ unit, without factoring it.
 * `Derivation.iterate_apply_mul`: the general Leibniz rule for iterates of a derivation.
 * `Derivation.iterate_smul_apply`: iterates of scalar multiples of a derivation.
 * `Derivation.exists_iterate_smul_eq_zero`: scalar multiples preserve local nilpotence.
+* `Derivation.leibniz_ringInverse`: the derivative of `Ring.inverse a`.
+* `Derivation.leibniz_ringInverse_factorial_mul_pow_succ`: the derivative of the divided power
+  `x ^ (j + 1) / (j + 1)!` when `D x = 1`.
 * `Derivation.squarefree_of_isUnit`: an element whose derivative is a unit is squarefree.
+* `Derivation.ofMapAlgebraMap`: a derivation killing the image of `R` as an `R`-derivation.
+* `Derivation.conjAlgEquiv`: a derivation transported along an algebra isomorphism.
 -/
 
 public section
@@ -133,5 +147,82 @@ theorem squarefree_of_isUnit (D : Derivation R A A) {a : A} (ha : IsUnit (D a)) 
   refine isUnit_of_dvd_unit ?_ ha
   rw [mul_assoc, leibniz, smul_eq_mul, smul_eq_mul]
   exact dvd_add (dvd_mul_right x _) (dvd_mul_of_dvd_left (dvd_mul_right x y) _)
+
+section Ring
+
+variable {R A M : Type*} [CommRing R] [CommRing A] [Algebra R A] [AddCommGroup M] [Module A M]
+  [Module R M]
+
+/-- The derivative of the ring inverse: `D (Ring.inverse a) = -(Ring.inverse a) ^ 2 • D a`, the
+form of `Derivation.leibniz_invOf` for the total inverse. When `a` is not a unit, both sides
+vanish. -/
+theorem leibniz_ringInverse (D : Derivation R A M) (a : A) :
+    D (Ring.inverse a) = -Ring.inverse a ^ 2 • D a := by
+  by_cases ha : IsUnit a
+  · exact D.leibniz_of_mul_eq_one (Ring.inverse_mul_cancel a ha)
+  · simp [Ring.inverse_non_unit a ha]
+
+open scoped Nat in
+/-- If `D x = 1` and `(j + 1)!` is a unit, the derivative of the divided power
+`x ^ (j + 1) / (j + 1)!` is `x ^ j / j!`. -/
+theorem leibniz_ringInverse_factorial_mul_pow_succ (D : Derivation R A A) {x : A} (hx : D x = 1)
+    {j : ℕ} (hj : IsUnit ((j + 1)! : A)) :
+    D (Ring.inverse ((j + 1)! : A) * x ^ (j + 1)) = Ring.inverse (j ! : A) * x ^ j := by
+  have hfac : ((j + 1)! : A) = (j + 1 : A) * j ! := by
+    rw [Nat.factorial_succ, Nat.cast_mul, Nat.cast_succ]
+  have hj₁ : IsUnit (j + 1 : A) := isUnit_of_mul_isUnit_left (hfac ▸ hj)
+  -- The constant `(j + 1)!⁻¹` has derivative zero, and `D (x ^ (j + 1)) = (j + 1) x ^ j`.
+  calc D (Ring.inverse ((j + 1)! : A) * x ^ (j + 1))
+      = Ring.inverse ((j + 1)! : A) * ((j + 1 : A) * x ^ j) := by
+        simp [leibniz_ringInverse, leibniz_pow, hx, mul_comm]
+    _ = Ring.inverse (j ! : A) * x ^ j := by
+        rw [hfac, Ring.inverse_mul (.inl hj₁), mul_assoc, Ring.inverse_mul_cancel_left _ _ hj₁]
+
+end Ring
+
+end Derivation
+
+namespace Derivation
+
+section OfMapAlgebraMap
+
+variable {S R A M : Type*} [CommSemiring S] [CommSemiring R] [CommSemiring A] [AddCommMonoid M]
+  [Algebra S A] [Algebra R A] [Module A M] [Module S M] [Module R M] [IsScalarTower R A M]
+
+/-- A derivation over `S` that vanishes on the image of `R` is `R`-linear. -/
+def ofMapAlgebraMap (D : Derivation S A M) (hD : ∀ r : R, D (algebraMap R A r) = 0) :
+    Derivation R A M where
+  toFun := D
+  map_add' := D.map_add
+  map_smul' r a := by
+    rw [RingHom.id_apply, Algebra.smul_def, D.leibniz, hD, smul_zero, add_zero, algebraMap_smul]
+  map_one_eq_zero' := D.map_one_eq_zero
+  leibniz' := D.leibniz
+
+@[simp]
+theorem coe_ofMapAlgebraMap (D : Derivation S A M) (hD : ∀ r : R, D (algebraMap R A r) = 0) :
+    ⇑(D.ofMapAlgebraMap hD) = D :=
+  (rfl)
+
+end OfMapAlgebraMap
+
+section ConjAlgEquiv
+
+variable {R A B : Type*} [CommSemiring R] [CommSemiring A] [CommSemiring B] [Algebra R A]
+  [Algebra R B]
+
+/-- A derivation of `A` transported along an `R`-algebra isomorphism `e : A ≃ₐ[R] B`: the
+derivation `e ∘ D ∘ e⁻¹` of `B`. -/
+def conjAlgEquiv (D : Derivation R A A) (e : A ≃ₐ[R] B) : Derivation R B B where
+  toLinearMap := (e.toLinearMap : A →ₗ[R] B) ∘ₗ D.toLinearMap ∘ₗ (e.symm.toLinearMap : B →ₗ[R] A)
+  map_one_eq_zero' := by simp
+  leibniz' x y := by simp [D.leibniz, smul_eq_mul]
+
+@[simp]
+theorem conjAlgEquiv_apply (D : Derivation R A A) (e : A ≃ₐ[R] B) (x : B) :
+    D.conjAlgEquiv e x = e (D (e.symm x)) :=
+  (rfl)
+
+end ConjAlgEquiv
 
 end Derivation

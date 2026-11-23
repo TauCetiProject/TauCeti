@@ -61,7 +61,7 @@ instance (X : Scheme.{u}) (x : X) : IsLocalHom (toHenselization X x).hom :=
 /-- The sections of `X` over an open `W` act on the henselization at a point of `W` through the
 local ring at that point. -/
 noncomputable instance (W : X.Opens) (x : W) : Algebra Γ(X, W) (henselization X x) :=
-  (X.presheaf.germ W x x.2 ≫ toHenselization X x).hom.toAlgebra
+  (X.presheaf.germ W x x.property ≫ toHenselization X x).hom.toAlgebra
 
 /-- The action of `Γ(X, W)` on `𝒪ʰ_{X,x}` factors through the local ring `𝒪_{X,x}`. -/
 instance (W : X.Opens) (x : W) :

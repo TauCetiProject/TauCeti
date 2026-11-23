@@ -107,7 +107,7 @@ theorem smulPieceMap_surjective {g : N ⟶ P} (hg : Function.Surjective g.hom) (
   have hxp : g.hom (DirectSum.decompose N.grading.piece x p : N) = g.hom x := by
     rw [g.isHomogeneous.map_decompose, add_zero, DirectSum.decompose_of_mem_same _ hy]
   refine ⟨⟨e • (DirectSum.decompose N.grading.piece x p : N),
-    Submodule.smul_mem_pointwise_smul _ _ _ (DirectSum.decompose N.grading.piece x p).2⟩, ?_⟩
+    Submodule.smul_mem_pointwise_smul _ _ _ (DirectSum.decompose N.grading.piece x p).property⟩, ?_⟩
   ext
   simp [hxp]
 
@@ -142,7 +142,7 @@ theorem exact_smulPieceMap (he : IsIdempotentElem e) (he₀ : e ∈ 𝒜 0) {f :
       rw [f.isHomogeneous.map_decompose, add_zero, hw,
         DirectSum.decompose_of_mem_same _ (smul_grading_piece_le he₀ N p hz)]
     refine ⟨⟨e • w', Submodule.smul_mem_pointwise_smul _ _ _
-      (DirectSum.decompose M.grading.piece w p).2⟩, ?_⟩
+      (DirectSum.decompose M.grading.piece w p).property⟩, ?_⟩
     obtain ⟨y, -, rfl⟩ := (Submodule.mem_smul_pointwise_iff_exists _ _ _).1 hz
     ext
     rw [coe_smulPieceMap_apply, map_smul, hw', smul_smul, he.eq]

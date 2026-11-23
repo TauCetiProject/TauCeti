@@ -1,0 +1,200 @@
+/-
+Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: The Tau Ceti contributors
+-/
+module
+
+public import TauCeti.Combinatorics.Network.Shift
+public import TauCeti.Combinatorics.Quiver.Reachable
+
+/-!
+# Restricting bounded assignments to weak components
+
+An arrow family restricts to any one of its weakly connected components by taking the vertices
+whose component class is fixed and retaining the original arrows between them. Every original
+arrow incident to such a vertex stays inside the component. Consequently, restricting an arrow
+assignment preserves its excess at each retained vertex.
+
+This gives component restrictions of prescribed- and interval-excess assignments, preserving all
+arrow and vertex bounds. In particular, prescribed excess sums to zero on every weak component,
+while interval endpoints have nonpositive and nonnegative sums there. These are the componentwise
+balance conditions used when bounded assignment problems are solved component by component.
+-/
+
+public section
+
+namespace TauCeti
+
+open _root_.Quiver
+
+universe u v w
+
+variable {V : Type u} {Q : V → V → Type v} {K : Type w}
+
+namespace Assignment
+
+variable (C : @_root_.Quiver.WeaklyConnectedComponent V ⟨Q⟩)
+
+/-- Restrict an assignment to the arrows within a weakly connected component. -/
+def restrictComponent (f : Assignment Q K) : Assignment (Quiver.ComponentHom Q C) K :=
+  fun _ _ e ↦ f e
+
+@[simp]
+theorem restrictComponent_apply (f : Assignment Q K) {x y : Quiver.ComponentVertex Q C}
+    (e : Q x.val y.val) : f.restrictComponent C e = f e :=
+  (rfl)
+
+/-- Component restriction preserves the zero assignment. -/
+@[simp]
+theorem restrictComponent_zero [Zero K] :
+    (0 : Assignment Q K).restrictComponent C = 0 :=
+  (rfl)
+
+/-- Component restriction preserves pointwise addition. -/
+@[simp]
+theorem restrictComponent_add [Add K] (f g : Assignment Q K) :
+    (f + g).restrictComponent C = f.restrictComponent C + g.restrictComponent C :=
+  (rfl)
+
+/-- Component restriction preserves pointwise negation. -/
+@[simp]
+theorem restrictComponent_neg [Neg K] (f : Assignment Q K) :
+    (-f).restrictComponent C = -f.restrictComponent C :=
+  (rfl)
+
+/-- Component restriction preserves pointwise subtraction. -/
+@[simp]
+theorem restrictComponent_sub [Sub K] (f g : Assignment Q K) :
+    (f - g).restrictComponent C = f.restrictComponent C - g.restrictComponent C :=
+  (rfl)
+
+variable [Fintype V] [∀ x y, Fintype (Q x y)] [AddCommGroup K]
+
+/-- Restricting an assignment to a weakly connected component preserves excess at every vertex
+of that component. -/
+@[simp]
+theorem excessAt_restrictComponent (f : Assignment Q K) (x : Quiver.ComponentVertex Q C) :
+    excessAt (f.restrictComponent C) x = excessAt f x.val := by
+  classical
+  have hin : (∑ y : Quiver.ComponentVertex Q C, ∑ e : Q y.val x.val, f e) =
+      ∑ y : V, ∑ e : Q y x.val, f e := by
+    calc
+      _ = ∑ a : Σ y : Quiver.ComponentVertex Q C, Q y.val x.val, f a.2 :=
+        (Fintype.sum_sigma' fun (y : Quiver.ComponentVertex Q C) (e : Q y.val x.val) ↦
+          f e).symm
+      _ = ∑ a : Σ y : V, Q y x.val, f a.2 :=
+        by
+          have h (a : Σ y : Quiver.ComponentVertex Q C, Q y.val x.val) :
+              f (Quiver.componentIncomingEquiv C x a).2 = f a.2 := by
+            rw [Quiver.componentIncomingEquiv_apply]
+          simpa only [h] using
+            (Quiver.componentIncomingEquiv C x).sum_comp fun a ↦ f a.2
+      _ = _ := Fintype.sum_sigma' fun y e ↦ f (x := y) (y := x.val) e
+  have hout : (∑ y : Quiver.ComponentVertex Q C, ∑ e : Q x.val y.val, f e) =
+      ∑ y : V, ∑ e : Q x.val y, f e := by
+    calc
+      _ = ∑ a : Σ y : Quiver.ComponentVertex Q C, Q x.val y.val, f a.2 :=
+        (Fintype.sum_sigma' fun (y : Quiver.ComponentVertex Q C) (e : Q x.val y.val) ↦
+          f e).symm
+      _ = ∑ a : Σ y : V, Q x.val y, f a.2 :=
+        by
+          have h (a : Σ y : Quiver.ComponentVertex Q C, Q x.val y.val) :
+              f (Quiver.componentOutgoingEquiv C x a).2 = f a.2 := by
+            rw [Quiver.componentOutgoingEquiv_apply]
+          simpa only [h] using
+            (Quiver.componentOutgoingEquiv C x).sum_comp fun a ↦ f a.2
+      _ = _ := Fintype.sum_sigma' fun y e ↦ f (x := x.val) (y := y) e
+  simp only [excessAt_def, restrictComponent_apply]
+  rw [hin, hout]
+
+end Assignment
+
+/-- A circulation restricts to a circulation on each weak component. -/
+theorem IsCirculation.restrictComponent [Fintype V] [∀ x y, Fintype (Q x y)]
+    [AddCommGroup K] {f : Assignment Q K} (hf : IsCirculation f)
+    (C : @WeaklyConnectedComponent V ⟨Q⟩) : IsCirculation (f.restrictComponent C) := by
+  rw [isCirculation_iff] at hf ⊢
+  intro x
+  simpa using hf x.val
+
+section Bounded
+
+variable [Fintype V] [∀ x y, Fintype (Q x y)] [AddCommGroup K] [Preorder K]
+variable {lo hi : Assignment Q K} {a b d : V → K}
+variable (C : @_root_.Quiver.WeaklyConnectedComponent V ⟨Q⟩)
+
+namespace ExcessFlow
+
+/-- Restrict a prescribed-excess assignment to one weakly connected component. -/
+def restrictComponent (f : ExcessFlow lo hi d) :
+    ExcessFlow (lo.restrictComponent C) (hi.restrictComponent C)
+      (fun x ↦ d x.val) :=
+  ⟨f.val.restrictComponent C,
+    ⟨⟨fun x y e ↦ f.mem_Icc.1 x.val y.val e, fun x y e ↦ f.mem_Icc.2 x.val y.val e⟩,
+      funext fun x ↦ by simp [f.excessAt_eq]⟩⟩
+
+/-- Restriction of a prescribed-excess assignment retains the restricted arrow assignment. -/
+@[simp]
+theorem restrictComponent_val (f : ExcessFlow lo hi d) :
+    (f.restrictComponent C).val = f.val.restrictComponent C :=
+  (rfl)
+
+end ExcessFlow
+
+namespace ExcessIntervalFlow
+
+/-- Restrict an interval-excess assignment to one weakly connected component. -/
+def restrictComponent (f : ExcessIntervalFlow lo hi a b) :
+    ExcessIntervalFlow (lo.restrictComponent C) (hi.restrictComponent C)
+      (fun x ↦ a x.val) (fun x ↦ b x.val) :=
+  ⟨f.val.restrictComponent C,
+    ⟨⟨fun x y e ↦ f.mem_Icc.1 x.val y.val e, fun x y e ↦ f.mem_Icc.2 x.val y.val e⟩,
+      ⟨fun x ↦ by simpa using f.excessAt_mem_Icc.1 x.val,
+        fun x ↦ by simpa using f.excessAt_mem_Icc.2 x.val⟩⟩⟩
+
+/-- Restriction of an interval-excess assignment retains the restricted arrow assignment. -/
+@[simp]
+theorem restrictComponent_val (f : ExcessIntervalFlow lo hi a b) :
+    (f.restrictComponent C).val = f.val.restrictComponent C :=
+  (rfl)
+
+end ExcessIntervalFlow
+
+end Bounded
+
+section Balance
+
+variable [Fintype V] [∀ x y, Fintype (Q x y)] [AddCommGroup K]
+variable {lo hi : Assignment Q K} {a b d : V → K}
+variable (C : @_root_.Quiver.WeaklyConnectedComponent V ⟨Q⟩)
+
+namespace ExcessFlow
+
+/-- Prescribed excess sums to zero on each weakly connected component. -/
+theorem sum_component_eq_zero [Preorder K] (f : ExcessFlow lo hi d) :
+    ∑ x : Quiver.ComponentVertex Q C, d x.val = 0 :=
+  (f.restrictComponent C).sum_eq_zero
+
+end ExcessFlow
+
+namespace ExcessIntervalFlow
+
+/-- The lower excess bounds sum to a nonpositive value on each weakly connected component. -/
+theorem sum_component_lower_le_zero [PartialOrder K] [IsOrderedAddMonoid K]
+    (f : ExcessIntervalFlow lo hi a b) :
+    ∑ x : Quiver.ComponentVertex Q C, a x.val ≤ 0 :=
+  (f.restrictComponent C).sum_le_zero
+
+/-- The upper excess bounds sum to a nonnegative value on each weakly connected component. -/
+theorem zero_le_sum_component_upper [PartialOrder K] [IsOrderedAddMonoid K]
+    (f : ExcessIntervalFlow lo hi a b) :
+    0 ≤ ∑ x : Quiver.ComponentVertex Q C, b x.val :=
+  (f.restrictComponent C).zero_le_sum
+
+end ExcessIntervalFlow
+
+end Balance
+
+
+end TauCeti

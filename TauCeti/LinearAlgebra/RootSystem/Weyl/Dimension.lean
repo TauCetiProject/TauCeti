@@ -9,7 +9,7 @@ public import TauCeti.LinearAlgebra.RootSystem.InvariantForm.Basic
 public import TauCeti.LinearAlgebra.RootSystem.Weyl.Denominator.Basic
 public import TauCeti.LinearAlgebra.RootSystem.Weyl.Numerator
 public import TauCeti.RingTheory.PowerSeries.CoeffProd
-public import TauCeti.RingTheory.PowerSeries.Exp
+public import TauCeti.RingTheory.PowerSeries.Exp.Basic
 
 /-!
 # The Weyl dimension formula for a root pairing

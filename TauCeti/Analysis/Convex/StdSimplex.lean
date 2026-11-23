@@ -13,6 +13,7 @@ public import Mathlib.Topology.Algebra.Ring.Real
 public import Mathlib.Topology.Order.Compact
 public import Mathlib.Analysis.Normed.Group.Constructions
 public import Mathlib.Analysis.Normed.Group.Real
+public import Mathlib.Analysis.Normed.Lp.PiLp
 import Mathlib.Algebra.BigOperators.Pi
 import Mathlib.Analysis.Convex.Combination
 import Mathlib.Analysis.Normed.MulAction
@@ -50,6 +51,7 @@ likewise separated by at least `(card ι)⁻¹`.
   simplex are the vectors with nonnegative coordinates summing to one.
 * `Convexity.StdSimplex.convex_range_toFun_comp_weights`: the weight vectors of the standard
   simplex form a convex set.
+* `Convexity.StdSimplex.norm_toLp_weights_le_one`: each weight vector has ℓᵖ norm at most one.
 * `LinearMap.sum_apply_eq_of_mapsTo_range_weights`: a linear map carrying the standard simplex
   into a standard simplex preserves coordinate sums.
 * `TauCeti.stdSimplexBoundary`, `TauCeti.isCompact_stdSimplexBoundary`: the relative boundary of
@@ -100,6 +102,16 @@ theorem convex_range_toFun_comp_weights (R : Type*) [Semiring R] [PartialOrder R
     simpa using add_nonneg (mul_nonneg ha (s.nonneg x)) (mul_nonneg hb (t.nonneg x))
   · simp [Finsupp.sum_add_index', Finsupp.sum_smul_index', ← Finsupp.mul_sum, s.total, t.total,
       hab]
+
+/-- The ℓᵖ norm of the weights of a standard simplex point is at most one for `1 ≤ p`. -/
+theorem norm_toLp_weights_le_one {ι : Type*} [Fintype ι] {p : ENNReal} [Fact (1 ≤ p)]
+    (t : StdSimplex ℝ ι) : ‖WithLp.toLp p (t.weights : ι → ℝ)‖ ≤ 1 := by
+  classical
+  conv_lhs => rw [pi_eq_sum_univ' (t.weights : ι → ℝ)]
+  rw [WithLp.toLp_sum]
+  simpa [WithLp.toLp_smul, norm_smul, Real.norm_of_nonneg (t.weights_nonneg _)] using
+    norm_sum_le (Finset.univ : Finset ι)
+      (fun i ↦ t.weights i • PiLp.single p i (1 : ℝ))
 
 /-- A coordinate of a point of the standard simplex is less than one if some other coordinate
 is positive. -/
