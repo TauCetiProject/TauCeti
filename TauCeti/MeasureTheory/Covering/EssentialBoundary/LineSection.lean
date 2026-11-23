@@ -5,11 +5,12 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.MeasureTheory.Covering.EssentialBoundary
+public import TauCeti.MeasureTheory.Covering.EssentialBoundary.Basic
 public import TauCeti.MeasureTheory.Measure.Lebesgue.OrthogonalSlices
 import Mathlib.MeasureTheory.Covering.BesicovitchVectorSpace
 import Mathlib.Topology.MetricSpace.Polish
-import TauCeti.MeasureTheory.Measure.InterBall
+import TauCeti.MeasureTheory.Covering.Besicovitch.NullSet
+import TauCeti.MeasureTheory.Measure.InterBall.IsClosed
 
 /-!
 # Essential boundaries of line sections
@@ -46,6 +47,9 @@ parameter off `∂ᵉs`.
 
 ## Main results
 
+* `TauCeti.ae_essentialBoundary_lineSection_subset_closure`: for almost every line parallel to
+  `e`, the essential boundary of the line section lies in the closure of the parameters at which
+  the line meets `∂ᵉs`.
 * `TauCeti.ae_essentialBoundary_lineSection_inter_subset`: for almost every line parallel to `e`
   and every open set `U ⊆ ℝ` of parameters at which the line meets `∂ᵉs` finitely often, the
   essential boundary of the line section inside `U` lies on `∂ᵉs`.
@@ -64,48 +68,6 @@ open Filter Metric MeasureTheory Module Set Topology
 open scoped ENNReal Pointwise
 
 namespace TauCeti
-
-/-! ### Closedness and a density criterion for null sets -/
-
-section Metric
-
-variable {X : Type*} [PseudoMetricSpace X] [MeasurableSpace X] [OpensMeasurableSpace X]
-
-/-- The points around which a set fills at most a prescribed amount `K r` of every open ball of
-radius `r < ρ` form a closed set. -/
-private theorem isClosed_setOf_forall_measure_inter_ball_le (μ : Measure X) (A : Set X) (ρ : ℝ)
-    (K : ℝ → ℝ≥0∞) : IsClosed {x | ∀ r ∈ Ioo 0 ρ, μ (A ∩ ball x r) ≤ K r} := by
-  refine closure_subset_iff_isClosed.1 fun x hx r hr => ?_
-  have hrestr (z : X) (ρ' : ℝ) : μ (A ∩ ball z ρ') = μ.restrict A (ball z ρ') := by
-    rw [Measure.restrict_apply measurableSet_ball, inter_comm]
-  rw [hrestr]
-  refine Measure.measure_ball_le_of_forall_lt _ fun r' hr' => ?_
-  obtain ⟨x', hx', hxx'⟩ := Metric.mem_closure_iff.1 hx (r - r') (sub_pos.2 hr')
-  rw [← hrestr]
-  calc μ (A ∩ ball x r') ≤ μ (A ∩ ball x' r) :=
-        measure_mono (inter_subset_inter_right _ (ball_subset_ball' (by linarith)))
-    _ ≤ K r := hx' r hr
-
-end Metric
-
-section Besicovitch
-
-variable {X : Type*} [MetricSpace X] [MeasurableSpace X] [SecondCountableTopology X]
-  [BorelSpace X] [HasBesicovitchCovering X]
-
-/-- A set filling at most half of every small closed ball around every point is null, by
-Lebesgue's density theorem. No measurability is assumed. -/
-private theorem measure_eq_zero_of_forall_measure_inter_closedBall_le (ν : Measure X)
-    [IsLocallyFiniteMeasure ν] (Q : Set X)
-    (h : ∀ z, ∀ᶠ r in 𝓝[>] 0, ν (Q ∩ closedBall z r) ≤ 2⁻¹ * ν (closedBall z r)) : ν Q = 0 := by
-  by_contra hQ
-  have : (ae (ν.restrict Q)).NeBot := ae_neBot.2 (by rwa [Ne, Measure.restrict_eq_zero])
-  obtain ⟨z, hz⟩ := (Besicovitch.ae_tendsto_measure_inter_div ν Q).exists
-  have h1 : ∀ᶠ r in 𝓝[>] (0 : ℝ), ν (Q ∩ closedBall z r) / ν (closedBall z r) ≤ 2⁻¹ :=
-    (h z).mono fun r hr => ENNReal.div_le_of_le_mul hr
-  exact absurd (le_of_tendsto hz h1) (not_le.2 (ENNReal.inv_lt_one.2 ENNReal.one_lt_two))
-
-end Besicovitch
 
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
   [MeasurableSpace E] [BorelSpace E]
@@ -257,7 +219,8 @@ private theorem volume_setOf_exists_eq_zero (e : E) (he : ‖e‖ = 1) {A C : Se
       (SparseAt c ρ A ((y : E) + t • e) ∧ ∀ τ ∈ Ioo 0 δ, (y : E) + (t + σ * τ) • e ∈ C) ∧
       σ * t ∈ Ico (j * (δ / 2)) ((j + 1) * (δ / 2))}) (fun y hy => ?_)
     (measure_iUnion_null fun j : ℤ =>
-    measure_eq_zero_of_forall_measure_inter_closedBall_le _ _ fun z => ?_)
+    measure_eq_zero_of_forall_measure_inter_closedBall_le _ _
+      (ENNReal.inv_lt_one.2 ENNReal.one_lt_two) fun z => ?_)
   · obtain ⟨t, ht⟩ := hy
     refine mem_iUnion.2 ⟨⌊σ * t / (δ / 2)⌋, t, ht, ?_, ?_⟩
     · have := Int.floor_le (σ * t / (δ / 2))
@@ -519,33 +482,30 @@ private theorem ae_forall_not_sparseAt_and (e : E) (he : ‖e‖ = 1) {A C : Set
   exacts [h₁, hm₁]
 
 /-- **Essential boundaries of line sections.** Let `s` be a null-measurable set and `e` a unit
-vector. For almost every `y` in the orthogonal hyperplane, the following holds for every open set
-`U ⊆ ℝ`: if the line `t ↦ y + t • e` meets the essential boundary `∂ᵉs` at only finitely many
-parameters `t ∈ U`, then every point of `U` in the one-dimensional essential boundary of the line
-section `{t | y + t • e ∈ s}` is one of them.
+vector. For almost every `y` in the orthogonal hyperplane, every point of the one-dimensional
+essential boundary of the line section `{t | y + t • e ∈ s}` lies in the closure of the set of
+parameters at which the line `t ↦ y + t • e` meets the essential boundary `∂ᵉs`.
 
-The finiteness hypothesis cannot be dropped: there is a planar set `s` such that on every
-vertical line, a point of density one of `s` lies on the essential boundary of the line section
-(see the module docstring). -/
-theorem ae_essentialBoundary_lineSection_inter_subset {s : Set E}
+The closure cannot be dropped: there is a planar set `s` such that on every vertical line, a point
+of density one of `s` lies on the essential boundary of the line section (see the module
+docstring). -/
+theorem ae_essentialBoundary_lineSection_subset_closure {s : Set E}
     (hs : NullMeasurableSet s volume) (e : E) (he : ‖e‖ = 1) :
-    ∀ᵐ y : (ℝ ∙ e)ᗮ, ∀ U : Set ℝ, IsOpen U →
-      {t ∈ U | (y : E) + t • e ∈ essentialBoundary volume s}.Finite →
-      essentialBoundary volume {t : ℝ | (y : E) + t • e ∈ s} ∩ U ⊆
-        {t : ℝ | (y : E) + t • e ∈ essentialBoundary volume s} := by
+    ∀ᵐ y : (ℝ ∙ e)ᗮ, essentialBoundary volume {t : ℝ | (y : E) + t • e ∈ s} ⊆
+      closure {t : ℝ | (y : E) + t • e ∈ essentialBoundary volume s} := by
   have : Nontrivial E := nontrivial_of_ne e 0 (by rintro rfl; simp at he)
   obtain ⟨c, hc0, hc2, hc⟩ := exists_const (E := E) e
   filter_upwards [ae_forall_not_sparseAt_and e he (essentialExterior_ae_eq hs).subset hc,
     ae_forall_not_sparseAt_and e he (essentialInterior_ae_eq hs).subset hc,
     ae_lineSection_eq e he (essentialInterior_ae_eq hs),
     ae_lineSection_eq e he (essentialExterior_ae_eq hs)] with y hO hI hIs hOs
-  intro U hU hfin t ⟨ht, htU⟩
+  intro t ht
   by_contra htB
-  obtain ⟨ε, hε, hεsub⟩ := Metric.isOpen_iff.1 (hU.sdiff hfin.isClosed) t ⟨htU, fun h => htB h.2⟩
+  obtain ⟨ε, hε, hεsub⟩ := Metric.isOpen_iff.1 isClosed_closure.isOpen_compl t htB
   have hTPN : ball t ε ⊆ {t | (y : E) + t • e ∈ essentialInterior volume s} ∪
       {t | (y : E) + t • e ∈ essentialExterior volume s} := fun t' ht' => by
     have hnB : (y : E) + t' • e ∉ essentialBoundary volume s := fun h =>
-      (hεsub ht').2 ⟨(hεsub ht').1, h⟩
+      hεsub ht' (subset_closure h)
     exact (not_and_or.1 (mt mem_essentialBoundary.2 hnB)).imp not_not.1 not_not.1
   have htT : t ∈ interior (ball t ε) := by rw [isOpen_ball.interior_eq]; exact mem_ball_self hε
   rcases disjoint_or_disjoint_of_isPreconnected_lineSection hs hc0 hc2 hO hI isOpen_ball
@@ -564,6 +524,29 @@ theorem ae_essentialBoundary_lineSection_inter_subset {s : Set E}
       exact ht'.mp ((hTPN ht'T).resolve_right fun h => hd.ne_of_mem ht'T h rfl)
     exact (mem_essentialBoundary.1 ht).1
       (essentialInterior_mono_ae hsub (interior_subset_essentialInterior htT))
+
+/-- **Essential boundaries of line sections.** Let `s` be a null-measurable set and `e` a unit
+vector. For almost every `y` in the orthogonal hyperplane, the following holds for every open set
+`U ⊆ ℝ`: if the line `t ↦ y + t • e` meets the essential boundary `∂ᵉs` at only finitely many
+parameters `t ∈ U`, then every point of `U` in the one-dimensional essential boundary of the line
+section `{t | y + t • e ∈ s}` is one of them.
+
+The finiteness hypothesis cannot be dropped: there is a planar set `s` such that on every
+vertical line, a point of density one of `s` lies on the essential boundary of the line section
+(see the module docstring). -/
+theorem ae_essentialBoundary_lineSection_inter_subset {s : Set E}
+    (hs : NullMeasurableSet s volume) (e : E) (he : ‖e‖ = 1) :
+    ∀ᵐ y : (ℝ ∙ e)ᗮ, ∀ U : Set ℝ, IsOpen U →
+      {t ∈ U | (y : E) + t • e ∈ essentialBoundary volume s}.Finite →
+      essentialBoundary volume {t : ℝ | (y : E) + t • e ∈ s} ∩ U ⊆
+        {t : ℝ | (y : E) + t • e ∈ essentialBoundary volume s} := by
+  filter_upwards [ae_essentialBoundary_lineSection_subset_closure hs e he] with y hy U hU hfin t
+    ⟨ht, htU⟩
+  have h := hU.inter_closure ⟨htU, hy ht⟩
+  rw [show U ∩ {t : ℝ | (y : E) + t • e ∈ essentialBoundary volume s} =
+      {t ∈ U | (y : E) + t • e ∈ essentialBoundary volume s} from rfl,
+    hfin.isClosed.closure_eq] at h
+  exact h.2
 
 /-- **Essential boundaries of line sections.** Let `s` be a null-measurable set and `e` a unit
 vector. For almost every `y` in the orthogonal hyperplane, if the line `t ↦ y + t • e` meets the
