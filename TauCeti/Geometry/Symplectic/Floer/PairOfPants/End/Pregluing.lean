@@ -138,10 +138,8 @@ variable {q : Puncture} {x : ℝ → V} {u v : ℝ × ℝ → V} {R : ℝ} {z : 
 
 /-- **Away from the neck the pre-glued pair of pants is `u`.** At a point whose signed
 longitudinal coordinate on the end `q` is at most `R - 1`, the pre-glued pair of pants is `u`. -/
-theorem preglueEnd_of_le
-    (h : q.endSign * (q.endCoord (Complex.equivRealProdCLM.symm z)).re ≤ R - 1) :
-    preglueEnd q x u v R z = u z :=
-  preglueEndChart_of_le (isEndChart_positiveEndChart q) h
+theorem preglueEnd_of_le (h : (positiveEndCoord q z).1 ≤ R - 1) : preglueEnd q x u v R z = u z :=
+  preglueEndChart_of_le (isEndChart_positiveEndChart q) (by rwa [fst_positiveEndCoord] at h)
 
 /-- **Beyond the neck the pre-glued pair of pants is the translated cylinder.** For `R ≥ 0`, at a
 point whose signed end coordinates `(s, t)` on the end `q` have `s ≥ R + 1`, the pre-glued pair of
@@ -158,11 +156,9 @@ theorem preglueEnd_of_add_one_le (hR : 0 ≤ R)
 is less than `R - 1`, such as a point of `S` away from the neck, the pre-glued pair of pants agrees
 with `u`. -/
 theorem preglueEnd_eventuallyEq_of_lt (hz : Complex.equivRealProdCLM.symm z ≠ q.endCenter)
-    (h : q.endSign * (q.endCoord (Complex.equivRealProdCLM.symm z)).re < R - 1) :
-    preglueEnd q x u v R =ᶠ[𝓝 z] u :=
-  preglueEndChart_eventuallyEq_of_lt (isEndChart_positiveEndChart q)
-    (continuousAt_const.mul ((q.contDiffAt_re_endCoord hz (n := 0)).continuousAt.comp
-      Complex.equivRealProdCLM.symm.continuous.continuousAt)) h
+    (h : (positiveEndCoord q z).1 < R - 1) : preglueEnd q x u v R =ᶠ[𝓝 z] u :=
+  ((continuousAt_fst_positiveEndCoord q hz).eventually_lt continuousAt_const h).mono
+    fun _ hw ↦ preglueEnd_of_le hw.le
 
 /-- **The pre-glued pair of pants on the end.** At the image under the positive end chart of a
 point `(s, t)` with `s > 0`, the pre-glued pair of pants is the pre-glued map at `(s - R, t)`,

@@ -31,7 +31,8 @@ invertible (`CategoryTheory.Functor.isIso_smul_id_obj`), as does passing to a co
 an integer these apply in every preadditive category, through Mathlib's `ℕ`- and `ℤ`-linear
 structures.
 An endomorphism with a scalar multiple equal to the identity is invertible
-(`CategoryTheory.Linear.isIso_of_smul_eq_id`).
+(`CategoryTheory.Linear.isIso_of_smul_eq_id`); in particular so is `n • 𝟙` for a natural number
+`n` that is a unit of the ground semiring (`CategoryTheory.Linear.isIso_nsmul_id`).
 
 An additive linear functor induces an algebra homomorphism on endomorphisms,
 `Functor.mapEndAlgHom`, which is injective when the functor is faithful and bijective
@@ -124,6 +125,13 @@ lemma Linear.comp_inv_smul_id {X Y : C} (f : X ⟶ Y) (r : R) [IsIso (r • 𝟙
 lemma Linear.isIso_of_smul_eq_id {X : C} {t : X ⟶ X} {c : R} (h : c • t = 𝟙 X) : IsIso t :=
   ⟨c • 𝟙 X, by rw [Linear.comp_smul, Category.comp_id, h],
     by rw [Linear.smul_comp, Category.id_comp, h]⟩
+
+/-- Multiplication by a natural number `n` is invertible on every object when `n` is a unit of the
+ground semiring. -/
+lemma Linear.isIso_nsmul_id {X : C} {n : ℕ} (h : IsUnit (n : R)) : IsIso (n • 𝟙 X) := by
+  obtain ⟨u, hu⟩ := h
+  refine Linear.isIso_of_smul_eq_id (c := (↑u⁻¹ : R)) ?_
+  rw [← Nat.cast_smul_eq_nsmul R, smul_smul, ← hu, Units.inv_mul, one_smul]
 
 /-- If multiplication by a scalar `r` is invertible on `X`, then it is invertible on the image of
 `X` under any `R`-linear functor. -/
