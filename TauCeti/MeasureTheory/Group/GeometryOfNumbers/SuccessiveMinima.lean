@@ -130,12 +130,6 @@ theorem successiveMin_of_finrank_int_le [DiscreteTopology L]
     successiveMin L s i = 0 := by
   simp [hi]
 
-private theorem finiteDimensional_span_of_lt_finrank_int [DiscreteTopology L]
-    (hi : i < finrank ℤ L) : FiniteDimensional ℝ (span ℝ (L : Set E)) :=
-  Module.finite_of_finrank_pos (by
-    rw [← Set.finrank, setFinrank_real_eq_finrank_int]
-    exact (Nat.zero_le i).trans_lt hi)
-
 /-- For a discrete `L`, an absorbent set `s`, and `i < finrank ℤ L`, some dilate of `s` contains
 vectors of `L` spanning a real subspace of dimension greater than `i`: the infimum defining
 `successiveMin L s i` is taken over a nonempty set. Because `finrank ℤ L` is `0` when `L` has
@@ -143,7 +137,7 @@ infinite rank, the bound `i < finrank ℤ L` excludes infinite rank of `L`, thou
 the ambient space `E`. -/
 theorem exists_lt_setFinrank_smul_inter [DiscreteTopology L] (hs : Absorbent ℝ s)
     (hi : i < finrank ℤ L) : ∃ r : ℝ≥0, i < Set.finrank ℝ (r • s ∩ L) := by
-  have := finiteDimensional_span_of_lt_finrank_int hi
+  have := L.finiteDimensional_span_of_finrank_pos ℝ ((Nat.zero_le i).trans_lt hi)
   -- Finitely many vectors of `L` span `span ℝ L`, and `s` absorbs them.
   obtain ⟨f, hfL, hspan, -⟩ := exists_fun_fin_finrank_span_eq ℝ (L : Set E)
   obtain ⟨r, hr, hrs⟩ := (hs.absorbs_finite (Set.finite_range f)).exists_pos
@@ -186,7 +180,7 @@ necessarily of the ambient space `E`. -/
 theorem lt_setFinrank_smul_inter_of_successiveMin_lt [DiscreteTopology L] {r : ℝ≥0}
     (hsc : StarConvex ℝ 0 s) (hs : Absorbent ℝ s) (hi : i < finrank ℤ L)
     (hr : successiveMin L s i < r) : i < Set.finrank ℝ (r • s ∩ L) := by
-  have := finiteDimensional_span_of_lt_finrank_int hi
+  have := L.finiteDimensional_span_of_finrank_pos ℝ ((Nat.zero_le i).trans_lt hi)
   have : FiniteDimensional ℝ (span ℝ ((r • s ∩ L) : Set E)) :=
     Submodule.finiteDimensional_of_le (span_mono Set.inter_subset_right)
   rw [successiveMin_def] at hr

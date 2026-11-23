@@ -55,6 +55,7 @@ dilates of the unit ball, shows that a full lattice in a real normed space of di
 
 ## Main results
 
+* `ZLattice.covolume_nonneg`: the covolume of any `ℤ`-submodule is nonnegative.
 * `ZLattice.covolume_sq_eq_det_gram`: `covolume L ^ 2` is the determinant of the Gram matrix of
   any `ℤ`-basis of `L`.
 * `ZLattice.covolume_span_sq_eq_det_gram`: in particular `covolume (span ℤ (range b)) ^ 2` is the
@@ -87,6 +88,13 @@ open Asymptotics Filter Metric Module MeasureTheory Submodule
 open LinearMap (BilinForm)
 
 namespace TauCeti
+
+/-- The covolume of a `ℤ`-submodule is nonnegative, with no finite-dimensionality or lattice
+hypotheses. -/
+@[simp]
+theorem _root_.ZLattice.covolume_nonneg {E : Type*} [NormedAddCommGroup E] [MeasurableSpace E]
+    (L : Submodule ℤ E) (μ : Measure E := by volume_tac) : 0 ≤ ZLattice.covolume L μ :=
+  ENNReal.toReal_nonneg
 
 section NormedSpace
 

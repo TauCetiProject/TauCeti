@@ -35,7 +35,8 @@ surjective one, and composing on the left with a map that does not lower the dim
 does not enlarge the kernel. Conjugating an endomorphism by a linear equivalence preserves the
 dimension of its kernel.
 The kernel of a surjection from a finite-dimensional space has dimension the difference of the
-dimensions.
+dimensions. An `R`-submodule of positive `R`-finrank has finite-dimensional `K`-span over any
+division ring `K` receiving `R` faithfully (`Submodule.finiteDimensional_span_of_finrank_pos`).
 -/
 
 public section
@@ -217,6 +218,18 @@ theorem rank_prod [Semiring 𝕜] [StrongRankCondition 𝕜] {M : Type u} {N : T
     Module.rank 𝕜 (V.prod W) =
       Cardinal.lift.{v} (Module.rank 𝕜 V) + Cardinal.lift.{u} (Module.rank 𝕜 W) := by
   rw [(V.prodEquiv W).rank_eq, _root_.rank_prod]
+
+/-- If an `R`-submodule `M` of a `K`-vector space has positive `R`-finrank, then its `K`-span is
+finite-dimensional over `K`. -/
+theorem finiteDimensional_span_of_finrank_pos
+    {R V : Type*} [CommRing R] [Nontrivial R] [AddCommGroup V] [Module R V]
+    (M : Submodule R V) (K : Type*) [DivisionRing K] [SMulWithZero R K] [FaithfulSMul R K]
+    [IsScalarTower R K K] [Module K V] [IsScalarTower R K V]
+    (hM : 0 < Module.finrank R M) :
+    FiniteDimensional K (span K (M : Set V)) := by
+  refine Module.rank_lt_aleph0_iff.mp ((Submodule.rank_span_le_rank M).trans_lt ?_)
+  by_contra! h
+  simp [Module.finrank, Cardinal.toNat_apply_of_aleph0_le h] at hM
 
 end Submodule
 

@@ -16,7 +16,7 @@ import TauCeti.Analysis.Convex.Combination
 import TauCeti.Analysis.Convex.Topology
 import TauCeti.LinearAlgebra.Pi
 import TauCeti.MeasureTheory.Constructions.Pi
-import TauCeti.MeasureTheory.Group.Measure
+import TauCeti.MeasureTheory.Measure.Haar.NormedSpace
 import TauCeti.MeasureTheory.Measure.IntegerSlabs
 import TauCeti.MeasureTheory.Measure.Lebesgue.Weighted.Crosspolytope
 
@@ -625,14 +625,6 @@ theorem prod_mul_measure_le_two_pow_mul_covolume [FiniteDimensional ℝ E] (L : 
     _ ≤ _ := prod_mul_measure_interior_le L μ hK hKs h0 hn haL ha
       (fun i ↦ ((hg0 i).lt_of_ne' (hgz i)).trans_le (hgG i)) hG hGgap
 
-/-- A compact set of nonzero measure for an additive Haar measure forces the ambient real normed
-space to be finite-dimensional. -/
-private theorem finiteDimensional_of_isCompact_measure_ne_zero {μ : Measure E}
-    [μ.IsAddHaarMeasure] {K : Set E} (hK : IsCompact K) (hμ : μ K ≠ 0) :
-    FiniteDimensional ℝ E :=
-  have := hK.locallyCompactSpace_of_measure_ne_zero_of_addGroup hμ
-  .of_locallyCompactSpace ℝ
-
 /-- **Minkowski's second theorem**, upper bound, in terms of the successive minima. For a full
 lattice `L` in a real normed space `E`, a Haar measure `μ` on `E`, and a convex body `K` symmetric
 about `0`, the successive minima `λ i = successiveMin L K i` satisfy
@@ -646,7 +638,7 @@ theorem prod_successiveMin_mul_measure_le_two_pow_mul_covolume (L : Submodule �
       2 ^ finrank ℝ E * ENNReal.ofReal (ZLattice.covolume L μ) := by
   by_cases hμ : μ K = 0
   · simp [hμ]
-  have := finiteDimensional_of_isCompact_measure_ne_zero K.isCompact hμ
+  have := μ.finiteDimensional_of_isCompact_measure_ne_zero ℝ K.isCompact hμ
   rcases (interior (K : Set E)).eq_empty_or_nonempty with hK | hK
   · rw [← measure_interior_of_null_frontier (K.convex.addHaar_frontier μ), hK]
     simp
@@ -664,9 +656,8 @@ theorem prod_successiveMin_mul_measureReal_le_two_pow_mul_covolume (L : Submodul
     {K : ConvexBody E} (hKs : ∀ x ∈ K, -x ∈ K) :
     (∏ i, successiveMin L K i) * μ.real K ≤ 2 ^ finrank ℝ E * ZLattice.covolume L μ := by
   by_cases hμ : μ K = 0
-  · rw [measureReal_def, hμ, ENNReal.toReal_zero, mul_zero, ZLattice.covolume]
-    exact mul_nonneg (by positivity) ENNReal.toReal_nonneg
-  have := finiteDimensional_of_isCompact_measure_ne_zero K.isCompact hμ
+  · simp [measureReal_def, hμ]
+  have := μ.finiteDimensional_of_isCompact_measure_ne_zero ℝ K.isCompact hμ
   have h := ENNReal.toReal_mono (by finiteness)
     (prod_successiveMin_mul_measure_le_two_pow_mul_covolume L μ hKs)
   rwa [ENNReal.toReal_mul, ENNReal.toReal_mul, ENNReal.toReal_ofReal
@@ -684,7 +675,7 @@ theorem prod_successiveMin_le_covolume_of_two_pow_finrank_le (L : Submodule ℤ 
     {K : ConvexBody E} (hKs : ∀ x ∈ K, -x ∈ K) (hμK : 2 ^ finrank ℝ E ≤ μ K) :
     ∏ i, successiveMin L K i ≤ ZLattice.covolume L μ := by
   have hμ : μ K ≠ 0 := (lt_of_lt_of_le (by positivity) hμK).ne'
-  have := finiteDimensional_of_isCompact_measure_ne_zero K.isCompact hμ
+  have := μ.finiteDimensional_of_isCompact_measure_ne_zero ℝ K.isCompact hμ
   rw [← ENNReal.ofReal_le_ofReal_iff (ZLattice.covolume_pos L μ).le,
     ← ENNReal.mul_le_mul_iff_left (pow_ne_zero (finrank ℝ E) two_ne_zero)
       (ENNReal.pow_ne_top ENNReal.ofNat_ne_top)]
