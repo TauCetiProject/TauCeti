@@ -271,8 +271,7 @@ theorem cyclicComplexMatrixKernelIso_hom_f_basis (r : ZMod n)
     (hD := gradedMatrix_degree_intCast hD) (hDD := hDD)
     (cyclicBasis hD hd hDD)
     (cyclicBasis_d hD hd hDD) r ⟨i, (orbitDegree_eq_intCast hd i).symm.trans i.property⟩
-  rw [cyclicBasis, Basis.reindex_apply] at h
-  exact h
+  rwa [cyclicBasis, Basis.reindex_apply, Equiv.subtypeEquivRight_symm_apply] at h
 
 /-- The inverse of `cyclicComplexMatrixKernelIso` sends a generator to its orbit. -/
 @[simp]
@@ -286,8 +285,7 @@ theorem cyclicComplexMatrixKernelIso_inv_f_basis (r : ZMod n) (i : {i // (e i : 
   have h := isoGradedMatrixComplexOfBasis_inv_f_basis
     (hD := gradedMatrix_degree_intCast hD) (hDD := hDD)
     (cyclicBasis hD hd hDD) (cyclicBasis_d hD hd hDD) r i
-  rw [cyclicBasis, Basis.reindex_apply] at h
-  exact h
+  rwa [cyclicBasis, Basis.reindex_apply, Equiv.subtypeEquivRight_symm_apply] at h
 
 /-- **The homology of the cyclic complex of the Laurent extension of a graded matrix.** If the
 degrees of the generators lie in `[a, b]`, its homology in residue `r` is the direct sum of the
