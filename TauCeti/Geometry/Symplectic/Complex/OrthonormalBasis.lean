@@ -74,9 +74,12 @@ The orthogonal transformation carrying a fixed basis adapted to `J₀` to it dep
   `OrthonormalBasis.continuousOn_unitaryToAdaptedFourBasis`: the orthogonal transformation
   carrying a basis adapted to `J₀` to the basis `(a, K a, u, K u)` intertwines `J₀` with `K`, and
   depends continuously on `K`.
-* `TauCeti.AlmostComplexStructure.basisOfOrthonormalBasis`: for an orthonormal four-frame with
-  `J e₀ = e₁` and `J e₂ = e₃`, `e₀, e₂` is a basis of the complex vector space `(V, J)`, with
-  coordinates `⟪e₀, x⟫ + i ⟪e₁, x⟫` and `⟪e₂, x⟫ + i ⟪e₃, x⟫`.
+* `TauCeti.AlmostComplexStructure.basisOfOrthonormalBasis`: for an orthonormal basis with
+  `e (2k + 1) = J (e (2k))`, the vectors `e (2k)` form a basis of the complex vector space
+  `(V, J)`, with coordinates `⟪e (2k), x⟫ + i ⟪e (2k + 1), x⟫`.
+* `TauCeti.AlmostComplexStructure.basisOfOrthonormalBasisFinFour`: its case of an orthonormal
+  four-frame with `J e₀ = e₁` and `J e₂ = e₃`, the basis `(e₀, e₂)` with coordinates
+  `⟪e₀, x⟫ + i ⟪e₁, x⟫` and `⟪e₂, x⟫ + i ⟪e₃, x⟫`.
 * `TauCeti.AlmostComplexStructure.det_eq_of_orthonormalBasis`: the determinant of a complex-linear
   map of `(V, J)` from its coordinates in that basis.
 
@@ -439,115 +442,163 @@ end DimensionFour
 section Det
 
 variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V]
-  {J : AlmostComplexStructure V} {e : OrthonormalBasis (Fin 4) ℝ V}
+  {J : AlmostComplexStructure V} {n : ℕ} {e : OrthonormalBasis (Fin (2 * n)) ℝ V}
 
-/-- The two complex frame coordinates `⟪e₀, x⟫ + i ⟪e₁, x⟫` and `⟪e₂, x⟫ + i ⟪e₃, x⟫` of
-`s e₀ + t e₂` in `(V, J)` are `s` and `t`. -/
-private theorem frameCoord_smul_add_smul (h₀ : J (e 0) = e 1) (h₂ : J (e 2) = e 3) (s t : ℂ) :
+/-- The even vectors `e (2k)` of an orthonormal basis adapted to `J`, `e (2k + 1) = J (e (2k))`,
+span the complex vector space `(V, J)`. -/
+private theorem top_le_span_apply_two_mul
+    (hb : ∀ k : Fin n, e ⟨2 * k.val + 1, by omega⟩ = J (e ⟨2 * k.val, by omega⟩)) :
     letI := J.complexModule
-    ((⟪e 0, s • e 0 + t • e 2⟫ : ℂ) + Complex.I * ⟪e 1, s • e 0 + t • e 2⟫ = s) ∧
-      ((⟪e 2, s • e 0 + t • e 2⟫ : ℂ) + Complex.I * ⟪e 3, s • e 0 + t • e 2⟫ = t) := by
+    ⊤ ≤ Submodule.span ℂ (Set.range fun k : Fin n ↦ e ⟨2 * k.val, by omega⟩) := by
   let := J.complexModule
-  have ho (i j : Fin 4) : ⟪e i, e j⟫ = if i = j then 1 else 0 :=
+  have := J.complexModule_isScalarTower
+  set S := Submodule.span ℂ (Set.range fun k : Fin n ↦ e ⟨2 * k.val, by omega⟩)
+  have hS (i : Fin (2 * n)) : e i ∈ S := by
+    obtain ⟨k, rfl | rfl⟩ : ∃ k : Fin n,
+        i = ⟨2 * k.val, by omega⟩ ∨ i = ⟨2 * k.val + 1, by omega⟩ :=
+      ⟨⟨i.val / 2, by omega⟩, by simp only [Fin.ext_iff]; omega⟩
+    · exact Submodule.subset_span ⟨k, rfl⟩
+    · rw [hb k, ← J.complexModule_I_smul]
+      exact S.smul_mem _ (Submodule.subset_span ⟨k, rfl⟩)
+  intro x _
+  rw [← e.sum_repr' x]
+  exact S.sum_mem fun i _ ↦ S.smul_of_tower_mem _ (hS i)
+
+/-- The even vectors `e (2k)` of an orthonormal basis adapted to `J` are linearly independent over
+`ℂ` in `(V, J)`: they span it, and there are `n = dim_ℂ (V, J)` of them. -/
+private theorem linearIndependent_apply_two_mul
+    (hb : ∀ k : Fin n, e ⟨2 * k.val + 1, by omega⟩ = J (e ⟨2 * k.val, by omega⟩)) :
+    letI := J.complexModule
+    LinearIndependent ℂ fun k : Fin n ↦ e ⟨2 * k.val, by omega⟩ := by
+  let := J.complexModule
+  have := J.complexModule_isScalarTower
+  have : FiniteDimensional ℝ V := Module.Finite.of_basis e.toBasis
+  have : FiniteDimensional ℂ V := Module.Finite.of_restrictScalars_finite ℝ ℂ V
+  refine linearIndependent_of_top_le_span_of_card_eq_finrank (top_le_span_apply_two_mul hb) ?_
+  have h := Module.finrank_mul_finrank ℝ ℂ V
+  rw [Complex.finrank_real_complex, Module.finrank_eq_card_basis e.toBasis] at h
+  simp only [Fintype.card_fin] at h ⊢
+  omega
+
+/-- **The complex basis of an adapted orthonormal basis.** If `e` is an orthonormal basis with
+`e (2k + 1) = J (e (2k))` for every `k`, as produced by `exists_adapted_orthonormalBasis`, then the
+vectors `e (2k)` form a basis of the complex vector space `(V, J)`. The `k`-th coordinate of `x` in
+it is `⟪e (2k), x⟫ + i ⟪e (2k + 1), x⟫` (`basisOfOrthonormalBasis_repr_apply`). -/
+noncomputable def basisOfOrthonormalBasis
+    (hb : ∀ k : Fin n, e ⟨2 * k.val + 1, by omega⟩ = J (e ⟨2 * k.val, by omega⟩)) :
+    letI := J.complexModule
+    Basis (Fin n) ℂ V :=
+  letI := J.complexModule
+  Basis.mk (linearIndependent_apply_two_mul hb) (top_le_span_apply_two_mul hb)
+
+/-- The `k`-th vector of the complex basis of an adapted orthonormal basis `e` is `e (2k)`. -/
+@[simp]
+theorem basisOfOrthonormalBasis_apply
+    (hb : ∀ k : Fin n, e ⟨2 * k.val + 1, by omega⟩ = J (e ⟨2 * k.val, by omega⟩)) (k : Fin n) :
+    letI := J.complexModule
+    basisOfOrthonormalBasis hb k = e ⟨2 * k.val, by omega⟩ := by
+  simp [basisOfOrthonormalBasis]
+
+/-- The `k`-th coordinate of `x` in the complex basis of an adapted orthonormal basis `e` is
+`⟪e (2k), x⟫ + i ⟪e (2k + 1), x⟫`. -/
+@[simp]
+theorem basisOfOrthonormalBasis_repr_apply
+    (hb : ∀ k : Fin n, e ⟨2 * k.val + 1, by omega⟩ = J (e ⟨2 * k.val, by omega⟩)) (x : V)
+    (k : Fin n) :
+    letI := J.complexModule
+    (basisOfOrthonormalBasis hb).repr x k =
+      (⟪e ⟨2 * k.val, by omega⟩, x⟫ : ℂ) + Complex.I * ⟪e ⟨2 * k.val + 1, by omega⟩, x⟫ := by
+  let := J.complexModule
+  have hx := (basisOfOrthonormalBasis hb).sum_repr x
+  have ho (i j : Fin (2 * n)) : ⟪e i, e j⟫ = if i = j then 1 else 0 :=
     orthonormal_iff_ite.1 e.orthonormal i j
-  simp only [J.complexModule_smul_def, h₀, h₂, inner_add_right, inner_smul_right, ho]
-  refine ⟨Complex.ext ?_ ?_, Complex.ext ?_ ?_⟩ <;> simp
+  -- Pairing `x = ∑ⱼ cⱼ • e (2j)` with `e (2k)` and `e (2k + 1)` reads off `c k`.
+  have hpair (j : Fin n) :
+      ((⟨2 * k.val, by omega⟩ : Fin (2 * n)) = ⟨2 * j.val, by omega⟩ ↔ k = j) ∧
+        ((⟨2 * k.val, by omega⟩ : Fin (2 * n)) = ⟨2 * j.val + 1, by omega⟩ ↔ False) ∧
+        ((⟨2 * k.val + 1, by omega⟩ : Fin (2 * n)) = ⟨2 * j.val, by omega⟩ ↔ False) ∧
+        ((⟨2 * k.val + 1, by omega⟩ : Fin (2 * n)) = ⟨2 * j.val + 1, by omega⟩ ↔ k = j) := by
+    simp only [Fin.ext_iff, iff_false]
+    omega
+  have hre : ⟪e ⟨2 * k.val, by omega⟩, x⟫ = ((basisOfOrthonormalBasis hb).repr x k).re := by
+    conv_lhs => rw [← hx]
+    simp [inner_sum, J.complexModule_smul_def, ← hb, inner_add_right, real_inner_smul_right, ho,
+      hpair]
+  have him : ⟪e ⟨2 * k.val + 1, by omega⟩, x⟫ = ((basisOfOrthonormalBasis hb).repr x k).im := by
+    conv_lhs => rw [← hx]
+    simp [inner_sum, J.complexModule_smul_def, ← hb, inner_add_right, real_inner_smul_right, ho,
+      hpair]
+  rw [hre, him, mul_comm]
+  exact (Complex.re_add_im _).symm
 
-/-- In `(V, J)`, every vector is `z₀ e₀ + z₂ e₂` for its two complex frame coordinates. -/
-private theorem eq_frameCoord_smul_add_smul (h₀ : J (e 0) = e 1) (h₂ : J (e 2) = e 3) (x : V) :
-    letI := J.complexModule
-    x = ((⟪e 0, x⟫ : ℂ) + Complex.I * ⟪e 1, x⟫) • e 0 +
-      ((⟪e 2, x⟫ : ℂ) + Complex.I * ⟪e 3, x⟫) • e 2 := by
-  let := J.complexModule
-  simp only [J.complexModule_smul_def, h₀, h₂]
-  conv_lhs => rw [← e.sum_repr' x, Fin.sum_univ_four]
-  simp only [Complex.add_re, Complex.ofReal_re, Complex.mul_re, Complex.I_re, Complex.ofReal_im,
-    Complex.I_im, Complex.add_im, Complex.mul_im]
-  module
+section FinFour
 
-/-- **The complex basis of a unitary frame.** If `e` is an orthonormal basis with `J e₀ = e₁` and
-`J e₂ = e₃`, then `e₀, e₂` is a basis of the complex vector space `(V, J)`. The coordinates of `x`
-in it are `z₀(x) = ⟪e₀, x⟫ + i ⟪e₁, x⟫` and `z₂(x) = ⟪e₂, x⟫ + i ⟪e₃, x⟫`
-(`basisOfOrthonormalBasis_repr_apply_zero`, `basisOfOrthonormalBasis_repr_apply_one`). -/
-noncomputable def basisOfOrthonormalBasis (h₀ : J (e 0) = e 1) (h₂ : J (e 2) = e 3) :
+variable {e : OrthonormalBasis (Fin 4) ℝ V}
+
+/-- **The complex basis of a unitary four-frame.** If `e` is an orthonormal basis with `J e₀ = e₁`
+and `J e₂ = e₃`, then `e₀, e₂` is a basis of the complex vector space `(V, J)`: the case `n = 2` of
+`basisOfOrthonormalBasis`, for frames indexed by `Fin 4`. The coordinates of `x` in it are
+`z₀(x) = ⟪e₀, x⟫ + i ⟪e₁, x⟫` and `z₂(x) = ⟪e₂, x⟫ + i ⟪e₃, x⟫`
+(`basisOfOrthonormalBasisFinFour_repr_apply_zero`, `basisOfOrthonormalBasisFinFour_repr_apply_one`).
+-/
+noncomputable def basisOfOrthonormalBasisFinFour (h₀ : J (e 0) = e 1) (h₂ : J (e 2) = e 3) :
     letI := J.complexModule
     Basis (Fin 2) ℂ V :=
-  letI := J.complexModule
-  Basis.mk (v := ![e 0, e 2])
-    (LinearIndependent.pair_iff.2 fun s t hst ↦ by
-      have h := frameCoord_smul_add_smul h₀ h₂ s t
-      simp only [hst, inner_zero_right, Complex.ofReal_zero, mul_zero, add_zero] at h
-      exact ⟨h.1.symm, h.2.symm⟩)
-    fun x _ ↦ by
-      rw [eq_frameCoord_smul_add_smul h₀ h₂ x]
-      exact Submodule.add_mem _ (Submodule.smul_mem _ _ (Submodule.subset_span ⟨0, rfl⟩))
-        (Submodule.smul_mem _ _ (Submodule.subset_span ⟨1, rfl⟩))
+  basisOfOrthonormalBasis (n := 2) (e := e) fun k ↦ by
+    fin_cases k
+    exacts [h₀.symm, h₂.symm]
 
 /-- The first vector of the basis `(e₀, e₂)` of `(V, J)` is `e₀`. -/
 @[simp]
-theorem basisOfOrthonormalBasis_zero (h₀ : J (e 0) = e 1) (h₂ : J (e 2) = e 3) :
+theorem basisOfOrthonormalBasisFinFour_zero (h₀ : J (e 0) = e 1) (h₂ : J (e 2) = e 3) :
     letI := J.complexModule
-    basisOfOrthonormalBasis h₀ h₂ 0 = e 0 := by
-  simp [basisOfOrthonormalBasis]
+    basisOfOrthonormalBasisFinFour h₀ h₂ 0 = e 0 :=
+  basisOfOrthonormalBasis_apply _ 0
 
 /-- The second vector of the basis `(e₀, e₂)` of `(V, J)` is `e₂`. -/
 @[simp]
-theorem basisOfOrthonormalBasis_one (h₀ : J (e 0) = e 1) (h₂ : J (e 2) = e 3) :
+theorem basisOfOrthonormalBasisFinFour_one (h₀ : J (e 0) = e 1) (h₂ : J (e 2) = e 3) :
     letI := J.complexModule
-    basisOfOrthonormalBasis h₀ h₂ 1 = e 2 := by
-  simp [basisOfOrthonormalBasis]
-
-/-- The coordinates of `x` in the basis `(e₀, e₂)` of `(V, J)` are its two complex frame
-coordinates. -/
-private theorem basisOfOrthonormalBasis_repr_apply (h₀ : J (e 0) = e 1) (h₂ : J (e 2) = e 3)
-    (x : V) :
-    letI := J.complexModule
-    (basisOfOrthonormalBasis h₀ h₂).repr x 0 = (⟪e 0, x⟫ : ℂ) + Complex.I * ⟪e 1, x⟫ ∧
-      (basisOfOrthonormalBasis h₀ h₂).repr x 1 = (⟪e 2, x⟫ : ℂ) + Complex.I * ⟪e 3, x⟫ := by
-  let := J.complexModule
-  set b := basisOfOrthonormalBasis h₀ h₂
-  have hx : b.repr x = b.repr (((⟪e 0, x⟫ : ℂ) + Complex.I * ⟪e 1, x⟫) • b 0 +
-      ((⟪e 2, x⟫ : ℂ) + Complex.I * ⟪e 3, x⟫) • b 1) := by
-    rw [basisOfOrthonormalBasis_zero, basisOfOrthonormalBasis_one,
-      ← eq_frameCoord_smul_add_smul h₀ h₂ x]
-  rw [hx, map_add, map_smul, map_smul, b.repr_self, b.repr_self]
-  simp only [Finsupp.add_apply, Finsupp.smul_apply, Finsupp.single_apply, smul_eq_mul]
-  norm_num
+    basisOfOrthonormalBasisFinFour h₀ h₂ 1 = e 2 :=
+  basisOfOrthonormalBasis_apply _ 1
 
 /-- The first coordinate of `x` in the basis `(e₀, e₂)` of `(V, J)` is
 `z₀(x) = ⟪e₀, x⟫ + i ⟪e₁, x⟫`. -/
 @[simp]
-theorem basisOfOrthonormalBasis_repr_apply_zero (h₀ : J (e 0) = e 1) (h₂ : J (e 2) = e 3)
+theorem basisOfOrthonormalBasisFinFour_repr_apply_zero (h₀ : J (e 0) = e 1) (h₂ : J (e 2) = e 3)
     (x : V) :
     letI := J.complexModule
-    (basisOfOrthonormalBasis h₀ h₂).repr x 0 = (⟪e 0, x⟫ : ℂ) + Complex.I * ⟪e 1, x⟫ :=
-  (basisOfOrthonormalBasis_repr_apply h₀ h₂ x).1
+    (basisOfOrthonormalBasisFinFour h₀ h₂).repr x 0 = (⟪e 0, x⟫ : ℂ) + Complex.I * ⟪e 1, x⟫ :=
+  basisOfOrthonormalBasis_repr_apply _ x 0
 
 /-- The second coordinate of `x` in the basis `(e₀, e₂)` of `(V, J)` is
 `z₂(x) = ⟪e₂, x⟫ + i ⟪e₃, x⟫`. -/
 @[simp]
-theorem basisOfOrthonormalBasis_repr_apply_one (h₀ : J (e 0) = e 1) (h₂ : J (e 2) = e 3)
+theorem basisOfOrthonormalBasisFinFour_repr_apply_one (h₀ : J (e 0) = e 1) (h₂ : J (e 2) = e 3)
     (x : V) :
     letI := J.complexModule
-    (basisOfOrthonormalBasis h₀ h₂).repr x 1 = (⟪e 2, x⟫ : ℂ) + Complex.I * ⟪e 3, x⟫ :=
-  (basisOfOrthonormalBasis_repr_apply h₀ h₂ x).2
+    (basisOfOrthonormalBasisFinFour h₀ h₂).repr x 1 = (⟪e 2, x⟫ : ℂ) + Complex.I * ⟪e 3, x⟫ :=
+  basisOfOrthonormalBasis_repr_apply _ x 1
 
 /-- **The complex determinant in a unitary frame.** If `e` is an orthonormal basis with
 `J e₀ = e₁` and `J e₂ = e₃`, the determinant of a complex-linear map `F` of `(V, J)` is
 `z₀(F e₀) z₂(F e₂) - z₂(F e₀) z₀(F e₂)`, where `z₀` and `z₂` are the coordinates in the basis
-`(e₀, e₂)` of `(V, J)` (`basisOfOrthonormalBasis`). -/
+`(e₀, e₂)` of `(V, J)` (`basisOfOrthonormalBasisFinFour`). -/
 theorem det_eq_of_orthonormalBasis (h₀ : J (e 0) = e 1) (h₂ : J (e 2) = e 3)
     (F : letI := J.complexModule; V →ₗ[ℂ] V) :
     letI := J.complexModule
     LinearMap.det F =
-      (basisOfOrthonormalBasis h₀ h₂).repr (F (e 0)) 0 *
-          (basisOfOrthonormalBasis h₀ h₂).repr (F (e 2)) 1 -
-        (basisOfOrthonormalBasis h₀ h₂).repr (F (e 0)) 1 *
-          (basisOfOrthonormalBasis h₀ h₂).repr (F (e 2)) 0 := by
+      (basisOfOrthonormalBasisFinFour h₀ h₂).repr (F (e 0)) 0 *
+          (basisOfOrthonormalBasisFinFour h₀ h₂).repr (F (e 2)) 1 -
+        (basisOfOrthonormalBasisFinFour h₀ h₂).repr (F (e 0)) 1 *
+          (basisOfOrthonormalBasisFinFour h₀ h₂).repr (F (e 2)) 0 := by
   let := J.complexModule
-  rw [← LinearMap.det_toMatrix (basisOfOrthonormalBasis h₀ h₂), Matrix.det_fin_two]
-  simp only [LinearMap.toMatrix_apply, basisOfOrthonormalBasis_zero, basisOfOrthonormalBasis_one]
+  rw [← LinearMap.det_toMatrix (basisOfOrthonormalBasisFinFour h₀ h₂), Matrix.det_fin_two]
+  simp only [LinearMap.toMatrix_apply, basisOfOrthonormalBasisFinFour_zero,
+    basisOfOrthonormalBasisFinFour_one]
   ring
+
+end FinFour
 
 end Det
 

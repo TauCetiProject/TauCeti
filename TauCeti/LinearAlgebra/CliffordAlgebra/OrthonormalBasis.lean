@@ -37,7 +37,8 @@ basis vector `e_s` indexed by a finite set `s` of indices squares to the sign
   vectors.
 * `OrthonormalBasis.map_ι_apply_map_ι_apply`, `OrthonormalBasis.map_ι_apply_map_ι_apply_comm`: in
   a Clifford module, `c(bᵢ)² = -1`, and `c(bᵢ)` and `c(bⱼ)` anticommute for `i ≠ j`.
-* `OrthonormalBasis.map_ι_apply_eq_sum`: `c(v) = ∑ᵢ ⟪bᵢ, v⟫ c(bᵢ)` in a Clifford module.
+* `OrthonormalBasis.map_ι_eq_sum`, `OrthonormalBasis.map_ι_apply_eq_sum`: `c(v) = ∑ᵢ ⟪bᵢ, v⟫ c(bᵢ)`,
+  in any real algebra receiving the Clifford algebra and applied in a Clifford module.
 * `QuadraticMap.polar_eq_neg_two_inner`: the polar form of `Q` is `-2 ⟪u, v⟫`.
 * `CliffordAlgebra.ι_mul_ι_add_swap_eq_neg_two_inner`, and in the even subalgebra
   `CliffordAlgebra.even_ι_bilin_add_swap_eq_neg_two_inner`: the polarized Clifford relation
@@ -94,6 +95,14 @@ theorem prod_map_map_eq_neg_one_pow (l : List ι) : ((l.map b).map Q).prod = (-1
   obtain ⟨i, -, rfl⟩ := hx
   simp [hQ, b.orthonormal.1 i]
 
+omit hQ in
+/-- Clifford multiplication expanded in an orthonormal basis, in any real algebra receiving the
+Clifford algebra: `ρ (c(v)) = ∑ᵢ ⟪bᵢ, v⟫ ρ (c(bᵢ))`. -/
+theorem map_ι_eq_sum {A : Type*} [Semiring A] [Algebra ℝ A] (ρ : CliffordAlgebra Q →ₐ[ℝ] A)
+    (v : V) : ρ (CliffordAlgebra.ι Q v) = ∑ i, ⟪b i, v⟫ • ρ (CliffordAlgebra.ι Q (b i)) := by
+  conv_lhs => rw [← b.sum_repr' v]
+  simp only [map_sum, map_smul]
+
 section Module
 
 variable {W : Type*} [AddCommGroup W] [Module ℂ W] (ρ : CliffordAlgebra Q →ₐ[ℝ] Module.End ℂ W)
@@ -114,11 +123,12 @@ theorem map_ι_apply_map_ι_apply_comm {i j : ι} (hij : i ≠ j) (ψ : W) :
     congrArg (fun x ↦ ρ x ψ) (CliffordAlgebra.ι_mul_ι_comm_of_isOrtho (b.isOrtho_apply hQ hij))
 
 omit hQ in
-/-- Clifford multiplication expanded in an orthonormal basis: `c(v) ψ = ∑ᵢ ⟪bᵢ, v⟫ c(bᵢ) ψ`. -/
+/-- Clifford multiplication expanded in an orthonormal basis, applied to a vector of a Clifford
+module: `c(v) ψ = ∑ᵢ ⟪bᵢ, v⟫ c(bᵢ) ψ` (`OrthonormalBasis.map_ι_eq_sum` evaluated at `ψ`). -/
 theorem map_ι_apply_eq_sum (v : V) (ψ : W) :
     ρ (CliffordAlgebra.ι Q v) ψ = ∑ i, ⟪b i, v⟫ • ρ (CliffordAlgebra.ι Q (b i)) ψ := by
-  conv_lhs => rw [← b.sum_repr' v]
-  simp [map_sum, map_smul, LinearMap.sum_apply]
+  rw [b.map_ι_eq_sum ρ v, LinearMap.sum_apply]
+  simp only [LinearMap.smul_apply]
 
 end Module
 
