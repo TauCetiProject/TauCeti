@@ -162,7 +162,7 @@ simple root is nonnegative and the chosen maximal-height root `θ = b.highestRoo
 (the classical highest root when `P` is reduced and irreducible). When `N` is a
 finite-dimensional Hausdorff real topological vector space (`[IsTopologicalAddGroup N]
 [ContinuousSMul ℝ N] [T2Space N] [FiniteDimensional ℝ N]`) and `ι` is finite and nonempty, it is
-the closure of `RootPairing.fundamentalAlcove` (`RootPairing.closure_fundamentalAlcove`). For a
+the closure of `RootPairing.fundamentalAlcove` (`RootPairing.Base.closure_fundamentalAlcove`). For a
 finite, reduced, irreducible, crystallographic root pairing over an archimedean linearly ordered
 ring, the affine Weyl group carries every point into it
 (`RootPairing.exists_mem_affineWeylGroup_apply_mem_closedFundamentalAlcove`). -/
@@ -569,7 +569,7 @@ theorem zero_mem_openAlcoveFace_compl_singleton_none [ZeroLEOneClass R] :
 
 /-- On `b.closedAlcoveFace {k}ᶜ`, where every affine simple root other than `aₖ` vanishes, the
 null-root relation reduces to `mₖ * aₖ(x) = 1`. -/
-private lemma affineMarks_mul_affineSimpleRoot_eq_one {k : Option b.support} {x : N}
+theorem affineMarks_mul_affineSimpleRoot_eq_one {k : Option b.support} {x : N}
     (hx : x ∈ b.closedAlcoveFace {k}ᶜ) :
     (b.affineMarks k : R) * b.affineSimpleRoot k x = 1 := by
   classical
@@ -604,8 +604,7 @@ theorem closedAlcoveFace_compl_singleton_none [ZeroLEOneClass R] [P.IsRootSystem
     rintro (_ | i) hi
     · exact absurd rfl hi
     · simp
-  exact Subset.antisymm (fun _ hx ↦ mem_singleton_iff.mpr
-    (b.subsingleton_closedAlcoveFace_compl_singleton none hx h0)) (singleton_subset_iff.mpr h0)
+  exact (b.subsingleton_closedAlcoveFace_compl_singleton none).eq_singleton_of_mem h0
 
 /-- For a root system, a point `x : N` with `0 ≤ P.root' j x` and `b.affineSimpleRoot l x = 0` for
 all `l ≠ some j` is the unique point of the closed vertex face `b.closedAlcoveFace {some j}ᶜ`. -/
@@ -626,9 +625,7 @@ private lemma closedAlcoveFace_compl_singleton_some_eq_singleton [P.IsRootSystem
     · have hnone : b.affineSimpleRoot none x = 0 := h0 none (by simp)
       rw [affineSimpleRoot_none, sub_eq_zero] at hnone
       exact hnone.ge
-  exact Subset.antisymm (fun _ hy ↦ mem_singleton_iff.mpr
-    (b.subsingleton_closedAlcoveFace_compl_singleton (some j) hy hmem))
-    (singleton_subset_iff.mpr hmem)
+  exact (b.subsingleton_closedAlcoveFace_compl_singleton (some j)).eq_singleton_of_mem hmem
 
 /-- For a root system, at a special simple node `j`, the vertex of the closed fundamental alcove
 opposite the wall `αⱼ = 0` is `{b.fundamentalCoweightBasis j}`. -/

@@ -43,17 +43,18 @@ discharges continuity of every root functional automatically.
 
 * `RootPairing.Base.continuous_affineSimpleRoot_of_continuous` and
   `RootPairing.Base.continuous_affineSimpleRoot`: every affine simple root is continuous.
-* `RootPairing.isOpen_fundamentalAlcove_of_continuous` and `RootPairing.isOpen_fundamentalAlcove`:
-  the open fundamental alcove is open.
-* `RootPairing.isClosed_closedFundamentalAlcove_of_continuous`,
-  `RootPairing.isClosed_closedFundamentalAlcove`, and `RootPairing.Base.isClosed_closedAlcoveFace`:
-  the closed fundamental alcove and all of its closed faces are closed.
-* `RootPairing.closure_fundamentalAlcove_of_continuous` and
-  `RootPairing.closure_fundamentalAlcove`: **the closed fundamental alcove is the topological
+* `RootPairing.Base.isOpen_fundamentalAlcove_of_continuous` and
+  `RootPairing.Base.isOpen_fundamentalAlcove`: the open fundamental alcove is open.
+* `RootPairing.Base.isClosed_closedFundamentalAlcove_of_continuous`,
+  `RootPairing.Base.isClosed_closedFundamentalAlcove`, and
+  `RootPairing.Base.isClosed_closedAlcoveFace`: the closed fundamental alcove and all of its
+  closed faces are closed.
+* `RootPairing.Base.closure_fundamentalAlcove_of_continuous` and
+  `RootPairing.Base.closure_fundamentalAlcove`: **the closed fundamental alcove is the topological
   closure of the open fundamental alcove.**
-* `RootPairing.interior_closedFundamentalAlcove_of_continuous` and
-  `RootPairing.interior_closedFundamentalAlcove`: **the open fundamental alcove is the topological
-  interior of the closed fundamental alcove.**
+* `RootPairing.Base.interior_closedFundamentalAlcove_of_continuous` and
+  `RootPairing.Base.interior_closedFundamentalAlcove`: **the open fundamental alcove is the
+  topological interior of the closed fundamental alcove.**
 * `RootPairing.locallyFinite_setOf_root'_eq_intCast_of_continuous` and
   `RootPairing.locallyFinite_setOf_root'_eq_intCast`: **the family of affine root hyperplanes
   `{x | αⱼ(x) = k}` indexed by `ι × ℤ` is locally finite.**
@@ -96,14 +97,14 @@ theorem Base.continuous_affineSimpleRoot_of_continuous [ContinuousAdd R]
   exact (hcont _).add continuous_const
 
 /-- The open fundamental alcove is open when every root functional is continuous. -/
-theorem isOpen_fundamentalAlcove_of_continuous [LinearOrder R] [OrderClosedTopology R]
+theorem Base.isOpen_fundamentalAlcove_of_continuous [LinearOrder R] [OrderClosedTopology R]
     (hcont : ∀ i, Continuous (P.root' i)) : IsOpen (fundamentalAlcove P b) := by
   rw [fundamentalAlcove_eq_biInter_inter]
   exact (isOpen_biInter_finset fun i _ ↦ isOpen_Ioi.preimage (hcont i)).inter
     (isOpen_Iio.preimage (hcont _))
 
 /-- The closed fundamental alcove is closed when every root functional is continuous. -/
-theorem isClosed_closedFundamentalAlcove_of_continuous [Preorder R] [OrderClosedTopology R]
+theorem Base.isClosed_closedFundamentalAlcove_of_continuous [Preorder R] [OrderClosedTopology R]
     (hcont : ∀ i, Continuous (P.root' i)) : IsClosed (closedFundamentalAlcove P b) := by
   rw [closedFundamentalAlcove_eq_biInter_inter]
   exact (isClosed_iInter fun i ↦ isClosed_iInter fun _ ↦ isClosed_Ici.preimage (hcont i)).inter
@@ -119,7 +120,7 @@ theorem Base.isClosed_closedAlcoveFace_of_continuous [PartialOrder R] [OrderClos
     ext x
     simp [Base.mem_closedAlcoveFace]
   rw [h]
-  refine (isClosed_closedFundamentalAlcove_of_continuous b hcont).inter
+  refine (b.isClosed_closedFundamentalAlcove_of_continuous hcont).inter
     (isClosed_biInter fun k _ ↦ ?_)
   rcases k with _ | i
   · have hpre : b.affineSimpleRoot none ⁻¹' {0} = P.root' b.highestRoot ⁻¹' {1} := by
@@ -204,7 +205,7 @@ variable {ι R M N : Type*} [Field R] [LinearOrder R] [IsStrictOrderedRing R]
 
 /-- Every point of the closed fundamental alcove is a limit of points on an open segment in the
 fundamental alcove; no continuity of the root functionals is required for this inclusion. -/
-theorem closedFundamentalAlcove_subset_closure_fundamentalAlcove :
+theorem Base.closedFundamentalAlcove_subset_closure_fundamentalAlcove :
     closedFundamentalAlcove P b ⊆ closure (fundamentalAlcove P b) := by
   intro x hx
   obtain ⟨x₀, hx₀⟩ := fundamentalAlcove_nonempty b
@@ -214,19 +215,19 @@ theorem closedFundamentalAlcove_subset_closure_fundamentalAlcove :
   exact lineMap_mem_fundamentalAlcove hx hx₀ ht.1 ht.2.le
 
 /-- **The closed fundamental alcove is the topological closure of the open fundamental alcove.** -/
-theorem closure_fundamentalAlcove_of_continuous (hcont : ∀ i, Continuous (P.root' i)) :
+theorem Base.closure_fundamentalAlcove_of_continuous (hcont : ∀ i, Continuous (P.root' i)) :
     closure (fundamentalAlcove P b) = closedFundamentalAlcove P b :=
   Subset.antisymm
     (closure_minimal (fundamentalAlcove_subset_closedFundamentalAlcove P b)
-      (isClosed_closedFundamentalAlcove_of_continuous b hcont))
-    (closedFundamentalAlcove_subset_closure_fundamentalAlcove b)
+      (b.isClosed_closedFundamentalAlcove_of_continuous hcont))
+    b.closedFundamentalAlcove_subset_closure_fundamentalAlcove
 
 /-- **The open fundamental alcove is the topological interior of the closed fundamental alcove.** -/
-theorem interior_closedFundamentalAlcove_of_continuous (hcont : ∀ i, Continuous (P.root' i)) :
+theorem Base.interior_closedFundamentalAlcove_of_continuous (hcont : ∀ i, Continuous (P.root' i)) :
     interior (closedFundamentalAlcove P b) = fundamentalAlcove P b := by
   refine Subset.antisymm (fun x hx ↦ ?_)
     (interior_maximal (fundamentalAlcove_subset_closedFundamentalAlcove P b)
-      (isOpen_fundamentalAlcove_of_continuous b hcont))
+      (b.isOpen_fundamentalAlcove_of_continuous hcont))
   have hxbar : x ∈ closedFundamentalAlcove P b := interior_subset hx
   refine (mem_fundamentalAlcove_iff_forall_affineSimpleRoot_pos b).mpr fun k ↦ ?_
   have hnn := (mem_closedFundamentalAlcove_iff_forall_affineSimpleRoot_nonneg b).mp hxbar k
@@ -278,13 +279,13 @@ theorem Base.continuous_affineSimpleRoot (k : Option b.support) :
 
 /-- Over `ℝ`, on a finite-dimensional Hausdorff topological vector space, the open fundamental
 alcove is open. -/
-theorem isOpen_fundamentalAlcove : IsOpen (fundamentalAlcove P b) :=
-  isOpen_fundamentalAlcove_of_continuous b P.continuous_root'
+theorem Base.isOpen_fundamentalAlcove : IsOpen (fundamentalAlcove P b) :=
+  b.isOpen_fundamentalAlcove_of_continuous P.continuous_root'
 
 /-- Over `ℝ`, on a finite-dimensional Hausdorff topological vector space, the closed fundamental
 alcove is closed. -/
-theorem isClosed_closedFundamentalAlcove : IsClosed (closedFundamentalAlcove P b) :=
-  isClosed_closedFundamentalAlcove_of_continuous b P.continuous_root'
+theorem Base.isClosed_closedFundamentalAlcove : IsClosed (closedFundamentalAlcove P b) :=
+  b.isClosed_closedFundamentalAlcove_of_continuous P.continuous_root'
 
 /-- Over `ℝ`, on a finite-dimensional Hausdorff topological vector space, every closed face of the
 fundamental alcove is closed. -/
@@ -295,16 +296,16 @@ theorem Base.isClosed_closedAlcoveFace (J : Set (Option b.support)) :
 /-- **Over `ℝ`, the closed fundamental alcove is the topological closure of the open fundamental
 alcove.** -/
 @[simp]
-theorem closure_fundamentalAlcove :
+theorem Base.closure_fundamentalAlcove :
     closure (fundamentalAlcove P b) = closedFundamentalAlcove P b :=
-  closure_fundamentalAlcove_of_continuous b P.continuous_root'
+  b.closure_fundamentalAlcove_of_continuous P.continuous_root'
 
 /-- **Over `ℝ`, the open fundamental alcove is the topological interior of the closed fundamental
 alcove.** -/
 @[simp]
-theorem interior_closedFundamentalAlcove :
+theorem Base.interior_closedFundamentalAlcove :
     interior (closedFundamentalAlcove P b) = fundamentalAlcove P b :=
-  interior_closedFundamentalAlcove_of_continuous b P.continuous_root'
+  b.interior_closedFundamentalAlcove_of_continuous P.continuous_root'
 
 end Base
 
