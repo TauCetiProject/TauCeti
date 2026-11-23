@@ -1211,15 +1211,16 @@ theorem ae_eq_integral_of_littlewoodPaleyLowPass_succ_eq [CompleteSpace F] {p : 
     (hg : littlewoodPaleyLowPass F φ (j + 1) (f : 𝓢'(E, F)) = g) :
     g =ᵐ[volume] fun x ↦ ∫ s, 𝓕⁻ (fun ξ ↦ (φ ξ : ℂ)) s • f (x - ((2 : ℝ) ^ j)⁻¹ • s) := by
   obtain ⟨g', hg', hconv, -⟩ := exists_fourierMultiplierCLM_toTemperedDistribution_eq
-    (φ.lowPassSchwartz (pow_ne_zero j two_ne_zero)) f (q := p) (r := 1) le_rfl (by rw [inv_one, add_comm])
+    (φ.lowPassSchwartz (pow_ne_zero j two_ne_zero)) f (q := p) (r := 1) le_rfl
+    (by rw [inv_one, add_comm])
   rw [φ.coe_lowPassSchwartz, ← littlewoodPaleyLowPass_succ_eq_fourierMultiplierCLM, hg] at hg'
   rw [Lp.toTemperedDistribution_injective hg']
   refine hconv.trans (Eventually.of_forall fun x ↦ ?_)
   -- The kernel is `2^{jn} 𝓕⁻ φ (2^j ·)`; substitute `t = 2^{-j} s` in the convolution integral.
   have h0 : 𝓕⁻ ⇑(φ.lowPassSchwartz one_ne_zero) = 𝓕⁻ (fun ξ ↦ (φ ξ : ℂ)) := by
     simp [φ.coe_lowPassSchwartz]
-  simp_rw [convolution_def, ContinuousLinearMap.lsmul_apply, φ.fourierInv_lowPassSchwartz_apply (pow_pos two_pos j),
-    h0, smul_assoc]
+  simp_rw [convolution_def, ContinuousLinearMap.lsmul_apply,
+    φ.fourierInv_lowPassSchwartz_apply (pow_pos two_pos j), h0, smul_assoc]
   have h := Measure.integral_comp_smul volume
     (fun t ↦ 𝓕⁻ (fun ξ ↦ (φ ξ : ℂ)) (((2 : ℝ) ^ j) • t) • f (x - t)) ((2 : ℝ) ^ j)⁻¹
   simp only [smul_smul, mul_inv_cancel₀ (pow_ne_zero j (two_ne_zero : (2 : ℝ) ≠ 0)), one_smul] at h
