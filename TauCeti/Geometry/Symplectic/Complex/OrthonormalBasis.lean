@@ -12,6 +12,7 @@ public import TauCeti.Geometry.Symplectic.AlmostComplex
 public import TauCeti.Geometry.Symplectic.CompatibleMetric
 public import TauCeti.Geometry.Symplectic.Orientation
 import TauCeti.Geometry.Symplectic.Complex.InnerProductSpace
+import TauCeti.Geometry.Symplectic.Finrank
 import TauCeti.Analysis.InnerProductSpace.Euclidean.Complex
 import TauCeti.Analysis.InnerProductSpace.Projection.Basic
 import Mathlib.LinearAlgebra.Complex.FiniteDimensional
@@ -53,6 +54,8 @@ The orthogonal transformation carrying a fixed basis adapted to `J₀` to it dep
   metric `ω(·, J ·)` is the inner product is the imaginary part of the Hermitian product.
 * `TauCeti.AlmostComplexStructure.exists_adapted_orthonormalBasis`: adapted orthonormal bases
   exist in every even dimension `2 * n`.
+* `TauCeti.AlmostComplexStructure.exists_orthonormal_forall_inner_apply_eq_zero`: up to half the
+  dimension, there are families of `r` vectors orthonormal for the Hermitian metric of `J`.
 * `TauCeti.AlmostComplexStructure.exists_forall_norm_apply_eq`: orthogonal almost complex
   structures exist in even dimension.
 * `TauCeti.AlmostComplexStructure.toBasis_orientation_eq_symplecticForm_orientation`: every adapted
@@ -139,6 +142,19 @@ theorem exists_adapted_orthonormalBasis (J : AlmostComplexStructure V) (hJ : ∀
     LinearIsometryEquiv.trans_apply, LinearIsometryEquiv.symm_symm]
   rw [hsingle]
   exact hΦ _
+
+/-- Up to half the dimension, there are families of `r` vectors that are orthonormal for the
+Hermitian metric of an orthogonal almost complex structure `J`: `u` is orthonormal and
+`⟪J uᵢ, uⱼ⟫ = 0` for all `i` and `j`. -/
+theorem exists_orthonormal_forall_inner_apply_eq_zero {J : AlmostComplexStructure V}
+    (hJ : ∀ v w, ⟪J v, J w⟫ = ⟪v, w⟫) {r : ℕ} (hr : 2 * r ≤ finrank ℝ V) :
+    ∃ u : Fin r → V, Orthonormal ℝ u ∧ ∀ i j, ⟪J (u i), u j⟫ = 0 := by
+  obtain ⟨n, hn⟩ := J.even_finrank_real
+  obtain ⟨b, hb⟩ := exists_adapted_orthonormalBasis J (norm_apply hJ) n (by omega)
+  refine ⟨fun i ↦ b ⟨2 * i, by omega⟩, ?_, fun i j ↦ ?_⟩
+  · exact b.orthonormal.comp _ fun i j h ↦ Fin.ext (by simpa using congrArg Fin.val h)
+  · rw [← hb ⟨i, by omega⟩]
+    exact b.orthonormal.2 (by simp [Fin.ext_iff]; omega)
 
 /-- An even-dimensional real inner product space admits an orthogonal almost complex structure,
 including the zero structure in dimension zero. -/
