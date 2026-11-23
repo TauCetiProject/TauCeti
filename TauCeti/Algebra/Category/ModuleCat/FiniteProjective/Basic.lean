@@ -17,7 +17,8 @@ import Mathlib.RingTheory.Finiteness.Prod
 
 This file defines the object property `TauCeti.finiteProjectiveModules R` of finitely generated
 projective `R`-modules in `ModuleCat R`, together with its basic closure properties (retracts,
-zero, binary products), and the regular module `TauCeti.finiteProjectiveModulesRegular R`.
+zero, binary products), the regular module `TauCeti.finiteProjectiveModulesRegular R`, and the
+finite free modules `TauCeti.finiteProjectiveModulesFree R n`.
 
 ## Main definitions
 
@@ -27,6 +28,10 @@ zero, binary products), and the regular module `TauCeti.finiteProjectiveModulesR
   projective `R`-module.
 * `TauCeti.finiteProjectiveModulesRegularLinearEquiv`: the canonical linear equivalence between
   `TauCeti.finiteProjectiveModulesRegular R` and `R`.
+* `TauCeti.finiteProjectiveModulesFree`: the finite free module `Fin n → R`, as a finitely
+  generated projective `R`-module.
+* `TauCeti.finiteProjectiveModulesFreeLinearEquiv`: the canonical linear equivalence between
+  `TauCeti.finiteProjectiveModulesFree R n` and `Fin n → R`.
 
 ## Main results
 
@@ -138,5 +143,23 @@ theorem finiteProjectiveModulesRegular_obj :
 noncomputable def finiteProjectiveModulesRegularLinearEquiv :
     (finiteProjectiveModulesRegular R).obj ≃ₗ[R] R :=
   (eqToIso (finiteProjectiveModulesRegular_obj R)).toLinearEquiv
+
+/-- The finite free `R`-module `Fin n → R`, as a finitely generated projective `R`-module. -/
+def finiteProjectiveModulesFree (n : ℕ) : (finiteProjectiveModules R).FullSubcategory :=
+  ⟨ModuleCat.of R (Fin n → R), finiteProjectiveModules_iff.2
+    ⟨inferInstanceAs (Module.Finite R (Fin n → R)),
+      inferInstanceAs (Module.Projective R (Fin n → R))⟩⟩
+
+/-- The underlying module of `TauCeti.finiteProjectiveModulesFree R n` is `Fin n → R`. -/
+@[simp]
+theorem finiteProjectiveModulesFree_obj (n : ℕ) :
+    (finiteProjectiveModulesFree R n).obj = ModuleCat.of R (Fin n → R) :=
+  (rfl)
+
+/-- The canonical `R`-linear equivalence between `TauCeti.finiteProjectiveModulesFree R n` and
+`Fin n → R`. -/
+noncomputable def finiteProjectiveModulesFreeLinearEquiv (n : ℕ) :
+    (finiteProjectiveModulesFree R n).obj ≃ₗ[R] (Fin n → R) :=
+  (eqToIso (finiteProjectiveModulesFree_obj R n)).toLinearEquiv
 
 end TauCeti

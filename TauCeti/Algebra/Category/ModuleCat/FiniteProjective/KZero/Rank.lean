@@ -77,16 +77,16 @@ theorem zsmul_of_finiteProjectiveModulesRegular_injective [InvariantBasisNumber 
   -- Write `z = n - m` with `n m : ℕ`, so that `n[A] = m[A]`, that is `[Aⁿ] = [Aᵐ]`.
   obtain ⟨n, m, rfl⟩ : ∃ n m : ℕ, z = n - m := ⟨z.toNat, (-z).toNat, by omega⟩
   rw [zmultiplesHom_apply, sub_smul, sub_eq_zero, natCast_zsmul, natCast_zsmul,
-    ← SplitK0.of_eq_nsmul_of_linearEquiv_fin (X := ⟨ModuleCat.of A (Fin n → A),
-      finiteProjectiveModules_iff.2 ⟨inferInstance, inferInstance⟩⟩) (.refl _ _)
-      (finiteProjectiveModulesRegularLinearEquiv A),
-    ← SplitK0.of_eq_nsmul_of_linearEquiv_fin (X := ⟨ModuleCat.of A (Fin m → A),
-      finiteProjectiveModules_iff.2 ⟨inferInstance, inferInstance⟩⟩) (.refl _ _)
-      (finiteProjectiveModulesRegularLinearEquiv A),
+    ← SplitK0.of_eq_nsmul_of_linearEquiv_fin (X := finiteProjectiveModulesFree A n)
+      (finiteProjectiveModulesFreeLinearEquiv A n) (finiteProjectiveModulesRegularLinearEquiv A),
+    ← SplitK0.of_eq_nsmul_of_linearEquiv_fin (X := finiteProjectiveModulesFree A m)
+      (finiteProjectiveModulesFreeLinearEquiv A m) (finiteProjectiveModulesRegularLinearEquiv A),
     SplitK0.of_eq_of_iff_stableEquivalent, stableEquivalent_iff] at hz
   obtain ⟨k, ⟨e⟩⟩ := hz
   have := eq_of_fin_equiv A <| (LinearEquiv.piFinAppend A A n k).trans <|
-    e.trans (LinearEquiv.piFinAppend A A m k).symm
+    (((finiteProjectiveModulesFreeLinearEquiv A n).symm.prodCongr (.refl _ _)).trans <|
+      e.trans ((finiteProjectiveModulesFreeLinearEquiv A m).prodCongr (.refl _ _))).trans
+      (LinearEquiv.piFinAppend A A m k).symm
   omega
 
 /-- The class of a stably free finitely generated projective `A`-module is an integer multiple

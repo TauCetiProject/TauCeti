@@ -92,6 +92,11 @@ theorem presented_additiveClosure_eq_top (hP : IsProgenerator P) :
     (additiveClosure P).presented = ⊤ :=
   ObjectProperty.presented_eq_top hP.exists_epi_additiveClosure
 
+/-- In an abelian category with a progenerator `P`, every object has a presentation by `add P`. -/
+theorem presented_additiveClosure (hP : IsProgenerator P) (X : C) :
+    (additiveClosure P).presented X :=
+  hP.presented_additiveClosure_eq_top ▸ trivial
+
 /-! ### Well-definedness, full faithfulness, and essential image of `Hom(P, -)` -/
 
 /-- For a progenerator `P` of an abelian category `C` and any object `X` of `C`, `Hom(P, X)` is a
@@ -100,10 +105,7 @@ theorem finitePresentationModules_preadditiveCoyonedaObj_obj (hP : IsProgenerato
     finitePresentationModules (End P)ᵐᵒᵖ ((preadditiveCoyonedaObj P).obj X) := by
   have := hP.projective
   rw [← presented_finiteProjectiveModules (End P)ᵐᵒᵖ]
-  have hX : (additiveClosure P).presented X := by
-    rw [hP.presented_additiveClosure_eq_top]
-    trivial
-  obtain @⟨Q₀, Q₁, u, c, hc, hQ₀, hQ₁⟩ := hX
+  obtain @⟨Q₀, Q₁, u, c, hc, hQ₀, hQ₁⟩ := hP.presented_additiveClosure X
   let hc' : IsColimit (CokernelCofork.ofπ c.π c.condition) :=
     IsColimit.ofIsoColimit hc (Cofork.ext (Iso.refl _))
   exact MorphismProperty.cokernels.of_isColimit ((preadditiveCoyonedaObj P).map u) _
@@ -120,10 +122,7 @@ theorem preadditiveCoyonedaObj_map_bijective (hP : IsProgenerator P) (X Y : C) :
   · obtain ⟨Q, π, hQ, hπ⟩ := hP.exists_epi_additiveClosure X
     refine (cancel_epi π).mp ((TauCeti.preadditiveCoyonedaObj_map_bijective hQ Y).1 ?_)
     rw [Functor.map_comp, Functor.map_comp, hf]
-  · have hX : (additiveClosure P).presented X := by
-      rw [hP.presented_additiveClosure_eq_top]
-      trivial
-    obtain @⟨Q₀, Q₁, u, c, hc, hQ₀, hQ₁⟩ := hX
+  · obtain @⟨Q₀, Q₁, u, c, hc, hQ₀, hQ₁⟩ := hP.presented_additiveClosure X
     obtain ⟨h, hh⟩ := (TauCeti.preadditiveCoyonedaObj_map_bijective hQ₁ Y).2
       ((preadditiveCoyonedaObj P).map c.π ≫ φ)
     have huh : u ≫ h = 0 := (TauCeti.preadditiveCoyonedaObj_map_bijective hQ₀ Y).1 <| by
