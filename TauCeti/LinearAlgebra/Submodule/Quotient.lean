@@ -7,6 +7,7 @@ module
 
 public import Mathlib.LinearAlgebra.Quotient.Basic
 public import Mathlib.RingTheory.Ideal.Maps
+public import Mathlib.RingTheory.Finiteness.Defs
 import Mathlib.LinearAlgebra.Isomorphisms
 
 /-!
@@ -39,6 +40,15 @@ If an ideal `I` annihilates `S`, every linear map `M → S` kills `I • M`, so 
 `M ⧸ I • M` into `S` are the same as maps out of `M`; `TauCeti.linearMapQuotientSMulTopEquiv`
 packages this as an additive equivalence. For `I = Ring.jacobson R` it applies to every semisimple
 `S`, by `IsSemisimpleModule.jacobson_le_annihilator`.
+
+The images of a set `S` span `M ⧸ p` exactly when `p ⊔ span S = ⊤`
+(`Submodule.span_image_mkQ_eq_top_iff`). When the quotient is finitely generated, finitely many
+vectors of `S` already suffice (`Submodule.exists_finset_subset_sup_span_eq_top`).
+
+If an `R`-submodule `P` of an `S`-module `M` equals the scalar restriction `Q.restrictScalars R`
+of an `S`-submodule `Q`, composing `Submodule.quotEquivOfEq` with
+`Submodule.Quotient.restrictScalarsEquiv` gives a canonical `R`-linear equivalence
+`Submodule.quotEquivOfEqRestrictScalars : (M ⧸ P) ≃ₗ[R] M ⧸ Q`.
 -/
 
 public section
@@ -128,6 +138,52 @@ theorem quotientComapEquivSupQuotient_apply_mk {P : Type*} [AddCommGroup P] [Mod
         ⟨φ c, Submodule.mem_sup_right ⟨c, rfl⟩⟩ := by
   simp [quotientComapEquivSupQuotient]
   rfl
+
+/-- The images of a set `S` span the quotient `M ⧸ p` exactly when `p` and the span of `S`
+together span `M`. -/
+theorem span_image_mkQ_eq_top_iff {p : Submodule R M} {S : Set M} :
+    span R (p.mkQ '' S) = ⊤ ↔ p ⊔ span R S = ⊤ := by
+  rw [← map_span, map_mkQ_eq_top]
+
+/-- **Finitely many vectors complete a submodule with finitely generated quotient.** If `M ⧸ p`
+is finitely generated and `p ⊔ span R S = ⊤`, then some finite subset `t ⊆ S` already gives
+`p ⊔ span R t = ⊤`. -/
+theorem exists_finset_subset_sup_span_eq_top {p : Submodule R M} [Module.Finite R (M ⧸ p)]
+    {S : Set M} (h : p ⊔ span R S = ⊤) : ∃ t : Finset M, ↑t ⊆ S ∧ p ⊔ span R t = ⊤ := by
+  classical
+  rw [← span_image_mkQ_eq_top_iff] at h
+  obtain ⟨b, hbS, hbspan⟩ := (fg_span_iff_fg_span_finset_subset _).1 (h ▸ Module.Finite.fg_top)
+  obtain ⟨t, htS, rfl⟩ := Finset.subset_set_image_iff.1 hbS
+  refine ⟨t, htS, ?_⟩
+  rw [← span_image_mkQ_eq_top_iff, ← Finset.coe_image, ← hbspan, h]
+
+section RestrictScalars
+
+variable {S : Type*} [Ring S] [SMul R S] [Module S M] [IsScalarTower R S M]
+
+/-- If an `R`-submodule `P` equals the scalar restriction of an `S`-submodule `Q`, the quotients
+`M ⧸ P` and `M ⧸ Q` are canonically `R`-linearly equivalent. -/
+def quotEquivOfEqRestrictScalars (P : Submodule R M) (Q : Submodule S M)
+    (h : P = Q.restrictScalars R) : (M ⧸ P) ≃ₗ[R] M ⧸ Q :=
+  (quotEquivOfEq P (Q.restrictScalars R) h).trans (Quotient.restrictScalarsEquiv R Q)
+
+/-- `Submodule.quotEquivOfEqRestrictScalars` sends a quotient class to the class of the same
+representative. -/
+@[simp]
+theorem quotEquivOfEqRestrictScalars_mk (P : Submodule R M) (Q : Submodule S M)
+    (h : P = Q.restrictScalars R) (x : M) :
+    P.quotEquivOfEqRestrictScalars Q h (Quotient.mk x) = Quotient.mk x := by
+  simp [quotEquivOfEqRestrictScalars]
+
+/-- The inverse of `Submodule.quotEquivOfEqRestrictScalars` sends a quotient class to the class of
+the same representative. -/
+@[simp]
+theorem quotEquivOfEqRestrictScalars_symm_mk (P : Submodule R M) (Q : Submodule S M)
+    (h : P = Q.restrictScalars R) (x : M) :
+    (P.quotEquivOfEqRestrictScalars Q h).symm (Quotient.mk x) = Quotient.mk x := by
+  rw [LinearEquiv.symm_apply_eq, quotEquivOfEqRestrictScalars_mk]
+
+end RestrictScalars
 
 end Submodule
 

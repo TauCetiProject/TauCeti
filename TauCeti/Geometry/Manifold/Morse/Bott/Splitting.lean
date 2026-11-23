@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.InnerProductSpace.Spectral.Relative
-public import TauCeti.Geometry.Manifold.Morse.Bott.Index
+public import TauCeti.Geometry.Manifold.Morse.Bott.Index.Basic
 public import TauCeti.Topology.VectorBundle.Riemannian.Basic
 
 /-!
@@ -50,6 +50,9 @@ In the namespace `TauCeti.SmoothEmbedding`:
   `IsCriticalSubmanifold.normalHessian_apply_self_pos_of_mem_positiveNormalSpace`: the normal
   Hessian is negative definite on the negative normal space and positive definite on the positive
   normal space.
+* `IsCriticalSubmanifold.normalHessian_apply_self_nonpos_of_mem_negativeNormalSpace` and
+  `IsCriticalSubmanifold.normalHessian_apply_self_nonneg_of_mem_positiveNormalSpace`: the
+  corresponding semidefiniteness, including the zero vector.
 * `IsCriticalSubmanifold.inner_eq_zero_of_mem_negativeNormalSpace` and
   `IsCriticalSubmanifold.normalHessian_eq_zero_of_mem_negativeNormalSpace`: the two spaces are
   orthogonal for the metric and for the normal Hessian.
@@ -161,6 +164,13 @@ theorem normalHessian_apply_self_pos_of_mem_positiveNormalSpace
     (hv : v ∈ h.positiveNormalSpace hn g s) (hv0 : v ≠ 0) : 0 < h.normalHessian hn s v v :=
   LinearMap.BilinForm.apply_self_pos_of_mem_relativeSpectralSubspace_Ioi
     (g.isSymm_toBilinForm_inner s) (g.pos s) (h.isSymm_normalHessian hn s) hv hv0
+
+/-- **The normal Hessian is positive semidefinite on the positive normal space.** -/
+theorem normalHessian_apply_self_nonneg_of_mem_positiveNormalSpace
+    (hv : v ∈ h.positiveNormalSpace hn g s) : 0 ≤ h.normalHessian hn s v v := by
+  rcases eq_or_ne v 0 with rfl | hv0
+  · simp
+  · exact (h.normalHessian_apply_self_pos_of_mem_positiveNormalSpace hn g hv hv0).le
 
 end IsCriticalSubmanifold
 

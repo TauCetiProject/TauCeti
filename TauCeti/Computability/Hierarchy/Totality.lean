@@ -64,7 +64,7 @@ theorem IsPi.oneOneReducible_totality (hp : IsPi Z 2 p) :
   refine ⟨fun x => encode (Code.curry c (encode x)),
     Computable.encode.comp (Code.primrec₂_curry.to_comp.comp
       (Computable.const c) Computable.encode),
-    fun _ _ h => encode_injective (Code.curry_inj (encode_injective h)).2, fun x => ?_⟩
+    fun _ _ h => encode_injective (Code.curry_inj.1 (encode_injective h)).2, fun x => ?_⟩
   simpa only [mem_totality, ofNat_encode, Code.eval_curry, encode_prod_val, encode_nat] using
     (heq x).trans (forall_congr' fun y => hc (x, y))
 

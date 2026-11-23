@@ -11,6 +11,7 @@ public import Mathlib.Analysis.Calculus.Deriv.Prod
 import Mathlib.Analysis.Calculus.Deriv.Shift
 import Mathlib.Analysis.Calculus.FDeriv.Prod
 import Mathlib.Analysis.Calculus.MeanValue
+import Mathlib.Analysis.ODE.ExistUnique
 import Mathlib.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
 
 /-!
@@ -31,6 +32,8 @@ nonautonomous replacement for the group law of an ordinary `Flow`.
 ## Main declarations
 
 * `TauCeti.timeDependentSuspension`: the autonomous field `(t, x) ↦ (1, v t x)`.
+* `TauCeti.lipschitzWith_timeDependentSuspension`: a jointly Lipschitz field has a Lipschitz
+  suspension.
 * `TauCeti.timeDependentFlow`: the global evolution map of a time-dependent field whose
   suspension is globally Lipschitz, specializing `ODE.nonautonomousSolution`.
 * `TauCeti.timeDependentFlow_eq_nonautonomousSolution`: agreement with
@@ -41,11 +44,17 @@ nonautonomous replacement for the group law of an ordinary `Flow`.
 * `TauCeti.timeDependentFlow_trans`: evolution through an intermediate time composes.
 * `TauCeti.timeDependentFlow_eq_integral`: the integral equation from time `s` to time `t`.
 * `TauCeti.eq_timeDependentFlow`: uniqueness for global solutions with prescribed initial time.
+* `TauCeti.timeDependentFlow_add_const`: the flow of a translation-invariant field commutes with
+  the translation.
+* `TauCeti.timeDependentFlow_snd_eq_of_snd_eq`: the flow of a field on a product `E × F`
+  tangent to a slice `E × {c}` preserves that slice.
+* `TauCeti.timeDependentFlow_snd_mem_Icc`: the flow of a field on `E × ℝ` tangent to the slices
+  `E × {a}` and `E × {b}` preserves the band `E × [a, b]`.
 -/
 
 public section
 
-open Function
+open Function Set
 open scoped NNReal
 
 namespace TauCeti
@@ -74,6 +83,15 @@ private theorem lipschitzWith_of_lipschitzWith_timeDependentSuspension (v : ℝ 
     (hv : LipschitzWith K (timeDependentSuspension v)) (t : ℝ) :
     LipschitzWith K (v t) := fun x y ↦ by
   simpa [timeDependentSuspension, Prod.edist_eq] using hv (t, x) (t, y)
+
+omit [NormedSpace ℝ E] [CompleteSpace E] in
+/-- The suspension of a time-dependent field is Lipschitz with the joint Lipschitz constant of
+the field in time and space. -/
+theorem lipschitzWith_timeDependentSuspension {v : ℝ → E → E} {K : ℝ≥0}
+    (hv : LipschitzWith K fun p : ℝ × E ↦ v p.1 p.2) :
+    LipschitzWith K (timeDependentSuspension v) :=
+  LipschitzWith.of_dist_le_mul fun p q ↦ by
+    simpa [timeDependentSuspension, Prod.dist_eq] using hv.dist_le_mul p q
 
 /-- The global **time-dependent flow** of `v`.  The value `timeDependentFlow v hv s t x` is the
 value at time `t` of the solution which equals `x` at time `s`, obtained by specializing
@@ -179,6 +197,68 @@ theorem eq_timeDependentFlow (v : ℝ → E → E) {K : ℝ≥0}
     (hy : ∀ t, HasDerivAt y (v t (y t)) t) (s t : ℝ) :
     y t = timeDependentFlow v hv s t (y s) :=
   congrFun (ODE.eq_nonautonomousSolution v _ _ hy s) t
+
+/-- If a time-dependent field is invariant under the translation by `c`, its flow commutes with
+that translation. -/
+theorem timeDependentFlow_add_const (v : ℝ → E → E) {K : ℝ≥0}
+    (hv : LipschitzWith K (timeDependentSuspension v)) {c : E}
+    (hc : ∀ t x, v t (x + c) = v t x) (s t : ℝ) (x : E) :
+    timeDependentFlow v hv s t (x + c) = timeDependentFlow v hv s t x + c := by
+  have h := eq_timeDependentFlow v hv (y := fun u ↦ timeDependentFlow v hv s u x + c)
+    (fun u ↦ by simpa only [hc] using (hasDerivAt_timeDependentFlow v hv s u x).add_const c) s t
+  simpa using h.symm
+
+/-! ### Fields on a product tangent to slices -/
+
+section Slice
+
+variable {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] [CompleteSpace F] {K : ℝ≥0}
+
+/-- The time-dependent flow of a field on a product `E × F` whose second component vanishes on
+the slice `E × {c}` preserves that slice. -/
+theorem timeDependentFlow_snd_eq_of_snd_eq {v : ℝ → E × F → E × F}
+    (hv : LipschitzWith K (timeDependentSuspension v)) {c : F} (hc : ∀ t x, (v t (x, c)).2 = 0)
+    (s t : ℝ) {p : E × F} (hp : p.2 = c) : (timeDependentFlow v hv s t p).2 = c := by
+  set φ : ℝ → E × F := fun u ↦ timeDependentFlow v hv s u p with hφ
+  -- The height of the orbit and the constant `c` solve the same scalar equation.
+  have hLip (u : ℝ) : LipschitzOnWith K (fun z ↦ (v u ((φ u).1, z)).2) univ := by
+    refine (LipschitzWith.of_dist_le_mul fun z z' ↦ ?_).lipschitzOnWith
+    have h := hv.dist_le_mul (u, ((φ u).1, z)) (u, ((φ u).1, z'))
+    simp only [timeDependentSuspension_apply, Prod.dist_eq, dist_self] at h
+    simp only [max_eq_right dist_nonneg] at h
+    exact (le_max_right _ _).trans (le_max_right _ _ |>.trans h)
+  have hf (u : ℝ) : HasDerivAt (fun u ↦ (φ u).2) ((v u ((φ u).1, (φ u).2)).2) u :=
+    by simpa using ((hasDerivAt_timeDependentFlow v hv s u p).hasFDerivAt.snd).hasDerivAt
+  have h := ODE_solution_unique_univ (v := fun u z ↦ (v u ((φ u).1, z)).2) (s := fun _ ↦ univ)
+    (f := fun u ↦ (φ u).2) (g := fun _ ↦ c) (t₀ := s) hLip (fun u ↦ ⟨hf u, trivial⟩)
+    (fun u ↦ ⟨by simpa only [hc] using hasDerivAt_const u c, trivial⟩) (by simpa [hφ] using hp)
+  exact congrFun h t
+
+/-- The time-dependent flow of a field on `E × ℝ` whose second component vanishes on the slices
+`E × {a}` and `E × {b}` preserves the band `E × [a, b]`. -/
+theorem timeDependentFlow_snd_mem_Icc {v : ℝ → E × ℝ → E × ℝ}
+    (hv : LipschitzWith K (timeDependentSuspension v))
+    {a b : ℝ} (ha : ∀ t x, (v t (x, a)).2 = 0) (hb : ∀ t x, (v t (x, b)).2 = 0) (s t : ℝ)
+    {p : E × ℝ} (hp : p.2 ∈ Icc a b) :
+    (timeDependentFlow v hv s t p).2 ∈ Icc a b := by
+  -- If the orbit meets a boundary line at some time, it stays on it at every time.
+  have hline (c : ℝ) (hc : ∀ t x, (v t (x, c)).2 = 0) (u : ℝ)
+      (hu : (timeDependentFlow v hv s u p).2 = c) : (timeDependentFlow v hv s t p).2 = c := by
+    rw [← timeDependentFlow_trans v hv s u t]
+    exact timeDependentFlow_snd_eq_of_snd_eq hv hc u t hu
+  have hz : ContinuousOn (fun u ↦ (timeDependentFlow v hv s u p).2) (uIcc s t) :=
+    (continuous_snd.comp ((continuous_timeDependentFlow v hv).comp
+      (by fun_prop : Continuous fun u : ℝ ↦ ((s, u), p)))).continuousOn
+  have hs : (timeDependentFlow v hv s s p).2 = p.2 := by simp
+  refine ⟨le_of_not_gt fun hlt ↦ ?_, le_of_not_gt fun hlt ↦ ?_⟩
+  · obtain ⟨u, -, hu⟩ := intermediate_value_uIcc hz
+      (mem_uIcc.2 (Or.inr ⟨hlt.le, hs ▸ hp.1⟩))
+    exact hlt.ne (hline a ha u hu)
+  · obtain ⟨u, -, hu⟩ := intermediate_value_uIcc hz
+      (mem_uIcc.2 (Or.inl ⟨hs ▸ hp.2, hlt.le⟩))
+    exact hlt.ne' (hline b hb u hu)
+
+end Slice
 
 end TauCeti
 

@@ -9,9 +9,10 @@ public import Mathlib.Analysis.InnerProductSpace.Adjoint
 public import Mathlib.MeasureTheory.Function.Holder
 public import Mathlib.MeasureTheory.Function.L2Space
 public import Mathlib.MeasureTheory.Function.LpSpace.Indicator
+public import TauCeti.MeasureTheory.Function.Lp.Indicator
 public import TauCeti.MeasureTheory.Function.Lp.LinftyAlgebra
-import TauCeti.MeasureTheory.Function.Lp.Indicator
 import TauCeti.MeasureTheory.Function.Lp.Norm
+import TauCeti.MeasureTheory.Function.LpSeminorm.ContinuousOn
 
 /-!
 # Multiplication operators on `Lᵖ`
@@ -27,6 +28,16 @@ Over a nontrivially normed field `𝕜` on a sigma-finite measure space with non
 operator norm on `Lp E p μ` equals the `L∞` norm `‖a‖` (`norm_multiplicationOperator`). On
 `Lp E 2 μ` for a complete inner-product space `E` over `𝕜` (`[RCLike 𝕜]`), the Hilbert adjoint of
 multiplication by `a` is multiplication by `star a` (`adjoint_multiplicationOperator`).
+
+For a measurable set `s`, multiplication by the class `TauCeti.linftyIndicator μ s hs` of its
+indicator cuts an `Lᵖ` class off to `s` (`multiplicationOperator_linftyIndicator_ae`). It does not
+increase the norm (`norm_multiplicationOperator_linftyIndicator_apply_le`), and the cut-offs to `s`
+and to its complement add up to the class (`multiplicationOperator_linftyIndicator_add_compl`).
+
+A function `f` continuous and bounded on a measurable set `s` has a class
+`TauCeti.linftyOfContinuousOn μ hf hs hC` in `L∞(μ.restrict s)`, and multiplication by it acts by
+`x ↦ f x • g x` (`multiplicationOperator_linftyOfContinuousOn_ae`). Multiplication by `a` commutes
+with composition by a continuous linear map (`ContinuousLinearMap.compLpL_multiplicationOperator`).
 -/
 
 public section
@@ -34,6 +45,26 @@ public section
 noncomputable section
 
 open scoped ENNReal InnerProductSpace
+
+namespace TauCeti
+
+open MeasureTheory
+
+variable {α F : Type*} [TopologicalSpace α] [MeasurableSpace α] [OpensMeasurableSpace α]
+  [NormedAddCommGroup F] [SecondCountableTopologyEither α F] {f : α → F} {s : Set α}
+
+variable (μ : Measure α) in
+/-- The class in `L∞(μ.restrict s)` of a function continuous and bounded on a measurable set `s`. -/
+def linftyOfContinuousOn (hf : ContinuousOn f s) (hs : MeasurableSet s)
+    (hC : ∃ C, ∀ x ∈ s, ‖f x‖ ≤ C) : Lp F ∞ (μ.restrict s) :=
+  (hf.memLp_top_restrict_of_bound hs _ hC.choose_spec).toLp f
+
+/-- The class `TauCeti.linftyOfContinuousOn μ hf hs hC` is almost everywhere `f` on `s`. -/
+theorem coeFn_linftyOfContinuousOn {μ : Measure α} (hf : ContinuousOn f s) (hs : MeasurableSet s)
+    (hC : ∃ C, ∀ x ∈ s, ‖f x‖ ≤ C) : linftyOfContinuousOn μ hf hs hC =ᵐ[μ.restrict s] f :=
+  MemLp.coeFn_toLp _
+
+end TauCeti
 
 namespace MeasureTheory.Lp
 
@@ -141,6 +172,75 @@ theorem multiplicationOperator_const [IsFiniteMeasure μ] (c : 𝕜) :
   multiplicationOperator_of_ae_eq_const (Lp.coeFn_const (μ := μ) ∞ c)
 
 end NormedSpace
+
+section Indicator
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] {p : ℝ≥0∞} [Fact (1 ≤ p)]
+  {s : Set α}
+
+/-- Multiplication by the `L∞` class `TauCeti.linftyIndicator μ s hs` cuts an `Lᵖ` class off to
+`s`. -/
+theorem multiplicationOperator_linftyIndicator_ae (hs : MeasurableSet s) (f : Lp E p μ) :
+    multiplicationOperator (TauCeti.linftyIndicator μ s hs) f =ᵐ[μ] s.indicator f := by
+  filter_upwards [multiplicationOperator_ae (TauCeti.linftyIndicator μ s hs) f,
+    TauCeti.coeFn_linftyIndicator (μ := μ) hs] with x hx h₁
+  rw [hx, h₁]
+  by_cases hxs : x ∈ s <;> simp [hxs]
+
+/-- Cutting an `Lᵖ` class off to a measurable set does not increase its norm. -/
+theorem norm_multiplicationOperator_linftyIndicator_apply_le (hs : MeasurableSet s)
+    (f : Lp E p μ) : ‖multiplicationOperator (TauCeti.linftyIndicator μ s hs) f‖ ≤ ‖f‖ := by
+  refine Lp.norm_le_norm_of_ae_le ?_
+  filter_upwards [multiplicationOperator_linftyIndicator_ae hs f] with x hx
+  rw [hx]
+  exact norm_indicator_le_norm_self f x
+
+/-- The cut-offs of an `Lᵖ` class to a measurable set and to its complement add up to the class. -/
+theorem multiplicationOperator_linftyIndicator_add_compl (hs : MeasurableSet s) (f : Lp E p μ) :
+    multiplicationOperator (TauCeti.linftyIndicator μ s hs) f +
+      multiplicationOperator (TauCeti.linftyIndicator μ sᶜ hs.compl) f = f := by
+  refine Lp.ext ?_
+  filter_upwards [Lp.coeFn_add (multiplicationOperator (TauCeti.linftyIndicator μ s hs) f)
+      (multiplicationOperator (TauCeti.linftyIndicator μ sᶜ hs.compl) f),
+    multiplicationOperator_linftyIndicator_ae hs f,
+    multiplicationOperator_linftyIndicator_ae hs.compl f] with x hx h₁ h₂
+  rw [hx, Pi.add_apply, h₁, h₂, Set.indicator_self_add_compl_apply]
+
+end Indicator
+
+section ContinuousOn
+
+variable {X E : Type*} [TopologicalSpace X] [MeasurableSpace X] [OpensMeasurableSpace X]
+  [NormedAddCommGroup E] [NormedSpace ℝ E] {p : ℝ≥0∞} [Fact (1 ≤ p)] {μ : Measure X}
+  {f : X → ℝ} {s : Set X}
+
+/-- Multiplication by the class `TauCeti.linftyOfContinuousOn μ hf hs hC` of `f` acts by
+`x ↦ f x • g x`. -/
+theorem multiplicationOperator_linftyOfContinuousOn_ae (hf : ContinuousOn f s)
+    (hs : MeasurableSet s) (hC : ∃ C, ∀ x ∈ s, ‖f x‖ ≤ C) (g : Lp E p (μ.restrict s)) :
+    multiplicationOperator (TauCeti.linftyOfContinuousOn μ hf hs hC) g
+      =ᵐ[μ.restrict s] fun x ↦ f x • g x := by
+  filter_upwards [multiplicationOperator_ae (TauCeti.linftyOfContinuousOn μ hf hs hC) g,
+    TauCeti.coeFn_linftyOfContinuousOn (μ := μ) hf hs hC] with x hx h₁
+  rw [hx, h₁]
+
+end ContinuousOn
+
+section CompLpL
+
+variable {𝕜 E F : Type*} [NontriviallyNormedField 𝕜] [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+  [NormedAddCommGroup F] [NormedSpace 𝕜 F] {p : ℝ≥0∞} [Fact (1 ≤ p)]
+
+/-- Composition with a continuous linear map commutes with multiplication by an `L∞` class. -/
+theorem _root_.ContinuousLinearMap.compLpL_multiplicationOperator (L : E →L[𝕜] F)
+    (a : Lp 𝕜 ∞ μ) (g : Lp E p μ) :
+    L.compLpL p μ (multiplicationOperator a g) = multiplicationOperator a (L.compLpL p μ g) := by
+  refine Lp.ext ?_
+  filter_upwards [L.coeFn_compLpL (multiplicationOperator a g), multiplicationOperator_ae a g,
+    multiplicationOperator_ae a (L.compLpL p μ g), L.coeFn_compLpL g] with x h₁ h₂ h₃ h₄
+  rw [h₁, h₂, h₃, h₄, map_smul]
+
+end CompLpL
 
 section InnerProductSpace
 

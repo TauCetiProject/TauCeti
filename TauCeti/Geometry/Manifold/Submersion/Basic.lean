@@ -71,6 +71,8 @@ constant on the fibres factors through a unique `C^m` map
   `Manifold.IsSubmersionAt.exists_contMDiffOn_uncurry_section`: local sections through every
   nearby point of the source, depending smoothly on that point.
 * `Manifold.IsSubmersion.isOpenMap`: a submersion from a boundaryless manifold is an open map.
+* `Manifold.IsSubmersion.finrank_le`: a submersion out of a nonempty manifold does not raise
+  dimension.
 * `Manifold.IsSubmersionAt.contMDiffAt_comp_iff`, `Manifold.IsSubmersion.contMDiff_comp_iff`:
   smoothness descends along a submersion.
 * `Manifold.IsSubmersion.existsUnique_contMDiff_comp_eq`: smooth maps constant on the fibres of a
@@ -298,6 +300,15 @@ theorem IsSubmersionAt.hasRightInverse_mfderiv (h : IsSubmersionAt I J n f x) (h
 theorem IsSubmersion.hasRightInverse_mfderiv (h : IsSubmersion I J n f) (hn : n ≠ 0) (x : M) :
     (mfderiv I J f x).HasRightInverse :=
   (h.isSubmersionAt x).hasRightInverse_mfderiv hn
+
+/-- **A submersion does not raise dimension**: a `C^n` submersion, `n ≠ 0`, out of a nonempty
+manifold with finite-dimensional model has target model of dimension at most that of the source
+model. -/
+theorem IsSubmersion.finrank_le [FiniteDimensional 𝕜 E] [Nonempty M] (h : IsSubmersion I J n f)
+    (hn : n ≠ 0) : Module.finrank 𝕜 E'' ≤ Module.finrank 𝕜 E := by
+  obtain ⟨x⟩ := ‹Nonempty M›
+  exact LinearMap.finrank_le_finrank_of_surjective (f := (mfderiv I J f x).toLinearMap)
+    (h.surjective_mfderiv hn x)
 
 end Derivative
 

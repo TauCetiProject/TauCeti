@@ -246,10 +246,7 @@ theorem occurrenceGap_restrict_Iic (μ : Measure ℝ≥0) [IsLocallyFiniteMeasur
       have hn : μ.occurrenceTime n ≤ b :=
         (μ.monotone_occurrenceTime (Nat.le_succ n)).trans hle
       have hnfin : μ.occurrenceTime n ≠ ∞ := ne_top_of_le_ne_top ENNReal.coe_ne_top hn
-      rw [ite_eq_left hle,
-        occurrenceGap_succ_of_ne_top (by simp [occurrenceTime_restrict_Iic, hn, hnfin]),
-        occurrenceTime_restrict_Iic, occurrenceTime_restrict_Iic,
-        ite_eq_left hle, ite_eq_left hn, occurrenceGap_succ_of_ne_top hnfin]
+      simp [occurrenceGap_succ_of_ne_top, occurrenceTime_restrict_Iic, hle, hn, hnfin]
   · simp [hle, occurrenceGap_eq_top_iff, occurrenceTime_restrict_Iic]
 
 /-- For a locally finite measure, the first interarrival gap is positive if and only if the

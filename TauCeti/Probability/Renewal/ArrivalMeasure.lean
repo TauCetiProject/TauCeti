@@ -129,8 +129,7 @@ theorem renewalArrivalMeasure_toNNReal_occurrenceGap_eq {N : Ω → Measure ℝ�
       ℝ≥0∞)) = (N ω).occurrenceTime :=
     funext fun n => coe_arrival_succ_toNNReal_occurrenceGap (hfin n)
   rw [harr]
-  have := hloc
-  exact hN.eq_occurrenceTimeMeasure.symm
+  exact (@Measure.IsIntegerValued.eq_occurrenceTimeMeasure _ hloc hN).symm
 
 /-- Integration against the arrival measure sums the test function over all arrivals. -/
 @[simp]

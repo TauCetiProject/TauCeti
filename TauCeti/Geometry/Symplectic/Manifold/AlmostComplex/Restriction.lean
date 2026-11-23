@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Symplectic.Manifold.AlmostComplex.Family
+public import TauCeti.Geometry.Symplectic.Manifold.JHolomorphic
 public import TauCeti.Geometry.Manifold.VectorBundle.Tangent.Restriction
 
 /-!
@@ -14,6 +15,10 @@ public import TauCeti.Geometry.Manifold.VectorBundle.Tangent.Restriction
 Both ordinary structures and jointly domain-dependent vertical structures restrict to open
 submanifolds through the canonical tangent-space equivalences. The regularity order is unchanged;
 zero and infinite regularity are included. No nonempty-domain assumption is used.
+
+For a smooth almost complex structure `J` on `M` and an open `U ⊆ M`, the inclusion `U → M` is
+pseudoholomorphic from the restricted structure `J.restrictOpen U` to `J`
+(`TauCeti.SmoothAlmostComplexStructure.isPseudoholomorphic_subtype_val`).
 -/
 
 public noncomputable section
@@ -62,6 +67,51 @@ theorem restrictOpen_apply (J : ContMDiffAlmostComplexStructure I n M) (U : Open
   Manifold.restrictOpenTangentSpaceEnd_apply _ _ _ _
 
 end ContMDiffAlmostComplexStructure
+
+namespace SmoothAlmostComplexStructure
+
+/-- Restrict a smooth almost complex structure to an open submanifold. -/
+def restrictOpen (J : SmoothAlmostComplexStructure I M) (U : Opens M) :
+    SmoothAlmostComplexStructure I U :=
+  ((J.toContMDiff ⊤).restrictOpen U).toSmooth
+
+/-- Open restriction evaluates the ambient structure through the canonical tangent equivalence. -/
+@[simp]
+theorem restrictOpen_apply (J : SmoothAlmostComplexStructure I M) (U : Opens M) (x : U)
+    (v : TangentSpace I x) :
+    J.restrictOpen U x v = (Manifold.tangentSpaceOpenEquiv (I := I) x).symm
+      (J (x : M) (Manifold.tangentSpaceOpenEquiv (I := I) x v)) := by
+  rw [restrictOpen, ContMDiffAlmostComplexStructure.toSmooth_apply,
+    ContMDiffAlmostComplexStructure.restrictOpen_apply, toContMDiff_apply]
+
+/-- Smooth-to-finite regularity conversion commutes with open restriction. -/
+@[simp]
+theorem toContMDiff_restrictOpen (J : SmoothAlmostComplexStructure I M) (U : Opens M) (n : ℕ∞) :
+    (J.restrictOpen U).toContMDiff n = (J.toContMDiff n).restrictOpen U := by
+  ext x v
+  rw [toContMDiff_apply, restrictOpen_apply, ContMDiffAlmostComplexStructure.restrictOpen_apply,
+    toContMDiff_apply]
+
+/-- The inclusion of an open submanifold is pseudoholomorphic from the restricted structure to the
+ambient one. -/
+theorem isPseudoholomorphic_subtype_val (J : SmoothAlmostComplexStructure I M) (U : Opens M) :
+    IsPseudoholomorphic (J.restrictOpen U) J (Subtype.val : U → M) :=
+  isPseudoholomorphic_iff.2 fun x ↦ isPseudoholomorphicAt_of_hasMFDerivAt
+    ((contMDiff_subtypeVal.mdifferentiableAt one_ne_zero).hasMFDerivAt) fun w ↦ by
+      simp only [Manifold.mfderiv_subtype_val, ContinuousLinearEquiv.coe_coe, restrictOpen_apply,
+        ContinuousLinearEquiv.apply_symm_apply]
+
+end SmoothAlmostComplexStructure
+
+/-- Infinite-order open restriction agrees with the native smooth restriction under smooth
+conversion. -/
+@[simp]
+theorem ContMDiffAlmostComplexStructure.toSmooth_restrictOpen
+    (J : ContMDiffAlmostComplexStructure I ⊤ M) (U : Opens M) :
+    (J.restrictOpen U).toSmooth = J.toSmooth.restrictOpen U := by
+  ext x v
+  rw [toSmooth_apply, restrictOpen_apply, SmoothAlmostComplexStructure.restrictOpen_apply,
+    toSmooth_apply]
 
 namespace ContMDiffAlmostComplexStructureFamily
 

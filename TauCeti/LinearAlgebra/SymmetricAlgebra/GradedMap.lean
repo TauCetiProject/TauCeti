@@ -18,7 +18,9 @@ which is surjective when the image generates `A`. This presents
 a graded algebra generated in degree one as a graded quotient of a symmetric algebra, the algebraic
 form of an embedding of its projective spectrum into a projective space. For an external graded
 algebra `⨁ n, 𝒜 n`, the lift into the degree-one summand is degree-preserving in the same sense
-(`SymmetricAlgebra.lift_lof_comp_apply_of_mem_homogeneousSubmodule`).
+(`SymmetricAlgebra.lift_lof_comp_apply_of_mem_homogeneousSubmodule`), and so is any lift into
+`⨁ n, 𝒜 n` with values in `𝒜 1` over a base ring whose scalars lie in `𝒜 0`
+(`SymmetricAlgebra.lift_apply_of_mem_homogeneousSubmodule`).
 
 In particular, a linear map `M → N` induces a degree-preserving map of symmetric algebras, the
 graded lift into the degree-one part of `Sym N`; its underlying map is `SymmetricAlgebra.map`. The
@@ -32,6 +34,7 @@ public section
 namespace SymmetricAlgebra
 
 open TauCeti.SymmetricAlgebra
+open scoped DirectSum
 
 universe u v w x
 
@@ -97,24 +100,38 @@ end GradedLift
 
 section DirectSum
 
-variable (𝒜 : ℕ → Type*) [∀ i, AddCommMonoid (𝒜 i)] [∀ i, Module R (𝒜 i)]
-  [DirectSum.GCommSemiring 𝒜] [DirectSum.GAlgebra R 𝒜]
+variable (𝒜 : ℕ → Type*) [∀ i, AddCommMonoid (𝒜 i)] [DirectSum.GCommSemiring 𝒜]
+
+/-- Let `⨁ n, 𝒜 n` be an external graded algebra over `R` whose scalars lie in the summand `𝒜 0`.
+The lift of a linear map whose values lie in the summand `𝒜 1` sends a homogeneous element of
+degree `n` into the summand `𝒜 n`. -/
+theorem lift_apply_of_mem_homogeneousSubmodule [Algebra R (⨁ n, 𝒜 n)]
+    (h₀ : ∀ r : R, algebraMap R (⨁ n, 𝒜 n) r =
+      DirectSum.of 𝒜 0 (algebraMap R (⨁ n, 𝒜 n) r 0))
+    (f : M →ₗ[R] ⨁ n, 𝒜 n) (h₁ : ∀ m, f m = DirectSum.of 𝒜 1 (f m 1)) {n : ℕ}
+    {x : SymmetricAlgebra R M} (hx : x ∈ homogeneousSubmodule R M n) :
+    lift f x = DirectSum.of 𝒜 n (lift f x n) := by
+  induction hx using Submodule.pow_induction_on_left' with
+  | algebraMap r => rw [AlgHom.commutes]; exact h₀ r
+  | add x y _ _ _ hx hy =>
+    rw [map_add, hx, hy, DirectSum.add_apply, DirectSum.of_eq_same, DirectSum.of_eq_same,
+      map_add]
+  | mem_mul m hm i x _ ih =>
+    obtain ⟨y, rfl⟩ := hm
+    rw [Nat.succ_eq_one_add i, map_mul, ih, lift_ι_apply, h₁ y, DirectSum.of_mul_of,
+      DirectSum.of_eq_same]
+
+variable [∀ i, Module R (𝒜 i)] [DirectSum.GAlgebra R 𝒜]
 
 /-- The lift of a linear map into the degree-one summand of an external graded algebra
 `⨁ n, 𝒜 n` sends a homogeneous element of degree `n` into the summand `𝒜 n`. -/
 theorem lift_lof_comp_apply_of_mem_homogeneousSubmodule (f : M →ₗ[R] 𝒜 1) {n : ℕ}
     {x : SymmetricAlgebra R M} (hx : x ∈ homogeneousSubmodule R M n) :
     lift (DirectSum.lof R ℕ 𝒜 1 ∘ₗ f) x =
-      DirectSum.of 𝒜 n (lift (DirectSum.lof R ℕ 𝒜 1 ∘ₗ f) x n) := by
-  induction hx using Submodule.pow_induction_on_left' with
-  | algebraMap r => rw [AlgHom.commutes, DirectSum.algebraMap_apply, DirectSum.of_eq_same]
-  | add x y _ _ _ hx hy =>
-    rw [map_add, hx, hy, DirectSum.add_apply, DirectSum.of_eq_same, DirectSum.of_eq_same,
-      map_add]
-  | mem_mul m hm i x _ ih =>
-    obtain ⟨y, rfl⟩ := hm
-    rw [Nat.succ_eq_one_add i, map_mul, ih, lift_ι_apply, LinearMap.comp_apply,
-      DirectSum.lof_eq_of, DirectSum.of_mul_of, DirectSum.of_eq_same]
+      DirectSum.of 𝒜 n (lift (DirectSum.lof R ℕ 𝒜 1 ∘ₗ f) x n) :=
+  lift_apply_of_mem_homogeneousSubmodule R 𝒜
+    (fun r ↦ by rw [DirectSum.algebraMap_apply, DirectSum.of_eq_same]) _
+    (fun m ↦ by rw [LinearMap.comp_apply, DirectSum.lof_eq_of, DirectSum.of_eq_same]) hx
 
 end DirectSum
 

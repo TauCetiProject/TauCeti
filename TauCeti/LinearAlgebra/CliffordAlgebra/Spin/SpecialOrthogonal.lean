@@ -27,7 +27,8 @@ remains canonical.
   inducing a determinant-one isometry is even.
 * `CliffordAlgebra.det_lipschitzToOrthogonal_eq_one_of_mem_even` gives the converse: an even
   Lipschitz element acts with determinant one.
-* `CliffordAlgebra.coe_spinToSpecialOrthogonal_apply` identifies its underlying action
+* `CliffordAlgebra.coe_spinToSpecialOrthogonal` and
+  `CliffordAlgebra.coe_spinToSpecialOrthogonal_apply` identify its underlying action
   with the Spin action on the quadratic module.
 * `CliffordAlgebra.specialOrthogonalToOrthogonal_spinToSpecialOrthogonal`: followed by the
   inclusion of `SO(Q)` into `O(Q)`, it is the orthogonal Spin action.
@@ -279,6 +280,13 @@ theorem coe_spinToSpecialOrthogonal_apply (Q : QuadraticForm R M) (x : spinGroup
   -- The codomain restriction does not change the underlying orthogonal action.
   change (((spinToOrthogonal Q x : QuadraticMap.orthogonalGroup Q) : M ≃ₗ[R] M) m) = _
   rw [coe_spinToOrthogonal_apply]
+
+/-- The underlying linear equivalence of the special orthogonal Spin action is
+`CliffordAlgebra.spinVectorAction`. -/
+theorem coe_spinToSpecialOrthogonal (Q : QuadraticForm R M) (x : spinGroup Q) :
+    ((spinToSpecialOrthogonal Q x : QuadraticMap.specialOrthogonalGroup Q) : M ≃ₗ[R] M) =
+      spinVectorAction Q x :=
+  LinearEquiv.ext (coe_spinToSpecialOrthogonal_apply Q x)
 
 /-- The Spin action into `SO(Q)`, followed by the inclusion `SO(Q) →* O(Q)`, is the Spin action
 into `O(Q)`. -/

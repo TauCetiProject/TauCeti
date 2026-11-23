@@ -77,7 +77,6 @@ theorem hasLaw_renewalArrivalMeasure_poissonLaw_of_expMeasure
     (hindep : iIndepFun T P)
     (hlaw : ∀ n, HasLaw (fun ω ↦ (T n ω : ℝ)) (expMeasure r) P) :
     HasLaw (renewalArrivalMeasure T) ((r : ℝ≥0∞) • nnvolume).poissonLaw P := by
-  have := hindep.isProbabilityMeasure
   have hTnn (n : ℕ) : AEMeasurable (T n) P :=
     (hasLaw_nnrealExpMeasure_iff.mpr (hlaw n)).aemeasurable
   let T' : ℕ → Ω → ℝ≥0 := fun n ↦ (hTnn n).mk (T n)

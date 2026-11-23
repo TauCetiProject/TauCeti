@@ -65,7 +65,6 @@ def diskEvaluation : HardySpace →L[ℂ] ℂ :=
         x.norm_diskFunction_le (by simpa only [Metric.mem_ball, dist_zero_right] using w.property)
 
 /-- The bounded evaluation map agrees with the disk function. -/
-@[simp]
 theorem diskEvaluation_apply (x : HardySpace) : diskEvaluation w x = x.diskFunction w :=
   (rfl)
 
@@ -75,10 +74,9 @@ def reproducingKernel : HardySpace :=
 
 /-- Pairing with the Szegő kernel reproduces the disk function, with the inner product
 conjugate linear in its first argument. -/
-@[simp↓]
 theorem inner_reproducingKernel (x : HardySpace) :
     ⟪reproducingKernel w, x⟫_ℂ = x.diskFunction w := by
-  simp [reproducingKernel]
+  simp [reproducingKernel, diskEvaluation_apply]
 
 /-- The nonnegative Fourier coordinates of the kernel are the powers of the conjugate point. -/
 @[simp]
@@ -151,7 +149,6 @@ theorem normalize_reproducingKernel :
   exact (Complex.coe_smul ..).symm
 
 /-- Pairing with a normalized kernel is the corresponding scaled evaluation. -/
-@[simp↓]
 theorem inner_normalize_reproducingKernel (x : HardySpace) :
     ⟪NormedSpace.normalize (reproducingKernel w), x⟫_ℂ =
       (√(1 - ‖(w : ℂ)‖ ^ 2) : ℂ) * x.diskFunction w := by

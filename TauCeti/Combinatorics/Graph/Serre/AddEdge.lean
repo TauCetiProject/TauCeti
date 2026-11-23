@@ -102,6 +102,15 @@ theorem addEdge_src_inr_false : (Γ.addEdge x y).src (.inr false) = y := (rfl)
 
 @[simp] theorem addEdge_tgt_inr_false : (Γ.addEdge x y).tgt (.inr false) = x := (rfl)
 
+/-- Adjoining a loop to a graph all of whose darts are loops gives a graph all of whose darts are
+loops. For instance, adjoining a loop to a graph without edges gives a one-petal rose together with
+isolated vertices. -/
+theorem addEdge_src_eq_tgt (h : ∀ e, Γ.src e = Γ.tgt e) (e : (Γ.addEdge x x).E) :
+    (Γ.addEdge x x).src e = (Γ.addEdge x x).tgt e := by
+  rcases e with e | b
+  · exact h e
+  · cases b <;> rfl
+
 variable (Γ x y)
 
 /-- The inclusion of a Serre graph into the graph obtained by adjoining an edge. -/
