@@ -179,10 +179,10 @@ noncomputable instance instConditionallyCompletePartialOrder :
   isGLB_csInf_of_directed s hd hne hbdd := by
     have := hd.isCodirectedOrder
     have := hne.to_subtype
-    have hrange : range (fun a : (↥s)ᵒᵈ => (OrderDual.ofDual a).1) = s :=
+    have hrange : range (fun a : (↥s)ᵒᵈ => (OrderDual.ofDual a).val) = s :=
       (OrderDual.ofDual.surjective.range_comp _).trans Subtype.range_coe
     obtain ⟨T, hT, -⟩ := exists_isGLB_tendsto_of_antitone (ι := (↥s)ᵒᵈ)
-      (f := fun a => (OrderDual.ofDual a).1) (fun _ _ hab => hab) (by rwa [hrange])
+      (f := fun a => (OrderDual.ofDual a).val) (fun _ _ hab => hab) (by rwa [hrange])
     have hex : ∃ T, IsGLB s T := ⟨T, hrange ▸ hT⟩
     simpa [hex] using hex.choose_spec
 
