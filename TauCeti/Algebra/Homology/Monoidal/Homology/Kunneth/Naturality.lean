@@ -50,30 +50,29 @@ variable {R : Type u} [CommRing R] {K K' K'' : ChainComplex (ModuleCat.{u} R) �
   (f : K ⟶ K') (f' : K' ⟶ K'') (L : ChainComplex (ModuleCat.{u} R) ℕ)
 
 /-- The morphism of Künneth bicomplexes induced by a chain map `f : K ⟶ K'`: on column `p` it is
-`f ▷ Q.X p`, for the Cartan–Eilenberg resolution `Q` of `L`. -/
-def kunnethBicomplexMapLeft : kunnethBicomplex K L ⟶ kunnethBicomplex K' L where
-  f p := f ▷ (ChainComplex.cartanEilenbergResolution L).X p
-  comm' p p' _ := by
-    rw [kunnethBicomplex_d, kunnethBicomplex_d]
-    exact (whisker_exchange _ _).symm
+`f ▷ Q.X p`, for the Cartan–Eilenberg resolution `Q` of `L`. It is the natural transformation
+`tensorLeft K ⟶ tensorLeft K'` induced by `f`, applied to the complexes of `Q`. -/
+def kunnethBicomplexMapLeft : kunnethBicomplex K L ⟶ kunnethBicomplex K' L :=
+  (NatTrans.mapHomologicalComplex ((curriedTensor _).map f) _).app
+    (ChainComplex.cartanEilenbergResolution L)
 
 /-- The morphism `HomologicalComplex.kunnethBicomplexMapLeft f L` is `f ▷ Q.X p` on column `p`. -/
+@[simp]
 lemma kunnethBicomplexMapLeft_f (p : ℕ) :
     (kunnethBicomplexMapLeft f L).f p = f ▷ (ChainComplex.cartanEilenbergResolution L).X p :=
   (rfl)
 
 @[simp]
 lemma kunnethBicomplexMapLeft_id : kunnethBicomplexMapLeft (𝟙 K) L = 𝟙 _ := by
-  ext p : 1
-  rw [kunnethBicomplexMapLeft_f, id_whiskerRight]
+  rw [kunnethBicomplexMapLeft, CategoryTheory.Functor.map_id, NatTrans.mapHomologicalComplex_id]
   rfl
 
 @[simp]
 lemma kunnethBicomplexMapLeft_comp :
     kunnethBicomplexMapLeft (f ≫ f') L =
       kunnethBicomplexMapLeft f L ≫ kunnethBicomplexMapLeft f' L := by
-  ext p : 1
-  rw [kunnethBicomplexMapLeft_f, comp_whiskerRight]
+  rw [kunnethBicomplexMapLeft, CategoryTheory.Functor.map_comp,
+    NatTrans.mapHomologicalComplex_comp]
   rfl
 
 /-- The morphism of Künneth bicomplexes induced by `f` is compatible with the augmentations of the
@@ -105,6 +104,7 @@ abbrev kunnethSpectralSequenceMapLeft :
 lemma kunnethSpectralSequenceMapLeft_id : kunnethSpectralSequenceMapLeft (𝟙 K) L = 𝟙 _ := by
   simp [kunnethSpectralSequenceMapLeft]
 
+@[simp]
 lemma kunnethSpectralSequenceMapLeft_comp :
     kunnethSpectralSequenceMapLeft (f ≫ f') L =
       kunnethSpectralSequenceMapLeft f L ≫ kunnethSpectralSequenceMapLeft f' L := by

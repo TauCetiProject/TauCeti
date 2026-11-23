@@ -48,28 +48,9 @@ open CategoryTheory Limits ComplexShape ComposableArrows
 
 namespace HomologicalComplex₂
 
-variable {C : Type*} [Category* C] [Abelian C]
+section Preadditive
 
-/-- The morphism of the bicomplexes of rows `≥ 1` induced by a morphism of bicomplexes. -/
-@[expose, simps]
-def rowsSuccMap {K L : HomologicalComplex₂ C (down ℕ) (down ℕ)} (φ : K ⟶ L) :
-    K.rowsSucc ⟶ L.rowsSucc where
-  f p := { f q := (φ.f p).f (q + 1) }
-
-/-- The projection killing row `0` is natural. -/
-@[reassoc]
-lemma dropRowZero_naturality {K L : HomologicalComplex₂ C (down ℕ) (down ℕ)} (φ : K ⟶ L) :
-    total.map φ (down ℕ) ≫ L.dropRowZero =
-      K.dropRowZero ≫
-        HomologicalComplex.extendMap (total.map (rowsSuccMap φ) (down ℕ))
-          (embeddingDownNatAdd 1) := by
-  refine HomologicalComplex.hom_ext _ _ fun n ↦ ?_
-  rcases n with _ | n
-  · exact (HomologicalComplex.isZero_extend_X _ _ 0 fun _ ↦ by simp).eq_of_tgt _ _
-  · refine total.hom_ext _ fun p q h ↦ ?_
-    rcases q with _ | q
-    · simp
-    · simp [HomologicalComplex.extendMap_f _ (embeddingDownNatAdd 1) (embeddingDownNatAdd_f 1 n)]
+variable {C : Type*} [Category* C] [Preadditive C] [HasFiniteCoproducts C] [HasZeroObject C]
 
 /-- The morphism of the total complexes of the rows `≥ s` induced by a morphism of bicomplexes. -/
 def mapTotalRowsGE : (s : ℕ) → {K L : HomologicalComplex₂ C (down ℕ) (down ℕ)} → (K ⟶ L) →
@@ -78,17 +59,58 @@ def mapTotalRowsGE : (s : ℕ) → {K L : HomologicalComplex₂ C (down ℕ) (do
   | s + 1, _, _, φ =>
     HomologicalComplex.extendMap (mapTotalRowsGE s (rowsSuccMap φ)) (embeddingDownNatAdd 1)
 
+variable {K L M : HomologicalComplex₂ C (down ℕ) (down ℕ)} (φ : K ⟶ L) (ψ : L ⟶ M)
+
+/-- On the rows `≥ 0`, the morphism of total complexes is that of the whole total complexes. -/
+@[simp]
+lemma mapTotalRowsGE_zero : mapTotalRowsGE 0 φ = total.map φ (down ℕ) := (rfl)
+
+/-- On the rows `≥ s + 1`, the morphism of total complexes is that of the rows `≥ s` of the
+bicomplexes of rows `≥ 1`, placed one degree higher. -/
+lemma mapTotalRowsGE_succ (s : ℕ) :
+    mapTotalRowsGE (s + 1) φ =
+      HomologicalComplex.extendMap (mapTotalRowsGE s (rowsSuccMap φ)) (embeddingDownNatAdd 1) :=
+  (rfl)
+
+@[simp]
+lemma mapTotalRowsGE_id (s : ℕ) : mapTotalRowsGE s (𝟙 K) = 𝟙 _ := by
+  induction s generalizing K with
+  | zero => simp
+  | succ s ih => rw [mapTotalRowsGE_succ, rowsSuccMap_id, ih, HomologicalComplex.extendMap_id]
+
+@[simp]
+lemma mapTotalRowsGE_comp (s : ℕ) :
+    mapTotalRowsGE s (φ ≫ ψ) = mapTotalRowsGE s φ ≫ mapTotalRowsGE s ψ := by
+  induction s generalizing K L M with
+  | zero => simp [total.map_comp]
+  | succ s ih =>
+    rw [mapTotalRowsGE_succ, mapTotalRowsGE_succ, mapTotalRowsGE_succ, rowsSuccMap_comp, ih,
+      HomologicalComplex.extendMap_comp]
+
 /-- The projections onto the total complexes of the rows `≥ s` are natural. -/
 @[reassoc]
-lemma toTotalRowsGE_naturality (s : ℕ) {K L : HomologicalComplex₂ C (down ℕ) (down ℕ)}
-    (φ : K ⟶ L) :
+lemma toTotalRowsGE_naturality (s : ℕ) :
     K.toTotalRowsGE s ≫ mapTotalRowsGE s φ = total.map φ (down ℕ) ≫ L.toTotalRowsGE s := by
   induction s generalizing K L with
-  | zero => simp [mapTotalRowsGE]
+  | zero => simp
   | succ s ih =>
-    rw [toTotalRowsGE_succ, toTotalRowsGE_succ, mapTotalRowsGE, Category.assoc,
+    rw [toTotalRowsGE_succ, toTotalRowsGE_succ, mapTotalRowsGE_succ, Category.assoc,
       ← HomologicalComplex.extendMap_comp, ih, HomologicalComplex.extendMap_comp,
       dropRowZero_naturality_assoc]
+
+/-- On the summand `(K.X p).X q`, `s ≤ q`, the morphism of the total complexes of the rows `≥ s`
+is the component `(φ.f p).f q`. -/
+@[reassoc (attr := simp)]
+lemma ιTotalRowsGE_mapTotalRowsGE_f (s p q n : ℕ) (hs : s ≤ q) (h : p + q = n) :
+    K.ιTotalRowsGE s p q n hs h ≫ (mapTotalRowsGE s φ).f n =
+      (φ.f p).f q ≫ L.ιTotalRowsGE s p q n hs h := by
+  rw [← ιTotal_toTotalRowsGE_f, ← ιTotal_toTotalRowsGE_f, Category.assoc,
+    ← HomologicalComplex.comp_f, toTotalRowsGE_naturality, HomologicalComplex.comp_f,
+    ιTotal_map_assoc]
+
+end Preadditive
+
+variable {C : Type*} [Category* C] [Abelian C]
 
 variable {K L M : HomologicalComplex₂ C (down ℕ) (down ℕ)} (φ : K ⟶ L) (ψ : L ⟶ M)
 
@@ -108,6 +130,13 @@ def rowFiltrationFunctorMap :
     CochainComplex.filtrationFunctor K.rowFiltration K.monotone_rowFiltration ⟶
       CochainComplex.filtrationFunctor L.rowFiltration L.monotone_rowFiltration :=
   CochainComplex.filtrationFunctorMap _ _ _ (rowFiltration_factors φ)
+
+/-- The morphism `HomologicalComplex₂.rowFiltrationFunctorMap φ` is the morphism of filtration
+functors induced by the morphism of total complexes. -/
+lemma rowFiltrationFunctorMap_def :
+    rowFiltrationFunctorMap φ =
+      CochainComplex.filtrationFunctorMap _ _ _ (rowFiltration_factors φ) :=
+  (rfl)
 
 /-- The morphism of the spectral objects of the row filtrations induced by a morphism of
 bicomplexes. -/
@@ -140,6 +169,7 @@ lemma rowFiltrationFunctorMap_comp :
 lemma rowFiltrationSpectralObjectMap_id : rowFiltrationSpectralObjectMap (𝟙 K) = 𝟙 _ := by
   simp [rowFiltrationSpectralObjectMap]
 
+@[simp]
 lemma rowFiltrationSpectralObjectMap_comp :
     rowFiltrationSpectralObjectMap (φ ≫ ψ) =
       rowFiltrationSpectralObjectMap φ ≫ rowFiltrationSpectralObjectMap ψ := by
@@ -149,6 +179,7 @@ lemma rowFiltrationSpectralObjectMap_comp :
 lemma rowFiltrationSpectralSequenceMap_id : rowFiltrationSpectralSequenceMap (𝟙 K) = 𝟙 _ := by
   simp [rowFiltrationSpectralSequenceMap, Abelian.SpectralObject.spectralSequenceMap_id]
 
+@[simp]
 lemma rowFiltrationSpectralSequenceMap_comp :
     rowFiltrationSpectralSequenceMap (φ ≫ ψ) =
       rowFiltrationSpectralSequenceMap φ ≫ rowFiltrationSpectralSequenceMap ψ := by

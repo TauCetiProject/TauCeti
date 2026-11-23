@@ -247,11 +247,38 @@ abbrev singularKunnethSpectralSequenceMap :
     ((TauCeti.singularChains R).obj Y)
 
 @[simp]
+lemma singularKunnethBicomplexMap_id : singularKunnethBicomplexMap Y R (𝟙 X) = 𝟙 _ := by
+  rw [singularKunnethBicomplexMap, CategoryTheory.Functor.map_id, kunnethBicomplexMapLeft_id]
+
+@[simp]
+lemma singularKunnethBicomplexMap_comp :
+    singularKunnethBicomplexMap Y R (g ≫ g') =
+      singularKunnethBicomplexMap Y R g ≫ singularKunnethBicomplexMap Y R g' := by
+  rw [singularKunnethBicomplexMap, CategoryTheory.Functor.map_comp, kunnethBicomplexMapLeft_comp]
+
+@[simp]
+lemma singularKunnethSpectralObjectMap_id :
+    singularKunnethSpectralObjectMap Y R (𝟙 X) = 𝟙 _ := by
+  rw [singularKunnethSpectralObjectMap, singularKunnethBicomplexMap_id,
+    CategoryTheory.Functor.map_id]
+  -- the identity of `(flipFunctor _ _ _).obj B` is that of `B.flip` only after unfolding
+  -- `flipFunctor`
+  exact HomologicalComplex₂.rowFiltrationSpectralObjectMap_id
+
+@[simp]
+lemma singularKunnethSpectralObjectMap_comp :
+    singularKunnethSpectralObjectMap Y R (g ≫ g') =
+      singularKunnethSpectralObjectMap Y R g ≫ singularKunnethSpectralObjectMap Y R g' := by
+  rw [singularKunnethSpectralObjectMap, singularKunnethBicomplexMap_comp,
+    CategoryTheory.Functor.map_comp, HomologicalComplex₂.rowFiltrationSpectralObjectMap_comp]
+
+@[simp]
 lemma singularKunnethSpectralSequenceMap_id :
     singularKunnethSpectralSequenceMap Y R (𝟙 X) = 𝟙 _ := by
   rw [singularKunnethSpectralSequenceMap, CategoryTheory.Functor.map_id,
     kunnethSpectralSequenceMapLeft_id]
 
+@[simp]
 lemma singularKunnethSpectralSequenceMap_comp :
     singularKunnethSpectralSequenceMap Y R (g ≫ g') =
       singularKunnethSpectralSequenceMap Y R g ≫ singularKunnethSpectralSequenceMap Y R g' := by

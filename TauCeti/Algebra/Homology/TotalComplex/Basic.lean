@@ -50,7 +50,9 @@ compares the homology sequences of these short exact sequences.
   single column is that column.
 * `HomologicalComplex₂.rowZeroShortComplex`: the degreewise split short exact sequence
   `row 0 ⟶ Tot K ⟶ Tot (rowsSucc K)[1]`, where `HomologicalComplex₂.rowsSucc K` is the bicomplex
-  of the rows `≥ 1` of `K`.
+  of the rows `≥ 1` of `K`; the projection `HomologicalComplex₂.dropRowZero` is natural
+  (`HomologicalComplex₂.dropRowZero_naturality`) along the morphisms
+  `HomologicalComplex₂.rowsSuccMap` of the bicomplexes of rows `≥ 1`.
 * `HomologicalComplex₂.quasiIso_total_map_of_rows`: a map of bicomplexes which is a
   quasi-isomorphism on every row induces a quasi-isomorphism of total complexes.
 * `HomologicalComplex₂.quasiIso_totalAugmentation_of_rows`: exact augmented rows make the
@@ -488,9 +490,19 @@ end HasZeroObject
 variable {K} {L : HomologicalComplex₂ C (ComplexShape.down ℕ) (ComplexShape.down ℕ)} (φ : K ⟶ L)
 
 omit [HasFiniteCoproducts C] in
-/-- The map of the bicomplexes of rows `≥ 1` induced by `φ`. -/
-private abbrev rowsSuccMap : rowsSucc K ⟶ rowsSucc L where
+/-- The map of the bicomplexes of rows `≥ 1` induced by `φ`. It is an abbreviation so that its
+components are reducibly those of `φ`. -/
+abbrev rowsSuccMap : rowsSucc K ⟶ rowsSucc L where
   f p := { f q := (φ.f p).f (q + 1) }
+
+omit [HasFiniteCoproducts C] in
+@[simp]
+lemma rowsSuccMap_id : rowsSuccMap (𝟙 K) = 𝟙 _ := (rfl)
+
+omit [HasFiniteCoproducts C] in
+@[simp]
+lemma rowsSuccMap_comp {M : HomologicalComplex₂ C (ComplexShape.down ℕ) (ComplexShape.down ℕ)}
+    (ψ : L ⟶ M) : rowsSuccMap (φ ≫ ψ) = rowsSuccMap φ ≫ rowsSuccMap ψ := (rfl)
 
 @[reassoc]
 private lemma dropRowZeroX_naturality (n : ℕ) :
@@ -520,6 +532,15 @@ private noncomputable def rowZeroShortComplexMap :
         extendMap_f _ (embeddingDownNatAdd 1) (embeddingDownNatAdd_f 1 n), Category.assoc,
         Iso.inv_hom_id_assoc]
       rw [dropRowZeroX_naturality_assoc]
+
+variable [HasZeroObject C] in
+/-- The projection killing row `0` is natural. -/
+@[reassoc]
+lemma dropRowZero_naturality :
+    total.map φ (ComplexShape.down ℕ) ≫ dropRowZero L =
+      dropRowZero K ≫
+        extendMap (total.map (rowsSuccMap φ) (ComplexShape.down ℕ)) (embeddingDownNatAdd 1) :=
+  (rowZeroShortComplexMap φ).comm₂₃
 
 end Preadditive
 
