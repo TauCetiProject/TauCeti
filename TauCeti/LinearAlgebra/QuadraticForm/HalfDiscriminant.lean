@@ -1,0 +1,284 @@
+/-
+Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: The Tau Ceti contributors
+-/
+module
+
+public import Mathlib.LinearAlgebra.BilinearForm.TensorProduct
+public import Mathlib.LinearAlgebra.Dual.Basis
+public import Mathlib.LinearAlgebra.Matrix.SesquilinearForm
+public import Mathlib.LinearAlgebra.QuadraticForm.Basis
+public import Mathlib.RingTheory.TensorProduct.Free
+public import TauCeti.LinearAlgebra.Matrix.Determinant.Half
+public import TauCeti.RepresentationTheory.Spin.Polarization.Split.Even
+public import TauCeti.RepresentationTheory.Spin.Polarization.Split.Odd
+
+/-!
+# The discriminant and half-discriminant of a quadratic form over a ring
+
+Let `q` be a quadratic form on a free module `M` of finite rank `l` over a commutative ring `R`,
+with basis `b`. Its *discriminant* `disc(q)` is the determinant of the Gram matrix of the polar
+form `b_q`. When `l` is odd, this determinant is divisible by `2` as a universal polynomial in the
+coefficients of `q`, and the *half-discriminant* `disc'(q)` is the quotient: in a basis
+`q(x) = xᵀ A x` with `A` upper triangular, `b_q` has Gram matrix `A + Aᵀ`, and
+`disc'(q) = Matrix.halfDet A`. It does not depend on the choice of `A` among the matrices with
+`q(x) = xᵀ A x`, it is compatible with base change, and a change of basis multiplies it by the
+square of a unit, like `disc(q)`.
+
+The form is *nondegenerate* in the sense of Conrad's *Reductive group schemes* (Appendix C.1)
+when `disc(q)` (`l` even) or `disc'(q)` (`l` odd) is a unit; in rank `0` every form is.
+`TauCeti.QuadraticMap.normalizedDiscr` is `disc` in even rank and `disc'` in odd rank, and
+`TauCeti.QuadraticMap.IsDiscrNondegenerate` asks for it to be a unit in some basis, equivalently
+in every basis. No invertibility of `2` is assumed: `x²` over `𝔽₂` has `disc' = 1` and is
+nondegenerate although its polar form is zero. The standard split forms `TauCeti.splitEvenForm`
+and `TauCeti.splitOddForm` are nondegenerate over every commutative ring.
+
+## Main definitions
+
+* `TauCeti.QuadraticMap.polarDiscr q b`: the Gram determinant `disc(q)` of the polar form.
+* `TauCeti.QuadraticMap.halfDiscr q b`: the half-discriminant `disc'(q)`.
+* `TauCeti.QuadraticMap.normalizedDiscr q b`: `disc(q)` in even rank, `disc'(q)` in odd rank.
+* `TauCeti.QuadraticMap.IsDiscrNondegenerate q`: `normalizedDiscr q b` is a unit.
+
+## Main results
+
+* `TauCeti.QuadraticMap.halfDiscr_eq_halfDet`: `disc'(q)` computed from any bilinear form `B`
+  with `B(x, x) = q(x)`.
+* `TauCeti.QuadraticMap.two_mul_halfDiscr`: `2 disc'(q) = disc(q)` in odd rank.
+* `TauCeti.QuadraticMap.halfDiscr_basis_change`, `TauCeti.QuadraticMap.halfDiscr_reindex`:
+  `disc'(q)` is well defined up to the square of a unit.
+* `TauCeti.QuadraticMap.halfDiscr_baseChange`: compatibility with base change.
+* `TauCeti.QuadraticMap.isDiscrNondegenerate_iff`: nondegeneracy can be read in any basis.
+* `TauCeti.QuadraticMap.halfDiscr_sq`, `TauCeti.QuadraticMap.halfDiscr_sq_add_mul`: `x²` has
+  `disc' = 1` and `z² + xy` has `disc' = -1`.
+* `TauCeti.isDiscrNondegenerate_splitEvenForm`, `TauCeti.isDiscrNondegenerate_splitOddForm`: the
+  standard split forms are nondegenerate.
+
+## References
+
+* B. Conrad, *Reductive group schemes*, Appendix C.1.
+* M.-A. Knus, *Quadratic and Hermitian forms over rings*, Chapter IV, §3.
+-/
+
+public section
+
+open Module Matrix
+
+namespace TauCeti.QuadraticMap
+
+open _root_.QuadraticMap (polarBilin)
+
+variable {R M ι κ : Type*} [CommRing R] [AddCommGroup M] [Module R M]
+  [Fintype ι] [DecidableEq ι] [Fintype κ] [DecidableEq κ]
+
+/-- The discriminant `disc(q)` of a quadratic form in the basis `b`: the determinant of the Gram
+matrix of its polar form `b_q(x, y) = q(x + y) - q(x) - q(y)`. -/
+@[expose] noncomputable def polarDiscr (q : QuadraticForm R M) (b : Basis ι R M) : R :=
+  (LinearMap.toMatrix₂ b b (polarBilin q)).det
+
+/-- The half-discriminant `disc'(q)` of a quadratic form in the basis `b`: `Matrix.halfDet A` for
+the Gram matrix `A` of any bilinear form `B` with `B(x, x) = q(x)`
+(`TauCeti.QuadraticMap.halfDiscr_eq_halfDet`). In odd rank `2 disc'(q) = disc(q)`; in even rank it
+is `0` by convention. -/
+@[expose] noncomputable def halfDiscr (q : QuadraticForm R M) (b : Basis ι R M) : R :=
+  haveI := Module.Free.of_basis b
+  (LinearMap.toMatrix₂ b b (LinearMap.BilinMap.toQuadraticMap_surjective q).choose).halfDet
+
+/-- A bilinear form with zero quadratic form has a Gram matrix of the form `Z - Zᵀ`. -/
+private theorem exists_toMatrix₂_eq_sub_transpose (b : Basis ι R M)
+    {D : LinearMap.BilinForm R M} (hD : D.toQuadraticMap = 0) :
+    ∃ Z : Matrix ι ι R, LinearMap.toMatrix₂ b b D = Z - Zᵀ := by
+  let : LinearOrder ι := LinearOrder.lift' (Fintype.equivFin ι) (Fintype.equivFin ι).injective
+  have hdiag (i : ι) : D (b i) (b i) = 0 := by
+    rw [← LinearMap.BilinMap.toQuadraticMap_apply, hD]
+    rfl
+  have hanti (i j : ι) : D (b i) (b j) + D (b j) (b i) = 0 := by
+    have h := LinearMap.BilinMap.polar_toQuadraticMap (B := D) (b i) (b j)
+    rw [hD] at h
+    simpa [QuadraticMap.polar] using h.symm
+  refine ⟨of fun i j => if i < j then D (b i) (b j) else 0, ?_⟩
+  ext i j
+  rcases lt_trichotomy i j with h | rfl | h
+  · simp [LinearMap.toMatrix₂_apply, Function.swap, h, h.not_gt]
+  · simp [LinearMap.toMatrix₂_apply, hdiag]
+  · simp [LinearMap.toMatrix₂_apply, Function.swap, h, h.not_gt,
+      eq_neg_of_add_eq_zero_left (hanti i j)]
+
+/-- The half-discriminant can be computed from any bilinear form `B` with `B(x, x) = q(x)`. -/
+theorem halfDiscr_eq_halfDet {q : QuadraticForm R M} (b : Basis ι R M)
+    {B : LinearMap.BilinForm R M} (hB : B.toQuadraticMap = q) :
+    halfDiscr q b = (LinearMap.toMatrix₂ b b B).halfDet := by
+  by_cases hι : Odd (Fintype.card ι)
+  · have := Module.Free.of_basis b
+    have hB' := (LinearMap.BilinMap.toQuadraticMap_surjective (N := R) q).choose_spec
+    obtain ⟨Z, hZ⟩ := exists_toMatrix₂_eq_sub_transpose b
+      (D := B - (LinearMap.BilinMap.toQuadraticMap_surjective q).choose) (by
+        rw [LinearMap.BilinMap.toQuadraticMap_sub, hB, hB', sub_self])
+    rw [halfDiscr, ← halfDet_add_sub_transpose hι _ Z, ← hZ, ← map_add]
+    congr 2
+    abel
+  · rw [halfDiscr, halfDet_of_not_odd hι, halfDet_of_not_odd hι]
+
+/-- In even rank, `disc'(q)` is `0` by convention. -/
+theorem halfDiscr_of_not_odd (hι : ¬Odd (Fintype.card ι)) (q : QuadraticForm R M)
+    (b : Basis ι R M) : halfDiscr q b = 0 := by
+  rw [halfDiscr, halfDet_of_not_odd hι]
+
+/-- In odd rank, `2 disc'(q) = disc(q)`. -/
+theorem two_mul_halfDiscr (hι : Odd (Fintype.card ι)) (q : QuadraticForm R M)
+    (b : Basis ι R M) : 2 * halfDiscr q b = polarDiscr q b := by
+  have := Module.Free.of_basis b
+  obtain ⟨B, hB⟩ := LinearMap.BilinMap.toQuadraticMap_surjective (N := R) q
+  rw [halfDiscr_eq_halfDet b hB, two_mul_halfDet hι, polarDiscr, ← hB,
+    LinearMap.BilinMap.polarBilin_toQuadraticMap, map_add]
+  congr 2
+
+/-- Changing the basis multiplies `disc(q)` by the square of the determinant of the change of
+basis. -/
+theorem polarDiscr_basis_change (q : QuadraticForm R M) (b b' : Basis ι R M) :
+    polarDiscr q b' = b.det b' ^ 2 * polarDiscr q b := by
+  rw [polarDiscr, polarDiscr, ← LinearMap.toMatrix₂_mul_basis_toMatrix b b, det_mul, det_mul,
+    det_transpose, Basis.det_apply]
+  ring
+
+/-- Changing the basis multiplies `disc'(q)` by the square of the determinant of the change of
+basis; so `disc'(q)` is well defined up to the square of a unit. -/
+theorem halfDiscr_basis_change (q : QuadraticForm R M) (b b' : Basis ι R M) :
+    halfDiscr q b' = b.det b' ^ 2 * halfDiscr q b := by
+  by_cases hι : Odd (Fintype.card ι)
+  · have := Module.Free.of_basis b
+    obtain ⟨B, hB⟩ := LinearMap.BilinMap.toQuadraticMap_surjective (N := R) q
+    rw [halfDiscr_eq_halfDet b' hB, halfDiscr_eq_halfDet b hB,
+      ← LinearMap.toMatrix₂_mul_basis_toMatrix b b, halfDet_transpose_mul_mul hι, Basis.det_apply]
+  · rw [halfDiscr_of_not_odd hι, halfDiscr_of_not_odd hι, mul_zero]
+
+/-- The Gram matrix in a reindexed basis is the reindexed Gram matrix. -/
+private theorem toMatrix₂_reindex (b : Basis ι R M) (e : ι ≃ κ) (B : LinearMap.BilinForm R M) :
+    LinearMap.toMatrix₂ (b.reindex e) (b.reindex e) B =
+      (LinearMap.toMatrix₂ b b B).submatrix e.symm e.symm := by
+  ext i j
+  simp [LinearMap.toMatrix₂_apply]
+
+/-- Reindexing the basis does not change `disc(q)`. -/
+theorem polarDiscr_reindex (q : QuadraticForm R M) (b : Basis ι R M) (e : ι ≃ κ) :
+    polarDiscr q (b.reindex e) = polarDiscr q b := by
+  rw [polarDiscr, polarDiscr, toMatrix₂_reindex, det_submatrix_equiv_self]
+
+/-- Reindexing the basis does not change `disc'(q)`. -/
+theorem halfDiscr_reindex (q : QuadraticForm R M) (b : Basis ι R M) (e : ι ≃ κ) :
+    halfDiscr q (b.reindex e) = halfDiscr q b := by
+  have := Module.Free.of_basis b
+  obtain ⟨B, hB⟩ := LinearMap.BilinMap.toQuadraticMap_surjective (N := R) q
+  rw [halfDiscr_eq_halfDet _ hB, halfDiscr_eq_halfDet _ hB, toMatrix₂_reindex,
+    halfDet_submatrix_equiv]
+
+/-- The half-discriminant is compatible with base change: for a bilinear form `B` with
+`B(x, x) = q(x)`, the form `x ↦ B_A(x, x)` on `A ⊗ M`, which has the same coefficients as `q`, has
+half-discriminant the image of `disc'(q)`. -/
+theorem halfDiscr_baseChange (A : Type*) [CommRing A] [Algebra R A] {q : QuadraticForm R M}
+    (b : Basis ι R M) {B : LinearMap.BilinForm R M} (hB : B.toQuadraticMap = q) :
+    halfDiscr (B.baseChange A).toQuadraticMap (Algebra.TensorProduct.basis A b) =
+      algebraMap R A (halfDiscr q b) := by
+  rw [halfDiscr_eq_halfDet _ rfl, halfDiscr_eq_halfDet _ hB, map_halfDet]
+  congr 1
+  ext i j
+  simp [LinearMap.toMatrix₂_apply, Algebra.TensorProduct.basis_apply,
+    Algebra.algebraMap_eq_smul_one]
+
+/-- The discriminant that decides nondegeneracy: `disc(q)` in even rank and `disc'(q)` in odd
+rank. -/
+@[expose] noncomputable def normalizedDiscr (q : QuadraticForm R M) (b : Basis ι R M) : R :=
+  if Even (Fintype.card ι) then polarDiscr q b else halfDiscr q b
+
+/-- Changing the basis multiplies `normalizedDiscr` by the square of a unit. -/
+theorem normalizedDiscr_basis_change (q : QuadraticForm R M) (b b' : Basis ι R M) :
+    normalizedDiscr q b' = b.det b' ^ 2 * normalizedDiscr q b := by
+  unfold normalizedDiscr
+  split_ifs
+  · exact polarDiscr_basis_change q b b'
+  · exact halfDiscr_basis_change q b b'
+
+/-- Reindexing the basis does not change `normalizedDiscr`. -/
+theorem normalizedDiscr_reindex (q : QuadraticForm R M) (b : Basis ι R M) (e : ι ≃ κ) :
+    normalizedDiscr q (b.reindex e) = normalizedDiscr q b := by
+  rw [normalizedDiscr, normalizedDiscr, polarDiscr_reindex, halfDiscr_reindex,
+    Fintype.card_congr e]
+
+/-- A quadratic form on a free module of finite rank is *nondegenerate* (Conrad, *Reductive group
+schemes*, Appendix C.1) if in some basis its discriminant (even rank) or half-discriminant (odd
+rank) is a unit; then this holds in every basis (`TauCeti.QuadraticMap.isDiscrNondegenerate_iff`).
+In rank `0` every form is nondegenerate. -/
+@[expose] def IsDiscrNondegenerate (q : QuadraticForm R M) : Prop :=
+  ∃ (n : ℕ) (b : Basis (Fin n) R M), IsUnit (normalizedDiscr q b)
+
+/-- Nondegeneracy can be read in any basis. -/
+theorem isDiscrNondegenerate_iff {q : QuadraticForm R M} (b : Basis ι R M) :
+    IsDiscrNondegenerate q ↔ IsUnit (normalizedDiscr q b) := by
+  refine ⟨fun ⟨n, b', h⟩ => ?_, fun h => ⟨_, b.reindex (Fintype.equivFin ι), by
+    rwa [normalizedDiscr_reindex]⟩⟩
+  rcases subsingleton_or_nontrivial R with hR | hR
+  · exact isUnit_of_subsingleton _
+  · rw [← normalizedDiscr_reindex q b' (b'.indexEquiv b),
+      normalizedDiscr_basis_change q b] at h
+    exact isUnit_of_mul_isUnit_right h
+
+/-- The form `x²` on `R` has half-discriminant `1`. -/
+theorem halfDiscr_sq :
+    halfDiscr (QuadraticMap.sq : QuadraticForm R R) (Basis.singleton Unit R) = 1 := by
+  rw [halfDiscr_eq_halfDet _ (B := LinearMap.mul R R) (by ext; simp), halfDet_unique]
+  simp [LinearMap.toMatrix₂_apply]
+
+/-- The form `z² + xy` on `R³` has half-discriminant `-1`. -/
+theorem halfDiscr_sq_add_mul :
+    halfDiscr (QuadraticMap.proj 2 2 + QuadraticMap.proj 0 1 : QuadraticForm R (Fin 3 → R))
+      (Pi.basisFun R (Fin 3)) = -1 := by
+  rw [halfDiscr_eq_halfDet _ (B := (LinearMap.mul R R).compl₁₂ (LinearMap.proj 2)
+      (LinearMap.proj 2) + (LinearMap.mul R R).compl₁₂ (LinearMap.proj 0) (LinearMap.proj 1))
+      (by ext; simp), halfDet_fin_three]
+  simp [LinearMap.toMatrix₂_apply]
+
+end TauCeti.QuadraticMap
+
+namespace TauCeti
+
+open TauCeti.QuadraticMap
+
+variable (K : Type*) [CommRing K] (n : ℕ)
+
+/-- The Gram matrix `fromBlocks 0 1 1 0` of a hyperbolic form has unit determinant. -/
+private theorem isUnit_det_fromBlocks_zero_one_one_zero :
+    IsUnit (fromBlocks 0 1 1 0 : Matrix (Fin n ⊕ Fin n) (Fin n ⊕ Fin n) K).det :=
+  isUnit_det_of_left_inverse (B := fromBlocks 0 1 1 0) (by simp [fromBlocks_multiply])
+
+/-- The basis of `M* × M` given by the dual coordinate functionals and the coordinate vectors. -/
+private noncomputable abbrev splitEvenBasis' : Basis (Fin n ⊕ Fin n) K (SplitEvenSpace K n) :=
+  (Pi.basisFun K (Fin n)).dualBasis.prod (Pi.basisFun K (Fin n))
+
+/-- The standard split even form is nondegenerate over every commutative ring. -/
+theorem isDiscrNondegenerate_splitEvenForm : IsDiscrNondegenerate (splitEvenForm K n) := by
+  rw [isDiscrNondegenerate_iff (splitEvenBasis' K n), normalizedDiscr, ite_eq_left (by simp),
+    polarDiscr]
+  convert isUnit_det_fromBlocks_zero_one_one_zero K n
+  ext (i | i) (j | j) <;>
+    simp [LinearMap.toMatrix₂_apply, Matrix.one_apply, Pi.single_apply, eq_comm]
+
+/-- The standard split odd form is nondegenerate over every commutative ring. -/
+theorem isDiscrNondegenerate_splitOddForm : IsDiscrNondegenerate (splitOddForm K n) := by
+  let B : LinearMap.BilinForm K (SplitOddSpace K n) :=
+    LinearMap.mk₂ K (fun u v => u.1.1 v.1.2 + u.2 * v.2) (by intros; simp; ring)
+      (by intros; simp; ring) (by intros; simp; ring) (by intros; simp; ring)
+  have hB : B.toQuadraticMap = splitOddForm K n := by ext; simp [B]
+  let b := (splitEvenBasis' K n).prod (Basis.singleton Unit K)
+  have hodd : ¬Even (Fintype.card ((Fin n ⊕ Fin n) ⊕ Unit)) := by
+    simp [Fintype.card_sum, ← two_mul]
+  rw [isDiscrNondegenerate_iff b, normalizedDiscr, ite_eq_right hodd, halfDiscr_eq_halfDet b hB]
+  have hM : LinearMap.toMatrix₂ b b B =
+      fromBlocks (fromBlocks 0 1 0 0) 0 0 (of fun _ _ => 1) := by
+    ext ((i | i) | i) ((j | j) | j) <;>
+      simp [b, B, LinearMap.toMatrix₂_apply, Matrix.one_apply, Pi.single_apply]
+  rw [hM, halfDet_fromBlocks_zero (by simp) (by simp), halfDet_unique, fromBlocks_transpose,
+    fromBlocks_add]
+  simpa using isUnit_det_fromBlocks_zero_one_one_zero K n
+
+end TauCeti
