@@ -310,6 +310,11 @@ private theorem exists_ofTorus_eq (hω : (conj ω₁ * ω₂).im ≠ 0)
   set G : (Fin 2 → ℝ) → ℂ := fun p ↦ exp (-phaseCLM θ₁ θ₂ p) * u (L p)
   have hGc : ContDiff ℝ ∞ G :=
     (contDiff_exp.comp (phaseCLM θ₁ θ₂).contDiff.neg).mul (hu.comp L.contDiff)
+  -- The holonomy along `k w`, `k ∈ ℤ`, is the `k`-th power of the holonomy along `w`.
+  have htw {w e : ℂ} (he : e ≠ 0) (h : ∀ z, u (z + w) = e * u z) (k : ℤ) (z : ℂ) :
+      u (z + k * w) = e ^ k * u z := by
+    simpa [Units.smul_def, zsmul_eq_mul] using Function.apply_add_zsmul_eq_zpow_smul
+      (a := Units.mk0 e he) (f := u) (by simpa [Units.smul_def] using h) k z
   have hper (m : Fin 2 → ℤ) : Function.Periodic G fun i ↦ (m i : ℝ) := fun p ↦ by
     have hL : L (p + fun i ↦ (m i : ℝ)) = L p + (m 0 : ℂ) * ω₁ + (m 1 : ℂ) * ω₂ := by
       rw [map_add, periodCoordEquiv_apply, periodCoordEquiv_apply]
@@ -322,8 +327,7 @@ private theorem exists_ofTorus_eq (hω : (conj ω₁ * ω₂).im ≠ 0)
       push_cast
       ring
     simp only [G]
-    rw [hL, Function.apply_add_int_mul_eq_zpow_mul (exp_ne_zero _) hu₂,
-      Function.apply_add_int_mul_eq_zpow_mul (exp_ne_zero _) hu₁, map_add, neg_add,
+    rw [hL, htw (exp_ne_zero _) hu₂, htw (exp_ne_zero _) hu₁, map_add, neg_add,
       Complex.exp_add, Complex.exp_neg (phaseCLM θ₁ θ₂ fun i ↦ (m i : ℝ)), hexp]
     field_simp
   obtain ⟨g, -, hgG⟩ := TauCeti.UnitAddTorus.exists_continuous_comp_coe_eq hGc.continuous hper

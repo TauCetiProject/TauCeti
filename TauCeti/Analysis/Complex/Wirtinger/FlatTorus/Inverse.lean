@@ -134,17 +134,10 @@ private theorem two_mul_I_mul_im_mul_conjWirtingerDeriv_mul_conj_add (z : ℂ) :
         (conjWirtingerDeriv u z 1 * conj (φ z) + u z * conj (wirtingerDeriv φ z 1)) =
       ω₂ * (fderiv ℝ u z ω₁ * conj (φ z) + u z * conj (fderiv ℝ φ z ω₁)) -
         ω₁ * (fderiv ℝ u z ω₂ * conj (φ z) + u z * conj (fderiv ℝ φ z ω₂)) := by
-  have hD : (2 * I * (conj ω₁ * ω₂).im : ℂ) = ω₂ * conj ω₁ - ω₁ * conj ω₂ := by
-    have h := sub_conj (ω₂ * conj ω₁)
-    simp only [map_mul, conj_conj] at h
-    rw [show (ω₂ * conj ω₁).im = (conj ω₁ * ω₂).im by rw [mul_comm]] at h
-    push_cast at h
-    linear_combination -h
-  simp only [fderiv_apply_eq_smul_wirtingerDeriv_add_smul_conjWirtingerDeriv (f := u),
-    fderiv_apply_eq_smul_wirtingerDeriv_add_smul_conjWirtingerDeriv (f := φ), smul_eq_mul,
-    map_add, map_mul, conj_conj]
-  linear_combination (conjWirtingerDeriv u z 1 * conj (φ z) +
-    u z * conj (wirtingerDeriv φ z 1)) * hD
+  have hu := smul_conjWirtingerDeriv_apply_one_eq_sub u ω₁ ω₂ z
+  have hφ := congrArg conj (smul_wirtingerDeriv_apply_one_eq_sub φ ω₁ ω₂ z)
+  simp only [smul_eq_mul, map_mul, map_sub, map_ofNat, conj_conj, conj_I, conj_ofReal] at hu hφ
+  linear_combination conj (φ z) * hu - u z * hφ
 
 /-- **`∂bar` and `-∂` are formally adjoint on a unitary flat line.** Let `ω₁, ω₂` be linearly
 independent over `ℝ`, and let `u` and `φ` be `C¹` functions twisted by the same unit complex numbers

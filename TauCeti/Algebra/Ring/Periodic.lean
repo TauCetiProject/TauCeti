@@ -18,9 +18,9 @@ A function periodic under `c₁` and `c₂` is periodic under every integer comb
 function on `ℂ` these are the vectors of the lattice `ℤ + ℤ i`; for the periods `τ` and `1` of a
 function on `ℂ` they are the vectors of the lattice `ℤ τ + ℤ`.
 
-More generally, a function twisted by a nonzero factor `a` under translation by `c`,
-`f (x + c) = a * f x`, is twisted by `a ^ k` under translation by every integer multiple `k c`
-(`Function.apply_add_int_mul_eq_zpow_mul`).
+More generally, a function twisted by a group element `a` under translation by `c`,
+`f (x + c) = a • f x`, is twisted by `a ^ k` under translation by every integer multiple `k • c`
+(`Function.apply_add_zsmul_eq_zpow_smul`).
 
 A function on a product is periodic under `(0, c)` exactly when it is `c`-periodic in its second
 coordinate (`Function.periodic_zero_prodMk_iff`); for instance a map on the cylinder `ℝ × ℝ` of
@@ -55,21 +55,17 @@ theorem periodic_zero_prodMk_iff {γ δ : Type*} [AddZeroClass γ] [Add δ] {g :
     {c : δ} : Periodic g (0, c) ↔ ∀ a, Periodic (fun b ↦ g (a, b)) c :=
   ⟨fun h a b ↦ by simpa using h (a, b), fun h ⟨a, b⟩ ↦ by simpa using h a b⟩
 
-/-- A function twisted by a nonzero factor `a` under translation by `c` is twisted by `a ^ k` under
-translation by `k c`, for every integer `k`. -/
-theorem apply_add_int_mul_eq_zpow_mul {G₀ : Type*} [CommGroupWithZero G₀] {f : α → G₀} {c : α}
-    {a : G₀} (ha : a ≠ 0) (h : ∀ x, f (x + c) = a * f x) (k : ℤ) (x : α) :
-    f (x + k * c) = a ^ k * f x := by
+/-- A function twisted by a group element `a` under translation by `c` is twisted by `a ^ k` under
+translation by `k • c`, for every integer `k`. -/
+theorem apply_add_zsmul_eq_zpow_smul {A G X : Type*} [AddGroup A] [Group G] [MulAction G X]
+    {f : A → X} {c : A} {a : G} (h : ∀ x, f (x + c) = a • f x) (k : ℤ) (x : A) :
+    f (x + k • c) = a ^ k • f x := by
   induction k using Int.induction_on with
   | zero => simp
-  | succ k ih =>
-    rw [Int.cast_add, Int.cast_one, add_one_mul, ← add_assoc, h, ih, zpow_add_one₀ ha,
-      mul_comm (a ^ (k : ℤ)) a, mul_assoc]
+  | succ k ih => rw [add_one_zsmul, ← add_assoc, h, ih, ← mul_smul, mul_self_zpow]
   | pred k ih =>
-    have h' := h (x + ((-k - 1 : ℤ) : α) * c)
-    rw [add_assoc, ← add_one_mul, Int.cast_sub, Int.cast_one, sub_add_cancel, ih] at h'
-    rw [zpow_sub_one₀ ha, mul_right_comm, h', Int.cast_sub, Int.cast_one, mul_comm a,
-      mul_inv_cancel_right₀ ha]
+    rw [← smul_left_cancel_iff a, ← h, add_assoc, ← add_one_zsmul, sub_add_cancel, ih,
+      ← mul_smul, mul_self_zpow, sub_add_cancel]
 
 /-- A function with period `c`, composed with the reflection `x ↦ -x`, has period `c`. -/
 theorem Periodic.comp_neg {γ : Type*} [AddCommGroup γ] {f : γ → β} {c : γ} (h : Periodic f c) :

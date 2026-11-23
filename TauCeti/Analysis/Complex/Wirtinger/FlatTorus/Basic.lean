@@ -560,10 +560,7 @@ theorem mul_setIntegral_norm_sq_le_setIntegral_norm_conjWirtingerDeriv_sq (hu : 
   -- Pointwise, `2 i D ∂bar u = ω₂ A - ω₁ B`.
   rw [one_mul]
   refine four_mul_sq_mul_norm_sq_eq_of_mul_eq ?_
-  rw [fderiv_apply_eq_smul_wirtingerDeriv_add_smul_conjWirtingerDeriv,
-    fderiv_apply_eq_smul_wirtingerDeriv_add_smul_conjWirtingerDeriv, two_mul_I_mul_im_conj_mul]
-  simp only [smul_eq_mul]
-  ring
+  simpa only [smul_eq_mul, mul_comm] using smul_conjWirtingerDeriv_apply_one_eq_sub u ω₁ ω₂ z
 
 /-- **The adjoint estimate.** Under the hypotheses of
 `TauCeti.mul_setIntegral_norm_sq_le_setIntegral_norm_conjWirtingerDeriv_sq`, the operator `∂`,
@@ -580,10 +577,9 @@ theorem mul_setIntegral_norm_sq_le_setIntegral_norm_wirtingerDeriv_sq (hu : Cont
     (W := fun z ↦ wirtingerDeriv u z 1) (-1) fun z ↦ ?_
   -- Pointwise, `-2 i D ∂u = conj ω₂ A - conj ω₁ B`.
   refine four_mul_sq_mul_norm_sq_eq_of_mul_neg_eq ?_
-  rw [fderiv_apply_eq_smul_wirtingerDeriv_add_smul_conjWirtingerDeriv,
-    fderiv_apply_eq_smul_wirtingerDeriv_add_smul_conjWirtingerDeriv, two_mul_I_mul_im_conj_mul]
-  simp only [smul_eq_mul]
-  ring
+  have h := smul_wirtingerDeriv_apply_one_eq_sub u ω₁ ω₂ z
+  simp only [smul_eq_mul] at h
+  linear_combination -h
 
 end Estimate
 
