@@ -99,6 +99,12 @@ theorem norm_comap [NumberField K] (f : F →ₗ[𝓞 K] E) (hf : Function.Injec
     (h.comap f hf).norm σ u = h.norm σ (f.baseChange (Codomain σ) u) := by
   rw [norm_def, norm_def, comap_form_apply]
 
+@[simp]
+theorem placeNorm_comap [NumberField K] (f : F →ₗ[𝓞 K] E) (hf : Function.Injective f)
+    (v : InfinitePlace K) (x : F) :
+    (h.comap f hf).placeNorm v x = h.placeNorm v (f x) := by
+  rw [← v.mk_embedding, placeNorm_mk, placeNorm_mk, norm_comap, LinearMap.baseChange_tmul]
+
 /-! ### The quotient metric -/
 
 variable (F' : Submodule (𝓞 K) E)
@@ -247,6 +253,13 @@ theorem norm_quotient_baseChange_mkQ_le (σ : K →+* ℂ) (v : Codomain σ ⊗[
   refine (pow_le_pow_iff_left₀ (h.norm_nonneg σ u) (h.norm_nonneg σ v) two_ne_zero).mp ?_
   rw [hv, h.norm_add_sq_eq_norm_sq_add_norm_sq_of_form_eq_zero horth]
   exact le_add_of_nonneg_right (sq_nonneg _)
+
+/-- The quotient norm of the class of `x` at a place is at most the norm of `x` there. -/
+theorem placeNorm_quotient_mk_le (v : InfinitePlace K) (x : E) :
+    (h.quotient F').placeNorm v (Submodule.Quotient.mk x) ≤ h.placeNorm v x := by
+  rw [← v.mk_embedding, placeNorm_mk, placeNorm_mk, ← Submodule.mkQ_apply,
+    ← LinearMap.baseChange_tmul]
+  exact h.norm_quotient_baseChange_mkQ_le F' _ _
 
 /-- On a lift `v` orthogonal to `F_σ`, the quotient norm of its class is `‖v‖_σ`. -/
 theorem norm_quotient_baseChange_mkQ {σ : K →+* ℂ} {v : Codomain σ ⊗[𝓞 K] E}
