@@ -24,6 +24,7 @@ import TauCeti.Analysis.Distribution.TestFunction.Integral
 import TauCeti.Analysis.Distribution.TestFunction.Translation
 import TauCeti.Analysis.Normed.Module.Ball
 import TauCeti.Analysis.Sobolev.WeakDeriv.Basic
+import TauCeti.LinearAlgebra.Dimension.FinrankOne
 import TauCeti.MeasureTheory.Function.LocallyIntegrable
 import TauCeti.MeasureTheory.Measure.Haar.HalfSpace
 import TauCeti.MeasureTheory.Measure.Lebesgue.EqHaar
@@ -770,9 +771,8 @@ finite-dimensional real inner product space, at every point `x` of the reduced b
 theorem hasDensityAt_of_mem_reducedBoundary
     (hx : x ∈ reducedBoundary μ Ω s) : HasDensityAt μ s x (1 / 2) := by
   rcases lt_or_ge (finrank ℝ E) 2 with hn | hn
-  · rcases Nat.le_one_iff_eq_zero_or_eq_one.1 (Nat.lt_succ_iff.1 hn) with h0 | h1
-    · have : Subsingleton E := (Module.finrank_zero_iff (R := ℝ)).1 h0
-      simp at hx
+  · rcases subsingleton_or_finrank_eq_one_of_le_one (Nat.lt_succ_iff.1 hn) with _ | h1
+    · simp at hx
     · exact hasDensityAt_of_mem_reducedBoundary_of_finrank_eq_one h1 hx
   · exact hasDensityAt_of_mem_reducedBoundary_of_two_le hn hx
 

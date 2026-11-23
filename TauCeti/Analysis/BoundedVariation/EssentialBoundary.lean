@@ -13,6 +13,7 @@ import TauCeti.Analysis.BoundedVariation.OneDimensional.LocalClassification
 import TauCeti.Analysis.BoundedVariation.OneDimensional.ReducedBoundary
 import TauCeti.Analysis.BoundedVariation.RelativeIsoperimetric
 import TauCeti.Geometry.Euclidean.Volume.Measure
+import TauCeti.LinearAlgebra.Dimension.FinrankOne
 import TauCeti.MeasureTheory.Covering.HausdorffDensity
 import TauCeti.MeasureTheory.Function.LocallyIntegrable
 
@@ -35,7 +36,7 @@ Hausdorff / counting measure and both boundaries are empty). Equivalently, `∂�
 agree `Hⁿ⁻¹`-almost everywhere (`TauCeti.essentialBoundary_inter_ae_eq_reducedBoundary`).
 
 In dimension `n ≤ 1`, `∂ᵉs ∩ Ω = ∂*s` literally as sets
-(`TauCeti.reducedBoundary_eq_inter_essentialBoundary_of_finrank_le_one`).
+(`TauCeti.essentialBoundary_inter_eq_reducedBoundary_of_finrank_le_one`).
 
 ## Proof
 
@@ -144,9 +145,8 @@ private theorem exists_pos_frequently_le_perimeter_ball_div
       perimeter μ ⟨ball x r, isOpen_ball⟩ s / ENNReal.ofReal r ^ (finrank ℝ E - 1) := by
   obtain ⟨ε, hε, hεU⟩ := Metric.mem_nhds_iff.1 hU
   rcases lt_or_ge (finrank ℝ E) 2 with hn | hn
-  · rcases Nat.le_one_iff_eq_zero_or_eq_one.1 (Nat.lt_succ_iff.1 hn) with h0 | h1
-    · have : Subsingleton E := (Module.finrank_zero_iff (R := ℝ)).1 h0
-      simp at hx
+  · rcases subsingleton_or_finrank_eq_one_of_le_one (Nat.lt_succ_iff.1 hn) with _ | h1
+    · simp at hx
     · set a := Measure.addHaarScalarFactor μ volume
       refine ⟨(a : ℝ), Measure.addHaarScalarFactor_pos_of_isAddHaarMeasure μ volume,
         (Eventually.frequently (Ioo_mem_nhdsGT hε)).mono fun r ⟨hr0, hrε⟩ => ?_⟩
@@ -154,14 +154,8 @@ private theorem exists_pos_frequently_le_perimeter_ball_div
         hs.mono (Measure.restrict_mono ((ball_subset_ball hrε.le).trans hεU) le_rfl)
       rw [h1, Nat.sub_self, pow_zero, div_one, ENNReal.ofReal_coe_nnreal]
       by_contra! hlt
-      rcases ae_eq_empty_or_univ_of_perimeter_ball_lt h1 hsr hlt with he | hu'
-      · have hd0 : HasDensityAt μ s x 0 :=
-          (hasDensityAt_congr_ae_of_mem_nhds (ball_mem_nhds x hr0) he).2 hasDensityAt_empty
-        exact (mem_essentialBoundary.1 hx).2 (mem_essentialExterior.2 hd0)
-      · have hd1 : HasDensityAt μ s x 1 :=
-          (hasDensityAt_congr_ae_of_mem_nhds (ball_mem_nhds x hr0) hu').2
-            (hasDensityAt_univ (eventually_measure_closedBall_ne_zero_ne_top μ x))
-        exact (mem_essentialBoundary.1 hx).1 (mem_essentialInterior.2 hd1)
+      exact notMem_essentialBoundary_of_ae_eq_empty_or_univ isOpen_ball (mem_ball_self hr0)
+        (ae_eq_empty_or_univ_of_perimeter_ball_lt h1 hsr hlt) hx
   · obtain ⟨a, ha, hfreq⟩ := exists_pos_frequently_ofReal_mul_measure_closedBall_le hx
     obtain ⟨C, hCtop, hC⟩ := exists_min_div_closedBall_rpow_le_mul_perimeter_div hn μ
     set C' : ℝ≥0∞ := max C 1

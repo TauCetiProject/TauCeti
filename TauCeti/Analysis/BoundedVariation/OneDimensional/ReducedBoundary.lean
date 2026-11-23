@@ -10,6 +10,7 @@ public import TauCeti.MeasureTheory.Covering.EssentialBoundary
 import TauCeti.Analysis.BoundedVariation.Hyperplane
 import TauCeti.Analysis.BoundedVariation.OneDimensional.LocalClassification
 import TauCeti.Analysis.InnerProductSpace.Nondegenerate
+import TauCeti.LinearAlgebra.Dimension.FinrankOne
 import TauCeti.MeasureTheory.Measure.Haar.HalfSpace
 
 /-!
@@ -18,7 +19,7 @@ import TauCeti.MeasureTheory.Measure.Haar.HalfSpace
 Let `E` be a finite-dimensional real inner product space of dimension at most one carrying an
 additive Haar measure `μ`, and let `s` be a set of locally finite perimeter in an open set `Ω ⊆ E`.
 
-* In dimension `0`, `E` is a subsingleton, so both `∂*s` and `∂ᵉs` are empty and `∂*s = Ω ∩ ∂ᵉs`
+* In dimension `0`, `E` is a subsingleton, so both `∂*s` and `∂ᵉs` are empty and `∂ᵉs ∩ Ω = ∂*s`
   holds trivially.
 * In dimension `1`, `s` agrees `μ`-almost everywhere locally with a constant (`∅` or `univ`) or a
   single half-line around every point `x ∈ Ω`
@@ -40,8 +41,8 @@ or `1` at `x`, so `x` belongs neither to `∂*s` nor to `∂ᵉs`. In the third 
 * every point of `∂*s` in dimension `1` has density `1 / 2`
   (`TauCeti.hasDensityAt_of_mem_reducedBoundary_of_finrank_eq_one`), so `∂*s ⊆ ∂ᵉs` in dimension
   `≤ 1` (`TauCeti.reducedBoundary_subset_essentialBoundary_of_finrank_le_one`);
-* when `s` has locally finite perimeter in `Ω`, `∂*s = Ω ∩ ∂ᵉs` literally as sets
-  (`TauCeti.reducedBoundary_eq_inter_essentialBoundary_of_finrank_le_one`).
+* when `s` has locally finite perimeter in `Ω`, `∂ᵉs ∩ Ω = ∂*s` literally as sets
+  (`TauCeti.essentialBoundary_inter_eq_reducedBoundary_of_finrank_le_one`).
 
 ## References
 
@@ -160,35 +161,31 @@ theorem hasDensityAt_of_mem_reducedBoundary_of_finrank_eq_one (hn : finrank ℝ 
 /-- **The reduced boundary lies in the essential boundary in dimension at most one.** -/
 theorem reducedBoundary_subset_essentialBoundary_of_finrank_le_one (hn : finrank ℝ E ≤ 1) :
     reducedBoundary μ Ω s ⊆ essentialBoundary μ s := by
-  rcases Nat.le_one_iff_eq_zero_or_eq_one.1 hn with h0 | h1
-  · have : Subsingleton E := (Module.finrank_zero_iff (R := ℝ)).1 h0
-    simp
+  rcases subsingleton_or_finrank_eq_one_of_le_one hn with _ | h1
+  · simp
   · intro x hx
     exact (hasDensityAt_of_mem_reducedBoundary_of_finrank_eq_one h1 hx).mem_essentialBoundary
       (by simp) (by simp)
 
-/-- **Exact agreement of reduced and essential boundaries in dimension at most one.** For a set `s`
-of locally finite perimeter in `Ω` and `finrank ℝ E ≤ 1`, `∂*s = Ω ∩ ∂ᵉs` literally as sets. -/
-theorem reducedBoundary_eq_inter_essentialBoundary_of_finrank_le_one (hn : finrank ℝ E ≤ 1)
+/-- **Exact agreement of essential and reduced boundaries in dimension at most one.** For a set `s`
+of locally finite perimeter in `Ω` and `finrank ℝ E ≤ 1`, `∂ᵉs ∩ Ω = ∂*s` literally as sets. -/
+theorem essentialBoundary_inter_eq_reducedBoundary_of_finrank_le_one (hn : finrank ℝ E ≤ 1)
     (hu : LocallyIntegrableOn (s.indicator (1 : E → ℝ)) Ω μ)
     (hfin : ∀ K, IsCompact K → K ⊆ Ω →
       ∃ U : Opens E, K ⊆ (U : Set E) ∧ totalVariationOn μ U (s.indicator 1) ≠ ∞) :
-    reducedBoundary μ Ω s = (Ω : Set E) ∩ essentialBoundary μ s := by
-  rcases Nat.le_one_iff_eq_zero_or_eq_one.1 hn with h0 | h1
-  · have : Subsingleton E := (Module.finrank_zero_iff (R := ℝ)).1 h0
-    simp
-  · refine Subset.antisymm (subset_inter reducedBoundary_subset
-      (reducedBoundary_subset_essentialBoundary_of_finrank_le_one hn)) fun x ⟨hxΩ, hxeb⟩ => ?_
+    (essentialBoundary μ s ∩ Ω : Set E) = reducedBoundary μ Ω s := by
+  rcases subsingleton_or_finrank_eq_one_of_le_one hn with _ | h1
+  · simp
+  · refine Subset.antisymm (fun x ⟨hxeb, hxΩ⟩ => ?_)
+      (subset_inter (reducedBoundary_subset_essentialBoundary_of_finrank_le_one hn)
+        reducedBoundary_subset)
     obtain ⟨r, hr, hrΩ, hcases⟩ :=
       exists_ae_eq_empty_or_univ_or_setOf_inner_lt_of_finrank_eq_one h1 hu hfin hxΩ
     rcases hcases with he | hu' | ⟨ν, hν, hsH⟩
-    · have hd0 : HasDensityAt μ s x 0 :=
-        (hasDensityAt_congr_ae_of_mem_nhds (ball_mem_nhds x hr) he).2 hasDensityAt_empty
-      exact ((mem_essentialBoundary.1 hxeb).2 (mem_essentialExterior.2 hd0)).elim
-    · have hd1 : HasDensityAt μ s x 1 :=
-        (hasDensityAt_congr_ae_of_mem_nhds (ball_mem_nhds x hr) hu').2
-          (hasDensityAt_univ (eventually_measure_closedBall_ne_zero_ne_top μ x))
-      exact ((mem_essentialBoundary.1 hxeb).1 (mem_essentialInterior.2 hd1)).elim
+    · exact absurd hxeb (notMem_essentialBoundary_of_ae_eq_empty_or_univ isOpen_ball
+        (mem_ball_self hr) (.inl he))
+    · exact absurd hxeb (notMem_essentialBoundary_of_ae_eq_empty_or_univ isOpen_ball
+        (mem_ball_self hr) (.inr hu'))
     · exact mem_reducedBoundary_of_ae_eq_setOf_inner_lt_of_finrank_eq_one h1 hu hfin hr hrΩ
         hν hsH
 

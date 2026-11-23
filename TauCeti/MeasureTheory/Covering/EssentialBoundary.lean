@@ -9,7 +9,6 @@ public import TauCeti.MeasureTheory.Covering.Besicovitch
 public import TauCeti.MeasureTheory.Measure.OpenPos
 public import TauCeti.MeasureTheory.OuterMeasure.Basic
 public import Mathlib.MeasureTheory.Measure.Lebesgue.EqHaar
-import TauCeti.MeasureTheory.Measure.Haar.NormedSpace
 import TauCeti.MeasureTheory.Measure.InterBall
 import TauCeti.Topology.Order.IntermediateValue
 
@@ -56,8 +55,9 @@ complement fill a fixed positive proportion of arbitrarily small closed balls.
 
 * `TauCeti.HasDensityAt μ s x d`: the set `s` has density `d` at `x` with respect to `μ`.
 * `TauCeti.essentialInterior`, `TauCeti.essentialExterior`, `TauCeti.essentialBoundary`.
-* `TauCeti.essentialInterior_congr_ae`, `TauCeti.inter_essentialBoundary_inter_of_isOpen` and
-  companions: invariance under null modification and open localization.
+* `TauCeti.essentialInterior_congr_ae`, `TauCeti.inter_essentialBoundary_inter_of_isOpen`,
+  `TauCeti.notMem_essentialBoundary_of_ae_eq_empty_or_univ` and companions: invariance under null
+  modification and open localization.
 * `TauCeti.essentialInterior_compl` and `TauCeti.essentialBoundary_compl`: complements.
 * `TauCeti.essentialBoundary_union_subset` and `TauCeti.essentialBoundary_inter_subset`.
 * `TauCeti.essentialInterior_preimage_add_right` and its companions: for a translation-invariant
@@ -511,6 +511,19 @@ theorem essentialBoundary_eq_empty_of_subsingleton [Subsingleton α] :
   · have hs : s = univ := eq_univ_of_forall fun z => Subsingleton.elim y z ▸ hy
     rw [hs, essentialBoundary_univ]
 
+omit [IsLocallyFiniteMeasure μ] [μ.IsOpenPosMeasure] in
+/-- If a set agrees `μ`-almost everywhere with `∅` or `univ` on an open neighborhood `U` of `x`,
+then `x` does not lie in its essential boundary. -/
+theorem notMem_essentialBoundary_of_ae_eq_empty_or_univ {U : Set α} (hU : IsOpen U) (hxU : x ∈ U)
+    (h : s =ᵐ[μ.restrict U] (∅ : Set α) ∨ s =ᵐ[μ.restrict U] univ) :
+    x ∉ essentialBoundary μ s := by
+  intro hx
+  rcases h with he | hu
+  · have hcongr := (inter_essentialBoundary_congr_ae hU he).subset ⟨hxU, hx⟩
+    simp at hcongr
+  · have hcongr := (inter_essentialBoundary_congr_ae hU hu).subset ⟨hxU, hx⟩
+    simp at hcongr
+
 end Compl
 
 /-! ### Comparison with the topological interior and frontier -/
@@ -594,42 +607,50 @@ theorem hasDensityAt_zero_or_one_of_tendsto_min_div_of_continuousOn {ε : ℝ} (
     (μ.continuousOn_real_inter_closedBall x s hfin hb_cont).div hb_cont
       fun r hr => (hb_pos hr).ne'
   have hsum {r : ℝ} (hr : r ∈ Set.Ioo 0 ε) : 1 ≤ f r + g r ∧ f r ≤ 1 := by
-    have hb0 := hb_pos hr
     have hle : b r ≤ μ.real (s ∩ closedBall x r) + μ.real (closedBall x r \ s) := by
       simpa only [b, inter_comm s, inter_union_sdiff] using
         measureReal_union_le (s ∩ closedBall x r) (closedBall x r \ s)
-    refine ⟨?_, div_le_one_of_le₀
-      (measureReal_mono inter_subset_right (hfin r hr)) hb0.le⟩
-    rw [← add_div, one_le_div hb0]
-    exact hle
+    exact ⟨by rw [← add_div, one_le_div (hb_pos hr)]; exact hle,
+      div_le_one_of_le₀ (measureReal_mono inter_subset_right (hfin r hr)) (hb_pos hr).le⟩
   have hf_toReal (r : ℝ) : (μ (s ∩ closedBall x r) / μ (closedBall x r)).toReal = f r := by
-    rw [ENNReal.toReal_div, ← measureReal_def, ← measureReal_def]
-  have hg_toReal (r : ℝ) : (μ (closedBall x r \ s) / μ (closedBall x r)).toReal = g r := by
     rw [ENNReal.toReal_div, ← measureReal_def, ← measureReal_def]
   have hmin : Tendsto (fun r => min (f r) (g r)) (𝓝[>] 0) (𝓝 0) := by
     refine ((ENNReal.tendsto_toReal ENNReal.zero_ne_top).comp h).congr'
       (eventually_of_mem (Ioo_mem_nhdsGT hε) fun r hr => ?_)
-    have hfin₁ : μ (s ∩ closedBall x r) ≠ ∞ :=
-      measure_ne_top_of_subset inter_subset_right (hfin r hr)
-    have hfin₂ : μ (closedBall x r \ s) ≠ ∞ :=
-      measure_ne_top_of_subset sdiff_subset (hfin r hr)
     have hdiv : min (μ (s ∩ closedBall x r)) (μ (closedBall x r \ s)) / μ (closedBall x r) =
         min (μ (s ∩ closedBall x r) / μ (closedBall x r))
           (μ (closedBall x r \ s) / μ (closedBall x r)) :=
       Monotone.map_min (fun _ _ h => ENNReal.div_le_div_right h _)
-    rw [Function.comp_apply, hdiv, ENNReal.toReal_min (ENNReal.div_ne_top hfin₁ (hpos r hr))
-      (ENNReal.div_ne_top hfin₂ (hpos r hr)), hf_toReal, hg_toReal]
+    rw [Function.comp_apply, hdiv, ENNReal.toReal_min
+        (ENNReal.div_ne_top (measure_ne_top_of_subset inter_subset_right (hfin r hr)) (hpos r hr))
+        (ENNReal.div_ne_top (measure_ne_top_of_subset sdiff_subset (hfin r hr)) (hpos r hr)),
+      hf_toReal, ENNReal.toReal_div, ← measureReal_def, ← measureReal_def]
   have hconv {c : ℝ} (hc : Tendsto f (𝓝[>] 0) (𝓝 c)) :
       HasDensityAt μ s x (ENNReal.ofReal c) := by
     refine hasDensityAt_iff.2 ((ENNReal.tendsto_ofReal hc).congr'
       (eventually_of_mem (Ioo_mem_nhdsGT hε) fun r hr => ?_))
-    have hfin₁ : μ (s ∩ closedBall x r) ≠ ∞ :=
-      measure_ne_top_of_subset inter_subset_right (hfin r hr)
-    rw [← hf_toReal r, ENNReal.ofReal_toReal (ENNReal.div_ne_top hfin₁ (hpos r hr))]
-  have hdich := hf_cont.tendsto_zero_or_tendsto_of_tendsto_min hε
-    (eventually_of_mem (Ioo_mem_nhdsGT hε) fun _ hr => (hsum hr).1)
-    (eventually_of_mem (Ioo_mem_nhdsGT hε) fun _ hr => (hsum hr).2) hmin
-  exact hdich.imp (fun h0 => by simpa using hconv h0) (fun h1 => by simpa using hconv h1)
+    rw [← hf_toReal r, ENNReal.ofReal_toReal
+      (ENNReal.div_ne_top (measure_ne_top_of_subset inter_subset_right (hfin r hr)) (hpos r hr))]
+  by_contra! hnot
+  set f' : ℝ → ℝ := fun r => f (min r (ε / 2))
+  have hf'_cont : ContinuousOn f' (Ioi 0) :=
+    hf_cont.comp (continuous_id.min continuous_const).continuousOn
+      fun r hr => ⟨lt_min hr (half_pos hε), (min_le_right _ _).trans_lt (half_lt_self hε)⟩
+  have hf'_eq : f' =ᶠ[𝓝[>] 0] f :=
+    eventually_of_mem (Ioo_mem_nhdsGT (half_pos hε)) fun r hr => congrArg f (min_eq_left hr.2.le)
+  have hf'_Icc : ∀ᶠ r in 𝓝[>] 0, f' r ∈ Icc 0 1 := by
+    filter_upwards [Ioo_mem_nhdsGT (half_pos hε), hf'_eq] with r hr heq
+    exact ⟨heq.symm ▸ div_nonneg measureReal_nonneg measureReal_nonneg,
+      heq.symm ▸ (hsum ⟨hr.1, hr.2.trans (half_lt_self hε)⟩).2⟩
+  obtain ⟨c, d, hc, hd, hfreq⟩ := hf'_cont.exists_frequently_mem_Icc_of_not_tendsto hf'_Icc
+    (fun h0 => hnot.1 (by simpa using hconv (h0.congr' hf'_eq)))
+    (fun h1 => hnot.2 (by simpa using hconv (h1.congr' hf'_eq)))
+  have hfreq_min : ∃ᶠ r in 𝓝[>] 0, min c (1 - d) ≤ min (f r) (g r) := by
+    refine (hfreq.and_eventually (hf'_eq.and (Ioo_mem_nhdsGT hε))).mono fun r ⟨hrf, heq, hrε⟩ => ?_
+    rw [heq] at hrf
+    exact le_min ((min_le_left _ _).trans hrf.1)
+      ((min_le_right _ _).trans (by linarith [hrf.2, (hsum hrε).1]))
+  exact (lt_min hc (sub_pos.2 hd)).not_ge (ge_of_tendsto_of_frequently hmin hfreq_min)
 
 end ContinuousClosedBall
 
@@ -766,9 +787,9 @@ theorem hasDensityAt_zero_or_one_of_tendsto_min_div
   hasDensityAt_zero_or_one_of_tendsto_min_div_of_continuousOn one_pos
     (fun _ hr => (measure_closedBall_pos μ x hr.1).ne')
     (fun _ _ => measure_closedBall_lt_top.ne)
-    (((μ.continuousOn_addHaar_inter_closedBall x univ).mono
-        (Ioo_subset_Ico_self.trans Ico_subset_Ici_self)).congr
-      fun _ _ => congrArg (μ ·) (univ_inter _).symm)
+    (((ENNReal.continuous_mul_const (measure_ball_lt_top.ne : μ (ball (0 : E) 1) ≠ ∞)).comp
+      (ENNReal.continuous_ofReal.comp (continuous_pow (Module.finrank ℝ E)))).continuousOn.congr
+      fun _ hr => Measure.addHaar_closedBall μ x hr.1.le)
     h
 
 /-- **Points of the essential boundary are balanced at arbitrarily small scales.** Against an

@@ -22,11 +22,7 @@ import TauCeti.MeasureTheory.Measure.Real
 
 Let `μ` be a measure finite on compact sets on a proper metric space, and write
 `m(ρ) = μ(s ∩ ball x₀ ρ)` for the measure of a set `s` in the balls about `x₀`. The function `m`
-is monotone in the radius (`TauCeti.monotone_measureReal_inter_ball`); more generally, for any
-measure on a pseudo-metric space with measurable closed balls, `ρ ↦ μ.real (s ∩ closedBall x₀ ρ)`
-is continuous at `r₀` whenever `ρ ↦ μ.real (closedBall x₀ ρ)` is and some closed ball around `x₀`
-of radius strictly greater than `r₀` has finite measure
-(`TauCeti.continuousAt_measureReal_inter_closedBall`), for every set `s`. Two concentric balls of
+is monotone in the radius (`TauCeti.monotone_measureReal_inter_ball`). Two concentric balls of
 the same measure agree up to a null set (`TauCeti.ball_ae_eq_ball_of_measure_eq`); more generally,
 the measure of their symmetric difference is at most that of any two sets with the same measures
 (`TauCeti.measure_ball_symmDiff_ball_le`). Monotonicity
@@ -52,20 +48,16 @@ over the parts of `S` in the balls about a point tend to `0` with the radius
 pseudo-metric space with measurable closed balls (`[OpensMeasurableSpace]`), between radii whose
 closed balls have finite `μ`-measure the variation of `r ↦ μ.real (s ∩ closedBall x r)` is
 controlled by that of `r ↦ μ.real (closedBall x r)`
-(`MeasureTheory.Measure.dist_real_inter_closedBall_le`), so continuity and finiteness of the
-closed-ball volume on a set `S` pass to `r ↦ μ.real (s ∩ closedBall x r)` and
-`r ↦ μ (s ∩ closedBall x r)` (`MeasureTheory.Measure.continuousOn_real_inter_closedBall`,
-`MeasureTheory.Measure.continuousOn_inter_closedBall`), without any measurability assumption on
-`s`.
+(`MeasureTheory.Measure.dist_real_inter_closedBall_le`), so continuity and finiteness of
+`r ↦ μ.real (closedBall x r)` on a set `S` pass to `r ↦ μ.real (s ∩ closedBall x r)`
+(`MeasureTheory.Measure.continuousOn_real_inter_closedBall`), without any measurability assumption
+on `s`.
 
 ## Main results
 
 * `TauCeti.measure_ball_inter_ne_top`: the intersection of a ball with any set has finite
   measure.
 * `TauCeti.monotone_measureReal_inter_ball`: `ρ ↦ μ(s ∩ ball x₀ ρ)` is monotone.
-* `TauCeti.continuousAt_measureReal_inter_closedBall`: `ρ ↦ μ.real (s ∩ closedBall x₀ ρ)` is
-  continuous at `r₀` whenever `ρ ↦ μ.real (closedBall x₀ ρ)` is, provided some closed ball of
-  radius `R > r₀` has finite measure.
 * `TauCeti.ball_ae_eq_ball_of_measure_eq`: concentric balls of equal measure agree a.e.
 * `TauCeti.measure_ball_symmDiff_ball_le`: concentric balls are no farther apart in measure than
   any two sets with the same measures.
@@ -75,11 +67,10 @@ closed-ball volume on a set `S` pass to `r ↦ μ.real (s ∩ closedBall x r)` a
   arbitrarily close to `ρ` from the right extends to `ρ` for a right-continuous gauge.
 * `MeasureTheory.Measure.measure_ball_le_of_forall_lt`: a bound on the measures of the open balls
   of radius less than `ρ` bounds the open ball of radius `ρ`.
-* `MeasureTheory.Measure.dist_real_inter_closedBall_le`,
-  `MeasureTheory.Measure.continuousOn_real_inter_closedBall` and
-  `MeasureTheory.Measure.continuousOn_inter_closedBall`: variation bound and continuity of
-  `r ↦ μ (s ∩ closedBall x r)` from continuity of `r ↦ μ (closedBall x r)`, assuming measurable
-  closed balls of finite measure (with no measurability assumption on `s`).
+* `MeasureTheory.Measure.dist_real_inter_closedBall_le` and
+  `MeasureTheory.Measure.continuousOn_real_inter_closedBall`: variation bound and continuity of
+  `r ↦ μ.real (s ∩ closedBall x r)` from continuity of `r ↦ μ.real (closedBall x r)`, assuming
+  measurable closed balls of finite measure (with no measurability assumption on `s`).
 * `TauCeti.tendsto_measure_ball_nhdsGT_zero` and
   `TauCeti.tendsto_measure_ball_sdiff_singleton_nhdsGT_zero`: shrinking balls and punctured balls
   about `z` have measures tending to `μ {z}` and `0`, respectively, once at least one ball of the
@@ -128,19 +119,6 @@ theorem continuousOn_real_inter_closedBall (μ : Measure X) (x : X) (s : Set X) 
   exact ⟨δ, hδ, fun r hr hdist =>
     (μ.dist_real_inter_closedBall_le x s (hfin r hr) (hfin r₀ hr₀)).trans_lt (hδg hr hdist)⟩
 
-/-- If `r ↦ μ (closedBall x r)` is continuous on `S` and finite on `S`, then
-`r ↦ μ (s ∩ closedBall x r)` is continuous on `S` for every set `s` (no measurability is needed).
--/
-theorem continuousOn_inter_closedBall (μ : Measure X) (x : X) (s : Set X) {S : Set ℝ}
-    (hfin : ∀ r ∈ S, μ (closedBall x r) ≠ ∞)
-    (hcont : ContinuousOn (fun r => μ (closedBall x r)) S) :
-    ContinuousOn (fun r => μ (s ∩ closedBall x r)) S := by
-  have hcontReal : ContinuousOn (fun r => μ.real (closedBall x r)) S :=
-    ENNReal.continuousOn_toReal.comp hcont fun r hr => hfin r hr
-  exact (ENNReal.continuous_ofReal.comp_continuousOn
-    (μ.continuousOn_real_inter_closedBall x s hfin hcontReal)).congr fun r hr =>
-    (ofReal_measureReal (measure_ne_top_of_subset inter_subset_right (hfin r hr))).symm
-
 end ClosedBallContinuity
 
 end MeasureTheory.Measure
@@ -149,25 +127,6 @@ namespace TauCeti
 
 open MeasureTheory Metric Filter Set
 open scoped ENNReal Topology symmDiff
-
-/-- For a measure with measurable closed balls such that some closed ball around `x` of radius
-`R > r₀` has finite measure, if the measures of the closed balls about `x` depend continuously on
-the radius at `r₀`, then so do the measures `μ.real (s ∩ closedBall x r)` of the parts of any set
-`s` in these balls, measurable or not: enlarging the radius adds at most the measure of the shell
-between the two balls. -/
-theorem continuousAt_measureReal_inter_closedBall {E : Type*} [PseudoMetricSpace E]
-    [MeasurableSpace E] [OpensMeasurableSpace E] (μ : Measure E) (s : Set E) {x : E} {r₀ : ℝ}
-    (hfin : ∃ R > r₀, μ (closedBall x R) ≠ ∞)
-    (h : ContinuousAt (fun r => μ.real (closedBall x r)) r₀) :
-    ContinuousAt (fun r => μ.real (s ∩ closedBall x r)) r₀ := by
-  obtain ⟨R, hR, hRfin⟩ := hfin
-  have hfin_lt : ∀ r < R, μ (closedBall x r) ≠ ∞ := fun r hr =>
-    measure_ne_top_of_subset (closedBall_subset_closedBall hr.le) hRfin
-  refine tendsto_iff_dist_tendsto_zero.2 <|
-    squeeze_zero' (Eventually.of_forall fun _ => dist_nonneg) ?_
-      (tendsto_iff_dist_tendsto_zero.1 h)
-  filter_upwards [Iio_mem_nhds hR] with r hr
-  exact μ.dist_real_inter_closedBall_le x s (hfin_lt r hr) (hfin_lt r₀ hR)
 
 variable {E : Type*} [PseudoMetricSpace E] [ProperSpace E] [MeasurableSpace E]
 

@@ -21,7 +21,6 @@ import Mathlib.MeasureTheory.Group.Integral
 import Mathlib.MeasureTheory.Measure.Haar.NormedSpace
 import Mathlib.MeasureTheory.Measure.Real
 import Mathlib.RingTheory.Norm.Transitivity
-import TauCeti.MeasureTheory.Measure.InterBall
 import TauCeti.MeasureTheory.Measure.OpenPos
 import TauCeti.RingTheory.Norm.RCLike
 
@@ -108,9 +107,6 @@ gives a set of measure one.
 * `MeasureTheory.Measure.addHaar_real_closedBall_sdiff_ball`: the shell between the open ball of
   radius `r > 0` and the concentric closed ball of radius `s ≥ r` has measure `(sⁿ - rⁿ)` times
   that of the unit ball.
-* `MeasureTheory.Measure.continuousOn_addHaar_real_inter_closedBall`,
-  `MeasureTheory.Measure.continuousOn_addHaar_inter_closedBall`: for any set `s`, the functions
-  `r ↦ μ.real (s ∩ closedBall x r)` and `r ↦ μ (s ∩ closedBall x r)` are continuous on `[0, ∞)`.
 * `MeasureTheory.Measure.addHaar_real_ball_sdiff_closedBall`: the open annulus between the closed
   ball of radius `r ≥ 0` and the concentric open ball of radius `s ≥ r` has measure `(sⁿ - rⁿ)`
   times that of the unit ball.
@@ -913,45 +909,6 @@ theorem addHaar_eq_zero_of_prod_mk_preimage_image_eq_zero (μH : Measure H) [IsA
     Set.preimage_image_eq _ e.injective] at this
 
 end Fubini
-
-section ClosedBallContinuity
-
-open scoped ENNReal
-
-variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
-  [MeasurableSpace E] [BorelSpace E] (μ : Measure E) [μ.IsAddHaarMeasure]
-
-/-- For nonnegative radii `r₁, r₂`, the variation of `r ↦ μ.real (s ∩ closedBall x r)` is
-bounded by `|r₁ ^ n - r₂ ^ n| * μ.real (ball 0 1)` without any measurability assumption on `s`. -/
-theorem dist_addHaar_real_inter_closedBall_le (x : E) (s : Set E) {r₁ r₂ : ℝ}
-    (hr₁ : 0 ≤ r₁) (hr₂ : 0 ≤ r₂) :
-    dist (μ.real (s ∩ closedBall x r₁)) (μ.real (s ∩ closedBall x r₂)) ≤
-      dist (r₁ ^ finrank ℝ E * μ.real (ball 0 1)) (r₂ ^ finrank ℝ E * μ.real (ball 0 1)) := by
-  rw [← μ.addHaar_real_closedBall x hr₁, ← μ.addHaar_real_closedBall x hr₂]
-  exact μ.dist_real_inter_closedBall_le x s measure_closedBall_lt_top.ne
-    measure_closedBall_lt_top.ne
-
-/-- For an additive Haar measure `μ` on a finite-dimensional real normed space, the real measure
-`r ↦ μ.real (s ∩ closedBall x r)` is continuous on `[0, ∞)` for every set `s` (no measurability is
-needed). -/
-theorem continuousOn_addHaar_real_inter_closedBall (x : E) (s : Set E) :
-    ContinuousOn (fun r => μ.real (s ∩ closedBall x r)) (Set.Ici 0) := by
-  refine μ.continuousOn_real_inter_closedBall x s (fun _ _ => measure_closedBall_lt_top.ne) ?_
-  have hg : ContinuousOn (fun r : ℝ => r ^ finrank ℝ E * μ.real (ball 0 1)) (Set.Ici 0) :=
-    ((continuous_pow _).mul continuous_const).continuousOn
-  exact hg.congr fun r hr => μ.addHaar_real_closedBall x hr
-
-/-- For an additive Haar measure `μ` on a finite-dimensional real normed space, the measure
-`r ↦ μ (s ∩ closedBall x r)` is continuous on `[0, ∞)` for every set `s` (no measurability is
-needed). -/
-theorem continuousOn_addHaar_inter_closedBall (x : E) (s : Set E) :
-    ContinuousOn (fun r => μ (s ∩ closedBall x r)) (Set.Ici 0) :=
-  (ENNReal.continuous_ofReal.comp_continuousOn
-    (μ.continuousOn_addHaar_real_inter_closedBall x s)).congr fun _ _ =>
-    (ofReal_measureReal (measure_ne_top_of_subset Set.inter_subset_right
-      measure_closedBall_lt_top.ne)).symm
-
-end ClosedBallContinuity
 
 end MeasureTheory.Measure
 
