@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.LinearAlgebra.QuadraticForm.RegularFormClass.BaseChange
-import TauCeti.LinearAlgebra.QuadraticForm.Transport
+public import TauCeti.LinearAlgebra.QuadraticForm.Transport
 
 /-!
 # Transport of regular-form isometry classes along field isomorphisms
@@ -27,6 +27,8 @@ isomorphisms such as `adicCompletionCongr`. When an `Algebra K L` structure is p
 
 * `TauCeti.RegularFormPresentation.equivOfRingEquiv`: the equivalence of diagonal presentations
   induced by a ring isomorphism of fields.
+* `TauCeti.RegularFormPresentation.coordEquivOfRingEquiv`: the coordinate semilinear equivalence
+  induced by a ring isomorphism of fields on a diagonal presentation.
 * `TauCeti.RegularFormClass.mapRingEquiv`: the semiring isomorphism of regular-form isometry
   classes induced by a ring isomorphism of fields in which `2` is invertible.
 
@@ -34,6 +36,8 @@ isomorphisms such as `adicCompletionCongr`. When an `Algebra K L` structure is p
 
 * `TauCeti.presentedForm_equivOfRingEquiv`: evaluation of a transported presented form on
   coordinatewise images under `e`.
+* `TauCeti.presentedForm_equivOfRingEquiv_eq_transport`: the form presented by a transported
+  presentation is `QuadraticMap.transport` along `coordEquivOfRingEquiv`.
 * `TauCeti.equivalent_presentedForm_equivOfRingEquiv_iff`: presentation transport preserves and
   reflects isometry of the presented forms, without assuming `2` is invertible.
 * `TauCeti.RegularFormPresentation.equivOfRingEquiv_refl`,
@@ -56,7 +60,7 @@ isomorphisms such as `adicCompletionCongr`. When an `Algebra K L` structure is p
   and the plain and signed discriminants under transport.
 * `TauCeti.RegularFormClass.mapRingEquiv_baseChange`: naturality of class transport with respect to
   scalar extension in a commutative square of field homomorphisms.
-* `TauCeti.formClass_eq_mapRingEquiv_of_semilinearEquiv`,
+* `TauCeti.formClass_eq_mapRingEquiv_of_semilinearEquiv`, `TauCeti.formClass_transport`,
   `TauCeti.discr_formClass_eq_squareClassMap_of_semilinearEquiv`,
   `TauCeti.signedDiscr_formClass_eq_squareClassMap_of_semilinearEquiv`: the isometry class and
   discriminants of a regular form transported along a semilinear equivalence over a field
@@ -131,6 +135,58 @@ theorem presentedForm_equivOfRingEquiv (p : RegularFormPresentation K) (e : K �
     fun i ↦ ?_
   simp [RegularFormPresentation.equivOfRingEquiv_apply]
 
+/-- The coordinate semilinear equivalence induced by a ring isomorphism `e : K ≃+* L` on a
+diagonal presentation `p`. -/
+def RegularFormPresentation.coordEquivOfRingEquiv (p : RegularFormPresentation K)
+    (e : K ≃+* L) :
+    haveI := RingHomInvPair.of_ringEquiv e
+    haveI := RingHomInvPair.of_ringEquiv_symm e
+    (Fin p.1 → K) ≃ₛₗ[(e : K →+* L)]
+      (Fin (RegularFormPresentation.equivOfRingEquiv e p).1 → L) :=
+  haveI := RingHomInvPair.of_ringEquiv e
+  haveI := RingHomInvPair.of_ringEquiv_symm e
+  { toFun := fun x i ↦
+      e (x (Fin.cast (RegularFormPresentation.fst_equivOfRingEquiv e p) i))
+    invFun := fun y i ↦
+      e.symm (y (Fin.cast (RegularFormPresentation.fst_equivOfRingEquiv e p).symm i))
+    left_inv := fun x ↦ by ext i; simp
+    right_inv := fun y ↦ by ext i; simp
+    map_add' := fun x y ↦ by ext i; simp
+    map_smul' := fun c x ↦ by ext i; simp }
+
+/-- Evaluating `TauCeti.RegularFormPresentation.coordEquivOfRingEquiv` applies `e`
+coordinatewise through `TauCeti.RegularFormPresentation.fst_equivOfRingEquiv`. -/
+@[simp]
+theorem RegularFormPresentation.coordEquivOfRingEquiv_apply (p : RegularFormPresentation K)
+    (e : K ≃+* L) (x : Fin p.1 → K)
+    (i : Fin (RegularFormPresentation.equivOfRingEquiv e p).1) :
+    p.coordEquivOfRingEquiv e x i =
+      e (x (Fin.cast (RegularFormPresentation.fst_equivOfRingEquiv e p) i)) := (rfl)
+
+/-- The inverse of `TauCeti.RegularFormPresentation.coordEquivOfRingEquiv` applies `e.symm`
+coordinatewise through `TauCeti.RegularFormPresentation.fst_equivOfRingEquiv`. -/
+@[simp]
+theorem RegularFormPresentation.coordEquivOfRingEquiv_symm_apply
+    (p : RegularFormPresentation K) (e : K ≃+* L)
+    (y : Fin (RegularFormPresentation.equivOfRingEquiv e p).1 → L) (i : Fin p.1) :
+    (p.coordEquivOfRingEquiv e).symm y i =
+      e.symm (y (Fin.cast (RegularFormPresentation.fst_equivOfRingEquiv e p).symm i)) := (rfl)
+
+/-- The form presented by a transported presentation is the `QuadraticMap.transport` of the
+original presented form along `TauCeti.RegularFormPresentation.coordEquivOfRingEquiv`. -/
+theorem presentedForm_equivOfRingEquiv_eq_transport (p : RegularFormPresentation K)
+    (e : K ≃+* L) :
+    haveI := RingHomInvPair.of_ringEquiv e
+    haveI := RingHomInvPair.of_ringEquiv_symm e
+    presentedForm (RegularFormPresentation.equivOfRingEquiv e p) =
+      (presentedForm p).transport (p.coordEquivOfRingEquiv e) := by
+  have := RingHomInvPair.of_ringEquiv e
+  have := RingHomInvPair.of_ringEquiv_symm e
+  ext y
+  obtain ⟨x, rfl⟩ := (p.coordEquivOfRingEquiv e).surjective y
+  rw [QuadraticMap.transport_apply_apply]
+  exact presentedForm_equivOfRingEquiv p e x
+
 /-- Presentation transport along a ring isomorphism preserves and reflects isometry of the
 presented forms, without assuming `2` is invertible. -/
 @[simp]
@@ -141,26 +197,10 @@ theorem equivalent_presentedForm_equivOfRingEquiv_iff (p q : RegularFormPresenta
       (presentedForm p).Equivalent (presentedForm q) := by
   have := RingHomInvPair.of_ringEquiv e
   have := RingHomInvPair.of_ringEquiv_symm e
-  let coord (r : RegularFormPresentation K) :
-      (Fin r.1 → K) ≃ₛₗ[(e : K →+* L)]
-        (Fin (RegularFormPresentation.equivOfRingEquiv e r).1 → L) :=
-    { toFun := fun x i ↦
-        e (x (Fin.cast (RegularFormPresentation.fst_equivOfRingEquiv e r) i))
-      invFun := fun y i ↦
-        e.symm (y (Fin.cast (RegularFormPresentation.fst_equivOfRingEquiv e r).symm i))
-      left_inv := fun x ↦ by ext i; simp
-      right_inv := fun y ↦ by ext i; simp
-      map_add' := fun x y ↦ by ext i; simp
-      map_smul' := fun c x ↦ by ext i; simp }
-  have htransport (r : RegularFormPresentation K) :
-      presentedForm (RegularFormPresentation.equivOfRingEquiv e r) =
-        (presentedForm r).transport (coord r) := by
-    ext y
-    obtain ⟨x, rfl⟩ := (coord r).surjective y
-    rw [QuadraticMap.transport_apply_apply]
-    exact presentedForm_equivOfRingEquiv r e x
-  rw [htransport p, htransport q]
-  exact QuadraticMap.equivalent_transport_iff (coord p) (coord q)
+  rw [presentedForm_equivOfRingEquiv_eq_transport p e,
+    presentedForm_equivOfRingEquiv_eq_transport q e]
+  exact QuadraticMap.equivalent_transport_iff (p.coordEquivOfRingEquiv e)
+    (q.coordEquivOfRingEquiv e)
 
 /-- When an `Algebra K L` structure agrees with `e`, presentation transport agrees with
 `RegularFormPresentation.baseChange`. -/
@@ -499,6 +539,16 @@ theorem formClass_eq_mapRingEquiv_of_semilinearEquiv
       g.map_app v, RingHomInvPair.toRingEquiv_apply, hf v]
   rw [formClass_mk Q hQ p ⟨g⟩, RegularFormClass.mapRingEquiv_mk,
     formClass_mk Q' hQ' _ hEquiv]
+
+/-- The isometry class of `Q.transport f` is the transport along
+`RingHomInvPair.toRingEquiv σ σ'` of the isometry class of `Q`. -/
+@[simp]
+theorem formClass_transport {Q : QuadraticForm K V} {f : V ≃ₛₗ[σ] W}
+    (h : (Q.transport f).Nondegenerate) :
+    formClass (Q.transport f) h =
+      RegularFormClass.mapRingEquiv (RingHomInvPair.toRingEquiv σ σ')
+        (formClass Q ((QuadraticMap.nondegenerate_transport_iff f Q).mp h)) :=
+  formClass_eq_mapRingEquiv_of_semilinearEquiv _ h f (QuadraticMap.transport_apply_apply f Q)
 
 /-- If `f : V ≃ₛₗ[σ] W` intertwines two regular quadratic forms `Q` and `Q'` via
 `Q' (f v) = σ (Q v)`, then the discriminant of `Q'` is the image under `σ` of the discriminant of

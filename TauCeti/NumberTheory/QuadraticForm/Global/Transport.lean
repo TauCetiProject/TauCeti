@@ -56,9 +56,10 @@ to number fields in any universe.
   invariant at corresponding finite places.
 * `QuadraticForm.finiteHasse_eq_of_semilinearEquiv_of_valuation_eq`,
   `QuadraticForm.finiteHasse_eq_of_semilinearEquiv`,
-  `QuadraticForm.finiteHasse_equivOfRingEquiv_of_semilinearEquiv`: regular quadratic forms
-  intertwined by a semilinear equivalence over an isomorphism of number fields have the same
-  finite Hasse sign at corresponding finite places.
+  `QuadraticForm.finiteHasse_equivOfRingEquiv_of_semilinearEquiv`,
+  `QuadraticForm.finiteHasse_transport_equivOfRingEquiv`: regular quadratic forms intertwined by
+  a semilinear equivalence over an isomorphism of number fields have the same finite Hasse sign at
+  corresponding finite places.
 * `RingEquiv.exists_sq_sub_mul_sq_adicCompletion_iff_of_ringEquiv`,
   `RingEquiv.exists_sq_sub_mul_sq_adicCompletion_equivOfRingEquiv`,
   `RingEquiv.forall_adicCompletion_exists_sq_sub_mul_sq_iff_of_ringEquiv`: solvability of
@@ -241,6 +242,19 @@ theorem finiteHasse_equivOfRingEquiv_of_semilinearEquiv
       Q.finiteHasse hQ v :=
   finiteHasse_eq_of_semilinearEquiv hQ hQ' f hf
     (asIdeal_equivOfRingEquiv (RingOfIntegers.mapRingEquiv (RingHomInvPair.toRingEquiv σ σ')) v)
+
+/-- The finite Hasse sign of a semilinearly transported regular form `Q.transport f` at the image
+finite place equals the finite Hasse sign of `Q` at `v`. -/
+@[simp↓]
+theorem finiteHasse_transport_equivOfRingEquiv
+    {Q : _root_.QuadraticForm K V} {f : V ≃ₛₗ[σ] W}
+    (h : (Q.transport f).Nondegenerate) (v : HeightOneSpectrum (𝓞 K)) :
+    (Q.transport f).finiteHasse h
+        (HeightOneSpectrum.equivOfRingEquiv
+          (RingOfIntegers.mapRingEquiv (RingHomInvPair.toRingEquiv σ σ')) v) =
+      Q.finiteHasse ((QuadraticMap.nondegenerate_transport_iff f Q).mp h) v :=
+  finiteHasse_equivOfRingEquiv_of_semilinearEquiv _ h f
+    (QuadraticMap.transport_apply_apply f Q) v
 
 end SemilinearEquiv
 
