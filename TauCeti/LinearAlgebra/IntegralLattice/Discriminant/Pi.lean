@@ -229,6 +229,20 @@ theorem discriminantGroupPiEquiv_discriminantQuadraticIsometryPiOfIsometry
   rw [discriminantQuadraticIsometryPiOfIsometry_apply]
   exact congrFun ((discriminantGroupPiEquiv L).apply_symm_apply fun i ↦ f i (x i)) i
 
+/-- The inverse of the isometry induced by summandwise alphabet isometries decodes each coordinate
+of a discriminant class through the corresponding inverse alphabet isometry. -/
+@[simp]
+theorem discriminantQuadraticIsometryPiOfIsometry_symm_apply [∀ i, (L i).IsNondegenerate]
+    {hL : ∀ i, (L i).IsEven} {A : ι → FiniteQuadraticModule.{a}}
+    (f : ∀ i, FiniteQuadraticModule.Isometry (A i) ((L i).discriminantQuadraticModule (hL i)))
+    (c : (pi L).DiscriminantGroup) (i : ι) :
+    (discriminantQuadraticIsometryPiOfIsometry L f).symm c i =
+      (f i).symm (discriminantGroupPiEquiv L c i) := by
+  refine (f i).eq_symm_apply.mpr ?_
+  refine (discriminantGroupPiEquiv_discriminantQuadraticIsometryPiOfIsometry L f _ i).symm.trans ?_
+  exact congrArg (fun x ↦ discriminantGroupPiEquiv L x i)
+    ((discriminantQuadraticIsometryPiOfIsometry L f).apply_symm_apply c)
+
 /-! ## Naturality
 
 The identification `A_(⊥ i, L i) ≃ Π i, A_(L i)` is natural for the two kinds of isometries of
@@ -361,13 +375,15 @@ theorem
         (isEven_pi hL) (discriminantQuadraticIsometryPiOfIsometry L a x) =
       discriminantQuadraticIsometryPiOfIsometry M' b fun k ↦ g k (x (σ k)) := by
   obtain ⟨v, rfl⟩ := (Equiv.piCongrLeft (fun i ↦ A i) σ).surjective x
-  have hσ := discriminantQuadraticIsometry_piCongrLeft_discriminantQuadraticIsometryPiOfIsometry
-    L a σ v
-  have hpi := discriminantQuadraticIsometry_pi_discriminantQuadraticIsometryPiOfIsometry
-    (fun k ↦ a (σ k)) b f g h v
-  rw [Isometry.discriminantQuadraticIsometry_trans_apply, ← hσ,
-    Isometry.discriminantQuadraticIsometry_symm_apply_apply]
-  refine hpi.trans (congrArg _ (funext fun k ↦ ?_))
+  -- Undo the reindexing to reach `v` over `k ↦ L (σ k)`, then apply `f` componentwise.
+  rw [Isometry.discriminantQuadraticIsometry_trans, FiniteQuadraticModule.Isometry.trans_apply,
+    Isometry.discriminantQuadraticIsometry_symm,
+    ← discriminantQuadraticIsometry_piCongrLeft_discriminantQuadraticIsometryPiOfIsometry L a σ v,
+    QuadraticMap.IsometryEquiv.symm_apply_apply]
+  refine (discriminantQuadraticIsometry_pi_discriminantQuadraticIsometryPiOfIsometry
+    (fun k ↦ a (σ k)) b f g h v).trans ?_
+  congr 1
+  funext k
   rw [Equiv.piCongrLeft_apply_apply]
 
 end Naturality

@@ -301,6 +301,16 @@ theorem discriminantQuadraticIsometry_symm (e : Isometry L M)
     ((e.discriminantQuadraticIsometry_apply _ (e.discriminantGroupEquiv.symm x)).trans
       (e.discriminantGroupEquiv.apply_symm_apply x)).symm).symm
 
+/-- The inverse of the induced discriminant quadratic isometry acts through the inverse of the
+discriminant-group equivalence. -/
+@[simp]
+theorem discriminantQuadraticIsometry_symm_apply (e : Isometry L M)
+    [L.IsNondegenerate] [M.IsNondegenerate] (hL : L.IsEven)
+    (y : M.DiscriminantGroup) :
+    (e.discriminantQuadraticIsometry hL).symm y = e.discriminantGroupEquiv.symm y := by
+  rw [← e.discriminantQuadraticIsometry_symm (e.isEven_iff.mp hL),
+    discriminantQuadraticIsometry_apply, discriminantGroupEquiv_symm]
+
 /-- The discriminant quadratic isometry induced by a composite is the composite of the induced
 isometries. -/
 @[simp]
@@ -316,34 +326,6 @@ theorem discriminantQuadraticIsometry_trans (e : Isometry L M) (f : Isometry M N
     ((f.discriminantQuadraticIsometry_apply (e.isEven_iff.mp hL) _).symm.trans
       (FiniteQuadraticModule.Isometry.trans_apply (e.discriminantQuadraticIsometry hL)
         (f.discriminantQuadraticIsometry (e.isEven_iff.mp hL)) x).symm)
-
-/-- Applying the discriminant-quadratic isometry induced by a composite applies the two induced
-isometries in sequence. -/
-theorem discriminantQuadraticIsometry_trans_apply (e : Isometry L M) (f : Isometry M N)
-    [L.IsNondegenerate] [M.IsNondegenerate] [N.IsNondegenerate] (hL : L.IsEven)
-    (x : L.discriminantQuadraticModule hL) :
-    (e.trans f).discriminantQuadraticIsometry hL x =
-      f.discriminantQuadraticIsometry (e.isEven_iff.mp hL)
-        (e.discriminantQuadraticIsometry hL x) := by
-  rw [discriminantQuadraticIsometry_trans, FiniteQuadraticModule.Isometry.trans_apply]
-
-/-- Applying the discriminant-quadratic isometry of an inverse lattice isometry cancels the
-forward discriminant-quadratic isometry. -/
-theorem discriminantQuadraticIsometry_symm_apply_apply (e : Isometry L M)
-    [L.IsNondegenerate] [M.IsNondegenerate] (hL : L.IsEven) (hM : M.IsEven)
-    (x : L.discriminantQuadraticModule hL) :
-    e.symm.discriminantQuadraticIsometry hM (e.discriminantQuadraticIsometry hL x) = x := by
-  rw [discriminantQuadraticIsometry_symm]
-  exact QuadraticMap.IsometryEquiv.symm_apply_apply _ x
-
-/-- Applying the forward discriminant-quadratic isometry cancels the discriminant-quadratic
-isometry of the inverse lattice isometry. -/
-theorem discriminantQuadraticIsometry_apply_symm_apply (e : Isometry L M)
-    [L.IsNondegenerate] [M.IsNondegenerate] (hL : L.IsEven) (hM : M.IsEven)
-    (y : M.discriminantQuadraticModule hM) :
-    e.discriminantQuadraticIsometry hL (e.symm.discriminantQuadraticIsometry hM y) = y := by
-  rw [discriminantQuadraticIsometry_symm]
-  exact QuadraticMap.IsometryEquiv.apply_symm_apply _ y
 
 end Isometry
 
