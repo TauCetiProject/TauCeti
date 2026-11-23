@@ -8,8 +8,8 @@ module
 public import TauCeti.ModelTheory.Basic
 public import TauCeti.ModelTheory.Interpolation.Craig
 public import TauCeti.ModelTheory.RelationalConfiguration.LanguageMap
+import Mathlib.Topology.MetricSpace.PiNat
 import TauCeti.Topology.Algebra.Group.Perm
-import TauCeti.Topology.MetricSpace.PiNat.WordCylinder
 
 /-!
 # The López–Escobar theorem and invariant analytic separation
@@ -42,12 +42,16 @@ under isomorphism of `f` need not be cut out by a sentence.
   separating analytic sets with no isomorphic pair (or disjoint analytic sets with one side
   isomorphism invariant) by an `L_{ω₁ω}` sentence, for relational languages of arbitrary
   cardinality.
+* `TauCeti.RelationalConfiguration.exists_modelsOf_eq_of_analyticSet_compl`:
+  **Suslin–López–Escobar**, showing that every isomorphism-invariant bi-analytic set of
+  configurations is the model class of an `L_{ω₁ω}` sentence.
 * `TauCeti.RelationalConfiguration.exists_modelsOf_eq_iff`: **López–Escobar's theorem**,
   characterizing model classes of `L_{ω₁ω}` sentences on a countable carrier as the
   isomorphism-invariant measurable sets, for relational languages of arbitrary cardinality.
-* `TauCeti.RelationalConfiguration.exists_sentence_mem_modelsOf_iff`: **relative López–Escobar**
-  along a measurable family parametrized by a standard Borel space, in a countable relational
-  vocabulary.
+* `TauCeti.RelationalConfiguration.exists_sentence_separating_preimage` and
+  `TauCeti.RelationalConfiguration.exists_sentence_mem_modelsOf_iff`: **relative separation**
+  and **relative López–Escobar** along a measurable family parametrized by a standard Borel space,
+  in a countable relational vocabulary.
 
 ## References
 
@@ -205,10 +209,15 @@ private theorem realize_wordSentence {L : Language.{u, v}} {V : Type w}
     (hx : ∀ i j : ℕ,
       @Structure.RelMap (L.sum (baireWitnessLang V)) M _ 0 (Sum.inr (i, j)) Fin.elim0 ↔ x i = j)
     (w : List ℕ) :
-    SentenceInf.Realize (wordSentence L V w) M ↔ x ∈ PiNat.wordCylinder w := by
-  simp only [wordSentence, SentenceInf.realize_foldr_inf, List.forall_mem_ofFn_iff,
-    realize_bitSentence, hx, PiNat.mem_wordCylinder_iff, Fin.forall_iff]
-  rfl
+    SentenceInf.Realize (wordSentence L V w) M ↔ ∀ i : Fin w.length, x i = w[i] := by
+  simp only [wordSentence, SentenceInf.realize_def, FormulaInf.realize_def,
+    BoundedFormulaInf.realize_foldr_inf]
+  refine ⟨fun h i => ?_, fun h φ hφ => ?_⟩
+  · have hi := h _ (List.mem_ofFn.2 ⟨i, rfl⟩)
+    rwa [← FormulaInf.realize_def, ← SentenceInf.realize_def, realize_bitSentence, hx] at hi
+  · obtain ⟨i, rfl⟩ := List.mem_ofFn.1 hφ
+    simpa only [← FormulaInf.realize_def, ← SentenceInf.realize_def, realize_bitSentence, hx]
+      using h i
 
 /-- Countable disjunction over prefix cylinders contained in `U`, expressing `x ∈ U` for an open
 subset `U ⊆ ℕ → ℕ`. -/
@@ -216,7 +225,7 @@ private noncomputable def openBaireSentence (L : Language.{u, v}) (V : Type w)
     (U : Set (ℕ → ℕ)) : (L.sum (baireWitnessLang V)).Sentenceω := by
   classical
   exact BoundedFormulaInf.iSupAlong (IndexCoding.ofEncodable (List ℕ)) fun w : List ℕ =>
-    if PiNat.wordCylinder w ⊆ U then wordSentence L V w else ⊥
+    if {z : ℕ → ℕ | ∀ i : Fin w.length, z i = w[i]} ⊆ U then wordSentence L V w else ⊥
 
 private theorem realize_openBaireSentence {L : Language.{u, v}} {V : Type w}
     {M : Type w'} [(L.sum (baireWitnessLang V)).Structure M] {x : ℕ → ℕ}
@@ -225,22 +234,31 @@ private theorem realize_openBaireSentence {L : Language.{u, v}} {V : Type w}
     {U : Set (ℕ → ℕ)} (hU : IsOpen U) :
     SentenceInf.Realize (openBaireSentence L V U) M ↔ x ∈ U := by
   classical
-  simp only [openBaireSentence, SentenceInf.realize_iSupAlong]
+  simp only [openBaireSentence, SentenceInf.realize_def, FormulaInf.realize_def,
+    BoundedFormulaInf.realize_iSupAlong]
   refine ⟨fun ⟨w, hw⟩ => ?_, fun hxU => ?_⟩
   · split_ifs at hw with hsub
-    · exact hsub ((realize_wordSentence hx w).1 hw)
+    · rw [← FormulaInf.realize_def, ← SentenceInf.realize_def, realize_wordSentence hx] at hw
+      exact hsub hw
     · simp at hw
-  · obtain ⟨_, ⟨w, rfl⟩, hx_mem, hsub⟩ :=
-      (PiNat.isTopologicalBasis_wordCylinder (α := ℕ)).exists_subset_of_mem_open hxU hU
+  · obtain ⟨_, ⟨y, n, rfl⟩, hx_mem, hsub⟩ :=
+      (PiNat.isTopologicalBasis_cylinders (fun _ : ℕ => ℕ)).exists_subset_of_mem_open hxU hU
+    let w : List ℕ := List.ofFn fun i : Fin n => y i
+    have hcyl : {z : ℕ → ℕ | ∀ i : Fin w.length, z i = w[i]} = PiNat.cylinder y n := by
+      ext z
+      simp only [w, List.length_ofFn, Fin.forall_iff, Fin.getElem_fin, List.getElem_ofFn,
+        mem_ofPred_eq, PiNat.mem_cylinder_iff]
     refine ⟨w, ?_⟩
-    simp only [hsub, ↓reduceIte, realize_wordSentence hx]
-    exact hx_mem
+    split_ifs with hsub'
+    · rw [← FormulaInf.realize_def, ← SentenceInf.realize_def, realize_wordSentence hx]
+      exact mem_ofPred.1 (hcyl.symm ▸ hx_mem)
+    · exact False.elim (hsub' (hcyl.trans_subset hsub))
 
 /-- Sentence asserting that the witness constants `constTerm L v` are pairwise distinct. -/
 private noncomputable def carrierInjectiveSentence (L : Language.{u, v}) (V : Type w)
     [Countable V] : (L.sum (baireWitnessLang V)).Sentenceω := by
   classical
-  let cV : IndexCoding V ℕ := IndexCoding.ofCountable V
+  let cV : IndexCoding V ℕ := IndexCoding.ofEncodableWith (Encodable.ofCountable V)
   exact BoundedFormulaInf.iInfAlong cV fun v₁ : V =>
     BoundedFormulaInf.iInfAlong cV fun v₂ : V =>
       if v₁ = v₂ then ⊤ else (BoundedFormulaInf.equal (constTerm L v₁) (constTerm L v₂)).not
@@ -251,15 +269,16 @@ private theorem realize_carrierInjectiveSentence {L : Language.{u, v}} {V : Type
       Function.Injective (fun v : V =>
         @Structure.funMap (L.sum (baireWitnessLang V)) M _ 0 (Sum.inr v) Fin.elim0) := by
   classical
-  simp only [carrierInjectiveSentence, SentenceInf.realize_iInfAlong]
+  simp only [carrierInjectiveSentence, SentenceInf.realize_def, FormulaInf.realize_def,
+    BoundedFormulaInf.realize_iInfAlong]
   refine ⟨fun h v₁ v₂ heq => by_contra fun hne => ?_, fun hinj v₁ v₂ => ?_⟩
   · have h1 := h v₁ v₂
-    simp only [hne, ↓reduceIte, SentenceInf.realize_not, SentenceInf.realize_equal,
+    simp only [hne, ↓reduceIte, BoundedFormulaInf.realize_not, BoundedFormulaInf.realize_equal,
       realize_constTerm] at h1
     exact h1 heq
   · by_cases h : v₁ = v₂
     · simp [h]
-    · simp only [h, ↓reduceIte, SentenceInf.realize_not, SentenceInf.realize_equal,
+    · simp only [h, ↓reduceIte, BoundedFormulaInf.realize_not, BoundedFormulaInf.realize_equal,
         realize_constTerm]
       exact fun heq => h (hinj heq)
 
@@ -267,7 +286,7 @@ private theorem realize_carrierInjectiveSentence {L : Language.{u, v}} {V : Type
 `constTerm L v`. -/
 private noncomputable def carrierSurjectiveSentence (L : Language.{u, v}) (V : Type w)
     [Countable V] : (L.sum (baireWitnessLang V)).Sentenceω :=
-  let cV : IndexCoding V ℕ := IndexCoding.ofCountable V
+  let cV : IndexCoding V ℕ := IndexCoding.ofEncodableWith (Encodable.ofCountable V)
   (BoundedFormulaInf.iSupAlong cV fun v : V =>
     BoundedFormulaInf.equal (Term.var (Sum.inr (0 : Fin 1))) (constTerm L v)).all
 
@@ -276,9 +295,9 @@ private theorem realize_carrierSurjectiveSentence {L : Language.{u, v}} {V : Typ
     SentenceInf.Realize (carrierSurjectiveSentence L V) M ↔
       Function.Surjective (fun v : V =>
         @Structure.funMap (L.sum (baireWitnessLang V)) M _ 0 (Sum.inr v) Fin.elim0) := by
-  simp only [carrierSurjectiveSentence, SentenceInf.realize_all,
-    BoundedFormulaInf.realize_iSupAlong, BoundedFormulaInf.realize_equal, Term.realize_var,
-    Sum.elim_inr, realize_constTerm]
+  simp only [carrierSurjectiveSentence, SentenceInf.realize_def, FormulaInf.realize_def,
+    BoundedFormulaInf.realize_all, BoundedFormulaInf.realize_iSupAlong,
+    BoundedFormulaInf.realize_equal, Term.realize_var, Sum.elim_inr, realize_constTerm]
   exact forall_congr' fun _ => exists_congr fun _ => eq_comm
 
 /-- Sentence asserting that every atom of `L` over the witness constants agrees with `f x`. -/
@@ -286,7 +305,7 @@ private noncomputable def diagramSentence {L : Language.{u, v}} {V : Type w}
     [∀ n, Countable (L.Relations n)] [Countable V]
     (f : (ℕ → ℕ) → RelationalConfiguration L V) : (L.sum (baireWitnessLang V)).Sentenceω :=
   let cA : IndexCoding (Σ n, L.Relations n × (Fin n → V)) ℕ :=
-    IndexCoding.ofCountable _
+    IndexCoding.ofEncodableWith (Encodable.ofCountable _)
   BoundedFormulaInf.iInfAlong cA fun p =>
     (BoundedFormulaInf.rel
       ((LHom.sumInl : L →ᴸ L.sum (baireWitnessLang V)).onRelation p.2.1)
@@ -303,11 +322,9 @@ private theorem realize_diagramSentence {L : Language.{u, v}} {V : Type w}
             (fun r => @Structure.funMap (L.sum (baireWitnessLang V)) M _ 0 (Sum.inr (t r))
               Fin.elim0) ↔
           SentenceInf.Realize (openBaireSentence L V {x | (f x).eval (atom R t) = true}) M := by
-  simp only [diagramSentence, SentenceInf.realize_iInfAlong, Sigma.forall, Prod.forall,
-    SentenceInf.realize_iff]
-  refine forall_congr' fun n => forall_congr' fun R => forall_congr' fun t => iff_congr ?_ Iff.rfl
-  simp only [SentenceInf.realize_def, FormulaInf.realize_def, BoundedFormulaInf.realize_rel,
-    realize_constTerm]
+  simp only [diagramSentence, SentenceInf.realize_def, FormulaInf.realize_def,
+    BoundedFormulaInf.realize_iInfAlong, Sigma.forall, Prod.forall,
+    BoundedFormulaInf.realize_iff, BoundedFormulaInf.realize_rel, realize_constTerm]
   rfl
 
 /-- Complete `L.sum (baireWitnessLang V)`-sentence cutting out the `PC_{ω₁ω}` class of structures
@@ -424,31 +441,40 @@ private theorem exists_sentence_separating_of_countable {L : Language.{u, v}} [L
     obtain ⟨θ, rfl⟩ := exists_modelsOf_eq_of_isEmpty hD
     exact ⟨θ, hAD, hBD⟩
   | inr _ =>
-    rcases A.eq_empty_or_nonempty with rfl | hAne
-    · exact ⟨⊥, by simp, by simp⟩
-    rcases B.eq_empty_or_nonempty with rfl | hBne
-    · exact ⟨⊤, by simp, by simp⟩
-    obtain ⟨f, hf, rfl⟩ := hA.exists_continuous_range_eq hAne
-    obtain ⟨g, hg, rfl⟩ := hB.exists_continuous_range_eq hBne
-    obtain ⟨θ, h₁, h₂⟩ :=
-      pcSeparation.{u, v, w, 0, w, 0, w, w} (baireImageSentence f) (baireImageSentence g)
-        (fun M _ _ _ hMf hMg => by
-          obtain ⟨x, ⟨ef⟩⟩ := (pcMem_baireImageSentence_iff hf M).1 hMf
-          obtain ⟨y, ⟨eg⟩⟩ := (pcMem_baireImageSentence_iff hg M).1 hMg
-          exact hAB (f x) (mem_range_self x) (g y) (mem_range_self y)
-            (isoSetoid_apply.2 ⟨@Language.Equiv.comp L V M (f x).toStructure _
-              V (g y).toStructure eg (@Language.Equiv.symm L M V _ (f x).toStructure ef)⟩))
-    refine ⟨θ, ?_, disjoint_left.2 ?_⟩
-    · rintro _ ⟨x, rfl⟩
-      rw [mem_modelsOf]
-      exact @h₁ V (f x).toStructure _
-        ((@pcMem_baireImageSentence_iff L _ V _ _ f hf V (f x).toStructure).2
-          ⟨x, ⟨@Language.Equiv.refl L V (f x).toStructure⟩⟩)
-    · rintro _ ⟨y, rfl⟩ hθ
-      rw [mem_modelsOf] at hθ
-      exact @h₂ V (g y).toStructure _
-        ((@pcMem_baireImageSentence_iff L _ V _ _ g hg V (g y).toStructure).2
-          ⟨y, ⟨@Language.Equiv.refl L V (g y).toStructure⟩⟩) hθ
+    obtain ⟨X, _, _, f₀, hf₀, rfl⟩ := analyticSet_iff_exists_polishSpace_range.1 hA
+    obtain ⟨Y, _, _, g₀, hg₀, rfl⟩ := analyticSet_iff_exists_polishSpace_range.1 hB
+    cases isEmpty_or_nonempty X with
+    | inl _ => exact ⟨⊥, by simp [range_eq_empty], by simp⟩
+    | inr _ =>
+      cases isEmpty_or_nonempty Y with
+      | inl _ => exact ⟨⊤, by simp, by simp [range_eq_empty]⟩
+      | inr _ =>
+        obtain ⟨pX, hpX, hsurjX⟩ := PolishSpace.exists_nat_nat_continuous_surjective X
+        obtain ⟨pY, hpY, hsurjY⟩ := PolishSpace.exists_nat_nat_continuous_surjective Y
+        let f := f₀ ∘ pX
+        let g := g₀ ∘ pY
+        have hf : Continuous f := hf₀.comp hpX
+        have hg : Continuous g := hg₀.comp hpY
+        rw [← hsurjX.range_comp, ← hsurjY.range_comp] at hAB ⊢
+        obtain ⟨θ, h₁, h₂⟩ :=
+          pcSeparation.{u, v, w, 0, w, 0, w, w} (baireImageSentence f) (baireImageSentence g)
+            (fun M _ _ _ hMf hMg => by
+              obtain ⟨x, ⟨ef⟩⟩ := (pcMem_baireImageSentence_iff hf M).1 hMf
+              obtain ⟨y, ⟨eg⟩⟩ := (pcMem_baireImageSentence_iff hg M).1 hMg
+              exact hAB (f x) (mem_range_self x) (g y) (mem_range_self y)
+                (isoSetoid_apply.2 ⟨@Language.Equiv.comp L V M (f x).toStructure _
+                  V (g y).toStructure eg (@Language.Equiv.symm L M V _ (f x).toStructure ef)⟩))
+        refine ⟨θ, ?_, disjoint_left.2 ?_⟩
+        · rintro _ ⟨x, rfl⟩
+          rw [mem_modelsOf]
+          exact @h₁ V (f x).toStructure _
+            ((@pcMem_baireImageSentence_iff L _ V _ _ f hf V (f x).toStructure).2
+              ⟨x, ⟨@Language.Equiv.refl L V (f x).toStructure⟩⟩)
+        · rintro _ ⟨y, rfl⟩ hθ
+          rw [mem_modelsOf] at hθ
+          exact @h₂ V (g y).toStructure _
+            ((@pcMem_baireImageSentence_iff L _ V _ _ g hg V (g y).toStructure).2
+              ⟨y, ⟨@Language.Equiv.refl L V (g y).toStructure⟩⟩) hθ
 
 end BairePC
 

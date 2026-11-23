@@ -7,7 +7,6 @@ module
 
 public import TauCeti.ModelTheory.RelationalConfiguration.Sentence.Basic
 public import TauCeti.SetTheory.Descriptive.Antichain
-import TauCeti.Basic.Countable.Basic
 import TauCeti.Data.Set.Countable
 import TauCeti.Data.Setoid.Countable
 import TauCeti.ModelTheory.RelationalConfiguration.Observables
@@ -57,7 +56,7 @@ public section
 
 universe u v w uι uκ
 
-open FirstOrder FirstOrder.Language MeasureTheory Set
+open Cardinal FirstOrder FirstOrder.Language MeasureTheory Set
 
 namespace TauCeti.RelationalConfiguration
 
@@ -80,7 +79,10 @@ theorem not_hasCantorAntichainOn_of_forall_countable_image_sentenceTheory
   obtain ⟨θ, hθ⟩ := exists_sentenceTheory_apply_eq hf_cont.measurable hf_ne
   have huniv : (univ : Set (ℕ → Bool)).Countable :=
     (h θ).mono (by rintro x -; exact ⟨f x, hfC x, hθ x⟩)
-  exact Set.not_countable_univ huniv
+  have hcount : Countable (ℕ → Bool) := countable_univ_iff.1 huniv
+  have hcard : #(ℕ → Bool) = 𝔠 := by
+    rw [mk_arrow, mk_bool, mk_nat, lift_id, lift_id, two_power_aleph0]
+  exact (hcard.symm ▸ aleph0_lt_continuum).not_ge (mk_le_aleph0_iff.2 hcount)
 
 /-- If every countable sequence of `L_{ω₁ω}` sentences realizes only countably many truth sequences
 on `C`, then `C` is thin for isomorphism. No measurability or invariance of `C` is required. -/

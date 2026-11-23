@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.SetTheory.Descriptive.SmallFamily.Basic
-public import TauCeti.Topology.MetricSpace.PiNat.WordCylinder
+public import TauCeti.Topology.Instances.CantorSpace
 import TauCeti.MeasureTheory.Constructions.Polish.Analytic
 
 /-!
