@@ -199,7 +199,7 @@ noncomputable def tensorRightFreeIso (V : C) :
     rw [← cancel_epi ((tensorFreeIso M).inv.app V)]
     apply Hom.ext
     simp only [comp_hom', tensorFreeIso_inv_app_hom, Functor.flip_obj_map,
-      curriedTensor_map_app, Category.assoc, tensorπ_whiskerRight_hom_assoc,
+      MonoidalCategory.curriedTensor_map_app, Category.assoc, tensorπ_whiskerRight_hom_assoc,
       Hom.mk'_hom, Iso.app_hom]
     rw [whisker_exchange_assoc, freeModι_tensorπ_tensorFreeIso_hom,
       freeModι_tensorπ_tensorFreeIso_hom_assoc]

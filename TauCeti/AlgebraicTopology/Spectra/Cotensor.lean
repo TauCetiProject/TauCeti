@@ -8,6 +8,7 @@ module
 public import TauCeti.AlgebraicTopology.Spectra.MappingSpace
 public import TauCeti.CategoryTheory.Monoidal.Mod.Free.Closed
 import Mathlib.CategoryTheory.Adjunction.Whiskering
+import Mathlib.CategoryTheory.Adjunction.ParametrizedLimits
 
 /-!
 # Cotensors of symmetric spectra
@@ -296,12 +297,6 @@ namespace TauCeti.SymmetricSpectrum
 
 open scoped DayFunctor
 
-/-- Smashing every level with a fixed pointed simplicial set, with the sphere acting on the
-spectrum coordinate. On objects this is the existing `levelSmash` construction. -/
-noncomputable abbrev levelSmashRight (K : PointedSSet.{0}) :
-    SymmetricSpectrum ⥤ SymmetricSpectrum :=
-  Mod.tensorRight ((SymmetricSequence.free 0).obj K)
-
 /-- The point-set cotensor `E^K`: the internal function spectrum from the free spectrum `F₀ K`.
 Its levels are the pointed mapping objects `Map_*(K, E_n)` (`cotensorLevelIso`). -/
 noncomputable abbrev cotensor (K : PointedSSet.{0}) :
@@ -319,6 +314,20 @@ noncomputable def levelSmashCotensorAdjunction (K : PointedSSet.{0}) :
 preserves colimits of all sizes. -/
 instance (K : PointedSSet.{0}) : (levelSmashRight K).IsLeftAdjoint :=
   (levelSmashCotensorAdjunction K).isLeftAdjoint
+
+instance (K : PointedSSet.{0}) : (levelSmashBifunctor.flip.obj K).IsLeftAdjoint :=
+  (levelSmashCotensorAdjunction K).isLeftAdjoint
+
+section
+universe w w'
+
+/-- Fixing the target spectrum `Y`, the contravariant functor `X ↦ Map(X, Y)` sends colimits of
+symmetric spectra to limits of pointed simplicial sets. -/
+instance (Y : SymmetricSpectrum) :
+    Limits.PreservesLimitsOfSize.{w', w} (mappingSpaceBifunctor.flip.obj Y) where
+  preservesLimitsOfShape := levelSmashMappingSpaceAdjunction₂.preservesLimitsOfShape_flip_obj _ Y
+
+end
 
 /-- Cotensoring symmetric spectra by a fixed pointed simplicial set `K` is a right adjoint, hence
 preserves limits of all sizes. -/

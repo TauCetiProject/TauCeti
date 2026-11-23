@@ -49,6 +49,8 @@ Joël Riou and Jack McKoen and `ParametrizedAdjunction.hasLiftingProperty_iff` b
 
 ## References
 
+* M. Hovey, *Model categories*, Mathematical Surveys and Monographs 63, American Mathematical
+  Society, 1999, Section 4.2.
 * M. Hovey, B. Shipley and J. Smith, *Symmetric spectra*, J. Amer. Math. Soc. 13 (2000),
   Proposition 5.1.4 and Lemma 5.1.5.
 -/
@@ -264,15 +266,6 @@ lemma levelTrivialFibrations_cotensorBifunctor_map_app {K L : PointedSSet.{0}} {
   levelTrivialFibrations_cotensorBifunctor_pullbackObjObjπ_of_anodyne hj
     (levelFibrations_terminal_from E)
     (Functor.PullbackObjObj.ofIsTerminal cotensorBifunctor j (terminal.from E) terminalIsTerminal)
-
-/-- Precomposing a cotensor `E^L ⟶ E^K` along an anodyne based map `j : K ⟶ L` gives a level
-equivalence whenever every level of `E` is a Kan complex. -/
-lemma levelEquivalences_cotensorBifunctor_map_app {K L : PointedSSet.{0}} {j : K ⟶ L}
-    (hj : SSet.anodyneExtensions j.right) (E : SymmetricSpectrum)
-    [∀ n, SSet.KanComplex ((evaluation n).obj E).right] :
-    levelEquivalences ((cotensorBifunctor.map j.op).app E) :=
-  levelTrivialFibrations_le_levelEquivalences _
-    (levelTrivialFibrations_cotensorBifunctor_map_app hj E)
 
 /-- Level `n` of the cotensor `E^K` is a Kan complex whenever level `n` of `E` is a Kan
 complex. -/
