@@ -9,8 +9,7 @@ public import Mathlib.Algebra.BigOperators.Finprod
 public import Mathlib.GroupTheory.GroupAction.Quotient
 public import Mathlib.LinearAlgebra.Finsupp.LinearCombination
 public import Mathlib.RepresentationTheory.Intertwining
-public import Mathlib.Topology.Algebra.OpenSubgroup
-import TauCeti.Algebra.GroupAction.DiagonalOrbits
+public import TauCeti.Algebra.GroupAction.DiagonalOrbits
 import TauCeti.RepresentationTheory.OfMulAction
 
 /-!
@@ -36,16 +35,16 @@ No measure is used, so the construction works over every coefficient ring.
 
 ## Main declarations
 
-* `TauCeti.FiniteStabilizerOrbits`: every orbit of every point stabilizer is finite, with
-  `TauCeti.FiniteStabilizerOrbits.of_isCompact_of_isOpen` for compact open stabilizers.
-* `TauCeti.permutationHeckeModule G S A`: the `A`-module `Fun_G(S × S, A)`.
+* `TauCeti.permutationHeckeModule G S A`: the `A`-module `Fun_G(S × S, A)`, containing each
+  orbit indicator (`TauCeti.PermutationHecke.indicator_orbit_mem`).
 * `TauCeti.PermutationHecke.toEnd`: the action of `Fun_G(S × S, A)` on `S →₀ A`, with
   `toEnd_single` (`h * s = Σ_t h(t, s) t`) and `toEnd_injective`.
 * `TauCeti.PermutationHecke.toIntertwiningMap`: the same action on `A[S]`, by intertwining maps of
   `Representation.ofMulAction A G S`.
 * `TauCeti.PermutationHecke.mul_apply`: the matrix product, with `toEnd_mul`.
-* `TauCeti.PermutationHecke.one_apply`, `TauCeti.PermutationHecke.toIntertwiningMapAlgEquiv`: for
-  finitely many orbits, the unit and the algebra isomorphism with `End_G(A[S])`.
+* `TauCeti.PermutationHecke.one_apply`, `TauCeti.PermutationHecke.algebraMap_apply`,
+  `TauCeti.PermutationHecke.toIntertwiningMapAlgEquiv`: for finitely many orbits, the unit, the
+  scalar matrices and the algebra isomorphism with `End_G(A[S])`.
 
 ## References
 
@@ -62,29 +61,7 @@ open MulAction
 
 namespace TauCeti
 
-variable (G S : Type*) [Group G] [MulAction G S]
-
-/-- Every orbit of every point stabilizer is finite: for all `x y : S`, the orbit of `y` under the
-stabilizer of `x` is finite. This holds when `G` is a topological group and every point stabilizer
-is compact and open (`TauCeti.FiniteStabilizerOrbits.of_isCompact_of_isOpen`). -/
-class FiniteStabilizerOrbits : Prop where
-  finite_orbit (x y : S) : (orbit (stabilizer G x) y).Finite
-
-variable {G S}
-
-/-- If every point stabilizer is compact and open, every orbit of every point stabilizer is
-finite. -/
-theorem FiniteStabilizerOrbits.of_isCompact_of_isOpen [TopologicalSpace G] [IsTopologicalGroup G]
-    (hc : ∀ x : S, IsCompact (stabilizer G x : Set G))
-    (ho : ∀ x : S, IsOpen (stabilizer G x : Set G)) : FiniteStabilizerOrbits G S where
-  finite_orbit x y := by
-    let K := stabilizer G x
-    have : CompactSpace K := isCompact_iff_compactSpace.mp (hc x)
-    have hopen : IsOpen (stabilizer K y : Set K) := (ho y).preimage continuous_subtypeVal
-    have : Finite (K ⧸ stabilizer K y) := (stabilizer K y).quotient_finite_of_isOpen hopen
-    exact Set.finite_coe_iff.mp (.of_equiv _ (orbitEquivQuotientStabilizer K y).symm)
-
-variable (G S) (A : Type*) [CommRing A]
+variable (G S : Type*) [Group G] [MulAction G S] (A : Type*) [CommRing A]
 
 /-- The **permutation Hecke module** `Fun_G(S × S, A)`: functions `S × S → A` invariant under the
 diagonal action of `G` whose support is a finite union of `G`-orbits. -/
@@ -110,6 +87,14 @@ theorem mem_iff {h : S × S → A} :
       (Quotient.mk (orbitRel G (S × S)) '' Function.support h).Finite :=
   Iff.rfl
 
+/-- The indicator of a diagonal orbit lies in `Fun_G(S × S, A)`. -/
+theorem indicator_orbit_mem (p : S × S) :
+    Set.indicator (orbit G p) 1 ∈ permutationHeckeModule G S A := by
+  refine ⟨fun g q ↦ ?_, (Set.finite_singleton (Quotient.mk (orbitRel G (S × S)) p)).subset ?_⟩
+  · simp only [Set.indicator, Pi.one_apply, ← orbit_eq_iff, orbit_smul]
+  rintro _ ⟨q, hq, rfl⟩
+  exact Quotient.sound (Set.mem_of_indicator_ne_zero hq)
+
 /-- Elements of `Fun_G(S × S, A)` are invariant under the diagonal action. -/
 @[simp]
 theorem apply_smul (h : permutationHeckeModule G S A) (g : G) (x y : S) :
@@ -122,26 +107,6 @@ section Finiteness
 
 variable [FiniteStabilizerOrbits G S]
 
-/-- The points `t` with `(t, s)` in a given orbit form a finite set: they lie in one orbit of
-the stabilizer of `s`. -/
-private theorem finite_setOf_mk_right_eq (s : S) (q : Quotient (orbitRel G (S × S))) :
-    {t | Quotient.mk (orbitRel G (S × S)) (t, s) = q}.Finite := by
-  rcases Set.eq_empty_or_nonempty {t | Quotient.mk (orbitRel G (S × S)) (t, s) = q} with
-    h | ⟨t₀, ht₀⟩
-  · simp [h]
-  refine (FiniteStabilizerOrbits.finite_orbit (G := G) s t₀).subset fun t ht ↦ ?_
-  have hst : MulAction.orbitRelQuotientStabilizerMap (G := G) s (Quotient.mk'' t) =
-      MulAction.orbitRelQuotientStabilizerMap s (Quotient.mk'' t₀) := by
-    simpa using ht.trans ht₀.symm
-  exact Quotient.exact' (MulAction.orbitRelQuotientStabilizerMap_injective s hst)
-
-/-- The points `y` with `(x, y)` in a given orbit form a finite set, by swapping coordinates. -/
-private theorem finite_setOf_mk_left_eq (x : S) (q : Quotient (orbitRel G (S × S))) :
-    {y | Quotient.mk (orbitRel G (S × S)) (x, y) = q}.Finite :=
-  (finite_setOf_mk_right_eq x (Quotient.map' (s₁ := orbitRel G (S × S))
-    (s₂ := orbitRel G (S × S)) Prod.swap (by rintro _ b ⟨g, rfl⟩; exact ⟨g, rfl⟩) q)).subset
-    fun _ hy ↦ by subst hy; rw [Set.mem_ofPred_eq, Quotient.map'_mk'', Prod.swap_prod_mk]
-
 omit [FiniteStabilizerOrbits G S] in
 /-- The entries of `h` along a map `f : S → S × S` that meets each orbit in finitely many points
 have finite support. -/
@@ -153,12 +118,12 @@ private theorem finite_support_comp (h : permutationHeckeModule G S A) (f : S �
 /-- Each row of an element of `Fun_G(S × S, A)` has finitely many nonzero entries. -/
 theorem finite_support_row (h : permutationHeckeModule G S A) (x : S) :
     (Function.support fun y ↦ (h : S × S → A) (x, y)).Finite :=
-  finite_support_comp h _ (finite_setOf_mk_left_eq x)
+  finite_support_comp h _ (FiniteStabilizerOrbits.finite_setOf_mk_left_eq x)
 
 /-- Each column of an element of `Fun_G(S × S, A)` has finitely many nonzero entries. -/
 theorem finite_support_column (h : permutationHeckeModule G S A) (s : S) :
     (Function.support fun t ↦ (h : S × S → A) (t, s)).Finite :=
-  finite_support_comp h _ (finite_setOf_mk_right_eq s)
+  finite_support_comp h _ (FiniteStabilizerOrbits.finite_setOf_mk_right_eq s)
 
 /-- The column of `h` at `s`, the finitely supported function `t ↦ h(t, s)`. -/
 def column (h : permutationHeckeModule G S A) (s : S) : S →₀ A :=
@@ -272,6 +237,7 @@ theorem mul_apply (h₁ h₂ : permutationHeckeModule G S A) (x z : S) :
   (rfl)
 
 /-- The matrix product corresponds to composition of the actions on `S →₀ A`. -/
+@[simp]
 theorem toEnd_mul (h₁ h₂ : permutationHeckeModule G S A) :
     toEnd G S A (h₁ * h₂) = toEnd G S A h₁ * toEnd G S A h₂ := by
   refine Finsupp.lhom_ext fun z c ↦ ?_
@@ -283,6 +249,7 @@ theorem toEnd_mul (h₁ h₂ : permutationHeckeModule G S A) :
   ring
 
 /-- The matrix product corresponds to composition of the actions on `A[S]`. -/
+@[simp]
 theorem toIntertwiningMap_mul (h₁ h₂ : permutationHeckeModule G S A) :
     toIntertwiningMap G S A (h₁ * h₂) = toIntertwiningMap G S A h₁ * toIntertwiningMap G S A h₂ :=
   Representation.IntertwiningMap.ext <| LinearMap.ext fun f ↦ MonoidAlgebra.coeff_injective <| by
@@ -328,11 +295,13 @@ instance instOnePermutationHeckeModule : One (permutationHeckeModule G S A) wher
 
 omit [FiniteStabilizerOrbits G S] in
 /-- The unit of `Fun_G(S × S, A)` is the diagonal indicator. -/
+@[simp]
 theorem one_apply (x y : S) :
     ((1 : permutationHeckeModule G S A) : S × S → A) (x, y) = Finsupp.single y 1 x :=
   (rfl)
 
 /-- The unit acts as the identity. -/
+@[simp]
 theorem toEnd_one : toEnd G S A 1 = 1 := by
   refine Finsupp.lhom_ext fun s c ↦ ?_
   ext t
@@ -364,6 +333,7 @@ private theorem pow_succ_def (h : permutationHeckeModule G S A) (n : ℕ) :
   (rfl)
 
 /-- The action of a power is the power of the action. -/
+@[simp]
 theorem toEnd_pow (h : permutationHeckeModule G S A) (n : ℕ) :
     toEnd G S A (h ^ n) = toEnd G S A h ^ n := by
   induction n with
@@ -371,10 +341,12 @@ theorem toEnd_pow (h : permutationHeckeModule G S A) (n : ℕ) :
   | succ n ih => rw [pow_succ_def, toEnd_mul, ih, pow_succ]
 
 /-- The action of a natural number is multiplication by it. -/
+@[simp]
 theorem toEnd_natCast (n : ℕ) : toEnd G S A (n : permutationHeckeModule G S A) = n := by
   rw [natCast_def, map_nsmul, toEnd_one, nsmul_one]
 
 /-- The action of an integer is multiplication by it. -/
+@[simp]
 theorem toEnd_intCast (n : ℤ) : toEnd G S A (n : permutationHeckeModule G S A) = n := by
   rw [intCast_def, map_zsmul, toEnd_one]
   exact zsmul_one (R := Module.End A (S →₀ A)) n
@@ -389,6 +361,14 @@ instance instRingPermutationHeckeModule : Ring (permutationHeckeModule G S A) :=
 instance instAlgebraPermutationHeckeModule : Algebra A (permutationHeckeModule G S A) :=
   .ofModule smul_mul_assoc mul_smul_comm
 
+/-- The scalar matrices: `algebraMap A _ c` is `c` on the diagonal and `0` off it. -/
+@[simp]
+theorem algebraMap_apply (c : A) (x y : S) :
+    ((algebraMap A (permutationHeckeModule G S A) c : permutationHeckeModule G S A) :
+      S × S → A) (x, y) = Finsupp.single y c x := by
+  classical
+  simp [Algebra.algebraMap_eq_smul_one, one_apply, Finsupp.single_apply]
+
 variable (G S A) in
 /-- The action of `Fun_G(S × S, A)` on `S →₀ A`, as an algebra homomorphism. -/
 def toEndAlgHom : permutationHeckeModule G S A →ₐ[A] Module.End A (S →₀ A) :=
@@ -401,6 +381,7 @@ theorem toEndAlgHom_apply (h : permutationHeckeModule G S A) :
   (rfl)
 
 /-- The unit acts as the identity on `A[S]`. -/
+@[simp]
 theorem toIntertwiningMap_one : toIntertwiningMap G S A 1 = 1 :=
   Representation.IntertwiningMap.ext <| LinearMap.ext fun f ↦ MonoidAlgebra.coeff_injective <| by
     simp [toEnd_one]
