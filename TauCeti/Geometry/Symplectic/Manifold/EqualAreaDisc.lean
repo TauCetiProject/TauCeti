@@ -185,8 +185,8 @@ theorem isEmbedding_discToSphere (a : ℝ) :
   -- The radial stretching restricted to the disc has the continuous left inverse `e`.
   have hf : Continuous fun z : ball (0 : ℂ) r ↦ e.symm (orthonormalBasisOneI.repr z) :=
     (OpenPartialHomeomorph.continuousOn_univBall_symm 0 r).comp_continuous
-      (orthonormalBasisOneI.repr.continuous.comp continuous_subtype_val)
-      fun z ↦ repr_mem_ball z.2
+      (orthonormalBasisOneI.repr.continuous.comp continuous_subtypeVal)
+      fun z ↦ repr_mem_ball z.property
   have hg : Continuous fun u : ℝ² ↦ (⟨_, hmem u⟩ : ball (0 : ℂ) r) :=
     (orthonormalBasisOneI.repr.symm.continuous.comp
       (OpenPartialHomeomorph.continuous_univBall 0 r)).subtype_mk _
@@ -194,7 +194,8 @@ theorem isEmbedding_discToSphere (a : ℝ) :
       fun z : ball (0 : ℂ) r ↦ e.symm (orthonormalBasisOneI.repr z) :=
     fun z ↦ Subtype.ext <| by
       dsimp only
-      rw [e.right_inv (by rw [OpenPartialHomeomorph.univBall_target 0 hr]; exact repr_mem_ball z.2),
+      rw [e.right_inv (by
+          rw [OpenPartialHomeomorph.univBall_target 0 hr]; exact repr_mem_ball z.property),
         LinearIsometryEquiv.symm_apply_apply]
   exact isOpenEmbedding_stereoSphere.isEmbedding.comp (hleft.isEmbedding hg hf)
 
