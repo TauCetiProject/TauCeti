@@ -7,10 +7,9 @@ module
 
 public import Mathlib.Analysis.InnerProductSpace.Basic
 public import Mathlib.MeasureTheory.Function.Holder
+public import Mathlib.MeasureTheory.Integral.IntegrableOn
 public import TauCeti.MeasureTheory.Function.Lp.One
 import Mathlib.Analysis.InnerProductSpace.Continuous
-
-import Mathlib.MeasureTheory.Integral.IntegrableOn
 
 /-!
 # Hölder estimates for pointwise pairings
@@ -30,9 +29,12 @@ integration-by-parts arguments:
 * `ContinuousLinearMap.lpPairing_mul_eq_integral`: the Hölder pairing
   `ContinuousLinearMap.lpPairing` of the multiplication of a complete normed algebra is the
   integral of the product.
-* `ContinuousLinearMap.integrable_of_bilin_of_continuousOn`: a continuous bilinear pairing of an
-  integrable function vanishing off a compact set `K` with a function continuous on `K` is
-  integrable.
+* `ContinuousLinearMap.integrableOn_of_bilin_of_continuousOn_of_ae_mem`: a continuous bilinear
+  pairing of a function integrable on a set `s` with a function continuous on a compact set `K` of
+  full measure for `μ.restrict s` is integrable on `s`.
+* `ContinuousLinearMap.integrable_of_bilin_of_continuousOn`: a continuous bilinear pairing of a
+  function integrable on a compact set `K` and vanishing almost everywhere off `K` with a function
+  continuous on `K` is integrable.
 * `ContinuousLinearMap.norm_lpPairing_apply_apply_le`: Hölder's inequality
   `‖B.lpPairing μ p q g f‖ ≤ ‖B‖ * ‖g‖ * ‖f‖` for the integral pairing of a bilinear map `B`.
 * `TauCeti.enorm_integral_smul_le`: Hölder's inequality `‖∫ a • f‖ ≤ ‖a‖_p ‖f‖_q` for the
@@ -128,30 +130,40 @@ namespace ContinuousLinearMap
 open MeasureTheory
 
 variable {α 𝕜 E F G : Type*} [TopologicalSpace α] [MeasurableSpace α] [OpensMeasurableSpace α]
-  [T2Space α] [NontriviallyNormedField 𝕜] [NormedAddCommGroup E] [NormedAddCommGroup F]
+  [NontriviallyNormedField 𝕜] [NormedAddCommGroup E] [NormedAddCommGroup F]
   [NormedAddCommGroup G] [NormedSpace 𝕜 E] [NormedSpace 𝕜 F] [NormedSpace 𝕜 G] {μ : Measure α}
 
-/-- A continuous bilinear pairing of an integrable function vanishing off a compact set `K` with a
-function continuous on `K` is integrable. -/
-theorem integrable_of_bilin_of_continuousOn (B : E →L[𝕜] F →L[𝕜] G) {f : α → E}
-    (hf : Integrable f μ) {K : Set α} (hK : IsCompact K) (hfK : ∀ x ∉ K, f x = 0) {g : α → F}
-    (hg : ContinuousOn g K) : Integrable (fun x => B (f x) (g x)) μ := by
+/-- A continuous bilinear pairing of a function integrable on a set `s` with a function continuous
+on a compact set `K` of full measure for `μ.restrict s` (that is, `∀ᵐ x ∂μ.restrict s, x ∈ K`) is
+integrable on `s`. Neither `s` nor `K` needs to be measurable. -/
+theorem integrableOn_of_bilin_of_continuousOn_of_ae_mem (B : E →L[𝕜] F →L[𝕜] G) {f : α → E}
+    {g : α → F} {s K : Set α} (hf : IntegrableOn f s μ) (hg : ContinuousOn g K)
+    (hK : IsCompact K) (hsK : ∀ᵐ x ∂μ.restrict s, x ∈ K) :
+    IntegrableOn (fun x ↦ B (f x) (g x)) s μ := by
   obtain ⟨C, hC⟩ := hK.exists_bound_of_continuousOn hg
-  have heq : (fun x => B (f x) (g x)) = fun x => B (f x) (K.indicator g x) := by
-    funext x
-    by_cases hx : x ∈ K
-    · rw [Set.indicator_of_mem hx]
-    · simp [hfK x hx]
-  rw [heq]
-  refine B.integrable_of_bilin_of_bdd_right (max C 0) hf
-    ((aestronglyMeasurable_indicator_iff hK.measurableSet).2
-      (hg.aestronglyMeasurable_of_isCompact hK hK.measurableSet))
-    (.of_forall fun x => ?_)
-  by_cases hx : x ∈ K
-  · rw [Set.indicator_of_mem hx]
-    exact (hC x hx).trans (le_max_left _ _)
-  · rw [Set.indicator_of_notMem hx, norm_zero]
-    exact le_max_right _ _
+  -- `K` need not be measurable, so measure `g` on a measurable `T ⊆ K` of full measure.
+  obtain ⟨T, hTae, hTm, hTK⟩ := hsK.exists_measurable_mem
+  have hgT : AEStronglyMeasurable g ((μ.restrict s).restrict T) :=
+    (hg.aestronglyMeasurable_of_subset_isCompact hK hTm hTK).mono_measure
+      (Measure.restrict_mono subset_rfl Measure.restrict_le_self)
+  rw [Measure.restrict_eq_self_of_ae_mem hTae] at hgT
+  exact B.integrable_of_bilin_of_bdd_right C hf hgT (hsK.mono fun x hx ↦ hC x hx)
+
+/-- A continuous bilinear pairing of a function integrable on a compact set `K` and vanishing
+almost everywhere off `K` with a function continuous on `K` is integrable. The domain need not be
+Hausdorff, and `K` need not be measurable. -/
+theorem integrable_of_bilin_of_continuousOn (B : E →L[𝕜] F →L[𝕜] G) {f : α → E} {K : Set α}
+    (hf : IntegrableOn f K μ) (hK : IsCompact K) (hfK : ∀ᵐ x ∂μ, x ∉ K → f x = 0) {g : α → F}
+    (hg : ContinuousOn g K) : Integrable (fun x => B (f x) (g x)) μ := by
+  have hfi := hf.integrable_of_ae_notMem_eq_zero hfK
+  -- `K` need not be measurable, so integrate over the support of `f` instead: it is
+  -- null-measurable, and almost all of it lies in `K`.
+  refine (B.integrableOn_of_bilin_of_continuousOn_of_ae_mem (s := Function.support f)
+    hfi.integrableOn hg hK ?_).integrable_of_forall_notMem_eq_zero fun x hx ↦ ?_
+  · filter_upwards [ae_restrict_mem₀ hfi.aestronglyMeasurable.nullMeasurableSet_support,
+      ae_restrict_of_ae hfK] with x hx hxK
+    exact by_contra fun h ↦ Function.mem_support.mp hx (hxK h)
+  · simp [Function.notMem_support.mp hx]
 
 end ContinuousLinearMap
 

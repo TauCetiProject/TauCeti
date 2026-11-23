@@ -275,7 +275,7 @@ theorem IsSigma.oneOneReducible_finiteDomain (hp : IsSigma Z 2 p) :
   refine ⟨f, hf.to_comp, ?_, fun x => ?_⟩
   · intro x₁ x₂ h
     have hcur := Code.prefixDom_inj.1 (encode_injective h)
-    exact encode_injective (Code.curry_inj hcur).2
+    exact encode_injective (Code.curry_inj.1 hcur).2
   · rw [hpq x]
     simp only [f, mem_finiteDomain, ofNat_encode, Code.finite_dom_eval_prefixDom_iff,
       Code.eval_curry]
