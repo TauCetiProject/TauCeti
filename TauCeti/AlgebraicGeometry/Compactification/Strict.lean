@@ -35,6 +35,8 @@ are equalized by a strict morphism.
   multiplicative class of morphisms respecting isomorphisms.
 * `TauCeti.Compactification.strict_iff_isPullback`: strictness as a cartesian square.
 * `TauCeti.Compactification.strict_baseChangeMap`: base change preserves strictness.
+* `TauCeti.surjective_of_isDominant_of_comp_eq_id`: a section of a separated morphism with dense
+  range is surjective.
 * `TauCeti.Compactification.strict_of_isDominant`: morphisms out of a compactification with
   topologically dense interior are strict.
 * `TauCeti.Compactification.exists_strict_commonRefinement`,
@@ -61,6 +63,14 @@ universe u
 namespace TauCeti
 
 variable {X S T : Scheme.{u}} {f : X ⟶ S}
+
+/-- A section of a separated morphism with dense range is surjective: it is a closed immersion,
+so its range is closed as well as dense. -/
+theorem surjective_of_isDominant_of_comp_eq_id {Y : Scheme.{u}} {s : X ⟶ Y} {r : Y ⟶ X}
+    [IsSeparated r] [IsDominant s] (hsr : s ≫ r = 𝟙 X) : Surjective s := by
+  have : IsClosedImmersion (s ≫ r) := hsr ▸ inferInstance
+  have : IsClosedImmersion s := IsClosedImmersion.of_comp s r
+  exact surjective_of_isDominant_of_isClosed_range s s.isClosedEmbedding.isClosed_range
 
 namespace Compactification
 
@@ -148,15 +158,11 @@ theorem strict_of_isDominant {C D : Compactification f} [IsDominant C.j] (h : C 
   set V := h.hom.h ⁻¹ᵁ D.j.opensRange
   -- The interior of `C` lies in `V`, so `C.j` factors through `V` by a map `s`.
   have hsV : Set.range C.j ⊆ Set.range V.ι := by
-    rw [Scheme.Opens.range_ι]
-    exact opensRange_le_preimage_opensRange h
+    simpa [V] using SetLike.coe_subset_coe.mpr (opensRange_le_preimage_opensRange h)
   let s : X ⟶ V := IsOpenImmersion.lift V.ι C.j hsV
   -- The map `V ⟶ X` induced by `h` is separated, and `s` is a section of it.
   have hrV : Set.range (V.ι ≫ h.hom.h) ⊆ Set.range D.j := by
-    rintro _ ⟨v, rfl⟩
-    rw [Scheme.Hom.comp_apply, ← Scheme.Hom.coe_opensRange, SetLike.mem_coe,
-      ← Scheme.Hom.mem_preimage, ← SetLike.mem_coe, ← Scheme.Opens.range_ι]
-    exact Set.mem_range_self v
+    simp [Set.range_comp, Set.image_subset_iff, V]
   let r : V.toScheme ⟶ X := IsOpenImmersion.lift D.j (V.ι ≫ h.hom.h) hrV
   have : IsSeparated (r ≫ D.j) := by
     rw [IsOpenImmersion.lift_fac]
@@ -165,24 +171,14 @@ theorem strict_of_isDominant {C D : Compactification f} [IsDominant C.j] (h : C 
   have hsr : s ≫ r = 𝟙 X := by
     rw [← cancel_mono D.j, Category.assoc, IsOpenImmersion.lift_fac,
       IsOpenImmersion.lift_fac_assoc, h.hom.ι_h, Category.id_comp]
-  -- A section of a separated morphism is a closed immersion, so its range is closed in `V`.
-  have : IsClosedImmersion (s ≫ r) := by
-    rw [hsr]
-    infer_instance
-  have : IsClosedImmersion s := IsClosedImmersion.of_comp s r
-  have hclosed : IsClosed (Set.range s) := s.isClosedEmbedding.isClosed_range
-  -- Its range is also dense in the open subscheme `V`, hence everything.
-  have hpre : V.ι ⁻¹' Set.range C.j = Set.range s := by
-    rw [← IsOpenImmersion.lift_fac V.ι C.j hsV, Scheme.Hom.comp_base, TopCat.coe_comp,
-      Set.range_comp, V.ι.isOpenEmbedding.injective.preimage_image]
-  have hdense : Dense (Set.range s) :=
-    hpre ▸ C.j.denseRange.preimage V.ι.isOpenEmbedding.isOpenMap
-  have huniv : Set.range s = Set.univ := by
-    rw [← hclosed.closure_eq, hdense.closure_eq]
+  -- The range of `s` is dense in `V` because that of `C.j = s ≫ V.ι` is, so `s` is surjective.
+  have : IsDominant (s ≫ V.ι) := by rwa [IsOpenImmersion.lift_fac]
+  have : IsDominant s := IsDominant.of_comp_of_isOpenImmersion s V.ι
+  have : Surjective s := surjective_of_isDominant_of_comp_eq_id hsr
   intro x hx
-  obtain ⟨v, rfl⟩ : x ∈ Set.range V.ι := by rwa [Scheme.Opens.range_ι]
-  have hv : v ∈ V.ι ⁻¹' Set.range C.j := by simp [hpre, huniv]
-  rwa [Set.mem_preimage, ← Scheme.Hom.coe_opensRange, SetLike.mem_coe] at hv
+  obtain ⟨v, rfl⟩ : x ∈ Set.range V.ι := by simpa using hx
+  obtain ⟨y, rfl⟩ := s.surjective v
+  simp [← Scheme.Hom.comp_apply, s]
 
 /-- Any two compactifications have a common refinement by strict morphisms, for example their
 common refinement `commonRefinement C₁ C₂`. -/
@@ -229,7 +225,7 @@ theorem not_strict_coprodSelfCodiag [IsProper f] [Nonempty X] :
       (identity f).j.opensRange := by
     simp
   rw [hh] at hx
-  obtain ⟨y, hy⟩ := hx
+  obtain ⟨y, hy⟩ := Scheme.Hom.mem_opensRange.mp hx
   exact inl_ne_inr X X y x hy
 
 end Compactification
