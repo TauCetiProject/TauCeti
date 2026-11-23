@@ -59,9 +59,10 @@ The argument for the identification:
   (`Distribution.IsLocallyCkHolderAt.of_contDiffOn`). The notion is
   stable under the linear operations (`Distribution.isLocallyCkHolderAt_zero_iff`,
   `Distribution.IsLocallyCkHolderAt.smul`, `Distribution.IsLocallyCkHolderAt.add`,
-  `Distribution.IsLocallyCkHolderAt.sub`), smooth multipliers
+  `Distribution.IsLocallyCkHolderAt.sub`), smooth multipliers for `α ≤ 1`
   (`Distribution.IsLocallyCkHolderAt.smulLeftCLM`) and lowering the regularity
-  (`Distribution.IsLocallyCkHolderAt.mono_exponent`, `Distribution.IsLocallyCkHolderAt.mono`).
+  (`Distribution.IsLocallyCkHolderAt.mono_exponent`, and `Distribution.IsLocallyCkHolderAt.mono`
+  for a target exponent `β ≤ 1`).
 * `Distribution.isLocallyMemBesovAt_iff_isLocallyCkHolderAt`: for `0 < α < 1`, being `C^{k,α}`
   near `x` is being `B^{k+α}_{∞,∞}` near `x`. The direction
   `Distribution.IsLocallyCkHolderAt.isLocallyMemBesovAt` holds for every `α`, and
