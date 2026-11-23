@@ -85,14 +85,15 @@ theorem sameGenus_iff_discriminantBilinear_of_odd_discriminant
   have hdisc := discriminant_eq_of_isometry_discriminantBilinearModule e
   obtain ⟨w, hw⟩ := L.exists_isCharacteristicVector
   obtain ⟨w', hw'⟩ := M.exists_isCharacteristicVector
+  have hpos : L.sigPos = M.sigPos := congrArg (fun s ↦ s.1) hsig
+  have hneg : L.sigNeg = M.sigNeg := congrArg (fun s ↦ s.2.2) hsig
   refine (sameGenus_iff_localIntegralForm_two_and_discriminantBilinear L M).mpr ⟨hsig, ?_, ⟨e⟩⟩
   exact (L.localIntegralForm_two_equivalent_iff_of_isCharacteristicVector M
     (L.isUnit_determinant_two_iff_odd_discriminant.mpr hL)
     (M.isUnit_determinant_two_iff_odd_discriminant.mpr (hdisc ▸ hL)) hw hw').mpr
     ⟨L.finrank_eq_of_signature_eq hsig, heven,
       determinant_eq_of_signature_eq_of_discriminant_eq hsig hdisc ▸ IsSquare.mul_self _,
-      integralNorm_modEq_eight_of_odd_discriminant hL
-        (congrArg (fun s : ℕ × ℕ × ℕ ↦ (s.1 : ℤ) - s.2.2) hsig ▸ .rfl) e hw hw'⟩
+      integralNorm_modEq_eight_of_odd_discriminant hL (by rw [hpos, hneg]) e hw hw'⟩
 
 /-- **The genus of even lattices of odd discriminant (Nikulin, Corollary 1.9.4, odd-discriminant
 case).** Let `L` and `M` be even nondegenerate integral lattices with `L.discriminant` odd. Then

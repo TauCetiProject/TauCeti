@@ -236,11 +236,8 @@ theorem primaryDecomposition_toFiniteBilinearModule :
     rw [FiniteBilinearModule.Isometry.ofEq_apply]
     exact congrArg Subtype.val (congrFun (cast_eq _ x) p)
   rw [FiniteBilinearModule.Isometry.trans_apply,
-    A.toFiniteBilinearModule.primaryDecomposition_apply]
-  have hlhs : A.primaryDecomposition.toFiniteBilinearModule x = A.primaryDecomposition x := by
-    rw [← FiniteBilinearModule.Isometry.coe_toAddEquiv, Isometry.toFiniteBilinearModule_toAddEquiv]
-    rfl
-  rw [hlhs, A.primaryDecomposition_apply]
+    A.toFiniteBilinearModule.primaryDecomposition_apply,
+    Isometry.toFiniteBilinearModule_apply, A.primaryDecomposition_apply]
   exact Finset.sum_congr rfl fun p _ ↦ (hcast p).symm
 
 /-- The orthogonal product of primary components is nondegenerate exactly when the original

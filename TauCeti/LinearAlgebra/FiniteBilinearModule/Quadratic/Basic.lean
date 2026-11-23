@@ -376,6 +376,11 @@ def toFiniteBilinearModule (f : Isometry A B) :
 theorem toFiniteBilinearModule_toAddEquiv (f : Isometry A B) :
     f.toFiniteBilinearModule.toAddEquiv = f.toAddEquiv := (rfl)
 
+/-- Applying the induced bilinear isometry agrees with applying the quadratic isometry. -/
+@[simp]
+theorem toFiniteBilinearModule_apply (f : Isometry A B) (x : A) :
+    f.toFiniteBilinearModule x = f x := (rfl)
+
 /-- Nondegeneracy transfers along a quadratic isometry. -/
 theorem isNondegenerate (f : Isometry A B) (hA : A.IsNondegenerate) : B.IsNondegenerate :=
   f.toFiniteBilinearModule.isNondegenerate hA

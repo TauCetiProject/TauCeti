@@ -91,7 +91,8 @@ theorem integralNorm_modEq_eight_of_odd_discriminant
       let _ : Fact p.Prime := ⟨Nat.prime_of_mem_primeFactors hp⟩
       gaussSign_restrict_primaryComponent_evenSublattice_eq_of_odd L M
         (fun h2 ↦ h2P (h2 ▸ hp)) (e.restrictPrimaryComponent p)
-  have h := (hsumL.symm.trans hAL_eq_AM).trans (hodd_sum ▸ hsumM)
+  rw [← hodd_sum] at hsumM
+  have h := (hsumL.symm.trans hAL_eq_AM).trans hsumM
   exact (ZMod.intCast_eq_intCast_iff _ _ 8).mp (add_right_cancel h)
 
 end TauCeti.IntegralLattice

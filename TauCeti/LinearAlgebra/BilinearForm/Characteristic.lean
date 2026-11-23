@@ -213,10 +213,17 @@ theorem IsSymm.exists_isCharacteristic_of_finite [Free R M] [Module.Finite R M]
   let w : M := ∑ i, c i • b i
   refine ⟨w, (hB.isCharacteristic_iff_forall_basis h2 b).2 fun j ↦ ?_⟩
   rw [← Ideal.mem_span_singleton, ← Ideal.Quotient.eq]
-  have hj := congrFun hu j
-  simp only [Matrix.mulVec, dotProduct, Matrix.diag_apply, A, Matrix.of_apply, ← hc, ← map_mul,
-    ← map_sum] at hj
-  simpa [w, hB.eq (b j), mul_comm] using hj
+  have hj : Ideal.Quotient.mk I (∑ i, c i * B (b i) (b j)) =
+      Ideal.Quotient.mk I (B (b j) (b j)) := by
+    have h := congrFun hu j
+    simp only [Matrix.mulVec, dotProduct, Matrix.diag_apply, A, Matrix.of_apply, ← hc, ← map_mul,
+      ← map_sum] at h
+    refine (congrArg (Ideal.Quotient.mk I) (Finset.sum_congr rfl fun i _ ↦ ?_)).trans h
+    rw [mul_comm, hB.eq (b i) (b j)]
+  have hwj : B w (b j) = ∑ i, c i * B (b i) (b j) := by
+    simp only [w, map_sum, LinearMap.sum_apply, map_smul, LinearMap.smul_apply, smul_eq_mul]
+  rw [hwj]
+  exact hj
 
 /-- **Two characteristic vectors differ by twice a vector** when the form is perfect and the
 module is free. -/
