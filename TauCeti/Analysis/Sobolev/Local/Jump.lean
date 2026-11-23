@@ -13,9 +13,9 @@ public import TauCeti.Analysis.Sobolev.WeakDeriv.Jump
 
 The indicator `{x | 0 < ℓ x}.indicator (fun _ => (1 : ℝ))` of an open half-space defined by a
 nonzero continuous linear functional `ℓ : E →L[ℝ] ℝ` on a finite-dimensional real normed space `E`
-lies in every local `Lᵖ` class everywhere (`TauCeti.memLpLoc_indicator_pos`), yet lies in no local
-Sobolev class `TauCeti.MemWkpLoc p U (k + 1)` of positive order when `interior U` meets `ker ℓ`
-(`TauCeti.not_memWkpLoc_indicator_pos`).
+lies in every local `Lᵖ` class everywhere (`ContinuousLinearMap.memLpLoc_indicator_pos`), yet lies
+in no local Sobolev class `TauCeti.MemWkpLoc p U (k + 1)` of positive order when `interior U` meets
+`ker ℓ` (`TauCeti.not_memWkpLoc_indicator_pos`).
 
 ## Main declarations
 
@@ -31,7 +31,7 @@ namespace TauCeti
 
 /-- The indicator of an open half-space `{x | 0 < ℓ x}` (for `ℓ ≠ 0`) lies in no local Sobolev
 class of positive order on any set whose interior meets `ker ℓ`, although it is locally `Lᵖ`
-there (`TauCeti.memLpLoc_indicator_pos`). -/
+there (`ContinuousLinearMap.memLpLoc_indicator_pos`). -/
 theorem not_memWkpLoc_indicator_pos {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
     [FiniteDimensional ℝ E] [MeasureSpace E] [BorelSpace E]
     [(volume : Measure E).IsAddHaarMeasure] {p : ENNReal} {U : Set E} {k : ℕ} {ℓ : E →L[ℝ] ℝ}

@@ -47,14 +47,13 @@ a weak derivative and is bounded on every compact subset by a local Lipschitz co
 theorem _root_.LocallyLipschitzOn.memWkpLoc_one [FiniteDimensional ℝ F] {Ω : Opens E}
     {u : E → F} (hu : LocallyLipschitzOn (Ω : Set E) u) : MemWkpLoc p Ω 1 u := by
   refine hu.continuousOn.memWkpLoc_one_iff.2 ⟨fderiv ℝ u, hu.hasWeakFDerivOn_fderiv,
-    memLpLoc_iff.2 fun L hLΩ hL => ?_⟩
-  obtain ⟨W, hLW, hWΩ, hWc⟩ := Opens.exists_between_and_isCompact_closure hL hLΩ
-  obtain ⟨C, hC⟩ := (hu.mono hWΩ).exists_lipschitzOnWith_of_compact hWc
-  have : IsFiniteMeasure (volume.restrict L) := ⟨by simpa using hL.measure_lt_top⟩
-  refine MemLp.of_bound (measurable_fderiv ℝ u).aestronglyMeasurable C ?_
-  filter_upwards [ae_restrict_mem hL.measurableSet] with x hx
-  exact norm_fderiv_le_of_lipschitzOn ℝ
-    (mem_of_superset (W.isOpen.mem_nhds (hLW hx)) subset_closure) hC
+    memLpLoc_of_forall_eventually_norm_le (measurable_fderiv ℝ u).aestronglyMeasurable
+      fun z hz => ?_⟩
+  obtain ⟨C, s, hs, hC⟩ := hu hz
+  rw [Ω.isOpen.nhdsWithin_eq hz] at hs
+  obtain ⟨t, hts, hto, hzt⟩ := mem_nhds_iff.1 hs
+  refine ⟨C, Eventually.mono (hto.mem_nhds hzt) fun w hw => ?_⟩
+  exact norm_fderiv_le_of_lipschitzOn ℝ (hto.mem_nhds hw) (hC.mono hts)
 
 /-- A locally Lipschitz map from a finite-dimensional real normed space into a finite-dimensional
 space lies in `W^{1,p}_loc` on every subset, for every exponent `p`. -/

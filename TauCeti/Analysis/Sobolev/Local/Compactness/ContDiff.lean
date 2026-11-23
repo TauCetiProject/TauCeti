@@ -11,6 +11,7 @@ import Mathlib.Analysis.Calculus.ContDiff.Operations
 import TauCeti.Analysis.Calculus.ContDiff.FTaylorSeries
 import TauCeti.Analysis.Sobolev.WeakDeriv.Chain
 import TauCeti.Analysis.Sobolev.Wkp.Classical
+import TauCeti.MeasureTheory.Function.MemLpLoc.PreciseRepresentative
 import TauCeti.Topology.Algebra.IsUniformGroup.Basic
 
 /-!

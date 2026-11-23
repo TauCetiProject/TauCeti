@@ -348,7 +348,7 @@ private theorem exists_eLpNormWkp_compact_le_of_hasWeakConjWirtingerDerivOn (hp 
         ‖a w‖ₑ * (C₁ * (1 + C₀) * (X + Y)) := by
       have hDw : eLpNorm (fun z => D z w) p (volume.restrict Ω₁) ≤
           ‖a w‖ₑ * eLpNorm D p (volume.restrict Ω₁) := by
-        have := eLpNormWkp_clm_comp_le (p := p) (U := Ω₁) (k := 0) (f := D) (a w)
+        have := (a w).eLpNormWkp_comp_le (p := p) (U := Ω₁) (k := 0) (f := D)
         rw [eLpNormWkp_zero, eLpNormWkp_zero] at this
         exact this
       calc eLpNormWkp p K (k + 1) (fun z => D z w)
@@ -358,7 +358,7 @@ private theorem exists_eLpNormWkp_compact_le_of_hasWeakConjWirtingerDerivOn (hp 
               (h.weakLineDeriv (hD.hasWeakLineDerivOn w) (hDf.hasWeakLineDerivOn w))
         _ ≤ C₁ * (‖a w‖ₑ * X + ‖a w‖ₑ * (C₀ * (X + Y))) := by
             refine mul_le_mul_right (add_le_add ?_ ?_) _
-            · exact (eLpNormWkp_clm_comp_le (f := Df) (a w)).trans (by gcongr)
+            · exact ((a w).eLpNormWkp_comp_le (f := Df)).trans (by gcongr)
             · exact hDw.trans (by gcongr)
         _ ≤ C₁ * (‖a w‖ₑ * (X + Y) + ‖a w‖ₑ * (C₀ * (X + Y))) := by
             gcongr
@@ -381,8 +381,8 @@ private theorem exists_eLpNormWkp_compact_le_of_hasWeakConjWirtingerDerivOn (hp 
           · exact eLpNorm_mono_measure _ (Measure.restrict_mono hKΩ₂ le_rfl)
           · rw [hDeq]
             refine (eLpNormWkp_add_le hp.le).trans (add_le_add ?_ ?_)
-            · exact (eLpNormWkp_clm_comp_le L₁).trans (by gcongr; exact hdir 1)
-            · exact (eLpNormWkp_clm_comp_le L₂).trans (by gcongr; exact hdir I)
+            · exact L₁.eLpNormWkp_comp_le.trans (by gcongr; exact hdir 1)
+            · exact L₂.eLpNormWkp_comp_le.trans (by gcongr; exact hdir I)
       _ ≤ ↑(1 + B * (C₁ * (1 + C₀))) * (X + Y) := by
           rw [hB]
           exact (add_le_add (le_add_self : Y ≤ X + Y) le_rfl).trans_eq (by push_cast; ring)

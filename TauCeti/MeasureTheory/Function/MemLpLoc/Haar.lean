@@ -36,32 +36,14 @@ theorem memLpLoc_smul_measure_iff {X F : Type*}
     [TopologicalSpace X] [MeasurableSpace X] [NormedAddCommGroup F]
     {μ : Measure X} {c : ℝ≥0∞} (hc0 : c ≠ 0) (hc : c ≠ ∞)
     {p : ENNReal} {U : Set X} {f : X → F} :
-    MemLpLoc p U f (c • μ) ↔ MemLpLoc p U f μ := by
-  refine ⟨fun h => memLpLoc_iff.2 fun K hKU hK => ?_,
-    fun h => memLpLoc_iff.2 fun K hKU hK => ?_⟩
-  · have h' := (memLpLoc_iff.1 h K hKU hK).smul_measure (ENNReal.inv_ne_top.2 hc0)
-    rwa [Measure.restrict_smul, smul_smul, ENNReal.inv_mul_cancel hc0 hc, one_smul] at h'
-  · rw [Measure.restrict_smul]
-    exact (memLpLoc_iff.1 h K hKU hK).smul_measure hc
+    MemLpLoc p U f (c • μ) ↔ MemLpLoc p U f μ :=
+  ⟨fun h => h.of_measure_le_smul (ENNReal.inv_ne_top.2 hc0)
+      (by rw [smul_smul, ENNReal.inv_mul_cancel hc0 hc, one_smul]),
+    fun h => h.of_measure_le_smul hc le_rfl⟩
 
 end SmulMeasure
 
 section Translation
-
-/-- Right translation preserves local `Lᵖ` membership under any right-invariant Borel measure. -/
-theorem MemLpLoc.comp_add_right {G F : Type*}
-    [AddGroup G] [TopologicalSpace G] [IsTopologicalAddGroup G]
-    [MeasurableSpace G] [BorelSpace G] {μ : Measure G} [μ.IsAddRightInvariant]
-    [NormedAddCommGroup F] {p : ENNReal} {U V : Set G} {u : G → F}
-    (hu : MemLpLoc p V u μ) (b : G) (hmaps : MapsTo (· + b) U V) :
-    MemLpLoc p U (fun x => u (x + b)) μ := by
-  have hcont : Continuous (· + b) := continuous_id.add continuous_const
-  refine memLpLoc_iff.2 fun K hKU hK => ?_
-  have hu' : MemLp u p (μ.restrict ((· + b) '' K)) :=
-    memLpLoc_iff.1 hu _ ((image_mono hKU).trans hmaps.image_subset) (hK.image hcont)
-  exact hu'.comp_measurePreserving
-    ((measurePreserving_add_right μ b).restrict_image_emb
-      (measurableEmbedding_addRight b) K)
 
 /-- Right translation preserves and reflects local `Lᵖ` membership. -/
 @[simp]
@@ -70,10 +52,17 @@ theorem memLpLoc_comp_add_right_iff {G F : Type*}
     [MeasurableSpace G] [BorelSpace G] {μ : Measure G} [μ.IsAddRightInvariant]
     [NormedAddCommGroup F] {p : ENNReal} {V : Set G} {u : G → F} (b : G) :
     MemLpLoc p ((· + b) ⁻¹' V) (fun x => u (x + b)) μ ↔ MemLpLoc p V u μ := by
-  refine ⟨fun h => ?_, fun h => h.comp_add_right b (mapsTo_preimage (· + b) V)⟩
-  simpa only [add_assoc, neg_add_cancel, add_zero] using
-    h.comp_add_right (-b) fun x hx => by
-      simpa [mem_preimage, add_assoc, neg_add_cancel, add_zero] using hx
+  simpa [Function.comp_def, (measurePreserving_add_right μ b).map_eq] using
+    (Homeomorph.addRight b).memLpLoc_comp_iff (μ := μ) (p := p) (U := V) (f := u)
+
+/-- Right translation preserves local `Lᵖ` membership under any right-invariant Borel measure. -/
+theorem MemLpLoc.comp_add_right {G F : Type*}
+    [AddGroup G] [TopologicalSpace G] [IsTopologicalAddGroup G]
+    [MeasurableSpace G] [BorelSpace G] {μ : Measure G} [μ.IsAddRightInvariant]
+    [NormedAddCommGroup F] {p : ENNReal} {U V : Set G} {u : G → F}
+    (hu : MemLpLoc p V u μ) (b : G) (hmaps : MapsTo (· + b) U V) :
+    MemLpLoc p U (fun x => u (x + b)) μ :=
+  ((memLpLoc_comp_add_right_iff b).2 hu).mono_set hmaps.subset_preimage
 
 end Translation
 

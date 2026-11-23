@@ -65,6 +65,9 @@ whenever `k < p`, including the behavior at the origin, on arbitrary real inner-
 * `norm_iteratedFDeriv_two_norm_rpow_le`: the Hessian is `O(‖x‖ ^ (p - 2))`.
 * `inv_norm_le_norm_fderiv_fderiv_norm`: the second derivative of the norm is at least `‖x‖⁻¹`
   in operator norm when a nonzero direction is orthogonal to `x`.
+* `inv_norm_le_norm_fderiv_normalize`, `inv_norm_le_norm_fderiv_normalize_of_one_lt_finrank`:
+  the derivative of `NormedSpace.normalize` has operator norm at least `‖x‖⁻¹` when a nonzero
+  direction is orthogonal to `x`, and in particular whenever `1 < dim E`.
 * `norm_iteratedFDeriv_two_norm_rpow_sub_le`: for `p ≤ 3`, the Hessian changes by
   `O(‖a - b‖ ‖b‖ ^ (p - 3))` between points `a` and `b` with `2 ‖a - b‖ ≤ ‖b‖`.
 * `iteratedFDeriv_two_norm_rpow_zero`, `norm_iteratedFDeriv_two_norm_rpow_le_of_two_lt`: for
@@ -493,6 +496,22 @@ theorem inv_norm_le_norm_fderiv_normalize {x v : E} (hx : x ≠ 0) (hv : v ≠ 0
       _ = ‖fderiv ℝ (NormedSpace.normalize : E → E) x v‖ := by rw [happ]
       _ ≤ ‖fderiv ℝ (NormedSpace.normalize : E → E) x‖ * ‖v‖ := ContinuousLinearMap.le_opNorm _ _
   exact le_of_mul_le_mul_right hbound hv0
+
+/-- Away from the origin on a finite-dimensional real inner product space of dimension at least
+two, the derivative of `NormedSpace.normalize` has operator norm at least `‖x‖⁻¹`. -/
+theorem inv_norm_le_norm_fderiv_normalize_of_one_lt_finrank [FiniteDimensional ℝ E]
+    (hd : 1 < Module.finrank ℝ E) {x : E} (hx : x ≠ 0) :
+    ‖x‖⁻¹ ≤ ‖fderiv ℝ (NormedSpace.normalize : E → E) x‖ := by
+  have horth : (Submodule.span ℝ ({x} : Set E))ᗮ ≠ ⊥ := by
+    intro hbot
+    have hsum := Submodule.finrank_add_finrank_orthogonal (Submodule.span ℝ ({x} : Set E))
+    rw [hbot, finrank_bot, add_zero] at hsum
+    have hle : Module.finrank ℝ (Submodule.span ℝ ({x} : Set E)) ≤ 1 :=
+      (finrank_span_singleton hx).le
+    omega
+  obtain ⟨v, hv, hv0⟩ := Submodule.exists_mem_ne_zero_of_ne_bot horth
+  exact inv_norm_le_norm_fderiv_normalize hx hv0
+    (by rw [real_inner_comm]; exact Submodule.mem_orthogonal_singleton_iff_inner_left.1 hv)
 
 /-- Along the line `s ↦ b + s • d`, the Hessian formula of `x ↦ ‖x‖ ^ p`
 (`TauCeti.iteratedFDeriv_two_norm_rpow_apply`) evaluated on two fixed directions `v`, `w` is

@@ -26,10 +26,11 @@ additive Haar measure (`TauCeti.memWkpLoc_iff_of_isAddHaarMeasure`,
 Consequently, any continuous linear equivalence `e : E ≃L[ℝ] E₁` between finite-dimensional real
 normed spaces carrying arbitrary Borel additive Haar measures preserves and reflects `MemWkpLoc` at
 every order (`TauCeti.MemWkpLoc.comp_continuousLinearEquiv`,
-`ContinuousLinearEquiv.memWkpLoc_comp_iff`). Combined with translation invariance
+`ContinuousLinearEquiv.memWkpLoc_comp_right_iff`). Combined with translation invariance
 (`TauCeti.MemWkpLoc.comp_add_right`, `TauCeti.memWkpLoc_comp_add_right_iff`), this yields affine
-invariance (`TauCeti.MemWkpLoc.comp_continuousLinearEquiv_add`) across arbitrary finite-dimensional
-real normed spaces, independent of inner products or canonical volume normalizations.
+invariance (`TauCeti.MemWkpLoc.comp_continuousLinearEquiv_add`) across arbitrary
+finite-dimensional real normed spaces, independent of inner products or canonical volume
+normalizations.
 
 ## Main declarations
 
@@ -39,8 +40,9 @@ real normed spaces, independent of inner products or canonical volume normalizat
   independence of the choice of additive Haar measure and `MeasureSpace` instance.
 * `TauCeti.MemWkpLoc.comp_add_right`, `TauCeti.memWkpLoc_comp_add_right_iff`: translation
   invariance.
-* `TauCeti.MemWkpLoc.comp_continuousLinearEquiv`, `ContinuousLinearEquiv.memWkpLoc_comp_iff`:
-  linear invariance of local Sobolev classes of every order.
+* `TauCeti.MemWkpLoc.comp_continuousLinearEquiv`,
+  `ContinuousLinearEquiv.memWkpLoc_comp_right_iff`: linear invariance of local Sobolev classes of
+  every order.
 * `TauCeti.MemWkpLoc.comp_continuousLinearEquiv_add`: affine invariance of local Sobolev classes of
   every order.
 
@@ -63,18 +65,6 @@ universe u u₁ v
 
 section SmulMeasure
 
-private theorem memWkpLoc_smul_measure_iff_succ {E : Type u} {F : Type v}
-    [NormedAddCommGroup E] [NormedSpace ℝ E] [MeasurableSpace E]
-    [NormedAddCommGroup F] [NormedSpace ℝ F]
-    {μ : Measure E} {c : ℝ≥0∞} (hc0 : c ≠ 0) (hc : c ≠ ∞)
-    {p : ENNReal} {U : Set E} {k : ℕ} {f : E → F}
-    (ih : ∀ {D : E → E →L[ℝ] F},
-      @MemWkpLoc E _ _ ⟨c • μ⟩ p U k _ _ _ D ↔ @MemWkpLoc E _ _ ⟨μ⟩ p U k _ _ _ D) :
-    @MemWkpLoc E _ _ ⟨c • μ⟩ p U (k + 1) F _ _ f ↔ @MemWkpLoc E _ _ ⟨μ⟩ p U (k + 1) F _ _ f := by
-  simp only [@memWkpLoc_succ_iff E F _ _ ⟨c • μ⟩, @memWkpLoc_succ_iff E F _ _ ⟨μ⟩]
-  exact and_congr (memLpLoc_smul_measure_iff hc0 hc) <| exists_congr fun D =>
-    and_congr (hasWeakFDerivOn_smul_measure_iff (μ := μ) (D := D) hc0 hc) ih
-
 /-- Scaling the ambient measure by a positive finite constant preserves and reflects local Sobolev
 membership at every order. -/
 theorem memWkpLoc_smul_measure_iff {E : Type u} {F : Type v}
@@ -83,22 +73,21 @@ theorem memWkpLoc_smul_measure_iff {E : Type u} {F : Type v}
     {μ : Measure E} {c : ℝ≥0∞} (hc0 : c ≠ 0) (hc : c ≠ ∞)
     {p : ENNReal} {U : Set E} {k : ℕ} {f : E → F} :
     @MemWkpLoc E _ _ ⟨c • μ⟩ p U k F _ _ f ↔ @MemWkpLoc E _ _ ⟨μ⟩ p U k F _ _ f := by
-  have aux : ∀ (k : ℕ) {F : Type (max u v)} [NormedAddCommGroup F] [NormedSpace ℝ F]
-      {f : E → F},
-      @MemWkpLoc E _ _ ⟨c • μ⟩ p U k F _ _ f ↔
-        @MemWkpLoc E _ _ ⟨μ⟩ p U k F _ _ f := by
-    intro k
-    induction k with
-    | zero =>
-      intro F _ _ f
+  have hlift := normSpace_induction_max E
+    (fun k F _ _ => ∀ (f : E → F),
+      @MemWkpLoc E _ _ ⟨c • μ⟩ p U k F _ _ f ↔ @MemWkpLoc E _ _ ⟨μ⟩ p U k F _ _ f)
+    (fun F _ _ f => by
       simp only [@memWkpLoc_zero_iff E F _ _ ⟨c • μ⟩, @memWkpLoc_zero_iff E F _ _ ⟨μ⟩]
-      exact memLpLoc_smul_measure_iff hc0 hc
-    | succ k ih => exact fun {_ _ _ _} => memWkpLoc_smul_measure_iff_succ hc0 hc ih
-  cases k with
-  | zero =>
-    simp only [@memWkpLoc_zero_iff E F _ _ ⟨c • μ⟩, @memWkpLoc_zero_iff E F _ _ ⟨μ⟩]
-    exact memLpLoc_smul_measure_iff hc0 hc
-  | succ k => exact memWkpLoc_smul_measure_iff_succ hc0 hc (aux k)
+      exact memLpLoc_smul_measure_iff hc0 hc)
+    (fun k F _ _ ih f => by
+      simp only [@memWkpLoc_succ_iff E F _ _ ⟨c • μ⟩, @memWkpLoc_succ_iff E F _ _ ⟨μ⟩]
+      exact and_congr (memLpLoc_smul_measure_iff hc0 hc) <| exists_congr fun D =>
+        and_congr (hasWeakFDerivOn_smul_measure_iff (μ := μ) (D := D) hc0 hc) (ih D))
+    k F
+  let e : F ≃L[ℝ] ULift.{u} F := ContinuousLinearEquiv.ulift.symm
+  rw [← @ContinuousLinearEquiv.comp_memWkpLoc_iff E F (ULift.{u} F) _ _ ⟨c • μ⟩ _ _ _ _ p U k f e,
+    ← @ContinuousLinearEquiv.comp_memWkpLoc_iff E F (ULift.{u} F) _ _ ⟨μ⟩ _ _ _ _ p U k f e]
+  exact hlift (fun z => e (f z))
 
 end SmulMeasure
 
@@ -139,19 +128,6 @@ end HaarIndependence
 
 section Translation
 
-private theorem MemWkpLoc.comp_add_right_succ {E : Type u} {F : Type v}
-    [NormedAddCommGroup E] [NormedSpace ℝ E] [MeasureSpace E] [BorelSpace E]
-    [(volume : Measure E).IsAddHaarMeasure] [NormedAddCommGroup F] [NormedSpace ℝ F]
-    {p : ENNReal} {U V : Set E} {k : ℕ} {u : E → F}
-    (hu : MemWkpLoc p V (k + 1) u) (b : E) (hmaps : MapsTo (· + b) U V)
-    (hint : MapsTo (· + b) (interior U) (interior V))
-    (ih : ∀ {D : E → E →L[ℝ] F}, MemWkpLoc p V k D → MemWkpLoc p U k (fun x => D (x + b))) :
-    MemWkpLoc p U (k + 1) (fun x => u (x + b)) := by
-  obtain ⟨hLp, D, hD, hk⟩ := memWkpLoc_succ_iff.1 hu
-  exact memWkpLoc_succ_iff.2
-    ⟨hLp.comp_add_right b hmaps, fun x => D (x + b),
-      hD.comp_add_right (V := Opens.interior U) (by simpa using hint), ih hk⟩
-
 /-- Right translation preserves local Sobolev membership at every order. -/
 theorem MemWkpLoc.comp_add_right {E : Type u} {F : Type v}
     [NormedAddCommGroup E] [NormedSpace ℝ E] [MeasureSpace E] [BorelSpace E]
@@ -161,17 +137,17 @@ theorem MemWkpLoc.comp_add_right {E : Type u} {F : Type v}
     MemWkpLoc p U k (fun x => u (x + b)) := by
   have hint : MapsTo (· + b) (interior U) (interior V) :=
     (Homeomorph.addRight b).isOpenMap.mapsTo_interior hmaps
-  have aux : ∀ (k : ℕ) {F : Type (max u v)} [NormedAddCommGroup F] [NormedSpace ℝ F]
-      {u : E → F}, MemWkpLoc p V k u → MemWkpLoc p U k (fun x => u (x + b)) := by
-    intro k
-    induction k with
-    | zero =>
-      intro F _ _ u hu
-      exact memWkpLoc_zero_iff.2 ((memWkpLoc_zero_iff.1 hu).comp_add_right b hmaps)
-    | succ k ih => exact fun {_ _ _ _} hu => hu.comp_add_right_succ b hmaps hint ih
-  cases k with
-  | zero => exact memWkpLoc_zero_iff.2 ((memWkpLoc_zero_iff.1 hu).comp_add_right b hmaps)
-  | succ k => exact hu.comp_add_right_succ b hmaps hint (aux k)
+  have hlift := normSpace_induction_max E
+    (fun k F _ _ => ∀ (u : E → F), MemWkpLoc p V k u → MemWkpLoc p U k (fun x => u (x + b)))
+    (fun F _ _ u hu => memWkpLoc_zero_iff.2 ((memWkpLoc_zero_iff.1 hu).comp_add_right b hmaps))
+    (fun k F _ _ ih u hu => by
+      obtain ⟨hLp, D, hD, hk⟩ := memWkpLoc_succ_iff.1 hu
+      exact memWkpLoc_succ_iff.2
+        ⟨hLp.comp_add_right b hmaps, fun x => D (x + b),
+          hD.comp_add_right (V := Opens.interior U) (by simpa using hint), ih D hk⟩)
+    k F
+  let e : F ≃L[ℝ] ULift.{u} F := ContinuousLinearEquiv.ulift.symm
+  exact e.comp_memWkpLoc_iff.1 (hlift (fun x => e (u x)) (e.comp_memWkpLoc_iff.2 hu))
 
 /-- Right translation preserves and reflects local Sobolev membership at every order. -/
 @[simp]
@@ -196,22 +172,6 @@ variable {E : Type u} {E₁ : Type u₁} {F : Type v}
   [MeasureSpace E₁] [BorelSpace E₁] [(volume : Measure E₁).IsAddHaarMeasure]
   [NormedAddCommGroup F] [NormedSpace ℝ F]
 
-private theorem MemWkpLoc.comp_continuousLinearEquiv_succ {p : ENNReal} {U : Set E}
-    {V : Set E₁} {k : ℕ} {u : E₁ → F}
-    (hu : MemWkpLoc p V (k + 1) u) (e : E ≃L[ℝ] E₁) (hmaps : MapsTo e U V)
-    (hint : MapsTo e (interior U) (interior V))
-    (ih : ∀ {D : E₁ → E₁ →L[ℝ] F}, MemWkpLoc p V k D → MemWkpLoc p U k (D ∘ e)) :
-    MemWkpLoc p U (k + 1) (u ∘ e) := by
-  obtain ⟨hLp, D, hD, hk⟩ := memWkpLoc_succ_iff.1 hu
-  have := hD.completeSpace
-  refine memWkpLoc_succ_iff.2
-    ⟨hLp.comp_continuousLinearEquiv e hmaps,
-      fun x => ((ContinuousLinearMap.compL ℝ E E₁ F).flip (e : E →L[ℝ] E₁)) (D (e x)),
-      ?_, (ih hk).clm_comp _⟩
-  simpa only [ContinuousLinearMap.flip_apply, ContinuousLinearMap.compL_apply] using
-    hD.comp_continuousLinearEquiv_of_isAddHaarMeasure (U := Opens.interior U) e
-      (by simpa using hint)
-
 /-- **Linear invariance of local Sobolev classes.** Precomposition with any continuous linear
 equivalence `e : E ≃L[ℝ] E₁` between finite-dimensional real normed spaces (carrying arbitrary
 Borel additive Haar measures) preserves local Sobolev membership at every order. -/
@@ -221,23 +181,28 @@ theorem MemWkpLoc.comp_continuousLinearEquiv {p : ENNReal} {U : Set E}
     MemWkpLoc p U k (u ∘ e) := by
   have hint : MapsTo e (interior U) (interior V) :=
     e.toHomeomorph.isOpenMap.mapsTo_interior hmaps
-  have aux : ∀ (k : ℕ) {F : Type (max u₁ v)} [NormedAddCommGroup F] [NormedSpace ℝ F]
-      {u : E₁ → F}, MemWkpLoc p V k u → MemWkpLoc p U k (u ∘ e) := by
-    intro k
-    induction k with
-    | zero =>
-      intro F _ _ u hu
-      exact memWkpLoc_zero_iff.2 ((memWkpLoc_zero_iff.1 hu).comp_continuousLinearEquiv e hmaps)
-    | succ k ih => exact fun {_ _ _ _} hu => hu.comp_continuousLinearEquiv_succ e hmaps hint ih
-  cases k with
-  | zero =>
-    exact memWkpLoc_zero_iff.2 ((memWkpLoc_zero_iff.1 hu).comp_continuousLinearEquiv e hmaps)
-  | succ k => exact hu.comp_continuousLinearEquiv_succ e hmaps hint (aux k)
+  have hlift := normSpace_induction_max E₁
+    (fun k F _ _ => ∀ (u : E₁ → F), MemWkpLoc p V k u → MemWkpLoc p U k (u ∘ e))
+    (fun F _ _ u hu =>
+      memWkpLoc_zero_iff.2 ((memWkpLoc_zero_iff.1 hu).comp_continuousLinearEquiv e hmaps))
+    (fun k F _ _ ih u hu => by
+      obtain ⟨hLp, D, hD, hk⟩ := memWkpLoc_succ_iff.1 hu
+      have := hD.completeSpace
+      refine memWkpLoc_succ_iff.2
+        ⟨hLp.comp_continuousLinearEquiv e hmaps,
+          fun x => ((ContinuousLinearMap.compL ℝ E E₁ F).flip (e : E →L[ℝ] E₁)) (D (e x)),
+          ?_, (ih D hk).clm_comp _⟩
+      simpa only [ContinuousLinearMap.flip_apply, ContinuousLinearMap.compL_apply] using
+        hD.comp_continuousLinearEquiv_of_isAddHaarMeasure (U := Opens.interior U) e
+          (by simpa using hint))
+    k F
+  let eF : F ≃L[ℝ] ULift.{u₁} F := ContinuousLinearEquiv.ulift.symm
+  exact eF.comp_memWkpLoc_iff.1 (hlift (fun x => eF (u x)) (eF.comp_memWkpLoc_iff.2 hu))
 
 /-- Precomposition with a continuous linear equivalence preserves and reflects local Sobolev
 membership at every order. -/
 @[simp]
-theorem _root_.ContinuousLinearEquiv.memWkpLoc_comp_iff {p : ENNReal}
+theorem _root_.ContinuousLinearEquiv.memWkpLoc_comp_right_iff {p : ENNReal}
     {V : Set E₁} {k : ℕ} {u : E₁ → F} (e : E ≃L[ℝ] E₁) :
     MemWkpLoc p (e ⁻¹' V) k (u ∘ e) ↔ MemWkpLoc p V k u := by
   refine ⟨fun h => ?_, fun h => h.comp_continuousLinearEquiv e (mapsTo_preimage e V)⟩

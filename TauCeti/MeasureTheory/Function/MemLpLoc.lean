@@ -39,7 +39,8 @@ functions bounded near every point of `U`, are locally `Lᵖ` for every exponent
 membership is detected on the open subsets with compact closure inside it, and on a ball of a proper
 metric space on the smaller concentric balls (`TauCeti.memLpLoc_ball_iff`); with `1 ≤ p` a locally
 `Lᵖ` function agrees almost everywhere with its precise representative. The indicator of an open
-half-space `{x | 0 < ℓ x}` is locally `Lᵖ` on every set (`TauCeti.memLpLoc_indicator_pos`).
+half-space `{x | 0 < ℓ x}` is locally `Lᵖ` on every set
+(`ContinuousLinearMap.memLpLoc_indicator_pos`).
 
 Membership for `μ` passes to every measure bounded by a finite multiple of `μ`
 (`TauCeti.MemLpLoc.of_measure_le_smul`). Two additive Haar measures on a locally compact group
@@ -475,8 +476,8 @@ section HalfSpace
 
 /-- The indicator of any open half-space `{x | 0 < ℓ x}` is locally `Lᵖ` on every set, for every
 exponent. -/
-theorem memLpLoc_indicator_pos {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
-    [MeasurableSpace E] [OpensMeasurableSpace E] {μ : Measure E}
+theorem _root_.ContinuousLinearMap.memLpLoc_indicator_pos {E : Type*} [NormedAddCommGroup E]
+    [NormedSpace ℝ E] [MeasurableSpace E] [OpensMeasurableSpace E] {μ : Measure E}
     [IsFiniteMeasureOnCompacts μ] {p : ℝ≥0∞} {U : Set E} (ℓ : E →L[ℝ] ℝ) :
     MemLpLoc p U ({x : E | 0 < ℓ x}.indicator fun _ => (1 : ℝ)) μ := by
   refine memLpLoc_iff.2 fun K _ hK => ?_

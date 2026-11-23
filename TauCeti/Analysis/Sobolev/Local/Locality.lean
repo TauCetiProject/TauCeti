@@ -81,53 +81,44 @@ private theorem MemWkpLoc.indicator_interior [OpensMeasurableSpace E] {k : ℕ}
 
 variable [FiniteDimensional ℝ E] [BorelSpace E]
 
-private theorem memWkpLoc_forall_inter_succ [CompleteSpace F] {ι : Type*} {O : ι → Opens E}
-    (hU : U ⊆ ⋃ i, (O i : Set E)) {k : ℕ} (h : ∀ i, MemWkpLoc p (U ∩ O i) (k + 1) f)
-    (ih : ∀ {g : E → E →L[ℝ] F}, (∀ i, MemWkpLoc p (U ∩ O i) k g) → MemWkpLoc p U k g) :
-    MemWkpLoc p U (k + 1) f := by
-  have hint : ∀ i, interior (U ∩ O i) = interior U ∩ O i := fun i => by
-    rw [interior_inter, (O i).isOpen.interior_eq]
-  have hsup : (⨆ i, Opens.interior (U ∩ O i)) = Opens.interior U := by
-    ext z
-    simp only [Opens.coe_iSup, Opens.coe_interior, hint, ← inter_iUnion]
-    exact ⟨fun hz => hz.1, fun hz => ⟨hz, hU (interior_subset hz)⟩⟩
-  choose D hD hDk using fun i => (h i).exists_weakFDeriv
-  obtain ⟨G', hG, hGD⟩ := exists_hasWeakFDerivOn_iSup _ D hD
-  refine memWkpLoc_succ_iff.2 ⟨(memLpLoc_iff_forall_inter O hU).2 fun i => (h i).memLpLoc,
-    (interior U).indicator G', ?_, ih fun i => ?_⟩
-  · rw [hsup] at hG
-    exact hG.congr_ae_deriv
-      (indicator_ae_eq_restrict measurableSet_interior.nullMeasurableSet).symm
-  · refine (hDk i).indicator_interior.congr_ae ?_
-    have hGDi := (ae_restrict_iff' measurableSet_interior).1 (hGD i)
-    filter_upwards [ae_restrict_of_ae hGDi, ae_restrict_of_ae_restrict_of_subset
-      inter_subset_right (ae_restrict_mem (O i).isOpen.measurableSet)] with z hz hzO
-    by_cases hzU : z ∈ interior U
-    · have hzi : z ∈ interior (U ∩ O i) := (hint i).symm ▸ ⟨hzU, hzO⟩
-      simp only [indicator_of_mem hzi, indicator_of_mem hzU, hz hzi]
-    · have hzi : z ∉ interior (U ∩ O i) := fun hzi => hzU ((hint i ▸ hzi).1)
-      simp only [indicator_of_notMem hzi, indicator_of_notMem hzU]
-
 /-- Positive-order local Sobolev membership on `U` can be checked on the traces `U ∩ O i` of an
 open cover. The local weak derivatives need not agree; they are glued on the interior of `U`.
 Completeness of the codomain is needed for an empty cover. -/
 theorem memWkpLoc_iff_forall_inter [CompleteSpace F] {ι : Type*} (O : ι → Opens E)
     (hU : U ⊆ ⋃ i, (O i : Set E)) {k : ℕ} :
     MemWkpLoc p U k f ↔ ∀ i, MemWkpLoc p (U ∩ O i) k f := by
-  have aux : ∀ {G : Type (max u v)} [NormedAddCommGroup G] [NormedSpace ℝ G] [CompleteSpace G]
-      {k : ℕ} {g : E → G},
-      (∀ i, MemWkpLoc p (U ∩ O i) k g) → MemWkpLoc p U k g := by
-    intro G _ _ _ k
-    induction k generalizing G with
-    | zero =>
-      intro g h
-      exact memWkpLoc_zero_iff.2 <| (memLpLoc_iff_forall_inter O hU).2 fun i => (h i).memLpLoc
-    | succ k ih => exact fun {_} h => memWkpLoc_forall_inter_succ hU h ih
   refine ⟨fun hf i => hf.mono inter_subset_left, fun h => ?_⟩
-  cases k with
-  | zero =>
-    exact memWkpLoc_zero_iff.2 <| (memLpLoc_iff_forall_inter O hU).2 fun i => (h i).memLpLoc
-  | succ k => exact memWkpLoc_forall_inter_succ hU h aux
+  have hlift := normSpace_induction_max E
+    (fun k G _ _ => CompleteSpace G → ∀ (g : E → G),
+      (∀ i, MemWkpLoc p (U ∩ O i) k g) → MemWkpLoc p U k g)
+    (fun G _ _ _ g hg =>
+      memWkpLoc_zero_iff.2 <| (memLpLoc_iff_forall_inter O hU).2 fun i => (hg i).memLpLoc)
+    (fun k G _ _ ih _ g hg => by
+      have hint : ∀ i, interior (U ∩ O i) = interior U ∩ O i := fun i => by
+        rw [interior_inter, (O i).isOpen.interior_eq]
+      have hsup : (⨆ i, Opens.interior (U ∩ O i)) = Opens.interior U := by
+        ext z
+        simp only [Opens.coe_iSup, Opens.coe_interior, hint, ← inter_iUnion]
+        exact ⟨fun hz => hz.1, fun hz => ⟨hz, hU (interior_subset hz)⟩⟩
+      choose D hD hDk using fun i => (hg i).exists_weakFDeriv
+      obtain ⟨G', hG, hGD⟩ := exists_hasWeakFDerivOn_iSup _ D hD
+      refine memWkpLoc_succ_iff.2 ⟨(memLpLoc_iff_forall_inter O hU).2 fun i => (hg i).memLpLoc,
+        (interior U).indicator G', ?_, ih inferInstance _ fun i => ?_⟩
+      · rw [hsup] at hG
+        exact hG.congr_ae_deriv
+          (indicator_ae_eq_restrict measurableSet_interior.nullMeasurableSet).symm
+      · refine (hDk i).indicator_interior.congr_ae ?_
+        have hGDi := (ae_restrict_iff' measurableSet_interior).1 (hGD i)
+        filter_upwards [ae_restrict_of_ae hGDi, ae_restrict_of_ae_restrict_of_subset
+          inter_subset_right (ae_restrict_mem (O i).isOpen.measurableSet)] with z hz hzO
+        by_cases hzU : z ∈ interior U
+        · have hzi : z ∈ interior (U ∩ O i) := (hint i).symm ▸ ⟨hzU, hzO⟩
+          simp only [indicator_of_mem hzi, indicator_of_mem hzU, hz hzi]
+        · have hzi : z ∉ interior (U ∩ O i) := fun hzi => hzU ((hint i ▸ hzi).1)
+          simp only [indicator_of_notMem hzi, indicator_of_notMem hzU])
+    k F (completeSpace_ulift_iff.2 inferInstance)
+  let e : F ≃L[ℝ] ULift.{u} F := ContinuousLinearEquiv.ulift.symm
+  exact e.comp_memWkpLoc_iff.1 (hlift _ fun i => e.comp_memWkpLoc_iff.2 (h i))
 
 /-- Local Sobolev membership on the union of open sets is membership on each of them. -/
 theorem memWkpLoc_iSup_iff [CompleteSpace F] {ι : Type*} (V : ι → Opens E) {k : ℕ} :

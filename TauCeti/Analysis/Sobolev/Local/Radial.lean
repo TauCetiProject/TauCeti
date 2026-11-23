@@ -129,18 +129,7 @@ theorem not_memWkpLoc_one_normalize (hd : 1 < Module.finrank ℝ E)
     have hnull : ∀ᵐ x ∂(volume : Measure E), x ≠ 0 := by simp [ae_iff, measure_singleton]
     filter_upwards [h1, hnull] with x hx hx0 hxb
     rw [hx ⟨hK hxb, hx0⟩, Real.norm_of_nonneg (inv_nonneg.2 (norm_nonneg x))]
-    have horth : (Submodule.span ℝ ({x} : Set E))ᗮ ≠ ⊥ := by
-      intro hbot
-      have hsum := Submodule.finrank_add_finrank_orthogonal (Submodule.span ℝ ({x} : Set E))
-      rw [hbot, finrank_bot, add_zero] at hsum
-      have hle : Module.finrank ℝ (Submodule.span ℝ ({x} : Set E)) ≤ 1 :=
-        (finrank_span_singleton hx0).le
-      omega
-    obtain ⟨v, hv, hv0⟩ := Submodule.exists_mem_ne_zero_of_ne_bot horth
-    have hxv : ⟪x, v⟫ = 0 := by
-      rw [real_inner_comm]
-      exact Submodule.mem_orthogonal_singleton_iff_inner_left.1 hv
-    exact inv_norm_le_norm_fderiv_normalize hx0 hv0 hxv
+    exact inv_norm_le_norm_fderiv_normalize_of_one_lt_finrank hd hx0
   exact not_memLp_norm_inv_closedBall (half_pos hr) hp hinvK
 
 /-- **Critical exponent for `NormedSpace.normalize`.** On a finite-dimensional real inner product

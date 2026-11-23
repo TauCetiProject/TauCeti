@@ -45,8 +45,8 @@ while the general radial and hyperplane-jump criteria live in
   radial field `NormedSpace.normalize` (`TauCeti.memWkpLoc_one_normalize`).
 * The indicator of the half-plane `{z | 0 < z.re}` has no weak derivative on any open set
   meeting the imaginary axis (`TauCeti.not_hasWeakFDerivOn_indicator_pos` at `Complex.reCLM`), so
-  it is in every local `Lᵖ` class (`TauCeti.memLpLoc_indicator_pos`) but in no local `W^{k,p}`
-  class of positive order there (`TauCeti.not_memWkpLoc_indicator_pos`).
+  it is in every local `Lᵖ` class (`ContinuousLinearMap.memLpLoc_indicator_pos`) but in no local
+  `W^{k,p}` class of positive order there (`TauCeti.not_memWkpLoc_indicator_pos`).
 * On the closed upper half-disc `D⁺ = ball 0 1 ∩ {z | 0 ≤ z.im}`, the map `z ↦ √z.im` is in the
   local class `W^{1,p}` exactly when `p < 2`, because the `Lᵖ` bounds reach the real axis. On the
   open half-disc it is in that class for every `p`, although it is continuous up to the axis.

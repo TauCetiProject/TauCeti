@@ -9,11 +9,10 @@ public import TauCeti.Analysis.Sobolev.WeakDeriv.Basic
 import Mathlib.Analysis.Calculus.BumpFunction.InnerProduct
 import Mathlib.Analysis.Calculus.BumpFunction.Normed
 import Mathlib.Analysis.InnerProductSpace.EuclideanDist
-import Mathlib.Analysis.Normed.Module.Span
-import Mathlib.LinearAlgebra.Projection
 import Mathlib.MeasureTheory.Integral.Prod
 import TauCeti.Analysis.Sobolev.WeakDeriv.Haar
 import TauCeti.MeasureTheory.Integral.IntegralEqImproper
+import TauCeti.Topology.Algebra.Support
 
 /-!
 # Non-existence of weak derivatives across a hyperplane jump
@@ -50,14 +49,9 @@ private def prodBumpTestFunction {H : Type*} [NormedAddCommGroup H]
     𝓓(Ω, ℝ) :=
   let f : ℝ × H → ℝ := ((a : ℝ → ℝ) ∘ Prod.fst) * ((b : H → ℝ) ∘ Prod.snd)
   have hfs : tsupport f ⊆ Metric.closedBall x₀ a.rOut ×ˢ Metric.closedBall y₀ b.rOut := by
-    intro q hq
-    have hq1 : q ∈ Prod.fst ⁻¹' tsupport a :=
-      tsupport_comp_subset_preimage (a : ℝ → ℝ) continuous_fst (tsupport_mul_subset_left hq)
-    have hq2 : q ∈ Prod.snd ⁻¹' tsupport b :=
-      tsupport_comp_subset_preimage (b : H → ℝ) continuous_snd (tsupport_mul_subset_right hq)
-    rw [mem_preimage, a.tsupport_eq] at hq1
-    rw [mem_preimage, b.tsupport_eq] at hq2
-    exact ⟨hq1, hq2⟩
+    simpa only [f, Pi.mul_def, Function.comp_def, smul_eq_mul, mul_comm,
+      a.tsupport_eq, b.tsupport_eq] using
+      tsupport_snd_smul_fst_subset (b : H → ℝ) (a : ℝ → ℝ)
   ⟨f, (a.contDiff.comp (ContinuousLinearMap.fst ℝ ℝ H).contDiff).mul
       (b.contDiff.comp (ContinuousLinearMap.snd ℝ ℝ H).contDiff),
     ((isCompact_closedBall x₀ a.rOut).prod
@@ -172,54 +166,6 @@ private theorem not_hasWeakFDerivOn_indicator_fst_pos {d : ℕ}
   have hb := b.integral_pos (μ := volume)
   linarith
 
-private def hyperplaneEquiv {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
-    [FiniteDimensional ℝ E] (ℓ : E →L[ℝ] ℝ) (v : E) (hℓv : ℓ v = 1) :
-    (ℝ × EuclideanSpace ℝ (Fin (Module.finrank ℝ (LinearMap.ker ℓ.toLinearMap)))) ≃L[ℝ] E :=
-  have hv : v ≠ 0 := fun h => by simp [h] at hℓv
-  let L := ℝ ∙ v
-  let lineIso : ℝ ≃L[ℝ] L := ContinuousLinearEquiv.toSpanNonzeroSingleton ℝ v hv
-  let proj : E →ₗ[ℝ] L := lineIso.toLinearEquiv.toLinearMap.comp ℓ.toLinearMap
-  have hproj : ∀ x : L, proj x = x := fun x => by
-    obtain ⟨c, hc⟩ := Submodule.mem_span_singleton.1 x.property
-    apply Subtype.ext
-    have hc' : c • v = (x : E) := hc
-    have hℓx : ℓ (x : E) = c := by rw [← hc', map_smul, smul_eq_mul, hℓv, mul_one]
-    have hline : ((lineIso c : L) : E) = c • v := rfl
-    simpa [proj, hℓx, hc'] using hline
-  have hker : LinearMap.ker proj = LinearMap.ker ℓ.toLinearMap := by
-    ext x
-    simp only [LinearMap.mem_ker, LinearMap.coe_comp, LinearEquiv.coe_coe,
-      ContinuousLinearEquiv.coe_toLinearEquiv, ContinuousLinearMap.coe_coe,
-      Function.comp_apply, proj]
-    exact ⟨fun hx => lineIso.injective (hx.trans (map_zero lineIso).symm),
-      fun hx => by simp [hx]⟩
-  have hcompl : IsCompl L (LinearMap.ker ℓ.toLinearMap) := by
-    rw [← hker]
-    exact LinearMap.isCompl_of_proj hproj
-  ((lineIso.toLinearEquiv.prodCongr
-      (toEuclidean (E := LinearMap.ker ℓ.toLinearMap)).symm.toLinearEquiv).trans
-    (Submodule.prodEquivOfIsCompl L (LinearMap.ker ℓ.toLinearMap) hcompl)).toContinuousLinearEquiv
-
-private theorem hyperplaneEquiv_apply {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
-    [FiniteDimensional ℝ E] (ℓ : E →L[ℝ] ℝ) (v : E) (hℓv : ℓ v = 1)
-    (q : ℝ × EuclideanSpace ℝ (Fin (Module.finrank ℝ (LinearMap.ker ℓ.toLinearMap)))) :
-    hyperplaneEquiv ℓ v hℓv q =
-      q.1 • v + ((toEuclidean (E := LinearMap.ker ℓ.toLinearMap)).symm q.2 : E) :=
-  rfl
-
-private theorem apply_hyperplaneEquiv_fst {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
-    [FiniteDimensional ℝ E] (ℓ : E →L[ℝ] ℝ) (v : E) (hℓv : ℓ v = 1)
-    (q : ℝ × EuclideanSpace ℝ (Fin (Module.finrank ℝ (LinearMap.ker ℓ.toLinearMap)))) :
-    ℓ (hyperplaneEquiv ℓ v hℓv q) = q.1 := by
-  have hq2 : ℓ ((toEuclidean (E := LinearMap.ker ℓ.toLinearMap)).symm q.2 : E) = 0 :=
-    LinearMap.mem_ker.1 ((toEuclidean (E := LinearMap.ker ℓ.toLinearMap)).symm q.2).property
-  rw [hyperplaneEquiv_apply, map_add, map_smul, smul_eq_mul, hℓv, mul_one, hq2, add_zero]
-
-private theorem hyperplaneEquiv_symm_fst {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
-    [FiniteDimensional ℝ E] (ℓ : E →L[ℝ] ℝ) (v : E) (hℓv : ℓ v = 1) (x : E) :
-    ((hyperplaneEquiv ℓ v hℓv).symm x).1 = ℓ x := by
-  conv_rhs => rw [← (hyperplaneEquiv ℓ v hℓv).apply_symm_apply x, apply_hyperplaneEquiv_fst]
-
 /-- The indicator of an open half-space `{x | 0 < ℓ x}` (for a nonzero continuous linear
 functional `ℓ`) admits no weak derivative on any open set meeting `ker ℓ`. -/
 theorem not_hasWeakFDerivOn_indicator_pos {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
@@ -233,23 +179,31 @@ theorem not_hasWeakFDerivOn_indicator_pos {E : Type*} [NormedAddCommGroup E] [No
     exact hℓ (ContinuousLinearMap.ext h)
   let v : E := (ℓ w)⁻¹ • w
   have hℓv : ℓ v = 1 := by simp [v, inv_mul_cancel₀ hw]
-  set e := hyperplaneEquiv ℓ v hℓv
-  have : (volume : Measure (ℝ × EuclideanSpace ℝ
-      (Fin (Module.finrank ℝ (LinearMap.ker ℓ.toLinearMap))))).IsAddHaarMeasure := by
+  have hrinv : Function.RightInverse ((ContinuousLinearMap.id ℝ ℝ).smulRight v) ℓ :=
+    fun c => by simp [hℓv]
+  let e₁ := ContinuousLinearEquiv.equivOfRightInverse ℓ
+    ((ContinuousLinearMap.id ℝ ℝ).smulRight v) hrinv
+  let H := EuclideanSpace ℝ (Fin (Module.finrank ℝ ℓ.ker))
+  let e : (ℝ × H) ≃L[ℝ] E :=
+    ((ContinuousLinearEquiv.refl ℝ ℝ).prodCongr (toEuclidean (E := ℓ.ker)).symm).trans e₁.symm
+  have : (volume : Measure (ℝ × H)).IsAddHaarMeasure := by
     rw [Measure.volume_eq_prod]
     infer_instance
-  let Ω' : Opens (ℝ × EuclideanSpace ℝ (Fin (Module.finrank ℝ (LinearMap.ker ℓ.toLinearMap)))) :=
-    ⟨e ⁻¹' Ω, Ω.isOpen.preimage e.continuous⟩
+  let Ω' : Opens (ℝ × H) := ⟨e ⁻¹' Ω, Ω.isOpen.preimage e.continuous⟩
   have hpull := hD.comp_continuousLinearEquiv_of_isAddHaarMeasure (μ := volume) (U := Ω') e
     (mapsTo_preimage e Ω)
+  have hefst (q : ℝ × EuclideanSpace ℝ (Fin (Module.finrank ℝ ℓ.ker))) : ℓ (e q) = q.1 := by
+    rw [← ContinuousLinearEquiv.fst_equivOfRightInverse ℓ _ hrinv (e q)]
+    simp [e, e₁, hℓv]
+  have hsymmfst : (e.symm x₀).1 = ℓ x₀ := by
+    simp [e, e₁]
   have hcomp : ({x : E | 0 < ℓ x}.indicator (fun _ => (1 : ℝ))) ∘ e =
       {q | 0 < q.1}.indicator fun _ => (1 : ℝ) := by
     funext q
-    simp only [e, Function.comp_apply, Set.indicator_apply, Set.mem_ofPred_eq,
-      apply_hyperplaneEquiv_fst ℓ v hℓv q]
+    simp only [Function.comp_apply, Set.indicator_apply, Set.mem_ofPred_eq, hefst q]
   rw [hcomp] at hpull
   exact not_hasWeakFDerivOn_indicator_fst_pos (Ω := Ω') (p₀ := e.symm x₀)
-    (by simpa [Ω'] using hx₀) ((hyperplaneEquiv_symm_fst ℓ v hℓv x₀).trans hx₀') _ hpull
+    (by simpa [Ω'] using hx₀) (hsymmfst.trans hx₀') _ hpull
 
 end HalfSpaceJump
 
