@@ -6,8 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicTopology.EilenbergMacLane.Degree
+public import TauCeti.Topology.Homotopy.MappingPath.Fiber
 public import TauCeti.Topology.Homotopy.HomotopyGroup.LoopSpace
 public import TauCeti.Topology.PathSpace.Moore.Comparison.HomotopyGroup
+import TauCeti.AlgebraicTopology.EilenbergMacLane.HomotopyEquiv
 
 /-!
 # The loop space of a `K(G, n + 2)` space is a `K(G, n + 1)` space
@@ -22,7 +24,10 @@ loop space.
 
 The loop space is based at the constant loop. Since `ΩX` is then path connected, the base point
 plays no role (`TauCeti.IsEilenbergMacLaneSpace.of_basepoint`). This identifies the fibre of the
-based path-space fibration `ΩK(G, n + 2) → P → K(G, n + 2)` as a `K(G, n + 1)` space.
+based path-space fibration `ΩK(G, n + 2) → P → K(G, n + 2)` as a `K(G, n + 1)` space. More
+generally, every fibre of the source projection of the mapping-path fibre of a map into a
+`K(G, n + 2)` space is homotopy equivalent to its loop space, hence a `K(G, n + 1)` space
+(`TauCeti.IsEilenbergMacLaneSpace.exists_fiber_mappingPathFiberProj`).
 
 ## Main results
 
@@ -32,6 +37,8 @@ based path-space fibration `ΩK(G, n + 2) → P → K(G, n + 2)` as a `K(G, n + 
   `K(G, n + 1)` space.
 * `TauCeti.MooreLoopSpace.isEilenbergMacLaneSpace_iff`,
   `TauCeti.IsEilenbergMacLaneSpace.mooreLoopSpace`: the same for Moore loops.
+* `TauCeti.IsEilenbergMacLaneSpace.exists_fiber_mappingPathFiberProj`: the fibres of the source
+  projection of a mapping-path fibre into a `K(G, n + 2)` space are `K(G, n + 1)` spaces.
 
 ## References
 
@@ -84,6 +91,21 @@ theorem IsEilenbergMacLaneSpace.loopSpace (h : IsEilenbergMacLaneSpace G (n + 2)
     IsEilenbergMacLaneSpace G (n + 1) (Ω X x) (Path.refl x) :=
   have := h.pathConnectedSpace
   isEilenbergMacLaneSpace_loopSpace_iff.2 h
+
+/-- **The fibres of a mapping-path fibration into a `K(G, n + 2)` space are `K(G, n + 1)`
+spaces.** For a map `f : B → X` into a `K(G, n + 2)` space and a point `k` of `X`, the fibre over
+`b` of the source projection of the mapping-path fibre of `f` over `k` is homotopy equivalent to
+the loop space `Ω X k` (`MappingPathFiber.projFiberHomotopyEquivLoopSpace`), hence a `K(G, n + 1)`
+space. -/
+theorem IsEilenbergMacLaneSpace.exists_fiber_mappingPathFiberProj
+    (h : IsEilenbergMacLaneSpace G (n + 2) X x) {B : Type w} [TopologicalSpace B] (f : C(B, X))
+    (k : X) (b : B) :
+    ∃ y, IsEilenbergMacLaneSpace G (n + 1)
+      {p : MappingPathFiber f k // MappingPathFiber.proj f k p = b} y := by
+  have := h.pathConnectedSpace
+  let e := (MappingPathFiber.projFiberHomotopyEquivLoopSpace f k b
+    (PathConnectedSpace.somePath _ _)).symm
+  exact ⟨e (Path.refl k), (h.of_basepoint k).loopSpace.of_homotopyEquiv e _⟩
 
 /-- **The Moore loop space of a `K(G, n + 2)` space is a `K(G, n + 1)` space, and conversely.**
 For a path-connected space `X`, the Moore loop space `MooreLoopSpace X x`, based at the constant

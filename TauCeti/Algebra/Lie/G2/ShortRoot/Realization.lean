@@ -8,7 +8,7 @@ module
 public import TauCeti.Algebra.Lie.G2.ShortRoot.Datum
 public import TauCeti.Algebra.Lie.G2.ShortRoot.IntegralToralClosure.Basic
 public import TauCeti.Algebra.AlgebraicGroup.Chevalley.Root.Subgroup
-public import TauCeti.Algebra.AlgebraicGroup.Chevalley.Frobenius
+public import TauCeti.Algebra.AlgebraicGroup.Chevalley.Frobenius.Basic
 
 /-!
 # The integral realization of the seven-dimensional G₂ Chevalley datum

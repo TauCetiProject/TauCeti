@@ -9,6 +9,7 @@ public import TauCeti.Analysis.Sobolev.WeakDeriv.Basic
 public import Mathlib.Analysis.Calculus.ContDiff.Convolution
 public import TauCeti.Analysis.Convolution.Jensen
 import TauCeti.Analysis.Convolution.Basic
+import TauCeti.Analysis.Distribution.TestFunction.Translation
 
 /-!
 # Mollification of weakly differentiable functions
@@ -79,16 +80,10 @@ theorem HasWeakLineDerivOn.hasLineDerivAt_convolution_right {u u' : E → F} {v 
     (hrho_cpt : HasCompactSupport rho) (x : E)
     (hx : ∀ y ∈ tsupport rho, x - y ∈ Omega) :
     HasLineDerivAt ℝ (u ⋆[(lsmul ℝ ℝ).flip, mu] rho) ((u' ⋆[(lsmul ℝ ℝ).flip, mu] rho) x) x v := by
-  have hsmooth : ContDiff ℝ ∞ fun t ↦ rho (x - t) := by fun_prop
-  have hcpt : HasCompactSupport fun t ↦ rho (x - t) :=
-    hrho_cpt.comp_homeomorph (Homeomorph.subLeft x)
-  have hsupp : tsupport (fun t ↦ rho (x - t)) ⊆ Omega := fun t ht ↦ by
-    simpa using hx _ (tsupport_comp_subset_preimage rho (f := (x - ·)) (by fun_prop) ht)
-  have hline (t : E) : lineDeriv ℝ (fun s ↦ rho (x - s)) t v = -fderiv ℝ rho (x - t) v := by
-    simpa [Function.comp_def] using ((hrho.differentiable (by simp) (x - t)).hasFDerivAt.comp t
-      ((hasFDerivAt_id t).const_sub x)).hasLineDerivAt v |>.lineDeriv
-  have hweak := h.integral_lineDeriv_smul_eq_neg_integral_smul ⟨_, hsmooth, hcpt, hsupp⟩
-  simp only [TestFunction.coe_mk, hline, neg_smul, integral_neg, neg_inj] at hweak
+  have hweak := h.integral_lineDeriv_smul_eq_neg_integral_smul
+    (reflectTranslateTestFunction rho x hrho hrho_cpt hx)
+  simp only [lineDeriv_reflectTranslateTestFunction, reflectTranslateTestFunction_apply, neg_smul,
+    integral_neg, neg_inj] at hweak
   convert (hrho_cpt.hasFDerivAt_convolution_right (lsmul ℝ ℝ).flip hu
     (hrho.of_le (by simp)) x).hasLineDerivAt v using 1
   rw [convolution_precompR_apply (lsmul ℝ ℝ).flip hu (hrho_cpt.fderiv ℝ)

@@ -7,7 +7,9 @@ module
 
 public import TauCeti.Algebra.Group.Action.Pow
 public import TauCeti.LinearAlgebra.Eigenspace.Transport
+public import TauCeti.Algebra.Bialgebra.Module.TensorProduct
 public import TauCeti.QuantumGroups.UqSl2.Basic
+public import TauCeti.QuantumGroups.UqSl2.Hopf
 public import TauCeti.QuantumGroups.QuantumInteger.Basic
 public import Mathlib.LinearAlgebra.Eigenspace.Triangularizable
 public import Mathlib.LinearAlgebra.Eigenspace.Minpoly
@@ -30,6 +32,8 @@ lowest-weight vector. This is the starting point for classifying finite-dimensio
 modules, and the generalized weight decomposition is the setting of the finite-dimensional
 complete-reducibility argument. Taking generalized weight spaces of finite-dimensional modules is
 exact: a surjective module map carries generalized weight spaces onto those of its target.
+An invariant functional, that is a module map to the trivial module, vanishes on every weight
+space of weight other than `1`.
 
 The action conventions are those of A. Virelizier, *Quantum groups*, Sections 2.3--2.4.
 -/
@@ -86,25 +90,21 @@ theorem kInv_smul_of_mem_weightSpace {μ : ℂ} {v : V} (hv : v ∈ weightSpace 
       kInv q • v = μ⁻¹ • μ • kInv q • v := by rw [smul_smul, inv_mul_cancel₀ hμ, one_smul]
       _ = μ⁻¹ • v := by rw [← hv']
 
+/-- An element `a` with `K a = c (a K)` maps the `μ`-weight space into the `c μ`-weight space. -/
+theorem smul_mem_weightSpace_of_k_mul {a : UqSl2 q} {c μ : ℂ} (ha : k q * a = c • (a * k q))
+    {v : V} (hv : v ∈ weightSpace q V μ) : a • v ∈ weightSpace q V (c * μ) := by
+  rw [mem_weightSpace_iff] at hv ⊢
+  rw [← mul_smul, ha, smul_assoc, mul_smul, hv, smul_comm a μ v, smul_smul]
+
 /-- Raising a weight vector multiplies its weight by `q²`. -/
 theorem e_smul_mem_weightSpace {μ : ℂ} {v : V} (hv : v ∈ weightSpace q V μ) :
-    e q • v ∈ weightSpace q V (q ^ 2 * μ) := by
-  rw [mem_weightSpace_iff] at hv ⊢
-  calc
-    k q • e q • v = (k q * e q) • v := (mul_smul _ _ _).symm
-    _ = (q ^ 2 • (e q * k q)) • v := by rw [k_mul_e]
-    _ = (q ^ 2 * μ) • e q • v := by
-      simp [smul_assoc, mul_smul, hv, smul_comm (e q) μ v]
+    e q • v ∈ weightSpace q V (q ^ 2 * μ) :=
+  smul_mem_weightSpace_of_k_mul k_mul_e hv
 
 /-- Lowering a weight vector multiplies its weight by `q⁻²`. -/
 theorem f_smul_mem_weightSpace {μ : ℂ} {v : V} (hv : v ∈ weightSpace q V μ) :
-    f q • v ∈ weightSpace q V (q⁻¹ ^ 2 * μ) := by
-  rw [mem_weightSpace_iff] at hv ⊢
-  calc
-    k q • f q • v = (k q * f q) • v := (mul_smul _ _ _).symm
-    _ = (q⁻¹ ^ 2 • (f q * k q)) • v := by rw [k_mul_f]
-    _ = (q⁻¹ ^ 2 * μ) • f q • v := by
-      simp [smul_assoc, mul_smul, hv, smul_comm (f q) μ v]
+    f q • v ∈ weightSpace q V (q⁻¹ ^ 2 * μ) :=
+  smul_mem_weightSpace_of_k_mul k_mul_f hv
 
 /-- The weight after `n` raising operations. -/
 theorem e_pow_smul_mem_weightSpace {μ : ℂ} {v : V} (hv : v ∈ weightSpace q V μ) (n : ℕ) :
@@ -142,6 +142,19 @@ theorem map_weightSpace_le {W : Type*} [AddCommGroup W] [Module ℂ W] [Module (
     [IsScalarTower ℂ (UqSl2 q) W] (φ : V →ₗ[UqSl2 q] W) (μ : ℂ) :
     (weightSpace q V μ).map (φ.restrictScalars ℂ) ≤ weightSpace q W μ :=
   Module.End.map_genEigenspace_le _ (LinearMap.ext fun x => (φ.map_smul (k q) x).symm) μ 1
+
+/-- An invariant functional, that is a module map to the trivial module, kills every vector of
+weight different from `1`. -/
+theorem apply_eq_zero_of_mem_weightSpace [Fact (q ≠ 0)]
+    (g : V →ₗ[UqSl2 q] BialgebraModule.Trivial ℂ (UqSl2 q)) {μ : ℂ} (hμ : μ ≠ 1) {v : V}
+    (hv : v ∈ weightSpace q V μ) : g v = 0 := by
+  have h := congrArg (BialgebraModule.trivialEquiv ℂ (UqSl2 q)) (g.map_smul (k q) v)
+  rw [mem_weightSpace_iff.mp hv, LinearMapClass.map_smul_of_tower, map_smul,
+    BialgebraModule.trivialEquiv_smul, counit_k, smul_eq_mul, one_mul] at h
+  apply (BialgebraModule.trivialEquiv ℂ (UqSl2 q)).injective
+  rw [map_zero]
+  have h' : (μ - 1) * BialgebraModule.trivialEquiv ℂ (UqSl2 q) (g v) = 0 := by linear_combination h
+  exact (mul_eq_zero.mp h').resolve_left (sub_ne_zero.mpr hμ)
 
 variable (q V) in
 /-- A finite-dimensional module has only finitely many weights. -/
@@ -181,7 +194,7 @@ theorem weightSpace_le_genWeightSpace (μ : ℂ) : weightSpace q V μ ≤ genWei
 theorem genWeightSpace_zero : genWeightSpace q V 0 = ⊥ := by
   refine (Submodule.eq_bot_iff _).mpr fun v hv => ?_
   obtain ⟨n, hn⟩ := mem_genWeightSpace_iff.mp hv
-  rw [map_zero, sub_zero, ← kUnit_val, ← Units.val_pow_eq_pow_val] at hn
+  rw [map_zero, sub_zero, ← val_kUnit, ← Units.val_pow_eq_pow_val] at hn
   exact ((kUnit q ^ n).isUnit.smul_eq_zero).mp hn
 
 /-- An element `a` that `q`-commutes with `K` in the form `K a = c (a K)` maps the generalized
