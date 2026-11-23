@@ -37,7 +37,6 @@ open subsets of `ℂ` (the additive Cousin problem), which is not proved here.
 
 * `TauCeti.Hyperfunction.holomorphicSectionsEquiv`: holomorphic functions on `V` in the ambient
   encoding are the sections of the holomorphic structure sheaf over `V`;
-* `TauCeti.Hyperfunction.realAxis`: the real axis as a closed subset of `ℂ`;
 * `TauCeti.Hyperfunction.oneDimBoundaryToSupportedModuleH`: the map
   `O(ℂ ∖ ℝ) / O(W(U)) ⟶ H¹_ℝ(W(U), 𝒪)`, injective
   (`TauCeti.Hyperfunction.oneDimBoundaryToSupportedModuleH_injective`), with image the kernel of
@@ -68,8 +67,8 @@ namespace TauCeti.Hyperfunction
 theorem contMDiff_subtype_of_mem_holomorphicSections {V : Opens ℂ} {f : ℂ → ℂ}
     (hf : f ∈ holomorphicSections V) : ContMDiff 𝓘(ℂ) 𝓘(ℂ) ω (fun x : V ↦ f x) :=
   (contMDiffOn_iff_contDiffOn.2 (((mem_holomorphicSections_iff.1 hf).1.analyticOnNhd
-    V.isOpen).contDiffOn V.isOpen.uniqueDiffOn)).comp_contMDiff contMDiff_subtype_val
-    fun x ↦ x.2
+    V.isOpen).contDiffOn V.isOpen.uniqueDiffOn)).comp_contMDiff contMDiff_subtypeVal
+    fun x ↦ x.property
 
 /-- A section of the holomorphic structure sheaf over `V`, extended by zero off `V`, is a
 holomorphic function on `V` in the ambient encoding. -/
@@ -79,14 +78,14 @@ theorem extend_mem_holomorphicSections {V : Opens ℂ}
   refine mem_holomorphicSections_iff.2 ⟨fun z hz ↦ ?_, fun z hz ↦ ?_⟩
   · have h := (holomorphicStructureSheafModules.contMDiff s ⟨z, hz⟩).extend_subtypeVal 0
     exact ((contMDiffAt_iff_contDiffAt.1 h).differentiableAt (by simp)).differentiableWithinAt
-  · exact Function.extend_apply' _ _ _ fun ⟨x, hx⟩ ↦ hz (hx ▸ x.2)
+  · exact Function.extend_apply' _ _ _ fun ⟨x, hx⟩ ↦ hz (hx ▸ x.property)
 
 /-- The holomorphic functions on an open `V ⊆ ℂ`, encoded as functions on `ℂ` vanishing off `V`,
 are the sections over `V` of the holomorphic structure sheaf of `ℂ`. -/
 def holomorphicSectionsEquiv (V : Opens ℂ) :
     holomorphicSections V ≃ₗ[ℂ] (holomorphicStructureSheafModules 𝓘(ℂ) ℂ).obj.obj (op V) where
   toFun f := holomorphicStructureSheafModules.ofContMDiff _
-    (contMDiff_subtype_of_mem_holomorphicSections f.2)
+    (contMDiff_subtype_of_mem_holomorphicSections f.property)
   invFun s := ⟨Subtype.val.extend s 0, extend_mem_holomorphicSections s⟩
   map_add' f g := holomorphicStructureSheafModules.ext fun x ↦ by simp
   map_smul' c f := holomorphicStructureSheafModules.ext fun x ↦ by simp
@@ -94,8 +93,8 @@ def holomorphicSectionsEquiv (V : Opens ℂ) :
     by_cases hz : z ∈ V
     · exact (Subtype.val_injective.extend_apply _ _ ⟨z, hz⟩).trans
         (holomorphicStructureSheafModules.ofContMDiff_apply _ _ _)
-    · exact (Function.extend_apply' _ _ _ fun ⟨x, hx⟩ ↦ hz (hx ▸ x.2)).trans
-        ((mem_holomorphicSections_iff.1 f.2).2 z hz).symm
+    · exact (Function.extend_apply' _ _ _ fun ⟨x, hx⟩ ↦ hz (hx ▸ x.property)).trans
+        ((mem_holomorphicSections_iff.1 f.property).2 z hz).symm
   right_inv s := holomorphicStructureSheafModules.ext fun x ↦
     (holomorphicStructureSheafModules.ofContMDiff_apply _ _ x).trans
       (Subtype.val_injective.extend_apply _ _ x)
@@ -111,6 +110,14 @@ theorem coe_holomorphicSectionsEquiv_symm_apply {V : Opens ℂ}
     ((holomorphicSectionsEquiv V).symm s : ℂ → ℂ) x = s x :=
   Subtype.val_injective.extend_apply _ _ x
 
+/-- A restriction of the section of the structure sheaf attached to a holomorphic function `f`
+takes the values of `f`. -/
+theorem map_holomorphicSectionsEquiv_apply {U V : Opens ℂ} (h : U ≤ V)
+    (f : holomorphicSections V) (x : U) :
+    (holomorphicStructureSheafModules 𝓘(ℂ) ℂ).obj.map (homOfLE h).op
+      (holomorphicSectionsEquiv V f) x = (f : ℂ → ℂ) x := by
+  rw [holomorphicStructureSheafModules.map_apply, holomorphicSectionsEquiv_apply]
+
 /-- The identification of holomorphic functions with sections of the structure sheaf commutes
 with restriction to a smaller open set. -/
 theorem holomorphicSectionsEquiv_holomorphicRestrict {U V : Opens ℂ} (h : U ≤ V)
@@ -118,31 +125,9 @@ theorem holomorphicSectionsEquiv_holomorphicRestrict {U V : Opens ℂ} (h : U �
     holomorphicSectionsEquiv U (holomorphicRestrict h f) =
       (holomorphicStructureSheafModules 𝓘(ℂ) ℂ).obj.map (homOfLE h).op
         (holomorphicSectionsEquiv V f) :=
-  holomorphicStructureSheafModules.ext fun x ↦ (holomorphicSectionsEquiv_apply _ x).trans <|
-    (congrFun (coe_holomorphicRestrict h f) x).trans <| (indicator_of_mem x.2 _).trans <|
-      (holomorphicSectionsEquiv_apply f (Opens.inclusion h x)).symm.trans
-        (holomorphicStructureSheafModules.map_apply 𝓘(ℂ) ℂ _ _ x).symm
-
-/-! ### The real axis -/
-
-/-- The real axis `{z | z.im = 0}`, as a closed subset of `ℂ`. -/
-def realAxis : Closeds ℂ :=
-  ⟨{z | z.im = 0}, isClosed_eq Complex.continuous_im continuous_const⟩
-
-@[simp]
-theorem mem_realAxis_iff {z : ℂ} : z ∈ realAxis ↔ z.im = 0 :=
-  Iff.rfl
-
-/-- The complement of the real axis is `ℂ ∖ ℝ`. -/
-theorem compl_realAxis : realAxis.compl = nonRealOpen := by
-  ext z
-  simp [Closeds.compl]
-
-/-- Removing the real axis from `W(U) = ℂ ∖ (ℝ ∖ U)` leaves `ℂ ∖ ℝ`. -/
-theorem complexNeighborhood_inf_compl_realAxis (U : Opens ℝ) :
-    complexNeighborhood U ⊓ realAxis.compl = nonRealOpen := by
-  rw [compl_realAxis]
-  exact inf_eq_right.2 (nonRealOpen_le_complexNeighborhood U)
+  holomorphicStructureSheafModules.ext fun x ↦ by
+    rw [holomorphicSectionsEquiv_apply, map_holomorphicSectionsEquiv_apply,
+      coe_holomorphicRestrict, indicator_of_mem x.property]
 
 /-! ### The comparison with local cohomology -/
 
@@ -157,8 +142,17 @@ private def nonRealSectionsEquiv (U : Opens ℝ) :
 @[simp]
 private theorem nonRealSectionsEquiv_apply (U : Opens ℝ) (f : holomorphicSections nonRealOpen)
     (x : ↥(complexNeighborhood U ⊓ realAxis.compl)) :
-    nonRealSectionsEquiv U f x = (f : ℂ → ℂ) x :=
-  holomorphicSectionsEquiv_apply _ x
+    nonRealSectionsEquiv U f x = (f : ℂ → ℂ) x := by
+  rw [nonRealSectionsEquiv, LinearEquiv.trans_apply, holomorphicSectionsEquiv_apply,
+    LinearEquiv.coe_ofEq_apply]
+
+/-- A restriction of the section over `W(U) ∖ ℝ` attached to `f` takes the values of `f`. -/
+private theorem map_nonRealSectionsEquiv_apply {U : Opens ℝ} {W : Opens ℂ}
+    (h : W ≤ complexNeighborhood U ⊓ realAxis.compl) (f : holomorphicSections nonRealOpen)
+    (x : W) :
+    (holomorphicStructureSheafModules 𝓘(ℂ) ℂ).obj.map (homOfLE h).op
+      (nonRealSectionsEquiv U f) x = (f : ℂ → ℂ) x := by
+  rw [holomorphicStructureSheafModules.map_apply, nonRealSectionsEquiv_apply]
 
 /-- The connecting map `O(ℂ ∖ ℝ) ⟶ H¹_ℝ(W(U), 𝒪)` of the long exact sequence of supports. -/
 private def nonRealToSupportedModuleH (U : Opens ℝ) :
@@ -178,21 +172,20 @@ private theorem ker_nonRealToSupportedModuleH (U : Opens ℝ) :
     mem_throughReal_iff]
   constructor
   · rintro ⟨g, hg⟩
-    refine ⟨_, ((holomorphicSectionsEquiv _).symm g).2, fun z hz ↦ ?_⟩
+    refine ⟨_, ((holomorphicSectionsEquiv _).symm g).property, fun z hz ↦ ?_⟩
     have hzW : z ∈ complexNeighborhood U ⊓ realAxis.compl := by
       rwa [complexNeighborhood_inf_compl_realAxis]
     -- both sides are the value at `z` of the section over `W(U) ∖ ℝ`
-    exact (coe_holomorphicSectionsEquiv_symm_apply g ⟨z, hzW.1⟩).trans <|
-      (holomorphicStructureSheafModules.map_apply 𝓘(ℂ) ℂ _ g ⟨z, hzW⟩).symm.trans <|
-        congr($hg ⟨z, hzW⟩).trans (nonRealSectionsEquiv_apply U f ⟨z, hzW⟩)
+    have := congr($hg ⟨z, hzW⟩)
+    rw [holomorphicStructureSheafModules.map_apply, nonRealSectionsEquiv_apply] at this
+    exact (coe_holomorphicSectionsEquiv_symm_apply g ⟨z, hzW.1⟩).trans this
   · rintro ⟨g, hg, hgf⟩
     refine ⟨holomorphicSectionsEquiv _ ⟨g, hg⟩, holomorphicStructureSheafModules.ext fun x ↦ ?_⟩
     have hx : (x : ℂ) ∈ nonRealOpen := by
       rw [← complexNeighborhood_inf_compl_realAxis U]
-      exact x.2
-    exact (holomorphicStructureSheafModules.map_apply 𝓘(ℂ) ℂ _ _ x).trans <|
-      (holomorphicSectionsEquiv_apply _ _).trans <|
-        (hgf hx).trans (nonRealSectionsEquiv_apply U f x).symm
+      exact x.property
+    rw [map_holomorphicSectionsEquiv_apply, nonRealSectionsEquiv_apply]
+    exact hgf hx
 
 /-- The one-dimensional hyperfunctions `O(ℂ ∖ ℝ) / O(W(U))` on an open `U ⊆ ℝ` map to the local
 cohomology `H¹_ℝ(W(U), 𝒪)` of the holomorphic structure sheaf, by the connecting map of the long
@@ -212,9 +205,11 @@ theorem oneDimBoundaryToSupportedModuleH_mk_of_forall_apply_eq (U : Opens ℝ)
     (hs : ∀ x, s x = (f : ℂ → ℂ) x) :
     oneDimBoundaryToSupportedModuleH U (Submodule.Quotient.mk f) =
       (holomorphicStructureSheafModules 𝓘(ℂ) ℂ).supportedModuleHSectionsδ realAxis
-        (complexNeighborhood U) s :=
-  congrArg _ (holomorphicStructureSheafModules.ext fun x ↦
-    (nonRealSectionsEquiv_apply U f x).trans (hs x).symm)
+        (complexNeighborhood U) s := by
+  rw [oneDimBoundaryToSupportedModuleH, Submodule.liftQ_apply, nonRealToSupportedModuleH,
+    LinearMap.comp_apply, LinearEquiv.coe_coe]
+  exact congrArg _ (holomorphicStructureSheafModules.ext fun x ↦ by
+    rw [nonRealSectionsEquiv_apply, hs])
 
 /-- The class of a holomorphic function `f` on `ℂ ∖ ℝ` is the connecting image of `f`, viewed as a
 section of the structure sheaf over `ℂ ∖ ℝ` and restricted to `W(U) ∖ ℝ = ℂ ∖ ℝ`. -/
@@ -225,9 +220,8 @@ theorem oneDimBoundaryToSupportedModuleH_mk (U : Opens ℝ) (f : holomorphicSect
         (complexNeighborhood U) ((holomorphicStructureSheafModules 𝓘(ℂ) ℂ).obj.map
           (homOfLE (complexNeighborhood_inf_compl_realAxis U).le).op
           (holomorphicSectionsEquiv nonRealOpen f)) :=
-  oneDimBoundaryToSupportedModuleH_mk_of_forall_apply_eq U f _ fun x ↦
-    (holomorphicStructureSheafModules.map_apply 𝓘(ℂ) ℂ _ _ x).trans
-      (holomorphicSectionsEquiv_apply f _)
+  oneDimBoundaryToSupportedModuleH_mk_of_forall_apply_eq U f _
+    (map_holomorphicSectionsEquiv_apply _ f)
 
 /-- The map from one-dimensional hyperfunctions to local cohomology is injective. -/
 theorem oneDimBoundaryToSupportedModuleH_injective (U : Opens ℝ) :
@@ -258,13 +252,10 @@ theorem supportedModuleHPresheaf_map_oneDimBoundaryToSupportedModuleH {U V : Ope
       oneDimBoundaryToSupportedModuleH U (oneDimBoundaryRestrict h q) := by
   induction q using Submodule.Quotient.induction_on with
   | H f =>
-    -- the values of sections are compared explicitly, since the coercion of sections over
-    -- `Opens ℂ` to functions is not unfolded by `simp`
     rw [oneDimBoundaryRestrict_mk,
       oneDimBoundaryToSupportedModuleH_mk_of_forall_apply_eq V f _ (nonRealSectionsEquiv_apply V f),
       CategoryTheory.Sheaf.supportedModuleHPresheaf_map_supportedModuleHSectionsδ,
-      oneDimBoundaryToSupportedModuleH_mk_of_forall_apply_eq U f _ fun x ↦
-        (holomorphicStructureSheafModules.map_apply 𝓘(ℂ) ℂ _ _ x).trans
-          (nonRealSectionsEquiv_apply V f _)]
+      oneDimBoundaryToSupportedModuleH_mk_of_forall_apply_eq U f _
+        (map_nonRealSectionsEquiv_apply _ f)]
 
 end TauCeti.Hyperfunction
