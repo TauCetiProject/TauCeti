@@ -69,18 +69,6 @@ theorem _root_.Irrational.not_of_terminatedAt (hξ : Irrational ξ) (n : ℕ) :
   obtain ⟨q, rfl⟩ := (terminates_iff_rat ξ).mp ⟨n, h⟩
   exact hξ.ne_rat q rfl
 
-/-- `SimpContFract.of ξ` is `of ξ` bundled with the proof that its partial numerators are `1`. -/
-private theorem coe_simpContFract_of (ξ : ℝ) :
-    ((SimpContFract.of ξ : SimpContFract ℝ) : GenContFract ℝ) = of ξ := rfl
-
-/-- The determinant identity `Aₙ Bₙ₊₁ - Bₙ Aₙ₊₁ = (-1) ^ (n + 1)` for the continuants of the
-continued fraction of `ξ`, before it terminates. -/
-private theorem nums_mul_dens_succ_sub (ξ : ℝ) {n : ℕ} (hn : ¬(of ξ).TerminatedAt n) :
-    (of ξ).nums n * (of ξ).dens (n + 1) - (of ξ).dens n * (of ξ).nums (n + 1) =
-      (-1) ^ (n + 1) := by
-  rw [← coe_simpContFract_of] at hn ⊢
-  exact (SimpContFract.of ξ).determinant hn
-
 /-- The `n`-th continuants of a real number are coprime: before termination by the
 determinant formula, after termination since the continuants are stable. -/
 private theorem isCoprime_of_nums_dens (ξ : ℝ) (n : ℕ) {a b : ℤ} (ha : (of ξ).nums n = a)
@@ -98,7 +86,7 @@ private theorem isCoprime_of_nums_dens (ξ : ℝ) (n : ℕ) {a b : ℤ} (ha : (o
     · rw [nums_stable_of_terminated k.le_succ ht] at ha
       rw [dens_stable_of_terminated k.le_succ ht] at hb
       exact ih ha hb
-    have hdet := nums_mul_dens_succ_sub ξ ht
+    have hdet := of_nums_mul_dens_succ_sub ht
     rw [hA₀, hB₀, ha, hb] at hdet
     have hdetZ : a₀ * b - b₀ * a = (-1) ^ (k + 1) := by exact_mod_cast hdet
     set u : ℤ := (-1) ^ (k + 1)
@@ -192,7 +180,7 @@ of `ξ`, before its continued fraction terminates. -/
 theorem num_convergent_mul_den_convergent_succ_sub (ξ : ℝ) {n : ℕ} (hn : ¬(of ξ).TerminatedAt n) :
     (ξ.convergent n).num * (ξ.convergent (n + 1)).den -
       (ξ.convergent n).den * (ξ.convergent (n + 1)).num = (-1) ^ (n + 1) := by
-  have h := nums_mul_dens_succ_sub ξ hn
+  have h := of_nums_mul_dens_succ_sub hn
   rw [← Real.num_convergent, ← Real.num_convergent, ← Real.den_convergent,
     ← Real.den_convergent] at h
   exact_mod_cast h

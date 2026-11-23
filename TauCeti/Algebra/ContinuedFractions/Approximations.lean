@@ -6,18 +6,22 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.ContinuedFractions.Computation.Approximations
+public import Mathlib.Algebra.ContinuedFractions.Determinant
 
 /-!
 # Integrality of continuants and bounds for the denominators and errors of convergents
 
 For the continued fraction `GenContFract.of v` of an element `v` of a floor field, this file
-proves four complements to Mathlib's
+proves five complements to Mathlib's
 `Mathlib.Algebra.ContinuedFractions.Computation.Approximations`. Here `Aₙ / Bₙ` is the `n`-th
 convergent `(of v).convs n`, and `bₙ₊₁` is the partial denominator given by
 `(of v).partDens.get? n = some bₙ₊₁`.
 
 * `GenContFract.exists_int_contsAux_eq`: the continuants `contsAux n = ⟨Aₙ₋₁, Bₙ₋₁⟩` are pairs of
   integers, since the partial numerators are `1` and the partial denominators are integers.
+* `GenContFract.of_nums_mul_dens_succ_sub`: if the continued fraction has not terminated at `n`,
+  then `Aₙ Bₙ₊₁ - Bₙ Aₙ₊₁ = (-1) ^ (n + 1)`. This is Mathlib's `SimpContFract.determinant` for
+  `SimpContFract.of v`, stated for `of v`.
 * `GenContFract.of_den_le_partDen_add_one_mul_den`: `Bₙ₊₁ ≤ (bₙ₊₁ + 1) Bₙ`. Together with
   Mathlib's lower bound `GenContFract.le_of_succ_get?_den`, `bₙ₊₁ Bₙ ≤ Bₙ₊₁`, this places the
   ratio `Bₙ₊₁ / Bₙ` between `bₙ₊₁` and `bₙ₊₁ + 1`.
@@ -64,7 +68,17 @@ theorem exists_int_contsAux_eq (v : K) (n : ℕ) :
       push_cast
       ring_nf
 
-variable [IsStrictOrderedRing K] {v : K} {n : ℕ}
+variable {v : K} {n : ℕ}
+
+/-- The determinant identity `Aₙ Bₙ₊₁ - Bₙ Aₙ₊₁ = (-1) ^ (n + 1)` for the continuants of the
+continued fraction of `v`, before it terminates. This is `SimpContFract.determinant` for
+`SimpContFract.of v`, whose underlying continued fraction is `of v`. -/
+theorem of_nums_mul_dens_succ_sub (hn : ¬(of v).TerminatedAt n) :
+    (of v).nums n * (of v).dens (n + 1) - (of v).dens n * (of v).nums (n + 1) =
+      (-1) ^ (n + 1) :=
+  (SimpContFract.of v).determinant hn
+
+variable [IsStrictOrderedRing K]
 
 /-- The next convergent denominator is at most the current one times one plus the next
 partial denominator. Together with `le_of_succ_get?_den`, this bounds their ratio. -/
