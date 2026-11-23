@@ -189,8 +189,8 @@ instance instField : Field (meromorphicGerms 𝕜 a) where
   mul_inv_cancel φ hφ := by
     obtain ⟨f, hf, rfl⟩ := exists_mk φ
     -- A nonzero germ has a representative vanishing nowhere on a punctured neighbourhood.
-    have hne : ∀ᶠ z in 𝓝[≠] a, f z ≠ 0 := hf.germ_ne_zero_iff.mp fun h ↦ hφ <| Subtype.ext <| by
-      simpa only [coe_mk, ZeroMemClass.coe_zero] using h
+    have hne : ∀ᶠ z in 𝓝[≠] a, f z ≠ 0 := hf.germ_ne_zero_iff.mp <| by
+      simpa only [coe_mk] using (Subring.coe_eq_zero_iff (meromorphicGerms 𝕜 a)).not.mpr hφ
     rw [← mk_inv, ← mk_mul, ← mk_one, mk_eq_mk_iff]
     filter_upwards [hne] with z hz
     exact mul_inv_cancel₀ hz
