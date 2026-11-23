@@ -224,10 +224,12 @@ theorem exists_forall_norm_le_mul_norm_familyDomainTrajectoryOperator_add_norm_o
   -- The estimates near the two ends and near each time.
   obtain ⟨Ct, Tt, hCt⟩ :=
     exists_forall_norm_le_mul_norm_familyDomainTrajectoryOperator_of_tendsto_atTop
-      (ContinuousLinearMap.inner_apply_eq_inner_apply_of_tendsto hAtop hSymm) hAtop' hAL hAtop
+      (fun x y ↦ ContinuousLinearMap.inner_apply_eq_inner_apply_of_tendsto hAtop
+        (.of_forall fun s ↦ hSymm s x y)) hAtop' hAL hAtop
   obtain ⟨Cb, Tb, hCb⟩ :=
     exists_forall_norm_le_mul_norm_familyDomainTrajectoryOperator_of_tendsto_atBot
-      (ContinuousLinearMap.inner_apply_eq_inner_apply_of_tendsto hAbot hSymm) hAbot' hAL hAbot
+      (fun x y ↦ ContinuousLinearMap.inner_apply_eq_inner_apply_of_tendsto hAbot
+        (.of_forall fun s ↦ hSymm s x y)) hAbot' hAL hAbot
   have hloc (s₀ : ℝ) : ∃ C e : ℝ, 0 ≤ e ∧ ∃ S ∈ 𝓝 s₀,
       ∀ w : WeakDerivStep volume ⊤ 2 (ι.compLpL 2 μ₀),
       (∀ᵐ s ∂volume, s ∉ S → prev _ w s = 0) →
