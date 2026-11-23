@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Topology.Covering.Category
-public import TauCeti.Topology.Homotopy.Monodromy.Basic
+public import TauCeti.Topology.Covering.Degree
 
 /-!
 # Finite covering spaces
@@ -21,10 +21,9 @@ adds is the finiteness property, the constructor family and the inclusion functo
 given again because they pin `P` down to finiteness — and
 `TauCeti.FiniteCoveringSpace.finite_fiber`, recording finiteness of every fibre as an instance.
 
-Finiteness of all fibres is one condition rather than infinitely many as soon as the base is path
-connected: monodromy along a path is a bijection between the fibres over its endpoints, so the
-fibres over any two points of a path component are in bijection. That is
-`TauCeti.coveringFiberEquiv`, from `TauCeti.Topology.Homotopy.Monodromy.Basic`, and
+Finiteness of all fibres is one condition rather than infinitely many as soon as the base is
+preconnected: fibre cardinality is locally constant, hence constant on each connected component.
+This is recorded by `IsCoveringMap.finite_fiber_of_mem_connectedComponent`, and
 `TauCeti.hasFiniteFibers_of_finite_fiber` is the resulting one-point criterion.
 
 Finite covers are the covering-space side of the Galois-category picture: the fibre over a
@@ -41,7 +40,7 @@ functor lands in `FintypeCat`.
   constructor, its computation lemmas and the inclusion into all covering spaces. The rest of the
   API is `TauCeti.CoveringSpace.FullSubcategory`'s.
 * `TauCeti.FiniteCoveringSpace.finite_fiber`: every fibre of a finite covering space is finite.
-* `TauCeti.hasFiniteFibers_of_finite_fiber`: over a path-connected base, one finite fibre makes
+* `TauCeti.hasFiniteFibers_of_finite_fiber`: over a preconnected base, one finite fibre makes
   all fibres finite.
 -/
 
@@ -57,12 +56,11 @@ section Fibers
 
 variable {E : Type u} {X : Type v} [TopologicalSpace E] [TopologicalSpace X] {p : E → X}
 
-/-- Over a path-connected base, a covering map with one finite fibre has all fibres finite. -/
-theorem finite_fiber_of_finite_fiber [PathConnectedSpace X] (hp : IsCoveringMap p) {x₀ : X}
+/-- Over a preconnected base, a covering map with one finite fibre has all fibres finite. -/
+theorem finite_fiber_of_finite_fiber [PreconnectedSpace X] (hp : IsCoveringMap p) {x₀ : X}
     (h : Finite ↥(p ⁻¹' {x₀})) (x : X) : Finite ↥(p ⁻¹' {x}) :=
-  have := h
-  Finite.of_equiv _
-    (coveringFiberEquiv hp (Path.Homotopic.Quotient.mk (PathConnectedSpace.somePath x₀ x)))
+  hp.finite_fiber_of_mem_connectedComponent
+    (by simp only [PreconnectedSpace.connectedComponent_eq_univ, Set.mem_univ]) h
 
 end Fibers
 
@@ -122,8 +120,8 @@ instance finite_fiber (p : FiniteCoveringSpace X) (x : X) : Finite ↥(⇑p.proj
 
 end FiniteCoveringSpace
 
-/-- **Over a path-connected base one finite fibre makes a covering space finite.** -/
-theorem hasFiniteFibers_of_finite_fiber {X : TopCat.{u}} [PathConnectedSpace X]
+/-- **Over a preconnected base one finite fibre makes a covering space finite.** -/
+theorem hasFiniteFibers_of_finite_fiber {X : TopCat.{u}} [PreconnectedSpace X]
     (p : CoveringSpace X) (x₀ : X) (h : Finite ↥(⇑p.proj ⁻¹' {x₀})) :
     Over.hasFiniteFibers X p.obj :=
   Over.hasFiniteFibers_iff.2 fun x => finite_fiber_of_finite_fiber p.isCoveringMap_proj h x

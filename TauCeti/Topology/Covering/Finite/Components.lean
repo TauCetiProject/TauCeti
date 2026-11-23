@@ -12,8 +12,9 @@ public import TauCeti.Topology.Covering.Proper
 # Components of finite covers
 
 A covering map with finite fibres over a space with finitely many connected components has
-finitely many connected components in its total space. Thus a finite cover splits into only
-finitely many connected covering spaces, even without compactness assumptions.
+finitely many connected components in its total space. This reduces componentwise arguments to
+finitely many connected pieces, without compactness assumptions. The base may be disconnected,
+and the map need not be surjective; no piece is asserted to cover the whole base surjectively.
 -/
 
 public section
