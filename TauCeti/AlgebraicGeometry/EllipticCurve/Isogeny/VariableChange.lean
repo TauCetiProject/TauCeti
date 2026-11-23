@@ -70,8 +70,10 @@ one of them: `W.autGroup ≃* (Hom W W)ˣ`.
 * `TauCeti.Isogeny.variableChangeIsogeny_inj`: a change of variables is determined by its isogeny.
 * `TauCeti.Isogeny.variableChangeIsogeny_negVariableChange`: the change of variables `[-1]` gives
   the negation isogeny.
-* `TauCeti.Isogeny.pullbackDifferential_variableChangeIsogeny_invariantDifferential`: a change of
-  variables `C` pulls the invariant differential back to `C.u` times the invariant differential.
+* `TauCeti.Isogeny.pullbackDifferential_variableChangeIsogeny_invariantDifferential` and
+  `TauCeti.Isogeny.pullbackDifferential_variableChangeIsogeny_comp_eq_smul`: a change of
+  variables `C` pulls the invariant differential back to `C.u` times the invariant differential,
+  and conjugating an isogeny by `C₁`, `C₂` scales its pullback constant by `C₂.u / C₁.u`.
 * `TauCeti.Isogeny.exists_algebraMap_eq_pullback_of_degree_eq_one`: an isogeny of degree one out
   of a curve with integrally closed coordinate ring (for instance an elliptic curve) pulls the
   coordinate ring back into the coordinate ring.
@@ -254,6 +256,26 @@ theorem pullbackDifferential_variableChangeIsogeny_invariantDifferential (h : C 
     map_inv₀, hd, smul_smul, ← algebraMap_smul W₁.FunctionField (C.u : F), smul_smul]
   congr 1
   rw [mul_inv, mul_right_comm, ← map_inv₀, ← map_mul, hu]
+
+open _root_.WeierstrassCurve.Affine in
+/-- **Conjugating an isogeny by changes of variables scales its differential pullback constant**:
+if `φ : W₁ → W₂` satisfies `φ^*ω₂ = c ω₁`, and `C₁`, `C₂` carry `W₁`, `W₂` to `W₁'`, `W₂'`, then
+`C₂ ∘ φ ∘ C₁⁻¹ : W₁' → W₂'` pulls `ω₂'` back to `(c * C₂.u / C₁.u) • ω₁'`. -/
+theorem pullbackDifferential_variableChangeIsogeny_comp_eq_smul
+    {W₁' W₂' : WeierstrassCurve.Affine F} (φ : Isogeny W₁ W₂) {c : F}
+    (hc : φ.pullbackDifferential (invariantDifferential W₂) = c • invariantDifferential W₁)
+    {C₁ C₂ : VariableChange F} (h₁ : C₁⁻¹ • W₁' = W₁) (h₂ : C₂ • W₂ = W₂') :
+    ((variableChangeIsogeny C₂ h₂).comp
+        (φ.comp (variableChangeIsogeny C₁⁻¹ h₁))).pullbackDifferential
+        (invariantDifferential W₂') =
+      (c * C₂.u / C₁.u) • invariantDifferential W₁' := by
+  rw [pullbackDifferential_comp, pullbackDifferential_comp, LinearMap.comp_apply,
+    LinearMap.comp_apply, pullbackDifferential_variableChangeIsogeny_invariantDifferential,
+    map_smul, hc, map_smul, map_smul,
+    pullbackDifferential_variableChangeIsogeny_invariantDifferential, smul_smul, smul_smul]
+  simp only [VariableChange.inv_def, Units.val_inv_eq_inv_val]
+  congr 1
+  ring
 
 /-! ### Every isomorphism is a change of variables -/
 
@@ -457,7 +479,8 @@ variable (W : WeierstrassCurve.Affine F)
 point at infinity, hence a unit of the endomorphism monoid. -/
 noncomputable def autGroupToUnits : W.autGroup →* (Hom W W)ˣ :=
   MonoidHom.toHomUnits
-    { toFun := fun C => ofIsogeny (variableChangeIsogeny C (MulAction.mem_stabilizer_iff.mp C.2))
+    { toFun := fun C => ofIsogeny (variableChangeIsogeny C (MulAction.mem_stabilizer_iff.mp
+        C.property))
       map_one' := by
         simp only [OneMemClass.coe_one, variableChangeIsogeny_one, one_def, id_def]
       map_mul' := fun C C' => by
@@ -469,7 +492,7 @@ noncomputable def autGroupToUnits : W.autGroup →* (Hom W W)ˣ :=
 @[simp]
 theorem coe_autGroupToUnits (C : W.autGroup) :
     (autGroupToUnits W C : Hom W W) =
-      ofIsogeny (variableChangeIsogeny C (MulAction.mem_stabilizer_iff.mp C.2)) :=
+      ofIsogeny (variableChangeIsogeny C (MulAction.mem_stabilizer_iff.mp C.property)) :=
   (rfl)
 
 /-- **Distinct changes of variables fixing `W` give distinct automorphisms of `W`.** -/

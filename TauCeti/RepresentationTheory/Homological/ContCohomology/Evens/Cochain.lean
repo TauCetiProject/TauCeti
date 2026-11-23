@@ -195,14 +195,14 @@ theorem continuous_evensExtend [TopologicalSpace G] [SeparatelyContinuousMul G]
     (hopen : IsOpen (U : Set G)) (hα : Continuous α) : Continuous (evensExtend U α) := by
   -- on `U` the extension takes the first branch of its `dite`, so it restricts to `α` there
   have hres : (U : Set G).domRestrict (evensExtend U α) =
-      fun v : ↥(U : Set G) => Multiplicative.toAdd (α ⟨(v : G), v.2⟩) :=
-    funext fun v => dite_eq_left v.2
+      fun v : ↥(U : Set G) => Multiplicative.toAdd (α ⟨(v : G), v.property⟩) :=
+    funext fun v => dite_eq_left v.property
   -- off `U` it takes the second branch, so it restricts to the constant `0`
   have hresc : ((U : Set G)ᶜ).domRestrict (evensExtend U α) = fun _ => (0 : ZMod 2) :=
-    funext fun v => dite_eq_right v.2
+    funext fun v => dite_eq_right v.property
   have hon : ContinuousOn (evensExtend U α) (U : Set G) := by
     rw [continuousOn_iff_continuous_domRestrict, hres]
-    exact continuous_toAdd.comp (hα.comp (continuous_subtype_val.subtype_mk _))
+    exact continuous_toAdd.comp (hα.comp (continuous_subtypeVal.subtype_mk _))
   have hoff : ContinuousOn (evensExtend U α) ((U : Set G)ᶜ) := by
     rw [continuousOn_iff_continuous_domRestrict, hresc]
     exact continuous_const

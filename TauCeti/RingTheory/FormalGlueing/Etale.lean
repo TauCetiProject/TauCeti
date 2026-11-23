@@ -10,6 +10,7 @@ public import Mathlib.RingTheory.Etale.Basic
 import Mathlib.RingTheory.Extension.Cotangent.BaseChange
 import Mathlib.RingTheory.Finiteness.ModuleFinitePresentation
 import Mathlib.RingTheory.Kaehler.TensorProduct
+import TauCeti.RingTheory.TensorProduct.AlgEquiv
 
 /-!
 # Detecting finite étaleness on formal-glueing pieces
@@ -20,7 +21,10 @@ to each `R[1/g]`, for `g ∈ G`, are finite étale. Neither ring needs to be Noe
 `R → S` need not be faithfully flat.
 
 This criterion checks that an algebra reconstructed by formal glueing is finite étale.
-It does not construct that algebra. Formal étaleness is detected without any finiteness
+It does not construct that algebra. `IsBaseChange.formallyEtale_of_formalGlueing` and
+`IsBaseChange.finite_etale_of_formalGlueing` package the criterion for a commutative algebra
+equipped with an abstract base-change map `φ : E →ₐ[R] N` and principal-localization equivalences
+to `M`. Formal étaleness is detected without any finiteness
 hypothesis: both the module of Kähler differentials and the first cotangent homology
 vanish if they vanish on all the pieces. Their base-change comparisons are Mathlib's
 `KaehlerDifferential.tensorKaehlerEquivBase` and `Algebra.tensorH1CotangentOfFlat`.
@@ -99,3 +103,44 @@ theorem finite_etale_iff_baseChange_and_localized
   exact ⟨inferInstance, ⟨inferInstance, inferInstance⟩⟩
 
 end TauCeti
+
+namespace IsBaseChange
+
+variable {R S E M N : Type*} [CommRing R] [CommRing S] [Algebra R S] [Module.Flat R S]
+  [CommRing E] [Algebra R E] [CommRing M] [Algebra R M]
+  [CommRing N] [Algebra R N] [Algebra S N] [IsScalarTower R S N]
+
+/-- Any commutative `R`-algebra `E` glued from a formally étale `S`-algebra `N` and locally
+formally étale `R`-algebra `M` across `G` is formally étale over `R`. -/
+theorem formallyEtale_of_formalGlueing {φ : E →ₐ[R] N} (hφ : IsBaseChange S φ.toLinearMap)
+    (G : Finset R)
+    (hG : Bijective (Ideal.quotientMap ((Ideal.span (G : Set R)).map (algebraMap R S))
+      (algebraMap R S) Ideal.le_comap_map))
+    (e_loc : ∀ r ∈ G, Localization.Away r ⊗[R] E ≃ₐ[Localization.Away r]
+      Localization.Away r ⊗[R] M)
+    [Algebra.FormallyEtale S N]
+    (hM : ∀ r ∈ G, Algebra.FormallyEtale (Localization.Away r) (Localization.Away r ⊗[R] M)) :
+    Algebra.FormallyEtale R E :=
+  (TauCeti.formallyEtale_iff_baseChange_and_localized hG).mpr
+    ⟨.of_equiv hφ.algEquiv.symm, fun r hr ↦ by
+      have := hM r hr
+      exact .of_equiv (e_loc r hr).symm⟩
+
+/-- Any commutative `R`-algebra `E` glued from a finite étale `S`-algebra `N` and locally finite
+étale `R`-algebra `M` across `G` is finite étale over `R`. -/
+theorem finite_etale_of_formalGlueing {φ : E →ₐ[R] N} (hφ : IsBaseChange S φ.toLinearMap)
+    (G : Finset R)
+    (hG : Bijective (Ideal.quotientMap ((Ideal.span (G : Set R)).map (algebraMap R S))
+      (algebraMap R S) Ideal.le_comap_map))
+    (e_loc : ∀ r ∈ G, Localization.Away r ⊗[R] E ≃ₐ[Localization.Away r]
+      Localization.Away r ⊗[R] M)
+    [Module.Finite S N] [Algebra.Etale S N]
+    (hM : ∀ r ∈ G, Module.Finite (Localization.Away r) (Localization.Away r ⊗[R] M) ∧
+      Algebra.Etale (Localization.Away r) (Localization.Away r ⊗[R] M)) :
+    Module.Finite R E ∧ Algebra.Etale R E :=
+  (TauCeti.finite_etale_iff_baseChange_and_localized hG).mpr
+    ⟨⟨Module.Finite.equiv hφ.equiv.symm, .of_equiv hφ.algEquiv.symm⟩, fun r hr ↦ by
+      obtain ⟨_, _⟩ := hM r hr
+      exact ⟨Module.Finite.equiv (e_loc r hr).toLinearEquiv.symm, .of_equiv (e_loc r hr).symm⟩⟩
+
+end IsBaseChange

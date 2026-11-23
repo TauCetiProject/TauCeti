@@ -297,7 +297,7 @@ noncomputable def galoisCharacterUnitaryWeight (χ : (L ≃ₐ[K] L) →* ℂˣ)
 /-- The unitary packaging has the same underlying weight. -/
 @[simp]
 theorem val_galoisCharacterUnitaryWeight (χ : (L ≃ₐ[K] L) →* ℂˣ) :
-    (galoisCharacterUnitaryWeight (L := L) χ).1 = galoisCharacterWeight (L := L) χ := by
+    (galoisCharacterUnitaryWeight (L := L) χ).val = galoisCharacterWeight (L := L) χ := by
   simp [galoisCharacterUnitaryWeight]
 
 /-- The weight of a Galois character is bounded by `1`. -/
