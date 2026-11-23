@@ -45,8 +45,17 @@ The hypothesis `α ≤ 1` is used for both: a bounded Lipschitz function is `α`
   `C_{par,b}^{(k+1)+α} → C_{par,b}^{k+α}`.
 * `TauCeti.ParabolicCkHolderSpace.inclusionL_apply` and
   `TauCeti.ParabolicCkHolderSpace.mixedDerivL_inclusionL`: it keeps the map and its fields.
-* `TauCeti.ParabolicCkHolderSpace.norm_inclusionL_le`: the bound on its norm.
-* `TauCeti.ParabolicCkHolderSpace.inclusionL_injective`: it is injective.
+* `TauCeti.ParabolicCkHolderSpace.norm_inclusionL_le` and
+  `TauCeti.ParabolicCkHolderSpace.norm_inclusionL_le_mul_sq`: the bounds on its norm.
+* `TauCeti.ParabolicCkHolderSpace.inclusionOfLEL`: the inclusion
+  `C_{par,b}^{n+α} → C_{par,b}^{m+α}` for `m ≤ n`, the composite of the inclusions of consecutive
+  orders (`TauCeti.ParabolicCkHolderSpace.inclusionOfLEL_self`,
+  `TauCeti.ParabolicCkHolderSpace.inclusionOfLEL_succ`), which keeps the map and its fields
+  (`TauCeti.ParabolicCkHolderSpace.inclusionOfLEL_apply`,
+  `TauCeti.ParabolicCkHolderSpace.mixedDerivL_inclusionOfLEL`) and has norm at most
+  `(8 n²) ^ (n - m)` (`TauCeti.ParabolicCkHolderSpace.norm_inclusionOfLEL_le`).
+* `TauCeti.ParabolicCkHolderSpace.inclusionL_injective`: the inclusion of consecutive orders is
+  injective.
 * `TauCeti.ParabolicCkHolderSpace.memHolder_mixedDerivL_of_le`: every field of order at most `k`
   is parabolically `α`-Hölder.
 * `TauCeti.ParabolicCkHolderSpace.exists_coe_eq_of_le` and
@@ -142,10 +151,78 @@ theorem norm_inclusionL_le (hα : α ≤ 1) :
       (parabolicDerivPairs k).card * 8 :=
   LinearMap.mkContinuous_norm_le _ (by positivity) _
 
+/-- The inclusion `C_{par,b}^{(k+1)+α} → C_{par,b}^{k+α}` has norm at most `8 (k + 1)²`. -/
+theorem norm_inclusionL_le_mul_sq (hα : α ≤ 1) :
+    ‖inclusionL (k := k) (E := E) (F := F) (hab := hab) hα‖ ≤ 8 * (k + 1) ^ 2 := by
+  refine (norm_inclusionL_le hα).trans ?_
+  have := card_parabolicDerivPairs_le k
+  rw [mul_comm]
+  gcongr
+  exact_mod_cast this
+
 /-- The inclusion is injective. -/
 theorem inclusionL_injective (hα : α ≤ 1) :
     Function.Injective (inclusionL (k := k) (E := E) (F := F) (hab := hab) hα) :=
   fun f g hfg ↦ ext fun p ↦ by rw [← inclusionL_apply hα f p, hfg, inclusionL_apply]
+
+/-- **The inclusion of parabolic Hölder spaces of comparable orders.** For `α ≤ 1` and `m ≤ n`,
+the composite `C_{par,b}^{n+α} → C_{par,b}^{m+α}` of the inclusions of consecutive orders. -/
+def inclusionOfLEL (hα : α ≤ 1) {m n : ℕ} (h : m ≤ n) :
+    ParabolicCkHolderSpace n α E F hab →L[ℝ] ParabolicCkHolderSpace m α E F hab :=
+  Nat.leRec (motive := fun n _ ↦
+      ParabolicCkHolderSpace n α E F hab →L[ℝ] ParabolicCkHolderSpace m α E F hab)
+    (ContinuousLinearMap.id ℝ _) (fun _ _ L ↦ L.comp (inclusionL hα)) h
+
+/-- The inclusion of an order into itself is the identity. -/
+@[simp]
+theorem inclusionOfLEL_self (hα : α ≤ 1) (n : ℕ) :
+    inclusionOfLEL (E := E) (F := F) (hab := hab) hα (le_refl n) = ContinuousLinearMap.id ℝ _ :=
+  Nat.leRec_self _ _
+
+/-- The inclusion from order `n + 1` is the inclusion from order `n` after the inclusion of
+consecutive orders. -/
+theorem inclusionOfLEL_succ (hα : α ≤ 1) {m n : ℕ} (h : m ≤ n) :
+    inclusionOfLEL (E := E) (F := F) (hab := hab) hα (h.trans (n.le_add_right 1)) =
+      (inclusionOfLEL hα h).comp (inclusionL hα) :=
+  Nat.leRec_succ _ _ h
+
+/-- The inclusion of comparable orders keeps the map. -/
+@[simp]
+theorem inclusionOfLEL_apply (hα : α ≤ 1) {m n : ℕ} (h : m ≤ n)
+    (f : ParabolicCkHolderSpace n α E F hab) (p : slab (E := E) a b) :
+    inclusionOfLEL hα h f p = f p := by
+  induction n, h using Nat.le_induction with
+  | base => simp
+  | succ n h ih =>
+    rw [inclusionOfLEL_succ hα h, ContinuousLinearMap.comp_apply, ih, inclusionL_apply]
+
+/-- The inclusion of comparable orders keeps the mixed derivatives `D_t^r D_x^m u` of parabolic
+order `2 r + m ≤ k`. -/
+@[simp]
+theorem mixedDerivL_inclusionOfLEL (hα : α ≤ 1) {n : ℕ} (h : k ≤ n)
+    (f : ParabolicCkHolderSpace n α E F hab) {r m : ℕ} (hrm : 2 * r + m ≤ k) :
+    mixedDerivL r m (inclusionOfLEL hα h f) = mixedDerivL r m f := by
+  induction n, h using Nat.le_induction with
+  | base => simp
+  | succ n h ih =>
+    rw [inclusionOfLEL_succ hα h, ContinuousLinearMap.comp_apply, ih,
+      mixedDerivL_inclusionL hα f (hrm.trans h)]
+
+/-- **The norm of the inclusion of comparable orders.** For `m ≤ n`, the inclusion
+`C_{par,b}^{n+α} → C_{par,b}^{m+α}` has norm at most `(8 n²) ^ (n - m)`. -/
+theorem norm_inclusionOfLEL_le (hα : α ≤ 1) {m n : ℕ} (h : m ≤ n) :
+    ‖inclusionOfLEL (E := E) (F := F) (hab := hab) hα h‖ ≤ (8 * n ^ 2 : ℝ) ^ (n - m) := by
+  induction n, h using Nat.le_induction with
+  | base => simpa using ContinuousLinearMap.norm_id_le
+  | succ n h ih =>
+    -- Each of the `n - m` earlier inclusions has norm at most `8 n² ≤ 8 (n + 1)²`, and the last
+    -- one has norm at most `8 (n + 1)²`.
+    rw [inclusionOfLEL_succ hα h, Nat.succ_sub h, pow_succ]
+    refine (ContinuousLinearMap.opNorm_comp_le _ _).trans ?_
+    push_cast
+    gcongr
+    · exact ih.trans (by gcongr; linarith)
+    · exact norm_inclusionL_le_mul_sq hα
 
 /-- **Every field is parabolically Hölder.** For `α ≤ 1`, every field `D_t^r D_x^m u` with
 `2 r + m ≤ k` of a map of order `k` is parabolically `α`-Hölder, not only those of top order:

@@ -18,6 +18,9 @@ import TauCeti.Geometry.Manifold.ContMDiff.Subtype
 The compact derivative topology on native sections is independent of the covering smooth
 frame system. Changes of frame act by the actual smooth transition matrix, including its
 higher derivatives. Open-cover locality is taken in the existing weak Whitney topology.
+Restriction to an open subset and multiplication by a smooth scalar function are continuous
+(`ContMDiffSection.continuous_restrict_frameTopology`,
+`ContMDiffSection.continuous_smul_function_frameTopology`).
 -/
 
 public noncomputable section
@@ -196,5 +199,19 @@ theorem continuous_restrict_frameTopology (W : Opens M) :
   erw [Bundle.Trivialization.frameCoordinates_apply,
     Bundle.Trivialization.pullback_apply, ContMDiffSection.restrict_apply]
   rfl
+
+omit [LocallyCompactSpace E] in
+/-- Multiplication of sections by a fixed smooth scalar function is continuous for the frame
+topology. In each frame it multiplies the coefficients by the restricted function. -/
+theorem continuous_smul_function_frameTopology (f : C^n⟮I, M; 𝕜⟯) :
+    let _ := frameTopology (I := I) (n := n) e U hU
+    Continuous (fun s : Cₛ^n⟮I; F, V⟯ ↦ f • s) := by
+  let A (i : ι) : C^n⟮I, U i; 𝓘(𝕜, F →L[𝕜] F), F →L[𝕜] F⟯ :=
+    ⟨fun x ↦ f x • ContinuousLinearMap.id 𝕜 F,
+      (f.contMDiff.comp contMDiff_subtypeVal).smul contMDiff_const⟩
+  refine continuous_frameTopology_of_frameCoordinates_eq_clmApplyLinearMap e U hU e hU A
+    fun i s ↦ ContMDiffMap.ext fun x ↦ ?_
+  rw [ContMDiffMap.clmApplyLinearMap_apply]
+  simp [A, ← (e i).continuousLinearMapAt_apply_of_mem 𝕜 (hU i x.property)]
 
 end ContMDiffSection

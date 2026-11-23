@@ -9,7 +9,7 @@ public import TauCeti.Analysis.Complex.Pompeiu.Holder.Operator
 public import TauCeti.Analysis.Holder.Iterated
 import Mathlib.Analysis.Calculus.ContDiff.Operations
 import TauCeti.Analysis.Calculus.IteratedFDeriv.Basic
-import TauCeti.Analysis.Normed.Operator.FiniteDimensional
+import TauCeti.Topology.Algebra.Module.FiniteDimension
 import TauCeti.Topology.MetricSpace.Holder
 
 /-!
@@ -151,7 +151,7 @@ theorem exists_contDiffOn_holderOnWith_iteratedFDeriv_cauchyTransform
     -- The real action is uniquely determined by the compatible complex action.
     cases NormedSpace.restrictScalars_eq (𝕜 := ℝ) (𝕜' := ℂ) (E := F)
     have : FiniteDimensional ℂ (ℂ →L[ℝ] F) :=
-      ContinuousLinearMap.finiteDimensional_of_isScalarTower
+      ContinuousLinearMap.finiteDimensional_of_smulCommClass
     obtain ⟨C, hC⟩ := ih (F := ℂ →L[ℝ] F)
     refine ⟨C + (2 * (r + R)).toNNReal, fun {f H M} hf hs hH hM ↦ ?_⟩
     have hc : HasCompactSupport f :=
