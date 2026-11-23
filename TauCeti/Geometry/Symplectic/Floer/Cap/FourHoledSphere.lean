@@ -237,7 +237,7 @@ def glue₃ (W : (⟨γ₀⟩ : FundamentalGroupoid (Ω X x)) ⟶ ⟨(γ₁.tran
 theorem glue₃_mk (W : (⟨γ₀⟩ : FundamentalGroupoid (Ω X x)) ⟶ ⟨(γ₁.trans γ₂).trans γ₃⟩)
     (D₁ : RawCap γ₁) (D₂ : RawCap γ₂) (D₃ : RawCap γ₃) :
     glue₃ W (mk ω c D₁) (mk ω c D₂) (mk ω c D₃) = mk ω c (RawCap.glue₃ W D₁ D₂ D₃) := by
-  rw [glue₃, pantsGlue_mk, pantsGlue_mk, RawCap.glue₃_eq_pantsGlue_pantsGlue]
+  simp only [glue₃, pantsGlue_mk, RawCap.glue₃_eq_pantsGlue_pantsGlue]
 
 theorem glue₃_eq_pantsGlue_pantsGlue
     (W : (⟨γ₀⟩ : FundamentalGroupoid (Ω X x)) ⟶ ⟨(γ₁.trans γ₂).trans γ₃⟩)
@@ -253,7 +253,7 @@ theorem glue_glue₃ {γ₀' : Ω X x} (p : (⟨γ₀'⟩ : FundamentalGroupoid 
     (W : (⟨γ₀⟩ : FundamentalGroupoid (Ω X x)) ⟶ ⟨(γ₁.trans γ₂).trans γ₃⟩)
     (q₁ : SphericalCapClass ω c γ₁) (q₂ : SphericalCapClass ω c γ₂)
     (q₃ : SphericalCapClass ω c γ₃) : glue p (glue₃ W q₁ q₂ q₃) = glue₃ (p ≫ W) q₁ q₂ q₃ := by
-  rw [glue₃_eq_pantsGlue_pantsGlue, glue_pantsGlue, glue₃_eq_pantsGlue_pantsGlue]
+  simp only [glue₃_eq_pantsGlue_pantsGlue, glue_pantsGlue]
 
 /-- Gluing cap classes glued to homotopies of loops `p₁`, `p₂` and `p₃` at the inputs is gluing
 along the four-holed sphere followed by the product `(p₁ ⋀ p₂) ⋀ p₃` of the homotopies. -/
@@ -268,7 +268,7 @@ theorem glue₃_glue_glue_glue {γ₁' γ₂' γ₃' : Ω X x}
   induction q₁ using induction_on with | h D₁ =>
   induction q₂ using induction_on with | h D₂ =>
   induction q₃ using induction_on with
-  | h D₃ => rw [glue_mk, glue_mk, glue_mk, glue₃_mk, glue₃_mk, RawCap.glue₃_comp_comp_comp]
+  | h D₃ => simp only [glue_mk, glue₃_mk, RawCap.glue₃_comp_comp_comp]
 
 /-- **Sewing a pair of pants into the first input**, on cap classes: if `W` is `P ≫ (P' ⋀ 𝟙)`,
 then gluing along `W` is gluing along `P'` and then along `P`. -/
@@ -282,8 +282,7 @@ theorem glue₃_eq_pantsGlue_pantsGlue_left
   induction q₁ using induction_on with | h D₁ =>
   induction q₂ using induction_on with | h D₂ =>
   induction q₃ using induction_on with
-  | h D₃ => rw [pantsGlue_mk, pantsGlue_mk, glue₃_mk,
-      RawCap.glue₃_eq_pantsGlue_pantsGlue_left W P P' hW]
+  | h D₃ => simp only [pantsGlue_mk, glue₃_mk, RawCap.glue₃_eq_pantsGlue_pantsGlue_left W P P' hW]
 
 /-- **Sewing a pair of pants into the second input**, on cap classes: if `W` is
 `Q ≫ (𝟙 ⋀ Q')` followed by the associator of the loop space, then gluing along `W` is gluing
@@ -299,8 +298,7 @@ theorem glue₃_eq_pantsGlue_pantsGlue_right
   induction q₁ using induction_on with | h D₁ =>
   induction q₂ using induction_on with | h D₂ =>
   induction q₃ using induction_on with
-  | h D₃ => rw [pantsGlue_mk, pantsGlue_mk, glue₃_mk,
-      RawCap.glue₃_eq_pantsGlue_pantsGlue_right W Q Q' hW]
+  | h D₃ => simp only [pantsGlue_mk, glue₃_mk, RawCap.glue₃_eq_pantsGlue_pantsGlue_right W Q Q' hW]
 
 /-- Changing the first input cap class changes the cap class glued along a four-holed sphere by
 the same class. -/
@@ -314,7 +312,7 @@ theorem glue₃_vsub_glue₃_left
   induction q₁ using induction_on with | h D₁ =>
   induction q₂ using induction_on with | h D₂ =>
   induction q₃ using induction_on with
-  | h D₃ => rw [glue₃_mk, glue₃_mk, mk_vsub_mk, mk_vsub_mk, RawCap.glue₃_vsub_glue₃_left]
+  | h D₃ => simp only [glue₃_mk, mk_vsub_mk, RawCap.glue₃_vsub_glue₃_left]
 
 /-- Changing the second input cap class changes the cap class glued along a four-holed sphere by
 the same class. -/
@@ -328,7 +326,7 @@ theorem glue₃_vsub_glue₃_middle
   induction q₂' using induction_on with | h D₂' =>
   induction q₂ using induction_on with | h D₂ =>
   induction q₃ using induction_on with
-  | h D₃ => rw [glue₃_mk, glue₃_mk, mk_vsub_mk, mk_vsub_mk, RawCap.glue₃_vsub_glue₃_middle]
+  | h D₃ => simp only [glue₃_mk, mk_vsub_mk, RawCap.glue₃_vsub_glue₃_middle]
 
 /-- Changing the third input cap class changes the cap class glued along a four-holed sphere by
 the same class. -/
@@ -342,7 +340,7 @@ theorem glue₃_vsub_glue₃_right
   induction q₂ using induction_on with | h D₂ =>
   induction q₃' using induction_on with | h D₃' =>
   induction q₃ using induction_on with
-  | h D₃ => rw [glue₃_mk, glue₃_mk, mk_vsub_mk, mk_vsub_mk, RawCap.glue₃_vsub_glue₃_right]
+  | h D₃ => simp only [glue₃_mk, mk_vsub_mk, RawCap.glue₃_vsub_glue₃_right]
 
 variable [PathConnectedSpace X]
 
