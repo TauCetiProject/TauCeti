@@ -49,11 +49,10 @@ grading graded-isomorphic to a shift has such a generator.
   shifts `A(d)` and `A(e)` are graded-isomorphic if and only if `d - e ∈ homogeneousUnitDegrees 𝒜`.
 * `TauCeti.ShiftClassGroup.equivZMod`: for a `ℤ`-grading whose homogeneous unit degrees are the
   multiples of `e`, the shift class group is `ZMod |e|`.
-* `TauCeti.sub_mem_homogeneousUnitDegrees_of_associated_of_isLeftRegular` and
-  `TauCeti.sub_mem_homogeneousUnitDegrees_of_associated`: associated homogeneous elements `b`
-  and `a` have degrees differing by an element of `homogeneousUnitDegrees 𝒜`, either when `b`
-  is left-regular in a graded semiring or when `b ≠ 0` in a graded semiring with left
-  cancellation by nonzero elements.
+* `TauCeti.neg_add_mem_homogeneousUnitDegrees_of_associated_of_isLeftRegular` and
+  `TauCeti.neg_add_mem_homogeneousUnitDegrees_of_associated`: associated homogeneous elements `b`
+  and `a` satisfy `-db + da ∈ homogeneousUnitDegrees 𝒜`, either when `b` is left-regular in a
+  graded semiring or when `b ≠ 0` in a graded semiring with left cancellation by nonzero elements.
 
 The group-algebra and Laurent-polynomial examples, `TauCeti.homogeneousUnitDegrees_gradeBy` and
 `TauCeti.shiftClassGroupLaurentPolynomialEquiv`, are in `TauCeti.Algebra.MonoidAlgebra.Grading`
@@ -248,6 +247,32 @@ theorem exists_linearEquiv_iff_exists_isUnit_mem [AddSubmonoidClass σM A] [Deco
 
 end AddGroup
 
+section Associated
+
+variable {ι A σ : Type*} [DecidableEq ι] [AddGroup ι] [Semiring A] [SetLike σ A]
+  [AddSubmonoidClass σ A] {𝒜 : ι → σ} [GradedRing 𝒜]
+
+/-- In a semiring graded by an additive group, if a left-regular homogeneous element `b ∈ 𝒜 db` is
+associated to `a ∈ 𝒜 da`, then `-db + da ∈ homogeneousUnitDegrees 𝒜`: the unit cofactor on the
+right is homogeneous of degree `-db + da`. -/
+theorem neg_add_mem_homogeneousUnitDegrees_of_associated_of_isLeftRegular {a b : A} {da db : ι}
+    (ha : a ∈ 𝒜 da) (hb : b ∈ 𝒜 db) (hb_reg : IsLeftRegular b) (h : Associated b a) :
+    -db + da ∈ homogeneousUnitDegrees 𝒜 := by
+  obtain ⟨u, rfl⟩ := h
+  exact mem_homogeneousUnitDegrees_of_mem <|
+    GradedAlgebra.mem_of_mul_mem_add_of_isLeftRegular 𝒜 hb hb_reg (by rwa [add_neg_cancel_left])
+
+/-- In a graded semiring with left cancellation by nonzero elements and grading group an additive
+group, if a nonzero homogeneous element `b ∈ 𝒜 db` is associated to `a ∈ 𝒜 da`, then
+`-db + da ∈ homogeneousUnitDegrees 𝒜`. -/
+theorem neg_add_mem_homogeneousUnitDegrees_of_associated [IsLeftCancelMulZero A] {a b : A}
+    {da db : ι} (ha : a ∈ 𝒜 da) (hb : b ∈ 𝒜 db) (hb0 : b ≠ 0) (h : Associated b a) :
+    -db + da ∈ homogeneousUnitDegrees 𝒜 :=
+  neg_add_mem_homogeneousUnitDegrees_of_associated_of_isLeftRegular ha hb
+    (fun _ _ ↦ mul_left_cancel₀ hb0) h
+
+end Associated
+
 section AddCommGroup
 
 variable [AddCommGroup ι] (𝒜 : ι → σ) [GradedRing 𝒜]
@@ -275,27 +300,6 @@ theorem ShiftClassGroup.mk_eq_mk_iff {d e : ι} :
     (d : ShiftClassGroup 𝒜) = e ↔ ∃ φ : A ≃ₗ[A] A, ∀ n x, φ x ∈ 𝒜 (n + e) ↔ x ∈ 𝒜 (n + d) := by
   rw [QuotientAddGroup.eq, ← sub_mem_homogeneousUnitDegrees_iff, ← neg_mem_iff, neg_add_rev,
     neg_neg, neg_add_eq_sub]
-
-variable {𝒜}
-
-/-- In a semiring graded by an additive commutative group, if a left-regular homogeneous element
-`b ∈ 𝒜 db` is associated to `a ∈ 𝒜 da`, then `da - db ∈ homogeneousUnitDegrees 𝒜`: the unit
-cofactor on the right is homogeneous of degree `da - db`. -/
-theorem sub_mem_homogeneousUnitDegrees_of_associated_of_isLeftRegular {a b : A} {da db : ι}
-    (ha : a ∈ 𝒜 da) (hb : b ∈ 𝒜 db) (hb_reg : IsLeftRegular b) (h : Associated b a) :
-    da - db ∈ homogeneousUnitDegrees 𝒜 := by
-  obtain ⟨u, rfl⟩ := h
-  exact mem_homogeneousUnitDegrees_of_mem <|
-    GradedAlgebra.mem_of_mul_mem_add_of_isLeftRegular 𝒜 hb hb_reg (by rwa [add_sub_cancel])
-
-/-- In a graded semiring with left cancellation by nonzero elements and grading group an additive
-commutative group, if a nonzero homogeneous element `b ∈ 𝒜 db` is associated to `a ∈ 𝒜 da`, then
-`da - db ∈ homogeneousUnitDegrees 𝒜`. -/
-theorem sub_mem_homogeneousUnitDegrees_of_associated [IsLeftCancelMulZero A] {a b : A} {da db : ι}
-    (ha : a ∈ 𝒜 da) (hb : b ∈ 𝒜 db) (hb0 : b ≠ 0) (h : Associated b a) :
-    da - db ∈ homogeneousUnitDegrees 𝒜 :=
-  sub_mem_homogeneousUnitDegrees_of_associated_of_isLeftRegular ha hb
-    (fun _ _ ↦ mul_left_cancel₀ hb0) h
 
 end AddCommGroup
 

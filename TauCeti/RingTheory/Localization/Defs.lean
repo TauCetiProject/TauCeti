@@ -116,9 +116,8 @@ variable {R : Type*} [CommSemiring R] {M : Submonoid R} {S : Type*} [CommSemirin
 a unit in `S`. -/
 @[simp]
 theorem isUnit_mk'_iff {x : R} {y : M} :
-    IsUnit (mk' S x y) ↔ IsUnit (algebraMap R S x) := by
-  rw [← mk'_spec S x y]
-  simpa [IsUnit.unit_spec] using (Units.isUnit_mul_units (mk' S x y) (map_units S y).unit).symm
+    IsUnit (mk' S x y) ↔ IsUnit (algebraMap R S x) :=
+  (toLocalizationMap M S).isUnit_mk'_iff
 
 end TauCeti.IsLocalization
 

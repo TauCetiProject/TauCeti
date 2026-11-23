@@ -212,8 +212,9 @@ theorem homogeneousUnitDegrees_awayGrading_of_eq_prod {f : A} {e : ι} (hf : f �
       SetLike.prod_pow_mem_graded 𝒜 d p m hp
     have ha0 : a ≠ 0 := hassoc.ne_zero_iff.mpr <|
       Finset.prod_ne_zero_iff.mpr fun j hj ↦ pow_ne_zero (m j) (hprime j hj).ne_zero
-    have hsub : (∑ j ∈ t, m j • d j) - c ∈ homogeneousUnitDegrees 𝒜 :=
-      sub_mem_homogeneousUnitDegrees_of_associated hm_mem ha ha0 hassoc
+    have hsub : (∑ j ∈ t, m j • d j) - c ∈ homogeneousUnitDegrees 𝒜 := by
+      rw [sub_eq_neg_add]
+      exact neg_add_mem_homogeneousUnitDegrees_of_associated hm_mem ha ha0 hassoc
     have hsum : ∑ j ∈ t, m j • d j ∈ AddSubgroup.closure (d '' t) :=
       sum_mem fun j hj ↦ nsmul_mem (AddSubgroup.subset_closure (Set.mem_image_of_mem d hj)) (m j)
     simpa using sub_mem (AddSubgroup.mem_sup_right hsum) (AddSubgroup.mem_sup_left hsub)

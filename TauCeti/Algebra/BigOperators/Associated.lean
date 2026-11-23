@@ -89,10 +89,11 @@ theorem eq_of_associated_prod_pow_primes (s : Finset ι) {p : ι → M₀} (hp :
   have hzero (j : ι) (hj : j ∈ s) (hji : j ≠ i) (k : ℕ) : emultiplicity (p i) (p j ^ k) = 0 := by
     rw [emultiplicity_pow hpi, emultiplicity_eq_zero.mpr fun hdvd ↦
       hs hi hj hji.symm (hpi.associated_of_dvd (hp j hj) hdvd), mul_zero]
-  simp only [Finset.emultiplicity_prod hpi] at key
-  rw [Finset.sum_eq_single i (fun j hj hji ↦ hzero j hj hji _) (fun hni ↦ absurd hi hni),
-    Finset.sum_eq_single i (fun j hj hji ↦ hzero j hj hji _) (fun hni ↦ absurd hi hni),
-    emultiplicity_pow_self_of_prime hpi, emultiplicity_pow_self_of_prime hpi] at key
+  have hmult (k : ι → ℕ) : emultiplicity (p i) (∏ j ∈ s, p j ^ k j) = k i := by
+    rw [Finset.emultiplicity_prod hpi,
+      Finset.sum_eq_single i (fun j hj hji ↦ hzero j hj hji _) (fun hni ↦ absurd hi hni),
+      emultiplicity_pow_self_of_prime hpi]
+  rw [hmult m, hmult n] at key
   exact Nat.cast_inj.mp key
 
 end Finset
