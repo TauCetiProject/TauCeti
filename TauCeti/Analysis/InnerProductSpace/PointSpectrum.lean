@@ -114,8 +114,6 @@ spectrum from that of its orthogonal complement.
   bounded operator `T` has absolute value at most `‖T‖`.
 * `ContinuousLinearMap.pointSpectralSubspace_inter_closedBall_norm`: consequently the
   point-spectral subspaces of `T` only see the selected reals in `[-‖T‖, ‖T‖]`.
-* `ContinuousLinearMap.ker_sub_smul_id_eq_bot_iff`: `T - μ • id` is injective exactly when `μ` is
-  not an eigenvalue of a bounded operator `T`.
 * `ContinuousLinearMap.isSymmetric_sub_smul_id`: shifting a symmetric bounded operator by a real
   multiple of the identity keeps it symmetric.
 * `LinearMap.IsSymmetric.pointSpectrumIn_Iic_iff`, `LinearMap.IsSymmetric.pointSpectrumIn_Ici_iff`:
@@ -905,15 +903,6 @@ theorem pointSpectralSubspace_inter_closedBall_norm (T : E →L[𝕜] E) (Ω : S
       ⟨hμ, by rwa [mem_closedBall_zero_iff, Real.norm_eq_abs]⟩
   · rw [eigenspace_eq_bot_of_norm_lt_abs (not_le.1 h)]
     exact bot_le
-
-/-- `T - μ • id` has trivial kernel exactly when `μ` is not an eigenvalue of `T`. -/
-theorem ker_sub_smul_id_eq_bot_iff {T : E →L[𝕜] E} {μ : 𝕜} :
-    LinearMap.ker ((T - μ • ContinuousLinearMap.id 𝕜 E : E →L[𝕜] E) : E →ₗ[𝕜] E) = ⊥ ↔
-      ¬HasEigenvalue (T : E →ₗ[𝕜] E) μ := by
-  rw [hasEigenvalue_iff, not_not]
-  congr!
-  ext x
-  simp [sub_eq_zero]
 
 end ContinuousLinearMap
 

@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.Normed.Module.RCLike.Basic
 public import Mathlib.Analysis.Normed.Operator.Basic
 public import Mathlib.Analysis.Normed.Ring.Units
+public import Mathlib.LinearAlgebra.Eigenspace.Basic
 public import Mathlib.Topology.Algebra.Module.ContinuousLinearMap.Invertible
 import Mathlib.Analysis.Normed.Module.FiniteDimension
 import Mathlib.Analysis.Normed.Operator.BoundedLinearMaps
@@ -53,8 +54,10 @@ operator `T`, as a map between spaces of operators, has norm at most `‖T‖`
 
 Finally, an operator bounded below is injective
 (`ContinuousLinearMap.injective_of_forall_norm_le`), so a lower bound `α ‖x‖ ≤ ‖f x‖` with
-`0 < α` gives a trivial kernel (`ContinuousLinearMap.ker_eq_bot_of_forall_mul_norm_le`), its
-lower and upper bounds satisfy `1 ≤ ‖f‖ M` on a nontrivial space
+`0 < α` gives a trivial kernel (`ContinuousLinearMap.ker_eq_bot_of_forall_mul_norm_le`), and
+`T - μ • id` has trivial kernel exactly when `μ` is not an eigenvalue of `T`
+(`ContinuousLinearMap.ker_sub_smul_id_eq_bot_iff`). The lower and upper bounds of an operator
+bounded below satisfy `1 ≤ ‖f‖ M` on a nontrivial space
 (`ContinuousLinearMap.one_le_opNorm_mul_of_forall_norm_le`),
 it stays nonzero under a sufficiently small perturbation
 (`ContinuousLinearMap.apply_add_ne_zero_of_forall_norm_le`), and it is invertible if it is also
@@ -365,6 +368,15 @@ theorem ker_eq_bot_of_forall_mul_norm_le {F : Type*} [SeminormedAddCommGroup F]
     [NormedSpace 𝕜 F] {f : E →L[𝕜] F} {α : ℝ} (hα : 0 < α) (h : ∀ x, α * ‖x‖ ≤ ‖f x‖) :
     LinearMap.ker (f : E →ₗ[𝕜] F) = ⊥ :=
   LinearMap.ker_eq_bot.2 (injective_of_forall_norm_le fun x ↦ (le_inv_mul_iff₀ hα).2 (h x))
+
+/-- `T - μ • id` has trivial kernel exactly when `μ` is not an eigenvalue of `T`. -/
+theorem ker_sub_smul_id_eq_bot_iff {T : E →L[𝕜] E} {μ : 𝕜} :
+    LinearMap.ker ((T - μ • ContinuousLinearMap.id 𝕜 E : E →L[𝕜] E) : E →ₗ[𝕜] E) = ⊥ ↔
+      ¬Module.End.HasEigenvalue (T : E →ₗ[𝕜] E) μ := by
+  rw [Module.End.hasEigenvalue_iff, not_not]
+  congr!
+  ext x
+  simp [sub_eq_zero]
 
 /-- An operator bounded below, `‖x‖ ≤ M ‖f x‖`, stays nonzero at `x ≠ 0` under a perturbation `w`
 with `‖w‖ ≤ ε ‖x‖`, provided `M ε < 1`. -/
