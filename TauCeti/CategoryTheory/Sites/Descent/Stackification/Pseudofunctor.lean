@@ -261,6 +261,13 @@ omit [HasPullbacks C] in
     exact A.D.hom_congr q' _ b b' hb hb' hb.symm
 
 omit [HasPullbacks C] in
+/-- The identifications of `PullbackData.refl A` are the descent isomorphisms of `A`. -/
+lemma PullbackData.refl_iso {U : C} (A : Obj.{w} J F U) ⦃T : C⦄ ⦃j : A.ι⦄ (b : T ⟶ A.X j)
+    (c : T ⟶ A.X j) (h : b ≫ 𝟙 _ = c) :
+    (refl A).iso b c h = A.D.iso (b ≫ A.f j) b c rfl (by rw [← h, Category.comp_id]) :=
+  (rfl)
+
+omit [HasPullbacks C] in
 private lemma iso_hom_comp_iso_hom_congr {U V W : C} {q : V ⟶ U} {r : W ⟶ V}
     {A : Obj.{w} J F U} {B : Obj.{w} J F V} {E : Obj.{w} J F W} (P : PullbackData r B E)
     (Q : PullbackData q A B) ⦃T : C⦄ ⦃j : E.ι⦄ (b : T ⟶ E.X j) (m m' : T ⟶ B.X (P.α j))
