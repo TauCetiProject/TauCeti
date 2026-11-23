@@ -10,6 +10,8 @@ public import Mathlib.LinearAlgebra.FreeModule.PID
 public import Mathlib.RingTheory.Flat.TorsionFree
 public import TauCeti.Algebra.Category.ModuleCat.FiniteProjective.KZero.Defs
 public import TauCeti.Algebra.Category.ModuleCat.FiniteProjective.StableEquivalent
+public import TauCeti.LinearAlgebra.InvariantBasisNumber
+public import TauCeti.RingTheory.LocalRing.Module
 
 /-!
 # `K₀` of rings whose projective modules are stably free
@@ -26,9 +28,9 @@ Following the right-module convention of algebraic `K`-theory, `K₀(R)` is the 
 group of finitely generated projective right `R`-modules, encoded as left `Rᵐᵒᵖ`-modules:
 `TauCeti.FiniteProjectiveRight R` and `TauCeti.KZero R`, defined in
 `TauCeti.Algebra.Category.ModuleCat.FiniteProjective.KZero.Defs`. The criterion applies to
-division rings, where every module is free, and to commutative principal ideal domains such as
-`ℤ`, where every finitely generated projective module is free; for these `K₀(R) ≅ ℤ`. Over the
-zero ring every module is zero and `K₀` is trivial.
+division rings, where every module is free, to possibly noncommutative local rings and to
+commutative principal ideal domains such as `ℤ`, where every finitely generated projective module
+is free; for these `K₀(R) ≅ ℤ`. Over the zero ring every module is zero and `K₀` is trivial.
 
 ## Main definitions
 
@@ -47,20 +49,23 @@ zero ring every module is zero and `K₀` is trivial.
 * `TauCeti.FiniteProjectiveModules.rankEquiv_of`: the class of a free module goes to its rank.
 * `TauCeti.FiniteProjectiveModules.subsingleton_splitK0`: `K₀` of the zero ring is trivial.
 * `TauCeti.kZero_divisionRing`: `K₀` of a division ring is `ℤ`, with `[D] ↦ 1`.
+* `TauCeti.kZero_of_isLocalRing`: `K₀` of a possibly noncommutative local ring is `ℤ`, with
+  `[R] ↦ 1`.
 * `TauCeti.kZero_of_isPrincipalIdealRing`: `K₀` of a commutative principal ideal domain is `ℤ`,
   with `[R] ↦ 1`, and `TauCeti.kZero_int` the case of `ℤ`.
 
 ## References
 
 * Charles A. Weibel, *The K-book: An Introduction to Algebraic K-theory*, Chapter II, §2, the
-  examples of division rings and principal ideal domains at the start of the section, p. 5.
+  examples of division rings and principal ideal domains at the start of the section, p. 5, and
+  Chapter I, Lemma 2.2 (finitely generated projective modules over a local ring are free).
 -/
 
 public section
 
 namespace TauCeti
 
-open CategoryTheory CategoryTheory.Limits Module
+open CategoryTheory CategoryTheory.Limits _root_.Module
 
 universe u
 
@@ -180,6 +185,16 @@ to `1`. -/
 theorem kZero_divisionRing (D : Type u) [DivisionRing D] :
     ∃ e : KZero D ≃+ ℤ, e (SplitK0.of (finiteProjectiveModulesRegular Dᵐᵒᵖ)) = 1 :=
   ⟨FiniteProjectiveModules.rankEquiv Dᵐᵒᵖ fun _ ↦ inferInstance,
+    FiniteProjectiveModules.rankEquiv_of_finiteProjectiveModulesRegular _ _⟩
+
+/-- `K₀` of a possibly noncommutative local ring `R` is `ℤ`, with the class of the free right
+module of rank one going to `1`: every finitely generated projective module is free, and a local
+ring has invariant basis number. -/
+theorem kZero_of_isLocalRing (R : Type u) [Ring R] [IsLocalRing R] :
+    ∃ e : KZero R ≃+ ℤ, e (SplitK0.of (finiteProjectiveModulesRegular Rᵐᵒᵖ)) = 1 :=
+  ⟨FiniteProjectiveModules.rankEquiv Rᵐᵒᵖ fun P ↦
+      have := Module.free_of_projective_of_isLocalRing (R := Rᵐᵒᵖ) (M := P.obj)
+      inferInstance,
     FiniteProjectiveModules.rankEquiv_of_finiteProjectiveModulesRegular _ _⟩
 
 /-- `K₀` of a commutative principal ideal domain `R` is `ℤ`, with the class of the free right
