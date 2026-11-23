@@ -26,9 +26,6 @@ either vertex consists of all edges.
 An actual edge crosses a cut exactly when its unordered pair of ends crosses the corresponding
 set of actual vertices.
 
-If the edge cut of `T` is contained in that of `S`, then the subgraph induced on `S` has empty
-edge cut along `T`; conversely when `T ⊆ S`.
-
 These facts are the interface between cut-based and walk-based descriptions of connectivity,
 used for instance to characterize bridges by deletion.
 
@@ -160,28 +157,6 @@ theorem edgeCut_banana_singleton {u w : α} (huw : u ≠ w) (F : Set β) :
   · rintro ⟨-, -, ⟨hf, -⟩, -, -⟩
     exact hf
   · exact fun hf ↦ ⟨u, w, ⟨hf, .inl ⟨rfl, rfl⟩⟩, rfl, huw.symm⟩
-
-/-! ### Edge cuts of induced subgraphs -/
-
-/-- If every edge crossing `T` also crosses `S`, then no edge with both ends in `S` crosses `T`:
-the subgraph induced on `S` has empty edge cut along `T`. -/
-theorem edgeCut_induce_eq_empty_of_edgeCut_subset {T : Set α}
-    (h : G.edgeCut T ⊆ G.edgeCut S) : (G.induce S).edgeCut T = ∅ := by
-  refine eq_empty_of_forall_notMem fun e he ↦ ?_
-  obtain ⟨x, y, ⟨hxy, hxS, hyS⟩, hxT, hyT⟩ := mem_edgeCut_iff.mp he
-  have := hxy.mem_edgeCut_iff.mp (h (mem_edgeCut_iff.mpr ⟨x, y, hxy, hxT, hyT⟩))
-  tauto
-
-/-- If `T ⊆ S` has empty edge cut in the subgraph induced on `S`, then every edge crossing `T`
-also crosses `S`. -/
-theorem edgeCut_subset_edgeCut_of_edgeCut_induce_eq_empty {T : Set α} (hTS : T ⊆ S)
-    (h : (G.induce S).edgeCut T = ∅) : G.edgeCut T ⊆ G.edgeCut S := by
-  intro e he
-  obtain ⟨x, y, hxy, hxT, hyT⟩ := mem_edgeCut_iff.mp he
-  refine mem_edgeCut_iff.mpr ⟨x, y, hxy, hTS hxT, fun hyS ↦ ?_⟩
-  have he : e ∈ (G.induce S).edgeCut T :=
-    mem_edgeCut_iff.mpr ⟨x, y, ⟨hxy, hTS hxT, hyS⟩, hxT, hyT⟩
-  exact notMem_empty e (h ▸ he)
 
 end Graph
 
