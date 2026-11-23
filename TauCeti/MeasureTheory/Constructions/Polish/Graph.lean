@@ -87,7 +87,7 @@ theorem MeasurableSet.measurableEmbedding_domRestrict_fst {G : Set (X × Y)}
     (hG : MeasurableSet G) (hinj : InjOn Prod.fst G) :
     MeasurableEmbedding (G.domRestrict Prod.fst) :=
   have := hG.standardBorel
-  (measurable_fst.comp measurable_subtype_coe).measurableEmbedding (injOn_iff_injective.1 hinj)
+  (measurable_fst.comp measurable_subtypeVal).measurableEmbedding (injOn_iff_injective.1 hinj)
 
 /-- A map with values in a measurable subset `G` of a product of standard Borel spaces with at
 most one point above each `x` is measurable if and only if its first coordinate is. -/
@@ -97,14 +97,14 @@ theorem MeasurableSet.measurable_iff_measurable_fst {Z : Type*} [MeasurableSpace
   refine ⟨fun h ↦ measurable_fst.comp h, fun h ↦ ?_⟩
   have hψ : Measurable fun z ↦ (⟨φ z, hφ z⟩ : G) :=
     (hG.measurableEmbedding_domRestrict_fst hinj).measurable_comp_iff.1 h
-  exact measurable_subtype_coe.comp hψ
+  exact measurable_subtypeVal.comp hψ
 
 /-- The function defined by a functional Borel graph is measurable on its domain. -/
 @[fun_prop]
 theorem Set.InjOn.measurable_graphValue {G : Set (X × Y)} (hinj : InjOn Prod.fst G)
     (hG : MeasurableSet G) : Measurable hinj.graphValue := by
   have hm : Measurable (fun x : Prod.fst '' G ↦ ((x : X), hinj.graphValue x)) :=
-    (hG.measurable_iff_measurable_fst hinj hinj.graphValue_mem).2 measurable_subtype_coe
+    (hG.measurable_iff_measurable_fst hinj hinj.graphValue_mem).2 measurable_subtypeVal
   exact hm.snd
 
 /-- First projection identifies a functional Borel graph measurably with its domain. -/
@@ -114,9 +114,9 @@ noncomputable def MeasurableSet.graphDomainEquiv {G : Set (X × Y)} (hG : Measur
   invFun x := ⟨((x : X), hinj.graphValue x), hinj.graphValue_mem x⟩
   left_inv p := Subtype.ext (hinj (hinj.graphValue_mem _) p.property rfl)
   right_inv _ := rfl
-  measurable_toFun := (measurable_fst.comp measurable_subtype_coe).subtype_mk
+  measurable_toFun := (measurable_fst.comp measurable_subtypeVal).subtype_mk
   measurable_invFun :=
-    (measurable_subtype_coe.prodMk (hinj.measurable_graphValue hG)).subtype_mk
+    (measurable_subtypeVal.prodMk (hinj.measurable_graphValue hG)).subtype_mk
 
 /-- The domain equivalence is the first projection. -/
 @[simp]
@@ -143,7 +143,7 @@ theorem MeasurableSet.of_graphOn {s : Set X} {f : X → Y} (h : MeasurableSet (s
 theorem MeasurableSet.measurable_domRestrict_of_graphOn {s : Set X} {f : X → Y}
     (h : MeasurableSet (s.graphOn f)) : Measurable (s.domRestrict f) := by
   have : Measurable fun x : s ↦ ((x : X), f x) :=
-    (h.measurable_iff_measurable_fst fst_injOn_graph fun x ↦ by simp).2 measurable_subtype_coe
+    (h.measurable_iff_measurable_fst fst_injOn_graph fun x ↦ by simp).2 measurable_subtypeVal
   exact measurable_snd.comp this
 
 namespace TauCeti

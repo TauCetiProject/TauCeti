@@ -28,6 +28,8 @@ covers comparing a function with its derivative.
 * `TauCeti.eLpNorm_rpow_eq_lintegral`: for an a.e. measurable `ℝ≥0∞`-valued function, the `p`-th
   power of the `Lᵖ` seminorm is the integral `∫⁻ f ^ p`; `TauCeti.eLpNorm_eq_lintegral_rpow` is
   the same identity solved for the seminorm.
+* `TauCeti.eLpNorm_two_sq_eq_lintegral`: the square of the `L²` seminorm is the integral of the
+  squared extended norm.
 * `TauCeti.eLpNorm_ennreal_le_of_ae_tendsto`: the `ℝ≥0∞`-valued Fatou lemma for the `Lᵖ` seminorm,
   along any countably generated filter at arbitrary `p : ℝ≥0∞`.
 * `TauCeti.ae_lt_top_of_eLpNorm_ne_top`: at any nonzero exponent, an `ℝ≥0∞`-valued function with
@@ -46,7 +48,7 @@ namespace TauCeti
 
 open Filter
 open MeasureTheory
-open scoped ENNReal Topology
+open scoped ENNReal NNReal Topology
 
 /-- For a finite nonzero exponent, the `p`-th power of the `Lᵖ` seminorm of an a.e. measurable
 `ℝ≥0∞`-valued function is the integral of the `p`-th power of that function. This is
@@ -68,6 +70,14 @@ theorem eLpNorm_eq_lintegral_rpow {α : Type*} [MeasurableSpace α]
     eLpNorm f p μ = (∫⁻ a, f a ^ p.toReal ∂μ) ^ (1 / p.toReal) := by
   rw [eLpNorm_eq_lintegral_rpow_eNorm_toReal hp0 hp hf.aestronglyMeasurable]
   simp only [eNorm_eq_self]
+
+/-- The square of the `L²` seminorm of an a.e. strongly measurable function is the integral of
+its squared extended norm. -/
+theorem eLpNorm_two_sq_eq_lintegral {α ε : Type*} [MeasurableSpace α] [TopologicalSpace ε]
+    [ENorm ε] {f : α → ε} {μ : Measure α} (hf : AEStronglyMeasurable f μ) :
+    eLpNorm f 2 μ ^ 2 = ∫⁻ a, ‖f a‖ₑ ^ 2 ∂μ := by
+  simpa only [NNReal.coe_ofNat, ENNReal.rpow_two, ENNReal.coe_ofNat] using
+    eLpNorm_nnreal_pow_eq_lintegral (p := (2 : ℝ≥0)) two_ne_zero hf
 
 /-- **Fatou's lemma for the `Lᵖ` seminorm of `ℝ≥0∞`-valued functions**, at every exponent
 `p : ℝ≥0∞` (including `0` and `∞`) and along any countably generated filter: an almost everywhere

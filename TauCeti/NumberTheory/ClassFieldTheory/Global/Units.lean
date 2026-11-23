@@ -79,7 +79,7 @@ variable {K L}
 private theorem sum_coeff_augmentationLattice (v : augmentationLattice K L) :
     ∑ w, (v : MonoidAlgebra ℤ (InfinitePlace L)).coeff w = 0 := by
   simpa [Finsupp.sum_fintype] using
-    (mem_augmentationSubrepresentation_iff (G := L ≃ₐ[K] L)).1 v.2
+    (mem_augmentationSubrepresentation_iff (G := L ≃ₐ[K] L)).1 v.property
 
 variable (K L)
 
@@ -106,17 +106,17 @@ private def augmentationCoordEquiv :
     · let f : InfinitePlace L → ℤ := fun w ↦ if h : w = w₀ then -∑ i, y i else y ⟨w, h⟩
       have hf : ∑ w, f w = 0 := by
         rw [Fintype.sum_eq_add_sum_subtype_ne _ w₀,
-          Fintype.sum_congr _ _ fun w : {w // w ≠ w₀} ↦ (by simp [f, w.2] : f w = y w)]
+          Fintype.sum_congr _ _ fun w : {w // w ≠ w₀} ↦ (by simp [f, w.property] : f w = y w)]
         simp [f]
       refine ⟨⟨MonoidAlgebra.ofCoeff (Finsupp.equivFunOnFinite.symm f), ?_⟩, funext fun w ↦ ?_⟩
       · simpa [Finsupp.sum_fintype] using hf
-      · simp [f, w.2]
+      · simp [f, w.property]
 
 variable {K L}
 
 private theorem augmentationCoordEquiv_apply (v : augmentationLattice K L)
     (w : {w : InfinitePlace L // w ≠ w₀}) :
-    augmentationCoordEquiv K L v w = (v : MonoidAlgebra ℤ (InfinitePlace L)).coeff w.1 := by
+    augmentationCoordEquiv K L v w = (v : MonoidAlgebra ℤ (InfinitePlace L)).coeff w.val := by
   simp only [augmentationCoordEquiv]
   rfl
 
@@ -129,7 +129,7 @@ private def augmentationToLogSpace : augmentationLattice K L →ₗ[ℤ] logSpac
 
 private theorem augmentationToLogSpace_apply (v : augmentationLattice K L)
     (w : {w : InfinitePlace L // w ≠ w₀}) :
-    augmentationToLogSpace K L v w = (v : MonoidAlgebra ℤ (InfinitePlace L)).coeff w.1 := by
+    augmentationToLogSpace K L v w = (v : MonoidAlgebra ℤ (InfinitePlace L)).coeff w.val := by
   classical
   simp only [augmentationToLogSpace, LinearMap.comp_apply, LinearEquiv.coe_coe,
     Fintype.linearCombination_apply, Finset.sum_apply]
@@ -148,7 +148,7 @@ private theorem augmentationToLogSpace_rho (σ : L ≃ₐ[K] L) (v : augmentatio
   have hext : logSpaceExtend L (augmentationToLogSpace K L v) =
       fun t ↦ ((v : MonoidAlgebra ℤ (InfinitePlace L)).coeff t : ℝ) := by
     have hv : augmentationToLogSpace K L v = fun w : {w : InfinitePlace L // w ≠ w₀} ↦
-        ((v : MonoidAlgebra ℤ (InfinitePlace L)).coeff w.1 : ℝ) :=
+        ((v : MonoidAlgebra ℤ (InfinitePlace L)).coeff w.val : ℝ) :=
       funext (augmentationToLogSpace_apply v)
     rw [hv]
     exact logSpaceExtend_eq_self
@@ -196,7 +196,7 @@ private theorem coe_unitsToUnitLattice_hom_apply (x : Additive (𝓞 L)ˣ) :
 private instance : Epi (unitsToUnitLattice K L) := (Rep.epi_iff_surjective _).2 fun y ↦ by
   have hy : (y : logSpace L) ∈ unitLattice L := by
     rw [← toSubmodule_unitLatticeSubrep (K := K)]
-    exact y.2
+    exact y.property
   obtain ⟨x, -, hx⟩ := hy
   exact ⟨x, Subtype.ext <| (coe_unitsToUnitLattice_hom_apply x).trans hx⟩
 
@@ -206,13 +206,13 @@ private theorem finite_kernel_unitsToUnitLattice : Finite ↑(kernel (unitsToUni
       ((forget₂ (Rep ℤ (L ≃ₐ[K] L)) (ModuleCat ℤ)).map (unitsToUnitLattice K L)).hom) := by
     have hker (x : LinearMap.ker
         ((forget₂ (Rep ℤ (L ≃ₐ[K] L)) (ModuleCat ℤ)).map (unitsToUnitLattice K L)).hom) :
-        Additive.toMul (α := (𝓞 L)ˣ) x.1 ∈ torsion L := by
+        Additive.toMul (α := (𝓞 L)ˣ) x.val ∈ torsion L := by
       rw [← logEmbedding_eq_zero_iff, ← coe_unitsToUnitLattice_hom_apply (K := K)]
-      exact congrArg Subtype.val (LinearMap.mem_ker.1 x.2)
+      exact congrArg Subtype.val (LinearMap.mem_ker.1 x.property)
     exact Finite.of_injective
-      (fun x ↦ (⟨Additive.toMul (α := (𝓞 L)ˣ) x.1, hker x⟩ : torsion L))
+      (fun x ↦ (⟨Additive.toMul (α := (𝓞 L)ˣ) x.val, hker x⟩ : torsion L))
       fun x y hxy ↦ by
-        have h : Additive.toMul (α := (𝓞 L)ˣ) x.1 = Additive.toMul (α := (𝓞 L)ˣ) y.1 :=
+        have h : Additive.toMul (α := (𝓞 L)ˣ) x.val = Additive.toMul (α := (𝓞 L)ˣ) y.val :=
           congrArg (fun z : torsion L ↦ (z : (𝓞 L)ˣ)) hxy
         exact Subtype.ext h
   -- the kernel is computed in `ModuleCat ℤ`, as the kernel of the underlying linear map

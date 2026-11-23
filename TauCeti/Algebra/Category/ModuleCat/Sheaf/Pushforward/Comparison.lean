@@ -31,9 +31,10 @@ formula for `T.map`, which is how `SheafOfModules.exteriorPower` and
 * `TauCeti.SheafOfModules.sheafifyPushforwardComparison`: the comparison
   `T_S ∘ φ_* ⟶ φ_* ∘ T_R`, determined on underlying presheaves by
   `unit_comp_forget_map_sheafifyPushforwardComparison_app`;
-* `TauCeti.SheafOfModules.sheafifyPushforwardComparison_app_comp_pushforward_map`: the comparison
-  is compatible with sheafified maps out of `T_S` and `T_R` whose sectionwise maps are compatible
-  with `c`, as for the identifications of first exterior and symmetric powers with the module;
+* `TauCeti.SheafOfModules.sheafifyPushforwardComparison_app_comp_pushforward_map_eq_comp`: the
+  comparison is compatible with sheafified maps out of `T_S` and `T_R` whose sectionwise maps are
+  compatible with `c`, as for the identifications of zeroth and first exterior and symmetric
+  powers with the structure sheaf and the module;
 * `TauCeti.SheafOfModules.isIso_sheafifyPushforwardComparison`: the comparison is invertible
   when the sectionwise comparison is invertible and the functor of sites is cocontinuous.
 -/
@@ -155,31 +156,37 @@ theorem unit_comp_forget_map_sheafifyPushforwardComparison_app
   exact ((PresheafOfModules.sheafificationAdjunction (𝟙 (ringCatSheaf S).obj)).homEquiv_unit
     _ _ _).symm.trans (Equiv.apply_symm_apply _ _)
 
-/-- The sheafified comparison is compatible with maps `fS : T_S (φ_* M) ⟶ φ_* M` and
-`fR : T_R M ⟶ M` that are sheafifications of sectionwise maps `oS` and `oR` compatible with the
-sectionwise comparison `c`. For instance, this identifies the comparison in degree one with the
-identity, through the identifications of first exterior or symmetric powers with the module. -/
-theorem sheafifyPushforwardComparison_app_comp_pushforward_map
+/-- The sheafified comparison is compatible with maps `fS : T_S (φ_* M) ⟶ A` and
+`fR : T_R M ⟶ B` that are sheafifications of sectionwise maps `oS` and `oR`, and with a map
+`g : A ⟶ φ_* B` such that `c` followed by `φ_* oR` is `oS` followed by `g`. For instance, with
+`g = 𝟙` this identifies the comparison in degree one with the identity, through the
+identifications of first exterior or symmetric powers with the module, and it identifies the
+comparison in degree zero with the unit map `𝒪 ⟶ φ_* 𝒪`, through the identifications of zeroth
+exterior or symmetric powers with the structure sheaves. -/
+theorem sheafifyPushforwardComparison_app_comp_pushforward_map_eq_comp
     (M : _root_.SheafOfModules.{u} (ringCatSheaf R))
-    {fS : TS.obj ((_root_.SheafOfModules.pushforward φ).obj M) ⟶
-      (_root_.SheafOfModules.pushforward φ).obj M} {fR : TR.obj M ⟶ M}
-    {oS : PS.obj ((_root_.SheafOfModules.pushforward φ).obj M).val ⟶
-      ((_root_.SheafOfModules.pushforward φ).obj M).val} {oR : PR.obj M.val ⟶ M.val}
+    {A : _root_.SheafOfModules.{u} (ringCatSheaf S)}
+    {B : _root_.SheafOfModules.{u} (ringCatSheaf R)}
+    {fS : TS.obj ((_root_.SheafOfModules.pushforward φ).obj M) ⟶ A} {fR : TR.obj M ⟶ B}
+    {g : A ⟶ (_root_.SheafOfModules.pushforward φ).obj B}
+    {oS : PS.obj ((_root_.SheafOfModules.pushforward φ).obj M).val ⟶ A.val}
+    {oR : PR.obj M.val ⟶ B.val}
     (hfS : (eS _).inv ≫ fS = (PresheafOfModules.sheafification (𝟙 (ringCatSheaf S).obj)).map oS ≫
       (sheafificationIso _ _).hom)
     (hfR : (eR M).inv ≫ fR = (PresheafOfModules.sheafification (𝟙 (ringCatSheaf R).obj)).map oR ≫
       (sheafificationIso _ _).hom)
-    (h : c.app M.val ≫ (PresheafOfModulesOfCommRing.pushforward (commRingCatHom φ)).map oR = oS) :
+    (h : c.app M.val ≫ (PresheafOfModulesOfCommRing.pushforward (commRingCatHom φ)).map oR =
+      oS ≫ g.val) :
     (sheafifyPushforwardComparison φ eS hS eR hR c).app M ≫
-      (_root_.SheafOfModules.pushforward φ).map fR = fS := by
+      (_root_.SheafOfModules.pushforward φ).map fR = fS ≫ g := by
   rw [← cancel_epi (eS ((_root_.SheafOfModules.pushforward φ).obj M)).inv]
   apply ((PresheafOfModules.sheafificationAdjunction
     (𝟙 (ringCatSheaf S).obj)).homEquiv _ _).injective
-  -- Compare the transposes along the sheafification map of `P_S (φ_* M)`: both are `oS`.
+  -- Compare the transposes along the sheafification map of `P_S (φ_* M)`: both are `oS ≫ g`.
   have key : (PresheafOfModules.sheafificationAdjunction (𝟙 (ringCatSheaf S).obj)).unit.app
         (PS.obj ((_root_.SheafOfModules.pushforward φ).obj M).val) ≫
       ((eS _).inv ≫ (sheafifyPushforwardComparison φ eS hS eR hR c).app M).val ≫
-        ((_root_.SheafOfModules.pushforward φ).map fR).val = oS := by
+        ((_root_.SheafOfModules.pushforward φ).map fR).val = oS ≫ g.val := by
     let P := presheafPushforward φ
     -- The sectionwise comparison, typed as a morphism of presheaves of modules over
     -- `(ringCatSheaf S).obj` so that every composite below lives in one category.
@@ -197,19 +204,19 @@ theorem sheafifyPushforwardComparison_app_comp_pushforward_map
         congrArg (c' ≫ ·) ((P.map_comp _ _).symm.trans (congrArg P.map (Category.assoc _ _ _)))
       _ = c' ≫ P.map oR :=
         (congrArg (fun g : (PresheafOfModules.sheafification
-            (𝟙 (ringCatSheaf R).obj)).obj (PR.obj M.val) ⟶ M ↦ c' ≫ P.map (η ≫ g.val))
+            (𝟙 (ringCatSheaf R).obj)).obj (PR.obj M.val) ⟶ B ↦ c' ≫ P.map (η ≫ g.val))
           hfR).trans (congrArg (fun g ↦ c' ≫ P.map g)
             (unit_comp_val_sheafification_map_comp_sheafificationIso_hom
               (R := ringCatSheaf R) oR))
   -- Transport both sides through the adjunction using their unit characterizations.
   refine (Adjunction.homEquiv_unit _ _ _ _).trans ?_
   refine key.trans ?_
-  refine (unit_comp_val_sheafification_map_comp_sheafificationIso_hom
-    (R := ringCatSheaf S) oS).symm.trans ?_
+  refine (congrArg (· ≫ g.val) (unit_comp_val_sheafification_map_comp_sheafificationIso_hom
+    (R := ringCatSheaf S) oS).symm).trans ?_
   rw [← hfS]
   exact (Adjunction.homEquiv_unit
     (PresheafOfModules.sheafificationAdjunction (𝟙 (ringCatSheaf S).obj)) _ _
-    ((eS ((_root_.SheafOfModules.pushforward φ).obj M)).inv ≫ fS)).symm
+    ((eS ((_root_.SheafOfModules.pushforward φ).obj M)).inv ≫ fS ≫ g)).symm
 
 /-- Along a continuous and cocontinuous functor, sheafification carries an invertible
 sectionwise pushforward comparison to an invertible comparison of sheaves of modules. -/

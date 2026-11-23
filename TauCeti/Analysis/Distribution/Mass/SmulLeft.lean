@@ -129,7 +129,7 @@ section MassMeasure
 
 open MeasureTheory
 
-variable [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] {𝓕 : Type*}
+variable [MeasurableSpace E] [BorelSpace E] {𝓕 : Type*}
   [FunLike 𝓕 𝓓^{n}(Ω, E [⋀^Fin (k + 1)]→L[ℝ] F) ℝ]
   [LinearMapClass 𝓕 ℝ 𝓓^{n}(Ω, E [⋀^Fin (k + 1)]→L[ℝ] F) ℝ]
 

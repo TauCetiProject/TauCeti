@@ -34,10 +34,10 @@ with kernel `I ⊓ J`: the map `(x, y) ↦ (x + y, j x - i y)` is an isomorphism
 def prodEquivProdInf (hi : i ∈ I) (hj : j ∈ J) (hij : i + j = 1) :
     (I × J) ≃ₗ[R] R × ↥(I ⊓ J) where
   toFun x := (x.1 + x.2, ⟨j * x.1 - i * x.2,
-    sub_mem ⟨I.mul_mem_left j x.1.2, J.mul_mem_right _ hj⟩
-      ⟨I.mul_mem_right _ hi, J.mul_mem_left i x.2.2⟩⟩)
-  invFun y := (⟨i * y.1 + y.2, add_mem (I.mul_mem_right _ hi) (mem_inf.1 y.2.2).1⟩,
-    ⟨j * y.1 - y.2, sub_mem (J.mul_mem_right _ hj) (mem_inf.1 y.2.2).2⟩)
+    sub_mem ⟨I.mul_mem_left j x.1.property, J.mul_mem_right _ hj⟩
+      ⟨I.mul_mem_right _ hi, J.mul_mem_left i x.2.property⟩⟩)
+  invFun y := (⟨i * y.1 + y.2, add_mem (I.mul_mem_right _ hi) (mem_inf.1 y.2.property).1⟩,
+    ⟨j * y.1 - y.2, sub_mem (J.mul_mem_right _ hj) (mem_inf.1 y.2.property).2⟩)
   map_add' x y := by ext <;> simp <;> ring
   map_smul' r x := by ext <;> simp <;> ring
   left_inv x := by

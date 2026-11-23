@@ -78,7 +78,7 @@ theorem mem_zigzagProjectiveRadicalPower_iff (i : V) (n : ℕ)
     · exact fun _ _ hx hy ↦ (Ring.jacobson Z ^ n).add_mem hx hy
   · intro hx
     have hfix : (x : Z) * zigzagVertexIdempotent k G i = x :=
-      (mem_zigzagProjective_iff k G).mp x.2
+      (mem_zigzagProjective_iff k G).mp x.property
     have hmem := Submodule.smul_mem_smul hx
       (show zigzagProjectiveGenerator k G i ∈
         (⊤ : Submodule Z (zigzagProjective k G i)) from Submodule.mem_top)
@@ -232,7 +232,7 @@ theorem restrictScalars_zigzagProjectiveRadicalPower_two_eq_volumeLine
   · intro x hx
     rw [Submodule.restrictScalars_mem, mem_zigzagProjectiveRadicalPower_two_iff hns] at hx
     have hfix : (x : nonisolatedZigzagQuotient k G) * zigzagVertexIdempotent k G i = x :=
-      (mem_zigzagProjective_iff k G).mp x.2
+      (mem_zigzagProjective_iff k G).mp x.property
     have hm := mul_zigzagVertexIdempotent_mem_span_singleton_of_mem_zigzagVolumeSpan i hx
     rw [hfix] at hm
     obtain ⟨c, hc⟩ := Submodule.mem_span_singleton.mp hm
@@ -279,7 +279,7 @@ theorem ker_zigzagProjectiveHeadCoeff_eq_restrictScalars_radicalPower_one
     intro j
     rw [← zigzagTrivialCoeff_apply_eq_repr hns]
     have hfix : (x : nonisolatedZigzagQuotient k G) * zigzagVertexIdempotent k G i = x :=
-      (mem_zigzagProjective_iff k G).mp x.2
+      (mem_zigzagProjective_iff k G).mp x.property
     have hcoeff := congrArg (fun f ↦ f (vertex G j))
       (congrArg (zigzagTrivialCoeff k G) hfix)
     rw [map_mul, Pi.mul_apply] at hcoeff

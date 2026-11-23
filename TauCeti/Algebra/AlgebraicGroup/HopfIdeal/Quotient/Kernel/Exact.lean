@@ -13,6 +13,7 @@ import Mathlib.RingTheory.Flat.EquationalCriterion
 import TauCeti.Algebra.AlgebraicGroup.Hopf.KernelPoints
 import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Quotient.Kernel.BaseChange
 import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Quotient.Kernel.Finiteness
+import TauCeti.RingTheory.Flat.Descent
 import TauCeti.RingTheory.RingHom.FaithfullyFlat
 
 /-!
@@ -48,7 +49,14 @@ smoothness, reducedness or finite-type hypotheses, and derives its basic consequ
   (`IsShortExact.isIsogeny_iff_moduleFinite`).
 * When `G` is finite projective over the base and `Q` is of finite type, the quotient map
   `G → Q` is finite locally free (`IsShortExact.moduleProjective`).
-* Short exact sequences are stable under arbitrary base change (`IsShortExact.baseChange`).
+* Short exact sequences are stable under arbitrary base change (`IsShortExact.baseChange`), and
+  short exactness descends along a faithfully flat one (`isShortExact_baseChangeMap_iff`): the
+  proof descends faithful flatness, surjectivity and the equality of kernel Hopf ideals, so it
+  keeps the full scheme-theoretic kernel and needs neither smoothness nor finite type. Over a
+  field, exactness can thus be checked after any field extension, such as an algebraic closure.
+* Short exactness is invariant under bialgebra equivalences of the three coordinate algebras
+  intertwining two sequences, also across universes (`isShortExact_iff_of_bialgEquiv`), and in
+  particular under isomorphisms of the coordinate algebras (`isShortExact_iso_iff`).
 
 ## Main declarations
 
@@ -66,6 +74,11 @@ smoothness, reducedness or finite-type hypotheses, and derives its basic consequ
 * `TauCeti.CommHopfAlgCat.IsShortExact.moduleProjective`: the quotient map of finite projective
   groups is finite locally free.
 * `TauCeti.CommHopfAlgCat.IsShortExact.baseChange`: base change of short exact sequences.
+* `TauCeti.CommHopfAlgCat.isShortExact_iff_of_bialgEquiv`: invariance under bialgebra equivalences
+  of the coordinate algebras.
+* `TauCeti.CommHopfAlgCat.isShortExact_iso_iff`: invariance under coordinate isomorphisms.
+* `TauCeti.CommHopfAlgCat.isShortExact_baseChangeMap_iff`: faithfully flat descent of short exact
+  sequences.
 
 ## References
 
@@ -193,6 +206,36 @@ theorem baseChange (h : IsShortExact p i) (T : Type w) [CommRing T] [Algebra R T
 
 end IsShortExact
 
+/-- Faithfully flat scalar extension preserves and reflects short exact sequences of affine
+group schemes. Over a field this applies to every field extension, including algebraic closure. -/
+@[simp]
+theorem isShortExact_baseChangeMap_iff {S : Type w} [CommRing S] [Algebra R S]
+    [Module.FaithfullyFlat R S] (p : Q ⟶ G) (i : G ⟶ N) :
+    IsShortExact (baseChangeMap (K := S) p) (baseChangeMap (K := S) i) ↔ IsShortExact p i := by
+  refine ⟨fun h ↦ ?_, fun h ↦ h.baseChange S⟩
+  -- Faithful flatness: the algebra map underlying `baseChangeMap p` is `id ⊗ p`.
+  have hp := h.faithfullyFlat
+  rw [hom_baseChangeMap, Bialgebra.TensorProduct.map_toAlgHom, BialgHom.id_toAlgHom] at hp
+  -- Surjectivity: the `R`-linear map underlying `baseChangeMap i` is `LinearMap.lTensor S i`.
+  have hmap : (i.hom : G →ₗ[R] N).lTensor S =
+      ((baseChangeMap (K := S) i).hom :
+        baseChange (K := S) G →ₗ[S] baseChange (K := S) N).restrictScalars R :=
+    TensorProduct.ext' fun s g ↦ by simp
+  have hi : Function.Surjective i.hom := by
+    rw [← BialgHom.coe_toLinearMap, ← Module.FaithfullyFlat.lTensor_surjective_iff_surjective R S,
+      hmap, LinearMap.coe_restrictScalars, BialgHom.coe_toLinearMap]
+    exact h.surjective
+  -- Kernel: both Hopf ideals have the same base change, the kernel of `baseChangeMap i`. The
+  -- identity isomorphisms specialize `map_baseChangeHopfIdeal_kerOfSurjective` to `S ⊗[R] G`
+  -- itself, where the bialgebra map of the identity morphism is `BialgHom.id` by definition.
+  have heq : HopfIdeal.kerOfSurjective i.hom hi = kernelHopfIdeal p :=
+    baseChangeHopfIdeal_injective (K := S) <| (HopfIdeal.map_id _).symm.trans <|
+      (map_baseChangeHopfIdeal_kerOfSurjective (Iso.refl _) (Iso.refl _) hi h.surjective
+        (by simp)).trans <|
+      h.kerOfSurjective_eq_kernelHopfIdeal.trans (baseChangeHopfIdeal_kernelHopfIdeal p).symm
+  refine ⟨.of_lTensor S hp, hi, ?_⟩
+  simp [← heq, RingHom.ker_coe_toRingHom]
+
 /-- A faithfully flat morphism and the quotient map onto its scheme-theoretic kernel form a
 short exact sequence. -/
 theorem isShortExact_mkQuotient_kernelHopfIdeal (p : Q ⟶ G)
@@ -217,5 +260,87 @@ theorem isShortExact_iff_exists_iso (p : Q ⟶ G) (i : G ⟶ N) :
       BialgHom.comp_toAlgHom, AlgHom.toRingHom_eq_coe, AlgHom.toRingHom_eq_coe, RingHom.coe_coe,
       RingHom.coe_coe, AlgHom.comp_apply]
     exact map_eq_zero_iff _ he.1
+
+section BialgEquiv
+
+variable {Q' G' N' : _root_.CommHopfAlgCat.{w} R}
+variable {p : Q ⟶ G} {i : G ⟶ N} {p' : Q' ⟶ G'} {i' : G' ⟶ N'}
+
+/-- Short exactness transfers along bialgebra equivalences of the three coordinate algebras
+intertwining the two sequences. The two sequences may live in different universes. -/
+theorem IsShortExact.of_bialgEquiv (h : IsShortExact p i)
+    (eQ : Q ≃ₐc[R] Q') (eG : G ≃ₐc[R] G') (eN : N ≃ₐc[R] N')
+    (hp : p'.hom.comp (eQ : Q →ₐc[R] Q') = (eG : G →ₐc[R] G').comp p.hom)
+    (hi : i'.hom.comp (eG : G →ₐc[R] G') = (eN : N →ₐc[R] N').comp i.hom) :
+    IsShortExact p' i' := by
+  have hp' (x : Q) : p'.hom (eQ x) = eG (p.hom x) := DFunLike.congr_fun hp x
+  have hi' (x : G) : i'.hom (eG x) = eN (i.hom x) := DFunLike.congr_fun hi x
+  refine ⟨?_, ?_, ?_⟩
+  · have hcomp : p'.hom.toAlgHom.toRingHom =
+        ((eG : G →+* G').comp p.hom.toAlgHom.toRingHom).comp (eQ.symm : Q' →+* Q) := by
+      ext x
+      simpa using hp' (eQ.symm x)
+    rw [hcomp]
+    exact (RingHom.FaithfullyFlat.of_bijective eQ.symm.bijective).comp
+      (h.faithfullyFlat.comp (RingHom.FaithfullyFlat.of_bijective eG.bijective))
+  · intro y
+    obtain ⟨y, rfl⟩ := eN.surjective y
+    obtain ⟨x, rfl⟩ := h.surjective y
+    exact ⟨eG x, hi' x⟩
+  · have haug : (HopfIdeal.augmentation R Q').toIdeal =
+        Ideal.map (eQ : Q →+* Q') (HopfIdeal.augmentation R Q).toIdeal := by
+      refine (Ideal.map_comap_of_surjective (eQ : Q →+* Q') eQ.surjective _).symm.trans ?_
+      congr 1
+      ext x
+      simp [CoalgHomClass.counit_comp_apply]
+    have hmap : (kernelHopfIdeal p').toIdeal =
+        Ideal.map (eG : G →+* G') (kernelHopfIdeal p).toIdeal := by
+      rw [kernelHopfIdeal_toIdeal, kernelHopfIdeal_toIdeal, haug, Ideal.map_map, Ideal.map_map]
+      congr 1
+      ext x
+      exact hp' x
+    ext x
+    obtain ⟨x, rfl⟩ := EquivLike.surjective eG x
+    rw [hmap, Ideal.mem_map_iff_of_surjective (eG : G →+* G') eG.surjective, ← h.ker_eq]
+    simp [hi']
+
+/-- Short exactness can be checked after replacing the three coordinate algebras along
+bialgebra equivalences intertwining the two sequences, possibly in another universe. -/
+theorem isShortExact_iff_of_bialgEquiv
+    (eQ : Q ≃ₐc[R] Q') (eG : G ≃ₐc[R] G') (eN : N ≃ₐc[R] N')
+    (hp : p'.hom.comp (eQ : Q →ₐc[R] Q') = (eG : G →ₐc[R] G').comp p.hom)
+    (hi : i'.hom.comp (eG : G →ₐc[R] G') = (eN : N →ₐc[R] N').comp i.hom) :
+    IsShortExact p i ↔ IsShortExact p' i' := by
+  refine ⟨fun h ↦ h.of_bialgEquiv eQ eG eN hp hi,
+    fun h ↦ h.of_bialgEquiv eQ.symm eG.symm eN.symm ?_ ?_⟩
+  · refine BialgHom.ext fun x ↦ ?_
+    simp [show p'.hom x = eG (p.hom (eQ.symm x)) by
+      simpa using DFunLike.congr_fun hp (eQ.symm x)]
+  · refine BialgHom.ext fun x ↦ ?_
+    simp [show i'.hom x = eN (i.hom (eG.symm x)) by
+      simpa using DFunLike.congr_fun hi (eG.symm x)]
+
+end BialgEquiv
+
+section Iso
+
+variable {Q' G' N' : _root_.CommHopfAlgCat.{v} R} {p : Q ⟶ G} {i : G ⟶ N}
+
+/-- Short exactness can be checked after changing all three coordinate algebras by
+isomorphisms. -/
+@[simp]
+theorem isShortExact_iso_iff (eQ : Q ≅ Q') (eG : G ≅ G') (eN : N ≅ N') :
+    IsShortExact (eQ.inv ≫ p ≫ eG.hom) (eG.inv ≫ i ≫ eN.hom) ↔ IsShortExact p i :=
+  (isShortExact_iff_of_bialgEquiv (ofIso eQ) (ofIso eG) (ofIso eN)
+    (BialgHom.ext fun x ↦ by simp [ofIso_apply]) (BialgHom.ext fun x ↦ by simp [ofIso_apply])).symm
+
+/-- Short exactness is preserved when the three coordinate algebras are replaced by
+isomorphic ones. -/
+theorem IsShortExact.of_iso (h : IsShortExact p i)
+    (eQ : Q ≅ Q') (eG : G ≅ G') (eN : N ≅ N') :
+    IsShortExact (eQ.inv ≫ p ≫ eG.hom) (eG.inv ≫ i ≫ eN.hom) :=
+  (isShortExact_iso_iff eQ eG eN).mpr h
+
+end Iso
 
 end TauCeti.CommHopfAlgCat

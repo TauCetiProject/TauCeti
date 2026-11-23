@@ -229,7 +229,7 @@ private abbrev unitTests := (LocallyConstant.toContinuousMapLinearMap ℤ_[p]
 
 private theorem dense_unitTests :
     DenseRange ((unitTests (p := p)).subtype : unitTests →ₗ[ℤ_[p]] C(ℤ_[p]ˣ, ℤ_[p])) := by
-  apply denseRange_subtype_val.mpr
+  apply denseRange_subtypeVal.mpr
   rw [SetLike.setOfPred_mem_eq, LinearMap.coe_range]
   exact LocallyConstant.denseRange_toContinuousMap
 
@@ -269,7 +269,7 @@ theorem ofUnitCoordinates_apply_locallyConstant (f : LocallyConstant ℤ_[p]ˣ �
     ofUnitCoordinates c hc f.toContinuousMap = unitCoordinateIntegral c hc f := by
   have he := (integralOnUnitTests c hc).extend_eq
     (e := (unitTests (p := p)).subtypeL) dense_unitTests
-    isUniformEmbedding_subtype_val.isUniformInducing
+    isUniformEmbedding_subtypeVal.isUniformInducing
     ⟨f.toContinuousMap, ⟨f, rfl⟩⟩
   rw [ofUnitCoordinates, coe_symm_toCLMEquiv]
   exact he.trans (integralOnUnitTests_apply c hc f)

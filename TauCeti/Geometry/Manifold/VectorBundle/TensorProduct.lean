@@ -94,7 +94,8 @@ namespace TauCeti
 `TensorProduct.inCoordinates`. -/
 @[simp] theorem chartAt_tensorProduct (y₀ y : TotalSpace PF₁F₂ TE₁E₂) :
     chartAt (ModelProd HB PF₁F₂) y₀ y =
-      (chartAt HB y₀.1 y.1, TensorProduct.inCoordinates F₁ E₁ F₂ E₂ y₀.1 y.1 y₀.1 y.1 y.2) := by
+      (chartAt HB y₀.proj y.proj, TensorProduct.inCoordinates F₁ E₁ F₂ E₂ y₀.proj y.proj y₀.proj
+          y.proj y.snd) := by
   rw [FiberBundle.chartedSpace_chartAt, trans_apply, OpenPartialHomeomorph.prod_apply,
     Trivialization.coe_coe, OpenPartialHomeomorph.refl_apply, Function.id_def,
     tensorProduct_trivializationAt_apply]
@@ -104,8 +105,9 @@ projection and its coordinate expression `TensorProduct.inCoordinates` are `C^n`
 `x₀`. -/
 theorem contMDiffWithinAt_tensorProduct_bundle (f : M → TotalSpace PF₁F₂ TE₁E₂) {s : Set M}
     {x₀ : M} : ContMDiffWithinAt IM (IB.prod 𝓘(𝕜, PF₁F₂)) n f s x₀ ↔
-      ContMDiffWithinAt IM IB n (fun x ↦ (f x).1) s x₀ ∧ ContMDiffWithinAt IM 𝓘(𝕜, PF₁F₂) n
-        (fun x ↦ TensorProduct.inCoordinates F₁ E₁ F₂ E₂ (f x₀).1 (f x).1 (f x₀).1 (f x).1 (f x).2)
+      ContMDiffWithinAt IM IB n (fun x ↦ (f x).proj) s x₀ ∧ ContMDiffWithinAt IM 𝓘(𝕜, PF₁F₂) n
+        (fun x ↦ TensorProduct.inCoordinates F₁ E₁ F₂ E₂ (f x₀).proj (f x).proj (f x₀).proj
+            (f x).proj (f x).snd)
         s x₀ := by
   simpa only [tensorProduct_trivializationAt_apply] using
     contMDiffWithinAt_totalSpace_iff (IB := IB) (IM := IM) (n := n) (F := PF₁F₂) (E := TE₁E₂)
@@ -115,8 +117,9 @@ theorem contMDiffWithinAt_tensorProduct_bundle (f : M → TotalSpace PF₁F₂ T
 and its coordinate expression `TensorProduct.inCoordinates` are `C^n` at `x₀`. -/
 theorem contMDiffAt_tensorProduct_bundle (f : M → TotalSpace PF₁F₂ TE₁E₂) {x₀ : M} :
     ContMDiffAt IM (IB.prod 𝓘(𝕜, PF₁F₂)) n f x₀ ↔
-      ContMDiffAt IM IB n (fun x ↦ (f x).1) x₀ ∧ ContMDiffAt IM 𝓘(𝕜, PF₁F₂) n
-        (fun x ↦ TensorProduct.inCoordinates F₁ E₁ F₂ E₂ (f x₀).1 (f x).1 (f x₀).1 (f x).1 (f x).2)
+      ContMDiffAt IM IB n (fun x ↦ (f x).proj) x₀ ∧ ContMDiffAt IM 𝓘(𝕜, PF₁F₂) n
+        (fun x ↦ TensorProduct.inCoordinates F₁ E₁ F₂ E₂ (f x₀).proj (f x).proj (f x₀).proj
+            (f x).proj (f x).snd)
         x₀ := by
   simpa only [← contMDiffWithinAt_univ] using
     contMDiffWithinAt_tensorProduct_bundle (IB := IB) (IM := IM) (n := n) f (s := univ) (x₀ := x₀)
@@ -126,8 +129,10 @@ base projection and its coordinate expression `TensorProduct.inCoordinates` are 
 within `s` at `x₀`. -/
 theorem mdifferentiableWithinAt_tensorProduct_bundle (f : M → TotalSpace PF₁F₂ TE₁E₂) {s : Set M}
     {x₀ : M} : MDifferentiableWithinAt IM (IB.prod 𝓘(𝕜, PF₁F₂)) f s x₀ ↔
-      MDifferentiableWithinAt IM IB (fun x ↦ (f x).1) s x₀ ∧ MDifferentiableWithinAt IM 𝓘(𝕜, PF₁F₂)
-        (fun x ↦ TensorProduct.inCoordinates F₁ E₁ F₂ E₂ (f x₀).1 (f x).1 (f x₀).1 (f x).1 (f x).2)
+      MDifferentiableWithinAt IM IB (fun x ↦ (f x).proj) s x₀ ∧ MDifferentiableWithinAt IM 𝓘(𝕜,
+          PF₁F₂)
+        (fun x ↦ TensorProduct.inCoordinates F₁ E₁ F₂ E₂ (f x₀).proj (f x).proj (f x₀).proj
+            (f x).proj (f x).snd)
         s x₀ := by
   simpa only [tensorProduct_trivializationAt_apply] using
     mdifferentiableWithinAt_totalSpace IB (IM := IM) (F := PF₁F₂) (E := TE₁E₂) f (s := s) (x₀ := x₀)
@@ -137,8 +142,9 @@ projection and its coordinate expression `TensorProduct.inCoordinates` are diffe
 `x₀`. -/
 theorem mdifferentiableAt_tensorProduct_bundle (f : M → TotalSpace PF₁F₂ TE₁E₂) {x₀ : M} :
     MDifferentiableAt IM (IB.prod 𝓘(𝕜, PF₁F₂)) f x₀ ↔
-      MDifferentiableAt IM IB (fun x ↦ (f x).1) x₀ ∧ MDifferentiableAt IM 𝓘(𝕜, PF₁F₂)
-        (fun x ↦ TensorProduct.inCoordinates F₁ E₁ F₂ E₂ (f x₀).1 (f x).1 (f x₀).1 (f x).1 (f x).2)
+      MDifferentiableAt IM IB (fun x ↦ (f x).proj) x₀ ∧ MDifferentiableAt IM 𝓘(𝕜, PF₁F₂)
+        (fun x ↦ TensorProduct.inCoordinates F₁ E₁ F₂ E₂ (f x₀).proj (f x).proj (f x₀).proj
+            (f x).proj (f x).snd)
         x₀ := by
   simpa only [← mdifferentiableWithinAt_univ] using
     mdifferentiableWithinAt_tensorProduct_bundle (IB := IB) (IM := IM) f (s := univ) (x₀ := x₀)
@@ -323,9 +329,9 @@ theorem contMDiff_bundleTensorMap {f : ∀ x, E₁ x →L[𝕜] E₁' x} {g : �
 
 variable (e₁ : ∀ x, E₁ x ≃L[𝕜] E₁' x) (e₂ : ∀ x, E₂ x ≃L[𝕜] E₂' x)
   (he₁ : ContMDiff (IB.prod 𝓘(𝕜, F₁)) (IB.prod 𝓘(𝕜, F₁')) n
-    (fun p : TotalSpace F₁ E₁ ↦ TotalSpace.mk' F₁' p.proj (e₁ p.proj p.2)))
+    (fun p : TotalSpace F₁ E₁ ↦ TotalSpace.mk' F₁' p.proj (e₁ p.proj p.snd)))
   (he₂ : ContMDiff (IB.prod 𝓘(𝕜, F₂)) (IB.prod 𝓘(𝕜, F₂')) n
-    (fun p : TotalSpace F₂ E₂ ↦ TotalSpace.mk' F₂' p.proj (e₂ p.proj p.2)))
+    (fun p : TotalSpace F₂ E₂ ↦ TotalSpace.mk' F₂' p.proj (e₂ p.proj p.snd)))
 
 /-- `C^n` diffeomorphism of tensor-product total spaces induced by two `C^n` families of fibrewise
 linear equivalences. -/
@@ -339,12 +345,12 @@ def bundleTensorCongrDiffeomorph :
 
 @[simp] theorem bundleTensorCongrDiffeomorph_apply (p : TotalSpace PF₁F₂ TE₁E₂) :
     bundleTensorCongrDiffeomorph e₁ e₂ he₁ he₂ p =
-      ⟨p.proj, bundleTensorCongr e₁ e₂ p.proj p.2⟩ := by
+      ⟨p.proj, bundleTensorCongr e₁ e₂ p.proj p.snd⟩ := by
   rw [bundleTensorCongrDiffeomorph, bundleDiffeomorphOfHom_apply]
 
 @[simp] theorem bundleTensorCongrDiffeomorph_symm_apply (p : TotalSpace PF₁'F₂' TE₁'E₂') :
     (bundleTensorCongrDiffeomorph e₁ e₂ he₁ he₂).symm p =
-      ⟨p.proj, (bundleTensorCongr e₁ e₂ p.proj).symm p.2⟩ := by
+      ⟨p.proj, (bundleTensorCongr e₁ e₂ p.proj).symm p.snd⟩ := by
   rw [bundleTensorCongrDiffeomorph, bundleDiffeomorphOfHom_symm_apply]
 
 @[simp] theorem toHomeomorph_bundleTensorCongrDiffeomorph :
@@ -379,12 +385,12 @@ def bundleTensorCommDiffeomorph :
 
 @[simp] theorem bundleTensorCommDiffeomorph_apply (p : TotalSpace PF₁F₂ TE₁E₂) :
     bundleTensorCommDiffeomorph IB n F₁ E₁ F₂ E₂ p =
-      ⟨p.proj, bundleTensorCommEquiv p.proj p.2⟩ := by
+      ⟨p.proj, bundleTensorCommEquiv p.proj p.snd⟩ := by
   rw [bundleTensorCommDiffeomorph, bundleDiffeomorphOfHom_apply]
 
 @[simp] theorem bundleTensorCommDiffeomorph_symm_apply (p : TotalSpace PF₂F₁ TE₂E₁) :
     (bundleTensorCommDiffeomorph IB n F₁ E₁ F₂ E₂).symm p =
-      ⟨p.proj, (bundleTensorCommEquiv p.proj).symm p.2⟩ := by
+      ⟨p.proj, (bundleTensorCommEquiv p.proj).symm p.snd⟩ := by
   rw [bundleTensorCommDiffeomorph, bundleDiffeomorphOfHom_symm_apply]
 
 @[simp] theorem toHomeomorph_bundleTensorCommDiffeomorph :
@@ -429,12 +435,12 @@ def bundleTensorAssocDiffeomorph :
 
 @[simp] theorem bundleTensorAssocDiffeomorph_apply (p : TotalSpace PAssocL TAssocL) :
     bundleTensorAssocDiffeomorph IB n F₁ E₁ F₂ E₂ F₃ E₃ p =
-      ⟨p.proj, bundleTensorAssocEquiv p.proj p.2⟩ := by
+      ⟨p.proj, bundleTensorAssocEquiv p.proj p.snd⟩ := by
   rw [bundleTensorAssocDiffeomorph, bundleDiffeomorphOfHom_apply]
 
 @[simp] theorem bundleTensorAssocDiffeomorph_symm_apply (p : TotalSpace PAssocR TAssocR) :
     (bundleTensorAssocDiffeomorph IB n F₁ E₁ F₂ E₂ F₃ E₃).symm p =
-      ⟨p.proj, (bundleTensorAssocEquiv p.proj).symm p.2⟩ := by
+      ⟨p.proj, (bundleTensorAssocEquiv p.proj).symm p.snd⟩ := by
   rw [bundleTensorAssocDiffeomorph, bundleDiffeomorphOfHom_symm_apply]
 
 @[simp] theorem toHomeomorph_bundleTensorAssocDiffeomorph :
@@ -455,7 +461,7 @@ is `C^n`. -/
 theorem contMDiff_bundleDualTensorHom :
     ContMDiff (IB.prod 𝓘(𝕜, PDual)) (IB.prod 𝓘(𝕜, F₁ →L[𝕜] F₂)) n
       (fun p : TotalSpace PDual TDual ↦ TotalSpace.mk' (F₁ →L[𝕜] F₂) (E := LE₁E₂)
-        p.proj (bundleDualTensorHom p.proj p.2)) := by
+        p.proj (bundleDualTensorHom p.proj p.snd)) := by
   have : ∀ x, ContinuousAdd (E₁ x →L[𝕜] E₂ x) := fun _ ↦ inferInstance
   refine (contMDiff_hom_bundle_iff (IB := IB) (F₁ := PDual) (F₂ := F₁ →L[𝕜] F₂)
     (E₁ := TDual) (E₂ := LE₁E₂) (bundleDualTensorHom (𝕜 := 𝕜))).1 ?_
@@ -474,18 +480,18 @@ def bundleDualTensorHomDiffeomorph :
   bundleDiffeomorph (F₁ := PDual) (F₂ := F₁ →L[𝕜] F₂) (E₁ := TDual) (E₂ := LE₁E₂)
     (bundleDualTensorHomEquiv 𝕜 F₁ F₂) (contMDiff_bundleDualTensorHom.congr fun p ↦
       congr_arg (TotalSpace.mk' _ _)
-        (DFunLike.congr_fun (bundleDualTensorHomEquiv_toContinuousLinearMap p.proj) p.2))
+        (DFunLike.congr_fun (bundleDualTensorHomEquiv_toContinuousLinearMap p.proj) p.snd))
 
 @[simp] theorem bundleDualTensorHomDiffeomorph_apply (p : TotalSpace PDual TDual) :
     bundleDualTensorHomDiffeomorph IB n F₁ E₁ F₂ E₂ p =
-      ⟨p.proj, bundleDualTensorHomEquiv 𝕜 F₁ F₂ p.proj p.2⟩ := by
+      ⟨p.proj, bundleDualTensorHomEquiv 𝕜 F₁ F₂ p.proj p.snd⟩ := by
   have : ∀ x, ContinuousAdd (E₁ x →L[𝕜] E₂ x) := fun _ ↦ inferInstance
   rw [bundleDualTensorHomDiffeomorph, bundleDiffeomorph_apply]
 
 @[simp] theorem bundleDualTensorHomDiffeomorph_symm_apply
     (p : TotalSpace (F₁ →L[𝕜] F₂) LE₁E₂) :
     (bundleDualTensorHomDiffeomorph IB n F₁ E₁ F₂ E₂).symm p =
-      ⟨p.proj, (bundleDualTensorHomEquiv 𝕜 F₁ F₂ p.proj).symm p.2⟩ := by
+      ⟨p.proj, (bundleDualTensorHomEquiv 𝕜 F₁ F₂ p.proj).symm p.snd⟩ := by
   have : ∀ x, ContinuousAdd (E₁ x →L[𝕜] E₂ x) := fun _ ↦ inferInstance
   rw [bundleDualTensorHomDiffeomorph, bundleDiffeomorph_symm_apply]
 

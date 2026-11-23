@@ -40,12 +40,17 @@ The proof transports the regularity of `(p, A)` for the universal curve
   (`WeierstrassCurve.VariableChange.heightIdeal_formalGroup_variableChange`), so `(p, A_W)` is
   weakly regular on `R[u, u⁻¹, r, s, t]` as well.
 * The ring `R[u, u⁻¹, r, s, t]` is faithfully flat over `R`, so `(p, A_W)` is weakly regular on `R`
-  (`IsBaseChange.isWeaklyRegular_map_algebraMap_iff`).
+  (`RingTheory.Sequence.isWeaklyRegular_map_algebraMap_iff_of_faithfullyFlat`).
 
 Regularity of a characteristic-`p` curve fails, since `p = 0` on `R`, even for an ordinary elliptic
 curve; the hypothesis is flatness of the classifying map, not smoothness of the curve. For the
 universal curve the classifying map is the right unit of the Weierstrass Hopf algebroid, which is
 flat (`TauCeti.WeierstrassHopfAlgebroid.flat_rightUnit`).
+
+For an elliptic curve, the full Landweber condition, in all heights, is
+`WeierstrassCurve.isLandweberRegular_formalGroup_of_flat_universalChange` in
+`TauCeti/AlgebraicGeometry/EllipticCurve/FormalGroup/Height/Landweber.lean`. The results here
+do not assume that the discriminant is a unit, so they also cover nodal fibres.
 
 ## Main results
 
@@ -78,15 +83,15 @@ for the universal change of variables `C` over `R[u, u⁻¹, r, s, t]`, is a fla
 Then for every prime `p`, the sequence of `p` and the Hasse invariant of `W` is weakly regular on
 `R`. -/
 theorem isWeaklyRegular_natCast_coeff_invariantDifferential_of_flat (hp : p.Prime)
-    (hW : (ChangeRing.universalChange R • W.map (algebraMap R (ChangeRing R))).specialize.Flat) :
+    (hW : (ChangeRing.universalChange R • W.baseChange (ChangeRing R)).specialize.Flat) :
     IsWeaklyRegular R
       [(p : R), PowerSeries.coeff (p - 1) (formalGroup W).invariantDifferential] := by
-  set W' := W.map (algebraMap R (ChangeRing R))
+  set W' := W.baseChange (ChangeRing R)
   set V := ChangeRing.universalChange R • W'
   let := V.specialize.toAlgebra
   have : Module.Flat (MvPolynomial Coeff ℤ) (ChangeRing R) := RingHom.flat_algebraMap_iff.mp hW
   -- flat base change of the universal regular sequence `(p, A)` gives `(p, A_V)`
-  have hV := (Universal.isRegular_natCast_coeff_invariantDifferential hp).1.of_flat
+  have hV := (Universal.isRegular_natCast_coeff_invariantDifferential hp).toIsWeaklyRegular.of_flat
     (S := ChangeRing R)
   have hA : V.specialize
       (PowerSeries.coeff (p - 1) (formalGroup Universal.curve).invariantDifferential) =
@@ -102,7 +107,7 @@ theorem isWeaklyRegular_natCast_coeff_invariantDifferential_of_flat (hp : p.Prim
       VariableChange.heightIdeal_formalGroup_variableChange])] at hV
   -- and `R[u, u⁻¹, r, s, t]` is faithfully flat over `R`
   rw [← isWeaklyRegular_map_algebraMap_iff_of_faithfullyFlat (S := ChangeRing R)]
-  simpa only [List.map_cons, List.map_nil, map_natCast, W', map_formalGroup,
+  simpa only [List.map_cons, List.map_nil, map_natCast, W', baseChange, map_formalGroup,
     ← FormalGroup.map_invariantDifferential, PowerSeries.coeff_map] using hV
 
 /-- **Landweber's conditions in heights `0` and `1` for a flat Weierstrass curve.** If the map
@@ -110,7 +115,7 @@ theorem isWeaklyRegular_natCast_coeff_invariantDifferential_of_flat (hp : p.Prim
 by `p` and the coefficient of `Tᵖ` in the `p`-series of the formal group of `W` is weakly regular
 on `R`: `p` is a non-zero-divisor on `R` and `v₁` is a non-zero-divisor on `R ⧸ p`. -/
 theorem isWeaklyRegular_natCast_coeff_nsmulSeries_of_flat (hp : p.Prime)
-    (hW : (ChangeRing.universalChange R • W.map (algebraMap R (ChangeRing R))).specialize.Flat) :
+    (hW : (ChangeRing.universalChange R • W.baseChange (ChangeRing R)).specialize.Flat) :
     IsWeaklyRegular R [(p : R), PowerSeries.coeff p ((formalGroup W).nsmulSeries p)] :=
   (W.isWeaklyRegular_natCast_coeff_nsmulSeries_iff hp R).mpr
     (W.isWeaklyRegular_natCast_coeff_invariantDifferential_of_flat hp hW)
