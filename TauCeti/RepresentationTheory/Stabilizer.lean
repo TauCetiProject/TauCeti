@@ -48,6 +48,8 @@ equals `ρ.stabilizer v` for a single general-position vector `v ∈ U`, via sub
 * `Representation.stabilizer_prod`, `Representation.stabilizer_directSum`: stabilizers in direct
   sums.
 * `Representation.mem_invariants_comp_subtype_iff`
+* `Representation.invariants_prod`, `Representation.invariants_directSum`: invariants of direct
+  sums.
 * `Representation.stabilizer_ofMulAction_single`
 * `Representation.orbitMap_smul`, `Representation.orbitMap_injective`,
   `Representation.range_orbitMap`
@@ -132,6 +134,26 @@ its stabilizer. -/
 theorem mem_invariants_comp_subtype_iff {H : Subgroup G} {v : V} :
     v ∈ invariants (ρ.comp H.subtype) ↔ H ≤ ρ.stabilizer v := by
   simp [mem_invariants, IsConcreteLE.le_iff]
+
+variable {W : Type*} [AddCommGroup W] [Module A W]
+
+/-- The invariants of a direct sum are the product of the invariants. -/
+theorem invariants_prod (ρ : Representation A G V) (σ : Representation A G W) :
+    invariants (ρ.prod σ) = (invariants ρ).prod (invariants σ) := by
+  ext x
+  simp [mem_invariants, Prod.ext_iff, forall_and]
+
+/-- The invariants of a direct sum of a finite family correspond, under the identification of the
+direct sum with the product, to the product of the invariants. -/
+theorem invariants_directSum {ι : Type*} [Fintype ι] {V : ι → Type*} [∀ i, AddCommGroup (V i)]
+    [∀ i, Module A (V i)] (ρ : ∀ i, Representation A G (V i)) :
+    invariants (directSum ρ) = (Submodule.pi Set.univ fun i ↦ invariants (ρ i)).comap
+      (DirectSum.linearEquivFunOnFintype A ι V).toLinearMap := by
+  ext x
+  simp only [mem_invariants, directSum_apply, Submodule.mem_comap, Submodule.mem_pi, Set.mem_univ,
+    true_implies, LinearEquiv.coe_coe, DirectSum.linearEquivFunOnFintype_apply, DirectSum.ext_iff,
+    DirectSum.lmap_apply]
+  exact forall_comm
 
 end CommRing
 

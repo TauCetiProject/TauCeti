@@ -88,7 +88,7 @@ theorem IsAdmissible.of_hasBasis [IsNoetherianRing A] [IsSmooth ρ] {ι : Type*}
   have := hfin i hi
   have hle : invariants (ρ.comp (U' : Subgroup G).subtype) ≤ invariants (ρ.comp (U i).subtype) :=
     invariants_le_invariants_comp (ρ.comp (U' : Subgroup G).subtype)
-      (Subgroup.inclusion (show U i ≤ (U' : Subgroup G) from hsub))
+      (Subgroup.inclusion (SetLike.coe_subset_coe.1 hsub))
   exact Module.Finite.of_injective (Submodule.inclusion hle) (Submodule.inclusion_injective _)
 
 /-- Admissibility passes back along an injective intertwining map over a noetherian ring; in
@@ -98,10 +98,10 @@ theorem IsAdmissible.of_injective [IsNoetherianRing A] [IsAdmissible σ] (f : ρ
   have : IsSmooth ρ := IsSmooth.of_injective f hf
   refine ⟨fun U hU ↦ ?_⟩
   have := IsAdmissible.finite_invariants (ρ := σ) U hU
-  let g : invariants (ρ.comp (U : Subgroup G).subtype) →ₗ[A]
-      invariants (σ.comp (U : Subgroup G).subtype) :=
-    (f.toLinearMap.comp (Submodule.subtype _)).codRestrict _ fun v u ↦ by
-      simpa [f.isIntertwining] using congrArg f (v.property u)
+  -- `f` maps `U`-invariant vectors to `U`-invariant vectors, since it intertwines `ρ` and `σ`.
+  let g := f.toLinearMap.restrict (p := invariants (ρ.comp (U : Subgroup G).subtype))
+    (q := invariants (σ.comp (U : Subgroup G).subtype)) fun v hv u ↦ by
+      simpa [f.isIntertwining] using congrArg f (hv u)
   exact Module.Finite.of_injective g fun v w hvw ↦ Subtype.ext (hf (congrArg Subtype.val hvw))
 
 /-- A subrepresentation of an admissible representation over a noetherian ring is admissible. -/
@@ -134,22 +134,20 @@ theorem IsAdmissible.comp [IsAdmissible ρ] {H : Type*} [Group H] [TopologicalSp
     {φ : H →* G} (hφ : Continuous φ) (hφo : IsOpenMap φ) : IsAdmissible (ρ.comp φ) := by
   have : IsSmooth (ρ.comp φ) := IsSmooth.comp hφ
   refine ⟨fun U hU ↦ ?_⟩
-  let U' : OpenSubgroup G :=
-    ⟨(U : Subgroup H).map φ, by
-      change IsOpen (((U : Subgroup H).map φ : Subgroup G) : Set G)
-      rw [Subgroup.coe_map]
-      exact hφo _ U.isOpen⟩
-  have hU' : IsCompact (U' : Set G) := by
-    change IsCompact (((U : Subgroup H).map φ : Subgroup G) : Set G)
+  have hopen : IsOpen ((U : Subgroup H).map φ : Set G) := by
+    rw [Subgroup.coe_map]
+    exact hφo _ U.isOpen
+  let U' : OpenSubgroup G := ⟨(U : Subgroup H).map φ, hopen⟩
+  have hU' : IsCompact ((U : Subgroup H).map φ : Set G) := by
     rw [Subgroup.coe_map]
     exact hU.image hφ
   have := IsAdmissible.finite_invariants (ρ := ρ) U' hU'
-  have h : invariants ((ρ.comp φ).comp (U : Subgroup H).subtype) =
-      invariants (ρ.comp (U' : Subgroup G).subtype) := by
-    rw [← invariants_comp_of_surjective (ρ.comp (U' : Subgroup G).subtype)
-      (φ.subgroupMap (U : Subgroup H)) (φ.subgroupMap_surjective _)]
-    rfl
-  rw [h]
+  -- Restricting `ρ.comp φ` to `U` is restricting `ρ` to `U' = φ(U)` after `φ : U → φ(U)`.
+  have hcomp : (ρ.comp φ).comp (U : Subgroup H).subtype =
+      (ρ.comp (U' : Subgroup G).subtype).comp (φ.subgroupMap (U : Subgroup H)) := by
+    ext u : 1
+    simp [U']
+  rw [hcomp, invariants_comp_of_surjective _ _ (φ.subgroupMap_surjective _)]
   infer_instance
 
 /-- The restriction of an admissible representation to an open subgroup is admissible. -/
@@ -164,14 +162,13 @@ instance IsAdmissible.prod [IsAdmissible ρ] [IsAdmissible σ] :
   refine ⟨fun U hU ↦ ?_⟩
   have := IsAdmissible.finite_invariants (ρ := ρ) U hU
   have := IsAdmissible.finite_invariants (ρ := σ) U hU
+  -- Restricting `ρ.prod σ` to `U` is, by definition, the product of the restrictions.
   have h : invariants ((ρ.prod σ).comp (U : Subgroup G).subtype) =
       (invariants (ρ.comp (U : Subgroup G).subtype)).prod
-        (invariants (σ.comp (U : Subgroup G).subtype)) := by
-    ext x
-    simp only [mem_invariants_comp_subtype_iff, Submodule.mem_prod, stabilizer_prod, le_inf_iff]
-  rw [Module.Finite.iff_fg] at *
-  rw [h]
-  exact Submodule.FG.prod ‹_› ‹_›
+        (invariants (σ.comp (U : Subgroup G).subtype)) :=
+    invariants_prod (ρ.comp (U : Subgroup G).subtype) (σ.comp (U : Subgroup G).subtype)
+  rw [Module.Finite.iff_fg, h]
+  exact (Module.Finite.iff_fg.1 ‹_›).prod (Module.Finite.iff_fg.1 ‹_›)
 
 /-- The direct sum of a finite family of admissible representations is admissible: its
 invariants correspond to the product of the invariants. -/
@@ -184,11 +181,9 @@ instance IsAdmissible.directSum {ι : Type*} [Finite ι] {V : ι → Type*}
   have := fun i ↦ IsAdmissible.finite_invariants (ρ := ρ i) U hU
   have h : invariants ((Representation.directSum ρ).comp (U : Subgroup G).subtype) =
       (Submodule.pi Set.univ fun i ↦ invariants ((ρ i).comp (U : Subgroup G).subtype)).comap
-        (DirectSum.linearEquivFunOnFintype A ι V).toLinearMap := by
-    ext x
-    simp only [mem_invariants_comp_subtype_iff, Submodule.mem_comap, Submodule.mem_pi,
-      Set.mem_univ, true_implies, stabilizer_directSum, le_iInf_iff, LinearEquiv.coe_coe,
-      DirectSum.linearEquivFunOnFintype_apply]
+        (DirectSum.linearEquivFunOnFintype A ι V).toLinearMap :=
+    -- Restricting `directSum ρ` to `U` is, by definition, the direct sum of the restrictions.
+    invariants_directSum fun i ↦ (ρ i).comp (U : Subgroup G).subtype
   rw [Module.Finite.iff_fg, h, Submodule.comap_equiv_eq_map_symm]
   exact (Submodule.fg_pi fun i ↦ Module.Finite.iff_fg.1 (this i)).map _
 
