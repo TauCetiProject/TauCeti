@@ -21,7 +21,9 @@ cocompact filter (whose images therefore lie in no fixed compact set), passing f
 valid near each point of a compact set to one constant valid on all of it, and neighborhood
 eventualities along `coclosedCompact` and `cocompact`. Maps converging continuously on a compact
 set eventually map it into any open set containing the image under the limit
-(`IsCompact.eventually_forall_mem_of_tendsto_prod_nhds`).
+(`IsCompact.eventually_forall_mem_of_tendsto_prod_nhds`). The fibres over `w` of a closed set
+`C ⊆ P × X` that near `w₀` all lie in a fixed compact set are eventually contained in every open
+neighbourhood of the fibre over `w₀` (`IsClosed.eventually_preimage_prodMk_subset`).
 
 A continuous injection on a compact set `K` restricts to a closed embedding of `K`
 (`IsCompact.isClosedEmbedding_domRestrict`), so neighbourhoods of a point of `K`
@@ -302,6 +304,21 @@ theorem _root_.IsCompact.eventually_forall_mem_of_tendsto_prod_nhds {Y ι : Type
   have h := hA.mem_prod_nhdsSet_of_forall (s := {p : ι × X | f p.1 p.2 ∈ t})
     fun a ha ↦ (hconv a ha).eventually (ht.mem_nhds (hmem a ha))
   exact (Filter.Eventually.curry h).mono fun _ hi ↦ hi.self_of_nhdsSet
+
+/-- **Fibres of a closed set vary upper semicontinuously.** Let `C ⊆ P × X` be closed, and suppose
+that for `w` near `w₀` the fibre `{x | (w, x) ∈ C}` lies in a fixed compact set `K`. Then every
+open set `U` containing the fibre over `w₀` contains the fibres over all `w` near `w₀`. -/
+theorem _root_.IsClosed.eventually_preimage_prodMk_subset {P : Type*} [TopologicalSpace P]
+    {C : Set (P × X)} (hC : IsClosed C) {K : Set X} (hK : IsCompact K) {w₀ : P}
+    (hKC : ∀ᶠ w in 𝓝 w₀, Prod.mk w ⁻¹' C ⊆ K) {U : Set X} (hU : IsOpen U)
+    (hCU : Prod.mk w₀ ⁻¹' C ⊆ U) : ∀ᶠ w in 𝓝 w₀, Prod.mk w ⁻¹' C ⊆ U := by
+  -- On the compact set `K \ U` the fibre over `w₀` is empty, hence so are nearby fibres.
+  have hev : ∀ᶠ w in 𝓝 w₀, ∀ x ∈ K \ U, (w, x) ∉ C :=
+    (hK.diff hU).eventually_forall_of_forall_eventually fun x hx ↦
+      hC.isOpen_compl.mem_nhds fun h ↦ hx.2 (hCU h)
+  filter_upwards [hKC, hev] with w hwK hwU x hx
+  by_contra hxU
+  exact hwU x ⟨hwK hx, hxU⟩ hx
 
 section TubeLemma
 
