@@ -183,12 +183,14 @@ theorem coe_complexSpecialOrthogonalLieEquivSkewAdjoint_apply_apply [Fact Q.Nond
           (skewAdjointMatricesLieSubalgebra (LinearMap.BilinForm.toMatrix' Q.polarBilin))
           (complexSpecialOrthogonalLieEquivSkewAdjointMatrices (Q := Q) X)) :
         Matrix (Fin n) (Fin n) ℂ) *ᵥ v := by
-  have hrepr : ⇑((Pi.basisFun ℂ (Fin n)).repr v) = v := funext fun j ↦ by simp
+  have htoLin (A : Matrix (Fin n) (Fin n) ℂ) :
+      Matrix.toLinAlgEquiv (Pi.basisFun ℂ (Fin n)) A = Matrix.toLin' A := by
+    apply (LinearMap.toMatrixAlgEquiv (Pi.basisFun ℂ (Fin n))).injective
+    rw [LinearMap.toMatrixAlgEquiv_toLinAlgEquiv, ← Matrix.toLin_eq_toLin',
+      LinearMap.toMatrixAlgEquiv_eq_toMatrix, LinearMap.toMatrix_toLin]
   simp only [complexSpecialOrthogonalLieEquivSkewAdjoint, LieEquiv.trans_apply,
     LieEquiv.restrictScalars_apply, AddEquiv.apply_symm_apply,
-    TauCeti.coe_skewAdjointLieEquivOfBasis_apply, Matrix.toLinAlgEquiv_apply, hrepr]
-  ext i
-  simp [Pi.basisFun_apply, Pi.single_apply]
+    TauCeti.coe_skewAdjointLieEquivOfBasis_apply, htoLin, Matrix.toLin'_apply]
 
 /-- The continuous Spin-to-SO range projection over `ℂ`, upgraded to a smooth homomorphism of real
 Lie groups by automatic smoothness. -/
@@ -208,15 +210,6 @@ theorem complexSpinToSpecialOrthogonalSmoothRange_apply [Fact Q.Nondegenerate]
       spinToSpecialOrthogonalUnitsRange Q x :=
   congrFun (ContinuousMonoidHom.coe_toContMDiffMonoidMorphism
     (I := 𝓘(ℝ, SpinLieModel)) (I' := 𝓘(ℝ, SpecialOrthogonalLieModel)) _) x
-
-/-- On the canonical unit representative of `g : spinGroup Q`, the smooth complex range projection
-computes `spinToSpecialOrthogonal Q g` in `GL(n, ℂ)`. -/
-theorem complexSpinToSpecialOrthogonalSmoothRange_toUnits [Fact Q.Nondegenerate]
-    (g : spinGroup Q) :
-    complexSpinToSpecialOrthogonalSmoothRange (Q := Q) ⟨spinGroup.toUnits g, ⟨g, rfl⟩⟩ =
-      Q.specialOrthogonalContinuousMulEquivRange (spinToSpecialOrthogonal Q g) := by
-  rw [complexSpinToSpecialOrthogonalSmoothRange_apply,
-    spinToSpecialOrthogonalUnitsRange_apply_toUnits]
 
 /-- The real differential of the complex `Spin(Q) → SO(Q)` projection in quadratic-Clifford source
 coordinates and polar skew-adjoint matrix target coordinates. -/

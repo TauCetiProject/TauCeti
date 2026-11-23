@@ -86,21 +86,18 @@ theorem mem_range_orthogonalToGeneralLinear_iff
     rw [coe_orthogonalToGeneralLinear, LinearMap.toMatrix'_mulVec, LinearEquiv.coe_coe]
     exact (mem_orthogonalGroup_iff.mp g.prop) x
   · intro hU
-    refine ⟨⟨LinearMap.GeneralLinearGroup.generalLinearEquiv R (n → R)
+    let g : orthogonalGroup Q := ⟨LinearMap.GeneralLinearGroup.generalLinearEquiv R (n → R)
         (matrixGeneralLinearEquiv U),
       mem_orthogonalGroup_iff.mpr fun x ↦ by
-        rw [matrixGeneralLinearEquiv_apply, hU x]⟩, ?_⟩
+        rw [matrixGeneralLinearEquiv_apply, hU x]⟩
+    refine ⟨g, ?_⟩
     apply Units.ext
-    rw [coe_orthogonalToGeneralLinear]
-    have hlin : ((LinearMap.GeneralLinearGroup.generalLinearEquiv R (n → R)
-        (matrixGeneralLinearEquiv U) : (n → R) ≃ₗ[R] (n → R)) :
-          (n → R) →ₗ[R] (n → R)) = Matrix.toLin' (U : Matrix n n R) :=
+    have hlin : (g : (n → R) ≃ₗ[R] (n → R)).toLinearMap = Matrix.toLin' (U : Matrix n n R) :=
       LinearMap.ext fun v ↦ matrixGeneralLinearEquiv_apply U v
-    change LinearMap.toMatrix'
-      ((LinearMap.GeneralLinearGroup.generalLinearEquiv R (n → R)
-        (matrixGeneralLinearEquiv U) : (n → R) ≃ₗ[R] (n → R)) :
-          (n → R) →ₗ[R] (n → R)) = (U : Matrix n n R)
-    rw [hlin, LinearMap.toMatrix'_toLin']
+    have hmat :
+        LinearMap.toMatrix' (g : (n → R) ≃ₗ[R] (n → R)).toLinearMap = (U : Matrix n n R) :=
+      (congrArg LinearMap.toMatrix' hlin).trans (LinearMap.toMatrix'_toLin' (U : Matrix n n R))
+    rw [coe_orthogonalToGeneralLinear, hmat]
 
 /-- A general-linear matrix lies in the coordinate range of `SO(Q)` if and only if its
 matrix-vector action preserves `Q` and its determinant is one. -/

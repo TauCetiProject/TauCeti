@@ -88,14 +88,14 @@ variable {𝕜 : Type*} [NormedCommRing 𝕜] [NormedAlgebra ℝ 𝕜]
   [FiniteDimensional ℝ 𝕜] [Invertible (2 : 𝕜)]
   {m : Type*} [Fintype m] [DecidableEq m]
   {Q : QuadraticForm 𝕜 (m → 𝕜)}
-  {R : Type*} [NormedRing R] [NormedAlgebra ℝ R] [CompleteSpace R]
+  {R : Type*} [NormedRing R] [NormedAlgebra ℝ R]
 
 /-- **Spin–SO exponential-curve differentiation.** If a curve `u` in `MonoidHom.range
 spinGroup.toUnits` has Clifford ambient coordinate `NormedSpace.exp (t • e x)` and projects under
 `spinToSpecialOrthogonalUnitsRange` to `NormedSpace.exp (t • A)`, then `A` acts on embedded
 vectors `v` by the Clifford Lie bracket with `x`. -/
 theorem ι_mulVec_eq_lie_of_spinToSpecialOrthogonal_exp_curve
-    [IsModuleTopology 𝕜 (m → 𝕜)] [ContinuousMul (CliffordAlgebra Q)]
+    [IsModuleTopology 𝕜 (m → 𝕜)] [ContinuousMul (CliffordAlgebra Q)] [CompleteSpace R]
     (e : CliffordAlgebra Q ≃ₐ[ℝ] R)
     (x : CliffordAlgebra Q) (A : Matrix m m 𝕜)
     (u : ℝ → MonoidHom.range (spinGroup.toUnits (Q := Q)))
@@ -112,7 +112,7 @@ theorem ι_mulVec_eq_lie_of_spinToSpecialOrthogonal_exp_curve
     let s := (spinGroupContinuousMulEquivUnitsRange Q).symm (u t)
     have hmatrix : NormedSpace.exp (t • A) *ᵥ v = spinVectorAction Q s v := by
       rw [← hA t, spinToSpecialOrthogonalUnitsRange_apply,
-        Q.coe_specialOrthogonalContinuousMulEquivRange_apply,
+        Q.specialOrthogonalContinuousMulEquivRange_apply,
         Q.specialOrthogonalToGeneralLinear_mulVec, coe_spinToSpecialOrthogonal_apply]
     have hs : e (s : CliffordAlgebra Q) = NormedSpace.exp (t • e x) := by
       rw [coe_spinGroupContinuousMulEquivUnitsRange_symm_apply, hu t]
@@ -167,6 +167,7 @@ theorem ι_mulVec_eq_lie_of_embeddedLieSubgroupData
       (v : m → 𝕜),
       ι Q (A *ᵥ v) = ⁅x, ι Q v⁆ := by
   let _ : CompleteSpace 𝕜 := FiniteDimensional.completeSpace ℝ 𝕜
+  let _ : CompleteSpace R := FiniteDimensional.completeSpace ℝ R
   let _ : ChartedSpace E₁ K₁ := d₁.chartedSpace
   let _ : LieGroup 𝓘(ℝ, E₁) ∞ K₁ := d₁.lieGroup
   let _ : ChartedSpace E₂ (MonoidHom.range Q.specialOrthogonalToGeneralLinear) :=

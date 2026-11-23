@@ -64,7 +64,7 @@ theorem realCliffordSpinToSpecialOrthogonalRange_surjective (n : ℕ) :
   obtain ⟨x, rfl⟩ := spinToSpecialOrthogonal_surjective_of_posDef
     (realCliffordForm n 0) (posDef_realCliffordForm_zero n) y
   exact ⟨⟨spinGroup.toUnits x, ⟨x, rfl⟩⟩, by
-    rw [spinToSpecialOrthogonalUnitsRange_apply_toUnits,
+    rw [spinToSpecialOrthogonalUnitsRange_apply, spinGroupContinuousMulEquivUnitsRange_symm_apply,
       QuadraticMap.specialOrthogonalContinuousMulEquivRange_apply]⟩
 
 /-- The projection between the closed real Spin and special-orthogonal carriers is a covering

@@ -302,7 +302,7 @@ theorem lie_complexSpinSmoothMatrixComplexLieHom_ι_eq
     (LinearMap.toMatrixAlgEquiv b).toAlgHom.comp (spinAction Q P)
   have hφ (z : CliffordAlgebra Q) : LinearMap.toMatrix b b (spinAction Q P z) = φ z := by
     simp only [φ, AlgHom.comp_apply, AlgEquiv.coe_toAlgHom,
-      LinearMap.toMatrixAlgEquiv, AlgEquiv.ofLinearEquiv_apply]
+      LinearMap.toMatrixAlgEquiv_eq_toMatrix]
   have hlie : ⁅φ x, φ (ι Q v)⁆ = φ ⁅(x : CliffordAlgebra Q), ι Q v⁆ :=
     (φ.toLieHom.map_lie (x : CliffordAlgebra Q) (ι Q v)).symm
   rw [complexSpinSmoothMatrixComplexLieHom_apply, hφ, hφ, hφ, hlie,

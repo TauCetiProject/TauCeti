@@ -123,16 +123,12 @@ of `Spin(Q)` in `(CliffordAlgebra Q)ˣ` and `SO(Q)` in `GL(n, R)`. -/
 def spinToSpecialOrthogonalUnitsRange (Q : QuadraticForm R (n → R))
     [IsModuleTopology R (n → R)] [ContinuousMul (CliffordAlgebra Q)] :
     MonoidHom.range (spinGroup.toUnits (Q := Q)) →ₜ*
-      MonoidHom.range Q.specialOrthogonalToGeneralLinear where
-  toMonoidHom :=
-    Q.specialOrthogonalToGeneralLinear.rangeRestrict.comp
-      ((spinToSpecialOrthogonal Q).comp
-        (spinGroupContinuousMulEquivUnitsRange Q).symm.toMonoidHom)
-  continuous_toFun := by
-    refine (Q.specialOrthogonalContinuousMulEquivRange.continuous.comp
-      ((continuous_spinToSpecialOrthogonal_pi Q).comp
-        (spinGroupContinuousMulEquivUnitsRange Q).symm.continuous)).congr fun x ↦ ?_
-    exact Q.specialOrthogonalContinuousMulEquivRange_apply _
+      MonoidHom.range Q.specialOrthogonalToGeneralLinear :=
+  (Q.specialOrthogonalContinuousMulEquivRange :
+      TauCeti.QuadraticMap.specialOrthogonalGroup Q →ₜ* _).comp
+    ((⟨spinToSpecialOrthogonal Q, continuous_spinToSpecialOrthogonal_pi Q⟩ :
+        spinGroup Q →ₜ* TauCeti.QuadraticMap.specialOrthogonalGroup Q).comp
+      ((spinGroupContinuousMulEquivUnitsRange Q).symm : _ →ₜ* spinGroup Q))
 
 /-- Evaluating the range-carrier Spin projection applies `spinToSpecialOrthogonal Q` to the
 corresponding Spin element and embeds the result in `GL(n, R)`. -/
@@ -142,16 +138,9 @@ theorem spinToSpecialOrthogonalUnitsRange_apply (Q : QuadraticForm R (n → R))
     (x : MonoidHom.range (spinGroup.toUnits (Q := Q))) :
     spinToSpecialOrthogonalUnitsRange Q x =
       Q.specialOrthogonalContinuousMulEquivRange
-        (spinToSpecialOrthogonal Q ((spinGroupContinuousMulEquivUnitsRange Q).symm x)) :=
-  (Q.specialOrthogonalContinuousMulEquivRange_apply _).symm
-
-/-- On the canonical unit representative of `x : spinGroup Q`, the range-carrier projection agrees
-with `spinToSpecialOrthogonal Q` followed by the `GL(n, R)` range equivalence. -/
-theorem spinToSpecialOrthogonalUnitsRange_apply_toUnits (Q : QuadraticForm R (n → R))
-    [IsModuleTopology R (n → R)] [ContinuousMul (CliffordAlgebra Q)] (x : spinGroup Q) :
-    spinToSpecialOrthogonalUnitsRange Q ⟨spinGroup.toUnits x, ⟨x, rfl⟩⟩ =
-      Q.specialOrthogonalContinuousMulEquivRange (spinToSpecialOrthogonal Q x) := by
-  rw [spinToSpecialOrthogonalUnitsRange_apply, spinGroupContinuousMulEquivUnitsRange_symm_apply]
+        (spinToSpecialOrthogonal Q ((spinGroupContinuousMulEquivUnitsRange Q).symm x)) := by
+  simp only [spinToSpecialOrthogonalUnitsRange, ContinuousMonoidHom.coe_comp,
+    Function.comp_apply, ContinuousMonoidHom.coe_coe, ContinuousMonoidHom.coe_mk]
 
 end CoordinateProjection
 
@@ -174,7 +163,7 @@ theorem spinToSpecialOrthogonalUnitsRange_eq_one_iff (Q : QuadraticForm K (n →
     obtain rfl : x = 1 := Subsingleton.elim _ _
     simp
   · obtain ⟨_, y, rfl⟩ := x
-    rw [spinToSpecialOrthogonalUnitsRange_apply_toUnits,
+    rw [spinToSpecialOrthogonalUnitsRange_apply, spinGroupContinuousMulEquivUnitsRange_symm_apply,
       map_eq_one_iff _ Q.specialOrthogonalContinuousMulEquivRange.injective,
       ← MonoidHom.mem_ker, mem_ker_spinToSpecialOrthogonal_iff Q hQ]
     simp only [Subtype.ext_iff (a1 := y), Units.ext_iff, spinGroup.val_toUnits_apply,
