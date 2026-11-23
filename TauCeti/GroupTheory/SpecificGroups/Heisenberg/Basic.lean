@@ -65,7 +65,7 @@ group.
 public section
 
 open Subgroup
-open scoped commutatorElement
+open scoped commutatorElement Matrix
 
 namespace TauCeti
 
@@ -228,6 +228,12 @@ def toMatrix : HeisenbergGroup R →* Matrix (Fin 3) (Fin 3) R where
 
 theorem toMatrix_apply (a : HeisenbergGroup R) :
     toMatrix a = !![1, a.x, a.z; 0, 1, a.y; 0, 0, 1] := (rfl)
+
+/-- The Heisenberg matrix acts on vectors by its three coordinate formulas. -/
+theorem toMatrix_mulVec (a : HeisenbergGroup R) (v : Fin 3 → R) :
+    toMatrix a *ᵥ v = ![v 0 + a.x * v 1 + a.z * v 2, v 1 + a.y * v 2, v 2] := by
+  ext i
+  fin_cases i <;> simp [toMatrix_apply, Matrix.mulVec, dotProduct, Fin.sum_univ_three]
 
 /-- A group element is determined by its matrix. -/
 theorem toMatrix_injective : Function.Injective (toMatrix : HeisenbergGroup R → _) := by

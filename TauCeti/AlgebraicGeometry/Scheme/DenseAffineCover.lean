@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.AlgebraicGeometry.Properties
+import TauCeti.Topology.Irreducible
 
 /-!
 # Affine covers with dense total intersection
@@ -53,8 +54,8 @@ theorem exists_isAffineOpen_genericPoint_mem_and_disjoint
       ∀ D ∈ irreducibleComponents X, D ≠ C.val → Disjoint (V : Set X) D := by
   let T : Set (Set X) := irreducibleComponents X \ {C.val}
   have hT : T.Finite := hX.sdiff
-  let O : X.Opens := ⟨(⋃₀ T)ᶜ, (hT.isClosed_sUnion
-    (fun D hD ↦ isClosed_of_mem_irreducibleComponents D hD.1)).isOpen_compl⟩
+  let O : X.Opens :=
+    ⟨(⋃₀ T)ᶜ, hT.isOpen_compl_sUnion_of_subset_irreducibleComponents Set.sdiff_subset⟩
   have hOC : (O : Set X) ⊆ C.val := by
     rw [← closure_sUnion_irreducibleComponents_sdiff_singleton hX C.val C.property]
     exact subset_closure
@@ -78,8 +79,8 @@ theorem exists_isAffineOpen_mem_and_genericPoints_subset
   -- Start with an affine neighbourhood avoiding every component not containing x.
   let s : Set (Set X) := {C ∈ irreducibleComponents X | x ∉ C}
   have hs : s.Finite := hX.subset (fun _ hC ↦ hC.1)
-  let W₀ : X.Opens := ⟨(⋃₀ s)ᶜ, (hs.isClosed_sUnion
-    (fun C hC ↦ isClosed_of_mem_irreducibleComponents C hC.1)).isOpen_compl⟩
+  let W₀ : X.Opens :=
+    ⟨(⋃₀ s)ᶜ, hs.isOpen_compl_sUnion_of_subset_irreducibleComponents (fun _ hC ↦ hC.1)⟩
   have hxW₀ : x ∈ W₀ := by
     rintro ⟨C, hC, hxC⟩
     exact hC.2 hxC
