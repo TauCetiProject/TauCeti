@@ -8,13 +8,10 @@ module
 public import TauCeti.Analysis.Calculus.FDeriv.Pi.Basic
 public import TauCeti.Analysis.Convex.CompositionOuterApprox
 public import Mathlib.Analysis.SpecialFunctions.Log.Basic
-public import Mathlib.Data.Fin.VecNotation
-import Mathlib.Algebra.BigOperators.Fin
 import Mathlib.Analysis.Calculus.Deriv.Pow
 import Mathlib.Analysis.Calculus.Deriv.Prod
 import Mathlib.Analysis.SpecialFunctions.ExpDeriv
 import Mathlib.Tactic.Linarith
-import Mathlib.Tactic.NormNum
 
 /-!
 # Examples of matched outer approximations
