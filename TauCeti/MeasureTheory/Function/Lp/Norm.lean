@@ -73,7 +73,6 @@ bounds.
   `φ x (f n x) ≤ c n`, for continuous `φ x`, pass to the limit in `L²`.
 * `MeasureTheory.lpNorm_congr_ae`: the `Lᵖ` norm of a function depends only on its almost
   everywhere class.
-* `MeasureTheory.Lp.eLpNorm_coeFn_zero`: the zero element of `Lᵖ` has zero `L^q` seminorm.
 * `MeasureTheory.Lp.norm_eq_lpNorm_of_ae_eq`: the norm of an element of `Lᵖ(ν)` is the `Lᵖ` norm of
   any representative.
 * `MeasureTheory.Lp.memLp_of_restrict_coe_opens_top` and
@@ -323,11 +322,6 @@ theorem lpNorm_congr_ae {alpha F : Type*} [MeasurableSpace alpha] [NormedAddComm
     {ν : Measure alpha} {p : ℝ≥0∞} {f g : alpha → F} (h : f =ᵐ[ν] g) :
     lpNorm f p ν = lpNorm g p ν := by
   rw [← toReal_eLpNorm, ← toReal_eLpNorm, eLpNorm_congr_ae h]
-
-/-- The zero element of `Lᵖ(ν)` has zero `L^q` seminorm, for every exponent `q`. -/
-theorem Lp.eLpNorm_coeFn_zero {alpha F : Type*} [MeasurableSpace alpha] [NormedAddCommGroup F]
-    {ν : Measure alpha} {p q : ℝ≥0∞} : eLpNorm ((0 : Lp F p ν) : alpha → F) q ν = 0 := by
-  rw [eLpNorm_congr_ae (Lp.coeFn_zero F p ν), eLpNorm_zero]
 
 /-- The norm of an element of `Lᵖ(ν)` is the `Lᵖ` norm of any of its representatives. -/
 theorem Lp.norm_eq_lpNorm_of_ae_eq {alpha F : Type*} [MeasurableSpace alpha]

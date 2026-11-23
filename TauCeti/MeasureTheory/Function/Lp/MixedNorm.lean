@@ -60,7 +60,8 @@ bounded above and below and `‖Φ b‖₂` is bounded. Then
 
 `∫_A ψ ^ q ≤ |∫ ⟪Φ b, G b⟫| ≤ M ‖G‖_{L^{q'} L^{r'}} ≤ M (∫_A ψ ^ q) ^ (1 - 1 / q)`,
 
-so `‖1_A ψ‖_{L^q} ≤ M`. Exhausting `β` by such sets `A` and letting `N → ∞`, by monotone
+so `‖1_A ψ‖_{L^q} ≤ M`; this testing step is `MeasureTheory.eLpNorm_le_of_enorm_rpow_le_re_inner`,
+stated for any `f ∈ L^q`. Exhausting `β` by such sets `A` and letting `N → ∞`, by monotone
 convergence in `x` and in `b`, gives the bound for `Φ`.
 
 At `r = ∞` there is no extremal function in `L¹` for the essential supremum, and the test
@@ -193,12 +194,46 @@ private theorem eLpNorm_truncLp_rpow_le (N : ℝ≥0) {r : ℝ≥0∞} (hr : r �
         ring_nf
     _ ≤ ‖u x‖ * min ‖u x‖ N ^ (r.toReal - 1) := by gcongr; exact min_le_left _ _
 
+/-- **The testing step for mixed norms.** Let `f ∈ L^q(ρ)` with `q < ∞`, and let `G` be a test
+function with integrable pairing such that `‖f b‖ ^ q ≤ re ⟪Φ b, G b⟫` almost everywhere and
+`‖G b‖_{r'} ≤ ‖f b‖ ^ (q - 1)`. If `|∫ ⟪Φ b, G b⟫ dρ| ≤ M ‖G‖_{L^{q'} L^{r'}}`, then
+`‖f‖_q ^ q ≤ M ‖f‖_q ^ (q - 1)`, so `‖f‖_q ≤ M`. -/
+theorem eLpNorm_le_of_enorm_rpow_le_re_inner {q q' r' : ℝ≥0∞} [q.HolderConjugate q']
+    (hq : q ≠ ∞) {Φ G : β → Lp E 2 μ} {M : ℝ≥0∞} {f : β → ℝ} (hf : MemLp f q ρ)
+    (hG : AEStronglyMeasurable G ρ) (hpair : Integrable (fun b ↦ ⟪Φ b, G b⟫_𝕜) ρ)
+    (hre : ∀ᵐ b ∂ρ, 0 ≤ RCLike.re ⟪Φ b, G b⟫_𝕜)
+    (hle : ∀ᵐ b ∂ρ, ‖f b‖ₑ ^ q.toReal ≤ ENNReal.ofReal (RCLike.re ⟪Φ b, G b⟫_𝕜))
+    (hGf : ∀ b, eLpNorm (G b) r' μ ≤ ‖‖f b‖ ^ (q.toReal - 1)‖ₑ)
+    (hM : ‖∫ b, ⟪Φ b, G b⟫_𝕜 ∂ρ‖ₑ ≤ M * eLpNorm (fun b ↦ eLpNorm (G b) r' μ) q' ρ) :
+    eLpNorm f q ρ ≤ M := by
+  have hq0 : q ≠ 0 := ENNReal.HolderConjugate.ne_zero q q'
+  refine ENNReal.le_of_rpow_le_mul_rpow_sub_one (r := q.toReal) hf.eLpNorm_ne_top ?_
+  calc eLpNorm f q ρ ^ q.toReal = ∫⁻ b, ‖f b‖ₑ ^ q.toReal ∂ρ :=
+        (lintegral_rpow_enorm_eq_eLpNorm_rpow hq0 hq hf.aestronglyMeasurable).symm
+    _ ≤ ∫⁻ b, ENNReal.ofReal (RCLike.re ⟪Φ b, G b⟫_𝕜) ∂ρ := lintegral_mono_ae hle
+    _ = ENNReal.ofReal (∫ b, RCLike.re ⟪Φ b, G b⟫_𝕜 ∂ρ) :=
+        (ofReal_integral_eq_lintegral_ofReal hpair.re hre).symm
+    _ ≤ ‖∫ b, ⟪Φ b, G b⟫_𝕜 ∂ρ‖ₑ := by
+        rw [integral_re hpair, ← ofReal_norm]
+        exact ENNReal.ofReal_le_ofReal (RCLike.re_le_norm _)
+    _ ≤ M * eLpNorm (fun b ↦ eLpNorm (G b) r' μ) q' ρ := hM
+    _ ≤ M * eLpNorm (fun b ↦ ‖f b‖ ^ (q.toReal - 1)) q' ρ := by
+        gcongr
+        exact eLpNorm_mono_eNorm
+          (hG.aemeasurable_eLpNorm_Lp .rfl r').aestronglyMeasurable
+          fun b ↦ by rw [eNorm_eq_self]; exact hGf b
+    _ ≤ M * eLpNorm f q ρ ^ (q.toReal - 1) := by
+        gcongr
+        exact TauCeti.eLpNorm_le_eLpNorm_rpow_toReal_sub_one hq
+          (hf.aestronglyMeasurable.norm.aemeasurable.pow_const _).aestronglyMeasurable
+          (ae_of_all _ fun b ↦ (Real.norm_of_nonneg (by positivity)).le)
+
 /-- **The duality step.** Let `f ≥ 0` vanish off a set `A` of finite measure and be at most `K` on
 it. If the weak bound `|∫ ⟪Φ b, G b⟫ dρ| ≤ M ‖G‖_{L^{q'} L^{r'}}` holds and a test function `G`
 with integrable pairing satisfies `‖f b‖ ^ q ≤ re ⟪Φ b, G b⟫` and `‖G b‖_{r'} ≤ ‖f b‖ ^ (q - 1)`,
-then `‖f‖_q ^ q ≤ M ‖f‖_q ^ (q - 1)`, so `‖f‖_q ≤ M`. -/
-private theorem eLpNorm_le_of_enorm_rpow_le_re_inner {q q' r' : ℝ≥0∞} [q.HolderConjugate q']
-    (hq : q ≠ ∞) {Φ : β → Lp E 2 μ} {M : ℝ≥0∞}
+then `‖f‖_q ≤ M` by `eLpNorm_le_of_enorm_rpow_le_re_inner`. -/
+private theorem eLpNorm_le_of_bounded_enorm_rpow_le_re_inner {q q' r' : ℝ≥0∞}
+    [q.HolderConjugate q'] (hq : q ≠ ∞) {Φ : β → Lp E 2 μ} {M : ℝ≥0∞}
     (hM : ∀ G : β → Lp E 2 μ, Integrable G ρ → Integrable (fun b ↦ ⟪Φ b, G b⟫_𝕜) ρ →
       ‖∫ b, ⟪Φ b, G b⟫_𝕜 ∂ρ‖ₑ ≤ M * eLpNorm (fun b ↦ eLpNorm (G b) r' μ) q' ρ)
     {f : β → ℝ} (hf : AEStronglyMeasurable f ρ) (hf0 : ∀ b, 0 ≤ f b) {A : Set β}
@@ -208,35 +243,15 @@ private theorem eLpNorm_le_of_enorm_rpow_le_re_inner {q q' r' : ℝ≥0∞} [q.H
     (hle : ∀ b, ‖f b‖ₑ ^ q.toReal ≤ ENNReal.ofReal (RCLike.re ⟪Φ b, G b⟫_𝕜))
     (hGf : ∀ b, eLpNorm (G b) r' μ ≤ ‖‖f b‖ ^ (q.toReal - 1)‖ₑ) :
     eLpNorm f q ρ ≤ M := by
-  have hq0 : q ≠ 0 := ENNReal.HolderConjugate.ne_zero q q'
   -- `f` is bounded by `max K 0` and vanishes off `A`, which has finite measure.
-  have hX : eLpNorm f q ρ ≠ ∞ := by
-    refine (memLp_of_norm_le_of_measure_support_ne_top hf (c := max K 0) (ae_of_all _ fun b ↦ ?_)
-      hρA hfA q).eLpNorm_ne_top
-    rw [Real.norm_of_nonneg (hf0 b)]
-    by_cases hb : b ∈ A
-    · exact (hfK b hb).trans (le_max_left _ _)
-    · exact (hfA b hb).trans_le (le_max_right _ _)
-  refine ENNReal.le_of_rpow_le_mul_rpow_sub_one (r := q.toReal) hX ?_
-  calc eLpNorm f q ρ ^ q.toReal = ∫⁻ b, ‖f b‖ₑ ^ q.toReal ∂ρ :=
-        (lintegral_rpow_enorm_eq_eLpNorm_rpow hq0 hq hf).symm
-    _ ≤ ∫⁻ b, ENNReal.ofReal (RCLike.re ⟪Φ b, G b⟫_𝕜) ∂ρ := lintegral_mono hle
-    _ = ENNReal.ofReal (∫ b, RCLike.re ⟪Φ b, G b⟫_𝕜 ∂ρ) :=
-        (ofReal_integral_eq_lintegral_ofReal hpair.re (Eventually.of_forall hre)).symm
-    _ ≤ ‖∫ b, ⟪Φ b, G b⟫_𝕜 ∂ρ‖ₑ := by
-        rw [integral_re hpair, ← ofReal_norm]
-        exact ENNReal.ofReal_le_ofReal (RCLike.re_le_norm _)
-    _ ≤ M * eLpNorm (fun b ↦ eLpNorm (G b) r' μ) q' ρ := hM G hG hpair
-    _ ≤ M * eLpNorm (fun b ↦ ‖f b‖ ^ (q.toReal - 1)) q' ρ := by
-        gcongr
-        exact eLpNorm_mono_eNorm
-          (hG.aestronglyMeasurable.aemeasurable_eLpNorm_Lp .rfl r').aestronglyMeasurable
-          fun b ↦ by rw [eNorm_eq_self]; exact hGf b
-    _ ≤ M * eLpNorm f q ρ ^ (q.toReal - 1) := by
-        gcongr
-        exact TauCeti.eLpNorm_le_eLpNorm_rpow_toReal_sub_one hq
-          (hf.norm.aemeasurable.pow_const _).aestronglyMeasurable
-          (ae_of_all _ fun b ↦ (Real.norm_of_nonneg (by positivity)).le)
+  refine eLpNorm_le_of_enorm_rpow_le_re_inner hq
+    (memLp_of_norm_le_of_measure_support_ne_top hf (c := max K 0) (ae_of_all _ fun b ↦ ?_)
+      hρA hfA q) hG.aestronglyMeasurable hpair (ae_of_all _ hre) (ae_of_all _ hle) hGf
+    (hM G hG hpair)
+  rw [Real.norm_of_nonneg (hf0 b)]
+  by_cases hb : b ∈ A
+  · exact (hfK b hb).trans (le_max_left _ _)
+  · exact (hfA b hb).trans_le (le_max_right _ _)
 
 /-! ### The bound on a set of finite measure -/
 
@@ -396,7 +411,7 @@ private theorem eLpNorm_indicator_truncNorm_le (hq : q ≠ ∞) (hr : r ≠ ∞)
   have hpos : ∀ b ∈ A, 0 < truncNorm (𝕜 := 𝕜) N r (Φ b) := fun b hb ↦ ha.trans_le (hAψ b hb).1
   obtain ⟨hG, hpair⟩ :=
     integrable_testFn (𝕜 := 𝕜) (r := r) hs hΦ hA hρA (q.toReal - r.toReal) ha hAψ
-  refine eLpNorm_le_of_enorm_rpow_le_re_inner hq hM
+  refine eLpNorm_le_of_bounded_enorm_rpow_le_re_inner hq hM
     ((measurable_truncNorm (𝕜 := 𝕜) N r hΦ).indicator hA).aestronglyMeasurable
     (fun b ↦ Set.indicator_nonneg (fun _ _ ↦ truncNorm_nonneg) b) hρA
     (fun b hb ↦ Set.indicator_of_notMem hb _)
@@ -792,8 +807,8 @@ private theorem eLpNorm_indicator_truncRatio_le (hq : q ≠ ∞) {Φ : β → Lp
     rw [sub_add_cancel] at h
     exact h
   have hf0 : ∀ b, 0 ≤ f b := fun b ↦ Set.indicator_nonneg (fun _ _ ↦ truncRatio_nonneg) b
-  refine eLpNorm_le_of_enorm_rpow_le_re_inner hq hM (hψ.indicator hA).aestronglyMeasurable hf0
-    hρA (fun b hb ↦ Set.indicator_of_notMem hb _)
+  refine eLpNorm_le_of_bounded_enorm_rpow_le_re_inner hq hM (hψ.indicator hA).aestronglyMeasurable
+    hf0 hρA (fun b hb ↦ Set.indicator_of_notMem hb _)
     (fun b hb ↦ by rw [hf_def, Set.indicator_of_mem hb]; exact (hAψ b hb).2.1) hG hpair
     (fun b ↦ ?_) (fun b ↦ ?_)
     (eLpNorm_ratioWeight_smul_le N hs Φ _ fun b hb ↦ (hpos b hb).2)

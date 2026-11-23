@@ -14,8 +14,8 @@ public import Mathlib.MeasureTheory.Integral.IntegrableOn
 import Mathlib.Analysis.InnerProductSpace.LinearMap
 import Mathlib.MeasureTheory.Function.LpSeminorm.CompareExp
 import Mathlib.MeasureTheory.Function.LpSpace.Complete
+import Mathlib.MeasureTheory.Function.StronglyMeasurable.Lp
 import Mathlib.MeasureTheory.Integral.Bochner.ContinuousLinearMap
-import Mathlib.Topology.Bases
 import TauCeti.Analysis.InnerProductSpace.ExtremalRpow
 import TauCeti.Analysis.Normed.Module.RCLike.Rpow
 import TauCeti.Analysis.SpecialFunctions.Pow.NNReal
@@ -24,6 +24,7 @@ import TauCeti.MeasureTheory.Function.LpSeminorm.CompareExp
 import TauCeti.MeasureTheory.Function.StronglyMeasurable.SpanningSets
 import TauCeti.MeasureTheory.Function.Holder
 import TauCeti.MeasureTheory.Function.L2Space
+import TauCeti.Topology.Order.CountableSup
 
 /-!
 # Norming `Lᵖ` functions by test functions
@@ -93,9 +94,9 @@ is `∞` outside the almost everywhere strongly measurable functions.
   the duality bound for `q < ∞` for inner product space valued functions, against integrable
   simple test functions, for `h ∈ L^q` and, on a σ-finite measure space, without assuming
   `h ∈ L^q`.
-* `MeasureTheory.Lp.exists_eLpNorm_le_one_and_lt_re_inner`: for `1 ≤ q ≤ ∞` on a σ-finite
-  measure space, the `L^q` norm of `h ∈ L²`, finite or not, is the supremum of `re ⟪h, g⟫` over the
-  `g ∈ L²` in the unit ball of `L^{q'}`.
+* `MeasureTheory.Lp.exists_eLpNorm_le_one_and_lt_re_inner`: for `1 ≤ q ≤ ∞`, the `L^q` norm of
+  `h ∈ L²`, finite or not, is the supremum of `re ⟪h, g⟫` over the `g ∈ L²` in the unit ball of
+  `L^{q'}`.
 * `TopologicalSpace.IsSeparable.exists_seq_eLpNorm_eq_iSup_ofReal_re_inner`: a countable family
   of such `g` norms every element of a separable subset of `L²` in `L^q`.
 
@@ -510,18 +511,18 @@ private theorem Lp.enorm_integral_inner_le_of_forall_re_inner_le {E : Type*}
   exact Lp.enorm_inner_le_of_forall_re_inner_le hq' hc H _
     (hnorm ▸ (hg.mono_exponent_of_measure_support_ne_top hgs hs le_top).eLpNorm_ne_top)
 
-/-- The case `q = ∞` of `Lp.exists_eLpNorm_le_one_and_lt_re_inner`: if `re ⟪h, g⟫ ≤ c` for every
-`g ∈ L²` in the unit ball of `L¹`, then `‖h‖_∞ ≤ c`. Test `‖h‖` against simple functions `g ∈ L¹`
-through `g • (h / ‖h‖)`. -/
-private theorem Lp.eLpNorm_top_le_of_forall_re_inner_le [SigmaFinite μ] {E : Type*}
-    [NormedAddCommGroup E] [InnerProductSpace 𝕜 E] {h : Lp E 2 μ} {c : ℝ} (hc : 0 ≤ c)
-    (H : ∀ g : Lp E 2 μ, eLpNorm g 1 μ ≤ 1 → RCLike.re ⟪h, g⟫_𝕜 ≤ c) :
-    eLpNorm h ∞ μ ≤ ENNReal.ofReal c := by
+/-- The case `q = ∞` of `Lp.exists_eLpNorm_le_one_and_lt_re_inner`, on a σ-finite measure space:
+if `‖∫ ⟪h, g⟫‖ ≤ C ‖g‖₁` for every bounded `g` vanishing off a set of finite measure, then
+`‖h‖_∞ ≤ C`. Test `‖h‖` against simple functions `g ∈ L¹` through `g • (h / ‖h‖)`. -/
+private theorem AEStronglyMeasurable.eLpNorm_top_le_of_forall_enorm_integral_inner_le
+    [SigmaFinite μ] {E : Type*} [NormedAddCommGroup E] [InnerProductSpace 𝕜 E] {h : α → E}
+    (hh : AEStronglyMeasurable h μ) {C : ℝ≥0∞}
+    (hC : ∀ (g : α → E) (s : Set α), μ s ≠ ∞ → (∀ x, x ∉ s → g x = 0) → MemLp g ∞ μ →
+      ‖∫ x, ⟪h x, g x⟫_𝕜 ∂μ‖ₑ ≤ C * eLpNorm g 1 μ) :
+    eLpNorm h ∞ μ ≤ C := by
   have hn : AEStronglyMeasurable (fun x ↦ ((‖h x‖ : ℝ) : 𝕜)) μ :=
-    (RCLike.continuous_ofReal.comp continuous_norm).comp_aestronglyMeasurable
-      (Lp.aestronglyMeasurable h)
-  rw [← eLpNorm_congr_norm_ae hn (Lp.aestronglyMeasurable h)
-    (ae_of_all _ fun x ↦ by simp)]
+    (RCLike.continuous_ofReal.comp continuous_norm).comp_aestronglyMeasurable hh
+  rw [← eLpNorm_congr_norm_ae hn hh (ae_of_all _ fun x ↦ by simp)]
   refine hn.eLpNorm_top_le_of_forall_enorm_integral_mul_le fun g hg ↦ ?_
   set g₁ : α → E := fun x ↦ g x • ((‖h x‖⁻¹ : ℝ) : 𝕜) • h x
   -- `‖h x‖⁻¹ • h x` is the extremal vector `‖h x‖ ^ (r - 2) • h x` of the case `r = 1`.
@@ -535,41 +536,64 @@ private theorem Lp.eLpNorm_top_le_of_forall_re_inner_le [SigmaFinite μ] {E : Ty
     norm_num
   have hinv : AEStronglyMeasurable (fun x ↦ ((‖h x‖⁻¹ : ℝ) : 𝕜)) μ :=
     (RCLike.continuous_ofReal.measurable.comp_aemeasurable
-      (Lp.aestronglyMeasurable h).norm.aemeasurable.inv).aestronglyMeasurable
-  have hg₁m : AEStronglyMeasurable g₁ μ :=
-    g.aestronglyMeasurable.smul (hinv.smul (Lp.aestronglyMeasurable h))
+      hh.norm.aemeasurable.inv).aestronglyMeasurable
+  have hg₁m : AEStronglyMeasurable g₁ μ := g.aestronglyMeasurable.smul (hinv.smul hh)
   have hint : ∫ x, ⟪h x, g₁ x⟫_𝕜 ∂μ = ∫ x, ((‖h x‖ : ℝ) : 𝕜) * g x ∂μ := by
     congr 1 with x
     dsimp only [g₁]
     rw [hext, inner_smul_right, inner_ofReal_rpow_sub_two_smul one_ne_zero, Real.rpow_one,
       mul_comm]
   calc ‖∫ x, ((‖h x‖ : ℝ) : 𝕜) * g x ∂μ‖ₑ = ‖∫ x, ⟪h x, g₁ x⟫_𝕜 ∂μ‖ₑ := by rw [hint]
-    _ ≤ ENNReal.ofReal c * eLpNorm g₁ 1 μ :=
-        Lp.enorm_integral_inner_le_of_forall_re_inner_le one_ne_zero hc H
-          (g.measure_support_lt_top_of_memLp hg one_ne_zero ENNReal.one_ne_top).ne
+    _ ≤ C * eLpNorm g₁ 1 μ :=
+        hC g₁ _ (g.measure_support_lt_top_of_memLp hg one_ne_zero ENNReal.one_ne_top).ne
           (fun x hx ↦ by simp [g₁, Function.notMem_support.1 hx])
           ((g.memLp_top μ).of_le hg₁m (ae_of_all _ hg₁))
-    _ ≤ ENNReal.ofReal c * eLpNorm g 1 μ := by gcongr; exact eLpNorm_mono hg₁m hg₁
+    _ ≤ C * eLpNorm g 1 μ := by gcongr; exact eLpNorm_mono hg₁m hg₁
 
-/-- **Norming `Lᵠ` norms by square-integrable functions.** On a σ-finite measure space, let `q`
-and `q'` be Hölder conjugate, `1 ≤ q ≤ ∞`. For every `h ∈ L²`, the `L^q` norm of `h`, finite or
-not, is the supremum of `re ⟪h, g⟫` over the functions `g ∈ L²` in the unit ball of `L^{q'}`:
-below every `c` with `c < ‖h‖_q` there is such a `g` with `c < re ⟪h, g⟫`. The converse bound
+/-- **Norming `Lᵠ` norms by square-integrable functions.** Let `q` and `q'` be Hölder conjugate,
+`1 ≤ q ≤ ∞`. For every `h ∈ L²`, the `L^q` norm of `h`, finite or not, is the supremum of
+`re ⟪h, g⟫` over the functions `g ∈ L²` in the unit ball of `L^{q'}`: below every `c` with
+`c < ‖h‖_q` there is such a `g` with `c < re ⟪h, g⟫`. The converse bound
 `re ⟪h, g⟫ ≤ ‖h‖_q ‖g‖_{q'}` is Hölder's inequality (`TauCeti.enorm_integral_inner_le`). -/
-theorem Lp.exists_eLpNorm_le_one_and_lt_re_inner [SigmaFinite μ] {E : Type*}
-    [NormedAddCommGroup E] [InnerProductSpace 𝕜 E] {q q' : ℝ≥0∞} [hqq : q.HolderConjugate q']
-    (h : Lp E 2 μ) {c : ℝ} (hc : ENNReal.ofReal c < eLpNorm h q μ) :
+theorem Lp.exists_eLpNorm_le_one_and_lt_re_inner {E : Type*} [NormedAddCommGroup E]
+    [InnerProductSpace 𝕜 E] {q q' : ℝ≥0∞} [hqq : q.HolderConjugate q'] (h : Lp E 2 μ) {c : ℝ}
+    (hc : ENNReal.ofReal c < eLpNorm h q μ) :
     ∃ g : Lp E 2 μ, eLpNorm g q' μ ≤ 1 ∧ c < RCLike.re ⟪h, g⟫_𝕜 := by
   rcases lt_or_ge c 0 with hc0 | hc0
-  · exact ⟨0, Lp.eLpNorm_coeFn_zero.trans_le zero_le_one, by simpa using hc0⟩
+  · exact ⟨0, (eLpNorm_eq_zero_of_ae_zero (Lp.coeFn_zero _ _ _)).trans_le zero_le_one,
+      by simpa using hc0⟩
   by_contra! H
   refine hc.not_ge ?_
+  -- `h` vanishes off a measurable set `t` on which `μ` is σ-finite: argue on `μ|_t`.
+  have hfin := MemLp.aefinStronglyMeasurable (Lp.memLp h) two_ne_zero ENNReal.ofNat_ne_top
+  have ht : MeasurableSet hfin.sigmaFiniteSet := hfin.measurableSet
+  have := hfin.sigmaFinite_restrict
+  rw [← eLpNorm_congr_ae (indicator_ae_eq_of_restrict_compl_ae_eq_zero ht hfin.ae_eq_zero_compl),
+    eLpNorm_indicator_eq_eLpNorm_restrict ht.nullMeasurableSet]
+  -- Test functions for `μ|_t`, extended by zero, are test functions for `μ`.
+  have hC : ∀ (g : α → E) (s : Set α), μ.restrict hfin.sigmaFiniteSet s ≠ ∞ →
+      (∀ x, x ∉ s → g x = 0) → MemLp g ∞ (μ.restrict hfin.sigmaFiniteSet) →
+      ‖∫ x, ⟪h x, g x⟫_𝕜 ∂μ.restrict hfin.sigmaFiniteSet‖ₑ ≤
+        ENNReal.ofReal c * eLpNorm g q' (μ.restrict hfin.sigmaFiniteSet) := by
+    intro g s hs hgs hg
+    have hint : ∫ x, ⟪h x, hfin.sigmaFiniteSet.indicator g x⟫_𝕜 ∂μ =
+        ∫ x in hfin.sigmaFiniteSet, ⟪h x, g x⟫_𝕜 ∂μ := by
+      rw [← integral_indicator ht]
+      congr 1 with x
+      by_cases hx : x ∈ hfin.sigmaFiniteSet <;> simp [hx]
+    rw [← hint, ← eLpNorm_indicator_eq_eLpNorm_restrict ht.nullMeasurableSet]
+    refine Lp.enorm_integral_inner_le_of_forall_re_inner_le hqq.symm.ne_zero hc0 H
+      (s := s ∩ hfin.sigmaFiniteSet) (by rwa [Measure.restrict_apply' ht] at hs) (fun x hx ↦ ?_)
+      ((memLp_indicator_iff_restrict ht.nullMeasurableSet).2 hg)
+    by_cases hxt : x ∈ hfin.sigmaFiniteSet
+    · rw [Set.indicator_of_mem hxt]
+      exact hgs x fun hxs ↦ hx ⟨hxs, hxt⟩
+    · exact Set.indicator_of_notMem hxt _
   rcases eq_or_ne q ∞ with rfl | hq
   · obtain rfl : q' = 1 := (ENNReal.HolderConjugate.eq_top_iff_eq_one ∞ q').1 rfl
-    exact Lp.eLpNorm_top_le_of_forall_re_inner_le hc0 H
-  · exact (Lp.aestronglyMeasurable h).eLpNorm_le_of_forall_enorm_integral_inner_le (𝕜 := 𝕜)
-      (q' := q') hq fun g s hs hgs hg ↦
-        Lp.enorm_integral_inner_le_of_forall_re_inner_le hqq.symm.ne_zero hc0 H hs hgs hg
+    exact (Lp.aestronglyMeasurable h).restrict.eLpNorm_top_le_of_forall_enorm_integral_inner_le hC
+  · exact (Lp.aestronglyMeasurable h).restrict.eLpNorm_le_of_forall_enorm_integral_inner_le
+      (𝕜 := 𝕜) hq hC
 
 end MeasureTheory
 
@@ -578,57 +602,45 @@ namespace TopologicalSpace.IsSeparable
 variable {X 𝕜 E : Type*} [RCLike 𝕜] {mX : MeasurableSpace X} {μ : Measure X}
   [NormedAddCommGroup E] [InnerProductSpace 𝕜 E]
 
-/-- **Countable norming families.** On a σ-finite measure space, let `q` and `q'` be Hölder
-conjugate. For every separable set `S` of square-integrable functions there is a sequence `gₙ` of
-square-integrable functions in the unit ball of `L^{q'}` which norms every element of `S` in
-`L^q`:
+/-- **Countable norming families.** Let `q` and `q'` be Hölder conjugate. For every separable set
+`S` of square-integrable functions there is a sequence `gₙ` of square-integrable functions in the
+unit ball of `L^{q'}` which norms every element of `S` in `L^q`:
 
 `‖h‖_q = supₙ re ⟪h, gₙ⟫` for every `h ∈ S`,
 
 whether `‖h‖_q` is finite or not. -/
-theorem exists_seq_eLpNorm_eq_iSup_ofReal_re_inner [SigmaFinite μ] {q q' : ℝ≥0∞}
-    [hqq : q.HolderConjugate q'] {S : Set (Lp E 2 μ)} (hS : IsSeparable S) :
+theorem exists_seq_eLpNorm_eq_iSup_ofReal_re_inner {q q' : ℝ≥0∞} [hqq : q.HolderConjugate q']
+    {S : Set (Lp E 2 μ)} (hS : IsSeparable S) :
     ∃ g : ℕ → Lp E 2 μ, (∀ n, eLpNorm (g n) q' μ ≤ 1) ∧
       ∀ h ∈ S, eLpNorm h q μ = ⨆ n, ENNReal.ofReal (RCLike.re ⟪h, g n⟫_𝕜) := by
   have := hS.separableSpace
   set Γ := {g : Lp E 2 μ // eLpNorm g q' μ ≤ 1}
-  -- For each rational level `c`, countably many test functions cover `{h ∈ S | c < ‖h‖_q}`.
-  have hcount : ∀ c : ℚ, ∃ D : Set Γ, D.Countable ∧
-      ⋃ g ∈ D, {h : S | (c : ℝ) < RCLike.re ⟪(h : Lp E 2 μ), (g : Lp E 2 μ)⟫_𝕜} =
-        ⋃ g : Γ, {h : S | (c : ℝ) < RCLike.re ⟪(h : Lp E 2 μ), (g : Lp E 2 μ)⟫_𝕜} := by
-    intro c
-    refine isOpen_iUnion_countable _ fun g ↦ isOpen_lt continuous_const ?_
-    exact RCLike.continuous_re.comp (continuous_subtypeVal.inner continuous_const)
-  choose D hDc hD using hcount
-  set D' : Set (Lp E 2 μ) := insert 0 (⋃ c : ℚ, Subtype.val '' D c)
-  have hD'c : D'.Countable :=
-    (Set.countable_iUnion fun c ↦ (hDc c).image _).insert 0
-  obtain ⟨g, hg⟩ := hD'c.exists_eq_range (Set.insert_nonempty _ _)
+  -- A countable set `D` of test functions realizes the supremum over all of `Γ` on `S`.
+  obtain ⟨D, hDc, hD⟩ := TauCeti.exists_countable_iSup_eq_of_continuous
+    (f := fun (γ : Γ) (h : S) ↦ ENNReal.ofReal (RCLike.re ⟪(h : Lp E 2 μ), (γ : Lp E 2 μ)⟫_𝕜))
+    fun γ ↦ ENNReal.continuous_ofReal.comp
+      (RCLike.continuous_re.comp (continuous_subtypeVal.inner continuous_const))
+  obtain ⟨g, hg⟩ := ((hDc.image Subtype.val).insert 0).exists_eq_range (Set.insert_nonempty _ _)
   have hgΓ : ∀ n, eLpNorm (g n) q' μ ≤ 1 := by
     intro n
-    have hn : g n ∈ D' := hg ▸ Set.mem_range_self n
-    rcases hn with hn | hn
-    · exact hn ▸ Lp.eLpNorm_coeFn_zero.trans_le zero_le_one
-    · obtain ⟨c, hc⟩ := Set.mem_iUnion.1 hn
-      obtain ⟨γ, -, hγ⟩ := hc
-      exact hγ ▸ γ.property
+    have hn : g n ∈ insert 0 (Subtype.val '' D) := hg ▸ Set.mem_range_self n
+    rcases hn with hn | ⟨γ, -, hγ⟩
+    · exact hn ▸ (eLpNorm_eq_zero_of_ae_zero (Lp.coeFn_zero _ _ _)).trans_le zero_le_one
+    · exact hγ ▸ γ.property
   refine ⟨g, hgΓ, fun h hh ↦ le_antisymm ?_ (iSup_le fun n ↦ ?_)⟩
-  · -- Below `‖h‖_q`, a rational level is exceeded by the pairing with some `gₙ`.
-    refine le_of_forall_lt fun b hb ↦ ?_
-    obtain ⟨c, hc0, hbc, hch⟩ := ENNReal.lt_iff_exists_rat_btwn.1 hb
-    obtain ⟨γ, hγ, hcγ⟩ := Lp.exists_eLpNorm_le_one_and_lt_re_inner (𝕜 := 𝕜) (q' := q') h
-      (c := c) hch
-    have hmem : (⟨h, hh⟩ : S) ∈ ⋃ γ : Γ,
-        {h : S | (c : ℝ) < RCLike.re ⟪(h : Lp E 2 μ), (γ : Lp E 2 μ)⟫_𝕜} :=
-      Set.mem_iUnion.2 ⟨⟨γ, hγ⟩, hcγ⟩
-    rw [← hD c] at hmem
-    obtain ⟨γ', hγ'D, hγ'⟩ := Set.mem_iUnion₂.1 hmem
-    have hγ'mem : (γ' : Lp E 2 μ) ∈ Set.range g :=
-      hg ▸ Set.mem_insert_of_mem _ (Set.mem_iUnion.2 ⟨c, γ', hγ'D, rfl⟩)
-    obtain ⟨n, hn⟩ := hγ'mem
-    refine lt_iSup_iff.2 ⟨n, hbc.trans ?_⟩
-    rw [hn]
-    exact (ENNReal.ofReal_lt_ofReal_iff_of_nonneg (by exact_mod_cast hc0)).2 hγ'
+  · calc eLpNorm h q μ ≤ ⨆ γ : Γ, ENNReal.ofReal (RCLike.re ⟪h, (γ : Lp E 2 μ)⟫_𝕜) := by
+          -- Below `‖h‖_q`, the pairing with some test function is larger.
+          refine le_of_forall_lt fun b hb ↦ ?_
+          obtain ⟨γ, hγ, hbγ⟩ := Lp.exists_eLpNorm_le_one_and_lt_re_inner (𝕜 := 𝕜) (q' := q') h
+            (c := b.toReal) (by rwa [ENNReal.ofReal_toReal hb.ne_top])
+          exact lt_iSup_iff.2 ⟨⟨γ, hγ⟩, (ENNReal.ofReal_toReal hb.ne_top).symm.trans_lt
+            ((ENNReal.ofReal_lt_ofReal_iff_of_nonneg ENNReal.toReal_nonneg).2 hbγ)⟩
+      _ = ⨆ γ ∈ D, ENNReal.ofReal (RCLike.re ⟪h, (γ : Lp E 2 μ)⟫_𝕜) := hD ⟨h, hh⟩
+      _ ≤ ⨆ n, ENNReal.ofReal (RCLike.re ⟪h, g n⟫_𝕜) := by
+          refine iSup₂_le fun γ hγ ↦ ?_
+          obtain ⟨n, hn⟩ : (γ : Lp E 2 μ) ∈ Set.range g :=
+            hg ▸ Set.mem_insert_of_mem _ (Set.mem_image_of_mem _ hγ)
+          exact le_iSup_of_le n (by rw [hn])
   · -- Hölder's inequality bounds each pairing.
     calc ENNReal.ofReal (RCLike.re ⟪h, g n⟫_𝕜) ≤ ‖⟪h, g n⟫_𝕜‖ₑ := by
           rw [← ofReal_norm]

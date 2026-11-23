@@ -10,6 +10,7 @@ public import Mathlib.MeasureTheory.Function.StronglyMeasurable.AEStronglyMeasur
 import Mathlib.MeasureTheory.Function.AEEqOfLIntegral
 import TauCeti.MeasureTheory.Function.Lp.Duality
 import TauCeti.MeasureTheory.Function.Lp.Integral.Functional
+import TauCeti.MeasureTheory.Function.Lp.MixedNorm
 import TauCeti.MeasureTheory.Function.Lp.LIntegralRpow
 import TauCeti.MeasureTheory.Function.Lp.Norm
 import TauCeti.MeasureTheory.Function.LpSeminorm.CompareExp
@@ -41,9 +42,9 @@ finiteness of `‖F t‖_q` is not assumed: it follows for almost every `t` when
 
 `MeasureTheory.AEStronglyMeasurable.eLpNorm_eLpNorm_le_of_forall_enorm_integral_inner_le` in
 `TauCeti.MeasureTheory.Function.Lp.MixedNorm` proves the same bound by truncated extremal
-functions, without σ-finiteness of `X` but only for `p < ∞` and `q ≥ 2`, and against integrable
-test functions. The theorem here covers `p = ∞` and `1 ≤ q < 2`, and needs the bound only for
-bounded test functions of finite-measure support.
+functions, but only for `p < ∞` and `q ≥ 2`, and against integrable test functions. The theorem
+here covers `p = ∞` and `1 ≤ q < 2`, and needs the bound only for bounded test functions of
+finite-measure support.
 
 ## The argument
 
@@ -51,9 +52,9 @@ The difficulty is to choose, measurably in `t`, a test function `G t` that nearl
 `L^q`. Each single `h ∈ L²` is normed by test functions `g ∈ L²` in the unit ball of `L^{q'}`
 (`MeasureTheory.Lp.exists_eLpNorm_le_one_and_lt_re_inner`). Almost every `F t` lies in a
 separable set `S`, and on `S` countably many test functions suffice
-(`TopologicalSpace.IsSeparable.exists_seq_eLpNorm_eq_iSup_ofReal_re_inner`): for each rational
-level `c`, the sets `{h | c < re ⟪h, g⟫}` are open and cover `{h ∈ S | c < ‖h‖_q}`, and `S` is
-Lindelöf. With such a sequence `gₘ`,
+(`TopologicalSpace.IsSeparable.exists_seq_eLpNorm_eq_iSup_ofReal_re_inner`), because a pointwise
+supremum of continuous functions on the second-countable space `S` is realized by a countable
+subfamily. With such a sequence `gₘ`,
 
 `‖F t‖_q = supₘ re ⟪F t, gₘ⟫`
 
@@ -96,45 +97,6 @@ private theorem measurable_re_inner_toNNReal {F : T → Lp E 2 μ} (hF : Strongl
     (g : Lp E 2 μ) : Measurable fun t ↦ (RCLike.re ⟪F t, g⟫_𝕜).toNNReal :=
   ((RCLike.continuous_re.comp (continuous_id.inner continuous_const)).comp_stronglyMeasurable
     hF).measurable.real_toNNReal
-
-/-- **The testing step.** If a nonnegative `u ∈ L^p` and a test function `G` satisfy
-`re ⟪F t, G t⟫ = u(t) ^ p` and `‖G t‖_{q'} ≤ u(t) ^ (p - 1)`, then the duality bound
-`|∫ ⟪F t, G t⟫| ≤ C ‖G‖_{L^{p'}_t L^{q'}_x}` gives `‖u‖_p ≤ C`: the left side is `‖u‖_p ^ p` and
-the right side is at most `C ‖u‖_p ^ (p - 1)`. -/
-private theorem eLpNorm_le_of_re_inner_eq_rpow {p p' q' : ℝ≥0∞} [hpp : p.HolderConjugate p']
-    (hp : p ≠ ∞) {C : ℝ≥0∞} {F G : T → Lp E 2 μ} {u : T → ℝ} (hu : MemLp u p ν)
-    (hum : Measurable u) (hu0 : ∀ t, 0 ≤ u t) (hG : AEStronglyMeasurable G ν)
-    (hint : Integrable (fun t ↦ ⟪F t, G t⟫_𝕜) ν)
-    (hre : ∀ᵐ t ∂ν, RCLike.re ⟪F t, G t⟫_𝕜 = u t ^ p.toReal)
-    (hGq : ∀ t, eLpNorm (G t) q' μ ≤ ENNReal.ofReal (u t ^ (p.toReal - 1)))
-    (hC : ‖∫ t, ⟪F t, G t⟫_𝕜 ∂ν‖ₑ ≤ C * eLpNorm (fun t ↦ eLpNorm (G t) q' μ) p' ν) :
-    eLpNorm u p ν ≤ C := by
-  have hp0 : p ≠ 0 := hpp.ne_zero
-  set X := eLpNorm u p ν
-  have hXr : X ^ p.toReal = ENNReal.ofReal (∫ t, u t ^ p.toReal ∂ν) := by
-    rw [hu.eLpNorm_rpow_toReal_eq_enorm_integral (𝕜 := ℝ) hp0 hp,
-      ← Real.eNorm_eq_ofReal (integral_nonneg fun t ↦ Real.rpow_nonneg (hu0 t) _)]
-    congr 2 with t
-    rw [Real.norm_of_nonneg (hu0 t), RCLike.ofReal_real_eq_id, id]
-  refine ENNReal.le_of_rpow_le_mul_rpow_sub_one (r := p.toReal) hu.eLpNorm_ne_top ?_
-  calc X ^ p.toReal = ENNReal.ofReal (∫ t, u t ^ p.toReal ∂ν) := hXr
-    _ = ENNReal.ofReal (RCLike.re (∫ t, ⟪F t, G t⟫_𝕜 ∂ν)) := by
-        rw [← integral_re hint, integral_congr_ae (hre.mono fun t ht ↦ ht.symm)]
-    _ ≤ ‖∫ t, ⟪F t, G t⟫_𝕜 ∂ν‖ₑ := by
-        rw [← ofReal_norm]
-        exact ENNReal.ofReal_le_ofReal (RCLike.re_le_norm _)
-    _ ≤ C * eLpNorm (fun t ↦ eLpNorm (G t) q' μ) p' ν := hC
-    _ ≤ C * eLpNorm (fun t ↦ u t ^ (p.toReal - 1)) p' ν := by
-        gcongr
-        refine eLpNorm_mono_eNorm (hG.aemeasurable_eLpNorm_Lp
-          Measure.AbsolutelyContinuous.rfl q').aestronglyMeasurable fun t ↦ ?_
-        rw [eNorm_eq_self, Real.eNorm_eq_ofReal (Real.rpow_nonneg (hu0 t) _)]
-        exact hGq t
-    _ ≤ C * X ^ (p.toReal - 1) := by
-        gcongr
-        refine TauCeti.eLpNorm_le_eLpNorm_rpow_toReal_sub_one (q' := p') hp
-          (hum.pow_const _).aestronglyMeasurable (ae_of_all _ fun t ↦ ?_)
-        rw [Real.norm_of_nonneg (Real.rpow_nonneg (hu0 t) _), Real.norm_of_nonneg (hu0 t)]
 
 /-- **Testing against a chosen index.** Let `gₘ` be test functions in the unit ball of `L^{q'}`
 and let `s` be a measurable set of finite measure on which `‖F t‖₂ ≤ R`. Let `φ ≥ 0` and an index
@@ -198,32 +160,37 @@ private theorem eLpNorm_indicator_le_of_re_inner_eq {p p' q' : ℝ≥0∞}
       exact Real.rpow_le_rpow (NNReal.coe_nonneg _) (hu_mem t ht ▸ hu_le t) (by linarith)
     · rw [hG_zero t ht, norm_zero]
       positivity
-  have hG_eLpNorm : ∀ t, eLpNorm (G t) q' μ ≤ ENNReal.ofReal (u t ^ (r - 1)) := fun t ↦ by
+  have hG_eLpNorm : ∀ t, eLpNorm (G t) q' μ ≤ ‖‖u t‖ ^ (r - 1)‖ₑ := fun t ↦ by
+    rw [Real.norm_of_nonneg (hu_nonneg t), Real.eNorm_eq_ofReal (Real.rpow_nonneg (hu_nonneg t) _)]
     by_cases ht : t ∈ D
     · rw [hG_eq t ht, eLpNorm_congr_ae (Lp.coeFn_smul _ _), eLpNorm_const_smul, hu_mem t ht,
         ← ofReal_norm, RCLike.norm_ofReal,
         abs_of_nonneg (Real.rpow_nonneg (NNReal.coe_nonneg _) _)]
       exact mul_le_of_le_one_right' (hg1 _)
-    · rw [hG_zero t ht, Lp.eLpNorm_coeFn_zero]
+    · rw [hG_zero t ht, eLpNorm_eq_zero_of_ae_zero (Lp.coeFn_zero _ _ _)]
       exact zero_le
   have hGs : ∀ t, t ∉ s → G t = 0 := fun t ht ↦ hG_zero t fun h ↦ ht h.1
   have hint : Integrable (fun t ↦ ⟪F t, G t⟫_𝕜) ν := by
-    refine memLp_one_iff_integrable.1 ((memLp_top_of_bound (hF.inner hGm).aestronglyMeasurable
-      (R * ((M : ℝ) ^ (r - 1) * K)) (ae_of_all _ fun t ↦ ?_))
-      |>.mono_exponent_of_measure_support_ne_top
-        (fun t ht ↦ by rw [hGs t ht, inner_zero_right]) hsν le_top)
+    refine memLp_one_iff_integrable.1 (memLp_of_norm_le_of_measure_support_ne_top
+      (hF.inner hGm).aestronglyMeasurable (c := R * ((M : ℝ) ^ (r - 1) * K))
+      (ae_of_all _ fun t ↦ ?_) hsν (fun t ht ↦ by rw [hGs t ht, inner_zero_right]) 1)
     by_cases ht : t ∈ s
     · exact (norm_inner_le_norm _ _).trans
         (mul_le_mul (hR t ht) (hG_norm t) (norm_nonneg _) R.coe_nonneg)
     · rw [hGs t ht, inner_zero_right, norm_zero]
       positivity
   -- Testing against `G` bounds the `L^p` norm of `u = 1_D φ` by `C`.
-  have huLp : MemLp u p ν := (memLp_top_of_bound hum.aestronglyMeasurable M
-    (ae_of_all _ fun t ↦ by rw [Real.norm_of_nonneg (hu_nonneg t)]; exact hu_le t)
-    ).mono_exponent_of_measure_support_ne_top (fun t ht ↦ hu_notMem t fun h ↦ ht h.1) hsν le_top
-  exact eLpNorm_le_of_re_inner_eq_rpow (p' := p') (q' := q') hp huLp hum hu_nonneg
-    hGm.aestronglyMeasurable hint (ae_of_all _ hG_re) hG_eLpNorm
+  have huLp : MemLp u p ν := memLp_of_norm_le_of_measure_support_ne_top
+    hum.aestronglyMeasurable (c := M)
+    (ae_of_all _ fun t ↦ by rw [Real.norm_of_nonneg (hu_nonneg t)]; exact hu_le t) hsν
+    (fun t ht ↦ hu_notMem t fun h ↦ ht h.1) p
+  refine eLpNorm_le_of_enorm_rpow_le_re_inner (q' := p') (r' := q') hp huLp
+    hGm.aestronglyMeasurable hint (ae_of_all _ fun t ↦ ?_) (ae_of_all _ fun t ↦ ?_) hG_eLpNorm
     (hC G s hsν hGs (memLp_top_of_bound hGm.aestronglyMeasurable _ (ae_of_all _ hG_norm)))
+  · rw [hG_re]
+    exact Real.rpow_nonneg (hu_nonneg t) _
+  · rw [hG_re, Real.eNorm_eq_ofReal (hu_nonneg t),
+      ENNReal.ofReal_rpow_of_nonneg (hu_nonneg t) (by positivity)]
 
 /-- **The truncated testing step.** Let `gₘ` be test functions in the unit ball of `L^{q'}`, let
 `φ_N(t) = max_{m < N} (re ⟪F t, gₘ⟫)⁺`, and let `s` be a measurable set of finite measure on which
@@ -238,28 +205,31 @@ private theorem eLpNorm_indicator_finsetSup_le {p p' q' : ℝ≥0∞} [hpp : p.H
     (hR : ∀ t ∈ s, ‖F t‖ ≤ R) :
     eLpNorm (s.indicator fun t ↦
       (((Finset.range N).sup fun m ↦ (RCLike.re ⟪F t, g m⟫_𝕜).toNNReal : ℝ≥0) : ℝ)) p ν ≤ C := by
+  rcases N.eq_zero_or_pos with rfl | hN
+  · simp
   have hf : ∀ m, Measurable fun t ↦ (RCLike.re ⟪F t, g m⟫_𝕜).toNNReal := fun m ↦
     measurable_re_inner_toNNReal hF (g m)
-  obtain ⟨ψ, hψm, hψN, hψ⟩ := TauCeti.exists_measurable_finsetSup_eq hf N
-  set K : ℝ≥0 := ∑ m ∈ Finset.range (N + 1), ‖g m‖₊
-  have hgK : ∀ m ≤ N, ‖g m‖ ≤ K := fun m hm ↦ by
+  obtain ⟨ψ, hψm, hψ⟩ := TauCeti.exists_measurable_finsetSup_eq hN fun m _ ↦ hf m
+  set K : ℝ≥0 := ∑ m ∈ Finset.range N, ‖g m‖₊
+  have hgK : ∀ m < N, ‖g m‖ ≤ K := fun m hm ↦ by
     rw [← coe_nnNorm]
     exact NNReal.coe_le_coe.2 (Finset.single_le_sum (f := fun m ↦ ‖g m‖₊) (fun m _ ↦ zero_le)
-      (Finset.mem_range_succ_iff.2 hm))
+      (Finset.mem_range.2 hm))
   refine eLpNorm_indicator_le_of_re_inner_eq hp hF hg1 hC hs hsν hR
-    (Finset.measurable_sup_apply _ fun m _ ↦ hf m) (M := R * K) (fun t ht ↦ ?_) hψm
-    (fun t ↦ hgK _ (hψN t)) fun t ht ↦ ?_
+    (Finset.measurable_sup_apply _ fun m _ ↦ hf m) (M := R * K) (fun t ht ↦ ?_)
+    (ψ := fun t ↦ ψ t) ((measurable_of_countable _).comp hψm) (fun t ↦ hgK _ (ψ t).isLt)
+    fun t ht ↦ ?_
   · refine Finset.sup_le fun m hm ↦ Real.toNNReal_le_iff_le_coe.2 ?_
     push_cast
     exact (RCLike.re_le_norm _).trans ((norm_inner_le_norm _ _).trans (mul_le_mul (hR t ht)
-      (hgK m (Finset.mem_range.1 hm).le) (norm_nonneg _) R.coe_nonneg))
+      (hgK m (Finset.mem_range.1 hm)) (norm_nonneg _) R.coe_nonneg))
   · have h0 : 0 < (RCLike.re ⟪F t, g (ψ t)⟫_𝕜).toNNReal := by
-      rw [hψ t ht]
+      rw [hψ t]
       exact pos_iff_ne_zero.2 ht
-    rw [← hψ t ht, Real.coe_toNNReal _ (Real.toNNReal_pos.1 h0).le]
+    rw [← hψ t, Real.coe_toNNReal _ (Real.toNNReal_pos.1 h0).le]
 
 /-- The case `p < ∞` of `eLpNorm_eLpNorm_le_of_forall_enorm_integral_inner_bounded_le`. -/
-private theorem eLpNorm_eLpNorm_le_of_ne_top [SigmaFinite μ] [SigmaFinite ν]
+private theorem eLpNorm_eLpNorm_le_of_ne_top [SigmaFinite ν]
     {p p' q q' : ℝ≥0∞} [hpp : p.HolderConjugate p'] [hqq : q.HolderConjugate q'] (hp : p ≠ ∞)
     {F : T → Lp E 2 μ} (hF : AEStronglyMeasurable F ν) {C : ℝ≥0∞}
     (hC : ∀ (G : T → Lp E 2 μ) (s : Set T), ν s ≠ ∞ → (∀ t, t ∉ s → G t = 0) →
@@ -299,11 +269,8 @@ private theorem eLpNorm_eLpNorm_le_of_ne_top [SigmaFinite μ] [SigmaFinite ν]
     filter_upwards [hFS, hFF'] with t htS ht
     rw [ht, hgS _ (ht ▸ htS)]
     have hiSup : ⨆ N, (φ N t : ℝ≥0∞) = ⨆ m, ENNReal.ofReal (RCLike.re ⟪F' t, g m⟫_𝕜) := by
-      refine le_antisymm (iSup_le fun N ↦ ?_) (iSup_le fun m ↦ le_iSup_of_le (m + 1) ?_)
-      · rw [ENNReal.coe_finset_sup]
-        exact Finset.sup_le fun m _ ↦ le_iSup (fun m ↦ ENNReal.ofReal (RCLike.re ⟪F' t, g m⟫_𝕜)) m
-      · exact ENNReal.coe_le_coe.2 (Finset.le_sup (f := fun m ↦ (RCLike.re ⟪F' t, g m⟫_𝕜).toNNReal)
-          (Finset.self_mem_range_succ m))
+      simp only [φ, ENNReal.coe_finset_sup, Finset.sup_eq_iSup, Finset.mem_range]
+      exact biSup_lt_eq_iSup
     have hev : ∀ᶠ N in atTop, (φ N t : ℝ≥0∞) = ‖u N t‖ₑ := by
       filter_upwards [eventually_mem_spanningSets ν t,
         tendsto_natCast_atTop_atTop.eventually_ge_atTop ‖F' t‖] with N ht₁ ht₂
@@ -319,7 +286,7 @@ private theorem eLpNorm_eLpNorm_le_of_ne_top [SigmaFinite μ] [SigmaFinite ν]
 set `A` of finite measure, testing against `1_A G` and applying the case `p = 1` to the
 restriction of `ν` to `A` gives `∫_A ‖F t‖_q ≤ C ν(A)`. As `A` is arbitrary, `‖F t‖_q ≤ C` for
 almost every `t`. -/
-private theorem eLpNorm_eLpNorm_top_le [SigmaFinite μ] [SigmaFinite ν] {q q' : ℝ≥0∞}
+private theorem eLpNorm_eLpNorm_top_le [SigmaFinite ν] {q q' : ℝ≥0∞}
     [hqq : q.HolderConjugate q'] {F : T → Lp E 2 μ} (hF : AEStronglyMeasurable F ν) {C : ℝ≥0∞}
     (hC : ∀ (G : T → Lp E 2 μ) (s : Set T), ν s ≠ ∞ → (∀ t, t ∉ s → G t = 0) →
       MemLp G ∞ ν → ‖∫ t, ⟪F t, G t⟫_𝕜 ∂ν‖ₑ ≤ C * eLpNorm (fun t ↦ eLpNorm (G t) q' μ) 1 ν) :
@@ -347,7 +314,7 @@ private theorem eLpNorm_eLpNorm_top_le [SigmaFinite μ] [SigmaFinite ν] {q q' :
     by_cases ht : t ∈ A
     · simp only [Set.indicator_of_mem ht]
     · simp only [Set.indicator_of_notMem ht]
-      exact Lp.eLpNorm_coeFn_zero
+      exact eLpNorm_eq_zero_of_ae_zero (Lp.coeFn_zero _ _ _)
   rw [hint, hnorm, eLpNorm_indicator_eq_eLpNorm_restrict hA.nullMeasurableSet] at hGA
   refine hGA.trans ?_
   rw [mul_assoc]
@@ -360,9 +327,8 @@ private theorem eLpNorm_eLpNorm_top_le [SigmaFinite μ] [SigmaFinite ν] {q q' :
     _ = ν A * eLpNorm (fun t ↦ eLpNorm (G t) q' μ) ∞ (ν.restrict A) := by
         simp [mul_comm]
 
-/-- **Duality for mixed norms.** On σ-finite measure spaces `T` and `X`, let `(p, p')` and
-`(q, q')` be Hölder conjugate pairs, and let `F : T → L²(X, E)` be almost everywhere strongly
-measurable. If
+/-- **Duality for mixed norms.** Let `T` be a σ-finite measure space, let `(p, p')` and `(q, q')`
+be Hölder conjugate pairs, and let `F : T → L²(X, E)` be almost everywhere strongly measurable. If
 
 `|∫ ⟪F t, G t⟫ dt| ≤ C ‖G‖_{L^{p'}_t L^{q'}_x}`
 
@@ -371,7 +337,7 @@ for every bounded `G : T → L²(X, E)` vanishing off a set of finite measure, t
 `‖F‖_{L^p_t L^q_x} = ‖t ↦ ‖F t‖_{L^q(X)}‖_{L^p(T)} ≤ C`.
 
 In particular `F t ∈ L^q` for almost every `t` as soon as `C < ∞`. -/
-theorem eLpNorm_eLpNorm_le_of_forall_enorm_integral_inner_bounded_le [SigmaFinite μ] [SigmaFinite ν]
+theorem eLpNorm_eLpNorm_le_of_forall_enorm_integral_inner_bounded_le [SigmaFinite ν]
     {p p' q q' : ℝ≥0∞} [hpp : p.HolderConjugate p'] [hqq : q.HolderConjugate q']
     {F : T → Lp E 2 μ} (hF : AEStronglyMeasurable F ν) {C : ℝ≥0∞}
     (hC : ∀ (G : T → Lp E 2 μ) (s : Set T), ν s ≠ ∞ → (∀ t, t ∉ s → G t = 0) →
