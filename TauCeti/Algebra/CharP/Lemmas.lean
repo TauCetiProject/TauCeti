@@ -45,8 +45,8 @@ law.
 * `TauCeti.natCast_mul_natCast_val_inv_eq_one`: `m * (m⁻¹ : ZMod p).val = 1` in characteristic
   `p` when `m` is prime to `p`.
 * `TauCeti.neg_pow_expChar_pow`: `(-x) ^ p ^ n = -x ^ p ^ n`.
-* `RingHom.charP_of_prime`: a ring homomorphism from a ring of prime characteristic `p` into a
-  nontrivial ring transports characteristic `p`.
+* `CharP.of_ringHom_of_prime`: a ring homomorphism from a ring in which a prime `p` vanishes into
+  a nontrivial ring transports characteristic `p`.
 -/
 
 public section
@@ -130,13 +130,12 @@ theorem neg_pow_expChar_pow (x : R) : (-x) ^ p ^ n = -x ^ p ^ n := by
 
 end TauCeti
 
-namespace RingHom
+namespace CharP
 
-/-- A ring homomorphism from a ring of prime characteristic `p` into a nontrivial ring
+/-- A ring homomorphism from a ring in which a prime `p` vanishes into a nontrivial ring
 transports characteristic `p`, without requiring injectivity. -/
-theorem charP_of_prime {R S : Type*} [NonAssocSemiring R] [NonAssocSemiring S] [Nontrivial S]
-    (f : R →+* S) (p : ℕ) (hp : p.Prime) [CharP R p] : CharP S p :=
-  (CharP.charP_iff_prime_eq_zero hp).2 <| by
-    rw [← map_natCast f, CharP.cast_eq_zero, map_zero]
+theorem of_ringHom_of_prime {R S : Type*} [NonAssocSemiring R] [NonAssocSemiring S] [Nontrivial S]
+    (f : R →+* S) (p : ℕ) (hp : p.Prime) (hR : (p : R) = 0) : CharP S p :=
+  (CharP.charP_iff_prime_eq_zero hp).2 <| by simpa using congrArg f hR
 
-end RingHom
+end CharP

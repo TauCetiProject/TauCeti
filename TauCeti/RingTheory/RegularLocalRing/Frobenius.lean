@@ -92,7 +92,7 @@ theorem IsRegularRing.flat_frobenius [IsRegularRing R] : (frobenius R p).Flat :=
     ext a
     exact hJ.pow_mem_iff_mem p hp.pos
   have : CharP (Localization.AtPrime J) p :=
-    (algebraMap R (Localization.AtPrime J)).charP_of_prime p hp
+    CharP.of_ringHom_of_prime (algebraMap R (Localization.AtPrime J)) p hp (CharP.cast_eq_zero R p)
   have : ExpChar (Localization.AtPrime J) p := .prime hp
   have hcomp : Localization.localRingHom _ J (frobenius R p) rfl =
       (frobenius (Localization.AtPrime J) p).comp

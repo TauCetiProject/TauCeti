@@ -92,11 +92,11 @@ theorem IsRegularLocalRing.of_flat_frobenius {R : Type u} [CommRing R] [IsLocalR
     exists_surjective_mvPowerSeries_spanFinrank (ZMod p) R' (maximalIdeal R').fg_of_isNoetherianRing
   let e := (maximalIdeal R').spanFinrank
   let P₀ := _root_.MvPowerSeries (Fin e) (ResidueField R')
-  have : CharP (ResidueField R') p := (residue R').charP_of_prime p hp
+  have : CharP (ResidueField R') p :=
+    CharP.of_ringHom_of_prime (residue R') p hp (CharP.cast_eq_zero R' p)
   have : CharP P₀ p := charP_of_injective_ringHom _root_.MvPowerSeries.C_injective p
   have hdim : ringKrullDim P₀ ≤ e := by
-    rw [_root_.MvPowerSeries.ringKrullDim_of_isNoetherianRing_of_finite,
-      ringKrullDim_eq_zero_of_field, zero_add, Nat.card_fin]
+    simp [P₀, ringKrullDim_eq_zero_of_field]
   -- Lift `φ : P₀ →+* R'` to a surjection of colimit perfections to bound global dimension of
   -- `PerfectClosure R' p`.
   have hψ : Function.Surjective
@@ -125,7 +125,7 @@ theorem IsRegularRing.of_flat_frobenius {R : Type u} [CommRing R] [IsNoetherianR
   have : CharP R p := (expChar_prime_iff (R := R) hp).1 inferInstance
   refine isRegularRing_iff.mpr fun q _ ↦ ?_
   have : CharP (Localization.AtPrime q) p :=
-    (algebraMap R (Localization.AtPrime q)).charP_of_prime p hp
+    CharP.of_ringHom_of_prime (algebraMap R (Localization.AtPrime q)) p hp (CharP.cast_eq_zero R p)
   exact IsRegularLocalRing.of_flat_frobenius p (flat_frobenius_of_isLocalization p q.primeCompl h)
 
 /-- **Kunz's theorem (local case).** A Noetherian local ring of prime characteristic `p` is regular

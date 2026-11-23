@@ -70,25 +70,21 @@ theorem bijective_comp [hp : Fact p.Prime] (hK : (p : K) = 0) [PerfectRing M p] 
         map_mul' _ _ := Subsingleton.elim _ _
         map_zero' := rfl
         map_add' _ _ := Subsingleton.elim _ _ }, RingHom.ext fun _ ↦ Subsingleton.elim _ _⟩
-  -- Any ring map `K →+* M` forces `p = 0` in `K` and `M`.
-  have hKchar (j : K →+* M) : Nontrivial K ∧ CharP K p :=
-    have : Nontrivial K := j.domain_nontrivial
-    ⟨‹_›, (CharP.charP_iff_prime_eq_zero hp.out).2 hK⟩
-  have hM (j : K →+* M) : CharP M p :=
-    have ⟨_, _⟩ := hKchar j
-    j.charP_of_prime p hp.out
+  -- Any ring map `K →+* M` forces `p = 0` in `M`.
+  have hM (j : K →+* M) : CharP M p := CharP.of_ringHom_of_prime j p hp.out hK
   refine ⟨fun f g hfg ↦ ?_, fun j ↦ ?_⟩
   · have := hM (f.comp i)
     exact IsPRadical.injective_comp_of_perfect M i p hfg
   have := hM j
-  obtain ⟨_, _⟩ := hKchar j
+  have : Nontrivial K := j.domain_nontrivial
+  have : CharP K p := (CharP.charP_iff_prime_eq_zero hp.out).2 hK
   -- `L` is nonzero: otherwise `1` lies in the kernel of `i`, so `1` would be `p`-nilpotent.
   have : Nontrivial L := by
     refine (subsingleton_or_nontrivial L).resolve_left fun _ ↦ ?_
     obtain ⟨n, hn⟩ := mem_pNilradical.1
       (IsPRadical.ker_le i p ((RingHom.mem_ker (r := 1)).2 (Subsingleton.elim _ _)))
     simp at hn
-  have : CharP L p := i.charP_of_prime p hp.out
+  have : CharP L p := CharP.of_ringHom_of_prime i p hp.out hK
   exact ⟨PerfectRing.lift i j p, PerfectRing.lift_comp i j p⟩
 
 end IsPRadical
