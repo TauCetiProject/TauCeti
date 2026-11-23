@@ -6,9 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RingTheory.Huber.Kaehler.ConormalMap
-public import TauCeti.RingTheory.Huber.Kaehler.UniversalProperty
+public import TauCeti.RingTheory.Huber.Kaehler.FiniteType
 
 import TauCeti.RingTheory.Derivation.Quotient
+import TauCeti.RingTheory.Huber.Kaehler.FiniteTarget
 
 /-!
 # Exact sequences for continuous differentials

@@ -6,8 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RingTheory.Huber.Kaehler.Map
-public import TauCeti.RingTheory.Huber.Kaehler.UniversalProperty
+public import TauCeti.RingTheory.Huber.Kaehler.FiniteType
 
+import TauCeti.RingTheory.Huber.Kaehler.FiniteTarget
 import TauCeti.RingTheory.Huber.TensorProduct.Derivation
 
 /-!
