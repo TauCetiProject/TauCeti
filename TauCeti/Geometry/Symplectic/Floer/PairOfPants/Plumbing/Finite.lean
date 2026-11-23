@@ -8,6 +8,7 @@ module
 public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.Plumbing.Action
 public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.Energy.Finite
 import TauCeti.Geometry.Manifold.ContMDiff.Prod
+import TauCeti.Geometry.Symplectic.Floer.PairOfPants.Plumbing.Energy
 import TauCeti.Topology.Order.MonotoneConvergence
 
 /-!
@@ -84,7 +85,9 @@ variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] [FiniteDimension
 plumbed four-punctured sphere `ℂ ∖ {0, 1, ψ(1)}` outside the truncation
 `Σ_{L/2} = S_{L/2} ∪ ψ(S_{L/2})`, the curvature of the plumbed perturbation vanishes: such a point
 lies on the part `±s > L/2` of one of the four outer ends, where the plumbed datum is the
-cylindrical datum `H(t) dt` of that end. -/
+cylindrical datum `H(t) dt` of that end. This is
+`SmoothTwoForm.hamiltonianCurvature_plumbedPerturbation_eq_zero_of_notMem_plumbedTruncation` for
+the constant two-form `ω`. -/
 theorem hamiltonianCurvature_plumbedPerturbation_eq_zero_of_notMem_plumbedTruncation
     (ω : SymplecticForm V)
     (hq : q ≠ inf) (hHa : ∀ r, Periodic (Ha r) 1) (hHb : ∀ r, Periodic (Hb r) 1)
@@ -97,51 +100,11 @@ theorem hamiltonianCurvature_plumbedPerturbation_eq_zero_of_notMem_plumbedTrunca
         (fun z x ↦ plumbedPerturbation Ha Hb q L (Complex.equivRealProdCLM.symm z) x 1)
         (fun z x ↦ plumbedPerturbation Ha Hb q L (Complex.equivRealProdCLM.symm z) x Complex.I)
         z x = 0 := by
-  rcases mem_or_exists_plumbingMap_eq_of_mem_plumbedSphere hz with ⟨hS, hre⟩ | ⟨w', hS, hre, hψ⟩
-  · -- On the receiving part, `z` lies beyond the height `L/2` on an end of `S`.
-    obtain ⟨r, hr⟩ := exists_lt_endSign_mul_re_endCoord_of_notMem_truncation
-      (mem_thricePuncturedSphereReal_iff.2 hS) fun h ↦
-        hzT (mem_plumbedTruncation_iff.2 (Or.inl ⟨h, hre⟩))
-    rw [← hamiltonianCurvature_constSmooth,
-      ω.constSmooth.hamiltonianCurvature_plumbedPerturbation_of_re_endCoord_lt hq hab
-        (ne_endCenter hS q) (by linarith), hamiltonianCurvature_constSmooth]
-    exact ω.hamiltonianCurvature_pairOfPantsPerturbation_eq_zero_of_two_lt hHb hHbs hS
-      (q := r) (by linarith) x
-  · -- On the inserted part, `z = ψ(w')` with `w'` beyond the height `L/2` on an end of `S'`.
-    set w : ℝ × ℝ := Complex.equivRealProdCLM w'
-    have hw : Complex.equivRealProdCLM.symm w = w' := Complex.equivRealProdCLM.symm_apply_apply w'
-    have hwS : Complex.equivRealProdCLM.symm w ≠ 0 ∧ Complex.equivRealProdCLM.symm w ≠ 1 := by
-      rwa [hw]
-    have hzw : realChart (q.plumbingMap L) w = z := by
-      rw [realChart_equivRealProdCLM, hψ, ContinuousLinearEquiv.apply_symm_apply]
-    obtain ⟨r, hr⟩ := exists_lt_endSign_mul_re_endCoord_of_notMem_truncation (z := w)
-      (mem_thricePuncturedSphereReal_iff.2 hwS) fun h ↦
-        hzT (mem_plumbedTruncation_iff.2 (Or.inr ⟨w', by rwa [hw] at h, hre, hψ⟩))
-    -- The plumbed datum is differentiable in the domain at `z`.
-    have hK (v : ℂ) : DifferentiableAt ℝ
-        (fun z ↦ plumbedPerturbation Ha Hb q L (Complex.equivRealProdCLM.symm z) x v)
-        (realChart (q.plumbingMap L) w) :=
-      hzw ▸ differentiableAt_plumbedPerturbation_domain hq hHa hHb
-        (fun r ↦ contMDiff_prod_modelWithCornersSelf_iff.2 (hHas r).contMDiff)
-        (fun r ↦ contMDiff_prod_modelWithCornersSelf_iff.2 (hHbs r).contMDiff) hab hL hz x v
-    -- Its pullback along the plumbing chart is the datum of `S'`, whose curvature vanishes at `w`.
-    have h := ω.hamiltonianCurvature_perturbationPullback
-      (Ks := fun z x ↦ plumbedPerturbation Ha Hb q L (Complex.equivRealProdCLM.symm z) x 1)
-      (Kt := fun z x ↦ plumbedPerturbation Ha Hb q L (Complex.equivRealProdCLM.symm z) x Complex.I)
-      (contDiff_realChart_plumbingMap q L).contDiffAt (hK 1) (hK Complex.I)
-    rw [← hamiltonianCurvature_constSmooth ω (perturbationPullback (realChart (q.plumbingMap L))
-        (fun z x ↦ plumbedPerturbation Ha Hb q L (Complex.equivRealProdCLM.symm z) x 1)
-        (fun z x ↦ plumbedPerturbation Ha Hb q L (Complex.equivRealProdCLM.symm z) x Complex.I)
-        stdComplexLineReal),
-      ω.constSmooth.hamiltonianCurvature_perturbationPullback_plumbedPerturbation hq hab
-        hwS.1 (by rw [hw]; linarith), hamiltonianCurvature_constSmooth,
-      ω.hamiltonianCurvature_pairOfPantsPerturbation_eq_zero_of_two_lt hHa hHas hwS
-        (q := r) (by linarith) x, hzw] at h
-    -- The Jacobian of the plumbing chart does not vanish.
-    have hdet : (fderiv ℝ (realChart (q.plumbingMap L)) w).det ≠ 0 := by
-      rw [TauCeti.Complex.det_fderiv_realChart (q.hasDerivAt_plumbingMap L _)]
-      exact (Complex.normSq_pos.2 (q.plumbingFactor_ne_zero L)).ne'
-    exact (mul_eq_zero.1 h.symm).resolve_left hdet
+  rw [← hamiltonianCurvature_constSmooth]
+  exact ω.constSmooth.hamiltonianCurvature_plumbedPerturbation_eq_zero_of_notMem_plumbedTruncation
+    hq hHa hHb (fun r ↦ contMDiff_prod_modelWithCornersSelf_iff.2 (hHas r).contMDiff)
+    (fun r ↦ contMDiff_prod_modelWithCornersSelf_iff.2 (hHbs r).contMDiff) hab hL (by linarith) hz
+    hzT x
 
 /-- **The curvature along a map on the plumbed sphere is integrable.** For a map `u` continuous on
 the plumbed four-punctured sphere `ℂ ∖ {0, 1, ψ(1)}`, the curvature `R_K(z, u(z))` of the plumbed

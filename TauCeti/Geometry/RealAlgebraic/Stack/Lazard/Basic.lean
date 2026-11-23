@@ -126,7 +126,7 @@ structure LazardDelineation (F : ι → MvPolynomial (Fin (n + 1)) ℝ) (S : Set
   every `x`. -/
   lazardExponent_eq (k : ι) (x : S) :
     (optionEquivRight ℝ (Fin n) (rename finSuccEquivLast (F k))).lazardExponent
-      (Polynomial.C ∘ x.1) = exponent k
+      (Polynomial.C ∘ x.val) = exponent k
   /-- The multiplicity of the `i`-th root function as a root of the Lazard evaluation of the
   `k`-th member. -/
   multiplicity : ι → Fin count → ℕ
@@ -134,11 +134,11 @@ structure LazardDelineation (F : ι → MvPolynomial (Fin (n + 1)) ℝ) (S : Set
   `multiplicity k i` at every `x`. -/
   rootMultiplicity_root (k : ι) (i : Fin count) (x : S) :
     ((optionEquivRight ℝ (Fin n) (rename finSuccEquivLast (F k))).lazardEval
-      (Polynomial.C ∘ x.1)).rootMultiplicity (root i x) = multiplicity k i
+      (Polynomial.C ∘ x.val)).rootMultiplicity (root i x) = multiplicity k i
   /-- Every root of the Lazard evaluation of a nonzero member is the value of a root function. -/
   exists_root_eq (k : ι) (x : S) : F k ≠ 0 → ∀ t,
     ((optionEquivRight ℝ (Fin n) (rename finSuccEquivLast (F k))).lazardEval
-      (Polynomial.C ∘ x.1)).IsRoot t → ∃ i, root i x = t
+      (Polynomial.C ∘ x.val)).IsRoot t → ∃ i, root i x = t
   /-- Every root function is a root of some member. -/
   exists_multiplicity_pos (i : Fin count) : ∃ k, 0 < multiplicity k i
 
@@ -151,7 +151,7 @@ nonzero and the root function is a root of its Lazard evaluation, at any base po
 theorem multiplicity_pos_iff {k : ι} {i : Fin D.count} (x : S) :
     0 < D.multiplicity k i ↔ F k ≠ 0 ∧
       ((optionEquivRight ℝ (Fin n) (rename finSuccEquivLast (F k))).lazardEval
-        (Polynomial.C ∘ x.1)).IsRoot (D.root i x) := by
+        (Polynomial.C ∘ x.val)).IsRoot (D.root i x) := by
   rw [← D.rootMultiplicity_root k i x, Polynomial.rootMultiplicity_pos', Ne,
     lazardEval_optionEquivRight_rename_finSuccEquivLast_eq_zero_iff]
 
@@ -164,7 +164,7 @@ theorem multiplicity_eq_zero {k : ι} (hk : F k = 0) (i : Fin D.count) : D.multi
 values of the root functions in which it has positive multiplicity. -/
 theorem isRoot_iff {k : ι} (hk : F k ≠ 0) (x : S) (t : ℝ) :
     ((optionEquivRight ℝ (Fin n) (rename finSuccEquivLast (F k))).lazardEval
-        (Polynomial.C ∘ x.1)).IsRoot t ↔ ∃ i, D.root i x = t ∧ 0 < D.multiplicity k i :=
+        (Polynomial.C ∘ x.val)).IsRoot t ↔ ∃ i, D.root i x = t ∧ 0 < D.multiplicity k i :=
   Polynomial.isRoot_iff_of_rootMultiplicity (fun i ↦ D.rootMultiplicity_root k i x)
     (D.exists_root_eq k x hk)
     ((lazardEval_optionEquivRight_rename_finSuccEquivLast_eq_zero_iff _).not.2 hk) t
@@ -174,7 +174,7 @@ Lazard evaluations of the nonzero members of the family. -/
 theorem range_root (x : S) :
     range (fun i ↦ D.root i x) = {t | ∃ k, F k ≠ 0 ∧
       ((optionEquivRight ℝ (Fin n) (rename finSuccEquivLast (F k))).lazardEval
-        (Polynomial.C ∘ x.1)).IsRoot t} := by
+        (Polynomial.C ∘ x.val)).IsRoot t} := by
   ext t
   refine ⟨?_, fun ⟨k, hk, ht⟩ ↦ D.exists_root_eq k x hk t ht⟩
   rintro ⟨i, rfl⟩
@@ -252,7 +252,7 @@ evaluation of any member over the base point. -/
 theorem rootMultiplicity_eq_zero_of_mem_sectorSet (k : ι) {j : Fin (D.count + 1)} {z : S × ℝ}
     (hz : z ∈ sectorSet D.root j) :
     ((optionEquivRight ℝ (Fin n) (rename finSuccEquivLast (F k))).lazardEval
-      (Polynomial.C ∘ z.1.1)).rootMultiplicity z.2 = 0 := by
+      (Polynomial.C ∘ z.1.val)).rootMultiplicity z.2 = 0 := by
   by_cases hk : F k = 0
   · simp [hk]
   refine Polynomial.rootMultiplicity_eq_zero fun ht ↦ ?_
@@ -264,7 +264,7 @@ delineation, the Lazard valuation of a nonzero member `F k` is its removed base 
 followed by the multiplicity of the section as a root of its Lazard evaluation. -/
 theorem lazardValuation_snoc_of_mem_sectionSet {k : ι} (hk : F k ≠ 0) {i : Fin D.count}
     {z : S × ℝ} (hz : z ∈ sectionSet D.root i) :
-    (F k).lazardValuation (Fin.snoc z.1.1 z.2) =
+    (F k).lazardValuation (Fin.snoc z.1.val z.2) =
       toLex (Finsupp.snoc (D.exponent k) (D.multiplicity k i)) := by
   rw [lazardValuation_snoc hk, D.lazardExponent_eq, ← mem_sectionSet.1 hz,
     D.rootMultiplicity_root]
@@ -273,7 +273,7 @@ theorem lazardValuation_snoc_of_mem_sectionSet {k : ι} (hk : F k ≠ 0) {i : Fi
 Lazard valuation of a nonzero member `F k` is its removed base exponent vector followed by `0`. -/
 theorem lazardValuation_snoc_of_mem_sectorSet {k : ι} (hk : F k ≠ 0) {j : Fin (D.count + 1)}
     {z : S × ℝ} (hz : z ∈ sectorSet D.root j) :
-    (F k).lazardValuation (Fin.snoc z.1.1 z.2) = toLex (Finsupp.snoc (D.exponent k) 0) := by
+    (F k).lazardValuation (Fin.snoc z.1.val z.2) = toLex (Finsupp.snoc (D.exponent k) 0) := by
   rw [lazardValuation_snoc hk, D.lazardExponent_eq,
     D.rootMultiplicity_eq_zero_of_mem_sectorSet k hz]
 
@@ -281,7 +281,8 @@ theorem lazardValuation_snoc_of_mem_sectorSet {k : ι} (hk : F k ≠ 0) {j : Fin
 delineation. -/
 theorem lazardValuation_snoc_eq_of_mem_sectionSet (k : ι) {i : Fin D.count} {z z' : S × ℝ}
     (hz : z ∈ sectionSet D.root i) (hz' : z' ∈ sectionSet D.root i) :
-    (F k).lazardValuation (Fin.snoc z.1.1 z.2) = (F k).lazardValuation (Fin.snoc z'.1.1 z'.2) := by
+    (F k).lazardValuation (Fin.snoc z.1.val z.2) = (F k).lazardValuation (Fin.snoc z'.1.val z'.2)
+        := by
   obtain hk | hk := eq_or_ne (F k) 0
   · simp [hk]
   · rw [D.lazardValuation_snoc_of_mem_sectionSet hk hz,
@@ -291,7 +292,8 @@ theorem lazardValuation_snoc_eq_of_mem_sectionSet (k : ι) {i : Fin D.count} {z 
 delineation. -/
 theorem lazardValuation_snoc_eq_of_mem_sectorSet (k : ι) {j : Fin (D.count + 1)} {z z' : S × ℝ}
     (hz : z ∈ sectorSet D.root j) (hz' : z' ∈ sectorSet D.root j) :
-    (F k).lazardValuation (Fin.snoc z.1.1 z.2) = (F k).lazardValuation (Fin.snoc z'.1.1 z'.2) := by
+    (F k).lazardValuation (Fin.snoc z.1.val z.2) = (F k).lazardValuation (Fin.snoc z'.1.val z'.2)
+        := by
   obtain hk | hk := eq_or_ne (F k) 0
   · simp [hk]
   · rw [D.lazardValuation_snoc_of_mem_sectorSet hk hz,
@@ -317,10 +319,10 @@ theorem lazardValuation_snoc_eq_of_mem_stackCells (k : ι)
 /-- Over a preconnected base, every member of a family is sign-invariant on each section of a
 Lazard delineation. -/
 theorem signInvariant_sectionSet (hS : IsPreconnected S) (k : ι) (i : Fin D.count) :
-    SignInvariant (fun z : S × ℝ ↦ eval (Fin.snoc z.1.1 z.2) (F k)) (sectionSet D.root i) := by
+    SignInvariant (fun z : S × ℝ ↦ eval (Fin.snoc z.1.val z.2) (F k)) (sectionSet D.root i) := by
   have := isPreconnected_iff_preconnectedSpace.1 hS
   refine (isPreconnected_sectionSet (D.continuous_root i)).signInvariant_of_eq_zero_iff
-    ((continuous_eval (F k)).comp ((continuous_subtype_val.comp continuous_fst).finSnoc
+    ((continuous_eval (F k)).comp ((continuous_subtypeVal.comp continuous_fst).finSnoc
       (A := fun _ ↦ ℝ) continuous_snd)).continuousOn fun z hz z' hz' ↦ ?_
   rw [← lazardValuation_pos_iff, ← lazardValuation_pos_iff,
     D.lazardValuation_snoc_eq_of_mem_sectionSet k hz hz']
@@ -328,11 +330,11 @@ theorem signInvariant_sectionSet (hS : IsPreconnected S) (k : ι) (i : Fin D.cou
 /-- Over a preconnected base, every member of a family is sign-invariant on each sector of a
 Lazard delineation. -/
 theorem signInvariant_sectorSet (hS : IsPreconnected S) (k : ι) (j : Fin (D.count + 1)) :
-    SignInvariant (fun z : S × ℝ ↦ eval (Fin.snoc z.1.1 z.2) (F k)) (sectorSet D.root j) := by
+    SignInvariant (fun z : S × ℝ ↦ eval (Fin.snoc z.1.val z.2) (F k)) (sectorSet D.root j) := by
   have := isPreconnected_iff_preconnectedSpace.1 hS
   refine (isPreconnected_sectorSet D.continuous_root D.strictMono_root j
     ).signInvariant_of_eq_zero_iff
-    ((continuous_eval (F k)).comp ((continuous_subtype_val.comp continuous_fst).finSnoc
+    ((continuous_eval (F k)).comp ((continuous_subtypeVal.comp continuous_fst).finSnoc
       (A := fun _ ↦ ℝ) continuous_snd)).continuousOn fun z hz z' hz' ↦ ?_
   rw [← lazardValuation_pos_iff, ← lazardValuation_pos_iff,
     D.lazardValuation_snoc_eq_of_mem_sectorSet k hz hz']
@@ -343,7 +345,7 @@ theorem signInvariant_rename_finRotate_of_mem_stackCells (hS : IsPreconnected S)
     {E : Set (Fin (n + 1) → ℝ)} (hE : E ∈ stackCells S D.root) :
     SignInvariant (fun x ↦ eval x (rename (finRotate (n + 1)) (F k))) E := by
   have key : (fun x ↦ eval x (rename (finRotate (n + 1)) (F k))) ∘ cylinder S =
-      fun z ↦ eval (Fin.snoc z.1.1 z.2) (F k) := by
+      fun z ↦ eval (Fin.snoc z.1.val z.2) (F k) := by
     funext z
     rw [Function.comp_apply, eval_rename, cylinder_def, Fin.snoc_eq_cons_rotate]
     rfl
@@ -363,7 +365,7 @@ theorem analyticOnSubmanifold_root {d : ℕ} (hS : IsAnalyticSubmanifold d S) (i
       (Finsupp.snoc (D.exponent k) j)
   have hcoeff (x : S) (j : ℕ) :
       ((optionEquivRight ℝ (Fin n) (rename finSuccEquivLast (F k))).lazardEval
-        (Polynomial.C ∘ x.1)).coeff j = eval (Fin.snoc x.1 0) (c j) := by
+        (Polynomial.C ∘ x.val)).coeff j = eval (Fin.snoc x.val 0) (c j) := by
     rw [coeff_lazardEval_optionEquivRight_rename_finSuccEquivLast, D.lazardExponent_eq,
       eval_coeff_taylor_map_C]
   refine hS.analyticOnSubmanifold_of_rootMultiplicity_eq (F := fun x ↦

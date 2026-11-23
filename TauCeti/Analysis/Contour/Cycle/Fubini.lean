@@ -42,8 +42,8 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E] {F : ℂ → ℂ
 function continuous on the product of the traces is integrable on the product of the parameter
 intervals. -/
 private theorem integrableOn_deriv_smul_deriv_smul
-    (hF : ContinuousOn (uncurry F) (trace C ×ˢ trace D)) (hγ : γ ∈ FreeAbelianGroup.support C)
-    (hη : η ∈ FreeAbelianGroup.support D) :
+    (hF : ContinuousOn (uncurry F) (trace C ×ˢ trace D)) (hγ : γ ∈ FreeAddCommGroup.support C)
+    (hη : η ∈ FreeAddCommGroup.support D) :
     IntegrableOn (fun p : ℝ × ℝ ↦ deriv γ p.1 • deriv η p.2 • F (γ p.1) (η p.2))
       (Ι γ.a γ.b ×ˢ Ι η.a η.b) := by
   have hmaps : MapsTo (fun p : ℝ × ℝ ↦ (γ p.1, η p.2)) (uIcc γ.a γ.b ×ˢ uIcc η.a η.b)
@@ -63,8 +63,8 @@ private theorem integrableOn_deriv_smul_deriv_smul
 /-- For curves `γ` and `η` in the supports of `C` and `D`, the order of the two contour integrals
 along `γ` and `η` can be exchanged. -/
 private theorem integral_deriv_smul_integral_deriv_smul_comm
-    (hF : ContinuousOn (uncurry F) (trace C ×ˢ trace D)) (hγ : γ ∈ FreeAbelianGroup.support C)
-    (hη : η ∈ FreeAbelianGroup.support D) :
+    (hF : ContinuousOn (uncurry F) (trace C ×ˢ trace D)) (hγ : γ ∈ FreeAddCommGroup.support C)
+    (hη : η ∈ FreeAddCommGroup.support D) :
     ∫ s in γ.a..γ.b, deriv γ s • ∫ t in η.a..η.b, deriv η t • F (γ s) (η t) =
       ∫ t in η.a..η.b, deriv η t • ∫ s in γ.a..γ.b, deriv γ s • F (γ s) (η t) := by
   simp_rw [← intervalIntegral.integral_smul]
@@ -75,8 +75,8 @@ private theorem integral_deriv_smul_integral_deriv_smul_comm
 /-- For a curve `γ` in the support of `C`, the inner contour integral along a curve `η` in the
 support of `D`, weighted by `γ'`, is interval-integrable along `γ`. -/
 private theorem intervalIntegrable_deriv_smul_integral_deriv_smul
-    (hF : ContinuousOn (uncurry F) (trace C ×ˢ trace D)) (hγ : γ ∈ FreeAbelianGroup.support C)
-    (hη : η ∈ FreeAbelianGroup.support D) :
+    (hF : ContinuousOn (uncurry F) (trace C ×ˢ trace D)) (hγ : γ ∈ FreeAddCommGroup.support C)
+    (hη : η ∈ FreeAddCommGroup.support D) :
     IntervalIntegrable (fun s ↦ deriv γ s • ∫ t in η.a..η.b, deriv η t • F (γ s) (η t))
       volume γ.a γ.b := by
   have h := integrableOn_deriv_smul_deriv_smul hF hγ hη
@@ -91,18 +91,18 @@ private theorem intervalIntegrable_deriv_smul_integral_deriv_smul
 /-- Integrating the inner cycle integral `∫_D F (γ s) w dw` along a curve `γ` in the support of `C`
 gives the sum of the double integrals along `γ` and the curves in the support of `D`. -/
 private theorem integral_deriv_smul_integral_eq_sum
-    (hF : ContinuousOn (uncurry F) (trace C ×ˢ trace D)) (hγ : γ ∈ FreeAbelianGroup.support C) :
+    (hF : ContinuousOn (uncurry F) (trace C ×ˢ trace D)) (hγ : γ ∈ FreeAddCommGroup.support C) :
     ∫ s in γ.a..γ.b, deriv γ s • integral (F (γ s)) D =
-      ∑ η ∈ FreeAbelianGroup.support D, FreeAbelianGroup.coeff η D •
+      ∑ η ∈ FreeAddCommGroup.support D, FreeAddCommGroup.coeff η D •
         ∫ s in γ.a..γ.b, deriv γ s • ∫ t in η.a..η.b, deriv η t • F (γ s) (η t) := by
   calc ∫ s in γ.a..γ.b, deriv γ s • integral (F (γ s)) D
-      = ∫ s in γ.a..γ.b, ∑ η ∈ FreeAbelianGroup.support D, (FreeAbelianGroup.coeff η D : ℂ) •
+      = ∫ s in γ.a..γ.b, ∑ η ∈ FreeAddCommGroup.support D, (FreeAddCommGroup.coeff η D : ℂ) •
           (deriv γ s • ∫ t in η.a..η.b, deriv η t • F (γ s) (η t)) :=
         intervalIntegral.integral_congr fun s _ ↦ by
           simp only [integral_eq_sum_support, Finset.smul_sum, Int.cast_smul_eq_zsmul]
           exact Finset.sum_congr rfl fun _ _ ↦ smul_comm _ _ _
     _ = _ := by
-        rw [intervalIntegral.integral_finsetSum (f := fun η s ↦ (FreeAbelianGroup.coeff η D : ℂ) •
+        rw [intervalIntegral.integral_finsetSum (f := fun η s ↦ (FreeAddCommGroup.coeff η D : ℂ) •
           (deriv γ s • ∫ t in η.a..η.b, deriv η t • F (γ s) (η t))) fun η hη ↦
           (intervalIntegrable_deriv_smul_integral_deriv_smul hF hγ hη).smul _]
         simp only [intervalIntegral.integral_smul]
@@ -121,20 +121,20 @@ theorem integral_integral_swap (hF : ContinuousOn (uncurry F) (trace C ×ˢ trac
   -- because the derivatives of the curves are integrable and `F` is bounded on the compact product
   -- of the traces.
   rw [integral_eq_sum_support, integral_eq_sum_support]
-  calc ∑ γ ∈ FreeAbelianGroup.support C, FreeAbelianGroup.coeff γ C •
+  calc ∑ γ ∈ FreeAddCommGroup.support C, FreeAddCommGroup.coeff γ C •
         ∫ s in γ.a..γ.b, deriv γ s • integral (F (γ s)) D
-      = ∑ γ ∈ FreeAbelianGroup.support C, FreeAbelianGroup.coeff γ C •
-          ∑ η ∈ FreeAbelianGroup.support D, FreeAbelianGroup.coeff η D •
+      = ∑ γ ∈ FreeAddCommGroup.support C, FreeAddCommGroup.coeff γ C •
+          ∑ η ∈ FreeAddCommGroup.support D, FreeAddCommGroup.coeff η D •
             ∫ s in γ.a..γ.b, deriv γ s • ∫ t in η.a..η.b, deriv η t • F (γ s) (η t) :=
         Finset.sum_congr rfl fun γ hγ ↦ by rw [integral_deriv_smul_integral_eq_sum hF hγ]
-    _ = ∑ η ∈ FreeAbelianGroup.support D, FreeAbelianGroup.coeff η D •
-          ∑ γ ∈ FreeAbelianGroup.support C, FreeAbelianGroup.coeff γ C •
+    _ = ∑ η ∈ FreeAddCommGroup.support D, FreeAddCommGroup.coeff η D •
+          ∑ γ ∈ FreeAddCommGroup.support C, FreeAddCommGroup.coeff γ C •
             ∫ t in η.a..η.b, deriv η t • ∫ s in γ.a..γ.b, deriv γ s • F (γ s) (η t) := by
         simp only [Finset.smul_sum]
         rw [Finset.sum_comm]
         refine Finset.sum_congr rfl fun η hη ↦ Finset.sum_congr rfl fun γ hγ ↦ ?_
         rw [smul_comm, integral_deriv_smul_integral_deriv_smul_comm hF hγ hη]
-    _ = ∑ η ∈ FreeAbelianGroup.support D, FreeAbelianGroup.coeff η D •
+    _ = ∑ η ∈ FreeAddCommGroup.support D, FreeAddCommGroup.coeff η D •
           ∫ t in η.a..η.b, deriv η t • integral (fun z ↦ F z (η t)) C :=
         Finset.sum_congr rfl fun η hη ↦ by rw [integral_deriv_smul_integral_eq_sum hF' hη]
 

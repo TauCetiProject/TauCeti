@@ -110,7 +110,7 @@ private theorem exists_isOpen_ae_hasNondegenerateCriticalPointsOn_norm_sq_sub_co
   set g : E → ℝ := fun w ↦ f c w - L w + ‖(b : V)‖ ^ 2
   have hev : ∀ u ∈ Φ.source, ‖F u - a‖ ^ 2 = g (Φ u) := fun u hu ↦ by
     simp only [g, f, Φ.left_inv hu, hL, hΦe u hu, hab,
-      Submodule.norm_sub_add_sq_of_mem_of_mem_orthogonal R _ b.2 c.2, R]
+      Submodule.norm_sub_add_sq_of_mem_of_mem_orthogonal R _ b.property c.property, R]
   exact HasNondegenerateCriticalPointsOn.of_eqOn_comp_add_const ha hΦd hev
 
 /-- **The squared distance from almost every point is Morse along an immersion.** If `F` is `C²`
