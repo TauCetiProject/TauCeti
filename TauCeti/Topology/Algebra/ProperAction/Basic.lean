@@ -43,6 +43,8 @@ type tags (`Multiplicative.properSMul`, `Additive.properVAdd`).
 * `MulAction.isClosedMap_quotientMk_of_compactSpace`,
   `MulAction.isProperMap_quotientMk_of_compactSpace`: for a continuous action of a compact group,
   with no separation axiom, the quotient map `X → X ⧸ G` is closed and proper.
+* `TauCeti.properSMul_prod`: a diagonal action is proper as soon as it is proper on the first
+  factor and continuous on a Hausdorff second factor.
 * `Topology.IsEmbedding.properSMul`: an action which a topological embedding intertwines with a
   proper action is proper.
 * `Topology.IsEmbedding.properSMul_of_isEmbedding`: the same along a topological embedding of
@@ -50,6 +52,8 @@ type tags (`Multiplicative.properSMul`, `Additive.properVAdd`).
   the image come from the smaller group.
 * `Continuous.properSMul`: a continuous action on a Hausdorff space which a continuous map
   intertwines with a proper action is proper.
+* `ProperSMul.prod_of_smul_eq`: a factorwise action of a product of groups, each acting properly
+  on its factor, is proper.
 -/
 
 public section
@@ -180,3 +184,54 @@ theorem Continuous.properSMul {G X Y : Type*} [Group G] [TopologicalSpace G] [Mu
   obtain ⟨g, -, hg⟩ := (properSMul_iff_continuousSMul_ultrafilter_tendsto.1 ‹_›).2 _ _ _ hX
   rw [Ultrafilter.coe_map, tendsto_map'_iff] at hg
   exact ⟨g, hg⟩
+
+namespace TauCeti
+
+open Filter Topology in
+/-- **A diagonal action is proper when it is proper on the first factor and continuous on a
+Hausdorff second factor.** If `G` acts properly on `X` and continuously on a Hausdorff space `Y`,
+then its diagonal action on `X × Y` is proper: when `(g • x, x)` converges, so does `g`, to an
+element `g₀`, and then `g • y` converges both to `g₀ • y₀` and to the limit of the first
+coordinates. -/
+@[to_additive /-- **A diagonal additive action is proper when it is proper on the first factor
+and continuous on a Hausdorff second factor.** If `G` acts properly on `X` and continuously on a
+Hausdorff space `Y`, then its diagonal additive action on `X × Y` is proper. -/]
+instance properSMul_prod {G X Y : Type*} [Group G] [TopologicalSpace G] [MulAction G X]
+    [TopologicalSpace X] [ProperSMul G X] [MulAction G Y] [TopologicalSpace Y] [ContinuousSMul G Y]
+    [T2Space Y] : ProperSMul G (X × Y) := by
+  refine properSMul_iff_continuousSMul_ultrafilter_tendsto.2 ⟨inferInstance, fun 𝒰 p₁ p₂ hp ↦ ?_⟩
+  -- Properness on `X`, along the image of `𝒰` in `G × X`.
+  have hX : Tendsto (fun q : G × X ↦ (q.1 • q.2, q.2)) (𝒰.map fun q ↦ (q.1, q.2.1))
+      (𝓝 (p₁.1, p₂.1)) := by
+    rw [Ultrafilter.coe_map, tendsto_map'_iff]
+    exact ((continuous_fst.prodMap continuous_fst).tendsto _).comp hp
+  obtain ⟨g, hg, hgt⟩ :=
+    (properSMul_iff_continuousSMul_ultrafilter_tendsto.1 ‹ProperSMul G X›).2 _ _ _ hX
+  rw [Ultrafilter.coe_map, tendsto_map'_iff] at hgt
+  refine ⟨g, Prod.ext hg ?_, hgt⟩
+  exact tendsto_nhds_unique (hgt.smul ((continuous_snd.tendsto _).comp
+    ((continuous_snd.tendsto _).comp hp))) ((continuous_snd.tendsto _).comp
+      ((continuous_fst.tendsto _).comp hp))
+
+end TauCeti
+
+/-- **Products of proper actions are proper.** If `G` acts properly on `X` and `K` acts properly on
+`Y`, then an action of `G × K` on `X × Y` acting factorwise, `(g, k) • (x, y) = (g • x, k • y)`,
+is proper: up to reordering the factors, its map `((g, k), (x, y)) ↦ ((g, k) • (x, y), (x, y))` is
+the product of the proper maps of the two actions. -/
+@[to_additive /-- **Products of proper additive actions are proper.** If `G` acts properly on `X`
+and `K` acts properly on `Y`, then an additive action of `G × K` on `X × Y` acting factorwise,
+`(g, k) +ᵥ (x, y) = (g +ᵥ x, k +ᵥ y)`, is proper. -/]
+theorem ProperSMul.prod_of_smul_eq {G K X Y : Type*} [Group G] [Group K] [TopologicalSpace G]
+    [TopologicalSpace K] [TopologicalSpace X] [TopologicalSpace Y] [MulAction G X]
+    [MulAction K Y] [ProperSMul G X] [ProperSMul K Y] [MulAction (G × K) (X × Y)]
+    (hsmul : ∀ (g : G × K) (p : X × Y), g • p = (g.1 • p.1, g.2 • p.2)) :
+    ProperSMul (G × K) (X × Y) where
+  isProperMap_smul_pair := by
+    have h := ((Homeomorph.prodProdProdComm X X Y Y).isProperMap.comp
+      ((ProperSMul.isProperMap_smul_pair (G := G) (X := X)).prodMap
+        (ProperSMul.isProperMap_smul_pair (G := K) (X := Y)))).comp
+      (Homeomorph.prodProdProdComm G K X Y).isProperMap
+    convert h using 1
+    funext ⟨⟨g, k⟩, x, y⟩
+    simp [hsmul, Homeomorph.prodProdProdComm]

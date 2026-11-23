@@ -38,7 +38,8 @@ above the critical value; in dimension two this is the index-one saddle model
 ## Main declarations
 
 * `TauCeti.MorseChart.normalizedCoord`: the reordered, rescaled Euclidean coordinates of a Morse
-  chart.
+  chart, with `TauCeti.MorseChart.inner_normalizedCoord`: their Euclidean inner product is half
+  the dot product of the chart coordinates.
 * `TauCeti.MorseChart.normalizedChart`: a Morse chart as a partial diffeomorphism into Euclidean
   space, with `TauCeti.MorseChart.eq_quadratic_normalizedChart` its sum-of-squares equation.
 * `TauCeti.IsManifoldNondegenerateCriticalPoint.exists_normalized_morseChart`: the normalized
@@ -123,6 +124,17 @@ theorem sum_ite_mul_normalizedCoord_sq (v : E) :
   refine Finset.sum_congr rfl fun i _ ↦ ?_
   rw [normalizedCoord_apply, ← φ.weight_sort_apply, mul_pow, inv_pow,
     Real.sq_sqrt zero_le_two]
+  ring
+
+/-- The Euclidean inner product of normalized coordinates is half the dot product of the
+coordinates of the Morse chart. -/
+theorem inner_normalizedCoord (a b : E) :
+    inner ℝ (φ.normalizedCoord a) (φ.normalizedCoord b) = 2⁻¹ * (φ.coord a ⬝ᵥ φ.coord b) := by
+  have h2 : (√2)⁻¹ * (√2)⁻¹ = (2 : ℝ)⁻¹ := by rw [← mul_inv, Real.mul_self_sqrt zero_le_two]
+  rw [PiLp.inner_apply, dotProduct, Finset.mul_sum,
+    ← Equiv.sum_comp (Tuple.sort φ.weight) fun j ↦ 2⁻¹ * (φ.coord a j * φ.coord b j)]
+  refine Finset.sum_congr rfl fun i _ ↦ ?_
+  simp only [normalizedCoord_apply, RCLike.inner_apply, conj_trivial, ← h2]
   ring
 
 /-- A Morse chart in normalized coordinates, as a partial diffeomorphism onto an open subset of

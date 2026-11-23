@@ -377,6 +377,23 @@ theorem id_eq_diagBasis (X : TLCat R δ) :
     (𝟙 X : X ⟶ X) = diagBasis X X (PlanarMatching.nested X.as) :=
   hom_ext <| by simp
 
+/-- Induction on morphisms of `TLCat R δ` along the diagram basis: a property of morphisms
+`X ⟶ Y` that holds on every basis morphism and is closed under `0`, addition and scalar
+multiplication holds for every morphism. -/
+@[elab_as_elim]
+theorem hom_induction {motive : (X ⟶ Y) → Prop} (zero : motive 0)
+    (add : ∀ f g, motive f → motive g → motive (f + g))
+    (smul : ∀ (r : R) f, motive f → motive (r • f)) (basis : ∀ x, motive (diagBasis X Y x))
+    (f : X ⟶ Y) : motive f := by
+  have hf : f ∈ Submodule.span R (Set.range (diagBasis X Y)) := by
+    rw [(diagBasis X Y).span_eq]
+    exact Submodule.mem_top
+  induction hf using Submodule.span_induction with
+  | mem _ h => obtain ⟨x, rfl⟩ := h; exact basis x
+  | zero => exact zero
+  | add _ _ _ _ h₁ h₂ => exact add _ _ h₁ h₂
+  | smul r _ _ h => exact smul r _ h
+
 /-- **The loop rule.** Composing two planar-matching basis morphisms glues their matchings along
 the middle boundary and multiplies by `δ` raised to the number of closed circles formed there. -/
 @[simp, reassoc]

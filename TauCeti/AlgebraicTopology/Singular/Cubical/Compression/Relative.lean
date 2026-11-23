@@ -103,7 +103,7 @@ private theorem map_comp_endHomotopy_hom_comp_π (i j : ℕ) :
   · rw [(D.endHomotopy R).zero i j (by simpa using hij), zero_comp, comp_zero]
 
 /-- **The chain homotopy from the identity to the end of a deformation into the subspace of a
-pair, on relative cubical chains**, descended from `TauCeti.SubspaceCubeDeformation.endHomotopy`. -/
+pair, on relative cubical chains**, descended from `TauCeti.CubeDeformation.endHomotopy`. -/
 def relEndHomotopy : Homotopy (𝟙 _) (D.relEndChainMap R) :=
   Homotopy.descCokernel (D.endHomotopy R) ((normalizedCubicalChainComplex R).map P.map)
     (cokernel.π _) (cokernel.π _)
@@ -179,7 +179,7 @@ theorem homologyπ_mem_of_cube {m : ℕ} (hm : (m : ℕ∞) < n)
     | add a b ha hb => simp only [map_add, ha, hb, add_zero]
     | smul r a ha => simp [ha]
     | ofCube c =>
-      simp only [j, LinearMap.comp_apply, SubspaceCubeDeformation.endChain_ofCube]
+      simp only [j, LinearMap.comp_apply, CubeDeformation.endChain_ofCube]
       simpa [TopPair.cubicalChainOfCube_def] using
         TopPair.d_cubicalChainOfCube R (D.mapsTo_endCube_boundary hm c)
   have hΦ (g : NormalizedCubicalChain P.fst R (m + 1)) :
@@ -193,7 +193,7 @@ theorem homologyπ_mem_of_cube {m : ℕ} (hm : (m : ℕ∞) < n)
       convert hT (D.endCube c) (D.mapsTo_endCube_boundary hm c) using 2
       apply (P.cubicalChainComplex R).moduleCat_iCycles_injective
       simp only [HomologicalComplex.iCycles_moduleCatCyclesMk, j, LinearMap.comp_apply,
-        SubspaceCubeDeformation.endChain_ofCube, TopPair.iCycles_cubicalCycleOfCube,
+        CubeDeformation.endChain_ofCube, TopPair.iCycles_cubicalCycleOfCube,
         TopPair.cubicalChainOfCube_def, LinearEquiv.coe_coe]
   -- The end of the deformation induces the identity on homology.
   obtain ⟨w, hw⟩ := (ModuleCat.epi_iff_surjective

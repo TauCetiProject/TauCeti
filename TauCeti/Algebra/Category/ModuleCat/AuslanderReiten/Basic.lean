@@ -53,7 +53,7 @@ variable {k : Type u} {A : Type v} [Field k] [Ring A] [Algebra k A]
 the image of dual restriction to the kernel of `f` under the Nakayama Hom pairing. -/
 theorem auslanderReitenTranslate_injectiveStableFunctor_map_eq_zero_iff
     (f : P₁ →ₗ[A] P₀) (N : ModuleCat.{max u v w} A)
-    (g : N →ₗ[A] AuslanderReitenTranslate k f) :
+    (g : N →ₗ[A] AuslanderReitenTranslate k k f) :
     (ExactStructure.abelian (ModuleCat.{max u v w} A)).injectiveStableFunctor.map
         (ModuleCat.ofHom g) = 0 ↔
       (nakayamaHomEquiv k A P₁ N).symm ((auslanderReitenTranslateToNakayama f).comp g) ∈
@@ -79,7 +79,7 @@ theorem auslanderReitenTranslate_injectiveStableFunctor_map_eq_zero_iff
 quotient functor. -/
 theorem auslanderReitenCocyclePairing_eq_zero_iff_injectiveStableFunctor_map_eq_zero
     (f : P₁ →ₗ[A] P₀) (N : ModuleCat.{max u v w} A)
-    (g : N →ₗ[A] AuslanderReitenTranslate k f) :
+    (g : N →ₗ[A] AuslanderReitenTranslate k k f) :
     auslanderReitenCocyclePairing f g = 0 ↔
       (ExactStructure.abelian (ModuleCat.{max u v w} A)).injectiveStableFunctor.map
         (ModuleCat.ofHom g) = 0 := by
@@ -92,13 +92,13 @@ noncomputable def auslanderReitenStableHomEquiv
     (f : P₁ →ₗ[A] P₀) (N : ModuleCat.{max u v w} A) :
     ((ExactStructure.abelian (ModuleCat.{max u v w} A)).injectiveStableFunctor.obj N ⟶
       (ExactStructure.abelian (ModuleCat.{max u v w} A)).injectiveStableFunctor.obj
-        (ModuleCat.of A (AuslanderReitenTranslate k f))) ≃ₗ[k]
+        (ModuleCat.of A (AuslanderReitenTranslate k k f))) ≃ₗ[k]
       Module.Dual k (HomCocycleQuotient (k := k) f N) := by
   let F := (ExactStructure.abelian (ModuleCat.{max u v w} A)).injectiveStableFunctor
-  letI : Module k (N ⟶ ModuleCat.of A (AuslanderReitenTranslate k f)) :=
-    Linear.homModule (R := k) N (ModuleCat.of A (AuslanderReitenTranslate k f))
-  let q := F.mapLinearMap k (X := N) (Y := ModuleCat.of A (AuslanderReitenTranslate k f))
-  let p : (N ⟶ ModuleCat.of A (AuslanderReitenTranslate k f)) →ₗ[k]
+  letI : Module k (N ⟶ ModuleCat.of A (AuslanderReitenTranslate k k f)) :=
+    Linear.homModule (R := k) N (ModuleCat.of A (AuslanderReitenTranslate k k f))
+  let q := F.mapLinearMap k (X := N) (Y := ModuleCat.of A (AuslanderReitenTranslate k k f))
+  let p : (N ⟶ ModuleCat.of A (AuslanderReitenTranslate k k f)) →ₗ[k]
       Module.Dual k (HomCocycleQuotient (k := k) f N) :=
     { toFun := fun g ↦ auslanderReitenCocyclePairing f g.hom
       map_add' := by intros; simp
@@ -124,12 +124,12 @@ noncomputable def auslanderReitenStableHomEquiv
 @[simp]
 theorem auslanderReitenStableHomEquiv_map
     (f : P₁ →ₗ[A] P₀) (N : ModuleCat.{max u v w} A)
-    (g : N ⟶ ModuleCat.of A (AuslanderReitenTranslate k f)) :
+    (g : N ⟶ ModuleCat.of A (AuslanderReitenTranslate k k f)) :
     auslanderReitenStableHomEquiv f N
       ((ExactStructure.abelian (ModuleCat.{max u v w} A)).injectiveStableFunctor.map g) =
       auslanderReitenCocyclePairing f g.hom := by
-  let : Module k (N ⟶ ModuleCat.of A (AuslanderReitenTranslate k f)) :=
-    Linear.homModule (R := k) N (ModuleCat.of A (AuslanderReitenTranslate k f))
+  let : Module k (N ⟶ ModuleCat.of A (AuslanderReitenTranslate k k f)) :=
+    Linear.homModule (R := k) N (ModuleCat.of A (AuslanderReitenTranslate k k f))
   -- `mapLinearMap` has the functor map as its underlying function.
   exact LinearMap.equivOfSurjectiveOfKerEq_apply _ _ _ _ _ g
 
@@ -137,11 +137,11 @@ theorem auslanderReitenStableHomEquiv_map
 @[simp]
 theorem auslanderReitenStableHomEquiv_symm_pairing
     (f : P₁ →ₗ[A] P₀) (N : ModuleCat.{max u v w} A)
-    (g : N ⟶ ModuleCat.of A (AuslanderReitenTranslate k f)) :
+    (g : N ⟶ ModuleCat.of A (AuslanderReitenTranslate k k f)) :
     (auslanderReitenStableHomEquiv f N).symm (auslanderReitenCocyclePairing f g.hom) =
       (ExactStructure.abelian (ModuleCat.{max u v w} A)).injectiveStableFunctor.map g := by
-  let : Module k (N ⟶ ModuleCat.of A (AuslanderReitenTranslate k f)) :=
-    Linear.homModule (R := k) N (ModuleCat.of A (AuslanderReitenTranslate k f))
+  let : Module k (N ⟶ ModuleCat.of A (AuslanderReitenTranslate k k f)) :=
+    Linear.homModule (R := k) N (ModuleCat.of A (AuslanderReitenTranslate k k f))
   -- `mapLinearMap` has the functor map as its underlying function.
   exact LinearMap.equivOfSurjectiveOfKerEq_symm_apply _ _ _ _ _ g
 
@@ -151,7 +151,7 @@ theorem auslanderReitenStableHomEquiv_naturality
     (f : P₁ →ₗ[A] P₀) {N N' : ModuleCat.{max u v w} A} (g : N ⟶ N')
     (h : (ExactStructure.abelian (ModuleCat.{max u v w} A)).injectiveStableFunctor.obj N' ⟶
       (ExactStructure.abelian (ModuleCat.{max u v w} A)).injectiveStableFunctor.obj
-        (ModuleCat.of A (AuslanderReitenTranslate k f))) :
+        (ModuleCat.of A (AuslanderReitenTranslate k k f))) :
     auslanderReitenStableHomEquiv f N
         ((ExactStructure.abelian (ModuleCat.{max u v w} A)).injectiveStableFunctor.map g ≫ h) =
       (homCocycleQuotientMap (k := k) f g.hom).dualMap
@@ -168,7 +168,7 @@ noncomputable def auslanderReitenExtEquiv
     (f : P₁ →ₗ[A] P₀) (N : ModuleCat.{max u v w} A) :
     ((ExactStructure.abelian (ModuleCat.{max u v w} A)).injectiveStableFunctor.obj N ⟶
       (ExactStructure.abelian (ModuleCat.{max u v w} A)).injectiveStableFunctor.obj
-        (ModuleCat.of A (AuslanderReitenTranslate k f))) ≃ₗ[k]
+        (ModuleCat.of A (AuslanderReitenTranslate k k f))) ≃ₗ[k]
       Module.Dual k (CategoryTheory.Abelian.Ext (ModuleCat.of A (P₀ ⧸ range f)) N 1) := by
   let e : HomCocycleQuotient (k := k) f N ≃ₗ[k]
       CategoryTheory.Abelian.Ext (ModuleCat.of A (P₀ ⧸ range f)) N 1 :=
@@ -181,7 +181,7 @@ theorem auslanderReitenExtEquiv_apply
     (f : P₁ →ₗ[A] P₀) (N : ModuleCat.{max u v w} A)
     (h : (ExactStructure.abelian (ModuleCat.{max u v w} A)).injectiveStableFunctor.obj N ⟶
       (ExactStructure.abelian (ModuleCat.{max u v w} A)).injectiveStableFunctor.obj
-        (ModuleCat.of A (AuslanderReitenTranslate k f)))
+        (ModuleCat.of A (AuslanderReitenTranslate k k f)))
     (x : HomCocycleQuotient (k := k) f N) :
     auslanderReitenExtEquiv f N h (homCocycleQuotientEquivExt (k := k) f N x) =
       auslanderReitenStableHomEquiv f N h x := by
@@ -192,7 +192,7 @@ theorem auslanderReitenExtEquiv_naturality
     (f : P₁ →ₗ[A] P₀) {N N' : ModuleCat.{max u v w} A} (g : N ⟶ N')
     (h : (ExactStructure.abelian (ModuleCat.{max u v w} A)).injectiveStableFunctor.obj N' ⟶
       (ExactStructure.abelian (ModuleCat.{max u v w} A)).injectiveStableFunctor.obj
-        (ModuleCat.of A (AuslanderReitenTranslate k f)))
+        (ModuleCat.of A (AuslanderReitenTranslate k k f)))
     (α : CategoryTheory.Abelian.Ext (ModuleCat.of A (P₀ ⧸ range f)) N 1) :
     auslanderReitenExtEquiv f N
         ((ExactStructure.abelian (ModuleCat.{max u v w} A)).injectiveStableFunctor.map g ≫ h) α =

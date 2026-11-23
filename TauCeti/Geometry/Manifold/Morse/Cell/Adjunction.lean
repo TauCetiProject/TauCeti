@@ -39,8 +39,8 @@ cell attachment theorem makes its comparison map to `M_{c+ε}` a homotopy equiva
 inclusion on `M_{c-ε}` (`TauCeti.IsMorse.exists_morseCellAttachment_deformation`). Second, the
 inclusion `M_{c+ε} → M_b` is a homotopy equivalence across the band `f⁻¹[c + ε, b]`
 (`TauCeti.exists_sublevelHomotopyEquiv`). Third, the retraction `r` is a homotopy equivalence with
-homotopy inverse the inclusion (`ContinuousMap.HomotopyEquiv.ofRetraction`), and attaching cells
-is homotopy invariant under a change of base
+homotopy inverse the inclusion (`ContinuousMap.HomotopyEquiv.ofDeformationRetraction`), and
+attaching cells is homotopy invariant under a change of base
 (`ContinuousMap.HomotopyEquiv.exists_homotopyEquiv_pushout`): attaching the cells to `M_a` along
 `r ∘ α` is homotopy equivalent to attaching them to `M_{c-ε}` along `α`, by a map which is the
 inclusion on `M_a`. These last two steps move any attachment across regular collars
