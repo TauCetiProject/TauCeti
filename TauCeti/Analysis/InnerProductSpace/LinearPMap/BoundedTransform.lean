@@ -71,16 +71,6 @@ private theorem norm_inv_one_add_sq_le_one (t : ℝ) :
   rw [Complex.norm_real, Real.norm_eq_abs, abs_inv, abs_of_pos (by positivity)]
   exact inv_le_one_of_one_le₀ (by nlinarith)
 
-private def invOneAddSqSymbol : BoundedBorelFunction ℝ :=
-  BoundedBorelFunction.ofFunction (fun t ↦ (((1 + t ^ 2)⁻¹ : ℝ) : ℂ))
-    (Continuous.measurable <| by fun_prop (disch := intro t; positivity))
-    ⟨1, zero_le_one, norm_inv_one_add_sq_le_one⟩
-
-private theorem norm_invOneAddSqSymbol_le (t : ℝ) :
-    ‖invOneAddSqSymbol t‖ ≤ 1 := by
-  simpa only [invOneAddSqSymbol, BoundedBorelFunction.ofFunction_apply] using
-    norm_inv_one_add_sq_le_one t
-
 /-- The **bounded transform** (or Woronowicz–Baaj–Julg transform) `F_A = A (1 + A²)⁻¹/²` of a
 self-adjoint operator `A` with compact resolvent, defined via the bounded eigenbasis functional
 calculus of `t ↦ t / √(1 + t²)`. -/
@@ -141,19 +131,23 @@ private theorem inv_one_add_sq_add_boundedTransform_sq (t : ℝ) :
 /-- **`1 - F_A² = (1 + A²)⁻¹`.** -/
 theorem one_sub_boundedTransform_mul_self :
     1 - A.boundedTransform hA h * A.boundedTransform hA h = A.invOneAddSq := by
-  have hinv_fn : (invOneAddSqSymbol : ℝ → ℂ) = fun t ↦ (((1 + t ^ 2)⁻¹ : ℝ) : ℂ) := by
-    ext t
-    simp [invOneAddSqSymbol]
-  have hinv_int : (A.spectralPVM hA).integral invOneAddSqSymbol = A.invOneAddSq := by
-    rw [← A.boundedEigenCalculus_eq_integral hA h invOneAddSqSymbol ⟨1, norm_invOneAddSqSymbol_le⟩]
-    simp_rw [hinv_fn]
+  let g : BoundedBorelFunction ℝ := BoundedBorelFunction.ofFunction
+    (fun t ↦ (((1 + t ^ 2)⁻¹ : ℝ) : ℂ))
+    (Continuous.measurable <| by fun_prop (disch := intro t; positivity))
+    ⟨1, zero_le_one, norm_inv_one_add_sq_le_one⟩
+  have hg_fn : (g : ℝ → ℂ) = fun t ↦ (((1 + t ^ 2)⁻¹ : ℝ) : ℂ) := by
+    ext t; simp [g]
+  have hg_int : (A.spectralPVM hA).integral g = A.invOneAddSq := by
+    rw [← A.boundedEigenCalculus_eq_integral hA h g ⟨1, fun t ↦ by
+      simpa only [g, BoundedBorelFunction.ofFunction_apply] using norm_inv_one_add_sq_le_one t⟩]
+    simp_rw [hg_fn]
     exact A.boundedEigenCalculus_invOneAddSq hA h ⟨1, norm_inv_one_add_sq_le_one⟩
-  rw [boundedTransform_eq_integral, ← hinv_int, ← map_mul, ← map_one (A.spectralPVM hA).integral,
+  rw [boundedTransform_eq_integral, ← hg_int, ← map_mul, ← map_one (A.spectralPVM hA).integral,
     ← _root_.map_sub (A.spectralPVM hA).integral]
   congr 1
   ext t
   simp only [BoundedBorelFunction.sub_apply, BoundedBorelFunction.one_apply,
-    BoundedBorelFunction.mul_apply, boundedTransformSymbol, invOneAddSqSymbol,
+    BoundedBorelFunction.mul_apply, boundedTransformSymbol, g,
     BoundedBorelFunction.ofFunction_apply]
   exact sub_eq_iff_eq_add.2 (inv_one_add_sq_add_boundedTransform_sq t).symm
 
@@ -246,15 +240,13 @@ private theorem bjMulRes_apply_basis (hA : IsSelfAdjoint A) {ι : Type*} {b : Hi
   have hs2c : (s : ℂ) ^ 2 = ((1 + r : ℝ) : ℂ) := by exact_mod_cast hs2
   have hprod : (Complex.I * (s : ℂ) - (lam k : ℂ)) * (-Complex.I * (s : ℂ) - (lam k : ℂ)) =
       ((1 + r + lam k ^ 2 : ℝ) : ℂ) := by
-    calc (Complex.I * (s : ℂ) - (lam k : ℂ)) * (-Complex.I * (s : ℂ) - (lam k : ℂ))
-        = (lam k : ℂ) ^ 2 - (Complex.I ^ 2) * (s : ℂ) ^ 2 := by ring
-      _ = (lam k : ℂ) ^ 2 + (s : ℂ) ^ 2 := by rw [Complex.I_sq]; ring
-      _ = ((1 + r + lam k ^ 2 : ℝ) : ℂ) := by rw [hs2c]; push_cast; ring
+    rw [show (Complex.I * (s : ℂ) - (lam k : ℂ)) * (-Complex.I * (s : ℂ) - (lam k : ℂ)) =
+      (lam k : ℂ) ^ 2 - Complex.I ^ 2 * (s : ℂ) ^ 2 by ring, Complex.I_sq, hs2c]
+    push_cast; ring
   rw [inv_add_inv hpos1 hpos2, hprod]
   push_cast
   have _ : (1 : ℝ) + r + lam k ^ 2 ≠ 0 := by positivity
-  field_simp
-  ring
+  field_simp; ring
 
 private theorem isCompactOperator_bjMulRes (hA : IsSelfAdjoint A) (h : A.HasCompactResolvent)
     (r : ℝ) : IsCompactOperator ⇑(bjMulRes A r) := by
@@ -271,23 +263,18 @@ private theorem norm_resolvent_I_mul_sub_le (hA : IsSelfAdjoint A) {t₁ t₂ : 
     ‖A.resolvent (Complex.I * t₁) - A.resolvent (Complex.I * t₂)‖ ≤ ‖t₁ - t₂‖ := by
   have h1 := hA.mem_resolventSet_I_mul (zero_lt_one.trans_le ht₁).ne'
   have h2 := hA.mem_resolventSet_I_mul (zero_lt_one.trans_le ht₂).ne'
-  rw [resolvent_sub_resolvent h1 h2, norm_smul]
   have hsub : ‖Complex.I * (t₂ : ℂ) - Complex.I * (t₁ : ℂ)‖ = ‖t₁ - t₂‖ := by
     rw [← mul_sub, norm_mul, Complex.norm_I, one_mul, ← Complex.ofReal_sub, Complex.norm_real,
       norm_sub_rev]
-  have hn1 : ‖A.resolvent (Complex.I * t₁)‖ ≤ 1 := by
-    refine (hA.norm_resolvent_I_mul_le (zero_lt_one.trans_le ht₁).ne').trans ?_
-    rw [abs_of_pos (zero_lt_one.trans_le ht₁)]
-    exact inv_le_one_of_one_le₀ ht₁
-  have hn2 : ‖A.resolvent (Complex.I * t₂)‖ ≤ 1 := by
-    refine (hA.norm_resolvent_I_mul_le (zero_lt_one.trans_le ht₂).ne').trans ?_
-    rw [abs_of_pos (zero_lt_one.trans_le ht₂)]
-    exact inv_le_one_of_one_le₀ ht₂
-  calc ‖Complex.I * (t₂ : ℂ) - Complex.I * (t₁ : ℂ)‖ *
-          ‖A.resolvent (Complex.I * t₁) ∘L A.resolvent (Complex.I * t₂)‖
+  have hn {t : ℝ} (ht : 1 ≤ t) : ‖A.resolvent (Complex.I * t)‖ ≤ 1 := by
+    have h := hA.norm_resolvent_I_mul_le (zero_lt_one.trans_le ht).ne'
+    rw [abs_of_pos (zero_lt_one.trans_le ht)] at h
+    exact h.trans (inv_le_one_of_one_le₀ ht)
+  rw [resolvent_sub_resolvent h1 h2, norm_smul, hsub]
+  calc ‖t₁ - t₂‖ * ‖A.resolvent (Complex.I * t₁) ∘L A.resolvent (Complex.I * t₂)‖
       ≤ ‖t₁ - t₂‖ * (‖A.resolvent (Complex.I * t₁)‖ * ‖A.resolvent (Complex.I * t₂)‖) := by
-        rw [hsub]; gcongr; exact ContinuousLinearMap.opNorm_comp_le _ _
-    _ ≤ ‖t₁ - t₂‖ * (1 * 1) := by gcongr
+        gcongr; exact ContinuousLinearMap.opNorm_comp_le _ _
+    _ ≤ ‖t₁ - t₂‖ * (1 * 1) := by gcongr <;> exact hn ‹_›
     _ = ‖t₁ - t₂‖ := by ring
 
 private theorem continuous_bjMulRes (hA : IsSelfAdjoint A) : Continuous (bjMulRes A) := by
@@ -300,13 +287,10 @@ private theorem continuous_bjMulRes (hA : IsSelfAdjoint A) : Continuous (bjMulRe
       exact (norm_resolvent_I_mul_sub_le hA ht' ht).trans_lt htt'
     exact hon.comp_continuous continuous_bjShift one_le_bjShift
   have hcont_neg : Continuous fun r ↦ A.resolvent (-Complex.I * bjShift r) := by
-    have hfun : (fun r ↦ A.resolvent (-Complex.I * bjShift r)) =
-        fun r ↦ ContinuousLinearMap.adjoint (A.resolvent (Complex.I * bjShift r)) := by
-      ext1 r
-      exact (adjoint_resolvent_I_bjShift hA r).symm
-    rw [hfun]
+    rw [show (fun r ↦ A.resolvent (-Complex.I * bjShift r)) =
+        fun r ↦ ContinuousLinearMap.adjoint (A.resolvent (Complex.I * bjShift r)) from
+      funext fun r ↦ (adjoint_resolvent_I_bjShift hA r).symm]
     exact ContinuousLinearMap.adjoint.continuous.comp hcont_pos
-  unfold bjMulRes
   exact (continuous_const (y := -(2 : ℂ)⁻¹)).smul (hcont_pos.add hcont_neg)
 
 omit [CompleteSpace H] in
@@ -320,14 +304,9 @@ private theorem resolvent_mul_sub_mul_resolvent {T C : H →L[ℂ] H}
   have hstep : z • T (A.resolvent z y) - A ⟨T (A.resolvent z y), hTmem⟩ =
       T y - C (A.resolvent z y) := by
     have hC := hTC.equation ⟨A.resolvent z y, hmem⟩
-    have hR := smul_sub_apply_resolvent hz y
     dsimp only at hC
-    calc z • T (A.resolvent z y) - A ⟨T (A.resolvent z y), hTmem⟩
-        = (z • T (A.resolvent z y) - T (A ⟨A.resolvent z y, hmem⟩)) - C (A.resolvent z y) := by
-            rw [← hC]; abel
-      _ = T (z • A.resolvent z y - A ⟨A.resolvent z y, hmem⟩) - C (A.resolvent z y) := by
-            rw [T.map_sub, ContinuousLinearMap.map_smul]
-      _ = T y - C (A.resolvent z y) := by rw [hR]
+    conv_rhs => arg 1; rw [← smul_sub_apply_resolvent hz y, T.map_sub, ContinuousLinearMap.map_smul]
+    rw [← hC]; abel
   have happ := congrArg (A.resolvent z) hstep
   rw [resolvent_smul_sub_apply hz ⟨T (A.resolvent z y), hTmem⟩, (A.resolvent z).map_sub] at happ
   exact sub_eq_iff_eq_add'.2 (eq_add_of_sub_eq happ.symm)
@@ -348,32 +327,19 @@ private theorem norm_bjMulRes_commutator_le (hA : IsSelfAdjoint A) {T C : H →L
   have hn_neg : ‖A.resolvent (-Complex.I * bjShift r)‖ ≤ (bjShift r)⁻¹ := by
     simpa only [← adjoint_resolvent_I_bjShift hA r, ContinuousLinearMap.adjoint.norm_map] using
       hn_pos
-  have hterm_pos :
-      ‖A.resolvent (Complex.I * bjShift r) * C * A.resolvent (Complex.I * bjShift r)‖ ≤
-        ‖C‖ * (1 + r)⁻¹ := by
-    calc ‖A.resolvent (Complex.I * bjShift r) * C * A.resolvent (Complex.I * bjShift r)‖
-        ≤ ‖A.resolvent (Complex.I * bjShift r)‖ * ‖C‖ * ‖A.resolvent (Complex.I * bjShift r)‖ :=
-          norm_mul₃_le
+  have hterm {u : ℂ} (hu : ‖A.resolvent u‖ ≤ (bjShift r)⁻¹) :
+      ‖A.resolvent u * C * A.resolvent u‖ ≤ ‖C‖ * (1 + r)⁻¹ := by
+    calc ‖A.resolvent u * C * A.resolvent u‖
+        ≤ ‖A.resolvent u‖ * ‖C‖ * ‖A.resolvent u‖ := norm_mul₃_le
       _ ≤ (bjShift r)⁻¹ * ‖C‖ * (bjShift r)⁻¹ := by
           gcongr; exact mul_nonneg (inv_nonneg.2 (bjShift_pos r).le) (norm_nonneg C)
-      _ = ‖C‖ * (bjShift r ^ 2)⁻¹ := by ring
-      _ = ‖C‖ * (1 + r)⁻¹ := by rw [hs2]
-  have hterm_neg :
-      ‖A.resolvent (-Complex.I * bjShift r) * C * A.resolvent (-Complex.I * bjShift r)‖ ≤
-        ‖C‖ * (1 + r)⁻¹ := by
-    calc ‖A.resolvent (-Complex.I * bjShift r) * C * A.resolvent (-Complex.I * bjShift r)‖
-        ≤ ‖A.resolvent (-Complex.I * bjShift r)‖ * ‖C‖ *
-            ‖A.resolvent (-Complex.I * bjShift r)‖ := norm_mul₃_le
-      _ ≤ (bjShift r)⁻¹ * ‖C‖ * (bjShift r)⁻¹ := by
-          gcongr; exact mul_nonneg (inv_nonneg.2 (bjShift_pos r).le) (norm_nonneg C)
-      _ = ‖C‖ * (bjShift r ^ 2)⁻¹ := by ring
-      _ = ‖C‖ * (1 + r)⁻¹ := by rw [hs2]
+      _ = ‖C‖ * (1 + r)⁻¹ := by rw [← hs2]; ring
   rw [hcomm, norm_smul, norm_neg, norm_inv, Complex.norm_ofNat]
   calc (2 : ℝ)⁻¹ *
           ‖A.resolvent (Complex.I * bjShift r) * C * A.resolvent (Complex.I * bjShift r) +
             A.resolvent (-Complex.I * bjShift r) * C * A.resolvent (-Complex.I * bjShift r)‖
       ≤ (2 : ℝ)⁻¹ * (‖C‖ * (1 + r)⁻¹ + ‖C‖ * (1 + r)⁻¹) := by
-        gcongr; exact (norm_add_le _ _).trans (add_le_add hterm_pos hterm_neg)
+        gcongr; exact (norm_add_le _ _).trans (add_le_add (hterm hn_pos) (hterm hn_neg))
     _ = ‖C‖ * (1 + r)⁻¹ := by ring
 
 private def bjIntegrand (A : H →ₗ.[ℂ] H) (T : H →L[ℂ] H) (r : ℝ) : H →L[ℂ] H :=
@@ -436,9 +402,7 @@ private theorem integral_bjKernel (μ : ℝ) :
       Complex.ofRealCLM.integral_comp_comm (integrableOn_bjKernelReal μ),
     Complex.ofRealCLM_apply]
   congr 1
-  rw [show (∫ r in Ioi (0 : ℝ), bjKernelReal μ r) =
-      Real.pi⁻¹ * (μ * ∫ r in Ioi (0 : ℝ), (Real.sqrt r)⁻¹ * (1 + μ ^ 2 + r)⁻¹) from by
-        simp only [bjKernelReal, integral_const_mul],
+  simp only [bjKernelReal, integral_const_mul,
     TauCeti.integral_Ioi_inv_sqrt_mul_inv_add (a := 1 + μ ^ 2) (by positivity)]
   have hpi : Real.pi ≠ 0 := Real.pi_ne_zero
   field_simp

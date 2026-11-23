@@ -98,15 +98,12 @@ def toFredholmModule : FredholmModule A H where
       S.hasCompactResolvent_operator).mul_right (S.rep a)
 
 @[simp]
-theorem toFredholmModule_rep : S.toFredholmModule.rep = S.rep.toNonUnitalStarAlgHom :=
-  (rfl)
+theorem toFredholmModule_rep : S.toFredholmModule.rep = S.rep.toNonUnitalStarAlgHom := by rfl
 
-theorem toFredholmModule_rep_apply (a : A) : S.toFredholmModule.rep a = S.rep a :=
-  (rfl)
+theorem toFredholmModule_rep_apply (a : A) : S.toFredholmModule.rep a = S.rep a := by rfl
 
 @[simp]
-theorem toFredholmModule_operator : S.toFredholmModule.operator = S.boundedTransform :=
-  (rfl)
+theorem toFredholmModule_operator : S.toFredholmModule.operator = S.boundedTransform := by rfl
 
 /-- Unitary equivalence of spectral triples induces unitary equivalence of their bounded-transform
 Fredholm modules. -/
@@ -150,12 +147,10 @@ def toEvenFredholmModule : EvenFredholmModule A H where
 
 @[simp]
 theorem toEvenFredholmModule_toFredholmModule :
-    S.toEvenFredholmModule.toFredholmModule = S.toSpectralTriple.toFredholmModule :=
-  (rfl)
+    S.toEvenFredholmModule.toFredholmModule = S.toSpectralTriple.toFredholmModule := by rfl
 
 @[simp]
-theorem toEvenFredholmModule_grading : S.toEvenFredholmModule.grading = S.grading :=
-  (rfl)
+theorem toEvenFredholmModule_grading : S.toEvenFredholmModule.grading = S.grading := by rfl
 
 /-- Unitary equivalence of even spectral triples induces unitary equivalence of their
 bounded-transform even Fredholm modules. -/

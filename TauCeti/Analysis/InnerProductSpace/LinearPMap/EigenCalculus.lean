@@ -86,40 +86,26 @@ private theorem chosenBasis_spec (hA : IsSelfAdjoint A) (h : A.HasCompactResolve
   (hA.exists_hilbertBasis_forall_apply_eq_smul_of_hasCompactResolvent
     h).choose_spec.choose_spec.choose_spec k
 
-private theorem countable_chosenIndex (hA : IsSelfAdjoint A) (h : A.HasCompactResolvent) :
-    Countable (chosenIndex hA h) :=
-  h.countable_of_eigenbasis (chosenBasis hA h) (chosenBasis_spec hA h)
-
 private def eigvalRange (hA : IsSelfAdjoint A) (h : A.HasCompactResolvent) : Set ℝ :=
   Set.range (chosenEigval hA h)
 
 private theorem countable_eigvalRange (hA : IsSelfAdjoint A) (h : A.HasCompactResolvent) :
-    (eigvalRange hA h).Countable := by
-  have := countable_chosenIndex hA h
-  exact Set.countable_range _
-
-private theorem measurableSet_eigvalRange (hA : IsSelfAdjoint A) (h : A.HasCompactResolvent) :
-    MeasurableSet (eigvalRange hA h) :=
-  (countable_eigvalRange hA h).measurableSet
+    (eigvalRange hA h).Countable :=
+  have := h.countable_of_eigenbasis (chosenBasis hA h) (chosenBasis_spec hA h)
+  Set.countable_range _
 
 private theorem measurable_indicator_eigvalRange (hA : IsSelfAdjoint A)
     (h : A.HasCompactResolvent) (f : ℝ → ℂ) :
     Measurable ((eigvalRange hA h).indicator f) := by
-  have hcount := countable_eigvalRange hA h
   intro U _
   by_cases h0 : (0 : ℂ) ∈ U
-  · have hcompl : ((eigvalRange hA h).indicator f ⁻¹' U)ᶜ =
-        eigvalRange hA h ∩ {t | f t ∉ U} := by
-      ext t
-      by_cases ht : t ∈ eigvalRange hA h <;> simp [ht, h0]
-    rw [← MeasurableSet.compl_iff, hcompl]
-    exact (hcount.mono Set.inter_subset_left).measurableSet
-  · have hpre : (eigvalRange hA h).indicator f ⁻¹' U =
-        eigvalRange hA h ∩ {t | f t ∈ U} := by
-      ext t
-      by_cases ht : t ∈ eigvalRange hA h <;> simp [ht, h0]
-    rw [hpre]
-    exact (hcount.mono Set.inter_subset_left).measurableSet
+  · rw [← MeasurableSet.compl_iff, show ((eigvalRange hA h).indicator f ⁻¹' U)ᶜ =
+        eigvalRange hA h ∩ {t | f t ∉ U} by
+      ext t; by_cases ht : t ∈ eigvalRange hA h <;> simp [ht, h0]]
+    exact ((countable_eigvalRange hA h).mono Set.inter_subset_left).measurableSet
+  · rw [show (eigvalRange hA h).indicator f ⁻¹' U = eigvalRange hA h ∩ {t | f t ∈ U} by
+      ext t; by_cases ht : t ∈ eigvalRange hA h <;> simp [ht, h0]]
+    exact ((countable_eigvalRange hA h).mono Set.inter_subset_left).measurableSet
 
 private theorem mem_eigvalRange_of_apply_eq_smul (hA : IsSelfAdjoint A)
     (h : A.HasCompactResolvent) (x : A.domain) {r : ℝ}
@@ -206,7 +192,7 @@ private theorem spectralPVM_spectralIntegral_eq_diagonalPMap (hA : IsSelfAdjoint
 private theorem ae_mem_eigvalRange (hA : IsSelfAdjoint A) (h : A.HasCompactResolvent) :
     ∀ᶠ t in (A.spectralPVM hA).ae, t ∈ eigvalRange hA h := by
   set P := A.spectralPVM hA
-  have hB := measurableSet_eigvalRange hA h
+  have hB := (countable_eigvalRange hA h).measurableSet
   have hfix : ∀ k, P.proj (eigvalRange hA h) hB (chosenBasis hA h k) = chosenBasis hA h k := by
     intro k
     rw [P.proj_apply_eq_self_iff]
