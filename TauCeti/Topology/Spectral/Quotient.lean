@@ -167,13 +167,10 @@ private theorem exists_minimal_rel {r : Setoid X}
   have hS : IsLocallySpectralSpace S := (hR.setOfPred_rel hX x).isLocallySpectralSpace hX
   have : QuasiSober S := hS.quasiSober
   have : T0Space S := hS.t0Space
-  let s₀ : S := ⟨x, r.refl x⟩
-  let C : irreducibleComponents S :=
-    ⟨irreducibleComponent s₀, irreducibleComponent_mem_irreducibleComponents s₀⟩
-  let η := genericPoints.ofComponent C
-  refine ⟨η.val.val, η.val.property, fun ξ hξ hξη ↦ ?_⟩
-  have hspec : (⟨ξ, hξ⟩ : S) ⤳ η.val := IsInducing.subtypeVal.specializes_iff.mp hξη
-  exact congrArg Subtype.val (mem_genericPoints_iff.mp η.property ⟨ξ, hξ⟩ hspec)
+  obtain ⟨η, hη, -⟩ := exists_genericPoint_specializes (⟨x, r.refl x⟩ : S)
+  refine ⟨η.val, η.property, fun ξ hξ hξη ↦ ?_⟩
+  have hspec : (⟨ξ, hξ⟩ : S) ⤳ η := IsInducing.subtypeVal.specializes_iff.mp hξη
+  exact congrArg Subtype.val (mem_genericPoints_iff.mp hη ⟨ξ, hξ⟩ hspec)
 
 /-- If `X` is locally spectral, `{q : X × X | r q.1 q.2}` is locally pro-constructible, and the
 first projection from `{q : X × X // r q.1 q.2}` is generalizing, then `Quotient.mk r` is a
