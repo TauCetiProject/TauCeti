@@ -185,6 +185,37 @@ private theorem exists_isometry_oddCyclic_prod_pi (hp : Odd p) {n : ℕ} (k : Fi
             ((QuadraticMap.IsometryEquiv.prodLeftComm _ _ _).trans
               ((QuadraticMap.IsometryEquiv.refl _).prod u))))⟩
 
+/-- The inductive step of `nonempty_isometry_pi_oddCyclic_of_prod_legendreSym_eq_fin`: if the first
+summands match, split them off and use the induction hypothesis on the tail. -/
+private theorem nonempty_isometry_pi_oddCyclic_step (hp : Odd p) {n : ℕ}
+    (ih : ∀ (k : Fin n → ℕ) {θ η : Fin n → ℤ}, (∀ i, IsCoprime (p : ℤ) (θ i)) →
+      (∀ i, IsCoprime (p : ℤ) (η i)) →
+      (∀ m, 0 < m →
+        ∏ i with k i = m, legendreSym p (θ i) = ∏ i with k i = m, legendreSym p (η i)) →
+      Nonempty (Isometry (pi fun i ↦ oddCyclic (p ^ k i) hp.pow (θ i))
+        (pi fun i ↦ oddCyclic (p ^ k i) hp.pow (η i))))
+    (k : Fin (n + 1) → ℕ) {θ' η : Fin (n + 1) → ℤ} (hθ' : ∀ i, IsCoprime (p : ℤ) (θ' i))
+    (hη : ∀ i, IsCoprime (p : ℤ) (η i))
+    (h' : ∀ m, 0 < m → ∏ i with k i = m, legendreSym p (θ' i) =
+      ∏ i with k i = m, legendreSym p (η i))
+    (h0 : k 0 = 0 ∨ legendreSym p (θ' 0) = legendreSym p (η 0)) :
+    Nonempty (Isometry (pi fun i ↦ oddCyclic (p ^ k i) hp.pow (θ' i))
+      (pi fun i ↦ oddCyclic (p ^ k i) hp.pow (η i))) := by
+  obtain ⟨g⟩ : Nonempty (Isometry (oddCyclic (p ^ k 0) hp.pow (θ' 0))
+      (oddCyclic (p ^ k 0) hp.pow (η 0))) := by
+    rcases h0 with h0 | h0
+    · exact nonempty_isometry_oddCyclic_of_eq_zero hp h0 _ _
+    · exact nonempty_isometry_oddCyclic_of_legendreSym_eq hp (k 0) (hθ' 0) h0
+  obtain ⟨g'⟩ := ih (fun i ↦ k i.succ) (fun i ↦ hθ' i.succ) (fun i ↦ hη i.succ)
+    fun m hm ↦ Fin.prod_filter_succ_eq_of_prod_filter_eq (k · = m) (h' m hm)
+      (fun _ h ↦ ((ZMod.isUnit_intCast_iff_isCoprime _ p).2 (hθ' 0)).ne_zero
+        ((legendreSym.eq_zero_iff p _).1 h))
+      fun hk ↦ h0.resolve_left (by omega)
+  exact ⟨(QuadraticMap.IsometryEquiv.consPi fun i ↦
+      (oddCyclic (p ^ k i) hp.pow (θ' i)).quadratic).symm.trans
+    ((g.prod g').trans (QuadraticMap.IsometryEquiv.consPi fun i ↦
+      (oddCyclic (p ^ k i) hp.pow (η i)).quadratic))⟩
+
 /-- **Equal level products give isometric sums.** If for every `m ≥ 1` the Legendre symbols of
 the coefficients of the summands of order `p^m` have the same product, then the orthogonal sums
 `⊕ q_{θ_i}^{(p)}(p^{k_i})` and `⊕ q_{η_i}^{(p)}(p^{k_i})` are isometric. -/
@@ -198,29 +229,8 @@ private theorem nonempty_isometry_pi_oddCyclic_of_prod_legendreSym_eq_fin (hp : 
   induction n with
   | zero => exact ⟨Isometry.ofSubsingleton⟩
   | succ n ih =>
-    -- If the first summands match, split them off and use the induction hypothesis.
-    have step (θ' : Fin (n + 1) → ℤ) (hθ' : ∀ i, IsCoprime (p : ℤ) (θ' i))
-        (h' : ∀ m, 0 < m → ∏ i with k i = m, legendreSym p (θ' i) =
-          ∏ i with k i = m, legendreSym p (η i))
-        (h0 : k 0 = 0 ∨ legendreSym p (θ' 0) = legendreSym p (η 0)) :
-        Nonempty (Isometry (pi fun i ↦ oddCyclic (p ^ k i) hp.pow (θ' i))
-          (pi fun i ↦ oddCyclic (p ^ k i) hp.pow (η i))) := by
-      obtain ⟨g⟩ : Nonempty (Isometry (oddCyclic (p ^ k 0) hp.pow (θ' 0))
-          (oddCyclic (p ^ k 0) hp.pow (η 0))) := by
-        rcases h0 with h0 | h0
-        · exact nonempty_isometry_oddCyclic_of_eq_zero hp h0 _ _
-        · exact nonempty_isometry_oddCyclic_of_legendreSym_eq hp (k 0) (hθ' 0) h0
-      obtain ⟨g'⟩ := ih (fun i ↦ k i.succ) (fun i ↦ hθ' i.succ) (fun i ↦ hη i.succ)
-        fun m hm ↦ Fin.prod_filter_succ_eq_of_prod_filter_eq (k · = m) (h' m hm)
-          (fun _ h ↦ ((ZMod.isUnit_intCast_iff_isCoprime _ p).2 (hθ' 0)).ne_zero
-            ((legendreSym.eq_zero_iff p _).1 h))
-          fun hk ↦ h0.resolve_left (by omega)
-      exact ⟨(QuadraticMap.IsometryEquiv.consPi fun i ↦
-          (oddCyclic (p ^ k i) hp.pow (θ' i)).quadratic).symm.trans
-        ((g.prod g').trans (QuadraticMap.IsometryEquiv.consPi fun i ↦
-          (oddCyclic (p ^ k i) hp.pow (η i)).quadratic))⟩
     by_cases h0 : k 0 = 0 ∨ legendreSym p (θ 0) = legendreSym p (η 0)
-    · exact step θ hθ h h0
+    · exact nonempty_isometry_pi_oddCyclic_step hp ih k hθ hη h h0
     push Not at h0
     obtain ⟨hk0, hχ⟩ := h0
     -- Otherwise the tail has a summand of order `p^{k 0}`, which can absorb the mismatch.
@@ -240,7 +250,7 @@ private theorem nonempty_isometry_pi_oddCyclic_of_prod_legendreSym_eq_fin (hp : 
         (pi fun i ↦ oddCyclic (p ^ k i) hp.pow ((Fin.cons (η 0) θ' : Fin (n + 1) → ℤ) i)) :=
       (QuadraticMap.IsometryEquiv.consPi fun i ↦
           (oddCyclic (p ^ k i) hp.pow (θ i)).quadratic).symm.trans (g.trans u)
-    obtain ⟨f'⟩ := step _ hθ'' (fun m hm ↦
+    obtain ⟨f'⟩ := nonempty_isometry_pi_oddCyclic_step hp ih k hθ'' hη (fun m hm ↦
       (prod_legendreSym_eq_of_isometry_pi_oddCyclic hp k hθ hθ'' f hm).symm.trans (h m hm))
       (Or.inr (by rw [Fin.cons_zero]))
     exact ⟨f.trans f'⟩
