@@ -50,8 +50,10 @@ the `k`-th, embedded through it.
   its submodule is zero; in particular images of zero operators are zero
   (`TauCeti.GradedPair.ImageModel.n_eq_zero_iff`).
 * `TauCeti.GradedPair.exists_iteratedImage_n_eq_zero`: iterated images eventually vanish.
-* `TauCeti.GradedPair.isomorphic_shift_imageModel`: the shift of the image of a pair is
-  isomorphic to the image of the shifted pair.
+* `TauCeti.GradedPair.SubmoduleModel.isomorphic_shift`: the shift of a model of `W` is
+  isomorphic to any model of `W` for the shifted pair; in particular the shift of the image of a
+  pair is isomorphic to the image of the shifted pair
+  (`TauCeti.GradedPair.isomorphic_shift_imageModel`).
 
 ## References
 
@@ -275,6 +277,12 @@ theorem shift_pair (M : P.SubmoduleModel W) (c : ℤ) : (M.shift c).pair = M.pai
 theorem shift_embed (M : P.SubmoduleModel W) (c : ℤ) : (M.shift c).embed = M.embed :=
   (rfl)
 
+/-- The shift of a model pair of `W` is graded-isomorphic to any model pair of `W` for the shifted
+pair. -/
+theorem isomorphic_shift (M : P.SubmoduleModel W) {c : ℤ} (M' : (P.shift c).SubmoduleModel W) :
+    (M.pair.shift c).Isomorphic M'.pair :=
+  M.shift_pair c ▸ (M.shift c).isomorphic M'
+
 /-- The embedding of a model carries the image of its operator onto the image of `W` under the
 ambient operator. -/
 theorem map_range_operator (M : P.SubmoduleModel W) :
@@ -352,9 +360,8 @@ theorem imageModel_zero_n : (imageModel (0 : GradedPair S d)).space.n = 0 :=
 /-- The image of a shifted pair is the shift of the image, up to graded isomorphism. -/
 theorem isomorphic_shift_imageModel (P : GradedPair S d) (c : ℤ) :
     (P.imageModel.pair.shift c).Isomorphic (P.shift c).imageModel.pair := by
-  have h := SubmoduleModel.isomorphic ((P.imageModel.shift c).congr (by rw [operator_shift]))
-    (P.shift c).imageModel
-  rwa [SubmoduleModel.congr_pair, SubmoduleModel.shift_pair] at h
+  have h := P.imageModel.isomorphic_shift ((P.shift c).imageModel.congr (by rw [operator_shift]))
+  rwa [SubmoduleModel.congr_pair] at h
 
 /-! ### Iterated images -/
 
@@ -381,12 +388,6 @@ theorem image_pair (M : P.SubmoduleModel W) : M.image.pair = M.pair.imageModel.p
 theorem image_embed (M : P.SubmoduleModel W) :
     M.image.embed = M.embed ∘ₗ M.pair.imageModel.embed :=
   (rfl)
-
-/-- The image of a model carries the image pair of the model pair, up to graded isomorphism. -/
-theorem isomorphic_image (M : P.SubmoduleModel W) :
-    M.image.pair.Isomorphic M.pair.imageModel.pair := by
-  rw [image_pair]
-  exact Isomorphic.refl _
 
 end SubmoduleModel
 
@@ -433,23 +434,6 @@ theorem iteratedImage_succ_embed (P : GradedPair S d) (k : ℕ) :
       (P.iteratedImage k).embed ∘ₗ (P.iteratedImage k).pair.imageModel.embed :=
   (rfl)
 
-/-- The zeroth iterated image is the pair itself, up to graded isomorphism. -/
-theorem isomorphic_iteratedImage_zero (P : GradedPair S d) :
-    (P.iteratedImage 0).pair.Isomorphic P := by
-  rw [iteratedImage_zero_pair]
-  exact Isomorphic.refl _
-
-/-- The `(k + 1)`-st iterated image is the image of the `k`-th, up to graded isomorphism. -/
-theorem isomorphic_iteratedImage_succ (P : GradedPair S d) (k : ℕ) :
-    (P.iteratedImage (k + 1)).pair.Isomorphic (P.iteratedImage k).pair.imageModel.pair := by
-  rw [iteratedImage_succ_pair]
-  exact Isomorphic.refl _
-
-/-- The total dimension of the `k`-th iterated image is the rank of `P.operator ^ k`. -/
-theorem iteratedImage_n (P : GradedPair S d) (k : ℕ) :
-    (P.iteratedImage k).space.n = finrank ℂ (LinearMap.range (P.operator ^ k)) :=
-  (P.iteratedImage k).n_eq_finrank
-
 /-- The `k`-th iterated image is zero-dimensional exactly when `P.operator ^ k = 0`. -/
 theorem iteratedImage_n_eq_zero_iff (P : GradedPair S d) (k : ℕ) :
     (P.iteratedImage k).space.n = 0 ↔ P.operator ^ k = 0 := by
@@ -465,9 +449,9 @@ theorem exists_iteratedImage_n_eq_zero (P : GradedPair S d) :
 graded isomorphism. -/
 theorem isomorphic_shift_iteratedImage (P : GradedPair S d) (c : ℤ) (k : ℕ) :
     ((P.iteratedImage k).pair.shift c).Isomorphic ((P.shift c).iteratedImage k).pair := by
-  have h := SubmoduleModel.isomorphic
-    (((P.iteratedImage k).shift c).congr (by rw [operator_shift])) ((P.shift c).iteratedImage k)
-  rwa [SubmoduleModel.congr_pair, SubmoduleModel.shift_pair] at h
+  have h := (P.iteratedImage k).isomorphic_shift
+    (((P.shift c).iteratedImage k).congr (by rw [operator_shift]))
+  rwa [SubmoduleModel.congr_pair] at h
 
 end GradedPair
 
