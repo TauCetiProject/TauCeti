@@ -142,7 +142,7 @@ theorem explicitCup_projection (a : H0 G M) (b : H1 U N) :
       explicitCup01 G M N P μ hμ hequiv a (explicitCor1 G N U hU b) := by
   -- Replace `res⁰ a` by an element whose underlying coefficient is literally `a`, so that the
   -- cup cochains on the two sides are pairings against the same element of `M`.
-  have hres : explicitRes0 G M U a = ⟨(a : M), fun g : U => a.2 (g : G)⟩ :=
+  have hres : explicitRes0 G M U a = ⟨(a : M), fun g : U => a.property (g : G)⟩ :=
     Subtype.ext (coe_explicitRes0 G M U a)
   induction b using QuotientAddGroup.induction_on with
   | _ c =>
@@ -177,8 +177,8 @@ theorem explicitCup_projection10 (b : H1 U M) (n : H0 G N) :
         (explicitCup10 U M N P μ hμ (fun g m y => hequiv (g : G) m y) b
           (explicitRes0 G N U n)) =
       explicitCup10 G M N P μ hμ hequiv (explicitCor1 G M U hU b) n := by
-  have hn : ∀ g : G, g • (n : N) = (n : N) := n.2
-  have hres : explicitRes0 G N U n = ⟨(n : N), fun g : U => n.2 (g : G)⟩ :=
+  have hn : ∀ g : G, g • (n : N) = (n : N) := n.property
+  have hres : explicitRes0 G N U n = ⟨(n : N), fun g : U => n.property (g : G)⟩ :=
     Subtype.ext (coe_explicitRes0 G N U n)
   induction b using QuotientAddGroup.induction_on with
   | _ c =>
@@ -223,7 +223,7 @@ theorem explicitCup_projection02 (a : H0 G M) (b : H2 U N) :
         (explicitCup02 U M N P μ hμ (fun g m y => hequiv (g : G) m y)
           (explicitRes0 G M U a) b) =
       explicitCup02 G M N P μ hμ hequiv a (explicitCor2 G N U hU b) := by
-  have hres : explicitRes0 G M U a = ⟨(a : M), fun g : U => a.2 (g : G)⟩ :=
+  have hres : explicitRes0 G M U a = ⟨(a : M), fun g : U => a.property (g : G)⟩ :=
     Subtype.ext (coe_explicitRes0 G M U a)
   induction b using QuotientAddGroup.induction_on with
   | _ c =>
@@ -257,8 +257,8 @@ theorem explicitCup_projection20 (b : H2 U M) (n : H0 G N) :
         (explicitCup20 U M N P μ hμ (fun g m y => hequiv (g : G) m y) b
           (explicitRes0 G N U n)) =
       explicitCup20 G M N P μ hμ hequiv (explicitCor2 G M U hU b) n := by
-  have hn : ∀ g : G, g • (n : N) = (n : N) := n.2
-  have hres : explicitRes0 G N U n = ⟨(n : N), fun g : U => n.2 (g : G)⟩ :=
+  have hn : ∀ g : G, g • (n : N) = (n : N) := n.property
+  have hres : explicitRes0 G N U n = ⟨(n : N), fun g : U => n.property (g : G)⟩ :=
     Subtype.ext (coe_explicitRes0 G N U n)
   induction b using QuotientAddGroup.induction_on with
   | _ c =>
@@ -463,12 +463,12 @@ theorem explicitCup_projection11 (a : H1 G M) (b : H1 U N) :
       refine mem_B2_iff'.2 ⟨cup11ProjectionHomotopy G M N P U μ Quotient.out Quotient.out_eq
         (α : G → M) (c : U → N),
         continuous_cup11ProjectionHomotopy G M N P U hU μ hμ Quotient.out Quotient.out_eq
-          (α : G → M) (mem_Z1_iff.1 c.2).1, fun γ η => ?_⟩
+          (α : G → M) (mem_Z1_iff.1 c.property).1, fun γ η => ?_⟩
       -- Restriction is evaluation of the cochain at the inclusion, by `cocyclesMap1_apply`.
       simp only [Pi.sub_apply, coe_cocyclesCor2, coe_cocyclesCor1, cocyclesMap1_apply,
         Subgroup.smul_def]
       exact cup11ProjectionHomotopy_spec G M N P U μ Quotient.out Quotient.out_eq hequiv
-        (mem_Z1_iff.1 α.2).2 (mem_Z1_iff.1 c.2).2 γ η
+        (mem_Z1_iff.1 α.property).2 (mem_Z1_iff.1 c.property).2 γ η
 
 end CupOneOne
 
@@ -768,7 +768,7 @@ theorem explicitCup_projection10_res_left (a : H1 G M) (n : H0 U N) :
     simp only [Pi.sub_apply, coe_cocyclesCor1, cocyclesMap1_apply, Subgroup.smul_def,
       coe_explicitCor0]
     exact cup10ProjectionHomotopy_spec G M N P U μ Quotient.out Quotient.out_eq hequiv
-      (mem_Z1_iff.1 α.2).2 n.2 γ
+      (mem_Z1_iff.1 α.property).2 n.property γ
 
 /-- **The `(2,0)` projection formula with restriction on the cocycle**,
 `cor² (res² a ⌣ n) = a ⌣ cor⁰ n`. The two sides differ on cochains by `d¹` of
@@ -783,7 +783,7 @@ theorem explicitCup_projection20_res_left (a : H2 G M) (n : H0 U N) :
     simp only [explicitRes2_mk, explicitCup20_mk, explicitCor2_mk, H2pi_eq_iff]
     refine mem_B2_iff'.2 ⟨cup20ProjectionHomotopy G M N P U μ Quotient.out (α : G × G → M) (n : N),
       continuous_cup20ProjectionHomotopy G M N P U hU μ hμ Quotient.out
-        (mem_Z2_iff.1 α.2).1 (n : N), fun γ η => ?_⟩
+        (mem_Z2_iff.1 α.property).1 (n : N), fun γ η => ?_⟩
     -- Restriction is evaluation of the cochain at the inclusion, by `cocyclesMap2_apply`.
     have hres : ((cocyclesMap2 G M U M (ContinuousMonoidHom.subgroupSubtype U) (AddMonoidHom.id M)
         continuous_id (ContinuousMonoidHom.id_subgroupSubtype_smul M U) α : Z2 U M) : U × U → M) =
@@ -791,7 +791,7 @@ theorem explicitCup_projection20_res_left (a : H2 G M) (n : H0 U N) :
       funext fun q => cocyclesMap2_apply G M U M _ _ _ _ α q.1 q.2
     simp only [Pi.sub_apply, coe_cocyclesCor2, hres, Subgroup.smul_def, coe_explicitCor0]
     exact cup20ProjectionHomotopy_spec G M N P U μ Quotient.out Quotient.out_eq hequiv
-      (mem_Z2_iff.1 α.2).2 n.2 γ η
+      (mem_Z2_iff.1 α.property).2 n.property γ η
 
 end ResLeft
 

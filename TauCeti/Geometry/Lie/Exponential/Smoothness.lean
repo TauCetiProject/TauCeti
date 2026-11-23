@@ -21,11 +21,6 @@ one-parameter-subgroup law.
 * `contMDiffAt_mulInvariantExp_modelSpace_zero`: the tangent-space exponential is smooth at zero.
 * `contMDiff_mulInvariantExp`: the tangent-space exponential is smooth everywhere.
 * `contMDiff_lieExp`: the derivation-based Lie-group exponential is smooth everywhere.
-
-## References
-
-* [Lie groups and the Lie algebra correspondence roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/LieGroups/README.md),
-  Deliverable A, Layer 0, "The exponential map".
 -/
 
 public section

@@ -135,8 +135,8 @@ private lemma injOn_gompertzTransform (hη : 0 < η) (hb : 0 < b) :
     InjOn (fun e : ℝ => log (1 + e / η) / b) (Ioi 0) := by
   intro e he f hf hef
   have hp (y : ℝ) (hy : 0 < y) : 0 < 1 + y / η := by positivity
-  have hh := (log_injOn_pos (hp e he) (hp f hf)) ((div_left_inj' hb.ne').mp hef)
-  exact (div_left_inj' hη.ne').mp (by linarith)
+  have hh := (log_injOn_pos (hp e he) (hp f hf)) ((div_left_inj₀ hb.ne').mp hef)
+  exact (div_left_inj₀ hη.ne').mp (by linarith)
 
 private lemma hasDerivAt_gompertzTransform (hη : 0 < η) (b : ℝ) {e : ℝ} (he : 0 < e) :
     HasDerivAt (fun y : ℝ => log (1 + y / η) / b) ((η + e)⁻¹ / b) e := by

@@ -69,7 +69,7 @@ theorem isIso_singularHomologyMap_cellAttachingMap_domRestrict {n : ℕ} {i : ce
     (hemb : IsEmbedding (U.domRestrict (cellAttachingMap j)))
     (hsurj : ∀ z : skeletonObj C (n + 1), (z : X) ∈ openCell n i →
       ∃ u ∈ U, cellAttachingMap j u = z)
-    (hfU : MapsTo (TopCat.ofHom (⟨Subtype.val, continuous_subtype_val⟩ :
+    (hfU : MapsTo (TopCat.ofHom (⟨Subtype.val, continuous_subtypeVal⟩ :
         C(U, TopCat.diskBoundary.{w} (n + 1))) ≫ cellAttachingMap j)
       (Subtype.val ⁻¹' {y}ᶜ : Set U) {cellAttachingMap j y}ᶜ) (k : ℕ) :
     IsIso (TopPair.singularHomologyMap (TopPair.ofSubsetMap _ hfU) R k) := by
@@ -83,7 +83,7 @@ theorem isIso_singularHomologyMap_cellAttachingMap_domRestrict {n : ℕ} {i : ce
   · rw [TopPair.ofSubsetMap_fst]
     exact hemb
   · rintro u ⟨z, hz⟩
-    refine ⟨⟨u, fun hu ↦ z.2 ?_⟩, rfl⟩
+    refine ⟨⟨u, fun hu ↦ z.property ?_⟩, rfl⟩
     refine hz.trans ?_
     rw [TopPair.ofSubsetMap_fst_apply]
     exact congrArg (cellAttachingMap j) hu
@@ -131,7 +131,7 @@ theorem isUnit_cellularIncidence_of_isEmbedding {n : ℕ} {i : cell C (n + 1)}
     exact hfib u hfu ▸ hu
   have hfP : MapsTo (cellAttachingMap j) {y}ᶜ {cellAttachingMap j y}ᶜ :=
     fun z hz h ↦ hz (hfib z h)
-  have hfU : MapsTo (TopCat.ofHom (⟨Subtype.val, continuous_subtype_val⟩ :
+  have hfU : MapsTo (TopCat.ofHom (⟨Subtype.val, continuous_subtypeVal⟩ :
       C(U, TopCat.diskBoundary.{w} (n + 2))) ≫ cellAttachingMap j)
       (Subtype.val ⁻¹' {y}ᶜ : Set U) {cellAttachingMap j y}ᶜ := fun _ hu ↦ hfP hu
   have := TopPair.isIso_singularHomologyMap_excisionMap_of_isClosed_subset
@@ -142,9 +142,8 @@ theorem isUnit_cellularIncidence_of_isEmbedding {n : ℕ} {i : cell C (n + 1)}
       TopPair.ofSubsetMap _ hfU := by
     refine TopPair.hom_ext_of_fst _ ?_
     rw [TopPair.Hom.fst_comp, TopPair.ofSubsetMap_fst, TopPair.ofSubsetMap_fst]
-    congr 1
     ext u
-    exact TopPair.excisionMap_fst_apply U {y}ᶜ u
+    exact congrArg (cellAttachingMap j) (TopPair.excisionMap_fst_apply U {y}ᶜ u)
   have : IsIso (TopPair.singularHomologyMap (TopPair.ofSubsetMap _ hfP) (ModuleCat.of R R)
       (n + 1)) := by
     rw [← hfac, TopPair.singularHomologyMap_comp] at hloc

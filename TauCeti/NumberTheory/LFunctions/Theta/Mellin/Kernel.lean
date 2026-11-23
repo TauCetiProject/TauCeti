@@ -35,7 +35,8 @@ and `1/w` accounts for the roots of unity, which act trivially on the parameters
 * `exists_norm_mellinKernel_sub_le`: for a bounded measurable `D` the kernel tends to
   `(2^r₂ / w) vol(D)` with error `O(exp(-c u^(1/n)))`, uniformly from the decay of the theta
   series on bounded subsets of `S`, the second half of Neukirch (5.8);
-  `isBigO_mellinKernel_sub_rpow` is the resulting decay faster than every power.
+  `exists_norm_mellinKernel_sub_le_on_Ici` promotes this to any ray `[a, ∞)` (`a > 0`) via
+  continuity, and `isBigO_mellinKernel_sub_rpow` is the resulting decay faster than every power.
 * `mellinKernel_mixedDual_idealLattice`: for the lattice `σ(I)` of a fractional ideal, the dual
   side is again the kernel of an ideal lattice, that of the trace dual `J = I^∨`, over the
   translate of `D` by the point `traceShift K` of `S`. The Euclidean dual of `σ(I)` is
@@ -162,12 +163,12 @@ theorem integrableOn_latticeTheta_surfaceScale {D : Set (realSpace K)} (hDm : Me
     rw [continuous_iff_continuousAt]
     intro x
     exact ContinuousAt.comp (g := latticeTheta L) (continuousAt_latticeTheta L
-      (surfaceScale_pos (mem_normOneSurface.mp x.2).1 ht))
+      (surfaceScale_pos (mem_normOneSurface.mp x.property).1 ht))
         (continuous_surfaceScale.comp
-          (continuous_subtype_val.prodMk continuous_const)).continuousAt
+          (continuous_subtypeVal.prodMk continuous_const)).continuousAt
   have := isFiniteMeasure_restrict.mpr (surfaceHaar_preimage_lt_top hD).ne
   refine (integrable_const B).mono' hmeas ?_
-  filter_upwards [ae_restrict_mem (measurable_subtype_coe hDm)] with x hx
+  filter_upwards [ae_restrict_mem (measurable_subtypeVal hDm)] with x hx
   exact hB t le_rfl x hx
 
 open scoped Classical in
@@ -212,7 +213,7 @@ theorem continuousOn_mellinKernel {D : Set (realSpace K)} (hDm : MeasurableSet D
   have hbound : ∀ᶠ u in nhds u₀, ∀ᵐ x ∂(surfaceHaar K).restrict (Subtype.val ⁻¹' D),
       ‖F u x‖ ≤ B := by
     filter_upwards [Ioi_mem_nhds (half_lt_self hu₀)] with u (hu : u₀ / 2 < u)
-    filter_upwards [ae_restrict_mem (measurable_subtype_coe hDm)] with x hx
+    filter_upwards [ae_restrict_mem (measurable_subtypeVal hDm)] with x hx
     exact hB (u / V ^ 2) (div_le_div_of_nonneg_right hu.le (sq_nonneg V)) x hx
   have hint : Integrable (fun _ ↦ B)
       ((surfaceHaar K).restrict (Subtype.val ⁻¹' D)) := by
@@ -240,7 +241,7 @@ theorem continuous_latticeTheta_surfaceScale (L : Submodule ℤ (mixedSpace K))
     Continuous fun x : normOneSurface K ↦ latticeTheta L (surfaceScale (x : realSpace K) t) :=
   continuous_iff_continuousAt.mpr fun x ↦ ContinuousAt.comp (g := latticeTheta L)
     (continuousAt_latticeTheta L (surfaceScale_pos (mem_normOneSurface.mp x.property).1 ht))
-    (continuous_surfaceScale.comp (continuous_subtype_val.prodMk continuous_const)).continuousAt
+    (continuous_surfaceScale.comp (continuous_subtypeVal.prodMk continuous_const)).continuousAt
 
 open scoped Classical in
 /-- **The Mellin kernel at `∞`**: over a bounded measurable set `D` of parameters the kernel of a
@@ -258,7 +259,7 @@ theorem exists_norm_mellinKernel_sub_le {D : Set (realSpace K)} (hDm : Measurabl
   set n : ℝ := (Module.finrank ℚ K : ℝ)⁻¹
   set A : ℂ := (2 : ℂ) ^ nrComplexPlaces K / (Units.torsionOrder K : ℂ)
   set S : Set (normOneSurface K) := Subtype.val ⁻¹' D
-  have hS : MeasurableSet S := measurable_subtype_coe hDm
+  have hS : MeasurableSet S := measurable_subtypeVal hDm
   have hfin : surfaceHaar K S < ⊤ := surfaceHaar_preimage_lt_top hD
   have : IsFiniteMeasure ((surfaceHaar K).restrict S) := isFiniteMeasure_restrict.mpr hfin.ne
   -- the decay of the theta series on the bounded subset `D ∩ S` of the norm-one surface
@@ -291,6 +292,27 @@ theorem exists_norm_mellinKernel_sub_le {D : Set (realSpace K)} (hDm : Measurabl
       ≤ ‖A‖ * (C * e * (surfaceHaar K).real S) :=
         mul_le_mul_of_nonneg_left (norm_setIntegral_le_of_norm_le_const hfin hθ) (norm_nonneg _)
     _ = ‖A‖ * (C * (surfaceHaar K).real S) * e := by ring
+
+open scoped Classical in
+/-- Over any bounded measurable set `D` of parameters, `mellinKernel D L` minus its asymptotic
+constant `(2 ^ r₂ / w) vol(D)` satisfies a stretched-exponential bound with exponent
+`[K : ℚ]⁻¹` on every ray `[a, ∞)` with `a > 0`. -/
+theorem exists_norm_mellinKernel_sub_le_on_Ici {D : Set (realSpace K)} (hDm : MeasurableSet D)
+    (hD : Bornology.IsBounded D) (L : Submodule ℤ (mixedSpace K)) [DiscreteTopology L]
+    [IsZLattice ℝ L] {a : ℝ} (ha : 0 < a) :
+    ∃ c > 0, ∃ C ≥ 0, ∀ u ∈ Ici a,
+      ‖mellinKernel D L u - (2 : ℂ) ^ nrComplexPlaces K / (Units.torsionOrder K : ℂ) *
+          ((surfaceHaar K).real (Subtype.val ⁻¹' D) : ℂ)‖ ≤
+        C * Real.exp (-c * u ^ (Module.finrank ℚ K : ℝ)⁻¹) := by
+  obtain ⟨c, hc, C₀, _, hev⟩ := exists_norm_mellinKernel_sub_le hDm hD L
+  have hcont : ContinuousOn
+      (fun u ↦ mellinKernel D L u - (2 : ℂ) ^ nrComplexPlaces K / (Units.torsionOrder K : ℂ) *
+        ((surfaceHaar K).real (Subtype.val ⁻¹' D) : ℂ)) (Ici a) :=
+    ((continuousOn_mellinKernel hDm hD L).mono (Ici_subset_Ioi.mpr ha)).sub
+      continuousOn_const
+  obtain ⟨C, hC, hbound⟩ :=
+    exists_norm_le_mul_exp_neg_mul_rpow_Ici_of_eventually (.inl ha) hcont hev
+  exact ⟨c, hc, C, hC, hbound⟩
 
 open scoped Classical in
 /-- Over a bounded measurable set `D` of parameters the kernel of a full lattice minus
@@ -372,14 +394,14 @@ theorem mellinKernel_mixedDual_idealLattice {I J : (FractionalIdeal (𝓞 K)⁰ 
     congr 1
     ext w
     simp only [Pi.mul_apply, surfaceScale_apply, hc, traceShift_def, surfacePart_apply _ hN.le,
-      Real.mul_rpow_of_pos_left hN]
+      Real.mul_rpow_of_nonneg_left hN.le]
     field_simp
   have hpre : surfaceMul c ⁻¹' (Subtype.val ⁻¹' ((traceShift K * ·) '' D)) =
       Subtype.val ⁻¹' D := by
     ext x
     simp only [Set.mem_preimage, surfaceMul_apply]
     refine (Function.Injective.mem_set_image fun a b hab ↦ funext fun w ↦ ?_)
-    exact mul_left_cancel₀ ((mem_normOneSurface.mp c.2).1 w).ne' (congrFun hab w)
+    exact mul_left_cancel₀ ((mem_normOneSurface.mp c.property).1 w).ne' (congrFun hab w)
   simp_rw [mellinKernel_def, hpt]
   rw [← hpre, (measurePreserving_surfaceMul c).setIntegral_preimage_emb
     (surfaceMul c).measurableEmbedding fun y : normOneSurface K ↦ latticeTheta (idealLattice K J)

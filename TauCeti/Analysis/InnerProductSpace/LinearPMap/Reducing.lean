@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.InnerProductSpace.InvariantSubspace
 public import TauCeti.Analysis.InnerProductSpace.LinearPMap.SelfAdjoint
 public import TauCeti.LinearAlgebra.LinearPMap.Restrict
+public import TauCeti.Topology.Algebra.Module.LinearPMap.Intertwining
 
 /-!
 # Reducing subspaces of partial linear maps
@@ -31,6 +32,10 @@ orthogonal decomposition into reducing subspaces.
 ## Main results
 
 * `LinearPMap.IsReducing.orthogonal`: if `U` reduces `A`, so does `Uᗮ`.
+* `LinearPMap.isReducing_iff_starProjection_mem_graph`: `U` reduces `A` exactly when the
+  orthogonal projection onto `U` commutes with `A`.
+* `LinearPMap.isReducing_iff_intertwines_starProjection`: equivalently, the orthogonal projection
+  onto `U` intertwines `A` with itself.
 * `LinearPMap.isReducing_toPMap_top_iff`: for everywhere-defined maps, reduction agrees with
   `Submodule.IsReducing`.
 * `LinearPMap.IsReducing.dense_restrict_domain`: the reduced part of a densely defined map is
@@ -70,7 +75,7 @@ theorem IsFormalAdjoint.restrict {A : E →ₗ.[𝕜] E} {U : Submodule 𝕜 E}
     (hA : A.IsFormalAdjoint A) (hU : A.IsInvariant U) :
     (A.restrict hU.apply_mem).IsFormalAdjoint (A.restrict hU.apply_mem) := fun x y ↦ by
   simp only [Submodule.coe_inner, coe_restrict_apply]
-  exact hA ⟨x, (mem_restrict_domain _).1 x.2⟩ ⟨y, (mem_restrict_domain _).1 y.2⟩
+  exact hA ⟨x, (mem_restrict_domain _).1 x.property⟩ ⟨y, (mem_restrict_domain _).1 y.property⟩
 
 variable {A : E →ₗ.[𝕜] E} {U : Submodule 𝕜 E} [U.HasOrthogonalProjection]
 
@@ -95,6 +100,43 @@ theorem isReducing_orthogonal_iff : A.IsReducing Uᗮ ↔ A.IsReducing U := by
   · rw [← sub_sub_cancel x (U.starProjection x), ← Submodule.starProjection_orthogonal_val]
     exact h.sub_starProjection_mem_domain hx
   · simpa only [Submodule.orthogonal_orthogonal] using h.isInvariant_orthogonal
+
+/-- **Reduction is commutation with the projection.** A subspace reduces a partial linear map
+exactly when the orthogonal projection `P` onto it commutes with the map: `P × P` sends the graph
+into itself, that is, `P` preserves the domain and `A (P x) = P (A x)` for every `x ∈ dom A`. -/
+theorem isReducing_iff_starProjection_mem_graph :
+    A.IsReducing U ↔
+      ∀ x y, (x, y) ∈ A.graph → (U.starProjection x, U.starProjection y) ∈ A.graph := by
+  refine ⟨fun hR x y hxy ↦ ?_, fun h ↦
+    ⟨fun {x} hx ↦ ?_, isInvariant_iff.2 fun x hx ↦ ?_, isInvariant_iff.2 fun x hx ↦ ?_⟩⟩
+  · obtain ⟨z, rfl, rfl⟩ := A.mem_graph_iff.1 hxy
+    let p : A.domain := ⟨_, hR.starProjection_mem_domain z.property⟩
+    let q : A.domain := ⟨_, hR.sub_starProjection_mem_domain z.property⟩
+    have hsplit : A z = A p + A q := by
+      rw [← map_add]
+      congr 1
+      exact Subtype.ext (add_sub_cancel _ _).symm
+    have hp : A p ∈ U := hR.isInvariant.apply_mem p (U.starProjection_apply_mem z)
+    have hq : A q ∈ Uᗮ :=
+      hR.isInvariant_orthogonal.apply_mem q (U.sub_starProjection_mem_orthogonal z)
+    rw [hsplit, ContinuousLinearMap.map_add, Submodule.starProjection_eq_self_iff.2 hp,
+      (U.starProjection_apply_eq_zero_iff).2 hq, add_zero]
+    exact A.mem_graph p
+  · exact mem_domain_of_mem_graph (h x _ (A.mem_graph ⟨x, hx⟩))
+  · have hg := h _ _ (A.mem_graph x)
+    rw [Submodule.starProjection_eq_self_iff.2 hx] at hg
+    rw [A.mem_graph_snd_inj (A.mem_graph x) hg rfl]
+    exact U.starProjection_apply_mem _
+  · have hg := h _ _ (A.mem_graph x)
+    rw [(U.starProjection_apply_eq_zero_iff).2 hx] at hg
+    exact (U.starProjection_apply_eq_zero_iff).1 (A.graph_fst_eq_zero_snd hg rfl)
+
+/-- **Reduction is self-intertwining of the projection.** A subspace reduces a partial linear map
+exactly when the orthogonal projection onto it intertwines the map with itself. -/
+theorem isReducing_iff_intertwines_starProjection :
+    A.IsReducing U ↔ A.Intertwines A U.starProjection := by
+  rw [isReducing_iff_starProjection_mem_graph, intertwines_iff_forall_mem_graph]
+  exact ⟨fun h p hp ↦ h p.1 p.2 hp, fun h x y hxy ↦ h (x, y) hxy⟩
 
 /-- For an everywhere-defined linear map, reduction in the sense of partial linear maps is
 reduction in the sense of `Submodule.IsReducing`. -/
@@ -122,17 +164,17 @@ private theorem IsReducing.coe_mem_adjoint_domain [CompleteSpace E] {U : Submodu
     (hy : y ∈ (A.restrict hR.isInvariant.apply_mem)†.domain) : (y : E) ∈ A†.domain := by
   set z : U := (A.restrict hR.isInvariant.apply_mem)† ⟨y, hy⟩
   refine mem_adjoint_domain_of_exists _ ⟨z, fun x ↦ ?_⟩
-  have hp := hR.starProjection_mem_domain x.2
-  have hq := hR.sub_starProjection_mem_domain x.2
+  have hp := hR.starProjection_mem_domain x.property
+  have hq := hR.sub_starProjection_mem_domain x.property
   have hsplit : A x = A ⟨_, hp⟩ + A ⟨_, hq⟩ := by
     rw [← map_add]
     congr 1
     exact Subtype.ext (add_sub_cancel _ _).symm
   have hzx : ⟪(z : E), (x : E)⟫_𝕜 = ⟪(z : E), U.starProjection x⟫_𝕜 := by
     rw [← Submodule.inner_starProjection_left_eq_right,
-      Submodule.starProjection_eq_self_iff.mpr z.2]
+      Submodule.starProjection_eq_self_iff.mpr z.property]
   have hy0 : ⟪(y : E), A ⟨_, hq⟩⟫_𝕜 = 0 :=
-    Submodule.inner_right_of_mem_orthogonal y.2
+    Submodule.inner_right_of_mem_orthogonal y.property
       (hR.isInvariant_orthogonal.apply_mem _ (U.sub_starProjection_mem_orthogonal x))
   have hz := adjoint_isFormalAdjoint (hR.dense_restrict_domain hA) ⟨y, hy⟩
     ⟨⟨_, U.starProjection_apply_mem x⟩, (mem_restrict_domain _).2 hp⟩

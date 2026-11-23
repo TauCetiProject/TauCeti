@@ -9,6 +9,7 @@ public import Mathlib.Analysis.Calculus.FDeriv.Symmetric
 public import Mathlib.Analysis.InnerProductSpace.PiL2
 public import Mathlib.LinearAlgebra.QuadraticForm.Real
 public import TauCeti.Analysis.Calculus.Morse.Basic
+public import TauCeti.LinearAlgebra.Matrix.Signature
 public import TauCeti.LinearAlgebra.QuadraticForm.Signature
 import TauCeti.Analysis.Matrix.HermitianSignature.Continuity
 import TauCeti.LinearAlgebra.QuadraticForm.Real
@@ -53,8 +54,8 @@ Morse complex.
 * `TauCeti.morseIndex_comp`: invariance under a change of coordinates.
 * `TauCeti.morseIndex_slice_right`: along a critical zero section of a function on a product, the
   Morse index is the index of the restriction to the fibre.
-* `TauCeti.eventually_morseIndex_le`: in finite dimensions the Morse index of a `C²` function is
-  lower semicontinuous, also at degenerate and noncritical points.
+* `TauCeti.eventually_morseIndex_le`: the Morse index of a `C²` function is lower
+  semicontinuous, also at degenerate and noncritical points.
 * `TauCeti.span_range_hessianQuadraticForm_comp_left`, `TauCeti.span_range_hessianQuadraticForm_pi`,
   `TauCeti.range_hessianQuadraticForm_comp`: the space spanned by the Hessians of the functions
   `ℓ ∘ φ`, for `ℓ` a continuous linear functional, computed from a spanning family of functionals,
@@ -69,6 +70,11 @@ Morse complex.
 * `TauCeti.morseIndex_eq_zero_of_posDef`: a positive-definite Hessian forces index zero.
 * `TauCeti.neg_hessianQuadraticForm_posDef_iff_morseIndex_eq_finrank`: in finite dimensions, full
   index characterizes a negative-definite Hessian at every point.
+* `TauCeti.isHermitian_toMatrix_toBilinForm_fderiv_fderiv`,
+  `TauCeti.IsNondegenerateCriticalPoint.isUnit_det_toMatrix_toBilinForm_fderiv_fderiv` and
+  `TauCeti.IsNondegenerateCriticalPoint.signature_toMatrix_toBilinForm_fderiv_fderiv`: in any
+  basis, the Hessian matrix is symmetric, and at a nondegenerate critical point it is invertible
+  with signature `dim E - 2 ind_x(f)`.
 * `TauCeti.IsNondegenerateCriticalPoint.exists_hessianQuadraticForm_equivalent_weightedSumSquares`:
   the Hessian has a diagonal `±1` normal form.
 * `TauCeti.exists_continuousLinearEquiv_inv_two_mul_fderiv_fderiv_eq_sum`: an invertible Hessian
@@ -334,15 +340,15 @@ theorem morseIndex_slice_right [FiniteDimensional ℝ E] [FiniteDimensional ℝ 
     simp only [hessianQuadraticForm_apply, QuadraticMap.prod_apply, h1, h2]
     rw [fderiv_fderiv_slice_right_apply hf]
     simp
-  rw [morseIndex_def, morseIndex_def, hQ, QuadraticForm.sigNeg_prod,
-    (QuadraticForm.forall_nonneg_iff_sigNeg_eq_zero (0 : QuadraticForm ℝ E)).mp fun _ ↦ by simp,
+  rw [morseIndex_def, morseIndex_def, hQ, QuadraticForm.sigNeg_prod, QuadraticForm.sigNeg_zero,
     zero_add]
 
-/-- **The Morse index is lower semicontinuous.** In finite dimensions, if `f` is `C²` at `x`, then
-at every point near `x` the Morse index of `f` is at least its Morse index at `x`. The point `x`
-need not be critical, nor nondegenerate: a degenerate Hessian can acquire new negative directions
-under perturbation, but negative directions are never lost. -/
-theorem eventually_morseIndex_le [FiniteDimensional ℝ E] (hf : ContDiffAt ℝ 2 f x) :
+/-- **The Morse index is lower semicontinuous.** If `f` is `C²` at `x`, then at every point near
+`x` the Morse index of `f` is at least its Morse index at `x`. The point `x` need not be critical,
+nor nondegenerate: a degenerate Hessian can acquire new negative directions under perturbation,
+but negative directions are never lost. In infinite dimensions every Morse index is `0` by
+convention. -/
+theorem eventually_morseIndex_le (hf : ContDiffAt ℝ 2 f x) :
     ∀ᶠ y in 𝓝 x, morseIndex f x ≤ morseIndex f y := by
   have hc : ContinuousAt (fderiv ℝ (fderiv ℝ f)) x :=
     (hf.fderiv_right (m := 1) (by norm_num)).continuousAt_fderiv (by norm_num)
@@ -378,6 +384,14 @@ theorem morseIndex_eq_zero_of_not_finiteDimensional (hE : ¬FiniteDimensional �
   have h := morseIndex_le_finrank (f := f) (x := x)
   rw [Module.finrank_of_not_finite hE] at h
   omega
+
+/-- A constant function has Morse index `0` at every point, since its Hessian vanishes. -/
+@[simp]
+theorem morseIndex_const (c : ℝ) : morseIndex (fun _ : E ↦ c) x = 0 := by
+  by_cases hE : FiniteDimensional ℝ E
+  · rw [morseIndex_def, ← QuadraticForm.forall_nonneg_iff_sigNeg_eq_zero]
+    simp
+  · exact morseIndex_eq_zero_of_not_finiteDimensional hE
 
 /-- If the Hessian is nondegenerate, the Morse indices of a function and its negation add to the
 dimension of the ambient space. In an infinite-dimensional space both indices and the dimension
@@ -431,6 +445,40 @@ theorem neg_hessianQuadraticForm_posDef_iff_morseIndex_eq_finrank [FiniteDimensi
   rw [QuadraticForm.posDef_iff_sigNeg_eq_zero_and_radical_eq_bot, QuadraticMap.radical_neg,
     sigNeg_neg, ← Submodule.finrank_eq_zero (R := ℝ), morseIndex_def]
   omega
+
+section Matrix
+
+variable {ι : Type*} [Fintype ι] [DecidableEq ι]
+
+/-- In any basis, the matrix of the second derivative of a function which is `C²` at `x` is
+symmetric. -/
+theorem isHermitian_toMatrix_toBilinForm_fderiv_fderiv (b : Basis ι ℝ E)
+    (hf : ContDiffAt ℝ 2 f x) :
+    (LinearMap.BilinForm.toMatrix b (fderiv ℝ (fderiv ℝ f) x).toBilinForm).IsHermitian :=
+  Matrix.isHermitian_iff_isSymm.2 <| (LinearMap.BilinForm.isSymm_toMatrix_iff_isSymm b).2 <|
+    ContinuousLinearMap.isSymm_toBilinForm_iff.2 (hf.isSymmSndFDerivAt (by norm_num))
+
+/-- At a nondegenerate critical point, the matrix of the second derivative in any basis is
+invertible. -/
+theorem IsNondegenerateCriticalPoint.isUnit_det_toMatrix_toBilinForm_fderiv_fderiv
+    (b : Basis ι ℝ E) (h : IsNondegenerateCriticalPoint f x) :
+    IsUnit (LinearMap.BilinForm.toMatrix b (fderiv ℝ (fderiv ℝ f) x).toBilinForm).det := by
+  have := Module.Finite.of_basis b
+  exact isUnit_iff_ne_zero.2 ((LinearMap.BilinForm.nondegenerate_iff_det_ne_zero b).1
+    (LinearMap.BilinForm.Nondegenerate.ofSeparatingLeft h.separatingLeft))
+
+/-- At a nondegenerate critical point, the matrix of the second derivative in any basis has
+signature `dim E - 2 ind_x(f)`, since the positive index of the Hessian and the Morse index add up
+to the dimension. -/
+theorem IsNondegenerateCriticalPoint.signature_toMatrix_toBilinForm_fderiv_fderiv
+    (b : Basis ι ℝ E) (h : IsNondegenerateCriticalPoint f x) :
+    Matrix.signature (LinearMap.BilinForm.toMatrix b (fderiv ℝ (fderiv ℝ f) x).toBilinForm) =
+      Module.finrank ℝ E - 2 * morseIndex f x := by
+  have hsum := h.sigPos_hessianQuadraticForm_add_morseIndex_eq_finrank
+  rw [LinearMap.BilinForm.signature_toMatrix, ← hessianQuadraticForm_def, ← morseIndex_def]
+  omega
+
+end Matrix
 
 /-- At a nondegenerate critical point, the Hessian quadratic form has a diagonal normal form with
 every weight equal to `-1` or `1`.  The returned equivalence can be passed to

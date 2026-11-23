@@ -85,11 +85,11 @@ theorem extendsDisjointOpens_diskBoundaryInclusion_prodMap (n : ℕ) (Z : Type u
   have hνμ (s : TopCat.diskBoundary.{u} n) : ν (TopCat.diskBoundaryInclusion n s) = μ s :=
     coe_diskBoundaryInclusion_apply_down n s
   have hμ₁ (s : TopCat.diskBoundary.{u} n) : ‖μ s‖ = 1 := mem_sphere_zero_iff_norm.1
-    (s : ULift.{u} (Metric.sphere (0 : EuclideanSpace ℝ (Fin n)) 1)).down.2
+    (s : ULift.{u} (Metric.sphere (0 : EuclideanSpace ℝ (Fin n)) 1)).down.property
   -- The radial projection in the first factor, continuous away from the centre, retracts the
   -- neighbourhood `1 / 2 < ‖x‖` of `∂𝔻 n × Z` onto it.
   have hν : Continuous fun x : TopCat.disk.{u} n × Z ↦ ν x.1 :=
-    (continuous_subtype_val.comp continuous_uliftDown).comp continuous_fst
+    (continuous_subtypeVal.comp continuous_uliftDown).comp continuous_fst
   refine extendsDisjointOpens_of_continuousOn _ (hμ.prodMap IsEmbedding.id).isInducing
     (N := {x | 1 / 2 < ‖ν x.1‖}) (ρ := fun x ↦ (‖ν x.1‖⁻¹ • ν x.1, x.2))
     (isOpen_lt continuous_const hν.norm)
@@ -167,7 +167,7 @@ theorem t2Space [T2Space X] [∀ j i, T2Space (B j i)] [∀ j i, RegularSpace (B
       exact (c.attachCells j hj).t2Space (fun i ↦ hc ⟨j, hj, i⟩) (fun i ↦ hc' ⟨j, hj, i⟩)
     | isSuccLimit j hj ih =>
       have (k : Set.Iio j) : T2Space (((Set.principalSegIio j).monotone.functor ⋙ c.F).obj k) :=
-        ih k.1 k.2
+        ih k.val k.property
       exact t2Space_of_isColimit (c.F.isColimitOfIsWellOrderContinuous j hj)
         fun k ↦ h.mem_map _
   exact t2Space_of_isColimit c.isColimit h.mem_incl_app
@@ -177,6 +177,14 @@ end RelativeCellComplex
 end HomotopicalAlgebra
 
 namespace TopCat
+
+/-- A relative CW complex `f : X ⟶ Y` extends disjoint open sets: every pair of disjoint open
+subsets of `X` is the preimage of a pair of disjoint open subsets of `Y`. -/
+theorem RelativeCWComplex.extendsDisjointOpens {X Y : TopCat.{u}} {f : X ⟶ Y}
+    (c : RelativeCWComplex f) : extendsDisjointOpens f :=
+  TauCeti.TopCat.extendsDisjointOpens.transfiniteCompositionsOfShape_le _ _
+    ((c.transfiniteCompositionOfShape' fun s ↦ extendsDisjointOpens_diskBoundaryInclusion s.j).ofLE
+      (pushouts_le_iff.2 (coproducts_le _))).mem
 
 /-- **A relative CW complex on a Hausdorff space is Hausdorff.** If `f : X ⟶ Y` is a relative CW
 complex in Mathlib's categorical sense and `X` is Hausdorff, then so is `Y`. -/

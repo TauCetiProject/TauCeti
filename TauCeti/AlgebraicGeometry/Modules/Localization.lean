@@ -105,6 +105,15 @@ lemma _root_.AlgebraicGeometry.Scheme.Modules.basicOpen_smul_def (f r : Γ(X, U)
     r • y = X.presheaf.map (homOfLE (X.basicOpen_le f)).op r • y :=
   rfl
 
+/-- The restriction of sections of an `𝒪_X`-module between basic opens of `U` is
+`Γ(X, U)`-linear. -/
+lemma _root_.AlgebraicGeometry.Scheme.Modules.map_smul_of_basicOpen_le {f t : Γ(X, U)}
+    (h : X.basicOpen t ≤ X.basicOpen f) (r : Γ(X, U)) (y : Γ(M, X.basicOpen f)) :
+    M.presheaf.map (homOfLE h).op (r • y) = r • M.presheaf.map (homOfLE h).op y := by
+  rw [M.basicOpen_smul_def, Scheme.Modules.map_smul, ← ConcreteCategory.comp_apply,
+    ← Functor.map_comp]
+  rfl
+
 /-- The restriction of sections of an `𝒪_X`-module from `U` to `X.basicOpen f`, as a
 `Γ(X, U)`-linear map. -/
 def _root_.AlgebraicGeometry.Scheme.Modules.basicOpenRestrict (f : Γ(X, U)) :
@@ -281,8 +290,8 @@ theorem _root_.AlgebraicGeometry.Scheme.Modules.isQuasicoherent_iff_isLocalizedM
     M.IsQuasicoherent ↔ ∀ U : X.Opens, IsAffineOpen U →
       ∀ f : Γ(X, U), IsLocalizedModule.Away f (M.basicOpenRestrict f) :=
   ⟨fun _ _ hU f ↦ M.isLocalizedModule_basicOpenRestrict hU f, fun h ↦
-    M.isQuasicoherent_of_isLocalizedModule (fun U : X.affineOpens ↦ U.1) (fun U ↦ U.2)
-      (iSup_affineOpens_eq_top X) fun U ↦ h U.1 U.2⟩
+    M.isQuasicoherent_of_isLocalizedModule (fun U : X.affineOpens ↦ U.val) (fun U ↦ U.property)
+      (iSup_affineOpens_eq_top X) fun U ↦ h U.val U.property⟩
 
 open Scheme.Modules in
 /-- **Sections over a basic open extend after multiplication by a power of the function.** For a
@@ -317,7 +326,8 @@ theorem _root_.AlgebraicGeometry.Scheme.Modules.exists_pow_smul_eq_zero_of_isCom
   -- On each affine `V i ≤ U`, the restriction of `x` is killed by a power of `f`.
   have H (i : s) : ∃ n : ℕ, X.presheaf.map (homOfLE (hVU i)).op f ^ n •
       M.presheaf.map (homOfLE (hVU i)).op x = 0 := by
-    have := M.isLocalizedModule_basicOpenRestrict i.1.2 (X.presheaf.map (homOfLE (hVU i)).op f)
+    have := M.isLocalizedModule_basicOpenRestrict i.val.property (X.presheaf.map (homOfLE
+        (hVU i)).op f)
     obtain ⟨⟨_, n, rfl⟩, hn⟩ := IsLocalizedModule.exists_of_eq
       (S := Submonoid.powers (X.presheaf.map (homOfLE (hVU i)).op f))
       (f := M.basicOpenRestrict _) (x₁ := M.presheaf.map (homOfLE (hVU i)).op x) (x₂ := 0) (by
@@ -330,7 +340,7 @@ theorem _root_.AlgebraicGeometry.Scheme.Modules.exists_pow_smul_eq_zero_of_isCom
   choose n hn using H
   -- The largest of these powers kills `x` on every `V i`, hence on `U`.
   refine ⟨Finset.univ.sup n, TopCat.Sheaf.eq_of_locally_eq'
-    (⟨M.presheaf, M.isSheaf⟩ : TopCat.Sheaf AddCommGrpCat X) (fun i : s ↦ (i.1 : X.Opens)) U
+    (⟨M.presheaf, M.isSheaf⟩ : TopCat.Sheaf AddCommGrpCat X) (fun i : s ↦ (i.val : X.Opens)) U
     (fun i ↦ homOfLE (hVU i)) hUV _ _ fun i ↦ ?_⟩
   -- The restriction maps of the sheaf `⟨M.presheaf, M.isSheaf⟩` are those of `M`.
   change M.presheaf.map _ _ = M.presheaf.map _ _
@@ -451,28 +461,29 @@ private theorem exists_pow_smul_eq_basicOpenRestrict [M.IsQuasicoherent]
     ∃ (n : ℕ) (x : Γ(M, U)), f ^ n • y = M.basicOpenRestrict f x := by
   obtain ⟨s, _, hVU, hUV⟩ := X.exists_finite_affineOpens_cover hU
   cases nonempty_fintype s
-  have hDV (i : s) : (i.1 : X.Opens) ⊓ X.basicOpen f ≤ i.1 := inf_le_left
-  have hDf (i : s) : (i.1 : X.Opens) ⊓ X.basicOpen f ≤ X.basicOpen f := inf_le_right
+  have hDV (i : s) : (i.val : X.Opens) ⊓ X.basicOpen f ≤ i.val := inf_le_left
+  have hDf (i : s) : (i.val : X.Opens) ⊓ X.basicOpen f ≤ X.basicOpen f := inf_le_right
   -- On each affine `V i`, some `f ^ n i • y` extends to a section `x i`.
-  have H (i : s) := M.exists_pow_smul_eq_map i.1.2 (X.presheaf.map (homOfLE (hVU i)).op f)
+  have H (i : s) := M.exists_pow_smul_eq_map i.val.property (X.presheaf.map (homOfLE (hVU i)).op f)
     (X.basicOpen_res _ _) (hDV i) (M.presheaf.map (homOfLE (hDf i)).op y)
   choose n x hx using H
   simp only [← Functor.map_comp_apply, ← op_comp, homOfLE_comp] at hx
   -- After multiplication by powers of `f`, the `x i` extend the same multiple `f ^ N • y`.
   let N := Finset.univ.sup n
-  let x' (i : s) : Γ(M, i.1) := X.presheaf.map (homOfLE (hVU i)).op f ^ (N - n i) • x i
+  let x' (i : s) : Γ(M, i.val) := X.presheaf.map (homOfLE (hVU i)).op f ^ (N - n i) • x i
   have hx' (i : s) : M.presheaf.map (homOfLE (hDV i)).op (x' i) =
       X.presheaf.map (homOfLE ((hDV i).trans (hVU i))).op f ^ N •
         M.presheaf.map (homOfLE (hDf i)).op y := by
     simp only [x', M.map_smul, map_pow, ← Functor.map_comp_apply, ← op_comp, homOfLE_comp]
     rw [← hx i, smul_smul, pow_sub_mul_pow _ (Finset.le_sup (f := n) (Finset.mem_univ i))]
   -- Since `U` is quasi-separated, the `x' i` glue after multiplication by a further power.
-  obtain ⟨K, g, hg⟩ := exists_pow_smul_eq_of_isCompact_inf M (fun i : s ↦ (i.1 : X.Opens)) hVU
-    hUV (fun i j ↦ hU' _ _ (hVU i) i.1.1.isOpen i.1.2.isCompact (hVU j) j.1.1.isOpen
-      j.1.2.isCompact) f x' fun i j ↦ by
-    have hi : (i.1 : X.Opens) ⊓ j.1 ⊓ X.basicOpen f ≤ (i.1 : X.Opens) ⊓ X.basicOpen f :=
+  obtain ⟨K, g, hg⟩ := exists_pow_smul_eq_of_isCompact_inf M (fun i : s ↦ (i.val : X.Opens)) hVU
+    hUV (fun i j ↦ hU' _ _ (hVU i) i.val.val.isOpen i.val.property.isCompact
+        (hVU j) j.val.val.isOpen
+      j.val.property.isCompact) f x' fun i j ↦ by
+    have hi : (i.val : X.Opens) ⊓ j.val ⊓ X.basicOpen f ≤ (i.val : X.Opens) ⊓ X.basicOpen f :=
       inf_le_inf_right _ inf_le_left
-    have hj : (i.1 : X.Opens) ⊓ j.1 ⊓ X.basicOpen f ≤ (j.1 : X.Opens) ⊓ X.basicOpen f :=
+    have hj : (i.val : X.Opens) ⊓ j.val ⊓ X.basicOpen f ≤ (j.val : X.Opens) ⊓ X.basicOpen f :=
       inf_le_inf_right _ inf_le_right
     -- Restrict `hx' i` and `hx' j` further to `V i ⊓ V j ⊓ X.basicOpen f`.
     have hi' := congrArg (M.presheaf.map (homOfLE hi).op) (hx' i)
@@ -482,7 +493,7 @@ private theorem exists_pow_smul_eq_basicOpenRestrict [M.IsQuasicoherent]
   -- The glued section restricts to `f ^ (N + K) • y` on each `V i ⊓ X.basicOpen f`.
   refine ⟨N + K, g, TopCat.Sheaf.eq_of_locally_eq'
     (⟨M.presheaf, M.isSheaf⟩ : TopCat.Sheaf AddCommGrpCat X)
-    (fun i : s ↦ (i.1 : X.Opens) ⊓ X.basicOpen f) (X.basicOpen f) (fun i ↦ homOfLE (hDf i))
+    (fun i : s ↦ (i.val : X.Opens) ⊓ X.basicOpen f) (X.basicOpen f) (fun i ↦ homOfLE (hDf i))
     (by rw [← iSup_inf_eq]; exact le_inf ((X.basicOpen_le f).trans hUV) le_rfl) _ _
     fun i ↦ ?_⟩
   -- The restriction maps of the sheaf `⟨M.presheaf, M.isSheaf⟩` are those of `M`.

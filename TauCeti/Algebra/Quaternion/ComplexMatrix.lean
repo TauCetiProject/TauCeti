@@ -263,7 +263,7 @@ theorem mem_specialUnitaryGroup_iff_exists_toComplexMatrix
 
 private noncomputable def unitaryToSpecialUnitaryGroup :
     unitary ℍ[ℝ] →* Matrix.specialUnitaryGroup (Fin 2) ℂ where
-  toFun q := ⟨toComplexMatrix (q : ℍ[ℝ]), mem_specialUnitaryGroup_toComplexMatrix q.2⟩
+  toFun q := ⟨toComplexMatrix (q : ℍ[ℝ]), mem_specialUnitaryGroup_toComplexMatrix q.property⟩
   map_one' := Subtype.ext (by simp)
   map_mul' _ _ := Subtype.ext (by simp)
 
@@ -274,7 +274,7 @@ noncomputable def unitaryEquivSpecialUnitaryGroup :
   MulEquiv.ofBijective unitaryToSpecialUnitaryGroup
     ⟨fun p q hpq => Subtype.ext (toComplexMatrix_injective (congrArg Subtype.val hpq)),
       fun M => by
-        obtain ⟨q, hq, hqM⟩ := exists_eq_toComplexMatrix_of_mem_specialUnitaryGroup M.2
+        obtain ⟨q, hq, hqM⟩ := exists_eq_toComplexMatrix_of_mem_specialUnitaryGroup M.property
         exact ⟨⟨q, hq⟩, Subtype.ext hqM⟩⟩
 
 /-- The special unitary matrix attached to a unit quaternion is its matrix under

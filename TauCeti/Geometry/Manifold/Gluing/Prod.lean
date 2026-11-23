@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.Gluing.GlueData
-public import TauCeti.Geometry.Manifold.LocalDiffeomorph.Prod
+public import TauCeti.Geometry.Manifold.LocalDiffeomorph.Prod.Basic
 public import TauCeti.Topology.Category.TopCat.GlueData
 
 /-!

@@ -216,7 +216,7 @@ private noncomputable def referenceConjEven :
       -- Expose membership in the degree-zero part after multiplying degrees `1 + 0 + 1`.
       change _ ∈ CliffordAlgebra.evenOdd Q4 0
       have h := SetLike.mul_mem_graded
-        (SetLike.mul_mem_graded (CliffordAlgebra.ι_mem_evenOdd_one Q4 (e4 3)) x.2)
+        (SetLike.mul_mem_graded (CliffordAlgebra.ι_mem_evenOdd_one Q4 (e4 3)) x.property)
         (CliffordAlgebra.ι_mem_evenOdd_one Q4 (e4 3))
       exact (show (1 + 1 : ZMod 2) = 0 by decide) ▸ h⟩
   map_one' := by
@@ -333,7 +333,7 @@ private theorem vectorEven4_spin_action (s : spinGroup Q4) (v : Fin 4 → ℝ) :
           CliffordAlgebra.reverse (s : CliffordAlgebra Q4) *
             CliffordAlgebra.ι Q4 (e4 3))
   rw [CliffordAlgebra.reverse_eq_star_of_mem_even
-    ⟨(s : CliffordAlgebra Q4), spinGroup.mem_even s.2⟩]
+    ⟨(s : CliffordAlgebra Q4), spinGroup.mem_even s.property⟩]
   -- Reassociate twice to isolate and cancel the square of the reference vector.
   rw [show (s : CliffordAlgebra Q4) * CliffordAlgebra.ι Q4 v *
           star (s : CliffordAlgebra Q4) * CliffordAlgebra.ι Q4 (e4 3) =
