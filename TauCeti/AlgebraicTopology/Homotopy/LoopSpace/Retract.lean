@@ -119,15 +119,16 @@ theorem injective_singularHomologyMap_map_of_homotopicRel {B X Q : Type u} [Topo
     {s : C(X, Q)} {r : C(Q, X)} (hs : s x = q) (hr : r q = x)
     (h : (r.comp s).HomotopicRel (ContinuousMap.id X) {x}) (k : Type u) [Ring k] (m : ℕ) :
     Function.Injective (ContinuousMap.singularHomologyMap k m
-      (⟨map s hs, continuous_map s hs⟩ : C(BasedMap B X b₀ x, BasedMap B Q b₀ q))) := by
+      (mapContinuousMap s hs : C(BasedMap B X b₀ x, BasedMap B Q b₀ q))) := by
   have hrs : r.comp s x = x := by rw [ContinuousMap.comp_apply, hs, hr]
   -- `Map_*(B, r) ∘ Map_*(B, s) = Map_*(B, r ∘ s)` is homotopic to `Map_*(B, id) = id`.
   refine ContinuousMap.injective_singularHomologyMap_of_homotopic_comp_id k m
-    (r := ⟨map r hr, continuous_map r hr⟩) ?_
-  convert homotopic_map_of_homotopicRel (B := B) (b₀ := b₀) hrs rfl h using 1
+    (r := mapContinuousMap r hr) ?_
+  convert homotopic_map_of_homotopicRel (B := B) (b₀ := b₀) hrs (ContinuousMap.id_apply x) h using 1
   · ext f : 1
-    exact map_comp r hr s hs f
+    simp
   · ext f : 1
+    rw [coe_mapContinuousMap]
     exact (map_id f).symm
 
 /-- **Based maps into a sphere mapping with degree `±1` onto a sphere.** Let `B` be a space with a
@@ -145,7 +146,7 @@ theorem injective_singularHomologyMap_map_of_surjective_singularHomologyMap {B Q
     (h : Function.Surjective (ContinuousMap.singularHomologyMap ℤ (n + 2) (c.comp s)))
     (k : Type) [Ring k] (m : ℕ) :
     Function.Injective (ContinuousMap.singularHomologyMap k m
-      (⟨map s hs, continuous_map s hs⟩ : C(BasedMap B _ b₀ x, BasedMap B Q b₀ q))) := by
+      (mapContinuousMap s hs : C(BasedMap B _ b₀ x, BasedMap B Q b₀ q))) := by
   obtain ⟨r, hr, hrs⟩ :=
     ContinuousMap.exists_homotopicRel_comp_id_of_surjective_singularHomologyMap h x
   exact injective_singularHomologyMap_map_of_homotopicRel hs (by rwa [← hs]) hrs k m
