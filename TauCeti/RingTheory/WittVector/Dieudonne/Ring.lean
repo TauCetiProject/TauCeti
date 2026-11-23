@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.Ring.Action.End
 public import Mathlib.Algebra.SkewMonoidAlgebra.Basic
 public import Mathlib.RingTheory.WittVector.Complete
+public import TauCeti.RingTheory.WittVector.Frobenius
 
 /-!
 # The Dieudonné ring
@@ -39,6 +40,7 @@ Since `p` is a non-zero-divisor on `W`, this ring is spanned freely as a left `W
 * `TauCeti.DieudonneRing.lift`: the universal property: a ring homomorphism `g : W → R` with
   elements `f v : R` satisfying the defining relations extends uniquely
   (`TauCeti.DieudonneRing.ringHom_ext`) to a ring homomorphism `E → R`.
+* `TauCeti.DieudonneRing.induction_on`: `E` is generated as a ring by the scalars, `F` and `V`.
 
 ## References
 
@@ -212,14 +214,6 @@ theorem val_V :
     val (V p k) = SkewMonoidAlgebra.single (Multiplicative.ofAdd (-1)) (p : 𝕎 k) := by
   rfl
 
-private lemma frobeniusEquiv_inv_frobenius (ξ : 𝕎 k) :
-    (frobeniusEquiv p k)⁻¹ (frobenius ξ) = ξ :=
-  (frobeniusEquiv p k).symm_apply_apply ξ
-
-private lemma frobenius_frobeniusEquiv_inv (ξ : 𝕎 k) :
-    frobenius ((frobeniusEquiv p k)⁻¹ ξ) = ξ :=
-  (frobeniusEquiv p k).apply_symm_apply ξ
-
 /-- `F ξ = σ(ξ) F`. -/
 theorem F_mul_C (ξ : 𝕎 k) : F p k * C p k ξ = C p k (frobenius ξ) * F p k := by
   apply val_injective
@@ -229,8 +223,8 @@ theorem F_mul_C (ξ : 𝕎 k) : F p k * C p k ξ = C p k (frobenius ξ) * F p k 
 theorem V_mul_C_frobenius (ξ : 𝕎 k) : V p k * C p k (frobenius ξ) = C p k ξ * V p k := by
   apply val_injective
   simp only [map_mul, val_V, val_C, SkewMonoidAlgebra.single_mul_single,
-    frobeniusZPowAction_smul_def, toAdd_ofAdd, zpow_neg, zpow_one, frobeniusEquiv_inv_frobenius,
-    one_mul, one_smul, mul_comm]
+    frobeniusZPowAction_smul_def, toAdd_ofAdd, zpow_neg, zpow_one, RingAut.inv_apply,
+    frobeniusEquiv_symm_frobenius, one_mul, one_smul, mul_comm]
 
 /-- `F V = p`. -/
 @[simp]
@@ -347,7 +341,7 @@ private lemma zpowFV_mul_map {g : 𝕎 k →+* R} {f v : R}
   · rw [zpowFV_natCast, zpow_natCast]
     exact pow_mul_map hF n ξ
   · have hV' (ξ : 𝕎 k) : v * g ξ = g ((frobeniusEquiv p k)⁻¹ ξ) * v := by
-      rw [← hV, frobenius_frobeniusEquiv_inv]
+      rw [← hV, RingAut.inv_apply, frobenius_frobeniusEquiv_symm]
     rw [zpowFV_neg_natCast, zpow_neg, zpow_natCast,
       ← inv_pow (frobeniusEquiv p k : RingAut (𝕎 k))]
     exact pow_mul_map hV' n ξ
@@ -597,6 +591,27 @@ theorem ringHom_ext {R : Type*} [Ring R] {a b : DieudonneRing p k →+* R}
   simp only [AddMonoidHom.coe_ofClass]
   rw [smul_def, map_mul, map_mul, basis_eq_word, word, map_zpowFV, map_zpowFV, hF, hV,
     ← RingHom.comp_apply, hC, RingHom.comp_apply]
+
+/-- **Induction principle for the Dieudonné ring**: a property of elements of `D_k` that holds
+for the scalars `C ξ` and the generators `F` and `V`, and is closed under sums and products,
+holds for every element. -/
+@[elab_as_elim]
+theorem induction_on {P : DieudonneRing p k → Prop} (x : DieudonneRing p k)
+    (hC : ∀ ξ : 𝕎 k, P (C p k ξ)) (hF : P (F p k)) (hV : P (V p k))
+    (hadd : ∀ x y, P x → P y → P (x + y)) (hmul : ∀ x y, P x → P y → P (x * y)) : P x := by
+  have hpow {y : DieudonneRing p k} (hy : P y) (n : ℕ) : P (y ^ n) := by
+    induction n with
+    | zero => simpa using hC 1
+    | succ n ih => simpa [pow_succ] using hmul _ _ ih hy
+  induction (basis p k).mem_span x using Submodule.span_induction with
+  | mem y hy =>
+    obtain ⟨n, rfl⟩ := hy
+    obtain ⟨m, rfl | rfl⟩ := Int.eq_nat_or_neg n
+    · simpa using hpow hF m
+    · simpa using hpow hV m
+  | zero => simpa using hC 0
+  | add y z _ _ hy hz => exact hadd y z hy hz
+  | smul ξ y _ hy => simpa [smul_def] using hmul _ _ (hC ξ) hy
 
 end DieudonneRing
 

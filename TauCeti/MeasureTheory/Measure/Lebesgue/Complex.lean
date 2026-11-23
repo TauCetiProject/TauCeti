@@ -20,6 +20,8 @@ import Mathlib.MeasureTheory.Measure.Haar.NormedSpace
 /-!
 # Planar area of coordinate lines, graphs and rectangles
 
+Mathlib's measurable equivalence `Complex.measurableEquivRealProd` is the map
+`Complex.equivRealProdCLM` (`Complex.coe_measurableEquivRealProd_eq_equivRealProdCLM`).
 The set `s ×ℂ t = {z | z.re ∈ s ∧ z.im ∈ t}` is measurable when `s` and `t` are
 (`MeasurableSet.reProdIm`).
 Coordinate lines and continuous graphs over compact intervals have zero planar Lebesgue measure,
@@ -50,6 +52,12 @@ theorem MeasurableSet.reProdIm {s t : Set ℝ} (hs : MeasurableSet s) (ht : Meas
   exact (Complex.continuous_re.measurable hs).inter (Complex.continuous_im.measurable ht)
 
 namespace Complex
+
+/-- Mathlib's measurable equivalence `ℂ ≃ᵐ ℝ × ℝ`, along which `volume` is preserved, is the map
+`equivRealProdCLM`. -/
+theorem coe_measurableEquivRealProd_eq_equivRealProdCLM :
+    (measurableEquivRealProd : ℂ → ℝ × ℝ) = equivRealProdCLM :=
+  funext fun w ↦ by rw [measurableEquivRealProd_apply, equivRealProdCLM_apply]
 
 /-- A vertical coordinate line has zero planar area. -/
 theorem volume_setOf_re_eq (c : ℝ) : volume {z : ℂ | z.re = c} = 0 := by
