@@ -10,6 +10,8 @@ public import Mathlib.FieldTheory.IsAlgClosed.AlgebraicClosure
 public import Mathlib.NumberTheory.Padics.Complex
 public import Mathlib.NumberTheory.Padics.RingHoms
 import Mathlib.RingTheory.Valuation.Integral
+import Mathlib.Topology.Algebra.Valued.LocallyCompact
+import TauCeti.Topology.Algebra.Valued.Integer
 
 /-!
 # The residue field of the algebraic closure of `ℚ_p`
@@ -35,7 +37,6 @@ file proves that `κ` is an algebraic closure of `𝔽_p = ZMod p`, hence non-ca
 
 ## Main results
 
-* `PadicAlgCl.mem_integer_iff`: `x ∈ 𝒪[PadicAlgCl p]` iff `‖x‖ ≤ 1`.
 * `PadicAlgCl.norm_coeff_minpoly_le_one`: an element of norm at most `1` has minimal polynomial
   over `ℚ_p` with coefficients of norm at most `1`.
 * `PadicAlgCl.instIsAlgClosedResidueField`: `𝓀[PadicAlgCl p]` is algebraically closed.
@@ -55,11 +56,6 @@ namespace PadicAlgCl
 
 variable {p : ℕ} [Fact p.Prime]
 
-/-- The valuation ring of `PadicAlgCl p` is its closed unit ball. -/
-theorem mem_integer_iff {x : PadicAlgCl p} : x ∈ 𝒪[PadicAlgCl p] ↔ ‖x‖ ≤ 1 := by
-  rw [Valued.integer, Valuation.mem_integer_iff, valuation_def, ← NNReal.coe_le_coe,
-    coe_nnNorm, NNReal.coe_one]
-
 /-- An element of `PadicAlgCl p` of norm at most `1` has minimal polynomial over `ℚ_p` with all
 coefficients of norm at most `1`: the spectral norm is the spectral value of the minimal
 polynomial. -/
@@ -70,7 +66,7 @@ theorem norm_coeff_minpoly_le_one {x : PadicAlgCl p} (hx : ‖x‖ ≤ 1) (n : �
 /-- The integers `ℤ_p` sit inside the valuation ring of `PadicAlgCl p`. -/
 noncomputable def padicIntToInteger (p : ℕ) [Fact p.Prime] : ℤ_[p] →+* 𝒪[PadicAlgCl p] :=
   ((algebraMap ℚ_[p] (PadicAlgCl p)).comp (PadicInt.Coe.ringHom (p := p))).codRestrict _
-    fun x ↦ mem_integer_iff.2 (by simpa [norm_extends] using x.norm_le_one)
+    fun x ↦ Valued.integer.mem_iff.2 (by simpa [norm_extends] using x.norm_le_one)
 
 /-- `PadicAlgCl.padicIntToInteger` is the inclusion `ℤ_p ⊆ ℚ_p ⊆ PadicAlgCl p`. -/
 @[simp]
@@ -79,13 +75,10 @@ theorem coe_padicIntToInteger (x : ℤ_[p]) :
   (rfl)
 
 /-- The prime `p` lies in the maximal ideal of `𝒪[PadicAlgCl p]`. -/
-theorem residue_natCast_p : residue 𝒪[PadicAlgCl p] (p : 𝒪[PadicAlgCl p]) = 0 := by
-  rw [residue_eq_zero_iff, mem_maximalIdeal, mem_nonunits_iff,
-    (Valuation.integer.integers _).isUnit_iff_valuation_eq_one, map_natCast, valuation_def]
-  intro h
-  have h' : ‖(p : PadicAlgCl p)‖ = 1 := by simpa using congrArg NNReal.toReal h
-  rw [← map_natCast (algebraMap ℚ_[p] (PadicAlgCl p)), norm_extends] at h'
-  exact (Padic.norm_p_lt_one (p := p)).ne h'
+theorem residue_natCast_p : residue 𝒪[PadicAlgCl p] (p : 𝒪[PadicAlgCl p]) = 0 :=
+  Valued.integer.residue_eq_zero_iff_norm_lt_one.2 (by
+    rw [Subring.coe_natCast, ← map_natCast (algebraMap ℚ_[p] (PadicAlgCl p)), norm_extends]
+    exact Padic.norm_p_lt_one)
 
 /-- The residue field of `PadicAlgCl p` has characteristic `p`. -/
 instance instCharPResidueField : CharP 𝓀[PadicAlgCl p] p :=
@@ -133,7 +126,7 @@ its residue. -/
 instance instIsAlgebraicZModResidueField : Algebra.IsAlgebraic (ZMod p) 𝓀[PadicAlgCl p] := by
   refine ⟨fun y ↦ ?_⟩
   obtain ⟨x, rfl⟩ := residue_surjective y
-  have hx := mem_integer_iff.1 x.property
+  have hx := Valued.integer.norm_le_one x
   have hlifts : minpoly ℚ_[p] (x : PadicAlgCl p) ∈ lifts (PadicInt.Coe.ringHom (p := p)) :=
     lifts_iff_coeff_lifts _ |>.2 fun n ↦ ⟨⟨_, norm_coeff_minpoly_le_one hx n⟩, rfl⟩
   obtain ⟨Q, hQ, -, hQm⟩ := lifts_and_natDegree_eq_and_monic hlifts
