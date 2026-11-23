@@ -230,6 +230,85 @@ theorem mfderiv_eq_zero_iff (hn : n ≠ 0) {y : M} (hy : y ∈ h.domChart.source
   rw [← (h.isInvertible_mfderiv_codChart_extend hn hy).injective.eq_iff, map_zero, hv]
   exact iff_of_eq (congrArg (· = 0) (h.projection_apply _))
 
+/-- Retarget a submersion normal form at `x` onto any prescribed chart `ψ` of the maximal atlas
+around `f x`, keeping the same complement and linear equivalence. -/
+theorem exists_domChart_of_codChart [I.Boundaryless] [J.Boundaryless] [IsManifold I n M]
+    (h : IsSubmersionAtOfComplement F I J n f x)
+    {ψ : OpenPartialHomeomorph N G} (hψ : ψ ∈ IsManifold.maximalAtlas J n N)
+    (hx : f x ∈ ψ.source) :
+    ∃ φ : OpenPartialHomeomorph M H,
+      φ ∈ IsManifold.maximalAtlas I n M ∧
+      x ∈ φ.source ∧
+      φ.source ⊆ f ⁻¹' ψ.source ∧
+      ∀ z ∈ φ.source, ψ.extend J (f z) = (h.equiv (φ.extend I z)).1 := by
+  have hI : ∀ u : E, I (I.symm u) = u := fun u ↦ I.right_inv (by simp [I.range_eq_univ])
+  have hI_symm : ContMDiff 𝓘(𝕜, E) I n I.symm :=
+    contMDiffOn_univ.1 (I.range_eq_univ ▸ I.contMDiffOn_symm)
+  have hJ_symm : ContMDiff 𝓘(𝕜, E'') J n J.symm :=
+    contMDiffOn_univ.1 (J.range_eq_univ ▸ J.contMDiffOn_symm)
+  let transJ (ψ₁ ψ₂ : OpenPartialHomeomorph N G) : OpenPartialHomeomorph E'' E'' :=
+    (J.toHomeomorph.symm.transOpenPartialHomeomorph (ψ₁.symm.trans ψ₂)).transHomeomorph
+      J.toHomeomorph
+  have hτ_smooth : ∀ {ψ₁ ψ₂}, ψ₁ ∈ IsManifold.maximalAtlas J n N →
+      ψ₂ ∈ IsManifold.maximalAtlas J n N →
+      ContMDiffOn 𝓘(𝕜, E'') 𝓘(𝕜, E'') n (transJ ψ₁ ψ₂) (transJ ψ₁ ψ₂).source := fun h₁ h₂ ↦
+    J.contMDiff.comp_contMDiffOn <| (contMDiffOn_of_mem_maximalAtlas h₂).comp
+      ((contMDiffOn_symm_of_mem_maximalAtlas h₁).comp hJ_symm.contMDiffOn fun _ hu ↦ hu.1)
+      fun _ hu ↦ hu.2
+  let liftL (σ : OpenPartialHomeomorph E'' E'') : OpenPartialHomeomorph E E :=
+    (h.equiv.toHomeomorph.transOpenPartialHomeomorph
+      (σ.prod (OpenPartialHomeomorph.refl F))).transHomeomorph h.equiv.symm.toHomeomorph
+  have hg_smooth : ∀ {σ : OpenPartialHomeomorph E'' E''},
+      ContMDiffOn 𝓘(𝕜, E'') 𝓘(𝕜, E'') n σ σ.source →
+      ContMDiffOn 𝓘(𝕜, E) 𝓘(𝕜, E) n (liftL σ) (liftL σ).source := fun {σ} hσ ↦
+    h.equiv.symm.contDiff.contMDiff.comp_contMDiffOn <|
+      ((hσ.comp ((ContinuousLinearMap.fst 𝕜 E'' F).contMDiff.contMDiffOn
+          (s := (σ.prod (OpenPartialHomeomorph.refl F)).source))
+        fun _ hp ↦ hp.1).prodMk_space
+        (ContinuousLinearMap.snd 𝕜 E'' F).contMDiff.contMDiffOn).comp
+        h.equiv.contDiff.contMDiff.contMDiffOn fun _ hu ↦ hu
+  let τ := transJ h.codChart ψ
+  let g := liftL τ
+  let φ : OpenPartialHomeomorph M H :=
+    ((h.domChart.transHomeomorph I.toHomeomorph).trans g).transHomeomorph I.toHomeomorph.symm
+  have hτ_inv : τ.symm = transJ ψ h.codChart := by ext u <;> simp [τ, transJ]
+  have hg_inv : g.symm = liftL τ.symm := by ext u <;> simp [g, liftL]
+  have hφ_atlas : φ ∈ IsManifold.maximalAtlas I n M := by
+    refine φ.mem_maximalAtlas_of_contMDiffOn ?_ ?_
+    · have h1 := I.contMDiff.comp_contMDiffOn
+        (contMDiffOn_of_mem_maximalAtlas h.domChart_mem_maximalAtlas)
+      exact hI_symm.comp_contMDiffOn
+        ((hg_smooth (hτ_smooth h.codChart_mem_maximalAtlas hψ)).comp
+          (h1.mono fun z hz ↦ hz.1) fun z hz ↦ hz.2)
+    · have h1 := (contMDiffOn_symm_of_mem_maximalAtlas h.domChart_mem_maximalAtlas).comp
+        (hI_symm.contMDiffOn (s := I '' h.domChart.target)) fun u ⟨w, hw, hw'⟩ ↦
+          hw' ▸ by simpa [I.left_inv] using hw
+      have h2 := (hg_inv ▸ hg_smooth (hτ_inv ▸ hτ_smooth hψ h.codChart_mem_maximalAtlas)).comp
+        (I.contMDiff.contMDiffOn (s := φ.target)) fun z hz ↦ by simpa [φ, hI] using hz.1
+      exact h1.comp h2 fun z hz ↦ ⟨I.symm (g.symm (I z)), by simpa [φ, hI] using hz.2, hI _⟩
+  have hx_φ : x ∈ φ.source := by
+    refine ⟨h.mem_domChart_source, ⟨?_, trivial⟩⟩
+    change (h.equiv (h.domChart.extend I x)).1 ∈ τ.source
+    rw [← h.projection_apply, ← h.codChart_extend_apply h.mem_domChart_source]
+    change J.symm (J (h.codChart (f x))) ∈ h.codChart.target ∧
+      h.codChart.symm (J.symm (J (h.codChart (f x)))) ∈ ψ.source
+    rw [J.left_inv]
+    exact ⟨h.codChart.map_source h.mem_codChart_source,
+      by rwa [h.codChart.left_inv h.mem_codChart_source]⟩
+  have hsub : φ.source ⊆ f ⁻¹' ψ.source := fun z hz ↦ by
+    have hgz : (h.equiv (h.domChart.extend I z)).1 ∈ τ.source := hz.2.1
+    rw [← h.projection_apply, ← h.codChart_extend_apply hz.1] at hgz
+    have hmem : h.codChart.symm (J.symm (J (h.codChart (f z)))) ∈ ψ.source := hgz.2
+    rwa [J.left_inv, h.codChart.left_inv (h.source_subset_preimage_source hz.1)] at hmem
+  refine ⟨φ, hφ_atlas, hx_φ, hsub, fun z hz ↦ ?_⟩
+  have hφz : φ.extend I z = g (h.domChart.extend I z) := by
+    simp [φ, OpenPartialHomeomorph.extend, hI]
+  have hLg : (h.equiv (g (h.domChart.extend I z))).1 = τ (h.equiv (h.domChart.extend I z)).1 := by
+    simp [g, liftL]
+  rw [hφz, hLg, ← h.projection_apply, ← h.codChart_extend_apply hz.1]
+  simp [τ, transJ, OpenPartialHomeomorph.extend, J.left_inv,
+    h.codChart.left_inv (h.source_subset_preimage_source hz.1)]
+
 end IsSubmersionAtOfComplement
 
 /-- **The derivative of a submersion is surjective.** -/

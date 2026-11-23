@@ -117,6 +117,16 @@ theorem mfderiv_pi {f : N → ∀ i, M i} {y : N}
       ContinuousLinearMap.pi fun i ↦ mfderiv J (I i) (fun z ↦ f z i) y :=
   (hasMFDerivAt_pi fun i ↦ (hf i).hasMFDerivAt).mfderiv
 
+/-- The differential of a coordinate of a map into a finite product of manifolds is the
+corresponding coordinate of its differential. -/
+theorem _root_.MDifferentiableAt.mfderiv_apply {f : N → ∀ i, M i} {y : N}
+    (hf : MDifferentiableAt J (ModelWithCorners.pi I) f y) (i : ι) (v : TangentSpace J y) :
+    mfderiv J (I i) (fun z ↦ f z i) y v = (mfderiv J (ModelWithCorners.pi I) f y v) i := by
+  have h := mfderiv_comp_apply (I' := ModelWithCorners.pi I) y
+    (hasMFDerivAt_apply i (f y)).mdifferentiableAt hf v
+  rw [TauCeti.mfderiv_apply] at h
+  exact h
+
 end Pi
 
 variable [DecidableEq ι]

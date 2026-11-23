@@ -108,4 +108,14 @@ theorem mfderiv_comp_const_add_smul_apply (u : F → M) (c w : F) (ε : 𝕜) (v
   rw [mfderiv_zero_of_not_mdifferentiableAt hu, mfderiv_zero_of_not_mdifferentiableAt hu']
   exact (smul_zero ε).symm
 
+/-- Equal maps have equal manifold derivatives at a point, up to `tangentSpaceCast` on the
+target tangent space. -/
+theorem mfderiv_apply_eq_of_eq {E' H' N : Type*}
+    [NormedAddCommGroup E'] [NormedSpace 𝕜 E'] [TopologicalSpace H']
+    {J : ModelWithCorners 𝕜 E' H'} [TopologicalSpace N] [ChartedSpace H' N]
+    {f₁ f₂ : M → N} (h : f₁ = f₂) (x : M) (v : TangentSpace I x) :
+    mfderiv I J f₁ x v = tangentSpaceCast J (f₂ x) (f₁ x) (mfderiv I J f₂ x v) := by
+  subst h
+  rfl
+
 end TauCeti
