@@ -99,12 +99,11 @@ theorem isLocalization_of_mem_range_iff {ι R A R' S : Type*} [Finite ι] [CommS
     intro m
     have hu : IsUnit (algebraMap A S (algebraMap R A m)) :=
       IsLocalization.map_units S ⟨_, Algebra.mem_algebraMapSubmonoid_of_mem m⟩
-    obtain ⟨v, hv⟩ := (hτ (hu.unit⁻¹ : Sˣ)).mpr fun i ↦ by
-      refine Units.eq_inv_of_mul_eq_one_right ?_
-      rw [← map_one (τ i), ← Units.inv_mul hu.unit, map_mul, IsUnit.unit_spec, hfix]
+    obtain ⟨v, hv⟩ := (hτ (Ring.inverse (algebraMap A S (algebraMap R A m)))).mpr fun i ↦ by
+      rw [hu.map_ringInverse (τ i), hfix]
     refine isUnit_iff_exists_inv.mpr ⟨v, hR' ?_⟩
     rw [map_mul, h, hv, map_one]
-    exact hu.mul_val_inv
+    exact Ring.mul_inverse_cancel _ hu
   · -- A fixed fraction `a / s` equals `t a / (s t)` with `t ∈ M` and `t a` fixed.
     intro z
     obtain ⟨⟨a, _, ⟨s, hs, rfl⟩⟩, ha⟩ :=
@@ -181,16 +180,16 @@ instance isLocalization_subsemiring [Monoid.FG G] {M : Submonoid (FixedPoints.su
       (FixedPoints.subsemiring (Localization (Algebra.algebraMapSubmonoid A M)) G) := by
   obtain ⟨s, hs, hsfin⟩ := Monoid.fg_iff.mp ‹Monoid.FG G›
   have := hsfin.to_subtype
+  -- In `A` and in `M⁻¹A`, the invariants are the elements fixed by every generator in `s`.
+  have hrange {X : Type _} [CommSemiring X] [MulSemiringAction G X] (x : X) :
+      x ∈ Set.range (algebraMap (FixedPoints.subsemiring X G) X) ↔
+        ∀ g : s, MulSemiringAction.toRingHom G X g x = x :=
+    (Set.ext_iff.mp Subtype.range_coe_subtype _).trans
+      ⟨fun hx g ↦ hx g, fun hx g ↦ Submonoid.forall_mem_closure_smul_eq_self_iff.mpr
+        (fun g hg ↦ hx ⟨g, hg⟩) g (hs ▸ Submonoid.mem_top g)⟩
   exact isLocalization_of_mem_range_iff (fun g : s ↦ MulSemiringAction.toRingHom G A g)
     (fun g : s ↦ MulSemiringAction.toRingHom G _ g) (fun g ↦ Localization.smul_algebraMap (g : G))
-    Subtype.val_injective
-    (fun _ ↦ (Set.ext_iff.mp Subtype.range_coe_subtype _).trans
-      ⟨fun ha g ↦ ha g, fun ha g ↦ Submonoid.forall_mem_closure_smul_eq_self_iff.mpr
-        (fun g hg ↦ ha ⟨g, hg⟩) g (hs ▸ Submonoid.mem_top g)⟩)
-    Subtype.val_injective
-    (fun _ ↦ (Set.ext_iff.mp Subtype.range_coe_subtype _).trans
-      ⟨fun ha g ↦ ha g, fun ha g ↦ Submonoid.forall_mem_closure_smul_eq_self_iff.mpr
-        (fun g hg ↦ ha ⟨g, hg⟩) g (hs ▸ Submonoid.mem_top g)⟩)
+    Subtype.val_injective hrange Subtype.val_injective hrange
     coe_algebraMap_localization_subsemiring
 
 end Semiring

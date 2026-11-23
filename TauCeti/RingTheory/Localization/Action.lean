@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.Algebra.Hom
 public import Mathlib.RingTheory.Localization.Defs
+import TauCeti.Algebra.Algebra.Basic
 
 /-!
 # Extending an action to a localization
@@ -101,19 +102,12 @@ end Localization
 
 variable {R : Type*} [CommSemiring R] [Algebra R A] [SMulCommClass G R A] {M : Submonoid R}
 
-/-- If `G` acts on the `R`-algebra `A` by `R`-algebra endomorphisms, it fixes the image in `A` of a
-submonoid of `R`. -/
-theorem smul_eq_of_mem_algebraMapSubmonoid (g : G) {a : A}
-    (ha : a ∈ Algebra.algebraMapSubmonoid A M) : g • a = a := by
-  obtain ⟨m, -, rfl⟩ := ha
-  exact smul_algebraMap g m
-
 /-- The hypothesis of `localizationRingEnd` for a localization `B` of `A` at the image of a
 submonoid `M` of `R`: `G` fixes the denominators, so they stay units in `B`. -/
 theorem isUnit_algebraMap_smul (B : Type*) [CommSemiring B] [Algebra A B]
     [IsLocalization (Algebra.algebraMapSubmonoid A M) B] (g : G)
     (s : Algebra.algebraMapSubmonoid A M) : IsUnit (algebraMap A B (g • (s : A))) := by
-  rw [smul_eq_of_mem_algebraMapSubmonoid g s.property]
+  rw [Algebra.smul_eq_of_mem_algebraMapSubmonoid g s.property]
   exact IsLocalization.map_units B s
 
 end TauCeti.IsLocalization
@@ -174,6 +168,6 @@ theorem smul_mk' (g : G) (a : A) (s : Algebra.algebraMapSubmonoid A M) :
   rw [← localizationRingEnd_apply (isUnit_algebraMap_smul (A := A) (M := M) _),
     localizationRingEnd_mk' _ _ g a s
       (Algebra.algebraMapSubmonoid_le_comap M (MulSemiringAction.toAlgHom R A g) s.property)]
-  exact congrArg _ <| Subtype.ext <| smul_eq_of_mem_algebraMapSubmonoid g s.property
+  exact congrArg _ <| Subtype.ext <| Algebra.smul_eq_of_mem_algebraMapSubmonoid g s.property
 
 end TauCeti.Localization

@@ -15,8 +15,9 @@ The preimages `{a | g • a ∈ Q}` are primes, the translates `g⁻¹ • Q` wh
 finitely many of them occur, prime avoidance gives an element of an ideal outside all of them as
 soon as the ideal lies in none of them. For a group `G`, if such an element `u` has finite orbit,
 for instance when `G` is finite, its invariant norm, the product of the distinct elements of its
-orbit, lies outside `Q`. Applied to the annihilator of an invariant, which is `G`-stable, this shows
-that an invariant killed by an element outside `Q` is killed by an invariant outside `Q`.
+orbit, lies outside `Q`. For a finite group `G`, applied to the annihilator of an invariant, which
+is `G`-stable, this shows that an invariant killed by an element outside `Q` is killed by an
+invariant outside `Q`.
 
 ## Main results
 
@@ -72,9 +73,9 @@ section Group
 
 variable {G : Type*} [Group G] [Finite G] {A : Type*} [CommRing A] [MulSemiringAction G A]
 
-/-- If an invariant `x` is killed by an element outside a prime `Q`, it is killed by an invariant
-element outside `Q`. This is prime avoidance for the `G`-stable annihilator of `x` and the
-finitely many primes `g⁻¹ • Q`. -/
+/-- For a finite group `G`, if an invariant `x` is killed by an element outside a prime `Q`, it is
+killed by an invariant element outside `Q`. This is prime avoidance for the `G`-stable annihilator
+of `x` and the finitely many primes `g⁻¹ • Q`, followed by the invariant norm. -/
 theorem exists_mem_fixedPoints_notMem_mul_eq_zero_of_mul_eq_zero (Q : Ideal A)
     [Q.IsPrime] (x : FixedPoints.subring A G) {t : A} (htQ : t ∉ Q) (htx : t * x = 0) :
     ∃ s ∈ FixedPoints.subring A G, s ∉ Q ∧ s * x = 0 := by
