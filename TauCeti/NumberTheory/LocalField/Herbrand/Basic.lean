@@ -84,7 +84,9 @@ classical `φ_{L/K}` is instead defined through a Galois closure.
   `TauCeti.LocalFieldsRamification.psiNat_eq_add_card_mul_sub`: `ψℕ(v) = v` exactly when
   `G_v = G_0`, and `ψℕ(v) = t + #G_0 (v - t)` for `v ≥ t` when the filtration is
   constant through `t` and trivial afterward.
-* `TauCeti.LocalFieldsRamification.upperRamificationGroup_herbrand`: `G^{φ(u)} = G_u`.
+* `TauCeti.LocalFieldsRamification.upperRamificationGroup_herbrand` and
+  `TauCeti.LocalFieldsRamification.upperRamificationGroup_eq_of_herbrand_lt_of_le`:
+  `G^{φ(u)} = G_u`, and `G^v = G_{i+1}` on `(φ(i), φ(i + 1)]`.
 * `TauCeti.LocalFieldsRamification.upperRamificationGroup_antitone`: the upper filtration
   decreases, and each `G^v` is normal.
 * `TauCeti.LocalFieldsRamification.exists_forall_upperRamificationGroup_natCast_eq_bot`:
@@ -241,13 +243,13 @@ private theorem exists_herbrandReal_eq {y : ℝ} (hy : -1 ≤ y) :
 
 /-- The Herbrand function as a self-map of `[-1, ∞)`. -/
 private def herbrandFun (u : RamificationIndexDomain) : RamificationIndexDomain :=
-  ⟨herbrandReal K L u, mem_Ici.2 (neg_one_le_herbrandReal K L u.2)⟩
+  ⟨herbrandReal K L u, mem_Ici.2 (neg_one_le_herbrandReal K L u.property)⟩
 
 private theorem herbrandFun_strictMono : StrictMono (herbrandFun K L) :=
   fun _ _ h ↦ Subtype.mk_lt_mk.2 (herbrandReal_strictMono K L h)
 
 private theorem herbrandFun_surjective : Function.Surjective (herbrandFun K L) := fun y ↦ by
-  obtain ⟨u, hu, h⟩ := exists_herbrandReal_eq K L y.2
+  obtain ⟨u, hu, h⟩ := exists_herbrandReal_eq K L y.property
   exact ⟨⟨u, hu⟩, Subtype.ext h⟩
 
 /-! ### The Herbrand function and its inverse -/
@@ -342,7 +344,8 @@ theorem herbrand_slope_anti_adjacent {u v w : RamificationIndexDomain} (huv : u 
 @[simp]
 theorem herbrand_of_coe_le_zero {u : RamificationIndexDomain} (hu : (u : ℝ) ≤ 0) :
     herbrand K L u = u :=
-  Subtype.ext ((coe_herbrand_eq_herbrandReal K L u).trans (herbrandReal_of_le_zero K L u.2 hu))
+  Subtype.ext ((coe_herbrand_eq_herbrandReal K L u).trans (herbrandReal_of_le_zero K L u.property
+      hu))
 
 /-- On an interval `[a, b]` over which the lower ramification filtration is constant, that is
 `G_t = G_b` for every `a < t ≤ b`, the Herbrand function is affine of slope `#G_b / #G_0`:
@@ -677,6 +680,22 @@ theorem upperRamificationGroup_natCast (n : ℕ) :
       lowerRamificationGroup K L (psiNat K L n) := by
   rw [upperRamificationGroup_def, ← coe_psiNat, ← Int.cast_natCast,
     lowerRamificationGroupReal_intCast]
+
+/-- For `v ∈ (φ_{L/K}(i), φ_{L/K}(i + 1)]` (`i : ℕ`), the upper ramification group `G^v` equals
+the lower ramification group `G_{i + 1}`. -/
+theorem upperRamificationGroup_eq_of_herbrand_lt_of_le {i : ℕ}
+    {v : RamificationIndexDomain}
+    (hv₁ : herbrand K L ⟨i, Nat.cast_mem_ramificationIndexDomain i⟩ < v)
+    (hv₂ : v ≤ herbrand K L ⟨((i + 1 : ℕ) : ℝ),
+      Nat.cast_mem_ramificationIndexDomain (i + 1)⟩) :
+    upperRamificationGroup K L v = lowerRamificationGroup K L ((i + 1 : ℕ) : ℤ) := by
+  have h₁ := inverseHerbrand_strictMono K L hv₁
+  have h₂ := (inverseHerbrand_strictMono K L).monotone hv₂
+  rw [inverseHerbrand_herbrand] at h₁ h₂
+  rw [upperRamificationGroup_def]
+  exact lowerRamificationGroupReal_eq_of_sub_one_lt_of_le K L (i := ((i + 1 : ℕ) : ℤ))
+    (by have := Subtype.coe_lt_coe.2 h₁; push_cast; linarith)
+    (by exact_mod_cast Subtype.coe_le_coe.2 h₂)
 
 /-- The upper ramification filtration of a finite Galois extension of local fields is trivial at
 every large enough natural index. -/

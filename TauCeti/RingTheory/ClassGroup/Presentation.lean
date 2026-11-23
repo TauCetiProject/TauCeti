@@ -126,7 +126,7 @@ theorem single_mem_relationLattice_iff [DecidableEq ι] {i : ι} {k : ℤ} :
 theorem single_one_mem_relationLattice_iff [DecidableEq ι] {i : ι} :
     Pi.single i 1 ∈ relationLattice I ↔ (I i : Ideal R).IsPrincipal := by
   rw [relationLattice, LinearMap.mem_ker, presentation_single, zpow_one, ofMul_eq_zero,
-    ← ClassGroup.mk0_eq_one_iff (I i).2]
+    ← ClassGroup.mk0_eq_one_iff (I i).property]
 
 /-- Every exponent vector is a relation exactly when every ideal `I i` is principal. -/
 theorem relationLattice_eq_top_iff :
@@ -134,13 +134,13 @@ theorem relationLattice_eq_top_iff :
   classical
   refine ⟨fun h i ↦ single_one_mem_relationLattice_iff.mp (h ▸ Submodule.mem_top), fun h ↦ ?_⟩
   refine eq_top_iff.mpr fun e _ ↦ mem_relationLattice_iff.mpr (Finset.prod_eq_one fun i _ ↦ ?_)
-  rw [(ClassGroup.mk0_eq_one_iff (I i).2).mpr (h i), one_zpow]
+  rw [(ClassGroup.mk0_eq_one_iff (I i).property).mpr (h i), one_zpow]
 
 /-- Over a ring with trivial class group, for instance a principal ideal domain, every exponent
 vector is a relation. -/
 theorem relationLattice_eq_top [Subsingleton (ClassGroup R)] : relationLattice I = ⊤ :=
   relationLattice_eq_top_iff.mpr fun i ↦
-    (ClassGroup.mk0_eq_one_iff (I i).2).mp (Subsingleton.elim _ _)
+    (ClassGroup.mk0_eq_one_iff (I i).property).mp (Subsingleton.elim _ _)
 
 /-- For an empty family of ideals, every exponent vector is a relation. -/
 theorem relationLattice_of_isEmpty [IsEmpty ι] : relationLattice I = ⊤ :=

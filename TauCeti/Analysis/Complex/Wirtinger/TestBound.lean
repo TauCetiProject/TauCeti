@@ -129,7 +129,6 @@ theorem exists_enorm_integral_lineDeriv_smul_le_of_integral_conjWirtingerDeriv_e
           C * ‖v‖ₑ * (eLpNorm f p (volume.restrict U) + eLpNorm u p (volume.restrict U)) *
             eLpNorm (φ : ℂ → ℝ) q volume := by
   have : Fact (1 ≤ p) := ⟨hp.le⟩
-  have : Fact (1 ≤ q) := ⟨ENNReal.HolderConjugate.one_le q p⟩
   obtain ⟨R, hR, hRU⟩ := hK.exists_cthickening_subset_open U.isOpen hKU
   let δ := R / 4
   have hδ : 0 < δ := by positivity
@@ -182,8 +181,7 @@ theorem exists_enorm_integral_lineDeriv_smul_le_of_integral_conjWirtingerDeriv_e
     have hψ := ψ.continuous.memLp_of_hasCompactSupport ψ.hasCompactSupport
       (p := q) (μ := (volume : Measure ℂ))
     simpa only [ψ, TestFunction.coe_lineDerivCLM] using hψ
-  have hlim := tendsto_integral_smul_normed_convolution hp_top
-    hρ hψ hu₀
+  have hlim := tendsto_integral_smul_normed_convolution hρ hψ hu₀
   have hnormlim := (continuous_eNorm.tendsto _).comp hlim
   have hfinal := le_of_tendsto hnormlim (Filter.Eventually.of_forall htest)
   have heq : (∫ z, lineDeriv ℝ (φ : ℂ → ℝ) z v • u₀ z) =
@@ -217,7 +215,6 @@ theorem exists_enorm_integral_lineDeriv_smul_le_of_integral_conjWirtingerDeriv_e
           C * ‖v‖ₑ * (eLpNorm f p (volume.restrict U) + eLpNorm u r (volume.restrict U)) *
             eLpNorm (φ : ℂ → ℝ) q volume := by
   have : Fact (1 ≤ p) := ⟨hp.le⟩
-  have : Fact (1 ≤ q) := ⟨ENNReal.HolderConjugate.one_le q p⟩
   obtain ⟨R, hR, hRU⟩ := hK.exists_cthickening_subset_open U.isOpen hKU
   let W : Opens ℂ := ⟨thickening R K, isOpen_thickening⟩
   have hKW : K ⊆ W := self_subset_thickening hR K

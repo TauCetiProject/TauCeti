@@ -8,7 +8,7 @@ module
 public import TauCeti.Geometry.Manifold.Riemannian.Jacobi.Uniqueness
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.AlongCurve.Affine
 import TauCeti.Geometry.Manifold.VectorBundle.Scalar
-import TauCeti.Geometry.Manifold.VectorBundle.Translate
+import TauCeti.Geometry.Manifold.VectorBundle.SectionAlongMap.Regularity
 
 /-!
 # Jacobi fields along constant geodesics

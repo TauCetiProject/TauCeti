@@ -6,8 +6,12 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicTopology.Homotopy.Relative.Skeleton
-public import TauCeti.AlgebraicTopology.Singular.Cubical.Compression.Relative
+public import TauCeti.AlgebraicTopology.Singular.Homotopy.RelHomotopyGroup
 public import TauCeti.AlgebraicTopology.Singular.Homotopy.WeakHomotopyEquivalence
+public import TauCeti.Topology.Homotopy.MappingCylinder
+import TauCeti.AlgebraicTopology.Homotopy.Whitehead
+import TauCeti.AlgebraicTopology.Singular.Cubical.LocalCoefficients.Compression
+import TauCeti.AlgebraicTopology.Singular.Twisted.HomotopyInvariance.Basic
 
 /-!
 # `n`-connected maps and singular homology
@@ -40,7 +44,10 @@ of the origin, and the swept cubes give the chain homotopy from the identity to 
 followed by the inclusion (`TauCeti.SubspaceCubeDeformation.twistedRetractChain`). In degrees where
 both are defined this makes the inclusion of the bottom face surjective on homology, and injective
 one degree lower (`TauCeti.epi_twistedHomologyMap_subtypeVal_of_relHomotopyGroup`,
-`TauCeti.isIso_twistedHomologyMap_subtypeVal_of_relHomotopyGroup_of_add_one_lt`).
+`TauCeti.isIso_twistedHomologyMap_subtypeVal_of_relHomotopyGroup_of_add_one_lt`). By the long exact
+sequence of the pair, the relative homology `H_m(M_f, X; L)` then vanishes for `m ≤ n`
+(`ContinuousMap.IsNConnected.isZero_twistedHomology_mappingCylinder`), which is the input of the
+cohomological statement with local coefficients.
 
 For a map of pairs `(X, A) → (Y, B)` which is `n`-connected on the ambient spaces and
 `(n - 1)`-connected on the subspaces, the five lemma in the long exact sequences of the two pairs
@@ -54,6 +61,13 @@ The isomorphisms below degree `n` are the classical statement that the skeleton 
 homology of the complex (Hatcher, Lemma 2.34(c)), already available as
 `TauCeti.isIso_homologyMap_skeletonBasePairToComplex_fst`.
 
+For a map of pairs `f : (X, A) ⟶ (Y, B)` which is `n`-connected on the ambient spaces and
+`k`-connected on the subspaces, the five lemma in the long exact sequences of the two pairs gives
+the relative statement with local coefficients: `H_m(X, A; f⁎L) → H_m(Y, B; L)` is an isomorphism
+for `m < n` with `m ≤ k`, and a surjection for `m ≤ n` with `m ≤ k + 1`. In particular, if the
+inclusion of the subspace of a pair `(X, A)` is `n`-connected, the long exact sequence of the pair
+makes its relative homology with local coefficients vanish up to degree `n`.
+
 ## Main results
 
 * `ContinuousMap.IsNConnected.isZero_singularHomology_mappingCylinder`: the relative homology of
@@ -66,10 +80,17 @@ homology of the complex (Hatcher, Lemma 2.34(c)), already available as
 * `ContinuousMap.IsNConnected.isIso_twistedHomologyMap`,
   `ContinuousMap.IsNConnected.epi_twistedHomologyMap`: an `n`-connected map induces isomorphisms
   on homology with local coefficients below degree `n`, and surjections up to degree `n`.
+* `ContinuousMap.IsNConnected.isZero_twistedHomology_mappingCylinder`: the same vanishing of the
+  relative homology of the mapping cylinder, with local coefficients.
 * `TopPair.isIso_singularHomologyMap_of_isNConnected`,
   `TopPair.epi_singularHomologyMap_of_isNConnected`: a map of pairs which is `n`-connected on the
   ambient spaces and `(n - 1)`-connected on the subspaces induces isomorphisms on relative singular
   homology below degree `n`, and surjections up to degree `n`.
+* `TopPair.isIso_twistedHomologyMap_of_isNConnected`,
+  `TopPair.epi_twistedHomologyMap_of_isNConnected`: the same for relative homology with local
+  coefficients of a map of pairs which is connected on the ambient spaces and on the subspaces.
+* `TopPair.isZero_twistedHomology_of_isNConnected`: the relative homology with local coefficients
+  of a pair whose inclusion is `n`-connected vanishes up to degree `n`.
 * `TauCeti.epi_singularHomologyMap_inclusion_skeletonLT`: the inclusion of the `n`-skeleton of a
   relative CW complex induces surjections on singular homology up to degree `n`.
 
@@ -112,7 +133,7 @@ theorem isZero_singularHomology_mappingCylinder (hf : f.IsNConnected n) {m : ℕ
   isZero_singularHomology_ofSubset_of_relHomotopyGroup (n := n + 1)
     (X := TopCat.of (MappingCylinder f)) (A := Set.range (MappingCylinder.incl f))
     (MappingCylinder.exists_mem_range_incl_joined hf.exists_joined)
-    hf.subsingleton_relHomotopyGroup_mappingCylinder_fin R (by lia)
+    hf.subsingleton_relHomotopyGroup_mappingCylinder_fin (ModuleCat.of R R) (by lia)
 
 /-- The map induced on singular homology by `f` is the map induced by the inclusion of the bottom
 face of the mapping cylinder, up to the isomorphisms induced by the homeomorphism of `X` with the
@@ -153,7 +174,7 @@ theorem isIso_singularHomologyMap (hf : f.IsNConnected n) {m : ℕ} (hm : m < n)
   have := isIso_singularHomologyMap_subtypeVal_of_relHomotopyGroup_of_add_one_lt (n := n + 1)
     (X := TopCat.of (MappingCylinder f)) (A := Set.range (MappingCylinder.incl f))
     (MappingCylinder.exists_mem_range_incl_joined hf.exists_joined)
-    hf.subsingleton_relHomotopyGroup_mappingCylinder_fin R (m := m) (by lia)
+    hf.subsingleton_relHomotopyGroup_mappingCylinder_fin (ModuleCat.of R R) (m := m) (by lia)
   rw [singularHomologyMap_eq]
   infer_instance
 
@@ -167,7 +188,7 @@ theorem epi_singularHomologyMap (hf : f.IsNConnected n) {m : ℕ} (hm : m ≤ n)
   have := epi_singularHomologyMap_subtypeVal_of_relHomotopyGroup (n := n + 1)
     (X := TopCat.of (MappingCylinder f)) (A := Set.range (MappingCylinder.incl f))
     (MappingCylinder.exists_mem_range_incl_joined hf.exists_joined)
-    hf.subsingleton_relHomotopyGroup_mappingCylinder_fin R (m := m) (by lia)
+    hf.subsingleton_relHomotopyGroup_mappingCylinder_fin (ModuleCat.of R R) (m := m) (by lia)
   rw [singularHomologyMap_eq]
   infer_instance
 
@@ -230,6 +251,19 @@ private theorem twistedHomologyMap_mem (P : MorphismProperty (ModuleCat.{v} R)) 
   rw [P.cancel_left_of_respectsIso, P.cancel_left_of_respectsIso, P.cancel_left_of_respectsIso,
     P.cancel_left_of_respectsIso, P.cancel_right_of_respectsIso]
   exact hi
+
+/-- **The mapping cylinder of an `n`-connected map is `n`-connected relative to its bottom face for
+homology with local coefficients**: if `f : X → Y` is `n`-connected, then for every local
+coefficient system `L` on the mapping cylinder `M_f`, `H_m(M_f, X; L) = 0` for every `m ≤ n`, where
+`X` is identified with the bottom face of `M_f`. -/
+theorem isZero_twistedHomology_mappingCylinder (hf : f.IsNConnected n)
+    (L : LocalCoefficientSystem.{u, v, v} R (TopCat.of (MappingCylinder f))) {m : ℕ}
+    (hm : m ≤ n) :
+    IsZero ((TopPair.ofSubset (X := TopCat.of (MappingCylinder f))
+      (Set.range (MappingCylinder.incl f))).twistedHomology L m) :=
+  isZero_twistedHomology_ofSubset_of_relHomotopyGroup (n := n + 1)
+    (MappingCylinder.exists_mem_range_incl_joined hf.exists_joined)
+    hf.subsingleton_relHomotopyGroup_mappingCylinder_fin L (by lia)
 
 /-- **An `n`-connected map induces isomorphisms on homology with local coefficients below degree
 `n`**: if `f : X → Y` is `n`-connected, then for every local coefficient system `L` on `Y` the map
@@ -310,5 +344,93 @@ theorem epi_singularHomologyMap_of_isNConnected (hfst : (Hom.fst f).hom.IsNConne
       -- As in `isIso_singularHomologyMap_of_isNConnected`, the instance is passed by hand.
       exact @IsIso.mono_of_iso _ _ _ _ _ (hfst.isIso_singularHomologyMap R (by simp at hj; lia)))
   rwa [SSetPair.chainComplexShortComplexMap_τ₃] at h
+
+end TopPair
+
+/-! ### Maps of pairs with local coefficients -/
+
+namespace TopPair
+
+open LocalCoefficientSystem
+
+variable {R : Type u} [Ring R] {P Q : TopPair.{v}} (f : P ⟶ Q)
+  (L : LocalCoefficientSystem.{u, v, v} R Q.fst) {n k m : ℕ}
+
+/-- **A map of pairs which is connected on the ambient spaces and on the subspaces induces
+isomorphisms on relative homology with local coefficients in low degrees**: if
+`f : (X, A) ⟶ (Y, B)` is `n`-connected on the ambient spaces and `k`-connected on the
+subspaces, then for every local coefficient system `L` on `Y` the map
+`f_* : H_m(X, A; f⁎L) → H_m(Y, B; L)` is an isomorphism for every `m < n` with `m ≤ k`. -/
+theorem isIso_twistedHomologyMap_of_isNConnected (hfst : (Hom.fst f).hom.IsNConnected n)
+    (hsnd : (Hom.snd f).hom.IsNConnected k) (hmn : m < n) (hmk : m ≤ k) :
+    IsIso (TopPair.twistedHomologyMap f L m) := by
+  have := HomologicalComplex.HomologySequence.isIso_homologyMap_τ₃
+    (twistedChainComplexShortComplexMap f L) (P.shortExact_twistedChainComplexShortComplex _)
+    (Q.shortExact_twistedChainComplexShortComplex L) m
+    (homologyMap_twistedChainComplexShortComplexMap_τ₁_mem f L (.epimorphisms _) m
+      (hsnd.epi_twistedHomologyMap (Q.subspaceSystem L) hmk))
+    (homologyMap_twistedChainComplexShortComplexMap_τ₂_mem f L (.isomorphisms _) m
+      (hfst.isIso_twistedHomologyMap L hmn))
+    (fun j (hj : j + 1 = m) ↦
+      homologyMap_twistedChainComplexShortComplexMap_τ₁_mem f L (.isomorphisms _) j
+        (hsnd.isIso_twistedHomologyMap (Q.subspaceSystem L) (by lia)))
+    (fun j (hj : j + 1 = m) ↦
+      homologyMap_twistedChainComplexShortComplexMap_τ₂_mem f L (.monomorphisms _) j
+        (have := hfst.isIso_twistedHomologyMap L (m := j) (by lia); inferInstance))
+  rwa [twistedChainComplexShortComplexMap_τ₃] at this
+
+/-- **A map of pairs which is connected on the ambient spaces and on the subspaces induces
+surjections on relative homology with local coefficients in low degrees**: if
+`f : (X, A) ⟶ (Y, B)` is `n`-connected on the ambient spaces and `k`-connected on the
+subspaces, then for every local coefficient system `L` on `Y` the map
+`f_* : H_m(X, A; f⁎L) → H_m(Y, B; L)` is an epimorphism for every `m ≤ n` with `m ≤ k + 1`. -/
+theorem epi_twistedHomologyMap_of_isNConnected (hfst : (Hom.fst f).hom.IsNConnected n)
+    (hsnd : (Hom.snd f).hom.IsNConnected k) (hmn : m ≤ n) (hmk : m ≤ k + 1) :
+    Epi (TopPair.twistedHomologyMap f L m) := by
+  have := HomologicalComplex.HomologySequence.epi_homologyMap_τ₃
+    (twistedChainComplexShortComplexMap f L) (P.shortExact_twistedChainComplexShortComplex _)
+    (Q.shortExact_twistedChainComplexShortComplex L) m
+    (homologyMap_twistedChainComplexShortComplexMap_τ₂_mem f L (.epimorphisms _) m
+      (hfst.epi_twistedHomologyMap L hmn))
+    (fun j (hj : j + 1 = m) ↦
+      homologyMap_twistedChainComplexShortComplexMap_τ₁_mem f L (.epimorphisms _) j
+        (hsnd.epi_twistedHomologyMap (Q.subspaceSystem L) (by lia)))
+    (fun j (hj : j + 1 = m) ↦
+      homologyMap_twistedChainComplexShortComplexMap_τ₂_mem f L (.monomorphisms _) j
+        (have := hfst.isIso_twistedHomologyMap L (m := j) (by lia); inferInstance))
+  rwa [twistedChainComplexShortComplexMap_τ₃] at this
+
+end TopPair
+
+/-! ### Pairs with a connected inclusion -/
+
+namespace TopPair
+
+open LocalCoefficientSystem
+
+variable {R : Type u} [Ring R] {P : TopPair.{v}} {n : ℕ}
+
+/-- **A pair whose inclusion is `n`-connected has no relative homology with local coefficients up to
+degree `n`.** If the inclusion `A → X` of the subspace of a pair `(X, A)` is `n`-connected, then
+`H_m(X, A; L) = 0` for every local coefficient system `L` on `X` and every `m ≤ n`: in the long
+exact sequence of the pair, `H_m(A; L|_A) → H_m(X; L)` is surjective and
+`H_{m-1}(A; L|_A) → H_{m-1}(X; L)` is injective. -/
+theorem isZero_twistedHomology_of_isNConnected (hP : P.map.hom.IsNConnected n)
+    (L : LocalCoefficientSystem.{u, v, v} R P.fst) {m : ℕ} (hm : m ≤ n) :
+    IsZero (P.twistedHomology L m) := by
+  -- The subspace homology surjects onto the ambient one, so the latter maps to zero.
+  have hπ : P.twistedHomologyπ L m = 0 :=
+    (P.twistedHomology_exact_space L m).epi_f_iff.1 (hP.epi_twistedHomologyMap L hm)
+  cases m with
+  | zero =>
+    exact (IsZero.iff_id_eq_zero _).2 (by rw [← cancel_epi (P.twistedHomologyπ L 0), hπ]; simp)
+  | succ k =>
+    -- The subspace homology injects into the ambient one, so the connecting map vanishes.
+    have hδ : P.twistedHomologyδ L (k + 1) k = 0 := by
+      refine (P.twistedHomology_exact_subspace L (k + 1) k).mono_g_iff.1 ?_
+      -- The isomorphism is stated for `TopCat.ofHom P.map.hom`, which is `P.map` only up to
+      -- unfolding, so instance search does not see it; the instance is passed by hand.
+      exact @IsIso.mono_of_iso _ _ _ _ _ (hP.isIso_twistedHomologyMap L (m := k) (by lia))
+    exact (P.twistedHomology_exact_relative L (k + 1) k).isZero_X₂ hπ hδ
 
 end TopPair
