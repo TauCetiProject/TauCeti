@@ -16,7 +16,9 @@ import Mathlib.CategoryTheory.Preadditive.LeftExact
 Finitely generated comodules over a flat coalgebra over a Noetherian commutative ring form
 an abelian category. Their kernels and cokernels are computed in the category of all comodules.
 In particular, finite-dimensional comodules over a field form an abelian category, with an
-exact forgetful functor to vector spaces. For coordinate Hopf algebras this supplies the
+exact forgetful functor to vector spaces. Hence epimorphisms and monomorphisms of finite
+comodules are surjective and injective (`TauCeti.FGComoduleCat.surjective_of_epi`,
+`TauCeti.FGComoduleCat.injective_of_mono`). For coordinate Hopf algebras this supplies the
 abelian and exact structures of the Tannakian representation category.
 
 The full-subcategory argument uses Mathlib's `ObjectProperty` kernel and cokernel closure API.
@@ -102,6 +104,20 @@ instance : PreservesFiniteColimits
     (forget₂ (FGComoduleCat.{u, v, w} R C) (ModuleCat.{w} R)) :=
   inferInstanceAs (PreservesFiniteColimits
     (incl ⋙ forget₂ (ComoduleCat.{u, v, w} R C) (ModuleCat.{w} R)))
+
+omit [IsNoetherianRing R] [Module.Flat R C] in
+/-- An epimorphism of finite comodules is surjective. -/
+theorem surjective_of_epi {M N : FGComoduleCat.{u, v, w} R C} (f : M ⟶ N) [Epi f] :
+    Function.Surjective f :=
+  (ModuleCat.epi_iff_surjective _).1
+    (inferInstance : Epi ((forget₂ (FGComoduleCat.{u, v, w} R C) (ModuleCat.{w} R)).map f))
+
+/-- A monomorphism of finite comodules over a flat coalgebra over a Noetherian ring is
+injective. -/
+theorem injective_of_mono {M N : FGComoduleCat.{u, v, w} R C} (f : M ⟶ N) [Mono f] :
+    Function.Injective f :=
+  (ModuleCat.mono_iff_injective _).1
+    (inferInstance : Mono ((forget₂ (FGComoduleCat.{u, v, w} R C) (ModuleCat.{w} R)).map f))
 
 end FGComoduleCat
 

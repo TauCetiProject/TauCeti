@@ -7,14 +7,14 @@ module
 
 public import Mathlib.Analysis.Convex.Exposed
 public import Mathlib.Topology.Algebra.ContinuousAffineEquiv
-public import TauCeti.Analysis.Convex.Intrinsic
+public import TauCeti.Analysis.Convex.Extreme
 
 /-!
 # Exposed sets, relative interiors and continuous affine equivalences
 
 An exposed subset of a set `P` which meets the intrinsic interior of `P` is all of `P`
-(`IsExposed.eq_of_mem_intrinsicInterior`): the exposing functional is maximal at an intrinsic
-interior point, hence constant on `P`. Continuous affine equivalences carry exposed subsets to
+(`IsExposed.eq_of_mem_intrinsicInterior`), by extreme-subset rigidity.
+Continuous affine equivalences carry exposed subsets to
 exposed subsets (`IsExposed.image_continuousAffineEquiv`): composing an exposing functional with
 the inverse linear part preserves all comparisons, since the inverse translation contributes the
 same additive constant at every point. The part of an exposed subset in a subset of the ambient
@@ -29,6 +29,38 @@ from the same file at Mei commit
 -/
 
 public section
+
+namespace ContinuousAffineMap
+
+variable {𝕜 V : Type*} [TopologicalSpace 𝕜] [Ring 𝕜] [PartialOrder 𝕜]
+  [IsOrderedAddMonoid 𝕜] [ContinuousAdd 𝕜] [AddCommGroup V] [Module 𝕜 V]
+  [TopologicalSpace V] {P : Set V}
+
+/-- A supporting level of a continuous affine functional is exposed in any set on which the
+functional is bounded above by that level. -/
+theorem isExposed_setOf_eq_of_le (g : V →ᴬ[𝕜] 𝕜) {c : 𝕜} (hg : ∀ x ∈ P, g x ≤ c) :
+    IsExposed 𝕜 P {x ∈ P | g x = c} := by
+  rintro ⟨p, hp, hpc⟩
+  have hlin : (g.toAffineMap.linear : V → 𝕜) = fun x => g x + -g 0 := by
+    ext x
+    simpa only [ContinuousAffineMap.coe_toAffineMap, Pi.sub_apply, sub_eq_add_neg] using
+      congrFun g.toAffineMap.decomp' x
+  let l : StrongDual 𝕜 V := ⟨g.toAffineMap.linear, by
+    rw [LinearMap.toFun_eq_coe, hlin]
+    exact g.continuous.add continuous_const⟩
+  have hl : (l : V → 𝕜) = g.toAffineMap.linear := ContinuousLinearMap.coe_mk' _ _
+  have hval (x : V) : g x = l x + g 0 := by
+    rw [congrFun hl, congrFun hlin, add_assoc, neg_add_cancel, add_zero]
+  have hcmp (a b : V) : l a ≤ l b ↔ g a ≤ g b := by
+    rw [hval a, hval b, add_le_add_iff_right]
+  refine ⟨l, Set.ext fun x => ?_⟩
+  constructor
+  · rintro ⟨hx, hxc⟩
+    exact ⟨hx, fun y hy => (hcmp y x).mpr ((hg y hy).trans_eq hxc.symm)⟩
+  · rintro ⟨hx, hmax⟩
+    exact ⟨hx, le_antisymm (hg x hx) (by simpa only [hpc] using (hcmp p x).mp (hmax p hp))⟩
+
+end ContinuousAffineMap
 
 namespace IsExposed
 
@@ -72,19 +104,19 @@ end Intersections
 
 section IntrinsicInterior
 
-variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] {P F : Set V}
+variable {V : Type*} [AddCommGroup V] [Module ℝ V] [TopologicalSpace V] [ContinuousAdd V]
+  [ContinuousSMul ℝ V] {P F : Set V}
 
 /-- An exposed subset meeting the intrinsic interior of its ambient set is the whole set.
 Neither convexity nor finite dimensionality is required. -/
 theorem eq_of_mem_intrinsicInterior (hF : IsExposed ℝ P F) {x : V} (hxF : x ∈ F)
     (hx : x ∈ intrinsicInterior ℝ P) : F = P := by
-  obtain ⟨l, rfl⟩ := hF ⟨x, hxF⟩
-  refine Set.Subset.antisymm (fun _ hy => hy.1) fun p hp => ⟨hp, fun q hq => ?_⟩
-  have hg := TauCeti.eq_zero_of_nonneg_of_mem_intrinsicInterior
-    (g := AffineMap.const ℝ V (l x) - l.toLinearMap.toAffineMap)
-    (fun y hy => by simpa using hxF.2 y hy) hx (by simp) hp
-  simp only [FunLike.coe_sub, Pi.sub_apply, AffineMap.const_apply, sub_eq_zero] at hg
-  simpa [hg] using hxF.2 q hq
+  exact hF.isExtreme.eq_of_mem_intrinsicInterior hxF hx
+
+/-- Every proper exposed subset lies in the relative frontier of its ambient set. -/
+theorem subset_intrinsicFrontier (hF : IsExposed ℝ P F) (hne : F ≠ P) :
+    F ⊆ intrinsicFrontier ℝ P := by
+  exact hF.isExtreme.subset_intrinsicFrontier hne
 
 end IntrinsicInterior
 

@@ -13,6 +13,7 @@ import Mathlib.CategoryTheory.Abelian.Refinements
 import TauCeti.CategoryTheory.Abelian.GrothendieckAxioms.Colim
 import TauCeti.CategoryTheory.ObjectProperty.FunctorCategory.PreservesLimits
 import Mathlib.CategoryTheory.ObjectProperty.FunctorCategory.ExactColimits
+import Mathlib.Algebra.Homology.HomotopyCategory.Pretriangulated
 
 /-!
 # K-flat resolutions of unbounded complexes
@@ -50,6 +51,11 @@ transition maps and their morphisms to `K` are computed by
 `CochainComplex.kFlatResolution.sequence_map_succ` and
 `CochainComplex.kFlatResolution.toComplex_app_succ`, in terms of the public cell-attachment step
 `CochainComplex.kFlatResolution.attachingMap` and `CochainComplex.kFlatResolution.attachDesc`.
+
+When `(E, p)` is functorial (`E : C ⥤ C` and `p : E ⟶ 𝟭 C`), each morphism of complexes `g : K ⟶ L`
+induces a morphism `CochainComplex.kFlatResolution.map E p g` compatible with `π`, assembling into
+the resolution functor `CochainComplex.kFlatResolutionFunctor E p` and natural augmentation
+`CochainComplex.kFlatResolutionNatTrans E p`.
 
 ## References
 
@@ -357,5 +363,236 @@ public theorem exists_quasiIso_isKFlat [MonoidalCategory C] [MonoidalPreadditive
     ∃ (P : CochainComplex C ℤ) (π : P ⟶ K), QuasiIso π ∧ P.IsKFlat := by
   choose E p hp hflat hflat' using hC
   exact ⟨kFlatResolution E p K, kFlatResolution.π E p K, inferInstance, inferInstance⟩
+
+section FunctorialResolution
+
+namespace kFlatResolution
+
+private def boundaryPairsMap {P₁ K₁ P₂ K₂ : CochainComplex C ℤ}
+    (f₁ : P₁ ⟶ K₁) (f₂ : P₂ ⟶ K₂) (u : P₁ ⟶ P₂) (g : K₁ ⟶ K₂)
+    (hu : u ≫ f₂ = f₁ ≫ g) (n : ℤ) :
+    boundaryPairs f₁ n ⟶ boundaryPairs f₂ n :=
+  pullback.map (cyclesMap f₁ n) (K₁.toCycles (n - 1) n)
+    (cyclesMap f₂ n) (K₂.toCycles (n - 1) n)
+    (cyclesMap u n) (g.f (n - 1)) (cyclesMap g n)
+    (by rw [← cyclesMap_comp, ← cyclesMap_comp, hu])
+    (by simp [← cancel_mono (K₂.iCycles n)])
+
+private lemma boundaryPairsMap_id {P K : CochainComplex C ℤ} (f : P ⟶ K) (n : ℤ) :
+    boundaryPairsMap f f (𝟙 P) (𝟙 K) (by rw [Category.id_comp, Category.comp_id]) n = 𝟙 _ := by
+  apply pullback.hom_ext <;> simp [boundaryPairsMap]
+
+private lemma boundaryPairsMap_comp {P₁ K₁ P₂ K₂ P₃ K₃ : CochainComplex C ℤ}
+    (f₁ : P₁ ⟶ K₁) (f₂ : P₂ ⟶ K₂) (f₃ : P₃ ⟶ K₃)
+    (u₁₂ : P₁ ⟶ P₂) (u₂₃ : P₂ ⟶ P₃) (g₁₂ : K₁ ⟶ K₂) (g₂₃ : K₂ ⟶ K₃)
+    (hu₁₂ : u₁₂ ≫ f₂ = f₁ ≫ g₁₂) (hu₂₃ : u₂₃ ≫ f₃ = f₂ ≫ g₂₃) (n : ℤ) :
+    boundaryPairsMap f₁ f₃ (u₁₂ ≫ u₂₃) (g₁₂ ≫ g₂₃)
+        (by rw [Category.assoc, hu₂₃, ← Category.assoc, hu₁₂, Category.assoc]) n =
+      boundaryPairsMap f₁ f₂ u₁₂ g₁₂ hu₁₂ n ≫ boundaryPairsMap f₂ f₃ u₂₃ g₂₃ hu₂₃ n := by
+  apply pullback.hom_ext <;> simp [boundaryPairsMap, cyclesMap_comp]
+
+variable (E : C ⥤ C)
+
+private def stepCellMap {P₁ K₁ P₂ K₂ : CochainComplex C ℤ}
+    (f₁ : P₁ ⟶ K₁) (f₂ : P₂ ⟶ K₂) (u : P₁ ⟶ P₂) (g : K₁ ⟶ K₂)
+    (hu : u ≫ f₂ = f₁ ≫ g) :
+    graded (.up ℤ) (fun n ↦ E.obj (boundaryPairs f₁ n)) ⟶
+      graded (.up ℤ) (fun n ↦ E.obj (boundaryPairs f₂ n)) :=
+  gradedMap (.up ℤ) fun n ↦ E.map (boundaryPairsMap f₁ f₂ u g hu n)
+
+variable (p : E ⟶ 𝟭 C)
+
+private lemma attachingMap_stepCellMap {P₁ K₁ P₂ K₂ : CochainComplex C ℤ}
+    (f₁ : P₁ ⟶ K₁) (f₂ : P₂ ⟶ K₂) (u : P₁ ⟶ P₂) (g : K₁ ⟶ K₂)
+    (hu : u ≫ f₂ = f₁ ≫ g) :
+    attachingMap f₁ (fun n ↦ p.app (boundaryPairs f₁ n)) ≫ u =
+      stepCellMap E f₁ f₂ u g hu ≫ attachingMap f₂ (fun n ↦ p.app (boundaryPairs f₂ n)) := by
+  symm
+  refine gradedMap_fromGraded _ _ _ u fun n ↦ ?_
+  have hnat := p.naturality (boundaryPairsMap f₁ f₂ u g hu n)
+  dsimp at hnat
+  rw [← Category.assoc, hnat, Category.assoc, boundaryPairsMap, pullback.lift_fst, Category.assoc]
+
+private def stepMap {P₁ K₁ P₂ K₂ : CochainComplex C ℤ}
+    (f₁ : P₁ ⟶ K₁) (f₂ : P₂ ⟶ K₂) (u : P₁ ⟶ P₂) (g : K₁ ⟶ K₂)
+    (hu : u ≫ f₂ = f₁ ≫ g) :
+    mappingCone (attachingMap f₁ fun n ↦ p.app (boundaryPairs f₁ n)) ⟶
+      mappingCone (attachingMap f₂ fun n ↦ p.app (boundaryPairs f₂ n)) :=
+  mappingCone.map _ _ (stepCellMap E f₁ f₂ u g hu) u (attachingMap_stepCellMap E p f₁ f₂ u g hu)
+
+private lemma inr_stepMap {P₁ K₁ P₂ K₂ : CochainComplex C ℤ}
+    (f₁ : P₁ ⟶ K₁) (f₂ : P₂ ⟶ K₂) (u : P₁ ⟶ P₂) (g : K₁ ⟶ K₂)
+    (hu : u ≫ f₂ = f₁ ≫ g) :
+    mappingCone.inr (attachingMap f₁ fun n ↦ p.app (boundaryPairs f₁ n)) ≫
+      stepMap E p f₁ f₂ u g hu =
+      u ≫ mappingCone.inr (attachingMap f₂ fun n ↦ p.app (boundaryPairs f₂ n)) :=
+  (mappingCone.triangleMap _ _ _ _ (attachingMap_stepCellMap E p f₁ f₂ u g hu)).comm₂
+
+private lemma stepMap_attachDesc {P₁ K₁ P₂ K₂ : CochainComplex C ℤ}
+    (f₁ : P₁ ⟶ K₁) (f₂ : P₂ ⟶ K₂) (u : P₁ ⟶ P₂) (g : K₁ ⟶ K₂)
+    (hu : u ≫ f₂ = f₁ ≫ g) :
+    stepMap E p f₁ f₂ u g hu ≫ attachDesc f₂ (fun n ↦ p.app (boundaryPairs f₂ n)) =
+      attachDesc f₁ (fun n ↦ p.app (boundaryPairs f₁ n)) ≫ g := by
+  ext j
+  rw [mappingCone.ext_from_iff _ (j + 1) j rfl]
+  refine ⟨?_, ?_⟩
+  · simp only [stepMap, mappingCone.map, attachDesc, comp_f, mappingCone.inl_v_desc_f_assoc,
+      Cochain.zero_cochain_comp_v, Cochain.ofHom_v, Category.assoc, mappingCone.inl_v_desc_f,
+      boundaryPrimitive, Cochain.mk_v]
+    dsimp [stepCellMap]
+    have hnat := p.naturality (boundaryPairsMap f₁ f₂ u g hu (j + 1))
+    dsimp at hnat
+    rw [gradedMap_f, reassoc_of% hnat, boundaryPairsMap, pullback.lift_snd_assoc, Category.assoc,
+      XIsoOfEq_hom_naturality]
+  · rw [← comp_f, reassoc_of% inr_stepMap, inr_attachDesc, hu, ← comp_f, inr_attachDesc_assoc]
+
+private lemma stepMap_id {P K : CochainComplex C ℤ} (f : P ⟶ K) (u : P ⟶ P)
+    (hu : u ≫ f = f ≫ 𝟙 K) (hu_id : u = 𝟙 P) :
+    stepMap E p f f u (𝟙 K) hu = 𝟙 _ := by
+  subst hu_id
+  have hcell : stepCellMap E f f (𝟙 P) (𝟙 K) hu = 𝟙 _ := by
+    simp [stepCellMap, boundaryPairsMap_id]
+  simpa only [stepMap, hcell] using
+    mappingCone.map_id (attachingMap f fun n ↦ p.app (boundaryPairs f n))
+
+private lemma stepMap_comp {P₁ K₁ P₂ K₂ P₃ K₃ : CochainComplex C ℤ}
+    (f₁ : P₁ ⟶ K₁) (f₂ : P₂ ⟶ K₂) (f₃ : P₃ ⟶ K₃)
+    (u₁₂ : P₁ ⟶ P₂) (u₂₃ : P₂ ⟶ P₃) (u₁₃ : P₁ ⟶ P₃)
+    (g₁₂ : K₁ ⟶ K₂) (g₂₃ : K₂ ⟶ K₃)
+    (hu₁₂ : u₁₂ ≫ f₂ = f₁ ≫ g₁₂) (hu₂₃ : u₂₃ ≫ f₃ = f₂ ≫ g₂₃)
+    (hu₁₃ : u₁₃ ≫ f₃ = f₁ ≫ (g₁₂ ≫ g₂₃)) (hu : u₁₃ = u₁₂ ≫ u₂₃) :
+    stepMap E p f₁ f₃ u₁₃ (g₁₂ ≫ g₂₃) hu₁₃ =
+      stepMap E p f₁ f₂ u₁₂ g₁₂ hu₁₂ ≫ stepMap E p f₂ f₃ u₂₃ g₂₃ hu₂₃ := by
+  subst hu
+  have hcell : stepCellMap E f₁ f₃ (u₁₂ ≫ u₂₃) (g₁₂ ≫ g₂₃) hu₁₃ =
+      stepCellMap E f₁ f₂ u₁₂ g₁₂ hu₁₂ ≫ stepCellMap E f₂ f₃ u₂₃ g₂₃ hu₂₃ := by
+    simp [stepCellMap, boundaryPairsMap_comp f₁ f₂ f₃ u₁₂ u₂₃ g₁₂ g₂₃ hu₁₂ hu₂₃]
+  simpa only [stepMap, hcell] using mappingCone.map_comp _ _ _ _ _
+    (attachingMap_stepCellMap E p f₁ f₂ u₁₂ g₁₂ hu₁₂) _ _
+    (attachingMap_stepCellMap E p f₂ f₃ u₂₃ g₂₃ hu₂₃)
+
+private def stageMap {K L : CochainComplex C ℤ} (g : K ⟶ L) :
+    ∀ k : ℕ, { u : (stage E.obj p.app K k).1 ⟶ (stage E.obj p.app L k).1 //
+      u ≫ (stage E.obj p.app L k).2 = (stage E.obj p.app K k).2 ≫ g }
+  | 0 => ⟨gradedMap (.up ℤ) fun n ↦ E.map (cyclesMap g n),
+      gradedMap_fromGraded _ _ _ g fun n ↦ p.naturality (cyclesMap g n)⟩
+  | k + 1 => ⟨stepMap E p (stage E.obj p.app K k).2 (stage E.obj p.app L k).2
+      (stageMap g k).val g (stageMap g k).property,
+      stepMap_attachDesc E p _ _ _ g (stageMap g k).property⟩
+
+private lemma stageMap_id (K : CochainComplex C ℤ) :
+    ∀ k : ℕ, (stageMap E p (𝟙 K) k).val = 𝟙 _
+  | 0 => by simp [stageMap, stage]
+  | k + 1 => stepMap_id E p _ _ (stageMap E p (𝟙 K) k).property (stageMap_id K k)
+
+private lemma stageMap_comp {K L M : CochainComplex C ℤ} (g : K ⟶ L) (h : L ⟶ M) :
+    ∀ k : ℕ, (stageMap E p (g ≫ h) k).val = (stageMap E p g k).val ≫ (stageMap E p h k).val
+  | 0 => by simp [stageMap, stage, cyclesMap_comp]
+  | k + 1 => stepMap_comp E p _ _ _ _ _ _ g h
+      (stageMap E p g k).property (stageMap E p h k).property (stageMap E p (g ≫ h) k).property
+      (stageMap_comp g h k)
+
+private def sequenceMap {K L : CochainComplex C ℤ} (g : K ⟶ L) :
+    sequence E.obj p.app K ⟶ sequence E.obj p.app L :=
+  NatTrans.ofSequence (fun k ↦ (stageMap E p g k).val) fun k ↦ by
+    rw [sequence_map_succ, sequence_map_succ]
+    exact inr_stepMap E p _ _ _ g (stageMap E p g k).property
+
+private lemma sequenceMap_id (K : CochainComplex C ℤ) :
+    sequenceMap E p (𝟙 K) = 𝟙 _ :=
+  NatTrans.ext (funext fun k ↦ stageMap_id E p K k)
+
+private lemma sequenceMap_comp {K L M : CochainComplex C ℤ} (g : K ⟶ L) (h : L ⟶ M) :
+    sequenceMap E p (g ≫ h) = sequenceMap E p g ≫ sequenceMap E p h :=
+  NatTrans.ext (funext fun k ↦ stageMap_comp E p g h k)
+
+private lemma sequenceMap_toComplex_app {K L : CochainComplex C ℤ} (g : K ⟶ L) (k : ℕ) :
+    (sequenceMap E p g).app k ≫ (toComplex E.obj p.app L).app k =
+      (toComplex E.obj p.app K).app k ≫ g :=
+  (stageMap E p g k).property
+
+variable [HasColimitsOfShape ℕ C]
+
+/-- The morphism on K-flat resolutions induced by a morphism of complexes `g : K ⟶ L` when the
+covering data `(E, p)` is functorial. -/
+public def map {K L : CochainComplex C ℤ} (g : K ⟶ L) :
+    kFlatResolution E.obj p.app K ⟶ kFlatResolution E.obj p.app L :=
+  colimMap (sequenceMap E p g)
+
+@[simp]
+public lemma map_id (K : CochainComplex C ℤ) :
+    map E p (𝟙 K) = 𝟙 (kFlatResolution E.obj p.app K) :=
+  colimit.hom_ext fun k ↦ by simp [map, sequenceMap_id]
+
+@[reassoc, simp]
+public lemma map_comp {K L M : CochainComplex C ℤ} (g : K ⟶ L) (h : L ⟶ M) :
+    map E p (g ≫ h) = map E p g ≫ map E p h :=
+  colimit.hom_ext fun k ↦ by simp [map, sequenceMap_comp]
+
+@[reassoc (attr := simp)]
+public lemma map_π {K L : CochainComplex C ℤ} (g : K ⟶ L) :
+    map E p g ≫ π E.obj p.app L = π E.obj p.app K ≫ g :=
+  colimit.hom_ext fun k ↦ by simp [map, sequenceMap_toComplex_app]
+
+end kFlatResolution
+
+variable (E : C ⥤ C) (p : E ⟶ 𝟭 C) [HasColimitsOfShape ℕ C]
+
+-- `kFlatResolutionFunctor` is exposed so that `(kFlatResolutionFunctor E p).obj K` is
+-- definitionally `kFlatResolution E.obj p.app K` in public theorem signatures
+-- (`kFlatResolutionFunctor_map` and `kFlatResolutionNatTrans_app`); `kFlatResolution.map` (like
+-- `kFlatResolution.π`) remains an unexposed `public def`, while `stageMap` and `sequenceMap` are
+-- `private`.
+/-- The functorial cell-attachment resolution associated to a functor `E : C ⥤ C` and a natural
+transformation `p : E ⟶ 𝟭 C`. Its value on a complex `K` is
+`CochainComplex.kFlatResolution E.obj p.app K`. -/
+@[expose]
+public def kFlatResolutionFunctor : CochainComplex C ℤ ⥤ CochainComplex C ℤ where
+  obj K := kFlatResolution E.obj p.app K
+  map g := kFlatResolution.map E p g
+
+@[simp]
+public lemma kFlatResolutionFunctor_obj (K : CochainComplex C ℤ) :
+    (kFlatResolutionFunctor E p).obj K = kFlatResolution E.obj p.app K := rfl
+
+@[simp]
+public lemma kFlatResolutionFunctor_map {K L : CochainComplex C ℤ} (g : K ⟶ L) :
+    (kFlatResolutionFunctor E p).map g = kFlatResolution.map E p g := rfl
+
+/-- When the covering objects `E.obj X` are flat and countable coproducts and sequential colimits
+are exact and commute with tensoring on the right, every value of `kFlatResolutionFunctor E p` is
+K-flat. -/
+public instance isKFlat_kFlatResolutionFunctor_obj [MonoidalCategory C] [MonoidalPreadditive C]
+    [∀ K L : CochainComplex C ℤ, HasTensor K L]
+    [HasExactColimitsOfShape ℕ C] [∀ X : C, PreservesColimitsOfShape ℕ (tensorRight X)]
+    [HasColimitsOfShape (Discrete ℤ) C] [HasExactColimitsOfShape (Discrete ℤ) C]
+    [∀ X : C, PreservesColimitsOfShape (Discrete ℤ) (tensorRight X)]
+    [∀ X : C, PreservesFiniteLimits (tensorLeft (E.obj X))]
+    [∀ X : C, PreservesFiniteColimits (tensorLeft (E.obj X))]
+    (K : CochainComplex C ℤ) :
+    ((kFlatResolutionFunctor E p).obj K).IsKFlat := by
+  rw [kFlatResolutionFunctor_obj]
+  infer_instance
+
+/-- The natural augmentation from `kFlatResolutionFunctor E p` to the identity functor, whose
+component at `K` is `kFlatResolution.π E.obj p.app K`. -/
+public def kFlatResolutionNatTrans : kFlatResolutionFunctor E p ⟶ 𝟭 (CochainComplex C ℤ) where
+  app K := kFlatResolution.π E.obj p.app K
+  naturality _ _ g := kFlatResolution.map_π E p g
+
+@[simp]
+public lemma kFlatResolutionNatTrans_app (K : CochainComplex C ℤ) :
+    (kFlatResolutionNatTrans E p).app K = kFlatResolution.π E.obj p.app K := by
+  rfl
+
+/-- If sequential colimits in `C` are exact and every `p.app X` is an epimorphism, then every
+component of `kFlatResolutionNatTrans E p` is a quasi-isomorphism. -/
+public instance quasiIso_kFlatResolutionNatTrans_app
+    [HasExactColimitsOfShape ℕ C] [∀ X : C, Epi (p.app X)] (K : CochainComplex C ℤ) :
+    QuasiIso ((kFlatResolutionNatTrans E p).app K) := by
+  rw [kFlatResolutionNatTrans_app]
+  exact kFlatResolution.quasiIso_π E.obj p.app K
+
+end FunctorialResolution
 
 end CochainComplex
