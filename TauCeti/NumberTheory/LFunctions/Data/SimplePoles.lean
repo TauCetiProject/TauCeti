@@ -20,9 +20,9 @@ collects the symmetry lemmas for that divisor under `s ↦ conj s` and `s ↦ 1 
   `Finsupp.single 0 1 + Finsupp.single 1 1` under `conj`.
 * `TauCeti.LFunctions.single_zero_one_add_single_one_one_one_sub_conj`: invariance of
   `Finsupp.single 0 1 + Finsupp.single 1 1` under `s ↦ 1 - conj s`.
-* `hasMeromorphicContinuation_of_polarOrder_eq_single_zero_one_add_single_one_one`:
+* `hasMeromorphicContinuation_of_polarOrder_eq_single_add_single`:
   shared `HasMeromorphicContinuation` constructor in `AnalyticLFunctionData` for cards with simple
-  poles at `0` and `1`.
+  poles at two distinct points `a` and `b`.
 -/
 
 public section
@@ -54,26 +54,26 @@ theorem single_zero_one_add_single_one_one_one_sub_conj (s : ℂ) :
 namespace AnalyticLFunctionData
 
 /-- Construct `HasMeromorphicContinuation` for an `AnalyticLFunctionData` card whose polar divisor
-is `Finsupp.single 0 1 + Finsupp.single 1 1` from simple poles at `0` and `1` and analyticity off
-`{0, 1}`. -/
-theorem hasMeromorphicContinuation_of_polarOrder_eq_single_zero_one_add_single_one_one
-    {d : AnalyticLFunctionData}
-    (hpol : d.polarOrder = Finsupp.single 0 1 + Finsupp.single 1 1)
-    (h0 : meromorphicOrderAt d.completed 0 = (-1 : ℤ))
-    (h1 : meromorphicOrderAt d.completed 1 = (-1 : ℤ))
-    (ha : ∀ p : ℂ, p ≠ 0 → p ≠ 1 → AnalyticAt ℂ d.completed p) :
+is `Finsupp.single a 1 + Finsupp.single b 1` for distinct `a ≠ b`, from simple poles at `a` and `b`
+and analyticity off `{a, b}`. -/
+theorem hasMeromorphicContinuation_of_polarOrder_eq_single_add_single
+    {d : AnalyticLFunctionData} {a b : ℂ} (hab : a ≠ b)
+    (hpol : d.polarOrder = Finsupp.single a 1 + Finsupp.single b 1)
+    (ha : meromorphicOrderAt d.completed a = (-1 : ℤ))
+    (hb : meromorphicOrderAt d.completed b = (-1 : ℤ))
+    (han : ∀ p : ℂ, p ≠ a → p ≠ b → AnalyticAt ℂ d.completed p) :
     d.HasMeromorphicContinuation :=
   hasMeromorphicContinuation_of_meromorphicOrderAt
     (fun p hp ↦ by
       rw [hpol] at hp ⊢
-      rcases eq_or_ne p 0 with rfl | hp0
-      · simp [h0]
-      rcases eq_or_ne p 1 with rfl | hp1
-      · simp [h1]
-      · simp [Ne.symm hp0, Ne.symm hp1] at hp)
+      rcases eq_or_ne p a with rfl | hpa
+      · simp [hab, ha]
+      rcases eq_or_ne p b with rfl | hpb
+      · simp [hab.symm, hb]
+      · simp [Ne.symm hpa, Ne.symm hpb] at hp)
     fun p hp ↦ by
       rw [hpol] at hp
-      exact ha p (by rintro rfl; simp at hp) (by rintro rfl; simp at hp)
+      exact han p (by rintro rfl; simp at hp) (by rintro rfl; simp at hp)
 
 end AnalyticLFunctionData
 

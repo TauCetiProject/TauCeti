@@ -5,10 +5,13 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Analysis.SpecialFunctions.Gamma.Archimedean
 public import TauCeti.NumberTheory.LFunctions.DedekindZeta.UnitQuotient
 public import TauCeti.NumberTheory.LFunctions.Theta.Mellin.Pair
 public import TauCeti.NumberTheory.LFunctions.Theta.UnitCone
 public import TauCeti.NumberTheory.NumberField.CanonicalEmbedding.IdealLattice
+import TauCeti.Analysis.SpecialFunctions.Pow.Complex
+import TauCeti.RingTheory.FractionalIdeal.Norm
 
 /-!
 # Hecke's unfolding of the theta integral over a unit cone
@@ -57,6 +60,9 @@ rank (`NumberField.Units.not_summable_absNorm_of_rank_pos`).
 * `TauCeti.LFunctions.hasMellin_mellinKernel_idealLattice_sub_mellinConstant`: Neukirch's (5.5),
   the Mellin transform at `s/2` of the kernel of `σ(I)` minus its constant term, expressed through
   the Dirichlet series of the ideal class of `I⁻¹`.
+* `TauCeti.LFunctions.hasMellin_mellinKernel_idealLattice_sub_mellinConstant_tsum` and
+  `TauCeti.LFunctions.mellinKernelFEPair_Λ_div_two_eq_tsum`: covolume-normalized Mellin and
+  `mellinKernelFEPair.Λ` identities for the completed partial zeta series on `Re s > 1`.
 
 ## References
 
@@ -286,5 +292,101 @@ theorem hasMellin_mellinKernel_idealLattice_sub_mellinConstant
   convert h using 1
   · simp only [ofReal_mul, ofReal_div, ofReal_pow, ofReal_ofNat, ofReal_natCast]
   · field_simp
+
+open scoped Classical in
+/-- Complex power `(V_{σ(I)} ^ 2) ^ (s / 2)` expanded in terms of `N(I)`, `2 ^ (-r₂)`, and
+`|d_K|`. -/
+private theorem covolume_sq_idealLattice_cpow (I : (FractionalIdeal (𝓞 K)⁰ K)ˣ) (s : ℂ) :
+    (ZLattice.covolume (idealLattice K I) ^ 2 : ℂ) ^ (s / 2) =
+      ((FractionalIdeal.absNorm I.val : ℝ) : ℂ) ^ s *
+        (((2⁻¹ : ℝ) : ℂ) ^ s) ^ nrComplexPlaces K *
+        (((|discr K| : ℤ) : ℂ)) ^ (s / 2) := by
+  set N_I : ℝ := (FractionalIdeal.absNorm I.val : ℝ)
+  set D_K : ℝ := ((|discr K| : ℤ) : ℝ)
+  have hNI_pos : 0 < N_I := Rat.cast_pos.mpr (FractionalIdeal.absNorm_pos I.ne_zero)
+  have hDK_pos : 0 < D_K := Int.cast_pos.mpr (abs_pos.mpr (discr_ne_zero K))
+  have hV_pos : 0 < ZLattice.covolume (idealLattice K I) := ZLattice.covolume_pos (idealLattice K I)
+  have h1 : (ZLattice.covolume (idealLattice K I) ^ 2 : ℂ) ^ (s / 2) =
+      (ZLattice.covolume (idealLattice K I) : ℂ) ^ s := by
+    rw [TauCeti.ofReal_pow_cpow hV_pos.le 2 (s / 2), Nat.cast_ofNat,
+      mul_div_cancel₀ _ two_ne_zero]
+  have hcov : ZLattice.covolume (idealLattice K I) = N_I * 2⁻¹ ^ nrComplexPlaces K * √D_K := by
+    rw [covolume_idealLattice]
+    simp [N_I, D_K]
+  rw [h1, hcov, ofReal_mul,
+    ofReal_mul_cpow (mul_nonneg hNI_pos.le (by positivity)),
+    ofReal_mul, ofReal_mul_cpow hNI_pos.le, ofReal_pow,
+    TauCeti.ofReal_pow_cpow (by positivity) (nrComplexPlaces K) s, cpow_nat_mul,
+    Real.sqrt_eq_rpow, ← cpow_mul_ofReal_nonneg hDK_pos.le, ofReal_intCast |discr K|]
+  congr 2
+  push_cast
+  ring
+
+open scoped Classical in
+/-- Covolume-rescaled normalization algebra converting the Mellin output of `Unfolding` into the
+archimedean factor `|d_K| ^ (s / 2) Γ_ℝ(s) ^ r₁ Γ_ℂ(s) ^ r₂`. -/
+private theorem covolume_gamma_mul_eq (I : (FractionalIdeal (𝓞 K)⁰ K)ˣ) (s : ℂ) :
+    (2 : ℂ) ^ nrComplexPlaces K *
+        (ZLattice.covolume (idealLattice K I) ^ 2 : ℂ) ^ (s / 2) *
+        ((FractionalIdeal.absNorm (I : FractionalIdeal (𝓞 K)⁰ K) : ℚ) : ℂ) ^ (-s) *
+        (Gammaℝ s ^ nrRealPlaces K * Gammaℝ (2 * s) ^ nrComplexPlaces K) =
+      ((|discr K| : ℤ) : ℂ) ^ (s / 2) * Gammaℝ s ^ nrRealPlaces K *
+        Gammaℂ s ^ nrComplexPlaces K := by
+  set r₁ := nrRealPlaces K
+  set r₂ := nrComplexPlaces K
+  set N_I : ℝ := (FractionalIdeal.absNorm I.val : ℝ)
+  have hNI_pos : 0 < N_I := Rat.cast_pos.mpr (FractionalIdeal.absNorm_pos I.ne_zero)
+  have h2gamma : (2 : ℂ) ^ r₂ * Gammaℝ (2 * s) ^ r₂ = ((2 : ℂ) ^ s) ^ r₂ * Gammaℂ s ^ r₂ := by
+    rw [← mul_pow, two_mul_Gammaℝ_two_mul, mul_pow]
+  have h2cancel : (((2⁻¹ : ℝ) : ℂ) ^ s) ^ r₂ * ((2 : ℂ) ^ s) ^ r₂ = 1 := by
+    rw [← ofReal_ofNat, ← mul_pow, ← ofReal_mul_cpow (by positivity)]
+    norm_num
+  have hNI_cancel : (N_I : ℂ) ^ s * ((FractionalIdeal.absNorm I.val : ℚ) : ℂ) ^ (-s) = 1 := by
+    rw [← ofReal_ratCast, ← cpow_add _ _ (ofReal_ne_zero.mpr hNI_pos.ne'), add_neg_cancel,
+      cpow_zero]
+  rw [covolume_sq_idealLattice_cpow]
+  calc (2 : ℂ) ^ r₂ *
+          ((N_I : ℂ) ^ s * (((2⁻¹ : ℝ) : ℂ) ^ s) ^ r₂ * ((|discr K| : ℤ) : ℂ) ^ (s / 2)) *
+          ((FractionalIdeal.absNorm I.val : ℚ) : ℂ) ^ (-s) *
+          (Gammaℝ s ^ r₁ * Gammaℝ (2 * s) ^ r₂)
+      = ((N_I : ℂ) ^ s * ((FractionalIdeal.absNorm I.val : ℚ) : ℂ) ^ (-s)) *
+          ((((2⁻¹ : ℝ) : ℂ) ^ s) ^ r₂ * ((2 : ℂ) ^ r₂ * Gammaℝ (2 * s) ^ r₂)) *
+          (((|discr K| : ℤ) : ℂ) ^ (s / 2) * Gammaℝ s ^ r₁) := by ring
+    _ = ((|discr K| : ℤ) : ℂ) ^ (s / 2) * Gammaℝ s ^ r₁ * Gammaℂ s ^ r₂ := by
+        rw [hNI_cancel, h2gamma]
+        linear_combination
+          (((|discr K| : ℤ) : ℂ) ^ (s / 2) * Gammaℝ s ^ r₁ * Gammaℂ s ^ r₂) * h2cancel
+
+/-- On `Re s > 1`, `mellinKernel D (idealLattice K I) - mellinConstant K` has Mellin transform at
+`s / 2` equal to the completed partial zeta series of `I`. -/
+theorem hasMellin_mellinKernel_idealLattice_sub_mellinConstant_tsum
+    {D : Set (realSpace K)} (hD : IsUnitFundamentalDomain K D)
+    (I : (FractionalIdeal (𝓞 K)⁰ K)ˣ) {s : ℂ} (hs : 1 < s.re) :
+    HasMellin (fun u ↦ mellinKernel D (idealLattice K I) u - mellinConstant K) (s / 2)
+      (((|discr K| : ℤ) : ℂ) ^ (s / 2) * Gammaℝ s ^ nrRealPlaces K *
+        Gammaℂ s ^ nrComplexPlaces K *
+        ∑' 𝔟 : {𝔟 : (Ideal (𝓞 K))⁰ // ClassGroup.mk0 𝔟 = (ClassGroup.mk K I)⁻¹},
+          (Ideal.absNorm (𝔟 : Ideal (𝓞 K)) : ℂ) ^ (-s)) := by
+  have hm := hasMellin_mellinKernel_idealLattice_sub_mellinConstant I hD
+    (c := oneEquivClassGroup.symm (ClassGroup.mk K I)⁻¹)
+    (by rw [rayClassMk_idealsPrimeToEquiv_symm_eq, ← map_inv, inv_inv]) hs
+  rw [LSeries_rayClassCoeff_one_eq_tsum_oneEquivClassGroup _ hs, MulEquiv.apply_symm_apply] at hm
+  simpa only [covolume_gamma_mul_eq] using hm
+
+/-- On `Re s > 1`, `(mellinKernelFEPair hD (idealLattice K I)).Λ (s / 2)` equals the completed
+partial zeta series of `I`. -/
+theorem mellinKernelFEPair_Λ_div_two_eq_tsum {D : Set (realSpace K)}
+    (hD : IsUnitFundamentalDomain K D) (I : (FractionalIdeal (𝓞 K)⁰ K)ˣ) {s : ℂ}
+    (hs : 1 < s.re) :
+    (mellinKernelFEPair hD (idealLattice K I)).Λ (s / 2) =
+      ((|discr K| : ℤ) : ℂ) ^ (s / 2) * Gammaℝ s ^ nrRealPlaces K *
+        Gammaℂ s ^ nrComplexPlaces K *
+        ∑' 𝔟 : {𝔟 : (Ideal (𝓞 K))⁰ // ClassGroup.mk0 𝔟 = (ClassGroup.mk K I)⁻¹},
+          (Ideal.absNorm (𝔟 : Ideal (𝓞 K)) : ℂ) ^ (-s) := by
+  have hs2 : 1 / 2 < (s / 2).re := by
+    rw [div_ofNat_re]
+    linarith
+  exact (hasMellin_mellinKernel_sub_mellinConstant hD (idealLattice K I) hs2).2.symm.trans
+    (hasMellin_mellinKernel_idealLattice_sub_mellinConstant_tsum hD I hs).2
 
 end TauCeti.LFunctions

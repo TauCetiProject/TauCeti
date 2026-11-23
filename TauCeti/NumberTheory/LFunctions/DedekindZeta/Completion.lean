@@ -6,6 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.LFunctions.DedekindZeta.CompletedPartialZeta
+import TauCeti.Analysis.Meromorphic.NormalForm
+import TauCeti.Analysis.Meromorphic.Order
 
 /-!
 # The completed Dedekind zeta function
@@ -46,9 +48,8 @@ reflection symmetry `Λ_K(conj s) = conj (Λ_K(s))`.
   `TauCeti.LFunctions.meromorphicOrderAt_completedDedekindZeta_one`: analyticity, canonical pole
   values, residues, and simple poles of `completedDedekindZeta`.
 * `TauCeti.LFunctions.completedDedekindZeta_one_sub`,
-  `TauCeti.LFunctions.completedDedekindZeta_one_sub_eventuallyEq`,
   `TauCeti.LFunctions.completedDedekindZeta_conj`: the functional equation `Λ_K(1 - s) = Λ_K(s)`
-  (pointwise and as punctured germs) and reflection symmetry `Λ_K(conj s) = conj (Λ_K(s))`.
+  and reflection symmetry `Λ_K(conj s) = conj (Λ_K(s))`.
 
 ## References
 
@@ -99,40 +100,14 @@ theorem meromorphic_completedDedekindZeta : Meromorphic (completedDedekindZeta K
   meromorphicOn_univ.mp (meromorphicNFOn_completedDedekindZeta K).meromorphicOn
 
 variable (K) in
-/-- Algebraic identity relating the sum of the partial-zeta residues `h * (2 a₀)` to the
-completed Dedekind zeta residue `2^(r₁ + r₂) R h / w`. -/
-private theorem classNumber_mul_two_mul_mellinConstant :
-    (classNumber K : ℝ) * (2 * mellinConstant K) =
-      2 ^ (nrRealPlaces K + nrComplexPlaces K) * regulator K * classNumber K /
-        torsionOrder K := by
-  have hr : 1 ≤ nrRealPlaces K + nrComplexPlaces K := by
-    rw [← InfinitePlace.card_eq_nrRealPlaces_add_nrComplexPlaces]
-    exact Fintype.card_pos
-  have h2pow : (2 : ℝ) * 2 ^ (nrRealPlaces K + nrComplexPlaces K - 1) =
-      2 ^ (nrRealPlaces K + nrComplexPlaces K) := by
-    rw [← pow_succ', Nat.sub_add_cancel hr]
-  rw [mellinConstant_def]
-  calc (classNumber K : ℝ) *
-        (2 * (2 ^ (nrRealPlaces K + nrComplexPlaces K - 1) * regulator K / torsionOrder K))
-      = (2 * 2 ^ (nrRealPlaces K + nrComplexPlaces K - 1)) * regulator K * classNumber K /
-          torsionOrder K := by ring
-    _ = 2 ^ (nrRealPlaces K + nrComplexPlaces K) * regulator K * classNumber K /
-          torsionOrder K := by rw [h2pow]
-
-variable (K) in
-/-- Complex cast of `classNumber_mul_two_mul_mellinConstant`. -/
-private theorem classNumber_mul_two_mul_mellinConstant_complex :
-    (classNumber K : ℂ) * (2 * (mellinConstant K : ℂ)) =
-      ((2 ^ (nrRealPlaces K + nrComplexPlaces K) * regulator K * classNumber K /
-        torsionOrder K : ℝ) : ℂ) := by
-  exact_mod_cast classNumber_mul_two_mul_mellinConstant K
-
-variable (K) in
-/-- Nonvanishing of the common residue `h * (2 a₀)` in `ℂ`. -/
-private theorem classNumber_mul_two_mul_mellinConstant_ne_zero :
-    (classNumber K : ℂ) * (2 * (mellinConstant K : ℂ)) ≠ 0 :=
-  mul_ne_zero (Nat.cast_ne_zero.mpr (classNumber_ne_zero K))
-    (mul_ne_zero two_ne_zero (ofReal_ne_zero.mpr (mellinConstant_ne_zero K)))
+/-- Nonvanishing of the completed Dedekind zeta residue `2^(r₁ + r₂) R h / w` in `ℂ`. -/
+private theorem completedDedekindZeta_residue_ne_zero :
+    ((2 ^ (nrRealPlaces K + nrComplexPlaces K) * regulator K * classNumber K /
+      torsionOrder K : ℝ) : ℂ) ≠ 0 := by
+  have := regulator_pos K
+  have := Nat.pos_of_ne_zero (classNumber_ne_zero K)
+  have := Nat.pos_of_ne_zero (torsionOrder_ne_zero K)
+  exact ofReal_ne_zero.mpr (by positivity)
 
 /-! ### Class-sum helpers and decomposition -/
 
@@ -148,36 +123,42 @@ private theorem analyticAt_sum_completedPartialZetaClass {s : ℂ} (h0 : s ≠ 0
 private theorem sum_completedPartialZetaClass_one_sub (s : ℂ) :
     (∑ c : ClassGroup (𝓞 K), completedPartialZetaClass c (1 - s)) =
       ∑ c : ClassGroup (𝓞 K), completedPartialZetaClass c s := by
-  set d : ClassGroup (𝓞 K) :=
-    (ClassGroup.mk K (FractionalIdeal.dualEquiv ℤ ℚ (1 : _)))⁻¹
+  let d : ClassGroup (𝓞 K) :=
+    ClassGroup.mk0 ⟨differentIdeal ℤ (𝓞 K), mem_nonZeroDivisors_of_ne_zero differentIdeal_ne_bot⟩
   let e : ClassGroup (𝓞 K) ≃ ClassGroup (𝓞 K) := (Equiv.inv _).trans (Equiv.mulLeft d)
   simp_rw [fun c ↦ completedPartialZetaClass_one_sub c s]
   exact Equiv.sum_comp e (fun c ↦ completedPartialZetaClass c s)
 
+private theorem tendsto_sum_completedPartialZetaClass_mul {a L : ℂ}
+    (hL : ∀ c : ClassGroup (𝓞 K),
+      Tendsto (fun z : ℂ ↦ (z - a) * completedPartialZetaClass c z) (𝓝[≠] a) (𝓝 L)) :
+    Tendsto (fun z : ℂ ↦ (z - a) * ∑ c : ClassGroup (𝓞 K), completedPartialZetaClass c z)
+      (𝓝[≠] a) (𝓝 ((classNumber K : ℂ) * L)) := by
+  have hsum := tendsto_finsetSum Finset.univ fun c _ ↦ hL c
+  simp only [Finset.sum_const, Finset.card_univ, nsmul_eq_mul] at hsum
+  exact hsum.congr fun z ↦ (Finset.mul_sum _ _ _).symm
+
 private theorem tendsto_sub_one_mul_sum_completedPartialZetaClass :
     Tendsto (fun z : ℂ ↦ (z - 1) * ∑ c : ClassGroup (𝓞 K), completedPartialZetaClass c z)
-      (𝓝[≠] 1) (𝓝 (classNumber K * (2 * (mellinConstant K : ℂ)))) := by
-  have hsum : Tendsto
-      (fun z : ℂ ↦ ∑ c : ClassGroup (𝓞 K), (z - 1) * completedPartialZetaClass c z)
-      (𝓝[≠] 1) (𝓝 (∑ _c : ClassGroup (𝓞 K), (2 * (mellinConstant K : ℂ)))) :=
-    tendsto_finsetSum Finset.univ fun c _ ↦ tendsto_sub_one_mul_completedPartialZetaClass c
-  simp only [Finset.sum_const, Finset.card_univ, nsmul_eq_mul] at hsum
-  rw [← NumberField.classNumber] at hsum
-  exact hsum.congr fun z ↦ (Finset.mul_sum _ _ _).symm
+      (𝓝[≠] 1)
+      (𝓝 ((2 ^ (nrRealPlaces K + nrComplexPlaces K) * regulator K * classNumber K /
+        torsionOrder K : ℝ) : ℂ)) := by
+  have h := tendsto_sum_completedPartialZetaClass_mul (K := K) (a := 1)
+    fun c ↦ tendsto_sub_one_mul_completedPartialZetaClass c
+  convert h using 2
+  push_cast
+  ring
 
 private theorem tendsto_mul_sum_completedPartialZetaClass_zero :
     Tendsto (fun z : ℂ ↦ z * ∑ c : ClassGroup (𝓞 K), completedPartialZetaClass c z)
-      (𝓝[≠] 0) (𝓝 (-(classNumber K * (2 * (mellinConstant K : ℂ))))) := by
-  have hsub : Tendsto (fun z : ℂ ↦ 1 - z) (𝓝[≠] (0 : ℂ)) (𝓝[≠] 1) := by
-    refine tendsto_nhdsWithin_iff.mpr ⟨?_, ?_⟩
-    · simpa only [sub_zero] using
-        ((continuous_sub_left (1 : ℂ)).continuousAt (x := (0 : ℂ))).tendsto.mono_left
-          nhdsWithin_le_nhds
-    · filter_upwards [self_mem_nhdsWithin] with z (hz : z ≠ 0)
-      exact fun h ↦ hz (sub_eq_self.mp h)
-  have hlim := ((tendsto_sub_one_mul_sum_completedPartialZetaClass (K := K)).comp hsub).neg
-  refine hlim.congr fun z ↦ ?_
-  simp only [Function.comp_apply, sum_completedPartialZetaClass_one_sub]
+      (𝓝[≠] 0)
+      (𝓝 (-((2 ^ (nrRealPlaces K + nrComplexPlaces K) * regulator K * classNumber K /
+        torsionOrder K : ℝ) : ℂ))) := by
+  have h := tendsto_sum_completedPartialZetaClass_mul (K := K) (a := 0)
+    fun c ↦ by simpa only [sub_zero] using tendsto_mul_completedPartialZetaClass_zero c
+  simp only [sub_zero] at h
+  convert h using 2
+  push_cast
   ring
 
 private theorem meromorphicOrderAt_sum_completedPartialZetaClass_zero :
@@ -185,7 +166,7 @@ private theorem meromorphicOrderAt_sum_completedPartialZetaClass_zero :
         (fun z : ℂ ↦ ∑ c : ClassGroup (𝓞 K), completedPartialZetaClass c z) 0 = (-1 : ℤ) := by
   refine (meromorphic_sum_completedPartialZetaClass 0)
     |>.meromorphicOrderAt_eq_neg_one_of_tendsto_sub_smul
-      (neg_ne_zero.mpr (classNumber_mul_two_mul_mellinConstant_ne_zero K)) ?_
+      (neg_ne_zero.mpr (completedDedekindZeta_residue_ne_zero K)) ?_
   simpa only [sub_zero, smul_eq_mul] using tendsto_mul_sum_completedPartialZetaClass_zero (K := K)
 
 private theorem meromorphicOrderAt_sum_completedPartialZetaClass_one :
@@ -193,7 +174,7 @@ private theorem meromorphicOrderAt_sum_completedPartialZetaClass_one :
         (fun z : ℂ ↦ ∑ c : ClassGroup (𝓞 K), completedPartialZetaClass c z) 1 = (-1 : ℤ) := by
   refine (meromorphic_sum_completedPartialZetaClass 1)
     |>.meromorphicOrderAt_eq_neg_one_of_tendsto_sub_smul
-      (classNumber_mul_two_mul_mellinConstant_ne_zero K) ?_
+      (completedDedekindZeta_residue_ne_zero K) ?_
   simpa only [smul_eq_mul] using tendsto_sub_one_mul_sum_completedPartialZetaClass (K := K)
 
 private theorem sum_completedPartialZetaClass_eqOn :
@@ -224,12 +205,12 @@ theorem completedDedekindZeta_eq_sum_completedPartialZetaClass (s : ℂ) :
     rcases eq_or_ne z 0 with rfl | hz0
     · refine Or.inr ⟨meromorphic_sum_completedPartialZetaClass 0, ?_, ?_⟩
       · rw [meromorphicOrderAt_sum_completedPartialZetaClass_zero]
-        exact WithTop.coe_lt_zero.mpr (by norm_num)
+        exact WithTop.coe_lt_zero.mpr (by omega)
       · exact Finset.sum_eq_zero fun c _ ↦ completedPartialZetaClass_zero c
     rcases eq_or_ne z 1 with rfl | hz1
     · refine Or.inr ⟨meromorphic_sum_completedPartialZetaClass 1, ?_, ?_⟩
       · rw [meromorphicOrderAt_sum_completedPartialZetaClass_one]
-        exact WithTop.coe_lt_zero.mpr (by norm_num)
+        exact WithTop.coe_lt_zero.mpr (by omega)
       · exact Finset.sum_eq_zero fun c _ ↦ completedPartialZetaClass_one c
     · exact Or.inl (analyticAt_sum_completedPartialZetaClass hz0 hz1)
   have heq : completedDedekindZeta K = F := by
@@ -271,8 +252,7 @@ theorem tendsto_mul_completedDedekindZeta_zero :
     Tendsto (fun s : ℂ ↦ s * completedDedekindZeta K s) (𝓝[≠] 0)
       (𝓝 (-((2 ^ (nrRealPlaces K + nrComplexPlaces K) * regulator K * classNumber K /
         torsionOrder K : ℝ) : ℂ))) := by
-  simpa only [completedDedekindZeta_eq_sum_completedPartialZetaClass,
-    classNumber_mul_two_mul_mellinConstant_complex] using
+  simpa only [completedDedekindZeta_eq_sum_completedPartialZetaClass] using
     tendsto_mul_sum_completedPartialZetaClass_zero (K := K)
 
 variable (K) in
@@ -282,8 +262,7 @@ theorem tendsto_sub_one_mul_completedDedekindZeta :
     Tendsto (fun s : ℂ ↦ (s - 1) * completedDedekindZeta K s) (𝓝[≠] 1)
       (𝓝 ((2 ^ (nrRealPlaces K + nrComplexPlaces K) * regulator K * classNumber K /
         torsionOrder K : ℝ) : ℂ)) := by
-  simpa only [completedDedekindZeta_eq_sum_completedPartialZetaClass,
-    classNumber_mul_two_mul_mellinConstant_complex] using
+  simpa only [completedDedekindZeta_eq_sum_completedPartialZetaClass] using
     tendsto_sub_one_mul_sum_completedPartialZetaClass (K := K)
 
 variable (K) in
@@ -308,13 +287,11 @@ theorem analyticAt_completedDedekindZeta_iff {s : ℂ} :
     AnalyticAt ℂ (completedDedekindZeta K) s ↔ s ≠ 0 ∧ s ≠ 1 := by
   refine ⟨fun han ↦ ⟨?_, ?_⟩, fun ⟨h0, h1⟩ ↦ analyticAt_completedDedekindZeta h0 h1⟩
   · rintro rfl
-    exact not_analyticAt_of_meromorphicOrderAt_neg
-      (by rw [meromorphicOrderAt_completedDedekindZeta_zero]
-          exact WithTop.coe_lt_zero.mpr (by norm_num)) han
+    exact TauCeti.not_analyticAt_of_meromorphicOrderAt_eq_neg_one
+      (meromorphicOrderAt_completedDedekindZeta_zero K) han
   · rintro rfl
-    exact not_analyticAt_of_meromorphicOrderAt_neg
-      (by rw [meromorphicOrderAt_completedDedekindZeta_one]
-          exact WithTop.coe_lt_zero.mpr (by norm_num)) han
+    exact TauCeti.not_analyticAt_of_meromorphicOrderAt_eq_neg_one
+      (meromorphicOrderAt_completedDedekindZeta_one K) han
 
 variable (K) in
 /-- As a meromorphic normal form, `completedDedekindZeta K` takes the canonical value `0` at its
@@ -342,13 +319,6 @@ theorem completedDedekindZeta_one_sub (s : ℂ) :
   rw [completedDedekindZeta_eq_sum_completedPartialZetaClass,
     completedDedekindZeta_eq_sum_completedPartialZetaClass,
     sum_completedPartialZetaClass_one_sub]
-
-variable (K) in
-/-- Punctured-germ form of `TauCeti.LFunctions.completedDedekindZeta_one_sub` at every point
-`s : ℂ` (poles included). -/
-theorem completedDedekindZeta_one_sub_eventuallyEq (s : ℂ) :
-    (fun z : ℂ ↦ completedDedekindZeta K (1 - z)) =ᶠ[𝓝[≠] s] completedDedekindZeta K :=
-  Eventually.of_forall (completedDedekindZeta_one_sub K)
 
 variable (K) in
 /-- **Reflection symmetry of the completed Dedekind zeta function**:

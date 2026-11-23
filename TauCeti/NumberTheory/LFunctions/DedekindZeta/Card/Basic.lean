@@ -28,10 +28,11 @@ function defines an analytic L-function card `TauCeti.LFunctions.dedekindZetaDat
 This lightweight module defines `dedekindZetaData K` and exposes the field's degree, gamma factor
 (with right-half-plane nonvanishing), conductor cast, self-duality, `HasDirichletAgreement`,
 `HasMeromorphicContinuation`, and `HasFunctionalEquation` to the generic
-`TauCeti.LFunctions.AnalyticLFunctionData` API (supporting `(dedekindZetaData K).continuedL` and
-derived zero/L-function theory), while keeping coefficient-growth and
-`AnalyticLFunctionData.ofSeries` recovery in
-`TauCeti.NumberTheory.LFunctions.DedekindZeta.Card.Series`.
+`TauCeti.LFunctions.AnalyticLFunctionData` API. Import
+`TauCeti.NumberTheory.LFunctions.DedekindZeta.Continuation` for `(dedekindZetaData K).continuedL`
+and its identification with `TauCeti.LFunctions.dedekindZetaC K`, and
+`TauCeti.NumberTheory.LFunctions.DedekindZeta.Card.Series` for coefficient-growth and
+`AnalyticLFunctionData.ofSeries` recovery.
 
 ## Main definitions
 
@@ -164,7 +165,7 @@ open AnalyticLFunctionData in
 and no other singularities. -/
 theorem dedekindZetaData_hasMeromorphicContinuation :
     (dedekindZetaData K).HasMeromorphicContinuation :=
-  hasMeromorphicContinuation_of_polarOrder_eq_single_zero_one_add_single_one_one
+  hasMeromorphicContinuation_of_polarOrder_eq_single_add_single zero_ne_one
     (dedekindZetaData_polarOrder K)
     (by rw [dedekindZetaData_completed]; exact meromorphicOrderAt_completedDedekindZeta_zero K)
     (by rw [dedekindZetaData_completed]; exact meromorphicOrderAt_completedDedekindZeta_one K)

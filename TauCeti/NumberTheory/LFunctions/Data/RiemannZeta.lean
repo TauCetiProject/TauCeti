@@ -127,7 +127,7 @@ open AnalyticLFunctionData in
 others. -/
 theorem riemannZetaData_hasMeromorphicContinuation :
     riemannZetaData.HasMeromorphicContinuation :=
-  hasMeromorphicContinuation_of_polarOrder_eq_single_zero_one_add_single_one_one
+  hasMeromorphicContinuation_of_polarOrder_eq_single_add_single zero_ne_one
     riemannZetaData_polarOrder
     (by rw [riemannZetaData_completed]; exact meromorphicOrderAt_completedRiemannZeta_zero)
     (by rw [riemannZetaData_completed]; exact meromorphicOrderAt_completedRiemannZeta_one)

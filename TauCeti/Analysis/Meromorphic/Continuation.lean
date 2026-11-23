@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Meromorphic.Identity
-public import TauCeti.Analysis.Meromorphic.NormalForm
 public import Mathlib.Analysis.Complex.Basic
 
 /-!

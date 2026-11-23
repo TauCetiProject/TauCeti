@@ -8,6 +8,8 @@ module
 public import TauCeti.NumberTheory.LFunctions.Continued.Basic
 public import TauCeti.NumberTheory.LFunctions.DedekindZeta.Basic
 public import TauCeti.NumberTheory.LFunctions.DedekindZeta.Card.Basic
+import TauCeti.Analysis.Meromorphic.NormalForm
+import TauCeti.Analysis.Meromorphic.Order
 
 /-!
 # Meromorphic continuation and analytic properties of the Dedekind zeta function
@@ -34,7 +36,8 @@ rank is positive, whereas in unit rank `0` (`ℚ` and imaginary quadratic fields
   `(dedekindZetaData K).continuedL = dedekindZetaC K`.
 * `TauCeti.LFunctions.dedekindZetaC_eventuallyEq_mul_completedDedekindZeta`,
   `TauCeti.LFunctions.dedekindZetaC_eq_mul_completedDedekindZeta`,
-  `TauCeti.LFunctions.completedDedekindZeta_eventuallyEq_mul_dedekindZetaC`: relation between
+  `TauCeti.LFunctions.completedDedekindZeta_eventuallyEq_mul_dedekindZetaC`,
+  `TauCeti.LFunctions.completedDedekindZeta_eq_mul_dedekindZetaC`: relation between
   `dedekindZetaC K` and `completedDedekindZeta K`.
 * `TauCeti.LFunctions.dedekindZetaC_eq`: agreement with `NumberField.dedekindZeta K` on
   `Re s > 1`.
@@ -130,6 +133,21 @@ theorem completedDedekindZeta_eventuallyEq_mul_dedekindZetaC (s : ℂ) :
     AnalyticLFunctionData.completed_eventuallyEq_mul_continuedL
       (dedekindZetaData_hasMeromorphicContinuation K).meromorphic s
 
+variable (K) in
+/-- Away from gamma poles (in particular on `Re s > 0`, including at `s = 1`), putting back the
+conductor and gamma factors recovers `completedDedekindZeta K s` pointwise from
+`dedekindZetaC K s`. -/
+theorem completedDedekindZeta_eq_mul_dedekindZetaC {s : ℂ}
+    (hγ : Gammaℝ s ^ nrRealPlaces K * Gammaℂ s ^ nrComplexPlaces K ≠ 0) :
+    completedDedekindZeta K s =
+      ((|discr K| : ℤ) : ℂ) ^ (s / 2) *
+        Gammaℝ s ^ nrRealPlaces K * Gammaℂ s ^ nrComplexPlaces K *
+        dedekindZetaC K s := by
+  simpa only [dedekindZetaData_completed, dedekindZetaData_conductor_cast,
+    dedekindZetaData_gammaFactor, dedekindZetaData_continuedL, mul_assoc] using
+    (dedekindZetaData_hasMeromorphicContinuation K).completed_eq_mul_continuedL
+      (by simpa [dedekindZetaData_gammaFactor] using hγ)
+
 /-! ### Vanishing order and leading coefficient at `s = 0` -/
 
 variable (K) in
@@ -144,26 +162,16 @@ theorem meromorphicOrderAt_dedekindZetaC_zero :
       (dedekindZetaData_hasMeromorphicContinuation K).meromorphic 0,
     dedekindZetaData_completed, meromorphicOrderAt_completedDedekindZeta_zero,
     AnalyticLFunctionData.meromorphicOrderAt_gammaFactor_eq_neg_count]
-  have hr : 1 ≤ nrRealPlaces K + nrComplexPlaces K := by
-    rw [← InfinitePlace.card_eq_nrRealPlaces_add_nrComplexPlaces]
-    exact Fintype.card_pos
-  have hR : ((dedekindZetaData K).gammaR.countP fun μ ↦ ∃ n : ℕ, 0 + μ = -(2 * (n : ℂ))) =
-      nrRealPlaces K := by
-    rw [dedekindZetaData_gammaR, Multiset.countP_eq_card_filter, Multiset.filter_eq_self.mpr ?_,
+  have hcount (n : ℕ) {p : ℂ → Prop} [DecidablePred p] (hp : p 0) :
+      (Multiset.replicate n (0 : ℂ)).countP p = n := by
+    rw [Multiset.countP_eq_card.mpr fun x hx ↦ (Multiset.eq_of_mem_replicate hx).symm ▸ hp,
       Multiset.card_replicate]
-    intro μ hμ
-    rw [Multiset.eq_of_mem_replicate hμ]
-    exact ⟨0, by norm_num⟩
-  have hC : ((dedekindZetaData K).gammaC.countP fun ν ↦ ∃ n : ℕ, 0 + ν = -(n : ℂ)) =
-      nrComplexPlaces K := by
-    rw [dedekindZetaData_gammaC, Multiset.countP_eq_card_filter, Multiset.filter_eq_self.mpr ?_,
-      Multiset.card_replicate]
-    intro ν hν
-    rw [Multiset.eq_of_mem_replicate hν]
-    exact ⟨0, by norm_num⟩
-  rw [hR, hC, NumberField.Units.rank_eq_nrRealPlaces_add_nrComplexPlaces_sub_one]
+  rw [dedekindZetaData_gammaR, dedekindZetaData_gammaC, hcount _ ⟨0, by norm_num⟩,
+    hcount _ ⟨0, by norm_num⟩]
   norm_cast
-  omega
+  rw [← NumberField.Units.rank_add_one K]
+  push_cast
+  ring
 
 /-- **Holomorphy of the Dedekind zeta function away from `s = 1`**: `dedekindZetaC K` is analytic
 at every `s ≠ 1`, including `s = 0` where the reciprocal archimedean factor
@@ -187,14 +195,8 @@ variable (K) in
 theorem analyticOrderAt_dedekindZetaC_zero :
     analyticOrderAt (dedekindZetaC K) 0 = NumberField.Units.rank K := by
   have h := (analyticAt_dedekindZetaC (K := K) zero_ne_one).meromorphicOrderAt_eq
-  rw [meromorphicOrderAt_dedekindZetaC_zero K] at h
-  cases hord : analyticOrderAt (dedekindZetaC K) 0 with
-  | top =>
-    rw [hord] at h
-    simp at h
-  | coe n =>
-    rw [hord] at h
-    exact_mod_cast (WithTop.coe_inj.mp h).symm
+  rw [meromorphicOrderAt_dedekindZetaC_zero K, ← ENat.map_natCast] at h
+  exact ENat.map_natCast_injective h.symm
 
 private theorem inv_two_pow_mul_completedDedekindZeta_residue
     (K : Type*) [Field K] [NumberField K] :
@@ -221,12 +223,8 @@ private theorem uncompletedProduct_div_pow_rank_eq (K : Type*) [Field K] [Number
     ((|discr K| : ℤ) : ℂ) ^ (-s / 2) * (s * Gammaℝ s)⁻¹ ^ nrRealPlaces K *
         (s * Gammaℂ s)⁻¹ ^ nrComplexPlaces K * (s * completedDedekindZeta K s) =
       (dedekindZetaData K).uncompletedProduct s / s ^ NumberField.Units.rank K := by
-  have hr : 1 ≤ nrRealPlaces K + nrComplexPlaces K := by
-    rw [← InfinitePlace.card_eq_nrRealPlaces_add_nrComplexPlaces]
-    exact Fintype.card_pos
   have hspow : s ^ NumberField.Units.rank K * s = s ^ (nrRealPlaces K + nrComplexPlaces K) := by
-    rw [NumberField.Units.rank_eq_nrRealPlaces_add_nrComplexPlaces_sub_one, ← pow_succ,
-      Nat.sub_add_cancel hr]
+    rw [← pow_succ, NumberField.Units.rank_add_one K]
   rw [uncompletedProduct_dedekindZetaData, div_eq_mul_inv]
   simp only [mul_inv, mul_pow]
   calc
@@ -368,9 +366,8 @@ theorem analyticAt_dedekindZetaC_iff {s : ℂ} :
     AnalyticAt ℂ (dedekindZetaC K) s ↔ s ≠ 1 := by
   refine ⟨fun han ↦ ?_, analyticAt_dedekindZetaC⟩
   rintro rfl
-  exact not_analyticAt_of_meromorphicOrderAt_neg
-    (by rw [meromorphicOrderAt_dedekindZetaC_one]
-        exact WithTop.coe_lt_zero.mpr (by norm_num)) han
+  exact TauCeti.not_analyticAt_of_meromorphicOrderAt_eq_neg_one
+    (meromorphicOrderAt_dedekindZetaC_one K) han
 
 variable (K) in
 /-- As a meromorphic normal form, `dedekindZetaC K` takes the canonical value `0` at its pole

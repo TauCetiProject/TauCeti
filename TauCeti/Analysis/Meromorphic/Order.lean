@@ -42,6 +42,9 @@ meromorphic order to every point of `closedBall c R`.
   the closed disc.
 * `DifferentiableOn.neg_one_le_meromorphicOrderAt`: a function differentiable off a closed set of
   at-worst-simple poles has meromorphic order at least `-1` throughout an open set.
+* `TauCeti.not_analyticAt_of_meromorphicOrderAt_neg`,
+  `TauCeti.not_analyticAt_of_meromorphicOrderAt_eq_neg_one`: negative meromorphic order
+  (in particular order `-1`) precludes analyticity.
 -/
 
 public section
@@ -137,6 +140,8 @@ end Bounded
 
 section NonAnalytic
 
+namespace TauCeti
+
 variable {𝕜 E : Type*} [NontriviallyNormedField 𝕜] [NormedAddCommGroup E] [NormedSpace 𝕜 E]
   {f : 𝕜 → E} {x : 𝕜}
 
@@ -144,6 +149,13 @@ variable {𝕜 E : Type*} [NontriviallyNormedField 𝕜] [NormedAddCommGroup E] 
 theorem not_analyticAt_of_meromorphicOrderAt_neg (h : meromorphicOrderAt f x < 0) :
     ¬ AnalyticAt 𝕜 f x :=
   fun ha ↦ h.not_ge ha.meromorphicOrderAt_nonneg
+
+/-- A function with meromorphic order `-1` at `x` is not analytic at `x`. -/
+theorem not_analyticAt_of_meromorphicOrderAt_eq_neg_one
+    (h : meromorphicOrderAt f x = (-1 : ℤ)) : ¬ AnalyticAt 𝕜 f x :=
+  not_analyticAt_of_meromorphicOrderAt_neg (h ▸ WithTop.coe_lt_zero.mpr (by norm_num))
+
+end TauCeti
 
 end NonAnalytic
 

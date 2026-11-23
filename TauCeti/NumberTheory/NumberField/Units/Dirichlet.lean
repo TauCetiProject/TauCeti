@@ -36,6 +36,7 @@ Hilbert pour Γ₁(c, n)*, proof of Théorème 8.3).
 
 * `NumberField.unitsMulEquivTorsionProdMultiplicative`: the unit group as the product of
   its torsion subgroup and the free abelian group on the fundamental system.
+* `NumberField.Units.rank_add_one`: the unit rank plus one is `r₁ + r₂`.
 * `NumberField.Units.rank_eq_nrRealPlaces_add_nrComplexPlaces_sub_one`: the unit rank as
   `r₁ + r₂ - 1`.
 * `NumberField.Units.rank_add_nrComplexPlaces_add_one`: the unit rank plus the number of
@@ -130,11 +131,22 @@ namespace Units
 
 variable (K : Type*) [Field K] [NumberField K]
 
+/-- **Dirichlet unit rank plus one is the number of infinite places `r₁ + r₂`.**
+
+Stated as an addition rather than `rank K = r₁ + r₂ - 1` so truncated subtraction on `ℕ` is
+avoided. -/
+theorem rank_add_one :
+    rank K + 1 = InfinitePlace.nrRealPlaces K + InfinitePlace.nrComplexPlaces K := by
+  have hcard := InfinitePlace.card_eq_nrRealPlaces_add_nrComplexPlaces K
+  have hpos : 0 < Fintype.card (InfinitePlace K) := Fintype.card_pos
+  rw [NumberField.Units.rank]
+  omega
+
 /-- **Dirichlet unit rank in terms of real and complex places**:
 `NumberField.Units.rank K = r₁ + r₂ - 1`. -/
 theorem rank_eq_nrRealPlaces_add_nrComplexPlaces_sub_one :
-    rank K = InfinitePlace.nrRealPlaces K + InfinitePlace.nrComplexPlaces K - 1 := by
-  rw [NumberField.Units.rank, InfinitePlace.card_eq_nrRealPlaces_add_nrComplexPlaces]
+    rank K = InfinitePlace.nrRealPlaces K + InfinitePlace.nrComplexPlaces K - 1 :=
+  Nat.eq_sub_of_add_eq (rank_add_one K)
 
 /-- **The unit rank, the complex places and one exhaust the degree.** Dirichlet's rank is
 `#(InfinitePlace K) - 1` while the degree is `r₁ + 2 * r₂`, so restoring the complex places and
