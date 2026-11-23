@@ -92,9 +92,9 @@ in the genus of `L` have the rank and the determinant of `L`. No definiteness is
 covers indefinite binary lattices, isotropic or anisotropic. -/
 theorem finite_genusClasses_of_finrank_eq_two {L : IntegralLattice V} [L.IsNondegenerate]
     (h2 : finrank ℤ L = 2) : L.genusClasses.Finite := by
-  have hgen (c : L.genusClasses) : L.SameGenus c.1.out := mem_genusClasses_iff.mp c.2
+  have hgen (c : L.genusClasses) : L.SameGenus c.val.out := mem_genusClasses_iff.mp c.property
   exact Set.finite_coe_iff.mp <| finite_of_pairwise_isEmpty_isometry_of_finrank_eq_two
-    (fun c : L.genusClasses ↦ c.1.out) (L.determinant_ne_zero_iff.mpr L.form_nondegenerate)
+    (fun c : L.genusClasses ↦ c.val.out) (L.determinant_ne_zero_iff.mpr L.form_nondegenerate)
     (fun c ↦ (hgen c).finrank_eq.symm.trans h2) (fun c ↦ (hgen c).determinant_eq.symm)
     fun c d hcd ↦ ⟨fun e ↦ hcd (Subtype.ext (IsometryQuotient.eq_of_isometry_out e))⟩
 

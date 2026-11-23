@@ -129,7 +129,7 @@ private theorem halfNorm_eq_zero (hu : L.integralNorm u = 0) : L.halfNorm (u : V
 
 private theorem polar_halfNorm_eq_zero (w : L.evenOrthogonal u) :
     polar L.halfNorm (u : V) ((w : L) : V) = 0 := by
-  rw [polar_halfNorm, ← integralForm_cast, (mem_evenOrthogonal_iff.mp w.2).1, Int.cast_zero]
+  rw [polar_halfNorm, ← integralForm_cast, (mem_evenOrthogonal_iff.mp w.property).1, Int.cast_zero]
 
 /-- The ambient Eichler transvection of the rational half-norm, before restriction to `L`. -/
 private noncomputable abbrev ambientTransvection (hu : L.integralNorm u = 0)
@@ -140,7 +140,7 @@ private noncomputable abbrev ambientTransvection (hu : L.integralNorm u = 0)
 private theorem halfNorm_parameter (w : L.evenOrthogonal u) :
     L.halfNorm ((w : L) : V) = ((L.integralNorm w / 2 : ℤ) : ℚ) := by
   rw [halfNorm_apply, ← integralForm_cast, ← integralNorm_apply,
-    Int.cast_div (even_iff_two_dvd.mp (mem_evenOrthogonal_iff.mp w.2).2) (by norm_num),
+    Int.cast_div (even_iff_two_dvd.mp (mem_evenOrthogonal_iff.mp w.property).2) (by norm_num),
     Int.cast_ofNat]
 
 private theorem ambientTransvection_apply (hu : L.integralNorm u = 0) (w : L.evenOrthogonal u)
@@ -226,7 +226,7 @@ theorem det_eichlerTransvection (hu : L.integralNorm u = 0) (w : L.evenOrthogona
     Isometry.det L (eichlerTransvection hu w) = 1 := by
   -- On the carrier, `E_{u,w}` is the composite of the integral linear transvections
   -- `x ↦ x + B(u, x) • w` and `x ↦ x + (k B(u, x) - B(w, x)) • u`, where `2k = B(w, w)`.
-  obtain ⟨h₁, hw⟩ := mem_evenOrthogonal_iff.mp w.2
+  obtain ⟨h₁, hw⟩ := mem_evenOrthogonal_iff.mp w.property
   have huu : L.integralForm u u = 0 := by rwa [← integralNorm_apply]
   have hwu : L.integralForm w u = 0 := by rw [L.isSymm_integralForm.eq, h₁]
   have h₂ : ((L.integralNorm w / 2) • L.integralForm u - L.integralForm w) u = 0 := by
@@ -415,7 +415,7 @@ theorem exists_mem_evenOrthogonal_notMem_span (hrank : 3 ≤ Module.finrank ℤ 
     (L.polarBilin_halfNorm ▸ hu₀) (L.finrank_carrier ▸ hrank)
   rw [polar_halfNorm] at huv
   obtain ⟨s, hs, hsv⟩ := Submodule.IsLattice.exists_ne_zero_smul_mem ℚ L.carrier
-    Submodule.IsLattice.span_eq_top v
+    Submodule.IsFullLattice.span_eq_top v
   -- Doubling makes the norm even; the scalar `2 * s` is nonzero, so `w` stays off the line.
   refine ⟨(2 : ℤ) • ⟨s • v, hsv⟩, mem_evenOrthogonal_iff.mpr ⟨?_, ?_⟩, ?_⟩
   · apply Int.cast_injective (α := ℚ)
@@ -437,7 +437,7 @@ theorem infinite_specialOrthogonalGroup_of_not_anisotropic [L.IsNondegenerate]
   obtain ⟨v, hv, hv₀⟩ : ∃ v : V, L.norm v = 0 ∧ v ≠ 0 := by
     simpa [QuadraticMap.Anisotropic] using hiso
   obtain ⟨s, hs, hsv⟩ := Submodule.IsLattice.exists_ne_zero_smul_mem ℚ L.carrier
-    Submodule.IsLattice.span_eq_top v
+    Submodule.IsFullLattice.span_eq_top v
   set u : L := ⟨s • v, hsv⟩
   have hsv' : (s : ℚ) • v = (u : V) := Int.cast_smul_eq_zsmul ℚ s v
   have hu₀ : L.form u ≠ 0 := by

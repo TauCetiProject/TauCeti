@@ -13,6 +13,7 @@ public import TauCeti.Geometry.Manifold.ContMDiff.ParametricIntegral
 public import TauCeti.Geometry.Manifold.Riemannian.Section
 public import Mathlib.MeasureTheory.Group.Integral
 public import TauCeti.RepresentationTheory.Compact.Haar
+import TauCeti.Geometry.Manifold.VectorBundle.Riemannian.Existence
 
 /-!
 # Invariant Riemannian metrics for finite and compact group actions
@@ -60,6 +61,9 @@ invariant compatible almost complex structure is obtained by polar normalization
 * `TauCeti.exists_contMDiffRiemannianMetric_inner_mfderiv`: a compact topological group that is a
   manifold, acting jointly `C^(n+1)` on a boundaryless finite-dimensional manifold with a `C^n`
   metric, preserves some `C^n` metric.
+* `TauCeti.of_forall_riemannianBundle_inner_mfderiv`: to prove a statement about a smooth action
+  of such a group on a σ-compact Hausdorff manifold, it suffices to prove it for every smooth
+  Riemannian metric preserved by the action.
 
 ## References
 
@@ -390,5 +394,41 @@ theorem exists_contMDiffRiemannianMetric_inner_mfderiv [IsTopologicalGroup G]
     measureAverageRiemannianMetric_inner_mfderiv J (haarProb G) g⟩
 
 end Compact
+
+section Smooth
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+  {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H} [I.Boundaryless]
+  {M : Type*} [TopologicalSpace M] [ChartedSpace H M] [IsManifold I ∞ M] [T2Space M]
+  [SigmaCompactSpace M]
+  {E' : Type*} [NormedAddCommGroup E'] [NormedSpace ℝ E']
+  {H' : Type*} [TopologicalSpace H'] (J : ModelWithCorners ℝ E' H')
+  (G : Type*) [Group G] [TopologicalSpace G] [IsTopologicalGroup G] [CompactSpace G] [T2Space G]
+  [ChartedSpace H' G] [IsManifold J ∞ G] [MulAction G M] [ContMDiffSMul J I ∞ G M]
+
+include J
+
+/-- **Reduction to an invariant smooth metric.** A compact group acting smoothly on a σ-compact
+Hausdorff boundaryless manifold preserves a smooth Riemannian metric, the Haar average of the
+pullbacks of any smooth metric. So to prove a statement it suffices to prove it for an arbitrary
+smooth Riemannian metric preserved by the action. -/
+theorem of_forall_riemannianBundle_inner_mfderiv {P : Prop}
+    (h : ∀ [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
+      [IsContMDiffRiemannianBundle I ∞ E (fun x : M ↦ TangentSpace I x)],
+      (∀ (a : G) (x : M) (v w : TangentSpace I x),
+        inner ℝ (mfderiv I I (a • ·) x v) (mfderiv I I (a • ·) x w) = inner ℝ v w) → P) : P := by
+  obtain ⟨g⟩ := nonempty_contMDiffRiemannianMetric (IB := I) (n := ⊤) (F := E)
+    (E := fun x : M ↦ TangentSpace I x)
+  -- Haar averaging needs the action to be `C^(n + 1)` for a `C^n` metric; for `n = ∞` this is
+  -- smoothness.
+  have : ContMDiffSMul J I (∞ + 1) G M := by
+    rwa [ENat.coe_top_add_one]
+  obtain ⟨g', hg'⟩ := exists_contMDiffRiemannianMetric_inner_mfderiv (G := G) (n := ⊤) J g
+  let : RiemannianBundle (fun x : M ↦ TangentSpace I x) := ⟨g'.toRiemannianMetric⟩
+  let : IsContMDiffRiemannianBundle I ∞ E (fun x : M ↦ TangentSpace I x) :=
+    Bundle.instIsContMDiffRiemannianBundle g'
+  exact h hg'
+
+end Smooth
 
 end TauCeti

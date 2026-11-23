@@ -37,6 +37,8 @@ For a tower of ideals `p ⊆ Q ⊆ P` along a tower of algebras `A → B → C`,
   forces `p` to be prime.
 * `Ideal.Quotient.isScalarTower_quotient_of_liesOver`: `A ⧸ p → B ⧸ Q → C ⧸ P` is a tower of
   algebras.
+* `Ideal.comap_inclusion_under`: pulling back `I.under B` along `Subalgebra.inclusion hAB` gives
+  `I.under A`.
 -/
 
 public section
@@ -44,6 +46,14 @@ public section
 open Ideal
 
 namespace Ideal
+
+/-- Pulling back the contraction `I.under B` to a smaller subalgebra `A ≤ B` recovers
+`I.under A`. -/
+@[simp]
+theorem comap_inclusion_under {R S : Type*} [CommSemiring R] [CommSemiring S] [Algebra R S]
+    {A B : Subalgebra R S} (hAB : A ≤ B) (I : Ideal S) :
+    (I.under B).comap (Subalgebra.inclusion hAB) = I.under A :=
+  ext fun _ ↦ Iff.rfl
 
 /-- An ideal of an `R`-algebra lying over the principal ideal `(a)` meets `R` exactly in the
 multiples of `a`: `algebraMap R S m ∈ Q ↔ a ∣ m`. -/

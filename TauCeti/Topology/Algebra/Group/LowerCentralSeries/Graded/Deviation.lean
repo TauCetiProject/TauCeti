@@ -140,7 +140,8 @@ private def deviationAux (k : ℕ) :
     pLowerCentralSeries p G k →*
       (pLowerCentralSeries p G (m + k) ⧸
         (pLowerCentralSeries p G (m + k + 1)).subgroupOf (pLowerCentralSeries p G (m + k))) where
-  toFun x := QuotientGroup.mk ⟨(x : G)⁻¹ * θ x, inv_mul_apply_mem_pLowerCentralSeries θ hθc hθ x.2⟩
+  toFun x := QuotientGroup.mk ⟨(x : G)⁻¹ * θ x, inv_mul_apply_mem_pLowerCentralSeries θ hθc hθ
+      x.property⟩
   map_one' := by
     rw [← QuotientGroup.mk_one]
     congr 1
@@ -150,7 +151,7 @@ private def deviationAux (k : ℕ) :
     rw [← QuotientGroup.mk_mul, QuotientGroup.eq_subgroupOf]
     simp only [coe_mul]
     have hu : (x : G)⁻¹ * θ x ∈ pLowerCentralSeries p G (m + k) :=
-      inv_mul_apply_mem_pLowerCentralSeries θ hθc hθ x.2
+      inv_mul_apply_mem_pLowerCentralSeries θ hθc hθ x.property
     have h : ((x : G) * y)⁻¹ * θ ((x : G) * y) =
         ((y : G)⁻¹ * ((x : G)⁻¹ * θ x) * (y : G)⁻¹⁻¹) * ((y : G)⁻¹ * θ y) := by
       rw [map_mul]; group
@@ -159,7 +160,7 @@ private def deviationAux (k : ℕ) :
 
 private theorem deviationAux_apply (k : ℕ) (x : pLowerCentralSeries p G k) :
     deviationAux θ hθc hθ k x = QuotientGroup.mk ⟨(x : G)⁻¹ * θ x,
-      inv_mul_apply_mem_pLowerCentralSeries θ hθc hθ x.2⟩ :=
+      inv_mul_apply_mem_pLowerCentralSeries θ hθc hθ x.property⟩ :=
   rfl
 
 private theorem subgroupOf_le_ker_deviationAux (k : ℕ) :
@@ -184,7 +185,7 @@ def gradedDeviation (k : ℕ) : gradedPiece p G k →+ gradedPiece p G (m + k) :
 theorem gradedDeviation_gradedMk {k : ℕ} (x : pLowerCentralSeries p G k) :
     gradedDeviation θ hθc hθ k (gradedMk p G k x) =
       gradedMk p G (m + k)
-        ⟨(x : G)⁻¹ * θ x, inv_mul_apply_mem_pLowerCentralSeries θ hθc hθ x.2⟩ := by
+        ⟨(x : G)⁻¹ * θ x, inv_mul_apply_mem_pLowerCentralSeries θ hθc hθ x.property⟩ := by
   rw [gradedDeviation, gradedMk_def k x, MonoidHom.toAdditive_apply_apply, toMul_ofMul,
     QuotientGroup.lift_mk, deviationAux_apply, gradedMk_def (m + k)]
 
@@ -206,7 +207,7 @@ theorem gradedMap_eq_id_of_one_le (hm : 1 ≤ m) (k : ℕ) :
   rw [gradedMap_gradedMk, AddMonoidHom.id_apply, gradedMk_eq_gradedMk_iff, coe_mk, eq_comm,
     QuotientGroup.eq]
   exact pLowerCentralSeries_antitone (by omega)
-    (inv_mul_apply_mem_pLowerCentralSeries θ hθc hθ x.2)
+    (inv_mul_apply_mem_pLowerCentralSeries θ hθc hθ x.property)
 
 /-- **The Leibniz rule.** For `m ≥ 1` the graded deviation is a derivation of the bracket:
 `D [x, y] = [D x, y] + [x, D y]`, with the two terms transported to the degree `m + (j + k + 1)`.
@@ -222,9 +223,9 @@ theorem gradedDeviation_gradedBracket (hm : 1 ≤ m) {j k : ℕ} (x : gradedPiec
   obtain ⟨x, rfl⟩ := gradedMk_surjective j x
   obtain ⟨y, rfl⟩ := gradedMk_surjective k y
   have hu : (x : G)⁻¹ * θ x ∈ pLowerCentralSeries p G (m + j) :=
-    inv_mul_apply_mem_pLowerCentralSeries θ hθc hθ x.2
+    inv_mul_apply_mem_pLowerCentralSeries θ hθc hθ x.property
   have hv : (y : G)⁻¹ * θ y ∈ pLowerCentralSeries p G (m + k) :=
-    inv_mul_apply_mem_pLowerCentralSeries θ hθc hθ y.2
+    inv_mul_apply_mem_pLowerCentralSeries θ hθc hθ y.property
   rw [gradedBracket_gradedMk, gradedDeviation_gradedMk, gradedDeviation_gradedMk,
     gradedDeviation_gradedMk, gradedBracket_gradedMk, gradedBracket_gradedMk, gradedCast_gradedMk,
     gradedCast_gradedMk, ← gradedMk_mul, gradedMk_eq_gradedMk_iff]
@@ -240,16 +241,17 @@ theorem gradedDeviation_gradedBracket (hm : 1 ≤ m) {j k : ℕ} (x : gradedPiec
         ((⁅u, (y : G)⁆ : G) : G ⧸ _) := by
     rw [mk_eq_mk_mul_mk_of_pLowerCentralSeries_of_le _ (by omega)
         (mk_commutatorElement_mul_left hu
-          (mul_mem y.2 (pLowerCentralSeries_antitone (Nat.le_add_left k m) hv)) x),
+          (mul_mem y.property (pLowerCentralSeries_antitone (Nat.le_add_left k m) hv)) x),
       mk_eq_mk_mul_mk_of_pLowerCentralSeries_of_le _ (by omega)
-        (mk_commutatorElement_mul_right x.2 hv y),
+        (mk_commutatorElement_mul_right x.property hv y),
       mk_eq_mk_mul_mk_of_pLowerCentralSeries_of_le _ (by omega)
         (mk_commutatorElement_mul_right hu hv y),
       mk_eq_one_of_mem_pLowerCentralSeries_of_le _ (commutator_mem_pLowerCentralSeries hu hv)
         (by omega), mul_one]
   rw [map_commutatorElement, hθx, hθy, QuotientGroup.mk_mul, QuotientGroup.mk_inv, h,
     QuotientGroup.mk_mul, mul_assoc, inv_mul_cancel_left,
-    (commute_mk_of_mem_pLowerCentralSeries_of_le _ (commutator_mem_pLowerCentralSeries x.2 hv)
+    (commute_mk_of_mem_pLowerCentralSeries_of_le _ (commutator_mem_pLowerCentralSeries x.property
+        hv)
       (by omega) _).eq]
 
 /-- **The Leibniz rule in degree zero**, in the cast-free form
@@ -268,7 +270,7 @@ theorem gradedDeviation_gradedBracket_zero (hm : 1 ≤ m) (x y : gradedPiece p G
   -- degrees `m + (0 + 0 + 1)`, `m + 0 + 0 + 1` and `0 + (m + 0) + 1` all read as `m + 1`.
   have h : gradedMk p G (m + 1) ⟨⁅(x : G), (y : G)⁆⁻¹ * θ ⁅(x : G), (y : G)⁆,
         inv_mul_apply_mem_pLowerCentralSeries θ hθc hθ
-          (commutator_mem_pLowerCentralSeries x.2 y.2)⟩ =
+          (commutator_mem_pLowerCentralSeries x.property y.property)⟩ =
       gradedMk p G (m + 1) ⟨⁅(x : G)⁻¹ * θ x, (y : G)⁆,
           commutator_mem_pLowerCentralSeries_succ hu y⟩ +
         gradedMk p G (m + 1) ⟨⁅(x : G), (y : G)⁻¹ * θ y⁆,
@@ -301,12 +303,13 @@ theorem gradedDeviation_gradedPow_of_one_le {k : ℕ} (hk : 1 ≤ k) (x : graded
       gradedPow p G (m + k) (gradedDeviation θ hθc hθ k x) := by
   obtain ⟨x, rfl⟩ := gradedMk_surjective k x
   have hu : (x : G)⁻¹ * θ x ∈ pLowerCentralSeries p G (m + k) :=
-    inv_mul_apply_mem_pLowerCentralSeries θ hθc hθ x.2
+    inv_mul_apply_mem_pLowerCentralSeries θ hθc hθ x.property
   -- The two sides live in `gr_{m+(k+1)}` and `gr_{m+k+1}`, which agree definitionally.
   have e : gradedDeviation θ hθc hθ (k + 1)
-      (gradedMk p G (k + 1) ⟨(x : G) ^ p, pow_mem_pLowerCentralSeries x.2⟩) =
+      (gradedMk p G (k + 1) ⟨(x : G) ^ p, pow_mem_pLowerCentralSeries x.property⟩) =
         gradedMk p G (m + k + 1) ⟨((x : G) ^ p)⁻¹ * θ ((x : G) ^ p),
-          inv_mul_apply_mem_pLowerCentralSeries θ hθc hθ (pow_mem_pLowerCentralSeries x.2)⟩ :=
+          inv_mul_apply_mem_pLowerCentralSeries θ hθc hθ (pow_mem_pLowerCentralSeries x.property)⟩
+              :=
     gradedDeviation_gradedMk θ hθc hθ _
   rw [gradedPow_gradedMk, e, gradedDeviation_gradedMk, gradedPow_gradedMk, gradedMk_eq_gradedMk_iff]
   dsimp only
@@ -315,7 +318,7 @@ theorem gradedDeviation_gradedPow_of_one_le {k : ℕ} (hk : 1 ≤ k) (x : graded
   rw [map_pow, hθx, QuotientGroup.mk_mul, QuotientGroup.mk_inv, QuotientGroup.mk_pow,
     QuotientGroup.mk_pow, QuotientGroup.mk_mul _ (x : G) u,
     (QuotientGroup.commute_mk_iff.mpr (pLowerCentralSeries_antitone (by omega)
-      (commutator_mem_pLowerCentralSeries x.2 hu))).mul_pow, inv_mul_cancel_left,
+      (commutator_mem_pLowerCentralSeries x.property hu))).mul_pow, inv_mul_cancel_left,
     QuotientGroup.mk_pow]
 
 /-- **The graded deviation against `π` in degree zero**:

@@ -463,7 +463,7 @@ theorem cauchyTransform_mem_throughReal (u : 𝓓'(Ω, ℂ)) (χ : 𝓓(Ω, ℝ)
     (hV : Disjoint (V : Set ℝ) (dsupport u ∩ tsupport χ)) :
     ⟨cauchyTransform u χ, cauchyTransform_mem_holomorphicSections u χ⟩ ∈ throughReal V := by
   choose χ' hχ' ht using fun t : V ↦
-    exists_cauchyTransform_eq_and_notMem_tsupport u χ (disjoint_left.1 hV t.2)
+    exists_cauchyTransform_eq_and_notMem_tsupport u χ (disjoint_left.1 hV t.property)
   refine mem_throughReal_of_le_iSup
     (U := fun t ↦ ⟨(tsupport (χ' t))ᶜ, (isClosed_tsupport _).isOpen_compl⟩)
     (fun t ht' ↦ Opens.mem_iSup.2 ⟨⟨t, ht'⟩, ht ⟨t, ht'⟩⟩) fun t ↦ ?_
