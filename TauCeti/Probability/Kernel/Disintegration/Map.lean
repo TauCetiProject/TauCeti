@@ -311,7 +311,7 @@ theorem map_prodMk_eq_compProd_comap_of_ae_eq {S₁ S₂ : Type*} [MeasurableSpa
       ← Measure.map_map (hf.prodMap measurable_id) (hU₁.prodMk measurable_id'),
       Measure.map_apply (hf.prodMap measurable_id) hA, hdis, Measure.compProd_apply hB,
       lintegral_map (Kernel.measurable_kernel_prodMk_left hB) hU₁]
-    rfl
+    simp only [B, Set.preimage_preimage, Prod.map_apply, id_eq]
   have hRHS : (μ.map U₂ ⊗ₘ K.comap g hg) A =
       ∫⁻ x, K (g (U₂ x)) (Prod.mk (U₂ x) ⁻¹' A) ∂μ := by
     rw [Measure.compProd_apply hA, lintegral_map (Kernel.measurable_kernel_prodMk_left hA) hU₂]
