@@ -9,6 +9,7 @@ public import Mathlib.Analysis.CStarAlgebra.Matrix
 public import Mathlib.Analysis.Matrix.PosDef
 public import TauCeti.Analysis.InnerProductSpace.CourantFischer
 public import TauCeti.Analysis.Matrix.EntrywiseOpNorm
+import TauCeti.Analysis.Matrix.Spectrum
 import TauCeti.LinearAlgebra.Matrix.Rank
 
 /-!
@@ -42,10 +43,10 @@ allowed.
 The perturbation estimate combines the operator Weyl inequality in
 `TauCeti.Analysis.InnerProductSpace.CourantFischer` with the entrywise operator bound in
 `TauCeti.Analysis.Matrix.EntrywiseOpNorm`. The rank count reindexes Mathlib's
-`Matrix.IsHermitian.rank_eq_card_non_zero_eigs` to the sorted enumeration. The same reindexing
-turns a simple sorted eigenvalue into a simple matrix-indexed one
-(`Matrix.IsHermitian.eigenvalues_ne_eigenvalues_equivOfCardEq`), whose gaps `λᵢ - λₖ` to the
-other eigenvalues have nonzero product (`Matrix.IsHermitian.prod_erase_sub_eigenvalues_ne_zero`).
+`Matrix.IsHermitian.rank_eq_card_non_zero_eigs` to the sorted enumeration, using
+`Matrix.IsHermitian.eigenvalues_apply_equivOfCardEq` from `TauCeti.Analysis.Matrix.Spectrum`.
+At a simple sorted eigenvalue `λᵢ`, the gaps `λᵢ - λₖ` to the other matrix-indexed eigenvalues
+have nonzero product (`Matrix.IsHermitian.prod_erase_sub_eigenvalues_ne_zero`).
 Every sorted eigenvalue `μ` is a root of the characteristic polynomial, so `μ - A` is singular
 (`Matrix.IsHermitian.det_scalar_eigenvalues₀_sub_eq_zero`).
 
@@ -208,26 +209,6 @@ theorem IsHermitian.card_eigenvalues₀_ge_eq_of_norm_sub_lt
     hA.le_eigenvalues₀_iff_of_norm_sub_lt hB i (hpert.trans_le (hgap i)))
 
 end
-
-/-- Reindexing a sorted eigenvalue by the canonical finite equivalence gives the
-corresponding matrix-indexed eigenvalue. -/
-@[simp]
-theorem IsHermitian.eigenvalues_apply_equivOfCardEq (hA : A.IsHermitian)
-    (i : Fin (Fintype.card ι)) :
-    hA.eigenvalues (Fintype.equivOfCardEq (Fintype.card_fin (Fintype.card ι)) i) =
-      hA.eigenvalues₀ i := by
-  simp only [IsHermitian.eigenvalues, Equiv.symm_apply_apply]
-
-/-- A simple sorted eigenvalue is simple as a matrix-indexed eigenvalue at the index given by the
-canonical finite equivalence. -/
-theorem IsHermitian.eigenvalues_ne_eigenvalues_equivOfCardEq (hA : A.IsHermitian)
-    {i : Fin (Fintype.card ι)} (hi : ∀ j ≠ i, hA.eigenvalues₀ j ≠ hA.eigenvalues₀ i) :
-    ∀ k ≠ Fintype.equivOfCardEq (Fintype.card_fin (Fintype.card ι)) i, hA.eigenvalues k ≠
-      hA.eigenvalues (Fintype.equivOfCardEq (Fintype.card_fin (Fintype.card ι)) i) := by
-  set e := Fintype.equivOfCardEq (Fintype.card_fin (Fintype.card ι))
-  intro k hk
-  have hk' : e.symm k ≠ i := fun h ↦ hk (by rw [← h, e.apply_symm_apply])
-  simpa [e, IsHermitian.eigenvalues] using hi _ hk'
 
 /-- At a simple ordered eigenvalue `λᵢ`, the product `∏_{j ≠ i} (λᵢ - λⱼ)` over the remaining
 matrix-indexed eigenvalues does not vanish. -/
