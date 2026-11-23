@@ -364,7 +364,7 @@ theorem norm_propagator_sub_one_le (hP : IntegrableOn P (Icc a b)) (hs : s ∈ I
     hPi.mul_continuousOn
       (continuousOn_primitive_interval (hP.mono_set hsub).norm).abs.rexp
   rw [propagator_eq_one_add_integral hP hs ht, add_sub_cancel_left,
-    ← hPi.abs_integral_mul_exp_abs_integral fun _ _ ↦ norm_nonneg _]
+    ← hPi.abs_integral_mul_exp_abs_integral]
   refine norm_integral_le_abs_of_norm_le ((ae_restrict_mem measurableSet_uIoc).mono
     fun u hu ↦ ?_) hg
   exact (ContinuousLinearMap.opNorm_comp_le _ _).trans (mul_le_mul_of_nonneg_left

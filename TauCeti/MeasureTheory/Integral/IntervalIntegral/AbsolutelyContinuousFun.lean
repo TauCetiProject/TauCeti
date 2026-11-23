@@ -16,6 +16,7 @@ import Mathlib.Analysis.Calculus.Deriv.Comp
 import Mathlib.Analysis.LocallyConvex.SeparatingDual
 import Mathlib.MeasureTheory.SpecificCodomains.Pi
 import Mathlib.Analysis.SpecialFunctions.Log.Deriv
+import Mathlib.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
 import Mathlib.MeasureTheory.Integral.IntervalIntegral.LebesgueDifferentiationThm
 
 /-!
@@ -56,7 +57,7 @@ fundamental-theorem results to curves.
   and a `C¹` function `φ`, `∫ s in c..d, g s * φ' (G s) = φ (G d) - φ 0`.
 * `IntervalIntegrable.integral_mul_pow_integral`: `∫ s in c..d, g s * G s ^ k = G d ^ (k + 1) /
   (k + 1)`.
-* `IntervalIntegrable.abs_integral_mul_exp_abs_integral`: for `g ≥ 0`,
+* `IntervalIntegrable.abs_integral_mul_exp_abs_integral`:
   `|∫ s in c..d, g s * exp |G s|| = exp |G d| - 1`.
 -/
 
@@ -330,29 +331,43 @@ theorem IntervalIntegrable.integral_mul_pow_integral {g : ℝ → ℝ} {c d : �
   simpa [hd] using hg.integral_mul_deriv_integral (φ := fun x : ℝ ↦ x ^ (k + 1) / (k + 1))
     ((contDiff_id.pow (k + 1)).div_const _)
 
-/-- For `g ≥ 0` interval integrable on `c..d`, with primitive `G u = ∫ v in c..u, g v`,
-`|∫ u in c..d, g u * exp |G u|| = exp |G d| - 1`, whatever the order of `c` and `d`. This gives
-the exponential bound for linear equations with integrable coefficients. -/
+/-- For `g` interval integrable on `c..d`, with primitive `G u = ∫ v in c..u, g v`,
+`|∫ u in c..d, g u * exp |G u|| = exp |G d| - 1`, whatever the order of `c` and `d` and the sign
+of `g`. This gives the exponential bound for linear equations with integrable coefficients. -/
 theorem IntervalIntegrable.abs_integral_mul_exp_abs_integral {g : ℝ → ℝ} {c d : ℝ}
-    (hg : IntervalIntegrable g volume c d) (hg₀ : ∀ u ∈ uIcc c d, 0 ≤ g u) :
+    (hg : IntervalIntegrable g volume c d) :
     |∫ u in c..d, g u * Real.exp (|∫ v in c..u, g v|)| = Real.exp |∫ v in c..d, g v| - 1 := by
-  obtain ⟨σ, hσ, hG⟩ := intervalIntegral.exists_abs_integral_eq_mul_integral hg₀
-  have hσσ : σ * σ = 1 := by rw [← abs_mul_abs_self, hσ, one_mul]
-  have hd (x : ℝ) : deriv (fun x : ℝ ↦ Real.exp (σ * x)) x = σ * Real.exp (σ * x) := by
-    rw [(((hasDerivAt_id' x).const_mul σ).exp).deriv]
-    simp [mul_comm]
-  have h := hg.integral_mul_deriv_integral (φ := fun x ↦ Real.exp (σ * x))
-    (contDiff_const.mul contDiff_id).exp
-  simp only [hd, mul_zero, Real.exp_zero] at h
-  rw [intervalIntegral.integral_congr (g := fun u ↦ g u * Real.exp (σ * ∫ v in c..u, g v))
-    fun u hu ↦ by simp only [hG u hu]]
-  have h' : ∫ u in c..d, g u * Real.exp (σ * ∫ v in c..u, g v) =
-      σ * (Real.exp (σ * ∫ v in c..d, g v) - 1) := by
-    rw [← h, ← intervalIntegral.integral_const_mul]
-    refine intervalIntegral.integral_congr fun u _ ↦ ?_
-    linear_combination (-(g u * Real.exp (σ * ∫ v in c..u, g v))) * hσσ
-  rw [h', hG d right_mem_uIcc, abs_mul, hσ, one_mul,
-    abs_of_nonneg (sub_nonneg.2 (Real.one_le_exp (by rw [← hG d right_mem_uIcc]; positivity)))]
+  -- The integrand is `g * H' ∘ G` for the odd primitive `H x = ∫ y in 0..x, exp |y|`.
+  have hc : Continuous fun y : ℝ ↦ Real.exp |y| := by fun_prop
+  set H : ℝ → ℝ := fun x ↦ ∫ y in 0..x, Real.exp |y|
+  have hH (x : ℝ) : HasDerivAt H (Real.exp |x|) x :=
+    (hc.integral_hasStrictDerivAt 0 x).hasDerivAt
+  have hH₁ : ContDiff ℝ 1 H := by
+    rw [contDiff_one_iff_deriv]
+    refine ⟨fun x ↦ (hH x).differentiableAt, ?_⟩
+    simpa [funext fun x ↦ (hH x).deriv] using hc
+  have habs (x : ℝ) : |H x| = Real.exp |x| - 1 := by
+    rcases le_total 0 x with hx | hx
+    · have : H x = Real.exp x - 1 := by
+        rw [← Real.exp_zero]
+        refine intervalIntegral.integral_eq_sub_of_hasDerivAt (fun y hy ↦ ?_)
+          (hc.intervalIntegrable _ _)
+        rw [uIcc_of_le hx] at hy
+        simpa [abs_of_nonneg hy.1] using Real.hasDerivAt_exp y
+      rw [this, abs_of_nonneg hx, abs_of_nonneg (sub_nonneg.2 (Real.one_le_exp hx))]
+    · have : H x = -(Real.exp (-x) - 1) := by
+        have := intervalIntegral.integral_eq_sub_of_hasDerivAt (f := fun y ↦ -Real.exp (-y))
+          (a := 0) (b := x) (fun y hy ↦ ?_) (hc.intervalIntegrable _ _)
+        · simp only [H, this, neg_zero, Real.exp_zero]
+          ring
+        · rw [uIcc_of_ge hx] at hy
+          simpa [abs_of_nonpos hy.2] using (hasDerivAt_neg y).exp.fun_neg
+      rw [this, abs_neg, abs_of_nonpos hx,
+        abs_of_nonneg (sub_nonneg.2 (Real.one_le_exp (neg_nonneg.2 hx)))]
+  have h := hg.integral_mul_deriv_integral hH₁
+  simp only [funext fun x ↦ (hH x).deriv, H, intervalIntegral.integral_same, sub_zero] at h
+  rw [h]
+  exact habs _
 
 /-- A continuous curve with an integrable derivative outside a countable exceptional set is
 absolutely continuous on its parameter interval. -/
