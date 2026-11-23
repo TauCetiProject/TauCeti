@@ -15,9 +15,9 @@ import Mathlib.Algebra.Order.Pi
 
 An *order unit* of a preordered additive monoid `G` is a nonnegative element `u` such that every
 element `g : G` satisfies `g ≤ n • u` for some `n : ℕ`. In a preordered abelian group `G`,
-this is equivalent to `-(n • u) ≤ g ≤ n • u` for every `g : G`, forces `G` to be upward directed,
-and for an interpolation group agrees with `[0, u]` being a scale
-(`isScale_Icc_iff_isAddOrderUnit`).
+an element `u ≥ 0` is an order unit iff `-(n • u) ≤ g ≤ n • u` holds for every `g : G` (for some
+`n : ℕ`); admitting an order unit forces `G` to be upward directed, and in a directed
+interpolation group `[0, u]` is a scale iff `u` is an order unit (`isScale_Icc_iff_isAddOrderUnit`).
 
 ## Main definitions
 

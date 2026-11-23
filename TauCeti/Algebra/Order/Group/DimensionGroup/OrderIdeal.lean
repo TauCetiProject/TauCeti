@@ -25,10 +25,11 @@ positive cone (`0 ≤ a ≤ b` with `b ∈ I` implies `a ∈ I`, equivalently `I
 order-connected).
 
 Under Riesz interpolation, order ideals form a distributive lattice (`OrderIdeal.distribLattice`)
-with intersection as infimum and subgroup sum as supremum, as well as a complete lattice when `G`
-is directed (`OrderIdeal.completeLattice`). A directed partially ordered abelian group has only the
-trivial order ideals `⊥` and `⊤` if and only if it is nontrivial and every strictly positive
-element is an order unit (`isSimpleOrder_iff_forall_pos_isAddOrderUnit`).
+with intersection as infimum and subgroup sum as supremum, and in fact a complete lattice
+(`OrderIdeal.completeLattice`), whose top element `OrderIdeal.sSup h Set.univ` equals the whole
+group when `G` is directed (`OrderIdeal.sSup_univ_eq_top`). A directed partially ordered abelian
+group has exactly two distinct order ideals (`⊥` and `⊤`) if and only if it is nontrivial and
+every strictly positive element is an order unit (`isSimpleOrder_iff_forall_pos_isAddOrderUnit`).
 
 ## Main definitions
 
@@ -599,18 +600,25 @@ def distribLattice (h : HasRieszInterpolation G) : DistribLattice (OrderIdeal G)
             rw [inf_comm z y]
         _ = x ⊔ (y ⊓ z) := by rw [← sup_assoc, sup_idem] }
 
-/-- In a directed ordered abelian group with Riesz interpolation, order ideals form a complete
-lattice. -/
+/-- Under Riesz interpolation, order ideals form a complete lattice with top element
+`sSup h Set.univ`. -/
 @[instance_reducible]
-def completeLattice (h : HasRieszInterpolation G) [IsDirectedOrder G] :
-    CompleteLattice (OrderIdeal G) where
+def completeLattice (h : HasRieszInterpolation G) : CompleteLattice (OrderIdeal G) where
   __ := distribLattice h
-  le_top _ := le_top
+  top := sSup h Set.univ
+  le_top _ := le_sSup h (Set.mem_univ _)
   bot_le _ := _root_.bot_le
   sSup := sSup h
   isLUB_sSup _ := ⟨fun _ hI ↦ le_sSup h hI, fun _ hJ ↦ sSup_le h hJ⟩
   sInf S := sSup h { K | ∀ I ∈ S, K ≤ I }
   isGLB_sInf _ := ⟨fun _ hI ↦ sSup_le h fun _ hK ↦ hK _ hI, fun _ hK ↦ le_sSup h hK⟩
+
+/-- In a directed ordered abelian group with Riesz interpolation, the top element `sSup h Set.univ`
+of the complete lattice of order ideals is the whole group `⊤`. -/
+@[simp]
+theorem sSup_univ_eq_top (h : HasRieszInterpolation G) [IsDirectedOrder G] :
+    sSup h Set.univ = ⊤ :=
+  le_antisymm le_top (le_sSup h (Set.mem_univ ⊤))
 
 end Lattice
 
@@ -618,8 +626,9 @@ section Simple
 
 variable {G : Type*} [AddCommGroup G] [PartialOrder G] [IsOrderedAddMonoid G] [IsDirectedOrder G]
 
-/-- A directed partially ordered abelian group has no nontrivial proper order ideals iff it is
-nontrivial and every strictly positive element is an order unit. -/
+/-- A directed partially ordered abelian group has `OrderIdeal G` simple (i.e., exactly two
+distinct order ideals `⊥` and `⊤`) iff it is nontrivial and every strictly positive element is an
+order unit. -/
 theorem isSimpleOrder_iff_forall_pos_isAddOrderUnit :
     IsSimpleOrder (OrderIdeal G) ↔ Nontrivial G ∧ ∀ g : G, 0 < g → IsAddOrderUnit g := by
   refine ⟨fun hsimple ↦ ⟨?_, fun g hg ↦ ?_⟩, fun ⟨_, hunit⟩ ↦ ?_⟩

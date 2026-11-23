@@ -46,8 +46,8 @@ between order ideals of `G ⧸ I` and order ideals of `G` containing `I`
   `TauCeti.OrderIdeal.Quotient.isUnperforated`,
   `TauCeti.OrderIdeal.Quotient.isDimensionGroup`: permanence of dimension-group axioms under
   quotients by order ideals.
-* `TauCeti.OrderIdeal.isSimpleOrder_quotient_iff`: `G ⧸ I` has only trivial order ideals iff `I`
-  is maximal proper (`IsCoatom I`).
+* `TauCeti.OrderIdeal.isSimpleOrder_quotient_iff`: `G ⧸ I` has exactly two distinct order ideals
+  iff `I` is maximal among proper order ideals (`IsCoatom I`).
 
 ## References
 
@@ -202,7 +202,7 @@ end Order
 section UniversalProperty
 
 variable {G H : Type*} [AddCommGroup G] [PartialOrder G] [IsOrderedAddMonoid G]
-  [AddCommGroup H] [PartialOrder H] [IsOrderedAddMonoid H]
+  [AddMonoid H] [Preorder H]
 
 /-- Universal property of `G ⧸ I`: a monotone homomorphism `f : G →+o H` vanishing on `I`
 factors uniquely through `mk I` as a monotone homomorphism `(G ⧸ I) →+o H`. -/
@@ -220,22 +220,43 @@ factors uniquely through `mk I` as a monotone homomorphism `(G ⧸ I) →+o H`. 
         (QuotientAddGroup.mk' I.toAddSubgroup y)
     simpa [hf h hhI] using hle
 
-omit [IsOrderedAddMonoid H] in
 @[simp]
 theorem lift_mk (I : OrderIdeal G) (f : G →+o H) (hf : ∀ x ∈ I, f x = 0) (x : G) :
     lift I f hf (mk I x) = f x :=
   rfl
 
-omit [IsOrderedAddMonoid H] in
 theorem hom_ext {I : OrderIdeal G} {f g : (G ⧸ I) →+o H}
     (h : f.comp (mk I) = g.comp (mk I)) : f = g := by
   ext q
   induction q using inductionOn with | _ x =>
   exact congrArg (fun φ : G →+o H ↦ φ x) h
 
+/-- Canonical map between quotients `G ⧸ I →+o G ⧸ J` for `I ≤ J`. -/
+def factor {I J : OrderIdeal G} (hIJ : I ≤ J) : (G ⧸ I) →+o (G ⧸ J) :=
+  lift I (mk J) fun _ hx ↦ mk_eq_zero_iff.2 (hIJ hx)
+
+@[simp]
+theorem factor_mk {I J : OrderIdeal G} (hIJ : I ≤ J) (x : G) :
+    factor hIJ (mk I x) = mk J x :=
+  lift_mk I (mk J) _ x
+
+@[simp]
+theorem factor_comp_mk {I J : OrderIdeal G} (hIJ : I ≤ J) :
+    (factor hIJ).comp (mk I) = mk J := by
+  ext x
+  simp
+
+end UniversalProperty
+
+section LiftOrderIso
+
+variable {G H : Type*} [AddCommGroup G] [PartialOrder G] [IsOrderedAddMonoid G]
+  [AddCommGroup H] [Preorder H] [IsOrderedAddMonoid H]
+
 /-- First isomorphism theorem for order ideals: if `f : G →+o H` is surjective, vanishes on `I`,
-and lifts nonnegative elements (`0 ≤ f g` implies `0 ≤ g + h` for some `h ∈ I`), then `lift`
-is an ordered additive isomorphism `(G ⧸ I) ≃+o H`. -/
+and lifts nonnegative elements within every prescribed coset modulo `I` (`0 ≤ f g` implies
+`0 ≤ g + h` for some `h ∈ I`, which together with `hf` forces `ker f = I`), then `lift` is an
+ordered additive isomorphism `(G ⧸ I) ≃+o H`. -/
 noncomputable def liftOrderIso (I : OrderIdeal G) (f : G →+o H) (hf : ∀ x ∈ I, f x = 0)
     (hsurj : Function.Surjective f) (hlift : ∀ g : G, 0 ≤ f g → ∃ h ∈ I, 0 ≤ g + h) :
     (G ⧸ I) ≃+o H :=
@@ -266,22 +287,7 @@ noncomputable def liftOrderIso (I : OrderIdeal G) (f : G →+o H) (hf : ∀ x �
         rw [← sub_nonneg]
         exact hpos.trans_eq (by abel)⟩ }
 
-/-- Canonical map between quotients `G ⧸ I →+o G ⧸ J` for `I ≤ J`. -/
-def factor {I J : OrderIdeal G} (hIJ : I ≤ J) : (G ⧸ I) →+o (G ⧸ J) :=
-  lift I (mk J) fun _ hx ↦ mk_eq_zero_iff.2 (hIJ hx)
-
-@[simp]
-theorem factor_mk {I J : OrderIdeal G} (hIJ : I ≤ J) (x : G) :
-    factor hIJ (mk I x) = mk J x :=
-  lift_mk I (mk J) _ x
-
-@[simp]
-theorem factor_comp_mk {I J : OrderIdeal G} (hIJ : I ≤ J) :
-    (factor hIJ).comp (mk I) = mk J := by
-  ext x
-  simp
-
-end UniversalProperty
+end LiftOrderIso
 
 section Permanence
 
@@ -426,8 +432,9 @@ def orderIdealQuotientOrderIso (I : OrderIdeal G) :
     induction q using Quotient.inductionOn with | _ x =>
     exact h hq
 
-/-- In a directed ordered abelian group, the quotient `G ⧸ I` has no nontrivial proper order
-ideals iff `I` is maximal among proper order ideals (`IsCoatom I`). -/
+/-- In a directed ordered abelian group, the quotient `G ⧸ I` has `OrderIdeal (G ⧸ I)` simple
+(i.e., exactly two distinct order ideals `⊥` and `⊤`) iff `I` is maximal among proper order ideals
+(`IsCoatom I`). -/
 theorem isSimpleOrder_quotient_iff (I : OrderIdeal G) [IsDirectedOrder G] :
     IsSimpleOrder (OrderIdeal (G ⧸ I)) ↔ IsCoatom I := by
   let heq : OrderIdeal (G ⧸ I) ≃o Set.Ici I := orderIdealQuotientOrderIso I
