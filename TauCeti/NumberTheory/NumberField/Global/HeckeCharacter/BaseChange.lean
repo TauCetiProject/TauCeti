@@ -52,7 +52,8 @@ public section
 noncomputable section
 
 open NumberField NumberField.InfinitePlace NumberField.InfinitePlace.Completion
-open scoped NumberField NumberField.LiesOver
+open scoped NumberField
+attribute [local instance] AbsoluteValue.Completion.algebraOfLiesOver
 
 namespace TauCeti.GlobalNumberFields
 
@@ -90,18 +91,18 @@ theorem infiniteComponent_baseChange (χ : HeckeCharacter K) (w : InfinitePlace 
 the real place below. -/
 theorem realComponent_baseChange (χ : HeckeCharacter K) (w : {w : InfinitePlace L // w.IsReal}) :
     (baseChange L χ).realComponent w =
-      χ.realComponent ⟨w.1.comap (algebraMap K L), w.2.comap _⟩ := by
+      χ.realComponent ⟨w.val.comap (algebraMap K L), w.property.comap _⟩ := by
   refine ContinuousMonoidHom.ext fun x ↦ ?_
   rw [realComponent_apply, realComponent_apply, infiniteComponent_baseChange]
   congr 1
   rw [ContinuousMulEquiv.eq_symm_apply]
   apply Units.ext
-  simp [extensionEmbeddingOfIsReal_norm_of_isReal (w.2.comap (algebraMap K L)) w.2]
+  simp [extensionEmbeddingOfIsReal_norm_of_isReal (w.property.comap (algebraMap K L)) w.property]
 
 /-- At a complex place of `L` over a real place, the component of the base change of `χ` is the
 component of `χ` at the real place below, composed with the norm `z ↦ |z|²`. -/
 theorem complexComponent_baseChange_of_isReal (χ : HeckeCharacter K)
-    (w : {w : InfinitePlace L // w.IsComplex}) (hv : (w.1.comap (algebraMap K L)).IsReal)
+    (w : {w : InfinitePlace L // w.IsComplex}) (hv : (w.val.comap (algebraMap K L)).IsReal)
     (z : ℂˣ) :
     (baseChange L χ).complexComponent w z =
       χ.realComponent ⟨_, hv⟩ (Units.map (Complex.normSq : ℂ →* ℝ) z) := by
@@ -109,15 +110,15 @@ theorem complexComponent_baseChange_of_isReal (χ : HeckeCharacter K)
   congr 1
   rw [ContinuousMulEquiv.eq_symm_apply]
   apply Units.ext
-  simp [extensionEmbeddingOfIsReal_norm_of_isRamified (isRamified_iff.2 ⟨w.2, hv⟩) hv]
+  simp [extensionEmbeddingOfIsReal_norm_of_isRamified (isRamified_iff.2 ⟨w.property, hv⟩) hv]
 
 /-- At a complex place `w` of `L` over a complex place whose embedding is extended by
 `w.embedding`, the component of the base change of `χ` is the component of `χ` below. -/
 theorem complexComponent_baseChange_of_comp_eq (χ : HeckeCharacter K)
-    (w : {w : InfinitePlace L // w.IsComplex}) (hv : (w.1.comap (algebraMap K L)).IsComplex)
-    (he : w.1.embedding.comp (algebraMap K L) = (w.1.comap (algebraMap K L)).embedding) :
+    (w : {w : InfinitePlace L // w.IsComplex}) (hv : (w.val.comap (algebraMap K L)).IsComplex)
+    (he : w.val.embedding.comp (algebraMap K L) = (w.val.comap (algebraMap K L)).embedding) :
     (baseChange L χ).complexComponent w = χ.complexComponent ⟨_, hv⟩ := by
-  have : ComplexEmbedding.LiesOver w.1.embedding (w.1.comap (algebraMap K L)).embedding := ⟨he⟩
+  have : ComplexEmbedding.LiesOver w.val.embedding (w.val.comap (algebraMap K L)).embedding := ⟨he⟩
   refine ContinuousMonoidHom.ext fun z ↦ ?_
   rw [complexComponent_apply, complexComponent_apply, infiniteComponent_baseChange]
   congr 1
@@ -129,13 +130,13 @@ theorem complexComponent_baseChange_of_comp_eq (χ : HeckeCharacter K)
 conjugate of `w.embedding`, the component of the base change of `χ` is the component of `χ`
 below, composed with complex conjugation. -/
 theorem complexComponent_baseChange_of_conjugate_comp_eq (χ : HeckeCharacter K)
-    (w : {w : InfinitePlace L // w.IsComplex}) (hv : (w.1.comap (algebraMap K L)).IsComplex)
-    (he : (ComplexEmbedding.conjugate w.1.embedding).comp (algebraMap K L) =
-      (w.1.comap (algebraMap K L)).embedding) (z : ℂˣ) :
+    (w : {w : InfinitePlace L // w.IsComplex}) (hv : (w.val.comap (algebraMap K L)).IsComplex)
+    (he : (ComplexEmbedding.conjugate w.val.embedding).comp (algebraMap K L) =
+      (w.val.comap (algebraMap K L)).embedding) (z : ℂˣ) :
     (baseChange L χ).complexComponent w z =
       χ.complexComponent ⟨_, hv⟩ (Units.map (starRingEnd ℂ : ℂ →* ℂ) z) := by
-  have : ComplexEmbedding.LiesOver (ComplexEmbedding.conjugate w.1.embedding)
-    (w.1.comap (algebraMap K L)).embedding := ⟨he⟩
+  have : ComplexEmbedding.LiesOver (ComplexEmbedding.conjugate w.val.embedding)
+    (w.val.comap (algebraMap K L)).embedding := ⟨he⟩
   rw [complexComponent_apply, complexComponent_apply, infiniteComponent_baseChange]
   congr 1
   rw [ContinuousMulEquiv.eq_symm_apply]
@@ -151,7 +152,7 @@ theorem infinityType_baseChange (χ : HeckeCharacter K) :
   refine infinityType_eq_iff.2 ⟨fun w ↦ ?_, fun w ↦ ?_⟩
   · rw [realComponent_baseChange, realComponent_eq,
       ContinuousInfinityType.baseChange_realExponent, ContinuousInfinityType.baseChange_realParity]
-  by_cases hv : (w.1.comap (algebraMap K L)).IsReal
+  by_cases hv : (w.val.comap (algebraMap K L)).IsReal
   · refine ContinuousMonoidHom.ext fun z ↦ ?_
     rw [complexComponent_baseChange_of_isReal χ w hv, realComponent_eq,
       realUnitsCharacter_map_normSq,
@@ -159,8 +160,8 @@ theorem infinityType_baseChange (χ : HeckeCharacter K) :
       ContinuousInfinityType.baseChange_complexAngularFrequency_of_isReal _ _ hv]
   have hv' := not_isReal_iff_isComplex.mp hv
   rw [ContinuousInfinityType.baseChange_complexExponent_of_isComplex _ _ hv']
-  rcases LiesOver.embedding_comp_eq_or_conjugate_embedding_comp_eq w.1
-    (w.1.comap (algebraMap K L)) with he | he
+  rcases LiesOver.embedding_comp_eq_or_conjugate_embedding_comp_eq w.val
+    (w.val.comap (algebraMap K L)) with he | he
   · rw [complexComponent_baseChange_of_comp_eq χ w hv' he, complexComponent_eq,
       ContinuousInfinityType.baseChange_complexAngularFrequency_of_comp_eq _ _ hv' he]
   · refine ContinuousMonoidHom.ext fun z ↦ ?_

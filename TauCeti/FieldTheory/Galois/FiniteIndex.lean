@@ -79,7 +79,7 @@ variable (U : Subgroup (M ≃ₐ[K] M))
 -- Every element of `U` fixes the fixed field of `U`.
 private theorem mem_fixingSubgroup_fixedField (u : U) :
     (u : M ≃ₐ[K] M) ∈ (fixedField U).fixingSubgroup :=
-  (le_fixedField_iff_le_fixingSubgroup _ _).mp le_rfl u.2
+  (le_fixedField_iff_le_fixingSubgroup _ _).mp le_rfl u.property
 
 -- The elements of `U` permute the roots of a polynomial with coefficients in `fixedField U`.
 private theorem aeval_smul_eq_zero {p : (fixedField U)[X]} {x : M} (hp : aeval x p = 0) (u : U) :
@@ -113,7 +113,8 @@ private theorem exists_monic_map_eq_prod_orbit (hx : (orbit U x).Finite) :
   have hlifts : ∏ y ∈ s, (X - C y) ∈ lifts (algebraMap (fixedField U) M) := by
     refine (lifts_iff_coeff_lifts _).mpr fun n ↦
       ⟨⟨(∏ y ∈ s, (X - C y)).coeff n, (mem_fixedField_iff _ _).mpr fun u hu ↦ ?_⟩, rfl⟩
-    simpa [coeff_smul] using congrArg (fun p : M[X] ↦ p.coeff n) (hinv ⟨u, hu⟩)
+    simpa [AddMonoidAlgebra.coeff_smul_apply] using
+      congrArg (fun p : M[X] ↦ p.coeff n) (hinv ⟨u, hu⟩)
   obtain ⟨q, hq, -, hmonic⟩ := lifts_and_natDegree_eq_and_monic hlifts
     (monic_prod_of_monic _ _ fun y _ ↦ monic_X_sub_C y)
   exact ⟨q, hq, hmonic⟩
@@ -249,7 +250,7 @@ private theorem isIntegral_extendScalars_fixedField (hVU : V ≤ U) (h : V.relIn
     Algebra.IsIntegral (fixedField U) (extendScalars (fixedField_le hVU)) :=
   ⟨fun y ↦ by
     rw [← isIntegral_algHom_iff (val _) (val _).injective]
-    exact isIntegral_fixedField_of_finite_orbit (finite_orbit_of_mem_fixedField y.2 h)⟩
+    exact isIntegral_fixedField_of_finite_orbit (finite_orbit_of_mem_fixedField y.property h)⟩
 
 /-- **A subgroup of finite index has a finite fixed field**: if `V ≤ U` has finite index, then
 `M^V` is a finite extension of `M^U`. -/
@@ -267,7 +268,7 @@ theorem finiteDimensional_fixedField_of_relIndex_ne_zero (hVU : V ≤ U) (h : V.
   rw [← (Field.primitive_element_iff_minpoly_natDegree_eq _ α).mp hα,
     minpoly_eq, minpoly_eq] at hn
   exact hn.not_ge (Nat.le_of_dvd (Nat.pos_of_ne_zero h)
-    (natDegree_minpoly_fixedField_dvd_relIndex (α : E).2))
+    (natDegree_minpoly_fixedField_dvd_relIndex (α : E).property))
 
 /-- **A subgroup of finite index has a separable fixed field**: if `V ≤ U` has finite index, then
 `M^V` is a separable extension of `M^U`. -/
@@ -290,7 +291,7 @@ theorem relfinrank_fixedField_dvd_relIndex (hVU : V ≤ U) :
   obtain ⟨α, hα⟩ := Field.exists_primitive_element (fixedField U) E
   rw [relfinrank_eq_finrank_of_le (fixedField_le hVU),
     ← (Field.primitive_element_iff_minpoly_natDegree_eq _ α).mp hα, minpoly_eq]
-  exact natDegree_minpoly_fixedField_dvd_relIndex α.2
+  exact natDegree_minpoly_fixedField_dvd_relIndex α.property
 
 /-- **The degree of the fixed field of a subgroup of finite index is at most the index**: for
 `V ≤ U` with `[U : V]` finite, `[M^V : M^U] ≤ [U : V]`. -/
@@ -311,7 +312,7 @@ private theorem relIndex_eq_finrank_of_fixingSubgroup_eq (hVU : V ≤ U)
     rw [← lift_adjoin_simple, hα, lift_top]
   -- an element of `U` fixing `α` fixes `(fixedField U)⟮α⟯ = M^V`, so lies in the closed `V`
   have hstab : stabilizer U (α : M) = V.subgroupOf U := by
-    refine le_antisymm (fun u hu ↦ ?_) (subgroupOf_le_stabilizer α.2)
+    refine le_antisymm (fun u hu ↦ ?_) (subgroupOf_le_stabilizer α.property)
     set σ := fixingSubgroupEquiv (fixedField U) ⟨u, mem_fixingSubgroup_fixedField U u⟩
     have hσ : σ ∈ ((fixedField U)⟮(α : M)⟯).fixingSubgroup := by
       rw [fixingSubgroup_adjoin_simple, mem_stabilizer_iff, AlgEquiv.smul_def,

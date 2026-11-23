@@ -16,6 +16,7 @@ import Mathlib.Analysis.InnerProductSpace.Dual
 import Mathlib.MeasureTheory.Function.Holder
 import Mathlib.Analysis.Calculus.BumpFunction.FiniteDimension
 import Mathlib.Analysis.Calculus.LineDeriv.IntegrationByParts
+import Mathlib.Analysis.Distribution.AEEqOfIntegralContDiff
 
 /-!
 # Integrals of test functions against measures finite on compact sets
@@ -38,6 +39,12 @@ of a constant distribution, including on arbitrarily small overlap neighborhoods
 Against an additive Haar measure, the directional derivative of a test function has integral
 zero, by Mathlib's integration by parts against the constant function `1`.
 
+On a finite-dimensional space, against a locally finite measure positive on nonempty open sets, a
+function continuous on an open set is determined there by its integrals against smooth compactly
+supported functions, by Mathlib's fundamental lemma of the calculus of variations
+`IsOpen.ae_eq_zero_of_integral_contDiff_smul_eq_zero`. In particular a test function is determined
+by these integrals.
+
 ## Main definitions
 
 * `TestFunction.toCompactlySupportedContinuousMap`: the restriction of a test function on `Ω` to a
@@ -57,6 +64,8 @@ zero, by Mathlib's integration by parts against the constant function `1`.
 * `TestFunction.neg_integral_smul_neg_add_eq`: the integral of a test function against the
   right-hand side `-(f + ∑ᵢⱼ Gᵢⱼ)` of a weak derivative equation.
 
+* `TestFunction.integral_smul_congr_of_eqOn`: `∫ φ • g₁ ∂μ = ∫ φ • g₂ ∂μ` whenever `g₁ = g₂` on `Ω`.
+
 * `TestFunction.integrable_inner_subtype`: the pairing `⟪φ x, v x⟫` of a test vector field with a
   locally integrable field is integrable.
 
@@ -64,6 +73,12 @@ zero, by Mathlib's integration by parts against the constant function `1`.
   and bounded by `1` with `v` is at most the mass of `|v| m` on `U`.
 
 * `TestFunction.integral_lineDeriv_eq_zero`: `∫ ∂_w φ dμ = 0` for an additive Haar measure `μ`.
+
+* `IsOpen.eqOn_zero_of_integral_contDiff_smul_eq_zero`: a function continuous on an open set `U`
+  whose integrals against smooth functions compactly supported in `U` vanish is zero on `U`.
+
+* `TestFunction.ext_of_forall_integral_smul_eq`: a test function is determined by its integrals
+  against smooth compactly supported functions.
 -/
 
 public section
@@ -83,7 +98,7 @@ def toCompactlySupportedContinuousMap (φ : 𝓓^{n}(Ω, F)) : C_c(Ω, F) where
   continuous_toFun := by fun_prop
   hasCompactSupport' := by
     refine HasCompactSupport.intro' (K := ((↑) : Ω → E) ⁻¹' tsupport φ) ?_
-      ((isClosed_tsupport _).preimage continuous_subtype_val)
+      ((isClosed_tsupport _).preimage continuous_subtypeVal)
       fun x hx => image_eq_zero_of_notMem_tsupport hx
     exact Ω.isOpen.isOpenEmbedding_subtypeVal.isInducing.isCompact_preimage'
       φ.hasCompactSupport.isCompact (by simpa using φ.tsupport_subset)
@@ -162,6 +177,15 @@ theorem neg_integral_smul_neg_add_eq [OpensMeasurableSpace E] {κ κ' : Type*} [
     simp only [smul_eq_mul, mul_comm]
   · exact Finset.sum_congr rfl fun i _ => integral_finsetSum _ fun j _ => hIG i j
 
+/-- Integrating against a test function on `Ω` only sees the integrand on `Ω`: if `g₁ = g₂` on `Ω`,
+then `∫ φ • g₁ ∂μ = ∫ φ • g₂ ∂μ`. -/
+theorem integral_smul_congr_of_eqOn (φ : 𝓓^{n}(Ω, ℝ)) {μ : Measure E} {g₁ g₂ : E → F}
+    (h : Set.EqOn g₁ g₂ Ω) : ∫ x, (φ : E → ℝ) x • g₁ x ∂μ = ∫ x, (φ : E → ℝ) x • g₂ x ∂μ := by
+  refine integral_congr_ae (Filter.Eventually.of_forall fun x => ?_)
+  by_cases hx : x ∈ (Ω : Set E)
+  · simp only [h hx]
+  · simp [φ.zero_on_compl hx]
+
 section InnerPairing
 
 variable {G : Type*} [NormedAddCommGroup G] [InnerProductSpace ℝ G] [OpensMeasurableSpace E]
@@ -179,9 +203,9 @@ theorem enorm_integral_inner_le_withDensity {U : Set E} (hU : MeasurableSet U)
     {φ : 𝓓^{n}(Ω, G)} (hφU : tsupport φ ⊆ U) (hφ : ∀ x, ‖φ x‖ ≤ 1) (m : Measure Ω) (v : Ω → G) :
     ‖∫ x : Ω, ⟪φ x, v x⟫ ∂m‖ₑ ≤
       m.withDensity (fun x => ‖v x‖ₑ) ((↑) ⁻¹' U) := by
-  rw [withDensity_apply _ (hU.preimage measurable_subtype_coe),
-    ← lintegral_indicator (hU.preimage measurable_subtype_coe)]
-  refine (enorm_integral_le_lintegral_enorm _).trans (lintegral_mono fun x => ?_)
+  rw [withDensity_apply _ (hU.preimage measurable_subtypeVal),
+    ← lintegral_indicator (hU.preimage measurable_subtypeVal)]
+  refine (eNorm_integral_le_lintegral_eNorm _).trans (lintegral_mono fun x => ?_)
   by_cases hx : x ∈ ((↑) ⁻¹' U : Set Ω)
   · rw [Set.indicator_of_mem hx, ← ofReal_norm, ← ofReal_norm]
     exact ENNReal.ofReal_le_ofReal ((norm_inner_le_norm _ _).trans
@@ -246,5 +270,46 @@ theorem integral_lineDeriv_eq_zero (φ : 𝓓(Ω, ℝ)) (w : E) :
     fun x _ ↦ (hd x).lineDifferentiableAt.hasLineDerivAt
 
 end LineDeriv
+
+section Determination
+
+open Set
+open scoped ContDiff
+
+variable [FiniteDimensional ℝ E] [BorelSpace E] [CompleteSpace F] {μ : Measure E}
+  [IsLocallyFiniteMeasure μ] [μ.IsOpenPosMeasure]
+
+/-- **Fundamental lemma of the calculus of variations for continuous functions.** A function
+continuous on an open set `U` whose integrals against all smooth functions compactly supported in
+`U` vanish is zero on `U`. -/
+theorem _root_.IsOpen.eqOn_zero_of_integral_contDiff_smul_eq_zero {U : Set E} (hU : IsOpen U)
+    {d : E → F} (hd : ContinuousOn d U)
+    (h : ∀ g : E → ℝ, ContDiff ℝ ∞ g → HasCompactSupport g → tsupport g ⊆ U →
+      ∫ x, g x • d x ∂μ = 0) :
+    EqOn d 0 U :=
+  μ.eqOn_open_of_ae_eq ((ae_restrict_iff' hU.measurableSet).2
+    (hU.ae_eq_zero_of_integral_contDiff_smul_eq_zero (hd.locallyIntegrableOn hU.measurableSet) h))
+    hU hd continuousOn_const
+
+/-- A test function on `Ω` is determined by its integrals against smooth functions compactly
+supported in `Ω`. -/
+theorem ext_of_forall_integral_smul_eq {φ ψ : 𝓓^{n}(Ω, F)}
+    (h : ∀ g : E → ℝ, ContDiff ℝ ∞ g → HasCompactSupport g → tsupport g ⊆ Ω →
+      ∫ x, g x • φ x ∂μ = ∫ x, g x • ψ x ∂μ) :
+    φ = ψ := by
+  have hint (χ : 𝓓^{n}(Ω, F)) {g : E → ℝ} (hg : Continuous g) :
+      Integrable (fun x ↦ g x • χ x) μ :=
+    (hg.smul χ.continuous).integrable_of_hasCompactSupport χ.hasCompactSupport.smul_left
+  have hEq := Ω.isOpen.eqOn_zero_of_integral_contDiff_smul_eq_zero (μ := μ) (d := ⇑φ - ⇑ψ)
+    (φ.continuous.sub ψ.continuous).continuousOn fun g hg hgc hgΩ ↦ by
+      simp_rw [Pi.sub_apply, smul_sub]
+      rw [integral_sub (hint φ hg.continuous) (hint ψ hg.continuous), h g hg hgc hgΩ, sub_self]
+  ext x
+  by_cases hx : x ∈ (Ω : Set E)
+  · simpa [sub_eq_zero] using hEq hx
+  · rw [image_eq_zero_of_notMem_tsupport fun h ↦ hx (φ.tsupport_subset h),
+      image_eq_zero_of_notMem_tsupport fun h ↦ hx (ψ.tsupport_subset h)]
+
+end Determination
 
 end TestFunction

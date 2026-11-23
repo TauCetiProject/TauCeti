@@ -74,6 +74,10 @@ only its even half is, the whole algebra being two copies of that half.
 * `TauCeti.SpinPolarizationData.finrank_exteriorAlgebra_W_of_finrank_eq_two_mul_add_one` and
   `TauCeti.SpinPolarizationData.finrank_even_eq_finrank_end_of_odd_finrank`: the dimension
   bookkeeping the operator form rests on.
+* `TauCeti.SpinPolarizationData.not_injective_spinAction_of_odd_finrank`: in odd dimension a single
+  Fock action is not faithful, over any field.
+* `TauCeti.spinAction_injOn_even`: the Fock action is faithful on the even subalgebra in either
+  parity of the dimension.
 
 ## References
 
@@ -128,6 +132,24 @@ theorem finrank_even_eq_finrank_end_of_odd_finrank
   rw [CliffordAlgebra.finrank_even Q, hEnd,
     P.finrank_exteriorAlgebra_W_of_finrank_eq_two_mul_add_one hV, hV, Nat.add_sub_cancel,
     two_mul, pow_add]
+
+omit [FiniteDimensional F V] in
+/-- **A single Fock action is not faithful in odd dimension**: the Clifford algebra has dimension
+`2 ^ (2 * l + 1)`, while the operator algebra of the spinor module has dimension `(2 ^ l) ^ 2`. -/
+theorem not_injective_spinAction_of_odd_finrank (hodd : Odd (finrank F V)) :
+    ¬ Function.Injective (spinAction Q P) := by
+  intro hinj
+  obtain ⟨l, hV⟩ := hodd
+  have : FiniteDimensional F V := Module.finite_of_finrank_pos (by omega)
+  have hS := P.finrank_exteriorAlgebra_W_of_finrank_eq_two_mul_add_one hV
+  have : Module.Finite F (ExteriorAlgebra F P.W) :=
+    Module.finite_of_finrank_pos (by rw [hS]; positivity)
+  have hle := LinearMap.finrank_le_finrank_of_injective (f := (spinAction Q P).toLinearMap) hinj
+  rw [CliffordAlgebra.finrank_eq_two_pow, Module.finrank_linearMap, hS, hV] at hle
+  have h2 : 2 ^ (2 * l + 1) = 2 * (2 ^ l * 2 ^ l) := by ring
+  have h0 : 0 < 2 ^ l * 2 ^ l := by positivity
+  rw [h2] at hle
+  omega
 
 end Dimension
 
@@ -279,15 +301,22 @@ theorem evenSpinAction_surjective : Function.Surjective (evenSpinAction Q P) := 
   obtain ⟨x, rfl⟩ := spinAction_surjective P f
   exact (AlgHom.mem_range _).1 (hle ((adjoin_range_ι (Q := Q)).ge Algebra.mem_top))
 
-/-- **The even Clifford action on the spinor module is faithful in odd dimension.** It is onto an
-algebra of the same dimension, so it is injective. -/
-theorem evenSpinAction_injective : Function.Injective (evenSpinAction Q P) := by
-  have : FiniteDimensional F V := Module.finite_of_finrank_pos hodd.pos
-  have _ : Invertible (2 : F) := invertibleOfNonzero (NeZero.ne (2 : F))
-  exact (LinearMap.injective_iff_surjective_of_finrank_eq_finrank
-    (f := (evenSpinAction Q P).toLinearMap)
-    (P.finrank_even_eq_finrank_end_of_odd_finrank hodd)).2
-    (evenSpinAction_surjective P hodd)
+omit hodd in
+/-- **The even Clifford action on the spinor module is faithful** for a finite-dimensional
+polarized quadratic space over a field of characteristic not two, in either parity of the
+dimension. In even dimension the whole Clifford action is faithful; in odd dimension the even
+action is onto an algebra of the same dimension. -/
+theorem evenSpinAction_injective [FiniteDimensional F V] :
+    Function.Injective (evenSpinAction Q P) := by
+  rcases Nat.even_or_odd (finrank F V) with heven | hodd
+  · intro x y hxy
+    apply Subtype.ext
+    exact spinAction_injective P heven (by simpa only [evenSpinAction_apply] using hxy)
+  · have _ : Invertible (2 : F) := invertibleOfNonzero (NeZero.ne (2 : F))
+    exact (LinearMap.injective_iff_surjective_of_finrank_eq_finrank
+      (f := (evenSpinAction Q P).toLinearMap)
+      (P.finrank_even_eq_finrank_end_of_odd_finrank hodd)).2
+      (evenSpinAction_surjective P hodd)
 
 /-- **The odd structure theorem in operator form**: for a polarized quadratic space of odd
 dimension over a field of characteristic not two, the Fock action is an isomorphism of
@@ -298,9 +327,10 @@ This is the odd-dimensional companion of
 `TauCeti.SpinPolarizationData.cliffordEquivEnd`, one grade down: there the *whole* algebra is
 `Module.End F S`, here only its even half is, the whole algebra being two copies of it. -/
 noncomputable def SpinPolarizationData.evenCliffordEquivEnd :
-    ↥(even Q) ≃ₐ[F] Module.End F (ExteriorAlgebra F P.W) :=
-  AlgEquiv.ofBijective (evenSpinAction Q P)
-    ⟨evenSpinAction_injective P hodd, evenSpinAction_surjective P hodd⟩
+    ↥(even Q) ≃ₐ[F] Module.End F (ExteriorAlgebra F P.W) := by
+  have : FiniteDimensional F V := Module.finite_of_finrank_pos hodd.pos
+  exact AlgEquiv.ofBijective (evenSpinAction Q P)
+    ⟨evenSpinAction_injective P, evenSpinAction_surjective P hodd⟩
 
 /-- The operator form of the odd structure theorem is the Fock action itself. -/
 @[simp]
@@ -336,5 +366,18 @@ theorem SpinPolarizationData.evenCliffordEquivEnd_toMatrix_intertwines_spinRep
       rw [b.equivFun_apply]
 
 end OperatorForm
+
+/-- The Clifford action of a finite-dimensional polarized quadratic space over a field of
+characteristic not two is faithful on the even subalgebra, in either parity of the dimension.
+In odd dimension this does not extend to the whole Clifford algebra. -/
+theorem spinAction_injOn_even {K : Type u} [Field K] [NeZero (2 : K)]
+    {V : Type v} [AddCommGroup V] [Module K V] [FiniteDimensional K V]
+    {Q : QuadraticForm K V} (P : SpinPolarizationData Q) :
+    Set.InjOn (spinAction Q P) (even Q : Set (CliffordAlgebra Q)) := by
+  intro x hx y hy hxy
+  have h := evenSpinAction_injective P
+    (a₁ := ⟨x, hx⟩) (a₂ := ⟨y, hy⟩)
+    (by simpa only [evenSpinAction_apply] using hxy)
+  exact congrArg Subtype.val h
 
 end TauCeti

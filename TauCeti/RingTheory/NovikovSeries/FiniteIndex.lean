@@ -8,6 +8,7 @@ module
 public import Mathlib.GroupTheory.Index
 public import Mathlib.LinearAlgebra.Dimension.StrongRankCondition
 public import Mathlib.LinearAlgebra.FreeModule.Basic
+public import Mathlib.RingTheory.Norm.Defs
 public import Mathlib.RingTheory.Trace.Defs
 public import TauCeti.RingTheory.NovikovSeries.Functoriality
 
@@ -44,10 +45,15 @@ basis is the restriction of `a` to `K`, so the trace of `a` is `[H : K]` times t
   the basis vectors and the coefficients of the coordinates.
 * `TauCeti.NovikovSeries.finite_support_iff_forall_finite_support_cosetBasis_repr`: a series has
   finite support exactly when its coordinates do.
-* `TauCeti.NovikovSeries.finrank_eq_index`: over a nontrivial commutative ring, the rank of
-  `Nov(R, H, N)` over `Nov(R, K, N|K)` is the index `[H : K]`.
+* `TauCeti.NovikovSeries.linearIndependent_coset_single_one`: for any subgroup `K` and coset
+  representatives `s`, the monomials `e^(s q)` are linearly independent over `Nov(R, K, N|K)`.
+* `TauCeti.NovikovSeries.finrank_eq_index`: over a nontrivial commutative ring, the natural-valued
+  `Module.finrank` of `Nov(R, H, N)` over `Nov(R, K, N|K)` is the index `[H : K]` (both are `0` for
+  infinite index, by the convention for `Module.finrank` of an infinite-rank module).
 * `TauCeti.NovikovSeries.trace_eq_index_smul_comap`: the trace of `a` is `[H : K]` times the
   restriction of `a` to `K`.
+* `TauCeti.NovikovSeries.norm_mapRingHom` and `TauCeti.NovikovSeries.trace_mapRingHom`: the norm
+  and trace over `Nov(R, K, N|K)` commute with changing coefficients along a ring homomorphism.
 
 ## References
 
@@ -79,7 +85,7 @@ private theorem comap_subtype_single_mul_algebraMap_of_notMem {g : H} (hg : g �
     comap K.subtype hφ hker (single g r * algebraMap _ (NovikovSeries R H N) b) = 0 := by
   ext k
   rw [coeff_comap, coeff_single_mul, coeff_algebraMap_addSubgroup_of_notMem, mul_zero, coeff_zero]
-  exact fun hk => hg (by simpa using K.sub_mem k.2 hk)
+  exact fun hk => hg (by simpa using K.sub_mem k.property hk)
 
 /-- Restricting to `K` the translate `e^(-g) a` reads off the coefficients of `a` on `g + K`. -/
 private theorem coeff_comap_subtype_single_neg_mul (g : H) (a : NovikovSeries R H N) (k : K) :
@@ -88,14 +94,14 @@ private theorem coeff_comap_subtype_single_neg_mul (g : H) (a : NovikovSeries R 
 
 end Restriction
 
-section Basis
+section Coordinates
 
-variable [CommSemiring R] [K.FiniteIndex] (s : H ⧸ K → H) (hs : ∀ q, (s q : H ⧸ K) = q)
+variable [CommSemiring R] (s : H ⧸ K → H)
 
-/-- The coordinates of a Novikov series on `H` in the coset decomposition along `K`: the
-coordinate at `q` is the restriction to `K` of `e^(-s q) a`. -/
-private def cosetEquiv :
-    NovikovSeries R H N ≃ₗ[NovikovSeries R K (N.comp K.subtype)]
+/-- The coordinates of a Novikov series on `H` along the cosets of `K`, for representatives `s`:
+the coordinate at `q` is the restriction to `K` of `e^(-s q) a`. -/
+private def cosetCoord :
+    NovikovSeries R H N →ₗ[NovikovSeries R K (N.comp K.subtype)]
       (H ⧸ K → NovikovSeries R K (N.comp K.subtype)) where
   toFun a q := comap K.subtype (exists_period_rescale_subtype K) (by simp)
     (single (-s q) 1 * a)
@@ -106,6 +112,49 @@ private def cosetEquiv :
     ext1 q
     dsimp only [RingHom.id_apply, Pi.smul_apply]
     rw [smul_eq_mul, Algebra.smul_def, mul_left_comm, comap_subtype_algebraMap_mul]
+
+private theorem cosetCoord_apply (a : NovikovSeries R H N) (q : H ⧸ K) :
+    cosetCoord K s a q = comap K.subtype (exists_period_rescale_subtype K)
+      (by simp) (single (-s q) 1 * a) :=
+  rfl
+
+variable {s} (hs : ∀ q, (s q : H ⧸ K) = q)
+include hs
+
+/-- If `s` picks a representative of each coset, the coordinates of `e^(s q) b` are `b` at `q`
+and `0` at the other cosets. -/
+private theorem cosetCoord_single_mul_algebraMap [DecidableEq (H ⧸ K)] (q : H ⧸ K)
+    (b : NovikovSeries R K (N.comp K.subtype)) :
+    cosetCoord K s (single (s q) 1 * algebraMap _ _ b) = Pi.single q b := by
+  ext1 p
+  rw [cosetCoord_apply, ← mul_assoc, single_mul_single, mul_one]
+  rcases eq_or_ne p q with rfl | hpq
+  · simp
+  · rw [Pi.single_eq_of_ne hpq, comap_subtype_single_mul_algebraMap_of_notMem]
+    exact fun hK => hpq (by rw [← hs p, ← hs q]; exact QuotientAddGroup.eq.2 hK)
+
+/-- If `s` picks a representative of each coset of `K`, the monomials `e^(s q)` are linearly
+independent over the Novikov series on `K`. -/
+theorem linearIndependent_coset_single_one :
+    LinearIndependent (NovikovSeries R K (N.comp K.subtype))
+      fun q : H ⧸ K => (single (s q) 1 : NovikovSeries R H N) := by
+  classical
+  refine .of_comp (cosetCoord K s) ?_
+  convert Pi.linearIndependent_single_one (H ⧸ K) (NovikovSeries R K (N.comp K.subtype)) with q
+  simpa using cosetCoord_single_mul_algebraMap (R := R) (N := N) K hs q 1
+
+end Coordinates
+
+section Basis
+
+variable [CommSemiring R] [K.FiniteIndex] (s : H ⧸ K → H) (hs : ∀ q, (s q : H ⧸ K) = q)
+
+/-- The coordinates of a Novikov series on `H` in the coset decomposition along `K`: the
+coordinate at `q` is the restriction to `K` of `e^(-s q) a`. -/
+private def cosetEquiv :
+    NovikovSeries R H N ≃ₗ[NovikovSeries R K (N.comp K.subtype)]
+      (H ⧸ K → NovikovSeries R K (N.comp K.subtype)) where
+  __ := cosetCoord K s
   invFun c := ∑ᶠ q, single (s q) 1 * algebraMap _ _ (c q)
   left_inv a := by
     have := Fintype.ofFinite (H ⧸ K)
@@ -114,23 +163,17 @@ private def cosetEquiv :
     rw [finsum_eq_sum_of_fintype, coeff_sum, sum_eq_single (h : H ⧸ K)]
     · have hK : -s h + h ∈ K := QuotientAddGroup.eq.1 (hs h)
       rw [coeff_single_mul, ← AddSubgroup.coe_mk K _ hK, coeff_algebraMap_addSubgroup_coe,
-        coeff_comap_subtype_single_neg_mul]
+        LinearMap.toFun_eq_coe, cosetCoord_apply, coeff_comap_subtype_single_neg_mul]
       simp
     · intro q _ hq
       rw [coeff_single_mul, coeff_algebraMap_addSubgroup_of_notMem, mul_zero]
       exact fun hK => hq (by rw [← hs q]; exact QuotientAddGroup.eq.2 hK)
     · exact fun h => absurd (mem_univ _) h
   right_inv c := by
+    classical
     have := Fintype.ofFinite (H ⧸ K)
-    ext1 p
-    dsimp only
-    rw [finsum_eq_sum_of_fintype, mul_sum, map_sum, sum_eq_single p]
-    · rw [← mul_assoc, single_mul_single]
-      simp
-    · intro q _ hq
-      rw [← mul_assoc, single_mul_single, mul_one, comap_subtype_single_mul_algebraMap_of_notMem]
-      exact fun hK => hq (by rw [← hs p, ← hs q]; exact (QuotientAddGroup.eq.2 hK).symm)
-    · exact fun h => absurd (mem_univ _) h
+    simp only [LinearMap.toFun_eq_coe, finsum_eq_sum_of_fintype, map_sum,
+      cosetCoord_single_mul_algebraMap K hs, univ_sum_single]
 
 private theorem cosetEquiv_apply (a : NovikovSeries R H N) (q : H ⧸ K) :
     cosetEquiv K s hs a q = comap K.subtype (exists_period_rescale_subtype K)
@@ -200,16 +243,22 @@ end Basis
 
 section Ring
 
-variable [CommRing R] [K.FiniteIndex]
+variable [CommRing R]
 
-/-- Over a nontrivial commutative ring, the rank of the Novikov series on `H` over those on a
-finite-index subgroup `K` is the index of `K`. -/
+/-- Over a nontrivial commutative ring, the natural-valued `Module.finrank` of the Novikov series
+on `H` over those on a subgroup `K` is the index of `K`. For infinite index, the module has
+infinite rank and both sides are `0` by convention. -/
 theorem finrank_eq_index [Nontrivial R] :
     Module.finrank (NovikovSeries R K (N.comp K.subtype)) (NovikovSeries R H N) = K.index := by
-  rw [Module.finrank_eq_nat_card_basis (cosetBasis K Quotient.out QuotientAddGroup.out_eq'),
-    AddSubgroup.index_eq_card]
+  by_cases hK : K.index = 0
+  · have := AddSubgroup.index_eq_zero_iff_infinite.1 hK
+    rw [hK, (linearIndependent_coset_single_one (R := R) (N := N) K
+      QuotientAddGroup.out_eq').finrank_eq_zero_of_infinite]
+  · have : K.FiniteIndex := ⟨hK⟩
+    rw [Module.finrank_eq_nat_card_basis (cosetBasis K Quotient.out QuotientAddGroup.out_eq'),
+      AddSubgroup.index_eq_card]
 
-variable {K}
+variable {K} [K.FiniteIndex]
 
 /-- The trace of a Novikov series `a` on `H` over the Novikov series on a finite-index subgroup
 `K` is the index `[H : K]` times the restriction of `a` to `K`. -/
@@ -228,6 +277,60 @@ theorem trace_eq_index_smul_comap
   simp [Algebra.leftMulMatrix_eq_repr_mul, b, coeff_mul_single]
 
 end Ring
+
+section CoefficientChange
+
+variable {S : Type*}
+
+/-- Changing coefficients commutes with taking coordinates in the coset basis. -/
+theorem cosetBasis_repr_mapRingHom [CommSemiring R] [CommSemiring S] (ρ : R →+* S)
+    [K.FiniteIndex] (s : H ⧸ K → H) (hs : ∀ q, (s q : H ⧸ K) = q)
+    (a : NovikovSeries R H N) (q : H ⧸ K) :
+    (cosetBasis K s hs).repr (mapRingHom ρ (AddMonoidHom.id H) exists_period_rescale_id a) q =
+      mapRingHom ρ (AddMonoidHom.id K) exists_period_rescale_id ((cosetBasis K s hs).repr a q) := by
+  ext k
+  simp
+
+variable [CommRing R] [CommRing S] (ρ : R →+* S) [K.FiniteIndex]
+
+/-- Changing coefficients commutes with taking the matrix of multiplication in the coset
+basis. -/
+theorem leftMulMatrix_cosetBasis_mapRingHom (s : H ⧸ K → H) (hs : ∀ q, (s q : H ⧸ K) = q)
+    [Fintype (H ⧸ K)] [DecidableEq (H ⧸ K)] (a : NovikovSeries R H N) :
+    Algebra.leftMulMatrix (cosetBasis K s hs)
+        (mapRingHom ρ (AddMonoidHom.id H) exists_period_rescale_id a) =
+      (mapRingHom ρ (AddMonoidHom.id K) exists_period_rescale_id).mapMatrix
+        (Algebra.leftMulMatrix (cosetBasis K s hs) a) := by
+  ext i j k
+  simp
+
+/-- The norm of a Novikov series over the Novikov series on a finite-index subgroup commutes with
+changing coefficients. -/
+theorem norm_mapRingHom (a : NovikovSeries R H N) :
+    Algebra.norm (NovikovSeries S K (N.comp K.subtype))
+        (mapRingHom ρ (AddMonoidHom.id H) exists_period_rescale_id a) =
+      mapRingHom ρ (AddMonoidHom.id K) exists_period_rescale_id
+        (Algebra.norm (NovikovSeries R K (N.comp K.subtype)) a) := by
+  classical
+  have := Fintype.ofFinite (H ⧸ K)
+  rw [Algebra.norm_eq_matrix_det (cosetBasis K Quotient.out QuotientAddGroup.out_eq'),
+    Algebra.norm_eq_matrix_det (cosetBasis K Quotient.out QuotientAddGroup.out_eq'),
+    leftMulMatrix_cosetBasis_mapRingHom, RingHom.map_det]
+
+/-- The trace of a Novikov series over the Novikov series on a finite-index subgroup commutes with
+changing coefficients. -/
+theorem trace_mapRingHom (a : NovikovSeries R H N) :
+    Algebra.trace (NovikovSeries S K (N.comp K.subtype)) (NovikovSeries S H N)
+        (mapRingHom ρ (AddMonoidHom.id H) exists_period_rescale_id a) =
+      mapRingHom ρ (AddMonoidHom.id K) exists_period_rescale_id
+        (Algebra.trace (NovikovSeries R K (N.comp K.subtype)) (NovikovSeries R H N) a) := by
+  classical
+  have := Fintype.ofFinite (H ⧸ K)
+  rw [Algebra.trace_eq_matrix_trace (cosetBasis K Quotient.out QuotientAddGroup.out_eq'),
+    Algebra.trace_eq_matrix_trace (cosetBasis K Quotient.out QuotientAddGroup.out_eq'),
+    leftMulMatrix_cosetBasis_mapRingHom, RingHom.mapMatrix_apply, AddMonoidHom.map_trace]
+
+end CoefficientChange
 
 end NovikovSeries
 

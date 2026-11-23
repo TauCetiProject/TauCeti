@@ -6,12 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Combinatorics.Enumerative.PerfectMatching
-public import Mathlib.Algebra.BigOperators.Group.Finset.Basic
-public import Mathlib.Data.Finset.Sort
-import TauCeti.GroupTheory.Perm.Basic
-import Mathlib.Data.Fin.Rev
-import Mathlib.Data.Fintype.Prod
-import Mathlib.Tactic.FinCases
 
 /-!
 # Based oriented Gauss codes
@@ -105,45 +99,8 @@ theorem ext {D E : BasedOrientedGaussCode n}
 /-- Partnered visits carry the same crossing label. -/
 @[simp]
 theorem visit_partner (D : BasedOrientedGaussCode n) (i : Fin (2 * n)) :
-    D.visit (D.partner.val i) = D.visit i := by
-  exact (D.visit_eq_iff i (D.partner.val i)).mpr (Or.inr rfl) |>.symm
-
-/-- Every crossing label occurs in the traversal. -/
-theorem visit_surjective (D : BasedOrientedGaussCode n) : Function.Surjective D.visit := by
-  classical
-  let s := Finset.univ.image D.visit
-  have hfiber (c : Fin n) (hc : c ∈ s) :
-      (Finset.univ.filter fun i => D.visit i = c).card = 2 := by
-    obtain ⟨i, -, rfl⟩ := Finset.mem_image.mp hc
-    have heq : (Finset.univ.filter fun j => D.visit j = D.visit i) = {i, D.partner.val i} := by
-      ext j
-      simp only [Finset.mem_filter, Finset.mem_univ, true_and, Finset.mem_insert,
-        Finset.mem_singleton]
-      constructor
-      · intro h
-        exact (D.visit_eq_iff i j).mp h.symm
-      · intro h
-        exact ((D.visit_eq_iff i j).mpr h).symm
-    rw [heq]
-    rw [Finset.card_insert_of_notMem]
-    · simp
-    · simpa using (D.partner.apply_ne i).symm
-  have hcount : 2 * n = 2 * s.card := by
-    calc
-      2 * n = Finset.univ.card := by simp
-      _ = ∑ c ∈ s, (Finset.univ.filter fun i => D.visit i = c).card :=
-        Finset.card_eq_sum_card_image D.visit Finset.univ
-      _ = ∑ _c ∈ s, 2 := by
-        apply Finset.sum_congr rfl
-        intro c hc
-        exact hfiber c hc
-      _ = 2 * s.card := by simp [Nat.mul_comm]
-  have hcard : s.card = n := by omega
-  have hs : s = Finset.univ := s.eq_univ_of_card (by simpa using hcard)
-  intro c
-  have hc : c ∈ s := by rw [hs]; simp
-  obtain ⟨i, -, hi⟩ := Finset.mem_image.mp hc
-  exact ⟨i, hi⟩
+    D.visit (D.partner.val i) = D.visit i :=
+  (D.visit_eq_iff i (D.partner.val i)).mpr (Or.inr rfl) |>.symm
 
 /-- The two visits at every crossing have opposite over/under data. -/
 theorem over_partner_ne {D : BasedOrientedGaussCode n} (i : Fin (2 * n)) :
@@ -189,6 +146,10 @@ theorem visitData_bijective (D : BasedOrientedGaussCode n) : Function.Bijective 
     · subst j
       exact (D.over_partner_ne i hover.symm).elim
   · simp [Nat.mul_comm]
+
+/-- Every crossing label occurs in the traversal. -/
+theorem visit_surjective (D : BasedOrientedGaussCode n) : Function.Surjective D.visit :=
+  fun c ↦ let ⟨i, hi⟩ := D.visitData_bijective.2 (c, true); ⟨i, congrArg Prod.fst hi⟩
 
 /-- Visits are equivalent to pairs consisting of a crossing and an over/under choice. -/
 noncomputable def visitDataEquiv (D : BasedOrientedGaussCode n) : Fin (2 * n) ≃ Fin n × Bool :=
@@ -325,7 +286,7 @@ def writhe (D : BasedOrientedGaussCode n) : ℤ :=
 
 /-- Expand the writhe as the sum of the integer values of the crossing signs. -/
 theorem writhe_def (D : BasedOrientedGaussCode n) :
-    D.writhe = ∑ c : Fin n, ((D.sign c : ℤˣ) : ℤ) := by simp [writhe]
+    D.writhe = ∑ c : Fin n, ((D.sign c : ℤˣ) : ℤ) := (rfl)
 
 /-- Summing the sign of the crossing met at each visit counts every crossing twice, so it gives
 twice the writhe. -/
@@ -349,20 +310,18 @@ def mirror (D : BasedOrientedGaussCode n) : BasedOrientedGaussCode n where
   over_partner := D.over_partner
 
 /-- Mirroring preserves the sequence of crossing labels. -/
-@[simp] theorem visit_mirror (D : BasedOrientedGaussCode n) : D.mirror.visit = D.visit := by
-  simp [mirror]
+@[simp] theorem visit_mirror (D : BasedOrientedGaussCode n) : D.mirror.visit = D.visit := (rfl)
 
 /-- Mirroring preserves the over/under data. -/
-@[simp] theorem over_mirror (D : BasedOrientedGaussCode n) : D.mirror.over = D.over := by
-  simp [mirror]
+@[simp] theorem over_mirror (D : BasedOrientedGaussCode n) : D.mirror.over = D.over := (rfl)
 
 /-- Mirroring negates every crossing sign. -/
 @[simp] theorem sign_mirror (D : BasedOrientedGaussCode n) (c : Fin n) :
-    D.mirror.sign c = -D.sign c := by simp [mirror]
+    D.mirror.sign c = -D.sign c := (rfl)
 
 /-- Mirroring preserves the partner matching. -/
-@[simp] theorem partner_mirror (D : BasedOrientedGaussCode n) : D.mirror.partner = D.partner := by
-  simp [mirror]
+@[simp] theorem partner_mirror (D : BasedOrientedGaussCode n) : D.mirror.partner = D.partner :=
+  (rfl)
 
 /-- Mirroring twice recovers the original Gauss code. -/
 @[simp] theorem mirror_mirror (D : BasedOrientedGaussCode n) : D.mirror.mirror = D := by
@@ -402,15 +361,14 @@ def reverse (D : BasedOrientedGaussCode n) : BasedOrientedGaussCode n where
 
 /-- Reversing orientation reads the crossing labels in reverse order. -/
 @[simp] theorem visit_reverse (D : BasedOrientedGaussCode n) (i : Fin (2 * n)) :
-    D.reverse.visit i = D.visit (Fin.rev i) := by simp [reverse]
+    D.reverse.visit i = D.visit (Fin.rev i) := (rfl)
 
 /-- Reversing orientation reads the over/under statuses in reverse order. -/
 @[simp] theorem over_reverse (D : BasedOrientedGaussCode n) (i : Fin (2 * n)) :
-    D.reverse.over i = D.over (Fin.rev i) := by simp [reverse]
+    D.reverse.over i = D.over (Fin.rev i) := (rfl)
 
 /-- Reversing orientation preserves every crossing sign. -/
-@[simp] theorem sign_reverse (D : BasedOrientedGaussCode n) : D.reverse.sign = D.sign := by
-  simp [reverse]
+@[simp] theorem sign_reverse (D : BasedOrientedGaussCode n) : D.reverse.sign = D.sign := (rfl)
 
 /-- Reversing orientation conjugates the partner matching by reversal of the visit indices. -/
 @[simp] theorem partner_reverse (D : BasedOrientedGaussCode n) (i : Fin (2 * n)) :
@@ -436,7 +394,8 @@ private def unorientedSetoid : Setoid (BasedOrientedGaussCode n) :=
 
 private theorem unorientedSetoid_apply (D E : BasedOrientedGaussCode n) :
     unorientedSetoid D E ↔ D = E ∨ D = E.reverse :=
-  TauCeti.sameCycle_toPerm_iff reverse reverse_reverse D E
+  Function.Involutive.sameCycle_iff (f := Function.Involutive.toPerm reverse reverse_reverse)
+    reverse_reverse D E
 
 end BasedOrientedGaussCode
 
@@ -478,20 +437,19 @@ def relabel (D : BasedOrientedGaussCode n) (e : Fin n ≃ Fin n) : BasedOriented
 
 /-- Relabelling composes the visit labels with the given equivalence. -/
 @[simp] theorem visit_relabel (D : BasedOrientedGaussCode n) (e : Fin n ≃ Fin n)
-    (i : Fin (2 * n)) : (D.relabel e).visit i = e (D.visit i) := by
-  simp [relabel]
+    (i : Fin (2 * n)) : (D.relabel e).visit i = e (D.visit i) := (rfl)
 
 /-- Relabelling preserves the over/under data. -/
 @[simp] theorem over_relabel (D : BasedOrientedGaussCode n) (e : Fin n ≃ Fin n) :
-    (D.relabel e).over = D.over := by simp [relabel]
+    (D.relabel e).over = D.over := (rfl)
 
 /-- Relabelling transports signs along the inverse equivalence. -/
 @[simp] theorem sign_relabel (D : BasedOrientedGaussCode n) (e : Fin n ≃ Fin n) (c : Fin n) :
-    (D.relabel e).sign c = D.sign (e.symm c) := by simp [relabel]
+    (D.relabel e).sign c = D.sign (e.symm c) := (rfl)
 
 /-- Relabelling preserves the partner matching. -/
 @[simp] theorem partner_relabel (D : BasedOrientedGaussCode n) (e : Fin n ≃ Fin n) :
-    (D.relabel e).partner = D.partner := by simp [relabel]
+    (D.relabel e).partner = D.partner := (rfl)
 
 /-- Relabelling preserves the writhe. -/
 @[simp] theorem writhe_relabel (D : BasedOrientedGaussCode n) (e : Fin n ≃ Fin n) :
@@ -631,7 +589,7 @@ def positiveKink : BasedOrientedGaussCode 1 where
 
 /-- Both visits of the positive kink carry its unique crossing label. -/
 @[simp] theorem visit_positiveKink (i : Fin 2) :
-    positiveKink.visit i = 0 := by simp [positiveKink]
+    positiveKink.visit i = 0 := (rfl)
 
 /-- The first visit of the positive kink is over and the second is under. -/
 @[simp] theorem over_positiveKink (i : Fin 2) :
@@ -640,7 +598,7 @@ def positiveKink : BasedOrientedGaussCode 1 where
 
 /-- The unique crossing of the positive kink has positive sign. -/
 @[simp] theorem sign_positiveKink (c : Fin 1) :
-    positiveKink.sign c = 1 := by simp [positiveKink]
+    positiveKink.sign c = 1 := (rfl)
 
 /-- The positive kink pairs its two visits by swapping them. -/
 @[simp] theorem partner_positiveKink :
@@ -695,8 +653,8 @@ def writhe (D : BasedUnorientedGaussCode n) : ℤ :=
 
 /-- The writhe of an unoriented class is the writhe of any oriented representative. -/
 @[simp] theorem writhe_forgetOrientation (D : BasedOrientedGaussCode n) :
-    writhe D.forgetOrientation = D.writhe := by
-  exact BasedUnorientedGaussCode.lift_forgetOrientation BasedOrientedGaussCode.writhe
+    writhe D.forgetOrientation = D.writhe :=
+  BasedUnorientedGaussCode.lift_forgetOrientation BasedOrientedGaussCode.writhe
     BasedOrientedGaussCode.writhe_reverse D
 
 /-- Mirror a based unoriented Gauss code. -/

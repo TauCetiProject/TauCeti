@@ -32,6 +32,8 @@ the canonical operation internal to integral lattices is the integer action defi
   lattices.
 * `TauCeti.IntegralLattice.instInvolutiveNeg`: form negation, defined as scaling by `-1`.
 * `TauCeti.IntegralLattice.isEven_neg_iff`: form negation preserves evenness.
+* `TauCeti.IntegralLattice.IsEven.smul` and `TauCeti.IntegralLattice.isEven_smul_of_even`: scaling
+  an even lattice, or scaling any lattice by an even integer, gives an even lattice.
 * `TauCeti.IntegralLattice.gramMatrix_smul`: scaling multiplies every Gram-matrix entry.
 * `TauCeti.IntegralLattice.determinant_smul`: the determinant is multiplied by the scalar to the
   lattice rank.
@@ -55,7 +57,6 @@ the canonical operation internal to integral lattices is the integer action defi
 ## References
 
 * W. Ebeling, *Lattices and Codes*, Chapter 1.
-* `TauCetiRoadmap/IntegralLattices/README.md`, Layer 1, form scaling and negation.
 -/
 
 public section
@@ -83,7 +84,7 @@ without boilerplate transports. -/
 def scale (n : ℤ) (L : IntegralLattice V) : IntegralLattice V where
   carrier := L.carrier
   form := (n : ℚ) • L.form
-  isLattice := L.isLattice
+  isFullLattice := L.isFullLattice
   isSymm := L.isSymm.smul (n : ℚ)
   le_dual := by
     intro x hx
@@ -308,6 +309,22 @@ theorem integralForm_neg (L : IntegralLattice V) :
   change ((-1 : ℤ) • L).integralForm = -L.integralForm
   rw [integralForm_smul, neg_one_smul ℤ]
 
+/-- The integral norm of a scaled lattice is the scalar times the original integral norm. -/
+theorem integralNorm_smul_apply (n : ℤ) (L : IntegralLattice V) (x : L) :
+    (n • L).integralNorm x = n * L.integralNorm x := by
+  rw [integralNorm_apply, integralNorm_apply, integralForm_smul_apply]
+
+/-- Scaling an even lattice by any integer gives an even lattice. -/
+theorem IsEven.smul {L : IntegralLattice V} (hL : L.IsEven) (n : ℤ) : (n • L).IsEven :=
+  (n • L).isEven_of_span Submodule.span_univ fun x _ ↦ by
+    simpa only [integralNorm_smul_apply] using
+      ((L.even_integralNorm_iff x).mpr (hL.exists_norm_eq_two_mul x)).mul_left n
+
+/-- Scaling any integral lattice by an even integer gives an even lattice. -/
+theorem isEven_smul_of_even {n : ℤ} (hn : Even n) (L : IntegralLattice V) : (n • L).IsEven :=
+  (n • L).isEven_of_span Submodule.span_univ fun x _ ↦ by
+    simpa only [integralNorm_smul_apply] using hn.mul_right (L.integralNorm x)
+
 /-- An integral lattice is even if and only if its form negation is even. -/
 @[simp]
 theorem isEven_neg_iff (L : IntegralLattice V) : (-L).IsEven ↔ L.IsEven := by
@@ -515,7 +532,7 @@ theorem exists_eq_smul_iff_forall_dvd {n : ℤ} (hn : n ≠ 0) {L : IntegralLatt
     dsimp only at hxy
     rw [LinearMap.smul_apply, LinearMap.smul_apply, smul_eq_mul, ← hxy,
       inv_mul_cancel_left₀ hnq, algebraMap_int_eq, eq_intCast]
-  refine ⟨⟨L.carrier, (n : ℚ)⁻¹ • L.form, L.isLattice, L.isSymm.smul _, hdual⟩, ?_⟩
+  refine ⟨⟨L.carrier, (n : ℚ)⁻¹ • L.form, L.isFullLattice, L.isSymm.smul _, hdual⟩, ?_⟩
   ext : 1
   · rfl
   · rw [smul_form, smul_smul, mul_inv_cancel₀ hnq, one_smul]
@@ -556,7 +573,7 @@ theorem smul_isometryQuotient_injective {n : ℤ} (hn : n ≠ 0) :
 /-! ## Interaction with constructors -/
 
 @[simp]
-theorem smul_ofSubmodule (n : ℤ) (S : Submodule ℤ V) [hS : S.IsLattice ℚ]
+theorem smul_ofSubmodule (n : ℤ) (S : Submodule ℤ V) [hS : S.IsFullLattice ℚ]
     (B : LinearMap.BilinForm ℚ V) (hB : B.IsSymm) (hle : S ≤ B.dualSubmodule S) :
     n • ofSubmodule S B hB hle = ofSubmodule S ((n : ℚ) • B) (hB.smul (n : ℚ))
       (by
@@ -568,7 +585,7 @@ theorem smul_ofSubmodule (n : ℤ) (S : Submodule ℤ V) [hS : S.IsLattice ℚ]
   apply IntegralLattice.ext <;> simp
 
 @[simp]
-theorem neg_ofSubmodule (S : Submodule ℤ V) [hS : S.IsLattice ℚ]
+theorem neg_ofSubmodule (S : Submodule ℤ V) [hS : S.IsFullLattice ℚ]
     (B : LinearMap.BilinForm ℚ V) (hB : B.IsSymm) (hle : S ≤ B.dualSubmodule S) :
     -ofSubmodule S B hB hle = ofSubmodule S (-B) hB.neg
       (by

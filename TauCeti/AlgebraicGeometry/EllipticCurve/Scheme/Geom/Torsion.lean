@@ -5,10 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.Geom.Hom
+public import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.Geom.Hom.Basic
 public import TauCeti.AlgebraicGeometry.GroupScheme.Torsion.Basic
 import TauCeti.AlgebraicGeometry.IdealSheaf.BaseChange
-import TauCeti.AlgebraicGeometry.IdealSheaf.Section
 import TauCeti.Data.ZMod.MonoidHomEquiv
 
 /-!
@@ -255,7 +254,6 @@ instance isClosedImmersion_torsionι_left : IsClosedImmersion (E.torsionι n).le
 subscheme `E[n]` of `E` is the inverse image along `[n]` of the ideal sheaf of the zero section. -/
 theorem ker_torsionι_left :
     (E.torsionι n).left.ker = E.zero.ker.comap (E.mulBy n).left := by
-  have := E.zero.isClosedImmersion_of_comp_eq_id E.zero_comp
   exact Scheme.IdealSheafData.ker_eq_comap_of_isPullback _ (E.isPullback_torsion n)
 
 /-- The `n`-torsion of an elliptic curve is proper over the base. -/
@@ -308,6 +306,18 @@ theorem torsionMap_torsionι : torsionMap n hg h0 ≫ (E.torsionι n).left = (E'
 @[reassoc (attr := simp)]
 theorem torsionMap_hom : torsionMap n hg h0 ≫ (E.torsion n).X.hom = (E'.torsion n).X.hom ≫ f :=
   IsPullback.lift_snd _ _ _ _
+
+open MonoidalCategory in
+/-- The morphism `E'[n] ⟶ E[n]` carries the zero section of `E'[n]` to that of `E[n]`. -/
+@[reassoc (attr := simp)]
+theorem one_left_torsionMap :
+    (1 : 𝟙_ (Over S') ⟶ (E'.torsion n).X).left ≫ torsionMap n hg h0 =
+      f ≫ (1 : 𝟙_ (Over S) ⟶ (E.torsion n).X).left := by
+  refine (E.isPullback_torsion n).hom_ext ?_ (by simp)
+  have h := congrArg CommaMorphism.left (MonObj.one_comp (X := 𝟙_ (Over S')) (E'.torsionι n))
+  have h' := congrArg CommaMorphism.left (MonObj.one_comp (X := 𝟙_ (Over S)) (E.torsionι n))
+  simp only [Over.comp_left, hom_one_left] at h h'
+  simp [reassoc_of% h, h', h0]
 
 /-- **The `n`-torsion commutes with base change.** For a morphism `g : E' ⟶ E` of elliptic curves
 lying over `f : S' ⟶ S`, forming a pullback square with the structure morphisms and carrying the
@@ -385,7 +395,7 @@ theorem existsUnique_comp_torsionPointHom {Z : Over S}
     (φ : Multiplicative (ZMod N) →* (Z ⟶ Over.mk E.structureMap)) :
     ∃! x : Z ⟶ (E.torsion N).X, ∀ a, x ≫ E.torsionPointHom N a = φ a := by
   let e := zmodMonoidHomEquiv N (Z ⟶ Over.mk E.structureMap)
-  let P := E.torsionPointsEquiv N Z ⟨(e φ).1, by rw [zpow_natCast]; exact (e φ).2⟩
+  let P := E.torsionPointsEquiv N Z ⟨(e φ).val, by rw [zpow_natCast]; exact (e φ).property⟩
   refine ⟨P, fun a ↦ ?_, fun x hx ↦ torsion_hom_ext ?_⟩
   · -- write `a = a₁`, so that `φ a = φ 1 ^ a₁`
     obtain ⟨a₁, rfl⟩ : ∃ a₁ : ZMod N, Multiplicative.ofAdd a₁ = a := ⟨a.toAdd, rfl⟩
@@ -443,8 +453,8 @@ theorem existsUnique_comp_torsionPairHom {Z : Over S}
     (φ : Multiplicative (ZMod N × ZMod N) →* (Z ⟶ Over.mk E.structureMap)) :
     ∃! x : Z ⟶ (E.torsion N).X ⊗ (E.torsion N).X, ∀ a, x ≫ E.torsionPairHom N a = φ a := by
   let e := zmodProdMonoidHomEquiv N (Z ⟶ Over.mk E.structureMap)
-  let P := E.torsionPointsEquiv N Z ⟨(e φ).1, by rw [zpow_natCast]; exact (e φ).1.2⟩
-  let Q := E.torsionPointsEquiv N Z ⟨(e φ).2, by rw [zpow_natCast]; exact (e φ).2.2⟩
+  let P := E.torsionPointsEquiv N Z ⟨(e φ).1, by rw [zpow_natCast]; exact (e φ).1.property⟩
+  let Q := E.torsionPointsEquiv N Z ⟨(e φ).2, by rw [zpow_natCast]; exact (e φ).2.property⟩
   refine ⟨lift P Q, fun a ↦ ?_, fun x hx ↦ ?_⟩
   · -- write `a = (a₁, a₂)`, so that `φ a = φ (1, 0) ^ a₁ * φ (0, 1) ^ a₂`
     obtain ⟨⟨a₁, a₂⟩, rfl⟩ : ∃ p : ZMod N × ZMod N, Multiplicative.ofAdd p = a := ⟨a.toAdd, rfl⟩

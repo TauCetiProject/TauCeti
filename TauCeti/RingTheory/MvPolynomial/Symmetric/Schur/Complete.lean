@@ -81,8 +81,6 @@ without the Bender--Knuth involution that `TauCeti.schurPoly_isSymmetric` needs 
 * [I. G. Macdonald, *Symmetric Functions and Hall Polynomials*][macdonald1995], Chapter I,
   Section 3, where `s_{(n)} = h_n` sits beside `s_{(1ⁿ)} = e_n` as the first examples of a Schur
   function.
-* [Schur--Weyl roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/SchurWeyl/README.md),
-  Layer 7.
 -/
 
 public section
@@ -101,11 +99,11 @@ variable {N : ℕ} {μ : YoungDiagram}
 through the length `μ.rowLen 0` of its first row, so this reads the first row of any bounded
 tableau; for a one-row shape it reads the whole tableau. -/
 def rowEntry (T : BoundedSSYT N μ) (j : Fin (μ.rowLen 0)) : Fin N :=
-  ⟨T.1 0 j, entry_lt T (YoungDiagram.mem_iff_lt_rowLen.mpr j.isLt)⟩
+  ⟨T.val 0 j, entry_lt T (YoungDiagram.mem_iff_lt_rowLen.mpr j.isLt)⟩
 
 @[simp]
 theorem rowEntry_val (T : BoundedSSYT N μ) (j : Fin (μ.rowLen 0)) :
-    (rowEntry T j : ℕ) = T.1 0 j :=
+    (rowEntry T j : ℕ) = T.val 0 j :=
   (rfl)
 
 /-- **The first row of a bounded tableau increases weakly**, entries increasing weakly rightwards
@@ -114,8 +112,8 @@ theorem rowEntry_monotone (T : BoundedSSYT N μ) : Monotone (rowEntry T) := by
   intro j₁ j₂ hj
   rw [Fin.le_def, rowEntry_val, rowEntry_val]
   rcases Nat.eq_or_lt_of_le (Fin.le_def.mp hj) with h | h
-  · exact le_of_eq (congrArg (T.1 0) h)
-  · exact T.1.row_weak h (YoungDiagram.mem_iff_lt_rowLen.mpr j₂.isLt)
+  · exact le_of_eq (congrArg (T.val 0) h)
+  · exact T.val.row_weak h (YoungDiagram.mem_iff_lt_rowLen.mpr j₂.isLt)
 
 /-- The multiset of letters the first row of a bounded tableau uses, with multiplicity. -/
 def rowMultiset (T : BoundedSSYT N μ) : Multiset (Fin N) :=
@@ -138,7 +136,7 @@ theorem card_rowMultiset (T : BoundedSSYT N μ) :
 
 /-- The cells of a one-row shape carrying a given letter, read off the columns that carry it. -/
 private theorem filter_cells_eq_image (h : μ.colLen 0 ≤ 1) (T : BoundedSSYT N μ) (y : Fin N) :
-    (μ.cells.filter fun c => T.1 c.1 c.2 = (y : ℕ))
+    (μ.cells.filter fun c => T.val c.1 c.2 = (y : ℕ))
       = (Finset.univ.filter fun j : Fin (μ.rowLen 0) => rowEntry T j = y).image
           fun j : Fin (μ.rowLen 0) => (0, (j : ℕ)) := by
   ext c
@@ -240,7 +238,7 @@ def ofRowMultiset (h : μ.colLen 0 ≤ 1) (s : Multiset (Fin N))
 
 private theorem ofRowMultiset_apply (h : μ.colLen 0 ≤ 1) (s : Multiset (Fin N))
     (hs : Multiset.card s = μ.rowLen 0) (i j : ℕ) :
-    (ofRowMultiset h s hs).1 i j = if i = 0 then (rowList s).getD j 0 else 0 :=
+    (ofRowMultiset h s hs).val i j = if i = 0 then (rowList s).getD j 0 else 0 :=
   rowTableau_apply h s hs i j
 
 /-- The first row of `TauCeti.BoundedSSYT.ofRowMultiset` reads off the sorted word. -/
@@ -273,11 +271,11 @@ theorem rowMultiset_ofRowMultiset (h : μ.colLen 0 ≤ 1) (s : Multiset (Fin N))
 /-- **The row of a one-row tableau is already sorted**, so it is the sorted word of its own
 multiset of letters. -/
 private theorem rowList_rowMultiset (T : BoundedSSYT N μ) :
-    rowList (rowMultiset T) = List.ofFn fun j : Fin (μ.rowLen 0) => (T.1 0 j : ℕ) := by
+    rowList (rowMultiset T) = List.ofFn fun j : Fin (μ.rowLen 0) => (T.val 0 j : ℕ) := by
   refine List.Perm.eq_of_pairwise' (pairwise_rowList _) ?_ ?_
   · rw [List.pairwise_ofFn]
     intro i j hij
-    exact T.1.row_weak (Fin.lt_def.mp hij) (YoungDiagram.mem_iff_lt_rowLen.mpr j.isLt)
+    exact T.val.row_weak (Fin.lt_def.mp hij) (YoungDiagram.mem_iff_lt_rowLen.mpr j.isLt)
   · rw [← Multiset.coe_eq_coe, coe_rowList, rowMultiset, Multiset.map_map, Fin.univ_val_map]
     rfl
 
@@ -291,7 +289,7 @@ theorem ofRowMultiset_rowMultiset (h : μ.colLen 0 ≤ 1) (T : BoundedSSYT N μ)
   by_cases hij : (i, j) ∈ μ
   · obtain ⟨rfl, hj⟩ := (YoungDiagram.mem_iff_of_colLen_le_one h).mp hij
     rw [ite_eq_left rfl, List.getD_eq_getElem _ _ (by simpa using hj), List.getElem_ofFn]
-  · rw [T.1.zeros hij]
+  · rw [T.val.zeros hij]
     by_cases hi : i = 0
     · subst hi
       rw [ite_eq_left rfl, List.getD_eq_default]
@@ -306,9 +304,10 @@ row in increasing order. -/
 def rowMultisetEquiv (h : μ.colLen 0 ≤ 1) : BoundedSSYT N μ ≃ Sym (Fin N) μ.card where
   toFun T := ⟨rowMultiset T,
     (card_rowMultiset T).trans (YoungDiagram.card_eq_rowLen_of_colLen_le_one h).symm⟩
-  invFun s := ofRowMultiset h s.1 (s.2.trans (YoungDiagram.card_eq_rowLen_of_colLen_le_one h))
+  invFun s := ofRowMultiset h s.val (s.property.trans (YoungDiagram.card_eq_rowLen_of_colLen_le_one
+      h))
   left_inv T := ofRowMultiset_rowMultiset h T
-  right_inv s := Sym.ext (rowMultiset_ofRowMultiset h s.1 _)
+  right_inv s := Sym.ext (rowMultiset_ofRowMultiset h s.val _)
 
 @[simp]
 theorem rowMultisetEquiv_apply_coe (h : μ.colLen 0 ≤ 1) (T : BoundedSSYT N μ) :
@@ -320,7 +319,7 @@ order. -/
 @[simp]
 theorem rowMultisetEquiv_symm_apply (h : μ.colLen 0 ≤ 1) (s : Sym (Fin N) μ.card) :
     (rowMultisetEquiv h).symm s
-      = ofRowMultiset h s.1 (s.2.trans (YoungDiagram.card_eq_rowLen_of_colLen_le_one h)) :=
+      = ofRowMultiset h s.val (s.property.trans (YoungDiagram.card_eq_rowLen_of_colLen_le_one h)) :=
   (rfl)
 
 end BoundedSSYT

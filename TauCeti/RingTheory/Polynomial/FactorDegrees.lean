@@ -10,6 +10,7 @@ public import Mathlib.Algebra.Field.ZMod
 public import Mathlib.RingTheory.Polynomial.Resultant.Basic
 import Mathlib.RingTheory.Polynomial.UniqueFactorization
 import TauCeti.RingTheory.Polynomial.Resultant.Discriminant
+import TauCeti.RingTheory.UniqueFactorizationDomain.NormalizedFactors
 
 /-!
 # Degrees of polynomial factors modulo a prime
@@ -34,6 +35,8 @@ and its relationship with irreducibility. Worked examples for `X ^ 5 - X - 1` ar
   factorization of the reduction into irreducibles.
 * `Polynomial.sum_factorDegrees_eq_natDegree_map`, `Polynomial.Monic.sum_factorDegrees`: the
   factor degrees sum to the degree after reduction, which for monic `f` is `f.natDegree`.
+* `Polynomial.card_factorDegrees_eq_one_iff`: the reduction is irreducible exactly when `f` has a
+  single factor degree, counted with multiplicity.
 * `Polynomial.factorDegrees_eq_singleton_iff`: the factor degrees are `{n}` exactly when the
   reduction is irreducible of degree `n`.
 * `Polynomial.squarefree_map_of_nodup_factorDegrees`: pairwise distinct factor degrees force the
@@ -146,11 +149,11 @@ theorem factorDegrees_eq_singleton_of_irreducible (f : ℤ[X]) (p : ℕ)
   rw [factorDegrees_def]
   exact Polynomial.map_natDegree_normalizedFactors_eq_singleton_iff.mpr h
 
-/-- A single factor degree, whatever it is, forces the reduction to be irreducible. -/
-theorem irreducible_map_of_card_factorDegrees_eq_one {f : ℤ[X]} {p : ℕ}
-    [Fact p.Prime] (h : (f.factorDegrees p).card = 1) :
-    Irreducible (f.map (Int.castRingHom (ZMod p))) :=
-  Polynomial.irreducible_of_card_normalizedFactors_eq_one (by simpa using h)
+/-- There is exactly one factor degree, counted with multiplicity, if and only if the reduction
+is irreducible. -/
+theorem card_factorDegrees_eq_one_iff {f : ℤ[X]} {p : ℕ} [Fact p.Prime] :
+    (f.factorDegrees p).card = 1 ↔ Irreducible (f.map (Int.castRingHom (ZMod p))) := by
+  rw [card_factorDegrees, card_normalizedFactors_eq_one_iff]
 
 /-- The factor degrees of `f` modulo `p` are the singleton `{n}` exactly when the reduction is
 irreducible of degree `n`. -/
@@ -162,7 +165,7 @@ theorem factorDegrees_eq_singleton_iff {f : ℤ[X]} {p n : ℕ}
         (f.map (Int.castRingHom (ZMod p))).natDegree = n := by
   constructor
   · intro h
-    refine ⟨irreducible_map_of_card_factorDegrees_eq_one ?_, ?_⟩
+    refine ⟨card_factorDegrees_eq_one_iff.mp ?_, ?_⟩
     · simp [h]
     · simpa using congrArg Multiset.sum h
   · rintro ⟨hirr, hdeg⟩

@@ -8,7 +8,7 @@ module
 public import Mathlib.Dynamics.Ergodic.MeasurePreserving
 public import Mathlib.MeasureTheory.Function.LpOrder
 public import TauCeti.MeasureTheory.Function.Lp.CastMeasure
-public import TauCeti.MeasureTheory.Function.Lp.CompMeasurePreservingEquiv
+public import TauCeti.MeasureTheory.Function.Lp.CompMeasurePreserving.Equiv
 public import TauCeti.MeasureTheory.Function.Lp.ExtendByZero
 public import TauCeti.MeasureTheory.Integral.Bochner.Subtype
 public import TauCeti.MeasureTheory.Integral.ComapSubtype
@@ -73,7 +73,7 @@ variable {α E : Type*} [MeasurableSpace α] [NormedAddCommGroup E]
 `Lp E p (μ.comap ((↑) : s → α))`, even when `s` is empty. -/
 private theorem surjective_compMeasurePreserving_subtype_coe (hs : MeasurableSet s) :
     Function.Surjective (compMeasurePreservingₗᵢ (E := E) (p := p) 𝕜 ((↑) : s → α)
-      (measurePreserving_subtype_coe (μa := μ) hs)) := by
+      (measurePreserving_subtypeVal (μa := μ) hs)) := by
   intro f₀
   set F : α → E := Function.extend ((↑) : s → α) (⇑f₀) 0
   have hFcomp : F ∘ ((↑) : s → α) = ⇑f₀ :=
@@ -85,7 +85,7 @@ private theorem surjective_compMeasurePreserving_subtype_coe (hs : MeasurableSet
       exact Lp.memLp f₀)
   refine ⟨hF.toLp F, Lp.ext ?_⟩
   filter_upwards [coeFn_compMeasurePreserving (hF.toLp F)
-    (measurePreserving_subtype_coe (μa := μ) hs),
+    (measurePreserving_subtypeVal (μa := μ) hs),
     (ae_restrict_iff_subtype hs).1 hF.coeFn_toLp] with x hx1 hx2
   exact hx1.trans (hx2.trans (congrFun hFcomp x))
 
@@ -95,7 +95,7 @@ given by precomposing representatives with `(↑) : s → α`. -/
 def comapSubtypeEquivₗᵢ (hs : MeasurableSet s) :
     Lp E p (μ.restrict s) ≃ₗᵢ[𝕜] Lp E p (μ.comap ((↑) : s → α)) :=
   LinearIsometryEquiv.ofSurjective
-    (compMeasurePreservingₗᵢ 𝕜 ((↑) : s → α) (measurePreserving_subtype_coe (μa := μ) hs))
+    (compMeasurePreservingₗᵢ 𝕜 ((↑) : s → α) (measurePreserving_subtypeVal (μa := μ) hs))
     (surjective_compMeasurePreserving_subtype_coe 𝕜 hs)
 
 variable {𝕜}
@@ -104,14 +104,14 @@ variable {𝕜}
 @[simp]
 theorem comapSubtypeEquivₗᵢ_apply (hs : MeasurableSet s) (f : Lp E p (μ.restrict s)) :
     comapSubtypeEquivₗᵢ 𝕜 μ hs f =
-      compMeasurePreserving ((↑) : s → α) (measurePreserving_subtype_coe (μa := μ) hs) f := by
+      compMeasurePreserving ((↑) : s → α) (measurePreserving_subtypeVal (μa := μ) hs) f := by
   rw [comapSubtypeEquivₗᵢ, LinearIsometryEquiv.coe_ofSurjective, compMeasurePreservingₗᵢ_apply]
 
 /-- `comapSubtypeEquivₗᵢ` restricts representatives to `s` almost everywhere. -/
 theorem coeFn_comapSubtypeEquivₗᵢ (hs : MeasurableSet s) (f : Lp E p (μ.restrict s)) :
     ⇑(comapSubtypeEquivₗᵢ 𝕜 μ hs f) =ᵐ[μ.comap ((↑) : s → α)] ⇑f ∘ ((↑) : s → α) := by
   rw [comapSubtypeEquivₗᵢ_apply]
-  exact coeFn_compMeasurePreserving f (measurePreserving_subtype_coe (μa := μ) hs)
+  exact coeFn_compMeasurePreserving f (measurePreserving_subtypeVal (μa := μ) hs)
 
 /-- The inverse of `comapSubtypeEquivₗᵢ` agrees with `f₀` along `(↑) : s → α` almost everywhere. -/
 theorem coeFn_comapSubtypeEquivₗᵢ_symm_comp_subtype (hs : MeasurableSet s)
@@ -137,7 +137,7 @@ ambient space `Lp E p μ`, as a linear isometry. -/
 def extendByZeroComapₗᵢ (hs : MeasurableSet s) :
     Lp E p (μ.comap ((↑) : s → α)) →ₗᵢ[𝕜] Lp E p μ :=
   (TauCeti.castLpₗᵢ (𝕜 := 𝕜) (Measure.restrict_univ (μ := μ))).toLinearIsometry.comp <|
-    (TauCeti.extendByZeroLpₗᵢ 𝕜 μ hs (subset_univ s)).comp
+    (TauCeti.extendByZeroLpₗᵢ 𝕜 μ hs.nullMeasurableSet (subset_univ s)).comp
       (comapSubtypeEquivₗᵢ 𝕜 μ hs).symm.toLinearIsometry
 
 variable (𝕜 μ p) in
@@ -152,8 +152,8 @@ def restrictComapCLM (hs : MeasurableSet s) :
 theorem coeFn_extendByZeroComapₗᵢ (hs : MeasurableSet s)
     (f₀ : Lp E p (μ.comap ((↑) : s → α))) :
     (extendByZeroComapₗᵢ 𝕜 μ hs f₀ : α → E) =ᵐ[μ] Function.extend ((↑) : s → α) (⇑f₀) 0 := by
-  have h1 := (ae_imp_of_ae_restrict (TauCeti.coeFn_extendByZeroLpₗᵢ 𝕜 hs (subset_univ s)
-    ((comapSubtypeEquivₗᵢ 𝕜 μ hs).symm f₀))).mono fun _ hx ↦ hx (mem_univ _)
+  have h1 := (ae_imp_of_ae_restrict (TauCeti.coeFn_extendByZeroLpₗᵢ 𝕜 hs.nullMeasurableSet
+    (subset_univ s) ((comapSubtypeEquivₗᵢ 𝕜 μ hs).symm f₀))).mono fun _ hx ↦ hx (mem_univ _)
   have h2 := (ae_eq_restrict_iff_indicator_ae_eq hs).1
     (coeFn_comapSubtypeEquivₗᵢ_symm (𝕜 := 𝕜) hs f₀)
   filter_upwards [h1, h2] with x hx1 hx2

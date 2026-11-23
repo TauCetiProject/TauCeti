@@ -19,8 +19,9 @@ splitting, of the affine range of its real covariance. Consequently, a covarianc
 positive definite gives a law singular with respect to real Lebesgue volume on the complex
 coordinate space. The Radon–Nikodym derivative then vanishes almost everywhere.
 
-This is the singular half of the density dichotomy for proper complex Gaussian laws. It includes
-positive-semidefinite singular covariances and invalid covariance parameters.
+At positive-definite covariance the support is the whole coordinate space. The singular half
+of the density dichotomy includes positive-semidefinite singular covariances and invalid
+covariance parameters.
 
 ## References
 
@@ -55,6 +56,34 @@ theorem support_properComplexGaussianMeasure {C : Matrix iota iota ℂ} (hC : C.
   rw [(complexToRealEuclidean iota).symm.toHomeomorph.image_eq_preimage_symm,
     ContinuousLinearEquiv.toHomeomorph_symm, Homeomorph.symm_symm,
     ContinuousLinearEquiv.coe_toHomeomorph]
+
+/-- A proper complex Gaussian with positive-definite covariance has full support. -/
+@[simp]
+theorem support_properComplexGaussianMeasure_of_posDef {C : Matrix iota iota ℂ}
+    (hC : C.PosDef) (m : iota → ℂ) :
+    (properComplexGaussianMeasure m C).support = Set.univ := by
+  have hR : (complexGaussianRealCovariance C).PosDef :=
+    (posDef_complexGaussianRealCovariance_iff C).mpr hC
+  have hr : Function.Surjective (Matrix.toEuclideanLin (complexGaussianRealCovariance C)) := by
+    intro x
+    obtain ⟨y, hy⟩ := ((complexGaussianRealCovariance C).toEuclideanCLE hR.det_pos.ne').surjective x
+    exact ⟨y, (Matrix.toEuclideanCLE_apply _ _ y).symm.trans hy⟩
+  rw [support_properComplexGaussianMeasure hC.posSemidef, LinearMap.range_eq_top.mpr hr]
+  simp
+
+/-- The identity-covariance proper complex Gaussian has full support at every mean. -/
+@[simp]
+theorem support_properComplexGaussianMeasure_one (m : iota → ℂ) :
+    (properComplexGaussianMeasure m 1).support = Set.univ :=
+  support_properComplexGaussianMeasure_of_posDef Matrix.PosDef.one m
+
+/-- The standard scalar proper complex Gaussian has full support on the complex plane. -/
+@[simp]
+theorem support_properComplexGaussianScalar : properComplexGaussianScalar.support = Set.univ := by
+  rw [properComplexGaussianScalar_def,
+    Measure.support_map_eq_closure_range _
+      (support_properComplexGaussianMeasure_one _) (by fun_prop)]
+  rw [Set.range_eq_univ.mpr (fun z ↦ ⟨fun _ ↦ z, rfl⟩), closure_univ]
 
 /-- A proper complex Gaussian lies almost surely in its realified affine range. -/
 theorem ae_mem_affineRange_properComplexGaussianMeasure (C : Matrix iota iota ℂ)
@@ -131,7 +160,7 @@ theorem HasLaw.ae_mem_affineRange_properComplexGaussianMeasure
       AffineSubspace.mk' (complexToRealEuclidean iota m)
         (LinearMap.range (Matrix.toEuclideanLin (complexGaussianRealCovariance C))) := by
   exact (hX.ae_iff (measurableSet_setOfPred.mp
-    ((AffineSubspace.closed_of_finiteDimensional _).measurableSet.preimage (by fun_prop)))).2
+    ((AffineSubspace.isClosed_of_finiteDimensional _).measurableSet.preimage (by fun_prop)))).2
       (TauCeti.Probability.ae_mem_affineRange_properComplexGaussianMeasure C m)
 
 end ProbabilityTheory

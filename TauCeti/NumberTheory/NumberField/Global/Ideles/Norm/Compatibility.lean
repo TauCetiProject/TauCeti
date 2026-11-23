@@ -31,7 +31,8 @@ public section
 noncomputable section
 
 open IsDedekindDomain NumberField NumberField.InfinitePlace
-open scoped AdicCompletionExtension NumberField.LiesOver
+open scoped AdicCompletionExtension
+attribute [local instance] AbsoluteValue.Completion.algebraOfLiesOver
 
 namespace TauCeti.GlobalNumberFields
 
@@ -43,7 +44,7 @@ theorem norm_ideleFiniteCoord_ideleNormMap (v : HeightOneSpectrum (𝓞 K))
     (x : IdeleGroup (𝓞 L) L) :
     ‖(v.ideleFiniteCoord (ideleNormMap K L x) : v.adicCompletion K)‖ =
       ∏ᶠ w : {w : HeightOneSpectrum (𝓞 L) // w.asIdeal.LiesOver v.asIdeal},
-        ‖(w.1.ideleFiniteCoord x : w.1.adicCompletion L)‖ := by
+        ‖(w.val.ideleFiniteCoord x : w.val.adicCompletion L)‖ := by
   classical
   let _ : Fintype {w : HeightOneSpectrum (𝓞 L) // w.asIdeal.LiesOver v.asIdeal} :=
     Fintype.ofFinite _
@@ -57,7 +58,7 @@ theorem completionNormalizedAbsValue_ideleInfiniteCoord_ideleNormMap (v : Infini
     (x : IdeleGroup (𝓞 L) L) :
     completionNormalizedAbsValue v (v.ideleInfiniteCoord (ideleNormMap K L x)) =
       ∏ᶠ w : {w : InfinitePlace L // w.LiesOver v},
-        completionNormalizedAbsValue w.1 (w.1.ideleInfiniteCoord x) := by
+        completionNormalizedAbsValue w.val (w.val.ideleInfiniteCoord x) := by
   classical
   rw [ideleInfiniteCoord_ideleNormMap, finprod_eq_prod_of_fintype,
     Units.coe_prod, map_prod, finprod_eq_prod_of_fintype]

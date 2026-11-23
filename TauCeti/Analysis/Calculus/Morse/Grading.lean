@@ -95,7 +95,7 @@ module. -/
 @[simp]
 theorem morseChainInclusion_single (n : ℕ)
     (p : {p : MorseCriticalPoint f // morseIndex f p = n}) (a : ZMod 2) :
-    morseChainInclusion n (Finsupp.single p a) = Finsupp.single p.1 a :=
+    morseChainInclusion n (Finsupp.single p a) = Finsupp.single p.val a :=
   Finsupp.mapDomain_single
 
 section Boundary

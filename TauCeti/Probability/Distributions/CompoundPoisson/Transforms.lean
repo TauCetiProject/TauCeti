@@ -52,7 +52,7 @@ theorem integrable_exp_mul_compoundPoissonMeasure (r : ℝ≥0) (hf : Measurable
         rw [Measure.convolutionPower_succ, Measure.conv,
           integrable_map_measure (by fun_prop) (by fun_prop)]
         simpa only [Function.comp_def, map_add, mul_add, exp_add] using ih.mul_prod ht
-  rw [compoundPoissonMeasure_def, Measure.integrable_bind_iff Measurable.of_discrete
+  rw [compoundPoissonMeasure_def, Measure.integrable_bind_iff Measurable.of_discrete.aemeasurable
     (by fun_prop)]
   refine ⟨ae_of_all _ hpow, ?_⟩
   simp_rw [Real.norm_of_nonneg (exp_pos _).le]
@@ -70,7 +70,7 @@ theorem integrable_exp_mul_compoundPoissonMeasure_iff {r : ℝ≥0} (hr : r ≠ 
     Integrable (fun x ↦ exp (t * f x)) (compoundPoissonMeasure r μ) ↔
       Integrable (fun x ↦ exp (t * f x)) μ := by
   refine ⟨fun h ↦ ?_, integrable_exp_mul_compoundPoissonMeasure r hf⟩
-  rw [compoundPoissonMeasure_def, Measure.integrable_bind_iff Measurable.of_discrete
+  rw [compoundPoissonMeasure_def, Measure.integrable_bind_iff Measurable.of_discrete.aemeasurable
     (by fun_prop)] at h
   -- A positive Poisson intensity assigns positive mass to the one-jump event.
   have hone := (ae_iff_of_countable.mp h.1) 1
@@ -105,12 +105,18 @@ theorem mgf_compoundPoissonMeasure (r : ℝ≥0) (hf : Measurable f) {t : ℝ}
   simpa only [pgf_def, id_eq] using pgf_poissonMeasure r (mgf f μ t)
 
 omit [SFinite μ] in
-/-- Compounding the normalized restriction of a measure to a set of finite positive mass, at
+/-- Compounding the normalized restriction of a measure to a set of finite mass, at
 rate equal to that mass, exponentiates the restricted exponential integral minus the mass. -/
-theorem mgf_compoundPoissonMeasure_cond (hf : Measurable f) {s : Set α} (hs0 : μ s ≠ 0)
+theorem mgf_compoundPoissonMeasure_cond (hf : Measurable f) {s : Set α}
     (hs : μ s ≠ ∞) {t : ℝ} (ht : IntegrableOn (fun x ↦ exp (t * f x)) s μ) :
     mgf f (compoundPoissonMeasure (μ s).toNNReal μ[|s]) t =
       exp (∫ x in s, exp (t * f x) ∂μ - μ.real s) := by
+  rcases eq_or_ne (μ s) 0 with hs0 | hs0
+  · simp only [hs0, Measure.restrict_eq_zero.2 hs0, measureReal_def, ENNReal.toNNReal_zero,
+      compoundPoissonMeasure_zero, mgf, integral_zero_measure, ENNReal.toReal_zero, sub_zero,
+      exp_zero]
+    rw [integral_dirac' _ _ (by fun_prop : Measurable fun x ↦ exp (t * f x)).stronglyMeasurable]
+    simp
   have hcond : Integrable (fun x ↦ exp (t * f x)) μ[|s] := by
     rw [ProbabilityTheory.cond]
     exact ht.smul_measure (ENNReal.inv_ne_top.mpr hs0)

@@ -45,7 +45,7 @@ variable {C : Type u} [Category.{v} C] [HasCoproducts.{w} C] [Preadditive C]
   {P P' : SSetPair.{w}} (f : P ⟶ P') (R : C)
   (e : ∀ n, P.RelativeSimplex n ≃ P'.RelativeSimplex n)
   (he : ∀ n (x : P.RelativeSimplex n),
-    (e n x).1 = f.right.app (Opposite.op (SimplexCategory.mk n)) x.1)
+    (e n x).val = f.right.app (Opposite.op (SimplexCategory.mk n)) x.val)
 
 open Classical in
 /-- The degree-`n` relative chains identify with the coproduct indexed by the complementary
@@ -94,8 +94,8 @@ private lemma ι_relativeChainComplexXIso_inv (P : SSetPair.{w}) (n : ℕ)
     (x : P.RelativeSimplex n) :
     Sigma.ι (fun (_ : P.RelativeSimplex n) ↦ R) x ≫
         (relativeChainComplexXIso R P n).inv =
-      P.right.ιChainComplex x.1 ≫ (P.chainComplexπ R).f n := by
-  rw [← ι_sigmaConstCokernelCofork_π_assoc R _ x.1 x.2,
+      P.right.ιChainComplex x.val ≫ (P.chainComplexπ R).f n := by
+  rw [← ι_sigmaConstCokernelCofork_π_assoc R _ x.val x.property,
     sigmaConstCokernelCofork_π_relativeChainComplexXIso_inv]
   rfl
 
@@ -184,24 +184,24 @@ variable {A B}
 exactly to the simplices of the ambient simplicial set outside `B`. -/
 def excisionRelativeSimplexEquiv (h : A ⊔ B = ⊤) (n : ℕ) :
     (interPair A B).RelativeSimplex n ≃ B.pair.RelativeSimplex n where
-  toFun x := ⟨x.1.1, by
+  toFun x := ⟨x.val.val, by
     rintro ⟨b, hb⟩
-    apply x.2
-    refine ⟨⟨x.1.1, x.1.2, ?_⟩, ?_⟩
-    · exact hb ▸ b.2
+    apply x.property
+    refine ⟨⟨x.val.val, x.val.property, ?_⟩, ?_⟩
+    · exact hb ▸ b.property
     · apply Subtype.ext
       rfl⟩
-  invFun x := ⟨⟨x.1, by
-    have hx : x.1 ∈ (A ⊔ B).obj (Opposite.op (SimplexCategory.mk n)) := by
+  invFun x := ⟨⟨x.val, by
+    have hx : x.val ∈ (A ⊔ B).obj (Opposite.op (SimplexCategory.mk n)) := by
       rw [h]
       trivial
     rcases hx with hxA | hxB
     · exact hxA
-    · exact (x.2 ⟨⟨x.1, hxB⟩, rfl⟩).elim⟩, by
+    · exact (x.property ⟨⟨x.val, hxB⟩, rfl⟩).elim⟩, by
     rintro ⟨z, hz⟩
-    apply x.2
-    refine ⟨⟨x.1, ?_⟩, rfl⟩
-    exact congrArg Subtype.val hz ▸ z.2.2⟩
+    apply x.property
+    refine ⟨⟨x.val, ?_⟩, rfl⟩
+    exact congrArg Subtype.val hz ▸ z.property.2⟩
   left_inv x := by
     apply Subtype.ext
     apply Subtype.ext
@@ -213,12 +213,12 @@ def excisionRelativeSimplexEquiv (h : A ⊔ B = ⊤) (n : ℕ) :
 @[simp]
 lemma excisionRelativeSimplexEquiv_apply_val (h : A ⊔ B = ⊤) (n : ℕ)
     (x : (interPair A B).RelativeSimplex n) :
-    (excisionRelativeSimplexEquiv h n x).1 = x.1.1 := (rfl)
+    (excisionRelativeSimplexEquiv h n x).val = x.val.val := (rfl)
 
 @[simp]
 lemma excisionRelativeSimplexEquiv_symm_apply_val (h : A ⊔ B = ⊤) (n : ℕ)
     (x : B.pair.RelativeSimplex n) :
-    ((excisionRelativeSimplexEquiv h n).symm x).1.1 = x.1 := (rfl)
+    ((excisionRelativeSimplexEquiv h n).symm x).val.val = x.val := (rfl)
 
 variable {C : Type u} [Category.{v} C] [HasCoproducts.{w} C] [Preadditive C]
   (R : C)

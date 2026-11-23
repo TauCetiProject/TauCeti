@@ -157,24 +157,11 @@ theorem wassersteinEDist_sum_smul_dirac_le
       ∑ x ∈ s, c x • Measure.dirac x =
         c x₀ • Measure.dirac x₀ + ∑ y ∈ s.erase x₀, c y • Measure.dirac y := fun c ↦
     (Finset.add_sum_erase _ (fun x ↦ c x • Measure.dirac x) hx₀).symm
+  have hzero : a x₀ - b x₀ = 0 :=
+    tsub_eq_zero_of_le (le_of_sum_eq_of_forall_ne_le hx₀ hsum.symm hfin hab)
   have hbx₀ : b x₀ = a x₀ + ∑ y ∈ s.erase x₀, (a y - b y) := by
-    have hfin' : ∑ y ∈ s.erase x₀, b y ≠ ∞ :=
-      ne_top_of_le_ne_top (ENNReal.sum_ne_top.2 fun y hy ↦
-        hfin y (Finset.mem_of_mem_erase hy) (Finset.ne_of_mem_erase hy))
-        (Finset.sum_le_sum hab')
-    have hsplit' : ∑ y ∈ s.erase x₀, a y
-        = ∑ y ∈ s.erase x₀, b y + ∑ y ∈ s.erase x₀, (a y - b y) := by
-      rw [← Finset.sum_add_distrib]
-      exact Finset.sum_congr rfl fun y hy ↦ (add_tsub_cancel_of_le (hab' y hy)).symm
-    have hs' : ∑ y ∈ s.erase x₀, b y + b x₀
-        = ∑ y ∈ s.erase x₀, b y + (a x₀ + ∑ y ∈ s.erase x₀, (a y - b y)) := by
-      rw [← Finset.add_sum_erase _ b hx₀, ← Finset.add_sum_erase _ a hx₀] at hsum
-      rw [hsplit'] at hsum
-      calc ∑ y ∈ s.erase x₀, b y + b x₀ = b x₀ + ∑ x ∈ s.erase x₀, b x := by ring
-        _ = a x₀ + (∑ y ∈ s.erase x₀, b y + ∑ y ∈ s.erase x₀, (a y - b y)) := hsum
-        _ = ∑ y ∈ s.erase x₀, b y + (a x₀ + ∑ y ∈ s.erase x₀, (a y - b y)) := by ring
-    exact (ENNReal.add_right_inj hfin').1 hs'
-  have hzero : a x₀ - b x₀ = 0 := tsub_eq_zero_of_le (hbx₀ ▸ le_self_add)
+    rw [← add_sum_tsub_eq_of_forall_ne_le hx₀ hsum.symm hfin hab, ← Finset.add_sum_erase _ _ hx₀,
+      hzero, zero_add]
   have hexcess : ∑ y ∈ s, (a y - b y) • Measure.dirac y
       = ∑ y ∈ s.erase x₀, (a y - b y) • Measure.dirac y := by
     rw [hsplit (fun y ↦ a y - b y), hzero, zero_smul, zero_add]
@@ -211,7 +198,7 @@ theorem exists_nat_weights_wassersteinEDist_le
         ((∑ x ∈ s, (m x : ℝ≥0∞))⁻¹ • ∑ x ∈ s, (m x : ℝ≥0∞) • Measure.dirac x) ≤ ε := by
   classical
   have ht : 0 < p.toReal := ENNReal.toReal_pos hp0 hp
-  obtain ⟨x₀, hx₀⟩ : s.Nonempty := Finset.nonempty_iff_ne_empty.2 (by rintro rfl; simp at hν)
+  obtain ⟨x₀, hx₀⟩ : s.Nonempty := Finset.ne_empty_iff_nonempty.1 (by rintro rfl; simp at hν)
   set a : X → ℝ≥0∞ := fun x ↦ ν {x}
   have hν_eq : ν = ∑ x ∈ s, a x • Measure.dirac x :=
     Measure.ae_mem_finset_iff.1 (mem_ae_iff.2 hν)
@@ -292,7 +279,7 @@ theorem exists_map_range_wassersteinEDist_le
   have hdisp : Measurable fun x ↦ edist x (u (Nat.find (hidx x))) :=
     hd.comp (measurable_id.prodMk hT_meas)
   refine (wassersteinEDist_map_le hd hT_meas.aemeasurable p).trans ?_
-  refine le_trans (eLpNorm_mono_enorm hdisp.aestronglyMeasurable
+  refine le_trans (eLpNorm_mono_eNorm hdisp.aestronglyMeasurable
     (g := fun _ : X ↦ ENNReal.ofReal δ) fun x ↦ ?_) ?_
   · simpa [edist_dist] using ENNReal.ofReal_le_ofReal (Nat.find_spec (hidx x)).le
   · rcases eq_or_ne p 0 with rfl | hp0
@@ -361,7 +348,7 @@ theorem exists_eLpNorm_edist_le (hp : 1 ≤ p) (hp_top : p ≠ ∞) [IsProbabili
       eLpNorm_rpow_eq_lintegral hp0 hp_top hf_meas.aemeasurable, withDensity_apply _ (hA_meas n)]
   calc eLpNorm (fun x ↦ edist x (T x)) p μ
       ≤ eLpNorm ((fun _ : X ↦ ENNReal.ofReal δ) + (A n).indicator f) p μ :=
-        eLpNorm_mono_enorm
+        eLpNorm_mono_eNorm
           (measurable_edist.comp (measurable_id.prodMk hT_meas)).aestronglyMeasurable
           fun x ↦ by simpa using hbound x
     _ ≤ ENNReal.ofReal δ + ENNReal.ofReal δ := by

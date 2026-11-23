@@ -21,6 +21,9 @@ Restricting further to ideles that are local units on a finite set `S` gives
 `TauCeti.toIntegralIdealsAway`, a surjective homomorphism to
 `TauCeti.NumberFieldArithmetic.integralIdealsAway S`, with the same fibre criterion.
 
+An element of `K` lies in the fractional ideal of a finite idele `x` exactly when it is
+divisible by `x_v` in `𝒪_v` at every finite place `v`.
+
 The construction uses `FiniteAdeleRing.toFractionalIdeal` and Mathlib's
 `FractionalIdeal.le_one_iff_exists_coeIdeal`.
 
@@ -70,6 +73,30 @@ theorem toFractionalIdeal_le_one_iff (x : 𝔸ᶠ[R, K]ˣ) :
       ← Int.toNat_of_nonneg hv, zpow_natCast]
     exact pow_le_one' FractionalIdeal.coeIdeal_le_one _
 
+/-- **Membership in the fractional ideal of a finite idele.** An element `a` of `K` lies in the
+fractional ideal of `x` exactly when `x_v⁻¹ a` is integral at every finite place, that is, when
+the valuation of `a` at `v` is at most that of `x_v` for every `v`. -/
+theorem mem_toFractionalIdeal_iff (x : 𝔸ᶠ[R, K]ˣ) {a : K} :
+    a ∈ (toFractionalIdeal x : FractionalIdeal R⁰ K) ↔
+      ∀ v : HeightOneSpectrum R,
+        ((x⁻¹ : 𝔸ᶠ[R, K]ˣ) : 𝔸ᶠ[R, K]) v * algebraMap K (v.adicCompletion K) a ∈
+          v.adicCompletionIntegers K := by
+  rcases eq_or_ne a 0 with rfl | ha
+  · exact iff_of_true (FractionalIdeal.zero_mem _) fun v ↦ by simp
+  -- `a ∈ I` exactly when `(a) I⁻¹ ≤ 1`, and `(a) I⁻¹` is the fractional ideal of `a x⁻¹`.
+  set u := Units.mk0 a ha
+  have hle : (toPrincipalIdeal R K u : FractionalIdeal R⁰ K) ≤ toFractionalIdeal x ↔
+      ((toFractionalIdeal (unitEmbedding R K u * x⁻¹) : (FractionalIdeal R⁰ K)ˣ) :
+        FractionalIdeal R⁰ K) ≤ 1 := by
+    rw [map_mul, toFractionalIdeal_unitEmbedding, map_inv, Units.val_mul]
+    refine ⟨fun h ↦ ?_, fun h ↦ ?_⟩
+    · simpa using mul_le_mul_left h ((toFractionalIdeal x)⁻¹ : (FractionalIdeal R⁰ K)ˣ).val
+    · simpa [mul_assoc] using mul_le_mul_left h (toFractionalIdeal x : FractionalIdeal R⁰ K)
+  rw [← FractionalIdeal.spanSingleton_le_iff_mem, ← Units.val_mk0 ha, ← coe_toPrincipalIdeal,
+    hle, toFractionalIdeal_le_one_iff, mem_integralAdeles]
+  refine forall_congr' fun v ↦ ?_
+  simp [u, mul_comm, unitEmbedding_apply, algebraMap_adicCompletion]
+
 variable (R K) in
 /-- Finite ideles whose underlying adeles are integral at every finite place. -/
 def integralFiniteIdeles : Submonoid 𝔸ᶠ[R, K]ˣ :=
@@ -84,7 +111,7 @@ theorem mem_integralFiniteIdeles {x : 𝔸ᶠ[R, K]ˣ} :
 private theorem exists_integralIdeal (x : integralFiniteIdeles R K) :
     ∃ I : (Ideal R)⁰, (I : FractionalIdeal R⁰ K) = toFractionalIdeal (x : 𝔸ᶠ[R, K]ˣ) := by
   obtain ⟨I, hI⟩ := FractionalIdeal.le_one_iff_exists_coeIdeal.mp
-    ((toFractionalIdeal_le_one_iff _).mpr x.2)
+    ((toFractionalIdeal_le_one_iff _).mpr x.property)
   have hI0 : I ≠ 0 := by
     intro h
     exact Units.ne_zero (toFractionalIdeal (x : 𝔸ᶠ[R, K]ˣ)) (by simpa [h] using hI.symm)
@@ -195,15 +222,15 @@ def toIntegralIdealsAway (S : Finset (HeightOneSpectrum R)) :
     (toIntegralIdeal.comp (integralFiniteIdelesAway (K := K) S).subtype)).codRestrict _ fun x ↦ by
     simp only [MonoidHom.comp_apply, Submonoid.subtype_apply]
     rw [NumberFieldArithmetic.mem_integralIdealsAway_iff_count_eq_zero (K := K)]
-    refine ⟨nonZeroDivisors.coe_ne_zero (toIntegralIdeal x.1), fun v hv ↦ ?_⟩
+    refine ⟨nonZeroDivisors.coe_ne_zero (toIntegralIdeal x.val), fun v hv ↦ ?_⟩
     rw [coe_toIntegralIdeal, count_coe_toFractionalIdeal]
-    exact (mem_integralFiniteIdelesAway_iff S x.1).mp x.2 v hv
+    exact (mem_integralFiniteIdelesAway_iff S x.val).mp x.property v hv
 
 /-- The prime-to integral-ideal map is the restriction of the integral-ideal map. -/
 @[simp]
 theorem coe_toIntegralIdealsAway (S : Finset (HeightOneSpectrum R))
     (x : integralFiniteIdelesAway (K := K) S) :
-    (toIntegralIdealsAway S x : Ideal R) = (toIntegralIdeal x.1 : Ideal R) :=
+    (toIntegralIdealsAway S x : Ideal R) = (toIntegralIdeal x.val : Ideal R) :=
   (rfl)
 
 /-- Every integral ideal prime to `S` comes from an integral finite idele locally a unit on `S`.
@@ -211,7 +238,8 @@ theorem coe_toIntegralIdealsAway (S : Finset (HeightOneSpectrum R))
 theorem toIntegralIdealsAway_surjective (S : Finset (HeightOneSpectrum R)) :
     Function.Surjective (toIntegralIdealsAway (K := K) S) := by
   intro I
-  let J : (Ideal R)⁰ := ⟨I, NumberFieldArithmetic.integralIdealsAway_le_nonZeroDivisors S I.2⟩
+  let J : (Ideal R)⁰ := ⟨I, NumberFieldArithmetic.integralIdealsAway_le_nonZeroDivisors S
+      I.property⟩
   obtain ⟨x, hx⟩ := toIntegralIdeal_surjective (K := K) J
   have hxS : x ∈ integralFiniteIdelesAway (K := K) S := by
     rw [mem_integralFiniteIdelesAway_iff]
@@ -219,7 +247,7 @@ theorem toIntegralIdealsAway_surjective (S : Finset (HeightOneSpectrum R)) :
     have hcount : FractionalIdeal.count K v (toIntegralIdeal x : FractionalIdeal R⁰ K) =
         adicOrd (x : 𝔸ᶠ[R, K]ˣ) v := by simp
     rw [← hcount, hx]
-    exact (NumberFieldArithmetic.mem_integralIdealsAway_iff_count_eq_zero.mp I.2).2 v hv
+    exact (NumberFieldArithmetic.mem_integralIdealsAway_iff_count_eq_zero.mp I.property).2 v hv
   refine ⟨⟨x, hxS⟩, Subtype.ext ?_⟩
   rw [coe_toIntegralIdealsAway, hx]
 
@@ -227,7 +255,7 @@ theorem toIntegralIdealsAway_surjective (S : Finset (HeightOneSpectrum R)) :
 @[simp]
 theorem toIntegralIdealsAway_eq_one_iff (S : Finset (HeightOneSpectrum R))
     (x : integralFiniteIdelesAway (K := K) S) :
-    toIntegralIdealsAway S x = 1 ↔ (x.1 : 𝔸ᶠ[R, K]ˣ) ∈ integralUnits R K := by
+    toIntegralIdealsAway S x = 1 ↔ (x.val : 𝔸ᶠ[R, K]ˣ) ∈ integralUnits R K := by
   rw [← toIntegralIdeal_eq_one_iff]
   constructor
   · intro h
@@ -253,8 +281,8 @@ when their ratio is an everywhere-integral unit. -/
 theorem toIntegralIdealsAway_eq_iff (S : Finset (HeightOneSpectrum R))
     (x y : integralFiniteIdelesAway (K := K) S) :
     toIntegralIdealsAway S x = toIntegralIdealsAway S y ↔
-      (x.1 : 𝔸ᶠ[R, K]ˣ) / (y.1 : 𝔸ᶠ[R, K]ˣ) ∈ integralUnits R K := by
+      (x.val : 𝔸ᶠ[R, K]ˣ) / (y.val : 𝔸ᶠ[R, K]ˣ) ∈ integralUnits R K := by
   simpa only [← Subtype.coe_inj, coe_toIntegralIdealsAway] using
-    toIntegralIdeal_eq_iff x.1 y.1
+    toIntegralIdeal_eq_iff x.val y.val
 
 end TauCeti

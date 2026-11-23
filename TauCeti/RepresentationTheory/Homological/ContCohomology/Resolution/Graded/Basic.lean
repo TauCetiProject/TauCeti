@@ -124,6 +124,26 @@ theorem gradedResolutionDifferential_lof (n : ℕ) (x : (resolutionX X (n + 1)).
     resolutionModuleComplex_d_apply] at h
   exact h
 
+/-- The total differential has degree one: the degree-`n + 1` component of `d x` is the original
+resolution differential `d (n + 1)` applied to the degree-`n` component of `x`. -/
+@[simp]
+theorem component_gradedResolutionDifferential_succ (n : ℕ) (x : X.gradedResolutionModule) :
+    DirectSum.component R ℕ (fun n ↦ (resolutionX X (n + 1)).V) (n + 1)
+        (X.gradedResolutionDifferential x) =
+      (d X (n + 1)).hom
+        (DirectSum.component R ℕ (fun n ↦ (resolutionX X (n + 1)).V) n x) := by
+  classical
+  induction x using DirectSum.induction_on with
+  | zero => simp
+  | of m y =>
+    rw [← DirectSum.lof_eq_of R, gradedResolutionDifferential_lof, DirectSum.component.of,
+      DirectSum.component.of]
+    by_cases h : m = n
+    · subst h
+      simp
+    · simp [h]
+  | add x y hx hy => simp only [map_add, hx, hy]
+
 /-- The differential of the total shifted resolution squares to zero. -/
 @[simp]
 theorem gradedResolutionDifferential_sq (x : X.gradedResolutionModule) :
@@ -166,7 +186,7 @@ theorem lof_mem_gradedResolutionPiece (n : ℕ) (x : (resolutionX X (n + 1)).V) 
 
 /-- The total resolution differential has degree one. -/
 theorem isHomogeneous_gradedResolutionDifferential :
-    TauCeti.LinearMap.IsHomogeneous X.gradedResolutionDifferential X.gradedResolutionPiece
+    LinearMap.IsHomogeneous X.gradedResolutionDifferential X.gradedResolutionPiece
       X.gradedResolutionPiece 1 :=
   (resolutionModuleComplex X).isHomogeneous_directSumDifferential
 
@@ -212,9 +232,9 @@ theorem gradedResolutionDifferential_equivariant (g : G) (x : X.gradedResolution
 
 /-- The componentwise action preserves the homogeneous pieces. -/
 theorem isHomogeneous_gradedResolutionRepresentation (g : G) :
-    TauCeti.LinearMap.IsHomogeneous (X.gradedResolutionRepresentation g) X.gradedResolutionPiece
+    LinearMap.IsHomogeneous (X.gradedResolutionRepresentation g) X.gradedResolutionPiece
       X.gradedResolutionPiece 0 := by
-  rw [TauCeti.LinearMap.isHomogeneous_def]
+  rw [LinearMap.isHomogeneous_def]
   intro p x hx
   simp only [add_zero]
   rcases lt_or_ge p 0 with hp | hp
@@ -347,7 +367,7 @@ theorem gradedResolutionMap_augmentation (f : TopRep.res (φ : H →* G) X ⟶ Y
 
 /-- The map of a compatible pair preserves the homogeneous degrees of the total resolutions. -/
 theorem isHomogeneous_gradedResolutionMap (f : TopRep.res (φ : H →* G) X ⟶ Y) :
-    TauCeti.LinearMap.IsHomogeneous (gradedResolutionMap φ f) X.gradedResolutionPiece
+    LinearMap.IsHomogeneous (gradedResolutionMap φ f) X.gradedResolutionPiece
       Y.gradedResolutionPiece 0 :=
   CochainComplex.isHomogeneous_directSumMap (resolutionModuleMap φ f)
 
@@ -441,6 +461,15 @@ theorem gradedResolutionProjection_lof_succ (n : ℕ)
   rw [gradedResolutionProjection, LinearMap.comp_apply, DirectSum.component.of,
     dite_eq_right n.succ_ne_zero, map_zero]
 
+/-- The projection only sees the degree-zero component. -/
+theorem gradedResolutionProjection_lof_component_zero [DecidableEq ℕ]
+    (w : X.gradedResolutionModule) :
+    X.gradedResolutionProjection
+        (DirectSum.lof R ℕ (fun n ↦ (resolutionX X (n + 1)).V) 0
+          (DirectSum.component R ℕ (fun n ↦ (resolutionX X (n + 1)).V) 0 w)) =
+      X.gradedResolutionProjection w := by
+  simp [gradedResolutionProjection]
+
 /-- The projection retracts the augmentation. -/
 @[simp↓]
 theorem gradedResolutionProjection_augmentation (x : X.V) :
@@ -526,7 +555,7 @@ theorem gradedResolutionDifferential_gradedResolutionHomotopy_add (x : X.gradedR
 
 /-- The contracting homotopy of the total shifted resolution has degree minus one. -/
 theorem isHomogeneous_gradedResolutionHomotopy :
-    TauCeti.LinearMap.IsHomogeneous X.gradedResolutionHomotopy X.gradedResolutionPiece
+    LinearMap.IsHomogeneous X.gradedResolutionHomotopy X.gradedResolutionPiece
       X.gradedResolutionPiece (-1) :=
   Homotopy.isHomogeneous_directSumHomotopy (resolutionModuleHomotopy X)
 
@@ -652,7 +681,7 @@ theorem gradedResolutionTopRepDifferential_apply (x : X.gradedResolutionModule) 
 
 /-- The bundled total differential has degree one. -/
 theorem isHomogeneous_gradedResolutionTopRepDifferential :
-    TauCeti.LinearMap.IsHomogeneous X.gradedResolutionTopRepDifferential.hom.toLinearMap
+    LinearMap.IsHomogeneous X.gradedResolutionTopRepDifferential.hom.toLinearMap
       X.gradedResolutionPiece X.gradedResolutionPiece 1 :=
   X.isHomogeneous_gradedResolutionDifferential
 
@@ -714,7 +743,7 @@ theorem gradedResolutionTopRepResMap_apply (f : TopRep.res (φ : H →* G) X ⟶
 
 /-- The change-of-group morphism preserves the homogeneous degrees of the total resolutions. -/
 theorem isHomogeneous_gradedResolutionTopRepResMap (f : TopRep.res (φ : H →* G) X ⟶ Y') :
-    TauCeti.LinearMap.IsHomogeneous (gradedResolutionTopRepResMap φ f).hom.toLinearMap
+    LinearMap.IsHomogeneous (gradedResolutionTopRepResMap φ f).hom.toLinearMap
       X.gradedResolutionPiece Y'.gradedResolutionPiece 0 :=
   isHomogeneous_gradedResolutionMap φ f
 

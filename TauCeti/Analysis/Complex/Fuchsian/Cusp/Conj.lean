@@ -87,7 +87,7 @@ def cuspOrbitConjEquiv (h : ConjAct.toConjAct g • Γ = Γ') : Γ.CuspOrbit ≃
 theorem cuspOrbitConjEquiv_cuspOrbitMk (h : ConjAct.toConjAct g • Γ = Γ') (c : Γ.cuspPoints) :
     cuspOrbitConjEquiv h (Γ.cuspOrbitMk c) =
       Γ'.cuspOrbitMk ⟨g • (c : OnePoint ℝ), mem_cuspPoints.mpr
-        ((isCuspPoint_smul_iff_of_conjAct_smul_eq h c).mpr (mem_cuspPoints.mp c.2))⟩ :=
+        ((isCuspPoint_smul_iff_of_conjAct_smul_eq h c).mpr (mem_cuspPoints.mp c.property))⟩ :=
   Subtype.ext (by simp only [cuspOrbitConjEquiv, Equiv.subtypeEquiv_apply, cuspOrbitMk_val]; rfl)
 
 /-- The inverse of the bijection of cusp orbits induced by `g` is the one induced by `g⁻¹`. -/
@@ -132,14 +132,14 @@ def CuspDatum.conj (D : Γ.CuspDatum) (h : ConjAct.toConjAct g • Γ = Γ') : �
   scaling := D.scaling * g⁻¹
   generator := ⟨g * D.generator * g⁻¹, h ▸ by
     simpa [ConjAct.toConjAct_smul] using
-      smul_mem_pointwise_smul _ (ConjAct.toConjAct g) Γ D.generator.2⟩
+      smul_mem_pointwise_smul _ (ConjAct.toConjAct g) Γ D.generator.property⟩
   width := D.width
   width_pos := D.width_pos
   zpowers_generator := by
     subst h
     ext k
     have hk : g⁻¹ * k * g ∈ Γ := by
-      have := Subgroup.mem_pointwise_smul_iff_inv_smul_mem.mp k.2
+      have := Subgroup.mem_pointwise_smul_iff_inv_smul_mem.mp k.property
       rwa [← ConjAct.toConjAct_inv, ConjAct.toConjAct_smul, inv_inv] at this
     -- `k` fixes `g • c` exactly when `g⁻¹ k g` fixes `c`, that is, is a power of `γ`
     have key := D.mem_stabilizer_iff (g := ⟨g⁻¹ * k * g, hk⟩)
@@ -191,7 +191,7 @@ theorem cuspOrbit_conj : (D.conj h).cuspOrbit = cuspOrbitConjEquiv h D.cuspOrbit
 /-- Transport of a cusp datum by conjugation by `1` is the identity. -/
 @[simp]
 theorem conj_one (h : ConjAct.toConjAct (1 : PSL(2, ℝ)) • Γ = Γ) : D.conj h = D :=
-  CuspDatum.ext (by simp) (by simp)
+  CuspDatum.ext (by simp)
 
 /-- Transporting a cusp datum by conjugation by `g` and then by `g'` is transporting it by
 conjugation by `g' * g`. -/
@@ -200,7 +200,7 @@ theorem conj_conj {Γ'' : Subgroup PSL(2, ℝ)} {g' : PSL(2, ℝ)}
     (h' : ConjAct.toConjAct g' • Γ' = Γ'') :
     (D.conj h).conj h' =
       D.conj (by rw [map_mul, mul_smul, h, h'] : ConjAct.toConjAct (g' * g) • Γ = Γ'') :=
-  CuspDatum.ext (by simp [mul_smul]) (by simp [mul_assoc])
+  CuspDatum.ext (by simp [mul_assoc])
 
 end CuspDatum
 

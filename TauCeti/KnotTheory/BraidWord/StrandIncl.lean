@@ -49,7 +49,8 @@ private abbrev strandInclCross : Fin w.length ≃ Fin (w.strandIncl).length :=
   finCongr (length_strandIncl w).symm
 
 private theorem getElem_strandIncl (j : Fin w.length) :
-    (w.strandIncl)[(w.strandInclCross j).1] = ((w[j.1].1.castSucc : Fin (n + 1)), w[j.1].2) := by
+    (w.strandIncl)[(w.strandInclCross j).val] = ((w[j.val].1.castSucc : Fin (n + 1)), w[j.val].2)
+        := by
   simp only [strandInclCross, finCongr_apply, Fin.val_cast, strandIncl_def]
   rw [List.getElem_map]
 

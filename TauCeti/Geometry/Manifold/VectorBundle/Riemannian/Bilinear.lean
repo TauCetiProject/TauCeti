@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Geometry.Manifold.VectorBundle.Riemannian
-import Mathlib.Geometry.Manifold.VectorBundle.Hom
+import TauCeti.Geometry.Manifold.VectorBundle.Bilinear.SmulRight
 
 /-!
 # Products of metric-dual covectors
@@ -50,18 +50,4 @@ theorem ContMDiffAt.innerSL_smulRight_bundle {σ τ : Π x, V x} {x : M}
       ext u w
       exact (heq y u w).symm
     simpa only [hmetric] using ContMDiffAt.clm_bundle_apply (hg x) hs
-  have hσ' := hdual hσ
-  have hτ' := hdual hτ
-  rw [contMDiffAt_section] at hσ' hτ' ⊢
-  -- Cache operator norms before composing the curried multiplication map.
-  let _ : NormedAddCommGroup (F →L[ℝ] ℝ) := inferInstance
-  let _ : NormedSpace ℝ (F →L[ℝ] ℝ) := inferInstance
-  let _ : NormedAddCommGroup (F →L[ℝ] F →L[ℝ] ℝ) := inferInstance
-  let _ : NormedSpace ℝ (F →L[ℝ] F →L[ℝ] ℝ) := inferInstance
-  have hp := ((ContinuousLinearMap.smulRightL ℝ F (F →L[ℝ] ℝ)).contDiff.comp_contMDiffAt
-    hσ').clm_apply hτ'
-  refine hp.congr_of_eventuallyEq ?_
-  filter_upwards [(trivializationAt F V x).open_baseSet.mem_nhds
-    (FiberBundle.mem_baseSet_trivializationAt F V x)] with y hy
-  ext u w
-  simp [hom_trivializationAt_apply, ContinuousLinearMap.inCoordinates, hy]
+  exact (hdual hσ).clm_bundle_smulRight (hdual hτ)

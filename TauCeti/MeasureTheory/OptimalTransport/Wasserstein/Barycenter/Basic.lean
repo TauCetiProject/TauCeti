@@ -112,7 +112,7 @@ theorem quantile_quantileBarycenter_ae (w : ι → ℝ≥0) (μ : ι → Measure
       fun t ↦ ∑ i, (w i : ℝ) * (μ i).quantile t := by
   rw [quantileBarycenter_def]
   refine Measure.quantile_map_volume_Ioo_ae fun s hs t ht hst ↦ Finset.sum_le_sum fun i _ ↦ ?_
-  exact mul_le_mul_of_nonneg_left ((μ i).monotoneOn_quantile hs ht hst) (w i).2
+  exact mul_le_mul_of_nonneg_left ((μ i).monotoneOn_quantile hs ht hst) (w i).property
 
 /-- A probability law on `ℝ` is the quantile barycenter exactly when its quantile function is the
 weighted average of the quantile functions, at almost every level. -/
@@ -304,7 +304,7 @@ theorem wassersteinEDist_quantileBarycenter_pair (hp : 1 ≤ p) (μ₀ μ₁ : M
       quantile_quantileBarycenter_pair_ae hr μ₀ μ₁] with u hus hur
     simp only [hus, hur, Pi.smul_apply, smul_eq_mul]
     ring
-  rw [eLpNorm_congr_ae hdiff, eLpNorm_const_smul, Real.enorm_eq_ofReal_abs, abs_sub_comm]
+  rw [eLpNorm_congr_ae hdiff, eLpNorm_const_smul, Real.eNorm_eq_ofReal_abs, abs_sub_comm]
 
 variable [Fact (1 ≤ p)]
 
@@ -327,7 +327,8 @@ theorem exists_isGeodesicSegment_quantileBarycenter (μ₀ μ₁ : WassersteinSp
   have hβ (s : Icc (0 : ℝ) 1) : HasFiniteMoment p (β s) := by
     rw [hasFiniteMoment_iff_wassersteinEDist_ne_top_of_hasFiniteMoment measurable_edist
       μ₀.hasFiniteMoment]
-    have h := wassersteinEDist_quantileBarycenter_pair hp m₀ m₁ (left_mem_Icc.2 zero_le_one) s.2
+    have h := wassersteinEDist_quantileBarycenter_pair hp m₀ m₁
+        (left_mem_Icc.2 zero_le_one) s.property
     rw [quantileBarycenter_pair_zero] at h
     rw [h]
     exact ENNReal.mul_ne_top ENNReal.ofReal_ne_top hW

@@ -203,7 +203,7 @@ theorem range_re_diag_unitary_mul_diagonal_mul_star (w : ι → ℝ) :
   ext d
   refine ⟨?_, fun hd ↦ ?_⟩
   · rintro ⟨U, rfl⟩
-    exact re_diag_mul_diagonal_mul_star_mem_convexHull U.2 w
+    exact re_diag_mul_diagonal_mul_star_mem_convexHull U.property w
   · obtain ⟨U, hU, hUd⟩ := exists_mem_unitaryGroup_re_diag_mul_diagonal_mul_star_eq (𝕜 := 𝕜) hd
     exact ⟨⟨U, hU⟩, funext hUd⟩
 
@@ -277,8 +277,10 @@ theorem exists_isSymm_fin_two_charpoly_eq_iff {l₁ l₂ d₁ d₂ : ℝ} (hl : 
   · -- Compare the coefficients of `X` and `1` in the two characteristic polynomials.
     rw [charpoly_fin_two, hpoly] at hχ
     have htr : A.trace = l₁ + l₂ := by
-      linarith [show -A.trace = -l₂ + -l₁ by simpa using congr_arg (coeff · 1) hχ]
-    have hdet : A.det = l₁ * l₂ := by simpa using congr_arg (coeff · 0) hχ
+      linarith [show -A.trace = -l₂ + -l₁ by
+        simpa using congr_arg (AddMonoidAlgebra.coeff · 1) hχ]
+    have hdet : A.det = l₁ * l₂ := by
+      simpa using congr_arg (AddMonoidAlgebra.coeff · 0) hχ
     have h₁₀ : A 1 0 = A 0 1 := hA.apply 0 1
     rw [trace_fin_two, h₀, h₁] at htr
     rw [det_fin_two, h₀, h₁, h₁₀] at hdet

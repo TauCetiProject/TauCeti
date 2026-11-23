@@ -46,6 +46,7 @@ coboundaries and the cocycles are the traces.
 * `TauCeti.hochschildCohomology.mk`: the class of a Hochschild cocycle.
 * `TauCeti.hochschildCohomology.desc`: the linear map out of Hochschild cohomology induced by a
   linear map on Hochschild cocycles vanishing on Hochschild coboundaries.
+* `TauCeti.hochschildCohomology.map`: contravariant pullback along nonunital algebra homomorphisms.
 
 ## Main results
 
@@ -76,20 +77,22 @@ variable (R : Type*) (A : Type u) (M : Type*) [Semiring R] [NonUnitalSemiring A]
   [SMulCommClass R R M]
 
 /-- The Hochschild `n`-cocycles: the `n`-cochains annihilated by the Hochschild coboundary. -/
-def hochschildCocycles (n : ℕ) : Submodule R (MultilinearMap R (fun _ : Fin (n + 1) ↦ A) M) :=
+def hochschildCocycles (n : ℕ) : Submodule R (MultilinearMap (RingHom.id R) (fun _ : Fin (n + 1) ↦
+    A) M) :=
   LinearMap.ker (hochschildCoboundary R A M n)
 
 variable {R A M} in
 /-- A cochain is a Hochschild cocycle exactly when its Hochschild coboundary vanishes. -/
 @[simp]
-theorem mem_hochschildCocycles_iff {n : ℕ} {φ : MultilinearMap R (fun _ : Fin (n + 1) ↦ A) M} :
+theorem mem_hochschildCocycles_iff {n : ℕ} {φ : MultilinearMap (RingHom.id R) (fun _ : Fin (n + 1)
+    ↦ A) M} :
     φ ∈ hochschildCocycles R A M n ↔ hochschildCoboundary R A M n φ = 0 :=
   LinearMap.mem_ker
 
 /-- The Hochschild `n`-coboundaries: zero in degree zero, and the image of the Hochschild
 coboundary of `n`-cochains in degree `n + 1`. -/
 def hochschildCoboundaries :
-    (n : ℕ) → Submodule R (MultilinearMap R (fun _ : Fin (n + 1) ↦ A) M)
+    (n : ℕ) → Submodule R (MultilinearMap (RingHom.id R) (fun _ : Fin (n + 1) ↦ A) M)
   | 0 => ⊥
   | n + 1 => LinearMap.range (hochschildCoboundary R A M n)
 
@@ -107,7 +110,7 @@ variable {R A M} in
 of an `n`-cochain. -/
 @[simp]
 theorem mem_hochschildCoboundaries_succ_iff {n : ℕ}
-    {φ : MultilinearMap R (fun _ : Fin (n + 2) ↦ A) M} :
+    {φ : MultilinearMap (RingHom.id R) (fun _ : Fin (n + 2) ↦ A) M} :
     φ ∈ hochschildCoboundaries R A M (n + 1) ↔ ∃ ψ, hochschildCoboundary R A M n ψ = φ :=
   LinearMap.mem_range
 
@@ -121,9 +124,33 @@ theorem hochschildCoboundaries_le_hochschildCocycles (n : ℕ) :
 
 variable {R A M} in
 /-- A `0`-cochain is a Hochschild cocycle exactly when it is a trace. -/
-theorem mem_hochschildCocycles_zero_iff {φ : MultilinearMap R (fun _ : Fin 1 ↦ A) M} :
+theorem mem_hochschildCocycles_zero_iff {φ : MultilinearMap (RingHom.id R) (fun _ : Fin 1 ↦ A) M} :
     φ ∈ hochschildCocycles R A M 0 ↔ ∀ x y : A, φ (fun _ ↦ x * y) = φ (fun _ ↦ y * x) := by
   rw [mem_hochschildCocycles_iff, hochschildCoboundary_zero_eq_zero_iff]
+
+variable {R A M} {B : Type*} [NonUnitalSemiring B] [Module R B] [IsScalarTower R B B]
+  [SMulCommClass R B B]
+
+/-- Pulling a Hochschild cocycle back along a nonunital algebra homomorphism yields a cocycle. -/
+theorem compLinearMap_mem_hochschildCocycles (f : A →ₙₐ[R] B) {n : ℕ}
+    {φ : MultilinearMap (RingHom.id R) (fun _ : Fin (n + 1) ↦ B) M}
+    (hφ : φ ∈ hochschildCocycles R B M n) :
+    (φ.compLinearMap fun _ ↦ (f : A →ₗ[R] B)) ∈ hochschildCocycles R A M n := by
+  rw [mem_hochschildCocycles_iff, hochschildCoboundary_compLinearMap,
+    mem_hochschildCocycles_iff.1 hφ]; rfl
+
+/-- Pulling a Hochschild coboundary back along a nonunital algebra homomorphism yields a
+coboundary. -/
+theorem compLinearMap_mem_hochschildCoboundaries (f : A →ₙₐ[R] B) {n : ℕ}
+    {φ : MultilinearMap (RingHom.id R) (fun _ : Fin (n + 1) ↦ B) M}
+    (hφ : φ ∈ hochschildCoboundaries R B M n) :
+    (φ.compLinearMap fun _ ↦ (f : A →ₗ[R] B)) ∈ hochschildCoboundaries R A M n := by
+  cases n with
+  | zero => rw [hochschildCoboundaries_zero, Submodule.mem_bot] at hφ ⊢; subst hφ; rfl
+  | succ n =>
+    obtain ⟨ψ, rfl⟩ := mem_hochschildCoboundaries_succ_iff.1 hφ
+    exact mem_hochschildCoboundaries_succ_iff.2
+      ⟨ψ.compLinearMap fun _ ↦ (f : A →ₗ[R] B), hochschildCoboundary_compLinearMap f ψ⟩
 
 end Cocycles
 
@@ -135,14 +162,15 @@ section Complex
 /-- The Hochschild cochain complex `C⁰ → C¹ → ⋯`: in degree `n` the `M`-valued `n`-cochains on
 `A`, the multilinear maps in `n + 1` arguments, with the Hochschild coboundary as differential. -/
 def hochschildCochainComplex : CochainComplex (ModuleCat R) ℕ :=
-  CochainComplex.of (fun n ↦ ModuleCat.of R (MultilinearMap R (fun _ : Fin (n + 1) ↦ A) M))
+  CochainComplex.of (fun n ↦ ModuleCat.of R (MultilinearMap (RingHom.id R) (fun _ : Fin (n + 1) ↦
+      A) M))
     (fun n ↦ ModuleCat.ofHom (hochschildCoboundary R A M n))
     fun _ ↦ ModuleCat.hom_ext (hochschildCoboundary_comp_hochschildCoboundary R A M)
 
 /-- The degree-`n` term of the Hochschild cochain complex is the module of `n`-cochains. -/
 def hochschildCochainComplexXIso (n : ℕ) :
     (hochschildCochainComplex R A M).X n ≅
-      ModuleCat.of R (MultilinearMap R (fun _ : Fin (n + 1) ↦ A) M) :=
+      ModuleCat.of R (MultilinearMap (RingHom.id R) (fun _ : Fin (n + 1) ↦ A) M) :=
   Iso.refl _
 
 /-- Under the identifications `hochschildCochainComplexXIso`, the differential of the Hochschild
@@ -167,7 +195,7 @@ abbrev hochschildCohomology (n : ℕ) : ModuleCat R :=
   (hochschildCochainComplex R A M).homology n
 
 private theorem mem_hochschildCocycles_iff_complex (n : ℕ)
-    (φ : MultilinearMap R (fun _ : Fin (n + 1) ↦ A) M) :
+    (φ : MultilinearMap (RingHom.id R) (fun _ : Fin (n + 1) ↦ A) M) :
     φ ∈ hochschildCocycles R A M n ↔
       (hochschildCochainComplex R A M).d n (n + 1)
         ((hochschildCochainComplexXIso R A M n).inv φ) = 0 := by
@@ -175,7 +203,7 @@ private theorem mem_hochschildCocycles_iff_complex (n : ℕ)
     (hochschildCoboundary R A M) (hochschildCochainComplex_d R A M)]
 
 private theorem mem_hochschildCoboundaries_iff_complex (n : ℕ)
-    (φ : MultilinearMap R (fun _ : Fin (n + 1) ↦ A) M) :
+    (φ : MultilinearMap (RingHom.id R) (fun _ : Fin (n + 1) ↦ A) M) :
     φ ∈ hochschildCoboundaries R A M n ↔
       ∃ y : (hochschildCochainComplex R A M).X ((ComplexShape.up ℕ).prev n),
         (hochschildCochainComplex R A M).d ((ComplexShape.up ℕ).prev n) n y =
@@ -189,7 +217,7 @@ namespace hochschildCohomology
 /-- The Hochschild cohomology class of a Hochschild cocycle. -/
 def mk (n : ℕ) : hochschildCocycles R A M n →ₗ[R] hochschildCohomology R A M n :=
   (hochschildCochainComplex R A M).moduleCatCohomologyClassOfIso
-    (fun n ↦ MultilinearMap R (fun _ : Fin (n + 1) ↦ A) M) (hochschildCocycles R A M)
+    (fun n ↦ MultilinearMap (RingHom.id R) (fun _ : Fin (n + 1) ↦ A) M) (hochschildCocycles R A M)
     (hochschildCochainComplexXIso R A M) (mem_hochschildCocycles_iff_complex R A M) n
 
 /-- The class of a Hochschild cocycle `φ` is the homology class of any cycle of the Hochschild
@@ -200,13 +228,13 @@ theorem mk_eq_homologyπ {n : ℕ} (φ : hochschildCocycles R A M n)
       ((hochschildCochainComplex R A M).iCycles n z) = φ) :
     mk R A M n φ = (hochschildCochainComplex R A M).homologyπ n z :=
   (hochschildCochainComplex R A M).moduleCatCohomologyClassOfIso_eq_homologyπ
-    (fun n ↦ MultilinearMap R (fun _ : Fin (n + 1) ↦ A) M) (hochschildCocycles R A M)
+    (fun n ↦ MultilinearMap (RingHom.id R) (fun _ : Fin (n + 1) ↦ A) M) (hochschildCocycles R A M)
     (hochschildCochainComplexXIso R A M) (mem_hochschildCocycles_iff_complex R A M) φ z hz
 
 /-- Every Hochschild cohomology class is the class of a Hochschild cocycle. -/
 theorem mk_surjective (n : ℕ) : Function.Surjective (mk R A M n) :=
   (hochschildCochainComplex R A M).moduleCatCohomologyClassOfIso_surjective
-    (fun n ↦ MultilinearMap R (fun _ : Fin (n + 1) ↦ A) M) (hochschildCocycles R A M)
+    (fun n ↦ MultilinearMap (RingHom.id R) (fun _ : Fin (n + 1) ↦ A) M) (hochschildCocycles R A M)
     (hochschildCochainComplexXIso R A M) (mem_hochschildCocycles_iff_complex R A M) n
 
 /-- A Hochschild cocycle has zero cohomology class exactly when it is a Hochschild
@@ -214,9 +242,10 @@ coboundary. -/
 @[simp]
 theorem mk_eq_zero_iff (n : ℕ) (φ : hochschildCocycles R A M n) :
     mk R A M n φ = 0 ↔
-      (φ : MultilinearMap R (fun _ : Fin (n + 1) ↦ A) M) ∈ hochschildCoboundaries R A M n :=
+      (φ : MultilinearMap (RingHom.id R) (fun _ : Fin (n + 1) ↦ A)
+          M) ∈ hochschildCoboundaries R A M n :=
   (hochschildCochainComplex R A M).moduleCatCohomologyClassOfIso_eq_zero_iff
-    (fun n ↦ MultilinearMap R (fun _ : Fin (n + 1) ↦ A) M) (hochschildCocycles R A M)
+    (fun n ↦ MultilinearMap (RingHom.id R) (fun _ : Fin (n + 1) ↦ A) M) (hochschildCocycles R A M)
     (hochschildCoboundaries R A M) (hochschildCochainComplexXIso R A M)
     (mem_hochschildCocycles_iff_complex R A M) (mem_hochschildCoboundaries_iff_complex R A M) n φ
 
@@ -224,9 +253,10 @@ theorem mk_eq_zero_iff (n : ℕ) (φ : hochschildCocycles R A M n) :
 coboundary. -/
 theorem mk_eq_mk_iff (n : ℕ) (φ ψ : hochschildCocycles R A M n) :
     mk R A M n φ = mk R A M n ψ ↔
-      (φ : MultilinearMap R (fun _ : Fin (n + 1) ↦ A) M) - ψ ∈ hochschildCoboundaries R A M n :=
+      (φ : MultilinearMap (RingHom.id R) (fun _ : Fin (n + 1) ↦ A)
+          M) - ψ ∈ hochschildCoboundaries R A M n :=
   (hochschildCochainComplex R A M).moduleCatCohomologyClassOfIso_eq_iff
-    (fun n ↦ MultilinearMap R (fun _ : Fin (n + 1) ↦ A) M) (hochschildCocycles R A M)
+    (fun n ↦ MultilinearMap (RingHom.id R) (fun _ : Fin (n + 1) ↦ A) M) (hochschildCocycles R A M)
     (hochschildCoboundaries R A M) (hochschildCochainComplexXIso R A M)
     (mem_hochschildCocycles_iff_complex R A M) (mem_hochschildCoboundaries_iff_complex R A M) n
     φ ψ
@@ -247,7 +277,8 @@ theorem linearMap_ext {n : ℕ} {f g : hochschildCohomology R A M n →ₗ[R] N}
 Hochschild cohomology. -/
 def desc (n : ℕ) (f : hochschildCocycles R A M n →ₗ[R] N)
     (hf : ∀ φ : hochschildCocycles R A M n,
-      (φ : MultilinearMap R (fun _ : Fin (n + 1) ↦ A) M) ∈ hochschildCoboundaries R A M n →
+      (φ : MultilinearMap (RingHom.id R) (fun _ : Fin (n + 1) ↦ A)
+          M) ∈ hochschildCoboundaries R A M n →
         f φ = 0) :
     hochschildCohomology R A M n →ₗ[R] N :=
   (mk R A M n).liftOfSurjective (mk_surjective R A M n)
@@ -258,7 +289,8 @@ def desc (n : ℕ) (f : hochschildCocycles R A M n →ₗ[R] N)
 @[simp]
 theorem desc_mk (n : ℕ) (f : hochschildCocycles R A M n →ₗ[R] N)
     (hf : ∀ φ : hochschildCocycles R A M n,
-      (φ : MultilinearMap R (fun _ : Fin (n + 1) ↦ A) M) ∈ hochschildCoboundaries R A M n →
+      (φ : MultilinearMap (RingHom.id R) (fun _ : Fin (n + 1) ↦ A)
+          M) ∈ hochschildCoboundaries R A M n →
         f φ = 0)
     (φ : hochschildCocycles R A M n) :
     desc n f hf (mk R A M n φ) = f φ :=
@@ -268,12 +300,40 @@ theorem desc_mk (n : ℕ) (f : hochschildCocycles R A M n →ₗ[R] N)
 @[simp]
 theorem desc_comp_mk (n : ℕ) (f : hochschildCocycles R A M n →ₗ[R] N)
     (hf : ∀ φ : hochschildCocycles R A M n,
-      (φ : MultilinearMap R (fun _ : Fin (n + 1) ↦ A) M) ∈ hochschildCoboundaries R A M n →
+      (φ : MultilinearMap (RingHom.id R) (fun _ : Fin (n + 1) ↦ A)
+          M) ∈ hochschildCoboundaries R A M n →
         f φ = 0) :
     desc n f hf ∘ₗ mk R A M n = f :=
   LinearMap.ext (desc_mk n f hf)
 
 end Desc
+
+section Map
+variable {R A M} {B : Type*} [NonUnitalSemiring B] [Module R B] [IsScalarTower R B B]
+  [SMulCommClass R B B]
+
+variable (M) in
+/-- Pullback on Hochschild cohomology along a homomorphism of nonunital algebras. -/
+def map (f : A →ₙₐ[R] B) (n : ℕ) :
+    hochschildCohomology R B M n →ₗ[R] hochschildCohomology R A M n :=
+  desc n (mk R A M n ∘ₗ (MultilinearMap.compLinearMapₗ fun _ : Fin (n + 1) ↦
+      (f : A →ₗ[R] B)).restrict fun _ ↦ compLinearMap_mem_hochschildCocycles f)
+    fun _ hφ ↦ (mk_eq_zero_iff R A M n _).2 (compLinearMap_mem_hochschildCoboundaries f hφ)
+
+/-- `map` sends `[φ]` to the class of its pullback along `f`. -/
+@[simp] theorem map_mk (f : A →ₙₐ[R] B) {n : ℕ} (φ : hochschildCocycles R B M n) :
+    map M f n (mk R B M n φ) = mk R A M n ⟨φ.val.compLinearMap fun _ ↦ (f : A →ₗ[R] B),
+      compLinearMap_mem_hochschildCocycles f φ.property⟩ := desc_mk _ _ _ φ
+/-- Pulling back along the identity nonunital algebra homomorphism is the identity. -/
+@[simp] theorem map_id (n : ℕ) :
+    map (R := R) (A := A) M (NonUnitalAlgHom.id R A) n = LinearMap.id := by
+  ext φ; simp only [LinearMap.comp_apply, map_mk, LinearMap.id_apply]; congr 1
+/-- Pullback on Hochschild cohomology is contravariantly functorial. -/
+theorem map_comp {C : Type*} [NonUnitalSemiring C] [Module R C] [IsScalarTower R C C]
+    [SMulCommClass R C C] (f : A →ₙₐ[R] B) (g : B →ₙₐ[R] C) (n : ℕ) :
+    map M (g.comp f) n = (map M f n).comp (map M g n) := by
+  ext φ; simp only [LinearMap.comp_apply, map_mk]; congr 1
+end Map
 
 end hochschildCohomology
 

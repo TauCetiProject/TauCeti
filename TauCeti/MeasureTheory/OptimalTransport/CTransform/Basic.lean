@@ -20,11 +20,11 @@ against a cost `c : X × Y → ℝ` is the pointwise inequality `φ x + ψ y ≤
 fixed, the largest `ψ` satisfying it is the *infimal `c`-transform*
 `cTransform c φ y = ⨅ x, (c (x, y) - φ x)`, and symmetrically with `ψ` fixed. This file builds
 that transform, the two closure operations it generates, the `c`-concave potentials they fix,
-and the contact set on which the dual constraint is an equality. It is the finite-real slice of
-the roadmap's broader transform interface; the analytic-sublevel interface lives in
-`TauCeti.MeasureTheory.OptimalTransport.CTransform.Analytic`, and the compact attainment and
-lower-semicontinuity interface in `TauCeti.MeasureTheory.OptimalTransport.CTransform.Compact`.
-The extended-cost interface is a follow-up slice. The elementary
+and the contact set on which the dual constraint is an equality, for a finite real cost. The
+analytic-sublevel interface lives in `TauCeti.MeasureTheory.OptimalTransport.CTransform.Analytic`,
+the compact attainment and lower-semicontinuity interface in
+`TauCeti.MeasureTheory.OptimalTransport.CTransform.Compact`, and the transform for an extended
+cost in `TauCeti.MeasureTheory.OptimalTransport.CTransform.Extended`. The elementary
 upper-semicontinuity result for infimal transforms, the Borel measurability it gives with no
 hypothesis on the opposite factor, and a metric continuity result for real-valued transforms are
 included here.
@@ -39,7 +39,8 @@ no side condition, which gives the adjunction `ψ ≤ cTransform c φ ↔ φ ≤
 recorded as `TauCeti.cTransform_galoisConnection`. For an extended-valued cost the same formula
 is *not* the right one: with `c ≡ ⊤` and `φ ≡ 0`, `EReal` subtraction gives `⊤ - ⊤ = ⊥`, so the
 double transform of `φ` is `⊥` on nonempty factors and the inequality `φ ≤ φᶜᶜ` fails. The
-extended-cost interface needs its own conventions and is not built here.
+extended-cost transform needs its own conventions; `TauCeti.cTransformExtended` replaces the
+subtraction by additive residuation.
 
 Apart from the upper-semicontinuity and Borel measurability results, and the metric continuity
 result on pseudometric spaces, the two factors are bare types and the results are
@@ -92,8 +93,6 @@ marginal integrals of a dual pair meaningful.
 * `TauCeti.exists_boundedContinuousFunction_of_eq_iInf_sub` — for a bounded uniformly continuous
   cost, two real potentials each the infimal transform of the other are bounded continuous
   functions.
-
-This is the finite-real algebraic slice of Layer 2, item 2 of the optimal-transport roadmap.
 
 ## References
 
@@ -167,6 +166,18 @@ theorem le_cTransform (h : ∀ x, a ≤ (c (x, y) : EReal) - φ x) : a ≤ cTran
 theorem le_cTransformSymm (h : ∀ y, a ≤ (c (x, y) : EReal) - ψ y) : a ≤ cTransformSymm c ψ x :=
   by simpa only [cTransformSymm_eq_cTransform] using
     le_cTransform (c := fun p : Y × X => c (p.2, p.1)) h
+
+/-- The `c`-transform at `y` is strictly below `a` if and only if some source point witnesses the
+strict bound. -/
+theorem cTransform_lt_iff :
+    cTransform c φ y < a ↔ ∃ x, (c (x, y) : EReal) - φ x < a :=
+  iInf_lt_iff
+
+/-- The symmetric `c`-transform at `x` is strictly below `a` if and only if some target point
+witnesses the strict bound. -/
+theorem cTransformSymm_lt_iff :
+    cTransformSymm c ψ x < a ↔ ∃ y, (c (x, y) : EReal) - ψ y < a :=
+  iInf_lt_iff
 
 /-- The `c`-transform of `φ` is dual feasible against `φ`. -/
 theorem add_cTransform_le (c : X × Y → ℝ) (φ : X → EReal) (x : X) (y : Y) :
@@ -273,6 +284,16 @@ theorem cTransformSymm_lt_top_of_ne_bot (c : X × Y → ℝ) (hy : ψ y ≠ ⊥)
     cTransformSymm c ψ x < ⊤ := by
   simpa only [cTransformSymm_eq_cTransform] using
     cTransform_lt_top_of_ne_bot (fun p : Y × X => c (p.2, p.1)) hy x
+
+/-- If the `c`-transform avoids `-∞` at one target point, the source potential avoids `⊤`
+everywhere. -/
+theorem ne_top_of_cTransform_ne_bot (hy : cTransform c φ y ≠ ⊥) (x : X) : φ x ≠ ⊤ := fun hx =>
+  hy <| eq_bot_iff.2 <| by simpa [hx] using cTransform_le c φ x y
+
+/-- If the symmetric `c`-transform avoids `-∞` at one source point, the target potential avoids `⊤`
+everywhere. -/
+theorem ne_top_of_cTransformSymm_ne_bot (hx : cTransformSymm c ψ x ≠ ⊥) (y : Y) : ψ y ≠ ⊤ :=
+  ne_top_of_cTransform_ne_bot (c := fun p : Y × X => c (p.2, p.1)) hx y
 
 /-- The symmetric `c`-transform of a potential on an empty target is `⊤`. -/
 @[simp]

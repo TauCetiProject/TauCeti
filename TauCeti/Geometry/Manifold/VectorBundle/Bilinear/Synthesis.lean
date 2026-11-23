@@ -7,7 +7,8 @@ module
 
 public import Mathlib.Geometry.Manifold.VectorBundle.Hom
 public import TauCeti.Analysis.InnerProductSpace.Dual
-public import TauCeti.Analysis.InnerProductSpace.Frame
+public import TauCeti.Analysis.InnerProductSpace.Frame.Basic
+import TauCeti.Geometry.Manifold.VectorBundle.Bilinear.Section
 import Mathlib.Geometry.Manifold.Algebra.Monoid
 import Mathlib.Geometry.Manifold.Algebra.SMul
 
@@ -54,10 +55,8 @@ theorem contMDiffOn_bilinearComp_synthesisMap {d : ℕ}
     ContMDiffOn IB 𝓘(ℝ, EuclideanSpace ℝ (Fin d) →L[ℝ] EuclideanSpace ℝ (Fin d) →L[ℝ] ℝ) n
       (fun y ↦ (Q y).bilinearComp (synthesisMap ℝ (ε · y)).toContinuousLinearMap
         (synthesisMap ℝ (ε · y)).toContinuousLinearMap) U := by
-  have hc (i j : Fin d) : ContMDiffOn IB 𝓘(ℝ) n (fun y ↦ Q y (ε i y) (ε j y)) U := fun y hy ↦ by
-    have h := ContMDiffWithinAt.clm_bundle_apply₂ (F₃ := ℝ) (E₃ := Bundle.Trivial B ℝ)
-      (b := id) (hQ y).contMDiffWithinAt (hε i y hy) (hε j y hy)
-    exact (contMDiffWithinAt_totalSpace.mp h).2
+  have hc (i j : Fin d) : ContMDiffOn IB 𝓘(ℝ) n (fun y ↦ Q y (ε i y) (ε j y)) U :=
+    hQ.contMDiffOn.clm_bundle_apply₂_trivial (hε i) (hε j)
   simp_rw [bilinearComp_synthesisMap_eq_sum]
   exact contMDiffOn_finsetSum fun i _ ↦ contMDiffOn_finsetSum fun j _ ↦
     (hc i j).smul contMDiffOn_const

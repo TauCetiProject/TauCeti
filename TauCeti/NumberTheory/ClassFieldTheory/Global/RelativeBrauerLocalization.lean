@@ -115,7 +115,8 @@ private theorem unitsToIdeles_comp_semilocalUnitsToCoind :
   refine (semilocalUnitsToCoind_apply v w (Additive.toMul (α := (v.adicCompletion K ⊗[K] L)ˣ)
     ((unitsToIdeles K L ≫ idelesToSemilocalUnits L v).hom a)) g).trans ?_
   rw [coe_unitsToIdeles_idelesToSemilocalUnits_hom_apply,
-    Algebra.TensorProduct.baseChangeAutHom_tmul, semilocalEquiv_tmul, map_one, one_mul]
+    Algebra.TensorProduct.baseChangeAutHom_tmul,
+    HeightOneSpectrum.adicCompletionSemilocalEquiv_tmul, map_one, one_mul]
   rw [Representation.IntertwiningMap.coe_toLinearMap]
   refine Eq.trans ?_ ((congrArg (fun z ↦ Units.val (Additive.toMul z : (w.adicCompletion L)ˣ))
     (Rep.resCoindToHom_hom_apply_coe _ _ _ (unitsToDecompositionUnits v w) a g)).trans <|
@@ -163,7 +164,7 @@ end Finite
 section Infinite
 
 open NumberField.InfinitePlace GlobalNumberFields
-open scoped NumberField.LiesOver
+attribute [local instance] AbsoluteValue.Completion.algebraOfLiesOver
 
 variable (v : InfinitePlace K) (w : InfinitePlace L) [w.LiesOver v]
 
@@ -179,7 +180,7 @@ private def unitsToInfiniteDecompositionUnits :
       -- State that equality explicitly so the public completion comparison applies.
       change algebraMap L w.Completion ((d : L ≃ₐ[K] L) ((Additive.toMul a : Lˣ) : L)) =
         (decompositionHom v w d) (algebraMap L w.Completion ((Additive.toMul a : Lˣ) : L))
-      simpa only [InfinitePlace.Completion.algebraMap_apply] using
+      simpa only [NumberField.InfinitePlace.Completion.algebraMap_apply_eq_coe] using
         (decompositionHom_algebraMap (v := v) d ((Additive.toMul a : Lˣ) : L)).symm
 
 omit [NumberField K] [NumberField L] in

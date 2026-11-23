@@ -10,6 +10,7 @@ public import TauCeti.LinearAlgebra.RootSystem.FiniteType.Irreducible
 public import TauCeti.LinearAlgebra.RootSystem.Positive
 public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.Assembly
 public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.Reduced
+import TauCeti.Algebra.Algebra.Pi
 
 /-!
 # The rational root system of a Dynkin type
@@ -47,6 +48,7 @@ instead deduced over `ℚ` from connectedness of the pinned Dynkin diagram.
 * `TauCeti.DynkinType.hasCartanType_rationalRootSystem`: the rational system realizes its own
   Dynkin type against the pinned numbering.
 * `TauCeti.DynkinType.pairingIn_rationalRootSystem`: its Cartan integers are those of the datum.
+* `TauCeti.DynkinType.height_rationalBase`: rational base change preserves root heights.
 * `TauCeti.DynkinType.instIsReducedRationalRootSystem` and
   `TauCeti.DynkinType.instIsIrreducibleRationalRootSystem`: the rational system is reduced and
   irreducible.
@@ -79,21 +81,21 @@ reflection permutation is unchanged. -/
 def rationalRootSystem :
     RootPairing (Fin t.numRoots) ℚ (Fin t.rank → ℚ) (Fin t.rank → ℚ) :=
   rootPairingBaseChange ℚ (t.simplyConnectedRootDatum ht)
-    (toLinearMap_simplyConnectedRootDatum t ht)
+    (toLinearMap_simplyConnectedRootDatum_apply_apply t ht)
 
 /-- Identify the rational root system with entrywise base change of its integral datum.
 The body of `rationalRootSystem` is not exposed to importing modules, so use this equation
 to apply constructions on base-changed pairings to the rational model. -/
 theorem rationalRootSystem_def :
     t.rationalRootSystem ht = rootPairingBaseChange ℚ (t.simplyConnectedRootDatum ht)
-      (toLinearMap_simplyConnectedRootDatum t ht) :=
+      (toLinearMap_simplyConnectedRootDatum_apply_apply t ht) :=
   (rfl)
 
 /-- The Bourbaki-numbered base of `TauCeti.DynkinType.rationalRootSystem`, supported on the same
 first `t.rank` root indices as the base of the integral datum. -/
 def rationalBase : (t.rationalRootSystem ht).Base :=
   rootPairingBaseChangeBase ℚ (t.simplyConnectedRootDatum ht)
-    (toLinearMap_simplyConnectedRootDatum t ht) (t.simplyConnectedBase ht)
+    (toLinearMap_simplyConnectedRootDatum_apply_apply t ht) (t.simplyConnectedBase ht)
 
 @[simp] theorem root_rationalRootSystem (i : Fin t.numRoots) (k : Fin t.rank) :
     (t.rationalRootSystem ht).root i k = ((t.simplyConnectedRootDatum ht).root i k : ℚ) := by
@@ -114,6 +116,13 @@ theorem root_rationalRootSystem_eq_add_zsmul_iff (α β γ : Fin t.numRoots) (n 
     (t.rationalRootSystem ht).coroot i k = ((t.simplyConnectedRootDatum ht).coroot i k : ℚ) := by
   rw [rationalRootSystem, coroot_rootPairingBaseChange, piAlgebraMap_apply]
   simp
+
+/-- The rational simple coroots are the standard coordinate vectors. -/
+@[simp] theorem coroot_rationalRootSystem_simpleIndex (i : Fin t.rank) :
+    (t.rationalRootSystem ht).coroot (t.simpleIndex ht i) = Pi.single i 1 := by
+  ext j
+  simp only [coroot_rationalRootSystem, coroot_simpleIndex]
+  by_cases hij : i = j <;> simp [hij]
 
 @[simp] theorem reflectionPerm_rationalRootSystem :
     (t.rationalRootSystem ht).reflectionPerm = (t.simplyConnectedRootDatum ht).reflectionPerm :=
@@ -242,7 +251,7 @@ def simpleSupportEquiv : Fin t.rank ≃ (t.rationalBase ht).support :=
 @[simp] theorem coe_simpleSupportEquiv (i : Fin t.rank) :
     ((t.simpleSupportEquiv ht i : Fin t.numRoots)) = t.simpleIndex ht i := by
   let e := supportEquivRootPairingBaseChangeBase ℚ (t.simplyConnectedRootDatum ht)
-    (toLinearMap_simplyConnectedRootDatum t ht) (t.simplyConnectedBase ht)
+    (toLinearMap_simplyConnectedRootDatum_apply_apply t ht) (t.simplyConnectedBase ht)
   let x := t.simpleSupportEquivSimplyConnectedBase ht i
   have hcoe : ((e.symm x : Fin t.numRoots)) = (x : Fin t.numRoots) := by
     calc
@@ -252,7 +261,7 @@ def simpleSupportEquiv : Fin t.rank ≃ (t.rationalBase ht).support :=
   calc
     ((t.simpleSupportEquiv ht i : Fin t.numRoots)) = (e.symm x : Fin t.numRoots) := rfl
     _ = (x : Fin t.numRoots) := hcoe
-    _ = t.simpleIndex ht i := coe_simpleSupportEquivSimplyConnectedBase t ht i
+    _ = t.simpleIndex ht i := coe_simpleSupportEquivSimplyConnectedBase_apply t ht i
 
 variable {t ht} in
 /-- Every Bourbaki-numbered simple root `t.simpleIndex ht i` lies in the support of the pinned
@@ -260,7 +269,30 @@ base. -/
 theorem simpleIndex_mem_support (i : Fin t.rank) :
     t.simpleIndex ht i ∈ (t.rationalBase ht).support := by
   rw [← coe_simpleSupportEquiv]
-  exact (t.simpleSupportEquiv ht i).2
+  exact (t.simpleSupportEquiv ht i).property
+
+variable {t ht} in
+/-- A simple root belongs to the positive roots of the pinned rational base. -/
+theorem simpleIndex_mem_posRoots (i : Fin t.rank) :
+    t.simpleIndex ht i ∈ posRoots (t.rationalRootSystem ht) (t.rationalBase ht) :=
+  (mem_posRoots _ _ _).mpr
+    (RootPairing.Base.isPos_of_mem_support (simpleIndex_mem_support i))
+
+variable {t ht} in
+/-- A simple root is positive with respect to the pinned integral base. -/
+theorem isPos_simplyConnectedBase_simpleIndex (i : Fin t.rank) :
+    (t.simplyConnectedBase ht).IsPos (t.simpleIndex ht i) :=
+  (t.simplyConnectedBase ht).isPos_of_mem_support
+    (by rw [← support_rationalBase]; exact simpleIndex_mem_support i)
+
+variable {t ht} in
+/-- The positive roots split into the roots other than a chosen simple root and that root. -/
+theorem posRoots_eq_diff_union_simpleIndex (i : Fin t.rank) :
+    posRoots (t.rationalRootSystem ht) (t.rationalBase ht) =
+      (posRoots (t.rationalRootSystem ht) (t.rationalBase ht) \ {t.simpleIndex ht i}) ∪
+        {t.simpleIndex ht i} :=
+  (Set.sdiff_union_of_subset
+    (Set.singleton_subset_iff.mpr (simpleIndex_mem_posRoots i))).symm
 
 variable {t ht} in
 /-- Every element of the support of the pinned base is a Bourbaki-numbered simple root

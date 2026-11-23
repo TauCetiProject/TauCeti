@@ -5,22 +5,26 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicTopology.Cellular.EulerCharacteristic.FiniteCWType
+public import TauCeti.AlgebraicTopology.Cellular.EulerCharacteristic.Manifold
 public import TauCeti.AlgebraicTopology.Singular.LocalHomology.FundamentalClass
+import TauCeti.AlgebraicTopology.Singular.LocalHomology.FlatCoefficients
+import TauCeti.RingTheory.Flat.FractionRing
 
 /-!
 # Euler characteristic of a closed oriented surface
 
 A compact connected Hausdorff surface with a homological orientation has rational Betti numbers
 `b₀ = b₂ = 1` and `bᵢ = 0` for `i > 2`. If it has finite CW type, the native Euler--Poincaré
-formula therefore gives `χ = 2 - b₁`, and in particular `χ ≤ 2`.
+formula `TauCeti.eulerChar_eq_one_sub_finrank_add_finrank` therefore gives `χ = 2 - b₁`, and in
+particular `χ ≤ 2`.
 
 The surface is a topological manifold charted on a real two-dimensional normed space, with no
 boundary. Its orientation is the genuine native `TauCeti.HomologicalOrientation`, not an assumed
-Betti-number computation. The top Betti number follows from the rational fundamental-class
-isomorphism; the zeroth follows from connectedness and the local path connectedness of charts;
-the higher homology vanishes by the compact-manifold local-homology theorem. Finite CW type is
-an explicit hypothesis, and also ensures the first homology is finite-dimensional.
+Betti-number computation. The top Betti number follows from the fundamental class by flat base
+change (`TauCeti.HomologicalOrientation.finrank_singularChains_homology_eq_one`); the zeroth
+follows from connectedness and the local path connectedness of charts; the higher homology
+vanishes by the compact-manifold local-homology theorem. Finite CW type is an explicit
+hypothesis, and also ensures the first homology is finite-dimensional.
 
 These statements do not assert evenness of `b₁` or construct a genus. Those require the
 nondegenerate alternating cup pairing supplied by Poincaré duality. Conversion of a smooth
@@ -53,23 +57,11 @@ theorem eulerChar_eq_two_sub_finrank_singularHomology_one :
     eulerChar M = 2 - (finrank ℚ
       (((singularHomologyFunctor (ModuleCat.{0} ℚ) 1).obj (ModuleCat.of ℚ ℚ)).obj
         (TopCat.of M)) : ℤ) := by
-  have := ChartedSpace.locallyPathConnectedSpace E M
-  have : PathConnectedSpace M := pathConnectedSpace_iff_connectedSpace.mpr inferInstance
-  have h₀ : finrank ℚ
-      (((singularHomologyFunctor (ModuleCat.{0} ℚ) 0).obj (ModuleCat.of ℚ ℚ)).obj
-        (TopCat.of M)) = 1 := by
-    rw [(asIso ((TopCat.of M).singularHomology₀ε (ModuleCat.of ℚ ℚ))).toLinearEquiv.finrank_eq]
-    exact finrank_self ℚ
   have h₂ : finrank ℚ
       (((singularHomologyFunctor (ModuleCat.{0} ℚ) 2).obj (ModuleCat.of ℚ ℚ)).obj
-        (TopCat.of M)) = 1 := by
-    rw [(o.rationalFundamentalClassEquiv hn).symm.finrank_eq]
-    exact finrank_self ℚ
-  rw [eulerChar_eq_finsum_finrank_singularHomology M ℚ,
-    ModuleCat.finsum_neg_one_pow_finrank_eq_sum_range (N := 3)
-      (fun i hi ↦ isZero_singularHomology_of_compactSpace (M := M) (E := E)
-        (ModuleCat.of ℚ ℚ) hn (by omega))]
-  simp [Finset.sum_range_succ, h₀, h₂]
+        (TopCat.of M)) = 1 :=
+    o.finrank_singularChains_homology_eq_one hn ℚ
+  rw [eulerChar_eq_one_sub_finrank_add_finrank M ℚ hn, h₂]
   ring
 
 /-- A closed connected homologically oriented surface of finite CW type has Euler characteristic

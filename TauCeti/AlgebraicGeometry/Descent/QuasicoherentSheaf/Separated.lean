@@ -7,16 +7,15 @@ module
 
 public import TauCeti.AlgebraicGeometry.Sites.Big.Sheaf
 public import TauCeti.AlgebraicGeometry.Modules.Quasicoherent.Cokernels
-public import Mathlib.CategoryTheory.Sites.Descent.DescentData
 
 /-!
 # Uniqueness of fpqc descent for module morphisms
 
 Morphisms into a quasi-coherent module are determined by their pullbacks along an fpqc
 covering family, on arbitrary schemes. The source module need not be quasi-coherent.
-Isomorphisms of quasi-coherent modules can also be detected on such a family. Consequently
-the comparison from quasi-coherent modules to descent data is faithful for every fpqc
-covering family.
+Isomorphisms of quasi-coherent modules can also be detected on such a family. On the big site
+`Over S`, morphisms are therefore determined by their pullbacks to any family of `S`-schemes
+covering it for a topology coarser than the fpqc topology (`Hom.ext_of_coversTop`).
 
 The argument uses `Scheme.Modules.isSheaf_bigPresheaf_comp_forget_fpqcTopology`: sections of the
 target module on the big site form an fpqc sheaf. Equality of sections can therefore be checked
@@ -92,25 +91,18 @@ theorem Hom.isIso_of_fpqc {S : Scheme.{u}} {M N : S.Modules}
       simp [← Functor.map_comp])
   exact isIso_of_mono_of_epi φ
 
+/-- Morphisms into a quasi-coherent module are equal if their pullbacks to a family of `S`-schemes
+covering the big site of `S` for a topology coarser than the fpqc topology are equal. -/
+theorem Hom.ext_of_coversTop {S : Scheme.{u}} {M N : S.Modules} [N.IsQuasicoherent]
+    {J : GrothendieckTopology Scheme.{u}} (hJ : J ≤ fpqcTopology) (φ ψ : M ⟶ N) {ι : Type v}
+    {Y : ι → Over S} (hY : (J.over S).CoversTop Y)
+    (h : ∀ i, (pullback (Y i).hom).map φ = (pullback (Y i).hom).map ψ) : φ = ψ := by
+  refine Hom.ext_of_fpqc φ ψ (fun i ↦ (Y i).hom) (fpqcTopology.superset_covering ?_
+    (hJ _ ((J.mem_over_iff _).mp (hY (Over.mk (𝟙 S)))))) h
+  intro Z f hf
+  obtain ⟨i, ⟨b⟩⟩ := (Sieve.overEquiv_iff (Y := Over.mk (𝟙 S)) _ f).mp hf
+  have hb : b.left ≫ (Y i).hom = f := (Over.w b).trans (Category.comp_id f)
+  exact hb ▸ Sieve.downward_closed _
+    (Sieve.ofArrows_mk (fun i ↦ (Y i).left) (fun i ↦ (Y i).hom) i) b.left
+
 end AlgebraicGeometry.Scheme.Modules
-
-namespace TauCeti.AlgebraicGeometry.Descent
-
-/-- The comparison functor to quasi-coherent descent data is faithful for every fpqc
-covering family: a descended morphism, if it exists, is unique. -/
-theorem qcohPseudofunctor_faithful_toDescentData {S : Scheme.{u}} {ι : Type v}
-    {X : ι → Scheme.{u}} (f : ∀ i, X i ⟶ S)
-    (hf : Sieve.ofArrows X f ∈ Scheme.fpqcTopology S) :
-    (qcohPseudofunctor.toDescentData f).Faithful where
-  map_injective {M N} φ ψ h := by
-    have : N.obj.IsQuasicoherent := N.property
-    apply ObjectProperty.hom_ext
-    apply Scheme.Modules.Hom.ext_of_fpqc φ.hom ψ.hom f hf
-    intro i
-    have hi := congrArg (fun k ↦
-      (Pseudofunctor.DescentData.Hom.hom (F := qcohPseudofunctor) (f := f) k i).hom) h
-    simp only [Pseudofunctor.toDescentData_map_hom] at hi
-    exact (qcohPseudofunctor_map_toFunctor_map_hom (f i).op.toLoc φ).symm.trans
-      (hi.trans (qcohPseudofunctor_map_toFunctor_map_hom (f i).op.toLoc ψ))
-
-end TauCeti.AlgebraicGeometry.Descent

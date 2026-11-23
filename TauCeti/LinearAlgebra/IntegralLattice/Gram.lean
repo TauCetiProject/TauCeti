@@ -58,7 +58,6 @@ discriminant group.
 ## References
 
 * W. Ebeling, *Lattices and Codes*, Chapter 1.
-* `TauCetiRoadmap/IntegralLattices/README.md`, Layer 1.
 -/
 
 public section
@@ -134,15 +133,15 @@ theorem isSymm_gramMatrix {ι : Type v} (e : Basis ι ℤ L) :
 ambient rational form. -/
 theorem map_gramMatrix {ι : Type v} [Fintype ι] [DecidableEq ι] (e : Basis ι ℤ L) :
     (L.gramMatrix e).map (algebraMap ℤ ℚ) =
-      LinearMap.BilinForm.toMatrix (e.extendOfIsLattice ℚ) L.form := by
+      LinearMap.BilinForm.toMatrix (e.extendOfIsFullLattice ℚ) L.form := by
   ext i j
   simp only [Matrix.map_apply]
   -- `Matrix.map` displays the integer cast as `algebraMap`; the entry lemma uses cast notation.
   change (L.gramMatrix e i j : ℚ) =
-    LinearMap.BilinForm.toMatrix (e.extendOfIsLattice ℚ) L.form i j
+    LinearMap.BilinForm.toMatrix (e.extendOfIsFullLattice ℚ) L.form i j
   rw [intCast_gramMatrix_apply,
-    LinearMap.BilinForm.toMatrix_apply, Basis.extendOfIsLattice_apply,
-    Basis.extendOfIsLattice_apply]
+    LinearMap.BilinForm.toMatrix_apply, Basis.extendOfIsFullLattice_apply,
+    Basis.extendOfIsFullLattice_apply]
 
 /-- The signed determinant of the Gram matrix in a carrier basis. -/
 noncomputable def gramDet {ι : Type v} [Fintype ι] [DecidableEq ι]
@@ -160,7 +159,7 @@ in the extended basis. -/
 theorem intCast_gramDet {ι : Type v} [Fintype ι] [DecidableEq ι]
     (e : Basis ι ℤ L) :
     (L.gramDet e : ℚ) =
-      Matrix.det (LinearMap.BilinForm.toMatrix (e.extendOfIsLattice ℚ) L.form) := by
+      Matrix.det (LinearMap.BilinForm.toMatrix (e.extendOfIsFullLattice ℚ) L.form) := by
   rw [gramDet_def, Int.cast_det]
   exact congrArg Matrix.det (map_gramMatrix L e)
 
@@ -194,7 +193,7 @@ theorem gramDet_eq_gramDet {ι : Type v} {κ : Type w} [Fintype ι] [Fintype κ]
 theorem gramDet_ne_zero_iff {ι : Type v} [Fintype ι] [DecidableEq ι]
     (e : Basis ι ℤ L) :
     L.gramDet e ≠ 0 ↔ L.form.Nondegenerate := by
-  rw [LinearMap.BilinForm.nondegenerate_iff_det_ne_zero (e.extendOfIsLattice ℚ),
+  rw [LinearMap.BilinForm.nondegenerate_iff_det_ne_zero (e.extendOfIsFullLattice ℚ),
     ← intCast_gramDet]
   exact (Int.cast_ne_zero (α := ℚ) (n := L.gramDet e)).symm
 
@@ -369,8 +368,8 @@ of `b'`. -/
 theorem ofGramMatrixEq_apply_basis {ι : Type v} (b : Basis ι ℤ L) (b' : Basis ι ℤ M)
     (h : L.gramMatrix b = M.gramMatrix b') (i : ι) :
     ofGramMatrixEq b b' h (b i) = b' i := by
-  rw [ofGramMatrixEq, ofCarrierEquiv_apply, LinearEquiv.extendOfIsLattice_apply, Basis.equiv_apply,
-    Equiv.refl_apply]
+  rw [ofGramMatrixEq, ofCarrierEquiv_apply, LinearEquiv.extendOfIsFullLattice_apply,
+    Basis.equiv_apply, Equiv.refl_apply]
 
 end Isometry
 

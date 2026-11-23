@@ -176,7 +176,7 @@ theorem order_taylor_mul_eq_rootMultiplicity [CompleteSpace K]
   have h0 : (_root_.PowerSeries.taylor x (e : PowerSeries K)).order = 0 := by
     simpa using (_root_.PowerSeries.order_eq_nat (n := 0)).mpr
       ⟨by simpa using hu, fun i hi ↦ absurd hi i.not_lt_zero⟩
-  rw [_root_.PowerSeries.IsRestricted.taylor_mul e.2 (isRestricted_polynomial P) hx,
+  rw [_root_.PowerSeries.IsRestricted.taylor_mul e.property (isRestricted_polynomial P) hx,
     _root_.PowerSeries.order_mul, h0, zero_add]
   exact _root_.PowerSeries.isGoodZero_iff_order_taylor_eq.mp
     (_root_.PowerSeries.isGoodZero_coe_iff_of_field.mpr ⟨hP, rfl⟩)
@@ -223,7 +223,7 @@ theorem IsLowestDominant.card_filter_roots_map_norm_lt_le (hl : IsLowestDominant
     (hr : 0 < r) (he : IsUnit e) (hf : (e : PowerSeries K) * P = f) :
     ((P.map (algebraMap K L)).roots.filter (‖·‖ < r)).card ≤ l := by
   have : IsUltrametricDist L := .of_normedAlgebra K
-  exact (hl.map_polynomial hr he hf).card_filter_roots_norm_lt_le hr
+  exact (hl.map_polynomial hr he hf).card_filter_roots_norm_lt_le
 
 /-- **Zeros in the open disc, split case.** Let `f = e * P` over an ultrametric normed field `K`,
 with `e` a unit of the ring of series restricted at `r > 0`, and let `l` be the lowest dominant
@@ -244,7 +244,7 @@ theorem IsDistinguished.card_filter_roots_map_norm_le_le (hd : IsDistinguished r
     (hr : 0 < r) (he : IsUnit e) (hf : (e : PowerSeries K) * P = f) :
     ((P.map (algebraMap K L)).roots.filter (‖·‖ ≤ r)).card ≤ d := by
   have : IsUltrametricDist L := .of_normedAlgebra K
-  exact (hd.map_polynomial hr he hf).card_filter_roots_norm_le_le hr
+  exact (hd.map_polynomial hr he hf).card_filter_roots_norm_le_le
 
 /-- **Zeros in the closed disc, split case.** Let `f = e * P` over an ultrametric normed field `K`,
 with `e` a unit of the ring of series restricted at `r > 0`, and let `d` be the distinguished
@@ -294,7 +294,8 @@ private theorem roots_map_spec [DecidableEq L] (hd : IsDistinguished r d f) (hr 
         (_root_.PowerSeries.taylor x (_root_.PowerSeries.map (algebraMap K L) f)).order =
           (P.map (algebraMap K L)).roots.count x := by
   have : IsUltrametricDist L := .of_normedAlgebra K
-  refine ⟨fun z hz ↦ (hd.map_polynomial hr he hf).norm_le_of_eval_eq_zero hr
+  refine ⟨fun z hz ↦ (hd.map_polynomial hr he hf).norm_le_of_eval_eq_zero
+    (MulHomClass.isPowMul normHom) hr
     (hP.map (algebraMap K L)) (Polynomial.mem_roots'.mp hz).2, fun x hx ↦ ?_⟩
   rw [order_taylor_map_eq_rootMultiplicity he hP.ne_zero hf hx, Polynomial.count_roots]
 

@@ -50,7 +50,7 @@ theorem idealTerm_convolution (f g : IdealArithmeticFunction K) (s : ℂ) :
   have hA := congrArg (fun I : (Ideal (𝓞 K))⁰ ↦ Ideal.absNorm (I : Ideal (𝓞 K)))
     (Ideal.mem_divisorsAntidiagonal.mp hp)
   simp only [Submonoid.coe_mul, map_mul] at hA
-  rw [← hA, Nat.cast_mul, Complex.natCast_mul_natCast_cpow]
+  rw [← hA, Nat.cast_mul, Complex.natCast_mul_cpow]
   exact mul_div_mul_comm _ _ _ _
 
 /-- The ideal-indexed Dirichlet series of a convolution has the product of the sums of

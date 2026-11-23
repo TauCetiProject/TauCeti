@@ -96,8 +96,7 @@ theorem intValuation_ringEquiv (e : R ≃+* R') {v : HeightOneSpectrum R} {w : H
     have hspan : Ideal.span {e r} = Ideal.map e (Ideal.span {r}) := by
       rw [Ideal.map_span, Set.image_singleton]
     rw [w.intValuation_if_neg her, v.intValuation_if_neg hr, hvw, hspan,
-      Ideal.count_factors_map_of_ringEquiv e ((Ideal.prime_iff_isPrime v.ne_bot).mpr v.isPrime)
-        (by simpa only [ne_eq, Ideal.span_singleton_eq_bot] using hr)]
+      Ideal.count_factors_map_of_ringEquiv e]
 
 variable {K K' : Type*} [Field K] [Field K'] [Algebra R K] [IsFractionRing R K] [Algebra R' K']
   [IsFractionRing R' K']

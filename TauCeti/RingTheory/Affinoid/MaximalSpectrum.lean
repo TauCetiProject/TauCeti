@@ -5,12 +5,14 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.RingTheory.Spectrum.Maximal.Topology
 public import TauCeti.RingTheory.Affinoid.Basic
 public import TauCeti.RingTheory.MvPowerSeries.TateAlgebra.Jacobson
 public import TauCeti.RingTheory.MvPowerSeries.TateAlgebra.Nullstellensatz
 
 import Mathlib.LinearAlgebra.FiniteDimensional.Basic
 import Mathlib.RingTheory.Ideal.GoingUp
+import TauCeti.RingTheory.Spectrum.Maximal.Topology
 
 /-!
 # Maximal ideals of affinoid algebras
@@ -22,7 +24,9 @@ contravariant map on maximal spectra used for classical points of affinoid space
 surjective for integral injective maps; so residue fields of an integral subalgebra of an affinoid
 algebra are finite over the ground field as well. Every affinoid
 algebra is moreover a Jacobson ring, so its maximal ideals, the classical points, determine every
-radical ideal: each prime ideal is the intersection of the maximal ideals containing it.
+radical ideal: each prime ideal is the intersection of the maximal ideals containing it. In
+particular, `Sp A` is Zariski connected if and only if `A` is nontrivial and has only trivial
+idempotents (`TauCeti.IsAffinoidAlgebra.connectedSpace_maximalSpectrum_iff_idempotent`).
 
 The residue-field finiteness is the affinoid form of the Tate-algebra Nullstellensatz proved in
 `TauCeti.RingTheory.MvPowerSeries.TateAlgebra.Nullstellensatz`, and the Jacobson property descends
@@ -132,6 +136,20 @@ theorem finite_quotient_of_isIntegral (hB : IsAffinoidAlgebra K B) (f : A →ₐ
   have := hB.finite_quotient_of_isMaximal y.asIdeal
   exact Module.Finite.of_injective (Ideal.quotientMapₐ y.asIdeal f le_rfl).toLinearMap
     Ideal.quotientMap_injective
+
+/-- **Zariski connectedness criterion for affinoid spectra.** The classical spectrum `Sp A` of an
+affinoid algebra is connected in the Zariski topology if and only if `A` is nontrivial and its only
+idempotents are `0` and `1`. -/
+theorem connectedSpace_maximalSpectrum_iff_idempotent
+    (hA : IsAffinoidAlgebra K A) :
+    ConnectedSpace (MaximalSpectrum A) ↔
+      Nontrivial A ∧ ∀ e : A, IsIdempotentElem e → e = 0 ∨ e = 1 := by
+  have := hA.isJacobsonRing
+  rcases subsingleton_or_nontrivial A with hsub | hnt
+  · have : IsEmpty (MaximalSpectrum A) := ⟨fun x ↦ x.isMaximal.ne_top (Subsingleton.elim _ _)⟩
+    exact ⟨fun h ↦ False.elim (IsEmpty.false h.toNonempty.some),
+      fun ⟨hnt, _⟩ ↦ False.elim ((not_nontrivial_iff_subsingleton.mpr hsub) hnt)⟩
+  · simp [hnt, MaximalSpectrum.connectedSpace_iff_idempotent (R := A)]
 
 end IsAffinoidAlgebra
 

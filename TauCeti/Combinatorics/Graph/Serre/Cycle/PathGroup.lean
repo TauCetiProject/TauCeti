@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Combinatorics.Graph.Serre.Cycle.Basis
+public import TauCeti.Combinatorics.Graph.Serre.Cycle.SpanningTree
 public import TauCeti.Combinatorics.Graph.Serre.Path.SpanningTree
 public import TauCeti.Combinatorics.Quiver.PathWeight
 public import Mathlib.GroupTheory.Abelianization.Defs
@@ -19,13 +19,20 @@ When `O` is an orientation, exactly one of the two is present, the boundary of t
 path is its endpoint minus its starting point, and a closed path gives a cycle. Backtrack
 homotopic paths have the same chain, so this defines the cycle class homomorphism from the
 reduced path group to the kernel of the incidence boundary, over any coefficient ring.
+Extension of scalars carries the integral cycle class to the cycle class over any ring, whose
+coordinates are the casts of the integral ones; over `ZMod 2` the binary cycle class is the
+reduction of the integral one.
 
 For a connected graph the integral cycle class identifies the abelianization of the path group
 with the integral cycle lattice. The inverse uses a spanning tree `T`: a chain `c` goes to the
 product of the tree loops through its darts, whose cycle class is `c` minus the tree paths to
 the vertices of the boundary of `c`, hence `c` itself when `c` is a cycle. The cycle class of
 the tree loop through a positive dart outside `T` is a fundamental cycle: among the positive
-darts outside `T` it has coordinate one at that dart and zero elsewhere.
+darts outside `T` it has coordinate one at that dart and zero elsewhere. So it is the
+fundamental cycle of that dart in the basis of the cycle module given by `T`, over every
+coefficient ring: the chain of the dart followed by the tree path from its target back to its
+source. The isomorphism matches the classes of the tree loops with the integral fundamental
+cycles.
 
 ## Main definitions
 
@@ -41,6 +48,12 @@ darts outside `T` it has coordinate one at that dart and zero elsewhere.
 * `TauCeti.SerreGraph.Path.Homotopic.chain_eq`: homotopic paths have the same chain.
 * `TauCeti.SerreGraph.SpanningTree.cycleChordCoordinates_cycleClass_loop`: tree loops have unit
   coordinates outside the tree.
+* `TauCeti.SerreGraph.SpanningTree.cycleClass_loop`: the cycle class of a tree loop is the
+  fundamental cycle of its dart.
+* `TauCeti.SerreGraph.SpanningTree.coe_cycleBasis`: the fundamental cycle of a dart outside the
+  tree is that dart followed by the tree path back to its source.
+* `TauCeti.SerreGraph.PathGroup.cycleBaseChangeEquiv_tmul_cycleClass`: extension of scalars
+  carries integral cycle classes to cycle classes.
 
 ## References
 
@@ -50,6 +63,8 @@ darts outside `T` it has coordinate one at that dart and zero elsewhere.
 -/
 
 public section
+
+open scoped TensorProduct
 
 namespace TauCeti.SerreGraph
 
@@ -63,9 +78,17 @@ noncomputable def dartChain (e : Γ.E) : O →₀ R :=
 
 variable {Γ O}
 
+/-- The chain of a dart is the restriction to the chosen darts of the unit chain of the dart
+minus that of its reverse. -/
+theorem dartChain_eq_subtypeDomain (e : Γ.E) :
+    Γ.dartChain O R e =
+      (Finsupp.single e (1 : R) - Finsupp.single (Γ.rev e) 1).subtypeDomain (· ∈ O) :=
+  (rfl)
+
 /-- A coordinate of the chain of a dart: one at the dart itself, minus one at its reverse. -/
 theorem dartChain_apply (e : Γ.E) (f : O) :
-    Γ.dartChain O R e f = Finsupp.single e (1 : R) f.1 - Finsupp.single (Γ.rev e) (1 : R) f.1 := by
+    Γ.dartChain O R e f = Finsupp.single e (1 : R) f.val - Finsupp.single (Γ.rev e) (1 : R) f.val
+        := by
   simp [dartChain]
 
 variable (O) in
@@ -82,12 +105,17 @@ variable (O) in
   simp only [Finsupp.mapRange_apply, dartChain_apply, Finsupp.single_apply]
   split_ifs <;> simp
 
+/-- Casting a coordinate of the integral chain of a dart gives that coordinate over any ring. -/
+@[simp] theorem intCast_dartChain_apply (e : Γ.E) (f : O) :
+    ((Γ.dartChain O ℤ e f : ℤ) : R) = Γ.dartChain O R e f := by
+  rw [← mapRange_intCast_dartChain (R := R), Finsupp.mapRange_apply]
+
 /-- The chain of a positive dart of an orientation is its unit chain. -/
 theorem dartChain_of_mem (hO : Γ.IsOrientation O) {e : Γ.E} (he : e ∈ O) :
     Γ.dartChain O R e = Finsupp.single ⟨e, he⟩ 1 := by
   classical
   ext f
-  have hf : Γ.rev e ≠ f.1 := fun h => hO.rev_notMem_of_mem Γ e he (h ▸ f.2)
+  have hf : Γ.rev e ≠ f.val := fun h => hO.rev_notMem_of_mem Γ e he (h ▸ f.property)
   simp [dartChain_apply, Finsupp.single_apply, hf, Subtype.ext_iff]
 
 /-- The chain of a negative dart of an orientation is minus the unit chain of its reverse. -/
@@ -107,17 +135,17 @@ variable (Γ O)
 
 /-- The chain of a path: the sum of the signed chains of its darts. -/
 noncomputable def Path.chain {a b : Γ.V} (p : Γ.Path a b) : O →₀ R :=
-  p.addWeight fun {x y : Γ.V} (e : x ⟶ y) => Γ.dartChain O R e.1
+  p.addWeight fun {x y : Γ.V} (e : x ⟶ y) => Γ.dartChain O R e.val
 
 @[simp] theorem Path.chain_nil (a : Γ.V) : Path.chain Γ O R (Quiver.Path.nil : Γ.Path a a) = 0 := by
   simp [Path.chain]
 
 @[simp] theorem Path.chain_cons {a b c : Γ.V} (p : Γ.Path a b) (e : b ⟶ c) :
-    Path.chain Γ O R (p.cons e) = Path.chain Γ O R p + Γ.dartChain O R e.1 := by
+    Path.chain Γ O R (p.cons e) = Path.chain Γ O R p + Γ.dartChain O R e.val := by
   simp [Path.chain]
 
 @[simp] theorem Path.chain_toPath {a b : Γ.V} (e : a ⟶ b) :
-    Path.chain Γ O R e.toPath = Γ.dartChain O R e.1 := by
+    Path.chain Γ O R e.toPath = Γ.dartChain O R e.val := by
   simp [Quiver.Hom.toPath]
 
 @[simp] theorem Path.chain_comp {a b c : Γ.V} (p : Γ.Path a b) (q : Γ.Path b c) :
@@ -139,6 +167,11 @@ noncomputable def Path.chain {a b : Γ.V} (p : Γ.Path a b) : O →₀ R :=
   induction p with
   | nil => simp
   | cons p e ih => simp [Finsupp.mapRange_add, ih]
+
+/-- Casting a coordinate of the integral chain of a path gives that coordinate over any ring. -/
+@[simp] theorem Path.intCast_chain_apply {a b : Γ.V} (p : Γ.Path a b) (f : O) :
+    ((Path.chain Γ O ℤ p f : ℤ) : R) = Path.chain Γ O R p f := by
+  rw [← Path.mapRange_intCast_chain Γ O R, Finsupp.mapRange_apply]
 
 variable {Γ O} in
 /-- Backtrack homotopic paths have the same chain. -/
@@ -167,11 +200,11 @@ variable {Γ O}
 
 /-- The chain of a path vanishes at a chosen dart that the path crosses in neither direction. -/
 theorem Path.chain_apply_eq_zero {a b : Γ.V} {p : Γ.Path a b} {f : O}
-    (h : ∀ e ∈ Path.darts Γ p, e ≠ f.1 ∧ Γ.rev e ≠ f.1) : Path.chain Γ O R p f = 0 := by
+    (h : ∀ e ∈ Path.darts Γ p, e ≠ f.val ∧ Γ.rev e ≠ f.val) : Path.chain Γ O R p f = 0 := by
   induction p with
   | nil => simp
   | cons p e ih =>
-    have he := h e.1 (by simp)
+    have he := h e.val (by simp)
     simp [ih fun d hd => h d (by simp [hd]), dartChain_apply, he.1, he.2]
 
 namespace PathGroup
@@ -208,11 +241,26 @@ theorem mapRange_intCast_coe_cycleClass (hO : Γ.IsOrientation O) (g : PathGroup
       (cycleClass hO R g).toAdd := by
   simp [coe_cycleClass]
 
+/-- Casting a coordinate of the integral cycle class of a closed path gives that coordinate of its
+cycle class over any ring. -/
+@[simp] theorem intCast_coe_cycleClass_apply (hO : Γ.IsOrientation O) (g : PathGroup Γ v) (f : O) :
+    (((cycleClass hO ℤ g).toAdd : O →₀ ℤ) f : R) = ((cycleClass hO R g).toAdd : O →₀ R) f := by
+  rw [← mapRange_intCast_coe_cycleClass R hO, Finsupp.mapRange_apply]
+
+/-- Extension of scalars sends `r ⊗` the integral cycle class of a closed path to `r` times its
+cycle class over `R`. For `r = 1` and `R = ZMod 2`: the binary cycle class is the reduction of the
+integral one. -/
+@[simp] theorem cycleBaseChangeEquiv_tmul_cycleClass (hO : Γ.IsOrientation O) (r : R)
+    (g : PathGroup Γ v) : Γ.cycleBaseChangeEquiv O R (r ⊗ₜ[ℤ] (cycleClass hO ℤ g).toAdd) =
+      r • (cycleClass hO R g).toAdd := by
+  rw [cycleBaseChangeEquiv_tmul_eq]
+  exact congrArg (r • ·) (Subtype.ext (mapRange_intCast_coe_cycleClass R hO g))
+
 /-- The cycle class of a positive loop dart is its unit chain. Together with `map_inv`, such a
 loop and its reverse have opposite classes, nonzero over a nontrivial ring; this applies to every
 petal of a rose. -/
-theorem coe_cycleClass_ofPath_toPath (hO : Γ.IsOrientation O) (e : v ⟶ v) (he : e.1 ∈ O) :
-    ((cycleClass hO R (ofPath e.toPath)).toAdd : O →₀ R) = Finsupp.single ⟨e.1, he⟩ 1 := by
+theorem coe_cycleClass_ofPath_toPath (hO : Γ.IsOrientation O) (e : v ⟶ v) (he : e.val ∈ O) :
+    ((cycleClass hO R (ofPath e.toPath)).toAdd : O →₀ R) = Finsupp.single ⟨e.val, he⟩ 1 := by
   rw [coe_cycleClass_ofPath, Path.chain_toPath, dartChain_of_mem R hO he]
 
 end PathGroup
@@ -222,7 +270,7 @@ namespace SpanningTree
 variable (T : Γ.SpanningTree) (v : Γ.V)
 
 /-- The chain of a tree path vanishes at every chosen dart outside the tree. -/
-theorem chain_path_apply_of_notMem (a b : Γ.V) {f : O} (hf : f.1 ∉ T.darts) :
+theorem chain_path_apply_of_notMem (a b : Γ.V) {f : O} (hf : f.val ∉ T.darts) :
     Path.chain Γ O R (T.path a b) f = 0 :=
   Path.chain_apply_eq_zero R fun e he => by
     have he := T.mem_of_mem_darts_path he
@@ -231,41 +279,62 @@ theorem chain_path_apply_of_notMem (a b : Γ.V) {f : O} (hf : f.1 ∉ T.darts) :
 /-- Outside the tree, the cycle class of a tree loop has the coordinates of the chain of its
 dart: the two tree paths contribute nothing. -/
 theorem coe_cycleClass_loop_apply_of_notMem (hO : Γ.IsOrientation O) (e : Γ.E) {f : O}
-    (hf : f.1 ∉ T.darts) :
-    (PathGroup.cycleClass hO R (T.loop v e)).toAdd.1 f = Γ.dartChain O R e f := by
+    (hf : f.val ∉ T.darts) :
+    (PathGroup.cycleClass hO R (T.loop v e)).toAdd.val f = Γ.dartChain O R e f := by
   simp [loop_def, T.chain_path_apply_of_notMem R _ _ hf]
 
 /-- The cycle class of the tree loop through a positive dart outside the tree is a fundamental
 cycle: its coordinates at the positive darts outside the tree form the unit vector of that
 dart. -/
-@[simp] theorem cycleChordCoordinates_cycleClass_loop (hO : Γ.IsOrientation O)
+theorem cycleChordCoordinates_cycleClass_loop (hO : Γ.IsOrientation O)
     (e : ↥(O \ T.darts)) :
-    Γ.cycleChordCoordinates O T.darts R (PathGroup.cycleClass hO R (T.loop v e.1)).toAdd =
+    Γ.cycleChordCoordinates O T.darts R (PathGroup.cycleClass hO R (T.loop v e.val)).toAdd =
       Finsupp.single e 1 := by
   classical
   ext f
-  rw [cycleChordCoordinates_apply, T.coe_cycleClass_loop_apply_of_notMem R v hO _ f.2.2,
-    dartChain_of_mem R hO e.2.1]
+  rw [cycleChordCoordinates_apply, T.coe_cycleClass_loop_apply_of_notMem R v hO _ f.property.2,
+    dartChain_of_mem R hO e.property.1]
   simp [Finsupp.single_apply, Subtype.ext_iff]
+
+/-- The cycle class of the tree loop through a positive dart outside the tree is the fundamental
+cycle of that dart. -/
+@[simp] theorem cycleClass_loop (hO : Γ.IsOrientation O) (e : ↥(O \ T.darts)) :
+    PathGroup.cycleClass hO R (T.loop v e.val) = .ofAdd (T.cycleBasis hO R e) := by
+  apply Multiplicative.toAdd.injective
+  apply (T.cycleBasis hO R).repr.injective
+  ext f
+  simpa using DFunLike.congr_fun (T.cycleChordCoordinates_cycleClass_loop R v hO e) f
+
+/-- The fundamental cycle of a positive dart outside the tree is the chain of the cycle that
+crosses that dart and returns along the tree path from its target to its source. -/
+theorem coe_cycleBasis (hO : Γ.IsOrientation O) (e : ↥(O \ T.darts)) :
+    ((T.cycleBasis hO R e : (Γ.incidenceBoundary O R).ker) : O →₀ R) =
+      Finsupp.single ⟨e.val, e.property.1⟩ 1 + Path.chain Γ O R (T.path (Γ.tgt e.val) (Γ.src e.val))
+          := by
+  rw [← toAdd_ofAdd (T.cycleBasis hO R e), ← T.cycleClass_loop R (Γ.tgt e.val) hO e, loop_def,
+    PathGroup.coe_cycleClass_ofPath]
+  simp [dartChain_of_mem R hO e.property.1, add_comm]
 
 /-- The class in the abelianized path group of the product of tree loops prescribed by an
 integral chain. -/
-private noncomputable def loopClass : (O →₀ ℤ) →+ Additive (Abelianization (PathGroup Γ v)) :=
+private noncomputable def loopClass : (O →₀ ℤ) →+ Additive (Group.Abelianization (PathGroup Γ v)) :=
   Finsupp.liftAddHom fun e =>
-    zmultiplesHom _ (Additive.ofMul (Abelianization.of (T.loop v e.1)))
+    zmultiplesHom _ (Additive.ofMul (Group.Abelianization.of (T.loop v e.val)))
 
 private theorem loopClass_single (e : O) (n : ℤ) :
-    T.loopClass v (Finsupp.single e n) = n • Additive.ofMul (Abelianization.of (T.loop v e.1)) := by
+    T.loopClass v (Finsupp.single e n) =
+      n • Additive.ofMul (Group.Abelianization.of (T.loop v e.val)) := by
   simp [loopClass]
 
 private theorem loopClass_dartChain (hO : Γ.IsOrientation O) (e : Γ.E) :
-    T.loopClass v (Γ.dartChain O ℤ e) = Additive.ofMul (Abelianization.of (T.loop v e)) := by
+    T.loopClass v (Γ.dartChain O ℤ e) = Additive.ofMul (Group.Abelianization.of (T.loop v e)) := by
   by_cases he : e ∈ O
   · simp [dartChain_of_mem ℤ hO he, loopClass_single]
   · simp [dartChain_of_rev_mem ℤ hO ((hO.mem_rev_iff Γ e).mpr he), loopClass_single]
 
 private theorem loopClass_chain (hO : Γ.IsOrientation O) {a b : Γ.V} (p : Γ.Path a b) :
-    T.loopClass v (Path.chain Γ O ℤ p) = Additive.ofMul (Abelianization.of (T.basedPath v p)) := by
+    T.loopClass v (Path.chain Γ O ℤ p) =
+      Additive.ofMul (Group.Abelianization.of (T.basedPath v p)) := by
   induction p with
   | nil => simp
   | cons p e ih =>
@@ -275,11 +344,11 @@ private theorem loopClass_chain (hO : Γ.IsOrientation O) {a b : Γ.V} (p : Γ.P
 
 /-- The cycle class on the abelianized path group. -/
 private noncomputable def abCycleClass (hO : Γ.IsOrientation O) :
-    Additive (Abelianization (PathGroup Γ v)) →+ (Γ.incidenceBoundary O ℤ).ker :=
-  (Abelianization.lift (PathGroup.cycleClass hO ℤ)).toAdditiveLeft
+    Additive (Group.Abelianization (PathGroup Γ v)) →+ (Γ.incidenceBoundary O ℤ).ker :=
+  (Group.Abelianization.lift (PathGroup.cycleClass hO ℤ)).toAdditiveLeft
 
 private theorem abCycleClass_of (hO : Γ.IsOrientation O) (g : PathGroup Γ v) :
-    abCycleClass v hO (Additive.ofMul (Abelianization.of g)) =
+    abCycleClass v hO (Additive.ofMul (Group.Abelianization.of g)) =
       (PathGroup.cycleClass hO ℤ g).toAdd := by
   simp [abCycleClass]
 
@@ -293,10 +362,10 @@ private theorem coe_abCycleClass_loopClass (hO : Γ.IsOrientation O) (c : O →�
   | zero => simp
   | add c d hc hd => simp only [map_add, Submodule.coe_add, hc, hd]; abel
   | single e n =>
-    have h := Path.chain_reverse Γ O ℤ (T.path v (Γ.tgt e.1))
+    have h := Path.chain_reverse Γ O ℤ (T.path v (Γ.tgt e.val))
     rw [T.reverse_path] at h
     simp [loopClass_single, abCycleClass_of, PathGroup.coe_cycleClass, loop_def,
-      dartChain_of_mem ℤ hO e.2, h, sub_eq_add_neg]
+      dartChain_of_mem ℤ hO e.property, h, sub_eq_add_neg]
     abel
 
 /-- The abelianization of the path group of a connected graph is its integral cycle lattice:
@@ -304,7 +373,7 @@ the cycle class of closed paths induces an isomorphism from the abelianized path
 kernel of the integral incidence boundary of an orientation. The spanning tree enters only
 through the inverse, which sends a cycle to the product of the tree loops through its darts. -/
 noncomputable def abelianizationEquivCycle (hO : Γ.IsOrientation O) :
-    Additive (Abelianization (PathGroup Γ v)) ≃+ (Γ.incidenceBoundary O ℤ).ker :=
+    Additive (Group.Abelianization (PathGroup Γ v)) ≃+ (Γ.incidenceBoundary O ℤ).ker :=
   AddMonoidHom.toAddEquiv (abCycleClass v hO)
     ((T.loopClass v).comp (Γ.incidenceBoundary O ℤ).ker.subtype.toAddMonoidHom)
     (by
@@ -313,21 +382,35 @@ noncomputable def abelianizationEquivCycle (hO : Γ.IsOrientation O) :
       | h p => simp [abCycleClass_of, T.loopClass_chain v hO])
     (by
       ext c : 2
-      simp [T.coe_abCycleClass_loopClass v hO, LinearMap.mem_ker.mp c.2])
+      simp [T.coe_abCycleClass_loopClass v hO, LinearMap.mem_ker.mp c.property])
 
 /-- The isomorphism sends the class of a closed path to its cycle class; in particular it does
 not depend on the spanning tree. -/
 @[simp] theorem abelianizationEquivCycle_of (hO : Γ.IsOrientation O) (g : PathGroup Γ v) :
-    T.abelianizationEquivCycle v hO (Additive.ofMul (Abelianization.of g)) =
+    T.abelianizationEquivCycle v hO (Additive.ofMul (Group.Abelianization.of g)) =
       (PathGroup.cycleClass hO ℤ g).toAdd :=
   abCycleClass_of v hO g
+
+/-- The isomorphism of the abelianized path group with the integral cycle lattice does not
+depend on the spanning tree used to construct its inverse. -/
+theorem abelianizationEquivCycle_eq (T' : Γ.SpanningTree) (hO : Γ.IsOrientation O) :
+    T.abelianizationEquivCycle v hO = T'.abelianizationEquivCycle v hO :=
+  AddEquiv.toAddMonoidHom_injective <| by ext; simp
 
 /-- The inverse isomorphism sends the cycle class of a closed path back to its class. -/
 @[simp] theorem abelianizationEquivCycle_symm_cycleClass (hO : Γ.IsOrientation O)
     (g : PathGroup Γ v) :
     (T.abelianizationEquivCycle v hO).symm (PathGroup.cycleClass hO ℤ g).toAdd =
-      Additive.ofMul (Abelianization.of g) := by
+      Additive.ofMul (Group.Abelianization.of g) := by
   rw [← T.abelianizationEquivCycle_of v hO, AddEquiv.symm_apply_apply]
+
+/-- The inverse isomorphism sends the integral fundamental cycle of a positive dart outside the
+tree to the class of its tree loop. -/
+@[simp] theorem abelianizationEquivCycle_symm_cycleBasis (hO : Γ.IsOrientation O)
+    (e : ↥(O \ T.darts)) :
+    (T.abelianizationEquivCycle v hO).symm (T.cycleBasis hO ℤ e) =
+      Additive.ofMul (Group.Abelianization.of (T.loop v e.val)) := by
+  simpa using T.abelianizationEquivCycle_symm_cycleClass v hO (T.loop v e.val)
 
 end SpanningTree
 

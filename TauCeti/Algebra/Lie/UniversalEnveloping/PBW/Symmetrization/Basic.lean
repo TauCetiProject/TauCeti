@@ -28,9 +28,6 @@ by `⁅x, y⁆`. Hence the symmetrization of a homogeneous Lie invariant `p ∈ 
 symbols are the given invariants, in the proof of the Harish-Chandra isomorphism by Chevalley's
 restriction theorem.
 
-The scalar ring lies in `Type`, as required by Mathlib's `Fin n`-indexed symmetric power
-`Sym[R]^n L`. The Lie algebra module has an independent universe.
-
 ## Main results
 
 * `TauCeti.UniversalEnvelopingAlgebra.lie_ι_pbwSymmetrization_tprod`: the commutator of `ι x`
@@ -61,9 +58,9 @@ namespace TauCeti.UniversalEnvelopingAlgebra
 
 open TauCeti.SymmetricAlgebra
 
-universe v
+universe u v
 
-variable (R : Type) (L : Type v) [CommRing R] [LieRing L] [LieAlgebra R L]
+variable (R : Type u) (L : Type v) [CommRing R] [LieRing L] [LieAlgebra R L]
 
 attribute [local instance 100] LieRing.ofAssociativeRing
 
@@ -71,7 +68,7 @@ local notation "U" => _root_.UniversalEnvelopingAlgebra R L
 local notation "ι" => _root_.UniversalEnvelopingAlgebra.ι R (L := L)
 
 private noncomputable def wordMultilinear (n : ℕ) :
-    MultilinearMap R (fun _ : Fin n ↦ L) U :=
+    MultilinearMap (RingHom.id R) (fun _ : Fin n ↦ L) U :=
   (MultilinearMap.mkPiAlgebraFin R n U).compLinearMap (fun _ ↦ (ι).toLinearMap)
 
 /-- The average of all ordered products of a symmetric tensor's Lie generators. -/
@@ -295,11 +292,7 @@ theorem lie_ι_pbwSymmetrization_tprod (n : ℕ) (hn : IsUnit (n.factorial : R))
   rw [Finset.sum_comm]
   congr 1
   refine Finset.sum_congr rfl fun σ _ ↦ ?_
-  have h := (LieAlgebra.ad R U (ι x)).toAddMonoidHom.map_prod_ofFn_of_leibniz
-    (by simpa only [LinearMap.toAddMonoidHom_coe, LieAlgebra.ad_apply] using hleib)
-    (fun i ↦ ι (m (σ i)))
-  simp only [LinearMap.toAddMonoidHom_coe, LieAlgebra.ad_apply] at h
-  rw [h]
+  rw [map_prod_ofFn_of_leibniz (⁅ι x, ·⁆) hleib]
   -- Reindex the replaced letter by its position `σ k` in the permuted word.
   conv_rhs => rw [← Equiv.sum_comp σ]
   refine Finset.sum_congr rfl fun k _ ↦ ?_
@@ -328,10 +321,9 @@ theorem lie_ι_pbwHomogeneousSymmetrization (n : ℕ) (hn : IsUnit (n.factorial 
         lieModuleDerivation R L L x (a * b) =
           lieModuleDerivation R L L x a * b + a * lieModuleDerivation R L L x b := by
       rw [Derivation.leibniz, smul_eq_mul, smul_eq_mul, add_comm, mul_comm b]
-    have hprod := (lieModuleDerivation R L L x).toLinearMap.toAddMonoidHom.map_prod_ofFn_of_leibniz
-      (by simpa only [LinearMap.toAddMonoidHom_coe, Derivation.coeFn_coe] using hleib)
-      (fun i ↦ _root_.SymmetricAlgebra.ι R L (m i))
-    simp only [LinearMap.toAddMonoidHom_coe, Derivation.coeFn_coe, List.prod_ofFn] at hprod
+    have hprod := map_prod_ofFn_of_leibniz (lieModuleDerivation R L L x) hleib
+      fun i ↦ _root_.SymmetricAlgebra.ι R L (m i)
+    simp only [List.prod_ofFn] at hprod
     have hDm : D (e (⨂ₛ[R] i, m i)) = ∑ k, e (⨂ₛ[R] i, Function.update m k ⁅x, m k⁆ i) := by
       apply Subtype.ext
       simp only [D, e, LinearMap.restrict_apply, Submodule.coe_sum,
@@ -400,7 +392,7 @@ theorem pbwHomogeneousSymmetrization_mem_center_iff (n : ℕ) (hn : IsUnit (n.fa
   refine ⟨fun h ↦ mem_lieInvariants.mpr fun x ↦ ?_,
     pbwHomogeneousSymmetrization_mem_center R L n hn⟩
   let q : homogeneousSubmodule R L n :=
-    ⟨lieModuleDerivation R L L x p, lieModuleDerivation_mem_homogeneousSubmodule R L L x p.2⟩
+    ⟨lieModuleDerivation R L L x p, lieModuleDerivation_mem_homogeneousSubmodule R L L x p.property⟩
   have hq : pbwHomogeneousSymmetrization R L n hn q = pbwHomogeneousSymmetrization R L n hn 0 := by
     rw [← lie_ι_pbwHomogeneousSymmetrization R L n hn x rfl, ← lie_skew,
       (mem_center_iff_forall_lie_ι R L).mp h x, neg_zero, map_zero]

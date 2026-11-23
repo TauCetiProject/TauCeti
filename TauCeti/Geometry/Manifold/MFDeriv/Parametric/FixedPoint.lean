@@ -14,6 +14,7 @@ import Mathlib.Geometry.Manifold.ContMDiff.NormedSpace
 import Mathlib.Geometry.Manifold.ContMDiff.Constructions
 import Mathlib.Geometry.Manifold.MFDeriv.SpecificFunctions
 import TauCeti.Geometry.Manifold.Boundary.Basic
+import TauCeti.Geometry.Manifold.ContMDiff.Prod
 
 /-!
 # Continuation of nondegenerate fixed points in families
@@ -36,6 +37,22 @@ function theorem `ContDiffAt.implicitFunction` solves for `z` as a function of `
 derivative stays invertible near the base point, since `G` is `C¹` there and invertible operators
 form an open set, and this gives the nondegeneracy of the nearby fixed points.
 
+On a compact set the local statements combine, by the tube lemma. If every fixed point of `f p₀`
+in a compact set `K` is nondegenerate, then so is every fixed point of `f p` in `K` for `p` near
+`p₀` (`IsCompact.eventually_forall_isNondegenerateFixedPt_of_isFixedPt`): near a fixed point of
+`f p₀` by the local statement, and near any other point of `K` because a point that `f p₀` moves is
+still moved by `f p`. On a compact manifold whose fixed points of `f p₀` are all nondegenerate, they
+are finitely many, and for `p` near `p₀` their continuation branches are exactly the fixed points of
+`f p` (`TauCeti.exists_contMDiffAt_bijOn_fixedPoints`); in particular `f p` has as many fixed points
+as `f p₀` (`TauCeti.eventually_ncard_fixedPoints_eq`). Applied to the iterates `(f p)^[k]`, which
+again form a jointly `C^n` family (`TauCeti.contMDiffAt_uncurry_iterate`), and to the finitely many
+periods `0 < k ≤ K`, this says that nondegeneracy up to period `K`
+(`TauCeti.IsNondegenerateUpToPeriod`) is an open condition on the parameter
+(`TauCeti.IsNondegenerateUpToPeriod.eventually_isNondegenerateUpToPeriod`), and that the number of
+points of each period `k ≤ K` is locally constant
+(`TauCeti.IsNondegenerateUpToPeriod.eventually_ncard_ptsOfPeriod_eq`). This is the openness half of
+the argument that makes all periodic points up to a cutoff nondegenerate by a small perturbation.
+
 Families of this kind arise as the return maps of a periodic orbit of a family of vector fields,
 and as the time-one maps of a family of time-dependent Hamiltonians. Once such a family is known
 to depend smoothly on the parameter, these results continue its nondegenerate periodic orbits
@@ -48,6 +65,14 @@ Banach space.
   of nearby maps, close to a nondegenerate fixed point, are nondegenerate.
 * `TauCeti.IsNondegenerateFixedPt.exists_contMDiffAt_fixedPt_continuation`: a nondegenerate
   fixed point continues to a unique, `C^n`, nondegenerate branch of fixed points of nearby maps.
+* `IsCompact.eventually_forall_isNondegenerateFixedPt_of_isFixedPt`: nondegeneracy of the fixed
+  points in a compact set persists under perturbation.
+* `TauCeti.exists_contMDiffAt_bijOn_fixedPoints`, `TauCeti.eventually_ncard_fixedPoints_eq`: on a
+  compact manifold, the fixed points of nearby maps are the continuations of those of `f p₀`, and
+  there are as many of them.
+* `TauCeti.IsNondegenerateUpToPeriod.eventually_isNondegenerateUpToPeriod`,
+  `TauCeti.IsNondegenerateUpToPeriod.eventually_ncard_ptsOfPeriod_eq`: nondegeneracy up to a period
+  persists, and the number of points of each period up to it is locally constant.
 
 This is the fixed-point counterpart of the continuation of nondegenerate critical points,
 `TauCeti.IsManifoldNondegenerateCriticalPoint.exists_contMDiffAt_criticalPoint_continuation`.
@@ -155,7 +180,7 @@ theorem IsNondegenerateFixedPt.eventually_isNondegenerateFixedPt_of_isFixedPt [I
     (hf : ContMDiffAt (J.prod I) I n (uncurry f) (p₀, x₀))
     (h : IsNondegenerateFixedPt I (f p₀) x₀) :
     ∀ᶠ q in 𝓝 (p₀, x₀), IsFixedPt (f q.1) q.2 → IsNondegenerateFixedPt I (f q.1) q.2 := by
-  have : CompleteSpace E := FiniteDimensional.complete 𝕜 E
+  have : CompleteSpace E := FiniteDimensional.completeSpace 𝕜 E
   have h1 : (1 : ℕ∞ω) ≤ n := ENat.one_le_iff_ne_zero_withTop.2 hn
   have : IsManifold I 1 M := IsManifold.of_le h1
   have : IsManifold J 1 N := IsManifold.of_le h1
@@ -218,7 +243,7 @@ theorem IsNondegenerateFixedPt.exists_contMDiffAt_fixedPt_continuation [Complete
     ∃ g : N → M, g p₀ = x₀ ∧ ContMDiffAt J I n g p₀ ∧
       (∀ᶠ p in 𝓝 p₀, IsNondegenerateFixedPt I (f p) (g p)) ∧
       ∀ᶠ q in 𝓝 (p₀, x₀), IsFixedPt (f q.1) q.2 ↔ g q.1 = q.2 := by
-  have : CompleteSpace E := FiniteDimensional.complete 𝕜 E
+  have : CompleteSpace E := FiniteDimensional.completeSpace 𝕜 E
   have hx : f p₀ x₀ = x₀ := h.isFixedPt
   have hGc := contDiffAt_fixedPtCoord hf hx
   have hinv := isInvertible_fderiv_fixedPtCoord_comp_inr hn hf h
@@ -283,5 +308,155 @@ theorem IsNondegenerateFixedPt.exists_contMDiffAt_fixedPt_continuation [Complete
     exact hnd hp
   · filter_upwards [huniq, continuousAt_fst.tendsto.eventually hfix] with q hq hq'
     exact ⟨fun hfx ↦ (hq hfx).symm, fun hgq ↦ hgq ▸ hq'⟩
+
+/-! ### Compact sets of fixed points
+
+By the tube lemma `IsCompact.eventually_forall_of_forall_eventually`, the local statements above
+hold uniformly on a compact set: near a fixed point of `f p₀` by continuation, and near any other
+point because a point moved by `f p₀` is still moved by `f p`. -/
+
+variable [T2Space M]
+
+/-- A point moved by `f p₀` is still moved by `f q.1` at every point `q` near `(p₀, x)`. -/
+private theorem eventually_not_isFixedPt {x : M} (hf : ContinuousAt (uncurry f) (p₀, x))
+    (h : ¬IsFixedPt (f p₀) x) : ∀ᶠ q in 𝓝 (p₀, x), ¬IsFixedPt (f q.1) q.2 :=
+  (hf.ne_iff_eventually_ne continuousAt_snd).1 h
+
+/-- **Nondegeneracy on a compact set persists.** Let `f : N → M → M` be a family of self-maps of a
+boundaryless Hausdorff manifold modelled on a finite-dimensional space, parametrized by a
+boundaryless manifold and jointly `C^n`, `n ≥ 1`, at every point of `{p₀} × K` for a compact set
+`K ⊆ M`. If every fixed point of `f p₀` in `K` is nondegenerate, then for `p` near `p₀` every fixed
+point of `f p` in `K` is nondegenerate. -/
+theorem _root_.IsCompact.eventually_forall_isNondegenerateFixedPt_of_isFixedPt [IsManifold I n M]
+    [IsManifold J n N] {K : Set M} (hK : IsCompact K) (hn : n ≠ 0)
+    (hf : ∀ x ∈ K, ContMDiffAt (J.prod I) I n (uncurry f) (p₀, x))
+    (h : ∀ x ∈ K, IsFixedPt (f p₀) x → IsNondegenerateFixedPt I (f p₀) x) :
+    ∀ᶠ p in 𝓝 p₀, ∀ x ∈ K, IsFixedPt (f p) x → IsNondegenerateFixedPt I (f p) x := by
+  refine hK.eventually_forall_of_forall_eventually fun x hx ↦ ?_
+  by_cases hfix : IsFixedPt (f p₀) x
+  · exact (h x hx hfix).eventually_isNondegenerateFixedPt_of_isFixedPt hn (hf x hx)
+  · exact (eventually_not_isFixedPt (hf x hx).continuousAt hfix).mono fun _ hq hq' ↦
+      absurd hq' hq
+
+/-- **The fixed points of a family on a compact manifold continue.** Let `f : N → M → M` be a
+family of self-maps of a compact boundaryless Hausdorff manifold modelled on a finite-dimensional
+space, parametrized by a boundaryless manifold modelled on a Banach space and jointly `C^n`,
+`n ≥ 1`, at every point of `{p₀} × M`, and let every fixed point of `f p₀` be nondegenerate. Then
+each fixed point `x` of `f p₀` lies on a branch `g x : N → M`, `C^n` at `p₀` with `g x p₀ = x`, and
+for `p` near `p₀` the map `x ↦ g x p` is a bijection from the fixed points of `f p₀` onto those of
+`f p`, all of which are nondegenerate. -/
+theorem exists_contMDiffAt_bijOn_fixedPoints [CompleteSpace F] [CompactSpace M] [IsManifold I n M]
+    [IsManifold J n N] (hn : n ≠ 0) (hf : ∀ x, ContMDiffAt (J.prod I) I n (uncurry f) (p₀, x))
+    (h : ∀ x ∈ fixedPoints (f p₀), IsNondegenerateFixedPt I (f p₀) x) :
+    ∃ g : M → N → M, (∀ x ∈ fixedPoints (f p₀), g x p₀ = x ∧ ContMDiffAt J I n (g x) p₀) ∧
+      ∀ᶠ p in 𝓝 p₀, BijOn (fun x ↦ g x p) (fixedPoints (f p₀)) (fixedPoints (f p)) ∧
+        ∀ x ∈ fixedPoints (f p), IsNondegenerateFixedPt I (f p) x := by
+  have hcont : Continuous (f p₀) := continuous_iff_continuousAt.2 fun x ↦
+    (hf x).continuousAt.comp (continuousAt_const.prodMk continuousAt_id)
+  have hS : (fixedPoints (f p₀)).Finite := finite_fixedPoints_of_isNondegenerateFixedPt hcont h
+  -- Choose the continuation branch through each fixed point of `f p₀`.
+  have hex (x : M) : ∃ g : N → M, x ∈ fixedPoints (f p₀) → g p₀ = x ∧ ContMDiffAt J I n g p₀ ∧
+      (∀ᶠ p in 𝓝 p₀, IsNondegenerateFixedPt I (f p) (g p)) ∧
+      ∀ᶠ q in 𝓝 (p₀, x), IsFixedPt (f q.1) q.2 ↔ g q.1 = q.2 := by
+    by_cases hx : x ∈ fixedPoints (f p₀)
+    · obtain ⟨g, hg⟩ := (h x hx).exists_contMDiffAt_fixedPt_continuation hn (hf x)
+      exact ⟨g, fun _ ↦ hg⟩
+    · exact ⟨fun _ ↦ x, fun hx' ↦ absurd hx' hx⟩
+  choose g hg using hex
+  have hg₀ (x) (hx : x ∈ fixedPoints (f p₀)) := (hg x hx).1
+  have hgc (x) (hx : x ∈ fixedPoints (f p₀)) := (hg x hx).2.1
+  have hgnd (x) (hx : x ∈ fixedPoints (f p₀)) := (hg x hx).2.2.1
+  have hgiff (x) (hx : x ∈ fixedPoints (f p₀)) := (hg x hx).2.2.2
+  refine ⟨g, fun x hx ↦ ⟨hg₀ x hx, hgc x hx⟩, ?_⟩
+  -- Every fixed point of a nearby map lies on one of the branches.
+  have hsurj : ∀ᶠ p in 𝓝 p₀, ∀ y ∈ univ, IsFixedPt (f p) y →
+      ∃ x ∈ fixedPoints (f p₀), g x p = y := by
+    refine isCompact_univ.eventually_forall_of_forall_eventually fun y _ ↦ ?_
+    by_cases hy : IsFixedPt (f p₀) y
+    · filter_upwards [hgiff y hy] with q hq hfix
+      exact ⟨y, hy, hq.1 hfix⟩
+    · exact (eventually_not_isFixedPt (hf y).continuousAt hy).mono fun _ hq hfix ↦
+        absurd hfix hq
+  -- The branches are pairwise distinct near `p₀`, since they start at distinct points.
+  have hinj : ∀ᶠ p in 𝓝 p₀, ∀ x ∈ fixedPoints (f p₀), ∀ x' ∈ fixedPoints (f p₀),
+      x ≠ x' → g x p ≠ g x' p := by
+    refine (eventually_all_finite hS).2 fun x hx ↦ (eventually_all_finite hS).2 fun x' hx' ↦ ?_
+    by_cases hxx' : x = x'
+    · exact Eventually.of_forall fun _ hne ↦ absurd hxx' hne
+    · have hne : g x p₀ ≠ g x' p₀ := by rwa [hg₀ x hx, hg₀ x' hx']
+      filter_upwards [((hgc x hx).continuousAt.ne_iff_eventually_ne
+        (hgc x' hx').continuousAt).1 hne] with p hp _
+      exact hp
+  filter_upwards [hsurj, (eventually_all_finite hS).2 hgnd, hinj,
+    isCompact_univ.eventually_forall_isNondegenerateFixedPt_of_isFixedPt hn (fun x _ ↦ hf x)
+      fun x _ ↦ h x] with p hps hpg hpi hpn
+  refine ⟨⟨fun x hx ↦ (hpg x hx).isFixedPt, fun x hx x' hx' hxx' ↦ ?_, fun y hy ↦ ?_⟩,
+    fun x hx ↦ hpn x (mem_univ x) hx⟩
+  · by_contra hne
+    exact hpi x hx x' hx' hne hxx'
+  · obtain ⟨x, hx, rfl⟩ := hps y (mem_univ y) hy
+    exact ⟨x, hx, rfl⟩
+
+/-- **The number of fixed points is locally constant.** Under the hypotheses of
+`TauCeti.exists_contMDiffAt_bijOn_fixedPoints`, for `p` near `p₀` the map `f p` has as many fixed
+points as `f p₀`. -/
+theorem eventually_ncard_fixedPoints_eq [CompleteSpace F] [CompactSpace M] [IsManifold I n M]
+    [IsManifold J n N] (hn : n ≠ 0) (hf : ∀ x, ContMDiffAt (J.prod I) I n (uncurry f) (p₀, x))
+    (h : ∀ x ∈ fixedPoints (f p₀), IsNondegenerateFixedPt I (f p₀) x) :
+    ∀ᶠ p in 𝓝 p₀, (fixedPoints (f p)).ncard = (fixedPoints (f p₀)).ncard := by
+  obtain ⟨g, -, hg⟩ := exists_contMDiffAt_bijOn_fixedPoints hn hf h
+  exact hg.mono fun p hp ↦ hp.1.ncard_eq.symm
+
+/-! ### Iterates up to a period cutoff
+
+A point of period `k` of `f p` is a fixed point of the iterate `(f p)^[k]`, and the iterates form
+again a family which is jointly `C^n` along `{p₀} × M` (`TauCeti.contMDiffAt_uncurry_iterate`). Up
+to a period cutoff `K` there are finitely many periods to consider, so nondegeneracy up to period
+`K` (`TauCeti.IsNondegenerateUpToPeriod`) is an open condition on the parameter, and the number of
+periodic points of each period `k ≤ K` is locally constant. -/
+
+omit [FiniteDimensional 𝕜 E] [BoundarylessManifold I M] [T2Space M] in
+/-- For a map nondegenerate up to period `K`, at each period `k ∈ [1, K]` every fixed point of
+the iterate `g^[k]` is nondegenerate. -/
+private theorem IsNondegenerateUpToPeriod.isNondegenerateFixedPt_of_mem_Icc {g : M → M} {K k : ℕ}
+    (h : IsNondegenerateUpToPeriod I g K) (hk : k ∈ Finset.Icc 1 K) {x : M}
+    (hx : IsFixedPt g^[k] x) : IsNondegenerateFixedPt I g^[k] x :=
+  h.isNondegenerateFixedPt (Finset.mem_Icc.1 hk).1 (Finset.mem_Icc.1 hk).2 hx
+
+/-- **Nondegeneracy up to a period persists.** Let `f : N → M → M` be a family of self-maps of a
+compact boundaryless Hausdorff manifold modelled on a finite-dimensional space, parametrized by a
+boundaryless manifold and jointly `C^n`, `n ≥ 1`, at every point of `{p₀} × M`. If `f p₀` is
+nondegenerate up to period `K`, then so is `f p` for `p` near `p₀`. -/
+theorem IsNondegenerateUpToPeriod.eventually_isNondegenerateUpToPeriod [CompactSpace M]
+    [IsManifold I n M] [IsManifold J n N] {K : ℕ} (h : IsNondegenerateUpToPeriod I (f p₀) K)
+    (hn : n ≠ 0) (hf : ∀ x, ContMDiffAt (J.prod I) I n (uncurry f) (p₀, x)) :
+    ∀ᶠ p in 𝓝 p₀, IsNondegenerateUpToPeriod I (f p) K := by
+  have hk : ∀ᶠ p in 𝓝 p₀, ∀ k ∈ Finset.Icc 1 K, ∀ x ∈ univ,
+      IsFixedPt (f p)^[k] x → IsNondegenerateFixedPt I (f p)^[k] x :=
+    (eventually_all_finset _).2 fun k hk ↦
+      isCompact_univ.eventually_forall_isNondegenerateFixedPt_of_isFixedPt
+        (f := fun p ↦ (f p)^[k]) hn (fun x _ ↦ contMDiffAt_uncurry_iterate hf k x)
+        fun _ _ hx ↦ h.isNondegenerateFixedPt_of_mem_Icc hk hx
+  filter_upwards [hk] with p hp
+  exact isNondegenerateUpToPeriod_iff.2 fun k hk hkK x hx ↦
+    hp k (Finset.mem_Icc.2 ⟨hk, hkK⟩) x (mem_univ x) hx
+
+/-- **The number of periodic points up to a period is locally constant.** Under the hypotheses of
+`TauCeti.IsNondegenerateUpToPeriod.eventually_isNondegenerateUpToPeriod`, with a parameter manifold
+modelled on a Banach space, for `p` near `p₀` and every period `0 < k ≤ K` the map `f p` has as many
+points of period `k` as `f p₀`. -/
+theorem IsNondegenerateUpToPeriod.eventually_ncard_ptsOfPeriod_eq [CompleteSpace F]
+    [CompactSpace M] [IsManifold I n M] [IsManifold J n N] {K : ℕ}
+    (h : IsNondegenerateUpToPeriod I (f p₀) K)
+    (hn : n ≠ 0) (hf : ∀ x, ContMDiffAt (J.prod I) I n (uncurry f) (p₀, x)) :
+    ∀ᶠ p in 𝓝 p₀, ∀ k, 0 < k → k ≤ K →
+      (ptsOfPeriod (f p) k).ncard = (ptsOfPeriod (f p₀) k).ncard := by
+  have hk : ∀ᶠ p in 𝓝 p₀, ∀ k ∈ Finset.Icc 1 K,
+      (fixedPoints (f p)^[k]).ncard = (fixedPoints (f p₀)^[k]).ncard :=
+    (eventually_all_finset _).2 fun k hk ↦ eventually_ncard_fixedPoints_eq
+      (f := fun p ↦ (f p)^[k]) hn (contMDiffAt_uncurry_iterate hf k)
+      fun _ hx ↦ h.isNondegenerateFixedPt_of_mem_Icc hk hx
+  filter_upwards [hk] with p hp k hk hkK
+  exact hp k (Finset.mem_Icc.2 ⟨hk, hkK⟩)
 
 end TauCeti

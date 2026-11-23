@@ -136,7 +136,8 @@ theorem proj_map_eq_zero_iff (V : OpenNormalSubgroup Δ) (x : completedGroupAlge
     proj R Δ V (map R f hf x) = 0 ↔ proj R Γ (V.comap f hf) x = 0 := by
   rw [proj_map]
   exact (MonoidAlgebra.mapDomain_injective
-    ((QuotientGroup.map_injective_iff f V.toSubgroup _).mpr (V.toSubgroup_comap f hf))).eq_iff'
+    ((_root_.QuotientGroup.map_injective_iff _ V.toSubgroup f _).mpr
+      (V.toSubgroup_comap f hf).ge)).eq_iff'
       (MonoidAlgebra.mapDomain_zero (R := R) _)
 
 /-- The induced map sends the group element `γ` to the group element `f γ`. -/

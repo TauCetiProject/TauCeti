@@ -168,7 +168,7 @@ theorem finsum_orderOfVanishingOnOrbit_eq_sum_canonicalReps [ModularFormClass F 
   · intro p₁ h₁ p₂ h₂ h
     exact orbit_mk_injOn_canonicalReps f h₁ h₂ (congrArg Subtype.val h)
   · intro q hq
-    obtain ⟨p, hp, hporb⟩ := exists_mem_canonicalReps_orbit_mk_eq q.2.1 q.2.2
+    obtain ⟨p, hp, hporb⟩ := exists_mem_canonicalReps_orbit_mk_eq q.property.1 q.property.2
       ((hasFiniteSupport_orderOfVanishingOnOrbit_nonElliptic f).mem_toFinset.mp hq)
     exact ⟨p, hp, Subtype.ext hporb⟩
   · intro p _

@@ -28,6 +28,8 @@ linear maps and characterizes independence of complementary coordinate blocks.
 * `TauCeti.Probability.covMatrix_multivariateGaussian` recovers the covariance parameter of a
   multivariate
   Gaussian law.
+* `TauCeti.Probability.eq_multivariateGaussian_covMatrix` writes every Gaussian measure on a
+  Euclidean space as the multivariate Gaussian with its mean and covariance matrix.
 * `TauCeti.Probability.integral_of_hasLaw_multivariateGaussian` gives the Bochner mean of a
   random variable with a multivariate Gaussian law.
 * `TauCeti.Probability.multivariateGaussian_zero_eq_map_stdGaussian_sqrt` writes the centred law as
@@ -35,6 +37,12 @@ linear maps and characterizes independence of complementary coordinate blocks.
   of the standard Gaussian.
 * `TauCeti.Probability.multivariateGaussian_zero_right` identifies the zero-covariance law with
   the point mass at its mean.
+* `TauCeti.Probability.multivariateGaussian_eq_dirac_iff` shows that this is the only
+  positive-semidefinite Gaussian law equal to that point mass, and
+  `TauCeti.Probability.multivariateGaussian_neg_right` that negated positive-semidefinite
+  parameters give it too.
+* `TauCeti.Probability.charFun_multivariateGaussian_smul_one` gives the characteristic function
+  of the isotropic law `multivariateGaussian a (u • 1)`.
 * `TauCeti.Probability.measurable_multivariateGaussian_inv_smul` shows that the family
   `τ ↦ N(m, τ⁻¹ • S)` is measurable in the precision `τ`.
 * `TauCeti.Probability.measurable_multivariateGaussian_prodMk_left_apply` shows that the Gaussian
@@ -46,11 +54,9 @@ linear maps and characterizes independence of complementary coordinate blocks.
 * `TauCeti.Probability.indepFun_sumEquivProd_multivariateGaussian_iff` characterizes independence of
   two
   complementary coordinate blocks.
-
-## References
-
-* Roadmap: `TauCetiRoadmap/StandardDistributions/README.md`, Layer 5, item 1,
-  **Covariance matrices**.
+* `TauCeti.Probability.covariance_inner_stdGaussian`,
+  `ProbabilityTheory.HasLaw.covariance_inner_map_smul_stdGaussian`: inner-product covariance under
+  `stdGaussian E` and its scaled pushforwards.
 -/
 
 public section
@@ -74,6 +80,18 @@ theorem covMatrix_multivariateGaussian [Fintype ι] [DecidableEq ι] (m : Euclid
   ext i j
   simpa only [covMatrix_apply] using covariance_eval_multivariateGaussian hS i j
 
+/-- A Gaussian measure on a finite-dimensional Euclidean space is the multivariate Gaussian with
+its own mean and covariance matrix. No nondegeneracy is required. -/
+theorem eq_multivariateGaussian_covMatrix [Fintype ι] [DecidableEq ι]
+    (ν : Measure (EuclideanSpace ℝ ι)) [IsGaussian ν] :
+    ν = multivariateGaussian (∫ x, x ∂ν) (covMatrix ν) := by
+  apply IsGaussian.ext
+  · simp
+  · ext x y
+    rw [covarianceBilin_multivariateGaussian (posSemidef_covMatrix ν IsGaussian.memLp_two_id),
+      covarianceBilin_eq_covMatrix ν IsGaussian.memLp_two_id]
+    simp [PiLp.inner_apply, dotProduct, Matrix.mulVec, Finset.mul_sum, mul_comm]
+
 /-- Each coordinate of a multivariate Gaussian has as mean the corresponding coordinate of the
 mean parameter. No hypothesis on the covariance parameter is needed. -/
 @[simp]
@@ -90,6 +108,18 @@ theorem integral_of_hasLaw_multivariateGaussian [Fintype ι] [DecidableEq ι]
     ∫ ω, X ω ∂P = m := by
   rw [hX.integral_eq, integral_id_multivariateGaussian]
 
+/-- A multivariate Gaussian is the affine image of independent standard real Gaussians
+under the square root of its covariance parameter. This includes singular and invalid parameters. -/
+theorem multivariateGaussian_eq_map_pi [Fintype ι] [DecidableEq ι]
+    (m : EuclideanSpace ℝ ι) (S : Matrix ι ι ℝ) :
+    multivariateGaussian m S =
+      (Measure.pi fun _ : ι ↦ gaussianReal 0 1).map
+        (fun y ↦ m + Matrix.toEuclideanCLM (𝕜 := ℝ) (CFC.sqrt S)
+          ((EuclideanSpace.equiv ι ℝ).symm y)) := by
+  rw [multivariateGaussian, ← map_pi_eq_stdGaussian,
+    Measure.map_map (by fun_prop) (by fun_prop)]
+  simp only [Function.comp_def, PiLp.continuousLinearEquiv_symm_apply]
+
 /-- A centred multivariate Gaussian law is the image of the standard Gaussian under the square
 root of its matrix parameter. No hypothesis on that parameter is needed. -/
 theorem multivariateGaussian_zero_eq_map_stdGaussian_sqrt [Fintype ι] [DecidableEq ι]
@@ -104,6 +134,37 @@ theorem multivariateGaussian_zero_eq_map_stdGaussian_sqrt [Fintype ι] [Decidabl
 theorem multivariateGaussian_zero_right [Fintype ι] [DecidableEq ι] (m : EuclideanSpace ℝ ι) :
     multivariateGaussian m (0 : Matrix ι ι ℝ) = Measure.dirac m := by
   simp [multivariateGaussian]
+
+/-- A positive-semidefinite multivariate Gaussian is the point mass at its mean exactly when its
+covariance parameter vanishes. -/
+theorem multivariateGaussian_eq_dirac_iff [Fintype ι] [DecidableEq ι] (m : EuclideanSpace ℝ ι)
+    {S : Matrix ι ι ℝ} (hS : S.PosSemidef) :
+    multivariateGaussian m S = Measure.dirac m ↔ S = 0 := by
+  refine ⟨fun h ↦ ?_, fun h ↦ h ▸ multivariateGaussian_zero_right m⟩
+  rw [← covMatrix_multivariateGaussian m hS, h, ← multivariateGaussian_zero_right m,
+    covMatrix_multivariateGaussian m Matrix.PosSemidef.zero]
+
+/-- A multivariate Gaussian whose covariance parameter is the negative of a positive-semidefinite
+matrix is the point mass at its mean: either the parameter is not positive semidefinite, or both
+it and its negative are, and then it vanishes. -/
+theorem multivariateGaussian_neg_right [Fintype ι] [DecidableEq ι] (m : EuclideanSpace ℝ ι)
+    {S : Matrix ι ι ℝ} (hS : S.PosSemidef) :
+    multivariateGaussian m (-S) = Measure.dirac m := by
+  by_cases hS' : (-S).PosSemidef
+  · rw [le_antisymm (neg_nonneg.1 hS'.nonneg) hS.nonneg, neg_zero,
+      multivariateGaussian_zero_right]
+  · exact multivariateGaussian_of_not_posSemidef m hS'
+
+/-- The characteristic function of the isotropic Gaussian law `multivariateGaussian a (u • 1)`. -/
+theorem charFun_multivariateGaussian_smul_one [Fintype ι] [DecidableEq ι]
+    (a : EuclideanSpace ℝ ι) {u : ℝ} (hu : 0 ≤ u) (x : EuclideanSpace ℝ ι) :
+    charFun (multivariateGaussian a (u • 1)) x =
+      Complex.exp (⟪x, a⟫ * Complex.I - u * ‖x‖ ^ 2 / 2) := by
+  rw [charFun_multivariateGaussian (Matrix.PosSemidef.one.smul hu)]
+  have hx : x.ofLp ⬝ᵥ x.ofLp = ‖x‖ ^ 2 := by
+    rw [← real_inner_self_eq_norm_sq, EuclideanSpace.inner_eq_star_dotProduct]
+    simp
+  simp [Matrix.smul_mulVec, hx]
 
 /-- The Gaussian family `τ ↦ N(m, τ⁻¹ • S)` is measurable in the precision `τ`. -/
 theorem measurable_multivariateGaussian_inv_smul [Fintype ι] [DecidableEq ι]
@@ -270,5 +331,26 @@ theorem indepFun_sumEquivProd_multivariateGaussian_iff
       S.submatrix Sum.inl Sum.inr = 0 :=
   ⟨submatrix_eq_zero_of_indepFun_sumEquivProd_multivariateGaussian m hS,
     indepFun_sumEquivProd_multivariateGaussian_of_submatrix_eq_zero m hS⟩
+
+/-- Under `stdGaussian E`, scalar inner-product projections have covariance `⟪u, v⟫`. -/
+@[simp]
+theorem covariance_inner_stdGaussian {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
+    [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] (u v : E) :
+    cov[fun x : E ↦ ⟪u, x⟫, fun x : E ↦ ⟪v, x⟫; stdGaussian E] = ⟪u, v⟫ := by
+  rw [← covarianceBilin_apply_eq_cov IsGaussian.memLp_two_id, covarianceBilin_stdGaussian,
+    innerSL_apply_apply]
+
+/-- If `Y` has law `(stdGaussian E).map (c • ·)`, its inner-product projections have covariance
+`c ^ 2 * ⟪u, v⟫`. -/
+theorem _root_.ProbabilityTheory.HasLaw.covariance_inner_map_smul_stdGaussian
+    {Ω E : Type*} [MeasurableSpace Ω] {P : Measure Ω} [NormedAddCommGroup E]
+    [InnerProductSpace ℝ E] [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E]
+    {Y : Ω → E} {c : ℝ} (hY : HasLaw Y ((stdGaussian E).map (fun x : E ↦ c • x)) P) (u v : E) :
+    cov[fun ω ↦ ⟪u, Y ω⟫, fun ω ↦ ⟪v, Y ω⟫; P] = c ^ 2 * ⟪u, v⟫ := by
+  rw [hY.covariance_fun_comp (by fun_prop) (by fun_prop),
+    covariance_map_fun (by fun_prop) (by fun_prop) (by fun_prop)]
+  simp_rw [real_inner_smul_right]
+  rw [covariance_const_mul_left, covariance_const_mul_right, covariance_inner_stdGaussian,
+    ← mul_assoc, ← sq]
 
 end TauCeti.Probability

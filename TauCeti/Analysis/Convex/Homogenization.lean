@@ -5,8 +5,9 @@ Authors: Codex
 -/
 module
 
-public import Mathlib.Geometry.Convex.Cone.Pointed
+public import Mathlib.Analysis.Convex.Cone.Dual
 public import Mathlib.Analysis.Convex.Basic
+public import TauCeti.Topology.Algebra.ContinuousAffineMap
 public import Mathlib.Topology.Algebra.Module.Basic
 public import Mathlib.Topology.Algebra.Order.Module
 public import TauCeti.Analysis.Convex.Recession.Basic
@@ -23,8 +24,20 @@ nonnegative heights meeting height one is the homogenization of that slice.
 Pulling back its lineality to height zero recovers the lineality of the
 recession cone.
 
+`ContinuousAffineMap.homogenize` sends an affine map `g : V →ᴬ[R] W` to the linear map
+`(x, t) ↦ g.contLinear x + t • g 0`. For real-valued maps, `TauCeti.homogeneousInequalityCone g`
+consists of points of nonnegative height satisfying the homogenized inequalities.
+`Set.homogenization_setOf_forall_eq` identifies this cone with the homogenization of a
+nonempty solution set of continuous affine inequalities, allowing infinite families.
+Nonemptiness is essential: different presentations of the empty set can give different
+homogeneous inequality cones, whereas its homogenization is the closure of the zero cone
+(and is the zero cone in a Hausdorff space).
+
 Adapted from `Mei/Geometry/Convex/Homogenization.lean` at Mei commit
-`7f1e4c7714fb020473694755ad8748c8f15d0e7f`.
+`7f1e4c7714fb020473694755ad8748c8f15d0e7f`. The affine-inequality API is adapted from
+`Mei/Geometry/Convex/Homogenization/Inequalities.lean` in
+[yuma-mizuno-lean/Mei](https://github.com/yuma-mizuno-lean/Mei), commit
+`3d2e9c869ee44c41ae9c7b5c6e2042898430d0ca`, licensed under Apache 2.0.
 -/
 
 public section
@@ -273,3 +286,58 @@ theorem homogenization_slice_one (C : PointedCone ℝ (V × ℝ))
     · exact hpos ht hz
 
 end PointedCone
+
+variable {V ι : Type*} [AddCommGroup V] [Module ℝ V] [TopologicalSpace V]
+  [IsTopologicalAddGroup V]
+
+namespace TauCeti
+
+/-- The cone of `(x, t)` with `t ≥ 0` satisfying the homogenized inequalities of the family `g`.
+For a nonempty solution set of `g`, this is its homogenization
+(`Set.homogenization_setOf_forall_eq`). -/
+def homogeneousInequalityCone (g : ι → (V →ᴬ[ℝ] ℝ)) : PointedCone ℝ (V × ℝ) :=
+  PointedCone.dual (topDualPairing ℝ (V × ℝ))
+    (insert (ContinuousLinearMap.snd ℝ V ℝ) (Set.range fun i => -(g i).homogenize))
+
+/-- The homogeneous inequality cone is dual to the height functional and the negated rows. -/
+theorem homogeneousInequalityCone_def (g : ι → (V →ᴬ[ℝ] ℝ)) :
+    homogeneousInequalityCone g = PointedCone.dual (topDualPairing ℝ (V × ℝ))
+      (insert (ContinuousLinearMap.snd ℝ V ℝ) (Set.range fun i => -(g i).homogenize)) := (rfl)
+
+/-- Membership in the homogeneous inequality cone records the height and every homogenized row. -/
+@[simp]
+theorem mem_homogeneousInequalityCone {g : ι → (V →ᴬ[ℝ] ℝ)} {z : V × ℝ} :
+    z ∈ homogeneousInequalityCone g ↔ 0 ≤ z.2 ∧ ∀ i, (g i).homogenize z ≤ 0 := by
+  simp [homogeneousInequalityCone, PointedCone.mem_dual]
+
+/-- The homogeneous inequality cone is closed, being cut out by continuous functionals. -/
+theorem isClosed_homogeneousInequalityCone (g : ι → (V →ᴬ[ℝ] ℝ)) :
+    IsClosed (homogeneousInequalityCone g : Set (V × ℝ)) := by
+  rw [homogeneousInequalityCone_def]
+  exact PointedCone.isClosed_dual fun f => f.continuous
+
+end TauCeti
+
+namespace Set
+
+variable [ContinuousSMul ℝ V]
+
+/-- **Homogenization by inequalities.** The homogenization of a nonempty solution set of
+continuous affine inequalities is the homogeneous inequality cone of the family.
+The index family may be infinite. -/
+theorem homogenization_setOf_forall_eq (g : ι → (V →ᴬ[ℝ] ℝ))
+    (hne : {x : V | ∀ i, g i x ≤ 0}.Nonempty) :
+    homogenization {x : V | ∀ i, g i x ≤ 0} = TauCeti.homogeneousInequalityCone g := by
+  simpa using (TauCeti.homogeneousInequalityCone g).homogenization_slice_one
+    (TauCeti.isClosed_homogeneousInequalityCone g)
+    (fun z hz => (TauCeti.mem_homogeneousInequalityCone.mp hz).1) (by simpa using hne)
+
+/-- The membership criterion for the homogenization of a nonempty solution set: nonnegative height
+and the homogenized inequalities. -/
+theorem mem_homogenization_setOf_forall_iff {g : ι → (V →ᴬ[ℝ] ℝ)}
+    (hne : {x : V | ∀ i, g i x ≤ 0}.Nonempty) {x : V} {t : ℝ} :
+    (x, t) ∈ homogenization {x : V | ∀ i, g i x ≤ 0} ↔
+      0 ≤ t ∧ ∀ i, (g i).homogenize (x, t) ≤ 0 := by
+  rw [homogenization_setOf_forall_eq g hne, TauCeti.mem_homogeneousInequalityCone]
+
+end Set

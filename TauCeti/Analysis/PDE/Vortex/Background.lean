@@ -8,8 +8,11 @@ module
 public import TauCeti.Analysis.PDE.Vortex.EndFraming
 public import TauCeti.Analysis.Complex.LogOneAddNormSq
 public import TauCeti.Analysis.Polynomial.AtInfinity
+public import TauCeti.Analysis.Normed.Module.Ball.UnivUnitBall
+public import Mathlib.Analysis.InnerProductSpace.Calculus
 import Mathlib.Analysis.Calculus.Deriv.Polynomial
 import Mathlib.Analysis.Complex.CauchyIntegral
+import TauCeti.Analysis.SpecialFunctions.Exp.UniformConvergence
 
 /-!
 # The background amplitude of the prescribed-zero vortex problem
@@ -22,11 +25,13 @@ when `u` solves the regularized scalar equation
 
 (`TauCeti.Vortex.equation_amplitudeField_eq_zero_iff`,
 `TauCeti.Vortex.tendsto_sectionValue_amplitudeField_mul_inv_phase_iff_log`, for `C²` amplitudes
-`u`). Bringing an arbitrary vortex with zero divisor `P` into this form is a gauge choice that is
-not treated here. For `m ≥ 1` the solution `u` grows like `-m log |z|`, so it is not square
-integrable on `ℂ` and in particular does not lie in the unweighted space `H¹(ℂ)`. Following
-Taubes, this file subtracts an explicit smooth background with the same growth. Here the
-background is
+`u`). Conversely, every smooth vortex with this end framing and zero divisor `P` is a framed gauge
+transform of such an amplitude field
+(`TauCeti.Vortex.exists_framedGaugeGroup_smul_amplitudeField_eq`, in
+`TauCeti.Analysis.PDE.Vortex.AmplitudeForm`). For `m ≥ 1` the solution `u` grows like
+`-m log |z|`, so it is not square integrable on `ℂ` and in particular does not lie in the
+unweighted space `H¹(ℂ)`. Following Taubes, this file subtracts an explicit smooth background with
+the same growth. Here the background is
 
 `u₀ = -log (1 + |P|²) / 2`    (`TauCeti.Vortex.backgroundAmplitude`),
 
@@ -50,6 +55,20 @@ source `g` is integrable; these are the integrability properties of the coeffici
 variational treatment of the reduced equation on `H¹(ℂ)` uses. Existence of a solution of the
 reduced equation is not proved here.
 
+**Dependence on the polynomial.** The background section is the image
+`exp(u₀) P = (√(1 + ‖P‖²))⁻¹ • P` of `P` under the radial map
+`OpenPartialHomeomorph.univUnitBall` onto the open unit disc, and the background connection is
+`Du₀ = -⟪P, DP⟫ / (1 + ‖P‖²)`. Let the coefficients of polynomials `P i` converge to those of `Q`,
+with eventually `deg P i ≤ deg Q`. Then `P i - Q` and its derivative are bounded by
+`δ i (1 + ‖Q‖)` with `δ i → 0`, while `‖Q'‖ ≤ C (1 + ‖Q‖)`. The radial map turns errors of this
+size into uniformly small ones (`OpenPartialHomeomorph.norm_univUnitBall_sub_le_of_norm_sub_le`),
+so the background sections and the derivatives `Du₀` converge uniformly on the whole plane, not
+only on compact sets; zeros of `P i` may collide in the limit. The fields reconstructed from
+amplitudes `u₀ + w i` then converge uniformly whenever differentiable corrections `w i` converge
+uniformly together with their first derivatives and the limit `w₀` is bounded above. This is the
+background half of the continuity of the vortex field `amplitudeField (u₀ + w_P) P` in `P`, the
+correction `w_P` entering through these hypotheses.
+
 ## Main results
 
 * `TauCeti.Vortex.laplacian_backgroundAmplitude`: `Δu₀ = -2 |f'|² / (1 + |f|²)²` for holomorphic
@@ -62,6 +81,20 @@ reduced equation is not proved here.
   framing of the reconstructed section is equivalent to `w → 0`.
 * `TauCeti.Vortex.integrable_laplacian_backgroundAmplitude`: the source term of the reduced
   equation is integrable.
+* `TauCeti.Vortex.exp_backgroundAmplitude_smul`, `TauCeti.Vortex.hasFDerivAt_backgroundAmplitude`:
+  the background section is `univUnitBall ∘ f`, and `Du₀ = -⟪f, Df⟫ / (1 + ‖f‖²)`.
+* `TauCeti.Vortex.exists_abs_fderiv_backgroundAmplitude_apply_le`: for a polynomial `P`, the
+  derivative `Du₀` is bounded on the plane.
+* `TauCeti.Vortex.tendstoUniformly_exp_backgroundAmplitude_smul`,
+  `TauCeti.Vortex.tendstoUniformly_fderiv_backgroundAmplitude`: along polynomials whose
+  coefficients converge, the background sections and the derivatives of the background amplitudes
+  converge uniformly on the plane.
+* `TauCeti.Vortex.continuous_ofFun_exp_backgroundAmplitude_smul`,
+  `TauCeti.Vortex.continuous_ofFun_fderiv_backgroundAmplitude`: the same as continuity in the
+  uniform topology for families of a fixed degree.
+* `TauCeti.Vortex.tendstoUniformly_amplitudeField_backgroundAmplitude_add`: the reconstructed
+  fields converge uniformly when the corrections and their derivatives do and the limit correction
+  is bounded above.
 
 ## References
 
@@ -77,7 +110,7 @@ noncomputable section
 
 namespace TauCeti.Vortex
 
-open Complex Filter Topology InnerProductSpace Laplacian MeasureTheory
+open Complex Filter Topology InnerProductSpace RealInnerProductSpace Laplacian MeasureTheory
 
 variable {f : ℂ → ℂ} {z : ℂ}
 
@@ -122,6 +155,13 @@ theorem backgroundWeight_nonneg (f : ℂ → ℂ) (z : ℂ) : 0 ≤ backgroundWe
 theorem backgroundWeight_lt_one (f : ℂ → ℂ) (z : ℂ) : backgroundWeight f z < 1 := by
   rw [backgroundWeight_def, div_lt_one (by positivity)]
   exact lt_one_add _
+
+/-- The coefficient `h = ‖f‖² / (1 + ‖f‖²)` is `1` minus its defect `(1 + ‖f‖²)⁻¹`. -/
+theorem backgroundWeight_eq_one_sub_inv (f : ℂ → ℂ) (z : ℂ) :
+    backgroundWeight f z = 1 - (1 + ‖f z‖ ^ 2)⁻¹ := by
+  rw [backgroundWeight_def]
+  field_simp
+  ring
 
 theorem continuous_backgroundWeight (hf : Continuous f) : Continuous (backgroundWeight f) := by
   have hh : backgroundWeight f = fun z ↦ ‖f z‖ ^ 2 / (1 + ‖f z‖ ^ 2) :=
@@ -256,5 +296,267 @@ theorem integrable_laplacian_backgroundAmplitude (P : Polynomial ℂ) :
       mul_div_assoc]
   rw [hΔ]
   exact (P.integrable_norm_derivative_eval_sq_div_one_add_norm_eval_sq_sq.const_mul 2).neg
+
+/-! ### The background section and the derivative of the background amplitude -/
+
+/-- `exp u₀ = (√(1 + ‖f‖²))⁻¹`. -/
+@[simp]
+theorem exp_backgroundAmplitude (f : ℂ → ℂ) (z : ℂ) :
+    Real.exp (backgroundAmplitude f z) = (√(1 + ‖f z‖ ^ 2))⁻¹ := by
+  rw [← Real.sqrt_inv, eq_comm, Real.sqrt_eq_iff_mul_self_eq_of_pos (Real.exp_pos _),
+    ← Real.exp_add, ← two_mul, exp_two_mul_backgroundAmplitude]
+
+/-- The background section `exp(u₀) f` is the image of `f` under the radial map
+`OpenPartialHomeomorph.univUnitBall : w ↦ (√(1 + ‖w‖²))⁻¹ • w` onto the open unit disc. -/
+theorem exp_backgroundAmplitude_smul (f : ℂ → ℂ) (z : ℂ) :
+    Real.exp (backgroundAmplitude f z) • f z = OpenPartialHomeomorph.univUnitBall (f z) := by
+  rw [exp_backgroundAmplitude, OpenPartialHomeomorph.univUnitBall_apply]
+
+/-- The derivative of the background amplitude `u₀ = -log (1 + ‖f‖²) / 2`:
+`Du₀ = -⟪f, Df⟫ / (1 + ‖f‖²)`. -/
+theorem hasFDerivAt_backgroundAmplitude {f' : ℂ →L[ℝ] ℂ} (hf : HasFDerivAt f f' z) :
+    HasFDerivAt (backgroundAmplitude f) (-(1 + ‖f z‖ ^ 2)⁻¹ • (innerSL ℝ (f z)).comp f') z := by
+  have h := ((hf.norm_sq.const_add 1).log (by positivity : 1 + ‖f z‖ ^ 2 ≠ 0)).const_mul
+    (-(1 / 2) : ℝ)
+  convert h using 1
+  · funext x
+    rw [backgroundAmplitude_apply]
+    ring
+  module
+
+/-- The derivative of the background amplitude of a real-differentiable `f`. -/
+theorem fderiv_backgroundAmplitude (hf : DifferentiableAt ℝ f z) :
+    fderiv ℝ (backgroundAmplitude f) z =
+      -(1 + ‖f z‖ ^ 2)⁻¹ • (innerSL ℝ (f z)).comp (fderiv ℝ f z) :=
+  (hasFDerivAt_backgroundAmplitude hf.hasFDerivAt).fderiv
+
+/-- The derivative of the background amplitude of a complex-differentiable `f`, applied to a
+vector `v`: `Du₀(v) = -⟪f, v f'⟫ / (1 + ‖f‖²)`. -/
+theorem fderiv_backgroundAmplitude_apply (hf : DifferentiableAt ℂ f z) (v : ℂ) :
+    fderiv ℝ (backgroundAmplitude f) z v = -((1 + ‖f z‖ ^ 2)⁻¹ * ⟪f z, v * deriv f z⟫_ℝ) := by
+  rw [(hasFDerivAt_backgroundAmplitude (hf.hasDerivAt.hasFDerivAt.restrictScalars ℝ)).fderiv]
+  simp [smul_eq_mul]
+
+/-- The derivative of the background amplitude of a polynomial is bounded on unit vectors. -/
+theorem exists_abs_fderiv_backgroundAmplitude_apply_le (P : Polynomial ℂ) :
+    ∃ C, ∀ z v, ‖v‖ = 1 → |fderiv ℝ (backgroundAmplitude P.eval) z v| ≤ C := by
+  obtain ⟨C, hC0, hC⟩ :=
+    Polynomial.exists_norm_eval_le_mul_one_add_norm_eval (Polynomial.degree_derivative_le (p := P))
+  refine ⟨2 * C, fun z v hv ↦ ?_⟩
+  rw [fderiv_backgroundAmplitude_apply (P.differentiable z), Polynomial.deriv, abs_neg, abs_mul,
+    abs_inv, abs_of_pos (by positivity : (0 : ℝ) < 1 + ‖P.eval z‖ ^ 2)]
+  have hin : |⟪P.eval z, v * P.derivative.eval z⟫_ℝ| ≤ ‖P.eval z‖ * (C * (1 + ‖P.eval z‖)) := by
+    refine (abs_real_inner_le_norm _ _).trans ?_
+    rw [norm_mul, hv, one_mul]
+    exact mul_le_mul_of_nonneg_left (hC z) (norm_nonneg _)
+  rw [inv_mul_le_iff₀ (by positivity)]
+  refine hin.trans ?_
+  have := norm_nonneg (P.eval z)
+  nlinarith [sq_nonneg (‖P.eval z‖ - 1), mul_nonneg hC0 (sq_nonneg (‖P.eval z‖ - 1))]
+
+/-! ### Uniform convergence along converging polynomials -/
+
+variable {ι : Type*} {l : Filter ι} {P : ι → Polynomial ℂ} {Q : Polynomial ℂ}
+
+/-- **Uniform convergence of the background sections.** If the coefficients of the polynomials
+`P i` converge to those of `Q`, and eventually `deg P i ≤ deg Q`, then the background sections
+`exp(u₀) P = P / √(1 + ‖P‖²)` converge uniformly on the whole plane. -/
+theorem tendstoUniformly_exp_backgroundAmplitude_smul
+    (hdeg : ∀ᶠ i in l, (P i).natDegree ≤ Q.natDegree)
+    (hcoeff : ∀ k, Tendsto (fun i ↦ (P i).coeff k) l (𝓝 (Q.coeff k))) :
+    TendstoUniformly (fun i z ↦ Real.exp (backgroundAmplitude (P i).eval z) • (P i).eval z)
+      (fun z ↦ Real.exp (backgroundAmplitude Q.eval z) • Q.eval z) l := by
+  obtain ⟨δ, -, hδ, hev⟩ := Polynomial.exists_tendsto_eventually_norm_eval_sub_le hdeg hcoeff
+  rw [Metric.tendstoUniformly_iff]
+  intro ε hε
+  filter_upwards [hev, hδ.eventually (gt_mem_nhds (by positivity : 0 < ε / 4))] with i hi hδi z
+  rw [dist_comm, dist_eq_norm, exp_backgroundAmplitude_smul, exp_backgroundAmplitude_smul]
+  linarith [OpenPartialHomeomorph.norm_univUnitBall_sub_le_of_norm_sub_le (hi z).1]
+
+/-- **Uniform convergence of the derivatives of the background amplitudes.** If the coefficients of
+the polynomials `P i` converge to those of `Q`, and eventually `deg P i ≤ deg Q`, then the
+derivatives `Du₀ = -⟪P, D P⟫ / (1 + ‖P‖²)` of the background amplitudes converge uniformly on the
+whole plane, in operator norm. -/
+theorem tendstoUniformly_fderiv_backgroundAmplitude
+    (hdeg : ∀ᶠ i in l, (P i).natDegree ≤ Q.natDegree)
+    (hcoeff : ∀ k, Tendsto (fun i ↦ (P i).coeff k) l (𝓝 (Q.coeff k))) :
+    TendstoUniformly (fun i ↦ fderiv ℝ (backgroundAmplitude (P i).eval))
+      (fderiv ℝ (backgroundAmplitude Q.eval)) l := by
+  obtain ⟨δ, hδ0, hδ, hev⟩ := Polynomial.exists_tendsto_eventually_norm_eval_sub_le hdeg hcoeff
+  -- `‖Q'‖ ≤ C (1 + ‖Q‖)`, since `deg Q' ≤ deg Q`.
+  obtain ⟨C, hC, hQ'⟩ :=
+    Polynomial.exists_norm_eval_le_mul_one_add_norm_eval (Polynomial.degree_derivative_le (p := Q))
+  rw [Metric.tendstoUniformly_iff]
+  intro ε hε
+  have hK : 0 < 24 * C + 12 := by positivity
+  filter_upwards [hev, hδ.eventually
+    (gt_mem_nhds (by positivity : 0 < min (1 / 2) (ε / (2 * (24 * C + 12)))))] with i hi hδi z
+  have hδ1 : δ i ≤ 1 / 2 := hδi.le.trans (min_le_left _ _)
+  have hδε : δ i * (24 * C + 12) < ε := by
+    have := hδi.trans_le (min_le_right _ _)
+    rw [lt_div_iff₀ (by positivity)] at this
+    nlinarith
+  rw [dist_comm, dist_eq_norm]
+  refine lt_of_le_of_lt (ContinuousLinearMap.opNorm_le_of_unit_norm (mul_nonneg hK.le (hδ0 i))
+    fun v hv ↦ ?_)
+    (by nlinarith : (24 * C + 12) * δ i < ε)
+  rw [sub_apply, fderiv_backgroundAmplitude_apply ((P i).differentiable z),
+    fderiv_backgroundAmplitude_apply (Q.differentiable z), Polynomial.deriv, Polynomial.deriv,
+    Real.norm_eq_abs, neg_sub_neg, abs_sub_comm]
+  -- Multiplying by a unit vector `v` preserves the hypotheses on the derivatives.
+  refine TauCeti.abs_inv_one_add_norm_sq_mul_inner_sub_le hδ1 (hi z).1 ?_ ?_
+  · rw [← mul_sub, norm_mul, hv, one_mul]
+    exact (hi z).2
+  · rw [norm_mul, hv, one_mul]
+    exact hQ' z
+
+/-- **Continuity of the background sections in the uniform topology.** For a family of
+polynomials of a fixed degree whose coefficients depend continuously on a parameter, the background
+sections `exp(u₀) P` depend continuously on the parameter in the topology of uniform convergence on
+the plane. -/
+theorem continuous_ofFun_exp_backgroundAmplitude_smul {X : Type*} [TopologicalSpace X]
+    {P : X → Polynomial ℂ} {m : ℕ} (hdeg : ∀ x, (P x).natDegree = m)
+    (hcoeff : ∀ k, Continuous fun x ↦ (P x).coeff k) :
+    Continuous fun x ↦
+      UniformFun.ofFun fun z ↦ Real.exp (backgroundAmplitude (P x).eval z) • (P x).eval z :=
+  continuous_iff_continuousAt.2 fun x ↦ UniformFun.tendsto_iff_tendstoUniformly.2 <|
+    tendstoUniformly_exp_backgroundAmplitude_smul
+      (Eventually.of_forall fun y ↦ ((hdeg y).trans (hdeg x).symm).le)
+      fun k ↦ (hcoeff k).continuousAt
+
+/-- **Continuity of the derivatives of the background amplitudes in the uniform topology.** Under
+the hypotheses of `TauCeti.Vortex.continuous_ofFun_exp_backgroundAmplitude_smul`, the derivatives
+of the background amplitudes depend continuously on the parameter in the topology of uniform
+convergence on the plane. -/
+theorem continuous_ofFun_fderiv_backgroundAmplitude {X : Type*} [TopologicalSpace X]
+    {P : X → Polynomial ℂ} {m : ℕ} (hdeg : ∀ x, (P x).natDegree = m)
+    (hcoeff : ∀ k, Continuous fun x ↦ (P x).coeff k) :
+    Continuous fun x ↦ UniformFun.ofFun (fderiv ℝ (backgroundAmplitude (P x).eval)) :=
+  continuous_iff_continuousAt.2 fun x ↦ UniformFun.tendsto_iff_tendstoUniformly.2 <|
+    tendstoUniformly_fderiv_backgroundAmplitude
+      (Eventually.of_forall fun y ↦ ((hdeg y).trans (hdeg x).symm).le)
+      fun k ↦ (hcoeff k).continuousAt
+
+/-- The derivatives `D (u₀ + w i)` of the amplitudes converge uniformly when the corrections are
+differentiable and their derivatives converge uniformly. -/
+private theorem tendstoUniformly_fderiv_backgroundAmplitude_add {w : ι → ℂ → ℝ} {w₀ : ℂ → ℝ}
+    (hdeg : ∀ᶠ i in l, (P i).natDegree ≤ Q.natDegree)
+    (hcoeff : ∀ k, Tendsto (fun i ↦ (P i).coeff k) l (𝓝 (Q.coeff k)))
+    (hw : ∀ i, Differentiable ℝ (w i)) (hw₀ : Differentiable ℝ w₀)
+    (hconv' : TendstoUniformly (fun i ↦ fderiv ℝ (w i)) (fderiv ℝ w₀) l) :
+    TendstoUniformly
+      (fun i z ↦ fderiv ℝ (fun z ↦ backgroundAmplitude (P i).eval z + w i z) z)
+      (fun z ↦ fderiv ℝ (fun z ↦ backgroundAmplitude Q.eval z + w₀ z) z) l := by
+  have hu₀ (R : Polynomial ℂ) : Differentiable ℝ (backgroundAmplitude R.eval) :=
+    (contDiff_backgroundAmplitude ((R.differentiable.contDiff (n := 1)).restrict_scalars ℝ)
+      ).differentiable one_ne_zero
+  have e₁ : ∀ i z, fderiv ℝ (fun z ↦ backgroundAmplitude (P i).eval z + w i z) z =
+      fderiv ℝ (backgroundAmplitude (P i).eval) z + fderiv ℝ (w i) z :=
+    fun i z ↦ fderiv_add (hu₀ (P i) z) (hw i z)
+  have e₂ : ∀ z, fderiv ℝ (fun z ↦ backgroundAmplitude Q.eval z + w₀ z) z =
+      fderiv ℝ (backgroundAmplitude Q.eval) z + fderiv ℝ w₀ z :=
+    fun z ↦ fderiv_add (hu₀ Q z) (hw₀ z)
+  simp_rw [e₁, e₂]
+  exact (tendstoUniformly_fderiv_backgroundAmplitude hdeg hcoeff).add hconv'
+
+/-- The sections `exp (w i) • exp(u₀) P i` converge uniformly when `w i → w₀` uniformly and `w₀` is
+bounded above: a uniformly convergent bounded real factor times a uniformly convergent factor
+bounded by `1`. -/
+private theorem tendstoUniformly_exp_smul_exp_backgroundAmplitude_smul {w : ι → ℂ → ℝ}
+    {w₀ : ℂ → ℝ} (hdeg : ∀ᶠ i in l, (P i).natDegree ≤ Q.natDegree)
+    (hcoeff : ∀ k, Tendsto (fun i ↦ (P i).coeff k) l (𝓝 (Q.coeff k))) {M : ℝ}
+    (hM : ∀ z, w₀ z ≤ M) (hconv : TendstoUniformly w w₀ l) :
+    TendstoUniformly
+      (fun i z ↦ Real.exp (w i z) • (Real.exp (backgroundAmplitude (P i).eval z) • (P i).eval z))
+      (fun z ↦ Real.exp (w₀ z) • (Real.exp (backgroundAmplitude Q.eval z) • Q.eval z)) l := by
+  have hE := hconv.rexp ⟨M, Set.forall_mem_range.2 hM⟩
+  have hG := tendstoUniformly_exp_backgroundAmplitude_smul hdeg hcoeff
+  rw [Metric.tendstoUniformly_iff] at hE hG ⊢
+  intro ε hε
+  filter_upwards [hE (ε / 2) (by positivity),
+    hG (ε / (2 * Real.exp M)) (by positivity)] with i hiE hiG z
+  have hE' := hiE z
+  have hG' := hiG z
+  simp only [exp_backgroundAmplitude_smul] at hG' ⊢
+  rw [dist_eq_norm] at hE' hG' ⊢
+  set F := OpenPartialHomeomorph.univUnitBall (E := ℂ)
+  have hsplit : Real.exp (w₀ z) • F (Q.eval z) - Real.exp (w i z) • F ((P i).eval z) =
+      (Real.exp (w₀ z) - Real.exp (w i z)) • F ((P i).eval z) +
+        Real.exp (w₀ z) • (F (Q.eval z) - F ((P i).eval z)) := by
+    module
+  rw [hsplit]
+  refine (norm_add_le _ _).trans_lt ?_
+  rw [norm_smul, norm_smul, Real.norm_eq_abs, Real.norm_eq_abs, Real.abs_exp]
+  have h₁ := mul_le_mul_of_nonneg_left (OpenPartialHomeomorph.norm_univUnitBall_le ((P i).eval z))
+    (abs_nonneg (Real.exp (w₀ z) - Real.exp (w i z)))
+  have h₂ := (lt_div_iff₀ (by positivity : (0 : ℝ) < 2 * Real.exp M)).1 hG'
+  have h₃ := mul_le_mul_of_nonneg_right (Real.exp_le_exp.2 (hM z))
+    (norm_nonneg (F (Q.eval z) - F ((P i).eval z)))
+  rw [Real.norm_eq_abs] at hE'
+  nlinarith [Real.exp_pos M]
+
+/-- The second section coordinate of the field reconstructed from `u + w` is
+`(exp w • exp u • f).re / 2`. -/
+private theorem amplitudeField_add_apply_two (u w : ℂ → ℝ) (f : ℂ → ℂ) (z : ℂ) :
+    amplitudeField (fun z ↦ u z + w z) f z 2 =
+      2⁻¹ * (Real.exp (w z) • Real.exp (u z) • f z).re := by
+  rw [amplitudeField_apply_two, Real.exp_add, smul_re, smul_re, smul_eq_mul, smul_eq_mul]
+  ring
+
+/-- The third section coordinate of the field reconstructed from `u + w` is
+`(exp w • exp u • f).im / 2`. -/
+private theorem amplitudeField_add_apply_three (u w : ℂ → ℝ) (f : ℂ → ℂ) (z : ℂ) :
+    amplitudeField (fun z ↦ u z + w z) f z 3 =
+      2⁻¹ * (Real.exp (w z) • Real.exp (u z) • f z).im := by
+  rw [amplitudeField_apply_three, Real.exp_add, smul_im, smul_im, smul_eq_mul, smul_eq_mul]
+  ring
+
+/-- **Uniform convergence of the reconstructed fields.** Let the coefficients of the polynomials
+`P i` converge to those of `Q`, with eventually `deg P i ≤ deg Q`, and let `w i`, `w₀` be
+differentiable corrections such that `w i → w₀` and `D (w i) → D w₀` uniformly on the plane, with
+`w₀` bounded above. Then the fields `amplitudeField (u₀ + w i) (P i)` reconstructed from the
+amplitudes `u₀ + w i`, `u₀` the background amplitude of `P i`, converge uniformly on the plane to
+`amplitudeField (u₀ + w₀) Q`. -/
+theorem tendstoUniformly_amplitudeField_backgroundAmplitude_add {w : ι → ℂ → ℝ} {w₀ : ℂ → ℝ}
+    (hdeg : ∀ᶠ i in l, (P i).natDegree ≤ Q.natDegree)
+    (hcoeff : ∀ k, Tendsto (fun i ↦ (P i).coeff k) l (𝓝 (Q.coeff k)))
+    (hw : ∀ i, Differentiable ℝ (w i)) (hw₀ : Differentiable ℝ w₀) {M : ℝ} (hM : ∀ z, w₀ z ≤ M)
+    (hconv : TendstoUniformly w w₀ l)
+    (hconv' : TendstoUniformly (fun i ↦ fderiv ℝ (w i)) (fderiv ℝ w₀) l) :
+    TendstoUniformly
+      (fun i ↦ amplitudeField (fun z ↦ backgroundAmplitude (P i).eval z + w i z) (P i).eval)
+      (amplitudeField (fun z ↦ backgroundAmplitude Q.eval z + w₀ z) Q.eval) l := by
+  have hD := tendstoUniformly_fderiv_backgroundAmplitude_add hdeg hcoeff hw hw₀ hconv'
+  have hS := tendstoUniformly_exp_smul_exp_backgroundAmplitude_smul hdeg hcoeff hM hconv
+  -- The connection coordinates are `-D(u₀ + w) i` and `D(u₀ + w) 1`, and the section
+  -- coordinates are the halved real and imaginary parts of `exp w • exp(u₀) P`.
+  rw [PiLp.tendstoUniformly_iff]
+  intro k
+  fin_cases k
+  · convert (-ContinuousLinearMap.apply ℝ ℝ I).uniformContinuous.comp_tendstoUniformly hD using 1
+    · funext i z
+      simp
+    · funext z
+      simp
+  · convert (ContinuousLinearMap.apply ℝ ℝ (1 : ℂ)).uniformContinuous.comp_tendstoUniformly hD
+      using 1
+    · funext i z
+      simp
+    · funext z
+      simp
+  · convert ((2⁻¹ : ℝ) • Complex.reCLM).uniformContinuous.comp_tendstoUniformly hS using 1
+    · funext i z
+      simp only [Function.comp_apply, smul_apply, Complex.reCLM_apply, Fin.reduceFinMk,
+        smul_eq_mul, amplitudeField_add_apply_two]
+    · funext z
+      simp only [Function.comp_apply, smul_apply, Complex.reCLM_apply, Fin.reduceFinMk,
+        smul_eq_mul, amplitudeField_add_apply_two]
+  · convert ((2⁻¹ : ℝ) • Complex.imCLM).uniformContinuous.comp_tendstoUniformly hS using 1
+    · funext i z
+      simp only [Function.comp_apply, smul_apply, Complex.imCLM_apply, Fin.reduceFinMk,
+        smul_eq_mul, amplitudeField_add_apply_three]
+    · funext z
+      simp only [Function.comp_apply, smul_apply, Complex.imCLM_apply, Fin.reduceFinMk,
+        smul_eq_mul, amplitudeField_add_apply_three]
 
 end TauCeti.Vortex

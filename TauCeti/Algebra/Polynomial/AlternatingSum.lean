@@ -120,8 +120,8 @@ private theorem coeff_eq_of_map_eq_sum_range_monomial {Q : ℕ[X]} {M : ℕ}
     {n : ℕ} (hn : n < M) :
     (Q.coeff n : ℤ) = ∑ i ∈ range (n + 1), (-1 : ℤ) ^ (n - i) * c i -
       ∑ i ∈ range (n + 1), (-1 : ℤ) ^ (n - i) * b i := by
-  simpa [coeff_map, finsetSum_coeff, coeff_monomial, hn,
-    sum_range_neg_one_pow_mul_natCast_sub] using congrArg (coeff · n) hQ
+  simpa [coeff_map, finsetSum_coeff, coeff_monomial, Finsupp.single_apply, hn,
+    sum_range_neg_one_pow_mul_natCast_sub] using congrArg (fun q : ℤ[X] ↦ q.coeff n) hQ
 
 /-- **Polynomial form of the Morse inequalities.** For `b, c : ℕ → ℕ`, there is a polynomial
 `Q ∈ ℕ[X]` with `∑ᵢ₌₀ᴺ cᵢ Xⁱ = ∑ᵢ₌₀ᴺ bᵢ Xⁱ + (1 + X) Q` if and only if

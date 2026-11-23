@@ -13,10 +13,10 @@ public import TauCeti.MeasureTheory.Measure.Support
 
 Positive concentrations give positive mass to every count vector with the prescribed total.
 Consequently the native topological support is the finite count antidiagonal, and the support
-of the Euclidean cast is its image. The Euclidean membership criterion below describes this
-image intrinsically: each coordinate is a natural number and the coordinate sum is the trial
-count. These statements include zero trials and a single category; invalid concentrations give
-empty support.
+of arbitrary labels is its image, even when labels are not injective. The Euclidean membership
+criterion below describes the cast image intrinsically: each coordinate is a natural number and
+the coordinate sum is the trial count. These statements include zero trials and a single category;
+invalid concentrations give empty support.
 
 ## References
 
@@ -47,25 +47,25 @@ theorem support_dirichletMultinomialMeasure (n : ℕ) (a : ι → ℝ) :
     exact dirichletMultinomialMeasure_singleton_ne_zero_iff ha n k
   · simp [ha]
 
-/-- For positive concentrations, the Euclidean topological support is the finite image of all
-natural count vectors with the prescribed total. No additional limit points occur.
-For invalid concentrations, the support is empty. -/
+/-- Arbitrary labels of a Dirichlet-multinomial count vector have support equal to the labels
+of the count antidiagonal for valid concentrations, and empty support otherwise. Labels need
+not be injective. Taking `f := multinomialToEuclidean` gives the exact support of the Euclidean
+cast law, with no additional limit points. -/
 @[simp]
-theorem support_map_multinomialToEuclidean_dirichletMultinomialMeasure
-    (n : ℕ) (a : ι → ℝ) :
-    ((dirichletMultinomialMeasure n a).map multinomialToEuclidean).support =
-      if ∀ i, 0 < a i then
-        multinomialToEuclidean '' {k : ι → ℕ | ∑ i, k i = n} else ∅ := by
+theorem support_map_dirichletMultinomialMeasure {E : Type*} [TopologicalSpace E]
+    [T1Space E] [MeasurableSpace E] [BorelSpace E]
+    (n : ℕ) (a : ι → ℝ) (f : (ι → ℕ) → E) :
+    ((dirichletMultinomialMeasure n a).map f).support =
+      if ∀ i, 0 < a i then f '' {k | ∑ i, k i = n} else ∅ := by
   classical
+  have hfinite : Set.Finite {k : ι → ℕ | ∑ i, k i = n} :=
+    (Finset.piAntidiag Finset.univ n).finite_toSet.subset fun k hk ↦ by
+      simpa [Finset.mem_piAntidiag] using hk
+  rw [Measure.support_map_eq_closure_image _ Measure.support_mem_ae
+    continuous_of_discreteTopology, support_dirichletMultinomialMeasure]
   by_cases ha : ∀ i, 0 < a i
-  · have hfinite : ({k : ι → ℕ | ∑ i, k i = n} : Set (ι → ℕ)).Finite := by
-      exact (Finset.piAntidiag Finset.univ n).finite_toSet.subset fun k hk ↦ by
-        exact Finset.mem_piAntidiag.mpr ⟨hk, fun i _ ↦ Finset.mem_univ i⟩
-    rw [ite_eq_left ha, Measure.support_map_eq_closure_image _ Measure.support_mem_ae
-      (continuous_of_discreteTopology : Continuous (multinomialToEuclidean (ι := ι))),
-      support_dirichletMultinomialMeasure, ite_eq_left ha,
-      (hfinite.image multinomialToEuclidean).isClosed.closure_eq]
-  · simp [ha]
+  · rw [ite_eq_left ha, ite_eq_left ha, (hfinite.image f).isClosed.closure_eq]
+  · rw [ite_eq_right ha, ite_eq_right ha, image_empty, closure_empty]
 
 /-- A Euclidean vector belongs to the support precisely when the concentrations are positive,
 its coordinates are natural numbers, and their sum is the trial count. -/
@@ -74,7 +74,7 @@ theorem mem_support_map_multinomialToEuclidean_dirichletMultinomialMeasure_iff
     x ∈ ((dirichletMultinomialMeasure n a).map multinomialToEuclidean).support ↔
       (∀ i, 0 < a i) ∧ (∀ i, ∃ k : ℕ, x i = k) ∧ ∑ i, x i = n := by
   classical
-  rw [support_map_multinomialToEuclidean_dirichletMultinomialMeasure]
+  rw [support_map_dirichletMultinomialMeasure]
   by_cases ha : ∀ i, 0 < a i
   · rw [ite_eq_left ha]
     simp only [mem_image, mem_ofPred_eq]

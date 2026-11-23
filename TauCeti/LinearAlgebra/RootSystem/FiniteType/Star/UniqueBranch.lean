@@ -39,8 +39,8 @@ theorem.
 
 ## References
 
-This is the affine-`D` elimination in the “classification of finite-type Cartan matrices” target,
-Layer 5 of `TauCetiRoadmap/RepresentationTheory/RootSystems/README.md`. See J. E. Humphreys,
+This is the affine-`D` elimination in the classification of finite-type Cartan matrices. See
+J. E. Humphreys,
 *Introduction to Lie Algebras and Representation Theory*, §11.4, and Bourbaki, *Lie Groups and Lie
 Algebras, Chapters 4--6*, Ch. VI, §4.
 -/
@@ -91,8 +91,8 @@ private lemma doubleForkEmbedding_injective {V : Type*} {G : SimpleGraph V} {u v
   · exact (hleft_not_mem j (hij.symm ▸ q.getVert_mem_support i)).elim
   · apply congrArg (Sum.inr ∘ Sum.inl)
     apply Fin.ext
-    exact hq.getVert_injOn (by simp only [Set.mem_ofPred_eq, hn]; omega)
-      (by simp only [Set.mem_ofPred_eq, hn]; omega) hij
+    exact hq.getVert_injOn (by simp only [Set.mem_Iic, hn]; omega)
+      (by simp only [Set.mem_Iic, hn]; omega) hij
   · exact (hright_not_mem j (hij.symm ▸ q.getVert_mem_support i)).elim
   · exact (hleft_right_ne j i hij.symm).elim
   · exact (hright_not_mem i (hij ▸ q.getVert_mem_support j)).elim

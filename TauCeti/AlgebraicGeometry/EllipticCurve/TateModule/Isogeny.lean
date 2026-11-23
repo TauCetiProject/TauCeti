@@ -190,8 +190,8 @@ theorem hasGoodReduction_iff [IsMinimal 𝒪[K] W₁] [IsMinimal 𝒪[K] W₂]
   classical
   obtain ⟨ℓ, hℓ, hℓ₀⟩ := exists_prime_natCast_ne_zero 𝓀[K]
   have := Fact.mk hℓ
-  rw [W₁.hasGoodReduction_iff_tateModuleGaloisRepresentation_eq_one hℓ₀,
-    W₂.hasGoodReduction_iff_tateModuleGaloisRepresentation_eq_one hℓ₀]
+  rw [W₁.hasGoodReduction_iff_forall_mem_inertiaSubgroup_tateModuleGaloisRepresentation_eq_one hℓ₀,
+    W₂.hasGoodReduction_iff_forall_mem_inertiaSubgroup_tateModuleGaloisRepresentation_eq_one hℓ₀]
   exact forall₂_congr fun σ _ ↦
     φ.tateModuleGaloisRepresentation_eq_one_iff <|
       natCast_ne_zero_of_residueField_natCast_ne_zero hℓ₀
@@ -243,9 +243,9 @@ private theorem frobeniusTrace_reduction_eq_of_hasGoodReduction
   -- a point `P` of order `ℓ` on `W₁` over `K^{alg}`
   obtain ⟨b⟩ := nonempty_basis_torsionBy (W₁⁄(AlgebraicClosure K)) ℓ
     (natCast_ne_zero_of_residueField_natCast_ne_zero hℓ₀)
-  set P : (W₁⁄(AlgebraicClosure K)).toAffine.Point := (b 0).1
+  set P : (W₁⁄(AlgebraicClosure K)).toAffine.Point := (b 0).val
   have hP0 : P ≠ 0 := fun h0 ↦ b.ne_zero 0 (Subtype.ext h0)
-  have hℓP : ℓ • P = 0 := AddSubgroup.torsionBy.nsmul_iff.mp (b 0).2
+  have hℓP : ℓ • P = 0 := AddSubgroup.torsionBy.nsmul_iff.mp (b 0).property
   -- an arithmetic Frobenius lift `σ` satisfies `σ² - a σ + q = 0` on the `ℓ`-torsion of both
   -- curves, at `P` and at `φ P`; comparing them, `N` kills `P`
   obtain ⟨σ, hσ⟩ := exists_isArithFrobeniusLift K

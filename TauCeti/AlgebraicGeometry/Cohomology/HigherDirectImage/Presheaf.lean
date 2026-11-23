@@ -5,13 +5,13 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicGeometry.Cohomology.Basic
+public import TauCeti.AlgebraicGeometry.Cohomology.InjectiveResolution
 public import TauCeti.AlgebraicGeometry.Cohomology.HigherDirectImage.Basic
 public import TauCeti.AlgebraicGeometry.Modules.Sheaf
 public import TauCeti.CategoryTheory.Sites.SheafCohomology.AcyclicResolution
 public import Mathlib.Algebra.Category.ModuleCat.Presheaf.Sheafification
 import TauCeti.AlgebraicGeometry.Cohomology.Flasque
-import TauCeti.AlgebraicGeometry.Modules.Pushforward.Basic
+import TauCeti.AlgebraicGeometry.Modules.Pushforward.HomologicalComplex
 import TauCeti.CategoryTheory.Abelian.Injective.Resolution
 
 /-!
@@ -27,8 +27,9 @@ quasi-coherence.
 
 The comparison with sheafification is natural in the coefficient module. In degree
 zero the presheaf is the underlying presheaf of the ordinary direct image. The
-comparison with cohomology uses the flasque abelian resolution underlying an injective
-resolution of modules.
+comparison with cohomology is natural in coefficient modules
+(`higherDirectImagePresheafToPresheafIso_naturality`) and uses the flasque abelian
+resolution underlying an injective resolution of modules.
 
 ## References
 
@@ -96,37 +97,57 @@ in `U`. -/
 def higherDirectImagePresheafToPresheafIso (M : X.Modules) (n : ℕ) :
     (PresheafOfModules.toPresheaf Y.ringCatSheaf.obj).obj
         ((f.higherDirectImagePresheaf n).obj M) ≅
-      (Opens.map f.base).op ⋙ ((toSheaf X).obj M).cohomologyPresheaf n := by
+      (Opens.map f.base).op ⋙
+        ((SheafOfModules.toSheaf X.ringCatSheaf).obj M).cohomologyPresheaf n := by
   letI := Functor.additive_of_preserves_binary_products
     (Scheme.Modules.pushforward f ⋙ Scheme.Modules.toPresheafOfModules Y)
   let P := injectiveResolution M
   let t := PresheafOfModules.toPresheaf Y.ringCatSheaf.obj
   let W := (whiskeringLeft Y.Opensᵒᵖ X.Opensᵒᵖ AddCommGrpCat.{u}).obj
     (Opens.map f.base).op
-  haveI : Mono ((toSheaf X).map (P.ι.f 0)) := Functor.map_mono _ _
   exact t.mapIso (P.isoRightDerivedObj
       (Scheme.Modules.pushforward f ⋙ Scheme.Modules.toPresheafOfModules Y) n) ≪≫
     (t.mapHomologicalComplexCompHomologyFunctorIso _ n).symm.app _ ≪≫
     (HomologicalComplex.homologyFunctor _ _ n).mapIso
-      -- Forgetting scalars commutes with pushforward; the remaining steps only regroup
-      -- the composite functors.
-      ((Functor.mapHomologicalComplexCompIso
-          (F := Scheme.Modules.pushforward f ⋙ Scheme.Modules.toPresheafOfModules Y) (G := t)
-          (H := toSheaf X ⋙ sheafToPresheaf _ _ ⋙ W)
-          (pushforwardCompToPresheafIso f ≪≫
-            Functor.isoWhiskerRight
-              (SheafOfModules.toSheafCompSheafToPresheafIso X.ringCatSheaf).symm W ≪≫
-            Functor.associator _ _ _) _).app P.cocomplex ≪≫
-        ((Functor.mapHomologicalComplexCompIso
-          (Iso.refl (toSheaf X ⋙ sheafToPresheaf _ _ ⋙ W)) _).app P.cocomplex).symm ≪≫
-        ((Functor.mapHomologicalComplexCompIso (Iso.refl _) _).app
-          (((toSheaf X).mapHomologicalComplex _).obj P.cocomplex)).symm) ≪≫
+      ((pushforwardSectionsComplexIso f).app P.cocomplex) ≪≫
     (W.mapHomologicalComplexCompHomologyFunctorIso _ n).app _ ≪≫
-    W.mapIso (Sheaf.H'.homologyIsoCohomologyPresheaf
-      (K := ((toSheaf X).mapHomologicalComplex _).obj P.cocomplex)
-      ((toSheaf X).map (P.ι.f 0)) (P.map_ι_f_zero_comp_d (toSheaf X))
-      (P.exact₀_map (toSheaf X)) (P.exactAt_succ_map (toSheaf X))
-      (fun V j k ↦ Scheme.Modules.subsingleton_cohomologyOn_succ_of_isFlasque
-        (P.cocomplex.X j) k V) n)
+    W.mapIso (P.cohomologyPresheafIso n)
+
+/-- The comparison of the higher direct image presheaf with cohomology on inverse
+images of opens is natural in the coefficient sheaf. -/
+@[reassoc]
+lemma higherDirectImagePresheafToPresheafIso_naturality {M N : X.Modules} (φ : M ⟶ N)
+    (n : ℕ) :
+    (PresheafOfModules.toPresheaf Y.ringCatSheaf.obj).map
+        ((f.higherDirectImagePresheaf n).map φ) ≫
+      (f.higherDirectImagePresheafToPresheafIso N n).hom =
+    (f.higherDirectImagePresheafToPresheafIso M n).hom ≫
+      whiskerLeft (Opens.map f.base).op
+        ((Sheaf.cohomologyPresheafFunctor _ n).map
+        ((SheafOfModules.toSheaf X.ringCatSheaf).map φ)) := by
+  let := Functor.additive_of_preserves_binary_products
+    (Scheme.Modules.pushforward f ⋙ Scheme.Modules.toPresheafOfModules Y)
+  let P := injectiveResolution M
+  let Q := injectiveResolution N
+  let ψ := InjectiveResolution.desc φ Q P
+  let F := Scheme.Modules.pushforward f ⋙ Scheme.Modules.toPresheafOfModules Y
+  let t := PresheafOfModules.toPresheaf Y.ringCatSheaf.obj
+  let W := (whiskeringLeft Y.Opensᵒᵖ X.Opensᵒᵖ AddCommGrpCat.{u}).obj
+    (Opens.map f.base).op
+  have h₁ := congrArg t.map (InjectiveResolution.isoRightDerivedObj_hom_naturality
+    φ P Q ψ (InjectiveResolution.desc_commutes_zero φ Q P) F n)
+  have h₂ := (t.mapHomologicalComplexCompHomologyFunctorIso _ n).inv.naturality
+    ((F.mapHomologicalComplex _).map ψ)
+  have h₃ := congrArg (HomologicalComplex.homologyFunctor _ _ n).map
+    ((pushforwardSectionsComplexIso f).hom.naturality ψ)
+  have h₄ := (W.mapHomologicalComplexCompHomologyFunctorIso _ n).hom.naturality
+    (((sheafToPresheaf _ AddCommGrpCat.{u}).mapHomologicalComplex _).map
+      (((toSheaf X).mapHomologicalComplex _).map ψ))
+  have h₅ := congrArg W.map (InjectiveResolution.cohomologyPresheafIso_naturality P Q φ ψ
+    (InjectiveResolution.desc_commutes_zero φ Q P) n)
+  simp only [Functor.map_comp, Functor.comp_map] at h₁ h₂ h₃ h₄ h₅
+  -- Compose the five naturality squares without unfolding their objectwise isomorphisms.
+  exact ((CommSq.mk h₁).vert_comp ((CommSq.mk h₂).vert_comp
+    ((CommSq.mk h₃).vert_comp ((CommSq.mk h₄).vert_comp (CommSq.mk h₅))))).w
 
 end AlgebraicGeometry.Scheme.Hom

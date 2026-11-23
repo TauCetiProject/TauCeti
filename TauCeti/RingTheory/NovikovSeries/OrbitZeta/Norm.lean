@@ -93,7 +93,7 @@ private theorem index_smul_comap_orbitLog (hpos : ∀ i, 0 < N (γ i))
     rintro ⟨k, hk⟩
     rw [AddSubgroup.subtype_apply] at hk
     obtain ⟨j, hj⟩ := (QuotientAddGroup.addOrderOf_mk_dvd_iff_nsmul_mem K _ _).2
-      (hk ▸ k.2 : (n + 1) • γ i ∈ K)
+      (hk ▸ k.property : (n + 1) • γ i ∈ K)
     obtain ⟨j, rfl⟩ := Nat.exists_eq_succ_of_ne_zero (n := j) (by rintro rfl; simp at hj)
     dsimp only at hj
     exact hp ⟨(i, j), Prod.ext rfl (Nat.sub_eq_of_eq_add hj.symm)⟩
@@ -129,13 +129,11 @@ theorem algebraNorm_orbitZeta (hpos : ∀ i, 0 < N (γ i))
       orbitZeta R (N.comp K.subtype)
         (fun p : (i : ι) × Fin (K.index / addOrderOf (γ i : H ⧸ K)) => K.liftClass (γ p.1))
         (fun p n => ε p.1 (addOrderOf (γ p.1 : H ⧸ K) * n)) := by
-  obtain ⟨hpos', hfin'⟩ := pos_tendsto_period_nsmul_addOrderOf K hpos hfin
-  obtain ⟨c, hc₀, hc⟩ := hfin.exists_gt_forall_le hpos
-  have h := algebraNorm_exp K (orbitLog_mem_posIdeal (K := R) hc₀ hc ε)
+  have h := algebraNorm_exp K (orbitLog_mem_posIdeal (K := R) hpos ε)
   dsimp only at h
   rw [orbitZeta_def, h, trace_eq_index_smul_comap (exists_period_rescale_subtype K) (by simp),
     index_smul_comap_orbitLog K hpos hfin ε, ← orbitZeta_def]
-  exact (orbitZeta_sigma hpos' hfin' (fun i n => ε i (addOrderOf (γ i : H ⧸ K) * n))
+  exact (orbitZeta_sigma (fun i n => ε i (addOrderOf (γ i : H ⧸ K) * n))
     fun i => K.index / addOrderOf (γ i : H ⧸ K)).symm
 
 end FiniteCover

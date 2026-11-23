@@ -12,26 +12,35 @@ public import Mathlib.LinearAlgebra.Determinant
 public import TauCeti.LinearAlgebra.Prod
 public import TauCeti.LinearAlgebra.TotallyReal.Basic
 public import TauCeti.LinearAlgebra.Complex.RealForm
+import Mathlib.LinearAlgebra.Dimension.OrzechProperty
 import TauCeti.RingTheory.TensorProduct.IsBaseChange
 
 /-!
 # Totally real subspaces of complex modules
 
 This file gives elementary examples of totally real real subspaces of complex modules, among them
-the real line `ℝ ⊆ ℂ`, and develops the complex-linear algebra of maximal totally real subspaces.
-A real basis of such a subspace is a complex basis of the ambient space. Complex-linear
-automorphisms act transitively on these subspaces, and an endomorphism preserving one has real
-determinant. An injective real-linear map onto a maximal totally real subspace exhibits the ambient
-module as its complexification, and that subspace is exactly the fixed locus of a unique
+the real line `ℝ ⊆ ℂ` and coordinatewise real spans in `ι → ℂ` (two of which are complementary
+exactly when they are pointwise independent), and develops the complex-linear algebra of maximal
+totally real subspaces. A real basis of such a subspace is a complex basis of the ambient space.
+Complex-linear automorphisms act transitively on these subspaces, and an endomorphism preserving one
+has real determinant. An injective real-linear map onto a maximal totally real subspace exhibits the
+ambient module as its complexification, and that subspace is exactly the fixed locus of a unique
 conjugate-linear involution.
 
 ## Main declarations
 
+* `TauCeti.isCompl_range_pi_smulRight_iff`: two coordinatewise real spans `τ ↦ (τ i • v i)ᵢ` and
+  `τ ↦ (τ i • w i)ᵢ` in `ι → ℂ` are complementary exactly when each pair `v i`, `w i` is
+  real-linearly independent.
 * `TauCeti.isMaximalTotallyReal_span_one`: the real line `ℝ ⊆ ℂ` is maximal totally real.
 * `TauCeti.IsTotallyReal.linearIndependent_complex`: real-linearly independent vectors of a
   totally real subspace are complex-linearly independent.
+* `TauCeti.IsTotallyReal.rank_span_complex`, `TauCeti.IsTotallyReal.finrank_span_complex`: the
+  complex span of a totally real subspace has complex dimension its real dimension.
 * `TauCeti.IsMaximalTotallyReal.complexBasis`: a real basis of a maximal totally real subspace,
   as a complex basis of the ambient space.
+* `TauCeti.IsMaximalTotallyReal.mem_iff_forall_conj_complexBasis_repr`: the subspace consists of
+  the vectors whose coordinates in `complexBasis b` are real.
 * `TauCeti.IsMaximalTotallyReal.det_eq_det_restrict`: a complex-linear map preserving a maximal
   totally real subspace has the same (real) determinant as its restriction.
 * `TauCeti.IsMaximalTotallyReal.exists_linearEquiv_map_eq`: complex-linear automorphisms act
@@ -77,6 +86,51 @@ theorem isTotallyReal_range_pi_smulRight {v : ι → ℂ} :
   · have h' : (σ i : ℂ) * Complex.I = τ i := mul_right_cancel₀ hi (by rw [← h]; ring)
     have hτ : τ i = 0 := by simpa using (congrArg Complex.re h').symm
     simp [hτ]
+
+/-- **Two coordinatewise real spans are complementary exactly when they are pointwise
+independent.** The images of the real-linear maps `τ ↦ (τ i • v i)ᵢ` and `τ ↦ (τ i • w i)ᵢ` from
+`ι → ℝ` to `ι → ℂ` are complementary exactly when `v i` and `w i` are linearly independent over
+`ℝ` for every `i`: coordinatewise, two real lines span the complex line exactly when they are
+independent. -/
+theorem isCompl_range_pi_smulRight_iff {v w : ι → ℂ} :
+    IsCompl
+        (LinearMap.range (LinearMap.pi fun i => (LinearMap.proj i : (ι → ℝ) →ₗ[ℝ] ℝ).smulRight
+          (v i)))
+        (LinearMap.range (LinearMap.pi fun i => (LinearMap.proj i : (ι → ℝ) →ₗ[ℝ] ℝ).smulRight
+          (w i))) ↔
+      ∀ i, LinearIndependent ℝ ![v i, w i] := by
+  classical
+  refine ⟨fun h i => ?_, fun h => ⟨?_, ?_⟩⟩
+  · -- every complex number is the `i`-th coordinate of a sum of vectors of the two ranges
+    refine linearIndependent_of_top_le_span_of_card_eq_finrank (fun c _ => ?_)
+      (by simp [Complex.finrank_real_complex])
+    obtain ⟨_, ⟨a, rfl⟩, _, ⟨b, rfl⟩, hab⟩ :=
+      Submodule.mem_sup.1 ((codisjoint_iff.1 h.codisjoint).symm ▸ Submodule.mem_top :
+        Pi.single i c ∈ _ ⊔ _)
+    have hi := congrFun hab i
+    simp only [Pi.add_apply, LinearMap.pi_apply, LinearMap.smulRight_apply, LinearMap.proj_apply,
+      Pi.single_eq_same] at hi
+    rw [Matrix.range_cons_cons_empty, Submodule.mem_span_pair]
+    exact ⟨a i, b i, hi⟩
+  · -- a common vector has coordinates `a i • v i = b i • w i`, which vanish by independence
+    rw [Submodule.disjoint_def]
+    rintro _ ⟨a, rfl⟩ ⟨b, hb⟩
+    funext i
+    have hi := congrFun hb i
+    simp only [LinearMap.pi_apply, LinearMap.smulRight_apply, LinearMap.proj_apply] at hi ⊢
+    obtain ⟨ha, -⟩ := LinearIndependent.pair_iff.1 (h i) (a i) (-b i)
+      (by rw [neg_smul, hi, add_neg_cancel])
+    simp [ha]
+  · -- independence makes each pair span `ℂ`, so every vector splits coordinatewise
+    refine codisjoint_iff.2 (eq_top_iff.2 fun z _ => ?_)
+    have hspan (i : ι) : ∃ a b : ℝ, a • v i + b • w i = z i := by
+      have htop := (h i).span_eq_top_of_card_eq_finrank' (by simp [Complex.finrank_real_complex])
+      rw [Matrix.range_cons_cons_empty] at htop
+      exact Submodule.mem_span_pair.1 (htop ▸ Submodule.mem_top)
+    choose a b hab using hspan
+    exact Submodule.mem_sup.2 ⟨_, ⟨a, rfl⟩, _, ⟨b, rfl⟩, funext fun i => by
+      simpa only [Pi.add_apply, LinearMap.pi_apply, LinearMap.smulRight_apply,
+        LinearMap.proj_apply] using hab i⟩
 
 /-- The real line `ℝ ⊆ ℂ`, the real span of `1`, is a maximal totally real subspace of `ℂ`: every
 complex number is uniquely `a + i b` with `a, b` real. -/
@@ -134,6 +188,28 @@ theorem IsTotallyReal.linearIndependent_complex
     rw [ha0, zero_eq_neg, smul_eq_zero] at hab
     exact hab.resolve_left Complex.I_ne_zero
   exact Complex.ext (hv s _ ha0 i hi) (hv s _ hb0 i hi)
+
+/-- The complex span of a totally real subspace `L` of a complex module has complex rank the real
+rank of `L`: a real basis of `L` is a complex basis of its span. -/
+theorem IsTotallyReal.rank_span_complex
+    (hL : IsTotallyReal ((LinearMap.lsmul ℂ E Complex.I).restrictScalars ℝ) L) :
+    Module.rank ℂ (Submodule.span ℂ (L : Set E)) = Module.rank ℝ L := by
+  let b := Basis.ofVectorSpace ℝ L
+  have hind : LinearIndependent ℂ ((↑) ∘ b : _ → E) :=
+    hL.linearIndependent_complex (b.linearIndependent.map' L.subtype L.ker_subtype)
+      fun i ↦ (b i).property
+  have hspan : Submodule.span ℂ (L : Set E) = Submodule.span ℂ (Set.range ((↑) ∘ b : _ → E)) := by
+    rw [← Submodule.span_span_of_tower ℝ ℂ (Set.range _), Set.range_comp, ← L.coe_subtype,
+      Submodule.span_image, b.span_eq, Submodule.map_top, Submodule.range_subtype]
+  rw [hspan, rank_span hind, ← b.mk_eq_rank'',
+    Cardinal.mk_range_eq _ (Subtype.val_injective.comp b.injective)]
+
+/-- The complex span of a totally real subspace `L` of a complex module has complex dimension the
+real dimension of `L`. -/
+theorem IsTotallyReal.finrank_span_complex
+    (hL : IsTotallyReal ((LinearMap.lsmul ℂ E Complex.I).restrictScalars ℝ) L) :
+    finrank ℂ (Submodule.span ℂ (L : Set E)) = finrank ℝ L := by
+  simp only [finrank, hL.rank_span_complex]
 
 /-- An injective real-linear map onto a maximal totally real subspace exhibits the ambient
 complex module as its complexification. Both real scalar structures are the given compatible
@@ -291,7 +367,7 @@ of `E`: `L` is a real form of `E`. -/
 noncomputable def complexBasis {ι : Type*} (b : Basis ι ℝ L) : Basis ι ℂ E :=
   Basis.mk (v := L.subtype ∘ b)
     (hL.isTotallyReal.linearIndependent_complex
-      (b.linearIndependent.map' L.subtype L.ker_subtype) fun i => (b i).2)
+      (b.linearIndependent.map' L.subtype L.ker_subtype) fun i => (b i).property)
     (hL.span_complex_eq_top (by
       rw [Set.range_comp, Submodule.span_image, b.span_eq, Submodule.map_subtype_top])).ge
 
@@ -313,18 +389,25 @@ theorem complexBasis_repr_coe {ι : Type*} (b : Basis ι ℝ L) (x : L) (i : ι)
       simp [hj]
   simpa using DFunLike.congr_fun (LinearMap.congr_fun h x) i
 
-/-- A complex-linear automorphism maps maximal totally real subspaces to maximal totally real
+/-- A vector lies in `L` exactly when its complex coordinates in `complexBasis b` are real. -/
+theorem mem_iff_forall_conj_complexBasis_repr {ι : Type*} (b : Basis ι ℝ L) {x : E} :
+    x ∈ L ↔ ∀ i, starRingEnd ℂ ((hL.complexBasis b).repr x i) = (hL.complexBasis b).repr x i := by
+  refine ⟨fun hx i => ?_, fun h => ?_⟩
+  · lift x to L using hx
+    simp
+  · rw [← (hL.complexBasis b).linearCombination_repr x, Finsupp.linearCombination_apply]
+    refine Submodule.finsuppSum_mem _ _ _ _ fun i _ => ?_
+    simpa [← algebraMap_smul ℂ, Complex.conj_eq_iff_re.mp (h i)] using
+      L.smul_mem ((hL.complexBasis b).repr x i).re (b i).property
+
+/-- A complex-linear isomorphism maps maximal totally real subspaces to maximal totally real
 subspaces. -/
-theorem map_linearEquiv (A : E ≃ₗ[ℂ] E) :
-    IsMaximalTotallyReal ((LinearMap.lsmul ℂ E Complex.I).restrictScalars ℝ)
-      (L.map ((A : E →ₗ[ℂ] E).restrictScalars ℝ)) := by
-  have hcomm : ((LinearMap.lsmul ℂ E Complex.I).restrictScalars ℝ).comp
-      ((A : E →ₗ[ℂ] E).restrictScalars ℝ) =
-        ((A : E →ₗ[ℂ] E).restrictScalars ℝ).comp
-          ((LinearMap.lsmul ℂ E Complex.I).restrictScalars ℝ) :=
-    LinearMap.ext fun x => (A.map_smul Complex.I x).symm
-  rw [isMaximalTotallyReal_iff, ← Submodule.map_comp, hcomm, Submodule.map_comp]
-  exact Submodule.isCompl_map (A.restrictScalars ℝ) hL.isCompl
+theorem map_linearEquiv {F : Type*} [AddCommGroup F] [Module ℝ F] [Module ℂ F]
+    [IsScalarTower ℝ ℂ F] (A : E ≃ₗ[ℂ] F) :
+    IsMaximalTotallyReal ((LinearMap.lsmul ℂ F Complex.I).restrictScalars ℝ)
+      (L.map ((A : E →ₗ[ℂ] F).restrictScalars ℝ)) :=
+  ((A.restrictScalars ℝ).isMaximalTotallyReal_map_iff
+    (LinearMap.ext fun x => (A.map_smul Complex.I x).symm)).2 hL
 
 omit hL in
 /-- If a complex-linear automorphism carries `L` onto a maximal totally real subspace `L'`, then
@@ -363,24 +446,25 @@ theorem det_eq_det_restrict (f : E →ₗ[ℂ] E) (hf : ∀ x ∈ L, f x ∈ L) 
     rw [LinearMap.det_eq_one_of_not_module_finite h2,
       LinearMap.det_eq_one_of_not_module_finite h1, Complex.ofReal_one]
 
-variable [FiniteDimensional ℂ E]
-
-/-- The complex-linear automorphisms act transitively on the maximal totally real subspaces of a
-finite-dimensional complex module. -/
+/-- The complex-linear automorphisms of a complex module act transitively on its maximal totally
+real subspaces; no finite-dimensionality is needed. -/
 theorem exists_linearEquiv_map_eq {L' : Submodule ℝ E}
     (hL' : IsMaximalTotallyReal ((LinearMap.lsmul ℂ E Complex.I).restrictScalars ℝ) L') :
     ∃ A : E ≃ₗ[ℂ] E, L.map ((A : E →ₗ[ℂ] E).restrictScalars ℝ) = L' := by
-  have : FiniteDimensional ℝ E := Module.Finite.trans ℂ E
-  have hspan {K : Submodule ℝ E} (c : Basis (Fin (finrank ℂ E)) ℝ K) :
-      Submodule.span ℝ (Set.range (K.subtype ∘ c)) = K := by
-    rw [Set.range_comp, Submodule.span_image, c.span_eq, Submodule.map_subtype_top]
-  let b := Module.finBasisOfFinrankEq ℝ L hL.finrank_eq_finrank_complex
-  let b' := Module.finBasisOfFinrankEq ℝ L' hL'.finrank_eq_finrank_complex
-  obtain ⟨A, hA⟩ : ∃ A : E ≃ₗ[ℂ] E, ∀ i, A (b i) = b' i :=
-    ⟨(hL.complexBasis b).equiv (hL'.complexBasis b') (Equiv.refl _), fun i => by
-      simpa using (hL.complexBasis b).equiv_apply i (hL'.complexBasis b') (Equiv.refl _)⟩
+  -- real bases of the two subspaces are complex bases of `E`, so they are indexed by equivalent
+  -- types, and the automorphism matching them carries one subspace onto the other
+  let b := Basis.ofVectorSpace ℝ L
+  let b' := Basis.ofVectorSpace ℝ L'
+  let e := (hL.complexBasis b).indexEquiv (hL'.complexBasis b')
+  obtain ⟨A, hA⟩ : ∃ A : E ≃ₗ[ℂ] E, ∀ i, A (b i) = b' (e i) :=
+    ⟨(hL.complexBasis b).equiv (hL'.complexBasis b') e, fun i => by
+      simpa using (hL.complexBasis b).equiv_apply i (hL'.complexBasis b') e⟩
+  have hspan : Submodule.span ℝ (Set.range (L.subtype ∘ b)) = L := by
+    rw [Set.range_comp, Submodule.span_image, b.span_eq, Submodule.map_subtype_top]
+  have hspan' : Submodule.span ℝ (Set.range (L'.subtype ∘ b')) = L' := by
+    rw [Set.range_comp, Submodule.span_image, b'.span_eq, Submodule.map_subtype_top]
   refine ⟨A, ?_⟩
-  rw [← hspan b, Submodule.map_span, ← Set.range_comp, ← hspan b']
+  rw [← hspan, Submodule.map_span, ← Set.range_comp, ← hspan', ← EquivLike.range_comp _ e]
   congr 2
   funext i
   exact hA i
@@ -428,8 +512,7 @@ theorem IsMaximalTotallyReal.projection_sum_smul {ι : Type*} [Fintype ι]
     conv_lhs => rw [← Complex.re_add_im (c i)]
     rw [add_smul, mul_smul, hr, hr]
   rw [hsplit, map_add,
-    Submodule.projection_apply_of_mem_right hL.isCompl
-      ⟨_, L.sum_mem fun i _ ↦ L.smul_mem _ (hv i), rfl⟩, add_zero,
+    hL.projection_map_of_mem (L.sum_mem fun i _ ↦ L.smul_mem _ (hv i)), add_zero,
     Submodule.projection_apply_of_mem_left hL.isCompl (L.sum_mem fun i _ ↦ L.smul_mem _ (hv i))]
 
 end TauCeti

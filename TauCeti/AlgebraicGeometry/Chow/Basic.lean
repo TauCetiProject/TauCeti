@@ -7,7 +7,7 @@ module
 
 public import Mathlib.AlgebraicGeometry.AlgebraicCycle.Basic
 public import Mathlib.AlgebraicGeometry.Morphisms.ClosedImmersion
-public import Mathlib.AlgebraicGeometry.OrderOfVanishing
+public import Mathlib.AlgebraicGeometry.OrderOfVanishing.DVR
 public import TauCeti.AlgebraicGeometry.AlgebraicCycle.Basic
 public import TauCeti.AlgebraicGeometry.AlgebraicCycle.Principal
 public import TauCeti.Topology.LocallyFinsupp.LocallyFiniteSum
@@ -94,6 +94,12 @@ variable {X} in
 lemma mem_cyclesOfDimension_iff {k : ℤ} {α : AlgebraicCycle X ℤ} :
     α ∈ cyclesOfDimension X k ↔ α.support ⊆ pointsOfDimension X k :=
   Iff.rfl
+
+variable {X} in
+/-- A `k`-cycle has coefficient zero at every point that is not of dimension `k`. -/
+lemma apply_eq_zero_of_notMem_pointsOfDimension {k : ℤ} {α : AlgebraicCycle X ℤ}
+    (hα : α ∈ cyclesOfDimension X k) {x : X} (hx : x ∉ pointsOfDimension X k) : α x = 0 :=
+  Function.notMem_support.mp fun h ↦ hx (mem_cyclesOfDimension_iff.mp hα h)
 
 /-- There are no nonzero cycles of negative dimension. -/
 lemma cyclesOfDimension_eq_bot_of_neg {k : ℤ} (hk : k < 0) : cyclesOfDimension X k = ⊥ := by
@@ -239,7 +245,7 @@ private lemma component_inv (j : F.ι) : F.inv.component j = -F.component j := b
   · obtain ⟨y, rfl⟩ := hx
     refine (F.inv.component_apply j y).trans ?_
     rw [Function.locallyFinsuppWithin.coe_neg, Pi.neg_apply, F.component_apply j y,
-      ← TauCeti.AlgebraicGeometry.Scheme.ord_inv, ← Units.val_inv_eq_inv_val]
+      ← AlgebraicGeometry.Scheme.ord_inv, ← Units.val_inv_eq_inv_val]
     -- `F.inv` has the subschemes of `F` and the rational functions `(F.r j)⁻¹`, by definition.
     rfl
   · simp [F.component_apply_eq_zero_of_notMem_range j hx,
@@ -377,8 +383,8 @@ lemma subsingleton_of_neg {k : ℤ} (hk : k < 0) : Subsingleton (ChowGroup X k) 
   obtain ⟨α, rfl⟩ := cycleClass_surjective a
   obtain ⟨β, rfl⟩ := cycleClass_surjective b
   have hbot := cyclesOfDimension_eq_bot_of_neg X hk
-  have hα : (α : AlgebraicCycle X ℤ) ∈ (⊥ : AddSubgroup _) := hbot ▸ α.2
-  have hβ : (β : AlgebraicCycle X ℤ) ∈ (⊥ : AddSubgroup _) := hbot ▸ β.2
+  have hα : (α : AlgebraicCycle X ℤ) ∈ (⊥ : AddSubgroup _) := hbot ▸ α.property
+  have hβ : (β : AlgebraicCycle X ℤ) ∈ (⊥ : AddSubgroup _) := hbot ▸ β.property
   rw [AddSubgroup.mem_bot] at hα hβ
   rw [Subtype.ext (hα.trans hβ.symm)]
 

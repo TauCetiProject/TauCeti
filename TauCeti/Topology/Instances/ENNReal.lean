@@ -32,6 +32,10 @@ subtraction-based estimates are unavailable, and the superadditivity of the lowe
   `a ≤ b + c`.
 * `TauCeti.truncated_cost_le_add_of_label_eq`: an `ℝ≥0∞`-valued cost truncated at `M` on a
   rectangle varies by at most `η` between points with the same labels.
+* `Continuous.ennreal_toReal`: a continuous `ℝ≥0∞`-valued function that avoids `∞` has continuous
+  real projection `fun z ↦ (c z).toReal`.
+* `Continuous.exists_forall_le_coe_of_ne_top`: on a compact space, a continuous `ℝ≥0∞`-valued
+  function that avoids `∞` is bounded above by a finite `ℝ≥0` constant.
 -/
 
 public section
@@ -48,7 +52,7 @@ theorem tendsto_nhds_zero_of_le_enorm_mul {G : E → ℝ≥0∞} {C : ℝ≥0∞
     (hG : ∀ᶠ h in 𝓝 (0 : E), G h ≤ ‖h‖ₑ * C) :
     Filter.Tendsto G (𝓝 0) (𝓝 0) := by
   have h0 : Filter.Tendsto (fun h : E => ‖h‖ₑ) (𝓝 0) (𝓝 0) :=
-    continuous_enorm.tendsto' 0 0 (by simp)
+    continuous_eNorm.tendsto' 0 0 (by simp)
   exact tendsto_of_tendsto_of_tendsto_of_le_of_le' tendsto_const_nhds
     (by simpa using ENNReal.Tendsto.mul_const h0 (Or.inr hC)) (.of_forall fun _ => zero_le) hG
 
@@ -159,7 +163,23 @@ theorem tendsto_ofReal_div_mul_add_mul_enorm_sub {ι F : Type*} [NormedAddCommGr
     exact (ENNReal.ofReal_pos.2 (div_pos hK hm₀)).ne'
   have h2 : Filter.Tendsto (fun i => M * ‖s i - a‖ₑ) l (𝓝 0) := by
     simpa [Function.comp_def] using
-      (ENNReal.Tendsto.const_mul ((continuous_enorm.tendsto (0 : F)).comp h0) (Or.inr hM))
+      (ENNReal.Tendsto.const_mul ((continuous_eNorm.tendsto (0 : F)).comp h0) (Or.inr hM))
   simpa using h1.add h2
+
+/-- A continuous `ℝ≥0∞`-valued function that avoids `∞` has continuous real projection
+`fun z ↦ (c z).toReal`. -/
+theorem _root_.Continuous.ennreal_toReal {Z : Type*} [TopologicalSpace Z] {c : Z → ℝ≥0∞}
+    (hc : Continuous c) (hfin : ∀ z, c z ≠ ∞) : Continuous fun z ↦ (c z).toReal :=
+  ENNReal.continuousOn_toReal.comp_continuous hc hfin
+
+/-- On a compact space, a continuous `ℝ≥0∞`-valued function that avoids `∞` is bounded above by a
+finite `ℝ≥0` constant. -/
+theorem _root_.Continuous.exists_forall_le_coe_of_ne_top {Z : Type*} [TopologicalSpace Z]
+    [CompactSpace Z] {c : Z → ℝ≥0∞} (hc : Continuous c) (hfin : ∀ z, c z ≠ ∞) :
+    ∃ B : ℝ≥0, ∀ z, c z ≤ B := by
+  obtain ⟨M, hM⟩ := (isCompact_range (hc.ennreal_toReal hfin)).bddAbove
+  refine ⟨Real.toNNReal M, fun z ↦ ?_⟩
+  rw [← ENNReal.ofReal_toReal (hfin z), ← ENNReal.ofReal_coe_nnreal]
+  exact ENNReal.ofReal_le_ofReal ((hM (Set.mem_range_self z)).trans (Real.le_coe_toNNReal M))
 
 end TauCeti

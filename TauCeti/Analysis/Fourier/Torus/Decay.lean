@@ -14,6 +14,7 @@ import Mathlib.Analysis.SpecialFunctions.ExpDeriv
 import TauCeti.Algebra.Module.ZLattice.Summable
 import TauCeti.Analysis.Calculus.PeriodicDeriv
 import TauCeti.Analysis.Fourier.Monomial
+import TauCeti.Analysis.Normed.Group.Pi
 import TauCeti.MeasureTheory.Measure.Haar.UnitAddTorus
 import TauCeti.Topology.Instances.AddCircle.UnitAddTorus
 
@@ -339,9 +340,8 @@ theorem pow_mul_norm_mFourierCoeff_le {f : UnitAddTorus d → E} {k : ℕ}
       simpa [norm_iteratedFDeriv_zero] using hM x
     · simpa [hn, zero_pow hk.ne'] using hM0
   -- Differentiate `k` times along a coordinate direction `i` with `|n i| = ‖n‖`.
-  obtain ⟨i, -, hi⟩ := Finset.exists_mem_eq_sup Finset.univ Finset.univ_nonempty fun i ↦ ‖n i‖₊
-  have hni : ‖n‖ = |(n i : ℝ)| := by
-    rw [← coe_nnnorm, Pi.nnnorm_def, hi, coe_nnnorm, Int.norm_eq_abs]
+  obtain ⟨i, hi⟩ := Pi.exists_norm_apply_eq_norm n
+  have hni : ‖n‖ = |(n i : ℝ)| := by rw [← hi, Int.norm_eq_abs]
   obtain ⟨g, -, hg⟩ := exists_continuous_comp_coe_eq_iteratedFDeriv f
     (hf.continuous_iteratedFDeriv le_rfl) fun _ ↦ Pi.single i 1
   change ∀ x, g (toTorus x) = iteratedFDeriv ℝ k (fun x ↦ f (toTorus x)) x

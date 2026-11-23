@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.PDE.Parabolic.Holder.Operator
+public import TauCeti.Analysis.PDE.Parabolic.Holder.InitialData
 
 /-!
 # Backward parabolic operators and time reversal
@@ -39,6 +39,8 @@ terminal-value problem.
   terminal-data map is bijective iff the reversed initial-data map is.
 * `TauCeti.ParabolicC2HolderSpace.hasDerivAt_timeSlice_const_sub`: a time slice read backward
   from the terminal time has the negated time derivative as its ordinary derivative.
+* `TauCeti.ParabolicC2HolderSpace.parabolicOperatorL_compLipschitzL_euclidean`: reversing the
+  scalar coefficients in time commutes with assembling the Euclidean operator.
 * `TauCeti.ParabolicC2HolderSpace.euclideanBackwardParabolicOperatorL` with the terminal-value
   bounds `le_exp_mul_mul_add_mul_of_le_euclideanBackwardParabolicOperatorL`,
   `abs_le_exp_mul_mul_add_mul_of_abs_euclideanBackwardParabolicOperatorL_le` and uniqueness
@@ -171,11 +173,10 @@ the forward problem on `E × [T - b, T - a]` with the reversed coefficients `A �
 theorem bijective_backwardParabolicOperatorL_prod_spatialTraceL_iff :
     Function.Bijective ((backwardParabolicOperatorL (ht := hab) hα A B C).prod
         (spatialTraceL ⟨b, right_mem_Icc.2 hab.le⟩)) ↔
-      Function.Bijective ((parabolicOperatorL (ht := ha ▸ hb ▸ sub_lt_sub_left hab T) hα
-          (HolderSpace.compLipschitzL _ (slabTimeReverse T ha hb).isometry.lipschitzWith A)
-          (HolderSpace.compLipschitzL _ (slabTimeReverse T ha hb).isometry.lipschitzWith B)
-          (HolderSpace.compLipschitzL _ (slabTimeReverse T ha hb).isometry.lipschitzWith C)).prod
-        (spatialTraceL ⟨a', left_mem_Icc.2 (ha ▸ hb ▸ sub_lt_sub_left hab T).le⟩)) := by
+      Function.Bijective (initialDataL (ht := ha ▸ hb ▸ sub_lt_sub_left hab T) hα
+        (HolderSpace.compLipschitzL _ (slabTimeReverse T ha hb).isometry.lipschitzWith A)
+        (HolderSpace.compLipschitzL _ (slabTimeReverse T ha hb).isometry.lipschitzWith B)
+        (HolderSpace.compLipschitzL _ (slabTimeReverse T ha hb).isometry.lipschitzWith C)) := by
   set R := slabTimeReverse (E := E) T ha hb
   -- The data of the reversed problem are those of the backward problem transported by
   -- `Φ (g, h) = (-g ∘ R, h)`, a bijection with inverse `(g, h) ↦ (-g ∘ R⁻¹, h)`.
@@ -187,17 +188,18 @@ theorem bijective_backwardParabolicOperatorL_prod_spatialTraceL_iff :
       ⟨fun gh ↦ (-HolderSpace.compLipschitzL _ R.symm.isometry.lipschitzWith gh.1, gh.2),
         fun gh ↦ ?_, fun gh ↦ ?_⟩ <;>
       ext <;> simp [hΦ]
-  have hcomp : ⇑((parabolicOperatorL (ht := ha ▸ hb ▸ sub_lt_sub_left hab T) hα
+  have hcomp : ⇑(initialDataL (ht := ha ▸ hb ▸ sub_lt_sub_left hab T) hα
         (HolderSpace.compLipschitzL _ R.isometry.lipschitzWith A)
         (HolderSpace.compLipschitzL _ R.isometry.lipschitzWith B)
-        (HolderSpace.compLipschitzL _ R.isometry.lipschitzWith C)).prod
-        (spatialTraceL ⟨a', left_mem_Icc.2 (ha ▸ hb ▸ sub_lt_sub_left hab T).le⟩)) ∘
+        (HolderSpace.compLipschitzL _ R.isometry.lipschitzWith C)) ∘
         timeReverseLIE T ha hb =
       Φ ∘ (backwardParabolicOperatorL (ht := hab) hα A B C).prod
         (spatialTraceL ⟨b, right_mem_Icc.2 hab.le⟩) := by
     funext u
-    simp only [Function.comp_apply, ContinuousLinearMap.prod_apply, spatialTraceL_apply, hΦ,
-      parabolicOperatorL_timeReverseLIE, spatialTrace_timeReverseLIE_left, R]
+    apply Prod.ext <;>
+      simp only [Function.comp_apply, ContinuousLinearMap.prod_apply, initialDataL_fst,
+        initialDataL_snd, spatialTraceL_apply, hΦ, parabolicOperatorL_timeReverseLIE,
+        spatialTrace_timeReverseLIE_left, R]
   rw [← Function.Bijective.of_comp_iff' hΦb, ← hcomp,
     Function.Bijective.of_comp_iff _ (timeReverseLIE T ha hb).bijective]
 
@@ -236,9 +238,7 @@ private theorem timeReverseLIE_slabMk_left
     timeReverseLIE (t₀ + t₁) left_eq_add_sub right_eq_add_sub u
         (slabMk x ⟨t₀, left_mem_Icc.2 ht.le⟩) =
       u (slabMk x ⟨t₁, right_mem_Icc.2 ht.le⟩) := by
-  rw [timeReverseLIE_apply, slabTimeReverse_slabMk]
-  congr
-  ring
+  rw [timeReverseLIE_apply, slabTimeReverse_slabMk, iccTimeReverse_left _ _ _ ht.le]
 
 /-- The time reversal of `u` about `t₀ + t₁`, evaluated at the reversal of `p`, is `u p`. -/
 private theorem timeReverseLIE_symm_apply
@@ -324,6 +324,42 @@ theorem euclideanParabolicOperatorL_timeReverseLIE {a b a' b' T : ℝ} {hab : a 
     HolderSpace.compLipschitzL_apply, HolderSpace.neg_apply,
     euclideanBackwardParabolicOperatorL_apply]
   ring
+
+/-- **Time reversal of the Euclidean coefficients.** With `R (x, s) = (x, T - s)`, the forward
+operator built from the reversed assembled coefficients `A ∘ R`, `B ∘ R`, `C ∘ R` is the Euclidean
+operator with the reversed scalar coefficients `aⁱʲ ∘ R`, `bⁱ ∘ R`, `c ∘ R`. -/
+theorem parabolicOperatorL_compLipschitzL_euclidean {a b a' b' T : ℝ} (hab : a < b)
+    {ha : a' = T - b} {hb : b' = T - a}
+    (A : ι → ι → HolderSpace α (slab (E := EuclideanSpace ℝ ι) a b) ℝ)
+    (B : ι → HolderSpace α (slab (E := EuclideanSpace ℝ ι) a b) ℝ)
+    (C : HolderSpace α (slab (E := EuclideanSpace ℝ ι) a b) ℝ) :
+    parabolicOperatorL (ht := ha ▸ hb ▸ sub_lt_sub_left hab T) hα
+        (HolderSpace.compLipschitzL _ (slabTimeReverse T ha hb).isometry.lipschitzWith
+          (euclideanSecondOrderCoeff A))
+        (HolderSpace.compLipschitzL _ (slabTimeReverse T ha hb).isometry.lipschitzWith
+          (euclideanFirstOrderCoeff B))
+        (HolderSpace.compLipschitzL _ (slabTimeReverse T ha hb).isometry.lipschitzWith
+          (euclideanZerothOrderCoeff C)) =
+      euclideanParabolicOperatorL hα
+        (fun i j ↦ HolderSpace.compLipschitzL _ (slabTimeReverse T ha hb).isometry.lipschitzWith
+          (A i j))
+        (fun i ↦ HolderSpace.compLipschitzL _ (slabTimeReverse T ha hb).isometry.lipschitzWith
+          (B i))
+        (HolderSpace.compLipschitzL _ (slabTimeReverse T ha hb).isometry.lipschitzWith C) := by
+  ext u p
+  simp [parabolicOperatorL_apply, HolderSpace.compLipschitzL_apply]
+
+/-- Uniform ellipticity of the coefficients `aⁱʲ` passes to the precomposed coefficients
+`aⁱʲ ∘ g`, with the same constant. -/
+theorem mul_norm_sq_le_toQuadraticForm'_compLipschitzL {X : Type*} [MetricSpace X]
+    {K : ℝ≥0} {g : X → slab (E := EuclideanSpace ℝ ι) t₀ t₁} (hg : LipschitzWith K g)
+    {a : ι → ι → HolderSpace α (slab (E := EuclideanSpace ℝ ι) t₀ t₁) ℝ} {lam : ℝ}
+    (ha : ∀ p (ξ : EuclideanSpace ℝ ι),
+      lam * ‖ξ‖ ^ 2 ≤ (Matrix.of fun i j ↦ a i j p).toQuadraticForm' ξ)
+    (p : X) (ξ : EuclideanSpace ℝ ι) :
+    lam * ‖ξ‖ ^ 2 ≤
+      (Matrix.of fun i j ↦ HolderSpace.compLipschitzL g hg (a i j) p).toQuadraticForm' ξ := by
+  simpa only [HolderSpace.compLipschitzL_apply] using ha (g p) ξ
 
 variable {a : ι → ι → HolderSpace α (slab (E := EuclideanSpace ℝ ι) t₀ t₁) ℝ}
   {b : ι → HolderSpace α (slab (E := EuclideanSpace ℝ ι) t₀ t₁) ℝ}
