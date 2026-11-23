@@ -106,10 +106,10 @@ theorem tendsto_integral_inner_of_tendsto_lintegral_enorm_sub {n : ℕ∞} {ι :
     (hlim : Tendsto (fun i => ∫⁻ x in s, ‖g i x - g₀ x‖ₑ ∂μ) l (𝓝 0)) :
     Tendsto (fun i => ∫ x, ⟪(φ : E → V) x, g i x⟫_ℝ ∂μ) l
       (𝓝 (∫ x, ⟪(φ : E → V) x, g₀ x⟫_ℝ ∂μ)) := by
-  have hpt (a b : V) : (innerSL ℝ : V →L[ℝ] V →L[ℝ] ℝ) a b = ⟪a, b⟫_ℝ := rfl
-  simpa only [hpt] using
+  simpa only [innerSL_apply_apply ℝ] using
     φ.tendsto_integral_bilin_of_tendsto_lintegral_enorm_sub (innerSL ℝ) hφs
-      (by simpa only [hpt] using hg) (by simpa only [hpt] using hg₀) hlim
+      (by simpa only [innerSL_apply_apply ℝ] using hg)
+      (by simpa only [innerSL_apply_apply ℝ] using hg₀) hlim
 
 /-- Pairing a `C^n` test function `φ` against `x ↦ A i x (u x)` converges to
 `∫ x, ⟪φ x, B x (u x)⟫_ℝ ∂μ` when `A i → B` uniformly on `tsupport φ`, `A i` is eventually
@@ -122,8 +122,7 @@ theorem tendsto_integral_inner_clm_of_tendstoUniformlyOn {n : ℕ∞}
     (hunif : TendstoUniformlyOn A B l (tsupport (φ : E → V))) :
     Tendsto (fun i => ∫ x, ⟪(φ : E → V) x, A i x (u x)⟫_ℝ ∂μ) l
       (𝓝 (∫ x, ⟪(φ : E → V) x, B x (u x)⟫_ℝ ∂μ)) := by
-  have hpt (a b : V) : (innerSL ℝ : V →L[ℝ] V →L[ℝ] ℝ) a b = ⟪a, b⟫_ℝ := rfl
-  simpa only [hpt] using
+  simpa only [innerSL_apply_apply ℝ] using
     φ.tendsto_integral_bilin_clm_of_tendstoUniformlyOn (innerSL ℝ) hu hA hunif
 
 omit [OpensMeasurableSpace E] in
@@ -144,8 +143,7 @@ theorem tendsto_integral_inner_bilin_normed_convolution
         B (((ρ i).normed μ ⋆[ContinuousLinearMap.lsmul ℝ ℝ, μ] W.indicator U) x)
           (u x)⟫_ℝ ∂μ)
       l (𝓝 (∫ x, ⟪(φ : E → V) x, B (U x) (u x)⟫_ℝ ∂μ)) := by
-  have hpt (a b : V) : (innerSL ℝ : V →L[ℝ] V →L[ℝ] ℝ) a b = ⟪a, b⟫_ℝ := rfl
-  simpa only [hpt] using
+  simpa only [innerSL_apply_apply ℝ] using
     φ.tendsto_integral_bilin_normed_convolution (innerSL ℝ) B hpq hW hφW hU hu hρ
 
 end TestFunction

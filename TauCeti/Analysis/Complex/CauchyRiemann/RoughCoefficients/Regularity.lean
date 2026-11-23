@@ -83,15 +83,6 @@ section Step
 variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] [FiniteDimensional ℝ V]
   {Ω : Opens ℂ}
 
-private local instance : NormedAddCommGroup (V →L[ℝ] V) := inferInstance
-private local instance : NormedSpace ℝ (V →L[ℝ] V) := inferInstance
-private local instance : NormedAddCommGroup (V × V →L[ℝ] V × V) := inferInstance
-private local instance : NormedSpace ℝ (V × V →L[ℝ] V × V) := inferInstance
-private local instance :
-    NormedAddCommGroup (WithLp 2 (V × V) →L[ℝ] WithLp 2 (V × V)) := inferInstance
-private local instance :
-    NormedSpace ℝ (WithLp 2 (V × V) →L[ℝ] WithLp 2 (V × V)) := inferInstance
-
 /-- Inductive step of `IsWeakCRSolution.memWkpLoc_succ_of_memWkpLoc`: upgrades
 `ξ ∈ W^{m+1,r}_loc(Ω)` to `ξ ∈ W^{m+2,r}_loc(Ω)` without assuming `p⁻¹ + r⁻¹ < 1` by entering the
 weak differentiated system at exponent `2` (since `η ∈ W^{1,r}_loc ⊆ L²_loc` and `p⁻¹ + 2⁻¹ < 1`)
@@ -115,10 +106,7 @@ private theorem memWkpLoc_succ_of_memWkpLoc_step {p r : ℝ≥0} {q : ℝ≥0∞
     MemWkpLoc r Ω (m + 2) ξ := by
   have h1le : 1 ≤ m + 1 := Nat.succ_le_succ (Nat.zero_le m)
   have hmax : max 1 m ≤ m + 1 := max_le h1le (Nat.le_succ m)
-  have hη_2 : MemLpLoc 2 Ω η := by
-    simpa only [ENNReal.coe_ofNat] using
-      (((hη.of_le h1le).mono_exponent (by exact_mod_cast hr.le)).memLpLoc_of_inv_sub_inv_le
-        (q := 1) (s := 2) le_rfl one_le_two (by norm_num))
+  have hη_2 : MemLpLoc 2 Ω η := (hη.of_le h1le).memLpLoc_two (by exact_mod_cast hr.le)
   have hp2 : (p : ℝ≥0∞)⁻¹ + (2 : ℝ≥0∞)⁻¹ < 1 :=
     ENNReal.inv_add_inv_two_lt_one_iff.2 (by exact_mod_cast hp)
   obtain ⟨Dξ, hDξ, -⟩ := hξm.exists_weakFDeriv_of_isOpen
@@ -208,12 +196,10 @@ theorem IsWeakCRSolution.exists_contDiffOn_ae_eq
     (hS : MemWkpLoc p Ω k S) (hη : MemWkpLoc r Ω k η)
     (hsol : IsWeakCRSolution q Ω J DJ S ξ η) :
     ∃ g : ℂ → V, ContDiffOn ℝ k g Ω ∧ ξ =ᵐ[volume.restrict Ω] g := by
-  set r₀ : ℝ≥0∞ := min r 3
-  have hr₀ : 2 < r₀ := lt_min hr (by norm_num)
+  obtain ⟨r₀, hr₀, hr₀_top, hr₀r⟩ := ENNReal.exists_lt_ne_top_le hr
   exact (hsol.memWkpLoc_succ_of_memWkpLoc (hr.trans_le hrp)
-    ((by norm_num : (1 : ℝ≥0∞) < 2).trans hr₀)
-    (ne_top_of_le_ne_top (by norm_num) (min_le_right _ _)) ((min_le_left _ _).trans hrp) hpq
-    hJ hDJ hJsq hS (hη.mono_exponent (min_le_left _ _))).exists_contDiffOn_ae_eq hr₀
+    ((by norm_num : (1 : ℝ≥0∞) < 2).trans hr₀) hr₀_top (hr₀r.trans hrp) hpq
+    hJ hDJ hJsq hS (hη.mono_exponent hr₀r)).exists_contDiffOn_ae_eq hr₀
 
 end HigherRegularity
 
@@ -224,11 +210,6 @@ section NormedSpace
 section InnerProductHelper
 
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
-
-private local instance : NormedAddCommGroup (E →L[ℝ] E) := inferInstance
-private local instance : NormedSpace ℝ (E →L[ℝ] E) := inferInstance
-private local instance : NormedAddCommGroup (ℂ →L[ℝ] E →L[ℝ] E) := inferInstance
-private local instance : NormedSpace ℝ (ℂ →L[ℝ] E →L[ℝ] E) := inferInstance
 
 /-- On a finite-dimensional real inner product space, any map `ξ` with weak derivative `Dξ` on `Ω`
 satisfying `∂_s ξ + J ∂_t ξ + S ξ = η` almost everywhere on `Ω` for Sobolev coefficients at
@@ -245,14 +226,12 @@ private theorem isWeakCRSolution_of_hasWeakFDerivOn_ae {Ω : Opens ℂ} {p : ℝ
   have hp1 : 1 ≤ p := one_le_two.trans hp.le
   have hp2 : p⁻¹ + (2 : ℝ≥0∞)⁻¹ < 1 := ENNReal.inv_add_inv_two_lt_one_iff.2 hp
   -- `HasWeakFDerivOn` places `ξ ∈ W^{1,1}_loc(Ω) ⊆ L²_loc(Ω)` via the 2D Sobolev embedding.
-  have hξ1 : MemWkpLoc ((1 : ℝ≥0) : ℝ≥0∞) Ω 1 ξ :=
+  have hξ1 : MemWkpLoc 1 Ω 1 ξ :=
     memWkpLoc_succ_iff_of_isOpen.2
       ⟨(memLpLoc_one_iff_locallyIntegrableOn hloc).2 hDξ.locallyIntegrableOn, Dξ, hDξ,
         memWkpLoc_zero_iff.2 ((memLpLoc_one_iff_locallyIntegrableOn hloc).2
           hDξ.locallyIntegrableOn_deriv)⟩
-  have hξ2 : MemLpLoc 2 Ω ξ := by
-    simpa only [ENNReal.coe_ofNat] using
-      hξ1.memLpLoc_of_inv_sub_inv_le (q := 1) (s := 2) le_rfl one_le_two (by norm_num)
+  have hξ2 : MemLpLoc 2 Ω ξ := hξ1.memLpLoc_two le_rfl
   -- Replace `J` by its continuous Morrey representative `J'`.
   have hJW1p : MemWkpLoc p Ω 1 J := memWkpLoc_succ_iff_of_isOpen.2
     ⟨hc.memLpLoc_coeff, DJ, hc.hasWeakFDerivOn, memWkpLoc_zero_iff.2 hc.memLpLoc_deriv⟩
@@ -356,12 +335,9 @@ theorem IsWeakLinearCauchyRiemannOn.contDiffOn (hp : 2 < p)
     (hJ : MemWkpLoc p Ω (max 1 k) J) (hJsq : ∀ᵐ z ∂volume.restrict Ω, J z * J z = -1)
     (hS : MemWkpLoc p Ω k S) (h : IsWeakLinearCauchyRiemannOn q Ω J S ξ) :
     ContDiffOn ℝ k ξ Ω := by
-  set p₀ : ℝ≥0∞ := min p 3
-  have hp₀ : 2 < p₀ := lt_min hp (by norm_num)
-  obtain ⟨g, hg, hae⟩ := (h.memWkpLoc_succ hp₀
-    (ne_top_of_le_ne_top (by norm_num) (min_le_right _ _))
-    (hJ.mono_exponent (min_le_left _ _)) hJsq
-    (hS.mono_exponent (min_le_left _ _))).exists_contDiffOn_ae_eq hp₀
+  obtain ⟨p₀, hp₀, hp₀_top, hp₀p⟩ := ENNReal.exists_lt_ne_top_le hp
+  obtain ⟨g, hg, hae⟩ := (h.memWkpLoc_succ hp₀ hp₀_top (hJ.mono_exponent hp₀p) hJsq
+    (hS.mono_exponent hp₀p)).exists_contDiffOn_ae_eq hp₀
   exact hg.congr (Measure.eqOn_open_of_ae_eq hae Ω.isOpen h.continuousOn hg.continuousOn)
 
 /-- **`C^∞` interior regularity for `TauCeti.IsWeakLinearCauchyRiemannOn` with smooth

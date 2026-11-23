@@ -47,8 +47,9 @@ estimates follow in a basis of `F`.
 * `TauCeti.exists_eLpNorm_le_mul_eLpNormWkp_one`: the local Sobolev inequality
   `‖u‖_{L^s(V)} ≤ C ‖u‖_{W^{1,q}(W)}`.
 * `TauCeti.exists_eLpNorm_top_le_mul_eLpNormWkp_one`: the order-one `L^∞` bound for `q > 2`.
-* `TauCeti.MemWkpLoc.memLpLoc_of_inv_sub_inv_le`: the embedding `W^{1,q}_loc ⊂ L^s_loc`, and
-  `TauCeti.MemWkpLoc.memLpLoc_of_inv_sub_inv_le_of_ne_top`, the same with exponents in `ℝ≥0∞`.
+* `TauCeti.MemWkpLoc.memLpLoc_of_inv_sub_inv_le`: the embedding `W^{1,q}_loc ⊂ L^s_loc`,
+  `TauCeti.MemWkpLoc.memLpLoc_of_inv_sub_inv_le_of_ne_top`, the same with exponents in `ℝ≥0∞`,
+  and `TauCeti.MemWkpLoc.memLpLoc_two`, the planar case `W^{1,r}_loc ⊂ L²_loc` for `1 ≤ r`.
 * `TauCeti.MemWkpLoc.of_succ_of_inv_sub_inv_le`: order lowering `W^{k+1,q}_loc ⊂ W^{k,s}_loc`.
 * `TauCeti.MemWkpLoc.of_le_of_inv_sub_inv_le`: its iterate `W^{k,q}_loc ⊂ W^{m,s}_loc` for
   `m ≤ k` and `1/q - 1/s ≤ (k - m)/2`, and `TauCeti.MemWkpLoc.memLpLoc_of_inv_sub_inv_le_div_two`,
@@ -200,6 +201,12 @@ theorem MemWkpLoc.memLpLoc_of_inv_sub_inv_le_of_ne_top {r t : ℝ≥0∞} (hu : 
       ENNReal.toReal_add, ENNReal.toReal_inv, ENNReal.toReal_ofNat] at h
     simp only [ENNReal.coe_toNNReal_eq_toReal]
     linarith
+
+/-- In dimension two, every `W^{1,r}_loc` map with `1 ≤ r ≤ ∞` is locally `L²`. -/
+theorem MemWkpLoc.memLpLoc_two {r : ℝ≥0∞} (hu : MemWkpLoc r Ω 1 u) (hr : 1 ≤ r) :
+    MemLpLoc 2 Ω u :=
+  (hu.mono_exponent hr).memLpLoc_of_inv_sub_inv_le_of_ne_top le_rfl ENNReal.ofNat_ne_top
+    one_le_two (by norm_num)
 
 /-- **Order lowering.** If `1 ≤ q ≤ s < ∞` and `1/q - 1/s ≤ 1/2`, then
 `W^{k+1,q}_loc(Ω, F) ⊂ W^{k,s}_loc(Ω, F)`: the function and its weak derivatives through order `k`

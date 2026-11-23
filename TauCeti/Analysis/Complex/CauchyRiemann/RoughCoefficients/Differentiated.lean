@@ -272,17 +272,6 @@ open scoped ContDiff Convolution Distributions InnerProductSpace LineDeriv Topol
 
 variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] {Ω : Opens ℂ}
 
-private local instance : NormedAddCommGroup (V →L[ℝ] V) := inferInstance
-private local instance : NormedSpace ℝ (V →L[ℝ] V) := inferInstance
-private local instance : NormedAddCommGroup (ℂ →L[ℝ] V) := inferInstance
-private local instance : NormedSpace ℝ (ℂ →L[ℝ] V) := inferInstance
-private local instance : NormedAddCommGroup (V × V →L[ℝ] V × V) := inferInstance
-private local instance : NormedSpace ℝ (V × V →L[ℝ] V × V) := inferInstance
-private local instance :
-    NormedAddCommGroup (WithLp 2 (V × V) →L[ℝ] WithLp 2 (V × V)) := inferInstance
-private local instance :
-    NormedSpace ℝ (WithLp 2 (V × V) →L[ℝ] WithLp 2 (V × V)) := inferInstance
-
 /-- Commutator identity for a smooth field `ψ` and a `W^{1,p}_loc` coefficient `J`: symmetry of the
 second Fréchet derivative of `ψ` cancels the second-derivative terms in the weak Leibniz rules for
 `∂_t(J ∂_s ψ)` and `∂_s(J ∂_t ψ)`. -/
@@ -376,8 +365,8 @@ private theorem integral_commutator_of_hasWeakFDerivOn [FiniteDimensional ℝ V]
   have hJW : MemLp J p (volume.restrict W) :=
     hc.memLpLoc_coeff.memLp_restrict_of_isCompact_closure hWc hWΩ
   have hDJW (w : ℂ) : MemLp (fun z => DJ z w) p (volume.restrict W) :=
-    (hc.memLpLoc_deriv.memLp_restrict_of_isCompact_closure hWc hWΩ).continuousLinearMap_comp
-      (ContinuousLinearMap.apply ℝ (V →L[ℝ] V) w)
+    (hc.memLpLoc_deriv.clm_comp (ContinuousLinearMap.apply ℝ (V →L[ℝ] V) w)
+      ).memLp_restrict_of_isCompact_closure hWc hWΩ
   have hξext : MemLp ((W : Set ℂ).indicator ξ) q volume :=
     (memLp_indicator_iff_restrict W.isOpen.measurableSet.nullMeasurableSet).2 hξW
   let Dψ (n : ℕ) : ℂ → ℂ →L[ℝ] V :=
@@ -629,12 +618,12 @@ theorem isWeakCRSolution_differentiated [FiniteDimensional ℝ V] {p q : ℝ≥0
   let e := (WithLp.prodContinuousLinearEquiv 2 ℝ V V).symm
   have hDJ₂ := hDJ.withLpDiag 2
   have hJ₂ := hJ.withLpDiag 2
-  have hc₂ : IsSobolevCRCoefficients p Ω (fun z => (J z).withLpProdMap 2 (J z))
-      (fun z => (ContinuousLinearMap.withLpDiagL 2 ℝ V V).comp (DJ z))
-      (fun z => e.arrowCongr e (differentiatedCRCoefficient (S z) (DJ z))) :=
-    IsSobolevCRCoefficients.of_memWkpLoc hJ₂ hDJ₂
-      ((memWkpLoc_zero_iff.1 ((memWkpLoc_zero_iff.2 hS.memLpLoc).differentiatedCRCoefficient
-        hJ hDJ)).clm_comp (e.arrowCongr e).toContinuousLinearMap)
+  have hS₂ : MemLpLoc p Ω (fun z => e.arrowCongr e (differentiatedCRCoefficient (S z) (DJ z))) := by
+    simpa only [ContinuousLinearEquiv.coe_coe] using
+      (memWkpLoc_zero_iff.1 ((memWkpLoc_zero_iff.2 hS.memLpLoc).differentiatedCRCoefficient
+        hJ hDJ)).clm_comp (G := WithLp 2 (V × V) →L[ℝ] WithLp 2 (V × V))
+        (e.arrowCongr e).toContinuousLinearMap
+  have hc₂ := IsSobolevCRCoefficients.of_memWkpLoc hJ₂ hDJ₂ hS₂
   have hΞq : MemLpLoc q Ω (fun z => WithLp.toLp 2 (Dξ z 1, Dξ z I)) := by
     simpa only [e, WithLp.prodContinuousLinearEquiv_symm_apply] using
       e.comp_memLpLoc_iff.2 (memWkpLoc_zero_iff.1 (hξ.memWkpLoc_partials_of_hasWeakFDerivOn hDξ))

@@ -338,7 +338,7 @@ theorem HasWeakLineDerivOn.bilin_of_continuousOn [CompleteSpace H] (B : F →L[�
       φ₀.integrable_smul ((hg.locallyIntegrableOn_deriv.mono_set hW₀Ω).continuousOn_clm_apply
         W₀.isOpen.isLocallyClosed (B.continuous.comp_continuousOn (hfn_cont n).continuousOn))
     simp only [φ₀, TestFunction.coe_mk, smul_add] at h
-    simp_rw [(φ.contDiff.differentiable (by simp) _).lineDeriv_eq_fderiv] at h
+    simp only [TestFunction.lineDeriv_eq_fderiv] at h
     rwa [integral_add hi1 hi2] at h
   have hunif : TendstoUniformlyOn f_n f atTop (tsupport (φ : ℂ → ℝ)) :=
     ContDiffBump.tendstoUniformlyOn_normed_convolution_indicator (μ := volume) hρ0 W.isOpen
@@ -367,7 +367,7 @@ theorem HasWeakLineDerivOn.bilin_of_continuousOn [CompleteSpace H] (B : F →L[�
       fun z => (φ : ℂ → ℝ) z • B (f' z) (g z) + (φ : ℂ → ℝ) z • B (f z) (g' z) :=
     funext fun z => smul_add _ _ _
   rw [heq, integral_add (φ.integrable_smul hBf'g) (φ.integrable_smul hBfg')]
-  simp_rw [(φ.contDiff.differentiable (by simp) _).lineDeriv_eq_fderiv]
+  simp only [TestFunction.lineDeriv_eq_fderiv]
   exact tendsto_nhds_unique (ht1.congr fun n => hid n) hrhs
 
 end Endpoint
