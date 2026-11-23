@@ -5,658 +5,687 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Calculus.Morse.MorseSmale.Basic
-public import Mathlib.Analysis.SpecialFunctions.Trigonometric.ArctanDeriv
-import TauCeti.Analysis.Normed.Operator.FiniteDimensional
+public import TauCeti.Analysis.Calculus.Morse.MorseSmale.Fredholm
+import Mathlib.Analysis.Calculus.FDeriv.WithLp
+import Mathlib.Analysis.SpecialFunctions.Trigonometric.ArctanDeriv
+import TauCeti.Analysis.InnerProductSpace.PiL2
+import TauCeti.Analysis.SpecialFunctions.Trigonometric.Arctan
 
 /-!
-# A saddle connection on the torus and its perturbation
+# A saddle connection on the upright torus and its removal by tilting
 
-The torus of revolution with radii `R > r > 0`, standing upright, has the height function
-`(R + r cos φ) cos θ` in the angles `θ` and `φ`. Its four critical points are a maximum `(0, 0)`,
-a minimum `(π, 0)` and two saddles `(0, π)` and `(π, π)`, of index `1`. Along the circle `φ = π`
-the negative-gradient flow runs from one saddle to the other: this is the standard example of a
-gradient flow which is not Morse–Smale, since a trajectory between two critical points of the same
-index has expected dimension `-1`. Tilting the torus slightly breaks the saddle connection. This
-file works this example out for the flat metric `dθ² + dφ²` on the doubly periodic functions
+The torus of revolution `((2 + cos y) cos x, (2 + cos y) sin x, sin y)` standing upright has the
+height function `(2 + cos y) cos x`. Tilting the direction of measurement to `(1, 0, ε)` gives
 
-`torusHeight R r ε (θ, φ) = (R + r cos φ) cos θ + ε sin φ`
+`f_ε(x, y) = (2 + cos y) cos x + ε sin y`
 
-on the plane `ℝ²` covering the torus, where the negative-gradient flow is defined by the
-Euclidean framework of `TauCeti.Analysis.Calculus.Morse` (the gradient is globally Lipschitz,
-`TauCeti.lipschitzWith_gradient_torusHeight`).
+(`TauCeti.tiltedTorusHeight`), which we study on the Euclidean plane, the universal cover of the
+torus. Its gradient is globally Lipschitz. Its critical points are the points with `sin x = 0` and
+`sin y cos x = ε cos y`, all nondegenerate. Among them, those with `cos y < 0` are saddles, of
+Morse index `1`; the others are maxima, where `cos x = 1`, and minima, where `cos x = -1`.
 
-* **Critical points.** For `|r| < R` the critical points are the points with `sin θ = 0` and
-  `ε cos φ = r sin φ cos θ`. With `ρ = √(r² + ε²) > 0` every one of them is nondegenerate, and there
-  are four kinds, up to the period lattice: a maximum of value `R + ρ`, saddles of values `R - ρ`
-  and `ρ - R`, and a minimum of value `-R - ρ`.
-* **The saddle connection.** For `ε = 0`, on a circle `φ = φ₀` with `sin φ₀ = 0` and
-  `R + r cos φ₀ > 0`, the point `(π / 2, φ₀)` lies on the trajectory
-  `t ↦ (2 arctan (e^{(R + r cos φ₀) t}), φ₀)` from `(0, φ₀)` to `(π, φ₀)`. For `|r| < R` and
-  `r ≠ 0`, choosing `φ₀ = π` if `r > 0` and `φ₀ = 0` if `r < 0` makes both endpoints saddles, so
-  the flow is not Morse–Smale (`TauCeti.not_isMorseSmale_torusHeight_zero`).
-* **The perturbation.** For `ε ≠ 0` and `ρ < R` the flow is Morse–Smale
-  (`TauCeti.isMorseSmale_torusHeight`); in particular no trajectory joins two saddles
-  (`TauCeti.IsMorseSmale.unstableSet_inter_stableSet_eq_empty`). By
-  `TauCeti.IsMorseSmale.of_forall_ne_of_morseIndex_ne` only trajectories between distinct saddles
-  need to be examined, and a trajectory between distinct critical points lowers the value. This
-  leaves only trajectories from a saddle of value `R - ρ`, where `ρ sin φ = -ε`, to a saddle of
-  value `ρ - R`, where `ρ sin φ = ε`. Along such a trajectory `ε sin φ` would pass from negative to
-  positive values, but wherever it vanishes its derivative is `-ε² < 0`, so it cannot.
+* **The upright torus is not Morse–Smale.** For `ε = 0` the line `y = π` is invariant, and on it the
+  flow is `x' = sin x`, solved by `x = 2 arctan eᵗ`. This trajectory runs from the saddle `(0, π)`
+  to the saddle `(π, π)`, of the same Morse index, so the flow is not Morse–Smale
+  (`TauCeti.not_isMorseSmale_tiltedTorusHeight_zero`).
+* **The tilted torus is Morse–Smale** for every `ε ≠ 0` (`TauCeti.isMorseSmale_tiltedTorusHeight`).
+  By `TauCeti.IsMorseSmale.of_forall_ne_of_morseIndex_ne` only trajectories between distinct
+  saddles need to be excluded. Along the flow `cos x` is nonincreasing, with derivative
+  `-(2 + cos y) sin² x`, and at a saddle `f_ε = (cos x) (2 - √(1 + ε²))` depends only on `cos x`.
+  Since `f_ε` strictly decreases along such a trajectory, it runs from a saddle with `cos x = 1` to
+  one with `cos x = -1`. These have `ε sin y < 0` and `ε sin y > 0` respectively, while along the
+  flow `ε sin y` can cross `0` only downwards: where `sin y = 0` its derivative is `-ε²`.
+
+This is the classical picture of the nongeneric saddle connection of the upright torus and of its
+perturbation into a Morse–Smale flow.
 
 ## Main results
 
-* `TauCeti.torusHeight`: the perturbed height function of the torus of revolution.
-* `TauCeti.fderiv_torusHeight_eq_zero_iff`, `TauCeti.fderiv_torusHeight_eq_zero_iff_cos_eq`: its
-  critical points.
-* `TauCeti.isNondegenerateCriticalPoint_torusHeight`: they are nondegenerate.
-* `TauCeti.morseIndex_torusHeight_eq_two`, `TauCeti.morseIndex_torusHeight_eq_one`,
-  `TauCeti.morseIndex_torusHeight_eq_zero`: Morse indices.
-* `TauCeti.morseIndex_torusHeight_of_fderiv_eq_zero`: the index and value of each critical point.
-* `TauCeti.mem_unstableSet_inter_stableSet_torusHeight_zero`: the saddle connection for `ε = 0`.
-* `TauCeti.not_isMorseSmale_torusHeight_zero`: for `ε = 0` the flow is not Morse–Smale.
-* `TauCeti.isMorseSmale_torusHeight`: for small `ε ≠ 0` it is.
+* `TauCeti.lipschitzWith_gradient_tiltedTorusHeight`: the gradient is `(4 + |ε|)`-Lipschitz.
+* `TauCeti.fderiv_tiltedTorusHeight_eq_zero_iff`,
+  `TauCeti.isNondegenerateCriticalPoint_tiltedTorusHeight`,
+  `TauCeti.morseIndex_tiltedTorusHeight_of_cos_lt_zero`,
+  `TauCeti.morseIndex_tiltedTorusHeight_of_cos_eq_one_of_cos_pos`,
+  `TauCeti.morseIndex_tiltedTorusHeight_of_cos_eq_neg_one_of_cos_pos`: the critical points, their
+  nondegeneracy and their Morse indices.
+* `TauCeti.mem_unstableSet_inter_stableSet_tiltedTorusHeight_zero`: the saddle connection of the
+  upright torus.
+* `TauCeti.not_isMorseSmale_tiltedTorusHeight_zero`: the upright torus is not Morse–Smale.
+* `TauCeti.isMorseSmale_tiltedTorusHeight`: the tilted torus is Morse–Smale.
 
 ## References
 
 * M. Hutchings, *Lecture notes on Morse homology (with an eye towards Floer theory and
-  pseudoholomorphic curves)*, 2002 (the upright torus, whose height function has trajectories
-  between its two saddles and is not Morse–Smale, and its perturbation by tilting).
+  pseudoholomorphic curves)*, 2002, §2 (the upright torus and its tilt).
 * M. Audin and M. Damian, *Morse Theory and Floer Homology*, Springer Universitext, 2014,
-  Chapter 2 (the Morse–Smale condition, with the height function of the upright torus as the
-  example of a pseudo-gradient that does not satisfy it).
+  Chapter 2 (the Morse–Smale condition).
 -/
 
 public section
 
-open Filter Set Topology Real
+open Set Filter Topology InnerProductSpace
 open scoped Gradient NNReal RealInnerProductSpace
 
 namespace TauCeti
 
-local notation "𝔼" => EuclideanSpace ℝ (Fin 2)
+/-- The height `(2 + cos y) cos x + ε sin y` of the torus of revolution
+`((2 + cos y) cos x, (2 + cos y) sin x, sin y)` in the direction `(1, 0, ε)`, as a function on the
+Euclidean plane. For `ε = 0` it is the height function of the upright torus. -/
+noncomputable def tiltedTorusHeight (ε : ℝ) (z : EuclideanSpace ℝ (Fin 2)) : ℝ :=
+  (2 + Real.cos (z 1)) * Real.cos (z 0) + ε * Real.sin (z 1)
 
-local notation "pr₀" => (EuclideanSpace.proj (0 : Fin 2) : EuclideanSpace ℝ (Fin 2) →L[ℝ] ℝ)
+variable {ε : ℝ}
 
-local notation "pr₁" => (EuclideanSpace.proj (1 : Fin 2) : EuclideanSpace ℝ (Fin 2) →L[ℝ] ℝ)
+private theorem two_add_cos_pos (y : ℝ) : 0 < 2 + Real.cos y := by
+  linarith [Real.neg_one_le_cos y]
 
-local notation "e₀" => EuclideanSpace.single (0 : Fin 2) (1 : ℝ)
-
-local notation "e₁" => EuclideanSpace.single (1 : Fin 2) (1 : ℝ)
-
-/-- The height function `(R + r cos φ) cos θ + ε sin φ` of a torus of revolution with radii `R`
-and `r`, perturbed by `ε sin φ`, in the angles `θ = z 0` and `φ = z 1`. It is `2π`-periodic in
-both angles. -/
-noncomputable def torusHeight (R r ε : ℝ) (z : EuclideanSpace ℝ (Fin 2)) : ℝ :=
-  (R + r * cos (z 1)) * cos (z 0) + ε * sin (z 1)
-
-variable {R r ε : ℝ}
-
-/-- The value of the perturbed torus height. -/
 @[simp]
-theorem torusHeight_apply (z : EuclideanSpace ℝ (Fin 2)) :
-    torusHeight R r ε z = (R + r * cos (z 1)) * cos (z 0) + ε * sin (z 1) :=
+theorem tiltedTorusHeight_apply (z : EuclideanSpace ℝ (Fin 2)) :
+    tiltedTorusHeight ε z = (2 + Real.cos (z 1)) * Real.cos (z 0) + ε * Real.sin (z 1) :=
   (rfl)
 
-/-- The perturbed torus height is smooth. -/
-theorem contDiff_torusHeight {n : WithTop ℕ∞} : ContDiff ℝ n (torusHeight R r ε) := by
-  have h0 : ContDiff ℝ n fun z : 𝔼 ↦ z 0 := ContinuousLinearMap.contDiff pr₀
-  have h1 : ContDiff ℝ n fun z : 𝔼 ↦ z 1 := ContinuousLinearMap.contDiff pr₁
-  exact ((contDiff_const.add (contDiff_const.mul (contDiff_cos.comp h1))).mul
-    (contDiff_cos.comp h0)).add (contDiff_const.mul (contDiff_sin.comp h1))
+/-- The tilted torus height is smooth. -/
+theorem contDiff_tiltedTorusHeight {n : WithTop ℕ∞} : ContDiff ℝ n (tiltedTorusHeight ε) := by
+  have h0 := (EuclideanSpace.proj (0 : Fin 2) : EuclideanSpace ℝ (Fin 2) →L[ℝ] ℝ).contDiff (n := n)
+  have h1 := (EuclideanSpace.proj (1 : Fin 2) : EuclideanSpace ℝ (Fin 2) →L[ℝ] ℝ).contDiff (n := n)
+  exact ((contDiff_const.add (Real.contDiff_cos.comp h1)).mul (Real.contDiff_cos.comp h0)).add
+    (contDiff_const.mul (Real.contDiff_sin.comp h1))
 
-private theorem hasFDerivAt_cos_apply (i : Fin 2) (z : 𝔼) :
-    HasFDerivAt (fun w : 𝔼 ↦ cos (w i)) (-sin (z i) • (EuclideanSpace.proj i : 𝔼 →L[ℝ] ℝ)) z := by
-  simpa [Function.comp_def] using (hasDerivAt_cos (z i)).comp_hasFDerivAt z
-    (EuclideanSpace.proj i : 𝔼 →L[ℝ] ℝ).hasFDerivAt
+/-- The basis vectors of the plane. -/
+private noncomputable abbrev e₀ : EuclideanSpace ℝ (Fin 2) := EuclideanSpace.single 0 1
 
-private theorem hasFDerivAt_sin_apply (i : Fin 2) (z : 𝔼) :
-    HasFDerivAt (fun w : 𝔼 ↦ sin (w i)) (cos (z i) • (EuclideanSpace.proj i : 𝔼 →L[ℝ] ℝ)) z := by
-  simpa [Function.comp_def] using (hasDerivAt_sin (z i)).comp_hasFDerivAt z
-    (EuclideanSpace.proj i : 𝔼 →L[ℝ] ℝ).hasFDerivAt
+private noncomputable abbrev e₁ : EuclideanSpace ℝ (Fin 2) := EuclideanSpace.single 1 1
 
-/-- The gradient field `(-(R + r cos φ) sin θ, ε cos φ - r sin φ cos θ)`. -/
-private noncomputable def gradField (R r ε : ℝ) (z : 𝔼) : 𝔼 :=
-  (-((R + r * cos (z 1)) * sin (z 0))) • e₀ + (ε * cos (z 1) - r * sin (z 1) * cos (z 0)) • e₁
+private theorem smul_e₀_add_smul_e₁_apply_zero (a b : ℝ) : (a • e₀ + b • e₁) 0 = a := by
+  simp
 
-private theorem hasGradientAt_torusHeight (z : 𝔼) :
-    HasGradientAt (torusHeight R r ε) (gradField R r ε z) z := by
+private theorem smul_e₀_add_smul_e₁_apply_one (a b : ℝ) : (a • e₀ + b • e₁) 1 = b := by
+  simp
+
+/-- The gradient field `(-(2 + cos y) sin x, -sin y cos x + ε cos y)`. -/
+private noncomputable def gradField (ε : ℝ) (z : EuclideanSpace ℝ (Fin 2)) :
+    EuclideanSpace ℝ (Fin 2) :=
+  (-((2 + Real.cos (z 1)) * Real.sin (z 0))) • e₀ +
+    (-(Real.sin (z 1) * Real.cos (z 0)) + ε * Real.cos (z 1)) • e₁
+
+@[simp]
+private theorem gradField_apply_zero (z : EuclideanSpace ℝ (Fin 2)) :
+    gradField ε z 0 = -((2 + Real.cos (z 1)) * Real.sin (z 0)) := by
+  simp [gradField]
+
+@[simp]
+private theorem gradField_apply_one (z : EuclideanSpace ℝ (Fin 2)) :
+    gradField ε z 1 = -(Real.sin (z 1) * Real.cos (z 0)) + ε * Real.cos (z 1) := by
+  simp [gradField]
+
+private theorem hasGradientAt_tiltedTorusHeight (z : EuclideanSpace ℝ (Fin 2)) :
+    HasGradientAt (tiltedTorusHeight ε) (gradField ε z) z := by
   rw [hasGradientAt_iff_hasFDerivAt]
-  have h := ((((hasFDerivAt_cos_apply 1 z).const_mul r).const_add R).mul
-    (hasFDerivAt_cos_apply 0 z)).add ((hasFDerivAt_sin_apply 1 z).const_mul ε)
-  refine h.congr_fderiv (ContinuousLinearMap.ext fun u ↦ ?_)
-  simp [gradField, PiLp.inner_apply]
+  have hp0 := PiLp.hasFDerivAt_apply (𝕜 := ℝ) 2 z 0
+  have hp1 := PiLp.hasFDerivAt_apply (𝕜 := ℝ) 2 z 1
+  have hc0 := (Real.hasDerivAt_cos (z 0)).comp_hasFDerivAt z hp0
+  have hc1 := (Real.hasDerivAt_cos (z 1)).comp_hasFDerivAt z hp1
+  have hs1 := (Real.hasDerivAt_sin (z 1)).comp_hasFDerivAt z hp1
+  refine ((((hasFDerivAt_const (2 : ℝ) z).add hc1).mul hc0).add (hs1.const_mul ε)).congr_fderiv ?_
+  ext u
+  simp only [add_apply, smul_apply, zero_apply, PiLp.proj_apply, Pi.add_apply,
+    Function.comp_apply, smul_eq_mul, toDual_apply_apply, PiLp.inner_apply, Fin.sum_univ_two,
+    RCLike.inner_apply, conj_trivial, gradField_apply_zero, gradField_apply_one]
   ring
 
-private theorem gradient_torusHeight : ∇ (torusHeight R r ε) = gradField R r ε :=
-  funext fun z ↦ (hasGradientAt_torusHeight z).gradient
+/-- The gradient of the tilted torus height. -/
+private theorem gradient_tiltedTorusHeight : ∇ (tiltedTorusHeight ε) = gradField ε :=
+  funext fun z ↦ (hasGradientAt_tiltedTorusHeight z).gradient
 
-/-- The first coordinate of the gradient is `-(R + r cos φ) sin θ`. -/
+/-- The first coordinate of the gradient is `-(2 + cos y) sin x`. -/
 @[simp]
-theorem gradient_torusHeight_apply_zero (z : EuclideanSpace ℝ (Fin 2)) :
-    ∇ (torusHeight R r ε) z 0 = -((R + r * cos (z 1)) * sin (z 0)) := by
-  simp [gradient_torusHeight, gradField]
+theorem gradient_tiltedTorusHeight_apply_zero (z : EuclideanSpace ℝ (Fin 2)) :
+    ∇ (tiltedTorusHeight ε) z 0 = -((2 + Real.cos (z 1)) * Real.sin (z 0)) := by
+  rw [gradient_tiltedTorusHeight, gradField_apply_zero]
 
-/-- The second coordinate of the gradient is `ε cos φ - r sin φ cos θ`. -/
+/-- The second coordinate of the gradient is `-sin y cos x + ε cos y`. -/
 @[simp]
-theorem gradient_torusHeight_apply_one (z : EuclideanSpace ℝ (Fin 2)) :
-    ∇ (torusHeight R r ε) z 1 = ε * cos (z 1) - r * sin (z 1) * cos (z 0) := by
-  simp [gradient_torusHeight, gradField]
+theorem gradient_tiltedTorusHeight_apply_one (z : EuclideanSpace ℝ (Fin 2)) :
+    ∇ (tiltedTorusHeight ε) z 1 = -(Real.sin (z 1) * Real.cos (z 0)) + ε * Real.cos (z 1) := by
+  rw [gradient_tiltedTorusHeight, gradField_apply_one]
 
-/-- The derivative of the gradient field, the Hessian of the perturbed torus height:
-`u ↦ (a u₀ + b u₁, b u₀ + c u₁)` with `a = -(R + r cos φ) cos θ`, `b = r sin φ sin θ` and
-`c = -ε sin φ - r cos φ cos θ`. -/
-private noncomputable def hessField (R r ε : ℝ) (z : 𝔼) : 𝔼 →L[ℝ] 𝔼 :=
-  ((-((R + r * cos (z 1)) * cos (z 0))) • pr₀ + (r * sin (z 1) * sin (z 0)) • pr₁).smulRight e₀ +
-    ((r * sin (z 1) * sin (z 0)) • pr₀ +
-      (-(ε * sin (z 1)) - r * cos (z 1) * cos (z 0)) • pr₁).smulRight e₁
+/-- The entries `a = -(2 + cos y) cos x`, `b = sin x sin y` and `d = -(cos y cos x + ε sin y)` of
+the Hessian matrix. -/
+private noncomputable def hessA (z : EuclideanSpace ℝ (Fin 2)) : ℝ :=
+  -((2 + Real.cos (z 1)) * Real.cos (z 0))
 
-private theorem hessField_apply (z u : 𝔼) :
-    hessField R r ε z u =
-      (-((R + r * cos (z 1)) * cos (z 0)) * u 0 + r * sin (z 1) * sin (z 0) * u 1) • e₀ +
-        (r * sin (z 1) * sin (z 0) * u 0 +
-          (-(ε * sin (z 1)) - r * cos (z 1) * cos (z 0)) * u 1) • e₁ := by
+private noncomputable def hessB (z : EuclideanSpace ℝ (Fin 2)) : ℝ :=
+  Real.sin (z 0) * Real.sin (z 1)
+
+private noncomputable def hessD (ε : ℝ) (z : EuclideanSpace ℝ (Fin 2)) : ℝ :=
+  -(Real.cos (z 1) * Real.cos (z 0) + ε * Real.sin (z 1))
+
+/-- The derivative of the gradient field, `u ↦ (a u₀ + b u₁, b u₀ + d u₁)`. -/
+private noncomputable def hessField (ε : ℝ) (z : EuclideanSpace ℝ (Fin 2)) :
+    EuclideanSpace ℝ (Fin 2) →L[ℝ] EuclideanSpace ℝ (Fin 2) :=
+  (hessA z • (EuclideanSpace.proj (0 : Fin 2) : EuclideanSpace ℝ (Fin 2) →L[ℝ] ℝ) +
+      hessB z • (EuclideanSpace.proj (1 : Fin 2) : EuclideanSpace ℝ (Fin 2) →L[ℝ] ℝ)).smulRight
+    e₀ +
+  (hessB z • (EuclideanSpace.proj (0 : Fin 2) : EuclideanSpace ℝ (Fin 2) →L[ℝ] ℝ) +
+      hessD ε z • (EuclideanSpace.proj (1 : Fin 2) : EuclideanSpace ℝ (Fin 2) →L[ℝ] ℝ)).smulRight
+    e₁
+
+private theorem hessField_apply (z u : EuclideanSpace ℝ (Fin 2)) :
+    hessField ε z u = (hessA z * u 0 + hessB z * u 1) • e₀ +
+      (hessB z * u 0 + hessD ε z * u 1) • e₁ := by
   simp [hessField]
 
-private theorem hasFDerivAt_gradField (z : 𝔼) :
-    HasFDerivAt (gradField R r ε) (hessField R r ε z) z := by
-  have h₀ := ((((hasFDerivAt_cos_apply 1 z).const_mul r).const_add R).mul
-    (hasFDerivAt_sin_apply 0 z)).neg
-  have h₁ := ((hasFDerivAt_cos_apply 1 z).const_mul ε).sub
-    (((hasFDerivAt_sin_apply 1 z).const_mul r).mul (hasFDerivAt_cos_apply 0 z))
-  refine ((h₀.smul_const e₀).add (h₁.smul_const e₁)).congr_fderiv
-    (ContinuousLinearMap.ext fun u ↦ ?_)
-  ext i
-  fin_cases i <;> simp [hessField] <;> ring
+private theorem hasFDerivAt_gradField (z : EuclideanSpace ℝ (Fin 2)) :
+    HasFDerivAt (gradField ε) (hessField ε z) z := by
+  have hp0 := PiLp.hasFDerivAt_apply (𝕜 := ℝ) 2 z 0
+  have hp1 := PiLp.hasFDerivAt_apply (𝕜 := ℝ) 2 z 1
+  have hc0 := (Real.hasDerivAt_cos (z 0)).comp_hasFDerivAt z hp0
+  have hs0 := (Real.hasDerivAt_sin (z 0)).comp_hasFDerivAt z hp0
+  have hc1 := (Real.hasDerivAt_cos (z 1)).comp_hasFDerivAt z hp1
+  have hs1 := (Real.hasDerivAt_sin (z 1)).comp_hasFDerivAt z hp1
+  have g0 := (((hasFDerivAt_const (2 : ℝ) z).add hc1).mul hs0).neg.smul_const e₀
+  have g1 := ((hs1.mul hc0).neg.add (hc1.const_mul ε)).smul_const e₁
+  refine (g0.add g1).congr_fderiv ?_
+  rw [hessField]
+  congr 2 <;> ext u <;>
+    simp only [add_apply, neg_apply, smul_apply, zero_apply, PiLp.proj_apply, Pi.add_apply,
+      Function.comp_apply, smul_eq_mul, hessA, hessB, hessD] <;>
+    ring
 
-private theorem hessianOperator_torusHeight (z : 𝔼) :
-    hessianOperator (torusHeight R r ε) z = hessField R r ε z := by
-  rw [← fderiv_gradient, gradient_torusHeight]
+/-- The Hessian operator of the tilted torus height. -/
+private theorem hessianOperator_tiltedTorusHeight (z : EuclideanSpace ℝ (Fin 2)) :
+    hessianOperator (tiltedTorusHeight ε) z = hessField ε z := by
+  rw [← fderiv_gradient, gradient_tiltedTorusHeight]
   exact (hasFDerivAt_gradField z).fderiv
 
-/-- The Hessian quadratic form of the perturbed torus height:
-`a u₀² + 2 b u₀ u₁ + c u₁²` with `a = -(R + r cos φ) cos θ`, `b = r sin φ sin θ` and
-`c = -ε sin φ - r cos φ cos θ`. -/
-theorem hessianQuadraticForm_torusHeight (z u : EuclideanSpace ℝ (Fin 2)) :
-    hessianQuadraticForm (torusHeight R r ε) z u =
-      -((R + r * cos (z 1)) * cos (z 0)) * u 0 ^ 2 + 2 * (r * sin (z 1) * sin (z 0)) * u 0 * u 1 +
-        (-(ε * sin (z 1)) - r * cos (z 1) * cos (z 0)) * u 1 ^ 2 := by
-  rw [hessianQuadraticForm_apply, ← inner_hessianOperator_left, hessianOperator_torusHeight,
-    hessField_apply]
-  simp [PiLp.inner_apply, Fin.sum_univ_two]
+/-- The Hessian quadratic form: `a u₀² + 2 b u₀ u₁ + d u₁²`. -/
+private theorem hessianQuadraticForm_tiltedTorusHeight (z u : EuclideanSpace ℝ (Fin 2)) :
+    hessianQuadraticForm (tiltedTorusHeight ε) z u =
+      hessA z * u 0 ^ 2 + 2 * hessB z * u 0 * u 1 + hessD ε z * u 1 ^ 2 := by
+  rw [hessianQuadraticForm_apply, ← inner_hessianOperator_left,
+    hessianOperator_tiltedTorusHeight, hessField_apply, PiLp.inner_apply, Fin.sum_univ_two,
+    smul_e₀_add_smul_e₁_apply_zero, smul_e₀_add_smul_e₁_apply_one]
+  simp only [RCLike.inner_apply, conj_trivial]
   ring
 
-/-- **The gradient is Lipschitz**, with constant `|R| + 4 |r| + |ε|`. -/
-theorem lipschitzWith_gradient_torusHeight (R r ε : ℝ) :
-    LipschitzWith (‖R‖₊ + 4 * ‖r‖₊ + ‖ε‖₊) (∇ (torusHeight R r ε)) := by
-  rw [gradient_torusHeight]
-  refine lipschitzWith_of_nnNorm_fderiv_le
-    (fun z ↦ (hasFDerivAt_gradField z).differentiableAt) fun z ↦ ?_
-  rw [(hasFDerivAt_gradField z).fderiv, ← NNReal.coe_le_coe, coe_nnNorm]
-  push_cast
-  simp only [Real.norm_eq_abs]
+private theorem abs_hessA_le (z : EuclideanSpace ℝ (Fin 2)) : |hessA z| ≤ 3 := by
+  rw [hessA, abs_neg, abs_mul, abs_of_pos (two_add_cos_pos (z 1))]
+  nlinarith [Real.abs_cos_le_one (z 0), Real.cos_le_one (z 1), abs_nonneg (Real.cos (z 0))]
+
+private theorem abs_hessB_le (z : EuclideanSpace ℝ (Fin 2)) : |hessB z| ≤ 1 := by
+  rw [hessB, abs_mul]
+  nlinarith [Real.abs_sin_le_one (z 0), Real.abs_sin_le_one (z 1),
+    abs_nonneg (Real.sin (z 0)), abs_nonneg (Real.sin (z 1))]
+
+private theorem abs_hessD_le (z : EuclideanSpace ℝ (Fin 2)) : |hessD ε z| ≤ 1 + |ε| := by
+  rw [hessD, abs_neg]
+  refine (abs_add_le _ _).trans (add_le_add ?_ ?_)
+  · rw [abs_mul]
+    nlinarith [Real.abs_cos_le_one (z 0), Real.abs_cos_le_one (z 1),
+      abs_nonneg (Real.cos (z 0)), abs_nonneg (Real.cos (z 1))]
+  · rw [abs_mul]
+    exact mul_le_of_le_one_right (abs_nonneg _) (Real.abs_sin_le_one _)
+
+/-- The operator norm of the derivative of the gradient field is at most `4 + |ε|`. -/
+private theorem norm_hessField_le (z : EuclideanSpace ℝ (Fin 2)) :
+    ‖hessField ε z‖ ≤ 4 + |ε| := by
   refine ContinuousLinearMap.opNorm_le_bound _ (by positivity) fun u ↦ ?_
-  have hu₀ : |u 0| ≤ ‖u‖ := by simpa using PiLp.norm_apply_le u 0
-  have hu₁ : |u 1| ≤ ‖u‖ := by simpa using PiLp.norm_apply_le u 1
-  have hu := norm_nonneg u
-  have abs_mul_le_of_abs_le_one {x c : ℝ} (hc : |c| ≤ 1) : |x * c| ≤ |x| := by
-    rw [abs_mul]
-    exact mul_le_of_le_one_right (abs_nonneg _) hc
-  -- The entries of the Hessian are bounded by `|R| + |r|`, `|r|` and `|ε| + |r|`.
-  have ha : |-((R + r * cos (z 1)) * cos (z 0))| ≤ |R| + |r| := by
-    rw [abs_neg]
-    refine (abs_mul_le_of_abs_le_one (abs_cos_le_one _)).trans ((abs_add_le _ _).trans ?_)
-    exact add_le_add_right (abs_mul_le_of_abs_le_one (abs_cos_le_one _)) _
-  have hb : |r * sin (z 1) * sin (z 0)| ≤ |r| :=
-    (abs_mul_le_of_abs_le_one (abs_sin_le_one _)).trans
-      (abs_mul_le_of_abs_le_one (abs_sin_le_one _))
-  have hc : |-(ε * sin (z 1)) - r * cos (z 1) * cos (z 0)| ≤ |ε| + |r| := by
-    refine (abs_sub _ _).trans (add_le_add ?_ ?_)
-    · rw [abs_neg]
-      exact abs_mul_le_of_abs_le_one (abs_sin_le_one _)
-    · exact (abs_mul_le_of_abs_le_one (abs_cos_le_one _)).trans
-        (abs_mul_le_of_abs_le_one (abs_cos_le_one _))
-  have hrow {a b : ℝ} : |a * u 0 + b * u 1| ≤ |a| * ‖u‖ + |b| * ‖u‖ := by
-    refine (abs_add_le _ _).trans ?_
-    rw [abs_mul, abs_mul]
-    gcongr
-  rw [hessField_apply]
-  refine (norm_add_le _ _).trans ?_
-  have he₀ : ‖e₀‖ = 1 := by simp
-  have he₁ : ‖e₁‖ = 1 := by simp
-  rw [norm_smul, norm_smul, he₀, he₁, mul_one, mul_one, Real.norm_eq_abs, Real.norm_eq_abs]
-  nlinarith [@hrow (-((R + r * cos (z 1)) * cos (z 0))) (r * sin (z 1) * sin (z 0)),
-    @hrow (r * sin (z 1) * sin (z 0)) (-(ε * sin (z 1)) - r * cos (z 1) * cos (z 0)),
-    mul_le_mul_of_nonneg_right ha hu, mul_le_mul_of_nonneg_right hb hu,
-    mul_le_mul_of_nonneg_right hc hu]
+  have ha := abs_hessA_le z
+  have hb := abs_hessB_le z
+  have hd := abs_hessD_le (ε := ε) z
+  have hu : ‖u‖ = √(u 0 ^ 2 + u 1 ^ 2) := by
+    rw [EuclideanSpace.norm_eq, Fin.sum_univ_two, Real.norm_eq_abs, Real.norm_eq_abs, sq_abs,
+      sq_abs]
+  have hv : ‖hessField ε z u‖ = √((hessA z * u 0 + hessB z * u 1) ^ 2 +
+      (hessB z * u 0 + hessD ε z * u 1) ^ 2) := by
+    rw [EuclideanSpace.norm_eq, Fin.sum_univ_two, Real.norm_eq_abs, Real.norm_eq_abs, sq_abs,
+      sq_abs, hessField_apply]
+    simp
+  set a := hessA z
+  set b := hessB z
+  set d := hessD ε z
+  -- Cauchy–Schwarz in each row, then the bounds on the entries.
+  have hrow0 : (a * u 0 + b * u 1) ^ 2 ≤ (a ^ 2 + b ^ 2) * (u 0 ^ 2 + u 1 ^ 2) := by
+    nlinarith [sq_nonneg (a * u 1 - b * u 0)]
+  have hrow1 : (b * u 0 + d * u 1) ^ 2 ≤ (b ^ 2 + d ^ 2) * (u 0 ^ 2 + u 1 ^ 2) := by
+    nlinarith [sq_nonneg (b * u 1 - d * u 0)]
+  have ha2 : a ^ 2 ≤ 9 := by nlinarith [sq_abs a, abs_nonneg a]
+  have hb2 : b ^ 2 ≤ 1 := by nlinarith [sq_abs b, abs_nonneg b]
+  have hd2 : d ^ 2 ≤ (1 + |ε|) ^ 2 := by nlinarith [sq_abs d, abs_nonneg d]
+  have hsum : (a * u 0 + b * u 1) ^ 2 + (b * u 0 + d * u 1) ^ 2 ≤
+      ((4 + |ε|) * √(u 0 ^ 2 + u 1 ^ 2)) ^ 2 := by
+    rw [mul_pow, Real.sq_sqrt (by positivity)]
+    nlinarith [abs_nonneg ε, (by positivity : 0 ≤ u 0 ^ 2 + u 1 ^ 2)]
+  rw [hv, hu]
+  exact (Real.sqrt_le_sqrt hsum).trans_eq (Real.sqrt_sq (by positivity))
 
-private theorem pos_add_mul_cos (hr : |r| < R) (x : ℝ) : 0 < R + r * cos x := by
-  have : |r * cos x| ≤ |r| := by
-    rw [abs_mul]
-    exact mul_le_of_le_one_right (abs_nonneg _) (abs_cos_le_one x)
-  linarith [neg_abs_le (r * cos x)]
+/-- **The gradient is `(4 + |ε|)`-Lipschitz.** -/
+theorem lipschitzWith_gradient_tiltedTorusHeight (ε : ℝ) :
+    LipschitzWith (4 + ‖ε‖₊) (∇ (tiltedTorusHeight ε)) := by
+  rw [gradient_tiltedTorusHeight]
+  refine lipschitzWith_of_nnNorm_fderiv_le (fun z ↦ (hasFDerivAt_gradField z).differentiableAt)
+    fun z ↦ ?_
+  rw [(hasFDerivAt_gradField z).fderiv, ← NNReal.coe_le_coe, coe_nnNorm, NNReal.coe_add,
+    coe_nnNorm, Real.norm_eq_abs]
+  exact norm_hessField_le z
 
-/-- A diagonal quadratic form on the plane with positive weights is positive definite. -/
-private theorem pos_mul_sq_add_mul_sq {a c : ℝ} (ha : 0 < a) (hc : 0 < c) {u : 𝔼} (hu : u ≠ 0) :
-    0 < a * u 0 ^ 2 + c * u 1 ^ 2 := by
-  have hne : u 0 ≠ 0 ∨ u 1 ≠ 0 := by
-    by_contra h
-    rw [not_or, not_not, not_not] at h
-    exact hu (by ext i; fin_cases i <;> simp [h.1, h.2])
-  rcases hne with h | h
-  · nlinarith [pow_pos (abs_pos.2 h) 2, sq_abs (u 0), sq_nonneg (u 1)]
-  · nlinarith [pow_pos (abs_pos.2 h) 2, sq_abs (u 1), sq_nonneg (u 0)]
+/-! ### Critical points and their Morse indices -/
 
-/-- **The critical points.** For `|r| < R`, the critical points of the perturbed torus height are
-the points with `sin θ = 0` and `ε cos φ = r sin φ cos θ`. -/
-theorem fderiv_torusHeight_eq_zero_iff (hr : |r| < R) {z : EuclideanSpace ℝ (Fin 2)} :
-    fderiv ℝ (torusHeight R r ε) z = 0 ↔
-      sin (z 0) = 0 ∧ ε * cos (z 1) = r * sin (z 1) * cos (z 0) := by
-  have h : fderiv ℝ (torusHeight R r ε) z = 0 ↔ ∇ (torusHeight R r ε) z = 0 := by
+/-- The critical points of the tilted torus height are the points with `sin x = 0` and
+`sin y cos x = ε cos y`. -/
+@[simp]
+theorem fderiv_tiltedTorusHeight_eq_zero_iff {z : EuclideanSpace ℝ (Fin 2)} :
+    fderiv ℝ (tiltedTorusHeight ε) z = 0 ↔
+      Real.sin (z 0) = 0 ∧ Real.sin (z 1) * Real.cos (z 0) = ε * Real.cos (z 1) := by
+  have h : fderiv ℝ (tiltedTorusHeight ε) z = 0 ↔ ∇ (tiltedTorusHeight ε) z = 0 := by
     simp [gradient]
   rw [h]
   constructor
   · intro h0
-    have h₀ := congrArg (fun v : 𝔼 ↦ v 0) h0
-    have h₁ := congrArg (fun v : 𝔼 ↦ v 1) h0
-    simp only [gradient_torusHeight_apply_zero, gradient_torusHeight_apply_one,
-      PiLp.zero_apply, neg_eq_zero] at h₀ h₁
-    exact ⟨(mul_eq_zero.1 h₀).resolve_left (pos_add_mul_cos hr _).ne', by linarith⟩
-  · rintro ⟨h₀, h₁⟩
-    ext i
-    fin_cases i <;> simp [h₀, h₁]
+    have h0' := congrArg (fun v : EuclideanSpace ℝ (Fin 2) ↦ v 0) h0
+    have h1' := congrArg (fun v : EuclideanSpace ℝ (Fin 2) ↦ v 1) h0
+    simp only [gradient_tiltedTorusHeight_apply_zero, gradient_tiltedTorusHeight_apply_one,
+      PiLp.zero_apply, neg_eq_zero] at h0' h1'
+    exact ⟨(mul_eq_zero.1 h0').resolve_left (two_add_cos_pos (z 1)).ne', by linarith⟩
+  · rintro ⟨h0, h1⟩
+    exact PiLp.ext <| Fin.forall_fin_two.2 ⟨by simp [h0], by simp [h1]⟩
 
-/-- At a point with `sin θ = 0` the Hessian is diagonal. -/
-private theorem hessianQuadraticForm_torusHeight_of_sin_eq_zero {z : 𝔼} (h : sin (z 0) = 0)
-    (u : 𝔼) :
-    hessianQuadraticForm (torusHeight R r ε) z u =
-      -((R + r * cos (z 1)) * cos (z 0)) * u 0 ^ 2 +
-        (-(ε * sin (z 1)) - r * cos (z 1) * cos (z 0)) * u 1 ^ 2 := by
-  rw [hessianQuadraticForm_torusHeight, h]
+variable {z : EuclideanSpace ℝ (Fin 2)}
+
+/-- At a critical point `cos² x = 1`. -/
+private theorem cos_sq_eq_one_of_fderiv_eq_zero (hz : fderiv ℝ (tiltedTorusHeight ε) z = 0) :
+    Real.cos (z 0) ^ 2 = 1 := by
+  have := (fderiv_tiltedTorusHeight_eq_zero_iff.1 hz).1
+  nlinarith [Real.sin_sq_add_cos_sq (z 0)]
+
+/-- At a critical point `cos y ≠ 0`: otherwise `sin y cos x = 0` would force `sin y = 0` too. -/
+private theorem cos_ne_zero_of_fderiv_eq_zero (hz : fderiv ℝ (tiltedTorusHeight ε) z = 0) :
+    Real.cos (z 1) ≠ 0 := by
+  intro hc
+  have h1 := (fderiv_tiltedTorusHeight_eq_zero_iff.1 hz).2
+  have hx := cos_sq_eq_one_of_fderiv_eq_zero hz
+  rw [hc, mul_zero] at h1
+  have hs : Real.sin (z 1) = 0 :=
+    (mul_eq_zero.1 h1).resolve_right fun h ↦ by rw [h] at hx; norm_num at hx
+  nlinarith [Real.sin_sq_add_cos_sq (z 1), hs]
+
+/-- At a critical point, `a cos x = -(2 + cos y)`, `b = 0` and `d cos x = -(1 + ε²) cos y` for the
+entries of the Hessian matrix. -/
+private theorem hess_of_fderiv_eq_zero (hz : fderiv ℝ (tiltedTorusHeight ε) z = 0) :
+    hessA z * Real.cos (z 0) = -(2 + Real.cos (z 1)) ∧ hessB z = 0 ∧
+      hessD ε z * Real.cos (z 0) = -((1 + ε ^ 2) * Real.cos (z 1)) := by
+  obtain ⟨h0, h1⟩ := fderiv_tiltedTorusHeight_eq_zero_iff.1 hz
+  have hx := cos_sq_eq_one_of_fderiv_eq_zero hz
+  refine ⟨?_, by simp [hessB, h0], ?_⟩
+  · rw [hessA]
+    linear_combination -(2 + Real.cos (z 1)) * hx
+  · rw [hessD]
+    linear_combination -Real.cos (z 1) * hx - ε * h1
+
+/-- At a critical point the Hessian quadratic form is diagonal: `a u₀² + d u₁²`. -/
+private theorem hessianQuadraticForm_tiltedTorusHeight_of_fderiv_eq_zero
+    (hz : fderiv ℝ (tiltedTorusHeight ε) z = 0) (u : EuclideanSpace ℝ (Fin 2)) :
+    hessianQuadraticForm (tiltedTorusHeight ε) z u = ∑ i, ![hessA z, hessD ε z] i * u i ^ 2 := by
+  rw [hessianQuadraticForm_tiltedTorusHeight, (hess_of_fderiv_eq_zero hz).2.1, Fin.sum_univ_two,
+    Matrix.cons_val_zero, Matrix.cons_val_one, Matrix.cons_val_zero]
   ring
 
-/-- **Nondegeneracy of a diagonal critical point.** A critical point with `sin θ = 0` at which
-both diagonal entries of the Hessian are nonzero is nondegenerate. -/
-private theorem isNondegenerateCriticalPoint_of_sin_eq_zero {z : 𝔼}
-    (hz : fderiv ℝ (torusHeight R r ε) z = 0) (h : sin (z 0) = 0)
-    (ha : (R + r * cos (z 1)) * cos (z 0) ≠ 0)
-    (hc : -(ε * sin (z 1)) - r * cos (z 1) * cos (z 0) ≠ 0) :
-    IsNondegenerateCriticalPoint (torusHeight R r ε) z := by
-  refine isNondegenerateCriticalPoint_iff_gradient.2
-    ⟨contDiff_torusHeight.contDiffAt, by simp [gradient, hz], ?_⟩
-  rw [hessianOperator_torusHeight]
-  refine ContinuousLinearMap.isInvertible_of_injective_of_finrank_eq _ rfl
-    ((injective_iff_map_eq_zero _).2 fun u hu ↦ ?_)
-  have h₀ := congrArg (fun v : 𝔼 ↦ v 0) hu
-  have h₁ := congrArg (fun v : 𝔼 ↦ v 1) hu
-  simp only [hessField_apply, h, mul_zero, zero_mul, add_zero, zero_add] at h₀ h₁
-  ext i
-  fin_cases i
-  · simpa [neg_mul, ha] using h₀
-  · simpa [hc] using h₁
+/-- At a critical point the negated Hessian quadratic form is `(-a) u₀² + (-d) u₁²`. -/
+private theorem neg_hessianQuadraticForm_tiltedTorusHeight_of_fderiv_eq_zero
+    (hz : fderiv ℝ (tiltedTorusHeight ε) z = 0) (u : EuclideanSpace ℝ (Fin 2)) :
+    (-hessianQuadraticForm (tiltedTorusHeight ε) z) u =
+      ∑ i, -![hessA z, hessD ε z] i * u i ^ 2 := by
+  simp only [neg_apply, hessianQuadraticForm_tiltedTorusHeight_of_fderiv_eq_zero hz, neg_mul,
+    Finset.sum_neg_distrib]
 
-/-- For `|r| < R`, the Morse index at a point with `cos θ = 1` and `r cos φ + ε sin φ > 0`, a
-maximum when it is critical, is `2`. -/
-theorem morseIndex_torusHeight_eq_two (hr : |r| < R) {z : EuclideanSpace ℝ (Fin 2)}
-    (h₀ : cos (z 0) = 1) (h₁ : 0 < r * cos (z 1) + ε * sin (z 1)) :
-    morseIndex (torusHeight R r ε) z = 2 := by
-  have hs : sin (z 0) = 0 := by nlinarith [sin_sq_add_cos_sq (z 0)]
-  have ha := pos_add_mul_cos hr (z 1)
-  refine (?_ : morseIndex _ _ = Module.finrank ℝ 𝔼).trans finrank_euclideanSpace_fin
-  refine neg_hessianQuadraticForm_posDef_iff_morseIndex_eq_finrank.1 fun u hu ↦ ?_
-  rw [neg_apply, hessianQuadraticForm_torusHeight_of_sin_eq_zero hs, h₀]
-  linarith [pos_mul_sq_add_mul_sq ha h₁ hu]
+private theorem hessA_ne_zero (hz : fderiv ℝ (tiltedTorusHeight ε) z = 0) : hessA z ≠ 0 := by
+  intro h
+  have := (hess_of_fderiv_eq_zero hz).1
+  rw [h, zero_mul] at this
+  linarith [two_add_cos_pos (z 1)]
 
-/-- For `|r| < R`, the Morse index at a point with `cos θ = -1` and `r cos φ - ε sin φ > 0`, a
-minimum when it is critical, is `0`. -/
-theorem morseIndex_torusHeight_eq_zero (hr : |r| < R) {z : EuclideanSpace ℝ (Fin 2)}
-    (h₀ : cos (z 0) = -1) (h₁ : 0 < r * cos (z 1) - ε * sin (z 1)) :
-    morseIndex (torusHeight R r ε) z = 0 := by
-  have hs : sin (z 0) = 0 := by nlinarith [sin_sq_add_cos_sq (z 0)]
-  have ha := pos_add_mul_cos hr (z 1)
-  refine morseIndex_eq_zero_of_posDef fun u hu ↦ ?_
-  rw [hessianQuadraticForm_torusHeight_of_sin_eq_zero hs, h₀]
-  linarith [pos_mul_sq_add_mul_sq ha h₁ hu]
+private theorem hessD_ne_zero (hz : fderiv ℝ (tiltedTorusHeight ε) z = 0) : hessD ε z ≠ 0 := by
+  intro h
+  have := (hess_of_fderiv_eq_zero hz).2.2
+  rw [h, zero_mul, eq_comm, neg_eq_zero] at this
+  exact cos_ne_zero_of_fderiv_eq_zero hz
+    ((mul_eq_zero.1 this).resolve_left (by positivity))
 
-/-- At a point at which the diagonal entries `-(R + r cos φ) cos θ` and
-`-(ε sin φ + r cos φ cos θ)` of the Hessian have opposite signs, for instance a saddle, the Morse
-index is `1`. -/
-theorem morseIndex_torusHeight_eq_one {z : EuclideanSpace ℝ (Fin 2)}
-    (h : (R + r * cos (z 1)) * cos (z 0) * (ε * sin (z 1) + r * cos (z 1) * cos (z 0)) < 0) :
-    morseIndex (torusHeight R r ε) z = 1 := by
-  have h₀ : hessianQuadraticForm (torusHeight R r ε) z e₀ =
-      -((R + r * cos (z 1)) * cos (z 0)) := by
-    rw [hessianQuadraticForm_torusHeight]
-    simp
-  have h₁ : hessianQuadraticForm (torusHeight R r ε) z e₁ =
-      -(ε * sin (z 1) + r * cos (z 1) * cos (z 0)) := by
-    rw [hessianQuadraticForm_torusHeight]
-    simp
-    ring
-  set Q := hessianQuadraticForm (torusHeight R r ε) z
-  -- The Hessian takes both signs at `e₀` and `e₁`, so both of its indices are positive, and they
-  -- add up to at most `2`.
-  have hQ : Q e₀ < 0 ∧ 0 < Q e₁ ∨ 0 < Q e₀ ∧ Q e₁ < 0 := by
-    rw [h₀, h₁]
-    rcases mul_neg_iff.1 h with h | h
-    · exact Or.inl ⟨by linarith, by linarith⟩
-    · exact Or.inr ⟨by linarith, by linarith⟩
-  have hneg : sigNeg Q ≠ 0 := by
-    rw [Ne, ← QuadraticForm.forall_nonneg_iff_sigNeg_eq_zero]
-    intro hQ'
-    rcases hQ with hQ | hQ
-    · exact (hQ' e₀).not_gt hQ.1
-    · exact (hQ' e₁).not_gt hQ.2
-  have hpos : sigPos Q ≠ 0 := by
-    rw [Ne, ← QuadraticForm.forall_nonpos_iff_sigPos_eq_zero]
-    intro hQ'
-    rcases hQ with hQ | hQ
-    · exact (hQ' e₁).not_gt hQ.2
-    · exact (hQ' e₀).not_gt hQ.1
-  have hsum := QuadraticForm.sigPos_add_sigNeg_add_radical (Q := Q)
-  rw [finrank_euclideanSpace_fin] at hsum
-  have hind : morseIndex (torusHeight R r ε) z = sigNeg Q := morseIndex_def
+/-- **The critical points are nondegenerate.** -/
+theorem isNondegenerateCriticalPoint_tiltedTorusHeight
+    (hz : fderiv ℝ (tiltedTorusHeight ε) z = 0) :
+    IsNondegenerateCriticalPoint (tiltedTorusHeight ε) z := by
+  refine isNondegenerateCriticalPoint_iff_separatingLeft.2
+    ⟨contDiff_tiltedTorusHeight.contDiffAt, hz,
+      (ContinuousLinearMap.separatingLeft_toBilinForm_iff_injective _).2 fun v w hvw ↦ ?_⟩
+  -- The Hessian bilinear form is `⟪hessField z v, w⟫`, and `hessField z` is injective.
+  rw [← sub_eq_zero]
+  have hB : fderiv ℝ (fderiv ℝ (tiltedTorusHeight ε)) z (v - w) = 0 := by
+    rw [map_sub, hvw, sub_self]
+  have hD : hessField ε z (v - w) = 0 := by
+    have h2 : fderiv ℝ (fderiv ℝ (tiltedTorusHeight ε)) z (v - w) (hessField ε z (v - w)) = 0 := by
+      simp [hB]
+    rw [← inner_hessianOperator_left, hessianOperator_tiltedTorusHeight] at h2
+    exact inner_self_eq_zero.1 h2
+  have h0 := congrArg (fun v : EuclideanSpace ℝ (Fin 2) ↦ v 0) hD
+  have h1 := congrArg (fun v : EuclideanSpace ℝ (Fin 2) ↦ v 1) hD
+  simp only [hessField_apply, (hess_of_fderiv_eq_zero hz).2.1] at h0 h1
+  exact PiLp.ext <| Fin.forall_fin_two.2
+    ⟨by simpa [hessA_ne_zero hz] using h0, by simpa [hessD_ne_zero hz] using h1⟩
+
+/-- **The tilted torus height is a Morse function**: every critical point is nondegenerate. -/
+theorem hasNondegenerateCriticalPointsOn_tiltedTorusHeight :
+    HasNondegenerateCriticalPointsOn (tiltedTorusHeight ε) univ :=
+  hasNondegenerateCriticalPointsOn_iff.2 fun _ _ hz ↦
+    isNondegenerateCriticalPoint_tiltedTorusHeight hz
+
+/-- **The saddles.** A critical point with `cos y < 0` has Morse index `1`. -/
+theorem morseIndex_tiltedTorusHeight_of_cos_lt_zero (hz : fderiv ℝ (tiltedTorusHeight ε) z = 0)
+    (hy : Real.cos (z 1) < 0) : morseIndex (tiltedTorusHeight ε) z = 1 := by
+  have hnd := isNondegenerateCriticalPoint_tiltedTorusHeight hz
+  obtain ⟨ha, -, hd⟩ := hess_of_fderiv_eq_zero hz
+  have hx := cos_sq_eq_one_of_fderiv_eq_zero hz
+  -- The diagonal entries `a` and `d` of the Hessian have opposite signs.
+  have had : hessA z * hessD ε z < 0 := by
+    have hprod : (hessA z * Real.cos (z 0)) * (hessD ε z * Real.cos (z 0)) < 0 := by
+      rw [ha, hd, neg_mul_neg]
+      exact mul_neg_of_pos_of_neg (two_add_cos_pos (z 1))
+        (mul_neg_of_pos_of_neg (by positivity) hy)
+    have heq : hessA z * hessD ε z =
+        (hessA z * Real.cos (z 0)) * (hessD ε z * Real.cos (z 0)) := by
+      linear_combination (-(hessA z * hessD ε z)) * hx
+    rw [heq]
+    exact hprod
+  have h0 : morseIndex (tiltedTorusHeight ε) z ≠ 0 := fun h ↦ by
+    obtain ⟨ha, hd⟩ : 0 < hessA z ∧ 0 < hessD ε z := by
+      simpa [Fin.forall_fin_two] using (EuclideanSpace.posDef_iff_of_forall_eq_sum_mul_sq
+        (hessianQuadraticForm_tiltedTorusHeight_of_fderiv_eq_zero hz)).1
+          (hnd.hessianQuadraticForm_posDef_iff_morseIndex_eq_zero.2 h)
+    linarith [mul_pos ha hd]
+  have h2 : morseIndex (tiltedTorusHeight ε) z ≠ 2 := fun h ↦ by
+    obtain ⟨ha, hd⟩ : hessA z < 0 ∧ hessD ε z < 0 := by
+      simpa [Fin.forall_fin_two] using (EuclideanSpace.posDef_iff_of_forall_eq_sum_mul_sq
+        (neg_hessianQuadraticForm_tiltedTorusHeight_of_fderiv_eq_zero hz)).1
+          ((neg_hessianQuadraticForm_posDef_iff_morseIndex_eq_finrank
+            (f := tiltedTorusHeight ε) (x := z)).2 (by rw [h, finrank_euclideanSpace_fin]))
+    linarith [mul_pos_of_neg_of_neg ha hd]
+  have hle : morseIndex (tiltedTorusHeight ε) z ≤ 2 := by
+    simpa using morseIndex_le_finrank (f := tiltedTorusHeight ε) (x := z)
   omega
 
-/-- If `(ρ c, ρ s) = (a, b)` with `ρ = ‖(a, b)‖ > 0`, then `a c + b s = ρ`. -/
-private theorem mul_add_mul_eq {ρ a b c s : ℝ} (hρ : 0 < ρ) (h2 : ρ ^ 2 = a ^ 2 + b ^ 2)
-    (hc : ρ * c = a) (hs : ρ * s = b) : a * c + b * s = ρ :=
-  mul_left_cancel₀ hρ.ne' (by linear_combination a * hc + b * hs - h2)
+/-- **The maxima.** A critical point with `cos x = 1` and `cos y > 0` has Morse index `2`. -/
+theorem morseIndex_tiltedTorusHeight_of_cos_eq_one_of_cos_pos
+    (hz : fderiv ℝ (tiltedTorusHeight ε) z = 0) (hx : Real.cos (z 0) = 1)
+    (hy : 0 < Real.cos (z 1)) : morseIndex (tiltedTorusHeight ε) z = 2 := by
+  obtain ⟨ha, -, hd⟩ := hess_of_fderiv_eq_zero hz
+  rw [hx, mul_one] at ha hd
+  have hd' : hessD ε z < 0 := by rw [hd]; nlinarith [sq_nonneg ε]
+  have ha' : hessA z < 0 := by rw [ha]; linarith
+  have hpd : (-hessianQuadraticForm (tiltedTorusHeight ε) z).PosDef :=
+    (EuclideanSpace.posDef_iff_of_forall_eq_sum_mul_sq
+      (neg_hessianQuadraticForm_tiltedTorusHeight_of_fderiv_eq_zero hz)).2
+        (by simp [Fin.forall_fin_two, ha', hd'])
+  simpa using neg_hessianQuadraticForm_posDef_iff_morseIndex_eq_finrank.1 hpd
 
-/-- **The four kinds of critical points.** For `|r| < R`, with `ρ = √(r² + ε²)`, a point is
-critical exactly when `cos θ = 1` and `(ρ cos φ, ρ sin φ) = ±(r, ε)`, or `cos θ = -1` and
-`(ρ cos φ, ρ sin φ) = ±(r, -ε)`. -/
-theorem fderiv_torusHeight_eq_zero_iff_cos_eq (hr : |r| < R) {z : EuclideanSpace ℝ (Fin 2)} :
-    fderiv ℝ (torusHeight R r ε) z = 0 ↔
-      (cos (z 0) = 1 ∧ √(r ^ 2 + ε ^ 2) * cos (z 1) = r ∧ √(r ^ 2 + ε ^ 2) * sin (z 1) = ε) ∨
-      (cos (z 0) = 1 ∧ √(r ^ 2 + ε ^ 2) * cos (z 1) = -r ∧ √(r ^ 2 + ε ^ 2) * sin (z 1) = -ε) ∨
-      (cos (z 0) = -1 ∧ √(r ^ 2 + ε ^ 2) * cos (z 1) = -r ∧ √(r ^ 2 + ε ^ 2) * sin (z 1) = ε) ∨
-      (cos (z 0) = -1 ∧ √(r ^ 2 + ε ^ 2) * cos (z 1) = r ∧ √(r ^ 2 + ε ^ 2) * sin (z 1) = -ε) := by
-  rw [fderiv_torusHeight_eq_zero_iff hr]
-  rcases (add_nonneg (sq_nonneg r) (sq_nonneg ε)).eq_or_lt with h0 | hrε'
-  · -- For `r = ε = 0` both sides say that `cos θ = ±1`.
-    obtain ⟨rfl, rfl⟩ : r = 0 ∧ ε = 0 := by constructor <;> nlinarith [sq_nonneg r, sq_nonneg ε]
-    simp [sin_eq_zero_iff_cos_eq]
-  set ρ := √(r ^ 2 + ε ^ 2)
-  have hρ : 0 < ρ := Real.sqrt_pos.2 hrε'
-  have hρ2 : ρ ^ 2 = r ^ 2 + ε ^ 2 := Real.sq_sqrt hrε'.le
-  refine ⟨fun ⟨hs, hc⟩ ↦ ?_, ?_⟩
-  · have hcs := sin_sq_add_cos_sq (z 1)
-    -- With `σ = cos θ = ±1` and `e = σ ε`, the critical point equation `e cos φ = r sin φ` puts
-    -- `(cos φ, sin φ)` on the line through `(r, e)`, so it is `±(r, e) / ρ`.
-    have key {e : ℝ} (he : ρ ^ 2 = r ^ 2 + e ^ 2) (hc : e * cos (z 1) = r * sin (z 1)) :
-        ρ * cos (z 1) = r ∧ ρ * sin (z 1) = e ∨ ρ * cos (z 1) = -r ∧ ρ * sin (z 1) = -e := by
-      set w := r * cos (z 1) + e * sin (z 1)
-      have hcw : ρ ^ 2 * cos (z 1) = r * w := by linear_combination cos (z 1) * he + e * hc
-      have hsw : ρ ^ 2 * sin (z 1) = e * w := by linear_combination sin (z 1) * he - r * hc
-      have hw : w ^ 2 = ρ ^ 2 := by
-        have : ρ ^ 2 * (w ^ 2 - ρ ^ 2) = 0 := by
-          linear_combination w ^ 2 * he - (ρ ^ 2 * cos (z 1) + r * w) * hcw -
-            (ρ ^ 2 * sin (z 1) + e * w) * hsw + ρ ^ 4 * hcs
-        have := (mul_eq_zero.1 this).resolve_left (by positivity)
-        linarith
-      rcases sq_eq_sq_iff_eq_or_eq_neg.1 hw with hw | hw
-      · refine Or.inl ⟨mul_left_cancel₀ hρ.ne' ?_, mul_left_cancel₀ hρ.ne' ?_⟩
-        · linear_combination hcw + r * hw
-        · linear_combination hsw + e * hw
-      · refine Or.inr ⟨mul_left_cancel₀ hρ.ne' ?_, mul_left_cancel₀ hρ.ne' ?_⟩
-        · linear_combination hcw + r * hw
-        · linear_combination hsw + e * hw
-    rcases sin_eq_zero_iff_cos_eq.1 hs with h₀ | h₀
-    · rw [h₀, mul_one] at hc
-      rcases key hρ2 hc with h | h
-      · exact Or.inl ⟨h₀, h⟩
-      · exact Or.inr (Or.inl ⟨h₀, h⟩)
-    · rw [h₀] at hc
-      rcases key (e := -ε) (by rw [hρ2, neg_sq]) (by linear_combination -hc) with h | h
-      · exact Or.inr (Or.inr (Or.inr ⟨h₀, h⟩))
-      · exact Or.inr (Or.inr (Or.inl ⟨h₀, h.1, by linear_combination h.2⟩))
-  · -- Conversely `cos θ = ±1` gives `sin θ = 0`, and `ε cos φ = r sin φ cos θ` after scaling
-    -- by `ρ`.
-    rintro (⟨h₀, hc, hs⟩ | ⟨h₀, hc, hs⟩ | ⟨h₀, hc, hs⟩ | ⟨h₀, hc, hs⟩) <;>
-      refine ⟨sin_eq_zero_iff_cos_eq.2 (by simp [h₀]), mul_left_cancel₀ hρ.ne' ?_⟩ <;>
-      rw [h₀]
-    · linear_combination ε * hc - r * hs
-    · linear_combination ε * hc - r * hs
-    · linear_combination ε * hc + r * hs
-    · linear_combination ε * hc + r * hs
+/-- **The minima.** A critical point with `cos x = -1` and `cos y > 0` has Morse index `0`. -/
+theorem morseIndex_tiltedTorusHeight_of_cos_eq_neg_one_of_cos_pos
+    (hz : fderiv ℝ (tiltedTorusHeight ε) z = 0) (hx : Real.cos (z 0) = -1)
+    (hy : 0 < Real.cos (z 1)) : morseIndex (tiltedTorusHeight ε) z = 0 := by
+  obtain ⟨ha, -, hd⟩ := hess_of_fderiv_eq_zero hz
+  rw [hx, mul_neg_one, neg_inj] at ha hd
+  have hd' : 0 < hessD ε z := by rw [hd]; positivity
+  have ha' : 0 < hessA z := by rw [ha]; linarith
+  exact morseIndex_eq_zero_of_posDef
+    ((EuclideanSpace.posDef_iff_of_forall_eq_sum_mul_sq
+      (hessianQuadraticForm_tiltedTorusHeight_of_fderiv_eq_zero hz)).2
+        (by simp [Fin.forall_fin_two, ha', hd']))
 
-/-- **The perturbed torus height is a Morse function.** For `|r| < R` and `(r, ε) ≠ (0, 0)`,
-every critical point is nondegenerate. -/
-theorem isNondegenerateCriticalPoint_torusHeight (hr : |r| < R) (hrε : r ≠ 0 ∨ ε ≠ 0)
-    {z : EuclideanSpace ℝ (Fin 2)} (hz : fderiv ℝ (torusHeight R r ε) z = 0) :
-    IsNondegenerateCriticalPoint (torusHeight R r ε) z := by
-  have hpos : 0 < r ^ 2 + ε ^ 2 := by rcases hrε with h | h <;> positivity
-  have hρ : 0 < √(r ^ 2 + ε ^ 2) := Real.sqrt_pos.2 hpos
-  have hρ2 : √(r ^ 2 + ε ^ 2) ^ 2 = r ^ 2 + ε ^ 2 := Real.sq_sqrt hpos.le
-  have ha := pos_add_mul_cos hr (z 1)
-  have hs : sin (z 0) = 0 := ((fderiv_torusHeight_eq_zero_iff hr).1 hz).1
-  rcases (fderiv_torusHeight_eq_zero_iff_cos_eq hr).1 hz with
-    ⟨h₀, hc, hs'⟩ | ⟨h₀, hc, hs'⟩ | ⟨h₀, hc, hs'⟩ | ⟨h₀, hc, hs'⟩
-  · have := mul_add_mul_eq hρ hρ2 hc hs'
-    exact isNondegenerateCriticalPoint_of_sin_eq_zero hz hs (by rw [h₀, mul_one]; exact ha.ne')
-      (show _ < (0 : ℝ) by rw [h₀]; linarith).ne
-  · have := mul_add_mul_eq hρ (by rw [hρ2]; ring) hc hs'
-    exact isNondegenerateCriticalPoint_of_sin_eq_zero hz hs (by rw [h₀, mul_one]; exact ha.ne')
-      (show (0 : ℝ) < _ by rw [h₀]; linarith).ne'
-  · have := mul_add_mul_eq hρ (by rw [hρ2]; ring) hc hs'
-    exact isNondegenerateCriticalPoint_of_sin_eq_zero hz hs (by rw [h₀]; linarith)
-      (show _ < (0 : ℝ) by rw [h₀]; linarith).ne
-  · have := mul_add_mul_eq hρ (by rw [hρ2]; ring) hc hs'
-    exact isNondegenerateCriticalPoint_of_sin_eq_zero hz hs (by rw [h₀]; linarith)
-      (show (0 : ℝ) < _ by rw [h₀]; linarith).ne'
+/-! ### The saddle connection of the upright torus -/
 
-/-- **The critical values and indices.** For `|r| < R` and `(r, ε) ≠ (0, 0)`, with
-`ρ = √(r² + ε²)`, a critical point of the perturbed torus height is a maximum of index `2` and
-value `R + ρ`, a saddle of index `1` with `ρ sin φ = -ε` and value `R - ρ`, a saddle of index `1`
-with `ρ sin φ = ε` and value `ρ - R`, or a minimum of index `0` and value `-R - ρ`. -/
-theorem morseIndex_torusHeight_of_fderiv_eq_zero (hr : |r| < R) (hrε : r ≠ 0 ∨ ε ≠ 0)
-    {z : EuclideanSpace ℝ (Fin 2)} (hz : fderiv ℝ (torusHeight R r ε) z = 0) :
-    (morseIndex (torusHeight R r ε) z = 2 ∧ torusHeight R r ε z = R + √(r ^ 2 + ε ^ 2)) ∨
-    (morseIndex (torusHeight R r ε) z = 1 ∧ √(r ^ 2 + ε ^ 2) * sin (z 1) = -ε ∧
-      torusHeight R r ε z = R - √(r ^ 2 + ε ^ 2)) ∨
-    (morseIndex (torusHeight R r ε) z = 1 ∧ √(r ^ 2 + ε ^ 2) * sin (z 1) = ε ∧
-      torusHeight R r ε z = √(r ^ 2 + ε ^ 2) - R) ∨
-    (morseIndex (torusHeight R r ε) z = 0 ∧ torusHeight R r ε z = -R - √(r ^ 2 + ε ^ 2)) := by
-  have hpos : 0 < r ^ 2 + ε ^ 2 := by rcases hrε with h | h <;> positivity
-  have hρ : 0 < √(r ^ 2 + ε ^ 2) := Real.sqrt_pos.2 hpos
-  have hρ2 : √(r ^ 2 + ε ^ 2) ^ 2 = r ^ 2 + ε ^ 2 := Real.sq_sqrt hpos.le
-  have ha := pos_add_mul_cos hr (z 1)
-  rcases (fderiv_torusHeight_eq_zero_iff_cos_eq hr).1 hz with
-    ⟨h₀, hc, hs⟩ | ⟨h₀, hc, hs⟩ | ⟨h₀, hc, hs⟩ | ⟨h₀, hc, hs⟩
-  · have := mul_add_mul_eq hρ hρ2 hc hs
-    exact Or.inl ⟨morseIndex_torusHeight_eq_two hr h₀ (by linarith),
-      by rw [torusHeight_apply, h₀]; linarith⟩
-  · have := mul_add_mul_eq hρ (by rw [hρ2]; ring) hc hs
-    have hw : ε * sin (z 1) + r * cos (z 1) * 1 = -√(r ^ 2 + ε ^ 2) := by linarith
-    exact Or.inr (Or.inl ⟨morseIndex_torusHeight_eq_one
-      (by rw [h₀, hw]; nlinarith [mul_pos ha hρ]), hs, by rw [torusHeight_apply, h₀]; linarith⟩)
-  · have := mul_add_mul_eq hρ (by rw [hρ2]; ring) hc hs
-    have hw : ε * sin (z 1) + r * cos (z 1) * -1 = √(r ^ 2 + ε ^ 2) := by linarith
-    exact Or.inr (Or.inr (Or.inl ⟨morseIndex_torusHeight_eq_one
-      (by rw [h₀, hw]; nlinarith [mul_pos ha hρ]), hs, by rw [torusHeight_apply, h₀]; linarith⟩))
-  · have := mul_add_mul_eq hρ (by rw [hρ2]; ring) hc hs
-    exact Or.inr (Or.inr (Or.inr ⟨morseIndex_torusHeight_eq_zero hr h₀ (by linarith),
-      by rw [torusHeight_apply, h₀]; linarith⟩))
+/-- The trajectory `(2 arctan eᵗ, π)` of the upright torus height, along the invariant line
+`y = π`. -/
+private noncomputable def saddleConnection (t : ℝ) : EuclideanSpace ℝ (Fin 2) :=
+  (2 * Real.arctan (Real.exp t)) • e₀ + Real.pi • e₁
 
-/-- The negative-gradient flow of the perturbed torus height. -/
-local notation "Φ" =>
-  negativeGradientFlow (torusHeight R r ε) (lipschitzWith_gradient_torusHeight R r ε)
+@[simp]
+private theorem saddleConnection_apply_zero (t : ℝ) :
+    saddleConnection t 0 = 2 * Real.arctan (Real.exp t) :=
+  smul_e₀_add_smul_e₁_apply_zero _ _
 
-/-- Along an orbit, the angle `φ` moves with velocity `r sin φ cos θ - ε cos φ`. -/
-private theorem hasDerivAt_flow_apply_one (y : 𝔼) (t : ℝ) :
-    HasDerivAt (fun t ↦ Φ t y 1)
-      (r * sin (Φ t y 1) * cos (Φ t y 0) - ε * cos (Φ t y 1)) t := by
-  have h := (isNegativeGradient_negativeGradientFlow (torusHeight R r ε)
-    (lipschitzWith_gradient_torusHeight R r ε)).isIntegralCurve y t
-  have h₁ : HasDerivAt (fun t ↦ Φ t y 1) (-∇ (torusHeight R r ε) (Φ t y) 1) t :=
-    (ContinuousLinearMap.hasFDerivAt pr₁).comp_hasDerivAt t h
-  convert h₁ using 1
-  rw [gradient_torusHeight_apply_one]
+@[simp]
+private theorem saddleConnection_apply_one (t : ℝ) : saddleConnection t 1 = Real.pi :=
+  smul_e₀_add_smul_e₁_apply_one _ _
+
+private theorem saddleConnection_eq_comp :
+    saddleConnection = (fun a : ℝ ↦ (2 * a) • e₀ + Real.pi • e₁) ∘ (Real.arctan ∘ Real.exp) := by
+  funext t
+  simp only [saddleConnection, Function.comp_apply]
+
+private theorem isIntegralCurve_saddleConnection :
+    IsIntegralCurve saddleConnection fun _ w ↦ -∇ (tiltedTorusHeight 0) w := by
+  intro t
+  rw [gradient_tiltedTorusHeight]
+  have hA := ((Real.hasDerivAt_arctan (Real.exp t)).comp t (Real.hasDerivAt_exp t)).const_mul 2
+  refine ((hA.smul_const e₀).add_const (Real.pi • e₁)).congr_deriv ?_
+  refine PiLp.ext <| Fin.forall_fin_two.2 ⟨?_, by simp⟩
+  simp only [PiLp.smul_apply, PiLp.single_eq_same, smul_eq_mul, mul_one, PiLp.neg_apply,
+    gradField_apply_zero, saddleConnection_apply_zero, saddleConnection_apply_one,
+    Real.sin_two_mul_arctan, Real.cos_pi]
+  field_simp
+  norm_num
+
+/-- **The saddle connection of the upright torus.** For the height function
+`(2 + cos y) cos x` of the upright torus, the point `(π / 2, π)` lies on the trajectory
+`(2 arctan eᵗ, π)` from the saddle `(0, π)` to the saddle `(π, π)`. -/
+theorem mem_unstableSet_inter_stableSet_tiltedTorusHeight_zero :
+    !₂[Real.pi / 2, Real.pi] ∈
+      Flow.unstableSet (negativeGradientFlow (tiltedTorusHeight 0)
+          (lipschitzWith_gradient_tiltedTorusHeight 0)) !₂[0, Real.pi] ∩
+        Flow.stableSet (negativeGradientFlow (tiltedTorusHeight 0)
+          (lipschitzWith_gradient_tiltedTorusHeight 0)) !₂[Real.pi, Real.pi] := by
+  have hflow := eq_negativeGradientFlow (tiltedTorusHeight 0)
+    (lipschitzWith_gradient_tiltedTorusHeight 0) isIntegralCurve_saddleConnection
+  have h0 : saddleConnection 0 = !₂[Real.pi / 2, Real.pi] := by
+    refine PiLp.ext <| Fin.forall_fin_two.2 ⟨?_, by simp⟩
+    rw [saddleConnection_apply_zero, Real.exp_zero, Real.arctan_one]
+    simp only [Matrix.cons_val_zero]
+    ring
+  rw [← h0]
+  have hc : Continuous fun a : ℝ ↦ (2 * a) • e₀ + Real.pi • e₁ := by fun_prop
+  refine ⟨Flow.mem_unstableSet.2 (Tendsto.congr hflow ?_),
+    Flow.mem_stableSet.2 (Tendsto.congr hflow ?_)⟩
+  · have harc : Tendsto (Real.arctan ∘ Real.exp) atBot (𝓝 0) := by
+      have h := (Real.continuous_arctan.tendsto 0).comp Real.tendsto_exp_atBot
+      rwa [Real.arctan_zero] at h
+    rw [saddleConnection_eq_comp]
+    convert (hc.tendsto 0).comp harc using 2
+    exact PiLp.ext <| Fin.forall_fin_two.2 ⟨by simp, by simp⟩
+  · have harc : Tendsto (Real.arctan ∘ Real.exp) atTop (𝓝 (Real.pi / 2)) :=
+      (Real.tendsto_arctan_atTop.mono_right nhdsWithin_le_nhds).comp Real.tendsto_exp_atTop
+    rw [saddleConnection_eq_comp]
+    convert (hc.tendsto (Real.pi / 2)).comp harc using 2
+    refine PiLp.ext <| Fin.forall_fin_two.2 ⟨?_, by simp⟩
+    rw [smul_e₀_add_smul_e₁_apply_zero]
+    simp only [Matrix.cons_val_zero]
+    ring
+
+/-- **The upright torus is not Morse–Smale.** The negative gradient flow of the height function
+`(2 + cos y) cos x` has a trajectory between the saddles `(0, π)` and `(π, π)`, both of Morse
+index `1`. -/
+theorem not_isMorseSmale_tiltedTorusHeight_zero :
+    ¬IsMorseSmale (tiltedTorusHeight 0) (lipschitzWith_gradient_tiltedTorusHeight 0) := by
+  intro h
+  have hp : fderiv ℝ (tiltedTorusHeight 0) !₂[0, Real.pi] = 0 :=
+    fderiv_tiltedTorusHeight_eq_zero_iff.2 (by simp)
+  have hq : fderiv ℝ (tiltedTorusHeight 0) !₂[Real.pi, Real.pi] = 0 :=
+    fderiv_tiltedTorusHeight_eq_zero_iff.2 (by simp)
+  have hind : morseIndex (tiltedTorusHeight 0) !₂[0, Real.pi] ≤
+      morseIndex (tiltedTorusHeight 0) !₂[Real.pi, Real.pi] := by
+    rw [morseIndex_tiltedTorusHeight_of_cos_lt_zero hp (by simp),
+      morseIndex_tiltedTorusHeight_of_cos_lt_zero hq (by simp)]
+  have hpq : (!₂[0, Real.pi] : EuclideanSpace ℝ (Fin 2)) ≠ !₂[Real.pi, Real.pi] := fun he ↦ by
+    have := congrArg (fun v : EuclideanSpace ℝ (Fin 2) ↦ v 0) he
+    simp only [Matrix.cons_val_zero] at this
+    exact Real.pi_ne_zero this.symm
+  have := h.unstableSet_inter_stableSet_eq_empty
+    (isNondegenerateCriticalPoint_tiltedTorusHeight hp)
+    (isNondegenerateCriticalPoint_tiltedTorusHeight hq) contDiff_tiltedTorusHeight hpq hind
+  rw [Set.eq_empty_iff_forall_notMem] at this
+  exact this _ mem_unstableSet_inter_stableSet_tiltedTorusHeight_zero
+
+/-! ### The tilted torus is Morse–Smale -/
+
+/-- At a critical point `sin y = ε cos x cos y`. -/
+private theorem sin_eq_of_fderiv_eq_zero (hz : fderiv ℝ (tiltedTorusHeight ε) z = 0) :
+    Real.sin (z 1) = ε * Real.cos (z 0) * Real.cos (z 1) := by
+  have h1 := (fderiv_tiltedTorusHeight_eq_zero_iff.1 hz).2
+  have hx := cos_sq_eq_one_of_fderiv_eq_zero hz
+  linear_combination Real.cos (z 0) * h1 - Real.sin (z 1) * hx
+
+/-- At a critical point `w = (1 + ε²) cos y` satisfies `w² = 1 + ε²`. -/
+private theorem sq_eq_of_fderiv_eq_zero (hz : fderiv ℝ (tiltedTorusHeight ε) z = 0) :
+    ((1 + ε ^ 2) * Real.cos (z 1)) ^ 2 = 1 + ε ^ 2 := by
+  have hs := sin_eq_of_fderiv_eq_zero hz
+  have hx := cos_sq_eq_one_of_fderiv_eq_zero hz
+  have hsc := Real.sin_sq_add_cos_sq (z 1)
+  linear_combination (1 + ε ^ 2) * hsc -
+    (1 + ε ^ 2) * (Real.sin (z 1) + ε * Real.cos (z 0) * Real.cos (z 1)) * hs -
+    (1 + ε ^ 2) * ε ^ 2 * Real.cos (z 1) ^ 2 * hx
+
+/-- At a critical point the value is `cos x (2 + (1 + ε²) cos y)`. -/
+private theorem tiltedTorusHeight_eq_of_fderiv_eq_zero (hz : fderiv ℝ (tiltedTorusHeight ε) z = 0) :
+    tiltedTorusHeight ε z = Real.cos (z 0) * (2 + (1 + ε ^ 2) * Real.cos (z 1)) := by
+  rw [tiltedTorusHeight_apply, sin_eq_of_fderiv_eq_zero hz]
   ring
 
-/-- **The barrier.** For `ε ≠ 0`, along an orbit the quantity `ε sin φ` stays nonpositive once it
-is: where it vanishes, `sin φ = 0` and its derivative is `-ε² < 0`. -/
-private theorem flow_barrier (hε : ε ≠ 0) (y : 𝔼) {a t : ℝ} (ha : ε * sin (Φ a y 1) ≤ 0)
-    (hat : a ≤ t) : ε * sin (Φ t y 1) ≤ 0 := by
-  have hd (x : ℝ) : HasDerivAt (fun t ↦ ε * sin (Φ t y 1))
-      (ε * (cos (Φ x y 1) * (r * sin (Φ x y 1) * cos (Φ x y 0) - ε * cos (Φ x y 1)))) x :=
-    ((hasDerivAt_flow_apply_one y x).sin).const_mul ε
-  refine image_le_of_deriv_right_lt_deriv_boundary (B := fun _ ↦ 0) (B' := fun _ ↦ 0)
-    (fun x _ ↦ (hd x).continuousAt.continuousWithinAt) (fun x _ ↦ (hd x).hasDerivWithinAt) ha
-    (fun _ ↦ hasDerivAt_const _ _) (fun x _ hx ↦ ?_) ⟨hat, le_rfl⟩
-  -- Where `ε sin φ = 0`, `sin φ = 0`, so `cos² φ = 1` and the derivative is `-ε²`.
-  have hs : sin (Φ x y 1) = 0 := (mul_eq_zero.1 hx).resolve_left hε
-  have hc := sin_sq_add_cos_sq (Φ x y 1)
-  rw [hs] at hc ⊢
+/-- A critical point whose Morse index is neither `0` nor `2` has `cos y < 0`. -/
+private theorem cos_lt_zero_of_morseIndex_ne (hz : fderiv ℝ (tiltedTorusHeight ε) z = 0)
+    (h0 : morseIndex (tiltedTorusHeight ε) z ≠ 0) (h2 : morseIndex (tiltedTorusHeight ε) z ≠ 2) :
+    Real.cos (z 1) < 0 := by
+  by_contra hy
+  have hy' : 0 < Real.cos (z 1) :=
+    lt_of_le_of_ne (not_lt.1 hy) (cos_ne_zero_of_fderiv_eq_zero hz).symm
+  rcases Real.sin_eq_zero_iff_cos_eq.1 (fderiv_tiltedTorusHeight_eq_zero_iff.1 hz).1 with hx | hx
+  · exact h2 (morseIndex_tiltedTorusHeight_of_cos_eq_one_of_cos_pos hz hx hy')
+  · exact h0 (morseIndex_tiltedTorusHeight_of_cos_eq_neg_one_of_cos_pos hz hx hy')
+
+/-- **Comparing two saddles.** Both saddles have the value `cos x (2 + w)` with the same
+`w = (1 + ε²) cos y = -√(1 + ε²)`, so their values agree when their values of `cos x` do. Hence if
+`cos x` at `q` is at most that at `p` and the value at `q` is below that at `p`, then `cos x = 1` at
+`p` and `cos x = -1` at `q`. -/
+private theorem cos_eq_one_and_cos_eq_neg_one_of_lt {p q : EuclideanSpace ℝ (Fin 2)}
+    (hpc : fderiv ℝ (tiltedTorusHeight ε) p = 0) (hqc : fderiv ℝ (tiltedTorusHeight ε) q = 0)
+    (hpy : Real.cos (p 1) < 0) (hqy : Real.cos (q 1) < 0)
+    (hcos : Real.cos (q 0) ≤ Real.cos (p 0))
+    (hlt : tiltedTorusHeight ε q < tiltedTorusHeight ε p) :
+    Real.cos (p 0) = 1 ∧ Real.cos (q 0) = -1 := by
+  have hwp := sq_eq_of_fderiv_eq_zero hpc
+  have hwq := sq_eq_of_fderiv_eq_zero hqc
+  have hwp0 : (1 + ε ^ 2) * Real.cos (p 1) < 0 := mul_neg_of_pos_of_neg (by positivity) hpy
+  have hwq0 : (1 + ε ^ 2) * Real.cos (q 1) < 0 := mul_neg_of_pos_of_neg (by positivity) hqy
+  have hw : (1 + ε ^ 2) * Real.cos (p 1) = (1 + ε ^ 2) * Real.cos (q 1) := by nlinarith
+  have hcpq : Real.cos (q 0) < Real.cos (p 0) := hcos.lt_of_ne fun h ↦ by
+    rw [tiltedTorusHeight_eq_of_fderiv_eq_zero hpc, tiltedTorusHeight_eq_of_fderiv_eq_zero hqc,
+      ← hw, h] at hlt
+    exact lt_irrefl _ hlt
+  constructor
+  · rcases Real.sin_eq_zero_iff_cos_eq.1 (fderiv_tiltedTorusHeight_eq_zero_iff.1 hpc).1 with h | h
+    · exact h
+    · linarith [Real.neg_one_le_cos (q 0)]
+  · rcases Real.sin_eq_zero_iff_cos_eq.1 (fderiv_tiltedTorusHeight_eq_zero_iff.1 hqc).1 with h | h
+    · linarith [Real.cos_le_one (p 0)]
+    · exact h
+
+/-- Along the negative gradient flow of `f_ε` the function `cos x` is antitone: its derivative is
+`-sin x · (2 + cos y) sin x = -(2 + cos y) sin² x`. -/
+private theorem antitone_cos_negativeGradientFlow (y : EuclideanSpace ℝ (Fin 2)) :
+    Antitone fun t ↦ Real.cos (negativeGradientFlow (tiltedTorusHeight ε)
+      (lipschitzWith_gradient_tiltedTorusHeight ε) t y 0) := by
+  set Φ := negativeGradientFlow (tiltedTorusHeight ε) (lipschitzWith_gradient_tiltedTorusHeight ε)
+  refine antitone_of_hasDerivAt_nonpos (f' := fun s ↦
+    -Real.sin (Φ s y 0) * ((2 + Real.cos (Φ s y 1)) * Real.sin (Φ s y 0))) (fun s ↦ ?_) fun s ↦ ?_
+  · have hx : HasDerivAt (fun s ↦ Φ s y 0) ((2 + Real.cos (Φ s y 1)) * Real.sin (Φ s y 0)) s :=
+      (hasDerivAt_negativeGradientFlow_apply _ _ y 0 s).congr_deriv (by
+        rw [gradient_tiltedTorusHeight_apply_zero, neg_neg])
+    exact (Real.hasDerivAt_cos _).comp s hx
+  · rw [Pi.zero_apply]
+    nlinarith [mul_nonneg (two_add_cos_pos (Φ s y 1)).le (sq_nonneg (Real.sin (Φ s y 0)))]
+
+/-- Along the negative gradient flow of `f_ε`, `ε ≠ 0`, the function `ε sin y` can cross `0` only
+downwards: once it is at most `0`, it stays at most `0`. Where `sin y = 0` its derivative is
+`ε cos y (sin y cos x - ε cos y) = -ε²`. -/
+private theorem mul_sin_negativeGradientFlow_nonpos (hε : ε ≠ 0) (y : EuclideanSpace ℝ (Fin 2))
+    {t₀ t : ℝ} (ht : t₀ ≤ t)
+    (h₀ : ε * Real.sin (negativeGradientFlow (tiltedTorusHeight ε)
+      (lipschitzWith_gradient_tiltedTorusHeight ε) t₀ y 1) ≤ 0) :
+    ε * Real.sin (negativeGradientFlow (tiltedTorusHeight ε)
+      (lipschitzWith_gradient_tiltedTorusHeight ε) t y 1) ≤ 0 := by
+  set Φ := negativeGradientFlow (tiltedTorusHeight ε) (lipschitzWith_gradient_tiltedTorusHeight ε)
+  have hγ (s : ℝ) : HasDerivAt (fun s ↦ Φ s y 1)
+      (Real.sin (Φ s y 1) * Real.cos (Φ s y 0) - ε * Real.cos (Φ s y 1)) s :=
+    (hasDerivAt_negativeGradientFlow_apply _ _ y 1 s).congr_deriv (by
+      rw [gradient_tiltedTorusHeight_apply_one]
+      ring)
+  have hg (s : ℝ) : HasDerivAt (fun s ↦ ε * Real.sin (Φ s y 1))
+      (ε * (Real.cos (Φ s y 1) *
+        (Real.sin (Φ s y 1) * Real.cos (Φ s y 0) - ε * Real.cos (Φ s y 1)))) s :=
+    ((Real.hasDerivAt_sin _).comp s (hγ s)).const_mul ε
+  refine image_le_of_deriv_right_lt_deriv_boundary' (B := fun _ ↦ 0) (B' := fun _ ↦ 0)
+    (fun s _ ↦ (hg s).continuousAt.continuousWithinAt) (fun s _ ↦ (hg s).hasDerivWithinAt) h₀
+    continuousOn_const (fun _ _ ↦ hasDerivWithinAt_const _ _ _) (fun s _ hs ↦ ?_) ⟨ht, le_rfl⟩
+  -- Where `ε sin y = 0`, `sin y = 0`, `cos² y = 1` and the derivative is `-ε²`.
+  have hsin : Real.sin (Φ s y 1) = 0 := (mul_eq_zero.1 hs).resolve_left hε
+  have hcos : Real.cos (Φ s y 1) ^ 2 = 1 := by nlinarith [Real.sin_sq_add_cos_sq (Φ s y 1)]
+  rw [hsin]
   nlinarith [sq_pos_of_ne_zero hε]
 
-/-- No orbit runs from a point with `ε sin φ < 0` to a point with `ε sin φ > 0`. -/
-private theorem notMem_unstableSet_inter_stableSet (hε : ε ≠ 0) {p q y : 𝔼}
-    (hp : ε * sin (p 1) < 0) (hq : 0 < ε * sin (q 1)) :
-    y ∉ Flow.unstableSet Φ p ∩ Flow.stableSet Φ q := by
-  rintro ⟨hu, hs⟩
-  have hG : Continuous fun z : 𝔼 ↦ ε * sin (z 1) :=
-    continuous_const.mul (continuous_sin.comp (ContinuousLinearMap.continuous pr₁))
-  obtain ⟨a, ha⟩ := (((hG.tendsto p).comp (Flow.mem_unstableSet.1 hu)).eventually
-    (gt_mem_nhds hp)).exists
-  obtain ⟨T, hT⟩ := eventually_atTop.1 (((hG.tendsto q).comp (Flow.mem_stableSet.1 hs)).eventually
-    (lt_mem_nhds hq))
-  exact (flow_barrier hε y ha.le (le_max_left a T)).not_gt (hT _ (le_max_right a T))
-
-/-- **The perturbation is Morse–Smale.** For `ε ≠ 0` and `√(r² + ε²) < R`, the negative-gradient
-flow of `(R + r cos φ) cos θ + ε sin φ` is Morse–Smale. -/
-theorem isMorseSmale_torusHeight (hε : ε ≠ 0) (hR : √(r ^ 2 + ε ^ 2) < R) :
-    IsMorseSmale (torusHeight R r ε) (lipschitzWith_gradient_torusHeight R r ε) := by
-  have hρ : 0 < √(r ^ 2 + ε ^ 2) := Real.sqrt_pos.2 (by positivity)
-  have hr : |r| < R := (Real.abs_le_sqrt (by nlinarith)).trans_lt hR
-  have hfs : ContDiff ℝ 2 (torusHeight R r ε) := contDiff_torusHeight
-  have hf := lipschitzWith_gradient_torusHeight R r ε
-  refine .of_forall_ne_of_morseIndex_ne hfs fun p q y hp hq hpq hp0 hp2 hq0 _ hy ↦ ?_
-  rw [finrank_euclideanSpace_fin] at hp2
-  have hlt :=
-    (isNegativeGradient_negativeGradientFlow _ hf).value_lt_of_mem_unstableSet_inter_stableSet
-      (fun _ ↦ hfs.differentiable (by norm_num) _) hfs.continuous.continuousAt
-      hfs.continuous.continuousAt hpq hy
-  rcases morseIndex_torusHeight_of_fderiv_eq_zero hr (.inr hε) hp.fderiv_eq_zero with
-    ⟨hip, -⟩ | ⟨-, hsp, hvp⟩ | ⟨-, -, hvp⟩ | ⟨hip, -⟩ <;>
-  rcases morseIndex_torusHeight_of_fderiv_eq_zero hr (.inr hε) hq.fderiv_eq_zero with
-    ⟨-, hvq⟩ | ⟨-, -, hvq⟩ | ⟨-, hsq, hvq⟩ | ⟨hiq, -⟩
-  all_goals first
-    | -- `p` is neither a maximum nor a minimum, and `q` is not a minimum.
-      exact absurd hip hp2
-    | exact absurd hip hp0
-    | exact absurd hiq hq0
-    | -- A connection that would not lower the value.
-      exact absurd hlt (by linarith)
-    | -- A connection between the two kinds of saddles crosses the barrier.
-      have hp' : ε * sin (p 1) < 0 := neg_of_mul_neg_right
-        (show √(r ^ 2 + ε ^ 2) * (ε * sin (p 1)) < 0 by
-          rw [mul_left_comm, hsp]; nlinarith [sq_pos_of_ne_zero hε]) hρ.le
-      have hq' : 0 < ε * sin (q 1) := pos_of_mul_pos_right
-        (show 0 < √(r ^ 2 + ε ^ 2) * (ε * sin (q 1)) by
-          rw [mul_left_comm, hsq]; nlinarith [sq_pos_of_ne_zero hε]) hρ.le
-      exact absurd hy (notMem_unstableSet_inter_stableSet hε hp' hq')
-
-/-- The trajectory `t ↦ (2 arctan (e^{c t}), φ)`, which for `c = R + r cos φ > 0` and
-`sin φ = 0` joins `(0, φ)` to `(π, φ)` along the circle `φ` of the unperturbed torus height. -/
-private noncomputable def connection (c φ t : ℝ) : 𝔼 :=
-  (2 * arctan (exp (c * t))) • e₀ + φ • e₁
-
-private theorem isIntegralCurve_connection {φ : ℝ} (hφ : sin φ = 0) :
-    IsIntegralCurve (connection (R + r * cos φ) φ) fun _ z ↦ -∇ (torusHeight R r 0) z := by
-  intro t
-  set c := R + r * cos φ
-  set x := exp (c * t)
-  have hx : HasDerivAt (fun t ↦ exp (c * t)) (x * c) t := by
-    simpa using ((hasDerivAt_id t).const_mul c).exp
-  have hθ := (((hasDerivAt_arctan x).comp t hx).const_mul 2).smul_const e₀ |>.add_const (φ • e₁)
-  refine hθ.congr_deriv ?_
-  -- `sin (2 arctan x) = 2 x / (1 + x²)`, so the angle `θ` solves `θ' = c sin θ`.
-  have hsq : √(1 + x ^ 2) ^ 2 = 1 + x ^ 2 := Real.sq_sqrt (by positivity)
-  ext i
-  fin_cases i
-  · simp [connection, c, sin_two_mul, sin_arctan, cos_arctan]
-    field_simp
-    rw [hsq]
-    ring
-  · simp [connection, hφ]
-
-private theorem connection_zero (c φ : ℝ) : connection c φ 0 = !₂[π / 2, φ] := by
-  ext i
-  fin_cases i <;> simp [connection, arctan_one]
-  ring
-
-private theorem tendsto_connection_atBot {c : ℝ} (hc : 0 < c) (φ : ℝ) :
-    Tendsto (connection c φ) atBot (𝓝 !₂[0, φ]) := by
-  have h : Tendsto (fun t ↦ exp (c * t)) atBot (𝓝 0) :=
-    tendsto_exp_atBot.comp (tendsto_id.const_mul_atBot hc)
-  have := ((((continuous_arctan.tendsto 0).comp h).const_mul 2).smul_const e₀).add_const (φ • e₁)
-  have e : (!₂[0, φ] : 𝔼) = (2 * arctan 0) • e₀ + φ • e₁ := by
-    ext i
-    fin_cases i <;> simp
-  rw [e]
-  exact this
-
-private theorem tendsto_connection_atTop {c : ℝ} (hc : 0 < c) (φ : ℝ) :
-    Tendsto (connection c φ) atTop (𝓝 !₂[π, φ]) := by
-  have h : Tendsto (fun t ↦ arctan (exp (c * t))) atTop (𝓝 (π / 2)) :=
-    (tendsto_arctan_atTop.mono_right nhdsWithin_le_nhds).comp
-      (tendsto_exp_atTop.comp (tendsto_id.const_mul_atTop hc))
-  have := ((h.const_mul 2).smul_const e₀).add_const (φ • e₁)
-  have e : (!₂[π, φ] : 𝔼) = (2 * (π / 2)) • e₀ + φ • e₁ := by
-    ext i
-    fin_cases i
-    · simp
-      ring
-    · simp
-  rw [e]
-  exact this
-
-/-- **A saddle connection.** For `ε = 0`, on a circle `φ = φ₀` with `sin φ₀ = 0` and
-`R + r cos φ₀ > 0`, the point `(π / 2, φ₀)` lies on a trajectory of the negative-gradient flow of
-`(R + r cos φ) cos θ` from `(0, φ₀)` to `(π, φ₀)`. Both endpoints are saddles when moreover
-`|r| < R` and `r cos φ₀ < 0`. -/
-theorem mem_unstableSet_inter_stableSet_torusHeight_zero {φ : ℝ} (hφ : sin φ = 0)
-    (hrφ : 0 < R + r * cos φ) :
-    !₂[π / 2, φ] ∈
-      Flow.unstableSet (negativeGradientFlow (torusHeight R r 0)
-          (lipschitzWith_gradient_torusHeight R r 0)) !₂[0, φ] ∩
-        Flow.stableSet (negativeGradientFlow (torusHeight R r 0)
-          (lipschitzWith_gradient_torusHeight R r 0)) !₂[π, φ] := by
-  have h (t : ℝ) := eq_negativeGradientFlow _ (lipschitzWith_gradient_torusHeight R r 0)
-    (isIntegralCurve_connection hφ) t
-  simp only [connection_zero] at h
-  refine ⟨Flow.mem_unstableSet.2 ?_, Flow.mem_stableSet.2 ?_⟩
-  · simpa only [← h] using tendsto_connection_atBot hrφ φ
-  · simpa only [← h] using tendsto_connection_atTop hrφ φ
-
-/-- **The unperturbed torus height is not Morse–Smale.** For `|r| < R` and `r ≠ 0`, the
-negative-gradient flow of `(R + r cos φ) cos θ` is not Morse–Smale. Compare
-`TauCeti.isMorseSmale_torusHeight`: for `ε ≠ 0` with `√(r² + ε²) < R`, the flow of the
-perturbation by `ε sin φ` is Morse–Smale. -/
-theorem not_isMorseSmale_torusHeight_zero (hr : |r| < R) (hr0 : r ≠ 0) :
-    ¬IsMorseSmale (torusHeight R r 0) (lipschitzWith_gradient_torusHeight R r 0) := fun h ↦ by
-  -- The circle `φ = π` for `r > 0`, or `φ = 0` for `r < 0`, carries a trajectory joining two
-  -- saddles.
-  obtain ⟨φ, hφ, hrφ⟩ : ∃ φ, sin φ = 0 ∧ r * cos φ < 0 := by
-    rcases hr0.lt_or_gt with h | h
-    · exact ⟨0, by simp, by simpa⟩
-    · exact ⟨π, by simp, by simpa⟩
-  have ha := pos_add_mul_cos hr φ
-  have hp : fderiv ℝ (torusHeight R r 0) !₂[0, φ] = 0 :=
-    (fderiv_torusHeight_eq_zero_iff hr).2 (by simp [hφ])
-  have hq : fderiv ℝ (torusHeight R r 0) !₂[π, φ] = 0 :=
-    (fderiv_torusHeight_eq_zero_iff hr).2 (by simp [hφ])
-  have hip : morseIndex (torusHeight R r 0) !₂[0, φ] = 1 :=
-    morseIndex_torusHeight_eq_one (by simp; nlinarith [mul_pos ha (neg_pos.2 hrφ)])
-  have hiq : morseIndex (torusHeight R r 0) !₂[π, φ] = 1 :=
-    morseIndex_torusHeight_eq_one (by simp; nlinarith [mul_pos ha (neg_pos.2 hrφ)])
-  have hpq : (!₂[0, φ] : 𝔼) ≠ !₂[π, φ] := fun h ↦ by
-    simpa [pi_ne_zero.symm] using congrArg (fun v : 𝔼 ↦ v 0) h
-  have hy := mem_unstableSet_inter_stableSet_torusHeight_zero hφ ha
-  exact (h.morseIndex_lt (isNondegenerateCriticalPoint_torusHeight hr (.inl hr0) hp)
-    (isNondegenerateCriticalPoint_torusHeight hr (.inl hr0) hq) contDiff_torusHeight hpq
-    hy.1 hy.2).ne (by rw [hip, hiq])
+/-- **The tilted torus is Morse–Smale.** For `ε ≠ 0`, the negative gradient flow of
+`(2 + cos y) cos x + ε sin y` is Morse–Smale. Only trajectories between distinct saddles need to be
+excluded. Along the flow `cos x` does not increase, and at a saddle the value is
+`cos x (2 - √(1 + ε²))`, so as the value strictly decreases such a trajectory would run from a
+saddle with `cos x = 1`, where `ε sin y < 0`, to one with `cos x = -1`, where `ε sin y > 0`; but
+`ε sin y` crosses `0` only downwards. -/
+theorem isMorseSmale_tiltedTorusHeight (hε : ε ≠ 0) :
+    IsMorseSmale (tiltedTorusHeight ε) (lipschitzWith_gradient_tiltedTorusHeight ε) := by
+  refine IsMorseSmale.of_forall_ne_of_morseIndex_ne contDiff_tiltedTorusHeight
+    fun p q y hp hq hpq hp0 hp2 hq0 hq2 hy ↦ (?_ : False).elim
+  rw [finrank_euclideanSpace_fin] at hp2 hq2
+  have hpc := hp.fderiv_eq_zero
+  have hqc := hq.fderiv_eq_zero
+  have hpy := cos_lt_zero_of_morseIndex_ne hpc hp0 hp2
+  have hqy := cos_lt_zero_of_morseIndex_ne hqc hq0 hq2
+  set Φ := negativeGradientFlow (tiltedTorusHeight ε) (lipschitzWith_gradient_tiltedTorusHeight ε)
+  -- `cos x` does not increase and the value decreases strictly from `p` to `q`, so
+  -- `cos (p 0) = 1` and `cos (q 0) = -1`.
+  have hC : Continuous fun w : EuclideanSpace ℝ (Fin 2) ↦ Real.cos (w 0) := by fun_prop
+  have hanti := antitone_cos_negativeGradientFlow (ε := ε) y
+  have hcos : Real.cos (q 0) ≤ Real.cos (p 0) :=
+    (le_of_tendsto ((hC.tendsto q).comp (Flow.mem_stableSet.1 hy.2))
+      (eventually_atTop.2 ⟨0, fun _ ht ↦ hanti ht⟩)).trans
+      (ge_of_tendsto ((hC.tendsto p).comp (Flow.mem_unstableSet.1 hy.1))
+        (eventually_atBot.2 ⟨0, fun _ ht ↦ hanti ht⟩))
+  have hd : Differentiable ℝ (tiltedTorusHeight ε) :=
+    (contDiff_tiltedTorusHeight (n := 1)).differentiable one_ne_zero
+  have hlt := (isNegativeGradient_negativeGradientFlow (tiltedTorusHeight ε)
+    (lipschitzWith_gradient_tiltedTorusHeight ε)).value_lt_of_mem_unstableSet_inter_stableSet
+    (fun _ ↦ hd.differentiableAt) hd.continuous.continuousAt hd.continuous.continuousAt hpq hy
+  obtain ⟨hcp, hcq⟩ := cos_eq_one_and_cos_eq_neg_one_of_lt hpc hqc hpy hqy hcos hlt
+  -- So `ε sin y` is negative at `p` and positive at `q`.
+  have hVp : ε * Real.sin (p 1) < 0 := by
+    rw [sin_eq_of_fderiv_eq_zero hpc, hcp]
+    nlinarith [sq_pos_of_ne_zero hε]
+  have hVq : 0 < ε * Real.sin (q 1) := by
+    rw [sin_eq_of_fderiv_eq_zero hqc, hcq]
+    nlinarith [sq_pos_of_ne_zero hε]
+  have hV : Continuous fun w : EuclideanSpace ℝ (Fin 2) ↦ ε * Real.sin (w 1) := by fun_prop
+  have hbot : Tendsto (fun t ↦ ε * Real.sin (Φ t y 1)) atBot (𝓝 (ε * Real.sin (p 1))) :=
+    (hV.tendsto p).comp (Flow.mem_unstableSet.1 hy.1)
+  have htop : Tendsto (fun t ↦ ε * Real.sin (Φ t y 1)) atTop (𝓝 (ε * Real.sin (q 1))) :=
+    (hV.tendsto q).comp (Flow.mem_stableSet.1 hy.2)
+  obtain ⟨t₀, ht₀⟩ := (hbot.eventually (gt_mem_nhds hVp)).exists
+  have hle : ε * Real.sin (q 1) ≤ 0 :=
+    le_of_tendsto htop (eventually_atTop.2 ⟨t₀, fun t ht ↦
+      mul_sin_negativeGradientFlow_nonpos hε y ht ht₀.le⟩)
+  linarith
 
 end TauCeti

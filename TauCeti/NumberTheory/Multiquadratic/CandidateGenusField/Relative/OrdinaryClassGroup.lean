@@ -59,11 +59,11 @@ positive `d`, the number of negative factors is even, so this vector belongs to
 `candidateGenusFieldRelativeSignSubmodule`. -/
 noncomputable def candidateGenusFieldNegativeSign (hd : Squarefree d) :
     {P // P ∈ genusPrimeDiscriminants hd} → ZMod 2 :=
-  fun P => if P.1 < 0 then 1 else 0
+  fun P => if P.val < 0 then 1 else 0
 
 @[simp] theorem candidateGenusFieldNegativeSign_apply (hd : Squarefree d)
     (P : {P // P ∈ genusPrimeDiscriminants hd}) :
-    candidateGenusFieldNegativeSign hd P = if P.1 < 0 then 1 else 0 := (rfl)
+    candidateGenusFieldNegativeSign hd P = if P.val < 0 then 1 else 0 := (rfl)
 
 /-- The narrow class of the chosen square root, viewed modulo squares. It generates the possible
 defect between the narrow and ordinary elementary-`2` class-group quotients. -/
@@ -95,12 +95,12 @@ theorem candidateGenusFieldBaseGenusCharLinearMap_narrowDefect (hd : Squarefree 
       (genusPrimeDiscriminants_spec hd).1 (genusPrimeDiscriminants_spec hd).2.1
       (genusPrimeDiscriminants_spec hd).2.2
       (minpoly_candidateGenusFieldBaseGen hd hnsq)
-      (adjoin_candidateGenusFieldBaseGen_eq_top hd) hd hpos P.2]
-  by_cases hP : P.1 < 0
+      (adjoin_candidateGenusFieldBaseGen_eq_top hd) hd hpos P.property]
+  by_cases hP : P.val < 0
   · rw [Int.sign_eq_neg_one_of_neg hP]
     simp [hP]
-  · have hP0 : 0 < P.1 := lt_of_le_of_ne (le_of_not_gt hP)
-      ((genusPrimeDiscriminants_spec hd).1 P P.2).isFundamentalDiscr.ne_zero.symm
+  · have hP0 : 0 < P.val := lt_of_le_of_ne (le_of_not_gt hP)
+      ((genusPrimeDiscriminants_spec hd).1 P P.property).isFundamentalDiscr.ne_zero.symm
     rw [Int.sign_eq_one_of_pos hP0]
     simp [hP]
 
@@ -113,7 +113,7 @@ theorem candidateGenusFieldNegativeSign_mem (hd : Squarefree d) (hpos : 0 < d) :
   · have hempty : genusPrimeDiscriminants hd = ∅ :=
       genusPrimeDiscriminants_eq_empty_of_isSquare hd ⟨1, by norm_num⟩
     rw [mem_candidateGenusFieldRelativeSignSubmodule_iff]
-    exact Finset.sum_eq_zero fun P _ => (Finset.notMem_empty P.1 (hempty ▸ P.2)).elim
+    exact Finset.sum_eq_zero fun P _ => (Finset.notMem_empty P.val (hempty ▸ P.property)).elim
   · have hnsq : ¬ IsSquare ((d : ℤ) : ℚ) :=
       not_isSquare_intCast_of_squarefree_of_ne_one hd hne
     rw [← candidateGenusFieldBaseGenusCharLinearMap_narrowDefect hd hnsq hpos,
@@ -125,7 +125,7 @@ canonical surjection from the relative sign space onto `Cl(K) / Cl(K)²`. -/
 noncomputable def candidateGenusFieldOrdinaryClassGroupSignMap (hd : Squarefree d)
     (hnsq : ¬ IsSquare ((d : ℤ) : ℚ)) :
     candidateGenusFieldRelativeSignSubmodule hd →ₗ[ZMod 2]
-      TauCeti.ClassGroup.ElementaryTwoQuotient (𝓞 (candidateGenusFieldBase hd)) :=
+      ClassGroup.ElementaryTwoQuotient (𝓞 (candidateGenusFieldBase hd)) :=
   (NarrowClassGroup.toClassGroupElementaryTwoQuotient (candidateGenusFieldBase hd)).comp
     (narrowElementaryTwoQuotientEquivRelativeSign hd
       hnsq).symm.toLinearMap
@@ -167,11 +167,9 @@ private theorem ker_toClassGroupElementaryTwoQuotient_eq_span_narrowDefect
       (NarrowClassGroup.toClassGroup (K := candidateGenusFieldBase hd))
       NarrowClassGroup.toClassGroup_surjective hxmap
     rw [← hC'C]
-    rw [NarrowClassGroup.toClassGroup_ker] at hC'
-    obtain ⟨u, rfl⟩ := hC'
-    rcases mkPrincipal_eq_one_or_eq_mkPrincipal_gen
+    rcases (NarrowClassGroup.toClassGroup_eq_one_iff
         (minpoly_candidateGenusFieldBaseGen hd hnsq)
-        (adjoin_candidateGenusFieldBaseGen_eq_top hd) u with hu | hu
+        (adjoin_candidateGenusFieldBaseGen_eq_top hd)).mp hC' with hu | hu
     · rw [hu, TauCeti.elementaryTwoQuotientMk_one]
       exact Submodule.zero_mem _
     · rw [hu]
@@ -224,7 +222,7 @@ squarefree `d`, `Cl(ℚ(√d)) / Cl(ℚ(√d))²` is the even-parity sign space 
 by the negative-coordinate vector. -/
 noncomputable def ordinaryElementaryTwoQuotientEquivRelativeSignQuotient
     (hd : Squarefree d) (hnsq : ¬ IsSquare ((d : ℤ) : ℚ)) (hpos : 0 < d) :
-    TauCeti.ClassGroup.ElementaryTwoQuotient (𝓞 (candidateGenusFieldBase hd)) ≃ₗ[ZMod 2]
+    ClassGroup.ElementaryTwoQuotient (𝓞 (candidateGenusFieldBase hd)) ≃ₗ[ZMod 2]
       (candidateGenusFieldRelativeSignSubmodule hd ⧸
         ZMod 2 ∙
           (⟨candidateGenusFieldNegativeSign hd,

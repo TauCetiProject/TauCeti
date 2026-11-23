@@ -8,6 +8,7 @@ module
 public import TauCeti.Combinatorics.SimpleGraph.AdditiveFunction
 public import TauCeti.LinearAlgebra.RootSystem.FiniteType.Classification
 public import TauCeti.LinearAlgebra.RootSystem.FiniteType.SimplyLaced
+import TauCeti.Data.Matrix.DotProduct
 import TauCeti.LinearAlgebra.Matrix.ZMatrix
 
 /-!
@@ -91,13 +92,7 @@ theorem isFiniteType_graphCartanMatrix_of_posDef {R : Type*} [Field R] [LinearOr
   have hstar : star (Rat.castHom R ∘ x) = Rat.castHom R ∘ x :=
     funext fun i ↦ by simp only [Pi.star_apply, Function.comp_apply, Rat.coe_castHom, star_ratCast]
   rw [← graphCartanMatrix_map G (Rat.castHom R), hstar] at hpos
-  have hcast : Rat.castHom R (x ⬝ᵥ G.graphCartanMatrix ℚ *ᵥ x) =
-      Rat.castHom R ∘ x ⬝ᵥ (G.graphCartanMatrix ℚ).map (Rat.castHom R) *ᵥ (Rat.castHom R ∘ x) := by
-    rw [RingHom.map_dotProduct]
-    congr 1
-    funext i
-    exact RingHom.map_mulVec _ _ _ i
-  rw [← hcast, Rat.coe_castHom, Rat.cast_pos] at hpos
+  rw [← RingHom.map_dotProduct_mulVec, Rat.coe_castHom, Rat.cast_pos] at hpos
   rwa [star_trivial]
 
 omit [Finite V] in
@@ -142,40 +137,13 @@ are path graphs. -/
 theorem _root_.TauCeti.DynkinType.exists_isSimplyLaced_diagramGraph_iso (t : DynkinType) :
     ∃ s : DynkinType, s.IsSimplyLaced ∧ (t.Valid → s.Valid) ∧
       Nonempty (diagramGraph t.cartanMatrix ≃g diagramGraph s.cartanMatrix) := by
-  have hpath {n : ℕ} {G : SimpleGraph (Fin n)} (hG : G = pathGraph n) :
-      Nonempty (G ≃g diagramGraph (CartanMatrix.A n)) := by
-    rw [hG, DynkinType.diagramGraph_cartanMatrix_A]
-    exact ⟨Iso.refl⟩
-  cases t with
-  | A n | D n | E6 | E7 | E8 => exact ⟨_, by simp, id, ⟨Iso.refl⟩⟩
-  | B n =>
-    refine ⟨.A n, by simp, fun h => by have := DynkinType.valid_B.mp h; simp; omega, ?_⟩
-    simpa only [DynkinType.rank_B, DynkinType.cartanMatrix_B, DynkinType.rank_A,
-      DynkinType.cartanMatrix_A] using hpath (G := diagramGraph (CartanMatrix.B n)) <| by
-      ext i j
-      rw [diagramGraph_adj, pathGraph_adj]
-      simp [CartanMatrix.B, Fin.ext_iff]
-      omega
-  | C n =>
-    refine ⟨.A n, by simp, fun h => by have := DynkinType.valid_C.mp h; simp; omega, ?_⟩
-    simpa only [DynkinType.rank_C, DynkinType.cartanMatrix_C, DynkinType.rank_A,
-      DynkinType.cartanMatrix_A] using hpath (G := diagramGraph (CartanMatrix.C n)) <| by
-      ext i j
-      rw [diagramGraph_adj, pathGraph_adj]
-      simp [CartanMatrix.C, Fin.ext_iff]
-      omega
-  | F4 =>
-    refine ⟨.A 4, by simp, fun _ => by simp, ?_⟩
-    simpa only [DynkinType.rank_F4, DynkinType.cartanMatrix_F4, DynkinType.rank_A,
-      DynkinType.cartanMatrix_A] using hpath (G := diagramGraph CartanMatrix.F₄) <| by
-      ext i j
-      fin_cases i <;> fin_cases j <;> decide
-  | G2 =>
-    refine ⟨.A 2, by simp, fun _ => by simp, ?_⟩
-    simpa only [DynkinType.rank_G2, DynkinType.cartanMatrix_G2, DynkinType.rank_A,
-      DynkinType.cartanMatrix_A] using hpath (G := diagramGraph CartanMatrix.G₂.transpose) <| by
-      ext i j
-      fin_cases i <;> fin_cases j <;> decide
+  by_cases ht : t.IsSimplyLaced
+  · exact ⟨t, ht, id, ⟨Iso.refl⟩⟩
+  · refine ⟨.A t.rank, by simp, fun hv => ?_, ⟨?_⟩⟩
+    · cases t <;> simp_all <;> omega
+    · simp only [t.diagramGraph_cartanMatrix_of_not_isSimplyLaced ht,
+        DynkinType.rank_A, DynkinType.cartanMatrix_A, DynkinType.diagramGraph_cartanMatrix_A]
+      exact Iso.refl
 
 omit [Finite V] in
 /-- **A graph isomorphic to the diagram of a standard Cartan matrix has a positive definite

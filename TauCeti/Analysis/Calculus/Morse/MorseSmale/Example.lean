@@ -6,6 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Calculus.Morse.MorseSmale.Manifold
+import Mathlib.Analysis.SpecialFunctions.Trigonometric.Bounds
+import TauCeti.Analysis.Calculus.Morse.MorseSmale.Fredholm
 
 /-!
 # A Morse–Smale function on the plane

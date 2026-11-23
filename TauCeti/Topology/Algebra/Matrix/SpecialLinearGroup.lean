@@ -49,14 +49,14 @@ variable {n R α : Type*} [Fintype n] [DecidableEq n] [CommRing R] [TopologicalS
 theorem tendsto_iff_tendsto_apply {l : Filter α} {M : α → SpecialLinearGroup n R}
     {D : SpecialLinearGroup n R} :
     Tendsto M l (𝓝 D) ↔ ∀ i j, Tendsto (fun x ↦ M x i j) l (𝓝 (D i j)) := by
-  exact (IsInducing.subtypeVal (t := {A : Matrix n n R | A.det = 1})).tendsto_nhds_iff.trans <|
-    tendsto_pi_nhds.trans <| forall_congr' fun _ ↦ tendsto_pi_nhds
+  exact (IsInducing.subtypeVal (t := {A : Matrix n n R | A.det = 1})).tendsto_nhds_iff.trans
+    Matrix.tendsto_iff_tendsto_apply
 
 /-- When addition and multiplication are continuous on `R`, `SL(n, R)` acts jointly continuously
 on column vectors, by restricting the action of all square matrices. -/
 instance instContinuousSMulVec [ContinuousAdd R] [ContinuousMul R] :
     ContinuousSMul (SpecialLinearGroup n R) (n → R) :=
-  IsInducing.id.continuousSMul (M := Matrix n n R) continuous_subtype_val
+  IsInducing.id.continuousSMul (M := Matrix n n R) continuous_subtypeVal
     (SpecialLinearGroup.smul_def _ _)
 
 /-- Over a σ-compact `T1` topological ring, `SL(n, R)` is σ-compact, as a closed subset of the

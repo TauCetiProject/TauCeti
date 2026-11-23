@@ -26,8 +26,8 @@ nondegenerate Killing form. Through `LieAlgebra.Basis.cartanMatrix_base_eq`, the
 Lie algebra is Killing-simple of type `G₂`.
 
 The identification of `Der 𝕆` with the split Lie algebra `LieAlgebra.g₂` presented by Serre's
-relations, that is the injectivity of `TauCeti.Octonion.g₂ToDerivationLieAlgebra`, is not proved
-here.
+relations, that is the injectivity of `TauCeti.Octonion.g₂ToDerivationLieAlgebra`, is deduced from
+this basis by Serre's theorem in `TauCeti/Algebra/Octonion/G2.lean`.
 
 ## Main definitions
 
@@ -134,7 +134,7 @@ theorem mem_cartanSubalgebra_iff {D : derivationLieAlgebra R (Octonion R)} :
     have htr : (N : Matrix (Fin 3) (Fin 3) R) 0 0 + (N : Matrix (Fin 3) (Fin 3) R) 1 1 +
         (N : Matrix (Fin 3) (Fin 3) R) 2 2 = 0 := by
       rw [← trace_fin_three]
-      exact LinearMap.mem_ker.mp N.2
+      exact LinearMap.mem_ker.mp N.property
     have hNeq : N = (-(N : Matrix (Fin 3) (Fin 3) R) 2 2) •
         (singleSubSingle 1 0 1 + singleSubSingle 1 2 1) +
           ((N : Matrix (Fin 3) (Fin 3) R) 0 0 - (N : Matrix (Fin 3) (Fin 3) R) 2 2) •
@@ -294,7 +294,7 @@ private def cartanElement (k : Fin 2) : 𝔥 :=
 /-- Every element of the Cartan subalgebra is a combination of the two Cartan generators. -/
 private theorem exists_eq_sum_cartanElement (h : 𝔥) :
     ∃ c : Fin 2 → R, h = ∑ k, c k • cartanElement k := by
-  obtain ⟨c, hc⟩ := exists_sum_cartanDerivation_eq h.2
+  obtain ⟨c, hc⟩ := exists_sum_cartanDerivation_eq h.property
   exact ⟨c, Subtype.ext (by rw [← hc]; simp)⟩
 
 /-- A vector on which each Cartan generator acts by minus a linear functional `χ` lies in the

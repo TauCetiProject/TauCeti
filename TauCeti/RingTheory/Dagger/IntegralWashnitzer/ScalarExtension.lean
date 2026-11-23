@@ -61,7 +61,7 @@ theorem isLocalizationAway (π : K°) (hπ0 : (π : K) ≠ 0) (hπ1 : ‖(π : K
     rw [h]
     exact (isUnit_iff_ne_zero.mpr hπ0).map _
   · obtain ⟨n, hn⟩ :=
-      (mem_washnitzerAlgebra_iff_exists_C_pow_mul_mem hπ0 hπ1).mp f.2
+      (mem_washnitzerAlgebra_iff_exists_C_pow_mul_mem hπ0 hπ1).mp f.property
     refine ⟨n, ⟨_, hn⟩, Subtype.ext ?_⟩
     simp [mul_comm, MvPowerSeries.algebraMap_apply]
   · refine ⟨0, ?_⟩

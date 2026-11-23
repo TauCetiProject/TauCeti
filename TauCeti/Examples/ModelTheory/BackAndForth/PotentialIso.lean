@@ -43,13 +43,13 @@ example :
   obtain ⟨f, a, ha, hb, -⟩ := h.exists_fgEquiv
   obtain ⟨g, h0, hfg⟩ := hext f 0
   -- `g` extends `f`, so it sends `a 0 = 1` to `0`, and must send `0` below `0`.
-  have h1 : (a 0 : ℕ) ∈ g.1.dom := PartialEquiv.dom_le_dom hfg (a 0).2
-  have hg1 : (g.1.toEquiv ⟨a 0, h1⟩ : ℕ) = 0 :=
-    (PartialEquiv.toEquiv_apply_of_le hfg (a 0).2).trans (by simpa using hb 0)
-  have hle : (g.1.toEquiv ⟨0, h0⟩ : ℕ) ≤ g.1.toEquiv ⟨a 0, h1⟩ :=
-    (g.1.toEquiv.map_rel (leSymb (L := Language.order)) ![⟨0, h0⟩, ⟨a 0, h1⟩]).2 (Nat.zero_le _)
+  have h1 : (a 0 : ℕ) ∈ g.val.dom := PartialEquiv.dom_le_dom hfg (a 0).property
+  have hg1 : (g.val.toEquiv ⟨a 0, h1⟩ : ℕ) = 0 :=
+    (PartialEquiv.toEquiv_apply_of_le hfg (a 0).property).trans (by simpa using hb 0)
+  have hle : (g.val.toEquiv ⟨0, h0⟩ : ℕ) ≤ g.val.toEquiv ⟨a 0, h1⟩ :=
+    (g.val.toEquiv.map_rel (leSymb (L := Language.order)) ![⟨0, h0⟩, ⟨a 0, h1⟩]).2 (Nat.zero_le _)
   rw [hg1, Nat.le_zero] at hle
-  have h01 := congrArg Subtype.val (g.1.toEquiv.injective (Subtype.ext (hle.trans hg1.symm)))
+  have h01 := congrArg Subtype.val (g.val.toEquiv.injective (Subtype.ext (hle.trans hg1.symm)))
   simp [ha 0] at h01
 
 end TauCeti

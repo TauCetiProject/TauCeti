@@ -169,7 +169,7 @@ theorem isCentralPoint_rootsOfUnityScalarPoints
     pointsMulEquiv_rootsOfUnityScalarPoints]
   apply Subtype.ext
   exact (Matrix.scalar_commute _ (fun r ↦ Commute.all _ r)
-    (SpecialLinear.pointsMulEquiv (R := S) (A := B) n g).1).eq
+    (SpecialLinear.pointsMulEquiv (R := S) (A := B) n g).val).eq
 
 /-- The scalar roots-of-unity map with codomain restricted to the universal center. -/
 noncomputable def rootsOfUnityScalarCenterHom
@@ -185,7 +185,7 @@ noncomputable def rootsOfUnityScalarCenterHom
 theorem coe_rootsOfUnityScalarCenterHom_apply
     (A : Type u) [CommRing A] [Algebra S A]
     (f : WithConv (MonoidAlgebra S (Multiplicative (ZMod n)) →ₐ[S] A)) :
-    (rootsOfUnityScalarCenterHom n A f).1 = rootsOfUnityScalarPoints n f := by
+    (rootsOfUnityScalarCenterHom n A f).val = rootsOfUnityScalarPoints n f := by
   rfl
 
 /-- For `0 < n`, scalar roots of unity give every universally central point of `SLₙ`. -/
@@ -198,13 +198,13 @@ theorem rootsOfUnityScalarCenterHom_bijective (hn : 0 < n)
     exact congrArg Subtype.val hfg
   · intro g
     have hgcentral :
-        SpecialLinear.pointsMulEquiv (R := S) (A := A) n g.1 ∈
+        SpecialLinear.pointsMulEquiv (R := S) (A := A) n g.val ∈
           Subgroup.center (Matrix.SpecialLinearGroup (Fin n) A) := by
       apply MulEquivClass.apply_mem_center
       apply HopfAlgebra.center_le_center
-      exact g.2
+      exact g.property
     let c : Subgroup.center (Matrix.SpecialLinearGroup (Fin n) A) :=
-      ⟨SpecialLinear.pointsMulEquiv (R := S) (A := A) n g.1, hgcentral⟩
+      ⟨SpecialLinear.pointsMulEquiv (R := S) (A := A) n g.val, hgcentral⟩
     let ζ : rootsOfUnity n A :=
       Matrix.SpecialLinearGroup.centerMulEquivRootsOfUnityFin n hn A c
     refine ⟨(RootsOfUnityGroup.pointsMulEquiv (R := S) (A := A) n).symm ζ, ?_⟩
@@ -233,7 +233,7 @@ noncomputable def rootsOfUnityScalarCenterMulEquiv (hn : 0 < n)
 theorem rootsOfUnityScalarCenterMulEquiv_apply (hn : 0 < n)
     (A : Type u) [CommRing A] [Algebra S A]
     (f : WithConv (MonoidAlgebra S (Multiplicative (ZMod n)) →ₐ[S] A)) :
-    (rootsOfUnityScalarCenterMulEquiv n hn A f).1 = rootsOfUnityScalarPoints n f := by
+    (rootsOfUnityScalarCenterMulEquiv n hn A f).val = rootsOfUnityScalarPoints n f := by
   rfl
 
 /-- Read the root of unity from the upper-left entry of a universally central `SLₙ`-point. -/
@@ -241,9 +241,9 @@ noncomputable def rootsOfUnityOfCenterPoint (hn : 0 < n)
     {A : Type u} [CommRing A] [Algebra S A]
     (g : HopfAlgebra.center S (coordinateHopfAlgebra S n) A) : rootsOfUnity n A :=
   Matrix.SpecialLinearGroup.centerMulEquivRootsOfUnityFin n hn A
-    ⟨SpecialLinear.pointsMulEquiv (R := S) (A := A) n g.1, by
+    ⟨SpecialLinear.pointsMulEquiv (R := S) (A := A) n g.val, by
       apply MulEquivClass.apply_mem_center
-      exact HopfAlgebra.center_le_center g.2⟩
+      exact HopfAlgebra.center_le_center g.property⟩
 
 /-- The inverse pointwise center equivalence reads off the root of unity from the central
 special-linear matrix. -/
@@ -268,9 +268,9 @@ theorem rootsOfUnityScalarCenterMulEquiv_symm_apply (hn : 0 < n)
     (fun c : Subgroup.center (Matrix.SpecialLinearGroup (Fin n) A) ↦
       ((c : Matrix.SpecialLinearGroup (Fin n) A) : Matrix (Fin n) (Fin n) A))
     ((Matrix.SpecialLinearGroup.centerMulEquivRootsOfUnityFin n hn A).symm_apply_apply
-      (⟨SpecialLinear.pointsMulEquiv (R := S) (A := A) n g.1, by
+      (⟨SpecialLinear.pointsMulEquiv (R := S) (A := A) n g.val, by
         apply MulEquivClass.apply_mem_center
-        exact HopfAlgebra.center_le_center g.2⟩ :
+        exact HopfAlgebra.center_le_center g.property⟩ :
         Subgroup.center (Matrix.SpecialLinearGroup (Fin n) A)))).symm
 
 variable {k : Type u} [Field k]
@@ -299,7 +299,7 @@ noncomputable def rootsOfUnityScalarCenterIso (hn : 0 < n) (A : CommAlgCat.{u} k
 theorem rootsOfUnityScalarCenterIso_hom_apply (hn : 0 < n) (A : CommAlgCat.{u} k)
     (f : HopfAlgebra.points (R := k)
       (H := MonoidAlgebra k (Multiplicative (ZMod n))) A) :
-    ((rootsOfUnityScalarCenterIso n hn A).hom f).1 = rootsOfUnityScalarPoints n f := by
+    ((rootsOfUnityScalarCenterIso n hn A).hom f).val = rootsOfUnityScalarPoints n f := by
   rfl
 
 /-- The inverse represented-center equivalence reads off the root of unity from the central
@@ -310,9 +310,9 @@ theorem rootsOfUnityScalarCenterIso_inv_apply (hn : 0 < n) (A : CommAlgCat.{u} k
     (rootsOfUnityScalarCenterIso n hn A).inv g =
       (RootsOfUnityGroup.pointsMulEquiv (R := k) (A := A) n).symm
         (rootsOfUnityOfCenterPoint (S := k) n hn
-          (⟨g.1, by
+          (⟨g.val, by
             rw [← CommHopfAlgCat.centerPointsSubgroup_eq_center]
-            exact g.2⟩ : HopfAlgebra.center k (coordinateHopfAlgebra k n) A)) := by
+            exact g.property⟩ : HopfAlgebra.center k (coordinateHopfAlgebra k n) A)) := by
   -- This theorem establishes the public inverse-application rule. The isomorphism is assembled
   -- from `MulEquiv.trans` and `MulEquiv.toGrpIso`, for which there is no application rewrite
   -- lemma connecting the categorical inverse to the underlying multiplicative equivalence.
@@ -336,8 +336,8 @@ noncomputable def rootsOfUnityScalarCenterNatIso (hn : 0 < n) :
     -- rewrite lemma that lowers those compositions and their concrete coercions to applications;
     -- `change` exposes that layer, after which the public component and value-map lemmas apply.
     change ((rootsOfUnityScalarCenterIso n hn B).hom
-        (AlgHom.mapValue φ.hom f)).1 =
-      AlgHom.mapValue φ.hom ((rootsOfUnityScalarCenterIso n hn A).hom f).1
+        (AlgHom.mapValue φ.hom f)).val =
+      AlgHom.mapValue φ.hom ((rootsOfUnityScalarCenterIso n hn A).hom f).val
     calc
       _ = rootsOfUnityScalarPoints n (AlgHom.mapValue φ.hom f) :=
         rootsOfUnityScalarCenterIso_hom_apply n hn B _
@@ -357,7 +357,7 @@ theorem rootsOfUnityScalarCenterNatIso_hom_app_apply
           (H := MonoidAlgebra k (Multiplicative (ZMod n)))).obj A)
         (Y := GrpCat.of (CommHopfAlgCat.centerPointsSubgroup
           (coordinateHopfAlgebra k n) A))
-        ((rootsOfUnityScalarCenterNatIso n hn).hom.app A) f).1 =
+        ((rootsOfUnityScalarCenterNatIso n hn).hom.app A) f).val =
       rootsOfUnityScalarPoints n f := by
   exact rootsOfUnityScalarCenterIso_hom_apply n hn A f
 
@@ -375,9 +375,9 @@ theorem rootsOfUnityScalarCenterNatIso_inv_app_apply
         ((rootsOfUnityScalarCenterNatIso n hn).inv.app A) g =
       (RootsOfUnityGroup.pointsMulEquiv (R := k) (A := A) n).symm
         (rootsOfUnityOfCenterPoint (S := k) n hn
-          (⟨g.1, by
+          (⟨g.val, by
             rw [← CommHopfAlgCat.centerPointsSubgroup_eq_center]
-            exact g.2⟩ : HopfAlgebra.center k (coordinateHopfAlgebra k n) A)) := by
+            exact g.property⟩ : HopfAlgebra.center k (coordinateHopfAlgebra k n) A)) := by
   exact rootsOfUnityScalarCenterIso_inv_apply n hn A g
 
 /-- The point functor of `μₙ` is naturally isomorphic to the point functor represented by the
