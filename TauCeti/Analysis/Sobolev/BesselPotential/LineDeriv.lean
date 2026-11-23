@@ -10,6 +10,7 @@ public import TauCeti.Analysis.Sobolev.BesselPotential.Operator
 import TauCeti.Analysis.Distribution.TemperedDistribution.Deriv
 import TauCeti.Analysis.Distribution.TemperedDistribution.Lp
 import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Peetre
+import TauCeti.MeasureTheory.Function.Lp.Norm
 
 /-!
 # Directional derivatives on `H^s` and the Plancherel identity for the norms
@@ -192,6 +193,7 @@ theorem norm_sq_eq_norm_inclusion_sq_add_sum_norm_lineDerivCLM_sq {ι : Type*} [
       ∫ x, (2 * π) ^ 2 * inner ℝ x (b i) ^ 2 * (1 + ‖x‖ ^ 2)⁻¹ * ‖G₀ x‖ ^ 2 := by
     rw [← norm_fourier_toLp_eq, ← Lp.integral_norm_sq_eq_norm_sq]
     refine integral_congr_ae ((coeFn_fourier_toLp_lineDerivCLM (b i) u).mono fun x hx ↦ ?_)
+    dsimp only
     rw [hx, norm_smul, mul_pow, norm_lineDerivSymbol_sq]
   have hint (i : ι) : Integrable fun x ↦
       (2 * π) ^ 2 * inner ℝ x (b i) ^ 2 * (1 + ‖x‖ ^ 2)⁻¹ * ‖G₀ x‖ ^ 2 := by

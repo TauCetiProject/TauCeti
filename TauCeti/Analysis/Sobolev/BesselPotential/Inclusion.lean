@@ -11,6 +11,7 @@ import Mathlib.Analysis.Normed.Operator.Banach
 import TauCeti.Analysis.Distribution.TemperedDistribution.Lp
 import TauCeti.Analysis.Sobolev.BesselPotential.Besov
 import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Peetre
+import TauCeti.MeasureTheory.Function.Lp.Norm
 
 /-!
 # The inclusion `H^{s,p} ⊆ H^{r,p}` of Bessel-potential spaces
@@ -420,6 +421,7 @@ theorem norm_inclusion_sq_eq_integral (h : r ≤ s) (u : H^{s}(E, F)) :
       ∫ x, (1 + ‖x‖ ^ 2) ^ (r - s) * ‖(𝓕 u.toLp : Lp F 2 (volume : Measure E)) x‖ ^ 2 := by
   rw [← norm_fourier_toLp_eq, ← Lp.integral_norm_sq_eq_norm_sq]
   refine integral_congr_ae ((coeFn_fourier_toLp_inclusion h u).mono fun x hx ↦ ?_)
+  dsimp only
   rw [hx, norm_smul, mul_pow, Complex.norm_real, Real.norm_of_nonneg (by positivity),
     ← Real.rpow_natCast, ← Real.rpow_mul (by positivity)]
   norm_num
