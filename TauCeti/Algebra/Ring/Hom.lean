@@ -39,10 +39,12 @@ along field and completion isomorphisms.
 ## Main results
 
 * `TauCeti.map_neg_one_eq_one_or_eq_neg_one`: the image of `-1` is `1` or `-1`.
-* `TauCeti.exists_add_neg_one_pow_mul_apply_eq` and
-  `TauCeti.exists_ne_zero_add_neg_one_pow_mul_apply_eq_zero`: extending existence of a trace-one
-  element for `t ↦ t + σ t` to surjectivity of `t ↦ t + (-1) ^ k * σ t`, and existence of a
-  nonzero kernel element.
+* `TauCeti.exists_add_neg_one_pow_mul_apply_eq`: showing from a trace-one element for
+  `t ↦ t + σ t` that every element `s` with `σ s = (-1) ^ k * s` has a preimage under
+  `t ↦ t + (-1) ^ k * σ t`.
+* `TauCeti.exists_ne_zero_add_neg_one_pow_mul_apply_eq_zero`: producing a nonzero kernel element
+  of `t ↦ t + (-1) ^ k * σ t` from a nonzero kernel element of `d ↦ d + σ d` when `k` is even
+  (and unconditionally via `1` when `k` is odd).
 * `TauCeti.exists_ne_zero_apply_mul_self_ne_one`: finding a nonzero element `u` with `σ u * u ≠ 1`
   from a fixed element `t ∉ {0, 1}` and a nonzero element `d` with `d + σ d = 0`.
 * `MulHom.unitize`: the unitization `a ↦ f a + (1 - f 1)` of a multiplicative map from a monoid
@@ -66,8 +68,10 @@ theorem map_neg_one_eq_one_or_eq_neg_one {F M R : Type*} [MulOneClass M] [HasDis
     f (-1) = 1 ∨ f (-1) = -1 :=
   mul_self_eq_one_iff.mp (by rw [← map_mul]; simp)
 
-/-- Existence of a trace-one element `b + σ b = 1` implies surjectivity of the signed trace
-`t ↦ t + (-1) ^ k * σ t` onto `{s | σ s = (-1) ^ k * s}` for every `k : ℕ`.
+/-- Existence of a trace-one element `b + σ b = 1` implies that every element `s` with
+`σ s = (-1) ^ k * s` has a preimage under the signed trace `t ↦ t + (-1) ^ k * σ t` for every
+`k : ℕ` (for an arbitrary ring endomorphism `σ`, the map need not land in
+`{s | σ s = (-1) ^ k * s}`).
 
 Adapted from `TauCeti.FiniteField.exists_add_neg_one_pow_mul_pow_eq` in
 `TauCeti.FieldTheory.Finite.PowAddSelf` to an arbitrary ring endomorphism. -/

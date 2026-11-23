@@ -66,8 +66,6 @@ reproduce every product `A *ᵥ x`.
 * `Matrix.comp_smul_dotProduct_mulVec_smul`: `h(c v, c v) = σ c * c * h(v, v)`.
 * `Matrix.vecMul_ne_zero_of_isUnit`: for a unit matrix `Q` over a semiring and `w ≠ 0`,
   `w ᵥ* Q ≠ 0`.
-* `Matrix.exists_eq_smul_of_vecMulVec_eq`: equality of `vecMulVec u₁ w₁` and `vecMulVec u₂ w₂`
-  with `u₂, w₂ ≠ 0` implies `u₁ = c • u₂` for some `c ≠ 0`.
 * `Matrix.map_intCast_mulVec` and `Matrix.map_intCast_vecMul`: casting integer entries commutes
   with matrix-vector and vector-matrix multiplication.
 -/
@@ -244,29 +242,5 @@ theorem vecMul_ne_zero_of_isUnit {Q : Matrix n n R} (hQ : IsUnit Q) {w : n → R
     _ = 0 := by rw [h0, zero_vecMul]
 
 end Semiring
-
-section Field
-
-variable {K : Type*} [Field K]
-
-omit [Fintype n] in
-/-- If two outer products `vecMulVec u₁ w₁` and `vecMulVec u₂ w₂` over a field agree and
-`u₂`, `w₂` are nonzero, then `u₁ = c • u₂` for some nonzero scalar `c`. -/
-theorem exists_eq_smul_of_vecMulVec_eq {u₁ u₂ : m → K} {w₁ w₂ : n → K}
-    (hu₂ : u₂ ≠ 0) (hw₂ : w₂ ≠ 0) (h : vecMulVec u₁ w₁ = vecMulVec u₂ w₂) :
-    ∃ c ≠ (0 : K), u₁ = c • u₂ := by
-  obtain ⟨j, hj⟩ := Function.ne_iff.mp hw₂
-  have hcol : ∀ i, u₁ i * w₁ j = u₂ i * w₂ j := fun i ↦ congrFun (congrFun h i) j
-  have hw₁j : w₁ j ≠ 0 := fun h0 ↦ hu₂ <| funext fun i ↦ by
-    have hi := hcol i
-    rw [h0, mul_zero] at hi
-    exact (mul_eq_zero.mp hi.symm).resolve_right hj
-  refine ⟨w₂ j * (w₁ j)⁻¹, mul_ne_zero hj (inv_ne_zero hw₁j), funext fun i ↦ ?_⟩
-  simp only [Pi.smul_apply, smul_eq_mul]
-  calc u₁ i = u₁ i * w₁ j * (w₁ j)⁻¹ := (mul_inv_cancel_right₀ hw₁j _).symm
-    _ = u₂ i * w₂ j * (w₁ j)⁻¹ := by rw [hcol i]
-    _ = w₂ j * (w₁ j)⁻¹ * u₂ i := by rw [mul_assoc, mul_comm (u₂ i)]
-
-end Field
 
 end Matrix
