@@ -133,9 +133,9 @@ theorem _root_.Finpartition.IsPairing.toFinpartition_toPerfectMatching
 on the finite underlying type. -/
 def pairingEquiv : PerfectMatching α ≃ {P : Finpartition (univ : Finset α) // P.IsPairing} where
   toFun D := ⟨D.toFinpartition, D.isPairing_toFinpartition⟩
-  invFun P := P.2.toPerfectMatching
+  invFun P := P.property.toPerfectMatching
   left_inv := toPerfectMatching_toFinpartition
-  right_inv P := Subtype.ext P.2.toFinpartition_toPerfectMatching
+  right_inv P := Subtype.ext P.property.toFinpartition_toPerfectMatching
 
 /-- The forward conversion of the equivalence is the orbit partition. -/
 @[simp]
@@ -145,7 +145,7 @@ theorem pairingEquiv_apply_coe (D : PerfectMatching α) :
 /-- The inverse conversion sends each point to its distinct block partner. -/
 @[simp]
 theorem pairingEquiv_symm_apply (P : {P : Finpartition (univ : Finset α) // P.IsPairing}) :
-    pairingEquiv.symm P = P.2.toPerfectMatching := (rfl)
+    pairingEquiv.symm P = P.property.toPerfectMatching := (rfl)
 
 end Finite
 

@@ -78,7 +78,7 @@ The predicates are unexposed. Their interface is the `simp` lemmas `isGlobalMini
   finite support. `IsGlobalMinimal` does not itself consume the instance, which its binder name
   records.
 The localisation instances that make `IsMinimal Oᵥ W` and `IsIntegral Oᵥ W` typecheck for an
-abstract fraction field `K` are in `TauCeti/RingTheory/Localization/AtPrime.lean` and
+abstract fraction field `K` are in `TauCeti/RingTheory/Localization/AtPrime/FractionRing.lean` and
 `TauCeti/RingTheory/DedekindDomain/LocalizationAtPrime.lean`.
 
 ## Provenance

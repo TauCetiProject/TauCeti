@@ -85,7 +85,7 @@ theorem explicitIso_delta0 (x : H0 G C) :
   -- A preimage `b` of `x` in `B`, and the cocycle `a` on `A` with `incl ∘ a = d⁰ b`.
   obtain ⟨b, hb⟩ := S.proj_surjective (x : C)
   obtain ⟨a, -, hab⟩ := S.exists_continuous_incl_comp_eq (continuous_d0_apply (M := B) b)
-    (proj_d0_eq_zero (hb ▸ x.2))
+    (proj_d0_eq_zero (hb ▸ x.property))
   have ha : a ∈ Z1 G A := mem_Z1_of_injective_comp_eq_d0 S.incl_injective S.incl_equivariant
     fun g ↦ (hab g).trans (d0_apply b g)
   -- A canonical `0`-cocycle representing `x`: it is the homogeneous cochain `g ↦ g • x`.
@@ -142,7 +142,7 @@ theorem explicitIso_delta1 (x : DiscreteH1 G C) :
   -- A cocycle `f` representing `x`, a continuous lift `e` of `f` to `B`, and the cocycle `a` on
   -- `A` with `incl ∘ a = d¹ e`.
   obtain ⟨f, hf⟩ := QuotientAddGroup.mk_surjective (discreteH1Equiv G C x)
-  obtain ⟨hfc, hfcoc⟩ := mem_Z1_iff.1 f.2
+  obtain ⟨hfc, hfcoc⟩ := mem_Z1_iff.1 f.property
   obtain ⟨e, hec, he⟩ := exists_continuous_lift S.proj_surjective hfc
   obtain ⟨a, -, hae⟩ := S.exists_continuous_incl_comp_eq (continuous_d1_apply hec)
     (proj_d1_eq_zero he hfcoc)

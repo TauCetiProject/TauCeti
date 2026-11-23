@@ -7,9 +7,13 @@ module
 
 public import Mathlib.Algebra.Module.Pi
 public import Mathlib.Algebra.Module.Submodule.Defs
+public import Mathlib.LinearAlgebra.Pi
 
 /-!
-# Functions changing sign on a two-element orbit
+# Coordinate sign changes and functions changing sign on a two-element orbit
+
+`TauCeti.piSignChange` negates the coordinates selected by an arbitrary decidable predicate
+as an involutive linear equivalence, over any semiring acting on an additive commutative group.
 
 Let `σ` be a map without fixed points on a type `α` whose elements are `a` and `σ a`. A function
 `α → R` that changes sign under `σ` (`g (σ a') = -g a'`) is determined by its value at `a`, and
@@ -40,11 +44,46 @@ theorem eval_bijective_of_mem_iff_apply_eq_neg {σ : α → α} (hfix : ∀ a', 
   refine ⟨fun g g' hg ↦ Subtype.ext (funext fun a' ↦ ?_), fun r ↦ ?_⟩
   · rcases hcases a' with rfl | rfl
     · exact hg
-    · rw [(hS g).1 g.2, (hS g').1 g'.2]
+    · rw [(hS g).1 g.property, (hS g').1 g'.property]
       exact congrArg Neg.neg hg
   · refine ⟨⟨fun a' ↦ if a' = a then r else -r, (hS _).2 fun a' ↦ ?_⟩, by simp⟩
     rcases hcases a' with rfl | rfl
     · simp [hfix]
     · simp [hσσ, hfix]
+
+section CoordinateSignChange
+
+/-- Negate the selected coordinates as an involutive linear equivalence. -/
+def piSignChange (R : Type*) [Semiring R] {ι A : Type*} [AddCommGroup A] [Module R A]
+    (p : ι → Prop) [DecidablePred p] : (ι → A) ≃ₗ[R] (ι → A) :=
+  LinearEquiv.piCongrRight fun e ↦ if p e then LinearEquiv.neg R else LinearEquiv.refl R A
+
+/-- Sign change negates exactly the selected coordinates. -/
+@[simp]
+theorem piSignChange_apply (R : Type*) [Semiring R] {ι A : Type*}
+    [AddCommGroup A] [Module R A] (p : ι → Prop) [DecidablePred p]
+    (c : ι → A) (e : ι) :
+    piSignChange R p c e = if p e then -c e else c e := by
+  simp only [piSignChange, LinearEquiv.piCongrRight_apply]
+  split_ifs <;> simp only [LinearEquiv.neg_apply, LinearEquiv.refl_apply]
+
+/-- Sign change is its own inverse linear equivalence. -/
+@[simp]
+theorem piSignChange_symm (R : Type*) [Semiring R] {ι A : Type*}
+    [AddCommGroup A] [Module R A] (p : ι → Prop) [DecidablePred p] :
+    (piSignChange R (A := A) p).symm = piSignChange R p := by
+  simp only [piSignChange, LinearEquiv.piCongrRight_symm]
+  congr 1
+  funext e
+  split_ifs <;> simp
+
+/-- Applying the same selected sign change twice restores the function. -/
+@[simp]
+theorem piSignChange_piSignChange (R : Type*) [Semiring R] {ι A : Type*}
+    [AddCommGroup A] [Module R A] (p : ι → Prop) [DecidablePred p]
+    (c : ι → A) : piSignChange R p (piSignChange R p c) = c := by
+  simpa only [piSignChange_symm] using (piSignChange R p).symm_apply_apply c
+
+end CoordinateSignChange
 
 end TauCeti

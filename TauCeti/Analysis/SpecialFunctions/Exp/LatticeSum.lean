@@ -16,7 +16,9 @@ import Mathlib.Tactic.Ring
 
 For a positive decay rate `a`, the two-sided exponential is summable over the
 integers, and its sum equals `(1 + exp (-a)) / (1 - exp (-a))`.
-The analogous one-sided positive tail is an ordinary geometric series.
+The analogous one-sided positive tail is an ordinary geometric series; for a complex
+exponential with `0 < Re z` it sums to `∑_{k ≥ 0} e^{−(k+1)z} = 1/(e^z − 1)`
+(`TauCeti.hasSum_exp_neg_natCast_add_one_mul`).
 
 ## Provenance
 
@@ -48,7 +50,7 @@ theorem tsum_nat_exp_neg_mul_add_one {a : ℝ} (ha : 0 < a) :
       intro n
       -- The summand is the geometric power given by `Real.exp_nat_mul`.
       dsimp only [q]
-      rw [← Real.exp_nat_mul]
+      rw [← Real.exp_natCast_mul]
       congr 1
       ring
     _ = ∑' n : ℕ, q ^ n * q := by simp_rw [pow_succ]
@@ -100,5 +102,35 @@ theorem tsum_int_exp_neg_mul_abs {a : ℝ} (ha : 0 < a) :
 
 
 end
+
+end TauCeti
+
+namespace TauCeti
+
+open Complex
+
+/-- The one-sided geometric series of a complex exponential: for `0 < Re z`,
+`∑_{k ≥ 0} e^{−(k+1)z} = 1/(e^z − 1)`. -/
+theorem hasSum_exp_neg_natCast_add_one_mul {z : ℂ} (hz : 0 < z.re) :
+    HasSum (fun k : ℕ => exp (-((k + 1) * z))) (1 / (exp z - 1)) := by
+  have hq : ‖exp (-z)‖ < 1 := by
+    rw [norm_exp, neg_re]
+    exact Real.exp_lt_one_iff.mpr (by linarith)
+  have hz1 : exp z - 1 ≠ 0 := by
+    intro h
+    have h1 : ‖exp z‖ = 1 := by rw [sub_eq_zero.mp h, norm_one]
+    rw [norm_exp, Real.exp_eq_one_iff] at h1
+    linarith
+  have hq1 : 1 - exp (-z) ≠ 0 := by
+    intro h
+    rw [← sub_eq_zero.mp h, norm_one] at hq
+    exact lt_irrefl _ hq
+  convert (hasSum_geometric_of_norm_lt_one hq).mul_left (exp (-z)) using 1
+  · funext k
+    rw [← exp_natCast_mul, ← exp_add]
+    ring_nf
+  · rw [exp_neg] at hq1 ⊢
+    have := exp_ne_zero z
+    field_simp
 
 end TauCeti

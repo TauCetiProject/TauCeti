@@ -78,7 +78,7 @@ private lemma mulMap_const_eq (c : ℕ) (hc : 0 < c) (hcN : Nat.Coprime c N) (b 
   exact HeckeCoset.mulMap_eq_of_eq_mul_mul
     (((Gamma0 N).map (mapGL ℚ)).mul_mem (((Gamma0 N).map (mapGL ℚ)).mul_mem
       (((Gamma0 N).map (mapGL ℚ)).mul_mem
-        (((Gamma0 N).map (mapGL ℚ)).mul_mem p.1.out.2 hL₁) hR₁) p.2.out.2) hL₂)
+        (((Gamma0 N).map (mapGL ℚ)).mul_mem p.1.out.property hL₁) hR₁) p.2.out.property) hL₂)
     hR₂ hprod
 
 /-- The scalar double coset occurs at most once in any product it takes part in. The other
