@@ -52,6 +52,8 @@ to an action on `E`.
   stabilizer on `G` with right multiplication on the fibre.
 * `TauCeti.orbitMap_mem_serreFibrations`: an orbit map with continuous local sections around
   every point is a Serre fibration, with fibre the stabilizer.
+* `ContinuousMap.comp_mulRight_eq_of_mem_stabilizer`: right translation by an element of the
+  stabilizer does not change the orbit map.
 * `TauCeti.equivariantLocalSectionTrivialization`: the trivialization of a continuous equivariant
   map over an open set, with fibre the preimage of `x₀`, determined by a continuous local section
   of the orbit map of `x₀`.
@@ -223,6 +225,19 @@ theorem orbitMap_mem_serreFibrations (x : X)
     rwa [orbitMapTrivialization_baseSet]⟩
 
 end TauCeti
+
+namespace ContinuousMap
+
+variable {G X : Type*} [Group G] [TopologicalSpace G] [ContinuousMul G] [TopologicalSpace X]
+  [MulAction G X]
+
+/-- Right translation by an element of the stabilizer of `x₀` does not change the orbit map
+`g ↦ g • x₀`. -/
+theorem comp_mulRight_eq_of_mem_stabilizer {x₀ : X} (f : C(G, X)) (hf : ∀ g, f g = g • x₀)
+    {h : G} (hh : h ∈ stabilizer G x₀) : f.comp (ContinuousMap.mulRight h) = f :=
+  ContinuousMap.ext fun g ↦ by simp [hf, mul_smul, mem_stabilizer_iff.1 hh]
+
+end ContinuousMap
 
 /-! ### Equivariant maps over an orbit map with local sections -/
 

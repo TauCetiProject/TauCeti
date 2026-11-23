@@ -237,6 +237,21 @@ theorem eq_secondCovariantDerivative_iff (hσ : CMDiff ∞ (T% σ)) (x : M)
     obtain ⟨Y, hY, rfl⟩ := exists_contMDiff_section_eq I E ∞ v
     rw [h Y hY u, secondCovariantDerivative_apply cov covT hσ x hY u]
 
+/-- The second covariant derivative only depends on the values of the connection on smooth
+sections: two smooth connections that agree there have the same second covariant derivative. -/
+theorem secondCovariantDerivative_congr (cov' : _root_.CovariantDerivative I F V)
+    [ContMDiffCovariantDerivative cov' ∞]
+    (h : ∀ τ : Π y : M, V y, CMDiff ∞ (T% τ) → cov τ = cov' τ) :
+    cov.secondCovariantDerivative covT σ = cov'.secondCovariantDerivative covT σ := by
+  funext x
+  by_cases hσ : CMDiff ∞ (T% σ)
+  · have hσ' : CMDiff (∞ + 1) (T% σ) := by simpa using hσ
+    refine ((eq_secondCovariantDerivative_iff cov covT hσ x _).2 fun Y hY u ↦ ?_).symm
+    rw [secondCovariantDerivative_apply cov' covT hσ x hY u, h σ hσ,
+      h _ (cov'.contMDiff_apply hY hσ')]
+  · rw [secondCovariantDerivative_of_not_contMDiff cov covT hσ,
+      secondCovariantDerivative_of_not_contMDiff cov' covT hσ]
+
 /-- The second covariant derivative is additive in the section. -/
 theorem secondCovariantDerivative_add {τ : Π y : M, V y} (hσ : CMDiff ∞ (T% σ))
     (hτ : CMDiff ∞ (T% τ)) (x : M) :

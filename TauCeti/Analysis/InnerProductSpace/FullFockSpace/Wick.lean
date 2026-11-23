@@ -80,7 +80,8 @@ private theorem wickWordOp_eq_min'_mul {s : Finset α} (hs : s.Nonempty) (f g : 
       (creation 𝕜 (f (s.min' hs)) + annihilation 𝕜 (g (s.min' hs))) *
         wickWordOp 𝕜 f g {y ∈ s | s.min' hs < y} := by
   have hsort : s.sort = s.min' hs :: {y ∈ s | s.min' hs < y}.sort := by
-    conv_lhs => rw [← insert_erase (s.min'_mem hs), ← filter_min'_lt_eq_erase hs]
+    conv_lhs =>
+      rw [← insert_erase (s.min'_mem hs), ← filter_lt_eq_erase_of_forall_le (s.min'_le · ·)]
     exact sort_insert (· ≤ ·) (fun y hy => (mem_filter.1 hy).2.le)
       fun hy => (mem_filter.1 hy).2.false
   rw [wickWordOp, hsort, List.map_cons, List.prod_cons, ← wickWordOp]
@@ -188,7 +189,8 @@ private theorem sum_creation_partner_eq {s : Finset α} (hs : s.Nonempty) (f g :
       creation 𝕜 (f m) (wickWordOp 𝕜 f g s' vacuum) := by
     simp [hempty, s']
   have hins : insert m s' = s := by
-    simp only [m, s', filter_min'_lt_eq_erase hs, insert_erase (s.min'_mem hs)]
+    simp only [m, s', filter_lt_eq_erase_of_forall_le (a := s.min' hs) (s.min'_le · ·),
+      insert_erase (s.min'_mem hs)]
   have hsplit := sum_insert (f := fun z =>
     ⟪vacuum, wickWordOp 𝕜 f g {y ∈ s | y < z} vacuum⟫_𝕜 •
       creation 𝕜 (f z) (wickWordOp 𝕜 f g {y ∈ s | z < y} vacuum)) hmnot
