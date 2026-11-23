@@ -67,6 +67,8 @@ Compression is its inverse on this corner, and extension preserves composition a
   continuous family it is continuous (`Continuous.clm_adjoint`).
 * `ContinuousLinearMap.adjointCompL`, `ContinuousLinearMap.compAdjointL`: the real-bilinear
   continuous maps `(S, T) ↦ S† ∘ T` and `(T, S) ↦ S ∘ T†`.
+* `ContinuousLinearMap.finiteRankOperators`: the nonunital star subalgebra of finite-rank
+  bounded operators on a Hilbert space.
 
 The adjoint commutes with real scalars whenever these act on operators through `𝕜`
 (`ContinuousLinearMap.starModule_real`).
@@ -519,6 +521,25 @@ omit [CompleteSpace F] in
 theorem hasFiniteRange_star_iff {A : E →L[𝕜] E} :
     ((star A : E →L[𝕜] E) : E →ₗ[𝕜] E).HasFiniteRange ↔ (A : E →ₗ[𝕜] E).HasFiniteRange := by
   rw [star_eq_adjoint, hasFiniteRange_adjoint_iff]
+
+omit [CompleteSpace F] in
+variable (𝕜 E) in
+/-- The nonunital star subalgebra of finite-rank bounded operators on a Hilbert space `E`. -/
+def finiteRankOperators : NonUnitalStarSubalgebra 𝕜 (E →L[𝕜] E) where
+  carrier := {F | (F : E →ₗ[𝕜] E).HasFiniteRange}
+  add_mem' hF₁ hF₂ := hF₁.add hF₂
+  zero_mem' := LinearMap.HasFiniteRange.zero
+  mul_mem' hF₁ _ := hF₁.comp_right _
+  smul_mem' c _ hF := hF.smul c
+  star_mem' hF := hF.star
+
+omit [CompleteSpace F] in
+/-- A bounded operator belongs to `ContinuousLinearMap.finiteRankOperators 𝕜 E` if and only if
+its underlying linear map has finite rank. -/
+@[simp]
+theorem mem_finiteRankOperators {T : E →L[𝕜] E} :
+    T ∈ finiteRankOperators 𝕜 E ↔ (T : E →ₗ[𝕜] E).HasFiniteRange :=
+  Iff.rfl
 
 end ContinuousLinearMap
 

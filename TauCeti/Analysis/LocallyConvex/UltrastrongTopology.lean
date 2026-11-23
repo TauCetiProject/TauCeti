@@ -464,16 +464,12 @@ theorem closure_image_ofCLM_of_closure_image_toPointwiseConvergenceCLM {t u : Se
     {C : ℝ} (ht : ∀ T ∈ t, ‖T‖ ≤ C)
     (hsot : closure (ContinuousLinearMap.toPointwiseConvergenceCLM 𝕜 (RingHom.id 𝕜) E F '' t) =
       ContinuousLinearMap.toPointwiseConvergenceCLM 𝕜 (RingHom.id 𝕜) E F '' u) :
-    closure (ofCLM '' t) = ofCLM '' u :=
-  closure_eq_of_isInducing_domRestrict
-    (f := fun A : ContinuousLinearMapUltrastrong 𝕜 E F ↦
-      ContinuousLinearMap.toPointwiseConvergenceCLM 𝕜 (RingHom.id 𝕜) E F A.toCLM)
-    continuous_toPointwiseConvergenceCLM
-    (fun _ _ h ↦ toCLM_injective (ContinuousLinearMap.toPointwiseConvergenceCLM_injective h))
-    (isClosed_image_toPointwiseConvergenceCLM_norm_le (𝕜 := 𝕜) (E := E) (F := F) C)
-    (isInducing_restrict_toPointwiseConvergenceCLM fun _ hA ↦ hA)
-    (t := ofCLM '' t) (by rintro _ ⟨T, hT, rfl⟩; exact ht T hT)
-    (by simpa only [Set.image_image] using hsot)
+    closure (ofCLM '' t) = ofCLM '' u := by
+  ext A
+  obtain ⟨x, rfl⟩ := ofCLM_surjective A
+  rw [ofCLM_mem_closure_image_iff_of_norm_le ht, hsot,
+    ContinuousLinearMap.toPointwiseConvergenceCLM_injective.mem_set_image,
+    ofCLM_injective.mem_set_image]
 
 end Comparison
 

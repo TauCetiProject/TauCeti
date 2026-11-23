@@ -121,6 +121,8 @@ theorem ContinuousLinearMap.toPointwiseConvergenceCLM_surjective {𝕜₁ 𝕜�
     [Module 𝕜₁ E] [ContinuousSMul 𝕜₁ E] [AddCommGroup F] [TopologicalSpace F]
     [IsTopologicalAddGroup F] [Module 𝕜₂ F] [ContinuousConstSMul 𝕜₂ F] :
     Function.Surjective (ContinuousLinearMap.toPointwiseConvergenceCLM 𝕜₂ σ E F) :=
+  -- `toPointwiseConvergenceCLM` is `LinearMap.id` on `ContinuousLinearMap`, and
+  -- `UniformConvergenceCLM` is definitionally `ContinuousLinearMap`.
   fun T ↦ ⟨(UniformConvergenceCLM.ofFun σ F {s : Set E | Finite s}).symm T, rfl⟩
 
 /-- A map lies in the closure of a set `s` of maps for the topology of pointwise convergence

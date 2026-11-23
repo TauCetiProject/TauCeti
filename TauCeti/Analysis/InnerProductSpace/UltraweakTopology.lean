@@ -456,15 +456,11 @@ closure is also `u`. -/
 theorem closure_image_ofCLM_of_closure_image_WOT {t u : Set (E →L[𝕜] F)} {C : ℝ}
     (ht : ∀ T ∈ t, ‖T‖ ≤ C)
     (hwot : closure (ContinuousLinearMapWOT.ofCLM '' t) = ContinuousLinearMapWOT.ofCLM '' u) :
-    closure (ofCLM '' t) = ofCLM '' u :=
-  closure_eq_of_isInducing_domRestrict
-    (f := fun A : ContinuousLinearMapUltraweak 𝕜 E F ↦ ContinuousLinearMapWOT.ofCLM A.toCLM)
-    continuous_toWOT
-    (fun _ _ h ↦ toCLM_injective (ContinuousLinearMapWOT.ofCLM_injective h))
-    (isClosed_image_toWOT_norm_le (𝕜 := 𝕜) (E := E) (F := F) C)
-    (isInducing_restrict_toWOT fun _ hA ↦ hA)
-    (t := ofCLM '' t) (by rintro _ ⟨T, hT, rfl⟩; exact ht T hT)
-    (by simpa only [Set.image_image] using hwot)
+    closure (ofCLM '' t) = ofCLM '' u := by
+  ext A
+  obtain ⟨x, rfl⟩ := ofCLM_surjective A
+  rw [ofCLM_mem_closure_image_iff_of_norm_le ht, hwot,
+    ContinuousLinearMapWOT.ofCLM_injective.mem_set_image, ofCLM_injective.mem_set_image]
 
 end Comparison
 

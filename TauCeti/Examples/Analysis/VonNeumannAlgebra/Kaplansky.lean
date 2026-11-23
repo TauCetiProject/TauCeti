@@ -78,27 +78,10 @@ section FiniteRankPlusScalars
 variable {H : Type*} [NormedAddCommGroup H] [InnerProductSpace ℂ H] [CompleteSpace H]
 
 variable (H) in
-/-- The nonunital star subalgebra of finite-rank bounded operators on `H`. -/
-def finiteRankOperators : NonUnitalStarSubalgebra ℂ (H →L[ℂ] H) where
-  carrier := {F | (F : H →ₗ[ℂ] H).HasFiniteRange}
-  add_mem' hF₁ hF₂ := hF₁.add hF₂
-  zero_mem' := LinearMap.HasFiniteRange.zero
-  mul_mem' hF₁ _ := hF₁.comp_right _
-  smul_mem' c _ hF := hF.smul c
-  star_mem' hF := hF.star
-
-/-- A bounded operator belongs to `finiteRankOperators H` if and only if its underlying linear map
-has finite range. -/
-@[simp]
-theorem mem_finiteRankOperators {T : H →L[ℂ] H} :
-    T ∈ finiteRankOperators H ↔ (T : H →ₗ[ℂ] H).HasFiniteRange :=
-  Iff.rfl
-
-variable (H) in
 /-- The unital star subalgebra of bounded operators of the form `algebraMap ℂ _ c + F` with `F` of
 finite rank. -/
 def finiteRankPlusScalars : StarSubalgebra ℂ (H →L[ℂ] H) :=
-  (NonUnitalStarSubalgebra.unitization (finiteRankOperators H)).range
+  (NonUnitalStarSubalgebra.unitization (ContinuousLinearMap.finiteRankOperators ℂ H)).range
 
 @[simp]
 theorem mem_finiteRankPlusScalars {T : H →L[ℂ] H} :
@@ -106,9 +89,12 @@ theorem mem_finiteRankPlusScalars {T : H →L[ℂ] H} :
       (F : H →ₗ[ℂ] H).HasFiniteRange ∧ T = algebraMap ℂ (H →L[ℂ] H) c + F := by
   refine ⟨?_, ?_⟩
   · rintro ⟨x, rfl⟩
-    exact ⟨x.fst, x.snd, x.snd.property, NonUnitalStarSubalgebra.unitization_apply _ x⟩
+    exact ⟨x.fst, x.snd, ContinuousLinearMap.mem_finiteRankOperators.1 x.snd.property,
+      NonUnitalStarSubalgebra.unitization_apply _ x⟩
   · rintro ⟨c, F, hF, rfl⟩
-    refine ⟨Unitization.inl c + Unitization.inr (⟨F, hF⟩ : finiteRankOperators H), ?_⟩
+    refine ⟨Unitization.inl c + Unitization.inr
+      (⟨F, ContinuousLinearMap.mem_finiteRankOperators.2 hF⟩ :
+        ContinuousLinearMap.finiteRankOperators ℂ H), ?_⟩
     simp [NonUnitalStarSubalgebra.unitization_apply]
 
 /-- Every finite-rank operator belongs to `finiteRankPlusScalars H`. -/

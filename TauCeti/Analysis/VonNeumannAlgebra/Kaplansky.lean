@@ -193,6 +193,14 @@ theorem closure_nonneg_unitBall_eq_nonneg_unitBall_double_centralizer
 
 /-! ### Shared closure helpers -/
 
+private theorem smul_mem_centralizer_centralizer_inter_closedBall
+    (S : StarSubalgebra ℂ (H →L[ℂ] H)) {x : H →L[ℂ] H}
+    (hx : x ∈ (S : Set (H →L[ℂ] H)).centralizer.centralizer)
+    {t s : ℝ} (ht : 0 < t) (hts : t * ‖x‖ ≤ s) :
+    (t : ℂ) • x ∈ (S : Set (H →L[ℂ] H)).centralizer.centralizer ∩ closedBall 0 s := by
+  refine ⟨Set.smul_mem_centralizer (t : ℂ) hx, ?_⟩
+  simpa [norm_smul, abs_of_pos ht] using hts
+
 private theorem closure_sot_inter_closedBall_of_unit (S : StarSubalgebra ℂ (H →L[ℂ] H))
     {C : Set (H →L[ℂ] H)} (hC0 : (0 : H →L[ℂ] H) ∈ C)
     (hCsmul : ∀ {t : ℝ} {x : H →L[ℂ] H}, 0 < t → x ∈ C → (t : ℂ) • x ∈ C) {r : ℝ}
@@ -216,25 +224,17 @@ private theorem closure_sot_inter_closedBall_of_unit (S : StarSubalgebra ℂ (H 
   · rw [closedBall_zero, mem_singleton_iff] at hbr
     subst hbr
     exact subset_closure ⟨0, ⟨⟨S.zero_mem, hC0⟩, mem_closedBall_self le_rfl⟩, rfl⟩
-  · have hcb_cc : ((r⁻¹ : ℝ) : ℂ) • b ∈ (S : Set (H →L[ℂ] H)).centralizer.centralizer :=
-      VonNeumannAlgebra.mem_adjoin_coe.mp
-        (SMulMemClass.smul_mem _ (VonNeumannAlgebra.mem_adjoin_coe.mpr hb))
-    have hcb1 : ‖((r⁻¹ : ℝ) : ℂ) • b‖ ≤ 1 := by
-      rw [mem_closedBall, dist_zero_right] at hbr
-      rw [norm_smul, Complex.norm_real, Real.norm_eq_abs, abs_inv, abs_of_pos hr,
-        inv_mul_le_iff₀ hr, mul_one]
-      exact hbr
-    have hmem := hunit hcb_cc (hCsmul (inv_pos.2 hr) hbC) hcb1
+  · obtain ⟨hcb_cc, hcb1⟩ := S.smul_mem_centralizer_centralizer_inter_closedBall hb
+      (inv_pos.2 hr) (inv_mul_le_one_of_le₀ (mem_closedBall_zero_iff.1 hbr) hr.le)
+    have hmem := hunit hcb_cc (hCsmul (inv_pos.2 hr) hbC) (mem_closedBall_zero_iff.1 hcb1)
     have hscaled := map_mem_closure (f := fun T : H →Lₚₜ[ℂ] H ↦ (r : ℂ) • T) (by fun_prop) hmem
       (t := q '' ((S : Set (H →L[ℂ] H)) ∩ C ∩ closedBall 0 r)) (by
         rintro _ ⟨a, ⟨⟨ha, haC⟩, har⟩, rfl⟩
         refine ⟨(r : ℂ) • a, ⟨⟨SMulMemClass.smul_mem _ ha, hCsmul hr haC⟩, ?_⟩,
           (map_smul q (r : ℂ) a).symm⟩
-        rw [mem_closedBall, dist_zero_right] at har ⊢
-        rw [norm_smul, Complex.norm_real, Real.norm_of_nonneg hr.le]
-        exact mul_le_of_le_one_right hr.le har)
-    have hrc : (r : ℂ) • (((r⁻¹ : ℝ) : ℂ) • b) = b := by
-      rw [smul_smul, ← Complex.ofReal_mul, mul_inv_cancel₀ hr.ne', Complex.ofReal_one, one_smul]
+        simpa [norm_smul, abs_of_pos hr] using
+          mul_le_of_le_one_right hr.le (mem_closedBall_zero_iff.1 har))
+    have hrc : (r : ℂ) • (((r⁻¹ : ℝ) : ℂ) • b) = b := by simp [smul_smul, hr.ne']
     rwa [← map_smul, hrc] at hscaled
 
 /-! ### Self-adjoint Kaplansky density for arbitrary radii -/
@@ -327,7 +327,8 @@ theorem closure_image_strongStar_ofCLM_inter_closedBall
       (S.isClosed_image_toPointwiseConvergenceCLM_double_centralizer_inter_closedBall r).preimage
         TauCeti.ContinuousLinearMapStrongStar.continuous_toPointwiseConvergenceCLM using 1
     ext A
-    obtain ⟨x, rfl⟩ : ∃ x, TauCeti.ContinuousLinearMapStrongStar.ofCLM x = A := ⟨A.toCLM, rfl⟩
+    obtain ⟨x, rfl⟩ : ∃ x, TauCeti.ContinuousLinearMapStrongStar.ofCLM x = A :=
+      ⟨A.toCLM, TauCeti.ContinuousLinearMapStrongStar.ofCLM_toCLM A⟩
     rw [Set.mem_preimage,
       (ContinuousLinearMap.toPointwiseConvergenceCLM_injective
         (𝕜₂ := ℂ) (σ := RingHom.id ℂ) (E := H) (F := H)).mem_set_image,
@@ -669,13 +670,11 @@ theorem double_commutant_iff_isClosed_image_toPointwiseConvergenceCLM_inter_clos
     by_cases hx0 : x = 0
     · exact hx0 ▸ S.zero_mem
     · have hxn : 0 < ‖x‖ := norm_pos_iff.2 hx0
-      let c : ℂ := ((r / ‖x‖ : ℝ) : ℂ)
-      have hcx_mem : c • x ∈ (S : Set (H →L[ℂ] H)) ∩ closedBall 0 r := hball ▸
-        ⟨VonNeumannAlgebra.mem_adjoin_coe.mp
-          (SMulMemClass.smul_mem c (VonNeumannAlgebra.mem_adjoin_coe.mpr hx)),
-        by simp [c, norm_smul, div_mul_cancel₀ _ hxn.ne', abs_of_pos hr]⟩
+      have hcx_mem : ((r / ‖x‖ : ℝ) : ℂ) • x ∈ (S : Set (H →L[ℂ] H)) ∩ closedBall 0 r :=
+        hball ▸ S.smul_mem_centralizer_centralizer_inter_closedBall hx (div_pos hr hxn)
+          (div_mul_cancel₀ r hxn.ne').le
       exact inv_smul_smul₀ (Complex.ofReal_ne_zero.2 (div_pos hr hxn).ne') x ▸
-        SMulMemClass.smul_mem c⁻¹ hcx_mem.1
+        SMulMemClass.smul_mem _ hcx_mem.1
 
 /-- For `r > 0`, a unital star subalgebra equals its double commutant if and only if its closed
 ball of radius `r` is weak operator closed. -/

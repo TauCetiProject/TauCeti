@@ -39,9 +39,7 @@ theorem closure_inter_selfAdjoint_inter_closedBall_zero (𝕜 : Type*) {A S : Ty
   let _ : NormedSpace ℝ A := NormedSpace.restrictScalars ℝ 𝕜 A
   have _ : IsScalarTower ℝ 𝕜 A := RestrictScalars.isScalarTower ℝ 𝕜 A
   have _ : SMulMemClass S ℝ A := SMulMemClass.ofIsScalarTower S ℝ 𝕜 A
-  have _ : StarModule ℝ A := ⟨fun c a ↦ by
-    rw [← algebraMap_smul 𝕜 c a, star_smul, RCLike.algebraMap_eq_ofReal, RCLike.star_def,
-      RCLike.conj_ofReal, ← RCLike.algebraMap_eq_ofReal, algebraMap_smul, star_trivial c]⟩
+  have _ : StarModule ℝ A := ⟨fun c a ↦ by rw [← smul_one_smul 𝕜 c a, star_smul]; simp⟩
   let p : Submodule ℝ A := Submodule.ofClass s ⊓ selfAdjoint.submodule ℝ A
   have hp : (p : Set A) = (s : Set A) ∩ selfAdjoint A := by
     simp only [p, Submodule.coe_inf, Submodule.coe_ofClass,

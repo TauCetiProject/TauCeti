@@ -244,6 +244,8 @@ theorem piLpEntryCLM_apply (i j : ι)
     (T : PiLp 2 (fun _ : ι => H) →Lₚₜ[𝕜] PiLp 2 (fun _ : ι => H)) (h : H) :
     piLpEntryCLM 𝕜 H i j T h = T (PiLp.single 2 j h) i := by
   rw [← PiLp.singleCLM_apply (p := 2) (𝕜 := 𝕜) (β := fun _ : ι => H) j h]
+  -- `PointwiseConvergenceCLM.postcomp`/`precomp` compose via `ContinuousLinearMap.comp`
+  -- definitionally, and `PiLp.proj` evaluates the coordinate definitionally.
   rfl
 
 /-- On the image of `toPointwiseConvergenceCLM`, `piLpEntryCLM` agrees with
