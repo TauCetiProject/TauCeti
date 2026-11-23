@@ -13,6 +13,7 @@ public import Mathlib.CategoryTheory.Sites.Spaces
 public import Mathlib.LinearAlgebra.Quotient.Basic
 public import Mathlib.Topology.Sheaves.Presheaf
 import Mathlib.Analysis.Complex.ReImTopology
+import Mathlib.Topology.Separation.Regular
 
 /-!
 # One-dimensional hyperfunctions as boundary values of holomorphic functions
@@ -58,6 +59,9 @@ Restriction to a smaller open multiplies by the indicator function
   uniqueness half of the sheaf property. The existence half needs the vanishing of the first
   cohomology of the sheaf of holomorphic functions on open subsets of `ℂ` (a Cousin problem) and is
   not proved here.
+* `TauCeti.Hyperfunction.eq_of_forall_oneDimBoundaryRestrict_eq`: a one-dimensional hyperfunction
+  on `U` is determined by its restrictions to the open sets whose closure is a compact subset
+  of `U`.
 
 ## References
 
@@ -113,7 +117,7 @@ theorem coe_holomorphicRestrict {U V : Opens ℂ} (h : U ≤ V) (f : holomorphic
 theorem holomorphicRestrict_self (U : Opens ℂ) (f : holomorphicSections U) :
     holomorphicRestrict le_rfl f = f :=
   Subtype.ext <| (coe_holomorphicRestrict _ f).trans <|
-    indicator_eq_self.mpr fun z hz => by_contra fun hzU => hz (f.property.2 z hzU)
+    indicator_eq_self.mpr <| Function.support_subset_iff'.mpr f.property.2
 
 @[simp]
 theorem holomorphicRestrict_holomorphicRestrict {U V W : Opens ℂ} (h₁ : U ≤ V) (h₂ : V ≤ W)
@@ -200,32 +204,28 @@ theorem throughReal_iSup {ι : Sort*} (U : ι → Opens ℝ) :
   -- The glued function: `f` off the real line, and the extension `g i` at a real point of `U i`.
   let G : ℂ → ℂ := fun z =>
     if z.im = 0 then (if h : ∃ i, z.re ∈ U i then g h.choose z else 0) else (f : ℂ → ℂ) z
+  -- Off the real line, the glued function is `f`.
+  have hGf : EqOn G f nonRealOpen := fun z hz => by simp [G, mem_nonRealOpen_iff.mp hz]
   -- On `W(U i)`, the glued function is the extension `g i`.
   have hG : ∀ i, EqOn G (g i) (complexNeighborhood (U i)) := by
     intro i z hz
-    by_cases him : z.im ≠ 0
-    · simp only [G, him, ite_false]
-      exact (hgf i him).symm
-    · have hre : z.re ∈ U i := (mem_complexNeighborhood_iff.mp hz).resolve_left him
-      have hex : ∃ j, z.re ∈ U j := ⟨i, hre⟩
-      simp only [G, not_not.mp him, hex, ite_true, dite_true]
+    by_cases him : z.im = 0
+    · have hex : ∃ j, z.re ∈ U j :=
+        ⟨i, (mem_complexNeighborhood_iff.mp hz).resolve_left fun h => h him⟩
+      simp only [G, him, hex, ite_true, dite_true]
       refine eqOn_inf_of_eqOn_nonRealOpen (hg _).1.continuousOn (hg i).1.continuousOn
         (nonRealOpen_le_complexNeighborhood _) (nonRealOpen_le_complexNeighborhood _)
         (fun w hw => (hgf _ hw).trans (hgf i hw).symm) ⟨Or.inr hex.choose_spec, hz⟩
-  refine mem_throughReal_iff.mpr ⟨G, ⟨fun z hz => ?_, fun z hz => ?_⟩, fun z hz => ?_⟩
+    · exact (hGf him).trans (hgf i him).symm
+  refine mem_throughReal_iff.mpr ⟨G, ⟨fun z hz => ?_, fun z hz => ?_⟩, hGf⟩
   · rcases mem_complexNeighborhood_iff.mp hz with him | hre
-    · have hGf : EqOn G f nonRealOpen := fun w hw => by simp [G, mem_nonRealOpen_iff.mp hw]
-      exact ((f.property.1.congr hGf).differentiableAt
+    · exact ((f.property.1.congr hGf).differentiableAt
         (nonRealOpen.isOpen.mem_nhds him)).differentiableWithinAt
     · obtain ⟨i, hi⟩ := Opens.mem_iSup.mp hre
-      have hzi : z ∈ complexNeighborhood (U i) := Or.inr hi
       exact (((hg i).1.congr (hG i)).differentiableAt
-        ((complexNeighborhood (U i)).isOpen.mem_nhds hzi)).differentiableWithinAt
-  · have him : ¬z.im ≠ 0 := fun h => hz (Or.inl h)
-    have hex : ¬∃ i, z.re ∈ U i := fun ⟨i, hi⟩ =>
-      hz (Or.inr (Opens.mem_iSup.mpr ⟨i, hi⟩))
-    simp only [G, not_not.mp him, hex, ite_true, dite_false]
-  · simp [G, mem_nonRealOpen_iff.mp hz]
+        ((complexNeighborhood (U i)).isOpen.mem_nhds (Or.inr hi))).differentiableWithinAt
+  · simp only [mem_complexNeighborhood_iff, Opens.mem_iSup, not_or, not_not, not_exists] at hz
+    simp [G, hz]
 
 /-- A holomorphic function on `ℂ ∖ ℝ` that extends across every member of a cover of `V` extends
 across `V`. -/
@@ -246,8 +246,7 @@ abbrev OneDimBoundaryQuotient (U : Opens ℝ) :=
 representative on `ℂ ∖ ℝ`. -/
 def oneDimBoundaryRestrict {U V : Opens ℝ} (h : U ≤ V) :
     OneDimBoundaryQuotient V →ₗ[ℂ] OneDimBoundaryQuotient U :=
-  Submodule.mapQ (throughReal V) (throughReal U) LinearMap.id
-    (by simpa using throughReal_antitone h)
+  Submodule.factor (throughReal_antitone h)
 
 @[simp]
 theorem oneDimBoundaryRestrict_mk {U V : Opens ℝ} (h : U ≤ V)
@@ -265,13 +264,13 @@ theorem oneDimBoundaryRestrict_oneDimBoundaryRestrict {U V W : Opens ℝ} (h₁ 
     (h₂ : V ≤ W) (q : OneDimBoundaryQuotient W) :
     oneDimBoundaryRestrict h₁ (oneDimBoundaryRestrict h₂ q) =
       oneDimBoundaryRestrict (h₁.trans h₂) q :=
-  Submodule.Quotient.induction_on _ q fun _ => rfl
+  Submodule.factor_comp_apply (throughReal_antitone h₂) (throughReal_antitone h₁) q
 
 /-- Every one-dimensional hyperfunction on a smaller open set is the restriction of one on a
 larger open set. -/
 theorem oneDimBoundaryRestrict_surjective {U V : Opens ℝ} (h : U ≤ V) :
-    Function.Surjective (oneDimBoundaryRestrict h) := fun q =>
-  Submodule.Quotient.induction_on _ q fun f => ⟨Submodule.Quotient.mk f, rfl⟩
+    Function.Surjective (oneDimBoundaryRestrict h) :=
+  Submodule.factor_surjective (throughReal_antitone h)
 
 /-- **Locality.** A one-dimensional hyperfunction on `V` whose restrictions to the members of a
 cover of `V` all vanish is zero. -/
@@ -291,6 +290,22 @@ theorem eq_of_oneDimBoundaryRestrict_eq {ι : Sort*} {U : ι → Opens ℝ} {V :
     q₁ = q₂ :=
   sub_eq_zero.mp <| eq_zero_of_oneDimBoundaryRestrict_eq_zero hUV hV fun i => by
     rw [map_sub, hq i, sub_self]
+
+/-- **Hyperfunctions are determined on relatively compact open sets.** Two one-dimensional
+hyperfunctions on `U` with the same restrictions to all open sets whose closure is a compact
+subset of `U` are equal. -/
+theorem eq_of_forall_oneDimBoundaryRestrict_eq {U : Opens ℝ} {q₁ q₂ : OneDimBoundaryQuotient U}
+    (h : ∀ (V : Opens ℝ) (hVU : V ≤ U), IsCompact (closure (V : Set ℝ)) →
+      closure (V : Set ℝ) ⊆ U → oneDimBoundaryRestrict hVU q₁ = oneDimBoundaryRestrict hVU q₂) :
+    q₁ = q₂ := by
+  let ι := {V : Opens ℝ // IsCompact (closure (V : Set ℝ)) ∧ closure (V : Set ℝ) ⊆ U}
+  have hle (V : ι) : V.val ≤ U := fun _ hx ↦ V.property.2 (subset_closure hx)
+  refine eq_of_oneDimBoundaryRestrict_eq (U := fun V : ι ↦ V.val) hle (fun x hx ↦ ?_)
+    fun V ↦ h V.val (hle V) V.property.1 V.property.2
+  obtain ⟨V, hV, hxV, hVU, hVc⟩ :=
+    exists_open_between_and_isCompact_closure isCompact_singleton U.isOpen
+      (singleton_subset_iff.2 hx)
+  exact Opens.mem_iSup.2 ⟨⟨⟨V, hV⟩, hVc, hVU⟩, hxV rfl⟩
 
 /-- The presheaf of complex vector spaces `U ↦ O(ℂ ∖ ℝ) / O(W(U))` on `ℝ`, whose sections are the
 one-dimensional hyperfunctions. -/

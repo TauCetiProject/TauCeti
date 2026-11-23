@@ -105,6 +105,11 @@ The derivative supremum bounds are adapted from Giada Franz’s formalization in
 * `TauCeti.contDiff_positiveCutoff`: the cutoff of a function that is `C¹` on `(0, ∞)` is `C¹`.
 * `TauCeti.exists_nnnorm_deriv_positiveCutoff_le`: its derivative is bounded when `g'` is bounded
   on `[m, ∞)`.
+* `TauCeti.neckCutoff`: the cutoff `s ↦ ψ (1 + a s)`, equal to `1` where `0 ≤ a s` and to `0` where
+  `1 + a s ≤ 0`, with derivative at most `|a|` times a bound for `ψ'`. These cutoffs splice
+  right inverses along a neck of length `2 R`, with slope `O(1 / R)`.
+* `TauCeti.neckCutoff_neg_two_div_eq_one`, `TauCeti.neckCutoff_neg_two_div_eq_zero` and their
+  `two_div` counterparts: where the neck cutoffs for `a = ∓ 2 / R` equal `1` and vanish.
 * `TauCeti.exists_contDiff_antitone_cutoff`: a smooth nonincreasing step from a value `v ≥ 0` on
   `(-∞, a]` down to `0` on `[b, ∞)`, positive on `(-∞, b)` when `v > 0`.
 * `TauCeti.exists_contDiff_plateau`: a smooth function with values in `[0, 1]`, vanishing outside
@@ -113,7 +118,7 @@ The derivative supremum bounds are adapted from Giada Franz’s formalization in
   for every `v < τ (b - a)`.
 * `TauCeti.exists_contDiff_odd_truncation`: a smooth odd function equal to the identity on
   `[-r, r]`, to `±1` on `±[R, ∞)`, with the sign of its argument.
-* `TauCeti.exists_cutoffs_add_add_eq_one`: three `C²` cutoffs summing to one, vanishing for
+* `TauCeti.exists_cutoffs_add_add_eq_one`: three smooth cutoffs summing to one, vanishing for
   `s ≤ R`, for `s ≥ -R` and outside `(-(R + 1), R + 1)`, with derivatives bounded by a common
   constant and supported in `[-(R + 1), R + 1]`.
 -/
@@ -604,7 +609,7 @@ theorem LocallyLipschitzOn.smoothTransition_mul_sub {α : Type*} [PseudoEMetricS
     LocallyLipschitzOn s fun x => Real.smoothTransition (c * (u x - t)) :=
   ((Real.smoothTransition.contDiff (n := 1)).comp
     (contDiff_const.mul (contDiff_id.sub contDiff_const))).locallyLipschitz
-    |>.comp_locallyLipschitzOn hu
+    |>.locallyLipschitzOn.comp hu (mapsTo_univ _ _)
 
 namespace TauCeti
 
@@ -685,6 +690,78 @@ theorem exists_nnnorm_deriv_positiveCutoff_le {m : ℝ} (hm : 0 < m) {g : ℝ �
   · exact (hC t ⟨ht, htm⟩).trans (le_max_left _ _)
   · rw [deriv_positiveCutoff hm g (by linarith), Real.norm_eq_abs]
     exact (hK t htm.le).trans (le_max_right _ _)
+
+/-- **The neck cutoff** `s ↦ ψ (1 + a s)`, for the smooth transition `ψ = Real.smoothTransition`.
+It equals `1` where `0 ≤ a s` (`TauCeti.neckCutoff_eq_one`) and `0` where `1 + a s ≤ 0`
+(`TauCeti.neckCutoff_eq_zero`), and its derivative is at most `|a|` times a bound for `ψ'`
+(`TauCeti.abs_deriv_neckCutoff_le`). For `a = -(2 / R)` it is `1` on `(-∞, 0]` and `0` on
+`[R / 2, ∞)`; for `a = 2 / R` it is `1` on `[0, ∞)` and `0` on `(-∞, -R / 2]`. These are the
+cutoffs that splice right inverses along a neck of length `2 R`, with slope `O(1 / R)`. -/
+def neckCutoff (a s : ℝ) : ℝ :=
+  Real.smoothTransition (1 + a * s)
+
+/-- The defining formula of the neck cutoff. -/
+theorem neckCutoff_def (a s : ℝ) : neckCutoff a s = Real.smoothTransition (1 + a * s) :=
+  (rfl)
+
+/-- The neck cutoff is smooth. -/
+theorem contDiff_neckCutoff (a : ℝ) {n : ℕ∞} : ContDiff ℝ n (neckCutoff a) := by
+  unfold neckCutoff
+  exact Real.smoothTransition.contDiff.comp (by fun_prop)
+
+/-- The neck cutoff is nonnegative. -/
+theorem neckCutoff_nonneg (a s : ℝ) : 0 ≤ neckCutoff a s :=
+  Real.smoothTransition.nonneg _
+
+/-- The neck cutoff is at most `1`. -/
+theorem neckCutoff_le_one (a s : ℝ) : neckCutoff a s ≤ 1 :=
+  Real.smoothTransition.le_one _
+
+/-- The neck cutoff takes values in `[-1, 1]`. -/
+theorem abs_neckCutoff_le_one (a s : ℝ) : |neckCutoff a s| ≤ 1 :=
+  Real.smoothTransition.abs_le_one _
+
+/-- The derivative of the neck cutoff, by the chain rule. -/
+theorem hasDerivAt_neckCutoff (a s : ℝ) :
+    HasDerivAt (neckCutoff a) (deriv Real.smoothTransition (1 + a * s) * a) s := by
+  unfold neckCutoff
+  simpa using (((hasDerivAt_id s).const_mul a).const_add 1).smoothTransition
+
+/-- The derivative of the neck cutoff is at most `|a| L`, for a bound `L` on the derivative of the
+smooth transition. -/
+theorem abs_deriv_neckCutoff_le {L : ℝ}
+    (hL : ∀ t, ‖deriv Real.smoothTransition t‖ ≤ L) (a s : ℝ) :
+    |deriv (neckCutoff a) s| ≤ |a| * L := by
+  rw [(hasDerivAt_neckCutoff a s).deriv, abs_mul, mul_comm]
+  exact mul_le_mul_of_nonneg_left (hL _) (abs_nonneg a)
+
+/-- The neck cutoff is `1` where `0 ≤ a s`. -/
+theorem neckCutoff_eq_one {a s : ℝ} (h : 0 ≤ a * s) : neckCutoff a s = 1 :=
+  Real.smoothTransition.one_of_one_le (by linarith)
+
+/-- The neck cutoff is `0` where `1 + a s ≤ 0`. -/
+theorem neckCutoff_eq_zero {a s : ℝ} (h : 1 + a * s ≤ 0) : neckCutoff a s = 0 :=
+  Real.smoothTransition.zero_of_nonpos h
+
+/-- The left neck cutoff `neckCutoff (-(2 / R))` is `1` on `(-∞, 0]`. -/
+theorem neckCutoff_neg_two_div_eq_one {R s : ℝ} (hR : 0 ≤ R) (hs : s ≤ 0) :
+    neckCutoff (-(2 / R)) s = 1 :=
+  neckCutoff_eq_one (mul_nonneg_of_nonpos_of_nonpos (neg_nonpos.2 (by positivity)) hs)
+
+/-- The right neck cutoff `neckCutoff (2 / R)` is `1` on `[0, ∞)`. -/
+theorem neckCutoff_two_div_eq_one {R s : ℝ} (hR : 0 ≤ R) (hs : 0 ≤ s) :
+    neckCutoff (2 / R) s = 1 :=
+  neckCutoff_eq_one (mul_nonneg (by positivity) hs)
+
+/-- The left neck cutoff `neckCutoff (-(2 / R))` vanishes on `[R / 2, ∞)`. -/
+theorem neckCutoff_neg_two_div_eq_zero {R s : ℝ} (hR : 0 < R) (hs : R / 2 ≤ s) :
+    neckCutoff (-(2 / R)) s = 0 :=
+  neckCutoff_eq_zero (by field_simp; linarith)
+
+/-- The right neck cutoff `neckCutoff (2 / R)` vanishes on `(-∞, -(R / 2)]`. -/
+theorem neckCutoff_two_div_eq_zero {R s : ℝ} (hR : 0 < R) (hs : s ≤ -(R / 2)) :
+    neckCutoff (2 / R) s = 0 :=
+  neckCutoff_eq_zero (by field_simp; linarith)
 
 /-- A smooth nonincreasing step down from a value `v ≥ 0` to `0`: for `a < b` there is a smooth
 antitone function `μ ≥ 0` equal to `v` on `(-∞, a]` and to `0` on `[b, ∞)`. When `v > 0` it is
@@ -818,7 +895,7 @@ theorem exists_contDiff_step {a b : ℝ} (hab : a < b) :
   exact ⟨fun r ↦ 1 - ν r, contDiff_const.sub hν, fun r hr ↦ by simp [hν1 r hr],
     fun r hr ↦ by simp [hνb r hr], fun r hr ↦ by rw [deriv_const_sub, hν' r hr, neg_zero]⟩
 
-/-- **Three cutoffs in `s` summing to one.** For `R ≥ 0` there are `C²` cutoffs `βp`, `βm`, `β₀`
+/-- **Three cutoffs in `s` summing to one.** For `R ≥ 0` there are smooth cutoffs `βp`, `βm`, `β₀`
 summing to one, with `βp` vanishing for `s ≤ R`, `βm` vanishing for `s ≥ -R` and `β₀` vanishing
 outside `(-(R + 1), R + 1)`. Each satisfies `|β| ≤ 1`, and their derivatives are bounded by a common
 constant `M` and vanish outside `[-(R + 1), R + 1]`. They are `ψ(s - R)`, `ψ(-s - R)` and
@@ -826,13 +903,13 @@ constant `M` and vanish outside `[-(R + 1), R + 1]`. They are `ψ(s - R)`, `ψ(-
 theorem exists_cutoffs_add_add_eq_one {R : ℝ} (hR : 0 ≤ R) :
     ∃ M, ∃ βp βm β₀ : ℝ → ℝ, (∀ s, βp s + βm s + β₀ s = 1) ∧ (∀ s, s ≤ R → βp s = 0) ∧
       (∀ s, -R ≤ s → βm s = 0) ∧ (∀ s, s ∉ Ioo (-(R + 1)) (R + 1) → β₀ s = 0) ∧
-      ∀ β ∈ ({βp, βm, β₀} : Set (ℝ → ℝ)), ContDiff ℝ 2 β ∧ (∀ s, |β s| ≤ 1) ∧
+      ∀ β ∈ ({βp, βm, β₀} : Set (ℝ → ℝ)), ContDiff ℝ ∞ β ∧ (∀ s, |β s| ≤ 1) ∧
         (∀ s, |deriv β s| ≤ M) ∧ ∀ s, s < -(R + 1) ∨ R + 1 < s → deriv β s = 0 := by
   obtain ⟨M, hM⟩ := Real.smoothTransition.exists_forall_norm_deriv_le
   set ψ := Real.smoothTransition
-  have hψc : ContDiff ℝ 2 ψ := Real.smoothTransition.contDiff
+  have hψc : ContDiff ℝ ∞ ψ := Real.smoothTransition.contDiff
   have hψd (x : ℝ) : HasDerivAt ψ (deriv ψ x) x :=
-    (hψc.differentiable two_ne_zero x).hasDerivAt
+    (hψc.differentiable (by simp) x).hasDerivAt
   have hψ0 (x : ℝ) (hx : x ≤ 0) : ψ x = 0 := Real.smoothTransition.zero_of_nonpos hx
   have hψ1 (x : ℝ) (hx : 1 ≤ x) : ψ x = 1 := Real.smoothTransition.one_of_one_le hx
   have hψ'M (x : ℝ) : |deriv ψ x| ≤ M := by simpa using hM x
