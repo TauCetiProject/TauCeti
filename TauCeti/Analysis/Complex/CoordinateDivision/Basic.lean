@@ -11,8 +11,6 @@ public import Mathlib.Analysis.Complex.Basic
 import Mathlib.Analysis.Calculus.FDeriv.Pi
 import Mathlib.Analysis.Complex.Polynomial.Basic
 import TauCeti.Algebra.Polynomial.Degree.Operations
-import TauCeti.Algebra.Polynomial.Eval.Degree
-import TauCeti.Algebra.Polynomial.Eval.Pi
 import TauCeti.Analysis.Complex.DividedDifference.Analytic
 import TauCeti.Analysis.Complex.DividedDifference.Basic
 import TauCeti.Analysis.Complex.DividedDifference.Degree
@@ -450,26 +448,37 @@ private theorem eq_zero_of_add_sum_mul_eval_eq_zero
       linear_combination -h
     have hF_deg (z : ι → ℂ) :
         ∃ Q : ℂ[X], Q.degree < (P j).degree ∧ ∀ w, F (update z j w) = Q.eval w := by
+      have hPj_deg : (P j).degree = ((P j).natDegree : ℕ) :=
+        degree_eq_natDegree (ne_zero_of_degree_gt (hdeg₀ j (mem_insert_self j s) 0).choose_spec.1)
       have hsum_deg : ∀ t ⊆ s,
-          ∃ Q : ℂ[X], Q.degree < (P j).degree ∧
-            ∀ w, f₀ (update z j w) + ∑ a ∈ t, g a (update z j w) * (P a).eval (update z j w a) =
-              Q.eval w := by
+          (fun w ↦ f₀ (update z j w) + ∑ a ∈ t, g a (update z j w) * (P a).eval (update z j w a)) ∈
+            evalDegreeLT ℂ (P j).natDegree := by
         intro t
         induction t using Finset.induction_on with
         | empty =>
           intro _
-          simpa using hdeg₀ j (mem_insert_self j s) z
+          simpa only [sum_empty, add_zero] using
+            mem_evalDegreeLT.mpr (by simpa only [hPj_deg] using hdeg₀ j (mem_insert_self j s) z)
         | insert a t ha iht =>
           intro hts
           have has : a ∈ s := hts (mem_insert_self a t)
           have haj : a < j := hj a has
-          obtain ⟨Q, hQdeg, hQ⟩ := exists_degree_lt_and_add_mul_const_eq_eval ((P a).eval (z a))
+          have hmem := (evalDegreeLT ℂ (P j).natDegree).add_mem
             (iht ((subset_insert a t).trans hts))
-            (hdeg_g a (mem_insert_of_mem has) j (mem_insert_self j s) haj z)
-          refine ⟨Q, hQdeg, fun w ↦ ?_⟩
-          rw [sum_insert ha, update_of_ne haj.ne, add_comm (g a _ * _), ← add_assoc]
-          exact hQ w
-      exact hsum_deg s Subset.rfl
+            ((evalDegreeLT ℂ (P j).natDegree).smul_mem ((P a).eval (z a))
+              (mem_evalDegreeLT.mpr (by
+                simpa only [hPj_deg] using
+                  hdeg_g a (mem_insert_of_mem has) j (mem_insert_self j s) haj z)))
+          rwa [show (fun w ↦ f₀ (update z j w) +
+              ∑ x ∈ insert a t, g x (update z j w) * (P x).eval (update z j w x)) =
+              (fun w ↦ f₀ (update z j w) +
+                ∑ x ∈ t, g x (update z j w) * (P x).eval (update z j w x)) +
+              (P a).eval (z a) • (fun w ↦ g a (update z j w)) by
+            ext w
+            simp only [Pi.add_apply, Pi.smul_apply, smul_eq_mul, sum_insert ha,
+              update_of_ne haj.ne]
+            ring]
+      simpa only [hPj_deg] using mem_evalDegreeLT.mp (hsum_deg s Subset.rfl)
     obtain ⟨hF0, hgj0⟩ := eq_of_eq_add_mul_eval (f := (0 : (ι → ℂ) → ℂ)) (f₀ := F) (fk := g j)
       (f₀' := 0) (fk' := 0) (hg j) continuous_const hsplit (fun _ ↦ by simp) hF_deg
       fun _ ↦ ⟨0, bot_le.trans_lt (hdeg₀ j (mem_insert_self j s) 0).choose_spec.1, fun _ ↦ by simp⟩
@@ -605,10 +614,21 @@ private theorem norm_le_of_eq_add_sum_mul_eval_of_list [Fintype ι]
     have hdeg_r' (j : ι) (hjl' : j ∈ l') (w : ι → ℂ) :
         ∃ Q : ℂ[X], Q.degree < (P j).degree ∧ ∀ u, r' (update w j u) = Q.eval u := by
       have hij : i ≠ j := (hilt j hjl').ne
-      obtain ⟨Q, hQdeg, hQ⟩ := exists_degree_lt_and_add_mul_const_eq_eval ((P i).eval (w i))
-        (hdeg₀ j (List.mem_cons_of_mem i hjl') w)
-        (hdeg_g i List.mem_cons_self j (List.mem_cons_of_mem i hjl') (hilt j hjl') w)
-      exact ⟨Q, hQdeg, fun u ↦ by simpa only [r', update_of_ne hij] using hQ u⟩
+      have hPj_deg : (P j).degree = ((P j).natDegree : ℕ) :=
+        degree_eq_natDegree (hP j).ne_zero
+      have hmem := (evalDegreeLT ℂ (P j).natDegree).add_mem
+        (mem_evalDegreeLT.mpr <| by
+          simpa only [hPj_deg] using hdeg₀ j (List.mem_cons_of_mem i hjl') w)
+        ((evalDegreeLT ℂ (P j).natDegree).smul_mem ((P i).eval (w i))
+          (mem_evalDegreeLT.mpr <| by
+            simpa only [hPj_deg] using
+              hdeg_g i List.mem_cons_self j (List.mem_cons_of_mem i hjl') (hilt j hjl') w))
+      have heq : (fun u ↦ r' (update w j u)) =
+          (fun u ↦ f₀ (update w j u)) + (P i).eval (w i) • fun u ↦ g i (update w j u) := by
+        ext u
+        simp only [r', Pi.add_apply, Pi.smul_apply, smul_eq_mul, update_of_ne hij, mul_comm]
+      rw [← heq] at hmem
+      simpa only [hPj_deg] using mem_evalDegreeLT.mp hmem
     have hnorm' := fun w hw ↦ ih hsort' hr' (fun m hm ↦ hg m (List.mem_cons_of_mem i hm))
       hdiv' hdeg_r' (fun a ha b hb ↦ hdeg_g a (List.mem_cons_of_mem i ha) b
         (List.mem_cons_of_mem i hb)) w hw
