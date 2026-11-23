@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.RingTheory.Flat.TorsionFree
 public import Mathlib.RingTheory.PicardGroup
 
 /-!
@@ -39,6 +40,8 @@ into an identity of pure tensors.
 * `Module.Invertible.leftCancelDualEquiv_tmul_tmul`: its value `ℓ ⊗ (ξ ⊗ p) ↦ ξ ℓ • p`.
 * `Module.Invertible.leftCancelDualEquiv_tmul_apply`: its value on duals.
 * `Module.Invertible.apply_smul_comm`: the rank-one identity `ξ x • y = ξ y • x`.
+* `Module.Invertible.injective_of_ne_zero`: over a domain, a nonzero functional on an invertible
+  module is injective.
 * `Module.Invertible.apply_smul_eq_self`, `Module.Invertible.dual_apply_smul_eq_self`: the
   expansions `ξ y • x = y` and `η x • ξ = η` for `ξ x = 1`.
 * `Module.Invertible.rid_lTensor_eval_tmul_eq_self`: an element of `W ⊗ M^*` is the pure tensor
@@ -107,6 +110,15 @@ theorem leftCancelDualEquiv_tmul_apply {N : Type*} [AddCommMonoid N] [Module R N
 locally. -/
 theorem apply_smul_comm (ξ : Dual R M) (x y : M) : ξ x • y = ξ y • x := by
   simpa using congr(TensorProduct.lid R M (ξ.rTensor M $(tmul_comm (R := R) (m₁ := x) (m₂ := y))))
+
+/-- Over a domain, a nonzero linear functional on an invertible module is injective. -/
+theorem injective_of_ne_zero [IsDomain R] {g : M →ₗ[R] R} (hg : g ≠ 0) :
+    Function.Injective g := by
+  obtain ⟨x, hx⟩ : ∃ x, g x ≠ 0 := by
+    by_contra! h
+    exact hg (LinearMap.ext h)
+  refine fun y z hyz ↦ smul_right_injective M hx ?_
+  simp only [apply_smul_comm g x, hyz]
 
 section DualPair
 

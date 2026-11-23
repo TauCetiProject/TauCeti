@@ -7,7 +7,6 @@ module
 
 public import Mathlib.LinearAlgebra.Dual.BaseChange
 public import Mathlib.LinearAlgebra.Dual.Lemmas
-public import Mathlib.RingTheory.Flat.TorsionFree
 public import TauCeti.LinearAlgebra.Dual.FiniteProjective
 public import TauCeti.RingTheory.PicardGroup.Contraction
 
@@ -47,13 +46,12 @@ compares the classes of two lines related by a nonzero map without choosing a ba
 
 * `LinearMap.indexIdeal`: the image ideal of `φ ⊗ x ↦ φ (f x)`.
 * `LinearMap.mem_indexIdeal_iff`: its elements are the finite sums `∑ φᵢ (f xᵢ)`.
-* `LinearMap.indexIdeal_baseChange`: the index ideal commutes with base change.
+* `LinearMap.indexIdeal_baseChange`: for a projective target, the index ideal commutes with
+  arbitrary base change.
 * `LinearMap.indexIdeal_comp`: multiplicativity under composition through a line.
 * `LinearMap.dualTensorEquivIndexIdeal`: `N^∨ ⊗ L ≃ f.indexIdeal` when the index ideal of a map
   of lines is invertible.
 * `LinearMap.pic_mk_eq_mk_indexIdeal_mul`: the Picard class identity `[L] = [f.indexIdeal] [N]`.
-* `Module.Invertible.injective_of_ne_zero`: over a domain, a nonzero functional on an invertible
-  module is injective.
 * `LinearMap.invertible_indexIdeal`: over a domain, a nonzero map of lines has an invertible
   index ideal.
 
@@ -254,24 +252,7 @@ end Invertible
 
 end CommSemiring
 
-end LinearMap
-
-namespace Module.Invertible
-
-variable {R M : Type*} [CommSemiring R] [IsDomain R] [AddCommMonoid M] [Module R M]
-  [Module.Invertible R M]
-
-/-- Over a domain, a nonzero linear functional on an invertible module is injective. -/
-theorem injective_of_ne_zero {g : M →ₗ[R] R} (hg : g ≠ 0) : Function.Injective g := by
-  obtain ⟨x, hx⟩ : ∃ x, g x ≠ 0 := by
-    by_contra! h
-    exact hg (LinearMap.ext h)
-  refine fun y z hyz ↦ smul_right_injective M hx ?_
-  simp only [apply_smul_comm g x, hyz]
-
-end Module.Invertible
-
-namespace LinearMap
+section IsDomain
 
 variable {R L N : Type*} [CommSemiring R] [IsDomain R] [AddCommMonoid L] [Module R L]
   [AddCommMonoid N] [Module R N] [Module.Invertible R L] [Module.Invertible R N]
@@ -284,5 +265,7 @@ theorem invertible_indexIdeal (hf : f ≠ 0) : Module.Invertible R f.indexIdeal 
     (g := contractLeft R N ∘ₗ f.lTensor (Dual R N))
     fun h ↦ hf <| f.indexIdeal_eq_bot_iff.1 <| f.indexIdeal_def ▸ range_eq_bot.2 h
   exact .congr (LinearEquiv.ofInjective _ hinj ≪≫ₗ .ofEq _ _ f.indexIdeal_def.symm)
+
+end IsDomain
 
 end LinearMap
