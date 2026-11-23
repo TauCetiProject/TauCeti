@@ -189,12 +189,8 @@ theorem sub_apply (s t : BundleTest I F V) (x : M) : (s - t) x = s x - t x :=
   rfl
 
 theorem sum_apply {ι : Type*} (u : Finset ι) (s : ι → BundleTest I F V) (x : M) :
-    (∑ i ∈ u, s i) x = ∑ i ∈ u, s i x := by
-  simpa only [AddMonoidHom.coe_comp, Function.comp_apply, coeAddHom_apply,
-    AddMonoidHom.coe_ofClass, Submodule.coe_subtype, Finset.sum_apply] using
-    congrFun (map_sum ((coeAddHom I F ∞ V).comp (((compactlySupported I F ∞ V).subtype :
-      compactlySupported I F ∞ V →+ _).comp ((ofCompactlySupported I F V).symm :
-        BundleTest I F V →+ _))) s u) x
+    (∑ i ∈ u, s i) x = ∑ i ∈ u, s i x :=
+  map_sum (AddMonoidHom.mk' (fun t : BundleTest I F V ↦ t x) fun a b ↦ add_apply a b x) s u
 
 variable [ContMDiffVectorBundle ∞ F V I] [IsManifold I ∞ M]
 

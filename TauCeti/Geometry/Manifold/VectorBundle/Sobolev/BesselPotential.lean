@@ -23,15 +23,16 @@ Let `V → M` be a smooth real vector bundle with model fibre `F`. A real functi
 bundle tests `TauCeti.BundleTest I F V` is read through a fixed finite family of charts and frames.
 This file builds the Sobolev spaces `H^s`, `s ∈ ℝ`, of such functionals from the Euclidean
 Bessel-potential spaces `H^s(E, ℂ)` of Mathlib. The distributional sections
-`TauCeti.BundleDistribution I M F W` of a bundle `W` are the case where `V` is the `W`-dual density
-bundle `fun x ↦ W x →L[ℝ] TauCeti.DensityBundle I M x`, so for them the charts, frames and cutoffs
-are taken on that bundle.
+`TauCeti.BundleDistribution I M G W` of a bundle `W` with model fibre `G` are the case where `V` is
+the `W`-dual density bundle `fun x ↦ W x →L[ℝ] TauCeti.DensityBundle I M x`, whose model fibre `F`
+is `G →L[ℝ] ℝ`. For them the partition is a
+`TauCeti.SquareChartPartition ι I (G →L[ℝ] ℝ) (fun x ↦ W x →L[ℝ] TauCeti.DensityBundle I M x)`.
 
 The functionals are read through a square chart partition (`TauCeti.SquareChartPartition`):
 finitely many charts `cᵢ` with smooth inverses, frames `tᵢ` over their sources, and smooth cutoffs
 `χᵢ` with compact supports inside the chart sources such that `∑ᵢ χᵢ² = 1`, which exists on every
-compact boundaryless manifold (`TauCeti.exists_squareChartPartition`). Write `(bⱼ)` for the standard
-basis `Module.finBasis ℝ F` of the model fibre.
+compact boundaryless manifold (`TauCeti.exists_squareChartPartition`). Write `(bⱼ)` for the fixed
+basis `Module.finBasis ℝ F` of the model fibre (chosen non-constructively).
 
 * The **localization** `χᵢ Tᵢⱼ` of `T` (`TauCeti.SquareChartPartition.localization`) is the
   tempered distribution on the model space `E` obtained from the component `φ ↦ T (φ • bⱼ)` of `T`
@@ -50,8 +51,9 @@ its localizations lie in `H^s(E, ℂ)`. The **Sobolev space**
 `TauCeti.SquareChartPartition.sobolevSpace` is the image of the localization map: the real subspace
 of the tuples `(uᵢⱼ)` in the Hilbert sum `⨁ᵢⱼ H^s(E, ℂ)` (`PiLp 2`) that are reproduced by
 localizing their reconstruction. It is closed
-(`TauCeti.SquareChartPartition.isClosed_sobolevSpace`), so it is complete, and its norm is the
-pinned atlas norm `‖T‖² = ∑ᵢⱼ ‖χᵢ Tᵢⱼ‖²_{H^s}`
+(`TauCeti.SquareChartPartition.isClosed_sobolevSpace`), so it is a real Hilbert space, with the real
+part of the inner product of the Hilbert sum (`TauCeti.SquareChartPartition.inner_sobolevSpace`),
+and its norm is the pinned atlas norm `‖T‖² = ∑ᵢⱼ ‖χᵢ Tᵢⱼ‖²_{H^s}`
 (`TauCeti.SquareChartPartition.norm_ofMemSobolev_sq`). It is linearly equivalent to the functionals
 that are `H^s` with respect to the partition (`TauCeti.SquareChartPartition.sobolevSpaceEquiv`),
 through the reconstruction `TauCeti.SquareChartPartition.toDistribution`.
@@ -70,7 +72,8 @@ equations of the subspace are closed.
   `TauCeti.SquareChartPartition.reconstruction_localization`.
 * `TauCeti.SquareChartPartition.MemSobolev`: `H^s` regularity with respect to the partition.
 * `TauCeti.SquareChartPartition.sobolevSpace`: the Sobolev space, with
-  `TauCeti.SquareChartPartition.isClosed_sobolevSpace` and its `CompleteSpace` instance.
+  `TauCeti.SquareChartPartition.isClosed_sobolevSpace`, its `CompleteSpace` and real
+  `InnerProductSpace` instances, and `TauCeti.SquareChartPartition.inner_sobolevSpace`.
 * `TauCeti.SquareChartPartition.toDistribution`, `TauCeti.SquareChartPartition.ofMemSobolev`,
   `TauCeti.SquareChartPartition.range_toDistribution` and
   `TauCeti.SquareChartPartition.sobolevSpaceEquiv`: the Sobolev space represents exactly the
@@ -157,8 +160,8 @@ private theorem localizationCLM_apply_of_notMem (i : ι) (ψ : C^∞⟮I, M; ℝ
     A.localizationCLM i ψ hψ s y = 0 :=
   (A.chartData i).trivialization.chartLocalization_apply_of_notMem _ _ _ _ _ _ _ _ hy
 
-/-- The `j`-th coordinate functional of the standard basis of the model fibre, with complex
-values. -/
+/-- The `j`-th coordinate functional of the fixed basis `Module.finBasis ℝ F` of the model fibre
+(chosen non-constructively), with complex values. -/
 private def coordCLM (j : Fin (Module.finrank ℝ F)) : F →L[ℝ] ℂ :=
   ofRealCLM ∘L LinearMap.toContinuousLinearMap ((Module.finBasis ℝ F).coord j)
 
@@ -169,8 +172,8 @@ private theorem coordCLM_apply (j : Fin (Module.finrank ℝ F)) (v : F) :
 
 /-- The **localization of bundle tests**: a bundle test `s` goes to the complex Schwartz function
 `y ↦ χᵢ (cᵢ⁻¹ y) bⱼ* (tᵢ (s (cᵢ⁻¹ y)))` on the model space, the `j`-th frame coordinate of `s` in
-the `i`-th chart cut off by `χᵢ`, extended by zero. Here `(bⱼ*)` is the dual basis of the standard
-basis `Module.finBasis ℝ F` of the model fibre. -/
+the `i`-th chart cut off by `χᵢ`, extended by zero. Here `(bⱼ*)` is the dual basis of the fixed
+basis `Module.finBasis ℝ F` of the model fibre (chosen non-constructively). -/
 def testLocalization (i : ι) (j : Fin (Module.finrank ℝ F)) :
     BundleTest I F V →L[ℝ] 𝓢(E, ℂ) :=
   ContDiffMapSupportedIn.toSchwartzMapCLM ℝ ∘L ContDiffMapSupportedIn.postcompCLM (coordCLM j) ∘L
@@ -337,12 +340,19 @@ theorem ext_localization {T T' : BundleTest I F V →L_c[ℝ] ℝ}
   rw [← A.reconstruction_localization T, ← A.reconstruction_localization T']
   exact congrArg A.reconstruction (funext fun k ↦ h k.1 k.2)
 
-/-- The value of a localization on a Schwartz function only involves the values of `T` on two
-bundle tests, which do not depend on `T`. -/
+/-- The value of a localization on a Schwartz function `ψ` only involves the values of `T` on two
+bundle tests, which do not depend on `T`: the chart extensions of the real and imaginary parts of
+`(χᵢ ψ) bⱼ`, where `χᵢ` is read in the chart. -/
 private theorem exists_localization_apply (i : ι) (j : Fin (Module.finrank ℝ F)) (ψ : 𝓢(E, ℂ)) :
     ∃ g g' : BundleTest I F V, ∀ T : BundleTest I F V →L_c[ℝ] ℝ,
       A.localization i j T ψ = (T g : ℂ) + Complex.I * (T g' : ℂ) :=
-  ⟨_, _, fun T ↦ by
+  let χψ := TestFunction.bilinLeftCLM (ContinuousLinearMap.mul ℂ ℂ) (ψ.smooth ⊤) (A.chartCutoff i)
+  let g (φ : 𝓓(⟨(A.chartData i).chart.target, (A.chartData i).chart.open_target⟩, ℝ)) :
+      BundleTest I F V :=
+    (A.chartData i).trivialization.chartTestCLM (A.chartData i).chart
+      (A.chartData i).contMDiffOn_chart (A.chartData i).source_subset
+      (TestFunction.postcompCLM (ContinuousLinearMap.toSpanSingleton ℝ (Module.finBasis ℝ F j)) φ)
+  ⟨g (TestFunction.postcompCLM reCLM χψ), g (TestFunction.postcompCLM imCLM χψ), fun T ↦ by
     rw [localization_apply, Distribution.cutoffTempered_def, Distribution.complexPairing_apply,
       Bundle.Trivialization.chartComponent_apply, Bundle.Trivialization.chartComponent_apply]⟩
 
@@ -462,6 +472,20 @@ theorem isClosed_sobolevSpace :
 
 instance : CompleteSpace (A.sobolevSpace s) :=
   (A.isClosed_sobolevSpace s).completeSpace_coe
+
+/-- The Sobolev space is a real Hilbert space: its inner product is the real part of the complex
+inner product `∑ᵢⱼ ⟪uᵢⱼ, vᵢⱼ⟫` of the Hilbert sum `⨁ᵢⱼ H^s(E, ℂ)`
+(`TauCeti.SquareChartPartition.inner_sobolevSpace`). -/
+instance : InnerProductSpace ℝ (A.sobolevSpace s) :=
+  letI : InnerProductSpace ℝ (PiLp 2 fun _ : ι × Fin (Module.finrank ℝ F) ↦ H^{s}(E, ℂ)) :=
+    InnerProductSpace.complexToReal
+  Submodule.innerProductSpace _
+
+theorem inner_sobolevSpace (u v : A.sobolevSpace s) :
+    inner ℝ u v = (∑ k, inner ℂ (u.val k) (v.val k)).re := by
+  let : InnerProductSpace ℝ (PiLp 2 fun _ : ι × Fin (Module.finrank ℝ F) ↦ H^{s}(E, ℂ)) :=
+    InnerProductSpace.complexToReal
+  rw [Submodule.coe_inner, real_inner_eq_re_inner ℂ, PiLp.inner_apply, RCLike.re_to_complex]
 
 /-- The functional on bundle tests represented by an element of the Sobolev space
 `TauCeti.SquareChartPartition.sobolevSpace`: the reconstruction of its components. -/
