@@ -111,8 +111,8 @@ theorem ae_tendsto_second_spectralMoment {V σ2 : ℝ}
     have hξi : ∀ ij, Integrable (fun ω ↦ ‖ξ ij ω‖ ^ 2) P := fun ij ↦
       Integrable.of_integral_ne_zero (by rw [hξ ij]; exact one_ne_zero)
     have hηi (i : ℕ) : Integrable (fun ω ↦ η i ω ^ 2) P := by
-      exact ((hmem i (.inl ⟨i, Nat.lt_succ_self i⟩)).integrable (by norm_num)).congr
-        (ae_of_all P (fun ω ↦ wignerCoordinateSquare_inl (i + 1) ⟨i, Nat.lt_succ_self i⟩ ω))
+      exact ((hmem i (.inr ⟨i, Nat.lt_succ_self i⟩)).integrable (by norm_num)).congr
+        (ae_of_all P (fun ω ↦ wignerCoordinateSquare_inr (i + 1) ⟨i, Nat.lt_succ_self i⟩ ω))
     have h := integral_re_trace_wignerMatrix_mul_self hξi hξ hηi hη (n + 1)
     have heq (ω : Ω) :
         (∫ x, x ^ 2 ∂((wignerMatrix ξ η (n + 1) ω).spectralMeasure
@@ -167,9 +167,9 @@ theorem ae_tendsto_integral_pow_spectralMeasure_wignerMatrix_sub_mean
   have hmem (n : ℕ) : MemLp (fun ω ↦ ∫ x, x ^ k
       ∂((wignerMatrix ξ η (n + 1) ω).spectralMeasure
         (wignerMatrix_isHermitian ξ η ω (n + 1)) : Measure ℝ)) 2 P :=
-    memLp_integral_pow_spectralMeasure_wignerMatrix (p := 2)
-      (by simpa only [Nat.cast_mul, Nat.cast_ofNat] using hξp)
-      (by simpa only [Nat.cast_mul, Nat.cast_ofNat] using hηp) n
+    memLp_integral_pow_spectralMeasure_wignerMatrix (p := 2) (fun _ ↦ inferInstance) n
+      (fun ij _ ↦ by simpa only [Nat.cast_mul, Nat.cast_ofNat] using hξp ij)
+      (fun i _ ↦ by simpa only [Nat.cast_mul, Nat.cast_ofNat] using hηp i)
   have hs : Summable fun n : ℕ ↦ 2 * (k : ℝ) ^ (2 * k) * B / (n + 1 : ℝ) ^ 2 := by
     simpa only [Nat.cast_add, Nat.cast_one, div_eq_mul_inv] using
       ((summable_nat_add_iff 1).2
