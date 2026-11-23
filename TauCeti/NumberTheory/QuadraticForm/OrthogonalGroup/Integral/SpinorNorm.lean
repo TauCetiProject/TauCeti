@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.NumberTheory.QuadraticForm.OrthogonalGroup.Integral.Basic
+public import TauCeti.NumberTheory.QuadraticForm.OrthogonalGroup.Integral.Reflection
 public import TauCeti.NumberTheory.LocalField.UnitSquareClasses
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.SpinorNorm.Basic
 import TauCeti.LinearAlgebra.QuadraticForm.CartanDieudonne.SpecialOrthogonal
@@ -90,16 +90,6 @@ private theorem polar_mem_subring (hpolar : ∀ i j, polar Q (b i) (b j) ∈ Pad
   | smul_right c x y _ _ h =>
     rw [Subring.smul_def, polar_smul_right, smul_eq_mul]; exact mul_mem c.property h
 
-/-- The reflection in an integral vector of unit norm preserves integral vectors. -/
-private theorem reflection_mem_span
-    (hpolar : ∀ i j, polar Q (b i) (b j) ∈ PadicInt.subring p) {v : V} [Invertible (Q v)]
-    (hv : v ∈ Submodule.span (PadicInt.subring p) (Set.range b)) (hQv : ‖Q v‖ = 1) {x : V}
-    (hx : x ∈ Submodule.span (PadicInt.subring p) (Set.range b)) :
-    reflection Q v x ∈ Submodule.span (PadicInt.subring p) (Set.range b) := by
-  rw [reflection_apply, invOf_eq_inv]
-  exact sub_mem hx (Submodule.smul_mem _ (⟨_, mul_mem (inv_mem_subring_of_norm_eq_one hQv)
-    (polar_mem_subring hpolar hv hx)⟩ : PadicInt.subring p) hv)
-
 /-- Two has norm one in `ℚ_[p]` for an odd prime `p`. -/
 private theorem norm_two_eq_one (hp : p ≠ 2) : ‖(2 : ℚ_[p])‖ = 1 := by
   exact_mod_cast (Padic.norm_natCast_eq_one_iff (p := p) (n := 2)).mpr
@@ -145,11 +135,11 @@ norm is an integral isometry. -/
 theorem reflectionOrthogonal_mem_integralOrthogonalSubgroup
     (hpolar : ∀ i j, polar Q (b i) (b j) ∈ PadicInt.subring p) {v : V} [Invertible (Q v)]
     (hv : v ∈ Submodule.span (PadicInt.subring p) (Set.range b)) (hQv : ‖Q v‖ = 1) :
-    reflectionOrthogonal Q v ∈ integralOrthogonalSubgroup Q b := by
-  rw [mem_integralOrthogonalSubgroup_iff_mem_span, reflectionOrthogonal_inv,
-    coe_reflectionOrthogonal]
-  exact ⟨fun x hx ↦ reflection_mem_span hpolar hv hQv hx,
-    fun x hx ↦ reflection_mem_span hpolar hv hQv hx⟩
+    reflectionOrthogonal Q v ∈ integralOrthogonalSubgroup Q b :=
+  reflectionOrthogonal_mem_integralOrthogonalSubgroup_of_norm_polar_le hv fun i ↦ by
+    rw [hQv]
+    exact (PadicInt.mem_subring_iff p).mp
+      (polar_mem_subring hpolar hv (Submodule.subset_span ⟨i, rfl⟩))
 
 section Orthogonal
 

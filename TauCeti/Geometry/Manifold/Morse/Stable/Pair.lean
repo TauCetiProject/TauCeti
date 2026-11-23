@@ -29,7 +29,8 @@ transverse when the transported pair is Morse–Smale. Unlike the trajectories b
 points of one function, these trajectories are not invariant under a translation of time, so the
 intersection is not divided by an action of `ℝ`, and its expected dimension is `ind p - ind q`
 rather than `ind p - ind q - 1`. The identification of continuation trajectories with these
-intersections is not part of this file.
+intersections is
+`TauCeti.IsContinuationField.eventually_morseContinuationSlice_eq_preimage_mpullback`.
 
 For a Morse–Smale pair the following hold, for critical points `a` of `f₀` and `b` of `f₁`:
 
@@ -43,9 +44,11 @@ For a Morse–Smale pair the following hold, for critical points `a` of `f₀` a
   `ind a < ind p`, and `b = q` or `ind q < ind b`
   (`IsMorseSmalePair.exists_mem_unstableSet_inter_stableSet_of_mem_closure`).
 * **Finiteness.** Hence when `ind p ≤ ind q` the intersection is finite
-  (`IsMorseSmalePair.finite_unstableSet_inter_stableSet`). Once continuation trajectories are
-  identified with these intersections, its points are expected to give the counts of the
-  continuation map between Morse complexes.
+  (`IsMorseSmalePair.finite_unstableSet_inter_stableSet`). For the pair transported by the
+  transition diffeomorphism of a continuation, its points give the counts of the continuation map
+  between Morse complexes
+  (`TauCeti.IsContinuationField.eventually_morseContinuationCoeff_eq_ncard_mpullback`), and the
+  continuation slices are finite (`TauCeti.IsTransverseContinuation.finite_morseContinuationSlice`).
 * **One-dimensional ends.** When `ind p = ind q + 1`, the intersection is one-dimensional, and its
   closure adds only once-broken configurations: a trajectory of `X₀` from `p` to a critical point
   `a` with `ind a = ind q`, followed by a point of `W^u_{X₀}(a) ∩ W^s_{X₁}(q)`, or a point of
@@ -63,6 +66,8 @@ In the namespace `TauCeti.IsAdaptedPseudoGradient`:
 * `IsMorseSmalePair`: the Morse–Smale condition for a pair of pseudo-gradients.
 * `isMorseSmalePair_iff` and `isMorseSmalePair_self_iff`: its unfolding, and the case of a single
   pseudo-gradient.
+* `unstableSet_inter_stableSet_eq_neg`: reversing both fields exchanges the unstable and stable
+  sets in an intersection.
 * `IsMorseSmalePair.neg`: reversing the pair.
 * `IsMorseSmalePair.exists_isSliceChart_unstableSet_inter_stableSet`,
   `IsMorseSmalePair.span_mtangentConeAt_unstableSet_inter_stableSet` and
@@ -130,6 +135,15 @@ theorem isMorseSmalePair_self_iff (hX : IsAdaptedPseudoGradient f X) :
   ⟨fun h ↦ IsMorseSmale.of_forall fun _ _ _ _ _ hy ↦ h hy,
     fun h _ _ _ hy ↦ h.span_mtangentConeAt_sup_eq_top hy⟩
 
+/-- **Reversing both fields in an intersection.** Reversing `X₀` and `X₁` exchanges unstable and
+stable sets: `W^u_{X₀}(a) ∩ W^s_{X₁}(b) = W^u_{-X₁}(b) ∩ W^s_{-X₀}(a)`. -/
+theorem unstableSet_inter_stableSet_eq_neg (hX₀ : IsAdaptedPseudoGradient f₀ X₀)
+    (hX₁ : IsAdaptedPseudoGradient f₁ X₁) (hf₀ : IsMorse 𝓘(ℝ, E) f₀) (hf₁ : IsMorse 𝓘(ℝ, E) f₁)
+    (a b : M) :
+    hX₀.flow.unstableSet a ∩ hX₁.flow.stableSet b =
+      (hX₁.neg hf₁).flow.unstableSet b ∩ (hX₀.neg hf₀).flow.stableSet a := by
+  rw [← hX₁.stableSet_eq_unstableSet_neg hf₁, ← hX₀.unstableSet_eq_stableSet_neg hf₀, inter_comm]
+
 namespace IsMorseSmalePair
 
 variable {hX₀ : IsAdaptedPseudoGradient f₀ X₀} {hX₁ : IsAdaptedPseudoGradient f₁ X₁}
@@ -149,10 +163,9 @@ Morse–Smale pair: reversing the flows exchanges unstable and stable manifolds.
 theorem neg (h : IsMorseSmalePair hX₀ hX₁) (hf₀ : IsMorse 𝓘(ℝ, E) f₀)
     (hf₁ : IsMorse 𝓘(ℝ, E) f₁) : IsMorseSmalePair (hX₁.neg hf₁) (hX₀.neg hf₀) := by
   intro a b y hy
-  rw [hX₁.neg_flow hf₁, hX₀.neg_flow hf₀, Flow.unstableSet_reverse, Flow.stableSet_reverse]
-    at hy ⊢
-  rw [sup_comm]
-  exact h ⟨hy.2, hy.1⟩
+  rw [← hX₀.unstableSet_inter_stableSet_eq_neg hX₁ hf₀ hf₁] at hy
+  rw [← hX₁.stableSet_eq_unstableSet_neg hf₁, ← hX₀.unstableSet_eq_stableSet_neg hf₀, sup_comm]
+  exact h hy
 
 /-- **Transverse intersections for a pair are embedded submanifolds.** For a Morse–Smale pair, near
 each point `y` of `W^u_{X₀}(a) ∩ W^s_{X₁}(b)` a chart of the maximal atlas flattens this
@@ -284,9 +297,9 @@ theorem isClosed_unstableSet_inter_stableSet (h : IsMorseSmalePair hX₀ hX₁)
 /-- **Rigid intersections for a pair are finite.** Let `(X₀, X₁)` be a Morse–Smale pair of
 Morse–Smale pseudo-gradients. If the index of `p` for `f₀` is at most the index of `q` for `f₁`,
 then `W^u_{X₀}(p) ∩ W^s_{X₁}(q)` is finite. By `unstableSet_inter_stableSet_eq_empty` it is empty
-unless the indices are equal. Once continuation trajectories are identified with these
-intersections, they are expected to give the counts of a continuation map between Morse complexes.
--/
+unless the indices are equal. For the pair transported by the transition diffeomorphism of a
+continuation, these intersections give the counts of the continuation map between Morse complexes
+(`TauCeti.IsContinuationField.eventually_morseContinuationCoeff_eq_ncard_mpullback`). -/
 theorem finite_unstableSet_inter_stableSet (h : IsMorseSmalePair hX₀ hX₁)
     (h₀ : hX₀.IsMorseSmale) (h₁ : hX₁.IsMorseSmale) (hf₀ : IsMorse 𝓘(ℝ, E) f₀)
     (hf₁ : IsMorse 𝓘(ℝ, E) f₁)
