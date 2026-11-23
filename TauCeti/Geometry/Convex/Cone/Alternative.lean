@@ -225,7 +225,7 @@ theorem exists_nat_sum_nsmul_eq_zero_and_forall_coeff_add_dual_pos [Fintype ι]
     by_contra h
     exact hk (Finset.mem_biUnion.2 ⟨j, Finset.mem_univ _, Finsupp.mem_support_iff.2 h⟩)
   -- Rational coordinates (on `S`) of lattice vectors with respect to an integral basis.
-  let e : N →+ (S → ℚ) := AddMonoidHom.mk' (fun n k ↦ (b.repr n k.1 : ℚ)) fun n n' ↦ by
+  let e : N →+ (S → ℚ) := AddMonoidHom.mk' (fun n k ↦ (b.repr n k.val : ℚ)) fun n n' ↦ by
     ext k
     simp
   obtain ⟨X, Y, hX, hsum, hY, hpos⟩ :=
@@ -245,7 +245,7 @@ theorem exists_nat_sum_nsmul_eq_zero_and_forall_coeff_add_dual_pos [Fintype ι]
     have : (0 : ℚ) ≤ z j := by rw [hz]; exact mul_nonneg hD'.le (hX j)
     rw [← hz]
     exact_mod_cast Int.toNat_of_nonneg (by exact_mod_cast this)
-  let m : N →+ ℤ := (∑ k : S, w k • b.coord k.1).toAddMonoidHom
+  let m : N →+ ℤ := (∑ k : S, w k • b.coord k.val).toAddMonoidHom
   have hm : ∀ n, (m n : ℚ) = E * Y (e n) := fun n ↦ by
     conv_rhs => rw [pi_eq_sum_univ' (e n)]
     simp only [m, LinearMap.toAddMonoidHom_coe, LinearMap.sum_apply, LinearMap.smul_apply,

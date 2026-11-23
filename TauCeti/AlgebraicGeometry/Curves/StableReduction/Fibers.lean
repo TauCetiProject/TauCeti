@@ -8,6 +8,7 @@ module
 public import TauCeti.AlgebraicGeometry.Curves.Family
 public import TauCeti.AlgebraicGeometry.Curves.StableReduction.Model.Basic
 public import TauCeti.AlgebraicGeometry.Fibers.SchematicDensity
+public import TauCeti.AlgebraicGeometry.SpecialFiber.Components
 
 /-!
 # Generic fibres of models over a discrete valuation ring
@@ -17,6 +18,10 @@ It records compatibility with the structure morphism and proves that the inclusi
 immersion and an affine morphism, with scheme-theoretically dense image. A morphism of total spaces
 over the base is compatible with the chosen generic fibres exactly when it commutes with these
 inclusions.
+Conversely, a flat finitely presented scheme over the discrete valuation ring together with a
+pullback square exhibiting a prescribed scheme over the fraction field as its generic fibre is a
+model (`TauCeti.Model.ofIsPullback`).
+
 When the model is a family of curves, so is its generic fibre.
 -/
 
@@ -116,6 +121,72 @@ instance isSchemeTheoreticallyDominant_genericι (M : Model R K C toK) :
   have := isSchemeTheoreticallyDominant_genericFiberι R K (IsFractionRing.injective R K) M.toBase
   rw [genericι_def]
   infer_instance
+
+section OfIsPullback
+
+variable {X : Scheme.{u}} (toBase : X ⟶ Spec (.of R)) [Flat toBase]
+  [LocallyOfFinitePresentation toBase] [QuasiCompact toBase] [QuasiSeparated toBase] {j : C ⟶ X}
+
+/-- The model with total space `X` determined by a pullback square exhibiting `C` as the generic
+fibre of `X`. Its generic-fibre identification is the canonical comparison of `C` with the chosen
+pullback, so that its generic-fibre inclusion is `j` (`TauCeti.Model.genericι_ofIsPullback`).
+This is the converse of `TauCeti.Model.isPullback_genericι`. -/
+def ofIsPullback (h : IsPullback j toK toBase (Spec.map (CommRingCat.ofHom (algebraMap R K)))) :
+    Model R K C toK where
+  total := X
+  toBase := toBase
+  flat := ‹_›
+  locallyOfFinitePresentation := ‹_›
+  quasiCompact := ‹_›
+  quasiSeparated := ‹_›
+  genericFiberIso := Over.isoMk h.isoPullback.symm (IsPullback.isoPullback_inv_snd _)
+
+variable (h : IsPullback j toK toBase (Spec.map (CommRingCat.ofHom (algebraMap R K))))
+
+/-- The total space of the model given by a pullback square is the scheme in that square. -/
+@[simp]
+lemma ofIsPullback_total : (ofIsPullback toBase h).total = X :=
+  (rfl)
+
+/-- The structure morphism of the model given by a pullback square is the morphism in that
+square. -/
+@[simp]
+lemma ofIsPullback_toBase :
+    (ofIsPullback toBase h).toBase = eqToHom (ofIsPullback_total toBase h) ≫ toBase :=
+  (rfl)
+
+/-- The generic-fibre inclusion of the model given by a pullback square is the morphism in that
+square. -/
+@[simp]
+lemma genericι_ofIsPullback :
+    (ofIsPullback toBase h).genericι = j ≫ eqToHom (ofIsPullback_total toBase h).symm := by
+  rw [genericι_def]
+  -- By definition of `ofIsPullback`, the inverse generic-fibre identification is
+  -- `h.isoPullback.hom` and the `eqToHom` is the identity of `X`.
+  exact (h.isoPullback_hom_fst).trans (Category.comp_id j).symm
+
+end OfIsPullback
+
+/-- The set-theoretic image of a model's chosen generic fibre in its total space is the complement
+of the special fibre. -/
+theorem range_genericι_eq_setOf_base_ne_closedPoint (M : Model R K C toK) :
+    Set.range M.genericι = {x : M.total | M.toBase x ≠ closedPoint R} := by
+  have : IsIso M.genericFiberIso.inv.left :=
+    inferInstanceAs (IsIso ((Over.forget _).map M.genericFiberIso.inv))
+  rw [M.genericι_def]
+  calc Set.range (M.genericFiberIso.inv.left ≫ genericFiberι R K M.toBase)
+      = Set.range (genericFiberι R K M.toBase ∘ M.genericFiberIso.inv.left) :=
+        congrArg Set.range (funext fun x ↦ Scheme.Hom.comp_apply _ _ x)
+    _ = Set.range (genericFiberι R K M.toBase) :=
+        M.genericFiberIso.inv.left.surjective.range_comp _
+    _ = {x : M.total | M.toBase x ≠ closedPoint R} :=
+        range_genericFiberι_of_isDiscreteValuationRing R K M.toBase
+
+/-- If the total space of a model `M` is irreducible, then its generic fibre `C` is nonempty. -/
+theorem nonempty_generic (M : Model R K C toK) [IrreducibleSpace M.total] : Nonempty C :=
+  (M.toBase.nonempty_genericFiber_of_base_ne_closedPoint K
+    (M.toBase.base_genericPoint_ne_closedPoint (IsDiscreteValuationRing.not_a_field R))).map
+    M.genericFiberIso.hom.left
 
 /-- A morphism of total spaces over the base respects the chosen identifications of generic fibres
 as soon as it carries the chosen generic fibre of `M` to that of `N`. This is the converse of

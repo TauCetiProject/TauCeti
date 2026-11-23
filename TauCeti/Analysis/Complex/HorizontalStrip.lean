@@ -16,9 +16,18 @@ Positive real scalings and complex translations map horizontal strips bijectivel
 onto the strips whose endpoints undergo the corresponding real affine map. These
 maps rescale logarithmic strip coordinates to arbitrary boundary heights.
 
+A map recovered up to integer multiples of `i`, such as an exponential end lift of a
+cylindrical end, is injective on every set whose imaginary parts vary by less than one, such as a
+horizontal strip of height one (`TauCeti.Complex.injOn_of_exists_eq_add_intCast_mul_I`).
+
 An open set of the plane whose frontier is, to the right of some `R`, exactly the two horizontal
 lines bounding a strip, and which misses a point of the strip to the right of `R`, agrees to the
 right of `R` with the complement of the closed strip.
+
+If, as `s → ±∞`, the maps `t ↦ u (s + i t)` on the strip `ℝ × [0, 1]` converge jointly in `s` and
+`t ∈ [0, 1]` to limits lying in an open set `U`, as the ends of finite-energy Floer strips converge
+to chords, then `u` maps the ends `|ℜ z| ≥ T` into `U` for some `T`
+(`TauCeti.exists_forall_mem_of_tendsto_strip_ends`), by compactness of `[0, 1]`.
 -/
 
 public section
@@ -35,7 +44,80 @@ theorem bijOn_ofReal_mul_add_horizontalStrip {s : ℝ} (hs : 0 < s) (c : ℂ) (l
   ((Equiv.mulLeft₀ (s : ℂ) (ofReal_ne_zero.mpr hs.ne')).trans (Equiv.addRight c)).bijOn
     fun w => by simp [hs]
 
+section StripEnds
+
+open Filter Topology
+
+/-- **The ends of a strip converging into an open set.** Let `u` be a map from the strip
+`ℝ × [0, 1]` to a topological space, and suppose that as `s → -∞` and as `s → +∞` the maps
+`t ↦ u (s + i t)` converge to `x` and to `y`, jointly in `s` and `t ∈ [0, 1]`, as the ends of a
+strip converge to the chords at its ends. If an open set `U` contains `x t` and `y t` for every
+`t ∈ [0, 1]`, then `u` maps the two ends `|ℜ z| ≥ T` of the strip into `U`, for some `T`. -/
+theorem exists_forall_mem_of_tendsto_strip_ends {X : Type*} [TopologicalSpace X] {u : ℂ → X}
+    {x y : ℝ → X} {U : Set X} (hU : IsOpen U) (hx : ∀ t ∈ Icc (0 : ℝ) 1, x t ∈ U)
+    (hy : ∀ t ∈ Icc (0 : ℝ) 1, y t ∈ U)
+    (hux : ∀ t ∈ Icc (0 : ℝ) 1,
+      Tendsto (fun p : ℝ × ℝ ↦ u (p.1 + p.2 * I)) (atBot ×ˢ 𝓝[Icc 0 1] t) (𝓝 (x t)))
+    (huy : ∀ t ∈ Icc (0 : ℝ) 1,
+      Tendsto (fun p : ℝ × ℝ ↦ u (p.1 + p.2 * I)) (atTop ×ˢ 𝓝[Icc 0 1] t) (𝓝 (y t))) :
+    ∃ T, ∀ z : ℂ, T ≤ |z.re| → 0 ≤ z.im → z.im ≤ 1 → u z ∈ U := by
+  -- Along either end, near each `t ∈ [0, 1]` the segments `s + i [0, 1]` eventually lie in `U`;
+  -- compactness of `[0, 1]` makes this uniform in `t`.
+  have hend (l : Filter ℝ) (c : ℝ → X) (hc : ∀ t ∈ Icc (0 : ℝ) 1, c t ∈ U)
+      (huc : ∀ t ∈ Icc (0 : ℝ) 1,
+        Tendsto (fun p : ℝ × ℝ ↦ u (p.1 + p.2 * I)) (l ×ˢ 𝓝[Icc 0 1] t) (𝓝 (c t))) :
+      ∀ᶠ s : ℝ in l, ∀ t ∈ Icc (0 : ℝ) 1, u (s + t * I) ∈ U := by
+    have key : {p : ℝ × ℝ | p.2 ∈ Icc (0 : ℝ) 1 → u (p.1 + p.2 * I) ∈ U} ∈
+        l ×ˢ 𝓝ˢ (Icc (0 : ℝ) 1) := by
+      refine isCompact_Icc.mem_prod_nhdsSet_of_forall fun t ht ↦ ?_
+      obtain ⟨A, hA, B, hB, hAB⟩ := mem_prod_iff.1 ((huc t ht).eventually (hU.mem_nhds (hc t ht)))
+      obtain ⟨V, hV, hVB⟩ := mem_nhdsWithin_iff_exists_mem_nhds_inter.1 hB
+      exact mem_of_superset (prod_mem_prod hA hV) fun p hp hp₂ ↦ hAB ⟨hp.1, hVB ⟨hp.2, hp₂⟩⟩
+    exact (Eventually.curry key).mono fun s hs t ht ↦ hs.self_of_nhdsSet t ht ht
+  obtain ⟨a, ha⟩ := eventually_atBot.1 (hend atBot x hx hux)
+  obtain ⟨b, hb⟩ := eventually_atTop.1 (hend atTop y hy huy)
+  refine ⟨max (-a) b, fun z hz hz₀ hz₁ ↦ ?_⟩
+  rw [← re_add_im z]
+  rcases le_abs'.1 hz with h | h
+  · exact ha z.re (by linarith [le_max_left (-a) b]) z.im ⟨hz₀, hz₁⟩
+  · exact hb z.re ((le_max_right _ _).trans h) z.im ⟨hz₀, hz₁⟩
+
+end StripEnds
+
 end TauCeti
+
+namespace TauCeti.Complex
+
+open Set
+
+/-- A map `f` on `ℂ` whose composite with some `g` recovers every point of a set `s` up to an
+integer multiple of `i` is injective on `s` if the imaginary parts of any two points of `s` differ
+by less than one: two points with the same image differ by an integer multiple of `i`. This is the
+injectivity of the exponential end lifts of cylindrical ends on horizontal strips of height one,
+with `g` a logarithmic end coordinate. -/
+theorem injOn_of_exists_eq_add_intCast_mul_I {α : Type*} {f : ℂ → α} {g : α → ℂ} {s : Set ℂ}
+    (h : ∀ z ∈ s, ∃ k : ℤ, g (f z) = z + k * Complex.I)
+    (hs : ∀ a ∈ s, ∀ b ∈ s, a.im - b.im ∈ Ioo (-1) 1) :
+    InjOn f s := by
+  intro a ha b hb hab
+  obtain ⟨hlo, hhi⟩ := hs a ha b hb
+  obtain ⟨k, hk⟩ := h a ha
+  obtain ⟨l, hl⟩ := h b hb
+  rw [hab, hl] at hk
+  -- The real parts agree, and the imaginary parts differ by the integer `l - k`.
+  have hre := congrArg Complex.re hk
+  have him := congrArg Complex.im hk
+  simp only [Complex.add_re, Complex.add_im, Complex.mul_re, Complex.mul_im,
+    Complex.intCast_re, Complex.intCast_im, Complex.I_re, Complex.I_im] at hre him
+  have hlt : |((l - k : ℤ) : ℝ)| < 1 := by
+    rw [abs_lt]
+    push_cast
+    constructor <;> linarith
+  rw [← Int.cast_abs, ← Int.cast_one, Int.cast_lt, Int.abs_lt_one_iff, sub_eq_zero] at hlt
+  subst hlt
+  exact Complex.ext (by linarith) (by linarith)
+
+end TauCeti.Complex
 
 namespace IsPreconnected
 

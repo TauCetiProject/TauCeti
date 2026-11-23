@@ -135,7 +135,7 @@ theorem cartanSubalgebra_normalizer_eq_self (h2 : IsRegular (2 : A)) :
     ((1 : A) ⊗ₜ[ℤ] cartan B (a : I → ℤ))
     (tmul_cartan_mem_cartanSubalgebra B A 1 a)
   have hz := (mem_cartanSubalgebra_iff B A _).mp hmem a
-  rw [basis_baseChange_repr_one_tmul_cartan_lie_inr, mem_normTwoShell.mp a.2] at hz
+  rw [basis_baseChange_repr_one_tmul_cartan_lie_inr, mem_normTwoShell.mp a.property] at hz
   simp only [zsmul_eq_mul, Int.cast_ofNat] at hz
   exact h2.left (by simpa only [mul_zero] using hz)
 

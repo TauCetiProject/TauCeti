@@ -46,8 +46,8 @@ private lemma chord_mem_slitPlane {z : Circle} (hz : z ≠ -1) (t : I) :
     sub_zero, Complex.add_im, Complex.mul_im, add_zero] at hre him
   have hn : (z : ℂ).re ^ 2 + (z : ℂ).im ^ 2 = 1 := by
     simpa [Complex.normSq_apply, sq] using Circle.normSq_coe z
-  have ht0 := t.2.1
-  have ht1 := t.2.2
+  have ht0 := t.property.1
+  have ht1 := t.property.2
   rcases mul_eq_zero.1 him with h1 | h1
   · rw [h1, zero_mul, zero_add] at hre
     linarith
@@ -56,14 +56,14 @@ private lemma chord_mem_slitPlane {z : Circle} (hz : z ≠ -1) (t : I) :
 
 /-- The radial projection of the chord from `z ≠ -1` to `1`, at time `t`. -/
 private def chord (p : I × {z : Circle | z ≠ -1}) : Circle :=
-  ⟨NormedSpace.normalize (((1 - p.1 : ℝ) : ℂ) * p.2.1 + (p.1 : ℝ)),
+  ⟨NormedSpace.normalize (((1 - p.1 : ℝ) : ℂ) * p.2.val + (p.1 : ℝ)),
     mem_sphere_zero_iff_norm.2 (NormedSpace.norm_normalize
-      (Complex.slitPlane_ne_zero (chord_mem_slitPlane p.2.2 p.1)))⟩
+      (Complex.slitPlane_ne_zero (chord_mem_slitPlane p.2.property p.1)))⟩
 
 private lemma chord_ne_neg_one (p : I × {z : Circle | z ≠ -1}) : chord p ≠ -1 := by
   intro h
-  have hmem := chord_mem_slitPlane p.2.2 p.1
-  set w := ((1 - p.1 : ℝ) : ℂ) * p.2.1 + (p.1 : ℝ)
+  have hmem := chord_mem_slitPlane p.2.property p.1
+  set w := ((1 - p.1 : ℝ) : ℂ) * p.2.val + (p.1 : ℝ)
   have hw : w = -(‖w‖ : ℂ) := by
     rw [← NormedSpace.norm_smul_normalize w]
     have h' := congrArg Subtype.val h
@@ -83,14 +83,14 @@ def circleChordHomotopy :
   continuous_toFun := by
     refine Continuous.subtype_mk (Continuous.subtype_mk ?_ _) _
     have hc : Continuous fun p : I × {z : Circle | z ≠ -1} =>
-        ((1 - p.1 : ℝ) : ℂ) * p.2.1 + (p.1 : ℝ) := by fun_prop
-    have h0 (p : I × {z : Circle | z ≠ -1}) : ((1 - p.1 : ℝ) : ℂ) * p.2.1 + (p.1 : ℝ) ≠ 0 :=
-      Complex.slitPlane_ne_zero (chord_mem_slitPlane p.2.2 p.1)
-    exact (continuous_subtype_val.comp (normalizeToSphere _ hc h0).continuous).congr fun p =>
+        ((1 - p.1 : ℝ) : ℂ) * p.2.val + (p.1 : ℝ) := by fun_prop
+    have h0 (p : I × {z : Circle | z ≠ -1}) : ((1 - p.1 : ℝ) : ℂ) * p.2.val + (p.1 : ℝ) ≠ 0 :=
+      Complex.slitPlane_ne_zero (chord_mem_slitPlane p.2.property p.1)
+    exact (continuous_subtypeVal.comp (normalizeToSphere _ hc h0).continuous).congr fun p =>
       coe_normalizeToSphere_apply _ hc h0 p
   map_zero_left z := by
     refine Subtype.ext (Circle.ext ?_)
-    simp [chord, NormedSpace.normalize_eq_self_of_norm_eq_one (Circle.norm_coe z.1)]
+    simp [chord, NormedSpace.normalize_eq_self_of_norm_eq_one (Circle.norm_coe z.val)]
   map_one_left z := by
     refine Subtype.ext (Circle.ext ?_)
     simp [chord, NormedSpace.normalize_eq_self_of_norm_eq_one (norm_one (α := ℂ))]
@@ -103,7 +103,7 @@ def circleChordHomotopy :
 @[simp]
 lemma coe_circleChordHomotopy_apply (t : I) (z : {z : Circle | z ≠ -1}) :
     ((circleChordHomotopy (t, z) : Circle) : ℂ) =
-      NormedSpace.normalize (((1 - t : ℝ) : ℂ) * z.1 + (t : ℝ)) :=
+      NormedSpace.normalize (((1 - t : ℝ) : ℂ) * z.val + (t : ℝ)) :=
   (rfl)
 
 end TauCeti
