@@ -29,8 +29,6 @@ The bounded transform `dist x y / (1 + dist x y)` satisfies the triangle inequal
 
 On the real line, the extended distance from `b` to `a ≤ b` is `b - a`
 (`Real.edist_eq_ofReal_sub_of_le`).
-
-Two points at unequal distances from a third point are distinct (`TauCeti.ne_of_dist_lt_dist`).
 -/
 
 public section
@@ -97,8 +95,3 @@ theorem Metric.dist_div_one_add_dist_le {X : Type*} [PseudoMetricSpace X] (a b c
   exact add_le_add
     (div_le_div_of_nonneg_left hab (by positivity) (by linarith))
     (div_le_div_of_nonneg_left hbc (by positivity) (by linarith))
-
-/-- If `a` is strictly closer to `c` than `b` is, then `b ≠ a`. -/
-theorem TauCeti.ne_of_dist_lt_dist {X : Type*} [Dist X] {a b c : X} (h : dist a c < dist b c) :
-    b ≠ a :=
-  fun hba ↦ h.not_ge (hba ▸ le_rfl)

@@ -551,9 +551,10 @@ hypergeometric series converges to `regularizedGaussHGFun (-n) b c z` at every c
 theorem hasSum_regularizedGaussHGFun_neg_natCast (b c z : ℂ) (n : ℕ) :
     HasSum (fun k : ℕ => (regularizedGaussHGFunSeries (-n) b c).coeff k * z ^ k)
       (regularizedGaussHGFun (-n) b c z) := by
-  simpa [regularizedGaussHGFun, regularizedGaussHGFunSeries,
-    FormalMultilinearSeries.ofScalars_apply_eq, mul_comm] using
-    (regularizedGaussHGFunSeries (-n) b c).hasSum (by simp)
+  rw [regularizedGaussHGFun_eq_regularizedHGFun]
+  simpa only [← regularizedHGFunCoeff_pair_singleton] using
+    hasSum_regularizedHGFun_of_neg_natCast_mem (a := {-(n : ℂ), b}) (b := {c}) (n := n)
+      (by simp) z
 
 /-- The zeroth coefficient of `regularizedGaussHGFunSeries a b c` is `(Gamma c)⁻¹`. -/
 @[simp]

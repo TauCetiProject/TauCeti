@@ -36,6 +36,8 @@ of `1 / 2` is a square root of `1 + y` for `‖y‖ < 1`, in any Banach algebra 
   `∑ n, multichoose r n * q ^ n` for `0 < r`.
 * `TauCeti.norm_multichoose_le_of_norm_le` — norm bound
   `‖Ring.multichoose w n‖ ≤ Ring.multichoose r n` for `‖w‖ ≤ r`.
+* `TauCeti.norm_eval_ascPochhammer_div_factorial_le` — norm bound
+  `‖(ascPochhammer 𝕂 n).eval w / n !‖ ≤ Ring.multichoose r n` for `‖w‖ ≤ r`.
 * `TauCeti.exists_abs_one_add_rpow_sub_sum_le` — the remainder of the real binomial series of
   `(1 + u) ^ r` after `K` terms is `O(|u| ^ K)` as `u → 0`.
 * `TauCeti.binomialSeries_radius_ge_one_of_normedRing` — the binomial series has radius at least
@@ -74,6 +76,14 @@ theorem norm_multichoose_le_of_norm_le {𝕂 : Type*} [RCLike 𝕂]
     TauCeti.Ring.multichoose_eq_inv_factorial_mul_eval_ascPochhammer, norm_mul, norm_inv,
     RCLike.norm_natCast]
   exact mul_le_mul_of_nonneg_left hp (by positivity)
+
+/-- Bound `‖(ascPochhammer 𝕂 n).eval w / n.factorial‖` by `Ring.multichoose r n` whenever
+`‖w‖ ≤ r`. -/
+theorem norm_eval_ascPochhammer_div_factorial_le {𝕂 : Type*} [RCLike 𝕂]
+    {w : 𝕂} {r : ℝ} (hr : ‖w‖ ≤ r) (n : ℕ) :
+    ‖(ascPochhammer 𝕂 n).eval w / (n.factorial : 𝕂)‖ ≤ Ring.multichoose r n := by
+  rw [div_eq_inv_mul, ← TauCeti.Ring.multichoose_eq_inv_factorial_mul_eval_ascPochhammer]
+  exact norm_multichoose_le_of_norm_le hr n
 
 /-- The generalized multichoose power series sums to `(1 - x)⁻ʳ` when `|x| < 1`. -/
 theorem hasSum_multichoose_mul_geometric_of_abs_lt_one {r x : ℝ} (hx : |x| < 1) :

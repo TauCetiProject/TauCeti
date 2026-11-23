@@ -10,6 +10,7 @@ import Mathlib.Analysis.Normed.Module.Convex
 import Mathlib.Analysis.Convex.PathConnected
 import Mathlib.Analysis.LocallyConvex.Separation
 import Mathlib.LinearAlgebra.Dimension.Constructions
+import TauCeti.Analysis.LocallyConvex.Separation
 
 /-!
 # Path-connected exteriors of closed balls and of unions of bounded closed convex sets
@@ -69,17 +70,38 @@ theorem isPathConnected_compl_closedBall (h : 1 < Module.rank ℝ E) (x : E) (r 
   · rintro ⟨u, t, ⟨hu, ht⟩, rfl⟩
     simpa [norm_smul, hu, abs_of_nonneg (hr.trans ht.le)] using ht
 
-/-- A ray along which a separating continuous linear functional is nonincreasing avoids the
-separated set. -/
-private theorem add_smul_notMem_of_continuousLinearMap_lt {s : Set E} {z : E}
-    {f : E →L[ℝ] ℝ} {c : ℝ} (hfz : f z < c) (hfs : ∀ y ∈ s, c < f y) {v : E}
-    (hfv : f v ≤ 0) {t : ℝ} (ht : 0 ≤ t) : z + t • v ∉ s := by
-  intro hmem
-  have hf_ray : f (z + t • v) < c :=
-    calc f (z + t • v) = f z + t * f v := by simp [smul_eq_mul]
-      _ ≤ f z := add_le_of_nonpos_right (mul_nonpos_of_nonneg_of_nonpos ht hfv)
-      _ < c := hfz
-  exact not_lt_of_ge hf_ray.le (hfs _ hmem)
+/-- In a real normed space of dimension at least two, any two continuous linear functionals admit a
+nonzero vector on which both are nonpositive. -/
+private theorem exists_ne_zero_continuousLinearMap_nonpos
+    (h : 1 < Module.rank ℝ E) (f₁ f₂ : E →L[ℝ] ℝ) :
+    ∃ v : E, v ≠ 0 ∧ f₁ v ≤ 0 ∧ f₂ v ≤ 0 := by
+  have hnot_inj : ¬Function.Injective f₁.toLinearMap := fun hinj => by
+    have hrank := f₁.toLinearMap.lift_rank_le_of_injective hinj
+    rw [Module.rank_self, Cardinal.lift_one, Cardinal.lift_le_one_iff] at hrank
+    exact h.not_ge hrank
+  obtain ⟨v₀, hv₀_mem, hv₀_ne⟩ := (Submodule.ne_bot_iff _).mp
+    (mt LinearMap.ker_eq_bot.mp hnot_inj)
+  have hv₀_f₁ : f₁ v₀ = 0 := LinearMap.mem_ker.mp hv₀_mem
+  rcases le_total (f₂ v₀) 0 with h2 | h2
+  · exact ⟨v₀, hv₀_ne, hv₀_f₁.le, h2⟩
+  · exact ⟨-v₀, neg_ne_zero.mpr hv₀_ne, by simp [hv₀_f₁], by simpa using h2⟩
+
+/-- Along any nonzero direction `v`, a sufficiently large positive ray parameter pushes `z` outside
+the closed ball `closedBall 0 R`. -/
+private theorem exists_pos_add_smul_notMem_closedBall
+    (z : E) {v : E} (hv : v ≠ 0) {R : ℝ} (hR : 0 ≤ R) :
+    ∃ T : ℝ, 0 < T ∧ z + T • v ∈ (closedBall (0 : E) R)ᶜ := by
+  let T : ℝ := (R + ‖z‖ + 1) / ‖v‖
+  have hT_pos : 0 < T := div_pos (by linarith [hR, norm_nonneg z]) (norm_pos_iff.mpr hv)
+  refine ⟨T, hT_pos, ?_⟩
+  rw [mem_compl_iff, mem_closedBall_zero_iff, not_le]
+  have hnorm : T * ‖v‖ = R + ‖z‖ + 1 := by
+    dsimp only [T]
+    exact div_mul_cancel₀ _ (norm_ne_zero_iff.mpr hv)
+  have htri := norm_le_norm_add_norm_sub' (T • v) (-z)
+  rw [sub_neg_eq_add, add_comm (T • v) z, norm_smul, Real.norm_of_nonneg hT_pos.le,
+    norm_neg, hnorm] at htri
+  linarith
 
 /-- **The exterior of a union of two bounded closed convex sets is path-connected** in a real
 normed space of dimension at least two. -/
@@ -108,29 +130,8 @@ theorem isPathConnected_compl_union_of_convex_of_isClosed_of_isBounded
   rw [mem_compl_iff, mem_union, not_or] at hz
   obtain ⟨f₁, c₁, hfz₁, hfc₁⟩ := geometric_hahn_banach_point_closed hs hs_closed hz.1
   obtain ⟨f₂, c₂, hfz₂, hfc₂⟩ := geometric_hahn_banach_point_closed ht ht_closed hz.2
-  -- Find a nonzero vector `v₀` in `ker f₁`, then orient `v = ±v₀` so `f₂ v ≤ 0`.
-  have hnot_inj : ¬Function.Injective f₁.toLinearMap := fun hinj => by
-    have hrank := f₁.toLinearMap.lift_rank_le_of_injective hinj
-    rw [Module.rank_self, Cardinal.lift_one, Cardinal.lift_le_one_iff] at hrank
-    exact h.not_ge hrank
-  obtain ⟨v₀, hv₀_mem, hv₀_ne⟩ := (Submodule.ne_bot_iff _).mp
-    (mt LinearMap.ker_eq_bot.mp hnot_inj)
-  have hv₀_f₁ : f₁ v₀ = 0 := LinearMap.mem_ker.mp hv₀_mem
-  obtain ⟨v, hv_ne, hv_f₁, hv_f₂⟩ : ∃ v : E, v ≠ 0 ∧ f₁ v ≤ 0 ∧ f₂ v ≤ 0 := by
-    rcases le_total (f₂ v₀) 0 with h2 | h2
-    · exact ⟨v₀, hv₀_ne, hv₀_f₁.le, h2⟩
-    · exact ⟨-v₀, neg_ne_zero.mpr hv₀_ne, by simp [hv₀_f₁], by simpa using h2⟩
-  let T : ℝ := (R + ‖z‖ + 1) / ‖v‖
-  have hT_pos : 0 < T := div_pos (by linarith [hR_nonneg, norm_nonneg z]) (norm_pos_iff.mpr hv_ne)
-  have hzT_R : z + T • v ∈ (closedBall (0 : E) R)ᶜ := by
-    rw [mem_compl_iff, mem_closedBall_zero_iff, not_le]
-    have hnorm : T * ‖v‖ = R + ‖z‖ + 1 := by
-      dsimp only [T]
-      exact div_mul_cancel₀ _ (norm_ne_zero_iff.mpr hv_ne)
-    have htri := norm_le_norm_add_norm_sub' (T • v) (-z)
-    rw [sub_neg_eq_add, add_comm (T • v) z, norm_smul, Real.norm_of_nonneg hT_pos.le,
-      norm_neg, hnorm] at htri
-    linarith
+  obtain ⟨v, hv_ne, hv_f₁, hv_f₂⟩ := exists_ne_zero_continuousLinearMap_nonpos h f₁ f₂
+  obtain ⟨T, hT_pos, hzT_R⟩ := exists_pos_add_smul_notMem_closedBall z hv_ne hR_nonneg
   have hjoin_ray : JoinedIn U z (z + T • v) := by
     refine JoinedIn.of_segment_subset ?_
     rw [segment_eq_image_lineMap]
