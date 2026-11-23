@@ -63,6 +63,36 @@ attribute [local instance] Abelian.hasFiniteBiproducts
 
 section Helpers
 
+section HomEquiv
+
+variable {C : Type u} [Category.{v} C] [MonoidalCategory C]
+
+private theorem tensorLeftHomEquiv_apply {X Y Y' Z : C} [ExactPairing Y Y']
+    (f : Y' ⊗ X ⟶ Z) :
+    tensorLeftHomEquiv X Y Y' Z f =
+      (λ_ X).inv ≫ η_ Y Y' ▷ X ≫ (α_ Y Y' X).hom ≫ Y ◁ f :=
+  rfl
+
+private theorem tensorLeftHomEquiv_symm_apply {X Y Y' Z : C} [ExactPairing Y Y']
+    (f : X ⟶ Y ⊗ Z) :
+    (tensorLeftHomEquiv X Y Y' Z).symm f =
+      Y' ◁ f ≫ (α_ Y' Y Z).inv ≫ ε_ Y Y' ▷ Z ≫ (λ_ Z).hom :=
+  rfl
+
+private theorem tensorRightHomEquiv_symm_apply {X Y Y' Z : C} [ExactPairing Y Y']
+    (f : X ⟶ Z ⊗ Y') :
+    (tensorRightHomEquiv X Y Y' Z).symm f =
+      f ▷ Y ≫ (α_ Z Y' Y).hom ≫ Z ◁ ε_ Y Y' ≫ (ρ_ Z).hom :=
+  rfl
+
+private theorem tensorLeftHomEquiv_whiskerLeft_comp {X X' Y Y' Z : C} [ExactPairing Y Y']
+    (f : X ⟶ X') (g : Y' ⊗ X' ⟶ Z) :
+    tensorLeftHomEquiv X Y Y' Z (Y' ◁ f ≫ g) = f ≫ tensorLeftHomEquiv X' Y Y' Z g := by
+  apply (tensorLeftHomEquiv X Y Y' Z).symm.injective
+  rw [Equiv.symm_apply_apply, tensorLeftHomEquiv_symm_naturality, Equiv.symm_apply_apply]
+
+end HomEquiv
+
 variable {C : Type u} [Category.{v} C] [Abelian C] [MonoidalCategory C] [RightRigidCategory C]
   [Fintype (SimpleClasses C)]
 
@@ -139,8 +169,7 @@ private theorem oppositeMateEquiv_apply (U : C) (S T : SimpleClasses C)
   let _ := simpleOppositeExactPairing S.repr
   let _ := simpleOppositeExactPairing T.repr
   rw [oppositeMateEquiv, LinearEquiv.trans_apply, tensorLeftHomLinearEquiv_apply,
-    tensorRightHomLinearEquiv_symm_apply]
-  dsimp only [tensorRightHomEquiv, tensorLeftHomEquiv, Equiv.coe_fn_mk, Equiv.coe_fn_symm_mk]
+    tensorRightHomLinearEquiv_symm_apply, tensorLeftHomEquiv_apply, tensorRightHomEquiv_symm_apply]
   monoidal
 
 private theorem tensorLeftHomEquiv_kernel (U : C) (S T : SimpleClasses C)
@@ -149,16 +178,19 @@ private theorem tensorLeftHomEquiv_kernel (U : C) (S T : SimpleClasses C)
         (𝟙 (S.repr ⊗ S.reprᘁ ⊗ U) ⊗≫ f ▷ (S.reprᘁ ⊗ U) ⊗≫
           U ◁ T.repr ◁ inductionMate k U g ⊗≫ U ◁ oppEval T ⊗≫ 𝟙 U) =
       inductionMate k U g ≫ oppositeMateEquiv k U S T f := by
-  rw [oppositeMateEquiv_apply]
-  dsimp only [tensorLeftHomEquiv, Equiv.coe_fn_mk]
-  calc _ = 𝟙 _ ⊗≫ oppCoev S ▷ ((S.reprᘁ : C) ⊗ U) ⊗≫
-            S.reprᘁ ◁ (f ▷ ((S.reprᘁ : C) ⊗ U) ≫ (U ⊗ T.repr) ◁ inductionMate k U g) ⊗≫
-            S.reprᘁ ◁ U ◁ oppEval T ⊗≫ 𝟙 _ := by monoidal
-    _ = 𝟙 _ ⊗≫ (oppCoev S ▷ ((S.reprᘁ : C) ⊗ U) ≫
-          ((S.reprᘁ : C) ⊗ S.repr) ◁ inductionMate k U g) ⊗≫
-          ((S.reprᘁ : C) ◁ f) ▷ T.reprᘁ ⊗≫ S.reprᘁ ◁ U ◁ oppEval T ⊗≫ 𝟙 _ := by
-          rw [← whisker_exchange, whiskerLeft_comp]; monoidal
-    _ = _ := by rw [← whisker_exchange]; monoidal
+  let _ := simpleOppositeExactPairing S.repr
+  let _ := simpleOppositeExactPairing T.repr
+  have harg :
+      (𝟙 (S.repr ⊗ S.reprᘁ ⊗ U) ⊗≫ f ▷ (S.reprᘁ ⊗ U) ⊗≫
+        U ◁ T.repr ◁ inductionMate k U g ⊗≫ U ◁ oppEval T ⊗≫ 𝟙 U) =
+        S.repr ◁ inductionMate k U g ≫
+          (tensorRightHomEquiv S.repr T.reprᘁ T.repr U).symm f := by
+    rw [tensorRightHomEquiv_symm_apply]
+    calc _ = 𝟙 _ ⊗≫ (f ▷ ((S.reprᘁ : C) ⊗ U) ≫ (U ⊗ T.repr) ◁ inductionMate k U g) ⊗≫
+              U ◁ oppEval T ⊗≫ 𝟙 _ := by monoidal
+      _ = _ := by rw [← whisker_exchange]; monoidal
+  rw [harg, tensorLeftHomEquiv_whiskerLeft_comp, oppositeMateEquiv, LinearEquiv.trans_apply,
+    tensorLeftHomLinearEquiv_apply, tensorRightHomLinearEquiv_symm_apply]
 
 private theorem coevaluation_comp_oppositeMateEquiv_comp_inductionMate (U : C)
     (S T : SimpleClasses C) (f : S.repr ⟶ U ⊗ T.repr) (g : U ⊗ T.repr ⟶ S.repr) :
@@ -360,7 +392,10 @@ private theorem sum_kernel_eq_evaluation (U : C) (S : SimpleClasses C) :
   apply (tensorLeftHomLinearEquiv k (S.reprᘁ ⊗ U) S.reprᘁ S.repr U).injective
   have hrhs : tensorLeftHomLinearEquiv k (S.reprᘁ ⊗ U) S.reprᘁ S.repr U
       ((α_ S.repr S.reprᘁ U).inv ≫ oppEval S ▷ U ≫ (λ_ U).hom) = 𝟙 (S.reprᘁ ⊗ U) := by
-    rw [tensorLeftHomLinearEquiv_apply, ← Equiv.eq_symm_apply]; simp [tensorLeftHomEquiv]
+    have hsymm : (α_ S.repr S.reprᘁ U).inv ≫ oppEval S ▷ U ≫ (λ_ U).hom =
+        (tensorLeftHomEquiv (S.reprᘁ ⊗ U) S.reprᘁ S.repr U).symm (𝟙 (S.reprᘁ ⊗ U)) := by
+      rw [tensorLeftHomEquiv_symm_apply, whiskerLeft_id, Category.id_comp]
+    rw [tensorLeftHomLinearEquiv_apply, hsymm, Equiv.apply_symm_apply]
   rw [hrhs, map_sum]
   simp_rw [map_sum, tensorLeftHomLinearEquiv_apply, tensorLeftHomEquiv_kernel,
     inductionMate_homDual_eq, ← Basis.map_apply]
