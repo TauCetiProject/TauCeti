@@ -101,12 +101,6 @@ variable [Group G] {V W : Type*} [AddCommGroup V] [Module ℂ V]
   [FiniteDimensional ℂ V] [AddCommGroup W] [Module ℂ W] [FiniteDimensional ℂ W]
   (ρ : Representation ℂ G V) (σ : Representation ℂ G W) [ρ.IsIrreducible] [σ.IsIrreducible]
 
-/-- The degree of an irreducible complex representation is nonzero. -/
-private theorem character_one_ne_zero : ρ.character 1 ≠ 0 := by
-  have : Nontrivial V := Representation.IsIrreducible.nontrivial ‹ρ.IsIrreducible›
-  rw [ρ.char_one]
-  exact_mod_cast Module.finrank_pos.ne'
-
 /-- **The block congruence of irreducible characters is the congruence of central characters.**
 Two irreducible complex characters are in the block congruence modulo `M` exactly when, on every
 class sum `K_C`, the difference `ω_χ(K_C) − ω_ψ(K_C)` of their central characters is (the image of)
@@ -119,8 +113,10 @@ theorem sameBlock_character_iff [Fintype G] [DecidableEq G] :
       (ρ.character g / ρ.character 1 - σ.character g / σ.character 1) =
       Representation.centralCharacter ρ (classSumCenter (ConjClasses.mk g)) -
         Representation.centralCharacter σ (classSumCenter (ConjClasses.mk g)) := by
-    rw [Representation.centralCharacter_classSumCenter ρ rfl (character_one_ne_zero ρ),
-      Representation.centralCharacter_classSumCenter σ rfl (character_one_ne_zero σ)]
+    rw [Representation.centralCharacter_classSumCenter ρ rfl
+        (by rw [ρ.char_one]; exact Representation.IsIrreducible.natCast_finrank_ne_zero ‹_›),
+      Representation.centralCharacter_classSumCenter σ rfl
+        (by rw [σ.char_one]; exact Representation.IsIrreducible.natCast_finrank_ne_zero ‹_›)]
     ring
   refine ⟨fun h C => ?_, fun h g => ?_⟩
   · obtain ⟨g, rfl⟩ := ConjClasses.mk_surjective C
