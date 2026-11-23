@@ -8,7 +8,7 @@ module
 public import TauCeti.Analysis.PDE.Schrodinger.Duhamel
 public import TauCeti.Analysis.PDE.Schrodinger.Strichartz
 import TauCeti.MeasureTheory.Function.Lp.Integral.Functional
-import TauCeti.MeasureTheory.Function.Lp.MixedNorm
+import TauCeti.MeasureTheory.Function.Lp.MixedNorm.Bounded
 
 /-!
 # Strichartz estimates for the Schrödinger equation in mixed norms
@@ -18,8 +18,7 @@ the Schrödinger propagator. A pair `(q, r)` is a non-endpoint admissible pair w
 `2 / q + n / r = n / 2`; then `2 ≤ r ≤ ∞`, and `r = ∞` occurs only on the line, at `(4, ∞)`. Write
 `p` for the Hölder conjugate of `q`. The `TT*` argument of
 `TauCeti.Analysis.PDE.Schrodinger.Strichartz` bounds the pairings of `S(t) f` and of the retarded
-Duhamel integral with `L²`-valued test functions. Testing against truncated extremal functions,
-normalized in `L¹` at `r = ∞`
+Duhamel integral with `L²`-valued test functions. Duality for mixed norms
 (`MeasureTheory.AEStronglyMeasurable.eLpNorm_eLpNorm_le_of_forall_enorm_integral_inner_le`) turns
 these weak estimates into bounds in the mixed norm
 `‖u‖_{L^q_t L^r_x} = ‖t ↦ ‖u(t)‖_{L^r}‖_{L^q}`, for every `r ≤ ∞`:
@@ -84,8 +83,8 @@ theorem exists_eLpNorm_eLpNorm_schrodingerPropagator_le (hq : 2 < q)
     exists_enorm_integral_inner_schrodingerPropagator_le (r' := (1 - r⁻¹)⁻¹) hq hpq hqr
   have := hpq.symm.coe_ennreal
   exact ⟨C, fun f ↦ (continuous_phasePropagator_apply laplacianSymbol f).aestronglyMeasurable
-    |>.eLpNorm_eLpNorm_le_of_forall_enorm_integral_inner_le (q' := p) (r' := (1 - r⁻¹)⁻¹)
-      ENNReal.coe_ne_top hr2 fun G hG _ ↦
+    |>.eLpNorm_eLpNorm_le_of_forall_enorm_integral_inner_le (p' := p) (q' := (1 - r⁻¹)⁻¹)
+      fun G hG _ ↦
         hC f G hG.aestronglyMeasurable
           (integrable_phasePropagator_apply _ continuous_neg.aestronglyMeasurable hG)⟩
 
@@ -130,8 +129,8 @@ theorem exists_eLpNorm_eLpNorm_setIntegral_Iio_schrodingerPropagator_sub_le (hq 
   have := hpq.symm.coe_ennreal
   refine ⟨C, fun F hF ↦ (aestronglyMeasurable_setIntegral_Iio_phasePropagator_sub laplacianSymbol
     hF.aestronglyMeasurable
-    |>.eLpNorm_eLpNorm_le_of_forall_enorm_integral_inner_le (𝕜 := ℂ) (q' := p)
-      (r' := (1 - r⁻¹)⁻¹) ENNReal.coe_ne_top hr2 fun G hG _ ↦ ?_)⟩
+    |>.eLpNorm_eLpNorm_le_of_forall_enorm_integral_inner_le (𝕜 := ℂ) (p' := p)
+      (q' := (1 - r⁻¹)⁻¹) fun G hG _ ↦ ?_)⟩
   -- Move the pairing with `G t` inside the integral over `s < t`.
   simp_rw [inner_setIntegral_Iio_phasePropagator_sub _ hF]
   exact hC F G hF.aestronglyMeasurable hG.aestronglyMeasurable

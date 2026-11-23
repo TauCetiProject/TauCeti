@@ -12,7 +12,7 @@ public import Mathlib.Topology.Algebra.Group.Basic
 public import Mathlib.Topology.Maps.Proper.Basic
 public import Mathlib.Topology.Metrizable.Basic
 
-import TauCeti.Topology.IsLocalHomeomorph
+import TauCeti.Topology.IsLocalHomeomorph.Basic
 
 /-!
 # Unit, pair and one-object topological groupoids
