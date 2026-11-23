@@ -432,10 +432,10 @@ private theorem diffContOnCl_holderOnWith_sub_sum_range_toNat {G : ℂ → ℂ} 
 for `0 < α < 1`, with `φ w = -(w ^ k * conj (φ w))` there, and let the Fourier coefficients `c n` of
 `θ ↦ φ(e^{iθ})` on `[0, 2π]` vanish for `k < n < 0`. Then there is `h`, holomorphic on the open
 disc and `α`-Hölder on the closed disc, with `h w - w ^ k * conj (h w) = φ w` on the unit circle.
-On the open disc, `h` is the Cauchy integral of `φ` minus the polynomial
-`∑_{0 ≤ n ≤ k} (c n / 2) zⁿ`; on the circle its Fourier coefficients are those of the explicit
-solution `TauCeti.unitDiscRiemannHilbertSolution`, whose series need not converge for Hölder
-data. -/
+The solution can be taken to be the Cauchy integral of `φ` minus the polynomial
+`∑_{0 ≤ n ≤ k} (c n / 2) zⁿ` on the open disc; its Fourier coefficients on the circle are then those
+of the explicit solution `TauCeti.unitDiscRiemannHilbertSolution`, whose series need not converge
+for Hölder data. -/
 theorem exists_holderOnWith_closedBall_sub_zpow_mul_conj_eq_of_fourierCoeffOn_eq_zero
     {K α : ℝ≥0} (hα0 : 0 < α) (hα1 : α < 1) (hφ : HolderOnWith K α φ (sphere 0 1))
     (hb : ∀ w ∈ sphere (0 : ℂ) 1, φ w = -(w ^ k * conj (φ w)))
@@ -470,7 +470,7 @@ theorem exists_holderOnWith_closedBall_deriv_sub_zpow_mul_conj_eq_of_fourierCoef
   -- `φ` is Lipschitz, hence `α`-Hölder, on the circle.
   obtain ⟨Mv, hMv⟩ :=
     (isCompact_sphere (0 : ℂ) 1).exists_bound_of_continuousOn (hvH.continuousOn hα0)
-  have hlip := lipschitzOnWith_sphere_of_hasDerivAt_exp_mul (M := Mv.toNNReal) hv fun w hw ↦
+  have hlip := lipschitzOnWith_sphere_of_hasDerivAt_exp_I_mul_mul (M := Mv.toNNReal) hv fun w hw ↦
     (hMv w hw).trans (Real.le_coe_toNNReal Mv)
   obtain ⟨Mφ, hMφ⟩ := (isCompact_sphere (0 : ℂ) 1).exists_bound_of_continuousOn hlip.continuousOn
   have hφ := hlip.holderOnWith_of_norm_le (M := Mφ.toNNReal)
@@ -500,7 +500,7 @@ theorem exists_holderOnWith_closedBall_deriv_sub_zpow_mul_conj_eq_of_fourierCoef
     have hpw : HasDerivAt (fun t : ℝ ↦ p (exp (I * t) * w)) ((I * w) • deriv p w) 0 := by
       convert hpd.scomp 0 hpath using 2
       simp
-    exact (hasDerivAt_comp_exp_mul_of_eqOn_two_pi_I_inv_smul_circleIntegral_sub_inv_smul hv
+    exact (hasDerivAt_comp_exp_I_mul_mul_of_eqOn_two_pi_I_inv_smul_circleIntegral_sub_inv_smul hv
       (hvH.continuousOn hα0) (hG.continuousOn hα0) hGF (hG'.continuousOn hα0) hG'F hw).sub
       (by simpa only [smul_eq_mul] using hpw)
   obtain ⟨h', K', hh', hh'd, -⟩ := hhd.exists_holderOnWith_closedBall_deriv hV hα0 hα1

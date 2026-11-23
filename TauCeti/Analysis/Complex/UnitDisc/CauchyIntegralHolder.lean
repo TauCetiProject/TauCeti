@@ -46,15 +46,15 @@ Taylor coefficients as nonnegative Fourier coefficients of its boundary values.
 
 **Derivatives.** Suppose that at every point `w` of the circle `t ↦ φ (e^{it} w)` has a derivative
 `v w` at `t = 0`, with `v` continuous on the circle. Then `φ` is Lipschitz on the circle
-(`TauCeti.lipschitzOnWith_sphere_of_hasDerivAt_exp_mul` in
+(`TauCeti.lipschitzOnWith_sphere_of_hasDerivAt_exp_I_mul_mul` in
 `TauCeti.Analysis.Complex.Circle.Rotation`), and integrating by parts along the circle shows that
 the tangential derivative `(i z) F'(z)` is the Cauchy integral of `v`
 (`TauCeti.I_mul_smul_deriv_two_pi_I_inv_smul_circleIntegral_sub_inv_smul`). Passing to the limit
 from the circles of radius `r < 1`, the boundary values of the extension `G` of `F` have the
 derivative along the rotations given by the extension of the Cauchy integral of `v`
-(`TauCeti.hasDerivAt_comp_exp_mul_of_eqOn_two_pi_I_inv_smul_circleIntegral_sub_inv_smul`). With
-`TauCeti.Analysis.Complex.BoundaryHolder`, `C^{1,α}` boundary data thus give a Cauchy integral of
-class `C^{1,α}` on the closed disc.
+(`TauCeti.hasDerivAt_comp_exp_I_mul_mul_of_eqOn_two_pi_I_inv_smul_circleIntegral_sub_inv_smul`).
+With `TauCeti.Analysis.Complex.BoundaryHolder`, `C^{1,α}` boundary data thus give a Cauchy integral
+of class `C^{1,α}` on the closed disc.
 
 This is the existence half of the Hölder theory of the Riemann–Hilbert problem on the disc: a
 holomorphic function with prescribed Hölder boundary data modulo the boundary condition is built
@@ -95,7 +95,7 @@ The proof estimates the derivative and then integrates it.
 * `TauCeti.I_mul_smul_deriv_two_pi_I_inv_smul_circleIntegral_sub_inv_smul`: the tangential
   derivative of the Cauchy integral of `φ` is the Cauchy integral of the derivative of `φ` along
   the rotations.
-* `TauCeti.hasDerivAt_comp_exp_mul_of_eqOn_two_pi_I_inv_smul_circleIntegral_sub_inv_smul`: the
+* `TauCeti.hasDerivAt_comp_exp_I_mul_mul_of_eqOn_two_pi_I_inv_smul_circleIntegral_sub_inv_smul`: the
   same holds for the boundary values of the extensions to the closed disc.
 
 ## References
@@ -518,7 +518,7 @@ every point `w` of the unit circle a derivative `v w` along the rotations, that 
 continuous on the closed unit disc and equal on the open disc to the Cauchy integrals of `φ` and of
 `v`. Then at every point `w` of the unit circle, `t ↦ G (e^{it} w)` has derivative `G' w` at
 `t = 0`: the boundary values of `G` have the derivative `G'` along the rotations. -/
-theorem hasDerivAt_comp_exp_mul_of_eqOn_two_pi_I_inv_smul_circleIntegral_sub_inv_smul
+theorem hasDerivAt_comp_exp_I_mul_mul_of_eqOn_two_pi_I_inv_smul_circleIntegral_sub_inv_smul
     [CompleteSpace E] {φ v G G' : ℂ → E}
     (hv : ∀ w ∈ sphere (0 : ℂ) 1, HasDerivAt (fun t : ℝ ↦ φ (exp (I * t) * w)) (v w) 0)
     (hvc : ContinuousOn v (sphere 0 1)) (hG : ContinuousOn G (closedBall 0 1))

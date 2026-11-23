@@ -38,8 +38,8 @@ the circle, since the arc between two points is at most `π / 2` times their dis
   circle gives the derivative of `t ↦ φ (e^{it} w)` at every `t`.
 * `TauCeti.hasDerivAt_comp_circleMap`, `TauCeti.continuous_comp_circleMap_of_hasDerivAt`: the same
   derivative read in the angle, `θ ↦ φ (e^{iθ})`, and the continuity it implies.
-* `TauCeti.lipschitzOnWith_sphere_of_hasDerivAt_exp_mul`: a derivative along the rotations bounded
-  by `M` makes a function `2 M`-Lipschitz on the circle.
+* `TauCeti.lipschitzOnWith_sphere_of_hasDerivAt_exp_I_mul_mul`: a derivative along the rotations
+  bounded by `M` makes a function `2 M`-Lipschitz on the circle.
 -/
 
 public section
@@ -112,7 +112,7 @@ theorem continuous_comp_circleMap_of_hasDerivAt {φ v : ℂ → E}
 `w` of the unit circle `t ↦ φ (e^{it} w)` has derivative `v w` at `t = 0`, and `‖v‖ ≤ M` on the
 circle, then `φ` is `2 M`-Lipschitz on the circle: the arc between two points is at most twice
 their distance. -/
-theorem lipschitzOnWith_sphere_of_hasDerivAt_exp_mul {φ v : ℂ → E} {M : ℝ≥0}
+theorem lipschitzOnWith_sphere_of_hasDerivAt_exp_I_mul_mul {φ v : ℂ → E} {M : ℝ≥0}
     (hv : ∀ w ∈ sphere (0 : ℂ) 1, HasDerivAt (fun t : ℝ ↦ φ (exp (I * t) * w)) (v w) 0)
     (hM : ∀ w ∈ sphere (0 : ℂ) 1, ‖v w‖ ≤ M) : LipschitzOnWith (2 * M) φ (sphere 0 1) := by
   refine LipschitzOnWith.of_dist_le_mul fun w hw w' hw' ↦ ?_
