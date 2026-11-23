@@ -401,10 +401,7 @@ noncomputable def spinPlusSubrepEquiv (hline : P.line = ⊥) :
       (spinPlusSubrep P hline).toRepresentation :=
   .mk (LinearEquiv.ofEq _ _ (toSubmodule_spinPlusSubrep P hline).symm) fun g ↦
     LinearMap.ext fun s ↦ Subtype.ext <| by
-      simp only [MonoidHom.coe_comp, AlgHom.coe_toMonoidHom, Function.comp_apply,
-        LinearMap.coe_comp, LinearEquiv.coe_coe, LinearEquiv.coe_ofEq_apply,
-        coe_spinPlusAction_apply, coe_spinGroupToEven_apply,
-        Subrepresentation.toRepresentation_apply, spinRep_apply, LinearMap.coe_restrict_apply]
+      simp [coe_spinPlusAction_apply, spinRep_apply]
 
 /-- **The odd half-spin action restricted to the Spin group is the odd half-spin
 subrepresentation**: the even-subalgebra action `TauCeti.spinMinusAction` composed with
@@ -417,10 +414,7 @@ noncomputable def spinMinusSubrepEquiv (hline : P.line = ⊥) :
       (spinMinusSubrep P hline).toRepresentation :=
   .mk (LinearEquiv.ofEq _ _ (toSubmodule_spinMinusSubrep P hline).symm) fun g ↦
     LinearMap.ext fun s ↦ Subtype.ext <| by
-      simp only [MonoidHom.coe_comp, AlgHom.coe_toMonoidHom, Function.comp_apply,
-        LinearMap.coe_comp, LinearEquiv.coe_coe, LinearEquiv.coe_ofEq_apply,
-        coe_spinMinusAction_apply, coe_spinGroupToEven_apply,
-        Subrepresentation.toRepresentation_apply, spinRep_apply, LinearMap.coe_restrict_apply]
+      simp [coe_spinMinusAction_apply, spinRep_apply]
 
 /-- `TauCeti.spinPlusSubrepEquiv` keeps the underlying exterior-algebra vector. -/
 @[simp]
