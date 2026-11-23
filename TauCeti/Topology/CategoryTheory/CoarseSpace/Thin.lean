@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Topology.CategoryTheory.CoarseSpace.Restrict
 public import TauCeti.Topology.CategoryTheory.ThinClassifyingSpace
+import TauCeti.Topology.Constructions.Basic
 
 /-!
 # Coarse projections and saturated restrictions of thin classifying spaces
@@ -30,7 +31,11 @@ yields the subspace homeomorphisms
 `CategoryTheory.ObjectProperty.thinClassifyingSpaceRestrictionHomeomorph`, and
 `CategoryTheory.ObjectProperty.thinClassifyingSpaceClosedRestrictionHomeomorph`, together with
 the comparison `TauCeti.thinClassifyingSpace.fatToThinClassifyingSpacePreimage` on coarse-map
-preimages and its compatibility with the fat and thin restriction homeomorphisms
+preimages (which is surjective for every subset `V` and a quotient map when `V` is open or closed:
+`fatToThinClassifyingSpacePreimage_surjective`,
+`isQuotientMap_fatToThinClassifyingSpacePreimage_of_isOpen`,
+`isQuotientMap_fatToThinClassifyingSpacePreimage_of_isClosed`) and its compatibility with the fat
+and thin restriction homeomorphisms
 (`thinClassifyingSpaceRestrictionHomeomorph_fatToThinClassifyingSpace`,
 `thinClassifyingSpaceClosedRestrictionHomeomorph_fatToThinClassifyingSpace`).
 
@@ -107,6 +112,49 @@ theorem fatToThinClassifyingSpacePreimage_apply_val
     (V : Set (Quotient (isIsomorphicSetoid C)))
     (z : fatClassifyingSpace.coarseMap hs ⁻¹' V) :
     (fatToThinClassifyingSpacePreimage hs V z).val = fatToThinClassifyingSpace C z.val := (rfl)
+
+/-- For every subset `V` of the coarse quotient, `fatToThinClassifyingSpacePreimage hs V` is
+surjective. -/
+theorem fatToThinClassifyingSpacePreimage_surjective
+    (V : Set (Quotient (isIsomorphicSetoid C))) :
+    Function.Surjective (fatToThinClassifyingSpacePreimage hs V) := by
+  rintro ⟨y, hy⟩
+  obtain ⟨x, rfl⟩ := fatToThinClassifyingSpace_surjective C y
+  refine ⟨⟨x, ?_⟩, Subtype.ext rfl⟩
+  change fatClassifyingSpace.coarseMap hs x ∈ V
+  rw [← fatToThinClassifyingSpace_comp_coarseMap hs, TopCat.comp_app]
+  exact hy
+
+/-- For an open subset `V` of the coarse quotient, `fatToThinClassifyingSpacePreimage hs V` is a
+topological quotient map. -/
+theorem isQuotientMap_fatToThinClassifyingSpacePreimage_of_isOpen
+    {V : Set (Quotient (isIsomorphicSetoid C))} (hV : IsOpen V) :
+    IsQuotientMap (fatToThinClassifyingSpacePreimage hs V) := by
+  have hpre : fatClassifyingSpace.coarseMap hs ⁻¹' V =
+      fatToThinClassifyingSpace C ⁻¹' (coarseMap hs ⁻¹' V) := by
+    rw [← Set.preimage_comp, ← TopCat.coe_comp, fatToThinClassifyingSpace_comp_coarseMap]
+  have hq :
+      IsQuotientMap ((coarseMap hs ⁻¹' V).restrictPreimage (fatToThinClassifyingSpace C)) :=
+    (isQuotientMap_fatToThinClassifyingSpace C).restrictPreimage_isOpen
+      (hV.preimage (coarseMap hs).hom.continuous)
+  exact hq.comp (Homeomorph.setCongr hpre).isQuotientMap
+
+/-- For a closed subset `V` of the coarse quotient, `fatToThinClassifyingSpacePreimage hs V` is a
+topological quotient map. -/
+theorem isQuotientMap_fatToThinClassifyingSpacePreimage_of_isClosed
+    {V : Set (Quotient (isIsomorphicSetoid C))} (hV : IsClosed V) :
+    IsQuotientMap (fatToThinClassifyingSpacePreimage hs V) := by
+  refine Topology.IsQuotientMap.of_comp_eq_comp (isQuotientMap_fatToThinClassifyingSpace C)
+    (fatToThinClassifyingSpacePreimage hs V).continuous
+    (fatToThinClassifyingSpacePreimage_surjective hs V)
+    ((hV.preimage (fatClassifyingSpace.coarseMap hs).hom.continuous)
+      |>.isClosedEmbedding_subtypeVal.isClosedMap)
+    continuous_subtypeVal Subtype.val_injective (funext fun _ ↦ rfl) fun z hz ↦ ?_
+  obtain ⟨⟨y, hy⟩, hyz⟩ := hz
+  refine ⟨⟨z, ?_⟩, rfl⟩
+  change fatClassifyingSpace.coarseMap hs z ∈ V
+  rw [← fatToThinClassifyingSpace_comp_coarseMap hs, TopCat.comp_app]
+  exact hyz ▸ hy
 
 end CoarseSpace
 

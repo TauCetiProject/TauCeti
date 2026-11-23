@@ -11,6 +11,8 @@ public import Mathlib.Topology.Compactness.CompactlyGeneratedSpace
 public import Mathlib.Topology.Homeomorph.Lemmas
 public import Mathlib.Topology.Homotopy.Basic
 
+import TauCeti.CategoryTheory.NatTrans
+
 /-!
 # Functor tensor products (coends) in `TopCat`
 
@@ -567,9 +569,10 @@ theorem preimage_augment_eq_range_map (hrange : ∀ d, range (φ.app d) = ε.app
 is saturated under morphisms of `Dᵒᵖ`. -/
 theorem mem_range_of_map_mem_range (hrange : ∀ d, range (φ.app d) = ε.app d ⁻¹' V)
     ⦃c d : Dᵒᵖ⦄ (f : c ⟶ d) (x : X.obj c) (hx : X.map f x ∈ range (φ.app d)) :
-    x ∈ range (φ.app c) := by
-  rw [hrange, mem_preimage, NatTrans.naturality_apply] at hx
-  rw [hrange]; simpa using hx
+    x ∈ range (φ.app c) :=
+  NatTrans.mem_range_of_map_mem_range (Functor.whiskerRight φ (forget TopCat))
+    (Functor.whiskerRight ε (forget TopCat) ≫ (Functor.constComp Dᵒᵖ Z (forget TopCat)).hom)
+    hrange f x hx
 
 /-- If `φ` is levelwise an open embedding with `range (φ.app d) = ε.app d ⁻¹' V`, then `map K φ`
 is an open embedding. -/

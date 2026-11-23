@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.AlgebraicTopology.SimplexCategory.SemiSimplexCategory
+public import TauCeti.AlgebraicTopology.SimplexCategory.Basic
 public import Mathlib.AlgebraicTopology.SimplicialSet.StdSimplexOne
 public import Mathlib.AlgebraicTopology.SimplicialSet.TopAdj
 public import Mathlib.AlgebraicTopology.SingularSet
@@ -376,10 +376,6 @@ instance (n : SemiSimplexCategory) : CompactSpace (toTop.{u}.obj n) :=
 instance (n : SemiSimplexCategory) : T2Space (toTop.{u}.obj n) :=
   inferInstanceAs (T2Space (SimplexCategory.toTop.obj _))
 
-/-- There are finitely many face inclusions between two objects of the semi-simplex category. -/
-instance : Finite (m ⟶ n) :=
-  Finite.of_injective (fun f ↦ ⇑(homEquiv f)) fun _ _ h ↦ hom_ext (DFunLike.coe_injective h)
-
 /-- A face inclusion of topological simplices pushes a point of the standard simplex forward
 along the order embedding. -/
 @[simp]
@@ -430,11 +426,11 @@ theorem eq_of_toTop_map_eq {a b : SemiSimplexCategory} {f : a ⟶ n} {g : b ⟶ 
     SimplexCategory.unique_mono_toTop_map_dim (μ₁ := μ₁) (μ₂ := μ₂)
       (not_not.1 hs) (not_not.1 hs') h
 
-/-- **Uniqueness of carrier faces.** If a point of `Δⁿ` is the image of points off the boundary of
-`Δᵐ` under two face inclusions, the face inclusions and the points coincide. -/
+/-- **Uniqueness of carrier faces.** If a point of `Δⁿ` is the image of a point `s` off the
+boundary of `Δᵐ` under a face inclusion `f`, and also the image of a point `s'` of `Δᵐ` under a
+face inclusion `g`, then the face inclusions and the points coincide. -/
 theorem eq_and_eq_of_toTop_map_eq {f g : m ⟶ n} {s s' : toTop.{u}.obj m}
     (hs : s ∉ SimplexCategory.toTopBoundary (toSimplexCategory.obj m))
-    (_hs' : s' ∉ SimplexCategory.toTopBoundary (toSimplexCategory.obj m))
     (h : toTop.map f s = toTop.map g s') :
     f = g ∧ s = s' := by
   let μ₁ : ⦋m.len⦌ ⟶ ⦋n.len⦌ := toSimplexCategory.map f

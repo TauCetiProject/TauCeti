@@ -349,8 +349,8 @@ theorem fatClassifyingSpaceMap_eq (Φ : C ⥤ D) (hΦ : Continuous Φ.toPrefunct
   (rfl)
 
 /-- The map of fat classifying spaces induced by a functor applies the functor to the string of
-composable arrows of each simplex. This is not a `simp` lemma: `simp` rewrites the dependent type
-of the string `F` on its left-hand side. -/
+composable arrows of each simplex. -/
+@[simp↓]
 theorem fatClassifyingSpaceMap_ι (Φ : C ⥤ D) (hΦ : Continuous Φ.toPrefunctor.mapTotal)
     (n : SemiSimplexCategory)
     (F : ComposableArrows C (SemiSimplexCategory.toSimplexCategory.obj n).len)
@@ -408,6 +408,9 @@ theorem fatClassifyingSpaceHomotopy_apply (Φ : unitInterval → C ⥤ D)
       fatClassifyingSpaceMap (Φ s) (hΦ.comp (.prodMk_right s)) p :=
   functorTensor.homotopy_apply SemiSimplexCategory.toTop _ _ s p
 
+/-- At time `s`, `fatClassifyingSpaceHomotopy Φ hΦ` acts on each simplex by applying `Φ s` to its
+string of composable arrows. -/
+@[simp↓]
 theorem fatClassifyingSpaceHomotopy_apply_ι (Φ : unitInterval → C ⥤ D)
     (hΦ : Continuous fun p : unitInterval × Quiver.Total C ↦ (Φ p.1).toPrefunctor.mapTotal p.2)
     (s : unitInterval) (n : SemiSimplexCategory)

@@ -146,7 +146,7 @@ private def reps (n : SemiSimplexCategory) :
       have hg' : toTop.map (e ≫ f) s = toTop.map g q.2 := by
         rw [Functor.map_comp, ConcreteCategory.comp_apply, hg]
       obtain rfl := eq_of_toTop_map_eq hs hv hg'
-      obtain ⟨rfl, rfl⟩ := eq_and_eq_of_toTop_map_eq hs hv hg'
+      obtain ⟨rfl, rfl⟩ := eq_and_eq_of_toTop_map_eq hs hg'
       refine ⟨e, rfl, ?_⟩
       rw [← hgx, op_comp, Functor.map_comp, ConcreteCategory.comp_apply]
 
@@ -156,7 +156,7 @@ private theorem reps_ι_of_notMem {n : SemiSimplexCategory} {x : X.obj (op n)}
   rw [reps, functorTensor.lift_ι]
   refine Set.ext fun ⟨y, v⟩ ↦ ⟨fun ⟨hv, g, hg, hgx⟩ ↦ ?_, ?_⟩
   · dsimp only at hv hg hgx ⊢
-    obtain ⟨rfl, rfl⟩ := eq_and_eq_of_toTop_map_eq (g := 𝟙 n) hv hu
+    obtain ⟨rfl, rfl⟩ := eq_and_eq_of_toTop_map_eq (g := 𝟙 n) hv
       (by rw [hg, CategoryTheory.Functor.map_id, TopCat.id_app])
     rw [← hgx, op_id, CategoryTheory.Functor.map_id, TopCat.id_app]
     rfl

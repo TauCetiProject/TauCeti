@@ -94,6 +94,7 @@ theorem fatClassifyingSpaceHomotopy_apply {f₀ f₁ : X →ₑ[MonoidHom.id G] 
 /-- The homotopy of fat classifying spaces induced by an equivariant homotopy `H` applies, at time
 `s`, the functor induced by the equivariant map `H (s, ·)` to the string of composable arrows of
 each simplex. -/
+@[simp↓]
 theorem fatClassifyingSpaceHomotopy_apply_ι {f₀ f₁ : X →ₑ[MonoidHom.id G] Y}
     {hf₀ : Continuous f₀} {hf₁ : Continuous f₁} (H : Homotopy ⟨f₀, hf₀⟩ ⟨f₁, hf₁⟩)
     (hH : ∀ (s : unitInterval) (g : G) (x : X), H (s, g • x) = g • H (s, x))
