@@ -37,9 +37,6 @@ is an isometry (`TauCeti.isometry_padicIntAlgebraMap`), the norm of a natural nu
 `p`-adic norm (`TauCeti.norm_natCast_eq_norm_padic`), and a nonzero integer `n` has norm at least
 `1 / |n|` in `K` (`TauCeti.inv_abs_le_norm_intCast`).
 
-It also records the discrete norm gaps on `ℚ_[p]`: consecutive integer powers of `p` enclose no
-norms (`Padic.norm_le_zpow_or_zpow_succ_le`, `Padic.norm_le_one_or_natCast_le_norm`).
-
 Two continuous ring homomorphisms from `ℚ_[p]` to a Hausdorff semiring are equal
 (`RingHom.ext_padic_of_continuous`), since they agree on the dense subfield `ℚ`; for instance a
 continuous Frobenius lift on a `p`-adic field fixes `ℚ_[p]`.
@@ -174,24 +171,6 @@ theorem inv_abs_le_norm_intCast (p : ℕ) [Fact (Nat.Prime p)] {K : Type*} [Semi
 end NormedAlgebra
 
 end TauCeti
-
-namespace Padic
-
-variable {p : ℕ} [Fact p.Prime]
-
-/-- **Discrete norm gap on `ℚ_[p]`.** No element of `ℚ_[p]` has norm strictly between `p ^ n` and
-`p ^ (n + 1)`. -/
-theorem norm_le_zpow_or_zpow_succ_le (x : ℚ_[p]) (n : ℤ) :
-    ‖x‖ ≤ (p : ℝ) ^ n ∨ (p : ℝ) ^ (n + 1) ≤ ‖x‖ := by
-  rw [norm_le_pow_iff_norm_lt_pow_add_one]
-  exact lt_or_ge _ _
-
-/-- No element of `ℚ_[p]` has norm strictly between `1` and `p`. -/
-theorem norm_le_one_or_natCast_le_norm (x : ℚ_[p]) :
-    ‖x‖ ≤ 1 ∨ (p : ℝ) ≤ ‖x‖ := by
-  simpa using norm_le_zpow_or_zpow_succ_le x 0
-
-end Padic
 
 namespace RingHom
 

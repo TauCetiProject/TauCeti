@@ -8,7 +8,6 @@ module
 public import TauCeti.NumberTheory.NewtonPolygon.Convergence
 public import TauCeti.NumberTheory.Padics.Complex.Valuation
 public import TauCeti.NumberTheory.Padics.LogGauge
-import TauCeti.NumberTheory.Padics.Basic
 import TauCeti.NumberTheory.Padics.Complex.Basic
 
 /-!
@@ -133,19 +132,19 @@ theorem linearGrowthInf_halfSlopeSeries :
     (linearGrowthInf fun n ↦
       (padicRealValuation p (PowerSeries.coeff n (halfSlopeSeries p))).toEReal) =
       ((1 / 2 : ℝ) : EReal) := by
-  refine le_antisymm ?_ ?_
-  · refine Frequently.linearGrowthInf_le (frequently_atTop.mpr fun N ↦ ⟨2 * N, by omega, ?_⟩)
-    rw [padicRealValuation_coeff_halfSlopeSeries, ceil_two_mul_div_two, WithTop.toEReal_coe]
-    have hle : ((N : ℝ) : EReal) ≤ ((1 / 2 : ℝ) * (2 * N : ℕ) : ℝ) := by
-      gcongr; push_cast; linarith
-    push_cast at hle ⊢
-    exact hle
-  · refine le_linearGrowthInf_of_affine_le (c := 0) (σ := 1 / 2) fun n ↦ ?_
-    rw [padicRealValuation_coeff_halfSlopeSeries, WithTop.coe_le_coe, zero_add]
-    have hq : (((n : ℚ) / 2 : ℚ) : ℝ) ≤ (⌈(n : ℚ) / 2⌉₊ : ℝ) := by
-      exact_mod_cast Nat.le_ceil ((n : ℚ) / 2)
-    push_cast at hq
-    linarith
+  have hinf :
+      {n | padicRealValuation p (PowerSeries.coeff n (halfSlopeSeries p)) ≠ ⊤}.Infinite := by
+    simp_rw [padicRealValuation_coeff_halfSlopeSeries]
+    simpa using Set.infinite_univ
+  rw [linearGrowthInf_eq_iSup_unitSlope_lowerConvexEnvelope isAdmissible_halfSlopeSeries hinf,
+    ← newtonPolygon_def]
+  simp_rw [unitSlope_newtonPolygon_halfSlopeSeries]
+  have h0 : (0 : ℕ) ∈ finiteEdges ((halfSlopeSeries p).newtonPolygon (padicRealValuation p)) :=
+    mem_finiteEdges.mpr ⟨by simp [newtonPolygon_halfSlopeSeries],
+      by simp [newtonPolygon_halfSlopeSeries]⟩
+  have : Nonempty (finiteEdges ((halfSlopeSeries p).newtonPolygon (padicRealValuation p))) :=
+    ⟨⟨0, h0⟩⟩
+  exact iSup_const
 
 /-- The intrinsic coefficient radius of `∑_{n ≥ 0} p ^ ⌈n / 2⌉ X ^ n` is `√p`. -/
 theorem radius_halfSlopeSeries :
@@ -205,13 +204,14 @@ failing `IsRestricted √p`. -/
 theorem hasSum_evalAt_halfSlopeSeries_of_norm_le_sqrt {x : ℚ_[p]} (hx : ‖x‖ ≤ Real.sqrt p) :
     HasSum (fun n ↦ PowerSeries.coeff n (halfSlopeSeries p) • x ^ n)
       ((halfSlopeSeries p).evalAt x) := by
-  rcases Padic.norm_le_one_or_natCast_le_norm x with hx1 | hpx
-  · have hxe : ‖x‖ₑ ≤ 1 := by simpa [← ofReal_norm] using hx1
-    exact hasSum_evalAt_of_lt_radius <|
-      (hxe.trans_eq convergenceRadius_padic_halfSlopeSeries.symm).trans_lt
-        convergenceRadius_padic_lt_radius_halfSlopeSeries
-  · have hsqrt : Real.sqrt p < p := Real.sqrt_lt_self_iff.mpr one_lt_p
-    exact (not_lt_of_ge hpx (hx.trans_lt hsqrt)).elim
+  have hsqrt : Real.sqrt p < p := Real.sqrt_lt_self_iff.mpr one_lt_p
+  have hx1 : ‖x‖ ≤ 1 := by
+    simpa using
+      (Padic.norm_le_pow_iff_norm_lt_pow_add_one x 0).mpr (by simpa using hx.trans_lt hsqrt)
+  have hxe : ‖x‖ₑ ≤ 1 := by simpa [← ofReal_norm] using hx1
+  exact hasSum_evalAt_of_lt_radius <|
+    (hxe.trans_eq convergenceRadius_padic_halfSlopeSeries.symm).trans_lt
+      convergenceRadius_padic_lt_radius_halfSlopeSeries
 
 /-- Over `ℂ_[p]`, the pointwise convergence radius of `∑_{n ≥ 0} p ^ ⌈n / 2⌉ X ^ n` equals its
 intrinsic radius `√p`. -/
@@ -239,7 +239,7 @@ theorem not_isRestricted_halfSlopeSeries_sqrt :
 theorem not_summable_padicComplex_halfSlopeSeries_of_norm_eq_sqrt {z : ℂ_[p]}
     (hz : ‖z‖ = Real.sqrt p) :
     ¬Summable fun n ↦ PowerSeries.coeff n (halfSlopeSeries p) • z ^ n := by
-  rw [(halfSlopeSeries p).summable_smul_pow_iff_isRestricted_of_norm_eq hz]
+  rw [(halfSlopeSeries p).summable_smul_pow_iff_isRestricted, hz]
   exact not_isRestricted_halfSlopeSeries_sqrt
 
 /-- Over `ℂ_[p]`, `∑_{n ≥ 0} p ^ ⌈n / 2⌉ x ^ n` converges if and only if `‖x‖ < √p`. -/

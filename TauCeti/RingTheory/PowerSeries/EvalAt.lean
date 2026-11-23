@@ -337,13 +337,13 @@ end ScalarRing
 
 section Normed
 
-variable {R A : Type*} [NormedCommRing R] [NormedRing A] [Algebra R A] [IsBoundedSMul R A]
-  {f : R⟦X⟧}
+section SeminormedTarget
 
-omit [IsBoundedSMul R A] in
+variable {R A : Type*} [NormedCommRing R] [SeminormedRing A] [Algebra R A] {f : R⟦X⟧}
+
 /-- A coefficient map bounded by `C` gives the same bound for evaluation in an
-ultrametric algebra, at every radius where the Gauss norm is defined and bounds the argument.
-Neither a norm-one identity nor completeness nor a bounded scalar action is required.
+ultrametric seminormed algebra, at every radius where the Gauss norm is defined and bounds the
+argument. Neither a norm-one identity nor completeness nor a bounded scalar action is required.
 For negative `C` the coefficient bound forces the series to be zero. -/
 theorem norm_evalAt_le_mul_gaussNorm_of_norm_algebraMap_le [IsUltrametricDist A] {r C : ℝ}
     (hf : f.HasGaussNorm norm r) (hφ : ∀ a, ‖algebraMap R A a‖ ≤ C * ‖a‖)
@@ -377,14 +377,18 @@ theorem norm_evalAt_le_mul_gaussNorm_of_norm_algebraMap_le [IsUltrametricDist A]
         gcongr
       _ ≤ C * gaussNorm norm r f := mul_le_mul_of_nonneg_left (le_gaussNorm norm r f hf _) hC
 
-omit [IsBoundedSMul R A] in
-/-- Contractive coefficient maps give a contractive evaluation estimate without requiring
-that the target algebra have norm-one identity. The target may be noncommutative. -/
+/-- Contractive coefficient maps give a contractive evaluation estimate in any ultrametric
+seminormed algebra without requiring a norm-one identity. The target may be noncommutative. -/
 theorem norm_evalAt_le_gaussNorm_of_norm_algebraMap_le [IsUltrametricDist A] {r : ℝ}
     (hf : f.HasGaussNorm norm r) (hφ : ∀ a, ‖algebraMap R A a‖ ≤ ‖a‖)
     {b : A} (hb : ‖b‖ ≤ r) : ‖f.evalAt b‖ ≤ gaussNorm norm r f := by
   simpa only [one_mul] using
     norm_evalAt_le_mul_gaussNorm_of_norm_algebraMap_le hf (C := 1) (by simpa using hφ) hb
+
+end SeminormedTarget
+
+variable {R A : Type*} [NormedCommRing R] [NormedRing A] [Algebra R A] [IsBoundedSMul R A]
+  {f : R⟦X⟧}
 
 /-- In an ultrametric normed algebra with `‖1‖ = 1`, the value of a series at a point `b` with
 `‖b‖ ≤ r` is bounded by the Gauss norm of the series at the radius `r`, whenever the latter is

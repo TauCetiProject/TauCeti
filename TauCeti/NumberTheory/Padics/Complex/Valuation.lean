@@ -216,16 +216,8 @@ variable (p) in
 `p`. -/
 theorem range_norm :
     Set.range (‖·‖ : ℂ_[p] → ℝ) = insert 0 (Set.range fun q : ℚ ↦ (p : ℝ) ^ (q : ℝ)) := by
-  rw [← image_norm_ne_zero p]
-  ext r
-  constructor
-  · rintro ⟨x, rfl⟩
-    rcases eq_or_ne x 0 with rfl | hx
-    · simp
-    · exact Or.inr ⟨x, hx, rfl⟩
-  · rintro (rfl | ⟨x, _, rfl⟩)
-    · exact ⟨0, norm_zero⟩
-    · exact ⟨x, rfl⟩
+  simpa [← image_norm_ne_zero p, Set.compl_def] using
+    (Set.insert_image_compl_eq_range (‖·‖ : ℂ_[p] → ℝ) 0).symm
 
 variable (p) in
 /-- The real additive valuation on `ℂ_[p]` with values in `WithTop ℝ`, normalised by `v(p) = 1`.

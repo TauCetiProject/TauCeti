@@ -155,10 +155,6 @@ theorem isRestricted_of_abs_le_norm_of_summable_smul_pow (hr : |r| ≤ ‖x‖)
   TauCeti.PowerSeries.isRestricted_of_abs_le (isRestricted_norm_of_summable h)
     (by rwa [abs_norm])
 
-private theorem isRestricted_norm_of_summable_of_norm_le {y : A}
-    (hx : Summable fun n ↦ coeff n f • x ^ n) (hy : ‖y‖ ≤ ‖x‖) : f.IsRestricted ‖y‖ :=
-  f.isRestricted_of_abs_le_norm_of_summable_smul_pow (by simpa [abs_norm] using hy) hx
-
 /-- **Pointwise convergence is bounded by the coefficient radius.** If `∑ aₙ • xⁿ` is summable,
 then `‖x‖ₑ ≤ f.radius`. -/
 theorem le_radius_of_summable (h : Summable fun n ↦ coeff n f • x ^ n) : ‖x‖ₑ ≤ f.radius := by
@@ -197,17 +193,12 @@ theorem summable_smul_pow_iff_isRestricted :
   rw [NonarchimedeanAddGroup.summable_iff_tendsto_cofinite_zero,
     tendsto_smul_pow_cofinite_iff_isRestricted]
 
-/-- At a point `x` of norm `r`, `∑ aₙ • xⁿ` is summable if and only if `f` is restricted at
-`r`. -/
-theorem summable_smul_pow_iff_isRestricted_of_norm_eq (hx : ‖x‖ = r) :
-    (Summable fun n ↦ coeff n f • x ^ n) ↔ f.IsRestricted r :=
-  hx ▸ summable_smul_pow_iff_isRestricted
-
 /-- In a complete ultrametric extension, convergence at one point `x` implies convergence at every
 point `y` of the closed disc `‖y‖ ≤ ‖x‖`. -/
 theorem summable_smul_pow_of_summable_of_norm_le (hx : Summable fun n ↦ coeff n f • x ^ n)
     (hy : ‖y‖ ≤ ‖x‖) : Summable fun n ↦ coeff n f • y ^ n :=
-  summable_smul_pow_iff_isRestricted.mpr (isRestricted_norm_of_summable_of_norm_le hx hy)
+  summable_smul_pow_iff_isRestricted.mpr
+    (isRestricted_of_abs_le_norm_of_summable_smul_pow (by simpa only [abs_norm] using hy) hx)
 
 /-- **Closed-ball convergence characterization.** When the radius `r` is attained as the norm of a
 point of `A`, summability of `f` throughout `Metric.closedBall (0 : A) r` is equivalent to
@@ -255,22 +246,13 @@ theorem norm_evalAt_le_gaussNorm_of_summable_smul_pow {R A : Type*} [NormedCommR
     [SeminormedRing A] [Algebra R A] [NormSMulClass R A] [NormMulClass A] [IsUltrametricDist A]
     {f : R⟦X⟧} {x y : A} (hy : ‖y‖ ≤ ‖x‖) (h : Summable fun n ↦ coeff n f • x ^ n) :
     ‖f.evalAt y‖ ≤ gaussNorm norm ‖x‖ f := by
-  have hf := TauCeti.PowerSeries.hasGaussNorm_of_isRestricted (isRestricted_norm_of_summable h)
-  rw [evalAt_def]
-  refine IsUltrametricDist.norm_tsum_le_of_forall_le_of_nonneg
-    (gaussNorm_nonneg norm ‖x‖ f norm_nonneg) fun n ↦ ?_
-  cases n with
-  | zero =>
-    have hmul : ‖(1 : A)‖ * ‖(1 : A)‖ = ‖(1 : A)‖ := by simpa using (norm_mul (1 : A) 1).symm
-    have h1 : ‖(1 : A)‖ ≤ 1 := by nlinarith [norm_nonneg (1 : A)]
-    calc ‖coeff 0 f • y ^ 0‖ = ‖coeff 0 f‖ * ‖(1 : A)‖ := by simp [norm_smul]
-      _ ≤ ‖coeff 0 f‖ * 1 := mul_le_mul_of_nonneg_left h1 (norm_nonneg _)
-      _ ≤ gaussNorm norm ‖x‖ f := by simpa using le_gaussNorm norm ‖x‖ f hf 0
-  | succ n =>
-    calc ‖coeff (n + 1) f • y ^ (n + 1)‖ = ‖coeff (n + 1) f‖ * ‖y‖ ^ (n + 1) :=
-        norm_coeff_smul_pow_succ f y n
-      _ ≤ ‖coeff (n + 1) f‖ * ‖x‖ ^ (n + 1) := by gcongr
-      _ ≤ gaussNorm norm ‖x‖ f := le_gaussNorm norm ‖x‖ f hf (n + 1)
+  have hmul : ‖(1 : A)‖ * ‖(1 : A)‖ = ‖(1 : A)‖ := by simpa using (norm_mul (1 : A) 1).symm
+  have h1 : ‖(1 : A)‖ ≤ 1 := by nlinarith [norm_nonneg (1 : A)]
+  refine norm_evalAt_le_gaussNorm_of_norm_algebraMap_le
+    (TauCeti.PowerSeries.hasGaussNorm_of_isRestricted (isRestricted_norm_of_summable h))
+    (fun a ↦ ?_) hy
+  rw [Algebra.algebraMap_eq_smul_one, norm_smul]
+  exact mul_le_of_le_one_right (norm_nonneg a) h1
 
 section ConvergenceRadiusDef
 
@@ -294,11 +276,6 @@ variable {A : Type*} [SeminormedRing A] [SMul R A] {f : R⟦X⟧} {x : A} {r : �
 theorem le_convergenceRadius_of_summable (hx : Summable fun n ↦ coeff n f • x ^ n) :
     ‖x‖ₑ ≤ f.convergenceRadius A :=
   le_iSup₂ (f := fun (y : A) (_ : Summable fun n ↦ coeff n f • y ^ n) ↦ ‖y‖ₑ) x hx
-
-/-- Every point at which `f` has a sum bounds `f.convergenceRadius A` from below. -/
-theorem le_convergenceRadius_of_hasSum {y : A} (h : HasSum (fun n ↦ coeff n f • x ^ n) y) :
-    ‖x‖ₑ ≤ f.convergenceRadius A :=
-  le_convergenceRadius_of_summable h.summable
 
 /-- `f` is not summable at any point of extended norm strictly above `f.convergenceRadius A`. -/
 theorem not_summable_of_convergenceRadius_lt (hx : f.convergenceRadius A < ‖x‖ₑ) :
@@ -508,8 +485,10 @@ private theorem min_convergenceRadius_le_of_isRestricted [SMul R A] [NormSMulCla
     if hle : ‖x₁‖ ≤ ‖x₂‖ then ⟨x₁, le_rfl, hle, hr₁.le⟩ else ⟨x₂, le_of_not_ge hle, le_rfl, hr₂.le⟩
   exact hrx.trans (le_convergenceRadius_of_summable
     ((summable_smul_pow_iff_isRestricted (R := R)).mpr
-      (hfg ‖x‖ (isRestricted_norm_of_summable_of_norm_le hf₁ hx₁)
-        (isRestricted_norm_of_summable_of_norm_le hg₂ hx₂))))
+      (hfg ‖x‖
+        (isRestricted_of_abs_le_norm_of_summable_smul_pow (by simpa only [abs_norm] using hx₁) hf₁)
+        (isRestricted_of_abs_le_norm_of_summable_smul_pow
+          (by simpa only [abs_norm] using hx₂) hg₂))))
 
 /-- In a complete ultrametric extension, the pointwise convergence radius of `f + g` is at least
 `min (f.convergenceRadius A) (g.convergenceRadius A)`. -/
@@ -683,10 +662,9 @@ theorem convergenceRadius_eq_radius_of_Ioi_subset_closure {R : Type*} [NormedRin
     f.convergenceRadius A = f.radius := by
   refine f.convergenceRadius_eq_radius_of_forall_exists_lt_norm_lt A fun r₁ r₂ hr₁ hlt ↦ ?_
   have hm : (r₁ + r₂) / 2 ∈ Set.Ioi (0 : ℝ) := Set.mem_Ioi.mpr (by linarith)
-  obtain ⟨_, ⟨x, -, rfl⟩, hdist⟩ :=
-    Metric.mem_closure_iff.mp (hdense hm) ((r₂ - r₁) / 2) (by linarith)
-  rw [Real.dist_eq, abs_lt] at hdist
-  exact ⟨x, by linarith, by linarith⟩
+  have hmem : (r₁ + r₂) / 2 ∈ Set.Ioo r₁ r₂ := ⟨by linarith, by linarith⟩
+  obtain ⟨_, ⟨hr₁x, hxr₂⟩, x, -, rfl⟩ := mem_closure_iff.mp (hdense hm) _ isOpen_Ioo hmem
+  exact ⟨x, hr₁x, hxr₂⟩
 
 /-- **Over a complete densely normed extension field `L` (such as `ℂ_[p]`), the pointwise
 convergence radius equals the intrinsic radius.** -/
@@ -758,28 +736,27 @@ section DiscreteValueGroup
 variable {R A : Type*} [NormedRing R] [SeminormedRing A] [SMul R A] [NormSMulClass R A]
   [NormMulClass A] {f : R⟦X⟧} {b : ℝ} {k : ℤ}
 
+private theorem norm_le_zpow_or_zpow_succ_le_of_disc {A : Type*} [SeminormedRing A] {b : ℝ}
+    (hb : 1 < b) (hdisc : ∀ y : A, ‖y‖ ≠ 0 → ∃ m : ℤ, ‖y‖ = b ^ m) (k : ℤ) (y : A) :
+    ‖y‖ ≤ b ^ k ∨ b ^ (k + 1) ≤ ‖y‖ := by
+  have hb0 : 0 < b := zero_lt_one.trans hb
+  rcases eq_or_ne ‖y‖ 0 with hy0 | hy0
+  · exact Or.inl (hy0 ▸ (zpow_pos hb0 k).le)
+  · obtain ⟨m, hm⟩ := hdisc y hy0
+    rw [hm]
+    rcases le_or_gt m k with hmk | hkm
+    · exact Or.inl (zpow_le_zpow_right₀ hb.le hmk)
+    · exact Or.inr (zpow_le_zpow_right₀ hb.le (by omega))
+
 /-- **Upper bound on the pointwise convergence radius in a discretely normed extension.** Suppose
 `b > 1` and every nonzero norm in `A` is an integer power `b ^ m` (`m ∈ ℤ`). If `f` is not
 restricted at `b ^ (k + 1)`, then `f.convergenceRadius A ≤ ENNReal.ofReal (b ^ k)`. Neither
 completeness, ultrametricity, nor norm attainment in `A` is needed. -/
 theorem convergenceRadius_le_ofReal_zpow (hb : 1 < b)
     (hdisc : ∀ y : A, ‖y‖ ≠ 0 → ∃ m : ℤ, ‖y‖ = b ^ m) (hnres : ¬f.IsRestricted (b ^ (k + 1))) :
-    f.convergenceRadius A ≤ ENNReal.ofReal (b ^ k) := by
-  have hb0 : 0 < b := zero_lt_one.trans hb
-  refine convergenceRadius_le_iff.mpr fun y hy ↦ ?_
-  rcases eq_or_ne ‖y‖ 0 with hy0 | hy0
-  · simp [← ofReal_norm, hy0]
-  · obtain ⟨m, hm⟩ := hdisc y hy0
-    have hm_le : m ≤ k := by
-      by_contra hlt
-      have hk1 : k + 1 ≤ m := by omega
-      have hpow : |b ^ (k + 1)| ≤ |b ^ m| := by
-        rw [abs_of_pos (zpow_pos hb0 _), abs_of_pos (zpow_pos hb0 _)]
-        exact zpow_le_zpow_right₀ hb.le hk1
-      exact hnres (TauCeti.PowerSeries.isRestricted_of_abs_le
-        (hm ▸ isRestricted_norm_of_summable hy) hpow)
-    rw [← ofReal_norm, hm]
-    exact ENNReal.ofReal_le_ofReal (zpow_le_zpow_right₀ hb.le hm_le)
+    f.convergenceRadius A ≤ ENNReal.ofReal (b ^ k) :=
+  convergenceRadius_le_ofReal_of_norm_le_or_le (zpow_pos (zero_lt_one.trans hb) _).le
+    (norm_le_zpow_or_zpow_succ_le_of_disc hb hdisc k) hnres
 
 /-- **Pointwise convergence radius in a discretely normed extension.** Suppose `b > 1` and every
 nonzero norm in `A` is an integer power `b ^ m` (`m ∈ ℤ`). In a complete ultrametric extension `A`,
@@ -788,12 +765,9 @@ restricted at `b ^ (k + 1)`, then `f.convergenceRadius A = ENNReal.ofReal (b ^ k
 theorem convergenceRadius_eq_ofReal_zpow [IsUltrametricDist A] [CompleteSpace A] (hb : 1 < b)
     (hdisc : ∀ y : A, ‖y‖ ≠ 0 → ∃ m : ℤ, ‖y‖ = b ^ m) (hatt : ∃ x : A, ‖x‖ = b ^ k)
     (hres : f.IsRestricted (b ^ k)) (hnres : ¬f.IsRestricted (b ^ (k + 1))) :
-    f.convergenceRadius A = ENNReal.ofReal (b ^ k) := by
-  refine le_antisymm (convergenceRadius_le_ofReal_zpow hb hdisc hnres) ?_
-  obtain ⟨x, hx⟩ := hatt
-  rw [← hx] at hres ⊢
-  rw [ofReal_norm]
-  exact le_convergenceRadius_of_summable (summable_smul_pow_iff_isRestricted.mpr hres)
+    f.convergenceRadius A = ENNReal.ofReal (b ^ k) :=
+  convergenceRadius_eq_ofReal_of_norm_le_or_le (zpow_pos (zero_lt_one.trans hb) _).le
+    hres hatt (norm_le_zpow_or_zpow_succ_le_of_disc hb hdisc k) hnres
 
 /-- **Pointwise convergence radius in a discretely normed extension strictly inside `f.radius`.**
 Suppose `b > 1` and every nonzero norm in `A` is an integer power `b ^ m` (`m ∈ ℤ`). In any

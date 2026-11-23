@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.BigOperators.Group.Finset.Defs
-public import Mathlib.Algebra.Order.Floor.Div
 public import Mathlib.Algebra.Order.Floor.Semifield
 public import Mathlib.Order.Interval.Finset.Nat
 
@@ -34,13 +33,8 @@ a positive cell count bounded by `t + 1` for `t ≥ 0`, and strictly below `t + 
 In an ordered ring, the integers `a ≤ k ≤ ⌊y⌋₊` number at most `(y + 1 − a)⁺`, which bounds a sum
 of terms at most `M ≥ 0` over them by `(y + 1 − a)⁺ M`.
 
-For natural numbers `m` and `n`, the ceiling of the semifield quotient `(m : K) / n` agrees with
-natural-number ceiling division `m ⌈/⌉ n` (`Nat.ceil_div_eq_ceilDiv`), dual to Mathlib's
-`Nat.floor_div_eq_div`.
-
 ## Main results
 
-* `Nat.ceil_div_eq_ceilDiv`: `⌈(m : K) / n⌉₊ = m ⌈/⌉ n`.
 * `TauCeti.le_ceil_div_mul`: `t ≤ ⌈t / τ⌉₊ * τ` for `τ > 0`.
 * `TauCeti.ceil_div_mul_lt_add`: `⌈t / τ⌉₊ * τ < t + τ` for `t ≥ 0` and `τ > 0`.
 * `TauCeti.natCast_ceil_div_sub_ceil_div_lt`: `⌈t / τ⌉₊ - ⌈s / τ⌉₊ < (t - s) / τ + 1`.
@@ -235,23 +229,3 @@ theorem sum_Icc_floor_le_max_mul {y M : R} (hy : 0 ≤ y) (hM : 0 ≤ M) (a : �
 end Ring
 
 end TauCeti
-
-namespace Nat
-
-/-- Natural ceiling division is the ceiling of semifield division: `⌈(m : K) / n⌉₊ = m ⌈/⌉ n`.
-Compare `Nat.floor_div_eq_div`. -/
-theorem ceil_div_eq_ceilDiv {K : Type*} [DivisionSemiring K] [LinearOrder K]
-    [IsStrictOrderedRing K] [FloorSemiring K] (m n : ℕ) :
-    ⌈(m : K) / n⌉₊ = m ⌈/⌉ n := by
-  rcases eq_or_ne n 0 with rfl | hn
-  · simp
-  have hn0 : 0 < n := Nat.pos_of_ne_zero hn
-  have hK : (0 : K) < n := Nat.cast_pos.mpr hn0
-  refine le_antisymm ?_ ?_
-  · rw [Nat.ceil_le, div_le_iff₀ hK, ← Nat.cast_mul, Nat.cast_le, Nat.mul_comm]
-    exact (_root_.ceilDiv_le_iff_le_mul hn0).mp le_rfl
-  · rw [_root_.ceilDiv_le_iff_le_mul hn0, Nat.mul_comm, ← Nat.cast_le (α := K), Nat.cast_mul,
-      ← div_le_iff₀ hK]
-    exact Nat.le_ceil _
-
-end Nat
