@@ -36,8 +36,8 @@ ring, with arbitrary `a₆`, and does not require the roots to be distinct.
 no further machinery. `y_eq_zero_of_order_two` is the current example: negation is `(x, y) ↦
 (x, -y)`, so a `2`-torsion point has `y = 0`. It lives here rather than with the division-polynomial
 material that first proved it because it needs none of that — this module's closure is one file,
-against thirty-three for `DivisionPolynomial/ShortNagellLutz.lean` — and its consumers, Nagell–Lutz
-and the `2`-descent torsion count, sit in unrelated parts of the library.
+against more than thirty for `DivisionPolynomial/ShortNagellLutz.lean` — and its consumers,
+Nagell–Lutz and the `2`-descent torsion count, sit in unrelated parts of the library.
 
 That gap matters as soon as a statement is about a curve over `ℤ` and a point over `ℚ`, which is
 the shape of the classical Nagell–Lutz theorem: the hypothesis is natural on the integral model,

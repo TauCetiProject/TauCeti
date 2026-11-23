@@ -110,19 +110,17 @@ theorem freeProP.exists_continuousMulEquiv_apply_eq_of_range_demushkinCharacter_
     (hG' : IsDemushkin 2 (presentedProP 2 (Fin n) {r'}))
     (h : (demushkinCharacter hG).toMonoidHom.range = (demushkinCharacter hG').toMonoidHom.range) :
     ∃ e : freeProP 2 (Fin n) ≃ₜ* freeProP 2 (Fin n), e r = r' := by
-  have hr := hG.mem_proPFrattini_of_presentedProP_singleton
-  have hr' := hG'.mem_proPFrattini_of_presentedProP_singleton
-  rcases range_demushkinCharacter_eq_zpowers_neg_one_or_unitsPlusMinus_of_odd hn hr hG with
-    hrange | ⟨hn₃, f, hf, hrange⟩
+  rcases range_demushkinCharacter_eq_zpowers_neg_one_or_unitsPlusMinus_of_odd hn hG with
+    hrange | ⟨-, f, hf, hrange⟩
   · obtain ⟨e, he⟩ :=
-      exists_continuousMulEquiv_apply_eq_demushkinWordTwoOddTop_of_range_eq hn hr hG hrange
-    obtain ⟨e', he'⟩ := exists_continuousMulEquiv_apply_eq_demushkinWordTwoOddTop_of_range_eq hn hr'
+      exists_continuousMulEquiv_apply_eq_demushkinWordTwoOddTop_of_range_eq hn hG hrange
+    obtain ⟨e', he'⟩ := exists_continuousMulEquiv_apply_eq_demushkinWordTwoOddTop_of_range_eq hn
       hG' (h.symm.trans hrange)
     exact ⟨e.trans e'.symm, by rw [ContinuousMulEquiv.trans_apply, he, ← he', e'.symm_apply_apply]⟩
   · obtain ⟨e, he⟩ :=
-      exists_continuousMulEquiv_apply_eq_demushkinWordTwoOdd_of_range_eq hn hn₃ hr hG hf hrange
-    obtain ⟨e', he'⟩ := exists_continuousMulEquiv_apply_eq_demushkinWordTwoOdd_of_range_eq hn hn₃
-      hr' hG' hf (h.symm.trans hrange)
+      exists_continuousMulEquiv_apply_eq_demushkinWordTwoOdd_of_range_eq hn hG hf hrange
+    obtain ⟨e', he'⟩ := exists_continuousMulEquiv_apply_eq_demushkinWordTwoOdd_of_range_eq hn
+      hG' hf (h.symm.trans hrange)
     exact ⟨e.trans e'.symm, by rw [ContinuousMulEquiv.trans_apply, he, ← he', e'.symm_apply_apply]⟩
 
 /-- **Labute's Theorem 2.** Let `r, r'` be relators of the free pro-`p` group `F` on `n`

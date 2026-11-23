@@ -7,6 +7,8 @@ module
 
 public import Mathlib.Analysis.Calculus.ContDiff.Operations
 public import Mathlib.Analysis.Calculus.Deriv.Mul
+public import Mathlib.Analysis.Calculus.IteratedDeriv.Lemmas
+import TauCeti.Algebra.Ring.Invertible
 import TauCeti.Analysis.Normed.Operator.Basic
 import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Invertible
 
@@ -37,11 +39,13 @@ curve through `1` with the constant `C`; the latter involves no inversion.
 * `ContinuousLinearMap.IsInvertible.of_mul_norm_sub_lt` and
   `ContinuousLinearMap.IsInvertible.norm_inverse_le_of_mul_norm_sub_lt`: if `‖A⁻¹‖ ≤ M` and
   `M * ‖B - A‖ < 1`, then `B` is invertible with `‖B⁻¹‖ ≤ M / (1 - M * ‖B - A‖)`.
+* `HasStrictFDerivAt.exists_continuousLinearEquiv_id_add`: `y ↦ y + f y` has an invertible strict
+  derivative where `f` has a strict derivative of norm less than one.
 * `HasDerivAt.clm_inverse`: differentiates `(A t)⁻¹`.
 * `HasDerivAt.clm_inverse_apply`: differentiates `(A t)⁻¹ (w t)`.
-* `ContDiffWithinAt.clm_inverse`, `ContDiffAt.clm_inverse`, `ContDiffOn.clm_inverse`: the
-  inverse of a `C^n` family of maps between Banach spaces, on any domain, is `C^n` where the
-  family is invertible.
+* `ContDiffWithinAt.clm_inverse`, `ContDiffAt.clm_inverse`, `ContDiffOn.clm_inverse`,
+  `ContDiff.clm_inverse`: the inverse of a `C^n` family of maps between Banach spaces, on any
+  domain, is `C^n` where the family is invertible.
 * `DifferentiableAt.clm_inverse_of_completeSpace`: the inverse of a differentiable family between
   Banach spaces, on any domain, is differentiable at an invertible base point.
 * `HasFDerivAt.clm_inverse`, `HasFDerivAt.clm_inverse_of_completeSpace`,
@@ -52,7 +56,10 @@ curve through `1` with the constant `C`; the latter involves no inversion.
 * `HasDerivAt.clm_inverse_apply_of_completeSpace`: the Banach-space specialization acting on a
   vector curve.
 * `ContDiffAt.inverse` and `ContDiff.inverse`: the ring inverse of a `C^n` family of units
-  is `C^n`.
+  is `C^n`; `ContinuousAt.ringInverse` is the continuous version, on any topological domain.
+* `TauCeti.iteratedDeriv_ringInverse_add_smul`: all derivatives of the ring inverse of an
+  affine pencil, at any parameter where the pencil is a unit;
+  `TauCeti.iteratedDeriv_ringInverse_one_sub_smul` is the commutative form for `1 - r • P`.
 * `DifferentiableAt.deriv_eq_mul_sub_mul_of_mul_eq_mul`: a family `K` with `K t * P t = P t * C`
   and `P` of velocity `Z` through `1` has velocity `Z * C - C * Z` at that point.
 
@@ -112,7 +119,7 @@ theorem ContinuousLinearMap.isInvertible_of_norm_sub_le_half [CompleteSpace E]
     (L : E ≃L[𝕜] F) {A : E →L[𝕜] F}
     (h : ‖A - (L : E →L[𝕜] F)‖₊ ≤ ‖(L.symm : F →L[𝕜] E)‖₊⁻¹ / 2) : A.IsInvertible := by
   rcases eq_or_ne (‖(L.symm : F →L[𝕜] E)‖₊)⁻¹ 0 with h0 | h0
-  · rw [h0, zero_div, le_zero_iff, nnNorm_eq_zero, sub_eq_zero] at h
+  · rw [h0, zero_div, nonpos_iff_eq_zero, nnNorm_eq_zero, sub_eq_zero] at h
     exact h ▸ ContinuousLinearMap.isInvertible_equiv
   · exact ContinuousLinearMap.isInvertible_of_norm_sub_lt L (h.trans_lt (NNReal.half_lt_self h0))
 
@@ -177,6 +184,18 @@ theorem ContinuousLinearMap.IsInvertible.norm_inverse_le_of_mul_norm_sub_lt [Com
   rw [div_mul_eq_mul_div, le_div_iff₀ hδ]
   nlinarith [mul_le_mul_of_nonneg_left hAx hM0]
 
+/-- A strict derivative of norm less than one is a small perturbation of the identity: if `f` has
+strict derivative `f'` at `x` with `‖f'‖ < 1`, then `y ↦ y + f y` has an invertible strict
+derivative at `x`, namely `1 + f'`. -/
+theorem HasStrictFDerivAt.exists_continuousLinearEquiv_id_add [CompleteSpace E] {f : E → E}
+    {f' : E →L[𝕜] E} {x : E} (hf : HasStrictFDerivAt f f' x) (hf' : ‖f'‖ < 1) :
+    ∃ L : E ≃L[𝕜] E, HasStrictFDerivAt (fun y ↦ y + f y) (L : E →L[𝕜] E) x := by
+  set L := ContinuousLinearEquiv.unitsEquiv 𝕜 E (Units.oneSub (-f') (by rwa [norm_neg]))
+  have hL : (L : E →L[𝕜] E) = ContinuousLinearMap.id 𝕜 E + f' := by
+    ext v
+    simp [L, ContinuousLinearEquiv.unitsEquiv_apply]
+  exact ⟨L, hL ▸ (hasStrictFDerivAt_id x).add hf⟩
+
 end Perturbation
 
 section ScalarTower
@@ -211,6 +230,13 @@ theorem ContDiffOn.clm_inverse [CompleteSpace G] (hf : ContDiffOn 𝕜 n f s)
     (hinv : ∀ y ∈ s, (f y).IsInvertible) :
     ContDiffOn 𝕜 n (fun y => (f y).inverse) s :=
   fun y hy => (hf y hy).clm_inverse (hinv y hy)
+
+/-- The inverse of a `C^n` family of continuous linear maps between Banach spaces that is invertible
+everywhere is `C^n`. -/
+theorem ContDiff.clm_inverse [CompleteSpace G] (hf : ContDiff 𝕜 n f)
+    (hinv : ∀ y, (f y).IsInvertible) :
+    ContDiff 𝕜 n (fun y => (f y).inverse) :=
+  contDiff_iff_contDiffAt.2 fun y => hf.contDiffAt.clm_inverse (hinv y)
 
 /-- The derivative of an inverse family of continuous linear maps, assuming the family is
 invertible at the base point and the inverse family is differentiable there:
@@ -318,10 +344,78 @@ theorem ContDiffAt.inverse {f : X → R} {x : X} (hf : ContDiffAt 𝕜 n f x)
   rw [hu] at hi
   exact hi.comp x hf
 
+/-- The ring inverse of a family continuous at a point where it takes a unit value is continuous
+there. -/
+theorem ContinuousAt.ringInverse {Y : Type*} [TopologicalSpace Y] {f : Y → R} {y : Y}
+    (hf : ContinuousAt f y) (hfy : IsUnit (f y)) :
+    ContinuousAt (fun y' => Ring.inverse (f y')) y :=
+  (NormedRing.inverse_continuousAt hfy.unit).comp_of_eq hf hfy.unit_spec.symm
+
 /-- The ring inverse of a `C^n` family of units is `C^n`. -/
 theorem ContDiff.inverse {f : X → R} (hf : ContDiff 𝕜 n f) (hfu : ∀ x, IsUnit (f x)) :
     ContDiff 𝕜 n (fun y => Ring.inverse (f y)) :=
   contDiff_iff_contDiffAt.2 fun x => hf.contDiffAt.inverse (hfu x)
+
+/-- All derivatives of the ring inverse of an affine pencil at a unit value, with the
+noncommutative product order preserved. No invertibility away from the evaluation point is
+required. -/
+theorem TauCeti.iteratedDeriv_ringInverse_add_smul (a b : R) (k : ℕ) {t : 𝕜}
+    (ht : IsUnit (a + t • b)) :
+    iteratedDeriv k (fun s : 𝕜 ↦ Ring.inverse (a + s • b)) t =
+      ((-1 : 𝕜) ^ k * (Nat.factorial k : 𝕜)) •
+        (Ring.inverse (a + t • b) * (b * Ring.inverse (a + t • b)) ^ k) := by
+  have hR (t : 𝕜) (ht : IsUnit (a + t • b)) :
+      HasDerivAt (fun s : 𝕜 ↦ Ring.inverse (a + s • b))
+      (-(Ring.inverse (a + t • b) * b * Ring.inverse (a + t • b))) t := by
+    obtain ⟨u, hu⟩ := ht
+    have hd : HasDerivAt (fun s : 𝕜 ↦ a + s • b) b t := by
+      simpa only [one_smul, id_eq] using! ((hasDerivAt_id t).smul_const b).const_add a
+    simpa only [Function.comp_def, ← hu, Ring.inverse_unit,
+      neg_apply, ContinuousLinearMap.mulLeftRight_apply] using!
+      (hasFDerivAt_ringInverse (𝕜 := 𝕜) u).comp_hasDerivAt_of_eq t hd hu
+  have hword (t : 𝕜) (ht : IsUnit (a + t • b)) (j : ℕ) : HasDerivAt
+      (fun s : 𝕜 ↦ Ring.inverse (a + s • b) * (b * Ring.inverse (a + s • b)) ^ j)
+      (-((j + 1 : ℕ) : 𝕜) •
+        (Ring.inverse (a + t • b) * (b * Ring.inverse (a + t • b)) ^ (j + 1))) t := by
+    have hR := hR t ht
+    induction j with
+    | zero => simpa [pow_one, mul_assoc] using hR
+    | succ j ih =>
+      have hd := ih.fun_mul (hR.const_mul b)
+      simp only [pow_succ, ← mul_assoc] at hd ⊢
+      refine hd.congr_deriv ?_
+      simp only [smul_mul_assoc, mul_neg, mul_assoc, Nat.cast_add, Nat.cast_one,
+        neg_add, add_smul, neg_one_smul, add_mul, neg_mul]
+  induction k generalizing t with
+  | zero => simp
+  | succ k ih =>
+    have hu : ∀ᶠ s in 𝓝 t, IsUnit (a + s • b) :=
+      (Units.isOpen.preimage (by fun_prop : Continuous (fun s : 𝕜 ↦ a + s • b))).mem_nhds ht
+    have heq : iteratedDeriv k (fun s : 𝕜 ↦ Ring.inverse (a + s • b)) =ᶠ[𝓝 t]
+        fun s ↦ ((-1 : 𝕜) ^ k * (Nat.factorial k : 𝕜)) •
+          (Ring.inverse (a + s • b) * (b * Ring.inverse (a + s • b)) ^ k) :=
+      hu.mono fun s hs ↦ ih hs
+    rw [iteratedDeriv_succ, heq.deriv_eq,
+      ((hword t ht k).fun_const_smul ((-1 : 𝕜) ^ k * (Nat.factorial k : 𝕜))).deriv, smul_smul]
+    congr 1
+    simp only [pow_succ, Nat.factorial_succ, Nat.cast_mul, Nat.cast_add, Nat.cast_one]
+    ring
+
+/-- `∂_r^j (1 - r P)⁻¹ = j! P ^ j ((1 - r P)⁻¹) ^ (j + 1)` where `1 - r P` is a unit: the
+commutative form of `TauCeti.iteratedDeriv_ringInverse_add_smul`, as `P` commutes with
+`(1 - r P)⁻¹`. -/
+theorem TauCeti.iteratedDeriv_ringInverse_one_sub_smul (P : R) (j : ℕ) {r : 𝕜}
+    (hr : IsUnit (1 - r • P)) :
+    iteratedDeriv j (fun s : 𝕜 => Ring.inverse (1 - s • P)) r =
+      (Nat.factorial j : 𝕜) • (P ^ j * Ring.inverse (1 - r • P) ^ (j + 1)) := by
+  have h1 (s : 𝕜) : 1 - s • P = 1 + s • -P := by rw [smul_neg, sub_eq_add_neg]
+  have hc := ((Commute.one_right P).sub_right ((Commute.refl P).smul_right r)).ringInverse_right
+  simp only [h1] at hr hc ⊢
+  have hI : Ring.inverse (1 + r • -P) * (P * Ring.inverse (1 + r • -P)) ^ j =
+      P ^ j * Ring.inverse (1 + r • -P) ^ (j + 1) := by
+    rw [hc.mul_pow, ← mul_assoc, ← (hc.pow_left j).eq, mul_assoc, ← pow_succ']
+  rw [iteratedDeriv_ringInverse_add_smul 1 (-P) j hr, neg_mul, ← hI]
+  rcases Nat.even_or_odd j with h | h <;> simp [h.neg_one_pow, h.neg_pow]
 
 omit [HasSummableGeomSeries R] in
 /-- If `K t * P t = P t * C` for all `t`, `P t₀ = 1`, `P` has derivative `Z` at `t₀` and `K` is

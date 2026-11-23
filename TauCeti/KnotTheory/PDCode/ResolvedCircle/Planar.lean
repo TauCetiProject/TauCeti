@@ -10,6 +10,7 @@ public import TauCeti.KnotTheory.PDCode.ResolvedCircle.Adjacent
 import TauCeti.Algebra.GroupAction.OrbitRelQuotient
 import TauCeti.GroupTheory.Perm.SigmaCongr
 import TauCeti.GroupTheory.Perm.SwapFactors
+import TauCeti.KnotTheory.PDCode.ResolvedCircle.Seifert
 
 /-!
 # Planar cube edges merge or split circles
@@ -32,6 +33,8 @@ These are the two kinds of edges carrying the merge and split maps of the Khovan
   cube of resolutions of a planar code is a merge or a split.
 * `TauCeti.PDCode.IsPlanar.stateLoopCount_eq_add_one_or_stateLoopCount_eq_add_one`: along every
   edge the number of circles changes by exactly one.
+* `TauCeti.OrientedPDCode.negativeCrossingCount_mod_two_congr_toPDCode`: two oriented PD-codes
+  sharing the same underlying planar PD-code have the same number of negative crossings modulo `2`.
 
 ## Implementation notes
 
@@ -422,5 +425,28 @@ theorem IsPlanar.card_false_add_stateLoopCount_mod_two_eq (hD : D.IsPlanar)
   simpa only [hs, ht] using (key {i | s i = false}).trans (key {i | t i = false}).symm
 
 end PDCode
+
+namespace OrientedPDCode
+
+/-- Two oriented PD-codes sharing the same underlying planar PD-code have the same number of
+negative crossings modulo `2`. -/
+theorem negativeCrossingCount_mod_two_congr_toPDCode {n : ℕ} {D₁ D₂ : OrientedPDCode n}
+    (hD₁ : D₁.toPDCode.IsPlanar) (h : D₁.toPDCode = D₂.toPDCode) :
+    D₁.negativeCrossingCount % 2 = D₂.negativeCrossingCount % 2 := by
+  have hD₂ : D₂.toPDCode.IsPlanar := h ▸ hD₁
+  have hcube₁ := hD₁.card_false_add_stateLoopCount_mod_two_eq D₁.seifertState (fun _ ↦ true)
+  have hcube₂ := hD₂.card_false_add_stateLoopCount_mod_two_eq D₂.seifertState (fun _ ↦ true)
+  have hseif₁ := Int.even_iff.mp D₁.even_seifertCircleCount_sub_crossingCount_add_componentCount
+  have hseif₂ := Int.even_iff.mp D₂.even_seifertCircleCount_sub_crossingCount_add_componentCount
+  have hneg (D : OrientedPDCode n) : #{i | D.seifertState i = false} = D.negativeCrossingCount := by
+    simp [negativeCrossingCount_def]
+  have hloop : D₁.toPDCode.stateLoopCount (fun _ ↦ true) =
+      D₂.toPDCode.stateLoopCount (fun _ ↦ true) := by rw [h]
+  have hcomp : D₁.toPDCode.componentCount = D₂.toPDCode.componentCount := by rw [h]
+  rw [hneg] at hcube₁ hcube₂
+  simp only [Bool.true_eq_false, filter_false, card_empty, zero_add] at hcube₁ hcube₂
+  omega
+
+end OrientedPDCode
 
 end TauCeti
