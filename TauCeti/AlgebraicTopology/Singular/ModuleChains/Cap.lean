@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicTopology.Cohomology.Cap.ChainMap
+public import TauCeti.AlgebraicTopology.Cohomology.Cap.Pushforward
 public import TauCeti.AlgebraicTopology.Singular.ModuleChains.Relative
 public import TauCeti.RepresentationTheory.LinearCharacter.Basic
 public import TauCeti.RepresentationTheory.Rep.Ihom
@@ -35,10 +35,11 @@ Forgetting the action of `G`, it is the pushed-forward cap product
 identifications of the underlying complexes with the relative singular chains of `(X, A)`
 (`TopPair.singularChainsRepForget₂Iso`) and with the shifted singular chains of `Y`
 (`TauCeti.singularChainsRepTwistExtendForget₂Iso`). Since forgetting the action detects
-quasi-isomorphisms, the equivariant cap product is a quasi-isomorphism exactly when the relative
-homology of `(X, A)` vanishes below `n` and `x ↦ p₀_*(x ⌢ [φ])` is an isomorphism in every degree
-(`TopPair.quasiIso_singularChainsRepCap_iff`), as for the Thom pair of a vector bundle and a cocycle
-representing a Thom class. If `G` acts freely on `Y`, the twisted chains of `Y` are projective
+quasi-isomorphisms, the equivariant cap product is a quasi-isomorphism exactly when
+`TopPair.pushforwardCapChainMap` is one (`TopPair.quasiIso_singularChainsRepCap_iff`), for instance
+when the relative homology of `(X, A)` vanishes below `n` and `x ↦ p₀_*(x ⌢ [φ])` is an isomorphism
+in every degree (`TopPair.quasiIso_pushforwardCapChainMap`), as for the Thom pair of a vector bundle
+and a cocycle representing a Thom class. If `G` acts freely on `Y`, the twisted chains of `Y` are projective
 representations (`TauCeti.projective_tensorLeft_singularChainsRep_X`), so such a quasi-isomorphism
 computes the twisted homology of the quotient of `(X, A)`
 (`TopPair.twistedHomologyIsoHomologyCoinvariantsTensorObj`).
@@ -59,9 +60,8 @@ homology of the Thom pair of the bundle with coefficients in its orientation sys
 
 * `TopPair.map_singularChainsRepCap_comp_singularChainsRepTwistExtendForget₂Iso_hom`: forgetting
   the action, the equivariant cap product is `TopPair.pushforwardCapChainMap`.
-* `TopPair.quasiIso_singularChainsRepCap_iff`: it is a quasi-isomorphism if and only if the relative
-  homology vanishes below `n` and the pushed-forward cap product with `[φ]` is an isomorphism in
-  every degree.
+* `TopPair.quasiIso_singularChainsRepCap_iff`: it is a quasi-isomorphism if and only if
+  `TopPair.pushforwardCapChainMap` is one.
 * `TauCeti.projective_tensorLeft_singularChainsRep_X`: the twisted singular chains of a free
   `G`-space are projective representations.
 
@@ -165,7 +165,9 @@ private def capComponent (q : ℕ) :
 degree `q + n` is `(-1)^(n q)` times `capComponent`. -/
 private theorem singularChainComplexπ_f_pushforwardCapChainMap_f (q : ℕ) :
     (P.singularChainComplexπ (ModuleCat.of k k)).f (q + n) ≫
-        (P.pushforwardCapChainMap p₀ (ModuleCat.of k k) n φ).f (q + n) =
+        (P.pushforwardCapChainMap p₀ (ModuleCat.of k k) n
+          ((P.singularCochainComplex (ModuleCat.of k k) k (ModuleCat.of k k)).iCycles n φ)
+          (ChainComplex.d_comp_linearYonedaObj_iCycles n (n + 1) φ)).f (q + n) =
       (((-1 : ℤ) ^ (n * q)) • capComponent P p₀ n φ q) ≫
         (((TopCat.toSSet.obj Y).chainComplex (ModuleCat.of k k)).extendXIso
           (ComplexShape.embeddingDownNatAdd n) (ComplexShape.embeddingDownNatAdd_f n q)).inv := by
@@ -185,9 +187,11 @@ private theorem singularChainComplexπ_f_pushforwardCapChainMap_f (q : ℕ) :
   -- the ambient chains of `P` appear in two forms which agree only after unfolding, so the steps
   -- are assembled in term mode rather than by rewriting
   exact (congrArg ((P.singularChainComplexπ (ModuleCat.of k k)).f (q + n) ≫ ·)
-    (pushforwardCapChainMap_f P p₀ _ n q (q + n) (by omega) φ)).trans
-    ((Category.assoc _ _ _).symm.trans (congrArg (· ≫ _)
-      ((Preadditive.comp_zsmul _ _ _).trans (congrArg (((-1 : ℤ) ^ (n * q)) • ·) h₁.symm))))
+    (ChainComplex.capChainMap_f _ _ (ChainComplex.d_comp_linearYonedaObj_iCycles n (n + 1) φ) q
+      (q + n) (by omega))).trans
+    ((Preadditive.comp_zsmul _ _ _).trans ((congrArg (((-1 : ℤ) ^ (n * q)) • ·)
+      ((Category.assoc _ _ _).symm.trans (congrArg (· ≫ _) h₁.symm))).trans
+        (Preadditive.zsmul_comp _ _ _).symm))
 
 variable {P p₀ n φ} in
 /-- **The cap product with a semi-invariant cocycle is semi-invariant.** If the cochain `φ`,
@@ -265,16 +269,19 @@ chain map `TauCeti.ChainComplex.capChainMap` of the cocycle `φ` pulled back to 
 private theorem signedCapComponent_comp_d (q : ℕ) :
     signedCapComponent P p₀ n φ (q + 1) ≫ ((singularChains k).obj Y).d (q + 1) q =
       ((singularChains k).obj P.fst).d (q + 1 + n) (q + n) ≫ signedCapComponent P p₀ n φ q := by
+  have hψ := ChainComplex.d_comp_linearYonedaObj_iCycles n (n + 1) (pulledCocycle P n φ)
   have h := (ChainComplex.capChainMap k
     (P.fst.alexanderWhitneyDiagonal (λ_ (ModuleCat.of k k)).inv)
     ((TopCat.toSSet.obj P.fst).chainComplexPairing (λ_ (ModuleCat.of k k)).hom ≫
-      SSet.chainComplexMap (TopCat.toSSet.map p₀) (ModuleCat.of k k)) n
-    (pulledCocycle P n φ)).comm (q + 1 + n) (q + n)
-  rw [ChainComplex.capChainMap_f _ _ n (q + 1) _ rfl, ChainComplex.capChainMap_f _ _ n q _ rfl,
+      SSet.chainComplexMap (TopCat.toSSet.map p₀) (ModuleCat.of k k)) n _ hψ).comm
+    (q + 1 + n) (q + n)
+  rw [ChainComplex.capChainMap_f _ _ hψ (q + 1) _ (by omega),
+    ChainComplex.capChainMap_f _ _ hψ q _ (by omega),
     HomologicalComplex.extend_d_eq _ _ (ComplexShape.embeddingDownNatAdd_f n (q + 1))
       (ComplexShape.embeddingDownNatAdd_f n q)] at h
-  simp only [Category.assoc, Iso.inv_hom_id_assoc] at h
-  simp only [← Category.assoc] at h
+  simp only [Preadditive.zsmul_comp, Preadditive.comp_zsmul, Category.assoc,
+    Iso.inv_hom_id_assoc] at h
+  simp only [← Category.assoc, ← Preadditive.zsmul_comp] at h
   exact (Iso.cancel_iso_inv_right _ _ _).1 h
 
 variable {P p₀ n φ} in
@@ -385,7 +392,7 @@ private def capAmbient :
       (((tensorLeft (Rep.of (Representation.ofLinearCharacter χ))).mapHomologicalComplex _).obj
         (TauCeti.singularChainsRep k Y G)).extend (ComplexShape.embeddingDownNatAdd n) :=
   (ComplexShape.embeddingDownNatAdd n).liftExtend (capRestrictionHom P hp₀ χ hφ)
-    ((ComplexShape.embeddingDownNatAdd n).hasLift _)
+    fun _ hj ↦ hj.false_of_isTruncLE.elim
 
 include hp₀ hφ in
 /-- In degree `q + n`, `capAmbient` is `capRep` followed by the identification of the twisted chains
@@ -456,7 +463,9 @@ theorem map_singularChainsRepCap_comp_singularChainsRepTwistExtendForget₂Iso_h
         (P.singularChainsRepCap hp₀ χ hφ hP) ≫
         (singularChainsRepTwistExtendForget₂Iso k Y χ n).hom =
       (P.singularChainsRepForget₂Iso k G hP).hom ≫
-        P.pushforwardCapChainMap p₀ (ModuleCat.of k k) n φ := by
+        P.pushforwardCapChainMap p₀ (ModuleCat.of k k) n
+            ((P.singularCochainComplex (ModuleCat.of k k) k (ModuleCat.of k k)).iCycles n φ)
+            (ChainComplex.d_comp_linearYonedaObj_iCycles n (n + 1) φ) := by
   rw [← cancel_epi (((forget₂ (Rep.{u} k G) (ModuleCat.{u} k)).mapHomologicalComplex _).map
       (P.singularChainsRepπ k G hP)), ← Functor.map_comp_assoc,
     singularChainsRepπ_singularChainsRepCap, ← Category.assoc,
@@ -499,18 +508,15 @@ theorem map_singularChainsRepCap_comp_singularChainsRepTwistExtendForget₂Iso_h
 include hp₀ hφ in
 /-- **When the equivariant cap product is a quasi-isomorphism.** The equivariant cap product
 `singularChainsRepCap` with a semi-invariant relative cocycle `φ` of degree `n` is a
-quasi-isomorphism of complexes of representations if and only if the relative homology of
-`(X, A)` vanishes below `n` and `x ↦ p₀_*(x ⌢ [φ])` is an isomorphism
-`H_{n + p}(X, A; k) ≅ Hₚ(Y; k)` for every `p`. -/
+quasi-isomorphism of complexes of representations if and only if the pushed-forward cap product
+`TopPair.pushforwardCapChainMap` with `φ` is a quasi-isomorphism, as forgetting the action detects
+quasi-isomorphisms. -/
 theorem quasiIso_singularChainsRepCap_iff :
     QuasiIso (P.singularChainsRepCap hp₀ χ hφ hP) ↔
-      (∀ m < n, IsZero (P.singularHomology (ModuleCat.of k k) m)) ∧
-        ∀ p, IsIso (P.pushforwardCap p₀ (ModuleCat.of k k) n p (n + p) rfl
-          ((P.singularCochainComplex (ModuleCat.of k k) k (ModuleCat.of k k)).homologyπ n φ)) := by
-  -- forgetting the action detects quasi-isomorphisms, and identifies the equivariant cap product
-  -- with `TopPair.pushforwardCapChainMap`
-  rw [← quasiIso_pushforwardCapChainMap_iff,
-    ← HomologicalComplex.quasiIso_map_iff_of_preservesHomology _
+      QuasiIso (P.pushforwardCapChainMap p₀ (ModuleCat.of k k) n
+        ((P.singularCochainComplex (ModuleCat.of k k) k (ModuleCat.of k k)).iCycles n φ)
+        (ChainComplex.d_comp_linearYonedaObj_iCycles n (n + 1) φ)) := by
+  rw [← HomologicalComplex.quasiIso_map_iff_of_preservesHomology _
       (forget₂ (Rep.{u} k G) (ModuleCat.{u} k))]
   exact quasiIso_iff_of_arrow_mk_iso _ _ (Arrow.isoMk (P.singularChainsRepForget₂Iso k G hP)
     (singularChainsRepTwistExtendForget₂Iso k Y χ n)

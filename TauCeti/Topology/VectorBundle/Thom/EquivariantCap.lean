@@ -21,9 +21,8 @@ class of `φ` is a Thom class, then the equivariant cap product with `φ`,
 `C(E, E₀; k) ⟶ (k_χ ⊗ C(B; k))[r]`,  `x ↦ ± π_*(x ⌢ φ)`
 
 (`TopPair.singularChainsRepCap`), is a quasi-isomorphism of complexes of representations of `G`
-(`TauCeti.quasiIso_singularChainsRepCap_thomPair`): the homology of the Thom pair vanishes below the
-rank (`TauCeti.isZero_singularHomology_thomPair`) and capping with a Thom class is the homology Thom
-isomorphism (`TauCeti.isIso_homologyThomMap`).
+(`TauCeti.quasiIso_singularChainsRepCap_thomPair`): forgetting the action, it is the chain-level
+homology Thom isomorphism `TauCeti.quasiIso_pushforwardCapChainMap_thomPair`.
 
 This is the chain-level, equivariant form of the homology Thom isomorphism used to compute the
 homology of a Thom pair with local coefficients from a covering. For the pull-back `E'` of `E` to
@@ -89,9 +88,6 @@ theorem quasiIso_singularChainsRepCap_thomPair
         (finrank ℝ F) φ)) :
     QuasiIso ((thomPair F E).singularChainsRepCap hp₀ χ hφ hP) :=
   (TopPair.quasiIso_singularChainsRepCap_iff _ hp₀ χ hφ hP).2
-    ⟨fun _ hm ↦ isZero_singularHomology_thomPair _ hm,
-      fun p ↦ by
-        rw [← homologyThomMap_def]
-        exact isIso_homologyThomMap p (finrank ℝ F + p) rfl hu⟩
+    (quasiIso_pushforwardCapChainMap_thomPair φ hu)
 
 end TauCeti

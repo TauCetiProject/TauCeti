@@ -16,8 +16,6 @@ morphism `n • 𝟙 X`, which is also the image of `n` in the endomorphism ring
 morphism (`CategoryTheory.End.intCast_asHom_comp`, `CategoryTheory.End.natCast_asHom_comp`).
 An endomorphism that an isomorphism conjugates to multiplication by an integer is itself
 multiplication by that integer (`CategoryTheory.Iso.eq_zsmul_id_of_zsmul_id_comp_hom`).
-Multiplying a morphism by a unit of `ℤ`, such as a sign `(-1) ^ m`, does not change whether it is
-an isomorphism (`CategoryTheory.isIso_zsmul_iff_of_isUnit`).
 
 The inverse of a scalar multiple `r • 𝟙` and its preservation by linear functors are in
 `TauCeti.CategoryTheory.Linear.Endomorphism`.
@@ -61,20 +59,5 @@ theorem Iso.eq_zsmul_id_of_zsmul_id_comp_hom {X Y : C} (e : X ≅ Y) (d : ℤ) {
     (h : (d • 𝟙 X) ≫ e.hom = e.hom ≫ g) : g = d • 𝟙 Y := by
   rw [← cancel_epi e.hom, ← h, Preadditive.zsmul_comp, Preadditive.comp_zsmul, Category.id_comp,
     Category.comp_id]
-
-/-- Multiplying a morphism by a unit `z` of `ℤ`, that is by `1` or `-1`, does not change whether it
-is an isomorphism. -/
-theorem isIso_zsmul_iff_of_isUnit {X Y : C} {z : ℤ} (hz : IsUnit z) (f : X ⟶ Y) :
-    IsIso (z • f) ↔ IsIso f := by
-  have hzz : z * z = 1 := by
-    rcases Int.isUnit_iff.1 hz with rfl | rfl <;> rfl
-  -- multiplying twice by `z` is the identity, so it suffices to show one direction for all `f`
-  suffices h : ∀ g : X ⟶ Y, IsIso g → IsIso (z • g) from
-    ⟨fun _ ↦ by simpa [smul_smul, hzz] using h (z • f) ‹_›, h f⟩
-  intro g _
-  exact ⟨z • inv g, by
-    rw [Preadditive.zsmul_comp, Preadditive.comp_zsmul, smul_smul, hzz, one_smul, IsIso.hom_inv_id],
-    by rw [Preadditive.zsmul_comp, Preadditive.comp_zsmul, smul_smul, hzz, one_smul,
-      IsIso.inv_hom_id]⟩
 
 end CategoryTheory
