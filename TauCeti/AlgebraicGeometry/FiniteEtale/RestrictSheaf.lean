@@ -77,28 +77,14 @@ private lemma toEtaleCompSmallEtaleBaseChangeIso_hom_app_left (p : T ⟶ S)
       (toEtaleCompSmallEtaleBaseChangeForgetIso p).hom :=
     ((Functor.FullyFaithful.ofFullyFaithful (Etale.forget T)).whiskeringRight _).map_preimage _
   refine (congrArg (fun η ↦ (η.app X).left) h).trans ?_
-  have happ₁ : ∀ {F G : TauCeti.FiniteEtaleScheme S ⥤ Over S} (e : F = G),
-      (eqToHom e).app X = eqToHom (congrArg (·.obj X) e) := by
-    rintro F _ rfl; rfl
-  have happ₂ : ∀ {F G : TauCeti.FiniteEtaleScheme S ⥤ Over T} (e : F = G),
-      (eqToHom e).app X = eqToHom (congrArg (·.obj X) e) := by
-    rintro F _ rfl; rfl
-  have happ₃ : ∀ {F G : TauCeti.FiniteEtaleScheme T ⥤ Over T} (e : F = G)
-      (Y : TauCeti.FiniteEtaleScheme T),
-      (eqToHom e).app Y = eqToHom (congrArg (·.obj Y) e) := by
-    rintro F _ rfl Y; rfl
-  have hmap : ∀ {A B : Over S} (e : A = B),
-      (Over.pullback p).map (eqToHom e) = eqToHom (congrArg (Over.pullback p).obj e) := by
-    rintro A _ rfl; simp
-  have hleft : ∀ {A B : Over T} (e : A = B),
-      (eqToHom e).left = eqToHom (congrArg Comma.left e) := by
-    rintro A _ rfl; rfl
   simp only [toEtaleCompSmallEtaleBaseChangeForgetIso, Iso.trans_hom, Iso.symm_hom,
     Functor.isoWhiskerLeft_hom, Functor.isoWhiskerRight_hom, NatTrans.comp_app,
     Functor.whiskerLeft_app, Functor.whiskerRight_app, Functor.associator_hom_app,
     Functor.associator_inv_app, eqToIso.hom, Category.id_comp, Category.comp_id,
-    happ₁, happ₂, happ₃, hmap, eqToHom_trans, Over.comp_left,
-    smallEtaleBaseChangeCompForgetIso_hom_app_left, hleft]
+    smallEtaleBaseChangeCompForgetIso_hom_app_left, Over.comp_left]
+  simp only [Functor.comp_obj, Etale.forget_obj_left, Over.pullback_obj_left,
+    Etale.forget_obj_hom, Functor.id_obj, Functor.const_obj_obj, ObjectProperty.ι_obj,
+    CategoryTheory.eqToHom_app, CategoryTheory.eqToHom_map, Over.eqToHom_left]
   exact (Category.id_comp _).trans (eqToHom_refl (Limits.pullback X.obj.hom p) rfl)
 
 private lemma toEtaleCompSmallEtaleBaseChangeIso_inv_app_left (p : T ⟶ S)

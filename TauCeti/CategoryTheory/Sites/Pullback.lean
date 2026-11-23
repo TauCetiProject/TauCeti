@@ -24,9 +24,10 @@ This file develops basic properties of Mathlib's `CategoryTheory.Functor.sheafPu
 * **Functoriality**: mate transport yields `sheafPullbackId`, `sheafPullbackComp`,
   `sheafPullbackIso`, `sheafPullbackId'`, `sheafPullbackComp'`, and the coherence laws
   `sheafPullback_id_comp`, `sheafPullback_comp_id`, and `sheafPullback_assoc`.
-* **Representables**: for a continuous functor `u : C ⥤ D` between subcanonical sites,
-  `yonedaCompSheafPullbackIso` identifies `J.yoneda ⋙ u.sheafPullback (Type v) J K` with
-  `u ⋙ K.yoneda`.
+* **Representables**: for a continuous functor `u : C ⥤ D` between subcanonical sites whose
+  sheaf pushforward `u.sheafPushforwardContinuous (Type v) J K` admits a left adjoint
+  (so `u.sheafPullback (Type v) J K` exists), `yonedaCompSheafPullbackIso` identifies
+  `J.yoneda ⋙ u.sheafPullback (Type v) J K` with `u ⋙ K.yoneda`.
 * **Adjoint continuous functors**: an adjunction `adj : F ⊣ G` between continuous functors yields
   `CategoryTheory.Adjunction.sheafPullbackIso : G.sheafPullback A K J ≅
   F.sheafPushforwardContinuous A J K`, and on representable sheaves of sets this reduces to
@@ -328,8 +329,9 @@ variable {C : Type*} [Category.{v} C] {D : Type*} [Category.{v} D]
   [J.Subcanonical] [K.Subcanonical] [u.IsContinuous J K]
   [(u.sheafPushforwardContinuous (Type v) J K).IsRightAdjoint]
 
-/-- Pulling back a representable sheaf of sets along a continuous functor `u : C ⥤ D` between
-subcanonical sites commutes with `u`:
+/-- When `u : C ⥤ D` is a continuous functor between subcanonical sites such that
+`u.sheafPushforwardContinuous (Type v) J K` admits a left adjoint, pulling back a representable
+sheaf of sets along `u` commutes with `u`:
 `J.yoneda ⋙ u.sheafPullback (Type v) J K ≅ u ⋙ K.yoneda`. -/
 def yonedaCompSheafPullbackIso :
     J.yoneda ⋙ u.sheafPullback (Type v) J K ≅ u ⋙ K.yoneda :=
@@ -517,23 +519,23 @@ variable {C' : Type*} [Category.{v} C'] {D' : Type*} [Category.{v} D']
   [(G'.sheafPushforwardContinuous (Type v) K' J').IsRightAdjoint]
 
 include adj' hF' in
-/-- Under `adj' : F' ⊣ G'`, transferring a section of `(F'.sheafPushforwardContinuous ...).obj
-(K'.yoneda.obj X)` along `(adj'.sheafPullbackIso (Type v) J' K').inv` and
-`(Functor.yonedaCompSheafPullbackIso G' K' J').hom` applies `adj'.homEquiv`. -/
-lemma sheafPullbackIso_inv_comp_yonedaCompSheafPullbackIso_hom_app_apply
-    (X : D') (W : C') (s : F'.obj W ⟶ X) :
-    (((adj'.sheafPullbackIso (Type v) J' K').inv.app (K'.yoneda.obj X) ≫
-        (Functor.yonedaCompSheafPullbackIso G' K' J').hom.app X).hom.app (Opposite.op W)) s =
-      adj'.homEquiv W X s := by
-  let ψ : (F'.sheafPushforwardContinuous (Type v) J' K').obj (K'.yoneda.obj X) ⟶
-      J'.yoneda.obj (G'.obj X) :=
-    (adj'.sheafPullbackIso (Type v) J' K').inv.app (K'.yoneda.obj X) ≫
-      (Functor.yonedaCompSheafPullbackIso G' K' J').hom.app X
+private lemma sheafPullbackIso_symm_trans_yonedaCompSheafPullbackIso_eq (X : D') :
+    ((adj'.sheafPullbackIso (Type v) J' K').app (K'.yoneda.obj X)).symm ≪≫
+        (Functor.yonedaCompSheafPullbackIso G' K' J').app X =
+      (fullyFaithfulSheafToPresheaf J' (Type v)).preimageIso
+        (X := (F'.sheafPushforwardContinuous (Type v) J' K').obj (K'.yoneda.obj X))
+        (Y := J'.yoneda.obj (G'.obj X))
+        (adj'.compYonedaIso.app X).symm := by
   let adj₁ := G'.sheafAdjunctionContinuous (Type v) K' J'
   let adj₂ : F'.sheafPushforwardContinuous (Type v) J' K' ⊣
       G'.sheafPushforwardContinuous (Type v) K' J' :=
     adj'.sheafPushforwardContinuous J' K'
-  have htranspose : adj₂.homEquiv (K'.yoneda.obj X) (J'.yoneda.obj (G'.obj X)) ψ =
+  refine Iso.ext (adj₂.homEquiv (K'.yoneda.obj X) (J'.yoneda.obj (G'.obj X)) |>.injective ?_)
+  let ψ : (F'.sheafPushforwardContinuous (Type v) J' K').obj (K'.yoneda.obj X) ⟶
+      J'.yoneda.obj (G'.obj X) :=
+    (adj'.sheafPullbackIso (Type v) J' K').inv.app (K'.yoneda.obj X) ≫
+      (Functor.yonedaCompSheafPullbackIso G' K' J').hom.app X
+  have hL : adj₂.homEquiv (K'.yoneda.obj X) (J'.yoneda.obj (G'.obj X)) ψ =
       (K'.yonedaEquiv
         (F := (G'.sheafPushforwardContinuous (Type v) K' J').obj (J'.yoneda.obj (G'.obj X)))).symm
         (𝟙 (G'.obj X)) := by
@@ -563,32 +565,33 @@ lemma sheafPullbackIso_inv_comp_yonedaCompSheafPullbackIso_hom_app_apply
             (F := (G'.sheafPushforwardContinuous (Type v) K' J').obj
               (J'.yoneda.obj (G'.obj X)))).symm (𝟙 (G'.obj X)) :=
             Equiv.apply_symm_apply _ _
-  have heval := congrArg
-    (fun α : K'.yoneda.obj X ⟶ _ ↦ α.hom.app (Opposite.op (F'.obj W)) s) htranspose
-  have hL : (adj₂.homEquiv (K'.yoneda.obj X) (J'.yoneda.obj (G'.obj X)) ψ).hom.app
-        (Opposite.op (F'.obj W)) s =
-      ψ.hom.app (Opposite.op (G'.obj (F'.obj W))) (adj'.counit.app (F'.obj W) ≫ s) := (rfl)
-  have hR : ((K'.yonedaEquiv
+  have hR : adj₂.homEquiv (K'.yoneda.obj X) (J'.yoneda.obj (G'.obj X))
+        ((fullyFaithfulSheafToPresheaf J' (Type v)).preimageIso
+          (X := (F'.sheafPushforwardContinuous (Type v) J' K').obj (K'.yoneda.obj X))
+          (Y := J'.yoneda.obj (G'.obj X))
+          (adj'.compYonedaIso.app X).symm).hom =
+      (K'.yonedaEquiv
         (F := (G'.sheafPushforwardContinuous (Type v) K' J').obj (J'.yoneda.obj (G'.obj X)))).symm
-        (𝟙 (G'.obj X))).hom.app (Opposite.op (F'.obj W)) s =
-      G'.map s :=
-    (K'.yonedaEquiv_symm_app_apply _ _ _).trans (Category.comp_id (G'.map s))
-  have hnat := congrArg
-    (fun f : (J'.yoneda.obj (G'.obj X)).obj.obj (Opposite.op (G'.obj (F'.obj W))) ↦
-      adj'.unit.app W ≫ f) (hL.symm.trans (heval.trans hR))
-  have hnat' : adj'.unit.app W ≫
-        ψ.hom.app (Opposite.op (G'.obj (F'.obj W))) (adj'.counit.app (F'.obj W) ≫ s) =
-      ψ.hom.app (Opposite.op W) (F'.map (adj'.unit.app W) ≫ adj'.counit.app (F'.obj W) ≫ s) :=
-    congrArg (fun φ : (K'.yoneda.obj X).obj.obj (Opposite.op (F'.obj (G'.obj (F'.obj W)))) ⟶
-        (J'.yoneda.obj (G'.obj X)).obj.obj (Opposite.op W) ↦
-      φ (adj'.counit.app (F'.obj W) ≫ s)) (ψ.hom.naturality (adj'.unit.app W).op).symm
-  have htri : ψ.hom.app (Opposite.op W)
-        (F'.map (adj'.unit.app W) ≫ adj'.counit.app (F'.obj W) ≫ s) =
-      ψ.hom.app (Opposite.op W) s :=
-    congrArg (ψ.hom.app (Opposite.op W))
-      ((Category.assoc _ _ _).symm.trans
-        ((congrArg (· ≫ s) (adj'.left_triangle_components W)).trans (Category.id_comp s)))
-  exact (htri.symm.trans (hnat'.symm.trans hnat)).trans (adj'.homEquiv_unit W X s).symm
+        (𝟙 (G'.obj X)) := by
+    ext V s
+    dsimp [adj₂]
+    change adj'.homEquiv (G'.obj V.unop) X (adj'.counit.app V.unop ≫ s) =
+      G'.map s ≫ 𝟙 (G'.obj X)
+    rw [Category.comp_id, adj'.homEquiv_unit, Functor.map_comp,
+      ← Category.assoc, adj'.right_triangle_components, Category.id_comp]
+  exact hL.trans hR.symm
+
+include adj' hF' in
+/-- Under `adj' : F' ⊣ G'`, transferring a section of `(F'.sheafPushforwardContinuous ...).obj
+(K'.yoneda.obj X)` along `(adj'.sheafPullbackIso (Type v) J' K').inv` and
+`(Functor.yonedaCompSheafPullbackIso G' K' J').hom` applies `adj'.homEquiv`. -/
+lemma sheafPullbackIso_inv_comp_yonedaCompSheafPullbackIso_hom_app_apply
+    (X : D') (W : C') (s : F'.obj W ⟶ X) :
+    (((adj'.sheafPullbackIso (Type v) J' K').inv.app (K'.yoneda.obj X) ≫
+        (Functor.yonedaCompSheafPullbackIso G' K' J').hom.app X).hom.app (Opposite.op W)) s =
+      adj'.homEquiv W X s :=
+  congrArg (fun e ↦ (e.hom.hom.app (Opposite.op W)) s)
+    (sheafPullbackIso_symm_trans_yonedaCompSheafPullbackIso_eq adj' J' K' X)
 
 include adj' hF' in
 /-- Inverse of `sheafPullbackIso_inv_comp_yonedaCompSheafPullbackIso_hom_app_apply`. -/
@@ -597,22 +600,9 @@ lemma yonedaCompSheafPullbackIso_inv_comp_sheafPullbackIso_hom_app_apply
     (((Functor.yonedaCompSheafPullbackIso G' K' J').inv.app X ≫
         (adj'.sheafPullbackIso (Type v) J' K').hom.app (K'.yoneda.obj X)).hom.app
       (Opposite.op W)) t =
-      (adj'.homEquiv W X).symm t := by
-  let s := (adj'.homEquiv W X).symm t
-  have hs := adj'.sheafPullbackIso_inv_comp_yonedaCompSheafPullbackIso_hom_app_apply J' K' X W s
-  rw [Equiv.apply_symm_apply] at hs
-  have hinv := congrArg (fun f ↦
-      (((Functor.yonedaCompSheafPullbackIso G' K' J').inv.app X ≫
-        (adj'.sheafPullbackIso (Type v) J' K').hom.app (K'.yoneda.obj X)).hom.app
-          (Opposite.op W)) f) hs
-  have hid : (((adj'.sheafPullbackIso (Type v) J' K').inv.app (K'.yoneda.obj X) ≫
-        (Functor.yonedaCompSheafPullbackIso G' K' J').hom.app X) ≫
-      ((Functor.yonedaCompSheafPullbackIso G' K' J').inv.app X ≫
-        (adj'.sheafPullbackIso (Type v) J' K').hom.app (K'.yoneda.obj X))) = 𝟙 _ := by
-    rw [Category.assoc, Iso.hom_inv_id_app_assoc, Iso.inv_hom_id_app]
-  have hcomp := congrArg (fun α : (F'.sheafPushforwardContinuous (Type v) J' K').obj
-      (K'.yoneda.obj X) ⟶ _ ↦ α.hom.app (Opposite.op W) s) hid
-  exact hinv.symm.trans hcomp
+      (adj'.homEquiv W X).symm t :=
+  congrArg (fun e ↦ (e.inv.hom.app (Opposite.op W)) t)
+    (sheafPullbackIso_symm_trans_yonedaCompSheafPullbackIso_eq adj' J' K' X)
 
 end Yoneda
 

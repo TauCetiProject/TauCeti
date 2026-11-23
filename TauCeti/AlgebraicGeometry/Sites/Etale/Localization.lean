@@ -105,19 +105,20 @@ theorem mem_over_smallEtaleTopology_iff {U : S.Etale} {V : Over U} (R : Sieve V)
 /-- A surjective morphism in the small étale site of `S` generates a covering sieve. -/
 theorem mem_smallEtaleTopology_singleton_of_surjective {U V : S.Etale} (f : U ⟶ V)
     [Surjective f.left] :
-    Sieve.generate (.singleton f) ∈ smallEtaleTopology S V :=
-  (mem_smallEtaleTopology_iff _).mpr fun x ↦
-    let ⟨u, hu⟩ := f.left.surjective x
-    ⟨U, f, u, Sieve.le_generate (.singleton f) _ _ (.mk), hu⟩
+    Sieve.generate (.singleton f) ∈ smallEtaleTopology S V := by
+  rw [← Presieve.ofArrows_pUnit.{0}, ← Sieve.ofArrows,
+    Scheme.ofArrows_mem_smallEtaleTopology_iff]
+  simp [Set.iUnion_const]
 
 /-- A morphism in `Over U` whose underlying morphism of schemes is surjective generates a covering
 sieve in the localized small étale topology `(smallEtaleTopology S).over U`. -/
 theorem mem_over_smallEtaleTopology_singleton_of_surjective {U : S.Etale} {A B : Over U}
     (g : A ⟶ B) [Surjective g.left.left] :
-    Sieve.generate (.singleton g) ∈ (smallEtaleTopology S).over U B :=
-  (mem_over_smallEtaleTopology_iff _).mpr fun x ↦
-    let ⟨a, ha⟩ := g.left.left.surjective x
-    ⟨A, g, a, Sieve.le_generate (.singleton g) _ _ (.mk), ha⟩
+    Sieve.generate (.singleton g) ∈ (smallEtaleTopology S).over U B := by
+  rw [GrothendieckTopology.mem_over_iff, Sieve.overEquiv_generate,
+    ← Sieve.arrows_generate_map_eq_functorPushforward, Sieve.generate_sieve,
+    Presieve.map_singleton]
+  exact mem_smallEtaleTopology_singleton_of_surjective g.left
 
 /-- An étale sheaf of sets on `S` satisfies the sheaf condition for any singleton family in
 `Over U` whose underlying morphism of schemes is surjective. -/

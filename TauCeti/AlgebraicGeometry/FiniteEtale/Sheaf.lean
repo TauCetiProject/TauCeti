@@ -242,10 +242,7 @@ noncomputable def toSheafTrivialCoverIso (S : Scheme.{u}) (M : Type u) [Finite M
     (C := Sheaf (Scheme.smallEtaleTopology S) (Type u)) (Discrete M)
   have := (constantSheafAdj (Scheme.smallEtaleTopology S) (Type u)
       (Scheme.Etale.mkIdTerminal S)).isLeftAdjoint
-  (toSheaf S).mapIso
-      ((trivialCover.isColimit S M).coconePointUniqueUpToIso
-        (colimit.isColimit (Discrete.functor fun _ : M ↦ ofHom (𝟙 S)))) ≪≫
-    PreservesCoproduct.iso (toSheaf S) (fun _ : M ↦ ofHom (𝟙 S)) ≪≫
+  PreservesCoproduct.iso (toSheaf S) (fun _ : M ↦ ofHom (𝟙 S)) ≪≫
     Sigma.mapIso (fun _ ↦ toSheafOfHomIdIso S) ≪≫
     (PreservesCoproduct.iso (constantSheaf (Scheme.smallEtaleTopology S) (Type u)) _).symm ≪≫
     (constantSheaf (Scheme.smallEtaleTopology S) (Type u)).mapIso

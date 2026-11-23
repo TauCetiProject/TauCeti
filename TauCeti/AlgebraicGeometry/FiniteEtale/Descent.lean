@@ -62,17 +62,15 @@ theorem exists_toSheaf_iso_of_smallEtalePullback_iso {S S' : Scheme.{u}} (p : S'
   let U : S.Etale := Etale.mk p
   let p₀ : U ⟶ U₀ := MorphismProperty.Over.homMk p (Category.comp_id p)
   let F₀ : (CategoryTheory.Over U₀)ᵒᵖ ⥤ Type u := (F.over U₀).obj
-  -- Representability of `F₀` after base change along `p₀ : U ⟶ U₀`.
-  let e' : (smallEtaleTopology S').yoneda.obj ((toEtale S').obj X) ≅
-      (p.smallEtaleMap.sheafPushforwardContinuous (Type u)
-        (smallEtaleTopology S') (smallEtaleTopology S)).obj F :=
-    e ≪≫ (p.smallEtalePullbackIsoMapPushforward (Type u)).app F
   let ePresheaf : U.iteratedSliceEquiv.functor.op ⋙ yoneda.obj ((toEtale S').obj X) ≅
       (CategoryTheory.Over.map p₀).op ⋙ F₀ :=
     Functor.isoWhiskerLeft U.iteratedSliceEquiv.functor.op
-      ((sheafToPresheaf (smallEtaleTopology S') (Type u)).mapIso e') ≪≫
-      (Functor.associator _ _ _).symm ≪≫
-      Functor.isoWhiskerRight (NatIso.op U.iteratedSliceEquivFunctorCompMapIso.symm) F.obj ≪≫
+      ((sheafToPresheaf (smallEtaleTopology S') (Type u)).mapIso
+        (e ≪≫ U.smallEtalePullbackObjIsoOver (Type u) F)) ≪≫
+      (sheafToPresheaf ((smallEtaleTopology S).over U) (Type u)).mapIso
+        ((U.overSheafEquiv (Type u)).symm.counitIso.app (F.over U)) ≪≫
+      eqToIso (congrArg (fun G : CategoryTheory.Over U ⥤ S.Etale ↦ G.op ⋙ F.obj)
+        (CategoryTheory.Over.mapForget_eq p₀).symm) ≪≫
       Functor.associator (CategoryTheory.Over.map p₀).op (CategoryTheory.Over.forget U₀).op F.obj
   let X_et : CategoryTheory.Over U := U.iteratedSliceEquiv.inverse.obj ((toEtale S').obj X)
   let e_rep : ((CategoryTheory.Over.map p₀).op ⋙ F₀).RepresentableBy X_et :=
@@ -102,84 +100,49 @@ theorem exists_toSheaf_iso_of_smallEtalePullback_iso {S S' : Scheme.{u}} (p : S'
   have hX₀_hom : L.map X₀_et.hom = X₀_over.hom :=
     (Category.comp_id _).symm.trans (MorphismProperty.Over.w (hU₀.from ((toEtale S).obj X₀)))
   -- Lift the descended model isomorphism `f` back to `CategoryTheory.Over U`.
-  let e_pb_lift :
-      Limits.pullback (L.map X₀_et.hom) (L.map p₀) ≅ Limits.pullback X₀_over.hom (L.map p₀) :=
-    Limits.pullback.congrHom hX₀_hom rfl
-  let e_pb : L.obj (Limits.pullback X₀_et.hom p₀) ≅ Limits.pullback X₀_over.hom (L.map p₀) :=
-    PreservesPullback.iso L X₀_et.hom p₀ ≪≫ e_pb_lift
-  have he_pb_lift_fst :
-      e_pb_lift.hom ≫ Limits.pullback.fst X₀_over.hom (L.map p₀) =
-        Limits.pullback.fst (L.map X₀_et.hom) (L.map p₀) :=
-    (congrArg (· ≫ Limits.pullback.fst X₀_over.hom (L.map p₀))
-      (Limits.pullback.congrHom_hom hX₀_hom rfl)).trans
-      ((Limits.pullback.lift_fst _ _ _).trans (Category.comp_id _))
-  have he_pb_lift_snd :
-      e_pb_lift.hom ≫ Limits.pullback.snd X₀_over.hom (L.map p₀) =
-        Limits.pullback.snd (L.map X₀_et.hom) (L.map p₀) :=
-    (congrArg (· ≫ Limits.pullback.snd X₀_over.hom (L.map p₀))
-      (Limits.pullback.congrHom_hom hX₀_hom rfl)).trans
-      ((Limits.pullback.lift_snd _ _ _).trans (Category.comp_id _))
-  have he_pb_snd : e_pb.hom ≫ Limits.pullback.snd X₀_over.hom (L.map p₀) =
-      L.map (Limits.pullback.snd X₀_et.hom p₀) :=
-    (Category.assoc _ _ _).trans
-      ((congrArg (_ ≫ ·) he_pb_lift_snd).trans (PreservesPullback.iso_hom_snd L X₀_et.hom p₀))
+  let iX₀ : CategoryTheory.Over.mk (L.map X₀_et.hom) ⟶ X₀_over :=
+    CategoryTheory.Over.homMk (𝟙 X₀_over.left) ((Category.id_comp _).trans hX₀_hom.symm)
+  have : IsIso iX₀ := by
+    suffices IsIso ((CategoryTheory.Over.forget (L.obj U₀)).map iX₀) from
+      isIso_of_reflects_iso iX₀ (CategoryTheory.Over.forget (L.obj U₀))
+    exact inferInstanceAs (IsIso (𝟙 X₀_over.left))
+  have : IsIso (TauCeti.DescentDatum.baseChangeHom (L.map p₀) iX₀).hom := by
+    rw [TauCeti.DescentDatum.baseChangeHom_hom]
+    infer_instance
+  let f_map : TauCeti.DescentDatum.Hom ((TauCeti.DescentDatum.baseChange p₀ X₀_et).map L)
+      D_scheme :=
+    f.comp ((TauCeti.DescentDatum.baseChangeHom (L.map p₀) iX₀).comp
+      (TauCeti.DescentDatum.baseChangeMapHom L p₀ X₀_et))
   let Φ : CategoryTheory.Over U ⥤ CategoryTheory.Over S' :=
     U.iteratedSliceEquiv.functor ⋙ Etale.forget S'
   let hΦ : Φ.FullyFaithful :=
     U.iteratedSliceEquiv.fullyFaithfulFunctor.comp (Etale.forgetFullyFaithful S')
   let g_scheme : Φ.obj ((CategoryTheory.Over.pullback p₀).obj X₀_et) ⟶ Φ.obj X_et :=
-    CategoryTheory.Over.homMk (e_pb.hom ≫ f.hom.left) <|
-      (Category.assoc _ _ _).trans
-        ((congrArg (e_pb.hom ≫ ·) (CategoryTheory.Over.w f.hom)).trans he_pb_snd)
-  have hg_scheme_left : g_scheme.left = e_pb.hom ≫ f.hom.left := (rfl)
-  have hf_left : IsIso f.hom.left :=
-    inferInstanceAs (IsIso ((CategoryTheory.Over.forget (L.obj U)).map f.hom))
+    CategoryTheory.Over.homMk f_map.hom.left (CategoryTheory.Over.w f_map.hom)
+  have : IsIso f_map.hom := by
+    dsimp only [f_map]
+    rw [TauCeti.DescentDatum.Hom.comp_hom, TauCeti.DescentDatum.Hom.comp_hom]
+    infer_instance
   have : IsIso g_scheme := by
     suffices IsIso ((CategoryTheory.Over.forget S').map g_scheme) from
       isIso_of_reflects_iso g_scheme (CategoryTheory.Over.forget S')
-    rw [CategoryTheory.Over.forget_map, hg_scheme_left]
-    exact IsIso.comp_isIso (f := e_pb.hom) (h := f.hom.left)
+    exact inferInstanceAs (IsIso ((CategoryTheory.Over.forget (L.obj U)).map f_map.hom))
   let g_et : (CategoryTheory.Over.pullback p₀).obj X₀_et ⟶ X_et := hΦ.preimage g_scheme
   have : IsIso g_et := by
     let := hΦ.reflectsIsomorphisms
     have : IsIso (Φ.map g_et) := (hΦ.map_preimage g_scheme).symm ▸ ‹IsIso g_scheme›
     exact isIso_of_reflects_iso g_et Φ
-  have hg_et : L.map g_et.left = e_pb.hom ≫ f.hom.left :=
-    (congrArg CategoryTheory.Over.Hom.left (hΦ.map_preimage g_scheme)).trans hg_scheme_left
-  let iX₀ : CategoryTheory.Over.mk (L.map X₀_et.hom) ⟶ X₀_over :=
-    CategoryTheory.Over.homMk (𝟙 X₀_over.left) ((Category.id_comp _).trans hX₀_hom.symm)
-  let f_map : TauCeti.DescentDatum.Hom ((TauCeti.DescentDatum.baseChange p₀ X₀_et).map L)
-      D_scheme :=
-    f.comp ((TauCeti.DescentDatum.baseChangeHom (L.map p₀) iX₀).comp
-      (TauCeti.DescentDatum.baseChangeMapHom L p₀ X₀_et))
-  have hf_map : f_map.hom.left = L.map g_et.left := by
-    have hiX₀ : (TauCeti.DescentDatum.baseChangeHom (L.map p₀) iX₀).hom.left = e_pb_lift.hom := by
-      refine Limits.pullback.hom_ext ?_ ?_
-      · have hw := (TauCeti.DescentDatum.isPullback_baseChangeHom (L.map p₀) iX₀).w
-        have hi : iX₀.left = 𝟙 X₀_over.left := (rfl)
-        exact hw.trans ((congrArg (_ ≫ ·) hi).trans
-          ((Category.comp_id _).trans he_pb_lift_fst.symm))
-      · exact (CategoryTheory.Over.w
-          (TauCeti.DescentDatum.baseChangeHom (L.map p₀) iX₀).hom).trans he_pb_lift_snd.symm
-    dsimp only [f_map]
-    rw [TauCeti.DescentDatum.Hom.comp_hom, TauCeti.DescentDatum.Hom.comp_hom,
-      CategoryTheory.Over.comp_left, CategoryTheory.Over.comp_left,
-      TauCeti.DescentDatum.baseChangeMapHom_hom_left, hiX₀,
-      ← Iso.trans_hom (PreservesPullback.iso L X₀_et.hom p₀) e_pb_lift]
-    exact hg_et.symm
+  have hf_map : f_map.hom.left = L.map g_et.left :=
+    (congrArg CategoryTheory.Over.Hom.left (hΦ.map_preimage g_scheme)).symm
   let f_et : (TauCeti.DescentDatum.baseChange p₀ X₀_et).Hom e_rep.descentDatum :=
     TauCeti.DescentDatum.Hom.ofMap L g_et f_map hf_map
   have : IsIso f_et.hom := by
     rw [TauCeti.DescentDatum.Hom.ofMap_hom]
     infer_instance
   -- Descend the local representation along `p₀` to represent `F₀` by `X₀_et`.
-  have hsurj (T : CategoryTheory.Over U₀) : Surjective (Limits.pullback.fst T.hom p₀).left := by
-    have hfst : (Limits.pullback.fst T.hom p₀).left = L.map (Limits.pullback.fst T.hom p₀) := (rfl)
-    have hpb : Surjective (Limits.pullback.fst (L.map T.hom) (L.map p₀)) := by
-      rw [surjective_iff, ← Set.range_eq_univ, Scheme.Pullback.range_fst,
-        range_eq_univ (L.map p₀), Set.preimage_univ]
-    rw [hfst, ← PreservesPullback.iso_hom_fst L T.hom p₀]
-    exact ⟨hpb.surj.comp (PreservesPullback.iso L T.hom p₀).hom.surjective⟩
+  have hsurj (T : CategoryTheory.Over U₀) : Surjective (Limits.pullback.fst T.hom p₀).left :=
+    MorphismProperty.of_isPullback (P := @Surjective)
+      (IsPullback.of_isLimit (isLimitOfHasPullbackOfPreservesLimit L T.hom p₀)).flip ‹_›
   have hF (T : CategoryTheory.Over U₀) :
       Presieve.IsSheafFor F₀ (.singleton ((CategoryTheory.Over.mapPullbackAdj p₀).counit.app T)) :=
     have hcounit : ((CategoryTheory.Over.mapPullbackAdj p₀).counit.app T).left =
