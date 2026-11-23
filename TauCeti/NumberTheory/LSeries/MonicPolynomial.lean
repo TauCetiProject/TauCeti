@@ -14,7 +14,6 @@ public import Mathlib.RingTheory.UniqueFactorizationDomain.NormalizedFactors
 public import TauCeti.Algebra.Polynomial.MonicOfCoeffs
 public import TauCeti.RingTheory.PowerSeries.Derivative
 import Mathlib.Algebra.Order.Antidiag.Finsupp
-import Mathlib.Tactic.LinearCombination
 
 /-!
 # The `L`-series of a multiplicative function on monic polynomials
@@ -45,14 +44,17 @@ series. This file proves the three facts that make the series useful.
   `L(λ, T)` is a polynomial of degree less than `d₀`.
 
 The definitions, the identities for a single Euler factor and the polynomial criterion hold for
-every finite commutative semiring `F`. The Euler product and the logarithmic derivative of
-`L(λ, T)` use unique factorization in `F[X]`, so they need a field.
+every finite commutative semiring `F`. The degree-`d` coefficient sums over the polynomials
+`monicOfCoeffs c`, `c : Fin d → F`, which are the monic polynomials of degree `d` when `F` is
+nontrivial; over the zero semiring they are all `0`. The Euler product and the logarithmic
+derivative of `L(λ, T)` use unique factorization in `F[X]`, so they need a field.
 
 ## Main definitions
 
 * `Polynomial.IsMonicMultiplicative λ`: `λ` is multiplicative on monic polynomials.
 * `Polynomial.lSeries λ`: the `L`-series `L(λ, T)`.
-* `Polynomial.lSeriesFactor λ P`: the Euler factor `∑_k λ(P) ^ k T ^ (k deg P)`.
+* `Polynomial.lSeriesFactor λ P`: the Euler factor, `∑_k λ(P) ^ k T ^ (k deg P)` for `deg P > 0`
+  and `1` for `deg P = 0`.
 * `Polynomial.lSeriesPowerSum λ n`: the power sum `S_n(λ)`.
 
 ## Main results
@@ -106,18 +108,20 @@ theorem IsMonicMultiplicative.map_prod_pow {lam : F[X] → R} (h : IsMonicMultip
 
 /-! ### Euler factors -/
 
-/-- The Euler factor `∑_k λ(P) ^ k T ^ (k deg P)` of `L(λ, T)` at `P`, which is
-`(1 - λ(P) T ^ deg P)⁻¹` (`Polynomial.one_sub_mul_lSeriesFactor`). -/
+/-- The Euler factor of `L(λ, T)` at `P`: the coefficient of `T ^ m` is `λ(P) ^ (m / deg P)` if
+`deg P ∣ m` and `0` otherwise. For `deg P > 0` it is the geometric series
+`∑_k λ(P) ^ k T ^ (k deg P)`, the inverse of `1 - λ(P) T ^ deg P`
+(`Polynomial.one_sub_mul_lSeriesFactor`). For `deg P = 0` it is `1`. -/
 noncomputable def lSeriesFactor (lam : F[X] → R) (P : F[X]) : PowerSeries R :=
   PowerSeries.mk fun m ↦ if P.natDegree ∣ m then lam P ^ (m / P.natDegree) else 0
 
-/-- The Euler factor is the inverse of `1 - λ(P) T ^ deg P`. -/
-theorem one_sub_mul_lSeriesFactor {R : Type*} [CommRing R] (lam : F[X] → R) {P : F[X]}
-    (hP : 0 < P.natDegree) :
-    (1 - PowerSeries.C (lam P) * PowerSeries.X ^ P.natDegree) * lSeriesFactor lam P = 1 := by
+/-- For `deg P > 0`, the Euler factor `E` satisfies `E = 1 + λ(P) T ^ deg P · E`. -/
+private theorem lSeriesFactor_eq_one_add (lam : F[X] → R) {P : F[X]} (hP : 0 < P.natDegree) :
+    lSeriesFactor lam P =
+      1 + PowerSeries.C (lam P) * PowerSeries.X ^ P.natDegree * lSeriesFactor lam P := by
   ext m
-  simp only [sub_mul, one_mul, map_sub, mul_assoc, PowerSeries.coeff_C_mul,
-    PowerSeries.coeff_X_pow_mul', lSeriesFactor, PowerSeries.coeff_mk, PowerSeries.coeff_one]
+  simp only [map_add, mul_assoc, PowerSeries.coeff_C_mul, PowerSeries.coeff_X_pow_mul',
+    lSeriesFactor, PowerSeries.coeff_mk, PowerSeries.coeff_one]
   set d := P.natDegree
   by_cases hdm : d ∣ m
   · obtain ⟨k, rfl⟩ := hdm
@@ -126,8 +130,8 @@ theorem one_sub_mul_lSeriesFactor {R : Type*} [CommRing R] (lam : F[X] → R) {P
     · have h1 : d ≤ d * (j + 1) := Nat.le_mul_of_pos_right _ (Nat.succ_pos j)
       have h2 : d * (j + 1) - d = d * j := by rw [Nat.mul_succ, Nat.add_sub_cancel]
       have h3 : d * (j + 1) ≠ 0 := Nat.mul_ne_zero hP.ne' (Nat.succ_ne_zero j)
-      simp only [dvd_mul_right, h1, h2, h3, ↓reduceIte, Nat.mul_div_cancel_left _ hP]
-      rw [pow_succ, mul_comm, sub_self]
+      simp only [dvd_mul_right, h1, h2, h3, ↓reduceIte, Nat.mul_div_cancel_left _ hP, zero_add]
+      rw [pow_succ, mul_comm]
   · have h : ¬(d ≤ m ∧ d ∣ m - d) := fun h ↦
       hdm (by simpa [Nat.sub_add_cancel h.1] using Nat.dvd_add h.2 (dvd_refl d))
     have hm : m ≠ 0 := fun hm ↦ hdm (hm ▸ dvd_zero d)
@@ -135,7 +139,16 @@ theorem one_sub_mul_lSeriesFactor {R : Type*} [CommRing R] (lam : F[X] → R) {P
       split_ifs with h1 h2
       · exact (h ⟨h1, h2⟩).elim
       all_goals rfl
-    simp only [hdm, hm, h4, ↓reduceIte, mul_zero, sub_zero]
+    simp only [hdm, hm, h4, ↓reduceIte, mul_zero, add_zero]
+
+/-- The Euler factor is the inverse of `1 - λ(P) T ^ deg P`. -/
+theorem one_sub_mul_lSeriesFactor {R : Type*} [CommRing R] (lam : F[X] → R) {P : F[X]}
+    (hP : 0 < P.natDegree) :
+    (1 - PowerSeries.C (lam P) * PowerSeries.X ^ P.natDegree) * lSeriesFactor lam P = 1 := by
+  have h := lSeriesFactor_eq_one_add lam hP
+  rw [sub_mul, one_mul]
+  nth_rw 1 [h]
+  ring
 
 /-- Over a field, the Euler factor is `(1 - λ(P) T ^ deg P)⁻¹`. -/
 theorem lSeriesFactor_eq_inv {K : Type*} [Field K] (lam : F[X] → K) {P : F[X]}
@@ -146,36 +159,47 @@ theorem lSeriesFactor_eq_inv {K : Type*} [Field K] (lam : F[X] → K) {P : F[X]}
 
 /-! ### The logarithmic derivative -/
 
+/-- For `d > 0`, a power series `D` with `D = B + a T ^ d · D` is determined by `B`, since the
+coefficient of `T ^ n` in `a T ^ d · D` uses only the coefficients of `D` below `n`. -/
+private theorem eq_of_eq_add_C_mul_X_pow_mul {B D₁ D₂ : PowerSeries R} {a : R} {d : ℕ}
+    (hd : 0 < d) (h₁ : D₁ = B + PowerSeries.C a * PowerSeries.X ^ d * D₁)
+    (h₂ : D₂ = B + PowerSeries.C a * PowerSeries.X ^ d * D₂) : D₁ = D₂ := by
+  ext n
+  induction n using Nat.strong_induction_on with
+  | _ n ih =>
+    rw [h₁, h₂]
+    simp only [map_add, mul_assoc, PowerSeries.coeff_C_mul, PowerSeries.coeff_X_pow_mul']
+    split_ifs with hdn
+    · rw [ih (n - d) (by omega)]
+    · rfl
+
 /-- The logarithmic derivative of an Euler factor: `X E' = D E` with
 `D = λ(P) deg P · X ^ deg P · E`, where `E = lSeriesFactor λ P`. -/
-theorem X_mul_derivative_lSeriesFactor {R : Type*} [CommRing R] (lam : F[X] → R) {P : F[X]}
-    (hP : 0 < P.natDegree) :
+theorem X_mul_derivative_lSeriesFactor (lam : F[X] → R) {P : F[X]} (hP : 0 < P.natDegree) :
     PowerSeries.X * PowerSeries.derivative (R := R) (lSeriesFactor lam P) =
       PowerSeries.C (lam P * P.natDegree) * PowerSeries.X ^ P.natDegree * lSeriesFactor lam P *
         lSeriesFactor lam P := by
   set E := lSeriesFactor lam P
   set d := P.natDegree
-  have h := one_sub_mul_lSeriesFactor lam hP
-  have hd := congrArg (PowerSeries.derivative (R := R)) h
-  rw [Derivation.leibniz, Derivation.map_one_eq_zero, map_sub, Derivation.map_one_eq_zero,
-    zero_sub, PowerSeries.derivative_C_mul_X_pow, smul_eq_mul, smul_eq_mul] at hd
+  have hE : E = 1 + PowerSeries.C (lam P) * PowerSeries.X ^ d * E :=
+    lSeriesFactor_eq_one_add lam hP
+  have hd := congrArg (PowerSeries.derivative (R := R)) hE
+  rw [map_add, Derivation.map_one_eq_zero, zero_add, Derivation.leibniz,
+    PowerSeries.derivative_C_mul_X_pow, smul_eq_mul, smul_eq_mul] at hd
   have hX : PowerSeries.X ^ (d - 1) * PowerSeries.X = (PowerSeries.X ^ d : PowerSeries R) := by
     rw [← pow_succ, Nat.sub_add_cancel hP]
-  calc PowerSeries.X * PowerSeries.derivative (R := R) E
-      = ((1 - PowerSeries.C (lam P) * PowerSeries.X ^ d) * E) *
-          (PowerSeries.X * PowerSeries.derivative (R := R) E) := by
-        rw [h, one_mul]
-    _ = PowerSeries.X * E * ((1 - PowerSeries.C (lam P) * PowerSeries.X ^ d) *
-          PowerSeries.derivative (R := R) E) := by
-        ring
-    _ = PowerSeries.X * E * (E * (PowerSeries.C (lam P * d) * PowerSeries.X ^ (d - 1))) := by
-        rw [← sub_eq_zero, ← mul_sub, sub_eq_add_neg, ← mul_neg, hd, mul_zero]
-    _ = _ := by rw [← hX]; ring
+  -- Both sides solve `D = C (λ(P) deg P) X ^ deg P E + λ(P) X ^ deg P D`.
+  refine eq_of_eq_add_C_mul_X_pow_mul (B := PowerSeries.C (lam P * d) * PowerSeries.X ^ d * E)
+    (a := lam P) hP ((congrArg (PowerSeries.X * ·) hd).trans (by rw [← hX]; ring)) ?_
+  calc PowerSeries.C (lam P * d) * PowerSeries.X ^ d * E * E
+      = PowerSeries.C (lam P * d) * PowerSeries.X ^ d * E *
+          (1 + PowerSeries.C (lam P) * PowerSeries.X ^ d * E) := by rw [← hE]
+    _ = _ := by ring
 
 /-- The logarithmic derivative of a finite Euler product:
 `X (∏_{P ∈ S} E_P)' = (∑_{P ∈ S} D_P) ∏_{P ∈ S} E_P`. -/
-theorem X_mul_derivative_prod_lSeriesFactor {R : Type*} [CommRing R] (lam : F[X] → R)
-    (S : Finset F[X]) (hS : ∀ P ∈ S, 0 < P.natDegree) :
+theorem X_mul_derivative_prod_lSeriesFactor (lam : F[X] → R) (S : Finset F[X])
+    (hS : ∀ P ∈ S, 0 < P.natDegree) :
     PowerSeries.X * PowerSeries.derivative (R := R) (∏ P ∈ S, lSeriesFactor lam P) =
       (∑ P ∈ S, PowerSeries.C (lam P * P.natDegree) * PowerSeries.X ^ P.natDegree *
         lSeriesFactor lam P) * ∏ P ∈ S, lSeriesFactor lam P := by
@@ -185,12 +209,14 @@ theorem X_mul_derivative_prod_lSeriesFactor {R : Type*} [CommRing R] (lam : F[X]
   | insert Q S hQ ih =>
     have h1 := ih fun P hP ↦ hS P (mem_insert_of_mem hP)
     have h2 := X_mul_derivative_lSeriesFactor lam (hS Q (mem_insert_self Q S))
-    rw [prod_insert hQ, sum_insert hQ, Derivation.leibniz, smul_eq_mul, smul_eq_mul]
-    linear_combination (lSeriesFactor lam Q) * h1 + (∏ P ∈ S, lSeriesFactor lam P) * h2
+    have key : ∀ a b c e : PowerSeries R, PowerSeries.X * (a * b + c * e) =
+        a * (PowerSeries.X * b) + c * (PowerSeries.X * e) := fun _ _ _ _ ↦ by ring
+    rw [prod_insert hQ, sum_insert hQ, Derivation.leibniz, smul_eq_mul, smul_eq_mul, key, h1, h2]
+    ring
 
 /-- The coefficients of `D_P = λ(P) deg P · X ^ deg P · lSeriesFactor λ P`. -/
-theorem coeff_C_mul_X_pow_mul_lSeriesFactor {R : Type*} [CommRing R] (lam : F[X] → R)
-    {P : F[X]} (hP : 0 < P.natDegree) (i : ℕ) :
+theorem coeff_C_mul_X_pow_mul_lSeriesFactor (lam : F[X] → R) {P : F[X]} (hP : 0 < P.natDegree)
+    (i : ℕ) :
     PowerSeries.coeff i (PowerSeries.C (lam P * P.natDegree) * PowerSeries.X ^ P.natDegree *
         lSeriesFactor lam P) =
       if P.natDegree ∣ i ∧ i ≠ 0 then P.natDegree * lam P ^ (i / P.natDegree) else 0 := by
@@ -219,14 +245,14 @@ theorem coeff_C_mul_X_pow_mul_lSeriesFactor {R : Type*} [CommRing R] (lam : F[X]
 
 variable [Fintype F] [DecidableEq F]
 
-/-- The `L`-series `L(λ, T) = ∑_d (∑_{g monic, deg g = d} λ(g)) T ^ d` of a function on `F[X]`,
-where the degree-`d` coefficient sums over the monic polynomials `monicOfCoeffs c`,
-`c : Fin d → F`. -/
+/-- The `L`-series of a function `λ` on `F[X]`: the coefficient of `T ^ d` sums `λ` over the
+polynomials `monicOfCoeffs c`, `c : Fin d → F`. For a nontrivial `F` (for instance a field) these
+are the monic polynomials of degree `d`, so `L(λ, T) = ∑_d (∑_{g monic, deg g = d} λ(g)) T ^ d`. -/
 noncomputable def lSeries (lam : F[X] → R) : PowerSeries R :=
   PowerSeries.mk fun d ↦ ∑ c : Fin d → F, lam (monicOfCoeffs c)
 
-/-- The degree-`d` coefficient of `L(λ, T)` is the sum of `λ` over the monic polynomials of
-degree `d`. -/
+/-- The degree-`d` coefficient of `L(λ, T)` is the sum of `λ` over `monicsOfDegree F d`, which for
+a nontrivial `F` is the set of monic polynomials of degree `d` (`Polynomial.mem_monicsOfDegree`). -/
 theorem coeff_lSeries (lam : F[X] → R) (d : ℕ) :
     PowerSeries.coeff d (lSeries lam) = ∑ g ∈ monicsOfDegree F d, lam g := by
   rw [lSeries, PowerSeries.coeff_mk, sum_monicsOfDegree]
@@ -467,8 +493,7 @@ theorem sum_ite_eq_lSeriesPowerSum (lam : F[X] → R) {S : Finset F[X]}
     exact ⟨hi P hPm hPirr (Nat.le_of_dvd (Nat.pos_of_ne_zero hi0) hei), hei, hi0⟩
 
 /-- **The logarithmic derivative** of the `L`-series: `X L' = (∑_n S_n(λ) X ^ n) L`. -/
-theorem X_mul_derivative_lSeries {R : Type*} [CommRing R] {lam : F[X] → R}
-    (hlam : IsMonicMultiplicative lam) :
+theorem X_mul_derivative_lSeries {lam : F[X] → R} (hlam : IsMonicMultiplicative lam) :
     PowerSeries.X * PowerSeries.derivative (R := R) (lSeries lam) =
       PowerSeries.mk (lSeriesPowerSum lam) * lSeries lam := by
   classical

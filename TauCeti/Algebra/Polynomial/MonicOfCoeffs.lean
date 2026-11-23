@@ -15,25 +15,29 @@ public import Mathlib.Data.Fintype.Pi
 A monic polynomial of degree `d` is `X ^ d + ∑_{i < d} c_i X ^ i` for a unique vector
 `c : Fin d → R` of lower coefficients. This file names that polynomial
 (`Polynomial.monicOfCoeffs c = X ^ d + Polynomial.ofFn d c`, with Mathlib's `Polynomial.ofFn`)
-and, over a finite semiring, collects the monic polynomials of degree `d` into a finset with
-`(card R) ^ d` elements. Sums over the monic polynomials of a given degree, such as the
-coefficients of the `L`-series of a function on `𝔽_q[X]`, are sums over this finset.
+and, over a finite semiring, collects the polynomials `monicOfCoeffs c`, `c : Fin d → R`, into a
+finset with `(card R) ^ d` elements. Over a nontrivial semiring these are exactly the monic
+polynomials of degree `d`, so sums over the monic polynomials of a given degree, such as the
+coefficients of the `L`-series of a function on `𝔽_q[X]`, are sums over this finset. Over the zero
+semiring every polynomial is `0`, so for `d > 0` the finset is `{0}`.
 
 ## Main definitions
 
 * `Polynomial.monicOfCoeffs c`: the monic polynomial `X ^ d + ∑_{i < d} c_i X ^ i`.
-* `Polynomial.monicsOfDegree R d`: the finset of monic polynomials of degree `d` over a finite
-  semiring `R`.
+* `Polynomial.monicsOfDegree R d`: the finset of the polynomials `monicOfCoeffs c`,
+  `c : Fin d → R`, over a finite semiring `R`; for a nontrivial `R`, the monic polynomials of
+  degree `d`.
 
 ## Main results
 
 * `Polynomial.monic_monicOfCoeffs`, `Polynomial.natDegree_monicOfCoeffs`,
-  `Polynomial.coeff_monicOfCoeffs_of_lt`: `monicOfCoeffs c` is monic of degree `d` with lower
-  coefficients `c`.
+  `Polynomial.coeff_monicOfCoeffs_of_lt`: `monicOfCoeffs c` is monic with lower coefficients `c`,
+  and of degree `d` when `R` is nontrivial.
 * `Polynomial.monicOfCoeffs_injective`, `Polynomial.exists_monicOfCoeffs_eq`: every monic
   polynomial of degree `d` is `monicOfCoeffs c` for exactly one `c`.
-* `Polynomial.mem_monicsOfDegree`, `Polynomial.card_monicsOfDegree`: `monicsOfDegree R d` consists
-  of the monic polynomials of degree `d`, and it has `(card R) ^ d` elements.
+* `Polynomial.mem_monicsOfDegree`, `Polynomial.card_monicsOfDegree`: for a nontrivial `R`,
+  `monicsOfDegree R d` consists of the monic polynomials of degree `d`; it has `(card R) ^ d`
+  elements.
 -/
 
 public section
@@ -83,8 +87,9 @@ theorem exists_monicOfCoeffs_eq {g : R[X]} (hg : g.Monic) :
 
 variable (R) [Fintype R]
 
-/-- The finset of monic polynomials of degree `d` over a finite semiring `R`, the image of
-`monicOfCoeffs` on `Fin d → R`. -/
+/-- The finset of the polynomials `monicOfCoeffs c`, `c : Fin d → R`, over a finite semiring `R`.
+For a nontrivial `R` these are the monic polynomials of degree `d`
+(`Polynomial.mem_monicsOfDegree`). -/
 noncomputable def monicsOfDegree (d : ℕ) : Finset R[X] :=
   univ.image (monicOfCoeffs (R := R) (d := d))
 
@@ -100,12 +105,13 @@ theorem mem_monicsOfDegree [Nontrivial R] {d : ℕ} {g : R[X]} :
     obtain ⟨c, hc⟩ := exists_monicOfCoeffs_eq hg
     exact mem_image.2 ⟨c, mem_univ _, hc⟩
 
-/-- There are `(card R) ^ d` monic polynomials of degree `d` over a finite semiring `R`. -/
+/-- `monicsOfDegree R d` has `(card R) ^ d` elements, one for each vector of lower coefficients.
+For a nontrivial `R` it follows that there are `(card R) ^ d` monic polynomials of degree `d`. -/
 theorem card_monicsOfDegree (d : ℕ) : #(monicsOfDegree R d) = Fintype.card R ^ d := by
   rw [monicsOfDegree, card_image_of_injective _ (monicOfCoeffs_injective d), card_univ,
     Fintype.card_fun, Fintype.card_fin]
 
-/-- A sum over the monic polynomials of degree `d` is a sum over their lower coefficients. -/
+/-- A sum over `monicsOfDegree R d` is a sum over the vectors of lower coefficients. -/
 theorem sum_monicsOfDegree {M : Type*} [AddCommMonoid M] (f : R[X] → M) (d : ℕ) :
     ∑ g ∈ monicsOfDegree R d, f g = ∑ c : Fin d → R, f (monicOfCoeffs c) :=
   sum_image fun _ _ _ _ h ↦ monicOfCoeffs_injective d h
