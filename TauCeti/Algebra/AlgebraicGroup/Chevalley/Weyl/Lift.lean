@@ -204,17 +204,17 @@ theorem weylQuotientLift_simplyConnectedWeylWordProd (A : Type v) [CommRing A]
     D.weylQuotientLift A (t.simplyConnectedWeylWordProd ht l) =
       QuotientGroup.mk ⟨(l.map fun i => D.weylElement (t.simpleIndex ht i) A 1).prod,
         D.list_prod_map_weylElement_mem_weylSubgroup A l⟩ := by
-  let q := QuotientGroup.mk' (((D.torusPoints A).range).subgroupOf (D.weylSubgroup A))
-  have hqprod : (l.map fun i => q (D.simpleWeylLift A i)).prod =
-      q (l.map (D.simpleWeylLift A)).prod := by
-    rw [map_list_prod, List.map_map]
-    rfl
+  have hqprod :
+      (l.map fun i =>
+          (QuotientGroup.mk (D.simpleWeylLift A i) :
+            D.weylSubgroup A ⧸ (((D.torusPoints A).range).subgroupOf (D.weylSubgroup A)))).prod =
+        QuotientGroup.mk (l.map (D.simpleWeylLift A)).prod := by
+    simp only [← QuotientGroup.mk'_apply, map_list_prod, List.map_map, Function.comp_def]
   rw [← t.simplyConnectedWeylCoxeterSystem_wordProd ht l, CoxeterSystem.wordProd, map_list_prod,
     List.map_map]
   simp only [Function.comp_def, t.simplyConnectedWeylCoxeterSystem_simple ht,
-    D.weylQuotientLift_ofIdx_simpleIndex A, ← QuotientGroup.mk'_apply]
-  change (l.map fun i => q (D.simpleWeylLift A i)).prod = _
-  rw [hqprod, QuotientGroup.mk'_apply]
+    D.weylQuotientLift_ofIdx_simpleIndex A]
+  rw [hqprod]
   exact congrArg QuotientGroup.mk <| Subtype.ext <| by
     simp only [Subgroup.val_list_prod, List.map_map, Function.comp_def, D.coe_simpleWeylLift]
 

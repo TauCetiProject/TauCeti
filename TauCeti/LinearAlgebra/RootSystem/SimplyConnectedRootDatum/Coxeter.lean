@@ -122,7 +122,7 @@ theorem simplyConnectedWeylCoxeterSystem_wordProd (l : List (Fin t.rank)) :
     simp [Function.comp_def]
   rw [simplyConnectedWeylCoxeterSystem, CoxeterSystem.wordProd_castMatrix,
     CoxeterSystem.wordProd, hmap]
-  simpa only [CoxeterSystem.wordProd, simplyConnectedWeylWordProd] using
+  simpa only [CoxeterSystem.wordProd, ← simplyConnectedWeylWordProd_def] using
     weylCoxeterSystem_wordProd (t.simplyConnectedRootDatum ht) (t.simplyConnectedBase ht)
       (l.map (t.simpleSupportEquivSimplyConnectedBase ht))
 

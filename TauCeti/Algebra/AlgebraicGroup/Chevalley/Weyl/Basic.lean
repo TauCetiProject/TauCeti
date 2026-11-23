@@ -63,6 +63,15 @@ theorem weylSubgroup_def (A : Type v) [CommRing A] :
       Set.range (fun i => D.weylElement (t.simpleIndex ht i) A 1)) :=
   (rfl)
 
+/-- The preimages of the torus points and pinned simple Weyl representatives generate
+`D.weylSubgroup A`. -/
+theorem closure_weylSubgroup_generators (A : Type v) [CommRing A] :
+    Subgroup.closure ((D.weylSubgroup A).subtype ⁻¹'
+      (Set.range (D.torusPoints A) ∪
+        Set.range (fun i => D.weylElement (t.simpleIndex ht i) A 1))) = ⊤ := by
+  rw [D.weylSubgroup_def]
+  exact Subgroup.closure_preimage_eq_top _
+
 /-- Every point of the actual torus belongs to the Weyl subgroup. -/
 theorem torusPoints_mem_weylSubgroup (A : Type v) [CommRing A] (s : Fin t.rank → Aˣ) :
     D.torusPoints A s ∈ D.weylSubgroup A :=

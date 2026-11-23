@@ -48,10 +48,17 @@ variable (t : DynkinType) (ht : t.Valid)
 /-- **The abstract Weyl-group element spelled by a word in the Bourbaki nodes.** The node indices
 are transported to the support of the pinned simply connected base before multiplying the simple
 reflections. -/
-@[expose] def simplyConnectedWeylWordProd (l : List (Fin t.rank)) :
+def simplyConnectedWeylWordProd (l : List (Fin t.rank)) :
     (t.simplyConnectedRootDatum ht).weylGroup :=
   TauCeti.wordProd (t.simplyConnectedRootDatum ht) (t.simplyConnectedBase ht)
     (l.map (t.simpleSupportEquivSimplyConnectedBase ht))
+
+/-- Unfolding lemma for `simplyConnectedWeylWordProd`. -/
+theorem simplyConnectedWeylWordProd_def (l : List (Fin t.rank)) :
+    t.simplyConnectedWeylWordProd ht l =
+      TauCeti.wordProd (t.simplyConnectedRootDatum ht) (t.simplyConnectedBase ht)
+        (l.map (t.simpleSupportEquivSimplyConnectedBase ht)) :=
+  (rfl)
 
 /-- The empty word spells the identity Weyl-group element. -/
 @[simp]

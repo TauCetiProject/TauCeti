@@ -162,8 +162,9 @@ theorem eq_chevalleyWeylSign_iff {α β : Fin t.numRoots} {ε : ℤˣ} :
 theorem chevalleyWeylSign_reflectionPerm_self (α β : Fin t.numRoots) :
     t.chevalleyWeylSign ht α ((t.simplyConnectedRootDatum ht).reflectionPerm β β) =
       t.chevalleyWeylSign ht α β := by
-  let ω : t.lieAlgebra ht →ₗ⁅ℚ⁆ t.lieAlgebra ht := t.chevalleyInvolution ht
-  have hω (z : t.lieAlgebra ht) : ω z = t.chevalleyInvolution ht z := rfl
+  let ω := (t.chevalleyInvolution ht).toLieHom
+  have hω (z : t.lieAlgebra ht) : ω z = t.chevalleyInvolution ht z :=
+    congrFun (LieEquiv.coe_toLieHom (t.chevalleyInvolution ht)) z
   have hωf :
       ω (t.chevalleySystem ht ((t.simplyConnectedRootDatum ht).reflectionPerm α α)) =
         -t.chevalleySystem ht α := by

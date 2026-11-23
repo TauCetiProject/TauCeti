@@ -167,12 +167,8 @@ theorem weylQuotientEquiv_mk_weylSubgroupMap (A : Type*) [CommRing A] [Nontrivia
     {B : Type*} [CommRing B] [Nontrivial B] (f : A →+* B) (g : D.weylSubgroup A) :
     D.weylQuotientEquiv B (QuotientGroup.mk (D.weylSubgroupMap A f g)) =
       D.weylQuotientEquiv A (QuotientGroup.mk g) := by
-  have hgen : Subgroup.closure ((D.weylSubgroup A).subtype ⁻¹'
-      (Set.range (D.torusPoints A) ∪
-        Set.range (fun i => D.weylElement (t.simpleIndex ht i) A 1))) = ⊤ := by
-    rw [D.weylSubgroup_def]
-    exact Subgroup.closure_preimage_eq_top _
-  refine DFunLike.congr_fun (MonoidHom.eq_of_eqOn_dense hgen ?_ :
+  refine DFunLike.congr_fun
+    (MonoidHom.eq_of_eqOn_dense (D.closure_weylSubgroup_generators A) ?_ :
     (((D.weylQuotientEquiv B).toMonoidHom.comp
       (QuotientGroup.mk' (((D.torusPoints B).range).subgroupOf (D.weylSubgroup B)))).comp
         (D.weylSubgroupMap A f)) =
@@ -199,12 +195,7 @@ theorem weylQuotientEquiv_mk_weylSubgroupMap (A : Type*) [CommRing A] [Nontrivia
 private theorem weylQuotientLift_comp_weylProjection (k : Type v) [Field k] :
     (D.weylQuotientLift k).comp (D.weylProjection k) =
       QuotientGroup.mk' (((D.torusPoints k).range).subgroupOf (D.weylSubgroup k)) := by
-  have hgen : Subgroup.closure ((D.weylSubgroup k).subtype ⁻¹'
-      (Set.range (D.torusPoints k) ∪
-        Set.range (fun i => D.weylElement (t.simpleIndex ht i) k 1))) = ⊤ := by
-    rw [D.weylSubgroup_def]
-    exact Subgroup.closure_preimage_eq_top _
-  apply MonoidHom.eq_of_eqOn_dense hgen
+  apply MonoidHom.eq_of_eqOn_dense (D.closure_weylSubgroup_generators k)
   rintro ⟨x, hx⟩ (⟨s, rfl⟩ | ⟨i, rfl⟩)
   · simp only [MonoidHom.comp_apply, D.weylProjection_torusPoints, map_one,
       QuotientGroup.mk'_apply, D.mk_torusPoints_eq_one]
