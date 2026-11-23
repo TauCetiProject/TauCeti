@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Algebra.TypeAHeckeAlgebra.AtomicModel.Countable.Basic
 public import TauCeti.Algebra.TypeAHeckeAlgebra.WenzlParam
-import TauCeti.Algebra.TypeAHeckeAlgebra.AtomicModel.WenzlInterval.Basic
+import TauCeti.Algebra.TypeAHeckeAlgebra.AtomicModel.Wenzl.Basic
 
 /-!
 # Countable atomic realizations of the Ocneanu trace on Wenzl's positive set

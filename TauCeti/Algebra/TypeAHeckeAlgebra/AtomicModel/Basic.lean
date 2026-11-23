@@ -64,9 +64,10 @@ Positivity is not considered: everything here is algebraic, over any commutative
   linear map of word spaces intertwining the representations on generators intertwine them
   everywhere.
 * `TauCeti.TypeAHeckeAlgebra.atomicTrace_mul_comm`, `TauCeti.TypeAHeckeAlgebra.atomicTrace_one`,
-  `TauCeti.TypeAHeckeAlgebra.atomicTrace_strandIncl`, and
-  `TauCeti.TypeAHeckeAlgebra.atomicTrace_subtype_eq_of_eq_zero`: trace, scaling, and zero-weight
-  dropping invariance (`signedChecked_comp_lmapDomain_strictMono`).
+  `TauCeti.TypeAHeckeAlgebra.atomicTrace_strandIncl`,
+  `TauCeti.TypeAHeckeAlgebra.atomicTrace_subtype_eq_of_eq_zero`, and
+  `TauCeti.TypeAHeckeAlgebra.atomicTrace_orderIso`: trace, scaling, zero-weight dropping, and
+  order-isomorphism invariance (`signedChecked_comp_lmapDomain_strictMono`).
 * `TauCeti.TypeAHeckeAlgebra.atomicTrace_strandIncl_mul_T_last`: the Markov rule
   (`signedChecked_strandIncl_mul_T_last_single_snoc_apply`).
 * `TauCeti.TypeAHeckeAlgebra.atomicTrace_eq_ocneanuTrace`: **the atomic trace is the Ocneanu
@@ -390,6 +391,23 @@ theorem atomicTrace_subtype_ne_zero [Finite ι] (x : TypeAHeckeAlgebra R q n) :
   atomicTrace_subtype_eq_of_eq_zero pos q p (fun a ↦ p a ≠ 0) (fun _ h ↦ not_not.mp h) x
 
 end Trace
+
+/-- Relabeling the alphabet along a sign- and weight-preserving order isomorphism preserves
+`atomicTrace`. -/
+theorem atomicTrace_orderIso {α β : Type*} [LinearOrder α] [LinearOrder β] [Finite α] [Finite β]
+    (posα : α → Prop) (posβ : β → Prop) [DecidablePred posα] [DecidablePred posβ]
+    (pα : α → R) (pβ : β → R) (e : α ≃o β) (hpos : ∀ a, posβ (e a) ↔ posα a)
+    (hp : ∀ a, pβ (e a) = pα a) (n : ℕ) (x : TypeAHeckeAlgebra R q n) :
+    atomicTrace posα q pα n x = atomicTrace posβ q pβ n x := by
+  classical
+  let := Fintype.ofFinite α
+  let := Fintype.ofFinite β
+  rw [atomicTrace_eq_sum, atomicTrace_eq_sum, ← (Equiv.piCongrRight fun _ ↦ e.toEquiv).sum_comp]
+  refine Finset.sum_congr rfl fun w _ ↦ ?_
+  have hw : (Equiv.piCongrRight fun _ ↦ e.toEquiv) w = e ∘ w :=
+    funext fun i ↦ Equiv.piCongrRight_apply _ w i
+  rw [hw, signedChecked_strictMono_single_apply posβ q posα e.strictMono hpos x w w]
+  simp [hp]
 
 /-- **A geometric atomic model.** On `r + 1` positive letters with weights `c * Q ^ a`,
 `Q = q ^ 2`, normalized by `c * [r + 1]_Q = 1`, the atomic trace is the Ocneanu trace with

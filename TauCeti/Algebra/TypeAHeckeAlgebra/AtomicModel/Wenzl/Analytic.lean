@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.TypeAHeckeAlgebra.AtomicModel.Countable.CycleWord
-public import TauCeti.Algebra.TypeAHeckeAlgebra.AtomicModel.WenzlInterval.Basic
+public import TauCeti.Algebra.TypeAHeckeAlgebra.AtomicModel.Wenzl.Basic
 
 /-!
 # Cycle-trace generating products for Wenzl's continuous interval models

@@ -8,10 +8,9 @@ module
 public import TauCeti.Algebra.TypeAHeckeAlgebra.AtomicModel.Countable.Basic
 public import TauCeti.Algebra.TypeAHeckeAlgebra.AtomicModel.CycleWord.Analytic
 import Mathlib.Analysis.Normed.Group.Tannery
-import Mathlib.Tactic.LinearCombination
 import Mathlib.Topology.Algebra.InfiniteSum.Ring
-import TauCeti.Algebra.Ring.Units
 import TauCeti.Algebra.TypeAHeckeAlgebra.AtomicModel.Countable.Slice
+import TauCeti.Algebra.TypeAHeckeAlgebra.WenzlParam
 import TauCeti.Analysis.Normed.Ring.InfiniteSum
 import TauCeti.Analysis.SpecificLimits.Normed
 
@@ -123,8 +122,8 @@ theorem hasProd_ofReal_cycleWord {ι : Type*} [LinearOrder ι] (pos : ι → Pro
     simpa only [Complex.norm_real, Real.norm_of_nonneg (hw0 _)] using hsum
   have hprod := (countableAtomicTrace_cycleWord_hasProd pos q _ hp (by rwa [hnorm_sum, mul_one])).2
   set s : ℝ := (1 + Q) * η - 1
-  have hqη : (q : ℂ) * ((q : ℂ) * η - (↑q⁻¹ : ℂ) * (1 - η)) = (s : ℂ) := by
-    simpa [s, hqQ] using Units.mul_sub_val_inv_mul_one_sub q (η : ℂ)
+  have hqη : (q : ℂ) * ((q : ℂ) * η - (↑q⁻¹ : ℂ) * (1 - η)) = (s : ℂ) :=
+    mul_markovParam_proj_eq hqQ η
   have htr (m : ℕ) : countableAtomicTrace pos q (fun a ↦ (w a : ℂ))
       hp (m + 1) (cycleWord q (m + 1)) * x ^ (m + 1) = x * ((s : ℂ) * x) ^ m := by
     rw [countableAtomicTrace_ofReal_eq_ocneanuTrace_of_leftSlice pos hqQ hw η hsum hslice,

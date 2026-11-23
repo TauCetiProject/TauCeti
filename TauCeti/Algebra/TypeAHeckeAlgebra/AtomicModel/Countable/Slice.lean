@@ -8,8 +8,8 @@ module
 public import TauCeti.Algebra.TypeAHeckeAlgebra.AtomicModel.Countable.Basic
 public import TauCeti.Algebra.TypeAHeckeAlgebra.AtomicModel.LeftSlice
 import Mathlib.Analysis.Complex.Basic
-import TauCeti.Algebra.Ring.Units
 import TauCeti.Algebra.TypeAHeckeAlgebra.Cocenter.Basic
+import TauCeti.Algebra.TypeAHeckeAlgebra.WenzlParam
 
 /-!
 # Slice Markov rules and block multiplicativity for countable atomic models
@@ -127,8 +127,7 @@ theorem countableAtomicTrace_ofReal_eq_ocneanuTrace_of_leftSlice {ι : Type*}
   refine countableAtomicTrace_eq_ocneanuTrace_of_leftSlice pos q _ _
     (by rw [← Complex.ofReal_tsum, hsum, Complex.ofReal_one]) (fun b ↦ ?_) x
   have hsl := congrArg ((↑) : ℝ → ℂ) (hslice b)
-  rw [← show (q : ℂ) * ((q : ℂ) * η - (↑q⁻¹ : ℂ) * (1 - η)) = (((1 + Q) * η - 1 : ℝ) : ℂ) by
-    simpa [hqQ] using Units.mul_sub_val_inv_mul_one_sub q (η : ℂ)] at hsl
+  rw [← mul_markovParam_proj_eq hqQ η] at hsl
   push_cast [Complex.ofReal_tsum, apply_ite ((↑) : ℝ → ℂ)] at hsl
   rwa [← hqQ, ← Units.val_inv_eq_inv_val] at hsl
 
