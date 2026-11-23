@@ -226,6 +226,7 @@ lemma singularHomologyIsoOfContractibleSpace_hom_naturality {P' : TopPair.{w}} (
 
 /-- If the subspace of a pair is contractible, the connecting morphism `Hₖ₊₁(X, A) ⟶ Hₖ(A)`
 vanishes. -/
+@[simp]
 theorem singularHomologyδ_eq_zero_of_contractibleSpace [ContractibleSpace P.snd] (k : ℕ) :
     P.singularHomologyδ R (k + 1) k = 0 := by
   rw [← cancel_epi (P.singularHomologyπ R (k + 1)),

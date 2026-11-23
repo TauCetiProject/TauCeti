@@ -9,6 +9,8 @@ public import TauCeti.AlgebraicTopology.Singular.Contractible
 public import TauCeti.AlgebraicTopology.Singular.Sublevel
 public import TauCeti.Geometry.Manifold.Morse.Projectivization
 public import TauCeti.Geometry.Manifold.Morse.SpectralSequence
+import TauCeti.Order.Fin.Basic
+import TauCeti.Order.Monotone.Basic
 
 /-!
 # The critical-band spectral sequence of real projective space
@@ -40,8 +42,9 @@ the connecting map of the triple `({f ≤ a 2}, {f ≤ a 1}, {f ≤ a 0})`, and 
 connecting map of the pair `({f ≤ a 2}, {f ≤ a 1})`, which vanishes
 (`TopPair.singularHomologyδ_eq_zero_of_contractibleSpace`).
 
-The real projective plane, where the first differential from `(-4, 2)` to `(-2, 1)` is
-multiplication by `±2`, is studied in the module
+The real projective plane, where with integer coefficients the first differential from `(-4, 2)`
+to `(-2, 1)` is multiplication by `±2` after identifying its source and target with `ℤ`, is
+studied in the module
 `TauCeti.Geometry.Manifold.Morse.Examples.RealProjectivePlane`.
 
 ## References
@@ -122,27 +125,10 @@ private theorem isZero_singularHomology_sublevelPair (hw : StrictMono w) {s t : 
 
 variable {a : ℤ → ℝ}
 
-/-- Weights separated by the values of a monotone sequence are increasing. -/
-private theorem strictMono_of_mem_Ioo
-    (hcut : ∀ k : Fin (N + 1), w k ∈ Ioo (a k) (a ((k : ℕ) + 1))) : StrictMono w :=
-  Fin.strictMono_iff_lt_succ.2 fun i ↦ (hcut i.castSucc).2.trans_le
-    (le_of_eq (by simp)) |>.trans (hcut i.succ).1
-
-/-- The band `[a q, a (q + 1)]` of a monotone sequence separating the weights contains the weight
-`w k` exactly when `q = k`. -/
-private theorem mem_Icc_iff (ha : Monotone a)
-    (hcut : ∀ k : Fin (N + 1), w k ∈ Ioo (a k) (a ((k : ℕ) + 1))) (k : Fin (N + 1)) (q : ℤ) :
-    w k ∈ Icc (a q) (a (q + 1)) ↔ q = k := by
-  refine ⟨fun h ↦ ?_, fun h ↦ h ▸ Ioo_subset_Icc_self (hcut k)⟩
-  by_contra hne
-  rcases lt_or_gt_of_ne hne with hlt | hlt
-  · exact (h.2.trans_lt (lt_of_le_of_lt (ha (by omega)) (hcut k).1)).false
-  · exact ((hcut k).2.trans_le (ha (by omega)) |>.trans_le h.1).false
-
 private theorem eq_of_mem_Icc (ha : Monotone a)
     (hcut : ∀ k : Fin (N + 1), w k ∈ Ioo (a k) (a ((k : ℕ) + 1))) (k : Fin (N + 1)) :
     ∀ i, w i ∈ Icc (a k) (a ((k : ℕ) + 1)) → i = k := fun i hi ↦
-  Fin.ext (by exact_mod_cast ((mem_Icc_iff ha hcut i k).1 hi).symm)
+  Fin.ext (by exact_mod_cast ((ha.mem_Icc_iff_eq_of_mem_Ioo (hcut i)).1 hi).symm)
 
 /-- **The first page of the critical-band spectral sequence of `ℝℙᴺ`.** Let `f` be the moment
 function on `ℝℙᴺ` with weights `w`, and let `a` be a monotone sequence with
@@ -156,8 +142,8 @@ theorem nonempty_filteredSpaceSpectralSequence_page_two_X_iso_projectiveMomentFu
     Nonempty (((filteredSpaceSpectralSequence (Y := TopCat.of (ℙ ℝ (Fin (N + 1) → ℝ))) R
       ((sublevel_mono (projectiveMomentFunction ℝ w)).comp ha)).page 2).X
         (-(2 * (k : ℕ) : ℤ), ((k : ℕ) : ℤ)) ≅ R) := by
-  obtain ⟨e⟩ := nonempty_singularHomology_sublevelPair_iso R (strictMono_of_mem_Ioo hcut) k
-    (hcut k).1 (hcut k).2 (eq_of_mem_Icc ha hcut k)
+  obtain ⟨e⟩ := nonempty_singularHomology_sublevelPair_iso R
+    (Fin.strictMono_of_forall_mem_Ioo hcut) k (hcut k).1 (hcut k).2 (eq_of_mem_Icc ha hcut k)
   exact ⟨filteredSpaceSpectralSequenceFirstPageXIso (Y := TopCat.of (ℙ ℝ (Fin (N + 1) → ℝ))) R
     ((sublevel_mono (projectiveMomentFunction ℝ w)).comp ha) _ _ _ rfl rfl _ rfl k
       (by push_cast; ring) ≪≫ e⟩
@@ -180,18 +166,19 @@ theorem isZero_filteredSpaceSpectralSequence_page_two_X_projectiveMomentFunction
     have hnk : n ≠ k := by
       rintro rfl
       exact hpq k (Prod.ext (by simp only at hn ⊢; omega) rfl)
-    exact (isZero_singularHomology_sublevelPair R (strictMono_of_mem_Ioo hcut) k (hcut k).1
-      (hcut k).2 (eq_of_mem_Icc ha hcut k) hnk).of_iso
+    exact (isZero_singularHomology_sublevelPair R (Fin.strictMono_of_forall_mem_Ioo hcut) k
+      (hcut k).1 (hcut k).2 (eq_of_mem_Icc ha hcut k) hnk).of_iso
         (filteredSpaceSpectralSequenceFirstPageXIso (Y := TopCat.of (ℙ ℝ (Fin (N + 1) → ℝ))) R
           ((sublevel_mono (projectiveMomentFunction ℝ w)).comp ha) _ _ _ rfl rfl _ rfl n hn)
   · push Not at hq
     refine isZero_filteredSpaceSpectralSequence_page_two_X_of_forall_notMem R
       (contMDiff_projectiveMomentFunction w) ha (p, q)
       (isClosed_Icc.preimage (continuous_projectiveMomentFunction w)).isCompact fun x hx hfx ↦ ?_
-    rw [criticalPoints_projectiveMomentFunction (strictMono_of_mem_Ioo hcut).injective] at hx
+    rw [criticalPoints_projectiveMomentFunction
+      (Fin.strictMono_of_forall_mem_Ioo hcut).injective] at hx
     obtain ⟨k, rfl⟩ := hx
     rw [projectiveMomentFunction_mk_single] at hfx
-    exact hq k ((mem_Icc_iff ha hcut k q).1 hfx).symm
+    exact hq k ((ha.mem_Icc_iff_eq_of_mem_Ioo (hcut k)).1 hfx).symm
 
 /-- **The sublevel around the minimum is contractible.** Under the hypotheses of
 `TauCeti.nonempty_filteredSpaceSpectralSequence_page_two_X_iso_projectiveMomentFunction`, the
