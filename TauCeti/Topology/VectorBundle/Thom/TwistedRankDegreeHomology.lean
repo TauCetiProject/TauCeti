@@ -11,6 +11,7 @@ public import TauCeti.Topology.VectorBundle.MayerVietoris.Basic
 public import TauCeti.Topology.VectorBundle.Orientation.LocalSystem
 public import TauCeti.Topology.VectorBundle.Thom.RankDegreeHomology
 import TauCeti.Algebra.Category.ModuleCat.SpanSingleton
+import TauCeti.Topology.Category.TopCat.Limits.Basic
 import TauCeti.AlgebraicTopology.Singular.MayerVietoris.FiniteUnion
 import TauCeti.AlgebraicTopology.Singular.Twisted.Coefficients
 import TauCeti.AlgebraicTopology.Singular.Twisted.ConstantNaturality
@@ -50,24 +51,36 @@ every fibre class is a twisted Thom class of `E`.
 The proof follows the computation of `Hᵣ(E, E₀; R) ≅ H₀(B; R)` for oriented bundles in
 `TauCeti.Topology.VectorBundle.Thom.RankDegreeHomology`, and shares with it the point class
 `TauCeti.complZeroPairPointHom` of `Hᵣ(F, F ∖ {0}; R)` and the Mayer–Vietoris induction
-`TauCeti.isIso_biUnion_of_mayerVietoris`. The map `H₀(W; R) ⟶ Hᵣ(E|_W, E₀|_W;
-π^*o(E))` sends the class of a point to the fibre class over it; it is well defined because the
-fibre classes are constant along paths. Over a subset `W` of the base set of a linear
-trivialization, the orientations of the fibres read by the trivialization trivialize `π^*o(E)` over
-`E|_W`, which identifies the twisted homology with the untwisted homology of the product
-`W × F`, and so with `H₀(W; R)`, carrying fibre classes to classes of points. The Mayer–Vietoris
-sequence of pairs with local coefficients
+`TauCeti.isIso_biUnion_of_mayerVietoris`. The map `H₀(W; R) ⟶ Hᵣ(E|_W, E₀|_W; π^*o(E))`
+(`TauCeti.thomPairOverTwistedHomologyFinrankInv`) sends the class of a point to the fibre class
+over it (`TauCeti.thomPairOverSignFiberClass`); it is well defined because the fibre classes are
+constant along paths (`TauCeti.thomPairOverSignFiberClass_eq_of_path`). Every linear trivialization
+at `x` reads the fibre class over `x` the same way (`TauCeti.thomPairOverSignFiberClass_eq`): if it
+reads the orientations of `E_x` oppositely, both the generator of the fibre pair and the
+trivialization of the coefficients change sign. Over a subset `W` of the base set of a
+trivialization of the atlas, the orientations of the fibres read by the trivialization trivialize
+`π^*o(E)` over `E|_W`, which identifies the twisted homology with the untwisted homology of the
+product `W × F`, and so with `H₀(W; R)`, carrying fibre classes to classes of points. The
+Mayer–Vietoris sequence of pairs with local coefficients
 (`TauCeti.LocalCoefficientSystem.pairTwistedMayerVietoris_exact₂`) ends in degree `r`, since the
 twisted homology of the Thom pair vanishes below the rank, so the map is an isomorphism over a
-finite union of trivializing open sets, hence over a compact base.
+finite union of trivializing open sets
+(`TauCeti.isIso_thomPairOverTwistedHomologyFinrankInv_biUnion`), hence over a compact base.
 
 ## Main definitions and results
 
 * `TauCeti.thomPairSignLocalSystem`: the orientation local system pulled back to the total space.
-* `TauCeti.thomPairSignFiberClass`: the fibre class over a point.
+* `TauCeti.thomPairSignFiberClass`: the fibre class over a point; replacing `ω` by `-ω` negates it
+  (`TauCeti.thomPairSignFiberClass_neg`).
+* `TauCeti.thomPairOverSignFiberClass_eq`: every linear trivialization at `x` reads the fibre class
+  over `x` as the generator of the fibre pair.
+* `TauCeti.isIso_thomPairOverTwistedHomologyFinrankInv_biUnion`:
+  `H₀(W; R) ≅ Hᵣ(E|_W, E₀|_W; π^*o(E))` for a finite union `W` of trivializing open sets.
 * `TauCeti.thomPairTwistedHomologyFinrankIso`: `Hᵣ(E, E₀; π^*o(E)) ≅ H₀(B; R)` over a compact base.
 * `TauCeti.thomPairTwistedHomologyFinrankIso_hom_thomPairSignFiberClass`: it sends the fibre class
   over `b` to the class of `b`.
+* `TauCeti.thomPairTwistedHomology_hom_ext`: over a compact base, morphisms out of
+  `Hᵣ(E, E₀; π^*o(E))` are determined by their values on the fibre classes.
 
 ## References
 
@@ -113,9 +126,16 @@ theorem thomPairSignLocalSystem_def :
         ⟨π F E, FiberBundle.continuous_proj F E⟩).obj (signLocalSystem F E R hι) :=
   (rfl)
 
+/-- The fibres of the pulled-back orientation system are fibres of `o(E)`, so they are projective.
+-/
+instance projective_thomPairSignLocalSystem_obj (v : FundamentalGroupoid (thomPair F E).fst) :
+    Projective ((thomPairSignLocalSystem F E R hι).obj v) :=
+  LocalCoefficientSystem.projective_pullback_obj_obj (X := TopCat.of (TotalSpace F E)) _ _ v
+
 variable (F E R) in
-/-- The pulled-back orientation system restricted to the part of the total space over `W`. -/
-private def overSignLocalSystem (W : Set B) :
+/-- The pulled-back orientation system `π^*o(E)` restricted to the part `E|_W` of the total space
+over `W`. -/
+def thomPairOverSignLocalSystem (W : Set B) :
     LocalCoefficientSystem R (thomPairOver F E W).fst :=
   (LocalCoefficientSystem.pullback (X := TopCat.of ↥(π F E ⁻¹' W))
     (ContinuousMap.subtypeVal (π F E ⁻¹' W))).obj (thomPairSignLocalSystem F E R hι)
@@ -124,7 +144,7 @@ private def overSignLocalSystem (W : Set B) :
 at an orientation of `E_x`: every path in `E_x` projects to the constant path at `x`. -/
 private def fiberSignIso {W : Set B} {x : B} (hx : x ∈ W) (ω : Orientation ℝ (E x) ι) :
     (LocalCoefficientSystem.pullback (TopPair.Hom.fst (fiberThomPairOverMap F E hx)).hom).obj
-        (overSignLocalSystem F E R hι W) ≅
+        (thomPairOverSignLocalSystem F E R hι W) ≅
       (constantFunctor _).obj (ModuleCat.of R R) :=
   NatIso.ofComponents (fun _ ↦ (signLocalSystemFiberEquiv hι ω).toModuleIso)
     fun {v v'} q ↦ by
@@ -140,34 +160,35 @@ private def fiberSignIso {W : Set B} {x : B} (hx : x ∈ W) (ω : Orientation �
         exact congrArg (Quotient.mk _) (Path.ext rfl)
       have h' : ((LocalCoefficientSystem.pullback
           (TopPair.Hom.fst (fiberThomPairOverMap F E hx)).hom).obj
-          (overSignLocalSystem F E R hι W)).map q = 𝟙 _ :=
+          (thomPairOverSignLocalSystem F E R hι W)).map q = 𝟙 _ :=
         (congrArg (signLocalSystem F E R hι).map h).trans
           ((signLocalSystem F E R hι).map_id _)
       rw [h', LocalCoefficientSystem.constantFunctor_obj_map]
       exact (Category.id_comp _).trans (Category.comp_id _).symm
 
 omit [NormedSpace ℝ F] [FiniteDimensional ℝ F] [∀ b, AddCommMonoid (E b)] [∀ b, Module ℝ (E b)]
-  [VectorBundle ℝ F E] in
+  [∀ b, TopologicalSpace (E b)] [FiberBundle F E] [VectorBundle ℝ F E] in
 /-- A vector over a subset of the base set of a trivialization lies over its base set. -/
-private theorem proj_mem_baseSet {c : B} {W : Set B} (hW : W ⊆ (trivializationAt F E c).baseSet)
-    (v : π F E ⁻¹' W) : v.val.proj ∈ (trivializationAt F E c).baseSet :=
+private theorem proj_mem_baseSet {e : Trivialization F (π F E)} {W : Set B} (hW : W ⊆ e.baseSet)
+    (v : π F E ⁻¹' W) : v.val.proj ∈ e.baseSet :=
   hW v.property
 
-/-- Over a subset `W` of the base set of the chosen trivialization at `c`, the pulled-back
+/-- Over a subset `W` of the base set of a trivialization `e` of the atlas, the pulled-back
 orientation system is trivialized by evaluating at the orientation read as `ω` by it. -/
-private def baseSetSignIso (c : B) {W : Set B} (hW : W ⊆ (trivializationAt F E c).baseSet)
+private def baseSetSignIso (e : Trivialization F (π F E)) [MemTrivializationAtlas e] {W : Set B}
+    (hW : W ⊆ e.baseSet)
     (ω : Orientation ℝ F ι) :
-    overSignLocalSystem F E R hι W ≅
+    thomPairOverSignLocalSystem F E R hι W ≅
       (constantFunctor _).obj (ModuleCat.of R R) :=
   NatIso.ofComponents (fun v ↦ (signLocalSystemFiberEquiv hι
-      (((trivializationAt F E c).mapOrientation ι (proj_mem_baseSet hW v.as)).symm ω)).toModuleIso)
+      ((e.mapOrientation ι (proj_mem_baseSet hW v.as)).symm ω)).toModuleIso)
     fun {v v'} q ↦ ModuleCat.hom_ext <| LinearMap.ext fun f ↦ by
       -- The section of the orientation cover read as `ω` lifts the projection of the path.
       have h := (VectorBundleOrientationCover.isCoveringMap_proj (F := F) (E := E)
         hι).monodromy_map_of_lift
         (g := (⟨π F E, FiberBundle.continuous_proj F E⟩ : C(TotalSpace F E, B)).comp
           (ContinuousMap.subtypeVal (π F E ⁻¹' W)))
-        (s := fun v : π F E ⁻¹' W ↦ (⟨v.val.proj, ((trivializationAt F E c).mapOrientation ι
+        (s := fun v : π F E ⁻¹' W ↦ (⟨v.val.proj, (e.mapOrientation ι
           (proj_mem_baseSet hW v)).symm ω⟩ : VectorBundleOrientationCover F E ι))
         ((VectorBundleOrientationCover.continuous_mk_mapOrientation_symm hι _ ω).comp
           (((FiberBundle.continuous_proj F E).comp continuous_subtypeVal).subtype_mk
@@ -194,11 +215,15 @@ section FiberClass
 variable (ω : Orientation ℝ F ι)
 
 variable (R) in
-/-- The fibre class over `x ∈ W` read through a linear trivialization `e` at `x`. -/
-private def fiberClassAux (e : Trivialization F (π F E)) [e.IsLinear ℝ] {x : B}
+/-- The fibre class over `x ∈ W` in `Hᵣ(E|_W, E₀|_W; π^*o(E))`, read through a linear trivialization
+`e` at `x`: the image of the class of the fibre pair `(E_x, E_x ∖ {0})` which `e` reads as the
+point class of `1` in `Hᵣ(F, F ∖ {0}; R)`, with the coefficients `o(E)_x` trivialized by the
+orientation of `E_x` which `e` reads as `ω`. It does not depend on `e`
+(`TauCeti.thomPairOverSignFiberClassOf_eq`). -/
+def thomPairOverSignFiberClassOf (e : Trivialization F (π F E)) [e.IsLinear ℝ] {x : B}
     (hx : x ∈ e.baseSet) {W : Set B} (hxW : x ∈ W) :
-    (thomPairOver F E W).twistedHomology (overSignLocalSystem F E R hι W) (finrank ℝ F) :=
-  TopPair.twistedHomologyMap (fiberThomPairOverMap F E hxW) (overSignLocalSystem F E R hι W)
+    (thomPairOver F E W).twistedHomology (thomPairOverSignLocalSystem F E R hι W) (finrank ℝ F) :=
+  TopPair.twistedHomologyMap (fiberThomPairOverMap F E hxW) (thomPairOverSignLocalSystem F E R hι W)
     (finrank ℝ F)
     ((TopPair.ofSubset (X := TopCat.of (E x)) ({0}ᶜ : Set (E x))).twistedHomologyCoefficientMap
       (fiberSignIso hι hxW ((e.mapOrientation ι hx).symm ω)).inv (finrank ℝ F)
@@ -208,29 +233,30 @@ private def fiberClassAux (e : Trivialization F (π F E)) [e.IsLinear ℝ] {x : 
           (ModuleCat.of R R) (finrank ℝ F)
           (complZeroPairPointHom (ModuleCat.of R R) F (finrank ℝ F) rfl (1 : R)))))
 
-/-- Over a subset `W` of the base set of the chosen trivialization at `c`, the trivialization
+/-- Over a subset `W` of the base set of a trivialization `e` of the atlas, the trivialization
 identifies `Hᵣ(E|_W, E₀|_W; π^*o(E))` with `H₀(W; R)`. -/
-private def localIso (c : B) {W : Set B}
-    (hW : W ⊆ (trivializationAt F E c).baseSet) :
-    (thomPairOver F E W).twistedHomology (overSignLocalSystem F E R hι W) (finrank ℝ F) ≅
+private def localIso (e : Trivialization F (π F E)) [MemTrivializationAtlas e] {W : Set B}
+    (hW : W ⊆ e.baseSet) :
+    (thomPairOver F E W).twistedHomology (thomPairOverSignLocalSystem F E R hι W) (finrank ℝ F) ≅
       ((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{w} R) 0).obj
         (ModuleCat.of R R)).obj (TopCat.of W) :=
   (HomologicalComplex.homologyFunctor _ _ (finrank ℝ F)).mapIso
-      ((thomPairOver F E W).twistedChainComplexCoefficientIso (baseSetSignIso hι c hW ω)) ≪≫
+      ((thomPairOver F E W).twistedChainComplexCoefficientIso (baseSetSignIso hι e hW ω)) ≪≫
     (thomPairOver F E W).twistedHomologyConstantIso (ModuleCat.of R R) (finrank ℝ F) ≪≫
-    asIso (TopPair.singularHomologyMap ((trivializationAt F E c).thomPairOverIso ℝ hW).hom
+    asIso (TopPair.singularHomologyMap (e.thomPairOverIso ℝ hW).hom
       (ModuleCat.of R R) (finrank ℝ F)) ≪≫
     prodThomPairSingularHomologyIso (ModuleCat.of R R) W F 0 (finrank ℝ F)
 
 omit [FiniteDimensional ℝ F] in
 /-- The trivialization over the base set, restricted to a fibre, is the trivialization of the
 fibre by the orientation it reads as `ω`. -/
-private theorem pullback_map_baseSetSignIso_hom (c : B) {W : Set B}
-    (hW : W ⊆ (trivializationAt F E c).baseSet) {x : B} (hxW : x ∈ W) :
+private theorem pullback_map_baseSetSignIso_hom (e : Trivialization F (π F E))
+    [MemTrivializationAtlas e] {W : Set B}
+    (hW : W ⊆ e.baseSet) {x : B} (hxW : x ∈ W) :
     (LocalCoefficientSystem.pullback (TopPair.Hom.fst (fiberThomPairOverMap F E hxW)).hom).map
-        (baseSetSignIso (R := R) hι c hW ω).hom ≫
+        (baseSetSignIso (R := R) hι e hW ω).hom ≫
       (LocalCoefficientSystem.pullbackConstantIso _ (ModuleCat.of R R)).hom =
-    (fiberSignIso hι hxW (((trivializationAt F E c).mapOrientation ι (hW hxW)).symm ω)).hom := by
+    (fiberSignIso hι hxW ((e.mapOrientation ι (hW hxW)).symm ω)).hom := by
   ext v : 2
   rw [NatTrans.comp_app, LocalCoefficientSystem.pullbackConstantIso_hom_app]
   -- After the unit law, both components are evaluation at the orientation of `E_x` read as `ω`:
@@ -239,20 +265,22 @@ private theorem pullback_map_baseSetSignIso_hom (c : B) {W : Set B}
   exact (Category.comp_id _).trans rfl
 
 omit [FiniteDimensional ℝ F] in
-/-- Over a subset of the base set of the trivialization at `c`, the fibre inclusion over `x`, read
-through the trivializations of the coefficient systems by the orientation that this trivialization
-reads as `ω`, is the fibre inclusion in ordinary homology. -/
+/-- Over a subset of the base set of a trivialization `e` of the atlas, the fibre inclusion over
+`x`, read through the trivializations of the coefficient systems by the orientation that this
+trivialization reads as `ω`, is the fibre inclusion in ordinary homology. -/
 @[reassoc]
-private theorem fiberSign_comp_twistedHomologyMap_comp_baseSetSign (c : B) {W : Set B}
-    (hW : W ⊆ (trivializationAt F E c).baseSet) {x : B} (hxW : x ∈ W) :
+private theorem fiberSign_comp_twistedHomologyMap_comp_baseSetSign (e : Trivialization F (π F E))
+    [MemTrivializationAtlas e] {W : Set B}
+    (hW : W ⊆ e.baseSet) {x : B} (hxW : x ∈ W) :
     ((TopPair.ofSubset (X := TopCat.of (E x)) ({0}ᶜ : Set (E x))).twistedHomologyConstantIso
         (ModuleCat.of R R) (finrank ℝ F)).inv ≫
       (TopPair.ofSubset (X := TopCat.of (E x)) ({0}ᶜ : Set (E x))).twistedHomologyCoefficientMap
-        (fiberSignIso hι hxW (((trivializationAt F E c).mapOrientation ι (hW hxW)).symm ω)).inv
+        (fiberSignIso hι hxW ((e.mapOrientation ι (hW hxW)).symm ω)).inv
         (finrank ℝ F) ≫
-      TopPair.twistedHomologyMap (fiberThomPairOverMap F E hxW) (overSignLocalSystem F E R hι W)
+      TopPair.twistedHomologyMap (fiberThomPairOverMap F E hxW)
+        (thomPairOverSignLocalSystem F E R hι W)
         (finrank ℝ F) ≫
-      (thomPairOver F E W).twistedHomologyCoefficientMap (baseSetSignIso hι c hW ω).hom
+      (thomPairOver F E W).twistedHomologyCoefficientMap (baseSetSignIso hι e hW ω).hom
         (finrank ℝ F) ≫
       ((thomPairOver F E W).twistedHomologyConstantIso (ModuleCat.of R R) (finrank ℝ F)).hom =
     TopPair.singularHomologyMap (fiberThomPairOverMap F E hxW) (ModuleCat.of R R)
@@ -266,32 +294,34 @@ private theorem fiberSign_comp_twistedHomologyMap_comp_baseSetSign (c : B) {W : 
     pullback_map_baseSetSignIso_hom, Iso.inv_hom_id, TopPair.twistedHomologyCoefficientMap_id,
     Category.id_comp, Iso.inv_hom_id_assoc]
 
-private theorem localIso_hom (c : B) {W : Set B} (hW : W ⊆ (trivializationAt F E c).baseSet) :
-    (localIso (R := R) hι ω c hW).hom =
-      (thomPairOver F E W).twistedHomologyCoefficientMap (baseSetSignIso hι c hW ω).hom
+private theorem localIso_hom (e : Trivialization F (π F E)) [MemTrivializationAtlas e] {W : Set B}
+    (hW : W ⊆ e.baseSet) :
+    (localIso (R := R) hι ω e hW).hom =
+      (thomPairOver F E W).twistedHomologyCoefficientMap (baseSetSignIso hι e hW ω).hom
           (finrank ℝ F) ≫
         ((thomPairOver F E W).twistedHomologyConstantIso (ModuleCat.of R R) (finrank ℝ F)).hom ≫
-        TopPair.singularHomologyMap ((trivializationAt F E c).thomPairOverIso ℝ hW).hom
+        TopPair.singularHomologyMap (e.thomPairOverIso ℝ hW).hom
           (ModuleCat.of R R) (finrank ℝ F) ≫
         (prodThomPairSingularHomologyIso (ModuleCat.of R R) W F 0 (finrank ℝ F)).hom := by
   simp only [localIso, Iso.trans_hom, Functor.mapIso_hom, HomologicalComplex.homologyFunctor_map,
     TopPair.twistedChainComplexCoefficientIso_hom, asIso_hom]
 
-/-- Through the trivialization at `c`, the fibre class over `x ∈ W` read through that
+/-- Through a trivialization `e` of the atlas, the fibre class over `x ∈ W` read through that
 trivialization is the class of the point `x`. -/
-private theorem localIso_hom_fiberClassAux (c : B) {W : Set B}
-    (hW : W ⊆ (trivializationAt F E c).baseSet) {x : B} (hxW : x ∈ W) :
-    (localIso hι ω c hW).hom (fiberClassAux R hι ω (trivializationAt F E c) (hW hxW) hxW) =
+private theorem localIso_hom_thomPairOverSignFiberClassOf (e : Trivialization F (π F E))
+    [MemTrivializationAtlas e] {W : Set B}
+    (hW : W ⊆ e.baseSet) {x : B} (hxW : x ∈ W) :
+    (localIso hι ω e hW).hom (thomPairOverSignFiberClassOf R hι ω e (hW hxW) hxW) =
       singularHomology₀Section (ModuleCat.of R R) (X := TopCat.of W) ⟨x, hxW⟩ 1 := by
   have h := ConcreteCategory.congr_hom
-    (fiberSign_comp_twistedHomologyMap_comp_baseSetSign_assoc (R := R) hι ω c hW hxW
-      (TopPair.singularHomologyMap ((trivializationAt F E c).thomPairOverIso ℝ hW).hom
+    (fiberSign_comp_twistedHomologyMap_comp_baseSetSign_assoc (R := R) hι ω e hW hxW
+      (TopPair.singularHomologyMap (e.thomPairOverIso ℝ hW).hom
           (ModuleCat.of R R) (finrank ℝ F) ≫
         (prodThomPairSingularHomologyIso (ModuleCat.of R R) W F 0 (finrank ℝ F)).hom))
-    (TopPair.singularHomologyMap ((trivializationAt F E c).continuousLinearEquivAt
+    (TopPair.singularHomologyMap (e.continuousLinearEquivAt
       ℝ x (hW hxW)).complZeroPairIso.inv (ModuleCat.of R R) (finrank ℝ F)
       (complZeroPairPointHom (ModuleCat.of R R) F (finrank ℝ F) rfl (1 : R)))
-  rw [localIso_hom, fiberClassAux]
+  rw [localIso_hom, thomPairOverSignFiberClassOf]
   simp only [ConcreteCategory.comp_apply] at h ⊢
   rw [h, ← ConcreteCategory.comp_apply, ← ConcreteCategory.comp_apply,
     ← TopPair.singularHomologyMap_comp_assoc,
@@ -299,12 +329,14 @@ private theorem localIso_hom_fiberClassAux (c : B) {W : Set B}
     ← TopPair.singularHomologyMap_comp_assoc, Iso.inv_hom_id_assoc, ConcreteCategory.comp_apply,
     singularHomologyMap_prodThomPairFiberMap_complZeroPairPointHom_one, Iso.inv_hom_id_apply]
 
-/-- The fibre class does not depend on the linear trivialization through which it is read: two
+/-- **The fibre class does not depend on the linear trivialization through which it is read**: two
 trivializations reading the fibre orientation alike read the generator alike, and reading it
 oppositely changes both the generator and the trivialization of the coefficients by a sign. -/
-private theorem fiberClassAux_eq (e e' : Trivialization F (π F E)) [e.IsLinear ℝ] [e'.IsLinear ℝ]
+theorem thomPairOverSignFiberClassOf_eq (e e' : Trivialization F (π F E)) [e.IsLinear ℝ]
+    [e'.IsLinear ℝ]
     {x : B} (hx : x ∈ e.baseSet) (hx' : x ∈ e'.baseSet) {W : Set B} (hxW : x ∈ W) :
-    fiberClassAux R hι ω e hx hxW = fiberClassAux R hι ω e' hx' hxW := by
+    thomPairOverSignFiberClassOf R hι ω e hx hxW =
+      thomPairOverSignFiberClassOf R hι ω e' hx' hxW := by
   set o := (e.mapOrientation ι hx).symm ω
   have ho : e.mapOrientation ι hx o = ω := Equiv.apply_symm_apply _ ω
   rcases Orientation.eq_or_eq_neg (e'.mapOrientation ι hx' o) ω
@@ -318,10 +350,9 @@ private theorem fiberClassAux_eq (e e' : Trivialization F (π F E)) [e.IsLinear 
       (Trivialization.singularHomologyMap_complZeroPairIso_hom_eq_of_mapOrientation_eq e e' hx hx'
         hι (ModuleCat.of R R) (h.trans ho.symm) (finrank ℝ F)).symm)
     simp only [TopPair.singularHomologyMapIso_inv] at hinv
-    rw [fiberClassAux, fiberClassAux, h', hinv]
+    rw [thomPairOverSignFiberClassOf, thomPairOverSignFiberClassOf, h', hinv]
   · have h' : (e'.mapOrientation ι hx').symm ω = -o := by
-      rw [Equiv.symm_apply_eq, Trivialization.mapOrientation_neg, h]
-      exact (neg_neg ω).symm
+      rw [← neg_neg ω, ← h, Trivialization.mapOrientation_symm_neg, Equiv.symm_apply_apply]
     have hinv : TopPair.singularHomologyMap
         (e'.continuousLinearEquivAt ℝ x hx').complZeroPairIso.inv
         (ModuleCat.of R R) (finrank ℝ F) =
@@ -334,7 +365,7 @@ private theorem fiberClassAux_eq (e e' : Trivialization F (π F E)) [e.IsLinear 
             e' hx hx' hι (ModuleCat.of R R) (h.trans (congrArg Neg.neg ho.symm)) (finrank ℝ F),
           Preadditive.neg_comp_neg, ← TopPair.singularHomologyMapIso_hom,
           ← TopPair.singularHomologyMapIso_inv, Iso.hom_inv_id])
-    rw [fiberClassAux, fiberClassAux, h', hinv, fiberSignIso_neg_inv,
+    rw [thomPairOverSignFiberClassOf, thomPairOverSignFiberClassOf, h', hinv, fiberSignIso_neg_inv,
       TopPair.twistedHomologyCoefficientMap_neg]
     simp only [ModuleCat.hom_neg, LinearMap.neg_apply, map_neg, neg_neg, o]
 
@@ -342,12 +373,11 @@ variable (F E R) in
 /-- The restriction `Hₙ(E|_W, E₀|_W; π^*o(E)) ⟶ Hₙ(E|_{W'}, E₀|_{W'}; π^*o(E))` for `W ⊆ W'`, the
 map of the Mayer–Vietoris sequence of pairs of subsets of the total space. -/
 private abbrev restr {W W' : Set B} (h : W ⊆ W') (n : ℕ) :
-    (thomPairOver F E W).twistedHomology (overSignLocalSystem F E R hι W) n ⟶
-      (thomPairOver F E W').twistedHomology (overSignLocalSystem F E R hι W') n :=
-  HomologicalComplex.homologyMap
-    ((thomPairSignLocalSystem F E R hι).subsetPairTwistedChainComplexMap
+    (thomPairOver F E W).twistedHomology (thomPairOverSignLocalSystem F E R hι W) n ⟶
+      (thomPairOver F E W').twistedHomology (thomPairOverSignLocalSystem F E R hι W') n :=
+  (thomPairSignLocalSystem F E R hι).subsetPairTwistedHomologyMap
     inter_subset_left inter_subset_left (preimage_mono h)
-    (inter_subset_inter_left _ (preimage_mono h))) n
+    (inter_subset_inter_left _ (preimage_mono h)) n
 
 /-- The inclusion `(E|_W, E₀|_W) ⟶ (E|_{W'}, E₀|_{W'})` for `W ⊆ W'`, in the form used by the
 restriction maps of pairs of subsets. -/
@@ -364,10 +394,10 @@ variable (R) in
 /-- The identification of the restriction to `W` of the pulled-back orientation system with the
 pullback of its restriction to `W'`. -/
 private def overRestrIso {W W' : Set B} (h : W ⊆ W') :
-    overSignLocalSystem F E R hι W ⟶
+    thomPairOverSignLocalSystem F E R hι W ⟶
       (LocalCoefficientSystem.pullback
         (TopPair.Hom.fst (overInclusion (F := F) (E := E) h)).hom).obj
-        (overSignLocalSystem F E R hι W') :=
+        (thomPairOverSignLocalSystem F E R hι W') :=
   (LocalCoefficientSystem.pullbackCompIso
     (TopCat.ofHom (ContinuousMap.inclusion (preimage_mono h))).hom
     (TopCat.ofHom (ContinuousMap.subtypeVal (π F E ⁻¹' W'))).hom).hom.app
@@ -382,7 +412,7 @@ omit [FiniteDimensional ℝ F] in
 private theorem restr_eq {W W' : Set B} (h : W ⊆ W') (n : ℕ) :
     restr F E R hι h n =
       (thomPairOver F E W).twistedHomologyCoefficientMap (overRestrIso R hι h) n ≫
-      TopPair.twistedHomologyMap (overInclusion h) (overSignLocalSystem F E R hι W') n :=
+      TopPair.twistedHomologyMap (overInclusion h) (thomPairOverSignLocalSystem F E R hι W') n :=
   (congrArg (HomologicalComplex.homologyMap · n)
     (LocalCoefficientSystem.subsetPairTwistedChainComplexMap_def (thomPairSignLocalSystem F E R hι)
       inter_subset_left inter_subset_left (preimage_mono h)
@@ -390,36 +420,38 @@ private theorem restr_eq {W W' : Set B} (h : W ⊆ W') (n : ℕ) :
     (HomologicalComplex.homologyMap_comp _ _ _)
 
 /-- Restriction carries fibre classes to fibre classes. -/
-private theorem restr_fiberClassAux (e : Trivialization F (π F E)) [e.IsLinear ℝ] {x : B}
+private theorem restr_thomPairOverSignFiberClassOf (e : Trivialization F (π F E)) [e.IsLinear ℝ]
+    {x : B}
     (hx : x ∈ e.baseSet) {W W' : Set B} (h : W ⊆ W') (hxW : x ∈ W) :
-    restr F E R hι h (finrank ℝ F) (fiberClassAux R hι ω e hx hxW) =
-      fiberClassAux R hι ω e hx (h hxW) := by
+    restr F E R hι h (finrank ℝ F) (thomPairOverSignFiberClassOf R hι ω e hx hxW) =
+      thomPairOverSignFiberClassOf R hι ω e hx (h hxW) := by
   have hfg : fiberThomPairOverMap F E hxW ≫ overInclusion h = fiberThomPairOverMap F E (h hxW) :=
     TopPair.hom_ext_of_fst _ (TopCat.ext fun _ ↦ rfl)
   have key := TopPair.twistedHomologyMap_comp (fiberThomPairOverMap F E hxW) (overInclusion h)
-    (overSignLocalSystem F E R hι W') (finrank ℝ F)
+    (thomPairOverSignLocalSystem F E R hι W') (finrank ℝ F)
   rw [TopPair.twistedHomologyMap_congr _ (congrArg TopPair.Hom.fst hfg)] at key
   have key' : TopPair.twistedHomologyMap (fiberThomPairOverMap F E hxW)
         ((LocalCoefficientSystem.pullback (TopPair.Hom.fst (overInclusion h)).hom).obj
-          (overSignLocalSystem F E R hι W')) (finrank ℝ F) ≫
-      TopPair.twistedHomologyMap (overInclusion h) (overSignLocalSystem F E R hι W') (finrank ℝ F) =
+          (thomPairOverSignLocalSystem F E R hι W')) (finrank ℝ F) ≫
+      TopPair.twistedHomologyMap (overInclusion h) (thomPairOverSignLocalSystem F E R hι W')
+        (finrank ℝ F) =
       (TopPair.ofSubset (X := TopCat.of (E x)) ({0}ᶜ : Set (E x))).twistedHomologyCoefficientMap
           (TopPair.fstPullbackCompIso (fiberThomPairOverMap F E hxW) (overInclusion h)
-            (overSignLocalSystem F E R hι W')).inv (finrank ℝ F) ≫
+            (thomPairOverSignLocalSystem F E R hι W')).inv (finrank ℝ F) ≫
         (TopPair.ofSubset (X := TopCat.of (E x)) ({0}ᶜ : Set (E x))).twistedHomologyCoefficientMap
           (eqToHom (congrArg (fun g ↦ (LocalCoefficientSystem.pullback (TopPair.Hom.fst g).hom).obj
-            (overSignLocalSystem F E R hι W')) hfg)) (finrank ℝ F) ≫
+            (thomPairOverSignLocalSystem F E R hι W')) hfg)) (finrank ℝ F) ≫
         TopPair.twistedHomologyMap (fiberThomPairOverMap F E (h hxW))
-          (overSignLocalSystem F E R hι W') (finrank ℝ F) := by
+          (thomPairOverSignLocalSystem F E R hι W') (finrank ℝ F) := by
     rw [key, ← TopPair.twistedHomologyCoefficientMap_comp_assoc, Iso.inv_hom_id,
       TopPair.twistedHomologyCoefficientMap_id, Category.id_comp]
   have hco : (((fiberSignIso hι hxW ((e.mapOrientation ι hx).symm ω)).inv ≫
       (LocalCoefficientSystem.pullback (TopPair.Hom.fst (fiberThomPairOverMap F E hxW)).hom).map
         (overRestrIso R hι h)) ≫
       (TopPair.fstPullbackCompIso (fiberThomPairOverMap F E hxW) (overInclusion h)
-        (overSignLocalSystem F E R hι W')).inv) ≫
+        (thomPairOverSignLocalSystem F E R hι W')).inv) ≫
       eqToHom (congrArg (fun g ↦ (LocalCoefficientSystem.pullback (TopPair.Hom.fst g).hom).obj
-        (overSignLocalSystem F E R hι W')) hfg) =
+        (thomPairOverSignLocalSystem F E R hι W')) hfg) =
       (fiberSignIso hι (h hxW) ((e.mapOrientation ι hx).symm ω)).inv := by
     ext v : 2
     simp only [NatTrans.comp_app, LocalCoefficientSystem.pullback_map_app, overRestrIso_app,
@@ -428,142 +460,141 @@ private theorem restr_fiberClassAux (e : Trivialization F (π F E)) [e.IsLinear 
     -- between fibres of `o(E)` over the projections of `v` along the two fibre inclusions, which
     -- are `x` by definition of `fiberThomPairOverMap`, so it is the identity.
     rfl
-  rw [restr_eq, fiberClassAux, fiberClassAux, ← ConcreteCategory.comp_apply,
+  rw [restr_eq, thomPairOverSignFiberClassOf, thomPairOverSignFiberClassOf,
+    ← ConcreteCategory.comp_apply,
     TopPair.twistedHomologyMap_naturality_assoc, key', ← ConcreteCategory.comp_apply,
     ← TopPair.twistedHomologyCoefficientMap_comp_assoc,
     ← TopPair.twistedHomologyCoefficientMap_comp_assoc,
     ← TopPair.twistedHomologyCoefficientMap_comp_assoc, hco, ConcreteCategory.comp_apply]
 
 variable (F E R) in
-/-- The fibre class over `x ∈ W`: the image of the generator of the fibre pair over `x`, read
-through the chosen trivialization at `x`, with coefficients trivialized by the orientation that this
-trivialization reads as `ω`. It does not depend on the trivialization (`fiberClassAux_eq`). -/
-private def fiberClass {W : Set B} {x : B} (hxW : x ∈ W) :
-    (thomPairOver F E W).twistedHomology (overSignLocalSystem F E R hι W) (finrank ℝ F) :=
-  fiberClassAux R hι ω (trivializationAt F E x) (FiberBundle.mem_baseSet_trivializationAt' x) hxW
+/-- The fibre class over `x ∈ W` in `Hᵣ(E|_W, E₀|_W; π^*o(E))`: the image of the generator of the
+fibre pair over `x`, read through the chosen trivialization at `x`, with coefficients trivialized by
+the orientation that this trivialization reads as `ω`. Every linear trivialization at `x` reads it
+the same way (`TauCeti.thomPairOverSignFiberClass_eq`). -/
+def thomPairOverSignFiberClass {W : Set B} {x : B} (hxW : x ∈ W) :
+    (thomPairOver F E W).twistedHomology (thomPairOverSignLocalSystem F E R hι W) (finrank ℝ F) :=
+  thomPairOverSignFiberClassOf R hι ω (trivializationAt F E x)
+    (FiberBundle.mem_baseSet_trivializationAt' x) hxW
 
-private theorem localIso_hom_fiberClass (c : B) {W : Set B}
-    (hW : W ⊆ (trivializationAt F E c).baseSet) {x : B} (hxW : x ∈ W) :
-    (localIso hι ω c hW).hom (fiberClass F E R hι ω hxW) =
+/-- **Canonicity of the fibre class**: every linear trivialization `e` at `x` reads the fibre class
+over `x` as the generator of the fibre pair, with the coefficients trivialized by the orientation
+which `e` reads as `ω`. -/
+theorem thomPairOverSignFiberClass_eq (e : Trivialization F (π F E)) [e.IsLinear ℝ] {x : B}
+    (hx : x ∈ e.baseSet) {W : Set B} (hxW : x ∈ W) :
+    thomPairOverSignFiberClass F E R hι ω hxW = thomPairOverSignFiberClassOf R hι ω e hx hxW :=
+  thomPairOverSignFiberClassOf_eq hι ω _ e _ hx hxW
+
+/-- Reading the fibre orientation through `-ω` instead of `ω` negates the fibre class read through
+a linear trivialization. -/
+@[simp]
+theorem thomPairOverSignFiberClassOf_neg (e : Trivialization F (π F E)) [e.IsLinear ℝ] {x : B}
+    (hx : x ∈ e.baseSet) {W : Set B} (hxW : x ∈ W) :
+    thomPairOverSignFiberClassOf R hι (-ω) e hx hxW =
+      -thomPairOverSignFiberClassOf R hι ω e hx hxW := by
+  have h : (e.mapOrientation ι hx).symm (-ω) = -(e.mapOrientation ι hx).symm ω := by
+    rw [Equiv.symm_apply_eq, Trivialization.mapOrientation_neg, Equiv.apply_symm_apply]
+  rw [thomPairOverSignFiberClassOf, thomPairOverSignFiberClassOf, h, fiberSignIso_neg_inv,
+    TopPair.twistedHomologyCoefficientMap_neg]
+  simp only [ModuleCat.hom_neg, LinearMap.neg_apply, map_neg]
+
+/-- Replacing the orientation `ω` of the model fibre by `-ω` negates the fibre classes. -/
+@[simp]
+theorem thomPairOverSignFiberClass_neg {W : Set B} {x : B} (hxW : x ∈ W) :
+    thomPairOverSignFiberClass F E R hι (-ω) hxW = -thomPairOverSignFiberClass F E R hι ω hxW :=
+  thomPairOverSignFiberClassOf_neg hι ω _ _ hxW
+
+private theorem localIso_hom_thomPairOverSignFiberClass (e : Trivialization F (π F E))
+    [MemTrivializationAtlas e] {W : Set B}
+    (hW : W ⊆ e.baseSet) {x : B} (hxW : x ∈ W) :
+    (localIso hι ω e hW).hom (thomPairOverSignFiberClass F E R hι ω hxW) =
       singularHomology₀Section (ModuleCat.of R R) (X := TopCat.of W) ⟨x, hxW⟩ 1 := by
-  rw [fiberClass, fiberClassAux_eq hι ω _ (trivializationAt F E c) _ (hW hxW),
-    localIso_hom_fiberClassAux]
+  rw [thomPairOverSignFiberClass, thomPairOverSignFiberClassOf_eq hι ω _ e _ (hW hxW),
+    localIso_hom_thomPairOverSignFiberClassOf]
 
-private theorem restr_fiberClass {W W' : Set B} (h : W ⊆ W') {x : B} (hxW : x ∈ W) :
-    restr F E R hι h (finrank ℝ F) (fiberClass F E R hι ω hxW) = fiberClass F E R hι ω (h hxW) :=
-  restr_fiberClassAux hι ω _ _ h hxW
+private theorem restr_thomPairOverSignFiberClass {W W' : Set B} (h : W ⊆ W') {x : B} (hxW : x ∈ W) :
+    restr F E R hι h (finrank ℝ F) (thomPairOverSignFiberClass F E R hι ω hxW) =
+      thomPairOverSignFiberClass F E R hι ω (h hxW) :=
+  restr_thomPairOverSignFiberClassOf hι ω _ _ h hxW
 
 /-- **The fibre classes are constant along paths**: near each point `b` they are read through the
 chosen trivialization at `b` as the classes of the points. -/
-private theorem fiberClass_eq_of_path {W : Set B} {x y : W} (γ : Path x y) :
-    fiberClass F E R hι ω x.property = fiberClass F E R hι ω y.property :=
+theorem thomPairOverSignFiberClass_eq_of_path {W : Set B} {x y : W} (γ : Path x y) :
+    thomPairOverSignFiberClass F E R hι ω x.property =
+      thomPairOverSignFiberClass F E R hι ω y.property :=
   eq_of_path_of_mono (fun h ↦ restr F E R hι h (finrank ℝ F))
-    (fun _ x ↦ fiberClass F E R hι ω x.property) (fun h x ↦ restr_fiberClass hι ω h x.property)
+    (fun _ x ↦ thomPairOverSignFiberClass F E R hι ω x.property)
+    (fun h x ↦ restr_thomPairOverSignFiberClass hι ω h x.property)
     (fun b ↦ (trivializationAt F E b).baseSet)
     (fun b ↦ (trivializationAt F E b).open_baseSet.mem_nhds
       (FiberBundle.mem_baseSet_trivializationAt' b))
-    (fun b _ ↦ ⟨(localIso hι ω b inter_subset_right).hom, 1, inferInstance, fun x ↦ by
-      rw [localIso_hom_fiberClass, one_smul]⟩) γ
+    (fun b _ ↦ ⟨(localIso hι ω (trivializationAt F E b) inter_subset_right).hom, 1,
+      inferInstance, fun x ↦ by rw [localIso_hom_thomPairOverSignFiberClass, one_smul]⟩) γ
 
 variable (F E R) in
 /-- The map `H₀(W; R) ⟶ Hᵣ(E|_W, E₀|_W; π^*o(E))` sending the class of a point to the fibre class
-over it. -/
-private def toThomPairOver (W : Set B) :
+over it (`TauCeti.thomPairOverSignFiberClass`). It is an isomorphism over every finite union of open
+sets each inside the base set of a trivialization of the atlas
+(`TauCeti.isIso_thomPairOverTwistedHomologyFinrankInv_biUnion`). -/
+def thomPairOverTwistedHomologyFinrankInv (W : Set B) :
     ((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{w} R) 0).obj (ModuleCat.of R R)).obj
         (TopCat.of W) ⟶
-      (thomPairOver F E W).twistedHomology (overSignLocalSystem F E R hι W) (finrank ℝ F) :=
+      (thomPairOver F E W).twistedHomology (thomPairOverSignLocalSystem F E R hι W) (finrank ℝ F) :=
   singularHomology₀Desc (ModuleCat.of R R) (X := TopCat.of W)
-    (fun x ↦ ModuleCat.ofHom (LinearMap.toSpanSingleton R _ (fiberClass F E R hι ω x.property)))
-    fun _ _ γ ↦ by rw [fiberClass_eq_of_path hι ω γ]
+    (fun x ↦ ModuleCat.ofHom
+      (LinearMap.toSpanSingleton R _ (thomPairOverSignFiberClass F E R hι ω x.property)))
+    fun _ _ γ ↦ by rw [thomPairOverSignFiberClass_eq_of_path hι ω γ]
 
+/-- The map `H₀(W; R) ⟶ Hᵣ(E|_W, E₀|_W; π^*o(E))` sends the class of a point to the fibre class
+over it. -/
 @[reassoc]
-private theorem singularHomology₀Section_toThomPairOver {W : Set B} (x : W) :
+theorem singularHomology₀Section_thomPairOverTwistedHomologyFinrankInv {W : Set B} (x : W) :
     singularHomology₀Section (ModuleCat.of R R) (X := TopCat.of W) x ≫
-        toThomPairOver F E R hι ω W =
-      ModuleCat.ofHom (LinearMap.toSpanSingleton R _ (fiberClass F E R hι ω x.property)) :=
+        thomPairOverTwistedHomologyFinrankInv F E R hι ω W =
+      ModuleCat.ofHom
+        (LinearMap.toSpanSingleton R _ (thomPairOverSignFiberClass F E R hι ω x.property)) :=
   singularHomology₀Section_singularHomology₀Desc (X := TopCat.of W) _ _ _ x
 
 /-- The maps over `W ⊆ W'` commute with the restrictions. -/
-private theorem toThomPairOver_naturality {W W' : Set B} (h : W ⊆ W') :
+private theorem thomPairOverTwistedHomologyFinrankInv_naturality {W W' : Set B} (h : W ⊆ W') :
     ((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{w} R) 0).obj (ModuleCat.of R R)).map
-        (TopCat.ofHom (ContinuousMap.inclusion h)) ≫ toThomPairOver F E R hι ω W' =
-      toThomPairOver F E R hι ω W ≫ restr F E R hι h (finrank ℝ F) := by
+        (TopCat.ofHom (ContinuousMap.inclusion h)) ≫
+        thomPairOverTwistedHomologyFinrankInv F E R hι ω W' =
+      thomPairOverTwistedHomologyFinrankInv F E R hι ω W ≫ restr F E R hι h (finrank ℝ F) := by
   refine singularHomology₀_hom_ext _ fun x ↦ ?_
-  rw [singularHomology₀Section_naturality_assoc, singularHomology₀Section_toThomPairOver,
-    singularHomology₀Section_toThomPairOver_assoc, ModuleCat.ofHom_toSpanSingleton_comp,
-    restr_fiberClass]
+  rw [singularHomology₀Section_naturality_assoc,
+    singularHomology₀Section_thomPairOverTwistedHomologyFinrankInv,
+    singularHomology₀Section_thomPairOverTwistedHomologyFinrankInv_assoc,
+    ModuleCat.ofHom_toSpanSingleton_comp, restr_thomPairOverSignFiberClass]
   simp only [TopCat.hom_ofHom, ContinuousMap.inclusion_apply_coe]
 
 /-- Over a subset of the base set of a chosen trivialization, the map is an isomorphism, inverse to
 `localIso`. -/
-private theorem toThomPairOver_comp_localIso_hom (c : B) {W : Set B}
-    (hW : W ⊆ (trivializationAt F E c).baseSet) :
-    toThomPairOver F E R hι ω W ≫ (localIso hι ω c hW).hom = 𝟙 _ := by
+private theorem thomPairOverTwistedHomologyFinrankInv_comp_localIso_hom
+    (e : Trivialization F (π F E))
+    [MemTrivializationAtlas e] {W : Set B}
+    (hW : W ⊆ e.baseSet) :
+    thomPairOverTwistedHomologyFinrankInv F E R hι ω W ≫ (localIso hι ω e hW).hom = 𝟙 _ := by
   refine singularHomology₀_hom_ext _ fun x ↦ ?_
-  rw [singularHomology₀Section_toThomPairOver_assoc, ModuleCat.ofHom_toSpanSingleton_comp,
-    localIso_hom_fiberClass, Category.comp_id]
+  rw [singularHomology₀Section_thomPairOverTwistedHomologyFinrankInv_assoc,
+    ModuleCat.ofHom_toSpanSingleton_comp,
+    localIso_hom_thomPairOverSignFiberClass, Category.comp_id]
   ext
   simp
 
-private theorem isIso_toThomPairOver_of_subset (c : B) {W : Set B}
-    (hW : W ⊆ (trivializationAt F E c).baseSet) : IsIso (toThomPairOver F E R hι ω W) := by
-  rw [(Iso.comp_hom_eq_id _).1 (toThomPairOver_comp_localIso_hom hι ω c hW)]
+private theorem isIso_thomPairOverTwistedHomologyFinrankInv_of_subset (e : Trivialization F (π F E))
+    [MemTrivializationAtlas e] {W : Set B}
+    (hW : W ⊆ e.baseSet) : IsIso (thomPairOverTwistedHomologyFinrankInv F E R hι ω W) := by
+  rw [(Iso.comp_hom_eq_id _).1 (thomPairOverTwistedHomologyFinrankInv_comp_localIso_hom hι ω e hW)]
   infer_instance
 
 /-! ### The Mayer–Vietoris step -/
 
-variable (F E R) in
-/-- The map between the relative twisted homology of two pairs of subsets of the total space, for
-inclusions of the subsets. -/
-private abbrev rmap {A₁ C₁ A₂ C₂ : Set (TotalSpace F E)} (h₁ : C₁ ⊆ A₁)
-    (h₂ : C₂ ⊆ A₂) (hA : A₁ ⊆ A₂) (hC : C₁ ⊆ C₂) (n : ℕ) :
-    (TopPair.ofInclusion (X := TopCat.of (TotalSpace F E)) h₁).twistedHomology
-      ((LocalCoefficientSystem.pullback (X := TopCat.of ↥A₁) (ContinuousMap.subtypeVal A₁)).obj
-        (thomPairSignLocalSystem F E R hι)) n ⟶
-    (TopPair.ofInclusion (X := TopCat.of (TotalSpace F E)) h₂).twistedHomology
-      ((LocalCoefficientSystem.pullback (X := TopCat.of ↥A₂) (ContinuousMap.subtypeVal A₂)).obj
-        (thomPairSignLocalSystem F E R hι)) n :=
-  HomologicalComplex.homologyMap
-    ((thomPairSignLocalSystem F E R hι).subsetPairTwistedChainComplexMap h₁ h₂ hA hC) n
-
 omit [FiniteDimensional ℝ F] in
-private theorem rmap_comp_rmap {A₁ C₁ A₂ C₂ A₃ C₃ : Set (TotalSpace F E)} (h₁ : C₁ ⊆ A₁)
-    (h₂ : C₂ ⊆ A₂) (h₃ : C₃ ⊆ A₃) (hA : A₁ ⊆ A₂) (hC : C₁ ⊆ C₂) (hA' : A₂ ⊆ A₃) (hC' : C₂ ⊆ C₃)
-    (n : ℕ) :
-    rmap F E R hι h₁ h₂ hA hC n ≫ rmap F E R hι h₂ h₃ hA' hC' n =
-      rmap F E R hι h₁ h₃ (hA.trans hA') (hC.trans hC') n :=
-  (HomologicalComplex.homologyMap_comp _ _ _).symm.trans
-    (congrArg (HomologicalComplex.homologyMap · n)
-      (LocalCoefficientSystem.subsetPairTwistedChainComplexMap_comp_subsetPairTwistedChainComplexMap
-        _ _ _ _ _ _ _ _))
-
-omit [FiniteDimensional ℝ F] in
-private theorem rmap_self {A₁ C₁ : Set (TotalSpace F E)} (h₁ : C₁ ⊆ A₁) (n : ℕ) :
-    rmap F E R hι h₁ h₁ subset_rfl subset_rfl n = 𝟙 _ :=
-  (congrArg (HomologicalComplex.homologyMap · n)
-    (LocalCoefficientSystem.subsetPairTwistedChainComplexMap_self _ _)).trans
-      (HomologicalComplex.homologyMap_id _ _)
-
-omit [FiniteDimensional ℝ F] in
-/-- Restrictions compose: `restr` is `rmap` for the pairs `(π⁻¹ W, π⁻¹ W ∩ E₀)`. -/
+/-- Restrictions compose. -/
 private theorem restr_comp_restr {W W' W'' : Set B} (h : W ⊆ W') (h' : W' ⊆ W'') (n : ℕ) :
     restr F E R hι h n ≫ restr F E R hι h' n = restr F E R hι (h.trans h') n :=
-  rmap_comp_rmap hι _ _ _ _ _ _ _ n
-
-variable (F E R) in
-/-- Equal pairs of subsets have isomorphic relative twisted homology. -/
-private def rmapIso {A₁ C₁ A₂ C₂ : Set (TotalSpace F E)} (h₁ : C₁ ⊆ A₁)
-    (h₂ : C₂ ⊆ A₂) (hA : A₁ = A₂) (hC : C₁ = C₂) (n : ℕ) :
-    (TopPair.ofInclusion (X := TopCat.of (TotalSpace F E)) h₁).twistedHomology
-      ((LocalCoefficientSystem.pullback (X := TopCat.of ↥A₁) (ContinuousMap.subtypeVal A₁)).obj
-        (thomPairSignLocalSystem F E R hι)) n ≅
-    (TopPair.ofInclusion (X := TopCat.of (TotalSpace F E)) h₂).twistedHomology
-      ((LocalCoefficientSystem.pullback (X := TopCat.of ↥A₂) (ContinuousMap.subtypeVal A₂)).obj
-        (thomPairSignLocalSystem F E R hι)) n where
-  hom := rmap F E R hι h₁ h₂ hA.subset hC.subset n
-  inv := rmap F E R hι h₂ h₁ hA.symm.subset hC.symm.subset n
-  hom_inv_id := (rmap_comp_rmap hι _ _ _ _ _ _ _ n).trans (rmap_self hι h₁ n)
-  inv_hom_id := (rmap_comp_rmap hι _ _ _ _ _ _ _ n).trans (rmap_self hι h₂ n)
+  LocalCoefficientSystem.subsetPairTwistedHomologyMap_comp _ _ _ _ _ _ _ _ n
 
 variable (F E R) in
 /-- The Mayer–Vietoris sequence of the Thom pairs over `U ∩ V`, `U`, `V` and `U ∪ V` with
@@ -584,30 +615,43 @@ private def mvShortComplexIso (U V : Set B) (n : ℕ) :
         (inter_subset_left : π F E ⁻¹' U ∩ zeroSectionCompl F E ⊆ π F E ⁻¹' U)
         (inter_subset_left : π F E ⁻¹' V ∩ zeroSectionCompl F E ⊆ π F E ⁻¹' V) n) := by
   refine ShortComplex.isoMk
-    (rmapIso F E R hι inter_subset_left _ (preimage_inter) (by ext; simp; tauto) n)
+    ((thomPairSignLocalSystem F E R hι).subsetPairTwistedHomologyIsoOfEq inter_subset_left _
+      (preimage_inter) (by ext; simp; tauto) n)
     (Iso.refl _)
-    (rmapIso F E R hι inter_subset_left _ (preimage_union) (by ext; simp; tauto) n) ?_ ?_
-  -- The objects `(thomPairOver F E W).twistedHomology (overSignLocalSystem F E R hι W) n` and the
-  -- homology of the pair of subsets `(π⁻¹ W, π⁻¹ W ∩ E₀)` agree only after unfolding
+    ((thomPairSignLocalSystem F E R hι).subsetPairTwistedHomologyIsoOfEq inter_subset_left _
+      (preimage_union) (by ext; simp; tauto) n) ?_ ?_
+  -- The objects `(thomPairOver F E W).twistedHomology (thomPairOverSignLocalSystem F E R hι W) n`
+  -- and the homology of the pair of subsets `(π⁻¹ W, π⁻¹ W ∩ E₀)` agree only after unfolding
   -- `thomPairOver`, so `simp` and `rw` meet compositions that are not type correct at reducible
   -- transparency and make no progress; the two squares are assembled with `Eq.trans` instead.
   · apply biprod.hom_ext
-    · exact (congrArg (_ ≫ ·)
-        (LocalCoefficientSystem.pairTwistedMayerVietorisToBiprod_fst _ _ _ n)).trans
-        ((rmap_comp_rmap hι _ _ _ _ _ _ _ n).trans
+    · exact (congrArg (· ≫ _)
+        (LocalCoefficientSystem.subsetPairTwistedHomologyIsoOfEq_hom _ _ _ _ _ n)).trans <|
+        (congrArg (_ ≫ ·)
+          (LocalCoefficientSystem.pairTwistedMayerVietorisToBiprod_fst _ _ _ n)).trans
+        ((LocalCoefficientSystem.subsetPairTwistedHomologyMap_comp _ _ _ _ _ _ _ _ n).trans
           ((biprod.lift_fst _ _).symm.trans (congrArg (· ≫ biprod.fst) (Category.comp_id _).symm)))
-    · exact (congrArg (_ ≫ ·)
-        (LocalCoefficientSystem.pairTwistedMayerVietorisToBiprod_snd _ _ _ n)).trans
+    · exact (congrArg (· ≫ _)
+        (LocalCoefficientSystem.subsetPairTwistedHomologyIsoOfEq_hom _ _ _ _ _ n)).trans <|
+        (congrArg (_ ≫ ·)
+          (LocalCoefficientSystem.pairTwistedMayerVietorisToBiprod_snd _ _ _ n)).trans
         (((Preadditive.comp_neg _ _).trans
-          (congrArg Neg.neg (rmap_comp_rmap hι _ _ _ _ _ _ _ n))).trans
+          (congrArg Neg.neg (LocalCoefficientSystem.subsetPairTwistedHomologyMap_comp
+            _ _ _ _ _ _ _ _ n))).trans
           ((biprod.lift_snd _ _).symm.trans (congrArg (· ≫ biprod.snd) (Category.comp_id _).symm)))
   · apply biprod.hom_ext'
     · exact ((congrArg (biprod.inl ≫ ·) (Category.id_comp _)).trans
         (LocalCoefficientSystem.inl_pairTwistedMayerVietorisFromBiprod _ _ _ n)).trans
-          ((biprod.inl_desc_assoc _ _ _).trans (rmap_comp_rmap hι _ _ _ _ _ _ _ n)).symm
+          ((biprod.inl_desc_assoc _ _ _).trans <|
+            (congrArg (_ ≫ ·)
+              (LocalCoefficientSystem.subsetPairTwistedHomologyIsoOfEq_hom _ _ _ _ _ n)).trans
+            (LocalCoefficientSystem.subsetPairTwistedHomologyMap_comp _ _ _ _ _ _ _ _ n)).symm
     · exact ((congrArg (biprod.inr ≫ ·) (Category.id_comp _)).trans
         (LocalCoefficientSystem.inr_pairTwistedMayerVietorisFromBiprod _ _ _ n)).trans
-          ((biprod.inr_desc_assoc _ _ _).trans (rmap_comp_rmap hι _ _ _ _ _ _ _ n)).symm
+          ((biprod.inr_desc_assoc _ _ _).trans <|
+            (congrArg (_ ≫ ·)
+              (LocalCoefficientSystem.subsetPairTwistedHomologyIsoOfEq_hom _ _ _ _ _ n)).trans
+            (LocalCoefficientSystem.subsetPairTwistedHomologyMap_comp _ _ _ _ _ _ _ _ n)).symm
 
 omit [FiniteDimensional ℝ F] in
 private theorem mvShortComplex_exact {U V : Set B} (hU : IsOpen U) (hV : IsOpen V) (n : ℕ) :
@@ -619,19 +663,20 @@ private theorem mvShortComplex_exact {U V : Set B} (hU : IsOpen U) (hV : IsOpen 
 include ω in
 /-- Over a subset of the base set of a chosen trivialization, the homology of the Thom pair with
 coefficients in the pulled-back orientation system vanishes below the rank. -/
-private theorem isZero_twistedHomology_thomPairOver (c : B) {W : Set B}
-    (hW : W ⊆ (trivializationAt F E c).baseSet) {m : ℕ} (hm : m < finrank ℝ F) :
-    IsZero ((thomPairOver F E W).twistedHomology (overSignLocalSystem F E R hι W) m) :=
-  ((trivializationAt F E c).isZero_singularHomology_thomPairOver hW (ModuleCat.of R R) hm).of_iso
+private theorem isZero_twistedHomology_thomPairOver (e : Trivialization F (π F E))
+    [MemTrivializationAtlas e] {W : Set B}
+    (hW : W ⊆ e.baseSet) {m : ℕ} (hm : m < finrank ℝ F) :
+    IsZero ((thomPairOver F E W).twistedHomology (thomPairOverSignLocalSystem F E R hι W) m) :=
+  (e.isZero_singularHomology_thomPairOver hW (ModuleCat.of R R) hm).of_iso
     ((HomologicalComplex.homologyFunctor _ _ m).mapIso
-      ((thomPairOver F E W).twistedChainComplexCoefficientIso (baseSetSignIso hι c hW ω)) ≪≫
+      ((thomPairOver F E W).twistedChainComplexCoefficientIso (baseSetSignIso hι e hW ω)) ≪≫
       (thomPairOver F E W).twistedHomologyConstantIso (ModuleCat.of R R) m)
 
 omit [FiniteDimensional ℝ F] in
 private theorem epi_mvShortComplex_g {U V : Set B} (hU : IsOpen U) (hV : IsOpen V) (n : ℕ)
     (hUV : ∀ m, m + 1 = n →
       IsZero ((thomPairOver F E (U ∩ V)).twistedHomology
-        (overSignLocalSystem F E R hι (U ∩ V)) m)) :
+        (thomPairOverSignLocalSystem F E R hι (U ∩ V)) m)) :
     Epi (mvShortComplex F E R hι U V n).g := by
   obtain ⟨hA, hB, hC, hD⟩ := isOpen_thomPairOver_mayerVietoris (F := F) (E := E) hU hV
   set e := mvShortComplexIso (F := F) (E := E) (R := R) hι U V n
@@ -643,8 +688,9 @@ private theorem epi_mvShortComplex_g {U V : Set B} (hU : IsOpen U) (hV : IsOpen 
     · exact (thomPairSignLocalSystem F E R hι).epi_pairTwistedMayerVietorisFromBiprod_zero _ _ hA
         hB hC hD
     · exact ((thomPairSignLocalSystem F E R hι).pairTwistedMayerVietoris_exact₃ _ _ hA hB hC hD
-        (m + 1) m).epi_f (((hUV m rfl).of_iso (rmapIso F E R hι _ _ (preimage_inter)
-          (by ext; simp; tauto) m).symm).eq_of_tgt _ _)
+        (m + 1) m).epi_f (((hUV m rfl).of_iso
+          ((thomPairSignLocalSystem F E R hι).subsetPairTwistedHomologyIsoOfEq _ _ (preimage_inter)
+            (by ext; simp; tauto) m).symm).eq_of_tgt _ _)
   have hg : (mvShortComplex F E R hι U V n).g = e.hom.τ₂ ≫
       ((thomPairSignLocalSystem F E R hι).pairTwistedMayerVietorisFromBiprod
         (inter_subset_left : π F E ⁻¹' U ∩ zeroSectionCompl F E ⊆ π F E ⁻¹' U)
@@ -657,7 +703,7 @@ private theorem epi_mvShortComplex_g {U V : Set B} (hU : IsOpen U) (hV : IsOpen 
 omit [FiniteDimensional ℝ F] in
 /-- Over the empty set, the homology of the Thom pair vanishes. -/
 private theorem isZero_twistedHomology_thomPairOver_empty :
-    IsZero ((thomPairOver F E ∅).twistedHomology (overSignLocalSystem F E R hι ∅)
+    IsZero ((thomPairOver F E ∅).twistedHomology (thomPairOverSignLocalSystem F E R hι ∅)
       (finrank ℝ F)) :=
   have : IsEmpty (thomPairOver F E (∅ : Set B)).fst := ⟨fun v ↦ v.property⟩
   have : IsEmpty (thomPairOver F E (∅ : Set B)).snd := ⟨fun v ↦ v.property.1⟩
@@ -669,7 +715,7 @@ private theorem isZero_twistedHomology_thomPairOver_empty :
 /-- The twisted homology of the Thom pair over the whole base, as a pair of subsets of the total
 space, is that of the Thom pair `(E, E₀)`. -/
 private def overUnivIso (n : ℕ) :
-    (thomPairOver F E univ).twistedHomology (overSignLocalSystem F E R hι univ) n ≅
+    (thomPairOver F E univ).twistedHomology (thomPairOverSignLocalSystem F E R hι univ) n ≅
       (thomPair F E).twistedHomology (thomPairSignLocalSystem F E R hι) n :=
   have hmap : (ContinuousMap.subtypeVal (π F E ⁻¹' univ) :
       C((thomPairOver F E univ).fst, TotalSpace F E)) =
@@ -688,25 +734,45 @@ private def overUnivIso (n : ℕ) :
     @asIso _ _ _ _ (TopPair.twistedHomologyMap (thomPairOverUnivIso F E).hom
       (thomPairSignLocalSystem F E R hι) n) hiso
 
-private theorem isIso_toThomPairOver_univ [CompactSpace B] :
-    IsIso (toThomPairOver F E R hι ω univ) := by
+/-- **The rank-degree homology over a finite union of trivializing open sets**: if `W` is the union
+of finitely many open sets, each inside the base set of a trivialization of the atlas, then
+`H₀(W; R) ⟶ Hᵣ(E|_W, E₀|_W; π^*o(E))`, sending the class of a point to the fibre class over it, is
+an isomorphism. -/
+theorem isIso_thomPairOverTwistedHomologyFinrankInv_biUnion {κ : Type*} (s : Finset κ)
+    {W : κ → Set B} (hWo : ∀ i ∈ s, IsOpen (W i))
+    (hWe : ∀ i ∈ s, ∃ (e : Trivialization F (π F E)) (_ : MemTrivializationAtlas e),
+      W i ⊆ e.baseSet) :
+    IsIso (thomPairOverTwistedHomologyFinrankInv F E R hι ω (⋃ i ∈ s, W i)) :=
+  -- The Mayer–Vietoris induction over finite unions of open sets in the base sets of
+  -- trivializations of the atlas; the homology over `U ∩ V` vanishes in degree `r - 1` for such a
+  -- `U`.
+  isIso_biUnion_of_mayerVietoris
+    (A := TopCat.subspaceDiagram (A := (id : Set B → Set B)) monotone_id ⋙
+      (AlgebraicTopology.singularHomologyFunctor (ModuleCat.{w} R) 0).obj (ModuleCat.of R R))
+    (fun _ _ h ↦ restr F E R hι h (finrank ℝ F)) (thomPairOverTwistedHomologyFinrankInv F E R hι ω)
+    (fun _ _ h ↦ thomPairOverTwistedHomologyFinrankInv_naturality hι ω h)
+    (fun U V _ _ ↦ epi_biprod_desc_singularHomologyMap_inclusion _ U V)
+    (fun W ↦ ∃ (e : Trivialization F (π F E)) (_ : MemTrivializationAtlas e), W ⊆ e.baseSet)
+    (fun _ _ h ⟨e, he, hW⟩ ↦ ⟨e, he, h.trans hW⟩)
+    (fun _ ⟨e, _, hW⟩ ↦ isIso_thomPairOverTwistedHomologyFinrankInv_of_subset hι ω e hW)
+    (isIso_of_source_target_iso_zero _
+      (isZero_singularHomology_of_isEmpty _ (TopCat.of (∅ : Set B)) _).isoZero
+      (isZero_twistedHomology_thomPairOver_empty hι).isoZero)
+    (fun U V ↦ (mvShortComplex F E R hι U V (finrank ℝ F)).zero)
+    (fun _ _ hU hV ↦ mvShortComplex_exact hι hU hV _)
+    (fun _ _ hU hV ⟨e, _, hW⟩ ↦ epi_mvShortComplex_g hι hU hV _ fun _ hm ↦
+      isZero_twistedHomology_thomPairOver hι ω e (inter_subset_left.trans hW) (by omega))
+    s hWo hWe
+
+private theorem isIso_thomPairOverTwistedHomologyFinrankInv_univ [CompactSpace B] :
+    IsIso (thomPairOverTwistedHomologyFinrankInv F E R hι ω univ) := by
   obtain ⟨s, hs⟩ := isCompact_univ.elim_finite_subcover
     (fun b : B ↦ (trivializationAt F E b).baseSet)
     (fun b ↦ (trivializationAt F E b).open_baseSet)
     (fun b _ ↦ mem_iUnion.2 ⟨b, FiberBundle.mem_baseSet_trivializationAt' b⟩)
-  -- The Mayer–Vietoris induction over finite unions of open sets in the base sets of the chosen
-  -- trivializations; the homology over `U ∩ V` vanishes in degree `r - 1` for such a `U`.
-  have h := isIso_biUnion_of_mayerVietoris (fun h ↦ restr F E R hι h (finrank ℝ F))
-    (toThomPairOver F E R hι ω) (toThomPairOver_naturality hι ω)
-    (fun h h' ↦ restr_comp_restr hι h h' _) (fun W ↦ ∃ c, W ⊆ (trivializationAt F E c).baseSet)
-    (fun h ⟨c, hc⟩ ↦ ⟨c, h.trans hc⟩)
-    (fun _ ⟨c, hc⟩ ↦ isIso_toThomPairOver_of_subset hι ω c hc)
-    (isZero_twistedHomology_thomPairOver_empty hι)
-    (fun hU hV ↦ mvShortComplex_exact hι hU hV _)
-    (fun hU hV ⟨c, hc⟩ ↦ epi_mvShortComplex_g hι hU hV _ fun _ hm ↦
-      isZero_twistedHomology_thomPairOver hι ω c (inter_subset_left.trans hc) (by omega))
-    s (W := fun b ↦ (trivializationAt F E b).baseSet)
-    (fun b _ ↦ (trivializationAt F E b).open_baseSet) fun b _ ↦ ⟨b, subset_rfl⟩
+  have h := isIso_thomPairOverTwistedHomologyFinrankInv_biUnion (R := R) hι ω s
+    (W := fun b ↦ (trivializationAt F E b).baseSet)
+    (fun b _ ↦ (trivializationAt F E b).open_baseSet) fun b _ ↦ ⟨_, inferInstance, subset_rfl⟩
   rwa [eq_univ_of_univ_subset hs] at h
 
 variable (F E R) in
@@ -717,7 +783,13 @@ by the orientation of `E_b` which this trivialization reads as `ω`. Reversing b
 together does not change it, so it does not depend on the trivialization. -/
 def thomPairSignFiberClass (b : B) :
     (thomPair F E).twistedHomology (thomPairSignLocalSystem F E R hι) (finrank ℝ F) :=
-  (overUnivIso hι (finrank ℝ F)).hom (fiberClass F E R hι ω (mem_univ b))
+  (overUnivIso hι (finrank ℝ F)).hom (thomPairOverSignFiberClass F E R hι ω (mem_univ b))
+
+/-- Replacing the orientation `ω` of the model fibre by `-ω` negates the fibre classes. -/
+@[simp]
+theorem thomPairSignFiberClass_neg (b : B) :
+    thomPairSignFiberClass F E R hι (-ω) b = -thomPairSignFiberClass F E R hι ω b := by
+  rw [thomPairSignFiberClass, thomPairSignFiberClass, thomPairOverSignFiberClass_neg, map_neg]
 
 variable (F E R) in
 /-- **The homology of the Thom pair in the rank degree with coefficients in the pulled-back
@@ -733,7 +805,8 @@ def thomPairTwistedHomologyFinrankIso [CompactSpace B] :
       ((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{w} R) 0).obj
         (ModuleCat.of R R)).obj (TopCat.of B) :=
   (overUnivIso hι (finrank ℝ F)).symm ≪≫
-    (@asIso _ _ _ _ (toThomPairOver F E R hι ω univ) (isIso_toThomPairOver_univ hι ω)).symm ≪≫
+    (@asIso _ _ _ _ (thomPairOverTwistedHomologyFinrankInv F E R hι ω univ)
+      (isIso_thomPairOverTwistedHomologyFinrankInv_univ hι ω)).symm ≪≫
     ((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{w} R) 0).obj
       (ModuleCat.of R R)).mapIso (TopCat.isoOfHomeo (Homeomorph.Set.univ B))
 
@@ -744,7 +817,7 @@ theorem thomPairTwistedHomologyFinrankIso_hom_thomPairSignFiberClass [CompactSpa
     (thomPairTwistedHomologyFinrankIso F E R hι ω).hom (thomPairSignFiberClass F E R hι ω b) =
       singularHomology₀Section (ModuleCat.of R R) (X := TopCat.of B) b 1 := by
   have hb := ConcreteCategory.congr_hom
-    (singularHomology₀Section_toThomPairOver (F := F) (E := E) (R := R) hι ω
+    (singularHomology₀Section_thomPairOverTwistedHomologyFinrankInv (F := F) (E := E) (R := R) hι ω
       (⟨b, mem_univ b⟩ : (univ : Set B))) 1
   simp only [ConcreteCategory.comp_apply, ModuleCat.hom_ofHom, LinearMap.toSpanSingleton_apply,
     one_smul] at hb
@@ -754,6 +827,26 @@ theorem thomPairTwistedHomologyFinrankIso_hom_thomPairSignFiberClass [CompactSpa
     singularHomology₀Section_naturality]
   simp only [TopCat.isoOfHomeo_hom, TopCat.hom_ofHom, ContinuousMap.coe_ofClass,
     Homeomorph.Set.univ_apply]
+
+/-- **Morphisms out of `Hᵣ(E, E₀; π^*o(E))` are determined by the fibre classes.** Over a compact
+base, two morphisms to a module `M` that agree on the fibre class over every point are equal. -/
+theorem thomPairTwistedHomology_hom_ext [CompactSpace B] {M : ModuleCat.{w} R}
+    {f g : (thomPair F E).twistedHomology (thomPairSignLocalSystem F E R hι) (finrank ℝ F) ⟶ M}
+    (h : ∀ b, f.hom (thomPairSignFiberClass F E R hι ω b) =
+      g.hom (thomPairSignFiberClass F E R hι ω b)) :
+    f = g := by
+  rw [← Iso.hom_inv_id_assoc (thomPairTwistedHomologyFinrankIso F E R hι ω) f,
+    ← Iso.hom_inv_id_assoc (thomPairTwistedHomologyFinrankIso F E R hι ω) g]
+  congr 1
+  refine singularHomology₀_hom_ext _ fun b ↦ ?_
+  -- The class of `b` is the image of the fibre class over `b`.
+  have hb : singularHomology₀Section (ModuleCat.of R R) (X := TopCat.of B) b =
+      ModuleCat.ofHom (LinearMap.toSpanSingleton R _ ((thomPairTwistedHomologyFinrankIso F E R hι
+        ω).hom (thomPairSignFiberClass F E R hι ω b))) := by
+    rw [thomPairTwistedHomologyFinrankIso_hom_thomPairSignFiberClass]
+    exact ModuleCat.hom_ext (LinearMap.ext_ring (by simp))
+  rw [hb, ModuleCat.ofHom_toSpanSingleton_comp, ModuleCat.ofHom_toSpanSingleton_comp,
+    ConcreteCategory.comp_apply, ConcreteCategory.comp_apply, Iso.hom_inv_id_apply, h b]
 
 end FiberClass
 

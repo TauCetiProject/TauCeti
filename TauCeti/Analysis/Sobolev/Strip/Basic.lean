@@ -71,8 +71,8 @@ of `Lᵖ` of the strip from `TauCeti.Analysis.Sobolev.Strip.Jet`.
 
 The Rellich compactness of the restriction to `[-T, T] × [0, 1]` is
 `TauCeti.StripSobolev.isCompactOperator_restrictValue_comp_subtypeL` in
-`TauCeti.Analysis.Sobolev.Strip.Rellich`. Peetre's argument for strip operators, which the cylinder
-file proves for the cylinder, is not proved yet.
+`TauCeti.Analysis.Sobolev.Strip.Rellich`, and Peetre's argument for first-order operators on the
+strip with boundary conditions is in `TauCeti.Analysis.Sobolev.Strip.Fredholm`.
 
 ## References
 
