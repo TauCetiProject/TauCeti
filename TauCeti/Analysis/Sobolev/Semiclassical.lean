@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Analysis.Sobolev.BesselPotential.Embedding
 public import TauCeti.Analysis.Sobolev.Dilation
 public import TauCeti.Analysis.Sobolev.Wkp.Algebra
 import Mathlib.MeasureTheory.Function.LpSeminorm.LpNorm
@@ -211,7 +212,8 @@ theorem exists_semiclassicalSobolevNorm_mul_le {k : ℕ} (hk : finrank ℝ E < 2
       (∀ i ≤ k, MemLp (iteratedFDeriv ℝ i (f * g)) 2) ∧
         semiclassicalSobolevNorm k h (f * g) ≤
           C * semiclassicalSobolevNorm k h f * semiclassicalSobolevNorm k h g := by
-  obtain ⟨C, hC⟩ := exists_sum_lpNorm_iteratedFDeriv_mul_le (E := E) hk
+  obtain ⟨C, hC⟩ := exists_sum_lpNorm_iteratedFDeriv_mul_le (E := E) le_rfl
+    (by rw [ENNReal.toReal_ofNat, mul_comm]; exact_mod_cast hk)
   refine ⟨C, fun h hh f g hf hg hfm hgm ↦ ?_⟩
   obtain ⟨hf', hfm'⟩ := contDiff_comp_smul_and_memLp hf hfm hh.ne'
   obtain ⟨hg', hgm'⟩ := contDiff_comp_smul_and_memLp hg hgm hh.ne'

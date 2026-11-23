@@ -14,6 +14,8 @@ import TauCeti.RingTheory.AdjoinRoot.Idempotent
 import TauCeti.RingTheory.Henselian.Basic
 import TauCeti.RingTheory.Henselian.Factorization
 import TauCeti.RingTheory.Henselian.Radical
+import TauCeti.RingTheory.Ideal.GoingUp
+import TauCeti.RingTheory.Ideal.Quotient.Defs
 import TauCeti.RingTheory.Idempotents.Polynomial
 import TauCeti.RingTheory.LocalRing.Module
 import TauCeti.RingTheory.LocalRing.Monogenic

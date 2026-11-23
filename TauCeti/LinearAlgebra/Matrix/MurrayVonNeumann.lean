@@ -61,6 +61,8 @@ spectral order (`Matrix.conjTranspose_mul_self_eq_zero`).
   are equivalent exactly when `p ⊕ 0` and `0 ⊕ q` are unitarily conjugate, and
   `Matrix.IsMurrayVonNeumannEquivalent.exists_isSelfAdjoint_mem_unitary_mul_fromBlocks_mul_star`
   supplies the conjugating self-adjoint unitary `!![1 - p, vᴴ; v, 1 - q]`.
+* `IsStarProjection.isMurrayVonNeumannEquivalent_fromBlocks_one_sub`: over a ring, `p ⊕ (1 - p)`
+  is equivalent to the identity matrix.
 * `IsStarProjection.isMurrayVonNeumannEquivalent_single` and
   `Matrix.IsMurrayVonNeumannEquivalent.rank_eq`: diagonal matrix units of any sizes at a star
   projection are equivalent, and over a commutative star ring with the strong rank condition
@@ -410,6 +412,22 @@ theorem isMurrayVonNeumannEquivalent_iff_exists_mem_unitary_mul_fromBlocks_mul_s
     isMurrayVonNeumannEquivalent_of_mem_unitary_mul_fromBlocks_mul_star hp hw hwpq⟩
   obtain ⟨w, -, hw, hwpq⟩ := h.exists_isSelfAdjoint_mem_unitary_mul_fromBlocks_mul_star
   exact ⟨w, hw, hwpq⟩
+
+omit [DecidableEq n] in
+/-- **Complements.** For a matrix projection `p`, the block sum `p ⊕ (1 - p)` is equivalent to
+the identity matrix, through the row of blocks `(p  1 - p)`. -/
+theorem _root_.IsStarProjection.isMurrayVonNeumannEquivalent_fromBlocks_one_sub
+    {p : Matrix m m R} (hp : IsStarProjection p) :
+    IsMurrayVonNeumannEquivalent (fromBlocks p 0 0 (1 - p)) (1 : Matrix m m R) := by
+  have hpH : pᴴ = p := by rw [← star_eq_conjTranspose, hp.isSelfAdjoint.star_eq]
+  have hqH : (1 - p)ᴴ = 1 - p := by
+    rw [← star_eq_conjTranspose, hp.one_sub.isSelfAdjoint.star_eq]
+  have hpe := hp.isIdempotentElem
+  refine ⟨hp.fromBlocks_zero₁₂_zero₂₁ hp.one_sub, .one _, fromCols p (1 - p), ?_, ?_⟩
+  · rw [conjTranspose_fromCols_eq_fromRows_conjTranspose, hpH, hqH, fromRows_mul_fromCols,
+      hpe.eq, hpe.mul_one_sub_self, hpe.one_sub_mul_self, hpe.one_sub.eq]
+  · rw [conjTranspose_fromCols_eq_fromRows_conjTranspose, hpH, hqH, fromCols_mul_fromRows,
+      hpe.eq, hpe.one_sub.eq, add_sub_cancel]
 
 end Ring
 

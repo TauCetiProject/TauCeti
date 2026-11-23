@@ -33,9 +33,10 @@ It is the input from which virtual fundamental cycles are built. Its data are:
 The axioms say that the footprint maps form a cocycle compatible with the Kuranishi maps, that
 `ψ_IJ` identifies `Z_IJ / Γ_(J \ I)` with its open image `U_IJ ⊆ X_I`, that the images satisfy
 `U_IJ₁ ∩ U_IJ₂ = U_I(J₁ ∪ J₂)` and `ψ_IJ⁻¹(U_IK) = U_JK ∩ Z_IJ`, that `Γ_(J \ I)` acts freely
-over the regular locus, that over the regular locus `s_(J \ I)` is locally a product projection
-`ℝ^(d + m_I) × E_(J \ I) → E_(J \ I)` with `m_I = ∑_(α ∈ I) dim E_α`, and that the regular
-*footprints* `V_I = ψ_∅I(X_I^reg ∩ Z_∅I)` cover `X`. The images `U_IJ` are not separate data:
+over the regular locus, that over the regular locus the extra obstruction `s_(J \ I)`
+(`TauCeti.kuranishiSdiff`) is locally a product projection `ℝ^(d + m_I) × E_(J \ I) → E_(J \ I)`
+with `m_I = ∑_(α ∈ I) dim E_α`, and that the regular *footprints* `V_I = ψ_∅I(X_I^reg ∩ Z_∅I)`
+cover `X`. The images `U_IJ` are not separate data:
 the quotient axiom makes `ψ_IJ` surjective onto `U_IJ`, so here `U_IJ` is the range of `ψ_IJ`.
 The regular locus is part of the data; outside it the thickening need not be a manifold and the
 action need not be free.
@@ -48,10 +49,14 @@ are proved for it. The zero sets are invariant
 `Γ_I` (`TauCeti.ImplicitAtlas.Core.act_mem_range_footprintMap`), the zero-set domains of the
 cocycle condition match (`TauCeti.ImplicitAtlas.Core.mem_kuranishiZeroSet_iff_footprintMap_mem`),
 the footprints are open and cover `X` (`TauCeti.ImplicitAtlas.Core.isOpen_footprint`,
-`TauCeti.ImplicitAtlas.Core.iUnion_footprint`), and the regular locus is empty where the expected
-dimension `d + m_I` is negative (`TauCeti.ImplicitAtlas.regLocus_eq_empty_of_neg`), so that a
-nonempty space carries no atlas whose expected dimensions are all negative
-(`TauCeti.ImplicitAtlas.isEmpty_of_forall_neg`).
+`TauCeti.ImplicitAtlas.Core.iUnion_footprint`) and are empty where the regular locus is
+(`TauCeti.ImplicitAtlas.Core.footprint_eq_empty_of_regLocus_eq_empty`), and the regular locus is
+empty where the expected dimension `d + m_I` is negative
+(`TauCeti.ImplicitAtlas.regLocus_eq_empty_of_neg`), so that a nonempty space carries no atlas
+whose expected dimensions are all negative (`TauCeti.ImplicitAtlas.isEmpty_of_forall_neg`).
+A point of `Z_IJ` fixed by a nontrivial element of `Γ_(J \ I)` does not lie over `X_I^reg`
+(`TauCeti.ImplicitAtlas.Core.footprintMap_notMem_regLocus_of_act_eq`), so an ineffective point
+has no regular base (`TauCeti.ImplicitAtlas.Core.regLocus_empty_eq_empty_of_nontrivial`).
 Examples are in `TauCeti.Topology.ImplicitAtlas.Examples`.
 
 ## Implementation notes
@@ -112,6 +117,28 @@ theorem mem_kuranishiZeroSet_self {T : Finset A → Type*} {E : A → Type*} [�
     (s : ∀ (J : Finset A) (α : J), T J → E α) {I : Finset A} (x : T I) :
     x ∈ kuranishiZeroSet s I I :=
   mem_kuranishiZeroSet.2 fun α hα ↦ (hα α.property).elim
+
+/-- The extra obstruction `s_(J \ I) : X_J → E_(J \ I) = ∏_(α ∈ J \ I) E_α` of a family of
+Kuranishi maps `s J α : X_J → E_α`: the components of `s_J` indexed by `J \ I`. Its zero set is
+`Z_IJ` (`TauCeti.kuranishiSdiff_eq_zero_iff`). -/
+def kuranishiSdiff [DecidableEq A] {T : Finset A → Type*} {E : A → Type*}
+    (s : ∀ (J : Finset A) (α : J), T J → E α) (I J : Finset A) (y : T J) :
+    (α : ↥(J \ I)) → E α :=
+  fun α ↦ s J ⟨α.val, (Finset.mem_sdiff.1 α.property).1⟩ y
+
+@[simp]
+theorem kuranishiSdiff_apply [DecidableEq A] {T : Finset A → Type*} {E : A → Type*}
+    (s : ∀ (J : Finset A) (α : J), T J → E α) (I J : Finset A) (y : T J) (α : ↥(J \ I)) :
+    kuranishiSdiff s I J y α = s J ⟨α.val, (Finset.mem_sdiff.1 α.property).1⟩ y := by
+  simp only [kuranishiSdiff]
+
+/-- The zero set of the extra obstruction `s_(J \ I)` is `Z_IJ`. -/
+theorem kuranishiSdiff_eq_zero_iff [DecidableEq A] {T : Finset A → Type*} {E : A → Type*}
+    [∀ α, Zero (E α)] {s : ∀ (J : Finset A) (α : J), T J → E α} {I J : Finset A} {y : T J} :
+    kuranishiSdiff s I J y = 0 ↔ y ∈ kuranishiZeroSet s I J := by
+  simp only [funext_iff, kuranishiSdiff_apply, Pi.zero_apply, mem_kuranishiZeroSet]
+  exact ⟨fun h α hα ↦ h ⟨α.val, Finset.mem_sdiff.2 ⟨α.property, hα⟩⟩,
+    fun h α ↦ h _ (Finset.mem_sdiff.1 α.property).2⟩
 
 /-- The data and axioms of an implicit atlas (`TauCeti.ImplicitAtlas`) other than its local
 product model over the regular locus, which is the only axiom involving the virtual dimension.
@@ -207,8 +234,7 @@ structure ImplicitAtlas [DecidableEq A] (Γ : A → Type*) [∀ α, Group (Γ α
     footprintMap h x ∈ regLocus I → ∃ n : ℕ,
       (n : ℤ) = d + ∑ α ∈ I, (Module.finrank ℝ (E α) : ℤ) ∧
       ∃ e : OpenPartialHomeomorph (T J) (EuclideanSpace ℝ (Fin n) × ((α : ↥(J \ I)) → E α)),
-        x.val ∈ e.source ∧ ∀ y ∈ e.source,
-          (e y).2 = fun α : ↥(J \ I) ↦ kuranishi J ⟨α.val, (Finset.mem_sdiff.1 α.property).1⟩ y
+        x.val ∈ e.source ∧ ∀ y ∈ e.source, (e y).2 = kuranishiSdiff kuranishi I J y
 
 namespace ImplicitAtlas
 
@@ -285,6 +311,11 @@ theorem mem_footprint {I : Finset A} {y : X} :
       x.val ∈ 𝒜.regLocus I ∧ 𝒜.baseHomeomorph (𝒜.footprintMap (Finset.empty_subset I) x) = y := by
   simp [footprint]
 
+/-- The regular footprint `V_I` is empty when the regular locus `X_I^reg` is. -/
+theorem footprint_eq_empty_of_regLocus_eq_empty {I : Finset A} (h : 𝒜.regLocus I = ∅) :
+    𝒜.footprint I = ∅ := by
+  simp [footprint, h]
+
 /-- The regular footprints are open. The set `X_I^reg ∩ Z_∅I` is open in `Z_∅I` and is a union
 of fibres of `ψ_∅I`, so its image is open in `U_∅I` by the quotient axiom, and `U_∅I` is open in
 `X_∅ ≃ₜ X`. -/
@@ -308,6 +339,34 @@ theorem iUnion_footprint : ⋃ I, 𝒜.footprint I = univ :=
   eq_univ_of_forall fun y ↦ mem_iUnion.2 <|
     let ⟨I, x, hx, hxy⟩ := 𝒜.exists_footprintMap_eq y
     ⟨I, 𝒜.mem_footprint.2 ⟨x, hx, hxy⟩⟩
+
+/-- A point of `Z_IJ` fixed by a nontrivial element of `Γ_(J \ I)` does not lie over the regular
+locus of `X_I`: `Γ_(J \ I)` acts freely on `ψ_IJ⁻¹(X_I^reg)`. -/
+theorem footprintMap_notMem_regLocus_of_act_eq {I J : Finset A} (h : I ⊆ J)
+    (x : kuranishiZeroSet 𝒜.kuranishi I J) {g : (α : J) → Γ α} (hg : g ≠ 1)
+    (hgI : Finset.restrict₂ (π := Γ) h g = 1) (hx : act J g x = x) :
+    𝒜.footprintMap h x ∉ 𝒜.regLocus I :=
+  fun hreg ↦ hg (𝒜.eq_one_of_act_eq h x hreg g hgI hx)
+
+/-- **An ineffective point has no regular base.** Suppose that for some index `α` the obstruction
+space `E_α` is zero, the thickenings `X_∅` and `X_α` are single points and the group `Γ_α` is
+nontrivial, so that it acts on `X_α` ineffectively. Then the regular locus of `X_∅` is empty,
+since `Γ_α` cannot act freely over `ψ_∅α⁻¹(X_∅^reg)`. -/
+theorem regLocus_empty_eq_empty_of_nontrivial (α : A) [Nontrivial (Γ α)] [Subsingleton (E α)]
+    [Subsingleton (T ∅)] [Subsingleton (T {α})] [Nonempty (T {α})] : 𝒜.regLocus ∅ = ∅ := by
+  -- A nontrivial element of `Γ_α` fixes the point of `Z_∅α = X_α`, which `ψ_∅α` sends to the
+  -- point of `X_∅`.
+  refine eq_empty_of_forall_notMem fun y hy ↦ ?_
+  obtain ⟨x⟩ := ‹Nonempty (T {α})›
+  have hx : x ∈ kuranishiZeroSet 𝒜.kuranishi ∅ {α} := mem_kuranishiZeroSet.2 fun ⟨β, hβ⟩ _ ↦ by
+    obtain rfl := Finset.mem_singleton.1 hβ
+    exact Subsingleton.elim _ _
+  obtain ⟨γ, hγ⟩ := exists_ne (1 : Γ α)
+  refine 𝒜.footprintMap_notMem_regLocus_of_act_eq (Finset.empty_subset {α}) ⟨x, hx⟩
+    (g := Pi.mulSingle (M := fun β : ({α} : Finset A) ↦ Γ β) ⟨α, Finset.mem_singleton_self α⟩ γ)
+    (fun hg ↦ hγ (by simpa using congr_fun hg ⟨α, Finset.mem_singleton_self α⟩))
+    (funext fun β ↦ (Finset.notMem_empty _ β.property).elim) (Subsingleton.elim _ _)
+    (Subsingleton.elim y (𝒜.footprintMap _ ⟨x, hx⟩) ▸ hy)
 
 end Core
 
