@@ -102,9 +102,8 @@ with `X`. -/
 lemma restrictionSingleIso_hom_f :
     (restrictionSingleIso e X i i' h).hom.f i =
       (singleObjXIsoOfEq c' i' X (e.f i) h).hom ≫ (singleObjXSelf c i X).inv := by
-  rw [restrictionSingleIso, Hom.isoOfComponents_hom_f, dite_eq_left rfl]
-  -- `Iso.trans` and `Iso.symm` compute their `hom` by definition.
-  rfl
+  rw [restrictionSingleIso, Hom.isoOfComponents_hom_f, dite_eq_left rfl, Iso.trans_hom,
+    Iso.symm_hom, singleObjXSelf]
 
 /-- In degree `i`, the inverse of `HomologicalComplex.restrictionSingleIso` is the identification
 of both terms with `X`. -/
@@ -112,9 +111,8 @@ of both terms with `X`. -/
 lemma restrictionSingleIso_inv_f :
     (restrictionSingleIso e X i i' h).inv.f i =
       (singleObjXSelf c i X).hom ≫ (singleObjXIsoOfEq c' i' X (e.f i) h).inv := by
-  rw [restrictionSingleIso, Hom.isoOfComponents_inv_f, dite_eq_left rfl]
-  -- `Iso.trans` and `Iso.symm` compute their `inv` by definition.
-  rfl
+  rw [restrictionSingleIso, Hom.isoOfComponents_inv_f, dite_eq_left rfl, Iso.trans_inv,
+    Iso.symm_inv, singleObjXSelf]
 
 end Single
 
