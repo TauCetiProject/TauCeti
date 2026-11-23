@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Field.Defs
 public import Mathlib.Algebra.Order.Field.Rat
 public import Mathlib.Algebra.Order.Ring.Abs
 public import Mathlib.Data.Rat.Lemmas

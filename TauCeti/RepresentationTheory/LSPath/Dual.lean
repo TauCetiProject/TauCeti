@@ -80,12 +80,11 @@ private theorem dualAux_congr {lam lam' : M} (h : lam = lam') (π : LSPath P b l
       congr (congrArg (fun m ↦ -(longestElement P b • m)) h) (dualAux π) := by subst h; simp
 
 private theorem congr_dualAux_dualAux {lam : M} (π : LSPath P b lam) :
-    congr (neg_longestElement_smul_neg_longestElement_smul (P := P) (b := b) lam)
+    congr (P.neg_longestElement_smul_neg_longestElement_smul b lam)
         (dualAux (dualAux π)) = π := by
   have hwall : P.wallIndices b (-(longestElement P b • -(longestElement P b • lam))) =
       P.wallIndices b lam :=
-    congrArg (P.wallIndices b)
-      (neg_longestElement_smul_neg_longestElement_smul (P := P) (b := b) lam)
+    congrArg (P.wallIndices b) (P.neg_longestElement_smul_neg_longestElement_smul b lam)
   symm
   refine ext' (by simp [dualAux]) (fun j ↦ ?_) (fun k ↦ ?_)
   · simp only [dir_congr, dualAux, Fin.rev_rev, hwall]
@@ -102,8 +101,7 @@ private theorem congr_dualAux_dualAux {lam : M} (π : LSPath P b lam) :
 realizing path reversal on `TauCeti.PLPath` (`TauCeti.LSPath.toPLPath_dual`). -/
 noncomputable def dual {lam : M} : LSPath P b lam ≃ LSPath P b (-(longestElement P b • lam)) where
   toFun := dualAux
-  invFun π' := congr (neg_longestElement_smul_neg_longestElement_smul (P := P) (b := b) lam)
-    (dualAux π')
+  invFun π' := congr (P.neg_longestElement_smul_neg_longestElement_smul b lam) (dualAux π')
   left_inv := congr_dualAux_dualAux
   right_inv π' := by rw [dualAux_congr]; exact congr_dualAux_dualAux π'
 
@@ -135,7 +133,7 @@ theorem duration_dual (j : Fin ((dual π).length + 1)) :
 /-- The inverse of `dual` is `dual` followed by shape transport along `-(w₀ • -(w₀ • λ)) = λ`. -/
 theorem dual_symm_eq_congr_dual (π' : LSPath P b (-(longestElement P b • lam))) :
     dual.symm π' =
-      congr (neg_longestElement_smul_neg_longestElement_smul (P := P) (b := b) lam) (dual π') :=
+      congr (P.neg_longestElement_smul_neg_longestElement_smul b lam) (dual π') :=
   (rfl)
 
 /-- Applying `dual` twice returns the original LS path up to `-(w₀ • -(w₀ • λ)) = λ`. -/
@@ -179,11 +177,14 @@ theorem toPLPath_dual_symm (π' : LSPath P b (-(longestElement P b • lam))) :
 
 end Realization
 
+/-- The canonical rational realization of `π^*` is the reversal of that of `π`. -/
+theorem toRatPLPath_dual : (dual π).toRatPLPath = π.toRatPLPath.reverse :=
+  toPLPath_dual π ℚ _
+
 /-- The weight of Littelmann's dual path `π^*` is the negative of the weight of `π`. -/
 @[simp]
 theorem weight_dual : (dual π).weight = -π.weight := by
   refine (dual π).weight_eq_iff_endpoint_toRatPLPath.mpr ?_
-  rw [toRatPLPath, toPLPath_dual, PLPath.endpoint_reverse, ← apply_weight ℚ _,
-    LinearMap.toAddMonoidHom_coe, map_neg]
+  rw [toRatPLPath_dual, PLPath.endpoint_reverse, π.endpoint_toRatPLPath, map_neg]
 
 end TauCeti.LSPath

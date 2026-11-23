@@ -244,7 +244,7 @@ theorem smul_smul_longestElement (x : M) :
   rw [smul_smul, ← sq, longestElement_sq, one_smul]
 
 /-- Negating and acting by `w₀` is an involution on the weight space. -/
-theorem neg_longestElement_smul_neg_longestElement_smul (x : M) :
+theorem _root_.RootPairing.neg_longestElement_smul_neg_longestElement_smul (x : M) :
     -(longestElement P b • -(longestElement P b • x)) = x := by
   rw [smul_neg, neg_neg, smul_smul_longestElement]
 

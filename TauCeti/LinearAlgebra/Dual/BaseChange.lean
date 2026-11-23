@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.Dual.BaseChange
+public import TauCeti.LinearAlgebra.TensorProduct.Tower
 import Mathlib.LinearAlgebra.Contraction
 import TauCeti.LinearAlgebra.TensorProduct.Basis
 
@@ -28,6 +29,9 @@ is faithful, as recorded by `IsBaseChange.toDual_ne_zero`.
   with respect to a base-changed linear map.
 * `Module.Dual.baseChange_apply_one_tmul`, `Module.Dual.baseChange_apply_one`: the value of a
   base-changed functional at `1 ⊗ m`, and at the unit of a base-changed algebra.
+* `AddMonoidHom.apply_liftBaseChangeSemilinear_baseChange`: compatibility between a semilinear
+  extension of `f : X →+ V` and the base change of an integral linear form agreeing with a linear
+  form on `f(X)`.
 * `TauCeti.Module.Dual.baseChangeEvaluationEquiv`: scalar extension commutes with the dual of a
   finite projective module.
 * `TauCeti.Module.Dual.baseChange_coord`: base-changed dual basis elements recover the
@@ -102,6 +106,17 @@ the image of `φ 1` in `A`. -/
 theorem _root_.Module.Dual.baseChange_apply_one {S : Type*} [Semiring S] [Algebra R S]
     (φ : Module.Dual R S) : φ.baseChange A 1 = algebraMap R A (φ 1) := by
   rw [Algebra.TensorProduct.one_def, Module.Dual.baseChange_apply_one_tmul]
+
+/-- Evaluating `F : V →ₗ[T] T` on `f.liftBaseChangeSemilinear σ z` agrees with
+`σ (Module.Dual.baseChange S φ z)` whenever `F` agrees with an integral linear form `φ` on
+`f(X)`. -/
+theorem _root_.AddMonoidHom.apply_liftBaseChangeSemilinear_baseChange {S T X V : Type*}
+    [CommRing S] [Ring T] [AddCommGroup X] [AddCommGroup V] [Module T V]
+    (f : X →+ V) (σ : S →+* T) (F : V →ₗ[T] T) (φ : Module.Dual ℤ X)
+    (hF : ∀ x : X, F (f x) = (φ x : T)) (z : S ⊗[ℤ] X) :
+    F (f.liftBaseChangeSemilinear σ z) = σ (Module.Dual.baseChange S φ z) :=
+  f.apply_liftBaseChangeSemilinear σ F (Module.Dual.baseChange S φ)
+    (fun x ↦ by rw [Module.Dual.baseChange_apply_one_tmul, eq_intCast, map_intCast, hF x]) z
 
 section FiniteProjective
 

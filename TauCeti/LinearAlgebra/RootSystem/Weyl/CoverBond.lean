@@ -120,22 +120,10 @@ theorem reflectionBond_minimalCosetRep_mul_longestElement_swap [IsDomain R] [Fin
 
 /-! ### Bonds of covers -/
 
-variable [LinearOrder R] [IsStrictOrderedRing R] [Finite ι] [P.IsCrystallographic] [P.IsReduced]
-  {lam : M}
-
-/-- The two orbit weights of a cover `y ⋖ x` of `W / W_λ` are distinct: distinct minimal coset
-representatives move `λ` to distinct points. -/
-theorem smul_ne_smul_of_minimalCosetRepCovBy (hlam : lam ∈ dominantChamber P b)
-    {x y : P.weylGroup}
-    (h : (weylCoxeterSystem P b).MinimalCosetRepCovBy (P.wallIndices b lam) y x) :
-    y • lam ≠ x • lam := by
-  have := P.flip_isReduced
-  exact fun heq ↦ h.ne <|
-    eq_of_isMinimalCosetRep_of_smul_eq hlam h.isMinimalCosetRep_left h.isMinimalCosetRep_right heq
-
 /-- **A cover of `W / W_λ` has a positive root label** `β` with `y λ = s_β (x λ)` (without
-assuming `λ` is dominant). -/
-theorem exists_isPos_reflection_smul_eq_of_minimalCosetRepCovBy {x y : P.weylGroup}
+assuming `λ` is dominant or `R` is ordered). -/
+theorem exists_isPos_reflection_smul_eq_of_minimalCosetRepCovBy [IsDomain R] [Finite ι]
+    [P.IsCrystallographic] [P.IsReduced] {lam : M} {x y : P.weylGroup}
     (h : (weylCoxeterSystem P b).MinimalCosetRepCovBy (P.wallIndices b lam) y x) :
     ∃ β, b.IsPos β ∧ P.reflection β (x • lam) = y • lam := by
   obtain ⟨t, ⟨w, i, rfl⟩, -, hmem⟩ := h.exists_isReflection
@@ -149,6 +137,19 @@ theorem exists_isPos_reflection_smul_eq_of_minimalCosetRepCovBy {x y : P.weylGro
   · exact ⟨_, hj, hstab⟩
   · refine ⟨_, hj, ?_⟩
     rw [← hstab, reflection_indexNeg_neg]
+
+variable [LinearOrder R] [IsStrictOrderedRing R] [Finite ι] [P.IsCrystallographic] [P.IsReduced]
+  {lam : M}
+
+/-- The two orbit weights of a cover `y ⋖ x` of `W / W_λ` are distinct: distinct minimal coset
+representatives move `λ` to distinct points. -/
+theorem smul_ne_smul_of_minimalCosetRepCovBy (hlam : lam ∈ dominantChamber P b)
+    {x y : P.weylGroup}
+    (h : (weylCoxeterSystem P b).MinimalCosetRepCovBy (P.wallIndices b lam) y x) :
+    y • lam ≠ x • lam := by
+  have := P.flip_isReduced
+  exact fun heq ↦ h.ne <|
+    eq_of_isMinimalCosetRep_of_smul_eq hlam h.isMinimalCosetRep_left h.isMinimalCosetRep_right heq
 
 /-- **A cover of `W / W_λ` has a unique positive root label.** If `y` is covered by `x` in the
 Bruhat order of the minimal coset representatives of the stabilizer of the dominant weight `λ`,

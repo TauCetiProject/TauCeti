@@ -581,7 +581,7 @@ theorem conj_longestElement_mem_parabolic_wallIndices_iff (lam : M) (p : P.weylG
   have hp : longestElement P b * (longestElement P b * p * longestElement P b) *
       longestElement P b = p := by
     rw [← mul_assoc, ← mul_assoc, hmul, one_mul, mul_assoc, hmul, mul_one]
-  simpa only [neg_longestElement_smul_neg_longestElement_smul, hp] using
+  simpa only [P.neg_longestElement_smul_neg_longestElement_smul, hp] using
     conj_longestElement_mem_parabolic_wallIndices (-(longestElement P b • lam)) h
 
 /-- **The minimal coset rep of `u * w₀` for `-(w₀ • λ)` sends `-(w₀ • λ)` to `-(u • λ)`.** -/
@@ -599,7 +599,7 @@ theorem minimalCosetRep_mul_longestElement_smul (lam : M) (u : P.weylGroup) :
     ((weylCoxeterSystem P b).minimalCosetRep _ _), mul_smul, hfix, mul_smul]
   have h : longestElement P b • lam' = -lam := neg_injective (by
     rw [neg_neg]
-    exact neg_longestElement_smul_neg_longestElement_smul P b lam)
+    exact P.neg_longestElement_smul_neg_longestElement_smul b lam)
   rw [h, smul_neg]
 
 end LongestElement

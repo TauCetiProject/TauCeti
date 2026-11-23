@@ -7,12 +7,10 @@ module
 
 public import Mathlib.LinearAlgebra.RootSystem.Base
 public import Mathlib.LinearAlgebra.RootSystem.WeylGroup
-public import Mathlib.LinearAlgebra.TensorProduct.Basic
 public import TauCeti.LinearAlgebra.Ray
 import Mathlib.LinearAlgebra.TensorProduct.Tower
 import TauCeti.LinearAlgebra.RootSystem.PairingInvariance
 import TauCeti.LinearAlgebra.RootSystem.Positive
-import TauCeti.LinearAlgebra.RootSystem.Reduced
 import TauCeti.LinearAlgebra.RootSystem.Weyl.Group
 
 /-!
@@ -112,20 +110,6 @@ theorem pairwise_not_sameRay_tensorProduct_mk_orbit (S : Type*) [Field S] [Linea
   simp_rw [← hsmul]
   exact fun _ hu _ hv huv h ↦ huv (h.eq_of_mem_orbit hu hv (Set.finite_range _))
 
-/-- The sum of squares of all coroot pairings at a weight is invariant under the Weyl group. -/
-theorem sum_coroot'_sq_smul {𝕜 : Type*} [Fintype ι] [CommSemiring 𝕜] [Algebra R 𝕜]
-    (w : P.weylGroup) (lam : V) :
-    ∑ j : ι, (algebraMap R 𝕜 (P.coroot' j (w • lam))) ^ 2 =
-      ∑ j : ι, (algebraMap R 𝕜 (P.coroot' j lam)) ^ 2 := by
-  calc ∑ j : ι, (algebraMap R 𝕜 (P.coroot' j (w • lam))) ^ 2
-      = ∑ j : ι, (algebraMap R 𝕜 (P.coroot' (P.weylGroupToPerm w⁻¹ j) lam)) ^ 2 := by
-        refine Finset.sum_congr rfl fun j _ ↦ ?_
-        have hc := P.coroot'_weylGroupToPerm_smul w⁻¹ j (w • lam)
-        rw [inv_smul_smul] at hc
-        rw [hc]
-    _ = ∑ j : ι, (algebraMap R 𝕜 (P.coroot' j lam)) ^ 2 :=
-        Equiv.sum_comp (P.weylGroupToPerm w⁻¹) fun j ↦ (algebraMap R 𝕜 (P.coroot' j lam)) ^ 2
-
 end CommRing
 
 section Realization
@@ -154,29 +138,6 @@ theorem mapsTo_preReflection_image_orbit_weylGroup (i : ι) {F : Module.Dual �
   rw [mul_smul, weylGroup.ofIdx_smul, Equiv.reflection_smul,
     P.map_reflection_eq_preReflection i hF]
 
-/-- Extending coroot proportionality `r₁ * ⟨x₁, αᵢ^∨⟩ = r₂ * ⟨x₂, αᵢ^∨⟩` from simple coroots to
-all coroots. -/
-theorem mul_coroot'_eq_of_forall_mem_support (b : P.Base) [Finite ι] [P.IsReduced]
-    {r₁ r₂ : 𝕜} {x₁ x₂ : M}
-    (hsimple : ∀ i : b.support, r₁ * (P.coroot' i x₁ : 𝕜) = r₂ * (P.coroot' i x₂ : 𝕜))
-    (j : ι) :
-    r₁ * (P.coroot' j x₁ : 𝕜) = r₂ * (P.coroot' j x₂ : 𝕜) := by
-  have := P.flip_isReduced
-  have hpos (k : ι) (hk : k ∈ TauCeti.posRoots P b) :
-      r₁ * (P.coroot' k x₁ : 𝕜) = r₂ * (P.coroot' k x₂ : 𝕜) := by
-    obtain ⟨c, -, hsum⟩ := TauCeti.exists_coroot'_eq_sum_nat_of_mem_posRoots P b hk
-    simp only [hsum, LinearMap.sum_apply, LinearMap.smul_apply, Nat.cast_smul_eq_nsmul,
-      nsmul_eq_mul, Int.cast_sum, Int.cast_mul, Int.cast_natCast, Finset.mul_sum]
-    refine Finset.sum_congr rfl fun i hi ↦ ?_
-    rw [← mul_assoc, mul_comm r₁, mul_assoc, hsimple ⟨i, hi⟩, ← mul_assoc, mul_comm _ r₂,
-      mul_assoc]
-  let := P.indexNeg
-  rcases Base.IsPos.or_neg b j with hj | hj
-  · exact hpos j ((TauCeti.mem_posRoots P b j).mpr hj)
-  · have h := hpos (-j) ((TauCeti.mem_posRoots P b (-j)).mpr hj)
-    simpa only [indexNeg_neg, coroot'_reflectionPerm_self, LinearMap.neg_apply, Int.cast_neg,
-      mul_neg, neg_inj] using h
-
 /-- An additive map from the weight lattice that pulls back a family of linear forms to the simple
 coroots is injective on every Weyl orbit. -/
 theorem injOn_orbit_of_compatible (b : P.Base) [Finite ι] [CharZero 𝕜]
@@ -196,30 +157,30 @@ theorem injOn_orbit_of_compatible (b : P.Base) [Finite ι] [CharZero 𝕜]
 
 /-- In any compatible realization `(𝕜, V, f, F)`, no two distinct points of a realized Weyl orbit
 lie on the same ray. -/
-theorem pairwise_not_sameRay_image_orbit_of_compatible (b : P.Base) [Finite ι] [P.IsReduced]
+theorem pairwise_not_sameRay_image_orbit_of_compatible (b : P.Base) [Finite ι]
     [LinearOrder 𝕜] [IsStrictOrderedRing 𝕜] {F : b.support → Module.Dual 𝕜 V}
     (hF : ∀ (i : b.support) (x : M), F i (f x) = (P.coroot' i x : 𝕜)) (lam : M) :
     (Set.range fun w : P.weylGroup ↦ f (w • lam)).Pairwise fun u v ↦ ¬ SameRay 𝕜 u v := by
-  have := P.flip_isReduced
   rintro _ ⟨w₁, rfl⟩ _ ⟨w₂, rfl⟩ hne hray
-  -- If any point of the realized orbit vanishes, every simple coroot kills it, so the orbit is a
+  -- If every simple coroot kills an orbit point, the Weyl group fixes it, so the orbit is a
   -- singleton, contradicting `hne`.
-  have hw_ne_zero (w : P.weylGroup) : f (w • lam) ≠ 0 := by
-    intro h0
-    have hzero : ∀ i ∈ b.support, P.coroot' i (w • lam) = 0 := fun i hi ↦ by
-      apply Int.cast_injective (α := 𝕜)
-      rw [← hF ⟨i, hi⟩, h0, map_zero, Int.cast_zero]
-    have hfix : ∀ u : P.weylGroup, u • lam = w • lam := fun u ↦ by
-      have hinv := TauCeti.smul_eq_self_of_forall_coroot'_eq_zero b hzero w⁻¹
-      rw [inv_smul_smul] at hinv
-      exact (TauCeti.smul_eq_self_of_forall_coroot'_eq_zero b
-        (fun i hi ↦ hinv ▸ hzero i hi) u).trans hinv
+  have hcollapse {w : P.weylGroup} (hzero : ∀ i ∈ b.support, P.coroot' i (w • lam) = 0) :
+      False := by
+    have hinv := TauCeti.smul_eq_self_of_forall_coroot'_eq_zero b hzero w⁻¹
+    rw [inv_smul_smul] at hinv
+    have hfix (u : P.weylGroup) : u • lam = w • lam :=
+      (TauCeti.smul_eq_self_of_forall_coroot'_eq_zero b (fun i hi ↦ hinv ▸ hzero i hi) u).trans
+        hinv
     exact hne (congrArg f ((hfix w₁).trans (hfix w₂).symm))
+  have hw_ne_zero (w : P.weylGroup) : f (w • lam) ≠ 0 := fun h0 ↦
+    hcollapse fun i hi ↦ Int.cast_injective (α := 𝕜) (by
+      rw [← hF ⟨i, hi⟩, h0, map_zero, Int.cast_zero])
   obtain ⟨r₁, r₂, hr₁, hr₂, hsmul⟩ := hray.exists_pos (hw_ne_zero w₁) (hw_ne_zero w₂)
   have hcoroot : ∀ j : ι,
-      r₁ * (P.coroot' j (w₁ • lam) : 𝕜) = r₂ * (P.coroot' j (w₂ • lam) : 𝕜) :=
-    P.mul_coroot'_eq_of_forall_mem_support b fun i ↦ by
-      simpa only [map_smul, smul_eq_mul, hF] using congrArg (F i) hsmul
+      r₁ * (P.coroot' j (w₁ • lam) : 𝕜) = r₂ * (P.coroot' j (w₂ • lam) : 𝕜) := by
+    simpa only [eq_intCast] using
+      P.mul_coroot'_eq_of_forall_mem_support b (𝕜 := 𝕜) fun i hi ↦ by
+        simpa only [eq_intCast, map_smul, smul_eq_mul, hF ⟨i, hi⟩] using congrArg (F ⟨i, hi⟩) hsmul
   let := Fintype.ofFinite ι
   have hS : r₁ ^ 2 * ∑ j : ι, (P.coroot' j (w₁ • lam) : 𝕜) ^ 2 =
       r₂ ^ 2 * ∑ j : ι, (P.coroot' j (w₁ • lam) : 𝕜) ^ 2 := by
@@ -239,15 +200,7 @@ theorem pairwise_not_sameRay_image_orbit_of_compatible (b : P.Base) [Finite ι] 
                 (P.sum_coroot'_sq_smul (𝕜 := 𝕜) w₁ lam).symm)
   by_cases hsum0 : ∑ j : ι, (P.coroot' j (w₁ • lam) : 𝕜) ^ 2 = 0
   · rw [Finset.sum_eq_zero_iff_of_nonneg fun j _ ↦ sq_nonneg _] at hsum0
-    have hzero : ∀ i ∈ b.support, P.coroot' i (w₁ • lam) = 0 := fun i _ ↦
-      Int.cast_eq_zero.mp (sq_eq_zero_iff.mp (hsum0 i (Finset.mem_univ i)))
-    have hfix : w₁ • lam = lam := by
-      have h := TauCeti.smul_eq_self_of_forall_coroot'_eq_zero b hzero w₁⁻¹
-      rwa [inv_smul_smul, eq_comm] at h
-    have hfix2 : w₂ • lam = w₁ • lam := by
-      rw [hfix]
-      exact TauCeti.smul_eq_self_of_forall_coroot'_eq_zero b (fun i hi ↦ hfix ▸ hzero i hi) w₂
-    exact hne (congrArg f hfix2.symm)
+    exact hcollapse fun i _ ↦ Int.cast_eq_zero.mp (sq_eq_zero_iff.mp (hsum0 i (Finset.mem_univ i)))
   · have hr : r₁ = r₂ := (sq_eq_sq₀ hr₁.le hr₂.le).mp (mul_right_cancel₀ hsum0 hS)
     rw [hr] at hsmul
     exact hne (smul_right_injective V hr₂.ne' hsmul)

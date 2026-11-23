@@ -10,6 +10,7 @@ public import TauCeti.RepresentationTheory.LSPath.Central.Transport
 public import TauCeti.RepresentationTheory.LSPath.Crystal.Normal
 import TauCeti.LinearAlgebra.Dual.BaseChange
 import TauCeti.LinearAlgebra.RootSystem.Reduced
+import TauCeti.RepresentationTheory.LSPath.Realization.Faithful
 
 /-!
 # Central transport as a strict isomorphism of Lakshmibai–Seshadri path crystals

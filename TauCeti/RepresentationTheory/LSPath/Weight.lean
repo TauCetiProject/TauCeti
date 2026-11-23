@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.RepresentationTheory.LSPath.Realization
+public import TauCeti.RepresentationTheory.LSPath.Realization.Basic
 
 import TauCeti.LinearAlgebra.RootSystem.BaseChange.Basic
 
@@ -148,7 +148,7 @@ theorem weight_eq_iff_endpoint_toRatPLPath (π : LSPath P b lam) {μ : M} :
 @[simp]
 theorem weight_straight : (straight lam : LSPath P b lam).weight = lam :=
   (weight_eq_iff_endpoint_toRatPLPath (straight lam)).mpr (by
-    rw [toRatPLPath, toPLPath_straight, PLPath.endpoint_straight, LinearMap.toAddMonoidHom_coe])
+    rw [toRatPLPath_straight, PLPath.endpoint_straight])
 
 @[simp]
 theorem weight_congr {lam' : M} (h : lam = lam') (π : LSPath P b lam) :
