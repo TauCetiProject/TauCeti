@@ -5,9 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.CategoryTheory.Skeletal
+public import Mathlib.CategoryTheory.Skeletal
 public import TauCeti.RingTheory.Idempotents.Corner.Simple
-public import TauCeti.RingTheory.Morita.Corner
+public import TauCeti.RingTheory.Morita.Corner.Basic
 
 /-!
 # Simple modules over a ring and over a corner ring
@@ -47,6 +47,9 @@ tensor products over the noncommutative ring `eAe`.
   a simple `A`-module.
 * `IsIdempotentElem.exists_isSimpleModule_linearEquiv_corner`: **every simple `eAe`-module is the
   corner of a simple `A`-module.**
+* `IsIdempotentElem.simpleCornerFunctor_mapSkeleton_obj_injective` and
+  `IsIdempotentElem.simpleCornerFunctor_mapSkeleton_obj_surjective`: the corner functor
+  `IsIdempotentElem.simpleCornerFunctor` is injective and surjective on isomorphism classes.
 
 ## References
 
@@ -66,31 +69,6 @@ universe v u
 namespace IsIdempotentElem
 
 variable {A : Type u} [Ring A] {e : A} (he : IsIdempotentElem e)
-
-section Submodule
-
-variable {M : Type*} [AddCommGroup M] [Module A M]
-
-/-- **The corner of a submodule containing `eM` is `eM`.** If an `A`-submodule `X` of `M`
-contains every `e • m`, then the corner `eX` is identified with `eM` by the inclusion `X ⊆ M`. -/
-def smulTopSubmoduleEquiv (X : Submodule A M) (hX : ∀ m : M, e • m ∈ X) :
-    ↥(e • (⊤ : Submodule ℤ X)) ≃ₗ[he.Corner] ↥(e • (⊤ : Submodule ℤ M)) where
-  toFun y := ⟨y.val.val, he.mem_smul_top_iff_smul_eq_self.2
-    (congrArg Subtype.val (he.smul_eq_self_of_mem_smul_top y.property))⟩
-  map_add' _ _ := rfl
-  map_smul' _ _ := rfl
-  invFun z := ⟨⟨z.val, he.smul_eq_self_of_mem_smul_top z.property ▸ hX z.val⟩,
-    he.mem_smul_top_iff_smul_eq_self.2 (Subtype.ext (he.smul_eq_self_of_mem_smul_top z.property))⟩
-  left_inv _ := rfl
-  right_inv _ := rfl
-
-@[simp]
-theorem coe_smulTopSubmoduleEquiv_apply (X : Submodule A M) (hX : ∀ m : M, e • m ∈ X)
-    (y : ↥(e • (⊤ : Submodule ℤ X))) :
-    (he.smulTopSubmoduleEquiv X hX y : M) = y.val.val :=
-  (rfl)
-
-end Submodule
 
 section CornerLift
 
@@ -112,6 +90,15 @@ theorem smul_mem_cornerLift (f : ↥(e • (⊤ : Submodule ℤ A)) →ₗ[he.Co
     e • f ∈ he.cornerLift N :=
   Submodule.subset_span (Submodule.smul_mem_pointwise_smul _ _ _ trivial)
 
+variable {N} in
+/-- **`IsIdempotentElem.cornerLift` is the smallest `A`-submodule containing the corner** of the
+coinduced module. -/
+theorem cornerLift_le_iff {X : Submodule A (↥(e • (⊤ : Submodule ℤ A)) →ₗ[he.Corner] N)} :
+    he.cornerLift N ≤ X ↔ ∀ f : ↥(e • (⊤ : Submodule ℤ A)) →ₗ[he.Corner] N, e • f ∈ X := by
+  refine ⟨fun h f ↦ h (he.smul_mem_cornerLift f), fun h ↦ Submodule.span_le.2 fun g hg ↦ ?_⟩
+  obtain ⟨f, -, rfl⟩ := (Submodule.mem_smul_pointwise_iff_exists _ _ _).1 hg
+  exact h f
+
 /-- **The corner of `IsIdempotentElem.cornerLift` is `N`**, by evaluation at `e`. -/
 def cornerLiftEquiv : ↥(e • (⊤ : Submodule ℤ (he.cornerLift N))) ≃ₗ[he.Corner] N :=
   (he.smulTopSubmoduleEquiv _ he.smul_mem_cornerLift).trans (he.smulTopCoindEquiv N)
@@ -119,8 +106,14 @@ def cornerLiftEquiv : ↥(e • (⊤ : Submodule ℤ (he.cornerLift N))) ≃ₗ[
 @[simp]
 theorem cornerLiftEquiv_apply (f : ↥(e • (⊤ : Submodule ℤ (he.cornerLift N)))) :
     he.cornerLiftEquiv N f = f.val.val he.smulTopGen := by
-  rw [cornerLiftEquiv, LinearEquiv.trans_apply, smulTopCoindEquiv_apply]
-  rfl
+  simp only [cornerLiftEquiv, LinearEquiv.trans_apply, smulTopCoindEquiv_apply,
+    coe_smulTopSubmoduleEquiv_apply]
+
+@[simp]
+theorem cornerLiftEquiv_symm_apply_coe_apply (n : N) (x : ↥(e • (⊤ : Submodule ℤ A))) :
+    ((he.cornerLiftEquiv N).symm n).val.val x = he.smulTopToCorner x • n := by
+  simp only [cornerLiftEquiv, LinearEquiv.symm_trans_apply,
+    coe_coe_smulTopSubmoduleEquiv_symm_apply, smulTopCoindEquiv_symm_apply_coe_apply]
 
 /-- `IsIdempotentElem.cornerLift` is nonzero when `N` is. -/
 theorem cornerLift_ne_bot [Nontrivial N] : he.cornerLift N ≠ ⊥ := by
@@ -131,11 +124,18 @@ theorem cornerLift_ne_bot [Nontrivial N] : he.cornerLift N ≠ ⊥ := by
   rw [← (he.smulTopCoindEquiv N).apply_symm_apply n, smulTopCoindEquiv_apply]
   exact (congrArg (· he.smulTopGen) h).trans (LinearMap.zero_apply _)
 
+/-- The corner of `IsIdempotentElem.cornerLift` is nonzero when `N` is. -/
+theorem smul_top_cornerLift_ne_bot [Nontrivial N] :
+    e • (⊤ : Submodule ℤ (he.cornerLift N)) ≠ ⊥ := by
+  rw [Ne, ← Submodule.subsingleton_iff_eq_bot, (he.cornerLiftEquiv N).subsingleton_congr]
+  exact not_subsingleton _
+
 variable {N} [IsSimpleModule he.Corner N]
 
 /-- **For simple `N`, every nonzero element of `Hom_{eAe}(eA, N)` generates its corner.** -/
 theorem exists_smul_eq_of_ne_zero {f : ↥(e • (⊤ : Submodule ℤ A)) →ₗ[he.Corner] N} (hf : f ≠ 0)
-    (g : ↥(e • (⊤ : Submodule ℤ (↥(e • (⊤ : Submodule ℤ A)) →ₗ[he.Corner] N)))) :
+    {g : ↥(e • (⊤ : Submodule ℤ A)) →ₗ[he.Corner] N}
+    (hg : g ∈ e • (⊤ : Submodule ℤ (↥(e • (⊤ : Submodule ℤ A)) →ₗ[he.Corner] N))) :
     ∃ a : A, a • f = g := by
   obtain ⟨x, hx⟩ : ∃ x, f x ≠ 0 := not_forall.mp fun h ↦ hf (LinearMap.ext h)
   let h : ↥(e • (⊤ : Submodule ℤ (↥(e • (⊤ : Submodule ℤ A)) →ₗ[he.Corner] N))) :=
@@ -146,21 +146,22 @@ theorem exists_smul_eq_of_ne_zero {f : ↥(e • (⊤ : Submodule ℤ A)) →ₗ
     congr 1
     exact Subtype.ext (by simp [he.eq, hxe])
   obtain ⟨b, hb⟩ := IsSimpleModule.toSpanSingleton_surjective he.Corner (hh ▸ hx)
-    (he.smulTopCoindEquiv N g)
+    (he.smulTopCoindEquiv N ⟨g, hg⟩)
   rw [LinearMap.toSpanSingleton_apply, ← map_smul, (he.smulTopCoindEquiv N).injective.eq_iff]
     at hb
   refine ⟨b.val * e * x.val, ?_⟩
-  rw [← hb, Corner.coe_smul, mul_smul, mul_smul]
+  rw [mul_smul, mul_smul]
+  exact (Corner.coe_smul he b h).symm.trans (congrArg Subtype.val hb)
 
 /-- **For simple `N`, `IsIdempotentElem.cornerLift` is the smallest nonzero submodule** of
 `Hom_{eAe}(eA, N)`: every nonzero `A`-submodule contains it. -/
 theorem cornerLift_le_of_ne_bot {X : Submodule A (↥(e • (⊤ : Submodule ℤ A)) →ₗ[he.Corner] N)}
     (hX : X ≠ ⊥) : he.cornerLift N ≤ X := by
   obtain ⟨f, hfX, hf⟩ := Submodule.exists_mem_ne_zero_of_ne_bot hX
-  refine Submodule.span_le.2 fun g hg ↦ ?_
-  obtain ⟨a, ha⟩ := he.exists_smul_eq_of_ne_zero hf ⟨g, hg⟩
-  rw [← show a • f = g from ha]
-  exact X.smul_mem a hfX
+  refine he.cornerLift_le_iff.2 fun g ↦ ?_
+  obtain ⟨a, ha⟩ :=
+    he.exists_smul_eq_of_ne_zero hf (Submodule.smul_mem_pointwise_smul g e ⊤ trivial)
+  exact ha ▸ X.smul_mem a hfX
 
 /-- **For simple `N`, `IsIdempotentElem.cornerLift` is a simple `A`-module.** -/
 instance instIsSimpleModuleCornerLift : IsSimpleModule A (he.cornerLift N) :=
@@ -182,7 +183,7 @@ section Skeleton
 
 /-- The corner functor `V ↦ eV`, from simple `A`-modules with nonzero corner at `e` to simple
 `eAe`-modules. -/
-def simpleCornerFunctor :
+@[expose] def simpleCornerFunctor :
     (ObjectProperty.FullSubcategory fun V : ModuleCat.{v} A ↦
       IsSimpleModule A V ∧ e • (⊤ : Submodule ℤ V) ≠ ⊥) ⥤
     ObjectProperty.FullSubcategory fun N : ModuleCat.{v} he.Corner ↦ IsSimpleModule he.Corner N :=
@@ -197,14 +198,22 @@ theorem simpleCornerFunctor_obj_obj
     (he.simpleCornerFunctor.obj V).obj = he.cornerFunctor.obj V.obj :=
   (rfl)
 
-/-- The corner functor is injective on isomorphism classes of simple modules with nonzero corner:
-this is `IsIdempotentElem.nonempty_linearEquiv_of_corner`. -/
-private theorem injective_simpleCornerFunctor_mapSkeleton_obj :
+@[simp]
+theorem simpleCornerFunctor_map_hom
+    {V V' : ObjectProperty.FullSubcategory fun V : ModuleCat.{v} A ↦
+      IsSimpleModule A V ∧ e • (⊤ : Submodule ℤ V) ≠ ⊥} (f : V ⟶ V') :
+    (he.simpleCornerFunctor.map f).hom = he.cornerFunctor.map f.hom :=
+  (rfl)
+
+/-- **The corner functor is injective on isomorphism classes** of simple modules with nonzero
+corner: this is `IsIdempotentElem.nonempty_linearEquiv_of_corner`. -/
+theorem simpleCornerFunctor_mapSkeleton_obj_injective :
     Function.Injective he.simpleCornerFunctor.{v}.mapSkeleton.obj := by
   intro x y hxy
   rw [← toSkeleton_fromSkeleton_obj x, ← toSkeleton_fromSkeleton_obj y,
-    Functor.mapSkeleton_obj_toSkeleton, Functor.mapSkeleton_obj_toSkeleton] at hxy
-  obtain ⟨φ⟩ := Quotient.exact hxy
+    Functor.mapSkeleton_obj_toSkeleton, Functor.mapSkeleton_obj_toSkeleton,
+    toSkeleton_eq_toSkeleton_iff] at hxy
+  obtain ⟨φ⟩ := hxy
   rw [← toSkeleton_fromSkeleton_obj x, ← toSkeleton_fromSkeleton_obj y]
   set V := (fromSkeleton _).obj x
   set V' := (fromSkeleton _).obj y
@@ -212,36 +221,43 @@ private theorem injective_simpleCornerFunctor_mapSkeleton_obj :
   have : IsSimpleModule A V'.obj := V'.property.1
   obtain ⟨ψ⟩ := he.nonempty_linearEquiv_of_corner (V := V.obj) (V' := V'.obj) V.property.2
     ((ObjectProperty.ι _).mapIso φ).toLinearEquiv
-  exact Quotient.sound ⟨ObjectProperty.isoMk _ ψ.toModuleIso⟩
+  exact congr_toSkeleton_of_iso (ObjectProperty.isoMk _ ψ.toModuleIso)
 
-/-- The corner functor is surjective on isomorphism classes: a simple `eAe`-module `N` is the
-corner of the simple `A`-module `IsIdempotentElem.cornerLift`. -/
-private theorem surjective_simpleCornerFunctor_mapSkeleton_obj :
+/-- The corner functor sends the class of the simple `A`-module `IsIdempotentElem.cornerLift N` to
+the class of `N`. -/
+theorem simpleCornerFunctor_mapSkeleton_obj_toSkeleton_cornerLift
+    (N : ModuleCat.{max u v} he.Corner) [IsSimpleModule he.Corner N] :
+    he.simpleCornerFunctor.mapSkeleton.obj (toSkeleton ⟨ModuleCat.of A (he.cornerLift N),
+      inferInstance,
+      @smul_top_cornerLift_ne_bot _ _ _ he N _ _ (IsSimpleModule.nontrivial he.Corner N)⟩) =
+      toSkeleton ⟨N, inferInstance⟩ := by
+  rw [Functor.mapSkeleton_obj_toSkeleton]
+  exact congr_toSkeleton_of_iso (ObjectProperty.isoMk _ (he.cornerLiftEquiv N).toModuleIso)
+
+/-- **The corner functor is surjective on isomorphism classes**: a simple `eAe`-module `N` is the
+corner of the simple `A`-module `IsIdempotentElem.cornerLift N`. -/
+theorem simpleCornerFunctor_mapSkeleton_obj_surjective :
     Function.Surjective he.simpleCornerFunctor.{max u v}.mapSkeleton.obj := by
   intro y
   rw [← toSkeleton_fromSkeleton_obj y]
   set N := (fromSkeleton _).obj y
   have : IsSimpleModule he.Corner N.obj := N.property
-  have := IsSimpleModule.nontrivial he.Corner N.obj
-  have hne : e • (⊤ : Submodule ℤ (he.cornerLift N.obj)) ≠ ⊥ := by
-    rw [Ne, ← Submodule.subsingleton_iff_eq_bot, (he.cornerLiftEquiv N.obj).subsingleton_congr]
-    exact not_subsingleton _
-  refine ⟨toSkeleton ⟨ModuleCat.of A (he.cornerLift N.obj), inferInstance, hne⟩, ?_⟩
-  rw [Functor.mapSkeleton_obj_toSkeleton]
-  exact Quotient.sound ⟨ObjectProperty.isoMk _ (he.cornerLiftEquiv N.obj).toModuleIso⟩
+  exact ⟨_, he.simpleCornerFunctor_mapSkeleton_obj_toSkeleton_cornerLift N.obj⟩
 
 /-- **Simple modules over `A` with nonzero corner correspond to simple modules over `eAe`.** The
 isomorphism class of a simple `A`-module `V` with `eV ≠ 0` goes to the class of its corner `eV`
-(`IsIdempotentElem.simpleCornerSkeletonEquiv_toSkeleton`). Both sides are taken in the universe
-`max u v`, which holds the modules built from `A : Type u`. -/
+(`IsIdempotentElem.simpleCornerSkeletonEquiv_toSkeleton`), and the inverse sends the class of a
+simple `eAe`-module `N` to the class of `IsIdempotentElem.cornerLift N`
+(`IsIdempotentElem.simpleCornerSkeletonEquiv_symm_toSkeleton`). Both sides are taken in the
+universe `max u v`, which holds the modules built from `A : Type u`. -/
 noncomputable def simpleCornerSkeletonEquiv :
     Skeleton (ObjectProperty.FullSubcategory fun V : ModuleCat.{max u v} A ↦
       IsSimpleModule A V ∧ e • (⊤ : Submodule ℤ V) ≠ ⊥) ≃
     Skeleton (ObjectProperty.FullSubcategory fun N : ModuleCat.{max u v} he.Corner ↦
       IsSimpleModule he.Corner N) :=
   Equiv.ofBijective he.simpleCornerFunctor.mapSkeleton.obj
-    ⟨he.injective_simpleCornerFunctor_mapSkeleton_obj,
-      he.surjective_simpleCornerFunctor_mapSkeleton_obj⟩
+    ⟨he.simpleCornerFunctor_mapSkeleton_obj_injective,
+      he.simpleCornerFunctor_mapSkeleton_obj_surjective⟩
 
 @[simp]
 theorem simpleCornerSkeletonEquiv_toSkeleton
@@ -249,6 +265,15 @@ theorem simpleCornerSkeletonEquiv_toSkeleton
       IsSimpleModule A V ∧ e • (⊤ : Submodule ℤ V) ≠ ⊥) :
     he.simpleCornerSkeletonEquiv (toSkeleton V) = toSkeleton (he.simpleCornerFunctor.obj V) :=
   he.simpleCornerFunctor.mapSkeleton_obj_toSkeleton V
+
+@[simp]
+theorem simpleCornerSkeletonEquiv_symm_toSkeleton
+    (N : ModuleCat.{max u v} he.Corner) [IsSimpleModule he.Corner N] :
+    he.simpleCornerSkeletonEquiv.symm (toSkeleton ⟨N, inferInstance⟩) =
+      toSkeleton ⟨ModuleCat.of A (he.cornerLift N), inferInstance,
+        @smul_top_cornerLift_ne_bot _ _ _ he N _ _ (IsSimpleModule.nontrivial he.Corner N)⟩ :=
+  he.simpleCornerSkeletonEquiv.symm_apply_eq.2
+    (he.simpleCornerFunctor_mapSkeleton_obj_toSkeleton_cornerLift N).symm
 
 end Skeleton
 
