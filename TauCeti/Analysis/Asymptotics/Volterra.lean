@@ -246,6 +246,26 @@ private lemma mul_tail_le_of_le {f : ℝ → ℝ} (hf : MonotoneOn f (Ici 0))
 
 omit [NormedSpace ℝ E] in
 include hQ0 hΨ in
+/-- If `‖F v‖ ≤ C * P v * f (Ψ v)` for `v > x`, where `f` is continuous and
+`Ψ v = ∫ u in Ioi v, P u * Q u * ‖ψ u‖` is the coefficient tail integral, then the weighted
+integral `∫ v in Ioi x, Q v * ‖ψ v • F v‖` is at most `C * ∫ v in Ioi x, g v * f (Ψ v)` for the
+coefficient weight `g v = P v * Q v * ‖ψ v‖`. -/
+private lemma integral_weight_smul_le_comp {F : ℝ → E} {f : ℝ → ℝ} (hf : Continuous f)
+    {x C : ℝ} (hx : a < x) (hFint : IntegrableOn (fun v ↦ Q v * ‖ψ v • F v‖) (Ioi x))
+    (hFle : ∀ v ∈ Ioi x, ‖F v‖ ≤ C * P v * f (∫ u in Ioi v, P u * Q u * ‖ψ u‖)) :
+    ∫ v in Ioi x, Q v * ‖ψ v • F v‖ ≤
+      C * ∫ v in Ioi x, P v * Q v * ‖ψ v‖ * f (∫ u in Ioi v, P u * Q u * ‖ψ u‖) := by
+  rw [← integral_const_mul]
+  refine setIntegral_mono_on hFint (((hΨ x hx).mul_comp_integral_Ioi hf.continuousOn).const_mul _)
+    measurableSet_Ioi fun v (hv : x < v) ↦ ?_
+  have hQψ : 0 ≤ Q v * ‖ψ v‖ := mul_nonneg (hQ0 v (hx.trans hv)) (norm_nonneg _)
+  rw [norm_smul, ← mul_assoc]
+  calc Q v * ‖ψ v‖ * ‖F v‖
+      ≤ Q v * ‖ψ v‖ * (C * P v * f (∫ u in Ioi v, P u * Q u * ‖ψ u‖)) := by grw [hFle v hv]
+    _ = _ := by ring
+
+omit [NormedSpace ℝ E] in
+include hQ0 hΨ in
 /-- If `‖F v‖ ≤ C * P v * Ψ v ^ k / k!` for `v > x`, where `Ψ v = ∫ u in Ioi v, P u * Q u * ‖ψ u‖`
 is the coefficient tail integral, then the weighted integral
 `∫ v in Ioi x, Q v * ‖ψ v • F v‖` is at most `C * Ψ x ^ (k + 1) / (k + 1)!`. -/
@@ -255,19 +275,11 @@ private lemma integral_weight_smul_le {F : ℝ → E} {x C : ℝ} (k : ℕ) (hx 
     ∫ v in Ioi x, Q v * ‖ψ v • F v‖ ≤
       C * (∫ u in Ioi x, P u * Q u * ‖ψ u‖) ^ (k + 1) / (k + 1)! := by
   calc ∫ v in Ioi x, Q v * ‖ψ v • F v‖
-      ≤ ∫ v in Ioi x, C / k ! *
-          (P v * Q v * ‖ψ v‖ * (∫ u in Ioi v, P u * Q u * ‖ψ u‖) ^ k) := by
-        refine setIntegral_mono_on hFint (((hΨ x hx).mul_pow_integral_Ioi k).const_mul _)
-          measurableSet_Ioi fun v (hv : x < v) ↦ ?_
-        have hQψ : 0 ≤ Q v * ‖ψ v‖ := mul_nonneg (hQ0 v (hx.trans hv)) (norm_nonneg _)
-        rw [norm_smul, ← mul_assoc]
-        calc Q v * ‖ψ v‖ * ‖F v‖
-            ≤ Q v * ‖ψ v‖ * (C * P v * (∫ u in Ioi v, P u * Q u * ‖ψ u‖) ^ k / k !) := by
-              grw [hFle v hv]
-          _ = _ := by ring
+      ≤ C / k ! * ∫ v in Ioi x, P v * Q v * ‖ψ v‖ * (∫ u in Ioi v, P u * Q u * ‖ψ u‖) ^ k :=
+        integral_weight_smul_le_comp hQ0 hΨ (continuous_pow k) hx hFint
+          fun v hv ↦ (hFle v hv).trans_eq (by ring)
     _ = C * (∫ u in Ioi x, P u * Q u * ‖ψ u‖) ^ (k + 1) / (k + 1)! := by
-        rw [integral_const_mul, (hΨ x hx).integral_Ioi_mul_pow_integral_Ioi k,
-          Nat.factorial_succ]
+        rw [(hΨ x hx).integral_Ioi_mul_pow_integral_Ioi k, Nat.factorial_succ]
         push_cast
         field_simp
 
@@ -925,21 +937,17 @@ theorem norm_deriv_volterra_solution_le [CompleteSpace E]
     exact mul_le_mul_of_nonneg_left (norm_add_le _ _) (hQ0 v (hx'.trans hv))
   have hexp : ∫ v in Ioi x, Q v * ‖ψ v • h v‖ ≤
       Φx * (Real.exp (∫ u in Ioi x, P u * Q u * ‖ψ u‖) - 1) := by
-    rw [← (hΨ x hx).integral_Ioi_mul_exp_integral_Ioi, ← integral_const_mul]
-    refine setIntegral_mono_on hψh ((hΨ x hx).mul_exp_integral_Ioi.const_mul _) measurableSet_Ioi
-      fun v (hv : x < v) ↦ ?_
+    rw [← (hΨ x hx).integral_Ioi_mul_exp_integral_Ioi]
+    refine integral_weight_smul_le_comp hQ0 hΨ Real.continuous_exp hx' hψh fun v (hv : x < v) ↦ ?_
     have hva : a < v := hx'.trans hv
-    have hhv := norm_volterra_solution_le hK hJ hψ hP hQ hP0 hQ0 hKle hΦ hΨ h_cont h_eq h_isBigO
-      hva
     have hΦle : ∫ u in Ioi v, Q u * ‖J u‖ ≤ Φx :=
       antitoneOn_integral_Ioi (forcing_weight_nonneg hQ0 le_rfl) hΦ hx' hva hv.le
-    rw [norm_smul, ← mul_assoc]
-    calc Q v * ‖ψ v‖ * ‖h v‖
-        ≤ Q v * ‖ψ v‖ * (P v * Φx * Real.exp (∫ u in Ioi v, P u * Q u * ‖ψ u‖)) := by
-          have := hP0 v hva
-          have := hQ0 v hva
-          grw [hhv, hΦle]
-      _ = Φx * (P v * Q v * ‖ψ v‖ * Real.exp (∫ u in Ioi v, P u * Q u * ‖ψ u‖)) := by ring
+    have := hP0 v hva
+    calc ‖h v‖
+        ≤ P v * (∫ u in Ioi v, Q u * ‖J u‖) * Real.exp (∫ u in Ioi v, P u * Q u * ‖ψ u‖) :=
+          norm_volterra_solution_le hK hJ hψ hP hQ hP0 hQ0 hKle hΦ hΨ h_cont h_eq h_isBigO hva
+      _ ≤ P v * Φx * Real.exp (∫ u in Ioi v, P u * Q u * ‖ψ u‖) := by grw [hΦle]
+      _ = Φx * P v * Real.exp (∫ u in Ioi v, P u * Q u * ‖ψ u‖) := by ring
   calc _ ≤ Φx + Φx * (Real.exp (∫ u in Ioi x, P u * Q u * ‖ψ u‖) - 1) :=
         by linarith
     _ = Φx * Real.exp (∫ u in Ioi x, P u * Q u * ‖ψ u‖) := by ring
