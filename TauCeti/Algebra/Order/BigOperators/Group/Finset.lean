@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.Order.BigOperators.Group.Finset
 public import Mathlib.Data.Fintype.Pi
+import TauCeti.Algebra.Order.BigOperators.Group.Multiset
 
 /-!
 # Order bounds for finset sums and products
@@ -41,8 +42,7 @@ variable {ι R : Type*} [AddCommGroup R] [Lattice R] [IsOrderedAddMonoid R]
 /-- A sum of terms with absolute value at most `B` has absolute value at most `#s • B`. -/
 theorem abs_sum_le_card_nsmul {s : Finset ι} {f : ι → R} {B : R} (h : ∀ i ∈ s, |f i| ≤ B) :
     |∑ i ∈ s, f i| ≤ #s • B :=
-  -- the triangle inequality `|∑ i ∈ s, f i| ≤ ∑ i ∈ s, |f i|`, valid in any lattice-ordered group
-  (le_sum_of_subadditive _ abs_zero.le abs_add_le s f).trans <| sum_le_card_nsmul s _ B h
+  Multiset.abs_sum_map_le_card_nsmul s.val f h
 
 end AbsSum
 
