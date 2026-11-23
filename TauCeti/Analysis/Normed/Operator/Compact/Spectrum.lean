@@ -20,8 +20,10 @@ eigenvectors `v n` with distinct eigenvalues `μ n`, the kernels of the operator
 `∏ i < n, (K - μ i • 1)` form a strictly increasing chain of closed subspaces that
 `K - μ n • 1` steps down, which the ascending-chain criterion
 `IsCompactOperator.exists_succ_eq_of_ascending_chain` rules out when the `μ n` are bounded away
-from zero. On a complete ambient space, the Fredholm alternative then shows that the spectrum is
-countable and can accumulate only at zero.
+from zero. A nonzero spectral value is an eigenvalue: as for Riesz's form of the Fredholm
+alternative, the ranges of the powers of `1 - μ⁻¹ • K` stabilise, so if this operator is
+injective then it is surjective, and it is bounded below. Hence the spectrum is countable and
+can accumulate only at zero, again without completeness.
 
 ## References
 
@@ -116,27 +118,69 @@ theorem countable_eigenvalues (hK : IsCompactOperator K) :
   · obtain ⟨n, hn⟩ := exists_nat_one_div_lt (norm_pos_iff.mpr hzero)
     exact Or.inr (Set.mem_iUnion.mpr ⟨n, hμ, hn.le⟩)
 
-variable [CompleteSpace E]
+/-- A nonzero spectral value of a compact operator is an eigenvalue, where the spectrum is taken
+in the algebra of continuous endomorphisms. Unlike Mathlib's
+`IsCompactOperator.hasEigenvalue_iff_mem_spectrum`, neither the ambient normed space nor the
+scalar field needs to be complete. -/
+theorem hasEigenvalue_of_mem_spectrum (hK : IsCompactOperator K) {μ : 𝕜} (hμ : μ ≠ 0)
+    (h : μ ∈ spectrum 𝕜 K) : Module.End.HasEigenvalue (K : Module.End 𝕜 E) μ := by
+  by_contra hne
+  -- Rescale to `A = 1 - μ⁻¹ • K`, a compact perturbation of the identity, with `ker A = 0`.
+  let A : E →L[𝕜] E := 1 - μ⁻¹ • K
+  have hK' : IsCompactOperator (μ⁻¹ • K : E →L[𝕜] E) := hK.smul μ⁻¹
+  have hker : LinearMap.ker (A : E →ₗ[𝕜] E) = Module.End.eigenspace (K : Module.End 𝕜 E) μ := by
+    ext x
+    simp only [A, LinearMap.mem_ker, ContinuousLinearMap.coe_coe, _root_.sub_apply,
+      _root_.smul_apply, one_apply_eq_self, sub_eq_zero, eq_inv_smul_iff₀ hμ,
+      Module.End.mem_eigenspace_iff]
+    exact eq_comm
+  have heig : Module.End.eigenspace (K : Module.End 𝕜 E) μ = ⊥ := by
+    simpa only [Module.End.hasEigenvalue_iff, ne_eq, not_not] using hne
+  have hinj : Function.Injective (A : E →ₗ[𝕜] E) := LinearMap.ker_eq_bot.1 (hker.trans heig)
+  -- The ranges of the powers of `A` stabilise, so the injective `A` is surjective.
+  have hsurj : Function.Surjective (A : E →ₗ[𝕜] E) := by
+    obtain ⟨p, hp⟩ := hK'.exists_range_pow_succ_eq_one_sub
+    intro y
+    obtain ⟨z, hz⟩ : ((A : E →ₗ[𝕜] E) ^ p) y ∈ LinearMap.range ((A : E →ₗ[𝕜] E) ^ (p + 1)) :=
+      hp ▸ LinearMap.mem_range_self _ y
+    rw [pow_succ, _root_.mul_apply_eq_comp, FunLike.coe_pow_eq_iterate] at hz
+    exact ⟨z, hinj.iterate p hz⟩
+  -- `A` is bounded below, so its inverse is continuous and `A` is a unit.
+  obtain ⟨c, hc, hbound⟩ := hK'.exists_pos_mul_norm_le_of_disjoint_ker (M := ⊤)
+    (by simpa only [Submodule.top_coe] using isClosed_univ)
+    (disjoint_top.2 (hker.trans heig))
+  let e := LinearEquiv.ofBijective (A : E →ₗ[𝕜] E) ⟨hinj, hsurj⟩
+  let e' := e.toContinuousLinearEquivOfBounds ‖A‖ c⁻¹ A.le_opNorm fun y ↦ by
+    have hy : (1 - μ⁻¹ • K : E →L[𝕜] E) (e.symm y) = y := e.apply_symm_apply y
+    rw [le_inv_mul_iff₀ hc]
+    simpa only [hy] using hbound (e.symm y) Submodule.mem_top
+  -- By construction `e'` applies `A`.
+  have hunit : IsUnit A := ⟨ContinuousLinearEquiv.toUnit e', by ext x; rfl⟩
+  have h1 : (1 : 𝕜) ∈ spectrum 𝕜 (μ⁻¹ • K) := by
+    simpa [Units.smul_def, smul_eq_mul, hμ] using
+      (spectrum.smul_mem_smul_iff (a := K) (s := μ) (r := Units.mk0 μ⁻¹ (inv_ne_zero hμ))).2 h
+  rw [spectrum.mem_iff, map_one] at h1
+  exact h1 hunit
 
-/-- Away from any ball of positive radius about zero, the spectrum of a compact operator
-on a Banach space is finite. -/
+/-- Away from any ball of positive radius about zero, the spectrum of a compact operator is
+finite. Neither the scalar field nor the ambient normed space need be complete. -/
 theorem finite_spectrum_norm_ge (hK : IsCompactOperator K) {ε : ℝ} (hε : 0 < ε) :
     {μ : 𝕜 | μ ∈ spectrum 𝕜 K ∧ ε ≤ ‖μ‖}.Finite :=
   (hK.finite_eigenvalues_norm_ge hε).subset fun _ hμ ↦
-    ⟨(hK.hasEigenvalue_iff_mem_spectrum (norm_pos_iff.mp (hε.trans_le hμ.2))).mpr hμ.1,
-      hμ.2⟩
+    ⟨hK.hasEigenvalue_of_mem_spectrum (norm_pos_iff.mp (hε.trans_le hμ.2)) hμ.1, hμ.2⟩
 
-/-- The spectrum of a compact operator on a Banach space is countable. -/
+/-- The spectrum of a compact operator is countable. Neither the scalar field nor the ambient
+normed space need be complete. -/
 theorem countable_spectrum (hK : IsCompactOperator K) : (spectrum 𝕜 K).Countable := by
   refine ((Set.countable_singleton (0 : 𝕜)).union hK.countable_eigenvalues).mono ?_
   intro μ hμ
   by_cases hzero : μ = 0
   · exact Or.inl hzero
-  · exact Or.inr ((hK.hasEigenvalue_iff_mem_spectrum hzero).mpr hμ)
+  · exact Or.inr (hK.hasEigenvalue_of_mem_spectrum hzero hμ)
 
 open Filter Topology in
-/-- Zero is the only possible accumulation point of the spectrum of a compact operator
-on a Banach space. In particular, every nonzero spectral value is isolated. -/
+/-- Zero is the only possible accumulation point of the spectrum of a compact operator. In
+particular, every nonzero spectral value is isolated. -/
 theorem eq_zero_of_accPt_spectrum (hK : IsCompactOperator K) {μ : 𝕜}
     (hμ : AccPt μ (𝓟 (spectrum 𝕜 K))) : μ = 0 := by
   by_contra hzero
@@ -153,10 +197,10 @@ theorem eq_zero_of_accPt_spectrum (hK : IsCompactOperator K) {μ : 𝕜}
   exact hnot ⟨⟨hν, hnorm.le⟩, hne⟩
 
 open Filter Topology in
-/-- The nonzero points of the real spectrum of a compact operator on a complex Banach space are
+/-- The nonzero points of the real spectrum of a compact operator on a complex normed space are
 isolated. -/
 theorem eventually_mem_spectrum_real_imp_eq {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E]
-    [CompleteSpace E] {T : E →L[ℂ] E} (hT : IsCompactOperator T) {μ : ℝ}
+    {T : E →L[ℂ] E} (hT : IsCompactOperator T) {μ : ℝ}
     (hμ : μ ≠ 0) : ∀ᶠ y in 𝓝 μ, y ∈ spectrum ℝ T → y = μ := by
   by_contra hacc
   simp only [not_eventually, Classical.not_imp] at hacc
