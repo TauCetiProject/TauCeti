@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Lie.Adjoint.Representation.Coadjoint.Basic
+public import TauCeti.Geometry.Lie.Adjoint.Representation.Semisimple
 public import TauCeti.RepresentationTheory.Subrepresentation
 import TauCeti.Order.ModularLattice
 
