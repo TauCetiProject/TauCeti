@@ -12,13 +12,11 @@ public import TauCeti.Algebra.Homology.SpectralSequence.Bicomplex.Naturality
 # Naturality of the Künneth spectral sequence in the first variable
 
 A chain map `f : K ⟶ K'` of complexes of modules over a commutative ring induces a morphism of
-Künneth bicomplexes `HomologicalComplex.kunnethBicomplexMapLeft f L`, which on column `p` is
-`f ▷ Q.X p` for the Cartan–Eilenberg resolution `Q` of `L`. It is compatible with the
-augmentations to `K ⊗ L` and `K' ⊗ L`
-(`HomologicalComplex.total_map_kunnethBicomplexMapLeft_kunnethBicomplexAugmentation`), and induces
-a morphism of Künneth spectral sequences
-(`HomologicalComplex.kunnethSpectralSequenceMapLeft`), the morphism of the spectral sequences of
-the column filtrations (`HomologicalComplex₂.rowFiltrationSpectralSequenceMap`).
+Künneth spectral sequences (`HomologicalComplex.kunnethSpectralSequenceMapLeft`): the morphism of
+the spectral sequences of the column filtrations
+(`HomologicalComplex₂.rowFiltrationSpectralSequenceMap`) induced by the morphism of Künneth
+bicomplexes `HomologicalComplex.kunnethBicomplexMapLeft f L`, `f ▷ Q.X p` on column `p` for the
+Cartan–Eilenberg resolution `Q` of `L`.
 
 The Künneth bicomplex is built from the Cartan–Eilenberg resolution of the second variable, so
 naturality in the second variable needs a comparison of Cartan–Eilenberg resolutions and is not
@@ -26,11 +24,6 @@ treated here.
 
 ## Main definitions and results
 
-* `HomologicalComplex.kunnethBicomplexMapLeft`: the morphism of Künneth bicomplexes, with
-  `HomologicalComplex.kunnethBicomplexMapLeft_id` and
-  `HomologicalComplex.kunnethBicomplexMapLeft_comp`.
-* `HomologicalComplex.total_map_kunnethBicomplexMapLeft_kunnethBicomplexAugmentation`: its
-  compatibility with the augmentations.
 * `HomologicalComplex.kunnethSpectralSequenceMapLeft`: the morphism of Künneth spectral sequences,
   with `HomologicalComplex.kunnethSpectralSequenceMapLeft_id` and
   `HomologicalComplex.kunnethSpectralSequenceMapLeft_comp`.
@@ -48,49 +41,6 @@ namespace HomologicalComplex
 
 variable {R : Type u} [CommRing R] {K K' K'' : ChainComplex (ModuleCat.{u} R) ℕ}
   (f : K ⟶ K') (f' : K' ⟶ K'') (L : ChainComplex (ModuleCat.{u} R) ℕ)
-
-/-- The morphism of Künneth bicomplexes induced by a chain map `f : K ⟶ K'`: on column `p` it is
-`f ▷ Q.X p`, for the Cartan–Eilenberg resolution `Q` of `L`. It is the natural transformation
-`tensorLeft K ⟶ tensorLeft K'` induced by `f`, applied to the complexes of `Q`. -/
-def kunnethBicomplexMapLeft : kunnethBicomplex K L ⟶ kunnethBicomplex K' L :=
-  (NatTrans.mapHomologicalComplex ((curriedTensor _).map f) _).app
-    (ChainComplex.cartanEilenbergResolution L)
-
-/-- The morphism `HomologicalComplex.kunnethBicomplexMapLeft f L` is `f ▷ Q.X p` on column `p`. -/
-@[simp]
-lemma kunnethBicomplexMapLeft_f (p : ℕ) :
-    (kunnethBicomplexMapLeft f L).f p = f ▷ (ChainComplex.cartanEilenbergResolution L).X p :=
-  (rfl)
-
-@[simp]
-lemma kunnethBicomplexMapLeft_id : kunnethBicomplexMapLeft (𝟙 K) L = 𝟙 _ := by
-  rw [kunnethBicomplexMapLeft, CategoryTheory.Functor.map_id, NatTrans.mapHomologicalComplex_id]
-  rfl
-
-@[simp]
-lemma kunnethBicomplexMapLeft_comp :
-    kunnethBicomplexMapLeft (f ≫ f') L =
-      kunnethBicomplexMapLeft f L ≫ kunnethBicomplexMapLeft f' L := by
-  rw [kunnethBicomplexMapLeft, CategoryTheory.Functor.map_comp,
-    NatTrans.mapHomologicalComplex_comp]
-  rfl
-
-/-- The morphism of Künneth bicomplexes induced by `f` is compatible with the augmentations of the
-total complexes to `K ⊗ L` and `K' ⊗ L`. -/
-@[reassoc]
-lemma total_map_kunnethBicomplexMapLeft_kunnethBicomplexAugmentation :
-    HomologicalComplex₂.total.map (kunnethBicomplexMapLeft f L) (ComplexShape.down ℕ) ≫
-        kunnethBicomplexAugmentation K' L =
-      kunnethBicomplexAugmentation K L ≫ f ▷ L := by
-  have e : (kunnethBicomplexMapLeft f L).f 0 ≫ kunnethBicomplexε K' L =
-      kunnethBicomplexε K L ≫ f ▷ L := by
-    rw [kunnethBicomplexε_def, kunnethBicomplexε_def, kunnethBicomplexMapLeft_f]
-    -- the column `0` of the Künneth bicomplex is `K ⊗ Q.X 0` only by definition
-    change f ▷ _ ≫ K' ◁ _ = K ◁ _ ≫ f ▷ _
-    exact (whisker_exchange _ _).symm
-  rw [kunnethBicomplexAugmentation_def, kunnethBicomplexAugmentation_def,
-    HomologicalComplex₂.total_map_totalAugmentation, HomologicalComplex₂.totalAugmentation_comp]
-  simp only [e]
 
 /-- **Naturality of the Künneth spectral sequence in the first variable**: the morphism of
 Künneth spectral sequences induced by a chain map `f : K ⟶ K'`, that of the spectral sequences of
