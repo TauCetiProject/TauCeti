@@ -338,28 +338,32 @@ private theorem rotation_eq_right (h1 : ∀ t, 2 / 3 ≤ t → ρ t = 1) (c : �
     ∀ t ∈ Ico (5 / 6 : ℝ) 1, r₀ + c * ρ t = r₀ + c := fun t ht ↦ by
   rw [h1 t (by linarith [ht.1]), mul_one]
 
-/-- **A sufficient smallness condition.** If `0 ≤ δ < π / 100`, then
-`2 δ ∫_{1/6}^{5/6} (t (1 - t²))⁻¹ dt < π / 12`, since `t (1 - t²) ≥ 4 / 25` on `[1/6, 5/6]`. So
-the smallness hypothesis of the examples below holds for every small enough amplitude. -/
-theorem two_mul_mul_integral_lt_pi_div_twelve {δ : ℝ} (hδ₀ : 0 ≤ δ) (hδ : δ < π / 100) :
+/-- **A sufficient smallness condition.** If `δ < π / 100`, then
+`2 δ ∫_{1/6}^{5/6} (t (1 - t²))⁻¹ dt < π / 12`. So the smallness hypothesis of the examples below
+holds for every small enough amplitude. -/
+theorem two_mul_mul_integral_lt_pi_div_twelve {δ : ℝ} (hδ : δ < π / 100) :
     2 * δ * ∫ t in (1 / 6 : ℝ)..5 / 6, (t * (1 - t ^ 2))⁻¹ < π / 12 := by
   have hlow : ∀ t ∈ Icc (1 / 6 : ℝ) (5 / 6), 4 / 25 ≤ t * (1 - t ^ 2) := fun t ht ↦ by
     -- `t (1 - t²)` lies above its chord on `[1/6, 5/6]`, which stays above `4 / 25`.
     have h := mul_nonneg (mul_nonneg (sub_nonneg.2 ht.1) (sub_nonneg.2 ht.2))
       (by linarith [ht.1] : (0 : ℝ) ≤ t + 1)
     nlinarith [ht.1, ht.2]
-  have hle : ∫ t in (1 / 6 : ℝ)..5 / 6, (t * (1 - t ^ 2))⁻¹ ≤
-      ∫ _ in (1 / 6 : ℝ)..5 / 6, (25 / 4 : ℝ) := by
-    refine intervalIntegral.integral_mono_on (by norm_num) ?_ intervalIntegrable_const
-      fun t ht ↦ ?_
-    · refine ContinuousOn.intervalIntegrable_of_Icc (by norm_num) fun t ht ↦ ?_
-      exact (ContinuousAt.inv₀ (f := fun t : ℝ ↦ t * (1 - t ^ 2)) (by fun_prop)
-        (by linarith [hlow t ht] : t * (1 - t ^ 2) ≠ 0)).continuousWithinAt
-    · rw [inv_le_comm₀ (by linarith [hlow t ht]) (by norm_num)]
-      norm_num
-      linarith [hlow t ht]
-  rw [intervalIntegral.integral_const, smul_eq_mul] at hle
-  linarith [mul_le_mul_of_nonneg_left hle (by positivity : 0 ≤ 2 * δ)]
+  have hnonneg : 0 ≤ ∫ t in (1 / 6 : ℝ)..5 / 6, (t * (1 - t ^ 2))⁻¹ :=
+    intervalIntegral.integral_nonneg (by norm_num) fun t ht ↦
+      inv_nonneg.2 (by linarith [hlow t ht])
+  rcases lt_or_ge δ 0 with hδ₀ | hδ₀
+  · linarith [mul_nonpos_of_nonpos_of_nonneg (by linarith : 2 * δ ≤ 0) hnonneg, Real.pi_pos]
+  have hle : ‖∫ t in (1 / 6 : ℝ)..5 / 6, (t * (1 - t ^ 2))⁻¹‖ ≤ 25 / 4 * |5 / 6 - 1 / 6| := by
+    refine intervalIntegral.norm_integral_le_of_norm_le_const fun t ht ↦ ?_
+    have ht' : t ∈ Icc (1 / 6 : ℝ) (5 / 6) := by
+      rw [uIoc_of_le (by norm_num)] at ht
+      exact Ioc_subset_Icc_self ht
+    rw [Real.norm_of_nonneg (inv_nonneg.2 (by linarith [hlow t ht'])),
+      inv_le_comm₀ (by linarith [hlow t ht']) (by norm_num)]
+    exact le_of_eq_of_le (by norm_num) (hlow t ht')
+  have hwidth : |(5 / 6 : ℝ) - 1 / 6| = 2 / 3 := by norm_num
+  rw [Real.norm_of_nonneg hnonneg, hwidth] at hle
+  linarith [mul_le_mul_of_nonneg_left hle (by linarith : 0 ≤ 2 * δ)]
 
 /-- **The half-turn: the identity in fixed bases, the exchange in tracked labels, on minima.** Let
 `ρ` be `0` for `t ≤ 1/3` and `1` for `t ≥ 2/3`, and let `δ > 0` with
