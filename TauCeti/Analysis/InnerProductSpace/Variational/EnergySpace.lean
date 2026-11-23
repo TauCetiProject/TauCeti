@@ -168,11 +168,18 @@ def toEnergySpace : V ≃L[𝕜] a.EnergySpace :=
     fun x ↦ a.norm_toEnergySpaceₗ_symm_le a.exists_coercive.choose_spec.1 x
       (a.exists_coercive.choose_spec.2 _)
 
-/-- The inner product of the energy space, in terms of the underlying vectors of `V`. This is the
-inner product of `innerProductCore`, since `a.toEnergySpace.symm` applies `toEnergySpaceₗ.symm`. -/
+/-- `a.toEnergySpace` applies `toEnergySpaceₗ`: `LinearEquiv.toContinuousLinearEquivOfBounds`
+keeps the underlying linear equivalence. -/
+private theorem coe_toEnergySpace : ⇑a.toEnergySpace = a.toEnergySpaceₗ := rfl
+
+/-- The inverse of `a.toEnergySpace` applies the inverse of `toEnergySpaceₗ`. -/
+private theorem coe_toEnergySpace_symm : ⇑a.toEnergySpace.symm = a.toEnergySpaceₗ.symm := rfl
+
+/-- The inner product of the energy space, in terms of the underlying vectors of `V`. -/
 theorem inner_eq_form (x y : a.EnergySpace) :
-    ⟪x, y⟫_𝕜 = a.form (a.toEnergySpace.symm x) (a.toEnergySpace.symm y) :=
-  (rfl)
+    ⟪x, y⟫_𝕜 = a.form (a.toEnergySpace.symm x) (a.toEnergySpace.symm y) := by
+  rw [coe_toEnergySpace_symm]
+  rfl
 
 /-- The energy inner product of two vectors of `V` is the value of the form on them. -/
 @[simp]
@@ -185,18 +192,21 @@ theorem norm_toEnergySpace_sq (u : V) : ‖a.toEnergySpace u‖ ^ 2 = re (a.form
   rw [@norm_sq_eq_re_inner 𝕜, inner_toEnergySpace]
 
 /-- The energy norm of `u` is `√(re (a.form u u))`. -/
-theorem norm_toEnergySpace (u : V) : ‖a.toEnergySpace u‖ = √(re (a.form u u)) :=
-  a.norm_toEnergySpaceₗ u
+theorem norm_toEnergySpace (u : V) : ‖a.toEnergySpace u‖ = √(re (a.form u u)) := by
+  rw [coe_toEnergySpace]
+  exact a.norm_toEnergySpaceₗ u
 
 /-- **Upper energy bound.** The energy norm is at most `√‖a.form‖` times the norm of `V`. -/
-theorem norm_toEnergySpace_le (u : V) : ‖a.toEnergySpace u‖ ≤ √‖a.form‖ * ‖u‖ :=
-  a.norm_toEnergySpaceₗ_le u
+theorem norm_toEnergySpace_le (u : V) : ‖a.toEnergySpace u‖ ≤ √‖a.form‖ * ‖u‖ := by
+  rw [coe_toEnergySpace]
+  exact a.norm_toEnergySpaceₗ_le u
 
 /-- **Lower energy bound.** If `c * ‖u‖ ^ 2 ≤ re (a.form u u)`, then the energy norm of `u` is
 at least `√c` times its norm in `V`. -/
 theorem sqrt_mul_norm_le_norm_toEnergySpace {c : ℝ} (u : V)
-    (h : c * ‖u‖ ^ 2 ≤ re (a.form u u)) : √c * ‖u‖ ≤ ‖a.toEnergySpace u‖ :=
-  a.sqrt_mul_norm_le_norm_toEnergySpaceₗ u h
+    (h : c * ‖u‖ ^ 2 ≤ re (a.form u u)) : √c * ‖u‖ ≤ ‖a.toEnergySpace u‖ := by
+  rw [coe_toEnergySpace]
+  exact a.sqrt_mul_norm_le_norm_toEnergySpaceₗ u h
 
 /-- The operator norm of `a.toEnergySpace` is at most `√‖a.form‖`. -/
 theorem opNorm_toEnergySpace_le : ‖(a.toEnergySpace : V →L[𝕜] a.EnergySpace)‖ ≤ √‖a.form‖ :=
@@ -207,8 +217,9 @@ theorem opNorm_toEnergySpace_le : ‖(a.toEnergySpace : V →L[𝕜] a.EnergySpa
 theorem opNorm_toEnergySpace_symm_le {c : ℝ} (hc : 0 < c)
     (hcoer : ∀ u, c * ‖u‖ ^ 2 ≤ re (a.form u u)) :
     ‖(a.toEnergySpace.symm : a.EnergySpace →L[𝕜] V)‖ ≤ (√c)⁻¹ :=
-  ContinuousLinearMap.opNorm_le_bound _ (by positivity) fun x ↦
-    a.norm_toEnergySpaceₗ_symm_le hc x (hcoer _)
+  ContinuousLinearMap.opNorm_le_bound _ (by positivity) fun x ↦ by
+    rw [ContinuousLinearEquiv.coe_coe, coe_toEnergySpace_symm]
+    exact a.norm_toEnergySpaceₗ_symm_le hc x (hcoer _)
 
 /-- The energy space of a coercive Hermitian form on a Banach space is a Hilbert space. -/
 instance [CompleteSpace V] : CompleteSpace a.EnergySpace :=
