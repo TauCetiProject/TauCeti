@@ -8,7 +8,7 @@ module
 public import TauCeti.AlgebraicTopology.LocalCoefficient.Sign.Tensor
 public import TauCeti.Topology.Homotopy.Monodromy.Basic
 public import TauCeti.Topology.IsLocalHomeomorph
-public import TauCeti.Topology.VectorBundle.Orientation.Cover
+public import TauCeti.Topology.VectorBundle.Orientation.Cover.Fiberwise
 
 import Mathlib.Algebra.Category.ModuleCat.Projective
 import TauCeti.Topology.Homotopy.Covering
@@ -34,6 +34,9 @@ in which Thom and Euler classes of bundles without a chosen orientation live; a 
 identifies cohomology twisted by it with ordinary cohomology. Independently of orientability,
 `TauCeti.VectorBundleOrientationCover.signLocalSystemTensorIso` identifies its tensor square
 with the constant coefficient system: evaluate both factors at either orientation and multiply.
+If `2 = 0` in `R`, as for `R = 𝔽₂`, the system itself is constant without any orientation
+(`TauCeti.VectorBundleOrientationCover.signLocalSystemIsoOfTwoEqZero`): evaluation at either
+orientation of a fibre gives the same value, since `-1 = 1` in `R`.
 
 Over the base set of a trivialization of the atlas the system is trivialized without a global
 orientation: transport along a path in the base set carries the element with value `r` at the
@@ -43,6 +46,14 @@ orientation read as `ω` at the end of the path
 since these orientations form a continuous section of the orientation double cover over the base
 set, which lifts the path. Transport is read through any path lifting by evaluation at its ends
 (`TauCeti.VectorBundleOrientationCover.signLocalSystemFiberEquiv_map`).
+
+Isomorphic bundles have isomorphic orientation local systems. A fibrewise isomorphism
+`φ b : E'_b ≃ E_b` with continuous total-space map induces a map of orientation double covers
+(`TauCeti.VectorBundleOrientationCover.map`) which commutes with the deck involutions, that is,
+a map of double covers, so pulling functions on orientations back along it is an isomorphism
+`o(E) ≅ o(E')` (`TauCeti.VectorBundleOrientationCover.signLocalSystemIsoOfFiberwise`, by
+`IsCoveringMap.signLocalSystemIsoOfMap`). Hence homology and cohomology twisted by the
+orientation local system depend only on the isomorphism class of the bundle.
 
 Every loop acts on a fibre of `o(E)` by `1` or by `-1`
 (`VectorBundleOrientationCover.monodromyRepresentation_signLocalSystem_eq_one_or_eq_neg_one`).
@@ -60,9 +71,13 @@ two orientations of a fibre, and it projects to a loop whose monodromy exchanges
   of the fibre.
 * `TauCeti.VectorBundleOrientation.signLocalSystemIso`: the trivialization given by an
   orientation.
+* `TauCeti.VectorBundleOrientationCover.signLocalSystemIsoOfFiberwise`: the isomorphism of
+  orientation local systems induced by a fibrewise isomorphism of bundles.
 * `TauCeti.VectorBundleOrientationCover.pullbackSignLocalSystemIso`: the trivialization of the
   orientation system pulled back along a map into the base set of a trivialization, by evaluation
   at the orientations which it reads as a fixed orientation of the model fibre.
+* `TauCeti.VectorBundleOrientationCover.signLocalSystemIsoOfTwoEqZero`: the trivialization when
+  `2 = 0` in the coefficients.
 
 ## Main results
 
@@ -291,6 +306,51 @@ theorem exists_monodromyRepresentation_signLocalSystem_eq_neg_one [ConnectedSpac
     deck_ne_self (fun _ _ h ↦ eq_or_eq_deck hι h) (e := ⟨q, hq⟩) (hg.trans (Subtype.ext ?_))⟩
   exact (Function.fiberMap_apply_coe _ proj_comp_deck b ⟨q, hq⟩).symm
 
+section TwoEqZero
+
+variable (h2 : (2 : R) = 0)
+
+/-- **The orientation local system in characteristic two.** If `2 = 0` in `R`, the orientation
+local system is constant, without any orientation of the bundle: over `b`, the isomorphism with
+the constant system evaluates at either orientation of `E_b`
+(`TauCeti.VectorBundleOrientationCover.signLocalSystemIsoOfTwoEqZero_hom_app_apply`), the two
+values agreeing since `-1 = 1` in `R`. -/
+def signLocalSystemIsoOfTwoEqZero :
+    signLocalSystem F E R hι ≅
+      (LocalCoefficientSystem.constantFunctor (TopCat.of B)).obj
+        (ModuleCat.of R (ULift.{max uB uE uι} R)) :=
+  (isCoveringMap_proj hι).signLocalSystemIsoOfTwoEqZero (hσ := proj_comp_deck) deck_ne_self
+    (fun _ _ h ↦ eq_or_eq_deck hι h) (surjective_proj hι) h2
+
+-- Not `simp`: the orientation `o` appears only on the right-hand side.
+/-- The trivialization of the orientation local system in characteristic two evaluates at any
+orientation `o` of the fibre. -/
+theorem signLocalSystemIsoOfTwoEqZero_hom_app_apply {b : B} (o : Orientation ℝ (E b) ι)
+    (f : (signLocalSystem F E R hι).obj (FundamentalGroupoid.mk b)) :
+    (ModuleCat.Hom.hom (B := ModuleCat.of R (ULift.{max uB uE uι} R))
+        ((signLocalSystemIsoOfTwoEqZero hι h2).hom.app (FundamentalGroupoid.mk b))) f =
+      ULift.up (signLocalSystemFiberEquiv hι o f) := by
+  rw [signLocalSystemFiberEquiv_apply]
+  exact (isCoveringMap_proj hι).signLocalSystemIsoOfTwoEqZero_hom_app_apply (X := TopCat.of B)
+    (hσ := proj_comp_deck) deck_ne_self (fun _ _ h ↦ eq_or_eq_deck hι h) (surjective_proj hι) h2
+    (FundamentalGroupoid.mk b) f ⟨⟨b, o⟩, rfl⟩
+
+/-- The inverse of the trivialization of the orientation local system in characteristic two
+sends `r` over `b` to the element of the fibre whose value at any orientation `o` of `E_b` is
+`r`. -/
+theorem signLocalSystemIsoOfTwoEqZero_inv_app_apply {b : B} (o : Orientation ℝ (E b) ι) (r : R) :
+    (ModuleCat.Hom.hom (A := ModuleCat.of R (ULift.{max uB uE uι} R))
+        ((signLocalSystemIsoOfTwoEqZero hι h2).inv.app (FundamentalGroupoid.mk b)))
+        (ULift.up r) =
+      (signLocalSystemFiberEquiv hι o).symm r := by
+  apply (signLocalSystemFiberEquiv hι o).injective
+  rw [LinearEquiv.apply_symm_apply, signLocalSystemFiberEquiv_apply]
+  exact (isCoveringMap_proj hι).signLocalSystemIsoOfTwoEqZero_inv_app_apply (X := TopCat.of B)
+    (hσ := proj_comp_deck) deck_ne_self (fun _ _ h ↦ eq_or_eq_deck hι h) (surjective_proj hι) h2
+    (FundamentalGroupoid.mk b) r ⟨⟨b, o⟩, rfl⟩
+
+end TwoEqZero
+
 section Tensor
 
 open MonoidalCategory
@@ -344,6 +404,85 @@ theorem signLocalSystemTensorIso_inv_app_mul {x : B} (o : Orientation ℝ (E x) 
     (⟨⟨x, o⟩, rfl⟩ : (proj ⁻¹' {x} : Set (VectorBundleOrientationCover F E ι))) a b
 
 end Tensor
+
+section Fiberwise
+
+/-! ### Isomorphic bundles -/
+
+variable {F' : Type*} [NormedAddCommGroup F'] [NormedSpace ℝ F'] [FiniteDimensional ℝ F']
+  {E' : B → Type uE} [TopologicalSpace (TotalSpace F' E')] [∀ b, AddCommMonoid (E' b)]
+  [∀ b, Module ℝ (E' b)] [∀ b, TopologicalSpace (E' b)] [FiberBundle F' E'] [VectorBundle ℝ F' E']
+  {φ : ∀ b, E' b ≃L[ℝ] E b} (hι' : Fintype.card ι = finrank ℝ F')
+  (hφ : Continuous fun v : TotalSpace F' E' ↦ TotalSpace.mk' F v.proj (φ v.proj v.snd))
+
+omit [FiniteDimensional ℝ F] [FiniteDimensional ℝ F'] in
+/-- Over the identity of the base, the map of orientation double covers induced by `φ` lies over
+the base. -/
+private theorem proj_comp_map :
+    proj ∘ ⇑(map (g := ContinuousMap.id B) (φ := φ) hι' hφ) = proj :=
+  funext (proj_map hι' hφ)
+
+omit [FiniteDimensional ℝ F] [FiniteDimensional ℝ F'] in
+/-- Over the identity of the base, the map of orientation double covers induced by `φ` commutes
+with the deck involutions, as maps of the total spaces. -/
+private theorem map_comp_deck :
+    ⇑(map (g := ContinuousMap.id B) (φ := φ) hι' hφ) ∘
+        ⇑(deck (F := F') (E := E') (ι := ι) : C(_, _)) =
+      ⇑(deck (F := F) (E := E) (ι := ι) : C(_, _)) ∘ ⇑(map (g := ContinuousMap.id B) hι' hφ) :=
+  funext (map_deck hι' hφ)
+
+omit [FiniteDimensional ℝ F] in
+variable (R) in
+/-- **Isomorphic bundles have isomorphic orientation local systems.** A fibrewise isomorphism
+`φ b : E'_b ≃ E_b` with continuous total-space map induces the isomorphism `o(E) ≅ o(E')` of
+orientation local systems that pulls a function on the orientations of `E_b` back along the
+transport of orientations by `φ b` (`TauCeti.VectorBundleOrientationCover.map`). -/
+def signLocalSystemIsoOfFiberwise : signLocalSystem F E R hι ≅ signLocalSystem F' E' R hι' :=
+  (isCoveringMap_proj hι').signLocalSystemIsoOfMap (isCoveringMap_proj hι) (proj_comp_map hι' hφ)
+    (map_comp_deck hι' hφ) deck_ne_self (fun _ _ h ↦ eq_or_eq_deck hι' h)
+    (fun _ _ h ↦ eq_or_eq_deck hι h) (surjective_proj hι')
+
+omit [FiniteDimensional ℝ F] in
+/-- The isomorphism of orientation local systems induced by `φ` evaluates a function on the
+orientations of `E_b` at the image under `φ b` of an orientation of `E'_b`. -/
+@[simp]
+theorem signLocalSystemObjEquiv_signLocalSystemIsoOfFiberwise_hom_app_apply
+    (x : FundamentalGroupoid (TopCat.of B)) (f : (signLocalSystem F E R hι).obj x)
+    (o : Orientation ℝ (E' x.as) ι) :
+    (signLocalSystemObjEquiv hι' x
+        (((signLocalSystemIsoOfFiberwise R hι hι' hφ).hom.app x).hom f) :
+        (proj ⁻¹' {x.as} : Set (VectorBundleOrientationCover F' E' ι)) → R) ⟨⟨x.as, o⟩, rfl⟩ =
+      (signLocalSystemObjEquiv hι x f :
+        (proj ⁻¹' {x.as} : Set (VectorBundleOrientationCover F E ι)) → R)
+        ⟨⟨x.as, Orientation.map ι (φ x.as).toLinearEquiv o⟩, rfl⟩ := by
+  refine ((isCoveringMap_proj hι').signLocalSystemObjEquiv_signLocalSystemIsoOfMap_hom_app_apply
+    (isCoveringMap_proj hι) (proj_comp_map hι' hφ) (map_comp_deck hι' hφ) deck_ne_self
+    (fun _ _ h ↦ eq_or_eq_deck hι' h) (fun _ _ h ↦ eq_or_eq_deck hι h) (surjective_proj hι') x f
+    _).trans ?_
+  -- The fibres of `o(E)` are by definition those of the sign local system of the cover.
+  refine congrArg ((isCoveringMap_proj hι).signLocalSystemObjEquiv _ proj_comp_deck x f).val
+    (Subtype.ext ?_)
+  rw [Function.fiberMap_apply_coe]
+  exact map_mk (g := ContinuousMap.id B) (φ := φ) hι' hφ x.as o
+
+omit [FiniteDimensional ℝ F] in
+/-- The inverse of the isomorphism of orientation local systems induced by `φ` pushes a function
+on the orientations of `E'_b` forward along the transport of orientations by `φ b`: its value at
+the image under `φ b` of an orientation of `E'_b` is the original value there. -/
+@[simp]
+theorem signLocalSystemObjEquiv_signLocalSystemIsoOfFiberwise_inv_app_apply
+    (x : FundamentalGroupoid (TopCat.of B)) (f : (signLocalSystem F' E' R hι').obj x)
+    (o : Orientation ℝ (E' x.as) ι) :
+    (signLocalSystemObjEquiv hι x
+        (((signLocalSystemIsoOfFiberwise R hι hι' hφ).inv.app x).hom f) :
+        (proj ⁻¹' {x.as} : Set (VectorBundleOrientationCover F E ι)) → R)
+        ⟨⟨x.as, Orientation.map ι (φ x.as).toLinearEquiv o⟩, rfl⟩ =
+      (signLocalSystemObjEquiv hι' x f :
+        (proj ⁻¹' {x.as} : Set (VectorBundleOrientationCover F' E' ι)) → R) ⟨⟨x.as, o⟩, rfl⟩ := by
+  rw [← signLocalSystemObjEquiv_signLocalSystemIsoOfFiberwise_hom_app_apply (hφ := hφ) (o := o),
+    ← ModuleCat.comp_apply, Iso.inv_hom_id_app, ModuleCat.id_apply]
+
+end Fiberwise
 
 end VectorBundleOrientationCover
 
