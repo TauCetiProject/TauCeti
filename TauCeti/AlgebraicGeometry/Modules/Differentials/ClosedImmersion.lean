@@ -20,9 +20,6 @@ map on sections over `i⁻¹ V` is `KaehlerDifferential.mapBaseChange`, which is
 
 ## Main results
 
-* `AlgebraicGeometry.Scheme.Modules.Hom.epi_of_surjective_app_of_isBasis`: a morphism of
-  `𝒪_X`-modules that is surjective on the sections over the members of a basis of `X` is an
-  epimorphism.
 * `TauCeti.AlgebraicGeometry.surjective_cotangentMap_app_preimage`: for a closed immersion `i` and
   an affine open `V` of `X`, `cotangentMap R i` is surjective on the sections over `i⁻¹ V`.
 * `TauCeti.AlgebraicGeometry.epi_cotangentMap_of_isClosedImmersion`: for a closed immersion `i`,
@@ -40,20 +37,6 @@ open CategoryTheory Opposite TopologicalSpace AlgebraicGeometry
 namespace TauCeti
 
 universe u
-
-/-- A morphism of `𝒪_X`-modules that is surjective on the sections over the members of a basis of
-the topology of `X` is an epimorphism. -/
-theorem _root_.AlgebraicGeometry.Scheme.Modules.Hom.epi_of_surjective_app_of_isBasis
-    {X : Scheme.{u}} {M N : X.Modules} (f : M ⟶ N) {ι : Type*} {B : ι → X.Opens}
-    (hB : Opens.IsBasis (Set.range B)) (hf : ∀ i, Function.Surjective (f.app (B i))) :
-    Epi f := by
-  have : Sheaf.IsLocallySurjective ((AlgebraicGeometry.Scheme.Modules.toSheaf X).map f) := by
-    constructor
-    intro U s x hx
-    obtain ⟨_, ⟨i, rfl⟩, hxi, hiU⟩ := (Opens.isBasis_iff_nbhd.mp hB) hx
-    exact ⟨B i, homOfLE hiU, hf i (N.presheaf.map (homOfLE hiU).op s), hxi⟩
-  exact (AlgebraicGeometry.Scheme.Modules.toSheaf X).epi_of_epi_map
-    (Sheaf.epi_of_isLocallySurjective _)
 
 namespace AlgebraicGeometry
 
@@ -87,13 +70,10 @@ epimorphism of `𝒪_Z`-modules. -/
 theorem epi_cotangentMap_of_isClosedImmersion : Epi (cotangentMap R i) := by
   refine Scheme.Modules.Hom.epi_of_surjective_app_of_isBasis _ (B := fun V : X.affineOpens ↦
     i ⁻¹ᵁ V.val) ?_ (surjective_cotangentMap_app_preimage R i)
-  refine Opens.isBasis_iff_nbhd.mpr fun {W z} hz ↦ ?_
-  -- `W = i⁻¹ W'` for an open `W'` of `X`, since `i` is an embedding.
-  obtain ⟨W', hW'⟩ := i.isEmbedding.isOpen_iff.mp W.isOpen
-  have hzW' : z ∈ i ⁻¹' W' := hW'.2 ▸ hz
-  obtain ⟨_, ⟨V, hV, rfl⟩, hzV, hVW⟩ :=
-    X.isBasis_affineOpens.exists_subset_of_mem_open hzW' hW'.1
-  exact ⟨i ⁻¹ᵁ V, ⟨⟨V, hV⟩, rfl⟩, hzV, fun y hy ↦ (hW'.2 ▸ hVW hy : y ∈ (W : Set Z))⟩
+  convert X.isBasis_affineOpens.of_isInducing i.isEmbedding.isInducing using 1
+  ext W
+  simp only [Set.mem_range, Set.mem_ofPred_eq, Subtype.exists, exists_prop]
+  rfl
 
 end AlgebraicGeometry
 
