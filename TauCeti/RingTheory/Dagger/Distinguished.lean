@@ -176,7 +176,7 @@ theorem exists_isDistinguished_of_isDistinguished_one
     ∃ ρ > (1 : ℝ), ρ ≤ ρ₀ ∧ PowerSeries.IsRestricted ρ (f : PowerSeries R) ∧
       IsDistinguished ρ s (f : PowerSeries R) := by
   -- The strict bound on the tail persists at a radius greater than one.
-  obtain ⟨ρ₁, hρ₁, hfρ₁, htail⟩ := exists_isRestricted_forall_mem_norm_coeff_mul_pow_lt f.2
+  obtain ⟨ρ₁, hρ₁, hfρ₁, htail⟩ := exists_isRestricted_forall_mem_norm_coeff_mul_pow_lt f.property
     (S := {u | s < u ()}) (fun u hu ↦ by
       rw [← PowerSeries.coeff_def (rfl : u () = u ())]
       simpa [← hf.norm_coeff_mul_pow_eq] using hf.norm_coeff_mul_pow_lt _ hu)
@@ -316,12 +316,12 @@ theorem exists_isDistinguished_isUnit_of_isDistinguished_one {g : washnitzerAlge
   obtain ⟨hN, hle, hlt⟩ := norm_coeff_le_of_isDistinguished_one hg hu
   set N := ‖coeff ((0 : σ →₀ ℕ).optionElim s) (g : MvPowerSeries (Option σ) K)‖
   -- First choice: the strict bounds persist to a radius `ρ₁ > 1`.
-  obtain ⟨ρ₁, hρ₁, hgρ₁, hρ₁S⟩ := exists_isRestricted_forall_mem_norm_coeff_mul_pow_lt g.2
+  obtain ⟨ρ₁, hρ₁, hgρ₁, hρ₁S⟩ := exists_isRestricted_forall_mem_norm_coeff_mul_pow_lt g.property
     (S := {u | s < u none ∨ u none = s ∧ u.some ≠ 0}) hlt
   set r := min ρ₁ ρ₀
   have hr : 1 < r := lt_min hρ₁ hρ₀
   -- Second choice, depending on `r`: the coefficients in `Y`-degrees below `s` stay below `N r`.
-  obtain ⟨ρ₂, hρ₂, -, hρ₂S⟩ := exists_isRestricted_forall_mem_norm_coeff_mul_pow_lt g.2
+  obtain ⟨ρ₂, hρ₂, -, hρ₂S⟩ := exists_isRestricted_forall_mem_norm_coeff_mul_pow_lt g.property
     (S := {u | u none < s}) (r := N * r) fun u _ ↦ (hle u).trans_lt (lt_mul_of_one_lt_right hN hr)
   set ρ := min ρ₂ r
   have hρ : 1 < ρ := lt_min hρ₂ hr

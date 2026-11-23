@@ -8,6 +8,7 @@ module
 public import TauCeti.Algebra.AlgebraicGroup.Chevalley.SimplyConnected
 public import TauCeti.Algebra.AlgebraicGroup.Chevalley.Torus.Basic
 public import TauCeti.LinearAlgebra.Basis.DiagonalTorus.Quotient
+import TauCeti.Algebra.AlgebraicGroup.Chevalley.Root.Injective
 
 /-!
 # The toral part of the centre of a Chevalley group
@@ -32,7 +33,7 @@ subgroup. It does not assert that all central elements lie in the torus or that 
 subgroup contains every point of the group scheme.
 
 The construction uses `ChevalleyDatum.torusPoints_conj_rootSubgroupPoints`,
-`scChevalleyDatum_rootSubgroupPoints_injective`, and the lattice-duality equivalence
+`ChevalleyDatum.rootSubgroupPoints_injective`, and the lattice-duality equivalence
 `TauCeti.torusAnnihilatorEquiv`. The converse argument and equivalence construction adapt
 `TauCeti.UniversalEnvelopingAlgebra.torusCharacter_eq_one_of_commute_kostantRootSubgroupParam`
 from `TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Torus.Basic` and
@@ -167,7 +168,7 @@ theorem scChevalleyDatum_torusPoints_mem_centralizer_rootTorusSubgroup_iff
       ∀ γ, torusCharacter s ((t.simplyConnectedRootDatum ht).root γ) = 1 := by
   simpa only [scChevalleyDatum_coordinateRoot] using
     (t.scChevalleyDatum ht).torusPoints_mem_centralizer_rootTorusSubgroup_iff
-      (fun γ => t.scChevalleyDatum_rootSubgroupPoints_injective ht γ A) s
+      (fun γ => (t.scChevalleyDatum ht).rootSubgroupPoints_injective γ A) s
 
 variable (A)
 
@@ -187,7 +188,7 @@ def scChevalleyDatumTorusInfCentralizerRootTorusSubgroupEquiv :
       (MulEquiv.subgroupCongr (by
         simpa only [funext (t.scChevalleyDatum_coordinateRoot ht)] using
           (t.scChevalleyDatum ht).map_torusAnnihilator_eq_range_inf_centralizer_rootTorusSubgroup
-            (fun γ => t.scChevalleyDatum_rootSubgroupPoints_injective ht γ A))))
+            (fun γ => (t.scChevalleyDatum ht).rootSubgroupPoints_injective γ A))))
 
 /-- The simply connected equivalence obtains the torus coordinates by evaluating the
 quotient character on the fundamental-weight classes. -/

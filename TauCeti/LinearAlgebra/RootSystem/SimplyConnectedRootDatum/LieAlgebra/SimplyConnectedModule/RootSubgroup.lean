@@ -62,7 +62,7 @@ private theorem primitive_highest (i : Fin t.rank) : IsPrimitive (highest t ht i
   -- Direct-sum operations are pointwise, and subtype operations are inherited,
   -- so the two linearity equations below hold definitionally.
   let p : M →ₗ[ℤ] t.fundamentalLattice ht i :=
-    { toFun x := ⟨(x : t.scModule ht) i, mem_scLattice_iff.mp x.2 i⟩
+    { toFun x := ⟨(x : t.scModule ht) i, mem_scLattice_iff.mp x.property i⟩
       map_add' _ _ := rfl
       map_smul' _ _ := rfl }
   have hp : p (highest t ht i) = ⟨t.fundamentalModuleGenerator ht i,
@@ -142,26 +142,6 @@ theorem exists_isPrimitive_chevalleySystem_apply (γ : Fin t.numRoots) :
           (coe_kostantRootOperator_apply e h ρ M
             (t.kostantForm_apply_mem_scLattice ht) (.inl i) v).symm,
         hv.2⟩) γ
-
-/-- Every all-root operator on the full-weight lattice remains faithful after arbitrary
-commutative scalar extension. This includes nonreduced rings and characteristics two and three. -/
--- Keep this as an explicit rewrite: simplifying this large operator type triggers
--- a search for torsion-freeness over the arbitrary value ring.
-theorem smul_baseChange_kostantRootOperator_chevalleySystem_scLattice_eq_zero_iff
-    (γ : Fin t.numRoots) (A : Type*) [CommRing A] (c : A) :
-    c • (kostantRootOperator (t.chevalleySystem ht) h ρ M
-      (kostantForm_chevalleySystem_smul_mem ρ M (t.kostantForm_apply_mem_scLattice ht)
-        (t.isNilpotent_representation_scModule_rootGenerator ht)) γ).baseChange A = 0 ↔ c = 0 := by
-  exact (t.exists_isPrimitive_chevalleySystem_apply ht γ).elim fun v hv =>
-    hv.elim fun w hw => by
-    have hvw := hw.1
-    have hp := hw.2
-    have heq : kostantRootOperator (t.chevalleySystem ht) h ρ M
-      (kostantForm_chevalleySystem_smul_mem ρ M (t.kostantForm_apply_mem_scLattice ht)
-        (t.isNilpotent_representation_scModule_rootGenerator ht)) γ v = w := by
-      apply Subtype.ext
-      simpa only [coe_kostantRootOperator_apply] using hvw
-    exact LinearMap.smul_baseChange_eq_zero_iff_of_isPrimitive _ v (heq.symm ▸ hp) A c
 
 end
 

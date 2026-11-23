@@ -8,6 +8,7 @@ module
 public import TauCeti.Algebra.AlgebraicGroup.Chevalley.Generation
 public import TauCeti.Algebra.AlgebraicGroup.Chevalley.SimplyConnected
 public import TauCeti.GroupTheory.SpecificGroups.CFSG.Closure
+import TauCeti.Algebra.AlgebraicGroup.Chevalley.Root.Injective
 import TauCeti.FieldTheory.IsAlgClosed.Units
 
 /-!
@@ -125,7 +126,7 @@ theorem coe_canonicalTorus (s : Fin d.dynkinType.rank → d.Closureˣ) :
 /-- **Every canonical root subgroup is injective.** -/
 theorem canonicalRootSubgroup_injective (γ : Fin d.dynkinType.numRoots) :
     Function.Injective (d.canonicalRootSubgroup γ) :=
-  d.dynkinType.scChevalleyDatum_rootSubgroupPoints_injective d.dynkinType_valid γ d.Closure
+  (d.dynkinType.scChevalleyDatum d.dynkinType_valid).rootSubgroupPoints_injective γ d.Closure
 
 /-- **The canonical torus is injective**: the weights of the full-weight lattice span the whole
 weight lattice. -/

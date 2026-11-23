@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.AlgebraicGroup.Chevalley.Root.Product
-public import TauCeti.Algebra.AlgebraicGroup.Chevalley.OrderedProduct
+import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.WeightDegree
 
 /-!
 # Ordered positive-root multiplication as a scheme morphism
@@ -17,8 +17,7 @@ rings, not just fields or reduced schemes. It is the uniqueness part of the sche
 positive-root factorization, and does not assert that its image is the unipotent radical or that
 the multiplication is a closed immersion.
 
-The monomorphism criterion `ChevalleyDatum.mono_rootProduct_of_injective` applies to
-`ChevalleyDatum.list_prod_map_rootSubgroupPoints_inj`.
+The proof specializes `ChevalleyDatum.mono_rootProduct_of_degree_pos` to `DynkinType.weightDegree`.
 
 ## References
 
@@ -36,10 +35,10 @@ variable {t : DynkinType} {ht : t.Valid} (D : ChevalleyDatum t ht)
 
 /-- Ordered multiplication of distinct positive root schemes is a monomorphism into the Chevalley
 group scheme of any Chevalley datum. The test schemes need not be affine or reduced. -/
-theorem mono_rootProduct (l : List (Fin t.numRoots)) (hl : l.Nodup)
+theorem mono_rootProduct_of_posRoots (l : List (Fin t.numRoots)) (hl : l.Nodup)
     (hpos : ∀ γ ∈ l, γ ∈ posRoots (t.rationalRootSystem ht) (t.rationalBase ht)) :
     Mono (D.rootProduct l) :=
-  D.mono_rootProduct_of_injective l fun A _ _ _ h =>
-    (D.list_prod_map_rootSubgroupPoints_inj A hl hpos).mp h
+  D.mono_rootProduct_of_degree_pos (t.weightDegree ht) l hl
+    (fun γ hγ => t.weightDegree_root_pos ht (hpos γ hγ))
 
 end TauCeti.DynkinType.ChevalleyDatum

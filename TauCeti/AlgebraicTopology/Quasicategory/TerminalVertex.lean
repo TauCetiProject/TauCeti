@@ -28,7 +28,8 @@ equivalence. For a strict Segal simplicial set only the conditions in dimensions
 matter (`SSet.isTerminalVertex_iff_of_isStrictSegal`). In particular, a vertex of the nerve of
 a category is terminal exactly when it is a terminal object of the category
 (`CategoryTheory.nerve.isTerminalVertex_iff`), and the last vertex of `Δ[n]` is terminal
-(`SSet.stdSimplex.isTerminalVertex_last`).
+(`SSet.stdSimplex.isTerminalVertex_last`). Every vertex of a terminal simplicial set, such as
+`Δ[0]`, is terminal (`SSet.isTerminalVertex_of_isTerminal`).
 
 ## References
 
@@ -125,6 +126,10 @@ lemma isTerminalVertex_iff_of_iso (e : X ≅ Y) (x : X _⦋0⦌) :
     Y.IsTerminalVertex (e.hom.app _ x) ↔ X.IsTerminalVertex x := by
   refine ⟨fun h ↦ ?_, fun h ↦ h.map_iso e⟩
   simpa using h.map_iso e.symm
+
+/-- Every vertex of a terminal simplicial set, such as `Δ[0]`, is terminal. -/
+lemma isTerminalVertex_of_isTerminal (hX : IsTerminal X) (x : X _⦋0⦌) : X.IsTerminalVertex x :=
+  fun _ _ _ ↦ ⟨hX.from _, hX.hom_ext _ _⟩
 
 /-- In a strict Segal simplicial set, such as the nerve of a category, a vertex `x` is terminal
 exactly when every vertex has an edge to `x` and every triangle ending at `x` is filled: maps
