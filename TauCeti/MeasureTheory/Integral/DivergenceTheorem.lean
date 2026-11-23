@@ -15,7 +15,7 @@ import TauCeti.Analysis.Complex.ReImTopology
 import TauCeti.Analysis.Calculus.FDeriv.CircleMap
 
 /-!
-# Green's formula for bilinear pairings on rectangles, annuli and half-annuli
+# Green's formula for bilinear pairings on rectangles, annuli, half-annuli and discs
 
 Let `u : ℝ × ℝ → V` be a `C²` map near a closed rectangle `R = [a₁, b₁] × [a₂, b₂]` and let `B` be
 a continuous bilinear map. Writing `∂s u` and `∂t u` for the derivatives of `u` in the directions

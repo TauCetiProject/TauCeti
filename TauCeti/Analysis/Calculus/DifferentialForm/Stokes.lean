@@ -406,8 +406,7 @@ theorem integral_extDeriv_closedBall
   exact h
 
 /-- Stokes' formula on an open disc, for a one-form which is `C¹` inside the disc and only
-continuous up to its boundary circle, with integrable exterior derivative. It is the limit of
-`TauCeti.integral_extDeriv_closedBall` on the concentric discs of radius `s < r`. -/
+continuous up to its boundary circle, with integrable exterior derivative. -/
 theorem integral_extDeriv_ball
     {ω : ℂ → ℂ [⋀^Fin 1]→L[ℝ] F} {z₀ : ℂ} {r : ℝ} (hr : 0 ≤ r)
     (hω : ∀ z ∈ Metric.ball z₀ r, ContDiffAt ℝ 1 ω z)

@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Symplectic.JHolomorphic.Energy.Rigidity
-public import TauCeti.Geometry.Symplectic.Liouville.RadialAction
+public import TauCeti.Geometry.Symplectic.Liouville.Radial.Action
 public import Mathlib.Analysis.SpecialFunctions.Complex.CircleMap
 import TauCeti.Geometry.Symplectic.Area.PuncturedDisc
 import TauCeti.Geometry.Symplectic.Duality
