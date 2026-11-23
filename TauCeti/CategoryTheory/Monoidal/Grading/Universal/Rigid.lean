@@ -5,16 +5,19 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.CategoryTheory.Monoidal.Grading.UnitDegree
+public import TauCeti.CategoryTheory.Monoidal.Grading.Universal.UnitSummands
 public import TauCeti.CategoryTheory.Simple.Rigid
 
 /-!
 # Duality and rigidity in the universal grading group
 
-In a finite semisimple monoidal category `C` with `[MonoidalPreadditive C]`, exact pairings invert
-universal degrees (`TauCeti.universalGradingGroup.degree_classOf_of_exactPairing`,
-`degree_classOf_rightDual`). Under `[RigidCategory C]`, dual simple classes have inverse degrees
-without assuming `[Simple (𝟙_ C)]` (`degree_dual`), and when `𝟙_ C` is simple every element of
+In a rigid category with simple tensor unit `𝟙_ C`, exact pairings and duals invert universal
+degrees without assuming finite semisimplicity
+(`TauCeti.universalGradingGroup.degree_classOf_of_exactPairing_of_simple_unit`,
+`degree_dual_of_simple_unit`). In a finite semisimple monoidal category `C` with
+`[MonoidalPreadditive C]`, exact pairings invert universal degrees without `[Simple (𝟙_ C)]`
+(`degree_classOf_of_exactPairing`, `degree_classOf_rightDual`). Under `[RigidCategory C]`, dual
+simple classes have inverse degrees (`degree_dual`), and when `𝟙_ C` is simple every element of
 `universalGradingGroup C` is the degree of a simple object (`degree_surjective`), making
 `universalGradingGroup C` finite whenever there are finitely many simple classes.
 -/
@@ -28,6 +31,29 @@ open CategoryTheory CategoryTheory.Limits MonoidalCategory
 universe v u
 
 namespace TauCeti.universalGradingGroup
+
+section SimpleUnit
+
+/-- In an exact pairing of simple objects when `𝟙_ C` is simple, `degree (classOf Y)` is the
+inverse of `degree (classOf X)`, without requiring finite semisimplicity. -/
+theorem degree_classOf_of_exactPairing_of_simple_unit {C : Type u} [Category.{v} C]
+    [HasZeroMorphisms C] [MonoidalCategory C] [Simple (𝟙_ C)] {X Y : C} [ExactPairing X Y]
+    [Simple X] [Simple Y] :
+    degree (SimpleClasses.classOf Y) = (degree (SimpleClasses.classOf X))⁻¹ := by
+  have h := degree_classOf_eq_mul (η_ X Y) (coevaluation_ne_zero (Y := Y) (Simple.not_isZero X))
+  rw [degree_unit] at h
+  exact eq_inv_of_mul_eq_one_right h.symm
+
+/-- When `𝟙_ C` is simple, dual simple objects have inverse universal degrees without requiring
+finite semisimplicity. -/
+theorem degree_dual_of_simple_unit {C : Type u} [Category.{v} C] [Abelian C] [MonoidalCategory C]
+    [RigidCategory C] [MonoidalPreadditive C] [Simple (𝟙_ C)] (S : SimpleClasses C) :
+    degree S.dual = (degree S)⁻¹ := by
+  rw [← SimpleClasses.classOf_repr S.dual,
+    (SimpleClasses.classOf_eq_iff_nonempty_iso _ _).2 ⟨SimpleClasses.dualReprIso S⟩,
+    degree_classOf_of_exactPairing_of_simple_unit (X := S.repr), SimpleClasses.classOf_repr]
+
+end SimpleUnit
 
 variable {C : Type u} [Category.{v} C] [Abelian C] [MonoidalCategory C]
   [IsFiniteSemisimpleCategory C]

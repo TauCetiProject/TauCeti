@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Group.Hom.Instances
 public import Mathlib.CategoryTheory.SingleObj
 
 /-!
@@ -22,14 +21,11 @@ a groupoid).
 * `CategoryTheory.SingleObj.functor_ext`: extensionality on morphisms for `C ⥤ SingleObj M`.
 * `CategoryTheory.SingleObj.functorOne`, `functorCommMonoid`, `functorCommGroup`: pointwise
   `One`, `CommMonoid`, and `CommGroup` instances on `C ⥤ SingleObj M`.
-* `CategoryTheory.SingleObj.evalMonoidHom`: evaluation at a morphism as a `MonoidHom`.
-* `CategoryTheory.SingleObj.whiskerLeftMonoidHom`: precomposition as a `MonoidHom`.
-* `CategoryTheory.SingleObj.mapHomMulEquiv`: `(N →* M) ≃* (SingleObj N ⥤ SingleObj M)`.
 -/
 
 public section
 
-universe v₁ v₂ u₁ u₂ w₁ w₂
+universe v₁ u₁ w₁
 
 namespace CategoryTheory.SingleObj
 
@@ -90,34 +86,6 @@ instance functorCommMonoid : CommMonoid (C ⥤ SingleObj M) where
   npow_zero _ := functor_ext fun _ ↦ pow_zero _
   npow_succ _ _ := functor_ext fun _ ↦ pow_succ _ _
   mul_comm _ _ := functor_ext fun _ ↦ mul_comm _ _
-
-/-- Evaluating a functor `C ⥤ SingleObj M` on a fixed morphism `f` is a monoid homomorphism. -/
-def evalMonoidHom {X Y : C} (f : X ⟶ Y) : (C ⥤ SingleObj M) →* M where
-  toFun F := F.map f; map_one' := rfl; map_mul' _ _ := rfl
-
-@[simp] theorem evalMonoidHom_apply {X Y : C} (f : X ⟶ Y) (F : C ⥤ SingleObj M) :
-    evalMonoidHom f F = F.map f := (rfl)
-
-/-- Precomposition with a functor `E : D ⥤ C` as a monoid homomorphism on `SingleObj M`-valued
-functors. -/
-def whiskerLeftMonoidHom {D : Type u₂} [Category.{v₂} D] (E : D ⥤ C) :
-    (C ⥤ SingleObj M) →* (D ⥤ SingleObj M) where
-  toFun F := E ⋙ F; map_one' := functor_ext fun _ ↦ rfl; map_mul' _ _ := functor_ext fun _ ↦ rfl
-
-@[simp] theorem whiskerLeftMonoidHom_apply {D : Type u₂} [Category.{v₂} D] (E : D ⥤ C)
-    (F : C ⥤ SingleObj M) : whiskerLeftMonoidHom E F = E ⋙ F := (rfl)
-
-/-- For a monoid `N` and a commutative monoid `M`, `CategoryTheory.SingleObj.mapHom` is a
-multiplicative equivalence `(N →* M) ≃* (SingleObj N ⥤ SingleObj M)`. -/
-def mapHomMulEquiv (N : Type w₂) [Monoid N] (M : Type w₁) [CommMonoid M] :
-    (N →* M) ≃* (SingleObj N ⥤ SingleObj M) :=
-  { SingleObj.mapHom N M with map_mul' := fun _ _ ↦ functor_ext fun _ ↦ rfl }
-
-@[simp] theorem mapHomMulEquiv_apply (N : Type w₂) [Monoid N] (M : Type w₁) [CommMonoid M]
-    (f : N →* M) : mapHomMulEquiv N M f = SingleObj.mapHom N M f := (rfl)
-@[simp] theorem mapHomMulEquiv_symm_apply (N : Type w₂) [Monoid N] (M : Type w₁) [CommMonoid M]
-    (F : SingleObj N ⥤ SingleObj M) :
-    (mapHomMulEquiv N M).symm F = (SingleObj.mapHom N M).symm F := (rfl)
 
 end CommMonoid
 

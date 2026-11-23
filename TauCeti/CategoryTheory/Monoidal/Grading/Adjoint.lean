@@ -391,14 +391,7 @@ theorem _root_.TauCeti.SimpleClasses.IsAdjoint.degree_eq_one {U : SimpleClasses 
   | of_tensor_rightDual X U f hf =>
     obtain ⟨g, hg⟩ : Occurs U.repr (X.repr ⊗ X.dual.repr) :=
       Occurs.of_iso_right (whiskerLeftIso _ (dualReprIso X).symm) ⟨f, hf⟩
-    let e := classOfReprIso (𝟙_ C)
-    let t := whiskerLeftIso X.repr (dualReprIso X).symm
-    have hc : e.hom ≫ η_ X.repr X.reprᘁ ≫ t.hom ≠ 0 := fun hc ↦
-      coevaluation_ne_zero (Y := X.reprᘁ) (Simple.not_isZero X.repr) <| by
-        simpa using e.inv ≫= hc =≫ t.inv
-    have hd : degree X.dual = (degree X)⁻¹ :=
-      eq_inv_of_mul_eq_one_right (by simpa [degree_unit] using (degree_mul _ _ _ _ hc).symm)
-    rw [degree_mul _ _ _ g hg, hd, mul_inv_cancel]
+    rw [degree_mul _ _ _ g hg, degree_dual_of_simple_unit, mul_inv_cancel]
   | of_tensor A B U f _ _ hf hA hB => rw [degree_mul _ _ _ f hf, hA, hB, mul_one]
 
 section DegreeCharacterization

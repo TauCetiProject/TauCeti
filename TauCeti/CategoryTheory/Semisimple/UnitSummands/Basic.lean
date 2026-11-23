@@ -270,20 +270,18 @@ theorem π_ne_zero (I : UnitSimpleClasses C) : π I ≠ 0 :=
   fun h ↦ CategoryTheory.id_ne_zero I.repr (by rw [← ι_comp_π_self I, h, comp_zero])
 
 /-- Biproduct decomposition of the tensor unit `𝟙_ C` indexed by `UnitSimpleClasses C`. -/
-def tensorUnitBicone : Bicone (fun I : UnitSimpleClasses C ↦ I.repr) where
+@[expose] def tensorUnitBicone : Bicone (fun I : UnitSimpleClasses C ↦ I.repr) where
   pt := 𝟙_ C; π := π; ι := ι
   ι_π I J := by by_cases h : I = J <;> [subst h; skip] <;> simp [*, ι_comp_π_ne]
 
 /-- The point of `tensorUnitBicone` is the tensor unit `𝟙_ C`. -/
 @[simp] theorem tensorUnitBicone_pt : (tensorUnitBicone (C := C)).pt = 𝟙_ C := (rfl)
-/-- The projection leg of `tensorUnitBicone` at `I` is `π I` up to the point identification. -/
+/-- The projection leg of `tensorUnitBicone` at `I` is `π I`. -/
 @[simp] theorem tensorUnitBicone_π (I : UnitSimpleClasses C) :
-    (tensorUnitBicone (C := C)).π I = eqToHom (tensorUnitBicone_pt (C := C)) ≫ π I :=
-  (Category.id_comp _).symm
-/-- The inclusion leg of `tensorUnitBicone` at `I` is `ι I` up to the point identification. -/
+    (tensorUnitBicone (C := C)).π I = π I := (rfl)
+/-- The inclusion leg of `tensorUnitBicone` at `I` is `ι I`. -/
 @[simp] theorem tensorUnitBicone_ι (I : UnitSimpleClasses C) :
-    (tensorUnitBicone (C := C)).ι I = ι I ≫ eqToHom (tensorUnitBicone_pt (C := C)).symm :=
-  (Category.comp_id _).symm
+    (tensorUnitBicone (C := C)).ι I = ι I := (rfl)
 
 private theorem π_equiv (i : (chosenTensorUnitDecomp C).ι) :
     π ((chosenTensorUnitDecomp C).equiv i) = (chosenTensorUnitDecomp C).iso.hom ≫
@@ -361,7 +359,7 @@ theorem hom_ext' {X : C} {f g : 𝟙_ C ⟶ X} (h : ∀ I : UnitSimpleClasses C,
     f = g := (tensorUnitBiconeIsBilimit (C := C)).isColimit.hom_ext fun ⟨I⟩ ↦ h I
 
 /-- The family of chosen representatives of `UnitSimpleClasses C` admits a biproduct. -/
-theorem hasBiproduct : HasBiproduct (fun I : UnitSimpleClasses C ↦ I.repr) :=
+instance hasBiproduct : HasBiproduct (fun I : UnitSimpleClasses C ↦ I.repr) :=
   HasBiproduct.mk ⟨tensorUnitBicone (C := C), tensorUnitBiconeIsBilimit (C := C)⟩
 
 /-- Resolution of the identity of `𝟙_ C` as the sum of the unit-summand projections followed by
