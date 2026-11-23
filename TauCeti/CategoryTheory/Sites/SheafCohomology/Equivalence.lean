@@ -117,6 +117,7 @@ lemma sheafCongrInverseFreeYonedaIso_evaluation (V : D)
       freeYonedaSheafSectionsEquiv J (e.inverse.obj V) F f := by
   let c := sheafCongrInverseFreeYonedaCorepresentation J K e V
   let c' := freeYonedaSheafCorepresentableBy J (e.inverse.obj V)
+  -- The inverse free-Yoneda map represents the identity section in the two corepresentations.
   change c.homEquiv (c.homEquiv.symm (c'.homEquiv (𝟙 _)) ≫ f) = _
   rw [c.homEquiv_comp, Equiv.apply_symm_apply]
   exact (c'.homEquiv_eq f).symm.trans
@@ -164,6 +165,7 @@ lemma cohomologyPresheafEvaluationIsoSheafCongr_resolutionClass (V : D) {n : ℕ
     (map_exactAt_succ E L hL) V s hs
   rw [Sheaf.H'.resolutionClass_def]
   erw [hm]
+  -- The evaluated comparison is inverse adjunction on Ext followed by the free-Yoneda iso.
   dsimp only [cohomologyPresheafEvaluationIsoSheafCongr]
   change (Ext.mk₀ ξ.inv).comp
     (adj.extEquiv.symm (KE.extMk (E.map ι) (map_augmentation_comp_d E L ι hι)
@@ -184,9 +186,7 @@ lemma cohomologyPresheafEvaluationIsoSheafCongr_inv_resolutionClass
   let q := (cohomologyPresheafEvaluationIsoSheafCongr J K e n V).app F
   have h := congrArg (fun x ↦ q.inv x)
     (cohomologyPresheafEvaluationIsoSheafCongr_resolutionClass J K e L ι hι hι' hL V s hs)
-  change q.inv (q.hom _) = _ at h
-  rw [Iso.hom_inv_id_apply] at h
-  exact h.symm
+  exact h.symm.trans (Iso.hom_inv_id_apply q _)
 
 
 end

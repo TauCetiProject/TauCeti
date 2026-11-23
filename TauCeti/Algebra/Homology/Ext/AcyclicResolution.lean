@@ -553,16 +553,18 @@ include hι in
 lemma map_augmentation_comp_d : G.map ι ≫ ((G.mapHomologicalComplex (.up ℕ)).obj K).d 0 1 = 0 := by
   rw [Functor.mapHomologicalComplex_obj_d, ← CategoryTheory.Functor.map_comp,
     hι, G.map_zero]
-omit [HasExt C] [HasExt D] [Mono ι] in
+omit [HasExt C] [HasExt D] [Mono ι]
+  [PreservesFiniteLimits G] [PreservesFiniteColimits G] in
 include hι' in
 /-- An exact functor preserves exactness at the augmentation. -/
-lemma map_augmentation_exact :
+lemma map_augmentation_exact [G.PreservesHomology] :
     (ShortComplex.mk _ _ (map_augmentation_comp_d G K ι hι)).Exact :=
   hι'.map G
-omit [HasExt C] [HasExt D] in
+omit [HasExt C] [HasExt D] [PreservesFiniteLimits G] [PreservesFiniteColimits G] in
 include hK in
 /-- An exact functor preserves exactness in every positive resolution degree. -/
-lemma map_exactAt_succ (j : ℕ) : ((G.mapHomologicalComplex (.up ℕ)).obj K).ExactAt (j + 1) :=
+lemma map_exactAt_succ [G.PreservesHomology] (j : ℕ) :
+    ((G.mapHomologicalComplex (.up ℕ)).obj K).ExactAt (j + 1) :=
   (G.mapHomologicalComplex_obj_exactAt_iff K (j + 1)).2 ((hK j).map G)
 private noncomputable def mappedCyclesIso (n : ℕ) :
     (mappedResolution G K).cycles (n + 1) ≅ G.obj (K.cycles (n + 1)) :=
@@ -587,17 +589,15 @@ private lemma mappedSuccExtClass_naturality (n : ℕ) :
         change (mappedCyclesIso G K n).inv ≫ (mappedResolution G K).iCycles (n + 1) =
           G.map (K.iCycles (n + 1)) ≫ 𝟙 _
         rw [Category.comp_id]
-        erw [ShortComplex.mapCyclesIso_inv_comp_iCycles]
-        rfl
+        exact HomologicalComplex.mapCyclesIso_inv_iCycles G K (n + 1)
       comm₂₃ := by
         -- The second short-complex arrows are the differential lifts to cycles.
         change 𝟙 _ ≫ (mappedResolution G K).toCycles (n + 1) (n + 2) =
           G.map (K.toCycles (n + 1) (n + 2)) ≫ (mappedCyclesIso G K (n + 1)).inv
         rw [Category.id_comp]
         exact (HomologicalComplex.map_toCycles_comp_mapCyclesIso_inv G K (n + 1) (n + 2)).symm }
-  have h := ((K.shortExact_resolution_succ hK n).map_of_exact G).extClass_naturality
+  exact ((K.shortExact_resolution_succ hK n).map_of_exact G).extClass_naturality
     ((mappedResolution G K).shortExact_resolution_succ (map_exactAt_succ G K hK) n) α
-  exact h
 
 /-- Exact functors transport the extension class associated to a resolution. -/
 theorem resolutionExtClass_mapExactFunctor (n : ℕ) :

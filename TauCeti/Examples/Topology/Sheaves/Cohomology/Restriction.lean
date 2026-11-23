@@ -35,8 +35,6 @@ def firstOne : Opens threePointSpace := ⟨{x | x.val < 1}, isOpen_discrete _⟩
 /-- The chosen nested opens form an inclusion. -/
 lemma firstOne_le_firstTwo : firstOne ≤ firstTwo := by
   intro x h
-  change x.val < 1 at h
-  change x.val < 2
   exact lt_trans h (by decide : (1 : ℕ) < 2)
 /-- The two-point open is a proper open of the three-point space. -/
 lemma firstTwo_proper : firstTwo ≠ ⊤ := by
@@ -46,7 +44,7 @@ lemma firstTwo_proper : firstTwo ≠ ⊤ := by
 /-- The inner open is proper in the actual two-point subspace. -/
 lemma firstOne_proper_in_firstTwo : firstOne ≠ firstTwo := by
   intro h
-  have hx : (1 : Fin 3) ∈ firstOne := h ▸ (by change (1 : Fin 3).val < 2; decide)
+  have hx : (1 : Fin 3) ∈ firstOne := h ▸ (by simp [firstTwo])
   exact (by decide : ¬((1 : Fin 3).val < 1)) hx
 /-- Decidable equality identifies the coefficient stalk in the skyscraper example. -/
 def pointDecisions : (U : Opens threePointSpace) → Decidable ((0 : Fin 3) ∈ U) :=
@@ -77,10 +75,12 @@ lemma coefficientTwo_ne_id : coefficientTwo ≠ 𝟙 integerSheaf := by
     erw [dite_eq_left hmem]
     rfl
   have hc := congrArg (fun f ↦ e.inv ≫ f ≫ e.hom) ht
-  rw [hf] at hc
+  -- The evaluated identity sheaf map is the identity on the skyscraper's actual top carrier.
+  have hid : (𝟙 integerSheaf : integerSheaf ⟶ integerSheaf).hom.app (op ⊤) =
+      e.hom ≫ e.inv := by
+    exact e.hom_inv_id.symm
+  rw [hf, hid] at hc
   have hm : (2 • 𝟙 integerModule) = 𝟙 integerModule := by
-    change e.inv ≫ (e.hom ≫ (2 • 𝟙 integerModule) ≫ e.inv) ≫ e.hom =
-      e.inv ≫ (𝟙 _) ≫ e.hom at hc
     simpa only [Category.assoc, Iso.inv_hom_id_assoc, Iso.inv_hom_id,
       Category.id_comp, Category.comp_id] using hc
   have hh := ConcreteCategory.congr_hom hm (1 : ℤ)

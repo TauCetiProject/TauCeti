@@ -574,17 +574,29 @@ variable {C : Type u₁} [Category.{v₁} C] {D : Type u₂} [Category.{v₂} D]
   (G : C ⥤ D) [G.Additive] [G.PreservesHomology]
   {ι : Type w} {c : ComplexShape ι} (K : HomologicalComplex C c) (i : ι)
 
+/-- The inverse cycles comparison commutes with the actual mapped complex's cycle inclusion. -/
+@[reassoc]
+lemma mapCyclesIso_inv_iCycles :
+    ((K.sc i).mapCyclesIso G).inv ≫ ((G.mapHomologicalComplex c).obj K).iCycles i =
+      G.map (K.iCycles i) := by
+  exact (K.sc i).mapCyclesIso_inv_comp_iCycles G
+
+/-- The forward cycles comparison commutes with the actual mapped complex's cycle inclusion. -/
+@[reassoc]
+lemma mapCyclesIso_hom_iCycles :
+    ((K.sc i).mapCyclesIso G).hom ≫ G.map (K.iCycles i) =
+      ((G.mapHomologicalComplex c).obj K).iCycles i := by
+  exact (K.sc i).mapCyclesIso_hom_iCycles G
+
 /-- An additive homology-preserving functor transports the differential's cycle lift. -/
 @[reassoc]
 lemma map_toCycles_comp_mapCyclesIso_inv (j : ι) :
     G.map (K.toCycles i j) ≫ ((K.sc j).mapCyclesIso G).inv =
       ((G.mapHomologicalComplex c).obj K).toCycles i j := by
-  erw [← cancel_mono (((G.mapHomologicalComplex c).obj K).iCycles j), Category.assoc,
-    ShortComplex.mapCyclesIso_inv_comp_iCycles, ← G.map_comp]
-  simp only [HomologicalComplex.toCycles_i, Functor.mapHomologicalComplex_obj_d]
-  -- The short-complex cycle inclusion is the complex cycle inclusion.
-  change G.map (K.toCycles i j ≫ K.iCycles j) = G.map (K.d i j)
-  rw [HomologicalComplex.toCycles_i]
+  apply (cancel_mono (((G.mapHomologicalComplex c).obj K).iCycles j)).1
+  rw [Category.assoc, mapCyclesIso_inv_iCycles, ← G.map_comp,
+    HomologicalComplex.toCycles_i, HomologicalComplex.toCycles_i,
+    Functor.mapHomologicalComplex_obj_d]
 
 variable {E : Type u₃} [Category.{v₃} E] [Preadditive E] [CategoryWithHomology E]
   (H : E ⥤ D) [H.Additive] [H.PreservesHomology] (L : HomologicalComplex E c)
@@ -599,14 +611,8 @@ lemma cyclesComparison_iCycles :
     cyclesComparison G K i H L φ ≫ H.map (L.iCycles i) =
       G.map (K.iCycles i) ≫ φ.f i := by
   dsimp only [cyclesComparison]
-  simp only [Category.assoc]
-  erw [ShortComplex.mapCyclesIso_hom_iCycles]
-  -- The transported short-complex inclusion is the mapped complex's cycle inclusion.
-  change ((K.sc i).mapCyclesIso G).inv ≫ HomologicalComplex.cyclesMap φ i ≫
-    ((H.mapHomologicalComplex c).obj L).iCycles i = _
-  rw [HomologicalComplex.cyclesMap_i, ← Category.assoc]
-  erw [ShortComplex.mapCyclesIso_inv_comp_iCycles]
-  rfl
+  rw [Category.assoc, Category.assoc, mapCyclesIso_hom_iCycles,
+    HomologicalComplex.cyclesMap_i, ← Category.assoc, mapCyclesIso_inv_iCycles]
 /-- The induced comparison of cycles commutes with passage to homology classes. -/
 lemma cyclesComparison_homologyπ :
     G.map (K.homologyπ i) ≫

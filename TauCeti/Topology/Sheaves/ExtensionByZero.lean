@@ -146,18 +146,21 @@ end TopologicalSpace.Opens
 
 namespace TopologicalSpace.Opens
 open CategoryTheory CategoryTheory.Limits
-variable {R : Type u} [CommRing R]
-/-- Restriction preserves injective module sheaves by its exact extension-by-zero adjunction. -/
-instance sheafRestrict_preservesInjectiveObjects {Y : Type u} [TopologicalSpace Y] (V : Opens Y) :
-    (V.sheafRestrict (X := TopCat.of Y) (C := ModuleCat.{u} R)).PreservesInjectiveObjects := by
-  let := preservesFiniteLimits_extendByZero (X := TopCat.of Y) V (ModuleCat.{u} R)
+variable {A : Type*} [Category* A] [Abelian A]
+/-- Restriction preserves injective sheaves by its exact extension-by-zero adjunction. -/
+instance sheafRestrict_preservesInjectiveObjects {Y : Type u} [TopologicalSpace Y] (V : Opens Y)
+    [HasSheafify (Opens.grothendieckTopology (TopCat.of Y)) A] :
+    (V.sheafRestrict (X := TopCat.of Y) (C := A)).PreservesInjectiveObjects := by
+  let := preservesFiniteLimits_extendByZero (X := TopCat.of Y) V A
   exact Functor.preservesInjectiveObjects_of_adjunction_of_preservesMonomorphisms
-    (V.extendByZeroAdjunction (X := TopCat.of Y) (ModuleCat.{u} R))
-/-- Open restriction is exact on native module sheaves. -/
-instance sheafRestrict_preservesHomology {Y : Type u} [TopologicalSpace Y] (V : Opens Y) :
-    (V.sheafRestrict (X := TopCat.of Y) (C := ModuleCat.{u} R)).PreservesHomology := by
-  let := (V.extendByZeroAdjunction (X := TopCat.of Y) (ModuleCat.{u} R)).isRightAdjoint
-  let := isLeftAdjoint_sheafRestrict (X := TopCat.of Y) (A := ModuleCat.{u} R) V
+    (V.extendByZeroAdjunction (X := TopCat.of Y) A)
+/-- Open restriction is exact when restriction to the over site is a left adjoint. -/
+instance sheafRestrict_preservesHomology {Y : Type u} [TopologicalSpace Y] (V : Opens Y)
+    [HasSheafify (Opens.grothendieckTopology (TopCat.of Y)) A]
+    [((Opens.grothendieckTopology (TopCat.of Y)).overPullback A V).IsLeftAdjoint] :
+    (V.sheafRestrict (X := TopCat.of Y) (C := A)).PreservesHomology := by
+  let := (V.extendByZeroAdjunction (X := TopCat.of Y) A).isRightAdjoint
+  let := isLeftAdjoint_sheafRestrict (X := TopCat.of Y) (A := A) V
   infer_instance
 
 end TopologicalSpace.Opens

@@ -222,6 +222,14 @@ end CategoryTheory
 
 universe u' v' u₂ v₂ u₃ v₃
 
+namespace CategoryTheory.InjectiveResolution
+variable {C : Type*} [Category* C] [Abelian C] {X : C}
+/-- An injective resolution is exact at each positive degree of its actual cocomplex. -/
+lemma exactAt_succ (I : InjectiveResolution X) (j : ℕ) : I.cocomplex.ExactAt (j + 1) := by
+  rw [HomologicalComplex.exactAt_iff' _ j (j + 1) (j + 2) (by simp) (by simp)]
+  exact I.exact_succ j
+end CategoryTheory.InjectiveResolution
+
 namespace CategoryTheory.Functor
 variable {C : Type u} [Category.{v} C] [Abelian C] [HasInjectiveResolutions C]
   {D : Type u'} [Category.{v'} D] [Abelian D]
@@ -240,11 +248,11 @@ theorem injectiveResolutionsCompIso_hom_app_comp_iso_hom [HasInjectiveResolution
     ((H.mapHomologicalComplex _).map
       (InjectiveResolution.homotopyEquiv (injectiveResolution X) I).hom) (by
         rw [Functor.mapInjectiveResolution_ι_f_zero,
-          Functor.mapInjectiveResolution_ι_f_zero, Functor.mapHomologicalComplex_map_f,
-          ]
+          Functor.mapInjectiveResolution_ι_f_zero, Functor.mapHomologicalComplex_map_f]
         exact (H.map_comp _ _).symm.trans
           ((congrArg H.map (InjectiveResolution.desc_commutes_zero (𝟙 X) I
-            (injectiveResolution X))).trans ((H.map_comp _ _).trans (by erw [H.map_id]; rfl))))
+            (injectiveResolution X))).trans ((H.map_comp _ _).trans (by
+            exact congrArg (· ≫ H.map (I.ι.f 0)) (H.map_id X)))))
   -- The quotient lift evaluates the chosen resolution map on its homotopy class.
   dsimp only [InjectiveResolution.iso, Functor.mapHomotopyCategory]
   erw [Quotient.lift_map_functor_map]
@@ -252,8 +260,8 @@ theorem injectiveResolutionsCompIso_hom_app_comp_iso_hom [HasInjectiveResolution
   exact t
 
 /-- The chosen-resolution derived-object isomorphism factors through homotopy homology. -/
-theorem isoRightDerivedObj_eq_mapIso (F : C ⥤ D) [F.Additive]
-    {X : C} (I : InjectiveResolution X) (n : ℕ) :
+theorem _root_.CategoryTheory.InjectiveResolution.isoRightDerivedObj_eq_mapIso
+    {X : C} (I : InjectiveResolution X) (F : C ⥤ D) [F.Additive] (n : ℕ) :
     I.isoRightDerivedObj F n =
       (HomotopyCategory.homologyFunctor D (ComplexShape.up ℕ) n).mapIso
         ((F.mapHomotopyCategory (ComplexShape.up ℕ)).mapIso I.iso) ≪≫
@@ -385,8 +393,8 @@ theorem rightDerivedCompIso_app_injectiveResolution {X : C} (I : InjectiveResolu
   apply (cancel_mono ((H'.mapInjectiveResolution I).isoRightDerivedObj F' n).hom).1
   let fac := (HomotopyCategory.homologyFunctorFactors D' (ComplexShape.up ℕ) n).app
     ((F'.mapHomologicalComplex _).obj ((H'.mapHomologicalComplex _).obj I.cocomplex))
-  have hI := congrArg Iso.hom (isoRightDerivedObj_eq_mapIso F I n)
-  have hJ := congrArg Iso.hom (isoRightDerivedObj_eq_mapIso F' (H'.mapInjectiveResolution I) n)
+  have hI := congrArg Iso.hom (I.isoRightDerivedObj_eq_mapIso F n)
+  have hJ := congrArg Iso.hom ((H'.mapInjectiveResolution I).isoRightDerivedObj_eq_mapIso F' n)
   dsimp only [Iso.trans_hom, CategoryTheory.Functor.mapIso_hom] at hI hJ
   have q := congrArg Iso.hom
     (comparisonHomotopy_complex_component F G H' F' e I.cocomplex n)
