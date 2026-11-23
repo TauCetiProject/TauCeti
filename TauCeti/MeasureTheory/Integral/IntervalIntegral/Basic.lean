@@ -7,6 +7,7 @@ module
 
 public import Mathlib.MeasureTheory.Integral.IntervalAverage
 public import Mathlib.MeasureTheory.Integral.IntervalIntegral.Basic
+import Mathlib.MeasureTheory.Function.Holder
 import Mathlib.Topology.MetricSpace.Equicontinuity
 import TauCeti.Analysis.Convex.Segment
 
@@ -48,6 +49,9 @@ not belong to any particular application.
   for `f` commuting with conjugation, it commutes with conjugation in `z`.
 * `MeasureTheory.IntegrableOn.intervalIntegrable_of_mem_Icc`: a function integrable on `(a, b)`
   for a measure without mass at points is interval integrable between any two points of `[a, b]`.
+* `MeasureTheory.IntegrableOn.intervalIntegrable_clm_comp`: for an operator field `P` integrable
+  on `[a, b]` and an operator field `N` continuous on `[a, b]`, the composition `u ↦ P u ∘L N u`
+  is interval integrable between any two points of `[a, b]`.
 * `TauCeti.intervalIntegral.norm_integral_le_setIntegral_norm` and
   `TauCeti.intervalIntegral.norm_integral_le_abs_of_ae_norm_le`: for such a function
   and measure, the integral between two points of `[a, b]` is bounded by the `L¹(a, b)` norm, and
@@ -442,6 +446,21 @@ theorem MeasureTheory.IntegrableOn.intervalIntegrable_of_mem_Icc {E : Type*}
     IntervalIntegrable f μ s t :=
   ((integrableOn_Icc_iff_integrableOn_Ioo (f := f)).2 hf |>.mono_set
     (uIcc_subset_Icc hs ht)).intervalIntegrable
+
+/-- For `P` integrable on `[a, b]` and `N` continuous on `[a, b]`, the integrand
+`u ↦ P u ∘L N u` is interval integrable between any two points of `[a, b]`. -/
+theorem MeasureTheory.IntegrableOn.intervalIntegrable_clm_comp {𝕜 : Type*}
+    [NontriviallyNormedField 𝕜] {E F G : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+    [NormedAddCommGroup F] [NormedSpace 𝕜 F] [NormedAddCommGroup G] [NormedSpace 𝕜 G]
+    {P : ℝ → F →L[𝕜] G} {N : ℝ → E →L[𝕜] F} {a b c d : ℝ} (hP : IntegrableOn P (Icc a b))
+    (hN : ContinuousOn N (Icc a b)) (hc : c ∈ Icc a b) (hd : d ∈ Icc a b) :
+    IntervalIntegrable (fun u ↦ P u ∘L N u) volume c d := by
+  have hsub := uIcc_subset_Icc hc hd
+  obtain ⟨C, hC⟩ := isCompact_uIcc.exists_bound_of_continuousOn (hN.mono hsub)
+  exact IntegrableOn.intervalIntegrable <|
+    (ContinuousLinearMap.compL 𝕜 E F G).integrable_of_bilin_of_bdd_right C (hP.mono_set hsub)
+      ((hN.mono hsub).aestronglyMeasurable measurableSet_uIcc)
+      (ae_restrict_of_forall_mem measurableSet_uIcc hC)
 
 /-- For `f` integrable on `(a, b)`, `c ∈ [a, b]` and `a ≤ s ≤ t ≤ b`, the integral of `f` over
 `(s, t)` is the difference of the primitives `∫ x in c..t, f x` and `∫ x in c..s, f x` based at

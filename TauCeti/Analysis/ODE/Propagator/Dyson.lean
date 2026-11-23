@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.ODE.Propagator
 public import TauCeti.Analysis.ODE.DysonSeries
 import TauCeti.MeasureTheory.Integral.IntervalIntegral.AbsolutelyContinuousFun
+import TauCeti.MeasureTheory.Integral.IntervalIntegral.Basic
 
 /-!
 # The Dyson expansion of the propagator

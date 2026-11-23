@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.ODE.Caratheodory
 import Mathlib.Analysis.SpecialFunctions.ExpDeriv
 import TauCeti.MeasureTheory.Integral.IntervalIntegral.AbsolutelyContinuousSubstitution.Basic
+import TauCeti.MeasureTheory.Integral.IntervalIntegral.Basic
 
 /-!
 # The propagator of a linear equation with an integrable coefficient
@@ -66,18 +67,6 @@ public section
 open MeasureTheory Set intervalIntegral Real
 
 namespace TauCeti
-
-/-- For `P` integrable on `[a, b]` and `N` continuous on `[a, b]`, the integrand
-`u ↦ P u ∘L N u` is interval integrable between any two points of `[a, b]`. -/
-theorem _root_.MeasureTheory.IntegrableOn.intervalIntegrable_clm_comp {𝕜 : Type*}
-    [NontriviallyNormedField 𝕜] {E : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E]
-    {P N : ℝ → E →L[𝕜] E} {a b c d : ℝ} (hP : IntegrableOn P (Icc a b))
-    (hN : ContinuousOn N (Icc a b)) (hc : c ∈ Icc a b) (hd : d ∈ Icc a b) :
-    IntervalIntegrable (fun u ↦ P u ∘L N u) volume c d := by
-  have hsub := uIcc_subset_Icc hc hd
-  refine IntegrableOn.intervalIntegrable ?_
-  simpa [ContinuousLinearMap.mul_def] using
-    (hP.mono_set hsub).mul_continuousOn (hN.mono hsub) isCompact_uIcc
 
 variable {𝕜 : Type*} [RCLike 𝕜] {E : Type*}
   [NormedAddCommGroup E] [NormedSpace 𝕜 E] [NormedSpace ℝ E] [IsScalarTower ℝ 𝕜 E]
