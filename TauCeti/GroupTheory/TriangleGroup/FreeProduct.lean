@@ -9,6 +9,7 @@ public import Mathlib.Data.ZMod.Basic
 public import Mathlib.GroupTheory.Abelianization.Defs
 public import Mathlib.GroupTheory.Coprod.Basic
 public import TauCeti.GroupTheory.TriangleGroup.Basic
+import TauCeti.Algebra.Group.Conj
 import TauCeti.Data.ZMod.MonoidHomEquiv
 import TauCeti.GroupTheory.Abelianization.Coprod
 import TauCeti.GroupTheory.Coprod.Torsion
@@ -150,18 +151,12 @@ theorem exists_isConj_x_zpow_or_y_zpow_of_isOfFinOrder {a b : ℕ} {g : Triangle
   rcases Monoid.Coprod.exists_isConj_inl_or_inr_of_isOfFinOrder hg' with
     ⟨u, hconj, -⟩ | ⟨v, hconj, -⟩
   · obtain ⟨k, rfl⟩ := Multiplicative.mem_zpowers_ofAdd_one u
-    have hmap : (equivCoprod a b).symm (.inl ((Multiplicative.ofAdd (1 : ZMod a)) ^ k)) =
-        x a b 0 ^ k := by
-      rw [map_zpow, map_zpow, equivCoprod_symm_inl_ofAdd_one]
-    have h := (equivCoprod a b).symm.toMonoidHom.map_isConj hconj
-    rw [MulEquiv.coe_toMonoidHom, MulEquiv.symm_apply_apply, hmap] at h
+    have h : IsConj g (x a b 0 ^ k) :=
+      (equivCoprod a b).isConj_apply_iff.mp (by simpa using hconj)
     exact Or.inl ⟨k, h, h.isOfFinOrder hg⟩
   · obtain ⟨k, rfl⟩ := Multiplicative.mem_zpowers_ofAdd_one v
-    have hmap : (equivCoprod a b).symm (.inr ((Multiplicative.ofAdd (1 : ZMod b)) ^ k)) =
-        y a b 0 ^ k := by
-      rw [map_zpow, map_zpow, equivCoprod_symm_inr_ofAdd_one]
-    have h := (equivCoprod a b).symm.toMonoidHom.map_isConj hconj
-    rw [MulEquiv.coe_toMonoidHom, MulEquiv.symm_apply_apply, hmap] at h
+    have h : IsConj g (y a b 0 ^ k) :=
+      (equivCoprod a b).isConj_apply_iff.mp (by simpa using hconj)
     exact Or.inr ⟨k, h, h.isOfFinOrder hg⟩
 
 /-- **Abelianization of `Δ(a, b, 0)`.** Written additively, the abelianization of

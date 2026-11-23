@@ -265,6 +265,16 @@ instance instGroupBoolFactors (G : Type u) (H : Type v) [Group G] [Group H] :
       · exact (inferInstance : Group (ULift G)).inv_mul_cancel
       · exact (inferInstance : Group (ULift H)).inv_mul_cancel }
 
+/-- The identity element of `boolFactors M N false` is `MulEquiv.ulift.symm 1`. -/
+theorem boolFactors_one_false (M : Type u) (N : Type v) [Monoid M] [Monoid N] :
+    (1 : boolFactors M N false) = MulEquiv.ulift.symm 1 :=
+  rfl
+
+/-- The identity element of `boolFactors M N true` is `MulEquiv.ulift.symm 1`. -/
+theorem boolFactors_one_true (M : Type u) (N : Type v) [Monoid M] [Monoid N] :
+    (1 : boolFactors M N true) = MulEquiv.ulift.symm 1 :=
+  rfl
+
 /-- Cross-universe comparison between the indexed free product over `Bool` of `ULift`ed factors
 and the binary free product `M ∗ N`. -/
 def uliftBoolEquivCoprod (M : Type u) (N : Type v) [Monoid M] [Monoid N] :
@@ -277,14 +287,18 @@ def uliftBoolEquivCoprod (M : Type u) (N : Type v) [Monoid M] [Monoid N] :
 theorem uliftBoolEquivCoprod_of_false {M : Type u} {N : Type v} [Monoid M] [Monoid N]
     (x : ULift.{v} M) :
     uliftBoolEquivCoprod M N (of (i := false) x) = Coprod.inl x.down := by
-  simp [uliftBoolEquivCoprod]; rfl
+  simp [uliftBoolEquivCoprod]
+  -- Unfolds `MulEquiv.ulift` on `x` (`MulEquiv.ulift x = x.down` definitionally).
+  rfl
 
 /-- `uliftBoolEquivCoprod` maps the `true` factor inclusion to `Coprod.inr`. -/
 @[simp]
 theorem uliftBoolEquivCoprod_of_true {M : Type u} {N : Type v} [Monoid M] [Monoid N]
     (y : ULift.{u} N) :
     uliftBoolEquivCoprod M N (of (i := true) y) = Coprod.inr y.down := by
-  simp [uliftBoolEquivCoprod]; rfl
+  simp [uliftBoolEquivCoprod]
+  -- Unfolds `MulEquiv.ulift` on `y` (`MulEquiv.ulift y = y.down` definitionally).
+  rfl
 
 /-- The inverse of `uliftBoolEquivCoprod` maps `Coprod.inl x` to the `false` factor
 inclusion. -/
@@ -293,7 +307,10 @@ theorem uliftBoolEquivCoprod_symm_inl {M : Type u} {N : Type v} [Monoid M] [Mono
     (x : M) :
     (uliftBoolEquivCoprod M N).symm (Coprod.inl x) =
       of (i := false) (MulEquiv.ulift.symm x) := by
-  simp [uliftBoolEquivCoprod, MulEquiv.symm_trans_apply]; rfl
+  simp [uliftBoolEquivCoprod, MulEquiv.symm_trans_apply]
+  -- Unfolds `boolFactors M N false` to `ULift M` (and `instMonoidBoolFactors` to `ULift.monoid`)
+  -- and `MulEquiv.ulift.symm` to `Equiv.ulift.symm`.
+  rfl
 
 /-- The inverse of `uliftBoolEquivCoprod` maps `Coprod.inr y` to the `true` factor
 inclusion. -/
@@ -302,7 +319,10 @@ theorem uliftBoolEquivCoprod_symm_inr {M : Type u} {N : Type v} [Monoid M] [Mono
     (y : N) :
     (uliftBoolEquivCoprod M N).symm (Coprod.inr y) =
       of (i := true) (MulEquiv.ulift.symm y) := by
-  simp [uliftBoolEquivCoprod, MulEquiv.symm_trans_apply]; rfl
+  simp [uliftBoolEquivCoprod, MulEquiv.symm_trans_apply]
+  -- Unfolds `boolFactors M N true` to `ULift N` (and `instMonoidBoolFactors` to `ULift.monoid`)
+  -- and `MulEquiv.ulift.symm` to `Equiv.ulift.symm`.
+  rfl
 
 /-- The inverse of `uliftBoolEquivCoprod` maps the product of a word `L : List (M ⊕ N)` to the
 product of the lifted factor inclusions along `L`. -/
@@ -337,13 +357,17 @@ variable {M}
 @[simp]
 theorem finTwoEquivCoprod_symm_inl (x : M 0) :
     (finTwoEquivCoprod M).symm (Coprod.inl x) = of x := by
-  simp [finTwoEquivCoprod]; rfl
+  simp [finTwoEquivCoprod]
+  -- `finTwoEquiv.symm false = 0` definitionally.
+  rfl
 
 /-- The inverse of `finTwoEquivCoprod` maps `Coprod.inr` to the canonical inclusion of `M 1`. -/
 @[simp]
 theorem finTwoEquivCoprod_symm_inr (x : M 1) :
     (finTwoEquivCoprod M).symm (Coprod.inr x) = of x := by
-  simp [finTwoEquivCoprod]; rfl
+  simp [finTwoEquivCoprod]
+  -- `finTwoEquiv.symm true = 1` definitionally.
+  rfl
 
 /-- `finTwoEquivCoprod` maps the canonical inclusion of `M 0` to `Coprod.inl`. -/
 @[simp]

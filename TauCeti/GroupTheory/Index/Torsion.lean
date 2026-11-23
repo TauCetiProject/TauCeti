@@ -20,8 +20,8 @@ order of every torsion element of `G` divides `H.index`.
 
 ## Main results
 
-* `Subgroup.natCard_dvd_index_of_forall_conj_mem`: if `g⁻¹ * k * g ∈ H → k = 1` for all `g : G`
-  and `k ∈ K`, then `Nat.card K ∣ H.index`.
+* `Subgroup.natCard_dvd_index_of_forall_conj_mem_eq_one`: if `g⁻¹ * k * g ∈ H → k = 1` for all
+  `g : G` and `k ∈ K`, then `Nat.card K ∣ H.index`.
 * `Subgroup.orderOf_dvd_index_of_forall_isOfFinOrder_eq_one`: if `H` has no nontrivial torsion
   elements, then `orderOf x ∣ H.index` for every torsion element `x : G`.
 * `Submonoid.eq_one_of_isOfFinOrder_mem`: a torsion-free submonoid contains no nontrivial ambient
@@ -47,7 +47,7 @@ variable {G : Type*} [Group G]
 
 /-- If a subgroup `K ≤ G` meets every conjugate of `H ≤ G` trivially, then `K` acts freely on
 `G ⧸ H`, so `Nat.card K` divides `H.index`. No finiteness assumption on `H.index` is required. -/
-theorem natCard_dvd_index_of_forall_conj_mem (H K : Subgroup G)
+theorem natCard_dvd_index_of_forall_conj_mem_eq_one (H K : Subgroup G)
     (h : ∀ g : G, ∀ k ∈ K, g⁻¹ * k * g ∈ H → k = 1) :
     Nat.card K ∣ H.index := by
   have hcanc : IsCancelSMul K (G ⧸ H) :=
@@ -67,7 +67,7 @@ theorem orderOf_dvd_index_of_forall_isOfFinOrder_eq_one (H : Subgroup G)
     (hH : ∀ y ∈ H, IsOfFinOrder y → y = 1) {x : G} (hx : IsOfFinOrder x) :
     orderOf x ∣ H.index := by
   have hdvd : Nat.card (zpowers x) ∣ H.index :=
-    H.natCard_dvd_index_of_forall_conj_mem (zpowers x) fun g k hk hmem => by
+    H.natCard_dvd_index_of_forall_conj_mem_eq_one (zpowers x) fun g k hk hmem => by
       have hk_fin : IsOfFinOrder k := hx.of_mem_zpowers hk
       have hconj : IsConj k (g⁻¹ * k * g) := isConj_iff.mpr ⟨g⁻¹, by simp⟩
       have hconj_one : g⁻¹ * k * g = 1 := hH _ hmem (hconj.isOfFinOrder hk_fin)

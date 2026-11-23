@@ -67,14 +67,10 @@ private theorem toSigma_fst (s : M ⊕ N) : (toSigma s).1 = s.isRight := by
 
 private theorem toSigma_injective : Function.Injective (toSigma (M := M) (N := N)) := by
   rintro (m | n) (m' | n') h
-  · cases congrArg (fun p : Σ b, CoprodI.boolFactors M N b =>
-      match p with | ⟨false, x⟩ => x.down | ⟨true, _⟩ => m) h
-    rfl
+  · exact congrArg Sum.inl (MulEquiv.ulift.symm.injective (eq_of_heq (Sigma.mk.inj h).2))
   · exact absurd (congrArg Sigma.fst h) Bool.false_ne_true
   · exact absurd (congrArg Sigma.fst h) Bool.false_ne_true.symm
-  · cases congrArg (fun p : Σ b, CoprodI.boolFactors M N b =>
-      match p with | ⟨true, y⟩ => y.down | ⟨false, _⟩ => n) h
-    rfl
+  · exact congrArg Sum.inr (MulEquiv.ulift.symm.injective (eq_of_heq (Sigma.mk.inj h).2))
 
 /-- A reduced word of `M ∗ N` as a reduced word of `Monoid.CoprodI (boolFactors M N)`. -/
 private def toWord (L : List (M ⊕ N)) (hc : (L.map Sum.isRight).IsChain (· ≠ ·))
@@ -84,9 +80,9 @@ private def toWord (L : List (M ⊕ N)) (hc : (L.map Sum.isRight).IsChain (· �
   ne_one := by
     simp only [List.mem_map, forall_exists_index, and_imp]
     rintro _ (m | n) hs rfl h
-    · change MulEquiv.ulift.symm m = MulEquiv.ulift.symm 1 at h
+    · rw [CoprodI.boolFactors_one_false] at h
       exact h₁ (MulEquiv.ulift.symm.injective h ▸ hs)
-    · change MulEquiv.ulift.symm n = MulEquiv.ulift.symm 1 at h
+    · rw [CoprodI.boolFactors_one_true] at h
       exact h₂ (MulEquiv.ulift.symm.injective h ▸ hs)
   chain_ne := by
     rw [List.isChain_map]

@@ -57,8 +57,8 @@ the algebraic structure of finite-order elements and characters of `PSL(2, ℤ)`
   representatives.
 * `TauCeti.ModularGroup.orderOf_eq_two_iff`, `TauCeti.ModularGroup.orderOf_eq_three_iff`:
   conjugacy characterization of elements of order `2` and `3`.
-* `Subgroup.six_dvd_index_of_forall_isOfFinOrder_eq_one`,
-  `Subgroup.six_dvd_index_of_isMulTorsionFree`: `6 ∣ Γ.index` for torsion-free `Γ`.
+* `Subgroup.six_dvd_index_of_forall_isOfFinOrder_eq_one_psl2z`,
+  `Subgroup.six_dvd_index_of_isMulTorsionFree_psl2z`: `6 ∣ Γ.index` for torsion-free `Γ`.
 * `TauCeti.ModularGroup.psl2zAbelianizationAddEquiv`,
   `TauCeti.ModularGroup.psl2zAbelianizationMulEquiv`,
   `TauCeti.ModularGroup.index_commutator_psl2z`: abelianization `≃ ZMod 6` and commutator index `6`.
@@ -161,32 +161,22 @@ def psl2zEquivCoprodI :
 /-- `psl2zEquivCoprodI` maps `S` to the generator of the factor at `0 : Fin 2`. -/
 @[simp]
 theorem psl2zEquivCoprodI_coe_S :
-    psl2zEquivCoprodI (S : PSL(2, ℤ)) = Monoid.CoprodI.of (i := (0 : Fin 2)) (.ofAdd 1) := by
-  calc psl2zEquivCoprodI (S : PSL(2, ℤ))
-    _ = (Monoid.CoprodI.finTwoEquivCoprod
-          fun i : Fin 2 ↦ Multiplicative (ZMod (psl2zCoprodOrder i))).symm
-          (psl2zEquivCoprod (S : PSL(2, ℤ))) := rfl
-    _ = (Monoid.CoprodI.finTwoEquivCoprod
-          fun i : Fin 2 ↦ Multiplicative (ZMod (psl2zCoprodOrder i))).symm (.inl (.ofAdd 1)) :=
-        congrArg _ psl2zEquivCoprod_coe_S
-    _ = Monoid.CoprodI.of (i := (0 : Fin 2)) (.ofAdd 1) :=
-        Monoid.CoprodI.finTwoEquivCoprod_symm_inl
-          (M := fun i : Fin 2 ↦ Multiplicative (ZMod (psl2zCoprodOrder i))) (.ofAdd 1)
+    psl2zEquivCoprodI (S : PSL(2, ℤ)) = Monoid.CoprodI.of (i := (0 : Fin 2)) (.ofAdd 1) :=
+  (congrArg (Monoid.CoprodI.finTwoEquivCoprod
+      fun i : Fin 2 ↦ Multiplicative (ZMod (psl2zCoprodOrder i))).symm
+    psl2zEquivCoprod_coe_S).trans
+    (Monoid.CoprodI.finTwoEquivCoprod_symm_inl
+      (M := fun i : Fin 2 ↦ Multiplicative (ZMod (psl2zCoprodOrder i))) (.ofAdd 1))
 
 /-- `psl2zEquivCoprodI` maps `R` to the generator of the factor at `1 : Fin 2`. -/
 @[simp]
 theorem psl2zEquivCoprodI_coe_R :
-    psl2zEquivCoprodI (R : PSL(2, ℤ)) = Monoid.CoprodI.of (i := (1 : Fin 2)) (.ofAdd 1) := by
-  calc psl2zEquivCoprodI (R : PSL(2, ℤ))
-    _ = (Monoid.CoprodI.finTwoEquivCoprod
-          fun i : Fin 2 ↦ Multiplicative (ZMod (psl2zCoprodOrder i))).symm
-          (psl2zEquivCoprod (R : PSL(2, ℤ))) := rfl
-    _ = (Monoid.CoprodI.finTwoEquivCoprod
-          fun i : Fin 2 ↦ Multiplicative (ZMod (psl2zCoprodOrder i))).symm (.inr (.ofAdd 1)) :=
-        congrArg _ psl2zEquivCoprod_coe_R
-    _ = Monoid.CoprodI.of (i := (1 : Fin 2)) (.ofAdd 1) :=
-        Monoid.CoprodI.finTwoEquivCoprod_symm_inr
-          (M := fun i : Fin 2 ↦ Multiplicative (ZMod (psl2zCoprodOrder i))) (.ofAdd 1)
+    psl2zEquivCoprodI (R : PSL(2, ℤ)) = Monoid.CoprodI.of (i := (1 : Fin 2)) (.ofAdd 1) :=
+  (congrArg (Monoid.CoprodI.finTwoEquivCoprod
+      fun i : Fin 2 ↦ Multiplicative (ZMod (psl2zCoprodOrder i))).symm
+    psl2zEquivCoprod_coe_R).trans
+    (Monoid.CoprodI.finTwoEquivCoprod_symm_inr
+      (M := fun i : Fin 2 ↦ Multiplicative (ZMod (psl2zCoprodOrder i))) (.ofAdd 1))
 
 /-- The inverse of `psl2zEquivCoprodI` maps the generator at `0 : Fin 2` to `S`. -/
 @[simp]
@@ -273,27 +263,20 @@ theorem isOfFinOrder_iff {g : PSL(2, ℤ)} :
       rcases ha a with rfl | rfl
       · rw [ofAdd_zero, map_one, isConj_one_left] at hconj
         exact Or.inl (psl2zEquivCoprod.injective (hconj.trans (map_one _).symm))
-      · rw [← psl2zEquivCoprod_coe_S] at hconj
-        have hgS := psl2zEquivCoprod.symm.toMonoidHom.map_isConj hconj
-        simp only [MulEquiv.coe_toMonoidHom, MulEquiv.symm_apply_apply] at hgS
-        exact Or.inr (Or.inl hgS)
+      · rw [← psl2zEquivCoprod_coe_S, psl2zEquivCoprod.isConj_apply_iff] at hconj
+        exact Or.inr (Or.inl hconj)
     · obtain ⟨b, rfl⟩ := Multiplicative.ofAdd.surjective v
       have hb : ∀ x : ZMod 3, x = 0 ∨ x = 1 ∨ x = 2 := by decide
       rcases hb b with rfl | rfl | rfl
       · rw [ofAdd_zero, map_one, isConj_one_left] at hconj
         exact Or.inl (psl2zEquivCoprod.injective (hconj.trans (map_one _).symm))
-      · rw [← psl2zEquivCoprod_coe_R] at hconj
-        have hgR := psl2zEquivCoprod.symm.toMonoidHom.map_isConj hconj
-        simp only [MulEquiv.coe_toMonoidHom, MulEquiv.symm_apply_apply] at hgR
-        exact Or.inr (Or.inr (Or.inl hgR))
+      · rw [← psl2zEquivCoprod_coe_R, psl2zEquivCoprod.isConj_apply_iff] at hconj
+        exact Or.inr (Or.inr (Or.inl hconj))
       · have h2 : Monoid.Coprod.inr (M := Multiplicative (ZMod 2))
             (Multiplicative.ofAdd (2 : ZMod 3)) = psl2zEquivCoprod ((R : PSL(2, ℤ)) ^ 2) := by
-          rw [map_pow, psl2zEquivCoprod_coe_R, ← map_pow, ← ofAdd_nsmul]
-          rfl
-        rw [h2] at hconj
-        have hgR2 := psl2zEquivCoprod.symm.toMonoidHom.map_isConj hconj
-        simp only [MulEquiv.coe_toMonoidHom, MulEquiv.symm_apply_apply] at hgR2
-        exact Or.inr (Or.inr (Or.inr hgR2))
+          rw [map_pow, psl2zEquivCoprod_coe_R, ← map_pow, ← ofAdd_nsmul, nsmul_one, Nat.cast_ofNat]
+        rw [h2, psl2zEquivCoprod.isConj_apply_iff] at hconj
+        exact Or.inr (Or.inr (Or.inr hconj))
   · rintro (rfl | h | h | h)
     · exact IsOfFinOrder.one
     · exact h.symm.isOfFinOrder isOfFinOrder_coe_S
@@ -367,7 +350,7 @@ theorem orderOf_eq_three_iff_coe_U {g : PSL(2, ℤ)} :
 
 /-- If `Γ ≤ PSL(2, ℤ)` contains no nontrivial element of finite order, then `6 ∣ Γ.index`
 (including when `Γ` has infinite index, where `Γ.index = 0`). -/
-theorem _root_.Subgroup.six_dvd_index_of_forall_isOfFinOrder_eq_one (Γ : Subgroup PSL(2, ℤ))
+theorem _root_.Subgroup.six_dvd_index_of_forall_isOfFinOrder_eq_one_psl2z (Γ : Subgroup PSL(2, ℤ))
     (hΓ : ∀ g ∈ Γ, IsOfFinOrder g → g = 1) :
     6 ∣ Γ.index := by
   have h2 : 2 ∣ Γ.index := by
@@ -379,10 +362,10 @@ theorem _root_.Subgroup.six_dvd_index_of_forall_isOfFinOrder_eq_one (Γ : Subgro
   exact (by decide : Nat.Coprime 2 3).mul_dvd_of_dvd_of_dvd h2 h3
 
 /-- If `Γ ≤ PSL(2, ℤ)` is torsion-free, then `6 ∣ Γ.index`. -/
-theorem _root_.Subgroup.six_dvd_index_of_isMulTorsionFree (Γ : Subgroup PSL(2, ℤ))
+theorem _root_.Subgroup.six_dvd_index_of_isMulTorsionFree_psl2z (Γ : Subgroup PSL(2, ℤ))
     [IsMulTorsionFree Γ] :
     6 ∣ Γ.index :=
-  Γ.six_dvd_index_of_forall_isOfFinOrder_eq_one
+  Γ.six_dvd_index_of_forall_isOfFinOrder_eq_one_psl2z
     fun _ hg hg_fin ↦ Γ.toSubmonoid.eq_one_of_isOfFinOrder_mem hg hg_fin
 
 /-! ### Abelianization of `PSL(2, ℤ)` -/
