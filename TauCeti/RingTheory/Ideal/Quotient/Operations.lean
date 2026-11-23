@@ -52,6 +52,10 @@ endomorphism of the quotient by `Ideal.span s` (`Ideal.exists_quotient_linearMap
 Multiplication by `b` gives the exact sequence `B/(J : b) → B/J → B/(J + (b))` for any ideal
 `J`, without regularity of `b`. The first map `TauCeti.ColonQuotient.mulColon` is injective.
 
+An isomorphism between quotients `R ⧸ I ≃+* S ⧸ J` preserves and reflects ideal primality
+(`Ideal.isPrime_iff_of_quotient_ringEquiv`) and, for nonzero principal generators, element
+primality (`prime_iff_of_quotient_span_singleton_ringEquiv`).
+
 -/
 
 public section
@@ -179,6 +183,21 @@ theorem exact_mulLeft_mkₐ_span_singleton {B : Type*} [CommRing B] [Algebra R B
     simp only [AlgHom.toLinearMap_apply, Quotient.mkₐ_eq_mk, Quotient.eq_zero_iff_mem,
       mem_span_singleton', Set.mem_range, LinearMap.mulLeft_apply]
     exact exists_congr fun _ ↦ by rw [mul_comm]
+
+/-- An ideal `I` of `R` is prime if and only if an ideal `J` of `S` with an isomorphic quotient
+`R ⧸ I ≃+* S ⧸ J` is prime. -/
+theorem isPrime_iff_of_quotient_ringEquiv {S : Type*} [CommRing S] {I : Ideal R} {J : Ideal S}
+    (e : R ⧸ I ≃+* S ⧸ J) : I.IsPrime ↔ J.IsPrime := by
+  rw [← Quotient.isDomain_iff_prime, ← Quotient.isDomain_iff_prime]
+  exact e.toMulEquiv.isDomain_iff
+
+/-- Nonzero elements `a : R` and `b : S` generating principal ideals with isomorphic quotients
+`R ⧸ (a) ≃+* S ⧸ (b)` are simultaneously prime. -/
+theorem _root_.prime_iff_of_quotient_span_singleton_ringEquiv {S : Type*} [CommRing S]
+    {a : R} {b : S} (ha : a ≠ 0) (hb : b ≠ 0) (e : R ⧸ span {a} ≃+* S ⧸ span {b}) :
+    Prime a ↔ Prime b := by
+  rw [← span_singleton_prime ha, ← span_singleton_prime hb]
+  exact isPrime_iff_of_quotient_ringEquiv e
 
 end Ideal
 

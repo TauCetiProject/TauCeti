@@ -17,6 +17,7 @@ import Mathlib.RingTheory.AdjoinRoot
 import TauCeti.Analysis.Analytic.IteratedDeriv
 import TauCeti.Analysis.Analytic.Uniqueness
 import TauCeti.Analysis.Complex.Weierstrass
+import TauCeti.RingTheory.Ideal.Quotient.Operations
 import TauCeti.RingTheory.Polynomial.Distinguished
 
 /-!
@@ -805,9 +806,8 @@ theorem isPrime_span_evalVertical_iff_of_isDistinguishedAt {x₀ : E} {w₀ : �
     {P : ((holomorphicStructureSheaf 𝓘(ℂ, E) E).presheaf.stalk x₀)[X]}
     (hP : P.IsDistinguishedAt
       (IsLocalRing.maximalIdeal ((holomorphicStructureSheaf 𝓘(ℂ, E) E).presheaf.stalk x₀))) :
-    (Ideal.span {evalVertical x₀ w₀ P}).IsPrime ↔ (Ideal.span {P}).IsPrime := by
-  rw [← Ideal.Quotient.isDomain_iff_prime, ← Ideal.Quotient.isDomain_iff_prime]
-  exact (MulEquiv.isDomain_iff (quotientEquivOfIsDistinguishedAt x₀ w₀ hP).toMulEquiv).symm
+    (Ideal.span {evalVertical x₀ w₀ P}).IsPrime ↔ (Ideal.span {P}).IsPrime :=
+  (Ideal.isPrime_iff_of_quotient_ringEquiv (quotientEquivOfIsDistinguishedAt x₀ w₀ hP)).symm
 
 /-- A distinguished polynomial over `𝒪_{E, x₀}` has prime vertical evaluation at `(x₀, w₀)` if and
 only if it is prime in `(𝒪_{E, x₀})[X]`. -/
@@ -819,8 +819,8 @@ theorem prime_evalVertical_iff_of_isDistinguishedAt {x₀ : E} {w₀ : ℂ}
   have hP0 : P ≠ 0 := hP.monic.ne_zero
   have hev0 : evalVertical x₀ w₀ P ≠ 0 :=
     (map_ne_zero_iff _ (evalVertical_injective x₀ w₀)).mpr hP0
-  rw [← Ideal.span_singleton_prime hP0, ← Ideal.span_singleton_prime hev0,
-    isPrime_span_evalVertical_iff_of_isDistinguishedAt hP]
+  exact (prime_iff_of_quotient_span_singleton_ringEquiv hP0 hev0
+    (quotientEquivOfIsDistinguishedAt x₀ w₀ hP)).symm
 
 /-- For a Weierstrass factorization `f = evalVertical x₀ w₀ P * u`, evaluating polynomials
 vertically induces a canonical ring isomorphism
