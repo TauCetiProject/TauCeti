@@ -428,15 +428,16 @@ omit [IsManifold I 1 M] in
 `Ψ` be a partial diffeomorphism of an open subset `W` of `M`, whose source and target contain the
 points of a set `K ⊆ W` and which fixes them. Then there is a partial diffeomorphism `Φ` of `M`
 whose source and target contain `K`, which fixes every point of `K`, and which at each point of its
-source pulls a given form back as `Ψ` pulls back the restriction of the form to `W`. For nonempty
+source pulls every form back as `Ψ` pulls back the restriction of the form to `W`. For nonempty
 `W` it is `Ψ.liftOpens`. -/
 theorem exists_partialDiffeomorph_mpullback_apply_eq_of_opens {n : WithTop ℕ∞} (hn : n ≠ 0)
     {W : Opens M} {K : Set M} (hKW : K ⊆ W) (Ψ : PartialDiffeomorph I I W W n)
     (hsrc : Subtype.val ⁻¹' K ⊆ Ψ.source) (htgt : Subtype.val ⁻¹' K ⊆ Ψ.target)
-    (hfix : ∀ y ∈ Subtype.val ⁻¹' K, Ψ y = y) (ω : RoughForm I M F k) :
+    (hfix : ∀ y ∈ Subtype.val ⁻¹' K, Ψ y = y) :
     ∃ Φ : PartialDiffeomorph I I M M n, K ⊆ Φ.source ∧ K ⊆ Φ.target ∧ (∀ x ∈ K, Φ x = x) ∧
       ∀ x ∈ Φ.source, ∃ y ∈ Ψ.source, (y : M) = x ∧
-        mpullback I I Φ ω x = mpullback I I Ψ (mpullback I I (Subtype.val : W → M) ω) y := by
+        ∀ {G : Type*} [NormedAddCommGroup G] [NormedSpace ℝ G] {l : ℕ} (ω : RoughForm I M G l),
+          mpullback I I Φ ω x = mpullback I I Ψ (mpullback I I (Subtype.val : W → M) ω) y := by
   rcases isEmpty_or_nonempty W with hW | hW
   · -- For empty `W`, the set `K` is empty and the partial diffeomorphism with empty source will do.
     obtain rfl : K = ∅ := eq_empty_of_forall_notMem fun x hx ↦ hW.false ⟨x, hKW hx⟩
@@ -451,7 +452,7 @@ theorem exists_partialDiffeomorph_mpullback_apply_eq_of_opens {n : WithTop ℕ�
       (congrArg Subtype.val (hfix ⟨x, hKW hx⟩ hx))
   · rw [PartialDiffeomorph.liftOpens_source] at hx
     obtain ⟨y, hy, rfl⟩ := hx
-    exact ⟨y, hy, rfl, mpullback_liftOpens_apply_coe Ψ hn hW hW ω hy⟩
+    exact ⟨y, hy, rfl, fun ω ↦ mpullback_liftOpens_apply_coe Ψ hn hW hW ω hy⟩
 
 omit [IsManifold I 1 M] in
 /-- **Pullback along a partial diffeomorphism, as a diffeomorphism of open subsets.** Pulling the

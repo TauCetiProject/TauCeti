@@ -190,11 +190,11 @@ theorem exists_partialDiffeomorph_mpullback_eq_smul_of_apply_eq {K : Set M}
         ((hval y hy).trans (coe_mpullback_subtype_val_apply α₀ y).symm)
   -- Read `φ` in `M`.
   obtain ⟨Φ, hsrcΦ, htgtΦ, hfixΦ, hΦ⟩ :=
-    exists_partialDiffeomorph_mpullback_apply_eq_of_opens (by simp) hKN φ hsrc htgt hfix α₁.val
+    exists_partialDiffeomorph_mpullback_apply_eq_of_opens (by simp) hKN φ hsrc htgt hfix
   refine ⟨Φ, hsrcΦ, htgtΦ, hfixΦ, fun x hx ↦ ?_⟩
   obtain ⟨y, hy, rfl, hΦy⟩ := hΦ x hx
   obtain ⟨g, hg, hφy⟩ := hφ y hy
-  refine ⟨g, hg, hΦy.trans ?_⟩
+  refine ⟨g, hg, (hΦy α₁.val).trans ?_⟩
   rw [coe_mpullback, coe_mpullback] at hφy
   exact hφy.trans (congrArg (g • ·) (mpullback_subtype_val_apply α₀.val y))
 

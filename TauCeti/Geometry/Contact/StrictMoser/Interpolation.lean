@@ -297,10 +297,10 @@ theorem exists_partialDiffeomorph_mpullback_eq_of_apply_eq [SigmaCompactSpace M]
         ((hval y hy).trans (coe_mpullback_subtype_val_apply α₀ y).symm)
   -- Read `φ` in `M`.
   obtain ⟨Φ, hsrcΦ, htgtΦ, hfixΦ, hΦ⟩ := exists_partialDiffeomorph_mpullback_apply_eq_of_opens
-    (by simp) (W := W) (fun x hx ↦ ⟨hKN hx, hKV hx⟩) φ hsrc htgt hfix α₁.val
+    (by simp) (W := W) (fun x hx ↦ ⟨hKN hx, hKV hx⟩) φ hsrc htgt hfix
   refine ⟨Φ, hsrcΦ, htgtΦ, hfixΦ, fun x hx ↦ ?_⟩
   obtain ⟨y, hy, rfl, hΦy⟩ := hΦ x hx
-  rw [hΦy, ← coe_mpullback]
+  rw [hΦy α₁.val, ← coe_mpullback]
   exact (hφ y hy).trans (coe_mpullback_subtype_val_apply α₀ y)
 
 end TauCeti.SmoothForm
