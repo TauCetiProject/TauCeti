@@ -142,7 +142,7 @@ vector. -/
 private theorem e8GlueShift_mem_checkerboardLattice (i : Fin 8) :
     (fun j ↦ ((e8GlueShift i j : ℤ) : ℚ)) ∈ (checkerboardLattice 8).carrier := by
   rw [checkerboardLattice_carrier]
-  exact mem_checkerboardCarrier_of (e8GlueShift i) (fun _ ↦ rfl)
+  exact mem_checkerboardCarrier_of_even_sum (e8GlueShift i) (fun _ ↦ rfl)
     (DynkinType.e8DoubledSimpleRoot_shift_half_sum_even i)
 
 /-- The first glue root differs from the spinor vector by a checkerboard vector. -/
@@ -172,7 +172,7 @@ private theorem e8GlueRoot_of_ne_zero (i : Fin 8) (hi : i ≠ 0) :
 /-- **Every glue root lies in `D₈⁺`**: the first differs from the spinor vector by a checkerboard
 vector, and the other seven are checkerboard vectors. -/
 theorem e8GlueRoot_mem_d8PlusCarrier (i : Fin 8) :
-    e8GlueRoot i ∈ (checkerboardPlusCarrier 8).1 := by
+    e8GlueRoot i ∈ (checkerboardPlusCarrier 8).val := by
   rw [mem_checkerboardPlusCarrier_iff 8 (by decide)]
   rcases eq_or_ne i 0 with rfl | hi
   · exact Or.inr (e8GlueRoot_zero_sub_spinor ▸ e8GlueShift_mem_checkerboardLattice 0)
@@ -249,7 +249,7 @@ private theorem map_carrier_e8GlueEquiv :
   rw [typeE₈RootLattice_carrier, Submodule.map_span, ← Set.range_comp, hrange]
 
 private theorem span_range_e8GlueRoot_le :
-    Submodule.span ℤ (Set.range e8GlueRoot) ≤ (checkerboardPlusCarrier 8).1 := by
+    Submodule.span ℤ (Set.range e8GlueRoot) ≤ (checkerboardPlusCarrier 8).val := by
   rw [Submodule.span_le]
   rintro _ ⟨i, rfl⟩
   exact e8GlueRoot_mem_d8PlusCarrier i
@@ -261,7 +261,7 @@ pairs integrally with the whole `E₈` carrier, because `D₈⁺` is an integral
 image of that carrier; so the preimage lies in the dual of the `E₈` root lattice, which by
 unimodularity is the `E₈` root lattice itself. -/
 theorem span_range_e8GlueRoot :
-    Submodule.span ℤ (Set.range e8GlueRoot) = (checkerboardPlusCarrier 8).1 := by
+    Submodule.span ℤ (Set.range e8GlueRoot) = (checkerboardPlusCarrier 8).val := by
   refine le_antisymm span_range_e8GlueRoot_le fun x hx ↦ ?_
   have hxmem : x ∈ (checkerboardPlusLattice 8 (by decide)).carrier := by
     rw [checkerboardPlusLattice_carrier]

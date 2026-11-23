@@ -102,13 +102,13 @@ theorem range_unipotentToParabolic_eq_ker_limitToLevi :
   · rintro ⟨u, rfl⟩
     rw [MonoidHom.mem_ker]
     apply Subtype.ext
-    obtain ⟨_, hu⟩ := mem_unipotent_iff.mp u.2
+    obtain ⟨_, hu⟩ := mem_unipotent_iff.mp u.property
     exact hu
   · intro hg
     rw [MonoidHom.mem_ker] at hg
     have hlimit : limit A l g = 1 := congrArg Subtype.val hg
     have hu : (g : WithConv (H →ₐ[R] A)) ∈ unipotent A l :=
-      mem_unipotent_iff.mpr ⟨g.2, hlimit⟩
+      mem_unipotent_iff.mpr ⟨g.property, hlimit⟩
     exact ⟨⟨g, hu⟩, Subtype.ext rfl⟩
 
 /-- The Levi-valued limit is surjective; the Levi inclusion supplies a preimage of every
@@ -117,7 +117,7 @@ theorem limitToLevi_surjective : Function.Surjective (limitToLevi A l) := by
   intro z
   refine ⟨leviToParabolic A l z, ?_⟩
   apply Subtype.ext
-  exact limit_of_mem_levi z.2
+  exact limit_of_mem_levi z.property
 
 /-- The dynamic parabolic is an extension of its Levi subgroup by its dynamic unipotent
 subgroup. -/
@@ -150,9 +150,9 @@ noncomputable def leviGroupExtensionSplitting :
     -- Normalize the monoid-hom coercion before comparing the two subtype witnesses.
     change limit A l (leviToParabolic A l z) = z
     have hinc : leviToParabolic A l z =
-        (⟨z, levi_le_parabolic z.2⟩ : parabolic A l) := Subtype.ext rfl
+        (⟨z, levi_le_parabolic z.property⟩ : parabolic A l) := Subtype.ext rfl
     rw [hinc]
-    exact limit_of_mem_levi z.2
+    exact limit_of_mem_levi z.property
 
 /-- The canonical splitting of the dynamic Levi extension is the Levi subgroup inclusion. -/
 @[simp]

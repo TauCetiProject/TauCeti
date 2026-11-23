@@ -409,8 +409,8 @@ theorem nonempty_tameFrameModule_torsion_linearEquiv_of_relationMap_injective
         (mem_of_smul_toQuotient_eq_zero hp hinj hJ hc hy₀ hgen' hz))
   refine ⟨(LinearEquiv.ofBijective (φ.codRestrict _ hφT)
     ⟨fun z z' h ↦ hinjφ (congrArg Subtype.val h), fun s ↦ ?_⟩).symm⟩
-  obtain ⟨y, hy⟩ := (tameFrameRelations R G σ τ a b).surjective_toQuotient s.1
-  obtain ⟨d, hd⟩ := exists_smul_toQuotient_eq hp hJ hc hy₀ hgen' (hy ▸ s.2)
+  obtain ⟨y, hy⟩ := (tameFrameRelations R G σ τ a b).surjective_toQuotient s.val
+  obtain ⟨d, hd⟩ := exists_smul_toQuotient_eq hp hJ hc hy₀ hgen' (hy ▸ s.property)
   exact ⟨Submodule.Quotient.mk (single 1 d), Subtype.ext (hd.trans hy)⟩
 
 end Torsion
@@ -450,8 +450,7 @@ theorem nonempty_tameFrameModule_torsion_linearEquiv [Finite G] {σ τ : G}
   obtain ⟨k, hk⟩ := PadicInt.ideal_eq_span_pow_p hne
   exact nonempty_tameFrameModule_torsion_linearEquiv_of_relationMap_injective hgen
     (IsSMulRegular.nat_of_hasUniqueDiv (M := ℤ_[p]) (Fact.out : p.Prime).ne_zero)
-    (tameFrameRelationMap_injective_of_card_ne_zero (isOfFinOrder_of_finite σ)
-      (isOfFinOrder_of_finite τ) hcard) hk
+    (tameFrameRelationMap_injective_of_card_ne_zero (.all σ) (.all τ) hcard) hk
 
 /-- **The torsion of the tame-frame module for supplied sharp exponents.** Let `σ, τ` generate
 the finite automorphism group of `L/K`. If `a, b` describe their action on the `p`-power roots of

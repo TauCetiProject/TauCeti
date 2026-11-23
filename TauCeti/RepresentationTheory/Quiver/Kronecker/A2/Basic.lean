@@ -202,9 +202,8 @@ theorem extEulerMatrix_A2_eq (k : Type v) [Field k] :
     (congrFun (submatrix_toMatrix_eulerForm_eq_eulerMatrixA2 (A := A)) i) j
   simp only [Matrix.submatrix_apply, LinearMap.BilinForm.toMatrix_apply,
     Pi.basisFun_apply, eulerForm_single_single] at h
-  by_cases hij : (![src, tgt] i : Kronecker A) = ![src, tgt] j
-  · simpa only [hij, ↓reduceIte, Nat.card_eq_fintype_card] using h
-  · simpa only [hij, ↓reduceIte, Nat.card_eq_fintype_card] using h
+  by_cases hij : (![src, tgt] i : Kronecker A) = ![src, tgt] j <;>
+    simpa only [hij, ↓reduceIte, Nat.card_eq_fintype_card] using h
 
 end Quiver.Kronecker
 
