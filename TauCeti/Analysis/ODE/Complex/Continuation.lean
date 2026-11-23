@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Analysis.ODE.Complex.SolutionGerm
 public import TauCeti.Analysis.Complex.Conformal.Continuation.Basic
-import TauCeti.Analysis.ODE.Complex.OrdinaryPoint
 
 /-!
 # Continuation of solutions of complex linear differential equations
@@ -18,9 +17,14 @@ of the path.
 
 `LinearEquation.IsSolutionNear.exists_isAnalyticContinuationAlong` constructs the continuation.
 `LinearEquation.IsSolutionNear.continuesInside` supplies the hypothesis of the monodromy theorem.
+`IsAnalyticContinuationAlong.isSolutionNear` preserves the equation for a caller's continuation.
 
-The proof subdivides the compact parameter interval into pieces whose images lie in discs
-inside the domain. The initial-value theorem on a disc extends the germ across each piece.
+The subdivision `exists_monotone_Icc_subset_open_cover_unitInterval` splits the compact parameter
+interval into pieces whose images lie in discs inside the domain. The disc initial-value theorem
+`LinearEquation.initialJetEquivOfEqEBall` and germ uniqueness
+`LinearEquation.initialJetGerm_injective` supply
+`LinearEquation.IsSolutionNear.exists_disc_extension` to extend the germ across each piece.
+`IsAnalyticContinuationAlong.union` glues the pieces.
 
 ## References
 
@@ -35,28 +39,6 @@ open scoped unitInterval
 namespace TauCeti.LinearEquation
 
 variable {U : Opens ℂ} {n : ℕ} {E : LinearEquation U n}
-
-private theorem IsSolutionNear.exists_disc_extension {a c : ℂ} {f : ℂ → ℂ} {r : ℝ}
-    (hf : E.IsSolutionNear a f)
-    (hball : (⟨Metric.ball c r, Metric.isOpen_ball⟩ : Opens ℂ) ≤ U)
-    (ha : a ∈ Metric.ball c r) :
-    ∃ g : ℂ → ℂ, (∀ z ∈ Metric.ball c r, E.IsSolutionNear z g) ∧ g =ᶠ[𝓝 a] f := by
-  let E' := E.restrict hball
-  let s := (E'.initialJetEquivOfEqEBall (c := c) (r := ENNReal.ofReal r)
-    (Metric.eball_ofReal.symm) ha).symm (fun j ↦ iteratedDeriv j f a)
-  let g := HolomorphicFunctions.extend s.val
-  have hg : ∀ z ∈ Metric.ball c r, E.IsSolutionNear z g := fun z hz ↦
-    (isSolutionNear_restrict_iff hball hz).mp
-      (((E'.mem_solutionSpace _).mp s.property).isSolutionNear hz)
-  refine ⟨g, hg, Germ.coe_eq.mp ?_⟩
-  have heq : (⟨g, (coe_mem_solutionGerms (hball ha)).mpr (hg a ha)⟩ :
-      E.solutionGerms (hball ha)) = ⟨f, (coe_mem_solutionGerms (hball ha)).mpr hf⟩ := by
-    apply E.initialJetGerm_injective (hball ha)
-    ext j
-    simp only [initialJetGerm_mk]
-    exact E'.iteratedDeriv_extend_initialJetEquivOfEqEBall_symm
-      (Metric.eball_ofReal.symm) ha _ j
-  exact congrArg Subtype.val heq
 
 private theorem continuation_step {γ : I → ℂ} (hγ : Continuous γ) {a b : I} (hab : a ≤ b)
     {F : I → ℂ → ℂ} (hF : IsAnalyticContinuationAlong F γ (Iic a))
@@ -104,7 +86,7 @@ theorem IsSolutionNear.exists_isAnalyticContinuationAlong {γ : I → ℂ} {f : 
       rw [ht0]
       have hlocal : ∀ u ≤ (0 : I), E.IsSolutionNear (γ u) f := by
         intro u hu
-        obtain rfl : u = 0 := le_antisymm hu bot_le
+        obtain rfl : u = 0 := le_antisymm hu unitInterval.nonneg'
         exact hf
       exact ⟨fun _ ↦ f, IsAnalyticContinuationAlong.const hγ.continuousOn
         (fun u hu ↦ (hlocal u hu).analyticAt), hlocal, .rfl⟩
@@ -112,15 +94,17 @@ theorem IsSolutionNear.exists_isAnalyticContinuationAlong {γ : I → ℂ} {f : 
       obtain ⟨F, hF, hsol, hF0⟩ := ih
       obtain ⟨i, hi⟩ := htsub k
       have hak := hi ⟨le_rfl, htmono k.le_succ⟩
-      obtain ⟨g, hg, hga⟩ := (hsol (t k) le_rfl).exists_disc_extension (hball i) hak
+      have hdisc : (⟨Metric.ball (γ i) (r i), Metric.isOpen_ball⟩ : Opens ℂ) ≤ U :=
+        SetLike.coe_subset_coe.mpr (hball i)
+      obtain ⟨g, hg, hga⟩ := (hsol (t k) le_rfl).exists_disc_extension hdisc hak
       obtain ⟨G, hG, hGsol, hG0⟩ := continuation_step hγ (htmono k.le_succ) hF hsol
         (fun u hu ↦ hg (γ u) (hi hu)) hga
       exact ⟨G, hG, hGsol, hG0 ▸ hF0⟩
   obtain ⟨F, hF, hsol, hF0⟩ := hind m
   rw [hm m le_rfl] at hF hsol
-  have hIic : Iic (1 : I) = univ := eq_univ_of_forall fun u ↦ u.property.2
+  have hIic : Iic (1 : I) = univ := eq_univ_of_forall fun _ ↦ unitInterval.le_one'
   rw [hIic] at hF
-  exact ⟨F, hF, hF0, fun u ↦ hsol u le_top⟩
+  exact ⟨F, hF, hF0, fun u ↦ hsol u unitInterval.le_one'⟩
 
 /-- A germ solving an analytic linear equation continues inside its coefficient domain. -/
 theorem IsSolutionNear.continuesInside {a : ℂ} {f : ℂ → ℂ} (hf : E.IsSolutionNear a f) :
@@ -131,3 +115,18 @@ theorem IsSolutionNear.continuesInside {a : ℂ} {f : ℂ → ℂ} (hf : E.IsSol
   exact continuesAlong_iff_exists.mpr ⟨F, hF, hF0⟩
 
 end TauCeti.LinearEquation
+
+namespace TauCeti.IsAnalyticContinuationAlong
+
+/-- A continuation inside the coefficient domain of an analytic linear equation remains a local
+solution at every parameter time if its starting germ solves the equation. -/
+theorem isSolutionNear {U : Opens ℂ} {n : ℕ}
+    {E : LinearEquation U n} {F : I → ℂ → ℂ} {γ : I → ℂ}
+    (hF : IsAnalyticContinuationAlong F γ univ) (hγU : ∀ t, γ t ∈ U)
+    (hsol : E.IsSolutionNear (γ 0) (F 0)) (t : I) : E.IsSolutionNear (γ t) (F t) := by
+  obtain ⟨G, hG, hG0, hGsol⟩ := hsol.exists_isAnalyticContinuationAlong
+    (continuousOn_univ.mp hF.continuousOn) hγU
+  exact (hGsol t).congr (hG.eventuallyEq hF isPreconnected_univ (mem_univ 0)
+    (mem_univ t) hG0)
+
+end TauCeti.IsAnalyticContinuationAlong

@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.ODE.Complex.LinearEquation
 public import TauCeti.Analysis.Calculus.IteratedDeriv.Germ
+import TauCeti.Analysis.ODE.Complex.OrdinaryPoint
 
 /-!
 # Solution germs of analytic linear equations and the local initial-value theorem
@@ -25,6 +26,8 @@ standard coordinate vectors form the normalized fundamental basis
 germs by `LinearEquation.toSolutionGerms`; on a disc centred at `a` this is the linear equivalence
 `LinearEquation.solutionSpaceEquivSolutionGermsBall`, compatible with the disc initial-value
 theorem `LinearEquation.initialJetEquivBall`.
+`LinearEquation.IsSolutionNear.exists_disc_extension` extends a local solution at any point of a
+disc contained in the coefficient domain to a solution throughout that disc.
 
 Solution germs are what analytic continuation of solutions transports along paths, and what
 global solutions on simply connected domains are assembled from.
@@ -321,6 +324,31 @@ theorem solutionSpaceEquivSolutionGermsBall_apply {z₀ : ℂ} {r : ℝ} (hr : 0
     E.solutionSpaceEquivSolutionGermsBall hr f = E.toSolutionGerms (Metric.mem_ball_self hr) f := by
   rw [solutionSpaceEquivSolutionGermsBall, LinearEquiv.trans_apply, LinearEquiv.symm_apply_eq,
     initialJetGermEquiv_apply, initialJetGerm_toSolutionGerms, initialJetEquivBall_apply]
+
+/-- A local solution at any point of a disc inside the coefficient domain extends to a solution
+throughout the disc, with the same germ at that point. -/
+theorem IsSolutionNear.exists_disc_extension {a c : ℂ} {f : ℂ → ℂ} {r : ℝ}
+    (hf : E.IsSolutionNear a f)
+    (hball : (⟨Metric.ball c r, Metric.isOpen_ball⟩ : Opens ℂ) ≤ U)
+    (ha : a ∈ Metric.ball c r) :
+    ∃ g : ℂ → ℂ, (∀ z ∈ Metric.ball c r, E.IsSolutionNear z g) ∧ g =ᶠ[𝓝 a] f := by
+  let V : Opens ℂ := ⟨Metric.ball c r, Metric.isOpen_ball⟩
+  have hV : (V : Set ℂ) = Metric.eball c (ENNReal.ofReal r) :=
+    Opens.coe_mk.trans Metric.eball_ofReal.symm
+  have haV : a ∈ V := Opens.mem_mk.mpr ha
+  let E' := E.restrict hball
+  let s := (E'.initialJetEquivOfEqEBall hV haV).symm (fun j ↦ iteratedDeriv j f a)
+  have hf' : E'.IsSolutionNear a f := (isSolutionNear_restrict_iff hball haV).mpr hf
+  have hjet : E'.initialJetGerm haV (E'.toSolutionGerms haV s) =
+      E'.initialJetGerm haV ⟨f, (coe_mem_solutionGerms haV).mpr hf'⟩ := by
+    rw [initialJetGerm_toSolutionGerms, initialJet_initialJetEquivOfEqEBall_symm]
+    exact funext fun j ↦ (initialJetGerm_mk haV _ j).symm
+  have hgerm := congrArg Subtype.val (E'.initialJetGerm_injective haV hjet)
+  rw [coe_toSolutionGerms] at hgerm
+  refine ⟨HolomorphicFunctions.extend s.val, fun z hz ↦ ?_, Germ.coe_eq.mp hgerm⟩
+  have hzV : z ∈ V := Opens.mem_mk.mpr hz
+  exact (isSolutionNear_restrict_iff hball hzV).mp
+    (((E'.mem_solutionSpace _).mp s.property).isSolutionNear hzV)
 
 /-! The following checks fix the unscaled-jet convention of the inverse equivalence. -/
 
