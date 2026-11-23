@@ -41,14 +41,13 @@ concentrated near `1`. Neither σ-finiteness of `μ` nor any countability of `G`
 ## Main results
 
 * `MeasureTheory.Lp.norm_convolutionL_sub_le_of_integral_eq_one`,
-  `MeasureTheory.Lp.norm_convolutionL_sub_le`: quantitative left
-  approximate-identity estimates when `∫ k = 1` and `k` vanishes outside `S`.
+  `MeasureTheory.Lp.exists_mem_nhds_one_forall_norm_convolutionL_sub_le_left`: quantitative left
+  approximate-identity estimates on `Lᵖ` (`1 ≤ p < ∞`) over any `RCLike` scalar field.
 * `MeasureTheory.Lp.tendsto_convolutionL_left_of_norm_le`,
   `MeasureTheory.Lp.tendsto_convolutionL_left`: `k i ⋆ u → u` in `Lᵖ` for kernels
   concentrating at the identity (`1 ≤ p < ∞`), over any `RCLike` scalar field and for nonnegative
   real kernels.
 * `MeasureTheory.Lp.norm_convolutionL_sub_le_of_rightTranslation_of_integral_eq_one`,
-  `MeasureTheory.Lp.norm_convolutionL_sub_le_of_rightTranslation`,
   `MeasureTheory.Lp.exists_mem_nhds_one_forall_norm_convolutionL_sub_le`: quantitative right
   approximate-identity estimates on `L¹`.
 * `MeasureTheory.Lp.tendsto_convolutionL_right_of_norm_le`,
@@ -77,7 +76,7 @@ variable {G E : Type*} [Group G] [TopologicalSpace G] [IsTopologicalGroup G] [Me
 section LeftInvariant
 
 variable [μ.IsMulLeftInvariant] [IsLocallyFiniteMeasure μ] [μ.InnerRegularCompactLTTop]
-  [CompleteSpace E] {p : ℝ≥0∞} [Fact (1 ≤ p)] {hp : p ≠ ∞}
+  [CompleteSpace E] {p : ℝ≥0∞} [Fact (1 ≤ p)]
 
 section RCLike
 
@@ -86,20 +85,40 @@ variable {𝕜 : Type*} [RCLike 𝕜] [NormedSpace 𝕜 E] [SMulCommClass ℝ �
 /-- Over an `RCLike` scalar field, if `k ∈ L¹(G, μ; 𝕜)` has integral one and vanishes outside
 `S`, and every left translate `L_y u` with `y ∈ S` lies within `ε` of `u`, then
 `‖k ⋆ u - u‖_p ≤ ε * ‖k‖₁`. -/
-theorem norm_convolutionL_sub_le_of_integral_eq_one {k : Lp 𝕜 1 μ} (hk1 : ∫ y, k y ∂μ = 1)
-    {S : Set G} (hkS : ∀ᵐ y ∂μ, y ∉ S → k y = 0) {u : Lp E p μ} {ε : ℝ}
-    (hu : ∀ y ∈ S, ‖leftTranslation μ p 𝕜 y u - u‖ ≤ ε) :
+theorem norm_convolutionL_sub_le_of_integral_eq_one {hp : p ≠ ∞} {k : Lp 𝕜 1 μ}
+    (hk1 : ∫ y, k y ∂μ = 1) {S : Set G} (hkS : ∀ᵐ y ∂μ, y ∉ S → k y = 0) {u : Lp E p μ}
+    {ε : ℝ} (hu : ∀ y ∈ S, ‖leftTranslation μ p 𝕜 y u - u‖ ≤ ε) :
     ‖convolutionL μ p hp k u - u‖ ≤ ε * ‖k‖ := by
   rw [convolutionL_apply]
   exact norm_integral_smul_sub_le hk1 hkS
     (integrable_smul_leftTranslation hp (L1.integrable_coeFn k) u).aestronglyMeasurable
     (ae_of_all _ hu)
 
+/-- **Left approximate identity**, quantitatively. Over an `RCLike` scalar field, for
+`u ∈ Lᵖ(G, μ; E)` (`1 ≤ p < ∞`), `C : ℝ`, and `ε > 0`, there is a neighbourhood `U` of `1` such
+that `‖k ⋆ u - u‖_p ≤ ε` for every `k ∈ L¹(G, μ; 𝕜)` with `‖k‖₁ ≤ C` and `∫ k = 1` vanishing
+almost everywhere outside `U`. -/
+theorem exists_mem_nhds_one_forall_norm_convolutionL_sub_le_left (hp : p ≠ ∞) (u : Lp E p μ)
+    (C : ℝ) {ε : ℝ} (hε : 0 < ε) :
+    ∃ U ∈ 𝓝 (1 : G), ∀ k : Lp 𝕜 1 μ, ‖k‖ ≤ C → ∫ y, k y ∂μ = 1 →
+      (∀ᵐ y ∂μ, y ∉ U → k y = 0) → ‖convolutionL μ p hp k u - u‖ ≤ ε := by
+  obtain ⟨δ, hδpos, hδC⟩ := exists_pos_mul_lt hε C
+  have hcont : Tendsto (fun y : G => leftTranslation μ p 𝕜 y u) (𝓝 1) (𝓝 u) := by
+    have h := (continuous_leftTranslation_apply (𝕜 := 𝕜) hp u).tendsto 1
+    rwa [map_one, LinearIsometryEquiv.coe_one, id_eq] at h
+  refine ⟨_, Metric.tendsto_nhds.1 hcont δ hδpos, fun k hkC hk₁ hkU => ?_⟩
+  refine (norm_convolutionL_sub_le_of_integral_eq_one hk₁ hkU fun y hy =>
+    le_of_lt (by rw [← dist_eq_norm_sub]; exact hy)).trans ?_
+  calc δ * ‖k‖ ≤ δ * C := mul_le_mul_of_nonneg_left hkC hδpos.le
+    _ = C * δ := mul_comm _ _
+    _ ≤ ε := hδC.le
+
 /-- **Left approximate identity** over an `RCLike` scalar field. Convolution on the left with a
 norm-bounded net of `L¹` kernels of integral one concentrating at the identity converges strongly
 to the identity on `Lᵖ`, for `1 ≤ p < ∞`. -/
-theorem tendsto_convolutionL_left_of_norm_le {ι : Type*} {l : Filter ι} {k : ι → Lp 𝕜 1 μ}
-    {C : ℝ} (hk1 : ∀ᶠ i in l, ∫ y, k i y ∂μ = 1) (hkC : ∀ᶠ i in l, ‖k i‖ ≤ C)
+theorem tendsto_convolutionL_left_of_norm_le {hp : p ≠ ∞} {ι : Type*} {l : Filter ι}
+    {k : ι → Lp 𝕜 1 μ} {C : ℝ} (hk1 : ∀ᶠ i in l, ∫ y, k i y ∂μ = 1)
+    (hkC : ∀ᶠ i in l, ‖k i‖ ≤ C)
     (hkl : ∀ U ∈ 𝓝 (1 : G), ∀ᶠ i in l, ∀ᵐ y ∂μ, y ∉ U → k i y = 0) (u : Lp E p μ) :
     Tendsto (fun i => convolutionL μ p hp (k i) u) l (𝓝 u) := by
   have hcont : Tendsto (fun y : G => leftTranslation μ p 𝕜 y u) (𝓝 1) (𝓝 u) := by
@@ -113,19 +132,10 @@ theorem tendsto_convolutionL_left_of_norm_le {ι : Type*} {l : Filter ι} {k : �
 
 end RCLike
 
-/-- If `k` is a nonnegative kernel of integral one which vanishes outside `S`, and every left
-translate `L_y u` with `y ∈ S` lies within `ε` of `u`, then `‖k ⋆ u - u‖_p ≤ ε`. -/
-theorem norm_convolutionL_sub_le {k : Lp ℝ 1 μ} (hk : 0 ≤ k) (hk1 : ∫ y, k y ∂μ = 1)
-    {S : Set G} (hkS : ∀ᵐ y ∂μ, y ∉ S → k y = 0) {u : Lp E p μ} {ε : ℝ}
-    (hu : ∀ y ∈ S, ‖leftTranslation μ p ℝ y u - u‖ ≤ ε) :
-    ‖convolutionL μ p hp k u - u‖ ≤ ε := by
-  simpa only [(L1.norm_eq_integral_of_nonneg hk).trans hk1, mul_one] using
-    norm_convolutionL_sub_le_of_integral_eq_one hk1 hkS hu
-
 /-- **Left approximate identity.** Convolution on the left with nonnegative kernels of integral
 one which concentrate at the identity converges strongly to the identity on `Lᵖ`, for
 `1 ≤ p < ∞`. -/
-theorem tendsto_convolutionL_left {ι : Type*} {l : Filter ι} {k : ι → Lp ℝ 1 μ}
+theorem tendsto_convolutionL_left {hp : p ≠ ∞} {ι : Type*} {l : Filter ι} {k : ι → Lp ℝ 1 μ}
     (hk : ∀ i, 0 ≤ k i) (hk1 : ∀ i, ∫ y, k i y ∂μ = 1)
     (hkl : ∀ U ∈ 𝓝 (1 : G), ∀ᶠ i in l, ∀ᵐ y ∂μ, y ∉ U → k i y = 0) (u : Lp E p μ) :
     Tendsto (fun i => convolutionL μ p hp (k i) u) l (𝓝 u) :=
@@ -151,16 +161,6 @@ theorem norm_convolutionL_sub_le_of_rightTranslation_of_integral_eq_one {𝕜 : 
     (integrable_smul_rightTranslation_inv ENNReal.one_ne_top
       (L1.integrable_coeFn k) h).aestronglyMeasurable
     (ae_of_all _ hC)
-
-/-- **Right approximate identity estimate.** If `k ∈ L¹(G, μ)` is nonnegative of integral one and
-vanishes almost everywhere outside `U`, then `‖h ⋆ k - h‖₁` is at most any bound `C` for
-`‖R_(z⁻¹) h - h‖₁` over `z ∈ U`. -/
-theorem norm_convolutionL_sub_le_of_rightTranslation {h k : Lp ℝ 1 μ} (hk : 0 ≤ k)
-    (hk₁ : ∫ z, k z ∂μ = 1) {U : Set G} (hkU : ∀ᵐ z ∂μ, z ∉ U → k z = 0) {C : ℝ}
-    (hC : ∀ z ∈ U, ‖rightTranslation μ 1 ℝ z⁻¹ h - h‖ ≤ C) :
-    ‖convolutionL μ 1 ENNReal.one_ne_top h k - h‖ ≤ C := by
-  simpa only [(L1.norm_eq_integral_of_nonneg hk).trans hk₁, mul_one] using
-    norm_convolutionL_sub_le_of_rightTranslation_of_integral_eq_one hk₁ hkU hC
 
 /-- **Right approximate identity**, quantitatively. Over an `RCLike` scalar field, for
 `h ∈ L¹(G, μ; 𝕜)`, `C : ℝ`, and `ε > 0`, there is a neighbourhood `U` of `1` such that

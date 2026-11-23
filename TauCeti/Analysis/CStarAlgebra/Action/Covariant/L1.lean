@@ -11,7 +11,6 @@ public import TauCeti.MeasureTheory.Measure.Regular
 public import TauCeti.Topology.Separation.TypeTags
 import Mathlib.Analysis.CStarAlgebra.Spectrum
 import Mathlib.MeasureTheory.Function.StronglyMeasurable.Lp
-import TauCeti.MeasureTheory.Function.StronglyMeasurable.InnerRegular
 
 /-!
 # Vector-valued integrated forms of covariant pairs on Bochner `L¹`

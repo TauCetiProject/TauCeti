@@ -19,7 +19,6 @@ import TauCeti.Analysis.CStarAlgebra.Hom
 import TauCeti.MeasureTheory.Function.Lp.LinearIsometry
 import TauCeti.MeasureTheory.Function.Lp.LocallyCompact
 import TauCeti.MeasureTheory.Function.Lp.Restriction
-import TauCeti.MeasureTheory.Function.StronglyMeasurable.InnerRegular
 import TauCeti.MeasureTheory.Group.Convolution.Support
 
 /-!
