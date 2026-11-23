@@ -1,37 +1,47 @@
 /-
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: The Tau Ceti contributors
+Authors: Axel Delaval, Zhiyuan Zhang, Leheng Chen, The Tau Ceti contributors
 -/
 module
 
 public import TauCeti.Analysis.PDE.MaximumPrinciple.Parabolic.Basic
 public import TauCeti.Geometry.Manifold.Riemannian.MaximumPrinciple
 import Mathlib.Analysis.Calculus.Deriv.Inv
+import Mathlib.Tactic
 
 /-!
-# The parabolic comparison principle on a closed manifold with evolving metrics
+# Parabolic comparison principles on manifolds with evolving metrics
 
-Let `M` be a compact boundaryless manifold and let `g t` be a Riemannian metric on `M` for each
-time `t`. This file proves the comparison principle for the scalar parabolic operator
+Let `g t` be a Riemannian metric on a boundaryless manifold `M` for each time `t`. This file
+proves comparison principles for scalar parabolic operators built from the Laplace–Beltrami
+operator `Δ_{g t} = div ∘ grad` of the metric at time `t`.
+
+**Compact-domain heat comparison.** On a boundaryless C² manifold, heat subsolutions lie below
+supersolutions on a compact spatial domain when this holds initially and on its spatial
+boundary. The metric may vary arbitrarily in time: only C¹ regularity of each spatial slice is
+required. The proof uses the native Laplace–Beltrami sign at a spatial local maximum and the
+abstract weak parabolic principle.
+
+**Reaction–drift comparison on a closed manifold.** Let `M` be compact. We consider the operator
 
 `∂ₜu - Δ_{g t} u - b·∇u - F(t, u)`,
 
-where `Δ_{g t}` is the Laplace–Beltrami operator `div ∘ grad` of the metric at time `t`, `b` is a
-time-dependent vector field and `F` is a reaction term. The drift term `b·∇u = g(b, grad u)` is
-the differential `du(b)`, spelled `mvfderiv I (u t) x (b t x)`, so it does not involve the metric.
-A function `u : ℝ → M → ℝ` (time first, so `u t` is the spatial slice at time `t`) is a
-subsolution when the operator is nonpositive on `u`, and a supersolution when it is nonnegative.
+where `b` is a time-dependent vector field and `F` is a reaction term. The drift term
+`b·∇u = g(b, grad u)` is the differential `du(b)`, spelled `mvfderiv I (u t) x (b t x)`, so it does
+not involve the metric. A function `u : ℝ → M → ℝ` (time first, so `u t` is the spatial slice at
+time `t`) is a subsolution when the operator is nonpositive on `u`, and a supersolution when it is
+nonnegative.
 
-**Comparison.** Let `u` be a subsolution and `v` a supersolution on `(0, T) × M`, both continuous
-on `[0, T] × M`, `C²` in space and differentiable in time, and let `F(t, ·)` be Lipschitz on
-bounded sets, uniformly in `t`. If `u ≤ v` at time `0`, then `u ≤ v` on `[0, T] × M`. At a
-spatial maximum of `u t - v t` the Laplacian of `u t - v t` is nonpositive and its differential
-vanishes, so `∂ₜ(u - v) ≤ F(t, u) - F(t, v) ≤ L (u - v)` there, and the Grönwall form of the
-perturbation argument, `TauCeti.le_of_deriv_sub_deriv_le_mul_of_isLocalMax_le_parabolicBoundary`,
-applies. The Lipschitz constant is taken on a ball containing the values of `u` and `v`, which
-are bounded by compactness. The metrics enter only through the sign of their Laplacians at a
-maximum, so no regularity of `g` in time is needed.
+Let `u` be a subsolution and `v` a supersolution on `(0, T) × M`, both continuous on
+`[0, T] × M`, `C²` in space and differentiable in time, and let `F(t, ·)` be Lipschitz on bounded
+sets, uniformly in `t`. If `u ≤ v` at time `0`, then `u ≤ v` on `[0, T] × M`. At a spatial
+maximum of `u t - v t` the Laplacian of `u t - v t` is nonpositive and its differential vanishes,
+so `∂ₜ(u - v) ≤ F(t, u) - F(t, v) ≤ L (u - v)` there, and the Grönwall form of the perturbation
+argument, `TauCeti.le_of_deriv_sub_deriv_le_mul_of_isLocalMax_le_parabolicBoundary`, applies. The
+Lipschitz constant is taken on a ball containing the values of `u` and `v`, which are bounded by
+compactness. The metrics enter only through the sign of their Laplacians at a maximum, so no
+regularity of `g` in time is needed.
 
 **ODE comparison.** A spatially constant function `φ(t)` with `φ' ≥ F(t, φ)` is a supersolution,
 and one with `φ' ≤ F(t, φ)` is a subsolution. Hence a subsolution starting below `φ(0)` stays below
@@ -43,6 +53,7 @@ with the Riccati equation `φ' = (2/n) φ²` gives `Scal ≥ s₀ / (1 - 2 s₀ 
 
 ## Main results
 
+* `TauCeti.Manifold.compactDomain_heat_comparison`: compact-domain comparison for native metrics.
 * `TauCeti.Manifold.le_of_deriv_sub_laplaceBeltrami_sub_mvfderiv_sub_le_of_le`: the comparison
   principle when `F(t, ·)` is Lipschitz from above between the two functions.
 * `TauCeti.Manifold.le_of_deriv_sub_laplaceBeltrami_sub_mvfderiv_sub_le_of_lipschitzOnWith`: the
@@ -59,23 +70,74 @@ with the Riccati equation `φ' = (2/n) φ²` gives `Scal ≥ s₀ / (1 - 2 s₀ 
 
 * R. S. Hamilton, *Three-manifolds with positive Ricci curvature*, J. Differential Geom. 17
   (1982), 255–306.
+* J. Morgan and G. Tian, *Ricci Flow and the Poincaré Conjecture*, Corollary 4.14.
 * P. Topping, *Lectures on the Ricci Flow*, LMS Lecture Note Series 325, Cambridge University
   Press (2006), Chapter 3 (the scalar maximum principle and the lower bound for scalar
   curvature).
+* https://github.com/frenzymath/lean-eval-submissions
+* https://github.com/frenzymath/PoincareConjecture
 -/
 
 public section
 
 noncomputable section
 
-open Bundle Set
+open Bundle CovariantDerivative Set Topology Filter
 open scoped ContDiff Manifold NNReal
 
 namespace TauCeti.Manifold
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
-  {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H} [I.Boundaryless]
-  {M : Type*} [TopologicalSpace M] [ChartedSpace H M] [IsManifold I 2 M] [CompactSpace M]
+  {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
+  {M : Type*} [TopologicalSpace M] [ChartedSpace H M] [IsManifold I 2 M]
+
+
+/-- Heat subsolutions lie below supersolutions on a compact spatial domain. -/
+theorem compactDomain_heat_comparison [I.Boundaryless] [T2Space M]
+    (g : ℝ → ContMDiffRiemannianMetric I 1 E (TangentSpace I : M → Type _))
+    {a b : ℝ} {U C : Set M}
+    (hU : IsOpen U) (hC : IsCompact C) (hCU : C ⊆ U)
+    (u v f w : ℝ → M → ℝ)
+    (hu : ContinuousOn (Function.uncurry u) (Icc a b ×ˢ C))
+    (hf : ContinuousOn (Function.uncurry f) (Icc a b ×ˢ C))
+    (hud : ∀ t ∈ Ioo a b, ∀ x ∈ interior C,
+      HasDerivAt (fun s ↦ u s x) (v t x) t)
+    (hfd : ∀ t ∈ Ioo a b, ∀ x ∈ interior C,
+      HasDerivAt (fun s ↦ f s x) (w t x) t)
+    (hus : ∀ t ∈ Ioo a b, ContMDiffOn I 𝓘(ℝ) 2 (u t) U)
+    (hfs : ∀ t ∈ Ioo a b, ContMDiffOn I 𝓘(ℝ) 2 (f t) U)
+    (hinit : ∀ x ∈ C, u a x ≤ f a x)
+    (hboundary : ∀ t ∈ Icc a b, ∀ x ∈ C \ interior C, u t x ≤ f t x)
+    (hevol : ∀ t ∈ Ioo a b, ∀ x ∈ interior C,
+      let : RiemannianBundle (TangentSpace I : M → Type _) := ⟨(g t).toRiemannianMetric⟩
+      v t x - laplaceBeltrami I (u t) x ≤ w t x - laplaceBeltrami I (f t) x) :
+    ∀ t ∈ Icc a b, ∀ x ∈ C, u t x ≤ f t x := by
+  have h := le_of_hasDerivAt_nonpos_of_isLocalMax_Icc hC (hu.sub hf)
+    (u := fun t x ↦ u t x - f t x) (v := fun t x ↦ v t x - w t x)
+    (by
+      intro t ht x hx
+      exact (hud t ht x hx).sub (hfd t ht x hx))
+    (by
+      intro t ht x hx hmax _
+      let : RiemannianBundle (TangentSpace I : M → Type _) := ⟨(g t).toRiemannianMetric⟩
+      have hmax' : IsLocalMax (fun y ↦ u t y + (-1) * f t y) x := by
+        simpa only [neg_one_mul, sub_eq_add_neg] using hmax
+      have hlap := laplaceBeltrami_add_mul_nonpos_of_isLocalMax
+        (((hus t ht).contMDiffAt
+          (hU.mem_nhds (hCU (interior_subset hx)))).of_le (by simp))
+        (((hfs t ht).contMDiffAt
+          (hU.mem_nhds (hCU (interior_subset hx)))).of_le (by simp)) hmax'
+      have he := hevol t ht x hx
+      linarith)
+    (fun x hx ↦ sub_nonpos.mpr (hinit x hx))
+    (fun t ht x hx ↦ sub_nonpos.mpr (hboundary t ht x
+      ⟨hC.isClosed.closure_eq ▸ hx.1, hx.2⟩))
+  exact fun t ht x hx ↦ sub_nonpos.mp (h t ht x hx)
+
+
+section ClosedManifold
+
+variable [I.Boundaryless] [CompactSpace M]
   {n : ℕ∞ω} {g : ℝ → ContMDiffRiemannianMetric I n E (fun x : M ↦ TangentSpace I x)}
   {T : ℝ} {u v : ℝ → M → ℝ} {b : (t : ℝ) → (x : M) → TangentSpace I x} {F : ℝ → ℝ → ℝ}
 
@@ -243,7 +305,11 @@ and differentiable in time on `(0, T) × M`, with `Δ_{g t} u + b·∇u + c u² 
 the left side is the solution of `φ' = c φ²` with `φ(0) = s₀`.
 
 With `c = 2 / n` and `u` the scalar curvature along Ricci flow on an `n`-manifold, this is the
-lower bound `Scal ≥ s₀ / (1 - 2 s₀ t / n)`. -/
+lower bound `Scal ≥ s₀ / (1 - 2 s₀ t / n)`.
+
+For `c ≥ 0`, the abstract form of this bound on a compact space, stated through the growth of `u`
+at its spatial minima, is `TauCeti.div_one_sub_mul_le_of_mul_sq_le_deriv_of_isLocalMin`; here
+`c` may have either sign, and the hypothesis is the Laplace–Beltrami inequality with a drift. -/
 theorem div_one_sub_mul_le_of_laplaceBeltrami_add_mvfderiv_add_mul_sq_le_deriv (hn : 1 ≤ n)
     {c s₀ : ℝ} (hucont : ContinuousOn (Function.uncurry u) (Icc 0 T ×ˢ univ))
     (hucd : ∀ ⦃t⦄, t ∈ Ioo 0 T → ContMDiff I 𝓘(ℝ) 2 (u t))
@@ -285,5 +351,7 @@ theorem div_one_sub_mul_le_of_laplaceBeltrami_add_mvfderiv_add_mul_sq_le_deriv (
     (fun t ht ↦ (hφ (Ioo_subset_Icc_self ht)).deriv.le)
     (fun R ↦ ⟨_, fun _ _ ↦ hlip R⟩) (fun x ↦ ?_)
   simpa using hinit x
+
+end ClosedManifold
 
 end TauCeti.Manifold

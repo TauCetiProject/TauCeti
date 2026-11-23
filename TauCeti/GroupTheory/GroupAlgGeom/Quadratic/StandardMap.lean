@@ -36,6 +36,8 @@ of another type.
 * `TauCeti.GroupAlgGeom.Quadratic.Standard.isRegular_map_iff`: `S.map f h` is regular through `ι`
   exactly when `S` is regular through `ι ∘ f`; likewise for degenerate, commutative and
   general-position solutions.
+* `TauCeti.GroupAlgGeom.Quadratic.Standard.exists_map_eq`: an equation whose coefficients lie in
+  the range of `f` is the image under `f` of an equation over `G`.
 * `TauCeti.GroupAlgGeom.Quadratic.isRegular_commutator_eq_commutator_eval`: over `F(a, b)[t]`, the
   equation `[x, y] = [a, t]` is regular along the specialisation `t ↦ b`.
 
@@ -205,6 +207,26 @@ theorem isRegular_map_iff (ι : H →* K) : (S.map f h).IsRegular ι ↔ S.IsReg
     cases S <;> simp_all
   rw [isRegular_def, isRegular_def, V_toWord_map]
   simp [hd]
+
+/-- A standard quadratic equation over `H` all of whose coefficients lie in the range of
+`f : G →* H` is the image under `f` of a standard quadratic equation over `G`. -/
+theorem exists_map_eq {f : G →* H} (S : Standard H X) (hS : ∀ g ∈ S.coeffs, g ∈ f.range) :
+    ∃ (S₀ : Standard G X) (h : ∀ g ∈ S₀.coeffs, f g ≠ 1), S₀.map f h = S := by
+  cases S with
+  | orientable n hn x y inj => exact ⟨orientable n hn x y inj, by simp, rfl⟩
+  | nonorientable n hn x inj => exact ⟨nonorientable n hn x inj, by simp, rfl⟩
+  | orientableCoeff n m hnm x y z inj c hc d hd =>
+    obtain ⟨d, rfl⟩ := hS d (by simp)
+    obtain ⟨c, rfl⟩ := Set.range_subset_range_iff_exists_comp.1
+      (Set.range_subset_iff.2 fun j => hS (c j) (by simp))
+    exact ⟨orientableCoeff n m hnm x y z inj c (fun j h => hc j (by simp [h])) d
+      (fun h => hd (by simp [h])), by simpa using ⟨hd, hc⟩, rfl⟩
+  | nonorientableCoeff n m hn x z inj c hc d hd =>
+    obtain ⟨d, rfl⟩ := hS d (by simp)
+    obtain ⟨c, rfl⟩ := Set.range_subset_range_iff_exists_comp.1
+      (Set.range_subset_iff.2 fun j => hS (c j) (by simp))
+    exact ⟨nonorientableCoeff n m hn x z inj c (fun j h => hc j (by simp [h])) d
+      (fun h => hd (by simp [h])), by simpa using ⟨hd, hc⟩, rfl⟩
 
 end TauCeti.GroupAlgGeom.Quadratic.Standard
 

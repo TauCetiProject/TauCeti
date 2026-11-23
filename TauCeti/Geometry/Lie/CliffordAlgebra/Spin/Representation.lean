@@ -72,7 +72,7 @@ def realCliffordSpinSmoothHom (f : CliffordAlgebra (realCliffordForm n 0) →ₐ
 @[simp]
 theorem realCliffordSpinSmoothHom_apply
     (f : CliffordAlgebra (realCliffordForm n 0) →ₐ[ℝ] A) (g : SpinUnitsRange(n)) :
-    f.realCliffordSpinSmoothHom g = Units.map f.toMonoidHom g.1 := by
+    f.realCliffordSpinSmoothHom g = Units.map f.toMonoidHom g.val := by
   simp only [realCliffordSpinSmoothHom, ContMDiffMonoidMorphism.coe_comp,
     Function.comp_apply, TauCeti.Lie.EmbeddedLieSubgroupData.subtypeVal_apply,
     unitsSmoothHom_apply]

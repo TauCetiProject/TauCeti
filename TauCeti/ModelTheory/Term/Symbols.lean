@@ -46,6 +46,10 @@ theorem functionsIn_finite (t : L.Term α) : t.functionsIn.Finite := by
   | func f ts ih =>
     exact (Set.finite_singleton _).union (Set.finite_iUnion ih)
 
+/-- The subtype of function symbols occurring in a term is finite. -/
+instance finite_functionsIn (t : L.Term α) : Finite t.functionsIn :=
+  t.functionsIn_finite.to_subtype
+
 /-- Relabelling variables does not change the function symbols of a term. -/
 @[simp]
 theorem functionsIn_relabel (t : L.Term α) (g : α → β) :

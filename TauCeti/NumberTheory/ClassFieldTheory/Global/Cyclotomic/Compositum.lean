@@ -167,7 +167,7 @@ theorem sumLocalInv_brLocalization_relBrInfl_eq_zero_of_le_iSup_adjoin
     (artinMap (v.adicCompletion K) (Units.map (algebraMap K (v.adicCompletion K)) a))
   have hσ' (a : Kˣ) (w : InfinitePlace K) := QuotientGroup.mk_surjective
     (infiniteArtinAt w (Units.map (algebraMap K w.Completion) a))
-  refine (forall_sumLocalInv_brLocalization_relBrInfl_eq_zero_iff E hg
+  refine (forall_sumLocalInv_brLocalization_relBrInfl_eq_zero_iff E
     (fun _ ↦ IsSepClosed.lift) (fun _ ↦ IsSepClosed.lift) (fun a v ↦ (hσ a v).choose)
     (fun a w ↦ (hσ' a w).choose) hχ (fun a v ↦ (hσ a v).choose_spec)
     (fun a w ↦ (hσ' a w).choose_spec)).2 (fun a ↦ ?_) y
@@ -183,9 +183,9 @@ theorem sumLocalInv_brLocalization_relBrInfl_eq_zero_of_le_adjoin_nth_roots
     (y : groupCohomology (Rep.ofMulDistribMulAction Gal(E/K) Eˣ) 2) :
     sumLocalInv K (brLocalization K (relBrInfl K E E.val y)) = 0 := by
   classical
-  let (q : ↥m.primeFactors) : Fact q.1.Prime := ⟨Nat.prime_of_mem_primeFactors q.2⟩
+  let (q : ↥m.primeFactors) : Fact q.val.Prime := ⟨Nat.prime_of_mem_primeFactors q.property⟩
   exact sumLocalInv_brLocalization_relBrInfl_eq_zero_of_le_iSup_adjoin
-    (fun q : ↥m.primeFactors ↦ q.1) E
+    (fun q : ↥m.primeFactors ↦ q.val) E
     (hE.trans (adjoin_nth_roots_le_iSup_adjoin_prime_pow hm)) y
 
 end TauCeti.ClassFieldTheory

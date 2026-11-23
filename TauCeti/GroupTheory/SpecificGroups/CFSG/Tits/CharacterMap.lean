@@ -33,13 +33,13 @@ noncomputable section
 variable (d : TitsLieIndex)
 
 /-- The represented weight torus in the Tits index's fundamental-weight coordinates. -/
-def weightTorus : (Fin d.1.rank → d.1.Closureˣ) →* d.AmbientGroup :=
-  (F4ShortRoot.PrimeField.weightTorusPoints d.1.Closure).comp
+def weightTorus : (Fin d.val.rank → d.val.Closureˣ) →* d.AmbientGroup :=
+  (F4ShortRoot.PrimeField.weightTorusPoints d.val.Closure).comp
     (MonoidHom.pi fun i => Pi.evalMonoidHom _ (finCongr d.rank_eq_four.symm i))
 
 /-- Evaluation uses the rank identification and no permutation of the torus coordinates. -/
-theorem weightTorus_apply (s : Fin d.1.rank → d.1.Closureˣ) :
-    d.weightTorus s = F4ShortRoot.PrimeField.weightTorusPoints d.1.Closure
+theorem weightTorus_apply (s : Fin d.val.rank → d.val.Closureˣ) :
+    d.weightTorus s = F4ShortRoot.PrimeField.weightTorusPoints d.val.Closure
       (fun i => s (finCongr d.rank_eq_four.symm i)) :=
   (rfl)
 
@@ -47,7 +47,7 @@ theorem weightTorus_apply (s : Fin d.1.rank → d.1.Closureˣ) :
 as character pullback; its exponent-one specialization retains the exceptional map. -/
 theorem isCharacterMap_steinberg :
     IsCharacterMap d.weightTorus d.steinberg d.toSuzukiReeIndex.datumSteinberg.weightMap := by
-  have h := F4ShortRoot.PrimeField.isCharacterMap_specialIsogeny d.1.Closure
+  have h := F4ShortRoot.PrimeField.isCharacterMap_specialIsogeny d.val.Closure
   -- The lattice depends on the rank; use the index eliminator before identifying coordinates.
   obtain rfl := d.eq_of
   rw [weightTorus, steinberg_def]

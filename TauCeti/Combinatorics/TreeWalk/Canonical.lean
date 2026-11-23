@@ -265,4 +265,15 @@ theorem card_filter_canonicalWalk_succ_eq (v : Fin (n + 1) → α) :
   simp only [card_filter, Fin.val_succ]
   omega
 
+/-- First-visit canonicalization preserves the multiplicity of every unordered edge of a path. -/
+theorem card_filter_range_sym2_canonicalWalk_eq (w : Fin (n + 1) → α) (i : Fin n) :
+    #{j ∈ range n |
+      s(canonicalWalk w j, canonicalWalk w (j + 1)) =
+        s(canonicalWalk w i.castSucc, canonicalWalk w i.succ)} =
+      #{j : Fin n | s(w j.castSucc, w j.succ) = s(w i.castSucc, w i.succ)} := by
+  rw [← Finset.image_fin_univ, filter_image, card_image_of_injective _ Fin.val_injective]
+  refine congrArg card (filter_congr fun j _ ↦ ?_)
+  rw [← Fin.val_succ j, ← Fin.val_castSucc j]
+  simp only [Sym2.eq_iff, canonicalWalk_eq_iff]
+
 end TauCeti.TreeWalk

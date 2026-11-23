@@ -112,7 +112,7 @@ theorem rawPairing_tmul [CuspFormClass F 𝒢 k] (f : F) (hk : k = w + 2)
     rawPairing R f hk (D ⊗ₜ[R] P) =
       Finsupp.linearCombination R
         (fun α ↦ cuspIntegral (periodIntegrand f P) ∞ α)
-        (MonoidAlgebra.coeff D.1) := by
+        (MonoidAlgebra.coeff D.val) := by
   simp [rawPairing, periodDivisorPairing, Finsupp.linearCombination_apply, periodAtCusp_apply]
 
 /-- The raw pairing sends `([α] - [β]) ⊗ P` to the period from `β` to `α`. This is the
