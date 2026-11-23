@@ -109,11 +109,7 @@ theorem lsCategoryCount_univ_eq_totalCriticalCount_of_subsingleton [Subsingleton
     lsCategoryCount M univ = totalCriticalCount I f := by
   have : Subsingleton H := I.injective.subsingleton
   have : DiscreteTopology M := ChartedSpace.discreteTopology H M
-  -- Each tangent space is the zero space `E`, on which the derivative of `f` vanishes.
-  have hcrit : criticalPoints I f = univ := eq_univ_of_forall fun x ↦ by
-    have : Subsingleton (TangentSpace I x) := ‹Subsingleton E›
-    exact mem_criticalPoints.mpr (ContinuousLinearMap.ext fun v ↦ by simp [Subsingleton.elim v 0])
-  rw [lsCategoryCount_eq_encard, totalCriticalCount_def, hcrit]
+  rw [lsCategoryCount_eq_encard, totalCriticalCount_def, criticalPoints_eq_univ_of_subsingleton]
 
 variable [FiniteDimensional ℝ E] [T2Space M] [I.Boundaryless] [IsManifold I ∞ M]
 
@@ -170,7 +166,7 @@ theorem lsCategoryCount_sublevel_le_encard (hf : ContMDiff I 𝓘(ℝ) ∞ f) {t
       by_contra hne
       obtain ⟨x, hx, hxt⟩ := exists_mem_criticalPoints_of_isCompact_sublevel (I := I)
         hf.continuous.continuousOn (hcpt isClosed_Iic (Iic_subset_Iic.mpr htb.le))
-        (nonempty_iff_ne_empty.mpr hne)
+        (Set.ne_empty_iff_nonempty.mp hne)
       exact hC.subset ⟨hx, hxt⟩
     simp [hempty]
   -- Otherwise let `c = f p ≤ t` be the largest critical value in `{f ≤ t}`, and cross the level
@@ -244,7 +240,7 @@ theorem lsCategoryCount_univ_le_encard_criticalPoints_inter {C : Set M}
   let U : Opens M := ⟨C, hCo⟩
   have : CompactSpace U := isCompact_iff_compactSpace.mp hCc
   have h := lsCategoryCount_univ_le_totalCriticalCount (I := I) (M := U)
-    (hf.comp_contMDiff contMDiff_subtype_val Subtype.prop)
+    (hf.comp_contMDiff contMDiff_subtypeVal Subtype.prop)
   rw [totalCriticalCount_comp_subtypeVal] at h
   -- The open submanifold `U` has carrier `C` by construction, so `↥U` is the subtype `↥C`.
   exact h

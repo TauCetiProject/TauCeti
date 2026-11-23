@@ -163,8 +163,8 @@ theorem iSup_range_map_subtypeVal_eq_top (hU : ∀ y, ∃ i, U i ∈ 𝓝 y) (hx
     rw [Subgroupoid.im, Subgroupoid.map_le_iff_le_comap]
     rintro ⟨⟨a⟩, ⟨b⟩, g⟩ -
     induction g using Path.Homotopic.Quotient.ind with | mk δ =>
-    exact comp_comp_inv_mem_iSup_range hx hpc (hτ a).somePath (δ.map continuous_subtype_val)
-      (hτ b).somePath (hτ' a) (by rintro _ ⟨t, rfl⟩; exact (δ t).2) (hτ' b)
+    exact comp_comp_inv_mem_iSup_range hx hpc (hτ a).somePath (δ.map continuous_subtypeVal)
+      (hτ b).somePath (hτ' a) (by rintro _ ⟨t, rfl⟩; exact (δ t).property) (hτ' b)
   -- A loop `γ` at `x` lies in `S`, and `τ x` is a loop inside `U (i₀ x)`, so `γ` lies in `H`.
   refine eq_top_iff.2 fun γ _ ↦ ?_
   have hγ : γ.asHom ∈ S.arrows (mk x) (mk x) := by

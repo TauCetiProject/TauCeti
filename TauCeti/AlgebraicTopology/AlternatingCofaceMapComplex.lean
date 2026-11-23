@@ -5,18 +5,26 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.BigOperators.Group.Finset.Lemmas
 public import Mathlib.Algebra.BigOperators.GroupWithZero.Action
+public import Mathlib.Algebra.Category.Grp.Preadditive
 public import Mathlib.AlgebraicTopology.AlternatingFaceMapComplex
 public import Mathlib.Tactic.Ring
 public import TauCeti.AlgebraicTopology.CosimplicialObject.Op
 
 /-!
-# Augmentation and reversal of alternating coface map complexes
+# The alternating coface map complex: differential, augmentation and reversal
 
-This file adds two pieces of structure to Mathlib's alternating coface map complex
+This file adds API to Mathlib's alternating coface map complex
 `AlgebraicTopology.alternatingCofaceMapComplex`, the cochain complex with the alternating sums
 of cofaces as differentials.
 
+* Mathlib describes the differential of the alternating face map complex of a simplicial object
+  (`AlgebraicTopology.AlternatingFaceMapComplex.obj_d_eq`). The cosimplicial counterpart
+  `AlgebraicTopology.AlternatingCofaceMapComplex.obj_d_eq` states that the differential of the
+  alternating coface map complex of a cosimplicial object in a preadditive category is the
+  alternating sum `∑ᵢ (-1)ⁱ δⁱ` of the cofaces. For a cosimplicial abelian group it is evaluated
+  at a cochain (`AlgebraicTopology.AlternatingCofaceMapComplex.obj_d_hom_apply`).
 * `AlgebraicTopology.AlternatingCofaceMapComplex.ε` is the natural cochain map from the
   augmentation object, placed in degree `0`, to the alternating coface map complex of an augmented
   cosimplicial object. Its degree `0` component is the augmentation. It is the cosimplicial
@@ -40,16 +48,41 @@ open scoped Simplicial
 
 universe v u
 
+namespace AlgebraicTopology.AlternatingCofaceMapComplex
+
+/-- The differential of the alternating coface map complex of a cosimplicial object is the
+alternating sum `∑ᵢ (-1)ⁱ δⁱ` of the cofaces. -/
+theorem obj_d_eq {C : Type*} [Category* C] [Preadditive C] (X : CosimplicialObject C) (n : ℕ) :
+    ((alternatingCofaceMapComplex C).obj X).d n (n + 1) =
+      ∑ i : Fin (n + 2), (-1 : ℤ) ^ (i : ℕ) • X.δ i :=
+  CochainComplex.of_d (fun n ↦ X.obj ⦋n⦌) (objD X) n
+
+/-- The differential of the alternating coface map complex of a cosimplicial abelian group,
+evaluated at a cochain, is the alternating sum `∑ᵢ (-1)ⁱ δⁱ` of the cofaces. -/
+theorem obj_d_hom_apply (X : CosimplicialObject AddCommGrpCat.{u}) (n : ℕ) (x : X.obj ⦋n⦌) :
+    (((alternatingCofaceMapComplex AddCommGrpCat).obj X).d n (n + 1)).hom x =
+      ∑ i : Fin (n + 2), (-1 : ℤ) ^ (i : ℕ) • (X.δ i).hom x := by
+  rw [obj_d_eq]
+  -- Restate the goal with the morphism typed by the cosimplicial object, not the complex, and
+  -- its underlying map `Hom.hom` as the additive equivalence `homAddEquiv`, which is additive in
+  -- the morphism.
+  change AddCommGrpCat.homAddEquiv (∑ i : Fin (n + 2), (-1 : ℤ) ^ (i : ℕ) • X.δ i) x = _
+  rw [map_sum, AddMonoidHom.finsetSum_apply]
+  simp only [map_zsmul, AddCommGrpCat.homAddEquiv_apply, AddMonoidHom.zsmul_apply]
+
+end AlgebraicTopology.AlternatingCofaceMapComplex
+
 namespace AlgebraicTopology
 
 variable {C : Type u} [Category.{v} C] [Preadditive C]
 
-/-- The differentials of the alternating coface map complex are the alternating sums of the
-cofaces. -/
+/-- The differentials of the alternating coface map complex are the differentials
+`AlternatingCofaceMapComplex.objD` of its construction; this is
+`AlternatingCofaceMapComplex.obj_d_eq` with the alternating sum of the cofaces kept folded. -/
 @[simp]
 lemma alternatingCofaceMapComplex_obj_d (X : CosimplicialObject C) (n : ℕ) :
-    ((alternatingCofaceMapComplex C).obj X).d n (n + 1) = AlternatingCofaceMapComplex.objD X n := by
-  simp [alternatingCofaceMapComplex, AlternatingCofaceMapComplex.obj]
+    ((alternatingCofaceMapComplex C).obj X).d n (n + 1) = AlternatingCofaceMapComplex.objD X n :=
+  AlternatingCofaceMapComplex.obj_d_eq X n
 
 /-- The alternating coface map complex of a morphism is the morphism in each degree. -/
 lemma alternatingCofaceMapComplex_map_f {X Y : CosimplicialObject C} (f : X ⟶ Y) (n : ℕ) :

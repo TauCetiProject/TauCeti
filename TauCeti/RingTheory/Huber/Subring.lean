@@ -32,7 +32,7 @@ theorem isTateRing_of_isPseudoUniformizer (S : Subring R) (u : Rˣ)
   let v : Sˣ := Units.mkOfMulEqOne ⟨u.val, hmem⟩ ⟨(u⁻¹).val, hinv⟩ (Subtype.ext u.val_inv)
   obtain ⟨P⟩ := IsHuberRing.nonempty_pairOfDefinition (A := R)
   exact IsTateRing.of_isOpen_isBounded (P.ringOfDefinition.comap S.subtype)
-    (P.isOpen_ringOfDefinition.preimage continuous_subtype_val)
+    (P.isOpen_ringOfDefinition.preimage continuous_subtypeVal)
     (S.isBounded_preimage_subtype P.isBounded_ringOfDefinition)
     (isPseudoUniformizer_iff.mpr ⟨v.isUnit,
       isTopologicallyNilpotent_mk hmem hu.isTopologicallyNilpotent⟩)

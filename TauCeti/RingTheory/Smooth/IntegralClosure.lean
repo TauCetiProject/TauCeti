@@ -22,6 +22,10 @@ of an integrally closed domain `R`, `S` is integrally closed in its generic fibr
   integrally closed in `S ⊗[R] B` whenever `R` is integrally closed in `B`. It is an instance.
 * `IsIntegral.exists_includeRight_eq`: the same with the factors in the other order: every element
   of `B ⊗[R] S` integral over `R` comes from `S`.
+* `AlgHom.bijective_of_bijective_tensorProduct`: smooth base-change descent for bijectivity:
+  if `R` is integrally closed in `F`, `B` is smooth over `R`, `A` is integral over `R` with
+  injective base-change map `A → F ⊗[R] A`, and `ψ : B →ₐ[R] A` induces a bijection on
+  `F`-fibres, then `ψ` is bijective.
 
 ## References
 
@@ -61,7 +65,7 @@ instance isIntegrallyClosedIn_tensorProduct [Algebra.Smooth R S] :
     clear hw hx'
     induction w with
     | tmul a b =>
-      obtain ⟨r, hr⟩ := hint b.2
+      obtain ⟨r, hr⟩ := hint b.property
       refine ⟨r • a, ?_⟩
       simp [← hr, Algebra.TensorProduct.algebraMap_apply, Algebra.algebraMap_eq_smul_one r,
         TensorProduct.smul_tmul]
@@ -89,3 +93,38 @@ theorem exists_includeRight_eq [Algebra.Smooth R S] {z : B ⊗[R] S} (hz : IsInt
   simpa [σ, Algebra.TensorProduct.algebraMap_apply] using hs
 
 end IsIntegral
+
+namespace AlgHom
+
+/-- **Smooth base-change descent for bijectivity.** If `R` is integrally closed in `F`, `B` is
+smooth over `R`, `A` is integral over `R` with injective base-change map
+`includeRight : A →ₐ[R] F ⊗[R] A`, and `ψ : B →ₐ[R] A` induces a bijection on `F`-fibres, then
+`ψ` is bijective.
+
+In particular, when `A` is flat over `R`, `hinj` is supplied by
+`Algebra.TensorProduct.includeRight_injective`. -/
+theorem bijective_of_bijective_tensorProduct {R F B A : Type*} [CommRing R] [CommRing F]
+    [Algebra R F] [IsIntegrallyClosedIn R F] [CommRing B] [Algebra R B] [Algebra.Smooth R B]
+    [Ring A] [Algebra R A] [Algebra.IsIntegral R A] (ψ : B →ₐ[R] A)
+    (hinj : Function.Injective (Algebra.TensorProduct.includeRight : A →ₐ[R] F ⊗[R] A))
+    (hψF : Function.Bijective (Algebra.TensorProduct.map (AlgHom.id F F) ψ)) :
+    Function.Bijective ψ := by
+  have hinjRF : Function.Injective (algebraMap R F) := (isIntegrallyClosedIn_iff.mp ‹_›).1
+  have hinjBL : Function.Injective (Algebra.TensorProduct.includeRight : B →ₐ[R] F ⊗[R] B) :=
+    Algebra.TensorProduct.includeRight_injective hinjRF
+  refine ⟨fun b₁ b₂ hb ↦ hinjBL (hψF.1 ?_), fun x ↦ ?_⟩
+  · rw [Algebra.TensorProduct.includeRight_apply, Algebra.TensorProduct.includeRight_apply,
+      Algebra.TensorProduct.map_tmul, Algebra.TensorProduct.map_tmul, hb]
+  · let eFL : F ⊗[R] B ≃ₐ[F] F ⊗[R] A := AlgEquiv.ofBijective _ hψF
+    have hxint : IsIntegral R (eFL.symm (1 ⊗ₜ x)) :=
+      ((Algebra.IsIntegral.isIntegral (R := R) x).map
+        (Algebra.TensorProduct.includeRight : A →ₐ[R] F ⊗[R] A)).map
+          (eFL.symm.toAlgHom.restrictScalars R)
+    obtain ⟨b, hb⟩ := hxint.exists_includeRight_eq
+    refine ⟨b, hinj ?_⟩
+    have hmap : eFL (1 ⊗ₜ b) = 1 ⊗ₜ ψ b := by
+      rw [AlgEquiv.ofBijective_apply, Algebra.TensorProduct.map_tmul, AlgHom.id_apply]
+    rw [Algebra.TensorProduct.includeRight_apply, Algebra.TensorProduct.includeRight_apply,
+      ← hmap, ← Algebra.TensorProduct.includeRight_apply, hb, eFL.apply_symm_apply]
+
+end AlgHom

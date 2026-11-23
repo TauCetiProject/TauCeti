@@ -539,7 +539,7 @@ private theorem creationPart_add (v : V) :
   rw [P.decompositionEquiv.apply_symm_apply] at h
   have hz : ((P.decompositionEquiv.symm v).2 : V) = 0 := by
     have hmem : ((P.decompositionEquiv.symm v).2 : V) ∈ (⊥ : Submodule K V) :=
-      hline ▸ (P.decompositionEquiv.symm v).2.2
+      hline ▸ (P.decompositionEquiv.symm v).2.property
     simpa using hmem
   rw [hz, add_zero] at h
   exact h.symm
@@ -636,11 +636,11 @@ private theorem det_spinPlusAction_spinGroupToEven_of_basis (s : spinGroup Q) :
     LinearMap.det (spinPlusAction Q P hline (spinGroupToEven Q s)) = 1 := by
   have hcoe : ((spinGroup.toUnits s : (CliffordAlgebra Q)ˣ) : CliffordAlgebra Q) = s := rfl
   obtain ⟨l, -, hl⟩ := mem_lipschitzGroup_iff_exists_list.mp
-    (spinGroup.units_mem_lipschitzGroup (x := spinGroup.toUnits s) (hcoe ▸ s.2))
+    (spinGroup.units_mem_lipschitzGroup (x := spinGroup.toUnits s) (hcoe ▸ s.property))
   rw [hcoe] at hl
   have hseven : (s : CliffordAlgebra Q) ∈ evenOdd Q 0 := by
     rw [← even_toSubmodule]
-    exact (spinGroup.mem_iff.mp s.2).2
+    exact (spinGroup.mem_iff.mp s.property).2
   have hstar : star (s : CliffordAlgebra Q) * s = 1 :=
     congrArg Subtype.val (spinGroup.star_mul_self s)
   -- A Spin element is even and nonzero, so it is a product of an even number of vectors.

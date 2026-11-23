@@ -7,11 +7,13 @@ module
 
 public import Mathlib.Analysis.Analytic.Basic
 public import Mathlib.Analysis.InnerProductSpace.Harmonic.Basic
+import Mathlib.Analysis.Analytic.ChangeOrigin
 import Mathlib.Analysis.Calculus.ContDiff.CPolynomial
 import TauCeti.Analysis.Analytic.Basic
 import TauCeti.Analysis.InnerProductSpace.Harmonic.Basic
 import TauCeti.Analysis.InnerProductSpace.Harmonic.Convergence
 import TauCeti.Analysis.InnerProductSpace.Harmonic.Dilation
+import TauCeti.Analysis.InnerProductSpace.Harmonic.IteratedFDeriv
 
 /-!
 # Taylor polynomials of harmonic functions are harmonic
@@ -21,13 +23,17 @@ Let `f : E → F` be harmonic at a point `x` of a finite-dimensional real inner 
 Each homogeneous term `y ↦ pₖ (y, …, y)` is then harmonic on all of `E`
 (`HasFPowerSeriesAt.harmonicAt_apply`), and so is every Taylor polynomial `p.partialSum n`
 (`HasFPowerSeriesAt.harmonicAt_partialSum`). Combined with the convergence of
-the partial sums (`HasFPowerSeriesOnBall.tendstoUniformlyOn`), a harmonic function admitting a
-power series is, near each point, a uniform limit of polynomial functions harmonic on the whole
-space. This applies to every harmonic function with values in a finite-dimensional space, which
-is analytic (`InnerProductSpace.HarmonicAt.analyticAt`). This is how functionals that annihilate
-every function harmonic on an open set, and are continuous for uniform convergence of
-derivatives up to some finite order, are seen to annihilate the expansions of potentials whose
-poles lie far away.
+the partial sums (`HasFPowerSeriesOnBall.tendstoLocallyUniformlyOn`), a function represented by a
+power series on `eball x r` that is harmonic at `x` is harmonic on the whole ball
+(`HasFPowerSeriesOnBall.harmonicOnNhd`). When `F` is finite-dimensional, interior derivative
+estimates (`TendstoLocallyUniformlyOn.iteratedFDeriv_of_harmonicOnNhd`) upgrade this to locally
+uniform convergence of all iterated derivatives on `eball 0 r`
+(`HasFPowerSeriesOnBall.tendstoLocallyUniformlyOn_iteratedFDeriv_partialSum_of_harmonicAt`) and
+uniform convergence on every smaller closed ball `closedBall 0 s`
+(`HasFPowerSeriesOnBall.tendstoUniformlyOn_iteratedFDeriv_partialSum_of_harmonicAt`). This applies
+to every harmonic function with values in a finite-dimensional space, which is analytic
+(`InnerProductSpace.HarmonicAt.analyticAt`), and is how functionals that annihilate global harmonic
+polynomials are seen to annihilate exterior multipole expansions of potentials.
 
 ## The argument
 
@@ -48,6 +54,11 @@ linear functional on `F`.
 * `HasFPowerSeriesAt.harmonicAt_apply`: the homogeneous terms of the power series of a harmonic
   function are harmonic everywhere.
 * `HasFPowerSeriesAt.harmonicAt_partialSum`: so are its Taylor polynomials.
+* `HasFPowerSeriesOnBall.harmonicOnNhd`: a function with a power series on `eball x r` that is
+  harmonic at `x` is harmonic on `eball x r`.
+* `HasFPowerSeriesOnBall.tendstoLocallyUniformlyOn_iteratedFDeriv_partialSum_of_harmonicAt` and
+  `HasFPowerSeriesOnBall.tendstoUniformlyOn_iteratedFDeriv_partialSum_of_harmonicAt`: locally
+  uniform and closed-ball uniform convergence of all iterated derivatives of the Taylor polynomials.
 
 ## References
 
@@ -114,3 +125,73 @@ theorem harmonicAt_partialSum (hp : HasFPowerSeriesAt f p x) (hf : HarmonicAt f 
   HarmonicAt.sum fun k _ ↦ hp.harmonicAt_apply hf k z
 
 end HasFPowerSeriesAt
+
+namespace HasFPowerSeriesOnBall
+
+open scoped ENNReal
+
+variable {r : ℝ≥0∞}
+
+/-- The scalar case of `HasFPowerSeriesOnBall.harmonicOnNhd`, from locally uniform convergence of
+the harmonic Taylor polynomials. -/
+private theorem harmonicOnNhd_real {f : E → ℝ} {p : FormalMultilinearSeries ℝ E ℝ}
+    (hp : HasFPowerSeriesOnBall f p x r) (hf : HarmonicAt f x) :
+    HarmonicOnNhd f (eball x r) := by
+  refine harmonicOnNhd_of_tendstoLocallyUniformlyOn isOpen_eball ?_ hp.tendstoLocallyUniformlyOn'
+  refine .of_forall fun n y _ ↦ ?_
+  have hsub : (fun z ↦ p.partialSum n (z - x)) = fun z ↦ p.partialSum n (z + -x) := by
+    ext z
+    rw [sub_eq_add_neg]
+  rw [hsub, harmonicAt_comp_add_right_iff]
+  exact hp.hasFPowerSeriesAt.harmonicAt_partialSum hf n _
+
+/-- **A function with a power series on a ball that is harmonic at the center is harmonic on the
+whole ball.** Every Taylor polynomial is harmonic everywhere and the partial sums converge locally
+uniformly to `f` on `eball x r`. -/
+theorem harmonicOnNhd [CompleteSpace F] (hp : HasFPowerSeriesOnBall f p x r)
+    (hf : HarmonicAt f x) : HarmonicOnNhd f (eball x r) := by
+  intro y hy
+  refine ⟨(hp.analyticOnNhd y hy).contDiffAt, ?_⟩
+  filter_upwards [isOpen_eball.mem_nhds hy] with z hz
+  refine SeparatingDual.eq_zero_of_forall_dual_eq_zero (R := ℝ) fun ℓ ↦ ?_
+  have hℓ := harmonicOnNhd_real (ℓ.comp_hasFPowerSeriesOnBall hp) (hf.comp_CLM ℓ) z hz
+  rw [← Function.comp_apply (f := ℓ), ← (hp.analyticOnNhd z hz).contDiffAt.laplacian_CLM_comp_left]
+  simpa [Function.comp_def] using hℓ.2.self_of_nhds
+
+/-- **Locally uniform `C^k` convergence of the Taylor polynomials of a harmonic function.**
+If `f` is harmonic at `x` and represented by `p` on `eball x r`, then on `eball 0 r` the `k`-th
+iterated Fréchet derivatives of `p.partialSum N` converge locally uniformly to those of
+`y ↦ f (x + y)`. -/
+theorem tendstoLocallyUniformlyOn_iteratedFDeriv_partialSum_of_harmonicAt [FiniteDimensional ℝ F]
+    (hp : HasFPowerSeriesOnBall f p x r) (hf : HarmonicAt f x) (k : ℕ) :
+    TendstoLocallyUniformlyOn (fun N ↦ iteratedFDeriv ℝ k (p.partialSum N))
+      (iteratedFDeriv ℝ k fun y ↦ f (x + y)) atTop (eball 0 r) := by
+  have hP (N : ℕ) : HarmonicOnNhd (p.partialSum N) (eball 0 r) :=
+    fun z _ ↦ hp.hasFPowerSeriesAt.harmonicAt_partialSum hf N z
+  have hF : HarmonicOnNhd (fun y ↦ f (x + y)) (eball 0 r) := by
+    intro y hy
+    have hcomm : (fun z ↦ f (x + z)) = fun z ↦ f (z + x) := by
+      ext z
+      rw [add_comm]
+    rw [hcomm, harmonicAt_comp_add_right_iff]
+    refine hp.harmonicOnNhd hf (y + x) ?_
+    simpa [mem_eball, eDist_eq_eNorm_sub] using hy
+  exact hp.tendstoLocallyUniformlyOn.iteratedFDeriv_of_harmonicOnNhd (.of_forall hP) hF
+    isOpen_eball k
+
+/-- **Uniform `C^k` convergence of the Taylor polynomials of a harmonic function on closed balls.**
+If `f` is harmonic at `x` and represented by `p` on `eball x r`, then for every real `s` with
+`ENNReal.ofReal s < r`, the `k`-th iterated Fréchet derivatives of `p.partialSum N` converge
+uniformly on `closedBall 0 s` to those of `y ↦ f (x + y)`. -/
+theorem tendstoUniformlyOn_iteratedFDeriv_partialSum_of_harmonicAt [FiniteDimensional ℝ F]
+    (hp : HasFPowerSeriesOnBall f p x r) (hf : HarmonicAt f x)
+    {s : ℝ} (hs : ENNReal.ofReal s < r) (k : ℕ) :
+    TendstoUniformlyOn (fun N ↦ iteratedFDeriv ℝ k (p.partialSum N))
+      (iteratedFDeriv ℝ k fun y ↦ f (x + y)) atTop (closedBall 0 s) := by
+  refine (tendstoLocallyUniformlyOn_iff_forall_isCompact isOpen_eball).1
+    (hp.tendstoLocallyUniformlyOn_iteratedFDeriv_partialSum_of_harmonicAt hf k)
+    (closedBall 0 s) (fun y hy ↦ ?_) (isCompact_closedBall 0 s)
+  rw [mem_eball, edist_dist]
+  exact (ENNReal.ofReal_le_ofReal (mem_closedBall.1 hy)).trans_lt hs
+
+end HasFPowerSeriesOnBall
