@@ -6,8 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.LFunctions.Grossencharacter.Basic
+public import TauCeti.NumberTheory.NumberField.Global.HeckeCharacter.Ideal
 import TauCeti.NumberTheory.LocalField.Uniformizer
-import TauCeti.NumberTheory.NumberField.Global.HeckeCharacter.Ideal
 
 /-!
 # Hecke's unit relation for a presentation
@@ -69,18 +69,17 @@ namespace Grossencharacter
 /-- On the integral ideals prime to `𝔪`, the ideal character of the presented Hecke character is
 the unitary weight times the norm to the ideal-side shift: both are multiplicative, and at a prime
 both are the local component at a uniformizer (`toHeckeCharacter_primeIdele`). -/
-private theorem coe_idealCharacter_integralIdealsAwayHom (χ : Grossencharacter K 𝔪)
-    (h𝔣 : (⟨χ.toHeckeCharacter.finiteConductor, χ.toHeckeCharacter.finiteConductor_ne_bot, ∅⟩ :
-      Modulus K) ∣ 𝔪) (J : integralIdealsPrimeTo 𝔪) :
-    (χ.toHeckeCharacter.idealCharacter
-        (NumberFieldArithmetic.integralIdealsAwayHom K _ (integralIdealsPrimeToInclusion h𝔣 J)) :
-        ℂ) =
-      χ.unitaryWeight.1 J * (Ideal.absNorm (J : Ideal (𝓞 K)) : ℂ) ^ (χ.idealShift : ℂ) := by
+theorem coe_idealCharacter_integralIdealsAwayHom (χ : Grossencharacter K 𝔪)
+    (J : integralIdealsPrimeTo 𝔪) :
+    (χ.toHeckeCharacter.idealCharacter (NumberFieldArithmetic.integralIdealsAwayHom K _
+        (integralIdealsPrimeToInclusion χ.mk_finiteConductor_dvd J)) : ℂ) =
+      χ.unitaryWeight.val J * (Ideal.absNorm (J : Ideal (𝓞 K)) : ℂ) ^ (χ.idealShift : ℂ) := by
+  have h𝔣 := χ.mk_finiteConductor_dvd
   let g : integralIdealsPrimeTo 𝔪 →* ℂ :=
-    { toFun J := χ.unitaryWeight.1 J * (Ideal.absNorm (J : Ideal (𝓞 K)) : ℂ) ^ (χ.idealShift : ℂ)
+    { toFun J := χ.unitaryWeight.val J * (Ideal.absNorm (J : Ideal (𝓞 K)) : ℂ) ^ (χ.idealShift : ℂ)
       map_one' := by simp
       map_mul' I J := by
-        rw [Submonoid.coe_mul, map_mul, map_mul, Nat.cast_mul, Complex.natCast_mul_natCast_cpow]
+        rw [Submonoid.coe_mul, map_mul, map_mul, Nat.cast_mul, Complex.natCast_mul_cpow]
         ring }
   refine DFunLike.congr_fun (NumberFieldArithmetic.integralIdealsAway_hom_ext
     (f := (Units.coeHom ℂ).comp (χ.toHeckeCharacter.idealCharacter.comp
@@ -105,40 +104,31 @@ private theorem coe_idealCharacter_integralIdealsAwayHom (χ : Grossencharacter 
 `χ_u((a)) * N(a) ^ σ * ∏_τ τ(a) ^ (n τ) = 1`. -/
 theorem compatibility (χ : Grossencharacter K 𝔪) (x : Kˣ) (hx : IsCongrOne 𝔪 x) (a : 𝓞 K)
     (ha : algebraMap (𝓞 K) K a = x) :
-    χ.unitaryWeight.1 (Ideal.span {a}) *
+    χ.unitaryWeight.val (Ideal.span {a}) *
         ((Ideal.absNorm (Ideal.span {a}) : ℕ) : ℂ) ^ (χ.idealShift : ℂ) *
       ∏ τ : K →+* ℂ, τ (x : K) ^ χ.infinityType τ = 1 := by
   set ψ := χ.toHeckeCharacter
   set 𝔣 : Modulus K := ⟨ψ.finiteConductor, ψ.finiteConductor_ne_bot, ∅⟩
-  have h𝔣 : 𝔣 ∣ 𝔪 :=
-    Modulus.dvd_iff.mpr ⟨χ.finiteConductor_dvd_finitePart, Finset.empty_subset _⟩
+  have h𝔣 : 𝔣 ∣ 𝔪 := χ.mk_finiteConductor_dvd
   have hx𝔣 : IsCongrOne 𝔣 x := hx.mono h𝔣
   -- The fractional ideal of `x` is the integral ideal `(a)`, prime to `𝔪` and to `𝔣`.
-  have hspan : ((Ideal.span {a} : Ideal (𝓞 K)) : FractionalIdeal (𝓞 K)⁰ K) =
-      ((toPrincipalIdeal (𝓞 K) K x : (FractionalIdeal (𝓞 K)⁰ K)ˣ) : FractionalIdeal (𝓞 K)⁰ K) := by
-    rw [coe_toPrincipalIdeal, FractionalIdeal.coeIdeal_span_singleton, ha]
-  have hne : Ideal.span {a} ≠ ⊥ := by
-    rw [Ne, Ideal.span_singleton_eq_bot]
-    rintro rfl
-    exact x.ne_zero (by rw [← ha, map_zero])
-  have hmem {𝔫 : Modulus K} (h𝔫 : IsCongrOne 𝔫 x) :
-      Ideal.span {a} ∈ NumberFieldArithmetic.integralIdealsAway 𝔫.support :=
-    NumberFieldArithmetic.mem_integralIdealsAway_iff_count_eq_zero.mpr ⟨hne, fun v hv ↦ by
-      rw [hspan]
-      exact NumberFieldArithmetic.mem_idealsAway_iff.mp h𝔫.toPrincipalIdeal_mem_idealsPrimeTo v hv⟩
+  have hmem : Ideal.span {a} ∈ integralIdealsPrimeTo 𝔪 :=
+    Modulus.mem_integralIdealsPrimeTo.mpr (Modulus.isCoprimeTo_span_singleton_iff.mpr
+      ⟨⟨x, congruenceSubgroup_le_primeToSubgroup 𝔪 (mem_congruenceSubgroup.mpr hx)⟩, ha.symm⟩)
   have hideal : NumberFieldArithmetic.integralIdealsAwayHom K 𝔣.support
-        (integralIdealsPrimeToInclusion h𝔣 ⟨_, hmem hx⟩) =
+        (integralIdealsPrimeToInclusion h𝔣 ⟨_, hmem⟩) =
       ⟨toPrincipalIdeal (𝓞 K) K x, hx𝔣.toPrincipalIdeal_mem_idealsPrimeTo⟩ :=
-    Subtype.ext (Units.ext (by
-      rw [NumberFieldArithmetic.coe_integralIdealsAwayHom, coe_integralIdealsPrimeToInclusion,
-        hspan]))
-  have hfinite := coe_idealCharacter_integralIdealsAwayHom χ h𝔣 ⟨_, hmem hx⟩
+    (NumberFieldArithmetic.integralIdealsAwayHom_eq_principalIdealAway
+      (coe_integralIdealsPrimeToInclusion h𝔣 ⟨_, hmem⟩)
+      (x := ⟨x, congruenceSubgroup_le_primeToSubgroup 𝔣 (mem_congruenceSubgroup.mpr hx𝔣)⟩)
+      ha).trans (Subtype.ext (NumberFieldArithmetic.coe_principalIdealAway _ _))
+  have hfinite := coe_idealCharacter_integralIdealsAwayHom χ ⟨_, hmem⟩
   -- The ideal character of `(x)` is the inverse of the archimedean monomial: at a real place
   -- where the parities differ, the place divides `𝔪`, where `x` is positive.
   have hpos (w : {w : InfinitePlace K // w.IsReal})
       (hw : ψ.infinityType.realParity w ≠
         (AlgebraicInfinityType.toContinuous χ.infinityType).realParity w) :
-      0 < InfinitePlace.embedding_of_isReal w.2 (x : K) :=
+      0 < InfinitePlace.embedding_of_isReal w.property (x : K) :=
     (isCongrOne_iff.mp hx).2 w (not_imp_comm.mp (χ.realParity_eq w) hw)
   rw [hideal, ψ.idealCharacter_apply_toPrincipalIdeal_eq_embeddingCharacter_inv χ.infinityType
       χ.agreesOnIdentityComponent x hx𝔣 hpos,
@@ -151,7 +141,7 @@ theorem compatibility (χ : Grossencharacter K 𝔪) (x : Kˣ) (hx : IsCongrOne 
 `χ_u((a)) N(a) ^ σ = (∏_τ τ(a) ^ (n τ))⁻¹`. -/
 theorem compatibility_inv (χ : Grossencharacter K 𝔪) (x : Kˣ) (hx : IsCongrOne 𝔪 x) (a : 𝓞 K)
     (ha : algebraMap (𝓞 K) K a = x) :
-    χ.unitaryWeight.1 (Ideal.span {a}) *
+    χ.unitaryWeight.val (Ideal.span {a}) *
         ((Ideal.absNorm (Ideal.span {a}) : ℕ) : ℂ) ^ (χ.idealShift : ℂ) =
       (∏ τ : K →+* ℂ, τ (x : K) ^ χ.infinityType τ)⁻¹ :=
   eq_inv_of_mul_eq_one_left (χ.compatibility x hx a ha)

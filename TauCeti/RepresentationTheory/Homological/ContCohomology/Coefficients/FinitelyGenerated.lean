@@ -97,14 +97,15 @@ written against. -/
 @[expose] noncomputable def fgSubrepresentationDiagram :
     {σ : Subrepresentation X.obj.ρ.toRepresentation // σ.toSubmodule.FG} ⥤
       SmoothDiscreteTopRep.{v, u, w} R G where
-  obj σ := ⟨TopRep.subrepresentation X.obj σ.1.toSubmodule
-      σ.1.contRepresentation_apply_mem_toSubmodule, X.property.subrepresentation _ _⟩
+  obj σ := ⟨TopRep.subrepresentation X.obj σ.val.toSubmodule
+      σ.val.contRepresentation_apply_mem_toSubmodule, X.property.subrepresentation _ _⟩
   map {σ τ} f := ObjectProperty.homMk <|
-    TopRep.subrepresentationLift X.obj τ.1.toSubmodule
-      τ.1.contRepresentation_apply_mem_toSubmodule
-      (TopRep.subrepresentationι X.obj σ.1.toSubmodule σ.1.contRepresentation_apply_mem_toSubmodule)
-      fun y ↦ (congrArg (· ∈ τ.1.toSubmodule) (TopRep.subrepresentationι_apply _ _ _ y)).mpr
-        (leOfHom f y.2)
+    TopRep.subrepresentationLift X.obj τ.val.toSubmodule
+      τ.val.contRepresentation_apply_mem_toSubmodule
+      (TopRep.subrepresentationι X.obj σ.val.toSubmodule
+          σ.val.contRepresentation_apply_mem_toSubmodule)
+      fun y ↦ (congrArg (· ∈ τ.val.toSubmodule) (TopRep.subrepresentationι_apply _ _ _ y)).mpr
+        (leOfHom f y.property)
   map_id σ := ObjectProperty.hom_ext _ <| by
     rw [ObjectProperty.homMk_hom, ObjectProperty.FullSubcategory.id_hom]
     exact (TopRep.subrepresentationLift_unique _ _ _ _ _ _ (Category.id_comp _)).symm
@@ -119,7 +120,8 @@ is exposed so that its point is, definitionally, `X` itself. -/
   pt := X
   ι :=
     { app σ := ObjectProperty.homMk <|
-        TopRep.subrepresentationι X.obj σ.1.toSubmodule σ.1.contRepresentation_apply_mem_toSubmodule
+        TopRep.subrepresentationι X.obj σ.val.toSubmodule
+            σ.val.contRepresentation_apply_mem_toSubmodule
       naturality _ _ _ := ObjectProperty.hom_ext _ <|
         (TopRep.subrepresentationLift_comp_ι _ _ _ _ _).trans (Category.comp_id _).symm }
 
@@ -129,7 +131,7 @@ is exposed so that its point is, definitionally, `X` itself. -/
 theorem fgSubrepresentationCocone_ι_app_hom_apply
     (σ : {σ : Subrepresentation X.obj.ρ.toRepresentation // σ.toSubmodule.FG})
     (y : ((fgSubrepresentationDiagram X).obj σ).obj.V) :
-    ((fgSubrepresentationCocone X).ι.app σ).hom.hom y = y.1 :=
+    ((fgSubrepresentationCocone X).ι.app σ).hom.hom y = y.val :=
   TopRep.subrepresentationι_apply _ _ _ y
 
 /-- The transition map of `fgSubrepresentationDiagram` along `σ ≤ τ` is the inclusion. -/
@@ -137,7 +139,7 @@ theorem fgSubrepresentationCocone_ι_app_hom_apply
 theorem coe_fgSubrepresentationDiagram_map_hom_apply
     {σ τ : {σ : Subrepresentation X.obj.ρ.toRepresentation // σ.toSubmodule.FG}} (f : σ ⟶ τ)
     (y : ((fgSubrepresentationDiagram X).obj σ).obj.V) :
-    (((fgSubrepresentationDiagram X).map f).hom.hom y).1 = y.1 :=
+    (((fgSubrepresentationDiagram X).map f).hom.hom y).val = y.val :=
   (congrArg Subtype.val (TopRep.subrepresentationLift_apply _ _ _ _ _ y)).trans
     (TopRep.subrepresentationι_apply _ _ _ y)
 

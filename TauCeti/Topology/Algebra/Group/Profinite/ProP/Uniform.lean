@@ -1,0 +1,229 @@
+/-
+Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: The Tau Ceti contributors
+-/
+module
+
+public import TauCeti.Topology.Algebra.Group.Powerful
+public import TauCeti.Topology.Algebra.Group.Profinite.ProP.LowerCentralSeries
+public import TauCeti.Topology.Algebra.Group.Profinite.ProP.PadicInt.CohomFp
+public import TauCeti.Topology.Algebra.Group.Profinite.ProP.Product
+public import TauCeti.Topology.Algebra.Group.Profinite.ProP.Rank
+public import TauCeti.Topology.Algebra.Group.Profinite.ProP.Torsion
+
+/-!
+# Uniform pro-`p` groups
+
+A pro-`p` group is **uniform** when it is topologically finitely generated, torsion-free and
+powerful (`TauCeti.IsPowerful`, with the fourth-power condition at `p = 2`). Uniform groups are the
+open subgroups through which Lazard's theory describes compact `p`-adic analytic groups: every
+compact `p`-adic analytic group has an open normal uniform subgroup, and the completed group
+algebra of a uniform group behaves like a power series ring in `d` variables. This file sets up
+the predicate, its closure properties and its first invariant.
+
+The **dimension** of a uniform group `U` is its topological generator rank
+`TauCeti.topologicalGeneratorRankNat U`, the least number `d` of topological generators. In a
+powerful group the commutators are already `p`-th powers, so the closed power subgroup `Uᵖ` is the
+first term `λ_1 = Φ(U)` of the lower `p`-series; hence `[U : Uᵖ] = p ^ d`
+(`TauCeti.IsUniform.index_closedPowerSubgroup`) and `d = log_p [U : Uᵖ]`.
+
+For commutative groups the notion is classical: a commutative profinite group is uniform exactly
+when it is topologically isomorphic to `ℤ_p ^ d` for some `d`
+(`TauCeti.isUniform_iff_exists_continuousMulEquiv_pi_padicInt`), and then `d` is its dimension.
+By contrast `ℤ/p` is powerful but not uniform, since it has torsion.
+
+## Main definitions
+
+* `TauCeti.IsUniform p G`: `G` is pro-`p`, topologically finitely generated, torsion-free and
+  powerful.
+
+## Main results
+
+* `TauCeti.IsPowerful.index_closedPowerSubgroup`, `TauCeti.IsUniform.index_closedPowerSubgroup`:
+  for a topologically finitely generated powerful pro-`p` group, `[G : Gᵖ] = p ^ d(G)`.
+* `TauCeti.IsUniform.topologicalGeneratorRankNat_eq_log_index`: the dimension is
+  `log_p [G : Gᵖ]`.
+* `TauCeti.isUniform_congr`, `TauCeti.IsUniform.prod`: uniformity is invariant under topological
+  group isomorphism and stable under binary products.
+* `TauCeti.isUniform_of_subsingleton`: the trivial group is uniform; its dimension is `0` by
+  `TauCeti.topologicalGeneratorRankNat_of_subsingleton`.
+* `TauCeti.isUniform_multiplicative_pi_padicInt`, `TauCeti.isUniform_multiplicative_padicInt`:
+  `ℤ_p ^ X` for finite `X` is uniform, of dimension `#X`; in particular `ℤ_p` is uniform of
+  dimension `1`.
+* `TauCeti.IsUniform.nonempty_continuousMulEquiv_pi_padicInt`,
+  `TauCeti.isUniform_iff_exists_continuousMulEquiv_pi_padicInt`: the commutative uniform groups are
+  exactly the groups `ℤ_p ^ d`, with `d` the dimension.
+* `TauCeti.not_isUniform_multiplicative_zmod`: `ℤ/p` is powerful but not uniform.
+
+## References
+
+* J. D. Dixon, M. P. F. du Sautoy, A. Mann and D. Segal, *Analytic pro-`p` groups*, second
+  edition, Chapter 4. Their Definition 4.1 asks instead for constant indices along the lower
+  `p`-series; Theorem 4.5 shows that for finitely generated powerful pro-`p` groups this is
+  equivalent to torsion-freeness, the form used here. That equivalence is not proved in this
+  file.
+* K. Ardakov and K. A. Brown, *Ring-theoretic properties of Iwasawa algebras: a survey*, §2.3.
+-/
+
+public section
+
+namespace TauCeti
+
+open Multiplicative
+
+universe u v
+
+/-- A topological group is **uniform** at `p` when it is pro-`p`, topologically finitely
+generated, torsion-free and powerful (`TauCeti.IsPowerful`, with the fourth-power condition at
+`p = 2`). Its dimension is its topological generator rank `TauCeti.topologicalGeneratorRankNat`,
+which is `log_p [G : Gᵖ]` by `TauCeti.IsUniform.topologicalGeneratorRankNat_eq_log_index`. -/
+structure IsUniform (p : ℕ) (G : Type u) [Group G] [TopologicalSpace G] [IsTopologicalGroup G] :
+    Prop where
+  /-- A uniform group is pro-`p`. -/
+  isProP : IsProP p G
+  /-- A uniform group is topologically finitely generated. -/
+  isTopologicallyFinitelyGenerated : IsTopologicallyFinitelyGenerated G
+  /-- A uniform group is torsion-free. -/
+  isMulTorsionFree : IsMulTorsionFree G
+  /-- A uniform group is powerful. -/
+  isPowerful : IsPowerful p G
+
+variable {p : ℕ}
+
+section Index
+
+variable [hp : Fact p.Prime] {G : Type u} [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
+  [CompactSpace G] [TotallyDisconnectedSpace G]
+
+/-- **The index of `Gᵖ` in a powerful group.** For a topologically finitely generated powerful
+pro-`p` group, the closed power subgroup `Gᵖ` has index `p ^ d`, where `d` is the topological
+generator rank: `Gᵖ` is the first term of the lower `p`-series, which is the Frattini
+subgroup. -/
+theorem IsPowerful.index_closedPowerSubgroup (hG : IsPowerful p G) (hP : IsProP p G)
+    (hfg : IsTopologicallyFinitelyGenerated G) :
+    (closedPowerSubgroup p G).index = p ^ topologicalGeneratorRankNat G hfg := by
+  rw [hG.closedPowerSubgroup_eq_pLowerCentralSeries_one,
+    pLowerCentralSeries_one_eq_proPFrattini hp.out, Subgroup.index_eq_card,
+    hP.natCard_quotient_proPFrattini hfg]
+
+/-- **The index of `Gᵖ` in a uniform group** is `p ^ d`, where `d` is the dimension. -/
+theorem IsUniform.index_closedPowerSubgroup (hG : IsUniform p G) :
+    (closedPowerSubgroup p G).index =
+      p ^ topologicalGeneratorRankNat G hG.isTopologicallyFinitelyGenerated :=
+  hG.isPowerful.index_closedPowerSubgroup hG.isProP _
+
+/-- **The dimension of a uniform group** is `log_p [G : Gᵖ]`. -/
+theorem IsUniform.topologicalGeneratorRankNat_eq_log_index (hG : IsUniform p G) :
+    topologicalGeneratorRankNat G hG.isTopologicallyFinitelyGenerated =
+      Nat.log p (closedPowerSubgroup p G).index := by
+  rw [hG.index_closedPowerSubgroup, Nat.log_pow hp.out.one_lt]
+
+end Index
+
+section Closure
+
+variable {G : Type u} [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
+variable {H : Type v} [Group H] [TopologicalSpace H] [IsTopologicalGroup H]
+
+/-- Uniformity is invariant under topological group isomorphism. -/
+theorem IsUniform.of_equiv (hG : IsUniform p G) (e : G ≃ₜ* H) : IsUniform p H where
+  isProP := hG.isProP.of_equiv e
+  isTopologicallyFinitelyGenerated :=
+    (isTopologicallyFinitelyGenerated_congr e).mp hG.isTopologicallyFinitelyGenerated
+  isMulTorsionFree :=
+    have := hG.isMulTorsionFree
+    Function.Injective.isMulTorsionFree (e.symm : H →* G) e.symm.injective
+  isPowerful := (isPowerful_congr e).mp hG.isPowerful
+
+/-- Uniformity is invariant under topological group isomorphism. -/
+theorem isUniform_congr (e : G ≃ₜ* H) : IsUniform p G ↔ IsUniform p H :=
+  ⟨fun hG ↦ hG.of_equiv e, fun hH ↦ hH.of_equiv e.symm⟩
+
+/-- **A product of two uniform groups is uniform.** -/
+theorem IsUniform.prod (hG : IsUniform p G) (hH : IsUniform p H) : IsUniform p (G × H) where
+  isProP := hG.isProP.prod hH.isProP
+  isTopologicallyFinitelyGenerated :=
+    hG.isTopologicallyFinitelyGenerated.prod hH.isTopologicallyFinitelyGenerated
+  isMulTorsionFree :=
+    have := hG.isMulTorsionFree
+    have := hH.isMulTorsionFree
+    inferInstance
+  isPowerful := hG.isPowerful.prod hH.isPowerful
+
+variable (p G) in
+/-- **The trivial group is uniform**, of dimension `0` by
+`TauCeti.topologicalGeneratorRankNat_of_subsingleton`. -/
+theorem isUniform_of_subsingleton [Subsingleton G] : IsUniform p G where
+  isProP := IsPGroup.isProP fun _ ↦ ⟨0, Subsingleton.elim _ _⟩
+  isTopologicallyFinitelyGenerated := (Set.finite_empty (α := G)).isTopologicallyFinitelyGenerated
+    (Subsingleton.elim _ _)
+  isMulTorsionFree := ⟨fun _ _ a b _ _ ↦ Subsingleton.elim a b⟩
+  isPowerful := (isPowerful_iff (p := p)).mpr fun g _ ↦ Subsingleton.elim g 1 ▸ one_mem _
+
+end Closure
+
+section PadicInt
+
+variable (p) [Fact p.Prime]
+
+/-- **`ℤ_p ^ X` is uniform** for finite `X`, of dimension `#X` by
+`TauCeti.topologicalGeneratorRankNat_multiplicative_pi_padicInt`. -/
+theorem isUniform_multiplicative_pi_padicInt (X : Type*) [Finite X] :
+    IsUniform p (Multiplicative (X → ℤ_[p])) where
+  isProP := isProP_multiplicative_pi_padicInt p X
+  isTopologicallyFinitelyGenerated :=
+    isTopologicallyFinitelyGenerated_multiplicative_pi_padicInt p X
+  isMulTorsionFree := inferInstance
+  isPowerful := isPowerful_of_isMulCommutative
+
+/-- **`ℤ_p` is uniform**, of dimension `1` by
+`TauCeti.topologicalGeneratorRankNat_multiplicative_padicInt`. -/
+theorem isUniform_multiplicative_padicInt : IsUniform p (Multiplicative ℤ_[p]) where
+  isProP := isProP_multiplicative_padicInt p
+  isTopologicallyFinitelyGenerated := isTopologicallyFinitelyGenerated_multiplicative_padicInt p
+  isMulTorsionFree := inferInstance
+  isPowerful := isPowerful_of_isMulCommutative
+
+/-- **`ℤ/p` is not uniform**, for any group topology: the class of `1` is a nontrivial element of
+order `p`. Being commutative, `ℤ/p` is nevertheless powerful, by
+`TauCeti.isPowerful_of_isMulCommutative`. -/
+theorem not_isUniform_multiplicative_zmod [TopologicalSpace (Multiplicative (ZMod p))]
+    [IsTopologicalGroup (Multiplicative (ZMod p))] : ¬ IsUniform p (Multiplicative (ZMod p)) := by
+  intro hG
+  have := hG.isMulTorsionFree
+  have h : (ofAdd (1 : ZMod p)) ^ p = 1 ^ p := by
+    rw [one_pow, ← ofAdd_nsmul, nsmul_eq_mul, mul_one, ZMod.natCast_self, ofAdd_zero]
+  have h1 := eq_of_pow_eq_pow_of_commute (Fact.out : p.Prime).ne_zero (Commute.one_right _) h
+  exact one_ne_zero (ofAdd_eq_one.mp h1)
+
+end PadicInt
+
+section Commutative
+
+variable [Fact p.Prime] {A : Type u} [CommGroup A] [TopologicalSpace A] [IsTopologicalGroup A]
+  [CompactSpace A] [TotallyDisconnectedSpace A]
+
+/-- **A commutative uniform group is `ℤ_p ^ d`**, where `d` is its dimension: this is the
+structure theorem for torsion-free topologically finitely generated abelian pro-`p` groups. -/
+theorem IsUniform.nonempty_continuousMulEquiv_pi_padicInt (hA : IsUniform p A) :
+    Nonempty (A ≃ₜ* Multiplicative
+      (Fin (topologicalGeneratorRankNat A hA.isTopologicallyFinitelyGenerated) → ℤ_[p])) := by
+  have := hA.isMulTorsionFree
+  obtain ⟨r, ⟨e⟩⟩ := hA.isProP.exists_continuousMulEquiv_pi_padicInt
+    hA.isTopologicallyFinitelyGenerated
+  have hr : topologicalGeneratorRankNat A hA.isTopologicallyFinitelyGenerated = r := by
+    rw [topologicalGeneratorRankNat_congr e, topologicalGeneratorRankNat_multiplicative_pi_padicInt,
+      Nat.card_eq_fintype_card, Fintype.card_fin]
+  rw [hr]
+  exact ⟨e⟩
+
+/-- **The commutative uniform groups are exactly the groups `ℤ_p ^ d`.** -/
+theorem isUniform_iff_exists_continuousMulEquiv_pi_padicInt :
+    IsUniform p A ↔ ∃ d : ℕ, Nonempty (A ≃ₜ* Multiplicative (Fin d → ℤ_[p])) :=
+  ⟨fun hA ↦ ⟨_, hA.nonempty_continuousMulEquiv_pi_padicInt⟩, fun ⟨d, ⟨e⟩⟩ ↦
+    (isUniform_multiplicative_pi_padicInt p (Fin d)).of_equiv e.symm⟩
+
+end Commutative
+
+end TauCeti

@@ -84,7 +84,7 @@ theorem isBoundedAtImInfty_thetaCoset_slash (hL : IsEven L)
     change SL(2, ℤ) at B
     intro γ
     change IsBoundedAtImInfty (thetaCoset L γ ∣[(k : ℤ)] (ModularGroup.T * B))
-    rw [SlashAction.slash_mul, hL.thetaCoset_slash_T γ.2,
+    rw [SlashAction.slash_mul, hL.thetaCoset_slash_T γ.property,
       ModularForm.SL_smul_slash]
     exact (Filter.boundedFilterSubmodule ℂ atImInfty).smul_mem _ (ih γ)
 

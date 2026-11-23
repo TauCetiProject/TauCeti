@@ -38,11 +38,11 @@ theorem map_pi_gaussianReal_to_vectors {ι κ : Type*} [Fintype ι] [Fintype κ]
   let fiber (j : ι) := {p : ι × κ // p.1 = j}
   let e (j : ι) : κ ≃ fiber j :=
     { toFun := fun i ↦ ⟨(j, i), rfl⟩
-      invFun := fun p ↦ p.1.2
+      invFun := fun p ↦ p.val.2
       left_inv := fun _ ↦ rfl
       right_inv := fun p ↦ by
         apply Subtype.ext
-        exact Prod.ext p.2.symm rfl }
+        exact Prod.ext p.property.symm rfl }
   have hfiber (j : ι) :
       MeasurePreserving
         (fun z : fiber j → ℝ ↦ WithLp.toLp 2 fun i : κ ↦ z (e j i))
