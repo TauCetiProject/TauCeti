@@ -126,7 +126,7 @@ theorem gaussSum_sqrt_two_smul_span_orthonormalBasis_eq_zero [Nonempty ι] {a : 
       gaussTerm _ hL (2 * p + 1) (2 * (2 * q + 1)) 0 (y + Submodule.Quotient.mk w) =
         -gaussTerm _ hL (2 * p + 1) (2 * (2 * q + 1)) 0 y := by
     induction y using Submodule.Quotient.induction_on with | H v
-    obtain ⟨u, hu, hv⟩ := mem_smul_pointwise_iff_exists _ _ _ |>.mp v.2
+    obtain ⟨u, hu, hv⟩ := mem_smul_pointwise_iff_exists _ _ _ |>.mp v.property
     obtain ⟨m, hm⟩ := isIntegral_iff.mp (isUnimodular_span_orthonormalBasis b).isIntegral u hu _ hbi
     -- `‖u + c' b i‖² = ‖u‖² + 2 c' ⟪u, b i⟫ + c'²`, so the argument of `e` moves by
     -- `a ⟪u, b i⟫ + a c' / 2 ∈ ℤ + 1/2`.

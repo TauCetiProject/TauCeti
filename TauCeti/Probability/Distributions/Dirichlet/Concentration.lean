@@ -50,11 +50,11 @@ theorem tendsto_dirichletMeasure_concentration_atBot [MeasurableSpace ι]
     Tendsto (β := ProbabilityMeasure (EuclideanSpace ℝ ι)) (fun c : Ioi (0 : ℝ) ↦
       (⟨dirichletMeasure (fun i ↦ (c : ℝ) * (p.weights i : ℝ)),
         isProbabilityMeasure_dirichletMeasure
-          (fun i ↦ mul_pos c.2 (by exact_mod_cast hp i))⟩ :
+          (fun i ↦ mul_pos c.property (by exact_mod_cast hp i))⟩ :
           ProbabilityMeasure (EuclideanSpace ℝ ι))) atBot
       (𝓝 ((categoricalMeasure p).map (EuclideanSpace.basisFun ι ℝ)).toProbabilityMeasure) := by
   have ha (c : Ioi (0 : ℝ)) (i : ι) : 0 < (c : ℝ) * (p.weights i : ℝ) :=
-    mul_pos c.2 (by exact_mod_cast hp i)
+    mul_pos c.property (by exact_mod_cast hp i)
   have hsqrt_mem (c : Ioi (0 : ℝ)) :
       MemLp (fun x : EuclideanSpace ℝ ι ↦ √(1 - ‖x‖ ^ 2)) 2
         (dirichletMeasure (fun i ↦ (c : ℝ) * (p.weights i : ℝ))) := by
@@ -72,7 +72,7 @@ theorem tendsto_dirichletMeasure_concentration_atBot [MeasurableSpace ι]
   · have hmoment (c : Ioi (0 : ℝ)) :
         ∫ x, √(1 - ‖x‖ ^ 2) ^ 2 ∂dirichletMeasure (fun i ↦ (c : ℝ) * (p.weights i : ℝ)) =
           (c : ℝ) * (1 - ∑ i, (p.weights i : ℝ) ^ 2) / ((c : ℝ) + 1) := by
-      rw [← integral_one_sub_norm_sq_dirichletMeasure_smul p hp c.2]
+      rw [← integral_one_sub_norm_sq_dirichletMeasure_smul p hp c.property]
       refine integral_congr_ae ?_
       filter_upwards [ae_norm_le_one_dirichletMeasure] with x hx
       exact Real.sq_sqrt (by nlinarith [norm_nonneg x])
@@ -93,7 +93,7 @@ theorem tendsto_dirichletMeasure_concentration_atBot [MeasurableSpace ι]
         ((memLp_eval_dirichletMeasure i 1).integrable (by norm_num)).mul_const _]
     refine Finset.sum_congr rfl fun i _ ↦ ?_
     rw [integral_mul_const, integral_eval_dirichletMeasure (ha c), p.sum_mul_coe_weights,
-      mul_div_cancel_left₀ _ c.2.ne', smul_eq_mul]
+      mul_div_cancel_left₀ _ c.property.ne', smul_eq_mul]
   · simp only [ProbabilityMeasure.coe_mk]
     filter_upwards [ae_pos_dirichletMeasure (a := fun i ↦ (c : ℝ) * (p.weights i : ℝ)),
       ae_sum_eq_one_dirichletMeasure (a := fun i ↦ (c : ℝ) * (p.weights i : ℝ))] with x hx0 hx1
@@ -137,13 +137,13 @@ theorem tendsto_dirichletMeasure_concentration_atTop (p : Convexity.StdSimplex �
     (hp : ∀ i, 0 < p.weights i) :
     Tendsto (β := ProbabilityMeasure (EuclideanSpace ℝ ι)) (fun c : Ioi (0 : ℝ) ↦
       (⟨dirichletMeasure (fun i ↦ (c : ℝ) * p.weights i),
-        isProbabilityMeasure_dirichletMeasure (fun i ↦ mul_pos c.2 (hp i))⟩ :
+        isProbabilityMeasure_dirichletMeasure (fun i ↦ mul_pos c.property (hp i))⟩ :
           ProbabilityMeasure (EuclideanSpace ℝ ι))) atTop
       (𝓝 (⟨Measure.dirac ((EuclideanSpace.equiv ι ℝ).symm p.weights), inferInstance⟩ :
         ProbabilityMeasure (EuclideanSpace ℝ ι))) := by
   apply ProbabilityMeasure.tendsto_dirac_of_integral_dist_sq_tendsto_zero
   · intro c
-    let _ := isProbabilityMeasure_dirichletMeasure (fun i ↦ mul_pos c.2 (hp i))
+    let _ := isProbabilityMeasure_dirichletMeasure (fun i ↦ mul_pos c.property (hp i))
     simpa only [dist_eq_norm, Pi.sub_apply, id_eq, ProbabilityMeasure.coe_mk] using
       ((memLp_id_dirichletMeasure (a := fun i ↦ (c : ℝ) * p.weights i) 2).sub
         (memLp_const ((EuclideanSpace.equiv ι ℝ).symm p.weights))).norm
@@ -156,6 +156,6 @@ theorem tendsto_dirichletMeasure_concentration_atTop (p : Convexity.StdSimplex �
       tendsto_const_nhds.div_atTop (tendsto_atTop_add_const_right _ 1 hcoe)
     convert hlim using 1
     ext c
-    exact integral_norm_sub_sq_dirichletMeasure_smul p hp c.2
+    exact integral_norm_sub_sq_dirichletMeasure_smul p hp c.property
 
 end TauCeti.Probability

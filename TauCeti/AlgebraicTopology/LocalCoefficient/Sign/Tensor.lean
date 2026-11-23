@@ -61,11 +61,11 @@ theorem signFiberTensorEquiv_tmul_eq {x : X} (e e' : p ⁻¹' {x})
     signFiberTensorEquiv hfix hfib e (f ⊗ₜ[R] g) =
       (f : p ⁻¹' {x} → R) e' * (g : p ⁻¹' {x} → R) e' := by
   have he := signFiberTensorEquiv_tmul hfix hfib e f g
-  rcases hfib e e' (e'.2.trans e.2.symm) with h | h
+  rcases hfib e e' (e'.property.trans e.property.symm) with h | h
   · simpa only [Subtype.ext h] using he
   · have h' : e' = Function.fiberMap σ hσ x e :=
       Subtype.ext (h.trans (Function.fiberMap_apply_coe σ hσ x e).symm)
-    rw [h', mem_signFiber_iff.1 f.2, mem_signFiber_iff.1 g.2, neg_mul_neg]
+    rw [h', mem_signFiber_iff.1 f.property, mem_signFiber_iff.1 g.property, neg_mul_neg]
     exact he
 
 /-- The tensor-square identification does not depend on a choice of sheet. -/

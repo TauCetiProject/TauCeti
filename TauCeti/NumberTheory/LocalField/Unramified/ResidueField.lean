@@ -46,7 +46,7 @@ instance unramifiedResidueField_isAlgClosed : IsAlgClosed 𝓀[Unramified E] := 
   refine IsAlgClosed.of_exists_root _ fun p hp_mon hp_irr ↦ ?_
   choose c hc using fun i : ℕ ↦ IsLocalRing.residue_surjective (p.coeff i)
   choose f hf0 hcf using fun i : ℕ ↦
-    mem_maximalUnramifiedExtension_iff.1 (c i : Unramified E).2
+    mem_maximalUnramifiedExtension_iff.1 (c i : Unramified E).property
   let N : ℕ := ∏ i ∈ Finset.range (p.natDegree + 1), f i
   have hN0 : N ≠ 0 := Finset.prod_ne_zero_iff.2 fun i _ ↦ hf0 i
   let L := unramifiedExtension E (AlgebraicClosure E) N
@@ -69,7 +69,8 @@ instance unramifiedResidueField_isAlgClosed : IsAlgClosed 𝓀[Unramified E] := 
       have hy_eq : algebraMap L (Unramified E) y = (c i : Unramified E) :=
         Subtype.ext (IntermediateField.coe_inclusion _ _)
       have hy1 : valuation L y ≤ 1 :=
-        (ValuativeExtension.valuation_algebraMap_le_one_iff y).1 (by rw [hy_eq]; exact (c i).2)
+        (ValuativeExtension.valuation_algebraMap_le_one_iff y).1 (by rw [hy_eq]; exact
+            (c i).property)
       have hy₀ : algebraMap 𝒪[L] 𝒪[Unramified E] ⟨y, hy1⟩ = c i := Subtype.ext hy_eq
       exact ⟨IsLocalRing.residue 𝒪[L] ⟨y, hy1⟩,
         by rw [ValuativeExtension.residueField_algebraMap_residue, hy₀, hc]⟩

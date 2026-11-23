@@ -74,15 +74,15 @@ variable {A : Type v} [CommRing A] [UniformSpace A] [IsTopologicalRing A] [IsTat
 /-- A finite product of rational opens in the category of opens contained in `W` is rational.
 The product is their intersection. -/
 private theorem prod_mem_spaRationalOpens {W : Opens ↥(spa Aplus)} {n : ℕ}
-    (U : Fin (n + 1) → Set.Iic W) (hU : ∀ i, (U i).1 ∈ spaRationalOpens Aplus) :
-    (∏ᶜ U).1 ∈ spaRationalOpens Aplus := by
-  let V : Set.Iic W := ⟨Finset.univ.inf fun i ↦ (U i).1, Set.mem_Iic.2
-    ((Finset.inf_le (Finset.mem_univ (0 : Fin (n + 1)))).trans (Set.mem_Iic.1 (U 0).2))⟩
+    (U : Fin (n + 1) → Set.Iic W) (hU : ∀ i, (U i).val ∈ spaRationalOpens Aplus) :
+    (∏ᶜ U).val ∈ spaRationalOpens Aplus := by
+  let V : Set.Iic W := ⟨Finset.univ.inf fun i ↦ (U i).val, Set.mem_Iic.2
+    ((Finset.inf_le (Finset.mem_univ (0 : Fin (n + 1)))).trans (Set.mem_Iic.1 (U 0).property))⟩
   have hV : V ⟶ ∏ᶜ U := Pi.lift fun i ↦ homOfLE (Subtype.mk_le_mk.2
     (Finset.inf_le (Finset.mem_univ i)))
-  have e : (∏ᶜ U).1 = Finset.univ.inf fun i ↦ (U i).1 :=
+  have e : (∏ᶜ U).val = Finset.univ.inf fun i ↦ (U i).val :=
     le_antisymm (Finset.le_inf fun i _ ↦ Subtype.coe_le_coe.2 (leOfHom (Pi.π U i)))
-      (Subtype.coe_le_coe.2 (leOfHom hV) : V.1 ≤ (∏ᶜ U).1)
+      (Subtype.coe_le_coe.2 (leOfHom hV) : V.val ≤ (∏ᶜ U).val)
   rw [e]
   exact finsetInf_mem_spaRationalOpens _ fun i _ ↦ hU i
 
@@ -120,7 +120,7 @@ theorem quasiIso_cechAugmentation_rationalCover_of_standardCover
     exact quasiIso_cechAugmentation_of_hom _ isTerminalTop _ (i₀ := i)
       (homOfLE (Subtype.mk_le_mk.2 (by
         intro x _
-        exact False.elim (by simpa [hspa] using x.2))))
+        exact False.elim (by simpa [hspa] using x.property))))
   let V : S → Set.Iic (⊤ : Opens ↥(spa Aplus)) := fun s ↦
     ⟨spaBasicOpen Aplus S s, Set.mem_Iic.2 le_top⟩
   let U' : ι → Set.Iic (⊤ : Opens ↥(spa Aplus)) := fun i ↦
@@ -138,12 +138,12 @@ theorem quasiIso_cechAugmentation_rationalCover_of_standardCover
     exact hv
   · intro n a
     let Y : Set.Iic (⊤ : Opens ↥(spa Aplus)) := ∏ᶜ fun j ↦ U' (a j)
-    have hY : Y.1 ∈ spaRationalOpens Aplus :=
+    have hY : Y.val ∈ spaRationalOpens Aplus :=
       prod_mem_spaRationalOpens (fun j ↦ U' (a j)) (fun j ↦ hU (a j))
     rw [quasiIso_cechAugmentation_prod_iff P Y]
     simpa only [V] using hstandard S hSne hS hY
   · intro s
-    obtain ⟨i, hi⟩ := hSU s s.2
+    obtain ⟨i, hi⟩ := hSU s s.property
     exact ⟨i, ⟨homOfLE (Subtype.mk_le_mk.2 (fun x hx ↦
       hi (mem_spaBasicOpen.mp hx)))⟩⟩
 
@@ -156,13 +156,13 @@ private theorem quasiIso_cechAugmentation_spaRationalOpens_of_iSup_eq_top
     [IsStronglyNoetherian A] (hP : P.ringOfDefinition ≤ Aplus)
     (hplus : IsRingOfIntegralElements Aplus) {W : Opens ↥(spa Aplus)} (hW : W = ⊤) {ι : Type v}
     [Nonempty ι] (U : ι → Set.Iic W)
-    (hU : ∀ i, (U i).1 ∈ spaRationalOpens Aplus) (hcov : ⨆ i, (U i).1 = W) :
+    (hU : ∀ i, (U i).val ∈ spaRationalOpens Aplus) (hcov : ⨆ i, (U i).val = W) :
     QuasiIso (cechAugmentation U isTerminalTop
       (presentationLimitAddCommGrpPresheaf P Aplus W)) := by
   subst hW
   exact quasiIso_cechAugmentation_rationalCover_of_standardCover P hplus
     (fun _ hS hspan _ hW ↦ quasiIso_cechAugmentation_inf_spaBasicOpen_of_span_eq_top P hP
-      hplus.isPowerBounded_of_mem hS hspan hW) (fun i ↦ (U i).1) hU hcov
+      hplus.isPowerBounded_of_mem hS hspan hW) (fun i ↦ (U i).val) hU hcov
 
 end Complete
 
@@ -178,7 +178,7 @@ exact in every degree.
 theorem quasiIso_cechAugmentation_spaRationalOpens_of_iSup_eq [IsStronglyNoetherian A]
     (hP : P.ringOfDefinition ≤ Aplus) (hAplus : ∀ ⦃a⦄, a ∈ Aplus → IsPowerBounded a)
     {W : Opens ↥(spa Aplus)} (hW : W ∈ spaRationalOpens Aplus) {ι : Type v} [Nonempty ι]
-    (U : ι → Set.Iic W) (hU : ∀ i, (U i).1 ∈ spaRationalOpens Aplus) (hcov : ⨆ i, (U i).1 = W) :
+    (U : ι → Set.Iic W) (hU : ∀ i, (U i).val ∈ spaRationalOpens Aplus) (hcov : ⨆ i, (U i).val = W) :
     QuasiIso (cechAugmentation U isTerminalTop
       (presentationLimitAddCommGrpPresheaf P Aplus W)) := by
   obtain ⟨T, s, hT, hWT⟩ := mem_spaRationalFamily_iff.mp (mem_spaRationalOpens.mp hW)
@@ -200,10 +200,11 @@ theorem quasiIso_cechAugmentation_spaRationalOpens_of_iSup_eq [IsStronglyNoether
   refine quasiIso_cechAugmentation_spaRationalOpens_of_iSup_eq_top
     (completionLocalization P T s _ hden)
     (completionLocalization_ringOfDefinition_le_completedPlusSubring P Aplus hP T s _ hden)
-    (isRingOfIntegralElements_completedPlusSubring P Aplus (fun j _ ↦ hP j.2) hAplus T s _ hden)
+    (isRingOfIntegralElements_completedPlusSubring P Aplus (fun j _ ↦ hP j.property) hAplus T s _
+        hden)
     (locOpensComap_spaBasicOpen_self P Aplus T s _ hden) _
     (fun i ↦ locOpensComap_mem_spaRationalOpens P Aplus T s _ hden (hU i)) ?_
-  refine (SetLike.ext fun v ↦ ?_ : _ = locOpensComap P Aplus T s _ hden (⨆ i, (U i).1)).trans
+  refine (SetLike.ext fun v ↦ ?_ : _ = locOpensComap P Aplus T s _ hden (⨆ i, (U i).val)).trans
     (congrArg _ hcov)
   simp
 

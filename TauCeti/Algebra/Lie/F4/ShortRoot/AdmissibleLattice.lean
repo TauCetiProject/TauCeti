@@ -110,27 +110,8 @@ theorem cartanMatrixRat_apply (i : Fin 4) (a b : Fin 26) :
 /-- The rational short-root matrices satisfy the type-`F₄` Serre relations. -/
 theorem isSerreSystemRat :
     TauCeti.IsSerreSystem ℚ CartanMatrix.F₄ᵀ cartanMatrixRat raisingMatrixRat
-      loweringMatrixRat := by
-  have h := isSerreSystem.map (TauCeti.matrixIntCastLieHom ℚ)
-  have hH : TauCeti.matrixIntCastLieHom ℚ ∘ cartanMatrix = cartanMatrixRat := by
-    funext i
-    rfl
-  have hE : TauCeti.matrixIntCastLieHom ℚ ∘ raisingMatrix = raisingMatrixRat := by
-    funext i
-    rfl
-  have hF : TauCeti.matrixIntCastLieHom ℚ ∘ loweringMatrix = loweringMatrixRat := by
-    funext i
-    rfl
-  rw [hH, hE, hF] at h
-  refine { h with
-    ad_pow_lie_E_E := ?_
-    ad_pow_lie_F_F := ?_ }
-  · intro i j
-    rw [← ad_pow_apply_eq_ad_pow_apply ℤ ℚ]
-    exact h.ad_pow_lie_E_E i j
-  · intro i j
-    rw [← ad_pow_apply_eq_ad_pow_apply ℤ ℚ]
-    exact h.ad_pow_lie_F_F i j
+      loweringMatrixRat :=
+  (isSerreSystem.map (TauCeti.matrixIntCastLieHom ℚ)).changeScalars
 
 /-- At each simple node, the three rational matrices form an `sl₂` triple. -/
 theorem isSl2TripleRat (i : Fin 4) :

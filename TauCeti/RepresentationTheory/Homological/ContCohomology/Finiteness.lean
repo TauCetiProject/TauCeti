@@ -139,9 +139,10 @@ theorem finite_continuousCohomology_of_isOpen_of_normal {V : Subgroup G} [V.Norm
   have : Finite (continuousCohomology i (ofDiscreteModule ℤ G (CoindQuotient G V A))) :=
     ih (fun j hj₀ hj ↦ h j hj₀ (hj.trans i.le_succ)) (CoindQuotient G V A)
       (S.nsmul_eq_zero_right (DiscreteCoind.nsmul_eq_zero hN))
-      fun v hv ↦ CoindQuotient.smul_eq_self_of_forall_smul_eq_self (fun u a ↦ htriv u u.2 a) hv
+      fun v hv ↦ CoindQuotient.smul_eq_self_of_forall_smul_eq_self (fun u a ↦ htriv u u.property a)
+          hv
   -- Shapiro's lemma: `Hⁱ⁺¹(G, Coind_V^G A) ≅ Hⁱ⁺¹(V, A)`
-  have := h (i + 1) i.succ_pos le_rfl A hN fun v a ↦ htriv v v.2 a
+  have := h (i + 1) i.succ_pos le_rfl A hN fun v a ↦ htriv v v.property a
   have : Finite (continuousCohomology (i + 1) (ofDiscreteModule ℤ G (DiscreteCoind G V A))) :=
     Finite.of_equiv _
       (shapiroIso V (V.isClosed_of_isOpen hV) A (i + 1)).symm.toContinuousLinearEquiv.toEquiv

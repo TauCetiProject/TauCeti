@@ -126,7 +126,7 @@ theorem mapsTo_eigenspace_chirality_of_mem_even {x : CliffordAlgebra Q} (hx : x 
 on the `ε`-eigenspace `W^ε` by the restriction of `ρ x`. For `ε = ±1` this is the action on the
 half-spinors `W^±`. -/
 def evenHalfSpinAction : even Q →ₐ[ℝ] Module.End ℂ (eigenspace (ρ (chirality Q o)) ε) where
-  toFun x := (ρ x).restrict fun _ hψ ↦ mapsTo_eigenspace_chirality_of_mem_even o ρ ε x.2 hψ
+  toFun x := (ρ x).restrict fun _ hψ ↦ mapsTo_eigenspace_chirality_of_mem_even o ρ ε x.property hψ
   map_one' := by ext; simp
   map_mul' x y := by ext; simp
   map_zero' := by ext; simp

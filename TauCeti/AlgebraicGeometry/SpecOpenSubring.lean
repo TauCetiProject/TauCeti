@@ -93,7 +93,7 @@ theorem mem_nonOpenPrimes (B : Subring A) {q : PrimeSpectrum B} :
 the basic opens `D(s)` for `s ∈ B` topologically nilpotent in the ambient ring. -/
 theorem nonOpenPrimes_eq_iSup_basicOpen (B : Subring A) :
     nonOpenPrimes B =
-      ⨆ s : {s : B // IsTopologicallyNilpotent (s : A)}, PrimeSpectrum.basicOpen s.1 := by
+      ⨆ s : {s : B // IsTopologicallyNilpotent (s : A)}, PrimeSpectrum.basicOpen s.val := by
   refine SetLike.ext fun q ↦
     ((B.mem_nonOpenPrimes).trans ?_).trans TopologicalSpace.Opens.mem_iSup.symm
   rw [isOpen_iff_setOf_isTopologicallyNilpotent_coe_subset_of_isRadical q.isPrime.isRadical,
@@ -125,20 +125,20 @@ theorem isIso_morphismRestrict_nonOpenPrimes (B : Subring A) (hB : IsOpen (B : S
     IsIso (Spec.map (CommRingCat.ofHom B.subtype) ∣_ nonOpenPrimes B) := by
   -- cover the non-open primes, as a scheme, by the preimages of the basic opens `D(s)`
   let V (s : {s : B // IsTopologicallyNilpotent (s : A)}) : (nonOpenPrimes B).toScheme.Opens :=
-    (nonOpenPrimes B).ι ⁻¹ᵁ PrimeSpectrum.basicOpen s.1
+    (nonOpenPrimes B).ι ⁻¹ᵁ PrimeSpectrum.basicOpen s.val
   have hV : ⨆ s, V s = ⊤ := by
     refine top_le_iff.mp fun x _ ↦ ?_
     obtain ⟨s, hs⟩ := TopologicalSpace.Opens.mem_iSup.mp
-      ((nonOpenPrimes_eq_iSup_basicOpen B).le x.2)
+      ((nonOpenPrimes_eq_iSup_basicOpen B).le x.property)
     exact TopologicalSpace.Opens.mem_iSup.mpr ⟨s, hs⟩
   rw [← MorphismProperty.isomorphisms.iff,
     IsZariskiLocalAtTarget.iff_of_iSup_eq_top (P := MorphismProperty.isomorphisms Scheme) V hV]
   intro s
-  have hle : (PrimeSpectrum.basicOpen s.1 : (Spec (CommRingCat.of B)).Opens) ≤ nonOpenPrimes B :=
+  have hle : (PrimeSpectrum.basicOpen s.val : (Spec (CommRingCat.of B)).Opens) ≤ nonOpenPrimes B :=
     (le_iSup (fun s : {s : B // IsTopologicallyNilpotent (s : A)} ↦
-      (PrimeSpectrum.basicOpen s.1 : (Spec (CommRingCat.of B)).Opens)) s).trans
+      (PrimeSpectrum.basicOpen s.val : (Spec (CommRingCat.of B)).Opens)) s).trans
       (nonOpenPrimes_eq_iSup_basicOpen B).ge
-  have himage : (nonOpenPrimes B).ι ''ᵁ V s = PrimeSpectrum.basicOpen s.1 :=
+  have himage : (nonOpenPrimes B).ι ''ᵁ V s = PrimeSpectrum.basicOpen s.val :=
     ((nonOpenPrimes B).ι.image_preimage_eq_opensRange_inf _).trans <| by
       rw [Scheme.Opens.opensRange_ι]
       exact inf_eq_right.mpr hle
@@ -146,12 +146,12 @@ theorem isIso_morphismRestrict_nonOpenPrimes (B : Subring A) (hB : IsOpen (B : S
   refine ((MorphismProperty.isomorphisms Scheme).arrow_mk_iso_iff
     (morphismRestrictRestrict (Spec.map (CommRingCat.ofHom B.subtype)) _ (V s) ≪≫
       morphismRestrictEq (Spec.map (CommRingCat.ofHom B.subtype)) himage ≪≫
-        SpecMapRestrictBasicOpenIso (CommRingCat.ofHom B.subtype) s.1)).mpr ?_
-  have hbij : Function.Bijective (Localization.awayMap B.subtype s.1) := by
-    have := (TauCeti.Localization.awayRingEquivOfIsTopologicallyNilpotent (Localization.Away s.1)
-      (Localization.Away (B.subtype s.1)) hB s.2).bijective
+        SpecMapRestrictBasicOpenIso (CommRingCat.ofHom B.subtype) s.val)).mpr ?_
+  have hbij : Function.Bijective (Localization.awayMap B.subtype s.val) := by
+    have := (TauCeti.Localization.awayRingEquivOfIsTopologicallyNilpotent (Localization.Away s.val)
+      (Localization.Away (B.subtype s.val)) hB s.property).bijective
     rwa [TauCeti.Localization.coe_awayRingEquivOfIsTopologicallyNilpotent] at this
-  have : IsIso (CommRingCat.ofHom (Localization.awayMap B.subtype s.1)) :=
+  have : IsIso (CommRingCat.ofHom (Localization.awayMap B.subtype s.val)) :=
     (ConcreteCategory.isIso_iff_bijective _).mpr hbij
   exact (MorphismProperty.isomorphisms.iff _).mpr (inferInstanceAs (IsIso (Spec.map _)))
 
