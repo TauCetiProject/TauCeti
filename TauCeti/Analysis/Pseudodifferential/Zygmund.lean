@@ -12,6 +12,7 @@ import TauCeti.Analysis.Distribution.SchwartzSpace.DyadicSymbol
 import TauCeti.Analysis.Fourier.ChangeOfVariables
 import TauCeti.Analysis.Pseudodifferential.Sobolev
 import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Bounds
+import TauCeti.Analysis.SpecificLimits.DyadicSum
 
 /-!
 # Zygmund estimates for pseudodifferential operators with compact spatial support

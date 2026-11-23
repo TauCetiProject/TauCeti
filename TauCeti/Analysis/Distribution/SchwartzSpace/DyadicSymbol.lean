@@ -115,10 +115,11 @@ theorem exists_integral_norm_fourierInv_cutoff_smul_le (m : ℝ) {N : ℕ}
 
 /-- **Kernels of dyadic pieces of symbols with finite-dimensional values.** The bound of
 `TauCeti.exists_integral_norm_fourierInv_cutoff_smul_le` for a symbol `g` with values in a
-finite-dimensional complex normed space, such as a space of operators `V →L[ℂ] W` between
-finite-dimensional spaces: there is a constant `C`, which depends neither on `g`, `W`, `R` nor `χ`,
-with `∫ ‖𝓕⁻ (χ g) x‖ dx ≤ C W R ^ m`. It follows from the scalar case by expanding `g` in a
-basis. -/
+finite-dimensional complex normed space `G`, such as a space of operators between
+finite-dimensional spaces: there is a constant `C` with `∫ ‖𝓕⁻ (χ g) x‖ dx ≤ C W R ^ m`. The
+constant depends on `E`, `G`, `m`, `N`, `a`, `b` and `B`, but not on the symbol `g`, its bound
+`W`, the scale `R` or the cutoff `χ`. It follows from the scalar case by expanding `g` in a basis
+of `G`. -/
 theorem exists_integral_norm_fourierInv_cutoff_smul_le_of_finiteDimensional {G : Type*}
     [NormedAddCommGroup G] [NormedSpace ℂ G] [FiniteDimensional ℂ G] (m : ℝ) {N : ℕ}
     (hN : finrank ℝ E < 2 * N) {a b : ℝ} (ha : 0 < a) (B : ℕ → ℝ) :
