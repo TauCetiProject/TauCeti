@@ -245,11 +245,11 @@ def cutoffConvolutionCLM {Ω' : Opens E} (χ : 𝓓(Ω, ℝ)) {K₀ : E → ℝ}
         simpa only [S, sub_eq_add_neg] using IsCompact.add χ.hasCompactSupport K.isCompact.neg
       haveI hκi : Integrable (S.indicator K₀) μ :=
         (integrable_indicator_iff hS.measurableSet).2 (hK₀.integrableOn_isCompact hS)
-      cutoffCLM χ.contDiff (inter_subset_left.trans χ.tsupport_subset) ∘L
+      cutoffTopCLM χ ∘L
         (ofSupportedInCLM ℝ (subset_univ _) : _ →L[ℝ] 𝓓(⊤, F)) ∘L
         ContDiffMapSupportedIn.convolutionCLM K hS hκi Set.support_indicator_subset)
     (fun K _ f ↦ TestFunction.ext fun x ↦ by
-      simp only [comp_apply, cutoffCLM_apply, coe_ofSupportedInCLM, coe_ofSupportedIn,
+      simp only [comp_apply, cutoffTopCLM_apply, coe_ofSupportedInCLM, coe_ofSupportedIn,
         ContDiffMapSupportedIn.convolutionCLM_apply, coe_mk]
       by_cases hx : x ∈ tsupport χ
       · congr 1

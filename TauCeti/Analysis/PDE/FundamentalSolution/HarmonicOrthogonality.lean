@@ -6,6 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.PDE.FundamentalSolution.CutoffPotential
+public import TauCeti.Analysis.PDE.FundamentalSolution.Euclidean.Basic
+public import TauCeti.Analysis.PDE.FundamentalSolution.Planar.Basic
 public import TauCeti.Topology.FilledIn
 import Mathlib.Analysis.Analytic.Uniqueness
 import Mathlib.Analysis.LocallyConvex.SeparatingDual
@@ -52,6 +54,10 @@ Lax–Malgrange harmonic orthogonality theorem
 
 ## Main declarations
 
+* `TauCeti.HasExteriorMultipoleApprox`,
+  `TauCeti.hasExteriorMultipoleApprox_planarNewtonianKernel`,
+  `TauCeti.hasExteriorMultipoleApprox_newtonianKernel`: exterior multipole approximation by
+  globally harmonic functions, proved for the planar and Euclidean Newtonian kernels.
 * `Distribution.kernelPotentialOfSupport_eq_zero_of_isFilledIn`,
   `Distribution.dsupport_cutoffConvolutionCLM_subset_of_isFilledIn`,
   `Distribution.apply_eq_zero_of_isFilledIn_of_harmonicOnNhd_of_fundamentalSolution`: unique
@@ -78,6 +84,37 @@ noncomputable section
 open Bornology ContinuousLinearMap Filter Function InnerProductSpace Laplacian
 open LineDeriv MeasureTheory Metric Set TauCeti TopologicalSpace
 open scoped ContDiff Convolution Distributions Pointwise Topology
+
+namespace TauCeti
+
+/-- A scalar kernel `G : E → ℝ` admits exterior multipole approximation if there is `c ∈ (0, 1)`
+such that for every pole `x ≠ 0`, `y ↦ G (x - y)` and all of its iterated derivatives are
+uniformly approximated on `closedBall 0 (c * ‖x‖)` by globally harmonic functions. -/
+def HasExteriorMultipoleApprox {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
+    [FiniteDimensional ℝ E] (G : E → ℝ) : Prop :=
+  ∃ c : ℝ, 0 < c ∧ c < 1 ∧ ∀ x : E, x ≠ 0 →
+    ∃ P : ℕ → E → ℝ, (∀ N z, HarmonicAt (P N) z) ∧
+      ∀ k : ℕ, TendstoUniformlyOn (fun N ↦ iteratedFDeriv ℝ k (P N))
+        (iteratedFDeriv ℝ k fun y ↦ G (x - y)) atTop (closedBall 0 (c * ‖x‖))
+
+/-- The planar Newtonian kernel admits exterior multipole approximation. -/
+theorem hasExteriorMultipoleApprox_planarNewtonianKernel :
+    HasExteriorMultipoleApprox planarNewtonianKernel :=
+  ⟨1 / 2, by norm_num, by norm_num, fun x hx ↦
+    ⟨(planarMultipoleSeries x).partialSum,
+      fun N z ↦ harmonicAt_planarMultipoleSeries_partialSum x N z,
+      fun k ↦ tendstoUniformlyOn_iteratedFDeriv_planarMultipoleSeries_partialSum
+        (by linarith [norm_pos_iff.2 hx]) k⟩⟩
+
+/-- Every Euclidean Newtonian kernel `newtonianKernel n` admits exterior multipole
+approximation. -/
+theorem hasExteriorMultipoleApprox_newtonianKernel (n : ℕ) :
+    HasExteriorMultipoleApprox (newtonianKernel n) := by
+  obtain ⟨c, hc0, hc1, h⟩ :=
+    exists_harmonicAt_mem_polynomialsDegLE_tendstoUniformlyOn_iteratedFDeriv_newtonianKernel_sub n
+  exact ⟨c, hc0, hc1, fun x hx ↦ let ⟨P, hP, _, hlim⟩ := h x hx; ⟨P, hP, hlim⟩⟩
+
+end TauCeti
 
 namespace Distribution
 
@@ -112,8 +149,7 @@ private theorem eventuallyEq_zero_kernelPotentialOfSupport_of_notMem
   let H : E → ℝ := fun y ↦ iteratedFDerivAlong ℝ (List.ofFn m) G (x₀ - y)
   have hH : HarmonicOnNhd H {x₀}ᶜ := hG.iteratedFDerivAlong_sub_right (List.ofFn m) x₀
   let ψ : 𝓓(Ω, ℝ) := χ.smulOfContDiffOn isOpen_compl_singleton
-    (subset_compl_singleton_iff.2 hx₀χ)
-    (hH.analyticOnNhd.contDiffOn isOpen_compl_singleton.uniqueDiffOn)
+    (subset_compl_singleton_iff.2 hx₀χ) (hH.contDiffOn_of_isOpen isOpen_compl_singleton)
   rw [iteratedFDerivAlong_kernelPotentialOfSupport T hχT hG hx₀χ (List.ofFn m)
       (φ := ψ) (fun y ↦ by simp [ψ, H]), zero_apply]
   refine hT H ψ (hH.mono (subset_compl_singleton_iff.2 hx₀)) ?_
@@ -125,11 +161,7 @@ functions on `Ω` and `G` admits exterior multipole approximation by globally ha
 then `T.kernelPotentialOfSupport hG` vanishes identically. -/
 private theorem exists_radius_kernelPotentialOfSupport_eq_zero {T : 𝓓'(Ω, ℝ)} {K : Set E}
     (hK : IsCompact K) (hKΩ : K ⊆ Ω) (hTK : dsupport T ⊆ K) {G : E → ℝ}
-    (hG : HarmonicOnNhd G {0}ᶜ)
-    (hmp : ∃ c : ℝ, 0 < c ∧ c < 1 ∧ ∀ x : E, x ≠ 0 →
-      ∃ P : ℕ → E → ℝ, (∀ N z, HarmonicAt (P N) z) ∧
-        ∀ k : ℕ, TendstoUniformlyOn (fun N ↦ iteratedFDeriv ℝ k (P N))
-          (iteratedFDeriv ℝ k fun y ↦ G (x - y)) atTop (closedBall 0 (c * ‖x‖)))
+    (hG : HarmonicOnNhd G {0}ᶜ) (hmp : HasExteriorMultipoleApprox G)
     (hT : ∀ (H : E → ℝ) (ψ : 𝓓(Ω, ℝ)), HarmonicOnNhd H Ω → ((ψ : E → ℝ) =ᶠ[𝓝ˢ K] H) → T ψ = 0) :
     ∃ R > 0, ∀ x : E, R < ‖x‖ → T.kernelPotentialOfSupport hG x = 0 := by
   obtain ⟨χ, hχ1, -⟩ := TestFunction.exists_eventually_eq_one (n := ⊤) hK hKΩ
@@ -152,8 +184,7 @@ private theorem exists_radius_kernelPotentialOfSupport_eq_zero {T : 𝓓'(Ω, �
   have hχx : tsupport (χ : E → ℝ) ⊆ {x}ᶜ := subset_compl_singleton_iff.2 hxχ
   obtain ⟨P, hPharm, hPlim⟩ := hmp x hx0
   have hPsmooth (N : ℕ) : ContDiffOn ℝ ∞ (P N) {x}ᶜ :=
-    (((HarmonicOnNhd.analyticOnNhd (fun z _ ↦ hPharm N z : HarmonicOnNhd (P N) univ)).contDiffOn
-      uniqueDiffOn_univ).mono (subset_univ _))
+    (HarmonicOnNhd.contDiffOn_of_isOpen (fun z _ ↦ hPharm N z) isOpen_compl_singleton)
   have hχ_sub : tsupport (χ : E → ℝ) ⊆ closedBall 0 (c * ‖x‖) :=
     hχR₁.trans (closedBall_subset_closedBall (by linarith))
   have htend := TestFunction.tendsto_smulOfContDiffOn χ isOpen_compl_singleton hχx hPsmooth
@@ -172,11 +203,7 @@ private theorem exists_radius_kernelPotentialOfSupport_eq_zero {T : 𝓓'(Ω, �
 
 private theorem kernelPotentialOfSupport_eq_zero_of_isFilledIn_real {T : 𝓓'(Ω, ℝ)} {K : Set E}
     (hK : IsCompact K) (hKΩ : K ⊆ Ω) (hfill : IsFilledIn K Ω) (hTK : dsupport T ⊆ K)
-    {G : E → ℝ} (hG : HarmonicOnNhd G {0}ᶜ)
-    (hmp : ∃ c : ℝ, 0 < c ∧ c < 1 ∧ ∀ x : E, x ≠ 0 →
-      ∃ P : ℕ → E → ℝ, (∀ N z, HarmonicAt (P N) z) ∧
-        ∀ k : ℕ, TendstoUniformlyOn (fun N ↦ iteratedFDeriv ℝ k (P N))
-          (iteratedFDeriv ℝ k fun y ↦ G (x - y)) atTop (closedBall 0 (c * ‖x‖)))
+    {G : E → ℝ} (hG : HarmonicOnNhd G {0}ᶜ) (hmp : HasExteriorMultipoleApprox G)
     (hT : ∀ (H : E → ℝ) (ψ : 𝓓(Ω, ℝ)), HarmonicOnNhd H Ω → ((ψ : E → ℝ) =ᶠ[𝓝ˢ K] H) → T ψ = 0)
     {x : E} (hx : x ∈ Kᶜ) :
     T.kernelPotentialOfSupport hG x = 0 := by
@@ -212,11 +239,7 @@ harmonic on `{0}ᶜ` with exterior multipole approximation by globally harmonic 
 `T.kernelPotentialOfSupport hG` vanishes throughout `Kᶜ`. -/
 theorem kernelPotentialOfSupport_eq_zero_of_isFilledIn {T : 𝓓'(Ω, F)} {K : Set E}
     (hK : IsCompact K) (hKΩ : K ⊆ Ω) (hfill : IsFilledIn K Ω) (hTK : dsupport T ⊆ K)
-    {G : E → ℝ} (hG : HarmonicOnNhd G {0}ᶜ)
-    (hmp : ∃ c : ℝ, 0 < c ∧ c < 1 ∧ ∀ x : E, x ≠ 0 →
-      ∃ P : ℕ → E → ℝ, (∀ N z, HarmonicAt (P N) z) ∧
-        ∀ k : ℕ, TendstoUniformlyOn (fun N ↦ iteratedFDeriv ℝ k (P N))
-          (iteratedFDeriv ℝ k fun y ↦ G (x - y)) atTop (closedBall 0 (c * ‖x‖)))
+    {G : E → ℝ} (hG : HarmonicOnNhd G {0}ᶜ) (hmp : HasExteriorMultipoleApprox G)
     (hT : ∀ (H : E → ℝ) (ψ : 𝓓(Ω, ℝ)), HarmonicOnNhd H Ω → ((ψ : E → ℝ) =ᶠ[𝓝ˢ K] H) → T ψ = 0)
     {x : E} (hx : x ∈ Kᶜ) :
     T.kernelPotentialOfSupport hG x = 0 := by
@@ -237,11 +260,7 @@ theorem dsupport_cutoffConvolutionCLM_subset_of_isFilledIn [MeasurableSpace E] [
     (hK : IsCompact K) (hKΩ : K ⊆ Ω) (hfill : IsFilledIn K Ω) (hTK : dsupport T ⊆ K)
     {χ : 𝓓(Ω, ℝ)} (hχ : ∀ᶠ y in 𝓝ˢ K, χ y = 1) {G : E → ℝ}
     (hG_loc : LocallyIntegrable G μ) (hG : HarmonicOnNhd G {0}ᶜ)
-    (hG_symm : ∀ x y, G (x - y) = G (y - x))
-    (hmp : ∃ c : ℝ, 0 < c ∧ c < 1 ∧ ∀ x : E, x ≠ 0 →
-      ∃ P : ℕ → E → ℝ, (∀ N z, HarmonicAt (P N) z) ∧
-        ∀ k : ℕ, TendstoUniformlyOn (fun N ↦ iteratedFDeriv ℝ k (P N))
-          (iteratedFDeriv ℝ k fun y ↦ G (x - y)) atTop (closedBall 0 (c * ‖x‖)))
+    (hG_symm : ∀ x y, G (x - y) = G (y - x)) (hmp : HasExteriorMultipoleApprox G)
     (hT : ∀ (H : E → ℝ) (ψ : 𝓓(Ω, ℝ)), HarmonicOnNhd H Ω → ((ψ : E → ℝ) =ᶠ[𝓝ˢ K] H) → T ψ = 0) :
     dsupport (cutoffConvolutionCLM (Ω' := ⊤) χ hG_loc T) ⊆ K := by
   rw [← disjoint_compl_left_iff_subset]
@@ -274,10 +293,7 @@ theorem apply_eq_zero_of_isFilledIn_of_harmonicOnNhd_of_fundamentalSolution [Mea
     {G : E → ℝ} (hG_loc : LocallyIntegrable G μ) (hG : HarmonicOnNhd G {0}ᶜ)
     (hG_symm : ∀ x y, G (x - y) = G (y - x))
     (hG_lap : ∀ φ : 𝓓((⊤ : Opens E), ℝ), Δ (G ⋆[lsmul ℝ ℝ, μ] (φ : E → ℝ)) = -(φ : E → ℝ))
-    (hmp : ∃ c : ℝ, 0 < c ∧ c < 1 ∧ ∀ x : E, x ≠ 0 →
-      ∃ P : ℕ → E → ℝ, (∀ N z, HarmonicAt (P N) z) ∧
-        ∀ k : ℕ, TendstoUniformlyOn (fun N ↦ iteratedFDeriv ℝ k (P N))
-          (iteratedFDeriv ℝ k fun y ↦ G (x - y)) atTop (closedBall 0 (c * ‖x‖)))
+    (hmp : HasExteriorMultipoleApprox G)
     (hT : ∀ (H : E → ℝ) (ψ : 𝓓(Ω, ℝ)), HarmonicOnNhd H Ω → ((ψ : E → ℝ) =ᶠ[𝓝ˢ K] H) → T ψ = 0)
     {h : E → ℝ} (hh : HarmonicOnNhd h K) {ψ : 𝓓(Ω, ℝ)} (hψ : (ψ : E → ℝ) =ᶠ[𝓝ˢ K] h) :
     T ψ = 0 := by
@@ -293,7 +309,7 @@ theorem apply_eq_zero_of_isFilledIn_of_harmonicOnNhd_of_fundamentalSolution [Mea
     (Ω := (⊤ : Opens E)) (n := ⊤) hK hUo hh (subset_univ _)
   have hU_harm : HarmonicOnNhd h U := fun _ hy ↦ hy
   let θ : 𝓓((⊤ : Opens E), ℝ) :=
-    η.smulOfContDiffOn hUo hηU (hU_harm.analyticOnNhd.contDiffOn hUo.uniqueDiffOn)
+    η.smulOfContDiffOn hUo hηU (hU_harm.contDiffOn_of_isOpen hUo)
   have hθh : (θ : E → ℝ) =ᶠ[𝓝ˢ K] h := by
     filter_upwards [hη1] with y hy
     simp [θ, hy]
@@ -310,14 +326,12 @@ theorem apply_eq_zero_of_isFilledIn_of_harmonicOnNhd_of_fundamentalSolution [Mea
   have hW0 : laplacianCLM ℝ E _ W θ = 0 := by
     rw [Distribution.laplacianCLM_apply_apply, Distribution.map_eq_map_of_eventuallyEq W hΔ0,
       map_zero]
-  have hχθ0 : T (TestFunction.cutoffCLM χ.contDiff
-      (inter_subset_left.trans χ.tsupport_subset) θ) = 0 := by
+  have hχθ0 : T (TestFunction.cutoffTopCLM χ θ) = 0 := by
     have hpois := congrArg (fun D : 𝓓'((⊤ : Opens E), F) ↦ D θ)
       (laplacianCLM_cutoffConvolutionCLM χ hG_loc hG_lap T)
-    rw [hW0, neg_apply, cutoffCLM_apply] at hpois
+    rw [hW0, neg_apply, cutoffTopCLM_apply] at hpois
     exact neg_eq_zero.1 hpois.symm
-  have hψ_eq : (ψ : E → ℝ) =ᶠ[𝓝ˢ (dsupport T)]
-      TestFunction.cutoffCLM χ.contDiff (inter_subset_left.trans χ.tsupport_subset) θ := by
+  have hψ_eq : (ψ : E → ℝ) =ᶠ[𝓝ˢ (dsupport T)] TestFunction.cutoffTopCLM χ θ := by
     refine Filter.EventuallyEq.filter_mono ?_ (nhdsSet_mono hTK)
     filter_upwards [hψ, hχ1, hθh] with y hy₁ hy₂ hy₃
     simp [hy₁, hy₂, hy₃]
@@ -419,24 +433,10 @@ private theorem apply_eq_zero_of_isFilledIn_of_harmonicOnNhd_real
           planarNewtonianKernel_sub_comm
           (fun φ ↦ laplacian_planarNewtonianKernel_convolution (φ.contDiff.of_le (by simp))
             φ.hasCompactSupport)
-          ⟨1 / 2, by norm_num, by norm_num, fun x hx ↦
-            ⟨(planarMultipoleSeries x).partialSum,
-              fun N z ↦ harmonicAt_planarMultipoleSeries_partialSum x N z,
-              fun k ↦ tendstoUniformlyOn_iteratedFDeriv_planarMultipoleSeries_partialSum
-                (by linarith [norm_pos_iff.2 hx]) k⟩⟩
-          hT' hh' hψ'
+          hasExteriorMultipoleApprox_planarNewtonianKernel hT' hh' hψ'
   | d + 3 =>
     let e : E ≃ₗᵢ[ℝ] EuclideanSpace ℝ (Fin (d + 3)) :=
       ((stdOrthonormalBasis ℝ E).reindex (finCongr hd)).repr
-    have hmp : ∃ c : ℝ, 0 < c ∧ c < 1 ∧ ∀ x : EuclideanSpace ℝ (Fin (d + 3)), x ≠ 0 →
-        ∃ P : ℕ → EuclideanSpace ℝ (Fin (d + 3)) → ℝ, (∀ N z, HarmonicAt (P N) z) ∧
-          ∀ k : ℕ, TendstoUniformlyOn (fun N ↦ iteratedFDeriv ℝ k (P N))
-            (iteratedFDeriv ℝ k fun y ↦ newtonianKernel (d + 3) (x - y)) atTop
-            (closedBall 0 (c * ‖x‖)) := by
-      obtain ⟨c, hc0, hc1, h⟩ :=
-        exists_harmonicAt_mem_polynomialsDegLE_tendstoUniformlyOn_iteratedFDeriv_newtonianKernel_sub
-          (d + 3)
-      exact ⟨c, hc0, hc1, fun x hx ↦ let ⟨P, hP, _, hlim⟩ := h x hx; ⟨P, hP, hlim⟩⟩
     exact apply_eq_zero_of_isFilledIn_of_harmonicOnNhd_of_linearIsometryEquiv e hK hKΩ hfill hTK
       hT hh hψ fun {Ω' T' K'} hK' hK'Ω' hfill' hT'K' hT' {h'} hh' {ψ'} hψ' ↦
         apply_eq_zero_of_isFilledIn_of_harmonicOnNhd_of_fundamentalSolution hK' hK'Ω' hfill'
@@ -444,7 +444,7 @@ private theorem apply_eq_zero_of_isFilledIn_of_harmonicOnNhd_real
           (harmonicOnNhd_newtonianKernel (d + 3)) (newtonianKernel_sub_comm (d + 3))
           (fun φ ↦ laplacian_newtonianKernel_convolution (by omega) (by omega)
             (φ.contDiff.of_le (by simp)) φ.hasCompactSupport)
-          hmp hT' hh' hψ'
+          (hasExteriorMultipoleApprox_newtonianKernel (d + 3)) hT' hh' hψ'
 
 /-- **Lax–Malgrange harmonic orthogonality.** Let `E` be any finite-dimensional real inner product
 space, `F` any real normed space, and `T : 𝓓'(Ω, F)` a distribution supported in a compact set

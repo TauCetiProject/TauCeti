@@ -125,6 +125,15 @@ private theorem exists_profile [FiniteDimensional ℝ E] [Nontrivial E] {r : ℝ
   · linarith [norm_le_norm_add_norm_sub' a y, norm_sub_rev a y]
   · linarith [norm_le_norm_add_norm_sub' y a]
 
+/-- Scaling by `0 < ε ≤ 1` maps `ball (0 : E) r` into itself. -/
+private theorem mapsTo_smul_ball {r : ℝ} {ε : ℝ} (h0 : 0 < ε) (h1 : ε ≤ 1) :
+    MapsTo (ε • ·) ((⟨ball (0 : E) r, isOpen_ball⟩ : Opens E) : Set E)
+      ((⟨ball (0 : E) r, isOpen_ball⟩ : Opens E) : Set E) := by
+  intro z hz
+  rw [SetLike.mem_coe, Opens.mem_mk, mem_ball_zero_iff] at hz ⊢
+  rw [norm_smul, Real.norm_of_nonneg h0.le]
+  exact (mul_le_of_le_one_left (norm_nonneg z) h1).trans_lt hz
+
 /-- The rescaled profile `y ↦ ε ^ l φ(ε⁻¹ (y - x₀))` as a test function on `Ω`, for a test
 function `φ` on `ball 0 r`, `ball x₀ r ⊆ Ω` and `0 < ε ≤ 1`: the profile dilated by `ε` and
 translated by `x₀`. -/
@@ -133,14 +142,7 @@ private def concentrate {r : ℝ} {x₀ : E} {Omega : Opens E} (hΩ : ball x₀ 
     𝓓(Omega, ℝ) :=
   ε ^ l •
     (dilateTestFunction (V := ⟨ball (0 : E) r, isOpen_ball⟩) (Ω := ⟨ball (0 : E) r, isOpen_ball⟩)
-      h0.ne'
-      (show MapsTo (ε • ·) (⟨ball (0 : E) r, isOpen_ball⟩ : Opens E)
-          (⟨ball (0 : E) r, isOpen_ball⟩ : Opens E) from fun z hz => by
-        change z ∈ ball (0 : E) r at hz
-        change ε • z ∈ ball (0 : E) r
-        rw [mem_ball_zero_iff, norm_smul, Real.norm_of_nonneg h0.le]
-        exact (mul_le_of_le_one_left (norm_nonneg z) h1).trans_lt (mem_ball_zero_iff.1 hz))
-      φ).translateOfMapsTo (x := x₀)
+      h0.ne' (mapsTo_smul_ball h0 h1) φ).translateOfMapsTo (x := x₀)
       (show MapsTo (· + x₀) _ Omega from fun z hz => hΩ <| by
         rw [mem_ball, dist_eq_norm, add_sub_cancel_right, ← mem_ball_zero_iff]
         exact TestFunction.tsupport_subset _ hz)

@@ -76,8 +76,7 @@ harmonic on the open set `Ω`. -/
 private def harmonicJetSubmodule {K Ω : Set E} (hK : IsCompact K) (hΩ : IsOpen Ω) (hKΩ : K ⊆ Ω)
     (m : ℕ) : Submodule ℝ (JetSpace E ℝ K m) where
   carrier := {J | ∃ H : E → ℝ, ∃ hH : HarmonicOnNhd H Ω,
-    J = JetSpace.ofContDiffOn hK hΩ hKΩ m
-      ((hH.analyticOnNhd.contDiffOn hΩ.uniqueDiffOn).of_le (mod_cast le_top))}
+    J = JetSpace.ofContDiffOn hK hΩ hKΩ m (hH.contDiffOn_of_isOpen hΩ)}
   zero_mem' := ⟨0, harmonicOnNhd_const 0, (JetSpace.ofContDiffOn_zero hK hΩ hKΩ m).symm⟩
   add_mem' := by
     rintro _ _ ⟨H₁, hH₁, rfl⟩ ⟨H₂, hH₂, rfl⟩
@@ -96,8 +95,7 @@ private def harmonicJetOn
     {K : Set E} (hK : IsCompact K) {f : E → ℝ} (hf : HarmonicOnNhd f K) (m : ℕ) :
     JetSpace E ℝ K m :=
   JetSpace.ofContDiffOn hK (isOpen_setOfPred_harmonicAt (f := f)) (fun _ hx ↦ hf _ hx) m
-    (((HarmonicOnNhd.analyticOnNhd (f := f) fun _ hy ↦ hy).contDiffOn
-      (isOpen_setOfPred_harmonicAt (f := f)).uniqueDiffOn).of_le (mod_cast le_top))
+    (HarmonicOnNhd.contDiffOn_of_isOpen (fun _ hy ↦ hy) (isOpen_setOfPred_harmonicAt (f := f)))
 
 /-- A continuous linear functional on `TauCeti.JetSpace E ℝ K m` vanishing on all harmonic `m`-jets
 from `Ω` also vanishes on the `m`-jet of any function harmonic on a neighbourhood of `K`, provided
@@ -110,7 +108,7 @@ private theorem mem_topologicalClosure_harmonicJetSubmodule
   set Uf : Set E := {y | HarmonicAt f y}
   have hUf : IsOpen Uf := isOpen_setOfPred_harmonicAt (f := f)
   have hfU : HarmonicOnNhd f Uf := fun _ hy ↦ hy
-  have hfU_cd : ContDiffOn ℝ ∞ f Uf := hfU.analyticOnNhd.contDiffOn hUf.uniqueDiffOn
+  have hfU_cd : ContDiffOn ℝ ∞ f Uf := hfU.contDiffOn_of_isOpen hUf
   refine (Submodule.mem_topologicalClosure_iff_forall_dual_eq_zero _ _).2 fun ℓ hℓ ↦ ?_
   let Ωo : Opens E := ⟨Ω, hΩ⟩
   set T := ℓ ∘L TestFunction.jetRestrictionCLM Ωo K m (by exact_mod_cast le_top) with hT_def
@@ -120,7 +118,7 @@ private theorem mem_topologicalClosure_harmonicJetSubmodule
       HarmonicOnNhd H Ωo → ((ψ : E → ℝ) =ᶠ[𝓝ˢ K] H) → T ψ = 0 := fun H ψ hH hψ ↦ by
     rw [hT_def, ContinuousLinearMap.comp_apply]
     exact hℓ _ ⟨H, hH, TestFunction.jetRestrictionCLM_eq_ofContDiffOn hK hΩ hKΩ m _
-      ((hH.analyticOnNhd.contDiffOn hΩ.uniqueDiffOn).of_le (mod_cast le_top)) hψ⟩
+      (hH.contDiffOn_of_isOpen hΩ) hψ⟩
   obtain ⟨η, -, hη1, hηU⟩ := TestFunction.exists_cutoff_tsupport_subset (Ω := Ωo) (n := ⊤)
     hK (hΩ.inter hUf) (subset_inter hKΩ hf) inter_subset_left
   let ψf : 𝓓(Ωo, ℝ) := η.smulOfContDiffOn hUf (hηU.trans inter_subset_right) hfU_cd
@@ -129,7 +127,7 @@ private theorem mem_topologicalClosure_harmonicJetSubmodule
     Distribution.apply_eq_zero_of_isFilledIn_of_harmonicOnNhd (T := T) hK hKΩ hfill hTK hT hf hψf
   rw [hT_def, ContinuousLinearMap.comp_apply,
     TestFunction.jetRestrictionCLM_eq_ofContDiffOn hK hUf (fun _ hy ↦ hf _ hy) m _
-      (hfU_cd.of_le (mod_cast le_top)) hψf] at hT0
+      (hfU.contDiffOn_of_isOpen hUf) hψf] at hT0
   exact hT0
 
 /-- Scalar harmonic Runge approximation on any finite-dimensional real inner product space. -/
@@ -145,8 +143,7 @@ private theorem exists_harmonicOnNhd_norm_iteratedFDeriv_sub_lt_real
   obtain ⟨_, ⟨H, hH, rfl⟩, hdist⟩ := Metric.mem_closure_iff.1 hclos ε hε
   refine ⟨H, hH, fun k hk x hx ↦ ?_⟩
   set j : Fin (m + 1) := ⟨k, Nat.lt_succ_of_le hk⟩
-  set JH := JetSpace.ofContDiffOn hK hΩ hKΩ m
-    ((hH.analyticOnNhd.contDiffOn hΩ.uniqueDiffOn).of_le (mod_cast le_top))
+  set JH := JetSpace.ofContDiffOn hK hΩ hKΩ m (hH.contDiffOn_of_isOpen hΩ)
   have hsub : iteratedFDeriv ℝ k (H - f) x = (JH - Jf).eval j ⟨x, hx⟩ := by
     have hJH : JH.eval j ⟨x, hx⟩ = iteratedFDeriv ℝ k H x :=
       JetSpace.eval_ofContDiffOn _ _ _ _ _ _ _

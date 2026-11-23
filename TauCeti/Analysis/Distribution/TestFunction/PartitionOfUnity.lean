@@ -105,6 +105,23 @@ theorem tsupport_cutoffCLM_subset (hχ : ContDiff ℝ n χ) (hχU : tsupport χ 
   rw [h]
   exact subset_inter (tsupport_smul_subset_left _ _) (tsupport_smul_subset_right _ _)
 
+/-- Multiplying a global test function on `⊤` by a cutoff test function `χ : 𝓓^{n}(U, ℝ)` gives
+a test function on `U`, as a continuous linear map `𝓓^{n}(⊤, F) →L[ℝ] 𝓓^{n}(U, F)`. -/
+noncomputable def cutoffTopCLM (χ : 𝓓^{n}(U, ℝ)) :
+    𝓓^{n}((⊤ : Opens E), F) →L[ℝ] 𝓓^{n}(U, F) :=
+  cutoffCLM χ.contDiff (inter_subset_left.trans χ.tsupport_subset)
+
+@[simp]
+theorem cutoffTopCLM_apply (χ : 𝓓^{n}(U, ℝ)) (φ : 𝓓^{n}((⊤ : Opens E), F)) (x : E) :
+    cutoffTopCLM χ φ x = χ x • φ x :=
+  cutoffCLM_apply _ _ φ x
+
+/-- Multiplying a global test function by a cutoff test function `χ` does not enlarge its
+support. -/
+theorem tsupport_cutoffTopCLM_subset (χ : 𝓓^{n}(U, ℝ)) (φ : 𝓓^{n}((⊤ : Opens E), F)) :
+    tsupport (cutoffTopCLM χ φ : E → F) ⊆ tsupport (χ : E → ℝ) ∩ tsupport φ :=
+  tsupport_cutoffCLM_subset χ.contDiff (inter_subset_left.trans χ.tsupport_subset) φ
+
 /-- **Pairing a test function with a function `Cⁿ` near its support.** Given a test function
 `φ ∈ 𝓓^{n}(Ω, F₁)`, a continuous bilinear map `B : F₁ →L[ℝ] F₂ →L[ℝ] F₃`, and a function
 `g : E → F₂` that is `Cⁿ` on an open neighbourhood `W` of `tsupport φ` (with no regularity
