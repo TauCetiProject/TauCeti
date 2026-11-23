@@ -1,7 +1,7 @@
 /-
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: The Tau Ceti contributors
+Authors: The Tau Ceti contributors, Axel Delaval, Zhiyuan Zhang, Leheng Chen
 -/
 module
 
@@ -9,7 +9,7 @@ public import TauCeti.Geometry.Manifold.Riemannian.WithMetric.Basic
 public import TauCeti.Geometry.Manifold.Riemannian.Distance
 
 /-!
-# Distance and completeness for a dominating metric
+# Distance comparison and completeness for Riemannian metrics
 
 If a Riemannian metric `g` uniformly dominates the given tangent norms on `M`, the
 identification `ofWithMetric : WithMetric g → M` is Lipschitz for Riemannian extended distance.
@@ -18,6 +18,9 @@ if the given tangent norms dominate `g`, then `toWithMetric g` is Lipschitz, and
 constant multiple `C²` of the given squared norms, the Riemannian extended distance of the copy is
 exactly `C` times that of `M` (`TauCeti.WithMetric.riemannianEDist_toWithMetric_eq_mul`).
 Extended distances allow points in distinct connected components to be infinitely far apart.
+
+`riemannianEDist_toWithMetric_le_mul_toWithMetric` compares the intrinsic distances of two
+bundled metrics on the same manifold from a pointwise quadratic-form bound.
 
 The carrier and tangent-norm comparison are provided by `TauCeti.WithMetric`.
 See M. P. do Carmo, *Riemannian Geometry*, Birkhäuser, 1992, Ch. 7, §3, Lemma 3.3.
@@ -34,6 +37,37 @@ namespace TauCeti.WithMetric
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
   {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H} {n : ℕ∞ω}
+
+section TwoMetrics
+
+variable {M : Type*} [TopologicalSpace M] [ChartedSpace H M] [IsManifold I 1 M]
+  {g g' : ContMDiffRiemannianMetric I n E (fun x : M ↦ TangentSpace I x)}
+
+/-- A pointwise quadratic-form comparison bounds intrinsic distances between the copies
+carrying the two metrics. The factor is positive to allow infinitely distant components. -/
+theorem riemannianEDist_toWithMetric_le_mul_toWithMetric {C : ℝ≥0} (hC0 : C ≠ 0)
+    (hgg' : ∀ x (v : TangentSpace I x), g'.inner x v v ≤ (C : ℝ) ^ 2 * g.inner x v v)
+    (x y : M) :
+    riemannianEDist I (toWithMetric g' x) (toWithMetric g' y) ≤
+      C * riemannianEDist I (toWithMetric g x) (toWithMetric g y) := by
+  have hnorm (z : WithMetric g) (v : TangentSpace I z) :
+      ‖mfderiv I I (diffeomorphWithMetric g g' 1) z v‖ ≤ C * ‖v‖ := by
+    have hd : mfderiv I I (diffeomorphWithMetric g g' 1) z v = v :=
+      congrArg (fun L : TangentSpace I z →L[ℝ] TangentSpace I z ↦ L v)
+        (mfderiv_diffeomorphWithMetric g' 1 z)
+    apply (pow_le_pow_iff_left₀ (norm_nonneg _)
+      (mul_nonneg C.coe_nonneg (norm_nonneg _)) two_ne_zero).1
+    rw [mul_pow, ← real_inner_self_eq_norm_sq, ← real_inner_self_eq_norm_sq,
+      inner_def, inner_def]
+    erw [mfderiv_ofWithMetric_apply, mfderiv_ofWithMetric_apply,
+      hd]
+    erw [diffeomorphWithMetric_apply, ofWithMetric_toWithMetric]
+    exact hgg' z.ofWithMetric v
+  simpa only [diffeomorphWithMetric_apply, ofWithMetric_toWithMetric] using
+    Manifold.riemannianEDist_le_mul (diffeomorphWithMetric g g' 1).contMDiff hC0 hnorm
+      (toWithMetric g x) (toWithMetric g y)
+
+end TwoMetrics
 
 section Intrinsic
 

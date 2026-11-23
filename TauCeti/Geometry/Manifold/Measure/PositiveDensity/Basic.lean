@@ -12,6 +12,7 @@ import TauCeti.Geometry.Manifold.ExtChartAt.Basic
 import TauCeti.Geometry.Manifold.ExtChartAt.Measurable
 import TauCeti.Geometry.Manifold.ExtChartAt.Measure
 import TauCeti.Geometry.Manifold.MFDeriv.Chart.Basic
+import TauCeti.Geometry.Manifold.MFDeriv.Chart.Det
 import TauCeti.Geometry.Manifold.ModelWithCorners.Measure
 import TauCeti.MeasureTheory.Measure.Haar.Unique
 

@@ -163,7 +163,7 @@ private theorem hasDerivAt_timeDependentFlowOf_coordinates
       ((hasDerivAt_id τ).mul_const (t - s))
   have hcomp := hd.scomp τ htime
   rw [FirstJetBundle.localRep_apply, (extChartAt I x).left_inv hsource]
-  simpa only [Function.comp_def, TangentBundle.trivializationAt_apply_tangentCoordChange]
+  simpa only [Function.comp_def, TangentBundle.trivializationAt_snd_eq_tangentCoordChange]
     using hcomp
 
 omit [CompleteSpace E] [T2Space M] in

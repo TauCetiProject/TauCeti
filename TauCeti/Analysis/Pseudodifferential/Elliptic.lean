@@ -37,6 +37,8 @@ degree:
   `g` from the unit sphere of frequencies is elliptic exactly when `g` is invertible there.
 * `HomogeneousSymbol.isElliptic_normRpow`: the powers `‖ξ‖ ^ m Id` of the frequency norm are
   elliptic.
+* `HomogeneousSymbol.IsElliptic.compProdMap` and `HomogeneousSymbol.isElliptic_compProdMap_iff`:
+  linear changes of variables preserve ellipticity, and invertible ones do not change it.
 * `HomogeneousSymbol.IsElliptic.finrank_eq`: when the frequency space is nontrivial, an elliptic
   symbol identifies the two fibres, so they have the same dimension. On a trivial frequency space
   every symbol is elliptic (`HomogeneousSymbol.isElliptic_of_subsingleton`), and no such
@@ -109,6 +111,21 @@ theorem isElliptic_castDegree_iff (h : m = m') {a : HomogeneousSymbol X E V W m}
     (a.castDegree h).IsElliptic ↔ a.IsElliptic := by
   simp only [isElliptic_iff, coefficient_castDegree]
 
+/-- A linear change of variables `(x, ξ) ↦ (P x, Q ξ)` preserves ellipticity. -/
+theorem IsElliptic.compProdMap {X' E' : Type*} [NormedAddCommGroup X'] [NormedSpace ℝ X']
+    [NormedAddCommGroup E'] [NormedSpace ℝ E'] {a : HomogeneousSymbol X E V W m}
+    (ha : a.IsElliptic) (P : X' →L[ℝ] X) (Q : E' ≃L[ℝ] E) : (a.compProdMap P Q).IsElliptic :=
+  fun x ξ hξ ↦ by simpa using ha (P x) (Q ξ) (by simpa using hξ)
+
+/-- An invertible linear change of variables does not change ellipticity. -/
+@[simp]
+theorem isElliptic_compProdMap_iff {X' E' : Type*} [NormedAddCommGroup X'] [NormedSpace ℝ X']
+    [NormedAddCommGroup E'] [NormedSpace ℝ E'] (P : X' ≃L[ℝ] X) (Q : E' ≃L[ℝ] E)
+    {a : HomogeneousSymbol X E V W m} :
+    (a.compProdMap (P : X' →L[ℝ] X) Q).IsElliptic ↔ a.IsElliptic := by
+  refine ⟨fun h x ξ hξ ↦ ?_, fun h ↦ h.compProdMap _ Q⟩
+  simpa using h (P.symm x) (Q.symm ξ) (by simpa using hξ)
+
 /-- The zero symbol is not elliptic as soon as there is a nonzero frequency and a nonzero
 vector. -/
 theorem not_isElliptic_zero [Nontrivial E] [Nontrivial V] :
@@ -148,8 +165,8 @@ noncomputable def inverse (a : HomogeneousSymbol X E V W m) (ha : a.IsElliptic) 
   contDiffOn_coefficient p hp :=
     ((a.contDiffAt_coefficient hp).clm_inverse (ha p.1 p.2 hp)).contDiffWithinAt
   homogeneous x ξ t ht := by
-    rw [a.homogeneous x ξ t ht, ← Complex.coe_smul, ContinuousLinearMap.inverse_smul,
-      ← Complex.ofReal_inv, Complex.coe_smul, Real.rpow_neg ht.le]
+    rw [a.homogeneous x ξ t ht, ContinuousLinearMap.inverse_smul_of_isScalarTower,
+      Real.rpow_neg ht.le]
 
 @[simp]
 theorem coefficient_inverse (p : X × E) :
@@ -186,11 +203,7 @@ theorem eq_inverse_of_comp_eq_id_left {b : HomogeneousSymbol X E W V (-m)}
   refine ext_of_ne_zero fun x ξ hξ ↦ ?_
   have hb := congrArg (fun c ↦ c.coefficient (x, ξ)) h
   simp only [coefficient_comp, coefficient_castDegree, coefficient_id hξ] at hb
-  calc b.coefficient (x, ξ)
-      = (b.coefficient (x, ξ) ∘L a.coefficient (x, ξ)) ∘L (a.inverse ha).coefficient (x, ξ) := by
-        rw [ContinuousLinearMap.comp_assoc, coefficient_comp_coefficient_inverse a ha hξ,
-          ContinuousLinearMap.comp_id]
-    _ = (a.inverse ha).coefficient (x, ξ) := by rw [hb, ContinuousLinearMap.id_comp]
+  exact (ha x ξ hξ).eq_inverse_of_comp_eq_id_left hb
 
 /-- A right inverse of an elliptic symbol is its inverse. -/
 theorem eq_inverse_of_comp_eq_id_right {b : HomogeneousSymbol X E W V (-m)}
@@ -198,11 +211,7 @@ theorem eq_inverse_of_comp_eq_id_right {b : HomogeneousSymbol X E W V (-m)}
   refine ext_of_ne_zero fun x ξ hξ ↦ ?_
   have hb := congrArg (fun c ↦ c.coefficient (x, ξ)) h
   simp only [coefficient_comp, coefficient_castDegree, coefficient_id hξ] at hb
-  calc b.coefficient (x, ξ)
-      = (a.inverse ha).coefficient (x, ξ) ∘L (a.coefficient (x, ξ) ∘L b.coefficient (x, ξ)) := by
-        rw [← ContinuousLinearMap.comp_assoc, coefficient_inverse_comp_coefficient a ha hξ,
-          ContinuousLinearMap.id_comp]
-    _ = (a.inverse ha).coefficient (x, ξ) := by rw [hb, ContinuousLinearMap.comp_id]
+  exact (ha x ξ hξ).eq_inverse_of_comp_eq_id_right hb
 
 /-- The inverse of the inverse is the original symbol. -/
 @[simp]

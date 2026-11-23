@@ -6,9 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.AlgebraicGroup.Semisimple.Center.Basic
+import TauCeti.Algebra.AlgebraicGroup.Center.Connected
 import TauCeti.Algebra.AlgebraicGroup.Center.Finite
 import TauCeti.Algebra.AlgebraicGroup.Center.Descent
-import TauCeti.Algebra.AlgebraicGroup.Smooth.IdentityComponent
 
 /-!
 # The center of a semisimple group is finite
@@ -49,43 +49,9 @@ private theorem reducedCenter_identityComponent_eq_augmentation
         (CommHopfAlgCat.reducedCenterCoordinateHopfAlgebra
           (FiniteTypeCommHopfAlgCat.baseChange (K := AlgebraicClosure k) H).obj) := by
   let G := FiniteTypeCommHopfAlgCat.baseChange (K := AlgebraicClosure k) H
-  let C := CommHopfAlgCat.reducedCenterCoordinateHopfAlgebra G.obj
-  let Cft := FiniteTypeCommHopfAlgCat.of (AlgebraicClosure k) C
-  let J := HopfAlgebra.identityComponentHopfIdeal (k := AlgebraicClosure k) (H := C)
-  let q : G.obj ⟶ C :=
-    CommHopfAlgCat.mkQuotient G.obj (CommHopfAlgCat.centerDefiningIdeal G.obj) ≫
-      CommHopfAlgCat.mkQuotient (CommHopfAlgCat.centerCoordinateHopfAlgebra G.obj)
-        (HopfIdeal.reduction (AlgebraicClosure k)
-          (CommHopfAlgCat.centerCoordinateHopfAlgebra G.obj))
-  have hq : Function.Surjective q.hom :=
-    (CommHopfAlgCat.mkQuotient_surjective _ _).comp
-      (CommHopfAlgCat.mkQuotient_surjective _ _)
-  let I := J.comapOfSurjective q.hom hq
-  let e := CommHopfAlgCat.Hom.quotientIsoOfSurjective q hq J
-  have hcentral : I.IsCentral := by
-    apply (CommHopfAlgCat.isCentral_centerDefiningIdeal G.obj).mono
-    intro x hx
-    apply HopfIdeal.mem_comapOfSurjective.mpr
-    have hx0 := (CommHopfAlgCat.mkQuotient_eq_zero_iff G.obj
-      (CommHopfAlgCat.centerDefiningIdeal G.obj) x).mpr hx
-    simp only [q, CommHopfAlgCat.hom_comp, BialgHom.comp_apply, hx0, map_zero]
-    exact zero_mem J
-  have hconnected : geometricallyConnectedCommHopfAlgProperty (AlgebraicClosure k)
-      (CommHopfAlgCat.quotient G.obj I) :=
-    (geometricallyConnectedCommHopfAlgProperty (AlgebraicClosure k)).prop_of_iso e.symm
-      (FiniteTypeCommHopfAlgCat.geometricallyConnected_identityComponent Cft)
-  let _ : Algebra.Smooth (AlgebraicClosure k) Cft :=
-    CommHopfAlgCat.smooth_reducedCenterCoordinateHopfAlgebra G.obj
-  have hsmooth : Algebra.Smooth (AlgebraicClosure k) (CommHopfAlgCat.quotient G.obj I) :=
-    (smoothCommHopfAlgProperty_iff _).mp <|
-      (smoothCommHopfAlgProperty (AlgebraicClosure k)).prop_of_iso e.symm
-        ((smoothCommHopfAlgProperty_iff _).mpr
-          (FiniteTypeCommHopfAlgCat.smooth_identityComponent Cft))
-  have hI : I = HopfIdeal.augmentation (AlgebraicClosure k) G :=
-    hH.eq_augmentation_of_isCentral I hcentral hconnected hsmooth
-  apply (HopfIdeal.comapOfSurjective_eq_comapOfSurjective_iff q.hom hq).mp
-  rw [HopfIdeal.comapOfSurjective_augmentation]
-  exact hI
+  exact (identityComponentHopfIdeal_reducedCenterCoordinateHopfAlgebra_eq_augmentation_iff G).mpr
+    (hH.eq_augmentation_of_isCentral _ (isCentral_reducedConnectedCenterDefiningIdeal G)
+      (geometricallyConnected_reducedConnectedCenter G) (smooth_reducedConnectedCenter G))
 
 /-- The scheme-theoretic center of a semisimple affine group is finite over its ground field.
 No restriction on the characteristic or reducedness of the center is needed. -/

@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.ModelTheory.Infinitary.Reindex
+public import TauCeti.ModelTheory.Infinitary.LanguageMap
 public import Mathlib.SetTheory.Cardinal.Aleph
 public import Mathlib.SetTheory.Ordinal.Family
 import Mathlib.SetTheory.Cardinal.Regular
@@ -41,6 +41,7 @@ and `⊥` have rank `0`; this includes an empty source carrier, where every bran
   finite.
 * `FirstOrder.Language.BoundedFormulaInf.qrank_lt_omega_one`: the rank of an infinitary formula
   with countable branching is countable.
+* `FirstOrder.Language.LHom.qrank_onBoundedFormulaInf`: language maps preserve quantifier rank.
 
 ## References
 
@@ -55,7 +56,7 @@ and `⊥` have rank `0`; this includes an empty source carrier, where every bran
 
 public section
 
-universe u v u' uι uκ w
+universe u v u' v' uα uι uκ w
 
 namespace FirstOrder
 
@@ -63,7 +64,7 @@ namespace Language
 
 open TauCeti
 
-variable {L : Language.{u, v}} {ι : Type uι} {κ : Type uκ} {α : Type u'} {n : ℕ}
+variable {L : Language.{u, v}} {ι : Type uι} {κ : Type uκ} {α : Type uα} {n : ℕ}
 
 namespace BoundedFormulaInf
 
@@ -259,6 +260,26 @@ theorem qrank_lt_omega_one [Countable ι] : ∀ {n} (φ : L.BoundedFormulaInf ι
 end Countable
 
 end BoundedFormulaInf
+
+namespace LHom
+
+variable {L' : Language.{u', v'}}
+
+/-- A language map preserves the quantifier rank of an infinitary formula; no injectivity on
+symbols is required. -/
+@[simp]
+theorem qrank_onBoundedFormulaInf (g : L →ᴸ L') (φ : L.BoundedFormulaInf ι α n) :
+    (g.onBoundedFormulaInf φ).qrank = φ.qrank := by
+  induction φ with
+  | falsum => simp
+  | equal => simp
+  | rel => simp
+  | imp _ _ ihφ ihψ => simp [ihφ, ihψ]
+  | all _ ih => simp [ih]
+  | iSup _ ih => simp [ih]
+  | iInf _ ih => simp [ih]
+
+end LHom
 
 end Language
 

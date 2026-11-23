@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.Module.LinearMap.Defs
 public import Mathlib.LinearAlgebra.BilinearMap
 public import Mathlib.LinearAlgebra.Prod
+public import Mathlib.LinearAlgebra.Span.Defs
 
 /-!
 # Composites of intertwining linear maps
@@ -18,8 +19,10 @@ of cochain maps assembled from maps commuting with differentials. It also record
 precomposition with a retraction of a section is a section of precomposition
 (`LinearMap.lcomp_comp_lcomp_eq_id`), that commuting squares `f' ∘ e₁ = e₂ ∘ f` and
 `g' ∘ e₁' = e₂' ∘ g` give the commuting square of products
-(`LinearMap.prodMap_comp_prodCongr_eq_of_comp_eq`), and that negation commutes with every linear
-map (`LinearMap.comp_neg_eq_neg_comp`).
+(`LinearMap.prodMap_comp_prodCongr_eq_of_comp_eq`), that negation commutes with every linear
+map (`LinearMap.comp_neg_eq_neg_comp`), and that a composite `P ∘ L` is bijective exactly when
+`L` is injective, `P` is onto, and the kernel of `P` is complementary to the range of `L`
+(`LinearMap.bijective_comp_iff`).
 -/
 
 public section
@@ -63,5 +66,42 @@ theorem comp_neg_eq_neg_comp {R M N : Type*} [Ring R] [AddCommGroup M] [Module R
     f ∘ₗ (LinearEquiv.neg R).toLinearMap = (LinearEquiv.neg R).toLinearMap ∘ₗ f := by
   ext
   simp
+
+section Ring
+
+variable {R E F Y : Type*} [Ring R] [AddCommGroup E] [Module R E] [AddCommGroup F] [Module R F]
+  [AddCommGroup Y] [Module R Y]
+
+/-- A composite `P ∘ L` is bijective exactly when `L` is injective, `P` is onto, and the kernel of
+`P` is complementary to the range of `L`. -/
+theorem bijective_comp_iff {L : E →ₗ[R] F} {P : F →ₗ[R] Y} :
+    Function.Bijective (P ∘ₗ L) ↔
+      Function.Injective L ∧ IsCompl (range L) (ker P) ∧ Function.Surjective P := by
+  constructor
+  · rintro ⟨hinj, hsurj⟩
+    refine ⟨fun x y hxy ↦ hinj (by simp [hxy]), ⟨?_, ?_⟩, fun y ↦ ?_⟩
+    · rw [Submodule.disjoint_def]
+      rintro _ ⟨x, rfl⟩ hx
+      rw [mem_ker] at hx
+      rw [hinj (show (P ∘ₗ L) x = (P ∘ₗ L) 0 by simpa using hx), map_zero]
+    · rw [codisjoint_iff, eq_top_iff]
+      intro f _
+      obtain ⟨x, hx⟩ := hsurj (P f)
+      refine Submodule.mem_sup.mpr ⟨L x, ⟨x, rfl⟩, f - L x, ?_, add_sub_cancel _ _⟩
+      simpa [sub_eq_zero] using hx.symm
+    · obtain ⟨x, hx⟩ := hsurj y
+      exact ⟨L x, hx⟩
+  · rintro ⟨hL, hc, hP⟩
+    refine ⟨fun x y hxy ↦ hL ?_, fun y ↦ ?_⟩
+    · have hmem : L (x - y) ∈ range L ⊓ ker P :=
+        ⟨⟨x - y, rfl⟩, by simpa [mem_ker, sub_eq_zero] using hxy⟩
+      rw [hc.inf_eq_bot, Submodule.mem_bot, map_sub, sub_eq_zero] at hmem
+      exact hmem
+    · obtain ⟨f, rfl⟩ := hP y
+      have hf : f ∈ range L ⊔ ker P := hc.sup_eq_top ▸ Submodule.mem_top
+      obtain ⟨_, ⟨x, rfl⟩, w, hw, rfl⟩ := Submodule.mem_sup.mp hf
+      exact ⟨x, by simp [mem_ker.mp hw]⟩
+
+end Ring
 
 end LinearMap

@@ -11,6 +11,7 @@ public import TauCeti.Geometry.Manifold.ExtChartAt.Basic
 import Mathlib.MeasureTheory.Function.Jacobian
 import TauCeti.Geometry.Manifold.ExtChartAt.Measurable
 import TauCeti.Geometry.Manifold.MFDeriv.Chart.Basic
+import TauCeti.Geometry.Manifold.MFDeriv.Chart.Det
 import TauCeti.Geometry.Manifold.ModelWithCorners.Measure
 
 /-!

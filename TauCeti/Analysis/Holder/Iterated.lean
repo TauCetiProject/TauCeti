@@ -58,7 +58,16 @@ conditions are closed under uniform convergence, which gives completeness.
   `D(Df)` by the derivative fields, and the Hölder bound on `D(Df)` for `k = 2`.
 * `TauCeti.CkHolderSpace.iteratedFDerivL` and `TauCeti.CkHolderSpace.iteratedFDerivHolderL`: the
   derivative fields as continuous linear maps; the second has operator norm at most one.
+* `TauCeti.CkHolderSpace.holderWith`: for `α ≤ 1`, an element is itself globally `α`-Hölder.
+* `TauCeti.CkHolderSpace.fderivL`: the derivative `C^{k+1,α} → C^{k,α}` with values in `E →L[ℝ] F`,
+  of operator norm at most one.
+* `TauCeti.CkHolderSpace.iteratedFDeriv_fderivL`: the derivative fields of `fderivL f` are those
+  of `f` of positive order, with the last variable separated.
 * `TauCeti.CkHolderSpace.instCompleteSpace`: completeness when the codomain is complete.
+* `TauCeti.supportedCkHolderSubmodule`: the elements vanishing off a set `s`; it is closed
+  (`TauCeti.isClosed_supportedCkHolderSubmodule`), hence complete for a complete codomain, and
+  its elements have compact support when `s` is compact
+  (`TauCeti.hasCompactSupport_of_mem_supportedCkHolderSubmodule`).
 
 ## References
 
@@ -393,6 +402,12 @@ theorem holderWith_iteratedFDeriv_of_le (f : CkHolderSpace k α E F) (hα : α �
         (fun x _ ↦ f.norm_iteratedFDeriv_apply_le hj x))
     convert h using 1; ring
 
+/-- A bounded `C^{k,α}` map is itself globally `α`-Hölder, with constant `3 ‖f‖`, when `α ≤ 1`. -/
+theorem holderWith (f : CkHolderSpace k α E F) (hα : α ≤ 1) : HolderWith (3 * ‖f‖₊) α f := by
+  have h := f.holderWith_iteratedFDeriv_of_le hα (Nat.zero_le k)
+  rw [iteratedFDeriv_zero_eq_comp] at h
+  exact (continuousMultilinearCurryFin0 ℝ E F).symm.isometry.holderWith_comp_iff.mp h
+
 /-- The `C^{k,α}` norm is at most `(k + 1) M + K` when every derivative through order `k` is
 bounded by `M` and the `k`-th derivative is `α`-Hölder with constant `K`. -/
 theorem norm_le_of_norm_iteratedFDeriv_le_of_holderWith {f : CkHolderSpace k α E F} {M : ℝ}
@@ -609,6 +624,16 @@ theorem coe_smul (c : ℝ) (f : CkHolderSpace k α E F) : ⇑(c • f) = c • �
     _root_.smul_apply]
   simp
 
+/-- The underlying function of a negation is the negation of the underlying function. -/
+@[simp]
+theorem coe_neg (f : CkHolderSpace k α E F) : ⇑(-f) = -⇑f := by
+  rw [← neg_one_smul ℝ f, coe_smul, neg_one_smul]
+
+/-- The underlying function of a difference is the difference of the underlying functions. -/
+@[simp]
+theorem coe_sub (f g : CkHolderSpace k α E F) : ⇑(f - g) = f - g := by
+  rw [sub_eq_add_neg, coe_add, coe_neg, sub_eq_add_neg]
+
 /-- The underlying bounded continuous function of a sum. -/
 @[simp]
 theorem toBoundedContinuousFunction_add (f g : CkHolderSpace k α E F) :
@@ -722,6 +747,85 @@ instance instCompleteSpace [CompleteSpace F] : CompleteSpace (CkHolderSpace k α
 
 attribute [irreducible] instNormedAddCommGroup instNormedSpace _root_.TauCeti.CkHolderSpace
 
+/-! ### The derivative -/
+
+section FDeriv
+
+/-- The derivative of `f ∈ C^{k+1,α}` as an element of `C^{k,α}`; `fderivL` is its bundled
+form. -/
+private def fderivAux (f : CkHolderSpace (k + 1) α E F) : CkHolderSpace k α E (E →L[ℝ] F) :=
+  ofContDiff (fderiv ℝ f) f.contDiff_fderiv
+    (fun _ hi ↦ ⟨‖f‖, fun x ↦ by
+      rw [norm_iteratedFDeriv_fderiv]
+      exact f.norm_iteratedFDeriv_apply_le (by omega) x⟩)
+    ((continuousMultilinearCurryRightEquiv' ℝ k E F).symm.isometry.holderWith_comp_iff.mp
+      (by simpa only [← iteratedFDeriv_succ_eq_comp_right'] using
+        f.memHolder_iteratedFDeriv.holderWith)).memHolder
+
+private theorem coe_fderivAux (f : CkHolderSpace (k + 1) α E F) : ⇑(fderivAux f) = fderiv ℝ f :=
+  coe_ofContDiff _ _ _ _
+
+private theorem iteratedFDeriv_fderivAux (f : CkHolderSpace (k + 1) α E F) (i : Fin (k + 1))
+    (x : E) :
+    (fderivAux f).iteratedFDeriv i x =
+      continuousMultilinearCurryRightEquiv' ℝ i E F (f.iteratedFDeriv i.succ x) := by
+  rw [← iteratedFDeriv_eq, ← iteratedFDeriv_eq, coe_fderivAux]
+  -- `i.succ` is `i + 1` by definition; unfold the top derivative through `fderiv`.
+  exact ((continuousMultilinearCurryRightEquiv' ℝ i E F).apply_symm_apply _).symm.trans
+    (congrArg _ iteratedFDeriv_succ_eq_comp_right.symm)
+
+private theorem norm_fderivAux_le (f : CkHolderSpace (k + 1) α E F) : ‖fderivAux f‖ ≤ ‖f‖ := by
+  have hfield (i : Fin (k + 1)) : ‖(fderivAux f).iteratedFDeriv i‖ ≤ ‖f.iteratedFDeriv i.succ‖ :=
+    (BoundedContinuousFunction.norm_le (norm_nonneg _)).2 fun x ↦ by
+      rw [iteratedFDeriv_fderivAux, LinearIsometryEquiv.norm_map]
+      exact (f.iteratedFDeriv i.succ).norm_coe_le_norm x
+  have htop : nnHolderNorm α (_root_.iteratedFDeriv ℝ k (fderivAux f)) =
+      nnHolderNorm α (_root_.iteratedFDeriv ℝ (k + 1) f) := by
+    rw [coe_fderivAux, iteratedFDeriv_succ_eq_comp_right', nnHolderNorm, nnHolderNorm,
+      (continuousMultilinearCurryRightEquiv' ℝ k E F).symm.isometry.eHolderNorm_comp]
+  rw [norm_eq, norm_eq f, htop, Fin.sum_univ_succ (f := fun i ↦ ‖f.iteratedFDeriv i‖)]
+  linarith [Finset.sum_le_sum fun i (_ : i ∈ Finset.univ) ↦ hfield i,
+    norm_nonneg (f.iteratedFDeriv 0)]
+
+variable (k α E F) in
+/-- **The derivative** `f ↦ Df` from `C^{k+1,α}` to `C^{k,α}` with values in `E →L[ℝ] F`, a
+continuous linear map of norm at most one: the derivative fields of `Df` are those of `f` of
+positive order. -/
+def fderivL : CkHolderSpace (k + 1) α E F →L[ℝ] CkHolderSpace k α E (E →L[ℝ] F) :=
+  LinearMap.mkContinuous
+    { toFun := fderivAux
+      map_add' f g := ext fun x ↦ by
+        simp only [coe_fderivAux, coe_add, Pi.add_apply]
+        exact fderiv_add (f.contDiff.differentiable (by simp) x)
+          (g.contDiff.differentiable (by simp) x)
+      map_smul' c f := ext fun x ↦ by
+        simp only [coe_fderivAux, coe_smul, Pi.smul_apply, RingHom.id_apply]
+        exact fderiv_const_smul (f.contDiff.differentiable (by simp) x) c }
+    1 fun f ↦ by simpa using norm_fderivAux_le f
+
+/-- The values of `fderivL f` are the Fréchet derivatives of `f`. -/
+@[simp]
+theorem fderivL_apply (f : CkHolderSpace (k + 1) α E F) (x : E) :
+    fderivL k α E F f x = fderiv ℝ f x :=
+  congrFun (coe_fderivAux f) x
+
+theorem coe_fderivL (f : CkHolderSpace (k + 1) α E F) : ⇑(fderivL k α E F f) = fderiv ℝ f :=
+  coe_fderivAux f
+
+/-- The derivative fields of `fderivL f` are those of `f` of one order more, with the last
+variable separated. -/
+@[simp]
+theorem iteratedFDeriv_fderivL (f : CkHolderSpace (k + 1) α E F) (i : Fin (k + 1)) (x : E) :
+    (fderivL k α E F f).iteratedFDeriv i x =
+      continuousMultilinearCurryRightEquiv' ℝ i E F (f.iteratedFDeriv i.succ x) :=
+  iteratedFDeriv_fderivAux f i x
+
+/-- The derivative has operator norm at most one. -/
+theorem norm_fderivL_le_one : ‖fderivL k α E F‖ ≤ 1 :=
+  LinearMap.mkContinuous_norm_le _ zero_le_one _
+
+end FDeriv
+
 end CkHolderSpace
 
 /-- Bounded finite-order Hölder maps vanishing outside a prescribed set, as a submodule of the
@@ -753,5 +857,33 @@ theorem support_subset_of_mem_supportedCkHolderSubmodule {E F : Type*}
   intro x hx
   by_contra h
   exact hx (hf x h)
+
+/-- An element of the supported Hölder submodule of a compact set has compact support. -/
+theorem hasCompactSupport_of_mem_supportedCkHolderSubmodule {E F : Type*}
+    [NormedAddCommGroup E] [NormedSpace ℝ E] [NormedAddCommGroup F] [NormedSpace ℝ F]
+    {k : ℕ} {α : ℝ≥0} {s : Set E} {f : CkHolderSpace k α E F} (hs : IsCompact s)
+    (hf : f ∈ supportedCkHolderSubmodule k α s) : HasCompactSupport f :=
+  HasCompactSupport.of_support_subset_isCompact hs
+    (support_subset_of_mem_supportedCkHolderSubmodule hf)
+
+/-- The supported `C^{k,α}` subspace is closed, as an intersection of kernels of evaluations. -/
+theorem isClosed_supportedCkHolderSubmodule {E F : Type*}
+    [NormedAddCommGroup E] [NormedSpace ℝ E] [NormedAddCommGroup F] [NormedSpace ℝ F]
+    (k : ℕ) (α : ℝ≥0) (s : Set E) :
+    IsClosed (supportedCkHolderSubmodule (F := F) k α s : Set (CkHolderSpace k α E F)) := by
+  have h : (supportedCkHolderSubmodule (F := F) k α s : Set (CkHolderSpace k α E F)) =
+      ⋂ x ∈ sᶜ, (fun f ↦ CkHolderSpace.toBoundedContinuousFunctionCLM f x) ⁻¹' {0} := by
+    ext f
+    simp
+  rw [h]
+  exact isClosed_biInter fun x _ ↦ isClosed_singleton.preimage
+    ((continuous_eval_const x).comp (ContinuousLinearMap.continuous _))
+
+/-- The supported `C^{k,α}` subspace is a Banach space when the codomain is. -/
+instance instCompleteSpaceSupportedCkHolderSubmodule {E F : Type*}
+    [NormedAddCommGroup E] [NormedSpace ℝ E] [NormedAddCommGroup F] [NormedSpace ℝ F]
+    [CompleteSpace F] (k : ℕ) (α : ℝ≥0) (s : Set E) :
+    CompleteSpace (supportedCkHolderSubmodule (F := F) k α s) :=
+  (isClosed_supportedCkHolderSubmodule k α s).completeSpace_coe
 
 end TauCeti

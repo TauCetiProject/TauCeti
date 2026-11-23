@@ -13,6 +13,7 @@ import TauCeti.Geometry.Manifold.ExtChartAt.Basic
 import TauCeti.Geometry.Manifold.ExtChartAt.Measurable
 import TauCeti.Geometry.Manifold.ExtChartAt.Measure
 import TauCeti.Geometry.Manifold.MFDeriv.Chart.Basic
+import TauCeti.Geometry.Manifold.MFDeriv.Chart.Det
 
 /-!
 # Existence of positive continuous density measures on manifolds

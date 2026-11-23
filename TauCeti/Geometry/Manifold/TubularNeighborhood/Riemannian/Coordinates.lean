@@ -112,30 +112,16 @@ theorem exists_partialDiffeomorph_normalExp_subset [SecondCountableTopology N] [
     Manifold.metrizableSpace (I.prod 𝓘(ℝ, P)) _
   have : Nonempty (TotalSpace P (fun x ↦ f.NormalSpace x hn)) :=
     Nonempty.map (zeroSection P (fun x ↦ f.NormalSpace x hn)) inferInstance
-  let A := f.normalExp (P := P) hn
-  let U := {p | IsLocalDiffeomorphAt (I.prod 𝓘(ℝ, P)) J m A p}
-  have hU : IsOpen U := isOpen_iff_mem_nhds.mpr fun _ hp => hp.eventually
-  let S := (U ∩ f.normalExpDomain (P := P) hn) ∩ A ⁻¹' O
-  have hS : IsOpen S :=
-    ContinuousOn.isOpen_inter_preimage
-      ((f.contMDiffOn_normalExp hn hm hdim).continuousOn.mono inter_subset_right)
-      (hU.inter (f.isOpen_normalExpDomain hn hdim)) hO
-  have hzero : range (zeroSection P (fun x ↦ f.NormalSpace x hn)) ⊆ S := by
-    rintro _ ⟨x, rfl⟩
-    exact ⟨⟨f.isLocalDiffeomorphAt_normalExp_zeroSection hn hm hm1 hdim x,
-      f.zeroSection_mem_normalExpDomain hn x⟩, by simpa [A] using hfO (mem_range_self x)⟩
-  have hlocal : IsLocalDiffeomorphOn (I.prod 𝓘(ℝ, P)) J m A S := fun p => p.property.1.1
-  have hcore : A ∘ zeroSection P (fun x ↦ f.NormalSpace x hn) = f :=
+  have hcore : f.normalExp (P := P) hn ∘ zeroSection P (fun x ↦ f.NormalSpace x hn) = f :=
     funext (f.normalExp_zeroSection hn)
-  obtain ⟨Φ, hzeroΦ, hΦS, htarget, hΦ⟩ := hlocal.exists_partialDiffeomorph_near_section
-    hS hzero (_root_.Bundle.Trivialization.continuous_zeroSection ℝ)
-    (π P (fun x ↦ f.NormalSpace x hn))
-    (FiberBundle.continuous_proj _ _) (fun _ => rfl) (hcore ▸ f.isEmbedding.isInducing)
-  refine ⟨Φ, fun x => hzeroΦ (mem_range_self x), fun p hp => (hΦS hp).1.2, ?_,
-    htarget, hΦ⟩
-  rw [htarget]
-  rintro _ ⟨p, hp, rfl⟩
-  exact (hΦS hp).2
+  obtain ⟨Φ, hzeroΦ, hΦD, hΦO, htarget, hΦ⟩ :=
+    exists_partialDiffeomorph_near_section_of_isLocalDiffeomorphAt
+      (f.isLocalDiffeomorphAt_normalExp_zeroSection hn hm hm1 hdim)
+      (f.isOpen_normalExpDomain hn hdim) (range_subset_iff.2 (f.zeroSection_mem_normalExpDomain hn))
+      hO (hcore ▸ hfO) (_root_.Bundle.Trivialization.continuous_zeroSection ℝ)
+      (π P (fun x ↦ f.NormalSpace x hn)) (FiberBundle.continuous_proj _ _) (fun _ => rfl)
+      (hcore ▸ f.isEmbedding.isInducing)
+  exact ⟨Φ, fun x => hzeroΦ (mem_range_self x), hΦD, hΦO, htarget, hΦ⟩
 
 omit [ENat.LEInfty m] [IsManifold I (m + 1) M] [I.Boundaryless] in
 /-- The radial compression step of the Riemannian tubular neighbourhood theorem: a partial
