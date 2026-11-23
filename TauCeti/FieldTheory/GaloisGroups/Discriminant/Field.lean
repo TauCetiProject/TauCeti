@@ -358,7 +358,7 @@ theorem isPretransitive_evenAutSubgroup_iff [Normal F E] :
   let φ : evenAutSubgroup f E →
       ((Gal.galActionHom f E).range ⊓ alternatingGroup (f.rootSet E) :
         Subgroup (Equiv.Perm (f.rootSet E))) :=
-    fun σ ↦ ⟨Gal.galActionHom f E (Gal.restrict f E σ), ⟨_, rfl⟩, σ.2⟩
+    fun σ ↦ ⟨Gal.galActionHom f E (Gal.restrict f E σ), ⟨_, rfl⟩, σ.property⟩
   refine MulAction.isPretransitive_congr (φ := φ)
     (f := ⟨id, fun σ x ↦ Subtype.ext ?_⟩) ?_ Function.bijective_id
   · simp [φ, Subgroup.smul_def, Equiv.Perm.smul_def, Gal.galActionHom_restrict, AlgEquiv.smul_def]

@@ -128,12 +128,12 @@ theorem mem_basePointFixedSubmodule_of_quotient_coact_eq_tmul_one
     simpa only [Comodule.corestrict_coact_apply] using hm
   rw [mem_basePointFixedSubmodule]
   intro n
-  obtain ⟨g, hg⟩ := n.2
+  obtain ⟨g, hg⟩ := n.property
   have hfixed := Comodule.basePointsRepresentation_eq_of_coact_eq_tmul_one m hm' g
   have hinclude : BialgHom.mapDomain q g =
       CommHopfAlgCat.quotientPointsHom A I (CommAlgCat.of R R) g := by
     rw [CommHopfAlgCat.quotientPointsHom_apply, BialgHom.mapDomain_apply]
-  have hq : BialgHom.mapDomain q g = n.1 := by
+  have hq : BialgHom.mapDomain q g = n.val := by
     exact hinclude.trans hg
   rw [Comodule.basePointsRepresentation_corestrict q g, hq] at hfixed
   exact hfixed

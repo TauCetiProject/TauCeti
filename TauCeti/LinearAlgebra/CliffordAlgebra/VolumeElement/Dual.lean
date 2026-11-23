@@ -9,8 +9,8 @@ public import TauCeti.LinearAlgebra.CliffordAlgebra.Dual
 public import TauCeti.LinearAlgebra.CliffordAlgebra.VolumeElement.Complex
 public import TauCeti.LinearAlgebra.Dual.Annihilator
 import TauCeti.Algebra.Ring.Parity
+import TauCeti.LinearAlgebra.CliffordAlgebra.VolumeElement.Eigenspace
 import TauCeti.LinearAlgebra.Eigenspace.Dual
-import TauCeti.LinearAlgebra.Eigenspace.Separation
 
 /-!
 # The chirality of the reverse-dual Clifford module
@@ -49,6 +49,8 @@ it need not be finite-dimensional or irreducible.
   `μ`-eigenspace of `Γ` on the reverse dual with the dual of the `(-1) ^ ⌊n / 2⌋ μ`-eigenspace of
   `Γ` on `S`, and `AlgHom.finrank_eigenspace_cliffordReverseDual_complexVolume` gives the
   dimension count.
+* `AlgHom.cliffordReverseDual_complexVolume_eq_dualMap_iff`: for nontrivial `S` over
+  `Q v = -‖v‖²`, the reverse-dual chirality agrees with `(Γ_S)ᵀ` if and only if `n / 2` is even.
 
 ## References
 
@@ -83,16 +85,10 @@ section Form
 variable (hQ : ∀ v, Q v = -‖v‖ ^ 2)
 include hQ
 
-/-- For `Q v = -‖v‖²`, the element `Γ` acts on every module as an involution. -/
-private theorem involutive_complexVolume :
-    Function.Involutive (ρ (complexVolume Q o)) := fun s ↦ by
-  rw [← mul_apply_eq_comp, ← map_mul, complexVolume_mul_self o hQ, map_one, one_apply_eq_self]
-
 /-- The `±1`-eigenspaces of `Γ` on a module are complementary. -/
 private theorem isCompl_eigenspace_complexVolume_neg {μ : ℂ} (hμ : μ = 1 ∨ μ = -1) :
     IsCompl ((ρ (complexVolume Q o)).eigenspace μ) ((ρ (complexVolume Q o)).eigenspace (-μ)) := by
-  have h := TauCeti.isCompl_eigenspace_one_neg_one two_ne_zero.isUnit
-    (involutive_complexVolume ρ o hQ)
+  have h := ρ.isCompl_eigenspace_complexVolume o hQ
   rcases hμ with rfl | rfl
   · exact h
   · rw [neg_neg]
@@ -172,6 +168,21 @@ theorem finrank_eigenspace_cliffordReverseDual_complexVolume {μ : ℂ}
       finrank ℂ ((ρ (complexVolume Q o)).eigenspace ((-1) ^ (n / 2) * μ)) := by
   rw [(cliffordReverseDualComplexVolumeEigenspaceEquiv ρ o hQ hμ).finrank_eq,
     Subspace.dual_finrank_eq]
+
+/-- For a nontrivial module over `Q v = -‖v‖²`, the chirality of the reverse dual agrees with the
+transpose `(ρ (complexVolume Q o)).dualMap` if and only if `n / 2` is even. -/
+theorem cliffordReverseDual_complexVolume_eq_dualMap_iff [Nontrivial S] :
+    cliffordReverseDual ρ (complexVolume Q o) = (ρ (complexVolume Q o)).dualMap ↔
+      Even (n / 2) := by
+  refine ⟨fun h ↦ ?_, fun he ↦ by rw [cliffordReverseDual_complexVolume, he.neg_one_pow, one_smul]⟩
+  by_contra hne
+  have ho : Odd (n / 2) := Nat.not_even_iff_odd.mp hne
+  obtain ⟨s, hs⟩ := exists_ne (0 : S)
+  obtain ⟨φ, hφ⟩ := Projective.exists_dual_eq_one ℂ hs
+  have h1 := LinearMap.congr_fun (LinearMap.congr_fun h φ) (ρ (complexVolume Q o) s)
+  simp only [cliffordReverseDual_complexVolume, ho.neg_one_pow, LinearMap.smul_apply,
+    LinearMap.dualMap_apply, smul_eq_mul, involutive_complexVolume ρ o hQ s, hφ] at h1
+  norm_num at h1
 
 end Form
 

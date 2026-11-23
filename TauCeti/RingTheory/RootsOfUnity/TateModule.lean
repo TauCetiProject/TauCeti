@@ -157,7 +157,8 @@ theorem proj_pow_div (x : PrimeToPTateModule p E) {m n : {m : ℕ // m ≠ 0 ∧
   -- `PrimeToPTateModule p E` is by definition the subgroup of compatible families, so the
   -- compatibility of `x` is its membership proof there. This is the only place the synonym is
   -- unfolded for membership; later results go through this lemma and `ext` instead.
-  mem_primeToPTateModuleSubgroup_iff.1 (show ↥(primeToPTateModuleSubgroup p E) from x).2 m n h
+  mem_primeToPTateModuleSubgroup_iff.1 (show ↥(primeToPTateModuleSubgroup p E) from x).property m n
+      h
 
 /-- A point of the Tate module is determined by its components. -/
 @[ext]
@@ -277,7 +278,7 @@ is a closed subgroup of the product of the finite discrete levels. -/
 instance {R : Type*} [CommRing R] [IsDomain R] : CompactSpace (PrimeToPTateModule p R) := by
   let (m : {m : ℕ // m ≠ 0 ∧ m.Coprime p}) : TopologicalSpace (rootsOfUnity m R) := ⊥
   have (m : {m : ℕ // m ≠ 0 ∧ m.Coprime p}) : DiscreteTopology (rootsOfUnity m R) := ⟨rfl⟩
-  have (m : {m : ℕ // m ≠ 0 ∧ m.Coprime p}) : NeZero (m : ℕ) := ⟨m.2.1⟩
+  have (m : {m : ℕ // m ≠ 0 ∧ m.Coprime p}) : NeZero (m : ℕ) := ⟨m.property.1⟩
   refine Topology.IsClosedEmbedding.compactSpace
     (f := fun x : PrimeToPTateModule p R ↦ fun m ↦ proj m x) ⟨isEmbedding_proj, ?_⟩
   rw [range_proj]
@@ -308,7 +309,8 @@ theorem surjective_of_forall_surjective_proj {X : Type*} [TopologicalSpace X] [C
       rw [← proj_pow_div (f x) hmn, ← proj_pow_div y hmn, hx]
   have : Nonempty {m : ℕ // m ≠ 0 ∧ m.Coprime p} := ⟨⟨1, one_ne_zero, Nat.coprime_one_left p⟩⟩
   obtain ⟨x, hx⟩ := IsCompact.nonempty_iInter_of_directed_nonempty_isCompact_isClosed t
-    (fun m n ↦ ⟨⟨m * n, mul_ne_zero m.2.1 n.2.1, Nat.Coprime.mul_left m.2.2 n.2.2⟩,
+    (fun m n ↦ ⟨⟨m * n, mul_ne_zero m.property.1 n.property.1, Nat.Coprime.mul_left m.property.2
+        n.property.2⟩,
       hsub (dvd_mul_right _ _), hsub (dvd_mul_left _ _)⟩)
     (fun m ↦ h m (proj m y)) (fun m ↦ ((continuous_iff.1 hf m).isClosed_fiber _).isCompact)
     fun m ↦ (continuous_iff.1 hf m).isClosed_fiber _
@@ -331,11 +333,11 @@ theorem exists_forall_isPrimitiveRoot_proj {X : Type*} [TopologicalSpace X] [Com
     fun m ↦ (fun x ↦ proj m (f x)) ⁻¹' {ζ | IsPrimitiveRoot (ζ : Eˣ) m}
   have hsub {m n : {m : ℕ // m ≠ 0 ∧ m.Coprime p}} (hmn : (m : ℕ) ∣ n) : t n ⊆ t m := by
     intro x (hx : IsPrimitiveRoot (proj n (f x) : Eˣ) n)
-    have h' := hx.pow_of_dvd (Nat.div_ne_zero_iff_of_dvd hmn |>.2 ⟨n.2.1, m.2.1⟩)
+    have h' := hx.pow_of_dvd (Nat.div_ne_zero_iff_of_dvd hmn |>.2 ⟨n.property.1, m.property.1⟩)
       (Nat.div_dvd_of_dvd hmn)
-    rwa [proj_pow_div (f x) hmn, Nat.div_div_self hmn n.2.1] at h'
+    rwa [proj_pow_div (f x) hmn, Nat.div_div_self hmn n.property.1] at h'
   have hne (m : {m : ℕ // m ≠ 0 ∧ m.Coprime p}) : (t m).Nonempty := by
-    have : NeZero (m : ℕ) := ⟨m.2.1⟩
+    have : NeZero (m : ℕ) := ⟨m.property.1⟩
     obtain ⟨ζ, hζ⟩ := hE m
     obtain ⟨x, hx⟩ := h m hζ.toRootsOfUnity
     refine ⟨x, ?_⟩
@@ -345,7 +347,8 @@ theorem exists_forall_isPrimitiveRoot_proj {X : Type*} [TopologicalSpace X] [Com
     isOpen_compl_iff.1 (continuous_iff.1 hf m {ζ | IsPrimitiveRoot (ζ : Eˣ) m}ᶜ)
   have : Nonempty {m : ℕ // m ≠ 0 ∧ m.Coprime p} := ⟨⟨1, one_ne_zero, Nat.coprime_one_left p⟩⟩
   obtain ⟨x, hx⟩ := IsCompact.nonempty_iInter_of_directed_nonempty_isCompact_isClosed t
-    (fun m n ↦ ⟨⟨m * n, mul_ne_zero m.2.1 n.2.1, Nat.Coprime.mul_left m.2.2 n.2.2⟩,
+    (fun m n ↦ ⟨⟨m * n, mul_ne_zero m.property.1 n.property.1, Nat.Coprime.mul_left m.property.2
+        n.property.2⟩,
       hsub (dvd_mul_right _ _), hsub (dvd_mul_left _ _)⟩)
     hne (fun m ↦ (hclosed m).isCompact) hclosed
   exact ⟨x, Set.mem_iInter.1 hx⟩
@@ -362,17 +365,17 @@ theorem topologicalClosure_zpowers_eq_top {R : Type*} [CommRing R] [IsDomain R]
   have : CompactSpace C :=
     isCompact_iff_compactSpace.1 (Subgroup.zpowers ζ).isClosed_topologicalClosure.isCompact
   have hsurj : Function.Surjective ((↑) : C → PrimeToPTateModule p R) := by
-    refine surjective_of_forall_surjective_proj continuous_subtype_val fun m y ↦ ?_
-    have : NeZero (m : ℕ) := ⟨m.2.1⟩
+    refine surjective_of_forall_surjective_proj continuous_subtypeVal fun m y ↦ ?_
+    have : NeZero (m : ℕ) := ⟨m.property.1⟩
     obtain ⟨k, hk⟩ : ∃ k : ℤ, (proj m ζ : Rˣ) ^ k = y := by
       rw [← Subgroup.mem_zpowers_iff, (hζ m).zpowers_eq]
-      exact y.2
+      exact y.property
     exact ⟨⟨ζ ^ k, (Subgroup.zpowers ζ).le_topologicalClosure
       (Subgroup.zpow_mem_zpowers ζ k)⟩,
       Subtype.ext (by simp [hk])⟩
   exact eq_top_iff.2 fun x _ ↦ by
     obtain ⟨c, rfl⟩ := hsurj x
-    exact c.2
+    exact c.property
 
 /-! ### Compatible systems of primitive roots of unity -/
 
@@ -390,7 +393,7 @@ theorem exists_forall_isPrimitiveRoot
       IsPrimitiveRoot (proj m ζ : Rˣ) m := by
   let (m : {m : ℕ // m ≠ 0 ∧ m.Coprime p}) : TopologicalSpace (rootsOfUnity m R) := ⊥
   have (m : {m : ℕ // m ≠ 0 ∧ m.Coprime p}) : DiscreteTopology (rootsOfUnity m R) := ⟨rfl⟩
-  have (m : {m : ℕ // m ≠ 0 ∧ m.Coprime p}) : NeZero (m : ℕ) := ⟨m.2.1⟩
+  have (m : {m : ℕ // m ≠ 0 ∧ m.Coprime p}) : NeZero (m : ℕ) := ⟨m.property.1⟩
   -- In the compact product of the finite discrete levels, the families whose level-`N` component
   -- is primitive and determines the components at all divisors of `N` form a directed family of
   -- nonempty closed sets. A point in their intersection is a compatible primitive family.
@@ -401,23 +404,23 @@ theorem exists_forall_isPrimitiveRoot
   have hsub {M N : {m : ℕ // m ≠ 0 ∧ m.Coprime p}} (hMN : (M : ℕ) ∣ N) : t N ⊆ t M := by
     rintro x ⟨hx, hc⟩
     refine ⟨?_, fun n hn ↦ ?_⟩
-    · have h' := hx.pow_of_dvd (Nat.div_ne_zero_iff_of_dvd hMN |>.2 ⟨N.2.1, M.2.1⟩)
+    · have h' := hx.pow_of_dvd (Nat.div_ne_zero_iff_of_dvd hMN |>.2 ⟨N.property.1, M.property.1⟩)
         (Nat.div_dvd_of_dvd hMN)
-      rwa [hc M hMN, Nat.div_div_self hMN N.2.1] at h'
+      rwa [hc M hMN, Nat.div_div_self hMN N.property.1] at h'
     · rw [← hc M hMN, ← hc n (hn.trans hMN), ← pow_mul, Nat.div_mul_div hMN hn]
   have hne (N : {m : ℕ // m ≠ 0 ∧ m.Coprime p}) : (t N).Nonempty := by
     obtain ⟨ζ, hζ⟩ := hR N
     -- The family `n ↦ ζ ^ (N / gcd(N, n))`: an `n`-th root of unity for every `n`, which is
     -- `ζ ^ (N / n)` when `n ∣ N`.
     have hmem (n : {m : ℕ // m ≠ 0 ∧ m.Coprime p}) :
-        hζ.toRootsOfUnity.1 ^ ((N : ℕ) / Nat.gcd N n) ∈ rootsOfUnity n R := by
+        hζ.toRootsOfUnity.val ^ ((N : ℕ) / Nat.gcd N n) ∈ rootsOfUnity n R := by
       rw [mem_rootsOfUnity, ← pow_mul, Nat.div_mul_right_comm (Nat.gcd_dvd_left _ _),
         Nat.mul_div_assoc _ (Nat.gcd_dvd_right _ _), pow_mul,
-        (mem_rootsOfUnity _ _).1 hζ.toRootsOfUnity.2, one_pow]
+        (mem_rootsOfUnity _ _).1 hζ.toRootsOfUnity.property, one_pow]
     refine ⟨fun n ↦ ⟨_, hmem n⟩, ?_, fun n hn ↦ ?_⟩
-    · simp only [Nat.gcd_self, Nat.div_self (Nat.pos_of_ne_zero N.2.1), pow_one]
+    · simp only [Nat.gcd_self, Nat.div_self (Nat.pos_of_ne_zero N.property.1), pow_one]
       rwa [← IsPrimitiveRoot.coe_units_iff, IsPrimitiveRoot.val_toRootsOfUnity_coe]
-    · simp [Nat.gcd_self, Nat.div_self (Nat.pos_of_ne_zero N.2.1), Nat.gcd_eq_right hn]
+    · simp [Nat.gcd_self, Nat.div_self (Nat.pos_of_ne_zero N.property.1), Nat.gcd_eq_right hn]
   have hclosed (N : {m : ℕ // m ≠ 0 ∧ m.Coprime p}) : IsClosed (t N) := by
     have hN : Continuous fun x : (∀ m : {m : ℕ // m ≠ 0 ∧ m.Coprime p}, rootsOfUnity m R) ↦
         x N := continuous_apply N
@@ -430,7 +433,8 @@ theorem exists_forall_isPrimitiveRoot
         (y.1 : Rˣ) ^ ((N : ℕ) / n) = y.2}).preimage hNn
   have : Nonempty {m : ℕ // m ≠ 0 ∧ m.Coprime p} := ⟨⟨1, one_ne_zero, Nat.coprime_one_left p⟩⟩
   obtain ⟨x, hx⟩ := IsCompact.nonempty_iInter_of_directed_nonempty_isCompact_isClosed t
-    (fun m n ↦ ⟨⟨m * n, mul_ne_zero m.2.1 n.2.1, Nat.Coprime.mul_left m.2.2 n.2.2⟩,
+    (fun m n ↦ ⟨⟨m * n, mul_ne_zero m.property.1 n.property.1, Nat.Coprime.mul_left m.property.2
+        n.property.2⟩,
       hsub (dvd_mul_right _ _), hsub (dvd_mul_left _ _)⟩)
     hne (fun N ↦ (hclosed N).isCompact) hclosed
   rw [Set.mem_iInter] at hx
@@ -444,12 +448,12 @@ theorem proj_surjective
     (hR : ∀ m : {m : ℕ // m ≠ 0 ∧ m.Coprime p}, ∃ ζ : R, IsPrimitiveRoot ζ m)
     (m : {m : ℕ // m ≠ 0 ∧ m.Coprime p}) :
     Function.Surjective (proj m : PrimeToPTateModule p R → rootsOfUnity m R) := by
-  have : NeZero (m : ℕ) := ⟨m.2.1⟩
+  have : NeZero (m : ℕ) := ⟨m.property.1⟩
   obtain ⟨ζ, hζ⟩ := exists_forall_isPrimitiveRoot hR
   intro y
   obtain ⟨k, hk⟩ : ∃ k : ℤ, (proj m ζ : Rˣ) ^ k = y := by
     rw [← Subgroup.mem_zpowers_iff, (hζ m).zpowers_eq]
-    exact y.2
+    exact y.property
   exact ⟨ζ ^ k, Subtype.ext (by simp [hk])⟩
 
 end Primitive
@@ -604,14 +608,14 @@ theorem ratChar_ofAdd_eq_zpow (x : PrimeToPTateModule 1 E) (n : {m : ℕ // m �
 theorem ratChar_ofAdd_intCast_div (x : PrimeToPTateModule 1 E)
     (n : {m : ℕ // m ≠ 0 ∧ m.Coprime 1}) (k : ℤ) :
     ratChar E x (.ofAdd ((k : ℚ) / (n : ℕ))) = (proj n x : Eˣ) ^ k :=
-  ratChar_ofAdd_eq_zpow x n (div_mul_cancel₀ _ (Nat.cast_ne_zero.mpr n.2.1)).symm
+  ratChar_ofAdd_eq_zpow x n (div_mul_cancel₀ _ (Nat.cast_ne_zero.mpr n.property.1)).symm
 
 /-- The character attached to `ζ` is trivial on the integers. -/
 @[simp]
 theorem ratChar_ofAdd_intCast (x : PrimeToPTateModule 1 E) (k : ℤ) :
     ratChar E x (.ofAdd (k : ℚ)) = 1 := by
   have h1 : (proj ⟨1, one_ne_zero, Nat.coprime_one_right _⟩ x : Eˣ) = 1 := by
-    simpa using (proj ⟨1, one_ne_zero, Nat.coprime_one_right _⟩ x).2
+    simpa using (proj ⟨1, one_ne_zero, Nat.coprime_one_right _⟩ x).property
   rw [ratChar_ofAdd_eq_zpow x ⟨1, one_ne_zero, Nat.coprime_one_right _⟩ (k := k)
     (by rw [Nat.cast_one, mul_one]), h1, one_zpow]
 
@@ -657,7 +661,7 @@ theorem coe_proj_zHatLift (ζ : PrimeToPTateModule 1 R) (n : ℕ+) (a : zHat.{u}
       (isLocallyConstant_proj ⟨n, n.ne_zero, Nat.coprime_one_right _⟩).continuous⟩
   have hq : (q ζ) ^ (n : ℕ) = 1 := Subtype.ext <| by
     rw [Subgroup.coe_pow, OneMemClass.coe_one]
-    exact (mem_rootsOfUnity _ _).1 (q ζ).2
+    exact (mem_rootsOfUnity _ _).1 (q ζ).property
   have h := zpowHat_eq_pow_val_toZMod hq (Additive.ofMul a)
   rw [zpowHat_def, toMul_ofMul, ← zHat.map_lift] at h
   exact congrArg ((↑) : rootsOfUnity n R → Rˣ) h |>.trans (by simp [q])
@@ -750,7 +754,7 @@ variable {R : Type*} [CommRing R] [IsDomain R] {ζ ζ' ζ'' : PrimeToPTateModule
 theorem coe_proj_zpowHat (ζ : PrimeToPTateModule 1 R) (a : Additive zHat.{u})
     (m : {m : ℕ // m ≠ 0 ∧ m.Coprime 1}) :
     (proj m (ζ ^ᶻ a) : Rˣ) =
-      (proj m ζ : Rˣ) ^ (zHat.toZMod (⟨m, Nat.pos_of_ne_zero m.2.1⟩ : ℕ+) a).val := by
+      (proj m ζ : Rˣ) ^ (zHat.toZMod (⟨m, Nat.pos_of_ne_zero m.property.1⟩ : ℕ+) a).val := by
   obtain ⟨m, hm, -⟩ := m
   rw [zpowHat_def]
   -- The level `⟨m, hm, _⟩` is the one `coe_proj_zHatLift` attaches to `⟨m, _⟩ : ℕ+`.

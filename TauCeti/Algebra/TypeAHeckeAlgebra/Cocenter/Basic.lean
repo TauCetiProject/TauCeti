@@ -617,7 +617,7 @@ theorem span_cycleBlock_sup_commutatorSubmodule (n : ℕ) :
     rw [Submodule.map_sup, Submodule.map_span, ← Set.range_comp]
     exact span_cycleBlock_sup_stageCommutatorSpan n
   refine eq_top_iff.2 fun z _ ↦ ?_
-  have hz : (z : InfiniteTypeAHeckeAlgebra R q) ∈ Subalgebra.toSubmodule (stage R q n) := z.2
+  have hz : (z : InfiniteTypeAHeckeAlgebra R q) ∈ Subalgebra.toSubmodule (stage R q n) := z.property
   rw [← h] at hz
   obtain ⟨w, hw, hwz⟩ := hz
   rwa [← Subtype.val_injective hwz]

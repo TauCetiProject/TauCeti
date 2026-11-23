@@ -69,10 +69,10 @@ theorem exists_lt_gt_reProdIm_inter_divisor_support_finite
     (MeromorphicOn.divisor f U).supportLocallyFiniteWithinDomain z (hU hz)
   obtain ⟨s, hs⟩ := (isCompact_Icc.reProdIm isCompact_Icc).elim_nhds_subcover_nhdsSet'
     (fun z hz ↦ V z hz) hV
-  let N := ⋃ z ∈ s, V z.1 z.2
+  let N := ⋃ z ∈ s, V z.val z.property
   have hN : (N ∩ Function.support (MeromorphicOn.divisor f U)).Finite := by
     simp only [N, iUnion_inter]
-    exact s.finite_toSet.biUnion fun z _ ↦ hfin z.1 z.2
+    exact s.finite_toSet.biUnion fun z _ ↦ hfin z.val z.property
   have hprod : equivRealProdCLM.symm ⁻¹' N ∈
       𝓝ˢ (Icc σ₁ σ₂ ×ˢ Icc t₁ t₂) :=
     equivRealProdCLM.symm.continuous.tendsto_nhdsSet
