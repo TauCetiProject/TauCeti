@@ -15,9 +15,10 @@ import TauCeti.Analysis.CStarAlgebra.CStarMatrix
 # Cone operations, compression, and the completely positive order on `A₁ →CP A₂`
 
 Completely positive maps between C⋆-algebras are closed under addition, `ℝ≥0`-scaling, identity,
-composition, and operator compression `ContinuousLinearMap.conjAdjoint` (`V.conjAdjoint :
-T ↦ V† ∘L T ∘L V`). Every positive linear functional is completely positive
-(`PositiveLinearMap.toCompletelyPositiveMap`, `PositiveLinearMap.toCompletelyPositiveMapCLM`).
+composition, conjugation `CompletelyPositiveMap.conj` (`x ↦ c⋆ x c`), and operator compression
+`ContinuousLinearMap.conjAdjoint` (`V.conjAdjoint : T ↦ V† ∘L T ∘L V`). Every positive linear
+functional is completely positive (`PositiveLinearMap.toCompletelyPositiveMap`,
+`PositiveLinearMap.toCompletelyPositiveMapCLM`).
 Equipping `A₁ →CP A₂` with the *completely positive order* `ψ ≤ φ ↔ ∃ θ : A₁ →CP A₂, φ = ψ + θ`
 makes it a partially ordered cancellative `ℝ≥0`-cone with bottom element `0`, used in Arveson's
 Radon–Nikodym theorem.
@@ -182,6 +183,27 @@ instance : IsOrderedAddMonoid (A₁ →CP A₂) where
   add_le_add_left ψ _ h χ := by obtain ⟨θ, rfl⟩ := h; exact ⟨θ, add_right_comm ψ θ χ⟩
 
 end General
+
+section Conj
+
+variable {B : Type*} [NonUnitalCStarAlgebra B] [PartialOrder B] [StarOrderedRing B]
+
+/-- Conjugation `x ↦ c⋆ x c` by an element `c` of a C⋆-algebra, as a completely positive map:
+the quadratic form of the amplified matrix at `y` is that of the original matrix at `c y`. -/
+def conj (c : B) : B →CP B where
+  toLinearMap :=
+    { toFun x := star c * x * c
+      map_add' x y := by simp [mul_add, add_mul]
+      map_smul' z x := by simp [mul_smul_comm, smul_mul_assoc] }
+  map_cstarMatrix_nonneg' _ M hM := by
+    refine CStarMatrix.nonneg_iff_forall_sum_nonneg.mpr fun y => ?_
+    simpa [CStarMatrix.map_apply, mul_assoc, star_mul] using
+      CStarMatrix.nonneg_iff_forall_sum_nonneg.mp hM fun i => c * y i
+
+/-- Evaluation of the conjugation map. -/
+@[simp] theorem conj_apply (c x : B) : conj c x = star c * x * c := (rfl)
+
+end Conj
 
 end CompletelyPositiveMap
 

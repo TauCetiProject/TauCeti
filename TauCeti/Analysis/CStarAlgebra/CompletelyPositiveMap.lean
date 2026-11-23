@@ -46,6 +46,11 @@ with unital domain is `‖φ 1‖`.
   `TauCeti.IsNPositive.star_map_mul_map_le_of_map_one` for unital ones.
 * `TauCeti.IsNPositive.norm_apply_le`: `‖φ a‖ ≤ ‖φ 1‖ * ‖a‖` for `2`-positive maps, and
   `TauCeti.IsNPositive.opNorm_eq_norm_map_one`: `‖ψ‖ = ‖ψ 1‖` for continuous ones.
+* `TauCeti.IsNPositive.norm_map_one_le_one_iff`: a `2`-positive map with unital domain is
+  contractive exactly when `‖φ 1‖ ≤ 1`, and then
+  `TauCeti.IsNPositive.star_map_mul_map_le_of_norm_map_one_le_one` gives `φ(a)⋆ φ(a) ≤ φ(a⋆a)`.
+* `TauCeti.IsNPositive.map_mul_eq_zero_of_map_one_mul_eq_zero`: `φ 1 q = 0` implies `φ a q = 0`,
+  and `TauCeti.IsNPositive.mul_map_eq_zero_of_mul_map_one_eq_zero` on the other side.
 * `CompletelyPositiveMapClass.star_map_mul_map_le`,
   `CompletelyPositiveMapClass.star_map_mul_map_le_of_map_one` and
   `CompletelyPositiveMapClass.opNorm_ofClass_eq_norm_map_one`: the Schwarz inequality for
@@ -346,6 +351,51 @@ theorem IsNPositive.opNorm_eq_norm_map_one {ψ : A →L[ℂ] B} (hψ : IsNPositi
   · simp [Subsingleton.elim (1 : A) 0]
   simpa using ψ.le_opNorm 1
 
+/-- A `2`-positive map with unital domain is contractive exactly when `‖φ 1‖ ≤ 1`. -/
+theorem IsNPositive.norm_map_one_le_one_iff (hφ : IsNPositive 2 φ) :
+    ‖φ 1‖ ≤ 1 ↔ ∀ a, ‖φ a‖ ≤ ‖a‖ := by
+  refine ⟨fun h a => (hφ.norm_apply_le a).trans (mul_le_of_le_one_left (norm_nonneg a) h),
+    fun h => (h 1).trans ?_⟩
+  nontriviality A
+  exact CStarRing.norm_one.le
+
+/-- **The contractive Kadison–Schwarz inequality.** A `2`-positive map `φ` with unital domain and
+`‖φ 1‖ ≤ 1` satisfies `φ(a)⋆ φ(a) ≤ φ(a⋆a)`. -/
+theorem IsNPositive.star_map_mul_map_le_of_norm_map_one_le_one (hφ : IsNPositive 2 φ)
+    (h : ‖φ 1‖ ≤ 1) (a : A) : star (φ a) * φ a ≤ φ (star a * a) := by
+  refine (hφ.star_map_mul_map_le a).trans ?_
+  calc ‖φ 1‖ • φ (star a * a) ≤ (1 : ℝ) • φ (star a * a) :=
+        smul_le_smul_of_nonneg_right h (hφ.map_nonneg two_pos (star_mul_self_nonneg a))
+    _ = φ (star a * a) := one_smul ℝ _
+
+/-- If `φ 1 q = 0` for a `2`-positive map `φ` with unital domain, then `φ a q = 0` for every `a`:
+by the Kadison–Schwarz inequality, `q⋆ φ(a)⋆ φ(a) q ≤ ‖φ 1‖ ‖a⋆a‖ q⋆ φ(1) q = 0`. -/
+theorem IsNPositive.map_mul_eq_zero_of_map_one_mul_eq_zero (hφ : IsNPositive 2 φ) {q : B}
+    (h : φ 1 * q = 0) (a : A) : φ a * q = 0 := by
+  have hle : φ (star a * a) ≤ ‖star a * a‖ • φ 1 := by
+    have h1 := OrderHomClass.mono (hφ.toPositiveLinearMap two_pos)
+      (IsSelfAdjoint.le_algebraMap_norm_self (star a * a))
+    simp only [IsNPositive.toPositiveLinearMap_apply] at h1
+    rwa [Algebra.algebraMap_eq_smul_one, ← Complex.coe_smul, map_smul, Complex.coe_smul] at h1
+  have hKS : star (φ a) * φ a ≤ (‖φ 1‖ * ‖star a * a‖) • φ 1 := by
+    refine (hφ.star_map_mul_map_le a).trans ?_
+    rw [mul_smul]
+    exact smul_le_smul_of_nonneg_left hle (norm_nonneg _)
+  have h0 : star (φ a * q) * (φ a * q) ≤ 0 := by
+    have h2 := star_left_conjugate_le_conjugate hKS q
+    rw [mul_smul_comm, smul_mul_assoc, mul_assoc (star q) (φ 1), h, mul_zero, smul_zero] at h2
+    simpa [star_mul, mul_assoc] using h2
+  exact star_mul_self_eq_zero.mp (le_antisymm h0 (star_mul_self_nonneg _))
+
+/-- If `q φ 1 = 0` for a `2`-positive map `φ` with unital domain, then `q φ a = 0` for every `a`.
+This is the adjoint of `TauCeti.IsNPositive.map_mul_eq_zero_of_map_one_mul_eq_zero`. -/
+theorem IsNPositive.mul_map_eq_zero_of_mul_map_one_eq_zero (hφ : IsNPositive 2 φ) {q : B}
+    (h : q * φ 1 = 0) (a : A) : q * φ a = 0 := by
+  have hsa : IsSelfAdjoint (φ 1) := (hφ.map_nonneg two_pos zero_le_one).isSelfAdjoint
+  have h' : φ 1 * star q = 0 := by simpa [star_mul, hsa.star_eq] using congrArg star h
+  simpa [star_mul, hφ.map_star two_pos] using
+    congrArg star (hφ.map_mul_eq_zero_of_map_one_mul_eq_zero h' (star a))
+
 end UnitalDomain
 
 end TauCeti
@@ -376,6 +426,35 @@ theorem norm_apply_le (φ : F) (a : A) : ‖φ a‖ ≤ ‖φ 1‖ * ‖a‖ :=
 theorem opNorm_ofClass_eq_norm_map_one (φ : F) :
     ‖((PositiveContinuousLinearMap.ofClass φ : A →P[ℂ] B) : A →L[ℂ] B)‖ = ‖φ 1‖ :=
   (isNPositive φ 2).opNorm_eq_norm_map_one
+
+/-- A completely positive map with unital domain is contractive exactly when `‖φ 1‖ ≤ 1`. -/
+theorem norm_map_one_le_one_iff (φ : F) : ‖φ 1‖ ≤ 1 ↔ ∀ a, ‖φ a‖ ≤ ‖a‖ :=
+  (isNPositive φ 2).norm_map_one_le_one_iff
+
+/-- **The contractive Kadison–Schwarz inequality.** A completely positive map `φ` with unital
+domain and `‖φ 1‖ ≤ 1` satisfies `φ(a)⋆ φ(a) ≤ φ(a⋆a)`. -/
+theorem star_map_mul_map_le_of_norm_map_one_le_one (φ : F) (h : ‖φ 1‖ ≤ 1) (a : A) :
+    star (φ a) * φ a ≤ φ (star a * a) :=
+  (isNPositive φ 2).star_map_mul_map_le_of_norm_map_one_le_one h a
+
+/-- Precomposing a contractive completely positive map with a star homomorphism between
+C⋆-algebras keeps it contractive. -/
+theorem norm_apply_star_hom_le {C G : Type*} [NonUnitalCStarAlgebra C] [FunLike G C A]
+    [NonUnitalAlgHomClass G ℂ C A] [StarHomClass G C A] (φ : F) (h : ‖φ 1‖ ≤ 1) (θ : G)
+    (c : C) : ‖φ (θ c)‖ ≤ ‖c‖ :=
+  ((norm_map_one_le_one_iff φ).mp h (θ c)).trans (NonUnitalStarAlgHom.norm_apply_le θ c)
+
+/-- If `φ 1 q = 0` for a completely positive map `φ` with unital domain, then `φ a q = 0` for
+every `a`. -/
+theorem map_mul_eq_zero_of_map_one_mul_eq_zero (φ : F) {q : B} (h : φ 1 * q = 0) (a : A) :
+    φ a * q = 0 :=
+  (isNPositive φ 2).map_mul_eq_zero_of_map_one_mul_eq_zero h a
+
+/-- If `q φ 1 = 0` for a completely positive map `φ` with unital domain, then `q φ a = 0` for
+every `a`. -/
+theorem mul_map_eq_zero_of_mul_map_one_eq_zero (φ : F) {q : B} (h : q * φ 1 = 0) (a : A) :
+    q * φ a = 0 :=
+  (isNPositive φ 2).mul_map_eq_zero_of_mul_map_one_eq_zero h a
 
 end NonUnital
 
