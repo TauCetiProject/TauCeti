@@ -19,7 +19,9 @@ vanish. Consequently their rank-one operators sum to twice the identity on `Λ²
 This gives trace and double-contraction formulas using all ordered pairs instead of the increasing
 pairs indexing Mathlib's `OrthonormalBasis.exteriorPower`, both for arbitrary endomorphisms
 (`LinearMap.trace`) and for bilinear forms (`TauCeti.bilinFormTrace`), as well as bilinear maps
-(`OrthonormalBasis.sum_inner_mul_inner_smul_ιMulti_two`), fixing the factor of two in curvature
+(`OrthonormalBasis.sum_apply_mul_eq_half_sum_ιMulti`,
+`OrthonormalBasis.sum_sum_apply_mul_eq_quarter_sum_ιMulti`, and
+`OrthonormalBasis.sum_inner_mul_inner_smul_ιMulti_two`), fixing the factor of two in curvature
 contractions.
 -/
 
@@ -80,6 +82,37 @@ theorem sum_apply_mul_eq_half_sum_ιMulti {ι' : Type*} [Fintype ι']
   rw [TauCeti.bilinFormTrace_eq_sum _ e] at h2
   simp only [LinearMap.compl₁₂_apply, LinearMap.mul_apply'] at h2
   rw [h2]
+  ring
+
+/-- Contracting two bilinear maps on `⋀² E` against an orthonormal basis `e` of `⋀² E` equals
+a quarter of the double sum over all pairs of ordered wedges `b i ∧ b j` and `b k ∧ b l` of an
+orthonormal basis `b` of `E`. -/
+theorem sum_sum_apply_mul_eq_quarter_sum_ιMulti {ι' : Type*} [Fintype ι']
+    (e : OrthonormalBasis ι' ℝ (⋀[ℝ]^2 E)) (b : OrthonormalBasis ι ℝ E)
+    (Φ₁ Φ₂ : ⋀[ℝ]^2 E →ₗ[ℝ] ⋀[ℝ]^2 E →ₗ[ℝ] ℝ) :
+    (∑ α, ∑ β, Φ₁ (e α) (e β) * Φ₂ (e α) (e β)) =
+      (1 / 4 : ℝ) * ∑ p : ι × ι, ∑ q : ι × ι,
+        Φ₁ (ιMulti ℝ 2 ![b p.1, b p.2]) (ιMulti ℝ 2 ![b q.1, b q.2]) *
+          Φ₂ (ιMulti ℝ 2 ![b p.1, b p.2]) (ιMulti ℝ 2 ![b q.1, b q.2]) := by
+  have hinner (x : ⋀[ℝ]^2 E) :
+      (∑ β, Φ₁ x (e β) * Φ₂ x (e β)) =
+        (1 / 2 : ℝ) * ∑ q : ι × ι,
+          Φ₁ x (ιMulti ℝ 2 ![b q.1, b q.2]) * Φ₂ x (ιMulti ℝ 2 ![b q.1, b q.2]) := by
+    rw [Fintype.sum_prod_type]
+    exact e.sum_apply_mul_eq_half_sum_ιMulti b (Φ₁ x) (Φ₂ x)
+  simp_rw [hinner, ← Finset.mul_sum]
+  rw [Finset.sum_comm]
+  have houter (q : ι × ι) :
+      (∑ α, Φ₁ (e α) (ιMulti ℝ 2 ![b q.1, b q.2]) *
+          Φ₂ (e α) (ιMulti ℝ 2 ![b q.1, b q.2])) =
+        (1 / 2 : ℝ) * ∑ p : ι × ι,
+          Φ₁ (ιMulti ℝ 2 ![b p.1, b p.2]) (ιMulti ℝ 2 ![b q.1, b q.2]) *
+            Φ₂ (ιMulti ℝ 2 ![b p.1, b p.2]) (ιMulti ℝ 2 ![b q.1, b q.2]) := by
+    rw [Fintype.sum_prod_type]
+    exact e.sum_apply_mul_eq_half_sum_ιMulti b
+      (Φ₁.flip (ιMulti ℝ 2 ![b q.1, b q.2])) (Φ₂.flip (ιMulti ℝ 2 ![b q.1, b q.2]))
+  simp_rw [houter, ← Finset.mul_sum]
+  rw [Finset.sum_comm]
   ring
 
 /-- Contracting a bilinear map `Φ` on `⋀² E` against all pairs of ordered basis wedges of an

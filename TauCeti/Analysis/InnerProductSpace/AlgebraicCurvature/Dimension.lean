@@ -253,6 +253,20 @@ theorem ofExteriorBilin_apply (B : BilinForm ℝ (⋀[ℝ]^2 V)) (u v z w : V) :
       B (exteriorPower.ιMulti ℝ 2 ![u, v]) (exteriorPower.ιMulti ℝ 2 ![z, w]) := by
   simp [ofExteriorBilin]
 
+/-- An exterior-square bilinear form is uniquely determined by its four-tensor. -/
+theorem ofExteriorBilin_injective : Function.Injective (ofExteriorBilin (V := V)) := by
+  intro B₁ B₂ h
+  refine exteriorPower.linearMap_ext_ιMulti_two fun u v ↦
+    exteriorPower.linearMap_ext_ιMulti_two fun z w ↦ ?_
+  have hval := congrArg (fun r : FourTensor V ↦ r ![u, v, z, w]) h
+  simpa only [ofExteriorBilin_apply] using hval
+
+/-- Two exterior-square bilinear forms induce the same four-tensor iff they are equal. -/
+@[simp]
+theorem ofExteriorBilin_inj {B₁ B₂ : BilinForm ℝ (⋀[ℝ]^2 V)} :
+    ofExteriorBilin B₁ = ofExteriorBilin B₂ ↔ B₁ = B₂ :=
+  ofExteriorBilin_injective.eq_iff
+
 /-- The four-tensor associated to a bilinear form on `⋀[ℝ]^2 V` is antisymmetric in its
 first pair. -/
 theorem ofExteriorBilin_antisymm_first (B : BilinForm ℝ (⋀[ℝ]^2 V))
@@ -294,11 +308,11 @@ theorem mem_range_ofExteriorBilin_iff {r : FourTensor V} :
   refine ⟨?_, fun ⟨h₁, h₂⟩ ↦ ?_⟩
   · rintro ⟨B, rfl⟩
     exact ⟨ofExteriorBilin_antisymm_first B, ofExteriorBilin_antisymm_last B⟩
-  · refine ⟨(toLinearMap₄ r).exteriorSquareBilinear
+  · have halt₂ : ∀ u v, (toLinearMap₄ r u v).IsAlt := fun u v z ↦ by
+      rw [toLinearMap₄_apply]; exact CharZero.eq_neg_self_iff.mp (h₂ u v z z)
+    refine ⟨(toLinearMap₄ r).exteriorSquareBilinear
       (fun u v z ↦ by rw [toLinearMap₄_apply]; exact CharZero.eq_neg_self_iff.mp (h₁ u u v z))
-      (show ∀ u v, (toLinearMap₄ r u v).IsAlt from fun u v z ↦ by
-        rw [toLinearMap₄_apply]; exact CharZero.eq_neg_self_iff.mp (h₂ u v z z)),
-      ext_vec fun u v z w ↦ ?_⟩
+      halt₂, ext_vec fun u v z w ↦ ?_⟩
     rw [ofExteriorBilin_apply, LinearMap.exteriorSquareBilinear_ιMulti_ιMulti]
     exact toLinearMap₄_apply r u v z w
 

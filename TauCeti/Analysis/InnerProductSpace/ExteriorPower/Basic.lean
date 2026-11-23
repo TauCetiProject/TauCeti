@@ -672,12 +672,18 @@ noncomputable def twoVectorBracket : ⋀[ℝ]^2 V →ₗ[ℝ] ⋀[ℝ]^2 V →�
   (LieAlgebra.ad ℝ (⋀[ℝ]^2 V)).toLinearMap
 
 omit [FiniteDimensional ℝ V] in
+private theorem twoVectorBracket_eq_lie (F G : ⋀[ℝ]^2 V) :
+    letI := bivectorLieRing (negHalfInnerQ V)
+    twoVectorBracket F G = ⁅F, G⁆ :=
+  (rfl)
+
+omit [FiniteDimensional ℝ V] in
 private theorem bivectorExterior_twoVectorBracket (F G : ⋀[ℝ]^2 V) :
     bivectorExterior (negHalfInnerQ V) (twoVectorBracket F G) =
       ⁅bivectorExterior (negHalfInnerQ V) F, bivectorExterior (negHalfInnerQ V) G⁆ := by
   let _ := bivectorLieRing (negHalfInnerQ V)
   let _ := bivectorLieAlgebra (negHalfInnerQ V)
-  change bivectorExterior (negHalfInnerQ V) ⁅F, G⁆ = _
+  rw [twoVectorBracket_eq_lie]
   calc
     bivectorExterior (negHalfInnerQ V) ⁅F, G⁆
         = ((bivectorLieEquiv (negHalfInnerQ V) ⁅F, G⁆ :
@@ -735,19 +741,25 @@ omit [FiniteDimensional ℝ V] in
 /-- Evaluation of `twoVectorBracket` through `exteriorPower.lieMap`. -/
 theorem twoVectorBracket_apply (F G : ⋀[ℝ]^2 V) :
     twoVectorBracket F G = lieMap 2 (twoVectorContraction F) G := by
-  have h :
-      twoVectorBracket = ((lieMap (V := V) 2).toLinearMap.comp twoVectorContractionₗ) :=
-    exteriorPower.linearMap_ext_ιMulti_two fun u v ↦
-      exteriorPower.linearMap_ext_ιMulti_two fun z w ↦ by
-        rw [LinearMap.comp_apply, LieHom.coe_toLinearMap, twoVectorContractionₗ_apply,
-          lieMap_two_apply_ιMulti, twoVectorContraction_ιMulti, twoVectorContraction_ιMulti]
-        change twoVectorBracket (ιMulti ℝ 2 ![u, v]) (ιMulti ℝ 2 ![z, w]) = _
-        rw [twoVectorBracket_ιMulti]
-        simp only [Matrix.cons_val_zero, Matrix.cons_val_one, sub_eq_add_neg,
-          ιMulti_two_add_left, ιMulti_two_add_right, ← neg_smul,
-          ιMulti_two_smul_left, ιMulti_two_smul_right]
-        module
-  exact LinearMap.congr_fun₂ h F G
+  have h1 (u v z w : V) :
+      twoVectorBracket (ιMulti ℝ 2 ![u, v]) (ιMulti ℝ 2 ![z, w]) =
+        lieMap 2 (twoVectorContraction (ιMulti ℝ 2 ![u, v])) (ιMulti ℝ 2 ![z, w]) := by
+    rw [twoVectorBracket_ιMulti, lieMap_two_apply_ιMulti, twoVectorContraction_ιMulti,
+      twoVectorContraction_ιMulti]
+    simp only [Matrix.cons_val_zero, Matrix.cons_val_one, sub_eq_add_neg,
+      ιMulti_two_add_left, ιMulti_two_add_right, ← neg_smul,
+      ιMulti_two_smul_left, ιMulti_two_smul_right]
+    module
+  have h2 (u v : V) :
+      twoVectorBracket (ιMulti ℝ 2 ![u, v]) =
+        lieMap 2 (twoVectorContraction (ιMulti ℝ 2 ![u, v])) :=
+    exteriorPower.linearMap_ext_ιMulti_two (h1 u v)
+  have h3 :
+      twoVectorBracket = (lieMap (V := V) 2).toLinearMap.comp twoVectorContractionₗ :=
+    exteriorPower.linearMap_ext_ιMulti_two fun u v ↦ by
+      rw [LinearMap.comp_apply, LieHom.coe_toLinearMap, twoVectorContractionₗ_apply]
+      exact h2 u v
+  exact LinearMap.congr_fun₂ h3 F G
 
 omit [FiniteDimensional ℝ V] in
 /-- Under `twoVectorContraction`, `twoVectorBracket` corresponds to the commutator of skew-adjoint
@@ -769,6 +781,7 @@ theorem twoVectorBracket_swap (F G : ⋀[ℝ]^2 V) :
     twoVectorBracket G F = -twoVectorBracket F G := by
   let _ := bivectorLieRing (negHalfInnerQ V)
   let _ := bivectorLieAlgebra (negHalfInnerQ V)
+  rw [twoVectorBracket_eq_lie, twoVectorBracket_eq_lie]
   exact (lie_skew G F).symm
 
 omit [FiniteDimensional ℝ V] in
@@ -777,6 +790,7 @@ omit [FiniteDimensional ℝ V] in
 theorem twoVectorBracket_self (F : ⋀[ℝ]^2 V) : twoVectorBracket F F = 0 := by
   let _ := bivectorLieRing (negHalfInnerQ V)
   let _ := bivectorLieAlgebra (negHalfInnerQ V)
+  rw [twoVectorBracket_eq_lie]
   exact lie_self F
 
 omit [FiniteDimensional ℝ V] in
@@ -788,6 +802,7 @@ theorem twoVectorBracket_jacobi (F G H : ⋀[ℝ]^2 V) :
       twoVectorBracket H (twoVectorBracket F G) = 0 := by
   let _ := bivectorLieRing (negHalfInnerQ V)
   let _ := bivectorLieAlgebra (negHalfInnerQ V)
+  simp only [twoVectorBracket_eq_lie]
   exact lie_jacobi F G H
 
 /-- Adjoint invariance of the inner product on `⋀² V`: `twoVectorBracket F` is skew-adjoint. -/
@@ -897,9 +912,8 @@ private noncomputable def negHalfInnerIsometry {E F : Type*} [NormedAddCommGroup
   map_app' x := by
     rw [TauCeti.negHalfInnerQ, TauCeti.negHalfInnerQ, smul_apply, smul_apply,
       LinearMap.BilinMap.toQuadraticMap_apply, LinearMap.BilinMap.toQuadraticMap_apply,
-      innerₗ_apply_apply, innerₗ_apply_apply]
-    change -(1 / 2 : ℝ) • ⟪f x, f x⟫ = -(1 / 2 : ℝ) • ⟪x, x⟫
-    rw [f.inner_map_map]
+      innerₗ_apply_apply, innerₗ_apply_apply, LinearMap.toFun_eq_coe,
+      LinearIsometry.coe_toLinearMap, f.inner_map_map]
 
 /-- Exterior-square functoriality of a linear isometry preserves `twoVectorBracket`. -/
 theorem exteriorPower_map_twoVectorBracket {E F : Type*} [NormedAddCommGroup E]

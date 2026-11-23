@@ -103,10 +103,8 @@ theorem sharpBilin_eq (A B : Module.End ℝ (⋀[ℝ]^2 V)) :
           LinearMap.adjoint (𝕜 := ℝ) (E := (⋀[ℝ]^2 V) ⊗[ℝ] (⋀[ℝ]^2 V)) (F := ⋀[ℝ]^2 V)
             (TensorProduct.lift TauCeti.twoVectorBracket)).adjoint := by
   dsimp only [sharpBilin]
-  rw [LinearMap.smul_apply, LinearMap.smul_apply, LinearMap.compr₂_apply,
-    LinearMap.compr₂_apply, LinearMap.compr₂_apply, LinearMap.flip_apply,
-    LinearMap.llcomp_apply', LinearMap.llcomp_apply', TensorProduct.mapBilinear_apply,
-    LinearEquiv.coe_toLinearMap]
+  simp only [LinearMap.smul_apply, LinearMap.compr₂_apply, LinearMap.flip_apply,
+    LinearMap.llcomp_apply', TensorProduct.mapBilinear_apply, LinearEquiv.coe_toLinearMap]
 
 /-- Hamilton's quadratic `#` operator `A.sharp = A.sharpBilin A` on `Module.End ℝ (⋀[ℝ]^2 V)`. -/
 def sharp (A : Module.End ℝ (⋀[ℝ]^2 V)) : Module.End ℝ (⋀[ℝ]^2 V) :=
@@ -250,12 +248,10 @@ variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] [FiniteDim
 
 /-- The `#` product of two symmetric endomorphisms of `⋀[ℝ]^2 V` is symmetric. -/
 theorem sharpBilin {A B : Module.End ℝ (⋀[ℝ]^2 V)} (hA : A.IsSymmetric) (hB : B.IsSymmetric) :
-    (Module.End.sharpBilin A B).IsSymmetric := by
-  have hAB : (TensorProduct.map A B).IsSymmetric := fun x y ↦ by
-    rw [← LinearMap.adjoint_inner_right, TensorProduct.adjoint_map, hA.adjoint_eq, hB.adjoint_eq]
-  have hconj := hAB.conj_adjoint (TensorProduct.lift (TauCeti.twoVectorBracket (V := V)))
-  rw [Module.End.sharpBilin_eq, hconj.adjoint_eq]
-  exact LinearMap.IsSymmetric.smul (star_trivial _) hconj
+    (Module.End.sharpBilin A B).IsSymmetric :=
+  (LinearMap.isSymmetric_iff_isSelfAdjoint _).mpr <| by
+    simp only [IsSelfAdjoint, LinearMap.star_eq_adjoint, Module.End.adjoint_sharpBilin,
+      hA.adjoint_eq, hB.adjoint_eq]
 
 /-- The `#`-square of a symmetric endomorphism of `⋀[ℝ]^2 V` is symmetric. -/
 theorem sharp {A : Module.End ℝ (⋀[ℝ]^2 V)} (hA : A.IsSymmetric) :
@@ -274,34 +270,6 @@ open TauCeti TauCeti.FourTensor
 
 variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] [FiniteDimensional ℝ V]
 
-private theorem double_sum_apply_mul_eq_quarter_sum_ιMulti {ι ι' : Type*} [Fintype ι] [Fintype ι']
-    (e : OrthonormalBasis ι' ℝ (⋀[ℝ]^2 V)) (b : OrthonormalBasis ι ℝ V)
-    (Φ₁ Φ₂ : ⋀[ℝ]^2 V →ₗ[ℝ] ⋀[ℝ]^2 V →ₗ[ℝ] ℝ) :
-    (∑ α, ∑ β, Φ₁ (e α) (e β) * Φ₂ (e α) (e β)) =
-      (1 / 4 : ℝ) * ∑ p : ι × ι, ∑ q : ι × ι,
-        Φ₁ (ιMulti ℝ 2 ![b p.1, b p.2]) (ιMulti ℝ 2 ![b q.1, b q.2]) *
-          Φ₂ (ιMulti ℝ 2 ![b p.1, b p.2]) (ιMulti ℝ 2 ![b q.1, b q.2]) := by
-  have hinner (x : ⋀[ℝ]^2 V) :
-      (∑ β, Φ₁ x (e β) * Φ₂ x (e β)) =
-        (1 / 2 : ℝ) * ∑ q : ι × ι,
-          Φ₁ x (ιMulti ℝ 2 ![b q.1, b q.2]) * Φ₂ x (ιMulti ℝ 2 ![b q.1, b q.2]) := by
-    rw [Fintype.sum_prod_type]
-    exact e.sum_apply_mul_eq_half_sum_ιMulti b (Φ₁ x) (Φ₂ x)
-  simp_rw [hinner, ← Finset.mul_sum]
-  rw [Finset.sum_comm]
-  have houter (q : ι × ι) :
-      (∑ α, Φ₁ (e α) (ιMulti ℝ 2 ![b q.1, b q.2]) *
-          Φ₂ (e α) (ιMulti ℝ 2 ![b q.1, b q.2])) =
-        (1 / 2 : ℝ) * ∑ p : ι × ι,
-          Φ₁ (ιMulti ℝ 2 ![b p.1, b p.2]) (ιMulti ℝ 2 ![b q.1, b q.2]) *
-            Φ₂ (ιMulti ℝ 2 ![b p.1, b p.2]) (ιMulti ℝ 2 ![b q.1, b q.2]) := by
-    rw [Fintype.sum_prod_type]
-    exact e.sum_apply_mul_eq_half_sum_ιMulti b
-      (Φ₁.flip (ιMulti ℝ 2 ![b q.1, b q.2])) (Φ₂.flip (ιMulti ℝ 2 ![b q.1, b q.2]))
-  simp_rw [houter, ← Finset.mul_sum]
-  rw [Finset.sum_comm]
-  ring
-
 private theorem inner_sharpBilin_eq_sum_ιMulti {ι : Type*} [Fintype ι]
     (b : OrthonormalBasis ι ℝ V) (A B : Module.End ℝ (⋀[ℝ]^2 V)) (ξ η : ⋀[ℝ]^2 V) :
     ⟪Module.End.sharpBilin A B ξ, η⟫ =
@@ -312,7 +280,7 @@ private theorem inner_sharpBilin_eq_sum_ιMulti {ι : Type*} [Fintype ι]
             (ιMulti ℝ 2 ![b q.1, b q.2]), η⟫ := by
   let e := stdOrthonormalBasis ℝ (⋀[ℝ]^2 V)
   rw [e.inner_sharpBilin]
-  have h := double_sum_apply_mul_eq_quarter_sum_ιMulti e b
+  have h := e.sum_sum_apply_mul_eq_quarter_sum_ιMulti b
     ((twoVectorBracket.compl₁₂ A B).compr₂ ((innerₗ (⋀[ℝ]^2 V)).flip ξ))
     (twoVectorBracket.compr₂ ((innerₗ (⋀[ℝ]^2 V)).flip η))
   simp only [LinearMap.compr₂_apply, LinearMap.compl₁₂_apply, LinearMap.flip_apply,

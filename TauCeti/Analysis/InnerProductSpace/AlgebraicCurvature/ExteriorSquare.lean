@@ -45,7 +45,6 @@ Under this dictionary, `curvatureEndomorphism (kulkarniNomizu h k) =
 * `TauCeti.FourTensor.inner_curvatureEndomorphism_ιMulti_of_antisymm`,
   `TauCeti.FourTensor.isSymmetric_curvatureEndomorphism_of_swap_pairs`,
   `TauCeti.FourTensor.isAlgebraicCurvature_ofExteriorEnd_iff`,
-  `TauCeti.FourTensor.mem_range_ofExteriorEnd_iff`,
   `TauCeti.FourTensor.curvatureEndomorphism_ofExteriorEnd`,
   `TauCeti.FourTensor.ofExteriorEnd_curvatureEndomorphism_of_antisymm`,
   `TauCeti.FourTensor.coe_curvatureEndomorphismEquiv_symm`,
@@ -252,16 +251,6 @@ theorem ofExteriorEnd_curvatureEndomorphism_of_antisymm {r : FourTensor V}
   refine ext_vec fun u v z w ↦ ?_
   rw [ofExteriorEnd_apply, inner_curvatureEndomorphism_ιMulti_of_antisymm h₁ h₂]
 
-/-- A four-tensor lies in the range of `ofExteriorEnd` iff it is antisymmetric in its first and
-last pairs. -/
-theorem mem_range_ofExteriorEnd_iff {r : FourTensor V} :
-    r ∈ LinearMap.range (ofExteriorEnd (V := V)) ↔
-      (∀ u v z w, r ![u, v, z, w] = -r ![v, u, z, w]) ∧
-        (∀ u v z w, r ![u, v, z, w] = -r ![u, v, w, z]) :=
-  ⟨by rintro ⟨T, rfl⟩; exact ⟨ofExteriorEnd_antisymm_first T, ofExteriorEnd_antisymm_last T⟩,
-   fun ⟨h₁, h₂⟩ ↦ ⟨curvatureEndomorphism r,
-     ofExteriorEnd_curvatureEndomorphism_of_antisymm h₁ h₂⟩⟩
-
 /-- On bivector-symmetric four-tensors, `ofExteriorEnd (curvatureEndomorphism r) = r`. -/
 @[simp]
 theorem IsBivectorSymmetric.ofExteriorEnd_curvatureEndomorphism {r : FourTensor V}
@@ -434,10 +423,8 @@ theorem map_comp_curvatureEndomorphism_compContinuousLinearMap
   have hadj : exteriorPower.map 2 e.toLinearMap ∘ₗ
       LinearMap.adjoint (exteriorPower.map 2 e.toLinearMap) = LinearMap.id := by
     rw [e.adjoint_exteriorPower_map, ← e.toLinearEquiv.exteriorPower_toLinearMap 2,
-      ← LinearEquiv.exteriorPower_toLinearMap e.symm.toLinearEquiv 2]
-    change (e.toLinearEquiv.exteriorPower 2).toLinearMap ∘ₗ
-        (e.toLinearEquiv.symm.exteriorPower 2).toLinearMap = LinearMap.id
-    rw [← LinearEquiv.exteriorPower_symm, LinearEquiv.comp_symm]
+      ← LinearEquiv.exteriorPower_toLinearMap e.symm.toLinearEquiv 2,
+      e.toLinearEquiv_symm, ← LinearEquiv.exteriorPower_symm, LinearEquiv.comp_symm]
   rw [e.toLinearIsometry.toContinuousLinearMap.curvatureEndomorphism_compContinuousLinearMap,
     LinearIsometry.toLinearMap_toContinuousLinearMap, e.toLinearIsometry_toLinearMap,
     ← LinearMap.comp_assoc, ← LinearMap.comp_assoc, hadj, LinearMap.id_comp]
