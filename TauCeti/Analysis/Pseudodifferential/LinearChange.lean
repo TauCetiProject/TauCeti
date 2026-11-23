@@ -188,10 +188,10 @@ theorem frequencyDeriv_compProdMap (P : CoordinateSpace n →L[ℝ] CoordinateSp
   have hd : DifferentiableAt ℝ (fun η ↦ a.coefficient (P x, η)) (Q ξ) :=
     (a.contDiff_coefficient.comp (contDiff_prodMk_right (P x))).differentiable (by simp) _
   have hcomp : (fun η ↦ (compProdMap P Q a).coefficient (x, η)) =
-      (fun η ↦ a.coefficient (P x, η)) ∘ (Q : CoordinateSpace n →L[ℝ] CoordinateSpace n) :=
+      (fun η ↦ a.coefficient (P x, η)) ∘ Q :=
     (rfl)
   rw [coefficient_frequencyDeriv, coordinateDeriv_cons, coordinateDeriv_nil, hcomp,
-    (hd.hasFDerivAt.comp ξ (Q : CoordinateSpace n →L[ℝ] CoordinateSpace n).hasFDerivAt).fderiv,
+    (hd.hasFDerivAt.comp ξ Q.hasFDerivAt).fderiv,
     ContinuousLinearMap.comp_apply, ContinuousLinearMap.apply_eq_sum_single, coefficient_sum,
     Finset.sum_apply]
   refine Finset.sum_congr rfl fun k _ ↦ ?_
