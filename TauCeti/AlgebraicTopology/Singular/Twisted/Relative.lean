@@ -135,6 +135,13 @@ def isColimitCokernelCoforkTwistedChainComplex :
     IsColimit (P.cokernelCoforkTwistedChainComplex L) :=
   cokernelIsCokernel _
 
+/-- The relative twisted chain complex of a pair is the cokernel of the inclusion of the twisted
+chains of its subspace, with the relative quotient map as the cokernel map. -/
+def isColimitCokernelCoforkTwistedChainComplexπ :
+    IsColimit (CokernelCofork.ofπ (P.twistedChainComplexπ L)
+      (P.twistedChainComplexMap_comp_twistedChainComplexπ L)) :=
+  P.cokernelCoforkTwistedChainComplex_def L ▸ P.isColimitCokernelCoforkTwistedChainComplex L
+
 /-- In every degree the subspace inclusion followed by the relative quotient is zero. -/
 @[reassoc (attr := simp)]
 lemma twistedChainComplex_condition_f (i : ℕ) :

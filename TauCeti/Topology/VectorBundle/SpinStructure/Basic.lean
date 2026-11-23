@@ -5,8 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Topology.Algebra.CliffordAlgebra.Spin.Real.Euclidean
 public import TauCeti.Topology.Algebra.CliffordAlgebra.Spin.SpinC
-public import TauCeti.Topology.VectorBundle.OrthonormalFrame.Lift
+public import TauCeti.Topology.VectorBundle.OrthonormalFrame.Extension
 
 /-!
 # Spin and `Spinᶜ` structures on real vector bundles with fibre inner products
@@ -28,9 +29,14 @@ topology, in place of `Spin(n)`, and its rotation homomorphism `[s, z] ↦ π(s)
 (`TauCeti.SpinCStructure.toFrame_smul_mk`). In particular the central circle `[1, z]` acts
 trivially on frames (`TauCeti.SpinCStructure.toFrame_smul_ofCircle`), so it acts on the fibres of
 `P → Fr(E)`. The determinant line of the structure is the line associated to `P` by the
-determinant character `[s, z] ↦ z²`; associated principal bundles, and hence that line, are not
-constructed here. On an almost Hermitian four-manifold the canonical `Spinᶜ` structure is the
-one induced from the unitary frame bundle by the canonical lift `U(2) → Spinᶜ(4)`, and
+determinant character `[s, z] ↦ z²`; that line is not constructed here.
+
+A lift of the orthonormal frame bundle along `ρ : G →* GL(ℝⁿ)` induces a `Spinᶜ` structure
+through any continuous homomorphism `σ : G →* Spinᶜ(n)` lifting `ρ` along the rotation
+homomorphism (`TauCeti.OrthonormalFrameLift.extendSpinC`): its principal bundle is the extension
+of structure group `P ×_σ Spinᶜ(n)`. On an almost Hermitian four-manifold the canonical `Spinᶜ`
+structure is the one induced in this way from the unitary frame bundle by the canonical lift
+`U(2) → Spinᶜ(4)`, and
 Seiberg–Witten theory is set up on the spinor bundles of a `Spinᶜ` structure, which need not
 come from a Spin structure.
 
@@ -54,6 +60,8 @@ nonzero form `Q`, which for the standard form on `ℝⁿ` means `n ≥ 1`
   products.
 * `TauCeti.SpinCStructure`: a `Spinᶜ` structure of rank `n ≥ 1` on a real vector bundle with
   fibre inner products.
+* `TauCeti.OrthonormalFrameLift.extendSpinC`: the `Spinᶜ` structure induced by a lift of the
+  orthonormal frame bundle and a lift of its structure group homomorphism to `Spinᶜ(n)`.
 
 ## Main results
 
@@ -147,5 +155,42 @@ theorem toFrame_smul_ofCircle (s : SpinCStructure F E n) (x : X) (p : s.P x) (z 
   s.toFrame_smul_of_map_eq_one (by simp) x p
 
 end SpinCStructure
+
+section ExtendSpinC
+
+/-! ### The `Spinᶜ` structure induced by a lift -/
+
+variable {V : X → Type} [∀ x, NormedAddCommGroup (V x)] [∀ x, InnerProductSpace ℝ (V x)]
+  [TopologicalSpace (TotalSpace F V)] [NormedAddCommGroup F] [NormedSpace ℝ F] [FiberBundle F V]
+  [VectorBundle ℝ F V] [NeZero n] {G : Type*} [Group G] [TopologicalSpace G]
+  {ρ : G →* (Fin n → ℝ) ≃ₗ[ℝ] (Fin n → ℝ)} (s : OrthonormalFrameLift F V n G ρ)
+  (σ : G →* spinCGroup (realCliffordForm n 0)
+    (QuadraticMap.Nondegenerate.ne_zero (nondegenerate_realCliffordForm n 0)))
+  (hσ : Continuous σ)
+  (hσρ : ((QuadraticMap.specialOrthogonalGroup (realCliffordForm n 0)).subtype.comp
+    (spinCGroup.toSpecialOrthogonal (realCliffordForm n 0) _)).comp σ = ρ)
+
+/-- **The `Spinᶜ` structure induced by a lift** `s` of the orthonormal frame bundle along `ρ`,
+through a continuous homomorphism `σ : G →* Spinᶜ(n)` lifting `ρ` along the rotation homomorphism
+`Spinᶜ(n) → SO(n)`: the extension of `s` along `σ` (`TauCeti.OrthonormalFrameLift.extend`). Its
+principal bundle is `P ×_σ Spinᶜ(n)`, and the frame of `[p, 1]` is the frame of `p`
+(`TauCeti.OrthonormalFrameLift.toFrame_extendSpinC_inl`). For the unitary frame bundle of an almost
+Hermitian four-manifold and the canonical lift `U(2) → Spinᶜ(4)`, this is the canonical `Spinᶜ`
+structure. -/
+noncomputable abbrev OrthonormalFrameLift.extendSpinC : SpinCStructure F V n :=
+  s.extend σ hσ hσρ
+    (fun g ↦ TauCeti.CliffordAlgebra.norm_toLp_specialOrthogonalGroup_realCliffordForm_apply n
+      (spinCGroup.toSpecialOrthogonal _ _ g))
+    (fun v ↦ (TauCeti.CliffordAlgebra.continuous_specialOrthogonalGroup_realCliffordForm_apply n
+      v).comp (spinCGroup.continuous_toSpecialOrthogonal_pi _ _))
+
+/-- **The frame of `[p, 1]`** in the `Spinᶜ` structure induced by a lift is the frame of `p`. -/
+@[simp]
+theorem OrthonormalFrameLift.toFrame_extendSpinC_inl (x : X) (p : s.P x) :
+    (s.extendSpinC σ hσ hσρ).toFrame ⟨x, PrincipalBundle.Extend.inl σ hσ p⟩ =
+      s.toFrame ⟨x, p⟩ :=
+  s.toFrame_extend_inl σ hσ hσρ _ _ x p
+
+end ExtendSpinC
 
 end TauCeti

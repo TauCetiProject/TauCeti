@@ -261,6 +261,21 @@ theorem map_symmetricCongruenceLinearMap_wishartGramMeasure {q : ℕ} (ν : ℕ)
   rw [hfun, ← Measure.map_map measurable_wishartGram (by fun_prop),
     Measure.pi_map_pi fun _ ↦ (by fun_prop : Measurable _).aemeasurable, hmap]
 
+/-- Congruence by a rectangular matrix sends a Gaussian-Gram Wishart random matrix to the law
+whose scale is transformed by the same congruence. The matrix need not have full row rank. -/
+theorem _root_.ProbabilityTheory.HasLaw.symmetricCongruenceLinearMap_wishartGramMeasure
+    {p q : ℕ} {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω}
+    {W : Ω → selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ)}
+    {ν : ℕ} {S : Matrix (Fin p) (Fin p) ℝ}
+    (hW : HasLaw W (wishartGramMeasure ν S) P) (M : Matrix (Fin q) (Fin p) ℝ)
+    (hS : S.PosSemidef) :
+    HasLaw (fun ω ↦ Matrix.symmetricCongruenceLinearMap M (W ω))
+      (wishartGramMeasure ν (M * S * Mᵀ)) P := by
+  have hmap : Measurable (Matrix.symmetricCongruenceLinearMap M) :=
+    (LinearMap.continuous_of_finiteDimensional _).measurable
+  have hlaw := (hasLaw_map hmap.aemeasurable).comp hW
+  rwa [map_symmetricCongruenceLinearMap_wishartGramMeasure ν M hS] at hlaw
+
 /-- The Gaussian-Gram law of a positive-semidefinite scale `S` is the standard Gaussian-Gram law
 pushed forward by the congruence with `CFC.sqrt S`. -/
 theorem wishartGramMeasure_eq_map_sqrt (ν : ℕ) (hS : S.PosSemidef) :
@@ -393,5 +408,18 @@ theorem wishartGramMeasure_conv_wishartGramMeasure (ν₁ ν₂ : ℕ)
   rw [MeasurableEquiv.coe_piCongrLeft, Function.comp_apply, Function.comp_apply,
     Function.comp_apply, wishartGram_piCongrLeft]
   rfl
+
+/-- The sum of independent Gaussian-Gram Wishart matrices with a common scale has the sum of
+their natural degrees. This includes zero degrees and invalid covariance matrices, whose laws are
+Dirac masses at zero. -/
+theorem _root_.ProbabilityTheory.IndepFun.hasLaw_add_wishartGramMeasure
+    {p : ℕ} {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω}
+    {X Y : Ω → selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ)}
+    {ν₁ ν₂ : ℕ} {S : Matrix (Fin p) (Fin p) ℝ} (hXY : IndepFun X Y P)
+    (hX : HasLaw X (wishartGramMeasure ν₁ S) P)
+    (hY : HasLaw Y (wishartGramMeasure ν₂ S) P) :
+    HasLaw (X + Y) (wishartGramMeasure (ν₁ + ν₂) S) P := by
+  rw [← wishartGramMeasure_conv_wishartGramMeasure ν₁ ν₂ S]
+  exact hXY.hasLaw_add hX hY
 
 end TauCeti.Probability

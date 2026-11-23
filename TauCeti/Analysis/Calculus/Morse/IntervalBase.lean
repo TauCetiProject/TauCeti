@@ -81,6 +81,9 @@ bijective.
 * `TauCeti.intervalBaseOrbit_sq_eq_sigmoid`, `TauCeti.one_sub_intervalBaseOrbit_sq` and
   `TauCeti.intervalBaseFlow_eq_intervalBaseOrbit`: the trajectory `q` through the sigmoid, and
   every flow line through `(0, 1)` as a reparametrization of `q`.
+* `TauCeti.intervalBaseOrbit_eq_exp_mul_inv_sqrt` and
+  `TauCeti.intervalBaseOrbit_eq_one_sub_exp_sq_mul`: `q` near its two ends in closed form in the
+  gluing parameters `e^{C s}` and `e^{-C s}`.
 * `TauCeti.mem_Icc_of_isIntegralCurve_intervalBasePotential`: for `C > 0`, a trajectory whose
   backward limit lies in `[-1, 1]` stays in `[-1, 1]`.
 * `TauCeti.exists_eq_intervalBaseOrbit_of_isIntegralCurve` and
@@ -449,6 +452,36 @@ theorem one_sub_intervalBaseOrbit_sq (C s : ℝ) :
     1 - intervalBaseOrbit C s ^ 2 = Real.sigmoid (-(2 * C * s)) := by
   rw [intervalBaseOrbit_sq_eq_sigmoid, Real.sigmoid_neg]
 
+/-- **The end chart of `q` at its source.** In the gluing parameter `ε = e^{C s}`, which tends to
+`0` as `s → -∞` for `C > 0`, the trajectory is `q(s) = ε / √(1 + ε²)`. This theorem is only that
+identity; it shows (without formalizing it) that `q` is a smooth function of `ε` vanishing to first
+order at `ε = 0`, so that `q` leaves `0` at rate `C`. -/
+theorem intervalBaseOrbit_eq_exp_mul_inv_sqrt (C s : ℝ) :
+    intervalBaseOrbit C s = Real.exp (C * s) * (√(1 + Real.exp (C * s) ^ 2))⁻¹ := by
+  have he := Real.exp_pos (C * s)
+  have h : 1 + Real.exp (-(2 * C * s)) = (1 + Real.exp (C * s) ^ 2) / Real.exp (C * s) ^ 2 := by
+    rw [show -(2 * C * s) = -(C * s) + -(C * s) by ring, Real.exp_add, Real.exp_neg]
+    field_simp
+    ring
+  rw [intervalBaseOrbit_apply, h, Real.sqrt_div' _ (by positivity), Real.sqrt_sq he.le]
+  field_simp
+
+/-- **The end chart of `q` at its sink.** In the gluing parameter `ε = e^{-C s}`, which tends to
+`0` as `s → ∞` for `C > 0`, the trajectory is `q(s) = 1 - ε² / (√(1 + ε²) (√(1 + ε²) + 1))`.
+This theorem is only that identity; it shows (without formalizing it) that the factor of `ε²` is a
+smooth function of `ε` equal to `1 / 2` at `ε = 0`, so that `q` approaches `1` at rate `2 C`. -/
+theorem intervalBaseOrbit_eq_one_sub_exp_sq_mul (C s : ℝ) :
+    intervalBaseOrbit C s = 1 - Real.exp (-(C * s)) ^ 2 *
+      (√(1 + Real.exp (-(C * s)) ^ 2) * (√(1 + Real.exp (-(C * s)) ^ 2) + 1))⁻¹ := by
+  set ε := Real.exp (-(C * s))
+  have := Real.sqrt_pos.2 (by positivity : (0 : ℝ) < 1 + ε ^ 2)
+  have hsq : √(1 + ε ^ 2) ^ 2 = 1 + ε ^ 2 := Real.sq_sqrt (by positivity)
+  have h : Real.exp (-(2 * C * s)) = ε ^ 2 := by
+    rw [← Real.exp_natCast_mul, show -(2 * C * s) = (2 : ℕ) * -(C * s) by push_cast; ring]
+  rw [intervalBaseOrbit_apply, h]
+  field_simp
+  linear_combination -hsq
+
 private theorem inv_sqrt_two_mem_Ioo : (√2)⁻¹ ∈ Ioo (0 : ℝ) 1 :=
   ⟨by positivity, inv_lt_one_of_one_lt₀ Real.one_lt_sqrt_two⟩
 
@@ -507,6 +540,12 @@ noncomputable def intervalBaseTimeCoordinate (t : ℝ) : ℝ :=
 
 theorem intervalBaseTimeCoordinate_apply (t : ℝ) :
     intervalBaseTimeCoordinate t = Real.log t - Real.log (1 - t ^ 2) / 2 := (rfl)
+
+/-- The time coordinate is even: `U(-t) = U(t)`. -/
+@[simp]
+theorem intervalBaseTimeCoordinate_neg (t : ℝ) :
+    intervalBaseTimeCoordinate (-t) = intervalBaseTimeCoordinate t := by
+  rw [intervalBaseTimeCoordinate, intervalBaseTimeCoordinate, Real.log_neg_eq_log, neg_sq]
 
 /-- The factor `t (1 - t²)` of the vector field `C t (1 - t²)` is positive on `(0, 1)`. -/
 theorem mul_one_sub_sq_pos_of_mem_Ioo {t : ℝ} (ht : t ∈ Ioo 0 1) : 0 < t * (1 - t ^ 2) :=

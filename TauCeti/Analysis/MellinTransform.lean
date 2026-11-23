@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.MellinTransform
 public import Mathlib.Analysis.SpecialFunctions.Gamma.Deligne
 public import TauCeti.MeasureTheory.Measure.Haar.MultHaar
+import TauCeti.Analysis.MellinTransform.Basic
 import TauCeti.Analysis.SpecialFunctions.Pow.Complex
 
 /-!
@@ -29,10 +30,6 @@ for `Γ(z)` (`Complex.GammaIntegral_convergent`), and the scaling `t ↦ c t` is
 `TauCeti.integral_multHaar_cpow_div_two_mul_exp_neg_pi_mul_sq`), which are the one-place gamma
 integrals produced by Gaussians in Hecke's integral representations of zeta and L-functions.
 
-The Mellin transform reads a function only on `(0, ∞)`, so functions agreeing there have the same
-transform, with the same convergence (`TauCeti.hasMellin_congr`). Kernels that are extended by zero
-off `(0, ∞)` are compared with their unextended forms this way.
-
 `TauCeti.hasMellin_max_one_sub_zero` computes the Mellin transform of the continuous cutoff
 `max (1 - t) 0`, using the difference of Mathlib's interval-power transforms. Its inverse
 transform gives the first-order Perron weight.
@@ -44,15 +41,6 @@ open Complex MeasureTheory Set
 open scoped Real
 
 namespace TauCeti
-
-/-- Functions that agree on `(0, ∞)` have the same Mellin transform, with the same convergence. -/
-theorem hasMellin_congr {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E] {f g : ℝ → E}
-    (h : EqOn f g (Ioi 0)) {s : ℂ} {m : E} : HasMellin f s m ↔ HasMellin g s m := by
-  have h' : EqOn (fun t : ℝ ↦ (t : ℂ) ^ (s - 1) • f t) (fun t ↦ (t : ℂ) ^ (s - 1) • g t)
-      (Ioi 0) := fun t ht ↦ by simp only [h ht]
-  simp only [HasMellin, MellinConvergent, mellin,
-    MeasureTheory.integrableOn_congr_fun h' measurableSet_Ioi,
-    MeasureTheory.setIntegral_congr_fun measurableSet_Ioi h']
 
 /-- The Mellin transform of the continuous cutoff `max (1 - t) 0` is `1 / (s(s+1))`
 for `0 < Re s`. Only its values on `(0, ∞)` contribute to the transform. -/

@@ -71,6 +71,8 @@ at most `|x - Re e| ^ s`.
 * `TauCeti.memLp_div_pow_compl_closedBall_iff` and
   `TauCeti.memLp_div_sub_pow_compl_closedBall_iff`: `a / (z - c) ^ m` is in `Lᵖ` off a disc
   centred at `c` exactly when `2 < m p`.
+* `Bornology.IsBounded.memLp_of_ae_norm_le_mul_norm_sub_rpow`: on a bounded set, a function
+  dominated almost everywhere by `C ‖x - y‖ ^ s` is `Lʳ` for every finite `r` with `-d < s r`.
 * `Bornology.IsBounded.memLp_norm_inv_restrict`, `TauCeti.not_memLp_norm_inv_closedBall`:
   `‖x‖⁻¹` is `Lʳ` on bounded sets for `r < dim E`, and not near the origin for `r ≥ dim E`.
 * `Bornology.IsBounded.memLp_norm_rpow_restrict`,
@@ -518,6 +520,26 @@ theorem _root_.Bornology.IsBounded.memLp_norm_rpow_restrict_iff [Nontrivial E] {
     norm_norm_rpow_rpow] at h'
   exact (integrableOn_norm_rpow_ball_iff hr).1 h'
 
+/-- On a bounded set `K`, a function dominated almost everywhere on `K` by `C ‖x - y‖ ^ s`, a
+power of the distance to a pole `x`, is `Lʳ` on `K` for every finite exponent `r` with
+`-dim E < s r`. -/
+theorem _root_.Bornology.IsBounded.memLp_of_ae_norm_le_mul_norm_sub_rpow {F : Type*}
+    [NormedAddCommGroup F] {K : Set E} (hK : Bornology.IsBounded K) {f : E → F} {s C : ℝ}
+    {r : ℝ≥0∞} (hr : r ≠ ∞) (hs : -(Module.finrank ℝ E : ℝ) < s * r.toReal) (x : E)
+    (hf : AEStronglyMeasurable f (mu.restrict K))
+    (hle : ∀ᵐ y ∂mu.restrict K, ‖f y‖ ≤ C * ‖x - y‖ ^ s) :
+    MemLp f r (mu.restrict K) := by
+  have hm : Measurable fun y : E => C * ‖x - y‖ ^ s := by fun_prop
+  refine MemLp.of_le ?_ hf (hle.mono fun y hy => hy.trans (Real.le_norm_self _))
+  rcases eq_or_ne r 0 with rfl | hr0
+  · exact memLp_zero_iff_aestronglyMeasurable.2 hm.aestronglyMeasurable
+  rw [← integrable_norm_rpow_iff hm.aestronglyMeasurable hr0 hr]
+  refine ((integrableOn_norm_sub_rpow_of_isBounded (mu := mu) hs hK x).const_mul
+    (|C| ^ r.toReal)).congr (Filter.Eventually.of_forall fun y => ?_)
+  have hy : 0 ≤ ‖x - y‖ ^ s := Real.rpow_nonneg (norm_nonneg _) _
+  simp only [Real.norm_eq_abs, abs_mul, abs_of_nonneg hy, Real.mul_rpow (abs_nonneg C) hy,
+    ← Real.rpow_mul (norm_nonneg (x - y))]
+
 /-- On a bounded set, a function dominated by `C ‖x‖ ^ s` is `Lʳ` for every finite exponent `r`
 with `-dim E < s r`. -/
 theorem _root_.Bornology.IsBounded.memLp_of_norm_le_mul_norm_rpow {F : Type*}
@@ -525,8 +547,8 @@ theorem _root_.Bornology.IsBounded.memLp_of_norm_le_mul_norm_rpow {F : Type*}
     {r : ℝ≥0∞} (hr : r ≠ ∞) (hs : -(Module.finrank ℝ E : ℝ) < s * r.toReal)
     (hf : AEStronglyMeasurable f (mu.restrict K)) (hle : ∀ x, ‖f x‖ ≤ C * ‖x‖ ^ s) :
     MemLp f r (mu.restrict K) :=
-  ((hK.memLp_norm_rpow_restrict hr hs).const_mul C).of_le hf <|
-    Filter.Eventually.of_forall fun x => (hle x).trans (Real.le_norm_self _)
+  hK.memLp_of_ae_norm_le_mul_norm_sub_rpow hr hs 0 hf <|
+    Filter.Eventually.of_forall fun y => by simpa using hle y
 
 /-- On a bounded set, `‖x‖⁻¹` is `Lʳ` for every exponent `r < dim E`. -/
 theorem _root_.Bornology.IsBounded.memLp_norm_inv_restrict {K : Set E}

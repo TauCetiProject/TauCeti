@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Analysis.Polynomial.L1Norm
 
-import TauCeti.Algebra.Polynomial.Taylor
+import TauCeti.Algebra.Polynomial.LinearFactor
 
 /-!
 # Values of Thue's auxiliary polynomials near `α`
