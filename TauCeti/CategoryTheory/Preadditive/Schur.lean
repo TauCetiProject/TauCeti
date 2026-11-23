@@ -37,8 +37,9 @@ category, have a simple unit whose endomorphism algebra is `k(t)`.
 * `TauCeti.endAlgEquivOfSimple_smul_id`: every endomorphism `f` is `endAlgEquivOfSimple k X f`
   times the identity, and `TauCeti.endAlgEquivOfSimple_apply_eq_iff` characterizes the scalar;
 * `TauCeti.HasScalarSimpleEnd`: typeclass asserting that `algebraMap k (End X)` is surjective for
-  every simple object `X`, instantiated automatically over algebraically closed fields when simple
-  endomorphism spaces are finite-dimensional;
+  every simple object `X`, instantiated automatically over algebraically closed fields when every
+  hom-space `X ⟶ X` is finite-dimensional (or via `TauCeti.HasScalarSimpleEnd.of_finiteDimensional`
+  when only simple objects have finite-dimensional endomorphisms);
 * `CategoryTheory.End.of_id`, `CategoryTheory.End.of_comp`, … of
   `TauCeti.CategoryTheory.Linear.Endomorphism` are `simp` lemmas pushing `End.of` inside
   expressions built from morphisms `f : X ⟶ X`, after which `map_mul`, `map_add`, … let `simp`
@@ -78,7 +79,7 @@ instance instHasScalarSimpleEnd [∀ X : C, FiniteDimensional k (X ⟶ X)] :
 
 /-- Over an algebraically closed field, if every simple object has finite-dimensional endomorphisms,
 the category has scalar simple endomorphisms (Schur's lemma). -/
-theorem HasScalarSimpleEnd.of_simple
+theorem HasScalarSimpleEnd.of_finiteDimensional
     (hfin : ∀ (X : C) [Simple X], FiniteDimensional k (X ⟶ X)) :
     HasScalarSimpleEnd k C where
   surjective_algebraMap X :=

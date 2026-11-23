@@ -23,12 +23,14 @@ the automorphism, since natural transformations out of an additive functor are d
 objects.
 
 `TauCeti.monoidalAutCharacter` constructs this group homomorphism for any field `k` with
-`[HasScalarSimpleEnd k C]` (in particular, automatically over an algebraically closed field when
-simple objects have finite-dimensional endomorphisms), and `TauCeti.monoidalAutCharacter_injective`
-proves its injectivity. The computation rule `TauCeti.monoidalAutCharacter_degree_smul_id`
-describes its value on the degree of any simple object, without referring to chosen representatives
-of simple classes. Surjectivity of the character map, which requires extending a compatible family
-of scalars to all objects, is proved in `TauCeti.CategoryTheory.Monoidal.Grading.Classification`.
+`[HasScalarSimpleEnd k C]` (automatically over an algebraically closed field when every hom-space
+`X ⟶ X` is finite-dimensional, or by applying `TauCeti.HasScalarSimpleEnd.of_finiteDimensional`
+explicitly when only simple objects have finite-dimensional endomorphisms), and
+`TauCeti.monoidalAutCharacter_injective` proves its injectivity. The computation rule
+`TauCeti.monoidalAutCharacter_degree_smul_id` describes its value on the degree of any simple
+object, without referring to chosen representatives of simple classes. Surjectivity of the character
+map, which requires extending a compatible family of scalars to all objects, is proved in
+`TauCeti.CategoryTheory.Monoidal.Grading.Classification`.
 
 No rigidity, finiteness of the set of simple classes, or characteristic assumption is needed.
 

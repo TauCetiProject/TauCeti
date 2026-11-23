@@ -134,6 +134,7 @@ every simple class agree up to `eqToHom` conjugation. -/
   dsimp only at hobj' hdeg; subst hobj'; congr; funext S; simpa using hdeg S
 
 variable (γ : GroupoidGrading C G)
+/-- Equal simple classes have equal grading degrees in `γ` up to endpoint transports. -/
 theorem deg_congr {S T : SimpleClasses C} (h : S = T) :
     γ.deg S = eqToHom (by rw [h]) ≫ γ.deg T ≫ eqToHom (by rw [h]) := by subst h; simp
 
@@ -196,14 +197,22 @@ section Basic
 variable {C : Type u₁} [Category.{v₁} C] [Abelian C] [MonoidalCategory C]
   [MonoidalPreadditive C] [IsFiniteSemisimpleCategory C]
 
+-- `universalGradingGroupoid C` is kept as an opaque `def` rather than an `abbrev` because
+-- `GeneratingQuiver` and `Rel` are `private` in a `module` file and cannot be exposed.
+/-- Groupoid structure on `universalGradingGroupoid C`, induced from the quotient of the free
+groupoid on simple classes by the tensor-constituent relations. -/
 @[instance_reducible] def instGroupoid : Groupoid.{u₁} (universalGradingGroupoid C) :=
-  by unfold universalGradingGroupoid; exact inferInstance
+  CategoryTheory.Quotient.groupoid (Rel C)
 attribute [instance] instGroupoid
 
 private def fromQuotientFunctor : CategoryTheory.Quotient (Rel C) ⥤ universalGradingGroupoid C :=
-  by unfold universalGradingGroupoid instGroupoid; exact 𝟭 _
+  { obj := id, map := id }
 private def toQuotientFunctor : universalGradingGroupoid C ⥤ CategoryTheory.Quotient (Rel C) :=
-  by unfold universalGradingGroupoid instGroupoid; exact 𝟭 _
+  { obj := id, map := id }
+private theorem fromQuotient_comp_toQuotient :
+    fromQuotientFunctor (C := C) ⋙ toQuotientFunctor (C := C) =
+      𝟭 (CategoryTheory.Quotient (Rel C)) :=
+  rfl
 private theorem toQuotient_comp_fromQuotient :
     toQuotientFunctor (C := C) ⋙ fromQuotientFunctor (C := C) = 𝟭 (universalGradingGroupoid C) :=
   rfl
@@ -218,6 +227,7 @@ def mkObj : UnitSimpleClasses C ≃ universalGradingGroupoid C where
   invFun x := (toQuotientFunctor.obj x).as.as.unit
   left_inv _ := rfl
   right_inv x := by
+    -- Unfold the opaque wrapper to destructure the three nested single-field structures.
     change quotFunctor.obj (freeGeneratingObj C (toQuotientFunctor.obj x).as.as.unit) = x
     rcases x with ⟨⟨⟨_⟩⟩⟩; rfl
 
@@ -232,6 +242,7 @@ its right unit support. -/
 def degree (S : SimpleClasses C) : mkObj (leftUnitClass S.repr) ⟶ mkObj (rightUnitClass S.repr) :=
   quotFunctor.map (freeGeneratingDeg C S)
 
+/-- Equal simple classes have equal universal degrees up to endpoint transports. -/
 theorem degree_congr {S T : SimpleClasses C} (h : S = T) :
     degree S = eqToHom (by rw [h]) ≫ degree T ≫ eqToHom (by rw [h]) := by subst h; simp
 
@@ -514,7 +525,10 @@ private theorem quotFunctor_map_inv_of (S : SimpleClasses C) :
       (inv ((Quiver.FreeGroupoid.of (GeneratingQuiver C)).map (GeneratingEdge.mk S)))) ≍
         inv (degree S) := by
   rw [CategoryTheory.Functor.map_inv, CategoryTheory.Functor.map_inv]
-  unfold degree quotFunctor; rfl
+  have h : ∀ {X₁ Y₁ X₂ Y₂ : universalGradingGroupoid C}, X₁ = X₂ → Y₁ = Y₂ →
+      ∀ {f : X₁ ⟶ Y₁} {g : X₂ ⟶ Y₂}, f ≍ g → inv f ≍ inv g := by
+    rintro _ _ _ _ rfl rfl _ _ h; cases h; rfl
+  exact h (quotFunctor_obj_of _) (quotFunctor_obj_of _) (quotFunctor_map_of S)
 
 /-- Presentation-independent induction principle for morphisms of `universalGradingGroupoid C`:
 a property that holds on all generating degrees `degree S`, their inverses `inv (degree S)`, and

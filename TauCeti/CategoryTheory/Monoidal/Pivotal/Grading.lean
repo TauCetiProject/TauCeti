@@ -13,9 +13,11 @@ public import TauCeti.CategoryTheory.Monoidal.Pivotal.Torsor
 
 Fix a pivotal structure `P` on a finite semisimple rigid linear monoidal category over a field `k`
 such that every simple object has scalar endomorphisms (`TauCeti.HasScalarSimpleEnd k C`, automatic
-over an algebraically closed field with finite-dimensional simple endomorphism spaces). Every other
-pivotal structure is uniquely the twist of `P` by a character of `universalGradingGroup C`, or
-equivalently by a `kˣ`-valued groupoid character `universalGradingGroupoid C ⥤ SingleObj kˣ`
+over an algebraically closed field when every hom-space `X ⟶ X` is finite-dimensional, or
+available by applying `TauCeti.HasScalarSimpleEnd.of_finiteDimensional` when only simple objects
+have finite-dimensional endomorphisms). Every other pivotal structure is uniquely the twist of `P`
+by a character of `universalGradingGroup C`, or equivalently by a `kˣ`-valued groupoid character
+`universalGradingGroupoid C ⥤ SingleObj kˣ`
 (Penneys, Lemma 3.19(2)). Simplicity of the tensor unit `𝟙_ C` is not required, so both
 classifications apply to arbitrary multitensor and multifusion categories.
 

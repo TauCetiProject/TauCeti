@@ -13,8 +13,10 @@ public import TauCeti.CategoryTheory.Monoidal.Grading.MonoidalAut
 
 In a finite semisimple linear monoidal category over a field `k` such that every simple object
 has scalar endomorphisms (`TauCeti.HasScalarSimpleEnd k C`, automatic over an algebraically closed
-field with finite-dimensional simple endomorphism spaces), monoidal natural automorphisms of the
-identity are exactly characters of the universal grading group.
+field when every hom-space `X ⟶ X` is finite-dimensional, or available by applying
+`TauCeti.HasScalarSimpleEnd.of_finiteDimensional` when only simple objects have finite-dimensional
+endomorphisms), monoidal natural automorphisms of the identity are exactly characters of the
+universal grading group.
 
 The maps `monoidalAutCharacter` (extracting the scalar on each simple object) and
 `characterMonoidalAut` (extending those scalars to all objects) are inverse group homomorphisms,

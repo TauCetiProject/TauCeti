@@ -13,7 +13,8 @@ public import TauCeti.CategoryTheory.Simple.Rigid
 
 In a finite semisimple monoidal category `C` with `MonoidalPreadditive C`, an exact pairing
 `ExactPairing X Y` between simple objects swaps left and right unit supports
-(`leftUnitClass_of_exactPairing`, `rightUnitClass_of_exactPairing`). When `Y` has a right dual
+(`leftUnitClass_eq_rightUnitClass_of_exactPairing`,
+`rightUnitClass_eq_leftUnitClass_of_exactPairing`). When `Y` has a right dual
 `Y'`, `X ⊗ Y` is nonzero iff `rightUnitClass X = leftUnitClass Y`
 (`not_isZero_tensorObj_iff_rightUnitClass_eq_leftUnitClass`), yielding `@[simp]` laws
 `leftUnitClass_rightDual`, `rightUnitClass_rightDual`, `leftUnitClass_dual_repr`, and
@@ -23,8 +24,9 @@ In a finite semisimple monoidal category `C` with `MonoidalPreadditive C`, an ex
 
 * `TauCeti.not_isZero_tensorObj_iff_rightUnitClass_eq_leftUnitClass`: `X ⊗ Y` is nonzero iff
   `rightUnitClass X = leftUnitClass Y` when `Y` has a right dual.
-* `TauCeti.leftUnitClass_of_exactPairing`, `TauCeti.rightUnitClass_of_exactPairing`: exact
-  pairings of simple objects swap left and right unit supports.
+* `TauCeti.leftUnitClass_eq_rightUnitClass_of_exactPairing`,
+  `TauCeti.rightUnitClass_eq_leftUnitClass_of_exactPairing`: exact pairings of simple objects swap
+  left and right unit supports.
 * `TauCeti.leftUnitClass_rightDual`, `TauCeti.rightUnitClass_rightDual`,
   `TauCeti.leftUnitClass_dual_repr`, `TauCeti.rightUnitClass_dual_repr`: simp laws for right duals
   and dual simple classes.
@@ -70,16 +72,16 @@ theorem not_isZero_tensorObj_iff_rightUnitClass_eq_leftUnitClass (X Y : C) {Y' :
 
 /-- In an exact pairing of simple objects, the left unit class of the right member equals the right
 unit class of the left member. -/
-theorem leftUnitClass_of_exactPairing {X Y : C} [ExactPairing X Y] [Simple X] [Simple Y] :
-    leftUnitClass Y = rightUnitClass X := by
+theorem leftUnitClass_eq_rightUnitClass_of_exactPairing {X Y : C} [ExactPairing X Y]
+    [Simple X] [Simple Y] : leftUnitClass Y = rightUnitClass X := by
   obtain ⟨_, hf⟩ := (UnitSimpleClasses.ne_zero_iff_exists_ι_comp_ne_zero _).1
     (coevaluation_ne_zero (Y := Y) (Simple.not_isZero X))
   exact (rightUnitClass_eq_leftUnitClass_of_hom_ne_zero hf).symm
 
 /-- In an exact pairing of simple objects, the right unit class of the right member equals the left
 unit class of the left member. -/
-theorem rightUnitClass_of_exactPairing {X Y : C} [ExactPairing X Y] [Simple X] [Simple Y] :
-    rightUnitClass Y = leftUnitClass X := by
+theorem rightUnitClass_eq_leftUnitClass_of_exactPairing {X Y : C} [ExactPairing X Y]
+    [Simple X] [Simple Y] : rightUnitClass Y = leftUnitClass X := by
   obtain ⟨_, hf⟩ := (UnitSimpleClasses.ne_zero_iff_exists_ι_comp_ne_zero _).1
     (coevaluation_ne_zero (Y := Y) (Simple.not_isZero X))
   have hR := rightUnitClass_eq_of_hom_ne_zero hf; have hL := leftUnitClass_eq_of_hom_ne_zero hf
@@ -89,11 +91,11 @@ theorem rightUnitClass_of_exactPairing {X Y : C} [ExactPairing X Y] [Simple X] [
 /-- Right duality interchanges left and right unit classes: the left unit class of `Xᘁ` is the
 right unit class of `X`. -/
 @[simp] theorem leftUnitClass_rightDual (X : C) [HasRightDual X] [Simple X] [Simple Xᘁ] :
-    leftUnitClass Xᘁ = rightUnitClass X := leftUnitClass_of_exactPairing
+    leftUnitClass Xᘁ = rightUnitClass X := leftUnitClass_eq_rightUnitClass_of_exactPairing
 /-- Right duality interchanges left and right unit classes: the right unit class of `Xᘁ` is the
 left unit class of `X`. -/
 @[simp] theorem rightUnitClass_rightDual (X : C) [HasRightDual X] [Simple X] [Simple Xᘁ] :
-    rightUnitClass Xᘁ = leftUnitClass X := rightUnitClass_of_exactPairing
+    rightUnitClass Xᘁ = leftUnitClass X := rightUnitClass_eq_leftUnitClass_of_exactPairing
 
 @[simp] theorem leftUnitClass_dual_repr [RigidCategory C] (S : SimpleClasses C) :
     leftUnitClass S.dual.repr = rightUnitClass S.repr := by

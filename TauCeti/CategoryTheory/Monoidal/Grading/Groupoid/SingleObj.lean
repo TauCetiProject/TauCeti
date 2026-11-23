@@ -189,18 +189,26 @@ private def fromSingleObjGradingGroupHom :
     fun S T U f hf ↦ by
       rw [degree_comp f hf]; simp [CategoryTheory.Groupoid.vertexGroup_mul, Category.assoc]
 
+private def fromSingleObjGradingGroupEndHom :
+    (universalGradingGroup C)ᵐᵒᵖ →* End (default : universalGradingGroupoid C) where
+  toFun m := End.of (fromSingleObjGradingGroupHom (MulOpposite.unop m))
+  map_one' := End.ext <| by simp [CategoryTheory.Groupoid.vertexGroup_one]
+  map_mul' m₁ m₂ := End.ext <| by simp [CategoryTheory.Groupoid.vertexGroup_mul]
+
+private theorem fromSingleObjGradingGroupEndHom_apply (m : (universalGradingGroup C)ᵐᵒᵖ) :
+    (fromSingleObjGradingGroupEndHom (C := C) m).asHom =
+      fromSingleObjGradingGroupHom (MulOpposite.unop m) := rfl
+
 private def fromSingleObjGradingGroup :
-    SingleObj (universalGradingGroup C)ᵐᵒᵖ ⥤ universalGradingGroupoid C where
-  obj _ := default
-  map m := fromSingleObjGradingGroupHom (MulOpposite.unop m)
-  map_id _ := fromSingleObjGradingGroupHom.map_one
-  map_comp m₁ m₂ := fromSingleObjGradingGroupHom.map_mul (MulOpposite.unop m₁) (MulOpposite.unop m₂)
+    SingleObj (universalGradingGroup C)ᵐᵒᵖ ⥤ universalGradingGroupoid C :=
+  SingleObj.functor fromSingleObjGradingGroupEndHom
 
 private theorem toSingleObj_comp_fromSingleObj :
     toSingleObjGradingGroup (C := C) ⋙ fromSingleObjGradingGroup (C := C) =
       𝟭 (universalGradingGroupoid C) :=
   functor_ext (fun _ ↦ Subsingleton.elim _ _) fun S ↦ by
-    simp [toSingleObjGradingGroup, fromSingleObjGradingGroup, fromSingleObjGradingGroupHom]
+    simp [toSingleObjGradingGroup, fromSingleObjGradingGroup,
+      fromSingleObjGradingGroupEndHom_apply, fromSingleObjGradingGroupHom]
 
 private theorem fromSingleObj_comp_toSingleObj :
     fromSingleObjGradingGroup (C := C) ⋙ toSingleObjGradingGroup (C := C) =
@@ -210,10 +218,11 @@ private theorem fromSingleObj_comp_toSingleObj :
     { toFun := fun x ↦
         MulOpposite.unop ((toSingleObjGradingGroup (C := C)).map (fromSingleObjGradingGroupHom x))
       map_one' := by
-        rw [map_one, CategoryTheory.Groupoid.vertexGroup_one, CategoryTheory.Functor.map_id]; rfl
+        rw [map_one, CategoryTheory.Groupoid.vertexGroup_one, CategoryTheory.Functor.map_id,
+          SingleObj.id_as_one, MulOpposite.unop_one]
       map_mul' := fun _ _ ↦ by
-        rw [map_mul, CategoryTheory.Groupoid.vertexGroup_mul, CategoryTheory.Functor.map_comp]
-        rfl }
+        rw [map_mul, CategoryTheory.Groupoid.vertexGroup_mul, CategoryTheory.Functor.map_comp,
+          SingleObj.comp_as_mul, MulOpposite.unop_mul] }
   have hψ : ψ = MonoidHom.id (universalGradingGroup C) := by
     ext S
     simp [ψ, fromSingleObjGradingGroupHom, toSingleObjGradingGroup, eqToHom_map, eqToHom_refl]
@@ -243,7 +252,8 @@ def singleObjEquivalence :
     singleObjEquivalence.inverse.map (X := SingleObj.star _) (Y := SingleObj.star _)
         (MulOpposite.op (universalGradingGroup.degree S)) =
       eqToHom (Subsingleton.elim _ _) ≫ degree S ≫ eqToHom (Subsingleton.elim _ _) := by
-  simp [singleObjEquivalence, fromSingleObjGradingGroup, fromSingleObjGradingGroupHom]
+  simp [singleObjEquivalence, fromSingleObjGradingGroup, fromSingleObjGradingGroupEndHom_apply,
+    fromSingleObjGradingGroupHom]
 theorem singleObjEquivalence_inverse_map_op_degree_classOf (X : C) [Simple X] :
     singleObjEquivalence.inverse.map (X := SingleObj.star _) (Y := SingleObj.star _)
         (MulOpposite.op (universalGradingGroup.degree (SimpleClasses.classOf X))) =
@@ -261,10 +271,12 @@ def vertexGroupMulEquiv :
   right_inv x := by
     let m : SingleObj.star (universalGradingGroup C)ᵐᵒᵖ ⟶
         SingleObj.star (universalGradingGroup C)ᵐᵒᵖ := MulOpposite.op x
-    simpa [fromSingleObjGradingGroup, m] using congrArg MulOpposite.unop
-      (CategoryTheory.Functor.congr_hom (fromSingleObj_comp_toSingleObj (C := C)) m)
+    simpa [fromSingleObjGradingGroup, fromSingleObjGradingGroupEndHom, m] using
+      congrArg MulOpposite.unop
+        (CategoryTheory.Functor.congr_hom (fromSingleObj_comp_toSingleObj (C := C)) m)
   map_mul' _ _ := by
-    rw [CategoryTheory.Groupoid.vertexGroup_mul, CategoryTheory.Functor.map_comp]; rfl
+    rw [CategoryTheory.Groupoid.vertexGroup_mul, CategoryTheory.Functor.map_comp,
+      SingleObj.comp_as_mul, MulOpposite.unop_mul]
 @[simp] theorem vertexGroupMulEquiv_degree (S : SimpleClasses C) :
     vertexGroupMulEquiv (eqToHom (Subsingleton.elim _ _) ≫ degree S ≫
       eqToHom (Subsingleton.elim _ _)) = universalGradingGroup.degree S := by

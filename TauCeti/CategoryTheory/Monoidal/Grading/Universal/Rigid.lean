@@ -21,6 +21,14 @@ degrees without assuming finite semisimplicity
 simple classes have inverse degrees (`degree_dual`), and when `𝟙_ C` is simple every element of
 `universalGradingGroup C` is the degree of a simple object (`degree_surjective`), making
 `universalGradingGroup C` finite whenever there are finitely many simple classes.
+
+## References
+
+* V. Drinfeld, S. Gelaki, D. Nikshych, V. Ostrik, *On braided fusion categories I*,
+  Selecta Math. **16** (2010), §2.3
+* [P. Etingof, S. Gelaki, D. Nikshych, V. Ostrik, *Tensor categories*][egno15], §4.14
+* D. Penneys, *Unitary dual functors for unitary multitensor categories*,
+  Higher Structures **4** (2020), no. 2, 22–56 (arXiv:1808.00323), §3.3
 -/
 
 public section
@@ -89,8 +97,7 @@ variable [RigidCategory C] [MonoidalPreadditive C]
 
 variable [Simple (𝟙_ C)]
 
-/-- Every element of the universal grading group is the degree of a simple object. Thus the
-universal assignment is faithful, rather than merely generating its target group. -/
+/-- Every element of the universal grading group is the degree of a simple object. -/
 theorem degree_surjective :
     Function.Surjective (degree : SimpleClasses C → universalGradingGroup C) := fun x ↦ by
   obtain ⟨S, _, _, hg⟩ := universalGradingGroupoid.exists_degree_eq

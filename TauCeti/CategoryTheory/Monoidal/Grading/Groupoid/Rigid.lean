@@ -20,6 +20,12 @@ Under `[RigidCategory C]`, every morphism in `universalGradingGroupoid C` is the
 class (`exists_degree_eq`), hom-sets `mkObj I ⟶ mkObj J` are nonempty iff the `(I, J)` Peirce
 corner contains a simple object (`nonempty_hom_mkObj_iff`), and finiteness of that corner (in
 particular `[Finite (SimpleClasses C)]`) makes `x ⟶ y` finite (`finite_hom_of_finite_subtype`).
+
+## References
+
+* D. Penneys, *Unitary dual functors for unitary multitensor categories*,
+  Higher Structures **4** (2020), no. 2, 22–56 (arXiv:1808.00323), §3.3
+* [P. Etingof, S. Gelaki, D. Nikshych, V. Ostrik, *Tensor categories*][egno15], §4.14
 -/
 
 public section
@@ -41,15 +47,16 @@ variable {C : Type u₁} [Category.{v₁} C] [Abelian C] [MonoidalCategory C]
 endpoint transports. -/
 theorem GroupoidGrading.degOf_of_exactPairing {G : Type u₂} [Groupoid.{v₂} G]
     (γ : GroupoidGrading C G) {X Y : C} [ExactPairing X Y] [Simple X] [Simple Y] :
-    γ.degOf Y = eqToHom (congrArg γ.obj leftUnitClass_of_exactPairing) ≫ inv (γ.degOf X) ≫
-      eqToHom (congrArg γ.obj rightUnitClass_of_exactPairing).symm := by
+    γ.degOf Y = eqToHom (congrArg γ.obj leftUnitClass_eq_rightUnitClass_of_exactPairing) ≫
+      inv (γ.degOf X) ≫
+      eqToHom (congrArg γ.obj rightUnitClass_eq_leftUnitClass_of_exactPairing).symm := by
   obtain ⟨I, hf⟩ := (UnitSimpleClasses.ne_zero_iff_exists_ι_comp_ne_zero _).1
     (coevaluation_ne_zero (Y := Y) (Simple.not_isZero X))
   have hcomp := γ.degOf_comp (UnitSimpleClasses.ι I ≫ η_ X Y) hf
   rw [γ.degOf_unitRepr] at hcomp
   have hinv : eqToHom (congrArg γ.obj (rightUnitClass_eq_leftUnitClass_of_hom_ne_zero hf)) ≫
       γ.degOf Y = inv (γ.degOf X) ≫
-        eqToHom (congrArg γ.obj rightUnitClass_of_exactPairing).symm := by
+        eqToHom (congrArg γ.obj rightUnitClass_eq_leftUnitClass_of_exactPairing).symm := by
     rw [IsIso.eq_inv_comp]
     simpa [Category.assoc] using
       eqToHom (congrArg γ.obj (leftUnitClass_eq_of_hom_ne_zero hf)).symm ≫= hcomp.symm =≫
@@ -81,8 +88,9 @@ variable {C : Type u₁} [Category.{v₁} C] [Abelian C] [MonoidalCategory C]
 /-- In an exact pairing of simple objects, `degreeOf Y` is the inverse of `degreeOf X` up to
 endpoint transports. -/
 theorem degreeOf_of_exactPairing {X Y : C} [ExactPairing X Y] [Simple X] [Simple Y] :
-    degreeOf Y = eqToHom (congrArg mkObj leftUnitClass_of_exactPairing) ≫ inv (degreeOf X) ≫
-      eqToHom (congrArg mkObj rightUnitClass_of_exactPairing).symm := by
+    degreeOf Y = eqToHom (congrArg mkObj leftUnitClass_eq_rightUnitClass_of_exactPairing) ≫
+      inv (degreeOf X) ≫
+      eqToHom (congrArg mkObj rightUnitClass_eq_leftUnitClass_of_exactPairing).symm := by
   have h := (idGrading (C := C)).degOf_of_exactPairing (X := X) (Y := Y)
   simp only [idGrading_degOf] at h
   simpa [Category.assoc] using eqToHom (idGrading_obj (leftUnitClass Y)).symm ≫= h =≫
