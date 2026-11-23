@@ -5,9 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Manifold.Boundary.Invariance
+public import TauCeti.Geometry.Manifold.Boundary.OfHomeomorph
 public import TauCeti.Geometry.Manifold.Instances.HalfSpace
-public import TauCeti.Topology.OpenPartialHomeomorph.Constructions
 
 /-!
 # The boundary of a manifold modelled on the half-space in `E × ℝ`
@@ -26,9 +25,10 @@ boundary charts is the ambient transition map restricted to the hyperplane `E ×
 by the projection to `E`, so the boundary inherits structures defined by the transition maps, for
 instance PL ones (`TauCeti.Geometry.Manifold.PLGroupoid.Boundary`).
 
-The construction parallels the boundary of a smooth manifold modelled on the Euclidean half-space,
-`TauCeti.boundaryChartedSpace` in `TauCeti.Geometry.Manifold.Boundary.Charts`, where chart
-independence of the boundary comes from the derivative instead.
+The structure is the general construction `ModelWithCorners.boundaryChartedSpaceOfHomeomorph` for
+forgetting the height, as is the boundary of a manifold modelled on the Euclidean half-space,
+`TauCeti.boundaryChartedSpace` in `TauCeti.Geometry.Manifold.Boundary.Charts`, for deleting the
+zeroth coordinate.
 
 ## Main definitions
 
@@ -57,104 +57,68 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimension
 it, in the atlas or not, reads it at height zero. -/
 theorem mem_boundary_modelWithCornersHalfSpace_iff
     {e : OpenPartialHomeomorph M {q : E × ℝ | 0 ≤ q.2}} {x : M} (hx : x ∈ e.source) :
-    x ∈ (modelWithCornersHalfSpace E).boundary M ↔ (e x).val.2 = 0 := by
-  rw [ModelWithCorners.boundary, mem_ofPred_eq,
-    ModelWithCorners.isBoundaryPoint_iff_mem_frontier_range_of_finiteDimensional hx,
-    frontier_range_modelWithCornersHalfSpace, modelWithCornersHalfSpace_apply, mem_ofPred_eq]
+    x ∈ (modelWithCornersHalfSpace E).boundary M ↔ (e x).val.2 = 0 :=
+  (ModelWithCorners.mem_boundary_iff_mem_frontier_range_of_finiteDimensional hx).trans
+    (modelWithCornersHalfSpace_mem_frontier_range_iff _)
 
-variable {e : OpenPartialHomeomorph M {q : E × ℝ | 0 ≤ q.2}}
+omit [FiniteDimensional ℝ E] in
+variable (E) in
+/-- Forgetting the vanishing height identifies the points that the half-space model sends to the
+frontier of its range with `E`. -/
+private noncomputable def halfSpaceFrontierHomeomorph :
+    {q : {q : E × ℝ | 0 ≤ q.2} //
+      modelWithCornersHalfSpace E q ∈ frontier (range (modelWithCornersHalfSpace E))} ≃ₜ E where
+  toFun q := q.val.val.1
+  invFun z := ⟨(modelWithCornersHalfSpace E).symm (z, 0),
+    (modelWithCornersHalfSpace_mem_frontier_range_iff _).2 <| by
+      rw [coe_modelWithCornersHalfSpace_symm_apply E le_rfl]⟩
+  left_inv q := Subtype.ext <| Subtype.ext <|
+    (coe_modelWithCornersHalfSpace_symm_apply E le_rfl).trans
+      (Prod.ext rfl ((modelWithCornersHalfSpace_mem_frontier_range_iff _).1 q.property).symm)
+  right_inv z := by simp [modelWithCornersHalfSpace_symm_apply]
+  continuous_toFun := continuous_fst.comp (continuous_subtypeVal.comp continuous_subtypeVal)
+  continuous_invFun := ((modelWithCornersHalfSpace E).continuous_symm.comp
+    (continuous_id.prodMk continuous_const)).subtype_mk _
 
-/-- A point of `E × {0}` in the target of a chart of `M` is the reading of a boundary point. -/
-private theorem symm_symm_mem_boundary_modelWithCornersHalfSpace {z : E}
-    (hz : (modelWithCornersHalfSpace E).symm (z, 0) ∈ e.target) :
-    e.symm ((modelWithCornersHalfSpace E).symm (z, 0)) ∈ (modelWithCornersHalfSpace E).boundary M :=
-  (mem_boundary_modelWithCornersHalfSpace_iff (e.map_target hz)).2 <| by
-    rw [e.right_inv hz]
-    simp [modelWithCornersHalfSpace_symm_apply]
+omit [FiniteDimensional ℝ E] in
+private theorem halfSpaceFrontierHomeomorph_apply
+    (q : {q : {q : E × ℝ | 0 ≤ q.2} //
+      modelWithCornersHalfSpace E q ∈ frontier (range (modelWithCornersHalfSpace E))}) :
+    halfSpaceFrontierHomeomorph E q = q.val.val.1 :=
+  (rfl)
 
-/-- A chart of `M` reads a boundary point in `E × {0}`. -/
-private theorem symm_fst_apply_eq_apply_of_mem_boundary {x : M} (hx : x ∈ e.source)
-    (hxb : x ∈ (modelWithCornersHalfSpace E).boundary M) :
-    (modelWithCornersHalfSpace E).symm ((e x).val.1, 0) = e x :=
-  Subtype.ext <| (coe_modelWithCornersHalfSpace_symm_apply E le_rfl).trans
-    (Prod.ext rfl ((mem_boundary_modelWithCornersHalfSpace_iff hx).1 hxb).symm)
-
-/-- The boundary chart attached to a chart `e` of `M`: read a boundary point through `e` and forget
-its height, which vanishes. The base point `p` witnesses that the boundary is nonempty, which
-`OpenPartialHomeomorph.subtypeCoord` needs to choose an irrelevant inverse value off the target. -/
-private noncomputable def halfSpaceBoundaryChart (p : (modelWithCornersHalfSpace E).boundary M)
-    (e : OpenPartialHomeomorph M {q : E × ℝ | 0 ≤ q.2}) :
-    OpenPartialHomeomorph ((modelWithCornersHalfSpace E).boundary M) E :=
-  e.subtypeCoord _ ⟨p⟩ (fun z => (modelWithCornersHalfSpace E).symm (z, 0)) (fun q => q.val.1)
-    symm_symm_mem_boundary_modelWithCornersHalfSpace symm_fst_apply_eq_apply_of_mem_boundary
-    (fun z _ => by simp [modelWithCornersHalfSpace_symm_apply])
-    ((modelWithCornersHalfSpace E).continuous_symm.comp (continuous_id.prodMk continuous_const))
-    (continuous_fst.comp continuous_subtypeVal).continuousOn
-
-variable {p : (modelWithCornersHalfSpace E).boundary M}
-
-@[simp]
-private theorem halfSpaceBoundaryChart_source :
-    (halfSpaceBoundaryChart p e).source = Subtype.val ⁻¹' e.source := by
-  unfold halfSpaceBoundaryChart
-  apply OpenPartialHomeomorph.subtypeCoord_source
-
-@[simp]
-private theorem halfSpaceBoundaryChart_target :
-    (halfSpaceBoundaryChart p e).target =
-      {z | (modelWithCornersHalfSpace E).symm (z, 0) ∈ e.target} := by
-  unfold halfSpaceBoundaryChart
-  apply OpenPartialHomeomorph.subtypeCoord_target
-
-@[simp]
-private theorem halfSpaceBoundaryChart_apply (q : (modelWithCornersHalfSpace E).boundary M) :
-    halfSpaceBoundaryChart p e q = (e q).val.1 := by
-  unfold halfSpaceBoundaryChart
-  apply OpenPartialHomeomorph.subtypeCoord_apply
-
-private theorem coe_halfSpaceBoundaryChart_symm_apply {z : E}
-    (hz : (modelWithCornersHalfSpace E).symm (z, 0) ∈ e.target) :
-    ((halfSpaceBoundaryChart p e).symm z : M) =
-      e.symm ((modelWithCornersHalfSpace E).symm (z, 0)) := by
-  unfold halfSpaceBoundaryChart
-  exact OpenPartialHomeomorph.coe_subtypeCoord_symm_apply _ _ _ _ _ _ _ _ _ _ hz
+omit [FiniteDimensional ℝ E] in
+private theorem coe_halfSpaceFrontierHomeomorph_symm_apply (z : E) :
+    ((halfSpaceFrontierHomeomorph E).symm z : {q : E × ℝ | 0 ≤ q.2}) =
+      (modelWithCornersHalfSpace E).symm (z, 0) :=
+  (rfl)
 
 variable (E M) in
 /-- The charted-space structure on the boundary of a manifold modelled on the half-space in
 `E × ℝ`, with `E` finite dimensional. Its charts are the charts of `M` restricted to the boundary,
-with the vanishing height forgotten. The implementation is opaque; use the characteristic lemmas
-below to reason about its charts. -/
+with the vanishing height forgotten: the general construction
+`ModelWithCorners.boundaryChartedSpaceOfHomeomorph` for forgetting the height. The implementation
+is opaque; use the characteristic lemmas below to reason about its charts. -/
 @[irreducible, instance] noncomputable def halfSpaceBoundaryChartedSpace :
-    ChartedSpace E ((modelWithCornersHalfSpace E).boundary M) where
-  atlas := range fun p => halfSpaceBoundaryChart p (chartAt _ p.val)
-  chartAt p := halfSpaceBoundaryChart p (chartAt _ p.val)
-  mem_chart_source p := by
-    rw [halfSpaceBoundaryChart_source]
-    exact mem_chart_source _ p.val
-  chart_mem_atlas p := mem_range_self p
-
-/-- The preferred boundary chart at `p` is the boundary chart induced by the preferred chart of `M`
-at `p`. -/
-private theorem halfSpaceBoundaryChartedSpace_chartAt
-    (p : (modelWithCornersHalfSpace E).boundary M) :
-    chartAt E p = halfSpaceBoundaryChart p (chartAt {q : E × ℝ | 0 ≤ q.2} (p : M)) := by
-  unfold halfSpaceBoundaryChartedSpace
-  rfl
+    ChartedSpace E ((modelWithCornersHalfSpace E).boundary M) :=
+  (modelWithCornersHalfSpace E).boundaryChartedSpaceOfHomeomorph M (halfSpaceFrontierHomeomorph E)
+    (fun q ↦ q.val.1) fun q ↦ (halfSpaceFrontierHomeomorph_apply q).symm
 
 variable (M) in
 /-- The atlas of the boundary is the range of its preferred charts. -/
 theorem halfSpaceBoundaryChartedSpace_atlas :
     atlas E ((modelWithCornersHalfSpace E).boundary M) =
       range fun p : (modelWithCornersHalfSpace E).boundary M => chartAt E p := by
-  unfold atlas halfSpaceBoundaryChartedSpace chartAt
-  rfl
+  unfold halfSpaceBoundaryChartedSpace
+  exact ModelWithCorners.boundaryChartedSpaceOfHomeomorph_atlas _ _ _ _ _
 
 /-- The source of the preferred boundary chart at `p` is the part of the boundary that the
 preferred chart of `M` at `p` sees. -/
 theorem halfSpaceBoundaryChartedSpace_chartAt_source
     (p : (modelWithCornersHalfSpace E).boundary M) :
     (chartAt E p).source = Subtype.val ⁻¹' (chartAt {q : E × ℝ | 0 ≤ q.2} (p : M)).source := by
-  rw [halfSpaceBoundaryChartedSpace_chartAt, halfSpaceBoundaryChart_source]
+  unfold halfSpaceBoundaryChartedSpace
+  exact ModelWithCorners.boundaryChartedSpaceOfHomeomorph_chartAt_source p
 
 /-- The target of the preferred boundary chart at `p` is the target of the preferred chart of `M`
 at `p`, pulled back to the hyperplane `E × {0}`. -/
@@ -163,14 +127,17 @@ theorem halfSpaceBoundaryChartedSpace_chartAt_target
     (chartAt E p).target =
       {z | (modelWithCornersHalfSpace E).symm (z, 0) ∈
         (chartAt {q : E × ℝ | 0 ≤ q.2} (p : M)).target} := by
-  rw [halfSpaceBoundaryChartedSpace_chartAt, halfSpaceBoundaryChart_target]
+  unfold halfSpaceBoundaryChartedSpace
+  simp_rw [ModelWithCorners.boundaryChartedSpaceOfHomeomorph_chartAt_target,
+    coe_halfSpaceFrontierHomeomorph_symm_apply]
 
 /-- The preferred boundary chart at `p` reads a point through the preferred chart of `M` at `p` and
 forgets its height. -/
 theorem halfSpaceBoundaryChartedSpace_chartAt_apply
     (p q : (modelWithCornersHalfSpace E).boundary M) :
     chartAt E p q = (chartAt {q : E × ℝ | 0 ≤ q.2} (p : M) q).val.1 := by
-  rw [halfSpaceBoundaryChartedSpace_chartAt, halfSpaceBoundaryChart_apply]
+  unfold halfSpaceBoundaryChartedSpace
+  exact ModelWithCorners.boundaryChartedSpaceOfHomeomorph_chartAt_apply p q
 
 /-- On its target, the inverse of the preferred boundary chart at `p` is the inverse of the
 preferred chart of `M` at `p`, applied at height zero. -/
@@ -180,6 +147,8 @@ theorem coe_halfSpaceBoundaryChartedSpace_chartAt_symm_apply
       (chartAt {q : E × ℝ | 0 ≤ q.2} (p : M)).target) :
     ((chartAt E p).symm z : M) =
       (chartAt {q : E × ℝ | 0 ≤ q.2} (p : M)).symm ((modelWithCornersHalfSpace E).symm (z, 0)) := by
-  rw [halfSpaceBoundaryChartedSpace_chartAt, coe_halfSpaceBoundaryChart_symm_apply hz]
+  unfold halfSpaceBoundaryChartedSpace
+  rw [← coe_halfSpaceFrontierHomeomorph_symm_apply] at hz ⊢
+  exact ModelWithCorners.coe_boundaryChartedSpaceOfHomeomorph_chartAt_symm_apply p hz
 
 end TauCeti
