@@ -55,8 +55,8 @@ noncomputable def equivariantKernelMap : M →*[G] N where
         (g • X.toGroupExtension.kernelMap Y.toGroupExtension φ.toMonoidHom hright m)
     let σ := X.toGroupExtension.surjInvRightHom
     rw [GroupExtension.inl_kernelMap,
-      GroupExtension.inl_smul σ X.inducesAction,
-      GroupExtension.inl_smul (σ.monoidHomComp φ.toMonoidHom hright) Y.inducesAction]
+      σ.inl_smul X.inducesAction,
+      GroupExtension.Section.inl_smul (σ.monoidHomComp φ.toMonoidHom hright) Y.inducesAction]
     simp
 
 /-- The equivariant kernel restriction agrees with the original map after inclusion. -/
