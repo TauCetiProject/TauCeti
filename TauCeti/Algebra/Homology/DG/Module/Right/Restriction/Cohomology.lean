@@ -75,7 +75,7 @@ theorem mem_restrictScalars_cycles_iff {x : DGRightModule.RestrictScalars f M} :
 theorem mem_restrictScalars_boundaries_iff {z : (hM.restrictScalars f).cycles} :
     z ∈ (hM.restrictScalars f).boundaries ↔
       (⟨(z : DGRightModule.RestrictScalars f M).val,
-        (hM.mem_restrictScalars_cycles_iff f).mp z.2⟩ : hM.cycles) ∈ hM.boundaries := by
+        (hM.mem_restrictScalars_cycles_iff f).mp z.property⟩ : hM.cycles) ∈ hM.boundaries := by
   rw [mem_boundaries, mem_boundaries]
   exact ⟨fun ⟨x, hx⟩ ↦ ⟨x.val, (val_restrictScalarsDifferential f x).symm.trans
       (congrArg DGRightModule.RestrictScalars.val hx)⟩,
@@ -84,8 +84,8 @@ theorem mem_restrictScalars_boundaries_iff {z : (hM.restrictScalars f).cycles} :
 
 /-- The cycles of a restricted module are the cycles of the original module. -/
 private def restrictScalarsCyclesEquiv : (hM.restrictScalars f).cycles ≃ₗ[R] hM.cycles where
-  toFun z := ⟨z.1.val, (hM.mem_restrictScalars_cycles_iff f).mp z.2⟩
-  invFun z := ⟨⟨z.1⟩, (hM.mem_restrictScalars_cycles_iff f).mpr z.2⟩
+  toFun z := ⟨z.val.val, (hM.mem_restrictScalars_cycles_iff f).mp z.property⟩
+  invFun z := ⟨⟨z.val⟩, (hM.mem_restrictScalars_cycles_iff f).mpr z.property⟩
   left_inv _ := rfl
   right_inv _ := rfl
   map_add' _ _ := rfl
@@ -115,7 +115,7 @@ noncomputable def restrictScalarsCohomologyEquiv :
 @[simp]
 theorem restrictScalarsCohomologyEquiv_mk (z : (hM.restrictScalars f).cycles) :
     hM.restrictScalarsCohomologyEquiv f (Submodule.Quotient.mk z) =
-      Submodule.Quotient.mk ⟨z.1.val, (hM.mem_restrictScalars_cycles_iff f).mp z.2⟩ :=
+      Submodule.Quotient.mk ⟨z.val.val, (hM.mem_restrictScalars_cycles_iff f).mp z.property⟩ :=
   (rfl)
 
 /-- The class of the underlying cycle comes from the class of the cycle of the restricted
@@ -123,7 +123,7 @@ module. -/
 @[simp]
 theorem restrictScalarsCohomologyEquiv_symm_mk (z : hM.cycles) :
     (hM.restrictScalarsCohomologyEquiv f).symm (Submodule.Quotient.mk z) =
-      Submodule.Quotient.mk ⟨⟨z.1⟩, (hM.mem_restrictScalars_cycles_iff f).mpr z.2⟩ :=
+      Submodule.Quotient.mk ⟨⟨z.val⟩, (hM.mem_restrictScalars_cycles_iff f).mpr z.property⟩ :=
   (rfl)
 
 /-- **The cohomology of a restricted module is restricted along the map on cohomology**: a class
@@ -153,7 +153,7 @@ theorem restrictScalarsCohomologyEquiv_mem_cohomologyGrading_iff {p : ℤ}
   rw [mem_cohomologyGrading, mem_cohomologyGrading]
   constructor
   · rintro ⟨z, hz, hzx⟩
-    refine ⟨⟨⟨z.1⟩, (hM.mem_restrictScalars_cycles_iff f).mpr z.2⟩, ?_, ?_⟩
+    refine ⟨⟨⟨z.val⟩, (hM.mem_restrictScalars_cycles_iff f).mpr z.property⟩, ?_, ?_⟩
     · rwa [mem_restrictScalarsGrading_iff, DGRightModule.RestrictScalars.linearEquiv_apply]
     · rw [← restrictScalarsCohomologyEquiv_symm_mk, hzx, LinearEquiv.symm_apply_apply]
   · rintro ⟨z, hz, rfl⟩

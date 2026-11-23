@@ -1,0 +1,64 @@
+/-
+Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: The Tau Ceti contributors
+-/
+module
+
+public import Mathlib.Algebra.Star.StarProjection
+public import Mathlib.LinearAlgebra.Matrix.DotProduct
+public import Mathlib.LinearAlgebra.Matrix.Hermitian
+
+/-!
+# Matrix star projections
+
+A matrix projection is a square matrix `p` over a star ring with `p * p = p` and `pᴴ = p`. This
+file records two facts about matrix projections that do not depend on comparing projections.
+Applying a star ring homomorphism to the entries of a matrix projection gives a matrix projection.
+Over a star-ordered proper star ring, such as `ℂ` or a C⋆-algebra with its spectral order,
+`vᴴ * v = 0` forces `v = 0` for rectangular matrices (`Matrix.conjTranspose_mul_self_eq_zero`).
+Hence a rectangular matrix `v` whose initial element `vᴴ * v` is a projection is a partial
+isometry, `v * vᴴ * v = v`.
+
+## Main statements
+
+* `IsStarProjection.matrix_map`: the entrywise image of a matrix projection under a star ring
+  homomorphism is a matrix projection.
+* `Matrix.mul_conjTranspose_mul_self_eq_of_isStarProjection`: over a star-ordered proper star
+  ring, a matrix `v` with `vᴴ * v` a projection is a partial isometry.
+-/
+
+public section
+
+namespace Matrix
+
+variable {m n R : Type*} [Fintype m] [Fintype n]
+
+/-- The entrywise image of a matrix projection under a star ring homomorphism is a matrix
+projection. -/
+theorem _root_.IsStarProjection.matrix_map {S F : Type*} [NonUnitalNonAssocSemiring R] [Star R]
+    [NonUnitalNonAssocSemiring S] [Star S] [FunLike F R S] [NonUnitalRingHomClass F R S]
+    [StarHomClass F R S] {p : Matrix m m R} (hp : IsStarProjection p) (f : F) :
+    IsStarProjection (p.map f) :=
+  ⟨by rw [IsIdempotentElem, ← Matrix.map_mul, hp.isIdempotentElem.eq],
+    (IsHermitian.map hp.isSelfAdjoint f fun _ ↦ map_star f _).isSelfAdjoint⟩
+
+section StarOrderedRing
+
+variable [NonUnitalRing R] [StarRing R] [PartialOrder R] [StarOrderedRing R] [IsProperStar R]
+
+/-- Over a star-ordered proper star ring, a rectangular matrix `v` whose initial element `vᴴ * v` is
+a projection is a partial isometry. -/
+theorem mul_conjTranspose_mul_self_eq_of_isStarProjection {v : Matrix n m R}
+    (h : IsStarProjection (vᴴ * v)) : v * vᴴ * v = v := by
+  have hp : vᴴ * (v * (vᴴ * v)) = vᴴ * v := by
+    rw [← Matrix.mul_assoc, h.isIdempotentElem.eq]
+  have hx : (v * (vᴴ * v) - v)ᴴ * (v * (vᴴ * v) - v) = 0 := by
+    simp only [conjTranspose_sub, conjTranspose_mul, conjTranspose_conjTranspose, Matrix.sub_mul,
+      Matrix.mul_sub, Matrix.mul_assoc, hp, sub_self]
+  rw [conjTranspose_mul_self_eq_zero, sub_eq_zero] at hx
+  rwa [Matrix.mul_assoc]
+
+end StarOrderedRing
+
+end Matrix

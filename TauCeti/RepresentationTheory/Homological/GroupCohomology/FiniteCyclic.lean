@@ -5,17 +5,21 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Module.Torsion.Basic
+public import Mathlib.LinearAlgebra.Dimension.Finrank
 public import Mathlib.RepresentationTheory.Homological.GroupCohomology.FiniteCyclic
 public import Mathlib.RepresentationTheory.Homological.GroupCohomology.Functoriality
 public import Mathlib.RepresentationTheory.Homological.GroupCohomology.LongExactSequence
+public import Mathlib.RingTheory.QuotSMulTop
 public import TauCeti.GroupTheory.SpecificGroups.Cyclic.Log
+public import TauCeti.RepresentationTheory.Invariants
 import TauCeti.Algebra.BigOperators.Finset.Range
 import TauCeti.Data.Nat.Carry
 import TauCeti.RepresentationTheory.Cyclic.Norm
-import TauCeti.RepresentationTheory.Invariants
 import TauCeti.RepresentationTheory.Homological.GroupCohomology.Functoriality
 import TauCeti.RepresentationTheory.Homological.GroupCohomology.Resolution
 import TauCeti.RepresentationTheory.Homological.Resolution
+import TauCeti.RingTheory.QuotSMulTop
 
 /-!
 # Cohomology of a finite cyclic group through the periodic resolution
@@ -28,6 +32,16 @@ kernel with the image of the norm. This file records that the map is surjective,
 of `Hⁱ(G, A)` is defined by its values on `g`-fixed elements. Likewise, in odd degree
 `Rep.FiniteCyclicGroup.groupCohomologyπOdd` is surjective, so that `Hⁱ(G, A)` is the quotient
 `Ker(N) / Im(ρ(g) - 𝟙)`.
+
+For a `k`-module `M` with the trivial action, `ρ(g) - 𝟙` vanishes and the norm is multiplication
+by the order `|G|`, so `Hⁱ(G, M)` is the `|G|`-torsion `M[|G|]` for odd `i`
+(`Rep.FiniteCyclicGroup.groupCohomologyTrivialLinearEquivOdd`) and `M / |G| M` for positive even
+`i` (`Rep.FiniteCyclicGroup.groupCohomologyTrivialLinearEquivEven`). When `|G|` kills `M`, every
+`Hⁱ(G, M)` therefore has the same `finrank` as `M`
+(`Rep.FiniteCyclicGroup.finrank_groupCohomology_trivial_of_isTorsionBy`); for instance
+`Hⁱ(ℤ/p, 𝔽_p)` is one-dimensional in every degree. These are the cohomological counterparts of
+`Rep.FiniteCyclicGroup.groupHomologyTrivialLinearEquivOdd` and
+`Rep.FiniteCyclicGroup.groupHomologyTrivialLinearEquivEven`.
 
 In degree `2` it then makes the map explicit on cocycles. Let `n` be the order of `G`. A
 `g`-fixed element `a` is sent to the class of the **carry cocycle**
@@ -64,6 +78,10 @@ Frobenius.
 
 ## Main definitions
 
+* `Rep.FiniteCyclicGroup.groupCohomologyTrivialLinearEquivOdd`: `Hⁱ(G, M) ≃ₗ[k] M[|G|]` for odd
+  `i` and trivial coefficients.
+* `Rep.FiniteCyclicGroup.groupCohomologyTrivialLinearEquivEven`: `Hⁱ(G, M) ≃ₗ[k] M / |G| M` for
+  positive even `i` and trivial coefficients.
 * `Rep.FiniteCyclicGroup.carryCocycle`: the carry cocycle of a `g`-fixed element, as a
   `k`-linear map into the `2`-cocycles.
 * `Rep.FiniteCyclicGroup.partialNormCocycle`: the partial norm cocycle of an element killed by
@@ -75,6 +93,8 @@ Frobenius.
   represented by an element fixed by the generator.
 * `Rep.FiniteCyclicGroup.groupCohomologyπOdd_surjective`: in odd degree every class is represented
   by an element killed by the norm.
+* `Rep.FiniteCyclicGroup.finrank_groupCohomology_trivial_of_isTorsionBy`: if `|G|` kills the
+  trivial coefficients `M`, then `Hⁱ(G, M)` has the same `finrank` as `M` in every degree.
 * `Rep.FiniteCyclicGroup.carryCocycle_apply`,
   `Rep.FiniteCyclicGroup.carryCocycle_apply_pow`: the values of the carry cocycle.
 * `Rep.FiniteCyclicGroup.groupCohomologyπEven_two`,
@@ -97,8 +117,8 @@ Frobenius.
 ## References
 
 * K. S. Brown, *Cohomology of Groups*, Graduate Texts in Mathematics 87, Springer (1982),
-  Chapter I, §6 (the periodic resolution of a cyclic group) and Chapter I, §7 (comparison of
-  projective resolutions).
+  Chapter I, §6 (the periodic resolution of a cyclic group), Chapter I, §7 (comparison of
+  projective resolutions) and Chapter III, §1 (the cohomology of a cyclic group).
 * J.-P. Serre, *Local Fields*, Graduate Texts in Mathematics 67, Springer (1979), Chapter VIII,
   §4 (the cohomology of cyclic groups).
 -/
@@ -139,6 +159,127 @@ theorem groupCohomologyπOdd_surjective (i : ℕ) (hi : Odd i) :
   have h₁ : Epi (subCompNormHom A g).moduleCatCyclesIso.inv := inferInstance
   have h₂ : Epi (subCompNormHom A g).homologyπ := inferInstance
   exact epi_comp' h₁ (epi_comp' h₂ inferInstance)
+
+/-! ### Trivial coefficients -/
+
+section Trivial
+
+open scoped Pointwise
+
+variable (k) (M : Type u) [AddCommGroup M] [Module k M]
+
+/-- For the trivial representation, the odd-degree representative map is injective, since
+`ρ(g) - 𝟙 = 0` has no nonzero image. -/
+private theorem groupCohomologyπOdd_trivial_injective (i : ℕ) (hi : Odd i) :
+    Function.Injective (groupCohomologyπOdd (Rep.trivial k G M) g hg i hi) := by
+  refine (injective_iff_map_eq_zero (groupCohomologyπOdd (Rep.trivial k G M) g hg i hi).hom).2
+    fun x hx ↦ ?_
+  obtain ⟨y, hy⟩ := (groupCohomologyπOdd_eq_zero_iff _ g hg i hi x).1 hx
+  exact Subtype.ext (hy.symm.trans (applyAsHom_trivial_sub_id_apply g M y))
+
+/-- **Odd-degree cohomology of a finite cyclic group with trivial coefficients.** If `G` is a
+finite group generated by `g` and `M` is a `k`-module with the trivial action, then for odd `i`,
+`Hⁱ(G, M)` is the `|G|`-torsion `M[|G|]` of `M`. It sends the class that
+`Rep.FiniteCyclicGroup.groupCohomologyπOdd` assigns to an element of `M[|G|]` to that element. -/
+noncomputable def groupCohomologyTrivialLinearEquivOdd (i : ℕ) (hi : Odd i) :
+    groupCohomology (Rep.trivial k G M) i ≃ₗ[k] Submodule.torsionBy k M (Nat.card G : k) :=
+  (LinearEquiv.ofBijective (groupCohomologyπOdd (Rep.trivial k G M) g hg i hi).hom
+    ⟨groupCohomologyπOdd_trivial_injective k g hg M i hi,
+      groupCohomologyπOdd_surjective (Rep.trivial k G M) g hg i hi⟩).symm.trans
+    -- For the trivial representation the norm is multiplication by `|G|`.
+    (LinearEquiv.ofEq _ _ (by
+      ext x
+      rw [LinearMap.mem_ker, Submodule.mem_torsionBy_iff]
+      exact Eq.congr_left (norm_trivial_hom_apply k x)))
+
+/-- The odd-degree identification sends the cohomology class of a representative `x` to `x`. -/
+theorem coe_groupCohomologyTrivialLinearEquivOdd_groupCohomologyπOdd (i : ℕ) (hi : Odd i)
+    (x : LinearMap.ker (Rep.trivial k G M).norm.asHom.hom.toLinearMap) :
+    (groupCohomologyTrivialLinearEquivOdd k g hg M i hi
+        (groupCohomologyπOdd (Rep.trivial k G M) g hg i hi x) : M) = x := by
+  rw [groupCohomologyTrivialLinearEquivOdd, LinearEquiv.trans_apply, LinearEquiv.coe_ofEq_apply]
+  exact congrArg Subtype.val ((LinearEquiv.ofBijective _ _).symm_apply_apply x)
+
+/-- The inverse of the odd-degree identification sends `x ∈ M[|G|]` to the cohomology class of
+the representative `x`. Unlike `coe_groupCohomologyTrivialLinearEquivOdd_groupCohomologyπOdd`,
+this direction can be used by `simp`. -/
+@[simp]
+theorem groupCohomologyTrivialLinearEquivOdd_symm_apply (i : ℕ) (hi : Odd i)
+    (x : Submodule.torsionBy k M (Nat.card G : k)) :
+    (groupCohomologyTrivialLinearEquivOdd k g hg M i hi).symm x =
+      groupCohomologyπOdd (Rep.trivial k G M) g hg i hi
+        ⟨x, by
+          rw [LinearMap.mem_ker]
+          exact (norm_trivial_hom_apply k (x : M)).trans
+            ((Submodule.mem_torsionBy_iff ..).1 x.property)⟩ :=
+  (LinearEquiv.symm_apply_eq _).2 (Subtype.ext
+    (coe_groupCohomologyTrivialLinearEquivOdd_groupCohomologyπOdd k g hg M i hi ⟨x, _⟩).symm)
+
+/-- The representative map `M → Hⁱ(G, M)` in positive even degree, for the trivial
+representation: every element of `M` is killed by `ρ(g) - 𝟙 = 0`, so
+`Rep.FiniteCyclicGroup.groupCohomologyπEven` is defined on all of `M`. -/
+private noncomputable def groupCohomologyTrivialπEven (i : ℕ) [NeZero i] (hi : Even i) :
+    M →ₗ[k] groupCohomology (Rep.trivial k G M) i :=
+  (groupCohomologyπEven (Rep.trivial k G M) g hg i hi).hom ∘ₗ
+    LinearMap.codRestrict _ (LinearMap.id : M →ₗ[k] M) (applyAsHom_trivial_sub_id_apply g M)
+
+private theorem groupCohomologyTrivialπEven_apply (i : ℕ) [NeZero i] (hi : Even i) (x : M) :
+    groupCohomologyTrivialπEven k g hg M i hi x =
+      groupCohomologyπEven (Rep.trivial k G M) g hg i hi
+        ⟨x, applyAsHom_trivial_sub_id_apply g M x⟩ := by
+  rw [groupCohomologyTrivialπEven, LinearMap.comp_apply]
+  exact congrArg _ (Subtype.ext (LinearMap.codRestrict_apply _ _ x))
+
+private theorem groupCohomologyTrivialπEven_surjective (i : ℕ) [NeZero i] (hi : Even i) :
+    Function.Surjective (groupCohomologyTrivialπEven k g hg M i hi) := by
+  intro y
+  obtain ⟨x, rfl⟩ := groupCohomologyπEven_surjective (Rep.trivial k G M) g hg i hi y
+  exact ⟨x.val, groupCohomologyTrivialπEven_apply k g hg M i hi x.val⟩
+
+private theorem ker_groupCohomologyTrivialπEven (i : ℕ) [NeZero i] (hi : Even i) :
+    LinearMap.ker (groupCohomologyTrivialπEven k g hg M i hi) =
+      (Nat.card G : k) • (⊤ : Submodule k M) := by
+  ext x
+  rw [LinearMap.mem_ker, groupCohomologyTrivialπEven_apply, groupCohomologyπEven_eq_zero_iff,
+    LinearMap.mem_range, Submodule.mem_smul_pointwise_iff_exists]
+  exact exists_congr fun y ↦ (Eq.congr_left (norm_trivial_hom_apply k y)).trans
+    (and_iff_right Submodule.mem_top).symm
+
+/-- **Even-degree cohomology of a finite cyclic group with trivial coefficients.** If `G` is a
+finite group generated by `g` and `M` is a `k`-module with the trivial action, then for positive
+even `i`, `Hⁱ(G, M) ≃ M / |G| M`. It sends the class that
+`Rep.FiniteCyclicGroup.groupCohomologyπEven` assigns to `x ∈ M` to the residue class of `x`. -/
+noncomputable def groupCohomologyTrivialLinearEquivEven (i : ℕ) [NeZero i] (hi : Even i) :
+    groupCohomology (Rep.trivial k G M) i ≃ₗ[k] QuotSMulTop (Nat.card G : k) M :=
+  ((Submodule.quotEquivOfEq _ _ (ker_groupCohomologyTrivialπEven k g hg M i hi).symm).trans
+    ((groupCohomologyTrivialπEven k g hg M i hi).quotKerEquivOfSurjective
+      (groupCohomologyTrivialπEven_surjective k g hg M i hi))).symm
+
+/-- The even-degree identification sends the cohomology class of a representative `x` to the
+residue class of `x` modulo `|G|`. -/
+theorem groupCohomologyTrivialLinearEquivEven_groupCohomologyπEven (i : ℕ) [NeZero i]
+    (hi : Even i)
+    (x : LinearMap.ker (applyAsHom (Rep.trivial k G M) g - 𝟙 (Rep.trivial k G M)).hom.toLinearMap) :
+    groupCohomologyTrivialLinearEquivEven k g hg M i hi
+        (groupCohomologyπEven (Rep.trivial k G M) g hg i hi x) =
+      Submodule.Quotient.mk (x : M) := by
+  rw [← LinearEquiv.eq_symm_apply, groupCohomologyTrivialLinearEquivEven, LinearEquiv.symm_symm,
+    LinearEquiv.trans_apply, Submodule.quotEquivOfEq_mk,
+    LinearMap.quotKerEquivOfSurjective_apply_mk, groupCohomologyTrivialπEven_apply]
+
+/-- The inverse of the even-degree identification sends the residue class of `x ∈ M` to the
+cohomology class of the representative `x`. Unlike
+`groupCohomologyTrivialLinearEquivEven_groupCohomologyπEven`, whose left side applies the
+reducible `Rep.FiniteCyclicGroup.groupCohomologyπEven`, this direction can be used by `simp`. -/
+@[simp]
+theorem groupCohomologyTrivialLinearEquivEven_symm_mk (i : ℕ) [NeZero i] (hi : Even i) (x : M) :
+    (groupCohomologyTrivialLinearEquivEven k g hg M i hi).symm (Submodule.Quotient.mk x) =
+      groupCohomologyπEven (Rep.trivial k G M) g hg i hi
+        ⟨x, applyAsHom_trivial_sub_id_apply g M x⟩ :=
+  (LinearEquiv.symm_apply_eq _).2
+    (groupCohomologyTrivialLinearEquivEven_groupCohomologyπEven k g hg M i hi ⟨x, _⟩).symm
+
+end Trivial
 
 /-! ### The comparison map from the bar resolution to the periodic resolution -/
 
@@ -347,24 +488,24 @@ order `n`: the `2`-cocycle `(gⁱ, gʲ) ↦ a` if `i + j ≥ n` and `0` otherwis
 noncomputable def carryCocycle :
     LinearMap.ker (applyAsHom A g - 𝟙 A).hom.toLinearMap →ₗ[k] cocycles₂ A :=
   LinearMap.codRestrict (cocycles₂ A) ((carryCochain A g hg).comp (Submodule.subtype _))
-    fun x => carryCochain_mem_cocycles₂ A g hg x.1 (Rep.ρ_apply_of_mem_ker A g x)
+    fun x => carryCochain_mem_cocycles₂ A g hg x.val (Rep.ρ_apply_of_mem_ker A g x)
 
 /-- The underlying function of the carry cocycle is its defining carry cochain. -/
 private theorem coe_carryCocycle
     (x : LinearMap.ker (applyAsHom A g - 𝟙 A).hom.toLinearMap) :
-    (carryCocycle A g hg x : G × G → A) = carryCochain A g hg x.1 := by
+    (carryCocycle A g hg x : G × G → A) = carryCochain A g hg x.val := by
   rw [← cocycles₂.val_eq_coe]
   calc
-    (carryCocycle A g hg x).1 = ((carryCochain A g hg).comp (Submodule.subtype _)) x :=
+    (carryCocycle A g hg x).val = ((carryCochain A g hg).comp (Submodule.subtype _)) x :=
       LinearMap.codRestrict_apply _ _ x
-    _ = carryCochain A g hg x.1 := by rw [LinearMap.comp_apply, Submodule.subtype_apply]
+    _ = carryCochain A g hg x.val := by rw [LinearMap.comp_apply, Submodule.subtype_apply]
 
 /-- The carry cocycle at an arbitrary pair, computed using their reduced exponents. -/
 @[simp low]
 theorem carryCocycle_apply (x : LinearMap.ker (applyAsHom A g - 𝟙 A).hom.toLinearMap)
     (p : G × G) :
     (carryCocycle A g hg x : G × G → A) p =
-      if orderOf g ≤ cyclicLog g hg p.1 + cyclicLog g hg p.2 then x.1 else 0 := by
+      if orderOf g ≤ cyclicLog g hg p.1 + cyclicLog g hg p.2 then x.val else 0 := by
   rw [coe_carryCocycle, carryCochain_apply]
 
 /-- The values of the carry cocycle: on `(gⁱ, gʲ)` with `i, j < n` it is `a` if `i + j ≥ n` and
@@ -372,7 +513,8 @@ theorem carryCocycle_apply (x : LinearMap.ker (applyAsHom A g - 𝟙 A).hom.toLi
 @[simp]
 theorem carryCocycle_apply_pow (x : LinearMap.ker (applyAsHom A g - 𝟙 A).hom.toLinearMap)
     {i j : ℕ} (hi : i < orderOf g) (hj : j < orderOf g) :
-    (carryCocycle A g hg x : G × G → A) (g ^ i, g ^ j) = if orderOf g ≤ i + j then x.1 else 0 := by
+    (carryCocycle A g hg x : G × G → A) (g ^ i, g ^ j) = if orderOf g ≤ i + j then x.val else 0
+        := by
   rw [carryCocycle_apply, cyclicLog_pow, cyclicLog_pow, Nat.mod_eq_of_lt hi,
     Nat.mod_eq_of_lt hj]
 
@@ -440,22 +582,22 @@ generated by `g`: the `1`-cocycle `gⁱ ↦ a + g a + ⋯ + gⁱ⁻¹ a`, for `0
 noncomputable def partialNormCocycle :
     LinearMap.ker A.norm.asHom.hom.toLinearMap →ₗ[k] cocycles₁ A :=
   LinearMap.codRestrict (cocycles₁ A) ((partialNormCochain A g hg).comp (Submodule.subtype _))
-    fun x => partialNormCochain_mem_cocycles₁ A g hg x.1 x.2
+    fun x => partialNormCochain_mem_cocycles₁ A g hg x.val x.property
 
 /-- The partial norm cocycle at an arbitrary element, computed using its reduced exponent. -/
 @[simp low]
 theorem partialNormCocycle_apply (x : LinearMap.ker A.norm.asHom.hom.toLinearMap) (y : G) :
     (partialNormCocycle A g hg x : G → A) y =
-      ∑ l ∈ Finset.range (cyclicLog g hg y), A.ρ (g ^ l) x.1 :=
-  partialNormCochain_apply A g hg x.1 y
+      ∑ l ∈ Finset.range (cyclicLog g hg y), A.ρ (g ^ l) x.val :=
+  partialNormCochain_apply A g hg x.val y
 
 /-- The values of the partial norm cocycle: on `gⁱ` it is `a + g a + ⋯ + gⁱ⁻¹ a`, for every
 `i`, since `a` is killed by the norm. -/
 @[simp]
 theorem partialNormCocycle_apply_pow (x : LinearMap.ker A.norm.asHom.hom.toLinearMap) (i : ℕ) :
-    (partialNormCocycle A g hg x : G → A) (g ^ i) = ∑ l ∈ Finset.range i, A.ρ (g ^ l) x.1 := by
+    (partialNormCocycle A g hg x : G → A) (g ^ i) = ∑ l ∈ Finset.range i, A.ρ (g ^ l) x.val := by
   rw [partialNormCocycle_apply, cyclicLog_pow,
-    A.ρ.sum_range_mod_orderOf_apply hg (LinearMap.mem_ker.1 x.2)]
+    A.ρ.sum_range_mod_orderOf_apply hg (LinearMap.mem_ker.1 x.property)]
 
 end PartialNormCocycle
 
@@ -535,7 +677,7 @@ theorem groupCohomologyπEven_two :
   -- Both sides are definitionally values of cochains at `v`: on the left, `homResolutionIso` sends
   -- `x` to `k[G] ⟶ A, 1 ↦ x` and the middle component of `alternatingConstScIsoEven` is the
   -- identity; on the right, `cochainsIso₂` evaluates at the pair `(v 0, v 1)`.
-  exact barToPeriodicCochains_f_two_apply A g hg x.1 v
+  exact barToPeriodicCochains_f_two_apply A g hg x.val v
 
 /-- **The periodicity class in degree `2` is the class of the carry cocycle**: an element `a`
 fixed by the generator `g` is sent to the class of `(gⁱ, gʲ) ↦ a` if `i + j ≥ n`, and `0`
@@ -581,7 +723,7 @@ theorem groupCohomologyπOdd_one :
   -- Both sides are definitionally values of cochains at `v`: on the left, `homResolutionIso` sends
   -- `x` to `k[G] ⟶ A, 1 ↦ x` and the middle component of `alternatingConstScIsoOdd` is the
   -- identity; on the right, `cochainsIso₁` evaluates at `v 0`.
-  exact barToPeriodicCochains_f_one_apply A g hg x.1 v
+  exact barToPeriodicCochains_f_one_apply A g hg x.val v
 
 /-- **The odd-degree class in degree `1` is the class of the partial norm cocycle**: an element
 `a` killed by the norm is sent to the class of `gⁱ ↦ a + g a + ⋯ + gⁱ⁻¹ a`, for `0 ≤ i < n`. -/
@@ -597,9 +739,9 @@ generated by `g`, and let `t` be killed by the norm `N` of `X₃`. Lift `t` to `
 `N s` lies in `X₁`, say `N s = v` with `v` fixed by `g`. Then `δ` sends the degree-`1` class of `t`
 to the degree-`2` class of `v`. -/
 theorem δ_groupCohomologyπOdd_one {X : ShortComplex (Rep k G)} (hX : X.ShortExact)
-    (t : LinearMap.ker X.X₃.norm.asHom.hom.toLinearMap) (s : X.X₂) (hs : X.g.hom s = t.1)
+    (t : LinearMap.ker X.X₃.norm.asHom.hom.toLinearMap) (s : X.X₂) (hs : X.g.hom s = t.val)
     (v : LinearMap.ker (applyAsHom X.X₁ g - 𝟙 X.X₁).hom.toLinearMap)
-    (hv : X.f.hom v.1 = X.X₂.ρ.norm s) :
+    (hv : X.f.hom v.val = X.X₂.ρ.norm s) :
     δ hX 1 2 rfl (groupCohomologyπOdd X.X₃ g hg 1 odd_one t) =
       groupCohomologyπEven X.X₁ g hg 2 even_two v := by
   rw [groupCohomologyπOdd_one_apply, groupCohomologyπEven_two_apply]
@@ -628,7 +770,7 @@ of representations of one group (`f = id` and `d = 1`) this is the class of `φ 
 theorem map_groupCohomologyπOdd_one {g' : G'} (hg' : ∀ x, x ∈ Subgroup.zpowers g') (d : ℕ)
     (hfg : f g = g' ^ d) (φ : res f B ⟶ A) (y : LinearMap.ker B.norm.asHom.hom.toLinearMap)
     (z : LinearMap.ker A.norm.asHom.hom.toLinearMap)
-    (hz : z.1 = φ.hom (∑ j ∈ Finset.range d, B.ρ (g' ^ j) y.1)) :
+    (hz : z.val = φ.hom (∑ j ∈ Finset.range d, B.ρ (g' ^ j) y.val)) :
     groupCohomology.map f φ 1 (groupCohomologyπOdd B g' hg' 1 odd_one y) =
       groupCohomologyπOdd A g hg 1 odd_one z := by
   rw [groupCohomologyπOdd_one_apply, groupCohomologyπOdd_one_apply, H1π_comp_map_apply]
@@ -653,7 +795,7 @@ private theorem mapCocycles₂_carryCocycle_apply [Finite G] [Finite G'] {g' : G
     (y : LinearMap.ker (applyAsHom B g' - 𝟙 B).hom.toLinearMap) (p : G × G) :
     ((mapCocycles₂ f φ).hom (carryCocycle B g' hg' y) : G × G → A) p =
       if orderOf g' ≤ d * cyclicLog g hg p.1 % orderOf g' + d * cyclicLog g hg p.2 % orderOf g' then
-        φ.hom y.1 else 0 := by
+        φ.hom y.val else 0 := by
   rw [coe_mapCocycles₂, cochainsMap₂, ModuleCat.ofHom_apply, LinearMap.comp_apply,
     LinearMap.compLeft_apply, Function.comp_apply, LinearMap.funLeft_apply, Prod.map_apply,
     carryCocycle_apply, cyclicLog_map g hg f hg' hfg,
@@ -671,21 +813,21 @@ order `m`. -/
 theorem map_groupCohomologyπEven_two {g' : G'} (hg' : ∀ x, x ∈ Subgroup.zpowers g') (d : ℕ)
     (hfg : f g = g' ^ d) (φ : res f B ⟶ A) (m : ℕ) (hm : d * Nat.card G = m * Nat.card G')
     (y : LinearMap.ker (applyAsHom B g' - 𝟙 B).hom.toLinearMap)
-    (z : LinearMap.ker (applyAsHom A g - 𝟙 A).hom.toLinearMap) (hz : z.1 = m • φ.hom y.1) :
+    (z : LinearMap.ker (applyAsHom A g - 𝟙 A).hom.toLinearMap) (hz : z.val = m • φ.hom y.val) :
     groupCohomology.map f φ 2 (groupCohomologyπEven B g' hg' 2 even_two y) =
       groupCohomologyπEven A g hg 2 even_two z := by
   rw [groupCohomologyπEven_two_apply, groupCohomologyπEven_two_apply,
     ← LinearMap.comp_apply (groupCohomology.map f φ 2).hom, ← ModuleCat.hom_comp, H2π_comp_map,
     ModuleCat.hom_comp, LinearMap.comp_apply, H2π_eq_iff]
   have hy := Rep.ρ_apply_of_mem_ker B g' y
-  have hfix : ∀ x : G, A.ρ x (φ.hom y.1) = φ.hom y.1 := by
+  have hfix : ∀ x : G, A.ρ x (φ.hom y.val) = φ.hom y.val := by
     intro x
     rw [← Rep.hom_comm_apply]
     exact congrArg φ.hom
       ((Representation.mem_invariants_iff_of_forall_mem_zpowers B.ρ g' hg' _).2 hy (f x))
   -- The difference of the two cocycles is the coboundary of `x ↦ -⌊d i(x)/n⌋ • φ y`, where `i(x)`
   -- is the exponent of `x` and `n` is the order of `G'`.
-  refine ⟨fun x => -((d * cyclicLog g hg x / orderOf g') • φ.hom y.1), funext fun p => ?_⟩
+  refine ⟨fun x => -((d * cyclicLog g hg x / orderOf g') • φ.hom y.val), funext fun p => ?_⟩
   rw [Pi.sub_apply, mapCocycles₂_carryCocycle_apply A g hg f hg' hfg φ y,
     carryCocycle_apply, hz]
   simp only [d₁₂, ModuleCat.hom_ofHom, LinearMap.coe_mk, AddHom.coe_mk, map_neg, map_nsmul, hfix,
@@ -694,11 +836,38 @@ theorem map_groupCohomologyπEven_two {g' : G'} (hg' : ∀ x, x ∈ Subgroup.zpo
     rw [orderOf_eq_card_of_forall_mem_zpowers hg, orderOf_eq_card_of_forall_mem_zpowers hg', hm]
   have hk := Nat.mul_div_add_mul_div_add_carry (orderOf_pos g') hn (cyclicLog_lt g hg p.1)
     (cyclicLog_lt g hg p.2)
-  have key := congrArg (· • φ.hom y.1) hk
+  have key := congrArg (· • φ.hom y.val) hk
   simp only [add_smul, mul_smul] at key
-  generalize φ.hom y.1 = b at key ⊢
+  generalize φ.hom y.val = b at key ⊢
   split_ifs at key ⊢ <;>
     simp only [zero_smul, one_smul, add_zero, smul_zero, sub_zero, zero_sub] at key ⊢ <;>
     linear_combination (norm := module) (-1 : ℤ) • key
+
+end Rep.FiniteCyclicGroup
+
+namespace Rep.FiniteCyclicGroup
+
+variable (k : Type u) {G : Type u} [CommRing k] [Group G] [Finite G] [IsCyclic G]
+  (M : Type u) [AddCommGroup M] [Module k M]
+
+/-- **The cohomology of a finite cyclic group with coefficients killed by its order.** If `G` is
+a finite cyclic group and `M` is a `k`-module with the trivial action on which multiplication by
+`|G|` vanishes, then `Hⁱ(G, M)` has the same `finrank` as `M` in every degree `i`. For instance, the
+cohomology of `ℤ/p` with coefficients in `𝔽_p` is one-dimensional in every degree. -/
+theorem finrank_groupCohomology_trivial_of_isTorsionBy
+    (hM : Module.IsTorsionBy k M (Nat.card G : k)) (i : ℕ) :
+    Module.finrank k (groupCohomology (Rep.trivial k G M) i) = Module.finrank k M := by
+  classical
+  have := Fintype.ofFinite G
+  let : CommGroup G := IsCyclic.commGroup
+  obtain ⟨g, hg⟩ := IsCyclic.exists_generator (α := G)
+  rcases Nat.even_or_odd i with hi | hi
+  · rcases eq_or_ne i 0 with rfl | hi₀
+    · exact (groupCohomology.H0IsoOfIsTrivial (Rep.trivial k G M)).toLinearEquiv.finrank_eq
+    · have : NeZero i := ⟨hi₀⟩
+      rw [(groupCohomologyTrivialLinearEquivEven k g hg M i hi).finrank_eq,
+        hM.quotSMulTopEquiv.finrank_eq]
+  · rw [(groupCohomologyTrivialLinearEquivOdd k g hg M i hi).finrank_eq,
+      (Module.isTorsionBy_iff_torsionBy_eq_top _).1 hM, finrank_top]
 
 end Rep.FiniteCyclicGroup

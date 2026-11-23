@@ -118,14 +118,14 @@ def H0ContinuousLinearEquivInvariants :
 /-- `H0ContinuousLinearEquivInvariants` is the identity on underlying elements. -/
 @[simp]
 theorem H0ContinuousLinearEquivInvariants_val (m : H0 G M) :
-    (H0ContinuousLinearEquivInvariants G M m).1 = m.1 := by
+    (H0ContinuousLinearEquivInvariants G M m).val = m.val := by
   -- The goal is an equality in the semireducibly bundled carrier
   -- `(ofDiscreteModule ℤ G M).V`, whereas the evaluation lemma is an equality in `M`.
   -- `change` crosses only that carrier wrapper before applying the public evaluation API.
   change
     ((@AddSubgroup.continuousLinearEquivInvariants G M _ _ _
       (inferInstance : IsTopologicalAddGroup M) (H0 G M) (ofDiscreteModule ℤ G M).ρ
-      (mem_invariants_ofDiscreteModule_iff_mem_H0 G M) m).1) = m.1
+      (mem_invariants_ofDiscreteModule_iff_mem_H0 G M) m).val) = m.val
   exact @AddSubgroup.continuousLinearEquivInvariants_val G M _ _ _
     (inferInstance : IsTopologicalAddGroup M) (H0 G M) (ofDiscreteModule ℤ G M).ρ
     (mem_invariants_ofDiscreteModule_iff_mem_H0 G M) m
@@ -134,12 +134,12 @@ theorem H0ContinuousLinearEquivInvariants_val (m : H0 G M) :
 @[simp]
 theorem H0ContinuousLinearEquivInvariants_symm_val
     (m : (ofDiscreteModule ℤ G M).ρ.invariants) :
-    ((H0ContinuousLinearEquivInvariants G M).symm m).1 = m.1 := by
+    ((H0ContinuousLinearEquivInvariants G M).symm m).val = m.val := by
   -- As above, expose only the bundled carrier so the public inverse evaluation lemma applies.
   change
     (((@AddSubgroup.continuousLinearEquivInvariants G M _ _ _
       (inferInstance : IsTopologicalAddGroup M) (H0 G M) (ofDiscreteModule ℤ G M).ρ
-      (mem_invariants_ofDiscreteModule_iff_mem_H0 G M)).symm m).1) = m.1
+      (mem_invariants_ofDiscreteModule_iff_mem_H0 G M)).symm m).val) = m.val
   exact @AddSubgroup.continuousLinearEquivInvariants_symm_val G M _ _ _
     (inferInstance : IsTopologicalAddGroup M) (H0 G M) (ofDiscreteModule ℤ G M).ρ
     (mem_invariants_ofDiscreteModule_iff_mem_H0 G M) m
@@ -176,15 +176,15 @@ theorem explicitH0IsoContinuousCohomology_hom_apply (m : H0 G M) :
 `TauCeti.ContinuousCohomology.degreeZeroClass`. -/
 theorem explicitH0IsoContinuousCohomology_hom_eq_degreeZeroClass (m : H0 G M) :
     (explicitH0IsoContinuousCohomology G M).hom m =
-      TauCeti.ContinuousCohomology.degreeZeroClass (ofDiscreteModule ℤ G M) m.1
-        (fun g => (FixedPoints.mem_addSubgroup G M m.1).1 m.2 g) := by
+      TauCeti.ContinuousCohomology.degreeZeroClass (ofDiscreteModule ℤ G M) m.val
+        (fun g => (FixedPoints.mem_addSubgroup G M m.val).1 m.property g) := by
   have hval : (ContinuousCohomology.zeroIso (ofDiscreteModule ℤ G M)).hom
-      (TauCeti.ContinuousCohomology.degreeZeroClass (ofDiscreteModule ℤ G M) m.1
-        (fun g => (FixedPoints.mem_addSubgroup G M m.1).1 m.2 g)) =
+      (TauCeti.ContinuousCohomology.degreeZeroClass (ofDiscreteModule ℤ G M) m.val
+        (fun g => (FixedPoints.mem_addSubgroup G M m.val).1 m.property g)) =
       H0ContinuousLinearEquivInvariants G M m :=
     Subtype.ext ((TauCeti.ContinuousCohomology.coe_zeroIso_hom_degreeZeroClass
-      (X := ofDiscreteModule ℤ G M) m.1
-      (fun g => (FixedPoints.mem_addSubgroup G M m.1).1 m.2 g)).trans
+      (X := ofDiscreteModule ℤ G M) m.val
+      (fun g => (FixedPoints.mem_addSubgroup G M m.val).1 m.property g)).trans
       (H0ContinuousLinearEquivInvariants_val G M m).symm)
   rw [explicitH0IsoContinuousCohomology_hom_apply, ← hval, Iso.hom_inv_id_apply]
 
@@ -197,7 +197,7 @@ theorem explicitH0IsoContinuousCohomology_hom_eq_degreeZeroClass (m : H0 G M) :
 theorem coe_explicitH0IsoContinuousCohomology_inv_apply
     (y : continuousCohomology 0 (ofDiscreteModule ℤ G M)) :
     (dsimp% only (((explicitH0IsoContinuousCohomology G M).inv y : H0 G M) : M)) =
-      ((ContinuousCohomology.zeroIso (ofDiscreteModule ℤ G M)).hom y).1 :=
+      ((ContinuousCohomology.zeroIso (ofDiscreteModule ℤ G M)).hom y).val :=
   H0ContinuousLinearEquivInvariants_symm_val G M
     ((ContinuousCohomology.zeroIso (ofDiscreteModule ℤ G M)).hom y)
 
@@ -258,7 +258,7 @@ theorem explicitH0Iso_map (H : Type u) [Group H] [TopologicalSpace H] [IsTopolog
   simp only [TopRep.invariantsResMap, TopModuleCat.hom_ofHom,
     ContIntertwiningMap.mapInvariantsOfRes_apply, H0ContinuousLinearEquivInvariants_val]
   exact (ofDiscreteModulePair_hom_apply (φ : H →* G) f.toIntLinearMap
-      (fun h m => hf h m) x.1).trans (coe_explicitMap0 G M (φ : H →* G) f hf x).symm
+      (fun h m => hf h m) x.val).trans (coe_explicitMap0 G M (φ : H →* G) f hf x).symm
 
 /-- **Transport of restriction in degree zero.** The comparison carries the explicit inclusion
 `M^G ⊆ M^S` to the canonical restriction. The two sides land in the same object because
@@ -331,7 +331,7 @@ theorem exists_coeffMap_ker_nsmul_eq (M : Type u) [AddCommGroup M] [TopologicalS
     { K.subtype with map_smul' := K.restrictDistribMulAction_coe_smul hK }
   let mK : H0 G K := ⟨⟨m, hm⟩, (FixedPoints.mem_addSubgroup G K _).2 fun g ↦ Subtype.ext <|
     (K.restrictDistribMulAction_coe_smul hK g _).trans
-      ((FixedPoints.mem_addSubgroup G M _).1 m.2 g)⟩
+      ((FixedPoints.mem_addSubgroup G M _).1 m.property g)⟩
   refine ⟨(explicitH0IsoContinuousCohomology G K).hom mK, ?_⟩
   have hmK : explicitCoeff0 G K ι mK = m := Subtype.ext (coe_explicitCoeff0 G K ι mK)
   rw [explicitH0Iso_coeffMap G K M ι mK, hmK]

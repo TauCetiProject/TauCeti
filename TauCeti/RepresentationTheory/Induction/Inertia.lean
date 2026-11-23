@@ -130,7 +130,7 @@ variable [Field k]
 This is the character shadow of `mem_inertia_iff`, and the form in which Clifford's theorem uses
 the inertia group. -/
 theorem char_conj_eq_of_mem_inertia {A : FDRep k N} {g : G} (hg : g ∈ inertia A) (x : N) :
-    A.character ⟨g⁻¹ * (x : G) * g, hN.conj_mem' (x : G) x.2 g⟩ = A.character x := by
+    A.character ⟨g⁻¹ * (x : G) * g, hN.conj_mem' (x : G) x.property g⟩ = A.character x := by
   obtain ⟨e⟩ := mem_inertia_iff.1 hg
   rw [← char_conjNormalFDRep_mk, FDRep.char_iso e]
 

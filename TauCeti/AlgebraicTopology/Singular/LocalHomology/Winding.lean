@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicTopology.Singular.LocalHomology.RegularValue
-public import TauCeti.AlgebraicTopology.UniversalCover.Circle.FreeLoop
+public import TauCeti.AlgebraicTopology.UniversalCover.Circle.FreeLoop.Basic
 public import Mathlib.LinearAlgebra.Complex.FiniteDimensional
 import Mathlib.RingTheory.RootsOfUnity.Complex
 import Mathlib.Topology.Homotopy.Affine
@@ -40,7 +40,7 @@ degree is constant (`TauCeti.HomologicalOrientation.localDegree_eq_of_homotopy_o
    `z ↦ f(r z / ‖z‖)` outside the disc;
 2. this map is a positive multiple of the cone `z ↦ ‖z‖ u(z / ‖z‖)` outside the disc;
 3. maps `S¹ → S¹` of the same degree are joined in `C(S¹, S¹)`
-   (`Circle.joined_iff_degree_toBasedLoop_eq`), so the cone over `u` is joined, through cones
+   (`Circle.joined_iff_circleDegree_eq`), so the cone over `u` is joined, through cones
    vanishing only at `0`, to the cone over `ζ ↦ ζⁿ`, `n = deg u`;
 4. that cone is a positive multiple of `z ↦ zⁿ` for `n ≥ 0`, and of `z ↦ conj (z^|n|)` for
    `n < 0`, away from `0`.
@@ -115,7 +115,7 @@ private theorem continuous_norm_mul_dir {X : Type*} [TopologicalSpace X]
   · have hd : ContinuousAt (fun p : X × ℂ ↦ dir p.2) (x, z) :=
       (continuousAt_dir hz).comp (f := Prod.snd) (x := (x, z)) continuousAt_snd
     exact (continuous_ofReal.comp continuous_snd.norm).continuousAt.mul
-      (continuous_subtype_val.continuousAt.comp (hΦ.continuousAt.comp
+      (continuous_subtypeVal.continuousAt.comp (hΦ.continuousAt.comp
         (continuousAt_fst.prodMk hd)))
 
 /-- The cone `z ↦ ‖z‖ u(z / ‖z‖)` over a map `u : S¹ → S¹`. -/
@@ -153,9 +153,9 @@ private theorem localDegree_eq_of_eq_smul {f₀ f₁ : C(ℂ, ℂ)} (R : ℝ)
   refine o.localDegree_eq_of_homotopy_of_norm_le H R fun ⟨s, z⟩ hsz ↦ not_lt.1 fun hz ↦ ?_
   obtain ⟨h₀, c, hc, h₁⟩ := h z hz
   have hpos : 0 < 1 - (s : ℝ) + s * c := by
-    rcases s.2.1.eq_or_lt with hs | hs
+    rcases s.property.1.eq_or_lt with hs | hs
     · simp [← hs]
-    · nlinarith [s.2.2, mul_pos hs hc]
+    · nlinarith [s.property.2, mul_pos hs hc]
   have hsum : (1 - (s : ℝ) + s * c) • f₀ z = 0 := by
     rw [← hsz, ContinuousMap.Homotopy.affine_apply, AffineMap.lineMap_apply_module, h₁, smul_smul,
       ← add_smul]
@@ -256,7 +256,7 @@ private theorem localDegree_eq_localDegree_cone {f : C(ℂ, ℂ)} {r : ℝ} (hr 
     have hsz' : f (μ (s, z) • z) = 0 := hsz
     refine hf _ ?_ hsz'
     have h1 : 1 ≤ ‖z‖ / r := (one_le_div hr).2 hz.le
-    have hst : 0 ≤ (s : ℝ) * (‖z‖ / r - 1) := mul_nonneg s.2.1 (by linarith)
+    have hst : 0 ≤ (s : ℝ) * (‖z‖ / r - 1) := mul_nonneg s.property.1 (by linarith)
     have hs : (s : ℝ) * ‖z‖ / r = s * (‖z‖ / r) := mul_div_assoc _ _ _
     have ht : 1 ≤ 1 - (s : ℝ) + s * ‖z‖ / r := by rw [hs]; linarith
     have htpos : 0 < 1 - (s : ℝ) + s * ‖z‖ / r := by linarith
@@ -265,7 +265,7 @@ private theorem localDegree_eq_localDegree_cone {f : C(ℂ, ℂ)} {r : ℝ} (hr 
     have hrt : r * (1 - (s : ℝ) + s * ‖z‖ / r) = (1 - s) * r + s * ‖z‖ := by
       field_simp
     rw [le_div_iff₀ htpos, hrt]
-    nlinarith [s.2.2, hz.le]
+    nlinarith [s.property.2, hz.le]
   · -- Outside the disc, `f₁` is a positive multiple of the cone over `u`.
     have hne : f (r * dir z) ≠ 0 := hf _ (by simp [abs_of_pos hr])
     refine ⟨hμ₁ z hz ▸ hne, ‖z‖ / ‖f (r * dir z)‖, div_pos (hr.trans hz) (norm_pos_iff.2 hne), ?_⟩
@@ -328,7 +328,9 @@ theorem localDegree_eq_degree_toBasedLoop {f : C(ℂ, ℂ)} {r : ℝ} (hr : 0 < 
     o.localDegree o finrank_real_complex f 0 = Circle.degree u.toBasedLoop := by
   rw [o.localDegree_eq_localDegree_cone hr hf hu,
     o.localDegree_cone_eq_of_joined (v := zpowMap (Circle.degree u.toBasedLoop))
-      (Circle.joined_iff_degree_toBasedLoop_eq.2 (Circle.degree_toBasedLoop_zpow _).symm),
+      (Circle.joined_iff_circleDegree_eq.2 <| by
+        rw [← Circle.degree_toBasedLoop]
+        exact (ContinuousMap.circleDegree_zpow _).symm),
     localDegree_cone_zpowMap]
 
 end HomologicalOrientation

@@ -24,6 +24,8 @@ infinite-order elements, such as those used for Euclidean triangle groups.
 * `AffineEquiv.semidirectSubgroup`: for a group `W` of linear automorphisms of a module `V` and a
   `W`-stable additive subgroup `L`, the affine automorphisms with linear part in `W` and
   translation part in `L`, a copy of the semidirect product `L ⋊ W` in the affine group.
+* `AffineEquiv.fixingSubgroup`: the affine automorphisms of an affine space fixing each point of
+  a set.
 * `AffineEquiv.toGL`: the embedding of the affine group of a commutative ring `R` into
   `GL (Fin 2) R` sending `x ↦ a * x + b` to the matrix `!![a, b; 0, 1]`.
 
@@ -35,6 +37,8 @@ infinite-order elements, such as those used for Euclidean triangle groups.
   `x ↦ a * x + b`.
 * `AffineEquiv.linear_mul_apply_one`: the linear coefficients `a` of affine self-equivalences of a
   commutative ring multiply as the maps compose.
+* `AffineEquiv.eq_homothetyUnitsMulHom_of_linear_one_ne_one`: an affine self-equivalence
+  `x ↦ a * x + b` of a field with `a ≠ 1` is a homothety about its fixed point.
 * `TauCeti.AffineEquiv.commutatorElement_homothetyUnitsMulHom`: the commutator of
   homotheties about two points is a translation.
 -/
@@ -84,6 +88,27 @@ theorem mem_semidirectSubgroup_iff {W : Subgroup (V₁ ≃ₗ[k] V₁)} {L : Add
     f ∈ semidirectSubgroup W L hL ↔ f.linear ∈ W ∧ f 0 ∈ L :=
   Iff.rfl
 
+section FixingSubgroup
+
+variable {V P : Type*} [AddCommGroup V] [Module k V] [AddTorsor V P]
+
+variable (k) in
+/-- The subgroup of affine automorphisms of `P` fixing each point of `s`. This is the analogue of
+the pointwise fixer `_root_.fixingSubgroup` of a group action; Mathlib does not make the affine
+group act on `P` by a `MulAction` instance, so that construction does not apply. -/
+def fixingSubgroup (s : Set P) : Subgroup (P ≃ᵃ[k] P) where
+  carrier := {f | ∀ p ∈ s, f p = p}
+  mul_mem' {f g} hf hg p hp := by simp [hg p hp, hf p hp]
+  one_mem' _ _ := rfl
+  inv_mem' {f} hf p hp := by rw [inv_def, symm_apply_eq, hf p hp]
+
+@[simp]
+theorem mem_fixingSubgroup_iff {s : Set P} {f : P ≃ᵃ[k] P} :
+    f ∈ fixingSubgroup k s ↔ ∀ p ∈ s, f p = p :=
+  Iff.rfl
+
+end FixingSubgroup
+
 section Ring
 
 variable {R : Type*}
@@ -116,6 +141,12 @@ compose. -/
 theorem linear_mul_apply_one (f g : R ≃ᵃ[R] R) : (f * g).linear 1 = f.linear 1 * g.linear 1 :=
   linear_apply_eq_linear_one_mul f (g.linear 1)
 
+/-- The homothety with ratio `a` about `c` in a commutative ring is `z ↦ c + a * (z - c)`. -/
+theorem homothetyUnitsMulHom_apply_ring (c : R) (a : Rˣ) (z : R) :
+    homothetyUnitsMulHom c a z = c + a * (z - c) := by
+  rw [coe_homothetyUnitsMulHom_apply, AffineMap.homothety_apply, vsub_eq_sub, vadd_eq_add,
+    smul_eq_mul, add_comm]
+
 /-- The invertible matrix `!![a, b; 0, 1]` of an affine self-equivalence `x ↦ a * x + b` of a
 commutative ring. The matrices of affine maps multiply as the maps compose. -/
 noncomputable def toGL : (R ≃ᵃ[R] R) →* GL (Fin 2) R where
@@ -138,6 +169,20 @@ theorem coe_toGL (f : R ≃ᵃ[R] R) :
   simp [toGL]
 
 end Ring
+
+section Field
+
+variable {K : Type*} [Field K]
+
+/-- An affine self-equivalence `x ↦ a * x + b` of a field with `a ≠ 1` is the homothety with ratio
+`a` about its fixed point `b / (1 - a)`. -/
+theorem eq_homothetyUnitsMulHom_of_linear_one_ne_one (f : K ≃ᵃ[K] K) (hf : f.linear 1 ≠ 1) :
+    f = homothetyUnitsMulHom (f 0 / (1 - f.linear 1)) (Units.mk0 _ f.linear_one_ne_zero) := by
+  ext z
+  rw [homothetyUnitsMulHom_apply_ring, Units.val_mk0, f.apply_eq_linear_one_mul_add]
+  linear_combination -div_mul_cancel₀ (f 0) (sub_ne_zero.2 hf.symm)
+
+end Field
 
 end AffineEquiv
 
