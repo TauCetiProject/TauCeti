@@ -433,6 +433,13 @@ theorem mem_range_toDirichletCharacter_iff
       refine ⟨((ratDirichletEquiv _ (NeZero.ne _)).symm χ).induced hmod, ?_⟩
       rw [toDirichletCharacter_def, induced_trans, induced_refl, MulEquiv.apply_symm_apply]
 
+private theorem conductor_finitePart_eq_iff_isPrimitive (ψ : RayClassCharacter 𝔪) :
+    ψ.conductor.finitePart = 𝔪.finitePart ↔ ψ.toDirichletCharacter.IsPrimitive := by
+  rw [isPrimitive_def, conductor_toDirichletCharacter]
+  exact ⟨fun h ↦ congrArg Ideal.absNorm h, fun h ↦ by
+    rw [← Rat.RingOfIntegers.ideal_span_absNorm_eq_self ψ.conductor.finitePart,
+      ← Rat.RingOfIntegers.ideal_span_absNorm_eq_self 𝔪.finitePart, h]⟩
+
 /-- **At a modulus of `ℚ` without the real place, a ray class character is primitive exactly when
 its Dirichlet character is primitive.** -/
 theorem isPrimitive_iff_of_infinitePart_eq_empty (h : 𝔪.infinitePart = ∅)
@@ -441,29 +448,23 @@ theorem isPrimitive_iff_of_infinitePart_eq_empty (h : 𝔪.infinitePart = ∅)
   have hinf : ψ.conductor.infinitePart = 𝔪.infinitePart := by
     rw [h, ← Finset.subset_empty, ← h]
     exact (Modulus.dvd_iff.mp ψ.conductor_dvd).2
-  rw [isPrimitive_iff_conductor_eq, Modulus.ext_iff, and_iff_left hinf, isPrimitive_def,
-    conductor_toDirichletCharacter]
-  refine ⟨fun hfin ↦ congrArg Ideal.absNorm hfin, fun hnorm ↦ ?_⟩
-  rw [← Rat.RingOfIntegers.ideal_span_absNorm_eq_self ψ.conductor.finitePart,
-    ← Rat.RingOfIntegers.ideal_span_absNorm_eq_self 𝔪.finitePart, hnorm]
+  rw [isPrimitive_iff_conductor_eq, Modulus.ext_iff, and_iff_left hinf]
+  exact conductor_finitePart_eq_iff_isPrimitive ψ
 
 /-- **At a modulus of `ℚ` containing the real place, a ray class character is primitive exactly
 when its Dirichlet character is primitive and odd.** -/
 theorem isPrimitive_iff_of_infinitePart_ne_empty (h : 𝔪.infinitePart ≠ ∅)
     (ψ : RayClassCharacter 𝔪) :
     ψ.IsPrimitive ↔ ψ.toDirichletCharacter.IsPrimitive ∧ ¬ ψ.toDirichletCharacter.Even := by
-  rw [isPrimitive_iff_conductor_eq, Modulus.ext_iff, isPrimitive_def,
-    conductor_toDirichletCharacter, ← conductor_infinitePart_eq_empty_iff_even_toDirichletCharacter]
-  refine and_congr ?_ ?_
-  · refine ⟨fun hfin ↦ congrArg Ideal.absNorm hfin, fun hnorm ↦ ?_⟩
-    rw [← Rat.RingOfIntegers.ideal_span_absNorm_eq_self ψ.conductor.finitePart,
-      ← Rat.RingOfIntegers.ideal_span_absNorm_eq_self 𝔪.finitePart, hnorm]
-  · refine ⟨fun hinf h0 ↦ h (hinf ▸ h0), fun hne ↦ ?_⟩
-    obtain ⟨w, hw⟩ := Finset.ne_empty_iff_nonempty.mp hne
-    obtain ⟨v, hv⟩ := Finset.ne_empty_iff_nonempty.mp h
-    ext u
-    exact ⟨fun _ ↦ Subtype.ext (Subsingleton.elim u.val v.val) ▸ hv,
-      fun _ ↦ Subtype.ext (Subsingleton.elim u.val w.val) ▸ hw⟩
+  rw [isPrimitive_iff_conductor_eq, Modulus.ext_iff,
+    ← conductor_infinitePart_eq_empty_iff_even_toDirichletCharacter]
+  refine and_congr (conductor_finitePart_eq_iff_isPrimitive ψ) ?_
+  refine ⟨fun hinf h0 ↦ h (hinf ▸ h0), fun hne ↦ ?_⟩
+  obtain ⟨w, hw⟩ := Finset.ne_empty_iff_nonempty.mp hne
+  obtain ⟨v, hv⟩ := Finset.ne_empty_iff_nonempty.mp h
+  ext u
+  exact ⟨fun _ ↦ Subtype.ext (Subsingleton.elim u.val v.val) ▸ hv,
+    fun _ ↦ Subtype.ext (Subsingleton.elim u.val w.val) ▸ hw⟩
 
 end ArbitraryModulus
 

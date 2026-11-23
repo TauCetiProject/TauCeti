@@ -10,6 +10,7 @@ public import TauCeti.NumberTheory.LFunctions.Data.RiemannZeta
 public import TauCeti.NumberTheory.LFunctions.Zeros.Completion.Basic
 
 import Mathlib.NumberTheory.LSeries.Nonvanishing
+import TauCeti.NumberTheory.DirichletCharacter.LFunction.Completed.Basic
 import TauCeti.NumberTheory.LFunctions.Zeros.Divisor
 
 /-!
@@ -191,26 +192,17 @@ theorem analyticOrderAt_zetaEntireCompletion_eq_riemannZeta {s : ℂ} (hs : 0 < 
     rw [(differentiable_zetaEntireCompletion.analyticAt 1).analyticOrderAt_eq_zero.mpr (by simp),
       analyticOrderAt_of_not_analyticAt hnot]
   · have hs0 : s ≠ 0 := by rintro rfl; simp at hs
-    have hΓ : AnalyticAt ℂ Gammaℝ s := by
-      simpa only [Pi.inv_def, inv_inv] using
-        (differentiable_Gammaℝ_inv.analyticAt s).inv (inv_ne_zero (Gammaℝ_ne_zero_of_re_pos hs))
-    let c : ℂ → ℂ := fun z ↦ z * (z - 1) * Gammaℝ z
-    have hc : AnalyticAt ℂ c s :=
-      (analyticAt_id.mul (analyticAt_id.sub analyticAt_const)).mul hΓ
-    have hc0 : c s ≠ 0 :=
-      mul_ne_zero (mul_ne_zero hs0 (sub_ne_zero.mpr hs1)) (Gammaℝ_ne_zero_of_re_pos hs)
-    have he : zetaEntireCompletion =ᶠ[𝓝 s] c * riemannZeta := by
-      have hopen : IsOpen {z : ℂ | 0 < z.re ∧ z ≠ 1} :=
-        (isOpen_lt continuous_const continuous_re).inter isOpen_ne
-      filter_upwards [hopen.mem_nhds ⟨hs, hs1⟩] with z ⟨hz, hz1⟩
-      have hz0 : z ≠ 0 := by rintro rfl; simp at hz
-      dsimp only [Pi.mul_apply, c]
-      rw [zetaEntireCompletion_eq_mul hz0 hz1, riemannZeta_def_of_ne_zero hz0,
-        mul_assoc (z * (z - 1)) (Gammaℝ z)]
-      congr 1
-      exact (mul_div_cancel₀ _ (Gammaℝ_ne_zero_of_re_pos hz)).symm
-    rw [analyticOrderAt_congr he, analyticOrderAt_mul hc (analyticOn_riemannZeta s hs1),
-      hc.analyticOrderAt_eq_zero.mpr hc0, zero_add]
+    have hc : AnalyticAt ℂ (fun z : ℂ ↦ z * (z - 1)) s :=
+      analyticAt_id.mul (analyticAt_id.sub analyticAt_const)
+    have hc0 : s * (s - 1) ≠ 0 := mul_ne_zero hs0 (sub_ne_zero.mpr hs1)
+    have he : zetaEntireCompletion =ᶠ[𝓝 s] (fun z : ℂ ↦ z * (z - 1)) * completedRiemannZeta := by
+      filter_upwards [eventually_ne_nhds hs0, eventually_ne_nhds hs1] with z hz0 hz1
+      exact zetaEntireCompletion_eq_mul hz0 hz1
+    rw [analyticOrderAt_congr he, analyticOrderAt_mul hc (analyticAt_completedRiemannZeta hs0 hs1),
+      hc.analyticOrderAt_eq_zero.mpr hc0, zero_add,
+      ← DirichletCharacter.completedLFunction_modOne_eq (χ := (1 : DirichletCharacter ℂ 1)),
+      (1 : DirichletCharacter ℂ 1).analyticOrderAt_completedLFunction hs (.inl hs1),
+      DirichletCharacter.LFunction_modOne_eq]
 
 /-- On the positive half-plane away from `1`, `zetaEntireCompletion` and `riemannZeta` have the
 same divisor. -/
