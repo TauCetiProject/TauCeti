@@ -9,6 +9,7 @@ public import TauCeti.Analysis.SpecialFunctions.Erf.Basic
 public import TauCeti.Analysis.Calculus.MeanValue
 public import TauCeti.Analysis.SpecialFunctions.Sqrt
 public import Mathlib.Analysis.Real.Pi.Bounds
+import Mathlib.Tactic.NormNum.RealSqrt
 import TauCeti.Analysis.SpecialFunctions.Exp.Chord
 
 /-!
@@ -225,10 +226,7 @@ private theorem millsRatio_le_one_div_add_sqrt {x : ℝ} (hx : 0 ≤ x) :
     rwa [comparison_sqrt_candidate_eq hc y] at this
   have hE0 := le_of_tendsto_atTop_of_hasDerivAt_nonpos_imp_nonpos hx
     (fun y _ => (hEd y).continuousAt.continuousWithinAt) (fun y _ => hEd y)
-    (by
-      simp only [hcdef, ne_eq, OfNat.ofNat_ne_zero, not_false_eq_true, zero_pow, zero_add,
-        sqrt_four_div_pi]
-      norm_num [TauCeti.Real.erfc_zero])
+    (by norm_num [hcdef, sqrt_four_div_pi, TauCeti.Real.erfc_zero])
     (tendsto_comparison (Real.tendsto_div_mul_add_sqrt_sq_add_atTop 1 (by norm_num) c))
     fun y z hy hyz h => by
       have hNy : N y ≤ 0 := by

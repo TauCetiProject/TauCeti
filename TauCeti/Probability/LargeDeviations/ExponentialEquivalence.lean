@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.MeasureTheory.Constructions.BorelSpace.Basic
-public import Mathlib.Topology.MetricSpace.Thickening
 public import TauCeti.Probability.LargeDeviations.Basic
 import TauCeti.Analysis.SpecialFunctions.Log.ENNRealLog.Basic
 import TauCeti.Data.EReal.Operations
@@ -23,9 +22,10 @@ that they are more than `δ` apart decays faster than every exponential:
 The relation is symmetric, reflexive at an eventually positive inverse speed and transitive at an
 eventually bounded inverse speed; so it is an equivalence relation at an eventually positive and
 eventually bounded inverse speed. At an inverse speed tending to `0`, exponentially equivalent
-families satisfy the same large deviation principles with good rate functions; the lower bound on
-open sets transfers without goodness. This allows a principle to be transferred to truncated,
-rounded or slightly perturbed random variables.
+families satisfy the same large deviation principles with good rate functions: the lower bound on
+open sets transfers without goodness, and the upper bound on closed sets transfers for a good rate
+function. This allows a principle to be transferred to truncated, rounded or slightly perturbed
+random variables.
 
 ## Main definitions
 
@@ -44,6 +44,9 @@ rounded or slightly perturbed random variables.
 * `TauCeti.Probability.ExponentiallyEquivalent.le_liminf_map_of_isOpen`: at an inverse speed tending
   to `0`, the large deviation lower bound on open sets passes to exponentially equivalent families,
   for any rate function.
+* `TauCeti.Probability.ExponentiallyEquivalent.limsup_map_le_of_isClosed`: at an inverse speed
+  tending to `0`, the large deviation upper bound on closed sets passes to exponentially equivalent
+  families, for a good rate function.
 * `TauCeti.Probability.HasLDP.of_exponentiallyEquivalent`: at an inverse speed tending to `0`, a
   large deviation principle with a good rate function passes to exponentially equivalent families.
 
@@ -107,17 +110,15 @@ theorem ExponentiallyEquivalent.trans {Z'' : ∀ i, Ω i → X} (h : Exponential
     ExponentiallyEquivalent l ε P Z Z'' := by
   intro δ hδ
   -- If `Z i` and `Z'' i` are more than `δ` apart, one of the two pairs is more than `δ / 2` apart.
-  have hsub (i : ι) : ((ε i : ℝ) : EReal) *
-      ENNReal.log (P i {ω | ENNReal.ofReal δ < edist (Z i ω) (Z'' i ω)}) ≤
-      ((ε i : ℝ) : EReal) * ENNReal.log (P i {ω | ENNReal.ofReal (δ / 2) < edist (Z i ω) (Z' i ω)} +
-        P i {ω | ENNReal.ofReal (δ / 2) < edist (Z' i ω) (Z'' i ω)}) := by
-    refine ENNReal.coe_mul_log_monotone (ε i)
-      ((measure_mono fun ω hω => ?_).trans (measure_union_le _ _))
+  have hsub (i : ι) : P i {ω | ENNReal.ofReal δ < edist (Z i ω) (Z'' i ω)} ≤
+      P i {ω | ENNReal.ofReal (δ / 2) < edist (Z i ω) (Z' i ω)} +
+        P i {ω | ENNReal.ofReal (δ / 2) < edist (Z' i ω) (Z'' i ω)} := by
+    refine (measure_mono fun ω hω => ?_).trans (measure_union_le _ _)
     simp only [Set.mem_union, Set.mem_ofPred_eq] at hω ⊢
     by_contra! hd
     refine hω.not_ge ((edist_triangle _ (Z' i ω) _).trans ((add_le_add hd.1 hd.2).trans_eq ?_))
     rw [← ENNReal.ofReal_add (half_pos hδ).le (half_pos hδ).le, add_halves]
-  exact le_bot_iff.1 ((limsup_le_limsup (.of_forall hsub)).trans_eq
+  exact le_bot_iff.1 ((ENNReal.limsup_coe_mul_log_mono (.of_forall hsub)).trans_eq
     (ENNReal.limsup_coe_mul_log_add_eq_bot hε (h _ (half_pos hδ)) (h' _ (half_pos hδ))))
 
 /-- Random variables that, eventually along `l`, are almost surely within every positive
@@ -130,7 +131,7 @@ theorem ExponentiallyEquivalent.of_eventually_ae_edist_le
   refine (limsup_congr ?_).trans limsup_const_bot
   filter_upwards [hpos, h δ hδ] with i hi hδi
   have hnull : P i {ω | ENNReal.ofReal δ < edist (Z i ω) (Z' i ω)} = 0 :=
-    measure_eq_zero_iff_ae_notMem.2 (hδi.mono fun ω hω => hω.not_gt)
+    measure_eq_zero_iff_ae_notMem.2 (hδi.mono fun ω hω => Set.notMem_ofPred_iff.2 hω.not_gt)
   simpa [hnull] using EReal.mul_bot_of_pos (by exact_mod_cast hi)
 
 /-- Exponential equivalence is reflexive at an eventually positive inverse speed. -/
@@ -157,12 +158,9 @@ private theorem ExponentiallyEquivalent.neg_le_liminf_map (he : ExponentiallyEqu
   obtain ⟨ρ, -, hρ0, hρr⟩ := ENNReal.lt_iff_exists_real_btwn.1 (ENNReal.half_pos hr.ne')
   have hρ : 0 < ρ := ENNReal.ofReal_pos.1 hρ0
   -- A ball of radius `ρ` around `x` is caught by `G` up to an exponentially small error.
-  have hsub : ∀ᶠ i in l, ((ε i : ℝ) : EReal) *
-      ENNReal.log ((P i).map (Z i) (eball x (ENNReal.ofReal ρ))) ≤
-      ((ε i : ℝ) : EReal) * ENNReal.log ((P i).map (Z' i) G +
-        P i {ω | ENNReal.ofReal ρ < edist (Z i ω) (Z' i ω)}) := by
+  have hsub : ∀ᶠ i in l, (P i).map (Z i) (eball x (ENNReal.ofReal ρ)) ≤
+      (P i).map (Z' i) G + P i {ω | ENNReal.ofReal ρ < edist (Z i ω) (Z' i ω)} := by
     filter_upwards [hZ, hZ'] with i hZi hZ'i
-    refine ENNReal.coe_mul_log_monotone (ε i) ?_
     rw [Measure.map_apply_of_aemeasurable hZi isOpen_eball.measurableSet,
       Measure.map_apply_of_aemeasurable hZ'i hG.measurableSet]
     refine (measure_mono fun ω hω => ?_).trans (measure_union_le _ _)
@@ -183,7 +181,7 @@ private theorem ExponentiallyEquivalent.neg_le_liminf_map (he : ExponentiallyEqu
           ENNReal.log ((P i).map (Z i) (eball x (ENNReal.ofReal ρ)))) l := hlower _ isOpen_eball
     _ ≤ liminf (fun i => ((ε i : ℝ) : EReal) * ENNReal.log ((P i).map (Z' i) G +
           P i {ω | ENNReal.ofReal ρ < edist (Z i ω) (Z' i ω)})) l :=
-        liminf_le_liminf hsub
+        ENNReal.liminf_coe_mul_log_mono hsub
     _ ≤ _ := by
       have := ENNReal.liminf_coe_mul_log_add_le (fun i => (P i).map (Z' i) G)
         (fun i => P i {ω | ENNReal.ofReal ρ < edist (Z i ω) (Z' i ω)}) hε
@@ -201,39 +199,43 @@ theorem ExponentiallyEquivalent.le_liminf_map_of_isOpen (he : ExponentiallyEquiv
     {G : Set X} (hG : IsOpen G) :
     -((⨅ x ∈ G, I x : ℝ≥0∞) : EReal) ≤
       liminf (fun i => ((ε i : ℝ) : EReal) * ENNReal.log ((P i).map (Z' i) G)) l :=
-  EReal.neg_coe_ennreal_biInf_le_iff.2 fun _ hx => he.neg_le_liminf_map hZ hZ' hε hlower hG hx
+  TauCeti.EReal.neg_coe_ennreal_biInf_le_iff.2 fun _ hx =>
+    he.neg_le_liminf_map hZ hZ' hε hlower hG hx
 
-/-- The upper bound for an exponentially equivalent family on a closed set. -/
-private theorem HasLDP.limsup_map_le_of_exponentiallyEquivalent
-    (h : HasLDP l ε (fun i => (P i).map (Z i)) I) (hI : IsGoodRateFunction I)
-    (hZ : ∀ᶠ i in l, AEMeasurable (Z i) (P i))
-    (hZ' : ∀ᶠ i in l, AEMeasurable (Z' i) (P i))
-    (he : ExponentiallyEquivalent l ε P Z Z') (hε : Tendsto ε l (𝓝 0)) {F : Set X}
-    (hF : IsClosed F) :
+/-- **Transfer of the upper bound.** At an inverse speed tending to `0`, the large deviation upper
+bound on closed sets passes from the laws of `Z i` to the laws of every exponentially equivalent
+family `Z' i`, with the same good rate function `I`. -/
+theorem ExponentiallyEquivalent.limsup_map_le_of_isClosed
+    (he : ExponentiallyEquivalent l ε P Z Z') (hZ : ∀ᶠ i in l, AEMeasurable (Z i) (P i))
+    (hZ' : ∀ᶠ i in l, AEMeasurable (Z' i) (P i)) (hε : Tendsto ε l (𝓝 0))
+    (hI : IsGoodRateFunction I)
+    (hupper : ∀ F : Set X, IsClosed F →
+      limsup (fun i => ((ε i : ℝ) : EReal) * ENNReal.log ((P i).map (Z i) F)) l ≤
+        -((⨅ x ∈ F, I x : ℝ≥0∞) : EReal))
+    {F : Set X} (hF : IsClosed F) :
     limsup (fun i => ((ε i : ℝ) : EReal) * ENNReal.log ((P i).map (Z' i) F)) l ≤
       -((⨅ x ∈ F, I x : ℝ≥0∞) : EReal) := by
   refine le_of_forall_gt fun c hc => ?_
   obtain ⟨δ, hδ, hδc⟩ := hI.exists_neg_coe_biInf_cthickening_lt hF hc
   -- Up to an exponentially small error, `F` is caught by the thickening `cthickening δ F`.
-  have hsub : ∀ᶠ i in l, ((ε i : ℝ) : EReal) * ENNReal.log ((P i).map (Z' i) F) ≤
-      ((ε i : ℝ) : EReal) * ENNReal.log ((P i).map (Z i) (cthickening δ F) +
-        P i {ω | ENNReal.ofReal δ < edist (Z i ω) (Z' i ω)}) := by
+  have hsub : ∀ᶠ i in l, (P i).map (Z' i) F ≤
+      (P i).map (Z i) (cthickening δ F) + P i {ω | ENNReal.ofReal δ < edist (Z i ω) (Z' i ω)} := by
     filter_upwards [hZ, hZ'] with i hZi hZ'i
-    refine ENNReal.coe_mul_log_monotone (ε i) ?_
     rw [Measure.map_apply_of_aemeasurable hZ'i hF.measurableSet,
       Measure.map_apply_of_aemeasurable hZi isClosed_cthickening.measurableSet]
     refine (measure_mono fun ω hω => ?_).trans (measure_union_le _ _)
+    simp only [Set.mem_union, Set.mem_preimage, Set.mem_ofPred_eq] at hω ⊢
     by_cases hd : ENNReal.ofReal δ < edist (Z i ω) (Z' i ω)
     · exact Or.inr hd
     · exact Or.inl (mem_cthickening_of_edist_le _ _ δ F hω (not_lt.1 hd))
   calc limsup (fun i => ((ε i : ℝ) : EReal) * ENNReal.log ((P i).map (Z' i) F)) l
       ≤ limsup (fun i => ((ε i : ℝ) : EReal) * ENNReal.log ((P i).map (Z i) (cthickening δ F) +
           P i {ω | ENNReal.ofReal δ < edist (Z i ω) (Z' i ω)})) l :=
-        limsup_le_limsup hsub
+        ENNReal.limsup_coe_mul_log_mono hsub
     _ ≤ limsup (fun i => ((ε i : ℝ) : EReal) *
           ENNReal.log ((P i).map (Z i) (cthickening δ F))) l := by
       rw [ENNReal.limsup_coe_mul_log_add _ _ hε, he δ hδ, max_bot_right]
-    _ ≤ -((⨅ x ∈ cthickening δ F, I x : ℝ≥0∞) : EReal) := h.upper_bound _ isClosed_cthickening
+    _ ≤ -((⨅ x ∈ cthickening δ F, I x : ℝ≥0∞) : EReal) := hupper _ isClosed_cthickening
     _ < c := hδc
 
 /-- **Exponential equivalence.** If the laws of `Z i` satisfy a large deviation principle with a
@@ -245,6 +247,6 @@ theorem HasLDP.of_exponentiallyEquivalent (h : HasLDP l ε (fun i => (P i).map (
     (hε : Tendsto ε l (𝓝 0)) :
     HasLDP l ε (fun i => (P i).map (Z' i)) I :=
   ⟨h.lowerSemicontinuous, fun _ hG => he.le_liminf_map_of_isOpen hZ hZ' hε h.lower_bound hG,
-    fun _ hF => h.limsup_map_le_of_exponentiallyEquivalent hI hZ hZ' he hε hF⟩
+    fun _ hF => he.limsup_map_le_of_isClosed hZ hZ' hε hI h.upper_bound hF⟩
 
 end TauCeti.Probability

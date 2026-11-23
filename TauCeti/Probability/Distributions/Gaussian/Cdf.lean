@@ -401,18 +401,18 @@ theorem measureReal_gaussianReal_abs_sub_ge_le (m : ℝ) (v : ℝ≥0) {t : ℝ}
     ext x
     simp only [mem_ofPred_eq, mem_Iic]
     constructor <;> intro h <;> linarith
-  have hlow : (gaussianReal m v).real (Iic (m - t)) = Real.erfc (t / √(2 * (v : ℝ))) / 2 := by
-    rw [← cdf_eq_real, cdf_gaussianReal_eq m hv, sub_sub_cancel_left, neg_div, Real.erf_neg,
-      Real.erfc_def]
-    ring
   have hup : (gaussianReal m v).real (Ici (m + t)) = Real.erfc (t / √(2 * (v : ℝ))) / 2 := by
     rw [← measureReal_congr (Ioi_ae_eq_Ici (μ := gaussianReal m v)),
       measureReal_Ioi_gaussianReal m hv, add_sub_cancel_left]
+  -- By symmetry about the mean, both tails are `Φ (-t / √v)`.
+  have hlow : (gaussianReal m v).real (Iic (m - t)) = (gaussianReal m v).real (Ici (m + t)) := by
+    rw [← cdf_eq_real, cdf_gaussianReal_eq_cdf_zero_one m hv,
+      measureReal_Ici_gaussianReal_eq_cdf m hv, sub_sub_cancel_left, sub_add_cancel_left]
   calc (gaussianReal m v).real {x | t ≤ |x - m|}
       ≤ (gaussianReal m v).real {x | t ≤ x - m} + (gaussianReal m v).real {x | t ≤ -(x - m)} :=
         TauCeti.measureReal_le_abs_le_add
     _ = Real.erfc (t / √(2 * (v : ℝ))) := by
-      rw [hup_eq, hlow_eq, hup, hlow]
+      rw [hup_eq, hlow_eq, hlow, hup]
       ring
     _ ≤ Real.exp (-t ^ 2 / (2 * v)) := by
       refine (Real.erfc_le_exp_neg_sq (by positivity)).trans_eq ?_

@@ -13,6 +13,7 @@ import TauCeti.Analysis.SpecialFunctions.Log.ENNRealLog.Basic
 import TauCeti.Data.EReal.Operations
 import TauCeti.Probability.Distributions.Gaussian.Cdf
 import TauCeti.Probability.Distributions.Gaussian.PDF
+import TauCeti.Probability.Distributions.Gaussian.SmallBall
 import TauCeti.Probability.Distributions.Gaussian.Sum.Real
 
 /-!
@@ -62,7 +63,7 @@ theorem limsup_coe_mul_log_gaussianReal_le (m : ℝ) (v : ℝ≥0) (hpos : ∀�
     (A : Set ℝ) :
     limsup (fun i => ((ε i : ℝ) : EReal) * ENNReal.log (gaussianReal m (ε i * v) A)) l ≤
       -((⨅ x ∈ A, ENNReal.ofReal ((x - m) ^ 2 / (2 * v)) : ℝ≥0∞) : EReal) := by
-  refine EReal.le_neg_coe_ennreal_of_forall_ofReal_le fun s hs => ?_
+  refine TauCeti.EReal.le_neg_coe_ennreal_of_forall_ofReal_le fun s hs => ?_
   -- Every point of `A` has rate at least `s`.
   have hA (x : ℝ) (hx : x ∈ A) : s ≤ (x - m) ^ 2 / (2 * v) :=
     (ENNReal.ofReal_le_ofReal_iff (by positivity)).1 (hs.trans (biInf_le _ hx))
@@ -144,8 +145,9 @@ theorem hasLDP_gaussianReal (m : ℝ) {v : ℝ≥0} (hv : v ≠ 0) (hε : Tendst
     ENNReal.continuous_ofReal.comp (by fun_prop)
   rcases l.eq_or_neBot with rfl | hl
   · exact ⟨hcont.lowerSemicontinuous, fun _ _ => by simp, fun _ _ => by simp⟩
-  exact ⟨hcont.lowerSemicontinuous, fun G hG => EReal.neg_coe_ennreal_biInf_le_iff.2 fun x hx =>
-    neg_le_liminf_coe_mul_log_gaussianReal m hv hε hpos (hG.mem_nhds hx),
+  exact ⟨hcont.lowerSemicontinuous,
+    fun G hG => TauCeti.EReal.neg_coe_ennreal_biInf_le_iff.2 fun x hx =>
+      neg_le_liminf_coe_mul_log_gaussianReal m hv hε hpos (hG.mem_nhds hx),
     fun F _ => limsup_coe_mul_log_gaussianReal_le m v hpos F⟩
 
 /-- At an eventually positive inverse speed `ε`, the Gaussian laws `gaussianReal m (ε i * v)` are

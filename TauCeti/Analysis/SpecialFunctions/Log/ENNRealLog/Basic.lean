@@ -21,8 +21,8 @@ logarithms `ε i * log (u i)` are the logarithms of the upper and lower limits o
 * `TauCeti.ENNReal.coe_mul_log_monotone`: the scaled logarithm is monotone.
 * `TauCeti.ENNReal.limsup_coe_mul_log`, `TauCeti.ENNReal.liminf_coe_mul_log`: the upper and lower
   limits of scaled logarithms as logarithms of upper and lower limits of powers.
-* `TauCeti.ENNReal.limsup_coe_mul_log_mono`: the upper limit of scaled logarithms is monotone in
-  the sequence.
+* `TauCeti.ENNReal.limsup_coe_mul_log_mono`, `TauCeti.ENNReal.liminf_coe_mul_log_mono`: the upper
+  and lower limits of scaled logarithms are monotone in the sequence.
 -/
 
 public section
@@ -59,5 +59,12 @@ theorem limsup_coe_mul_log_mono {u v : ι → ℝ≥0∞} (h : ∀ᶠ i in l, u 
     limsup (fun i => ((ε i : ℝ) : EReal) * ENNReal.log (u i)) l ≤
       limsup (fun i => ((ε i : ℝ) : EReal) * ENNReal.log (v i)) l :=
   limsup_le_limsup (h.mono fun i hi => coe_mul_log_monotone (ε i) hi)
+
+/-- The lower limit of `ε i * log (u i)` is monotone in `u`: an eventual inequality `u ≤ v`
+along `l` suffices. -/
+theorem liminf_coe_mul_log_mono {u v : ι → ℝ≥0∞} (h : ∀ᶠ i in l, u i ≤ v i) :
+    liminf (fun i => ((ε i : ℝ) : EReal) * ENNReal.log (u i)) l ≤
+      liminf (fun i => ((ε i : ℝ) : EReal) * ENNReal.log (v i)) l :=
+  liminf_le_liminf (h.mono fun i hi => coe_mul_log_monotone (ε i) hi)
 
 end TauCeti.ENNReal

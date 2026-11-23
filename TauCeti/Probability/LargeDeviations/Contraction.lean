@@ -63,7 +63,7 @@ theorem exists_eq_contractedRate (hI : IsGoodRateFunction I) (hf : Continuous f)
     (hy : contractedRate f I y ≠ ∞) : ∃ x, f x = y ∧ I x = contractedRate f I y := by
   rw [contractedRate_apply] at hy ⊢
   obtain ⟨x, hx, hxI⟩ := hI.exists_eq_biInf (isClosed_singleton.preimage hf) hy
-  exact ⟨x, hx, hxI⟩
+  exact ⟨x, Set.mem_singleton_iff.1 (Set.mem_preimage.1 hx), hxI⟩
 
 /-- A finite sublevel set of the contracted rate is the image of the corresponding sublevel set
 of the original rate. -/

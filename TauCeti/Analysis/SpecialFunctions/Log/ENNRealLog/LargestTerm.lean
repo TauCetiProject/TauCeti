@@ -7,9 +7,9 @@ module
 
 public import Mathlib.Analysis.SpecialFunctions.Log.ENNRealLogExp
 public import Mathlib.Order.Filter.ENNReal
-import Mathlib.Analysis.SpecialFunctions.Pow.Continuity
 import Mathlib.Topology.Instances.ENNReal.Lemmas
 import TauCeti.Analysis.SpecialFunctions.Log.ENNRealLog.Basic
+import TauCeti.Analysis.SpecialFunctions.Pow.NNReal
 import TauCeti.Order.LiminfLimsup
 
 /-!
@@ -51,32 +51,19 @@ namespace TauCeti.ENNReal
 
 variable {ι : Type*} {l : Filter ι} {ε : ι → ℝ≥0}
 
-private theorem tendsto_two_rpow (hε : Tendsto ε l (𝓝 0)) :
-    Tendsto (fun i => (2 : ℝ≥0∞) ^ (ε i : ℝ)) l (𝓝 1) := by
-  have h : Tendsto (fun i => (2 : ℝ) ^ (ε i : ℝ)) l (𝓝 1) := by
-    have := ((Real.continuous_const_rpow (a := 2) (by norm_num)).tendsto 0).comp
-      (NNReal.tendsto_coe.2 hε)
-    simpa [Function.comp_def] using this
-  have h2 := ENNReal.tendsto_ofReal h
-  rw [ENNReal.ofReal_one] at h2
-  refine h2.congr fun i => ?_
-  rw [← ENNReal.ofReal_rpow_of_pos two_pos, ENNReal.ofReal_ofNat]
-
-/-- The power of a doubled term, `(w + w) ^ e = 2 ^ e * w ^ e`, the form in which the doubling
-estimates below control the sum of two terms by twice the larger. -/
-private theorem add_self_rpow (w : ℝ≥0∞) (e : ℝ≥0) :
-    (w + w) ^ (e : ℝ) = 2 ^ (e : ℝ) * w ^ (e : ℝ) := by
-  rw [← two_mul, ENNReal.mul_rpow_of_nonneg _ _ e.coe_nonneg]
-
 /-- At an inverse speed tending to `0`, doubling a sequence does not raise its limsup rate. -/
 private theorem limsup_coe_mul_log_add_self_le (hε : Tendsto ε l (𝓝 0)) (w : ι → ℝ≥0∞) :
     limsup (fun i => ((ε i : ℝ) : EReal) * ENNReal.log (w i + w i)) l ≤
       limsup (fun i => ((ε i : ℝ) : EReal) * ENNReal.log (w i)) l := by
   rcases l.eq_or_neBot with rfl | hl
   · simp
-  have h1 := (tendsto_two_rpow hε).limsup_eq
+  -- The factor `2 ^ ε i` tends to `1`.
+  have h1 : limsup (fun i => (2 : ℝ≥0∞) ^ (ε i : ℝ)) l = 1 := by
+    simpa [Function.comp_def] using
+      (((ENNReal.continuous_const_rpow two_ne_zero ENNReal.ofNat_ne_top).tendsto 0).comp
+      (NNReal.tendsto_coe.2 hε)).limsup_eq
   rw [limsup_coe_mul_log, limsup_coe_mul_log, ENNReal.log_le_log_iff]
-  simp only [add_self_rpow]
+  simp only [ENNReal.add_self_rpow]
   calc limsup (fun i => 2 ^ (ε i : ℝ) * w i ^ (ε i : ℝ)) l
       ≤ limsup (fun i => (2 : ℝ≥0∞) ^ (ε i : ℝ)) l * limsup (fun i => w i ^ (ε i : ℝ)) l :=
         ENNReal.limsup_mul_le' (by simp [h1]) (by simp [h1])
@@ -88,9 +75,13 @@ private theorem liminf_coe_mul_log_add_self_le (hε : Tendsto ε l (𝓝 0)) (w 
       liminf (fun i => ((ε i : ℝ) : EReal) * ENNReal.log (w i)) l := by
   rcases l.eq_or_neBot with rfl | hl
   · simp
-  have h1 := (tendsto_two_rpow hε).limsup_eq
+  -- The factor `2 ^ ε i` tends to `1`.
+  have h1 : limsup (fun i => (2 : ℝ≥0∞) ^ (ε i : ℝ)) l = 1 := by
+    simpa [Function.comp_def] using
+      (((ENNReal.continuous_const_rpow two_ne_zero ENNReal.ofNat_ne_top).tendsto 0).comp
+      (NNReal.tendsto_coe.2 hε)).limsup_eq
   rw [liminf_coe_mul_log, liminf_coe_mul_log, ENNReal.log_le_log_iff]
-  simp only [add_self_rpow]
+  simp only [ENNReal.add_self_rpow]
   calc liminf (fun i => 2 ^ (ε i : ℝ) * w i ^ (ε i : ℝ)) l
       ≤ limsup (fun i => (2 : ℝ≥0∞) ^ (ε i : ℝ)) l * liminf (fun i => w i ^ (ε i : ℝ)) l :=
         ENNReal.liminf_mul_le (by simp [h1]) (by simp [h1])
@@ -126,8 +117,8 @@ theorem liminf_coe_mul_log_add_le (u v : ι → ℝ≥0∞) (hε : Tendsto ε l 
   calc liminf (fun i => ((ε i : ℝ) : EReal) * ENNReal.log (u i + v i)) l
       ≤ liminf (fun i => ((ε i : ℝ) : EReal) *
           ENNReal.log (max (u i) (v i) + max (u i) (v i))) l :=
-        liminf_le_liminf (.of_forall fun i => coe_mul_log_monotone (ε i)
-          (add_le_add (le_max_left _ _) (le_max_right _ _)))
+        liminf_coe_mul_log_mono
+          (.of_forall fun i => add_le_add (le_max_left _ _) (le_max_right _ _))
     _ ≤ liminf (fun i => ((ε i : ℝ) : EReal) * ENNReal.log (max (u i) (v i))) l :=
         liminf_coe_mul_log_add_self_le hε _
     _ = liminf (fun i => max (((ε i : ℝ) : EReal) * ENNReal.log (u i))
@@ -154,7 +145,7 @@ theorem limsup_coe_mul_log_add_eq_bot {u v : ι → ℝ≥0∞} (hε : IsBounded
       ≤ limsup (fun i => 2 ^ (B : ℝ) * max (u i) (v i) ^ (ε i : ℝ)) l := by
         refine limsup_le_limsup ?_
         filter_upwards [hB] with i hi
-        rw [add_self_rpow]
+        rw [ENNReal.add_self_rpow]
         gcongr
         · norm_num
         · exact_mod_cast hi

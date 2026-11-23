@@ -36,6 +36,10 @@ measures and extreme eigenvalues of Gaussian ensembles are proved.
 
 ## Main results
 
+* `TauCeti.Probability.HasWeakLDP.eventually_pos`: the inverse speed of a weak principle is
+  eventually positive.
+* `TauCeti.Probability.HasWeakLDP.congr`, `TauCeti.Probability.IsExponentiallyTight.congr`: weak
+  principles and exponential tightness depend only on the measures eventually along the filter.
 * `TauCeti.Probability.HasLDP.hasWeakLDP`: in an `R₁` space a large deviation principle is a weak
   one.
 * `TauCeti.Probability.IsExponentiallyTight.limsup_le_of_isClosed`: under exponential tightness
@@ -92,6 +96,29 @@ theorem isExponentiallyTight_iff : IsExponentiallyTight l ε μ ↔ ∀ L : ℝ,
     IsCompact K ∧ limsup (fun i => ((ε i : ℝ) : EReal) * ENNReal.log (μ i Kᶜ)) l ≤ -(L : EReal) :=
   Iff.rfl
 
+/-- A weak large deviation principle forces the inverse speed to be eventually positive: at a zero
+inverse speed the empty set would have rate `0` instead of `⊥`. -/
+theorem HasWeakLDP.eventually_pos (h : HasWeakLDP l ε μ I) : ∀ᶠ i in l, 0 < ε i :=
+  eventually_pos_of_limsup_coe_mul_log_empty_eq_bot <| le_bot_iff.1 <|
+    (h.upper_bound ∅ isCompact_empty).trans_eq (by simp)
+
+/-- A weak large deviation principle depends only on the measures eventually along `l`: it passes
+to every family `ν` with `μ i = ν i` eventually. -/
+theorem HasWeakLDP.congr {ν : ι → Measure X} (h : HasWeakLDP l ε μ I) (hμν : μ =ᶠ[l] ν) :
+    HasWeakLDP l ε ν I :=
+  ⟨h.lowerSemicontinuous,
+    fun G hG => (h.lower_bound G hG).trans_eq (liminf_congr (hμν.mono fun i hi => by rw [hi])),
+    fun K hK => (limsup_congr (hμν.mono fun i hi => by rw [hi])).symm.trans_le
+      (h.upper_bound K hK)⟩
+
+/-- Exponential tightness depends only on the measures eventually along `l`: it passes to every
+family `ν` with `μ i = ν i` eventually. -/
+theorem IsExponentiallyTight.congr {ν : ι → Measure X} (h : IsExponentiallyTight l ε μ)
+    (hμν : μ =ᶠ[l] ν) : IsExponentiallyTight l ε ν := by
+  intro L
+  obtain ⟨K, hK, hKL⟩ := h L
+  exact ⟨K, hK, (limsup_congr (hμν.mono fun i hi => by rw [hi])).symm.trans_le hKL⟩
+
 /-- In an `R₁` space, for instance a Hausdorff space, a large deviation principle is a weak one. -/
 theorem HasLDP.hasWeakLDP [R1Space X] (h : HasLDP l ε μ I) : HasWeakLDP l ε μ I := by
   refine ⟨h.lowerSemicontinuous, h.lower_bound, fun K hK => ?_⟩
@@ -103,8 +130,7 @@ theorem HasLDP.hasWeakLDP [R1Space X] (h : HasLDP l ε μ I) : HasWeakLDP l ε �
         (fun y hy => hc.trans_le (biInf_le _ hy)) hx
   calc limsup (fun i => ((ε i : ℝ) : EReal) * ENNReal.log (μ i K)) l
       ≤ limsup (fun i => ((ε i : ℝ) : EReal) * ENNReal.log (μ i (closure K))) l :=
-        limsup_le_limsup (.of_forall fun i =>
-          ENNReal.coe_mul_log_monotone (ε i) (measure_mono subset_closure))
+        ENNReal.limsup_coe_mul_log_mono (.of_forall fun i => measure_mono subset_closure)
     _ ≤ -((⨅ x ∈ closure K, I x : ℝ≥0∞) : EReal) := h.upper_bound _ isClosed_closure
     _ ≤ -((⨅ x ∈ K, I x : ℝ≥0∞) : EReal) :=
         EReal.neg_le_neg_iff.2 (EReal.coe_ennreal_le_coe_ennreal_iff.2 hinf)
@@ -126,16 +152,15 @@ theorem limsup_le_of_isClosed (ht : IsExponentiallyTight l ε μ) (hε : Tendsto
     exact ⟨-y, by simpa using hy⟩
   obtain ⟨K, hKc, hKL⟩ := ht L
   -- Split `F` into its compact part `F ∩ K` and the exponentially small remainder `Kᶜ`.
-  have hsplit (i : ι) : ((ε i : ℝ) : EReal) * ENNReal.log (μ i F) ≤
-      ((ε i : ℝ) : EReal) * ENNReal.log (μ i (F ∩ K) + μ i Kᶜ) :=
-    ENNReal.coe_mul_log_monotone (ε i) <| (measure_le_inter_add_sdiff (μ i) F K).trans
+  have hsplit (i : ι) : μ i F ≤ μ i (F ∩ K) + μ i Kᶜ :=
+    (measure_le_inter_add_sdiff (μ i) F K).trans
       (add_le_add le_rfl (measure_mono (Set.sdiff_subset_compl F K)))
   have hFK : -((⨅ x ∈ F ∩ K, I x : ℝ≥0∞) : EReal) ≤ -((⨅ x ∈ F, I x : ℝ≥0∞) : EReal) :=
     EReal.neg_le_neg_iff.2 <| EReal.coe_ennreal_le_coe_ennreal_iff.2 <|
       biInf_mono fun _ hx => hx.1
   calc limsup (fun i => ((ε i : ℝ) : EReal) * ENNReal.log (μ i F)) l
       ≤ limsup (fun i => ((ε i : ℝ) : EReal) * ENNReal.log (μ i (F ∩ K) + μ i Kᶜ)) l :=
-        limsup_le_limsup (.of_forall hsplit)
+        ENNReal.limsup_coe_mul_log_mono (.of_forall hsplit)
     _ ≤ max (limsup (fun i => ((ε i : ℝ) : EReal) * ENNReal.log (μ i (F ∩ K))) l)
           (limsup (fun i => ((ε i : ℝ) : EReal) * ENNReal.log (μ i Kᶜ)) l) :=
         (ENNReal.limsup_coe_mul_log_add _ _ hε).le
@@ -155,8 +180,8 @@ theorem isGoodRateFunction [R1Space X] [l.NeBot] (ht : IsExponentiallyTight l ε
   -- The lower bound on the open set `(closure K)ᶜ` forces `I > α` off the compact `closure K`.
   have hKL' : limsup (fun i => ((ε i : ℝ) : EReal) * ENNReal.log (μ i (closure K)ᶜ)) l ≤
       -((α.toReal + 1 : ℝ) : EReal) :=
-    (limsup_le_limsup (.of_forall fun i => ENNReal.coe_mul_log_monotone (ε i)
-      (measure_mono (Set.compl_subset_compl.2 subset_closure)))).trans hKL
+    (ENNReal.limsup_coe_mul_log_mono (.of_forall fun i =>
+      measure_mono (Set.compl_subset_compl.2 subset_closure))).trans hKL
   have hrate : ((α.toReal + 1 : ℝ) : EReal) ≤ ((⨅ x ∈ (closure K)ᶜ, I x : ℝ≥0∞) : EReal) :=
     EReal.neg_le_neg_iff.1 <|
       ((hlower _ isClosed_closure.isOpen_compl).trans liminf_le_limsup).trans hKL'
@@ -165,7 +190,7 @@ theorem isGoodRateFunction [R1Space X] [l.NeBot] (ht : IsExponentiallyTight l ε
     have hle : ((α.toReal + 1 : ℝ) : EReal) ≤ ((α.toReal : ℝ) : EReal) := by
       refine hrate.trans ?_
       rw [EReal.coe_ennreal_toReal hα]
-      exact EReal.coe_ennreal_le_coe_ennreal_iff.2 ((biInf_le _ hxK).trans hx)
+      exact EReal.coe_ennreal_le_coe_ennreal_iff.2 ((biInf_le _ hxK).trans (Set.mem_ofPred.1 hx))
     linarith [EReal.coe_le_coe_iff.1 hle]
   exact hK.closure.of_isClosed_subset (hI.isClosed_preimage α) hsub
 
@@ -200,7 +225,7 @@ theorem hasWeakLDP_of_forall_nhds
     (hI : LowerSemicontinuous I) (hε : Tendsto ε l (𝓝 0)) (hpos : ∀ᶠ i in l, 0 < ε i) :
     HasWeakLDP l ε μ I := by
   refine ⟨hI, fun G hG => ?_, fun K hK => le_of_forall_gt fun c hc => ?_⟩
-  · exact EReal.neg_coe_ennreal_biInf_le_iff.2 fun x hx => hlower x G (hG.mem_nhds hx)
+  · exact TauCeti.EReal.neg_coe_ennreal_biInf_le_iff.2 fun x hx => hlower x G (hG.mem_nhds hx)
   -- Cover `K` by finitely many neighbourhoods whose rates are below `c`.
   have hU (x : X) (hx : x ∈ K) : ∃ U ∈ 𝓝 x,
       limsup (fun i => ((ε i : ℝ) : EReal) * ENNReal.log (μ i U)) l < c := by
@@ -209,12 +234,11 @@ theorem hasWeakLDP_of_forall_nhds
     simpa only [iInf_lt_iff, exists_prop] using (hupper x).trans_lt hxc
   choose! U hUx hUc using hU
   obtain ⟨t, htK, hKt⟩ := hK.elim_nhds_subcover U hUx
-  have hcover (i : ι) : ((ε i : ℝ) : EReal) * ENNReal.log (μ i K) ≤
-      ((ε i : ℝ) : EReal) * ENNReal.log (∑ x ∈ t, μ i (U x)) :=
-    ENNReal.coe_mul_log_monotone (ε i) ((measure_mono hKt).trans (measure_biUnion_finset_le t U))
+  have hcover (i : ι) : μ i K ≤ ∑ x ∈ t, μ i (U x) :=
+    (measure_mono hKt).trans (measure_biUnion_finset_le t U)
   calc limsup (fun i => ((ε i : ℝ) : EReal) * ENNReal.log (μ i K)) l
       ≤ limsup (fun i => ((ε i : ℝ) : EReal) * ENNReal.log (∑ x ∈ t, μ i (U x))) l :=
-        limsup_le_limsup (.of_forall hcover)
+        ENNReal.limsup_coe_mul_log_mono (.of_forall hcover)
     _ ≤ ⨆ x ∈ t, limsup (fun i => ((ε i : ℝ) : EReal) * ENNReal.log (μ i (U x))) l :=
         (ENNReal.limsup_coe_mul_log_sum _ t hε hpos).le
     _ < c := by
