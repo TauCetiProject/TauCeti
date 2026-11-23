@@ -17,8 +17,9 @@ This file records small generic additions to Mathlib's `Setoid` API.
 
 * `TauCeti.Setoid.map_of_le_mk`: the quotient map induced by a setoid inequality sends a
   representative to the same representative in the larger quotient.
-* `Setoid.comapValQuotientEquiv` and `Setoid.coe_comapValQuotientEquiv_mk`: the restriction of `s`
-  to `K` is in bijection with `Quotient.mk s '' K`, sending `⟦x⟧` to `Quotient.mk s x.val`.
+* `Setoid.comapValQuotientEquiv`, `Setoid.coe_comapValQuotientEquiv_mk`, and
+  `Setoid.comapValQuotientEquiv_symm_mk`: the restriction of `s` to `K` is in bijection with
+  `Quotient.mk s '' K`, sending `⟦x⟧` to `Quotient.mk s x.val` and back.
 * `Setoid.ofPred_rel_eq_iff`: two elements have the same class exactly when they are related.
 * `Setoid.map_of_le_surjective`: the quotient map induced by a setoid inequality is surjective.
 * `Setoid.preimage_image_quotientMk_eq_relPreimage` and `Setoid.preimage_image_quotientMk`: the
@@ -59,6 +60,14 @@ in `Quotient s`. -/
 theorem coe_comapValQuotientEquiv_mk {α : Type*} (s : Setoid α) (K : Set α) (x : K) :
     (comapValQuotientEquiv s K ⟦x⟧ : Quotient s) = Quotient.mk s x.val := by
   rfl
+
+/-- The inverse of `Setoid.comapValQuotientEquiv` sends the image point represented by `x : K`
+back to `⟦x⟧`. -/
+@[simp]
+theorem comapValQuotientEquiv_symm_mk {α : Type*} (s : Setoid α) (K : Set α) (x : K)
+    (hx : Quotient.mk s x.val ∈ Quotient.mk s '' K) :
+    (comapValQuotientEquiv s K).symm ⟨Quotient.mk s x.val, hx⟩ = ⟦x⟧ := by
+  simp [Equiv.symm_apply_eq, ← Subtype.coe_inj]
 
 /-- Two elements have the same class exactly when they are related. -/
 theorem ofPred_rel_eq_iff {α : Type*} {r : Setoid α} {x y : α} :

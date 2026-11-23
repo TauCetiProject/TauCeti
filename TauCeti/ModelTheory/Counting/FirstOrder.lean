@@ -67,7 +67,8 @@ Three consequences follow:
 * `TauCeti.mk_isoClasses_modelsOfTheory_nat_le_aleph_one_or_hasPerfectAntichainOn` and
   `TauCeti.mk_isoClasses_modelsOfTheory_nat_le_aleph_one_or_eq_continuum`: Morley's theorem on `ℕ`
   for arbitrary first-order theories.
-* `TauCeti.countableModelCount_conjunction_inf_infiniteSentence`,
+* `TauCeti.RelationalConfiguration.mk_quotient_isoSetoidOn_conjunction_image_toOmega`,
+  `TauCeti.RelationalConfiguration.countable_quotient_isoSetoidOn_conjunction_image_toOmega_iff`,
   `TauCeti.hasVaughtDichotomy_conjunction_inf_infiniteSentence_iff`,
   `TauCeti.hasVaughtCount_conjunction_inf_infiniteSentence_iff`,
   `TauCeti.not_countable_quotient_isoSetoid_modelsOfTheory_nat_or_hasPerfectAntichainOn_iff`,
@@ -137,6 +138,35 @@ theorem hasPerfectAntichainOn_modelsOfTheory_onTheory_iff (V : Type w) (T : L.Th
 
 end FirstOrder.Language.LEquiv
 
+namespace TauCeti.RelationalConfiguration
+
+open TauCeti
+
+variable {L : Language.{u, v}} [L.IsRelational]
+
+/-- The `L_{ω₁ω}` conjunction of a countable first-order theory `T` has the same number of
+isomorphism classes of models on `V` as `T`. -/
+@[simp]
+theorem mk_quotient_isoSetoidOn_conjunction_image_toOmega {V : Type w} {T : L.Theory}
+    (hT : (BoundedFormula.toOmega '' T).Countable) :
+    #(Quotient (isoSetoidOn V (Theoryω.conjunction (BoundedFormula.toOmega '' T) hT))) =
+      #(Quotient ((isoSetoid L V).comap (Subtype.val : modelsOfTheory T → _))) := by
+  unfold isoSetoidOn
+  rw [modelsOf_conjunction_image_toOmega hT]
+
+/-- The `L_{ω₁ω}` conjunction of a countable first-order theory `T` has countably many
+isomorphism classes of models on `V` exactly when `T` does. -/
+@[simp]
+theorem countable_quotient_isoSetoidOn_conjunction_image_toOmega_iff {V : Type w} {T : L.Theory}
+    (hT : (BoundedFormula.toOmega '' T).Countable) :
+    Countable
+        (Quotient (isoSetoidOn V (Theoryω.conjunction (BoundedFormula.toOmega '' T) hT))) ↔
+      Countable (Quotient ((isoSetoid L V).comap (Subtype.val : modelsOfTheory T → _))) := by
+  unfold isoSetoidOn
+  rw [modelsOf_conjunction_image_toOmega hT]
+
+end TauCeti.RelationalConfiguration
+
 namespace TauCeti
 
 open RelationalConfiguration
@@ -173,19 +203,6 @@ section ConjunctionReduction
 variable {L : Language.{u, v}} [L.IsRelational]
 
 /-- Conjoining the `L_{ω₁ω}` conjunction of a countable first-order theory `T` with
-`L.infiniteSentence` identifies `countableModelCount` with the number of countably infinite
-models of `T` on `ℕ` up to isomorphism. No countability hypothesis on the ambient language is
-needed. -/
-theorem countableModelCount_conjunction_inf_infiniteSentence
-    {T : L.Theory} (hT : (BoundedFormula.toOmega '' T).Countable) :
-    countableModelCount
-        (Theoryω.conjunction (BoundedFormula.toOmega '' T) hT ⊓ L.infiniteSentence) =
-      #(Quotient ((isoSetoid L ℕ).comap (Subtype.val : modelsOfTheory T → _))) := by
-  rw [countableModelCount_inf_infiniteSentence]
-  unfold isoSetoidOn
-  rw [modelsOf_conjunction_image_toOmega hT]
-
-/-- Conjoining the `L_{ω₁ω}` conjunction of a countable first-order theory `T` with
 `L.infiniteSentence` turns `HasVaughtDichotomy` into the witnessed dichotomy on `modelsOfTheory T`
 at the tier `ℕ`. No countability hypothesis on the ambient language is needed. -/
 theorem hasVaughtDichotomy_conjunction_inf_infiniteSentence_iff
@@ -194,20 +211,22 @@ theorem hasVaughtDichotomy_conjunction_inf_infiniteSentence_iff
       (Theoryω.conjunction (BoundedFormula.toOmega '' T) hT ⊓ L.infiniteSentence) ↔
         Countable (Quotient ((isoSetoid L ℕ).comap (Subtype.val : modelsOfTheory T → _))) ∨
           (isoSetoid L ℕ).HasPerfectAntichainOn (modelsOfTheory T) := by
-  rw [hasVaughtDichotomy_inf_infiniteSentence_iff]
-  unfold isoSetoidOn
-  rw [modelsOf_conjunction_image_toOmega hT]
+  simp only [hasVaughtDichotomy_inf_infiniteSentence_iff,
+    countable_quotient_isoSetoidOn_conjunction_image_toOmega_iff,
+    modelsOf_conjunction_image_toOmega]
 
 /-- Conjoining the `L_{ω₁ω}` conjunction of a countable first-order theory `T` with
 `L.infiniteSentence` turns `HasVaughtCount` into the cardinal dichotomy on `modelsOfTheory T` at
 the tier `ℕ`. No countability hypothesis on the ambient language is needed. -/
+@[simp]
 theorem hasVaughtCount_conjunction_inf_infiniteSentence_iff
     {T : L.Theory} (hT : (BoundedFormula.toOmega '' T).Countable) :
     HasVaughtCount
       (Theoryω.conjunction (BoundedFormula.toOmega '' T) hT ⊓ L.infiniteSentence) ↔
         #(Quotient ((isoSetoid L ℕ).comap (Subtype.val : modelsOfTheory T → _))) ≤ ℵ₀ ∨
           #(Quotient ((isoSetoid L ℕ).comap (Subtype.val : modelsOfTheory T → _))) = 𝔠 := by
-  rw [hasVaughtCount_iff, countableModelCount_conjunction_inf_infiniteSentence]
+  simp only [hasVaughtCount_iff, countableModelCount_inf_infiniteSentence,
+    mk_quotient_isoSetoidOn_conjunction_image_toOmega]
 
 end ConjunctionReduction
 
@@ -227,11 +246,11 @@ theorem not_countable_quotient_isoSetoid_modelsOfTheory_nat_or_hasPerfectAnticha
   have h := not_hasVaughtDichotomy_iff (φ :=
     Theoryω.conjunction (BoundedFormula.toOmega '' T) (T.to_countable.image _) ⊓
       L.infiniteSentence)
-  rw [hasVaughtDichotomy_conjunction_inf_infiniteSentence_iff,
-    countableModelCount_conjunction_inf_infiniteSentence,
+  simpa only [hasVaughtDichotomy_conjunction_inf_infiniteSentence_iff,
+    countableModelCount_inf_infiniteSentence,
+    mk_quotient_isoSetoidOn_conjunction_image_toOmega,
     hasPerfectlyManyCountableModels_inf_infiniteSentence_iff,
-    modelsOf_conjunction_image_toOmega] at h
-  exact h
+    modelsOf_conjunction_image_toOmega] using h
 
 /-- When `ℵ₁ < 𝔠`, the cardinal dichotomy on `ℕ` for a first-order theory `T` is equivalent to the
 witnessed perfect-set dichotomy on `ℕ`. -/
