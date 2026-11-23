@@ -92,10 +92,10 @@ private theorem extendByZero_cycleMatrix_mul {V : Type u} {G : SimpleGraph V}
     {m : ℕ} [NeZero m] (hm : 3 ≤ m) (c : (cycleGraph m).Copy G) (v w : V) :
     c.extendByZero (cycleMatrix k m) w v * c.extendByZero (cycleMatrix k m) v w = 0 := by
   rw [c.extendByZero_mul_extendByZero _ (mul_zero 0)]
-  -- The product family vanishes on every edge of the cycle, so its extension vanishes.
-  by_contra h
-  obtain ⟨i, j, -, -, -, h⟩ := (c.extendByZero_ne_zero_iff _).1 h
-  exact h (cycleMatrix_mul_cycleMatrix k hm i j)
+  have h : (fun i j => cycleMatrix k m j i * cycleMatrix k m i j) = 0 := by
+    funext i j
+    exact cycleMatrix_mul_cycleMatrix k hm i j
+  simp only [h, c.extendByZero_zero, Pi.zero_apply]
 
 private theorem sum_extendByZero_cycleMatrix_mul {V : Type u} {G : SimpleGraph V} [G.LocallyFinite]
     {m : ℕ} [NeZero m] (hm : 3 ≤ m) (c : (cycleGraph m).Copy G) :

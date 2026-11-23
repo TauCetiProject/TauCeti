@@ -18,10 +18,10 @@ zero to `G`: the extended family takes the value `β x y` on `(f x, f y)` for ev
 are not edges of `H`.
 
 When the values form an additive commutative monoid and carry a multiplication with
-`0 * 0 = 0` for its zero (as in any semiring), the local sums
-`∑_{w ∼ v} β w v * β v w` over the neighbours of a vertex are preserved: at a vertex `f x` of the
-copy with finitely many neighbours in `G` and `x` with finitely many neighbours in `H`, the
-extended sum is the sum of `H` at `x`. So when `H`
+`0 * 0 = 0` for its zero (as in any semiring), the local sums over the neighbours of a vertex are
+preserved for `β' = f.extendByZero β`: at a vertex `f x` of the copy with finitely many neighbours
+in `G` and `x` with finitely many neighbours in `H`, the extended sum
+`∑_{w ∼ f x} β' w (f x) * β' (f x) w` equals `∑_{y ∼ x} β y x * β x y`. So when `H`
 is locally finite and the local sums of `β` vanish at every vertex, so do those of the extension
 at every vertex of `G` with finitely many neighbours, also away from the copy. These are the
 local relations of the signless preprojective algebra: for finite graphs, extending by zero the
@@ -46,7 +46,8 @@ gives a block-matrix representation of that of `G` (`TauCeti.signlessMatrixRepre
   of a pair is the extension of the product of `β` in the two orders, when `0 * 0 = 0`.
 * `SimpleGraph.Copy.sum_extendByZero_mul_extendByZero_apply`: at a vertex `f x` of the copy with
   finitely many neighbours in `G`, where `x` has finitely many neighbours in `H`, the local sum
-  `∑_{w ∼ f x} β w (f x) * β (f x) w` of the extension is the local sum of `β` at `x`.
+  `∑_{w ∼ f x} f.extendByZero β w (f x) * f.extendByZero β (f x) w` equals
+  `∑_{y ∼ x} β y x * β x y`.
 * `SimpleGraph.Copy.sum_extendByZero_mul_extendByZero`: for locally finite `H`, the local sums
   of the extension vanish at every vertex of `G` with finitely many neighbours when those of the
   original family vanish at every vertex of `H`.
@@ -155,31 +156,46 @@ theorem extendByZero_eq_iff {γ : V → V → M} :
       obtain ⟨x, y, rfl, rfl, hxy⟩ := h
       rw [extendByZero_apply_apply_of_adj f β hxy, hadj x y hxy]
 
+/-- Extending the zero family by zero yields the zero family. -/
+@[simp]
+theorem extendByZero_zero : f.extendByZero (0 : W → W → M) = 0 :=
+  (extendByZero_eq_iff f 0).2
+    ⟨fun _ _ _ => by simp only [Pi.zero_apply], fun _ _ _ => by simp only [Pi.zero_apply]⟩
+
 /-- The product of the extension in the two orders of an ordered pair `(v, w)` is the extension of
 the product `β y x * β x y` of `β` in the two orders of an edge `x ∼ y`. Of the multiplication only
 `0 * 0 = 0` is used: off the images of the edges of `H` both factors vanish. -/
 theorem extendByZero_mul_extendByZero [Mul M] (hmul : (0 : M) * 0 = 0) (v w : V) :
     f.extendByZero β w v * f.extendByZero β v w =
       f.extendByZero (fun x y => β y x * β x y) v w := by
-  by_cases h : ∀ x y, f x = v → f y = w → ¬H.Adj x y
-  · rw [extendByZero_eq_zero_of_forall_not_adj f β fun y x hy hx hyx => h x y hx hy hyx.symm,
-      extendByZero_eq_zero_of_forall_not_adj f β h, extendByZero_eq_zero_of_forall_not_adj f _ h,
-      hmul]
-  · push Not at h
-    obtain ⟨x, y, rfl, rfl, hxy⟩ := h
-    rw [extendByZero_apply_apply_of_adj f β hxy.symm, extendByZero_apply_apply_of_adj f β hxy,
-      extendByZero_apply_apply_of_adj f _ hxy]
+  have h : f.extendByZero (fun x y => β y x * β x y) =
+      fun v w => f.extendByZero β w v * f.extendByZero β v w := by
+    rw [extendByZero_eq_iff]
+    refine ⟨fun x y hxy => ?_, fun v w h => ?_⟩
+    · rw [extendByZero_apply_apply_of_adj f β hxy.symm, extendByZero_apply_apply_of_adj f β hxy]
+    · rw [extendByZero_eq_zero_of_forall_not_adj f β fun y x hy hx hyx => h x y hx hy hyx.symm,
+        extendByZero_eq_zero_of_forall_not_adj f β h, hmul]
+  exact (congrFun (congrFun h v) w).symm
 
 end Zero
+
+/-- Extending a pointwise sum of families by zero is the pointwise sum of their extensions. -/
+@[simp]
+theorem extendByZero_add [AddZeroClass M] (f : H.Copy G) (β γ : W → W → M) :
+    f.extendByZero (β + γ) = f.extendByZero β + f.extendByZero γ := by
+  rw [extendByZero_eq_iff]
+  refine ⟨fun x y hxy => ?_, fun v w h => ?_⟩
+  · simp only [Pi.add_apply, extendByZero_apply_apply_of_adj f _ hxy]
+  · simp only [Pi.add_apply, extendByZero_eq_zero_of_forall_not_adj f _ h, add_zero]
 
 section Mul
 
 variable [AddCommMonoid M] [Mul M] (f : H.Copy G) (β : W → W → M)
 
 /-- At a vertex `f x` of the copy with finitely many neighbours in `G`, where `x` has finitely many
-neighbours in `H`, the local sum `∑_{w ∼ f x} β w (f x) * β (f x) w` of the extension by zero over
-the neighbours in `G` is the local sum `∑_{y ∼ x} β y x * β x y` of `β` over the neighbours in
-`H`. Off the image of the neighbours of `x` both factors vanish, so of the multiplication only
+neighbours in `H`, the local sum `∑_{w ∼ f x} f.extendByZero β w (f x) * f.extendByZero β (f x) w`
+over the neighbours in `G` is the local sum `∑_{y ∼ x} β y x * β x y` of `β` over the neighbours
+in `H`. Off the image of the neighbours of `x` both factors vanish, so of the multiplication only
 `0 * 0 = 0` for the additive zero is used: it need neither distribute over the addition nor have
 zero as an absorbing element (`a * 0 = 0` may fail, as for `a * b = a`). -/
 theorem sum_extendByZero_mul_extendByZero_apply (hmul : (0 : M) * 0 = 0) (x : W)
