@@ -19,10 +19,12 @@ central. Commutativity is not assumed, so matrix algebras and Azumaya algebras a
 commutative case is `TauCeti.AlgebraicGeometry.QuasicoherentAlgebra`, which embeds by
 `TauCeti.AlgebraicGeometry.SheafAlgebra.ofQuasicoherentAlgebra`.
 
-On each open `U` the sections `Γ(A, U)` form a `Γ(X, U)`-algebra
-(`TauCeti.AlgebraicGeometry.SheafAlgebra.sections`), restriction is a ring homomorphism, and a
-morphism of sheaves of algebras is an algebra homomorphism on sections. Morphisms are determined
-by their values on sections (`TauCeti.AlgebraicGeometry.SheafAlgebra.hom_ext`).
+The sections API does not use quasi-coherence and is stated for all monoid objects in
+`X.Modules` (`CategoryTheory.Mon.ringSections`, `CategoryTheory.Mon.algebraSections`,
+`CategoryTheory.Mon.restrictSections`, `CategoryTheory.Mon.sectionsAlgHom`): on each open `U` the
+sections `Γ(A, U)` form a `Γ(X, U)`-algebra, restriction is a ring homomorphism, and a morphism of
+sheaves of algebras is an algebra homomorphism on sections. Morphisms of sheaves of algebras are
+determined by their values on sections (`TauCeti.AlgebraicGeometry.SheafAlgebra.hom_ext`).
 
 Pullback along a morphism of schemes `f : Y ⟶ X` is Mathlib's `Functor.mapMon` applied to the
 strong monoidal pullback of quasi-coherent sheaves; the characteristic equations identify the
@@ -33,12 +35,10 @@ monoidal comparisons of module pullback.
 
 * `TauCeti.AlgebraicGeometry.SheafAlgebra X`: quasi-coherent, not necessarily commutative
   `𝒪_X`-algebras.
-* `TauCeti.AlgebraicGeometry.SheafAlgebra.sections`: the `Γ(X, U)`-algebra of sections over `U`,
-  with restriction `SheafAlgebra.restrict` and the induced algebra homomorphisms
-  `SheafAlgebra.sectionsAlgHom`.
 * `TauCeti.AlgebraicGeometry.SheafAlgebra.hom_ext`: morphisms agreeing on all sections are equal.
 * `TauCeti.AlgebraicGeometry.SheafAlgebra.pullback`: pullback along a morphism of schemes, with
-  `pullbackId` and `pullbackComp`.
+  `pullbackId` and `pullbackComp`, given on underlying modules by Mathlib's
+  `Scheme.Modules.pullbackId` and `Scheme.Modules.pullbackComp`.
 * `TauCeti.AlgebraicGeometry.SheafAlgebra.unit`: the scalar algebra `𝒪_X`.
 
 ## References
@@ -70,153 +70,21 @@ variable {X : Scheme.{u}}
 
 instance isQuasicoherent_X (A : SheafAlgebra X) : A.obj.X.IsQuasicoherent := A.property
 
-variable (A : SheafAlgebra X)
+variable {A B : SheafAlgebra X}
 
-/-- The sections over `U` of a sheaf of algebras, as a monoid object in `Γ(X, U)`-modules: the
-image of `A` under the lax monoidal sections functor. -/
-abbrev sectionsMon (U : X.Opens) : Mon (ModuleCat.{u} Γ(X, U)) :=
-  (Scheme.Modules.sectionsFunctor U).mapMon.obj A.obj
-
-/-- The sections of a sheaf of algebras over an open `U`: the sections of its underlying module,
-carrying the ring and `Γ(X, U)`-algebra structures `SheafAlgebra.instRingSections` and
-`SheafAlgebra.instAlgebraSections`. -/
-@[expose]
-def sections (U : X.Opens) : Type u := Γ(A.obj.X, U)
-
-/-- The sections of a sheaf of algebras over an open form a ring, whose multiplication is that of
-`A` applied to the image of `x ⊗ₜ y` in the sections of the tensor product. -/
-instance instRingSections (U : X.Opens) : Ring (A.sections U) :=
-  ModuleCat.MonModuleEquivalenceAlgebra.MonObj.toRing (A.sectionsMon U).X
-
-/-- The sections of a sheaf of algebras over an open `U` form a `Γ(X, U)`-algebra, whose scalar
-multiplication is that of the sections of the underlying `𝒪_X`-module. -/
-instance instAlgebraSections (U : X.Opens) : Algebra Γ(X, U) (A.sections U) :=
-  ModuleCat.MonModuleEquivalenceAlgebra.Algebra_of_Mon_ (A.sectionsMon U).X
-
-/-- A section of the underlying module, viewed as a section of the sheaf of algebras. -/
-def ofModule {U : X.Opens} : Γ(A.obj.X, U) ≃ A.sections U := Equiv.refl _
-
-/-- A section of the sheaf of algebras, viewed as a section of the underlying module. -/
-def toModule {U : X.Opens} : A.sections U ≃ Γ(A.obj.X, U) := Equiv.refl _
-
-@[simp]
-lemma toModule_ofModule {U : X.Opens} (x : Γ(A.obj.X, U)) : A.toModule (A.ofModule x) = x :=
-  (rfl)
-
-@[simp]
-lemma ofModule_toModule {U : X.Opens} (x : A.sections U) : A.ofModule (A.toModule x) = x :=
-  (rfl)
-
-/-- The product of two sections is the multiplication of `A` applied to the image of their
-tensor product under the tensor map of the sections functor. -/
-lemma toModule_mul (U : X.Opens) (x y : A.sections U) :
-    A.toModule (x * y) = (MonObj.mul (X := A.obj.X)).app U
-      (Functor.LaxMonoidal.μ (Scheme.Modules.sectionsFunctor U) A.obj.X A.obj.X
-        (A.toModule x ⊗ₜ A.toModule y)) :=
-  (rfl)
-
-/-- The structure map `Γ(X, U) → Γ(A, U)` is the unit of `A` on sections over `U`. -/
-lemma toModule_algebraMap (U : X.Opens) (r : Γ(X, U)) :
-    A.toModule (algebraMap Γ(X, U) (A.sections U) r) = (MonObj.one (X := A.obj.X)).app U
-      (Functor.LaxMonoidal.ε (Scheme.Modules.sectionsFunctor U) r) :=
-  (rfl)
-
-/-- Restriction of sections of a sheaf of algebras along an inclusion of opens `V ≤ U`, as a
-ring homomorphism. -/
-def restrict {U V : X.Opens} (i : V ⟶ U) : A.sections U →+* A.sections V where
-  toFun x := A.ofModule (A.obj.X.presheaf.map i.op (A.toModule x))
-  map_one' := by
-    let F : X.Modules ⥤ PresheafOfModulesOfCommRing.{u} X.presheaf :=
-      _root_.SheafOfModules.forget _
-    let _ : F.LaxMonoidal := SheafOfModules.forgetLaxMonoidal X.sheaf
-    -- The unit of sections is `η[A]` applied to `1`; both maps commute with restriction.
-    have h₁ := PresheafOfModules.naturality_apply (MonObj.one (X := A.obj.X)).val i.op
-      ((Functor.LaxMonoidal.ε F).app' (op U) (1 : Γ(X, U)))
-    have h₂ := PresheafOfModules.naturality_apply (Functor.LaxMonoidal.ε F) i.op (1 : Γ(X, U))
-    exact h₁.symm.trans (congrArg _ (h₂.symm.trans
-      (congrArg _ (map_one (X.presheaf.map i.op).hom))))
-  map_mul' x y := by
-    let F : X.Modules ⥤ PresheafOfModulesOfCommRing.{u} X.presheaf :=
-      _root_.SheafOfModules.forget _
-    let _ : F.LaxMonoidal := SheafOfModules.forgetLaxMonoidal X.sheaf
-    -- The product is `μ[A]` applied to the tensor map of `F`; both commute with restriction,
-    -- and restriction of the sectionwise tensor product sends `x ⊗ₜ y` to the pure tensor of
-    -- the restrictions.
-    have h₁ := PresheafOfModules.naturality_apply (MonObj.mul (X := A.obj.X)).val i.op
-      ((Functor.LaxMonoidal.μ F A.obj.X A.obj.X).app' (op U) (x ⊗ₜ y))
-    have h₂ := PresheafOfModules.naturality_apply (Functor.LaxMonoidal.μ F A.obj.X A.obj.X) i.op
-      (x ⊗ₜ y)
-    exact h₁.symm.trans (congrArg _ h₂.symm)
-  map_zero' := map_zero (A.obj.X.presheaf.map i.op).hom
-  map_add' := map_add (A.obj.X.presheaf.map i.op).hom
-
-@[simp]
-lemma toModule_restrict {U V : X.Opens} (i : V ⟶ U) (x : A.sections U) :
-    A.toModule (A.restrict i x) = A.obj.X.presheaf.map i.op (A.toModule x) :=
-  (rfl)
-
-/-- Restriction of sections commutes with the structure maps from regular functions. -/
-lemma restrict_algebraMap {U V : X.Opens} (i : V ⟶ U) (r : Γ(X, U)) :
-    A.restrict i (algebraMap Γ(X, U) (A.sections U) r) =
-      algebraMap Γ(X, V) (A.sections V) (X.presheaf.map i.op r) := by
-  let F : X.Modules ⥤ PresheafOfModulesOfCommRing.{u} X.presheaf :=
-    _root_.SheafOfModules.forget _
-  let _ : F.LaxMonoidal := SheafOfModules.forgetLaxMonoidal X.sheaf
-  -- The algebra map is `η[A]` after the unit map of `F`; both commute with restriction.
-  have h₁ := PresheafOfModules.naturality_apply (MonObj.one (X := A.obj.X)).val i.op
-    ((Functor.LaxMonoidal.ε F).app' (op U) r)
-  have h₂ := PresheafOfModules.naturality_apply (Functor.LaxMonoidal.ε F) i.op r
-  exact h₁.symm.trans (congrArg _ h₂.symm)
-
-variable {A} {B C : SheafAlgebra X}
-
-/-- A morphism of sheaves of algebras is a `Γ(X, U)`-algebra homomorphism on sections over
-every open `U`. -/
-def sectionsAlgHom (f : A ⟶ B) (U : X.Opens) : A.sections U →ₐ[Γ(X, U)] B.sections U :=
-  ModuleCat.MonModuleEquivalenceAlgebra.functor.map
-    ((Scheme.Modules.sectionsFunctor U).mapMon.map f.hom) |>.hom
-
-@[simp]
-lemma toModule_sectionsAlgHom (f : A ⟶ B) (U : X.Opens) (x : A.sections U) :
-    B.toModule (sectionsAlgHom f U x) = f.hom.hom.app U (A.toModule x) :=
-  (rfl)
-
-@[simp]
-lemma sectionsAlgHom_id (U : X.Opens) : sectionsAlgHom (𝟙 A) U = AlgHom.id _ _ :=
-  (rfl)
-
-@[simp]
-lemma sectionsAlgHom_comp (f : A ⟶ B) (g : B ⟶ C) (U : X.Opens) :
-    sectionsAlgHom (f ≫ g) U = (sectionsAlgHom g U).comp (sectionsAlgHom f U) :=
-  (rfl)
-
-/-- Morphisms of sheaves of algebras are determined by their values on sections. -/
+/-- Morphisms of sheaves of algebras are determined by their values on sections, where they are
+the `Γ(X, U)`-algebra homomorphisms `CategoryTheory.Mon.sectionsAlgHom`. -/
 @[ext]
 lemma hom_ext {f g : A ⟶ B}
-    (h : ∀ (U : X.Opens) (x : A.sections U), sectionsAlgHom f U x = sectionsAlgHom g U x) :
-    f = g := by
-  apply ObjectProperty.hom_ext
-  apply Mon.Hom.ext
-  refine Scheme.Modules.hom_ext _ _ fun U ↦ ?_
-  ext x
-  exact h U (A.ofModule x)
+    (h : ∀ (U : X.Opens) (x : Γ(A.obj.X, U)),
+      Mon.sectionsAlgHom f.hom U x = Mon.sectionsAlgHom g.hom U x) :
+    f = g :=
+  ObjectProperty.hom_ext _ (Mon.hom_ext_of_sectionsAlgHom fun U ↦ AlgHom.ext (h U))
 
 /-- Two morphisms of sheaves of algebras are equal if their underlying morphisms of modules
 are. -/
 lemma hom_ext_of_hom {f g : A ⟶ B} (h : f.hom.hom = g.hom.hom) : f = g :=
   ObjectProperty.hom_ext _ (Mon.Hom.ext h)
-
-/-- An isomorphism of sheaves of algebras is a `Γ(X, U)`-algebra isomorphism on sections over
-every open `U`. -/
-def sectionsAlgEquiv (e : A ≅ B) (U : X.Opens) : A.sections U ≃ₐ[Γ(X, U)] B.sections U :=
-  AlgEquiv.ofAlgHom (sectionsAlgHom e.hom U) (sectionsAlgHom e.inv U)
-    (by rw [← sectionsAlgHom_comp, e.inv_hom_id, sectionsAlgHom_id])
-    (by rw [← sectionsAlgHom_comp, e.hom_inv_id, sectionsAlgHom_id])
-
-@[simp]
-lemma sectionsAlgEquiv_apply (e : A ≅ B) (U : X.Opens) (x : A.sections U) :
-    sectionsAlgEquiv e U x = sectionsAlgHom e.hom U x :=
-  (rfl)
 
 variable (X) in
 /-- The scalar algebra `𝒪_X`: the tensor unit of `X.Modules` with its trivial monoid
@@ -431,6 +299,47 @@ theorem pullbackId_inv_app_hom_hom (A : SheafAlgebra X) :
       (Scheme.Modules.pullbackId X).inv.app A.obj.X ≫ eqToHom (pullback_obj_X (𝟙 X) A).symm := by
   refine Eq.trans ?_ (QuasicoherentSheaf.pullbackId_inv_app_hom X ⟨A.obj.X, A.property⟩)
   -- Composites with the identity components of the conversions reduce definitionally.
+  rfl
+
+/-- The composition comparison of algebra pullback is Mathlib's composition comparison of module
+pullback on underlying modules. -/
+@[simp]
+theorem pullbackComp_hom_app_hom_hom (f : X ⟶ Y) (g : Y ⟶ Z) (A : SheafAlgebra Z) :
+    ((pullbackComp f g).hom.app A).hom.hom =
+      eqToHom ((pullback_obj_X f _).trans (congrArg _ (pullback_obj_X g A))) ≫
+        (Scheme.Modules.pullbackComp f g).hom.app A.obj.X ≫
+          eqToHom (pullback_obj_X (f ≫ g) A).symm := by
+  refine Eq.trans ?_ (QuasicoherentSheaf.pullbackComp_hom_app_hom f g ⟨A.obj.X, A.property⟩)
+  -- The component of `ofMonCompToMonIso` is the identity, and the remaining composite with the
+  -- identity components of the conversions reduces definitionally.
+  have h : (ofMonCompToMonIso Y).hom.app
+      ((QuasicoherentSheaf.pullback g).mapMon.obj ((toMon Z).obj A)) = 𝟙 _ :=
+    Mon.Hom.ext rfl
+  dsimp only [pullbackComp]
+  -- The intermediate functors of `pullbackComp` agree with those of `Iso.trans` only up to
+  -- unfolding `Functor.comp`, so the composite is split with `erw`.
+  erw [Iso.trans_hom, NatTrans.comp_app, Functor.isoWhiskerLeft_hom, Functor.whiskerLeft_app,
+    Functor.isoWhiskerRight_hom, Functor.whiskerRight_app, h, CategoryTheory.Functor.map_id,
+    Category.id_comp]
+  rfl
+
+/-- The inverse composition comparison of algebra pullback is Mathlib's inverse composition
+comparison of module pullback on underlying modules. -/
+@[simp]
+theorem pullbackComp_inv_app_hom_hom (f : X ⟶ Y) (g : Y ⟶ Z) (A : SheafAlgebra Z) :
+    ((pullbackComp f g).inv.app A).hom.hom =
+      eqToHom (pullback_obj_X (f ≫ g) A) ≫ (Scheme.Modules.pullbackComp f g).inv.app A.obj.X ≫
+        eqToHom ((pullback_obj_X f _).trans (congrArg _ (pullback_obj_X g A))).symm := by
+  refine Eq.trans ?_ (QuasicoherentSheaf.pullbackComp_inv_app_hom f g ⟨A.obj.X, A.property⟩)
+  have h : (ofMonCompToMonIso Y).inv.app
+      ((QuasicoherentSheaf.pullback g).mapMon.obj ((toMon Z).obj A)) = 𝟙 _ :=
+    Mon.Hom.ext rfl
+  dsimp only [pullbackComp]
+  -- As in `pullbackComp_hom_app_hom_hom`.
+  erw [Iso.trans_inv, NatTrans.comp_app, Functor.isoWhiskerLeft_inv, Functor.whiskerLeft_app,
+    Functor.isoWhiskerRight_inv, Functor.whiskerRight_app, Functor.isoWhiskerLeft_inv,
+    Functor.whiskerLeft_app, Functor.isoWhiskerRight_inv, Functor.whiskerRight_app, h,
+    CategoryTheory.Functor.map_id, Category.comp_id]
   rfl
 
 end SheafAlgebra

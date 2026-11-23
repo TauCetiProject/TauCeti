@@ -67,13 +67,11 @@ variable {X : Scheme.{u}} (A : CommMon X.Modules)
 
 namespace CategoryTheory.CommMon
 
-/-- The algebra map on sections induced by a morphism of commutative `𝒪ₓ`-algebras.
-It sends each section to its image under the morphism and preserves the structure map
-from `Γ(X, U)`. -/
+/-- The algebra map on sections induced by a morphism of commutative `𝒪ₓ`-algebras: that of the
+underlying morphism of monoid objects. -/
 def sectionsAlgHom {A B : CommMon X.Modules}
     (f : A ⟶ B) (U : X.Opens) : Γ(A.X, U) →ₐ[Γ(X, U)] Γ(B.X, U) :=
-  (ModuleCat.MonModuleEquivalenceAlgebra.functor.map
-    (((Scheme.Modules.sectionsFunctor U).mapCommMon.map f).hom)).hom
+  Mon.sectionsAlgHom f.hom U
 
 @[simp]
 lemma sectionsAlgHom_apply {A B : CommMon X.Modules}
@@ -86,52 +84,32 @@ restriction of sections. -/
 lemma sectionsAlgHom_restrictSections {A B : CommMon X.Modules}
     (f : A ⟶ B) {U V : X.Opens} (i : V ⟶ U) (x : Γ(A.X, U)) :
     CommMon.sectionsAlgHom f V (A.restrictSections i x) =
-      B.restrictSections i (CommMon.sectionsAlgHom f U x) := by
-  rw [CommMon.sectionsAlgHom_apply, CommMon.sectionsAlgHom_apply, CommMon.restrictSections_apply]
-  exact (PresheafOfModules.naturality_apply f.hom.hom.val i.op x).trans
-    (B.restrictSections_apply i _).symm
+      B.restrictSections i (CommMon.sectionsAlgHom f U x) :=
+  Mon.sectionsAlgHom_restrictSections f.hom i x
 
 /-- A morphism of commutative `𝒪ₓ`-algebras is determined by the algebra maps it induces on
 sections. -/
 lemma hom_ext_of_sectionsAlgHom {A B : CommMon X.Modules}
     {f g : A ⟶ B} (h : ∀ U, CommMon.sectionsAlgHom f U = CommMon.sectionsAlgHom g U) : f = g :=
-  CommMon.hom_ext _ _ (Scheme.Modules.hom_ext _ _ fun U ↦ ConcreteCategory.hom_ext _ _ fun x ↦
-    DFunLike.congr_fun (h U) x)
+  InducedCategory.hom_ext (Mon.hom_ext_of_sectionsAlgHom h)
 
 @[simp]
 lemma sectionsAlgHom_id (A : CommMon X.Modules) (U : X.Opens) :
-    CommMon.sectionsAlgHom (𝟙 A) U = AlgHom.id Γ(X, U) Γ(A.X, U) := by
-  let F := (Scheme.Modules.sectionsFunctor U).mapCommMon ⋙
-    CommMon.forget₂Mon (ModuleCat.{u} Γ(X, U)) ⋙ ModuleCat.MonModuleEquivalenceAlgebra.functor
-  -- `sectionsAlgHom` spells out the three functor maps; `map_id` is stated for
-  -- their composite `F`. `change` identifies these definitionally equal presentations.
-  change (F.map (𝟙 A)).hom = _
-  ext x
-  -- The identities use the algebra instances on `F.obj A` and on `Γ(A.X, U)`.
-  -- Rewriting the bundled maps does not match these instances; evaluation removes them.
-  change (F.map (𝟙 A)).hom x = x
-  simpa only [AlgCat.hom_id, AlgHom.id_apply] using
-    congrArg (fun f ↦ f.hom x) (F.map_id A)
+    CommMon.sectionsAlgHom (𝟙 A) U = AlgHom.id Γ(X, U) Γ(A.X, U) :=
+  (rfl)
 
 @[simp]
 lemma sectionsAlgHom_comp {A B C : CommMon X.Modules}
     (f : A ⟶ B) (g : B ⟶ C) (U : X.Opens) :
     CommMon.sectionsAlgHom (f ≫ g) U =
-      (CommMon.sectionsAlgHom g U).comp (CommMon.sectionsAlgHom f U) := by
-  let F := (Scheme.Modules.sectionsFunctor U).mapCommMon ⋙
-    CommMon.forget₂Mon (ModuleCat.{u} Γ(X, U)) ⋙ ModuleCat.MonModuleEquivalenceAlgebra.functor
-  -- `sectionsAlgHom` spells out the three functor maps; rewriting with `map_comp`
-  -- requires first presenting them as the map of the composite functor `F`.
-  change (F.map (f ≫ g)).hom = (F.map g).hom.comp (F.map f).hom
-  simpa only [AlgCat.hom_comp] using congrArg AlgCat.Hom.hom (F.map_comp f g)
+      (CommMon.sectionsAlgHom g U).comp (CommMon.sectionsAlgHom f U) :=
+  (rfl)
 
 /-- The `Γ(X, U)`-algebra isomorphism of sections over `U` induced by an isomorphism of
-commutative `𝒪ₓ`-algebras. -/
+commutative `𝒪ₓ`-algebras: that of the underlying isomorphism of monoid objects. -/
 def sectionsAlgEquiv {A B : CommMon X.Modules} (e : A ≅ B)
     (U : X.Opens) : Γ(A.X, U) ≃ₐ[Γ(X, U)] Γ(B.X, U) :=
-  AlgEquiv.ofAlgHom (CommMon.sectionsAlgHom e.hom U) (CommMon.sectionsAlgHom e.inv U)
-    (by rw [← CommMon.sectionsAlgHom_comp, e.inv_hom_id, CommMon.sectionsAlgHom_id])
-    (by rw [← CommMon.sectionsAlgHom_comp, e.hom_inv_id, CommMon.sectionsAlgHom_id])
+  Mon.sectionsAlgEquiv ((CommMon.forget₂Mon X.Modules).mapIso e) U
 
 @[simp]
 lemma sectionsAlgEquiv_apply {A B : CommMon X.Modules} (e : A ≅ B)
