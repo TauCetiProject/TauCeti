@@ -9,8 +9,8 @@ public import Mathlib.RingTheory.AdicCompletion.RingHom
 public import TauCeti.RingTheory.Deformation.ArtinLocalAlg
 public import TauCeti.RingTheory.Length
 public import TauCeti.RingTheory.LocalRing.Quotient
+import Mathlib.RingTheory.AdicCompletion.Noetherian
 import TauCeti.RingTheory.AdicCompletion.AlgHom
-import TauCeti.RingTheory.AdicCompletion.Nilpotent
 
 /-!
 # The complete local coefficient category
@@ -121,7 +121,7 @@ theorem augmentation_surjective (A : CompleteLocalAlg Λ k) :
 /-- The kernel of the augmentation of an object of `\hat{C}_Λ` is its maximal ideal. -/
 theorem ker_augmentation (A : CompleteLocalAlg Λ k) :
     RingHom.ker A.augmentation = maximalIdeal A.obj.left :=
-  eq_maximalIdeal (RingHom.ker_isMaximal_of_surjective _ A.augmentation_surjective)
+  ker_eq_maximalIdeal _ A.augmentation_surjective
 
 /-- An element of an object of `\hat{C}_Λ` has augmentation zero exactly when it lies in the maximal
 ideal. -/
@@ -133,7 +133,7 @@ theorem augmentation_eq_zero_iff {A : CompleteLocalAlg Λ k} {a : A.obj.left} :
 /-- An element of an object of `\hat{C}_Λ` is a unit exactly when its augmentation is nonzero. -/
 theorem isUnit_iff_augmentation_ne_zero {A : CompleteLocalAlg Λ k} {a : A.obj.left} :
     IsUnit a ↔ A.augmentation a ≠ 0 := by
-  rw [Ne, augmentation_eq_zero_iff, mem_maximalIdeal, mem_nonunits_iff, not_not]
+  rw [Ne, augmentation_eq_zero_iff, notMem_maximalIdeal]
 
 /-- Morphisms of `\hat{C}_Λ` are determined by their underlying `Λ`-algebra maps. -/
 @[ext]
@@ -198,17 +198,12 @@ section Artinian
 variable {Λ k}
 
 /-- An Artinian local augmented algebra is a complete local augmented algebra: an Artinian ring is
-Noetherian, and it is complete for its maximal ideal, which is nilpotent. -/
+Noetherian, and it is complete for its maximal ideal, which is nilpotent (a Mathlib instance). -/
 theorem IsArtinLocalAug.isCompleteLocalAug {A : Over (CommAlgCat.of Λ k)}
-    (hA : IsArtinLocalAug Λ k A) : IsCompleteLocalAug Λ k A := by
+    (hA : IsArtinLocalAug Λ k A) : IsCompleteLocalAug Λ k A :=
   have := hA.isArtinianRing
   have := hA.isLocalRing
-  obtain ⟨n, hn⟩ : IsNilpotent (maximalIdeal A.left) := by
-    rw [← ringJacobson_eq_maximalIdeal]
-    exact IsArtinianRing.isNilpotent_jacobson _
-  have hsmul : maximalIdeal A.left ^ n • (⊤ : Submodule A.left A.left) = ⊥ := by
-    rw [hn, Ideal.zero_eq_bot, Submodule.bot_smul]
-  exact ⟨inferInstance, inferInstance, isAdicComplete_of_pow_smul_eq_bot hsmul, hA.surjective⟩
+  ⟨inferInstance, inferInstance, inferInstance, hA.surjective⟩
 
 variable (Λ k) in
 /-- The Artinian coefficient category `C_Λ` is contained in `\hat{C}_Λ`. -/
@@ -240,6 +235,9 @@ augmentation in `C_Λ`. -/
 theorem ArtinLocalAlg.augmentation_toCompleteLocalAlg_obj (A : ArtinLocalAlg Λ k) :
     ((toCompleteLocalAlg Λ k).obj A).augmentation = A.augmentation := by
   rw [CompleteLocalAlg.augmentation_def, ArtinLocalAlg.augmentation_def]
+  -- `ObjectProperty.ιOfLE_obj_obj` turns the left side into `A.obj.hom.hom` as well, but the
+  -- two sides still differ in the carrier `((toCompleteLocalAlg Λ k).obj A).obj.left`, which is
+  -- `A.obj.left` only by unfolding `toCompleteLocalAlg`; `rfl` checks exactly that unfolding.
   rfl
 
 /-- The underlying algebra map of a morphism of `C_Λ`, regarded as a morphism of `\hat{C}_Λ`, is

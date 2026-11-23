@@ -134,8 +134,7 @@ theorem augmentation_surjective (A : ArtinLocalAlg Λ k) : Function.Surjective A
 /-- The kernel of the augmentation of an object of `C_Λ` is its maximal ideal. -/
 theorem ker_augmentation (A : ArtinLocalAlg Λ k) :
     RingHom.ker A.augmentation = maximalIdeal A.obj.left :=
-  have := RingHom.ker_isMaximal_of_surjective _ A.augmentation_surjective
-  eq_maximalIdeal this
+  ker_eq_maximalIdeal _ A.augmentation_surjective
 
 /-- An element of an object of `C_Λ` has augmentation zero exactly when it lies in the maximal
 ideal. -/
@@ -147,7 +146,7 @@ theorem augmentation_eq_zero_iff {A : ArtinLocalAlg Λ k} {a : A.obj.left} :
 /-- An element of an object of `C_Λ` is a unit exactly when its augmentation is nonzero. -/
 theorem isUnit_iff_augmentation_ne_zero {A : ArtinLocalAlg Λ k} {a : A.obj.left} :
     IsUnit a ↔ A.augmentation a ≠ 0 := by
-  rw [Ne, augmentation_eq_zero_iff, mem_maximalIdeal, mem_nonunits_iff, not_not]
+  rw [Ne, augmentation_eq_zero_iff, notMem_maximalIdeal]
 
 /-- Morphisms of `C_Λ` are determined by their underlying `Λ`-algebra maps. -/
 @[ext]
