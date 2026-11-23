@@ -18,8 +18,6 @@ Elementary consequences of the definition of a root system that need no further 
 * `RootPairing.nonempty_of_isRootSystem`: a root system on a nontrivial module has a root.
 * `RootPairing.finite_weight_of_isRootSystem`: the weight module of a finite root system is finitely
   generated.
-* `RootPairing.moduleFinite_coweight_of_isRootSystem`: for a finite root system, the coweight
-  module is finitely generated.
 -/
 
 public section
@@ -43,12 +41,5 @@ theorem finite_weight_of_isRootSystem (P : RootPairing ι R M N) [Finite ι] [P.
     Module.Finite R M :=
   Module.finite_def.mpr
     (IsRootSystem.span_root_eq_top (P := P) ▸ Submodule.fg_span (Set.finite_range P.root))
-
-/-- For a finite root system over a commutative ring, the coweight module `N` is finitely generated
-(in particular `FiniteDimensional R N` when `R` is a field), since it is spanned by the finitely
-many coroots. -/
-theorem moduleFinite_coweight_of_isRootSystem (P : RootPairing ι R M N) [Finite ι]
-    [P.IsRootSystem] : Module.Finite R N :=
-  P.flip.finite_weight_of_isRootSystem
 
 end RootPairing
