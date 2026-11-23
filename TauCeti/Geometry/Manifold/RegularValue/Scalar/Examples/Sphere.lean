@@ -114,18 +114,13 @@ noncomputable def normSqSublevelBoundaryDiffeomorphSphere :
 theorem coe_normSqSublevelBoundaryDiffeomorphSphere_apply
     (x : ↥((𝓡∂ (n + 1)).boundary {x : E | ‖x‖ ^ 2 ≤ 1})) :
     (normSqSublevelBoundaryDiffeomorphSphere x : E) = x.val.val := by
-  rw [normSqSublevelBoundaryDiffeomorphSphere, Diffeomorph.coe_trans, comp_apply,
-    coe_normSqLevelDiffeomorphSphere_apply, coe_scalarRegularSublevelBoundaryDiffeomorph,
-    coe_scalarRegularSublevelBoundaryHomeomorph_apply]
+  simp [normSqSublevelBoundaryDiffeomorphSphere]
 
 /-- The inverse of `TauCeti.normSqSublevelBoundaryDiffeomorphSphere` is the identity of points. -/
 @[simp]
 theorem coe_normSqSublevelBoundaryDiffeomorphSphere_symm_apply (x : sphere (0 : E) 1) :
-    ((normSqSublevelBoundaryDiffeomorphSphere (n := n)).symm x).val.val = (x : E) := by
-  rw [normSqSublevelBoundaryDiffeomorphSphere, Diffeomorph.symm_trans', Diffeomorph.coe_trans,
-    comp_apply, ← Diffeomorph.coe_toHomeomorph_symm,
-    toHomeomorph_scalarRegularSublevelBoundaryDiffeomorph,
-    coe_scalarRegularSublevelBoundaryHomeomorph_symm_apply,
-    coe_normSqLevelDiffeomorphSphere_symm_apply]
+    ((normSqSublevelBoundaryDiffeomorphSphere (n := n)).symm x).val.val = (x : E) :=
+  (coe_normSqSublevelBoundaryDiffeomorphSphere_apply _).symm.trans
+    (congrArg Subtype.val (Diffeomorph.apply_symm_apply _ x))
 
 end TauCeti
