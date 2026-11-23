@@ -109,19 +109,16 @@ lemma linearHomComplexEvaluation_ιTensorObj_tmul (A : CochainComplex (ModuleCat
     (𝟙_ (CochainComplex (ModuleCat.{v} R) ℤ)) q p 0 h
   rw [HomologicalComplex.ιTensorObj, reassoc_of% hι, ModuleCat.hom_comp, ModuleCat.hom_comp,
     LinearMap.comp_apply, LinearMap.comp_apply, ModuleCat.MonoidalCategory.whiskerLeft_apply]
-  -- The tensor unit `𝟙_ (ModuleCat R)` and `ModuleCat.of R R` index the same single complex but
-  -- are presented differently in the two isomorphisms `singleObjXSelf`; `hone` identifies them.
-  have hone : (HomologicalComplex.singleObjXSelf (ComplexShape.up ℤ) 0 (ModuleCat.of R R)).hom
-      ((HomologicalComplex.singleObjXSelf (ComplexShape.up ℤ) 0 (𝟙_ (ModuleCat.{v} R))).inv 1) =
-        (1 : R) :=
-    Iso.inv_hom_id_apply _ _
   simp only [linearHomComplex_X, linearHomComplexFromTensorUnitIso_inv_f_apply,
     cochainFromTensorUnitLinearEquiv_symm_apply, cochainCompTensor_tmul,
     linearHomComplexFromTensorUnitIso_hom_f_apply, cochainFromTensorUnitLinearEquiv_apply,
     Cochain.comp_v _ _ _ 0 p 0 (zero_add p) (by omega : p + q = 0),
     cochainToTensorUnitLinearEquiv_apply, Cochain.toSingleEquiv_apply, Cochain.fromSingleMk_v,
     ModuleCat.hom_comp, LinearMap.coe_comp, Function.comp_apply, Iso.hom_inv_id_apply]
-  rw [hone, ModuleCat.hom_ofHom, LinearMap.toSpanSingleton_apply, one_smul]
+  -- The tensor unit `𝟙_ (ModuleCat R)` and `ModuleCat.of R R` index the same single complex but
+  -- are presented differently in the two isomorphisms `singleObjXSelf`.
+  rw [singleObjXSelf_hom_singleObjXSelf_inv_apply, ModuleCat.hom_ofHom,
+    LinearMap.toSpanSingleton_apply, one_smul]
 
 /-- **Applying the dual-tensor comparison is evaluation.** The cochain that the dual-tensor
 comparison assigns to `b ⊗ φ`, applied to `a ∈ A ≅ Hom(R[0], A)`, is `b ⊗ φ(a) ≅ b • φ(a)` in
