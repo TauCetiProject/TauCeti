@@ -20,7 +20,8 @@ discharges the hypothesis of the general uniqueness theorem
 `TauCeti.WassersteinSpace.subsingleton_frechetBarycenters`.
 
 Consequently, a law `P` on `P₂(E)` has at most one quadratic Fréchet barycenter whenever it gives
-positive mass to `c - c`-regular laws. Via `TauCeti.Analysis.Convex.CCHypersurface.Regular`, this
+positive mass to `c - c`-regular laws. Via
+`TauCeti.Analysis.Convex.CCHypersurface.Regular.Basic`, this
 covers laws vanishing on Lipschitz graphs over hyperplanes, laws vanishing on Borel sets with
 `dimH A + 1 ≤ finrank ℝ E` or small sets (`dimH A ≤ finrank ℝ E - 1`, Agueh–Carlier
 Proposition 3.5), and laws absolutely continuous with respect to an additive Haar measure.

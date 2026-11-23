@@ -145,12 +145,8 @@ theorem IsCoupling.transportCost_norm_sub_sq_div_two_ne_top {μ ν : Measure F}
     {σ : Measure (F × F)} (hσ : IsCoupling σ μ ν) (hμ : MemLp id 2 μ) (hν : MemLp id 2 ν) :
     transportCost (fun z : F × F => ENNReal.ofReal (‖z.1 - z.2‖ ^ 2 / 2)) μ ν ≠ ∞ := by
   have hl {g : Measure F} (hg : MemLp id 2 g) : ∫⁻ x : F, ‖x‖ₑ ^ (2 : ℝ) ∂g < ⊤ := by
-    have h := eLpNorm_eq_lintegral_rpow_eNorm_toReal (μ := g) (f := id)
-      two_ne_zero ENNReal.ofNat_ne_top hg.aestronglyMeasurable
-    rw [ENNReal.toReal_ofNat] at h
-    have hlt : eLpNorm (id : F → F) 2 g ^ (2 : ℝ) < ⊤ :=
-      ENNReal.rpow_lt_top_of_nonneg (by positivity) hg.eLpNorm_ne_top
-    rwa [h, ← ENNReal.rpow_mul, one_div, inv_mul_cancel₀ two_ne_zero, ENNReal.rpow_one] at hlt
+    simpa only [ENNReal.toReal_ofNat, id_eq] using lintegral_rpow_eNorm_lt_top_of_eLpNorm_lt_top
+      two_ne_zero ENNReal.ofNat_ne_top hg.eLpNorm_lt_top
   have hae₁ : AEMeasurable (fun x : F => ‖x‖ₑ ^ (2 : ℝ)) μ :=
     hμ.aestronglyMeasurable.eNorm.pow_const _
   have hae₂ : AEMeasurable (fun y : F => ‖y‖ₑ ^ (2 : ℝ)) ν :=
@@ -166,8 +162,7 @@ theorem IsCoupling.transportCost_norm_sub_sq_div_two_ne_top {μ ν : Measure F}
       ≤ ∫⁻ z : F × F, (‖z.1‖ₑ ^ (2 : ℝ) + ‖z.2‖ₑ ^ (2 : ℝ)) ∂σ := by
         refine lintegral_mono fun z => ?_
         have hn (w : F) : (‖w‖ₑ ^ (2 : ℝ)) = ENNReal.ofReal (‖w‖ ^ 2) := by
-          rw [show (2 : ℝ) = ((2 : ℕ) : ℝ) by norm_num, ENNReal.rpow_natCast,
-            ← ofReal_norm, ENNReal.ofReal_pow (norm_nonneg w)]
+          rw [ENNReal.rpow_ofNat, ← ofReal_norm, ENNReal.ofReal_pow (norm_nonneg w)]
         rw [hn, hn, ← ENNReal.ofReal_add (by positivity) (by positivity)]
         exact ENNReal.ofReal_le_ofReal <| by
           nlinarith [norm_sub_le z.1 z.2, norm_nonneg (z.1 - z.2), sq_nonneg (‖z.1‖ - ‖z.2‖)]

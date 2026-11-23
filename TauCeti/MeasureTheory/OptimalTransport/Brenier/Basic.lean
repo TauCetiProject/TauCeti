@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Calculus.Gradient
-public import TauCeti.Analysis.Convex.CCHypersurface.Regular
+public import TauCeti.Analysis.Convex.CCHypersurface.Regular.Basic
 public import TauCeti.Analysis.Convex.Differentiability
 public import TauCeti.Analysis.Convex.MongeAmpere.Transport
 public import TauCeti.MeasureTheory.OptimalTransport.CTransform.Quadratic
@@ -14,7 +14,8 @@ public import TauCeti.MeasureTheory.OptimalTransport.Cost.CyclicalMonotonicity
 public import TauCeti.MeasureTheory.OptimalTransport.Cost.Mixture
 public import TauCeti.MeasureTheory.OptimalTransport.Existence.Basic
 public import TauCeti.MeasureTheory.OptimalTransport.Monge
-public import TauCeti.MeasureTheory.OptimalTransport.Wasserstein.Space
+public import TauCeti.MeasureTheory.OptimalTransport.Wasserstein.Basic
+import TauCeti.Analysis.Convex.CCHypersurface.Regular.Differentiability
 import TauCeti.Analysis.Convex.FenchelMoreau
 import TauCeti.Analysis.Convex.MongeAmpere.Decomposition
 import TauCeti.Analysis.Convex.MongeAmpere.Interpolation
@@ -28,11 +29,11 @@ import TauCeti.MeasureTheory.OptimalTransport.Wasserstein.Quadratic
 
 Let `E` be a finite-dimensional real inner product space, such as `ℝⁿ`, and consider the quadratic
 transport cost `c (x, y) = ‖x - y‖ ^ 2 / 2`. **Brenier's theorem** says that when the source law
-`μ` is `c - c`-regular (`TauCeti.IsCCRegular`, e.g. a.c.) and the optimal cost is finite, the
-optimal transport plan is unique and is induced by the gradient of a convex function: there is a
-lower semicontinuous convex `u : E → EReal` never taking `⊥`, finite and differentiable `μ`-almost
-everywhere, such that `x ↦ ∇ u (x)` pushes `μ` to `ν` and is the `μ`-almost everywhere unique
-optimal transport map.
+`μ` is finite and `c - c`-regular (`TauCeti.IsCCRegular`, e.g. a.c.) and the optimal cost is
+finite, the optimal transport plan is unique and is induced by the gradient of a convex function:
+there is a lower semicontinuous convex `u : E → EReal` never taking `⊥`, finite and differentiable
+`μ`-almost everywhere, such that `x ↦ ∇ u (x)` pushes `μ` to `ν` and is the `μ`-almost everywhere
+unique optimal transport map.
 
 The proof avoids Kantorovich duality. The support of an optimal plan of finite cost is
 `c`-cyclically monotone (`TauCeti.IsOptimalCoupling.isCyclicallyMonotone_support`), so by
@@ -76,9 +77,6 @@ are those of `‖x - y‖ ^ 2`, whose transport cost is twice as large
 * `TauCeti.IsOptimalCoupling.exists_support_subset_subdifferential` — on any real inner product
   space, the support of an optimal quadratic plan of finite cost lies in the subdifferential graph
   of a proper lower semicontinuous convex function;
-* `TauCeti.isCyclicallyMonotone_support_of_eLpNorm_eq` — a coupling realizing the quadratic
-  Wasserstein distance between laws with finite second moments has cyclically monotone support for
-  the cost `‖x - y‖ ^ 2 / 2`;
 * `TauCeti.eq_graphPlan_gradient_of_ae_mem_subdifferential_of_ae_differentiableAt` — on a real
   Hilbert space, a plan concentrated on the subdifferential graph of a function `u` that avoids
   `⊤` near `μ`-almost every point with differentiable real representative there is the graph plan
@@ -92,7 +90,7 @@ are those of `‖x - y‖ ^ 2`, whose transport cost is twice as large
   semicontinuous convex function never taking `⊥`, differentiable almost everywhere;
 * `TauCeti.IsOptimalCoupling.exists_eq_graphPlan_of_isCCRegular` — the graph-plan
   conclusion of `TauCeti.IsOptimalCoupling.exists_eq_graphPlan_gradient` for the cost `edist ^ 2`
-  of the quadratic Wasserstein distance: out of a `c - c`-regular source, an optimal plan to
+  of the quadratic Wasserstein distance: out of a finite `c - c`-regular source, an optimal plan to
   a law at finite `W₂` distance is the graph plan of a measurable map;
 * `TauCeti.map_swap_eq_graphPlan_gradient_fenchelConjugate` — for a `c - c`-regular target, the
   exchanged plan is the graph plan of the gradient of the conjugate potential;
@@ -102,10 +100,10 @@ are those of `‖x - y‖ ^ 2`, whose transport cost is twice as large
   almost everywhere;
 * `TauCeti.IsOptimalCoupling.unique` — for a `c - c`-regular source and finite optimal
   cost, the optimal quadratic plan is unique;
-* `TauCeti.IsCCRegular.isOptimalCoupling_graphPlan_gradient` — for a `c - c`-regular source with
-  finite second moments, if a convex potential avoids `⊤` source-a.e. and the gradient of its
-  real representative has the prescribed target law, its graph plan is optimal without assuming
-  `u ≠ ⊥` or a.e. differentiability;
+* `TauCeti.IsCCRegular.isOptimalCoupling_graphPlan_gradient` — for a finite `c - c`-regular
+  source and a finite target, both with finite second moments, if a convex potential avoids `⊤`
+  source-a.e. and the gradient of its real representative has the prescribed target law, its graph
+  plan is optimal without assuming `u ≠ ⊥` or a.e. differentiability;
 * `TauCeti.gradient_ae_eq_gradient_of_hasLaw` — **uniqueness of the monotone rearrangement**:
   two gradients of convex functions (with `u, v ≠ ⊤` a.e.) pushing a `c - c`-regular `μ` to the same
   law agree `μ`-almost everywhere, when both laws have finite second moments;
@@ -206,23 +204,19 @@ theorem IsOptimalCoupling.exists_support_subset_subdifferential [IsFiniteMeasure
   exact ⟨_, convex_epigraph_fenchelConjugate (innerₗ E) g,
     lowerSemicontinuous_fenchelConjugate_innerₗ g, hbot, htop, hsub⟩
 
-omit [InnerProductSpace ℝ E] in
-/-- **Optimal quadratic Wasserstein plans have cyclically monotone support.** If `π` is a coupling
-of a finite measure `μ` and a measure `ν`, both with finite second moments, whose quadratic cost
-realizes the quadratic Wasserstein distance, then its support is cyclically monotone for the cost
-`‖x - y‖ ^ 2 / 2`. -/
-theorem isCyclicallyMonotone_support_of_eLpNorm_eq [BorelSpace E] [SecondCountableTopology E]
-    [IsFiniteMeasure μ] (hμ : MemLp id 2 μ) (hν : MemLp id 2 ν) (hπ : IsCoupling π μ ν)
-    (hW : eLpNorm (fun z : E × E ↦ edist z.1 z.2) 2 π = wassersteinEDist 2 μ ν) :
-    IsCyclicallyMonotone (fun z : E × E ↦ ‖z.1 - z.2‖ ^ 2 / 2) π.support := by
-  have hopt : IsOptimalCoupling (fun z : E × E ↦ ENNReal.ofReal (‖z.1 - z.2‖ ^ 2 / 2)) π μ ν :=
-    isOptimalCoupling_norm_sub_sq_div_two_of_edist_rpow_two (by
-      simpa only [ENNReal.toReal_ofNat] using
-        (isOptimalCoupling_edist_rpow_iff measurable_edist two_ne_zero ENNReal.ofNat_ne_top).2
-          ⟨hπ, hW⟩)
-  exact (isCyclicallyMonotone_ofReal_iff fun _ ↦ by positivity).1
-    (hopt.isCyclicallyMonotone_support continuous_ofReal_norm_sub_sq_div_two
-      (hπ.transportCost_norm_sub_sq_div_two_ne_top hμ hν))
+/-- **An optimal quadratic plan concentrates on a subdifferential graph.** On a separable real
+inner product space, if `π` is an optimal plan of finite cost for `‖x - y‖ ^ 2 / 2` between finite
+measures, there is a proper convex, lower semicontinuous `u : E → EReal` such that `y ∈ ∂u(x)`
+for `π`-almost every `(x, y)`. -/
+private theorem IsOptimalCoupling.exists_ae_mem_subdifferential [SecondCountableTopology E]
+    [IsFiniteMeasure μ]
+    (h : IsOptimalCoupling (fun z : E × E => ENNReal.ofReal (‖z.1 - z.2‖ ^ 2 / 2)) π μ ν)
+    (hfin : transportCost (fun z : E × E => ENNReal.ofReal (‖z.1 - z.2‖ ^ 2 / 2)) μ ν ≠ ∞) :
+    ∃ u : E → EReal, Convex ℝ {p : E × ℝ | u p.1 ≤ p.2} ∧ LowerSemicontinuous u ∧
+      (∀ x, u x ≠ ⊥) ∧ (∃ x, u x ≠ ⊤) ∧ ∀ᵐ z ∂π, z.2 ∈ subdifferential (innerₗ E) u z.1 := by
+  obtain ⟨u, hconv, hlsc, hbot, htop, hsub⟩ := h.exists_support_subset_subdifferential hfin
+  refine ⟨u, hconv, hlsc, hbot, htop, ?_⟩
+  filter_upwards [π.support_mem_ae] with z hz using hsub hz
 
 omit [OpensMeasurableSpace (E × E)] in
 /-- **Reciprocity along a plan.** If `y ∈ ∂u(x)` for `π`-almost every `(x, y)`, then
@@ -440,9 +434,7 @@ theorem IsCoupling.isOptimalCoupling_iff_exists_ae_mem_subdifferential
   refine ⟨fun h => ?_, fun ⟨_, _, _, _, _, hu⟩ =>
     hπ.isOptimalCoupling_of_ae_mem_subdifferential hμ hν hu⟩
   have hfin := h.toIsCoupling.transportCost_norm_sub_sq_div_two_ne_top hμ hν
-  obtain ⟨u, hconv, hlsc, hbot, htop, hsub⟩ := h.exists_support_subset_subdifferential hfin
-  refine ⟨u, hconv, hlsc, hbot, htop, ?_⟩
-  filter_upwards [π.support_mem_ae] with z hz using hsub hz
+  exact h.exists_ae_mem_subdifferential hfin
 
 end InnerProduct
 
@@ -525,10 +517,8 @@ theorem IsOptimalCoupling.exists_eq_graphPlan_gradient [IsFiniteMeasure μ] (hμ
       (∀ x, u x ≠ ⊥) ∧
       (∀ᵐ x ∂μ, (∀ᶠ x' in 𝓝 x, u x' ≠ ⊤) ∧ DifferentiableAt ℝ (fun x' => (u x').toReal) x) ∧
       π = graphPlan (∇ fun x => (u x).toReal) μ := by
-  obtain ⟨u, hconv, hlsc, hbot, -, hsub⟩ := h.exists_support_subset_subdifferential hfin
-  have hsub' : ∀ᵐ z ∂π, z.2 ∈ subdifferential (innerₗ E) u z.1 := by
-    filter_upwards [π.support_mem_ae] with z hz using hsub hz
-  obtain ⟨hdiff, hgraph⟩ := eq_graphPlan_gradient_of_ae_mem_subdifferential h.fst_eq hμ hconv hsub'
+  obtain ⟨u, hconv, hlsc, hbot, -, hsub⟩ := h.exists_ae_mem_subdifferential hfin
+  obtain ⟨hdiff, hgraph⟩ := eq_graphPlan_gradient_of_ae_mem_subdifferential h.fst_eq hμ hconv hsub
   exact ⟨u, hconv, hlsc, hbot, hdiff, hgraph⟩
 
 /-- **The exchanged plan is the graph plan of the gradient of the conjugate.** Let `π` be a plan
@@ -730,13 +720,11 @@ theorem exists_isKantorovichOptimalTransportMap_gradient_and_gradient_fenchelCon
   have hc : Continuous fun z : E × E => ENNReal.ofReal (‖z.1 - z.2‖ ^ 2 / 2) :=
     continuous_ofReal_norm_sub_sq_div_two
   obtain ⟨π, hπ⟩ := exists_isOptimalCoupling_of_transportCost_ne_top hc.lowerSemicontinuous hfin
-  obtain ⟨u, hconv, hlsc, hbot, -, hsub⟩ := hπ.exists_support_subset_subdifferential hfin
-  have hsub' : ∀ᵐ z ∂π, z.2 ∈ subdifferential (innerₗ E) u z.1 := by
-    filter_upwards [π.support_mem_ae] with z hz using hsub hz
+  obtain ⟨u, hconv, hlsc, hbot, -, hsub⟩ := hπ.exists_ae_mem_subdifferential hfin
   obtain ⟨hdiff, hgraph⟩ :=
-    eq_graphPlan_gradient_of_ae_mem_subdifferential hπ.fst_eq hμ hconv hsub'
+    eq_graphPlan_gradient_of_ae_mem_subdifferential hπ.fst_eq hμ hconv hsub
   obtain ⟨hdiff', hgraph'⟩ :=
-    map_swap_eq_graphPlan_gradient_fenchelConjugate hπ.snd_eq hν hsub'
+    map_swap_eq_graphPlan_gradient_fenchelConjugate hπ.snd_eq hν hsub
   -- The quadratic cost is symmetric, so the exchanged plan is optimal from `ν` to `μ`.
   have hswap : IsOptimalCoupling (fun z : E × E => ENNReal.ofReal (‖z.1 - z.2‖ ^ 2 / 2))
       (π.map Prod.swap) ν μ := by

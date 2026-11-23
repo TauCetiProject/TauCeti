@@ -157,9 +157,9 @@ with differentiable real representative there, such that:
 * the map `s = ∇u⋆ ∘ U` has law `P`, where `u⋆` is the Legendre–Fenchel conjugate of `u`;
 * `U = ∇u ∘ s` almost everywhere.
 
-The factor `s` is determined by `u`
-(`TauCeti.ae_eq_gradient_fenchelConjugate_comp_of_ae_eq_gradient_comp`) and is the unique map of
-law `P` minimising the quadratic cost to `U`
+The factor `s` is determined `m`-almost everywhere by `u`
+(`TauCeti.ae_eq_gradient_fenchelConjugate_comp_of_ae_eq_gradient_comp`) and is the `m`-almost
+everywhere unique map of law `P` minimising the quadratic cost to `U`
 (`TauCeti.ae_eq_of_lintegral_norm_sub_sq_div_two_le`). -/
 theorem exists_hasLaw_and_ae_eq_gradient_comp [IsFiniteMeasure m]
     (hU : AEMeasurable U m) (hUreg : IsCCRegular (m.map U)) (hP : IsCCRegular P)
@@ -180,13 +180,13 @@ theorem exists_hasLaw_and_ae_eq_gradient_comp [IsFiniteMeasure m]
   refine ⟨u, hconv, hlsc, hbot, hdiff, hT, hS.toHasLaw.comp (hasLaw_map hU), ?_⟩
   filter_upwards [ae_eq_comp hU hinv] with ω hω using hω.symm
 
-/-- **The measure-preserving factor is the unique cost minimiser.** On a finite measure space
-`(α, m)`, let `T : E → E` be an optimal transport map for `‖x - y‖ ^ 2 / 2` from `P` to the law
-of `U : α → E`, at finite optimal cost, the law of `U` being `c - c`-regular. Let `s` have law `P`
-with `U = T ∘ s` almost everywhere. If a map `s'` of law `P` is at most as far from `U` as `s`, in
-the sense that
+/-- **The measure-preserving factor is the `m`-almost everywhere unique cost minimiser.** On a
+finite measure space `(α, m)`, let `T : E → E` be an optimal transport map for `‖x - y‖ ^ 2 / 2`
+from `P` to the law of `U : α → E`, at finite optimal cost, the law of `U` being `c - c`-regular.
+Let `s` have law `P` with `U = T ∘ s` almost everywhere. If a map `s'` of law `P` is at most as
+far from `U` as `s`, in the sense that
 `∫⁻ ω, ENNReal.ofReal (‖s' ω - U ω‖ ^ 2 / 2) ∂m ≤ ∫⁻ ω, ENNReal.ofReal (‖s ω - U ω‖ ^ 2 / 2) ∂m`,
-then `s' = s` almost everywhere. For the polar factorization, `T` is the gradient `∇u`. -/
+then `s' = s` `m`-almost everywhere. For the polar factorization, `T` is the gradient `∇u`. -/
 theorem ae_eq_of_lintegral_norm_sub_sq_div_two_le [IsFiniteMeasure m]
     (hUreg : IsCCRegular (m.map U)) {T : E → E}
     (hT : IsKantorovichOptimalTransportMap (fun z : E × E => ENNReal.ofReal (‖z.1 - z.2‖ ^ 2 / 2))
@@ -234,14 +234,15 @@ theorem ae_eq_of_lintegral_norm_sub_sq_div_two_le [IsFiniteMeasure m]
     ae_eq_comp_of_map_swap_map_prodMk_eq_graphPlan hS hs.aemeasurable hU hgraph] with ω h₁ h₂
   rw [h₁, h₂]
 
-/-- **The measure-preserving factor is the unique correlation maximiser.** On a finite measure
-space `(α, m)`, let `P` and the law of `U : α → E` have finite second moments, the law of `U`
-being `c - c`-regular. Let `T : E → E` be an optimal transport map for `‖x - y‖ ^ 2 / 2` from `P`
-to the law of `U`, and let `s` have law `P` with `U = T ∘ s` almost everywhere. By
-`TauCeti.integral_inner_le_of_ae_eq_comp`, `s` maximises the correlation `∫ ⟪s', U⟫ dm` among maps
-`s'` of law `P`; it is the unique maximiser: if `s'` has law `P` and
-`∫ ⟪s, U⟫ dm ≤ ∫ ⟪s', U⟫ dm`, then `s' = s` almost everywhere. For the polar factorization, `T` is
-the gradient `∇u`, optimal by `TauCeti.isKantorovichOptimalTransportMap_gradient`. -/
+/-- **The measure-preserving factor is the `m`-almost everywhere unique correlation maximiser.**
+On a finite measure space `(α, m)`, let `P` and the law of `U : α → E` have finite second moments,
+the law of `U` being `c - c`-regular. Let `T : E → E` be an optimal transport map for
+`‖x - y‖ ^ 2 / 2` from `P` to the law of `U`, and let `s` have law `P` with `U = T ∘ s` almost
+everywhere. By `TauCeti.integral_inner_le_of_ae_eq_comp`, `s` maximises the correlation
+`∫ ⟪s', U⟫ dm` among maps `s'` of law `P`; it is the `m`-almost everywhere unique maximiser: if `s'`
+has law `P` and `∫ ⟪s, U⟫ dm ≤ ∫ ⟪s', U⟫ dm`, then `s' = s` `m`-almost everywhere. For the polar
+factorization, `T` is the gradient `∇u`, optimal by
+`TauCeti.isKantorovichOptimalTransportMap_gradient`. -/
 theorem ae_eq_of_integral_inner_le [IsFiniteMeasure m] (hP2 : MemLp id 2 P)
     (hν : MemLp id 2 (m.map U)) (hUreg : IsCCRegular (m.map U)) {T : E → E}
     (hT : IsKantorovichOptimalTransportMap (fun z : E × E => ENNReal.ofReal (‖z.1 - z.2‖ ^ 2 / 2))

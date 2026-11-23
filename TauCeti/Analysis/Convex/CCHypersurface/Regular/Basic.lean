@@ -11,8 +11,6 @@ public import Mathlib.MeasureTheory.Measure.Typeclasses.NullSingletonClass
 public import Mathlib.Topology.MetricSpace.HausdorffDimension
 public import TauCeti.Analysis.Convex.CCHypersurface.Basic
 import TauCeti.Analysis.Convex.CCHypersurface.Measure
-import TauCeti.Analysis.Convex.CCHypersurface.Zajicek
-import TauCeti.Analysis.Convex.EffectiveDomain
 import TauCeti.Analysis.InnerProductSpace.OrthogonalLine.HausdorffDimension
 
 /-!
@@ -21,14 +19,20 @@ import TauCeti.Analysis.InnerProductSpace.OrthogonalLine.HausdorffDimension
 A measure `μ` on a real inner product space `E` is **`c - c`-regular** (`TauCeti.IsCCRegular`,
 avoiding Mathlib's topological `Measure.Regular`) if it vanishes on every `c - c` hypersurface
 (`TauCeti.IsCCHypersurface`). In finite dimensions, `IsCCRegular μ` is equivalent to `μ`-a.e.
-differentiability of every convex `E → ℝ` and is the sharp source regularity hypothesis for
-Brenier's theorem (`TauCeti/MeasureTheory/OptimalTransport/Brenier/Basic.lean`,
+differentiability of every convex `E → ℝ` (see
+`TauCeti.Analysis.Convex.CCHypersurface.Regular.Differentiability`) and is the sharp source
+regularity hypothesis for Brenier's theorem
+(`TauCeti/MeasureTheory/OptimalTransport/Brenier/Basic.lean`,
 `TauCeti/MeasureTheory/OptimalTransport/Brenier/RegularSource.lean`).
 
 ## Main declarations
 
 * `TauCeti.IsCCRegular` — vanishing on every `c - c` hypersurface.
 * `TauCeti.isCCRegular_add_iff`, `TauCeti.isCCRegular_smul_iff`, `TauCeti.isCCRegular_sum_iff`,
+  `TauCeti.isCCRegular_map_add_left_iff_of_aemeasurable`,
+  `TauCeti.isCCRegular_map_add_right_iff_of_aemeasurable`,
+  `TauCeti.isCCRegular_map_continuousLinearEquiv_iff_of_aemeasurable`,
+  `TauCeti.isCCRegular_map_linearIsometryEquiv_iff_of_aemeasurable`,
   `TauCeti.isCCRegular_map_add_left_iff`, `TauCeti.isCCRegular_map_add_right_iff`,
   `TauCeti.isCCRegular_map_continuousLinearEquiv_iff`,
   `TauCeti.isCCRegular_map_linearIsometryEquiv_iff` — closure and invariance properties.
@@ -37,11 +41,7 @@ Brenier's theorem (`TauCeti/MeasureTheory/OptimalTransport/Brenier/Basic.lean`,
 * `TauCeti.isCCRegular_of_forall_isLipschitzHypersurface`,
   `TauCeti.isCCRegular_of_null_lipschitz_graphs`, `TauCeti.isCCRegular_of_dimH_add_one_le`,
   `TauCeti.isCCRegular_of_dimH_le`, `TauCeti.isCCRegular_of_isAddHaarMeasure`,
-  `TauCeti.isCCRegular_of_absolutelyContinuous`,
-  `TauCeti.isCCRegular_iff_forall_convexOn_ae_differentiableAt`,
-  `TauCeti.isCCRegular_of_forall_convex_ae_differentiableAt`,
-  `TauCeti.IsCCRegular.ae_eventually_ne_top_and_differentiableAt_toReal` — sufficient conditions,
-  Zajíček characterization, and almost-everywhere differentiability on effective domains.
+  `TauCeti.isCCRegular_of_absolutelyContinuous` — sufficient conditions for `c - c`-regularity.
 
 ## References
 
@@ -172,44 +172,72 @@ theorem isCCRegular_iff_nullSingletonClass (hd : Module.finrank ℝ E = 1) :
     fun _ _ hs => let ⟨_, hx⟩ := (isCCHypersurface_iff_exists_eq_singleton hd).1 hs
       hx ▸ measure_singleton _⟩
 
-/-- Left translation preserves `c - c`-regularity of Borel measures. -/
-@[simp]
-theorem isCCRegular_map_add_left_iff [BorelSpace E] (v : E) :
-    IsCCRegular (μ.map (v + ·)) ↔ IsCCRegular μ := by
+/-- Left translation preserves `c - c`-regularity when the translation is a.e. measurable. -/
+theorem isCCRegular_map_add_left_iff_of_aemeasurable [OpensMeasurableSpace E] (v : E)
+    (hv : AEMeasurable (v + ·) μ) : IsCCRegular (μ.map (v + ·)) ↔ IsCCRegular μ := by
   have hpre (t : Set E) : (v + ·) ⁻¹' t = (-v) +ᵥ t := by
     ext x; simp [mem_vadd_set_iff_neg_vadd_mem]
   refine ⟨fun h s hs => ?_, fun h s hs => ?_⟩
   · have hvs := hs.vadd v
-    simpa [Measure.map_apply (continuous_const_add v).measurable hvs.measurableSet, hpre]
+    simpa [Measure.map_apply₀ hv hvs.isClosed.measurableSet.nullMeasurableSet, hpre]
       using h hvs
-  · rw [Measure.map_apply (continuous_const_add v).measurable hs.measurableSet, hpre]
+  · rw [Measure.map_apply₀ hv hs.isClosed.measurableSet.nullMeasurableSet, hpre]
     exact h (hs.vadd (-v))
+
+/-- Left translation preserves `c - c`-regularity of Borel measures. -/
+@[simp]
+theorem isCCRegular_map_add_left_iff [BorelSpace E] (v : E) :
+    IsCCRegular (μ.map (v + ·)) ↔ IsCCRegular μ :=
+  isCCRegular_map_add_left_iff_of_aemeasurable v (continuous_const_add v).measurable.aemeasurable
+
+/-- Right translation preserves `c - c`-regularity when the translation is a.e. measurable. -/
+theorem isCCRegular_map_add_right_iff_of_aemeasurable [OpensMeasurableSpace E] (v : E)
+    (hv : AEMeasurable (· + v) μ) : IsCCRegular (μ.map (· + v)) ↔ IsCCRegular μ := by
+  simpa only [add_comm _ v] using
+    isCCRegular_map_add_left_iff_of_aemeasurable (μ := μ) v (by simpa only [add_comm _ v] using hv)
 
 /-- Right translation preserves `c - c`-regularity of Borel measures. -/
 @[simp]
 theorem isCCRegular_map_add_right_iff [BorelSpace E] (v : E) :
-    IsCCRegular (μ.map (· + v)) ↔ IsCCRegular μ := by
-  simpa only [add_comm _ v] using isCCRegular_map_add_left_iff (μ := μ) v
+    IsCCRegular (μ.map (· + v)) ↔ IsCCRegular μ :=
+  isCCRegular_map_add_right_iff_of_aemeasurable v (continuous_add_const v).measurable.aemeasurable
+
+/-- Pushforward by an a.e. measurable continuous linear equivalence preserves `c - c`-regularity
+into a space where open sets are measurable. -/
+theorem isCCRegular_map_continuousLinearEquiv_iff_of_aemeasurable {F : Type*}
+    [NormedAddCommGroup F] [InnerProductSpace ℝ F] [MeasurableSpace F] [OpensMeasurableSpace F]
+    (L : E ≃L[ℝ] F) (hL : AEMeasurable L μ) :
+    IsCCRegular (μ.map L) ↔ IsCCRegular μ := by
+  refine ⟨fun h s hs => ?_, fun h s hs => ?_⟩
+  · have hLs := hs.image_continuousLinearEquiv L
+    simpa [Measure.map_apply₀ hL hLs.isClosed.measurableSet.nullMeasurableSet,
+      L.injective.preimage_image s] using h hLs
+  · rw [Measure.map_apply₀ hL hs.isClosed.measurableSet.nullMeasurableSet]
+    exact h ((isCCHypersurface_preimage_continuousLinearEquiv_iff L).2 hs)
 
 /-- Pushforward by a continuous linear equivalence preserves `c - c`-regularity. -/
 @[simp]
 theorem isCCRegular_map_continuousLinearEquiv_iff {F : Type*} [NormedAddCommGroup F]
     [InnerProductSpace ℝ F] [MeasurableSpace F] [OpensMeasurableSpace E] [BorelSpace F]
-    (L : E ≃L[ℝ] F) : IsCCRegular (μ.map L) ↔ IsCCRegular μ := by
-  refine ⟨fun h s hs => ?_, fun h s hs => ?_⟩
-  · have hLs := hs.image_continuousLinearEquiv L
-    simpa [Measure.map_apply L.continuous.measurable hLs.measurableSet,
-      L.injective.preimage_image s] using h hLs
-  · rw [Measure.map_apply L.continuous.measurable hs.measurableSet, ← L.image_symm_eq_preimage]
-    exact h (hs.image_continuousLinearEquiv L.symm)
+    (L : E ≃L[ℝ] F) : IsCCRegular (μ.map L) ↔ IsCCRegular μ :=
+  isCCRegular_map_continuousLinearEquiv_iff_of_aemeasurable L L.continuous.measurable.aemeasurable
+
+/-- Pushforward by an a.e. measurable linear isometric equivalence preserves `c - c`-regularity
+into a space where open sets are measurable. -/
+theorem isCCRegular_map_linearIsometryEquiv_iff_of_aemeasurable {F : Type*}
+    [NormedAddCommGroup F] [InnerProductSpace ℝ F] [MeasurableSpace F] [OpensMeasurableSpace F]
+    (L : E ≃ₗᵢ[ℝ] F) (hL : AEMeasurable L μ) :
+    IsCCRegular (μ.map L) ↔ IsCCRegular μ := by
+  simpa only [LinearIsometryEquiv.coe_toContinuousLinearEquiv] using
+    isCCRegular_map_continuousLinearEquiv_iff_of_aemeasurable (μ := μ) L.toContinuousLinearEquiv
+      (by simpa only [LinearIsometryEquiv.coe_toContinuousLinearEquiv] using hL)
 
 /-- Pushforward by a linear isometric equivalence preserves `c - c`-regularity. -/
 @[simp]
 theorem isCCRegular_map_linearIsometryEquiv_iff {F : Type*} [NormedAddCommGroup F]
     [InnerProductSpace ℝ F] [MeasurableSpace F] [OpensMeasurableSpace E] [BorelSpace F]
-    (L : E ≃ₗᵢ[ℝ] F) : IsCCRegular (μ.map L) ↔ IsCCRegular μ := by
-  simpa only [LinearIsometryEquiv.coe_toContinuousLinearEquiv] using
-    isCCRegular_map_continuousLinearEquiv_iff (μ := μ) L.toContinuousLinearEquiv
+    (L : E ≃ₗᵢ[ℝ] F) : IsCCRegular (μ.map L) ↔ IsCCRegular μ :=
+  isCCRegular_map_linearIsometryEquiv_iff_of_aemeasurable L L.continuous.measurable.aemeasurable
 
 end Basic
 
@@ -263,54 +291,6 @@ theorem isCCRegular_of_dimH_le [OpensMeasurableSpace E] {μ : Measure E}
     h _ hA (by
       simpa only [ENNReal.natCast_sub, Nat.cast_one] using
         ENNReal.le_sub_of_add_le_right ENNReal.one_ne_top hdim)
-
-/-- **Differentiability characterization of `c - c`-regularity.** By Zajíček's theorem
-(`TauCeti.exists_convexOn_subset_not_differentiableAt_iff`), a measure `μ` on a finite-dimensional
-real inner product space `E` is `c - c`-regular iff every convex `u : E → ℝ` is differentiable
-`μ`-almost everywhere. -/
-theorem isCCRegular_iff_forall_convexOn_ae_differentiableAt {μ : Measure E} :
-    IsCCRegular μ ↔ ∀ u : E → ℝ, ConvexOn ℝ univ u → ∀ᵐ x ∂μ, DifferentiableAt ℝ u x :=
-  ⟨fun hμ u hu => let ⟨C, hC, hCs, hsub⟩ :=
-      exists_convexOn_subset_not_differentiableAt_iff.1 ⟨u, hu, Subset.rfl⟩
-    ae_iff.2 (hμ.measure_eq_zero_of_subset_sUnion hC hCs hsub),
-   fun h s hs =>
-    let ⟨u, hu, hsub⟩ := (exists_convexOn_subset_not_differentiableAt_iff (A := s)).2
-      ⟨{s}, countable_singleton s, by simpa, by simp⟩
-    measure_mono_null hsub (ae_iff.1 (h u hu))⟩
-
-/-- **Extended-real convex differentiability implies `c - c`-regularity.** If every extended-real
-convex function on a finite-dimensional real inner product space (never `⊥`) has differentiable real
-representative `μ`-almost everywhere on its effective domain, then `μ` is `c - c`-regular. -/
-theorem isCCRegular_of_forall_convex_ae_differentiableAt {μ : Measure E}
-    (h : ∀ u : E → EReal, Convex ℝ {p : E × ℝ | u p.1 ≤ p.2} → (∀ x, u x ≠ ⊥) →
-      ∀ᵐ x ∂μ, u x ≠ ⊤ → DifferentiableAt ℝ (fun x' => (u x').toReal) x) :
-    IsCCRegular μ :=
-  isCCRegular_iff_forall_convexOn_ae_differentiableAt.2 fun v hv => by
-    simpa [EReal.toReal_coe] using
-      h (fun x => (v x : EReal)) (by simpa using convexOn_iff_convex_epigraph_ite.1 hv)
-        (fun _ => EReal.coe_ne_bot _)
-
-/-- **Almost-everywhere differentiability of extended-real convex functions against a
-`c - c`-regular measure.** By Zajíček's covering theorems, for any extended-real `u : E → EReal`
-with convex real epigraph and any `c - c`-regular `μ`, at `μ`-a.e. `x` with `u x ≠ ⊤`, `u ≠ ⊤` near
-`x` and `u.toReal` is differentiable at `x` (needing no `u x ≠ ⊥` hypothesis, unlike
-`TauCeti.ae_eventually_ne_top_and_differentiableAt_toReal`). -/
-theorem IsCCRegular.ae_eventually_ne_top_and_differentiableAt_toReal {μ : Measure E}
-    (hμ : IsCCRegular μ) {u : E → EReal} (hconv : Convex ℝ {p : E × ℝ | u p.1 ≤ p.2}) :
-    ∀ᵐ x ∂μ, u x ≠ ⊤ →
-      (∀ᶠ x' in 𝓝 x, u x' ≠ ⊤) ∧ DifferentiableAt ℝ (fun x' => (u x').toReal) x := by
-  let D : Set E := {x | u x ≠ ⊤}
-  obtain ⟨C₁, hC₁, hs₁, hfr⟩ :=
-    (convex_setOf_ne_top hconv).exists_countable_isCCHypersurface_cover_frontier
-  obtain ⟨C₂, hC₂, hs₂, hnd⟩ :=
-    exists_countable_isCCHypersurface_cover_mem_interior_not_differentiableAt_toReal hconv
-  have hdiff : D \ interior D ⊆ ⋃₀ C₁ := fun _ hx => hfr ⟨subset_closure hx.1, hx.2⟩
-  filter_upwards [measure_eq_zero_iff_ae_notMem.1 (hμ.measure_eq_zero_of_subset_sUnion hC₁ hs₁
-      hdiff),
-    measure_eq_zero_iff_ae_notMem.1 (hμ.measure_eq_zero_of_subset_sUnion hC₂ hs₂ hnd)] with
-    x hx₁ hx₂ hxD
-  have hx_int : x ∈ interior D := by by_contra hni; exact hx₁ ⟨hxD, hni⟩
-  exact ⟨mem_interior_iff_mem_nhds.1 hx_int, by by_contra hndiff; exact hx₂ ⟨hx_int, hndiff⟩⟩
 
 /-- **Every additive Haar measure is `c - c`-regular.** -/
 theorem isCCRegular_of_isAddHaarMeasure [BorelSpace E] (μ : Measure E) [μ.IsAddHaarMeasure] :

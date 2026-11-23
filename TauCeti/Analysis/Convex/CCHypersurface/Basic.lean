@@ -30,8 +30,10 @@ are precisely the singletons.
   (`*_iff_exists_eq_range`), orthonormal coordinate (`*_iff_exists_linearIsometryEquiv`), and 1D
   (`*_iff_exists_eq_singleton`) characterizations.
 * `TauCeti.isCCHypersurface_vadd_iff`, `TauCeti.isCCHypersurface_image_continuousLinearEquiv_iff`,
+  `TauCeti.isCCHypersurface_preimage_continuousLinearEquiv_iff`,
   `TauCeti.isLipschitzHypersurface_vadd_iff`,
-  `TauCeti.isLipschitzHypersurface_image_continuousLinearEquiv_iff` — affine invariance.
+  `TauCeti.isLipschitzHypersurface_image_continuousLinearEquiv_iff`,
+  `TauCeti.isLipschitzHypersurface_preimage_continuousLinearEquiv_iff` — affine invariance.
 * `TauCeti.IsCCHypersurface.exists_subset_iUnion_isLipschitzHypersurface` — countable Lipschitz
   covering of any `c - c` hypersurface in a separable space.
 
@@ -236,18 +238,36 @@ theorem isCCHypersurface_image_continuousLinearEquiv_iff {F : Type*} [NormedAddC
   ⟨fun h => by simpa [image_image] using h.image_continuousLinearEquiv L.symm,
     fun h => h.image_continuousLinearEquiv L⟩
 
+/-- Preimages under continuous linear equivalences preserve `c - c` hypersurfaces. -/
+@[simp]
+theorem isCCHypersurface_preimage_continuousLinearEquiv_iff {F : Type*} [NormedAddCommGroup F]
+    [InnerProductSpace ℝ F] {s : Set F} (L : E ≃L[ℝ] F) :
+    IsCCHypersurface (L ⁻¹' s) ↔ IsCCHypersurface s := by
+  simpa only [← L.image_symm_eq_preimage] using
+    isCCHypersurface_image_continuousLinearEquiv_iff (s := s) L.symm
+
 /-- Linear isometric equivalences preserve `c - c` hypersurfaces. -/
 theorem IsCCHypersurface.image_linearIsometryEquiv {F : Type*} [NormedAddCommGroup F]
     [InnerProductSpace ℝ F] {s : Set E} (hs : IsCCHypersurface s) (L : E ≃ₗᵢ[ℝ] F) :
-    IsCCHypersurface (L '' s) :=
-  hs.image_continuousLinearEquiv L.toContinuousLinearEquiv
+    IsCCHypersurface (L '' s) := by
+  simpa only [LinearIsometryEquiv.coe_toContinuousLinearEquiv] using
+    hs.image_continuousLinearEquiv L.toContinuousLinearEquiv
 
 /-- Images under linear isometric equivalences preserve `c - c` hypersurfaces. -/
 @[simp]
 theorem isCCHypersurface_image_linearIsometryEquiv_iff {F : Type*} [NormedAddCommGroup F]
     [InnerProductSpace ℝ F] {s : Set E} (L : E ≃ₗᵢ[ℝ] F) :
-    IsCCHypersurface (L '' s) ↔ IsCCHypersurface s :=
-  isCCHypersurface_image_continuousLinearEquiv_iff (s := s) L.toContinuousLinearEquiv
+    IsCCHypersurface (L '' s) ↔ IsCCHypersurface s := by
+  simpa only [LinearIsometryEquiv.coe_toContinuousLinearEquiv] using
+    isCCHypersurface_image_continuousLinearEquiv_iff (s := s) L.toContinuousLinearEquiv
+
+/-- Preimages under linear isometric equivalences preserve `c - c` hypersurfaces. -/
+@[simp]
+theorem isCCHypersurface_preimage_linearIsometryEquiv_iff {F : Type*} [NormedAddCommGroup F]
+    [InnerProductSpace ℝ F] {s : Set F} (L : E ≃ₗᵢ[ℝ] F) :
+    IsCCHypersurface (L ⁻¹' s) ↔ IsCCHypersurface s := by
+  simpa only [LinearIsometryEquiv.coe_toContinuousLinearEquiv] using
+    isCCHypersurface_preimage_continuousLinearEquiv_iff (s := s) L.toContinuousLinearEquiv
 
 /-- Continuous linear equivalences preserve Lipschitz hypersurfaces. -/
 theorem IsLipschitzHypersurface.image_continuousLinearEquiv {F : Type*} [NormedAddCommGroup F]
@@ -268,18 +288,36 @@ theorem isLipschitzHypersurface_image_continuousLinearEquiv_iff {F : Type*} [Nor
   ⟨fun h => by simpa [image_image] using h.image_continuousLinearEquiv L.symm,
     fun h => h.image_continuousLinearEquiv L⟩
 
+/-- Preimages under continuous linear equivalences preserve Lipschitz hypersurfaces. -/
+@[simp]
+theorem isLipschitzHypersurface_preimage_continuousLinearEquiv_iff {F : Type*}
+    [NormedAddCommGroup F] [InnerProductSpace ℝ F] {s : Set F} (L : E ≃L[ℝ] F) :
+    IsLipschitzHypersurface (L ⁻¹' s) ↔ IsLipschitzHypersurface s := by
+  simpa only [← L.image_symm_eq_preimage] using
+    isLipschitzHypersurface_image_continuousLinearEquiv_iff (s := s) L.symm
+
 /-- Linear isometric equivalences preserve Lipschitz hypersurfaces. -/
 theorem IsLipschitzHypersurface.image_linearIsometryEquiv {F : Type*} [NormedAddCommGroup F]
     [InnerProductSpace ℝ F] {s : Set E} (hs : IsLipschitzHypersurface s) (L : E ≃ₗᵢ[ℝ] F) :
-    IsLipschitzHypersurface (L '' s) :=
-  hs.image_continuousLinearEquiv L.toContinuousLinearEquiv
+    IsLipschitzHypersurface (L '' s) := by
+  simpa only [LinearIsometryEquiv.coe_toContinuousLinearEquiv] using
+    hs.image_continuousLinearEquiv L.toContinuousLinearEquiv
 
 /-- Images under linear isometric equivalences preserve Lipschitz hypersurfaces. -/
 @[simp]
 theorem isLipschitzHypersurface_image_linearIsometryEquiv_iff {F : Type*} [NormedAddCommGroup F]
     [InnerProductSpace ℝ F] {s : Set E} (L : E ≃ₗᵢ[ℝ] F) :
-    IsLipschitzHypersurface (L '' s) ↔ IsLipschitzHypersurface s :=
-  isLipschitzHypersurface_image_continuousLinearEquiv_iff (s := s) L.toContinuousLinearEquiv
+    IsLipschitzHypersurface (L '' s) ↔ IsLipschitzHypersurface s := by
+  simpa only [LinearIsometryEquiv.coe_toContinuousLinearEquiv] using
+    isLipschitzHypersurface_image_continuousLinearEquiv_iff (s := s) L.toContinuousLinearEquiv
+
+/-- Preimages under linear isometric equivalences preserve Lipschitz hypersurfaces. -/
+@[simp]
+theorem isLipschitzHypersurface_preimage_linearIsometryEquiv_iff {F : Type*}
+    [NormedAddCommGroup F] [InnerProductSpace ℝ F] {s : Set F} (L : E ≃ₗᵢ[ℝ] F) :
+    IsLipschitzHypersurface (L ⁻¹' s) ↔ IsLipschitzHypersurface s := by
+  simpa only [LinearIsometryEquiv.coe_toContinuousLinearEquiv] using
+    isLipschitzHypersurface_preimage_continuousLinearEquiv_iff (s := s) L.toContinuousLinearEquiv
 
 end Defs
 

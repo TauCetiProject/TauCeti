@@ -9,7 +9,7 @@ public import Mathlib.Analysis.Calculus.FDeriv.Defs
 public import Mathlib.Analysis.InnerProductSpace.PiL2
 public import TauCeti.Analysis.Convex.SingularSet
 public import TauCeti.Analysis.InnerProductSpace.OrthogonalLine.HausdorffDimension
-import TauCeti.Analysis.Convex.CCHypersurface.Regular
+import TauCeti.Analysis.Convex.CCHypersurface.Regular.Differentiability
 import TauCeti.Analysis.Convex.Separation
 import TauCeti.Analysis.Convex.SubgradientImage
 
@@ -282,10 +282,8 @@ theorem ae_eventually_ne_top_and_differentiableAt_toReal_of_dimH_add_one_le
     rw [Measure.map_apply he hA]
     refine hμ (e ⁻¹' A) (he hA) ?_
     simpa only [E₀, e.dimH_preimage, finrank_euclideanSpace_fin] using hdim
-  have hae₀ :=
-    (isCCRegular_of_null_lipschitz_graphs fun _ hv _ _ hg =>
-      measure_range_add_smul_eq_zero_of_dimH_add_one_le hμ₀ hv hg)
-      |>.ae_eventually_ne_top_and_differentiableAt_toReal (u := fun x => f (e.symm x)) hf₀
+  have hae₀ := (isCCRegular_of_dimH_add_one_le hμ₀).ae_eventually_ne_top_and_differentiableAt_toReal
+    (u := fun y => f (e.symm y)) hf₀
   filter_upwards [ae_of_ae_map he.aemeasurable hae₀] with x hx hfx
   obtain ⟨hdom, hd⟩ := hx (by simpa only [e.symm_apply_apply] using hfx)
   refine ⟨?_, ?_⟩

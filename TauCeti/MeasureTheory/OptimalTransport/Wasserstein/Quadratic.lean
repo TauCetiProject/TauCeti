@@ -22,6 +22,9 @@ theory out of general Wasserstein imports.
   transport cost of `‖x - y‖ ^ 2 / 2`.
 * `TauCeti.transportCost_norm_sub_sq_div_two_ne_top_of_wassersteinEDist_ne_top` — finite `W₂`
   distance implies finite quadratic transport cost for `‖x - y‖ ^ 2 / 2`.
+* `TauCeti.isCyclicallyMonotone_support_of_eLpNorm_eq` — a coupling realizing the quadratic
+  Wasserstein distance between laws with finite second moments has cyclically monotone support for
+  the cost `‖x - y‖ ^ 2 / 2`.
 -/
 
 public section
@@ -32,6 +35,29 @@ open MeasureTheory
 open scoped ENNReal
 
 namespace TauCeti
+
+section NormedFiniteCost
+
+variable {E : Type*} [SeminormedAddCommGroup E] [MeasurableSpace E] {μ ν : Measure E}
+
+/-- Finite quadratic Wasserstein distance implies finite quadratic transport cost for
+`‖x - y‖ ^ 2 / 2`. -/
+theorem transportCost_norm_sub_sq_div_two_ne_top_of_wassersteinEDist_ne_top
+    (hfin : wassersteinEDist 2 μ ν ≠ ∞) :
+    transportCost (fun z : E × E ↦ ENNReal.ofReal (‖z.1 - z.2‖ ^ 2 / 2)) μ ν ≠ ∞ := by
+  obtain ⟨π, hπ, hπlt⟩ := wassersteinEDist_lt_iff.1 hfin.lt_top
+  have hae : AEStronglyMeasurable (fun z : E × E ↦ edist z.1 z.2) π :=
+    aestronglyMeasurable_of_eLpNorm_ne_top hπlt.ne
+  have hsq : ∫⁻ z : E × E, ENNReal.ofReal (‖z.1 - z.2‖ ^ 2 / 2) ∂π ≤
+      eLpNorm (fun z : E × E ↦ edist z.1 z.2) 2 π ^ 2 := by
+    rw [eLpNorm_two_sq_eq_lintegral hae]
+    refine lintegral_mono fun z ↦ ?_
+    rw [eNorm_eq_self, ← ENNReal.rpow_two, edist_rpow_two_eq_two_mul_ofReal_norm_sub_sq_div_two]
+    exact le_mul_of_one_le_left zero_le one_le_two
+  exact ((transportCost_le_lintegral hπ _).trans hsq |>.trans_lt
+    (ENNReal.pow_lt_top hπlt)).ne
+
+end NormedFiniteCost
 
 section NormedOptimal
 
@@ -51,15 +77,22 @@ theorem wassersteinEDist_two_sq_eq_two_mul_transportCost (μ ν : Measure E) :
   funext z
   exact edist_rpow_two_eq_two_mul_ofReal_norm_sub_sq_div_two z
 
-/-- Finite quadratic Wasserstein distance implies finite quadratic transport cost for
+/-- **Optimal quadratic Wasserstein plans have cyclically monotone support.** If `π` is a coupling
+of a finite measure `μ` and a measure `ν`, both with finite second moments, whose quadratic cost
+realizes the quadratic Wasserstein distance, then its support is cyclically monotone for the cost
 `‖x - y‖ ^ 2 / 2`. -/
-theorem transportCost_norm_sub_sq_div_two_ne_top_of_wassersteinEDist_ne_top
-    (hfin : wassersteinEDist 2 μ ν ≠ ∞) :
-    transportCost (fun z : E × E ↦ ENNReal.ofReal (‖z.1 - z.2‖ ^ 2 / 2)) μ ν ≠ ∞ := by
-  intro htop
-  have hsq := wassersteinEDist_two_sq_eq_two_mul_transportCost μ ν
-  rw [htop, ENNReal.mul_top two_ne_zero] at hsq
-  exact ENNReal.pow_ne_top hfin hsq
+theorem isCyclicallyMonotone_support_of_eLpNorm_eq [IsFiniteMeasure μ] {π : Measure (E × E)}
+    (hμ : MemLp id 2 μ) (hν : MemLp id 2 ν) (hπ : IsCoupling π μ ν)
+    (hW : eLpNorm (fun z : E × E ↦ edist z.1 z.2) 2 π = wassersteinEDist 2 μ ν) :
+    IsCyclicallyMonotone (fun z : E × E ↦ ‖z.1 - z.2‖ ^ 2 / 2) π.support := by
+  have hopt : IsOptimalCoupling (fun z : E × E ↦ ENNReal.ofReal (‖z.1 - z.2‖ ^ 2 / 2)) π μ ν :=
+    isOptimalCoupling_norm_sub_sq_div_two_of_edist_rpow_two (by
+      simpa only [ENNReal.toReal_ofNat] using
+        (isOptimalCoupling_edist_rpow_iff measurable_edist two_ne_zero ENNReal.ofNat_ne_top).2
+          ⟨hπ, hW⟩)
+  exact (isCyclicallyMonotone_ofReal_iff fun _ ↦ by positivity).1
+    (hopt.isCyclicallyMonotone_support continuous_ofReal_norm_sub_sq_div_two
+      (hπ.transportCost_norm_sub_sq_div_two_ne_top hμ hν))
 
 end NormedOptimal
 

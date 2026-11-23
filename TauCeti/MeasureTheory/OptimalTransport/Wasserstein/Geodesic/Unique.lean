@@ -36,9 +36,10 @@ are exactly the linear interpolations `t ↦ ((1 - t) • x + t • y)₊ π` of
 of `μ` and `ν` (`TauCeti.WassersteinSpace.isGeodesicSegment_iff_exists_isOptimalCoupling`), so
 when the optimal coupling is unique they are exactly the linear interpolation of `π`. On a
 finite-dimensional real inner product space, Brenier's theorem makes the quadratic optimal coupling
-out of a `c - c`-regular law `μ` unique, and the graph plan of the Brenier map `T`. Every
-geodesic segment of `P₂ (E)` out of `μ` is then McCann's displacement interpolation
-`t ↦ ((1 - t) • id + t • T)₊ μ`, and in particular there is only one.
+out of a `c - c`-regular law `μ` to any target `ν` unique, and the graph plan of a Brenier map
+`T`. Every geodesic segment of `P₂ (E)` from `μ` to `ν` is then McCann's displacement
+interpolation `t ↦ ((1 - t) • id + t • T)₊ μ`, so any two geodesic segments from `μ` to `ν` agree
+on `[0, 1]`.
 
 ## Main results
 

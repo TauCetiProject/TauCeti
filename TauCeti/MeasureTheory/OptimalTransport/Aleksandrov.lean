@@ -7,6 +7,7 @@ module
 
 public import TauCeti.MeasureTheory.OptimalTransport.Brenier.Basic
 import Mathlib.MeasureTheory.Measure.Lebesgue.Basic
+import TauCeti.MeasureTheory.OptimalTransport.Wasserstein.Space
 
 /-!
 # Brenier and Aleksandrov solutions of the Monge–Ampère equation

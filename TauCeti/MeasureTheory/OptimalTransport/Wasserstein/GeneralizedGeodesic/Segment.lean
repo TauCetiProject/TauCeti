@@ -7,6 +7,7 @@ module
 
 public import TauCeti.MeasureTheory.OptimalTransport.Brenier.Basic
 public import TauCeti.MeasureTheory.OptimalTransport.Wasserstein.GeneralizedGeodesic.Stability
+import TauCeti.MeasureTheory.OptimalTransport.Wasserstein.Quadratic
 
 /-!
 # Restricting and reparameterizing generalized geodesics

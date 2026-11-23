@@ -41,13 +41,14 @@ specialization `TauCeti.existsUnique_isMinOn_sum_wassersteinEDist_sq_of_dimH_le`
 ## Main statements
 
 * `TauCeti.WassersteinSpace.existsUnique_isFrechetBarycenter_two` — existence and uniqueness of
-  population quadratic Wasserstein barycenters in `P₂(E)` when `P` has finite second moment and
-  gives positive mass to `c - c`-regular laws;
+  population quadratic Wasserstein barycenters in `P₂(E)` when `P` is a probability law on
+  `P₂(E)` with finite second moment that gives positive mass to `c - c`-regular laws;
 * `TauCeti.WassersteinSpace.existsUnique_isFrechetBarycenter_two_sum_smul_dirac` — existence and
-  uniqueness of finite quadratic barycenters in `P₂(E)` when one positively weighted input law is
-  `c - c`-regular;
+  uniqueness of finite quadratic barycenters in `P₂(E)` for weights summing to `1` when one
+  positively weighted input law is `c - c`-regular;
 * `TauCeti.existsUnique_isMinOn_sum_mul_wassersteinEDist_sq` — existence and uniqueness of
-  minimizers over `ProbabilityMeasure E` when one positively weighted input law is `c - c`-regular;
+  minimizers over `ProbabilityMeasure E` for probability laws of finite second moment and weights
+  summing to `1` when one positively weighted input law is `c - c`-regular;
 * `TauCeti.existsUnique_isMinOn_sum_wassersteinEDist_sq_of_dimH_le` — **Agueh–Carlier existence and
   uniqueness of quadratic barycenters** on `EuclideanSpace ℝ (Fin n)`.
 
@@ -90,7 +91,8 @@ theorem existsUnique_isFrechetBarycenter_two
       (mem_frechetBarycenters.mpr hν') (mem_frechetBarycenters.mpr hν)⟩
 
 /-- **Existence and uniqueness of finite quadratic Wasserstein barycenters in `P₂(E)`**
-(Agueh–Carlier) when one positively weighted input law is `c - c`-regular. -/
+(Agueh–Carlier) for weights summing to `1` when one positively weighted input law is
+`c - c`-regular. -/
 theorem existsUnique_isFrechetBarycenter_two_sum_smul_dirac
     {ι : Type*} [Fintype ι] {w : ι → ℝ≥0} (hw : ∑ i, w i = 1) (μ : ι → WassersteinSpace 2 E)
     {j : ι} (hj : w j ≠ 0)
@@ -105,7 +107,8 @@ theorem existsUnique_isFrechetBarycenter_two_sum_smul_dirac
 end WassersteinSpace
 
 /-- **Existence and uniqueness of quadratic barycenters over `ProbabilityMeasure E`**
-(Agueh–Carlier) when one positively weighted input law is `c - c`-regular. -/
+(Agueh–Carlier) for finitely many probability laws of finite second moment and weights summing to
+`1` when one positively weighted input law is `c - c`-regular. -/
 theorem existsUnique_isMinOn_sum_mul_wassersteinEDist_sq
     {ι : Type*} [Fintype ι] (w : ι → ℝ≥0) (hw : ∑ i, w i = 1) (μ : ι → Measure E)
     [∀ i, IsProbabilityMeasure (μ i)] (hμ : ∀ i, HasFiniteMoment 2 (μ i))

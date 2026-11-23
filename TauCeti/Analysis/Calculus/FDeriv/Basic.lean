@@ -100,8 +100,7 @@ theorem not_differentiableAt_of_add_sub_two_mul_ge {V : Type*} [SeminormedAddCom
     ¬ DifferentiableAt ℝ u x := fun hd => by
   have hderiv (w : V) : HasDerivAt (fun t : ℝ => u (x + t • w)) (fderiv ℝ u x w) 0 := by
     rw [hasDerivAt_iff_isLittleO_nhds_zero]
-    have h1 : (fun y : V => u y - u x - fderiv ℝ u x (y - x)) =o[nhds x] (fun y => y - x) :=
-      hasFDerivAt_iff_isLittleO.1 hd.hasFDerivAt
+    have h1 := hasFDerivAt_iff_isLittleO.1 hd.hasFDerivAt
     have h2 : Filter.Tendsto (fun t : ℝ => x + t • w) (nhds (0 : ℝ)) (nhds x) := by
       simpa [Pi.add_def] using
         ((continuous_const (y := x)).add (continuous_id.smul continuous_const) :
