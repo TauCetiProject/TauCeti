@@ -108,13 +108,13 @@ theorem apply_one_tmul_eq_zero_of_mem_identityComponentHopfIdeal
     (Algebra.TensorProduct.map (AlgHom.id d.Ω d.Ω) g.hom.toAlgHom).toRingHom.comp
       ((Algebra.TensorProduct.cancelBaseChange k K d.Ω d.Ω A).symm.toRingEquiv.toRingHom.comp
         (Algebra.TensorProduct.map d.right (AlgHom.id k A)).toRingHom)
-  let ψ : d.Ω ⊗[K] T →ₐ[K] d.Ω := Algebra.TensorProduct.lift (AlgHom.id K d.Ω)
-    ((Algebra.ofId K d.Ω).comp (Bialgebra.counitAlgHom K T)) fun _ _ ↦ Commute.all _ _
+  let ψ := Bialgebra.counitAlgHom d.Ω (d.Ω ⊗[K] T)
   have hψφ (y : baseChange (K := L) A) :
       ψ (φ y) = d.right (Bialgebra.counitAlgHom L (baseChange (K := L) A) y) := by
     induction y using TensorProduct.inductionOn with
     | tmul l a =>
-      simp [φ, ψ, Bialgebra.counitAlgHom_apply, Algebra.smul_def, mul_comm]
+      simp [φ, ψ, Bialgebra.counitAlgHom_apply, Algebra.smul_def, mul_comm,
+        ← IsScalarTower.algebraMap_apply]
     | add a b ha hb => simp only [map_add, ha, hb]
   have hconn : ConnectedSpace (PrimeSpectrum (d.Ω ⊗[K] T)) :=
     (PrimeSpectrum.homeomorphOfRingEquiv
