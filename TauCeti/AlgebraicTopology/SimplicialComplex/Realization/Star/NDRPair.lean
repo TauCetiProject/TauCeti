@@ -55,36 +55,37 @@ namespace AbstractSimplicialComplex
 variable {ι : Type*} (K : AbstractSimplicialComplex ι) (s : Set ι)
 
 private theorem mass_eq_sum_filter [DecidablePred (· ∈ s)] (x : Realization K) :
-    ∑ᶠ v ∈ s, x.1 v = ∑ v ∈ x.1.support with v ∈ s, x.1 v :=
+    ∑ᶠ v ∈ s, x.val v = ∑ v ∈ x.val.support with v ∈ s, x.val v :=
   TauCeti.finsum_mem_eq_sum_filter_of_support_subset _ s (Finsupp.fun_support_eq _).subset
 
 /-- The barycentric mass on `s` and the mass off `s` add up to one. -/
 private theorem mass_add_sum_filter_not [DecidablePred (· ∈ s)] (x : Realization K) :
-    ∑ᶠ v ∈ s, x.1 v + ∑ v ∈ x.1.support with v ∉ s, x.1 v = 1 := by
+    ∑ᶠ v ∈ s, x.val v + ∑ v ∈ x.val.support with v ∉ s, x.val v = 1 := by
   rw [mass_eq_sum_filter, Finset.sum_filter_add_sum_filter_not, ← Realization.sum_eq_one K x,
     Finsupp.sum]
 
-private theorem mass_nonneg (x : Realization K) : 0 ≤ ∑ᶠ v ∈ s, x.1 v := by
+private theorem mass_nonneg (x : Realization K) : 0 ≤ ∑ᶠ v ∈ s, x.val v := by
   classical
   rw [mass_eq_sum_filter]
   exact Finset.sum_nonneg fun v _ => Realization.nonneg K x v
 
-private theorem mass_le_one (x : Realization K) : ∑ᶠ v ∈ s, x.1 v ≤ 1 := by
+private theorem mass_le_one (x : Realization K) : ∑ᶠ v ∈ s, x.val v ≤ 1 := by
   classical
   have := mass_add_sum_filter_not K s x
-  linarith [Finset.sum_nonneg fun v (_ : v ∈ x.1.support.filter (· ∉ s)) =>
+  linarith [Finset.sum_nonneg fun v (_ : v ∈ x.val.support.filter (· ∉ s)) =>
     Realization.nonneg K x v]
 
-private theorem one_sub_mass_mem (x : Realization K) : 1 - ∑ᶠ v ∈ s, x.1 v ∈ unitInterval :=
+private theorem one_sub_mass_mem (x : Realization K) : 1 - ∑ᶠ v ∈ s, x.val v ∈ unitInterval :=
   ⟨sub_nonneg.2 (mass_le_one K s x), sub_le_self _ (mass_nonneg K s x)⟩
 
 /-- The barycentric mass on `s` is continuous for the weak topology: on each closed simplex it
 is a finite sum of coordinates. -/
-private theorem continuous_mass : Continuous fun x : Realization K => ∑ᶠ v ∈ s, x.1 v := by
+private theorem continuous_mass : Continuous fun x : Realization K => ∑ᶠ v ∈ s, x.val v := by
   classical
   refine continuous_iff_faceInclusion.2 fun τ => ?_
-  have hcoord : Continuous fun y : StandardSimplex τ.1 => (y.1 : ι → ℝ) := continuous_induced_dom
-  refine (continuous_finsetSum (τ.1.filter (· ∈ s)) fun v _ =>
+  have hcoord : Continuous fun y : StandardSimplex τ.val => (y.val : ι → ℝ)
+      := continuous_induced_dom
+  refine (continuous_finsetSum (τ.val.filter (· ∈ s)) fun v _ =>
     (continuous_apply v).comp hcoord).congr fun y => ?_
   simp only [Function.comp_apply, faceInclusion_val]
   exact (TauCeti.finsum_mem_eq_sum_filter_of_support_subset _ s
@@ -94,21 +95,21 @@ private theorem continuous_mass : Continuous fun x : Realization K => ∑ᶠ v �
 vanishes exactly on the polyhedron of the full subcomplex spanned by `s`, and is less than one
 exactly on the open star of `s`. -/
 def openStarControl : C(Realization K, I) where
-  toFun x := ⟨1 - ∑ᶠ v ∈ s, x.1 v, one_sub_mass_mem K s x⟩
+  toFun x := ⟨1 - ∑ᶠ v ∈ s, x.val v, one_sub_mass_mem K s x⟩
   continuous_toFun := (continuous_const.sub (continuous_mass K s)).subtype_mk _
 
 @[simp]
 theorem coe_openStarControl_apply (x : Realization K) :
-    (K.openStarControl s x : ℝ) = 1 - ∑ᶠ v ∈ s, x.1 v :=
+    (K.openStarControl s x : ℝ) = 1 - ∑ᶠ v ∈ s, x.val v :=
   (rfl)
 
 /-- The control function of the open star of `s` vanishes exactly on the polyhedron of the full
 subcomplex spanned by `s`. -/
 @[simp]
 theorem openStarControl_eq_zero_iff {x : Realization K} :
-    K.openStarControl s x = 0 ↔ (x.1.support : Set ι) ⊆ s := by
+    K.openStarControl s x = 0 ↔ (x.val.support : Set ι) ⊆ s := by
   classical
-  have h : 1 - ∑ᶠ v ∈ s, x.1 v = ∑ v ∈ x.1.support with v ∉ s, x.1 v := by
+  have h : 1 - ∑ᶠ v ∈ s, x.val v = ∑ v ∈ x.val.support with v ∉ s, x.val v := by
     linarith [mass_add_sum_filter_not K s x]
   rw [← Subtype.coe_inj, coe_openStarControl_apply, Icc.coe_zero, h,
     Finset.sum_eq_zero_iff_of_nonneg fun v _ => Realization.nonneg K x v]
@@ -130,7 +131,7 @@ theorem openStarControl_lt_one_iff {x : Realization K} :
 /-- **The polyhedron of a full subcomplex is an NDR pair.** The NDR data is obtained from the
 straight-line deformation of the open star of `s` onto the full subcomplex spanned by `s`, cut
 off by the control function `openStarControl K s`. -/
-def fullSubcomplexNDRPair : TauCeti.NDRPair {x : Realization K | (x.1.support : Set ι) ⊆ s} :=
+def fullSubcomplexNDRPair : TauCeti.NDRPair {x : Realization K | (x.val.support : Set ι) ⊆ s} :=
   .ofHomotopyRel (K.setOf_support_subset_subset_openStarRealizationSet s)
     (K.openStarDeformation s) (K.openStarControl s)
     (fun _ => K.openStarControl_eq_zero_iff s) fun _ => (K.openStarControl_lt_one_iff s).1
@@ -145,7 +146,7 @@ theorem fullSubcomplexNDRPair_def :
 /-- **The polyhedron of a full subcomplex has the homotopy extension property** in the weak
 realization. -/
 theorem hasHomotopyExtensionProperty_setOf_support_subset :
-    TauCeti.HasHomotopyExtensionProperty {x : Realization K | (x.1.support : Set ι) ⊆ s} :=
+    TauCeti.HasHomotopyExtensionProperty {x : Realization K | (x.val.support : Set ι) ⊆ s} :=
   (K.fullSubcomplexNDRPair s).hasHomotopyExtensionProperty
 
 end AbstractSimplicialComplex

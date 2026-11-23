@@ -32,7 +32,7 @@ variable {𝕜 : Type*} [NontriviallyNormedField 𝕜] {a : 𝕜}
 
 /-- The order of a meromorphic germ, with order `⊤` for the zero germ. -/
 def order (φ : meromorphicGerms 𝕜 a) : WithTop ℤ :=
-  Germ.liftOn φ.1 (fun f ↦ meromorphicOrderAt f a) fun _ _ h ↦ meromorphicOrderAt_congr h
+  Germ.liftOn φ.val (fun f ↦ meromorphicOrderAt f a) fun _ _ h ↦ meromorphicOrderAt_congr h
 
 @[simp]
 theorem order_mk (f : 𝕜 → 𝕜) (hf : MeromorphicAt f a) :

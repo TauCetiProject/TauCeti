@@ -70,8 +70,8 @@ private theorem exists_thue_auxiliary_polynomials_of_numberField [NumberField K]
     (fun i ↦ ((i : ℕ).choose k : K) * ((b : K) ^ (m + 1) * α ^ ((i : ℕ) - k + 1)))
   have he (k j) : IsIntegral ℤ (e k j) := by
     rcases j with i | i <;> have := i.is_lt
-    · exact (isIntegral_natCast _).mul (isIntegral_natCast_pow_mul_pow hbα (by omega))
-    · exact (isIntegral_natCast _).mul (isIntegral_natCast_pow_mul_pow hbα (by omega))
+    · exact (isIntegral_natCast _).mul (hbα.natCast_pow_mul_pow (by omega))
+    · exact (isIntegral_natCast _).mul (hbα.natCast_pow_mul_pow (by omega))
   let a : Matrix (Fin r) (Fin (m + 1) ⊕ Fin (m + 1)) (𝓞 K) :=
     fun k j ↦ (⟨e k j, he k j⟩ : 𝓞 K)
   have hH : 1 ≤ H := le_max_left _ _

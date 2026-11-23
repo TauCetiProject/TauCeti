@@ -8,15 +8,26 @@ module
 public import Mathlib.RingTheory.LocalRing.MaximalIdeal.Basic
 
 /-!
-# Irreducible elements and the maximal ideal of a local ring
+# Elements in the maximal ideal of a local ring
 
-In a commutative local semiring, every nonunit belongs to the unique maximal ideal, so every
-irreducible element lies in `IsLocalRing.maximalIdeal R` (`Irreducible.mem_maximalIdeal`) and is
-never a product of two elements of `IsLocalRing.maximalIdeal R`
-(`Irreducible.ne_mul_of_mem_maximalIdeal`).
+In a commutative local semiring, every nonunit belongs to the unique maximal ideal
+`IsLocalRing.maximalIdeal R`. In particular, any element that fails to divide another lies in the
+maximal ideal (`TauCeti.IsLocalRing.mem_maximalIdeal_of_not_dvd`), and every irreducible element
+lies in `IsLocalRing.maximalIdeal R` (`Irreducible.mem_maximalIdeal`) and is never a product of two
+elements of `IsLocalRing.maximalIdeal R` (`Irreducible.ne_mul_of_mem_maximalIdeal`).
 -/
 
 public section
+
+namespace TauCeti.IsLocalRing
+
+/-- In a commutative local semiring, any element that fails to divide another lies in the maximal
+ideal. -/
+theorem mem_maximalIdeal_of_not_dvd {R : Type*} [CommSemiring R] [IsLocalRing R] {f a : R}
+    (hfa : ¬ f ∣ a) : f ∈ _root_.IsLocalRing.maximalIdeal R :=
+  of_not_not fun h ↦ hfa (_root_.IsLocalRing.notMem_maximalIdeal.mp h).dvd
+
+end TauCeti.IsLocalRing
 
 namespace Irreducible
 

@@ -332,13 +332,13 @@ private theorem map_pointMapHom_formalPointFiltration_le {c : F_u} (hc0 : c ≠ 
   have hP0 : P ≠ 0 := by
     rintro rfl
     rw [Affine.Point.xCoord_zero, map_zero] at hP
-    exact (pow_ne_zero 2 exp_ne_zero) (le_zero_iff.mp hP)
+    exact (pow_ne_zero 2 exp_ne_zero) (nonpos_iff_eq_zero.mp hP)
   obtain ⟨x, y, h, rfl⟩ := Affine.Point.exists_eq_some_of_ne_zero hP0
   rw [Affine.Point.xCoord_some] at hP
   obtain ⟨-, hv⟩ := hR x y h (hRk.trans_le hP)
   -- `exp j ^ 2 · v c ^ 2 = exp k ^ 2 ≤ v x = v (x (φ P)) · v c ^ 2`
   have hc2 : 0 < Valued.v c ^ 2 :=
-    pow_pos (zero_lt_iff.mpr ((Valued.v : Valuation F_u ℤᵐ⁰).ne_zero_iff.mpr hc0)) 2
+    pow_pos (pos_iff_ne_zero.mpr ((Valued.v : Valuation F_u ℤᵐ⁰).ne_zero_iff.mpr hc0)) 2
   refine Or.inr (le_of_mul_le_mul_right ?_ hc2)
   rw [hv, ← mul_pow, mul_comm, hjk]
   exact hP

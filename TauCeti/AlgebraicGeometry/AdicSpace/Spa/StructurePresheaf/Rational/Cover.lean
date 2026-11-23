@@ -77,7 +77,7 @@ public section
 
 open CategoryTheory TopologicalSpace TauCeti.Huber TauCeti.Huber.PairOfDefinition
 
-universe v w
+universe v
 
 namespace TauCeti.ValuationSpectrum
 
@@ -110,7 +110,7 @@ private theorem isSheafFor_ofArrows_spaRationalOpens_of_iSup_eq_top (hC : Lauren
     have hspa : spa Aplus = ∅ := by
       simpa using spa_eq_biUnion_rationalSubset_of_span_eq_top Aplus hS
     obtain ⟨i⟩ := ‹Nonempty ι›
-    have hle : ⊤ ≤ U i := fun v _ ↦ absurd v.2 (by simp [hspa])
+    have hle : ⊤ ≤ U i := fun v _ ↦ absurd v.property (by simp [hspa])
     rw [Presieve.isSheafFor_iff_generate, (Sieve.id_mem_iff_eq_top (S := Sieve.generate _)).mp
       ⟨_, homOfLE hle, _, Presieve.ofArrows.mk i, rfl⟩]
     exact Presieve.isSheafFor_top _
@@ -126,7 +126,7 @@ private theorem isSheafFor_ofArrows_spaRationalOpens_of_iSup_eq_top (hC : Lauren
     (isSheafFor_ofArrows_inf_spaBasicOpen_of_span_eq_top_of_laurentGluing P hC hA
       hP hAplus hSne hS (top_mem_spaRationalOpens Aplus)) (fun V g hg ↦ ?_) fun i Z g hg ↦ ?_
   · obtain ⟨f⟩ := hg
-    obtain ⟨i, hi⟩ := hSU f f.2
+    obtain ⟨i, hi⟩ := hSU f f.property
     exact ⟨U i, homOfLE fun v hv ↦ hi (mem_spaBasicOpen.mp hv.2), homOfLE le_top,
       Presieve.ofArrows.mk i, rfl⟩
   · obtain ⟨f⟩ := hg
@@ -179,7 +179,8 @@ theorem isSheafFor_ofArrows_spaRationalOpens_of_iSup_eq_of_laurentGluing
     refine isSheafFor_ofArrows_spaRationalOpens_of_iSup_eq_top (completionLocalization P T s _ hden)
       hC hB
       (completionLocalization_ringOfDefinition_le_completedPlusSubring P Aplus hP T s _ hden)
-      (isRingOfIntegralElements_completedPlusSubring P Aplus (fun j _ ↦ hP j.2) hAplus T s _ hden)
+      (isRingOfIntegralElements_completedPlusSubring P Aplus (fun j _ ↦ hP j.property) hAplus T s _
+          hden)
       (locOpensComap_spaBasicOpen_self P Aplus T s _ hden)
       (fun i ↦ locOpensComap_mem_spaRationalOpens P Aplus T s _ hden (hU i)) ?_
     rw [← hcov]

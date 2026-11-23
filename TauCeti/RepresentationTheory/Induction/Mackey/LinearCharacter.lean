@@ -137,7 +137,7 @@ theorem simple_indFDRep_ofLinearCharacter_iff_of_conj_eq_inv (hindex : N.index =
     have hconj : MulAut.conjNormal t x = x⁻¹ :=
       Subtype.ext (by
         rw [MulAut.conjNormal_apply]
-        simpa using conj_eq_inv_of_notMem_of_index_two hindex hs hinv ht x.2)
+        simpa using conj_eq_inv_of_notMem_of_index_two hindex hs hinv ht x.property)
     rw [hconj, map_inv, ne_eq, ne_eq, inv_eq_iff_mul_eq_one, ← sq]
   refine ⟨fun h => ?_, fun ⟨x, hx⟩ t ht => ⟨x, (key ht x).mpr hx⟩⟩
   obtain ⟨x, hx⟩ := h s hs
@@ -157,7 +157,7 @@ theorem simple_indFDRep_ofLinearCharacter_iff_centralizer_le {χ : N →* kˣ}
     by_contra hsN
     obtain ⟨x, hx⟩ := h s hsN
     refine hx (congrArg χ (Subtype.ext ?_))
-    rw [MulAut.conjNormal_apply, ← Subgroup.mem_centralizer_iff.mp hs (x : G) x.2]
+    rw [MulAut.conjNormal_apply, ← Subgroup.mem_centralizer_iff.mp hs (x : G) x.property]
     group
   · intro h s hs
     by_contra hall

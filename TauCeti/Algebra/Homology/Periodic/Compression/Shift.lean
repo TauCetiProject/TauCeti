@@ -51,7 +51,7 @@ instance hasCompression_shift : HasCompression n (K⟦k⟧) := fun r =>
     (GradedObject.mapObjFun K.X (fun i : ℤ ↦ (i : ZMod n)) (r + k))
     (GradedObject.mapObjFun (K⟦k⟧).X (fun i : ℤ ↦ (i : ZMod n)) r)
     ((Equiv.addRight k).subtypeEquiv (fun i => by simp))
-    (fun i => CochainComplex.shiftFunctorObjXIso K k i.1 (i.1 + k) rfl)
+    (fun i => CochainComplex.shiftFunctorObjXIso K k i.val (i.val + k) rfl)
 
 /-- The degreewise isomorphism which reindexes the compression of a shifted complex by
 `i ↦ i + k`. -/

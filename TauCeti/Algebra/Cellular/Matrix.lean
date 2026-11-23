@@ -78,6 +78,13 @@ theorem lowerSpan_matrix : (matrix R n).lowerSpan () = ⊥ := by
     Set.eq_empty_of_forall_notMem fun _ hi => lt_irrefl () hi
   rw [lowerSpan_def, h, Set.image_empty, Submodule.span_empty]
 
+/-- The single cell `()` of `CellularBasis.matrix R n` spans the entire matrix algebra. -/
+@[simp]
+theorem leSpan_matrix : (matrix R n).leSpan () = ⊤ := by
+  have h : {i : Σ _ : Unit, n × n | i.1 ≤ ()} = Set.univ :=
+    Set.eq_univ_of_forall fun ⟨⟨⟩, _⟩ ↦ Set.mem_ofPred.mpr le_rfl
+  rw [leSpan_def, h, Set.image_univ, (matrix R n).basis.span_eq]
+
 /-- The cell representation of the matrix units is the identity: the cell module of a matrix
 algebra is its defining module. -/
 @[simp]
@@ -98,13 +105,8 @@ theorem gramMatrix_matrix : (matrix R n).gramMatrix () = 1 := by
 /-- The single cell of `CellularBasis.matrix R n` has trivial cell radical over any commutative
 ring `R`. -/
 @[simp]
-theorem cellRadical_matrix : (matrix R n).cellRadical () = ⊥ := by
-  rw [Submodule.eq_bot_iff]
-  intro x hx
-  apply ((matrix R n).cellModuleEquiv ()).injective
-  ext i
-  have h0 := ((matrix R n).mem_cellRadical () x).mp hx ((matrix R n).cellBasis () i)
-  simpa [cellForm_apply, dotProduct, Matrix.one_apply] using h0
+theorem cellRadical_matrix : (matrix R n).cellRadical () = ⊥ :=
+  (matrix R n).cellRadical_eq_bot_of_det_gramMatrix_mem_nonZeroDivisors (by simp)
 
 /-- Over any commutative ring `R`, the single cell of `CellularBasis.matrix R n` has nondegenerate
 bilinear form. -/

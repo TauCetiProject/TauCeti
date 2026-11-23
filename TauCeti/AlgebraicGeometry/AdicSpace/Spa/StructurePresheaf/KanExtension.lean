@@ -248,27 +248,27 @@ theorem isSheaf_rational_comp_of_isSheafFor_ofArrows
   intro W S hS
   obtain ⟨ι, U, π, rfl⟩ := S.exists_eq_ofArrows
   rw [Functor.mem_restrictedTopology_iff, Sieve.functorPushforward_ofArrows] at hS
-  have hcov : ⨆ i, (U i).1 = W.1 := by
+  have hcov : ⨆ i, (U i).val = W.val := by
     apply le_antisymm (iSup_le fun i ↦ (π i).hom.le)
     intro x hx
     obtain ⟨V, f, hf, hxV⟩ := hS x hx
     obtain ⟨V', g, f', hf', rfl⟩ := hf
     obtain ⟨i⟩ := hf'
     exact Opens.mem_iSup.mpr ⟨i, g.le hxV⟩
-  have hrat := hrat W.2 (fun i ↦ (U i).2) hcov
+  have hrat := hrat W.property (fun i ↦ (U i).property) hcov
   have hπ (i : ι) : (rationalOpensFunctor Aplus).map (π i) =
-      homOfLE ((le_iSup (fun i ↦ (U i).1) i).trans_eq hcov) := Subsingleton.elim _ _
+      homOfLE ((le_iSup (fun i ↦ (U i).val) i).trans_eq hcov) := Subsingleton.elim _ _
   rw [← Presieve.isSheafFor_iff_generate, Presieve.isSheafFor_arrows_iff]
   rw [Presieve.isSheafFor_arrows_iff] at hrat
   intro x hx
   -- Intersections of rational opens are rational, so compatibility on the basis supplies the
   -- pairwise-intersection compatibility required in the ambient category of opens.
   have hcompat : Presieve.Arrows.Compatible (presentationLimitPresheaf P Aplus ⋙ G)
-      (fun i ↦ homOfLE ((le_iSup (fun i ↦ (U i).1) i).trans_eq hcov)) x := by
+      (fun i ↦ homOfLE ((le_iSup (fun i ↦ (U i).val) i).trans_eq hcov)) x := by
     apply (Presieve.Arrows.compatible_homOfLE_iff _ _).mpr
     intro i j
     let V : spaRationalOpens Aplus :=
-      ⟨(U i).1 ⊓ (U j).1, inf_mem_spaRationalOpens (U i).2 (U j).2⟩
+      ⟨(U i).val ⊓ (U j).val, inf_mem_spaRationalOpens (U i).property (U j).property⟩
     exact hx i j V (InducedCategory.homMk (homOfLE inf_le_left))
       (InducedCategory.homMk (homOfLE inf_le_right)) (Subsingleton.elim _ _)
   obtain ⟨a, ha, hu⟩ := hrat x hcompat

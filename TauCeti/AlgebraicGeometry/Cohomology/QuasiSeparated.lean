@@ -91,23 +91,23 @@ theorem exists_subsingleton_cohomologyOn_inf_basicOpen_of_le_isAffineOpen {U W :
     rw [← hsW, Finset.sup_empty, bot_inf_eq]
     exact subsingleton_cohomologyOn_succ_of_isAffineOpen M (isAffineOpen_bot X) m
   refine ⟨s.card, fun V hWV g M _ n hn ↦ ?_⟩
-  have hsW' : s.sup (fun i : ι ↦ X.basicOpen i.1 ⊓ X.basicOpen g) = W ⊓ X.basicOpen g := by
+  have hsW' : s.sup (fun i : ι ↦ X.basicOpen i.val ⊓ X.basicOpen g) = W ⊓ X.basicOpen g := by
     rw [← Finset.sup_inf_distrib_right, hsW]
   rw [← hsW']
   refine subsingleton_cohomologyOn_sup_of_card_le M hne _ (fun t _ ht i ↦ ?_) n hn
   -- A nonempty finite intersection of basic opens of `U` is a basic open `D(f)` of `U`, and
   -- `D(f) ⊓ D(g)` is the basic open of the affine open `D(f) ⊆ V` cut out by `g`.
-  obtain ⟨f, hf⟩ : t.inf (fun i : ι ↦ X.basicOpen i.1) ∈
+  obtain ⟨f, hf⟩ : t.inf (fun i : ι ↦ X.basicOpen i.val) ∈
       Set.range fun f : Γ(X, U) ↦ X.basicOpen f := by
     rw [← Finset.inf'_eq_inf ht]
-    exact Finset.inf'_mem _ Scheme.inf_mem_range_basicOpen _ ht _ fun i _ ↦ ⟨i.1, rfl⟩
+    exact Finset.inf'_mem _ Scheme.inf_mem_range_basicOpen _ ht _ fun i _ ↦ ⟨i.val, rfl⟩
   obtain ⟨j, hj⟩ := ht
   have hfV : X.basicOpen f ≤ V := by
     rw [show X.basicOpen f = _ from hf]
-    exact (Finset.inf_le hj).trans (j.2.trans hWV)
-  have hinf : t.inf (fun i : ι ↦ X.basicOpen i.1 ⊓ X.basicOpen g) =
-      t.inf (fun i : ι ↦ X.basicOpen i.1) ⊓ X.basicOpen g :=
-    (Finset.inf_inf (f := fun i : ι ↦ X.basicOpen i.1) (g := fun _ ↦ X.basicOpen g)).trans
+    exact (Finset.inf_le hj).trans (j.property.trans hWV)
+  have hinf : t.inf (fun i : ι ↦ X.basicOpen i.val ⊓ X.basicOpen g) =
+      t.inf (fun i : ι ↦ X.basicOpen i.val) ⊓ X.basicOpen g :=
+    (Finset.inf_inf (f := fun i : ι ↦ X.basicOpen i.val) (g := fun _ ↦ X.basicOpen g)).trans
       (congrArg _ (Finset.inf_const ⟨j, hj⟩ _))
   rw [hinf, ← show X.basicOpen f = _ from hf, ← Scheme.basicOpen_res X g (homOfLE hfV).op]
   exact subsingleton_cohomologyOn_succ_of_isAffineOpen M ((hU.basicOpen f).basicOpen _) i
@@ -128,15 +128,16 @@ theorem exists_subsingleton_cohomologyOn_inf_basicOpen_of_isCompact {W : X.Opens
       (isAffineOpen_bot X) isCompact_empty le_rfl) fun W hW U ih hWU' ↦ ?_
   obtain ⟨N₁, hN₁⟩ := ih (hWU'.of_subset Set.subset_union_left)
   -- By quasi-separation, `W ⊓ U` is a quasi-compact open of the affine open `U`.
-  obtain ⟨N₂, hN₂⟩ := exists_subsingleton_cohomologyOn_inf_basicOpen_of_le_isAffineOpen U.2
-    (hWU' _ _ Set.subset_union_left W.isOpen hW Set.subset_union_right U.1.isOpen U.2.isCompact)
-    (inf_le_right : W ⊓ U.1 ≤ U.1)
+  obtain ⟨N₂, hN₂⟩ := exists_subsingleton_cohomologyOn_inf_basicOpen_of_le_isAffineOpen U.property
+    (hWU' _ _ Set.subset_union_left W.isOpen hW Set.subset_union_right U.val.isOpen
+        U.property.isCompact)
+    (inf_le_right : W ⊓ U.val ≤ U.val)
   refine ⟨max N₁ (N₂ + 1), fun V hV g M _ n hn ↦ ?_⟩
   obtain ⟨m, rfl⟩ : ∃ m, n = m + 1 := ⟨n - 1, by omega⟩
   -- `U ⊓ D(g)` is a basic open of the affine open `U`.
-  have hUg : IsAffineOpen (U.1 ⊓ X.basicOpen g) := by
+  have hUg : IsAffineOpen (U.val ⊓ X.basicOpen g) := by
     rw [← Scheme.basicOpen_res X g (homOfLE (le_sup_right.trans hV)).op]
-    exact U.2.basicOpen _
+    exact U.property.basicOpen _
   rw [inf_sup_right]
   refine subsingleton_cohomologyOn_sup_succ M m ?_
     (hN₁ V (le_sup_left.trans hV) g M (m + 1) (by omega))
@@ -196,24 +197,25 @@ theorem exists_isZero_higherDirectImage {X S : Scheme.{u}} (f : X ⟶ S) [QuasiC
     isCompact_iff_finite_and_eq_biUnion_affineOpens (X := S) (U := ⊤).mp isCompact_univ
   -- A bound on the basic opens of the preimage of each affine open of `S`.
   choose N hN using fun U : S.affineOpens ↦
-    Modules.exists_subsingleton_cohomologyOn_inf_basicOpen_of_isCompact (X := X) (W := f ⁻¹ᵁ U.1)
-      (f.isCompact_preimage U.2.isCompact) (f.isQuasiSeparated_preimage U.2.isQuasiSeparated)
+    Modules.exists_subsingleton_cohomologyOn_inf_basicOpen_of_isCompact (X := X) (W := f ⁻¹ᵁ U.val)
+      (f.isCompact_preimage U.property.isCompact)
+          (f.isQuasiSeparated_preimage U.property.isQuasiSeparated)
   obtain ⟨M, hM⟩ := (hs.image N).bddAbove
   refine ⟨max M 1, fun F _ p hp ↦ ?_⟩
   obtain ⟨q, rfl⟩ : ∃ q, p = q + 1 := ⟨p - 1, by omega⟩
   -- The basic opens of the affine opens in `s` form a basis of `S`.
-  have hB : Opens.IsBasis {V : S.Opens | ∃ U ∈ s, ∃ r : Γ(S, U.1), S.basicOpen r = V} := by
+  have hB : Opens.IsBasis {V : S.Opens | ∃ U ∈ s, ∃ r : Γ(S, U.val), S.basicOpen r = V} := by
     refine Opens.isBasis_iff_nbhd.mpr fun {O x} hx ↦ ?_
-    obtain ⟨U, hU, hxU⟩ : ∃ U ∈ s, x ∈ U.1 := by
+    obtain ⟨U, hU, hxU⟩ : ∃ U ∈ s, x ∈ U.val := by
       have : x ∈ (⊤ : S.Opens) := trivial
       rw [hsS] at this
       simpa using this
-    obtain ⟨r, hr, hxr⟩ := U.2.exists_basicOpen_le ⟨x, hx⟩ hxU
+    obtain ⟨r, hr, hxr⟩ := U.property.exists_basicOpen_le ⟨x, hx⟩ hxU
     exact ⟨_, ⟨U, hU, r, rfl⟩, hxr, hr⟩
   refine f.isZero_higherDirectImage_succ_of_isBasis F q hB ?_
   -- The preimage of `D(r)` is the basic open `D(f^* r)` of `f⁻¹ U`, where the bound holds.
   rintro _ ⟨U, hU, r, rfl⟩
-  rw [Scheme.preimage_basicOpen, ← inf_eq_right.mpr (X.basicOpen_le (f.app U.1 r))]
+  rw [Scheme.preimage_basicOpen, ← inf_eq_right.mpr (X.basicOpen_le (f.app U.val r))]
   exact hN U _ le_rfl _ F (q + 1) (by have := hM ⟨U, hU, rfl⟩; omega)
 
 end AlgebraicGeometry.Scheme.Hom

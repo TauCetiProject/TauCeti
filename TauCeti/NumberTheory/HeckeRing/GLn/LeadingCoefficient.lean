@@ -68,7 +68,7 @@ private lemma natDiagGL_inv_mul_mul_mem_SLnZ {a : Fin n → ℕ} (ha : ∀ i, 0 
   have hij := congrFun (congrFun hY' i) j
   simp only [diagonal_mul, mul_diagonal] at hij
   simp only [Units.val_mul, natDiagGL_coe n a ha, diagonal_mul, mul_diagonal]
-  simp only [mapGL_coe_matrix, map_apply_coe, RingHom.mapMatrix_apply, algebraMap_int_eq,
+  simp only [mapGL_coe_matrix, map_apply_coe, algebraMap_int_eq,
     Int.coe_castRingHom, map_apply]
   exact_mod_cast hij.symm
 
@@ -95,7 +95,7 @@ private lemma natDiagGL_inv_mul_mul_mem_SLnZ_of_eq {a b : Fin n → ℕ} (ha : �
     simp only [Units.val_mul, natDiagGL_coe_eq_map_intCast n _ ha,
       natDiagGL_coe_eq_map_intCast n _ hb,
       natDiagGL_coe_eq_map_intCast n (a * b) fun i ↦ Nat.mul_pos (ha i) (hb i), mapGL_coe_matrix,
-      map_apply_coe, RingHom.mapMatrix_apply, algebraMap_int_eq, Int.coe_castRingHom] at hmat
+      map_apply_coe, algebraMap_int_eq, Int.coe_castRingHom] at hmat
     simp only [hcast, map_mul] at hmat ⊢
     exact hmat
   refine Matrix.dvd_apply_mul_of_dvd_mul_diagonal_mul_diagonal_apply
@@ -128,8 +128,8 @@ private lemma multiplicity_diagCoset_mul_le_one {a b : Fin n → ℕ} (ha : ∀ 
       (natDiagGL n a)⁻¹ * (g₁⁻¹ * i.out * h₁) * natDiagGL n a ∈ SLnZ n := by
     rw [QuotientGroup.eq] at hp
     -- forget the coset representatives, on whose types `δa` and `δb` enter
-    have hu : (i.out : GL (Fin n) ℚ) ∈ SLnZ n := i.out.2
-    have hv : (j.out : GL (Fin n) ℚ) ∈ SLnZ n := j.out.2
+    have hu : (i.out : GL (Fin n) ℚ) ∈ SLnZ n := i.out.property
+    have hv : (j.out : GL (Fin n) ℚ) ∈ SLnZ n := j.out.property
     generalize (i.out : GL (Fin n) ℚ) = u at hp hu ⊢
     generalize (j.out : GL (Fin n) ℚ) = v at hp hv
     set κ := (u * δa * (v * δb))⁻¹ * δc

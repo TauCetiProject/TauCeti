@@ -269,13 +269,13 @@ private theorem continuous_iwasawaUnitary : Continuous (iwasawaUnitary (𝕜 := 
       exact iwasawaTriangular_mem g
     · intro hx
       apply Subtype.ext
-      have h := iwasawaUnitary_mul x.2 hx
+      have h := iwasawaUnitary_mul x.property hx
       rwa [mul_inv_cancel_left] at h
   have hclosed : IsClosed f.graph := by
     rw [hgraph]
     exact (isClosed_posUpperTriangularGroup (Fin n) 𝕜).preimage
-      ((continuous_subtype_val.comp continuous_snd).inv.mul continuous_fst)
-  exact continuous_subtype_val.comp (continuous_of_isClosed_graph hclosed)
+      ((continuous_subtypeVal.comp continuous_snd).inv.mul continuous_fst)
+  exact continuous_subtypeVal.comp (continuous_of_isClosed_graph hclosed)
 
 variable (𝕜 n) in
 /-- **The Iwasawa decomposition of `GL n 𝕜`**, for `𝕜 = ℝ` or `ℂ`. Multiplication

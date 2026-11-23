@@ -148,8 +148,8 @@ theorem isMulCommutative_centralizer_of_notMem_range_scalar
     (hg : (g : Matrix (Fin 2) (Fin 2) R) ∉ Set.range (Matrix.scalar (Fin 2))) :
     IsMulCommutative ↥(Subgroup.centralizer {g}) :=
   ⟨⟨fun x y => Subtype.ext (Commute.units_val_iff.mp (commute_of_commute_fin_two hg
-    (mem_centralizer_singleton_iff_commute_val.mp x.2)
-    (mem_centralizer_singleton_iff_commute_val.mp y.2))).eq⟩⟩
+    (mem_centralizer_singleton_iff_commute_val.mp x.property)
+    (mem_centralizer_singleton_iff_commute_val.mp y.property))).eq⟩⟩
 
 end GeneralLinearGroup
 
