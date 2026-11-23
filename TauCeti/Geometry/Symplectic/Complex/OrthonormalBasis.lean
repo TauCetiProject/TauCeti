@@ -83,8 +83,6 @@ The orthogonal transformation carrying a fixed basis adapted to `J₀` to it dep
 * `TauCeti.AlmostComplexStructure.basisOfOrthonormalBasisFinFour`: its case of an orthonormal
   four-frame with `J e₀ = e₁` and `J e₂ = e₃`, the basis `(e₀, e₂)` with coordinates
   `⟪e₀, x⟫ + i ⟪e₁, x⟫` and `⟪e₂, x⟫ + i ⟪e₃, x⟫`.
-* `TauCeti.AlmostComplexStructure.det_eq_of_orthonormalBasis`: the determinant of a complex-linear
-  map of `(V, J)` from its coordinates in that basis.
 
 ## References
 
@@ -455,7 +453,7 @@ theorem exists_orthonormalBasis_toBasis_orientation_eq_symplecticForm_orientatio
 
 end DimensionFour
 
-section Det
+section ComplexBasis
 
 variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V]
   {J : AlmostComplexStructure V} {n : ℕ} {e : OrthonormalBasis (Fin (2 * n)) ℝ V}
@@ -596,27 +594,9 @@ theorem basisOfOrthonormalBasisFinFour_repr_apply_one (h₀ : J (e 0) = e 1) (h�
     (basisOfOrthonormalBasisFinFour h₀ h₂).repr x 1 = (⟪e 2, x⟫ : ℂ) + Complex.I * ⟪e 3, x⟫ :=
   basisOfOrthonormalBasis_repr_apply _ x 1
 
-/-- **The complex determinant in a unitary frame.** If `e` is an orthonormal basis with
-`J e₀ = e₁` and `J e₂ = e₃`, the determinant of a complex-linear map `F` of `(V, J)` is
-`z₀(F e₀) z₂(F e₂) - z₂(F e₀) z₀(F e₂)`, where `z₀` and `z₂` are the coordinates in the basis
-`(e₀, e₂)` of `(V, J)` (`basisOfOrthonormalBasisFinFour`). -/
-theorem det_eq_of_orthonormalBasis (h₀ : J (e 0) = e 1) (h₂ : J (e 2) = e 3)
-    (F : letI := J.complexModule; V →ₗ[ℂ] V) :
-    letI := J.complexModule
-    LinearMap.det F =
-      (basisOfOrthonormalBasisFinFour h₀ h₂).repr (F (e 0)) 0 *
-          (basisOfOrthonormalBasisFinFour h₀ h₂).repr (F (e 2)) 1 -
-        (basisOfOrthonormalBasisFinFour h₀ h₂).repr (F (e 0)) 1 *
-          (basisOfOrthonormalBasisFinFour h₀ h₂).repr (F (e 2)) 0 := by
-  let := J.complexModule
-  rw [← LinearMap.det_toMatrix (basisOfOrthonormalBasisFinFour h₀ h₂), Matrix.det_fin_two]
-  simp only [LinearMap.toMatrix_apply, basisOfOrthonormalBasisFinFour_zero,
-    basisOfOrthonormalBasisFinFour_one]
-  ring
-
 end FinFour
 
-end Det
+end ComplexBasis
 
 end TauCeti.AlmostComplexStructure
 
