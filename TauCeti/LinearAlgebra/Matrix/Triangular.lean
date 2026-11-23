@@ -87,6 +87,9 @@ Lie-algebra theory.
   strictly below the diagonal is upper triangular exactly when its parameter vanishes.
 * `TauCeti.vecMul_injective_of_submatrix_isUpperTriangular` — a rectangular matrix has injective
   row multiplication when a square column selection is upper triangular with nonzero diagonal.
+* `TauCeti.upperUnitriangularMatrixOfEntries` — the upper-unitriangular matrix with prescribed
+  entries on the pairs satisfying a predicate, with its evaluation lemmas
+  `TauCeti.upperUnitriangularMatrixOfEntries_apply_of_mem`, `_apply_self` and `_apply_of_notMem`.
 -/
 
 public section
@@ -721,5 +724,52 @@ theorem vecMul_injective_of_submatrix_isUpperTriangular {K ι κ : Type*} [Field
     simp [Matrix.vecMul, dotProduct]
   rw [hcol x, hcol y]
   exact congrFun hxy (e j)
+
+/-! ### Upper-unitriangular matrices with prescribed entries -/
+
+section UpperUnitriangularMatrixOfEntries
+
+variable {ι R : Type*} [LinearOrder ι] [Zero R] [One R]
+
+open Classical in
+/-- The upper-unitriangular matrix with prescribed entries on the pairs of indices satisfying `P`:
+`upperUnitriangularMatrixOfEntries P f` has the entry `f p` at each pair `p` with `P p`, the entry
+`1` on the diagonal and the entry `0` everywhere else. -/
+noncomputable def upperUnitriangularMatrixOfEntries (P : ι × ι → Prop)
+    (f : {p : ι × ι // P p} → R) : Matrix ι ι R :=
+  Matrix.of fun i j => if i = j then 1 else if h : P (i, j) then f ⟨(i, j), h⟩ else 0
+
+/-- The entry of `upperUnitriangularMatrixOfEntries P f` at a pair satisfying `P`, off the
+diagonal, is the prescribed one. -/
+theorem upperUnitriangularMatrixOfEntries_apply_of_mem (P : ι × ι → Prop)
+    (f : {p : ι × ι // P p} → R) {i j : ι} (hij : i ≠ j) (h : P (i, j)) :
+    upperUnitriangularMatrixOfEntries P f i j = f ⟨(i, j), h⟩ := by
+  simp only [upperUnitriangularMatrixOfEntries, Matrix.of_apply, ite_eq_right hij, dite_eq_left h]
+
+/-- Every diagonal entry of `upperUnitriangularMatrixOfEntries P f` is one. -/
+@[simp]
+theorem upperUnitriangularMatrixOfEntries_apply_self (P : ι × ι → Prop)
+    (f : {p : ι × ι // P p} → R) (i : ι) :
+    upperUnitriangularMatrixOfEntries P f i i = 1 := by
+  simp only [upperUnitriangularMatrixOfEntries, Matrix.of_apply, ite_true]
+
+/-- The entries of `upperUnitriangularMatrixOfEntries P f` off the diagonal and off the pairs
+satisfying `P` are zero. -/
+theorem upperUnitriangularMatrixOfEntries_apply_of_notMem (P : ι × ι → Prop)
+    (f : {p : ι × ι // P p} → R) {i j : ι} (hij : i ≠ j) (h : ¬ P (i, j)) :
+    upperUnitriangularMatrixOfEntries P f i j = 0 := by
+  simp only [upperUnitriangularMatrixOfEntries, Matrix.of_apply, ite_eq_right hij, dite_eq_right h]
+
+/-- If every pair satisfying `P` lies strictly above the diagonal,
+`upperUnitriangularMatrixOfEntries P f` is upper unitriangular. -/
+theorem isUpperUnitriangular_upperUnitriangularMatrixOfEntries (P : ι × ι → Prop)
+    (hP : ∀ p, P p → p.1 < p.2) (f : {p : ι × ι // P p} → R) :
+    (upperUnitriangularMatrixOfEntries P f).IsUpperUnitriangular := by
+  rw [Matrix.isUpperUnitriangular_def]
+  exact ⟨fun i j hji => upperUnitriangularMatrixOfEntries_apply_of_notMem P f (ne_of_lt hji).symm
+      (fun h' => lt_irrefl j (hji.trans (hP (i, j) h'))),
+    upperUnitriangularMatrixOfEntries_apply_self P f⟩
+
+end UpperUnitriangularMatrixOfEntries
 
 end TauCeti
