@@ -338,7 +338,7 @@ theorem exists_norm_iteratedFDeriv_cauchyFueterKernel_right_le_of_mem_closedBall
   linarith
 
 /-- Operator-norm bound for the `m`-th pole derivative of `y ↦ cauchyFueterKernel w y * c`. -/
-theorem norm_iteratedFDeriv_cauchyFueterKernel_mul_right_le {w q : ℍ} (h : w ≠ q) (c : ℍ)
+theorem norm_iteratedFDeriv_cauchyFueterKernel_right_mul_const_le {w q : ℍ} (h : w ≠ q) (c : ℍ)
     (m : ℕ) :
     ‖iteratedFDeriv ℝ m (fun y ↦ cauchyFueterKernel w y * c) q‖ ≤
       ‖iteratedFDeriv ℝ m (cauchyFueterKernel w) q‖ * ‖c‖ := by
@@ -352,7 +352,7 @@ theorem norm_iteratedFDeriv_cauchyFueterKernel_mul_right_le {w q : ℍ} (h : w �
     (mul_le_mul_of_nonneg_right hop (norm_nonneg _))).trans_eq (mul_comm _ _)
 
 /-- Operator-norm bound for the `m`-th pole derivative of `y ↦ c * cauchyFueterKernel w y`. -/
-theorem norm_iteratedFDeriv_mul_cauchyFueterKernel_right_le {w q : ℍ} (h : w ≠ q) (c : ℍ)
+theorem norm_iteratedFDeriv_const_mul_cauchyFueterKernel_right_le {w q : ℍ} (h : w ≠ q) (c : ℍ)
     (m : ℕ) :
     ‖iteratedFDeriv ℝ m (fun y ↦ c * cauchyFueterKernel w y) q‖ ≤
       ‖c‖ * ‖iteratedFDeriv ℝ m (cauchyFueterKernel w) q‖ :=

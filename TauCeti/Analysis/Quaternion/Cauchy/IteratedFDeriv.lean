@@ -102,42 +102,27 @@ private theorem iteratedFDeriv_cauchyFueter_affine_bilin
     (hw : ∀ j, ContinuousOn (w j) (Icc (0 : Fin 4 → ℝ) 1))
     (hx₀ : L.symm (x₀ - p) ∈ pi univ fun _ : Fin 4 ↦ Ioo (0 : ℝ) 1) (m : ℕ)
     (hrep : ∀ x : Fin 4 → ℝ, L.symm (x - p) ∈ pi univ (fun _ : Fin 4 ↦ Ioo (0 : ℝ) 1) →
-      f (dq x) = (1 / (2 * Real.pi ^ 2)) • ∑ j : Fin 4,
-        ((∫ u in Icc (0 : Fin 3 → ℝ) 1,
-            B (cauchyFueterKernel (dq (p + L (j.insertNth 1 u))) (dq x))
-              (w j (j.insertNth 1 u))) -
-          ∫ u in Icc (0 : Fin 3 → ℝ) 1,
-            B (cauchyFueterKernel (dq (p + L (j.insertNth 0 u))) (dq x))
-              (w j (j.insertNth 0 u)))) :
-    iteratedFDeriv ℝ m f (dq x₀) = (1 / (2 * Real.pi ^ 2)) • ∑ j : Fin 4,
-      ((∫ u in Icc (0 : Fin 3 → ℝ) 1,
-          iteratedFDeriv ℝ m (fun y ↦
-            B (cauchyFueterKernel (dq (p + L (j.insertNth 1 u))) y)
-              (w j (j.insertNth 1 u))) (dq x₀)) -
-        ∫ u in Icc (0 : Fin 3 → ℝ) 1,
-          iteratedFDeriv ℝ m (fun y ↦
-            B (cauchyFueterKernel (dq (p + L (j.insertNth 0 u))) y)
-              (w j (j.insertNth 0 u))) (dq x₀)) := by
+      f (dq x) = (1 / (2 * Real.pi ^ 2)) • boxBoundarySum 0 1
+        (fun j u ↦ B (cauchyFueterKernel (dq (p + L u)) (dq x)) (w j u))) :
+    iteratedFDeriv ℝ m f (dq x₀) = (1 / (2 * Real.pi ^ 2)) • boxBoundarySum 0 1
+      (fun j u ↦ iteratedFDeriv ℝ m
+        (fun y ↦ B (cauchyFueterKernel (dq (p + L u)) y) (w j u)) (dq x₀)) := by
   obtain ⟨δ, hδ, hball, hdist⟩ := exists_ball_subset_and_le_norm_affine_face (a := 0) (b := 1) hx₀
   have hfeq : f =ᶠ[𝓝 (dq x₀)] fun y ↦ (1 / (2 * Real.pi ^ 2)) •
-      boxBoundarySum (0 : Fin 4 → ℝ) 1
+      boxBoundarySum 0 1
         (fun j u ↦ B (cauchyFueterKernel (dq (p + L u)) y) (w j u)) := by
     filter_upwards [isOpen_ball.mem_nhds (mem_ball_self hδ)] with y hy
     obtain ⟨_, ⟨v, hv, rfl⟩, rfl⟩ := hball hy
-    simpa only [boxBoundarySum_def, Function.comp_def, Pi.zero_apply, Pi.one_apply,
-      ← Pi.zero_def, ← Pi.one_def] using hrep (p + L v) (by simpa using hv)
-  simpa only [boxBoundarySum_def, Function.comp_def, Pi.zero_apply, Pi.one_apply,
-      ← Pi.zero_def, ← Pi.one_def] using
-    iteratedFDeriv_eq_smul_boxBoundarySum_bilin B (a := (0 : Fin 4 → ℝ)) (b := 1)
-      (φ := fun u ↦ dq (p + L u)) w hδ m hfeq
-      (fun _ _ _ ↦ (by fun_prop : Continuous fun u ↦ dq _).aestronglyMeasurable)
-      (fun j {c} hc ↦ by
-        have hmem : c ∈ Icc (0 : ℝ) 1 := by
-          rcases hc with rfl | rfl
-          · exact left_mem_Icc.2 zero_le_one
-          · exact right_mem_Icc.2 zero_le_one
-        exact ContinuousOn.integrableOn_insertNth_Icc (hw j) j hmem)
-      hdist
+    exact hrep (p + L v) (by simpa using hv)
+  refine iteratedFDeriv_eq_smul_boxBoundarySum_bilin B (a := (0 : Fin 4 → ℝ)) (b := 1)
+    (φ := fun u ↦ dq (p + L u)) w hδ m hfeq
+    (fun _ _ _ ↦ (by fun_prop : Continuous fun u ↦ dq _).aestronglyMeasurable)
+    (fun j {c} hc ↦ ?_) hdist
+  have hmem : c ∈ Icc (0 : ℝ) 1 := by
+    rcases hc with rfl | rfl
+    · exact left_mem_Icc.2 zero_le_one
+    · exact right_mem_Icc.2 zero_le_one
+  exact ContinuousOn.integrableOn_insertNth_Icc (hw j) j hmem
 
 /-- Differentiated left Cauchy–Fueter representation on a coordinate box: for every interior point
 `x₀ ∈ ∏ i, Ioo (a i) (b i)` and order `m`, `iteratedFDeriv ℝ m f (dq x₀)` is `1 / (2π²)` times the
@@ -177,22 +162,19 @@ theorem iteratedFDeriv_right_cauchyFueter_box {a b x₀ : Fin 4 → ℝ} {f : �
             (fun i ↦ (hx i (mem_univ i)).1) (fun i ↦ (hx i (mem_univ i)).2)
 
 /-- Differentiated left Cauchy–Fueter representation on a positively oriented affine parallelepiped,
-expressed via the outward face normals `ContinuousLinearMap.affineFaceNormal`. -/
+expressed via `boxBoundarySum 0 1` and the outward face normals
+`ContinuousLinearMap.affineFaceNormal`. -/
 theorem iteratedFDeriv_left_cauchyFueter_affine
     {L : (Fin 4 → ℝ) ≃L[ℝ] (Fin 4 → ℝ)} {p x₀ : Fin 4 → ℝ}
     (hL : 0 < LinearMap.det (L : (Fin 4 → ℝ) →ₗ[ℝ] Fin 4 → ℝ))
     {f : ℍ → ℍ} (hc : ContinuousOn f (dq '' ((fun u ↦ p + L u) '' Icc 0 1)))
     (hf : LeftFueterOn f (dq '' ((fun u ↦ p + L u) '' pi univ fun _ : Fin 4 ↦ Ioo (0 : ℝ) 1)))
     (hx₀ : L.symm (x₀ - p) ∈ pi univ fun _ : Fin 4 ↦ Ioo (0 : ℝ) 1) (m : ℕ) :
-    iteratedFDeriv ℝ m f (dq x₀) = (1 / (2 * Real.pi ^ 2)) • ∑ j : Fin 4,
-      ((∫ u in Icc (0 : Fin 3 → ℝ) 1,
-          iteratedFDeriv ℝ m (fun y ↦ cauchyFueterKernel (dq (p + L (j.insertNth 1 u))) y *
-            ContinuousLinearMap.affineFaceNormal L.toContinuousLinearMap j *
-            f (dq (p + L (j.insertNth 1 u)))) (dq x₀)) -
-        ∫ u in Icc (0 : Fin 3 → ℝ) 1,
-          iteratedFDeriv ℝ m (fun y ↦ cauchyFueterKernel (dq (p + L (j.insertNth 0 u))) y *
-            ContinuousLinearMap.affineFaceNormal L.toContinuousLinearMap j *
-            f (dq (p + L (j.insertNth 0 u)))) (dq x₀)) := by
+    iteratedFDeriv ℝ m f (dq x₀) = (1 / (2 * Real.pi ^ 2)) • boxBoundarySum 0 1
+      (fun j u ↦ iteratedFDeriv ℝ m
+        (fun y ↦ cauchyFueterKernel (dq (p + L u)) y *
+          ContinuousLinearMap.affineFaceNormal L.toContinuousLinearMap j *
+          f (dq (p + L u))) (dq x₀)) := by
   simpa only [ContinuousLinearMap.mul_apply', mul_assoc] using
     iteratedFDeriv_cauchyFueter_affine_bilin (ContinuousLinearMap.mul ℝ ℍ)
       (fun j u ↦ ContinuousLinearMap.affineFaceNormal L.toContinuousLinearMap j *
@@ -202,26 +184,24 @@ theorem iteratedFDeriv_left_cauchyFueter_affine
       hx₀ m fun x hvx ↦ by
         have hrep := left_cauchyFueter_affine hL hc (hf.mono sdiff_subset) hvx
         rw [hrep]
-        simp only [ContinuousLinearMap.rawAffineBoundary_eq, ContinuousLinearMap.mulLeftRight_apply,
-          ContinuousLinearMap.mul_apply', mul_assoc, ContinuousLinearEquiv.coe_coe]
+        simp only [ContinuousLinearMap.rawAffineBoundary_eq_boxBoundarySum,
+          ContinuousLinearMap.mulLeftRight_apply, ContinuousLinearMap.mul_apply', mul_assoc,
+          ContinuousLinearEquiv.coe_coe]
 
 /-- Differentiated right Cauchy–Fueter representation on a positively oriented affine
-parallelepiped, preserving the factor order `f * affineFaceNormal * cauchyFueterKernel`. -/
+parallelepiped, preserving the factor order `f * affineFaceNormal * cauchyFueterKernel` via
+`boxBoundarySum 0 1`. -/
 theorem iteratedFDeriv_right_cauchyFueter_affine
     {L : (Fin 4 → ℝ) ≃L[ℝ] (Fin 4 → ℝ)} {p x₀ : Fin 4 → ℝ}
     (hL : 0 < LinearMap.det (L : (Fin 4 → ℝ) →ₗ[ℝ] Fin 4 → ℝ))
     {f : ℍ → ℍ} (hc : ContinuousOn f (dq '' ((fun u ↦ p + L u) '' Icc 0 1)))
     (hf : RightFueterOn f (dq '' ((fun u ↦ p + L u) '' pi univ fun _ : Fin 4 ↦ Ioo (0 : ℝ) 1)))
     (hx₀ : L.symm (x₀ - p) ∈ pi univ fun _ : Fin 4 ↦ Ioo (0 : ℝ) 1) (m : ℕ) :
-    iteratedFDeriv ℝ m f (dq x₀) = (1 / (2 * Real.pi ^ 2)) • ∑ j : Fin 4,
-      ((∫ u in Icc (0 : Fin 3 → ℝ) 1,
-          iteratedFDeriv ℝ m (fun y ↦ f (dq (p + L (j.insertNth 1 u))) *
-            ContinuousLinearMap.affineFaceNormal L.toContinuousLinearMap j *
-            cauchyFueterKernel (dq (p + L (j.insertNth 1 u))) y) (dq x₀)) -
-        ∫ u in Icc (0 : Fin 3 → ℝ) 1,
-          iteratedFDeriv ℝ m (fun y ↦ f (dq (p + L (j.insertNth 0 u))) *
-            ContinuousLinearMap.affineFaceNormal L.toContinuousLinearMap j *
-            cauchyFueterKernel (dq (p + L (j.insertNth 0 u))) y) (dq x₀)) := by
+    iteratedFDeriv ℝ m f (dq x₀) = (1 / (2 * Real.pi ^ 2)) • boxBoundarySum 0 1
+      (fun j u ↦ iteratedFDeriv ℝ m
+        (fun y ↦ f (dq (p + L u)) *
+          ContinuousLinearMap.affineFaceNormal L.toContinuousLinearMap j *
+          cauchyFueterKernel (dq (p + L u)) y) (dq x₀)) := by
   simpa only [ContinuousLinearMap.flip_apply, ContinuousLinearMap.mul_apply'] using
     iteratedFDeriv_cauchyFueter_affine_bilin (ContinuousLinearMap.mul ℝ ℍ).flip
       (fun j u ↦ f (dq (p + L u)) *
@@ -231,9 +211,9 @@ theorem iteratedFDeriv_right_cauchyFueter_affine
       hx₀ m fun x hvx ↦ by
         have hrep := right_cauchyFueter_affine hL hc (hf.mono sdiff_subset) hvx
         rw [hrep]
-        simp only [ContinuousLinearMap.rawAffineBoundary_eq, ContinuousLinearMap.mulLeftRight_apply,
-          ContinuousLinearMap.flip_apply, ContinuousLinearMap.mul_apply',
-          ContinuousLinearEquiv.coe_coe]
+        simp only [ContinuousLinearMap.rawAffineBoundary_eq_boxBoundarySum,
+          ContinuousLinearMap.mulLeftRight_apply, ContinuousLinearMap.flip_apply,
+          ContinuousLinearMap.mul_apply', ContinuousLinearEquiv.coe_coe]
 
 end BoundaryRepresentations
 

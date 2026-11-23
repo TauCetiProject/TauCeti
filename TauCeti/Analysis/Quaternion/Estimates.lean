@@ -155,7 +155,7 @@ theorem exists_leftFueter_iteratedFDeriv_cube_boundary_bound (m : ℕ) :
       (fun i x hne ↦ by
         simpa only [mul_assoc, norm_mul, norm_dq, PiLp.toLp_single, PiLp.norm_single,
           norm_one, one_mul] using
-          norm_iteratedFDeriv_cauchyFueterKernel_mul_right_le hne
+          norm_iteratedFDeriv_cauchyFueterKernel_right_mul_const_le hne
             (dq (Pi.single i 1) * f (dq x)) m)
       hM⟩
 
@@ -180,7 +180,7 @@ theorem exists_rightFueter_iteratedFDeriv_cube_boundary_bound (m : ℕ) :
       (iteratedFDeriv_right_cauchyFueter_box hc hf (fun _ ↦ by linarith) (fun _ ↦ by linarith) m)
       (fun i x hne ↦ by
         simpa only [norm_mul, norm_dq, PiLp.toLp_single, PiLp.norm_single, norm_one, mul_one] using
-          (norm_iteratedFDeriv_mul_cauchyFueterKernel_right_le hne
+          (norm_iteratedFDeriv_const_mul_cauchyFueterKernel_right_le hne
             (f (dq x) * dq (Pi.single i 1)) m).trans_eq (mul_comm _ _))
       hM⟩
 
