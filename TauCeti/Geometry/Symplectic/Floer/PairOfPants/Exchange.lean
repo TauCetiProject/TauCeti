@@ -11,6 +11,7 @@ public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.End.Chart
 public import TauCeti.Analysis.Complex.ThricePuncturedSphere.Exchange
 public import Mathlib.Geometry.Manifold.Algebra.LieGroup
 import TauCeti.Analysis.SpecialFunctions.Exp.Bounds
+import TauCeti.Geometry.Symplectic.Floer.Manifold.Translation
 import TauCeti.Geometry.Symplectic.Floer.PairOfPants.Curvature
 import TauCeti.Geometry.Manifold.ContMDiff.Prod
 import Mathlib.MeasureTheory.Group.LIntegral

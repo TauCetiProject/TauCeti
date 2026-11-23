@@ -10,24 +10,22 @@ public import Mathlib.Algebra.MonoidAlgebra.Basic
 public import Mathlib.Algebra.MonoidAlgebra.MapDomain
 
 /-!
-# Changing the coefficients of the centre of a monoid algebra
+# The centre of a monoid algebra under a coefficient map
 
 A ring homomorphism `f : R →+* S` of commutative semirings induces the ring homomorphism
-`MonoidAlgebra.mapRingHom M f`, which applies `f` to every coefficient of an element of the monoid
-algebra `R[M]`. It carries the centre of `R[M]` into the centre of `S[M]`: a central element
-commutes with every basis element `single m 1`, so its image commutes with every
-`single m 1 = mapRingHom M f (single m 1)`, and the scalar multiples of these span `S[M]`. The
-restriction is the ring homomorphism `MonoidAlgebra.centerMapRingHom M f` between the centres; for
-the reduction `O → k` of a complete local ring to its residue field it is the reduction of central
-elements of a group algebra, along which central idempotents are lifted.
+`MonoidAlgebra.mapRingHom G f : R[G] →+* S[G]` applying `f` to the coefficients. It carries the
+centre of `R[G]` into the centre of `S[G]` (`MonoidAlgebra.mapRingHom_mem_center`), because
+`S[G]` is spanned over its central scalars `S` by the elements `of S G g`, the images of the
+`of R G g`. The restriction is `MonoidAlgebra.centerMapRingHom G f : Z(R[G]) →+* Z(S[G])`.
 
 ## Main definitions
 
-* `MonoidAlgebra.centerMapRingHom M f`: the map `Z(R[M]) →+* Z(S[M])` induced by `f : R →+* S`.
+* `MonoidAlgebra.centerMapRingHom G f`: the ring homomorphism `Z(R[G]) →+* Z(S[G])` induced by
+  `f : R →+* S`.
 
 ## Main results
 
-* `MonoidAlgebra.mapRingHom_mem_center`: changing the coefficients preserves centrality.
+* `MonoidAlgebra.mapRingHom_mem_center`: the coefficient map preserves centrality.
 * `MonoidAlgebra.centerMapRingHom_algebraMap`: the map on centres is compatible with the scalars.
 -/
 
@@ -35,44 +33,40 @@ public section
 
 namespace MonoidAlgebra
 
-variable {R S M : Type*} [CommSemiring R] [CommSemiring S] [Monoid M]
+variable {R S : Type*} (G : Type*) [CommSemiring R] [CommSemiring S] [Monoid G]
 
-/-- **Changing the coefficients preserves centrality.** If `z` is central in `R[M]`, then applying
-a ring homomorphism `f : R →+* S` to its coefficients gives a central element of `S[M]`. -/
-theorem mapRingHom_mem_center (f : R →+* S) {z : MonoidAlgebra R M}
-    (hz : z ∈ Subalgebra.center R (MonoidAlgebra R M)) :
-    mapRingHom M f z ∈ Subalgebra.center S (MonoidAlgebra S M) := by
-  rw [Subalgebra.mem_center_iff] at hz ⊢
-  intro b
-  induction b using MonoidAlgebra.induction_linear with
-  | zero => rw [zero_mul, mul_zero]
-  | add x y hx hy => rw [add_mul, mul_add, hx, hy]
-  | single m s =>
-    have h := congrArg (mapRingHom M f) (hz (single m 1))
-    rw [map_mul, map_mul, mapRingHom_single, map_one] at h
-    rw [← mul_one s, ← smul_single', smul_mul_assoc, h, mul_smul_comm]
+/-- **The coefficient map preserves centrality.** For `f : R →+* S` and `x` in the centre of
+`R[G]`, the image of `x` in `S[G]` is central: it commutes with the scalars `S`, which are central,
+and with each `single g 1`, the image of the element `single g 1` of `R[G]`. -/
+theorem mapRingHom_mem_center (f : R →+* S) {x : R[G]}
+    (hx : x ∈ Subalgebra.center R R[G]) :
+    mapRingHom G f x ∈ Subalgebra.center S S[G] := by
+  rw [Subalgebra.mem_center_iff] at hx ⊢
+  intro y
+  induction y using MonoidAlgebra.induction_linear with
+  | zero => simp
+  | add y z hy hz => rw [add_mul, mul_add, hy, hz]
+  | single g s =>
+    have hg : of S G g = mapRingHom G f (of R G g) := by simp
+    rw [single_eq_algebraMap_mul_of, mul_assoc, Algebra.left_comm, hg, ← map_mul, ← map_mul, hx]
 
-variable (M) in
-/-- The ring homomorphism `Z(R[M]) →+* Z(S[M])` between the centres of the monoid algebras induced
-by a ring homomorphism `f : R →+* S`: the restriction of `MonoidAlgebra.mapRingHom M f`, which
-applies `f` to every coefficient. -/
+/-- The ring homomorphism `Z(R[G]) →+* Z(S[G])` of centres induced by a ring homomorphism
+`f : R →+* S`: the restriction of `MonoidAlgebra.mapRingHom G f`. -/
 noncomputable def centerMapRingHom (f : R →+* S) :
-    Subalgebra.center R (MonoidAlgebra R M) →+* Subalgebra.center S (MonoidAlgebra S M) :=
-  ((mapRingHom M f).comp (Subalgebra.center R (MonoidAlgebra R M)).val.toRingHom).codRestrict _
-    fun z ↦ mapRingHom_mem_center f z.property
+    Subalgebra.center R R[G] →+* Subalgebra.center S S[G] :=
+  ((mapRingHom G f).comp (Subalgebra.center R R[G]).toSubsemiring.subtype).codRestrict
+    (Subalgebra.center S S[G]).toSubsemiring fun x ↦ mapRingHom_mem_center G f x.property
 
-/-- The underlying element of the image of a central element `z` under `centerMapRingHom M f` is
-`mapRingHom M f z`. -/
 @[simp]
-theorem coe_centerMapRingHom (f : R →+* S) (z : Subalgebra.center R (MonoidAlgebra R M)) :
-    (centerMapRingHom M f z : MonoidAlgebra S M) = mapRingHom M f z :=
-  (rfl)
+theorem coe_centerMapRingHom (f : R →+* S) (x : Subalgebra.center R R[G]) :
+    (centerMapRingHom G f x : S[G]) = mapRingHom G f x := by
+  simp [centerMapRingHom]
 
 /-- The map on centres sends the scalar `r` to the scalar `f r`. -/
 @[simp]
 theorem centerMapRingHom_algebraMap (f : R →+* S) (r : R) :
-    centerMapRingHom M f (algebraMap R (Subalgebra.center R (MonoidAlgebra R M)) r) =
-      algebraMap S (Subalgebra.center S (MonoidAlgebra S M)) (f r) :=
+    centerMapRingHom G f (algebraMap R (Subalgebra.center R R[G]) r) =
+      algebraMap S (Subalgebra.center S S[G]) (f r) :=
   Subtype.ext <| RingHom.congr_fun (mapRingHom_comp_algebraMap f) r
 
 end MonoidAlgebra

@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.BigOperators.Group.Finset.Defs
+public import Mathlib.Data.Finset.NatAntidiagonal
 public import Mathlib.Algebra.Ring.Parity
 public import Mathlib.Data.Nat.Choose.Basic
 public import Mathlib.Order.Interval.Finset.Nat
@@ -22,10 +23,11 @@ import Mathlib.Tactic.Ring
 
 This file records arithmetic identities involving natural-number binomial coefficients.
 
-Besides four identities and a parity formula for the second binomial coefficient and the sum
-`2ⁿ - 2` of the inner binomial coefficients `C(n, i)`, `0 < i < n`, it develops Vandermonde's
-convolution `∑ i, C(A, i) * C(B, r - i) = C(A + B, r)` in the shape taken by factorial moments of a
-law supported on such a convolution: each summand is weighted by the falling factorial `(i)ₘ` of
+Besides four identities and a parity formula for the second binomial coefficient, the sum
+`2ⁿ - 2` of the inner binomial coefficients `C(n, i)`, `0 < i < n`, and the sum `2ⁿ` of all of
+them over the antidiagonal, it develops Vandermonde's convolution
+`∑ i, C(A, i) * C(B, r - i) = C(A + B, r)` in the shape taken by factorial moments of a law
+supported on such a convolution: each summand is weighted by the falling factorial `(i)ₘ` of
 the summation index. The weighted sum is again a single binomial coefficient,
 `(A)ₘ * C(A + B - m, r - m)`, because `(i)ₘ` lowers both indices of `C(A, i)` at once.
 
@@ -48,6 +50,7 @@ the summation index. The weighted sum is again a single binomial coefficient,
   `(-1) ^ C(p + q + 1, 2) * (-1) ^ C(q + 1, 2) * (-1) ^ C(p + 1, 2) = (-1) ^ (p q)`.
 * `Nat.sum_Icc_choose_eq_two_pow_sub_two`: the binomial coefficients `C(n, i)`, `0 < i < n`,
   sum to `2ⁿ - 2`.
+* `Nat.sum_antidiagonal_choose`: the binomial coefficients `C(n, i)`, `i + j = n`, sum to `2ⁿ`.
 * `Nat.descFactorial_mul_choose`: a falling factorial of the lower index lowers both indices,
   `(i)ₘ * C(A, i) = (A)ₘ * C(A - m, i - m)`.
 * `Nat.sum_range_descFactorial_mul_choose_mul_choose`: Vandermonde's convolution weighted by a
@@ -191,6 +194,12 @@ theorem sum_Icc_choose_eq_two_pow_sub_two (n : ℕ) :
   simp only [Nat.add_sub_cancel, add_comm 1]
   simp at h
   omega
+
+/-- The binomial coefficients `C(n, i)`, summed over the antidiagonal `i + j = n`, sum to `2ⁿ`:
+the antidiagonal form of `Nat.sum_range_choose`. -/
+theorem sum_antidiagonal_choose (n : ℕ) : ∑ ij ∈ antidiagonal n, n.choose ij.1 = 2 ^ n := by
+  rw [Finset.Nat.sum_antidiagonal_eq_sum_range_succ_mk]
+  exact sum_range_choose n
 
 /-- **A falling factorial of the lower index lowers both indices of a binomial coefficient:**
 `(i)ₘ * C(A, i) = (A)ₘ * C(A - m, i - m)` for `m ≤ i`.

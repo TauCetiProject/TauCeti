@@ -63,12 +63,19 @@ This file computes the propagator and the invertibility of this realization:
 ## Main statements
 
 * `TauCeti.CircleSobolev.antiperiodicGaugeLoop_apply_coe`: the formula for `Sₐ(t)`.
+* `TauCeti.CircleSobolev.antiperiodicGaugeLoop_zero`: for `S = 0`, `Sₐ` is the constant loop
+  `-(π i / T)`.
+* `TauCeti.CircleSobolev.lipschitzWith_antiperiodicGaugeLoop`,
+  `TauCeti.CircleSobolev.continuous_antiperiodicGaugeLoop`: `Sₐ` depends `1`-Lipschitz on `S`.
+* `TauCeti.CircleSobolev.im_inner_antiperiodicGaugeLoop_add_eq_zero`: `Sₐ` is infinitesimally
+  symplectic for `Im ⟪·, ·⟫` when `S` is.
 * `TauCeti.CircleSobolev.hasDerivAt_antiperiodicGaugeLoop_add_iff`,
   `TauCeti.CircleSobolev.hasDerivAt_antiperiodicGaugeLoop_iff`: `η' = Sₐ η + f` exactly when
   `(u η)' = S (u η) + u f`, and its homogeneous case `f = 0`.
 * `TauCeti.CircleSobolev.dysonSeriesLeft_antiperiodicGaugeLoop_apply`,
   `TauCeti.CircleSobolev.dysonSeriesLeft_antiperiodicGaugeLoop_period`: `Ψₐ(t) = u(t)⁻¹ Ψ(t)` and
-  `Ψₐ(T) = -Ψ(T)`.
+  `Ψₐ(T) = -Ψ(T)`, and `TauCeti.CircleSobolev.one_sub_dysonSeriesLeft_antiperiodicGaugeLoop_period`:
+  `1 - Ψₐ(T) = 1 + Ψ(T)`.
 * `TauCeti.CircleSobolev.loopOperator_antiperiodicGaugeLoop_eq_zero_iff`: the kernel of `L_Sₐ`.
 * `TauCeti.CircleSobolev.isInvertible_loopOperator_antiperiodicGaugeLoop_iff`,
   `TauCeti.CircleSobolev.isInvertible_loopOperator_antiperiodicGaugeLoop_iff_det_ne_zero`,
@@ -171,6 +178,53 @@ theorem antiperiodicGaugeLoop_apply_coe (S : C(AddCircle T, E →L[ℝ] E)) (t :
         (↑(π / T) * I) • v := by
   rw [← gaugeFun_apply, antiperiodicGaugeLoop, ContinuousMap.coe_mk, Function.Periodic.lift_coe]
 
+/-- **The reference loop.** For the zero loop, `Sₐ` is the constant loop `-(π i / T)`, so the
+antiperiodic realization of `ζ ↦ ζ'` is the complex-linear operator `η ↦ η' + (π i / T) η`. -/
+@[simp]
+theorem antiperiodicGaugeLoop_zero :
+    antiperiodicGaugeLoop T (0 : C(AddCircle T, E →L[ℝ] E)) =
+      ContinuousMap.const _ ((-(↑(π / T) * I)) • ContinuousLinearMap.id ℝ E) := by
+  ext t v
+  induction t using QuotientAddGroup.induction_on with
+  | H t => simp [neg_smul, sub_eq_add_neg]
+
+/-- **Dependence on the loop.** The passage `S ↦ Sₐ` is `1`-Lipschitz for the uniform norm:
+`Sₐ(t) - S'ₐ(t)` is the conjugate of `S(t) - S'(t)` by the unit phase `u(t)`. -/
+theorem lipschitzWith_antiperiodicGaugeLoop :
+    LipschitzWith 1 (antiperiodicGaugeLoop (E := E) T) := by
+  refine LipschitzWith.of_dist_le_mul fun S S' ↦ ?_
+  rw [NNReal.coe_one, one_mul]
+  refine (ContinuousMap.dist_le dist_nonneg).2 fun t ↦ ?_
+  induction t using QuotientAddGroup.induction_on with
+  | H t =>
+    set u := cexp (↑(π / T * t) * I)
+    have hu : ‖u‖ = 1 := by simp only [u, norm_exp_ofReal_mul_I]
+    rw [dist_eq_norm]
+    refine (ContinuousLinearMap.opNorm_le_bound _ dist_nonneg fun v ↦ ?_)
+    have h : (antiperiodicGaugeLoop T S ↑t - antiperiodicGaugeLoop T S' ↑t) v =
+        u⁻¹ • (S t - S' t) (u • v) := by
+      simp only [sub_apply, antiperiodicGaugeLoop_apply_coe, smul_sub, u]
+      abel
+    rw [h, norm_smul, norm_inv, hu, inv_one, one_mul]
+    calc ‖(S t - S' t) (u • v)‖ ≤ ‖S t - S' t‖ * ‖u • v‖ := ContinuousLinearMap.le_opNorm _ _
+      _ ≤ dist S S' * ‖v‖ := by
+        rw [norm_smul, hu, one_mul, ← dist_eq_norm]
+        exact mul_le_mul_of_nonneg_right (ContinuousMap.dist_apply_le_dist _) (norm_nonneg v)
+
+/-- The loop `Sₐ` depends continuously on `S`, for the uniform norm. -/
+@[fun_prop]
+theorem continuous_antiperiodicGaugeLoop : Continuous (antiperiodicGaugeLoop (E := E) T) :=
+  (lipschitzWith_antiperiodicGaugeLoop T).continuous
+
+/-- The periodic gauge `Sₐ` of a loop of complex-linear maps is a loop of complex-linear maps. -/
+theorem antiperiodicGaugeLoop_apply_I_smul {S : C(AddCircle T, E →L[ℝ] E)}
+    (hS : ∀ t v, S t (I • v) = I • S t v) (t : AddCircle T) (v : E) :
+    antiperiodicGaugeLoop T S t (I • v) = I • antiperiodicGaugeLoop T S t v := by
+  induction t using QuotientAddGroup.induction_on with
+  | H t =>
+    simp only [antiperiodicGaugeLoop_apply_coe, smul_sub]
+    rw [smul_comm _ I v, hS, smul_comm _ I, smul_comm _ I v]
+
 /-! ### Solutions -/
 
 /-- **The gauge identity.** With `u(t) = exp (π i t / T)`, a map `η : ℝ → E` satisfies
@@ -224,6 +278,14 @@ theorem dysonSeriesLeft_antiperiodicGaugeLoop_period (S : C(AddCircle T, E →L[
   ext v
   rw [dysonSeriesLeft_antiperiodicGaugeLoop_apply, phase_period]
   simp
+
+/-- **The endomorphism of the return map.** Since the return map of `Sₐ` is `-P`, the endomorphism
+`1 - Ψₐ(T)` of `E` is `1 + P`. -/
+theorem one_sub_dysonSeriesLeft_antiperiodicGaugeLoop_period (S : C(AddCircle T, E →L[ℝ] E)) :
+    (1 - (↑(dysonSeriesLeft (fun t : ℝ ↦ antiperiodicGaugeLoop T S t) T) : E →ₗ[ℝ] E)) =
+      1 + (↑(dysonSeriesLeft (fun t : ℝ ↦ S t) T) : E →ₗ[ℝ] E) := by
+  rw [dysonSeriesLeft_antiperiodicGaugeLoop_period, ContinuousLinearMap.toLinearMap_neg,
+    sub_neg_eq_add]
 
 /-! ### The Sobolev realization -/
 
@@ -286,8 +348,8 @@ theorem isInvertible_loopOperator_antiperiodicGaugeLoop_iff_det_one_add_ne_zero
     (S : C(AddCircle T, E →L[ℝ] E)) :
     (loopOperator T (antiperiodicGaugeLoop T S)).IsInvertible ↔
       LinearMap.det (1 + (↑(dysonSeriesLeft (fun t : ℝ ↦ S t) T) : E →ₗ[ℝ] E)) ≠ 0 := by
-  rw [isInvertible_loopOperator_iff_det_ne_zero, dysonSeriesLeft_antiperiodicGaugeLoop_period,
-    ContinuousLinearMap.toLinearMap_neg, sub_neg_eq_add]
+  rw [isInvertible_loopOperator_iff_det_ne_zero,
+    one_sub_dysonSeriesLeft_antiperiodicGaugeLoop_period]
 
 /-- **The Fredholm alternative in the form `det (-1 - P)`.** The realization
 `L_Sₐ : H¹(E) → H⁰(E)` of `ζ ↦ ζ' - S ζ` on antiperiodic loops is invertible exactly when
@@ -300,6 +362,37 @@ theorem isInvertible_loopOperator_antiperiodicGaugeLoop_iff_det_ne_zero
         (↑(dysonSeriesLeft (fun t : ℝ ↦ S t) T) : E →ₗ[ℝ] E)) ≠ 0 := by
   rw [isInvertible_loopOperator_antiperiodicGaugeLoop_iff_det_one_add_ne_zero, neg_one_smul,
     ← neg_add', LinearMap.det_neg_of_complex]
+
+section Inner
+
+variable {F : Type*} [NormedAddCommGroup F] [InnerProductSpace ℂ F]
+
+/-- **`Sₐ` is infinitesimally symplectic with `S`.** If every `S(t)` is infinitesimally symplectic
+for `Im ⟪·, ·⟫`, so is every `Sₐ(t)`: conjugation by the unit phase `u(t)` preserves
+`Im ⟪·, ·⟫`, and multiplication by the imaginary scalar `π i / T` is infinitesimally symplectic. -/
+theorem im_inner_antiperiodicGaugeLoop_add_eq_zero {S : C(AddCircle T, F →L[ℝ] F)}
+    (hS : ∀ t v w, (inner ℂ (S t v) w).im + (inner ℂ v (S t w)).im = 0) (t : AddCircle T)
+    (v w : F) :
+    (inner ℂ (antiperiodicGaugeLoop T S t v) w).im +
+      (inner ℂ v (antiperiodicGaugeLoop T S t w)).im = 0 := by
+  induction t using QuotientAddGroup.induction_on with
+  | H t =>
+    rw [antiperiodicGaugeLoop_apply_coe, antiperiodicGaugeLoop_apply_coe]
+    set u := cexp (↑(π / T * t) * I)
+    have hu : u⁻¹ = (starRingEnd ℂ) u := inv_eq_conj (by simp only [u, norm_exp_ofReal_mul_I])
+    -- Move the phases across the inner products, then apply `hS` to `u v` and `u w`.
+    have h₁ : inner ℂ (u⁻¹ • S t (u • v)) w = inner ℂ (S t (u • v)) (u • w) := by
+      rw [inner_smul_left, inner_smul_right, hu, conj_conj]
+    have h₂ : inner ℂ v (u⁻¹ • S t (u • w)) = inner ℂ (u • v) (S t (u • w)) := by
+      rw [inner_smul_right, inner_smul_left, hu]
+    have hc : (inner ℂ ((↑(π / T) * I) • v) w).im + (inner ℂ v ((↑(π / T) * I) • w)).im = 0 := by
+      simp only [inner_smul_left, inner_smul_right, map_mul, conj_ofReal, conj_I, mul_im,
+        ofReal_re, ofReal_im, I_re, I_im, neg_im, mul_neg, neg_mul]
+      ring
+    rw [inner_sub_left, inner_sub_right, h₁, h₂, sub_im, sub_im]
+    linarith [hS t (u • v) (u • w)]
+
+end Inner
 
 end CircleSobolev
 

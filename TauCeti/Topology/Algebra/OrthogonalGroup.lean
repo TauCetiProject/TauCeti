@@ -337,8 +337,8 @@ theorem exists_path_linearIsometryEquiv_of_det_eq
         EuclideanSpace ℝ ι →L[ℝ] EuclideanSpace ℝ ι)) ∧
       γ 0 = g ∧ γ 1 = g' := by
   classical
-  obtain ⟨A, rfl⟩ := Matrix.UnitaryGroup.toLinearIsometryEquiv_surjective g
-  obtain ⟨B, rfl⟩ := Matrix.UnitaryGroup.toLinearIsometryEquiv_surjective g'
+  obtain ⟨A, rfl⟩ := Matrix.UnitaryGroup.toLinearIsometryEquiv.surjective g
+  obtain ⟨B, rfl⟩ := Matrix.UnitaryGroup.toLinearIsometryEquiv.surjective g'
   have hAB : (A : _root_.Matrix ι ι ℝ).det = (B : _root_.Matrix ι ι ℝ).det := by
     rw [← Matrix.UnitaryGroup.det_toLinearIsometryEquiv,
       ← Matrix.UnitaryGroup.det_toLinearIsometryEquiv]
