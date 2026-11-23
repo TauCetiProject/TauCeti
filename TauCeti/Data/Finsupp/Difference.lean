@@ -7,6 +7,8 @@ module
 
 public import Mathlib.Data.Finsupp.Basic
 
+import Mathlib.Order.Interval.Finset.Nat
+
 /-!
 # Finite differences of finitely supported sequences
 
@@ -22,20 +24,12 @@ variable {A : Type*}
 
 /-- The finitely supported sequence of finite tail sums. -/
 noncomputable def tailSum [AddCommMonoid A] (f : ℕ →₀ A) : ℕ →₀ A :=
-  onFinset (Finset.range (f.support.sup id + 1))
-    (fun n ↦ f.sum fun i a ↦ if n ≤ i then a else 0) fun n hn ↦ by
-      apply Finset.mem_range.mpr
-      by_contra h
-      apply hn
-      apply Finset.sum_eq_zero
-      intro i hi
-      have hi' : i ≤ f.support.sup id := Finset.le_sup (f := id) hi
-      exact ite_eq_right (by omega)
+  f.sum (fun i a ↦ ∑ j ∈ Finset.Iic i, Finsupp.single j a)
 
 @[simp]
 theorem tailSum_apply [AddCommMonoid A] (f : ℕ →₀ A) (n : ℕ) :
     tailSum f n = f.sum (fun i a ↦ if n ≤ i then a else 0) := by
-  rfl
+  simp [tailSum, Finsupp.sum_apply, Finset.sum_apply', Finsupp.single_apply]
 
 /-- Identity minus the left shift, sending `f` to the sequence `n ↦ f n - f (n + 1)`. -/
 noncomputable def oneSubShift [AddCommGroup A] : (ℕ →₀ A) →+ (ℕ →₀ A) :=
@@ -62,9 +56,7 @@ theorem oneSubShift_tailSum [AddCommGroup A] (f : ℕ →₀ A) :
 /-- Identity minus the left shift is injective on finitely supported sequences. -/
 theorem oneSubShift_injective [AddCommGroup A] :
     Function.Injective (oneSubShift (A := A)) := by
-  suffices hker : ∀ f : ℕ →₀ A, oneSubShift f = 0 → f = 0 by
-    intro f g h
-    exact sub_eq_zero.mp (hker (f - g) (by rw [map_sub, h, sub_self]))
+  apply (injective_iff_map_eq_zero (oneSubShift (A := A))).2
   intro f hf
   have hstep (n : ℕ) : f n = f (n + 1) := by
     have h := DFunLike.congr_fun hf n

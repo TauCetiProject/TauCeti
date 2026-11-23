@@ -6,7 +6,10 @@ Authors: Tau Ceti contributors
 module
 
 public import TauCeti.Condensed.Light.NullSequence.Basic
-public import TauCeti.Condensed.Light.InternalHom
+public import TauCeti.Condensed.Light.InternalHom.Basic
+public import Mathlib.CategoryTheory.ObjectProperty.ContainsZero
+
+import Mathlib.CategoryTheory.Comma.Arrow
 
 /-!
 # Light solid modules
@@ -47,15 +50,25 @@ def IsLightSolid : ObjectProperty (LightCondMod R) := fun M ↦ IsIso (lightSoli
 lemma isLightSolid_iff (M : LightCondMod R) :
     IsLightSolid M ↔ IsIso (lightSolidDifference M) := by rfl
 
+/-- On sections, the internal null-sequence difference subtracts the precomposition map. -/
+lemma lightSolidDifference_app_apply (M : LightCondMod R) (S : LightProfinite.{u})
+    (s : (nullSeq R ⟶[LightCondMod R] M).obj.obj (Opposite.op S)) :
+    (lightSolidDifference M).hom.app (Opposite.op S) s =
+      s - ((MonoidalClosed.pre (nullShift R)).app M).hom.app (Opposite.op S) s := by
+  change (((sheafToPresheaf (coherentTopology LightProfinite.{u}) (ModuleCat R)).map
+    (𝟙 _ - (MonoidalClosed.pre (nullShift R)).app M)).app (Opposite.op S)) s = _
+  rw [Functor.map_sub, NatTrans.app_sub, CategoryTheory.Functor.map_id, NatTrans.id_app]
+  change ((𝟙 _ - (((MonoidalClosed.pre (nullShift R)).app M).hom.app
+    (Opposite.op S))).hom) s = _
+  rw [ModuleCat.hom_sub, LinearMap.sub_apply, ModuleCat.hom_id, LinearMap.id_apply]
+
 /-- The tensor test equivalence sends the external difference to the internal difference. -/
-lemma lightSolidDifference_tensorHomSectionsAddEquiv (M : LightCondMod R) (S : LightProfinite.{u})
+lemma tensorHomSectionsAddEquiv_sub_precomp (M : LightCondMod R) (S : LightProfinite.{u})
     (g : nullSeq R ⊗ (free R).obj S.toCondensed ⟶ M) :
     tensorHomSectionsAddEquiv R (nullSeq R) M S (g - (nullShift R ▷ _) ≫ g) =
       (lightSolidDifference M).hom.app (Opposite.op S)
         (tensorHomSectionsAddEquiv R (nullSeq R) M S g) := by
-  rw [map_sub, tensorHomSectionsAddEquiv_precomp]
-  -- Section maps of sheaf differences are differences of the section maps.
-  rfl
+  rw [map_sub, tensorHomSectionsAddEquiv_precomp, lightSolidDifference_app_apply]
 
 /-- Solidity is equivalent to unique solvability of the difference equation on every test family. -/
 lemma isLightSolid_iff_bijective (M : LightCondMod R) :
@@ -67,7 +80,7 @@ lemma isLightSolid_iff_bijective (M : LightCondMod R) :
         Function.Bijective (fun g : nullSeq R ⊗ (free R).obj S.toCondensed ⟶ M ↦
           g - (nullShift R ▷ _) ≫ g) := by
     rw [← Function.Bijective.of_comp_iff _ (tensorHomSectionsAddEquiv R (nullSeq R) M S).bijective]
-    simp_rw [Function.comp_def, ← lightSolidDifference_tensorHomSectionsAddEquiv]
+    simp_rw [Function.comp_def, ← tensorHomSectionsAddEquiv_sub_precomp]
     exact Function.Bijective.of_comp_iff' (tensorHomSectionsAddEquiv R (nullSeq R) M S).bijective _
   -- The sheaf-to-presheaf functor detects invertibility componentwise.
   rw [isLightSolid_iff]
@@ -87,30 +100,18 @@ lemma lightSolidDifference_naturality {M N : LightCondMod R} (f : M ⟶ N) :
   simp only [lightSolidDifference_eq, Preadditive.sub_comp, Preadditive.comp_sub,
     id_comp, comp_id, MonoidalClosed.pre_comm_ihom_map]
 
-/-- Solidity transports across an isomorphism of light condensed modules. -/
-lemma IsLightSolid.of_iso {M N : LightCondMod R} (hM : IsLightSolid M) (e : M ≅ N) :
-    IsLightSolid N := by
-  have : IsIso (lightSolidDifference M) := (isLightSolid_iff M).mp hM
-  apply (isLightSolid_iff N).mpr
-  have : IsIso ((ihom (nullSeq R)).map e.hom ≫ lightSolidDifference N) := by
-    rw [← lightSolidDifference_naturality]
-    infer_instance
-  exact IsIso.of_isIso_comp_left ((ihom (nullSeq R)).map e.hom) _
+instance : (IsLightSolid (R := R)).IsClosedUnderIsomorphisms where
+  of_iso e hM := by
+    let e' : Arrow.mk (lightSolidDifference _) ≅ Arrow.mk (lightSolidDifference _) :=
+      Arrow.isoMk ((ihom (nullSeq R)).mapIso e) ((ihom (nullSeq R)).mapIso e)
+        (lightSolidDifference_naturality e.hom).symm
+    exact (Arrow.isIso_iff_isIso_of_isIso e'.hom).mp hM
 
-/-- Solidity depends only on the isomorphism class of the coefficient object. -/
-lemma isLightSolid_iso_iff {M N : LightCondMod R} (e : M ≅ N) :
-    IsLightSolid M ↔ IsLightSolid N :=
-  ⟨fun h ↦ h.of_iso e, fun h ↦ h.of_iso e.symm⟩
-
-/-- Every zero light condensed module is solid. -/
-lemma isLightSolid_of_isZero {M : LightCondMod R} (hM : Limits.IsZero M) :
-    IsLightSolid M := by
-  apply (isLightSolid_iff M).mpr
-  have h := (ihom (nullSeq R)).map_isZero hM
-  exact h.isIso h _
-
-/-- The zero light condensed module is solid. -/
-lemma isLightSolid_zero : IsLightSolid (0 : LightCondMod R) :=
-  isLightSolid_of_isZero (Limits.isZero_zero _)
+instance : (IsLightSolid (R := R)).ContainsZero where
+  exists_zero := by
+    refine ⟨0, Limits.isZero_zero _, ?_⟩
+    apply (isLightSolid_iff _).mpr
+    have h := (ihom (nullSeq R)).map_isZero (Limits.isZero_zero (LightCondMod R))
+    exact h.isIso h _
 
 end TauCeti

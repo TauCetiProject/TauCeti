@@ -22,8 +22,8 @@ namespace LocallyConstant
 variable {T S M : Type*} [TopologicalSpace T] [TopologicalSpace S] [CompactSpace S]
 
 /-- Currying a locally constant function on a product with a compact second factor. -/
-def curryLinearEquiv (R : Type*) [Semiring R] [AddCommMonoid M] [Module R M] :
-    LocallyConstant (T × S) M ≃ₗ[R] LocallyConstant T (LocallyConstant S M) where
+def curryEquiv :
+    LocallyConstant (T × S) M ≃ LocallyConstant T (LocallyConstant S M) where
   toFun f := ⟨fun t ↦ ⟨fun s ↦ f (t, s),
       f.isLocallyConstant.comp_continuous (continuous_const.prodMk continuous_id)⟩,
     IsLocallyConstant.of_uncurry_coe f.isLocallyConstant⟩
@@ -35,15 +35,34 @@ def curryLinearEquiv (R : Type*) [Semiring R] [AddCommMonoid M] [Module R M] :
     exact (congrArg (fun g : LocallyConstant S M ↦ g q.2) hq.1).trans hq.2⟩
   left_inv _ := rfl
   right_inv _ := rfl
+
+/-- Evaluating the curried function recovers evaluation on the product. -/
+@[simp]
+theorem curryEquiv_apply_apply (f : LocallyConstant (T × S) M) (t : T) (s : S) :
+    curryEquiv f t s = f (t, s) := by
+  rfl
+
+/-- Evaluating the inverse equivalence applies the family at the two coordinates. -/
+@[simp]
+theorem curryEquiv_symm_apply_apply (f : LocallyConstant T (LocallyConstant S M))
+    (t : T) (s : S) : (curryEquiv.symm f) (t, s) = f t s := by
+  rfl
+
+/-- The linear refinement of currying with a compact second factor. -/
+def curryLinearEquiv (R : Type*) [Semiring R] [AddCommMonoid M] [Module R M] :
+    LocallyConstant (T × S) M ≃ₗ[R] LocallyConstant T (LocallyConstant S M) where
+  toEquiv := curryEquiv
   map_add' _ _ := rfl
   map_smul' _ _ := rfl
 
+/-- Evaluating the linear currying equivalence recovers evaluation on the product. -/
 @[simp]
 theorem curryLinearEquiv_apply_apply (R : Type*) [Semiring R] [AddCommMonoid M] [Module R M]
     (f : LocallyConstant (T × S) M) (t : T) (s : S) :
     curryLinearEquiv R f t s = f (t, s) := by
   rfl
 
+/-- The inverse linear equivalence evaluates a family at the product coordinates. -/
 @[simp]
 theorem curryLinearEquiv_symm_apply_apply (R : Type*) [Semiring R] [AddCommMonoid M]
     [Module R M] (f : LocallyConstant T (LocallyConstant S M)) (t : T) (s : S) :

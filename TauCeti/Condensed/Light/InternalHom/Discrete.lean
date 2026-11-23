@@ -5,7 +5,7 @@ Authors: Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Condensed.Light.InternalHom
+public import TauCeti.Condensed.Light.InternalHom.Basic
 public import TauCeti.Condensed.Light.LocallyConstant
 
 import Mathlib.CategoryTheory.Linear.Basic
@@ -14,8 +14,10 @@ import TauCeti.Topology.LocallyConstant.Product
 /-!
 # Internal Hom with discrete coefficients
 
-For a light profinite space S, internal Hom from its free module to a discrete module is
-represented by locally constant functions on S. Compactness supplies the exponential law.
+For light profinite spaces `S` and `T`, sections on `T` of internal Hom from the free
+source `R[S]` to a discrete target module `M` are locally constant maps from `T` into
+the discrete module `LocallyConstant S M`. The product comparison first identifies these
+sections with locally constant functions on `S × T`; compactness supplies the exponential law.
 -/
 
 public section
@@ -24,53 +26,57 @@ universe u
 
 open CategoryTheory Category MonoidalCategory LightCondensed Opposite
 
-namespace LightCondMod.LocallyConstant
+namespace ModuleCat
 
 variable {R : Type u} [CommRing R]
 
 /-- Sections of internal Hom from a free test object, as functions on a product. -/
 noncomputable def internalHomProductEquiv (M : ModuleCat.{u} R)
     (S T : LightProfinite.{u}) :
-    (((free R).obj S.toCondensed ⟶[LightCondMod R]
+    (((LightCondensed.free R).obj S.toCondensed ⟶[LightCondMod R]
       (LightCondMod.LocallyConstant.functor R).obj M).obj.obj (op T)) ≃+
         LocallyConstant (S × T) M := by
-  let F := lightProfiniteToLightCondSet ⋙ free R
+  let F := lightProfiniteToLightCondSet ⋙ LightCondensed.free R
   exact (tensorHomSectionsAddEquiv R (F.obj S)
     ((LightCondMod.LocallyConstant.functor R).obj M) T).symm.trans
     (((Linear.homCongr ℤ (Functor.Monoidal.μIso F S T) (Iso.refl _)).toAddEquiv).trans
       ((S ⊗ T).freeModuleHomEquiv.trans
-        (LightCondMod.LocallyConstant.sectionsEquiv M (S ⊗ T)).toAddEquiv))
+        (ModuleCat.sectionsEquiv M (S ⊗ T)).toAddEquiv))
 
-/-- Product evaluation is the tensor–Hom comparison followed by the free monoidal map. -/
+/-- Uncurry the section map, precompose with the inverse free monoidal comparison, and
+then evaluate the resulting free-module map as a section on `S × T`. -/
 lemma internalHomProductEquiv_apply (M : ModuleCat.{u} R)
     (S T : LightProfinite.{u})
-    (s : (((free R).obj S.toCondensed ⟶[LightCondMod R]
+    (s : (((LightCondensed.free R).obj S.toCondensed ⟶[LightCondMod R]
       (LightCondMod.LocallyConstant.functor R).obj M).obj.obj (op T))) :
     internalHomProductEquiv M S T s =
-      LightCondMod.LocallyConstant.sectionsEquiv M (S ⊗ T)
+      ModuleCat.sectionsEquiv M (S ⊗ T)
         ((S ⊗ T).freeModuleHomEquiv
-          ((Functor.Monoidal.μIso (lightProfiniteToLightCondSet ⋙ free R) S T).inv ≫
+          ((Functor.Monoidal.μIso (lightProfiniteToLightCondSet ⋙ LightCondensed.free R) S T).inv ≫
             MonoidalClosed.uncurry (T.freeModuleHomEquiv.symm s))) := by
-  simp only [internalHomProductEquiv, AddEquiv.trans_apply,
-     AddEquiv.coe_mk, Equiv.coe_fn_mk ]
-  rw [tensorHomSectionsAddEquiv_symm_apply]
-  rfl
+  change sectionsEquiv M (S ⊗ T) ((S ⊗ T).freeModuleHomEquiv
+    (Linear.homCongr ℤ
+      (Functor.Monoidal.μIso (lightProfiniteToLightCondSet ⋙ LightCondensed.free R) S T)
+      (Iso.refl _) ((tensorHomSectionsAddEquiv R _ _ T).symm s))) = _
+  rw [Linear.homCongr_apply, Iso.refl_hom, Category.comp_id,
+    tensorHomSectionsAddEquiv_symm_apply]
 
-private lemma internalHomProductEquiv_naturality (M : ModuleCat.{u} R)
+/-- Restriction of product sections is precomposition by `id × f`. -/
+lemma internalHomProductEquiv_naturality (M : ModuleCat.{u} R)
     (S : LightProfinite.{u}) {T U : LightProfinite.{u}} (f : T ⟶ U)
-    (s : (((free R).obj S.toCondensed ⟶[LightCondMod R]
-      (LightCondMod.LocallyConstant.functor R).obj M).obj.obj (op U))) (x : S) (y : T) :
+    (s : (((LightCondensed.free R).obj S.toCondensed ⟶[LightCondMod R]
+      (LightCondMod.LocallyConstant.functor R).obj M).obj.obj (op U))) :
     internalHomProductEquiv M S T
-      (((free R).obj S.toCondensed ⟶[LightCondMod R]
-        (LightCondMod.LocallyConstant.functor R).obj M).obj.map f.op s) (x, y) =
-      internalHomProductEquiv M S U s (x, f y) := by
-  let F := lightProfiniteToLightCondSet ⋙ free R
-  let N := ((free R).obj S.toCondensed ⟶[LightCondMod R]
+      (((LightCondensed.free R).obj S.toCondensed ⟶[LightCondMod R]
+        (LightCondMod.LocallyConstant.functor R).obj M).obj.map f.op s) =
+      (internalHomProductEquiv M S U s).comap (S ◁ f).hom.hom := by
+  let F := lightProfiniteToLightCondSet ⋙ LightCondensed.free R
+  let N := ((LightCondensed.free R).obj S.toCondensed ⟶[LightCondMod R]
     (LightCondMod.LocallyConstant.functor R).obj M)
   have h : T.freeModuleHomEquiv.symm (N.obj.map f.op s) =
       F.map f ≫ U.freeModuleHomEquiv.symm s := by
     apply T.freeModuleHomEquiv.injective
-    rw [show F.map f = (free R).map (lightProfiniteToLightCondSet.map f) from rfl,
+    rw [Functor.comp_map,
       LightProfinite.freeModuleHomEquiv_comp, AddEquiv.apply_symm_apply,
       AddEquiv.apply_symm_apply]
   have hδ := Functor.OplaxMonoidal.δ_natural_right F S f
@@ -83,20 +89,21 @@ private lemma internalHomProductEquiv_naturality (M : ModuleCat.{u} R)
       congrArg (fun k ↦ k ≫ MonoidalClosed.uncurry (U.freeModuleHomEquiv.symm s)) hδ
   have hs := congrArg ((S ⊗ T).freeModuleHomEquiv (M :=
     (LightCondMod.LocallyConstant.functor R).obj M)) hn
-  rw [show F.map (S ◁ f) = (free R).map
-    (lightProfiniteToLightCondSet.map (S ◁ f)) from rfl,
+  rw [Functor.comp_map,
     LightProfinite.freeModuleHomEquiv_comp] at hs
+  ext ⟨x, y⟩
   have he := congrArg (fun z ↦
-    LightCondMod.LocallyConstant.sectionsEquiv M (S ⊗ T) z (x, y)) hs
-  have he' := he.trans (LightCondMod.LocallyConstant.sectionsEquiv_map_apply M
+    ModuleCat.sectionsEquiv M (S ⊗ T) z (x, y)) hs
+  have he' := he.trans (ModuleCat.sectionsEquiv_map_apply M
     (S ◁ f) _ (x, y))
   rw [internalHomProductEquiv_apply, internalHomProductEquiv_apply]
   exact he'
 
-/-- Internal Hom from a compact test object has discrete locally constant coefficients. -/
+/-- For free source `R[S]` and discrete target `M`, internal Hom sections on `T` are
+locally constant maps from `T` into the discrete module `LocallyConstant S M`. -/
 noncomputable def internalHomSectionsEquiv (M : ModuleCat.{u} R)
     (S T : LightProfinite.{u}) :
-    (((free R).obj S.toCondensed ⟶[LightCondMod R]
+    (((LightCondensed.free R).obj S.toCondensed ⟶[LightCondMod R]
       (LightCondMod.LocallyConstant.functor R).obj M).obj.obj (op T)) ≃+
         LocallyConstant T (LocallyConstant S M) :=
   (internalHomProductEquiv M S T).trans
@@ -106,7 +113,7 @@ noncomputable def internalHomSectionsEquiv (M : ModuleCat.{u} R)
 /-- Curried evaluation agrees with evaluation on the product. -/
 lemma internalHomSectionsEquiv_apply (M : ModuleCat.{u} R)
     (S T : LightProfinite.{u})
-    (s : (((free R).obj S.toCondensed ⟶[LightCondMod R]
+    (s : (((LightCondensed.free R).obj S.toCondensed ⟶[LightCondMod R]
       (LightCondMod.LocallyConstant.functor R).obj M).obj.obj (op T))) (y : T) (x : S) :
     internalHomSectionsEquiv M S T s y x = internalHomProductEquiv M S T s (x, y) := by
   simp [internalHomSectionsEquiv]
@@ -114,15 +121,17 @@ lemma internalHomSectionsEquiv_apply (M : ModuleCat.{u} R)
 /-- Restriction acts by precomposition on the parameter of the curried section. -/
 lemma internalHomSectionsEquiv_naturality (M : ModuleCat.{u} R)
     (S : LightProfinite.{u}) {T U : LightProfinite.{u}} (f : T ⟶ U)
-    (s : (((free R).obj S.toCondensed ⟶[LightCondMod R]
+    (s : (((LightCondensed.free R).obj S.toCondensed ⟶[LightCondMod R]
       (LightCondMod.LocallyConstant.functor R).obj M).obj.obj (op U))) :
     internalHomSectionsEquiv M S T
-      (((free R).obj S.toCondensed ⟶[LightCondMod R]
+      (((LightCondensed.free R).obj S.toCondensed ⟶[LightCondMod R]
         (LightCondMod.LocallyConstant.functor R).obj M).obj.map f.op s) =
       (internalHomSectionsEquiv M S U s).comap f.hom.hom := by
   ext y x
   simp only [internalHomSectionsEquiv_apply, LocallyConstant.coe_comap_apply]
-  convert internalHomProductEquiv_naturality M S f s x y using 1
-  rfl
+  have hf (z : T) : f.hom.hom z = f z := rfl
+  rw [hf]
+  exact congrArg (fun g : LocallyConstant (S × T) M ↦ g (x, y))
+    (internalHomProductEquiv_naturality M S f s)
 
-end LightCondMod.LocallyConstant
+end ModuleCat

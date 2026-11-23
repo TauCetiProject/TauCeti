@@ -42,14 +42,20 @@ noncomputable def tensorHomSectionsAddEquiv (A B : LightCondMod R) (S : LightPro
 lemma tensorHomSectionsAddEquiv_apply (A B : LightCondMod R) (S : LightProfinite.{u})
     (g : A ⊗ (free R).obj S.toCondensed ⟶ B) :
     tensorHomSectionsAddEquiv R A B S g = S.freeModuleHomEquiv (MonoidalClosed.curry g) := by
-  rfl
+  let : (tensorLeft A).Additive :=
+    preservesFiniteColimits_le_additiveFunctor _ _ _ inferInstance
+  simpa only [tensorHomSectionsAddEquiv, AddEquiv.trans_apply, MonoidalClosed.curry] using
+    congrArg S.freeModuleHomEquiv ((ihom.adjunction A).homAddEquiv_apply _ _ g)
 
 /-- The inverse comparison evaluates a section as a free-object map and uncurries it. -/
 lemma tensorHomSectionsAddEquiv_symm_apply (A B : LightCondMod R) (S : LightProfinite.{u})
     (s : (A ⟶[LightCondMod R] B).obj.obj (Opposite.op S)) :
     (tensorHomSectionsAddEquiv R A B S).symm s =
       MonoidalClosed.uncurry (S.freeModuleHomEquiv.symm s) := by
-  rfl
+  let : (tensorLeft A).Additive :=
+    preservesFiniteColimits_le_additiveFunctor _ _ _ inferInstance
+  simpa only [tensorHomSectionsAddEquiv, AddEquiv.symm_trans_apply, MonoidalClosed.uncurry] using
+    (ihom.adjunction A).homAddEquiv_symm_apply _ _ (S.freeModuleHomEquiv.symm s)
 
 /-- Precomposition in the first tensor factor acts by internal precomposition on sections. -/
 lemma tensorHomSectionsAddEquiv_precomp {A A' B : LightCondMod R} (f : A' ⟶ A)
