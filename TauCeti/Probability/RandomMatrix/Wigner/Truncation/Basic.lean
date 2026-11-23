@@ -38,8 +38,8 @@ extending the moment method to finite-second-moment entry laws.
 
 ## Main results
 
-* `ProbabilityTheory.iIndepFun.wignerMatrix_centeredTruncation` — truncating and centering the
-  upper coordinates preserves their joint independence with the diagonal coordinates.
+* `ProbabilityTheory.iIndepFun.wignerCoordinates_centeredTruncation` — truncating and centering
+  the upper coordinates of a corner preserves the joint independence of its Wigner coordinates.
 * `TauCeti.norm_wignerMatrix_centeredTruncation_zero_apply_le` — the entry bound `2R/√n`.
 * `TauCeti.integral_norm_wignerMatrix_centeredTruncation_zero_apply_pow_le` and
   `TauCeti.integral_norm_wignerMatrix_centeredTruncation_zero_apply_pow_le_of_identDistrib` —
@@ -65,20 +65,19 @@ namespace TauCeti.Probability
 variable {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω}
   {ξ : StrictUpper → Ω → ℂ} {η : ℕ → Ω → ℝ}
 
-/-- Truncating and centering upper coordinates preserves their joint independence with the
-unchanged diagonal coordinates. -/
-theorem _root_.ProbabilityTheory.iIndepFun.wignerMatrix_centeredTruncation
-    (h : iIndepFun (fun k : StrictUpper ⊕ ℕ ↦
-      Sum.elim ξ (fun i ω ↦ (η i ω : ℂ)) k) P) (R : ℝ≥0) :
-    iIndepFun (fun k : StrictUpper ⊕ ℕ ↦
-      Sum.elim (fun ij ↦ centeredTruncation (ξ ij) P R) (fun i ω ↦ (η i ω : ℂ)) k) P := by
+/-- Truncating and centering the upper coordinates of the `n × n` corner preserves the joint
+independence of its Wigner coordinates, with the diagonal coordinates unchanged. -/
+theorem _root_.ProbabilityTheory.iIndepFun.wignerCoordinates_centeredTruncation {n : ℕ}
+    (h : iIndepFun (fun k ω ↦ wignerCoordinates ξ η n ω k) P) (R : ℝ≥0) :
+    iIndepFun (fun k ω ↦
+      wignerCoordinates (fun ij ↦ centeredTruncation (ξ ij) P R) η n ω k) P := by
   choose g hg hgξ using fun ij ↦ exists_measurable_comp_eq_centeredTruncation (ξ ij) P R
-  convert h.comp (fun k ↦ Sum.elim g (fun _ ↦ id) k) (fun k ↦ by
-    cases k with
-    | inl ij => exact hg ij
-    | inr _ => exact measurable_id) using 1
-  funext k
-  cases k <;> simp only [Sum.elim_inl, Sum.elim_inr, hgξ, Function.id_comp]
+  convert h.comp (γ := WignerCoordinateType) (fun k ↦ match k with
+    | .inl u => g u.toStrictUpper
+    | .inr _ => id) (by rintro (_ | _) <;> [exact hg _; exact measurable_id]) using 1
+  funext k ω
+  cases k <;> simp only [wignerCoordinates_inl, wignerCoordinates_inr, Function.comp_apply, id,
+    ← hgξ]
 
 end TauCeti.Probability
 

@@ -10,7 +10,7 @@ public import TauCeti.MeasureTheory.Integral.Bind
 public import TauCeti.Probability.Distributions.Semicircle.Moments
 public import TauCeti.Probability.Moments.WeakConvergence
 public import TauCeti.Probability.RandomMatrix.LeadingMoments
-import TauCeti.Probability.RandomMatrix.Wigner.TraceIntegrability
+import TauCeti.Probability.RandomMatrix.Wigner.Trace.Integrability
 
 /-!
 # Expected empirical spectral moments and expected semicircle law for Wigner matrices
@@ -19,7 +19,9 @@ For a Hermitian Wigner matrix `H_{n+1}`, the `k`th moment `∫ x ^ k dL_{H_{n+1}
 spectral measure is the real part of the normalized trace `(n + 1)⁻¹ tr(H_{n+1} ^ k)`. Against `P`,
 this transfers the quantitative trace bounds from `TauCeti.Probability.RandomMatrix.MomentBounds`
 and `TauCeti.Probability.RandomMatrix.LeadingMoments` directly to expected empirical spectral
-moments:
+moments. The transfer of `Lᵖ` bounds, integrability and expectations from traces to spectral
+moments holds for every random Hermitian matrix of fixed size, and the Wigner versions are its
+special cases. The quantitative consequences are:
 
 * even expected spectral moments `E[∫ x ^ (2 * m) dL_{H_{n+1}}]` lie within `O((n + 1)⁻¹)` of
   `s ^ m * catalan m = ∫ x ^ (2 * m) ∂semicircleReal 0 s`;
@@ -36,6 +38,10 @@ expected empirical spectral measure — has finite moments of every order and co
 
 ## Main results
 
+* `TauCeti.Probability.memLp_integral_pow_spectralMeasure`,
+  `TauCeti.Probability.integrable_integral_pow_spectralMeasure`, and
+  `TauCeti.Probability.integral_integral_pow_spectralMeasure`: for a random Hermitian matrix, the
+  `Lᵖ` bound, integrability and expectation of a spectral moment, from those of the trace.
 * `TauCeti.Probability.integral_pow_spectralMeasure_wignerMatrix`,
   `TauCeti.Probability.integral_integral_pow_spectralMeasure_wignerMatrix`, and
   `TauCeti.Probability.integral_pow_bind_spectralMeasure_wignerMatrix`: deterministic, expected, and
@@ -69,6 +75,43 @@ open scoped Topology NNReal ENNReal BoundedContinuousFunction
 
 namespace TauCeti.Probability
 
+section Hermitian
+
+variable {Ω ι 𝕜 : Type*} [MeasurableSpace Ω] {P : Measure Ω} [Fintype ι] [DecidableEq ι]
+  [Nonempty ι] [RCLike 𝕜] {A : Ω → Matrix ι ι 𝕜}
+
+/-- If the trace of the `k`-th power of a random Hermitian matrix lies in `Lᵖ`, so does its `k`-th
+empirical spectral moment. -/
+theorem memLp_integral_pow_spectralMeasure (hA : ∀ ω, (A ω).IsHermitian) {p : ℝ≥0∞} {k : ℕ}
+    (h : MemLp (fun ω ↦ (A ω ^ k).trace) p P) :
+    MemLp (fun ω ↦ ∫ x, x ^ k ∂((A ω).spectralMeasure (hA ω) : Measure ℝ)) p P := by
+  simp_rw [Matrix.integral_pow_spectralMeasure]
+  exact h.re.const_mul _
+
+/-- If the trace of the `k`-th power of a random Hermitian matrix is integrable, so is its `k`-th
+empirical spectral moment. -/
+theorem integrable_integral_pow_spectralMeasure (hA : ∀ ω, (A ω).IsHermitian) {k : ℕ}
+    (h : Integrable (fun ω ↦ (A ω ^ k).trace) P) :
+    Integrable (fun ω ↦ ∫ x, x ^ k ∂((A ω).spectralMeasure (hA ω) : Measure ℝ)) P :=
+  memLp_one_iff_integrable.1 <|
+    memLp_integral_pow_spectralMeasure hA (memLp_one_iff_integrable.2 h)
+
+/-- The expected `k`-th empirical spectral moment of a random Hermitian matrix is the real part of
+its normalized expected `k`-th trace. No moment or finiteness hypothesis is needed: the trace of a
+power of a Hermitian matrix is real, and the Bochner integral commutes with the embedding of `ℝ`
+in `𝕜`. -/
+theorem integral_integral_pow_spectralMeasure (hA : ∀ ω, (A ω).IsHermitian) (k : ℕ) :
+    ∫ ω, (∫ x, x ^ k ∂((A ω).spectralMeasure (hA ω) : Measure ℝ)) ∂P =
+      RCLike.re (((Fintype.card ι : ℕ) : 𝕜)⁻¹ * ∫ ω, (A ω ^ k).trace ∂P) := by
+  have h (ω : Ω) : ((Fintype.card ι : ℕ) : 𝕜)⁻¹ * (A ω ^ k).trace =
+      RCLike.ofReal (∫ x, x ^ k ∂((A ω).spectralMeasure (hA ω) : Measure ℝ)) :=
+    (Matrix.ofReal_integral_pow_spectralMeasure _ (hA ω) k).symm
+  rw [← integral_const_mul]
+  simp_rw [h]
+  rw [integral_ofReal, RCLike.ofReal_re]
+
+end Hermitian
+
 section FixedSpace
 
 variable {Ω : Type*} {ξ : StrictUpper → Ω → ℂ} {η : ℕ → Ω → ℝ}
@@ -94,9 +137,8 @@ theorem memLp_integral_pow_spectralMeasure_wignerMatrix {p : ℝ≥0∞} {k : �
     (hξp : ∀ ij : StrictUpper, ij.val.2 < n + 1 → MemLp (ξ ij) (p * k) P)
     (hηp : ∀ i < n + 1, MemLp (η i) (p * k) P) :
     MemLp (fun ω ↦ ∫ x, x ^ k ∂((wignerMatrix ξ η (n + 1) ω).spectralMeasure
-      (wignerMatrix_isHermitian ξ η ω (n + 1)) : Measure ℝ)) p P := by
-  simp_rw [Matrix.integral_pow_spectralMeasure, Fintype.card_fin]
-  exact (memLp_trace_pow_wignerMatrix hP hξp hηp).re.const_mul _
+      (wignerMatrix_isHermitian ξ η ω (n + 1)) : Measure ℝ)) p P :=
+  memLp_integral_pow_spectralMeasure _ (memLp_trace_pow_wignerMatrix hP hξp hηp)
 
 /-- The `k`th empirical spectral moment of the `(n + 1) × (n + 1)` Wigner matrix is integrable
 whenever all coordinates in the `(n + 1) × (n + 1)` corner lie in `Lᵏ`. The measure is assumed
@@ -107,9 +149,7 @@ theorem integrable_integral_pow_spectralMeasure_wignerMatrix {k n : ℕ}
     (hη : ∀ i < n + 1, MemLp (η i) k P) :
     Integrable (fun ω ↦ ∫ x, x ^ k ∂((wignerMatrix ξ η (n + 1) ω).spectralMeasure
       (wignerMatrix_isHermitian ξ η ω (n + 1)) : Measure ℝ)) P :=
-  memLp_one_iff_integrable.1 <| memLp_integral_pow_spectralMeasure_wignerMatrix hP n
-    (fun ij hij ↦ by simpa only [one_mul] using hξ ij hij)
-    (fun i hi ↦ by simpa only [one_mul] using hη i hi)
+  integrable_integral_pow_spectralMeasure _ (integrable_trace_pow_wignerMatrix hP hξ hη)
 
 /-- The expected `k`th empirical spectral moment is the real part of the normalized expected `k`th
 trace. No moment or finiteness hypothesis is needed: the trace of a power of a Hermitian matrix is
@@ -118,13 +158,7 @@ theorem integral_integral_pow_spectralMeasure_wignerMatrix (n k : ℕ) :
     ∫ ω, (∫ x, x ^ k ∂((wignerMatrix ξ η (n + 1) ω).spectralMeasure
       (wignerMatrix_isHermitian ξ η ω (n + 1)) : Measure ℝ)) ∂P =
       (((n + 1 : ℕ) : ℂ)⁻¹ * ∫ ω, (wignerMatrix ξ η (n + 1) ω ^ k).trace ∂P).re := by
-  have h (ω : Ω) : ((n + 1 : ℕ) : ℂ)⁻¹ * (wignerMatrix ξ η (n + 1) ω ^ k).trace =
-      RCLike.ofReal (∫ x, x ^ k ∂((wignerMatrix ξ η (n + 1) ω).spectralMeasure
-        (wignerMatrix_isHermitian ξ η ω (n + 1)) : Measure ℝ)) := by
-    rw [Matrix.ofReal_integral_pow_spectralMeasure, Fintype.card_fin]
-  rw [← integral_const_mul]
-  simp_rw [h]
-  rw [integral_ofReal, ← RCLike.re_to_complex, RCLike.ofReal_re]
+  rw [integral_integral_pow_spectralMeasure, Fintype.card_fin, RCLike.re_to_complex]
 
 /-- **Quantitative expected even spectral moment bound.** For independent centered entries in the
 `(n + 1) × (n + 1)` corner with `2m`th absolute moments bounded by `B` and strictly upper second

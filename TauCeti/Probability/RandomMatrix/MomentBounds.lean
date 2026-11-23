@@ -8,7 +8,7 @@ module
 public import TauCeti.Combinatorics.TraceWord.Counting
 public import TauCeti.Data.Fintype.SmallRange
 public import TauCeti.MeasureTheory.Integral.MeanInequalities
-public import TauCeti.Probability.RandomMatrix.TraceWord
+public import TauCeti.Probability.RandomMatrix.Wigner.Trace.Word
 
 /-!
 # Bounds for nonleading Wigner trace words

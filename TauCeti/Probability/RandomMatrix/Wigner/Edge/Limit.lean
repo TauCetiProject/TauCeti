@@ -10,9 +10,8 @@ public import TauCeti.Probability.RandomMatrix.Wigner.Truncation.OperatorNorm
 import TauCeti.Probability.RandomMatrix.Wigner.SemicircleLaw
 import TauCeti.Probability.RandomMatrix.Wigner.Diagonal.OperatorNorm
 import TauCeti.Probability.RandomMatrix.SpectralMoment.Extremes
-import TauCeti.Probability.RandomMatrix.Wigner.TraceIntegrability
+import TauCeti.Probability.RandomMatrix.Wigner.Trace.Integrability
 import TauCeti.Analysis.Matrix.SpectralMeasure.ExtremeEigenvalues
-import TauCeti.Analysis.Matrix.Eigenvalues.Continuous
 import TauCeti.Analysis.Normed.Group.Basic
 
 /-!

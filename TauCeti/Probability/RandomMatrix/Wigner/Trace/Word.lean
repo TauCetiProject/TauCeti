@@ -48,7 +48,7 @@ case and proves integrability first.
   products of entries along the walk. The integrability of `(Hₙ ^ k).trace` for corner entries
   in `Lᵏ`, which needs neither independence nor centering, is
   `TauCeti.integrable_trace_pow_wignerMatrix` in
-  `TauCeti.Probability.RandomMatrix.Wigner.TraceIntegrability`; that theorem covers every `k`
+  `TauCeti.Probability.RandomMatrix.Wigner.Trace.Integrability`; that theorem covers every `k`
   and assumes a finite measure when `k = 0`.
 
 * `TauCeti.integrable_prod_wignerMatrix_apply_path`,

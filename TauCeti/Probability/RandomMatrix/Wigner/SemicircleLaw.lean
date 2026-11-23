@@ -89,8 +89,9 @@ private theorem ae_tendsto_wigner_approximation_error
       (.of_forall fun ω ↦ by simpa only [Real.norm_of_nonneg b.coe_nonneg] using hb (ξ e₀ ω))
   have hint : Integrable (fun ω ↦ f (ξ e₀ ω)) P :=
     (hξ.sub hg₂).integrable_norm_pow'
-  filter_upwards [ae_tendsto_sum_finStrictUpper_div (X := fun i ω ↦ f (ξ i ω)) hint
+  filter_upwards [ae_tendsto_inv_smul_sum_finStrictUpper (X := fun i ω ↦ f (ξ i ω)) hint
     (fun _ _ hij ↦ (hind.indepFun hij).comp hf hf) (fun i ↦ (hid i).comp hf)] with ω hω
+  simp only [smul_eq_mul, inv_mul_eq_div] at hω
   exact (hω.comp (tendsto_add_atTop_nat 1)).sqrt
 
 private theorem ae_tendsto_spectralMeasure_wignerMatrix_zero_of_bounded

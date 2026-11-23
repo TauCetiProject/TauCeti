@@ -521,6 +521,11 @@ theorem strictUpperEquivNat_apply (ij : StrictUpper) :
     strictUpperEquivNat ij = ij.val.2.choose 2 + ij.val.1 :=
   (rfl)
 
+/-- The column enumeration starts at the position `(0, 1)`. -/
+@[simp]
+theorem strictUpperEquivNat_symm_zero : strictUpperEquivNat.symm 0 = ⟨(0, 1), by decide⟩ :=
+  strictUpperEquivNat.symm_apply_eq.2 (by simp)
+
 /-- The position with index `k` in the column enumeration has column below `n` exactly when `k` is
 below `n.choose 2`. -/
 @[simp]
