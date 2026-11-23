@@ -53,21 +53,21 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
 
 private def curvatureValue (x : M) (u v : TangentSpace I x) (w : V x) : V x :=
   cov.curvatureOperator
-    (Classical.choose (exists_contMDiff_section_eq I E ∞ u))
-    (Classical.choose (exists_contMDiff_section_eq I E ∞ v))
-    (Classical.choose (exists_contMDiff_section_eq I F ∞ w)) x
+    (contMDiffExtend I E u)
+    (contMDiffExtend I E v)
+    (contMDiffExtend I F w) x
 
 private theorem curvatureValue_eq (x : M)
     {X Y : Π y : M, TangentSpace I y} {σ : Π y : M, V y}
     (hX : CMDiff ∞ (T% X)) (hY : CMDiff ∞ (T% Y)) (hσ : CMDiff ∞ (T% σ)) :
     curvatureValue cov x (X x) (Y x) (σ x) = cov.curvatureOperator X Y σ x := by
   exact curvatureOperator_congr
-    (Classical.choose_spec (exists_contMDiff_section_eq I E ∞ (X x))).1 hX
-    (Classical.choose_spec (exists_contMDiff_section_eq I E ∞ (Y x))).1 hY
-    (Classical.choose_spec (exists_contMDiff_section_eq I F ∞ (σ x))).1 hσ
-    (Classical.choose_spec (exists_contMDiff_section_eq I E ∞ (X x))).2
-    (Classical.choose_spec (exists_contMDiff_section_eq I E ∞ (Y x))).2
-    (Classical.choose_spec (exists_contMDiff_section_eq I F ∞ (σ x))).2
+    (contMDiff_contMDiffExtend I E (X x)) hX
+    (contMDiff_contMDiffExtend I E (Y x)) hY
+    (contMDiff_contMDiffExtend I F (σ x)) hσ
+    (contMDiffExtend_apply_self I E (X x))
+    (contMDiffExtend_apply_self I E (Y x))
+    (contMDiffExtend_apply_self I F (σ x))
 
 private theorem curvatureValue_add_first (x : M) (u u' v : TangentSpace I x) (w : V x) :
     curvatureValue cov x (u + u') v w =

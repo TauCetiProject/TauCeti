@@ -143,17 +143,17 @@ namespace TauCeti.SuzukiLieIndex
 algebraic closure used by a valid Suzuki index. -/
 noncomputable def generatorFieldEmbedding (m : ℕ)
     (hvalid : (LieTypeIndex.suzuki m).Valid) :
-    GaloisField 2 (2 * m + 1) →+* (of m hvalid).1.Closure := by
-  letI : CharP (of m hvalid).1.Closure 2 := charP_closure_two (of m hvalid)
-  letI : Algebra (ZMod 2) (of m hvalid).1.Closure := ZMod.algebra _ _
+    GaloisField 2 (2 * m + 1) →+* (of m hvalid).val.Closure := by
+  letI : CharP (of m hvalid).val.Closure 2 := charP_closure_two (of m hvalid)
+  letI : Algebra (ZMod 2) (of m hvalid).val.Closure := ZMod.algebra _ _
   exact (IsAlgClosed.lift :
-    GaloisField 2 (2 * m + 1) →ₐ[ZMod 2] (of m hvalid).1.Closure).toRingHom
+    GaloisField 2 (2 * m + 1) →ₐ[ZMod 2] (of m hvalid).val.Closure).toRingHom
 
 /-- Scalar extension of the coordinate-changed generator model into the algebraic closure of a
 valid Suzuki index. -/
 noncomputable def generatorEmbedding (m : ℕ) (hvalid : (LieTypeIndex.suzuki m).Valid) :
     GL (Fin 4) (GaloisField 2 (2 * m + 1)) →*
-      GL (Fin 4) (of m hvalid).1.Closure :=
+      GL (Fin 4) (of m hvalid).val.Closure :=
   (Matrix.GeneralLinearGroup.map (generatorFieldEmbedding m hvalid)).comp
     (Suzuki.coordinateEquiv (GaloisField 2 (2 * m + 1))).toMonoidHom
 
@@ -179,7 +179,7 @@ the field embedding applied entrywise. -/
 theorem coe_generatorEmbedding (m : ℕ)
     (hvalid : (LieTypeIndex.suzuki m).Valid)
     (g : GL (Fin 4) (GaloisField 2 (2 * m + 1))) :
-    (generatorEmbedding m hvalid g : Matrix (Fin 4) (Fin 4) (of m hvalid).1.Closure) =
+    (generatorEmbedding m hvalid g : Matrix (Fin 4) (Fin 4) (of m hvalid).val.Closure) =
       ((Suzuki.coordinateEquiv _ g : GL (Fin 4) _) : Matrix (Fin 4) (Fin 4) _).map
         (generatorFieldEmbedding m hvalid) := by
   ext i j
@@ -208,7 +208,7 @@ theorem generatorEmbedding_mem_map_fixedSubgroup (m : ℕ)
             (fun x ↦ x ^ 2 ^ (m + 1)))) :
     generatorEmbedding m hvalid g ∈
       (fixedSubgroup (of m hvalid).steinberg).map
-        (SpStd.points 1 (of m hvalid).1.Closure).subtype := by
+        (SpStd.points 1 (of m hvalid).val.Closure).subtype := by
   rw [(of m hvalid).mem_map_fixedSubgroup_steinberg_iff, coe_generatorEmbedding,
     SuzukiReeIndex.halfExponent_suzuki, Matrix.symplecticSpecialIsogeny_map, hiso]
   refine ⟨?_, fun i j ↦ ?_⟩
@@ -223,7 +223,7 @@ theorem generatorEmbedding_unipotent_mem_map_fixedSubgroup (m : ℕ)
     (a b : GaloisField 2 (2 * m + 1)) :
     generatorEmbedding m hvalid (Suzuki.unipotent m a b) ∈
       (fixedSubgroup (of m hvalid).steinberg).map
-        (SpStd.points 1 (of m hvalid).1.Closure).subtype :=
+        (SpStd.points 1 (of m hvalid).val.Closure).subtype :=
   generatorEmbedding_mem_map_fixedSubgroup m hvalid _
     (Suzuki.coordinateEquiv_unipotent_mul_jFin_mul_transpose m a b)
     (Suzuki.symplecticSpecialIsogeny_coordinateEquiv_unipotent m a b)
@@ -234,7 +234,7 @@ theorem generatorEmbedding_weyl_mem_map_fixedSubgroup (m : ℕ)
     (hvalid : (LieTypeIndex.suzuki m).Valid) :
     generatorEmbedding m hvalid (Suzuki.weyl m) ∈
       (fixedSubgroup (of m hvalid).steinberg).map
-        (SpStd.points 1 (of m hvalid).1.Closure).subtype :=
+        (SpStd.points 1 (of m hvalid).val.Closure).subtype :=
   generatorEmbedding_mem_map_fixedSubgroup m hvalid _
     (Suzuki.coordinateEquiv_weyl_mul_jFin_mul_transpose m)
     (Suzuki.symplecticSpecialIsogeny_coordinateEquiv_weyl m)
@@ -245,7 +245,7 @@ theorem map_suzukiGroup_le_map_fixedSubgroup (m : ℕ)
     (hvalid : (LieTypeIndex.suzuki m).Valid) :
     (suzukiGroup m).map (generatorEmbedding m hvalid) ≤
       (fixedSubgroup (of m hvalid).steinberg).map
-        (SpStd.points 1 (of m hvalid).1.Closure).subtype := by
+        (SpStd.points 1 (of m hvalid).val.Closure).subtype := by
   rw [Subgroup.map_le_iff_le_comap, Suzuki.suzukiGroup_le_iff]
   exact ⟨fun a b ↦ generatorEmbedding_unipotent_mem_map_fixedSubgroup m hvalid a b,
     generatorEmbedding_weyl_mem_map_fixedSubgroup m hvalid⟩

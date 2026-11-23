@@ -149,9 +149,9 @@ def prodMap (hm : finrank ℝ F₁ = m) (hn : finrank ℝ F₂ = n)
     VectorBundleOrientationCover (F₁ × F₂) (E₁ ×ᵇ E₂) (Fin (m + n)) := by
   letI := fun b ↦ VectorBundle.finiteDimensional ℝ F₁ E₁ b
   letI := fun b ↦ VectorBundle.finiteDimensional ℝ F₂ E₂ b
-  exact ⟨p.1.1.proj, Orientation.prod p.1.1.orientation (p.2.symm ▸ p.1.2.orientation)
-    ((VectorBundle.finrank_eq ℝ F₁ E₁ p.1.1.proj).trans hm)
-    ((VectorBundle.finrank_eq ℝ F₂ E₂ p.1.1.proj).trans hn)⟩
+  exact ⟨p.val.1.proj, Orientation.prod p.val.1.orientation (p.property.symm ▸ p.val.2.orientation)
+    ((VectorBundle.finrank_eq ℝ F₁ E₁ p.val.1.proj).trans hm)
+    ((VectorBundle.finrank_eq ℝ F₂ E₂ p.val.1.proj).trans hn)⟩
 
 /-- On two orientations over a common base point, the comparison is their actual linear
 product orientation. The finite-dimensional fibre instances are inherited from the bundle. -/
@@ -167,7 +167,7 @@ theorem prodMap_mk (hm : finrank ℝ F₁ = m) (hn : finrank ℝ F₂ = n) (b : 
 
 @[simp]
 theorem proj_prodMap (hm : finrank ℝ F₁ = m) (hn : finrank ℝ F₂ = n)
-    (p : FiberProd F₁ E₁ F₂ E₂ m n) : (prodMap hm hn p).proj = p.1.1.proj :=
+    (p : FiberProd F₁ E₁ F₂ E₂ m n) : (prodMap hm hn p).proj = p.val.1.proj :=
   (rfl)
 
 private theorem preimage_sheet_prodMap (hm : finrank ℝ F₁ = m) (hn : finrank ℝ F₂ = n)
@@ -175,7 +175,7 @@ private theorem preimage_sheet_prodMap (hm : finrank ℝ F₁ = m) (hn : finrank
     (e₂ : Trivialization F₂ (π F₂ E₂)) [e₂.IsLinear ℝ]
     (o₁ : Orientation ℝ F₁ (Fin m)) (o₂ : Orientation ℝ F₂ (Fin n)) :
     {p : FiberProd F₁ E₁ F₂ E₂ m n |
-      p.1.1 ∈ sheet e₁ o₁ ∧ p.1.2 ∈ sheet e₂ o₂} ⊆
+      p.val.1 ∈ sheet e₁ o₁ ∧ p.val.2 ∈ sheet e₂ o₂} ⊆
       prodMap hm hn ⁻¹' sheet (e₁.prod e₂) (Orientation.prod o₁ o₂ hm hn) := by
   rintro ⟨⟨⟨b, p⟩, ⟨b', q⟩⟩, h⟩ ⟨hp, hq⟩
   obtain ⟨hp, hpo⟩ := mem_sheet_iff.1 hp
@@ -190,22 +190,22 @@ theorem continuous_prodMap (hm : finrank ℝ F₁ = m) (hn : finrank ℝ F₂ = 
     Continuous (prodMap (F₁ := F₁) (E₁ := E₁) (F₂ := F₂) (E₂ := E₂) hm hn) := by
   refine continuous_of_isOpen_preimage_sheet (by
     simpa only [Function.comp_def, proj_prodMap] using
-      (continuous_proj.comp (continuous_fst.comp continuous_subtype_val) :
-        Continuous fun p : FiberProd F₁ E₁ F₂ E₂ m n ↦ p.1.1.proj)) fun b o ↦ ?_
+      (continuous_proj.comp (continuous_fst.comp continuous_subtypeVal) :
+        Continuous fun p : FiberProd F₁ E₁ F₂ E₂ m n ↦ p.val.1.proj)) fun b o ↦ ?_
   refine isOpen_iff_forall_mem_open.2 fun p hp ↦ ?_
   obtain ⟨hb, ho⟩ := mem_sheet_iff.1 hp
   let e₁ := trivializationAt F₁ E₁ b
   let e₂ := trivializationAt F₂ E₂ b
-  have hb₁ : p.1.1.proj ∈ e₁.baseSet := hb.1
-  have hb₂ : p.1.2.proj ∈ e₂.baseSet := p.2 ▸ hb.2
-  let o₁ := e₁.mapOrientation (Fin m) hb₁ p.1.1.orientation
-  let o₂ := e₂.mapOrientation (Fin n) hb₂ p.1.2.orientation
+  have hb₁ : p.val.1.proj ∈ e₁.baseSet := hb.1
+  have hb₂ : p.val.2.proj ∈ e₂.baseSet := p.property ▸ hb.2
+  let o₁ := e₁.mapOrientation (Fin m) hb₁ p.val.1.orientation
+  let o₂ := e₂.mapOrientation (Fin n) hb₂ p.val.2.orientation
   have hopen : IsOpen {q : FiberProd F₁ E₁ F₂ E₂ m n |
-      q.1.1 ∈ sheet e₁ o₁ ∧ q.1.2 ∈ sheet e₂ o₂} :=
+      q.val.1 ∈ sheet e₁ o₁ ∧ q.val.2 ∈ sheet e₂ o₂} :=
     ((isOpen_sheet (by simpa only [Fintype.card_fin] using hm.symm) e₁ o₁).preimage
-      (continuous_fst.comp continuous_subtype_val)).inter
+      (continuous_fst.comp continuous_subtypeVal)).inter
       ((isOpen_sheet (by simpa only [Fintype.card_fin] using hn.symm) e₂ o₂).preimage
-        (continuous_snd.comp continuous_subtype_val))
+        (continuous_snd.comp continuous_subtypeVal))
   refine ⟨_, ?_, hopen, mem_sheet_iff.2 ⟨hb₁, rfl⟩, mem_sheet_iff.2 ⟨hb₂, rfl⟩⟩
   have hmodel : Orientation.prod o₁ o₂ hm hn = o := by
     rcases p with ⟨⟨⟨x, a⟩, ⟨y, c⟩⟩, hxy⟩
@@ -223,7 +223,7 @@ def prodDeck : FiberProd F₁ E₁ F₂ E₂ m n ≃ₜ FiberProd F₁ E₁ F₂
 omit [FiniteDimensional ℝ F₁] [FiniteDimensional ℝ F₂] in
 @[simp]
 theorem prodDeck_val (p : FiberProd F₁ E₁ F₂ E₂ m n) :
-    (prodDeck p).val = (deck p.1.1, deck p.1.2) := by
+    (prodDeck p).val = (deck p.val.1, deck p.val.2) := by
   rcases p with ⟨⟨p, q⟩, h⟩
   simp [prodDeck]
 
@@ -261,9 +261,9 @@ theorem prodMap_eq_prodMap_iff (hm : finrank ℝ F₁ = m) (hn : finrank ℝ F�
     (p q : FiberProd F₁ E₁ F₂ E₂ m n) :
     prodMap hm hn p = prodMap hm hn q ↔ p = q ∨ p = prodDeck q := by
   refine ⟨fun h ↦ ?_, ?_⟩
-  · have hbase : p.1.1.proj = q.1.1.proj := by
+  · have hbase : p.val.1.proj = q.val.1.proj := by
       simpa only [proj_prodMap] using congrArg proj h
-    have hbase' : p.1.2.proj = q.1.2.proj := p.2.symm.trans (hbase.trans q.2)
+    have hbase' : p.val.2.proj = q.val.2.proj := p.property.symm.trans (hbase.trans q.property)
     rcases eq_or_eq_deck (by simpa only [Fintype.card_fin] using hm.symm) hbase with h₁ | h₁ <;>
       rcases eq_or_eq_deck (by simpa only [Fintype.card_fin] using hn.symm) hbase' with h₂ | h₂
     · exact .inl (Subtype.ext (Prod.ext h₁ h₂))
@@ -324,16 +324,16 @@ theorem isOpenMap_prodMap (hm : finrank ℝ F₁ = m) (hn : finrank ℝ F₂ = n
   let o₁ := e₁.mapOrientation (Fin m) hb₁ a
   let o₂ := e₂.mapOrientation (Fin n) hb₂ c
   let s : V → FiberProd F₁ E₁ F₂ E₂ m n := fun x ↦
-    ⟨(⟨x, (e₁.mapOrientation (Fin m) x.2.1).symm o₁⟩,
-      ⟨x, (e₂.mapOrientation (Fin n) x.2.2).symm o₂⟩), rfl⟩
+    ⟨(⟨x, (e₁.mapOrientation (Fin m) x.property.1).symm o₁⟩,
+      ⟨x, (e₂.mapOrientation (Fin n) x.property.2).symm o₂⟩), rfl⟩
   have hs : Continuous s := by
     refine Continuous.subtype_mk (Continuous.prodMk ?_ ?_) _
     · exact (continuous_mk_mapOrientation_symm
         (by simpa only [Fintype.card_fin] using hm.symm) e₁ o₁).comp
-        (continuous_subtype_val.subtype_mk fun x ↦ x.2.1)
+        (continuous_subtypeVal.subtype_mk fun x ↦ x.property.1)
     · exact (continuous_mk_mapOrientation_symm
         (by simpa only [Fintype.card_fin] using hn.symm) e₂ o₂).comp
-        (continuous_subtype_val.subtype_mk fun x ↦ x.2.2)
+        (continuous_subtypeVal.subtype_mk fun x ↦ x.property.2)
   let t := prodMap hm hn ∘ s
   have ht : Continuous t := (continuous_prodMap hm hn).comp hs
   have hpt : proj ∘ t = (Subtype.val : V → B) := by

@@ -90,8 +90,8 @@ theorem trivializationAt_pullbackEquiv_snd {x₀ x : B'}
 def pullbackHomeomorph :
     TotalSpace F (AssociatedBundle G ((f : B' → B) *ᵖ P) F) ≃ₜ
       TotalSpace F ((f : B' → B) *ᵖ (AssociatedBundle G P F)) where
-  toFun z := ⟨z.proj, pullbackEquiv f z.proj z.2⟩
-  invFun z := ⟨z.proj, (pullbackEquiv f z.proj).symm z.2⟩
+  toFun z := ⟨z.proj, pullbackEquiv f z.proj z.snd⟩
+  invFun z := ⟨z.proj, (pullbackEquiv f z.proj).symm z.snd⟩
   left_inv z := by simp
   right_inv z := by simp
   continuous_toFun := by
@@ -130,14 +130,14 @@ def pullbackHomeomorph :
 theorem pullbackHomeomorph_apply
     (z : TotalSpace F (AssociatedBundle G ((f : B' → B) *ᵖ P) F)) :
     pullbackHomeomorph (G := G) (P := P) (F := F) f z =
-      ⟨z.proj, pullbackEquiv f z.proj z.2⟩ :=
+      ⟨z.proj, pullbackEquiv f z.proj z.snd⟩ :=
   (rfl)
 
 /-- The inverse total-space comparison acts by the inverse fibre comparison. -/
 theorem pullbackHomeomorph_symm_apply
     (z : TotalSpace F ((f : B' → B) *ᵖ (AssociatedBundle G P F))) :
     (pullbackHomeomorph (G := G) (P := P) (F := F) f).symm z =
-      ⟨z.proj, (pullbackEquiv f z.proj).symm z.2⟩ :=
+      ⟨z.proj, (pullbackEquiv f z.proj).symm z.snd⟩ :=
   (rfl)
 
 /-- The total-space comparison preserves the base point. -/

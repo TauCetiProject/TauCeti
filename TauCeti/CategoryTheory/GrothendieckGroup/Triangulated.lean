@@ -62,6 +62,8 @@ The biproduct triangles are distinguished, so the class map is additive on bipro
   defining relation.
 * `TauCeti.TriangulatedK0.of_shift_one` and `TauCeti.TriangulatedK0.of_shift`: the class of a
   shift, `[X⟦1⟧] = -[X]` and `[X⟦n⟧] = (-1)ⁿ[X]`.
+* `TauCeti.TriangulatedK0.exists_eq_of`: every element of triangulated `K₀` is the class of a
+  single object.
 * `TauCeti.TriangulatedK0.liftEquiv`: the universal property. Triangle-additive invariants with
   values in `G` correspond bijectively to homomorphisms `TriangulatedK0 C →+ G`.
 * `TauCeti.TriangulatedK0.BiadditiveInvariant.bilift_of_of` and
@@ -92,7 +94,7 @@ variable {C : Type u} [Category.{v} C] [HasShift C ℤ] [EssentiallySmall.{w} C]
 
 /-- The relation `[T.obj₂] - [T.obj₁] - [T.obj₃]` attached to a triangle. Triangulated `K₀`
 imposes it for every distinguished triangle. -/
-noncomputable def triangleRelation (T : Triangle C) : FreeAbelianGroup (ObjectCode C) :=
+noncomputable def triangleRelation (T : Triangle C) : FreeAddCommGroup (ObjectCode C) :=
   freeOf T.obj₂ - freeOf T.obj₁ - freeOf T.obj₃
 
 /-- The defining equation of `TauCeti.triangleRelation`. -/
@@ -104,7 +106,7 @@ lemma triangleRelation_def (T : Triangle C) :
 on that triangle. This evaluates a triangle relation once and for all, for both the quotient map
 presenting triangulated `K₀` and the free extension of an invariant. -/
 lemma map_triangleRelation_eq_zero_iff {G : Type*} [AddGroup G]
-    (f : FreeAbelianGroup (ObjectCode C) →+ G) (T : Triangle C) :
+    (f : FreeAddCommGroup (ObjectCode C) →+ G) (T : Triangle C) :
     f (triangleRelation T) = 0 ↔ f (freeOf T.obj₂) = f (freeOf T.obj₁) + f (freeOf T.obj₃) := by
   rw [triangleRelation_def, sub_sub, map_sub, map_add, sub_eq_zero]
 
@@ -125,12 +127,12 @@ variable (C : Type u) [Category.{v} C] [Preadditive C] [HasZeroObject C] [HasShi
 
 /-- The family of triangle relations presenting the triangulated `K₀` of a pretriangulated
 category. -/
-def triangulatedRelations : Set (FreeAbelianGroup (ObjectCode C)) :=
+def triangulatedRelations : Set (FreeAddCommGroup (ObjectCode C)) :=
   {r | ∃ T : Triangle C, T ∈ distTriang C ∧ r = triangleRelation T}
 
 variable {C}
 
-lemma mem_triangulatedRelations_iff {r : FreeAbelianGroup (ObjectCode C)} :
+lemma mem_triangulatedRelations_iff {r : FreeAddCommGroup (ObjectCode C)} :
     r ∈ triangulatedRelations C ↔ ∃ T : Triangle C, T ∈ distTriang C ∧ r = triangleRelation T :=
   Iff.rfl
 
@@ -236,6 +238,20 @@ theorem induction_on {motive : TriangulatedK0 C → Prop} (x : TriangulatedK0 C)
     (add : ∀ a b, motive a → motive b → motive (a + b))
     (neg : ∀ a, motive a → motive (-a)) : motive x :=
   PresentedK0.induction_on x zero of add neg
+
+/-- **Every element of triangulated `K₀` is the class of an object**: sums are realised by
+biproducts and negatives by shifts, since `[X⟦1⟧] = -[X]`. -/
+theorem exists_eq_of (x : TriangulatedK0 C) : ∃ X : C, x = of X := by
+  induction x using induction_on with
+  | zero => exact ⟨0, of_zero.symm⟩
+  | of X => exact ⟨X, rfl⟩
+  | add x y hx hy =>
+      obtain ⟨X, rfl⟩ := hx
+      obtain ⟨Y, rfl⟩ := hy
+      exact ⟨X ⊞ Y, (of_biprod X Y).symm⟩
+  | neg x hx =>
+      obtain ⟨X, rfl⟩ := hx
+      exact ⟨X⟦(1 : ℤ)⟧, (of_shift_one X).symm⟩
 
 section HomExt
 
@@ -563,12 +579,12 @@ variable (C) in
 `C` as integral combinations of objects, before passing to isomorphism classes. Their codes are
 the relations `TauCeti.triangulatedRelations C`, so they present triangulated `K₀` over every
 model of the isomorphism classes of `C`. -/
-def triangulatedObjectRelations : Set (FreeAbelianGroup C) :=
+def triangulatedObjectRelations : Set (FreeAddCommGroup C) :=
   {r | ∃ T : Triangle C, T ∈ distTriang C ∧ r = .of T.obj₂ - .of T.obj₁ - .of T.obj₃}
 
 /-- Membership in the family of object-level triangle relations. -/
 @[simp]
-lemma mem_triangulatedObjectRelations_iff {r : FreeAbelianGroup C} :
+lemma mem_triangulatedObjectRelations_iff {r : FreeAddCommGroup C} :
     r ∈ triangulatedObjectRelations C ↔
       ∃ T : Triangle C, T ∈ distTriang C ∧ r = .of T.obj₂ - .of T.obj₁ - .of T.obj₃ :=
   (Iff.rfl)
@@ -578,7 +594,7 @@ variable [EssentiallySmall.{w} C]
 /-- The codes of the object-level triangle relations are the triangle relations presenting
 triangulated `K₀`. -/
 lemma image_triangulatedObjectRelations :
-    FreeAbelianGroup.map objectCode '' triangulatedObjectRelations C = triangulatedRelations C := by
+    FreeAddCommGroup.map objectCode '' triangulatedObjectRelations C = triangulatedRelations C := by
   ext r
   simp [mem_triangulatedRelations_iff, freeOf_def, eq_comm]
 
