@@ -74,6 +74,7 @@ As a check, the torsion function of the ball: the weak solution of `-Δu = 1` in
   potential.
 * `TauCeti.contDiffOn_integral_ballGreenKernel_mul`,
   `TauCeti.continuousOn_integral_ballGreenKernel_mul`,
+  `TauCeti.integral_ballGreenKernel_mul_eq_zero_of_norm_eq_one`,
   `TauCeti.laplacian_integral_ballGreenKernel_mul`: the Green potential of data of class `C²`
   supported in the ball is the classical solution of the Dirichlet problem.
 * `TauCeti.integrable_ballGreenKernel_mul`: the Green operator on `L¹(B)`.
@@ -210,7 +211,7 @@ theorem contDiffOn_integral_ballGreenKernel_mul {k : ℕ∞} (hf : ContDiff ℝ 
 
 /-- **The Green potential is continuous up to the boundary.** For `f` continuous with
 `tsupport f` inside the unit ball, `x ↦ ∫ G(x, y) f(y) dy` is continuous on the closed ball. It
-vanishes on the unit sphere, by `TauCeti.ballGreenKernel_eq_zero_of_norm_eq_one_left`. -/
+vanishes on the unit sphere, by `TauCeti.integral_ballGreenKernel_mul_eq_zero_of_norm_eq_one`. -/
 theorem continuousOn_integral_ballGreenKernel_mul (hf : Continuous f)
     (hsupp : tsupport f ⊆ ball 0 1) :
     ContinuousOn (fun x => ∫ y, ballGreenKernel n x y * f y) (closedBall 0 1) :=
@@ -219,11 +220,18 @@ theorem continuousOn_integral_ballGreenKernel_mul (hf : Continuous f)
     (continuousOn_integral_ballGreenCorrector_mul hf hsupp)).congr fun _ hx =>
     integral_ballGreenKernel_mul_eq_sub hf hsupp (mem_closedBall_zero_iff.1 hx)
 
+/-- **The Green potential vanishes on the boundary.** For every `f`, the Green potential
+`x ↦ ∫ G(x, y) f(y) dy` is zero on the unit sphere, since `G(x, ·) = 0` there. -/
+theorem integral_ballGreenKernel_mul_eq_zero_of_norm_eq_one {x : EuclideanSpace ℝ (Fin n)}
+    (hx : ‖x‖ = 1) : ∫ y, ballGreenKernel n x y * f y = 0 := by
+  simp [ballGreenKernel_eq_zero_of_norm_eq_one_left hx]
+
 /-- **The Green potential solves Poisson's equation.** For `n = 1` or `n ≥ 3` and `f` of class
 `C²` with `tsupport f` inside the unit ball of `ℝⁿ`, the Green potential
 `v(x) = ∫ G(x, y) f(y) dy` satisfies `-Δv = f` in the ball. With
-`TauCeti.contDiffOn_integral_ballGreenKernel_mul` and
-`TauCeti.continuousOn_integral_ballGreenKernel_mul`, `v` is the classical solution of the
+`TauCeti.contDiffOn_integral_ballGreenKernel_mul`,
+`TauCeti.continuousOn_integral_ballGreenKernel_mul` and
+`TauCeti.integral_ballGreenKernel_mul_eq_zero_of_norm_eq_one`, `v` is the classical solution of the
 Dirichlet problem `-Δv = f` in the ball, `v = 0` on the sphere. -/
 theorem laplacian_integral_ballGreenKernel_mul (hn : n ≠ 2) (hn0 : n ≠ 0) (hf : ContDiff ℝ 2 f)
     (hsupp : tsupport f ⊆ ball 0 1) {x : EuclideanSpace ℝ (Fin n)} (hx : x ∈ ball 0 1) :
