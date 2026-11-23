@@ -36,8 +36,8 @@ on that ideal, and proves that
   `TauCeti.AdelicPoints.map_diagonal_centerPoints`: `Z(K) = Z(𝔸_K) ∩ G(K)`.
 * `TauCeti.AdelicPoints.centerPoints_eq_top`: for a commutative group, such as `𝔾ₘ`, every adelic
   point lies in the centre.
-* `TauCeti.AdelicPoints.map_centerPoints_pointsMulEquiv`: for `GLₙ`, `Z(𝔸_K)` is the centre of
-  `GLₙ(𝔸_K)`, the invertible scalar matrices.
+* For `GLₙ`, `Z(𝔸_K)` is the centre of `GLₙ(𝔸_K)`, the invertible scalar matrices: an `example`
+  applying `TauCeti.GeneralLinear.map_centerPointsSubgroup_pointsMulEquiv_eq_center`.
 
 ## References
 
@@ -64,38 +64,21 @@ points vanishing on the Hopf ideal `TauCeti.CommHopfAlgCat.centerDefiningIdeal H
 noncomputable def centerPoints : Subgroup (AdelicPoints R K H) :=
   quotientPointsSubgroup H (centerDefiningIdeal H) (CommAlgCat.of K (AdeleRing R K))
 
-variable {R K H}
-
-theorem mem_centerPoints_iff (x : AdelicPoints R K H) :
-    x ∈ centerPoints R K H ↔ ∀ h : H, h ∈ centerDefiningIdeal H → x h = 0 :=
-  mem_quotientPointsSubgroup_iff H _ (CommAlgCat.of K (AdeleRing R K)) x
-
-variable (R K H)
-
 /-- `Z(𝔸_K)` is a closed subgroup of `G(𝔸_K)`. -/
 theorem isClosed_centerPoints : IsClosed (centerPoints R K H : Set (AdelicPoints R K H)) :=
   PointTopology.isClosed_quotientPointsSubgroup (AdeleRing R K) H (centerDefiningIdeal H)
 
-variable {R K H}
-
-/-- A point of `Z(𝔸_K)` is universally central: it commutes with every point of `G` after any
-change of coefficients. -/
-theorem isCentralPoint_of_mem_centerPoints {x : AdelicPoints R K H}
-    (hx : x ∈ centerPoints R K H) : HopfAlgebra.IsCentralPoint x :=
-  isCentralPoint_of_mem_quotientPointsSubgroup H _ (isCentral_centerDefiningIdeal H)
-    (CommAlgCat.of K (AdeleRing R K)) hx
-
-variable (R K H)
-
 /-- `Z(𝔸_K)` is contained in the centre of the group `G(𝔸_K)`. -/
 theorem centerPoints_le_center : centerPoints R K H ≤ Subgroup.center (AdelicPoints R K H) :=
-  fun _ hx ↦ Subgroup.mem_center_iff.2 fun y ↦
-    ((isCentralPoint_of_mem_centerPoints hx).commute y).symm.eq
+  fun _ hx ↦ HopfAlgebra.center_le_center <| HopfAlgebra.mem_center.mpr <|
+    isCentralPoint_of_mem_quotientPointsSubgroup H _ (isCentral_centerDefiningIdeal H)
+      (CommAlgCat.of K (AdeleRing R K)) hx
 
 /-- For a commutative affine group, such as `𝔾ₘ`, every adelic point lies in the centre:
 `Z(𝔸_K) = G(𝔸_K)`. -/
 theorem centerPoints_eq_top [Coalgebra.IsCocomm K H] : centerPoints R K H = ⊤ :=
-  eq_top_iff.2 fun x _ ↦ (mem_centerPoints_iff x).2 fun h hh ↦ by
+  eq_top_iff.2 fun x _ ↦
+    (mem_quotientPointsSubgroup_iff H _ (CommAlgCat.of K (AdeleRing R K)) x).2 fun h hh ↦ by
     rw [(centerDefiningIdeal_eq_bot_iff_isCocomm H).2 inferInstance] at hh
     rw [HopfIdeal.mem_bot.1 hh, map_zero]
 
@@ -108,7 +91,7 @@ variable {R K H} [Nontrivial (AdeleRing R K)]
 theorem diagonal_mem_centerPoints_iff (g : WithConv (H →ₐ[K] K)) :
     diagonal R K H g ∈ centerPoints R K H ↔
       g ∈ quotientPointsSubgroup H (centerDefiningIdeal H) (CommAlgCat.of K K) := by
-  rw [mem_centerPoints_iff, mem_quotientPointsSubgroup_iff]
+  rw [centerPoints, mem_quotientPointsSubgroup_iff, mem_quotientPointsSubgroup_iff]
   refine forall₂_congr fun h _ ↦ ?_
   rw [diagonal_apply_apply, map_eq_zero_iff _ (algebraMap K (AdeleRing R K)).injective]
 
@@ -137,8 +120,9 @@ variable (R K : Type u) [CommRing R] [IsDedekindDomain R] [Field K] [Algebra R K
 
 open GeneralLinear in
 /-- For `GLₙ`, the adelic points of the centre are the centre of the group `GLₙ(𝔸_K)` of
-invertible adelic matrices, which consists of the invertible scalar matrices. -/
-theorem map_centerPoints_pointsMulEquiv :
+invertible adelic matrices, which consists of the invertible scalar matrices: main's
+`TauCeti.GeneralLinear.map_centerPointsSubgroup_pointsMulEquiv_eq_center` over `𝔸_K`. -/
+example :
     (centerPoints R K (coordinateHopfAlgebra K n)).map (pointsMulEquiv n).toMonoidHom =
       Subgroup.center (Matrix.GeneralLinearGroup (Fin n) (AdeleRing R K)) :=
   map_centerPointsSubgroup_pointsMulEquiv_eq_center n (CommAlgCat.of K (AdeleRing R K))
