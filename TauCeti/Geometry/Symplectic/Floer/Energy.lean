@@ -74,7 +74,7 @@ Hamiltonians, it is `∂_s H_{(s, t)}`, and in particular for a continuation per
   (`SymplecticForm.setIntegral_floerEnergyDensity_mono_set`).
 * `SymplecticForm.floerEnergyDensity_eq_zero_iff`: under tameness, the energy density of a
   solution vanishes exactly where the perturbed derivative does.
-* `SymplecticForm.associatedBilinForm_fderiv_stdComplexLineReal_eq_floerEnergyDensity`: for
+* `SymplecticForm.associatedBilinForm_fderiv_stdComplexLineReal_self_eq_floerEnergyDensity`: for
   `K = Kt dt`, the energy density of a solution is `g_J(∂s u, ∂s u)` for `g_J = ω(·, J ·)`.
 * `SymplecticForm.mul_norm_sq_add_norm_sq_perturbedFDeriv_le_mul_floerEnergyDensity` and
   `SymplecticForm.setLIntegral_norm_sq_add_norm_sq_perturbedFDeriv_le`: the energy controls the
@@ -565,10 +565,12 @@ theorem floerEnergyDensity_eq_of_isComplexLinearMap (ω : SymplecticForm V)
   rw [floerEnergyDensity_def]
   exact congrArg _ h.apply_stdComplexLineImag
 
-/-- **The energy density is the squared length of `∂s u`.** For the perturbation `K = Kt dt` and
+/-- **The energy density as a quadratic form in `∂s u`.** For the perturbation `K = Kt dt` and
 a solution of the Floer equation at `z` for an almost complex structure `J`, the Floer energy
-density at `z` is `g_J(∂s u, ∂s u)` for `g_J = ω(·, J ·)`. -/
-theorem associatedBilinForm_fderiv_stdComplexLineReal_eq_floerEnergyDensity
+density at `z` is `g_J(∂s u, ∂s u)` for the bilinear form `g_J = ω(·, J ·)`. When `ω` tames `J`
+this is the squared length of `∂s u` in the inner product given by the symmetrization of
+`g_J`. -/
+theorem associatedBilinForm_fderiv_stdComplexLineReal_self_eq_floerEnergyDensity
     (ω : SymplecticForm V) {J : AlmostComplexStructure V}
     (h : IsComplexLinearMap (AlmostComplexStructure.product ℝ) J
       (ω.perturbedFDeriv (fun _ _ ↦ 0) Kt u z : ℝ × ℝ →ₗ[ℝ] V)) :

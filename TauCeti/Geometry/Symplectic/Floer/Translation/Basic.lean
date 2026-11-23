@@ -37,12 +37,11 @@ derivative of such a cylinder sends `(a, b)` to `b (x' - X_{H_t}(x))`
 (`SymplecticForm.perturbedFDeriv_comp_snd_apply`), so it solves the Floer equation exactly when
 `x' = X_{H_t}(x)`, that is, when `x` is a Hamiltonian orbit
 (`SymplecticForm.isComplexLinearMap_perturbedFDeriv_comp_snd_iff`), and its energy density
-vanishes (`SymplecticForm.floerEnergyDensity_comp_snd`). A map differentiable on the strip is
-stationary there exactly when its `s`-derivative vanishes there
-(`TauCeti.fderiv_fst_eqOn_zero_iff`). Conversely, for almost complex structures
+vanishes (`SymplecticForm.floerEnergyDensity_comp_snd`). Conversely, for almost complex structures
 tamed by `ω`, a `C¹` solution has zero energy exactly when it is stationary
 (`SymplecticForm.lintegral_floerEnergyDensity_eq_zero_iff`): the energy density of a solution
-vanishes only where `∂_s u = 0`.
+vanishes only where `∂_s u = 0`, and a map differentiable on the strip is stationary there exactly
+when its `s`-derivative vanishes there (`TauCeti.fderiv_fst_eqOn_zero_iff`).
 
 A solution of finite energy that is invariant under a translation by `c ≠ 0` has the same energy
 over each of the infinitely many disjoint period rectangles of the strip, so its energy is zero
