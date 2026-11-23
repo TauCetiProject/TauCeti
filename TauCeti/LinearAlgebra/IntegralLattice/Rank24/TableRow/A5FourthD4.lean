@@ -372,18 +372,6 @@ private theorem componentTrialityLabel_d4Index :
   -- Both sides use proofs of `(D 4).Valid` and `(D 4).IsSimplyLaced`.
   rfl
 
-private theorem glueAlphabetIsometry_componentTrialityLabel
-    (i : Fin a5FourthD4.components.length)
-    (x : (a5FourthD4.componentType i).glueAlphabet (a5FourthD4.isSimplyLaced_componentType i)) :
-    (a5FourthD4.componentType i).glueAlphabetIsometry (a5FourthD4.valid_componentType i)
-        (a5FourthD4.isSimplyLaced_componentType i) (componentTrialityLabel i x) =
-      (componentTriality i).discriminantQuadraticIsometry
-        ((a5FourthD4.componentType i).isEven_rootLattice _)
-        ((a5FourthD4.componentType i).glueAlphabetIsometry (a5FourthD4.valid_componentType i)
-          (a5FourthD4.isSimplyLaced_componentType i) x) :=
-  glueAlphabetIsometry_glueAlphabetIsometryOfIsometry (a5FourthD4.valid_componentType i)
-    (a5FourthD4.valid_componentType i) (componentTriality i) x
-
 private theorem componentTrialityLabel_of_ne {i : Fin a5FourthD4.components.length}
     (hi : i ≠ a5FourthD4D4Index)
     (x : (a5FourthD4.componentType i).glueAlphabet (a5FourthD4.isSimplyLaced_componentType i)) :
@@ -449,9 +437,10 @@ theorem encodeGlueWord_a5FourthD4TrialityGlueIsometry (w : a5FourthD4.glueModule
   have hv (k : Fin a5FourthD4.components.length) :
       (((a5FourthD4.componentType k).glueLabelEquiv _).symm (v k)).val =
         (encodeGlueWord a5FourthD4.componentType a5FourthD4.isSimplyLaced_componentType w).getD
-          (a5FourthD4BlockRotation.symm k) 0 := by
-    rw [← getD_encodeGlueWord, encodeGlueWord_piGlueAlphabetCongr_eq_ofFn_getD,
-      List.getD_eq_getElem _ _ (by simp), List.getElem_ofFn]
+          (a5FourthD4BlockRotation.symm k) 0 :=
+    val_glueLabelEquiv_symm_piGlueAlphabetCongr a5FourthD4.componentType
+      a5FourthD4.isSimplyLaced_componentType a5FourthD4.isSimplyLaced_componentType
+      a5FourthD4BlockRotation.symm componentType_a5FourthD4BlockRotation_symm w k
   have htri4 :
       (((a5FourthD4.componentType ⟨4, by decide⟩).glueLabelEquiv _).symm
           (componentTrialityLabel ⟨4, by decide⟩ (v ⟨4, by decide⟩))).val =
@@ -496,7 +485,8 @@ noncomputable def a5FourthD4TrialityIsometry :
     (g := a5FourthD4BlockRotation.symm)
     componentType_a5FourthD4BlockRotation_symm componentTriality
     (fun k x ↦ componentTrialityLabel k x)
-    glueAlphabetIsometry_componentTrialityLabel
+    (fun i ↦ glueAlphabetIsometry_glueAlphabetIsometryOfIsometry
+      (a5FourthD4.valid_componentType i) (a5FourthD4.valid_componentType i) (componentTriality i))
     fun w ↦ by
       have h := a5FourthD4TrialityGlueIsometry_mem_glueSubgroup_iff w
       rw [a5FourthD4TrialityGlueIsometry, QuadraticMap.IsometryEquiv.trans_apply] at h
@@ -548,25 +538,6 @@ theorem a5FourthD4TrialityIsometry_apply_d4Index
   rw [a5FourthD4TrialityIsometry_apply, componentTriality_d4Index]
   refine congrArg (fun v ↦ typeD4Triality (isSimplyLaced_D 4) v j) (funext fun j' ↦ ?_)
   exact Fin.apply_cast_eq_apply_cast x a5FourthD4BlockRotation_symm_d4Index _ rfl j'
-
-/-- On the `D₄` component in position `4`, the combined symmetry applies triality. -/
-@[simp]
-theorem a5FourthD4TrialityIsometry_apply_four
-    (x : ∀ i, Fin (a5FourthD4.componentType i).rank → ℚ) :
-    a5FourthD4TrialityIsometry x (4 : Fin 5) =
-      typeD4Triality (isSimplyLaced_D 4) (x (4 : Fin 5)) :=
-  -- Unfolding `a5FourthD4D4Index`, the numeral `(4 : Fin 5)`, and `a5FourthD4.components`
-  -- identifies both indices with `⟨4, _⟩`; the bound proofs agree by proof irrelevance.
-  a5FourthD4TrialityIsometry_apply_d4Index x
-
-/-- On the `D₄` component in position `⟨4, h⟩`, the combined symmetry applies triality. -/
-@[simp]
-theorem a5FourthD4TrialityIsometry_apply_mk_four
-    (x : ∀ i, Fin (a5FourthD4.componentType i).rank → ℚ) (h : 4 < a5FourthD4.components.length) :
-    a5FourthD4TrialityIsometry x ⟨4, h⟩ = typeD4Triality (isSimplyLaced_D 4) (x ⟨4, h⟩) :=
-  -- Unfolding `a5FourthD4D4Index` gives `⟨4, _⟩`, which agrees with `⟨4, h⟩`
-  -- by proof irrelevance of the bound proofs.
-  a5FourthD4TrialityIsometry_apply_d4Index x
 
 /-- **On an `A₅` component, `a5FourthD4TrialityIsometry` reads the coordinates in position `k`
 from position `ρ⁻¹ k`**, where `ρ` is the block rotation. -/

@@ -210,14 +210,9 @@ theorem apply_piGlueAlphabetCongr_mem_glueSubgroup_iff_of_glueWords
       congrArg (φ k) (((r.componentType k).glueLabelEquiv
         (r.isSimplyLaced_componentType k)).apply_symm_apply _).symm
     rw [hψ_apply, hk, hδ k]
-    refine congrArg (δ k) ?_
-    have hpsi0 := congrArg (fun l : List ℕ ↦ l.getD k 0)
-      (encodeGlueWord_piGlueAlphabetCongr_eq_ofFn r.componentType r.isSimplyLaced_componentType
-        r.isSimplyLaced_componentType g hg v)
-    rw [List.getD_eq_getElem _ _ (by simp), getElem_encodeGlueWord,
-      List.getD_eq_getElem _ _ (by simp), List.getElem_ofFn, Fin.eta] at hpsi0
-    exact hpsi0.trans
-      ((List.getD_eq_getElem _ _ (by simp)).trans (getElem_encodeGlueWord _ _ v (g k))).symm
+    exact congrArg (δ k)
+      (val_glueLabelEquiv_symm_piGlueAlphabetCongr r.componentType r.isSimplyLaced_componentType
+        r.isSimplyLaced_componentType g hg v k)
   have hmap_le : r.glueSubgroup.map (ψ : r.glueModule →+ r.glueModule) ≤ r.glueSubgroup := by
     rw [glueSubgroup_def, AddMonoidHom.map_closure, AddSubgroup.closure_le,
       AddMonoidHom.coe_ofClass]

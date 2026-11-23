@@ -158,12 +158,9 @@ theorem det_eq_one_or_neg_one (e : Isometry L L) : det L e = 1 ∨ det L e = -1 
 /-- Any self-isometry satisfying an odd-exponent power relation `e ^ n = 1` has determinant `1`. -/
 theorem det_eq_one_of_pow_eq_one {e : Isometry L L} {n : ℕ} (hn : Odd n) (he : e ^ n = 1) :
     det L e = 1 := by
-  rcases det_eq_one_or_neg_one e with h | h
-  · exact h
-  · exfalso
-    have h1 : det L e ^ n = 1 := by rw [← map_pow, he, map_one]
-    rw [h, hn.neg_one_pow] at h1
-    exact absurd h1 (by decide)
+  have h1 : (det L e : ℤ) ^ n = (1 : ℤ) ^ n := by
+    rw [← Units.val_pow_eq_pow_val, ← map_pow, he, map_one, Units.val_one, one_pow]
+  exact Units.ext (hn.pow_inj.mp h1)
 
 /-- A self-isometry preserves a finite carrier basis orientation exactly when its determinant
 is one. -/

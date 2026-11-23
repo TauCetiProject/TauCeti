@@ -179,6 +179,17 @@ theorem encodeGlueWord_piGlueAlphabetCongr_eq_ofFn_getD {m : ℕ} {s : Fin m →
   funext k
   exact (getD_encodeGlueWord t ht w (σ k)).symm
 
+/-- The Conway--Sloane digit label in coordinate `k` of a glue word reindexed along `σ` is the
+digit of the original word in position `σ k`. -/
+theorem val_glueLabelEquiv_symm_piGlueAlphabetCongr {m : ℕ} {s : Fin m → DynkinType}
+    (hs : ∀ k, (s k).IsSimplyLaced) (σ : Fin m ≃ Fin n) (h : ∀ k, t (σ k) = s k)
+    (w : ∀ i, (t i).glueAlphabet (ht i)) (k : Fin m) :
+    (((s k).glueLabelEquiv (hs k)).symm
+        (DynkinType.piGlueAlphabetCongr t ht σ h w k)).val =
+      (encodeGlueWord t ht w).getD (σ k) 0 := by
+  rw [← getD_encodeGlueWord, encodeGlueWord_piGlueAlphabetCongr_eq_ofFn_getD,
+    List.getD_eq_getElem _ _ (by simp), List.getElem_ofFn]
+
 /-- **Digits are unchanged by passing to an equal family of components**: if the components
 `s k` over `Fin m` are the components `t k` over `Fin n` read along `m = n`, then a glue word and
 its image under `TauCeti.DynkinType.piGlueAlphabetCongr` have the same digit list. -/
