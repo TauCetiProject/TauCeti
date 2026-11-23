@@ -282,12 +282,12 @@ theorem of_pow_smul_eq_bot {k : ℕ} (hk : I ^ k • (⊤ : Submodule R M) = ⊥
   of_isAdicComplete
 
 /-- **Derived completeness puts the ideal in the Jacobson radical.** If `R` is derived
-`I`-complete, then `1 - g` is a unit for every `g ∈ I`: the preimage under the telescope map of the
-constant sequence `1` is shift-invariant by injectivity, so it is a constant `u` with
-`u - g * u = 1`. -/
+`I`-complete, then `I` lies in the Jacobson radical of `R`: `1 - g` is a unit for every `g ∈ I`. -/
 theorem le_jacobson (h : IsDerivedComplete I R) : I ≤ Ring.jacobson R := by
   intro x hx
   refine Ring.mem_jacobson_iff.2 fun y ↦ ?_
+  -- The preimage under the telescope map of the constant sequence `1` is shift-invariant by
+  -- injectivity, so it is a constant `u` with `u - g * u = 1`.
   obtain ⟨z, hz⟩ := (h.bijective (I.neg_mem_iff.2 (I.mul_mem_right y hx))).2 fun _ ↦ (1 : R)
   have hshift : (fun n ↦ z (n + 1)) = z :=
     (h.bijective (I.neg_mem_iff.2 (I.mul_mem_right y hx))).1 <| funext fun n ↦ by

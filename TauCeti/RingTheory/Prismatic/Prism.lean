@@ -34,12 +34,13 @@ elements unique up to units in the rigidity of maps of prisms (Bhatt and Scholze
 
 * `TauCeti.Prism p B`: a prism structure on the `δ`-ring `B`.
 * `TauCeti.Prism.IsBounded`: `B ⧸ J` has bounded `p`-power torsion.
-* `TauCeti.DeltaRing.IsPerfect`: the Frobenius lift of a `δ`-ring is bijective.
 
 ## Main results
 
 * `TauCeti.Prism.natCast_mem_jacobson` and `TauCeti.Prism.ideal_le_jacobson`: `p` and `J`
   lie in the Jacobson radical of `B`.
+* `TauCeti.Prism.isBounded_of_isLeftRegular` and `TauCeti.Prism.isBounded_of_pow_eq_zero`:
+  a prism is bounded if `B ⧸ J` has no `p`-torsion, or if a power of `p` vanishes in `B ⧸ J`.
 
 ## References
 
@@ -55,14 +56,10 @@ open DeltaRing
 
 variable (p : ℕ) [Fact p.Prime] (B : Type*) [CommRing B] [DeltaRing p B]
 
-/-- A `δ`-ring is **perfect** if its Frobenius lift `φ` is bijective (Bhatt and Scholze,
-§2). A prism on a perfect `δ`-ring is a perfect prism. -/
-def DeltaRing.IsPerfect : Prop :=
-  Function.Bijective (frobenius p B)
-
 /-- A **prism** structure on a `δ`-ring `B` (Bhatt and Scholze, Definition 3.2): an ideal `J` of
 `B` defining an effective Cartier divisor (an invertible `B`-module), such that `B` is derived
 `(p, J)`-complete and `p ∈ J + φ(J) B` for the Frobenius lift `φ`. -/
+@[ext]
 structure Prism where
   /-- The ideal `J` of the prism. -/
   ideal : Ideal B
@@ -86,6 +83,19 @@ kills every element of `B ⧸ J` killed by a power of `p`. -/
 def IsBounded : Prop :=
   ∃ n : ℕ, ∀ x : B ⧸ P.ideal, (∃ m : ℕ, (p : B ⧸ P.ideal) ^ m * x = 0) →
     (p : B ⧸ P.ideal) ^ n * x = 0
+
+theorem isBounded_iff : P.IsBounded ↔ ∃ n : ℕ, ∀ x : B ⧸ P.ideal,
+    (∃ m : ℕ, (p : B ⧸ P.ideal) ^ m * x = 0) → (p : B ⧸ P.ideal) ^ n * x = 0 :=
+  Iff.rfl
+
+/-- A prism `(B, J)` with `B ⧸ J` free of `p`-torsion is bounded. -/
+theorem isBounded_of_isLeftRegular (h : IsLeftRegular (p : B ⧸ P.ideal)) : P.IsBounded :=
+  ⟨0, fun x ⟨m, hm⟩ ↦ by
+    simpa using (h.pow m) (hm.trans (mul_zero _).symm)⟩
+
+/-- A prism `(B, J)` in which some power of `p` vanishes in `B ⧸ J` is bounded. -/
+theorem isBounded_of_pow_eq_zero {n : ℕ} (h : (p : B ⧸ P.ideal) ^ n = 0) : P.IsBounded :=
+  ⟨n, fun x _ ↦ by rw [h, zero_mul]⟩
 
 /-- **The ideal of a prism lies in the Jacobson radical.** -/
 theorem ideal_le_jacobson : P.ideal ≤ Ring.jacobson B :=
