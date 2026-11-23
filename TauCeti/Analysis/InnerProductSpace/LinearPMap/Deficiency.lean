@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.InnerProductSpace.LinearPMap.SelfAdjoint
+public import TauCeti.Analysis.InnerProductSpace.LinearPMap.PairShift
 public import TauCeti.Analysis.InnerProductSpace.Projection.Acute
 
 /-!

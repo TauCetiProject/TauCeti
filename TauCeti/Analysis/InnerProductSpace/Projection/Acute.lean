@@ -132,7 +132,7 @@ theorem IsAcute.nonempty_linearIsometryEquiv (h : U.IsAcute V) : Nonempty (U ≃
   have hT (u : U) : (T u : E) = V.starProjection u := rfl
   have hinj : Function.Injective T := by
     refine (injective_iff_map_eq_zero T).2 fun u hu ↦ Subtype.ext ?_
-    exact disjoint_def.1 hUV _ u.2 (orthogonalProjectionOnto_eq_zero_iff.1 hu)
+    exact disjoint_def.1 hUV _ u.property (orthogonalProjectionOnto_eq_zero_iff.1 hu)
   -- A vector of `V` orthogonal to the range of `T` is orthogonal to `U`, hence zero.
   have hdense : T.range.topologicalClosure = ⊤ := by
     refine topologicalClosure_eq_top_iff.2 (eq_bot_iff.2 fun v hv ↦ ?_)
@@ -140,8 +140,8 @@ theorem IsAcute.nonempty_linearIsometryEquiv (h : U.IsAcute V) : Nonempty (U ≃
       have h := inner_right_of_mem_orthogonal
         (LinearMap.mem_range_self (T : U →ₗ[𝕜] V) ⟨u, hu⟩) hv
       rwa [ContinuousLinearMap.coe_coe, coe_inner, hT, inner_starProjection_left_eq_right,
-        starProjection_eq_self_iff.2 v.2] at h
-    exact (mem_bot 𝕜).2 (Subtype.ext (disjoint_def.1 hVU _ v.2 hvU))
+        starProjection_eq_self_iff.2 v.property] at h
+    exact (mem_bot 𝕜).2 (Subtype.ext (disjoint_def.1 hVU _ v.property hvU))
   have hsurj : Function.Surjective T.polarFactor :=
     LinearMap.range_eq_top.1 (by rw [range_polarFactor, hdense])
   exact ⟨LinearIsometryEquiv.ofSurjective
