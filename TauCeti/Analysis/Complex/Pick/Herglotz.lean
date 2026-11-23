@@ -212,11 +212,11 @@ theorem integrable_subtractedResolventKernel {nu : Measure ℝ}
     simpa [subtractedResolventKernel_conj] using h
   · exact hH hz
 
-/-- At a nonreal point, the subtracted resolvent kernel dominates the weight `(1 + t ^ 2)⁻¹` up to
-a constant. -/
-private theorem inv_one_add_sq_le_mul_norm_subtractedResolventKernel {z : ℂ} (hz : z.im ≠ 0)
+/-- At a nonreal point, the absolute imaginary part `|Im z| / |t - z| ^ 2` of the subtracted
+resolvent kernel dominates the weight `(1 + t ^ 2)⁻¹` up to a constant. -/
+theorem inv_one_add_sq_le_mul_abs_im_subtractedResolventKernel {z : ℂ} (hz : z.im ≠ 0)
     (t : ℝ) :
-    (1 + t ^ 2)⁻¹ ≤ 2 * (1 + ‖z‖ ^ 2) / |z.im| * ‖subtractedResolventKernel z t‖ := by
+    (1 + t ^ 2)⁻¹ ≤ 2 * (1 + ‖z‖ ^ 2) / |z.im| * |(subtractedResolventKernel z t).im| := by
   have : 0 < |z.im| := abs_pos.2 hz
   have hns : normSq ((t : ℂ) - z) ≤ 2 * (1 + ‖z‖ ^ 2) * (1 + t ^ 2) := by
     have hre := (normSq_eq_norm_sq z).symm
@@ -226,13 +226,9 @@ private theorem inv_one_add_sq_le_mul_norm_subtractedResolventKernel {z : ℂ} (
       sq_nonneg (t * z.re), sq_nonneg (t * z.im)]
   have hpos : 0 < normSq ((t : ℂ) - z) :=
     normSq_pos.2 (ofReal_sub_ne_zero_of_im_ne_zero hz t)
-  have him : |z.im| / normSq ((t : ℂ) - z) ≤ ‖subtractedResolventKernel z t‖ := by
-    rw [← abs_of_pos hpos, ← abs_div, ← subtractedResolventKernel_im]
-    exact abs_im_le_norm _
+  rw [subtractedResolventKernel_im, abs_div, abs_of_pos hpos]
   calc (1 + t ^ 2)⁻¹ = 2 * (1 + ‖z‖ ^ 2) / |z.im| *
         (|z.im| / (2 * (1 + ‖z‖ ^ 2) * (1 + t ^ 2))) := by field_simp
-    _ ≤ 2 * (1 + ‖z‖ ^ 2) / |z.im| * (|z.im| / normSq ((t : ℂ) - z)) := by
-      gcongr
     _ ≤ _ := by gcongr
 
 /-- At a nonreal point, the subtracted resolvent kernel is `ν`-integrable exactly when `ν` has
@@ -243,7 +239,8 @@ theorem integrable_subtractedResolventKernel_iff {nu : Measure ℝ} {z : ℂ} (h
   refine ⟨fun h ↦ Integrable.lintegral_lt_top ?_, fun h ↦ integrable_subtractedResolventKernel h hz⟩
   refine (h.norm.const_mul (2 * (1 + ‖z‖ ^ 2) / |z.im|)).mono' (by fun_prop) (.of_forall fun t ↦ ?_)
   rw [Real.norm_of_nonneg (by positivity)]
-  exact inv_one_add_sq_le_mul_norm_subtractedResolventKernel hz t
+  exact (inv_one_add_sq_le_mul_abs_im_subtractedResolventKernel hz t).trans
+    (by gcongr; exact abs_im_le_norm _)
 
 /-- **Herglotz representation of a Pick function.** A function holomorphic on the upper
 half-plane with nonnegative imaginary part is `F z = Re F(i) + b z + ∫ ((t - z)⁻¹ -

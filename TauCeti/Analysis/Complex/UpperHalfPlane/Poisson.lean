@@ -45,6 +45,8 @@ kernel, `S[ν]` is holomorphic on `ℂ₊`, and `P[ν] = Re S[ν]` is therefore 
   location `Re z` and scale `Im z`, the Cauchy density when `Im z > 0` (for `Im z = 0` both vanish);
   hence `TauCeti.integral_upperHalfPlanePoissonKernel`, `∫ P(z, x) dx = 1` on `ℂ₊`.
 * `TauCeti.upperHalfPlanePoissonKernel_le`: `P(z, x) ≤ C(z) / (1 + x ^ 2)`.
+* `TauCeti.subtractedResolventKernel_im_eq_pi_mul_upperHalfPlanePoissonKernel`: the imaginary part
+  of the Schwarz kernel is `π P(z, x)`.
 * `TauCeti.upperHalfPlanePoissonMeasure`, `TauCeti.IsPoissonFinite`: the Poisson measure
   `dx / (1 + x ^ 2)`, which is `π` times the standard Cauchy distribution, and Poisson-finite
   measures.
@@ -57,8 +59,6 @@ kernel, `S[ν]` is holomorphic on `ℂ₊`, and `P[ν] = Re S[ν]` is therefore 
   (`TauCeti.upperHalfPlanePoissonLIntegral_eq_top_iff`).
 * `TauCeti.isPoissonFinite_iff_integrable_upperHalfPlanePoissonKernel`: `ν` is Poisson-finite
   exactly when `P(z, ·)` is `ν`-integrable.
-* `TauCeti.subtractedResolventKernel_im_eq_pi_mul_upperHalfPlanePoissonKernel`: the imaginary part
-  of the Schwarz kernel is `π P(z, x)`.
 * `TauCeti.differentiableOn_upperHalfPlaneSchwarzIntegral`: `S[ν]` is holomorphic on `ℂ₊`.
 * `TauCeti.re_upperHalfPlaneSchwarzIntegral`: `Re S[ν] = P[ν]`.
 * `TauCeti.harmonicOnNhd_upperHalfPlanePoissonIntegral`: `P[ν]` is harmonic on `ℂ₊`.
@@ -179,11 +179,19 @@ theorem upperHalfPlanePoissonKernel_le {z : ℂ} (hz : 0 ≤ z.im) (x : ℝ) :
     _ ≤ 2 * (1 + a ^ 2) * π * (max b b⁻¹ * (t + b ^ 2)) := by gcongr
     _ = 2 * (1 + a ^ 2) * max b b⁻¹ * (π * (t + b ^ 2)) := by ring
 
+/-- The imaginary part of the Schwarz kernel `TauCeti.subtractedResolventKernel` is `π P(z, x)`. -/
+theorem subtractedResolventKernel_im_eq_pi_mul_upperHalfPlanePoissonKernel (z : ℂ) (x : ℝ) :
+    (subtractedResolventKernel z x).im = π * upperHalfPlanePoissonKernel z x := by
+  rw [subtractedResolventKernel_im, upperHalfPlanePoissonKernel_eq]
+  rcases eq_or_ne (normSq ((x : ℂ) - z)) 0 with h | h
+  · simp [h]
+  · field_simp
+
 /-! ### Poisson-finite measures -/
 
 /-- The **Poisson measure** `Π = dx / (1 + x ^ 2)` on the real line, the boundary weight of the
-upper half-plane Poisson kernel. It is `π` times the standard Cauchy distribution
-(`TauCeti.upperHalfPlanePoissonMeasure_eq_withDensity`). -/
+upper half-plane Poisson kernel. Defined as `π` times the standard Cauchy distribution; it has
+density `1 / (1 + x ^ 2)` (`TauCeti.upperHalfPlanePoissonMeasure_eq_withDensity`). -/
 def upperHalfPlanePoissonMeasure : Measure ℝ :=
   ENNReal.ofReal π • ProbabilityTheory.cauchyMeasure 0 1
 
@@ -272,18 +280,13 @@ against it. -/
 theorem isPoissonFinite_iff_integrable_upperHalfPlanePoissonKernel {ν : Measure ℝ} {z : ℂ}
     (hz : z.im ≠ 0) : IsPoissonFinite ν ↔ Integrable (upperHalfPlanePoissonKernel z) ν := by
   refine ⟨fun hν ↦ hν.integrable_upperHalfPlanePoissonKernel z, fun h ↦ ?_⟩
-  have hb : 0 < |z.im| := abs_pos.2 hz
   refine (isPoissonFinite_iff ν).2
-    ((h.norm.const_mul ((2 + 2 * z.re ^ 2 + z.im ^ 2) * π / |z.im|)).mono'
-      (by fun_prop) (.of_forall fun x ↦ ?_))
-  have hN : 0 < (x - z.re) ^ 2 + z.im ^ 2 := by positivity
-  rw [Real.norm_of_nonneg (by positivity), Real.norm_eq_abs, upperHalfPlanePoissonKernel_eq,
-    normSq_ofReal_sub, abs_div, abs_of_pos (by positivity : 0 < π * ((x - z.re) ^ 2 + z.im ^ 2))]
-  calc (1 + x ^ 2)⁻¹ ≤ (2 + 2 * z.re ^ 2 + z.im ^ 2) / ((x - z.re) ^ 2 + z.im ^ 2) := by
-        rw [le_div_iff₀ hN, inv_mul_le_iff₀ (by positivity)]
-        nlinarith [sq_nonneg (x + z.re), mul_nonneg (sq_nonneg x) (sq_nonneg z.re),
-          mul_nonneg (sq_nonneg x) (sq_nonneg z.im)]
-    _ = _ := by field_simp [hb.ne']
+    ((h.norm.const_mul (2 * (1 + ‖z‖ ^ 2) / |z.im| * π)).mono' (by fun_prop)
+      (.of_forall fun x ↦ ?_))
+  rw [Real.norm_of_nonneg (by positivity), Real.norm_eq_abs, mul_assoc (2 * (1 + ‖z‖ ^ 2) / |z.im|),
+    ← abs_of_pos Real.pi_pos, ← abs_mul,
+    ← subtractedResolventKernel_im_eq_pi_mul_upperHalfPlanePoissonKernel]
+  exact inv_one_add_sq_le_mul_abs_im_subtractedResolventKernel hz x
 
 /-! ### The Poisson integral -/
 
@@ -343,7 +346,8 @@ theorem upperHalfPlanePoissonLIntegral_eq_top_iff {ν : Measure ℝ} {z : ℂ} (
   simp [(measurable_upperHalfPlanePoissonKernel z).aestronglyMeasurable, lt_top_iff_ne_top]
 
 /-- For a Poisson-finite measure, the real-valued Poisson integral is the extended one. In the
-lower half-plane both vanish, since the kernel is nonpositive there. -/
+closed lower half-plane both sides are `0`, since the kernel is nonpositive there and
+`ENNReal.ofReal` sends nonpositive reals to `0`. -/
 theorem ofReal_upperHalfPlanePoissonIntegral {ν : Measure ℝ} (hν : IsPoissonFinite ν) (z : ℂ) :
     ENNReal.ofReal (upperHalfPlanePoissonIntegral ν z) = upperHalfPlanePoissonLIntegral ν z := by
   rw [upperHalfPlanePoissonIntegral_def, upperHalfPlanePoissonLIntegral_def]
@@ -356,14 +360,6 @@ theorem ofReal_upperHalfPlanePoissonIntegral {ν : Measure ℝ} (hν : IsPoisson
     simp [ENNReal.ofReal_of_nonpos, hP]
 
 /-! ### The Schwarz integral -/
-
-/-- The imaginary part of the Schwarz kernel `TauCeti.subtractedResolventKernel` is `π P(z, x)`. -/
-theorem subtractedResolventKernel_im_eq_pi_mul_upperHalfPlanePoissonKernel (z : ℂ) (x : ℝ) :
-    (subtractedResolventKernel z x).im = π * upperHalfPlanePoissonKernel z x := by
-  rw [subtractedResolventKernel_im, upperHalfPlanePoissonKernel_eq]
-  rcases eq_or_ne (normSq ((x : ℂ) - z)) 0 with h | h
-  · simp [h]
-  · field_simp
 
 /-- The **Schwarz integral** `S[ν](z) = (1 / (π i)) ∫ (1 / (x - z) - x / (1 + x ^ 2)) dν(x)` of a
 measure `ν` on `ℝ`, the integral of the subtracted resolvent kernel
