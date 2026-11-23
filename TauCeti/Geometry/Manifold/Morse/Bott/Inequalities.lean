@@ -456,9 +456,8 @@ theorem finrank_singularHomology_sublevelPair_eq_sum_of_finrank_thomPair (d : ι
   let _ (j : ι) := (hV j).fiberBundle
   have (j : ι) := (hV j).vectorBundle
   -- The frames have size the dimension of the negative normal spaces, which is the index.
-  have hr (j : ι) (s : S j) : manifoldMorseIndex I f (i j s) = r j := by
-    rw [← (h.isNondegenerateCriticalSubmanifold j).finrank_negativeNormalSpace hn
-      (g j).toRiemannianMetric, (hV j).finrank_eq, Fintype.card_fin]
+  have hr (j : ι) := (h.isNondegenerateCriticalSubmanifold j)
+    |>.manifoldMorseIndex_eq_of_hasLocalSubbundleFrames hn _ (hV j)
   rw [h.finrank_singularHomology_sublevelPair_eq_sum_finrank_thomPair hn K hdim g hr hac hcb hcrit
     n]
   -- Each Thom pair has the homology `d j` shifted by the index, and none below the index.
