@@ -1031,12 +1031,8 @@ private theorem exists_hasSum_block_and_norm_le (hs : 0 < s) (u : BesovSpace F �
       ‖f‖ ≤ (1 - 2 ^ (-s))⁻¹ * ‖u‖ := by
   have hr : (2 : ℝ) ^ (-s) < 1 :=
     Real.rpow_lt_one_of_one_lt_of_neg one_lt_two (neg_neg_of_pos hs)
-  have hbound (j : ℕ) : ‖u.block j‖ ≤ ‖u‖ * (2 ^ (-s)) ^ j := by
-    calc ‖u.block j‖ = (2 ^ (-s)) ^ j * (2 ^ (s * j) * ‖u.block j‖) := by
-          rw [← Real.rpow_mul_natCast zero_le_two, ← mul_assoc, ← Real.rpow_add two_pos,
-            neg_mul, neg_add_cancel, Real.rpow_zero, one_mul]
-      _ ≤ (2 ^ (-s)) ^ j * ‖u‖ := by gcongr; exact rpow_mul_norm_block_le u j
-      _ = ‖u‖ * (2 ^ (-s)) ^ j := mul_comm _ _
+  have hbound (j : ℕ) : ‖u.block j‖ ≤ ‖u‖ * (2 ^ (-s)) ^ j :=
+    (u.norm_block_le j).trans_eq (mul_comm _ _)
   have hgeom := (summable_geometric_of_lt_one (by positivity) hr).mul_left ‖u‖
   have hsum : Summable u.block :=
     (hgeom.of_nonneg_of_le (fun _ ↦ norm_nonneg _) hbound).of_norm
@@ -1302,7 +1298,7 @@ def ofLpCLM : Lp F p (volume : Measure E) →L[ℂ] BesovSpace F φ 0 p ∞ :=
     exact ⟨C, fun f ↦ hC f⟩
 
 @[simp] theorem toDistr_ofLpCLM (f : Lp F p (volume : Measure E)) :
-    (ofLpCLM F φ p f).toDistr = f := by rfl
+    (ofLpCLM F φ p f).toDistr = f := by simp [ofLpCLM]
 
 variable (F φ) in
 /-- **The inclusion `Lᵖ ⊆ B^0_{p,∞}` is bounded uniformly in `p`.** There is `C`, depending only on

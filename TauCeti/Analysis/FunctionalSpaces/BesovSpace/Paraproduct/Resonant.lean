@@ -9,6 +9,7 @@ public import TauCeti.Analysis.FunctionalSpaces.BesovSpace.One
 public import TauCeti.Analysis.FunctionalSpaces.BesovSpace.Paraproduct.Basic
 import TauCeti.Analysis.Distribution.TemperedDistribution.Lp
 import TauCeti.Analysis.FunctionalSpaces.BesovSpace.Ball
+import TauCeti.Analysis.FunctionalSpaces.BesovSpace.SingleBlock
 import TauCeti.Analysis.Normed.Lp.Holder
 import TauCeti.Analysis.Normed.Lp.Reindex
 import TauCeti.Analysis.SpecialFunctions.Pow.Real
@@ -34,7 +35,7 @@ for `0 < α + β` yields Bahouri–Chemin–Danchin, Theorem 2.85:
 * Single-block (`toDistr_resonantCLM_of_block_eq_zero`) and constant-`1`
   (`toDistr_resonantCLM_one_left`, `toDistr_resonantCLM_one_right`) identities; companion
   paraproduct estimates live in `TauCeti.Analysis.FunctionalSpaces.BesovSpace.Paraproduct.Estimate`,
-  and the Bony products (`smulL` and `bonyProductPosCLM`) live in
+  and the Bony products (`smulL` and `smulLOfPos`) live in
   `TauCeti.Analysis.FunctionalSpaces.BesovSpace.Product`.
 
 ## References
@@ -407,15 +408,10 @@ theorem toDistr_resonantCLM_of_block_eq_zero [q₁.HolderTriple q₂ q] (N : ℕ
     {j₀ : ℕ} {u : BesovSpace ℂ φ α p₁ q₁} {v : BesovSpace F φ β p₂ q₂}
     (hu : ∀ k ≠ j₀, u.block k = 0) (hv : ∀ k ≠ j₀, v.block k = 0) :
     (resonantCLM r q N hαβ u v).toDistr =
-      ((u.block j₀ • v.block j₀ : Lp F r (volume : Measure E)) : 𝓢'(E, F)) := by
-  refine (hasSum_resonantCLM (r := r) (q := q) N hαβ u v).unique ?_
-  have hsingle : HasSum (fun j ↦ ((resonantTerm r N u v j : Lp F r (volume : Measure E)) :
-      𝓢'(E, F))) ((resonantTerm r N u v j₀ : Lp F r (volume : Measure E)) : 𝓢'(E, F)) :=
-    hasSum_single j₀ fun j hj ↦ by simp [resonantTerm_eq_smul_sum, hu j hj]
-  have hj₀ : resonantTerm r N u v j₀ = u.block j₀ • v.block j₀ := by
-    rw [resonantTerm_eq_smul_sum, Finset.sum_eq_single j₀ (fun k _ hk ↦ hv k hk)
-      (fun h ↦ absurd (Finset.mem_Icc.2 ⟨Nat.sub_le _ _, Nat.le_add_right _ _⟩) h)]
-  rwa [hj₀] at hsingle
+      ((u.block j₀ • v.block j₀ : Lp F r (volume : Measure E)) : 𝓢'(E, F)) :=
+  (hasSum_resonantCLM (r := r) (q := q) N hαβ u v).unique
+    (by simpa only [resonantTerm_eq_smul_sum] using
+      hasSum_block_smul_sum_block_of_block_eq_zero N hu hv)
 
 end SingleBlock
 
@@ -430,16 +426,10 @@ variable {φ : ContDiffBump (0 : E)} {α β : ℝ} {p₁ p₂ q₁ q₂ q : ℝ�
 theorem toDistr_resonantCLM_one_left [q₁.HolderTriple q₂ q] (N : ℕ) (hαβ : 0 < α + β)
     (v : BesovSpace F φ β p₂ q₂) :
     (resonantCLM p₂ q N hαβ (1 : BesovSpace ℂ φ α ∞ q₁) v).toDistr =
-      (v.lowPass (N + 1) : 𝓢'(E, F)) := by
-  refine (hasSum_resonantCLM (r := p₂) (q := q) N hαβ (1 : BesovSpace ℂ φ α ∞ q₁) v).unique ?_
-  have h0 : resonantTerm p₂ N (1 : BesovSpace ℂ φ α ∞ q₁) v 0 = v.lowPass (N + 1) := by
-    rw [resonantTerm_eq_smul_sum, block_one_zero, Lp.one_smul, Nat.zero_sub, Nat.zero_add,
-      ← Nat.range_succ_eq_Icc_zero, lowPass_eq_sum]
-  rw [← h0]
-  refine hasSum_single 0 fun j hj ↦ ?_
-  rcases j with _ | j
-  · exact absurd rfl hj
-  · simp [resonantTerm_eq_smul_sum]
+      (v.lowPass (N + 1) : 𝓢'(E, F)) :=
+  (hasSum_resonantCLM (r := p₂) (q := q) N hαβ (1 : BesovSpace ℂ φ α ∞ q₁) v).unique
+    (by simpa [resonantTerm_eq_smul_sum, coe_lowPass] using
+      hasSum_block_smul_sum_block_of_toDistr_eq_volume toDistr_one N v)
 
 /-- **Resonant remainder with `1` on the right (`F = ℂ`).** -/
 @[simp]

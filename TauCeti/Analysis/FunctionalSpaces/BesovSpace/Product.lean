@@ -38,7 +38,7 @@ series converge via the bundled operators:
 
 and `B^{α+β}_{r,q₁} ⊆ B^α_{r,q₁}` since `β > 0`.
 
-For positive regularity `0 < s`, the same Bony decomposition defines `bonyProductPosCLM` on
+For positive regularity `0 < s`, the same Bony decomposition defines `smulLOfPos` on
 `B^s_{p₁,q} × B^s_{p₂,q} → B^s_{r,q}` agreeing with pointwise `Lʳ` multiplication.
 
 The time-weighted product estimate lives in
@@ -54,14 +54,14 @@ The time-weighted product estimate lives in
   depending only on the bump function and the regularities, not on the integrability exponents.
 * `TauCeti.BesovSpace.smulL_eq_paraproductNegCLM_add`: identifies `smulL` with
   `T_u^N v + T_v^N u + R_N(u, v)` for any admissible gap `N`.
-* `TauCeti.BesovSpace.bonyProductPosCLM`: `B^s_{p₁,q} × B^s_{p₂,q} →L[ℂ] B^s_{r,q}` for `0 < s`,
-  agreeing with pointwise `Lʳ` multiplication (`toDistr_bonyProductPosCLM`) and independent of the
-  admissible gap `N` (`bonyProductPosCLM_apply`), with uniform norm bound
-  `exists_norm_bonyProductPosCLM_le`. At `p₁ = p₂ = r = ∞` this recovers the untamed algebra case
+* `TauCeti.BesovSpace.smulLOfPos`: `B^s_{p₁,q} × B^s_{p₂,q} →L[ℂ] B^s_{r,q}` for `0 < s`,
+  agreeing with pointwise `Lʳ` multiplication (`toDistr_smulLOfPos`) and independent of the
+  admissible gap `N` (`smulLOfPos_eq_paraproductLpCLM_add`), with uniform norm bound
+  `exists_norm_smulLOfPos_le`. At `p₁ = p₂ = r = ∞` this recovers the untamed algebra case
   `B^s_{∞,q} × B^s_{∞,q} → B^s_{∞,q}` (cf. Bahouri–Chemin–Danchin, Corollary 2.86, which proves the
   tame `L^∞ ∩ B^s_{p,q}` algebra estimate preserving `p`).
 * Single-block (`toDistr_smulL_of_block_eq_zero`) and constant-`1` (`smulL_one_left`,
-  `smulL_one_right`, `bonyProductPosCLM_one_left`, `bonyProductPosCLM_one_right`) identities.
+  `smulL_one_right`, `smulLOfPos_one_left`, `smulLOfPos_one_right`) identities.
 
 ## References
 
@@ -71,7 +71,7 @@ The time-weighted product estimate lives in
   Equations*, Grundlehren der mathematischen Wissenschaften 343, Springer, 2011, §2.8
   (Bony's decomposition and Theorems 2.82 and 2.85, from which the product estimate follows; cf.
   Corollary 2.86 for the tame `L^∞ ∩ B^s_{p,q}` algebra theorem, whose untamed `p = ∞` case is
-  recovered by `TauCeti.BesovSpace.bonyProductPosCLM`).
+  recovered by `TauCeti.BesovSpace.smulLOfPos`).
 -/
 
 public section
@@ -269,7 +269,7 @@ section Positive
 variable {s : ℝ} {q : ℝ≥0∞} [Fact (1 ≤ q)]
 
 /-- Auxiliary `N`-dependent Bony product at positive regularity `0 < s`. -/
-private def bonyProductPosAux (r : ℝ≥0∞) [Fact (1 ≤ r)] [p₁.HolderTriple p₂ r] {N : ℕ}
+private def smulLOfPosAux (r : ℝ≥0∞) [Fact (1 ≤ r)] [p₁.HolderTriple p₂ r] {N : ℕ}
     (hN : φ.rOut < 2 ^ N * φ.rIn) (hs : 0 < s) :
     BesovSpace ℂ φ s p₁ q →L[ℂ] BesovSpace F φ s p₂ q →L[ℂ] BesovSpace F φ s r q :=
   (paraproductLpCLM (F := F) r hN).bilinearComp (toLpCLM ℂ φ p₁ q hs)
@@ -281,23 +281,23 @@ private def bonyProductPosAux (r : ℝ≥0∞) [Fact (1 ≤ r)] [p₁.HolderTrip
         (.id ℂ (BesovSpace ℂ φ s p₁ q))
         (inclusion F φ p₂ le_rfl (le_top : q ≤ ∞)))
 
-private theorem bonyProductPosAux_apply {N : ℕ} (hN : φ.rOut < 2 ^ N * φ.rIn) (hs : 0 < s)
+private theorem smulLOfPosAux_apply {N : ℕ} (hN : φ.rOut < 2 ^ N * φ.rIn) (hs : 0 < s)
     (u : BesovSpace ℂ φ s p₁ q) (v : BesovSpace F φ s p₂ q) :
-    bonyProductPosAux r hN hs u v =
+    smulLOfPosAux r hN hs u v =
       paraproductLpCLM r hN (toLpCLM ℂ φ p₁ q hs u) v +
         paraproductRightLpCLM r hN u (toLpCLM F φ p₂ q hs v) +
         inclusion F φ r (by linarith) le_rfl
-          (resonantCLM r q N (add_pos hs hs) u (inclusion F φ p₂ le_rfl le_top v)) :=
-  rfl
+          (resonantCLM r q N (add_pos hs hs) u (inclusion F φ p₂ le_rfl le_top v)) := by
+  simp [smulLOfPosAux]
 
 /-- For every admissible gap `N`, `S_M u · S_M v` converges in `𝓢'(E, F)` to
-`bonyProductPosAux`. -/
-private theorem tendsto_lowPass_smul_lowPass_bonyProductPosAux {N : ℕ}
+`smulLOfPosAux`. -/
+private theorem tendsto_lowPass_smul_lowPass_smulLOfPosAux {N : ℕ}
     (hN : φ.rOut < 2 ^ N * φ.rIn) (hs : 0 < s)
     (u : BesovSpace ℂ φ s p₁ q) (v : BesovSpace F φ s p₂ q) :
     Tendsto (fun M ↦ ((u.lowPass M • v.lowPass M : Lp F r (volume : Measure E)) : 𝓢'(E, F)))
-      atTop (𝓝 (bonyProductPosAux r hN hs u v).toDistr) := by
-  rw [bonyProductPosAux_apply]
+      atTop (𝓝 (smulLOfPosAux r hN hs u v).toDistr) := by
+  rw [smulLOfPosAux_apply]
   simp only [toDistr_add, toDistr_inclusion]
   set v' : BesovSpace F φ s p₂ ∞ := inclusion F φ p₂ le_rfl le_top v
   have h₁ := (hasSum_paraproductLpCLM_of_toDistr_eq (r := r) hN (coe_toLpCLM hs u).symm v)
@@ -309,55 +309,55 @@ private theorem tendsto_lowPass_smul_lowPass_bonyProductPosAux {N : ℕ}
   simp [v', lowPass_smul_lowPass N M u v, block_inclusion]
 
 variable (r) in
-/-- **Bony's product at positive regularity.** For `0 < s` and Hölder exponents
+/-- **The product of Besov elements of positive regularity.** For `0 < s` and Hölder exponents
 `1/r = 1/p₁ + 1/p₂`, Bony's decomposition defines a continuous bilinear map
 `B^s_{p₁,q} × B^s_{p₂,q} → B^s_{r,q}` whose underlying tempered distribution is the pointwise
-`Lʳ` product `(toLpCLM u) • (toLpCLM v)` (`TauCeti.BesovSpace.toDistr_bonyProductPosCLM`), with
+`Lʳ` product `(toLpCLM u) • (toLpCLM v)` (`TauCeti.BesovSpace.toDistr_smulLOfPos`), with
 operator norm bounded independently of `p₁, p₂, r, q`. At `p₁ = p₂ = r = ∞` this recovers the
 untamed algebra case `B^s_{∞,q} × B^s_{∞,q} → B^s_{∞,q}` (cf. Bahouri–Chemin–Danchin,
 Corollary 2.86, which establishes the tame `L^∞ ∩ B^s_{p,q}` algebra estimate preserving `p`). -/
-def bonyProductPosCLM (hs : 0 < s) :
+def smulLOfPos (hs : 0 < s) :
     BesovSpace ℂ φ s p₁ q →L[ℂ] BesovSpace F φ s p₂ q →L[ℂ] BesovSpace F φ s r q :=
-  bonyProductPosAux r φ.exists_rOut_lt_two_pow_mul_rIn.choose_spec hs
+  smulLOfPosAux r φ.exists_rOut_lt_two_pow_mul_rIn.choose_spec hs
 
 /-- **Convergence of `S_M u · S_M v` in `𝓢'(E, F)` for `s > 0`.** -/
-theorem tendsto_lowPass_smul_lowPass_bonyProductPosCLM (hs : 0 < s)
+theorem tendsto_lowPass_smul_lowPass_smulLOfPos (hs : 0 < s)
     (u : BesovSpace ℂ φ s p₁ q) (v : BesovSpace F φ s p₂ q) :
     Tendsto (fun M ↦ ((u.lowPass M • v.lowPass M : Lp F r (volume : Measure E)) : 𝓢'(E, F)))
-      atTop (𝓝 (bonyProductPosCLM r hs u v).toDistr) :=
-  tendsto_lowPass_smul_lowPass_bonyProductPosAux _ hs u v
+      atTop (𝓝 (smulLOfPos r hs u v).toDistr) :=
+  tendsto_lowPass_smul_lowPass_smulLOfPosAux _ hs u v
 
-/-- **Independence of the gap parameter `N` for `bonyProductPosCLM`.** -/
-theorem bonyProductPosCLM_apply {N : ℕ} (hN : φ.rOut < 2 ^ N * φ.rIn) (hs : 0 < s)
+/-- **Bony decomposition of `TauCeti.BesovSpace.smulLOfPos` (independence of the gap `N`).** -/
+theorem smulLOfPos_eq_paraproductLpCLM_add {N : ℕ} (hN : φ.rOut < 2 ^ N * φ.rIn) (hs : 0 < s)
     (u : BesovSpace ℂ φ s p₁ q) (v : BesovSpace F φ s p₂ q) :
-    bonyProductPosCLM r hs u v =
+    smulLOfPos r hs u v =
       paraproductLpCLM r hN (toLpCLM ℂ φ p₁ q hs u) v +
         paraproductRightLpCLM r hN u (toLpCLM F φ p₂ q hs v) +
         inclusion F φ r (by linarith) le_rfl
           (resonantCLM r q N (add_pos hs hs) u (inclusion F φ p₂ le_rfl le_top v)) := by
-  rw [← bonyProductPosAux_apply]
-  exact ext <| tendsto_nhds_unique (tendsto_lowPass_smul_lowPass_bonyProductPosCLM hs u v)
-    (tendsto_lowPass_smul_lowPass_bonyProductPosAux hN hs u v)
+  rw [← smulLOfPosAux_apply]
+  exact ext <| tendsto_nhds_unique (tendsto_lowPass_smul_lowPass_smulLOfPos hs u v)
+    (tendsto_lowPass_smul_lowPass_smulLOfPosAux hN hs u v)
 
 /-- **Identification with pointwise `Lʳ` multiplication.** For `0 < s`, the tempered distribution
-of `bonyProductPosCLM r hs u v` is the `Lʳ` product `(toLpCLM u) • (toLpCLM v)`. -/
+of `smulLOfPos r hs u v` is the `Lʳ` product `(toLpCLM u) • (toLpCLM v)`. -/
 @[simp]
-theorem toDistr_bonyProductPosCLM (hs : 0 < s)
+theorem toDistr_smulLOfPos (hs : 0 < s)
     (u : BesovSpace ℂ φ s p₁ q) (v : BesovSpace F φ s p₂ q) :
-    (bonyProductPosCLM r hs u v).toDistr =
+    (smulLOfPos r hs u v).toDistr =
       ((toLpCLM ℂ φ p₁ q hs u • toLpCLM F φ p₂ q hs v :
         Lp F r (volume : Measure E)) : 𝓢'(E, F)) := by
-  refine tendsto_nhds_unique (tendsto_lowPass_smul_lowPass_bonyProductPosCLM hs u v) ?_
+  refine tendsto_nhds_unique (tendsto_lowPass_smul_lowPass_smulLOfPos hs u v) ?_
   have hLp := Lp.tendsto_lpSMul (r := r) (tendsto_lowPass hs u) (tendsto_lowPass hs v)
   simpa [Function.comp_def] using
     ((Lp.toTemperedDistributionCLM F volume r).continuous.tendsto _).comp hLp
 
-/-- **Uniform operator norm bound for `bonyProductPosCLM`.** The operator norm is bounded by a
+/-- **Uniform operator norm bound for `smulLOfPos`.** The operator norm is bounded by a
 constant depending only on `E`, `F`, `φ` and `s`, independently of `p₁, p₂, r, q`. -/
-theorem exists_norm_bonyProductPosCLM_le (hs : 0 < s) :
+theorem exists_norm_smulLOfPos_le (hs : 0 < s) :
     ∃ C : ℝ, 0 ≤ C ∧ ∀ {p₁ p₂ r q : ℝ≥0∞}
       [Fact (1 ≤ p₁)] [Fact (1 ≤ p₂)] [Fact (1 ≤ r)] [p₁.HolderTriple p₂ r] [Fact (1 ≤ q)],
-      ‖bonyProductPosCLM (F := F) (φ := φ) (p₁ := p₁) (p₂ := p₂) (q := q) r hs‖ ≤ C := by
+      ‖smulLOfPos (F := F) (φ := φ) (p₁ := p₁) (p₂ := p₂) (q := q) r hs‖ ≤ C := by
   set hN := φ.exists_rOut_lt_two_pow_mul_rIn.choose_spec
   obtain ⟨C₁, hC₁, h₁⟩ := exists_norm_paraproductLpCLM_le (F := F) hN s
   obtain ⟨C₂, hC₂, h₂⟩ := exists_norm_paraproductRightLpCLM_le (F := F) hN s
@@ -369,7 +369,7 @@ theorem exists_norm_bonyProductPosCLM_le (hs : 0 < s) :
   refine ⟨(C₁ + C₂) * (1 - 2 ^ (-s))⁻¹ + C₃, by positivity,
     fun {p₁' p₂' r' q'} _ _ _ _ _ ↦ ?_⟩
   refine ContinuousLinearMap.opNorm_le_bound₂ _ (by positivity) fun u v ↦ ?_
-  rw [bonyProductPosCLM, bonyProductPosAux_apply]
+  rw [smulLOfPos, smulLOfPosAux_apply]
   set v' : BesovSpace F φ s p₂' ∞ := inclusion F φ p₂' le_rfl le_top v
   have hv' : ‖v'‖ ≤ ‖v‖ := norm_inclusion_le _ _ v
   have hn₁ : ‖paraproductLpCLM r' hN (toLpCLM ℂ φ p₁' q' hs u) v‖ ≤
@@ -419,17 +419,17 @@ section One
 
 variable {s : ℝ} {q : ℝ≥0∞} [Fact (1 ≤ q)]
 
-/-- **Unitality of `bonyProductPosCLM` on the left:** `1 · v = v` in `B^s_{p₂,q}` (`s > 0`). -/
+/-- **Unitality of `smulLOfPos` on the left:** `1 · v = v` in `B^s_{p₂,q}` (`s > 0`). -/
 @[simp]
-theorem bonyProductPosCLM_one_left (hs : 0 < s) (v : BesovSpace F φ s p₂ q) :
-    bonyProductPosCLM p₂ hs (1 : BesovSpace ℂ φ s ∞ q) v = v :=
-  ext <| by simp [toDistr_bonyProductPosCLM]
+theorem smulLOfPos_one_left (hs : 0 < s) (v : BesovSpace F φ s p₂ q) :
+    smulLOfPos p₂ hs (1 : BesovSpace ℂ φ s ∞ q) v = v :=
+  ext <| by simp [toDistr_smulLOfPos]
 
-/-- **Unitality of `bonyProductPosCLM` on the right:** `u · 1 = u` in `B^s_{p₁,q}` (`s > 0`). -/
+/-- **Unitality of `smulLOfPos` on the right:** `u · 1 = u` in `B^s_{p₁,q}` (`s > 0`). -/
 @[simp]
-theorem bonyProductPosCLM_one_right (hs : 0 < s) (u : BesovSpace ℂ φ s p₁ q) :
-    bonyProductPosCLM p₁ hs u (1 : BesovSpace ℂ φ s ∞ q) = u :=
-  ext <| by simp [toDistr_bonyProductPosCLM, Lp.lpSMul_comm _ (1 : Lp ℂ ∞ _)]
+theorem smulLOfPos_one_right (hs : 0 < s) (u : BesovSpace ℂ φ s p₁ q) :
+    smulLOfPos p₁ hs u (1 : BesovSpace ℂ φ s ∞ q) = u :=
+  ext <| by simp [toDistr_smulLOfPos, Lp.lpSMul_comm _ (1 : Lp ℂ ∞ _)]
 
 /-- **Unitality of `smulL` on the left (`α < 0`, `0 < α + β`):**
 `T_1^N v = v - S_{N + 1} v`, `T_v^N 1 = 0`, and `R_N(1, v) = S_{N + 1} v` sum to `v` in

@@ -80,15 +80,6 @@ theorem fourierInv_delta (ξ : E) :
 
 variable (φ : ContDiffBump (0 : E))
 
-/-- **The Littlewood–Paley blocks of a plane wave.** The block `Δⱼ` multiplies the plane wave
-`𝓕⁻ δ_ξ` by the value `ψⱼ(ξ)` of the `j`-th piece of the partition. -/
-@[simp]
-theorem littlewoodPaleyBlock_fourierInv_delta (j : ℕ) (ξ : E) :
-    littlewoodPaleyBlock ℂ φ j (𝓕⁻ (delta ξ)) =
-      (φ.inhomogeneousLittlewoodPaley j ξ : ℂ) • 𝓕⁻ (delta ξ) := by
-  rw [littlewoodPaleyBlock_apply, fourierMultiplierCLM_fourierInv_delta
-    (φ.hasTemperateGrowth_ofReal_inhomogeneousLittlewoodPaley j)]
-
 /-- **A plane wave of dyadic frequency is a single block.** If `2^j φ.rOut ≤ ‖ξ‖ ≤ 2^{j+1} φ.rIn`,
 then the plane wave `𝓕⁻ δ_ξ` is its own block of index `j + 1`, and all its other blocks vanish. -/
 theorem littlewoodPaleyBlock_fourierInv_delta_of_le_norm_of_norm_le {j : ℕ} {ξ : E}
@@ -109,18 +100,6 @@ theorem littlewoodPaleyBlock_fourierInv_delta_of_le_norm_of_norm_le {j : ℕ} {�
       · simp
       have hr : 0 < φ.rIn := φ.rIn_pos
       exact h₂.trans (by gcongr <;> first | omega | norm_num)
-
-/-- **A plane wave of low frequency is its own low-frequency block.** If `‖ξ‖ ≤ φ.rIn`, then the
-plane wave `𝓕⁻ δ_ξ` is its block `Δ₀`, and all its other blocks vanish. -/
-theorem littlewoodPaleyBlock_fourierInv_delta_of_norm_le {ξ : E} (h : ‖ξ‖ ≤ φ.rIn) (k : ℕ) :
-    littlewoodPaleyBlock ℂ φ k (𝓕⁻ (delta ξ)) = if k = 0 then 𝓕⁻ (delta ξ) else 0 := by
-  rw [littlewoodPaleyBlock_fourierInv_delta]
-  rcases k with _ | k
-  · rw [φ.inhomogeneousLittlewoodPaley_zero, φ.one_of_mem_closedBall (mem_closedBall_zero_iff.2 h)]
-    simp
-  · rw [φ.inhomogeneousLittlewoodPaley_succ_eq_zero_of_norm_le
-      (h.trans (le_mul_of_one_le_left φ.rIn_pos.le (one_le_pow₀ one_le_two)))]
-    simp
 
 /-- **The derivatives of a plane wave.** Differentiating the plane wave `𝓕⁻ δ_ξ` in the direction
 `m` multiplies it by `2πi ⟪ξ, m⟫`. -/

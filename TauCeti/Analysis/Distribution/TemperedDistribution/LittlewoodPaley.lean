@@ -150,9 +150,12 @@ blocks `Δⱼ u`.
   `j ≥ 1`, have integral zero.
 * `ContDiffBump.fourierInv_inhomogeneousLittlewoodPaley_neg`: the kernels `𝓕⁻ ψⱼ` are even.
 * `TemperedDistribution.littlewoodPaleyBlock_delta_zero`,
-  `TemperedDistribution.littlewoodPaleyBlock_delta_zero_eq_toLp`, and
+  `TemperedDistribution.littlewoodPaleyBlock_delta_zero_eq_toLp`,
+  `TemperedDistribution.littlewoodPaleyBlock_fourierInv_delta`,
+  `TemperedDistribution.littlewoodPaleyBlock_fourierInv_delta_of_norm_le`, and
   `TemperedDistribution.littlewoodPaleyBlock_toTemperedDistribution_volume`: the blocks of the
-  Dirac mass `δ₀` are the kernels `𝓕⁻ ψⱼ`, and the constant `1` has only the `Δ₀` block.
+  Dirac mass `δ₀` are the kernels `𝓕⁻ ψⱼ`, the blocks of low-frequency plane waves `𝓕⁻ δ_ξ`
+  (`‖ξ‖ ≤ φ.rIn`), and the constant `1` has only the `Δ₀` block.
 * `TemperedDistribution.exists_littlewoodPaleyBlock_eq_and_norm_le` and
   `TemperedDistribution.exists_enlargedLittlewoodPaleyBlock_eq_and_norm_le`: the blocks and
   enlarged blocks are bounded on `Lᵖ`, `1 ≤ p ≤ ∞`, uniformly in `j`; and so are the low-pass
@@ -942,6 +945,28 @@ theorem littlewoodPaleyBlock_delta_zero (j : ℕ) :
   ext u
   simp [φ.hasTemperateGrowth_ofReal_inhomogeneousLittlewoodPaley j, mul_comm]
 
+/-- **The Littlewood–Paley blocks of a plane wave.** The block `Δⱼ` multiplies the plane wave
+`𝓕⁻ δ_ξ` by the value `ψⱼ(ξ)` of the `j`-th piece of the partition. -/
+@[simp]
+theorem littlewoodPaleyBlock_fourierInv_delta (j : ℕ) (ξ : E) :
+    littlewoodPaleyBlock ℂ φ j (𝓕⁻ (delta ξ)) =
+      (φ.inhomogeneousLittlewoodPaley j ξ : ℂ) • 𝓕⁻ (delta ξ) := by
+  rw [littlewoodPaleyBlock_apply, fourierMultiplierCLM_fourierInv_delta
+    (φ.hasTemperateGrowth_ofReal_inhomogeneousLittlewoodPaley j)]
+
+/-- **A plane wave of low frequency is its own low-frequency block.** If `‖ξ‖ ≤ φ.rIn`, then the
+plane wave `𝓕⁻ δ_ξ` is its block `Δ₀`, and all its other blocks vanish. -/
+theorem littlewoodPaleyBlock_fourierInv_delta_of_norm_le {ξ : E} (h : ‖ξ‖ ≤ φ.rIn) (k : ℕ) :
+    littlewoodPaleyBlock ℂ φ k (𝓕⁻ (delta ξ)) = if k = 0 then 𝓕⁻ (delta ξ) else 0 := by
+  rw [littlewoodPaleyBlock_fourierInv_delta]
+  rcases k with _ | k
+  · rw [φ.inhomogeneousLittlewoodPaley_zero,
+      φ.one_of_mem_closedBall (mem_closedBall_zero_iff.2 h)]
+    simp
+  · rw [φ.inhomogeneousLittlewoodPaley_succ_eq_zero_of_norm_le
+      (h.trans (le_mul_of_one_le_left φ.rIn_pos.le (one_le_pow₀ one_le_two)))]
+    simp
+
 section Lp
 
 open MeasureTheory
@@ -961,16 +986,8 @@ distribution `volume.toTemperedDistribution`, is its own low-frequency block `Δ
 theorem littlewoodPaleyBlock_toTemperedDistribution_volume (k : ℕ) :
     littlewoodPaleyBlock ℂ φ k (volume : Measure E).toTemperedDistribution =
       if k = 0 then (volume : Measure E).toTemperedDistribution else 0 := by
-  rw [← fourierInv_delta_zero, littlewoodPaleyBlock_apply,
-    fourierMultiplierCLM_fourierInv_delta
-      (φ.hasTemperateGrowth_ofReal_inhomogeneousLittlewoodPaley k) 0]
-  rcases k with _ | k
-  · rw [φ.inhomogeneousLittlewoodPaley_zero,
-      φ.one_of_mem_closedBall (Metric.mem_closedBall_self φ.rIn_pos.le)]
-    simp [fourierInv_delta_zero]
-  · rw [φ.inhomogeneousLittlewoodPaley_succ_eq_zero_of_norm_le
-      (by rw [norm_zero]; exact mul_nonneg (by positivity) φ.rIn_pos.le)]
-    simp
+  rw [← fourierInv_delta_zero]
+  exact littlewoodPaleyBlock_fourierInv_delta_of_norm_le φ (by simpa using φ.rIn_pos.le) k
 
 variable {φ} in
 /-- If the `j`-th Littlewood–Paley block of `u` is the `Lᵖ` function `f`, then the `j`-th block of

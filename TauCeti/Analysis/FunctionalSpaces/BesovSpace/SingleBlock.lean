@@ -73,25 +73,45 @@ section SingleBlock
 
 variable {p₁ p₂ r : ℝ≥0∞} [Fact (1 ≤ p₁)] [Fact (1 ≤ p₂)] [p₁.HolderTriple p₂ r]
 
+/-- **Termwise vanishing of `T_u v` under separated frequency support.** If every `k` with
+`k + N < j` has either `Δₖ u = 0` or `Δⱼ v = 0`, then `S_{j-N} u · Δⱼ v = 0`. -/
+theorem lowPass_smul_block_eq_zero (N : ℕ) {u : BesovSpace ℂ φ s p₁ q}
+    {v : BesovSpace F φ s' p₂ q'} (j : ℕ)
+    (h : ∀ k, k + N < j → u.block k = 0 ∨ v.block j = 0) :
+    (u.lowPass (j - N) • v.block j : Lp F r (volume : Measure E)) = 0 := by
+  by_cases hv : v.block j = 0
+  · simp [hv]
+  · rw [lowPass_eq_sum, Finset.sum_eq_zero fun k hk ↦
+      (h k (by rw [Finset.mem_range] at hk; omega)).resolve_right hv, Lp.zero_smul]
+
+/-- **Termwise vanishing of `T_v u` under separated frequency support.** If every `k` with
+`k + N < j` has either `Δⱼ u = 0` or `Δₖ v = 0`, then `Δⱼ u · S_{j-N} v = 0`. -/
+theorem block_smul_lowPass_eq_zero (N : ℕ) {u : BesovSpace ℂ φ s p₁ q}
+    {v : BesovSpace F φ s' p₂ q'} (j : ℕ)
+    (h : ∀ k, k + N < j → u.block j = 0 ∨ v.block k = 0) :
+    (u.block j • v.lowPass (j - N) : Lp F r (volume : Measure E)) = 0 := by
+  by_cases hu : u.block j = 0
+  · simp [hu]
+  · rw [lowPass_eq_sum, Finset.sum_eq_zero fun k hk ↦
+      (h k (by rw [Finset.mem_range] at hk; omega)).resolve_left hu, Lp.smul_zero]
+
 /-- **The paraproduct `T_u v` of two factors at the same frequency vanishes term by term.** If `u`
 and `v` each have only the block of index `m`, then `S_{j-N} u · Δⱼ v = 0` for every `j`. -/
 theorem lowPass_smul_block_eq_zero_of_block_eq_zero (N : ℕ) {u : BesovSpace ℂ φ s p₁ q}
     {v : BesovSpace F φ s' p₂ q'} {m : ℕ} (hu : ∀ k, k ≠ m → u.block k = 0)
     (hv : ∀ k, k ≠ m → v.block k = 0) (j : ℕ) :
-    (u.lowPass (j - N) • v.block j : Lp F r (volume : Measure E)) = 0 := by
-  rcases eq_or_ne j m with rfl | hjm
-  · rw [lowPass_eq_ite_of_block_eq_zero hu, ite_eq_right (by omega), Lp.zero_smul]
-  · rw [hv j hjm, Lp.smul_zero]
+    (u.lowPass (j - N) • v.block j : Lp F r (volume : Measure E)) = 0 :=
+  lowPass_smul_block_eq_zero N j fun k hkj ↦
+    (eq_or_ne j m).imp (fun hj ↦ hu k (by omega)) (hv j)
 
 /-- **The paraproduct `T_v u` of two factors at the same frequency vanishes term by term.** If `u`
 and `v` each have only the block of index `m`, then `Δⱼ u · S_{j-N} v = 0` for every `j`. -/
 theorem block_smul_lowPass_eq_zero_of_block_eq_zero (N : ℕ) {u : BesovSpace ℂ φ s p₁ q}
     {v : BesovSpace F φ s' p₂ q'} {m : ℕ} (hu : ∀ k, k ≠ m → u.block k = 0)
     (hv : ∀ k, k ≠ m → v.block k = 0) (j : ℕ) :
-    (u.block j • v.lowPass (j - N) : Lp F r (volume : Measure E)) = 0 := by
-  rcases eq_or_ne j m with rfl | hjm
-  · rw [lowPass_eq_ite_of_block_eq_zero hv, ite_eq_right (by omega), Lp.smul_zero]
-  · rw [hu j hjm, Lp.zero_smul]
+    (u.block j • v.lowPass (j - N) : Lp F r (volume : Measure E)) = 0 :=
+  block_smul_lowPass_eq_zero N j fun k hkj ↦
+    (eq_or_ne j m).symm.imp (hu j) fun hj ↦ hv k (by omega)
 
 /-- **The terms of the resonant part of two factors at the same frequency.** If `u` and `v` each
 have only the block of index `m`, then the `j`-th term `Δⱼ u · ∑_{|k - j| ≤ N} Δₖ v` of `R(u, v)`
