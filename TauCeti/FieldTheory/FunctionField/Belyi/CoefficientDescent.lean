@@ -21,11 +21,17 @@ polynomial therefore has coefficients in the rational function field over the fi
 the pointed stabilizer. This works even when the original constant field is transcendental over
 that fixed field, notably for subgroups of the automorphism group of `ℂ`.
 
-We identify this coefficient field (`TauCeti.AlgebraicBelyiPair.pointedFieldOfModuli`), bound its
-degree over the field of moduli (and show it equals the field of moduli in the Galois case,
-`TauCeti.AlgebraicBelyiPair.pointedFieldOfModuli_eq_fieldOfModuli_of_isGalois`), and produce a
-primitive element whose minimal polynomial descends to it. This is descent of an equation;
-unramifiedness and exactness of constants for a descended Belyi pair are not asserted here.
+We identify this coefficient field (`TauCeti.AlgebraicBelyiPair.pointedFieldOfModuli`) for any place
+`P`. When `P` lies over a rational point `t = q` (no degree-one or unramifiedness hypothesis is
+needed), we bound the degree of this field over the field of moduli and show it equals the field of
+moduli in the Galois case
+(`pointedFieldOfModuli_eq_fieldOfModuli_of_isGalois_of_restrict_eq_rationalPoint`, as a
+specialization of `pointedFieldOfModuli_eq_fieldOfModuli_of_isGalois_of_forall_restrict_eq` in
+`TauCeti.AlgebraicBelyiPair`).
+When `P` is moreover unbranched of degree one over a rational point `t = q` with `q ≠ 0, 1`, we
+produce a primitive element whose minimal polynomial descends to `X.pointedFieldOfModuli P`. This
+is descent of an equation; unramifiedness and exactness of constants for a descended Belyi pair are
+not asserted here.
 
 ## References
 
@@ -99,12 +105,12 @@ theorem pointedFieldOfModuli_eq_fieldOfModuli_of_isGalois_of_forall_restrict_eq
 
 /-- **For a Galois Belyi pair, the pointed field of moduli at any place over a rational point is
 the field of moduli of the pair.** -/
-theorem pointedFieldOfModuli_eq_fieldOfModuli_of_isGalois [IsGalois (RatFunc k) X]
-    {P : Place k X} {q : ℚ}
+theorem pointedFieldOfModuli_eq_fieldOfModuli_of_isGalois_of_restrict_eq_rationalPoint
+    [IsGalois (RatFunc k) X] {P : Place k X} {q : ℚ}
     (hPa : P.restrict k (RatFunc k) = Place.adicOfIrreducible (irreducible_X_sub_C (q : k))) :
-    X.pointedFieldOfModuli P = (IsoClass.mk X).fieldOfModuli := by
-  rw [pointedFieldOfModuli_def, IsoClass.fieldOfModuli_def,
-    X.pointedStabilizer_eq_stabilizer_of_isGalois hPa]
+    X.pointedFieldOfModuli P = (IsoClass.mk X).fieldOfModuli :=
+  X.pointedFieldOfModuli_eq_fieldOfModuli_of_isGalois_of_forall_restrict_eq
+    (restrict_smul_eq_of_restrict_eq_rationalPoint hPa)
 
 variable {X} {P : Place k X} {q : ℚ}
   (hq₀ : (q : k) ≠ 0) (hq₁ : (q : k) ≠ 1)

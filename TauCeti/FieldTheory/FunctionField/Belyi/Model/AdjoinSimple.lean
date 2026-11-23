@@ -13,19 +13,20 @@ import TauCeti.FieldTheory.FunctionField.ConstantExtension.RatFunc
 # Constructing a Belyi model by adjoining a primitive element
 
 Given an algebraic Belyi pair `X = (F, k(t) ↪ F)` over a field `k` of characteristic zero and a
-subfield `K → k` over which `t` remains transcendental, a primitive element `z` of `F / k(t)`
-satisfying `[K(t)⟮z⟯ : K(t)] = [F : k(t)]` defines a model of `X` over `K`
+subfield `K → k` over which `t` remains transcendental, together with a coefficient-extension map
+`K(t) → k(t)` respecting the constants `K → k` and fixing `t` (`RatFunc.X`) and a compatible
+`K(t)`-algebra structure on `F` (`IsScalarTower (RatFunc K) (RatFunc k) F`), a primitive element `z`
+of `F / k(t)` satisfying `[K(t)⟮z⟯ : K(t)] = [F : k(t)]` defines a model of `X` over `K`
 (`TauCeti.AlgebraicBelyiPair.modelOfAdjoinSimple`) without requiring `k / K` to be algebraic.
 
 ## Main definitions
 
 * `TauCeti.AlgebraicBelyiPair.modelOfAdjoinSimple`: promotes a primitive element of `X / k(t)` with
-  full degree over `K(t)` to a model of `X` over `K`.
+  full degree over `K(t)` (under compatible `K(t) → k(t) → X` maps fixing `K` and `t`) to a model
+  of `X` over `K`.
 
 ## Main results
 
-* `TauCeti.AlgebraicBelyiPair.finrank_modelOfAdjoinSimple_pair`: the constructed model has the same
-  Belyi degree as `X`.
 * `TauCeti.AlgebraicBelyiPair.fieldRange_modelOfAdjoinSimple_embedding`: the embedding image of the
   constructed model is `K(t)⟮z⟯`.
 -/
@@ -41,7 +42,8 @@ namespace TauCeti.AlgebraicBelyiPair
 variable {k : Type u} [Field k] [CharZero k] (X : AlgebraicBelyiPair k)
 
 /-- Promote a primitive element `z` of `X / k(t)` of full degree `[K(t)⟮z⟯ : K(t)] = [X : k(t)]`
-to a model of `X` over `K`. -/
+to a model of `X` over `K`, using the coefficient-extension map `K(t) → k(t)` respecting `K → k`
+(`hC`) and fixing `t` (`hX`) together with the compatible `K(t)`-action on `X`. -/
 noncomputable def modelOfAdjoinSimple {K : Type u} [Field K] [CharZero K] [Algebra K k]
     [Algebra (RatFunc K) (RatFunc k)]
     [Algebra (RatFunc K) X] [IsScalarTower (RatFunc K) (RatFunc k) X]
@@ -89,22 +91,6 @@ noncomputable def modelOfAdjoinSimple {K : Type u} [Field K] [CharZero K] [Algeb
     embedding_algebraMap_X := hX_E
     adjoin_range_embedding := hadj }
 
-/-- The model constructed from a primitive element `z` has the same Belyi degree as `X`. -/
-@[simp]
-theorem finrank_modelOfAdjoinSimple_pair {K : Type u} [Field K] [CharZero K] [Algebra K k]
-    [Algebra (RatFunc K) (RatFunc k)]
-    [Algebra (RatFunc K) X] [IsScalarTower (RatFunc K) (RatFunc k) X]
-    (hC : ∀ c : K,
-      algebraMap (RatFunc K) (RatFunc k) (algebraMap K (RatFunc K) c) =
-        algebraMap k (RatFunc k) (algebraMap K k c))
-    (hX : algebraMap (RatFunc K) (RatFunc k) RatFunc.X = RatFunc.X)
-    {z : X} (hgen : (RatFunc k)⟮z⟯ = ⊤)
-    (hfinrank : Module.finrank (RatFunc K) (RatFunc K)⟮z⟯ = Module.finrank (RatFunc k) X) :
-    Module.finrank (RatFunc K)
-        (X.modelOfAdjoinSimple hC hX hgen hfinrank).pair =
-      Module.finrank (RatFunc k) X :=
-  hfinrank
-
 /-- The embedding image of the model constructed from `z` is `K(t)⟮z⟯`. -/
 @[simp]
 theorem fieldRange_modelOfAdjoinSimple_embedding {K : Type u} [Field K] [CharZero K] [Algebra K k]
@@ -117,9 +103,7 @@ theorem fieldRange_modelOfAdjoinSimple_embedding {K : Type u} [Field K] [CharZer
     {z : X} (hgen : (RatFunc k)⟮z⟯ = ⊤)
     (hfinrank : Module.finrank (RatFunc K) (RatFunc K)⟮z⟯ = Module.finrank (RatFunc k) X) :
     (X.modelOfAdjoinSimple hC hX hgen hfinrank).embedding.fieldRange =
-      ((RatFunc K)⟮z⟯).toSubfield := by
-  ext x
-  simp only [modelOfAdjoinSimple, IntermediateField.mem_toSubfield]
-  exact ⟨fun ⟨a, ha⟩ ↦ ha ▸ a.property, fun hx ↦ ⟨⟨x, hx⟩, rfl⟩⟩
+      ((RatFunc K)⟮z⟯).toSubfield :=
+  Subfield.fieldRange_subtype ((RatFunc K)⟮z⟯).toSubfield
 
 end TauCeti.AlgebraicBelyiPair

@@ -9,6 +9,7 @@ public import TauCeti.FieldTheory.FunctionField.Belyi.CoefficientDescent
 public import TauCeti.FieldTheory.FunctionField.Belyi.Model.Basic
 import TauCeti.FieldTheory.FunctionField.Belyi.Model.AdjoinSimple
 import TauCeti.FieldTheory.FunctionField.Place.Extension.Existence
+import TauCeti.FieldTheory.RatFunc.Automorphism
 import TauCeti.FieldTheory.RatFunc.Transcendental
 
 /-!
@@ -40,11 +41,12 @@ This file promotes that descended equation to a genuine **model** of `X` over `K
    (`TauCeti.AlgebraicBelyiPair.IsoClass.exists_finrank_le_degree_and_isDefinedOver`, Köck's
    Theorem 2.2(a)).
 4. When `F / k(t)` is Galois, `U(X, P) = U(X)`
-   (`TauCeti.AlgebraicBelyiPair.pointedStabilizer_eq_stabilizer_of_isGalois`), so `K` is the field
+   (`pointedStabilizer_eq_stabilizer_of_isGalois_of_restrict_eq_rationalPoint`), so `K` is the field
    of moduli itself
-   (`TauCeti.AlgebraicBelyiPair.pointedFieldOfModuli_eq_fieldOfModuli_of_isGalois`), and over an
-   algebraically closed field `X` is defined over its field of moduli
-   (`TauCeti.AlgebraicBelyiPair.nonempty_model_fieldOfModuli_of_isGalois`, Köck's Theorem 2.2(b)).
+   (`pointedFieldOfModuli_eq_fieldOfModuli_of_isGalois_of_restrict_eq_rationalPoint` in
+   `TauCeti.AlgebraicBelyiPair`), and over an algebraically closed field `X` is defined over its
+   field of moduli (`TauCeti.AlgebraicBelyiPair.nonempty_model_fieldOfModuli_of_isGalois`, Köck's
+   Theorem 2.2(b)).
 
 ## Main definitions
 
@@ -54,8 +56,7 @@ This file promotes that descended equation to a genuine **model** of `X` over `K
 
 ## Main results
 
-* `TauCeti.AlgebraicBelyiPair.finrank_modelOverPointedFieldOfModuli_pair`,
-  `TauCeti.AlgebraicBelyiPair.exists_generator_fieldRange_modelOverPointedFieldOfModuli`,
+* `TauCeti.AlgebraicBelyiPair.exists_generator_fieldRange_modelOverPointedFieldOfModuli`,
   `TauCeti.AlgebraicBelyiPair.nonempty_model_pointedFieldOfModuli`, and
   `TauCeti.AlgebraicBelyiPair.isDefinedOver_pointedFieldOfModuli`: properties of the model over the
   pointed field of moduli.
@@ -86,10 +87,41 @@ variable {k : Type u} [Field k] [CharZero k]
 
 section PointedModel
 
+omit [CharZero k] in
+private theorem algebraMap_ratFunc_C {K : Type*} [Field K] [Algebra K k]
+    [Algebra (RatFunc K) (RatFunc k)]
+    (hC₀ : ∀ c : K, algebraMap (RatFunc K) (RatFunc k) (algebraMap K (RatFunc K) c) =
+      algebraMap k (RatFunc k) (algebraMap K k c)) (c : K) :
+    algebraMap (RatFunc K) (RatFunc k) (RatFunc.C c) = RatFunc.C (algebraMap K k c) := by
+  rw [← RatFunc.algebraMap_eq_C, hC₀ c, RatFunc.algebraMap_eq_C]
+
+omit [CharZero k] in
+private theorem eq_ratFuncAlgebraOfTranscendental {K : Type*} [Field K] [Algebra K k]
+    [Algebra K (RatFunc k)]
+    (hK : ∀ c : K, algebraMap K (RatFunc k) c = algebraMap k (RatFunc k) (algebraMap K k c))
+    (inst : Algebra (RatFunc K) (RatFunc k))
+    (hX_rf : Transcendental K (RatFunc.X : RatFunc k))
+    (hC : ∀ c : K, @algebraMap (RatFunc K) (RatFunc k) _ _ inst (RatFunc.C c) =
+      RatFunc.C (algebraMap K k c))
+    (hX : @algebraMap (RatFunc K) (RatFunc k) _ _ inst RatFunc.X = RatFunc.X) :
+    inst = ratFuncAlgebraOfTranscendental hX_rf := by
+  have h1 : @IsScalarTower K (RatFunc K) (RatFunc k) Algebra.toSMul inst.toSMul Algebra.toSMul :=
+    @IsScalarTower.of_algebraMap_eq K (RatFunc K) (RatFunc k) _ _ _ _ inst _ fun c ↦ by
+      rw [hK c, RatFunc.algebraMap_eq_C (K := k), RatFunc.algebraMap_eq_C (K := K), hC c]
+  have h2 := isScalarTower_ratFuncAlgebraOfTranscendental hX_rf
+  have hhom :
+      @IsScalarTower.toAlgHom K (RatFunc K) (RatFunc k) _ _ _ _ inst _ h1 =
+        @IsScalarTower.toAlgHom K (RatFunc K) (RatFunc k) _ _ _ _
+          (ratFuncAlgebraOfTranscendental hX_rf) _ h2 := by
+    refine _root_.RatFunc.algHom_ext ?_
+    simp [hX, algebraMap_ratFuncAlgebraOfTranscendental_X]
+  exact Algebra.algebra_ext inst (ratFuncAlgebraOfTranscendental hX_rf) fun r ↦
+    AlgHom.congr_fun hhom r
+
 variable (X : AlgebraicBelyiPair k)
 
-/-- Auxiliary packaging of the model over `X.pointedFieldOfModuli P` together with its degree and
-defining generator over `K(t)`. -/
+/-- Auxiliary packaging of the model over `X.pointedFieldOfModuli P` together with its defining
+generator over `K(t)`. -/
 private noncomputable def modelOverPointedFieldOfModuliAux {P : Place k X} {q : ℚ}
     (hq₀ : (q : k) ≠ 0) (hq₁ : (q : k) ≠ 1)
     (hPa : P.restrict k (RatFunc k) = Place.adicOfIrreducible (irreducible_X_sub_C (q : k)))
@@ -100,8 +132,6 @@ private noncomputable def modelOverPointedFieldOfModuliAux {P : Place k X} {q : 
       ((algebraMap (RatFunc k) X).comp
         (algebraMap (RatFunc (X.pointedFieldOfModuli P)) (RatFunc k))).toAlgebra
     { M : Model (X.pointedFieldOfModuli P) X //
-      Module.finrank (RatFunc (X.pointedFieldOfModuli P)) M.pair =
-        Module.finrank (RatFunc k) X ∧
       ∃ z : X, (RatFunc k)⟮z⟯ = ⊤ ∧
         IsIntegral (RatFunc (X.pointedFieldOfModuli P)) z ∧
         (minpoly (RatFunc (X.pointedFieldOfModuli P)) z).map
@@ -128,14 +158,12 @@ private noncomputable def modelOverPointedFieldOfModuliAux {P : Place k X} {q : 
       IsScalarTower.algebraMap_apply (X.pointedFieldOfModuli P) k (RatFunc k)]
   have hC : ∀ c : X.pointedFieldOfModuli P,
       algebraMap (RatFunc (X.pointedFieldOfModuli P)) (RatFunc k) (RatFunc.C c) =
-        RatFunc.C (c : k) := fun c ↦ by
-    rw [← RatFunc.algebraMap_eq_C, hC₀ c, RatFunc.algebraMap_eq_C,
-      IntermediateField.algebraMap_apply]
+        RatFunc.C (c : k) :=
+    fun c ↦ algebraMap_ratFunc_C hC₀ c
   have hX : algebraMap (RatFunc (X.pointedFieldOfModuli P)) (RatFunc k) RatFunc.X = RatFunc.X :=
     algebraMap_ratFuncAlgebraOfTranscendental_X hX_rf
   let h := X.exists_generator_finrank_adjoin_eq hq₀ hq₁ hPa hP hC hX
   ⟨X.modelOfAdjoinSimple hC₀ hX h.choose_spec.1 h.choose_spec.2.2.2,
-    finrank_modelOfAdjoinSimple_pair X _ _ _ _,
     ⟨h.choose, h.choose_spec.1, h.choose_spec.2.1, h.choose_spec.2.2.1,
       X.fieldRange_modelOfAdjoinSimple_embedding hC₀ hX h.choose_spec.1 h.choose_spec.2.2.2⟩⟩
 
@@ -147,16 +175,6 @@ noncomputable def modelOverPointedFieldOfModuli {P : Place k X} {q : ℚ}
     (hPa : P.restrict k (RatFunc k) = Place.adicOfIrreducible (irreducible_X_sub_C (q : k)))
     (hP : P.degree = 1) : Model (X.pointedFieldOfModuli P) X :=
   (X.modelOverPointedFieldOfModuliAux hq₀ hq₁ hPa hP).val
-
-/-- The model over `X.pointedFieldOfModuli P` has the same Belyi degree as `X`. -/
-@[simp]
-theorem finrank_modelOverPointedFieldOfModuli_pair {P : Place k X} {q : ℚ}
-    (hq₀ : (q : k) ≠ 0) (hq₁ : (q : k) ≠ 1)
-    (hPa : P.restrict k (RatFunc k) = Place.adicOfIrreducible (irreducible_X_sub_C (q : k)))
-    (hP : P.degree = 1) :
-    Module.finrank (RatFunc (X.pointedFieldOfModuli P))
-      (X.modelOverPointedFieldOfModuli hq₀ hq₁ hPa hP).pair = Module.finrank (RatFunc k) X :=
-  (X.modelOverPointedFieldOfModuliAux hq₀ hq₁ hPa hP).property.1
 
 /-- The embedding image of `X.modelOverPointedFieldOfModuli hq₀ hq₁ hPa hP` is `K(t)⟮z⟯` for a
 primitive element `z` of `X / k(t)` whose minimal polynomial over `k(t)` descends to `K(t)`, where
@@ -180,29 +198,17 @@ theorem exists_generator_fieldRange_modelOverPointedFieldOfModuli {P : Place k X
         ((RatFunc (X.pointedFieldOfModuli P))⟮z⟯).toSubfield := by
   have hX_rf : Transcendental (X.pointedFieldOfModuli P) (RatFunc.X : RatFunc k) :=
     RatFunc.transcendental_X.of_tower_top (X.pointedFieldOfModuli P)
-  have hinst₁ : inst₁ = ratFuncAlgebraOfTranscendental hX_rf := by
-    refine Algebra.algebra_ext _ _ fun r ↦ RingHom.congr_fun ?_ r
-    refine IsLocalization.ringHom_ext (nonZeroDivisors (Polynomial (X.pointedFieldOfModuli P))) ?_
-    refine Polynomial.ringHom_ext' ?_ ?_
-    · ext c
-      simp only [RingHom.comp_apply, RatFunc.algebraMap_C, hC c]
-      let _ := ratFuncAlgebraOfTranscendental hX_rf
-      have htower := isScalarTower_ratFuncAlgebraOfTranscendental hX_rf
-      rw [← RatFunc.algebraMap_eq_C (K := k),
-        ← RatFunc.algebraMap_eq_C (K := X.pointedFieldOfModuli P),
-        ← IntermediateField.algebraMap_apply,
-        ← IsScalarTower.algebraMap_apply (X.pointedFieldOfModuli P) k (RatFunc k),
-        IsScalarTower.algebraMap_apply (X.pointedFieldOfModuli P)
-          (RatFunc (X.pointedFieldOfModuli P)) (RatFunc k)]
-    · simp only [RingHom.comp_apply, RatFunc.algebraMap_X, hX]
-      exact (algebraMap_ratFuncAlgebraOfTranscendental_X hX_rf).symm
+  have hinst₁ : inst₁ = ratFuncAlgebraOfTranscendental hX_rf :=
+    eq_ratFuncAlgebraOfTranscendental
+      (IsScalarTower.algebraMap_apply (X.pointedFieldOfModuli P) k (RatFunc k)) inst₁ hX_rf
+      (fun c ↦ by rw [IntermediateField.algebraMap_apply]; exact hC c) hX
   have hinst₂ : inst₂ = ((algebraMap (RatFunc k) X).comp
       (algebraMap (RatFunc (X.pointedFieldOfModuli P)) (RatFunc k))).toAlgebra :=
     Algebra.algebra_ext _ _ fun r ↦
       IsScalarTower.algebraMap_apply (RatFunc (X.pointedFieldOfModuli P)) (RatFunc k) X r
   subst hinst₁
   subst hinst₂
-  exact (X.modelOverPointedFieldOfModuliAux hq₀ hq₁ hPa hP).property.2
+  exact (X.modelOverPointedFieldOfModuliAux hq₀ hq₁ hPa hP).property
 
 /-- Every algebraic Belyi pair admitting a degree-one place over a finite rational point `t = q`
 with `q ≠ 0, 1` has a model over its pointed field of moduli at that place. -/
@@ -286,12 +292,13 @@ variable (X : AlgebraicBelyiPair k) [IsGalois (RatFunc k) X]
 
 /-- A Galois Belyi pair admitting a degree-one place over a finite rational point `t = q` with
 `q ≠ 0, 1` has a model over its field of moduli. -/
-theorem nonempty_model_fieldOfModuli_of_degree_eq_one_of_isGalois {P : Place k X} {q : ℚ}
+theorem nonempty_model_fieldOfModuli_of_isGalois_of_degreeOnePlace_over_unbranchedRationalPoint
+    {P : Place k X} {q : ℚ}
     (hq₀ : (q : k) ≠ 0) (hq₁ : (q : k) ≠ 1)
     (hPa : P.restrict k (RatFunc k) = Place.adicOfIrreducible (irreducible_X_sub_C (q : k)))
     (hP : P.degree = 1) :
     Nonempty (Model (IsoClass.mk X).fieldOfModuli X) := by
-  rw [← X.pointedFieldOfModuli_eq_fieldOfModuli_of_isGalois hPa]
+  rw [← X.pointedFieldOfModuli_eq_fieldOfModuli_of_isGalois_of_restrict_eq_rationalPoint hPa]
   exact X.nonempty_model_pointedFieldOfModuli hq₀ hq₁ hPa hP
 
 /-- **Köck's Theorem 2.2(b), model form**: over an algebraically closed field `k` of characteristic
@@ -300,7 +307,7 @@ its field of moduli. -/
 theorem nonempty_model_fieldOfModuli_of_isGalois [IsAlgClosed k] :
     Nonempty (Model (IsoClass.mk X).fieldOfModuli X) := by
   obtain ⟨P, hPa, hP⟩ := exists_place_over_two_and_degree_eq_one X
-  exact X.nonempty_model_fieldOfModuli_of_degree_eq_one_of_isGalois
+  exact X.nonempty_model_fieldOfModuli_of_isGalois_of_degreeOnePlace_over_unbranchedRationalPoint
     (q := 2) (by norm_num) (by norm_num) hPa hP
 
 /-- **Köck's Theorem 2.2(b)**: over an algebraically closed field `k` of characteristic zero, the

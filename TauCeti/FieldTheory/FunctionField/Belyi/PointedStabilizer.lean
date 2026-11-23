@@ -62,9 +62,9 @@ coefficients of its minimal polynomial over `k(t)` are fixed by `U(X, P)`.
   `TauCeti.AlgebraicBelyiPair.relIndex_pointedStabilizer_ne_zero`: over a rational point the
   index of `U(X, P)` in `U(X)` is finite, at most the degree of `X`.
 * `TauCeti.AlgebraicBelyiPair.pointedStabilizer_eq_stabilizer_of_isGalois_of_forall_restrict_eq`
-  and `TauCeti.AlgebraicBelyiPair.pointedStabilizer_eq_stabilizer_of_isGalois`: for a Galois pair
-  and a place whose fibre over `k(t)` is preserved by semilinear automorphisms (in particular
-  any place over a rational point), `U(X, P) = U(X)`.
+  and `pointedStabilizer_eq_stabilizer_of_isGalois_of_restrict_eq_rationalPoint` (in
+  `TauCeti.AlgebraicBelyiPair`): for a Galois pair and a place whose fibre over `k(t)` is preserved
+  by semilinear automorphisms (in particular any place over a rational point), `U(X, P) = U(X)`.
 * `TauCeti.AlgebraicBelyiPair.eq_of_smul_eq_self_of_snd_eq`: a semilinear automorphism fixing an
   unramified place of relative degree one is determined by its action on `k`.
 
@@ -281,7 +281,7 @@ private theorem relIndex_pointedStabilizer_dvd_index (P : Place k X) :
   exact Subgroup.index_dvd_of_le le_sup_left
 
 /-- Every semilinear automorphism preserves the fibre over a rational point `t = q`. -/
-private theorem restrict_smul_eq_of_restrict_eq_adicOfIrreducible {P : Place k X} {q : ℚ}
+theorem restrict_smul_eq_of_restrict_eq_rationalPoint {P : Place k X} {q : ℚ}
     (hP : P.restrict k (RatFunc k) = Place.adicOfIrreducible (irreducible_X_sub_C (q : k)))
     (p : semilinearAut X) :
     (p • P).restrict k (RatFunc k) = P.restrict k (RatFunc k) := by
@@ -299,7 +299,7 @@ private theorem index_stabilizer_pos_and_le_finrank {P : Place k X} {q : ℚ}
   have horbit : MulAction.orbit (semilinearAut X) P ⊆
       {P' : Place k X | P'.restrict k (RatFunc k) = P.restrict k (RatFunc k)} := by
     rintro _ ⟨p, rfl⟩
-    exact restrict_smul_eq_of_restrict_eq_adicOfIrreducible hP p
+    exact restrict_smul_eq_of_restrict_eq_rationalPoint hP p
   rw [MulAction.index_stabilizer]
   exact ⟨(Set.ncard_pos (hfin.subset horbit)).mpr ⟨P, MulAction.mem_orbit_self P⟩,
     (Set.ncard_le_ncard horbit hfin).trans (Place.ncard_setOf_restrict_eq_le_finrank k _ _)⟩
@@ -410,7 +410,7 @@ private theorem ofAlgEquiv_smul (σ : X ≃ₐ[RatFunc k] X) (Q : Place k X) :
     rfl
 
 private theorem snd_ofAlgEquiv (σ : X ≃ₐ[RatFunc k] X) :
-    ((ofAlgEquiv X σ : semilinearAut X) : RingAut X × (k ≃ₐ[ℚ] k)).2 = 1 :=
+    ((MonoidHom.snd _ _).comp (semilinearAut X).subtype) (ofAlgEquiv X σ) = 1 :=
   rfl
 
 variable [IsGalois (RatFunc k) X]
@@ -427,17 +427,17 @@ theorem pointedStabilizer_eq_stabilizer_of_isGalois_of_forall_restrict_eq {P : P
   rw [pointedStabilizer_def, Subgroup.mem_map]
   refine ⟨ofAlgEquiv X σ * ⟨p, hp⟩, ?_, ?_⟩
   · rw [MulAction.mem_stabilizer_iff, mul_smul, ofAlgEquiv_smul, hσ]
-  · rw [MonoidHom.coe_snd] at hpg
-    rw [MonoidHom.comp_apply, Subgroup.coe_subtype, MonoidHom.coe_snd,
-      Subgroup.coe_mul, Prod.snd_mul, snd_ofAlgEquiv, one_mul, hpg]
+  · rw [map_mul, snd_ofAlgEquiv, one_mul]
+    exact hpg
 
 /-- **For a Galois Belyi pair, the pointed stabilizer at any place over a rational point equals the
 full stabilizer of the isomorphism class.** -/
-theorem pointedStabilizer_eq_stabilizer_of_isGalois {P : Place k X} {q : ℚ}
+theorem pointedStabilizer_eq_stabilizer_of_isGalois_of_restrict_eq_rationalPoint
+    {P : Place k X} {q : ℚ}
     (hPa : P.restrict k (RatFunc k) = Place.adicOfIrreducible (irreducible_X_sub_C (q : k))) :
     X.pointedStabilizer P = MulAction.stabilizer (k ≃ₐ[ℚ] k) (IsoClass.mk X) :=
   X.pointedStabilizer_eq_stabilizer_of_isGalois_of_forall_restrict_eq
-    (restrict_smul_eq_of_restrict_eq_adicOfIrreducible hPa)
+    (restrict_smul_eq_of_restrict_eq_rationalPoint hPa)
 
 end Galois
 

@@ -89,7 +89,7 @@ noncomputable def constantExtensionParameterBasis
     [Algebra.IsAlgebraic C F] {ι : Type*} (b : Module.Basis ι C F) :
     Module.Basis ι (constantCompositum C K F') F' :=
   (constantExtensionBasisOfLinearDisjoint H h C b).mapCoeffs
-    (RingEquiv.subfieldCongr (_root_.IntermediateField.constantCompositum_toSubfield C).symm)
+    (RingEquiv.subfieldCongr (constantCompositum_toSubfield_eq_adjoin_toSubfield C K F').symm)
     (fun _ _ ↦ rfl)
 
 /-- `TauCeti.constantExtensionParameterBasis` maps each index `i` to `algebraMap F F' (b i)`. -/
@@ -100,7 +100,7 @@ theorem constantExtensionParameterBasis_apply
     [Algebra.IsAlgebraic C F] {ι : Type*} (b : Module.Basis ι C F) (i : ι) :
     constantExtensionParameterBasis H h C b i = algebraMap F F' (b i) :=
   ((constantExtensionBasisOfLinearDisjoint H h C b).mapCoeffs_apply
-    (RingEquiv.subfieldCongr (_root_.IntermediateField.constantCompositum_toSubfield C).symm)
+    (RingEquiv.subfieldCongr (constantCompositum_toSubfield_eq_adjoin_toSubfield C K F').symm)
     (fun _ _ ↦ rfl) i).trans (constantExtensionBasisOfLinearDisjoint_apply H h C b i)
 
 /-- Multiplication over the enlarged intermediate field is bijective. -/
