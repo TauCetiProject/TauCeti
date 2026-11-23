@@ -67,7 +67,8 @@ Three consequences follow:
 * `TauCeti.mk_isoClasses_modelsOfTheory_nat_le_aleph_one_or_hasPerfectAntichainOn` and
   `TauCeti.mk_isoClasses_modelsOfTheory_nat_le_aleph_one_or_eq_continuum`: Morley's theorem on `ℕ`
   for arbitrary first-order theories.
-* `TauCeti.hasVaughtDichotomy_conjunction_inf_infiniteSentence_iff`,
+* `TauCeti.countableModelCount_conjunction_inf_infiniteSentence`,
+  `TauCeti.hasVaughtDichotomy_conjunction_inf_infiniteSentence_iff`,
   `TauCeti.hasVaughtCount_conjunction_inf_infiniteSentence_iff`,
   `TauCeti.not_countable_quotient_isoSetoid_modelsOfTheory_nat_or_hasPerfectAntichainOn_iff`,
   and `TauCeti.mk_isoClasses_modelsOfTheory_nat_le_aleph0_or_eq_continuum_iff`: reduction to
@@ -172,6 +173,19 @@ section ConjunctionReduction
 variable {L : Language.{u, v}} [L.IsRelational]
 
 /-- Conjoining the `L_{ω₁ω}` conjunction of a countable first-order theory `T` with
+`L.infiniteSentence` identifies `countableModelCount` with the number of countably infinite
+models of `T` on `ℕ` up to isomorphism. No countability hypothesis on the ambient language is
+needed. -/
+theorem countableModelCount_conjunction_inf_infiniteSentence
+    {T : L.Theory} (hT : (BoundedFormula.toOmega '' T).Countable) :
+    countableModelCount
+        (Theoryω.conjunction (BoundedFormula.toOmega '' T) hT ⊓ L.infiniteSentence) =
+      #(Quotient ((isoSetoid L ℕ).comap (Subtype.val : modelsOfTheory T → _))) := by
+  rw [countableModelCount_inf_infiniteSentence]
+  unfold isoSetoidOn
+  rw [modelsOf_conjunction_image_toOmega hT]
+
+/-- Conjoining the `L_{ω₁ω}` conjunction of a countable first-order theory `T` with
 `L.infiniteSentence` turns `HasVaughtDichotomy` into the witnessed dichotomy on `modelsOfTheory T`
 at the tier `ℕ`. No countability hypothesis on the ambient language is needed. -/
 theorem hasVaughtDichotomy_conjunction_inf_infiniteSentence_iff
@@ -193,9 +207,7 @@ theorem hasVaughtCount_conjunction_inf_infiniteSentence_iff
       (Theoryω.conjunction (BoundedFormula.toOmega '' T) hT ⊓ L.infiniteSentence) ↔
         #(Quotient ((isoSetoid L ℕ).comap (Subtype.val : modelsOfTheory T → _))) ≤ ℵ₀ ∨
           #(Quotient ((isoSetoid L ℕ).comap (Subtype.val : modelsOfTheory T → _))) = 𝔠 := by
-  rw [hasVaughtCount_iff, countableModelCount_inf_infiniteSentence]
-  unfold isoSetoidOn
-  rw [modelsOf_conjunction_image_toOmega hT]
+  rw [hasVaughtCount_iff, countableModelCount_conjunction_inf_infiniteSentence]
 
 end ConjunctionReduction
 
@@ -216,10 +228,9 @@ theorem not_countable_quotient_isoSetoid_modelsOfTheory_nat_or_hasPerfectAnticha
     Theoryω.conjunction (BoundedFormula.toOmega '' T) (T.to_countable.image _) ⊓
       L.infiniteSentence)
   rw [hasVaughtDichotomy_conjunction_inf_infiniteSentence_iff,
-    countableModelCount_inf_infiniteSentence,
-    hasPerfectlyManyCountableModels_inf_infiniteSentence_iff] at h
-  unfold isoSetoidOn at h
-  rw [modelsOf_conjunction_image_toOmega] at h
+    countableModelCount_conjunction_inf_infiniteSentence,
+    hasPerfectlyManyCountableModels_inf_infiniteSentence_iff,
+    modelsOf_conjunction_image_toOmega] at h
   exact h
 
 /-- When `ℵ₁ < 𝔠`, the cardinal dichotomy on `ℕ` for a first-order theory `T` is equivalent to the
@@ -332,12 +343,10 @@ theorem firstOrderVaughtConjecture_iff_bfScattered :
         BFScattered (modelsOfTheory (V := ℕ) T) →
         Countable (Quotient ((isoSetoid L ℕ).comap (Subtype.val : modelsOfTheory T → _))) := by
   rw [firstOrderVaughtConjecture_iff]
-  constructor
-  · intro h L _ _ T hT hscat
-    exact (h L T hT).resolve_right (Setoid.isThinOn_iff.1 hscat.isThinOn)
-  · intro h L _ _ T hT
-    refine or_iff_not_imp_right.2 fun hthin => h L T hT ?_
-    exact BFScattered.of_isThinOn (measurableSet_modelsOfTheory T) (Setoid.isThinOn_iff.2 hthin)
+  refine forall_congr' fun L => forall_congr' fun _ => forall_congr' fun _ =>
+    forall_congr' fun T => imp_congr_right fun _ => ?_
+  exact countable_quotient_comap_isoSetoid_or_hasPerfectAntichainOn_iff_bfScattered_imp
+    (measurableSet_modelsOfTheory T)
 
 /-- **The cardinal formulation of the first-order Vaught conjecture** when `ℵ₁ < 𝔠`. Under CH,
 every first-order theory already satisfies the cardinal dichotomy on `ℕ`

@@ -19,8 +19,6 @@ is monotone in `K`.
 
 ## Main results
 
-* `Setoid.mk_quotient_comap_val_eq_mk_image`: the restriction of `s` to `K` has as many classes as
-  the image `Quotient.mk s '' K`.
 * `Setoid.mk_quotient_comap_val_le_of_subset`: a subset meets at most as many classes of `s` as a
   superset.
 -/
@@ -31,18 +29,13 @@ open Cardinal
 
 namespace Setoid
 
-/-- The restriction of a setoid `s` to a set `K` has as many classes as the image of `K` in
-`Quotient s`. -/
-theorem mk_quotient_comap_val_eq_mk_image {α : Type*} (s : Setoid α) (K : Set α) :
-    #(Quotient (s.comap ((↑) : K → α))) = #(Quotient.mk s '' K) :=
-  Cardinal.mk_congr (comapValQuotientEquiv s K)
-
 /-- If `K ⊆ K'`, then the restriction of `s` to `K` has at most as many classes as its restriction
 to `K'`. -/
 theorem mk_quotient_comap_val_le_of_subset {α : Type*} {s : Setoid α} {K K' : Set α}
     (h : K ⊆ K') :
     #(Quotient (s.comap ((↑) : K → α))) ≤ #(Quotient (s.comap ((↑) : K' → α))) := by
-  rw [mk_quotient_comap_val_eq_mk_image, mk_quotient_comap_val_eq_mk_image]
+  rw [Cardinal.mk_congr (comapValQuotientEquiv s K),
+    Cardinal.mk_congr (comapValQuotientEquiv s K')]
   exact Cardinal.mk_le_mk_of_subset (Set.image_mono h)
 
 end Setoid

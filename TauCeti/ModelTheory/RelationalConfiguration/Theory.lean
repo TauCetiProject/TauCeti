@@ -52,7 +52,8 @@ homeomorphism `e.onConfiguration` carries `modelsOfTheory T` onto
 * `FirstOrder.Language.Equiv.mem_modelsOfTheory_iff`,
   `TauCeti.RelationalConfiguration.isomorphismInvariant_modelsOfTheory`, and
   `Equiv.encodeVia_mem_modelsOfTheory_iff`: invariance under isomorphism and carrier bijections.
-* `FirstOrder.Language.LHom.mem_modelsOfTheory_reductConfiguration_iff`,
+* `FirstOrder.Language.LHom.model_reductConfiguration_iff`,
+  `FirstOrder.Language.LHom.mem_modelsOfTheory_reductConfiguration_iff`,
   `FirstOrder.Language.LEquiv.preimage_onConfiguration_modelsOfTheory`,
   `FirstOrder.Language.LEquiv.image_onConfiguration_modelsOfTheory`, and
   `FirstOrder.Language.LEquiv.quotientIsoSetoidModelsOfTheoryEquiv`: transport along language maps
@@ -222,15 +223,24 @@ variable {L : Language.{u, v}} {L' : Language.{u', v'}} [L.IsRelational] [L'.IsR
 
 namespace LHom
 
+/-- The decoded structure of a reduct configuration along `g` models `T` if and only if the
+original decoded structure models `g.onTheory T`. -/
+@[simp]
+theorem model_reductConfiguration_iff (g : L →ᴸ L') (c : RelationalConfiguration L' V)
+    (T : L.Theory) :
+    @Theory.Model L V (g.reductConfiguration c).toStructure T ↔
+      @Theory.Model L' V c.toStructure (g.onTheory T) := by
+  rw [g.toStructure_reductConfiguration]
+  let := c.toStructure
+  let := g.reduct V
+  exact (g.onTheory_model T).symm
+
 /-- A configuration models the translated theory `g.onTheory T` if and only if its reduct
 configuration along `g` models `T`. -/
 theorem mem_modelsOfTheory_reductConfiguration_iff (g : L →ᴸ L') (c : RelationalConfiguration L' V)
     (T : L.Theory) :
-    c ∈ modelsOfTheory (g.onTheory T) ↔ g.reductConfiguration c ∈ modelsOfTheory T := by
-  rw [mem_modelsOfTheory, mem_modelsOfTheory, g.toStructure_reductConfiguration]
-  let := c.toStructure
-  let := g.reduct V
-  exact g.onTheory_model T
+    c ∈ modelsOfTheory (g.onTheory T) ↔ g.reductConfiguration c ∈ modelsOfTheory T :=
+  (g.model_reductConfiguration_iff c T).symm
 
 /-- Pulling back `modelsOfTheory T` along `g.reductConfiguration` yields
 `modelsOfTheory (g.onTheory T)`. -/
