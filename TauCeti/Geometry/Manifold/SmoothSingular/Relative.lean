@@ -106,6 +106,20 @@ theorem singularPairInIso_hom_right : (singularPairInIso X W).hom.right = 𝟙 _
   rw [singularPairInIso]
   rfl
 
+/-- On the subspaces, the inverse of `singularPairInIso` is the inverse of
+`TopCat.singularSubspaceIso`. -/
+@[simp]
+theorem singularPairInIso_inv_left :
+    (singularPairInIso X W).inv.left = (TopCat.singularSubspaceIso (X := TopCat.of X) W).inv := by
+  rw [singularPairInIso]
+  rfl
+
+/-- On the ambient simplicial sets, the inverse of `singularPairInIso` is the identity. -/
+@[simp]
+theorem singularPairInIso_inv_right : (singularPairInIso X W).inv.right = 𝟙 _ := by
+  rw [singularPairInIso]
+  rfl
+
 end Defs
 
 section SmoothDefs
@@ -187,6 +201,27 @@ theorem singularPairInMap_comp {Z : Type u} [TopologicalSpace Z] {W'' : Set Z} (
       (fun _ ↦ hφ) (fun _ ↦ hψ)
   · exact TopCat.toSSet.map_comp _ _
 
+/-- `singularPairInIso` is natural in maps of pairs: it carries the map of singular pairs of
+topological pairs induced by `φ` to `singularPairInMap φ hφ`. -/
+@[reassoc]
+theorem singularPairInIso_hom_naturality (φ : C(X, Y)) (hφ : Set.MapsTo φ W W') :
+    TopPair.toSSetPair.map (TopPair.ofSubsetMap (TopCat.ofHom φ) hφ) ≫
+        (singularPairInIso Y W').hom =
+      (singularPairInIso X W).hom ≫ singularPairInMap φ hφ := by
+  have hright : (TopPair.toSSetPair.map (TopPair.ofSubsetMap (TopCat.ofHom φ) hφ) ≫
+        (singularPairInIso Y W').hom).right =
+      ((singularPairInIso X W).hom ≫ singularPairInMap φ hφ).right := by
+    simp only [MorphismProperty.Comma.comp_hom, Comma.comp_right, TopPair.toSSetPair_map_right,
+      singularPairInIso_hom_right, singularPairInMap_right, TopPair.ofSubsetMap_fst]
+    -- The identities live on the pair components `(singularPairIn _ _).right`, which `simp` does
+    -- not identify with the objects of the composites, so `comp_id`/`id_comp` are applied by term.
+    exact (Category.comp_id _).trans (Category.id_comp _).symm
+  -- A map of pairs is determined by its ambient component, since the structure map of the target
+  -- pair is a monomorphism.
+  refine MorphismProperty.Arrow.Hom.ext ((cancel_mono (singularPairIn Y W').hom).1 ?_) hright
+  have hw {P Q : SSetPair.{u}} (f : P ⟶ Q) : f.left ≫ Q.hom = P.hom ≫ f.right := f.w
+  rw [hw, hw, hright]
+
 variable (W W') in
 /-- A smooth map carries smooth simplices with image in `W` to smooth simplices with image in `W'`
 when it carries `W` into `W'`. -/
@@ -209,19 +244,17 @@ def smoothPairInMap {φ : X → Y} (hφ : ContMDiff I J ∞ φ) (hW : Set.MapsTo
   SSetPair.homMk
     (SSet.Subcomplex.lift
       (SSet.Subcomplex.ι _ ≫ TopCat.toSSet.map (TopCat.ofHom ⟨φ, hφ.continuous⟩)) (by
-        rintro n _ ⟨σ, rfl⟩
-        exact smoothSingularSubcomplex_inf_smallSingularSubcomplex_le_preimage W W' hφ hW n
-          σ.property))
+        rw [← SSet.Subcomplex.image_eq_range, SSet.Subcomplex.image_le_iff]
+        exact smoothSingularSubcomplex_inf_smallSingularSubcomplex_le_preimage W W' hφ hW))
     (smoothSingularSubcomplexMap φ hφ)
     ((cancel_mono (smoothSingularSubcomplex J Y).ι).1 (by
-      -- The codomain of `(smoothPairIn J Y W').hom` is `(smoothPairIn J Y W').right`, which is the
-      -- smooth singular subcomplex only after unfolding `SSetPair.of`, so `rw` cannot match the
-      -- composites. Both sides are `(S ⊓ T).ι ≫ toSSet.map φ`: the right side by
-      -- `smoothSingularSubcomplexMap_ι` and `homOfLE_ι`, the left side by `homOfLE_ι` and
-      -- `lift_ι`.
-      erw [Category.assoc, Category.assoc, smoothSingularSubcomplexMap_ι,
-        SSet.Subcomplex.homOfLE_ι_assoc inf_le_left, SSet.Subcomplex.homOfLE_ι inf_le_left,
-        SSet.Subcomplex.lift_ι]))
+      -- `SSetPair.of` is built with the semireducible `MorphismProperty.Arrow.mk`, so the
+      -- objects of these composites are the pair components rather than the subcomplexes, and
+      -- `simp` cannot match the subcomplex lemmas. `change` restates the goal with the
+      -- subcomplexes as objects.
+      change (_ ≫ SSet.Subcomplex.homOfLE inf_le_left) ≫ _ =
+        (SSet.Subcomplex.homOfLE inf_le_left ≫ _) ≫ _
+      simp [smoothSingularSubcomplexMap_ι]))
 
 /-- On the subspaces, `smoothPairInMap` is the restriction of the map of singular simplicial
 sets. -/
@@ -267,16 +300,14 @@ theorem smoothPairInMap_comp_smoothPairToSingular {φ : X → Y} (hφ : ContMDif
     (hW : Set.MapsTo φ W W') :
     smoothPairInMap hφ hW ≫ smoothPairToSingular J Y W' =
       smoothPairToSingular I X W ≫ singularPairInMap ⟨φ, hφ.continuous⟩ hW := by
-  refine MorphismProperty.Arrow.Hom.ext ?_ ?_
-  · refine (cancel_mono ((TopCat.of Y).smallSingularSubcomplex fun _ : Unit ↦ W').ι).1 ?_
-    -- As in `smoothPairInMap`, the pair components agree with the subcomplexes only after
-    -- unfolding `SSet.Subcomplex.pair`, so `rw` cannot match the composites. Both sides are
-    -- `(S ⊓ T).ι ≫ toSSet.map φ`: the right side by `smallSingularSubcomplexMap_ι` and
-    -- `homOfLE_ι`, the left side by `homOfLE_ι` and `smoothPairInMap_left_ι`.
-    erw [Category.assoc, Category.assoc, TopCat.smallSingularSubcomplexMap_ι,
-      SSet.Subcomplex.homOfLE_ι_assoc inf_le_right, SSet.Subcomplex.homOfLE_ι inf_le_right,
-      smoothPairInMap_left_ι]
-  · exact smoothSingularSubcomplexMap_ι hφ
+  have hright : (smoothPairInMap hφ hW ≫ smoothPairToSingular J Y W').right =
+      (smoothPairToSingular I X W ≫ singularPairInMap ⟨φ, hφ.continuous⟩ hW).right :=
+    smoothSingularSubcomplexMap_ι hφ
+  -- A map of pairs is determined by its ambient component, since the structure map of the target
+  -- pair is a monomorphism.
+  refine MorphismProperty.Arrow.Hom.ext ((cancel_mono (singularPairIn Y W').hom).1 ?_) hright
+  have hw {P Q : SSetPair.{u}} (f : P ⟶ Q) : f.left ≫ Q.hom = P.hom ≫ f.right := f.w
+  rw [hw, hw, hright]
 
 end Naturality
 

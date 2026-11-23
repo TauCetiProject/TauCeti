@@ -199,6 +199,14 @@ lemma singularSubspaceIso_hom (S : Set X) :
       toSmallSingularSubcomplex (fun _ : Unit ↦ S) (i := ()) subset_rfl := by
   simp only [singularSubspaceIso, asIso_hom]
 
+/-- The inverse of `singularSubspaceIso`, followed by the subspace inclusion, is the inclusion of
+the subcomplex of singular simplices with image in `S`. -/
+@[reassoc (attr := simp)]
+lemma singularSubspaceIso_inv_comp_toSSet_map_subtypeVal (S : Set X) :
+    (singularSubspaceIso S).inv ≫ toSSet.map (ofHom (ContinuousMap.subtypeVal S)) =
+      (X.smallSingularSubcomplex fun _ : Unit ↦ S).ι := by
+  rw [Iso.inv_comp_eq, singularSubspaceIso_hom, toSmallSingularSubcomplex_ι]
+
 variable {μ : Type*} {Z : TopCat.{w}} (W : μ → Set Z)
 
 /-- Restriction of covered maps to small singular subcomplexes respects composition. -/
