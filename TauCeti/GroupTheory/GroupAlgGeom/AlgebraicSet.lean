@@ -13,6 +13,7 @@ public import Mathlib.GroupTheory.QuotientGroup.Defs
 public import Mathlib.Data.ZMod.Defs
 public import TauCeti.GroupTheory.GroupAlgGeom.Basic
 import Mathlib.Data.ZMod.Basic
+import Mathlib.Algebra.Group.TypeTags.Finite
 import TauCeti.GroupTheory.FreeGroup.Centralizer
 import Mathlib.GroupTheory.FreeGroup.CyclicallyReduced
 import Mathlib.Order.Concept
@@ -619,6 +620,14 @@ theorem quotientCoeff_def : quotientCoeff N = (QuotientGroup.mk' N).comp inl := 
 @[simp]
 theorem quotientCoeff_apply (g : G) : quotientCoeff N g = ((inl g : GX G X) : GX G X ⧸ N) := (rfl)
 
+variable {N} in
+/-- A `G`-homomorphism out of `G[X] ⧸ N` sends the class of a coefficient to its image. It is the
+simp-normal form of `GHom.map_coeff` once `quotientCoeff_apply` has rewritten the coefficient. -/
+@[simp]
+theorem map_mk_inl {K : Type*} [Group K] {κ : G →* K} (φ : GHom (quotientCoeff N) κ) (g : G) :
+    φ ((inl g : GX G X) : GX G X ⧸ N) = κ g :=
+  φ.map_coeff g
+
 variable {N}
 
 /-- A `G`-homomorphism `G[X] ⧸ N → H`, composed with the quotient map, restricts to `ι` on the
@@ -733,6 +742,13 @@ theorem coeff_def (S : Set (GX G X)) : coeff ι S = GX.quotientCoeff (Rad ι S) 
 @[simp]
 theorem coeff_apply (S : Set (GX G X)) (g : G) :
     coeff ι S g = ((inl g : GX G X) : CoordGroup ι S) := (rfl)
+
+/-- A `G`-homomorphism out of the coordinate group sends the class of a coefficient to its image. It
+is the simp-normal form of `GHom.map_coeff` once `coeff_apply` has rewritten the coefficient. -/
+@[simp]
+theorem map_mk_inl {K : Type*} [Group K] {κ : G →* K} {S : Set (GX G X)} (φ : GHom (coeff ι S) κ)
+    (g : G) : φ ((inl g : GX G X) : CoordGroup ι S) = κ g :=
+  φ.map_coeff g
 
 variable (v) in
 /-- Evaluation at a solution `v` of `S` in `H`, as a `G`-homomorphism `G_{R(S)} → H`. -/
@@ -1021,6 +1037,13 @@ theorem coeff_def (S : Set (GX G X)) : coeff S = GX.quotientCoeff (normalClosure
 theorem coeff_apply (S : Set (GX G X)) (g : G) :
     coeff S g = ((inl g : GX G X) : SystemGroup G S) := (rfl)
 
+/-- A `G`-homomorphism out of `G_S` sends the class of a coefficient to its image. It is the
+simp-normal form of `GHom.map_coeff` once `coeff_apply` has rewritten the coefficient. -/
+@[simp]
+theorem map_mk_inl {K : Type*} [Group K] {κ : G →* K} {S : Set (GX G X)} (φ : GHom (coeff S) κ)
+    (g : G) : φ ((inl g : GX G X) : SystemGroup G S) = κ g :=
+  φ.map_coeff g
+
 variable (ι) in
 /-- The canonical surjection `G_S →* G_{R(S)}`, a `G`-homomorphism. -/
 def toCoordGroup (S : Set (GX G X)) : GHom (coeff S) (CoordGroup.coeff ι S) where
@@ -1207,12 +1230,18 @@ theorem Rad_pow_eq_normalClosure (hι : Function.Injective ι) {n : ℕ}
   rw [Rad_def, hV, I_singleton_comp hι]
   simp [Set.range_unique]
 
+/-- In a group `H` with unique roots, the equation `u ^ n * w ^ n = 1` (`n ≠ 0`) in two words `u`
+and `w` has the same solutions as `u * w = 1`: the only `n`-th root of `(w ^ n)⁻¹` is `w⁻¹`. -/
+theorem V_pow_mul_pow [HasUniqueRoots H] {n : ℕ} (hn : n ≠ 0) (u w : GX G X) :
+    V ι {u ^ n * w ^ n} = V ι {u * w} := by
+  ext v
+  simp [mul_eq_one_iff_eq_inv, ← inv_pow, pow_left_inj hn]
+
 /-- In a group `H` with unique roots, the equation `x ^ n * b ^ n = 1` (`n ≠ 0`) has the same
 solutions as `x * b = 1`: the only `n`-th root of `(b ^ n)⁻¹` is `b⁻¹`. -/
 theorem V_pow_mul_inl_pow [HasUniqueRoots H] {n : ℕ} (hn : n ≠ 0) (x : X) (b : G) :
     V ι {(inr (of x) : GX G X) ^ n * inl (b ^ n)} = V ι {inr (of x) * inl b} := by
-  ext v
-  simp [mul_eq_one_iff_eq_inv, ← inv_pow, pow_left_inj hn]
+  rw [map_pow, V_pow_mul_pow hn]
 
 /-- In a group `H` with unique roots, the equations `x ^ n * b ^ n = 1` (`n ≠ 0`) and `x * b = 1`
 have the same radical. -/
@@ -1353,7 +1382,7 @@ generator `a` are the points whose `x`-coordinate is a power of `a`. -/
 theorem V_singleton_commutatorElement_of {α : Type*} (x : X) (a : α) :
     V (.id (FreeGroup α)) {⁅(inr (of x) : GX (FreeGroup α) X), inl (of a)⁆} =
       {v | v x ∈ zpowers (of a)} := by
-  rw [V_singleton_commutatorElement, MonoidHom.id_apply, centralizer_singleton_of]
+  rw [V_singleton_commutatorElement, MonoidHom.id_apply, centralizer_of]
 
 namespace CoordGroup
 
@@ -1386,7 +1415,7 @@ def gHomEquivZPowers {α : Type*} (a : α) : GHom (coeff (.id (FreeGroup α))
     {⁅(inr (of ()) : GX (FreeGroup α) Unit), (inl (of a) : GX (FreeGroup α) Unit)⁆})
     (.id (FreeGroup α)) ≃ zpowers (of a) :=
   (gHomEquivCentralizer (.id _) (of a)).trans <| Equiv.subtypeEquivRight fun h => by
-    rw [MonoidHom.id_apply, centralizer_singleton_of]
+    rw [MonoidHom.id_apply, centralizer_of]
 
 @[simp]
 theorem gHomEquivZPowers_apply_coe {α : Type*} (a : α) (φ : GHom (coeff (.id (FreeGroup α))

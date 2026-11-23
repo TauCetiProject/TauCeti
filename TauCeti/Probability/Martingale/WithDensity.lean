@@ -86,18 +86,29 @@ theorem StronglyAdapted.martingale_withDensity_iff_of_ae_eq_condExp
   exact ⟨fun h ↦ h.congr (fun t ↦ (hZ t).smul (hX t)) (fun t ↦ (heq t).symm),
     fun h ↦ h.congr (fun t ↦ stronglyMeasurable_condExp.smul (hX t)) heq⟩
 
-omit [SigmaFiniteFiltration μ ℱ] in
-/-- The reciprocal conditional density is a martingale under the equivalent changed
-measure. It is the conditional expectation of the reciprocal terminal density, not an
-inverse taken inside the original-measure conditional expectation. -/
-theorem martingale_inv_condExp_toReal_withDensity [IsFiniteMeasure μ] (hw : AEMeasurable w μ)
-    [IsFiniteMeasure (μ.withDensity w)] (hpos : ∀ᵐ x ∂μ, w x ≠ 0) :
+/-- The reciprocal conditional density is a martingale under a finite density change with
+almost everywhere nonzero density. For an almost everywhere measurable density it is the
+changed-measure conditional expectation of the reciprocal terminal density. If the real density
+is not integrable under the original measure, the process is identically zero. -/
+theorem Filtration.martingale_inv_condExp_toReal_withDensity (ℱ : Filtration ι mΩ)
+    [IsFiniteMeasure μ] [IsFiniteMeasure (μ.withDensity w)] (hpos : ∀ᵐ x ∂μ, w x ≠ 0) :
     Martingale (fun t x ↦ (μ[fun y ↦ (w y).toReal | ℱ t] x)⁻¹) ℱ
       (μ.withDensity w) := by
+  by_cases hint : Integrable (fun x ↦ (w x).toReal) μ
+  swap
+  · simp only [condExp_of_not_integrable hint, Pi.zero_apply, inv_zero]
+    exact martingale_zero ℝ ℱ (μ.withDensity w)
+  -- On nonzero values, `toReal` loses only `∞`, which is recovered from the value zero.
+  have hrestore : Measurable (fun r : ℝ ↦ if r ∈ ({0} : Set ℝ) then ∞ else ENNReal.ofReal r) :=
+    measurable_const.ite (measurableSet_singleton 0) ENNReal.measurable_ofReal
+  have hmeas := hrestore.comp_aemeasurable hint.aemeasurable
+  have hw : AEMeasurable w μ := hmeas.congr <| hpos.mono fun x hx ↦ by
+    by_cases ht : w x = ∞
+    · simp [ht]
+    · simp [ENNReal.toReal_ne_zero.mpr ⟨hx, ht⟩, ENNReal.ofReal_toReal ht]
   apply (martingale_condExp (fun x ↦ ((w x).toReal)⁻¹) ℱ (μ.withDensity w)).congr
     (fun t ↦ (stronglyMeasurable_condExp (μ := μ)
       (f := fun y ↦ (w y).toReal) (m := ℱ t)).inv₀)
-  intro t
-  exact condExp_inv_toReal_withDensity hw hpos
+  exact fun t ↦ hw.condExp_inv_toReal_withDensity hpos
 
 end MeasureTheory

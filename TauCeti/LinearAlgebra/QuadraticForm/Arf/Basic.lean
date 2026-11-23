@@ -71,6 +71,10 @@ criteria across submodules of `Q.radical` and `Q.polarBilin.ker`.
 * `QuadraticMap.IsometryEquiv.arf_eq`, `QuadraticMap.Equivalent.arf_eq`, `QuadraticMap.arf_prod`,
   `QuadraticMap.arf_pi`, `QuadraticMap.arf_of_isCompl_orthogonal`: isometry invariance and
   orthogonal-sum additivity of `Q.arf`.
+* `QuadraticMap.arf_eq_mul_of_polar_eq_one`, `QuadraticMap.arf_linMulLin_fst_snd`,
+  `QuadraticMap.arf_sq_comp_fst_add_linMulLin_fst_snd_add_sq_comp_snd`: the Arf invariant of a
+  binary form on `ZMod 2 × ZMod 2`, and of the hyperbolic plane `x * y` and the anisotropic plane
+  `x ^ 2 + x * y + y ^ 2`.
 * `QuadraticMap.two_mul_card_subtype_apply_eq_zero_of_finrank_eq`,
   `QuadraticMap.card_subtype_apply_eq_zero_of_pos_of_finrank_eq`,
   `QuadraticMap.arf_eq_zero_iff_card_subtype_apply_eq_one_lt_card_subtype_apply_eq_zero`: zero-locus
@@ -456,6 +460,46 @@ theorem arf_binaryQuadraticForm (a b : ZMod 2) :
     (nondegenerate_polarBilin_binaryQuadraticForm a b) (m := 1) (by simp) (by simp)
 
 end TauCeti
+
+/-! ### Binary forms on `ZMod 2 × ZMod 2` -/
+
+namespace QuadraticMap
+
+/-- **The Arf invariant of a binary form.** A quadratic form on `ZMod 2 × ZMod 2` whose polar form
+pairs the standard basis vectors to `1` has Arf invariant `Q (1, 0) * Q (0, 1)`. -/
+theorem arf_eq_mul_of_polar_eq_one {Q : QuadraticForm (ZMod 2) (ZMod 2 × ZMod 2)}
+    (hQ : polar Q (1, 0) (0, 1) = 1) : Q.arf = Q (1, 0) * Q (0, 1) := by
+  let b := (Module.Basis.singleton (Fin 1) (ZMod 2)).prod
+    (Module.Basis.singleton (Fin 1) (ZMod 2))
+  have hb₁ : b (.inl 0) = (1, 0) := by simp [b]
+  have hb₂ : b (.inr 0) = (0, 1) := by simp [b]
+  have hb : LinearMap.BilinForm.toMatrix b Q.polarBilin = Matrix.J (Fin 1) (ZMod 2) := by
+    ext x y
+    rw [LinearMap.BilinForm.toMatrix_apply]
+    rcases x with x | x <;> rcases y with y | y <;> obtain rfl := Subsingleton.elim x 0 <;>
+      obtain rfl := Subsingleton.elim y 0 <;>
+      simp [hb₁, hb₂, polar_self, polar_comm Q (0, 1), hQ, Matrix.J,
+        (by decide : (2 : ZMod 2) = 0)]
+  rw [Q.arf_eq_sum_of_toMatrix_polarBilin_eq_J hb, Fin.sum_univ_one, hb₁, hb₂]
+
+/-- The **hyperbolic plane** `Q (x, y) = x * y` over `ZMod 2` has Arf invariant `0`. -/
+@[simp]
+theorem arf_linMulLin_fst_snd :
+    (linMulLin (LinearMap.fst (ZMod 2) (ZMod 2) (ZMod 2))
+      (LinearMap.snd (ZMod 2) (ZMod 2) (ZMod 2))).arf = 0 := by
+  rw [arf_eq_mul_of_polar_eq_one] <;> simp [polar]
+
+/-- The **anisotropic plane** `Q (x, y) = x ^ 2 + x * y + y ^ 2` over `ZMod 2` has Arf
+invariant `1`. -/
+@[simp]
+theorem arf_sq_comp_fst_add_linMulLin_fst_snd_add_sq_comp_snd :
+    (sq.comp (LinearMap.fst (ZMod 2) (ZMod 2) (ZMod 2)) +
+      linMulLin (LinearMap.fst (ZMod 2) (ZMod 2) (ZMod 2))
+        (LinearMap.snd (ZMod 2) (ZMod 2) (ZMod 2)) +
+      sq.comp (LinearMap.snd (ZMod 2) (ZMod 2) (ZMod 2))).arf = 1 := by
+  rw [arf_eq_mul_of_polar_eq_one] <;> simp [polar]
+
+end QuadraticMap
 
 /-! ### Zero-locus counts, majority vote, and radical/polar-kernel descent of the Gauss sum -/
 

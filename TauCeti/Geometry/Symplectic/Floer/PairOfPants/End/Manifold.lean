@@ -8,6 +8,7 @@ module
 public import TauCeti.Geometry.Symplectic.Floer.HalfCylinder.Manifold
 public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.End.Pullback
 import TauCeti.Geometry.Symplectic.Floer.PairOfPants.Energy.Asymptotic
+import TauCeti.Geometry.Symplectic.Floer.Tameness
 import TauCeti.Geometry.Symplectic.Hamiltonian.PeriodicOrbit
 
 /-!
@@ -602,10 +603,8 @@ theorem
   have he_nonneg (z : ℝ × ℝ) (hz : z ∈ thricePuncturedSphereReal) :
       0 ≤ ω.floerEnergyDensity (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x 1)
         (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x Complex.I) u z := by
-    refine floerEnergyDensity_nonneg hω (fun v hv ↦ ?_) (hfloer z hz)
-    have hdv : mvfderiv I e (u z) v ≠ 0 := fun h0 ↦
-      hv (hde _ (huB z hz) (h0.trans (map_zero _).symm))
-    exact (mul_pos hc (pow_pos (norm_pos_iff.2 hdv) 2)).trans_le (hJc z hz v)
+    exact floerEnergyDensity_nonneg hω (hω.tames_of_mul_norm_sq_le (hde _ (huB z hz)) hc (hJc z hz))
+      (hfloer z hz)
   have hS : volume.restrict thricePuncturedSphereReal = volume :=
     Measure.restrict_eq_self_of_ae_mem ae_mem_thricePuncturedSphereReal
   have hA' : Integrable fun z ↦ (SmoothBundleForm.eval₂ ω (u z)

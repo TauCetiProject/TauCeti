@@ -7,6 +7,7 @@ module
 
 public import Mathlib.MeasureTheory.Function.ConditionalExpectation.PullOut
 public import Mathlib.MeasureTheory.Integral.Bochner.ContinuousLinearMap
+import TauCeti.MeasureTheory.Function.ConditionalExpectation.Order
 import TauCeti.MeasureTheory.Function.L1Space.Integrable
 
 /-!
@@ -23,7 +24,7 @@ under `Q`, not under `μ`. These identities allow conditional prices and marting
 identities to be transported across a change of measure. We use native conditional
 expectation, its integral characterization and its unbounded-multiplier pull-out rule.
 For equivalent finite measures, the conditional mean of the reciprocal terminal density
-is the reciprocal conditional density (`condExp_inv_toReal_withDensity`).
+is the reciprocal conditional density (`AEMeasurable.condExp_inv_toReal_withDensity`).
 
 ## References
 
@@ -85,25 +86,10 @@ theorem condExp_toReal_pos_withDensity (hm : m ≤ mΩ) [SigmaFinite (μ.trim hm
     (inferInstance : IsFiniteMeasure (μ.withDensity w))
   have htop := ae_lt_top' hw hmass
   have hwint := integrable_toReal_of_lintegral_ne_top hw hmass
-  let s := {x | μ[fun y ↦ (w y).toReal | m] x = 0}
-  have hs : MeasurableSet[m] s := stronglyMeasurable_condExp.measurable (measurableSet_singleton 0)
-  have hint : ∫ x in s, (w x).toReal ∂μ = 0 := by
-    rw [← setIntegral_condExp hm hwint hs]
-    exact setIntegral_eq_zero_of_forall_eq_zero fun x hx ↦ hx
-  have hzero : (fun x ↦ (w x).toReal) =ᵐ[μ.restrict s] 0 :=
-    (integral_eq_zero_iff_of_nonneg (fun x ↦ ENNReal.toReal_nonneg) hwint.integrableOn).mp hint
-  have hqs : μ.withDensity w s = 0 := by
-    rw [withDensity_apply _ (hm s hs)]
-    apply lintegral_eq_zero_of_ae_eq_zero
-    filter_upwards [hzero, ae_restrict_of_ae htop] with x hx hxt
-    exact ((ENNReal.toReal_eq_zero_iff _).mp hx).resolve_right hxt.ne
-  have hne : ∀ᵐ x ∂μ.withDensity w, μ[fun y ↦ (w y).toReal | m] x ≠ 0 := by
-    simpa only [ae_iff, not_not] using hqs
-  have hnonneg := (withDensity_absolutelyContinuous μ w).ae_le
-    (condExp_nonneg (m := m) (μ := μ) (f := fun x ↦ (w x).toReal)
-      (Filter.Eventually.of_forall fun _ ↦ ENNReal.toReal_nonneg))
-  filter_upwards [hne, hnonneg] with x hx hnx
-  exact lt_of_le_of_ne hnx hx.symm
+  apply (ae_withDensity_iff' hw).mpr
+  filter_upwards [htop, hwint.ae_pos_imp_condExp_pos hm
+    (Filter.Eventually.of_forall fun _ ↦ ENNReal.toReal_nonneg)] with x hxt hpos hx
+  exact hpos (ENNReal.toReal_pos hx hxt.ne)
 
 /-- **Bayes' formula** for a Banach-valued integrable observable. Division is expressed
 as scalar multiplication by the inverse conditional density. Equality is under the
@@ -173,7 +159,7 @@ theorem AEStronglyMeasurable.setIntegral_condExp_toReal_smul
 /-- For an equivalent finite density change, the conditional expectation of the reciprocal
 terminal density is the reciprocal conditional density. This is the reverse density process;
 the reciprocal need not be integrable under the original measure. -/
-theorem condExp_inv_toReal_withDensity [IsFiniteMeasure μ]
+theorem _root_.AEMeasurable.condExp_inv_toReal_withDensity [IsFiniteMeasure μ]
     (hw : AEMeasurable w μ) [IsFiniteMeasure (μ.withDensity w)]
     (hpos : ∀ᵐ x ∂μ, w x ≠ 0) :
     (μ.withDensity w)[fun x ↦ ((w x).toReal)⁻¹ | m] =ᵐ[μ.withDensity w]
@@ -189,7 +175,7 @@ theorem condExp_inv_toReal_withDensity [IsFiniteMeasure μ]
     exact mul_inv_cancel₀ (ENNReal.toReal_ne_zero.mpr ⟨hx, hxt.ne⟩)
   have hce : μ[fun x ↦ (w x).toReal * ((w x).toReal)⁻¹ | m] =ᵐ[μ] (fun _ ↦ (1 : ℝ)) := by
     simpa only [condExp_const hm] using condExp_congr_ae (m := m) hcancel
-  filter_upwards [condExp_withDensity_eq_div hm hw (integrable_inv_toReal_withDensity hw),
+  filter_upwards [condExp_withDensity_eq_div hm hw hw.integrable_inv_toReal_withDensity,
     (withDensity_absolutelyContinuous μ w).ae_le hce] with x hx hcx
   simpa only [hcx, one_div] using hx
 

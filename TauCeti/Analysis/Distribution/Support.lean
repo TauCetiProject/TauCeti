@@ -9,6 +9,7 @@ public import Mathlib.Analysis.Distribution.Support
 public import TauCeti.Analysis.Distribution.TestFunction.ExtDeriv
 public import TauCeti.Analysis.Distribution.TestFunction.PartitionOfUnity
 public import TauCeti.Analysis.Distribution.TestFunction.SmulLeft
+import Mathlib.Analysis.Distribution.AEEqOfIntegralContDiff
 import TauCeti.Analysis.Calculus.DifferentialForm.Const
 
 /-!
@@ -40,9 +41,13 @@ near the support.
 
 * `Distribution.dsupport_zero`, `Distribution.dsupport_neg`, `Distribution.dsupport_smul_subset`,
   `Distribution.dsupport_smul_of_ne_zero`: support under zero, negation, and scalar multiplication.
+* `Distribution.isVanishingOn_of_forall_inter`: an additive map on test functions vanishes on an
+  open set if it vanishes on its intersections with an open cover of `Ω`.
 * `Distribution.isVanishingOn_compl_dsupport`: an additive map on test functions vanishes on the
   complement of its support; `Distribution.isVanishingOn_iff_disjoint_dsupport` is the resulting
   characterization of the open sets on which it vanishes.
+* `Distribution.dsupport_comp_subset_of_disjoint`: the support of `T ∘ P` lies in a closed set `S`
+  when `P` takes tests supported off `S` to tests supported off the support of `T`.
 * `Distribution.map_eq_map_of_eventuallyEq`: tests that agree near the support have equal values;
   by `Distribution.map_eq_map_of_forall_eventuallyEq` it suffices that they agree near each point
   of the support in `Ω`.
@@ -56,6 +61,8 @@ near the support.
   `Distribution.isCompact_dsupport_comp_evalCLM_comp_toBoundedContinuousFunctionCLM`: support under
   smooth multiples and cutoffs, open/regularity restriction, existence of a test cutoff equal to
   one near the support, and compactness of point-evaluation support.
+* `Distribution.exists_cutoff_abs_le_one`: a cutoff equal to one near the support of `T` can be
+  replaced by one with `|ψ| ≤ 1` and the same germ along the support of `T`.
 * `Distribution.augmentation`: the pairing `T (χ • c)` with a cutoff `χ` equal to one near the
   support; `Distribution.augmentation_eq` is its independence of the cutoff.
 * `Distribution.augmentation_eq_zero_of_not_finiteDimensional`: on an infinite-dimensional `E`
@@ -65,6 +72,10 @@ near the support.
   `Distribution.not_exists_comp_extDerivCLM_eq_comp_evalCLM`: the augmentation of a boundary is
   zero, obstructing compactly supported fillings of currents with nonzero augmentation (in
   particular, for finite-dimensional `E`, nonzero point currents).
+* `Distribution.dsupport_ofFun_subset_tsupport`: the distribution of a function is supported in
+  the closed support of the function, and `Distribution.ae_eq_zero_of_notMem_dsupport_ofFun`: for
+  finite-dimensional `E`, a locally integrable function vanishes almost everywhere on the part of
+  `Ω` outside the support of its distribution.
 * `Distribution.subset_dsupport_ofFun_const`: for finite-dimensional `E`, a nonzero constant
   function is supported on all of `Ω`.
 
@@ -172,6 +183,14 @@ theorem isVanishingOn_sUnion {S : Set (Set E)} (hS : ∀ s ∈ S, IsOpen s ∧ I
   rw [sUnion_eq_iUnion]
   exact isVanishingOn_iUnion T (fun s ↦ (hS s s.property).1) fun s ↦ (hS s s.property).2
 
+/-- **Localization principle, cover form.** An additive map on test functions vanishes on an open
+set `W` if it vanishes on `U x ∩ W` for open sets `U x` containing the points `x` of `Ω`. -/
+theorem isVanishingOn_of_forall_inter {U : Ω → Set E} (hU : ∀ x, IsOpen (U x))
+    (hxU : ∀ x, (x : E) ∈ U x) {W : Set E} (hW : IsOpen W) (hT : ∀ x, IsVanishingOn T (U x ∩ W)) :
+    IsVanishingOn T W := fun φ hφ ↦
+  isVanishingOn_iUnion T (fun x ↦ (hU x).inter hW) hT φ fun y hy ↦
+    mem_iUnion.2 ⟨⟨y, φ.tsupport_subset hy⟩, hxU _, hφ hy⟩
+
 /-- An additive map on test functions vanishes on the complement of its support. -/
 theorem isVanishingOn_compl_dsupport : IsVanishingOn T (dsupport T)ᶜ := by
   rw [dsupport_compl_eq]
@@ -189,6 +208,20 @@ support. -/
 theorem map_eq_zero_of_disjoint_dsupport {φ : 𝓓^{n}(Ω, F)}
     (h : Disjoint (tsupport φ) (dsupport T)) : T φ = 0 :=
   isVanishingOn_compl_dsupport T φ h.subset_compl_right
+
+/-- **The support of a composition**: if `P` takes every test function on `Ω'` supported off a
+closed set `S` to a test function supported off the support of `T`, then the support of `T ∘ P`
+lies in `S`. -/
+theorem dsupport_comp_subset_of_disjoint {E' G : Type*} [NormedAddCommGroup E'] [NormedSpace ℝ E']
+    [NormedAddCommGroup G] [NormedSpace ℝ G] {Ω' : Opens E'} {m : ℕ∞}
+    {P : 𝓓^{m}(Ω', G) → 𝓓^{n}(Ω, F)} {S : Set E'} (hS : IsClosed S)
+    (hP : ∀ φ : 𝓓^{m}(Ω', G), Disjoint (tsupport φ) S →
+      Disjoint (tsupport (P φ)) (dsupport T)) :
+    dsupport (T ∘ P) ⊆ S := by
+  have hvan : IsVanishingOn (T ∘ P) Sᶜ := fun φ hφ ↦
+    map_eq_zero_of_disjoint_dsupport T (hP φ (subset_compl_iff_disjoint_right.1 hφ))
+  have h := (hvan.disjoint_dsupport hS.isOpen_compl).subset_compl_left
+  rwa [compl_compl] at h
 
 /-- An additive map on test functions vanishes exactly when its support is empty. -/
 theorem dsupport_eq_empty_iff : dsupport T = ∅ ↔ ⇑T = 0 :=
@@ -300,6 +333,29 @@ theorem dsupport_comp_subset {W : Type*} [Zero W] (f : 𝓓^{n}(Ω, F) → V) {g
   sInter_subset_sInter fun _ hs ↦ ⟨fun φ hφ ↦ by simp [hs.1 φ hφ, hg], hs.2⟩
 
 end SmoothMultiple
+
+section Cutoff
+
+variable [FiniteDimensional ℝ E] [Zero V]
+
+/-- A cutoff equal to one near the support of `T` can be replaced by one `ψ` with `|ψ| ≤ 1`, equal
+to one near the support of `T` and supported in the support of the original cutoff. The two
+cutoffs have the same germ along the support of `T`. -/
+theorem exists_cutoff_abs_le_one {β : Type*} [Zero β] [FunLike 𝓕 E β] {T : 𝓕 → V}
+    {χ : 𝓓^{n}(Ω, ℝ)} (hχ : ∀ᶠ x in 𝓝ˢ (dsupport T), χ x = 1) :
+    ∃ ψ : 𝓓^{n}(Ω, ℝ), (∀ᶠ x in 𝓝ˢ (dsupport T), ψ x = 1) ∧ (∀ x, |ψ x| ≤ 1) ∧
+      tsupport ψ ⊆ tsupport χ ∧ (χ : E → ℝ) =ᶠ[𝓝ˢ (dsupport T)] ψ := by
+  have hW : interior {x | χ x = 1} ⊆ tsupport χ := fun x hx ↦ by
+    have h : χ x = 1 := interior_subset hx
+    exact subset_tsupport _ (by simp [h])
+  have hTW : dsupport T ⊆ interior {x | χ x = 1} := subset_interior_iff_mem_nhdsSet.2 hχ
+  obtain ⟨ψ, hψ01, hψ1, hψW⟩ := TestFunction.exists_cutoff_tsupport_subset (n := n)
+    (χ.hasCompactSupport.of_isClosed_subset isClosed_dsupport (hTW.trans hW)) isOpen_interior
+    hTW (hW.trans χ.tsupport_subset)
+  exact ⟨ψ, hψ1, fun x ↦ abs_le.2 ⟨by linarith [(hψ01 x).1], (hψ01 x).2⟩, hψW.trans hW,
+    (hχ.and hψ1).mono fun x hx ↦ hx.1.trans hx.2.symm⟩
+
+end Cutoff
 
 section Augmentation
 
@@ -602,8 +658,48 @@ section OfFun
 
 open MeasureTheory Measure
 
-variable [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] {μ : Measure E}
-  [IsOpenPosMeasure μ] [IsFiniteMeasureOnCompacts μ] [CompleteSpace F]
+variable [MeasurableSpace E]
+
+section OpensMeasurableSpace
+
+variable [OpensMeasurableSpace E]
+
+/-- The distribution of a function is supported in the closed support of the function. -/
+theorem dsupport_ofFun_subset_tsupport (f : E → F) (μ : Measure E) :
+    dsupport (ofFun Ω f μ n) ⊆ tsupport f := by
+  refine compl_subset_compl.1 fun x hx ↦ ?_
+  rw [mem_compl_iff, notMem_dsupport_iff]
+  refine ⟨(tsupport f)ᶜ, fun φ hφ ↦ ?_, (isClosed_tsupport f).isOpen_compl, hx⟩
+  -- The integrand `φ • f` vanishes identically, since `supp φ` misses `supp f`.
+  have h (y : E) : φ y • f y = 0 := by
+    by_cases hy : y ∈ tsupport φ
+    · rw [image_eq_zero_of_notMem_tsupport (hφ hy), smul_zero]
+    · rw [image_eq_zero_of_notMem_tsupport hy, zero_smul]
+  simp [ofFun_apply_eq_ite, h]
+
+end OpensMeasurableSpace
+
+variable [FiniteDimensional ℝ E] [BorelSpace E] [CompleteSpace F] {μ : Measure E}
+
+/-- A function locally integrable on `Ω` vanishes almost everywhere on the part of `Ω` outside
+the support of its distribution. -/
+theorem ae_eq_zero_of_notMem_dsupport_ofFun {f : E → F} (hf : LocallyIntegrableOn f Ω μ) :
+    ∀ᵐ x ∂μ, x ∈ Ω → x ∉ dsupport (ofFun Ω f μ n) → f x = 0 := by
+  have hU : IsOpen ((Ω : Set E) ∩ (dsupport (ofFun Ω f μ n))ᶜ) :=
+    Ω.isOpen.inter isClosed_dsupport.isOpen_compl
+  -- A smooth `g` supported off the support of the distribution is a test function on which the
+  -- distribution vanishes.
+  have h (g : E → ℝ) (hg : ContDiff ℝ (⊤ : ℕ∞) g) (hgc : HasCompactSupport g)
+      (hgU : tsupport g ⊆ (Ω : Set E) ∩ (dsupport (ofFun Ω f μ n))ᶜ) :
+      ∫ x, g x • f x ∂μ = 0 := by
+    let φ : 𝓓^{n}(Ω, ℝ) := ⟨g, hg.of_le (mod_cast le_top), hgc, hgU.trans inter_subset_left⟩
+    rw [← isVanishingOn_compl_dsupport (ofFun Ω f μ n) φ (hgU.trans inter_subset_right)]
+    exact (ofFun_apply hf (φ := φ)).symm
+  filter_upwards [hU.ae_eq_zero_of_integral_contDiff_smul_eq_zero
+    (hf.mono_set inter_subset_left) h] with x hx hxΩ hxT
+  exact hx ⟨hxΩ, hxT⟩
+
+variable [IsOpenPosMeasure μ] [IsFiniteMeasureOnCompacts μ]
 
 /-- A nonzero constant function is a distribution supported everywhere on `Ω`: near every point
 of `Ω` some nonnegative bump has nonzero pairing with it. -/

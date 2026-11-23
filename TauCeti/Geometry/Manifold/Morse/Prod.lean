@@ -14,6 +14,8 @@ public import TauCeti.Geometry.Manifold.Morse.Hessian
 public import TauCeti.Geometry.Manifold.Morse.Index
 public import TauCeti.Geometry.Manifold.Morse.Lemma
 import TauCeti.Geometry.Manifold.MFDeriv.Prod
+import TauCeti.Geometry.Manifold.Morse.Submersion
+import TauCeti.Geometry.Manifold.RegularValue
 
 /-!
 # Morse functions on a product manifold
@@ -63,6 +65,8 @@ for `g` at `y` combine to a Morse chart for the separated sum at `(x, y)`.
 * `TauCeti.criticalPoints_comp_snd` and `TauCeti.manifoldMorseIndex_comp_snd`: the critical
   points of `(x, y) ↦ g y` on `M × N` are the points over critical points of `g`, and its Morse
   index at `(x, y)` is that of `g` at `y`.
+* `TauCeti.ker_criticalHessian_comp_snd`: the kernel of the Hessian of `(x, y) ↦ g y` is the
+  preimage under the second projection of the kernel of the Hessian of `g`.
 
 ## References
 
@@ -217,6 +221,16 @@ theorem manifoldMorseIndex_comp_snd [FiniteDimensional ℝ E] (g : N → ℝ) (p
     simp only [Function.comp_apply, extChartAt_prod, PartialEquiv.prod_coe_symm]
   rw [manifoldMorseIndex_def, manifoldMorseIndex_def, hchart, morseIndex_comp_snd]
   simp only [extChartAt_prod, PartialEquiv.prod_coe]
+
+/-- **The kernel of the Hessian of a function of the second factor.** At a point `p` of `M × N`
+over a critical point `p.2` of `g` at which `g` is `C²`, the kernel of the critical Hessian of
+`(x, y) ↦ g y` is the preimage under the second projection of the kernel of the critical Hessian
+of `g` at `p.2`. -/
+theorem ker_criticalHessian_comp_snd [I.Boundaryless] [I'.Boundaryless] {p : M × N}
+    (hg : ContMDiffAt I' 𝓘(ℝ) 2 g p.2) (hcrit : p.2 ∈ criticalPoints I' g) :
+    (criticalHessian (I.prod I') (g ∘ Prod.snd) p).ker =
+      (criticalHessian I' g p.2).ker.comap (mfderiv (I.prod I') I' Prod.snd p).toLinearMap :=
+  (isRegularPoint_snd p).ker_criticalHessian_comp hg contMDiffAt_snd hcrit
 
 end CompSnd
 
