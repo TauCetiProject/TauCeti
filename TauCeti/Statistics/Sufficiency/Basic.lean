@@ -34,8 +34,9 @@ and develops the conditional-expectation characterization of sufficiency:
   `TauCeti.IsMinimalSufficientStatistic.comp_of_ae_leftInverse`,
   `TauCeti.isMinimalSufficientStatistic_comp_iff_of_ae_leftInverse`: transport of sufficiency
   and minimal sufficiency under recodings that are invertible almost everywhere.
-* `TauCeti.IsSufficientStatistic.comp`, `TauCeti.IsSufficientStatistic.sumElim_comp`: preservation
-  of sufficiency under kernel mixtures, retaining the same common Markov kernel.
+* `TauCeti.IsSufficientStatistic.kernel_comp`,
+  `TauCeti.IsSufficientStatistic.sumElim_kernel_comp`: preservation of sufficiency under kernel
+  mixtures, retaining the same common Markov kernel.
 * `TauCeti.IsMinimalSufficientStatistic.{u, v, w, r} P T`: `T` is sufficient and factors
   `P θ`-almost everywhere through every sufficient statistic `U : X → S'` whose codomain
   `S' : Type r` lies in the explicit universe parameter `r`, via a measurable map `φ : S' → S`.
@@ -229,7 +230,7 @@ theorem IsSufficientStatistic.of_ae_eq {P : Θ → Measure X} {T₁ T₂ : X →
 
 /-- Mixing a sufficient kernel `P : Kernel Θ X` against a family of s-finite priors
 `Λ : Ι → Measure Θ` preserves sufficiency of `T`, with a single common Markov kernel. -/
-theorem IsSufficientStatistic.comp [MeasurableSpace Θ] {P : Kernel Θ X} [IsSFiniteKernel P]
+theorem IsSufficientStatistic.kernel_comp [MeasurableSpace Θ] {P : Kernel Θ X} [IsSFiniteKernel P]
     {T : X → S} (h : IsSufficientStatistic P T) {Ι : Type*} (Λ : Ι → Measure Θ)
     [∀ ι, SFinite (Λ ι)] :
     IsSufficientStatistic (fun ι ↦ P ∘ₘ Λ ι) T := by
@@ -238,7 +239,7 @@ theorem IsSufficientStatistic.comp [MeasurableSpace Θ] {P : Kernel Θ X} [IsSFi
 
 /-- Adjoining kernel mixtures `P ∘ₘ Λ ι` to a sufficient kernel `P` preserves sufficiency with a
 single common Markov kernel shared by `P` and all mixtures. -/
-theorem IsSufficientStatistic.sumElim_comp [MeasurableSpace Θ] {P : Kernel Θ X}
+theorem IsSufficientStatistic.sumElim_kernel_comp [MeasurableSpace Θ] {P : Kernel Θ X}
     [IsSFiniteKernel P] {T : X → S} (h : IsSufficientStatistic P T) {Ι : Type*}
     (Λ : Ι → Measure Θ) [∀ ι, SFinite (Λ ι)] :
     IsSufficientStatistic (Sum.elim P (fun ι ↦ P ∘ₘ Λ ι)) T := by
