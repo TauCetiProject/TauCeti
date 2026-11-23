@@ -32,6 +32,9 @@ Scaling a nonzero positive bounded operator preserves positivity iff the scalar 
 (`ContinuousLinearMap.IsPositive.isPositive_smul_iff`, `ContinuousLinearMap.smul_one_nonneg_iff`),
 and left multiplication `a ↦ T * a` preserves the positive cone iff `T` is a nonnegative scalar
 multiple of `1` (`ContinuousLinearMap.forall_nonneg_mul_nonneg_iff`).
+
+A vector on which the quadratic form of a positive endomorphism vanishes lies in its kernel
+(`LinearMap.IsPositive.apply_eq_zero_of_inner_map_self_eq_zero`).
 -/
 
 public section
@@ -71,6 +74,30 @@ theorem IsPositive.sum_re_inner_le_re_trace [FiniteDimensional 𝕜 E] {A : E �
     _ ≤ ∑ x ∈ u, RCLike.re ⟪x, A x⟫_𝕜 :=
         Finset.sum_le_sum_of_subset_of_nonneg hsub fun x _ _ ↦ hA.re_inner_nonneg_right x
     _ = ∑ x : u, RCLike.re ⟪(x : E), A x⟫_𝕜 := (Finset.sum_coe_sort u _).symm
+
+/-- A vector on which the quadratic form of a positive operator vanishes is in its kernel. -/
+theorem IsPositive.apply_eq_zero_of_inner_map_self_eq_zero {T : E →ₗ[𝕜] E} (hT : T.IsPositive)
+    {x : E} (hx : ⟪T x, x⟫_𝕜 = 0) : T x = 0 := by
+  -- The real part of `⟪T ·, ·⟫` is a positive semidefinite symmetric real bilinear form, so its
+  -- radical consists of the vectors on which it vanishes.
+  let _ := NormedSpace.restrictScalars ℝ 𝕜 E
+  let B : LinearMap.BilinForm ℝ E := LinearMap.mk₂ ℝ (fun u v ↦ RCLike.re ⟪T u, v⟫_𝕜)
+    (fun _ _ _ ↦ by simp only [map_add, inner_add_left])
+    (fun c u v ↦ by
+      rw [RCLike.real_smul_eq_coe_smul (K := 𝕜) c u, map_smul, inner_smul_left,
+        RCLike.conj_ofReal, RCLike.re_ofReal_mul, smul_eq_mul])
+    (fun _ _ _ ↦ by simp only [inner_add_right, map_add])
+    (fun c u v ↦ by
+      rw [RCLike.real_smul_eq_coe_smul (K := 𝕜) c v, inner_smul_right, RCLike.re_ofReal_mul,
+        smul_eq_mul])
+  have hB : LinearMap.IsSymm B := LinearMap.isSymm_def.mpr fun u v ↦ by
+    rw [LinearMap.mk₂_apply, LinearMap.mk₂_apply, RingHom.id_apply, hT.isSymmetric,
+      ← inner_conj_symm, RCLike.conj_re]
+  have hBx := (B.apply_apply_same_eq_zero_iff hT.re_inner_nonneg_left hB (x := x)).mp
+    (by rw [LinearMap.mk₂_apply, hx, map_zero])
+  -- Evaluate `B x = 0` at `T x`.
+  have : RCLike.re ⟪T x, T x⟫_𝕜 = 0 := LinearMap.congr_fun (LinearMap.mem_ker.mp hBx) (T x)
+  rwa [inner_self_eq_norm_sq, sq_eq_zero_iff, norm_eq_zero] at this
 
 end LinearMap
 
