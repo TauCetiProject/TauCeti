@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Probability.RandomMatrix.Wigner
+public import TauCeti.Probability.RandomMatrix.Wigner.Centering.Basic
 public import TauCeti.Analysis.Matrix.SpectralMeasure.ConstantOffDiagonal
 
 /-!
@@ -38,28 +38,6 @@ open scoped Topology
 namespace TauCeti
 
 variable {Ω : Type*}
-
-/-- Centering only the upper entries changes a Wigner matrix by the constant-upper-entry
-Hermitian matrix with upper entry `c / √n`. The identity also holds at dimension zero. -/
-theorem wignerMatrix_eq_center_add_hermitianOffDiagonal
-    (ξ : StrictUpper → Ω → ℂ) (η : ℕ → Ω → ℝ) (c : ℂ) (n : ℕ) (ω : Ω) :
-    wignerMatrix ξ η n ω = wignerMatrix (fun ij ω ↦ ξ ij ω - c) η n ω +
-      hermitianOffDiagonal ((Real.sqrt n)⁻¹ • c) n := by
-  ext i j
-  rw [Matrix.add_apply]
-  rcases lt_trichotomy i.val j.val with h | h | h
-  · simp only [wignerMatrix_apply_of_lt _ _ _ h,
-      hermitianOffDiagonal_apply_of_lt _ (Fin.mk_lt_mk.mpr h), Complex.real_smul]
-    push_cast
-    ring
-  · obtain rfl := Fin.ext h
-    simp
-  · simp only [wignerMatrix_apply_of_gt _ _ _ h,
-      hermitianOffDiagonal_apply_of_gt _ (Fin.mk_lt_mk.mpr h), star_sub,
-      star_smul, star_trivial]
-    simp only [Complex.real_smul]
-    push_cast
-    ring
 
 section Limits
 

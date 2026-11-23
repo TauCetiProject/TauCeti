@@ -9,9 +9,9 @@ public import TauCeti.Analysis.Matrix.SampleSecondMoment
 public import TauCeti.Combinatorics.TraceWord.Bipartite.Basic
 public import TauCeti.LinearAlgebra.Matrix.Trace.Pow
 public import TauCeti.Probability.Independence.Integration
-public import Mathlib.MeasureTheory.Function.LpSeminorm.CompareExp
 import TauCeti.Data.Fintype.SmallRange
 import TauCeti.MeasureTheory.Integral.MeanInequalities
+import TauCeti.MeasureTheory.Function.L1Space.Integrable
 
 /-!
 # Trace words of sample covariance matrices
@@ -47,10 +47,6 @@ with `p / n` bounded.
   their positions at least twice, of their expectations.
 * `TauCeti.Probability.integral_trace_sampleCovariance_pow`: the same expansion for the sample
   covariance matrix `X Xᴴ / n`.
-* `TauCeti.Probability.memLp_trace_pow_sampleCovariance` and
-  `TauCeti.Probability.integrable_trace_pow_sampleCovariance`: on a finite measure space with
-  entries in `L^(q * 2k)`, the trace of the `k`th power of the sample covariance matrix lies in
-  `L^q`; with entries in `L^(2k)` it is integrable.
 * `TauCeti.Probability.norm_integral_prod_mul_star_le` and
   `TauCeti.Probability.norm_sum_integral_prod_mul_star_le`: moment bounds for one bipartite word
   and for a family of bipartite words with a bounded number of rows and columns.
@@ -119,6 +115,11 @@ theorem integral_prod_apply_mul_star_apply_eq_zero
     simp only [readFactor, Sum.elim_inr, RCLike.star_def]
     rw [integral_conj, hX, map_zero]
 
+/-- A bipartite word of half-length `k` has `2 * k` steps. -/
+private theorem card_univ_sum_fin {k : ℕ} :
+    (Finset.univ : Finset (Fin k ⊕ Fin k)).card = 2 * k := by
+  simp [two_mul]
+
 /-- If the entries of a random rectangular matrix `X` lie in `L²ᵏ`, `k ≠ 0`, then the product of
 the entries `X (u t) (v t)` and conjugate entries `star (X (u (t + 1)) (v t))` along a bipartite
 word of half-length `k` is integrable. -/
@@ -131,12 +132,10 @@ theorem integrable_prod_apply_mul_star_apply {k : ℕ} (hk : k ≠ 0)
     cases s
     · exact hXk _ _
     · exact (hXk _ _).star
-  have hexponent : (∑ _ : Fin k ⊕ Fin k, (2 * k : ℝ≥0∞)⁻¹) = 1 := by
-    have h2k : (2 * k : ℝ≥0∞) ≠ 0 := by simpa using hk
-    simpa [nsmul_eq_mul, ← two_mul] using
-      ENNReal.mul_inv_cancel h2k (ENNReal.mul_ne_top (by simp) (by simp))
-  simpa [hexponent, memLp_one_iff_integrable] using
-    (MemLp.fun_prod (s := Finset.univ) fun s _ ↦ hfactor s)
+  have : Nonempty (Fin k) := ⟨⟨0, Nat.pos_of_ne_zero hk⟩⟩
+  exact integrable_fun_prod_of_memLp_card_of_nonempty Finset.univ_nonempty fun s _ ↦ by
+    rw [card_univ_sum_fin]
+    exact_mod_cast hfactor s
 
 /-- **Trace-word expansion of sample covariance moments.** Let the entries of a random
 rectangular matrix `X` be independent, centred and in `L²ᵏ`, `k ≠ 0`. Then the expected trace of
@@ -190,61 +189,11 @@ variable {k : ℕ}
 private theorem norm_readFactor (s : Fin k ⊕ Fin k) (z : 𝕜) : ‖readFactor s z‖ = ‖z‖ := by
   cases s <;> simp [readFactor]
 
-/-- A bipartite word of half-length `k` has `2 * k` steps. -/
-private theorem card_univ_sum_fin : #(univ : Finset (Fin k ⊕ Fin k)) = 2 * k := by
-  simp [two_mul]
-
-/-- The Hölder exponent of a product of `m ≠ 0` factors in `L^(q * m)` is `q`. -/
-private theorem inv_natCast_mul_inv_mul_natCast {m : ℕ} (hm : m ≠ 0) (q : ℝ≥0∞) :
-    ((m : ℝ≥0∞) * (q * m)⁻¹)⁻¹ = q := by
-  have hm' : (m : ℝ≥0∞) ≠ 0 := by simpa
-  rw [ENNReal.mul_inv (.inr (by simp)) (.inr hm'), mul_left_comm,
-    ENNReal.mul_inv_cancel hm' (by simp), mul_one, inv_inv]
-
 /-- A bound on the `2k`th absolute moments of the entries of a matrix with a nonempty set of
 positions is nonnegative. -/
 private theorem nonneg_of_integral_norm_pow_le [Nonempty p] [Nonempty n] {B : ℝ}
     (hB : ∀ a b, ∫ ω, ‖X ω a b‖ ^ (2 * k) ∂P ≤ B) : 0 ≤ B :=
   (integral_nonneg fun ω ↦ by positivity).trans (hB (Classical.arbitrary p) (Classical.arbitrary n))
-
-/-- On a finite measure space, the product along a bipartite word with entries in `L^(q * 2k)`
-lies in `L^q`. -/
-private theorem memLp_prod_mul_star [IsFiniteMeasure P] {q : ℝ≥0∞}
-    (hX : ∀ a b, MemLp (fun ω ↦ X ω a b) (q * (2 * k : ℕ)) P) (u : Fin k → p) (v : Fin k → n) :
-    MemLp (fun ω ↦ ∏ t, X ω (u t) (v t) * star (X ω (u (finRotate k t)) (v t))) q P := by
-  rcases eq_or_ne k 0 with rfl | hk
-  · simp [memLp_const]
-  simp_rw [prod_mul_star_eq_prod_readFactor]
-  have h := MemLp.fun_prod (s := (univ : Finset (Fin k ⊕ Fin k))) (p := fun _ ↦ q * (2 * k : ℕ))
-    (f := fun s ω ↦ readFactor s (X ω (bipartiteEdge u v s).1 (bipartiteEdge u v s).2))
-    fun s _ ↦ by
-      cases s
-      · exact hX _ _
-      · exact (hX _ _).star
-  rwa [sum_const, card_univ_sum_fin, nsmul_eq_mul,
-    inv_natCast_mul_inv_mul_natCast (by omega)] at h
-
-/-- On a finite measure space, the trace of the `k`th power of the sample covariance matrix of
-`X` lies in `L^q` whenever all entries of `X` lie in `L^(q * 2k)`. Neither independence nor
-centering is required, and `k = 0` is included. -/
-theorem memLp_trace_pow_sampleCovariance [Fintype p] [Fintype n] [DecidableEq p]
-    [IsFiniteMeasure P] {q : ℝ≥0∞}
-    (hX : ∀ a b, MemLp (fun ω ↦ X ω a b) (q * (2 * k : ℕ)) P) :
-    MemLp (fun ω ↦ ((X ω).sampleCovariance ^ k).trace) q P := by
-  rcases eq_or_ne k 0 with rfl | hk
-  · simp [memLp_const]
-  simp_rw [Matrix.trace_pow_sampleCovariance_eq_sum_prod _ hk]
-  exact (memLp_finsetSum _ fun u _ ↦ memLp_finsetSum _ fun v _ ↦
-    memLp_prod_mul_star hX u v).const_mul _
-
-/-- On a finite measure space, the trace of the `k`th power of the sample covariance matrix of
-`X` is integrable whenever all entries of `X` lie in `L^(2k)`. Neither independence nor centering
-is required, and `k = 0` is included. -/
-theorem integrable_trace_pow_sampleCovariance [Fintype p] [Fintype n] [DecidableEq p]
-    [IsFiniteMeasure P]
-    (hX : ∀ a b, MemLp (fun ω ↦ X ω a b) (2 * k : ℕ) P) :
-    Integrable (fun ω ↦ ((X ω).sampleCovariance ^ k).trace) P :=
-  memLp_one_iff_integrable.mp (memLp_trace_pow_sampleCovariance (by simpa using hX))
 
 /-- A bound `B` on the `2k`th absolute moments of the entries of `X` bounds the expected product
 along every bipartite word of half-length `k ≠ 0`. The positions read may repeat, and no
