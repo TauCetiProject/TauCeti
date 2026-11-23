@@ -49,9 +49,9 @@ made for a map `ρ : Q → B` with the properties of the orbit projection that t
   `ProperSMul.isClosed_of_mpullback_quotientMk_eq_mextDerivₗ`). For `α = ⟨ν, A⟩` it is the
   `ν`-component of the curvature of `A`, since `ν` vanishes on brackets. Then
   `(Φ ∘ f)^* (ω_B + π_B^* β) = f^* ω_Q`
-  (`TauCeti.CotangentBundle.mpullback_magneticReductionMap_comp_add_symplecticForm`): the form
-  that descends to the reduced space `μ⁻¹(ν) ⧸ G` is the pullback along `Φ` of the twisted form
-  `ω_B + π_B^* β` of `T*(Q ⧸ G)`.
+  (`TauCeti.CotangentBundle.mpullback_magneticReductionMap_comp_symplecticForm_add_mpullback`):
+  the form that descends to the reduced space `μ⁻¹(ν) ⧸ G` is the pullback along `Φ` of the
+  twisted form `ω_B + π_B^* β` of `T*(Q ⧸ G)`.
 * **Change of connection.** If `α'` is a second such one-form, then `α' - α` descends to a
   one-form `γ` on `Q ⧸ G`, and on `μ⁻¹(ν)` the magnetic reduction maps differ by the fibre
   translation by `γ`, `Φ' = τ_γ ∘ Φ`
@@ -270,7 +270,7 @@ boundaryless source and let `β` be a two-form on `B` with `ρ^* β = dα`. Alon
 of covectors `p` at `q` such that `p + α_q` vanishes on the vertical tangent vectors of `ρ`, the
 magnetic reduction map pulls the twisted form `ω_B + π_B^* β` of `T*B` back to the canonical
 symplectic form of `T*Q`. -/
-theorem mpullback_magneticReductionMap_comp_add_symplecticForm [IsManifold IX ∞ X]
+theorem mpullback_magneticReductionMap_comp_symplecticForm_add_mpullback [IsManifold IX ∞ X]
     (hρ : IsSubmersion I IB ∞ ρ) {β : SmoothForm IB B ℝ 2}
     (hβ : SmoothForm.mpullback ρ hρ.contMDiff β = mextDerivₗ I 1 α)
     {f : X → CotangentBundle I Q} (hf : ContMDiff IX (I.prod 𝓘(ℝ, E →L[ℝ] ℝ)) ∞ f)
@@ -441,7 +441,7 @@ pairing every fundamental vector field with `-ν`, and a two-form `β` on `Q ⧸
 along the orbit projection is `dα`, the magnetic reduction map to `T*(Q ⧸ G)` is smooth along every
 smooth family `f` of covectors in the level `μ⁻¹(ν)`, and pulls the twisted form `ω + π^* β` of
 `T*(Q ⧸ G)` back to the canonical symplectic form of `T*Q`. -/
-theorem mpullback_magneticReductionMap_comp_add_symplecticForm_quotientMk
+theorem mpullback_magneticReductionMap_comp_symplecticForm_add_mpullback_quotientMk
     (hα : ∀ x ξ, α.val x ![fundamentalVectorField I ξ x] = -ν ξ) :
     letI := orbitRelQuotientChartedSpace IG G I Q
     ∀ {β : SmoothForm 𝓘(ℝ, QuotientModelSpace EG E) (MulAction.orbitRel.Quotient G Q) ℝ 2},
@@ -460,7 +460,7 @@ theorem mpullback_magneticReductionMap_comp_add_symplecticForm_quotientMk
           SmoothForm.mpullback f hf (symplecticForm I Q) := by
   let _ := orbitRelQuotientChartedSpace IG G I Q
   intro β hβ f hf hz
-  exact CotangentBundle.mpullback_magneticReductionMap_comp_add_symplecticForm
+  exact CotangentBundle.mpullback_magneticReductionMap_comp_symplecticForm_add_mpullback
     isSubmersion_quotientMk hβ hf
     fun x ↦ (momentMap_eq_iff_of_ker_eq (ker_mfderiv_quotientMk _) hα).1 (hz x)
 
