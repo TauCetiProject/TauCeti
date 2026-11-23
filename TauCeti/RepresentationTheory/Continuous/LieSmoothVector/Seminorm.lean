@@ -120,12 +120,8 @@ theorem wordSeminorm_apply (X : ι → LeftInvariantDerivation I G) (k : ℕ)
 @[simp]
 theorem wordSeminorm_zero (X : ι → LeftInvariantDerivation I G) (v : lieSmoothVectors I π) :
     wordSeminorm I π X 0 v = ‖(v : V)‖ := by
-  rw [wordSeminorm_apply, Fintype.sum_eq_single ⟨0, Fin.elim0⟩]
-  · simp
-  · rintro ⟨n, w⟩ h
-    refine absurd ?_ h
-    obtain rfl : n = 0 := Fin.ext (Nat.lt_one_iff.mp n.isLt)
-    exact Sigma.ext rfl (heq_of_eq (funext fun i ↦ i.elim0))
+  rw [wordSeminorm_apply, Fintype.sum_sigma, Fin.sum_univ_one]
+  simp
 
 /-! ### Ordered monomials and the Sobolev seminorms -/
 
@@ -169,16 +165,11 @@ def SobolevIndex.toWord {k : ℕ} (α : SobolevIndex m k) : Word (Fin m) k :=
       rw [length_monomialWord]; exact Nat.lt_succ_of_le α.property⟩,
     (monomialWord α.exponent).get⟩
 
-/-- `SobolevIndex.toWord α` spells the ordered monomial word of `α`. -/
-theorem SobolevIndex.ofFn_toWord {k : ℕ} (α : SobolevIndex m k) :
-    List.ofFn α.toWord.2 = monomialWord α.exponent :=
-  List.ofFn_get _
-
 /-- Distinct ordered monomials give distinct words. -/
 theorem SobolevIndex.toWord_injective {k : ℕ} :
     Function.Injective (SobolevIndex.toWord (m := m) (k := k)) := fun α β h ↦ by
   have := congrArg (fun w : Word (Fin m) k ↦ List.ofFn w.2) h
-  simp only [SobolevIndex.ofFn_toWord] at this
+  simp only [SobolevIndex.toWord, List.ofFn_get] at this
   exact SobolevIndex.exponent_injective (monomialWord_injective this)
 
 variable (I π) in
@@ -211,7 +202,7 @@ theorem sobolevSeminorm_le (X : Fin m → LeftInvariantDerivation I G) (k : ℕ)
   set b : Word (Fin m) k → ℝ := fun w ↦ ‖(wordAction I π X (List.ofFn w.2) v : V)‖
   have hb : ∀ α : SobolevIndex m k,
       ‖(wordAction I π X (monomialWord α.exponent) v : V)‖ = b α.toWord := fun α ↦ by
-    simp only [b, SobolevIndex.ofFn_toWord]
+    simp only [b, SobolevIndex.toWord, List.ofFn_get]
   have hsum : ∑ α : SobolevIndex m k, b α.toWord ≤ ∑ w, b w := by
     rw [← Finset.sum_image fun _ _ _ _ h ↦ SobolevIndex.toWord_injective h]
     exact Finset.sum_le_univ_sum_of_nonneg fun _ ↦ norm_nonneg _
