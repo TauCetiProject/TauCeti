@@ -56,6 +56,8 @@ protected so that opening `Function.Periodic` does not shadow `deriv` and `logDe
   translations along a vector `v` has derivative vanishing on `v`.
 * `TauCeti.fderiv_add_snd_of_periodic_snd`: a map on a product of period `c` in the second
   coordinate has a Fréchet derivative of period `c` in it.
+* `TauCeti.fderiv_add_snd_of_eventually_periodic_snd`, `TauCeti.periodic_fderiv_mk_of_isOpen`:
+  its local forms, for periodicity near a point or over an open set of first coordinates.
 * `TauCeti.hasDerivAt_of_periodic_of_hasDerivWithinAt`: a periodic function solving `x' = Y` for a
   periodic `Y` within a single closed period interval `[a, a + T]` solves it everywhere.
 -/
@@ -164,6 +166,31 @@ theorem fderiv_add_snd_of_periodic_snd {𝕜 E F G : Type*} [NontriviallyNormedF
     fderiv 𝕜 f (x, y + c) = fderiv 𝕜 f (x, y) := by
   have hp : Function.Periodic f (0, c) := fun ⟨p, q⟩ ↦ by simpa using hf p q
   simpa using hp.fderiv (x, y)
+
+open Filter Topology in
+/-- A map on a product that is of period `c` in the second coordinate near `(x, y)` has a Fréchet
+derivative of period `c` in it at `(x, y)`. This is the local form of
+`TauCeti.fderiv_add_snd_of_periodic_snd`. -/
+theorem fderiv_add_snd_of_eventually_periodic_snd {𝕜 E F G : Type*} [NontriviallyNormedField 𝕜]
+    [NormedAddCommGroup E] [NormedSpace 𝕜 E] [NormedAddCommGroup F] [NormedSpace 𝕜 F]
+    [NormedAddCommGroup G] [NormedSpace 𝕜 G] {f : E × F → G} {c : F} {x : E} {y : F}
+    (hf : ∀ᶠ w in 𝓝 (x, y), f (w.1, w.2 + c) = f w) :
+    fderiv 𝕜 f (x, y + c) = fderiv 𝕜 f (x, y) := by
+  have hev : (fun w ↦ f (w + (0, c))) =ᶠ[𝓝 (x, y)] f := hf.mono fun w hw ↦
+    (congrArg f (show w + ((0 : E), c) = (w.1, w.2 + c) by ext <;> simp)).trans hw
+  have h := fderiv_comp_add_right (𝕜 := 𝕜) (f := f) (x := (x, y)) ((0 : E), c)
+  rw [hev.fderiv_eq] at h
+  simpa using h.symm
+
+/-- A map on a product that is of period `c` in the second coordinate over an open set `S` of first
+coordinates has, over `S`, a Fréchet derivative of period `c` in it. -/
+theorem periodic_fderiv_mk_of_isOpen {𝕜 E F G : Type*} [NontriviallyNormedField 𝕜]
+    [NormedAddCommGroup E] [NormedSpace 𝕜 E] [NormedAddCommGroup F] [NormedSpace 𝕜 F]
+    [NormedAddCommGroup G] [NormedSpace 𝕜 G] {f : E × F → G} {c : F} {S : Set E} (hS : IsOpen S)
+    (hf : ∀ x ∈ S, Function.Periodic (fun y ↦ f (x, y)) c) {x : E} (hx : x ∈ S) :
+    Function.Periodic (fun y ↦ fderiv 𝕜 f (x, y)) c := fun _ ↦
+  fderiv_add_snd_of_eventually_periodic_snd <|
+    Filter.eventually_of_mem ((hS.preimage continuous_fst).mem_nhds hx) fun w hw ↦ hf w.1 hw w.2
 
 open Set in
 /-- **Periodic solutions of a differential equation on one period.** Let `x` and `Y` be
