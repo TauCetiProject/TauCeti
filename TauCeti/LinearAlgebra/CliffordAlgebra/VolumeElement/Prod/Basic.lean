@@ -147,24 +147,16 @@ theorem complexProdTensor_ι_one_tmul_toLp_inr (w : W) :
 
 /-- The ordered frame product of `V ⊕ W` acts by
 `i ^ ⌊(n + m + 1) / 2⌋ (c(e₁) ⋯ c(eₙ) Γ_V ^ m ⊗ c(f₁) ⋯ c(fₘ))`. -/
-theorem complexProdTensor_complexVolume_eq_smul_map {m : ℕ}
-    (o : Orientation ℝ (WithLp 2 (V × W)) (Fin (n + m))) (b₁ : OrthonormalBasis (Fin n) ℝ V)
-    (b₂ : OrthonormalBasis (Fin m) ℝ W) (hQb₂ : (QuadraticMap.associated Q₂).IsOrthoᵢ b₂.toBasis)
+theorem complexProdTensor_complexVolume_eq_smul_map [FiniteDimensional ℝ W] {m : ℕ}
+    [Fact (finrank ℝ W = m)] (o : Orientation ℝ (WithLp 2 (V × W)) (Fin (n + m)))
+    (b₁ : OrthonormalBasis (Fin n) ℝ V) (b₂ : OrthonormalBasis (Fin m) ℝ W)
+    (hQb₂ : (QuadraticMap.associated Q₂).IsOrthoᵢ b₂.toBasis)
     (ho : ((b₁.prod b₂).reindex finSumFinEquiv).toBasis.orientation = o) :
-    complexProdTensor hQ o₁ hQ₁ hn ρ₁ ρ₂
-        (@complexVolume (WithLp 2 (V × W)) _ _
-          (Module.Finite.of_basis ((b₁.prod b₂).reindex finSumFinEquiv).toBasis) (n + m)
-          (by have := Module.Finite.of_basis b₂.toBasis
-              have : Fact (finrank ℝ W = m) :=
-                ⟨by rw [Module.finrank_eq_card_basis b₂.toBasis, Fintype.card_fin]⟩
-              exact TauCeti.instFactFinrankWithLpProd) Q o) =
+    complexProdTensor hQ o₁ hQ₁ hn ρ₁ ρ₂ (complexVolume Q o) =
       Complex.I ^ ((n + m + 1) / 2) • TensorProduct.map
         (ρ₁ (((List.finRange n).map b₁).map fun v ↦ ι (Q₁.baseChange ℂ) (1 ⊗ₜ v)).prod *
           ρ₁ (complexVolume Q₁ o₁) ^ m)
         (ρ₂ (((List.finRange m).map b₂).map fun w ↦ ι (Q₂.baseChange ℂ) (1 ⊗ₜ w)).prod) := by
-  have : FiniteDimensional ℝ W := Module.Finite.of_basis b₂.toBasis
-  have : Fact (finrank ℝ W = m) :=
-    ⟨by rw [Module.finrank_eq_card_basis b₂.toBasis, Fintype.card_fin]⟩
   have hQb₁ := b₁.isOrthoᵢ_associated hQ₁
   have hl : (List.finRange (n + m)).map ((b₁.prod b₂).reindex finSumFinEquiv) =
       ((List.finRange n).map fun i ↦ WithLp.toLp 2 (b₁ i, 0)) ++

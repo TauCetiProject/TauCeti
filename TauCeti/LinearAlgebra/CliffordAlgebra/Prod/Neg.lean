@@ -7,6 +7,7 @@ module
 
 public import Mathlib.LinearAlgebra.CliffordAlgebra.Conjugation
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Prod.Basic
+import TauCeti.LinearAlgebra.End.Basic
 
 /-!
 # Negating the grading in the graded tensor product of Clifford modules
@@ -44,6 +45,15 @@ public section
 
 open TensorProduct CliffordAlgebra
 
+namespace TauCeti
+
+/-- If `γ` squares to `1`, then `-γ` also squares to `1`. -/
+theorem neg_mul_neg_self_of_mul_self {A : Type*} [Mul A] [One A] [HasDistribNeg A] {γ : A}
+    (hγ : γ * γ = 1) : (-γ) * (-γ) = 1 :=
+  (neg_mul_neg γ γ).trans hγ
+
+end TauCeti
+
 namespace AlgHom
 
 variable {R M₁ M₂ E F : Type*} [CommRing R]
@@ -56,11 +66,18 @@ variable {R M₁ M₂ E F : Type*} [CommRing R]
   (ρ₂ : CliffordAlgebra Q₂ →ₐ[R] Module.End R F) {δ : Module.End R F}
   (hδρ : ∀ w, δ * ρ₂ (ι Q₂ w) = -(ρ₂ (ι Q₂ w) * δ))
 
+include hγρ in
+/-- If `γ` anticommutes with every `ρ₁ (ι Q₁ v)`, then `-γ` also anticommutes with every
+`ρ₁ (ι Q₁ v)`. -/
+theorem neg_mul_map_ι_of_mul_map_ι (v : M₁) :
+    (-γ) * ρ₁ (ι Q₁ v) = -(ρ₁ (ι Q₁ v) * (-γ)) := by
+  rw [neg_mul, mul_neg, hγρ, neg_neg]
+
 /-- Negating the grading `γ` of `E` in `AlgHom.cliffordProdTensor` is equivalent to twisting `ρ₂`
 by `CliffordAlgebra.involute`. -/
 theorem cliffordProdTensor_neg_grading :
-    cliffordProdTensor ρ₁ (-γ) (by rw [neg_mul_neg, hγ])
-        (fun v ↦ by rw [neg_mul, mul_neg, hγρ, neg_neg]) ρ₂ =
+    cliffordProdTensor ρ₁ (-γ) (TauCeti.neg_mul_neg_self_of_mul_self hγ)
+        (neg_mul_map_ι_of_mul_map_ι ρ₁ γ hγρ) ρ₂ =
       cliffordProdTensor ρ₁ γ hγ hγρ (ρ₂.comp CliffordAlgebra.involute) := by
   refine CliffordAlgebra.hom_ext <| LinearMap.ext fun ⟨v, w⟩ ↦ TensorProduct.ext' fun e f ↦ ?_
   simp [cliffordProdTensor_ι_tmul, TensorProduct.neg_tmul, TensorProduct.tmul_neg]
@@ -104,24 +121,15 @@ theorem conjAlgEquiv_lTensor_cliffordProdTensor (δ : Module.End R F)
     (hδ : Function.Involutive δ) (hδρ : ∀ w, δ * ρ₂ (ι Q₂ w) = -(ρ₂ (ι Q₂ w) * δ)) :
     (((LinearEquiv.ofInvolutive δ hδ).lTensor E).conjAlgEquiv R).toAlgHom.comp
         (cliffordProdTensor ρ₁ γ hγ hγρ ρ₂) =
-      cliffordProdTensor ρ₁ (-γ) (by rw [neg_mul_neg, hγ])
-        (fun v ↦ by rw [neg_mul, mul_neg, hγρ, neg_neg]) ρ₂ := by
+      cliffordProdTensor ρ₁ (-γ) (TauCeti.neg_mul_neg_self_of_mul_self hγ)
+        (neg_mul_map_ι_of_mul_map_ι ρ₁ γ hγρ) ρ₂ := by
   have hδ_mul : δ * δ = 1 := LinearMap.ext hδ
-  have hsymm : ((LinearEquiv.ofInvolutive δ hδ).symm : F →ₗ[R] F) = δ :=
-    LinearMap.ext fun f ↦ (LinearEquiv.symm_apply_eq _).mpr <| by
-      simp [LinearEquiv.coe_ofInvolutive, hδ f]
-  have hof : ((LinearEquiv.ofInvolutive δ hδ : F ≃ₗ[R] F) : F →ₗ[R] F) = δ :=
-    LinearMap.ext (congrFun (LinearEquiv.coe_ofInvolutive δ hδ))
-  have hcoe : (((LinearEquiv.ofInvolutive δ hδ).lTensor E : E ⊗[R] F ≃ₗ[R] E ⊗[R] F) :
-      E ⊗[R] F →ₗ[R] E ⊗[R] F) = δ.lTensor E := by
-    rw [LinearEquiv.coe_lTensor, hof]
-  have hsymm_coe : ((((LinearEquiv.ofInvolutive δ hδ).lTensor E).symm :
-      E ⊗[R] F ≃ₗ[R] E ⊗[R] F) : E ⊗[R] F →ₗ[R] E ⊗[R] F) = δ.lTensor E := by
-    rw [LinearEquiv.symm_lTensor, LinearEquiv.coe_lTensor, hsymm]
   refine AlgHom.ext fun a ↦ ?_
-  rw [AlgHom.comp_apply, AlgEquiv.coe_toAlgHom, LinearEquiv.conjAlgEquiv_apply,
-    hcoe, hsymm_coe, ← Module.End.mul_eq_comp, ← Module.End.mul_eq_comp]
-  exact (cliffordProdTensor_of_eq_neg ρ₁ γ hγ hγρ (-γ) (by rw [neg_mul_neg, hγ])
-    (fun v ↦ by rw [neg_mul, mul_neg, hγρ, neg_neg]) ρ₂ hδρ hδ_mul rfl a).symm
+  simp only [AlgHom.comp_apply, AlgEquiv.coe_toAlgHom, LinearEquiv.conjAlgEquiv_apply,
+    LinearEquiv.coe_lTensor, LinearEquiv.symm_lTensor, LinearEquiv.symm_ofInvolutive,
+    LinearEquiv.toLinearMap_ofInvolutive, ← Module.End.mul_eq_comp]
+  exact (cliffordProdTensor_of_eq_neg ρ₁ γ hγ hγρ (-γ)
+    (TauCeti.neg_mul_neg_self_of_mul_self hγ) (neg_mul_map_ι_of_mul_map_ι ρ₁ γ hγρ)
+    ρ₂ hδρ hδ_mul rfl a).symm
 
 end AlgHom

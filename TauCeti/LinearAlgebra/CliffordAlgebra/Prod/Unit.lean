@@ -64,15 +64,22 @@ variable {R M₁ M₂ E F : Type*} [CommRing R]
 
 section Left
 
-variable [Unique M₁] (ρ₁ : CliffordAlgebra Q₁ →ₐ[R] Module.End R E)
+variable (ρ₁ : CliffordAlgebra Q₁ →ₐ[R] Module.End R E)
   (ρ₂ : CliffordAlgebra Q₂ →ₐ[R] Module.End R F)
+
+/-- In a subsingleton quadratic module, any endomorphism anticommutes with the image of every
+vector. -/
+theorem mul_map_ι_of_subsingleton [Subsingleton M₁] (γ : Module.End R E) (v : M₁) :
+    γ * ρ₁ (ι Q₁ v) = -(ρ₁ (ι Q₁ v) * γ) := by
+  simp [Subsingleton.elim v 0]
+
+variable [Unique M₁]
 
 /-- **Left unit law of the graded tensor product.** If `M₁` is the zero space and `E` carries the
 trivial grading `γ = 1`, then `CliffordAlgebra (Q₁.prod Q₂)` acts on `E ⊗ F` by `1 ⊗ ρ₂`, after
 deleting the zero summand with `QuadraticMap.IsometryEquiv.uniqueProd`. -/
 theorem cliffordProdTensor_eq_lTensor (a : CliffordAlgebra (Q₁.prod Q₂)) :
-    cliffordProdTensor ρ₁ 1 (one_mul 1)
-        (fun v ↦ by simp [Subsingleton.elim v 0]) ρ₂ a =
+    cliffordProdTensor ρ₁ 1 (one_mul 1) (mul_map_ι_of_subsingleton ρ₁ 1) ρ₂ a =
       (ρ₂ (map (QuadraticMap.IsometryEquiv.uniqueProd Q₁ Q₂).toIsometry a)).lTensor E := by
   induction a using CliffordAlgebra.induction with
   | algebraMap r => simp [Algebra.algebraMap_eq_smul_one, Module.End.one_eq_id]
@@ -89,8 +96,7 @@ carries the action of `a` to that of its image in `CliffordAlgebra Q₂` under
 theorem lid_cliffordProdTensor (ρ₁ : CliffordAlgebra Q₁ →ₐ[R] Module.End R R)
     (a : CliffordAlgebra (Q₁.prod Q₂)) (z : R ⊗[R] F) :
     TensorProduct.lid R F
-        (cliffordProdTensor ρ₁ 1 (one_mul 1)
-          (fun v ↦ by simp [Subsingleton.elim v 0]) ρ₂ a z) =
+        (cliffordProdTensor ρ₁ 1 (one_mul 1) (mul_map_ι_of_subsingleton ρ₁ 1) ρ₂ a z) =
       ρ₂ (map (QuadraticMap.IsometryEquiv.uniqueProd Q₁ Q₂).toIsometry a)
         (TensorProduct.lid R F z) := by
   rw [cliffordProdTensor_eq_lTensor]
@@ -101,8 +107,7 @@ theorem lid_cliffordProdTensor (ρ₁ : CliffordAlgebra Q₁ →ₐ[R] Module.En
 /-- Conjugated algebra-homomorphism form of `AlgHom.lid_cliffordProdTensor`. -/
 theorem conjAlgEquiv_lid_cliffordProdTensor_one (ρ₁ : CliffordAlgebra Q₁ →ₐ[R] Module.End R R) :
     ((TensorProduct.lid R F).conjAlgEquiv R).toAlgHom.comp
-        (cliffordProdTensor ρ₁ 1 (one_mul 1)
-          (fun v ↦ by simp [Subsingleton.elim v 0]) ρ₂) =
+        (cliffordProdTensor ρ₁ 1 (one_mul 1) (mul_map_ι_of_subsingleton ρ₁ 1) ρ₂) =
       ρ₂.comp (map (QuadraticMap.IsometryEquiv.uniqueProd Q₁ Q₂).toIsometry) := by
   refine AlgHom.ext fun a ↦ LinearMap.ext fun f ↦ ?_
   simp only [AlgHom.comp_apply, AlgEquiv.coe_toAlgHom, LinearEquiv.conjAlgEquiv_apply,
@@ -114,19 +119,19 @@ theorem conjAlgEquiv_lid_cliffordProdTensor_one (ρ₁ : CliffordAlgebra Q₁ �
 theorem conjAlgEquiv_lid_cliffordProdTensor_neg_one
     (ρ₁ : CliffordAlgebra Q₁ →ₐ[R] Module.End R R) :
     ((TensorProduct.lid R F).conjAlgEquiv R).toAlgHom.comp
-        (cliffordProdTensor ρ₁ (-1) (LinearMap.ext fun _ ↦ by simp)
-          (fun v ↦ by simp [Subsingleton.elim v 0]) ρ₂) =
+        (cliffordProdTensor ρ₁ (-1) ((neg_mul_neg (1 : Module.End R R) 1).trans (one_mul 1))
+          (mul_map_ι_of_subsingleton ρ₁ (-1)) ρ₂) =
       (ρ₂.comp (CliffordAlgebra.involute : CliffordAlgebra Q₂ →ₐ[R] CliffordAlgebra Q₂)).comp
         (map (QuadraticMap.IsometryEquiv.uniqueProd Q₁ Q₂).toIsometry) := by
-  rw [cliffordProdTensor_neg_grading ρ₁ 1 (one_mul 1) (fun v ↦ by simp [Subsingleton.elim v 0]) ρ₂,
+  rw [cliffordProdTensor_neg_grading ρ₁ 1 (one_mul 1) (mul_map_ι_of_subsingleton ρ₁ 1) ρ₂,
     conjAlgEquiv_lid_cliffordProdTensor_one]
 
 /-- Applied form of `AlgHom.conjAlgEquiv_lid_cliffordProdTensor_neg_one`. -/
 theorem lid_cliffordProdTensor_neg_one (ρ₁ : CliffordAlgebra Q₁ →ₐ[R] Module.End R R)
     (a : CliffordAlgebra (Q₁.prod Q₂)) (z : R ⊗[R] F) :
     TensorProduct.lid R F
-        (cliffordProdTensor ρ₁ (-1) (LinearMap.ext fun _ ↦ by simp)
-          (fun v ↦ by simp [Subsingleton.elim v 0]) ρ₂ a z) =
+        (cliffordProdTensor ρ₁ (-1) ((neg_mul_neg (1 : Module.End R R) 1).trans (one_mul 1))
+          (mul_map_ι_of_subsingleton ρ₁ (-1)) ρ₂ a z) =
       ρ₂ (CliffordAlgebra.involute
         (map (QuadraticMap.IsometryEquiv.uniqueProd Q₁ Q₂).toIsometry a))
         (TensorProduct.lid R F z) := by

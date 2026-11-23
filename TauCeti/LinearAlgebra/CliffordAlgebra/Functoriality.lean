@@ -280,8 +280,8 @@ theorem equivOfIsometry_mem_evenOdd_iff (e : Q₁.IsometryEquiv Q₂) {x : Cliff
   exact ⟨fun ⟨y, hy, hxy⟩ ↦ (equivOfIsometry e).injective hxy ▸ hy, fun hx ↦ ⟨x, hx, rfl⟩⟩
 
 /-- The algebra homomorphism underlying `CliffordAlgebra.equivOfIsometry e` is
-`CliffordAlgebra.map e.toIsometry`. -/
-@[simp]
+`CliffordAlgebra.map e.toIsometry`. This is not a `simp` lemma, so
+`(equivOfIsometry e).toAlgHom` stays intact in conjugation and tensor-product statements. -/
 theorem equivOfIsometry_toAlgHom (e : Q₁.IsometryEquiv Q₂) :
     (equivOfIsometry e).toAlgHom = map e.toIsometry :=
   AlgHom.ext (equivOfIsometry_apply e)

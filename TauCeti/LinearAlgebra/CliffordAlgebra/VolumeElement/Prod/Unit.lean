@@ -100,6 +100,20 @@ theorem complexProdTensor_neg_orientation_complexVolume_of_map_prod (o₂ : Orie
 
 end NegOrientation
 
+end CliffordAlgebra
+
+namespace QuadraticMap
+
+/-- On a subsingleton normed space, every quadratic form satisfies `Q v = -‖v‖ ^ 2`. -/
+theorem apply_eq_neg_norm_sq_of_subsingleton {V : Type*}
+    [SeminormedAddCommGroup V] [Module ℝ V] [Subsingleton V] (Q : QuadraticForm ℝ V) (v : V) :
+    Q v = -‖v‖ ^ 2 := by
+  simp [Subsingleton.elim v 0]
+
+end QuadraticMap
+
+namespace CliffordAlgebra
+
 section UnitLeft
 
 variable {V W : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] [Unique V]
@@ -125,7 +139,7 @@ conjugating `complexProdTensor` on `ℂ ⊗ F` by `TensorProduct.lid ℂ F` reco
 theorem conjAlgEquiv_lid_complexProdTensor_positiveOrientation :
     ((TensorProduct.lid ℂ F).conjAlgEquiv ℂ).toAlgHom.comp
         (complexProdTensor hQ (positiveOrientation : Orientation ℝ V (Fin 0))
-          (fun v ↦ by simp [Subsingleton.elim v 0]) Even.zero ρ₁ ρ₂) =
+          (QuadraticMap.apply_eq_neg_norm_sq_of_subsingleton Q₁) Even.zero ρ₁ ρ₂) =
       ρ₂.comp (equivOfIsometry
         ((QuadraticMap.IsometryEquiv.withLpUniqueProd hQ).baseChange ℂ)).toAlgHom := by
   have hγ : ρ₁ (complexVolume Q₁ (positiveOrientation : Orientation ℝ V (Fin 0))) = 1 := by
@@ -140,7 +154,7 @@ oriented, conjugating `complexProdTensor` on `ℂ ⊗ F` by `TensorProduct.lid �
 theorem conjAlgEquiv_lid_complexProdTensor_neg_positiveOrientation :
     ((TensorProduct.lid ℂ F).conjAlgEquiv ℂ).toAlgHom.comp
         (complexProdTensor hQ (-positiveOrientation : Orientation ℝ V (Fin 0))
-          (fun v ↦ by simp [Subsingleton.elim v 0]) Even.zero ρ₁ ρ₂) =
+          (QuadraticMap.apply_eq_neg_norm_sq_of_subsingleton Q₁) Even.zero ρ₁ ρ₂) =
       (ρ₂.comp (CliffordAlgebra.involute :
           CliffordAlgebra (Q₂.baseChange ℂ) →ₐ[ℂ] CliffordAlgebra (Q₂.baseChange ℂ))).comp
         (equivOfIsometry
@@ -160,7 +174,8 @@ theorem conj_lid_complexProdTensor_positiveOrientation_complexVolume
       Fact.out Fact.out).map (Fin (0 + m)) (WithLp.linearEquiv 2 ℝ (V × W)).symm = o) :
     (TensorProduct.lid ℂ F).conj
         (complexProdTensor hQ (positiveOrientation : Orientation ℝ V (Fin 0))
-          (fun v ↦ by simp [Subsingleton.elim v 0]) Even.zero ρ₁ ρ₂ (complexVolume Q o)) =
+          (QuadraticMap.apply_eq_neg_norm_sq_of_subsingleton Q₁) Even.zero ρ₁ ρ₂
+          (complexVolume Q o)) =
       ρ₂ (complexVolume Q₂ o₂) := by
   subst o
   rw [LinearEquiv.conj_apply_of_conjAlgEquiv_comp
@@ -177,7 +192,8 @@ theorem conj_lid_complexProdTensor_neg_positiveOrientation_complexVolume
       Fact.out Fact.out).map (Fin (0 + m)) (WithLp.linearEquiv 2 ℝ (V × W)).symm = o) :
     (TensorProduct.lid ℂ F).conj
         (complexProdTensor hQ (-positiveOrientation : Orientation ℝ V (Fin 0))
-          (fun v ↦ by simp [Subsingleton.elim v 0]) Even.zero ρ₁ ρ₂ (complexVolume Q o)) =
+          (QuadraticMap.apply_eq_neg_norm_sq_of_subsingleton Q₁) Even.zero ρ₁ ρ₂
+          (complexVolume Q o)) =
       -((-1 : ℂ) ^ m • ρ₂ (complexVolume Q₂ o₂)) := by
   subst o
   have h := LinearEquiv.conj_apply_of_conjAlgEquiv_comp

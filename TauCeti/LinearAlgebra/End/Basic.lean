@@ -223,4 +223,19 @@ theorem eq_conj_of_comp_eq {R M N : Type*} [CommSemiring R]
   ext y
   simpa [LinearEquiv.conj_apply_apply] using (LinearMap.congr_fun h (e.symm y)).symm
 
+/-- The linear map underlying `LinearEquiv.ofInvolutive f hf` is `f`. -/
+@[simp]
+theorem toLinearMap_ofInvolutive {R M : Type*} [Semiring R] [AddCommMonoid M] [Module R M]
+    {σ σ' : R →+* R} [RingHomInvPair σ σ'] [RingHomInvPair σ' σ]
+    (f : M →ₛₗ[σ] M) (hf : Function.Involutive f) :
+    (ofInvolutive f hf : M →ₛₗ[σ] M) = f :=
+  (rfl)
+
+/-- A linear involution is its own inverse linear equivalence. -/
+@[simp]
+theorem symm_ofInvolutive {R M : Type*} [Semiring R] [AddCommMonoid M] [Module R M]
+    (f : M →ₗ[R] M) (hf : Function.Involutive f) :
+    (ofInvolutive f hf).symm = ofInvolutive f hf :=
+  LinearEquiv.ext fun _ ↦ rfl
+
 end LinearEquiv

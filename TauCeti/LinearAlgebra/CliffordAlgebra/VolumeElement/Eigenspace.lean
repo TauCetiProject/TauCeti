@@ -299,12 +299,14 @@ theorem finrank_eigenspace_complexVolume_neg (hn : Even n) (hn0 : n ≠ 0) (μ :
       rw [QuadraticForm.baseChange_tmul]
       simpa [Algebra.algebraMap_eq_smul_one] using (isUnit_iff_ne_zero.2 (by exact_mod_cast hu)))
     let e : S ≃ₗ[ℂ] S := LinearEquiv.ofLinearMap (ρ c) (ρ (hcu.unit⁻¹ : (CliffordAlgebra _)ˣ))
-      (by rw [← Module.End.mul_eq_comp, ← map_mul, IsUnit.mul_val_inv, map_one]; rfl)
-      (by rw [← Module.End.mul_eq_comp, ← map_mul, IsUnit.val_inv_mul, map_one]; rfl)
+      (by rw [← Module.End.mul_eq_comp, ← map_mul, IsUnit.mul_val_inv, map_one,
+        Module.End.one_eq_id])
+      (by rw [← Module.End.mul_eq_comp, ← map_mul, IsUnit.val_inv_mul, map_one,
+        Module.End.one_eq_id])
     refine finrank_genEigenspace_neg_of_anticommute e ?_ μ 1
     have hanti : complexVolume Q o * c + c * complexVolume Q o = 0 := by
       rw [complexVolume_mul_ι_of_even o hn, neg_add_cancel]
-    have he : (e : S →ₗ[ℂ] S) = ρ c := rfl
+    have he : (e : S →ₗ[ℂ] S) = ρ c := by simp only [e, LinearEquiv.toLinearMap_ofLinearMap]
     rw [he, ← map_mul, ← map_mul, ← map_add, hanti, map_zero]
 
 include hQ in
