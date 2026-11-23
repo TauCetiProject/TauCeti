@@ -88,11 +88,11 @@ theorem pullback_snd_comp_left [P.IsStableUnderComposition] {X' : C} (f : X ⟶ 
 /-- For a property stable under base change and composition, a product of morphisms in `Over S`
 has the property on underlying morphisms when both factors do. This parallels Mathlib's
 `MorphismProperty.pullbackMap`, which treats `pullback.map`. -/
-theorem prod_map_left [P.IsStableUnderComposition] {S : C} [HasBinaryProducts (Over S)]
-    {X Y X' Y' : Over S} (f : X ⟶ X') (g : Y ⟶ Y') (hf : P f.left) (hg : P g.left) :
-    P (prod.map f g).left := by
+theorem prod_map_left [P.IsStableUnderComposition] {S : C} {X Y X' Y' : Over S}
+    [HasBinaryProduct X Y] [HasBinaryProduct X' Y] [HasBinaryProduct X' Y'] (f : X ⟶ X')
+    (g : Y ⟶ Y') (hf : P f.left) (hg : P g.left) : P (prod.map f g).left := by
   -- A binary product in `Over S` is a pullback over `S` of the underlying objects.
-  have hpb (A B : Over S) :
+  have hpb (A B : Over S) [HasBinaryProduct A B] :
       IsPullback (prod.fst : A ⨯ B ⟶ A).left (prod.snd : A ⨯ B ⟶ B).left A.hom B.hom :=
     Over.isPullback_of_binaryFan_isLimit (BinaryFan.mk _ _) (prodIsProd A B)
   -- `prod.map f (𝟙 Y)` is the base change of `f.left` along the first projection of `X' ⨯ Y`.

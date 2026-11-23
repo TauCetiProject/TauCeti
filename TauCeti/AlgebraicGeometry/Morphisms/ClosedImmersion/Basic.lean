@@ -88,6 +88,7 @@ namespace AlgebraicGeometry.Scheme.Opens
 
 /-- The inclusion of an open subscheme is a closed immersion exactly when its underlying set is
 closed. -/
+@[simp]
 theorem isClosedImmersion_ι_iff {X : Scheme} (U : X.Opens) :
     IsClosedImmersion U.ι ↔ IsClosed (U : Set X) := by
   rw [IsClosedImmersion.iff_isPreimmersion, range_ι]
