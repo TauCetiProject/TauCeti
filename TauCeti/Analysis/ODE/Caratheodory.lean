@@ -261,17 +261,20 @@ private theorem norm_le_of_le {x : ℝ → E} (hx : ContinuousOn x (Icc a b))
     (ht : t ∈ Icc a b) (hle : t₀ ≤ t) :
     ‖x t‖ ≤ (‖x₀‖ + ∫ s in t₀..t, ‖F s‖) * exp (∫ s in t₀..t, ‖M s‖) := by
   have hsub : Icc t₀ t ⊆ Icc a b := Icc_subset_Icc ht₀.1 ht.2
-  refine le_mul_exp_integral_of_le_add_integral_mul (u := fun s ↦ ‖x s‖)
+  have hrec : ∀ s ∈ Icc t₀ t,
+      ‖x s‖ ≤ (‖x₀‖ + ∫ r in t₀..t, ‖F r‖) + ∫ r in t₀..s, ‖M r‖ * ‖x r‖ := by
+    intro s hs
+    have hs' := hsub hs
+    rw [h s hs', ODE.picard_apply]
+    have hFmono : ∫ r in t₀..s, ‖F r‖ ≤ ∫ r in t₀..t, ‖F r‖ :=
+      integral_mono_interval le_rfl hs.1 hs.2 (ae_of_all _ fun _ ↦ norm_nonneg _)
+        ((intervalIntegrable_iff_integrableOn_Icc_of_le hle).2 (IntegrableOn.mono_set hF.norm hsub))
+    linarith [norm_add_le x₀ (∫ r in t₀..s, (M r (x r) + F r)),
+      norm_integral_le_integral hM hF hx ht₀ hs' hs.1]
+  exact le_mul_exp_integral_of_le_add_integral_mul (u := fun s ↦ ‖x s‖)
     (IntegrableOn.mono_set hM.norm hsub) (ae_of_all _ fun _ ↦ norm_nonneg _)
     ((IntegrableOn.mono_set hM.norm hsub).mul_continuousOn (hx.mono hsub).norm isCompact_Icc)
-    (fun s hs ↦ ?_) t ⟨hle, le_rfl⟩
-  have hs' := hsub hs
-  rw [h s hs', ODE.picard_apply]
-  have hFmono : ∫ r in t₀..s, ‖F r‖ ≤ ∫ r in t₀..t, ‖F r‖ :=
-    integral_mono_interval le_rfl hs.1 hs.2 (ae_of_all _ fun _ ↦ norm_nonneg _)
-      ((intervalIntegrable_iff_integrableOn_Icc_of_le hle).2 (IntegrableOn.mono_set hF.norm hsub))
-  linarith [norm_add_le x₀ (∫ r in t₀..s, (M r (x r) + F r)),
-    norm_integral_le_integral hM hF hx ht₀ hs' hs.1]
+    (ae_restrict_of_forall_mem measurableSet_Icc hrec) ⟨hle, le_rfl⟩ (hrec t ⟨hle, le_rfl⟩)
 
 include ht₀ hM hF in
 /-- The norm bound for a solution at a time `t ≤ t₀`. -/
@@ -280,17 +283,20 @@ private theorem norm_le_of_ge {x : ℝ → E} (hx : ContinuousOn x (Icc a b))
     (ht : t ∈ Icc a b) (hle : t ≤ t₀) :
     ‖x t‖ ≤ (‖x₀‖ + ∫ s in t..t₀, ‖F s‖) * exp (∫ s in t..t₀, ‖M s‖) := by
   have hsub : Icc t t₀ ⊆ Icc a b := Icc_subset_Icc ht.1 ht₀.2
-  refine le_mul_exp_integral_of_le_add_integral_mul_rev (u := fun s ↦ ‖x s‖)
+  have hrec : ∀ s ∈ Icc t t₀,
+      ‖x s‖ ≤ (‖x₀‖ + ∫ r in t..t₀, ‖F r‖) + ∫ r in s..t₀, ‖M r‖ * ‖x r‖ := by
+    intro s hs
+    have hs' := hsub hs
+    rw [h s hs', ODE.picard_apply, integral_symm s t₀]
+    have hFmono : ∫ r in s..t₀, ‖F r‖ ≤ ∫ r in t..t₀, ‖F r‖ :=
+      integral_mono_interval hs.1 hs.2 le_rfl (ae_of_all _ fun _ ↦ norm_nonneg _)
+        ((intervalIntegrable_iff_integrableOn_Icc_of_le hle).2 (IntegrableOn.mono_set hF.norm hsub))
+    linarith [norm_add_le x₀ (-∫ r in s..t₀, (M r (x r) + F r)),
+      norm_neg (∫ r in s..t₀, (M r (x r) + F r)), norm_integral_le_integral hM hF hx hs' ht₀ hs.2]
+  exact le_mul_exp_integral_of_le_add_integral_mul_rev (u := fun s ↦ ‖x s‖)
     (IntegrableOn.mono_set hM.norm hsub) (ae_of_all _ fun _ ↦ norm_nonneg _)
     ((IntegrableOn.mono_set hM.norm hsub).mul_continuousOn (hx.mono hsub).norm isCompact_Icc)
-    (fun s hs ↦ ?_) t ⟨le_rfl, hle⟩
-  have hs' := hsub hs
-  rw [h s hs', ODE.picard_apply, integral_symm s t₀]
-  have hFmono : ∫ r in s..t₀, ‖F r‖ ≤ ∫ r in t..t₀, ‖F r‖ :=
-    integral_mono_interval hs.1 hs.2 le_rfl (ae_of_all _ fun _ ↦ norm_nonneg _)
-      ((intervalIntegrable_iff_integrableOn_Icc_of_le hle).2 (IntegrableOn.mono_set hF.norm hsub))
-  linarith [norm_add_le x₀ (-∫ r in s..t₀, (M r (x r) + F r)),
-    norm_neg (∫ r in s..t₀, (M r (x r) + F r)), norm_integral_le_integral hM hF hx hs' ht₀ hs.2]
+    (ae_restrict_of_forall_mem measurableSet_Icc hrec) ⟨le_rfl, hle⟩ (hrec t ⟨le_rfl, hle⟩)
 
 end CaratheodoryLinear
 
