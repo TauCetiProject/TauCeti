@@ -24,7 +24,8 @@ lengths: it is the unique list `p` of length `l.length - 1` with `p < l` such th
 
 ## References
 
-* [A. Montalbán, *Computable structure theory: beyond the arithmetic*], Lemma VI.18.
+* A. Montalbán, *Computable structure theory: within the arithmetic*, author's draft of Part 1
+  (2019), Lemma VI.18.
 -/
 
 public section
@@ -65,6 +66,8 @@ instance instOrderBot : OrderBot (List α) where
     | [] => le_rfl
     | _ :: _ => le_of_lt Lex.nil
 
+/-- The least element `⊥` of the lexicographic order is the empty list. -/
+@[simp]
 theorem bot_eq_nil : (⊥ : List α) = [] := rfl
 
 /-- A list is lexicographically smaller than each of its proper extensions. -/
@@ -105,7 +108,7 @@ theorem length_le_of_dropLast_lt_of_lt {l z : List α} (h₁ : l.dropLast < z) (
     have ht : t ≠ [] := by rintro rfl; simp at h₁
     have := length_pos_iff.2 ht
     have := length_pos_iff.2 hl
-    simp
+    rw [length_append, length_dropLast]
     omega
   · have := append_lt_append_of_lt_of_not_prefix (l₃ := [l.getLast hl]) (l₄ := []) h₁ hp
     rw [dropLast_append_getLast hl, append_nil] at this
@@ -120,14 +123,14 @@ theorem eq_dropLast_iff {l p : List α} (hl : l ≠ []) :
   have hlen := length_pos_iff.2 hl
   refine ⟨?_, fun ⟨hp, hpl, hz⟩ => ?_⟩
   · rintro rfl
-    exact ⟨by simp; omega, dropLast_lt hl, fun z => length_le_of_dropLast_lt_of_lt⟩
-  · have hlp : p.length = l.dropLast.length := by rw [length_dropLast, ← hp]; rfl
+    exact ⟨by rw [length_dropLast]; omega, dropLast_lt hl, fun z => length_le_of_dropLast_lt_of_lt⟩
+  · have hlp : p.length = l.dropLast.length := by rw [length_dropLast, ← hp]; omega
     have h := hpl
     rw [← dropLast_append_getLast hl, ← append_nil p,
       append_lt_append_iff_of_length_eq hlp] at h
     rcases h with h | ⟨h, -⟩
     · have := hz _ h (dropLast_lt hl)
-      simp at this
+      rw [length_dropLast] at this
       omega
     · exact h
 
