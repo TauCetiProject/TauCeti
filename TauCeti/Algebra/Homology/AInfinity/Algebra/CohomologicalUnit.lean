@@ -237,6 +237,12 @@ variable {R : Type uR} {A : Type uA} {B : Type uB} [CommRing R]
   [AddCommGroup A] [Module R A] [AddCommGroup B] [Module R B]
   {𝒜 : AInfinityAlgebra R A} {ℬ : AInfinityAlgebra R B}
 
+private theorem cohomologyMap_cohomologyMul (f : AInfinityHom 𝒜 ℬ) (a b : 𝒜.Cohomology) :
+    f.cohomologyMap (𝒜.cohomologyMul a b) =
+      ℬ.cohomologyMul (f.cohomologyMap a) (f.cohomologyMap b) := by
+  rw [← AInfinityAlgebra.cohomology_mul_eq_cohomologyMul, map_mul,
+    AInfinityAlgebra.cohomology_mul_eq_cohomologyMul]
+
 /-- The linear part of an `A∞` quasi-isomorphism preserves cohomological-unit representatives. -/
 theorem IsQuasiIso.cohomologicalUnit {f : AInfinityHom 𝒜 ℬ} (hf : f.IsQuasiIso) {e : A}
     (he : 𝒜.CohomologicalUnit e) : ℬ.CohomologicalUnit (f.linearPart e) where
@@ -247,17 +253,15 @@ theorem IsQuasiIso.cohomologicalUnit {f : AInfinityHom 𝒜 ℬ} (hf : f.IsQuasi
     refine (ℬ.cohomologyClass_eq_iff (ℬ.m_two_mem_cycles (f.linearPart_mem_cycles he.cycle) hy)
       hy).mp ?_
     rw [← ℬ.cohomologyMul_cohomologyClass (f.linearPart_mem_cycles he.cycle) hy,
-      ← f.cohomologyMap_cohomologyClass he.cycle, ← hc,
-      ← AInfinityAlgebra.cohomology_mul_eq_cohomologyMul, ← map_mul,
-      AInfinityAlgebra.cohomology_mul_eq_cohomologyMul, he.cohomologyMul_cohomologyClass_left]
+      ← f.cohomologyMap_cohomologyClass he.cycle, ← hc, ← cohomologyMap_cohomologyMul,
+      he.cohomologyMul_cohomologyClass_left]
   right_unit y hy := by
     obtain ⟨c, hc⟩ := ((isQuasiIso_def f).mp hf).2 (ℬ.cohomologyClass hy)
     refine (ℬ.cohomologyClass_eq_iff (ℬ.m_two_mem_cycles hy (f.linearPart_mem_cycles he.cycle))
       hy).mp ?_
     rw [← ℬ.cohomologyMul_cohomologyClass hy (f.linearPart_mem_cycles he.cycle),
-      ← f.cohomologyMap_cohomologyClass he.cycle, ← hc,
-      ← AInfinityAlgebra.cohomology_mul_eq_cohomologyMul, ← map_mul,
-      AInfinityAlgebra.cohomology_mul_eq_cohomologyMul, he.cohomologyMul_cohomologyClass_right]
+      ← f.cohomologyMap_cohomologyClass he.cycle, ← hc, ← cohomologyMap_cohomologyMul,
+      he.cohomologyMul_cohomologyClass_right]
 
 /-- Along an `A∞` quasi-isomorphism, a degree-zero cycle `e` is a cohomological unit iff
 `f.linearPart e` is a cohomological unit. -/
@@ -267,15 +271,13 @@ theorem IsQuasiIso.cohomologicalUnit_iff {f : AInfinityHom 𝒜 ℬ} (hf : f.IsQ
   have hbij := (isQuasiIso_def f).mp hf
   refine ⟨fun he' ↦ ⟨hdeg, hcyc, fun x hx ↦ ?_, fun x hx ↦ ?_⟩, hf.cohomologicalUnit⟩
   · refine (𝒜.cohomologyClass_eq_iff (𝒜.m_two_mem_cycles hcyc hx) hx).mp (hbij.1 ?_)
-    rw [← 𝒜.cohomologyMul_cohomologyClass hcyc hx,
-      ← AInfinityAlgebra.cohomology_mul_eq_cohomologyMul, map_mul,
-      AInfinityAlgebra.cohomology_mul_eq_cohomologyMul, f.cohomologyMap_cohomologyClass hcyc,
-      f.cohomologyMap_cohomologyClass hx, he'.cohomologyMul_cohomologyClass_left]
+    rw [← 𝒜.cohomologyMul_cohomologyClass hcyc hx, cohomologyMap_cohomologyMul,
+      f.cohomologyMap_cohomologyClass hcyc, f.cohomologyMap_cohomologyClass hx,
+      he'.cohomologyMul_cohomologyClass_left]
   · refine (𝒜.cohomologyClass_eq_iff (𝒜.m_two_mem_cycles hx hcyc) hx).mp (hbij.1 ?_)
-    rw [← 𝒜.cohomologyMul_cohomologyClass hx hcyc,
-      ← AInfinityAlgebra.cohomology_mul_eq_cohomologyMul, map_mul,
-      AInfinityAlgebra.cohomology_mul_eq_cohomologyMul, f.cohomologyMap_cohomologyClass hx,
-      f.cohomologyMap_cohomologyClass hcyc, he'.cohomologyMul_cohomologyClass_right]
+    rw [← 𝒜.cohomologyMul_cohomologyClass hx hcyc, cohomologyMap_cohomologyMul,
+      f.cohomologyMap_cohomologyClass hx, f.cohomologyMap_cohomologyClass hcyc,
+      he'.cohomologyMul_cohomologyClass_right]
 
 /-- Cohomological unitality is invariant under `A∞` quasi-isomorphism over any commutative ring. -/
 theorem IsQuasiIso.cohomologicallyUnital_iff {f : AInfinityHom 𝒜 ℬ} (hf : f.IsQuasiIso) :

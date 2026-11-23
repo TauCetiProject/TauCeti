@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.BigOperators.Group.Finset.Defs
 public import Mathlib.Data.Fin.Tuple.Basic
 public import Mathlib.Data.Fintype.Basic
+public import TauCeti.Algebra.BigOperators.Finset.PartialSum
 import Mathlib.Algebra.BigOperators.Fin
 
 /-!
@@ -33,8 +34,8 @@ identities in any additive commutative monoid when the replaced entry already eq
 * `TauCeti.duplicateAt_castSucc_of_lt`, `TauCeti.duplicateAt_succ_of_gt`: coordinates away from `j`
   recover `z`.
 * `TauCeti.sum_duplicateAt`: total sum of `duplicateAt a j z` when `z j = a`.
-* `TauCeti.sum_duplicateAt_range_le`: prefix sums of length at most `j` agree with those of `z`.
-* `TauCeti.sum_duplicateAt_range_succ_ge`: prefix sums of length `q + 1` with `j ≤ q ≤ L` exceed
+* `TauCeti.prefixSum_duplicateAt_le`: prefix sums of length at most `j` agree with those of `z`.
+* `TauCeti.prefixSum_duplicateAt_succ_ge`: prefix sums of length `q + 1` with `j ≤ q ≤ L` exceed
   the length-`q` prefix sum of `z` by `a` when `z j = a`.
 -/
 
@@ -106,38 +107,37 @@ theorem sum_duplicateAt {M : Type*} [AddCommMonoid M] {L : ℕ} (j : Fin L) {a :
   rw [hzj] at hsum; rw [hsum, add_comm]
 
 /-- Prefix sums of `duplicateAt a j z` of length at most `j` agree with those of `z`. -/
-theorem sum_duplicateAt_range_le {M : Type*} [AddCommMonoid M] {L : ℕ} (a : M) (j : Fin L)
+theorem prefixSum_duplicateAt_le {M : Type*} [AddCommMonoid M] {L : ℕ} (a : M) (j : Fin L)
     (z : Fin L → M) {p : ℕ} (hp : p ≤ j.val) :
-    (∑ r ∈ Finset.range p, if h : r < L + 1 then duplicateAt a j z ⟨r, h⟩ else 0) =
-      ∑ r ∈ Finset.range p, if h : r < L then z ⟨r, h⟩ else 0 :=
-  Finset.sum_congr rfl fun r hr ↦ by
-    rw [Finset.mem_range] at hr
-    rw [dite_eq_left (by omega), dite_eq_left (by omega)]
-    have hr_cast : (⟨r, by omega⟩ : Fin (L + 1)) = (⟨r, by omega⟩ : Fin L).castSucc := rfl
-    rw [hr_cast, duplicateAt_castSucc_of_lt a z (Fin.lt_def.2 (by simp; omega))]
+    prefixSum p (duplicateAt a j z) = prefixSum p z := by
+  rw [prefixSum_eq_sum_castLE (by omega), prefixSum_eq_sum_castLE (by omega)]
+  refine Finset.sum_congr rfl fun i _ ↦ ?_
+  have hi : (Fin.castLE (by omega) i : Fin (L + 1)) = (Fin.castLE (by omega) i : Fin L).castSucc :=
+    rfl
+  rw [hi, duplicateAt_castSucc_of_lt a z (i := Fin.castLE (by omega) i)
+    (Fin.lt_def.2 (by simp; omega))]
 
 /-- Prefix sums of `duplicateAt a j z` of length `q + 1` with `j ≤ q ≤ L` exceed the length-`q`
 prefix sum of `z` by `a` when `z j = a`. -/
-theorem sum_duplicateAt_range_succ_ge {M : Type*} [AddCommMonoid M] {L : ℕ} (j : Fin L) {a : M}
+theorem prefixSum_duplicateAt_succ_ge {M : Type*} [AddCommMonoid M] {L : ℕ} (j : Fin L) {a : M}
     {z : Fin L → M} (hzj : z j = a) {q : ℕ} (hq₁ : j.val ≤ q) (hq₂ : q ≤ L) :
-    (∑ r ∈ Finset.range (q + 1), if h : r < L + 1 then duplicateAt a j z ⟨r, h⟩ else 0) =
-      (∑ r ∈ Finset.range q, if h : r < L then z ⟨r, h⟩ else 0) + a := by
+    prefixSum (q + 1) (duplicateAt a j z) = prefixSum q z + a := by
   revert hq₂
   induction q, hq₁ using Nat.le_induction with
   | base =>
     intro _
-    rw [Finset.sum_range_succ, sum_duplicateAt_range_le a j z le_rfl, dite_eq_left (by omega)]
+    rw [prefixSum_succ (by omega), prefixSum_duplicateAt_le a j z le_rfl]
     have hj_cast : (⟨j.val, by omega⟩ : Fin (L + 1)) = j.castSucc := rfl
     rw [hj_cast, duplicateAt_castSucc]
   | succ q hjq ih =>
     intro hq₂
-    rw [Finset.sum_range_succ _ (q + 1), ih (by omega), Finset.sum_range_succ _ q,
-      dite_eq_left (by omega), dite_eq_left (by omega)]
+    rw [prefixSum_succ (by omega), ih (by omega), prefixSum_succ (by omega)]
     rcases eq_or_lt_of_le hjq with rfl | hlt
     · rw [Fin.eta, hzj]
       have hj_succ : (⟨j.val + 1, by omega⟩ : Fin (L + 1)) = j.succ := rfl
-      rw [hj_succ, duplicateAt_succ]
+      rw [hj_succ, duplicateAt_succ, add_right_comm]
     · have hq_succ : (⟨q + 1, by omega⟩ : Fin (L + 1)) = (⟨q, by omega⟩ : Fin L).succ := rfl
-      rw [hq_succ, duplicateAt_succ_of_gt a z (Fin.lt_def.2 hlt), add_right_comm]
+      rw [hq_succ, duplicateAt_succ_of_gt a z (i := ⟨q, by omega⟩) (Fin.lt_def.2 hlt),
+        add_right_comm]
 
 end TauCeti

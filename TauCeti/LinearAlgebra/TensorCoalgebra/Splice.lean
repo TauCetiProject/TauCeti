@@ -690,8 +690,7 @@ theorem splice_two_duplicateAt_pred {e : M} {n : ℕ} {j : Fin (n + 1)} (hj : 1 
     (duplicateAt e j w)
   have hj1 : duplicateAt e j w ⟨j.val + 1, by omega⟩ = e := duplicateAt_succ e j w
   have hj0 : duplicateAt e j w ⟨j.val - 1, by omega⟩ = w ⟨j.val - 1, by omega⟩ :=
-    duplicateAt_castSucc_of_lt e w
-      (show (⟨j.val - 1, by omega⟩ : Fin (n + 1)) < j from Fin.lt_def.2 (by dsimp; omega))
+    duplicateAt_castSucc_of_lt e w (i := ⟨j.val - 1, by omega⟩) (Fin.lt_def.2 (by dsimp; omega))
   rw [hj1, hj0] at h
   exact h.symm.trans (splice_two_duplicateAt_self R hw)
 
@@ -703,8 +702,7 @@ theorem splice_two_duplicateAt_succ {e : M} {n : ℕ} {j : Fin (n + 1)} (hj : j.
   have h := splice_two_succ_eq_splice_two_pred R (n := n + 1) (p := j.val + 1)
     (Nat.succ_pos _) (by omega) (duplicateAt e j w)
   have hj2 : duplicateAt e j w ⟨j.val + 1 + 1, by omega⟩ = w ⟨j.val + 1, by omega⟩ :=
-    duplicateAt_succ_of_gt e w
-      (show j < (⟨j.val + 1, by omega⟩ : Fin (n + 1)) from Fin.lt_def.2 (by dsimp; omega))
+    duplicateAt_succ_of_gt e w (i := ⟨j.val + 1, by omega⟩) (Fin.lt_def.2 (by dsimp; omega))
   have hj0 : duplicateAt e j w ⟨j.val + 1 - 1, by omega⟩ = e := by
     have hidx : (⟨j.val + 1 - 1, by omega⟩ : Fin (n + 2)) = j.castSucc := Fin.ext (by simp)
     rw [hidx, duplicateAt_castSucc]

@@ -139,6 +139,19 @@ private noncomputable def strictificationStage {𝒜 : AInfinityAlgebra R A} (h�
     Classical.choose (exists_strictificationStage_succ h𝒜 he hπ hπe
       (strictificationStage h𝒜 he hπ hπe m))
 
+private theorem strictificationStage_succ_spec {𝒜 : AInfinityAlgebra R A} (h𝒜 : 𝒜.IsMinimal)
+    {e : A} (he : 𝒜.CohomologicalUnit e) {π : Module.Dual R A} (hπ : π ∈ 𝒜.grading.dualPiece 0)
+    (hπe : π e = 1) (m : ℕ) :
+    (∀ z ∈ filtration R A (m + 2),
+      (strictificationStage h𝒜 he hπ hπe (m + 1)).alg.taylor z =
+        (strictificationStage h𝒜 he hπ hπe m).alg.taylor z) ∧
+    (∀ z ∈ filtration R A (m + 1),
+      (strictificationStage h𝒜 he hπ hπe (m + 1)).hom.taylor z =
+        (strictificationStage h𝒜 he hπ hπe m).hom.taylor z) := by
+  rw [strictificationStage]
+  exact Classical.choose_spec
+    (exists_strictificationStage_succ h𝒜 he hπ hπe (strictificationStage h𝒜 he hπ hπe m))
+
 /-- **Minimal unit strictification along a degree-zero retraction.** Given a minimal `A∞` algebra
 `𝒜` over `R`, a cohomological unit `e`, and `π ∈ 𝒜.grading.dualPiece 0` with `π e = 1`, there exist
 a minimal `A∞` structure `𝒜'` with the same grading and `m 2` for which `e` is a strict unit, and
@@ -151,10 +164,10 @@ theorem IsMinimal.exists_strictUnit_isIso_of_mem_dualPiece {𝒜 : AInfinityAlge
       𝒜'.StrictUnit e ∧ f.IsIso ∧ f.linearPart = LinearMap.id := by
   let s := strictificationStage h𝒜 he hπ hπe
   have hstab_alg : ∀ m, ∀ z ∈ filtration R A m, (s (m + 1)).alg.taylor z = (s m).alg.taylor z :=
-    fun m z hz ↦ (Classical.choose_spec (exists_strictificationStage_succ h𝒜 he hπ hπe (s m))).1 z
+    fun m z hz ↦ (strictificationStage_succ_spec h𝒜 he hπ hπe m).1 z
       (filtration_monotone R A (by omega : m ≤ m + 2) hz)
   have hstab_hom : ∀ m, ∀ z ∈ filtration R A m, (s (m + 1)).hom.taylor z = (s m).hom.taylor z :=
-    fun m z hz ↦ (Classical.choose_spec (exists_strictificationStage_succ h𝒜 he hπ hπe (s m))).2 z
+    fun m z hz ↦ (strictificationStage_succ_spec h𝒜 he hπ hπe m).2 z
       (filtration_monotone R A m.le_succ hz)
   let 𝒜' := limit (fun m ↦ (s m).alg) (fun m ↦ (s m).grading_eq) hstab_alg
   have hG' : 𝒜'.grading = 𝒜.grading := limit_grading (fun m ↦ (s m).grading_eq) hstab_alg
