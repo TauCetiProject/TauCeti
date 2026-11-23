@@ -14,6 +14,7 @@ public import TauCeti.Geometry.Manifold.VectorBundle.Tangent.Basic
 public import TauCeti.Topology.VectorBundle.ContinuousAlternatingMap
 public import Mathlib.Geometry.Manifold.ContMDiffMFDeriv
 public import Mathlib.Geometry.Manifold.VectorBundle.Tangent
+import TauCeti.Geometry.Manifold.Diffeomorph.Basic
 import TauCeti.Geometry.Manifold.DifferentialForm.Opens
 import TauCeti.Geometry.Manifold.DifferentialForm.Regularity
 import TauCeti.Topology.Algebra.Module.Alternating.Wedge.Append
@@ -37,7 +38,10 @@ form pulled back from each factor is the product of their values
 (`TauCeti.SmoothForm.wedge_mpullback_fst_snd_apply_append`). Pullback along a smooth map
 with a smooth right inverse, such as a vector bundle projection, is injective. The diffeomorphisms
 of `M` preserving a smooth form form a subgroup of the diffeomorphism group, its stabilizer
-(`TauCeti.SmoothForm.diffeomorphStabilizer`).
+(`TauCeti.SmoothForm.diffeomorphStabilizer`). A diffeomorphism in the stabilizer of a two-form
+preserves its values on pushed-forward tangent vectors
+(`TauCeti.SmoothForm.eval₂_mfderiv_of_mem_diffeomorphStabilizer`,
+`TauCeti.SmoothForm.eval₂_mfderiv_left_of_mem_diffeomorphStabilizer`).
 
 Conversely, regularity descends along a local section: if `s` is a `C^n` local section of `f`
 through `x`, a form is `C^m` near `f x` exactly when its pullback along `f` is `C^m` near `x`,
@@ -590,6 +594,24 @@ theorem mem_diffeomorphStabilizer {σ : SmoothForm I M F k} {φ : M ≃ₘ⟮I, 
 theorem mem_diffeomorphStabilizer_iff_forall {σ : SmoothForm I M F k} {φ : M ≃ₘ⟮I, I⟯ M} :
     φ ∈ diffeomorphStabilizer σ ↔ ∀ x, TauCeti.mpullback I I φ σ.val x = σ.val x := by
   rw [mem_diffeomorphStabilizer, Subtype.ext_iff, coe_mpullback, funext_iff]
+
+/-- A diffeomorphism preserving a two-form `τ` preserves its values on pushed-forward tangent
+vectors: `τ(dφ a, dφ b) = τ(a, b)`. -/
+theorem eval₂_mfderiv_of_mem_diffeomorphStabilizer {τ : SmoothForm I M F 2}
+    {φ : M ≃ₘ⟮I, I⟯ M} (hφ : φ ∈ diffeomorphStabilizer τ) (x : M) (a b : TangentSpace I x) :
+    SmoothBundleForm.eval₂ τ (φ x) (mfderiv I I φ x a) (mfderiv I I φ x b) =
+      SmoothBundleForm.eval₂ τ x a b := by
+  rw [← eval₂_mpullback φ φ.contMDiff, mem_diffeomorphStabilizer.1 hφ]
+
+/-- A diffeomorphism preserving a two-form `τ` moves a pushed-forward first argument back across
+`dφ`: `τ(dφ a, v) = τ(a, d(φ⁻¹) v)`. -/
+theorem eval₂_mfderiv_left_of_mem_diffeomorphStabilizer {τ : SmoothForm I M F 2}
+    {φ : M ≃ₘ⟮I, I⟯ M} (hφ : φ ∈ diffeomorphStabilizer τ) (x : M) (a : TangentSpace I x)
+    (v : TangentSpace I (φ x)) :
+    SmoothBundleForm.eval₂ τ (φ x) (mfderiv I I φ x a) v =
+      SmoothBundleForm.eval₂ τ x a (mfderiv I I φ.symm (φ x) v) := by
+  conv_lhs => rw [← φ.mfderiv_apply_mfderiv_symm_apply (by simp) x v]
+  exact eval₂_mfderiv_of_mem_diffeomorphStabilizer hφ x a _
 
 /-- A smooth form preserved by a diffeomorphism `φ` is preserved by every integer power of `φ`. -/
 theorem mpullback_zpow_eq_self {φ : M ≃ₘ⟮I, I⟯ M} {σ : SmoothForm I M F k}

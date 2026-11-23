@@ -85,7 +85,7 @@ variable {K : Type*} [Semiring K] [PartialOrder K] [IsStrictOrderedRing K] {A : 
 positive. -/
 theorem pos_of_mulVec_eq_smul (hA : ∀ i j, 0 < A i j) (hw : 0 ≤ w) (hw0 : w ≠ 0)
     (hAw : A *ᵥ w = μ • w) (i : n) : 0 < w i := by
-  have h : 0 < μ * w i := by simpa [hAw] using mulVec_pos hA hw hw0 i
+  have h : 0 < μ * w i := by simpa [hAw] using mulVec_pos (hA i) hw hw0
   exact (hw i).lt_of_ne' fun hi => by simp [hi] at h
 
 end StrictOrderedSemiring
@@ -182,11 +182,11 @@ private theorem exists_add_smul_le_mulVec {x : n → K} (hA : ∀ i j, 0 < A i j
     ∃ ε : K, 0 < ε ∧ ∃ y : n → K, 0 ≤ y ∧ ∑ i, y i = 1 ∧ (r + ε) • y ≤ A *ᵥ y := by
   obtain ⟨j₀, -⟩ := Function.ne_iff.1 hx0
   have : Nonempty n := ⟨j₀⟩
-  have hAx := mulVec_pos hA hx hx0
+  have hAx i := mulVec_pos (hA i) hx hx0
   -- The defect `z = A x - r x` is nonnegative and nonzero, so `A z` is strictly positive, and
   -- `A (A x) = A z + r (A x)` beats `r (A x)` by a uniform proportion `ε` of `A x`.
   set z := A *ᵥ x - r • x
-  have hAz := mulVec_pos hA (sub_nonneg.2 hxr) (sub_ne_zero.2 hne)
+  have hAz i := mulVec_pos (hA i) (sub_nonneg.2 hxr) (sub_ne_zero.2 hne)
   obtain ⟨i, hi⟩ := Finite.exists_min fun i => (A *ᵥ z) i / (A *ᵥ x) i
   have hy : (r + (A *ᵥ z) i / (A *ᵥ x) i) • (A *ᵥ x) ≤ A *ᵥ (A *ᵥ x) := fun j => by
     have h₁ := (le_div_iff₀ (hAx j)).1 (hi j)
@@ -266,7 +266,7 @@ theorem exists_mulVec_eq_smul_of_pos (hA : ∀ i j, 0 < A i j) :
       ⟨⟨hys, by positivity, le_sum_of_smul_le_mulVec hA' hys hyr⟩, hyr⟩
     linarith
   refine ⟨r, ?_, x, pos_of_mulVec_eq_smul hA hx hx0 heig, heig⟩
-  have h := mulVec_pos hA hx hx0 i₀
+  have h := mulVec_pos (hA i₀) hx hx0
   rw [heig] at h
   exact pos_of_mul_pos_left h (hx i₀)
 
@@ -306,7 +306,7 @@ theorem eq_of_norm_eq_of_mulVec_eq_smul (hA : ∀ i j, 0 < A i j) (hv : ∀ i, 0
   -- `‖s‖ y - re (c z)` vanish. That vector is nonnegative, so it is zero, and `c z i₀` is real.
   obtain ⟨i₀, hi₀⟩ := Function.ne_iff.1 hz
   have hr : 0 < r := by
-    have h := mulVec_pos hA (fun i => (hv i).le) (fun h => (hv i₀).ne' (congrFun h i₀)) i₀
+    have h := mulVec_pos (hA i₀) (fun i => (hv i).le) (fun h => (hv i₀).ne' (congrFun h i₀))
     rw [hAv] at h
     exact pos_of_mul_pos_left h (hv i₀).le
   set s := (A.map (↑) *ᵥ z) i₀
@@ -326,7 +326,7 @@ theorem eq_of_norm_eq_of_mulVec_eq_smul (hA : ∀ i j, 0 < A i j) (hv : ∀ i, 0
     ring
   have hx₀ : x i₀ = 0 := by
     by_contra h
-    exact (mulVec_pos hA hx (Function.ne_iff.2 ⟨i₀, h⟩) i₀).ne' hAx
+    exact (mulVec_pos (hA i₀) hx (Function.ne_iff.2 ⟨i₀, h⟩)).ne' hAx
   have hcz : c * z i₀ = (‖s‖ * y i₀ : ℝ) := by
     have hre : (c * z i₀).re = ‖s‖ * y i₀ := (sub_eq_zero.1 hx₀).symm
     have h0 := Complex.re_eq_norm.1 (hre.trans (hnorm i₀).symm)
