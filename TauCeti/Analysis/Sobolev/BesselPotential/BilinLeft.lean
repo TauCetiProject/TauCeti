@@ -9,6 +9,7 @@ public import TauCeti.Analysis.FunctionalSpaces.BesovSpace.Multiplication
 public import TauCeti.Analysis.Sobolev.BesselPotential.Besov
 public import TauCeti.Analysis.Sobolev.BesselPotential.Extension
 public import TauCeti.Analysis.Sobolev.BesselPotential.Postcomp
+import TauCeti.Analysis.Calculus.ContDiff.Bounds
 import TauCeti.Analysis.Calculus.IteratedFDeriv.Basic
 import TauCeti.Analysis.Distribution.SchwartzSpace.Basic
 import TauCeti.Analysis.Distribution.TemperateGrowth
@@ -168,13 +169,7 @@ private theorem exists_norm_toBesselPotentialSpaceCLM_bilinLeftCLM_le (s : ℝ) 
   -- The coordinates `gₖ = c k ∘ g` of `g` have bounded derivatives.
   have hgkM (k : Fin (Module.finrank ℂ G)) :
       ∀ n ≤ N, ∀ x, ‖iteratedFDeriv ℝ n (fun x ↦ b.repr (g x) k) x‖ ≤ ‖c k‖ * M :=
-    fun n hn x ↦ by
-      have h := ((c k).restrictScalars ℝ).norm_iteratedFDeriv_comp_left (x := x) (n := n)
-        (hg.1.contDiffAt) (mod_cast le_top)
-      simp only [ContinuousLinearMap.norm_restrictScalars, Function.comp_def,
-        ContinuousLinearMap.coe_restrictScalars', c, LinearMap.coe_toContinuousLinearMap',
-        Module.Basis.coord_apply] at h
-      exact h.trans (by gcongr; exact hgM n hn x)
+    (c k).norm_iteratedFDeriv_comp_left_le_of_forall_le (hg.1.of_le (mod_cast le_top)) hgM
   set U := SchwartzMap.toBesselPotentialSpaceCLM s 2 u
   choose v hv hvn using fun k ↦ hmul (hg.repr b k) (hgkM k) (postcomp E s 2 (B.flip (b k)) U)
   -- Since `‖B.flip bₖ‖ ≤ ‖B‖ ‖bₖ‖`, the `k`-th term has norm at most `C₀ ‖c k‖ M ‖B‖ ‖bₖ‖ ‖U‖`.
@@ -209,6 +204,7 @@ def bilinLeftCLM (B : F →L[ℂ] G →L[ℂ] K) {g : E → G} (hg : g.HasTemper
 /-- On a Schwartz function `u`, the operator `BesselPotentialSpace.bilinLeftCLM s B hg` is the
 Schwartz function `x ↦ B (u x) (g x)`, as soon as the derivatives of `g` of order at most
 `⌊|s|⌋₊ + 1` are bounded. -/
+@[simp]
 theorem bilinLeftCLM_toBesselPotentialSpaceCLM (B : F →L[ℂ] G →L[ℂ] K) {g : E → G}
     (hg : g.HasTemperateGrowth)
     (hbd : ∀ n ≤ ⌊|s|⌋₊ + 1, ∃ C, ∀ x, ‖iteratedFDeriv ℝ n g x‖ ≤ C) (u : 𝓢(E, F)) :
