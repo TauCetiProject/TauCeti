@@ -37,21 +37,14 @@ def quantumTorusCentralExponents (u : Rˣ) (Λ : LinearMap.BilinForm ℤ L) : Ad
 theorem mem_quantumTorusCentralExponents (u : Rˣ) (Λ : LinearMap.BilinForm ℤ L) (a : L) :
     a ∈ u.quantumTorusCentralExponents Λ ↔ ∀ b, u ^ (Λ a b) = u ^ (Λ b a) := by
   rw [quantumTorusCentralExponents, AddSubgroup.mem_iInf]
-  constructor
-  · intro h b
-    have hb := AddMonoidHom.mem_eqLocusM.mp (h b)
-    simp only [AddMonoidHom.comp_apply, MonoidHom.coe_toAdditiveRight,
-      Function.comp_apply, LinearMap.toAddMonoidHom_coe, zpowersHom_apply] at hb
-    have hf : (Λ.flip b) a = Λ a b := LinearMap.flip_apply Λ a b
-    rw [hf] at hb
-    exact Additive.ofMul.injective hb
-  · intro h b
-    apply AddMonoidHom.mem_eqLocusM.mpr
-    simp only [AddMonoidHom.comp_apply, MonoidHom.coe_toAdditiveRight,
-      Function.comp_apply, LinearMap.toAddMonoidHom_coe, zpowersHom_apply]
-    have hf : (Λ.flip b) a = Λ a b := LinearMap.flip_apply Λ a b
-    rw [hf]
-    exact congrArg Additive.ofMul (h b)
+  apply forall_congr'
+  intro b
+  refine AddMonoidHom.mem_eqLocusM.trans ?_
+  simp only [AddMonoidHom.comp_apply, MonoidHom.coe_toAdditiveRight,
+    Function.comp_apply, LinearMap.toAddMonoidHom_coe, zpowersHom_apply]
+  have hf : (Λ.flip b) a = Λ a b := LinearMap.flip_apply Λ a b
+  rw [hf]
+  exact Additive.ofMul.injective.eq_iff
 
 /-- The skew part of any bilinear form detects central exponents, including at finite order. -/
 theorem mem_quantumTorusCentralExponents_iff (u : Rˣ) (Λ : LinearMap.BilinForm ℤ L) (a : L) :

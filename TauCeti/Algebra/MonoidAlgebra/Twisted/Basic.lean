@@ -528,11 +528,13 @@ theorem repr_mul_of_apply_eq_zero (f : twistedMonoidAlgebra R H β) (b c : H)
   classical
   apply Finsupp.notMem_support_iff.mp
   intro hn
-  have hs := support_repr_mul_subset f (of b) hn
-  obtain ⟨a, ha, d, hd, he⟩ := Finset.mem_mul.mp hs
-  have hd' : d = b := Finset.mem_singleton.mp
-    (Finsupp.support_single_subset (by simpa only [repr_of] using hd))
-  exact hc ⟨a, ha, hd' ▸ he⟩
+  have hs := (support_repr_mul_subset f (of b)).trans
+    (Finset.mul_subset_mul_left (s := ((basis R H β).repr f).support)
+      (by simpa only [repr_of] using
+        (Finsupp.support_single_subset : (Finsupp.single b (1 : R)).support ⊆ {b})))
+  apply hc
+  simpa only [Finset.coe_mul, Finset.coe_singleton, Set.mul_singleton] using
+    (show c ∈ (↑(((basis R H β).repr f).support * {b}) : Set H) from hs hn)
 
 /-- A coefficient outside the left translate of the actual coefficient support vanishes. -/
 theorem repr_of_mul_apply_eq_zero (f : twistedMonoidAlgebra R H β) (b c : H)
@@ -541,11 +543,13 @@ theorem repr_of_mul_apply_eq_zero (f : twistedMonoidAlgebra R H β) (b c : H)
   classical
   apply Finsupp.notMem_support_iff.mp
   intro hn
-  have hs := support_repr_mul_subset (of b) f hn
-  obtain ⟨d, hd, a, ha, he⟩ := Finset.mem_mul.mp hs
-  have hd' : d = b := Finset.mem_singleton.mp
-    (Finsupp.support_single_subset (by simpa only [repr_of] using hd))
-  exact hc ⟨a, ha, hd' ▸ he⟩
+  have hs := (support_repr_mul_subset (of b) f).trans
+    (Finset.mul_subset_mul_right (t := ((basis R H β).repr f).support)
+      (by simpa only [repr_of] using
+        (Finsupp.support_single_subset : (Finsupp.single b (1 : R)).support ⊆ {b})))
+  apply hc
+  simpa only [Finset.coe_mul, Finset.coe_singleton, Set.singleton_mul] using
+    (show c ∈ (↑({b} * ((basis R H β).repr f).support) : Set H) from hs hn)
 
 /-- The coefficient at a free index after right multiplication by a unit-index basis element. -/
 @[simp]
@@ -730,6 +734,58 @@ theorem lift_of (u : G → A) (hu₁ : u 1 = 1)
   constr_of u g
 
 end Lift
+
+section DomCongr
+
+variable {R G H : Type*} [CommSemiring R] [Monoid G] [Monoid H]
+  {α : G → G → Rˣ} {β : H → H → Rˣ} [IsFactorSet α] [IsFactorSet β]
+
+/-- A multiplicative equivalence preserving the factor set reindexes the twisted algebra. -/
+noncomputable def domCongr (e : G ≃* H) (h : ∀ a b, α a b = β (e a) (e b)) :
+    twistedMonoidAlgebra R G α ≃ₐ[R] twistedMonoidAlgebra R H β := by
+  let f : twistedMonoidAlgebra R G α →ₐ[R] twistedMonoidAlgebra R H β :=
+    lift (fun a ↦ of (e a)) (by simp) (by intro a b; simp [of_mul_of, h])
+  let g : twistedMonoidAlgebra R H β →ₐ[R] twistedMonoidAlgebra R G α :=
+    lift (fun b ↦ of (e.symm b)) (by simp) (by
+      intro a b
+      have hh := h (e.symm a) (e.symm b)
+      simpa only [map_mul, e.apply_symm_apply, of_mul_of] using
+        congrArg (fun r : Rˣ ↦ (r : R) •
+          (of (e.symm a * e.symm b) : twistedMonoidAlgebra R G α)) hh)
+  exact AlgEquiv.ofAlgHom f g (by ext a; simp [f, g]) (by ext a; simp [f, g])
+
+/-- Reindexing sends each normalized basis element to its corresponding basis element. -/
+@[simp]
+theorem domCongr_of (e : G ≃* H) (h : ∀ a b, α a b = β (e a) (e b)) (a : G) :
+    domCongr e h (of a) = of (e a) := by
+  simp only [domCongr, AlgEquiv.ofAlgHom_apply, lift_of]
+
+/-- The underlying linear equivalence is the canonical basis transport. -/
+theorem domCongr_toLinearEquiv (e : G ≃* H) (h : ∀ a b, α a b = β (e a) (e b)) :
+    (domCongr e h).toLinearEquiv = (basis R G α).equiv (basis R H β) e.toEquiv := by
+  apply LinearEquiv.toLinearMap_injective
+  apply (basis R G α).ext
+  intro a
+  -- The induced linear maps evaluate as their underlying equivalences.
+  change (domCongr e h) ((basis R G α) a) =
+    ((basis R G α).equiv (basis R H β) e.toEquiv) ((basis R G α) a)
+  rw [Module.Basis.equiv_apply, basis_apply, basis_apply, domCongr_of]
+  simp only [MulEquiv.toEquiv_eq_coe, MulEquiv.coe_toEquiv]
+
+/-- Coefficients at corresponding indices are unchanged by twist-preserving reindexing. -/
+@[simp]
+theorem repr_domCongr_apply (e : G ≃* H) (h : ∀ a b, α a b = β (e a) (e b))
+    (f : twistedMonoidAlgebra R G α) (a : G) :
+    (basis R H β).repr (domCongr e h f) (e a) = (basis R G α).repr f a := by
+  have hr : ((basis R H β).reindex e.toEquiv.symm).repr (domCongr e h f) =
+      (basis R G α).repr f := by
+    rw [← AlgEquiv.toLinearEquiv_apply, domCongr_toLinearEquiv]
+    simp only [Module.Basis.equiv, LinearEquiv.trans_apply, LinearEquiv.apply_symm_apply]
+  have hc := congrArg (fun v ↦ v a) hr
+  simpa only [Module.Basis.repr_reindex_apply, Equiv.symm_symm,
+    MulEquiv.toEquiv_eq_coe, MulEquiv.coe_toEquiv] using hc
+
+end DomCongr
 
 section Trivial
 

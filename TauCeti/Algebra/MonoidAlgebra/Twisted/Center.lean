@@ -97,20 +97,30 @@ theorem mem_centralIndices (a : G) : a ∈ centralIndices α ↔ ∀ b, α a b =
 instance : IsFactorSet (fun a b : centralIndices α ↦ α a b) :=
   IsFactorSet.comp (centralIndices α).subtype α
 
+/-- A normalized basis element at a central index, bundled as an element of the center. -/
+noncomputable def centerOf (a : centralIndices α) :
+    Subalgebra.center R (twistedMonoidAlgebra R G α) :=
+  ⟨of (a : G), (of_mem_center_iff _).mpr ((mem_centralIndices _).mp a.property)⟩
+
+/-- The bundled central basis element has the expected ambient value. -/
+@[simp]
+theorem coe_centerOf (a : centralIndices α) :
+    (centerOf a : twistedMonoidAlgebra R G α) = of (a : G) := (rfl)
+
 /-- The restricted twisted algebra embeds canonically in the center, preserving its twist. -/
 noncomputable def centerHom (α : G → G → Rˣ) [IsFactorSet α] :
     twistedMonoidAlgebra R (centralIndices α) (fun a b ↦ α a b) →ₐ[R]
       Subalgebra.center R (twistedMonoidAlgebra R G α) :=
-  lift (fun a ↦ ⟨of (a : G), (of_mem_center_iff _).mpr ((mem_centralIndices _).mp a.property)⟩)
+  lift (fun a ↦ centerOf a)
     (by apply Subtype.ext; simp)
-    (by intro a b; apply Subtype.ext; simp only [of_mul_of, Subalgebra.coe_mul,
+    (by intro a b; apply Subtype.ext; simp only [coe_centerOf, of_mul_of, Subalgebra.coe_mul,
       Subalgebra.coe_smul, Submonoid.coe_mul])
 
 /-- The restricted center map sends normalized basis elements to bundled central elements. -/
 @[simp]
 theorem centerHom_of (a : centralIndices α) :
     centerHom α (of a) =
-      ⟨of (a : G), (of_mem_center_iff _).mpr ((mem_centralIndices _).mp a.property)⟩ := by
+      centerOf a := by
   simp only [centerHom, lift_of]
 
 /-- In ambient basis coordinates, the restricted center map extends coefficients by zero. -/
@@ -158,6 +168,28 @@ theorem centerHom_injective : Function.Injective (centerHom α) := by
     (basis R G α).repr (x : twistedMonoidAlgebra R G α)) h
   simpa only [repr_centerHom] using he
 
+/-- A bundled central element is in the restricted map's image exactly when its coefficients
+are supported on the central-index submonoid, without any cancellation assumption. -/
+theorem mem_range_centerHom_iff (f : Subalgebra.center R (twistedMonoidAlgebra R G α)) :
+    f ∈ Set.range (centerHom α) ↔
+      ∀ a ∈ ((basis R G α).repr (f : twistedMonoidAlgebra R G α)).support,
+        a ∈ centralIndices α := by
+  constructor
+  · rintro ⟨g, rfl⟩ a ha
+    by_contra hn
+    exact (Finsupp.mem_support_iff.mp ha) (repr_centerHom_apply_eq_zero g a hn)
+  · intro hs
+    have hm : (basis R G α).repr f.val ∈ Set.range
+        (Finsupp.mapDomain (fun a : centralIndices α ↦ (a : G))) := by
+      apply (Finsupp.mem_range_mapDomain_iff _ Subtype.val_injective _).mpr
+      intro a ha
+      by_contra hn
+      exact ha ⟨⟨a, hs a (Finsupp.mem_support_iff.mpr hn)⟩, rfl⟩
+    obtain ⟨v, hv⟩ := hm
+    refine ⟨(basis R (centralIndices α) _).repr.symm v, Subtype.ext ?_⟩
+    apply (basis R G α).repr.injective
+    rw [repr_centerHom, LinearEquiv.apply_symm_apply, hv]
+
 end CommMonoid
 
 section CancelCommMonoid
@@ -201,18 +233,9 @@ theorem center_toSubmodule_eq_span [IsLeftCancelMulZero R] :
 
 /-- Under index and nonzero-scalar cancellation, the restricted map exhausts the center. -/
 theorem centerHom_surjective [IsLeftCancelMulZero R] : Function.Surjective (centerHom α) := by
-  rintro ⟨f, hf⟩
-  have hs := (mem_center_iff_support f).mp hf
-  have hm : (basis R G α).repr f ∈ Set.range
-      (Finsupp.mapDomain (fun a : centralIndices α ↦ (a : G))) := by
-    apply (Finsupp.mem_range_mapDomain_iff _ Subtype.val_injective _).mpr
-    intro a ha
-    by_contra hn
-    exact ha ⟨⟨a, (mem_centralIndices a).mpr (hs a (Finsupp.mem_support_iff.mpr hn))⟩, rfl⟩
-  obtain ⟨v, hv⟩ := hm
-  refine ⟨(basis R (centralIndices α) _).repr.symm v, Subtype.ext ?_⟩
-  apply (basis R G α).repr.injective
-  rw [repr_centerHom, LinearEquiv.apply_symm_apply, hv]
+  intro f
+  exact (mem_range_centerHom_iff f).mpr fun a ha ↦
+    (mem_centralIndices a).mpr ((mem_center_iff_support f.val).mp f.property a ha)
 
 /-- The center is the twisted algebra restricted to its central-index submonoid. -/
 noncomputable def centerEquiv [IsLeftCancelMulZero R] :
@@ -226,12 +249,6 @@ theorem centerEquiv_apply [IsLeftCancelMulZero R]
     (f : twistedMonoidAlgebra R (centralIndices α) (fun a b ↦ α a b)) :
     centerEquiv (α := α) f = centerHom α f :=
   AlgEquiv.ofBijective_apply _ _ _
-
-/-- The restricted center equivalence preserves bundled normalized basis elements. -/
-theorem centerEquiv_of [IsLeftCancelMulZero R] (a : centralIndices α) :
-    centerEquiv (α := α) (of a) =
-      ⟨of (a : G), (of_mem_center_iff _).mpr ((mem_centralIndices _).mp a.property)⟩ :=
-  (AlgEquiv.ofBijective_apply _ _ _).trans (centerHom_of a)
 
 /-- The forward map of the restricted center equivalence is the canonical inclusion. -/
 @[simp]
@@ -252,8 +269,10 @@ theorem repr_centerEquiv_symm_apply [IsLeftCancelMulZero R]
 @[simp]
 theorem centerEquiv_symm_of [IsLeftCancelMulZero R] (a : centralIndices α) :
     (centerEquiv (α := α)).symm
-      ⟨of (a : G), (of_mem_center_iff _).mpr ((mem_centralIndices _).mp a.property)⟩ = of a :=
-  (centerEquiv (α := α)).symm_apply_eq.mpr (centerEquiv_of a).symm
+      (centerOf a) = of a :=
+  by
+    apply (centerEquiv (α := α)).symm_apply_eq.mpr
+    simp
 
 end CancelCommMonoid
 
