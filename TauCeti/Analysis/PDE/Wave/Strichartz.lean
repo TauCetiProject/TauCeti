@@ -272,8 +272,8 @@ private theorem exists_eLpNorm_halfWavePropagator_fourierMultiplierCLM_le_rpow
   refine eLpNorm_apply_le_of_eLpNorm_top_le hq
     (two_le_finrank_of_waveAdmissible hq (ENNReal.HolderConjugate.ne_zero r r') hqr hE).2.2 hqr _
     (by positivity) (by positivity) (zpow_pos two_pos j) hτ (fun f hf ↦ ?_)
-    ((norm_halfWavePropagator_comp_fourierMultiplierCLM_le hB0 (hm.mono fun ξ h ↦ h ▸ hB _)
-      τ).trans (by linarith)) g
+    ((norm_halfWavePropagator_comp_fourierMultiplierCLM_le (B := B)
+      (hm.mono fun ξ h ↦ h ▸ hB _) τ).trans (by linarith)) g
   refine (hC j m hm τ f hf).trans ?_
   gcongr ?_ * _
   exact ENNReal.ofReal_le_ofReal (by gcongr; linarith)
