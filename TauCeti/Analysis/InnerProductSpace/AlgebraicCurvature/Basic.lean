@@ -70,6 +70,8 @@ the curvature four-tensor of `S² × ℝⁿ⁻²` when `u, v` are orthonormal.
   finite-dimensional linear equivalence between them.
 * `TauCeti.FourTensor.algebraicCurvatureLinearIsometryEquiv`: pullback of algebraic curvature
   tensors along linear isometric equivalences.
+* `TauCeti.FourTensor.algebraicCurvaturePullback`: pullback of algebraic curvature tensors along a
+  continuous linear map, as a continuous linear map.
 * `TauCeti.FourTensor.ricci` and `TauCeti.FourTensor.scalar`: the Ricci and scalar contractions.
 * `TauCeti.FourTensor.kulkarniNomizu`: the Kulkarni–Nomizu product of two bilinear forms, as a
   four-tensor.
@@ -370,6 +372,45 @@ theorem abs_apply_le_norm_of_norm_eq_one (r : FourTensor V) {u v z w : V}
   rw [Real.norm_eq_abs, Fin.prod_univ_four] at h
   simpa only [Matrix.cons_val_zero, Matrix.cons_val_one, Matrix.cons_val, hu, hv, hz, hw,
     mul_one] using h
+
+/-- The pullback `r ↦ r(f ·, f ·, f ·, f ·)` of algebraic curvature tensors along a continuous
+linear map `f : W →L[ℝ] V`, as a continuous linear map between the spaces of algebraic curvature
+tensors. Along a linear isometry `V ≃ₗᵢ[ℝ] T` it transports curvature tensors on a tangent space
+`T` to the fixed model space `V`. -/
+def algebraicCurvaturePullback (f : W →L[ℝ] V) :
+    algebraicCurvatureSubmodule V →L[ℝ] algebraicCurvatureSubmodule W :=
+  ((ContinuousMultilinearMap.compContinuousLinearMapL fun _ ↦ f).comp
+    (algebraicCurvatureSubmodule V).subtypeL).codRestrict _ fun r ↦
+      compContinuousLinearMap_mem_algebraicCurvatureSubmodule r.property f
+
+/-- The pullback of `r` along `f` evaluates `r` on the images under `f`. -/
+@[simp]
+theorem coe_algebraicCurvaturePullback (f : W →L[ℝ] V) (r : algebraicCurvatureSubmodule V) :
+    (algebraicCurvaturePullback f r : FourTensor W) = r.val.compContinuousLinearMap fun _ ↦ f :=
+  (rfl)
+
+/-- Pullback along the identity is the identity. -/
+@[simp]
+theorem algebraicCurvaturePullback_id :
+    algebraicCurvaturePullback (.id ℝ V) = .id ℝ (algebraicCurvatureSubmodule V) := by
+  ext r m
+  simp
+
+/-- Pullback is contravariant: pulling back along `f` and then along `g` is pulling back along
+`f ∘ g`. -/
+theorem algebraicCurvaturePullback_comp {U : Type*} [NormedAddCommGroup U] [NormedSpace ℝ U]
+    (f : W →L[ℝ] V) (g : U →L[ℝ] W) :
+    algebraicCurvaturePullback (f.comp g) =
+      (algebraicCurvaturePullback g).comp (algebraicCurvaturePullback f) := by
+  ext r m
+  simp
+
+/-- Pulling back along a right inverse `g` of `f` undoes pulling back along `f`. -/
+theorem algebraicCurvaturePullback_algebraicCurvaturePullback_of_comp_eq_id {f : W →L[ℝ] V}
+    {g : V →L[ℝ] W} (h : f.comp g = .id ℝ V) (r : algebraicCurvatureSubmodule V) :
+    algebraicCurvaturePullback g (algebraicCurvaturePullback f r) = r := by
+  rw [← ContinuousLinearMap.comp_apply, ← algebraicCurvaturePullback_comp, h,
+    algebraicCurvaturePullback_id, ContinuousLinearMap.id_apply]
 
 /-- The bilinear form `(x, y) ↦ r(x, u, y, v)` whose metric trace is the Ricci contraction. -/
 private def ricciSlice (r : FourTensor V) (u v : V) : BilinForm ℝ V :=

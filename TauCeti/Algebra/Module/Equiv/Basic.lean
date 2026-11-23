@@ -17,16 +17,18 @@ public import Mathlib.LinearAlgebra.BilinearMap
 Mathlib's `LinearEquiv.smulOfUnit` packages multiplication by a unit `u` of the base ring as a
 linear equivalence, but records no lemma evaluating it at a vector. This file supplies that
 evaluation lemma, in the `simp`-normal form that rewrites an application of
-`LinearEquiv.smulOfUnit` to a scalar multiplication. It also records how a linear automorphism,
-viewed as a permutation of the module through `MulAction.toPermHom`, moves the set underlying a
-submodule.
+`LinearEquiv.smulOfUnit` to a scalar multiplication, and identifies the linear map underlying
+`LinearEquiv.smulOfNeZero` with a scalar multiple of the identity. It also records how a linear
+automorphism, viewed as a permutation of the module through `MulAction.toPermHom`, moves the set
+underlying a submodule.
 Postcomposition with an isomorphism of targets also transports hom spaces over auxiliary
 scalars, even when the ring defining the linear maps is noncommutative.
 For coordinate transport, forgetting linearity gives the corresponding additive word
 equivalence, with the same direction on coordinates. A commutative square of linear maps with
 isomorphisms on its vertical sides transports the ranges of precomposition on hom spaces.
-Conjugating an endomorphism by a semilinear equivalence commutes with powers and moves its kernel
-by the equivalence.
+Conjugating an endomorphism by a semilinear equivalence commutes with powers, moves its kernel
+and its range by the equivalence, and preserves the square-zero property, the conjugate being
+characterized by the equivalence intertwining the two endomorphisms.
 
 ## Main results
 
@@ -39,10 +41,15 @@ by the equivalence.
   kernels and ranges across an intertwining semilinear equivalence.
 * `LinearEquiv.conj_pow` and `LinearEquiv.ker_conj`: conjugation by a semilinear equivalence
   commutes with powers and transports kernels.
+* `LinearEquiv.eq_conjRingEquiv_apply_iff`: the conjugate `f ∘ d ∘ f⁻¹` of an endomorphism
+  by a semilinear equivalence is the unique endomorphism `e` with `e ∘ f = f ∘ d`; it squares
+  to zero when `d` does (`LinearEquiv.conjRingEquiv_apply_comp_self`).
 * `LinearEquiv.toPermHom_smul_coe`: the permutation of the module underlying a linear
   automorphism moves the set underlying a submodule to the set underlying its image.
 * `LinearEquiv.smulOfUnit_apply`: `LinearEquiv.smulOfUnit u` acts as multiplication by `u`.
 * `LinearEquiv.arrowCongr_eq_comp`: `e₁.arrowCongr e₂ f` as the composite `e₂ ∘ₗ f ∘ₗ e₁.symm`.
+* `LinearEquiv.toLinearMap_smulOfNeZero`: `LinearEquiv.smulOfNeZero K V c hc` is `c • id` as a
+  linear map.
 * `LinearEquiv.funCongrLeft_toAddMonoidHom`: forgetting linearity in coordinate transport
   gives additive coordinate transport.
 -/
@@ -162,6 +169,32 @@ theorem map_range_of_intertwine
 
 end Intertwining
 
+section ConjRingEquiv
+
+variable {R S M N : Type*} [Semiring R] [Semiring S] [AddCommMonoid M] [Module R M]
+  [AddCommMonoid N] [Module S N] {σ : R →+* S} {σ' : S →+* R} [RingHomInvPair σ σ']
+  [RingHomInvPair σ' σ]
+
+/-- A semilinear equivalence `f` is a chain map from an endomorphism `d` to its conjugate
+`f ∘ d ∘ f⁻¹`. -/
+theorem conjRingEquiv_apply_comp (f : M ≃ₛₗ[σ] N) (d : M →ₗ[R] M) :
+    f.conjRingEquiv d ∘ₛₗ f.toLinearMap = f.toLinearMap ∘ₛₗ d := by
+  ext x
+  simp
+
+/-- The conjugate `f ∘ d ∘ f⁻¹` is the unique endomorphism `e` for which the semilinear
+equivalence `f` is a chain map from `d` to `e`. -/
+theorem eq_conjRingEquiv_apply_iff (f : M ≃ₛₗ[σ] N) (d : M →ₗ[R] M) {e : N →ₗ[S] N} :
+    e = f.conjRingEquiv d ↔ e ∘ₛₗ f.toLinearMap = f.toLinearMap ∘ₛₗ d :=
+  f.eq_comp_toLinearMap_symm e (f.toLinearMap ∘ₛₗ d)
+
+/-- The conjugate of a square-zero endomorphism by a semilinear equivalence squares to zero. -/
+theorem conjRingEquiv_apply_comp_self (f : M ≃ₛₗ[σ] N) {d : M →ₗ[R] M} (hd : d ∘ₗ d = 0) :
+    f.conjRingEquiv d ∘ₗ f.conjRingEquiv d = 0 := by
+  rw [← Module.End.mul_eq_comp, ← map_mul, Module.End.mul_eq_comp, hd, map_zero]
+
+end ConjRingEquiv
+
 section Conj
 
 variable {R S M N : Type*} [CommSemiring R] [CommSemiring S] [AddCommMonoid M] [AddCommMonoid N]
@@ -179,6 +212,12 @@ theorem conj_pow (e : M ≃ₛₗ[σ] N) (f : Module.End R M) (k : ℕ) :
 theorem ker_conj (e : M ≃ₛₗ[σ] N) (f : Module.End R M) :
     LinearMap.ker (e.conj f) = (LinearMap.ker f).map (e : M →ₛₗ[σ] N) :=
   (map_ker_of_intertwine e f (e.conj f) fun d => by simp).symm
+
+/-- Conjugation by a semilinear equivalence `e` carries the range of `f` to its image under `e`. -/
+@[simp]
+theorem range_conj (e : M ≃ₛₗ[σ] N) (f : Module.End R M) :
+    LinearMap.range (e.conj f) = (LinearMap.range f).map (e : M →ₛₗ[σ] N) :=
+  (map_range_of_intertwine e f (e.conj f) fun d => by simp).symm
 
 end Conj
 
@@ -213,5 +252,11 @@ theorem arrowCongr_eq_comp {R A B A' B' : Type*} [CommSemiring R]
     (e₁ : A ≃ₗ[R] A') (e₂ : B ≃ₗ[R] B') (f : A →ₗ[R] B) :
     e₁.arrowCongr e₂ f = e₂.toLinearMap ∘ₗ f ∘ₗ e₁.symm.toLinearMap :=
   LinearMap.ext fun _ ↦ (rfl)
+
+/-- Multiplication by a nonzero scalar `c` of a field, as a linear map, is `c • id`. -/
+@[simp]
+theorem toLinearMap_smulOfNeZero (K V : Type*) [Field K] [AddCommGroup V] [Module K V] (c : K)
+    (hc : c ≠ 0) : (smulOfNeZero K V c hc).toLinearMap = c • LinearMap.id :=
+  LinearMap.ext fun _ ↦ smulOfNeZero_apply _ _ _ _ _
 
 end LinearEquiv

@@ -133,13 +133,8 @@ theorem schoutenTensor_eq_of_curvatureTensor_eq_smul_inner_sub (x : M) (k : ℝ)
     (h : ∀ w u v, curvature x w u v =
       k • (inner ℝ u v • w - inner ℝ w v • u)) :
     cov.schoutenTensor x = (k / 2) • innerₗ (TangentSpace I x) := by
-  have hcurv : cov.curvatureFourTensor x =
-      k • TauCeti.FourTensor.constantCurvature (TangentSpace I x) :=
-    TauCeti.FourTensor.ext_vec fun u v z w ↦ by
-      rw [cov.curvatureFourTensor_apply, smul_apply, smul_eq_mul]
-      exact TauCeti.FourTensor.inner_eq_mul_constantCurvature h u v z w
-  rw [schoutenTensor, hcurv, map_smul, TauCeti.FourTensor.schouten_constantCurvature hn,
-    smul_smul, mul_one_div]
+  rw [schoutenTensor, cov.curvatureFourTensor_eq_smul_constantCurvature x h, map_smul,
+    TauCeti.FourTensor.schouten_constantCurvature hn, smul_smul, mul_one_div]
 
 /-- For a smooth metric, the Schouten tensor of a smooth connection pairs two vector fields
 differentiable at `x` to a function differentiable at `x`. -/

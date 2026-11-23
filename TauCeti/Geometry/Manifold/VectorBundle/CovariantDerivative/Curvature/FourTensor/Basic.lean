@@ -24,6 +24,7 @@ Its algebraic Ricci and scalar contractions match `CovariantDerivative.ricciTens
 * `CovariantDerivative.curvatureFourTensor_apply`
 * `CovariantDerivative.ricci_curvatureFourTensor`
 * `CovariantDerivative.scalar_curvatureFourTensor`
+* `CovariantDerivative.curvatureFourTensor_eq_smul_constantCurvature`
 
 ## References
 
@@ -80,6 +81,17 @@ theorem scalar_curvatureFourTensor (x : M) :
   let b := stdOrthonormalBasis ℝ (TangentSpace I x)
   rw [scalar_apply_orthonormalBasis b, cov.scalarCurvature_eq_sum_riemannCurvatureTensor x b]
   simp [cov.curvatureFourTensor_eq_riemannCurvatureTensor]
+
+/-- If the curvature of `cov` at `x` has the constant-curvature form
+`R(w, u)v = κ (⟪u, v⟫ w - ⟪w, v⟫ u)`, its curvature four-tensor is `κ` times the
+constant-curvature tensor. -/
+theorem curvatureFourTensor_eq_smul_constantCurvature (x : M) {κ : ℝ}
+    (h : ∀ w u v : TangentSpace I x,
+      cov.curvatureTensor x w u v = κ • (⟪u, v⟫_ℝ • w - ⟪w, v⟫_ℝ • u)) :
+    cov.curvatureFourTensor x = κ • constantCurvature (TangentSpace I x) := by
+  refine ext_vec fun u v z w ↦ ?_
+  rw [_root_.smul_apply, curvatureFourTensor_apply, smul_eq_mul]
+  exact inner_eq_mul_constantCurvature h _ _ _ _
 
 end FourTensor
 

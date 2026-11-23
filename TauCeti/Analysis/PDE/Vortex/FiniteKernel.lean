@@ -35,7 +35,9 @@ The proof is the classical one, combining an estimate at infinity with compactne
 * **Estimate at infinity.** The exterior coercivity
   `exists_exterior_integral_norm_sq_gaugeFixedOperator_ge` applies to `χ y` for a kernel element
   `y` and a cutoff `χ` vanishing on a large disc. Since `L_x (χ y)` is the principal symbol of `dχ`
-  applied to `y`, which lives on an annulus, a kernel element is controlled by its mass on a
+  applied to `y`, this gives `c² ∫ |χ y|² ≤ ∫ |dχ|² |y|²` for every bounded such `χ`
+  (`mul_integral_norm_sq_smul_le_of_mem_gaugeFixedKernel`). For a cutoff whose derivative lives on
+  an annulus, a kernel element is therefore controlled by its mass on a
   disc: `∫ |y|² ≤ C ∫_{|z| ≤ ρ} |y|²` (`exists_integral_norm_sq_le_mul_setIntegral_closedBall`).
   As `y` is only square integrable, `χ y` is first truncated at large radius, with derivative
   errors that vanish in the limit.
@@ -48,6 +50,8 @@ The proof is the classical one, combining an estimate at infinity with compactne
 
 ## Main results
 
+* `TauCeti.Vortex.mul_integral_norm_sq_smul_le_of_mem_gaugeFixedKernel`: the exterior estimate
+  for a kernel element times a bounded weight vanishing on the disc.
 * `TauCeti.Vortex.exists_integral_norm_sq_le_mul_setIntegral_closedBall`: kernel elements are
   controlled by their mass on a fixed disc.
 * `TauCeti.Vortex.finiteDimensional_gaugeFixedKernel_of_tendsto`: the kernel is
@@ -74,87 +78,105 @@ variable {x : ℂ → EuclideanSpace ℝ (Fin 4)}
 
 /-! ### The estimate at infinity -/
 
-/-- The exterior estimate extends from compactly supported variations to the product `χ y` of a
-kernel element `y` with a cutoff `χ` vanishing on the disc: `c² ∫ |χ y|² ≤ 2 ∫ |dχ|² |y|²`. The
-proof truncates `χ y` at large radius `n + 1` by cutoffs with derivative `O(1 / (n + 1))`, whose
-contribution vanishes as `n → ∞`. -/
-private theorem mul_integral_norm_sq_smul_le (hx : Continuous x) {c R : ℝ}
+/-- The exterior estimate for the truncation `(ψ χ) y` of a kernel element `y` by a compactly
+supported cutoff `ψ` with values in `[0, 1]` and derivative at most `e`, where `|χ| ≤ M`. Since
+`L_x ((ψ χ) y) = σ(ψ dχ + χ dψ) y`,
+`c² ∫ |ψ χ y|² ≤ (1 + M e) ∫ |dχ|² |y|² + (M e + (M e)²) ∫ |y|²`. -/
+private theorem mul_integral_norm_sq_mul_smul_le (hx : Continuous x) {c R : ℝ}
     (hR : ∀ u : ℂ → EuclideanSpace ℝ (Fin 4), ContDiff ℝ 2 u → HasCompactSupport u →
       (∀ z, ‖z‖ ≤ R → u z = 0) → c ^ 2 * (∫ z, ‖u z‖ ^ 2) ≤ ∫ z, ‖gaugeFixedOperator x u z‖ ^ 2)
-    {χ : ℂ → ℝ} {χ' : ℂ → ℂ →L[ℝ] ℝ} (hχ : ContDiff ℝ 2 χ) (hχ01 : ∀ z, 0 ≤ χ z ∧ χ z ≤ 1)
+    {χ ψ : ℂ → ℝ} {χ' ψ' : ℂ → ℂ →L[ℝ] ℝ} {M e : ℝ} (hχ : ContDiff ℝ 2 χ)
+    (hχM : ∀ z, |χ z| ≤ M) (hχ0 : ∀ z, ‖z‖ ≤ R → χ z = 0) (hχd : ∀ z, HasFDerivAt χ (χ' z) z)
+    (hψ : ContDiff ℝ 2 ψ) (hψc : HasCompactSupport ψ) (hψ01 : ∀ z, 0 ≤ ψ z ∧ ψ z ≤ 1)
+    (hψd : ∀ z, HasFDerivAt ψ (ψ' z) z) (hψb : ∀ z, ‖ψ' z‖ ≤ e)
+    {y : ℂ → EuclideanSpace ℝ (Fin 4)} (hy : y ∈ gaugeFixedKernel x)
+    (hB : Integrable fun z ↦ ‖χ' z‖ ^ 2 * ‖y z‖ ^ 2) :
+    c ^ 2 * ∫ z, ‖(ψ z * χ z) • y z‖ ^ 2 ≤
+      (1 + M * e) * (∫ z, ‖χ' z‖ ^ 2 * ‖y z‖ ^ 2) + (M * e + (M * e) ^ 2) * ∫ z, ‖y z‖ ^ 2 := by
+  obtain ⟨hy, hy₂, hLy⟩ := mem_gaugeFixedKernel.1 hy
+  have hM : 0 ≤ M := (abs_nonneg _).trans (hχM 0)
+  have hMe : 0 ≤ M * e := mul_nonneg hM ((norm_nonneg _).trans (hψb 0))
+  have hn : Integrable fun z ↦ ‖y z‖ ^ 2 := hy₂.integrable_norm_pow two_ne_zero
+  have hwd (z : ℂ) : HasFDerivAt (fun z ↦ ψ z * χ z) (ψ z • χ' z + χ z • ψ' z) z :=
+    (hψd z).mul (hχd z)
+  have hu : ContDiff ℝ 2 fun z ↦ (ψ z * χ z) • y z := (hψ.mul hχ).smul hy
+  have hpt (z : ℂ) : ‖gaugeFixedOperator x (fun z ↦ (ψ z * χ z) • y z) z‖ ^ 2 ≤
+      (1 + M * e) * (‖χ' z‖ ^ 2 * ‖y z‖ ^ 2) + (M * e + (M * e) ^ 2) * ‖y z‖ ^ 2 := by
+    rw [gaugeFixedOperator_fun_smul x (hwd z).differentiableAt
+      (hy.differentiable two_ne_zero z), hLy z, smul_zero, zero_add,
+      (hwd z).fderiv, norm_sq_gaugeFixedOperatorSymbol]
+    have hW : ‖ψ z • χ' z + χ z • ψ' z‖ ≤ ‖χ' z‖ + M * e := by
+      refine (norm_add_le _ _).trans (add_le_add ?_ ?_)
+      · rw [norm_smul, Real.norm_of_nonneg (hψ01 z).1]
+        exact mul_le_of_le_one_left (norm_nonneg _) (hψ01 z).2
+      · rw [norm_smul, Real.norm_eq_abs]
+        exact mul_le_mul (hχM z) (hψb z) (norm_nonneg _) hM
+    have hsq := pow_le_pow_left₀ (norm_nonneg _) hW 2
+    nlinarith [sq_nonneg (‖χ' z‖ - 1), sq_nonneg ‖y z‖, mul_nonneg hMe (sq_nonneg ‖y z‖),
+      mul_nonneg (mul_nonneg hMe (sq_nonneg (‖χ' z‖ - 1))) (sq_nonneg ‖y z‖)]
+  have hRHS : Integrable fun z ↦
+      (1 + M * e) * (‖χ' z‖ ^ 2 * ‖y z‖ ^ 2) + (M * e + (M * e) ^ 2) * ‖y z‖ ^ 2 :=
+    (hB.const_mul _).add (hn.const_mul _)
+  have hLi : Integrable fun z ↦ ‖gaugeFixedOperator x (fun z ↦ (ψ z * χ z) • y z) z‖ ^ 2 :=
+    Integrable.mono' hRHS ((continuous_gaugeFixedOperator hx
+        (hu.of_le (by norm_num))).norm.pow 2).aestronglyMeasurable
+      (.of_forall fun z ↦ by rw [Real.norm_of_nonneg (sq_nonneg _)]; exact hpt z)
+  calc c ^ 2 * ∫ z, ‖(ψ z * χ z) • y z‖ ^ 2
+      ≤ ∫ z, ‖gaugeFixedOperator x (fun z ↦ (ψ z * χ z) • y z) z‖ ^ 2 :=
+        hR _ hu ((hψc.mul_right (f' := χ)).smul_right (f' := y)) fun z hz ↦ by simp [hχ0 z hz]
+    _ ≤ _ := integral_mono hLi hRHS hpt
+    _ = (1 + M * e) * (∫ z, ‖χ' z‖ ^ 2 * ‖y z‖ ^ 2) +
+          (M * e + (M * e) ^ 2) * ∫ z, ‖y z‖ ^ 2 := by
+      rw [integral_add (hB.const_mul _) (hn.const_mul _), integral_const_mul, integral_const_mul]
+
+/-- **The exterior estimate for a kernel element times a bounded cutoff.** If `L_x` satisfies the
+exterior estimate `c² ∫ |u|² ≤ ∫ |L_x u|²` for compactly supported `C²` variations vanishing on the
+disc of radius `R`, then so does the product `χ y` of a kernel element `y` with a bounded `C²`
+function `χ` vanishing on that disc: since `L_x (χ y) = σ(dχ) y`,
+
+`c² ∫ |χ y|² ≤ ∫ |dχ|² |y|²`.
+
+The proof truncates `χ y` at large radius `n + 1` by cutoffs with derivative `O(1 / (n + 1))`, whose
+contribution vanishes as `n → ∞`. -/
+theorem mul_integral_norm_sq_smul_le_of_mem_gaugeFixedKernel (hx : Continuous x) {c R : ℝ}
+    (hR : ∀ u : ℂ → EuclideanSpace ℝ (Fin 4), ContDiff ℝ 2 u → HasCompactSupport u →
+      (∀ z, ‖z‖ ≤ R → u z = 0) → c ^ 2 * (∫ z, ‖u z‖ ^ 2) ≤ ∫ z, ‖gaugeFixedOperator x u z‖ ^ 2)
+    {χ : ℂ → ℝ} {χ' : ℂ → ℂ →L[ℝ] ℝ} {M : ℝ} (hχ : ContDiff ℝ 2 χ) (hχM : ∀ z, |χ z| ≤ M)
     (hχ0 : ∀ z, ‖z‖ ≤ R → χ z = 0) (hχd : ∀ z, HasFDerivAt χ (χ' z) z)
     {y : ℂ → EuclideanSpace ℝ (Fin 4)} (hy : y ∈ gaugeFixedKernel x)
     (hB : Integrable fun z ↦ ‖χ' z‖ ^ 2 * ‖y z‖ ^ 2) :
-    c ^ 2 * ∫ z, ‖χ z • y z‖ ^ 2 ≤ 2 * ∫ z, ‖χ' z‖ ^ 2 * ‖y z‖ ^ 2 := by
-  obtain ⟨hy, hy₂, hLy⟩ := mem_gaugeFixedKernel.1 hy
+    c ^ 2 * ∫ z, ‖χ z • y z‖ ^ 2 ≤ ∫ z, ‖χ' z‖ ^ 2 * ‖y z‖ ^ 2 := by
+  have hyc := (mem_gaugeFixedKernel.1 hy).1.continuous
+  have hy₂ := (mem_gaugeFixedKernel.1 hy).2.1
   obtain ⟨A, -, hcut⟩ := exists_cutoff_fderiv_bound (E := ℂ)
   -- `ψ n` is one on the disc of radius `n + 1`, with derivative at most `A / (n + 1)`.
-  choose ψ ψ' hψ hψ01 hψ1 hψ0 hψd hψb using fun n : ℕ ↦ hcut 0 ((n : ℝ) + 1) (by positivity)
-  have hn : Integrable fun z ↦ ‖y z‖ ^ 2 :=
-    (memLp_two_iff_integrable_sq_norm hy₂.aestronglyMeasurable).mp hy₂
-  set w : ℕ → ℂ → ℝ := fun n z ↦ ψ n z * χ z with hw
-  have hwd (n : ℕ) (z : ℂ) : HasFDerivAt (w n) (ψ n z • χ' z + χ z • ψ' n z) z :=
-    (hψd n z).mul (hχd z)
-  have hw1 (n : ℕ) (z : ℂ) : ‖w n z‖ ≤ 1 := by
-    have := hψ01 n z; have := hχ01 z
-    rw [Real.norm_eq_abs, abs_le]
-    constructor <;> nlinarith
-  -- The truncations `w n • y` satisfy the exterior estimate, and `L_x (w n • y) = σ(dw n) y`.
-  have hineq (n : ℕ) : c ^ 2 * ∫ z, ‖w n z • y z‖ ^ 2 ≤
-      2 * (∫ z, ‖χ' z‖ ^ 2 * ‖y z‖ ^ 2) + 2 * (A * ((n : ℝ) + 1)⁻¹) ^ 2 * ∫ z, ‖y z‖ ^ 2 := by
-    have hu : ContDiff ℝ 2 fun z ↦ w n z • y z := ((hψ n 2).mul hχ).smul hy
-    have huc : HasCompactSupport fun z ↦ w n z • y z :=
-      HasCompactSupport.intro (isCompact_closedBall 0 (2 * ((n : ℝ) + 1))) fun z hz ↦ by
-        simp [hw, hψ0 n z (by simpa using hz)]
-    have hpt (z : ℂ) : ‖gaugeFixedOperator x (fun z ↦ w n z • y z) z‖ ^ 2 ≤
-        2 * (‖χ' z‖ ^ 2 * ‖y z‖ ^ 2) + 2 * (A * ((n : ℝ) + 1)⁻¹) ^ 2 * ‖y z‖ ^ 2 := by
-      rw [gaugeFixedOperator_fun_smul x (hwd n z).differentiableAt
-        (hy.differentiable two_ne_zero z), hLy z, smul_zero, zero_add,
-        (hwd n z).fderiv, norm_sq_gaugeFixedOperatorSymbol]
-      have hW : ‖ψ n z • χ' z + χ z • ψ' n z‖ ≤ ‖χ' z‖ + A * ((n : ℝ) + 1)⁻¹ := by
-        refine (norm_add_le _ _).trans (add_le_add ?_ ?_)
-        · rw [norm_smul, Real.norm_of_nonneg (hψ01 n z).1]
-          exact mul_le_of_le_one_left (norm_nonneg _) (hψ01 n z).2
-        · rw [norm_smul, Real.norm_of_nonneg (hχ01 z).1]
-          exact (mul_le_of_le_one_left (norm_nonneg _) (hχ01 z).2).trans (hψb n z)
-      have hsq := pow_le_pow_left₀ (norm_nonneg _) hW 2
-      nlinarith [sq_nonneg (‖χ' z‖ - A * ((n : ℝ) + 1)⁻¹), sq_nonneg ‖y z‖]
-    have hRHS : Integrable fun z ↦
-        2 * (‖χ' z‖ ^ 2 * ‖y z‖ ^ 2) + 2 * (A * ((n : ℝ) + 1)⁻¹) ^ 2 * ‖y z‖ ^ 2 :=
-      (hB.const_mul 2).add (hn.const_mul _)
-    have hLi : Integrable fun z ↦ ‖gaugeFixedOperator x (fun z ↦ w n z • y z) z‖ ^ 2 :=
-      Integrable.mono' hRHS
-        ((continuous_gaugeFixedOperator hx
-          (hu.of_le (by norm_num))).norm.pow 2).aestronglyMeasurable
-        (.of_forall fun z ↦ by rw [Real.norm_of_nonneg (sq_nonneg _)]; exact hpt z)
-    calc c ^ 2 * ∫ z, ‖w n z • y z‖ ^ 2
-        ≤ ∫ z, ‖gaugeFixedOperator x (fun z ↦ w n z • y z) z‖ ^ 2 :=
-          hR _ hu huc fun z hz ↦ by simp [hw, hχ0 z hz]
-      _ ≤ ∫ z, (2 * (‖χ' z‖ ^ 2 * ‖y z‖ ^ 2) +
-            2 * (A * ((n : ℝ) + 1)⁻¹) ^ 2 * ‖y z‖ ^ 2) := integral_mono hLi hRHS hpt
-      _ = 2 * (∫ z, ‖χ' z‖ ^ 2 * ‖y z‖ ^ 2) +
-            2 * (A * ((n : ℝ) + 1)⁻¹) ^ 2 * ∫ z, ‖y z‖ ^ 2 := by
-        rw [integral_add (hB.const_mul 2) (hn.const_mul _), integral_const_mul,
-          integral_const_mul]
+  choose ψ ψ' hψ hψ01 hψ1 hψ0 hψd hψb _ _ using fun n : ℕ ↦ hcut 0 ((n : ℝ) + 1) (by positivity)
+  have hn : Integrable fun z ↦ ‖y z‖ ^ 2 := hy₂.integrable_norm_pow two_ne_zero
+  have hineq (n : ℕ) := mul_integral_norm_sq_mul_smul_le hx hR hχ hχM hχ0 hχd (hψ n 2)
+    (HasCompactSupport.intro (isCompact_closedBall 0 (2 * ((n : ℝ) + 1))) fun z hz ↦
+      hψ0 n z (by simpa using hz)) (hψ01 n) (hψd n) (hψb n) hy hB
   -- Let the truncation radius tend to infinity, by dominated convergence on the left.
-  have hlimL : Tendsto (fun n : ℕ ↦ ∫ z, ‖w n z • y z‖ ^ 2) atTop
+  have hlimL : Tendsto (fun n : ℕ ↦ ∫ z, ‖(ψ n z * χ z) • y z‖ ^ 2) atTop
       (𝓝 (∫ z, ‖χ z • y z‖ ^ 2)) := by
-    refine tendsto_integral_of_dominated_convergence (fun z ↦ ‖y z‖ ^ 2)
+    refine tendsto_integral_of_dominated_convergence (fun z ↦ M ^ 2 * ‖y z‖ ^ 2)
       (fun n ↦ ((((hψ n 0).continuous.mul hχ.continuous).smul
-        hy.continuous).norm.pow 2).aestronglyMeasurable) hn
+        hyc).norm.pow 2).aestronglyMeasurable) (hn.const_mul _)
       (fun n ↦ .of_forall fun z ↦ ?_) (.of_forall fun z ↦ ?_)
-    · rw [Real.norm_of_nonneg (sq_nonneg _), norm_smul, mul_pow]
-      exact mul_le_of_le_one_left (sq_nonneg _) (pow_le_one₀ (norm_nonneg _) (hw1 n z))
+    · rw [Real.norm_of_nonneg (sq_nonneg _), norm_smul, mul_pow, norm_mul,
+        Real.norm_of_nonneg (hψ01 n z).1, Real.norm_eq_abs]
+      exact mul_le_mul_of_nonneg_right (pow_le_pow_left₀ (mul_nonneg (hψ01 n z).1 (abs_nonneg _))
+        ((mul_le_of_le_one_left (abs_nonneg _) (hψ01 n z).2).trans (hχM z)) 2) (sq_nonneg _)
     · refine tendsto_atTop_of_eventually_const (i₀ := ⌈‖z‖⌉₊) fun n hn ↦ ?_
       have hz : ‖z‖ ≤ (n : ℝ) + 1 :=
         (Nat.le_ceil _).trans ((Nat.cast_le.mpr hn).trans (by linarith))
-      simp [hw, hψ1 n z (by simpa using hz)]
-  have hlimR : Tendsto (fun n : ℕ ↦ 2 * (∫ z, ‖χ' z‖ ^ 2 * ‖y z‖ ^ 2) +
-      2 * (A * ((n : ℝ) + 1)⁻¹) ^ 2 * ∫ z, ‖y z‖ ^ 2) atTop
-      (𝓝 (2 * (∫ z, ‖χ' z‖ ^ 2 * ‖y z‖ ^ 2) + 2 * (A * 0) ^ 2 * ∫ z, ‖y z‖ ^ 2)) := by
+      simp [hψ1 n z (by simpa using hz)]
+  have hlima : Tendsto (fun n : ℕ ↦ M * (A * ((n : ℝ) + 1)⁻¹)) atTop (𝓝 0) := by
     have h := tendsto_one_div_add_atTop_nhds_zero_nat (𝕜 := ℝ)
     simp only [one_div] at h
-    exact tendsto_const_nhds.add ((((h.const_mul A).pow 2).const_mul 2).mul_const _)
+    simpa using (h.const_mul A).const_mul M
+  have hlimR := ((tendsto_const_nhds (x := 1)).add hlima).mul_const
+    (∫ z, ‖χ' z‖ ^ 2 * ‖y z‖ ^ 2) |>.add ((hlima.add (hlima.pow 2)).mul_const
+      (∫ z, ‖y z‖ ^ 2))
   simpa using le_of_tendsto_of_tendsto' (hlimL.const_mul _) hlimR hineq
 
 /-- **A kernel element is controlled by its mass on a disc.** For a `C¹` plane vortex with
@@ -170,14 +192,10 @@ theorem exists_integral_norm_sq_le_mul_setIntegral_closedBall (hx : ContDiff ℝ
     hx hsol hlim hcov (c := 1 / 4) (by norm_num) (by norm_num)
   obtain ⟨A, -, hcut⟩ := exists_cutoff_fderiv_bound (E := ℂ)
   -- `b` is one on the disc of radius `R` and vanishes beyond `2 R`; the cutoff is `1 - b`.
-  obtain ⟨b, b', hb, hb01, hb1, hb0, hbd, hbb⟩ := hcut 0 R hR0
-  refine ⟨2 * R, 1 + 32 * (A * R⁻¹) ^ 2, fun y hyK ↦ ?_⟩
+  obtain ⟨b, b', hb, hb01, hb1, hb0, hbd, hbb, hb'c, hb'0⟩ := hcut 0 R hR0
+  refine ⟨2 * R, 1 + 16 * (A * R⁻¹) ^ 2, fun y hyK ↦ ?_⟩
   have hy₂ : MemLp y 2 := memLp_of_mem_gaugeFixedKernel hyK
-  have hn : Integrable fun z ↦ ‖y z‖ ^ 2 :=
-    (memLp_two_iff_integrable_sq_norm hy₂.aestronglyMeasurable).mp hy₂
-  have hb'c : Continuous b' := by
-    have h : b' = fderiv ℝ b := funext fun z ↦ (hbd z).fderiv.symm
-    exact h ▸ (hb 1).continuous_fderiv one_ne_zero
+  have hn : Integrable fun z ↦ ‖y z‖ ^ 2 := hy₂.integrable_norm_pow two_ne_zero
   have hB : Integrable fun z ↦ ‖-b' z‖ ^ 2 * ‖y z‖ ^ 2 :=
     Integrable.mono' (hn.const_mul ((A * R⁻¹) ^ 2))
       ((hb'c.neg.norm.pow 2).aestronglyMeasurable.mul hn.aestronglyMeasurable)
@@ -185,22 +203,16 @@ theorem exists_integral_norm_sq_le_mul_setIntegral_closedBall (hx : ContDiff ℝ
         rw [Real.norm_of_nonneg (by positivity), norm_neg]
         exact mul_le_mul_of_nonneg_right (pow_le_pow_left₀ (norm_nonneg _) (hbb z) 2)
           (sq_nonneg _))
-  have hχB := mul_integral_norm_sq_smul_le hx.continuous hR (χ := fun z ↦ 1 - b z)
-    (contDiff_const.sub (hb 2)) (fun z ↦ ⟨by linarith [hb01 z], by linarith [hb01 z]⟩)
+  have hχB := mul_integral_norm_sq_smul_le_of_mem_gaugeFixedKernel hx.continuous hR
+    (χ := fun z ↦ 1 - b z) (M := 1) (contDiff_const.sub (hb 2))
+    (fun z ↦ abs_le.2 ⟨by linarith [hb01 z], by linarith [hb01 z]⟩)
     (fun z hz ↦ by simp [hb1 z (by simpa using hz)]) (fun z ↦ (hbd z).const_sub 1) hyK hB
   simp only [norm_neg] at hχB
   -- The derivative of the cutoff lives on the disc of radius `2 R`.
   have hBball : ∫ z, ‖b' z‖ ^ 2 * ‖y z‖ ^ 2 ≤
       (A * R⁻¹) ^ 2 * ∫ z in closedBall 0 (2 * R), ‖y z‖ ^ 2 := by
     rw [← setIntegral_eq_integral_of_forall_compl_eq_zero (s := closedBall (0 : ℂ) (2 * R))
-      fun z hz ↦ by
-        -- Beyond radius `2 R` the cutoff vanishes near `z`, so its derivative there is zero.
-        have hev : b =ᶠ[𝓝 z] fun _ ↦ 0 := by
-          filter_upwards [(isOpen_lt continuous_const continuous_norm).mem_nhds
-            (show 2 * R < ‖z‖ by simpa using hz)] with w hw
-          exact hb0 w (by simpa using hw)
-        rw [(hbd z).unique ((hasFDerivAt_const 0 z).congr_of_eventuallyEq hev)]
-        simp, ← integral_const_mul]
+      fun z hz ↦ by simp [hb'0 z (by simpa using hz)], ← integral_const_mul]
     refine setIntegral_mono (by simpa using hB.integrableOn) (hn.const_mul _).integrableOn
       fun z ↦ ?_
     exact mul_le_mul_of_nonneg_right (pow_le_pow_left₀ (norm_nonneg _) (hbb z) 2) (sq_nonneg _)
@@ -248,10 +260,9 @@ private theorem totallyBounded_setOf_ae_eq_smul (hx : ContDiff ℝ 1 x)
       exact mul_le_of_le_one_left (norm_nonneg _) (hb01 z).2
     have hu₂ : MemLp (fun z ↦ b z • y z) 2 :=
       hy₂.of_le hu.continuous.aestronglyMeasurable (.of_forall hnorm)
-    have hn : Integrable fun z ↦ ‖y z‖ ^ 2 :=
-      (memLp_two_iff_integrable_sq_norm hy₂.aestronglyMeasurable).mp hy₂
+    have hn : Integrable fun z ↦ ‖y z‖ ^ 2 := hy₂.integrable_norm_pow two_ne_zero
     have hun : Integrable fun z ↦ ‖b z • y z‖ ^ 2 :=
-      (memLp_two_iff_integrable_sq_norm hu₂.aestronglyMeasurable).mp hu₂
+      hu₂.integrable_norm_pow two_ne_zero
     have hL (z : ℂ) : ‖gaugeFixedOperator x (fun z ↦ b z • y z) z‖ ^ 2 ≤ A ^ 2 * ‖y z‖ ^ 2 := by
       rw [gaugeFixedOperator_fun_smul x (hbd z).differentiableAt
         (hy.differentiable two_ne_zero z), hLy z, smul_zero, zero_add,
@@ -300,9 +311,9 @@ private theorem totallyBounded_setOf_ae_eq_smul (hx : ContDiff ℝ 1 x)
   refine ENNReal.ofReal_le_ofReal (Real.sqrt_le_iff.mpr ⟨abs_nonneg _, ?_⟩)
   rw [sq_abs]
   refine le_trans (integral_mono ?_ ?_ fun z ↦ ?_) hyR
-  · exact (memLp_two_iff_integrable_sq_norm hu₂.aestronglyMeasurable).mp hu₂
+  · exact hu₂.integrable_norm_pow two_ne_zero
   · have hy₂ := memLp_of_mem_gaugeFixedKernel hy
-    exact (memLp_two_iff_integrable_sq_norm hy₂.aestronglyMeasurable).mp hy₂
+    exact hy₂.integrable_norm_pow two_ne_zero
   · refine pow_le_pow_left₀ (norm_nonneg _) ?_ 2
     rw [norm_smul, Real.norm_of_nonneg (hb01 z).1]
     exact mul_le_of_le_one_left (norm_nonneg _) (hb01 z).2
@@ -333,7 +344,7 @@ theorem finiteDimensional_gaugeFixedKernel_of_tendsto (hx : ContDiff ℝ 1 x)
     FiniteDimensional ℝ (gaugeFixedKernel x) := by
   obtain ⟨ρ, C, hC⟩ := exists_integral_norm_sq_le_mul_setIntegral_closedBall hx hsol hlim hcov
   obtain ⟨A, -, hcut⟩ := exists_cutoff_fderiv_bound (E := ℂ)
-  obtain ⟨b, b', hb, hb01, hb1, hb0, hbd, hbb⟩ := hcut 0 (max ρ 1) (by positivity)
+  obtain ⟨b, b', hb, hb01, hb1, hb0, hbd, hbb, -, -⟩ := hcut 0 (max ρ 1) (by positivity)
   set T := gaugeFixedKernelToLp x
   -- A bounded sequence in the range of `T` with pairwise distances at least `1` is impossible.
   have : FiniteDimensional ℝ (LinearMap.range T) := by

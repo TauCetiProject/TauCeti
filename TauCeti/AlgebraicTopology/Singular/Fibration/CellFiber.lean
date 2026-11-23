@@ -121,6 +121,15 @@ abbrev cellDiskPullbackPair (n : ℕ) (j : cell C n) : TopPair.{u} :=
   TopPair.ofSubset (_root_.TopCat.pullbackFst (cellULiftMap C n j) p ⁻¹'
     {x | (x : ULift.{u} (Fin n → ℝ)) ∈ sphere 0 1})
 
+/-- A point of the pullback `Pⱼ` along an `n`-cell `j` lies in the part `∂Pⱼ` over the
+boundary exactly when its point of the ball lies in the unit sphere. -/
+lemma mem_cellDiskPullbackPair_snd_iff (n : ℕ) (j : cell C n)
+    (y : {x : closedBall (0 : ULift.{u} (Fin n → ℝ)) 1 × E // cellULiftMap C n j x.1 = p x.2}) :
+    y ∈ _root_.TopCat.pullbackFst (cellULiftMap C n j) p ⁻¹'
+        {x | (x : ULift.{u} (Fin n → ℝ)) ∈ sphere 0 1} ↔
+      (y.val.1 : ULift.{u} (Fin n → ℝ)) ∈ sphere 0 1 := by
+  rw [mem_preimage, mem_ofPred_eq, _root_.TopCat.pullbackFst_apply]
+
 variable (p C) in
 /-- The inclusion `Pⱼ ⟶ P` of the pullback of `p` along the characteristic map of `j` into the
 pullback of `p` to the disks of all `n`-cells. -/
@@ -146,7 +155,7 @@ def cellDiskPullbackPairι (n : ℕ) (j : cell C n) :
     cellDiskPullbackPair p C n j ⟶ cellPullbackPair p C n :=
   TopPair.ofSubsetMap (cellDiskPullbackι p C n j) fun x hx ↦ by
     rw [mem_ofPred_eq, coe_cellDiskPullbackι_apply, coe_uliftClosedBall_apply, ULift.norm_down]
-    exact mem_sphere_zero_iff_norm.1 hx
+    exact mem_sphere_zero_iff_norm.1 ((mem_cellDiskPullbackPair_snd_iff n j x).1 hx)
 
 private lemma cellDiskPullbackPairι_fst_apply (n : ℕ) (j : cell C n)
     (x : (cellDiskPullbackPair p C n j).fst) :
