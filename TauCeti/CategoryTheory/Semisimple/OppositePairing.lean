@@ -201,7 +201,8 @@ theorem eq_simpleOppositeExactPairing_coevaluation_iff
   refine ⟨by rintro rfl; exact simpleOppositeExactPairing_coevaluation_comp_evaluation X,
     fun ht ↦ ?_⟩
   let _ : ExactPairing Xᘁ X := simpleOppositeExactPairing X
-  obtain ⟨c, rfl⟩ := hom_from_tensorUnit_eq_smul_coevaluation_of_simple_right k t
+  obtain ⟨c, rfl⟩ := hom_from_tensorUnit_eq_smul_coevaluation_of_surjective_right
+    (bijective_algebraMap_end_of_simple k X).surjective t
   rw [Linear.smul_comp, simpleOppositeExactPairing_coevaluation_comp_evaluation] at ht
   have hc : c = 1 := sub_eq_zero.1 <|
     (smul_eq_zero.1 (by rw [sub_smul, one_smul, ht, sub_self])).resolve_right

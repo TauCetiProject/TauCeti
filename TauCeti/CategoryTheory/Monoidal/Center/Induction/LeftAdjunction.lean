@@ -227,7 +227,8 @@ private def unitClassCoevaluationBasis (S : SimpleClasses C) :
       left_inv := hleft
       right_inv f := by
         let _ := simpleOppositeExactPairing S.repr
-        obtain ⟨c, hc⟩ := hom_from_tensorUnit_eq_smul_coevaluation_of_simple_right k (u₀.inv ≫ f)
+        obtain ⟨c, hc⟩ := hom_from_tensorUnit_eq_smul_coevaluation_of_surjective_right
+          (bijective_algebraMap_end_of_simple k S.repr).surjective (u₀.inv ≫ f)
         have hf : f = c • (u₀.hom ≫ oppCoev S) := by
           rw [← u₀.hom_inv_id_assoc f, hc, Linear.comp_smul]
         simp [hf] }
@@ -364,19 +365,10 @@ private theorem sum_kernel_eq_evaluation (U : C) (S : SimpleClasses C) :
   simp_rw [map_sum, tensorLeftHomLinearEquiv_apply, tensorLeftHomEquiv_kernel,
     inductionMate_homDual_eq, ← Basis.map_apply]
   let c (R : SimpleClasses C) := Module.finBasis k (R.repr ⟶ S.reprᘁ ⊗ U)
-  have hT (T : SimpleClasses C) :
-      ∑ i, ((Module.finBasis k (S.repr ⟶ U ⊗ T.repr)).map (oppositeMateEquiv k U S T)).homDual i ≫
-          ((Module.finBasis k (S.repr ⟶ U ⊗ T.repr)).map (oppositeMateEquiv k U S T)) i =
-        ∑ j, (c T.dual).homDual j ≫ c T.dual j := by
-    set d := (Module.finBasis k (S.repr ⟶ U ⊗ T.repr)).map (oppositeMateEquiv k U S T)
-    let u := SimpleClasses.dualReprIso T
-    let d' := d.map (Linear.homCongr k u.symm (Iso.refl (S.reprᘁ ⊗ U)))
-    have hsum : ∑ i, d.homDual i ≫ d i = ∑ i, d'.homDual i ≫ d' i :=
-      Finset.sum_congr rfl fun i _ ↦ by
-        simp [d', Basis.homDual_map_homCongr, Linear.homCongr_apply, Category.assoc]
-    rw [hsum]
-    exact d'.sum_homDual_eq (c T.dual) (Linear.comp _ _ _)
-  simp_rw [hT]
+  simp_rw [fun T : SimpleClasses C ↦
+    ((Module.finBasis k (S.repr ⟶ U ⊗ T.repr)).map
+      (oppositeMateEquiv k U S T)).sum_homDual_comp_eq_of_iso (c T.dual)
+      (SimpleClasses.dualReprIso T).symm]
   exact (Fintype.sum_equiv (Function.Involutive.toPerm _ SimpleClasses.dual_involutive)
     (fun T ↦ ∑ j, (c T.dual).homDual j ≫ c T.dual j)
     (fun R ↦ ∑ j, (c R).homDual j ≫ c R j) (fun _ ↦ rfl)).trans

@@ -58,8 +58,10 @@ factorization through simple constituents gives compatibility with tensor produc
   by `Module.Basis.comp_homDual` and `Module.Basis.homDual_repr`, and source-isomorphism
   transport `Module.Basis.homDual_map_homCongr`;
 * `TauCeti.sum_sum_homDual_comp_eq_id`: the completeness relation;
-* `Module.Basis.sum_homDual_comp`: naturality of the canonical element, and
-  `Module.Basis.sum_homDual_eq` its independence of the basis;
+* `Module.Basis.sum_homDual_comp`: naturality of the canonical element,
+  `Module.Basis.sum_homDual_eq` its independence of the basis, and
+  `Module.Basis.sum_homDual_comp_eq_of_iso` invariance of the dual-basis composite sum under
+  source isomorphism;
 * `TauCeti.sum_homDual_eq_sum_map_homDual`: the canonical element computed through the simple
   constituents of an object;
 * `TauCeti.homPairing_eq_homPairingOfBijective` and `TauCeti.isSplitSimpleFamily_simpleClasses`:
@@ -221,6 +223,17 @@ theorem sum_homDual_eq (a : Basis ι k (S ⟶ X)) (a' : Basis ι' k (S ⟶ X))
     (β : (X ⟶ S) →ₗ[k] (S ⟶ X) →ₗ[k] M) :
     ∑ i, β (a.homDual i) (a i) = ∑ j, β (a'.homDual j) (a' j) := by
   simpa using a.sum_homDual_comp a' (𝟙 X) β
+
+/-- The sum of dual-basis composites `∑ i, a.homDual i ≫ a i` is invariant under replacing the
+simple source by an isomorphic object and choosing a new basis. -/
+theorem sum_homDual_comp_eq_of_iso {S' : C} [Simple S'] [FiniteDimensional k (S' ⟶ S')]
+    (a : Basis ι k (S ⟶ X)) (a' : Basis ι' k (S' ⟶ X)) (u : S ≅ S') :
+    ∑ i, a.homDual i ≫ a i = ∑ j, a'.homDual j ≫ a' j := by
+  let b := a.map (Linear.homCongr k u (Iso.refl X))
+  have hsum : ∑ i, a.homDual i ≫ a i = ∑ i, b.homDual i ≫ b i :=
+    Finset.sum_congr rfl fun i _ ↦ by
+      simp [b, homDual_map_homCongr, Linear.homCongr_apply, Category.assoc]
+  exact hsum.trans (b.sum_homDual_eq a' (Linear.comp _ _ _))
 
 end Naturality
 
