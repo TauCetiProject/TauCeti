@@ -19,6 +19,9 @@ covers the usual case of an open interval `(a, b)` inside the compact interval `
 continuous counterpart of Mathlib's `MonotoneOn.memLp_top`, and the restricted-measure counterpart
 of `Continuous.memLp_top_of_hasCompactSupport`.
 
+Without compactness, a function continuous on a measurable set `s` and bounded there lies in
+`L^∞(μ.restrict s)` (`ContinuousOn.memLp_top_restrict_of_bound`).
+
 The same bound controls a pointwise composition `x ↦ A x ∘L B x` of operator families with `A`
 continuous on `K`: `A ∘L B` lies in `Lᵖ(s)` whenever `B` does
 (`MeasureTheory.MemLp.clm_comp_of_continuousOn`, Hölder's inequality
@@ -50,6 +53,13 @@ theorem ContinuousOn.memLp_top_restrict_of_subset_isCompact {f : X → E} {K s :
   obtain ⟨C, hC⟩ := (hK.image_of_continuousOn (continuous_nnNorm.comp_continuousOn hf)).bddAbove
   refine memLp_top_of_bound_eNorm (hf.aestronglyMeasurable_of_subset_isCompact hK hs hsK) C ?_
   filter_upwards [ae_restrict_mem hs] with x hx using eNorm_le_coe.2 <| hC ⟨x, hsK hx, rfl⟩
+
+/-- A function continuous and bounded on a measurable set `s` is essentially bounded on `s`. -/
+theorem ContinuousOn.memLp_top_restrict_of_bound [SecondCountableTopologyEither X E] {f : X → E}
+    {s : Set X} {μ : Measure X} (hf : ContinuousOn f s) (hs : MeasurableSet s) (C : ℝ)
+    (hC : ∀ x ∈ s, ‖f x‖ ≤ C) : MemLp f ∞ (μ.restrict s) :=
+  memLp_top_of_bound_eNorm (hf.aestronglyMeasurable hs) C.toNNReal <| (ae_restrict_iff' hs).2 <|
+    .of_forall fun x hx ↦ (ofReal_norm (f x)).symm.trans_le (ENNReal.ofReal_le_ofReal (hC x hx))
 
 omit [OpensMeasurableSpace X] in
 /-- **The essential supremum dominates a value at a point of continuity.** If `f` is continuous

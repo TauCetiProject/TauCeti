@@ -342,11 +342,16 @@ theorem closedSample_succ (γ : MooreFreeLoopSpace X) (n : ℕ) (i : Fin (n + 1)
     γ.closedSample (n + 1) i.succ = γ.toMoorePath.sample (n + 1) (i + 1) := by
   rw [closedSample_eq_snoc, Fin.snoc_self_zero_succ]
 
+/-- The vertices of a free loop vary continuously with the loop. -/
+@[fun_prop]
+theorem continuous_sample (r : ℕ) :
+    Continuous fun γ : MooreFreeLoopSpace X ↦ γ.toMoorePath.sample r :=
+  (MoorePath.continuous_sample r).comp continuous_toMoorePath
+
 @[fun_prop]
 theorem continuous_closedSample (r : ℕ) :
     Continuous fun γ : MooreFreeLoopSpace X ↦ γ.closedSample r :=
-  Continuous.finSnoc (A := fun _ ↦ X) ((MoorePath.continuous_sample r).comp continuous_toMoorePath)
-    continuous_basepoint
+  Continuous.finSnoc (A := fun _ ↦ X) (continuous_sample r) continuous_basepoint
 
 /-- The closed sampled vertices of a free Moore loop are the points `i / r` of its
 reparametrization to the unit interval. -/
@@ -369,6 +374,15 @@ theorem closedSample_of_length_eq_zero {γ : MooreFreeLoopSpace X} (hγ : γ.len
     rw [closedSample_castSucc, MoorePath.sample_apply, length_toMoorePath, hγ, zero_mul,
       ← MoorePath.source_def, source_toMoorePath]
 
+/-- The vertex sampled after the `i`-th one on a free loop is the end of its `i`-th arc; the vertex
+after the last one is the first one again, the end of the closing arc. -/
+theorem sample_add_one_eq_toUnitPath_arcPoint (γ : MooreFreeLoopSpace X) {n : ℕ}
+    (i : Fin (n + 1)) :
+    γ.toMoorePath.sample (n + 1) (i + 1) =
+      γ.toMoorePath.toUnitPath (unitInterval.arcPoint (n + 1) i 1) := by
+  rw [← closedSample_succ, closedSample_eq_toUnitPath γ n.succ_pos, Fin.val_succ,
+    unitInterval.arcPoint_one]
+
 end Closed
 
 variable {X : Type*} [PseudoMetricSpace X]
@@ -383,36 +397,13 @@ theorem exists_sample_dist_add_one_lt {K : Set (MooreFreeLoopSpace X)} (hK : IsC
   obtain ⟨N, _, h⟩ := MoorePath.exists_sample_arc_dist_lt
     (hK.image continuous_toMoorePath) hε
   refine ⟨N, fun r hr γ hγ i ↦ ?_⟩
-  have harc := h (r + 1) (by omega) γ.toMoorePath ⟨γ, hγ, rfl⟩ i
-  have hrpos : 0 < (r + 1 : ℝ) := by positivity
-  by_cases hi : i.val + 1 < r + 1
-  · have hj : (i + 1).val = i.val + 1 := Fin.val_add_one_of_lt' hi
-    let t : I := ⟨(i.val + 1 : ℝ) / (r + 1), by positivity,
-      (div_le_one hrpos).mpr (by exact_mod_cast hi.le)⟩
-    have hsample : γ.toMoorePath.sample (r + 1) (i + 1) = γ.toMoorePath.toUnitPath t := by
-      rw [MoorePath.sample_apply, MoorePath.toUnitPath_apply, hj]
-      congr 2
-      apply NNReal.coe_injective
-      rw [unitInterval.coe_toNNReal]
-      simp [t]
-    rw [hsample]
-    apply harc t
-    · dsimp [t]
-      simp only [Nat.cast_add, Nat.cast_one]
-      exact div_le_div_of_nonneg_right (by linarith) hrpos.le
-    · simp [t]
-  · have hi' : i.val + 1 = r + 1 := by omega
-    have hj : i + 1 = (0 : Fin (r + 1)) := by
-      ext
-      simp [Fin.val_add, hi']
-    rw [hj, MoorePath.sample_zero]
-    have hiReal : (i.val : ℝ) + 1 = (r : ℝ) + 1 := by exact_mod_cast hi'
-    have hdist := harc 1 (by
-      simp only [Set.Icc.coe_one, Nat.cast_add, Nat.cast_one]
-      exact (div_le_one hrpos).mpr (by exact_mod_cast i.isLt.le)) (by
-        simp only [Set.Icc.coe_one, Nat.cast_add, Nat.cast_one, hiReal,
-          div_self hrpos.ne', le_refl])
-    simpa only [MoorePath.toUnitPath_one, target_toMoorePath, source_toMoorePath] using hdist
+  have hcoe := unitInterval.coe_arcPoint i.isLt (1 : I)
+  rw [Set.Icc.coe_one] at hcoe
+  rw [sample_add_one_eq_toUnitPath_arcPoint]
+  refine h (r + 1) (by omega) γ.toMoorePath ⟨γ, hγ, rfl⟩ i _ ?_ ?_
+  · rw [hcoe]
+    exact div_le_div_of_nonneg_right (by linarith) (by positivity)
+  · exact hcoe.le
 
 /-- **Compact families of free loops are sampled into the distance cuts.** For a compact family
 `K` of free Moore loops and cut-offs bounded below by `ε > 0`, every sufficiently fine sampling
