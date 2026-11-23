@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.Star.StarProjection
 public import Mathlib.Analysis.CStarAlgebra.Exponential
 public import Mathlib.Analysis.SpecialFunctions.Trigonometric.Basic
+public import TauCeti.Algebra.Star.Unitary
 import TauCeti.Analysis.Normed.Algebra.Exponential
 
 /-!
@@ -19,17 +20,18 @@ The adjoint of the unitary `selfAdjoint.expUnitary h` is `expUnitary (-h)`
 (`selfAdjoint.star_expUnitary`).
 For a star projection `p`, `expUnitary (t • p)` has value `1 + (exp (t * I) - 1) • p` (and
 `1 - 2 • p` at `t = π`), and every self-adjoint unitary `u` equals `expUnitary (π • r)` for the
-star projection `r = 2⁻¹ • (1 - u)` (`Unitary.expUnitary_pi_smul_half_one_sub`) and is joined to
-`1` by `Unitary.expUnitaryPathToOne`.
+star projection `r = 2⁻¹ • (1 - u)` (`Unitary.isStarProjection_half_one_sub` in
+`TauCeti.Algebra.Star.Unitary`, yielding `Unitary.expUnitary_pi_smul_half_one_sub`) and is joined
+to `1` by `Unitary.expUnitaryPathToOne`.
 
 ## Main declarations
 
 * `selfAdjoint.star_expUnitary`: the adjoint of `expUnitary`.
 * `IsStarProjection.coe_expUnitary_smul`, `IsStarProjection.coe_expUnitary_pi_smul`: formulas for
   `expUnitary (t • p)` and `expUnitary (π • p)`.
-* `Unitary.isStarProjection_half_one_sub`, `Unitary.expUnitary_pi_smul_half_one_sub`,
-  `Unitary.expUnitaryPathToOne`: a self-adjoint unitary `u` yields `r = 2⁻¹ • (1 - u)` with
-  `expUnitary (π • r) = u` and a continuous unitary path from `1` to `u`.
+* `Unitary.expUnitary_pi_smul_half_one_sub`, `Unitary.expUnitaryPathToOne`: a self-adjoint unitary
+  `u` yields `r = 2⁻¹ • (1 - u)` with `expUnitary (π • r) = u` and a continuous unitary path from
+  `1` to `u`.
 
 ## References
 
@@ -40,16 +42,6 @@ star projection `r = 2⁻¹ • (1 - u)` (`Unitary.expUnitary_pi_smul_half_one_s
 public section
 
 noncomputable section
-
-/-- For a self-adjoint unitary `u` in a real star-algebra, `(2⁻¹ : ℝ) • (1 - u)` is a projection. -/
-theorem Unitary.isStarProjection_half_one_sub {A : Type*} [Ring A] [StarRing A] [Module ℝ A]
-    [IsScalarTower ℝ A A] [SMulCommClass ℝ A A] [StarModule ℝ A] (u : unitary A)
-    (hu : IsSelfAdjoint (u : A)) : IsStarProjection ((2⁻¹ : ℝ) • (1 - (u : A))) := by
-  have hu2 : (u : A) * (u : A) = 1 := by simpa [hu.star_eq] using Unitary.coe_star_mul_self u
-  refine ⟨?_, (IsSelfAdjoint.all (2⁻¹ : ℝ)).smul ((IsSelfAdjoint.one A).sub hu)⟩
-  have hsub : (1 - (u : A)) * (1 - (u : A)) = (2 : ℝ) • (1 - (u : A)) := by
-    simp only [mul_sub, sub_mul, mul_one, one_mul, hu2, two_smul]; abel
-  rw [IsIdempotentElem, smul_mul_smul_comm, hsub, smul_smul]; norm_num
 
 section Star
 variable {A : Type*} [NormedRing A] [NormedAlgebra ℂ A] [StarRing A] [ContinuousStar A]

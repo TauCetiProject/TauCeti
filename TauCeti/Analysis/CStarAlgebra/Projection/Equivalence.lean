@@ -24,7 +24,7 @@ a projection with its zero padding, without identifying different matrix sizes b
 
 We prove reflexivity on projections, symmetry, transitivity, and preservation by nonunital star
 homomorphisms. These are the relations needed to form the projection monoid (compatibility with
-block sums is in `TauCeti.Analysis.CStarAlgebra.CStarMatrix.ProjectionEquiv`). No unit,
+block sums is in `TauCeti.Analysis.CStarAlgebra.Projection.Stabilization`). No unit,
 separability, or cancellation is assumed.
 
 The algebraic matrix calculations use Mathlib's underlying `Matrix` operations, which are the
