@@ -27,7 +27,7 @@ A diffeomorphism between normed spaces of nonzero smoothness is differentiable
 (`Diffeomorph.differentiable`), and its Fréchet derivative composed with that of its inverse,
 in either order, is the identity (`Diffeomorph.fderiv_apply_fderiv_symm_apply`,
 `Diffeomorph.fderiv_comp_fderiv_symm`, `Diffeomorph.fderiv_symm_comp_fderiv`), so it is bijective
-at every point (`Diffeomorph.bijective_fderiv`). The derivative of a composition of
+at every point (`Diffeomorph.fderiv_bijective`). The derivative of a composition of
 diffeomorphisms is given by the chain rule (`Diffeomorph.fderiv_trans`), and so is the derivative
 of a vector-valued map on a manifold followed by a diffeomorphism, with no differentiability
 hypothesis on the map (`Diffeomorph.mvfderiv_diffeomorph_comp`). For a
@@ -73,7 +73,7 @@ theorem fderiv_symm_comp_fderiv (h : E ≃ₘ^n⟮𝓘(𝕜, E), 𝓘(𝕜, F)�
   h.symm.fderiv_comp_fderiv_symm hn x
 
 /-- The derivative of a normed-space diffeomorphism is bijective at every point. -/
-theorem bijective_fderiv (h : E ≃ₘ^n⟮𝓘(𝕜, E), 𝓘(𝕜, F)⟯ F) (hn : n ≠ 0) (x : E) :
+theorem fderiv_bijective (h : E ≃ₘ^n⟮𝓘(𝕜, E), 𝓘(𝕜, F)⟯ F) (hn : n ≠ 0) (x : E) :
     Function.Bijective (fderiv 𝕜 h x) := by
   refine ⟨Function.LeftInverse.injective (g := fderiv 𝕜 h.symm (h x)) fun v ↦ ?_,
     Function.RightInverse.surjective (g := fderiv 𝕜 h.symm (h x)) fun v ↦ ?_⟩

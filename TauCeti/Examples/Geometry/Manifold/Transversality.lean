@@ -74,6 +74,6 @@ example (x : ℝ) :
     IsTransverseAt 𝓘(ℝ) 𝓘(ℝ, Unit)
       (Diffeomorph.smulAdd ∞ (1 : ℝ) 1 one_ne_zero ∘ fun t : ℝ ↦ t ^ 2)
       (Diffeomorph.smulAdd ∞ (1 : ℝ) 1 one_ne_zero ∘ fun _ : Unit ↦ (0 : ℝ)) x ↔ x ≠ 0 := by
-  rw [Diffeomorph.isTransverseAt_comp_iff _ (by simp), isTransverseAt_sq_zero_iff]
+  rw [Diffeomorph.isTransverseAt_diffeomorph_comp_iff _ (by simp), isTransverseAt_sq_zero_iff]
 
 end TauCeti.TransversalityExamples

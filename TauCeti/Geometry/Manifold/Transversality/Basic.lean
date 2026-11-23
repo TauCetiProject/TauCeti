@@ -29,7 +29,7 @@ regular incidence parameter (`TauCeti.isRegularIncidenceParameter_iff_forall_isT
 Transversality at `x` depends only on the germ of `g` at `x`
 (`Filter.EventuallyEq.isTransverseAt_iff`); it is unchanged when `g` and `j` are both followed by
 one diffeomorphism of `V`, in particular by an affine isomorphism
-(`Diffeomorph.isTransverseAt_comp_iff`), and when either source is reparametrized by a
+(`Diffeomorph.isTransverseAt_diffeomorph_comp_iff`), and when either source is reparametrized by a
 diffeomorphism (`Diffeomorph.isTransverseAt_comp_diffeomorph_iff`,
 `Diffeomorph.isTransverseAt_comp_diffeomorph_right_iff`). When the model dimensions satisfy
 `dim E + dim F < dim V`, transversality at `x` means that `g x` avoids the range of `j`
@@ -42,7 +42,8 @@ diffeomorphism (`Diffeomorph.isTransverseAt_comp_diffeomorph_iff`,
   `TauCeti.isTransverseAt_of_surjective_mvfderiv_right`: the vacuous case and submersions.
 * `TauCeti.isRegularIncidenceParameter_iff_forall_isTransverseAt`: agreement with regular
   incidence parameters on normed spaces.
-* `Diffeomorph.isTransverseAt_comp_iff`, `Diffeomorph.isTransverseAt_comp_diffeomorph_iff`,
+* `Diffeomorph.isTransverseAt_diffeomorph_comp_iff`,
+  `Diffeomorph.isTransverseAt_comp_diffeomorph_iff`,
   `Diffeomorph.isTransverseAt_comp_diffeomorph_right_iff`: invariance under diffeomorphisms.
 * `TauCeti.isTransverseAt_iff_notMem_range`: dimension-counting avoidance.
 
@@ -201,7 +202,7 @@ variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
 /-- **Invariance under diffeomorphisms of the target.** Following `g` and `j` by one
 diffeomorphism `χ : V → V'` does not change transversality. This applies in particular to affine
 isomorphisms `v ↦ L v + b` of `V`. -/
-theorem isTransverseAt_comp_iff {V' : Type*} [NormedAddCommGroup V'] [NormedSpace 𝕜 V']
+theorem isTransverseAt_diffeomorph_comp_iff {V' : Type*} [NormedAddCommGroup V'] [NormedSpace 𝕜 V']
     (χ : V ≃ₘ^n⟮𝓘(𝕜, V), 𝓘(𝕜, V')⟯ V') (hn : n ≠ 0) :
     IsTransverseAt I J (χ ∘ g) (χ ∘ j) x ↔ IsTransverseAt I J g j x := by
   have hχ : Injective χ := χ.toHomeomorph.injective
@@ -209,7 +210,7 @@ theorem isTransverseAt_comp_iff {V' : Type*} [NormedAddCommGroup V'] [NormedSpac
   refine forall₂_congr fun y hy ↦ ?_
   rw [← hy, ← ContinuousLinearMap.comp_neg, ← ContinuousLinearMap.comp_coprod,
     ContinuousLinearMap.coe_comp]
-  exact Surjective.of_comp_iff' (χ.bijective_fderiv hn (g x)) _
+  exact Surjective.of_comp_iff' (χ.fderiv_bijective hn (g x)) _
 
 variable {E' : Type*} [NormedAddCommGroup E'] [NormedSpace 𝕜 E']
   {H' : Type*} [TopologicalSpace H'] {I' : ModelWithCorners 𝕜 E' H'}
