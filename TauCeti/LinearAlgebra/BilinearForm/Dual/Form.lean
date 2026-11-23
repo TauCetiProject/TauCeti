@@ -45,6 +45,12 @@ value `1/2`, so it is not integral; here `e = 2`, and `2 E^∨ = E₀^∨` is pr
 * `LinearMap.BilinForm.algebraMap_scaledDualForm`: `a Q^∨` restricts to the integral form.
 * `LinearMap.BilinForm.isPerfPair_scaledDualForm_one`: the dual form of a principal form is
   integral and principal.
+
+## References
+
+* Stanford VIGRE notes, *Complex theory of abelian varieties* (2004), Definitions 1.13–1.14 and
+  Lemma 1.16, pp. 5–6, <https://math.stanford.edu/~conrad/vigregroup/vigre04/abvaran.pdf>: the
+  dual form `Q^∨` and the integral rescaling `e Q^∨`.
 -/
 
 public section
@@ -64,7 +70,7 @@ finite-dimensional vector space `V`: the transport of `Q` to `Module.Dual K V` a
 `Q♭ : x ↦ Q(x, ·)`. -/
 noncomputable def dualForm (Q : LinearMap.BilinForm K V) (hQ : Q.Nondegenerate) :
     LinearMap.BilinForm K (Dual K V) :=
-  Q.compl₁₂ (Q.toDual hQ).symm.toLinearMap (Q.toDual hQ).symm.toLinearMap
+  congr (Q.toDual hQ) Q
 
 variable {Q : LinearMap.BilinForm K V} (hQ : Q.Nondegenerate)
 
@@ -91,18 +97,12 @@ theorem dualForm_apply_toDual_right (ξ : Dual K V) (y : V) :
   rw [dualForm_apply_eq, LinearEquiv.symm_apply_apply]
 
 /-- The dual form of a nondegenerate form is nondegenerate. -/
-theorem nondegenerate_dualForm : (Q.dualForm hQ).Nondegenerate := by
-  refine ⟨fun ξ hξ ↦ ?_, fun η hη ↦ ?_⟩
-  · have : (Q.toDual hQ).symm ξ = 0 :=
-      hQ.1 _ fun y ↦ by simpa [dualForm_apply] using hξ (Q.toDual hQ y)
-    simpa using congr_arg (Q.toDual hQ) this
-  · have : (Q.toDual hQ).symm η = 0 :=
-      hQ.2 _ fun x ↦ by simpa [dualForm_apply] using hη (Q.toDual hQ x)
-    simpa using congr_arg (Q.toDual hQ) this
+theorem nondegenerate_dualForm : (Q.dualForm hQ).Nondegenerate :=
+  hQ.congr (Q.toDual hQ)
 
 /-- The dual form of an alternating form is alternating. -/
 theorem IsAlt.dualForm (hQa : Q.IsAlt) : (Q.dualForm hQ).IsAlt :=
-  fun _ ↦ hQa _
+  fun ξ ↦ by rw [dualForm_apply]; exact hQa _
 
 /-- `(c Q)^∨ = c⁻¹ Q^∨`. -/
 theorem dualForm_smul {c : K} (hc : c ≠ 0) (hcQ : (c • Q).Nondegenerate) :
@@ -133,13 +133,15 @@ noncomputable def scaledDualPreimage : Dual R Λ →ₗ[R] Λ :=
     (a • LinearMap.id : Dual R Λ →ₗ[R] Dual R Λ).codRestrict (LinearMap.range Q) ha
 
 /-- `Q♭ y_η = a η`. -/
+@[simp]
 theorem apply_scaledDualPreimage (η : Dual R Λ) : Q (Q.scaledDualPreimage hQ a ha η) = a • η := by
   simp [scaledDualPreimage]
 
 /-- The **integral form `a Q^∨`** on `Hom(Λ, R)`: for `a` killing the cokernel of the injective
 map `Q♭ : Λ → Hom(Λ, R)`, it sends `(ξ, η)` to `ξ(y_η)`, where `Q♭ y_η = a η`. For `R = ℤ` and
-`a` the exponent of the cokernel this is the integral polarizing form `e Q^∨`; for `Q` principal and
-`a = 1` it is the dual form itself. -/
+`a` the exponent of the cokernel this is the integral polarizing form `e Q^∨` of the Stanford VIGRE
+notes, Lemma 1.16 (see the module docstring); for `Q` principal and `a = 1` it is the dual form
+itself. -/
 noncomputable def scaledDualForm : LinearMap.BilinForm R (Dual R Λ) :=
   (LinearMap.applyₗ (R := R) (M := Λ) (M₂ := R)).flip.compl₂ (Q.scaledDualPreimage hQ a ha)
 
@@ -155,18 +157,24 @@ theorem scaledDualPreimage_eq_iff (η : Dual R Λ) (y : Λ) :
     fun h ↦ hQ (by rw [apply_scaledDualPreimage, h])⟩
 
 /-- On `Hom(Λ, R)`, the integral form `a Q^∨` is `(ξ, Q♭ y) ↦ a ξ(y)`. -/
+@[simp]
 theorem scaledDualForm_apply_right (ξ : Dual R Λ) (y : Λ) :
     Q.scaledDualForm hQ a ha ξ (Q y) = a * ξ y := by
   have hpre : Q.scaledDualPreimage hQ a ha (Q y) = a • y :=
     (Q.scaledDualPreimage_eq_iff hQ a ha _ _).mpr (by rw [map_smul])
   rw [scaledDualForm_apply, hpre, map_smul, smul_eq_mul]
 
+/-- When `Q♭ : Λ → Hom(Λ, R)` is a perfect pairing, `1` kills its cokernel. -/
+theorem one_smul_mem_range_of_isPerfPair [Q.IsPerfPair] (η : Dual R Λ) :
+    (1 : R) • η ∈ LinearMap.range Q :=
+  LinearMap.mem_range.mpr ⟨Q.toPerfPair.symm ((1 : R) • η), by simp⟩
+
 /-- **The dual of a principal form is principal.** If `Q♭ : Λ → Hom(Λ, R)` is bijective, the
 integral dual form `Q^∨` (the case `a = 1`) is the transport of `Q` along `Q♭`, hence a perfect
 pairing on `Hom(Λ, R)`. -/
 theorem isPerfPair_scaledDualForm_one [Q.IsPerfPair] :
     (Q.scaledDualForm (IsPerfPair.bijective_left Q).injective 1
-      fun η ↦ LinearMap.mem_range.mpr ⟨Q.toPerfPair.symm ((1 : R) • η), by simp⟩).IsPerfPair := by
+      Q.one_smul_mem_range_of_isPerfPair).IsPerfPair := by
   refine IsPerfPair.congr (p := Q) Q.toPerfPair.symm Q.toPerfPair.symm _
     (LinearMap.ext₂ fun x y ↦ ?_)
   simp only [compl₁₂_apply, LinearEquiv.coe_coe, LinearEquiv.symm_symm, toLinearMap_toPerfPair]
@@ -178,17 +186,8 @@ variable {K V : Type*} [Field K] [Algebra R K] [AddCommGroup V] [Module K V] [Mo
   [IsScalarTower R K V] [FiniteDimensional K V] {j : Λ →ₗ[R] V} (hj : IsBaseChange K j)
   (hQK : (hj.bilinForm Q).Nondegenerate)
 
-omit [FiniteDimensional K V] in
-/-- The base change of a nondegenerate form on a finite free module to a field containing `R` is
-nondegenerate. -/
-theorem nondegenerate_bilinForm [Module.Free R Λ] [Module.Finite R Λ] [FaithfulSMul R K]
-    (hQn : Q.Nondegenerate) : (hj.bilinForm Q).Nondegenerate := by
-  rw [IsBaseChange.bilinForm_def, nondegenerate_congr_iff,
-    nondegenerate_baseChange_iff Q (Module.Free.chooseBasis R Λ)]
-  exact hQn
-
 /-- `Q♭` of the base change, on the image of `Λ`, is the base change of `Q♭`. -/
-theorem toDual_bilinForm_apply (y : Λ) :
+theorem toDual_isBaseChange_bilinForm_apply (y : Λ) :
     (hj.bilinForm Q).toDual hQK (j y) = hj.toDual (Q y) := by
   refine hj.algHom_ext _ _ fun z ↦ ?_
   rw [toDual_def, IsBaseChange.bilinForm_apply, IsBaseChange.toDual_comp_apply]
@@ -200,7 +199,7 @@ theorem algebraMap_scaledDualForm (ξ η : Dual R Λ) :
       algebraMap R K a * (hj.bilinForm Q).dualForm hQK (hj.toDual ξ) (hj.toDual η) := by
   set y := Q.scaledDualPreimage hQ a ha η
   have hy : (hj.bilinForm Q).toDual hQK (j y) = algebraMap R K a • hj.toDual η := by
-    rw [toDual_bilinForm_apply, apply_scaledDualPreimage, map_smul, algebraMap_smul]
+    rw [toDual_isBaseChange_bilinForm_apply, apply_scaledDualPreimage, map_smul, algebraMap_smul]
   rw [scaledDualForm_apply, ← hj.toDual_comp_apply]
   by_cases ha0 : algebraMap R K a = 0
   · rw [ha0, zero_smul, ← map_zero ((hj.bilinForm Q).toDual hQK)] at hy

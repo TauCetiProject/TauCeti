@@ -48,7 +48,8 @@ theorem two_smul_mem_range_E (η : Dual ℤ Λ) : (2 : ℤ) • η ∈ LinearMap
 /-- The rational extension of `E` is nondegenerate. -/
 theorem nondegenerate_E_rational :
     ((isBaseChange_latticeToRational Unit).bilinForm E).Nondegenerate := by
-  refine nondegenerate_bilinForm E _ ⟨fun x hx ↦ injective_E ?_, fun y hy ↦ ?_⟩
+  refine (isBaseChange_latticeToRational Unit).nondegenerate_bilinForm_iff E |>.mpr
+    ⟨fun x hx ↦ injective_E ?_, fun y hy ↦ ?_⟩
   · exact LinearMap.ext fun z ↦ by simpa using hx z
   · refine (IsPerfPair.bijective_right E₀).injective <|
       smul_right_injective _ (two_ne_zero (α := ℤ)) (LinearMap.ext fun z ↦ ?_)
@@ -85,6 +86,7 @@ theorem not_forall_mem_range_E : ¬ ∀ η : Dual ℤ Λ, (1 : ℤ) • η ∈ L
   have h := algebraMap_scaledDualForm E injective_E 1 h1
     (isBaseChange_latticeToRational Unit) nondegenerate_E_rational coordOne (E₀ one)
   rw [dualForm_E_eq_half, map_one, one_mul] at h
+  rw [eq_intCast] at h
   obtain ⟨c, hc⟩ : ∃ c : ℤ, (c : ℚ) = 1 / 2 := ⟨_, h⟩
   have : (c : ℚ) * 2 = 1 := by rw [hc]; norm_num
   have : c * 2 = 1 := by exact_mod_cast this
@@ -94,7 +96,7 @@ theorem not_forall_mem_range_E : ¬ ∀ η : Dual ℤ Λ, (1 : ℤ) • η ∈ L
 theorem scaledDualForm_E_eq :
     E.scaledDualForm injective_E 2 two_smul_mem_range_E =
       E₀.scaledDualForm (IsPerfPair.bijective_left E₀).injective 1
-        fun η ↦ LinearMap.mem_range.mpr ⟨E₀.toPerfPair.symm ((1 : ℤ) • η), by simp⟩ := by
+        E₀.one_smul_mem_range_of_isPerfPair := by
   refine LinearMap.ext₂ fun ξ η ↦ ?_
   obtain ⟨y, rfl⟩ := (IsPerfPair.bijective_left E₀).surjective η
   rw [scaledDualForm_E_apply, scaledDualForm_apply_right, one_mul]
