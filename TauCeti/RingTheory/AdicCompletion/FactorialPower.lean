@@ -83,18 +83,11 @@ section FiniteQuotient
 
 variable {J : Ideal R}
 
-/-- The quotient ring `S ⧸ J S` is finite, with the cardinality of `S ⧸ J • S`. -/
-private theorem finite_quotient_map_algebraMap [Finite (S ⧸ (J • ⊤ : Submodule R S))] {m : ℕ}
-    (hm : Nat.card (S ⧸ (J • ⊤ : Submodule R S)) ≤ m) :
-    Finite (S ⧸ J.map (algebraMap R S)) ∧ Nat.card (S ⧸ J.map (algebraMap R S)) ≤ m :=
-  ⟨.of_equiv _ (quotSMulTopEquivQuotMap J).toEquiv,
-    by rwa [← Nat.card_congr (quotSMulTopEquivQuotMap J).toEquiv]⟩
-
 /-- The factorial powers of `t` agree modulo `J • S` from `n = |S ⧸ J • S|` on. -/
 private theorem pow_factorial_sub_pow_factorial_mem [Finite (S ⧸ (J • ⊤ : Submodule R S))]
     (t : S) {m n : ℕ} (hm : Nat.card (S ⧸ (J • ⊤ : Submodule R S)) ≤ m) (hmn : m ≤ n) :
     t ^ (n !) - t ^ m ! ∈ J • (⊤ : Submodule R S) := by
-  obtain ⟨_, hm⟩ := finite_quotient_map_algebraMap hm
+  replace hm := (card_quotient_map_algebraMap J).trans_le hm
   rw [← mem_map_algebraMap_iff, ← Quotient.eq, map_pow, map_pow]
   exact TauCeti.pow_factorial_eq_pow_factorial_of_card_le _ hm hmn
 
@@ -102,7 +95,7 @@ private theorem pow_factorial_sub_pow_factorial_mem [Finite (S ⧸ (J • ⊤ : 
 private theorem pow_factorial_mul_self_sub_mem [Finite (S ⧸ (J • ⊤ : Submodule R S))]
     (t : S) {m : ℕ} (hm : Nat.card (S ⧸ (J • ⊤ : Submodule R S)) ≤ m) :
     t ^ m ! * t ^ (m !) - t ^ m ! ∈ J • (⊤ : Submodule R S) := by
-  obtain ⟨_, hm⟩ := finite_quotient_map_algebraMap hm
+  replace hm := (card_quotient_map_algebraMap J).trans_le hm
   rw [← mem_map_algebraMap_iff, ← Quotient.eq, map_mul, map_pow]
   exact TauCeti.isIdempotentElem_pow_factorial_of_card_le _ hm
 
@@ -110,7 +103,7 @@ private theorem pow_factorial_mul_self_sub_mem [Finite (S ⧸ (J • ⊤ : Submo
 private theorem pow_factorial_sub_one_mem_of_isUnit [Finite (S ⧸ (J • ⊤ : Submodule R S))]
     {t : S} (ht : IsUnit t) {m : ℕ} (hm : Nat.card (S ⧸ (J • ⊤ : Submodule R S)) ≤ m) :
     t ^ (m !) - 1 ∈ J • (⊤ : Submodule R S) := by
-  obtain ⟨_, hm⟩ := finite_quotient_map_algebraMap hm
+  replace hm := (card_quotient_map_algebraMap J).trans_le hm
   rw [← mem_map_algebraMap_iff, ← Quotient.eq, map_pow, map_one]
   exact (IsIdempotentElem.iff_eq_one_of_isUnit ((ht.map _).pow _)).mp
     (TauCeti.isIdempotentElem_pow_factorial_of_card_le _ hm)
