@@ -10,6 +10,7 @@ public import Mathlib.Probability.Process.LocalProperty
 public import Mathlib.MeasureTheory.Function.UniformIntegrable
 import TauCeti.MeasureTheory.Function.LpSeminorm.CompareExp
 import TauCeti.Probability.Martingale.LpLimit
+import TauCeti.Probability.Process.Stopping
 
 /-!
 # Uniformly integrable localizations of martingales
@@ -54,11 +55,10 @@ theorem ae_tendsto_stoppedProcess [Zero E] [TopologicalSpace E]
     (hτ : IsPreLocalizingSequence ℱ τ P) (X : ι → Ω → E) (t : ι) :
     ∀ᵐ ω ∂P, Tendsto (fun n ↦ MeasureTheory.stoppedProcess
       (fun s ↦ {ω | ⊥ < τ n ω}.indicator (X s)) (τ n) t ω) atTop (𝓝 (X t ω)) := by
-  filter_upwards [hτ.tendsto_top] with ω hω
-  have ht := hω.eventually (Ioi_mem_nhds (WithTop.coe_lt_top t))
-  refine tendsto_const_nhds.congr' (ht.mono fun n hn ↦ ?_)
-  have hpos : ω ∈ {ω | ⊥ < τ n ω} := lt_of_le_of_lt bot_le hn
-  simp only [stoppedProcess_eq_of_le hn.le, indicator_of_mem hpos]
+  filter_upwards [ae_eventuallyEq_stoppedProcess X t hτ.tendsto_top, hτ.tendsto_top] with ω hω htop
+  refine tendsto_const_nhds.congr' ?_
+  filter_upwards [hω, (WithTop.tendsto_nhds_top_iff _).mp htop ⊥] with n hn hpos
+  rw [stoppedProcess_indicator_comm, indicator_of_mem hpos, hn]
 
 /-- Uniform `Lᵖ` integrability of native stopped stages at a fixed time gives an `Lᵖ` value
 of the original process. No adaptation, martingale, or exponent restriction is required. -/

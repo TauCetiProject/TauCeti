@@ -8,8 +8,10 @@ module
 public import TauCeti.Probability.Process.Predictable.Measure
 public import TauCeti.MeasureTheory.Function.Lp.Iterated
 public import TauCeti.MeasureTheory.Measure.Lebesgue.Basic
+public import TauCeti.Probability.Finance.SimpleStrategy.Basic
 public import TauCeti.Probability.Process.TimeMeasure
 import Mathlib.MeasureTheory.Function.LpSeminorm.Prod
+import TauCeti.Probability.Finance.SimpleStrategy.Energy
 
 /-!
 # Expected and pathwise square-energy domains
@@ -25,14 +27,18 @@ restriction to predictable sets. The expected-energy domain is also closed under
 by predictable processes that are essentially bounded on each finite horizon.
 Product-almost-everywhere replacement by predictable processes preserves the expected-energy
 domain, and, for s-finite `P`, the pathwise-energy domain. A finite initial-measurable random
-variable, held constant in time, belongs to the pathwise domain without any moment assumption.
+variable, held constant in time, belongs to the pathwise domain without any moment assumption,
+while left-measurable `L²` (or bounded) heights on any finite deterministic grid belong to
+`BrownianIntegrable` (`TauCeti.BrownianIntegrable.simpleHolding`, `simpleHolding_of_bdd`).
 
 Time measure on `(0,T]` is written as the pullback of restricted real Lebesgue measure under
 `ℝ≥0 → ℝ`. By the native measurable-embedding restriction identity this is also the restriction
 of the pullback Lebesgue measure to `(0,T]`, that is `TauCeti.Probability.timeMeasure T`
 (`TauCeti.BrownianIntegrable.memLp_timeMeasure`). Pathwise membership uses native `MemLp`, so
 square energy means a finite nonnegative lower integral, never the default value of a divergent
-Bochner integral.
+Bochner integral. Product-`L²` convergence between two predictable process families yields
+convergence in probability of their pathwise square energies
+(`TauCeti.tendsto_measure_lintegral_enorm_sub_sq_of_tendsto_eLpNorm`).
 
 ## References
 
@@ -45,7 +51,7 @@ public section
 noncomputable section
 
 open MeasureTheory Set Filter
-open scoped ENNReal NNReal
+open scoped ENNReal NNReal Topology
 
 namespace TauCeti
 
@@ -261,5 +267,46 @@ theorem brownianIntegrable_const_iff [SFinite P] {ξ : Ω → ℝ} :
   · rintro ⟨hξ, hξ₂⟩
     exact ⟨((locallyBrownianIntegrable_const_iff (P := P)).2 hξ).isStronglyPredictable,
       fun _ ↦ hξ₂.comp_snd _⟩
+
+/-- Left-measurable `L²` heights on any finite deterministic grid produce an integrand in the
+expected-square-energy domain `BrownianIntegrable ℱ P`, for any `SFinite` measure `P` and with no
+monotonicity assumption on the grid. -/
+theorem BrownianIntegrable.simpleHolding [SFinite P] {n : ℕ} {τ : ℕ → ℝ≥0} {a : ℕ → Ω → ℝ}
+    (ha : ∀ j < n, StronglyMeasurable[ℱ (τ j)] (a j))
+    (ha₂ : ∀ j < n, MemLp (a j) 2 P) :
+    BrownianIntegrable ℱ P (Finance.simpleHolding τ n a) where
+  isStronglyPredictable := Finance.isStronglyPredictable_simpleHolding ha
+  memLp T := by
+    rw [NNReal.comap_volume_restrict_Ioc, ← Probability.timeMeasure_def]
+    exact (ℱ.memLp_predictableMeasure_iff P (Finance.isStronglyPredictable_simpleHolding ha) T 2).mp
+      (Finance.memLp_simpleHolding_predictableMeasure ha ha₂ T)
+
+/-- Bounded left-measurable heights on any finite deterministic grid produce an integrand in
+`BrownianIntegrable ℱ P` on a finite measure space `P`. -/
+theorem BrownianIntegrable.simpleHolding_of_bdd [IsFiniteMeasure P]
+    {n : ℕ} {τ : ℕ → ℝ≥0} {a : ℕ → Ω → ℝ}
+    (ha : ∀ j < n, StronglyMeasurable[ℱ (τ j)] (a j))
+    (hb : ∀ j < n, ∃ C, ∀ ω, ‖a j ω‖ ≤ C) :
+    BrownianIntegrable ℱ P (Finance.simpleHolding τ n a) :=
+  BrownianIntegrable.simpleHolding ha fun j hj ↦
+    let ⟨C, hC⟩ := hb j hj
+    MemLp.of_bound ((ha j hj).mono (ℱ.le _)).aestronglyMeasurable C (.of_forall hC)
+
+/-- Product-`L²` convergence of differences between two families of strongly predictable processes
+implies convergence in `P`-measure of their pathwise square energies. -/
+theorem tendsto_measure_lintegral_enorm_sub_sq_of_tendsto_eLpNorm
+    {ι Ω' E κ : Type*} [LinearOrder ι] [OrderBot ι] [TopologicalSpace ι]
+    [OrderClosedTopology ι] [MeasurableSpace ι] [OpensMeasurableSpace ι]
+    {mΩ' : MeasurableSpace Ω'} {ℱ' : Filtration ι mΩ'}
+    {μ : Measure ι} {Q : Measure Ω'} [SFinite μ] [SFinite Q] [SeminormedAddCommGroup E]
+    {l : Filter κ} {F G : κ → ι → Ω' → E}
+    (hF : ∀ k, IsStronglyPredictable ℱ' (F k))
+    (hG : ∀ k, IsStronglyPredictable ℱ' (G k))
+    (hl2 : Tendsto (fun k ↦ eLpNorm (fun p : ι × Ω' ↦ F k p.1 p.2 - G k p.1 p.2) 2
+      (μ.prod Q)) l (𝓝 0))
+    {ε : ℝ≥0∞} (hε : 0 < ε) :
+    Tendsto (fun k ↦ Q {ω | ε ≤ ∫⁻ s, ‖F k s ω - G k s ω‖ₑ ^ 2 ∂μ}) l (𝓝 0) :=
+  TauCeti.tendsto_measure_le_lintegral_enorm_sq_of_tendsto_eLpNorm
+    (fun k ↦ (((hF k).sub (hG k)).mono ℱ'.predictable_le_prod).aestronglyMeasurable) hl2 hε
 
 end TauCeti

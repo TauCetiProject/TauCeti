@@ -7,10 +7,9 @@ module
 
 public import Mathlib.Probability.Process.LocalProperty
 public import TauCeti.Probability.BrownianMotion.Integral.Energy.Localization
-public import TauCeti.Probability.BrownianMotion.Integral.Ito.L2
+public import TauCeti.Probability.BrownianMotion.Integral.Ito.Isometry
 public import TauCeti.Probability.BrownianMotion.Integral.Ito.Stopping
 import TauCeti.MeasureTheory.Function.ConvergenceInMeasure
-import TauCeti.MeasureTheory.Function.Lp.Iterated
 import TauCeti.Probability.Finance.SimpleStrategy.Approximation
 import TauCeti.Probability.Martingale.Local.Congruence
 import TauCeti.Probability.Process.Patching
@@ -23,7 +22,7 @@ import TauCeti.Topology.Instances.ENNReal
 `TauCeti.LocallyBrownianIntegrable ℱ P H` relaxes `TauCeti.BrownianIntegrable ℱ P H` to predictable
 integrands with a.s. finite pathwise square energy on every finite horizon. Building on optional
 stopping (`TauCeti.Probability.IsItoIntegral.stoppedProcess`, `stoppedProcess_indist`) and the
-`L²` theory (`TauCeti.Probability.BrownianMotion.Integral.Ito.L2`), this module establishes
+`L²` theory (`TauCeti.Probability.BrownianMotion.Integral.Ito.Isometry`), this module establishes
 the local-martingale property on a raw filtration
 (`TauCeti.Probability.IsItoIntegral.locally_martingale`) for any filtered pre-Brownian motion
 `W`, and `TauCeti.LocallyBrownianIntegrable.exists_isItoIntegral` constructs a strongly
@@ -153,10 +152,9 @@ private theorem isItoIntegral_of_stopped_stages
       tendsto_measure_lintegral_of_ae_eventually_eqOn
         (fun k ↦ Finance.isStronglyPredictable_simpleHolding (ha k))
         (fun k ↦ (hHs k).isStronglyPredictable) hH (fun _ hε ↦
-          TauCeti.tendsto_measure_le_lintegral_enorm_sq_of_tendsto_eLpNorm
-            (fun k ↦ (((Finance.isStronglyPredictable_simpleHolding (ha k)).sub
-              (hHs k).isStronglyPredictable).mono ℱ.predictable_le_prod).aestronglyMeasurable)
-            hl2_hold hε)
+          TauCeti.tendsto_measure_lintegral_enorm_sub_sq_of_tendsto_eLpNorm
+            (fun k ↦ Finance.isStronglyPredictable_simpleHolding (ha k))
+            (fun k ↦ (hHs k).isStronglyPredictable) hl2_hold hε)
         (heq.mono fun _ hω ↦ hω T),
       ((tendstoInMeasure_of_tendsto_eLpNorm (by norm_num) hl2_gain).add
         (MeasureTheory.tendstoInMeasure_of_stoppedProcess_ae_eq hτ_top

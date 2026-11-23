@@ -18,22 +18,23 @@ import TauCeti.MeasureTheory.Function.LpSeminorm.Lintegral
 import TauCeti.Probability.BrownianMotion.Integral.Energy.Bound
 import TauCeti.Probability.Finance.SimpleStrategy.Refinement
 import TauCeti.Probability.Process.ContinuousAE
-import TauCeti.Probability.Process.Predictable.Basic
 
 /-!
 # Itô integrals against Brownian motion: specification, algebra, and uniqueness
 
 `TauCeti.Probability.IsItoIntegral ℱ P W H I` says that `I` is an Itô integral of the integrand
 `H` against `W`. The integrand is predictable and the paths of `I` are almost surely continuous.
-Moreover, for every time `t` some simple holdings, with heights known at the left endpoints of
-their intervals, approximate `H` on `(0,t]` in square energy in probability, while their
-elementary integrals at `t` converge in probability to `I t`. Square energy is a lower Lebesgue
-integral, so an infinite energy is never read as the default value zero of a divergent Bochner
-integral. The heights need not be bounded; bounded approximants are a special case.
+Moreover, for every time `t` some simple holdings on nondecreasing deterministic grids (allowing
+repeated dates), with heights known at the left endpoints of their intervals, approximate `H` on
+`(0,t]` in square energy in probability, while their elementary integrals at `t` converge in
+probability to `I t`. Square energy is a lower Lebesgue integral, so an infinite energy is never
+read as the default value zero of a divergent Bochner integral. The heights need not be bounded;
+bounded approximants are a special case.
 
 Against a pre-Brownian motion relative to the filtration, any limit in probability of the
-elementary integrals of simple holdings approximating the integrand on `(0,t]` in square energy
-in probability agrees almost surely with the Itô integral at `t`
+elementary integrals of simple holdings on nondecreasing deterministic grids (allowing repeated
+dates) with left-measurable heights approximating the integrand on `(0,t]` in square energy in
+probability agrees almost surely with the Itô integral at `t`
 (`TauCeti.Probability.IsItoIntegral.ae_eq_of_tendstoInMeasure`), deduced via
 `TauCeti.Probability.IsItoIntegral.tendstoInMeasure_simpleGains`. Such a sequence and the one
 witnessing the Itô integral are compared on one common grid. Their difference has square energy
@@ -53,7 +54,9 @@ is its Itô integral against every process with almost surely continuous paths
 bounded initial and post-`u` multipliers, `(dt × P)`-a.e. integrand congruence for an `SFinite`
 measure `P` (`TauCeti.Probability.IsItoIntegral.congr_integrand`), and gains convergence in measure
 for arbitrary approximating sequences against a filtered pre-Brownian motion. Existence of the
-integral is proved in `TauCeti.Probability.BrownianMotion.Integral.Ito.Isometry`, `L2`, and `Local`.
+integral is proved in `TauCeti.Probability.BrownianMotion.Integral.Ito.Isometry` for
+square-integrable integrands and in `TauCeti.Probability.BrownianMotion.Integral.Ito.Local` for
+localized integrands.
 
 ## References
 
@@ -75,19 +78,20 @@ variable {Ω : Type*} {mΩ : MeasurableSpace Ω} {ℱ : Filtration ℝ≥0 mΩ} 
   {W B H K I J : ℝ≥0 → Ω → ℝ}
 
 /-- `I` is an **Itô integral** of the integrand `H` against `W`. The integrand is predictable,
-almost every path of `I` is continuous, and at every time `t` there are simple holdings with
-heights known at the left endpoints of their intervals such that
-`∫_(0,t] |Kₖ - H|² ds → 0` in probability while their elementary integrals at `t` converge to
-`I t` in probability. The square energy is a lower Lebesgue integral, so it is infinite rather
-than zero when the square error is not integrable. -/
+almost every path of `I` is continuous, and at every time `t` there are simple holdings on
+nondecreasing deterministic grids (repeated dates are allowed) with heights known at the left
+endpoints of their intervals such that `∫_(0,t] |Kₖ - H|² ds → 0` in probability while their
+elementary integrals at `t` converge to `I t` in probability. The square energy is a lower Lebesgue
+integral, so it is infinite rather than zero when the square error is not integrable. -/
 structure IsItoIntegral (ℱ : Filtration ℝ≥0 mΩ) (P : Measure Ω) (W H I : ℝ≥0 → Ω → ℝ) :
     Prop where
   /-- The integrand is predictable, so its square errors are measurable in time. -/
   isStronglyPredictable : IsStronglyPredictable ℱ H
   /-- Almost every path of the integral is continuous. -/
   ae_continuous : ∀ᵐ ω ∂P, Continuous fun t ↦ I t ω
-  /-- At each time `t`, simple holdings approximate the integrand on `(0,t]` in square energy
-  in probability, and their elementary integrals at `t` converge to `I t` in probability. -/
+  /-- At each time `t`, simple holdings on nondecreasing deterministic grids (repeated dates are
+  allowed) with left-measurable heights approximate the integrand on `(0,t]` in square energy in
+  probability, and their elementary integrals at `t` converge to `I t` in probability. -/
   exists_approx : ∀ t : ℝ≥0, ∃ (n : ℕ → ℕ) (τ : ℕ → ℕ → ℝ≥0) (a : ℕ → ℕ → Ω → ℝ),
     (∀ k, MonotoneOn (τ k) (Iic (n k))) ∧
     (∀ k j, j < n k → StronglyMeasurable[ℱ (τ k j)] (a k j)) ∧
@@ -99,12 +103,12 @@ structure IsItoIntegral (ℱ : Filtration ℝ≥0 mΩ) (P : Measure Ω) (W H I :
 private theorem aemeasurable_enorm_sq_sub {K H : ℝ≥0 → Ω → ℝ} (hK : IsStronglyPredictable ℱ K)
     (hH : IsStronglyPredictable ℱ H) (t : ℝ≥0) (ω : Ω) :
     AEMeasurable (fun s ↦ ‖K s ω - H s ω‖ₑ ^ 2) (timeMeasure t) :=
-  ((((hK.sub hH).mono ℱ.predictable_le_prod).measurable.comp
-    (measurable_id.prodMk measurable_const) |>.eNorm.pow_const 2)).aemeasurable
+  ((hK.stronglyMeasurable_path.sub hH.stronglyMeasurable_path).eNorm.pow_const 2).aemeasurable
 
-/-- If left-measurable simple strategies approximate `H` in pathwise square energy in probability
-on `(0, t]`, their elementary gains against a filtered pre-Brownian motion `W` converge in
-probability to `I t`, without height bounds or path continuity of `W`. -/
+/-- If simple strategies on nondecreasing deterministic grids (allowing repeated dates) with
+left-measurable heights approximate `H` in pathwise square energy in probability on `(0, t]`,
+their elementary gains against a filtered pre-Brownian motion `W` converge in probability to `I t`,
+without height bounds or path continuity of `W`. -/
 theorem IsItoIntegral.tendstoInMeasure_simpleGains (hW : IsFilteredPreBrownianReal ℱ W P)
     (hI : IsItoIntegral ℱ P W H I) {t : ℝ≥0}
     {n : ℕ → ℕ} {τ : ℕ → ℕ → ℝ≥0} {a : ℕ → ℕ → Ω → ℝ}
@@ -133,10 +137,10 @@ theorem IsItoIntegral.tendstoInMeasure_simpleGains (hW : IsFilteredPreBrownianRe
     (.of_forall fun _ ↦ zero_add _)
 
 /-- **Identification of the Itô integral at a time.** Against a pre-Brownian motion relative
-to the filtration, if simple holdings with heights known at the left endpoints of their
-intervals approximate the integrand on `(0,t]` in square energy in probability, then every
-limit in probability of their elementary integrals at `t` agrees almost surely with the Itô
-integral at `t`. -/
+to the filtration, if simple holdings on nondecreasing deterministic grids (allowing repeated dates)
+with heights known at the left endpoints of their intervals approximate the integrand on `(0,t]` in
+square energy in probability, then every limit in probability of their elementary integrals at `t`
+agrees almost surely with the Itô integral at `t`. -/
 theorem IsItoIntegral.ae_eq_of_tendstoInMeasure (hW : IsFilteredPreBrownianReal ℱ W P)
     (hI : IsItoIntegral ℱ P W H I) {t : ℝ≥0} {m : ℕ → ℕ} {σ : ℕ → ℕ → ℝ≥0}
     {b : ℕ → ℕ → Ω → ℝ} {X : Ω → ℝ} (hσ : ∀ k, MonotoneOn (σ k) (Iic (m k)))
@@ -251,15 +255,14 @@ theorem locallyBrownianIntegrable (hI : IsItoIntegral ℱ P W H I) :
   have hpred := Finance.isStronglyPredictable_simpleHolding (ha (φ j))
   have hL : MemLp (fun s ↦ Finance.simpleHolding (τ (φ j)) (n (φ j)) (a (φ j)) s ω) 2
       (timeMeasure N) :=
-    MemLp.of_bound ((hpred.mono ℱ.predictable_le_prod).measurable.comp
-      (measurable_id.prodMk measurable_const) |>.aestronglyMeasurable)
+    MemLp.of_bound hpred.stronglyMeasurable_path.aestronglyMeasurable
       (∑ i ∈ range (n (φ j)), ‖a (φ j) i ω‖) (.of_forall fun s ↦ by
         rw [Finance.simpleHolding_def]
         exact (norm_sum_le _ _).trans (sum_le_sum fun _ _ ↦ norm_indicator_le_norm_self _ _))
   have hdiff : MemLp (fun s ↦ Finance.simpleHolding (τ (φ j)) (n (φ j)) (a (φ j)) s ω - H s ω) 2
       (timeMeasure N) :=
-    (((hpred.sub hI.isStronglyPredictable).mono ℱ.predictable_le_prod).measurable.comp
-      (measurable_id.prodMk measurable_const) |>.aestronglyMeasurable
+    ((hpred.stronglyMeasurable_path.sub
+        hI.isStronglyPredictable.stronglyMeasurable_path).aestronglyMeasurable
       |>.memLp_two_iff_lintegral_enorm_sq_lt_top).mpr (lt_trans (not_le.mp hj) ENNReal.one_lt_top)
   exact (hL.sub hdiff).ae_eq (.of_forall fun _ ↦ sub_sub_cancel _ _)
 

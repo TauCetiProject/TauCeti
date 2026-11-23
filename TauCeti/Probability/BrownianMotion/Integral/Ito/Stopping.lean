@@ -8,7 +8,6 @@ module
 public import Mathlib.Probability.Process.Stopping
 public import TauCeti.Probability.BrownianMotion.Integral.Ito.Basic
 import TauCeti.MeasureTheory.Function.ConvergenceInMeasure
-import TauCeti.MeasureTheory.Function.LpSeminorm.Lintegral
 import TauCeti.Probability.BrownianMotion.Integral.Stopping
 import TauCeti.Probability.Finance.SimpleStrategy.Stopping
 import TauCeti.Probability.Process.StoppedValue
@@ -77,9 +76,22 @@ private theorem tendstoInMeasure_stoppedProcess_simpleGains_dyadicCeilTime
       TendstoInMeasure P (fun m ↦ Finance.simpleGains (τ₀ m) (n m) (a m) W s) atTop (I s) :=
     hI.tendstoInMeasure_simpleGains hW hτ₀ ha fun ε hε ↦
       MeasureTheory.tendsto_measure_lintegral_mono (timeMeasure_mono (hsT hs)) henergy hε
+  have hstop (X : ℝ≥0 → Ω → ℝ) (ω : Ω) :
+      MeasureTheory.stoppedProcess X (fun ω ↦ dyadicCeilTime k (σ ω)) T ω =
+        X (min (T : WithTop ℝ≥0) (dyadicCeilTime k (σ ω))).untopA ω := by
+    rcases le_or_gt (T : WithTop ℝ≥0) (dyadicCeilTime k (σ ω)) with hle | hlt
+    · rw [MeasureTheory.stoppedProcess_eq_of_le (τ := fun ω ↦ dyadicCeilTime k (σ ω)) hle,
+        min_eq_left hle, WithTop.untopA, WithTop.untopD_coe]
+    · rw [MeasureTheory.stoppedProcess_eq_of_ge (τ := fun ω ↦ dyadicCeilTime k (σ ω)) hlt.le,
+        min_eq_right hlt.le]
   exact fun ε hε ↦ tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds
     (by simpa using tendsto_finsetSum S fun s hs ↦ hgains_s hs ε hε) (fun _ ↦ zero_le) fun m ↦
-    (measure_mono fun ω hω ↦ mem_biUnion (hrange ω) hω).trans (measure_biUnion_finset_le S _)
+    (measure_mono fun ω hω ↦ by
+      let s := (min (T : WithTop ℝ≥0) (dyadicCeilTime k (σ ω))).untopA
+      have hs : s ∈ S := hrange ω
+      dsimp only at hω
+      rw [Set.mem_ofPred_eq, hstop _ ω, hstop _ ω] at hω
+      exact mem_biUnion hs hω).trans (measure_biUnion_finset_le S _)
 
 private theorem tendstoInMeasure_stoppedProcess_diag
     (hW : IsFilteredPreBrownianReal ℱ W P)
@@ -154,10 +166,10 @@ private theorem tendsto_measure_lintegral_stoppedProcess_diag [IsFiniteMeasure P
             rw [hhold k s hs ω]; split_ifs <;> simp)).trans (hm_hold k).le)
   simpa only [Function.comp_apply, id_eq, Pi.sub_apply, Function.uncurry_apply_pair,
       sub_add_sub_cancel] using MeasureTheory.tendsto_measure_lintegral_enorm_add_sq
-    (.of_forall fun k ω ↦ ((((Finance.isStronglyPredictable_simpleHolding (hcm k)).sub
-      (hH.ite_le (hσ.dyadicCeilTime k)).isStronglyPredictable).mono
-        ℱ.predictable_le_prod).measurable.comp
-          (measurable_id.prodMk measurable_const) |>.eNorm.pow_const 2).aemeasurable)
+    (.of_forall fun k ω ↦
+      (((Finance.isStronglyPredictable_simpleHolding (hcm k)).stronglyMeasurable_path.sub
+        (hH.ite_le (hσ.dyadicCeilTime k)).isStronglyPredictable.stronglyMeasurable_path)
+          |>.eNorm.pow_const 2).aemeasurable)
     he₁ (hH.tendsto_measure_lintegral_ite_le_dyadicCeilTime_sub_sq hσ T) hε
 
 /-- **Optional stopping for the continuous Brownian Itô integral**: stopping `I` at a stopping time

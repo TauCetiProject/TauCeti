@@ -7,27 +7,18 @@ module
 
 public import TauCeti.Probability.BrownianMotion.Integral.Ito.Isometry
 import TauCeti.MeasureTheory.Function.Lp.DominatedConvergence
-import TauCeti.Probability.BrownianMotion.Integral.Energy.Basic
-import TauCeti.Probability.BrownianMotion.Integral.Simple
-import TauCeti.Probability.Finance.SimpleStrategy.Energy
 
 /-!
-# Further `L²` properties of the continuous Brownian Itô integral
+# `L²(P)` time continuity and zero expectation of the continuous Brownian Itô integral
 
-Extending `TauCeti.Probability.BrownianMotion.Integral.Ito.Isometry`, this module identifies
-the `L²(P)` class of any continuous Itô integral of a `BrownianIntegrable` integrand with
-`hW.l2Integral T`, establishes zero expectation, the polarized and `(s, t]`-increment Itô
-isometries, elementary-strategy `L²` comparison, and `L²(P)` continuity in time, without assuming
-path continuity of the integrator `W`.
+Extending `TauCeti.Probability.BrownianMotion.Integral.Ito.Isometry`, this module establishes
+`L²(P)` continuity in time and zero expectation for any continuous Itô integral of a
+`BrownianIntegrable` integrand, without assuming path continuity of the integrator `W`.
 
 ## Main results
 
-* `TauCeti.Probability.IsItoIntegral.toLp_eq_l2Integral`: identification of `(I T)` in `L²(P)`
-  with `hW.l2Integral T`.
-* `TauCeti.Probability.IsItoIntegral.eLpNorm_sub_eq`, `eLpNorm_simpleGains_sub_eq`,
-  `integral_eq_zero`, `integral_mul`, `integral_sub_sq`: zero expectation, polarized and
-  increment Itô isometries, and elementary-strategy `L²` comparison.
 * `TauCeti.Probability.IsItoIntegral.continuous_toLp`: `L²(P)` continuity in time.
+* `TauCeti.Probability.IsItoIntegral.integral_eq_zero`: zero expectation at every horizon.
 
 ## References
 
@@ -40,62 +31,12 @@ public section
 noncomputable section
 
 open Filter MeasureTheory ProbabilityTheory Set
-open scoped ENNReal NNReal Topology InnerProductSpace
+open scoped ENNReal NNReal Topology
 
 namespace TauCeti.Probability.IsItoIntegral
 
 variable {Ω : Type*} {mΩ : MeasurableSpace Ω} {ℱ : Filtration ℝ≥0 mΩ}
-  {P : Measure Ω} {W H K I J : ℝ≥0 → Ω → ℝ}
-
-/-- At every horizon `T`, the `L²(P)` class of `I T` equals `hW.l2Integral T` applied to `H`,
-without assuming path continuity of `W`. -/
-theorem toLp_eq_l2Integral (hW : IsFilteredPreBrownianReal ℱ W P)
-    (hH : BrownianIntegrable ℱ P H) (hI : IsItoIntegral ℱ P W H I) (T : ℝ≥0) :
-    (hI.memLp hW hH T).toLp (I T) =
-      hW.l2Integral T ((hH.memLp_predictableMeasure T).toLp (Function.uncurry H)) :=
-  Lp.ext ((hI.memLp hW hH T).coeFn_toLp.trans (hI.ae_eq_l2Integral hW hH T))
-
-private theorem indicator_Ioi_ae_eq_indicator_Ioc (H : ℝ≥0 → Ω → ℝ) (s t : ℝ≥0) :
-    (fun p : ℝ≥0 × Ω ↦ (Ioi s).indicator (H · p.2) p.1) =ᵐ[(timeMeasure t).prod P]
-      fun p : ℝ≥0 × Ω ↦ (Ioc s t).indicator (H · p.2) p.1 := by
-  filter_upwards [(Measure.quasiMeasurePreserving_fst (μ := timeMeasure t)
-    (ν := P)).ae (ae_mem_Ioc_timeMeasure t)] with p hp
-  by_cases hps : s < p.1 <;> simp [hps, hp.2]
-
-/-- **`(s, t]`-increment `L²`-seminorm Itô isometry**: for `s ≤ t`, `eLpNorm (I t - I s) 2 P` equals
-the `L²((timeMeasure t).prod P)` seminorm of `H · 1_{(s, t]}`, without path continuity of `W`. -/
-theorem eLpNorm_sub_eq (hW : IsFilteredPreBrownianReal ℱ W P)
-    (hH : BrownianIntegrable ℱ P H) (hI : IsItoIntegral ℱ P W H I) {s t : ℝ≥0} (hst : s ≤ t) :
-    eLpNorm (I t - I s) 2 P =
-      eLpNorm (fun p : ℝ≥0 × Ω ↦ (Ioc s t).indicator (H · p.2) p.1) 2
-        ((timeMeasure t).prod P) := by
-  let := (hW.hasLaw_eval 0).isProbabilityMeasure
-  have hsub : eLpNorm (I t - I s) 2 P =
-      eLpNorm (fun p : ℝ≥0 × Ω ↦ (Ioi s).indicator (H · p.2) p.1) 2 ((timeMeasure t).prod P) := by
-    simpa only [Pi.sub_def, Function.uncurry_def, min_eq_left hst] using
-      (hI.indicator_Ioi hW s).eLpNorm_eq hW (hH.indicator_Ioi s) t
-  exact hsub.trans (eLpNorm_congr_ae (indicator_Ioi_ae_eq_indicator_Ioc H s t))
-
-/-- The `L²(P)` distance between the elementary gains of a left-measurable `L²` simple strategy on
-a nondecreasing grid and an Itô integral of `K` equals the `L²((timeMeasure T).prod P)` distance
-between their integrands, without assuming path continuity of `W`. -/
-theorem eLpNorm_simpleGains_sub_eq (hW : IsFilteredPreBrownianReal ℱ W P)
-    (hK : BrownianIntegrable ℱ P K) (hI : IsItoIntegral ℱ P W K I)
-    {n : ℕ} {γ : ℕ → ℝ≥0} {a : ℕ → Ω → ℝ} (hγ : MonotoneOn γ (Iic n))
-    (ha : ∀ j < n, StronglyMeasurable[ℱ (γ j)] (a j))
-    (ha₂ : ∀ j < n, MemLp (a j) 2 P) (T : ℝ≥0) :
-    eLpNorm (Finance.simpleGains γ n a W T - I T) 2 P =
-      eLpNorm (fun p ↦ Finance.simpleHolding γ n a p.1 p.2 - K p.1 p.2) 2
-        ((timeMeasure T).prod P) := by
-  let := (hW.hasLaw_eval 0).isProbabilityMeasure
-  rw [← Lp.edist_toLp_toLp _ _ (hW.memLp_simpleGains hγ ha ha₂ T) (hI.memLp hW hK T),
-    ← hW.l2Integral_simpleHolding hγ ha T
-      (Finance.memLp_simpleHolding_predictableMeasure ha ha₂ T)
-      (hW.memLp_simpleGains hγ ha ha₂ T),
-    hI.toLp_eq_l2Integral hW hK T, (hW.l2Integral T).isometry.edist_eq, Lp.edist_toLp_toLp,
-    ℱ.predictableMeasure_def, eLpNorm_trim ℱ.predictable_le_prod
-      ((Finance.isStronglyPredictable_simpleHolding ha).sub hK.isStronglyPredictable)]
-  simp only [Function.uncurry_def, Pi.sub_def]
+  {P : Measure Ω} {W H : ℝ≥0 → Ω → ℝ} {I : ℝ≥0 → Ω → ℝ}
 
 /-- **`L²(P)` time continuity**: the `L²(P)` class `t ↦ (hI.memLp hW hH t).toLp (I t)` of a
 continuous Itô integral of a `BrownianIntegrable` integrand varies continuously in `t`, without
@@ -146,37 +87,5 @@ theorem integral_eq_zero (hW : IsFilteredPreBrownianReal ℱ W P)
     (hH : BrownianIntegrable ℱ P H) (hI : IsItoIntegral ℱ P W H I) (T : ℝ≥0) :
     ∫ ω, I T ω ∂P = 0 :=
   (integral_congr_ae (hI.ae_eq_l2Integral hW hH T)).trans (hW.integral_l2Integral T _)
-
-/-- **Polarized Itô isometry**: `E[I T · J T] = E[∫_{(0, T]} H K]` for `BrownianIntegrable`
-integrands `H` and `K`, without assuming path continuity of `W`. -/
-theorem integral_mul (hW : IsFilteredPreBrownianReal ℱ W P)
-    (hH : BrownianIntegrable ℱ P H) (hK : BrownianIntegrable ℱ P K)
-    (hI : IsItoIntegral ℱ P W H I) (hJ : IsItoIntegral ℱ P W K J) (T : ℝ≥0) :
-    ∫ ω, I T ω * J T ω ∂P = ∫ p, H p.1 p.2 * K p.1 p.2 ∂(timeMeasure T).prod P := by
-  have hmap := (hW.l2Integral T).inner_map_map
-    ((hK.memLp_predictableMeasure T).toLp (Function.uncurry K))
-    ((hH.memLp_predictableMeasure T).toLp (Function.uncurry H))
-  rw [← hJ.toLp_eq_l2Integral hW hK T, ← hI.toLp_eq_l2Integral hW hH T,
-    L2.inner_def, L2.inner_def] at hmap
-  simp only [RCLike.inner_apply, conj_trivial] at hmap
-  rw [← integral_congr_ae (((hI.memLp hW hH T).coeFn_toLp.and (hJ.memLp hW hK T).coeFn_toLp).mono
-      fun _ ⟨h1, h2⟩ ↦ congrArg₂ (· * ·) h1 h2), hmap,
-    integral_congr_ae (((hH.memLp_predictableMeasure T).coeFn_toLp.and
-      (hK.memLp_predictableMeasure T).coeFn_toLp).mono fun _ ⟨h1, h2⟩ ↦ congrArg₂ (· * ·) h1 h2)]
-  exact ℱ.integral_predictableMeasure P (hH.isStronglyPredictable.mul hK.isStronglyPredictable) T
-
-/-- **`(s, t]`-increment Bochner-integral Itô isometry**: for `s ≤ t`,
-`E[(I t - I s)²] = E[∫_{(s, t]} H²]`, without assuming path continuity of `W`. -/
-theorem integral_sub_sq (hW : IsFilteredPreBrownianReal ℱ W P)
-    (hH : BrownianIntegrable ℱ P H) (hI : IsItoIntegral ℱ P W H I) {s t : ℝ≥0} (hst : s ≤ t) :
-    ∫ ω, (I t ω - I s ω) ^ 2 ∂P =
-      ∫ p, (Ioc s t).indicator (H · p.2) p.1 ^ 2 ∂(timeMeasure t).prod P := by
-  let := (hW.hasLaw_eval 0).isProbabilityMeasure
-  have heq : ∫ ω, (I t ω - I s ω) ^ 2 ∂P =
-      ∫ p, (Ioi s).indicator (H · p.2) p.1 ^ 2 ∂(timeMeasure t).prod P := by
-    simpa only [min_eq_left hst] using
-      (hI.indicator_Ioi hW s).integral_sq hW (hH.indicator_Ioi s) t
-  exact heq.trans (integral_congr_ae
-    ((indicator_Ioi_ae_eq_indicator_Ioc H s t).mono fun _ hp ↦ congrArg (· ^ 2) hp))
 
 end TauCeti.Probability.IsItoIntegral

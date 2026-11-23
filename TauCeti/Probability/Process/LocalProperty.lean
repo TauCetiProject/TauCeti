@@ -181,12 +181,11 @@ theorem ae_tendsto_stoppedProcess_localSeq (hX : Locally p ℱ X P) (t : ι) :
     ∀ᵐ ω ∂P, Tendsto (fun n ↦ stoppedProcess
       (fun u ↦ {ω | ⊥ < hX.localSeq n ω}.indicator (X u)) (hX.localSeq n) t ω)
       atTop (𝓝 (X t ω)) := by
-  filter_upwards [hX.isLocalizingSequence_localSeq.tendsto_top] with ω hω
-  have ht := hω.eventually (eventually_gt_nhds (WithTop.coe_lt_top t))
-  apply tendsto_const_nhds.congr'
-  filter_upwards [ht] with n hn
-  rw [stoppedProcess_eq_of_le hn.le, Set.indicator_of_mem]
-  exact lt_of_le_of_lt (WithTop.coe_le_coe.mpr bot_le) hn
+  filter_upwards [ae_eventuallyEq_stoppedProcess X t hX.isLocalizingSequence_localSeq.tendsto_top,
+    hX.isLocalizingSequence_localSeq.tendsto_top] with ω hω htop
+  refine tendsto_const_nhds.congr' ?_
+  filter_upwards [hω, (WithTop.tendsto_nhds_top_iff _).mp htop ⊥] with n hn hpos
+  rw [stoppedProcess_indicator_comm, Set.indicator_of_mem hpos, hn]
 
 end ProbabilityTheory.Locally
 

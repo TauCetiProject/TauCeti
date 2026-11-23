@@ -7,7 +7,6 @@ module
 
 public import Mathlib.MeasureTheory.Function.ConvergenceInMeasure
 public import Mathlib.Probability.Process.Stopping
-public import Mathlib.Topology.Order.WithTop
 
 /-!
 # Stopping times and stopped paths
@@ -21,11 +20,13 @@ stopping time is infinite. These pathwise facts require no measurability or stop
 hypothesis and let local-martingale and stochastic-integral arguments retain path regularity of
 their stopped stages.
 
-Simultaneous almost-sure nonnegativity controls random-time evaluations, including stopped
-processes restricted by an indicator (`MeasureTheory.ae_nonneg_stoppedProcess_indicator`).
-Pathwise set membership up to the random time also passes to the stopped process, and, under a
-finite measure, almost-sure agreements with almost-everywhere strongly measurable stage variables
-along random times diverging to `⊤` converge in measure to the unstopped slice
+Simultaneous almost-surely diverging random times eventually leave every deterministic time
+below the stopping horizon (`MeasureTheory.ae_eventuallyEq_stoppedProcess`). Simultaneous
+almost-sure nonnegativity controls random-time evaluations, including stopped processes
+restricted by an indicator (`MeasureTheory.ae_nonneg_stoppedProcess_indicator`). Pathwise set
+membership up to the random time also passes to the stopped process, and, under a finite
+measure, almost-sure agreements with almost-everywhere strongly measurable stage variables along
+random times diverging to `⊤` converge in measure to the unstopped slice
 (`MeasureTheory.tendstoInMeasure_of_stoppedProcess_ae_eq`). Under a finite measure, truncating an
 almost-everywhere measurable `WithTop ℝ≥0`-valued time at a deterministic bound `T : ℝ≥0` yields an
 integrable finite approximation (`MeasureTheory.integrable_untopA_const_min`).
@@ -140,6 +141,16 @@ theorem ae_nonneg_stoppedProcess_indicator
   · rw [stoppedProcess_eq_of_ge (le_of_not_ge ht)]
     exact Set.indicator_apply_nonneg (fun _ ↦ hω _)
 
+/-- If random times `τ` diverge almost surely to `⊤` along a filter `l`, then at any fixed time
+`t` the stopped process `stoppedProcess X (τ k) t` eventually agrees with `X t` almost surely. -/
+theorem ae_eventuallyEq_stoppedProcess {ι α Ω E : Type*} [LinearOrder ι] [Nonempty ι]
+    [TopologicalSpace ι] [OrderTopology ι] [MeasurableSpace Ω] {P : Measure Ω}
+    {l : Filter α} (X : ι → Ω → E) {τ : α → Ω → WithTop ι} (t : ι)
+    (hτ_top : ∀ᵐ ω ∂P, Tendsto (τ · ω) l (𝓝 ⊤)) :
+    ∀ᵐ ω ∂P, ∀ᶠ k in l, stoppedProcess X (τ k) t ω = X t ω :=
+  hτ_top.mono fun _ hω ↦ ((WithTop.tendsto_nhds_top_iff _).mp hω t).mono fun _ hk ↦
+    stoppedProcess_eq_of_le hk.le
+
 /-- If random times `τ k` diverge almost surely to `⊤` and each stopped slice
 `stoppedProcess X (τ k) t` agrees almost everywhere with an `AEStronglyMeasurable` variable `U k`,
 then `U k` converges to `X t` in `P`-measure on a finite measure space. No measurability or
@@ -153,9 +164,8 @@ theorem tendstoInMeasure_of_stoppedProcess_ae_eq {ι Ω E : Type*} [LinearOrder 
     (hX_stop : ∀ k, stoppedProcess X (τ k) t =ᵐ[P] U k) :
     TendstoInMeasure P U atTop (X t) :=
   (tendstoInMeasure_of_tendsto_ae (fun k ↦ (hUm k).congr (hX_stop k).symm)
-    (hτ_top.mono fun _ hω ↦ tendsto_const_nhds.congr' <|
-      ((WithTop.tendsto_nhds_top_iff _).mp hω t).mono fun k hk ↦
-        (stoppedProcess_eq_of_le (τ := τ k) hk.le).symm)).congr_left hX_stop
+    ((ae_eventuallyEq_stoppedProcess X t hτ_top).mono fun _ hω ↦
+      tendsto_const_nhds.congr' (hω.mono fun _ hk ↦ hk.symm))).congr_left hX_stop
 
 open scoped NNReal
 

@@ -502,12 +502,19 @@ theorem ae_eq_predictableMeasure_iff {E : Type*} [MeasurableSpace E] [Measurable
     f =ᵐ[ℱ.predictableMeasure P T] g ↔ f =ᵐ[(timeMeasure T).prod P] g :=
   ⟨ae_eq_of_ae_eq_trim, ae_eq_trim_of_measurable ℱ.predictable_le_prod hf hg⟩
 
+/-- For predictable functions the native `eLpNorm` coincides with the ambient time-product
+`eLpNorm`, at every exponent (in particular exponent two). -/
+theorem eLpNorm_predictableMeasure {E : Type*} [TopologicalSpace E] [ContinuousENorm E]
+    {f : ℝ≥0 × Ω → E} (hf : StronglyMeasurable[ℱ.predictable] f) (T : ℝ≥0) (p : ℝ≥0∞) :
+    eLpNorm f p (ℱ.predictableMeasure P T) = eLpNorm f p ((timeMeasure T).prod P) := by
+  rw [predictableMeasure_def, eLpNorm_trim ℱ.predictable_le_prod hf]
+
 /-- For predictable functions the native `MemLp` condition can be tested in the ambient
 product measure, at every exponent (in particular exponent two). -/
 theorem memLp_predictableMeasure_iff {E : Type*} [TopologicalSpace E] [ContinuousENorm E]
     {f : ℝ≥0 × Ω → E} (hf : StronglyMeasurable[ℱ.predictable] f) (T : ℝ≥0) (p : ℝ≥0∞) :
     MemLp f p (ℱ.predictableMeasure P T) ↔ MemLp f p ((timeMeasure T).prod P) := by
-  simp only [MemLp, predictableMeasure_def, eLpNorm_trim ℱ.predictable_le_prod hf]
+  simp only [MemLp, ℱ.eLpNorm_predictableMeasure P hf T p]
 
 end Dictionary
 
