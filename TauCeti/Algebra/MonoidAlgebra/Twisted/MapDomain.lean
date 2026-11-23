@@ -54,7 +54,7 @@ noncomputable def mapDomain (f : G →* H) (hf : ∀ g₁ g₂, β (f g₁) (f g
       mapDomain (g.comp f) (fun g₁ g₂ ↦ (hg (f g₁) (f g₂)).trans (hf g₁ g₂)) := by ext x; simp
 
 /-- Pointwise form of `mapDomain_comp`. -/
-theorem mapDomain_mapDomain (g : H →* K) (hg : ∀ h₁ h₂, γ (g h₁) (g h₂) = β h₁ h₂)
+@[simp] theorem mapDomain_mapDomain (g : H →* K) (hg : ∀ h₁ h₂, γ (g h₁) (g h₂) = β h₁ h₂)
     (f : G →* H) (hf : ∀ g₁ g₂, β (f g₁) (f g₂) = α g₁ g₂)
     (x : twistedMonoidAlgebra k G α) :
     mapDomain g hg (mapDomain f hf x) =

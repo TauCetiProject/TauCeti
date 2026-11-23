@@ -8,7 +8,7 @@ module
 public import Mathlib.Analysis.Real.Sqrt
 public import Mathlib.Analysis.SpecialFunctions.Complex.CircleAddChar
 public import Mathlib.LinearAlgebra.BilinearMap
-public import TauCeti.Algebra.MonoidAlgebra.Twisted.Basic
+public import TauCeti.Algebra.MonoidAlgebra.Twisted.Trace
 public import TauCeti.Algebra.TemperleyLieb.Basic
 -- Private: these are used only inside proofs.
 import TauCeti.Algebra.Ring.Idempotent.Basic
@@ -268,23 +268,23 @@ theorem weyl_pow (a : Fin N → ZMod 3) (n : ℕ) : weyl N a ^ n = weyl N (n •
 variable (N) in
 /-- The **scalar coefficient** `s_N`: the coefficient of the basis element `W(0) = 1` of `G_N`.
 It is a trace (`cubicScalarCoefficient_mul_comm`). -/
-noncomputable def cubicScalarCoefficient : CubicTorus N →ₗ[ℂ] ℂ :=
-  (basis ℂ (Multiplicative (Fin N → ZMod 3)) (cubicFactor N)).coord 1
+@[expose] noncomputable def cubicScalarCoefficient : CubicTorus N →ₗ[ℂ] ℂ :=
+  TwistedMonoidAlgebra.scalarTrace ℂ (Multiplicative (Fin N → ZMod 3)) (cubicFactor N)
 
 @[simp]
 theorem cubicScalarCoefficient_weyl (a : Fin N → ZMod 3) :
     cubicScalarCoefficient N (weyl N a) = if a = 0 then 1 else 0 := by
   classical
-  simp [cubicScalarCoefficient, weyl, Finsupp.single_apply]
+  simp [cubicScalarCoefficient, weyl, scalarTrace_of]
 
 @[simp]
-theorem cubicScalarCoefficient_one : cubicScalarCoefficient N 1 = 1 := by
-  simpa using cubicScalarCoefficient_weyl (N := N) 0
+theorem cubicScalarCoefficient_one : cubicScalarCoefficient N 1 = 1 :=
+  scalarTrace_one
 
 /-- The scalar coefficient is a trace. -/
 theorem cubicScalarCoefficient_mul_comm (x y : CubicTorus N) :
-    cubicScalarCoefficient N (x * y) = cubicScalarCoefficient N (y * x) :=
-  repr_mul_apply_one_comm x y
+    cubicScalarCoefficient N (x * y) = cubicScalarCoefficient N (y * x) := by
+  rw [cubicScalarCoefficient, scalarTrace_apply, scalarTrace_apply, repr_mul_apply_one_comm]
 
 /-- The scalar coefficient of a product of two basis elements: `s(W(a) W(b))` is `1` when
 `a + b = 0` and `0` otherwise. -/
@@ -311,7 +311,16 @@ theorem cubicSite_pow (j : Fin N) (n : ℕ) :
 
 @[simp]
 theorem cubicSite_pow_three (j : Fin N) : cubicSite N j ^ 3 = 1 := by
-  rw [cubicSite_pow, show ((3 : ℕ) : ZMod 3) = 0 from rfl, Pi.single_zero, weyl_zero]
+  rw [cubicSite_pow, ZMod.natCast_self, Pi.single_zero, weyl_zero]
+
+@[simp]
+theorem cubicSite_pow_four (j : Fin N) : cubicSite N j ^ 4 = cubicSite N j := by
+  rw [pow_succ, cubicSite_pow_three, one_mul]
+
+theorem cubicSite_sq_eq_weyl_neg_single (j : Fin N) :
+    cubicSite N j ^ 2 = weyl N (-Pi.single j 1) := by
+  have h2 : ((2 : ℕ) : ZMod 3) = -1 := by decide
+  rw [cubicSite_pow, h2, Pi.single_neg]
 
 /-- The commutation relation of the site unitaries: `U_i U_j = ω U_j U_i` when `j = i + 1`,
 `U_i U_j = ω⁻¹ U_j U_i` when `i = j + 1`, and `U_i` and `U_j` commute otherwise. -/
@@ -338,6 +347,20 @@ noncomputable def cubicProjection (j : Fin N) : CubicTorus N :=
 theorem cubicProjection_def (j : Fin N) :
     cubicProjection N j = (3 : ℂ)⁻¹ • (1 + cubicSite N j + cubicSite N j ^ 2) :=
   (rfl)
+
+@[simp]
+theorem cubicProjection_mul_cubicSite (j : Fin N) :
+    cubicProjection N j * cubicSite N j = cubicProjection N j := by
+  rw [cubicProjection_def, smul_mul_assoc,
+    TauCeti.one_add_add_sq_mul_of_pow_three_eq_one (cubicSite_pow_three j)]
+
+@[simp]
+theorem cubicSite_mul_cubicProjection (j : Fin N) :
+    cubicSite N j * cubicProjection N j = cubicProjection N j := by
+  rw [cubicProjection_def, mul_smul_comm]
+  congr 1
+  rw [mul_add, mul_add, mul_one, ← sq, ← pow_succ', cubicSite_pow_three]
+  abel
 
 @[simp]
 theorem cubicScalarCoefficient_cubicProjection (j : Fin N) :
@@ -394,37 +417,32 @@ variable (N) in
 /-- The **inversion** `θ_N : W(a) ↦ W(-a)` of the cubic quantum torus, an algebra map since the
 chain form satisfies `B(-a, -b) = B(a, b)`. It is an involution
 (`cubicInversion_cubicInversion`). -/
-noncomputable def cubicInversion : CubicTorus N →ₐ[ℂ] CubicTorus N :=
-  TwistedMonoidAlgebra.lift (fun g ↦ weyl N (-g.toAdd)) (by simp) fun g h ↦ by
-    rw [weyl_mul_weyl, LinearMap.map_neg₂, map_neg, neg_neg, toAdd_mul, neg_add,
-      cubicFactor_apply]
+@[expose] noncomputable def cubicInversion : CubicTorus N →ₐ[ℂ] CubicTorus N :=
+  TwistedMonoidAlgebra.mapDomain invMonoidHom fun g h ↦ by
+    simp [invMonoidHom_apply, cubicFactor_apply]
 
 @[simp]
-theorem cubicInversion_weyl (a : Fin N → ZMod 3) : cubicInversion N (weyl N a) = weyl N (-a) :=
-  TwistedMonoidAlgebra.lift_of _ _ _ _
+theorem cubicInversion_weyl (a : Fin N → ZMod 3) : cubicInversion N (weyl N a) = weyl N (-a) := by
+  simp [cubicInversion, weyl, invMonoidHom_apply, ofAdd_neg]
 
 /-- The inversion is an involution. -/
 @[simp]
 theorem cubicInversion_cubicInversion (x : CubicTorus N) :
     cubicInversion N (cubicInversion N x) = x := by
-  have h : (cubicInversion N).comp (cubicInversion N) = AlgHom.id ℂ (CubicTorus N) :=
-    algHom_ext fun g ↦ by simp [of_eq_weyl]
-  exact AlgHom.congr_fun h x
+  simp [cubicInversion, invMonoidHom_comp_invMonoidHom]
 
 /-- The inversion sends `U_j` to `U_j ^ 2 = U_j⁻¹`. -/
 @[simp]
 theorem cubicInversion_cubicSite (j : Fin N) :
     cubicInversion N (cubicSite N j) = cubicSite N j ^ 2 := by
-  rw [cubicSite_pow, cubicSite, cubicInversion_weyl, ← Pi.single_neg,
-    show (-1 : ZMod 3) = ((2 : ℕ) : ZMod 3) by decide]
+  nth_rw 1 [cubicSite_def]
+  rw [cubicInversion_weyl, ← cubicSite_sq_eq_weyl_neg_single]
 
 /-- The inversion fixes every cubic projection. -/
 @[simp]
 theorem cubicInversion_cubicProjection (j : Fin N) :
     cubicInversion N (cubicProjection N j) = cubicProjection N j := by
-  have h4 : cubicSite N j ^ 4 = cubicSite N j := by
-    rw [pow_succ, cubicSite_pow_three, one_mul]
-  simp [cubicProjection_def, ← pow_mul, h4, add_right_comm]
+  simp [cubicProjection_def, ← pow_mul, add_right_comm]
 
 variable (N) in
 /-- **The inversion-fixed cubic quantum torus** `C_N`, the subalgebra of `G_N` fixed by

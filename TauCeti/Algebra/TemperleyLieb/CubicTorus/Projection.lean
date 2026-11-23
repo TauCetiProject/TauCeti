@@ -8,33 +8,37 @@ module
 public import TauCeti.Algebra.MonoidAlgebra.Twisted.Trace
 public import TauCeti.Algebra.TemperleyLieb.CubicTorus.Basic
 public import TauCeti.Algebra.TemperleyLieb.Star
--- Private: field structure on `ZMod 3`, permutation trace, and essential-idempotent trace are
--- proof-only.
+-- Private: finite-product helpers, `ZMod 3` case split, permutation trace, and involution trace.
+import TauCeti.Data.Fin.Basic
+import TauCeti.Data.ZMod.Three
 import TauCeti.LinearAlgebra.Trace.Idempotent
-import Mathlib.Algebra.Field.ZMod
 import Mathlib.LinearAlgebra.Matrix.Permutation
 
 /-!
-# Adjoint, universal presentation, dimension of `cubicFixed`, and surjectivity of `cubicHom`
+# Adjoint, universal presentation, basis and dimension of `cubicFixed`, and surjectivity of
+# `cubicHom`
 
 Building on `TauCeti.Algebra.TemperleyLieb.CubicTorus.Basic`, this file supplies:
 
 * The conjugate-linear reversal `cubicAdjoint N` on `CubicTorus N` and its restriction
   `cubicFixedAdjoint N` to `cubicFixed N`, showing that `cubicHom m` intertwines the
   Temperley–Lieb analytic adjoint with `cubicAdjoint (m - 1)` (`cubicHom_star`).
+* The inversion-orbit basis `cubicFixedBasis N` of `cubicFixed N` indexed by `CubicOrbit N` and the
+  dimension formula `finrank_cubicFixed : Module.finrank ℂ (cubicFixed N) = (3 ^ N + 1) / 2`.
 * The universal property `liftSite` of `CubicTorus N` on the site unitaries `cubicSite N`,
   together with `adjoin_range_cubicSite` and `algHom_ext_cubicSite`.
-* The dimension formula `finrank_cubicFixed : Module.finrank ℂ (cubicFixed N) = (3 ^ N + 1) / 2`.
 * Generation of `cubicFixed N` by the spectral projections (`adjoin_range_cubicProjection`) and
   surjectivity of the comparison homomorphism `cubicHom m` (`cubicHom_surjective`).
 
 ## Main definitions and results
 
 * `TauCeti.TemperleyLieb.cubicAdjoint`, `TauCeti.TemperleyLieb.cubicFixedAdjoint`.
+* `TauCeti.TemperleyLieb.cubicOrbitSetoid`, `TauCeti.TemperleyLieb.CubicOrbit`,
+  `TauCeti.TemperleyLieb.cubicFixedBasis`, `TauCeti.TemperleyLieb.finrank_cubicFixed`.
 * `TauCeti.TemperleyLieb.liftSite`, `TauCeti.TemperleyLieb.adjoin_range_cubicSite`,
   `TauCeti.TemperleyLieb.algHom_ext_cubicSite`.
-* `TauCeti.TemperleyLieb.finrank_cubicFixed`, `TauCeti.TemperleyLieb.cubicHom_star`,
-  `TauCeti.TemperleyLieb.adjoin_range_cubicProjection`, `TauCeti.TemperleyLieb.cubicHom_surjective`.
+* `TauCeti.TemperleyLieb.cubicHom_star`, `TauCeti.TemperleyLieb.adjoin_range_cubicProjection`,
+  `TauCeti.TemperleyLieb.cubicHom_surjective`.
 -/
 
 public section
@@ -47,13 +51,9 @@ open Multiplicative TwistedMonoidAlgebra
 on `TemperleyLieb ℂ (Real.sqrt 3 : ℂ) m`. -/
 instance : Fact (IsSelfAdjoint (Real.sqrt 3 : ℂ)) := ⟨Complex.conj_ofReal _⟩
 
-private theorem zmod3_cases (x : ZMod 3) : x = 0 ∨ x = 1 ∨ x = 2 := by revert x; decide
-
 private theorem cubeRootPow_eq_one_iff {x : ZMod 3} : cubeRootPow x = 1 ↔ x = 0 := by
-  refine ⟨fun h ↦ by_contra fun hx ↦ ?_, fun h ↦ by simp [h]⟩
-  have hsum := one_add_cubeRootPow_add_sq hx
-  rw [h, Units.val_one, one_pow] at hsum
-  norm_num at hsum
+  simpa [← Units.val_inj, coe_cubeRootPow] using
+    (ZMod.isPrimitive_stdAddChar 3).zmod_char_eq_one_iff 3 x
 
 private theorem star_coe_cubeRootPow (x : ZMod 3) :
     star (cubeRootPow x : ℂ) = (cubeRootPow (-x) : ℂ) := by
@@ -88,28 +88,19 @@ theorem cubicAdjoint_mul (N : ℕ) (x y : CubicTorus N) :
 @[simp] theorem cubicAdjoint_cubicSite (N : ℕ) (j : Fin N) :
     cubicAdjoint N (cubicSite N j) = cubicSite N j ^ 2 := by
   nth_rw 1 [cubicSite_def]
-  rw [cubicAdjoint_weyl, ← Pi.single_neg,
-    show (-1 : ZMod 3) = ((2 : ℕ) : ZMod 3) by decide, ← cubicSite_pow]
+  rw [cubicAdjoint_weyl, ← cubicSite_sq_eq_weyl_neg_single]
 
 @[simp] theorem cubicAdjoint_cubicProjection (N : ℕ) (j : Fin N) :
     cubicAdjoint N (cubicProjection N j) = cubicProjection N j := by
   have hsq : cubicAdjoint N (cubicSite N j ^ 2) = cubicSite N j := by
-    rw [sq, cubicAdjoint_mul, cubicAdjoint_cubicSite, ← pow_add, show 2 + 2 = 3 + 1 from rfl,
-      pow_succ, cubicSite_pow_three, one_mul]
+    rw [sq, cubicAdjoint_mul, cubicAdjoint_cubicSite, ← sq, ← pow_mul, cubicSite_pow_four]
   rw [cubicProjection_def, map_smulₛₗ, starRingEnd_apply, star_inv₀, star_ofNat, map_add, map_add,
     TwistedMonoidAlgebra.conjReverse_one, cubicAdjoint_cubicSite, hsq, add_right_comm]
 
 theorem cubicAdjoint_cubicInversion (N : ℕ) (x : CubicTorus N) :
     cubicAdjoint N (cubicInversion N x) = cubicInversion N (cubicAdjoint N x) := by
-  induction (TwistedMonoidAlgebra.basis ℂ _ (cubicFactor N)).mem_span x
-      using Submodule.span_induction with
-  | mem _ ha =>
-    obtain ⟨a, rfl⟩ := ha
-    rw [TwistedMonoidAlgebra.basis_apply, of_eq_weyl, cubicInversion_weyl, cubicAdjoint_weyl,
-      cubicAdjoint_weyl, cubicInversion_weyl]
-  | zero => simp
-  | add _ _ _ _ hx hy => simp [hx, hy]
-  | smul _ _ _ hx => simp [hx]
+  rw [cubicInversion]
+  exact TwistedMonoidAlgebra.conjReverse_mapDomain _ _ x
 
 @[simp] theorem cubicScalarCoefficient_cubicInversion (N : ℕ) (x : CubicTorus N) :
     cubicScalarCoefficient N (cubicInversion N x) = cubicScalarCoefficient N x := by
@@ -126,40 +117,176 @@ theorem cubicAdjoint_mem_cubicFixed {N : ℕ} {x : CubicTorus N} (hx : x ∈ cub
   rw [mem_cubicFixed, ← cubicAdjoint_cubicInversion, mem_cubicFixed.mp hx]
 
 /-- Restriction of `cubicAdjoint N` to the inversion-fixed subalgebra `cubicFixed N`. -/
-noncomputable def cubicFixedAdjoint (N : ℕ) : cubicFixed N →ₗ⋆[ℂ] cubicFixed N where
-  toFun x := ⟨cubicAdjoint N x.val, cubicAdjoint_mem_cubicFixed x.property⟩
-  map_add' x y := Subtype.ext (map_add (cubicAdjoint N) x.val y.val)
-  map_smul' c x := Subtype.ext (map_smulₛₗ (cubicAdjoint N) c x.val)
+noncomputable def cubicFixedAdjoint (N : ℕ) : cubicFixed N →ₗ⋆[ℂ] cubicFixed N :=
+  (cubicAdjoint N).restrict (p := (cubicFixed N).toSubmodule) (q := (cubicFixed N).toSubmodule)
+    fun _ hx ↦ cubicAdjoint_mem_cubicFixed hx
 
 @[simp] theorem coe_cubicFixedAdjoint (N : ℕ) (x : cubicFixed N) :
-    (cubicFixedAdjoint N x : CubicTorus N) = cubicAdjoint N x := (rfl)
+    (cubicFixedAdjoint N x : CubicTorus N) = cubicAdjoint N x := by
+  rw [cubicFixedAdjoint, _root_.LinearMap.coe_restrict_apply]
 
 @[simp] theorem cubicFixedAdjoint_cubicFixedAdjoint (N : ℕ) (x : cubicFixed N) :
     cubicFixedAdjoint N (cubicFixedAdjoint N x) = x :=
-  Subtype.ext (TwistedMonoidAlgebra.conjReverse_conjReverse x.val)
+  Subtype.ext (by
+    rw [coe_cubicFixedAdjoint, coe_cubicFixedAdjoint, TwistedMonoidAlgebra.conjReverse_conjReverse])
 
 theorem cubicFixedAdjoint_mul (N : ℕ) (x y : cubicFixed N) :
     cubicFixedAdjoint N (x * y) = cubicFixedAdjoint N y * cubicFixedAdjoint N x :=
-  Subtype.ext (cubicAdjoint_mul N x.val y.val)
+  Subtype.ext (by
+    rw [coe_cubicFixedAdjoint, Subalgebra.coe_mul, cubicAdjoint_mul, Subalgebra.coe_mul,
+      coe_cubicFixedAdjoint, coe_cubicFixedAdjoint])
 
-/-! ### Dimension of `cubicFixed N` -/
+/-! ### Inversion-orbit basis and dimension of `cubicFixed N` -/
+
+/-- The inversion-orbit equivalence relation on `Fin N → ZMod 3`, identifying `a` with `±a`. -/
+def cubicOrbitSetoid (N : ℕ) : Setoid (Fin N → ZMod 3) where
+  r a b := a = b ∨ a = -b
+  iseqv :=
+    ⟨fun _ ↦ Or.inl rfl,
+      fun h ↦ h.elim (fun h ↦ Or.inl h.symm) (fun h ↦ Or.inr (neg_eq_iff_eq_neg.mp h.symm)),
+      fun h₁ h₂ ↦ by
+        rcases h₁ with rfl | rfl <;> rcases h₂ with rfl | rfl
+        · exact Or.inl rfl
+        · exact Or.inr rfl
+        · exact Or.inr rfl
+        · exact Or.inl (neg_neg _)⟩
+
+instance (N : ℕ) : DecidableRel (cubicOrbitSetoid N).r := fun a b ↦
+  inferInstanceAs (Decidable (a = b ∨ a = -b))
+
+/-- The type of inversion orbits `{a, -a}` in `Fin N → ZMod 3`, indexing a basis of
+`cubicFixed N`. -/
+abbrev CubicOrbit (N : ℕ) := Quotient (cubicOrbitSetoid N)
+
+private noncomputable def cubicOrbitVec (N : ℕ) : CubicOrbit N → cubicFixed N :=
+  Quotient.lift
+    (fun a ↦ ⟨if a = 0 then 1 else weyl N a + weyl N (-a), by
+      split_ifs with ha
+      · exact Subalgebra.one_mem _
+      · rw [mem_cubicFixed, map_add, cubicInversion_weyl, cubicInversion_weyl, neg_neg, add_comm]⟩)
+    (fun a b h ↦ Subtype.ext <| by
+      rcases h with rfl | rfl
+      · rfl
+      · by_cases hb : b = 0
+        · simp [hb]
+        · have hnb : -b ≠ 0 := neg_ne_zero.mpr hb
+          simp only [hb, hnb, ↓reduceIte, neg_neg]
+          exact add_comm _ _)
+
+private theorem cubicOrbitVec_linearIndependent (N : ℕ) :
+    LinearIndependent ℂ (cubicOrbitVec N) := by
+  classical
+  rw [Fintype.linearIndependent_iff]
+  intro c hc q₀
+  obtain ⟨a, rfl⟩ := Quotient.exists_rep q₀
+  let b := TwistedMonoidAlgebra.basis ℂ (Multiplicative (Fin N → ZMod 3)) (cubicFactor N)
+  have hcoord : ∀ q : CubicOrbit N,
+      b.repr (cubicOrbitVec N q : CubicTorus N) (ofAdd a) = if q = ⟦a⟧ then 1 else 0 := by
+    intro q
+    obtain ⟨x, rfl⟩ := Quotient.exists_rep q
+    have hq : (⟦x⟧ : CubicOrbit N) = ⟦a⟧ ↔ x = a ∨ x = -a := Quotient.eq
+    by_cases hx : x = 0
+    · subst hx
+      have h0 : a = 0 ↔ (⟦0⟧ : CubicOrbit N) = ⟦a⟧ := by
+        simp [hq, eq_comm, neg_eq_zero]
+      have h1 : ((1 : Multiplicative (Fin N → ZMod 3)) = ofAdd a) ↔ a = 0 := by
+        rw [eq_comm, ofAdd_eq_one]
+      simp only [cubicOrbitVec, Quotient.lift_mk, ↓reduceIte]
+      rw [← of_one, TwistedMonoidAlgebra.repr_of, Finsupp.single_apply]
+      simp only [h1, h0]
+    · have hne : x ≠ -x := fun h ↦ hx <| funext fun i ↦ by
+        have hi : -x i = x i := (congrFun h i).symm
+        rw [ZMod.neg_eq_self_iff] at hi
+        exact hi.resolve_right (by omega)
+      have hrepr (y : Fin N → ZMod 3) : b.repr (weyl N y) (ofAdd a) = if y = a then 1 else 0 := by
+        simp only [b, weyl_def, TwistedMonoidAlgebra.repr_of, Finsupp.single_apply,
+          ofAdd.injective.eq_iff]
+      have hneg : (-x = a) ↔ (x = -a) := neg_eq_iff_eq_neg
+      simp only [cubicOrbitVec, Quotient.lift_mk, hx, ↓reduceIte, map_add, Finsupp.add_apply,
+        hrepr, hq, hneg]
+      by_cases h1 : x = a
+      · have ha : a ≠ -a := h1 ▸ hne
+        simp [h1, ha]
+      · by_cases h2 : x = -a
+        · have ha : -a ≠ a := fun h ↦ hne (by rw [h2, neg_neg, h])
+          simp [h2, ha]
+        · simp [h1, h2]
+  have hsum : b.coord (ofAdd a)
+      ((∑ q : CubicOrbit N, c q • cubicOrbitVec N q : cubicFixed N) : CubicTorus N) = 0 := by
+    rw [hc, Subalgebra.coe_zero, map_zero]
+  have hcoe : ∀ s : Finset (CubicOrbit N),
+      ((∑ q ∈ s, c q • cubicOrbitVec N q : cubicFixed N) : CubicTorus N) =
+        ∑ q ∈ s, c q • (cubicOrbitVec N q : CubicTorus N) := fun s ↦ by
+    induction s using Finset.induction with
+    | empty => simp
+    | insert q s hqs ih => simp [Finset.sum_insert hqs, ih]
+  rw [hcoe Finset.univ, map_sum] at hsum
+  have hterm : ∀ q : CubicOrbit N,
+      b.coord (ofAdd a) (c q • (cubicOrbitVec N q : CubicTorus N)) =
+        c q * if q = ⟦a⟧ then 1 else 0 := fun q ↦ by
+    rw [map_smul, smul_eq_mul, Module.Basis.coord_apply, hcoord q]
+  simp only [hterm, mul_ite, mul_one, mul_zero, Finset.sum_ite_eq', Finset.mem_univ,
+    ↓reduceIte] at hsum
+  exact hsum
+
+private theorem cubicOrbitVec_span (N : ℕ) :
+    ⊤ ≤ Submodule.span ℂ (Set.range (cubicOrbitVec N)) := by
+  intro x _
+  let S : Submodule ℂ (cubicFixed N) := Submodule.span ℂ (Set.range (cubicOrbitVec N))
+  let b := TwistedMonoidAlgebra.basis ℂ (Multiplicative (Fin N → ZMod 3)) (cubicFactor N)
+  have hsymm (a : Fin N → ZMod 3) :
+      (⟨weyl N a + weyl N (-a), by
+        rw [mem_cubicFixed, map_add, cubicInversion_weyl, cubicInversion_weyl, neg_neg,
+          add_comm]⟩ : cubicFixed N) ∈ S := by
+    by_cases ha : a = 0
+    · have h0 : (⟨weyl N 0 + weyl N (-0), by
+          rw [mem_cubicFixed, map_add, cubicInversion_weyl, cubicInversion_weyl, neg_neg,
+            add_comm]⟩ : cubicFixed N) = (2 : ℂ) • cubicOrbitVec N ⟦0⟧ :=
+        Subtype.ext (by simp [cubicOrbitVec, two_smul])
+      rw [ha, h0]
+      exact S.smul_mem (2 : ℂ) (Submodule.subset_span ⟨⟦0⟧, rfl⟩)
+    · have ha' : (⟨weyl N a + weyl N (-a), by
+          rw [mem_cubicFixed, map_add, cubicInversion_weyl, cubicInversion_weyl, neg_neg,
+            add_comm]⟩ : cubicFixed N) = cubicOrbitVec N ⟦a⟧ :=
+        Subtype.ext (by simp [cubicOrbitVec, ha])
+      rw [ha']
+      exact Submodule.subset_span ⟨⟦a⟧, rfl⟩
+  have h2x : (2 : ℂ) • x =
+      (b.repr x.val).sum fun g z ↦ z • ⟨weyl N g.toAdd + weyl N (-g.toAdd), by
+        rw [mem_cubicFixed, map_add, cubicInversion_weyl, cubicInversion_weyl, neg_neg,
+          add_comm]⟩ := by
+    apply Subtype.ext
+    have hxrepr : x.val = (b.repr x.val).sum fun g z ↦ z • of g := by
+      conv_lhs => rw [← b.linearCombination_repr x.val, Finsupp.linearCombination_apply]
+      exact Finsupp.sum_congr fun g _ ↦ by rw [TwistedMonoidAlgebra.basis_apply]
+    have hinv : x.val + cubicInversion N x.val =
+        (b.repr x.val).sum fun g z ↦ z • (weyl N g.toAdd + weyl N (-g.toAdd)) := by
+      conv_lhs => rw [hxrepr]
+      simp [Finsupp.sum, map_sum, map_smul, Finset.sum_add_distrib, of_eq_weyl, smul_add]
+    simpa [SetLike.val_smul, two_smul, mem_cubicFixed.mp x.property, Finsupp.sum] using hinv
+  have hxS : (2 : ℂ) • x ∈ S := by
+    rw [h2x]
+    exact S.sum_mem fun g _ ↦ S.smul_mem _ (hsymm g.toAdd)
+  have hres := S.smul_mem (2 : ℂ)⁻¹ hxS
+  rwa [smul_smul, inv_mul_cancel₀ two_ne_zero, one_smul] at hres
+
+/-- **The inversion-orbit basis of `cubicFixed N`**: `⟦0⟧ ↦ 1` and `⟦a⟧ ↦ W(a) + W(-a)` for
+`a ≠ 0`. -/
+noncomputable def cubicFixedBasis (N : ℕ) : Module.Basis (CubicOrbit N) ℂ (cubicFixed N) :=
+  Module.Basis.mk (cubicOrbitVec_linearIndependent N) (cubicOrbitVec_span N)
+
+@[simp] theorem cubicFixedBasis_zero (N : ℕ) : cubicFixedBasis N ⟦0⟧ = 1 :=
+  Subtype.ext (by simp [cubicFixedBasis, cubicOrbitVec])
+
+theorem coe_cubicFixedBasis_of_ne_zero {N : ℕ} {a : Fin N → ZMod 3} (ha : a ≠ 0) :
+    (cubicFixedBasis N ⟦a⟧ : CubicTorus N) = weyl N a + weyl N (-a) := by
+  simp [cubicFixedBasis, cubicOrbitVec, ha]
 
 /-- **Dimension of the inversion-fixed subalgebra**: `dim_ℂ (cubicFixed N) = (3 ^ N + 1) / 2`. -/
 @[simp] theorem finrank_cubicFixed (N : ℕ) : Module.finrank ℂ (cubicFixed N) = (3 ^ N + 1) / 2 := by
   classical
   let b := TwistedMonoidAlgebra.basis ℂ (Multiplicative (Fin N → ZMod 3)) (cubicFactor N)
   let θ : Module.End ℂ (CubicTorus N) := (cubicInversion N).toLinearMap
-  let f : Module.End ℂ (CubicTorus N) := 1 + θ
-  have hsq : f * f = (2 : ℂ) • f := by
-    ext x
-    simp only [f, θ, mul_apply_eq_comp, _root_.LinearMap.add_apply, one_apply_eq_self,
-      AlgHom.toLinearMap_apply, map_add, cubicInversion_cubicInversion, two_smul]
-    abel_nf
-  have hrange : _root_.LinearMap.range f = (cubicFixed N).toSubmodule := by
-    ext x
-    simp only [_root_.LinearMap.mem_range, Subalgebra.mem_toSubmodule, mem_cubicFixed]
-    exact ⟨fun ⟨y, hy⟩ ↦ by subst hy; simp [f, θ, add_comm],
-      fun hx ↦ ⟨(2 : ℂ)⁻¹ • x, by simp [f, θ, hx, ← two_smul ℂ x]⟩⟩
   let σ : Equiv.Perm (Multiplicative (Fin N → ZMod 3)) := inv_involutive.toPerm Inv.inv
   have : Module.Finite ℂ (CubicTorus N) := Module.Finite.of_basis b
   have : Module.Free ℂ (CubicTorus N) := Module.Free.of_basis b
@@ -181,15 +308,17 @@ theorem cubicFixedAdjoint_mul (N : ℕ) (x y : cubicFixed N) :
   have htrθ : _root_.LinearMap.trace ℂ (CubicTorus N) θ = 1 := by
     rw [_root_.LinearMap.trace_eq_matrix_trace ℂ b θ, hmat, Matrix.trace_permutation, hfix,
       Set.ncard_singleton, Nat.cast_one]
-  have htr1 : _root_.LinearMap.trace ℂ (CubicTorus N) (1 : Module.End ℂ (CubicTorus N)) =
-      (3 ^ N : ℂ) :=
-    (_root_.LinearMap.trace_one (R := ℂ) (M := CubicTorus N)).trans
-      (by rw [finrank_cubicTorus, Nat.cast_pow, Nat.cast_ofNat])
-  have htr := TauCeti.LinearMap.trace_eq_mul_finrank_range (K := ℂ) (M := CubicTorus N) hsq
-  rw [hrange] at htr
-  dsimp only [f] at htr
-  rw [map_add, htr1, htrθ] at htr
-  have hnat : 3 ^ N + 1 = 2 * Module.finrank ℂ (cubicFixed N) := by exact_mod_cast htr
+  have hneg : (-θ) ^ 2 = 1 := by ext x; simp [θ, sq]
+  have hker : _root_.LinearMap.ker (1 + (-θ)) = (cubicFixed N).toSubmodule := by
+    ext x
+    simp only [_root_.LinearMap.mem_ker, _root_.LinearMap.add_apply, one_apply_eq_self,
+      _root_.LinearMap.neg_apply, Subalgebra.mem_toSubmodule, mem_cubicFixed, θ,
+      AlgHom.toLinearMap_apply]
+    exact add_neg_eq_zero.trans eq_comm
+  have htr := TauCeti.LinearMap.two_mul_finrank_ker_one_add_of_sq_eq_one
+    (K := ℂ) (M := CubicTorus N) hneg
+  rw [hker, map_neg, htrθ, sub_neg_eq_add, finrank_cubicTorus] at htr
+  have hnat : 2 * Module.finrank ℂ (cubicFixed N) = 3 ^ N + 1 := by exact_mod_cast htr
   omega
 
 /-! ### Universal property of `CubicTorus N` on site generators -/
@@ -221,40 +350,28 @@ private theorem halfChainForm_single_single (N : ℕ) (i j : Fin N) (c d : ZMod 
     Fintype.sum_eq_single j (fun y hy ↦ by simp [Pi.single_eq_of_ne hy])]
   simp
 
-private theorem partialProd_one {A : Type*} [Monoid A] (N : ℕ) :
-    Fin.partialProd (fun _ : Fin N ↦ (1 : A)) (Fin.last N) = 1 := by
-  induction N with
-  | zero => exact Fin.partialProd_zero _
-  | succ N ih =>
-    rw [← Fin.succ_last, Fin.partialProd_succ, ← Fin.partialProd_init]
-    simpa [Fin.init_def] using ih
-
-private theorem partialProd_pow_single {A : Type*} [Monoid A] :
-    ∀ {N : ℕ} (u : Fin N → A) (j : Fin N),
-      Fin.partialProd (fun i ↦ u i ^ ((Pi.single j (1 : ZMod 3) : Fin N → ZMod 3) i).val)
-        (Fin.last N) = u j
-  | 0, _, j => Fin.elim0 j
-  | N + 1, u, j => by
-    rw [← Fin.succ_last, Fin.partialProd_succ, ← Fin.partialProd_init]
-    induction j using Fin.lastCases with
-    | last =>
-      have hinit : Fin.init (fun i : Fin (N + 1) ↦
-          u i ^ ((Pi.single (Fin.last N) (1 : ZMod 3) : Fin (N + 1) → ZMod 3) i).val) =
-          fun _ ↦ 1 := by
-        ext i; simp [Fin.init_def]
-      rw [hinit, partialProd_one, one_mul, Pi.single_eq_same, ZMod.val_one, pow_one]
-    | cast i =>
-      have hinit : Fin.init (fun k : Fin (N + 1) ↦
-          u k ^ ((Pi.single i.castSucc (1 : ZMod 3) : Fin (N + 1) → ZMod 3) k).val) =
-          fun k ↦ (u ∘ Fin.castSucc) k ^
-            ((Pi.single i (1 : ZMod 3) : Fin N → ZMod 3) k).val := by
-        ext k; simp [Fin.init_def, Pi.single_apply, Fin.castSucc_inj]
-      rw [hinit, partialProd_pow_single (u ∘ Fin.castSucc) i,
-        Pi.single_eq_of_ne (M := fun _ : Fin (N + 1) ↦ ZMod 3) (Fin.castSucc_ne_last i).symm 1,
-        ZMod.val_zero, pow_zero, mul_one]
-      rfl
-
 variable {A : Type*} [Semiring A] [Algebra ℂ A]
+
+private theorem cubeRootPow_pow_val (z n : ZMod 3) :
+    (cubeRootPow z : ℂ) ^ n.val = (cubeRootPow (z * n) : ℂ) := by
+  rw [← Units.val_pow_eq_pow_val, ← AddChar.map_nsmul_eq_pow, nsmul_eq_mul,
+    ZMod.natCast_zmod_val, mul_comm]
+
+private theorem mul_pow_of_qcomm {x y : A} {z : ZMod 3}
+    (h : x * y = (cubeRootPow z : ℂ) • (y * x)) (n : ZMod 3) :
+    x * y ^ n.val = (cubeRootPow (z * n) : ℂ) • (y ^ n.val * x) := by
+  have hsemi : SemiconjBy x y ((cubeRootPow z : ℂ) • y) := by
+    simpa [SemiconjBy, smul_mul_assoc] using h
+  have hp := (hsemi.pow_right n.val).eq
+  rwa [smul_pow, smul_mul_assoc, cubeRootPow_pow_val] at hp
+
+private theorem pow_mul_of_qcomm {x y : A} {z : ZMod 3}
+    (h : x * y = (cubeRootPow z : ℂ) • (y * x)) (n : ZMod 3) :
+    x ^ n.val * y = (cubeRootPow (z * n) : ℂ) • (y * x ^ n.val) := by
+  have hsemi : SemiconjBy y ((cubeRootPow z : ℂ) • x) x := by
+    simpa [SemiconjBy, mul_smul_comm] using h.symm
+  have hp := (hsemi.pow_right n.val).eq.symm
+  rwa [smul_pow, mul_smul_comm, cubeRootPow_pow_val] at hp
 
 private theorem mul_partialProd_of_qcomm :
     ∀ {N : ℕ} {u : Fin N → A} {v : A} {φ : Fin N → ZMod 3},
@@ -267,21 +384,12 @@ private theorem mul_partialProd_of_qcomm :
   | N + 1, u, v, φ, hφ, b => by
     have ih := mul_partialProd_of_qcomm (u := u ∘ Fin.castSucc) (φ := φ ∘ Fin.castSucc)
       (fun i ↦ hφ i.castSucc) (Fin.init b)
-    have hsemi : SemiconjBy v (u (Fin.last N))
-        ((cubeRootPow (2 * φ (Fin.last N)) : ℂ) • u (Fin.last N)) := by
-      simpa [SemiconjBy, smul_mul_assoc] using hφ (Fin.last N)
-    have hlast : v * u (Fin.last N) ^ (b (Fin.last N)).val =
-        (cubeRootPow (2 * φ (Fin.last N) * b (Fin.last N)) : ℂ) •
-          (u (Fin.last N) ^ (b (Fin.last N)).val * v) := by
-      have hp := (hsemi.pow_right (b (Fin.last N)).val).eq
-      rw [smul_pow, smul_mul_assoc, ← Units.val_pow_eq_pow_val, ← AddChar.map_nsmul_eq_pow,
-        nsmul_eq_mul, ZMod.natCast_zmod_val, mul_comm (b (Fin.last N))] at hp
-      exact hp
+    have hlast := mul_pow_of_qcomm (hφ (Fin.last N)) (b (Fin.last N))
     have hinit_fn : Fin.init (fun i ↦ u i ^ (b i).val) =
-        fun i ↦ (u ∘ Fin.castSucc) i ^ (Fin.init b i).val := rfl
-    rw [← Fin.succ_last, Fin.partialProd_succ, ← Fin.partialProd_init, hinit_fn, ← mul_assoc, ih,
-      smul_mul_assoc, mul_assoc, hlast, mul_smul_comm, smul_smul, ← Units.val_mul,
-      ← AddChar.map_add_eq_mul, ← mul_assoc]
+        fun i ↦ (u ∘ Fin.castSucc) i ^ (Fin.init b i).val := by
+      ext i; simp [Fin.init_def]
+    rw [Fin.partialProd_last_eq_init_mul, hinit_fn, ← mul_assoc, ih, smul_mul_assoc, mul_assoc,
+      hlast, mul_smul_comm, smul_smul, ← Units.val_mul, ← AddChar.map_add_eq_mul, ← mul_assoc]
     congr 3; rw [Fin.sum_univ_castSucc]; simp [Fin.init, mul_add]; ring
 
 private theorem halfChainForm_succ (N : ℕ) (b a : Fin (N + 1) → ZMod 3) :
@@ -290,11 +398,10 @@ private theorem halfChainForm_succ (N : ℕ) (b a : Fin (N + 1) → ZMod 3) :
         a (Fin.last N) *
           ∑ i : Fin N, (if (i : ℕ) + 1 = N then (1 : ZMod 3) else 0) * b i.castSucc := by
   unfold halfChainForm
-  rw [Fin.sum_univ_castSucc,
-    show (∑ j : Fin (N + 1),
-        if (Fin.last N : ℕ) + 1 = (j : ℕ) then b (Fin.last N) * a j else 0) = 0 from
-      Finset.sum_eq_zero fun j _ ↦ by simp [Fin.val_last, show ¬ N + 1 = (j : ℕ) by omega],
-    add_zero]
+  have hlast : (∑ j : Fin (N + 1),
+      if (Fin.last N : ℕ) + 1 = (j : ℕ) then b (Fin.last N) * a j else 0) = 0 :=
+    Finset.sum_eq_zero fun j _ ↦ ite_eq_right_iff.mpr fun h ↦ by simp at h; omega
+  rw [Fin.sum_univ_castSucc, hlast, add_zero]
   simp only [Fin.sum_univ_castSucc, Fin.val_castSucc, Fin.val_last, Finset.sum_add_distrib,
     Fin.init, Finset.mul_sum]
   congr 1; exact Finset.sum_congr rfl fun i _ ↦ by split_ifs <;> ring
@@ -315,29 +422,15 @@ private theorem partialProd_mul_partialProd :
           (u i.castSucc * u (Fin.last N)) := fun i ↦ by
       split_ifs with hi
       · have h := congrArg ((cubeRootPow 2 : ℂ) • ·) (hadj (i := i.castSucc) (j := Fin.last N) hi)
-        rw [smul_smul, ← Units.val_mul, ← AddChar.map_add_eq_mul,
-          show (2 : ZMod 3) + 1 = 0 by decide, AddChar.map_zero_eq_one, Units.val_one, one_smul]
-          at h
+        have h3 : (2 : ZMod 3) + 1 = 0 := by exact_mod_cast ZMod.natCast_self 3
+        rw [smul_smul, ← Units.val_mul, ← AddChar.map_add_eq_mul, h3, AddChar.map_zero_eq_one,
+          Units.val_one, one_smul] at h
         simpa [mul_one] using h.symm
       · have hd : (i.castSucc : ℕ) + 2 ≤ (Fin.last N : ℕ) := by
           have := i.isLt; simp at hi ⊢; omega
         simp [hdist (Or.inr hd)]
     have hmulb := mul_partialProd_of_qcomm (u := u ∘ Fin.castSucc) hqcomm (Fin.init b)
-    have hsemi : SemiconjBy
-        (Fin.partialProd (fun i ↦ (u ∘ Fin.castSucc) i ^ (Fin.init b i).val) (Fin.last N))
-        ((cubeRootPow (2 * ∑ i : Fin N,
-          (if (i : ℕ) + 1 = N then (1 : ZMod 3) else 0) * Fin.init b i) : ℂ) • u (Fin.last N))
-        (u (Fin.last N)) := by
-      simpa [SemiconjBy, smul_mul_assoc] using hmulb.symm
-    have hcomm : u (Fin.last N) ^ (a (Fin.last N)).val *
-          Fin.partialProd (fun i ↦ (u ∘ Fin.castSucc) i ^ (Fin.init b i).val) (Fin.last N) =
-        (cubeRootPow (2 * (a (Fin.last N) * ∑ i : Fin N,
-          (if (i : ℕ) + 1 = N then (1 : ZMod 3) else 0) * Fin.init b i)) : ℂ) •
-          (Fin.partialProd (fun i ↦ (u ∘ Fin.castSucc) i ^ (Fin.init b i).val) (Fin.last N) *
-            u (Fin.last N) ^ (a (Fin.last N)).val) := by
-      have hp := (hsemi.pow_right (a (Fin.last N)).val).eq.symm
-      rwa [smul_pow, mul_smul_comm, ← Units.val_pow_eq_pow_val, ← AddChar.map_nsmul_eq_pow,
-        nsmul_eq_mul, ZMod.natCast_zmod_val, mul_left_comm] at hp
+    have hcomm := pow_mul_of_qcomm hmulb (a (Fin.last N))
     have ih := partialProd_mul_partialProd (u ∘ Fin.castSucc) (fun j ↦ hcube j.castSucc)
       (fun h ↦ hadj h) (fun h ↦ hdist h) (Fin.init a) (Fin.init b)
     have hpow : u (Fin.last N) ^ (a (Fin.last N)).val * u (Fin.last N) ^ (b (Fin.last N)).val =
@@ -345,9 +438,9 @@ private theorem partialProd_mul_partialProd :
       rw [← pow_add, Pi.add_apply, ZMod.val_add, ← pow_eq_pow_mod _ (hcube (Fin.last N))]
     have hinit : Fin.init (a + b) = Fin.init a + Fin.init b := by ext i; simp [Fin.init_def]
     have hinit_fn (x : Fin (N + 1) → ZMod 3) :
-        Fin.init (fun i ↦ u i ^ (x i).val) = fun i ↦ (u ∘ Fin.castSucc) i ^ (Fin.init x i).val :=
-      rfl
-    simp only [← Fin.succ_last, Fin.partialProd_succ, ← Fin.partialProd_init, hinit_fn]
+        Fin.init (fun i ↦ u i ^ (x i).val) = fun i ↦ (u ∘ Fin.castSucc) i ^ (Fin.init x i).val := by
+      ext i; simp [Fin.init_def]
+    simp only [Fin.partialProd_last_eq_init_mul, hinit_fn]
     rw [mul_assoc (Fin.partialProd _ _) (u (Fin.last N) ^ _),
       ← mul_assoc (u (Fin.last N) ^ _), hcomm, smul_mul_assoc, mul_smul_comm,
       mul_assoc (Fin.partialProd _ _), ← mul_assoc (Fin.partialProd _ _), ih, smul_mul_assoc,
@@ -367,7 +460,7 @@ noncomputable def liftSite {N : ℕ} (u : Fin N → A)
   TwistedMonoidAlgebra.lift
     (fun a ↦ (cubeRootPow (halfChainForm N a.toAdd a.toAdd) : ℂ) •
       Fin.partialProd (fun i ↦ u i ^ (a.toAdd i).val) (Fin.last N))
-    (by simp [partialProd_one, halfChainForm])
+    (by simp [Fin.partialProd_one, halfChainForm])
     (fun a b ↦ by
       rw [smul_mul_smul_comm, partialProd_mul_partialProd u hcube hadj hdist, smul_smul,
         smul_smul, ← Units.val_mul, ← Units.val_mul, ← Units.val_mul, cubicFactor_apply,
@@ -375,9 +468,10 @@ noncomputable def liftSite {N : ℕ} (u : Fin N → A)
         chainForm_eq_sub, toAdd_mul, halfChainForm_add_left, halfChainForm_add_right,
         halfChainForm_add_right]
       congr 3; apply sub_eq_zero.mp
+      have h3 : (3 : ZMod 3) = 0 := ZMod.natCast_self 3
       calc _ = (3 : ZMod 3) * (halfChainForm N b.toAdd a.toAdd -
               halfChainForm N a.toAdd b.toAdd) := by ring
-        _ = 0 := by rw [show (3 : ZMod 3) = 0 by decide, zero_mul])
+        _ = 0 := by rw [h3, zero_mul])
 
 /-- `liftSite` sends each site unitary `cubicSite N j` to `u j`. -/
 @[simp] theorem liftSite_cubicSite {N : ℕ} (u : Fin N → A) (hcube) (hadj) (hdist) (j : Fin N) :
@@ -385,7 +479,13 @@ noncomputable def liftSite {N : ℕ} (u : Fin N → A)
   rw [liftSite, cubicSite_def, weyl_def, TwistedMonoidAlgebra.lift_of, toAdd_ofAdd,
     halfChainForm_single_single]
   simp only [Nat.add_one_ne_self, ↓reduceIte, AddChar.map_zero_eq_one, Units.val_one, one_smul]
-  exact partialProd_pow_single u j
+  have hsingle : (fun i ↦ u i ^ ((Pi.single j (1 : ZMod 3) : Fin N → ZMod 3) i).val) =
+      Pi.mulSingle j (u j) := by
+    ext i
+    by_cases hi : i = j
+    · subst hi; simp [ZMod.val_one]
+    · simp [Pi.single_eq_of_ne hi, Pi.mulSingle_eq_of_ne hi]
+  rw [hsingle, Fin.partialProd_mulSingle]
 
 end UniversalProperty
 
@@ -395,10 +495,11 @@ theorem adjoin_range_cubicSite (N : ℕ) :
   let S : Subalgebra ℂ (CubicTorus N) := Algebra.adjoin ℂ (Set.range (cubicSite N))
   have hsingle (j : Fin N) (r : ZMod 3) : weyl N (Pi.single j r) ∈ S := by
     have hj : cubicSite N j ∈ S := Algebra.subset_adjoin (Set.mem_range_self j)
-    rcases zmod3_cases r with rfl | rfl | rfl
+    rcases ZMod.eq_zero_or_eq_one_or_eq_two r with rfl | rfl | rfl
     · rw [Pi.single_zero, weyl_zero]; exact S.one_mem
     · rwa [← cubicSite_def]
-    · rw [show (2 : ZMod 3) = ((2 : ℕ) : ZMod 3) by decide, ← cubicSite_pow j 2]
+    · have h2 : (2 : ZMod 3) = ((2 : ℕ) : ZMod 3) := Nat.cast_ofNat.symm
+      rw [h2, ← cubicSite_pow j 2]
       exact S.pow_mem hj 2
   have hweyl (a : Fin N → ZMod 3) : weyl N a ∈ S := by
     have hsum : a = ∑ j : Fin N, Pi.single j (a j) := by
@@ -449,9 +550,9 @@ theorem coe_cubicHom_star {m : ℕ} (x : TemperleyLieb ℂ (Real.sqrt 3 : ℂ) m
       Subalgebra.coe_smul, Subalgebra.coe_one, map_smulₛₗ, starRingEnd_apply,
       TwistedMonoidAlgebra.conjReverse_one]
   | add x y hx hy =>
-    have hadd (a b) : cubicHom m (a + b) = cubicHom m a + cubicHom m b := (cubicHom m).map_add' a b
-    rw [star_add, hadd, hadd, Subalgebra.coe_add, Subalgebra.coe_add,
-      map_add (cubicAdjoint (m - 1)), hx, hy]
+    have hadd (a b) : cubicHom m (a + b) = cubicHom m a + cubicHom m b :=
+      map_add (cubicHom m).toLinearMap a b
+    rw [star_add, hadd, hadd, Subalgebra.coe_add, Subalgebra.coe_add, map_add, hx, hy]
   | mul x y hx hy =>
     rw [star_mul, map_mul, map_mul, Subalgebra.coe_mul, Subalgebra.coe_mul, cubicAdjoint_mul,
       hx, hy]
@@ -494,7 +595,7 @@ private theorem symmWeyl_add_mem_of_chainForm_ne_zero {N : ℕ} {S : Subalgebra 
   have hβα : β * α = 1 := mul_comm α β ▸ hαβ
   have hα3 : α ^ 3 = 1 := by
     rw [← Units.val_pow_eq_pow_val, ← AddChar.map_nsmul_eq_pow, nsmul_eq_mul,
-      show ((3 : ℕ) : ZMod 3) = 0 by decide, zero_mul, AddChar.map_zero_eq_one, Units.val_one]
+      ZMod.natCast_self, zero_mul, AddChar.map_zero_eq_one, Units.val_one]
   have hα1 : α ≠ 1 := fun h1 ↦ by
     have hu : αu = 1 := Units.ext h1
     rw [cubeRootPow_eq_one_iff] at hu
@@ -503,12 +604,13 @@ private theorem symmWeyl_add_mem_of_chainForm_ne_zero {N : ℕ} {S : Subalgebra 
     have hsw : 2 * chainForm (ZMod 3) N b a = -(2 * chainForm (ZMod 3) N a b) := by
       rw [chainForm_swap]; ring
     rw [symmWeyl_mul_symmWeyl, hsw, AddChar.map_neg_eq_inv, neg_neg, add_comm b a,
-      show b - a = -(a - b) by ring, symmWeyl_neg]
+      ← neg_sub a b, symmWeyl_neg]
   have hcomb : α • (symmWeyl N a * symmWeyl N b) + (-β) • (symmWeyl N b * symmWeyl N a) =
       (α ^ 2 - β ^ 2) • symmWeyl N (a + b) := by
+    have hβ2 : -β * β = -(β ^ 2) := by ring
+    have hβα' : -β * α = -1 := by linear_combination -hβα
     rw [symmWeyl_mul_symmWeyl N a b, AddChar.map_neg_eq_inv, hba, smul_add, smul_add, smul_smul,
-      smul_smul, smul_smul, smul_smul, hαβ, show -β * β = -(β ^ 2) by ring,
-      show -β * α = -1 by linear_combination -hβα, ← sq α, add_add_add_comm, ← add_smul,
+      smul_smul, smul_smul, smul_smul, hαβ, hβ2, hβα', ← sq α, add_add_add_comm, ← add_smul,
       ← add_smul, add_neg_cancel, zero_smul, add_zero, ← sub_eq_add_neg]
   have hne : α ^ 2 - β ^ 2 ≠ 0 := fun h0 ↦ hα1 <| sub_eq_zero.mp <| by
     linear_combination (α ^ 2) * h0 - α * hα3 + (β * α + 1) * hβα
@@ -526,16 +628,16 @@ private theorem symmWeyl_single_mem_adjoin (N : ℕ) (j : Fin N) (r : ZMod 3) :
       rw [← add_smul, add_neg_cancel, zero_smul]
     have heq : symmWeyl N (Pi.single j 1) =
         (3 : ℂ) • cubicProjection N j + (-1 : ℂ) • (1 : CubicTorus N) := by
-      rw [symmWeyl, ← Pi.single_neg, show (-1 : ZMod 3) = ((2 : ℕ) : ZMod 3) by decide,
-        ← cubicSite_pow j 2, ← cubicSite_def, cubicProjection_def, smul_smul,
-        mul_inv_cancel₀ (by norm_num), one_smul, add_right_comm (1 + cubicSite N j),
-        add_right_comm 1 (cubicSite N j), h1, zero_add]
+      rw [symmWeyl, ← cubicSite_def, ← cubicSite_sq_eq_weyl_neg_single,
+        cubicProjection_def, smul_smul, mul_inv_cancel₀ (by norm_num), one_smul,
+        add_right_comm (1 + cubicSite N j), add_right_comm 1 (cubicSite N j), h1, zero_add]
     exact heq ▸ S.add_mem (S.smul_mem (Algebra.subset_adjoin (Set.mem_range_self j)) (3 : ℂ))
       (S.smul_mem S.one_mem (-1 : ℂ))
-  rcases zmod3_cases r with rfl | rfl | rfl
+  rcases ZMod.eq_zero_or_eq_one_or_eq_two r with rfl | rfl | rfl
   · rw [Pi.single_zero, symmWeyl_zero]; exact S.smul_mem S.one_mem (2 : ℂ)
   · exact hp
-  · simpa [← show (-1 : ZMod 3) = 2 by decide, Pi.single_neg, symmWeyl_neg] using hp
+  · have hneg1 : (-1 : ZMod 3) = 2 := by decide
+    simpa [← hneg1, Pi.single_neg, symmWeyl_neg] using hp
 
 private theorem chainForm_prefix_single {N m : ℕ} (hm : m + 1 < N)
     {y : Fin N → ZMod 3} (hy : ∀ i : Fin N, m + 1 ≤ (i : ℕ) → y i = 0) (r : ZMod 3) :
@@ -543,7 +645,9 @@ private theorem chainForm_prefix_single {N m : ℕ} (hm : m + 1 < N)
   rw [chainForm_apply, Fintype.sum_eq_single (⟨m, by omega⟩ : Fin N)]
   · rw [Fintype.sum_eq_single (⟨m + 1, hm⟩ : Fin N)]
     · simp
-    · intro j hj; simp [show ¬ (m : ℕ) + 1 = (j : ℕ) from fun h ↦ hj (Fin.ext h.symm)]
+    · intro j hj
+      have hne : ¬ (m : ℕ) + 1 = (j : ℕ) := fun h ↦ hj (Fin.ext h.symm)
+      simp [hne]
   · intro i hi
     refine Finset.sum_eq_zero fun j _ ↦ ?_
     split_ifs with hij
@@ -626,9 +730,11 @@ private theorem symmWeyl_mem_adjoin_of_support (N k : ℕ) :
           · have hij : i = jk := Fin.ext hval.symm; subst hij; simp [y, d, r]
           · have hne : i ≠ jk := fun h ↦ by subst h; exact Nat.lt_irrefl _ hlt
             simp [y, d, Pi.single_eq_of_ne hne, ha i hlt]
-        rw [show a = y + d by simp [y]]
+        have hay : a = y + d := (sub_add_cancel a d).symm
+        rw [hay]
         rcases k with _ | m
-        · rw [show y = 0 from funext fun i ↦ hy i (Nat.zero_le _), zero_add]
+        · have hy0 : y = 0 := funext fun i ↦ hy i (Nat.zero_le _)
+          rw [hy0, zero_add]
           exact symmWeyl_single_mem_adjoin N jk r
         · exact symmWeyl_add_single_mem_adjoin_of_prefix hkN ih hy hr
     · exact ih a fun i _ ↦ absurd i.isLt (by omega)

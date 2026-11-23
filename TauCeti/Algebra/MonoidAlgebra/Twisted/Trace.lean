@@ -28,8 +28,7 @@ and faithfulness when `α g⁻¹ g = 1`.
 
 ## Main results
 
-* `TauCeti.TwistedMonoidAlgebra.scalarTrace_mul_comm`,
-  `eq_zero_of_forall_scalarTrace_mul_eq_zero`, `conjReverse_mul`,
+* `TauCeti.TwistedMonoidAlgebra.eq_zero_of_forall_scalarTrace_mul_eq_zero`, `conjReverse_mul`,
   `scalarTrace_conjReverse_mul_self_eq_sum_normSq`,
   `scalarTrace_conjReverse_mul_self_nonneg`, `scalarTrace_conjReverse_mul_self_eq_zero_iff`.
 
@@ -109,21 +108,8 @@ variable {k G : Type*} [CommSemiring k] [Group G] {α : G → G → kˣ} [IsFact
 /-- Left-multiplying `x` by `of g` picks out the `g⁻¹`-coordinate weighted by `α g g⁻¹`. -/
 @[simp] theorem scalarTrace_of_mul (g : G) (x : twistedMonoidAlgebra k G α) :
     scalarTrace k G α (of g * x) = (α g g⁻¹ : k) * (basis k G α).repr x g⁻¹ := by
-  classical
-  induction (basis k G α).mem_span x using Submodule.span_induction with
-  | mem _ hx₀ =>
-    obtain ⟨h, rfl⟩ := hx₀
-    rw [basis_apply, of_mul_of, map_smul, smul_eq_mul, scalarTrace_of, repr_of,
-      Finsupp.single_apply, mul_eq_one_iff_inv_eq, eq_comm (a := g⁻¹) (b := h)]
-    split_ifs with hh <;> simp [hh]
-  | zero => simp
-  | add _ _ _ _ hx₁ hx₂ => simp [mul_add, hx₁, hx₂]
-  | smul _ _ _ hx₁ => simp [mul_left_comm, hx₁]
-
-/-- **Traciality of `scalarTrace`** on a twisted group algebra: `s(x * y) = s(y * x)`. -/
-theorem scalarTrace_mul_comm (x y : twistedMonoidAlgebra k G α) :
-    scalarTrace k G α (x * y) = scalarTrace k G α (y * x) :=
-  repr_mul_apply_one_comm x y
+  rw [scalarTrace_apply, repr_mul_apply_one_comm, ← scalarTrace_apply, scalarTrace_mul_of,
+    IsFactorSet.apply_inv_eq_inv_apply α g, mul_comm]
 
 /-- **Nondegeneracy of `scalarTrace`**: an element annihilated by every right factor is `0`. -/
 theorem eq_zero_of_forall_scalarTrace_mul_eq_zero {x : twistedMonoidAlgebra k G α}
@@ -203,18 +189,11 @@ theorem conjReverse_mul (hα : ∀ g h : G, star (α g h : k) = (α h⁻¹ g⁻�
   | add _ _ _ _ hx₁ hx₂ => simp [add_mul, mul_add, hx₁, hx₂]
   | smul _ _ _ hx₁ => simp [hx₁]
 
-/-- `conjReverse` is the unique additive conjugate-linear map inverting every basis element. -/
-theorem conjReverse_unique {f : twistedMonoidAlgebra k G α → twistedMonoidAlgebra k G α}
-    (hadd : ∀ x y, f (x + y) = f x + f y)
-    (hsmul : ∀ (r : k) x, f (r • x) = star r • f x)
+/-- `conjReverse` is the unique conjugate-linear map inverting every basis element. -/
+theorem conjReverse_unique {f : twistedMonoidAlgebra k G α →ₗ⋆[k] twistedMonoidAlgebra k G α}
     (hof : ∀ g : G, f (of g) = of g⁻¹) :
-    f = conjReverse k G α := by
-  funext x
-  induction (basis k G α).mem_span x using Submodule.span_induction with
-  | mem _ hy => obtain ⟨g, rfl⟩ := hy; rw [basis_apply, hof, conjReverse_of]
-  | zero => rw [show f 0 = 0 by simpa using hsmul 0 0, map_zero]
-  | add _ _ _ _ hx hy => rw [hadd, map_add, hx, hy]
-  | smul _ _ _ hx => rw [hsmul, map_smulₛₗ, starRingEnd_apply, hx]
+    f = conjReverse k G α :=
+  (basis k G α).ext fun g ↦ by simp [hof]
 
 /-- Sesquilinear coordinate expansion of `scalarTrace k G α (conjReverse k G α x * y)`. -/
 theorem scalarTrace_conjReverse_mul (x y : twistedMonoidAlgebra k G α) :
