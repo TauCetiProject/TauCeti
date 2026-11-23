@@ -10,8 +10,11 @@ public import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.FunctionField.Point
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Point.DegreeOneReduction
 public import TauCeti.FieldTheory.FunctionField.Place.Extension.Galois
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.FunctionField.Map.Basic
+import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.FunctionField.GeneratedByY
 -- Proof-only: a nontrivial valuation bounded by `1` on a Dedekind domain is adic up to equivalence.
 import TauCeti.RingTheory.DedekindDomain.AdicValuation.Basic
+-- Proof-only: intermediate field where two field homomorphisms agree modulo a valuation.
+import TauCeti.RingTheory.Valuation.EqMod
 
 /-!
 # The reduction of the generic point
@@ -30,7 +33,9 @@ reduction of such points is computed from: an isogeny's action on points in part
 Transporting a point along a homomorphism of fields `f : F →+* K` is compatible with places: the
 place of the transported point restricts along `FunctionField.map W f` to the place of the point
 (`WeierstrassCurve.Affine.isEquiv_comap_pointPlace_map`), so reduction at the two places can be
-compared.
+compared. Along `ι : F → F(W)`, the function-field embedding `FunctionField.map W ι` and the scalar
+embedding `algebraMap F(W) (F(W))(W)` agree to first order at the place of `W.genericPoint`
+(`WeierstrassCurve.Affine.valuation_pointPlace_genericX_genericY_map_sub_algebraMap_lt_one`).
 
 ## Main results
 
@@ -41,6 +46,9 @@ compared.
   at the place of `P`.
 * `WeierstrassCurve.Affine.isEquiv_comap_pointPlace_map`: the place of a point transported along
   a field homomorphism `f` restricts along `FunctionField.map W f` to the place of the point.
+* `WeierstrassCurve.Affine.valuation_pointPlace_genericX_genericY_map_sub_algebraMap_lt_one`:
+  `FunctionField.map W ι` and `algebraMap F(W) (F(W))(W)` agree modulo the place of
+  `W.genericPoint`.
 * `WeierstrassCurve.Affine.map_mem_polePoints_smul_iff` and
   `WeierstrassCurve.Affine.reductionOfDegreeEqOne_smul_map`: reduction commutes with field
   automorphisms and their action on places.
@@ -119,6 +127,35 @@ theorem isEquiv_comap_pointPlace_map {x y : F} (h : W.Equation x y) :
   rw [Place.valuation_ofPrime, ← h𝔭]
   exact he.symm
 
+/-- **Along `ι : F → F(W)`, the function-field embedding `FunctionField.map W ι` and the scalar
+embedding `algebraMap F(W) (F(W))(W)` agree to first order at the place of `W.genericPoint`.** -/
+theorem valuation_pointPlace_genericX_genericY_map_sub_algebraMap_lt_one
+    (z : W.FunctionField) :
+    (Place.ofPrime W.FunctionField (W.map (algebraMap F W.FunctionField)).FunctionField
+      (CoordinateRing.pointPlace (W := W.map (algebraMap F W.FunctionField))
+        W.equation_genericX_genericY)).valuation
+        (FunctionField.map W (algebraMap F W.FunctionField) z -
+          algebraMap W.FunctionField (W.map (algebraMap F W.FunctionField)).FunctionField z) <
+      1 := by
+  let ι := algebraMap F W.FunctionField
+  let v := (Place.ofPrime W.FunctionField (W.map ι).FunctionField
+    (CoordinateRing.pointPlace (W := W.map ι) W.equation_genericX_genericY)).valuation
+  let S := v.eqModIntermediateField F (FunctionField.map W ι) (algebraMap W.FunctionField _)
+    (Valuation.IsTrivialOn.valuation_algebraMap_le_one v)
+    fun c ↦ by
+      rw [FunctionField.map_algebraMap, sub_self, map_zero]
+      exact zero_lt_one
+  have hX : W.genericX ∈ S := by
+    rw [Valuation.mem_eqModIntermediateField, FunctionField.map_genericX]
+    exact valuation_pointPlace_genericX_sub_lt_one (W.map ι) W.equation_genericX_genericY
+  have hY : W.genericY ∈ S := by
+    rw [Valuation.mem_eqModIntermediateField, FunctionField.map_genericY]
+    exact valuation_pointPlace_genericY_sub_lt_one (W.map ι) W.equation_genericX_genericY
+  have htop : S = ⊤ :=
+    top_unique (W.adjoin_genericX_genericY_eq_top ▸
+      IntermediateField.adjoin_le_iff.mpr (Set.pair_subset hX hY))
+  exact Valuation.mem_eqModIntermediateField.mp (htop ▸ IntermediateField.mem_top)
+
 end BaseChange
 
 section Automorphism
@@ -155,7 +192,7 @@ variable [DecidableEq F]
 /-- **The generic point reduces to `P` at the place of `P`.** -/
 @[simp]
 theorem reductionOfDegreeEqOne_genericPoint (P : W.Point) :
-    reductionOfDegreeEqOne W (W.pointEquivDegreeOnePlace P).2 (genericPoint W) =
+    reductionOfDegreeEqOne W (W.pointEquivDegreeOnePlace P).property (genericPoint W) =
       Point.equivBaseChangeSelf W P := by
   rw [reductionOfDegreeEqOne_eq_iff]
   rcases P with _ | ⟨x, y, h⟩

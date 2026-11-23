@@ -78,12 +78,12 @@ coefficient. In zero variables this says that the prescribed scalar is the uniqu
 theorem existsUnique_pderiv_eq [Finite σ] (f : σ → washnitzerAlgebra σ K)
     (hf : ∀ i j, pderiv σ K i (f j) = pderiv σ K j (f i)) (c : K) :
     ∃! g : washnitzerAlgebra σ K,
-      (∀ i, pderiv σ K i g = f i) ∧ constantCoeff g.1 = c := by
+      (∀ i, pderiv σ K i g = f i) ∧ constantCoeff g.val = c := by
   obtain ⟨g, hg⟩ := (exists_pderiv_eq_iff f).mpr hf
-  let g₀ := g + algebraMap K (washnitzerAlgebra σ K) (c - constantCoeff g.1)
+  let g₀ := g + algebraMap K (washnitzerAlgebra σ K) (c - constantCoeff g.val)
   have hD (i : σ) : pderiv σ K i g₀ = f i := by
     simp [g₀, hg i]
-  have hconst : constantCoeff g₀.1 = c := by
+  have hconst : constantCoeff g₀.val = c := by
     simp [g₀, MvPowerSeries.algebraMap_apply]
   refine ⟨g₀, ⟨hD, hconst⟩, ?_⟩
   rintro g' ⟨hg', hc⟩

@@ -54,7 +54,7 @@ theorem IntermediateField.isPurelyInseparable_fixedField_top (F E : Type*) [Fiel
     obtain ⟨y, hne, hy⟩ :=
       (notMem_iff_exists_ne_and_isConjRoot hsep (Normal.splits ‹_› _)).mp h
     obtain ⟨σ, rfl⟩ := hy.symm.exists_algEquiv
-    exact hne (x.2 ⟨σ, Subgroup.mem_top σ⟩).symm
+    exact hne (x.property ⟨σ, Subgroup.mem_top σ⟩).symm
   obtain ⟨a, ha⟩ := Algebra.mem_bot.mp hbot
   exact ⟨a, Subtype.ext <| (IntermediateField.coe_algebraMap_apply _ a).trans ha⟩
 

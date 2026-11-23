@@ -450,11 +450,11 @@ theorem presentationLimitLocIso_hom_presentationLimitMap_apply
     letI := locUniformSpace P T s S hden
     letI := isUniformAddGroup_locUniformSpace P T s S hden
     letI := isTopologicalRing_locUniformSpace P T s S hden
-    (presentationLimitLocIso P Aplus T s S hden hAplus hT V' hV' (h.trans hVW)).hom.hom.1
-        ((presentationLimitMap (P := P) h).hom.1 x) =
+    (presentationLimitLocIso P Aplus T s S hden hAplus hT V' hV' (h.trans hVW)).hom.hom.val
+        ((presentationLimitMap (P := P) h).hom.val x) =
       (presentationLimitMap (P := completionLocalization P T s S hden)
-        (locOpensComap_mono P Aplus T s S hden h)).hom.1
-          ((presentationLimitLocIso P Aplus T s S hden hAplus hT V hV hVW).hom.hom.1 x) :=
+        (locOpensComap_mono P Aplus T s S hden h)).hom.val
+          ((presentationLimitLocIso P Aplus T s S hden hAplus hT V hV hVW).hom.hom.val x) :=
   ConcreteCategory.congr_hom (presentationLimitMap_comp_presentationLimitLocIso_hom P Aplus T s S
     hden hAplus hT hV hV' hVW h) x
 
@@ -466,7 +466,8 @@ theorem bijective_presentationLimitLocIso_hom (hAplus : ∀ ⦃a⦄, a ∈ Aplus
     letI := locUniformSpace P T s S hden
     letI := isUniformAddGroup_locUniformSpace P T s S hden
     letI := isTopologicalRing_locUniformSpace P T s S hden
-    Function.Bijective (presentationLimitLocIso P Aplus T s S hden hAplus hT V hV hVW).hom.hom.1 :=
+    Function.Bijective (presentationLimitLocIso P Aplus T s S hden hAplus hT V hV hVW).hom.hom.val
+        :=
   ⟨Function.LeftInverse.injective
       (presentationLimitLocIso P Aplus T s S hden hAplus hT V hV hVW).hom_inv_id_apply,
     Function.RightInverse.surjective
@@ -563,14 +564,14 @@ private theorem comap_locPresentationIso_rationalLocalizationPoint (hP : P.ringO
   have hwy : spaComapLoc _ _ q.num q.den _ q.hasDenominatorPower w = y :=
     spaComapLoc_spaCompletedLocalizationHomeomorph_symm _ _ hP' q.num q.den _
       q.hasDenominatorPower ⟨y, mem_spaBasicOpen.mp hy⟩
-  have hw := (mem_spa_iff _ _).mp w.2
+  have hw := (mem_spa_iff _ _).mp w.property
   have hjy : spaComapLoc P Aplus T s S hden y ∈ spaBasicOpen Aplus p.num p.den := by
     rwa [← locOpensComap_spaBasicOpen, mem_locOpensComap] at hy
   -- its pullback along `e` lies over `j(y)`
   have hcomap : comap ((e : _ →+* _).comp (toCompletionLoc P p.num p.den _ p.hasDenominatorPower))
-      w.1 = (spaComapLoc P Aplus T s S hden y).1 := by
+      w.val = (spaComapLoc P Aplus T s S hden y).val := by
     rw [he, comap_comp, Function.comp_apply, ← spaComapLoc_val, hwy, spaComapLoc_val]
-  have hmem : comap (e : _ →+* _) w.1 ∈
+  have hmem : comap (e : _ →+* _) w.val ∈
       spa (completedPlusSubring P Aplus p.num p.den _ p.hasDenominatorPower) := by
     refine comap_mem_spa_completedPlusSubring P Aplus p.num p.den _ p.hasDenominatorPower _
       (continuous_iteratedLocalizationRingEquiv ..) hw.1 ?_
@@ -579,7 +580,7 @@ private theorem comap_locPresentationIso_rationalLocalizationPoint (hP : P.ringO
   -- and the point of `Spa (A⟨p⟩, A_p⁺)` over `j(y)` is unique
   have hpt : (spaCompletedLocalizationHomeomorph P Aplus hP p.num p.den _
       p.hasDenominatorPower).symm ⟨spaComapLoc P Aplus T s S hden y, mem_spaBasicOpen.mp hjy⟩ =
-      ⟨comap (e : _ →+* _) w.1, hmem⟩ := by
+      ⟨comap (e : _ →+* _) w.val, hmem⟩ := by
     rw [Homeomorph.symm_apply_eq]
     refine Subtype.ext (Subtype.ext ?_)
     rw [spaCompletedLocalizationHomeomorph_apply, spaLocToRationalSubset_val, ← hcomap,
