@@ -5,9 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Algebra.Basic
 public import Mathlib.Algebra.Field.Subfield.Defs
 public import Mathlib.LinearAlgebra.Matrix.GeneralLinearGroup.Defs
+public import TauCeti.Algebra.Algebra.Subring
 
 /-!
 # Invertible matrices over subfields
@@ -27,8 +27,6 @@ and the image of `GL ι E →* GL ι L` is cut out purely by entrywise membershi
 
 * `Matrix.GeneralLinearGroup.map_subtype_liftOfMem`: pushing `liftOfMem E A hA` forward along
   `SubringClass.subtype E` recovers `A`.
-* `Matrix.GeneralLinearGroup.map_algebraMap_liftOfMem`: pushing `liftOfMem E A hA` forward along
-  `algebraMap E L` recovers `A`.
 * `Matrix.GeneralLinearGroup.coe_liftOfMem_apply`: the entries of `liftOfMem E A hA` agree with
   those of `A`.
 * `Matrix.GeneralLinearGroup.mem_range_map_subtype_iff`: an element of `GL ι L` lies in the range
@@ -67,14 +65,6 @@ theorem map_subtype_liftOfMem (E : S) (A : GL ι L) (hA : ∀ i j, (A : Matrix �
   ext i j
   simp only [liftOfMem, Matrix.GeneralLinearGroup.map_apply, val_mkOfDetNeZero, Matrix.of_apply,
     SubringClass.coe_subtype]
-
-/-- Pushing `liftOfMem E A hA` forward along `algebraMap E L` recovers `A`. -/
-@[simp]
-theorem map_algebraMap_liftOfMem (E : S) (A : GL ι L) (hA : ∀ i j, (A : Matrix ι ι L) i j ∈ E) :
-    Matrix.GeneralLinearGroup.map (algebraMap E L) (liftOfMem E A hA) = A := by
-  ext i j
-  simp only [liftOfMem, Matrix.GeneralLinearGroup.map_apply, val_mkOfDetNeZero, Matrix.of_apply,
-    Algebra.algebraMap_ofSubsemiring_apply]
 
 /-- The entries of `liftOfMem E A hA` coerce to the entries of `A`. -/
 @[simp]

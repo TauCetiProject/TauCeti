@@ -245,34 +245,28 @@ theorem baseChange_eq_of_baseChange_eq
     [AddCommMonoid V] [Module E V] [AddCommMonoid W] [Module E W]
     (f₁ : (E₁ ⊗[E] V) →ₗ[E₁] (E₁ ⊗[E] W))
     (f₂ : (E₂ ⊗[E] V) →ₗ[E₂] (E₂ ⊗[E] W))
-    (hL : ∀ x : L ⊗[E] V,
-      AlgebraTensorModule.cancelBaseChange E E₁ L L W
-          (f₁.baseChange L ((AlgebraTensorModule.cancelBaseChange E E₁ L L V).symm x)) =
-        AlgebraTensorModule.cancelBaseChange E E₂ L L W
-          (f₂.baseChange L ((AlgebraTensorModule.cancelBaseChange E E₂ L L V).symm x))) :
-    ∀ x : E' ⊗[E] V,
-      AlgebraTensorModule.cancelBaseChange E E₁ E' E' W
-          (f₁.baseChange E' ((AlgebraTensorModule.cancelBaseChange E E₁ E' E' V).symm x)) =
-        AlgebraTensorModule.cancelBaseChange E E₂ E' E' W
-          (f₂.baseChange E' ((AlgebraTensorModule.cancelBaseChange E E₂ E' E' V).symm x)) := by
+    (hL :
+      (AlgebraTensorModule.cancelBaseChange E E₁ L L W).toLinearMap ∘ₗ
+          f₁.baseChange L ∘ₗ
+          (AlgebraTensorModule.cancelBaseChange E E₁ L L V).symm.toLinearMap =
+        (AlgebraTensorModule.cancelBaseChange E E₂ L L W).toLinearMap ∘ₗ
+          f₂.baseChange L ∘ₗ
+          (AlgebraTensorModule.cancelBaseChange E E₂ L L V).symm.toLinearMap) :
+    (AlgebraTensorModule.cancelBaseChange E E₁ E' E' W).toLinearMap ∘ₗ
+        f₁.baseChange E' ∘ₗ
+        (AlgebraTensorModule.cancelBaseChange E E₁ E' E' V).symm.toLinearMap =
+      (AlgebraTensorModule.cancelBaseChange E E₂ E' E' W).toLinearMap ∘ₗ
+        f₂.baseChange E' ∘ₗ
+        (AlgebraTensorModule.cancelBaseChange E E₂ E' E' V).symm.toLinearMap := by
   let : AddCommGroup (E' ⊗[E] V) := Module.addCommMonoidToAddCommGroup E'
   let : AddCommGroup (E' ⊗[E] W) := Module.addCommMonoidToAddCommGroup E'
-  let g₁ : (E' ⊗[E] V) →ₗ[E'] (E' ⊗[E] W) :=
-    (AlgebraTensorModule.cancelBaseChange E E₁ E' E' W).toLinearMap ∘ₗ
-      (f₁.baseChange E') ∘ₗ
-      (AlgebraTensorModule.cancelBaseChange E E₁ E' E' V).symm.toLinearMap
-  let g₂ : (E' ⊗[E] V) →ₗ[E'] (E' ⊗[E] W) :=
-    (AlgebraTensorModule.cancelBaseChange E E₂ E' E' W).toLinearMap ∘ₗ
-      (f₂.baseChange E') ∘ₗ
-      (AlgebraTensorModule.cancelBaseChange E E₂ E' E' V).symm.toLinearMap
-  suffices h : g₁ = g₂ from fun x ↦ by
-    simpa only [g₁, g₂, LinearMap.comp_apply, LinearEquiv.coe_coe] using LinearMap.congr_fun h x
   apply LinearMap.baseChange_injective (R := E') (A := L)
   ext v
   apply (AlgebraTensorModule.cancelBaseChange E E' L L W).injective
-  have hv := hL ((1 : L) ⊗ₜ[E] v)
-  simp only [AlgebraTensorModule.cancelBaseChange_symm_tmul, LinearMap.baseChange_tmul] at hv
-  simp only [g₁, g₂, AlgebraTensorModule.curry_apply, TensorProduct.curry_apply,
+  have hv := LinearMap.congr_fun hL ((1 : L) ⊗ₜ[E] v)
+  simp only [LinearMap.comp_apply, LinearEquiv.coe_coe,
+    AlgebraTensorModule.cancelBaseChange_symm_tmul, LinearMap.baseChange_tmul] at hv
+  simp only [AlgebraTensorModule.curry_apply, TensorProduct.curry_apply,
     LinearMap.restrictScalars_apply, LinearMap.baseChange_tmul, LinearMap.comp_apply,
     LinearEquiv.coe_coe, AlgebraTensorModule.cancelBaseChange_symm_tmul]
   exact (AlgebraTensorModule.cancelBaseChange_one_tmul_cancelBaseChange _).trans

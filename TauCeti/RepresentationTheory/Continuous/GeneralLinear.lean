@@ -5,10 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.FieldTheory.IntermediateField.Basic
 public import Mathlib.LinearAlgebra.Matrix.GeneralLinearGroup.Defs
 public import Mathlib.Topology.Algebra.Group.Matrix
 public import Mathlib.Topology.Instances.Matrix
+public import TauCeti.Algebra.Algebra.Subring
 public import TauCeti.RepresentationTheory.Continuous.ContinuousRep
 
 import Mathlib.LinearAlgebra.Matrix.ToLin
@@ -32,7 +32,9 @@ This file connects continuous matrix homomorphisms `Γ →ₜ* GL ι A` with con
   representation on a module `V` carrying the `A`-module topology (`IsModuleTopology A V`) and a
   finite basis `b`, taking matrices in `b` yields a continuous homomorphism `Γ →ₜ* GL ι A` whose
   associated matrix representation is canonically isomorphic to `ρ`.
-* **Subfield lifting** (`TauCeti.ContinuousRep.liftGL`, `TauCeti.ContinuousRep.map_liftGL`,
+* **Subfield lifting** (`TauCeti.ContinuousRep.liftGL`,
+  `TauCeti.ContinuousRep.map_subtype_liftGL`,
+  `TauCeti.ContinuousRep.continuousMapGL_subtype_comp_liftGL`,
   `TauCeti.ContinuousRep.liftGL_unique`): a continuous homomorphism `Γ →ₜ* GL ι L` whose entries
   lie in a subfield `E` lifts uniquely and continuously to `Γ →ₜ* GL ι E`.
 * **Scalar extension** (`TauCeti.ContinuousRep.baseChangeOfGLIso`): when `B ⊗[A] (ι → A)` carries
@@ -47,10 +49,10 @@ This file connects continuous matrix homomorphisms `Γ →ₜ* GL ι A` with con
 * `TauCeti.ContinuousRep.toGL`: continuous matrix homomorphism `Γ →ₜ* GL ι A` attached to a
   continuous representation and a finite basis.
 * `TauCeti.ContinuousRep.ofGLToGLIso`: canonical isomorphism `Iso (ofGL (toGL ρ b)) ρ`.
-* `TauCeti.ContinuousRep.liftGL`: continuous lift of `Γ →ₜ* GL ι L` with entries in a subfield
-  `E` to `Γ →ₜ* GL ι E`.
 * `TauCeti.ContinuousRep.continuousMapGL`: continuous `GL` map induced by a continuous ring
   homomorphism.
+* `TauCeti.ContinuousRep.liftGL`: continuous lift of `Γ →ₜ* GL ι L` with entries in a subfield
+  `E` to `Γ →ₜ* GL ι E`.
 * `TauCeti.ContinuousRep.baseChangeOfGLIso`: canonical isomorphism identifying `(ofGL φ).baseChange
   B` with the entrywise image under `algebraMap A B`.
 
@@ -58,9 +60,9 @@ This file connects continuous matrix homomorphisms `Γ →ₜ* GL ι A` with con
 
 * `TauCeti.ContinuousRep.toGL_ofGL`
 * `TauCeti.ContinuousRep.map_subtype_liftGL`
-* `TauCeti.ContinuousRep.map_liftGL`
-* `TauCeti.ContinuousRep.map_liftGL_intermediateField`
+* `TauCeti.ContinuousRep.continuousMapGL_subtype_comp_liftGL`
 * `TauCeti.ContinuousRep.liftGL_unique`
+* `TauCeti.ContinuousRep.baseChangeOfGLIso_apply`
 -/
 
 public section
@@ -180,6 +182,25 @@ theorem toGL_ofGL (φ : Γ →ₜ* GL ι A) : toGL (ofGL φ) (Pi.basisFun A ι) 
 
 end ToGL
 
+section MapGL
+
+/-- **Continuous `GL` map induced by a continuous ring homomorphism.** -/
+def continuousMapGL {A B ι : Type*} [CommRing A] [TopologicalSpace A]
+    [CommRing B] [TopologicalSpace B] [Fintype ι] [DecidableEq ι]
+    (f : A →+* B) (hf : Continuous f) : GL ι A →ₜ* GL ι B where
+  toMonoidHom := Matrix.GeneralLinearGroup.map f
+  continuous_toFun := hf.generalLinearGroup_map
+
+/-- Applying `continuousMapGL f hf` agrees with `Matrix.GeneralLinearGroup.map f`. -/
+@[simp]
+theorem continuousMapGL_apply {A B ι : Type*} [CommRing A] [TopologicalSpace A]
+    [CommRing B] [TopologicalSpace B] [Fintype ι] [DecidableEq ι]
+    (f : A →+* B) (hf : Continuous f) (g : GL ι A) :
+    continuousMapGL f hf g = Matrix.GeneralLinearGroup.map f g :=
+  (rfl)
+
+end MapGL
+
 section LiftGL
 
 variable {L S ι : Type*} [Field L] [SetLike S L] [SubfieldClass S L]
@@ -211,13 +232,16 @@ theorem map_subtype_liftGL {Γ : Type*} [Monoid Γ] [TopologicalSpace Γ] [Topol
     Matrix.GeneralLinearGroup.map (SubringClass.subtype E) (liftGL ρ E hE g) = ρ g :=
   Matrix.GeneralLinearGroup.map_subtype_liftOfMem E (ρ g) (hE g)
 
-/-- Pushing `liftGL ρ E hE` forward along `algebraMap E L` recovers `ρ`. -/
+/-- Composing `liftGL ρ E hE` with `continuousMapGL (SubringClass.subtype E) continuous_subtypeVal`
+recovers `ρ`. -/
 @[simp]
-theorem map_liftGL {Γ : Type*} [Monoid Γ] [TopologicalSpace Γ] [TopologicalSpace L]
-    (ρ : Γ →ₜ* GL ι L) (E : S)
-    (hE : ∀ g i j, (ρ g : Matrix ι ι L) i j ∈ E) (g : Γ) :
-    Matrix.GeneralLinearGroup.map (algebraMap E L) (liftGL ρ E hE g) = ρ g :=
-  Matrix.GeneralLinearGroup.map_algebraMap_liftOfMem E (ρ g) (hE g)
+theorem continuousMapGL_subtype_comp_liftGL {Γ : Type*} [Monoid Γ] [TopologicalSpace Γ]
+    [TopologicalSpace L] (ρ : Γ →ₜ* GL ι L) (E : S)
+    (hE : ∀ g i j, (ρ g : Matrix ι ι L) i j ∈ E) :
+    (continuousMapGL (SubringClass.subtype E) continuous_subtypeVal).comp
+        (liftGL ρ E hE) = ρ := by
+  ext1 g
+  exact map_subtype_liftGL ρ E hE g
 
 /-- The entries of `liftGL ρ E hE g` coerce to the entries of `ρ g`. -/
 @[simp]
@@ -227,53 +251,19 @@ theorem coe_liftGL {Γ : Type*} [Monoid Γ] [TopologicalSpace Γ] [TopologicalSp
     ((liftGL ρ E hE g : Matrix ι ι E) i j : L) = (ρ g : Matrix ι ι L) i j :=
   Matrix.GeneralLinearGroup.coe_liftOfMem_apply E (ρ g) (hE g) i j
 
-/-- Variant of `map_liftGL` for `E : IntermediateField K L`. Because `IntermediateField.toAlgebra`
-differs from `Algebra.ofSubsemiring E` at reducible transparency, `simp` and `rw` need this
-specialization to simplify `baseChangeOfGLIso L (liftGL ρ E hE)`. -/
-@[simp]
-theorem map_liftGL_intermediateField {Γ K : Type*} [Monoid Γ] [TopologicalSpace Γ]
-    [Field K] [Algebra K L] [TopologicalSpace L]
-    (ρ : Γ →ₜ* GL ι L) (E : IntermediateField K L)
-    (hE : ∀ g i j, (ρ g : Matrix ι ι L) i j ∈ E) (g : Γ) :
-    Matrix.GeneralLinearGroup.map (algebraMap E L) (liftGL ρ E hE g) = ρ g := by
-  ext i j
-  simp only [Matrix.GeneralLinearGroup.map_apply, IntermediateField.algebraMap_apply, coe_liftGL]
-
 /-- **Uniqueness of `liftGL`.** A continuous homomorphism `Γ →ₜ* GL ι E` pushing forward to `ρ`
-along `algebraMap E L` equals `liftGL ρ E hE`. -/
+along `SubringClass.subtype E` equals `liftGL ρ E hE`. -/
 theorem liftGL_unique {Γ : Type*} [Monoid Γ] [TopologicalSpace Γ] [TopologicalSpace L]
     (ρ : Γ →ₜ* GL ι L) (E : S)
     (hE : ∀ g i j, (ρ g : Matrix ι ι L) i j ∈ E)
     {φ : Γ →ₜ* GL ι E}
-    (hφ : ∀ g, Matrix.GeneralLinearGroup.map (algebraMap E L) (φ g) = ρ g) :
+    (hφ : ∀ g, Matrix.GeneralLinearGroup.map (SubringClass.subtype E) (φ g) = ρ g) :
     φ = liftGL ρ E hE := by
   ext1 g
-  exact Matrix.GeneralLinearGroup.map_injective (f := algebraMap E L)
-    (by
-      intro x y h
-      exact Subtype.ext (by simpa only [Algebra.algebraMap_ofSubsemiring_apply] using h))
-    (by rw [hφ g, map_liftGL])
+  exact Matrix.GeneralLinearGroup.map_injective (f := SubringClass.subtype E)
+    Subtype.val_injective (by rw [hφ g, map_subtype_liftGL])
 
 end LiftGL
-
-section MapGL
-
-/-- **Continuous `GL` map induced by a continuous ring homomorphism.** -/
-def continuousMapGL {A B ι : Type*} [CommRing A] [TopologicalSpace A]
-    [CommRing B] [TopologicalSpace B] [Fintype ι] [DecidableEq ι]
-    (f : A →+* B) (hf : Continuous f) : GL ι A →ₜ* GL ι B where
-  toMonoidHom := Matrix.GeneralLinearGroup.map f
-  continuous_toFun := hf.generalLinearGroup_map
-
-/-- Applying `continuousMapGL f hf` agrees with `Matrix.GeneralLinearGroup.map f`. -/
-@[simp]
-theorem continuousMapGL_apply {A B ι : Type*} [CommRing A] [TopologicalSpace A]
-    [CommRing B] [TopologicalSpace B] [Fintype ι] [DecidableEq ι]
-    (f : A →+* B) (hf : Continuous f) (g : GL ι A) :
-    continuousMapGL f hf g = Matrix.GeneralLinearGroup.map f g :=
-  (rfl)
-
-end MapGL
 
 section BaseChangeOfGL
 
@@ -303,11 +293,11 @@ def baseChangeOfGLIso (φ : Γ →ₜ* GL ι A) :
     rfl)
 
 /-- Underlying map of `baseChangeOfGLIso` as `TensorProduct.piScalarRight`. -/
+@[simp]
 theorem baseChangeOfGLIso_apply (φ : Γ →ₜ* GL ι A) (x : B ⊗[A] (ι → A)) :
     baseChangeOfGLIso B φ x = TensorProduct.piScalarRight A B B ι x :=
   (Iso.ofEquiv_apply _ x).trans (Representation.Equiv.mk_apply _ x)
 
-@[simp]
 theorem baseChangeOfGLIso_tmul (φ : Γ →ₜ* GL ι A) (b : B) (v : ι → A) :
     baseChangeOfGLIso B φ (b ⊗ₜ v) = fun i ↦ v i • b :=
   (baseChangeOfGLIso_apply B φ _).trans (TensorProduct.piScalarRightHom_tmul A B B ι b v)
