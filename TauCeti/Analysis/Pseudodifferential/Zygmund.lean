@@ -496,7 +496,7 @@ private theorem HasCompactSpatialSupport.exists_norm_integral_fourierChar_smul_l
         mul_le_mul_of_nonneg_right (card_filter_two_pow_le_mul_two_pow_le _ j hQ) (by positivity)
     _ ≤ 3 * (Cψ * max CK 0) * (c * √2) ^ (1 + |r - m|) *
           (1 + ‖θ‖ ^ 2) ^ (-((n : ℝ) + 1) / 2) * M :=
-        two_mul_add_one_mul_le hc hM0 (mul_nonneg Cψ.2 (le_max_right CK 0)) (abs_nonneg _) θ
+        two_mul_add_one_mul_le hc hM0 (mul_nonneg Cψ.property (le_max_right CK 0)) (abs_nonneg _) θ
 
 /-! ### The Zygmund estimate -/
 
