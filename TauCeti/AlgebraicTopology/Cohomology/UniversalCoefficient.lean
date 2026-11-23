@@ -72,6 +72,8 @@ free in that degree and zero above it, while in the top degree it need not be to
   is injective on `H¹` of every space.
 * `TopCat.singularKroneckerEquivOne`: for free coefficients the Kronecker map is an isomorphism
   `H¹(X; R, M) ≃ₗ[k] Hom(H₁(X; R), M)` for every space `X`.
+* `TopCat.singularCohomology_one_ext`: for free coefficients a class of `H¹(X; R, M)` is
+  determined by its Kronecker pairings.
 * `TopCat.isAddTorsionFree_singularCohomology_one`: for free `R` and torsion-free `M`,
   `H¹(X; R, M)` is torsion-free.
 * `TopPair.singularKronecker_bijective_of_projective_homology_lt`: the relative Kronecker map is
@@ -175,6 +177,14 @@ lemma singularKroneckerEquivOne_apply [Module.Free k R] (M : ModuleCat.{w} k)
     X.singularKroneckerEquivOne M α = X.singularKronecker k 1 α :=
   (rfl)
 
+/-- **A class of `H¹` is determined by its Kronecker pairings**: for a free coefficient module `R`,
+two classes of `H¹(X; R, M)` that pair equally with every class of `H₁(X; R)` are equal, because
+the Kronecker map is injective in degree one (`TopCat.singularKroneckerEquivOne`). -/
+theorem singularCohomology_one_ext [Module.Free k R] {M : ModuleCat.{w} k}
+    {α β : X.singularCohomology R k M 1}
+    (h : ∀ c, X.singularKronecker k 1 α c = X.singularKronecker k 1 β c) : α = β :=
+  (X.singularKroneckerEquivOne M).injective (ModuleCat.hom_ext (LinearMap.ext h))
+
 /-- **`H¹` with torsion-free coefficients is torsion-free**: for a free coefficient module `R` and a
 module `M` without additive torsion, `H¹(X; R, M)` has no nonzero element of finite order, because
 the Kronecker map identifies it with `Hom(H₁(X; R), M)`
@@ -186,8 +196,7 @@ instance isAddTorsionFree_singularCohomology_one [Module.Free k R] (M : ModuleCa
     { toFun α := ⇑(X.singularKroneckerEquivOne M α).hom
       map_zero' := by simp
       map_add' α β := by simp }
-    fun α β h ↦ (X.singularKroneckerEquivOne M).injective
-      (ModuleCat.hom_ext (LinearMap.ext (congrFun h)))
+    fun _ _ h ↦ X.singularCohomology_one_ext (congrFun h)
 
 end ProjectiveHomologyBelow
 
