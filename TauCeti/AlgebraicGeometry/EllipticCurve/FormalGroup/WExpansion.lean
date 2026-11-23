@@ -69,10 +69,12 @@ equation at the substituted parameter rather than at `z`.
   equation gives the equation at `q`, so `w(q)` solves it there and across any commutative
   algebra. When moreover `constantCoeff q = 0`, `eq_subst_formalW_of_wEquation` combines this with
   `eq_of_wEquation` to identify `w(q)` as the only such solution.
-* `WeierstrassCurve.subst_formalW_ne_zero` and
-  `WeierstrassCurve.algebraMap_subst_formalW_ne_zero`: over a domain `R`, `w(q)` is nonzero
-  whenever `constantCoeff q = 0` and `q ≠ 0`, and stays nonzero in any domain `KK` on which
-  `MvPowerSeries σ R` acts faithfully.
+* `WeierstrassCurve.subst_formalW_eq_zero_iff`,
+  `WeierstrassCurve.algebraMap_subst_formalW_eq_zero_iff`,
+  `WeierstrassCurve.subst_formalW_ne_zero`, and `WeierstrassCurve.algebraMap_subst_formalW_ne_zero`:
+  over any commutative ring, `w(q) = 0 ↔ q ^ 3 = 0` for every substitutable `q`, and the same
+  after any faithful algebra map; over a ring without zero divisors, `w(q) ≠ 0` when `q ≠ 0` and
+  `constantCoeff q = 0`.
 * `WeierstrassCurve.formalWCoeff_recurrence`: the coefficientwise recurrence — each coefficient
   of `w(z)` above the leading one, from the strictly earlier ones. This is the form to compute
   with; the strong recursion behind `formalWCoeff` is an implementation detail.
@@ -649,26 +651,53 @@ theorem eq_subst_formalW_of_wEquation {q v : PowerSeries R}
   refine eq_of_wEquation W hq hv ?_ h (subst_formalW_wEquation W ha)
   exact PowerSeries.constantCoeff_subst_eq_zero hq (formalW W) (constantCoeff_formalW W)
 
-variable [IsDomain R] in
-/-- Over a domain the `w`-expansion at a nonzero parameter with vanishing constant coefficient is
-itself nonzero. -/
-theorem subst_formalW_ne_zero {σ : Type*} {q : MvPowerSeries σ R}
-    (hq : MvPowerSeries.constantCoeff q = 0) (hq0 : q ≠ 0) :
-    PowerSeries.subst q (formalW W) ≠ 0 :=
-  (PowerSeries.subst_eq_zero_iff hq hq0).not.mpr (formalW_ne_zero W)
+/-- Over any commutative ring, the `w`-expansion at a substitutable parameter vanishes if and only
+if the cube of the parameter vanishes: `w(q) = q ^ 3 * u(q)` where `u(q)` is a unit. -/
+@[simp]
+theorem subst_formalW_eq_zero_iff {σ S : Type*} [CommRing S] [Algebra R S]
+    {q : MvPowerSeries σ S} (hq : PowerSeries.HasSubst q) :
+    PowerSeries.subst q (formalW W) = 0 ↔ q ^ 3 = 0 := by
+  have hu : IsUnit (formalU W) := by
+    rw [MvPowerSeries.isUnit_iff_constantCoeff, ← PowerSeries.constantCoeff_eq,
+      constantCoeff_formalU]
+    exact isUnit_one
+  have hsu : IsUnit (PowerSeries.subst q (formalU W)) := by
+    simpa only [PowerSeries.coe_substAlgHom] using
+      hu.map (PowerSeries.substAlgHom (R := R) (S := S) hq)
+  have hw : PowerSeries.subst q (formalW W) = q ^ 3 * PowerSeries.subst q (formalU W) := by
+    rw [formalW_eq_X_pow_mul_formalU, ← PowerSeries.coe_substAlgHom hq, map_mul, map_pow,
+      PowerSeries.substAlgHom_X]
+  rw [hw, hsu.mul_left_eq_zero]
 
-/-- The `w`-expansion at a nonzero parameter stays nonzero after being pushed into a domain `KK` on
-which `MvPowerSeries σ R` acts faithfully: a faithful algebra map is injective, so it cannot
-introduce a zero. -/
-theorem algebraMap_subst_formalW_ne_zero {σ KK : Type*} [CommRing KK] [IsDomain KK]
+/-- The `w`-expansion at a substitutable parameter vanishes after being pushed into a commutative
+algebra `T` on which `MvPowerSeries σ S` acts faithfully if and only if `q ^ 3 = 0`. -/
+theorem algebraMap_subst_formalW_eq_zero_iff {σ S T : Type*} [CommRing S] [Algebra R S]
+    [CommRing T] [Algebra (MvPowerSeries σ S) T] [FaithfulSMul (MvPowerSeries σ S) T]
+    {q : MvPowerSeries σ S} (hq : PowerSeries.HasSubst q) :
+    algebraMap (MvPowerSeries σ S) T (PowerSeries.subst q (formalW W)) = 0 ↔ q ^ 3 = 0 := by
+  rw [map_eq_zero_iff _ (FaithfulSMul.algebraMap_injective (MvPowerSeries σ S) T),
+    W.subst_formalW_eq_zero_iff hq]
+
+/-- Over a ring without zero divisors, the `w`-expansion at a nonzero substitutable parameter is
+itself nonzero. -/
+theorem subst_formalW_ne_zero {σ S : Type*} [CommRing S] [Algebra R S] [NoZeroDivisors S]
+    {q : MvPowerSeries σ S} (hq : PowerSeries.HasSubst q) (hq0 : q ≠ 0) :
+    PowerSeries.subst q (formalW W) ≠ 0 := by
+  rw [ne_eq, W.subst_formalW_eq_zero_iff hq]
+  exact pow_ne_zero 3 hq0
+
+/-- The `w`-expansion at a nonzero parameter stays nonzero after being pushed into a reduced ring
+`KK` on which `MvPowerSeries σ R` acts faithfully. -/
+theorem algebraMap_subst_formalW_ne_zero {σ KK : Type*} [CommRing KK] [IsReduced KK]
     [Algebra (MvPowerSeries σ R) KK] [FaithfulSMul (MvPowerSeries σ R) KK]
     {q : MvPowerSeries σ R} (hq : MvPowerSeries.constantCoeff q = 0) (hq0 : q ≠ 0) :
-    algebraMap (MvPowerSeries σ R) KK (PowerSeries.subst q (formalW W)) ≠ 0 := fun h ↦ by
-  have hdom : IsDomain R :=
-    letI := IsDomain.of_faithfulSMul (MvPowerSeries σ R) KK
-    MvPowerSeries.isDomain_of_isDomain σ
-  exact W.subst_formalW_ne_zero hq hq0
-    (FaithfulSMul.algebraMap_injective (MvPowerSeries σ R) KK (by rw [h, map_zero]))
+    algebraMap (MvPowerSeries σ R) KK (PowerSeries.subst q (formalW W)) ≠ 0 := by
+  have hinj := FaithfulSMul.algebraMap_injective (MvPowerSeries σ R) KK
+  rw [ne_eq, W.algebraMap_subst_formalW_eq_zero_iff (PowerSeries.HasSubst.of_constantCoeff_zero hq)]
+  intro h
+  have hpow : algebraMap (MvPowerSeries σ R) KK q ^ 3 = 0 := by
+    rw [← map_pow, h, map_zero]
+  exact hq0 (hinj ((eq_zero_of_pow_eq_zero hpow).trans (map_zero _).symm))
 
 /-! ### Base change
 

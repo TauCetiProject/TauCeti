@@ -104,10 +104,7 @@ private theorem map_subst_pair_X_formalAdd {σ' S : Type*} [CommRing S] (φ : O 
         (formalAdd W)) =
       subst (pairSubstitution (X s₁ : MvPowerSeries σ' S) (X s₂)) (formalAdd (W.map φ)) := by
   rw [MvPowerSeries.map_subst (hasSubst_pair (constantCoeff_X _) (constantCoeff_X _)),
-    map_formalAdd]
-  congr 1
-  funext i
-  rcases i with u | u <;> simp
+    map_formalAdd, comp_pairSubstitution, MvPowerSeries.map_X, MvPowerSeries.map_X]
 
 /-- The addition series at a pair, read through a further substitution `g` that sends the first
 parameter to `X` and the second to `0`: the right unit law makes the result `X`. -/
@@ -117,13 +114,8 @@ private theorem subst_subst_pair_formalAdd_eq_X {σ' : Type*}
     (hga : subst g a = PowerSeries.X) (hgb : subst g b = 0) :
     subst g (subst (pairSubstitution a b)
       (formalAdd W)) = PowerSeries.X := by
-  -- The composite family is pointwise `X` and `0`, but only pointwise: the reshape below is
-  -- `funext`, not a definitional equality, and it is needed because `subst_unitR_formalAdd` is
-  -- stated for the `Sum.elim` spelling that `rw` must match syntactically.
-  rw [subst_comp_subst_apply (hasSubst_pair ha hb) hg,
-    show (fun s : Unit ⊕ Unit ↦ subst g (Sum.elim (fun _ ↦ a) (fun _ ↦ b) s)) =
-      (Sum.elim X (fun _ ↦ 0) : Unit ⊕ Unit → MvPowerSeries Unit O) from
-      funext fun s ↦ by rcases s with _ | _; exacts [hga, hgb]]
+  rw [subst_comp_subst_apply (hasSubst_pair ha hb) hg, comp_pairSubstitution,
+    hga, hgb, PowerSeries.X_apply]
   exact subst_unitR_formalAdd W
 
 /-- The addition series at a pair of parameters is nonzero, as soon as some substitution
@@ -237,41 +229,26 @@ private theorem some_eq_thetaPoint_formalAdd (hΔ : (fracCurve W σ KK).Δ ≠ 0
     Affine.Point.some _ _ h₃ = W.thetaPoint hΔ hF hF0 := by
   classical
   subst hTp
-  -- `h₃` is reverted so that the `set`s rewrite its type along with the goal, which depends on it
   revert h₃
-  set ρ := algebraMap (MvPowerSeries σ O) KK
   set Tp := subst (pairSubstitution q₁ q₂) (formalThirdRoot W)
-  set wT := PowerSeries.subst Tp (formalW W)
   intro h₃
   have hTp0 : Tp ≠ 0 := subst_pair_formalThirdRoot_ne_zero W h₁ h₂ hN
   have hTc : constantCoeff Tp = 0 := constantCoeff_subst_pair_formalThirdRoot W h₁ h₂
-  have hwT0 : ρ wT ≠ 0 := W.algebraMap_subst_formalW_ne_zero hTc hTp0
-  -- identify the third point with the point of parameter `F(q₁, q₂)`
-  set sp := PowerSeries.subst Tp (PowerSeries.invOfUnit (formalInverseDenom W) 1)
-  have hu : ρ (PowerSeries.subst Tp (formalInverseDenom W)) * ρ sp = 1 := by
-    rw [← map_mul, ← map_one ρ]
-    exact congrArg ρ (subst_pair_formalInverseDenom_mul W h₁ h₂)
-  have hsp0 := right_ne_zero_of_mul_eq_one hu
-  have hueq : ρ (PowerSeries.subst Tp (formalInverseDenom W)) =
-      1 - (fracCurve W σ KK).a₁ * ρ Tp - (fracCurve W σ KK).a₃ * ρ wT := by
-    simpa [← fracCurve_def] using W.algebraMap_subst_formalInverseDenom_eq (T := KK)
-      (PowerSeries.HasSubst.of_constantCoeff_zero hTc)
-  have hFeq : ρ (subst (pairSubstitution q₁ q₂) (formalAdd W)) = -(ρ Tp * ρ sp) := by
-    have h := congrArg ρ (subst_pair_formalAdd_eq W h₁ h₂)
-    simp only [map_neg, map_mul] at h
-    exact h
-  have hwFeq : ρ (PowerSeries.subst (subst (pairSubstitution q₁ q₂) (formalAdd W)) (formalW W))
-      = -(ρ wT * ρ sp) := by
-    have h := congrArg ρ (subst_pair_formalW_formalAdd W h₁ h₂)
-    simp only [map_neg, map_mul] at h
-    exact h
-  rw [W.thetaPoint_eq_some hΔ hF hF0 (W.thetaPoint_nonsingular hΔ hF hF0)]
-  simp only [Affine.Point.some.injEq]
-  constructor
-  · rw [hFeq, hwFeq]
-    field_simp
-  · rw [hwFeq, div_eq_div_iff hwT0 (neg_ne_zero.mpr (mul_ne_zero hwT0 hsp0))]
-    linear_combination (-(ρ wT)) * hu + (ρ wT * ρ sp) * hueq
+  have hF_eq : subst (pairSubstitution q₁ q₂) (formalAdd W) =
+      PowerSeries.subst Tp (formalInverse W) :=
+    (subst_pair_formalAdd W h₁ h₂).trans (PowerSeries.subst_def _ _).symm
+  have hi : constantCoeff (PowerSeries.subst Tp (formalInverse W)) = 0 :=
+    PowerSeries.constantCoeff_subst_eq_zero hTc (formalInverse W) (constantCoeff_formalInverse W)
+  have hi0 : PowerSeries.subst Tp (formalInverse W) ≠ 0 :=
+    (W.subst_formalInverse_eq_zero_iff (PowerSeries.HasSubst.of_constantCoeff_zero hTc)).not.mpr
+      hTp0
+  have hθ : W.thetaPoint hΔ hF hF0 = -W.thetaPoint hΔ hTc hTp0 :=
+    ((W.thetaPoint_inj hΔ hF hi hF0 hi0).mpr hF_eq).trans (W.thetaPoint_neg hΔ hTc hTp0)
+  rw [hθ, W.thetaPoint_eq_some hΔ hTc hTp0 (W.thetaPoint_nonsingular hΔ hTc hTp0)]
+  simp only [Affine.Point.neg_some, Affine.Point.some.injEq, Affine.negY, true_and]
+  have hwT0 : algebraMap (MvPowerSeries σ O) KK (PowerSeries.subst Tp (formalW W)) ≠ 0 :=
+    W.algebraMap_subst_formalW_ne_zero hTc hTp0
+  field_simp
 
 variable [DecidableEq KK] in
 /-- **The chord addition of parametrized points**: `θ(q₁) + θ(q₂) = θ(F(q₁, q₂))`.
@@ -332,7 +309,7 @@ private theorem pair_intercept_ne_zero_of_ne (hΔ : (fracCurve W σ KK).Δ ≠ 0
   have hi : constantCoeff (PowerSeries.subst q₂ (formalInverse W)) = 0 :=
     PowerSeries.constantCoeff_subst_eq_zero h₂ (formalInverse W) (constantCoeff_formalInverse W)
   have hi0 : PowerSeries.subst q₂ (formalInverse W) ≠ 0 :=
-    W.subst_formalInverse_ne_zero h₂ hq₂0
+    (W.subst_formalInverse_eq_zero_iff (PowerSeries.HasSubst.of_constantCoeff_zero h₂)).not.mpr hq₂0
   rcases hcase with hc | hc
   · exact hne₁ ((W.thetaPoint_inj hΔ h₁ h₂ hq₁0 hq₂0).mp hc)
   · rw [← W.thetaPoint_neg hΔ h₂ hq₂0] at hc

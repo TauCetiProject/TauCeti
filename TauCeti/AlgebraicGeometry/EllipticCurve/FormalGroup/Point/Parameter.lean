@@ -236,9 +236,8 @@ theorem thetaPoint_neg (hΔ : (fracCurve W σ KK).Δ ≠ 0)
     W.thetaPoint hΔ
         (PowerSeries.constantCoeff_subst_eq_zero hq (formalInverse W)
           (constantCoeff_formalInverse W))
-        (by
-          have := IsDomain.of_faithfulSMul (MvPowerSeries σ O) KK
-          exact W.subst_formalInverse_ne_zero hq hq0) =
+        ((W.subst_formalInverse_eq_zero_iff
+          (PowerSeries.HasSubst.of_constantCoeff_zero hq)).not.mpr hq0) =
       -W.thetaPoint hΔ hq hq0 := by
   classical
   set ρ := algebraMap (MvPowerSeries σ O) KK with hρ
@@ -257,9 +256,8 @@ theorem thetaPoint_neg (hΔ : (fracCurve W σ KK).Δ ≠ 0)
     W.algebraMap_subst_formalW_ne_zero hq hq0
   have hi : constantCoeff (PowerSeries.subst q (formalInverse W)) = 0 :=
     PowerSeries.constantCoeff_subst_eq_zero hq (formalInverse W) (constantCoeff_formalInverse W)
-  have hi0 : PowerSeries.subst q (formalInverse W) ≠ 0 := by
-    have := IsDomain.of_faithfulSMul (MvPowerSeries σ O) KK
-    exact W.subst_formalInverse_ne_zero hq hq0
+  have hi0 : PowerSeries.subst q (formalInverse W) ≠ 0 :=
+    (W.subst_formalInverse_eq_zero_iff hs).not.mpr hq0
   rw [W.thetaPoint_eq_some hΔ hi hi0 (W.thetaPoint_nonsingular hΔ hi hi0),
     W.thetaPoint_eq_some hΔ hq hq0 (W.thetaPoint_nonsingular hΔ hq hq0)]
   simp only [Affine.Point.neg_some, Affine.Point.some.injEq]

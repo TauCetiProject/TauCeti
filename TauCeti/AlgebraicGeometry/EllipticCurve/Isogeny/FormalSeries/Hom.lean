@@ -597,9 +597,9 @@ theorem formalGroupHom_applyPoint_formalPointAddHom {W₀ : WeierstrassCurve K} 
 /-- Evaluating `f.formalGroupHom` at the tautological point gives `formalPointAddHom f`. -/
 @[simp]
 theorem formalGroupHom_applyPoint_tautologicalPoint (f : Hom W₁.toAffine W₂.toAffine) :
-    f.formalGroupHom.applyPoint (formalGroup W₁).tautologicalPoint = formalPointAddHom f := by
-  apply Subtype.ext
-  simp [PowerSeries.X_subst]
+    f.formalGroupHom.applyPoint (formalGroup W₁).tautologicalPoint = formalPointAddHom f :=
+  Subtype.ext
+    (f.formalGroupHom.applyPoint_tautologicalPoint_val.trans f.formalGroupHom_toPowerSeries)
 
 /-- **A sum of morphisms acts on formal power-series points by addition in
 `formalGroup W₂`.** -/

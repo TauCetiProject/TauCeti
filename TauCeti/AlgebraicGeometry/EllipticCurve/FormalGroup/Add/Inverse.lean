@@ -243,18 +243,14 @@ obtained here by descent from the universal curve, whose base `ℤ[A₁, ⋯, A�
 theorem subst_invPair_formalThirdRoot :
     subst (pairSubstitution (PowerSeries.X : PowerSeries O) (formalInverse W))
       (formalThirdRoot W) = 0 := by
-  conv_lhs => rw [← W.map_specialize]
-  rw [map_formalThirdRoot, map_formalInverse]
-  have hfam : pairSubstitution (PowerSeries.X : PowerSeries O)
-        (PowerSeries.map W.specialize (formalInverse Universal.curve)) =
-      fun i ↦ MvPowerSeries.map W.specialize
-        (pairSubstitution (PowerSeries.X : PowerSeries (MvPolynomial Coeff ℤ))
-          (formalInverse Universal.curve) i) := by
-    have hmap (f : PowerSeries (MvPolynomial Coeff ℤ)) :
-        MvPowerSeries.map W.specialize f = PowerSeries.map W.specialize f := rfl
-    simp only [pairSubstitution, MvPowerSeries.comp_pairSubstitution, hmap, PowerSeries.map_X]
-  rw [hfam, ← MvPowerSeries.map_subst (hasSubst_invPair Universal.curve),
-    subst_invPair_formalThirdRoot_of_isDomain Universal.curve two_ne_zero, map_zero]
+  have h := congrArg (MvPowerSeries.map W.specialize)
+    (subst_invPair_formalThirdRoot_of_isDomain Universal.curve two_ne_zero)
+  have hι := (map_formalInverse Universal.curve W.specialize).symm
+  dsimp only [PowerSeries.map] at hι
+  rw [MvPowerSeries.map_subst (hasSubst_invPair Universal.curve),
+    MvPowerSeries.comp_pairSubstitution, PowerSeries.X_apply, MvPowerSeries.map_X,
+    ← PowerSeries.X_apply, ← map_formalThirdRoot, hι, map_zero] at h
+  simpa [W.map_specialize] using h
 
 /-- **The inverse law of the chord group law**: `F(z, ι(z)) = 0`.
 

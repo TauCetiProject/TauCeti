@@ -38,10 +38,10 @@ what makes `formalInverse` a power series at all.
   `WeierstrassCurve.subst_formalW_subst_formalInverse`: parameter-level forms of the formal
   inverse, its denominator, and `w(ι(q))`.
 * `WeierstrassCurve.isUnit_formalInverseDenom`: the denominator is a unit.
-* `WeierstrassCurve.constantCoeff_formalInverse` and `WeierstrassCurve.subst_formalInverse_ne_zero`:
-  `ι(0) = 0`, so `ι` may itself be substituted into a power series
-  (`WeierstrassCurve.hasSubst_formalInverse`), and `ι(q) ≠ 0` over a domain when `q ≠ 0` and
-  `constantCoeff q = 0`.
+* `WeierstrassCurve.constantCoeff_formalInverse` and
+  `WeierstrassCurve.subst_formalInverse_eq_zero_iff`: `ι(0) = 0`, so `ι` may itself be substituted
+  into a power series (`WeierstrassCurve.hasSubst_formalInverse`), and `ι(q) = 0 ↔ q = 0` for
+  every substitutable parameter `q` over any commutative ring.
 
 ## Implementation notes
 
@@ -239,16 +239,6 @@ theorem formalInverse_ne_zero [Nontrivial R] : formalInverse W ≠ 0 := by
   simp only [inv_one, Units.val_one] at h1
   exact one_ne_zero (neg_eq_zero.mp h1)
 
-/-- Over a domain of multivariate series, the formal inverse at a nonzero parameter with vanishing
-constant coefficient is itself nonzero. -/
-theorem subst_formalInverse_ne_zero {σ : Type*} [IsDomain (MvPowerSeries σ R)]
-    {q : MvPowerSeries σ R} (hq : MvPowerSeries.constantCoeff q = 0) (hq0 : q ≠ 0) :
-    PowerSeries.subst q (formalInverse W) ≠ 0 := by
-  have : Nontrivial R := RingHom.domain_nontrivial (MvPowerSeries.C : R →+* MvPowerSeries σ R)
-  have : NoZeroDivisors R :=
-    (MvPowerSeries.C_injective (σ := σ)).noZeroDivisors MvPowerSeries.C (map_zero _) (map_mul _)
-  exact (PowerSeries.subst_eq_zero_iff hq hq0).not.mpr (formalInverse_ne_zero W)
-
 /-- The denominator of the formal inverse, read at a parameter, still multiplies its `invOfUnit`
 to `1`: substituting is a ring map, so it carries `mul_invOfUnit_formalInverseDenom` along. -/
 theorem subst_formalInverseDenom_mul {σ : Type*} {q : MvPowerSeries σ R}
@@ -267,6 +257,28 @@ theorem subst_formalInverse_eq {σ : Type*} {q : MvPowerSeries σ R}
   rw [formalInverse_def, ← PowerSeries.coe_substAlgHom hq]
   simp only [map_neg, map_mul]
   rw [PowerSeries.coe_substAlgHom hq, PowerSeries.subst_X hq]
+
+/-- Over any commutative ring, the formal inverse at a substitutable parameter vanishes if and only
+if the parameter vanishes: `ι(q) = -(q * u(q)⁻¹)` where `u(q)` is a unit. -/
+@[simp]
+theorem subst_formalInverse_eq_zero_iff {σ : Type*} {q : MvPowerSeries σ R}
+    (hq : PowerSeries.HasSubst q) :
+    PowerSeries.subst q (formalInverse W) = 0 ↔ q = 0 := by
+  refine ⟨fun h ↦ ?_, fun h ↦ by
+    rw [h, PowerSeries.subst_zero_of_constantCoeff_zero (constantCoeff_formalInverse W)]⟩
+  have hq' : q * PowerSeries.subst q (PowerSeries.invOfUnit (formalInverseDenom W) 1) = 0 := by
+    rw [← neg_eq_zero]
+    exact (subst_formalInverse_eq W hq).symm.trans h
+  have hu : PowerSeries.subst q (formalInverseDenom W) *
+      PowerSeries.subst q (PowerSeries.invOfUnit (formalInverseDenom W) 1) = 1 :=
+    subst_formalInverseDenom_mul W hq
+  calc
+    q = q * (PowerSeries.subst q (formalInverseDenom W) *
+        PowerSeries.subst q (PowerSeries.invOfUnit (formalInverseDenom W) 1)) := by
+      rw [hu, mul_one]
+    _ = (q * PowerSeries.subst q (PowerSeries.invOfUnit (formalInverseDenom W) 1)) *
+        PowerSeries.subst q (formalInverseDenom W) := by ring
+    _ = 0 := by rw [hq', zero_mul]
 
 /-- The denominator of the formal inverse read at a parameter, written out. -/
 theorem subst_formalInverseDenom_eq {σ : Type*} {q : MvPowerSeries σ R}
