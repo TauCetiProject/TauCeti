@@ -277,8 +277,13 @@ def totalSpaceHomeomorphOfCoordChangeEqId
       (A.charts n).coordChange i j x v = v)
     (p : TotalSpace Unit A.Fiber) :
     A.totalSpaceHomeomorphOfCoordChangeEqId hcoord p = ⟨A.rank p.proj, (⟨p.proj, rfl⟩, p.snd)⟩ := by
-  simp [totalSpaceHomeomorphOfCoordChangeEqId]
-  rfl
+  rw [totalSpaceHomeomorphOfCoordChangeEqId, Homeomorph.trans_apply,
+    totalSpaceHomeomorph_symm_apply]
+  refine (Homeomorph.sigmaCongrRight_apply _
+    (⟨A.rank p.proj, ⟨⟨p.proj, rfl⟩, p.snd⟩⟩ : A.GluedTotalSpace)).trans
+    (congrArg (Sigma.mk (A.rank p.proj)) ?_)
+  exact (congrFun (Bundle.Trivialization.coe_toHomeomorphOfBaseSetEqUniv _ _) _).trans
+    ((A.charts (A.rank p.proj)).globalTrivializationOfCoordChangeEqId_apply (hcoord _) _)
 
 /-- Inverse evaluation of `FiniteRankAtlas.totalSpaceHomeomorphOfCoordChangeEqId`. -/
 @[simp] theorem totalSpaceHomeomorphOfCoordChangeEqId_symm_apply
@@ -330,6 +335,30 @@ private noncomputable def gluedReconstructionHomeomorph :
     (ofBundles 𝕜 r E).GluedTotalSpace ≃ₜ Σ n : ℕ, TotalSpace (Fin n → 𝕜) (E n) :=
   Homeomorph.sigmaCongrRight fun n => pointIndexedCoreHomeomorph 𝕜 (Fin n → 𝕜) (E n)
 
+private theorem gluedReconstructionHomeomorph_apply
+    (x : X) (v : (ofBundles 𝕜 r E).Fiber x) :
+    gluedReconstructionHomeomorph 𝕜 r E ⟨(ofBundles 𝕜 r E).rank x, ⟨⟨x, rfl⟩, v⟩⟩ =
+      ⟨r x, ⟨⟨x, rfl⟩,
+        pointIndexedCoreFiberEquiv 𝕜 (Fin (r x) → 𝕜) (E (r x)) ⟨x, rfl⟩ v⟩⟩ :=
+  (Homeomorph.sigmaCongrRight_apply
+    (fun m => pointIndexedCoreHomeomorph 𝕜 (Fin m → 𝕜) (E m))
+    ⟨r x, ⟨⟨x, rfl⟩, v⟩⟩).trans
+    (congrArg (Sigma.mk (r x))
+      (pointIndexedCoreHomeomorph_apply 𝕜 (Fin (r x) → 𝕜) (E (r x)) ⟨⟨x, rfl⟩, v⟩))
+
+private theorem gluedReconstructionHomeomorph_symm_apply
+    (p : Σ n : ℕ, TotalSpace (Fin n → 𝕜) (E n)) :
+    (gluedReconstructionHomeomorph 𝕜 r E).symm p =
+      ⟨p.1, ⟨p.2.proj,
+        (pointIndexedCoreFiberEquiv 𝕜 (Fin p.1 → 𝕜) (E p.1) p.2.proj).symm p.2.snd⟩⟩ :=
+  (congrArg (fun f : (Σ n : ℕ, TotalSpace (Fin n → 𝕜) (E n)) ≃ₜ
+        (Σ n : ℕ, (pointIndexedCore 𝕜 (Fin n → 𝕜) (E n)).TotalSpace) => f p)
+      (Homeomorph.sigmaCongrRight_symm
+        (fun n => pointIndexedCoreHomeomorph 𝕜 (Fin n → 𝕜) (E n)))).trans <|
+    (Homeomorph.sigmaCongrRight_apply
+      (fun n => (pointIndexedCoreHomeomorph 𝕜 (Fin n → 𝕜) (E n)).symm) p).trans
+      (congrArg (Sigma.mk p.1) (pointIndexedCoreHomeomorph_symm_apply 𝕜 (Fin p.1 → 𝕜) (E p.1) p.2))
+
 /-- The reconstructed atlas is homeomorphic, over the base, to the disjoint union
 of the original bundles. The fibre maps are the preferred-chart continuous linear
 equivalences `pointIndexedCoreFiberEquiv`. -/
@@ -342,10 +371,8 @@ noncomputable def reconstructionHomeomorph :
     reconstructionHomeomorph 𝕜 r E p =
       ⟨r p.proj, ⟨⟨p.proj, rfl⟩,
         pointIndexedCoreFiberEquiv 𝕜 (Fin (r p.proj) → 𝕜) (E (r p.proj)) ⟨p.proj, rfl⟩ p.snd⟩⟩ := by
-  rw [reconstructionHomeomorph, gluedReconstructionHomeomorph]
-  simp only [Homeomorph.trans_apply, totalSpaceHomeomorph_symm_apply]
-  erw [Homeomorph.sigmaCongrRight_apply, pointIndexedCoreHomeomorph_apply]
-  rfl
+  rw [reconstructionHomeomorph, Homeomorph.trans_apply, totalSpaceHomeomorph_symm_apply,
+    gluedReconstructionHomeomorph_apply]
 
 /-- The inverse comparison is the inverse preferred-chart fibre equivalence, followed
 by the canonical inclusion of that stratum into the reconstructed total space. -/
@@ -355,11 +382,8 @@ by the canonical inclusion of that stratum into the reconstructed total space. -
       (ofBundles 𝕜 r E).totalSpaceHomeomorph
         ⟨p.1, ⟨p.2.proj,
           (pointIndexedCoreFiberEquiv 𝕜 (Fin p.1 → 𝕜) (E p.1) p.2.proj).symm p.2.snd⟩⟩ := by
-  rw [reconstructionHomeomorph, gluedReconstructionHomeomorph]
-  simp only [Homeomorph.symm_trans_apply, Homeomorph.symm_symm]
-  erw [Homeomorph.sigmaCongrRight_symm, Homeomorph.sigmaCongrRight_apply,
-    pointIndexedCoreHomeomorph_symm_apply]
-  rfl
+  rw [reconstructionHomeomorph, Homeomorph.symm_trans_apply, Homeomorph.symm_symm,
+    gluedReconstructionHomeomorph_symm_apply]
 
 /-- The reconstruction comparison covers the identity map on the original base. -/
 @[simp] theorem proj_reconstructionHomeomorph
