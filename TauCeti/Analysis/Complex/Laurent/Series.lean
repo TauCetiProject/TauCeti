@@ -56,9 +56,10 @@ annuli, removable-singularity characterization, and term-by-term differentiation
   `TauCeti.HasLaurentSeriesOnAnnulus.tendsto_laurentNegPart_cocompact`: convergence and analyticity
   of the positive part on `Metric.eball c R` and of the negative part on `(Metric.closedBall c r)ᶜ`
   (uniform on `(Metric.ball c r')ᶜ` for `r' > r`), with vanishing at infinity.
-* `TauCeti.HasLaurentSeriesOnAnnulus.eq_laurentPosPart_add_laurentNegPart` and
-  `TauCeti.HasLaurentSeriesOnAnnulus.analyticOnNhd`: Laurent splitting and analyticity of the sum on
-  the open annulus.
+* `TauCeti.HasLaurentSeriesOnAnnulus.eq_laurentPosPart_add_laurentNegPart`,
+  `TauCeti.HasLaurentSeriesOnAnnulus.eventuallyEq_laurentPosPart_add_laurentNegPart`, and
+  `TauCeti.HasLaurentSeriesOnAnnulus.analyticOnNhd`: Laurent splitting on the open annulus (as a
+  germ on `𝓝[≠] c` for punctured disks) and analyticity of the sum on the open annulus.
 * `TauCeti.HasLaurentSeriesOnAnnulus.hasFPowerSeriesOnBall_update_of_neg_eq_zero`:
   removable-singularity extension across `c` when negative coefficients vanish.
 
@@ -643,6 +644,14 @@ theorem eq_laurentPosPart_add_laurentNegPart {f : ℂ → E} {a : ℤ → E} {c 
     simpa only [zpow_natCast] using h.hasSum_laurentPosPart hw.1
   have hn := h.hasSum_laurentNegPart hw.2
   exact (h.hasSum hw).unique (hp.of_nat_of_neg_add_one hn)
+
+/-- On a punctured disk (`r = 0`), `f` agrees on `𝓝[≠] c` with the sum of its nonnegative and
+negative Laurent parts. -/
+theorem eventuallyEq_laurentPosPart_add_laurentNegPart {f : ℂ → E} {a : ℤ → E} {c : ℂ}
+    {R : ℝ≥0∞} (h : HasLaurentSeriesOnAnnulus f a c 0 R) :
+    f =ᶠ[𝓝[≠] c] laurentPosPart a c + laurentNegPart a c := by
+  filter_upwards [sdiff_mem_nhdsWithin_compl (eball_mem_nhds c h.outerRadius_pos) {c}] with w hw
+  exact h.eq_laurentPosPart_add_laurentNegPart (by rwa [closedBall_zero])
 
 /-- Any function admitting a convergent Laurent series on an open annulus is complex-analytic on
 that annulus. -/

@@ -7,6 +7,8 @@ module
 
 public import TauCeti.AlgebraicGeometry.ProjectiveSpectrum.TwistingSheaf.LocalTriviality
 public import TauCeti.AlgebraicGeometry.LineBundle.Class
+public import TauCeti.AlgebraicGeometry.Modules.Tensor.Sections
+import all TauCeti.Algebra.Category.ModuleCat.Sheaf.TensorProduct.Monoidal
 
 /-!
 # Tensor products of twisting sheaves
@@ -30,6 +32,14 @@ sheafified tensor product follows the Cartier divisor construction in
 * `AlgebraicGeometry.Proj.twistingSheaf.tensorProductIso`: the isomorphism
   `𝒪(m) ⊗ 𝒪(n) ≅ 𝒪(m + n)` when the degree-one standard opens cover `Proj A`, with
   `AlgebraicGeometry.Proj.twistingSheaf.tensorProductIso_hom_tmul` describing it on pure tensors.
+* `AlgebraicGeometry.Proj.twistingSheaf.tensorObjIso`: the isomorphism `tensorProductIso`, read in
+  the monoidal category of `𝒪_{Proj A}`-modules, with
+  `AlgebraicGeometry.Proj.twistingSheaf.tensorObjIso_hom_app_tmulRight` describing it on tensors of
+  sections.
+* `AlgebraicGeometry.Proj.tensorPowTwistingSheafIso`: the isomorphism `𝒪(1)^{⊗n} ≅ 𝒪(n)` in the
+  monoidal category of `𝒪_{Proj A}`-modules, with its zero and successor cases
+  `AlgebraicGeometry.Proj.tensorPowTwistingSheafIso_zero` and
+  `AlgebraicGeometry.Proj.tensorPowTwistingSheafIso_succ`.
 * `AlgebraicGeometry.Proj.lineBundleClass_twistingSheaf_eq_zpow`: `[𝒪(n)] = [𝒪(1)] ^ n` in the
   group of line-bundle classes.
 
@@ -204,7 +214,6 @@ private theorem tensorProductIso_hom :
 
 /-- On a pure tensor `s ⊗ t` of sections over `U`, sent into `𝒪(m) ⊗ 𝒪(n)` by the unit of
 sheafification, the isomorphism `𝒪(m) ⊗ 𝒪(n) ≅ 𝒪(m + n)` is multiplication of sections. -/
-@[simp]
 theorem tensorProductIso_hom_tmul (U : (Proj 𝒜).Opens) (s : Γ(twistingSheaf 𝒜 m, U))
     (t : Γ(twistingSheaf 𝒜 n, U)) :
     dsimp% only [sheafCompose_obj_obj, Functor.comp_obj, CommRingCat.forgetToRingCat_obj,
@@ -246,9 +255,99 @@ theorem tensorProductIso_hom_tmul (U : (Proj 𝒜).Opens) (s : Γ(twistingSheaf 
       ((adj.unit.app P).app (op U) (s ⊗ₜ t)) = mul 𝒜 U m n s t at hU
   exact hU
 
+open MonoidalCategory in
+/-- **`𝒪(m) ⊗ 𝒪(n) ≅ 𝒪(m + n)` in the monoidal category of `𝒪_{Proj A}`-modules**, when the
+standard opens of degree-one elements cover `Proj A`: the isomorphism `tensorProductIso`, read
+through the identification of the monoidal tensor product with the sheafified one. -/
+def tensorObjIso : twistingSheaf 𝒜 m ⊗ twistingSheaf 𝒜 n ≅ twistingSheaf 𝒜 (m + n) :=
+  (twistingSheaf 𝒜 m).tensorUnderlyingIso (twistingSheaf 𝒜 n) ≪≫
+    (TauCeti.SheafOfModules.tensorProductIso (Proj 𝒜).sheaf _ _).symm ≪≫
+    tensorProductIso f hf hcover m n
+
+open MonoidalCategory in
+/-- The monoidal form of the multiplication isomorphism is `tensorProductIso`, composed with the
+comparison of the monoidal and the sheafified tensor products. -/
+theorem tensorObjIso_hom :
+    (tensorObjIso f hf hcover m n).hom =
+      ((twistingSheaf 𝒜 m).tensorUnderlyingIso (twistingSheaf 𝒜 n)).hom ≫
+        (TauCeti.SheafOfModules.tensorProductIso (Proj 𝒜).sheaf _ _).inv ≫
+        (tensorProductIso f hf hcover m n).hom :=
+  (rfl)
+
+open MonoidalCategory in
+/-- On the tensor `s ⊗ t` of sections over `U`, the isomorphism `𝒪(m) ⊗ 𝒪(n) ≅ 𝒪(m + n)` is
+multiplication of sections. -/
+@[simp]
+theorem tensorObjIso_hom_app_tmulRight (U : (Proj 𝒜).Opens) (s : Γ(twistingSheaf 𝒜 m, U))
+    (t : Γ(twistingSheaf 𝒜 n, U)) :
+    (tensorObjIso f hf hcover m n).hom.app U
+      (Scheme.Modules.tmulRight (twistingSheaf 𝒜 m) t s) = mul 𝒜 U m n s t := by
+  let F : (Proj 𝒜).Modules ⥤ PresheafOfModulesOfCommRing (Proj 𝒜).presheaf :=
+    _root_.SheafOfModules.forget _
+  let _ : F.LaxMonoidal := TauCeti.SheafOfModules.forgetLaxMonoidal (Proj 𝒜).sheaf
+  have e : ((twistingSheaf 𝒜 m).tensorUnderlyingIso (twistingSheaf 𝒜 n)).inv ≫
+      (tensorObjIso f hf hcover m n).hom =
+      (TauCeti.SheafOfModules.tensorProductIso (Proj 𝒜).sheaf _ _).inv ≫
+        (tensorProductIso f hf hcover m n).hom := by
+    rw [tensorObjIso_hom]
+    exact Iso.inv_hom_id_assoc _ _
+  -- The tensor map of the forgetful functor, followed by `tensorObjIso`, is the sheafification
+  -- unit followed by `tensorProductIso`.
+  have h : Functor.LaxMonoidal.μ F (twistingSheaf 𝒜 m) (twistingSheaf 𝒜 n) ≫
+      F.map (tensorObjIso f hf hcover m n).hom = _ :=
+    TauCeti.SheafOfModules.forget_μ_comp_map (R := (Proj 𝒜).sheaf) _
+  rw [e] at h
+  have hu := (TauCeti.SheafOfModules.sheafificationForgetAdjunction (Proj 𝒜).sheaf).homEquiv_unit
+    _ _ ((TauCeti.SheafOfModules.tensorProductIso (Proj 𝒜).sheaf (twistingSheaf 𝒜 m)
+      (twistingSheaf 𝒜 n)).inv ≫ (tensorProductIso f hf hcover m n).hom)
+  -- The tensor map of sections over `U` is that of the forgetful functor, evaluated at `U`.
+  rw [Scheme.Modules.tmulRight_apply]
+  change (tensorObjIso f hf hcover m n).hom.app U
+    ((Functor.LaxMonoidal.μ F (twistingSheaf 𝒜 m) (twistingSheaf 𝒜 n)).app (op U) (s ⊗ₜ t)) = _
+  -- `sheafificationForgetAdjunction` is Mathlib's sheafification adjunction, whose unit appears in
+  -- `tensorProductIso_hom_tmul`.
+  exact ((congrArg (fun g ↦ g.app (op U) (s ⊗ₜ t)) h).trans
+    (congrArg (fun g ↦ g.app (op U) (s ⊗ₜ t)) hu)).trans
+    (tensorProductIso_hom_tmul f hf hcover m n U s t)
+
 end Cover
 
 end twistingSheaf
+
+section TensorPow
+
+variable {ι : Type*} (f : ι → A) (hf : ∀ i, f i ∈ 𝒜 1)
+  (hcover : ⨆ i, basicOpen 𝒜 (f i) = ⊤)
+
+open MonoidalCategory in
+/-- **`𝒪(1)^{⊗n} ≅ 𝒪(n)`** in the monoidal category of `𝒪_{Proj A}`-modules, when the standard
+opens of degree-one elements cover `Proj A`. It is built from the multiplication isomorphisms
+`𝒪(1) ⊗ 𝒪(n) ≅ 𝒪(1 + n)` (`AlgebraicGeometry.Proj.twistingSheaf.tensorObjIso`). -/
+def tensorPowTwistingSheafIso :
+    (n : ℕ) → TauCeti.tensorPow (twistingSheaf 𝒜 1) n ≅ twistingSheaf 𝒜 n
+  | 0 => unitIsoTwistingSheafZero 𝒜
+  | n + 1 =>
+    whiskerLeftIso (twistingSheaf 𝒜 1) (tensorPowTwistingSheafIso n) ≪≫
+      twistingSheaf.tensorObjIso f hf hcover 1 n ≪≫
+      eqToIso (congrArg (twistingSheaf 𝒜) (by push_cast; ring))
+
+/-- `𝒪(1)^{⊗0} ≅ 𝒪(0)` is the identification of the monoidal unit with `𝒪(0)`. -/
+@[simp]
+theorem tensorPowTwistingSheafIso_zero :
+    tensorPowTwistingSheafIso f hf hcover 0 = unitIsoTwistingSheafZero 𝒜 :=
+  (rfl)
+
+open MonoidalCategory in
+/-- `𝒪(1)^{⊗(n + 1)} ≅ 𝒪(n + 1)` is `𝒪(1)^{⊗n} ≅ 𝒪(n)` tensored on the left with `𝒪(1)`,
+followed by the multiplication isomorphism `𝒪(1) ⊗ 𝒪(n) ≅ 𝒪(1 + n)`. -/
+theorem tensorPowTwistingSheafIso_succ (n : ℕ) :
+    tensorPowTwistingSheafIso f hf hcover (n + 1) =
+      whiskerLeftIso (twistingSheaf 𝒜 1) (tensorPowTwistingSheafIso f hf hcover n) ≪≫
+        twistingSheaf.tensorObjIso f hf hcover 1 n ≪≫
+        eqToIso (congrArg (twistingSheaf 𝒜) (by push_cast; ring)) :=
+  (rfl)
+
+end TensorPow
 
 variable {ι : Type u} (f : ι → A) (hf : ∀ i, f i ∈ 𝒜 1)
   (hcover : ⨆ i, basicOpen 𝒜 (f i) = ⊤)

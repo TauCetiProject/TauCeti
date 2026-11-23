@@ -93,7 +93,7 @@ theorem exists_slice (x : X) {W : Set X} (hW : W ∈ 𝓝 x) :
       smul_mem' := fun k y hy => by
         simp only [mem_iInter₂] at hy ⊢
         intro h hh
-        have := hy ((k : G)⁻¹ * h) (mul_mem (inv_mem k.2) hh)
+        have := hy ((k : G)⁻¹ * h) (mul_mem (inv_mem k.property) hh)
         rwa [mul_smul, ← smul_mem_smul_set_iff (a := (k : G)), smul_inv_smul] at this }
   have hUV : (U : Set X) ⊆ V := biInter_subset_of_mem (one_mem _) |>.trans (one_smul G V).subset
   refine ⟨U, ?_, ?_, hUV.trans (interior_subset.trans inter_subset_right), ?_⟩

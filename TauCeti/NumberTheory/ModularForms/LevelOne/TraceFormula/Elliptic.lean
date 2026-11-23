@@ -58,16 +58,16 @@ theorem finsum_elliptic_binaryForm_trace {K : Type*} [Field K] [CharZero K]
     ∑ᶠ X : orbitRel.Quotient (ConjAct SL(2, ℤ)) (traceDetFiber (Fin 2) t n),
       (2 / (cardStabilizerOnOrbit X : K)) *
         LinearMap.trace K (homogeneousSubmodule (Fin 2) K w)
-          (binaryFormRep K w (op (X.out.1 : Matrix (Fin 2) (Fin 2) ℤ))) =
+          (binaryFormRep K w (op (X.out.val : Matrix (Fin 2) (Fin 2) ℤ))) =
       2 * (hurwitzClassNumber D : K) * (Polynomial.dickson 2 (n : K) w).eval (t : K) := by
   classical
   let _ := BinaryQuadraticForm.finite_orbitRel_quotient_traceDetFiber h
   have htrace (X : orbitRel.Quotient (ConjAct SL(2, ℤ)) (traceDetFiber (Fin 2) t n)) :
       LinearMap.trace K (homogeneousSubmodule (Fin 2) K w)
-          (binaryFormRep K w (op (X.out.1 : Matrix (Fin 2) (Fin 2) ℤ))) =
+          (binaryFormRep K w (op (X.out.val : Matrix (Fin 2) (Fin 2) ℤ))) =
         (Polynomial.dickson 2 (n : K) w).eval (t : K) := by
     rw [trace_binaryFormRep_eq_dickson_eval]
-    obtain ⟨ht, hn⟩ := mem_traceDetFiber.1 X.out.2
+    obtain ⟨ht, hn⟩ := mem_traceDetFiber.1 X.out.property
     rw [ht, hn]
   have hweight :
       ∑ᶠ X : orbitRel.Quotient (ConjAct SL(2, ℤ)) (traceDetFiber (Fin 2) t n),

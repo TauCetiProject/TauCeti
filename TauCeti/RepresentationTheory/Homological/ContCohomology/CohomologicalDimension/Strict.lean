@@ -121,12 +121,12 @@ theorem CohomologicalDimensionLE.nsmul_right_injective {n : ℕ}
       proj_surjective := AddMonoidHom.rangeRestrict_surjective _
       exact := fun m ↦ by
         rw [← AddMonoidHom.mem_ker, AddMonoidHom.ker_rangeRestrict]
-        exact ⟨fun hm ↦ ⟨⟨m, hm⟩, rfl⟩, fun ⟨a, ha⟩ ↦ ha ▸ a.2⟩ }
+        exact ⟨fun hm ↦ ⟨⟨m, hm⟩, rfl⟩, fun ⟨a, ha⟩ ↦ ha ▸ a.property⟩ }
   -- the short exact sequence `0 → pM → M → M ⧸ pM → 0`
   let S₂ := DiscreteShortExact.ofAddSubgroup I hI
   -- `M[p]` and `M ⧸ pM` are killed by `p`, so their cohomology vanishes above `n`
   have hKp : IsAddPGroup p K :=
-    fun m ↦ ⟨1, Subtype.ext (by simpa [K] using AddMonoidHom.mem_ker.1 m.2)⟩
+    fun m ↦ ⟨1, Subtype.ext (by simpa [K] using AddMonoidHom.mem_ker.1 m.property)⟩
   have hQp : IsAddPGroup p (M ⧸ I) := fun q ↦ by
     induction q using QuotientAddGroup.induction_on with
     | H m => exact ⟨1, (QuotientAddGroup.eq_zero_iff _).2 (by simp [I])⟩

@@ -7,12 +7,14 @@ module
 
 public import TauCeti.Analysis.Distribution.WaveFrontSet.LineDeriv
 public import TauCeti.Analysis.Distribution.WaveFrontSet.SingularSupport
+import TauCeti.Analysis.Distribution.LineDeriv
 import TauCeti.Analysis.Distribution.TestFunction.LineDeriv
 import TauCeti.Analysis.InnerProductSpace.ProdInner
 import TauCeti.Analysis.Distribution.TestFunction.PartitionOfUnity
 import TauCeti.Analysis.Distribution.TestFunction.SmulLeft
 import TauCeti.Analysis.Calculus.IteratedFDeriv.Reciprocal
 import TauCeti.Analysis.Calculus.ContDiff.Bounds
+import TauCeti.Analysis.Normed.Module.Cone
 
 /-!
 # Microlocal elliptic regularity for differential operators
@@ -37,9 +39,10 @@ this is `TauCeti.constCoeffCharacteristicSet`. This file proves
 Together with the reverse microlocality `WF(P T) ⊆ WF(T)` of differential operators
 (`Distribution.waveFrontSet_sum_smul_smulLeftCLM_iteratedLineDerivOp_subset`), an operator
 elliptic at every point of `Ω` satisfies `WF(P T) = WF(T)`, and hence has the same singular
-support: `P T` is smooth on an open set exactly when `T` is. The constant-coefficient statements
-are the special case `a i = 1`, and the Laplacian is the basic example
-(`Distribution.waveFrontSet_laplacianCLM`).
+support: `P T` is smooth on an open set exactly when `T` is. In particular such an operator is
+hypoelliptic, and every distributional solution of `P T = 0` is a function smooth on `Ω`. The
+constant-coefficient statements are the special case `a i = 1`, and the Laplacian is the basic
+example (`Distribution.waveFrontSet_laplacianCLM`), for which this is Weyl's lemma.
 
 ## The argument
 
@@ -82,6 +85,9 @@ gives rapid decay on `Γ`.
 * `TauCeti.exists_nhds_cone_le_norm_principalSymbol`: a principal symbol with
   continuous coefficients that does not vanish at `(x, ξ)` is bounded below by `c₀ ‖η‖ ^ M` for
   `y` near `x` and `η` in an open cone around `ξ`.
+* `TauCeti.exists_mul_one_add_norm_pow_le_norm_sum_mul_prod`: on such a cone the full symbol
+  `∑ i ∈ s, b i y ∏ₗ 2πi ⟪m i l, η⟫`, lower-order terms included, is bounded below by a multiple
+  of `(1 + ‖η‖) ^ M` outside a ball.
 * `Distribution.IsMicrolocallySmoothAt.of_sum_smul_smulLeftCLM_iteratedLineDerivOp`: if `P T` is
   microlocally smooth at `(x, ξ)` and `σ_M(P)(x, ξ) ≠ 0`, then `T` is microlocally smooth there.
 * `Distribution.waveFrontSet_subset_waveFrontSet_sum_smul_smulLeftCLM_iteratedLineDerivOp_union`:
@@ -97,6 +103,13 @@ gives rapid decay on `Γ`.
 * `Distribution.waveFrontSet_laplacianCLM`, `Distribution.singularSupport_laplacianCLM`:
   `WF(Δ T) = WF(T)` and `singsupp(Δ T) = singsupp(T)` for the Laplacian
   `Δ = LineDeriv.laplacianCLM ℝ E 𝓓'(Ω, ℂ)`.
+* `Distribution.exists_contDiffOn_eq_ofFun_of_sum_smul_smulLeftCLM_iteratedLineDerivOp_eq_ofFun`:
+  elliptic operators are hypoelliptic: if `P T` is a function smooth on `Ω`, so is `T`.
+* `Distribution.exists_contDiffOn_eq_ofFun_of_sum_smul_smulLeftCLM_iteratedLineDerivOp_eq_zero`,
+  `Distribution.exists_contDiffOn_eq_ofFun_of_sum_smul_iteratedLineDerivOp_eq_zero`: every
+  distributional solution of `P T = 0` is a smooth function.
+* `Distribution.exists_contDiffOn_eq_ofFun_of_laplacianCLM_eq_zero`: Weyl's lemma for
+  distributions, `Δ T = 0` makes `T` a smooth function.
 
 ## References
 
@@ -284,22 +297,15 @@ theorem exists_nhds_cone_le_norm_principalSymbol {ι : Type*} {s : Finset ι}
     linarith [norm_pos_iff.2 hξ]
   obtain ⟨U, hU, V, hV, hUV⟩ := mem_nhds_prod_iff.1 (hO.mem_nhds hxξ)
   -- The cone over `interior V`.
-  refine ⟨U, hU, {η | ∃ t : ℝ, 0 < t ∧ t • η ∈ interior V}, ?_,
-    ⟨1, one_pos, by simpa using mem_interior_iff_mem_nhds.2 hV⟩, ?_, c₀, hc₀, ?_⟩
-  · have : {η : E | ∃ t : ℝ, 0 < t ∧ t • η ∈ interior V} =
-        ⋃ t ∈ Ioi (0 : ℝ), (fun η : E ↦ t • η) ⁻¹' interior V := by
-      ext η
-      simp
-    rw [this]
-    exact isOpen_biUnion fun t _ ↦ isOpen_interior.preimage (continuous_const_smul t)
-  · rintro t ht η ⟨u, hu, hη⟩
-    exact ⟨u / t, div_pos hu ht, by rwa [smul_smul, div_mul_cancel₀ _ ht.ne']⟩
-  · rintro y hy η ⟨t, ht, hη⟩
-    have h : c₀ * ‖t • η‖ ^ M < ‖σ (y, t • η)‖ := hUV (mk_mem_prod hy (interior_subset hη))
-    simp only [σ, principalSymbol_smul, norm_mul, norm_pow, Complex.norm_real,
-      norm_smul, Real.norm_of_nonneg ht.le, mul_pow] at h
-    refine (lt_of_mul_lt_mul_left ?_ (pow_pos ht M).le).le
-    linarith
+  obtain ⟨Γ, hΓ, hξΓ, hcone, hmem⟩ :=
+    isOpen_interior.exists_cone_exists_smul_mem (mem_interior_iff_mem_nhds.2 hV)
+  refine ⟨U, hU, Γ, hΓ, hξΓ, hcone, c₀, hc₀, fun y hy η hη ↦ ?_⟩
+  obtain ⟨t, ht, hη⟩ := hmem η hη
+  have h : c₀ * ‖t • η‖ ^ M < ‖σ (y, t • η)‖ := hUV (mk_mem_prod hy (interior_subset hη))
+  simp only [σ, principalSymbol_smul, norm_mul, norm_pow, Complex.norm_real,
+    norm_smul, Real.norm_of_nonneg ht.le, mul_pow] at h
+  refine (lt_of_mul_lt_mul_left ?_ (pow_pos ht M).le).le
+  linarith
 
 /-- **An elliptic cone.** If the principal symbol does not vanish at `ξ`, then it is bounded
 below by `c₀ ‖η‖ ^ M` on an open cone around `ξ`, for some `c₀ > 0`. -/
@@ -364,18 +370,6 @@ variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] {Ω : Open
 
 /-! ### Polynomial bounds for the symbol -/
 
-/-- The factor `2πi ⟪v, η⟫` contributed by a derivative `∂_v` is bounded by
-`2π ‖v‖ (1 + ‖η‖)`. -/
-private theorem norm_two_pi_I_inner_le (v η : E) :
-    ‖(2 * π * I * ⟪v, η⟫ : ℂ)‖ ≤ 2 * π * ‖v‖ * (1 + ‖η‖) := by
-  calc ‖(2 * π * I * ⟪v, η⟫ : ℂ)‖ = 2 * π * |⟪v, η⟫| := by
-        simp [abs_of_pos Real.pi_pos]
-    _ ≤ 2 * π * (‖v‖ * (1 + ‖η‖)) := by
-        gcongr
-        exact (abs_real_inner_le_norm v η).trans
-          (mul_le_mul_of_nonneg_left (le_add_of_nonneg_left zero_le_one) (norm_nonneg v))
-    _ = 2 * π * ‖v‖ * (1 + ‖η‖) := by ring
-
 /-- The symbol of `∂^m` in the frequency variable of the localized Fourier transform is
 `(2πi) ^ r` times the product of the inner products. -/
 private theorem prod_two_pi_I_inner {r : ℕ} (m : Fin r → E) (η : E) :
@@ -424,9 +418,10 @@ coefficients `b i y` be bounded by `A` for `y ∈ U`, and let the principal symb
 coefficients frozen at every `y ∈ U` be bounded below by `c₀ ‖η‖ ^ M` on `Γ`. Then the full symbol
 `p (y, η) = ∑ i ∈ s, b i y ∏ₗ 2πi ⟪m i l, η⟫` is bounded below by a multiple of `(1 + ‖η‖) ^ M`
 for `y ∈ U` and `η ∈ Γ` outside a ball: the terms of lower order are smaller by a factor `‖η‖`. -/
-private theorem exists_le_norm_symbol {ι : Type*} {s : Finset ι} {b : ι → E → ℂ} {k : ι → ℕ}
-    {m : ∀ i, Fin (k i) → E} {M : ℕ} (hk : ∀ i ∈ s, k i ≤ M) {U Γ : Set E} {A c₀ : ℝ}
-    (hc₀ : 0 < c₀) (hA : ∀ y ∈ U, ∀ i ∈ s, ‖b i y‖ ≤ A)
+theorem _root_.TauCeti.exists_mul_one_add_norm_pow_le_norm_sum_mul_prod {ι : Type*}
+    {s : Finset ι} {b : ι → E → ℂ} {k : ι → ℕ} {m : ∀ i, Fin (k i) → E} {M : ℕ}
+    (hk : ∀ i ∈ s, k i ≤ M) {U Γ : Set E} {A c₀ : ℝ} (hc₀ : 0 < c₀)
+    (hA : ∀ y ∈ U, ∀ i ∈ s, ‖b i y‖ ≤ A)
     (hΓ : ∀ y ∈ U, ∀ η ∈ Γ,
       c₀ * ‖η‖ ^ M ≤ ‖constCoeffPrincipalSymbol s (fun i ↦ b i y) m M η‖) :
     ∃ R c' : ℝ, 0 < c' ∧ ∀ y ∈ U, ∀ η ∈ Γ, R ≤ ‖η‖ →
@@ -530,21 +525,11 @@ private theorem exists_localFourier_iteratedLineDerivOp_le {T : 𝓓'(Ω, ℂ)} 
     have hφ₁ := h₁ φ hφ B (fun i hi ↦ hB i (by omega)) η hη
     have hφ₂ := h₁ (∂_{m 0} φ) ((tsupport_lineDerivOp_subset φ _).trans hφ) (‖m 0‖ * B)
       (norm_iteratedFDeriv_lineDerivOp_le φ (m 0) (r := ρ + r) hB) η hη
-    rw [iteratedLineDerivOp_succ_left, localFourier_lineDerivOp]
-    calc (1 + ‖η‖) ^ j * ‖2 * π * I * ⟪m 0, η⟫ * (∂^{Fin.tail m} T).localFourier φ η -
-          (∂^{Fin.tail m} T).localFourier (∂_{m 0} φ) η‖
+    rw [iteratedLineDerivOp_succ_left]
+    calc (1 + ‖η‖) ^ j * ‖(∂_{m 0} (∂^{Fin.tail m} T)).localFourier φ η‖
         ≤ 2 * π * ‖m 0‖ * (1 + ‖η‖) * ((1 + ‖η‖) ^ j * ‖(∂^{Fin.tail m} T).localFourier φ η‖) +
-            (1 + ‖η‖) ^ j * ‖(∂^{Fin.tail m} T).localFourier (∂_{m 0} φ) η‖ := by
-          refine (mul_le_mul_of_nonneg_left (norm_sub_le _ _) (by positivity)).trans ?_
-          rw [norm_mul, mul_add]
-          gcongr ?_ + _
-          calc (1 + ‖η‖) ^ j * (‖(2 * π * I * ⟪m 0, η⟫ : ℂ)‖ *
-                ‖(∂^{Fin.tail m} T).localFourier φ η‖)
-              ≤ (1 + ‖η‖) ^ j * (2 * π * ‖m 0‖ * (1 + ‖η‖) *
-                ‖(∂^{Fin.tail m} T).localFourier φ η‖) := by
-                gcongr
-                exact norm_two_pi_I_inner_le _ _
-            _ = _ := by ring
+            (1 + ‖η‖) ^ j * ‖(∂^{Fin.tail m} T).localFourier (∂_{m 0} φ) η‖ :=
+          (one_add_norm_pow_mul_norm_localFourier_lineDerivOp_le _ _ _ _ _).trans_eq (by ring)
       _ ≤ 2 * π * ‖m 0‖ * (1 + ‖η‖) * (C₁ * B * (1 + ‖η‖) ^ (k + r)) +
             C₁ * (‖m 0‖ * B) * (1 + ‖η‖) ^ (k + r + 1) :=
           add_le_add (mul_le_mul_of_nonneg_left hφ₁ (by positivity)) <| hφ₂.trans <|
@@ -590,7 +575,7 @@ private theorem exists_localFourier_iteratedLineDerivOp_sub_le {T : 𝓓'(Ω, �
           exact (norm_sub_le _ _).trans_eq (by rw [norm_mul])
       _ ≤ (1 + ‖η‖) ^ (j + 1) * (2 * π * ‖m 0‖ * (1 + ‖η‖) * ‖D‖ + ‖L‖) := by
           gcongr
-          exact norm_two_pi_I_inner_le _ _
+          exact TauCeti.norm_two_pi_I_mul_inner_le _ _
       _ = 2 * π * ‖m 0‖ * (1 + ‖η‖) * ((1 + ‖η‖) ^ (j + 1) * ‖D‖) +
             (1 + ‖η‖) * ((1 + ‖η‖) ^ j * ‖L‖) := by ring
       _ ≤ 2 * π * ‖m 0‖ * (1 + ‖η‖) * (C₁ * B * (1 + ‖η‖) ^ (k + r)) +
@@ -770,10 +755,11 @@ theorem IsMicrolocallySmoothAt.of_sum_smul_smulLeftCLM_iteratedLineDerivOp {ι :
   -- On `W` the full symbol is elliptic at large frequencies in `Γ₁ ∩ Γ₂`.
   obtain ⟨A, -, hA⟩ := exists_forall_norm_iteratedFDeriv_le_of_isCompact s (n := 0)
     (fun i _ ↦ (hb i).of_le (by exact_mod_cast le_top)) hK'c
-  obtain ⟨R, c', hc', hp⟩ := exists_le_norm_symbol (b := fun i y ↦ c i * (a i y : ℂ)) hk hc₀
-    (U := interior K') (Γ := Γ₁ ∩ Γ₂) (A := A)
-    (fun y hy i hi ↦ by simpa using hA i hi 0 le_rfl y (interior_subset hy))
-    (fun y hy η hη ↦ hell y (hK'sub (interior_subset hy)).1.1 η hη.1)
+  obtain ⟨R, c', hc', hp⟩ :=
+    exists_mul_one_add_norm_pow_le_norm_sum_mul_prod (b := fun i y ↦ c i * (a i y : ℂ)) hk hc₀
+      (U := interior K') (Γ := Γ₁ ∩ Γ₂) (A := A)
+      (fun y hy i hi ↦ by simpa using hA i hi 0 le_rfl y (interior_subset hy))
+      (fun y hy η hη ↦ hell y (hK'sub (interior_subset hy)).1.1 η hη.1)
   -- By induction on `j`, the localized Fourier transforms of `T` with cutoffs supported in `K`
   -- are `O((1 + ‖η‖) ^ k₀ / (1 + ‖η‖) ^ j)` on `Γ₁ ∩ Γ₂`, uniformly over bounded cutoffs.
   obtain ⟨k₀, C₀, hC₀, h₀⟩ := exists_forall_norm_localFourier_le T (K := ⟨K, hKc⟩) hKΩ
@@ -905,8 +891,7 @@ theorem waveFrontSet_laplacianCLM (T : 𝓓'(Ω, ℂ)) :
   set b := stdOrthonormalBasis ℝ E
   have h := waveFrontSet_sum_smul_iteratedLineDerivOp_of_forall_ne_zero Finset.univ (fun _ ↦ 1)
     (k := fun _ ↦ 2) (fun i ↦ ![b i, b i]) (M := 2) (fun _ _ ↦ le_rfl) (fun ξ hξ ↦ ?_) T
-  · simpa [laplacianCLM_eq_sum b, iteratedLineDerivOp_succ_left, iteratedLineDerivOp_one, Fin.tail]
-      using h
+  · simpa [laplacianCLM_eq_sum_iteratedLineDerivOp b] using h
   rw [constCoeffPrincipalSymbol_laplacian]
   exact_mod_cast (pow_pos (norm_pos_iff.2 hξ) 2).ne'
 
@@ -915,5 +900,57 @@ theorem waveFrontSet_laplacianCLM (T : 𝓓'(Ω, ℂ)) :
 theorem singularSupport_laplacianCLM [MeasurableSpace E] [BorelSpace E] (T : 𝓓'(Ω, ℂ)) :
     (laplacianCLM ℝ E 𝓓'(Ω, ℂ) T).singularSupport = T.singularSupport := by
   rw [← fst_image_waveFrontSet, ← fst_image_waveFrontSet, waveFrontSet_laplacianCLM]
+
+/-! ### Smoothness of solutions -/
+
+/-- **Elliptic differential operators are hypoelliptic.** If the principal symbol of
+`P = ∑ i ∈ s, c i a i ∂^(m i)` of order `M`, with the coefficients frozen at any point of `Ω`,
+vanishes at no `ξ ≠ 0`, and `P T` is a function smooth on `Ω`, then so is `T`. -/
+theorem exists_contDiffOn_eq_ofFun_of_sum_smul_smulLeftCLM_iteratedLineDerivOp_eq_ofFun
+    [MeasurableSpace E] [BorelSpace E] {ι : Type*} (s : Finset ι) (c : ι → ℂ) {a : ι → E → ℝ}
+    (ha : ∀ i, ContDiff ℝ ∞ (a i)) {k : ι → ℕ} (m : ∀ i, Fin (k i) → E) {M : ℕ}
+    (hk : ∀ i ∈ s, k i ≤ M)
+    (hσ : ∀ x ∈ Ω, ∀ ξ : E, ξ ≠ 0 → principalSymbol s (fun i y ↦ c i * a i y) m M x ξ ≠ 0)
+    {T : 𝓓'(Ω, ℂ)} {g : E → ℂ} (hg : ContDiffOn ℝ ∞ g Ω)
+    (hT : ∑ i ∈ s, c i • smulLeftCLM (ha i) (∂^{m i} T) = ofFun Ω g MeasureTheory.volume ⊤) :
+    ∃ f : E → ℂ, ContDiffOn ℝ ∞ f Ω ∧ T = ofFun Ω f MeasureTheory.volume ⊤ := by
+  rw [← singularSupport_eq_empty_iff,
+    ← singularSupport_sum_smul_smulLeftCLM_iteratedLineDerivOp_of_forall_ne_zero s c ha m hk hσ,
+    hT]
+  exact singularSupport_ofFun_eq_empty hg
+
+/-- **Solutions of elliptic equations are smooth.** If the principal symbol of
+`P = ∑ i ∈ s, c i a i ∂^(m i)` of order `M`, with the coefficients frozen at any point of `Ω`,
+vanishes at no `ξ ≠ 0`, then every distributional solution of `P T = 0` is a function smooth
+on `Ω`. -/
+theorem exists_contDiffOn_eq_ofFun_of_sum_smul_smulLeftCLM_iteratedLineDerivOp_eq_zero
+    [MeasurableSpace E] [BorelSpace E] {ι : Type*} (s : Finset ι) (c : ι → ℂ) {a : ι → E → ℝ}
+    (ha : ∀ i, ContDiff ℝ ∞ (a i)) {k : ι → ℕ} (m : ∀ i, Fin (k i) → E) {M : ℕ}
+    (hk : ∀ i ∈ s, k i ≤ M)
+    (hσ : ∀ x ∈ Ω, ∀ ξ : E, ξ ≠ 0 → principalSymbol s (fun i y ↦ c i * a i y) m M x ξ ≠ 0)
+    {T : 𝓓'(Ω, ℂ)} (hT : ∑ i ∈ s, c i • smulLeftCLM (ha i) (∂^{m i} T) = 0) :
+    ∃ f : E → ℂ, ContDiffOn ℝ ∞ f Ω ∧ T = ofFun Ω f MeasureTheory.volume ⊤ :=
+  exists_contDiffOn_eq_ofFun_of_sum_smul_smulLeftCLM_iteratedLineDerivOp_eq_ofFun s c ha m hk hσ
+    contDiffOn_const (hT.trans ofFun_zero.symm)
+
+/-- **Solutions of elliptic constant-coefficient equations are smooth.** If the principal symbol
+of `P = ∑ i ∈ s, c i ∂^(m i)` of order `M` vanishes at no `ξ ≠ 0`, then every distributional
+solution of `P T = 0` is a function smooth on `Ω`. -/
+theorem exists_contDiffOn_eq_ofFun_of_sum_smul_iteratedLineDerivOp_eq_zero [MeasurableSpace E]
+    [BorelSpace E] {ι : Type*} (s : Finset ι) (c : ι → ℂ) {k : ι → ℕ} (m : ∀ i, Fin (k i) → E)
+    {M : ℕ} (hk : ∀ i ∈ s, k i ≤ M)
+    (hσ : ∀ ξ : E, ξ ≠ 0 → constCoeffPrincipalSymbol s c m M ξ ≠ 0)
+    {T : 𝓓'(Ω, ℂ)} (hT : ∑ i ∈ s, c i • ∂^{m i} T = 0) :
+    ∃ f : E → ℂ, ContDiffOn ℝ ∞ f Ω ∧ T = ofFun Ω f MeasureTheory.volume ⊤ := by
+  rw [← singularSupport_eq_empty_iff,
+    ← singularSupport_sum_smul_iteratedLineDerivOp_of_forall_ne_zero s c m hk hσ, hT,
+    singularSupport_zero]
+
+/-- **Weyl's lemma for distributions.** Every distribution `T` with `Δ T = 0` on `Ω` is a function
+smooth on `Ω`. -/
+theorem exists_contDiffOn_eq_ofFun_of_laplacianCLM_eq_zero [MeasurableSpace E] [BorelSpace E]
+    {T : 𝓓'(Ω, ℂ)} (hT : laplacianCLM ℝ E 𝓓'(Ω, ℂ) T = 0) :
+    ∃ f : E → ℂ, ContDiffOn ℝ ∞ f Ω ∧ T = ofFun Ω f MeasureTheory.volume ⊤ := by
+  rw [← singularSupport_eq_empty_iff, ← singularSupport_laplacianCLM, hT, singularSupport_zero]
 
 end Distribution

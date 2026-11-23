@@ -5,321 +5,104 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.Polynomial.MahlerMeasure
+public import Mathlib.Analysis.Calculus.ContDiff.Operations
+public import Mathlib.RingTheory.MvPolynomial.Symmetric.Defs
 public import Mathlib.RingTheory.Polynomial.Resultant.Basic
-import Mathlib.Analysis.Complex.Polynomial.Basic
-import TauCeti.Algebra.Polynomial.Splits
-import TauCeti.Analysis.Polynomial.SupNorm.Basic
+import Mathlib.RingTheory.Polynomial.Vieta
+import TauCeti.Analysis.Calculus.ContDiff.Matrix
 import TauCeti.RingTheory.Polynomial.Resultant.Discriminant
 
 /-!
-# The derivative at a root and the nearest root of a polynomial
+# Regularity of the Sylvester matrix and of the discriminant
 
-Let `f ∈ ℂ[X]` have degree `d`, leading coefficient `a` and roots `α₁, …, α_d`, and let `M(f)` be
-its Mahler measure. The discriminant pairs the roots into a square,
-`disc f = a ^ (2 d - 2) ∏_{i < j} (αᵢ - αⱼ) ^ 2`, while the derivative at the root `α = α₁` is
-`f'(α) = a ∏_{j ≠ 1} (α - αⱼ)`. Splitting off the factors that involve `α₁` and bounding every
-other difference by `|αᵢ - αⱼ| ≤ 2 max(1, |αᵢ|) max(1, |αⱼ|)` gives, for `d ≥ 2`,
-
-`|disc f| ≤ (2 ^ C(d - 1, 2) M(f) ^ (d - 2) |f'(α)|) ^ 2`.
-
-For `P ∈ ℤ[X]` with nonzero discriminant, `|disc P| ≥ 1`, so the derivative at every complex root
-is bounded below: `1 ≤ 2 ^ C(d - 1, 2) M(P) ^ (d - 2) |P'(α)|`, which also holds in degree one,
-where `P'(α)` is the leading coefficient.
-
-If `α` is a root of `f` nearest to a point `z`, then `|α - αⱼ| ≤ 2 |z - αⱼ|` for every other root,
-and comparing `f(z) = a ∏ (z - αⱼ)` with `f'(α)` gives `|z - α| |f'(α)| ≤ 2 ^ (d - 1) |f(z)|`; this
-holds for a split polynomial over any normed field.
-Together with the lower bound for the derivative, a small value of an integer polynomial at `z`
-forces a root nearby: `|z - α| ≤ 2 ^ C(d, 2) M(P) ^ (d - 2) |P(z)|`, and, since
-`M(P) ≤ √(d + 1) H(P)` for the naive height `H(P)`, also
-`|z - α| ≤ 2 ^ C(d, 2) (√(d + 1) H(P)) ^ (d - 2) |P(z)|`. This is the nearest-root estimate
-behind Wirsing's lower bound for approximation by algebraic numbers in terms of Mahler's
-exponent: it turns a polynomial taking a small value at `ξ` into an algebraic number close to `ξ`.
+The entries of the Sylvester matrix of two polynomials are coefficients of those polynomials or
+zero, and the discriminant of a monic polynomial is, up to sign, the determinant of the Sylvester
+matrix of the polynomial and its derivative. So for polynomials whose coefficients depend `C^n` on
+a parameter, the Sylvester matrix and the discriminant depend `C^n` on it as well.
 
 ## Main results
 
-* `Polynomial.norm_discr_le_two_pow_mul_mahlerMeasure_pow_mul_norm_eval_derivative_sq`: the
-  bound on `|disc f|` for `f ∈ ℂ[X]` of degree at least `2`.
-* `Polynomial.one_le_two_pow_mul_mahlerMeasure_pow_mul_norm_eval_derivative`: the lower bound for
-  the derivative of an integer polynomial with nonzero discriminant at a complex root.
-* `Polynomial.norm_sub_mul_norm_eval_derivative_le_two_pow_mul_norm_eval`: the distance to a
-  nearest root times the derivative there is at most `2 ^ (d - 1) |f(z)|`, for a split polynomial
-  over any normed field.
-* `Polynomial.norm_sub_le_two_pow_mul_mahlerMeasure_pow_mul_norm_eval` and
-  `Polynomial.norm_sub_le_two_pow_mul_sqrt_mul_supNorm_pow_mul_norm_eval`: the nearest-root
-  estimate for an integer polynomial with nonzero discriminant, with the Mahler measure and with
-  the naive height.
-
-## References
-
-* K. Mahler, *An inequality for the discriminant of a polynomial*, Michigan Math. J. **11**
-  (1964), 257–262.
-* E. Wirsing, *Approximation mit algebraischen Zahlen beschränkten Grades*, J. reine angew. Math.
-  **206** (1961), 67–77.
-* Y. Bugeaud, *Approximation by Algebraic Numbers*, Cambridge University Press (2004), Chapter 3
-  and Appendix A.
+* `TauCeti.contDiffOn_sylvester_apply`: an entry of the Sylvester matrix of two families of
+  polynomials with `C^n` coefficients is `C^n`.
+* `TauCeti.contDiffOn_discr_of_monic`: the discriminant of a family of monic polynomials of fixed
+  degree with `C^n` coefficients is `C^n`.
+* `TauCeti.contDiffOn_discr_prod_X_sub_C`: if `b_j(y) = e_j(R(y))` are `C^n`, then the discriminant
+  of `∏_{w ∈ R(y)} (X - w)` is `C^n`.
 -/
 
 public section
 
-namespace Polynomial
+open Finset Polynomial
 
-/-! ### Products of differences of complex numbers -/
+namespace TauCeti
 
-/-- The product of `‖β - γ‖` over the ordered pairs `(β, γ)` of members of the multiset `t` at
-distinct positions. For the roots of `f`, it is `|disc f|` divided by `|a| ^ (2 d - 2)`. -/
-private noncomputable def pairProd (t : Multiset ℂ) : ℝ :=
-  (t.map fun β ↦ ((t.erase β).map fun γ ↦ ‖β - γ‖).prod).prod
+variable {𝕜 E 𝔸 : Type*} [NontriviallyNormedField 𝕜] [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+  [NormedCommRing 𝔸] [NormedAlgebra 𝕜 𝔸] {n : WithTop ℕ∞} {s : Set E}
 
-private theorem prod_map_norm_sub_nonneg (α : ℂ) (t : Multiset ℂ) :
-    0 ≤ (t.map fun γ ↦ ‖α - γ‖).prod :=
-  Multiset.prod_nonneg fun _ hx ↦ by
-    obtain ⟨γ, -, rfl⟩ := Multiset.mem_map.1 hx
-    exact norm_nonneg _
+/-- An entry of the Sylvester matrix of two families of polynomials whose coefficients are `C^n`
+on a set is `C^n` there. -/
+theorem contDiffOn_sylvester_apply {f g : E → 𝔸[X]}
+    (hf : ∀ k, ContDiffOn 𝕜 n (fun y ↦ (f y).coeff k) s)
+    (hg : ∀ k, ContDiffOn 𝕜 n (fun y ↦ (g y).coeff k) s) (p q : ℕ) (i j : Fin (p + q)) :
+    ContDiffOn 𝕜 n (fun y ↦ sylvester (f y) (g y) p q i j) s := by
+  induction j using Fin.addCases with
+  | left j =>
+    by_cases h : (i : ℕ) ∈ Set.Icc (j : ℕ) (j + q)
+    · simpa only [sylvester, Matrix.of_apply, Fin.addCases_left, h, ↓reduceIte] using hg _
+    · simpa only [sylvester, Matrix.of_apply, Fin.addCases_left, h, ↓reduceIte] using
+        contDiffOn_const
+  | right j =>
+    by_cases h : (i : ℕ) ∈ Set.Icc (j : ℕ) (j + p)
+    · simpa only [sylvester, Matrix.of_apply, Fin.addCases_right, h, ↓reduceIte] using hf _
+    · simpa only [sylvester, Matrix.of_apply, Fin.addCases_right, h, ↓reduceIte] using
+        contDiffOn_const
 
-private theorem one_le_prod_map_max_one_norm (t : Multiset ℂ) :
-    1 ≤ (t.map fun γ ↦ max 1 ‖γ‖).prod :=
-  Multiset.one_le_prod fun _ hx ↦ by
-    obtain ⟨γ, -, rfl⟩ := Multiset.mem_map.1 hx
-    exact le_max_left _ _
+/-- **Regularity of the discriminant.** If `P y` is monic of degree `m` for `y ∈ s` and its
+coefficients are `C^n` on `s`, then its discriminant is `C^n` on `s`: up to sign, it is the
+determinant of the Sylvester matrix of `P y` and its derivative. -/
+theorem contDiffOn_discr_of_monic {m : ℕ} {P : E → 𝔸[X]} (hmon : ∀ y ∈ s, (P y).Monic)
+    (hdeg : ∀ y ∈ s, (P y).natDegree = m) (hc : ∀ k, ContDiffOn 𝕜 n (fun y ↦ (P y).coeff k) s) :
+    ContDiffOn 𝕜 n (fun y ↦ (P y).discr) s := by
+  have hc' : ∀ k, ContDiffOn 𝕜 n (fun y ↦ (P y).derivative.coeff k) s := fun k ↦ by
+    simpa only [coeff_derivative] using (hc (k + 1)).mul contDiffOn_const
+  refine ((contDiffOn_const (c := (-1 : 𝔸) ^ (m * (m - 1) / 2))).mul
+    (ContDiffOn.matrix_det fun i j ↦ contDiffOn_sylvester_apply hc hc' m (m - 1) i j)).congr
+    fun y hy ↦ ?_
+  rw [(hmon y hy).discr_eq_neg_one_pow_mul_resultant_deriv, hdeg y hy, resultant]
 
-/-- Adjoining `α` to `t` multiplies the product over pairs by the square of the product of the
-distances from `α` to the members of `t`: each such distance occurs once with `α` first and once
-with `α` second. -/
-private theorem pairProd_cons (α : ℂ) (t : Multiset ℂ) :
-    pairProd (α ::ₘ t) = (t.map fun γ ↦ ‖α - γ‖).prod ^ 2 * pairProd t := by
-  have h : ∀ β ∈ t, (((α ::ₘ t).erase β).map fun γ ↦ ‖β - γ‖).prod =
-      ‖α - β‖ * ((t.erase β).map fun γ ↦ ‖β - γ‖).prod := fun β hβ ↦ by
-    rw [Multiset.erase_cons_tail_of_mem hβ, Multiset.map_cons, Multiset.prod_cons, norm_sub_rev]
-  unfold pairProd
-  simp only [Multiset.map_cons, Multiset.prod_cons, Multiset.erase_cons_head]
-  rw [Multiset.map_congr rfl h, Multiset.prod_map_mul]
-  ring
+/-- **Regularity of the discriminant in the roots.** If `b₁, …, b_m` are `C^n` on `s` and
+`b_j(y) = e_j(R(y))` for a multiset `R(y)` of `m` points, then the discriminant of
+`∏_{w ∈ R(y)} (X - w)` is `C^n` on `s`. By Vieta's formulas the coefficients of that product are
+`±b_j` and `1`. -/
+theorem contDiffOn_discr_prod_X_sub_C [Nontrivial 𝔸] {m : ℕ} {b : ℕ → E → 𝔸}
+    {R : E → Multiset 𝔸} (hb : ∀ j ∈ Icc 1 m, ContDiffOn 𝕜 n (b j) s)
+    (hR : ∀ y ∈ s, Multiset.card (R y) = m ∧ ∀ j ∈ Icc 1 m, b j y = (R y).esymm j) :
+    ContDiffOn 𝕜 n (fun y ↦ ((R y).map fun w ↦ X - C w).prod.discr) s := by
+  set P : E → 𝔸[X] := fun y ↦ ((R y).map fun w ↦ X - C w).prod with hP
+  -- The coefficients of `P y`, read off Vieta's formulas.
+  set c : ℕ → E → 𝔸 := fun k y ↦
+    if k < m then (-1) ^ (m - k) * b (m - k) y else if k = m then 1 else 0 with hc
+  have hcd : ∀ k, ContDiffOn 𝕜 n (c k) s := by
+    intro k
+    by_cases hk : k < m
+    · simpa only [hc, hk, ↓reduceIte] using
+        contDiffOn_const.mul (hb (m - k) (mem_Icc.2 ⟨by omega, by omega⟩))
+    · by_cases hk' : k = m
+      · simpa only [hc, hk, hk', ↓reduceIte, lt_irrefl] using contDiffOn_const
+      · simpa only [hc, hk, hk', ↓reduceIte] using contDiffOn_const
+  have hPc : ∀ y ∈ s, ∀ k, (P y).coeff k = c k y := by
+    intro y hy k
+    obtain ⟨hcard, hbR⟩ := hR y hy
+    by_cases hk : k ≤ m
+    · rw [hP, Multiset.prod_X_sub_C_coeff _ (hcard ▸ hk), hcard]
+      rcases hk.lt_or_eq with hk | rfl
+      · simp only [hc, hk, ↓reduceIte, hbR (m - k) (mem_Icc.2 ⟨by omega, by omega⟩)]
+      · simp [hc]
+    · rw [coeff_eq_zero_of_natDegree_lt (by
+        rw [hP, natDegree_multiset_prod_X_sub_C_eq_card, hcard]; omega)]
+      simp [hc, show ¬k < m by omega, show k ≠ m by omega]
+  exact contDiffOn_discr_of_monic (fun y _ ↦ monic_multisetProd_X_sub_C (R y))
+    (fun y hy ↦ by rw [natDegree_multiset_prod_X_sub_C_eq_card, (hR y hy).1])
+    fun k ↦ (hcd k).congr fun y hy ↦ hPc y hy k
 
-/-- The distances from `α` to the members of `t` multiply to at most
-`(2 max(1, |α|)) ^ #t ∏_{γ ∈ t} max(1, |γ|)`. -/
-private theorem prod_map_norm_sub_le (α : ℂ) (t : Multiset ℂ) :
-    (t.map fun γ ↦ ‖α - γ‖).prod ≤
-      (2 * max 1 ‖α‖) ^ Multiset.card t * (t.map fun γ ↦ max 1 ‖γ‖).prod := by
-  have hle (γ : ℂ) : ‖α - γ‖ ≤ 2 * max 1 ‖α‖ * max 1 ‖γ‖ := by
-    have hα := le_max_right 1 ‖α‖
-    have hγ := le_max_right 1 ‖γ‖
-    have hα₁ := le_max_left 1 ‖α‖
-    have hγ₁ := le_max_left 1 ‖γ‖
-    calc ‖α - γ‖ ≤ ‖α‖ + ‖γ‖ := norm_sub_le α γ
-      _ ≤ 2 * max 1 ‖α‖ * max 1 ‖γ‖ := by nlinarith [norm_nonneg α, norm_nonneg γ]
-  calc (t.map fun γ ↦ ‖α - γ‖).prod ≤ (t.map fun γ ↦ 2 * max 1 ‖α‖ * max 1 ‖γ‖).prod :=
-        Multiset.prod_map_le_prod_map₀ _ _ (fun _ _ ↦ norm_nonneg _) fun γ _ ↦ hle γ
-    _ = _ := by rw [Multiset.prod_map_mul, Multiset.map_const', Multiset.prod_replicate]
-
-/-- The product over pairs is at most `(2 ^ C(#t, 2) ∏_{γ ∈ t} max(1, |γ|) ^ (#t - 1)) ^ 2`: every
-member of `t` takes part in `#t - 1` of the `C(#t, 2)` unordered pairs. -/
-private theorem pairProd_le (t : Multiset ℂ) :
-    pairProd t ≤ (2 ^ (Multiset.card t).choose 2 *
-      (t.map fun γ ↦ max 1 ‖γ‖).prod ^ (Multiset.card t - 1)) ^ 2 := by
-  induction t using Multiset.induction_on with
-  | empty => simp [pairProd]
-  | cons α t ih =>
-    rcases Multiset.empty_or_exists_mem t with rfl | ⟨β, hβ⟩
-    · simp [pairProd]
-    obtain ⟨k, hk⟩ : ∃ k, Multiset.card t = k + 1 :=
-      ⟨Multiset.card t - 1, (Nat.succ_pred_eq_of_pos (Multiset.card_pos_iff_exists_mem.2
-        ⟨β, hβ⟩)).symm⟩
-    set P := (t.map fun γ ↦ ‖α - γ‖).prod
-    set M := (t.map fun γ ↦ max 1 ‖γ‖).prod
-    have hP := prod_map_norm_sub_le α t
-    have hP₀ : 0 ≤ P := prod_map_norm_sub_nonneg α t
-    have hM : 0 ≤ M := zero_le_one.trans (one_le_prod_map_max_one_norm t)
-    rw [hk, Nat.add_sub_cancel] at ih
-    rw [hk] at hP
-    have hch : (k + 1 + 1).choose 2 = (k + 1) + (k + 1).choose 2 := by
-      rw [Nat.choose_succ_succ', Nat.choose_one_right]
-    rw [pairProd_cons, Multiset.card_cons, hk, Multiset.map_cons, Multiset.prod_cons,
-      Nat.add_sub_cancel, hch]
-    calc P ^ 2 * pairProd t ≤ P ^ 2 * (2 ^ (k + 1).choose 2 * M ^ k) ^ 2 := by gcongr
-      _ = (P * (2 ^ (k + 1).choose 2 * M ^ k)) ^ 2 := by ring
-      _ ≤ ((2 * max 1 ‖α‖) ^ (k + 1) * M * (2 ^ (k + 1).choose 2 * M ^ k)) ^ 2 := by gcongr
-      _ = (2 ^ ((k + 1) + (k + 1).choose 2) * (max 1 ‖α‖ * M) ^ (k + 1)) ^ 2 := by ring
-
-/-! ### The derivative at a root -/
-
-/-- The discriminant of `f ∈ ℂ[X]` of degree `d` is `|a| ^ (2 d - 2)` times the product of the
-differences of its roots over ordered pairs: this is the root-product formula
-`Polynomial.discr_eq_leadingCoeff_pow_mul_prod_roots_sub_sq`, read over the root multiset. -/
-private theorem norm_discr_eq_mul_pairProd (f : ℂ[X]) :
-    ‖f.discr‖ = ‖f.leadingCoeff‖ ^ (2 * f.natDegree - 2) * pairProd f.roots := by
-  obtain ⟨r, hr⟩ := (exists_isRootEnumeration_iff_splits (f := f) (L := ℂ)
-    (ι := Fin f.natDegree) (by simp)).2 (by simpa using IsAlgClosed.splits f)
-  have h := discr_eq_leadingCoeff_pow_mul_prod_roots_sub_sq hr
-  have hroots : f.roots = Finset.univ.val.map r := by simpa using isRootEnumeration_iff.1 hr
-  simp only [Algebra.algebraMap_self, RingHom.id_apply] at h
-  -- Removing the root `r i` from the root multiset leaves the images of the other indices.
-  have herase (i : Fin f.natDegree) :
-      (Finset.univ.val.map r).erase (r i) = (Finset.univ.erase i).val.map r := by
-    rw [Finset.erase_val]
-    conv_lhs => rw [← Multiset.cons_erase (Finset.mem_val.mpr (Finset.mem_univ i))]
-    rw [Multiset.map_cons, Multiset.erase_cons_head]
-  rw [h, norm_mul, norm_pow, norm_prod, hroots]
-  congr 1
-  unfold pairProd
-  simp only [Multiset.map_map, Function.comp_apply, herase, ← Finset.prod_eq_multiset_prod,
-    ← Finset.compl_singleton, norm_prod, norm_pow]
-  -- Fold the product over ordered pairs into the product over pairs `i < j`.
-  rw [← Finset.prod_prod_Ioi_mul_eq_prod_prod_off_diag fun j i ↦ ‖r i - r j‖]
-  simp_rw [norm_sub_rev (r _) (r _), ← sq]
-
-/-- **The discriminant against the derivative at one root.** Let `f ∈ ℂ[X]` have degree
-`d ≥ 2` and let `α` be a root of `f`. Then
-`|disc f| ≤ (2 ^ C(d - 1, 2) M(f) ^ (d - 2) |f'(α)|) ^ 2`, where `M(f)` is the Mahler measure. -/
-theorem norm_discr_le_two_pow_mul_mahlerMeasure_pow_mul_norm_eval_derivative_sq {f : ℂ[X]}
-    (hf : 2 ≤ f.natDegree) {α : ℂ} (hα : f.IsRoot α) :
-    ‖f.discr‖ ≤ (2 ^ (f.natDegree - 1).choose 2 * f.mahlerMeasure ^ (f.natDegree - 2) *
-      ‖f.derivative.eval α‖) ^ 2 := by
-  have hf₀ : f ≠ 0 := by
-    rintro rfl
-    simp at hf
-  have hs : f.Splits := IsAlgClosed.splits f
-  have hαs : α ∈ f.roots := (mem_roots hf₀).2 hα
-  set t := f.roots.erase α with ht
-  have hst : f.roots = α ::ₘ t := (Multiset.cons_erase hαs).symm
-  obtain ⟨k, hk⟩ : ∃ k, Multiset.card t = k + 1 :=
-    ⟨Multiset.card t - 1, by rw [hs.natDegree_eq_card_roots, hst, Multiset.card_cons] at hf; omega⟩
-  have hd : f.natDegree = k + 2 := by rw [hs.natDegree_eq_card_roots, hst, Multiset.card_cons, hk]
-  set P := (t.map fun γ ↦ ‖α - γ‖).prod
-  set M := (t.map fun γ ↦ max 1 ‖γ‖).prod
-  have hP₀ : 0 ≤ P := prod_map_norm_sub_nonneg α t
-  have hM₁ : 1 ≤ M := one_le_prod_map_max_one_norm t
-  -- `|disc f| = |a| ^ (2 d - 2) P ^ 2 (pairs of other roots)` and `|f'(α)| = |a| P`.
-  have hdisc : ‖f.discr‖ = ‖f.leadingCoeff‖ ^ (2 * (k + 1)) * P ^ 2 * pairProd t := by
-    rw [norm_discr_eq_mul_pairProd, hst, pairProd_cons, hd,
-      show 2 * (k + 2) - 2 = 2 * (k + 1) by omega, mul_assoc]
-  have hderiv : ‖f.derivative.eval α‖ = ‖f.leadingCoeff‖ * P := by
-    rw [hs.eval_root_derivative_eq_leadingCoeff_mul hαs, norm_mul, Multiset.norm_prod_map, ← ht]
-  have hpair := pairProd_le t
-  rw [hk, Nat.add_sub_cancel] at hpair
-  have hmahler : f.mahlerMeasure = ‖f.leadingCoeff‖ * (max 1 ‖α‖ * M) := by
-    rw [mahlerMeasure_eq_leadingCoeff_mul_prod_roots, hst, Multiset.map_cons, Multiset.prod_cons]
-  rw [hdisc, hderiv, hmahler, hd, show k + 2 - 1 = k + 1 by omega, Nat.add_sub_cancel]
-  calc ‖f.leadingCoeff‖ ^ (2 * (k + 1)) * P ^ 2 * pairProd t
-      ≤ ‖f.leadingCoeff‖ ^ (2 * (k + 1)) * P ^ 2 * (2 ^ (k + 1).choose 2 * M ^ k) ^ 2 := by
-        gcongr
-    _ = (2 ^ (k + 1).choose 2 * (‖f.leadingCoeff‖ * M) ^ k * (‖f.leadingCoeff‖ * P)) ^ 2 := by
-        ring
-    _ ≤ (2 ^ (k + 1).choose 2 * (‖f.leadingCoeff‖ * (max 1 ‖α‖ * M)) ^ k *
-          (‖f.leadingCoeff‖ * P)) ^ 2 := by
-        gcongr
-        exact le_mul_of_one_le_left (zero_le_one.trans hM₁) (le_max_left _ _)
-
-/-- **The derivative of an integer polynomial at a root.** Let `P ∈ ℤ[X]` have degree `d` and
-nonzero discriminant. At every complex root `α` of `P`,
-`1 ≤ 2 ^ C(d - 1, 2) M(P) ^ (d - 2) |P'(α)|`, where `M(P)` is the Mahler measure. -/
-theorem one_le_two_pow_mul_mahlerMeasure_pow_mul_norm_eval_derivative {P : ℤ[X]}
-    (hdisc : P.discr ≠ 0) {α : ℂ} (hα : α ∈ (P.map (Int.castRingHom ℂ)).roots) :
-    1 ≤ 2 ^ (P.natDegree - 1).choose 2 *
-      (P.map (Int.castRingHom ℂ)).mahlerMeasure ^ (P.natDegree - 2) *
-        ‖(P.map (Int.castRingHom ℂ)).derivative.eval α‖ := by
-  set f := P.map (Int.castRingHom ℂ) with hf
-  have hf₀ : f ≠ 0 := ne_zero_of_mem_roots hα
-  have hdeg : f.natDegree = P.natDegree :=
-    natDegree_map_eq_of_injective (RingHom.injective_int _) P
-  have hpos : 0 < P.natDegree :=
-    hdeg ▸ natDegree_pos_iff_degree_pos.2 (degree_pos_of_root hf₀ (isRoot_of_mem_roots hα))
-  rcases lt_or_ge P.natDegree 2 with h₂ | h₂
-  · -- In degree one the derivative is the leading coefficient, a nonzero integer.
-    have h₁ : P.natDegree = 1 := by omega
-    have hderiv : f.derivative = C (P.leadingCoeff : ℂ) := by
-      rw [eq_X_add_C_of_natDegree_le_one (hdeg.trans h₁).le]
-      simp [hf, leadingCoeff, h₁]
-    have hlc : P.leadingCoeff ≠ 0 := leadingCoeff_ne_zero.2 (by rintro rfl; simp at hpos)
-    rw [h₁, hderiv, eval_C, Complex.norm_intCast]
-    simp only [Nat.reduceSub, Nat.choose_zero_succ, pow_zero, one_mul]
-    exact_mod_cast Int.one_le_abs hlc
-  · have hfdisc : f.discr = (P.discr : ℂ) := by
-      rw [hf, discr_map_of_natDegree_eq _ (hf ▸ hdeg), eq_intCast]
-    have h₁ : 1 ≤ ‖f.discr‖ := by
-      rw [hfdisc, Complex.norm_intCast]
-      exact_mod_cast Int.one_le_abs hdisc
-    have h := norm_discr_le_two_pow_mul_mahlerMeasure_pow_mul_norm_eval_derivative_sq
-      (hdeg ▸ h₂) (isRoot_of_mem_roots hα)
-    rw [hdeg] at h
-    have hM := f.mahlerMeasure_nonneg
-    exact (one_le_sq_iff₀ (by positivity)).1 (h₁.trans h)
-
-/-! ### The nearest root -/
-
-/-- **The nearest root.** Let `f` be a polynomial of degree `d` that splits over a normed field
-`K`, and let `α` be a root of `f` that is nearest to `z` among the roots of `f`. Then
-`|z - α| |f'(α)| ≤ 2 ^ (d - 1) |f(z)|`. -/
-theorem norm_sub_mul_norm_eval_derivative_le_two_pow_mul_norm_eval {K : Type*} [NormedField K]
-    {f : K[X]} (hs : f.Splits) {z α : K} (hα : α ∈ f.roots)
-    (hmin : ∀ β ∈ f.roots, ‖z - α‖ ≤ ‖z - β‖) :
-    ‖z - α‖ * ‖f.derivative.eval α‖ ≤ 2 ^ (f.natDegree - 1) * ‖f.eval z‖ := by
-  classical
-  set t := f.roots.erase α with ht
-  have hst : f.roots = α ::ₘ t := (Multiset.cons_erase hα).symm
-  have hd : f.natDegree - 1 = Multiset.card t := by
-    rw [hs.natDegree_eq_card_roots, hst, Multiset.card_cons, Nat.add_sub_cancel]
-  -- Every other root `β` has `|α - β| ≤ |α - z| + |z - β| ≤ 2 |z - β|`.
-  have hle : (t.map fun β ↦ ‖α - β‖).prod ≤
-      2 ^ Multiset.card t * (t.map fun β ↦ ‖z - β‖).prod := by
-    calc (t.map fun β ↦ ‖α - β‖).prod ≤ (t.map fun β ↦ 2 * ‖z - β‖).prod := by
-          refine Multiset.prod_map_le_prod_map₀ _ _ (fun _ _ ↦ norm_nonneg _) fun β hβ ↦ ?_
-          have h := hmin β (hst ▸ Multiset.mem_cons_of_mem hβ)
-          calc ‖α - β‖ ≤ ‖α - z‖ + ‖z - β‖ := norm_sub_le_norm_sub_add_norm_sub α z β
-            _ ≤ 2 * ‖z - β‖ := by rw [norm_sub_rev]; linarith
-      _ = 2 ^ Multiset.card t * (t.map fun β ↦ ‖z - β‖).prod := by
-          rw [Multiset.prod_map_mul, Multiset.map_const', Multiset.prod_replicate]
-  rw [hs.eval_root_derivative_eq_leadingCoeff_mul hα, ← ht, hs.eval_eq_prod_roots, hst,
-    Multiset.map_cons, Multiset.prod_cons, hd]
-  simp only [norm_mul, Multiset.norm_prod_map]
-  calc ‖z - α‖ * (‖f.leadingCoeff‖ * (t.map fun β ↦ ‖α - β‖).prod)
-      ≤ ‖z - α‖ * (‖f.leadingCoeff‖ * (2 ^ Multiset.card t * (t.map fun β ↦ ‖z - β‖).prod)) := by
-        gcongr
-    _ = _ := by ring
-
-/-- **The nearest-root estimate.** Let `P ∈ ℤ[X]` have degree `d` and nonzero discriminant, and let
-`α` be a complex root of `P` nearest to `z ∈ ℂ`. Then
-`|z - α| ≤ 2 ^ C(d, 2) M(P) ^ (d - 2) |P(z)|`, where `M(P)` is the Mahler measure. -/
-theorem norm_sub_le_two_pow_mul_mahlerMeasure_pow_mul_norm_eval {P : ℤ[X]} (hdisc : P.discr ≠ 0)
-    {z α : ℂ} (hα : α ∈ (P.map (Int.castRingHom ℂ)).roots)
-    (hmin : ∀ β ∈ (P.map (Int.castRingHom ℂ)).roots, ‖z - α‖ ≤ ‖z - β‖) :
-    ‖z - α‖ ≤ 2 ^ P.natDegree.choose 2 *
-      (P.map (Int.castRingHom ℂ)).mahlerMeasure ^ (P.natDegree - 2) *
-        ‖(P.map (Int.castRingHom ℂ)).eval z‖ := by
-  set f := P.map (Int.castRingHom ℂ)
-  have hdeg : f.natDegree = P.natDegree :=
-    natDegree_map_eq_of_injective (RingHom.injective_int _) P
-  have hpos : 0 < P.natDegree := hdeg ▸ natDegree_pos_iff_degree_pos.2
-    (degree_pos_of_root (ne_zero_of_mem_roots hα) (isRoot_of_mem_roots hα))
-  have hder := one_le_two_pow_mul_mahlerMeasure_pow_mul_norm_eval_derivative hdisc hα
-  have hM := f.mahlerMeasure_nonneg
-  have hnear := norm_sub_mul_norm_eval_derivative_le_two_pow_mul_norm_eval
-    (IsAlgClosed.splits f) hα hmin
-  rw [hdeg] at hnear
-  obtain ⟨n, hn⟩ : ∃ n, P.natDegree = n + 1 := ⟨P.natDegree - 1, by omega⟩
-  rw [hn, Nat.add_sub_cancel] at hder hnear
-  rw [hn, Nat.choose_succ_succ', Nat.choose_one_right, pow_add]
-  calc ‖z - α‖ ≤ ‖z - α‖ * (2 ^ n.choose 2 * f.mahlerMeasure ^ (n + 1 - 2) *
-        ‖f.derivative.eval α‖) := le_mul_of_one_le_right (norm_nonneg _) hder
-    _ = 2 ^ n.choose 2 * f.mahlerMeasure ^ (n + 1 - 2) *
-        (‖z - α‖ * ‖f.derivative.eval α‖) := by ring
-    _ ≤ 2 ^ n.choose 2 * f.mahlerMeasure ^ (n + 1 - 2) * (2 ^ n * ‖f.eval z‖) := by gcongr
-    _ = 2 ^ n * 2 ^ n.choose 2 * f.mahlerMeasure ^ (n + 1 - 2) * ‖f.eval z‖ := by ring
-
-/-- **The nearest-root estimate with the naive height.** Let `P ∈ ℤ[X]` have degree `d`, nonzero
-discriminant and naive height `H(P)`, the largest absolute value of a coefficient, and let `α` be
-a complex root of `P` nearest to `z ∈ ℂ`. Then
-`|z - α| ≤ 2 ^ C(d, 2) (√(d + 1) H(P)) ^ (d - 2) |P(z)|`. -/
-theorem norm_sub_le_two_pow_mul_sqrt_mul_supNorm_pow_mul_norm_eval {P : ℤ[X]}
-    (hdisc : P.discr ≠ 0) {z α : ℂ} (hα : α ∈ (P.map (Int.castRingHom ℂ)).roots)
-    (hmin : ∀ β ∈ (P.map (Int.castRingHom ℂ)).roots, ‖z - α‖ ≤ ‖z - β‖) :
-    ‖z - α‖ ≤ 2 ^ P.natDegree.choose 2 * (√(P.natDegree + 1) * P.supNorm) ^ (P.natDegree - 2) *
-      ‖(P.map (Int.castRingHom ℂ)).eval z‖ := by
-  refine (norm_sub_le_two_pow_mul_mahlerMeasure_pow_mul_norm_eval hdisc hα hmin).trans ?_
-  have h := (P.map (Int.castRingHom ℂ)).mahlerMeasure_le_sqrt_natDegree_add_one_mul_supNorm
-  rw [natDegree_map_eq_of_injective (RingHom.injective_int _), supNorm_map] at h
-  gcongr
-  exact mahlerMeasure_nonneg _
-
-end Polynomial
+end TauCeti

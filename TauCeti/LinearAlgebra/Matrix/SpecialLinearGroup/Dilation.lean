@@ -58,9 +58,9 @@ namespace Matrix.SpecialLinearGroup
 /-- The dilation `!![exp (s / 2), 0; 0, exp (-(s / 2))]`, an element of `SL(2, ℝ)` acting on `ℍ`
 as `z ↦ exp s * z`. -/
 def dilation (s : ℝ) : SL(2, ℝ) :=
-  ⟨!![Real.exp (s / 2), 0; 0, Real.exp (-(s / 2))], by
+  .mk !![Real.exp (s / 2), 0; 0, Real.exp (-(s / 2))] (by
     rw [Matrix.det_fin_two_of]
-    simp [← Real.exp_add]⟩
+    simp [← Real.exp_add])
 
 /-- The entries of `dilation s`. -/
 @[simp]

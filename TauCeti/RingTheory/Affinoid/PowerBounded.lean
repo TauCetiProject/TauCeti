@@ -142,8 +142,8 @@ theorem isIntegral_map_unitClosedBall_iff_supSeminorm_le_one (π : Tate σ →�
     have hp : (q.map (algebraMap _ A)).eval f = 0 := by rwa [eval_map]
     refine (hA.supSeminorm_le_iSup_coeff_rpow_of_eval_eq_zero (hq.map _) hp).trans
       (Real.iSup_le (fun i ↦ Real.rpow_le_one (TauCeti.supSeminorm_nonneg _) ?_
-        (one_div_nonneg.mpr (sub_nonneg.mpr (mod_cast i.2.le)))) zero_le_one)
-    obtain ⟨y, hy, hyc⟩ := (q.coeff i).2
+        (one_div_nonneg.mpr (sub_nonneg.mpr (mod_cast i.isLt.le)))) zero_le_one)
+    obtain ⟨y, hy, hyc⟩ := (q.coeff i).property
     have hyc : algebraMap _ A (q.coeff i) = π y := hyc.symm
     rw [coeff_map, hyc]
     exact (TauCeti.isAffinoidAlgebra_tate.supSeminorm_map_le hA π y).trans

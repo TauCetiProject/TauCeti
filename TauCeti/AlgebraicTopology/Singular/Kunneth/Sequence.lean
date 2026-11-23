@@ -5,8 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.Category.ModuleCat.Monoidal.Unit
 public import TauCeti.Algebra.Category.ModuleCat.Projective.Dimension
-public import TauCeti.Algebra.Homology.Monoidal.Homology.Kunneth.Sequence
+public import TauCeti.Algebra.Homology.Monoidal.Homology.Kunneth.Sequence.Basic
 public import TauCeti.AlgebraicTopology.Singular.Kunneth.Basic
 import Mathlib.Algebra.Category.ModuleCat.Projective
 import Mathlib.AlgebraicTopology.SingularHomology.HomologyZero
@@ -141,7 +142,8 @@ lemma singularHomologyToTor_def (m : ℕ) :
 lemma singularHomologyKunneth_comp_singularHomologyToTor (m : ℕ) :
     singularHomologyKunneth X Y M N (m + 1) ≫ singularHomologyToTor X Y M N m = 0 :=
   (singularHomologyKunneth_comp_homologyMap_alexanderWhitney_assoc X Y M N (m + 1) _).trans
-    (homologyKunneth_comp_homologyToTor _ _ m)
+    (homologyKunneth_comp_homologyToTor ((toSSet.obj X).chainComplex M)
+      ((toSSet.obj Y).chainComplex N) m)
 
 variable {X Y M N} in
 /-- The square of `TopCat.singularHomologyToTor` for chain maps `α`, `β` and `γ` of singular chain
@@ -246,7 +248,8 @@ is exact, the first map being the Künneth map and the second `TopCat.singularHo
 theorem singularHomologyKunnethShortComplex_shortExact (m : ℕ) :
     (singularHomologyKunnethShortComplex X Y M N m).ShortExact :=
   ShortComplex.shortExact_of_iso (homologyKunnethShortComplexIso X Y M N m)
-    (homologyKunnethShortComplex_shortExact _ _ m)
+    (homologyKunnethShortComplex_shortExact ((toSSet.obj X).chainComplex M)
+      ((toSSet.obj Y).chainComplex N) m)
 
 /-- **The Künneth map is a monomorphism** when the cycles `Z_q(Y; N)` and the quotients
 `C_q(Y; N) / Z_q(Y; N)` are projective, for instance for any projective `N` over a principal ideal
@@ -256,7 +259,8 @@ theorem mono_singularHomologyKunneth (n : ℕ) : Mono (singularHomologyKunneth X
   -- The shuffle map is a homotopy inverse of the Alexander–Whitney map.  The instances are passed
   -- explicitly: instance search does not identify the homology instances of the general
   -- `TopCat.singularHomologyKunneth` with those found in `ModuleCat`, which are only defeq.
-  exact @mono_comp _ _ _ _ _ _ (mono_homologyKunneth _ _ n) _ (@IsIso.mono_of_iso _ _ _ _ _
+  exact @mono_comp _ _ _ _ _ _ (mono_homologyKunneth ((toSSet.obj X).chainComplex M)
+    ((toSSet.obj Y).chainComplex N) n) _ (@IsIso.mono_of_iso _ _ _ _ _
     ((eilenbergZilberHomotopyEquiv X Y M N).toHomologyIso n).isIso_inv)
 
 /-- **The Künneth short exact sequence for singular homology splits** when, in addition, the
@@ -396,8 +400,10 @@ variable (k) [∀ V : ModuleCat.{w} k, HasProjectiveDimensionLE V 1] (X Y : TopC
 formed by the Künneth map and `TopCat.singularHomologyToTor` through the unitor `k ⊗ k ≅ k`. -/
 abbrev singularHomologyKunnethUnitShortComplex (m : ℕ) : ShortComplex (ModuleCat.{w} k) :=
   -- The unit `𝟙_ (ModuleCat k)` is `k` itself, so the singular chain modules `C_q(Y; k)` are
-  -- projective and instance search finds the hypotheses of `TopCat.singularHomologyToTor`.
-  have : Module.Projective k (𝟙_ (ModuleCat.{w} k)) := inferInstanceAs (Module.Projective k k)
+  -- projective and instance search finds the hypotheses of `TopCat.singularHomologyToTor`. The
+  -- global instance alone is reached only after a detour through `Module.Projective.of_free` that
+  -- exhausts the heartbeat limit, so it is made a local instance here and below.
+  have := ModuleCat.projective_tensorUnit k
   ShortComplex.mk
     (singularHomologyKunneth X Y (𝟙_ _) (𝟙_ _) (m + 1) ≫
       ((singularHomologyFunctor _ (m + 1)).map (λ_ (𝟙_ (ModuleCat.{w} k))).hom).app (X ⊗ Y))
@@ -415,7 +421,7 @@ is exact, the first map being the Künneth map followed by the map induced by th
 `k ⊗ k ≅ k`. -/
 theorem singularHomologyKunnethUnitShortComplex_shortExact (m : ℕ) :
     (singularHomologyKunnethUnitShortComplex k X Y m).ShortExact := by
-  have : Module.Projective k (𝟙_ (ModuleCat.{w} k)) := inferInstanceAs (Module.Projective k k)
+  have := ModuleCat.projective_tensorUnit k
   refine ShortComplex.shortExact_of_iso ?_
     (singularHomologyKunnethShortComplex_shortExact X Y (𝟙_ (ModuleCat.{w} k)) (𝟙_ _) m)
   -- the middle terms are identified by the map induced by the unitor `k ⊗ k ≅ k`
@@ -431,7 +437,7 @@ The splitting depends on chosen splittings of the cycles of the singular chain c
 not be natural in `X` and `Y`. -/
 def singularHomologyKunnethUnitSplitting (m : ℕ) :
     (singularHomologyKunnethUnitShortComplex k X Y m).Splitting :=
-  have : Module.Projective k (𝟙_ (ModuleCat.{w} k)) := inferInstanceAs (Module.Projective k k)
+  have := ModuleCat.projective_tensorUnit k
   have := isSplitMono_singularHomologyKunneth X Y (𝟙_ (ModuleCat.{w} k)) (𝟙_ _) (m + 1)
   -- a retraction of the Künneth map, preceded by the map induced by the inverse unitor
   .ofExactOfRetraction _ (singularHomologyKunnethUnitShortComplex_shortExact k X Y m).exact
@@ -445,8 +451,7 @@ the Künneth map, preceded by the map induced by the inverse unitor. -/
     (singularHomologyKunnethUnitSplitting k X Y m).r =
       ((singularHomologyFunctor _ (m + 1)).map (λ_ (𝟙_ (ModuleCat.{w} k))).inv).app (X ⊗ Y) ≫
         retraction (singularHomologyKunneth X Y (𝟙_ _) (𝟙_ _) (m + 1))
-          (hf := have : Module.Projective k (𝟙_ (ModuleCat.{w} k)) :=
-            inferInstanceAs (Module.Projective k k)
+          (hf := have := ModuleCat.projective_tensorUnit k
           isSplitMono_singularHomologyKunneth X Y (𝟙_ _) (𝟙_ _) (m + 1)) :=
   (rfl)
 

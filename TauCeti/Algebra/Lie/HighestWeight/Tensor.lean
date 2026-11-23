@@ -120,9 +120,9 @@ theorem irreducibleFormalCharacter_mul_eq_finsum_tensorMultiplicity_smul
     (lam mu : {l : Dual K H // IsDominantIntegral b l}) :
     irreducibleFormalCharacter b lam * irreducibleFormalCharacter b mu
       = ∑ᶠ nu : {l : Dual K H // IsDominantIntegral b l},
-          (tensorMultiplicity b lam.1 mu.1 nu.1 : ℤ) • irreducibleFormalCharacter b nu := by
-  have _ := finiteDimensional_irreducibleQuotient_of_isDominantIntegral lam.2
-  have _ := finiteDimensional_irreducibleQuotient_of_isDominantIntegral mu.2
+          (tensorMultiplicity b lam.val mu.val nu.val : ℤ) • irreducibleFormalCharacter b nu := by
+  have _ := finiteDimensional_irreducibleQuotient_of_isDominantIntegral lam.property
+  have _ := finiteDimensional_irreducibleQuotient_of_isDominantIntegral mu.property
   simp only [tensorMultiplicity_def]
   rw [irreducibleFormalCharacter_def, irreducibleFormalCharacter_def,
     ← formalCharacter_tensor]
@@ -132,14 +132,15 @@ theorem irreducibleFormalCharacter_mul_eq_finsum_tensorMultiplicity_smul
 nonzero finite-dimensional module, so at least one tensor multiplicity is nonzero, and the sum
 `ch L(lam) · ch L(mu) = ∑_nu c^nu_{lam mu} · ch L(nu)` has a term that survives. -/
 theorem exists_tensorMultiplicity_ne_zero (lam mu : {l : Dual K H // IsDominantIntegral b l}) :
-    ∃ nu : {l : Dual K H // IsDominantIntegral b l}, tensorMultiplicity b lam.1 mu.1 nu.1 ≠ 0 := by
-  have _ := finiteDimensional_irreducibleQuotient_of_isDominantIntegral lam.2
-  have _ := finiteDimensional_irreducibleQuotient_of_isDominantIntegral mu.2
+    ∃ nu : {l : Dual K H // IsDominantIntegral b l}, tensorMultiplicity b lam.val mu.val nu.val ≠ 0
+        := by
+  have _ := finiteDimensional_irreducibleQuotient_of_isDominantIntegral lam.property
+  have _ := finiteDimensional_irreducibleQuotient_of_isDominantIntegral mu.property
   by_contra hall
   push Not at hall
   -- every term of the sum vanishes, so the product of the two characters does
   have hzero : ∀ nu : {l : Dual K H // IsDominantIntegral b l},
-      (tensorMultiplicity b lam.1 mu.1 nu.1 : ℤ) • irreducibleFormalCharacter b nu = 0 := by
+      (tensorMultiplicity b lam.val mu.val nu.val : ℤ) • irreducibleFormalCharacter b nu = 0 := by
     intro nu
     rw [hall nu]
     simp
@@ -152,9 +153,9 @@ theorem exists_tensorMultiplicity_ne_zero (lam mu : {l : Dual K H // IsDominantI
     formalCharacter_eq_zero_iff, Module.finrank_tensorProduct] at hprod
   -- so one of the two factors is zero-dimensional, but both are irreducible, hence nonzero
   have _ := LieModule.nontrivial_of_isIrreducible (R := K) (L := L)
-    (M := irreducibleQuotient b lam.1)
+    (M := irreducibleQuotient b lam.val)
   have _ := LieModule.nontrivial_of_isIrreducible (R := K) (L := L)
-    (M := irreducibleQuotient b mu.1)
+    (M := irreducibleQuotient b mu.val)
   rcases Nat.mul_eq_zero.mp hprod with h | h
   · exact not_subsingleton _ (Module.finrank_zero_iff.mp h)
   · exact not_subsingleton _ (Module.finrank_zero_iff.mp h)
