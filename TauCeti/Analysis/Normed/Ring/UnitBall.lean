@@ -42,8 +42,8 @@ Over an ultrametric normed field `K`, divisibility in `K⁰` is comparison of no
 in that case `K⁰` is a principal ideal ring, and when `K` is nontrivially normed it is a discrete
 valuation ring. Without a norm gap below `1`, `K⁰⁰` is not finitely generated, but every `0 < ε < 1`
 factors through elements of norm strictly between `√ε` and `1`
-(`TauCeti.exists_factor_of_not_exists_forall_norm_le`), and every ideal of `K⁰` is *almost
-principal* (`Ideal.exists_mem_forall_smul_mem_span_singleton_unitClosedBall`).
+(`TauCeti.exists_forall_exists_eq_mul_and_norm_le_of_not_exists_forall_norm_le`), and every ideal of
+`K⁰` is *almost principal* (`Ideal.exists_mem_forall_smul_mem_span_singleton_unitClosedBall`).
 
 Conversely, a ring homomorphism into the closed unit ball of a seminormed ring with `‖1‖ = 1`
 maps units to elements of norm one. If its source is a local ring and it maps the maximal ideal
@@ -83,7 +83,7 @@ the valuation ring of a nonarchimedean field.
   `TauCeti.isNoetherianRing_unitClosedBall_iff_exists_forall_norm_le`, and
   `TauCeti.isDiscreteValuationRing_unitClosedBall_iff_isNoetherianRing`: characterizations of
   discrete norms, noetherianity, and the discrete valuation ring property for `K⁰`.
-* `TauCeti.exists_factor_of_not_exists_forall_norm_le`,
+* `TauCeti.exists_forall_exists_eq_mul_and_norm_le_of_not_exists_forall_norm_le`,
   `Ideal.exists_mem_forall_smul_mem_span_singleton_unitClosedBall`, and
   `Subring.unitClosedBall.smul_mem_span_singleton_of_norm_le`: scalar factorization in dense norm
   groups and almost-principality of ideals of `K⁰`.
@@ -444,7 +444,7 @@ theorem isNoetherianRing_unitClosedBall_iff_exists_forall_norm_le :
 /-- **Scalar factorization in dense norm groups.** When `K⁰` has no strict norm gap below `1`,
 every `0 < ε < 1` factors through an element `d ∈ K⁰` with `√ε < ‖d‖ < 1`, so every `c ∈ K⁰` of
 norm at most `ε` writes as `c' * d` with `‖c'‖ ≤ √ε`. -/
-theorem exists_factor_of_not_exists_forall_norm_le
+theorem exists_forall_exists_eq_mul_and_norm_le_of_not_exists_forall_norm_le
     (hdense : ¬ ∃ ρ : ℝ, ρ < 1 ∧ ∀ a : K, ‖a‖ < 1 → ‖a‖ ≤ ρ) {ε : ℝ} (hε0 : 0 < ε)
     (hε1 : ε < 1) :
     ∃ (δ : ℝ) (d : Subring.unitClosedBall K),

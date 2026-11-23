@@ -221,7 +221,7 @@ structure Huber.IntegralAffinoidPresentation (K : Type*) [NontriviallyNormedFiel
     [IsUltrametricDist K] (A : Type*) [CommRing A] [Algebra K A] [TopologicalSpace A]
     (V : Subring K) (A₀ : Subring A) where
   /-- Identification of `V` with the closed unit ball `K°` of `K`. -/
-  unitClosedBall_eq : V = Subring.unitClosedBall K
+  eq_unitClosedBall : V = Subring.unitClosedBall K
   /-- The number of restricted power-series variables. -/
   numVars : ℕ
   /-- The coefficient map `V →+* A₀`. -/
@@ -254,7 +254,7 @@ variable {K : Type*} [NontriviallyNormedField K] [IsUltrametricDist K]
 /-- Membership in the base integral subring `V` is equivalent to having norm at most `1`. -/
 theorem mem_iff_norm_le_one (P : IntegralAffinoidPresentation K A V A₀) (c : K) :
     c ∈ V ↔ ‖c‖ ≤ 1 := by
-  rw [P.unitClosedBall_eq, Subring.mem_unitClosedBall]
+  rw [P.eq_unitClosedBall, Subring.mem_unitClosedBall]
 
 /-- Continuity of the canonical constant-series inclusion `V →+* V⟨X₁, …, Xₙ⟩`. -/
 private theorem continuous_algebraMap_completion (P : IntegralAffinoidPresentation K A V A₀) :
@@ -283,7 +283,7 @@ theorem continuous_coeffHom (P : IntegralAffinoidPresentation K A V A₀) :
 `V = Subring.unitClosedBall K` in `K`. -/
 theorem continuousAt_algebraMap (P : IntegralAffinoidPresentation K A V A₀) :
     ContinuousAt (algebraMap K A) 0 := by
-  have hV : IsOpen (V : Set K) := P.unitClosedBall_eq.symm ▸ Subring.isOpen_unitClosedBall K
+  have hV : IsOpen (V : Set K) := P.eq_unitClosedBall.symm ▸ Subring.isOpen_unitClosedBall K
   have hcomp : ContinuousAt ((algebraMap K A) ∘ V.subtype) 0 := by
     have hsub : ((algebraMap K A) ∘ V.subtype : V → A) = A₀.subtype ∘ P.coeffHom :=
       funext fun c ↦ (P.coe_coeffHom c).symm
@@ -295,7 +295,7 @@ theorem continuousAt_algebraMap (P : IntegralAffinoidPresentation K A V A₀) :
 `V`. -/
 private noncomputable def integerRingEquiv (P : IntegralAffinoidPresentation K A V A₀) :
     𝒪[K] ≃+* V :=
-  RingEquiv.subringCongr (integer_eq_unitClosedBall.trans P.unitClosedBall_eq.symm)
+  RingEquiv.subringCongr (integer_eq_unitClosedBall.trans P.eq_unitClosedBall.symm)
 
 private theorem continuous_integerRingEquiv (P : IntegralAffinoidPresentation K A V A₀) :
     Continuous P.integerRingEquiv :=
@@ -321,6 +321,54 @@ noncomputable def completionUnitClosedBallEquiv [CompleteSpace K]
     restrictedMvPowerSeriesCompletion P.numVars V ≃+*
       Subring.unitClosedBall (IsRestricted.subring (R := K) (fun _ : Fin P.numVars ↦ 1)) :=
   P.completionIntegerEquiv.symm.trans (restrictedMvPowerSeriesCompletionIntegerEquiv P.numVars)
+
+/-- `P.completionUnitClosedBallEquiv` is continuous from the completion topology on
+`V⟨X₁, …, Xₙ⟩` to the subspace Gauss-norm topology on `K⟨X₁, …, Xₙ⟩°`. -/
+theorem continuous_completionUnitClosedBallEquiv [CompleteSpace K]
+    (P : IntegralAffinoidPresentation K A V A₀) :
+    Continuous P.completionUnitClosedBallEquiv := by
+  have hc : Continuous P.completionIntegerEquiv.symm :=
+    continuous_weightedMapCompletionEquiv_symm P.integerRingEquiv P.continuous_integerRingEquiv
+      P.continuous_integerRingEquiv_symm isWeightFamily_one_weight isWeightFamily_one_weight
+      (fun _ ↦ by simp [Set.image_singleton]) (fun _ ↦ by simp [Set.image_singleton])
+  exact (continuous_restrictedMvPowerSeriesCompletionIntegerEquiv P.numVars).comp hc
+
+/-- The inverse of `P.completionUnitClosedBallEquiv` is continuous. -/
+theorem continuous_completionUnitClosedBallEquiv_symm [CompleteSpace K]
+    (P : IntegralAffinoidPresentation K A V A₀) :
+    Continuous P.completionUnitClosedBallEquiv.symm := by
+  have hc : Continuous P.completionIntegerEquiv :=
+    continuous_weightedMapCompletionEquiv P.integerRingEquiv P.continuous_integerRingEquiv
+      P.continuous_integerRingEquiv_symm isWeightFamily_one_weight isWeightFamily_one_weight
+      (fun _ ↦ by simp [Set.image_singleton]) (fun _ ↦ by simp [Set.image_singleton])
+  exact hc.comp (continuous_restrictedMvPowerSeriesCompletionIntegerEquiv_symm P.numVars)
+
+/-- `P.completionUnitClosedBallEquiv` maps constants in `V` to constant series in
+`K⟨X₁, …, Xₙ⟩°`. -/
+theorem completionUnitClosedBallEquiv_algebraMap [CompleteSpace K]
+    (P : IntegralAffinoidPresentation K A V A₀) (c : V) :
+    P.completionUnitClosedBallEquiv (algebraMap V _ c) =
+      unitClosedBallCoeffHom ⟨(c : K), P.eq_unitClosedBall ▸ c.property⟩ := by
+  have hc : P.completionIntegerEquiv.symm (algebraMap V _ c) =
+      algebraMap 𝒪[K] _ (P.integerRingEquiv.symm c) := by
+    apply P.completionIntegerEquiv.injective
+    rw [RingEquiv.apply_symm_apply, algebraMap_completion_weightedRestrictedSubring_apply,
+      algebraMap_completion_weightedRestrictedSubring_apply, completionIntegerEquiv,
+      weightedMapCompletionEquiv_coe_weightedC]
+    simp
+  rw [completionUnitClosedBallEquiv, RingEquiv.trans_apply, hc,
+    restrictedMvPowerSeriesCompletionIntegerEquiv_algebraMap]
+  exact congrArg unitClosedBallCoeffHom (Subtype.ext (by rw [coe_integerUnitClosedBallEquiv]; rfl))
+
+/-- The inverse of `P.completionUnitClosedBallEquiv` sends constant series in `K⟨X₁, …, Xₙ⟩°`
+back to constants in `V`. -/
+@[simp]
+theorem completionUnitClosedBallEquiv_symm_unitClosedBallCoeffHom [CompleteSpace K]
+    (P : IntegralAffinoidPresentation K A V A₀) (c : Subring.unitClosedBall K) :
+    P.completionUnitClosedBallEquiv.symm (unitClosedBallCoeffHom c) =
+      algebraMap V _ ⟨(c : K), P.eq_unitClosedBall.symm ▸ c.property⟩ := by
+  apply P.completionUnitClosedBallEquiv.injective
+  rw [RingEquiv.apply_symm_apply, P.completionUnitClosedBallEquiv_algebraMap]
 
 /-- The transported integral presentation `𝒪[K]⟨X₁, …, Xₙ⟩ →+* A₀`. -/
 private noncomputable def integerHom (P : IntegralAffinoidPresentation K A V A₀) :
@@ -415,6 +463,7 @@ theorem surjective_tateHom (P : IntegralAffinoidPresentation K A V A₀) :
 
 /-- Restricting `P.tateHom` to the Gauss unit ball recovers `P.hom` transported along
 `P.completionUnitClosedBallEquiv`. -/
+@[simp]
 theorem tateHom_coe (P : IntegralAffinoidPresentation K A V A₀)
     (f : Subring.unitClosedBall (IsRestricted.subring (R := K) (fun _ : Fin P.numVars ↦ 1))) :
     P.tateHom f = P.hom (P.completionUnitClosedBallEquiv.symm f) :=
@@ -424,7 +473,7 @@ theorem tateHom_coe (P : IntegralAffinoidPresentation K A V A₀)
 theorem tateHom_completionUnitClosedBallEquiv (P : IntegralAffinoidPresentation K A V A₀)
     (w : restrictedMvPowerSeriesCompletion P.numVars V) :
     P.tateHom (P.completionUnitClosedBallEquiv w) = P.hom w := by
-  simpa using P.tateHom_coe (P.completionUnitClosedBallEquiv w)
+  simp
 
 /-- **Uniqueness of the Tate extension.** Any `K`-algebra homomorphism `π : K⟨X₁, …, Xₙ⟩ →ₐ[K] A`
 whose restriction to the Gauss unit ball agrees with `P.hom ∘ P.completionUnitClosedBallEquiv.symm`
@@ -510,7 +559,7 @@ over `K°`. -/
     (fun _ ↦ by simp [Set.image_singleton, map_one])
     (fun _ ↦ by simp [Set.image_singleton, map_one])
   let eComp := e.symm.trans (restrictedMvPowerSeriesCompletionIntegerEquiv n)
-  { unitClosedBall_eq := rfl
+  { eq_unitClosedBall := rfl
     numVars := n
     coeffHom := π.unitClosedBallMapHom.comp unitClosedBallCoeffHom
     coe_coeffHom := fun c ↦ π.coe_unitClosedBallMapHom_unitClosedBallCoeffHom c
@@ -572,6 +621,25 @@ private theorem weightedMapCompletionEquiv_symm_eq {k : ℕ}
   simp only [MvPowerSeries.coeff_map]
   exact h _
 
+/-- The presentation `ofSurjective π hπ` has `n` variables. -/
+@[simp]
+theorem numVars_ofSurjective [CompleteSpace K]
+    {A : Type*} [NormedCommRing A] [NormedAlgebra K A] [IsUltrametricDist A] [CompleteSpace A]
+    {n : ℕ} (π : IsRestricted.subring (R := K) (fun _ : Fin n ↦ 1) →ₐ[K] A)
+    (hπ : Function.Surjective π) :
+    (ofSurjective π hπ).numVars = n :=
+  rfl
+
+/-- The coefficient map of `ofSurjective π hπ` is `π.unitClosedBallMapHom.comp
+unitClosedBallCoeffHom`. -/
+@[simp]
+theorem coeffHom_ofSurjective [CompleteSpace K]
+    {A : Type*} [NormedCommRing A] [NormedAlgebra K A] [IsUltrametricDist A] [CompleteSpace A]
+    {n : ℕ} (π : IsRestricted.subring (R := K) (fun _ : Fin n ↦ 1) →ₐ[K] A)
+    (hπ : Function.Surjective π) :
+    (ofSurjective π hπ).coeffHom = π.unitClosedBallMapHom.comp unitClosedBallCoeffHom :=
+  rfl
+
 /-- The presentation map `(ofSurjective π hπ).hom` is the Gauss comparison
 `(ofSurjective π hπ).completionUnitClosedBallEquiv` followed by `π.unitClosedBallMapHom`. -/
 theorem ofSurjective_hom [CompleteSpace K]
@@ -619,7 +687,7 @@ noncomputable def unitClosedBallSelf [CompleteSpace K] :
   let r : Subring.unitClosedBall (IsRestricted.subring (R := K) (fun _ : Fin 0 ↦ 1)) →+*
       Subring.unitClosedBall K :=
     unitClosedBallConstantCoeffHom
-  { unitClosedBall_eq := rfl
+  { eq_unitClosedBall := rfl
     numVars := 0
     coeffHom := RingHom.id _
     coe_coeffHom := fun _ ↦ rfl
@@ -655,13 +723,25 @@ noncomputable def unitClosedBallSelf [CompleteSpace K] :
     isOpen_subring := Subring.isOpen_unitClosedBall K
     isBounded_subring := Subring.coe_unitClosedBall K ▸ isBounded_closedBall_zero 1 }
 
+/-- The canonical self-presentation `unitClosedBallSelf` has zero variables. -/
+@[simp]
+theorem numVars_unitClosedBallSelf [CompleteSpace K] :
+    (unitClosedBallSelf (K := K)).numVars = 0 := by
+  rfl
+
+/-- The coefficient map of `unitClosedBallSelf` is the identity on `K°`. -/
+@[simp]
+theorem coeffHom_unitClosedBallSelf [CompleteSpace K] :
+    (unitClosedBallSelf (K := K)).coeffHom = RingHom.id (Subring.unitClosedBall K) := by
+  rfl
+
 /-- **Zero-algebra presentation.** Any subsingleton topological `K`-algebra `A` admits a
 zero-variable continuous integral affinoid presentation onto any (hence its unique) subring
 `A₀ : Subring A`. -/
-@[expose] def ofSubsingleton {A : Type*} [CommRing A] [Algebra K A] [TopologicalSpace A]
+def ofSubsingleton {A : Type*} [CommRing A] [Algebra K A] [TopologicalSpace A]
     [Subsingleton A] (A₀ : Subring A) :
     IntegralAffinoidPresentation K A (Subring.unitClosedBall K) A₀ where
-  unitClosedBall_eq := rfl
+  eq_unitClosedBall := rfl
   numVars := 0
   coeffHom :=
     { toFun := fun _ ↦ 0
@@ -688,7 +768,7 @@ zero-variable continuous integral affinoid presentation onto any (hence its uniq
 @[simp]
 theorem numVars_ofSubsingleton {A : Type*} [CommRing A] [Algebra K A] [TopologicalSpace A]
     [Subsingleton A] (A₀ : Subring A) :
-    (ofSubsingleton (K := K) A₀).numVars = 0 :=
+    (ofSubsingleton (K := K) A₀).numVars = 0 := by
   rfl
 
 /-- **Zero-variable image.** Any continuous integral affinoid presentation with zero variables has

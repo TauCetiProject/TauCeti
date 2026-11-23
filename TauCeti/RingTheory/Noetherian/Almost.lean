@@ -27,8 +27,8 @@ property descends along surjective semilinear maps, surjective linear maps, and 
 homomorphisms with no loss in `ε`. Over an ultrametric normed field `K` whose norms below `1` have
 no strict upper bound below `1` (the non-noetherian case for `K°`, such as `ℂ_p`), any `0 < ε < 1`
 factors through scalars `c = c' * d` with `‖c'‖ ≤ √ε < 1` and `√ε < ‖d‖ < 1`
-(`TauCeti.exists_factor_of_not_exists_forall_norm_le`). This implies that almost noetherianity is
-preserved under finite products (`TauCeti.IsAlmostNoetherianModule.prod`,
+(`TauCeti.exists_forall_exists_eq_mul_and_norm_le_of_not_exists_forall_norm_le`). This implies that
+almost noetherianity is preserved under finite products (`TauCeti.IsAlmostNoetherianModule.prod`,
 `TauCeti.IsAlmostNoetherianModule.fin_pi`) and passes from `R` to every finitely generated
 `R`-module (`TauCeti.IsAlmostNoetherianModule.of_finite`).
 
@@ -158,7 +158,7 @@ theorem prod {φ : Subring.unitClosedBall K →+* R} {M₁ M₂ : Type*} [AddCom
   classical
   intro N ε hε0 hε1
   obtain ⟨δ, d, hδ0, hδ1, hd0, hd1, -, hfac⟩ :=
-    exists_factor_of_not_exists_forall_norm_le hdense hε0 hε1
+    exists_forall_exists_eq_mul_and_norm_le_of_not_exists_forall_norm_le hdense hε0 hε1
   -- Approximate the projection to `M₂` at threshold `‖d‖` and lift finite generators back to `N`.
   obtain ⟨N₂', hN₂'fg, hN₂'le, hN₂'smul⟩ :=
     hM₂ (N.map (LinearMap.snd R M₁ M₂)) hd0 hd1

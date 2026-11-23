@@ -435,7 +435,7 @@ private theorem isAlmostNoetherianModule_option [CompleteSpace K] {σ : Type*} [
   rw [isAlmostNoetherianModule_iff]
   intro I ε hε0 hε1
   obtain ⟨δ, d, hδ0, hδ1, -, hd1, -, hfac⟩ :=
-    exists_factor_of_not_exists_forall_norm_le hdense hε0 hε1
+    exists_forall_exists_eq_mul_and_norm_le_of_not_exists_forall_norm_le hdense hε0 hε1
   rcases Ideal.eq_bot_or_exists_mem_forall_mul_norm_le_unitClosedBall I hd1 with
     rfl | ⟨g, hgI, hg0, hgd⟩
   · exact ⟨⊥, Submodule.fg_bot, bot_le, fun _ _ _ hf ↦ by simp_all⟩
