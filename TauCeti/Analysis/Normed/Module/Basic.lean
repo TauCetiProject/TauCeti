@@ -52,6 +52,12 @@ normed spaces:
   `‖a • X + b • Y‖² + ‖(-b) • X + a • Y‖²` after composing with the conformal map agree up to the
   conformal factor `a² + b²` and a factor `2`. These compare `W^{1,2}` densities under a
   holomorphic change of coordinates.
+* `TauCeti.norm_div_norm_smul_le`: for a bounded real scalar action, rescaling a vector `y` by
+  `τ / ‖y‖` gives a vector of norm at most `‖τ‖`, for any real `τ` (exactly `‖τ‖` when `‖y‖ ≠ 0`
+  and the action preserves norms; `0` when `‖y‖ = 0`).
+* `Continuous.div_norm_smul`: for a continuous real scalar action and continuous `τ` and `y`, the
+  radial rescaling `p ↦ (τ p / ‖y p‖) • y p` is continuous as long as `τ` vanishes on the frontier
+  of the locus where `‖y‖` vanishes.
 * `IsOpen.diam_pos`: a nonempty bounded open set in a nontrivial real normed space has positive
   diameter.
 * `LipschitzWith.smul_const`: if a scalar function `f` is `K`-Lipschitz, then `y ↦ f y • c` is
@@ -231,6 +237,14 @@ theorem le_two_mul_norm_smul_add_smul_sq_add_norm_neg_smul_add_smul_sq {E : Type
   · refine le_of_mul_le_mul_left ?_ hpos
     nlinarith
 
+/-- For a bounded real scalar action, rescaling a vector `y` by `τ / ‖y‖` gives a vector of norm
+at most `‖τ‖`, for any real `τ`. -/
+theorem norm_div_norm_smul_le {F : Type*} [SeminormedAddGroup F] [SMulZeroClass ℝ F]
+    [IsBoundedSMul ℝ F] (y : F) (τ : ℝ) : ‖(τ / ‖y‖) • y‖ ≤ ‖τ‖ :=
+  (norm_smul_le _ _).trans <| by
+    rw [norm_div, Real.norm_of_nonneg (norm_nonneg y), div_eq_mul_inv, mul_assoc]
+    exact mul_le_of_le_one_right (norm_nonneg τ) inv_mul_le_one
+
 end TauCeti
 
 /-- A nonempty bounded open set in a nontrivial real normed space has positive diameter. -/
@@ -251,5 +265,62 @@ theorem LipschitzWith.smul_const {α 𝕜 E : Type*} [PseudoEMetricSpace α] [Se
     exact norm_smul_le _ _
   rw [mul_comm]
   exact hc.comp hf
+
+open Filter Topology in
+/-- **Continuity of a radial rescaling.** If `τ` and `y` are continuous and `τ` vanishes on the
+frontier of the locus `{p | ‖y p‖ = 0}`, then `p ↦ (τ p / ‖y p‖) • y p` is continuous. The map
+vanishes on that locus, and it tends to `0` at a point of its frontier. Only continuity of the
+scalar action is assumed, not a bound on it. -/
+theorem Continuous.div_norm_smul {X F : Type*} [TopologicalSpace X] [SeminormedAddCommGroup F]
+    [Module ℝ F] [ContinuousSMul ℝ F] {τ : X → ℝ} {y : X → F} (hτ : Continuous τ)
+    (hy : Continuous y) (hτ0 : ∀ p ∈ frontier {q | ‖y q‖ = 0}, τ p = 0) :
+    Continuous fun p ↦ (τ p / ‖y p‖) • y p := by
+  refine continuous_iff_continuousAt.2 fun p ↦ ?_
+  rcases eq_or_ne ‖y p‖ 0 with hp | hp
+  swap
+  · exact (hτ.continuousAt.div hy.norm.continuousAt hp).smul hy.continuousAt
+  suffices Tendsto (fun q ↦ (τ q / ‖y q‖) • y q) (𝓝 p) (𝓝 0) by
+    simpa [ContinuousAt, hp] using this
+  by_cases hpf : p ∈ frontier {q | ‖y q‖ = 0}
+  swap
+  · -- at an interior point of the locus, the map vanishes nearby
+    have hint : p ∈ interior {q | ‖y q‖ = 0} := by
+      rw [← self_sdiff_frontier]
+      exact ⟨hp, hpf⟩
+    refine tendsto_const_nhds.congr' ?_
+    filter_upwards [mem_interior_iff_mem_nhds.1 hint] with q hq
+    simp [show ‖y q‖ = 0 from hq]
+  -- At a frontier point, split `c = τ q / ‖y q‖` as `⌊c⌋ + fract c`. The integer part moves
+  -- `y q` by at most `(|c| + 1) * ‖y q‖ ≤ |τ q| + ‖y q‖`, and by compactness of `[0, 1]`,
+  -- `r • y q` tends to `0` uniformly in `r ∈ [0, 1]`, which covers the fractional part.
+  have hle (q : X) : ‖(τ q / ‖y q‖) • y q‖ ≤
+      ‖τ q‖ + ‖y q‖ + ‖Int.fract (τ q / ‖y q‖) • y q‖ := by
+    set c := τ q / ‖y q‖
+    have hc : |c| * ‖y q‖ ≤ ‖τ q‖ := by
+      simpa only [norm_smul, Real.norm_eq_abs, abs_norm] using
+        TauCeti.norm_div_norm_smul_le ‖y q‖ (τ q)
+    have hfl : |(⌊c⌋ : ℝ)| ≤ |c| + 1 := abs_le.2
+      ⟨by linarith [Int.sub_one_lt_floor c, neg_abs_le c],
+        by linarith [Int.floor_le c, le_abs_self c]⟩
+    calc ‖c • y q‖ = ‖⌊c⌋ • y q + Int.fract c • y q‖ := by
+          rw [← Int.cast_smul_eq_zsmul ℝ, ← add_smul, Int.floor_add_fract]
+      _ ≤ |(⌊c⌋ : ℝ)| * ‖y q‖ + ‖Int.fract c • y q‖ := by
+          grw [norm_add_le, norm_zsmul_le, Int.norm_eq_abs]
+      _ ≤ ‖τ q‖ + ‖y q‖ + ‖Int.fract c • y q‖ := by nlinarith [norm_nonneg (y q)]
+  have hfract : Tendsto (fun q ↦ Int.fract (τ q / ‖y q‖) • y q) (𝓝 p) (𝓝 0) := by
+    refine Metric.tendsto_nhds.2 fun ε hε ↦ ?_
+    have hK : ∀ᶠ v in 𝓝 (y p), ∀ r ∈ Set.Icc (0 : ℝ) 1, ‖r • v‖ < ε :=
+      isCompact_Icc.eventually_forall_of_forall_eventually fun r _ ↦ by
+        have h0 : ‖r • y p‖ = 0 := by
+          have h := (inseparable_zero_iff_norm.2 hp).map (continuous_const_smul r)
+          rw [smul_zero] at h
+          exact inseparable_zero_iff_norm.1 h
+        exact ((continuous_snd.smul continuous_fst).norm.tendsto (y p, r)).eventually
+          (gt_mem_nhds (h0.symm ▸ hε))
+    filter_upwards [hy.tendsto p hK] with q hq
+    simpa using hq _ ⟨Int.fract_nonneg _, (Int.fract_lt_one _).le⟩
+  refine squeeze_zero_norm hle ?_
+  simpa [hτ0 p hpf, hp] using
+    ((hτ.norm.tendsto p).add (hy.norm.tendsto p)).add hfract.norm
 
 end
