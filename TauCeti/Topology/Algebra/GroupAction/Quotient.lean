@@ -10,6 +10,7 @@ public import Mathlib.Topology.Algebra.Group.Quotient
 public import Mathlib.Topology.Homeomorph.Quotient
 public import TauCeti.Algebra.GroupAction.OrbitRelQuotient
 import TauCeti.Topology.Compactness.LocallyCompact
+import TauCeti.Topology.Homeomorph.Quotient
 
 /-!
 # Continuous maps from group quotients and compact orbit spaces
@@ -286,8 +287,9 @@ noncomputable def orbitRelQuotientHomeomorph (hq : IsQuotientMap q)
 theorem orbitRelQuotientHomeomorph_mk (hq : IsQuotientMap q)
     (h : ∀ e e', q e = q e' ↔ e ∈ MulAction.orbit G e') (e : E) :
     hq.orbitRelQuotientHomeomorph h (Quotient.mk _ e) = q e := by
-  unfold orbitRelQuotientHomeomorph
-  rfl
+  simp only [orbitRelQuotientHomeomorph, Homeomorph.trans_apply,
+    Homeomorph.Quotient.congrRight_mk, homeomorph_apply (f := ⟨q, hq.continuous⟩),
+    ContinuousMap.coe_mk, Setoid.kerLift_mk]
 
 /-- The inverse homeomorphism sends the image of a representative to its orbit. -/
 @[to_additive (attr := simp) addOrbitRelQuotientHomeomorph_symm_apply
