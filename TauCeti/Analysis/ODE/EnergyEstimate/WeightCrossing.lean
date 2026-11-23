@@ -16,8 +16,9 @@ product space `E` with symmetric limits `A±` at `±∞`. Multiplication by `exp
 trajectory operator `D_A u = u' + A u` on the weighted spaces `{u | exp w • u ∈ W^{1,2}}` to the
 unweighted trajectory operator `D_{A - w'}` (see `TauCeti.Analysis.ODE.EnergyEstimate.Weighted`).
 When the slope `w'` tends to `δ±` at `±∞`, the limits of `A - w'` are `A± - δ±`, which are
-invertible when `δ±` is not an eigenvalue of `A±`. For these non-exceptional weights the weighted
-operator is Fredholm, and this file computes its index:
+invertible when `δ±` is not an eigenvalue of `A±`. The weighted operator is Fredholm exactly for
+these non-exceptional weights (`isFredholm_trajectoryOperator_sub_smul_id_iff`), and this file
+computes its index:
 
 `ind D_{A - w'} = n_{< δ⁻}(A⁻) - n_{< δ⁺}(A⁺)`,
 
@@ -41,6 +42,10 @@ decreases by the multiplicity of the crossed eigenvalue
 The weights below the spectral gap of `TauCeti.Analysis.ODE.EnergyEstimate.Weighted` cross no
 eigenvalue, and leave the index unchanged.
 
+A weight can therefore make `D_A` Fredholm when a limit is degenerate, as for Morse–Bott
+trajectories: for `A = 0`, where `d/ds` itself is not Fredholm, a slope with `δ⁻ < 0 < δ⁺` gives
+index `-dim E` (`index_trajectoryOperator_neg_smul_id_eq_neg_finrank`).
+
 For the symmetric weight `w(s) = δ log (cosh s)`, which is `δ |s|` up to a bounded error, the slope
 is `δ tanh s` and the index is `n_{< -δ}(A⁻) - n_{< δ}(A⁺)`
 (`index_trajectoryOperator_sub_mul_tanh_smul_id_eq_finrank_pointSpectralSubspace_sub_finrank`).
@@ -52,10 +57,12 @@ of the two slopes `±δ` crosses the simple eigenvalue `a` of the limits.
 
 In the namespace `TauCeti.WeakDerivStep`:
 
-* `isFredholm_trajectoryOperator_sub_smul_id`: `D_{A - c}` is Fredholm for slopes `c` with
-  non-exceptional limits `δ±`.
+* `isFredholm_trajectoryOperator_sub_smul_id`, `isFredholm_trajectoryOperator_sub_smul_id_iff`:
+  `D_{A - c}` is Fredholm exactly for slopes `c` with non-exceptional limits `δ±`.
 * `index_trajectoryOperator_sub_smul_id_eq_finrank_pointSpectralSubspace_sub_finrank`: the index of
   `D_{A - c}` for slopes `c` with non-exceptional limits `δ±` is `n_{< δ⁻}(A⁻) - n_{< δ⁺}(A⁺)`.
+* `index_trajectoryOperator_neg_smul_id_eq_neg_finrank`: for `A = 0` and slopes with
+  `δ⁻ < 0 < δ⁺`, the weighted operator `d/ds - c` has index `-dim E`.
 * `index_trajectoryOperator_eq_add_finrank_pointSpectralSubspace_Ico`: moving the limits of the
   slope outward changes the index by the number of eigenvalues crossed at the two ends.
 * `index_trajectoryOperator_eq_add_finrank_eigenspace_atTop`,
@@ -73,6 +80,9 @@ In the namespace `TauCeti.WeakDerivStep`:
   Ann. Scuola Norm. Sup. Pisa Cl. Sci. (4) **12** (1985), 409–447 (the index on weighted spaces
   is locally constant in the weight and jumps at the exceptional weights by the dimension of the
   crossed asymptotic eigenspace).
+* M. Schwarz, *Morse Homology*, Birkhäuser, 1993, Chapter 2 (the linearized trajectory operator).
+* D. McDuff and D. Salamon, *J-holomorphic Curves and Symplectic Topology*, 2nd ed., AMS
+  Colloquium Publications **52**, 2012, Appendix A.1 and Chapter 10 (weighted Sobolev spaces).
 -/
 
 public section
@@ -112,6 +122,30 @@ theorem isFredholm_trajectoryOperator_sub_smul_id
     (hbot.sub (hcbot.smul_const _)) (htop.sub (hctop.smul_const _)) BL hBL).2
     ⟨LinearMap.ker_eq_bot.1 (ker_sub_smul_id_eq_bot_iff.2 hδminus),
       LinearMap.ker_eq_bot.1 (ker_sub_smul_id_eq_bot_iff.2 hδplus)⟩
+
+/-- **The weighted Fredholm criterion.** Let `A` be a continuous family of operators on a
+finite-dimensional real inner product space with symmetric limits `A±`, and let `c` be a
+continuous slope tending to `δ±` at `±∞`. The trajectory operator `u ↦ u' + (A - c) u` from
+`W^{1,2}(ℝ, E)` to `L²(ℝ, E)` is Fredholm exactly when neither `δ⁻` is an eigenvalue of `A⁻` nor
+`δ⁺` an eigenvalue of `A⁺`. For `c = w'` this operator is the conjugate of `D_A` on the spaces
+weighted by `exp w`. -/
+theorem isFredholm_trajectoryOperator_sub_smul_id_iff (hA : Continuous A)
+    (hsymminus : (Aminus : E →ₗ[ℝ] E).IsSymmetric) (hsymplus : (Aplus : E →ₗ[ℝ] E).IsSymmetric)
+    (hbot : Tendsto A atBot (𝓝 Aminus)) (htop : Tendsto A atTop (𝓝 Aplus))
+    {c : ℝ → ℝ} (hc : Continuous c) {δminus δplus : ℝ}
+    (hcbot : Tendsto c atBot (𝓝 δminus)) (hctop : Tendsto c atTop (𝓝 δplus))
+    (BL : Lp (E →L[ℝ] E) ∞ (volume.restrict ((⊤ : Opens ℝ) : Set ℝ)))
+    (hBL : BL =ᵐ[volume.restrict ((⊤ : Opens ℝ) : Set ℝ)]
+      fun s ↦ A s - c s • ContinuousLinearMap.id ℝ E) :
+    (trajectoryOperator (p := 2) BL).IsFredholm ↔
+      ¬ Module.End.HasEigenvalue (Aminus : E →ₗ[ℝ] E) δminus ∧
+        ¬ Module.End.HasEigenvalue (Aplus : E →ₗ[ℝ] E) δplus := by
+  rw [isFredholm_trajectoryOperator_iff (hA.sub (hc.smul continuous_const))
+      (isSymmetric_sub_smul_id hsymminus (conj_trivial δminus))
+      (isSymmetric_sub_smul_id hsymplus (conj_trivial δplus))
+      (hbot.sub (hcbot.smul_const _)) (htop.sub (hctop.smul_const _)) BL hBL,
+    ← ker_sub_smul_id_eq_bot_iff, ← ker_sub_smul_id_eq_bot_iff, LinearMap.ker_eq_bot,
+    LinearMap.ker_eq_bot, ContinuousLinearMap.coe_coe, ContinuousLinearMap.coe_coe]
 
 /-- **The index on exponentially weighted spaces.** Let `A` be a continuous family of operators on
 a finite-dimensional real inner product space with symmetric limits `A±` at `±∞`, and let `c` be
@@ -155,6 +189,44 @@ theorem index_trajectoryOperator_sub_smul_id_eq_finrank_pointSpectralSubspace_su
       (fun v ↦ (mul_le_mul_of_nonneg_right (min_le_right _ _) (norm_nonneg v)).trans (h₂ v))
       (hbot.sub (hcbot.smul_const I)) (htop.sub (hctop.smul_const I)) BL hBL,
     hshift, hshift]
+
+/-- **The index of `d/ds` with decaying weights.** For the zero family the trajectory operator is
+`d/ds`, which is not Fredholm on `W^{1,2}(ℝ, E)` when `E ≠ 0` since its limits are not injective
+(`TauCeti.WeakDerivStep.isFredholm_trajectoryOperator_iff`). Take a continuous slope `c` tending
+to `δ⁻ < 0` at `-∞` and to `δ⁺ > 0` at `+∞`, the derivative of a weight `w` for which the weighted
+paths decay exponentially at both ends. Then `u ↦ u' - c u` has index `-dim E`: no nonzero
+constant decays, while every constant pairs with the weighted target. Since `δ±` are not
+eigenvalues of `0`, this operator is Fredholm by
+`TauCeti.WeakDerivStep.isFredholm_trajectoryOperator_sub_smul_id_iff`. -/
+theorem index_trajectoryOperator_neg_smul_id_eq_neg_finrank {c : ℝ → ℝ} (hc : Continuous c)
+    {δminus δplus : ℝ} (hδminus : δminus < 0) (hδplus : 0 < δplus)
+    (hcbot : Tendsto c atBot (𝓝 δminus)) (hctop : Tendsto c atTop (𝓝 δplus))
+    (BL : Lp (E →L[ℝ] E) ∞ (volume.restrict ((⊤ : Opens ℝ) : Set ℝ)))
+    (hBL : BL =ᵐ[volume.restrict ((⊤ : Opens ℝ) : Set ℝ)]
+      fun s ↦ -(c s • ContinuousLinearMap.id ℝ E)) :
+    (trajectoryOperator (p := 2) BL).index = -(Module.finrank ℝ E : ℤ) := by
+  -- The zero operator has the single eigenvalue `0`, with eigenspace everything.
+  have heig (μ : ℝ) (hμ : μ ≠ 0) :
+      Module.End.eigenspace (((0 : E →L[ℝ] E) : E →ₗ[ℝ] E)) μ = ⊥ := by
+    ext x
+    simp [eq_comm (a := (0 : E)), hμ]
+  have hnot (μ : ℝ) (hμ : μ ≠ 0) :
+      ¬ Module.End.HasEigenvalue (((0 : E →L[ℝ] E) : E →ₗ[ℝ] E)) μ :=
+    fun h ↦ h (heig μ hμ)
+  have hsym : (((0 : E →L[ℝ] E) : E →ₗ[ℝ] E)).IsSymmetric := fun x y ↦ by simp
+  rw [index_trajectoryOperator_sub_smul_id_eq_finrank_pointSpectralSubspace_sub_finrank
+      (A := fun _ ↦ 0) continuous_const hsym hsym tendsto_const_nhds tendsto_const_nhds hc hcbot
+      hctop (hnot _ hδminus.ne) (hnot _ hδplus.ne') BL (by simpa using hBL)]
+  have hbot : Module.End.pointSpectralSubspace (((0 : E →L[ℝ] E) : E →ₗ[ℝ] E))
+      (Iio δminus) = ⊥ :=
+    eq_bot_iff.2 <| Module.End.pointSpectralSubspace_le_iff.2 fun μ hμ ↦
+      (heig μ (lt_trans (mem_Iio.1 hμ) hδminus).ne).le
+  have htop : Module.End.pointSpectralSubspace (((0 : E →L[ℝ] E) : E →ₗ[ℝ] E))
+      (Iio δplus) = ⊤ :=
+    eq_top_iff.2 fun x _ ↦ Module.End.eigenspace_le_pointSpectralSubspace (μ := 0) hδplus
+      (by simp)
+  rw [hbot, htop, finrank_bot, finrank_top]
+  simp
 
 /-- **The index jumps by the eigenvalues crossed by the weight.** Let `c₁` and `c₂` be continuous
 slopes with non-exceptional limits for the symmetric limits `A±` of `A`, such that the limits of

@@ -74,6 +74,9 @@ difference of dimensions of spaces of square-integrable solutions is
   `W^{1,2}(ℝ, F)` has the dimension of `TauCeti.squareIntegrableSolutions A`.
 * `TauCeti.WeakDerivStep.finrank_ker_trajectoryOperator_neg_comp_neg`: the kernels of `D_A` and
   of `D_{-A(-·)}` have the same dimension.
+* `TauCeti.WeakDerivStep.finrank_ker_trajectoryOperator_sub_smul_id`: the kernel of `D_{A - w'}`,
+  which is `D_A` conjugated from the `e^w`-weighted spaces, has the dimension of
+  `TauCeti.weightedSquareIntegrableSolutions A w`.
 * `TauCeti.WeakDerivStep.finiteDimensional_ker_trajectoryOperator`: that kernel is finite
   dimensional when `F` is.
 * `TauCeti.WeakDerivStep.ker_trajectoryOperator_eq_bot_iff`: `D_A` is injective on
@@ -637,6 +640,23 @@ theorem finrank_ker_trajectoryOperator_neg_comp_neg (hA : Continuous A)
   have hR : Continuous fun s ↦ -A (-s) := (hA.comp continuous_neg).neg
   rw [finrank_ker_trajectoryOperator hR RL hRL, finrank_ker_trajectoryOperator hA AL hAL,
     squareIntegrableSolutions_neg_comp_neg]
+
+/-- **The kernel of the weighted trajectory operator.** For a continuous family `A` on a real
+Banach space and a weight `w` with continuous derivative `w'`, the trajectory operator with
+coefficient `A - w'` on `W^{1,2}(ℝ, F)`, which is `D_A` conjugated from the `e^w`-weighted
+spaces, has the dimension of the space of solutions of `u' + A u = 0` with `e^w u` square
+integrable. -/
+theorem finrank_ker_trajectoryOperator_sub_smul_id (hA : Continuous A) {w w' : ℝ → ℝ}
+    (hw : ∀ s, HasDerivAt w (w' s) s) (hw' : Continuous w')
+    (AL : Lp (F →L[ℝ] F) ∞ (volume.restrict ((⊤ : Opens ℝ) : Set ℝ)))
+    (hAL : AL =ᵐ[volume.restrict ((⊤ : Opens ℝ) : Set ℝ)]
+      fun s ↦ A s - w' s • ContinuousLinearMap.id ℝ F) :
+    Module.finrank ℝ (trajectoryOperator (p := 2) AL).ker =
+      Module.finrank ℝ (weightedSquareIntegrableSolutions A w) := by
+  have hB : Continuous fun s ↦ A s - w' s • ContinuousLinearMap.id ℝ F :=
+    hA.sub (hw'.smul continuous_const)
+  rw [finrank_ker_trajectoryOperator hB AL hAL,
+    squareIntegrableSolutions_sub_smul_id_eq_weightedSquareIntegrableSolutions hw]
 
 /-- The kernel of the trajectory operator `D_A u = u' + A u` on `W^{1,2}(ℝ, F)` is finite
 dimensional when `F` is: it embeds into the initial values of the solutions of `v' + A v = 0`. -/

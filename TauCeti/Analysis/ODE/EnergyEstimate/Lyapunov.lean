@@ -73,6 +73,10 @@ only for the closed range.
   symmetric limits, `D_A` is Fredholm exactly when `A⁻` and `A⁺` are injective.
 * `TauCeti.WeakDerivStep.index_trajectoryOperator_of_hasLyapunovForm`: its index is
   `dim ker D_A - dim ker D_{-A†}`.
+* `TauCeti.WeakDerivStep.index_trajectoryOperator_sub_smul_id_eq_finrank_sub_finrank`: on the
+  spaces weighted by `e^w`, for hyperbolic shifted limits `A± - δ±`, the index of `D_A` is the
+  difference of the dimensions of the weighted solution spaces of `u' + A u = 0` and of the
+  adjoint equation `u' - A† u = 0` with weight `-w`.
 
 ## References
 
@@ -295,5 +299,42 @@ theorem index_trajectoryOperator_of_hasLyapunovForm
         Module.finrank ℝ (trajectoryOperator (p := 2) (-BL)).ker :=
   index_trajectoryOperator_of_isClosed_range (ae_eq_adjoint_of_ae_eq hAL hBL)
     (isClosed_range_trajectoryOperator_of_hasLyapunovForm hA hminus hplus hbot htop AL hAL)
+
+/-- **The index of the weighted trajectory operator.** Let `A` be a continuous family of operators
+on a finite-dimensional real inner product space with limits `A±`, and `w` a weight whose
+continuous derivative `w'` tends to `δ±` at `±∞`. If the shifted limits `A± - δ±` have Lyapunov
+forms, then the trajectory operator with coefficient `A - w'`, which is `D_A` conjugated from the
+`e^w`-weighted spaces, has index `dim K - dim K†`. Here `K` consists of the solutions of
+`u' + A u = 0` with `e^w u` square integrable, and `K†` of the solutions of the adjoint equation
+`u' - A† u = 0` with `e^{-w} u` square integrable. -/
+theorem index_trajectoryOperator_sub_smul_id_eq_finrank_sub_finrank (hA : Continuous A)
+    {w w' : ℝ → ℝ} (hw : ∀ s, HasDerivAt w (w' s) s) (hw' : Continuous w')
+    {Aminus Aplus : E →L[ℝ] E} {δminus δplus : ℝ}
+    (hminus : (Aminus - δminus • ContinuousLinearMap.id ℝ E).HasLyapunovForm)
+    (hplus : (Aplus - δplus • ContinuousLinearMap.id ℝ E).HasLyapunovForm)
+    (hbot : Tendsto A atBot (𝓝 Aminus)) (htop : Tendsto A atTop (𝓝 Aplus))
+    (hw'bot : Tendsto w' atBot (𝓝 δminus)) (hw'top : Tendsto w' atTop (𝓝 δplus))
+    (AL : Lp (E →L[ℝ] E) ∞ (volume.restrict ((⊤ : Opens ℝ) : Set ℝ)))
+    (hAL : AL =ᵐ[volume.restrict ((⊤ : Opens ℝ) : Set ℝ)]
+      fun s ↦ A s - w' s • ContinuousLinearMap.id ℝ E) :
+    (trajectoryOperator (p := 2) AL).index =
+      (Module.finrank ℝ (weightedSquareIntegrableSolutions A w) : ℤ) -
+        Module.finrank ℝ (weightedSquareIntegrableSolutions
+          (fun s ↦ -ContinuousLinearMap.adjoint (A s)) (-w)) := by
+  have hB : Continuous fun s ↦ A s - w' s • ContinuousLinearMap.id ℝ E :=
+    hA.sub (hw'.smul continuous_const)
+  have hadj : Continuous fun s ↦ -ContinuousLinearMap.adjoint (A s) :=
+    (ContinuousLinearMap.adjoint.continuous.comp hA).neg
+  obtain ⟨BL, hBL⟩ := exists_ae_eq_adjoint AL hAL
+  have hnegBL : -BL =ᵐ[volume.restrict ((⊤ : Opens ℝ) : Set ℝ)]
+      fun s ↦ -ContinuousLinearMap.adjoint (A s) - (-w' s) • ContinuousLinearMap.id ℝ E := by
+    filter_upwards [Lp.coeFn_neg BL, hBL] with s hs hBs
+    rw [hs, Pi.neg_apply, hBs, map_sub, map_smulₛₗ, ContinuousLinearMap.adjoint_id]
+    simp [sub_eq_add_neg, add_comm]
+  rw [index_trajectoryOperator_of_hasLyapunovForm hB hminus hplus
+      (hbot.sub (hw'bot.smul_const _)) (htop.sub (hw'top.smul_const _)) AL BL hAL hBL,
+    finrank_ker_trajectoryOperator_sub_smul_id hA hw hw' AL hAL,
+    finrank_ker_trajectoryOperator_sub_smul_id
+      hadj (w := -w) (fun s ↦ (hw s).neg) hw'.neg (-BL) hnegBL]
 
 end TauCeti.WeakDerivStep
