@@ -50,6 +50,9 @@ permanent node.
 
 * `NodalGluing.isQuotientMap_selfClutchMap` and `NodalGluing.selfClutchMap_eq_selfClutchMap_iff`:
   the self-clutching is the quotient of the curve identifying exactly the two glued marks.
+* `NodalGluing.inlClutchMap_injective`, `NodalGluing.inrClutchMap_injective` and
+  `NodalGluing.range_inlClutchMap_inter_range_inrClutchMap`: the two curves map injectively into
+  their external clutching and meet exactly at the new node.
 * `NodalGluing.Marking.specialPoints_selfClutch`: self-clutching preserves the special points of
   every component, since the glued marks become node branches.
 * `NodalGluing.connectedSpace_gluedCurve_selfClutch` and
@@ -73,7 +76,9 @@ For external clutching the components of the two curves form one family `X` inde
 `fun i ↦ X (.inr i)`. Topological and manifold structures on the components are then instances
 for both the curves and their union. `FlagPairData.clutch` and `Marking.clutch` are abbreviations
 for a self-clutching of the disjoint union, so that the self-clutching API applies to them
-directly.
+directly. In particular the simp lemmas for self-clutching and disjoint unions already normalize
+the flags and marks of an external clutching, so the stated normal forms such as
+`FlagPairData.fst_clutch_some_inl` and `Marking.point_clutch_inl` are not simp lemmas.
 
 ## References
 
@@ -245,8 +250,9 @@ theorem Marking.specialPoints_selfClutch (i : ι) :
   tauto
 
 variable (d m) in
-/-- **The clutching map.** The continuous map from a glued curve to its self-clutching, sending a
-point to its class; it identifies the two glued marks, which become the new node. -/
+/-- **The clutching map.** The map from a glued curve to its self-clutching, sending a point to its
+class; it identifies the two glued marks, which become the new node. It is continuous by
+`continuous_selfClutchMap`. -/
 def selfClutchMap : GluedCurve d → GluedCurve (d.selfClutch m) :=
   GluedCurve.lift d (Quotient.mk _) fun f ↦ by
     rw [← fstPoint_selfClutch_some (m := m), ← sndPoint_selfClutch_some (m := m), mk_fstPoint,
@@ -396,9 +402,9 @@ theorem selfClutch_apply (x : Σ i, X i) : e.selfClutch he x = e x :=
 
 /-- The clutched isomorphism acts on the old branches as the original one. -/
 @[simp]
-theorem branchEquiv_selfClutch_some (p : Flag × Bool) :
-    (e.selfClutch he).branchEquiv (some p.1, p.2) =
-      (some (e.branchEquiv p).1, (e.branchEquiv p).2) := by
+theorem branchEquiv_selfClutch_some (f : Flag) (b : Bool) :
+    (e.selfClutch he).branchEquiv (some f, b) =
+      (some (e.branchEquiv (f, b)).1, (e.branchEquiv (f, b)).2) := by
   rw [branchEquiv_apply_eq_iff, selfClutch_apply, flagPoint_selfClutch_some,
     flagPoint_selfClutch_some, Prod.mk.eta, flagPoint_branchEquiv]
 
@@ -406,9 +412,7 @@ theorem branchEquiv_selfClutch_some (p : Flag × Bool) :
 @[simp]
 theorem edgeEquiv_selfClutch_some (f : Flag) :
     (e.selfClutch he).edgeEquiv (some f) = some (e.edgeEquiv f) := by
-  rw [edgeEquiv_apply _ _ false, edgeEquiv_apply _ _ false,
-    show ((some f, false) : Option Flag × Bool) = (some (f, false).1, (f, false).2) from rfl,
-    branchEquiv_selfClutch_some]
+  rw [edgeEquiv_apply _ _ false, edgeEquiv_apply _ _ false, branchEquiv_selfClutch_some]
 
 /-- **The clutched isomorphism fixes the new node.** -/
 @[simp]
@@ -485,8 +489,9 @@ def selfClutchEquiv :
     {e : Iso I n d d' //
       s(e (m.point (.inr 0)), e (m.point (.inr 1))) = s(m'.point (.inr 0), m'.point (.inr 1))} ≃
     {e : Iso I n (d.selfClutch m) (d'.selfClutch m') // e.edgeEquiv none = none} where
-  toFun e := ⟨e.1.selfClutch e.2, edgeEquiv_selfClutch_none _ _⟩
-  invFun e := ⟨e.1.ofSelfClutch e.2, sym2_apply_point_inr_of_edgeEquiv_none e.1 e.2⟩
+  toFun e := ⟨e.val.selfClutch e.property, edgeEquiv_selfClutch_none _ _⟩
+  invFun e := ⟨e.val.ofSelfClutch e.property,
+    sym2_apply_point_inr_of_edgeEquiv_none e.val e.property⟩
   left_inv _ := rfl
   right_inv _ := rfl
 
@@ -495,14 +500,14 @@ def selfClutchEquiv :
 theorem selfClutchEquiv_apply_apply
     (e : {e : Iso I n d d' //
       s(e (m.point (.inr 0)), e (m.point (.inr 1))) = s(m'.point (.inr 0), m'.point (.inr 1))})
-    (x : Σ i, X i) : (selfClutchEquiv e).1 x = e.1 x :=
+    (x : Σ i, X i) : (selfClutchEquiv e).val x = e.val x :=
   (rfl)
 
 /-- The inverse correspondence `selfClutchEquiv.symm` keeps the map of normalizations. -/
 @[simp]
 theorem selfClutchEquiv_symm_apply_apply
     (e : {e : Iso I n (d.selfClutch m) (d'.selfClutch m') // e.edgeEquiv none = none})
-    (x : Σ i, X i) : (selfClutchEquiv.symm e).1 x = e.1 x :=
+    (x : Σ i, X i) : (selfClutchEquiv.symm e).val x = e.val x :=
   (rfl)
 
 end Iso
@@ -716,6 +721,48 @@ theorem FlagPairData.snd_clutch_none :
     (d₁.clutch d₂ m₁ m₂).snd none = .inr (m₂.point none).1 :=
   (rfl)
 
+/-- The flag pairs of the first curve keep their first components under external clutching. -/
+theorem FlagPairData.fst_clutch_some_inl (f : Flag₁) :
+    (d₁.clutch d₂ m₁ m₂).fst (some (.inl f)) = .inl (d₁.fst f) :=
+  (rfl)
+
+/-- The flag pairs of the first curve keep their second components under external clutching. -/
+theorem FlagPairData.snd_clutch_some_inl (f : Flag₁) :
+    (d₁.clutch d₂ m₁ m₂).snd (some (.inl f)) = .inl (d₁.snd f) :=
+  (rfl)
+
+/-- The flag pairs of the second curve keep their first components under external clutching. -/
+theorem FlagPairData.fst_clutch_some_inr (f : Flag₂) :
+    (d₁.clutch d₂ m₁ m₂).fst (some (.inr f)) = .inr (d₂.fst f) :=
+  (rfl)
+
+/-- The flag pairs of the second curve keep their second components under external clutching. -/
+theorem FlagPairData.snd_clutch_some_inr (f : Flag₂) :
+    (d₁.clutch d₂ m₁ m₂).snd (some (.inr f)) = .inr (d₂.snd f) :=
+  (rfl)
+
+/-- The flag points of the first curve are flag points of its external clutching. -/
+theorem flagPoint_clutch_some_inl (f : Flag₁) (b : Bool) :
+    flagPoint (d₁.clutch d₂ m₁ m₂) (some (.inl f), b) =
+      Sigma.map Sum.inl (fun _ ↦ id) (flagPoint d₁ (f, b)) := by
+  rw [flagPoint_selfClutch_some, flagPoint_sum_inl]
+
+/-- The flag points of the second curve are flag points of its external clutching. -/
+theorem flagPoint_clutch_some_inr (f : Flag₂) (b : Bool) :
+    flagPoint (d₁.clutch d₂ m₁ m₂) (some (.inr f), b) =
+      Sigma.map Sum.inr (fun _ ↦ id) (flagPoint d₂ (f, b)) := by
+  rw [flagPoint_selfClutch_some, flagPoint_sum_inr]
+
+/-- The marks `.inl l` of an external clutching are the marks `some l` of the first curve. -/
+theorem Marking.point_clutch_inl (l : L₁) :
+    (m₁.clutch m₂).point (.inl l) = Sigma.map Sum.inl (fun _ ↦ id) (m₁.point (some l)) :=
+  (rfl)
+
+/-- The marks `.inr l` of an external clutching are the marks `some l` of the second curve. -/
+theorem Marking.point_clutch_inr (l : L₂) :
+    (m₁.clutch m₂).point (.inr l) = Sigma.map Sum.inr (fun _ ↦ id) (m₂.point (some l)) :=
+  (rfl)
+
 variable (d₂) in
 /-- The inclusion of the first curve into an external clutching. -/
 def inlClutchMap : GluedCurve d₁ → GluedCurve (d₁.clutch d₂ m₁ m₂) :=
@@ -744,17 +791,33 @@ theorem inrClutchMap_mk (x : Σ i, X (.inr i)) :
     inrClutchMap d₁ m₁ m₂ (Quotient.mk _ x) = Quotient.mk _ (Sigma.map Sum.inr (fun _ ↦ id) x) :=
   GluedCurve.lift_mk _ _ _ x
 
+/-- The glued mark of the first curve is a branch of the new node of an external clutching. -/
+@[simp]
+theorem mk_sigmaMap_inl_point_none_clutch :
+    Quotient.mk (gluedRelSetoid (d₁.clutch d₂ m₁ m₂))
+        (Sigma.map Sum.inl (fun _ ↦ id) (m₁.point none)) =
+      nodeOfFlag (d₁.clutch d₂ m₁ m₂) none :=
+  mk_point_inr_selfClutch 0
+
+/-- The glued mark of the second curve is a branch of the new node of an external clutching. -/
+@[simp]
+theorem mk_sigmaMap_inr_point_none_clutch :
+    Quotient.mk (gluedRelSetoid (d₁.clutch d₂ m₁ m₂))
+        (Sigma.map Sum.inr (fun _ ↦ id) (m₂.point none)) =
+      nodeOfFlag (d₁.clutch d₂ m₁ m₂) none :=
+  mk_point_inr_selfClutch 1
+
 /-- The inclusion of the first curve sends its glued mark to the new node. -/
 theorem inlClutchMap_mk_point_none :
     inlClutchMap d₂ m₁ m₂ (Quotient.mk _ (m₁.point none)) =
       nodeOfFlag (d₁.clutch d₂ m₁ m₂) none := by
-  rw [inlClutchMap_mk, ← Marking.sumClutch_point_inr_zero, mk_point_inr_selfClutch]
+  rw [inlClutchMap_mk, mk_sigmaMap_inl_point_none_clutch]
 
 /-- The inclusion of the second curve sends its glued mark to the new node. -/
 theorem inrClutchMap_mk_point_none :
     inrClutchMap d₁ m₁ m₂ (Quotient.mk _ (m₂.point none)) =
       nodeOfFlag (d₁.clutch d₂ m₁ m₂) none := by
-  rw [inrClutchMap_mk, ← Marking.sumClutch_point_inr_one, mk_point_inr_selfClutch]
+  rw [inrClutchMap_mk, mk_sigmaMap_inr_point_none_clutch]
 
 /-- **The two curves cover their external clutching.** -/
 theorem range_inlClutchMap_union_range_inrClutchMap :
@@ -764,6 +827,53 @@ theorem range_inlClutchMap_union_range_inrClutchMap :
   obtain ⟨i | i, x⟩ := x
   exacts [.inl ⟨Quotient.mk _ ⟨i, x⟩, inlClutchMap_mk _⟩,
     .inr ⟨Quotient.mk _ ⟨i, x⟩, inrClutchMap_mk _⟩]
+
+/-- The inclusion of the first curve into an external clutching is injective. -/
+theorem inlClutchMap_injective : Function.Injective (inlClutchMap d₂ m₁ m₂) := by
+  intro a b h
+  induction a using Quotient.inductionOn with | _ x => ?_
+  induction b using Quotient.inductionOn with | _ y => ?_
+  simpa [Quotient.eq, gluedRel_def, flagRel_selfClutch_iff, sigmaMap_inl_injective.eq_iff,
+    sigmaMap_inl_ne_sigmaMap_inr, Sym2.eq_iff] using h
+
+/-- The inclusion of the second curve into an external clutching is injective. -/
+theorem inrClutchMap_injective : Function.Injective (inrClutchMap d₁ m₁ m₂) := by
+  intro a b h
+  induction a using Quotient.inductionOn with | _ x => ?_
+  induction b using Quotient.inductionOn with | _ y => ?_
+  simpa [Quotient.eq, gluedRel_def, flagRel_selfClutch_iff, sigmaMap_inr_injective.eq_iff,
+    (sigmaMap_inl_ne_sigmaMap_inr _ _).symm, Sym2.eq_iff] using h
+
+/-- **The two curves meet only at their glued marks**: a point of the first curve and a point of
+the second have the same image in the external clutching exactly when they are the two glued
+marks. -/
+theorem inlClutchMap_eq_inrClutchMap_iff (a : GluedCurve d₁) (b : GluedCurve d₂) :
+    inlClutchMap d₂ m₁ m₂ a = inrClutchMap d₁ m₁ m₂ b ↔
+      a = Quotient.mk _ (m₁.point none) ∧ b = Quotient.mk _ (m₂.point none) := by
+  induction a using Quotient.inductionOn with | _ x => ?_
+  induction b using Quotient.inductionOn with | _ y => ?_
+  have hmk₁ : Quotient.mk (gluedRelSetoid d₁) x = Quotient.mk _ (m₁.point none) ↔
+      x = m₁.point none :=
+    ⟨fun h ↦ (eq_of_mk_eq_of_notMem_flagPointSet (m₁.point_notMem_flagPointSet _) h.symm).symm,
+      fun h ↦ h ▸ rfl⟩
+  have hmk₂ : Quotient.mk (gluedRelSetoid d₂) y = Quotient.mk _ (m₂.point none) ↔
+      y = m₂.point none :=
+    ⟨fun h ↦ (eq_of_mk_eq_of_notMem_flagPointSet (m₂.point_notMem_flagPointSet _) h.symm).symm,
+      fun h ↦ h ▸ rfl⟩
+  simp [hmk₁, hmk₂, Quotient.eq, gluedRel_def, flagRel_selfClutch_iff,
+    sigmaMap_inl_ne_sigmaMap_inr, (sigmaMap_inl_ne_sigmaMap_inr _ _).symm,
+    sigmaMap_inl_injective.eq_iff, sigmaMap_inr_injective.eq_iff]
+
+/-- **The two curves of an external clutching meet exactly at the new node.** -/
+theorem range_inlClutchMap_inter_range_inrClutchMap :
+    range (inlClutchMap d₂ m₁ m₂) ∩ range (inrClutchMap d₁ m₁ m₂) =
+      {nodeOfFlag (d₁.clutch d₂ m₁ m₂) none} := by
+  refine Subset.antisymm ?_ ?_
+  · rintro _ ⟨⟨a, rfl⟩, b, hb⟩
+    obtain ⟨rfl, -⟩ := (inlClutchMap_eq_inrClutchMap_iff a b).mp hb.symm
+    exact inlClutchMap_mk_point_none
+  · rintro _ rfl
+    exact ⟨⟨_, inlClutchMap_mk_point_none⟩, _, inrClutchMap_mk_point_none⟩
 
 variable [∀ i, TopologicalSpace (X i)]
 
