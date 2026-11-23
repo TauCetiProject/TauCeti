@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.Normed.Lp.PiLp
 public import TauCeti.MeasureTheory.Function.LpSeminorm.Count
+import TauCeti.Analysis.Normed.Lp.PiLp.Basic
 import TauCeti.MeasureTheory.Function.Lp.IntermediateExponent
 
 /-!
@@ -25,13 +26,6 @@ open scoped ENNReal
 namespace TauCeti
 
 variable {ι : Type*} [Fintype ι]
-
-private theorem norm_toLp_nonneg (s : ℝ≥0∞) (f : ι → ℝ) : 0 ≤ ‖WithLp.toLp s f‖ := by
-  rcases s.trichotomy with rfl | rfl | hs
-  · rw [PiLp.norm_eq_card]; positivity
-  · rw [PiLp.norm_eq_ciSup]; exact Real.iSup_nonneg fun i ↦ norm_nonneg _
-  · rw [PiLp.norm_eq_sum hs]
-    exact Real.rpow_nonneg (Finset.sum_nonneg fun _ _ ↦ Real.rpow_nonneg (norm_nonneg _) _) _
 
 /-- For `s ≠ 0`, `ENNReal.ofReal ‖WithLp.toLp s f‖` equals the `Lˢ` seminorm of `f` for the
 counting measure. -/
@@ -87,10 +81,10 @@ theorem norm_toLp_rpow_mul_rpow_le {q₀ q₁ q : ℝ≥0∞} (hq₀ : q₀ ≠ 
       abs_of_nonneg (ha i), abs_of_nonneg (hb i),
       ENNReal.ofReal_mul (Real.rpow_nonneg (ha i) _),
       ← ENNReal.ofReal_rpow_of_nonneg (ha i) h1θ, ← ENNReal.ofReal_rpow_of_nonneg (hb i) hθ.1]
-  rw [ENNReal.ofReal_rpow_of_nonneg (norm_toLp_nonneg _ _) h1θ,
-    ENNReal.ofReal_rpow_of_nonneg (norm_toLp_nonneg _ _) hθ.1,
-    ← ENNReal.ofReal_mul (Real.rpow_nonneg (norm_toLp_nonneg _ _) _)] at h
-  exact (ENNReal.ofReal_le_ofReal_iff (mul_nonneg (Real.rpow_nonneg (norm_toLp_nonneg _ _) _)
-    (Real.rpow_nonneg (norm_toLp_nonneg _ _) _))).1 h
+  rw [ENNReal.ofReal_rpow_of_nonneg (PiLp.norm_nonneg' _) h1θ,
+    ENNReal.ofReal_rpow_of_nonneg (PiLp.norm_nonneg' _) hθ.1,
+    ← ENNReal.ofReal_mul (Real.rpow_nonneg (PiLp.norm_nonneg' _) _)] at h
+  exact (ENNReal.ofReal_le_ofReal_iff (mul_nonneg (Real.rpow_nonneg (PiLp.norm_nonneg' _) _)
+    (Real.rpow_nonneg (PiLp.norm_nonneg' _) _))).1 h
 
 end TauCeti

@@ -778,14 +778,10 @@ private theorem norm_analyticFamilyMap_le_of_pos (hT : IsBoundedAnalyticFamily T
     (norm_nonneg g)
     (fun t => (norm_smul _ _).trans_le (norm_scaleFactor_mul_I hM₀ t ▸
       ((mul_le_mul_of_nonneg_left (by simpa using h₀ t (g.val.1 t)) (inv_pos.2 hM₀).le).trans_eq
-        (inv_mul_cancel_left₀ hM₀.ne' _)).trans
-        ((ZeroAtInftyContinuousMap.norm_coe_le_norm _ t).trans
-          ((norm_fst_le g.val).trans_eq (Submodule.norm_coe g)))))
+        (inv_mul_cancel_left₀ hM₀.ne' _)).trans (norm_stripTraces_fst_apply_le g t)))
     (fun t => (norm_smul _ _).trans_le (norm_scaleFactor_one_add_mul_I hM₁ t ▸
       ((mul_le_mul_of_nonneg_left (by simpa using h₁ t (g.val.2 t)) (inv_pos.2 hM₁).le).trans_eq
-        (inv_mul_cancel_left₀ hM₁.ne' _)).trans
-        ((ZeroAtInftyContinuousMap.norm_coe_le_norm _ t).trans
-          ((norm_snd_le g.val).trans_eq (Submodule.norm_coe g)))))
+        (inv_mul_cancel_left₀ hM₁.ne' _)).trans (norm_stripTraces_snd_apply_le g t)))
   calc ‖analyticFamilyMap θ hT (mk θ g)‖ =
         K * ‖scaleFactor M₀ M₁ θ • analyticFamilyMap θ hT (mk θ g)‖ := by
         rw [norm_smul, ← mul_assoc, mul_comm K, norm_scaleFactor_mul_rpow hM₀ hM₁, one_mul]
