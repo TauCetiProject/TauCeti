@@ -111,8 +111,7 @@ private def mulGraph (ι : D →L[ℝ] H) (β : ℝ → ℝ) (hβ : ContDiff ℝ
     {L : ℝ} (hβ₁ : ∀ s, |deriv β s| ≤ L) :
     WeakDerivStep volume ⊤ 2 (ι.compLpL 2 μ₀) →L[ℝ] WeakDerivStep volume ⊤ 2 (ι.compLpL 2 μ₀) :=
   smulLeftCLM β hβ.contDiffOn ⟨1, fun s _ ↦ (Real.norm_eq_abs _).trans_le (hβ₀ s)⟩
-    ⟨L, fun s _ ↦ by rw [← norm_deriv_eq_norm_fderiv, Real.norm_eq_abs]; exact hβ₁ s⟩
-    ι.compLpL_multiplicationOperator
+    (exists_forall_norm_fderiv_le_of_abs_deriv_le hβ₁) ι.compLpL_multiplicationOperator
 
 /-! ### The error terms -/
 
@@ -159,7 +158,16 @@ private theorem coeffL_eq_add (AL : Lp (D →L[ℝ] H) ∞ μ₀) (B : D →L[�
       (coeffL ι AL B (fun s ↦ (1 - ρ s) * β s) ((continuous_const.sub hρ).mul hβ) hC₂ u)]
     with s h h₁ h₂ h₃
   rw [add_apply, h₃, Pi.add_apply, h, h₁, h₂, ← add_smul]
-  ring_nf
+  congr 1
+  ring
+
+/-- The pointwise bound behind the coefficient error: `|a| ‖y‖ ≤ k` when `|a| ≤ 1` and `‖y‖ ≤ k`
+unless `a = 0`. -/
+private theorem abs_mul_norm_le {E : Type*} [SeminormedAddCommGroup E] {a k : ℝ} {y : E}
+    (ha : |a| ≤ 1) (hk : 0 ≤ k) (h : a ≠ 0 → ‖y‖ ≤ k) : |a| * ‖y‖ ≤ k := by
+  by_cases ha₀ : a = 0
+  · rwa [ha₀, abs_zero, zero_mul]
+  · exact (mul_le_mul ha (h ha₀) (norm_nonneg _) zero_le_one).trans_eq (one_mul _)
 
 /-- Where `A(s)` is within `ε` of `B` on the support of `φ`, with `|φ| ≤ 1`, the coefficient error
 has norm at most `ε`. -/
@@ -171,26 +179,8 @@ private theorem norm_coeffL_le (AL : Lp (D →L[ℝ] H) ∞ μ₀) (B : D →L[�
     (mul_le_mul_of_nonneg_left (norm_prev_le _ u) hε)
   filter_upwards [coeffL_ae AL B hφ hC u, h] with s hs hsε
   rw [hs, norm_smul, Real.norm_eq_abs]
-  by_cases hφs : φ s = 0
-  · rw [hφs, abs_zero, zero_mul]
-    exact mul_nonneg hε (norm_nonneg _)
-  · calc |φ s| * ‖(AL s - B) (prev _ u s)‖ ≤ 1 * (ε * ‖prev _ u s‖) :=
-          mul_le_mul (hC s) (((AL s - B).le_opNorm _).trans
-            (mul_le_mul_of_nonneg_right (hsε hφs) (norm_nonneg _))) (norm_nonneg _) zero_le_one
-      _ = ε * ‖prev _ u s‖ := one_mul _
-
-/-- An operator from the graph space to `L²(ℝ, H)` that is bounded pointwise by `c ‖ι (u s)‖` and
-vanishes off a bounded window `(-b, b)` is compact, by the Aubin–Lions lemma. -/
-private theorem isCompactOperator_of_ae_norm_le [CompleteSpace D] (hι : IsCompactOperator ι)
-    {T : WeakDerivStep volume ⊤ 2 (ι.compLpL 2 μ₀) →L[ℝ] Lp H 2 μ₀} {b c : ℝ} (hc : 0 ≤ c)
-    (hT : ∀ u, ∀ᵐ s ∂μ₀, ‖T u s‖ ≤ c * ‖ι (prev _ u s)‖)
-    (hT₀ : ∀ u, ∀ᵐ s ∂μ₀, s ∉ Ioo (-b) b → T u s = 0) : IsCompactOperator T := by
-  have hW : (⟨Ioo (-b) b, isOpen_Ioo⟩ : Opens ℝ) ≤ ⊤ := le_top
-  have hμ : ae μ₀ = ae volume := by simp
-  refine IsCompactOperator.of_norm_le_mul_norm (C := c)
-    (isCompactOperator_restrictBaseL_compLpL (p := 2) hι hW)
-    fun u ↦ norm_le_mul_norm_restrictBaseL hc u ?_ ?_ <;> rw [← hμ]
-  exacts [hT u, hT₀ u]
+  exact abs_mul_norm_le (hC s) (mul_nonneg hε (norm_nonneg _)) fun hφs ↦
+    ((AL s - B).le_opNorm _).trans (mul_le_mul_of_nonneg_right (hsε hφs) (norm_nonneg _))
 
 /-- Where `A(s) - B` is bounded through `ι` on the support of `φ`, and `φ` vanishes off a bounded
 window, the coefficient error is compact. -/
@@ -199,13 +189,11 @@ private theorem isCompactOperator_coeffL [CompleteSpace D] (hι : IsCompactOpera
     (hC : ∀ s, |φ s| ≤ 1) {b c : ℝ} (hc₀ : 0 ≤ c)
     (h : ∀ᵐ s ∂μ₀, φ s ≠ 0 → ∀ x, ‖(AL s - B) x‖ ≤ c * ‖ι x‖)
     (hφ₀ : ∀ s ∉ Ioo (-b) b, φ s = 0) : IsCompactOperator (coeffL ι AL B φ hφ hC) := by
-  refine isCompactOperator_of_ae_norm_le hι (b := b) hc₀ (fun u ↦ ?_) fun u ↦ ?_
+  refine isCompactOperator_of_ae_norm_le hι (b := b) hc₀ (fun u ↦ ?_) (fun u ↦ ?_) <;>
+    rw [show ae (volume : Measure ℝ) = ae μ₀ by simp]
   · filter_upwards [coeffL_ae AL B hφ hC u, h] with s hs hsc
     rw [hs, norm_smul, Real.norm_eq_abs]
-    by_cases hφs : φ s = 0
-    · rw [hφs, abs_zero, zero_mul]
-      exact mul_nonneg hc₀ (norm_nonneg _)
-    · exact (mul_le_mul (hC s) (hsc hφs _) (norm_nonneg _) zero_le_one).trans_eq (one_mul _)
+    exact abs_mul_norm_le (hC s) (mul_nonneg hc₀ (norm_nonneg _)) fun hφs ↦ hsc hφs _
   · filter_upwards [coeffL_ae AL B hφ hC u] with s hs hsW
     rw [hs, hφ₀ s hsW, zero_smul]
 
@@ -214,7 +202,7 @@ private theorem isCompactOperator_commL [CompleteSpace D] (hι : IsCompactOperat
     (hφ : Continuous φ) {L b : ℝ} (hC : ∀ s, |φ s| ≤ L) (hφ₀ : ∀ s ∉ Ioo (-b) b, φ s = 0) :
     IsCompactOperator (commL ι φ hφ hC) := by
   refine isCompactOperator_of_ae_norm_le hι (b := b) ((abs_nonneg _).trans (hC 0))
-    (fun u ↦ ?_) fun u ↦ ?_
+    (fun u ↦ ?_) (fun u ↦ ?_) <;> rw [show ae (volume : Measure ℝ) = ae μ₀ by simp]
   · filter_upwards [commL_ae hφ hC u] with s hs
     rw [hs, norm_smul, Real.norm_eq_abs]
     exact mul_le_mul_of_nonneg_right (hC s) (norm_nonneg _)
@@ -242,7 +230,7 @@ private theorem familyDomainTrajectoryOperator_comp_mulGraph (AL : Lp (D →L[�
   simp only [ContinuousLinearMap.comp_apply, add_apply]
   filter_upwards [familyDomainTrajectoryOperator_smulLeftCLM_ae ι AL hβ.contDiffOn
       ⟨1, fun s _ ↦ (Real.norm_eq_abs _).trans_le (hβ₀ s)⟩
-      ⟨L, fun s _ ↦ by rw [← norm_deriv_eq_norm_fderiv, Real.norm_eq_abs]; exact hβ₁ s⟩ v,
+      (exists_forall_norm_fderiv_le_of_abs_deriv_le hβ₁) v,
     familyDomainTrajectoryOperator_sub_domainTrajectoryOperator_ae ι AL B v,
     Lp.coeFn_sub (familyDomainTrajectoryOperator ι AL v) (domainTrajectoryOperator ι B v),
     mulLp_ae hγ hγ₀ f, coeffL_ae AL B hβ.continuous hβ₀ v,

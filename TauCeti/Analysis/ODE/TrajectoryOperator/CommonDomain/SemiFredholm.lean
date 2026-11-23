@@ -120,11 +120,6 @@ private theorem ae_top_iff {P : ℝ → Prop} : (∀ᵐ s ∂μ₀, P s) ↔ ∀
 
 /-! ### Multiplication by a cutoff -/
 
-/-- The derivative bound of a cutoff on the line, in the form taken by `smulLeftCLM`. -/
-private theorem exists_forall_norm_fderiv_le {χ : ℝ → ℝ} {C₁ : ℝ} (h : ∀ s, |deriv χ s| ≤ C₁) :
-    ∃ C, ∀ s ∈ (⊤ : Opens ℝ), ‖fderiv ℝ χ s‖ ≤ C :=
-  ⟨C₁, fun s _ ↦ by rw [← norm_deriv_eq_norm_fderiv]; exact h s⟩
-
 omit [CompleteSpace D] in
 /-- **The error of a cutoff.** If `|χ| ≤ C₀`, `|χ'| ≤ C₁` and `χ'` vanishes off the window
 `(-b, b)`, then `‖D_A (χ u)‖ ≤ C₀ ‖D_A u‖ + C₁ ‖ι ∘ u‖_{L²((-b, b), H)}`. -/
@@ -278,14 +273,14 @@ private theorem norm_le_of_end_estimates (hSymm : ∀ x y : D, ⟪B x, ι y⟫_�
     rcases hs with hs | hs
     · exact Or.inl (by linarith)
     · exact Or.inr (by linarith)
-  set wtop := smulLeftCLM βp hpc.contDiffOn ⟨1, fun s _ ↦ hp1 s⟩ (exists_forall_norm_fderiv_le hpL)
-    ι.compLpL_multiplicationOperator u
-  set wbot := smulLeftCLM βm hmc.contDiffOn ⟨1, fun s _ ↦ hm1 s⟩ (exists_forall_norm_fderiv_le hmL)
-    ι.compLpL_multiplicationOperator u
+  set wtop := smulLeftCLM βp hpc.contDiffOn ⟨1, fun s _ ↦ hp1 s⟩
+    (exists_forall_norm_fderiv_le_of_abs_deriv_le hpL) ι.compLpL_multiplicationOperator u
+  set wbot := smulLeftCLM βm hmc.contDiffOn ⟨1, fun s _ ↦ hm1 s⟩
+    (exists_forall_norm_fderiv_le_of_abs_deriv_le hmL) ι.compLpL_multiplicationOperator u
   have hptop := ae_top_iff.1 (prev_smulLeftCLM_ae hpc.contDiffOn ⟨1, fun s _ ↦ hp1 s⟩
-    (exists_forall_norm_fderiv_le hpL) ι.compLpL_multiplicationOperator u)
+    (exists_forall_norm_fderiv_le_of_abs_deriv_le hpL) ι.compLpL_multiplicationOperator u)
   have hpbot := ae_top_iff.1 (prev_smulLeftCLM_ae hmc.contDiffOn ⟨1, fun s _ ↦ hm1 s⟩
-    (exists_forall_norm_fderiv_le hmL) ι.compLpL_multiplicationOperator u)
+    (exists_forall_norm_fderiv_le_of_abs_deriv_le hmL) ι.compLpL_multiplicationOperator u)
   -- The two ends `w₊ = βp u` and `w₋ = βm u`.
   have hDtop : ‖familyDomainTrajectoryOperator ι AL wtop‖ ≤ N + L * R :=
     (norm_familyDomainTrajectoryOperator_smulLeftCLM_le _ _ _ hp1 hpL

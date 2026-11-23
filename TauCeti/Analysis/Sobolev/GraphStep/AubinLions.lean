@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.Sobolev.GraphStep.Basic
 public import Mathlib.Analysis.Normed.Operator.Compact.Basic
 import Mathlib.Order.SuccPred.IntervalSucc
+import TauCeti.Analysis.Normed.Operator.Compact.Interpolation
 import TauCeti.Analysis.Sobolev.WeakDeriv.Interval
 import TauCeti.MeasureTheory.Function.Lp.Indicator
 import TauCeti.MeasureTheory.Function.Lp.Restriction
@@ -58,8 +59,10 @@ Letting `N → ∞`, it is a limit of compact operators in operator norm, hence 
   a bounded open interval in `Ω` is a compact operator on the graph space.
 * `TauCeti.WeakDerivStep.norm_le_mul_norm_restrictBaseL`: on the line, for `p = 2`, an `L²` path
   bounded pointwise by `c ‖ι (u s)‖` and vanishing off a window `(-b, b)` has norm at most `c`
-  times that of the restriction of `ι ∘ u` to the window. With the compactness of that
-  restriction, this makes such operators compact.
+  times that of the restriction of `ι ∘ u` to the window.
+* `TauCeti.WeakDerivStep.isCompactOperator_of_ae_norm_le`: on the line, for `p = 2`, an operator
+  from the graph space to `L²(ℝ, H)` bounded pointwise by `c ‖ι (u s)‖` and vanishing off a window
+  `(-b, b)` is compact.
 
 ## References
 
@@ -355,6 +358,16 @@ theorem norm_le_mul_norm_restrictBaseL {c : ℝ} (hc : 0 ≤ c)
   refine (ENNReal.toReal_mono (ENNReal.mul_ne_top ENNReal.ofReal_ne_top (Lp.eLpNorm_ne_top _))
     hle).trans_eq ?_
   rw [ENNReal.toReal_mul, ENNReal.toReal_ofReal hc]
+
+/-- An operator from the graph space to `L²(ℝ, H)` that is bounded pointwise by `c ‖ι (u s)‖` and
+vanishes off a bounded window `(-b, b)` is compact, by the Aubin–Lions lemma. -/
+theorem isCompactOperator_of_ae_norm_le (hι : IsCompactOperator ι)
+    {T : WeakDerivStep volume ⊤ 2 (ι.compLpL 2 μ₀) →L[ℝ] Lp H 2 μ₀} {c : ℝ} (hc : 0 ≤ c)
+    (hT : ∀ u, ∀ᵐ s ∂volume, ‖T u s‖ ≤ c * ‖ι (prev _ u s)‖)
+    (hT₀ : ∀ u, ∀ᵐ s ∂volume, s ∉ Ioo (-b) b → T u s = 0) : IsCompactOperator T :=
+  IsCompactOperator.of_norm_le_mul_norm (C := c)
+    (isCompactOperator_restrictBaseL_compLpL (p := 2) hι le_top)
+    fun u ↦ norm_le_mul_norm_restrictBaseL hc u (hT u) (hT₀ u)
 
 end Line
 
