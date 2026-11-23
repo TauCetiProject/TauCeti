@@ -12,7 +12,7 @@ public import TauCeti.Geometry.Manifold.Riemannian.Basic
 public import Mathlib.LinearAlgebra.BilinearForm.Properties
 public import Mathlib.Topology.VectorBundle.FiniteDimensional
 import TauCeti.Geometry.Manifold.ExtChartAt
-import TauCeti.Geometry.Manifold.VectorBundle.Tangent.Basic
+import TauCeti.Geometry.Manifold.VectorBundle.Tangent.OpensModelSpace
 
 /-!
 # Smooth nondegenerate metrics on a manifold

@@ -210,8 +210,8 @@ theorem contMDiff_riemannianExp_comp_val (h : IsNormalDomain I M p U) {n : ℕ�
   intro v
   have h' : IsLocalDiffeomorphAt 𝓘(ℝ, TangentSpace I p) I ∞ (riemannianExp I M p)
       (v : TangentSpace I p) :=
-    h.isLocalDiffeomorphOn ⟨v, h.mem_opens.1 v.2⟩
-  exact (h'.contMDiffAt.of_le (by simpa using hn)).comp v contMDiff_subtype_val.contMDiffAt
+    h.isLocalDiffeomorphOn ⟨v, h.mem_opens.1 v.property⟩
+  exact (h'.contMDiffAt.of_le (by simpa using hn)).comp v contMDiff_subtypeVal.contMDiffAt
 
 /-- On a normal domain, the differential of the exponential map read on the open subset is the
 differential of the exponential map, after identifying the tangent spaces of the open subset and
@@ -223,9 +223,9 @@ theorem mfderiv_riemannianExp_comp_val (h : IsNormalDomain I M p U) (v : h.opens
         (tangentSpaceOpenEquiv (I := 𝓘(ℝ, TangentSpace I p)) v).toContinuousLinearMap := by
   have h' : IsLocalDiffeomorphAt 𝓘(ℝ, TangentSpace I p) I ∞ (riemannianExp I M p)
       (v : TangentSpace I p) :=
-    h.isLocalDiffeomorphOn ⟨v, h.mem_opens.1 v.2⟩
+    h.isLocalDiffeomorphOn ⟨v, h.mem_opens.1 v.property⟩
   rw [mfderiv_comp v (h'.contMDiffAt.mdifferentiableAt (by simp))
-    (contMDiff_subtype_val.contMDiffAt.mdifferentiableAt one_ne_zero),
+    (contMDiff_subtypeVal.contMDiffAt.mdifferentiableAt one_ne_zero),
     mfderiv_subtype_val (I := 𝓘(ℝ, TangentSpace I p)) v]
 
 /-- The exponential map has invertible differential on a normal domain. -/
@@ -234,7 +234,7 @@ theorem isInvertible_mfderiv_riemannianExp_comp_val (h : IsNormalDomain I M p U)
     (mfderiv 𝓘(ℝ, TangentSpace I p) I
       (riemannianExp I M p ∘ (Subtype.val : h.opens → TangentSpace I p)) v).IsInvertible := by
   rw [h.mfderiv_riemannianExp_comp_val v]
-  exact ((h.isLocalDiffeomorphOn ⟨v, h.mem_opens.1 v.2⟩).isInvertible_mfderiv (by simp)).comp
+  exact ((h.isLocalDiffeomorphOn ⟨v, h.mem_opens.1 v.property⟩).isInvertible_mfderiv (by simp)).comp
     ContinuousLinearMap.isInvertible_equiv
 
 variable [I.Boundaryless] [T2Space M]

@@ -10,7 +10,7 @@ public import TauCeti.Geometry.Manifold.ExtChartAt
 public import TauCeti.Geometry.Manifold.Riemannian.Isometry.Pullback
 public import TauCeti.Geometry.Manifold.Riemannian.Scaling
 public import TauCeti.Geometry.Manifold.VectorBundle.Riemannian.Topology
-public import TauCeti.Geometry.Manifold.VectorBundle.Tangent.Basic
+public import TauCeti.Geometry.Manifold.VectorBundle.Tangent.OpensModelSpace
 
 /-!
 # Blowing up a metric at a point
@@ -109,7 +109,7 @@ theorem blowUp_inner (t : Icc (0 : ℝ) 1) (v : U) :
 
 /-- At scale `0` the blow-up is the constant metric with the value of `h` at the origin. -/
 theorem blowUp_zero_inner (v : U) :
-    (h.blowUp hU 0).inner v = h.inner ⟨0, hU.mem (Set.nonempty_of_mem v.2)⟩ := by
+    (h.blowUp hU 0).inner v = h.inner ⟨0, hU.mem (Set.nonempty_of_mem v.property)⟩ := by
   rw [blowUp_inner, StarConvex.opensHomothety_zero]
 
 /-- At scale `1` the blow-up is the metric itself. -/
@@ -123,7 +123,8 @@ theorem chartMetric_blowUp (t : Icc (0 : ℝ) 1) (x₀ : U) {z : V} (hz : z ∈ 
     (h.blowUp hU t).toNondegenerateMetric.chartMetric x₀ z =
       h.toNondegenerateMetric.chartMetric x₀ ((t : ℝ) • z) := by
   rw [chartMetric_opens_model_space _ _ hz,
-    chartMetric_opens_model_space _ _ (starConvex_zero_iff.1 hU hz t.2.1 t.2.2), blowUp_inner]
+    chartMetric_opens_model_space _ _ (starConvex_zero_iff.1 hU hz t.property.1 t.property.2),
+    blowUp_inner]
   congr 1
   exact Subtype.ext (hU.coe_opensHomothety t _)
 
@@ -155,8 +156,8 @@ theorem continuous_blowUp_chartCk [FiniteDimensional ℝ V] (k : ℕ∞) :
       (x := (t₀, z₀)) ((hs.prod hu).mem_nhds ⟨hts, hzu⟩)
   have hmap : Continuous fun q : Icc (0 : ℝ) 1 × (extChartAt 𝓘(ℝ, V) x).target ↦
       ((q.1 : ℝ), (q.2 : V)) :=
-    (continuous_subtype_val.comp continuous_fst).prodMk
-      (continuous_subtype_val.comp continuous_snd)
+    (continuous_subtypeVal.comp continuous_fst).prodMk
+      (continuous_subtypeVal.comp continuous_snd)
   refine (hcont.comp (f := fun q : Icc (0 : ℝ) 1 × (extChartAt 𝓘(ℝ, V) x).target ↦
       ((q.1 : ℝ), (q.2 : V))) hmap.continuousAt).congr ?_
   filter_upwards [hmap.continuousAt.preimage_mem_nhds ((hs.prod hu).mem_nhds ⟨hts, hzu⟩)]
