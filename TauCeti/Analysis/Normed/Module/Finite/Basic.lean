@@ -145,7 +145,7 @@ theorem antilipschitz_of_injective_of_isNoetherian [T2Space R] [IsNoetherian R N
     (f : M →ₗ[R] N) (hf : Function.Injective f) : ∃ C, AntilipschitzWith C f := by
   -- `M` is isomorphic to the range of `f`, which is finite and closed in the noetherian `N`.
   have : Module.Finite R M := Module.Finite.equiv (LinearEquiv.ofInjective f hf).symm
-  exact antilipschitz_of_injective_of_isClosed_range S f hf <| by
-    simpa using TauCeti.Huber.isClosed_of_isNoetherian (range f)
+  exact antilipschitz_of_injective_of_isClosed_range S f hf <|
+    f.coe_range ▸ TauCeti.Huber.isClosed_of_isNoetherian (range f)
 
 end LinearMap

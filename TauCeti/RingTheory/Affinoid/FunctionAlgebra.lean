@@ -206,14 +206,14 @@ theorem exists_norm_le_mul_supSeminorm [IsReduced A] (hA : IsAffinoidAlgebra K A
   have (I : Ideal A) : IsClosed (I : Set A) := hA.isClosed_ideal I
   -- The bound holds on each quotient by a minimal prime.
   have hcomp (𝔭 : minimalPrimes A) :
-      ∃ C : ℝ, 0 < C ∧ ∀ f : A ⧸ 𝔭.1, ‖f‖ ≤ C * supSeminorm K f := by
-    have : 𝔭.1.IsPrime := Ideal.IsMinimalPrime.isPrime 𝔭.2
-    exact (hA.quotient 𝔭.1).exists_norm_le_mul_supSeminorm_of_isDomain
+      ∃ C : ℝ, 0 < C ∧ ∀ f : A ⧸ 𝔭.val, ‖f‖ ≤ C * supSeminorm K f := by
+    have : 𝔭.val.IsPrime := Ideal.IsMinimalPrime.isPrime 𝔭.property
+    exact (hA.quotient 𝔭.val).exists_norm_le_mul_supSeminorm_of_isDomain
   choose C hC hCf using hcomp
   -- `A` embeds in the product of these quotients.
-  let Ψ : A →ₗ[A] ((𝔭 : minimalPrimes A) → A ⧸ 𝔭.1) :=
-    LinearMap.pi fun 𝔭 ↦ (Ideal.Quotient.mkₐ A 𝔭.1).toLinearMap
-  have hΨf (f : A) (𝔭 : minimalPrimes A) : Ψ f 𝔭 = Ideal.Quotient.mk 𝔭.1 f := by simp [Ψ]
+  let Ψ : A →ₗ[A] ((𝔭 : minimalPrimes A) → A ⧸ 𝔭.val) :=
+    LinearMap.pi fun 𝔭 ↦ (Ideal.Quotient.mkₐ A 𝔭.val).toLinearMap
+  have hΨf (f : A) (𝔭 : minimalPrimes A) : Ψ f 𝔭 = Ideal.Quotient.mk 𝔭.val f := by simp [Ψ]
   have hΨ : Function.Injective Ψ := by
     convert Ideal.injective_pi_quotient_mk_minimalPrimes A using 1
     ext f 𝔭
@@ -231,7 +231,7 @@ theorem exists_norm_le_mul_supSeminorm [IsReduced A] (hA : IsAffinoidAlgebra K A
   have hle : C 𝔭 ≤ D := by
     have := Finset.single_le_sum (fun 𝔮 _ ↦ (hC 𝔮).le) (Finset.mem_univ 𝔭)
     linarith
-  have hsup := hA.supSeminorm_map_le (hA.quotient 𝔭.1) (Ideal.Quotient.mkₐ K 𝔭.1) f
+  have hsup := hA.supSeminorm_map_le (hA.quotient 𝔭.val) (Ideal.Quotient.mkₐ K 𝔭.val) f
   rw [Ideal.Quotient.mkₐ_eq_mk] at hsup
   rw [hΨf]
   exact mul_le_mul hle hsup (supSeminorm_nonneg _) hD.le
