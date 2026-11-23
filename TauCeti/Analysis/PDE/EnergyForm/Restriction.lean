@@ -66,6 +66,8 @@ integrability hypotheses on `Ω`.
 * `TauCeti.PDE.forall_energyFormH1_restrictL_eq_inner_add_inner`: the same for
   `-∂ᵢ(aⁱʲ ∂ⱼu) = f - div G` with `f ∈ L²(B)`, which gives
   `a(u, v) = ⟪G - c, ∇v⟫_{L²(B)} + ⟪f, v⟫_{L²(B)}`.
+* `TauCeti.PDE.energyFormH1_restrictL_ofTestFunctionₗ_eq_setIntegral_inner_add_setIntegral`: the
+  same equation for the restriction of `u` to `B`, tested against test functions on `B`.
 * `TauCeti.PDE.forall_energyFormH1_restrictL_eq_setIntegral`: if `u` solves `-∂ᵢ(aⁱʲ ∂ⱼu) = f`
   weakly on `Ω`, tested against test functions, then on every open `B ⊆ Ω` on which `a` is
   essentially bounded and `f` is square integrable it satisfies `a(u, v) = ∫_B f v` for every
@@ -550,6 +552,18 @@ theorem inner_gradient_restrictL_eq_inner_toLp {F : Type*} [NormedAddCommGroup F
     gradientTestFunctionLp_apply_ae (mu := mu) (Omega := B) 2 φ] with x hx hφx
   rw [W1p.gradient_ofTestFunctionₗ, hx, hφx]
 
+/-- The `L²` pairing on `B` of a square-integrable `f` with a test function `φ` on `B` is
+`∫_B f φ`. -/
+private theorem inner_toLp_value_ofTestFunctionₗ {B : Opens (EuclideanSpace ℝ ι)}
+    {f : EuclideanSpace ℝ ι → ℝ} (hf : MemLp f 2 (mu.restrict B)) (φ : 𝓓(B, ℝ)) :
+    ⟪hf.toLp, W1p.value (W1p.ofTestFunctionₗ mu B 2 φ)⟫_ℝ = ∫ x in B, f x * φ x ∂mu := by
+  rw [L2.inner_def]
+  refine integral_congr_ae ?_
+  filter_upwards [hf.coeFn_toLp, W1p.value_ofTestFunctionₗ_ae (mu := mu) (p := 2) φ]
+    with x hx hφx
+  rw [hx, hφx]
+  simp [mul_comm]
+
 /-- **Weak equations restrict to smaller domains.** Let `B ⊆ Ω` be open, let the coefficients
 be essentially bounded on `B`, and let `ℓ` be a continuous linear functional on `H¹(B)`. If
 `a(u, ψ) = ℓ(φ)` whenever the test function `ψ` on `Ω` is a test function `φ` on `B`, then
@@ -604,24 +618,35 @@ theorem forall_energyFormH1_restrictL_eq_inner_add_inner {B : Opens (EuclideanSp
     (fun φ ψ hψ => ?_) v).trans (by
       simp only [add_apply, ContinuousLinearMap.comp_apply,
         innerSL_apply_apply, W1p.gradientL_apply, W1p.valueL_apply])
-  have hfφ : ⟪hf.toLp, W1p.value (W1p.ofTestFunctionₗ mu B 2 φ)⟫_ℝ =
-      ∫ x in B, f x * φ x ∂mu := by
-    rw [L2.inner_def]
-    refine integral_congr_ae ?_
-    filter_upwards [hf.coeFn_toLp, W1p.value_ofTestFunctionₗ_ae (mu := mu) (p := 2) φ]
-      with x hx hφx
-    rw [hx, hφx]
-    simp [mul_comm]
   -- A test function on an open set `U` vanishes off `U`, so `∫_U f χ = ∫ f χ`.
   have hfint {U : Opens (EuclideanSpace ℝ ι)} (χ : 𝓓(U, ℝ)) :
       ∫ x in U, f x * χ x ∂mu = ∫ x, f x * χ x ∂mu := by
     simpa only [smul_eq_mul, mul_comm] using setIntegral_smul_eq_integral_smul (μ := mu) (w := f) χ
   -- `a(u, φ) = ∫_Ω ⟪G, ∇φ⟫ + ∫_Ω f φ = ∫_B ⟪G, ∇φ⟫ + ∫_B f φ`.
   simp only [add_apply, ContinuousLinearMap.comp_apply, innerSL_apply_apply,
-    W1p.gradientL_apply, W1p.valueL_apply, inner_toLp_gradient_ofTestFunctionₗ hGc φ, hfφ]
+    W1p.gradientL_apply, W1p.valueL_apply, inner_toLp_gradient_ofTestFunctionₗ hGc φ,
+    inner_toLp_value_ofTestFunctionₗ hf φ]
   rw [hu, hfint ψ, hfint φ, hψ, φ.setIntegral_inner_gradient_eq_integral_inner_gradient G
     (φ.tsupport_subset.trans hB),
     φ.setIntegral_inner_gradient_eq_integral_inner_gradient G φ.tsupport_subset]
+
+/-- **Restricting a weak solution, tested against test functions.** The weak equation
+`-∂ᵢ(aⁱʲ ∂ⱼu) = f - div G` on `Ω`, tested against test functions, holds for the restriction of `u`
+to every open `B ⊆ Ω`, tested against test functions on `B`, provided `G - c` (for some constant
+`c`) and `f` are square integrable on `B` and the coefficients are essentially bounded on `B`. -/
+theorem energyFormH1_restrictL_ofTestFunctionₗ_eq_setIntegral_inner_add_setIntegral
+    {B : Opens (EuclideanSpace ℝ ι)} (hB : B ≤ Omega) {a : EuclideanSpace ℝ ι → Matrix ι ι ℝ}
+    (ha : MemLp (fun x => energyIntegrand (a x) 0 0) ⊤ (mu.restrict B)) {u : W1p mu Omega 2}
+    {G : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι} {f : EuclideanSpace ℝ ι → ℝ}
+    (hu : ∀ φ : 𝓓(Omega, ℝ), energyFormH1 a 0 0 u (W1p.ofTestFunctionₗ mu Omega 2 φ) =
+      ∫ x in Omega, ⟪G x, ∇ (φ : EuclideanSpace ℝ ι → ℝ) x⟫_ℝ ∂mu + ∫ x in Omega, f x * φ x ∂mu)
+    {c : EuclideanSpace ℝ ι} (hGc : MemLp (fun x => G x - c) 2 (mu.restrict B))
+    (hf : MemLp f 2 (mu.restrict B)) (φ : 𝓓(B, ℝ)) :
+    energyFormH1 a 0 0 (W1p.restrictL hB u) (W1p.ofTestFunctionₗ mu B 2 φ) =
+      ∫ x in B, ⟪G x, ∇ (φ : EuclideanSpace ℝ ι → ℝ) x⟫_ℝ ∂mu + ∫ x in B, f x * φ x ∂mu := by
+  rw [← inner_toLp_gradient_ofTestFunctionₗ hGc φ, ← inner_toLp_value_ofTestFunctionₗ hf φ]
+  exact forall_energyFormH1_restrictL_eq_inner_add_inner hB ha hu hGc hf
+    ⟨_, W1p.ofTestFunctionₗ_mem_w1p0Submodule φ⟩
 
 /-- The weak equation `-∂ᵢ(aⁱʲ ∂ⱼu) = -div G` on `Ω`, tested against test functions, holds on
 every open `B ⊆ Ω` against all of `H¹₀(B)` once `G` is replaced by `G - c` for a constant `c`,

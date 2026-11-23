@@ -247,6 +247,17 @@ theorem fourierMultiplierCLM_fourierMultiplierCLM_apply :
       fourierMultiplierCLM F (m₁ • m₂ : Lp ℂ ∞ (volume : Measure E)) f := by
   rw [← fourierMultiplierCLM_compL_fourierMultiplierCLM, comp_apply]
 
+/-- Two multipliers commute, since their symbols do. -/
+theorem fourierMultiplierCLM_fourierMultiplierCLM_comm :
+    fourierMultiplierCLM F m₁ (fourierMultiplierCLM F m₂ f) =
+      fourierMultiplierCLM F m₂ (fourierMultiplierCLM F m₁ f) := by
+  have h : (m₁ • m₂ : Lp ℂ ∞ (volume : Measure E)) = m₂ • m₁ := by
+    apply Lp.ext
+    filter_upwards [coeFn_lpSMul (r := ∞) m₁ m₂, coeFn_lpSMul (r := ∞) m₂ m₁] with ξ h₁ h₂
+    rw [h₁, h₂, Pi.smul_apply', Pi.smul_apply', smul_eq_mul, smul_eq_mul, mul_comm]
+  rw [fourierMultiplierCLM_fourierMultiplierCLM_apply,
+    fourierMultiplierCLM_fourierMultiplierCLM_apply, h]
+
 /-- The adjoint of the multiplier with symbol `m` is the multiplier with the complex conjugate
 symbol `star m`. In particular a real symbol gives a self-adjoint multiplier. -/
 theorem adjoint_fourierMultiplierCLM :
