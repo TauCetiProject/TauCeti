@@ -52,24 +52,19 @@ variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimen
   [TopologicalSpace H] {I : ModelWithCorners ℝ E H} [TopologicalSpace M] [ChartedSpace H M]
   [IsManifold I 1 M] {ι : Type*} [Fintype ι]
 
-omit [IsManifold I 1 M] in
-/-- The derivative of the inclusion of the interior is invertible, being the identity. -/
-private theorem isInvertible_mfderiv_val (x : I.interior M) :
-    (mfderiv 𝓘(ℝ, E) I Subtype.val x).IsInvertible := by
-  rw [ModelWithCorners.mfderiv_subtypeVal_interior]
-  exact ContinuousLinearMap.isInvertible_equiv (f := ContinuousLinearEquiv.refl ℝ E)
-
 /-- The **orientation of the interior** of an oriented manifold with corners: the pullback of `o`
 along the inclusion of the interior, whose tangent orientation at every point is that of `o`. -/
 def manifoldInterior (o : Orientation I M ι) : Orientation 𝓘(ℝ, E) (I.interior M) ι :=
-  o.pullback (I.contMDiff_subtypeVal_interior (M := M) (n := 1)) isInvertible_mfderiv_val o.card_eq
+  o.pullback (I.contMDiff_subtypeVal_interior (M := M) (n := 1))
+    ((I.isLocalDiffeomorph_subtypeVal_interior M 1).isInvertible_mfderiv one_ne_zero) o.card_eq
 
 /-- The tangent orientation of the interior at `x` is the tangent orientation of `M` at `x`. -/
 @[simp]
 theorem orientationAt_manifoldInterior (o : Orientation I M ι) (x : I.interior M) :
     o.manifoldInterior.orientationAt x = o.orientationAt (x : M) := by
   have h := map_orientationAt_pullback o (I.contMDiff_subtypeVal_interior (M := M) (n := 1))
-    isInvertible_mfderiv_val o.card_eq x (ContinuousLinearEquiv.refl ℝ E)
+    ((I.isLocalDiffeomorph_subtypeVal_interior M 1).isInvertible_mfderiv one_ne_zero) o.card_eq x
+    (ContinuousLinearEquiv.refl ℝ E)
     (ModelWithCorners.mfderiv_subtypeVal_interior x).symm
   have hrefl : (ContinuousLinearEquiv.refl ℝ E).toLinearEquiv = LinearEquiv.refl ℝ E :=
     LinearEquiv.ext fun v ↦ by simp
