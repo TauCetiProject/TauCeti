@@ -19,8 +19,8 @@ public import Mathlib.Tactic.Ring
 for a symmetric trace-free endomorphism `S` of a real plane and a symmetric trace-free
 endomorphism-valued map `D` satisfying `D u v = D v u`.
 
-For the second fundamental form `S = A` and its covariant derivative `D = ∇A` on a Euclidean
-minimal surface, this reads `|∇|A|²|² = 2 |A|² |∇A|²`. Hence
+For the scalar second fundamental form `S = A` and its covariant derivative `D = ∇A` on a
+minimal surface in ℝ³, this reads `|∇|A|²|² = 2 |A|² |∇A|²`. Hence
 `|∇|A||² = |∇A|² / 2` wherever `A ≠ 0`, the sharp Kato equality used in the
 surface-dimensional Simons formula. The energy uses the existing full two-slot tensor norm,
 summed over an orthonormal basis in each input.
@@ -68,7 +68,7 @@ private theorem planar_coefficient_identity (a : Fin 2 → Fin 2 → ℝ)
 /-- For a symmetric trace-free endomorphism `S` of a real plane and an endomorphism-valued
 map `D` with symmetric trace-free values and `D u v = D v u`, the exact Kato contraction is
 `∑ᵢ (2 ⟪S, D eᵢ⟫_HS)² = 2 ⟪S, S⟫_HS · D.bilinearHilbertSchmidtEnergy`.
-For `S = A` and `D = ∇A` on a Euclidean minimal surface, this gives
+For `S = A` and `D = ∇A` on a minimal surface in ℝ³, this gives
 `|∇|A|²|² = 2 |A|² |∇A|²`, hence `|∇|A||² = |∇A|² / 2` wherever `A ≠ 0`. -/
 theorem planar_kato_identity_of_codazzi (b : OrthonormalBasis (Fin 2) ℝ V)
     (S : V →L[ℝ] V) (D : V →L[ℝ] (V →L[ℝ] V)) (hS : S.toLinearMap.IsSymmetric)
