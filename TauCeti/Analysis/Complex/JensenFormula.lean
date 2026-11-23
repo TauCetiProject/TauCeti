@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.Complex.JensenFormula
 import TauCeti.Analysis.Complex.AbsMax
 import TauCeti.Analysis.Meromorphic.Divisor
+import TauCeti.Analysis.SpecialFunctions.Integrability.PosLog
 
 /-!
 # Jensen's inequality at a zero of the centre, and relative zero counts
@@ -28,6 +29,10 @@ The value `‖a‖` cannot simply replace `‖f c‖` in Mathlib's bound: for `f
 `r = 1/4`, `R = 1/2` and `M = 1` there is one zero in `closedBall 0 (1/4)` while
 `log (M / ‖a‖) / log (R / r) = 0`. Here the bound is `1 + log 2 / log 2 = 2`.
 
+When `f` is holomorphic and zero-free on a closed disc, the mean value property of Jensen's
+formula replaces the circle average of `log ‖f‖` by `log ‖f c‖`, so the boundary `L¹` norm of
+`log ‖f‖` is determined by the mean of `log⁺ ‖f‖`.
+
 ## Main results
 
 * `AnalyticOnNhd.sum_divisor_le_analyticOrderNatAt_add` — Jensen's bound for the number of zeros
@@ -40,8 +45,14 @@ The value `‖a‖` cannot simply replace `‖f c‖` in Mathlib's bound: for `f
 * `AnalyticOnNhd.le_circleAverage_log_norm`: Jensen's inequality from below, the circle average of
   `log ‖f‖` is at least `k * log r + log ‖τ‖`, where `k` is the order of `f` at the centre and `τ`
   its trailing coefficient there.
+* `AnalyticOnNhd.log_norm_le_circleAverage_log_norm`: sub-mean-value inequality
+  `Real.log ‖f c‖ ≤ circleAverage (fun z ↦ Real.log ‖f z‖) c r` when `f` is analytic near
+  `closedBall c |r|` and `f c ≠ 0` (the order-zero case, valid also at `r = 0`).
 * `AnalyticOnNhd.exists_forall_le_circleAverage_log_norm`: for `f` analytic on `ball c R` and
   `s > 0`, a uniform lower bound for these averages on the circles with radii in `[s, R)`.
+* `AnalyticOnNhd.circleAverage_abs_log_norm_of_ne_zero`: for `f` holomorphic and zero-free on a
+  closed disc about `c`, the circle average of `|log ‖f‖|` is twice that of `log⁺ ‖f‖` minus
+  `log ‖f c‖`.
 
 ## Implementation notes
 
@@ -217,6 +228,21 @@ theorem le_circleAverage_log_norm (hf : AnalyticOnNhd ℂ f (closedBall c |r|)) 
     · simp [hu]
   linarith
 
+/-- **Sub-mean-value inequality for `log ‖f‖`** (Jensen's inequality at a nonvanishing centre).
+If `f` is analytic on a neighbourhood of `closedBall c |r|` and `f c ≠ 0`, then
+`Real.log ‖f c‖ ≤ circleAverage (fun z ↦ Real.log ‖f z‖) c r`. -/
+theorem log_norm_le_circleAverage_log_norm (hf : AnalyticOnNhd ℂ f (closedBall c |r|))
+    (hfc : f c ≠ 0) :
+    Real.log ‖f c‖ ≤ circleAverage (fun z ↦ Real.log ‖f z‖) c r := by
+  rcases eq_or_ne r 0 with rfl | hr
+  · simp
+  · have hord : analyticOrderNatAt f c = 0 := by
+      by_contra hne
+      exact hfc (apply_eq_zero_of_analyticOrderNatAt_ne_zero hne)
+    have htrail : meromorphicTrailingCoeffAt f c = f c :=
+      (hf c (mem_closedBall_self (abs_nonneg r))).meromorphicTrailingCoeffAt_of_ne_zero hfc
+    simpa [hord, htrail] using hf.le_circleAverage_log_norm hr
+
 /-- By Jensen's inequality, the circle averages of `log ‖f‖` of a function analytic on `ball c R`
 are bounded below on the circles about `c` with radii in `[s, R)`, for any `s > 0`. -/
 theorem exists_forall_le_circleAverage_log_norm (hf : AnalyticOnNhd ℂ f (ball c R)) {s : ℝ}
@@ -227,6 +253,17 @@ theorem exists_forall_le_circleAverage_log_norm (hf : AnalyticOnNhd ℂ f (ball 
     exact hr.1
   · rw [abs_of_pos (hs.trans_le hr.1)]
     exact closedBall_subset_ball hr.2
+
+/-- If `f` is holomorphic and zero-free on the closed disc of radius `|r|` about `c`, then the
+circle average of `|log ‖f‖|` is twice the circle average of `log⁺ ‖f‖` minus `log ‖f c‖`. In
+particular, if `‖f c‖ = 1`, then the circle average of `|log ‖f‖|` is twice that of `log⁺ ‖f‖`:
+the positive and negative parts of `log ‖f‖` have the same mean. -/
+theorem circleAverage_abs_log_norm_of_ne_zero
+    (h₁f : AnalyticOnNhd ℂ f (closedBall c |r|)) (h₂f : ∀ u ∈ closedBall c |r|, f u ≠ 0) :
+    circleAverage (fun z ↦ |Real.log ‖f z‖|) c r =
+      2 * circleAverage (fun z ↦ log⁺ ‖f z‖) c r - Real.log ‖f c‖ := by
+  rw [(h₁f.mono sphere_subset_closedBall).meromorphicOn.circleAverage_abs_log_norm,
+    h₁f.circleAverage_log_norm_of_ne_zero h₂f]
 
 end AnalyticOnNhd
 

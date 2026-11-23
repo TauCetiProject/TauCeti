@@ -107,11 +107,11 @@ variable {A : Type w} [Category.{t} A] [HasColimitsOfSize.{v, v} A]
 neighbourhoods of that point. -/
 noncomputable def nhdsCocone : Cocone ((nhdsInclusion (ι := ι) x).op ⋙ P) where
   pt := (G.point x).presheafFiber.obj P
-  ι.app U := (G.point x).toPresheafFiber U.unop.1 (G.pointElement x U.unop.2) P
+  ι.app U := (G.point x).toPresheafFiber U.unop.val (G.pointElement x U.unop.property) P
   ι.naturality _ V f :=
     ((G.point x).toPresheafFiber_w
       ((nhdsInclusion (ι := ι) x).map f.unop)
-        (G.pointElement x V.unop.2) P).trans (Category.comp_id _).symm
+        (G.pointElement x V.unop.property) P).trans (Category.comp_id _).symm
 
 /-- The fiber at a classical site point satisfies the colimit universal property for
 admissible neighbourhoods. This holds for presheaves, without a sheaf hypothesis. -/
@@ -245,8 +245,8 @@ variable {Y : TopCat.{v}} {A : Type w} [Category.{v} A] [HasColimitsOfSize.{v, v
 -- neighbourhoods and their inclusion order are identical.
 private def topologicalNhdsOrderIso (x : Y) :
     {U : Opens Y // x ∈ opensEmbedding Y U} ≃o OpenNhds x where
-  toFun U := ⟨U.1, by simpa using U.2⟩
-  invFun U := ⟨U.1, by simpa using U.2⟩
+  toFun U := ⟨U.val, by simpa using U.property⟩
+  invFun U := ⟨U.val, by simpa using U.property⟩
   left_inv _ := rfl
   right_inv _ := rfl
   map_rel_iff' := Iff.rfl

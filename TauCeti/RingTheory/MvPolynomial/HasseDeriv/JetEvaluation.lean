@@ -38,14 +38,15 @@ interpolation matrix whose minors the arithmetic determinant method estimates.
   `MvPolynomial.aeval_hasseDeriv_eq_sum` is the box case of `MvPolynomial.jetEval_eq_mulVec`.
 * `MvPolynomial.toMatrix_jetEval`, `MvPolynomial.jetEval_eq_mulVec`: `jetMatrix` is the matrix of
   `jetEval` in the monomial basis.
-* `MvPolynomial.mem_ker_jetEval`: the kernel consists of the polynomials all of whose prescribed
-  jets vanish.
+* `MvPolynomial.mem_ker_jetEval`, `MvPolynomial.mem_ker_ordinaryJetEval`: the kernels consist of
+  the polynomials all of whose prescribed jets vanish.
 * `MvPolynomial.jetEval_mapRestrictSupport`, `MvPolynomial.jetMatrix_map`: naturality for a ring
   map `R →+* S`. Applied to `Ideal.Quotient.mk J`, they say that the jet map and the jet matrix
   over `R ⧸ J` are the reductions of those over `R`.
-* `MvPolynomial.ordinaryJetEval_apply_eq_factorial_mul`, `MvPolynomial.toMatrix_ordinaryJetEval`:
-  the ordinary jet map along multi-indices `k i • eᵥ₍ᵢ₎` is the Hasse one with row `i`
-  multiplied by `(k i)!`.
+* `MvPolynomial.ordinaryJetEval_apply_eq_factorial_mul`, `MvPolynomial.toMatrix_ordinaryJetEval`,
+  `MvPolynomial.toMatrix_ordinaryJetEval_eq_diagonal_mul`: the ordinary jet map along multi-indices
+  `k i • eᵥ₍ᵢ₎` is the Hasse one with row `i` multiplied by `(k i)!` (left multiplication by
+  `Matrix.diagonal (fun i ↦ ((k i).factorial : R))`).
 
 ## References
 
@@ -124,7 +125,7 @@ theorem mem_ker_jetEval {f : restrictSupport R s} :
 theorem jetEval_empty : jetEval (∅ : Set (σ →₀ ℕ)) a d = 0 := by
   ext f i
   have hf : (f : MvPolynomial σ R) = 0 := by
-    simpa [Set.subset_empty_iff] using (mem_restrictSupport_iff R).1 f.2
+    simpa [Set.subset_empty_iff] using (mem_restrictSupport_iff R).1 f.property
   simp [hf]
 
 /-- Naturality of the jet evaluation map: changing coefficients along `f : R →+* S` before or
@@ -176,6 +177,24 @@ theorem toMatrix_ordinaryJetEval [Fintype s] [Finite ι] [DecidableEq s] :
   rw [LinearMap.toMatrix_apply, Pi.basisFun_repr, ordinaryJetEval_apply_eq_factorial_mul,
     jetEval_apply]
   simp
+
+/-- The matrix of the ordinary jet map is the diagonal matrix of factorials `(k i)!` times the
+Hasse jet matrix. -/
+theorem toMatrix_ordinaryJetEval_eq_diagonal_mul [Fintype s] [Fintype ι] [DecidableEq s]
+    [DecidableEq ι] :
+    LinearMap.toMatrix (basisRestrictSupport R s) (Pi.basisFun R ι) (ordinaryJetEval s a v k) =
+      Matrix.diagonal (fun i ↦ ((k i).factorial : R)) *
+        jetMatrix s a (fun i ↦ single (v i) (k i)) := by
+  rw [toMatrix_ordinaryJetEval]
+  ext i μ
+  simp [Matrix.diagonal_mul]
+
+/-- The kernel of the ordinary jet map consists of the polynomials supported on `s` all of whose
+prescribed ordinary jets vanish. -/
+theorem mem_ker_ordinaryJetEval {f : restrictSupport R s} :
+    f ∈ LinearMap.ker (ordinaryJetEval s a v k) ↔
+      ∀ i, eval (a i) ((pderiv (v i))^[k i] (f : MvPolynomial σ R)) = 0 := by
+  simp [funext_iff]
 
 end Ordinary
 

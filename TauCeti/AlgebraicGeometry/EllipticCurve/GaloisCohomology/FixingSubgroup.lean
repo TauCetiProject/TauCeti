@@ -120,7 +120,8 @@ theorem forall_smul_eq_torsionCoeff_divisionField (m : ℕ)
   rw [absoluteGaloisGroupMap_separableClosureAlgEquiv, ContinuousMonoidHom.comp_toFun,
     ContinuousMonoidHom.coe_coe, ContinuousMonoidHom.subgroupSubtype_apply]
   simpa only [IntermediateField.fieldRange_val] using
-    (absoluteGaloisGroupEquivFixingSubgroup K (W.divisionField m) (W.divisionField m).val g).2
+    (absoluteGaloisGroupEquivFixingSubgroup K (W.divisionField m)
+        (W.divisionField m).val g).property
 
 /-- **Restriction of `H¹(G_K, E[m])` to the `m`-division field `K(E[m])` has finite kernel**, for
 `W` elliptic and `m ≠ 0`, along any embedding of separable closures. -/

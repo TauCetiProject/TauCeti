@@ -53,28 +53,29 @@ are the oriented orthonormal frame `(x, v, x ⨯₃ v)`. The inverse sends a rot
 columns. -/
 def stiefelTwoHomeomorphSpecialOrthogonalGroup :
     stiefel (EuclideanSpace ℝ (Fin 3)) 2 ≃ₜ specialOrthogonalGroup (Fin 3) ℝ where
-  toFun v := ⟨ofFrame (ofLp (v.1 0)) (ofLp (v.1 1)),
-    ofFrame_mem_iff.2 (mem_stiefel_two_euclideanSpace_iff.1 v.2)⟩
+  toFun v := ⟨ofFrame (ofLp (v.val 0)) (ofLp (v.val 1)),
+    ofFrame_mem_iff.2 (mem_stiefel_two_euclideanSpace_iff.1 v.property)⟩
   invFun A := ⟨![toLp 2 ((A : Matrix (Fin 3) (Fin 3) ℝ).col 0),
       toLp 2 ((A : Matrix (Fin 3) (Fin 3) ℝ).col 1)],
     by
-      have h := col_dotProduct_col_of_mem_orthogonalGroup A.2.1
+      have h := col_dotProduct_col_of_mem_orthogonalGroup A.property.1
       exact mem_stiefel_two_euclideanSpace_iff.2
         ⟨by simpa using h 0 0, by simpa using h 1 1, by simpa using h 0 1⟩⟩
   left_inv v := by
     ext1
     funext i
     fin_cases i <;> simp
-  right_inv A := Subtype.ext (ofFrame_col_zero_col_one A.2)
+  right_inv A := Subtype.ext (ofFrame_col_zero_col_one A.property)
   continuous_toFun := by
-    have hv (i : Fin 2) : Continuous fun v : stiefel (EuclideanSpace ℝ (Fin 3)) 2 ↦ ofLp (v.1 i) :=
-      (PiLp.continuous_ofLp 2 _).comp ((continuous_apply i).comp continuous_subtype_val)
+    have hv (i : Fin 2) : Continuous fun v : stiefel (EuclideanSpace ℝ (Fin 3)) 2 ↦ ofLp (v.val i)
+        :=
+      (PiLp.continuous_ofLp 2 _).comp ((continuous_apply i).comp continuous_subtypeVal)
     exact (continuous_ofFrame.comp ((hv 0).prodMk (hv 1))).subtype_mk _
   continuous_invFun := by
     have hA (j : Fin 3) : Continuous fun A : specialOrthogonalGroup (Fin 3) ℝ ↦
         toLp 2 ((A : Matrix (Fin 3) (Fin 3) ℝ).col j) :=
       (PiLp.continuous_toLp 2 _).comp ((continuous_apply j).comp
-        (continuous_id.matrix_transpose.comp continuous_subtype_val))
+        (continuous_id.matrix_transpose.comp continuous_subtypeVal))
     refine Continuous.subtype_mk (continuous_pi fun i ↦ ?_) _
     fin_cases i
     · exact hA 0
@@ -85,7 +86,7 @@ def stiefelTwoHomeomorphSpecialOrthogonalGroup :
 theorem coe_stiefelTwoHomeomorphSpecialOrthogonalGroup_apply
     (v : stiefel (EuclideanSpace ℝ (Fin 3)) 2) :
     (stiefelTwoHomeomorphSpecialOrthogonalGroup v : Matrix (Fin 3) (Fin 3) ℝ) =
-      ofFrame (ofLp (v.1 0)) (ofLp (v.1 1)) :=
+      ofFrame (ofLp (v.val 0)) (ofLp (v.val 1)) :=
   (rfl)
 
 /-- A rotation goes to the unit tangent vector given by its second column, at the point given by

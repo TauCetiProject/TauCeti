@@ -35,6 +35,8 @@ operators over an `RCLike` field, with the structure an instance provides in a c
   structure is `Algebra.restrictScalars R S A`.
 * `AlgEquiv.toRingEquiv_algebraMap_of_tower`: an `S`-algebra isomorphism fixes the image of `R`,
   stated as a compatibility of the underlying ring isomorphism along `RingEquiv.refl R`.
+* `IsScalarTower.linearMap_eq_restrictScalars_comp`: in a tower `R → S → A`, the structure map
+  `R → A` is the composite of `R → S` and `S → A` as `R`-linear maps.
 -/
 
 public section
@@ -72,3 +74,11 @@ This is the compatibility hypothesis of semilinear transports such as
 theorem AlgEquiv.toRingEquiv_algebraMap_of_tower (e : A ≃ₐ[S] B) (c : R) :
     e.toRingEquiv (algebraMap R A c) = algebraMap R B (RingEquiv.refl R c) :=
   (e.restrictScalars R).commutes c
+
+variable (R S A) in
+/-- In a tower `R → S → A`, the structure map `R → A` is the composite of `R → S` and `S → A`, as
+`R`-linear maps. -/
+theorem IsScalarTower.linearMap_eq_restrictScalars_comp :
+    Algebra.linearMap R A = (Algebra.linearMap S A).restrictScalars R ∘ₗ Algebra.linearMap R S := by
+  ext
+  simp

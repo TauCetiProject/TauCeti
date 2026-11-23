@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.PDE.Regularity.Harnack
+import TauCeti.Analysis.PDE.EnergyForm.Restriction
 import TauCeti.MeasureTheory.Measure.OpenPos
 
 /-!
@@ -108,10 +109,9 @@ private theorem UniformlyEllipticOn.ae_ball_value_eq_of_frequently_sub_lt [Nonem
   have hneg := W1p.value_neg_ae u
   set w := W1p.restrictL hU (-u) + W1p.const M
   have hwv : ∀ᵐ x ∂mu.restrict U, W1p.value w x = M - W1p.value u x := by
-    filter_upwards [W1p.value_add_const_ae (W1p.restrictL hU (-u)) M,
-      W1p.value_restrictL_ae hU (-u), ae_restrict_of_ae_restrict_of_subset hball hneg]
-      with x h1 h2 h3
-    rw [h1, h2, h3, Pi.neg_apply]
+    filter_upwards [W1p.value_restrictL_add_const_ae hU (-u) M,
+      ae_restrict_of_ae_restrict_of_subset hball hneg] with x h1 h3
+    rw [h1, h3, Pi.neg_apply]
     ring
   have hw0 : ∀ᵐ x ∂mu.restrict U, 0 ≤ W1p.value w x := by
     filter_upwards [hwv, ae_restrict_of_ae_restrict_of_subset hball hM] with x h1 h2

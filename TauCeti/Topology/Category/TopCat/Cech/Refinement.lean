@@ -40,16 +40,16 @@ noncomputable def map {ι : Type u} {κ : Type w} (r : ι → κ) :
     CechIndex.{u} ι ⥤ CechIndex.{w} κ := by
   classical
   exact
-    { obj := fun s ↦ OrderDual.toDual ⟨s.1.image r, s.2.image r⟩
+    { obj := fun s ↦ OrderDual.toDual ⟨s.val.image r, s.property.image r⟩
       map := fun f ↦ homOfLE (Finset.image_mono r f.le)
       map_id := fun _ ↦ Subsingleton.elim _ _
       map_comp := fun _ _ ↦ Subsingleton.elim _ _ }
 
 @[simp]
 lemma mem_map_obj_iff {ι : Type u} {κ : Type w} (r : ι → κ) (s : CechIndex ι) (j : κ) :
-    j ∈ ((map r).obj s).1 ↔ ∃ i ∈ s.1, r i = j := by
+    j ∈ ((map r).obj s).val ↔ ∃ i ∈ s.val, r i = j := by
   classical
-  exact Finset.mem_image (s := s.1) (f := r)
+  exact Finset.mem_image (s := s.val) (f := r)
 
 @[simp]
 lemma map_obj_singleton {ι : Type u} {κ : Type w} (r : ι → κ) (i : ι) :
