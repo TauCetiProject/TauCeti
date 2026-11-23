@@ -24,9 +24,8 @@ This file supplies the additional structure and compatibility results over a fie
   commutative;
 * `AbelianScheme.homEquivPointed`: over a field, homomorphisms of abelian schemes are equivalent
   to zero-preserving morphisms over `Spec K`;
-* `AbelianScheme.Field.homEquiv` and `AbelianScheme.Field.toAbelianVarietyMulEquiv`: the
-  pointwise commutative group equivalence on homomorphisms over a field, specializing
-  `AbelianScheme.instCommGroup`;
+* `AbelianScheme.Field.toAbelianVarietyMulEquiv`: the pointwise commutative group equivalence on
+  homomorphisms over a field, specializing `AbelianScheme.instCommGroup`;
 * `AbelianScheme.toAbelianVarietyIdentityIso`, `AbelianScheme.ofAbelianVarietyTrivialIso`,
   `AbelianScheme.toAbelianVarietyProdIso`, `AbelianScheme.ofAbelianVarietyProdIso`, and
   `AbelianScheme.toAbelianVarietyBaseChangeNatIso`: compatibility of the adapters with the zero
@@ -60,16 +59,11 @@ namespace Field
 
 open scoped TauCeti.AlgebraicGeometry.AbelianScheme AbelianVariety.Hom
 
-/-- The bijection on homomorphisms induced by `fieldEquivalence`. -/
-def homEquiv (A B : AbelianScheme (Spec (.of K))) :
-    (A ⟶ B) ≃ (toAbelianVariety A ⟶ toAbelianVariety B) :=
-  (Functor.FullyFaithful.ofFullyFaithful (toAbelianVarietyFunctor (K := K))).homEquiv
-
 /-- Over a field, `toAbelianVarietyFunctor.map` is a group isomorphism for the pointwise group
 laws. -/
 def toAbelianVarietyMulEquiv (A B : AbelianScheme (Spec (.of K))) :
     (A ⟶ B) ≃* (toAbelianVariety A ⟶ toAbelianVariety B) where
-  __ := homEquiv A B
+  __ := (Functor.FullyFaithful.ofFullyFaithful (toAbelianVarietyFunctor (K := K))).homEquiv
   map_mul' f g := AbelianVariety.Hom.toOverHom_injective <| by
     change AbelianVariety.Hom.toOverHom (toAbelianVarietyFunctor.map (f * g)) =
       AbelianVariety.Hom.toOverHom
@@ -90,13 +84,14 @@ end Field
 preserving the identity section. -/
 def homEquivPointed (A B : AbelianScheme (Spec (.of K))) :
     (A ⟶ B) ≃ {f : A.toOver ⟶ B.toOver // η[A.toOver] ≫ f = η[B.toOver]} :=
-  (Field.homEquiv A B).trans
+  ((Functor.FullyFaithful.ofFullyFaithful (toAbelianVarietyFunctor (K := K))).homEquiv).trans
     (AbelianVariety.Hom.equivPointed A.toAbelianVariety B.toAbelianVariety)
 
 @[simp]
 lemma coe_homEquivPointed_apply {A B : AbelianScheme (Spec (.of K))} (f : A ⟶ B) :
     (homEquivPointed A B f : A.toOver ⟶ B.toOver) = toOverHom f :=
-  (AbelianVariety.coe_equivPointed_apply (Field.homEquiv A B f)).trans
+  (AbelianVariety.coe_equivPointed_apply
+    ((Functor.FullyFaithful.ofFullyFaithful (toAbelianVarietyFunctor (K := K))).homEquiv f)).trans
     (toOverHom_toAbelianVarietyFunctor_map f)
 
 @[simp]
@@ -104,7 +99,9 @@ lemma toOverHom_homEquivPointed_symm_apply {A B : AbelianScheme (Spec (.of K))}
     (f : {f : A.toOver ⟶ B.toOver // η[A.toOver] ≫ f = η[B.toOver]}) :
     toOverHom ((homEquivPointed A B).symm f) = f.val :=
   (toOverHom_toAbelianVarietyFunctor_map _).symm.trans <|
-    (congrArg AbelianVariety.Hom.toOverHom ((Field.homEquiv A B).apply_symm_apply _)).trans
+    (congrArg AbelianVariety.Hom.toOverHom
+      ((Functor.FullyFaithful.ofFullyFaithful
+        (toAbelianVarietyFunctor (K := K))).homEquiv.apply_symm_apply _)).trans
       (AbelianVariety.Hom.toOverHom_equivPointed_symm_apply
         (A := A.toAbelianVariety) (B := B.toAbelianVariety) f)
 
@@ -122,33 +119,24 @@ def ofAbelianVarietyTrivialIso (K : Type u) [Field K] :
   ((AbelianVariety.isTerminalTrivial K).isTerminalObj
     (ofAbelianVarietyFunctor (K := K))).uniqueUpToIso (isTerminalIdentity (Spec (.of K)))
 
-private def abelianSchemeProdIsLimit (A B : AbelianScheme (Spec (.of K))) :
-    IsLimit (BinaryFan.mk (prod.fst A B) (prod.snd A B)) := by
-  rw [← prod.binaryFan_def]
-  exact prod.binaryFanIsLimit A B
-
-private def abelianVarietyProdIsLimit (A B : AbelianVariety K) :
-    IsLimit (BinaryFan.mk (AbelianVariety.prod.fst A B) (AbelianVariety.prod.snd A B)) := by
-  rw [← AbelianVariety.prod.binaryFan_def]
-  exact AbelianVariety.prod.binaryFanIsLimit A B
-
 private def toAbelianVarietyProdIsLimit (A B : AbelianScheme (Spec (.of K))) :
     IsLimit (BinaryFan.mk (toAbelianVarietyFunctor.map (prod.fst A B))
       (toAbelianVarietyFunctor.map (prod.snd A B))) :=
   mapIsLimitOfPreservesOfIsLimit toAbelianVarietyFunctor (prod.fst A B) (prod.snd A B)
-    (abelianSchemeProdIsLimit A B)
+    (prod.binaryFanIsLimit A B)
 
 private def ofAbelianVarietyProdIsLimit (A B : AbelianVariety K) :
     IsLimit (BinaryFan.mk (ofAbelianVarietyFunctor.map (AbelianVariety.prod.fst A B))
       (ofAbelianVarietyFunctor.map (AbelianVariety.prod.snd A B))) :=
   mapIsLimitOfPreservesOfIsLimit ofAbelianVarietyFunctor
-    (AbelianVariety.prod.fst A B) (AbelianVariety.prod.snd A B) (abelianVarietyProdIsLimit A B)
+    (AbelianVariety.prod.fst A B) (AbelianVariety.prod.snd A B)
+    (AbelianVariety.prod.binaryFanIsLimit A B)
 
 /-- `toAbelianVariety` preserves binary products, compatibly with projections. -/
 def toAbelianVarietyProdIso (A B : AbelianScheme (Spec (.of K))) :
     toAbelianVariety (A.prod B) ≅ (toAbelianVariety A).prod (toAbelianVariety B) :=
   (toAbelianVarietyProdIsLimit A B).conePointUniqueUpToIso
-    (abelianVarietyProdIsLimit (toAbelianVariety A) (toAbelianVariety B))
+    (AbelianVariety.prod.binaryFanIsLimit (toAbelianVariety A) (toAbelianVariety B))
 
 @[simp]
 lemma toAbelianVarietyProdIso_hom_fst (A B : AbelianScheme (Spec (.of K))) :
@@ -156,7 +144,8 @@ lemma toAbelianVarietyProdIso_hom_fst (A B : AbelianScheme (Spec (.of K))) :
         AbelianVariety.prod.fst (toAbelianVariety A) (toAbelianVariety B) =
       toAbelianVarietyFunctor.map (prod.fst A B) :=
   (toAbelianVarietyProdIsLimit A B).conePointUniqueUpToIso_hom_comp
-    (abelianVarietyProdIsLimit (toAbelianVariety A) (toAbelianVariety B)) ⟨WalkingPair.left⟩
+    (AbelianVariety.prod.binaryFanIsLimit (toAbelianVariety A) (toAbelianVariety B))
+    ⟨WalkingPair.left⟩
 
 @[simp]
 lemma toAbelianVarietyProdIso_hom_snd (A B : AbelianScheme (Spec (.of K))) :
@@ -164,27 +153,28 @@ lemma toAbelianVarietyProdIso_hom_snd (A B : AbelianScheme (Spec (.of K))) :
         AbelianVariety.prod.snd (toAbelianVariety A) (toAbelianVariety B) =
       toAbelianVarietyFunctor.map (prod.snd A B) :=
   (toAbelianVarietyProdIsLimit A B).conePointUniqueUpToIso_hom_comp
-    (abelianVarietyProdIsLimit (toAbelianVariety A) (toAbelianVariety B)) ⟨WalkingPair.right⟩
+    (AbelianVariety.prod.binaryFanIsLimit (toAbelianVariety A) (toAbelianVariety B))
+    ⟨WalkingPair.right⟩
 
 /-- `ofAbelianVariety` preserves binary products, compatibly with projections. -/
 def ofAbelianVarietyProdIso (A B : AbelianVariety K) :
     ofAbelianVariety (A.prod B) ≅ (ofAbelianVariety A).prod (ofAbelianVariety B) :=
   (ofAbelianVarietyProdIsLimit A B).conePointUniqueUpToIso
-    (abelianSchemeProdIsLimit (ofAbelianVariety A) (ofAbelianVariety B))
+    (prod.binaryFanIsLimit (ofAbelianVariety A) (ofAbelianVariety B))
 
 @[simp]
 lemma ofAbelianVarietyProdIso_hom_fst (A B : AbelianVariety K) :
     (ofAbelianVarietyProdIso A B).hom ≫ prod.fst (ofAbelianVariety A) (ofAbelianVariety B) =
       ofAbelianVarietyFunctor.map (AbelianVariety.prod.fst A B) :=
   (ofAbelianVarietyProdIsLimit A B).conePointUniqueUpToIso_hom_comp
-    (abelianSchemeProdIsLimit (ofAbelianVariety A) (ofAbelianVariety B)) ⟨WalkingPair.left⟩
+    (prod.binaryFanIsLimit (ofAbelianVariety A) (ofAbelianVariety B)) ⟨WalkingPair.left⟩
 
 @[simp]
 lemma ofAbelianVarietyProdIso_hom_snd (A B : AbelianVariety K) :
     (ofAbelianVarietyProdIso A B).hom ≫ prod.snd (ofAbelianVariety A) (ofAbelianVariety B) =
       ofAbelianVarietyFunctor.map (AbelianVariety.prod.snd A B) :=
   (ofAbelianVarietyProdIsLimit A B).conePointUniqueUpToIso_hom_comp
-    (abelianSchemeProdIsLimit (ofAbelianVariety A) (ofAbelianVariety B)) ⟨WalkingPair.right⟩
+    (prod.binaryFanIsLimit (ofAbelianVariety A) (ofAbelianVariety B)) ⟨WalkingPair.right⟩
 
 private lemma toOverHom_abelianVarietyBaseChangeFunctor_map {A B : AbelianVariety K} (f : A ⟶ B)
     (L : Type u) [Field L] [Algebra K L] :
@@ -200,22 +190,6 @@ private lemma toOverHom_abelianVarietyBaseChangeFunctor_map {A B : AbelianVariet
   rw [eqToHom_map AbelianVariety.Hom.toOverFunctor, eqToHom_map AbelianVariety.Hom.toOverFunctor]
   erw [Category.assoc, Category.assoc, eqToHom_trans_assoc, eqToHom_trans]
 
-private lemma toOverHom_toAbelianVarietyBaseChange_map {A B : AbelianScheme (Spec (.of K))}
-    (φ : A ⟶ B) (L : Type u) [Field L] [Algebra K L] :
-    AbelianVariety.Hom.toOverHom
-        ((baseChangeFunctor (Spec.map (CommRingCat.ofHom (algebraMap K L))) ⋙
-          toAbelianVarietyFunctor (K := L)).map φ) =
-      eqToHom (rfl : ((baseChangeFunctor (Spec.map (CommRingCat.ofHom (algebraMap K L))) ⋙
-          toAbelianVarietyFunctor (K := L)).obj A).toOver =
-          (Over.pullback (Spec.map (CommRingCat.ofHom (algebraMap K L)))).obj A.toOver) ≫
-        (Over.pullback (Spec.map (CommRingCat.ofHom (algebraMap K L)))).map (toOverHom φ) ≫
-        eqToHom (rfl : (Over.pullback (Spec.map (CommRingCat.ofHom (algebraMap K L)))).obj
-            B.toOver =
-          ((baseChangeFunctor (Spec.map (CommRingCat.ofHom (algebraMap K L))) ⋙
-            toAbelianVarietyFunctor (K := L)).obj B).toOver) := by
-  rw [Functor.comp_map, toOverHom_toAbelianVarietyFunctor_map, toOverHom_baseChangeFunctor_map]
-  exact (Category.id_comp _).symm.trans (Category.comp_id _).symm
-
 /-- Naturality of `toAbelianVariety_baseChange`: the adapter functor commutes with base change
 along a field extension `K → L`. -/
 def toAbelianVarietyBaseChangeNatIso (L : Type u) [Field L] [Algebra K L] :
@@ -227,13 +201,13 @@ def toAbelianVarietyBaseChangeNatIso (L : Type u) [Field L] [Algebra K L] :
     fun {A B} φ ↦ by
       apply AbelianVariety.Hom.toOverHom_injective
       rw [eqToIso.hom, eqToIso.hom, AbelianVariety.Hom.toOverHom_comp,
-        AbelianVariety.Hom.toOverHom_comp, toOverHom_toAbelianVarietyBaseChange_map,
-        Functor.comp_map, toOverHom_abelianVarietyBaseChangeFunctor_map,
-        toOverHom_toAbelianVarietyFunctor_map]
+        AbelianVariety.Hom.toOverHom_comp, Functor.comp_map, Functor.comp_map,
+        toOverHom_toAbelianVarietyFunctor_map, toOverHom_baseChangeFunctor_map,
+        toOverHom_abelianVarietyBaseChangeFunctor_map, toOverHom_toAbelianVarietyFunctor_map]
       dsimp only [AbelianVariety.Hom.toOverHom]
       rw [eqToHom_map AbelianVariety.Hom.toOverFunctor,
         eqToHom_map AbelianVariety.Hom.toOverFunctor]
-      erw [Category.assoc, Category.assoc, eqToHom_trans, eqToHom_trans_assoc]
+      erw [eqToHom_trans_assoc, eqToHom_refl, Category.id_comp]
       rfl
 
 end

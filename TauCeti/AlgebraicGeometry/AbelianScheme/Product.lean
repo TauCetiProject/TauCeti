@@ -17,7 +17,7 @@ is an abelian scheme over `S`.
 
 The projections `AbelianScheme.prod.fst`, `AbelianScheme.prod.snd` and pairing
 `AbelianScheme.prod.lift` exhibit `A.prod B` as the categorical binary product in
-`AbelianScheme S` (`AbelianScheme.prod.binaryFan` and `AbelianScheme.prod.binaryFanIsLimit`),
+`AbelianScheme S` (`AbelianScheme.prod.binaryFanIsLimit`),
 giving `HasBinaryProducts (AbelianScheme S)` and `HasFiniteProducts (AbelianScheme S)`. The file
 also records:
 
@@ -73,53 +73,34 @@ lemma prod_toScheme (A B : AbelianScheme S) :
     (prod A B).toScheme = pullback A.toOver.hom B.toOver.hom :=
   (rfl)
 
-/-- The unit section of a product is the componentwise unit section. -/
-lemma prod_one (A B : AbelianScheme S) :
-    η[(prod A B).toOver] ≫ eqToHom (prod_toOver A B) = η[A.toOver ⊗ B.toOver] :=
-  Category.comp_id _
-
-/-- The multiplication on a product is componentwise multiplication. -/
-lemma prod_mul (A B : AbelianScheme S) :
-    μ[(prod A B).toOver] ≫ eqToHom (prod_toOver A B) =
-      (eqToHom (prod_toOver A B) ⊗ₘ eqToHom (prod_toOver A B)) ≫ μ[A.toOver ⊗ B.toOver] :=
-  (Category.comp_id μ[(prod A B).toOver]).trans
-    ((Category.id_comp _).symm.trans
-      (congrArg (· ≫ _) (MonoidalCategory.id_tensorHom_id _ _).symm))
-
-/-- Inversion on a product is componentwise inversion. -/
-lemma prod_inv (A B : AbelianScheme S) :
-    ι[(prod A B).toOver] ≫ eqToHom (prod_toOver A B) =
-      eqToHom (prod_toOver A B) ≫ ι[A.toOver ⊗ B.toOver] :=
-  (Category.comp_id _).trans (Category.id_comp _).symm
-
-/-- The transport isomorphism for `prod_toOver` is a homomorphism of monoid objects. -/
-instance isMonHom_eqToHom_prod_toOver (A B : AbelianScheme S) :
-    IsMonHom (eqToHom (prod_toOver A B)) where
-  one_hom := prod_one A B
-  mul_hom := prod_mul A B
-
-/-- The inverse transport isomorphism for `prod_toOver` is a homomorphism of monoid objects. -/
-instance isMonHom_eqToHom_prod_toOver_symm (A B : AbelianScheme S) :
-    IsMonHom (eqToHom (prod_toOver A B).symm) :=
-  haveI : IsMonHom (eqToIso (prod_toOver A B)).hom := isMonHom_eqToHom_prod_toOver A B
-  inferInstanceAs (IsMonHom (eqToIso (prod_toOver A B)).inv)
-
 namespace prod
 
 /-- The first projection from a product of abelian schemes. -/
 def fst (A B : AbelianScheme S) : prod A B ⟶ A :=
   let f := eqToHom (prod_toOver A B) ≫ CartesianMonoidalCategory.fst A.toOver B.toOver
+  haveI : IsMonHom (eqToHom (prod_toOver A B)) := by
+    change IsMonHom (eqToHom (rfl : A.toOver ⊗ B.toOver = A.toOver ⊗ B.toOver))
+    rw [eqToHom_refl]
+    infer_instance
   homMk f (IsMonHom.one_hom f) (IsMonHom.mul_hom f)
 
 /-- The second projection from a product of abelian schemes. -/
 def snd (A B : AbelianScheme S) : prod A B ⟶ B :=
   let f := eqToHom (prod_toOver A B) ≫ CartesianMonoidalCategory.snd A.toOver B.toOver
+  haveI : IsMonHom (eqToHom (prod_toOver A B)) := by
+    change IsMonHom (eqToHom (rfl : A.toOver ⊗ B.toOver = A.toOver ⊗ B.toOver))
+    rw [eqToHom_refl]
+    infer_instance
   homMk f (IsMonHom.one_hom f) (IsMonHom.mul_hom f)
 
 /-- Pair two homomorphisms with a common source into a homomorphism into a product. -/
 def lift {A B C : AbelianScheme S} (f : C ⟶ A) (g : C ⟶ B) : C ⟶ prod A B :=
   let h := CartesianMonoidalCategory.lift (toOverHom f) (toOverHom g) ≫
     eqToHom (prod_toOver A B).symm
+  haveI : IsMonHom (eqToHom (prod_toOver A B).symm) := by
+    change IsMonHom (eqToHom (rfl : A.toOver ⊗ B.toOver = A.toOver ⊗ B.toOver))
+    rw [eqToHom_refl]
+    infer_instance
   homMk h (IsMonHom.one_hom h) (IsMonHom.mul_hom h)
 
 @[simp]
@@ -179,25 +160,19 @@ private abbrev grpBinaryFan (A B : AbelianScheme S) :
 
 private def grpBinaryFanIsLimit (A B : AbelianScheme S) :
     IsLimit (grpBinaryFan A B) :=
-  haveI : IsMonHom (eqToIso (prod_toOver A B)).hom := isMonHom_eqToHom_prod_toOver A B
+  haveI : IsMonHom (eqToIso (prod_toOver A B)).hom := by
+    rw [eqToIso.hom]
+    change IsMonHom (eqToHom (rfl : A.toOver ⊗ B.toOver = A.toOver ⊗ B.toOver))
+    rw [eqToHom_refl]
+    infer_instance
   IsLimit.ofIsoLimit
     (CartesianMonoidalCategory.tensorProductIsBinaryProduct (Grp.mk A.toOver) (Grp.mk B.toOver))
     (BinaryFan.ext (Grp.mkIso' (eqToIso (prod_toOver A B))).symm
       (by ext1; exact (Category.comp_id _).trans (toOverHom_fst A B).symm)
       (by ext1; exact (Category.comp_id _).trans (toOverHom_snd A B).symm))
 
-/-- The binary fan exhibiting `A.prod B` as the categorical product of `A` and `B`. -/
-def binaryFan (A B : AbelianScheme S) : BinaryFan A B :=
-  BinaryFan.mk (fst A B) (snd A B)
-
-/-- `prod.binaryFan A B` has apex `A.prod B` and projections `prod.fst A B` and `prod.snd A B`. -/
-lemma binaryFan_def (A B : AbelianScheme S) :
-    binaryFan A B = BinaryFan.mk (fst A B) (snd A B) := by
-  unfold binaryFan
-  rfl
-
-/-- `prod.binaryFan A B` is a limit cone in `AbelianScheme S`. -/
-def binaryFanIsLimit (A B : AbelianScheme S) : IsLimit (binaryFan A B) :=
+/-- `BinaryFan.mk (prod.fst A B) (prod.snd A B)` is a limit cone in `AbelianScheme S`. -/
+def binaryFanIsLimit (A B : AbelianScheme S) : IsLimit (BinaryFan.mk (fst A B) (snd A B)) :=
   isLimitOfReflectsOfMapIsLimit (inducedFunctor fun X : AbelianScheme S ↦ Grp.mk X.toOver)
     (fst A B) (snd A B) (grpBinaryFanIsLimit A B)
 
@@ -205,7 +180,7 @@ end prod
 
 /-- The concrete product supplies the categorical binary product of abelian schemes. -/
 instance hasBinaryProduct (A B : AbelianScheme S) : HasBinaryProduct A B :=
-  HasLimit.mk ⟨prod.binaryFan A B, prod.binaryFanIsLimit A B⟩
+  HasLimit.mk ⟨BinaryFan.mk (prod.fst A B) (prod.snd A B), prod.binaryFanIsLimit A B⟩
 
 /-- Abelian schemes over `S` have categorical binary products. -/
 instance hasBinaryProducts : HasBinaryProducts (AbelianScheme S) :=
@@ -219,14 +194,16 @@ instance hasFiniteProducts : HasFiniteProducts (AbelianScheme S) :=
 def prodIdentityIso (A : AbelianScheme S) : A.prod (identity S) ≅ A :=
   haveI : IsIso (prod.fst A (identity S)) :=
     (BinaryFan.isLimit_iff_isIso_fst (isTerminalIdentity S)
-      (prod.binaryFan A (identity S))).mp ⟨prod.binaryFanIsLimit A (identity S)⟩
+      (BinaryFan.mk (prod.fst A (identity S)) (prod.snd A (identity S)))).mp
+      ⟨prod.binaryFanIsLimit A (identity S)⟩
   asIso (prod.fst A (identity S))
 
 /-- The product of the identity abelian scheme `S` with `A` is canonically isomorphic to `A`. -/
 def identityProdIso (A : AbelianScheme S) : (identity S).prod A ≅ A :=
   haveI : IsIso (prod.snd (identity S) A) :=
     (BinaryFan.isLimit_iff_isIso_snd (isTerminalIdentity S)
-      (prod.binaryFan (identity S) A)).mp ⟨prod.binaryFanIsLimit (identity S) A⟩
+      (BinaryFan.mk (prod.fst (identity S) A) (prod.snd (identity S) A))).mp
+      ⟨prod.binaryFanIsLimit (identity S) A⟩
   asIso (prod.snd (identity S) A)
 
 /-- Base change preserves products of abelian schemes, respecting the group laws and projections. -/

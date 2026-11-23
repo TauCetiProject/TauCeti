@@ -189,29 +189,6 @@ lemma ofGroupScheme_toOver (G : Over S) [GrpObj G] [IsProper G.hom] [Smooth G.ho
     [GeometricallyConnected G.hom] : (ofGroupScheme G).toOver = G :=
   (rfl)
 
-/-- The unit of `ofGroupScheme G` is the unit of `G`. -/
-@[simp]
-lemma ofGroupScheme_one (G : Over S) [GrpObj G] [IsProper G.hom] [Smooth G.hom]
-    [GeometricallyConnected G.hom] :
-    η[(ofGroupScheme G).toOver] ≫ eqToHom (ofGroupScheme_toOver G) = η[G] :=
-  Category.comp_id η[G]
-
-/-- The multiplication of `ofGroupScheme G` is the multiplication of `G`. -/
-@[simp]
-lemma ofGroupScheme_mul (G : Over S) [GrpObj G] [IsProper G.hom] [Smooth G.hom]
-    [GeometricallyConnected G.hom] :
-    μ[(ofGroupScheme G).toOver] ≫ eqToHom (ofGroupScheme_toOver G) =
-      (eqToHom (ofGroupScheme_toOver G) ⊗ₘ eqToHom (ofGroupScheme_toOver G)) ≫ μ[G] :=
-  (Category.comp_id μ[G]).trans (by simp : μ[G] = (𝟙 G ⊗ₘ 𝟙 G) ≫ μ[G])
-
-/-- The inversion of `ofGroupScheme G` is the inversion of `G`. -/
-@[simp]
-lemma ofGroupScheme_inv (G : Over S) [GrpObj G] [IsProper G.hom] [Smooth G.hom]
-    [GeometricallyConnected G.hom] :
-    ι[(ofGroupScheme G).toOver] ≫ eqToHom (ofGroupScheme_toOver G) =
-      eqToHom (ofGroupScheme_toOver G) ≫ ι[G] :=
-  (Category.comp_id ι[G]).trans (Category.id_comp ι[G]).symm
-
 /-! ### The identity abelian scheme -/
 
 /-- The **identity abelian scheme** over `S`: the base `S ⟶ S` with its trivial group law. It is
@@ -245,26 +222,6 @@ lemma identity_toScheme (S : Scheme.{u}) : (identity S).toScheme = S := by
 /-- The scheme over `S` underlying the identity abelian scheme is terminal. -/
 noncomputable def isTerminalIdentityToOver (S : Scheme.{u}) : IsTerminal (identity S).toOver :=
   IsTerminal.ofIso isTerminalTensorUnit (eqToIso (identity_toOver S).symm)
-
-/-- The unit section of the identity abelian scheme is the identity of `𝟙_ (Over S)`. -/
-@[simp]
-lemma identity_one (S : Scheme.{u}) :
-    η[(identity S).toOver] ≫ eqToHom (identity_toOver S) = η[𝟙_ (Over S)] :=
-  Category.comp_id η[𝟙_ (Over S)]
-
-/-- The multiplication of the identity abelian scheme is that of `𝟙_ (Over S)`. -/
-@[simp]
-lemma identity_mul (S : Scheme.{u}) :
-    μ[(identity S).toOver] ≫ eqToHom (identity_toOver S) =
-      (eqToHom (identity_toOver S) ⊗ₘ eqToHom (identity_toOver S)) ≫ μ[𝟙_ (Over S)] :=
-  (Category.comp_id μ[𝟙_ (Over S)]).trans (by simp : μ[𝟙_ (Over S)] = (𝟙 _ ⊗ₘ 𝟙 _) ≫ _)
-
-/-- The inversion of the identity abelian scheme is that of `𝟙_ (Over S)`. -/
-@[simp]
-lemma identity_inv (S : Scheme.{u}) :
-    ι[(identity S).toOver] ≫ eqToHom (identity_toOver S) =
-      eqToHom (identity_toOver S) ≫ ι[𝟙_ (Over S)] :=
-  (Category.comp_id ι[𝟙_ (Over S)]).trans (Category.id_comp _).symm
 
 /-- Every integer multiplication map on the identity abelian scheme is the identity. -/
 @[simp]

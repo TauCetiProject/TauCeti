@@ -163,55 +163,6 @@ theorem relativeDimension_baseChange (A : AbelianScheme S) (f : T ⟶ S) (t : T)
     (topologicalKrullDim_pullback_Spec_map_of_field (K := S.residueField (f t))
       (L := T.residueField t) (A.toOver.hom.fiberToSpecResidueField (f t)))
 
-/-- The structure morphism of `A.baseChange (S.fromSpecResidueField s)` is smooth of relative
-dimension `A.relativeDimension s`. -/
-private lemma smoothOfRelativeDimension_baseChange_fiber (A : AbelianScheme S) (s : S) :
-    SmoothOfRelativeDimension (A.relativeDimension s)
-      (A.baseChange (S.fromSpecResidueField s)).toOver.hom := by
-  let i := S.fromSpecResidueField s
-  have hhom : (A.baseChange i).toOver.hom =
-      eqToHom (baseChange_toScheme A i) ≫ A.toOver.hom.fiberToSpecResidueField s := by
-    rw [← Over.eqToHom_left (baseChange_toOver A i)]
-    exact (eqToHom (baseChange_toOver A i)).w.symm
-  rw [hhom, ← Nat.zero_add (A.relativeDimension s)]
-  exact smoothOfRelativeDimension_comp (n := 0) (m := A.relativeDimension s)
-    (f := eqToHom (baseChange_toScheme A i)) (g := A.toOver.hom.fiberToSpecResidueField s)
-    (hg := smoothOfRelativeDimension_fiber A s)
-
-/-- The relative dimension of a product of abelian schemes is the sum of their relative
-dimensions. -/
-@[simp]
-theorem relativeDimension_prod (A B : AbelianScheme S) (s : S) :
-    (A.prod B).relativeDimension s = A.relativeDimension s + B.relativeDimension s := by
-  let i := S.fromSpecResidueField s
-  let As := A.baseChange i
-  let Bs := B.baseChange i
-  have hAs : SmoothOfRelativeDimension (A.relativeDimension s) As.toOver.hom :=
-    smoothOfRelativeDimension_baseChange_fiber A s
-  have hBs : SmoothOfRelativeDimension (B.relativeDimension s) Bs.toOver.hom :=
-    smoothOfRelativeDimension_baseChange_fiber B s
-  have hprodHom : (As.prod Bs).toOver.hom =
-      eqToHom (prod_toScheme As Bs) ≫ pullback.fst As.toOver.hom Bs.toOver.hom ≫ As.toOver.hom := by
-    rw [← Over.eqToHom_left (prod_toOver As Bs)]
-    simpa [Over.tensorObj_hom] using (eqToHom (prod_toOver As Bs)).w.symm
-  have hfst : SmoothOfRelativeDimension (B.relativeDimension s)
-      (pullback.fst As.toOver.hom Bs.toOver.hom) :=
-    inferInstance
-  have hprodSm : SmoothOfRelativeDimension (A.relativeDimension s + B.relativeDimension s)
-      (As.prod Bs).toOver.hom := by
-    rw [hprodHom, Nat.add_comm, ← Nat.zero_add (B.relativeDimension s + A.relativeDimension s)]
-    exact inferInstance
-  obtain ⟨pt⟩ := (inferInstance : Nonempty (Spec (S.residueField s)))
-  calc
-    (A.prod B).relativeDimension s = (A.prod B).relativeDimension (i pt) := by
-      rw [S.fromSpecResidueField_apply s pt]
-    _ = ((A.prod B).baseChange i).relativeDimension pt :=
-      (relativeDimension_baseChange (A.prod B) i pt).symm
-    _ = (As.prod Bs).relativeDimension pt :=
-      relativeDimension_eq_of_iso (baseChangeProdIso A B i) pt
-    _ = A.relativeDimension s + B.relativeDimension s :=
-      relativeDimension_eq_of_smoothOfRelativeDimension (As.prod Bs) _ pt
-
 /-- Over a field, the relative dimension of `ofAbelianVariety A` agrees with `A.dim`. -/
 theorem relativeDimension_ofAbelianVariety {K : Type u} [Field K] (A : AbelianVariety K)
     (s : Spec (.of K)) :
@@ -236,6 +187,38 @@ theorem dim_toAbelianVariety {K : Type u} [Field K] (A : AbelianScheme (Spec (.o
   rw [ofAbelianVariety_toAbelianVariety] at h
   exact h.symm
 
+/-- The relative dimension of a product of abelian schemes is the sum of their relative
+dimensions. -/
+@[simp]
+theorem relativeDimension_prod (A B : AbelianScheme S) (s : S) :
+    (A.prod B).relativeDimension s = A.relativeDimension s + B.relativeDimension s := by
+  let i := S.fromSpecResidueField s
+  obtain ⟨pt⟩ := (inferInstance : Nonempty (Spec (S.residueField s)))
+  have hcast : ((A.prod B).relativeDimension s : WithBot ℕ∞) =
+      (A.relativeDimension s + B.relativeDimension s : ℕ) := by
+    calc
+      ((A.prod B).relativeDimension s : WithBot ℕ∞)
+          = ((A.prod B).relativeDimension (i pt) : WithBot ℕ∞) := by
+            rw [S.fromSpecResidueField_apply s pt]
+      _ = (((A.prod B).baseChange i).relativeDimension pt : WithBot ℕ∞) := by
+            rw [relativeDimension_baseChange]
+      _ = (((A.baseChange i).prod (B.baseChange i)).relativeDimension pt : WithBot ℕ∞) := by
+            rw [relativeDimension_eq_of_iso (baseChangeProdIso A B i) pt]
+      _ = (toAbelianVariety ((A.baseChange i).prod (B.baseChange i))).dim :=
+            (dim_toAbelianVariety _ pt).symm
+      _ = ((toAbelianVariety (A.baseChange i)).prod (toAbelianVariety (B.baseChange i))).dim :=
+            AbelianVariety.dim_eq_of_iso (toAbelianVarietyProdIso _ _)
+      _ = (toAbelianVariety (A.baseChange i)).dim + (toAbelianVariety (B.baseChange i)).dim :=
+            AbelianVariety.dim_prod _ _
+      _ = (A.relativeDimension s + B.relativeDimension s : ℕ) := by
+            have hA : (A.baseChange i).relativeDimension pt = A.relativeDimension s := by
+              rw [relativeDimension_baseChange, S.fromSpecResidueField_apply s pt]
+            have hB : (B.baseChange i).relativeDimension pt = B.relativeDimension s := by
+              rw [relativeDimension_baseChange, S.fromSpecResidueField_apply s pt]
+            rw [dim_toAbelianVariety _ pt, dim_toAbelianVariety _ pt]
+            exact_mod_cast congrArg₂ (· + ·) hA hB
+  exact_mod_cast hcast
+
 /-! ### Dimension-zero abelian schemes over an arbitrary base -/
 
 /-- If an abelian scheme over `S` has relative dimension `0` everywhere, then its zero section is
@@ -254,21 +237,7 @@ theorem isIso_toOver_hom_of_forall_relativeDimension_eq_zero (A : AbelianScheme 
     (h : ∀ s : S, A.relativeDimension s = 0) :
     IsIso A.toOver.hom := by
   have : IsIso A.zeroSection := isIso_zeroSection_of_forall_relativeDimension_eq_zero A h
-  have heq : A.toOver.hom = inv A.zeroSection :=
-    IsIso.eq_inv_of_hom_inv_id A.zeroSection_comp_toOver_hom
-  rw [heq]
-  infer_instance
-
-/-- The zero section of an abelian scheme is an isomorphism if and only if its relative dimension is
-identically `0`. -/
-theorem isIso_zeroSection_iff (A : AbelianScheme S) :
-    IsIso A.zeroSection ↔ ∀ s : S, A.relativeDimension s = 0 := by
-  refine ⟨fun h s ↦ ?_, isIso_zeroSection_of_forall_relativeDimension_eq_zero A⟩
-  have heq : A.toOver.hom = inv A.zeroSection :=
-    IsIso.eq_inv_of_hom_inv_id A.zeroSection_comp_toOver_hom
-  have : IsIso A.toOver.hom := heq ▸ inferInstance
-  have : SmoothOfRelativeDimension 0 A.toOver.hom := inferInstance
-  exact relativeDimension_eq_of_smoothOfRelativeDimension A 0 s
+  exact isIso_of_hom_comp_eq_id A.zeroSection A.zeroSection_comp_toOver_hom
 
 /-- The structure morphism of an abelian scheme is an isomorphism if and only if its relative
 dimension is identically `0`. -/
@@ -277,6 +246,14 @@ theorem isIso_toOver_hom_iff (A : AbelianScheme S) :
   refine ⟨fun h s ↦ ?_, isIso_toOver_hom_of_forall_relativeDimension_eq_zero A⟩
   have : SmoothOfRelativeDimension 0 A.toOver.hom := inferInstance
   exact relativeDimension_eq_of_smoothOfRelativeDimension A 0 s
+
+/-- The zero section of an abelian scheme is an isomorphism if and only if its relative dimension is
+identically `0`. -/
+theorem isIso_zeroSection_iff (A : AbelianScheme S) :
+    IsIso A.zeroSection ↔ ∀ s : S, A.relativeDimension s = 0 :=
+  ⟨fun _ ↦ (isIso_toOver_hom_iff A).mp
+    (isIso_of_hom_comp_eq_id A.zeroSection A.zeroSection_comp_toOver_hom),
+    isIso_zeroSection_of_forall_relativeDimension_eq_zero A⟩
 
 /-- An abelian scheme of relative dimension `0` everywhere over `S` is canonically isomorphic to
 `AbelianScheme.identity S`. -/

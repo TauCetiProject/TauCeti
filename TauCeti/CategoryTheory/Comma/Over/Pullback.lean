@@ -7,6 +7,7 @@ module
 
 public import Mathlib.CategoryTheory.Functor.ReflectsIso.Jointly
 public import Mathlib.CategoryTheory.MorphismProperty.Limits
+import TauCeti.CategoryTheory.Adjunction.Mates
 public import TauCeti.CategoryTheory.Comma.Over
 public import TauCeti.CategoryTheory.Limits.Shapes.Pullback.EqToHom
 
@@ -116,8 +117,9 @@ private lemma conjugateEquiv_homEquiv_symm {C' D' : Type*} [Category C'] [Catego
     {c : C'} {d : D'} (p : c ⟶ R₁.obj d) :
     (adj₂.homEquiv c d).symm (p ≫ (conjugateEquiv adj₁ adj₂ α).app d) =
       α.app c ≫ (adj₁.homEquiv c d).symm p := by
-  rw [Adjunction.homEquiv_counit, Functor.map_comp, Category.assoc,
-    conjugateEquiv_counit adj₁ adj₂ α d, α.naturality_assoc p, ← Adjunction.homEquiv_counit]
+  apply (adj₂.homEquiv c d).injective
+  rw [Equiv.apply_symm_apply, ← Adjunction.homEquiv_conjugateEquiv adj₁ adj₂ α,
+    Equiv.apply_symm_apply]
 
 /-- The adjunction equivalence for `Over.pullback (𝟙 X)` agrees with `Over.pullbackId`. -/
 theorem mapPullbackAdj_id_homEquiv_symm {X : C} (G T : Over X)
