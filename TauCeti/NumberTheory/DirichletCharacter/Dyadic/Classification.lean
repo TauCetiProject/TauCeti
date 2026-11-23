@@ -188,13 +188,6 @@ theorem natCard_isQuadratic_two_pow (k : ℕ) :
     Nat.card {χ : DirichletCharacter R (2 ^ k) // χ.IsQuadratic} =
       if k ≤ 1 then 1 else if k = 2 then 2 else 4 := by
   rw [← Set.coe_ofPred, Nat.card_coe_set_eq]
-  have hc (h : 4 ∣ 2 ^ k) (ψ : DirichletCharacter R 4) :
-      (changeLevel h ψ).conductor = ψ.conductor := conductor_changeLevel ψ h
-  have hc8 (h : 8 ∣ 2 ^ k) (ψ : DirichletCharacter R 8) :
-      (changeLevel h ψ).conductor = ψ.conductor := conductor_changeLevel ψ h
-  have h1 : (1 : DirichletCharacter R (2 ^ k)).conductor = 1 := conductor_one
-  have hmem (χ : DirichletCharacter R (2 ^ k)) :
-      χ ∈ {χ : DirichletCharacter R (2 ^ k) | χ.IsQuadratic} ↔ χ.IsQuadratic := Iff.rfl
   split_ifs with hk hk2
   · have h4 : ¬4 ∣ 2 ^ k := fun h ↦ by
       have : 2 ^ k ≤ 2 ^ 1 := Nat.pow_le_pow_right two_pos hk
@@ -203,15 +196,16 @@ theorem natCard_isQuadratic_two_pow (k : ℕ) :
     have h8 : ¬8 ∣ 2 ^ k := fun h ↦ h4 ((by decide : 4 ∣ 8).trans h)
     rw [Set.ncard_eq_one]
     refine ⟨1, Set.ext fun χ ↦ ?_⟩
-    rw [hmem, isQuadratic_iff_of_level_two_pow]
+    rw [Set.mem_ofPred_eq, isQuadratic_iff_of_level_two_pow]
     simp [h4, h8]
   · have h4 : 4 ∣ 2 ^ k := by rw [hk2]; decide
     have h8 : ¬8 ∣ 2 ^ k := by rw [hk2]; decide
     rw [Set.ncard_eq_two]
     refine ⟨1, changeLevel h4 (χ₄.ringHomComp (Int.castRingHom R)), fun h ↦ ?_,
       Set.ext fun χ ↦ ?_⟩
-    · simpa [h1, hc, conductor_χ₄_ringHomComp] using congrArg conductor h
-    · rw [hmem, isQuadratic_iff_of_level_two_pow]
+    · simpa [conductor_one, conductor_changeLevel, conductor_χ₄_ringHomComp] using
+        congrArg conductor h
+    · rw [Set.mem_ofPred_eq, isQuadratic_iff_of_level_two_pow]
       simp [h4, h8]
   · have h4 : 4 ∣ 2 ^ k := Nat.pow_dvd_pow 2 (by omega : 2 ≤ k)
     have h8 : 8 ∣ 2 ^ k := Nat.pow_dvd_pow 2 (by omega : 3 ≤ k)
@@ -220,7 +214,7 @@ theorem natCard_isQuadratic_two_pow (k : ℕ) :
           changeLevel h8 (χ₈.ringHomComp (Int.castRingHom R)),
           changeLevel h8 (χ₈'.ringHomComp (Int.castRingHom R))} := by
       ext χ
-      rw [hmem, isQuadratic_iff_of_level_two_pow]
+      rw [Set.mem_ofPred_eq, isQuadratic_iff_of_level_two_pow]
       simp [h4, h8]
     have h88 : changeLevel h8 (χ₈.ringHomComp (Int.castRingHom R)) ≠
         changeLevel h8 (χ₈'.ringHomComp (Int.castRingHom R)) := fun h ↦ by
@@ -229,15 +223,11 @@ theorem natCard_isQuadratic_two_pow (k : ℕ) :
         MulChar.ringHomComp_intCast_apply_of_apply_eq χ₈' (a := 3) (b := 1) (by decide),
         Int.cast_neg, Int.cast_one] at h3
       exact two_ne_zero (α := R) (by linear_combination -h3)
-    rw [hset, Set.ncard_insert_of_notMem, Set.ncard_insert_of_notMem, Set.ncard_pair h88]
-    · simp only [Set.mem_insert_iff, Set.mem_singleton_iff, not_or]
-      refine ⟨fun h ↦ ?_, fun h ↦ ?_⟩ <;>
-        simpa [hc, hc8, conductor_χ₄_ringHomComp, conductor_χ₈_ringHomComp,
-          conductor_χ₈'_ringHomComp] using congrArg conductor h
-    · simp only [Set.mem_insert_iff, Set.mem_singleton_iff, not_or]
-      refine ⟨fun h ↦ ?_, fun h ↦ ?_, fun h ↦ ?_⟩ <;>
-        simpa [h1, hc, hc8, conductor_χ₄_ringHomComp, conductor_χ₈_ringHomComp,
-          conductor_χ₈'_ringHomComp] using congrArg conductor h
+    rw [hset, Set.ncard_insert_of_notMem, Set.ncard_insert_of_notMem, Set.ncard_pair h88] <;>
+      simp only [Set.mem_insert_iff, Set.mem_singleton_iff, not_or] <;> and_intros <;>
+      intro h <;>
+      simpa [conductor_one, conductor_changeLevel, conductor_χ₄_ringHomComp,
+        conductor_χ₈_ringHomComp, conductor_χ₈'_ringHomComp] using congrArg conductor h
 
 end Conductor
 
