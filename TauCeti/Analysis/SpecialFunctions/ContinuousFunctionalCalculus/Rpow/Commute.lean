@@ -11,9 +11,10 @@ public import Mathlib.Analysis.SpecialFunctions.ContinuousFunctionalCalculus.Rpo
 /-!
 # Real powers of commuting elements
 
-The real power `a ^ y = cfc (fun x : ℝ≥0 ↦ x ^ y) a` of the continuous functional calculus is a
-continuous function of `a`, so it commutes with every element commuting with `a`. This is the
-`CFC.rpow` case of `Commute.cfc_nnreal`.
+The real power `a ^ y = cfc (fun x : ℝ≥0 ↦ x ^ y) a` is an element of the form `cfc f a`, and every
+such element commutes with each element commuting with `a` (`Commute.cfc_nnreal`). So `a ^ y`
+commutes with every element commuting with `a`: this is the `CFC.rpow` case of
+`Commute.cfc_nnreal`.
 
 ## Main results
 

@@ -25,9 +25,9 @@ These formulas supply smooth local projections for splitting a nondegenerate sym
 into its positive and negative subbundles. They concern the existing
 `Module.End.pointSpectralSubspace` and `Submodule.starProjection`, not new choices of subspaces
 or projections. The invertibility hypothesis excludes eigenvalues crossing zero; dimension zero
-is allowed. The same formula shows that `(A * A) ^ (-(1 / 4))` conjugates `A` to the difference
-`1 - 2 Π` of the positive and negative spectral projections, where `Π` is the negative one
-(`ContinuousLinearMap.mul_self_rpow_mul_mul_mul_self_rpow`).
+is allowed. The same formula shows that the congruence `B * A * B` by `B = (A * A) ^ (-(1 / 4))`
+is the difference `1 - 2 Π` of the positive and negative spectral projections, where `Π` is the
+negative one (`ContinuousLinearMap.mul_self_rpow_mul_mul_mul_self_rpow`).
 
 ## References
 
@@ -100,9 +100,9 @@ theorem starProjection_pointSpectralSubspace_Ioi_zero_eq (A : E →L[ℝ] E) (hA
     neg_mul_neg, neg_mul, mul_neg, neg_neg, sub_neg_eq_add] using
     starProjection_pointSpectralSubspace_Iio_zero_eq (-A) hA.neg hunit.neg
 
-/-- For an invertible self-adjoint operator `A`, the operator `(A * A) ^ (-(1 / 4))` conjugates `A`
-to the difference `1 - 2 Π` of the orthogonal spectral projections, where `Π` projects onto the
-negative spectral subspace. -/
+/-- For an invertible self-adjoint operator `A`, the congruence `B * A * B` by
+`B = (A * A) ^ (-(1 / 4))` is the difference `1 - 2 Π` of the orthogonal spectral projections, where
+`Π` projects onto the negative spectral subspace. -/
 theorem mul_self_rpow_mul_mul_mul_self_rpow (A : E →L[ℝ] E) (hA : IsSelfAdjoint A)
     (hunit : IsUnit A) :
     (A * A) ^ (-(1 / 4) : ℝ) * A * (A * A) ^ (-(1 / 4) : ℝ) =

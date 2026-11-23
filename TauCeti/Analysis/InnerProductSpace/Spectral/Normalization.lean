@@ -32,15 +32,15 @@ which is self-adjoint for `h`. It is computed with the metric change transport `
 (`ContinuousLinearMap.metricChangeTransport`), an isometry from the inner product of `E` to `h`:
 if `A` is the Riesz operator of the pulled-back form `q (T ·) (T ·)`, then
 `N = T (A * A) ^ (-(1 / 4)) T⁻¹` (`ContinuousLinearMap.normalizingTransport`). Then
-`(A * A) ^ (-(1 / 4))` commutes with `A` (`Commute.rpow_left`) and conjugates it to the difference
-of the positive and negative orthogonal spectral projections of `A`
+`(A * A) ^ (-(1 / 4))` commutes with `A` (`Commute.rpow_left`), and the congruence of `A` by it is
+the difference of the positive and negative orthogonal spectral projections of `A`
 (`ContinuousLinearMap.mul_self_rpow_mul_mul_mul_self_rpow`).
 
 No choice enters: `N` is the unique operator `S` with `0 ≤ h (S u) u` for all `u` that is
 self-adjoint for `q` and normalizes `q` as above
 (`ContinuousLinearMap.eq_normalizingTransport_iff`); self-adjointness for `h` follows.
 Consequently it does not depend on the inner product of `E`, and it is natural under linear
-equivalences (`ContinuousLinearMap.normalizingTransport_bilinearComp`): normalizations computed in
+equivalences (`ContinuousLinearEquiv.normalizingTransport_bilinearComp`): normalizations computed in
 two local trivializations of a vector bundle agree under the transition. It also depends smoothly,
 even real analytically, on the pair `(q, h)` (`ContDiffOn.normalizingTransport`), and so does the
 corresponding operator on a finite-dimensional normed space without a chosen inner product
@@ -66,7 +66,7 @@ corresponding operator on a finite-dimensional normed space without a chosen inn
 * `ContinuousLinearMap.eq_normalizingTransport_iff`: the characterization.
 * `ContinuousLinearMap.eq_normalizingTransport_of_mem_relativeSpectralSubspace`: uniqueness, with
   the normalization identity read on the relative spectral subspaces.
-* `ContinuousLinearMap.normalizingTransport_bilinearComp`: naturality.
+* `ContinuousLinearEquiv.normalizingTransport_bilinearComp`: naturality.
 * `ContinuousLinearMap.contDiffOn_normalizingTransport`: smooth dependence on `(q, h)`.
 * `TauCeti.exists_contDiffOn_apply_eq_of_mem_relativeSpectralSubspace`: the normalization on a
   finite-dimensional normed space, read through the relative spectral subspaces and determined by
@@ -452,9 +452,9 @@ theorem eq_normalizingTransport_of_mem_relativeSpectralSubspace (hh : IsStrictly
 
 /-- **Naturality of the normalizing transport.** Pulling the form and the metric back along a
 linear equivalence `e` conjugates the normalizing transport by `e`. -/
-theorem normalizingTransport_bilinearComp {F : Type*} [NormedAddCommGroup F]
-    [InnerProductSpace ℝ F] [FiniteDimensional ℝ F] (e : F ≃L[ℝ] E) (hh : IsStrictlyPositive h♯)
-    (hq : ∀ u v, q u v = q v u) (hq' : Function.Injective q) :
+theorem _root_.ContinuousLinearEquiv.normalizingTransport_bilinearComp {F : Type*}
+    [NormedAddCommGroup F] [InnerProductSpace ℝ F] [FiniteDimensional ℝ F] (e : F ≃L[ℝ] E)
+    (hh : IsStrictlyPositive h♯) (hq : ∀ u v, q u v = q v u) (hq' : Function.Injective q) :
     (q.bilinearComp (e : F →L[ℝ] E) (e : F →L[ℝ] E)).normalizingTransport
         (h.bilinearComp (e : F →L[ℝ] E) (e : F →L[ℝ] E)) =
       (e.symm : E →L[ℝ] F) ∘L q.normalizingTransport h ∘L (e : F →L[ℝ] E) := by
@@ -463,7 +463,7 @@ theorem normalizingTransport_bilinearComp {F : Type*} [NormedAddCommGroup F]
     (isStrictlyPositive_continuousLinearMapOfBilin_bilinearComp_equiv h e hh)
     (fun u v ↦ hq _ _) (injective_bilinearComp hq' e.bijective)).mpr
     ⟨fun u ↦ ?_, fun u v ↦ ?_, fun u v ↦ ?_⟩).symm <;>
-  simp only [negativeSpectralProjection_bilinearComp e hh hq hq', coe_comp,
+  simp only [e.negativeSpectralProjection_bilinearComp hh hq hq', coe_comp,
     ContinuousLinearEquiv.coe_coe, Function.comp_apply, bilinearComp_apply,
     ContinuousLinearEquiv.apply_symm_apply]
   · exact hposN _
@@ -517,8 +517,9 @@ variable {P : Type*} [NormedAddCommGroup P] [NormedSpace ℝ P] [FiniteDimension
 omit [FiniteDimensional ℝ P] in
 /-- Read on a Euclidean model `W` through `T`, an operator on `P` with the properties of the
 normalizing transport is the normalizing transport of the pair pulled back along `T⁻¹`. -/
-private theorem eq_comp_normalizingTransport_comp {W : Type*} [NormedAddCommGroup W]
-    [InnerProductSpace ℝ W] [FiniteDimensional ℝ W] (T : P ≃L[ℝ] W) {q h : P →L[ℝ] P →L[ℝ] ℝ}
+private theorem _root_.ContinuousLinearEquiv.eq_comp_normalizingTransport_comp {W : Type*}
+    [NormedAddCommGroup W] [InnerProductSpace ℝ W] [FiniteDimensional ℝ W] (T : P ≃L[ℝ] W)
+    {q h : P →L[ℝ] P →L[ℝ] ℝ}
     (hqs : ∀ u v, q.bilinearComp (T.symm : W →L[ℝ] P) (T.symm : W →L[ℝ] P) u v =
       q.bilinearComp (T.symm : W →L[ℝ] P) (T.symm : W →L[ℝ] P) v u)
     (hqi : Function.Injective (q.bilinearComp (T.symm : W →L[ℝ] P) (T.symm : W →L[ℝ] P)))
@@ -586,13 +587,13 @@ theorem exists_contDiffOn_apply_eq_of_mem_relativeSpectralSubspace :
   set Ts : W →L[ℝ] P := (T.symm : W →L[ℝ] P)
   refine ⟨fun x ↦ Ts ∘L (x.1.bilinearComp Ts Ts).normalizingTransport
     (x.2.bilinearComp Ts Ts) ∘L (T : P →L[ℝ] W),
-    contDiffOn_conj_bilinearComp T ContinuousLinearMap.contDiffOn_normalizingTransport,
+    T.contDiffOn_conj_bilinearComp ContinuousLinearMap.contDiffOn_normalizingTransport,
     fun q h hq hq' hh hh' ↦ ?_⟩
   -- Pulled back to `W`, a nondegenerate form and a metric on `P` stay so.
   obtain ⟨hqs, hqi, hhp⟩ : (∀ u v, q.bilinearComp Ts Ts u v = q.bilinearComp Ts Ts v u) ∧
       Function.Injective (q.bilinearComp Ts Ts) ∧
       IsStrictlyPositive (continuousLinearMapOfBilin (𝕜 := ℝ) (h.bilinearComp Ts Ts)) :=
-    mapsTo_bilinearComp_symm T (x := (q, h)) ⟨hq, hq', hh, hh'⟩
+    T.mapsTo_bilinearComp_symm (x := (q, h)) ⟨hq, hq', hh, hh'⟩
   set N := (q.bilinearComp Ts Ts).normalizingTransport (h.bilinearComp Ts Ts)
   have hTsT (u : P) : Ts (T u) = u := T.symm_apply_apply u
   -- A vector of `P` lies in a relative spectral subspace exactly when its image in `W` lies in the
@@ -600,7 +601,7 @@ theorem exists_contDiffOn_apply_eq_of_mem_relativeSpectralSubspace :
   have hmem {Ω : Set ℝ} {w : W} : w ∈ (h.bilinearComp Ts Ts).toBilinForm.relativeSpectralSubspace
       (q.bilinearComp Ts Ts).toBilinForm Ω ↔
         Ts w ∈ h.toBilinForm.relativeSpectralSubspace q.toBilinForm Ω :=
-    ContinuousLinearMap.mem_relativeSpectralSubspace_bilinearComp_iff T.symm
+    T.symm.mem_relativeSpectralSubspace_bilinearComp_iff
   dsimp only
   simp only [ContinuousLinearMap.coe_comp, ContinuousLinearEquiv.coe_coe, Function.comp_apply]
   refine ⟨?_, fun u v ↦ ?_, fun u hu ↦ ?_, fun u v ↦ ?_, fun u hu ↦ ⟨?_, ?_⟩, fun u hu ↦ ⟨?_, ?_⟩,
@@ -627,6 +628,6 @@ theorem exists_contDiffOn_apply_eq_of_mem_relativeSpectralSubspace :
   · simpa [hTsT] using
       apply_normalizingTransport_normalizingTransport_of_mem_relativeSpectralSubspace_Ioi
         hhp hqs hqi (u := T u) (hmem.mpr (by rwa [hTsT]))
-  · exact eq_comp_normalizingTransport_comp T hqs hqi hhp hpos hqS hneg hposS
+  · exact T.eq_comp_normalizingTransport_comp hqs hqi hhp hpos hqS hneg hposS
 
 end TauCeti

@@ -69,16 +69,14 @@ vector bundle with a fibre metric, such as the normal Hessian of a Morse–Bott 
 * `ContinuousLinearMap.negativeSpectralProjection_apply_eq_self_iff` and
   `ContinuousLinearMap.negativeSpectralProjection_apply_eq_zero_iff`: the vectors fixed and killed
   by the projection are those of the negative and positive relative spectral subspaces.
-* `ContinuousLinearMap.negativeSpectralProjection_bilinearComp`: pulling `q` and `h` back along a
+* `ContinuousLinearEquiv.negativeSpectralProjection_bilinearComp`: pulling `q` and `h` back along a
   linear equivalence conjugates the projection by it.
-* `ContinuousLinearMap.map_relativeSpectralSubspace_bilinearComp`: pulling `q` and `h` back along a
-  linear equivalence pulls back their relative spectral subspaces.
 * `ContinuousLinearMap.contDiffOn_negativeSpectralProjection` and
   `ContDiffOn.negativeSpectralProjection`: the projection depends smoothly on `(q, h)`.
-* `TauCeti.mapsTo_bilinearComp_symm`: pulled back to a Euclidean model, symmetric nondegenerate
-  forms stay so and positive definite forms get strictly positive Riesz operators.
-* `TauCeti.contDiffOn_conj_bilinearComp`: smooth functions of forms on a Euclidean model give
-  smooth functions of forms on a finite-dimensional normed space.
+* `ContinuousLinearEquiv.mapsTo_bilinearComp_symm`: pulled back to a Euclidean model, symmetric
+  nondegenerate forms stay so and positive definite forms get strictly positive Riesz operators.
+* `ContinuousLinearEquiv.contDiffOn_conj_bilinearComp`: smooth functions of forms on a Euclidean
+  model give smooth functions of forms on a finite-dimensional normed space.
 * `TauCeti.exists_contDiffOn_range_eq_relativeSpectralSubspace`: on a finite-dimensional normed
   space without a chosen inner product, there is still a real-analytic family of projections onto
   the negative relative spectral subspaces along the positive ones.
@@ -476,9 +474,9 @@ theorem negativeSpectralProjection_apply_eq_zero_iff (hh : IsStrictlyPositive h�
 
 /-- **Naturality of the negative spectral projection.** Pulling the form and the metric back along
 a linear equivalence `e` conjugates the negative spectral projection by `e`. -/
-theorem negativeSpectralProjection_bilinearComp {F : Type*} [NormedAddCommGroup F]
-    [InnerProductSpace ℝ F] [FiniteDimensional ℝ F] (e : F ≃L[ℝ] E) (hh : IsStrictlyPositive h♯)
-    (hq : ∀ u v, q u v = q v u) (hq' : Function.Injective q) :
+theorem _root_.ContinuousLinearEquiv.negativeSpectralProjection_bilinearComp {F : Type*}
+    [NormedAddCommGroup F] [InnerProductSpace ℝ F] [FiniteDimensional ℝ F] (e : F ≃L[ℝ] E)
+    (hh : IsStrictlyPositive h♯) (hq : ∀ u v, q u v = q v u) (hq' : Function.Injective q) :
     (q.bilinearComp (e : F →L[ℝ] E) (e : F →L[ℝ] E)).negativeSpectralProjection
         (h.bilinearComp (e : F →L[ℝ] E) (e : F →L[ℝ] E)) =
       (e.symm : E →L[ℝ] F) ∘L q.negativeSpectralProjection h ∘L (e : F →L[ℝ] E) := by
@@ -544,44 +542,6 @@ theorem _root_.ContDiffOn.negativeSpectralProjection {F : Type*} [NormedAddCommG
 
 end ContinuousLinearMap
 
-/-! ### Pullbacks of relative spectral subspaces -/
-
-namespace ContinuousLinearMap
-
-variable {𝕜 V W : Type*} [NontriviallyNormedField 𝕜] [SeminormedAddCommGroup V] [NormedSpace 𝕜 V]
-  [SeminormedAddCommGroup W] [NormedSpace 𝕜 W]
-
-/-- Pulling a form and a metric back along a linear equivalence `e` pulls back their relative
-spectral subspaces: these are carried by `e` to the relative spectral subspaces of the original
-pair. -/
-@[simp]
-theorem map_relativeSpectralSubspace_bilinearComp (e : W ≃L[𝕜] V) (q h : V →L[𝕜] V →L[𝕜] 𝕜)
-    (Ω : Set 𝕜) :
-    ((h.bilinearComp (e : W →L[𝕜] V) (e : W →L[𝕜] V)).toBilinForm.relativeSpectralSubspace
-      (q.bilinearComp (e : W →L[𝕜] V) (e : W →L[𝕜] V)).toBilinForm Ω).map
-        (e.toLinearEquiv : W →ₗ[𝕜] V) =
-      h.toBilinForm.relativeSpectralSubspace q.toBilinForm Ω := by
-  have hc (B : V →L[𝕜] V →L[𝕜] 𝕜) : (B.bilinearComp (e : W →L[𝕜] V) (e : W →L[𝕜] V)).toBilinForm =
-      B.toBilinForm.compl₁₂ (e.toLinearEquiv : W →ₗ[𝕜] V) (e.toLinearEquiv : W →ₗ[𝕜] V) := by
-    ext u v
-    simp
-  rw [hc, hc]
-  exact LinearMap.BilinForm.map_relativeSpectralSubspace_compl₁₂ e.toLinearEquiv
-
-/-- A vector lies in a relative spectral subspace of a pulled-back pair exactly when its image
-lies in the corresponding relative spectral subspace of the original pair. -/
-@[simp]
-theorem mem_relativeSpectralSubspace_bilinearComp_iff (e : W ≃L[𝕜] V) {q h : V →L[𝕜] V →L[𝕜] 𝕜}
-    {Ω : Set 𝕜} {u : W} :
-    u ∈ (h.bilinearComp (e : W →L[𝕜] V) (e : W →L[𝕜] V)).toBilinForm.relativeSpectralSubspace
-        (q.bilinearComp (e : W →L[𝕜] V) (e : W →L[𝕜] V)).toBilinForm Ω ↔
-      e u ∈ h.toBilinForm.relativeSpectralSubspace q.toBilinForm Ω := by
-  rw [← map_relativeSpectralSubspace_bilinearComp e q h Ω, Submodule.mem_map]
-  refine ⟨fun hu ↦ ⟨u, hu, rfl⟩, fun ⟨w, hw, hwu⟩ ↦ ?_⟩
-  rwa [← e.injective hwu]
-
-end ContinuousLinearMap
-
 /-! ### Finite-dimensional normed spaces -/
 
 namespace TauCeti
@@ -593,8 +553,8 @@ omit [FiniteDimensional ℝ P] in
 finite-dimensional inner product space `W`. Pulled back to `W` along `T⁻¹`, a symmetric
 nondegenerate form on `P` stays symmetric and nondegenerate, and a positive definite symmetric form
 on `P` gets a strictly positive Riesz operator. -/
-theorem mapsTo_bilinearComp_symm {W : Type*} [NormedAddCommGroup W] [InnerProductSpace ℝ W]
-    [FiniteDimensional ℝ W] (T : P ≃L[ℝ] W) :
+theorem _root_.ContinuousLinearEquiv.mapsTo_bilinearComp_symm {W : Type*} [NormedAddCommGroup W]
+    [InnerProductSpace ℝ W] [FiniteDimensional ℝ W] (T : P ≃L[ℝ] W) :
     MapsTo (fun x : (P →L[ℝ] P →L[ℝ] ℝ) × (P →L[ℝ] P →L[ℝ] ℝ) ↦
         (x.1.bilinearComp (T.symm : W →L[ℝ] P) (T.symm : W →L[ℝ] P),
           x.2.bilinearComp (T.symm : W →L[ℝ] P) (T.symm : W →L[ℝ] P)))
@@ -613,8 +573,8 @@ finite-dimensional inner product space `W`. A function `Φ` of a symmetric nonde
 positive definite metric on `W`, of class `C^n` on such pairs, gives a `C^n` function of the pairs
 `(q, h)` of a symmetric nondegenerate form and a positive definite symmetric form on `P`: pull `q`
 and `h` back to `W` along `T⁻¹`, apply `Φ`, and conjugate the result back by `T`. -/
-theorem contDiffOn_conj_bilinearComp {W : Type*} [NormedAddCommGroup W] [InnerProductSpace ℝ W]
-    [FiniteDimensional ℝ W] (T : P ≃L[ℝ] W) {n : ℕ∞ω}
+theorem _root_.ContinuousLinearEquiv.contDiffOn_conj_bilinearComp {W : Type*} [NormedAddCommGroup W]
+    [InnerProductSpace ℝ W] [FiniteDimensional ℝ W] (T : P ≃L[ℝ] W) {n : ℕ∞ω}
     {Φ : (W →L[ℝ] W →L[ℝ] ℝ) × (W →L[ℝ] W →L[ℝ] ℝ) → W →L[ℝ] W}
     (hΦ : ContDiffOn ℝ n Φ {p | (∀ u v, p.1 u v = p.1 v u) ∧ Function.Injective p.1 ∧
       IsStrictlyPositive (continuousLinearMapOfBilin (𝕜 := ℝ) p.2)}) :
@@ -630,7 +590,7 @@ theorem contDiffOn_conj_bilinearComp {W : Type*} [NormedAddCommGroup W] [InnerPr
       contDiffOn_const).prodMk (contDiff_snd.contDiffOn.clm_bilinearComp contDiffOn_const
       contDiffOn_const))
   exact contDiffOn_const.clm_comp
-    ((hΦ.comp hc.contDiffOn (mapsTo_bilinearComp_symm T)).clm_comp contDiffOn_const)
+    ((hΦ.comp hc.contDiffOn T.mapsTo_bilinearComp_symm).clm_comp contDiffOn_const)
 
 /-- **Smooth negative relative spectral projections on a finite-dimensional normed space.** There
 is a family `Φ` of projections of `P`, indexed by the pairs `(q, h)` of a symmetric nondegenerate
@@ -652,16 +612,16 @@ theorem exists_contDiffOn_range_eq_relativeSpectralSubspace :
   set Ts : W →L[ℝ] P := (T.symm : W →L[ℝ] P)
   refine ⟨fun x ↦ Ts ∘L (x.1.bilinearComp Ts Ts).negativeSpectralProjection
     (x.2.bilinearComp Ts Ts) ∘L (T : P →L[ℝ] W),
-    contDiffOn_conj_bilinearComp T ContinuousLinearMap.contDiffOn_negativeSpectralProjection,
+    T.contDiffOn_conj_bilinearComp ContinuousLinearMap.contDiffOn_negativeSpectralProjection,
     fun q h hq hq' hh hh' ↦ ?_⟩
   -- Pulled back to `W`, a nondegenerate form and a metric on `P` stay so.
-  obtain ⟨hqs, hqi, hhp⟩ := mapsTo_bilinearComp_symm T (x := (q, h)) ⟨hq, hq', hh, hh'⟩
+  obtain ⟨hqs, hqi, hhp⟩ := T.mapsTo_bilinearComp_symm (x := (q, h)) ⟨hq, hq', hh, hh'⟩
   set N := (q.bilinearComp Ts Ts).negativeSpectralProjection (h.bilinearComp Ts Ts)
   -- The relative spectral subspaces of the pulled-back forms are carried to those of `q` and `h`.
   have hmap (Ω : Set ℝ) : ((h.bilinearComp Ts Ts).toBilinForm.relativeSpectralSubspace
       (q.bilinearComp Ts Ts).toBilinForm Ω).map (Ts : W →ₗ[ℝ] P) =
       h.toBilinForm.relativeSpectralSubspace q.toBilinForm Ω :=
-    ContinuousLinearMap.map_relativeSpectralSubspace_bilinearComp T.symm q h Ω
+    T.symm.map_relativeSpectralSubspace_bilinearComp q h Ω
   have hT : LinearMap.range ((T : P →L[ℝ] W) : P →ₗ[ℝ] W) = ⊤ :=
     LinearMap.range_eq_top.mpr T.surjective
   have hTs : LinearMap.ker (Ts : W →ₗ[ℝ] P) = ⊥ := LinearMap.ker_eq_bot.mpr T.symm.injective

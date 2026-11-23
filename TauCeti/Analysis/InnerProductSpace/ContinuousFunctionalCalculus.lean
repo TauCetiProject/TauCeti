@@ -16,6 +16,7 @@ public import TauCeti.Analysis.InnerProductSpace.Complexification
 import Mathlib.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Commute
 import Mathlib.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Order
 import TauCeti.Analysis.Normed.Operator.Banach
+import TauCeti.Analysis.InnerProductSpace.Positive.Basic
 import Mathlib.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.RealImaginaryPart
 
 /-!
@@ -312,31 +313,6 @@ theorem inner_sqrt_apply_sqrt_apply_eq_inner {T : X →L[ℝ] X} (hT : 0 ≤ T) 
     ⟪CFC.sqrt T u, CFC.sqrt T v⟫_ℝ = ⟪T u, v⟫_ℝ := by
   rw [← (nonneg_iff_isPositive.mp (CFC.sqrt_nonneg T)).inner_left_eq_inner_right,
     ← mul_apply_eq_comp, CFC.sqrt_mul_sqrt_self T hT]
-
-/-- A vector on which the quadratic form of a positive operator vanishes is in its kernel. -/
-theorem _root_.LinearMap.IsPositive.apply_eq_zero_of_inner_map_self_eq_zero {𝕜 E : Type*}
-    [RCLike 𝕜] [NormedAddCommGroup E] [InnerProductSpace 𝕜 E] {T : E →ₗ[𝕜] E}
-    (hT : T.IsPositive) {x : E} (hx : ⟪T x, x⟫_𝕜 = 0) : T x = 0 := by
-  -- The real part of `⟪T ·, ·⟫` is a positive semidefinite symmetric real bilinear form, so its
-  -- radical consists of the vectors on which it vanishes.
-  let _ := NormedSpace.restrictScalars ℝ 𝕜 E
-  let B : LinearMap.BilinForm ℝ E := LinearMap.mk₂ ℝ (fun u v ↦ RCLike.re ⟪T u, v⟫_𝕜)
-    (fun _ _ _ ↦ by simp only [map_add, inner_add_left])
-    (fun c u v ↦ by
-      rw [RCLike.real_smul_eq_coe_smul (K := 𝕜) c u, map_smul, inner_smul_left,
-        RCLike.conj_ofReal, RCLike.re_ofReal_mul, smul_eq_mul])
-    (fun _ _ _ ↦ by simp only [inner_add_right, map_add])
-    (fun c u v ↦ by
-      rw [RCLike.real_smul_eq_coe_smul (K := 𝕜) c v, inner_smul_right, RCLike.re_ofReal_mul,
-        smul_eq_mul])
-  have hB : LinearMap.IsSymm B := LinearMap.isSymm_def.mpr fun u v ↦ by
-    rw [LinearMap.mk₂_apply, LinearMap.mk₂_apply, RingHom.id_apply, hT.isSymmetric,
-      ← inner_conj_symm, RCLike.conj_re]
-  have hBx := (B.apply_apply_same_eq_zero_iff hT.re_inner_nonneg_left hB (x := x)).mp
-    (by rw [LinearMap.mk₂_apply, hx, map_zero])
-  -- Evaluate `B x = 0` at `T x`.
-  have : RCLike.re ⟪T x, T x⟫_𝕜 = 0 := LinearMap.congr_fun (LinearMap.mem_ker.mp hBx) (T x)
-  rwa [inner_self_eq_norm_sq, sq_eq_zero_iff, norm_eq_zero] at this
 
 open scoped ComplexOrder in
 /-- A strictly positive operator on an inner product space is positive definite. -/
