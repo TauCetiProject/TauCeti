@@ -183,7 +183,7 @@ def centerToModuleEnd : Subalgebra.center R Û →+* Module.End UK M where
   toFun z :=
     { toFun := ModuleTower.limSmul hM z
       map_add' := ModuleTower.limSmul_add hM z
-      map_smul' := limSmul_smul_of_mem_center hM z.2 }
+      map_smul' := limSmul_smul_of_mem_center hM z.property }
   map_one' := LinearMap.ext (one_limSmul hM)
   map_mul' z w := LinearMap.ext fun m ↦ mul_limSmul hM z w m
   map_zero' := LinearMap.ext fun m ↦ ModuleTower.zero_limSmul hM m
@@ -199,7 +199,7 @@ theorem limSmul_centerToModuleEnd (x : Û) (z : Subalgebra.center R Û) (m : M) 
     ModuleTower.limSmul hM x (centerToModuleEnd hM z m) =
       centerToModuleEnd hM z (ModuleTower.limSmul hM x m) := by
   rw [centerToModuleEnd_apply, centerToModuleEnd_apply, ← mul_limSmul, ← mul_limSmul,
-    Subalgebra.mem_center_iff.1 z.2 x]
+    Subalgebra.mem_center_iff.1 z.property x]
 
 /-- The action of the completed center is natural: linear maps between smooth modules commute
 with it. -/

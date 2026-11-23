@@ -205,8 +205,8 @@ theorem mvfderiv_mlieBracket {f : M → F} {V W : ∀ x : M, TangentSpace I x} {
   rw [fderivWithin_apply_lieBracket hfcoord le_rfl I.uniqueDiffOn
     (I.range_subset_closure_interior (Set.mem_range_self (f := I) _))
     (Set.mem_range_self (f := I) _) hVcoord hWcoord,
-    TauCeti.fderivWithin_fderivWithin_chart_apply_mpullbackWithin hf hn hW,
-    TauCeti.fderivWithin_fderivWithin_chart_apply_mpullbackWithin hf hn hV]
+    TauCeti.fderivWithin_fderivWithin_chart_apply_mpullbackWithin (U := W),
+    TauCeti.fderivWithin_fderivWithin_chart_apply_mpullbackWithin (U := V)]
 
 namespace TauCeti
 
@@ -223,8 +223,9 @@ theorem mvfderiv_div_mvfderiv_sub_eq_mlieBracket {n : ℕ∞ω} {f : M → 𝕜}
         mvfderiv I f p (mlieBracket I X Y p) / f p := by
   have hfd := hf.mdifferentiableAt
     (pos_iff_ne_zero.mp ((by norm_num : (0 : ℕ∞ω) < 2).trans_le (le_minSmoothness.trans hn)))
-  have hdX := TauCeti.mdifferentiableAt_mvfderiv_apply hf hn hX
-  have hdY := TauCeti.mdifferentiableAt_mvfderiv_apply hf hn hY
+  have h2n : (2 : ℕ∞ω) ≤ n := (le_minSmoothness (𝕜 := 𝕜) (n := (2 : ℕ∞ω))).trans hn
+  have hdX := TauCeti.mdifferentiableAt_mvfderiv_apply hf h2n hX
+  have hdY := TauCeti.mdifferentiableAt_mvfderiv_apply hf h2n hY
   -- The derivative of `df(U) / f` along `Z`, by the quotient rule.
   have hda {U Z : Π x : M, TangentSpace I x}
       (hdU : MDiffAt (fun x ↦ mvfderiv I f x (U x)) p) :
@@ -338,6 +339,7 @@ theorem lieBracketWithin_neg_right {V W : E → E} {s : Set E} {x : E}
 
 omit [CompleteSpace E] in
 /-- Negating the second vector field negates the manifold Lie bracket. -/
+@[simp]
 theorem mlieBracket_neg_right {V W : ∀ y : M, TangentSpace I y} {x : M} :
     mlieBracket I V (-W) x = -mlieBracket I V W x := by
   have hs : UniqueDiffWithinAt 𝕜 ((extChartAt I x).symm ⁻¹' Set.univ ∩ Set.range I)
@@ -350,6 +352,7 @@ theorem mlieBracket_neg_right {V W : ∀ y : M, TangentSpace I y} {x : M} :
 
 omit [CompleteSpace E] in
 /-- Negating the first vector field negates the manifold Lie bracket. -/
+@[simp]
 theorem mlieBracket_neg_left {V W : ∀ y : M, TangentSpace I y} {x : M} :
     mlieBracket I (-V) W x = -mlieBracket I V W x := by
   rw [mlieBracket_swap_apply, mlieBracket_neg_right, neg_neg, mlieBracket_swap_apply]

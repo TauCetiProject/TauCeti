@@ -106,7 +106,7 @@ theorem orbitCount_le_mul_orbitCount_of_semiconj [Finite α] [Finite β] {f : α
   have := Fintype.ofFinite Q
   -- Each cycle of `σ` is the cycle of a point lying over the representative of the cycle below.
   have hsurj : Surjective fun p : Σ c : Q, f ⁻¹' {c.out} ↦
-      Quotient.mk (SameCycle.setoid σ) p.2.1 := by
+      Quotient.mk (SameCycle.setoid σ) p.2.val := by
     rintro ⟨x⟩
     obtain ⟨i, -, hi⟩ := (Quotient.mk_out (s := SameCycle.setoid τ) (f x)).symm.exists_pow_eq'
     refine ⟨⟨Quotient.mk _ (f x), (σ ^ i) x, ?_⟩,

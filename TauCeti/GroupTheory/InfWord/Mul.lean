@@ -38,6 +38,9 @@ function with values in `Λ` on groups of cyclically decomposable words.
 
 * `TauCeti.InfWord.IsMul`: the graph of the partial multiplication of reduced words.
 * `TauCeti.InfWord.mul`: the partial multiplication, with `w ∈ u.mul v ↔ IsMul u v w`.
+* `TauCeti.InfWord.ReducedSubgroup`: subsets of `R(Λ, X)` closed under `empty`, inversion, and `∗`,
+  equipped with their induced `Group` structure and subgroup inclusions
+  `TauCeti.InfWord.ReducedSubgroup.inclusion`.
 
 ## Main results
 
@@ -55,7 +58,9 @@ function with values in `Λ` on groups of cyclically decomposable words.
 * `TauCeti.InfWord.exists_isMul_iff`: for reduced `u`, `v`, the product `u ∗ v` is defined if and
   only if the lengths of the common initial segments of `u⁻¹` and `v` have a greatest element `δ`;
   `TauCeti.InfWord.isMul_of_isGreatest` gives the product, and
-  `TauCeti.InfWord.exists_isMul_inv_left_iff` is the case of `u⁻¹ ∗ v`.
+  `TauCeti.InfWord.exists_isMul_inv_left_iff` is the case of `u⁻¹ ∗ v`. If `u ∗ v` is defined,
+  then so is `u ∗ v'` for every initial segment `v'` of `v`
+  (`TauCeti.InfWord.IsMul.exists_isMul_take`).
 * `TauCeti.InfWord.IsMul.length_add_two_nsmul_eq`: `|u ∗ v| + 2 δ = |u| + |v|`, where `δ` is the
   length of the longest common initial segment of `u⁻¹` and `v`; and
   `TauCeti.InfWord.length_add_two_nsmul_eq_of_isMul_inv_left`: `|u⁻¹ ∗ v| + 2 δ = |u| + |v|`,
@@ -67,6 +72,12 @@ function with values in `Λ` on groups of cyclically decomposable words.
 * `TauCeti.InfWord.append_inv_mul_append_cancel`, `TauCeti.InfWord.append_mul_inv_append_cancel`,
   `TauCeti.InfWord.append_mul_eq_mul_append`: the cancellation and reassociation rules above for
   the partial function `TauCeti.InfWord.mul`.
+* `TauCeti.InfWord.ofFun_const_mul_ofFun_const`,
+  `TauCeti.InfWord.ofFun_const_mul_ofFun_const_of_ne`,
+  `TauCeti.InfWord.ofFun_const_mul_ofFun_succ_zero`,
+  `TauCeti.InfWord.map_length_ofFun_const_mul_ofFun_succ_zero_of_ne`: products of powers of letters.
+* `TauCeti.InfWord.map_one_of_forall_isMul`, `TauCeti.InfWord.map_inv_of_forall_isMul`: any map
+  turning group multiplication into `∗` preserves the identity and inverses.
 
 ## References
 
@@ -364,6 +375,19 @@ theorem exists_isMul_iff (hu : u.IsReduced) (hv : v.IsReduced) : (∃ w, IsMul u
     ∃ δ, IsGreatest {β | 0 ≤ β ∧ β ≤ u.length ∧ β ≤ v.length ∧ u⁻¹.take β = v.take β} δ :=
   ⟨fun ⟨_, h⟩ => h.exists_isGreatest, fun ⟨_, hδ⟩ => ⟨_, isMul_of_isGreatest hu hv hδ⟩⟩
 
+/-- If `u ∗ v` is defined, then so is the product of `u` with every initial segment of `v`. -/
+theorem IsMul.exists_isMul_take (h : IsMul u v w) (β : Λ) : ∃ w', IsMul u (v.take β) w' := by
+  rw [← take_max_zero]
+  obtain ⟨δ, ⟨h0, hδu, hδv, hδ⟩, hmax⟩ := h.exists_isGreatest
+  refine (exists_isMul_iff h.isReduced_left (h.isReduced_right.take _)).2
+    ⟨min δ (max β 0), ⟨by simp [h0], by simp [hδu], by simp; grind, ?_⟩, ?_⟩
+  · rw [take_take, min_assoc, min_self]
+    simpa using congrArg (take · (min δ (max β 0))) hδ
+  · rintro γ ⟨hγ0, hγu, hγv, hγ⟩
+    have hγβ : γ ≤ max β 0 := by simp at hγv; grind
+    rw [take_take, min_eq_left hγβ] at hγ
+    exact le_min (hmax ⟨hγ0, hγu, by simp at hγv; grind, hγ⟩) hγβ
+
 /-- If the longest common initial segment of `u` and `v` has length `δ`, then `u⁻¹ ∗ v` is
 defined: it is `(u.drop δ)⁻¹ ++ v.drop δ`. -/
 theorem isMul_inv_left_of_isGreatest (hu : u.IsReduced) (hv : v.IsReduced)
@@ -482,6 +506,249 @@ protected theorem mul_assoc (huv : (u.mul v).Dom) (hvw : (v.mul w).Dom) :
   rw [huv.bind, hvw.bind]
   ext z
   simpa using (isMul_get huv).assoc_iff (isMul_get hvw)
+
+/-- Multiplying two powers of the same letter adds their lengths: `x^α ∗ x^β = x^{α + β}` for
+`α, β ≥ 0`. -/
+theorem ofFun_const_mul_ofFun_const {α β : Λ} (x : X × Bool) (hα : 0 ≤ α) (hβ : 0 ≤ β) :
+    (ofFun α fun _ => x).mul (ofFun β fun _ => x) = Part.some (ofFun (α + β) fun _ => x) := by
+  rw [← ofFun_const_append_ofFun_const x hα hβ]
+  exact mul_eq_some_append (by rw [ofFun_const_append_ofFun_const x hα hβ]; simp)
+
+/-- Multiplying powers of two non-inverse letters concatenates them without cancellation. -/
+theorem ofFun_const_mul_ofFun_const_of_ne {α β : Λ} {x y : X × Bool}
+    (hxy : y ≠ Prod.map id not x) :
+    (ofFun α fun _ => x).mul (ofFun β fun _ => y) =
+      Part.some ((ofFun α fun _ => x) ++ ofFun β fun _ => y) := by
+  refine mul_eq_some_append (isReduced_append_iff.2 ⟨isReduced_ofFun_const α x,
+    isReduced_ofFun_const β y, fun hα' hβ' => ?_⟩)
+  have hα0 : 0 < α := by simpa using hα'
+  have hβ0 : 0 < β := by simpa using hβ'
+  rw [length_ofFun, max_eq_left hα0.le,
+    letter_ofFun_of_pos_of_le _ (Order.lt_succ_self_of_lt hβ0) (Order.succ_le_of_lt hβ0),
+    letter_ofFun_of_pos_of_le _ hα0 le_rfl]
+  simpa using hxy
+
+/-- Right-multiplying `x^t` by the single letter `x` (of length `succ 0`) yields `x^{t + 1}`
+(`Order.succ t`). -/
+theorem ofFun_const_mul_ofFun_succ_zero {t : Λ} (ht : 0 ≤ t) (x : X × Bool) :
+    (ofFun t fun _ => x).mul (ofFun (Order.succ 0) fun _ => x) =
+      Part.some (ofFun (Order.succ t) fun _ => x) := by
+  rw [Order.succ_eq_add_succ_zero t]
+  exact ofFun_const_mul_ofFun_const x ht (Order.le_succ 0)
+
+/-- For non-inverse letters `x` and `y` and `t ≥ 0`, the product `x^t ∗ y` is defined and has length
+`t + 1` (`Order.succ t`). -/
+theorem map_length_ofFun_const_mul_ofFun_succ_zero_of_ne {t : Λ} (ht : 0 ≤ t) {x y : X × Bool}
+    (hxy : y ≠ Prod.map id not x) :
+    ((ofFun t fun _ => x).mul (ofFun (Order.succ 0) fun _ => y)).map length =
+      Part.some (Order.succ t) := by
+  rw [ofFun_const_mul_ofFun_const_of_ne hxy, Order.succ_eq_add_succ_zero t]
+  simp [ht, Order.le_succ (0 : Λ)]
+
+/-! ### Subgroups of reduced infinite words -/
+
+/-- Any map `f : G → InfWord Λ X` turning group multiplication into the partial product `∗` sends
+`1` to the empty word. -/
+theorem map_one_of_forall_isMul {G : Type*} [Group G] {f : G → InfWord Λ X}
+    (hf : ∀ g k, IsMul (f g) (f k) (f (g * k))) : f 1 = empty Λ X := by
+  have h1 : IsMul (f 1) (f 1) (f 1) := by simpa using hf 1 1
+  exact h1.right_cancel (isMul_empty_left h1.isReduced_left)
+
+/-- Any map `f : G → InfWord Λ X` turning group multiplication into `∗` commutes with inversion. -/
+theorem map_inv_of_forall_isMul {G : Type*} [Group G] {f : G → InfWord Λ X}
+    (hf : ∀ g k, IsMul (f g) (f k) (f (g * k))) (g : G) : f g⁻¹ = (f g)⁻¹ := by
+  have hmul : IsMul (f g) (f g⁻¹) (empty Λ X) := by
+    simpa [map_one_of_forall_isMul hf] using hf g g⁻¹
+  exact hmul.left_cancel (isMul_self_inv hmul.isReduced_left)
+
+variable (Λ X) in
+/-- A *subgroup of reduced `Λ`-words*: a subset of `InfWord Λ X` containing the empty word and
+closed under inversion and the partial multiplication `∗` (so `u ∗ v` is defined for all `u`, `v`
+in the subset, and every member is reduced). Equipped with `∗`, the subtype `↥H` is a group. -/
+structure ReducedSubgroup where
+  /-- The underlying set of words. -/
+  carrier : Set (InfWord Λ X)
+  /-- Closure under `∗`: for `u, v ∈ carrier`, `u ∗ v` is defined and belongs to `carrier`. -/
+  mul_mem' {u v : InfWord Λ X} : u ∈ carrier → v ∈ carrier → ∃ w ∈ carrier, IsMul u v w
+  /-- The empty word belongs to `carrier`. -/
+  empty_mem' : empty Λ X ∈ carrier
+  /-- Closure under inversion. -/
+  inv_mem' {u : InfWord Λ X} : u ∈ carrier → u⁻¹ ∈ carrier
+
+namespace ReducedSubgroup
+
+instance : SetLike (ReducedSubgroup Λ X) (InfWord Λ X) where
+  coe := carrier
+  coe_injective H K h := by cases H; cases K; congr
+
+@[simp]
+theorem mem_carrier {H : ReducedSubgroup Λ X} : w ∈ H.carrier ↔ w ∈ H :=
+  Iff.rfl
+
+@[simp]
+theorem mem_mk {s : Set (InfWord Λ X)} (hmul hempty hinv) :
+    w ∈ (⟨s, hmul, hempty, hinv⟩ : ReducedSubgroup Λ X) ↔ w ∈ s :=
+  Iff.rfl
+
+@[ext]
+theorem ext {H K : ReducedSubgroup Λ X} (h : ∀ w, w ∈ H ↔ w ∈ K) : H = K :=
+  SetLike.ext h
+
+@[simp]
+theorem empty_mem (H : ReducedSubgroup Λ X) : empty Λ X ∈ H :=
+  H.empty_mem'
+
+theorem inv_mem (H : ReducedSubgroup Λ X) (hu : u ∈ H) : u⁻¹ ∈ H :=
+  H.inv_mem' hu
+
+@[simp, grind =]
+theorem inv_mem_iff {H : ReducedSubgroup Λ X} : u⁻¹ ∈ H ↔ u ∈ H :=
+  ⟨fun h => by simpa using H.inv_mem h, H.inv_mem⟩
+
+theorem mul_mem (H : ReducedSubgroup Λ X) (hu : u ∈ H) (hv : v ∈ H) : ∃ w ∈ H, IsMul u v w :=
+  H.mul_mem' hu hv
+
+@[grind →]
+theorem mem_of_isMul (H : ReducedSubgroup Λ X) (hu : u ∈ H) (hv : v ∈ H) (hm : IsMul u v w) :
+    w ∈ H := by
+  obtain ⟨w', hw', hm'⟩ := H.mul_mem hu hv
+  exact hm'.unique hm ▸ hw'
+
+@[grind →]
+theorem isReduced_of_mem (H : ReducedSubgroup Λ X) (hu : u ∈ H) : u.IsReduced :=
+  let ⟨_, _, hm⟩ := H.mul_mem hu hu; hm.isReduced_left
+
+@[simp]
+theorem isReduced_coe (H : ReducedSubgroup Λ X) (u : H) : (u : InfWord Λ X).IsReduced :=
+  H.isReduced_of_mem u.property
+
+theorem mul_dom (H : ReducedSubgroup Λ X) (hu : u ∈ H) (hv : v ∈ H) : (u.mul v).Dom :=
+  let ⟨w, _, hm⟩ := H.mul_mem hu hv; mul_dom_iff.2 ⟨w, hm⟩
+
+theorem get_mul_mem (H : ReducedSubgroup Λ X) (hu : u ∈ H) (hv : v ∈ H) :
+    (u.mul v).get (H.mul_dom hu hv) ∈ H :=
+  H.mem_of_isMul hu hv (isMul_get (H.mul_dom hu hv))
+
+instance (H : ReducedSubgroup Λ X) : One H where
+  one := ⟨empty Λ X, H.empty_mem⟩
+
+instance (H : ReducedSubgroup Λ X) : Inv H where
+  inv u := ⟨u.val⁻¹, H.inv_mem u.property⟩
+
+noncomputable instance (H : ReducedSubgroup Λ X) : Group H where
+  mul u v := ⟨(u.val.mul v.val).get (H.mul_dom u.property v.property),
+      H.get_mul_mem u.property v.property⟩
+  mul_assoc a b c := Subtype.ext <|
+    ((isMul_get (H.mul_dom a.property b.property)).assoc_left (isMul_get
+        (H.mul_dom b.property c.property))
+      (isMul_get (H.mul_dom (H.get_mul_mem a.property b.property) c.property))).unique
+      (isMul_get (H.mul_dom a.property (H.get_mul_mem b.property c.property)))
+  one_mul a := Subtype.ext <|
+    (isMul_get (H.mul_dom H.empty_mem a.property)).unique (isMul_empty_left
+        (H.isReduced_of_mem a.property))
+  mul_one a := Subtype.ext <|
+    (isMul_get (H.mul_dom a.property H.empty_mem)).unique (isMul_empty_right
+        (H.isReduced_of_mem a.property))
+  inv_mul_cancel a := Subtype.ext <|
+    (isMul_get (H.mul_dom (H.inv_mem a.property) a.property)).unique (isMul_inv_self
+        (H.isReduced_of_mem a.property))
+
+@[simp]
+theorem coe_one (H : ReducedSubgroup Λ X) : ((1 : H) : InfWord Λ X) = empty Λ X := (rfl)
+
+@[simp]
+theorem coe_inv (H : ReducedSubgroup Λ X) (u : H) :
+    ((u⁻¹ : H) : InfWord Λ X) = (u : InfWord Λ X)⁻¹ :=
+  (rfl)
+
+@[simp]
+theorem isMul_coe_mul (H : ReducedSubgroup Λ X) (u v : H) :
+    IsMul (u : InfWord Λ X) (v : InfWord Λ X) ((u * v : H) : InfWord Λ X) :=
+  isMul_get (H.mul_dom u.property v.property)
+
+@[simp]
+theorem mul_coe_eq_some (H : ReducedSubgroup Λ X) (u v : H) :
+    (u : InfWord Λ X).mul (v : InfWord Λ X) = Part.some ((u * v : H) : InfWord Λ X) :=
+  mul_eq_some_iff.2 (H.isMul_coe_mul u v)
+
+theorem coe_mul_eq_iff {H : ReducedSubgroup Λ X} {u v : H} {w : InfWord Λ X} :
+    ((u * v : H) : InfWord Λ X) = w ↔ IsMul (u : InfWord Λ X) (v : InfWord Λ X) w :=
+  ⟨fun h => h ▸ H.isMul_coe_mul u v, (H.isMul_coe_mul u v).unique⟩
+
+theorem mul_eq_iff {H : ReducedSubgroup Λ X} {u v w : H} :
+    u * v = w ↔ IsMul (u : InfWord Λ X) (v : InfWord Λ X) (w : InfWord Λ X) :=
+  Subtype.ext_iff.trans coe_mul_eq_iff
+
+@[simp]
+theorem coe_eq_empty_iff {H : ReducedSubgroup Λ X} {u : H} :
+    (u : InfWord Λ X) = empty Λ X ↔ u = 1 := by
+  rw [← coe_one, Subtype.ext_iff]
+
+/-- Subgroups of reduced words form a meet-semilattice under intersection. -/
+instance : SemilatticeInf (ReducedSubgroup Λ X) where
+  __ := PartialOrder.ofSetLike (ReducedSubgroup Λ X)
+  inf H K :=
+    { carrier := H ∩ K
+      mul_mem' := fun ⟨huH, huK⟩ ⟨hvH, hvK⟩ => by
+        obtain ⟨w₁, hw₁, hm₁⟩ := H.mul_mem huH hvH
+        obtain ⟨w₂, hw₂, hm₂⟩ := K.mul_mem huK hvK
+        exact ⟨w₁, ⟨hw₁, hm₁.unique hm₂ ▸ hw₂⟩, hm₁⟩
+      empty_mem' := ⟨H.empty_mem, K.empty_mem⟩
+      inv_mem' := fun ⟨huH, huK⟩ => ⟨H.inv_mem huH, K.inv_mem huK⟩ }
+  inf_le_left _ _ _ h := h.1
+  inf_le_right _ _ _ h := h.2
+  le_inf _ _ _ h₁ h₂ _ hw := ⟨h₁ hw, h₂ hw⟩
+
+@[simp]
+theorem coe_inf (H K : ReducedSubgroup Λ X) :
+    ((H ⊓ K : ReducedSubgroup Λ X) : Set (InfWord Λ X)) = (H : Set (InfWord Λ X)) ∩ K :=
+  (rfl)
+
+@[simp]
+theorem mem_inf {H K : ReducedSubgroup Λ X} : w ∈ H ⊓ K ↔ w ∈ H ∧ w ∈ K :=
+  Iff.rfl
+
+/-- The inclusion homomorphism from a subgroup `H` of reduced words to a larger subgroup `K`. -/
+noncomputable def inclusion {H K : ReducedSubgroup Λ X} (h : H ≤ K) : H →* K where
+  toFun u := ⟨u, h u.property⟩
+  map_one' := Subtype.ext ((coe_one H).trans (coe_one K).symm)
+  map_mul' u v := Subtype.ext <|
+    ((K.isMul_coe_mul ⟨u, h u.property⟩ ⟨v, h v.property⟩).unique (H.isMul_coe_mul u v)).symm
+
+@[simp]
+theorem coe_inclusion {H K : ReducedSubgroup Λ X} (h : H ≤ K) (u : H) :
+    (inclusion h u : InfWord Λ X) = u :=
+  (rfl)
+
+theorem inclusion_injective {H K : ReducedSubgroup Λ X} (h : H ≤ K) :
+    Function.Injective (inclusion h) :=
+  Set.inclusion_injective h
+
+/-- The trivial subgroup `{ε}` of reduced `Λ`-words. -/
+instance : Bot (ReducedSubgroup Λ X) where
+  bot :=
+    { carrier := {empty Λ X}
+      mul_mem' := by rintro _ _ rfl rfl; exact ⟨empty Λ X, rfl, isMul_empty_left isReduced_empty⟩
+      empty_mem' := rfl
+      inv_mem' := by rintro _ rfl; simp }
+
+@[simp]
+theorem coe_bot :
+    ((⊥ : ReducedSubgroup Λ X) : Set (InfWord Λ X)) = {empty Λ X} :=
+  (rfl)
+
+@[simp]
+theorem mem_bot : w ∈ (⊥ : ReducedSubgroup Λ X) ↔ w = empty Λ X :=
+  Iff.rfl
+
+instance : OrderBot (ReducedSubgroup Λ X) where
+  bot_le H _ hw := (mem_bot.1 hw).symm ▸ H.empty_mem
+
+instance : Unique (⊥ : ReducedSubgroup Λ X) where
+  default := 1
+  uniq u := Subtype.ext ((mem_bot.1 u.property).trans (coe_one _).symm)
+
+end ReducedSubgroup
 
 end InfWord
 
