@@ -13,10 +13,9 @@ public import TauCeti.Analysis.Pseudodifferential.Symbol.Basic
 The image of a symbol under a continuous linear map of the coefficient spaces, such as conjugation
 by isomorphisms of `V` and `W`, or the passage `ℓ ∘ a ∘ e` to a scalar entry
 (`TauCeti.Symbol.entryMap`), has the same order (`TauCeti.Symbol.map`), and commutes with
-mixed, iterated, spatial and frequency derivatives (`TauCeti.Symbol.mixedDeriv_map`,
-`TauCeti.Symbol.iteratedFDeriv_map`, `TauCeti.Symbol.spatialDeriv_map`,
-`TauCeti.Symbol.frequencyDeriv_map`). In particular, if every value of a symbol commutes with an
-operator `T`, so do the values of its derivatives
+mixed, spatial and frequency derivatives (`TauCeti.Symbol.mixedDeriv_map`,
+`TauCeti.Symbol.spatialDeriv_map`, `TauCeti.Symbol.frequencyDeriv_map`). In particular, if
+every value of a symbol commutes with an operator `T`, so do the values of its derivatives
 (`TauCeti.Symbol.commute_coefficient_spatialDeriv`,
 `TauCeti.Symbol.commute_coefficient_frequencyDeriv`).
 
@@ -73,14 +72,6 @@ theorem mixedDeriv_map (Φ : (V →L[ℂ] W) →L[ℝ] (V' →L[ℂ] W')) (a : S
     (α β : List (Fin n)) (x ξ : CoordinateSpace n) :
     mixedDeriv α β (a.map Φ).coefficient x ξ = Φ (mixedDeriv α β a.coefficient x ξ) :=
   Φ.mixedDeriv_comp_left a.contDiff_coefficient α β x ξ
-
-/-- Iterated derivatives commute with the image under a continuous linear map. -/
-@[simp]
-theorem iteratedFDeriv_map (Φ : (V →L[ℂ] W) →L[ℝ] (V' →L[ℂ] W')) (a : Symbol n V W m) (k : ℕ)
-    (p : CoordinateSpace n × CoordinateSpace n) :
-    iteratedFDeriv ℝ k (a.map Φ).coefficient p =
-      Φ.compContinuousMultilinearMap (iteratedFDeriv ℝ k a.coefficient p) :=
-  Φ.iteratedFDeriv_comp_left a.contDiff_coefficient.contDiffAt (by exact_mod_cast le_top)
 
 /-- The coefficient of the symbol transported by conjugation `T ↦ e₂ ∘ T ∘ e₁⁻¹` along
 isomorphisms `e₁ : V ≃L[ℂ] V'` and `e₂ : W ≃L[ℂ] W'` is the conjugated coefficient. -/
