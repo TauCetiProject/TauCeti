@@ -112,12 +112,6 @@ theorem a5FourthD4BlockRotation_apply_zero :
   rw [a5FourthD4BlockRotation_def]
   exact List.formPerm_apply_of_notMem (by simp)
 
-/-- The rotation of the marked block fixes position `0`. -/
-theorem a5FourthD4BlockRotation_apply_mk_zero (h : 0 < a5FourthD4.components.length) :
-    a5FourthD4BlockRotation ⟨0, h⟩ = ⟨0, h⟩ := by
-  rw [Fin.mk_zero']
-  exact a5FourthD4BlockRotation_apply_zero
-
 /-- The rotation of the marked block moves position `1` to position `2`. -/
 @[simp]
 theorem a5FourthD4BlockRotation_apply_mk_one (h : 1 < a5FourthD4.components.length) :
@@ -154,12 +148,6 @@ theorem a5FourthD4BlockRotation_apply_mk_four (h : 4 < a5FourthD4.components.len
 theorem a5FourthD4BlockRotation_symm_apply_zero :
     a5FourthD4BlockRotation.symm 0 = 0 :=
   (Equiv.symm_apply_eq a5FourthD4BlockRotation).mpr a5FourthD4BlockRotation_apply_zero.symm
-
-/-- The inverse of the rotation of the marked block fixes position `0`. -/
-theorem a5FourthD4BlockRotation_symm_apply_mk_zero (h : 0 < a5FourthD4.components.length) :
-    a5FourthD4BlockRotation.symm ⟨0, h⟩ = ⟨0, h⟩ := by
-  exact (Equiv.symm_apply_eq a5FourthD4BlockRotation).mpr
-    (a5FourthD4BlockRotation_apply_mk_zero h).symm
 
 /-- The inverse of the rotation of the marked block moves position `1` to position `3`. -/
 @[simp]
@@ -206,8 +194,8 @@ theorem ofFn_comp_a5FourthD4BlockRotation {α : Type*}
     List.ofFn (fun k ↦ f (a5FourthD4BlockRotation k)) =
       [f ⟨0, by decide⟩, f ⟨2, by decide⟩, f ⟨3, by decide⟩, f ⟨1, by decide⟩,
         f ⟨4, by decide⟩] := by
-  simp only [ofFn_a5FourthD4,
-    a5FourthD4BlockRotation_apply_mk_zero,
+  simp only [ofFn_a5FourthD4, Fin.mk_zero',
+    a5FourthD4BlockRotation_apply_zero,
     a5FourthD4BlockRotation_apply_mk_one,
     a5FourthD4BlockRotation_apply_mk_two,
     a5FourthD4BlockRotation_apply_mk_three,
@@ -220,8 +208,8 @@ theorem ofFn_comp_a5FourthD4BlockRotation_symm {α : Type*}
     List.ofFn (fun k ↦ f (a5FourthD4BlockRotation.symm k)) =
       [f ⟨0, by decide⟩, f ⟨3, by decide⟩, f ⟨1, by decide⟩, f ⟨2, by decide⟩,
         f ⟨4, by decide⟩] := by
-  simp only [ofFn_a5FourthD4,
-    a5FourthD4BlockRotation_symm_apply_mk_zero,
+  simp only [ofFn_a5FourthD4, Fin.mk_zero',
+    a5FourthD4BlockRotation_symm_apply_zero,
     a5FourthD4BlockRotation_symm_apply_mk_one,
     a5FourthD4BlockRotation_symm_apply_mk_two,
     a5FourthD4BlockRotation_symm_apply_mk_three,
@@ -477,9 +465,9 @@ theorem encodeGlueWord_a5FourthD4TrialityGlueIsometry (w : a5FourthD4.glueModule
     componentTrialityLabel_of_ne (i := ⟨1, by decide⟩) (by decide),
     componentTrialityLabel_of_ne (i := ⟨2, by decide⟩) (by decide),
     componentTrialityLabel_of_ne (i := ⟨3, by decide⟩) (by decide), htri4, hv,
-    a5FourthD4BlockRotation_symm_apply_mk_zero, a5FourthD4BlockRotation_symm_apply_mk_one,
-    a5FourthD4BlockRotation_symm_apply_mk_two, a5FourthD4BlockRotation_symm_apply_mk_three,
-    a5FourthD4BlockRotation_symm_apply_mk_four]
+    a5FourthD4BlockRotation_symm_apply_mk_one, a5FourthD4BlockRotation_symm_apply_mk_two,
+    a5FourthD4BlockRotation_symm_apply_mk_three, a5FourthD4BlockRotation_symm_apply_mk_four]
+  rw [Fin.mk_zero', a5FourthD4BlockRotation_symm_apply_zero, Fin.val_zero]
 
 /-- **The rotation combined with triality permutes the digit words of `A₅⁴ D₄`**: it carries the
 rotations of `[2(024)0]` among themselves and `[33001] ↦ [30302] ↦ [30033] ↦ [33001]`. -/

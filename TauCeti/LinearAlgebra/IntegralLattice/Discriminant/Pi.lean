@@ -11,6 +11,7 @@ public import TauCeti.LinearAlgebra.IntegralLattice.Discriminant.Quadratic
 public import TauCeti.LinearAlgebra.IntegralLattice.Orthogonal.Pi
 
 import Mathlib.Algebra.BigOperators.Field
+import TauCeti.LinearAlgebra.QuadraticForm.Isometry
 
 /-!
 # Discriminant forms of orthogonal sums of finite families
@@ -362,9 +363,9 @@ theorem discriminantQuadraticIsometry_piCongrLeft_discriminantQuadraticIsometryP
   rw [Isometry.piCongrLeft_eq_piCongr]
   exact discriminantQuadraticIsometry_piCongr_discriminantQuadraticIsometryPiOfIsometry
     (fun k ↦ a (σ k)) a σ (fun k ↦ Isometry.refl (L (σ k))) (fun _ ↦ id)
-    (fun k y ↦ ((Isometry.discriminantQuadraticIsometry_apply (Isometry.refl (L (σ k)))
-      (hL (σ k)) (a (σ k) y)).trans
-      (DFunLike.congr_fun (Isometry.discriminantGroupEquiv_refl (L (σ k))) _)).symm) x
+    (fun k y ↦ by
+      rw [Isometry.discriminantQuadraticIsometry_refl, QuadraticMap.IsometryEquiv.refl_apply,
+        id_eq]) x
 
 variable {L}
 
