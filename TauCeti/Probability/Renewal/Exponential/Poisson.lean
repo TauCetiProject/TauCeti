@@ -71,12 +71,25 @@ theorem isPoissonRandomMeasure_renewalArrivalMeasure_of_expMeasure
   rwa [add_tsub_cancel_of_le hst] at h
 
 /-- **Equality of random-measure laws with the canonical Poisson construction.** The law of the
-exponential renewal arrival measure equals `((r : ℝ≥0∞) • nnvolume).poissonLaw`. -/
+exponential renewal arrival measure equals `((r : ℝ≥0∞) • nnvolume).poissonLaw`. The waiting
+times need only be almost everywhere measurable, as ensured by their law hypotheses. -/
 theorem hasLaw_renewalArrivalMeasure_poissonLaw_of_expMeasure
-    (hT : ∀ n, Measurable (T n)) (hindep : iIndepFun T P)
+    (hindep : iIndepFun T P)
     (hlaw : ∀ n, HasLaw (fun ω ↦ (T n ω : ℝ)) (expMeasure r) P) :
-    HasLaw (renewalArrivalMeasure T) ((r : ℝ≥0∞) • nnvolume).poissonLaw P :=
-  (isPoissonRandomMeasure_renewalArrivalMeasure_of_expMeasure hT hindep hlaw).hasLaw_poissonLaw
+    HasLaw (renewalArrivalMeasure T) ((r : ℝ≥0∞) • nnvolume).poissonLaw P := by
+  have hT (n : ℕ) : AEMeasurable (T n) P :=
+    (hasLaw_nnrealExpMeasure_iff.mpr (hlaw n)).aemeasurable
+  let T' (n : ℕ) := (hT n).mk (T n)
+  have hae (n : ℕ) : T n =ᵐ[P] T' n := (hT n).ae_eq_mk
+  have hlaw' (n : ℕ) : HasLaw (fun ω ↦ (T' n ω : ℝ)) (expMeasure r) P :=
+    (hlaw n).congr ((hae n).symm.mono fun _ h ↦ congrArg NNReal.toReal h)
+  have hPoisson : IsPoissonRandomMeasure P (renewalArrivalMeasure T')
+      ((r : ℝ≥0∞) • nnvolume) :=
+    isPoissonRandomMeasure_renewalArrivalMeasure_of_expMeasure
+      (fun n ↦ (hT n).measurable_mk) (hindep.congr hae) hlaw'
+  apply hPoisson.hasLaw_poissonLaw.congr
+  filter_upwards [arrival_congr_ae hae] with ω harr
+  simp only [renewalArrivalMeasure_def, harr]
 
 /-- **Equality in distribution of arrival measures.** The exponential renewal arrival measure has
 the same distribution as any homogeneous Poisson random measure of the same rate, possibly on a
