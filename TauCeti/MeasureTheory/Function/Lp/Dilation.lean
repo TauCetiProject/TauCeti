@@ -173,6 +173,18 @@ theorem coeFn_dilateLp_of_ae_eq (hr : 0 < r) {f : Lp F p μ} {g : E → F} (hf :
   simp only [Function.comp_apply] at hy
   rw [hx, hy]
 
+/-- At `p = ∞` the normalized dilation carries no weight: it is almost everywhere the plain
+precomposition `f (r⁻¹ • ·)`. -/
+theorem coeFn_dilateLp_top (hr : 0 < r) (f : Lp F ∞ μ) :
+    ⇑(dilateLp μ 𝕜 ∞ r hr f) =ᵐ[μ] fun x ↦ f (r⁻¹ • x) := by
+  simpa using coeFn_dilateLp (𝕜 := 𝕜) hr f
+
+/-- At `p = ∞` the normalized dilation of a class with representative `g` is almost everywhere
+`g (r⁻¹ • ·)`. -/
+theorem coeFn_dilateLp_top_of_ae_eq (hr : 0 < r) {f : Lp F ∞ μ} {g : E → F} (hf : f =ᵐ[μ] g) :
+    ⇑(dilateLp μ 𝕜 ∞ r hr f) =ᵐ[μ] fun x ↦ g (r⁻¹ • x) := by
+  simpa using coeFn_dilateLp_of_ae_eq (𝕜 := 𝕜) hr hf
+
 variable (μ) in
 /-- **`Lᵠ` seminorm of a dilate with an arbitrary normalization:**
 `‖r ^ (-a) • u (r⁻¹ • ·)‖_q = r ^ (n / q - a) * ‖u‖_q` for `r > 0`. The exponent `n / q` is

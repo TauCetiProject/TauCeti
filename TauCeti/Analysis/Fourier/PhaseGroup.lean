@@ -603,10 +603,10 @@ theorem dilateLp_toLp_phaseSymbol (hω : ∀ c : ℝ, 0 < c → ∀ ξ, ω (c �
     dilateLp volume ℝ ∞ r hr ((memLp_phaseSymbol ω t).toLp _) =
       (memLp_phaseSymbol ω (t / r ^ k)).toLp _ := by
   refine Lp.ext ?_
-  filter_upwards [coeFn_dilateLp_of_ae_eq (𝕜 := ℝ) hr (memLp_phaseSymbol ω t).coeFn_toLp,
+  filter_upwards [coeFn_dilateLp_top_of_ae_eq (𝕜 := ℝ) hr (memLp_phaseSymbol ω t).coeFn_toLp,
     (memLp_phaseSymbol ω (t / r ^ k)).coeFn_toLp] with ξ h₁ h₂
-  rw [h₁, h₂, ENNReal.toReal_top, div_zero, neg_zero, Real.rpow_zero, one_smul, phaseSymbol_apply,
-    phaseSymbol_apply, hω _ (inv_pos.2 hr), inv_pow, ← mul_assoc, ← div_eq_mul_inv]
+  rw [h₁, h₂, phaseSymbol_apply, phaseSymbol_apply, hω _ (inv_pos.2 hr), inv_pow, ← mul_assoc,
+    ← div_eq_mul_inv]
 
 /-- **Scaling of a homogeneous phase propagator.** If the phase `ω` is positively homogeneous of
 degree `k`, then for the normalized dilation `D_r f = r ^ (-n/2) • f (r⁻¹ • ·)` of `L²`, `r > 0`,

@@ -639,10 +639,9 @@ private theorem coeFn_fourier_dilateLp_aux {r : ℝ} (hr : 0 < r) (m : Lp ℂ �
     coeFn_dilateLp_of_ae_eq (𝕜 := ℝ) (inv_pos.2 hr)
       (coeFn_lpSMul (r := 2) (dilateLp volume ℝ ∞ r hr m) (𝓕 f)),
     (quasiMeasurePreserving_smul (volume : Measure E) (inv_ne_zero (inv_pos.2 hr).ne')).ae_eq_comp
-      (coeFn_dilateLp (μ := volume) (𝕜 := ℝ) (p := ∞) hr m)] with ξ h₁ h₂ h₃ h₄
+      (coeFn_dilateLp_top (μ := volume) (𝕜 := ℝ) hr m)] with ξ h₁ h₂ h₃ h₄
   simp only [Function.comp_apply] at h₄
-  rw [h₁, Pi.smul_apply', h₂, h₃, Pi.smul_apply', h₄, inv_inv, ENNReal.toReal_top, div_zero,
-    neg_zero, Real.rpow_zero, one_smul, inv_smul_smul₀ hr.ne', smul_comm]
+  rw [h₁, Pi.smul_apply', h₂, h₃, Pi.smul_apply', h₄, inv_inv, inv_smul_smul₀ hr.ne', smul_comm]
 
 /-- **Conjugating a Fourier multiplier by a dilation dilates its symbol.** For `r > 0`, the
 multiplier with symbol `m` applied after the normalized dilation `D_r` of `L²` is `D_r` applied
