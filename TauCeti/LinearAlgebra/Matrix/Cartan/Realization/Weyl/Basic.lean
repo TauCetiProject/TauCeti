@@ -183,32 +183,23 @@ theorem orderOf_simpleCoreflection (i : I) : orderOf (R.simpleCoreflection hA i)
 /-- If `A i j = 0` and `A j i = 0`, the simple reflections `sᵢ` and `sⱼ` commute. -/
 theorem commute_simpleReflection_of_eq_zero {i j : I} (hij : A i j = 0) (hji : A j i = 0) :
     Commute (R.simpleReflection hA i) (R.simpleReflection hA j) := by
-  ext φ h
-  simp only [mul_apply_eq_comp, simpleReflection_apply, map_sub, map_smul, root_coroot,
-    hij, hji, zero_smul, sub_zero]
-  exact sub_right_comm _ _ _
+  rw [R.simpleReflection_eq_reflection hA i, R.simpleReflection_eq_reflection hA j (by simp [hA j])]
+  exact Module.commute_reflection _ _ (by simpa [R.root_coroot] using hij)
+    (by simpa [R.root_coroot] using hji)
 
 /-- If `i ≠ j` and the simple reflections `sᵢ` and `sⱼ` commute, then `A i j = 0` and
 `A j i = 0`. -/
 theorem eq_zero_of_commute_simpleReflection {i j : I} (hij : i ≠ j)
     (h : Commute (R.simpleReflection hA i) (R.simpleReflection hA j)) :
     A i j = 0 ∧ A j i = 0 := by
-  have hpair (φ : Dual K H) : A i j * φ (R.coroot j) = 0 ∧ A j i * φ (R.coroot i) = 0 := by
-    have hφ := congr($(h.eq) φ)
-    simp only [mul_apply_eq_comp, simpleReflection_apply, map_sub, map_smul, R.root_coroot] at hφ
-    have hlin : (A i j * φ (R.coroot j)) • R.root i + (-(A j i * φ (R.coroot i))) • R.root j =
-        (0 : K) • R.root i + (0 : K) • R.root j := by
-      have hsub := sub_eq_zero.mpr hφ
-      simp only [zero_smul, add_zero]
-      rw [← hsub]
-      module
-    have hc := (R.linearIndependent_root_pair hij).eq_of_pair hlin
-    exact ⟨hc.1, neg_eq_zero.mp hc.2⟩
-  constructor <;> by_contra hne
-  · exact R.coroot_linearIndependent.ne_zero j <| (Module.forall_dual_apply_eq_zero_iff K _).mp
-      fun φ ↦ (mul_eq_zero.mp (hpair φ).1).resolve_left hne
-  · exact R.coroot_linearIndependent.ne_zero i <| (Module.forall_dual_apply_eq_zero_iff K _).mp
-      fun φ ↦ (mul_eq_zero.mp (hpair φ).2).resolve_left hne
+  rw [R.simpleReflection_eq_reflection hA i,
+    R.simpleReflection_eq_reflection hA j (by simp [hA j])] at h
+  have hne (k : I) : Dual.eval K H (R.coroot k) ≠ 0 := fun hk ↦
+    R.coroot_linearIndependent.ne_zero k <| (Module.forall_dual_apply_eq_zero_iff K _).mp
+      fun φ ↦ by simpa using congr($(hk) φ)
+  have h0 := (Module.commute_reflection_iff
+    (R.linearIndependent_root_pair hij) (hne i) (hne j)).mp h
+  simpa [R.root_coroot] using h0
 
 /-- For `i ≠ j`, the simple reflections `sᵢ` and `sⱼ` commute if and only if `A i j = 0` and
 `A j i = 0`. -/
@@ -260,7 +251,8 @@ theorem orderOf_weylSimple (i : I) : orderOf (R.weylSimple hA i) = 2 :=
 
 /-- The order of `sᵢ * sⱼ` in `R.weylGroup` equals the order of the product of the ambient
 simple reflections over any field. -/
-theorem orderOf_weylSimple_mul_weylSimple_eq_orderOf_simpleReflection (i j : I) :
+theorem orderOf_weylSimple_mul_weylSimple_eq_orderOf_simpleReflection_mul_simpleReflection
+    (i j : I) :
     orderOf (R.weylSimple hA i * R.weylSimple hA j) =
       orderOf (R.simpleReflection hA i * R.simpleReflection hA j) := by
   rw [← Subgroup.orderOf_coe, Subgroup.coe_mul, coe_weylSimple, coe_weylSimple]
@@ -534,7 +526,7 @@ theorem orderOf_weylSimple_mul_weylSimple {I K H : Type*} [DecidableEq I] [Field
     orderOf (R.weylSimple (diag_map_intCast hdiag) i *
         R.weylSimple (diag_map_intCast hdiag) j) =
       coxeterMatrixOfGeneralizedCartanMatrix A i j := by
-  rw [R.orderOf_weylSimple_mul_weylSimple_eq_orderOf_simpleReflection]
+  rw [R.orderOf_weylSimple_mul_weylSimple_eq_orderOf_simpleReflection_mul_simpleReflection]
   exact R.orderOf_simpleReflection_mul_simpleReflection (diag_map_intCast hdiag) hzero hprod
 
 section RankOne

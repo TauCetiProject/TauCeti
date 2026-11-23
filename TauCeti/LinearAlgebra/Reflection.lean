@@ -180,6 +180,15 @@ theorem reflection_mul_reflection_pow_two_eq_one (hfy : f y = 0) (hgx : g x = 0)
   norm_num [hfy, hgx, S_zero, S_one, S_neg_one]
   abel
 
+/-- **Two reflections commute when each fixes the other's defining vector**: if `f y = 0` and
+`g x = 0`, then `reflection hf` and `reflection hg` commute. -/
+theorem commute_reflection (hfy : f y = 0) (hgx : g x = 0) :
+    Commute (reflection hf) (reflection hg) := by
+  ext z
+  simp only [mul_apply_eq_comp, reflection_apply, map_sub, map_smul, hfy, hgx, zero_smul,
+    sub_zero]
+  exact sub_right_comm _ _ _
+
 /-- **The braid relation at Cartan product `1`**: if `f y * g x = 1`, then `(r₁ r₂)³ = 1`, the
 `A₂` configuration. -/
 theorem reflection_mul_reflection_pow_three_eq_one (h : f y * g x = 1) :
@@ -243,6 +252,27 @@ theorem reflection_mul_reflection_pow_apply_self_eq_self_iff (hxy : LinearIndepe
     exact h
   obtain ⟨h₁, h₂⟩ := hxy.eq_of_pair h'
   exact ⟨h₁, by linear_combination -h₂⟩
+
+/-- **Two reflections in linearly independent vectors along nonzero functionals commute iff each
+functional vanishes on the other vector.** -/
+theorem commute_reflection_iff [NoZeroDivisors R] (hxy : LinearIndependent R ![x, y])
+    (hf0 : f ≠ 0) (hg0 : g ≠ 0) :
+    Commute (reflection hf) (reflection hg) ↔ f y = 0 ∧ g x = 0 := by
+  refine ⟨fun hcomm ↦ ?_, fun ⟨hfy, hgx⟩ ↦ commute_reflection hf hg hfy hgx⟩
+  have hpair (z : M) : g z * f y = 0 ∧ f z * g x = 0 := by
+    have hz := congr($(hcomm.eq) z)
+    simp only [mul_apply_eq_comp, reflection_apply, map_sub, map_smul] at hz
+    have hlin : (g z * f y) • x + (-(f z * g x)) • y = (0 : R) • x + (0 : R) • y := by
+      have hsub := sub_eq_zero.mpr hz
+      simp only [zero_smul, add_zero]
+      rw [← hsub]
+      module
+    have hc := hxy.eq_of_pair hlin
+    exact ⟨hc.1, neg_eq_zero.mp hc.2⟩
+  obtain ⟨z₁, hz₁⟩ : ∃ z, g z ≠ 0 := not_forall.mp fun h ↦ hg0 (LinearMap.ext h)
+  obtain ⟨z₂, hz₂⟩ : ∃ z, f z ≠ 0 := not_forall.mp fun h ↦ hf0 (LinearMap.ext h)
+  exact ⟨(mul_eq_zero.mp (hpair z₁).1).resolve_left hz₁,
+    (mul_eq_zero.mp (hpair z₂).2).resolve_left hz₂⟩
 
 /-- **The product of two reflections each fixing the other's vector has order `2`**: if
 `f y = 0`, `g x = 0` and `2 • x ≠ 0`, then `r₁ r₂` has order exactly `2`. -/
