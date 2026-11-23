@@ -9,7 +9,7 @@ public import Mathlib.Topology.Homotopy.Basic
 public import TauCeti.Topology.Algebra.Module.ProdUnitsHomeomorph
 public import TauCeti.Topology.Compactification.OnePoint.Collapse
 public import TauCeti.Topology.Compactification.OnePoint.Sphere
-public import TauCeti.Topology.IsLocalHomeomorph
+public import TauCeti.Topology.IsLocalHomeomorph.Basic
 import TauCeti.Topology.Homotopy.Homotopic.Rel
 
 /-!
