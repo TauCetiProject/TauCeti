@@ -214,10 +214,7 @@ theorem isMetricCompatible_of_forall_integral_inner_apply_mgradient_eq
   -- Evaluate the defect tensor on smooth extensions and on a gradient field.
   refine isMetricCompatible_iff_derivMetricTensor_eq_zero.2 (funext fun x ↦ ?_)
   ext σ₀ τ₀ X₀
-  obtain ⟨f, -, hfx⟩ := TauCeti.exists_contMDiffMap_mvfderiv_eq (I := I) x (0 : ℝ) (innerSL ℝ X₀)
-  have hgrad : mgradient I f x = X₀ := by
-    refine (eq_mgradient_iff.2 fun v ↦ ?_).symm
-    rw [hfx, innerSL_apply_apply]
+  obtain ⟨f, hgrad⟩ := exists_contMDiffMap_mgradient_eq (I := I) x X₀
   obtain ⟨σ, rfl⟩ := ContMDiffSection.evalLinearMap_surjective (I := I) (F := F) (V := V) ∞ x σ₀
   obtain ⟨τ, rfl⟩ := ContMDiffSection.evalLinearMap_surjective (I := I) (F := F) (V := V) ∞ x τ₀
   let Y : Cₛ^∞⟮I; E, (TangentSpace I : M → Type _)⟯ :=
