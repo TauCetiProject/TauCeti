@@ -34,10 +34,10 @@ inverse that is bounded on `L²` and orthogonal to the weak kernel. At a smooth 
   Sobolev scale.
 * `exists_contDiff_gaugeFixedOperator_eq_of_forall_mem_framedFieldSpace`: at such a vortex, every
   continuous field lying in every `H^k` is `L_x y` for a smooth `y` lying in every `H^k`.
-* `exists_continuousLinearMap_isMinimalGaugeFixedWeakSolution_of_mem_framedFieldSpace`: at a
-  smooth vortex lying in `A_m^s` for a single `s > 2`, the weak right inverse `Q` maps `H^k` into
-  `H^(k+1)` for every `k ≤ s`, by elliptic regularity at finite order
-  (`mem_sobolevFields_natCast_add_one_of_mem_framedFieldSpace`).
+* `exists_isMinimalGaugeFixedWeakSolution_and_mem_sobolevFields_add_one_of_mem_framedFieldSpace`:
+  at a smooth vortex lying in `A_m^s` for a single `s > 2`, the weak right inverse `Q` maps `H^k`
+  into `H^(k+1)` for every `k ≤ s`, by elliptic regularity at finite order
+  (`mem_sobolevFields_add_one_of_mem_framedFieldSpace_of_integral_inner_gaugeFixedAdjoint_eq`).
 * `exists_mem_sobolevFields_contDiff_gaugeFixedOperator_ae_eq`: at such a vortex, for
   `2 ≤ k ≤ s`, every `g ∈ sobolevFields k` agrees almost everywhere with `L_x y` for a `C^(k-1)`
   field `y ∈ sobolevFields (k + 1)`. For `k ≥ 2` the field `Q g ∈ H^(k+1)` has a `C^(k-1)`
@@ -182,7 +182,7 @@ theorem exists_contDiff_gaugeFixedOperator_eq_of_forall_mem_framedFieldSpace (hx
 
 For a vortex lying in every `A_m^j` this is
 `exists_continuousLinearMap_isMinimalGaugeFixedWeakSolution_and_mem_sobolevFields_add_one`. -/
-theorem exists_continuousLinearMap_isMinimalGaugeFixedWeakSolution_of_mem_framedFieldSpace
+theorem exists_isMinimalGaugeFixedWeakSolution_and_mem_sobolevFields_add_one_of_mem_framedFieldSpace
     {s : ℝ} (hs : 2 < s) (hx : x ∈ framedFieldSpace ρ m s) (hxs : ContDiff ℝ ∞ x)
     (hsol : ∀ z, equation x z = 0) :
     ∃ Q : Lp (EuclideanSpace ℝ (Fin 4)) 2 volume →L[ℝ] Lp (EuclideanSpace ℝ (Fin 4)) 2 volume,
@@ -193,7 +193,8 @@ theorem exists_continuousLinearMap_isMinimalGaugeFixedWeakSolution_of_mem_framed
     (μ := volume) (hxs.of_le (by simp)) hsol
     (tendsto_normSq_of_mem_framedFieldSpace (by linarith) hx hxs.continuous)
   exact ⟨Q, fun g ↦ ⟨hQ g, fun k hks hg ↦
-    mem_sobolevFields_natCast_add_one_of_mem_framedFieldSpace hs hks hx hxs (Lp.memLp _) hg
+    mem_sobolevFields_add_one_of_mem_framedFieldSpace_of_integral_inner_gaugeFixedAdjoint_eq
+      hs hks hx hxs (Lp.memLp _) hg
       fun η hη hηc ↦
         (hQ g).isGaugeFixedWeakSolution.integral_inner_eq (hη.of_le (by simp)) hηc⟩⟩
 
@@ -207,8 +208,8 @@ theorem exists_mem_sobolevFields_contDiff_gaugeFixedOperator_ae_eq {s : ℝ} {k 
     ∃ y ∈ sobolevFields (k + 1), ContDiff ℝ (k - 1 : ℕ) y ∧
       gaugeFixedOperator x y =ᵐ[volume] g := by
   obtain ⟨Q, hQ⟩ :=
-    exists_continuousLinearMap_isMinimalGaugeFixedWeakSolution_of_mem_framedFieldSpace hs hx hxs
-      hsol
+    exists_isMinimalGaugeFixedWeakSolution_and_mem_sobolevFields_add_one_of_mem_framedFieldSpace
+      hs hx hxs hsol
   have hgL := memLp_of_mem_sobolevFields hg
   set u := Q (hgL.toLp g)
   have hu : (u : ℂ → EuclideanSpace ℝ (Fin 4)) ∈ sobolevFields (k + 1) :=

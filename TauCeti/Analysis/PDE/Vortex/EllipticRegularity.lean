@@ -59,14 +59,14 @@ multiplication by the transposed matrix.
   continuous field of `A_m^s`, `s > 1`, is bounded (`exists_norm_le_of_mem_framedFieldSpace`), so
   there weak `L²` solutions of `L_x y = f` with `f ∈ L²`, in particular the weak `L²` kernel of
   `L_x`, lie in `H¹`.
-* `mem_sobolevFields_natCast_add_one_of_mem_framedFieldSpace`: at a smooth field of `A_m^s`,
-  `s > 2`, a weak `L²` solution of `L_x y = f` with `f ∈ H^k`, `k ≤ s`, lies in `H^(k+1)`. Through
-  order one the coefficients have bounded derivatives by Sobolev embedding
-  (`exists_norm_iteratedFDeriv_le_of_mem_framedFieldSpace`); from order two on they
-  multiply `H^k` into itself since `H^k(ℂ)` is an algebra
+* `mem_sobolevFields_add_one_of_mem_framedFieldSpace_of_integral_inner_gaugeFixedAdjoint_eq`:
+  at a smooth field of `A_m^s`, `s > 2`, a weak `L²` solution of `L_x y = f` with `f ∈ H^k`,
+  `k ≤ s`, lies in `H^(k+1)`. Through order one the coefficients have bounded derivatives by
+  Sobolev embedding (`exists_norm_iteratedFDeriv_le_of_mem_framedFieldSpace`); from order two on
+  they multiply `H^k` into itself since `H^k(ℂ)` is an algebra
   (`mul_mem_realSobolevFunctions_of_mem_framedFieldSpace`). With `f = 0` the weak `L²` kernel of
   `L_x` lies in `H^(k+1)`
-  (`mem_sobolevFields_natCast_add_one_of_mem_framedFieldSpace_of_integral_inner_eq_zero`).
+  (`mem_sobolevFields_add_one_of_mem_framedFieldSpace_of_integral_inner_gaugeFixedAdjoint_eq_zero`).
 * `exists_continuousLinearMap_isMinimalGaugeFixedWeakSolution_and_mem_sobolevFields`: at a
   `C¹` vortex of `A_m^s`, `s > 1`, the weak right inverse `Q` takes values in `H¹`.
 * `mem_sobolevFields_add_one_of_integral_inner_gaugeFixedOperator_vacuumField_eq`,
@@ -624,10 +624,10 @@ private theorem mem_sobolevFields_add_one_of_gaugeFixedZerothOrder_mem {s : ℝ}
 /-- **Elliptic regularity at a field of `A_m^s`.** Let `x` be a smooth field of `A_m^s` with
 `s > 2`, and let `k ≤ s`. A square-integrable weak solution of `L_x y = g` with `g ∈ H^k` lies in
 `H^(k+1)`. -/
-theorem mem_sobolevFields_natCast_add_one_of_mem_framedFieldSpace {f : ContDiffBump (0 : ℝ)}
-    {m : ℕ} {s : ℝ} {k : ℕ} (hs : 2 < s) (hks : k ≤ s) {x y g : ℂ → EuclideanSpace ℝ (Fin 4)}
-    (hx : x ∈ framedFieldSpace f m s) (hxs : ContDiff ℝ ∞ x) (hy : MemLp y 2 volume)
-    (hg : g ∈ sobolevFields k)
+theorem mem_sobolevFields_add_one_of_mem_framedFieldSpace_of_integral_inner_gaugeFixedAdjoint_eq
+    {f : ContDiffBump (0 : ℝ)} {m : ℕ} {s : ℝ} {k : ℕ} (hs : 2 < s) (hks : k ≤ s)
+    {x y g : ℂ → EuclideanSpace ℝ (Fin 4)} (hx : x ∈ framedFieldSpace f m s)
+    (hxs : ContDiff ℝ ∞ x) (hy : MemLp y 2 volume) (hg : g ∈ sobolevFields k)
     (hweak : ∀ η : ℂ → EuclideanSpace ℝ (Fin 4), ContDiff ℝ ∞ η → HasCompactSupport η →
       ∫ z, ⟪y z, gaugeFixedAdjoint x η z⟫ = ∫ z, ⟪g z, η z⟫) :
     y ∈ sobolevFields (k + 1) := by
@@ -656,15 +656,16 @@ theorem mem_sobolevFields_natCast_add_one_of_mem_framedFieldSpace {f : ContDiffB
 
 /-- **Regularity of the weak kernel.** Let `x` be a smooth field of `A_m^s` with `s > 2`. Every
 square-integrable weak solution of `L_x y = 0` lies in `H^(k+1)` for each `k ≤ s`. -/
-theorem mem_sobolevFields_natCast_add_one_of_mem_framedFieldSpace_of_integral_inner_eq_zero
+theorem
+    mem_sobolevFields_add_one_of_mem_framedFieldSpace_of_integral_inner_gaugeFixedAdjoint_eq_zero
     {f : ContDiffBump (0 : ℝ)} {m : ℕ} {s : ℝ} {k : ℕ} (hs : 2 < s) (hks : k ≤ s)
     {x y : ℂ → EuclideanSpace ℝ (Fin 4)} (hx : x ∈ framedFieldSpace f m s)
     (hxs : ContDiff ℝ ∞ x) (hy : MemLp y 2 volume)
     (hweak : ∀ η : ℂ → EuclideanSpace ℝ (Fin 4), ContDiff ℝ ∞ η → HasCompactSupport η →
       ∫ z, ⟪y z, gaugeFixedAdjoint x η z⟫ = 0) :
     y ∈ sobolevFields (k + 1) :=
-  mem_sobolevFields_natCast_add_one_of_mem_framedFieldSpace hs hks hx hxs hy (zero_mem _)
-    fun η hη hηc ↦ by simpa using hweak η hη hηc
+  mem_sobolevFields_add_one_of_mem_framedFieldSpace_of_integral_inner_gaugeFixedAdjoint_eq
+    hs hks hx hxs hy (zero_mem _) fun η hη hηc ↦ by simpa using hweak η hη hηc
 
 /-- **The weak right inverse at a plane vortex takes values in `H¹`.** Let `x` be a `C¹` solution
 of the plane vortex equation in the affine space `A_m^s`, `s > 1`. Then there is a bounded
