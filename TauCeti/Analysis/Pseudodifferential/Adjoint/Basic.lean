@@ -8,8 +8,8 @@ module
 public import Mathlib.Analysis.InnerProductSpace.Adjoint
 public import TauCeti.Analysis.InnerProductSpace.Adjoint
 public import TauCeti.Analysis.Pseudodifferential.RightQuantization
-import Mathlib.Analysis.Distribution.AEEqOfIntegralContDiff
 import TauCeti.Analysis.Pseudodifferential.OutputSupport.Basic
+import TauCeti.Analysis.Distribution.TestFunction.Inner
 import TauCeti.Analysis.Fourier.Adjoint
 import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Basic
 import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Peetre
@@ -399,21 +399,14 @@ theorem coefficient_eq_adjoint_of_forall_integral_inner_eq (ha : a.HasCompactSpa
         ∫ x, inner ℂ (quantizeSchwartzValue a.coefficient u x) (v x) =
           ∫ x, inner ℂ (u x) (quantizeSchwartzValue b.coefficient v x)) :
     b.coefficient = (adjoint a ha).coefficient := by
-  refine coefficient_eq_of_forall_quantizeSchwartzValue_eq fun v hv ↦ funext fun x ↦ ?_
-  have hf := (b.contDiff_quantizeSchwartzValue v).continuous
-  have hf' := ((adjoint a ha).contDiff_quantizeSchwartzValue v).continuous
-  -- Both quantizations have the same pairing with every `x ↦ g x • e`, `g` a smooth bump.
-  refine ext_inner_left ℂ fun e ↦ ?_
-  have hcont (f : CoordinateSpace n → V) (hf : Continuous f) :
-      Continuous fun y ↦ inner ℂ e (f y) := continuous_const.inner hf
-  refine congrFun (((hcont _ hf).ae_eq_iff_eq volume (hcont _ hf')).1
-    (ae_eq_of_integral_contDiff_smul_eq (hcont _ hf).locallyIntegrable
-      (hcont _ hf').locallyIntegrable fun g hg hgc ↦ ?_)) x
-  have hu : HasCompactSupport fun y ↦ g y • e := hgc.smul_right
-  have huc : ContDiff ℝ ∞ fun y ↦ g y • e := hg.smul contDiff_const
-  simpa only [HasCompactSupport.toSchwartzMap_toFun, inner_smul_left_eq_smul] using
-    (h (hu.toSchwartzMap huc) v hu hv).symm.trans
-      (integral_inner_quantizeSchwartzValue_adjoint a ha (hu.toSchwartzMap huc) v)
+  refine coefficient_eq_of_forall_quantizeSchwartzValue_eq fun v hv ↦
+    eq_of_forall_integral_inner_eq_of_continuous (𝕜 := ℂ) (μ := volume)
+      (b.contDiff_quantizeSchwartzValue v).continuous
+      ((adjoint a ha).contDiff_quantizeSchwartzValue v).continuous fun u ↦ ?_
+  have hu := u.hasCompactSupport
+  simpa only [HasCompactSupport.toSchwartzMap_toFun] using
+    (h (hu.toSchwartzMap u.contDiff) v hu hv).symm.trans
+      (integral_inner_quantizeSchwartzValue_adjoint a ha _ v)
 
 end Adjoint
 

@@ -1378,21 +1378,20 @@ variable {V W : Type*} [NormedAddCommGroup V] [InnerProductSpace ℂ V] [Complet
 classical symbol of the same order, whose homogeneous terms are the pointwise adjoints of those of
 `a`. Its quantization is not the formal adjoint of `Op(a)`; that is the quantization of
 `TauCeti.ClassicalSymbol.adjoint`, of which `a†` is the leading term. -/
-def pointwiseAdjoint (a : ClassicalSymbol n V W m) : ClassicalSymbol n W V m where
-  toSymbol := a.toSymbol.map adjointRealCLM
-  term j := (a.term j).adjoint
-  exists_remainder' := ⟨default, fun N => ⟨(a.remainder default N).map adjointRealCLM, fun p => by
-    simp [map_sub, map_sum, map_smul, adjointRealCLM_apply]⟩⟩
+def pointwiseAdjoint (a : ClassicalSymbol n V W m) : ClassicalSymbol n W V m :=
+  a.map adjointRealCLM
 
 variable (a b : ClassicalSymbol n V W m)
 
 @[simp]
 theorem toSymbol_pointwiseAdjoint : a.pointwiseAdjoint.toSymbol = a.toSymbol.map adjointRealCLM :=
-  (rfl)
+  toSymbol_map _ a
 
 @[simp]
-theorem term_pointwiseAdjoint (j : ℕ) : a.pointwiseAdjoint.term j = (a.term j).adjoint :=
-  (rfl)
+theorem term_pointwiseAdjoint (j : ℕ) : a.pointwiseAdjoint.term j = (a.term j).adjoint := by
+  ext1
+  funext z
+  simp [pointwiseAdjoint, adjointRealCLM_apply]
 
 /-- The principal symbol of `a†` is the pointwise adjoint of the principal symbol of `a`. -/
 @[simp]
