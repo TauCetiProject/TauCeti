@@ -64,36 +64,10 @@ theorem Measure.map_smul_eq_inv_distribHaarChar_smul (μ : Measure A) [μ.IsAddH
     μ.map (g • ·) = (distribHaarChar A g)⁻¹ • μ := by
   have hmeas : Measurable fun a : A ↦ g • a := (continuous_const_smul g).measurable
   ext s hs
-  have hpre : (fun a : A ↦ g • a) ⁻¹' s = g⁻¹ • s := by
-    ext a
-    simp [Set.mem_smul_set_iff_inv_smul_mem]
-  rw [map_apply hmeas hs, hpre, ← distribHaarChar_mul μ g⁻¹ s, map_inv, smul_apply,
+  rw [map_apply hmeas hs, Set.preimage_smul, ← distribHaarChar_mul μ g⁻¹ s, map_inv, smul_apply,
     ENNReal.smul_def, smul_eq_mul, ENNReal.coe_inv (distribHaarChar_pos (A := A)).ne']
 
 end Pushforward
-
-section Monoid
-
-variable {R S : Type*} [Monoid R] [Monoid S]
-
-/-- The action of a unit of `R × S` on a rectangle is the rectangle of the actions of its
-components. -/
-private theorem units_smul_prod (x : (R × S)ˣ) (s : Set R) (t : Set S) :
-    x • (s ×ˢ t) =
-      (Units.map (MonoidHom.fst R S) x • s) ×ˢ (Units.map (MonoidHom.snd R S) x • t) := by
-  ext ⟨a, b⟩
-  simp only [Set.mem_smul_set_iff_inv_smul_mem, Set.mem_prod]
-  simp [Units.smul_def]
-
-/-- The action of a unit of `Π i, T i` on a box is the box of the actions of its coordinates. -/
-private theorem units_smul_pi {ι : Type*} {T : ι → Type*} [∀ i, Monoid (T i)] (x : (Π i, T i)ˣ)
-    (s : ∀ i, Set (T i)) :
-    x • univ.pi s = univ.pi fun i ↦ Units.map (Pi.evalMonoidHom T i) x • s i := by
-  ext a
-  simp only [Set.mem_smul_set_iff_inv_smul_mem, Set.mem_univ_pi]
-  simp [Units.smul_def]
-
-end Monoid
 
 section Ring
 
@@ -126,7 +100,10 @@ theorem distribHaarChar_prod [SecondCountableTopology R] [SecondCountableTopolog
     exact mul_ne_zero hK0 hL0
   · rw [prod_prod]
     exact ENNReal.mul_ne_top hKtop hLtop
-  · rw [units_smul_prod, prod_prod, prod_prod, ← distribHaarChar_mul, ← distribHaarChar_mul,
+  · rw [← Set.image_smul, show (x • · : R × S → R × S) = Prod.map
+        (Units.map (MonoidHom.fst R S) x • ·) (Units.map (MonoidHom.snd R S) x • ·) from rfl,
+      Set.prodMap_image_prod, Set.image_smul, Set.image_smul, prod_prod, prod_prod,
+      ← distribHaarChar_mul, ← distribHaarChar_mul,
       ENNReal.coe_mul]
     ring
 
@@ -149,7 +126,11 @@ theorem distribHaarChar_pi [∀ i, SecondCountableTopology (T i)] (x : (Π i, T 
     exact Finset.prod_ne_zero_iff.mpr fun i _ ↦ (hK i).1
   · rw [pi_pi]
     exact ENNReal.prod_ne_top fun i _ ↦ (hK i).2
-  · rw [units_smul_pi, pi_pi, pi_pi, ENNReal.ofNNReal_finsetProd, ← Finset.prod_mul_distrib]
+  · rw [← Set.image_smul, show (x • · : (Π i, T i) → Π i, T i) =
+        Pi.map fun i ↦ (Units.map (Pi.evalMonoidHom T i) x • ·) from rfl,
+      Set.piMap_image_univ_pi]
+    simp_rw [Set.image_smul]
+    rw [pi_pi, pi_pi, ENNReal.ofNNReal_finsetProd, ← Finset.prod_mul_distrib]
     exact Finset.prod_congr rfl fun i _ ↦ (distribHaarChar_mul (μ i) _ _).symm
 
 /-- **Transport of the Haar character.** A ring isomorphism `e : R ≃+* S` which is a

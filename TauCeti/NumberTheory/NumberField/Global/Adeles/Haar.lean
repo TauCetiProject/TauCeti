@@ -297,17 +297,12 @@ theorem distribHaarChar_adeleRing_eq_one_iff (x : IdeleGroup (𝓞 K) K) :
 theorem map_adeleHaar_mul_eq_self_iff (x : IdeleGroup (𝓞 K) K) :
     (adeleHaar K).map ((x : AdeleRing (𝓞 K) K) * ·) = adeleHaar K ↔ ideleNorm x = 1 := by
   rw [map_adeleHaar_mul, ← Units.val_eq_one]
-  constructor
-  · intro h
-    let K₀ : PositiveCompacts (AdeleRing (𝓞 K) K) := Classical.arbitrary _
-    have h1 := congrArg (fun μ : Measure (AdeleRing (𝓞 K) K) ↦ μ K₀) h
-    have h0 : adeleHaar K K₀ ≠ 0 := (measure_pos_of_nonempty_interior _ K₀.interior_nonempty).ne'
-    have htop : adeleHaar K K₀ ≠ ∞ := K₀.isCompact.measure_ne_top
-    simp only [ENNReal.smul_def] at h1
-    have h2 := (ENNReal.mul_left_inj h0 htop).1 (h1.trans (one_mul _).symm)
-    exact inv_eq_one.mp (ENNReal.coe_eq_one.mp h2)
-  · intro h
-    rw [h, inv_one, one_smul]
+  refine ⟨fun h ↦ ?_, fun h ↦ by rw [h, inv_one, one_smul]⟩
+  have h1 : addHaarScalarFactor ((ideleNorm x : ℝ≥0)⁻¹ • adeleHaar K) (adeleHaar K) =
+      addHaarScalarFactor (adeleHaar K) (adeleHaar K) := by
+    simp only [h]
+  rw [addHaarScalarFactor_smul, addHaarScalarFactor_self, smul_eq_mul, mul_one] at h1
+  exact inv_eq_one.mp h1
 
 /-- **The product formula, measure-theoretically.** Multiplication by a principal idele preserves
 `adeleHaar`. -/
