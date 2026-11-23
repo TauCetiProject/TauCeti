@@ -26,10 +26,12 @@ the Hamiltonian vector field `X_f`. A first integral which is differentiable at 
 integral curve of `X_f` is constant along that curve
 (`TauCeti.SmoothTwoForm.IsFirstIntegral.apply_eq_of_isMIntegralCurve`). More generally a function
 `g` evolves along an integral curve `γ` of `X_f` by `d/dt g (γ t) = {g, f} (γ t)`
-(`TauCeti.SmoothTwoForm.hasDerivAt_comp_of_isMIntegralCurveAt`). Conversely, when `σ` is
-nondegenerate and `M` is a finite-dimensional boundaryless manifold, local integral curves of `X_f`
-pass through every point when `f` is `C²`, so the first integrals of `f` are exactly the
+(`TauCeti.SmoothTwoForm.hasDerivAt_comp_of_isMIntegralCurveAt`). Conversely, when `M` is a
+boundaryless Banach manifold on which every flat map of `σ` is invertible, local integral curves
+of `X_f` pass through every point when `f` is `C²`, so the first integrals of `f` are exactly the
 differentiable functions constant along every integral curve of `X_f` on an open interval
+(`TauCeti.SmoothTwoForm.isFirstIntegral_iff_forall_isMIntegralCurveOn_of_isInvertible`). This
+holds in particular for a nondegenerate form on a finite-dimensional manifold
 (`TauCeti.SmoothTwoForm.IsNondegenerate.isFirstIntegral_iff_forall_isMIntegralCurveOn`). Being a
 first integral is a symmetric relation, by antisymmetry of the Poisson bracket.
 
@@ -173,6 +175,20 @@ theorem hasDerivAt_comp_of_isMIntegralCurveAt {γ : ℝ → M} {t : ℝ}
   exact Manifold.hasDerivAt_comp_curve hg hγ.hasMFDerivAt
 
 /-- **First integrals are the functions constant along Hamiltonian trajectories.** On a
+boundaryless Banach manifold on which every flat map of `σ` is invertible, a differentiable
+function `g` is a first integral of a `C²` Hamiltonian `f` exactly when `g` is constant along
+every integral curve of the Hamiltonian vector field of `f` on an open interval. -/
+theorem isFirstIntegral_iff_forall_isMIntegralCurveOn_of_isInvertible [CompleteSpace E]
+    [BoundarylessManifold I M] (hσ : ∀ x, (σ.flat x).IsInvertible)
+    (hf : ContMDiff I 𝓘(ℝ) 2 f) (hg : MDifferentiable I 𝓘(ℝ) g) :
+    σ.IsFirstIntegral f g ↔
+      ∀ (γ : ℝ → M) (a b : ℝ), IsMIntegralCurveOn γ (σ.hamiltonianVectorField f) (Set.Ioo a b) →
+        ∀ t₀ ∈ Set.Ioo a b, ∀ t ∈ Set.Ioo a b, g (γ t) = g (γ t₀) := by
+  rw [isFirstIntegral_iff_mvfderiv]
+  exact forall_mvfderiv_apply_eq_zero_iff_forall_isMIntegralCurveOn
+    (contMDiff_hamiltonianVectorField_of_isInvertible hσ (n := 1) (by simp) hf) hg
+
+/-- **First integrals are the functions constant along Hamiltonian trajectories.** On a
 finite-dimensional boundaryless manifold with a nondegenerate form, a differentiable function `g`
 is a first integral of a `C²` Hamiltonian `f` exactly when `g` is constant along every integral
 curve of the Hamiltonian vector field of `f` on an open interval. -/
@@ -181,10 +197,8 @@ theorem IsNondegenerate.isFirstIntegral_iff_forall_isMIntegralCurveOn [FiniteDim
     (hf : ContMDiff I 𝓘(ℝ) 2 f) (hg : MDifferentiable I 𝓘(ℝ) g) :
     σ.IsFirstIntegral f g ↔
       ∀ (γ : ℝ → M) (a b : ℝ), IsMIntegralCurveOn γ (σ.hamiltonianVectorField f) (Set.Ioo a b) →
-        ∀ t₀ ∈ Set.Ioo a b, ∀ t ∈ Set.Ioo a b, g (γ t) = g (γ t₀) := by
-  rw [isFirstIntegral_iff_mvfderiv]
-  exact forall_mvfderiv_apply_eq_zero_iff_forall_isMIntegralCurveOn
-    (hσ.contMDiff_hamiltonianVectorField (n := 1) (by simp) hf) hg
+        ∀ t₀ ∈ Set.Ioo a b, ∀ t ∈ Set.Ioo a b, g (γ t) = g (γ t₀) :=
+  isFirstIntegral_iff_forall_isMIntegralCurveOn_of_isInvertible hσ.isInvertible_flat hf hg
 
 /-! ### Completely integrable systems -/
 
