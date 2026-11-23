@@ -12,7 +12,7 @@ import TauCeti.Geometry.Manifold.VectorBundle.Cotangent.Basic
 import TauCeti.Geometry.Manifold.VectorBundle.Hom
 import TauCeti.Geometry.Manifold.VectorBundle.Pullback
 import TauCeti.Geometry.Manifold.VectorBundle.Scalar
-import TauCeti.Geometry.Manifold.VectorBundle.Translate
+import TauCeti.Geometry.Manifold.VectorBundle.SectionAlongMap.Regularity
 
 /-!
 # Smooth tangential corrections along an embedding
@@ -75,7 +75,7 @@ theorem contMDiff_of_eq_sub_mfderiv_inverse (f : SmoothEmbedding I J n M N) (hm 
     (hr : ∀ x v, r x v = v - mfderiv I J f x ((a x).inverse ((b (f x) v).comp (mfderiv I J f x)))) :
     ContMDiff (I.prod 𝓘(ℝ, V)) (J.prod 𝓘(ℝ, V)) m
       (fun p : TotalSpace V ((f : M → N) *ᵖ (TangentSpace J)) ↦
-        (⟨f p.proj, r p.proj p.2⟩ : TangentBundle J N)) := by
+        (⟨f p.proj, r p.proj p.snd⟩ : TangentBundle J N)) := by
   let fc : C^m⟮I, M; J, N⟯ := ⟨f, f.contMDiff.of_le (le_self_add.trans hm)⟩
   let := TangentBundle.contMDiffVectorBundle (I := I) (M := M) (n := m)
   let := TangentBundle.contMDiffVectorBundle (I := J) (M := N) (n := m)
@@ -91,17 +91,17 @@ theorem contMDiff_of_eq_sub_mfderiv_inverse (f : SmoothEmbedding I J n M N) (hm 
   let φ := fun (x : M) (v : TangentSpace J (f x)) ↦ (b (f x) v).comp (mfderiv I J f x)
   have hφ : ContMDiff (I.prod 𝓘(ℝ, V)) (I.prod 𝓘(ℝ, E →L[ℝ] ℝ)) m
       (fun p : TotalSpace V ((f : M → N) *ᵖ (TangentSpace J)) ↦
-        (⟨p.proj, φ p.proj p.2⟩ : CotangentBundle I M)) :=
+        (⟨p.proj, φ p.proj p.snd⟩ : CotangentBundle I M)) :=
     CotangentBundle.contMDiff_mk_comp_mfderiv
       (Ψ := fun q : TotalSpace V ((f : M → N) *ᵖ (TangentSpace J)) ↦
-        (⟨f q.proj, b (f q.proj) q.2⟩ : CotangentBundle J N))
+        (⟨f q.proj, b (f q.proj) q.snd⟩ : CotangentBundle J N))
       (fun _ ↦ rfl) ((hb.comp (fc.contMDiff.comp hbase)).clm_bundle_apply hlift)
       hbase f.contMDiff hm
   -- Invert `a` and push the resulting tangential component forward.
   let u := fun (x : M) (v : TangentSpace J (f x)) ↦ (a x).inverse (φ x v)
   have hu : ContMDiff (I.prod 𝓘(ℝ, V)) (I.prod 𝓘(ℝ, E)) m
       (fun p : TotalSpace V ((f : M → N) *ᵖ (TangentSpace J)) ↦
-        (⟨p.proj, u p.proj p.2⟩ : TangentBundle I M)) :=
+        (⟨p.proj, u p.proj p.snd⟩ : TangentBundle I M)) :=
     ((ha.clm_bundle_inverse hainv).comp hbase).clm_bundle_apply hφ
   have ht := (f.contMDiff.contMDiff_tangentMap (by simpa using hm)).comp hu
   have hneg := (contMDiff_const (c := (-1 : ℝ))).smul_totalSpace ht
@@ -109,7 +109,7 @@ theorem contMDiff_of_eq_sub_mfderiv_inverse (f : SmoothEmbedding I J n M N) (hm 
       r x v = v + (-1 : ℝ) • mfderiv I J f x (u x v) := by
     rw [hr, neg_one_smul, ← sub_eq_add_neg]
   exact (hlift.add_sectionAlong hneg).congr fun p ↦
-    congrArg (TotalSpace.mk (f p.proj)) (hformula p.proj p.2)
+    congrArg (TotalSpace.mk (f p.proj)) (hformula p.proj p.snd)
 
 /-- **Smooth descent of representatives.** A family of maps `r x` from the normal spaces to the
 ambient tangent spaces is `C^m` on the intrinsic normal bundle as soon as its values on normal
@@ -120,11 +120,11 @@ theorem contMDiff_normalBundle_of_contMDiff_normalClass (f : SmoothEmbedding I J
     (r : (x : M) → f.NormalSpace x hn → TangentSpace J (f x))
     (hr : ContMDiff (I.prod 𝓘(ℝ, V)) (J.prod 𝓘(ℝ, V)) m
       (fun p : TotalSpace V ((f : M → N) *ᵖ (TangentSpace J)) ↦
-        (⟨f p.proj, r p.proj (f.normalClass p.proj hn p.2)⟩ : TangentBundle J N))) :
+        (⟨f p.proj, r p.proj (f.normalClass p.proj hn p.snd)⟩ : TangentBundle J N))) :
     letI := f.normalSpaceFiberBundle hn hdim
     ContMDiff (I.prod 𝓘(ℝ, P)) (J.prod 𝓘(ℝ, V)) m
       (fun p : TotalSpace P (fun x ↦ f.NormalSpace x hn) ↦
-        (⟨f p.proj, r p.proj p.2⟩ : TangentBundle J N)) := by
+        (⟨f p.proj, r p.proj p.snd⟩ : TangentBundle J N)) := by
   let := f.normalSpaceFiberBundle hn hdim
   rw [f.contMDiff_normalBundle_iff hn hm hdim]
   convert hr using 1

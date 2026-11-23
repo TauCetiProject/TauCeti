@@ -92,7 +92,7 @@ theorem betaMeasure_map_centered_sq (a : ℝ) :
     rw [betaMeasure,
       map_affine_withDensity_volume _ (by norm_num),
       map_abs_withDensity (f := affineDensity (-1) 2 (betaPDF a a))
-        (measurable_affineDensity hf _ _)]
+        (measurable_affineDensity hf _ _).aemeasurable]
     congr 1
     ext x
     exact congrArg ((Ioi 0).indicator · x)

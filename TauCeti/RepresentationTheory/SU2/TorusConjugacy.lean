@@ -85,7 +85,7 @@ Equivalently, every special unitary `2 × 2` matrix is diagonalised by a special
 theorem exists_conj_mem_torus (g : SU2) : ∃ u : SU2, u * g * u⁻¹ ∈ torus := by
   have : IsStarNormal (g : Matrix (Fin 2) (Fin 2) ℂ) :=
     Unitary.coe_isStarNormal
-      (⟨g, Matrix.specialUnitaryGroup_le_unitaryGroup g.2⟩ : Matrix.unitaryGroup (Fin 2) ℂ)
+      (⟨g, Matrix.specialUnitaryGroup_le_unitaryGroup g.property⟩ : Matrix.unitaryGroup (Fin 2) ℂ)
   obtain ⟨U, hU, d, hd⟩ :=
     Matrix.exists_mem_unitaryGroup_star_mul_mul_eq_diagonal (g : Matrix (Fin 2) (Fin 2) ℂ)
   exact exists_conj_mem_torus_of_isDiag_star_left_conjugate g (U := ⟨U, hU⟩)

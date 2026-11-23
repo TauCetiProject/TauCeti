@@ -80,8 +80,8 @@ theorem HasUniformJetBoundsOn.bound_all {n : ℕ} {s : Set E} {f : ι → E → 
     ∃ C : ℝ, 0 ≤ C ∧ ∀ j, j ≤ m → ∀ i x, x ∈ s →
       ‖iteratedFDeriv 𝕜 j (f i) x‖ ≤ C := by
   classical
-  choose c hc using fun j : Finset.range (m + 1) ↦ h j.1
-    (Nat.le_trans (Nat.le_of_lt_succ (Finset.mem_range.1 j.2)) hm)
+  choose c hc using fun j : Finset.range (m + 1) ↦ h j.val
+    (Nat.le_trans (Nat.le_of_lt_succ (Finset.mem_range.1 j.property)) hm)
   let C : ℝ := ∑ j : Finset.range (m + 1), max (c j) 0
   have hC : 0 ≤ C := Finset.sum_nonneg (fun j _ ↦ le_max_right _ _)
   refine ⟨C, hC, fun j hj i x hx ↦ ?_⟩

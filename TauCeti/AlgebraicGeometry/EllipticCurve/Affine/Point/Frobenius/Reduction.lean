@@ -126,7 +126,7 @@ theorem cast_nonsingularReductionHom_map_eq_map_frobeniusAlgHom
     (P : (W⁄L).toAffine.nonsingularReduction v) :
     AddEquiv.cast (M := fun V ↦ V.toAffine.Point) hC
         ((W⁄L).toAffine.nonsingularReductionHom v
-          ⟨map τ P, map_mem_nonsingularReduction v hC hτ P.2⟩) =
+          ⟨map τ P, map_mem_nonsingularReduction v hC hτ P.property⟩) =
       map (FiniteField.frobeniusAlgHom F _)
         (AddEquiv.cast (M := fun V ↦ V.toAffine.Point) hC
           ((W⁄L).toAffine.nonsingularReductionHom v P)) := by

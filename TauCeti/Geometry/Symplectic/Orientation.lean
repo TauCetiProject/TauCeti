@@ -14,6 +14,7 @@ public import TauCeti.LinearAlgebra.Orientation.Prod
 import TauCeti.Geometry.Symplectic.Complex.Module.Basic
 import TauCeti.Geometry.Symplectic.ExistsCompatible
 import TauCeti.Geometry.Symplectic.Lagrangian.Basic
+import TauCeti.LinearAlgebra.Basis.Fin
 import TauCeti.LinearAlgebra.Basis.Triangular
 import TauCeti.LinearAlgebra.BilinearForm.SymplecticBasis
 
@@ -78,6 +79,8 @@ space, and the product law computes the orientation of a product such as
   structure have the same symplectic orientation.
 * `TauCeti.AlmostComplexStructure.orientation_eq_of_tames`: the complex orientation of `J` is the
   symplectic orientation of any form taming `J`.
+* `Module.Basis.orientation_eq_finTwoProd_of_apply_one_eq`: on the plane `ℝ × ℝ`, every complex
+  frame `(e, (-e₂, e₁))` is positive for the orientation of the standard basis.
 
 ## References
 
@@ -186,22 +189,9 @@ theorem orientation_prod [FiniteDimensional ℝ W] (ω₁ : SymplecticForm V) (�
     Orientation.prod_basis_orientation, ← (hb.prod hc).orientation_reindex hmk h]
   congr 1
   -- Both bases list `(q₁, p₁, …)` of `ω₁` followed by `(q'₁, p'₁, …)` of `ω₂`.
-  set e : (Fin (m / 2) × Fin 2) ⊕ (Fin (k / 2) × Fin 2) ≃ Fin (m / 2 + k / 2) × Fin 2 :=
-    (Equiv.sumProdDistrib _ _ _).symm.trans (finSumFinEquiv.prodCongr (Equiv.refl _))
-  set F := (Equiv.sumCongr (finProdFinEquiv.trans (finCongr h₁))
-    (finProdFinEquiv.trans (finCongr h₂))).trans finSumFinEquiv
-  have hF (p) : F p = finProdFinEquiv.trans (finCongr h) (e p) := by
-    rcases p with ⟨i, a⟩ | ⟨i, a⟩
-    · ext
-      simp [F, e]
-    · ext
-      simp [F, e]
-      omega
-  refine Basis.eq_of_apply_eq fun x ↦ ?_
-  obtain ⟨p, rfl⟩ := F.surjective x
-  conv_lhs => rw [Basis.reindex_apply, Basis.reindex_apply, hF, Equiv.symm_apply_apply,
-    Equiv.symm_apply_apply]
-  rcases p with p | p <;> simp [F, Basis.reindex_apply, Basis.prod_apply]
+  refine Basis.eq_of_apply_eq fun x ↦ congrFun ?_ x
+  rw [Basis.coe_reindex_prod_finProdFinEquiv b c h₁ h₂ h rfl, Basis.coe_prod_reindex_finSumFinEquiv]
+  simp only [Fin.cast_eq_self]
 
 /-- The symplectic orientations of `ω` indexed by `Fin k` and by `Fin k'`, for `k = k'`, correspond
 under the identification `finCongr` of the index types. -/
@@ -395,3 +385,22 @@ theorem orientation_reindex (J : AlmostComplexStructure V) {n : ℕ}
 end AlmostComplexStructure
 
 end TauCeti
+
+/-- **Complex frames of the plane are positive.** A basis `(e, (-e₂, e₁))` of `ℝ × ℝ`, whose second
+vector is the image of the first under the standard complex structure `(a, b) ↦ (-b, a)`, has the
+orientation of the standard basis `((1, 0), (0, 1))`: the standard symplectic form `ds ∧ dt` tames
+this structure (`TauCeti.SymplecticForm.Tames.orientation_reindex`) and induces that orientation
+(`TauCeti.SymplecticForm.orientation_stdSymplecticForm_real`). -/
+theorem Module.Basis.orientation_eq_finTwoProd_of_apply_one_eq (b : Basis (Fin 2) ℝ (ℝ × ℝ))
+    (hb : b 1 = (-(b 0).2, (b 0).1)) :
+    b.orientation = (Basis.finTwoProd ℝ).orientation := by
+  have h : 1 * 2 = 2 := rfl
+  let e : Fin 1 × Fin 2 ≃ Fin 2 := finProdFinEquiv.trans (finCongr h)
+  have he : (b.reindex e.symm).reindex e = b := Basis.eq_of_apply_eq fun i ↦ by simp
+  rw [← he, (TauCeti.stdSymplecticForm_tames_product (V := ℝ)).orientation_reindex (fun i ↦ ?_)
+    (by simp) h, TauCeti.SymplecticForm.orientation_stdSymplecticForm_real]
+  -- The adapted pair is `(b 0, b 1)`.
+  have h₀ : finProdFinEquiv ((0 : Fin 1), (0 : Fin 2)) = 0 := rfl
+  have h₁ : finProdFinEquiv ((0 : Fin 1), (1 : Fin 2)) = 1 := rfl
+  fin_cases i
+  simpa [e, TauCeti.AlmostComplexStructure.product_apply, h₀, h₁] using hb

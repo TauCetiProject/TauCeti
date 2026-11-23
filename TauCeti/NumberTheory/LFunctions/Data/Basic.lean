@@ -56,7 +56,7 @@ imposed on the analytic record.
 
 ## Main results
 
-* `AnalyticLFunctionData.dual_dual`, `degree_dual`, `gammaFactor_dual`.
+* `AnalyticLFunctionData.dual_dual`, `degree_dual`, `gammaFactor_dual`, `exists_shift_norm_le`.
 * `HasDirichletAgreement.dual`, `HasMeromorphicContinuation.dual`, `HasFunctionalEquation.dual`.
 * `HasFunctionalEquation.eventuallyEq`: the functional equation as germs at every point.
 
@@ -101,6 +101,17 @@ namespace AnalyticLFunctionData
 
 variable (d : AnalyticLFunctionData)
 
+/-- Every complex power of the positive conductor is nonzero. -/
+theorem conductor_cpow_ne_zero (z : ℂ) : ((d.conductor : ℕ) : ℂ) ^ z ≠ 0 :=
+  cpow_ne_zero_iff.mpr (Or.inl (Nat.cast_ne_zero.mpr d.conductor.ne_zero))
+
+/-- A complex power of the positive conductor is analytic wherever its exponent is analytic. -/
+@[fun_prop]
+theorem analyticAt_conductor_cpow {g : ℂ → ℂ} {s : ℂ} (hg : AnalyticAt ℂ g s) :
+    AnalyticAt ℂ (fun z ↦ ((d.conductor : ℕ) : ℂ) ^ g z) s := by
+  simp only [Complex.cpow_def_of_ne_zero (Nat.cast_ne_zero.mpr d.conductor.ne_zero)]
+  exact (analyticAt_const.mul hg).cexp
+
 /-- The **degree** `#μ + 2 #ν` of a card: a real gamma shift counts once and a complex gamma
 shift twice, as `Γ_ℂ(s) = Γ_ℝ(s) Γ_ℝ(s + 1)`. -/
 def degree : ℕ := d.gammaR.card + 2 * d.gammaC.card
@@ -115,6 +126,22 @@ theorem gammaFactor_def (s : ℂ) :
     d.gammaFactor s =
       (d.gammaR.map fun μ ↦ Gammaℝ (s + μ)).prod * (d.gammaC.map fun ν ↦ Gammaℂ (s + ν)).prod :=
   (rfl)
+
+/-- Every record `d` has a finite norm bound on its real and complex gamma shifts. -/
+theorem exists_shift_norm_le :
+    ∃ M ≥ 0, (∀ μ ∈ d.gammaR, ‖μ‖ ≤ M) ∧ (∀ ν ∈ d.gammaC, ‖ν‖ ≤ M) := by
+  have hnn (m : Multiset ℂ) : ∀ x ∈ m.map norm, (0 : ℝ) ≤ x := by
+    intro x hx
+    obtain ⟨z, -, rfl⟩ := Multiset.mem_map.mp hx
+    exact norm_nonneg z
+  have hR0 : 0 ≤ (d.gammaR.map norm).sum := Multiset.sum_nonneg (hnn d.gammaR)
+  have hC0 : 0 ≤ (d.gammaC.map norm).sum := Multiset.sum_nonneg (hnn d.gammaC)
+  refine ⟨(d.gammaR.map norm).sum + (d.gammaC.map norm).sum, add_nonneg hR0 hC0,
+    fun μ hμ ↦ ?_, fun ν hν ↦ ?_⟩
+  · have h1 := Multiset.single_le_sum (hnn d.gammaR) ‖μ‖ (Multiset.mem_map_of_mem norm hμ)
+    linarith
+  · have h2 := Multiset.single_le_sum (hnn d.gammaC) ‖ν‖ (Multiset.mem_map_of_mem norm hν)
+    linarith
 
 /-- The **dual card**: conjugate coefficients, conjugate gamma shifts, conjugate root number, the
 reflected completed function `s ↦ conj Λ(conj s)`, and the conjugate polar divisor. The conductor
@@ -198,6 +225,11 @@ structure HasFunctionalEquation : Prop where
 
 variable {d}
 
+/-- The root number of a card satisfying the functional equation is nonzero. -/
+theorem HasFunctionalEquation.rootNumber_ne_zero (h : d.HasFunctionalEquation) :
+    d.rootNumber ≠ 0 :=
+  norm_ne_zero_iff.mp (by simp [h.norm_rootNumber])
+
 /-- The dual of a card that agrees with a Dirichlet series agrees with the conjugate series. -/
 theorem HasDirichletAgreement.dual (h : d.HasDirichletAgreement) :
     d.dual.HasDirichletAgreement where
@@ -249,6 +281,11 @@ theorem HasFunctionalEquation.rootNumber_eq_div (h : d.HasFunctionalEquation) {s
     rw [hz, mul_zero] at heq
     exact hne heq
   exact (eq_div_iff hden).mpr heq.symm
+
+/-- A functional equation equates the polar order of `d` at `1 - s` with that of `d.dual` at `s`. -/
+theorem HasFunctionalEquation.polarOrder_one_sub (h : d.HasFunctionalEquation) (s : ℂ) :
+    d.polarOrder (1 - s) = d.dual.polarOrder s := by
+  rw [dual_polarOrder_apply, ← h.polarOrder_one_sub_conj (conj s), Complex.conj_conj]
 
 /-- The polar orders at the two points used to extract the root number agree. -/
 theorem HasFunctionalEquation.polarOrder_neg_one (h : d.HasFunctionalEquation) :

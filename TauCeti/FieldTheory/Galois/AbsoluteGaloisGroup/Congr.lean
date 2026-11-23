@@ -89,7 +89,7 @@ def absoluteGaloisGroupCongr (e : K ≃+* L) :
     refine ⟨ψ.symm ⟨g, hg⟩, ?_⟩
     exact congrArg Subtype.val (ψ.apply_symm_apply ⟨g, hg⟩)
   let φ := MulEquiv.ofBijective f hf
-  have hcont : Continuous φ := continuous_subtype_val.comp ψ.continuous
+  have hcont : Continuous φ := continuous_subtypeVal.comp ψ.continuous
   exact
     { φ with
       continuous_toFun := hcont

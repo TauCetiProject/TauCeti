@@ -31,6 +31,8 @@ A positive-definite observed block recovers the ordinary inverse formula.
 ## Main results
 
 * `TauCeti.Probability.condDistrib_multivariateGaussian` — the conditional-distribution formula.
+* `TauCeti.Probability.condDistrib_sumEquivProd_of_hasLaw_dirac` — the point-mass conditional
+  law of a vector whose law is a point mass.
 * `EuclideanSpace.map_snd_fst_multivariateGaussian` — the joint-law factorization into the
   observed marginal and conditional kernel.
 * `ProbabilityTheory.HasLaw.indepFun_gaussianResidual` — independence of the centered
@@ -530,6 +532,33 @@ theorem _root_.ProbabilityTheory.HasLaw.indepFun_gaussianResidual {Ω : Type*}
       Filter.EventuallyEq.rfl
     filter_upwards [hae] with ω hω
     simp [hω]
+
+omit [DecidableEq ι] [DecidableEq κ] in
+/-- If a vector has the point-mass law at `m`, then almost every observation of its second block
+is the second block of `m`, and the regular conditional law of the first block given it is the
+point mass at the first block of `m`. This is the conditioning of a Gaussian vector whose
+totalized law is a point mass, as for a covariance that is zero or not positive semidefinite. -/
+theorem condDistrib_sumEquivProd_of_hasLaw_dirac {Ω : Type*} [MeasurableSpace Ω]
+    {P : Measure Ω} [IsFiniteMeasure P] (X : Ω → EuclideanSpace ℝ (ι ⊕ κ))
+    (m : EuclideanSpace ℝ (ι ⊕ κ)) (hX : HasLaw X (Measure.dirac m) P) :
+    ∀ᵐ x₂ ∂P.map fun ω ↦ (EuclideanSpace.sumEquivProd (X ω)).2,
+      x₂ = (EuclideanSpace.sumEquivProd m).2 ∧
+        condDistrib (fun ω ↦ (EuclideanSpace.sumEquivProd (X ω)).1)
+            (fun ω ↦ (EuclideanSpace.sumEquivProd (X ω)).2) P x₂ =
+          Measure.dirac (EuclideanSpace.sumEquivProd m).1 := by
+  have hfst : (fun ω ↦ (EuclideanSpace.sumEquivProd (X ω)).1) =ᵐ[P]
+      fun _ ↦ (EuclideanSpace.sumEquivProd m).1 :=
+    hX.ae_eq_of_dirac.fun_comp fun x ↦ (EuclideanSpace.sumEquivProd x).1
+  have hsnd : (fun ω ↦ (EuclideanSpace.sumEquivProd (X ω)).2) =ᵐ[P]
+      fun _ ↦ (EuclideanSpace.sumEquivProd m).2 :=
+    hX.ae_eq_of_dirac.fun_comp fun x ↦ (EuclideanSpace.sumEquivProd x).2
+  have hobs : ∀ᵐ x₂ ∂P.map fun ω ↦ (EuclideanSpace.sumEquivProd (X ω)).2,
+      x₂ = (EuclideanSpace.sumEquivProd m).2 :=
+    (ae_map_iff (by fun_prop) (measurableSet_singleton _)).mpr hsnd
+  rw [condDistrib_congr_left hfst]
+  filter_upwards [condDistrib_const (by fun_prop) (EuclideanSpace.sumEquivProd m).1, hobs]
+    with x₂ hx₂ hm
+  exact ⟨hm, by rw [hx₂, Kernel.deterministic_apply]⟩
 
 /-- For a jointly Gaussian vector with positive-semidefinite covariance, the regular conditional
 law of the first block given the second is Gaussian with the generalized Schur complement and
