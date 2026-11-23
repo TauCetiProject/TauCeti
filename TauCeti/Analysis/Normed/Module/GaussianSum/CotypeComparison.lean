@@ -10,7 +10,6 @@ public import TauCeti.Analysis.Normed.Module.GaussianSum.Cotype
 import Mathlib.MeasureTheory.Integral.Prod
 import Mathlib.Probability.Distributions.Gaussian.Fernique
 import Mathlib.Topology.Instances.RealVectorSpace
-import TauCeti.Analysis.Normed.Module.GaussianSum.Rademacher
 import TauCeti.Analysis.Normed.Module.RademacherSum.Contraction
 import TauCeti.Analysis.Normed.Module.WeakDual.Integral
 import TauCeti.Analysis.Normed.Operator.AbsolutelySumming.Gaussian
@@ -31,7 +30,7 @@ each standard Gaussian coordinate at a threshold `t` with
 `C * (𝔼[g² 1_{|g| > t}])^(1/2) ≤ 1 / 2`, bounds the truncated sum by `t * R₂(y)` (by sign-flip
 invariance and Rademacher contraction) and the tail sum by `(1 / 2) * G₂(y)` (by Pietsch
 domination and Fubini). Absorption yields `G₂(y) ≤ 2 * t * R₂(y)` (Pisier, Lemma 3.8). Combining
-`HasGaussianCotype.gaussianSecondMoment_le` (`G₂(y) ≤ 4 √3 C R₂(y)`) with Gaussian cotype `2`
+`gaussianSecondMoment_le_two_mul_rademacherSecondMoment` at `t = 4 * C` with Gaussian cotype `2`
 gives Rademacher cotype `2` with constant `8 * C²`.
 
 ## Main declarations
@@ -60,28 +59,6 @@ section TailHelpers
 
 variable {ι : Type*} [Fintype ι]
 
-/-- Sign-flip invariance of the squared norm of `(EuclideanSpace.basisFun ι ℝ).toBasis.constrL y ∘
-truncVec t`. -/
-private theorem integral_norm_sq_truncVec_units_smul {Y : Type*}
-    [NormedAddCommGroup Y] [NormedSpace ℝ Y] (y : ι → Y) (t : ℝ) (ε : ι → ℤˣ) :
-    ∫ g, ‖(EuclideanSpace.basisFun ι ℝ).toBasis.constrL y (EuclideanSpace.truncVec t g)‖ ^ 2
-        ∂stdGaussian (EuclideanSpace ℝ ι) =
-      ∫ g, ‖∑ i, ε i • (EuclideanSpace.truncVec t g i • y i)‖ ^ 2
-        ∂stdGaussian (EuclideanSpace ℝ ι) := by
-  let U := (EuclideanSpace.basisFun ι ℝ).toBasis.constrL y
-  have hmeas : StronglyMeasurable fun g : EuclideanSpace ℝ ι ↦
-      ‖U (EuclideanSpace.truncVec t g)‖ ^ 2 :=
-    (U.continuous.comp_stronglyMeasurable
-      (EuclideanSpace.measurable_truncVec t).stronglyMeasurable).norm.pow 2
-  conv_lhs =>
-    rw [← Probability.stdGaussian_map_units_smul ε,
-      integral_map (μ := stdGaussian (EuclideanSpace ℝ ι)) (by fun_prop)
-        hmeas.aestronglyMeasurable]
-  refine integral_congr_ae (Filter.Eventually.of_forall fun g ↦ ?_)
-  dsimp only [U]
-  rw [EuclideanSpace.basisFun_toBasis_constrL_apply]
-  simp_rw [EuclideanSpace.truncVec_units_smul, smul_assoc]
-
 /-- Sign-flip invariance and Rademacher contraction bound the truncated Gaussian sum by
 `t * R₂(y)`. -/
 private theorem integral_norm_sq_truncVec_le [DecidableEq ι] {Y : Type*}
@@ -89,42 +66,24 @@ private theorem integral_norm_sq_truncVec_le [DecidableEq ι] {Y : Type*}
     ∫ g, ‖(EuclideanSpace.basisFun ι ℝ).toBasis.constrL y (EuclideanSpace.truncVec t g)‖ ^ 2
         ∂stdGaussian (EuclideanSpace ℝ ι) ≤
       (t * rademacherSecondMoment y) ^ 2 := by
-  have hint_ε (ε : ι → ℤˣ) :
-      Integrable (fun g : EuclideanSpace ℝ ι ↦
-          ‖∑ i, ε i • (EuclideanSpace.truncVec t g i • y i)‖ ^ 2)
-        (stdGaussian (EuclideanSpace ℝ ι)) := by
-    have heq (g : EuclideanSpace ℝ ι) :
-        ∑ i, ε i • (EuclideanSpace.truncVec t g i • y i) =
-          (EuclideanSpace.basisFun ι ℝ).toBasis.constrL (fun i ↦ ε i • y i)
-            (EuclideanSpace.truncVec t g) := by
-      rw [EuclideanSpace.basisFun_toBasis_constrL_apply]
-      exact Finset.sum_congr rfl fun i _ ↦ smul_comm _ _ _
-    simp_rw [heq]
-    exact (Probability.memLp_comp_truncVec
-      ((EuclideanSpace.basisFun ι ℝ).toBasis.constrL fun i ↦ ε i • y i) t (by simp))
-      |>.integrable_norm_pow (by norm_num)
-  have havg : ∫ g, ‖(EuclideanSpace.basisFun ι ℝ).toBasis.constrL y
-          (EuclideanSpace.truncVec t g)‖ ^ 2 ∂stdGaussian (EuclideanSpace ℝ ι) =
-      ∫ g, 𝔼 ε : ι → ℤˣ, ‖∑ i, ε i • (EuclideanSpace.truncVec t g i • y i)‖ ^ 2
-        ∂stdGaussian (EuclideanSpace ℝ ι) := by
-    simp_rw [Fintype.expect_eq_sum_div_card]
-    rw [integral_div, integral_finsetSum _ fun ε _ ↦ hint_ε ε]
-    simp_rw [← integral_norm_sq_truncVec_units_smul y t, Finset.sum_const, Finset.card_univ,
-      nsmul_eq_mul]
-    have hcard : (Fintype.card (ι → ℤˣ) : ℝ) ≠ 0 := Nat.cast_ne_zero.2 Fintype.card_ne_zero
-    field_simp [hcard]
-  rw [havg]
-  calc
-    ∫ g, 𝔼 ε : ι → ℤˣ, ‖∑ i, ε i • (EuclideanSpace.truncVec t g i • y i)‖ ^ 2
-          ∂stdGaussian (EuclideanSpace ℝ ι)
-        ≤ ∫ _, (t * rademacherSecondMoment y) ^ 2 ∂stdGaussian (EuclideanSpace ℝ ι) := by
-      refine integral_mono ?_ (integrable_const _) fun g ↦ ?_
-      · simp_rw [Fintype.expect_eq_sum_div_card]
-        exact (integrable_finsetSum _ fun ε _ ↦ hint_ε ε).div_const _
-      · rw [← rademacherSecondMoment_sq]
-        exact pow_le_pow_left₀ (rademacherSecondMoment_nonneg _)
-          (rademacherSecondMoment_smul_le (EuclideanSpace.abs_truncVec_apply_le ht g) y) 2
-    _ = (t * rademacherSecondMoment y) ^ 2 := by simp
+  let U : EuclideanSpace ℝ ι →L[ℝ] Y := (EuclideanSpace.basisFun ι ℝ).toBasis.constrL y
+  have hint : Integrable (fun g : EuclideanSpace ℝ ι ↦ ‖U (EuclideanSpace.truncVec t g)‖ ^ 2)
+      (stdGaussian (EuclideanSpace ℝ ι)) :=
+    (Probability.memLp_comp_truncVec U t (by simp)).integrable_norm_pow (by norm_num)
+  rw [Probability.integral_eq_integral_expect_signFlip hint]
+  refine (integral_mono_of_nonneg (ae_of_all _ fun _ ↦ Finset.expect_nonneg fun _ _ ↦
+    sq_nonneg _) (integrable_const ((t * rademacherSecondMoment y) ^ 2))
+    (ae_of_all _ fun g ↦ ?_)).trans_eq (by simp)
+  have h := pow_le_pow_left₀ (rademacherSecondMoment_nonneg _)
+    (rademacherSecondMoment_smul_le (EuclideanSpace.abs_truncVec_apply_le ht g) y) 2
+  rw [rademacherSecondMoment_sq] at h
+  refine h.trans_eq' (Finset.expect_congr rfl fun ε _ ↦ ?_)
+  have hflip : Probability.signFlip ε g = WithLp.toLp 2 fun j ↦ ε j • g j := by
+    ext j
+    simp [Probability.signFlip_apply]
+  dsimp only [U]
+  rw [hflip, EuclideanSpace.basisFun_toBasis_constrL_apply]
+  simp_rw [EuclideanSpace.truncVec_units_smul, smul_assoc]
 
 private theorem integral_sq_apply_tailVec_le_of_mem_closedBall
     (f : WeakDual.closedBall ℝ (EuclideanSpace ℝ ι) 1) (t : ℝ) :
@@ -267,16 +226,12 @@ theorem HasGaussianCotype.hasCotype_two {Y : Type*} [NormedAddCommGroup Y] [Norm
     {C : ℝ≥0} (hY : HasGaussianCotype Y 2 C) : HasCotype Y 2 (8 * C ^ 2) := by
   rw [hasCotype_iff]
   intro n y
-  have h3 : √3 ≤ 2 := Real.sqrt_le_iff.2 ⟨by norm_num, by norm_num⟩
-  have hr : 0 ≤ rademacherSecondMoment y := rademacherSecondMoment_nonneg y
   calc
     ‖WithLp.toLp 2 y‖ ≤ C * gaussianSecondMoment y := hY.norm_toLp_le y
-    _ ≤ C * (4 * √3 * C * rademacherSecondMoment y) := by
+    _ ≤ C * (2 * (4 * C) * rademacherSecondMoment y) := by
       gcongr
-      exact hY.gaussianSecondMoment_le y
-    _ ≤ C * (8 * C * rademacherSecondMoment y) := by
-      gcongr
-      linarith
+      exact gaussianSecondMoment_le_two_mul_rademacherSecondMoment hY
+        (Probability.mul_sqrt_setIntegral_sq_tail_four_mul_le C) y
     _ = ((8 * C ^ 2 : ℝ≥0) : ℝ) * rademacherSecondMoment y := by push_cast; ring
 
 end TauCeti

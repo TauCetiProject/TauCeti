@@ -70,7 +70,7 @@ theorem isCompact_closure_toWeakSpace_of_forall_exists_isCompact [CompleteSpace 
       have hcpt : IsCompact (inclusionInDoubleDualWeak 𝕜 E '' (toWeakSpace 𝕜 E '' K) +
           WeakDual.closedBall 𝕜 (StrongDual 𝕜 E) ε) :=
         (hK.image (inclusionInDoubleDualWeak 𝕜 E).continuous).add
-          (WeakDual.isCompact_closedBall' 𝕜 (StrongDual 𝕜 E) ε)
+          (WeakDual.isCompact_closedBall 0 ε)
       have hsub : inclusionInDoubleDualWeak 𝕜 E '' (toWeakSpace 𝕜 E '' A) ⊆
           inclusionInDoubleDualWeak 𝕜 E '' (toWeakSpace 𝕜 E '' K) +
             WeakDual.closedBall 𝕜 (StrongDual 𝕜 E) ε := by

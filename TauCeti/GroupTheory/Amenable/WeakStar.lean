@@ -119,7 +119,7 @@ theorem isClosed_range_toWeakDual :
 /-- The means form a weak-* compact set, by the Banach–Alaoglu theorem. -/
 theorem isCompact_range_toWeakDual :
     IsCompact (Set.range (toWeakDual : Mean G → WeakDual ℝ (UCB G))) :=
-  (WeakDual.isCompact_closedBall' ℝ (UCB G) 1).of_isClosed_subset isClosed_range_toWeakDual
+  (WeakDual.isCompact_closedBall 0 1).of_isClosed_subset isClosed_range_toWeakDual
     range_toWeakDual_subset_closedBall
 
 /-! ### The weak-* topology on means -/

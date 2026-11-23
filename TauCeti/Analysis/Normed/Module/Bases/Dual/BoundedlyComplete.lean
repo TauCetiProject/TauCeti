@@ -73,7 +73,7 @@ theorem IsShrinking.isBoundedlyComplete_dualBasis [ProperSpace 𝕜]
   intro a ⟨C, hC⟩
   let s (n : ℕ) := ∑ i ∈ Finset.range n, a i • hb.dualBasis i
   have hbound (n : ℕ) : ‖s n‖ ≤ C := hC (mem_range_self n)
-  obtain ⟨f, _, hf⟩ := (WeakDual.isCompact_closedBall' 𝕜 E C).exists_mapClusterPt
+  obtain ⟨f, _, hf⟩ := (WeakDual.isCompact_closedBall (0 : StrongDual 𝕜 E) C).exists_mapClusterPt
     (u := fun n ↦ StrongDual.toWeakDual (s n)) (f := atTop)
     (by
       rw [Filter.map_le_iff_le_comap, Filter.comap_principal, Filter.le_principal_iff]

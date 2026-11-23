@@ -97,7 +97,7 @@ private theorem exists_seq_finset_forall_one_lt_re_apply {C : Set (WeakDual 𝕜
     set S := C ∩ WeakDual.closedBall 𝕜 E (r * (n + 1 + 1)) ∩
       ⋂ x ∈ A, {f : WeakDual 𝕜 E | re (f x) ≤ 1}
     have hS : IsCompact S :=
-      (isCompact_closedBall' 𝕜 E (r * (n + 1 + 1))).of_isClosed_subset
+      (WeakDual.isCompact_closedBall 0 (r * (n + 1 + 1))).of_isClosed_subset
         ((hCR _).inter (isClosed_biInter fun x _ ↦
           isClosed_le (continuous_re.comp (eval_continuous x)) continuous_const))
         (inter_subset_left.trans inter_subset_right)
@@ -143,8 +143,8 @@ private theorem isClosed_inter_closedBall_preimage_add {C : Set (WeakDual 𝕜 E
       (C ∩ WeakDual.closedBall 𝕜 E (R + ‖toStrongDual f₀‖) ∩
         toStrongDual ⁻¹' closedBall (toStrongDual f₀) R) := by
     ext g
-    simp only [mem_inter_iff, mem_preimage, WeakDual.mem_closedBall_iff,
-      mem_closedBall, map_add, dist_self_add_left]
+    simp only [mem_inter_iff, mem_preimage, mem_closedBall, dist_zero_right, map_add,
+      dist_self_add_left]
     refine ⟨fun ⟨hg, hgR⟩ ↦ ⟨⟨hg, ?_⟩, hgR⟩, fun ⟨⟨hg, _⟩, hgR⟩ ↦ ⟨hg, hgR⟩⟩
     exact (norm_add_le _ _).trans (by linarith)
   rw [this]
@@ -249,7 +249,7 @@ and only if its intersection with every closed ball centred at zero is weak-star
 theorem isClosed_iff_forall_isClosed_inter_closedBall [CompleteSpace E] {C : Set (WeakDual 𝕜 E)}
     (hC : Convex ℝ C) :
     IsClosed C ↔ ∀ r, IsClosed (C ∩ WeakDual.closedBall 𝕜 E r) := by
-  refine ⟨fun h r ↦ h.inter (isClosed_closedBall' 𝕜 E r), fun hCR ↦ ?_⟩
+  refine ⟨fun h r ↦ h.inter (isClosed_closedBall 0 r), fun hCR ↦ ?_⟩
   refine isClosed_of_closure_subset fun f₀ hf₀ ↦ ?_
   by_contra hf₀C
   -- Translate `f₀` to zero: `C'` again has weak-star closed bounded slices.
@@ -283,22 +283,22 @@ theorem isClosed_iff_isClosed_inter_closedBall_zero_one [CompleteSpace E]
     (G : Submodule 𝕜 (WeakDual 𝕜 E)) :
     IsClosed (G : Set (WeakDual 𝕜 E)) ↔
       IsClosed ((G : Set (WeakDual 𝕜 E)) ∩ WeakDual.closedBall 𝕜 E 1) := by
-  refine ⟨fun h ↦ h.inter (isClosed_closedBall' 𝕜 E 1), fun h ↦ ?_⟩
+  refine ⟨fun h ↦ h.inter (isClosed_closedBall 0 1), fun h ↦ ?_⟩
   have hG : Convex ℝ (G : Set (WeakDual 𝕜 E)) := fun f hf g hg a b _ _ _ ↦ by
     rw [WeakDual.real_smul_eq_coe_smul, WeakDual.real_smul_eq_coe_smul]
     exact G.add_mem (G.smul_mem _ hf) (G.smul_mem _ hg)
   refine hG.isClosed_iff_forall_isClosed_inter_closedBall.2 fun r ↦ ?_
   rcases le_or_gt r 1 with hr | hr
   · -- Small radii: the slice is cut out of the unit slice by a weak-star closed ball.
-    convert h.inter (isClosed_closedBall' 𝕜 E r) using 1
-    rw [inter_assoc, WeakDual.closedBall_def, WeakDual.closedBall_def, ← preimage_inter,
+    convert h.inter (isClosed_closedBall 0 r) using 1
+    rw [inter_assoc, WeakDual.closedBall_def, ← preimage_inter,
       inter_eq_right.2 (closedBall_subset_closedBall hr)]
   · -- Large radii: the slice is the preimage of the unit slice under scaling by `r⁻¹`.
     have hr₀ : (r : 𝕜) ≠ 0 := ofReal_ne_zero.2 (by positivity)
     convert h.preimage (continuous_const_smul ((r : 𝕜)⁻¹)) using 1
     ext f
     simp only [mem_inter_iff, SetLike.mem_coe, mem_preimage,
-      WeakDual.mem_closedBall_iff, map_smul, norm_smul, G.smul_mem_iff (inv_ne_zero hr₀), norm_inv,
+      mem_closedBall_zero_iff, map_smul, norm_smul, G.smul_mem_iff (inv_ne_zero hr₀), norm_inv,
       norm_ofReal, abs_of_pos (zero_lt_one.trans hr), inv_mul_le_iff₀ (zero_lt_one.trans hr),
       mul_one]
 

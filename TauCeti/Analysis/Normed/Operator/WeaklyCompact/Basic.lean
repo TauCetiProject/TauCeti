@@ -231,7 +231,7 @@ theorem IsWeaklyCompact.of_range_precomp_precomp_subset {T : E →L[𝕜] F}
       rw [WeakDual.mem_closedBall_iff, inclusionInDoubleDualWeak_apply,
         LinearEquiv.symm_apply_apply, StrongDual.toStrongDual_toWeakDual]
       exact (double_dual_bound 𝕜 E x).trans (mem_closedBall_zero_iff.1 hx)
-    refine (closure_minimal hsub ((WeakDual.isCompact_closedBall' 𝕜 (StrongDual 𝕜 E) 1).image
+    refine (closure_minimal hsub ((WeakDual.isCompact_closedBall 0 1).image
       (continuous_toWeakDual_precomp_precomp T)).isClosed).trans ?_
     rintro _ ⟨Φ, -, rfl⟩
     exact (NormedSpace.toWeakDual_mem_range_inclusionInDoubleDualWeak_iff 𝕜 F _).2 (h ⟨_, rfl⟩)

@@ -117,12 +117,8 @@ theorem HasGaussianCotype.subsingleton_of_lt_one (h : HasGaussianCotype Y q C) (
     linarith
   · have h1 := h 1 (fun _ ↦ x)
     rw [gaussianSecondMoment_unique] at h1
-    have hnorm : ‖WithLp.toLp q (fun _ : Fin 1 ↦ x)‖ = ‖x‖ := by
-      rcases eq_or_ne q ∞ with rfl | hqtop
-      · simp [PiLp.norm_eq_ciSup]
-      · rw [PiLp.norm_eq_sum (ENNReal.toReal_pos hq hqtop)]
-        simp [← Real.rpow_mul (norm_nonneg x),
-          mul_inv_cancel₀ (ENNReal.toReal_pos hq hqtop).ne']
+    have hnorm : ‖WithLp.toLp q (fun _ : Fin 1 ↦ x)‖ = ‖x‖ :=
+      (PiLp.norm_apply_eq_norm hq (WithLp.toLp q (fun _ : Fin 1 ↦ x)) (0 : Fin 1)).symm
     rw [hnorm] at h1
     nlinarith
 

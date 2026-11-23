@@ -204,7 +204,7 @@ variable {𝕜 A : Type*} [NontriviallyNormedField 𝕜] [ProperSpace 𝕜] [Non
 `characterSpace 𝕜 A ∪ {0}` is weak-star compact inside `WeakDual 𝕜 A`. -/
 theorem isCompact_union_zero :
     IsCompact (characterSpace 𝕜 A ∪ {0} : Set (WeakDual 𝕜 A)) := by
-  refine (WeakDual.isCompact_closedBall' 𝕜 A 1).of_isClosed_subset
+  refine (WeakDual.isCompact_closedBall 0 1).of_isClosed_subset
     (union_zero_isClosed 𝕜 A) ?_
   rintro φ (hφ | rfl)
   · rw [WeakDual.mem_closedBall_iff]

@@ -43,7 +43,7 @@ theorem Filter.Eventually.exists_mapClusterPt_inclusionInDoubleDual [ProperSpace
       MapClusterPt (StrongDual.toWeakDual E) l
         (fun x ↦ StrongDual.toWeakDual (inclusionInDoubleDual 𝕜 X x)) := by
   obtain ⟨E, hEC, hE⟩ :=
-    (WeakDual.isCompact_closedBall' 𝕜 (StrongDual 𝕜 X) C).exists_mapClusterPt
+    (WeakDual.isCompact_closedBall (0 : StrongDual 𝕜 (StrongDual 𝕜 X)) C).exists_mapClusterPt
       (u := fun x : X ↦ StrongDual.toWeakDual (inclusionInDoubleDual 𝕜 X x))
       (Filter.tendsto_principal.mpr <| hC.mono fun x hx ↦ by
         simpa only [WeakDual.mem_closedBall_iff, StrongDual.toStrongDual_toWeakDual] using

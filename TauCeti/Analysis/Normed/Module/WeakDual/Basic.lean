@@ -29,8 +29,7 @@ passes to `Lᵖ`.
 ## Main declarations
 
 * `WeakDual.closedBall`: the weak-star closed ball around `0` of radius `r`, with
-  `WeakDual.closedBall_def`, `WeakDual.isClosed_closedBall'`, `WeakDual.isBounded_closedBall'`,
-  and `WeakDual.isCompact_closedBall'`.
+  `WeakDual.closedBall_def`.
 * `WeakDual.mem_closedBall_iff`, `WeakDual.norm_toStrongDual_le_of_mem_closedBall`,
   `WeakDual.norm_apply_le_of_mem_closedBall`: membership and norm bounds on `WeakDual.closedBall`.
 * `WeakDual.continuous_eval_closedBall`: joint evaluation continuity on `E × WeakDual.closedBall`.
@@ -50,7 +49,7 @@ variable {𝕜 E : Type*} [NontriviallyNormedField 𝕜]
 
 variable (𝕜 E) in
 /-- The weak-star closed dual ball of radius `r` around `0`, as a set in `WeakDual 𝕜 E`. -/
-noncomputable def closedBall (r : ℝ) : Set (WeakDual 𝕜 E) :=
+noncomputable abbrev closedBall (r : ℝ) : Set (WeakDual 𝕜 E) :=
   toStrongDual ⁻¹' Metric.closedBall (0 : StrongDual 𝕜 E) r
 
 variable (𝕜 E) in
@@ -60,7 +59,6 @@ theorem closedBall_def (r : ℝ) :
     closedBall 𝕜 E r = toStrongDual ⁻¹' Metric.closedBall (0 : StrongDual 𝕜 E) r := by
   rw [closedBall]
 
-@[simp]
 theorem mem_closedBall_iff {r : ℝ} {φ : WeakDual 𝕜 E} :
     φ ∈ closedBall 𝕜 E r ↔ ‖toStrongDual φ‖ ≤ r := by
   simp [closedBall]
@@ -75,31 +73,11 @@ theorem norm_apply_le_of_mem_closedBall {r : ℝ} (φ : closedBall 𝕜 E r) (x 
     ‖(φ : WeakDual 𝕜 E) x‖ ≤ r * ‖x‖ :=
   (toStrongDual (φ : WeakDual 𝕜 E)).le_of_opNorm_le (norm_toStrongDual_le_of_mem_closedBall φ) x
 
-variable (𝕜 E) in
-/-- The weak-star closed dual ball `WeakDual.closedBall 𝕜 E r` is weak-star closed. -/
-theorem isClosed_closedBall' (r : ℝ) : IsClosed (closedBall 𝕜 E r) :=
-  isClosed_closedBall (0 : StrongDual 𝕜 E) r
-
-variable (𝕜 E) in
-/-- The weak-star closed dual ball `WeakDual.closedBall 𝕜 E r` is bounded in `WeakDual 𝕜 E`. -/
-theorem isBounded_closedBall' (r : ℝ) :
-    Bornology.IsBounded (closedBall 𝕜 E r) :=
-  isBounded_closedBall (0 : StrongDual 𝕜 E) r
-
-variable (𝕜 E) in
-/-- The weak-star closed dual ball `WeakDual.closedBall 𝕜 E r` is compact by Banach–Alaoglu. -/
-theorem isCompact_closedBall' [ProperSpace 𝕜] (r : ℝ) : IsCompact (closedBall 𝕜 E r) :=
-  isCompact_closedBall (0 : StrongDual 𝕜 E) r
-
 /-- For a proper scalar field `𝕜` (for example `ℝ` or `ℂ`), a closed dual ball, with its
 weak-star topology, is compact by Banach–Alaoglu. -/
 instance [ProperSpace 𝕜] (f : StrongDual 𝕜 E) (r : ℝ) :
     CompactSpace (toStrongDual ⁻¹' Metric.closedBall f r : Set (WeakDual 𝕜 E)) :=
   isCompact_iff_compactSpace.mp (isCompact_closedBall f r)
-
-/-- The weak-star closed dual ball `WeakDual.closedBall 𝕜 E r` is compact by Banach–Alaoglu. -/
-instance [ProperSpace 𝕜] (r : ℝ) : CompactSpace (closedBall 𝕜 E r) :=
-  isCompact_iff_compactSpace.mp (isCompact_closedBall' 𝕜 E r)
 
 /-- Joint evaluation `(x, φ) ↦ φ x` is continuous on `E × WeakDual.closedBall 𝕜 E r`: closed dual
 balls are equicontinuous. -/
