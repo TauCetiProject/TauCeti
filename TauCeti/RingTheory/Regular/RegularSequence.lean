@@ -132,12 +132,12 @@ theorem isRegular_append_iff (rs ss : List R) :
       IsRegular M rs ∧ IsRegular (M ⧸ (Ideal.ofList rs • ⊤ : Submodule R M)) ss := by
   have htop : (⊤ : Submodule R M) = Ideal.ofList (rs ++ ss) • ⊤ ↔
       (⊤ : Submodule R (M ⧸ (Ideal.ofList rs • ⊤ : Submodule R M))) = Ideal.ofList ss • ⊤ := by
-    conv => congr <;> rw [eq_comm, ← Submodule.Quotient.subsingleton_iff]
-    refine (Submodule.quotEquivOfEq _ _ (by rw [Ideal.ofList_append, Submodule.sup_smul]) ≪≫ₗ
-      (Submodule.quotientQuotientEquivQuotientSup _ _).symm ≪≫ₗ
-      Submodule.quotEquivOfEq _ _ (by
-        rw [Submodule.map_smul'', Submodule.map_top,
-          Submodule.range_mkQ])).toEquiv.subsingleton_congr
+    simp_rw [@eq_comm _ ⊤]
+    conv_rhs =>
+      lhs
+      rw [← Submodule.range_mkQ (Ideal.ofList rs • (⊤ : Submodule R M)), ← Submodule.map_top,
+        ← Submodule.map_smul'']
+    rw [Submodule.map_mkQ_eq_top, ← Submodule.sup_smul, ← Ideal.ofList_append]
   refine ⟨fun h ↦ ?_, fun ⟨hrs, hss⟩ ↦ ?_⟩
   · obtain ⟨hw1, hw2⟩ := (isWeaklyRegular_append_iff M rs ss).1 h.toIsWeaklyRegular
     exact ⟨⟨hw1, fun h1 ↦ h.top_ne_smul (top_le_iff.1 (h1.le.trans (Submodule.smul_mono_left
