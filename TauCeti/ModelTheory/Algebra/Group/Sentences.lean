@@ -33,7 +33,7 @@ coefficients; the Vaught sentence has none.
 
 The existential and universal theories of a group in the language with coefficients are studied by
 Kharlampovich and Myasnikov, *Implicit function theorem over free groups*, §2.3 and §3.2, and
-*Algebraic geometry over free groups: lifting solutions into generic points*, Definition 9, where
+*Irreducible affine varieties over a free group II*, Definition 9, where
 the existential theory is the set of true sentences `∃ x₁ … xₙ, ⋀ uᵢ = 1 ∧ ⋀ vⱼ ≠ 1`;
 the nontrivial-centralizer sentence has this form, with one equation and one inequation.
 Vaught's condition is the universal sentence (V) of *Implicit function theorem over free groups*,
@@ -72,6 +72,23 @@ def commutativitySentence (A : Type*) : Language.group[[A]].Sentence :=
 /-- The sentence `commutativitySentence A` is universal. -/
 theorem isUniversal_commutativitySentence (A : Type*) : (commutativitySentence A).IsUniversal :=
   (BoundedFormula.IsAtomic.equal _ _).isQF.isUniversal.all.all
+
+/-! ### Their systems of equations and inequations -/
+
+/-- The existential sentence `∃ x, x * a * x⁻¹ * a⁻¹ = 1 ∧ x ≠ 1` has the single system
+`([x a x⁻¹ a⁻¹], [x])`, its witness `x` being the variable `0`. -/
+example (a : A) : (nontrivialCentralizerSentence a).eqIneqSystems =
+    [⟨[FreeGroup.of (Sum.inl (Sum.inr 0)) * FreeGroup.of (Sum.inr a) *
+        (FreeGroup.of (Sum.inl (Sum.inr 0)))⁻¹ * (FreeGroup.of (Sum.inr a))⁻¹],
+      [FreeGroup.of (Sum.inl (Sum.inr 0))]⟩] := by
+  simp [nontrivialCentralizerSentence, Language.con, EqIneqSystem.ext_iff]
+
+/-- The negation of the universal sentence `∀ x y, x * y * x⁻¹ * y⁻¹ = 1` has the single system
+with the one inequation `x * y * x⁻¹ * y⁻¹ ≠ 1`, its variables `x`, `y` being `0`, `1`. -/
+example : (commutativitySentence A).not.eqIneqSystems =
+    [⟨[], [FreeGroup.of (Sum.inl (Sum.inr 0)) * FreeGroup.of (Sum.inl (Sum.inr 1)) *
+        (FreeGroup.of (Sum.inl (Sum.inr 0)))⁻¹ * (FreeGroup.of (Sum.inl (Sum.inr 1)))⁻¹]⟩] := by
+  simp [commutativitySentence]
 
 /-! ### Truth values in groups -/
 

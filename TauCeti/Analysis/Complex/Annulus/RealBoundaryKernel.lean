@@ -230,7 +230,7 @@ theorem annulusRealBoundaryKernel_eq_span {r₁ r₂ : ℝ} (hr₁ : 0 ≤ r₁)
   · rintro _ ⟨f, ⟨hf, hfc, hbd⟩, rfl⟩
     obtain ⟨c, hc⟩ := exists_eq_ofReal_of_im_eq_zero_on_annulus_boundary hr₁ h hf hfc hbd
     refine Submodule.mem_span_singleton.2 ⟨c, funext fun z => ?_⟩
-    rw [Pi.smul_apply, real_smul, mul_one, LinearMap.funLeft_apply, hc z z.2]
+    rw [Pi.smul_apply, real_smul, mul_one, LinearMap.funLeft_apply, hc z z.property]
   · refine (Submodule.span_singleton_le_iff_mem _ _).2 ⟨fun _ => 1, ?_, rfl⟩
     exact ⟨differentiableOn_const 1, continuousOn_const, fun _ _ => one_im⟩
 
@@ -247,7 +247,7 @@ theorem annulusRealBoundaryAdjointKernel_eq_span {r₁ r₂ : ℝ} (hr₁ : 0 < 
   · rintro _ ⟨g, ⟨hg, hgc, hbd⟩, rfl⟩
     obtain ⟨c, hc⟩ := exists_eq_mul_inv_of_im_I_mul_eq_zero_on_annulus_boundary hr₁ h hg hgc hbd
     refine Submodule.mem_span_singleton.2 ⟨c, funext fun z => ?_⟩
-    rw [Pi.smul_apply, real_smul, LinearMap.funLeft_apply, hc z z.2]
+    rw [Pi.smul_apply, real_smul, LinearMap.funLeft_apply, hc z z.property]
   · refine (Submodule.span_singleton_le_iff_mem _ _).2 ⟨fun z => (I * z)⁻¹, ?_, rfl⟩
     have hU : ∀ z ∈ ball (0 : ℂ) r₂ \ closedBall 0 r₁, I * z ≠ 0 := fun z hz =>
       mul_ne_zero I_ne_zero (hne z (by

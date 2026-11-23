@@ -46,8 +46,8 @@ theorem toSubring_eq_integralClosure_of_comap_eq {B : ValuationSubring L} {A : V
     (hB : B.comap (algebraMap K L) = A) : B.toSubring = (integralClosure A L).toSubring := by
   let C := integralClosure A L
   let R : LocalSubring L :=
-    { toSubring := C.toSubring, isLocalRing := TauCeti.integralClosure.isLocalRing A L }
-  have hCB : C.toSubring ≤ B.toSubring := B.integralClosure_toSubring_le hB.ge
+    { toSubring := C.toSubring, isLocalRing := TauCeti.IsIntegralClosure.isLocalRing A L C }
+  have hCB : C.toSubring ≤ B.toSubring := B.integralClosure_toSubring_le_iff.mpr hB.ge
   refine le_antisymm ?_ hCB
   intro x hx
   by_contra hxC
@@ -68,14 +68,8 @@ theorem toSubring_eq_integralClosure_of_comap_eq {B : ValuationSubring L} {A : V
   obtain ⟨u, huB, huW, hu⟩ := exists_mem_nonunits_valuation_eq_one hBW (hB.trans hW'.symm)
   -- The separating element is integral and a unit in `W`, hence a unit in `C` and in `B`.
   have huC : u ∈ C.toSubring := by
-    by_contra h
-    obtain ⟨V, hCV, huV⟩ := Subring.exists_le_valuationSubring_of_isIntegrallyClosedIn h
-    have hAV : A ≤ V.comap (algebraMap K L) := by
-      intro a ha
-      rw [mem_comap, ← mem_toSubring]
-      simpa only [IsScalarTower.algebraMap_apply A K L, algebraMap_apply] using
-        hCV (Subalgebra.mem_toSubring.mpr (C.algebraMap_mem ⟨a, ha⟩))
-    exact huV (hu V (hB.le.trans hAV))
+    rw [Subalgebra.mem_toSubring, mem_integralClosure_iff]
+    exact A.isIntegral_iff_forall_comap_le.mpr (fun V hAV ↦ hu V (hB.le.trans hAV))
   have hunit : IsUnit (⟨u, huC⟩ : R.toSubring) :=
     IsUnit.of_map (Subring.inclusion hW.1) _ ((W.valuation_eq_one_iff ⟨u, hW.1 huC⟩).mpr huW)
   have huB' : IsUnit (⟨u, hCB huC⟩ : B) := hunit.map (Subring.inclusion hCB)
@@ -101,7 +95,7 @@ theorem mem_iff_isIntegral_of_comap_eq {B : ValuationSubring L} {A : ValuationSu
     simpa [y] using hy.map (IsScalarTower.toAlgHom A E L)
   · intro hxA
     rw [← mem_toSubring]
-    apply B.integralClosure_toSubring_le hB.ge
+    apply B.integralClosure_toSubring_le_iff.mpr hB.ge
     rwa [Subalgebra.mem_toSubring, mem_integralClosure_iff]
 
 /-- A henselian valuation subring has a unique prolongation to every algebraic field extension.

@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Algebra.Homology.Monoidal.Cup
 public import TauCeti.AlgebraicTopology.Cohomology.Twisted.Basic
-public import TauCeti.AlgebraicTopology.Singular.Twisted.AlexanderWhitney
+public import TauCeti.AlgebraicTopology.Singular.Twisted.AlexanderWhitney.Basic
 
 /-!
 # Cup products with dual local coefficients
@@ -62,39 +62,14 @@ lemma ιTwistedChainComplex_cupCochain (p q n : ℕ) (h : p + q = n)
           ιTwistedChainComplex K q
             ((TopCat.toSSet.obj X).map (SimplexCategory.subinterval p q (by omega)).op σ) ≫ ψ)) ≫
         μ := by
-  subst h
-  -- The tensor cochain kills every bidegree except `(p, q)`. State the surviving term for
-  -- an arbitrary equal back degree: rewriting `p + q - p` directly gives an ill-typed motive
-  -- because both the subinterval bound and the tensor-summand equality depend on that degree.
-  have key : ∀ (j : ℕ) (hj : j = q) (hj' : p + j ≤ p + q) (hj'' : p + j = p + q),
-      ((L.map (vertexTransport (SimplexCategory.subinterval 0 p (by omega)).op σ) ≫
-          ιTwistedChainComplex L p
-            ((TopCat.toSSet.obj X).map (SimplexCategory.subinterval 0 p (by omega)).op σ)) ⊗ₘ
-        (K.map (vertexTransport (SimplexCategory.subinterval p j hj').op σ) ≫
-          ιTwistedChainComplex K j
-            ((TopCat.toSSet.obj X).map (SimplexCategory.subinterval p j hj').op σ))) ≫
-          ιTensorObj L.twistedChainComplex K.twistedChainComplex p j (p + q) hj'' ≫
-            TauCeti.ChainComplex.tensorCochain μ φ ψ (p + q) =
-        ((L.map (vertexTransport (SimplexCategory.subinterval 0 p (by omega)).op σ) ≫
-            ιTwistedChainComplex L p
-              ((TopCat.toSSet.obj X).map (SimplexCategory.subinterval 0 p (by omega)).op σ) ≫ φ) ⊗ₘ
-          (K.map (vertexTransport (SimplexCategory.subinterval p q (by omega)).op σ) ≫
-            ιTwistedChainComplex K q
-              ((TopCat.toSSet.obj X).map (SimplexCategory.subinterval p q (by omega)).op σ) ≫ ψ)) ≫
-          μ := by
-    rintro _ rfl _ _
-    rw [TauCeti.ChainComplex.ιTensorObj_tensorCochain, tensorHom_comp_tensorHom_assoc]
-    simp only [Category.assoc]
+  -- The tensor cochain kills every bidegree except `(p, q)`.
   rw [TauCeti.ChainComplex.cupCochain_apply,
-    ιTwistedChainComplex_twistedAlexanderWhitneyDiagonal_f_assoc]
-  dsimp only [Monoidal.tensorObj_obj]
-  rw [Preadditive.sum_comp, Finset.sum_eq_single ⟨p, by omega⟩]
-  · simp only [Category.assoc]
-    exact key (p + q - p) (by omega) _ _
-  · rintro i - hi
-    rw [Category.assoc, TauCeti.ChainComplex.ιTensorObj_tensorCochain_of_ne_left _ _ _ _
-      (fun h ↦ hi (Fin.ext h)), comp_zero]
-  · simp
+    ιTwistedChainComplex_twistedAlexanderWhitneyDiagonal_f_comp_of_ne_left L K p q n h σ _
+      (fun _ _ hij hi ↦ TauCeti.ChainComplex.ιTensorObj_tensorCochain_of_ne_left _ _ _ hij hi),
+    TauCeti.ChainComplex.ιTensorObj_tensorCochain, tensorHom_comp_tensorHom_assoc]
+  simp only [Category.assoc]
+  -- The two sides differ only in the proofs of the subinterval bounds.
+  rfl
 
 /-- The cup product of twisted cohomology classes, with dual chain coefficient systems and
 the pairing `μ` of their values. -/

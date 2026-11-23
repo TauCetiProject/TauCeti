@@ -68,7 +68,7 @@ private theorem exists_mem_span_smul_sub_forall_smul_notMem [Finite G] (q : Idea
     by_contra! h
     exact hg ((Subgroup.mem_bot (G := G)).mp (hq ▸ (Ideal.mem_inertia (G := G)).mpr h))
   choose b hb using hdisp
-  set J : Ideal B := ⨅ g : {g : G // g ≠ 1}, Ideal.span (Set.range fun x : B ↦ g.1 • x - x)
+  set J : Ideal B := ⨅ g : {g : G // g ≠ 1}, Ideal.span (Set.range fun x : B ↦ g.val • x - x)
   -- `J` is not contained in any of the primes `h⁻¹ • q`.
   have hJ (h : G) : ¬ J ≤ q.comap (MulSemiringAction.toRingHom G B h) := by
     intro hsub
@@ -77,7 +77,8 @@ private theorem exists_mem_span_smul_sub_forall_smul_notMem [Finite G] (q : Idea
       (s := (Finset.univ : Finset {g : G // g ≠ 1}))).mp (by rwa [Finset.inf_univ_eq_iInf])
     -- The displacement by `g` of `h⁻¹ • b_{h g h⁻¹}` is carried by `h` to a displacement by
     -- the conjugate `h g h⁻¹ ≠ 1`, which lies outside `q`.
-    have hconj : h * g.1 * h⁻¹ ≠ 1 := fun h1 ↦ g.2 (by rwa [mul_inv_eq_one, mul_eq_left] at h1)
+    have hconj : h * g.val * h⁻¹ ≠ 1 := fun h1 ↦ g.property (by rwa [mul_inv_eq_one,
+        mul_eq_left] at h1)
     have hx := Ideal.mem_comap.mp (hg (Ideal.subset_span ⟨h⁻¹ • b _ hconj, rfl⟩))
     refine hb _ hconj ?_
     simpa [smul_sub, mul_smul] using hx
@@ -150,7 +151,7 @@ theorem isEtaleAt_of_inertia_eq_bot {R : Type*} [CommRing R] [Algebra R B] [SMul
   let e : R ≃+* FixedPoints.subring B G := RingEquiv.ofBijective
     ((algebraMap R B).codRestrict _ fun r g ↦ smul_algebraMap g r)
     ⟨fun _ _ h ↦ FaithfulSMul.algebraMap_injective R B (congrArg Subtype.val h), fun b ↦ by
-      obtain ⟨r, hr⟩ := Algebra.IsInvariant.isInvariant (A := R) (b : B) b.2
+      obtain ⟨r, hr⟩ := Algebra.IsInvariant.isInvariant (A := R) (b : B) b.property
       exact ⟨r, Subtype.ext hr⟩⟩
   let := e.toRingHom.toAlgebra
   -- `e` is by definition the corestriction of `R → B` to `Bᴳ`.
