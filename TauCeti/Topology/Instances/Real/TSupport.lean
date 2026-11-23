@@ -28,12 +28,12 @@ closed support. Such a function vanishes eventually at `∞` and on a right neig
 * `TauCeti.exists_lt_tsupport_subset_Ioo`: the support shrinks to `(0, R')` with `R' < R`.
 * `TauCeti.eventuallyEq_zero_of_forall_notMem_Ioo_of_fst_notMem_Icc`: a function on `ℝ × X`
   vanishing for `s ∉ (a, b)` vanishes near every point whose first coordinate is outside `[a, b]`.
-* `TauCeti.exists_pos_tsupport_inter_Ioi_subset_Icc`: a compact positive closed support lies in
+* `IsCompact.exists_pos_tsupport_inter_Ioi_subset_Icc`: a compact positive closed support lies in
   some `[a, b]` with `0 < a`.
-* `TauCeti.eventuallyEq_zero_atTop_of_isCompact_tsupport_inter_Ioi`,
-  `TauCeti.eventuallyEq_zero_nhdsGT_of_isCompact_tsupport_inter_Ioi`: such a function vanishes
+* `IsCompact.eventuallyEq_zero_atTop_of_tsupport_inter_Ioi`,
+  `IsCompact.eventuallyEq_zero_nhdsGT_of_tsupport_inter_Ioi`: such a function vanishes
   eventually at `∞` and on a right neighbourhood of `0`.
-* `TauCeti.isCompact_tsupport_comp_inv_inter_Ioi`: reflecting by `y ↦ y⁻¹` preserves compactness
+* `IsCompact.tsupport_comp_inv_inter_Ioi`: reflecting by `y ↦ y⁻¹` preserves compactness
   of the positive closed support.
 -/
 
@@ -69,7 +69,7 @@ theorem eventuallyEq_zero_of_forall_notMem_Ioo_of_fst_notMem_Icc {X : Type*} [To
 
 /-- A compact positive closed support `tsupport f ∩ Ioi 0` lies in an interval `[a, b]` with
 `0 < a`. -/
-theorem exists_pos_tsupport_inter_Ioi_subset_Icc {f : ℝ → F}
+theorem _root_.IsCompact.exists_pos_tsupport_inter_Ioi_subset_Icc {f : ℝ → F}
     (hc : IsCompact (tsupport f ∩ Ioi 0)) : ∃ a b : ℝ, 0 < a ∧ tsupport f ∩ Ioi 0 ⊆ Icc a b := by
   rcases (tsupport f ∩ Ioi 0).eq_empty_or_nonempty with he | hne
   · exact ⟨1, 0, one_pos, he ▸ empty_subset _⟩
@@ -78,23 +78,23 @@ theorem exists_pos_tsupport_inter_Ioi_subset_Icc {f : ℝ → F}
     exact ⟨a, b, ha, fun t ht ↦ ⟨hmin ht, hb ht⟩⟩
 
 /-- A function with compact positive closed support vanishes eventually at `∞`. -/
-theorem eventuallyEq_zero_atTop_of_isCompact_tsupport_inter_Ioi {f : ℝ → F}
+theorem _root_.IsCompact.eventuallyEq_zero_atTop_of_tsupport_inter_Ioi {f : ℝ → F}
     (hc : IsCompact (tsupport f ∩ Ioi 0)) : f =ᶠ[Filter.atTop] 0 := by
-  obtain ⟨a, b, -, hab⟩ := exists_pos_tsupport_inter_Ioi_subset_Icc hc
+  obtain ⟨a, b, -, hab⟩ := hc.exists_pos_tsupport_inter_Ioi_subset_Icc
   filter_upwards [Filter.eventually_gt_atTop (max b 0)] with t ht
   refine image_eq_zero_of_notMem_tsupport fun h ↦ ?_
   exact (lt_of_le_of_lt (le_max_left b 0) ht).not_ge
     (hab ⟨h, lt_of_le_of_lt (le_max_right b 0) ht⟩).2
 
 /-- A function with compact positive closed support vanishes on a right neighbourhood of `0`. -/
-theorem eventuallyEq_zero_nhdsGT_of_isCompact_tsupport_inter_Ioi {f : ℝ → F}
+theorem _root_.IsCompact.eventuallyEq_zero_nhdsGT_of_tsupport_inter_Ioi {f : ℝ → F}
     (hc : IsCompact (tsupport f ∩ Ioi 0)) : f =ᶠ[𝓝[>] 0] 0 := by
-  obtain ⟨a, b, ha, hab⟩ := exists_pos_tsupport_inter_Ioi_subset_Icc hc
+  obtain ⟨a, b, ha, hab⟩ := hc.exists_pos_tsupport_inter_Ioi_subset_Icc
   filter_upwards [Ioo_mem_nhdsGT ha] with t ht
   exact image_eq_zero_of_notMem_tsupport fun h ↦ ht.2.not_ge (hab ⟨h, ht.1⟩).1
 
 /-- Reflecting a function by `y ↦ y⁻¹` preserves compactness of its positive closed support. -/
-theorem isCompact_tsupport_comp_inv_inter_Ioi {f : ℝ → F}
+theorem _root_.IsCompact.tsupport_comp_inv_inter_Ioi {f : ℝ → F}
     (hc : IsCompact (tsupport f ∩ Ioi 0)) : IsCompact (tsupport (fun y ↦ f y⁻¹) ∩ Ioi 0) := by
   set K : Set ℝ := Inv.inv '' (tsupport f ∩ Ioi 0)
   have hK : IsCompact K :=

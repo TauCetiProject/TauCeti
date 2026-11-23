@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.MellinTransform
 public import TauCeti.Analysis.MellinTransform.CutoffKernel
 import TauCeti.Analysis.MellinTransform
 import TauCeti.Analysis.MellinTransform.Basic
@@ -262,7 +261,7 @@ theorem continuousOn_smoothCutoff (hνi : IntegrableOn (fun x ↦ ν x / x) (Ioi
     (integrableOn_congr_fun (fun z _ ↦ by simp [cpow_neg_one, div_eq_inv_mul])
       measurableSet_Ioi).mp hm
   intro x hx
-  have hK := (continuousOn_mellinCutoffKernel (hG.mono_set (Ioi_subset_Ioi (half_pos hx).le)))
+  have hK := (hG.mono_set (Ioi_subset_Ioi (half_pos hx).le)).continuousOn_mellinCutoffKernel
     |>.continuousAt (Ici_mem_nhds (half_lt_self hx))
   have heq : (fun y ↦ (mellinCutoffKernel (fun z ↦ (deltaSpike ν ε z : ℂ)) y).re) =ᶠ[nhds x]
       smoothCutoff ν ε :=
@@ -284,8 +283,9 @@ with transform `mellin ν (εs) / s`. -/
 theorem hasMellin_smoothCutoff (hνs : Function.support ν ⊆ Icc (1 / 2) 2)
     (hνi : IntegrableOn (fun x ↦ ν x / x) (Ioi 0)) (hε : 0 < ε) {s : ℂ} (hs : 0 < s.re) :
     HasMellin (fun x ↦ (smoothCutoff ν ε x : ℂ)) s (mellin (fun x ↦ (ν x : ℂ)) (ε * s) / s) := by
-  have h := hasMellin_mellinCutoffKernel ((mellinConvergent_deltaSpike_iff hε).mpr
-    (mellinConvergent_ofReal_of_support_subset_Icc (by norm_num) hνs hνi _)) hs
+  have hm := (mellinConvergent_deltaSpike_iff hε (s := s)).mpr
+    (mellinConvergent_ofReal_of_support_subset_Icc (by norm_num) hνs hνi _)
+  have h := hm.hasMellin_mellinCutoffKernel hs
   rw [mellin_deltaSpike ν hε] at h
   exact (hasMellin_congr fun x hx ↦ smoothCutoff_eq_mellinCutoffKernel ν ε hx).mpr h
 
