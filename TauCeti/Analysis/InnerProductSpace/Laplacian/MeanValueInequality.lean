@@ -9,6 +9,7 @@ public import TauCeti.Analysis.InnerProductSpace.Harmonic.MeanValue.Basic
 import Mathlib.MeasureTheory.Measure.Lebesgue.EqHaar
 import TauCeti.Analysis.Real.QuadraticLocalBound
 import TauCeti.MeasureTheory.Integral.NormRpow
+import TauCeti.MeasureTheory.Measure.Lebesgue.VolumeOfBalls
 import TauCeti.MeasureTheory.Measure.OpenPos
 
 /-!
@@ -60,6 +61,8 @@ to this value gives `μ (ball x₀ r) * w x₀ ≤ 15 ∫ w` without any smallne
 * `TauCeti.mul_le_fifteen_mul_setIntegral_ball_of_neg_mul_le_laplacian`: the linear version for
   `Δ w ≥ -A w` on balls with `16 A μ (ball x₀ r) ≤ μ (ball 0 1)`, which needs no smallness of
   `∫ w`.
+* `TauCeti.pi_mul_sq_mul_le_fifteen_mul_setIntegral_ball_of_neg_mul_le_laplacian`: its form on
+  discs of `ℂ`, `π r² w(z₀) ≤ 15 ∫_{B_r(z₀)} w` when `16 A r² ≤ 1`.
 
 ## References
 
@@ -345,5 +348,21 @@ theorem mul_le_fifteen_mul_setIntegral_ball_of_neg_mul_le_laplacian
     rw [mul_assoc, div_mul_eq_mul_div, mul_div_assoc', div_le_iff₀ hV]
     nlinarith
   linarith
+
+open Real in
+/-- **The linear mean-value inequality on a disc of `ℂ`.** The form of
+`TauCeti.mul_le_fifteen_mul_setIntegral_ball_of_neg_mul_le_laplacian` for Lebesgue measure on the
+complex plane: if `w ≥ 0` is `C²` on `ball z₀ r` and continuous on its closure, with `Δ w ≥ -A w`
+there and `16 A r² ≤ 1`, then `π r² w(z₀) ≤ 15 ∫_{B_r(z₀)} w`. -/
+theorem pi_mul_sq_mul_le_fifteen_mul_setIntegral_ball_of_neg_mul_le_laplacian
+    {w : ℂ → ℝ} {z₀ : ℂ} {r A : ℝ} (hr : 0 ≤ r) (hw : ContDiffOn ℝ 2 w (ball z₀ r))
+    (hwc : ContinuousOn w (closedBall z₀ r)) (hw0 : ∀ y ∈ ball z₀ r, 0 ≤ w y)
+    (hΔ : ∀ y ∈ ball z₀ r, -(A * w y) ≤ Δ w y) (hAr : 16 * A * r ^ 2 ≤ 1) :
+    π * r ^ 2 * w z₀ ≤ 15 * ∫ y in ball z₀ r, w y := by
+  have h := mul_le_fifteen_mul_setIntegral_ball_of_neg_mul_le_laplacian (μ := volume) (by simp)
+    hw hwc hw0 hΔ (by
+      rw [Complex.volume_real_ball z₀ hr, Complex.volume_real_ball 0 zero_le_one]
+      nlinarith [Real.pi_pos])
+  rwa [Complex.volume_real_ball z₀ hr] at h
 
 end TauCeti

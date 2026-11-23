@@ -176,8 +176,8 @@ theorem fderiv_add_snd_of_eventually_periodic_snd {𝕜 E F G : Type*} [Nontrivi
     [NormedAddCommGroup G] [NormedSpace 𝕜 G] {f : E × F → G} {c : F} {x : E} {y : F}
     (hf : ∀ᶠ w in 𝓝 (x, y), f (w.1, w.2 + c) = f w) :
     fderiv 𝕜 f (x, y + c) = fderiv 𝕜 f (x, y) := by
-  have hev : (fun w ↦ f (w + (0, c))) =ᶠ[𝓝 (x, y)] f := hf.mono fun w hw ↦
-    (congrArg f (show w + ((0 : E), c) = (w.1, w.2 + c) by ext <;> simp)).trans hw
+  have hev : (fun w ↦ f (w + (0, c))) =ᶠ[𝓝 (x, y)] f := hf.mono fun w hw ↦ by
+    simpa [Prod.add_def] using hw
   have h := fderiv_comp_add_right (𝕜 := 𝕜) (f := f) (x := (x, y)) ((0 : E), c)
   rw [hev.fderiv_eq] at h
   simpa using h.symm

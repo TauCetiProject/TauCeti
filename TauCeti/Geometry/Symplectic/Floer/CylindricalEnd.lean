@@ -580,27 +580,6 @@ theorem isComplexLinearMap_perturbedFDeriv_of_periodic (hHper : Periodic H 1)
   rw [hJz, hu z hz.1, ← ω.perturbedFDeriv_comp_add_right, hKt] at h
   rwa [ω.perturbedFDeriv_congr_of_eventuallyEq _ _ hloc]
 
-/-- **The energy of `∂ₛu` is controlled by the Floer energy.** On a Floer solution for the
-cylindrical perturbation `H_t dt` over a measurable set `S` of the domain, for a family `J'` of
-almost complex structures given along `u` as a function of the domain point and tamed with
-constant `c` on `S`, the energy `∫ ‖∂ₛu‖²` over `S` is at most `2 / c` times the Floer energy
-there. -/
-theorem setLIntegral_enorm_fderiv_stdComplexLineReal_sq_le {S : Set (ℝ × ℝ)}
-    {J' : ℝ × ℝ → AlmostComplexStructure V} {c : ℝ} (hc : 0 < c) (hS : MeasurableSet S)
-    (hJc : ∀ z ∈ S, ∀ v, c * ‖v‖ ^ 2 ≤ ω v (J' z v))
-    (hfloer : ∀ z ∈ S, IsComplexLinearMap (AlmostComplexStructure.product ℝ) (J' z)
-      (ω.perturbedFDeriv (fun _ _ ↦ 0) (fun w ↦ H w.2) u z : ℝ × ℝ →ₗ[ℝ] V)) :
-    ∫⁻ z in S, ‖fderiv ℝ u z stdComplexLineReal‖ₑ ^ 2 ≤
-      ENNReal.ofReal (2 / c) * ∫⁻ z in S,
-        ENNReal.ofReal (ω.floerEnergyDensity (fun _ _ ↦ 0) (fun w ↦ H w.2) u z) := by
-  rw [← lintegral_const_mul' _ _ ENNReal.ofReal_ne_top]
-  refine setLIntegral_mono' hS fun z hz ↦ ?_
-  rw [← ENNReal.ofReal_mul (by positivity), ← ofReal_norm, ← ENNReal.ofReal_pow (norm_nonneg _)]
-  refine ENNReal.ofReal_le_ofReal ?_
-  -- The `ds`-component of the perturbation vanishes, so `‖∂ₛu‖² ≤ (2 / c) e`.
-  simpa [hamiltonianVectorField_const] using
-    ω.norm_fderiv_stdComplexLineReal_sq_le hc (hJc z hz) (hfloer z hz)
-
 /-- In the complex coordinate `e = equivRealProdCLM`, the cylindrical datum `K = H_t dt` of a `C³`
 `1`-periodic Hamiltonian gives the `C²` coefficient `X(z, x) = X_K(e z, x) ∘ e`, periodic under
 `z ↦ z + 1` and `z ↦ z + i`. -/
@@ -748,7 +727,7 @@ theorem exists_pos_forall_norm_fderiv_le_of_setLIntegral_floerEnergyDensity_le
   calc ∫⁻ z in Ioo (p.1 - r) (p.1 + r) ×ˢ Icc 0 1, ‖fderiv ℝ u z stdComplexLineReal‖ₑ ^ 2
       ≤ ENNReal.ofReal (2 / c) * ∫⁻ z in Ioo (p.1 - r) (p.1 + r) ×ˢ Icc 0 1,
           ENNReal.ofReal (ω.floerEnergyDensity (fun _ _ ↦ 0) (fun w ↦ H w.2) u z) :=
-        setLIntegral_enorm_fderiv_stdComplexLineReal_sq_le hc
+        ω.setLIntegral_enorm_fderiv_stdComplexLineReal_sq_le hc
           (measurableSet_Ioo.prod measurableSet_Icc)
           (fun z hz v ↦ (hcM z.2 _ (huK z.1 (Ioo_subset_Icc_self.trans hpS hz.1) z.2) v).1)
           fun z hz ↦ hfloer z ⟨Ioo_subset_Icc_self.trans hpS hz.1, hz.2⟩
@@ -788,7 +767,7 @@ theorem exists_forall_norm_fderiv_le_of_floer (hH : ContDiff ℝ 3 (uncurry H))
   have hfin : ∫⁻ z in Ioi a ×ℂ Icc 0 1, ‖fderiv ℝ v z 1‖ₑ ^ 2 ≠ ⊤ := by
     rw [hEv _ measurableSet_Ioi subset_rfl]
     exact ne_top_of_le_ne_top (ENNReal.mul_ne_top ENNReal.ofReal_ne_top hE)
-      (setLIntegral_enorm_fderiv_stdComplexLineReal_sq_le hc
+      (ω.setLIntegral_enorm_fderiv_stdComplexLineReal_sq_le hc
         (measurableSet_Ioi.prod measurableSet_Icc)
         (fun z hz v ↦ (hcM z.2 _ (huK z.1 hz.1 z.2) v).1) hfloer)
   obtain ⟨M, hM⟩ := Floer.exists_forall_norm_fderiv_le_of_lintegral_ne_top hWc hJc hXc hK hKWc
@@ -913,7 +892,7 @@ theorem exists_forall_ofReal_norm_fderiv_sq_le_mul_setLIntegral_floerEnergyDensi
     exact ((hvper.fderiv (𝕜 := ℝ)).comp fun L : ℂ →L[ℝ] V ↦ ‖L 1‖ₑ ^ 2
       ).setLIntegral_ball_le_two_mul_setLIntegral_reProdIm_Ioo y hr2
   -- Combine with `‖∂ₛu‖² ≤ (2 / c) e` on the band.
-  have hstrip := setLIntegral_enorm_fderiv_stdComplexLineReal_sq_le hc
+  have hstrip := ω.setLIntegral_enorm_fderiv_stdComplexLineReal_sq_le hc
     (measurableSet_Ioo.prod measurableSet_Icc)
     (fun p hp v ↦ (hcM p.2 _ (huK p.1 (hband hp.1) p.2) v).1)
     fun p hp ↦ hfloer p ⟨hband hp.1, hp.2⟩

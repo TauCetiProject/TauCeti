@@ -13,7 +13,6 @@ import TauCeti.Analysis.Calculus.PeriodicDeriv
 import TauCeti.Analysis.Calculus.SecondDerivative
 import TauCeti.Analysis.InnerProductSpace.Laplacian.Basic
 import TauCeti.MeasureTheory.Integral.Bochner.ContinuousLinearMap
-import TauCeti.MeasureTheory.Measure.Lebesgue.VolumeOfBalls
 import Mathlib.Analysis.InnerProductSpace.EuclideanDist
 public import TauCeti.Geometry.Symplectic.Complex.Module.Basic
 public import TauCeti.Geometry.Symplectic.JHolomorphic.Varying
@@ -439,21 +438,6 @@ theorem exists_pos_forall_pi_mul_sq_mul_norm_fderiv_one_sq_le_eight_mul_setInteg
       (hJ.comp contDiffOn_snd fun _ hq ↦ hq) isCompact_univ hK
       (fun q hq ↦ hKW hq.2) fun _ _ ↦ hJsq
   exact ⟨δ, hδ, h (Set.mem_univ ())⟩
-
-/-- The mean-value inequality
-`TauCeti.mul_le_fifteen_mul_setIntegral_ball_of_neg_mul_le_laplacian` on a disc of the complex
-plane: if `w ≥ 0` is `C²` on `ball z₀ r` and continuous on its closure, with `Δ w ≥ -A w` there and
-`16 A r² ≤ 1`, then `π r² w(z₀) ≤ 15 ∫_{B_r(z₀)} w`. -/
-private theorem pi_mul_sq_mul_le_fifteen_mul_setIntegral_ball_of_neg_mul_le_laplacian
-    {w : ℂ → ℝ} {z₀ : ℂ} {r A : ℝ} (hr : 0 ≤ r) (hw : ContDiffOn ℝ 2 w (ball z₀ r))
-    (hwc : ContinuousOn w (closedBall z₀ r)) (hw0 : ∀ y ∈ ball z₀ r, 0 ≤ w y)
-    (hΔ : ∀ y ∈ ball z₀ r, -(A * w y) ≤ Δ w y) (hAr : 16 * A * r ^ 2 ≤ 1) :
-    π * r ^ 2 * w z₀ ≤ 15 * ∫ y in ball z₀ r, w y := by
-  have h := mul_le_fifteen_mul_setIntegral_ball_of_neg_mul_le_laplacian (μ := volume) (by simp)
-    hw hwc hw0 hΔ (by
-      rw [Complex.volume_real_ball z₀ hr, Complex.volume_real_ball 0 zero_le_one]
-      nlinarith [Real.pi_pos])
-  rwa [Complex.volume_real_ball z₀ hr] at h
 
 /-- **The mean-value inequality for `∂ₛu - e₀`.** Let `J` be invariant under the translations
 along a vector `e₀`, and let `u : ℂ → V` be `C³` on the open disk `ball z₀ r`, with `∂ₛu`
