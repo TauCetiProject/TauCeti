@@ -9,7 +9,7 @@ public import Mathlib.CategoryTheory.Functor.TypeValuedFlat
 public import Mathlib.CategoryTheory.Sites.JointlySurjective
 public import Mathlib.CategoryTheory.Sites.Point.Category
 public import Mathlib.CategoryTheory.Sites.PrecoverageToGrothendieck
-public import TauCeti.CategoryTheory.Action.Basic
+public import TauCeti.CategoryTheory.Action.Smooth
 public import TauCeti.CategoryTheory.Galois.ContAction
 
 /-!
@@ -35,13 +35,12 @@ continuous `G`-set because `G` is compact and stabilizers are open.
 
 * `ContAction.jointlySurjectiveTopology G`: the jointly surjective topology on finite continuous
   `G`-sets.
-* `Action.isSmooth G`, `Action.SmoothSet G`: `G`-sets whose stabilizers are open, and their
-  category.
 * `ContAction.point G`: the forgetful functor as a point of the site.
 * `ContAction.stalk G`: the stalk of a presheaf at this point, as a `G`-set.
 * `ContAction.homPresheaf G`: the presheaf of `G`-maps into a `G`-set.
 * `ContAction.sheafEquiv G`: for compact `G`, sheaves of sets on finite continuous `G`-sets are
-  equivalent to smooth `G`-sets.
+  equivalent to smooth `G`-sets (`Action.SmoothSet G`, from
+  `TauCeti.CategoryTheory.Action.Smooth`).
 
 ## Main results
 
@@ -60,33 +59,6 @@ public section
 open CategoryTheory Limits Opposite PreGaloisCategory FintypeCatDiscrete
 
 universe u
-
-namespace Action
-
-variable (G : Type u) [Group G] [TopologicalSpace G]
-
-/-- A `G`-set is smooth when every stabilizer is open; for the discrete topology on the set,
-this is continuity of the action (`continuousSMul_iff_stabilizer_isOpen`). -/
-def isSmooth : ObjectProperty (Action (Type u) G) :=
-  fun X ↦ ∀ x : X.V, IsOpen (MulAction.stabilizer G x : Set G)
-
-/-- The category of smooth `G`-sets: sets with an action of `G` whose stabilizers are open. -/
-abbrev SmoothSet : Type (u + 1) := (isSmooth G).FullSubcategory
-
-variable {G}
-
-/-- A `G`-set is smooth exactly when the stabilizer of every point is open. -/
-theorem isSmooth_iff (X : Action (Type u) G) :
-    isSmooth G X ↔ ∀ x : X.V, IsOpen (MulAction.stabilizer G x : Set G) :=
-  Iff.rfl
-
-/-- For compact `G`, orbits in a smooth `G`-set are finite. -/
-theorem isSmooth.finite_orbit [SeparatelyContinuousMul G] [CompactSpace G]
-    {X : Action (Type u) G} (hX : isSmooth G X) (x : X.V) : Finite (MulAction.orbit G x) :=
-  have := Subgroup.quotient_finite_of_isOpen _ (hX x)
-  (MulAction.orbitEquivQuotientStabilizer G x).finite_iff.2 this
-
-end Action
 
 namespace ContAction
 
@@ -204,7 +176,7 @@ theorem germ_map (P : (ContAction FintypeCat.{u} G)ᵒᵖ ⥤ Type u)
 /-- The stalk of a presheaf is a smooth `G`-set. -/
 theorem isSmooth_stalk (P : (ContAction FintypeCat.{u} G)ᵒᵖ ⥤ Type u) :
     Action.isSmooth G ((stalk G).obj P) := by
-  intro p
+  refine (Action.isSmooth_iff _).2 fun p ↦ ?_
   obtain ⟨S, s, z, rfl⟩ := (point G).toPresheafFiber_jointly_surjective (P := P) p
   refine Subgroup.isOpen_mono (fun g hg ↦ MulAction.mem_stabilizer_iff.2 ?_)
     (isOpen_stabilizer S s)
@@ -497,7 +469,7 @@ noncomputable def orbitObj {X : Action (Type u) G} (hX : Action.isSmooth G X) (x
   have := Fintype.ofFinite (MulAction.orbit G x)
   ⟨Action.FintypeCat.ofMulAction G (FintypeCat.of (MulAction.orbit G x)),
     (Action.isContinuous_iff_isOpen_stabilizer _).2 fun y ↦ by
-      convert hX y.val using 2
+      convert (Action.isSmooth_iff X).1 hX y.val using 2
       ext g
       exact Subtype.ext_iff⟩
 
