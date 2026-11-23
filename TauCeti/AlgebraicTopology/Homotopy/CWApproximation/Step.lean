@@ -86,7 +86,7 @@ the constant map at `z`, a sphere on which `f` is extended by that loop. -/
 def cwApproximationAttachingMap :
     {p : Ω^ (Fin n) Z z // HomotopyGroup.map f.hom rfl (⟦p⟧ : HomotopyGroup (Fin n) Z z) = 1} ⊕
         Ω^ (Fin (n + 1)) X (f z) → (TopCat.diskBoundary (n + 1) ⟶ Z)
-  | .inl p => GenLoop.diskBoundaryMap p.1
+  | .inl p => GenLoop.diskBoundaryMap p.val
   | .inr _ => TopCat.ofHom (ContinuousMap.const _ z)
 
 /-- A cell killing the class of `p` is attached along `GenLoop.diskBoundaryMap p`. -/
@@ -94,7 +94,7 @@ def cwApproximationAttachingMap :
 lemma cwApproximationAttachingMap_inl
     (p : {p : Ω^ (Fin n) Z z //
       HomotopyGroup.map f.hom rfl (⟦p⟧ : HomotopyGroup (Fin n) Z z) = 1}) :
-    cwApproximationAttachingMap f z n (.inl p) = GenLoop.diskBoundaryMap p.1 :=
+    cwApproximationAttachingMap f z n (.inl p) = GenLoop.diskBoundaryMap p.val :=
   (rfl)
 
 /-- The cell attached for a generalized loop of `X` is attached along the constant map at `z`. -/
@@ -118,9 +118,9 @@ private lemma exists_diskBoundaryInclusion_comp_eq_diskBoundaryMap_comp
     (p : {p : Ω^ (Fin n) Z z //
       HomotopyGroup.map f.hom rfl (⟦p⟧ : HomotopyGroup (Fin n) Z z) = 1}) :
     ∃ F : TopCat.disk (n + 1) ⟶ X,
-      TopCat.diskBoundaryInclusion (n + 1) ≫ F = GenLoop.diskBoundaryMap p.1 ≫ f :=
+      TopCat.diskBoundaryInclusion (n + 1) ≫ F = GenLoop.diskBoundaryMap p.val ≫ f :=
   (TopCat.Hom.nullhomotopic_iff_exists_diskBoundaryInclusion_comp_eq _).1
-    ((HomotopyGroup.map_mk_eq_one_iff_nullhomotopic_diskBoundaryMap_comp f rfl p.1).1 p.2)
+    ((HomotopyGroup.map_mk_eq_one_iff_nullhomotopic_diskBoundaryMap_comp f rfl p.val).1 p.property)
 
 /-- The map of a cell of the inductive step to `X`: a chosen null-homotopy of the attaching map
 followed by `f` for a cell killing a class, and the loop `γ` read on the disk for the cell attached

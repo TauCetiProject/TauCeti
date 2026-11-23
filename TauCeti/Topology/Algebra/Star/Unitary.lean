@@ -30,7 +30,7 @@ It needs only `ContinuousStar M` beyond a topological star monoid, with no separ
 continuity-of-multiplication assumption.
 
 This is the closedness hypothesis that the Lie algebra of a closed subgroup of `Mˣ` is computed
-from; see `TauCeti/Geometry/Lie/Subgroup/Unitary.lean`.
+from; see `TauCeti/Geometry/Lie/Subgroup/Unitary/Basic.lean`.
 
 ## Main results
 
@@ -54,8 +54,8 @@ theorem continuous_toUnits {M : Type*} [Monoid M] [StarMul M] [TopologicalSpace 
     [ContinuousStar M] : Continuous (toUnits : unitary M → Mˣ) := by
   refine Units.continuous_iff.mpr ⟨?_, ?_⟩
   · simpa only [Function.comp_def, val_toUnits_apply] using
-      (continuous_subtype_val : Continuous fun u : unitary M ↦ (u : M))
-  · refine continuous_subtype_val.star.congr fun u ↦ ?_
+      (continuous_subtypeVal : Continuous fun u : unitary M ↦ (u : M))
+  · refine continuous_subtypeVal.star.congr fun u ↦ ?_
     simp only [← map_inv, val_toUnits_apply, ← star_eq_inv, coe_star, Pi.star_apply]
 
 end Unitary
@@ -68,7 +68,7 @@ def unitarySubgroupUnitsHomeomorph (M : Type*) [Monoid M] [StarMul M] [Topologic
   have hc : Continuous (unitarySubgroupUnitsEquiv : unitarySubgroup Mˣ → unitary M) := by
     apply continuous_induced_rng.mpr
     simpa only [Function.comp_def, unitarySubgroupUnitsEquiv_apply_coe] using
-      (Units.continuous_val.comp (continuous_subtype_val (X := Mˣ)))
+      (Units.continuous_val.comp (continuous_subtypeVal (X := Mˣ)))
   have hc' : Continuous (unitarySubgroupUnitsEquiv.symm : unitary M → unitarySubgroup Mˣ) := by
     apply continuous_induced_rng.mpr
     simpa only [Function.comp_def, coe_unitarySubgroupUnitsEquiv_symm_apply] using

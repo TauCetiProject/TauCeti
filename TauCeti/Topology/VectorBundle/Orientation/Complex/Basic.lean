@@ -34,7 +34,7 @@ index types `2 * r₁ + 2 * r₂ = 2 * (r₁ + r₂)` (`TauCeti.VectorBundleOrie
 A complex-linear isomorphism of fibres, possibly of bundles with different model fibres, preserves
 the canonical orientations (`TauCeti.VectorBundleOrientation.map_complex`), while a conjugate-linear
 one multiplies them by `(-1) ^ n`, `n` the complex rank
-(`TauCeti.VectorBundleOrientation.map_toRealLinearEquiv_complex`).
+(`TauCeti.VectorBundleOrientation.map_restrictScalarsₛₗ_complex`).
 
 ## Main definitions
 
@@ -44,6 +44,9 @@ one multiplies them by `(-1) ^ n`, `n` the complex rank
 
 * `Bundle.Trivialization.mapOrientation_complexOrientation`: a complex-linear trivialization reads
   the canonical orientation of a fibre as the canonical orientation of the model fibre.
+* `TauCeti.VectorBundleOrientation.mapOrientation_complex` and
+  `TauCeti.VectorBundleOrientation.mapOrientation_reindex_complex`: a trivialization of the atlas
+  reads the canonical orientation, possibly reindexed, as that of the model fibre.
 * `TauCeti.VectorBundleOrientation.pullback_complex`: the canonical orientation of a pullback
   bundle is the pullback of the canonical orientation.
 * `TauCeti.VectorBundleOrientation.complex_trivial`: the canonical orientation of the trivial
@@ -53,9 +56,9 @@ one multiplies them by `(-1) ^ n`, `n` the complex rank
 * `TauCeti.VectorBundleOrientation.map_complex`: a complex-linear isomorphism of fibres carries the
   canonical orientation to the canonical orientation; `map_complex_same` is the simp form for
   bundles with the same model fibre.
-* `TauCeti.VectorBundleOrientation.map_toRealLinearEquiv_complex`: a conjugate-linear isomorphism
+* `TauCeti.VectorBundleOrientation.map_restrictScalarsₛₗ_complex`: a conjugate-linear isomorphism
   of fibres multiplies the canonical orientation by `(-1) ^ n`, `n` the complex rank;
-  `map_toRealLinearEquiv_complex_same` is the simp form for bundles with the same model fibre.
+  `map_restrictScalarsₛₗ_complex_same` is the simp form for bundles with the same model fibre.
 
 ## References
 
@@ -139,6 +142,14 @@ theorem mapOrientation_complex (e : Trivialization F (π F E)) [MemTrivializatio
   rw [complex_apply, Trivialization.mapOrientation_complexOrientation _ _ _ rfl, finCongr_refl,
     Orientation.reindex_refl, Equiv.refl_apply]
 
+/-- A complex-linear trivialization of the atlas reads the canonical orientation, reindexed along
+`f`, as the canonical orientation of the model fibre reindexed along `f`. -/
+theorem mapOrientation_reindex_complex {ι : Type*} (f : Fin (2 * finrank ℂ F) ≃ ι)
+    (e : Trivialization F (π F E)) [MemTrivializationAtlas e] {b : B} (hb : b ∈ e.baseSet) :
+    e.mapOrientation ι hb (reindex f (complex F E) b) =
+      Orientation.reindex ℝ F f (complexOrientation F) := by
+  rw [reindex_apply, Trivialization.mapOrientation_reindex, mapOrientation_complex]
+
 /-- **Naturality of the canonical orientation.** The canonical orientation of the pullback `f*E` of
 a complex vector bundle along a continuous map `f` is the pullback of the canonical orientation
 of `E`. -/
@@ -197,20 +208,20 @@ theorem map_complex {b' : B'} {b : B} (f : E' b' ≃ₗ[ℂ] E b) :
 canonical orientation of `E'_{b'}` to `(-1) ^ n` times that of `E_b`, after identifying the index
 types `2 * dim F = 2 * dim F'` of the model fibres, where `n` is the complex dimension of the model
 fibre `F'` of `E'`. -/
-theorem map_toRealLinearEquiv_complex {b' : B'} {b : B} (f : E' b' ≃ₛₗ[starRingEnd ℂ] E b) :
-    Orientation.map _ f.toRealLinearEquiv (complex F' E' b') =
+theorem map_restrictScalarsₛₗ_complex {b' : B'} {b : B} (f : E' b' ≃ₛₗ[starRingEnd ℂ] E b) :
+    Orientation.map _ (f.restrictScalarsₛₗ ℝ) (complex F' E' b') =
       (-1 : ℝˣ) ^ finrank ℂ F' •
         Orientation.reindex ℝ (E b)
           (finCongr (by rw [← VectorBundle.finrank_eq ℂ F E b,
             ← VectorBundle.finrank_eq ℂ F' E' b', ← finrank_real_eq_two_mul_finrank_complex,
-            ← finrank_real_eq_two_mul_finrank_complex, f.toRealLinearEquiv.finrank_eq]))
+            ← finrank_real_eq_two_mul_finrank_complex, (f.restrictScalarsₛₗ ℝ).finrank_eq]))
           (complex F E b) := by
   have := VectorBundle.finiteDimensional ℂ F E b
   have := VectorBundle.finiteDimensional ℂ F' E' b'
   have hn : (-1 : ℝˣ) ^ finrank ℂ (E' b') = (-1) ^ finrank ℂ F' := by
     rw [VectorBundle.finrank_eq ℂ F' E' b']
   rw [complex_apply, complex_apply, Orientation.map_reindex,
-    f.map_toRealLinearEquiv_complexOrientation, hn, Orientation.reindex_units_smul,
+    f.map_restrictScalarsₛₗ_complexOrientation, hn, Orientation.reindex_units_smul,
     ← Orientation.reindex_trans, ← Orientation.reindex_trans]
   exact congrArg (fun e ↦ _ • Orientation.reindex ℝ (E b) e _) (Equiv.ext fun _ ↦ by simp)
 
@@ -228,13 +239,13 @@ theorem map_complex_same {E' : B' → Type*} [TopologicalSpace (TotalSpace F E')
 model fibre `F` carries the canonical orientation of `E'_{b'}` to `(-1) ^ n` times that of `E_b`,
 where `n` is the complex dimension of `F`. -/
 @[simp]
-theorem map_toRealLinearEquiv_complex_same {E' : B' → Type*} [TopologicalSpace (TotalSpace F E')]
+theorem map_restrictScalarsₛₗ_complex_same {E' : B' → Type*} [TopologicalSpace (TotalSpace F E')]
     [∀ b, AddCommGroup (E' b)] [∀ b, Module ℝ (E' b)] [∀ b, Module ℂ (E' b)]
     [∀ b, IsScalarTower ℝ ℂ (E' b)] [∀ b, TopologicalSpace (E' b)] [FiberBundle F E']
     [VectorBundle ℂ F E'] {b' : B'} {b : B} (f : E' b' ≃ₛₗ[starRingEnd ℂ] E b) :
-    Orientation.map _ f.toRealLinearEquiv (complex F E' b') =
+    Orientation.map _ (f.restrictScalarsₛₗ ℝ) (complex F E' b') =
       (-1 : ℝˣ) ^ finrank ℂ F • complex F E b := by
-  rw [map_toRealLinearEquiv_complex (F := F), finCongr_refl, Orientation.reindex_refl,
+  rw [map_restrictScalarsₛₗ_complex (F := F), finCongr_refl, Orientation.reindex_refl,
     Equiv.refl_apply]
 
 end FiberwiseEquiv

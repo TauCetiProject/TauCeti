@@ -266,10 +266,10 @@ private theorem pushDown_ramp_ne {k : ι} {t : ℝ} {z : ℂ} (hz : z ≠ c k) :
 private def lowerHomotopyEquivComb : lower ≃ₕ comb c δ :=
   .ofWeakDeformationRetraction subset_union_left (fun p ↦ pushDown p.1 p.2)
     (by fun_prop)
-    (fun p ↦ pushDown_mem_comb p.1.2.1 p.2.2)
+    (fun p ↦ pushDown_mem_comb p.1.property.1 p.2.property)
     (fun _ ↦ pushDown_zero _)
     (fun _ ↦ pushDown_one_mem_lower _)
-    (fun t _ hz ↦ pushDown_mem_lower t.2.1 hz)
+    (fun t _ hz ↦ pushDown_mem_lower t.property.1 hz)
 
 /-- The comb is contractible. -/
 private theorem contractibleSpace_comb : ContractibleSpace (comb c δ) :=
@@ -286,7 +286,7 @@ private theorem continuous_piecePush (k : ι) : Continuous (piecePush (c := c) (
 
 private theorem piecePush_mem_piece (k : ι) (t : unitInterval) {z : ℂ}
     (hz : z ∈ piece c δ k) : piecePush (c := c) (δ := δ) k (t, z) ∈ piece c δ k := by
-  have hs : 0 ≤ (t : ℝ) * ramp δ (z.re - c k) := mul_nonneg t.2.1 (ramp_nonneg _ _)
+  have hs : 0 ≤ (t : ℝ) * ramp δ (z.re - c k) := mul_nonneg t.property.1 (ramp_nonneg _ _)
   rcases hz with hz | ⟨hz, hzk⟩
   · exact .inl (pushDown_mem_comb hs hz)
   · exact .inr ⟨by simpa [strip, piecePush] using hz, pushDown_ramp_ne hzk⟩
@@ -294,7 +294,7 @@ private theorem piecePush_mem_piece (k : ι) (t : unitInterval) {z : ℂ}
 private theorem piecePush_mem_model (k : ι) (t : unitInterval) {z : ℂ}
     (hz : z ∈ model c δ k \ {(c k : ℂ)}) :
     piecePush (c := c) (δ := δ) k (t, z) ∈ model c δ k \ {(c k : ℂ)} := by
-  have hs : 0 ≤ (t : ℝ) * ramp δ (z.re - c k) := mul_nonneg t.2.1 (ramp_nonneg _ _)
+  have hs : 0 ≤ (t : ℝ) * ramp δ (z.re - c k) := mul_nonneg t.property.1 (ramp_nonneg _ _)
   refine ⟨?_, pushDown_ramp_ne hz.2⟩
   rcases hz.1 with h | h
   · exact .inl (pushDown_mem_lower hs h)
@@ -319,9 +319,9 @@ private def modelHomotopyEquivPiece (hδ : 0 < δ) (k : ι) :
     ↥(model c δ k \ {(c k : ℂ)}) ≃ₕ piece c δ k :=
   .ofWeakDeformationRetraction (model_diff_subset_piece k) (fun p ↦ piecePush k (p.1, p.2))
     ((continuous_piecePush k).comp (by fun_prop))
-    (fun p ↦ piecePush_mem_piece k p.1 p.2.2)
+    (fun p ↦ piecePush_mem_piece k p.1 p.2.property)
     (fun _ ↦ by simp [piecePush])
-    (fun z ↦ piecePush_one_mem_model hδ k z.2)
+    (fun z ↦ piecePush_one_mem_model hδ k z.property)
     (fun t _ hz ↦ piecePush_mem_model k t hz)
 
 /-! ### The cover of the punctured plane -/
@@ -383,7 +383,7 @@ private theorem pathConnectedSpace_compl_range [Nonempty ι] (hδ : 0 < δ)
     PathConnectedSpace ↥(range fun i ↦ (c i : ℂ))ᶜ := by
   let b : ↥(range fun i ↦ (c i : ℂ))ᶜ := ⟨-I, neg_I_mem_compl_range⟩
   have hb (z : ↥(range fun i ↦ (c i : ℂ))ᶜ) : Joined z b := by
-    obtain ⟨k, hk⟩ := exists_piece_mem_nhds hδ z.2
+    obtain ⟨k, hk⟩ := exists_piece_mem_nhds hδ z.property
     exact ((isPathConnected_cover hδ hc k).joinedIn z (mem_preimage.2 (mem_of_mem_nhds hk)) b
       (comb_subset_piece k neg_I_mem_comb)).joined
   exact ⟨⟨b⟩, fun z w ↦ (hb z).trans (hb w).symm⟩
@@ -398,7 +398,7 @@ private theorem nonempty_fundamentalGroup_compl_range_mulEquiv_freeGroup (hδ : 
     have hconv : Convex ℝ (range fun i ↦ (c i : ℂ))ᶜ := by
       rw [range_eq_empty, compl_empty]
       exact convex_univ
-    have := hconv.contractibleSpace ⟨z, z.2⟩
+    have := hconv.contractibleSpace ⟨z, z.property⟩
     have : Unique (FundamentalGroup ↥(range fun i ↦ (c i : ℂ))ᶜ z) := uniqueOfSubsingleton 1
     exact ⟨MulEquiv.ofUnique⟩
   have := pathConnectedSpace_compl_range hδ hc
@@ -410,8 +410,8 @@ private theorem nonempty_fundamentalGroup_compl_range_mulEquiv_freeGroup (hδ : 
     SimplyConnectedSpace.ofContractible C
   have hx : (⟨-I, neg_I_mem_compl_range⟩ : ↥(range fun i ↦ (c i : ℂ))ᶜ) ∈ C := neg_I_mem_comb
   let vK := vanKampenWideEquiv (U := cover c δ) (C := C)
-    (fun y ↦ (exists_piece_mem_nhds hδ y.2).imp fun _ h ↦
-      continuous_subtype_val.continuousAt.preimage_mem_nhds h)
+    (fun y ↦ (exists_piece_mem_nhds hδ y.property).imp fun _ h ↦
+      continuous_subtypeVal.continuousAt.preimage_mem_nhds h)
     (isPathConnected_cover hδ hc) hC (fun k ↦ preimage_mono (comb_subset_piece k))
     (fun _ _ hij _ hz ↦ piece_inter_piece_subset hc hij hz)
     hx
@@ -477,7 +477,7 @@ theorem nonempty_fundamentalGroup_compl_mulEquiv_freeGroup {s : Set ℂ} (hs : s
   have hmem (x : s) : c x ∈ hs.toFinset.image c := Finset.mem_image_of_mem c (by simp)
   have hcδ : Pairwise fun i j : s ↦ 2 * r ≤ |c i - c j| := fun i j hij ↦ by
     simpa only [Real.dist_eq] using
-      (hrc _ (hmem i) _ (hmem j) (hc.ne i.2 j.2 (Subtype.coe_ne_coe.2 hij))).le
+      (hrc _ (hmem i) _ (hmem j) (hc.ne i.property j.property (Subtype.coe_ne_coe.2 hij))).le
   have himage : e '' sᶜ = (range fun i : s ↦ (c i : ℂ))ᶜ := by
     rw [e.image_compl]
     congr 1

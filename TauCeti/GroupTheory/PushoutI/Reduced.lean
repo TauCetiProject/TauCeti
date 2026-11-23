@@ -18,10 +18,31 @@ word: merging adjacent letters of the same factor and absorbing letters of the a
 reduces any word. This is the existence part of the normal form theorem; unlike uniqueness, it does
 not need the `φ i` to be injective.
 
+When the `φ i` are injective, uniqueness (Mathlib's `Monoid.PushoutI.Reduced.eq_empty_of_mem_range`)
+says that the product of a nonempty reduced word is not in the amalgamated subgroup, and more
+precisely that reduced words whose products agree up to the amalgamated subgroup visit the same
+sequence of factors; in particular the product of a reduced word of two or more letters is in no
+factor. This file states these facts for lists of letters `⟨i, g⟩` with `g : G i`, consecutive
+letters in different factors, which is the form in which they are applied to concrete words.
+
 ## Main results
 
 * `Monoid.PushoutI.exists_eq_base_mul_ofCoprodI_prod`: every element is `h * w` with `h` in the
   amalgamated subgroup and `w` the product of a reduced word.
+* `Monoid.PushoutI.exists_eq_of_mul_list_prod`: every element is `g * w` with `g` in a given
+  factor `G i` and `w` the product of a reduced list of letters not starting in `G i`.
+* `Monoid.PushoutI.exists_reduced_toList_eq`: a reduced list of letters is a reduced word.
+* `Monoid.PushoutI.list_prod_notMem_range_base`: the product of a nonempty reduced list of letters
+  is not in the amalgamated subgroup.
+* `Monoid.PushoutI.map_fst_eq_of_base_mul_list_prod_eq`: two reduced lists of letters whose
+  products agree up to the amalgamated subgroup visit the same sequence of factors.
+* `Monoid.PushoutI.length_le_one_of_list_prod_mem_range`: a reduced list of letters whose product
+  lies in a factor has at most one letter.
+* `Monoid.PushoutI.list_prod_inv_mul_of_mul_list_prod_notMem_range_base`: the conjugate
+  `w⁻¹ * g * w` of a letter `g` outside the amalgamated subgroup by the product `w` of a reduced
+  list that does not start in the factor of `g` is not in the amalgamated subgroup.
+* `Monoid.PushoutI.list_prod_inv_mul_of_mul_list_prod_notMem_range_of`: if moreover the list is
+  nonempty, this conjugate lies in no factor.
 
 ## References
 
@@ -81,5 +102,156 @@ theorem exists_eq_base_mul_ofCoprodI_prod (x : PushoutI φ) :
     intro z hz
     rw [mul_assoc]
     exact hx _ (hy z hz)
+
+/-- The normal form in an amalgamated product of groups, seen from a factor `G i`: every element
+is `g * a₁ * ⋯ * aᵣ` with `g ∈ G i` and letters `aⱼ`, consecutive ones from different factors, none
+of them in the amalgamated subgroup and the first one not in `G i`. -/
+theorem exists_eq_of_mul_list_prod (i : ι) (x : PushoutI φ) :
+    ∃ (g : G i) (L : List (Σ j, G j)), L.IsChain (fun l l' => l.1 ≠ l'.1) ∧
+      (∀ l ∈ L, l.2 ∉ (φ l.1).range) ∧ (∀ l ∈ L.head?, l.1 ≠ i) ∧
+      x = of i g * (L.map fun l => of l.1 l.2).prod := by
+  obtain ⟨h, ⟨L, _, hc⟩, hred, rfl⟩ := exists_eq_base_mul_ofCoprodI_prod x
+  simp only [Reduced] at hred
+  rw [← of_apply_eq_base φ i, Word.prod, map_list_prod, List.map_map]
+  simp only [Function.comp_def, ofCoprodI_of]
+  rcases L with _ | ⟨⟨j, a⟩, L⟩
+  · exact ⟨φ i h, [], hc, hred, by simp, rfl⟩
+  by_cases hj : j = i
+  · -- A leading letter of `G i` is absorbed into `g`.
+    subst hj
+    refine ⟨φ j h * a, L, hc.tail, fun l hl => hred l (List.mem_cons_of_mem _ hl),
+      fun l hl => ((List.isChain_cons.1 hc).1 l hl).symm, ?_⟩
+    simp only [List.map_cons, List.prod_cons, map_mul, mul_assoc]
+  · exact ⟨φ i h, _, hc, hred, by simpa using hj, rfl⟩
+
+/-- A list of letters, consecutive ones from different factors and none of them in the amalgamated
+subgroup, spells a reduced word of the free product with the same product. -/
+theorem exists_reduced_toList_eq {L : List (Σ i, G i)}
+    (hc : L.IsChain fun l l' => l.1 ≠ l'.1) (hred : ∀ l ∈ L, l.2 ∉ (φ l.1).range) :
+    ∃ w : Word G, w.toList = L ∧ Reduced φ w ∧
+      ofCoprodI w.prod = (L.map fun l => of (φ := φ) l.1 l.2).prod := by
+  refine ⟨⟨L, fun l hl h1 => hred l hl ⟨1, by rw [map_one, h1]⟩, hc⟩, rfl, hred, ?_⟩
+  simp [Word.prod, map_list_prod, Function.comp_def]
+
+/-- In an amalgamated product of groups, the product of a nonempty list of letters, consecutive
+ones from different factors and none of them in the amalgamated subgroup, is not in the
+amalgamated subgroup. -/
+theorem list_prod_notMem_range_base (hφ : ∀ i, Injective (φ i)) {L : List (Σ i, G i)}
+    (hL : L ≠ []) (hc : L.IsChain fun l l' => l.1 ≠ l'.1) (hred : ∀ l ∈ L, l.2 ∉ (φ l.1).range) :
+    (L.map fun l => of l.1 l.2).prod ∉ (base φ).range := by
+  obtain ⟨w, rfl, hw, hprod⟩ := exists_reduced_toList_eq hc hred
+  exact fun h => hL (congrArg Word.toList (Reduced.eq_empty_of_mem_range hφ hw (hprod ▸ h)))
+
+/-- In an amalgamated product of groups, two lists of letters, each with consecutive letters from
+different factors and no letter in the amalgamated subgroup, whose products agree up to elements
+of the amalgamated subgroup visit the same sequence of factors. -/
+theorem map_fst_eq_of_base_mul_list_prod_eq (hφ : ∀ i, Injective (φ i)) {L₁ L₂ : List (Σ i, G i)}
+    (hc₁ : L₁.IsChain fun l l' => l.1 ≠ l'.1) (hred₁ : ∀ l ∈ L₁, l.2 ∉ (φ l.1).range)
+    (hc₂ : L₂.IsChain fun l l' => l.1 ≠ l'.1) (hred₂ : ∀ l ∈ L₂, l.2 ∉ (φ l.1).range) {h₁ h₂ : H}
+    (h : base φ h₁ * (L₁.map fun l => of l.1 l.2).prod =
+      base φ h₂ * (L₂.map fun l => of l.1 l.2).prod) :
+    L₁.map Sigma.fst = L₂.map Sigma.fst := by
+  obtain ⟨d⟩ := NormalWord.transversal_nonempty φ hφ
+  obtain ⟨v₁, rfl, hv₁, hp₁⟩ := exists_reduced_toList_eq hc₁ hred₁
+  obtain ⟨v₂, rfl, hv₂, hp₂⟩ := exists_reduced_toList_eq hc₂ hred₂
+  -- A reduced word has a normal word with the same sequence of factors.
+  obtain ⟨w₁, hw₁, hm₁⟩ := hv₁.exists_normalWord_prod_eq d
+  obtain ⟨w₂, hw₂, hm₂⟩ := hv₂.exists_normalWord_prod_eq d
+  have he : h₁ • w₁ = h₂ • w₂ := NormalWord.prod_injective (by simp [hw₁, hw₂, hp₁, hp₂, h])
+  rw [← hm₁, ← hm₂]
+  -- Acting by the amalgamated subgroup changes only the head of a normal word.
+  simpa only [NormalWord.base_smul_def'] using
+    congrArg (fun w : NormalWord d => w.toList.map Sigma.fst) he
+
+/-- In an amalgamated product of groups, a list of letters, consecutive ones from different factors
+and none of them in the amalgamated subgroup, whose product lies in a factor has at most one
+letter. -/
+theorem length_le_one_of_list_prod_mem_range (hφ : ∀ i, Injective (φ i))
+    {L : List (Σ i, G i)} (hc : L.IsChain fun l l' => l.1 ≠ l'.1)
+    (hred : ∀ l ∈ L, l.2 ∉ (φ l.1).range) {j : ι}
+    (hL : (L.map fun l => of l.1 l.2).prod ∈ (of (φ := φ) j).range) : L.length ≤ 1 := by
+  obtain ⟨y, hy⟩ := hL
+  by_cases hyr : y ∈ (φ j).range
+  · -- The product lies in the amalgamated subgroup, so the list is empty.
+    obtain ⟨h, rfl⟩ := hyr
+    rcases eq_or_ne L [] with rfl | hL
+    · simp
+    exact absurd ⟨h, by rw [← hy, of_apply_eq_base]⟩ (list_prod_notMem_range_base hφ hL hc hred)
+  · -- Otherwise the list and the single letter `y` visit the same sequence of factors.
+    have he : base φ 1 * (L.map fun l => of l.1 l.2).prod =
+        base φ 1 * ([(⟨j, y⟩ : Σ i, G i)].map fun l => of (φ := φ) l.1 l.2).prod := by
+      simp [hy]
+    simpa using (congrArg List.length (map_fst_eq_of_base_mul_list_prod_eq hφ hc hred
+      (List.isChain_singleton _) (by simpa using hyr) he)).le
+
+/-- In an amalgamated product of groups, let `w` be the product of a list of `r` letters,
+consecutive ones from different factors and none of them in the amalgamated subgroup, and let `g`
+be a letter outside the amalgamated subgroup whose factor is not that of the first letter of the
+list. Then `w⁻¹ * g * w` is the product of such a list of `2 * r + 1` letters. -/
+private theorem exists_list_prod_eq_list_prod_inv_mul_of_mul_list_prod {L : List (Σ i, G i)}
+    (hc : L.IsChain fun l l' => l.1 ≠ l'.1) (hred : ∀ l ∈ L, l.2 ∉ (φ l.1).range) {i : ι} {g : G i}
+    (hg : g ∉ (φ i).range) (hi : ∀ l ∈ L.head?, l.1 ≠ i) :
+    ∃ K : List (Σ i, G i), K.IsChain (fun l l' => l.1 ≠ l'.1) ∧ (∀ l ∈ K, l.2 ∉ (φ l.1).range) ∧
+      K.length = 2 * L.length + 1 ∧ (K.map fun l => of (φ := φ) l.1 l.2).prod =
+        (L.map fun l => of l.1 l.2).prod⁻¹ * of i g * (L.map fun l => of l.1 l.2).prod := by
+  refine ⟨(L.map fun l => (⟨l.1, l.2⁻¹⟩ : Σ i, G i)).reverse ++ ⟨i, g⟩ :: L, ?_, fun l hl => ?_,
+    by simp; omega, ?_⟩
+  · refine List.isChain_append.2 ⟨?_, List.isChain_cons.2 ⟨fun l hl => (hi l hl).symm, hc⟩, ?_⟩
+    · rw [List.isChain_reverse, List.isChain_map]
+      exact hc.imp fun _ _ h => h.symm
+    · intro l hl l' hl'
+      obtain rfl : l' = ⟨i, g⟩ := by simpa using hl'.symm
+      rw [List.getLast?_reverse, List.head?_map] at hl
+      obtain ⟨l₀, hl₀, rfl⟩ := Option.mem_map.1 hl
+      exact hi l₀ hl₀
+  · rcases List.mem_append.1 hl with hl | hl
+    · obtain ⟨l₀, hl₀, rfl⟩ := List.mem_map.1 (List.mem_reverse.1 hl)
+      exact fun h => hred l₀ hl₀ (by simpa using inv_mem h)
+    · rcases List.mem_cons.1 hl with rfl | hl
+      exacts [hg, hred l hl]
+  · rw [List.prod_inv_reverse]
+    simp [Function.comp_def, mul_assoc]
+
+/-- In an amalgamated product of groups, let `w` be the product of a list of letters, consecutive
+ones from different factors and none of them in the amalgamated subgroup, and let `g` be a letter
+outside the amalgamated subgroup whose factor is not that of the first letter of the list. Then
+the conjugate `w⁻¹ * g * w` is not in the amalgamated subgroup. -/
+theorem list_prod_inv_mul_of_mul_list_prod_notMem_range_base (hφ : ∀ i, Injective (φ i))
+    {L : List (Σ i, G i)} (hc : L.IsChain fun l l' => l.1 ≠ l'.1)
+    (hred : ∀ l ∈ L, l.2 ∉ (φ l.1).range) {i : ι} {g : G i} (hg : g ∉ (φ i).range)
+    (hi : ∀ l ∈ L.head?, l.1 ≠ i) :
+    (L.map fun l => of l.1 l.2).prod⁻¹ * of i g * (L.map fun l => of l.1 l.2).prod ∉
+      (base φ).range := by
+  obtain ⟨K, hcK, hredK, hlen, hprod⟩ :=
+    exists_list_prod_eq_list_prod_inv_mul_of_mul_list_prod hc hred hg hi
+  rw [← hprod]
+  exact list_prod_notMem_range_base hφ (List.ne_nil_of_length_pos (by omega)) hcK hredK
+
+/-- In an amalgamated product of groups, let `w` be the product of a nonempty list of letters,
+consecutive ones from different factors and none of them in the amalgamated subgroup, and let `g`
+be a letter outside the amalgamated subgroup whose factor is not that of the first letter of the
+list. Then the conjugate `w⁻¹ * g * w` lies in no factor. -/
+theorem list_prod_inv_mul_of_mul_list_prod_notMem_range_of (hφ : ∀ i, Injective (φ i))
+    {L : List (Σ i, G i)} (hL : L ≠ []) (hc : L.IsChain fun l l' => l.1 ≠ l'.1)
+    (hred : ∀ l ∈ L, l.2 ∉ (φ l.1).range) {i j : ι} {g : G i} (hg : g ∉ (φ i).range)
+    (hi : ∀ l ∈ L.head?, l.1 ≠ i) :
+    (L.map fun l => of l.1 l.2).prod⁻¹ * of i g * (L.map fun l => of l.1 l.2).prod ∉
+      (of (φ := φ) j).range := by
+  rintro ⟨y, hy⟩
+  by_cases hyr : y ∈ (φ j).range
+  · obtain ⟨h, rfl⟩ := hyr
+    exact list_prod_inv_mul_of_mul_list_prod_notMem_range_base hφ hc hred hg hi
+      ⟨h, by rw [← hy, of_apply_eq_base]⟩
+  obtain ⟨K, hcK, hredK, hlen, hprod⟩ :=
+    exists_list_prod_eq_list_prod_inv_mul_of_mul_list_prod hc hred hg hi
+  -- The conjugate is a reduced list of `2 * r + 1 ≥ 3` letters and also the single letter `y`.
+  have he : base φ 1 * (K.map fun l => of l.1 l.2).prod =
+      base φ 1 * ([(⟨j, y⟩ : Σ i, G i)].map fun l => of (φ := φ) l.1 l.2).prod := by
+    simp [hprod, hy]
+  have hK : K.length = 1 := by
+    simpa using congrArg List.length (map_fst_eq_of_base_mul_list_prod_eq hφ hcK hredK
+      (List.isChain_singleton _) (by simpa using hyr) he)
+  have := List.length_pos_of_ne_nil hL
+  omega
 
 end Monoid.PushoutI

@@ -192,14 +192,15 @@ noncomputable def expEquivHopfIdealPoints
         (tangentLieEquivMatrix (R := R) (B := R) n).toLieHom ∧ IsNilpotent X} ≃
       {g : Matrix.GeneralLinearGroup (Fin n) R //
         g ∈ hopfIdealPointsSubgroup n I R ∧ IsNilpotent ((g : Matrix (Fin n) (Fin n) R) - 1)} where
-  toFun X := ⟨nilpotentExpUnit X.2.2,
-    nilpotentExpUnit_mem_hopfIdealPointsSubgroup n I X.2.2 X.2.1,
-    by simpa using IsNilpotent.isNilpotent_exp_sub_one X.2.2⟩
-  invFun g := ⟨IsNilpotent.log ((g.1 : Matrix.GeneralLinearGroup (Fin n) R) :
+  toFun X := ⟨nilpotentExpUnit X.property.2,
+    nilpotentExpUnit_mem_hopfIdealPointsSubgroup n I X.property.2 X.property.1,
+    by simpa using IsNilpotent.isNilpotent_exp_sub_one X.property.2⟩
+  invFun g := ⟨IsNilpotent.log ((g.val : Matrix.GeneralLinearGroup (Fin n) R) :
       Matrix (Fin n) (Fin n) R),
-    log_mem_map_lieSubalgebra n I g.1 g.2.2 g.2.1, IsNilpotent.isNilpotent_log g.2.2⟩
-  left_inv X := Subtype.ext (by simpa using IsNilpotent.log_exp X.2.2)
-  right_inv g := Subtype.ext (Units.nilpotentExpUnit_log g.1 g.2.2)
+    log_mem_map_lieSubalgebra n I g.val g.property.2 g.property.1,
+        IsNilpotent.isNilpotent_log g.property.2⟩
+  left_inv X := Subtype.ext (by simpa using IsNilpotent.log_exp X.property.2)
+  right_inv g := Subtype.ext (Units.nilpotentExpUnit_log g.val g.property.2)
 
 /-- The forward map of `expEquivHopfIdealPoints` is the finite exponential. -/
 @[simp]

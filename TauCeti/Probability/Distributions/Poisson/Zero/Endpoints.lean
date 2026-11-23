@@ -40,41 +40,16 @@ theorem tendsto_quantile_map_cast_poissonMeasure_cond_compl_zero_nhdsGT_zero
     {r : ℝ≥0} (hr : r ≠ 0) :
     Tendsto (fun u ↦ (((Po(r)[|{0}ᶜ]).map (Nat.cast : ℕ → ℝ)).quantile u : EReal))
       (𝓝[>] 0) (𝓝 1) := by
-  let := isProbabilityMeasure_poissonMeasure_cond_compl_zero hr
-  have hmass : 0 < (Po(r)[|{0}ᶜ]).real {1} := by
-    rw [poissonMeasure_cond_compl_zero_real_singleton one_ne_zero]
-    have hrpos : 0 < (r : ℝ) := NNReal.coe_pos.mpr (pos_iff_ne_zero.mpr hr)
-    have hexp : 0 < exp (r : ℝ) - 1 := sub_pos.mpr (one_lt_exp_iff.mpr hrpos)
-    positivity
-  refine tendsto_const_nhds.congr' ?_
-  filter_upwards [Ioo_mem_nhdsGT hmass] with u hu
-  have hlevel : u < 1 := hu.2.trans_le measureReal_le_one
-  have hq : ((Po(r)[|{0}ᶜ]).map (Nat.cast : ℕ → ℝ)).quantile u = 1 := by
-    rw [← Nat.cast_one, Measure.quantile_map_natCast_eq_succ_iff _ ⟨hu.1, hlevel⟩ 0]
-    constructor
-    · simpa [Measure.cond_compl_zero_real_Iic, Set.Iic_bot,
-        poissonMeasure_real_singleton_zero] using hu.1
-    · exact hu.2.le.trans (measureReal_mono (by simp : ({1} : Set ℕ) ⊆ Iic (0 + 1)))
-  simpa using congrArg (fun x : ℝ ↦ (x : EReal)) hq.symm
+  exact (poissonMeasure r).tendsto_quantile_map_natCast_cond_compl_zero_nhdsGT_zero
+    ((poissonMeasure_singleton_ne_zero_iff r 1).2 (Or.inl hr))
 
 /-- The upper endpoint of a positive-rate zero-truncated Poisson quantile is infinity. -/
 theorem tendsto_quantile_map_cast_poissonMeasure_cond_compl_zero_nhdsLT_one
     {r : ℝ≥0} (hr : r ≠ 0) :
     Tendsto (fun u ↦ (((Po(r)[|{0}ᶜ]).map (Nat.cast : ℕ → ℝ)).quantile u : EReal))
       (𝓝[<] 1) (𝓝 ⊤) := by
-  let := isProbabilityMeasure_poissonMeasure_cond_compl_zero hr
-  apply Measure.tendsto_quantile_nhdsLT_one_of_cdf_lt_one
-  intro x
-  by_cases hx : 0 ≤ x
-  · rw [cdf_map_cast_poissonMeasure_cond_compl_zero hr hx]
-    have hrpos : 0 < (r : ℝ) := NNReal.coe_pos.mpr (pos_iff_ne_zero.mpr hr)
-    have hden : 0 < 1 - exp (-(r : ℝ)) :=
-      sub_pos.mpr (exp_lt_one_iff.mpr (neg_neg_of_pos hrpos))
-    have hgamma := regularizedGamma_pos (by positivity : 0 < (⌊x⌋₊ : ℝ) + 1) hrpos
-    apply (div_lt_one hden).2
-    linarith
-  · rw [Measure.cdf_map_natCast_of_neg _ (lt_of_not_ge hx)]
-    exact zero_lt_one
+  apply (poissonMeasure r).tendsto_quantile_map_natCast_cond_compl_zero_nhdsLT_one
+  simpa [hr] using tendsto_quantile_map_cast_poissonMeasure_nhdsLT_one r
 
 /-- The lower endpoint of every zero-inflated Poisson quantile is zero. -/
 theorem tendsto_quantile_map_cast_poissonMeasure_atomMixture_zero_nhdsGT_zero
@@ -82,9 +57,9 @@ theorem tendsto_quantile_map_cast_poissonMeasure_atomMixture_zero_nhdsGT_zero
     Tendsto (fun u ↦ (((Po(r).atomMixture 0 w).map (Nat.cast : ℕ → ℝ)).quantile u : EReal))
       (𝓝[>] 0) (𝓝 0) := by
   have hmass : 0 < (w : ℝ) + (1 - (w : ℝ)) * exp (-(r : ℝ)) := by
-    rcases eq_or_lt_of_le w.2.1 with hw | hw
+    rcases eq_or_lt_of_le w.property.1 with hw | hw
     · simp [← hw, exp_pos]
-    · exact add_pos_of_pos_of_nonneg hw (mul_nonneg (sub_nonneg.mpr w.2.2) (exp_pos _).le)
+    · exact add_pos_of_pos_of_nonneg hw (mul_nonneg (sub_nonneg.mpr w.property.2) (exp_pos _).le)
   refine tendsto_const_nhds.congr' ?_
   filter_upwards [Ioo_mem_nhdsGT (lt_min hmass zero_lt_one)] with u hu
   have hq := (quantile_map_cast_poissonMeasure_atomMixture_zero_eq_zero_iff r w
@@ -102,7 +77,7 @@ theorem tendsto_quantile_map_cast_poissonMeasure_atomMixture_zero_nhdsLT_one
   · rcases h with hr | hw
     · have heq : (Measure.dirac (0 : ℕ)).atomMixture 0 w = Measure.dirac 0 := by
         rw [Measure.atomMixture_def, ← add_smul,
-          ← ENNReal.ofReal_add w.2.1 (sub_nonneg.mpr w.2.2)]
+          ← ENNReal.ofReal_add w.property.1 (sub_nonneg.mpr w.property.2)]
         simp
       simp [hr, poissonMeasure_zero, heq]
     · simp [hw]
@@ -136,7 +111,7 @@ theorem tendsto_quantile_map_cast_poissonMeasure_cond_compl_zero_atomMixture_zer
     have hwpos : 0 < (w : ℝ) :=
       unitInterval.coe_pos.mpr (unitInterval.pos_iff_ne_zero.mpr hw0)
     filter_upwards [Ioo_mem_nhdsGT hwpos] with u hu
-    have hu1 : u < 1 := hu.2.trans_le w.2.2
+    have hu1 : u < 1 := hu.2.trans_le w.property.2
     have hq := (Measure.quantile_map_natCast_cond_compl_zero_atomMixture_zero_eq_zero_iff
       Po(r) w (poissonMeasure_singleton_zero_eq_one_iff.not.mpr hr) ⟨hu.1, hu1⟩).2 hu.2.le
     simpa using congrArg (fun x : ℝ ↦ (x : EReal)) hq.symm

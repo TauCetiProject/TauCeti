@@ -132,7 +132,7 @@ private theorem map_charClass {H : Type u} [Group H] [TopologicalSpace H] [IsTop
   rw [H1EquivOfSmulEqSelf_symm_apply, H1EquivOfSmulEqSelf_symm_apply, explicitMap1_mk]
   congr 1
   ext h
-  simp [cocyclesMap1_coe, cochainsMap1_apply]
+  simp [coe_cocyclesMap1, cochainsMap1_apply]
 
 variable [CompactSpace G] [TotallyDisconnectedSpace G]
 
@@ -306,7 +306,7 @@ private theorem map_conjNormalMap_sub_eq_zero [NeZero p] (hV : IsOpen (V : Set G
     refine ContinuousMonoidHom.ext fun z ↦ ?_
     have hz : abelianizationProPMk p G V (κ z) = abelianizationProPMk p G V z := by
       have hκz : κ z = MulAut.conjNormal g⁻¹ (z : V) := Subtype.ext (by simp [κ])
-      rw [hκz, ← abelianizationProPMk_conj, hZ z z.2]
+      rw [hκz, ← abelianizationProPMk_conj, hZ z z.property]
     exact (DFunLike.congr_fun hφ' (κ z)).trans
       ((congrArg φ' hz).trans (DFunLike.congr_fun hφ' (z : V)).symm)
   -- Both terms restrict to the Bockstein of the same character of `Z`.

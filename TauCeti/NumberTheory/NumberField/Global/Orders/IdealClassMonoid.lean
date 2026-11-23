@@ -288,13 +288,13 @@ variable (O : NumberFieldOrder K)
 /-- The ideal class of a proper fractional ideal of an order. Proper fractional ideals are nonzero,
 so no separate nonvanishing hypothesis is needed. -/
 def mkIdealClassMonoid (I : O.properFractionalIdeals) : IdealClassMonoid O :=
-  IdealClassMonoid.mk O ⟨I, mem_nonZeroDivisors_of_ne_zero I.2.ne_zero⟩
+  IdealClassMonoid.mk O ⟨I, mem_nonZeroDivisors_of_ne_zero I.property.ne_zero⟩
 
 /-- The class of a proper fractional ideal is its class as a nonzero fractional ideal. -/
 @[simp]
 theorem mkIdealClassMonoid_eq_mk (I : O.properFractionalIdeals) :
     O.mkIdealClassMonoid I =
-      IdealClassMonoid.mk O ⟨I, mem_nonZeroDivisors_of_ne_zero I.2.ne_zero⟩ := by
+      IdealClassMonoid.mk O ⟨I, mem_nonZeroDivisors_of_ne_zero I.property.ne_zero⟩ := by
   rfl
 
 end NumberFieldOrder
