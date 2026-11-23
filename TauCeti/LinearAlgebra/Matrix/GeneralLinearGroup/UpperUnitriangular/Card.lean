@@ -18,9 +18,9 @@ ring `R`, `TauCeti.upperUnitriangularGroupEquiv` identifies the upper-unitriangu
 `|Uₙ₊₁(R)| = |R| ^ (n (n + 1) / 2)` for every ring `R`
 (`TauCeti.natCard_upperUnitriangularGroup`) and, over a finite field `𝔽` with `q` elements, the
 index of `Uₙ₊₁(𝔽)` in `GLₙ₊₁(𝔽)` is `∏_{i = 1}^{n + 1} (q ^ i - 1)`
-(`TauCeti.index_upperUnitriangularGroup`). The latter is the order of the group of `p'`-elements
-of `GLₙ₊₁(𝔽)` for `p` the characteristic, and the degree of the Gelfand–Graev representations
-of `GLₙ₊₁(𝔽)`.
+(`TauCeti.index_upperUnitriangularGroup`). The latter is the prime-to-`p` part of the order of
+`GLₙ₊₁(𝔽)` for `p` the characteristic, and the degree of the Gelfand–Graev representations of
+`GLₙ₊₁(𝔽)`.
 
 ## Main declarations
 
@@ -144,7 +144,7 @@ theorem natCard_pairs_lt_fin (m : ℕ) :
 
 /-- The order of the upper-unitriangular group over a ring `R`: an upper-unitriangular matrix of
 size `m + 1` is determined by its `m (m + 1) / 2` entries strictly above the diagonal. Over an
-infinite ring `R` both sides are `0`. -/
+infinite ring `R` both sides equal `1` in size one and `0` in larger sizes. -/
 theorem natCard_upperUnitriangularGroup :
     Nat.card (upperUnitriangularGroup (Fin (m + 1)) R) = Nat.card R ^ (m * (m + 1) / 2) := by
   rw [Nat.card_congr (upperUnitriangularGroupEquiv m R)]
