@@ -325,21 +325,17 @@ theorem continuous_nextCollisionEquiv_symm (hχ : ContDiff ℝ 2 χ) :
   (continuous_restrict_strip (χ.contDiffOn_nextCollision_inv one_ne_zero hχ).continuousOn
     fun x ↦ χ.neg_nextTangential_neg_mem_Ioo x.1 x.2).congr fun x ↦ by simp
 
-/-- The projection `ℝ × (-1, 1) → AddCircle L × (-1, 1)` onto the space of collision states is an
-open quotient map. -/
-private theorem isOpenQuotientMap_prodMap_coe :
-    IsOpenQuotientMap (Prod.map ((↑) : ℝ → AddCircle χ.period) (id : Ioo (-1 : ℝ) 1 → _)) :=
-  QuotientAddGroup.isOpenQuotientMap_mk.prodMap IsOpenQuotientMap.id
-
-/-- A map of `AddCircle L × (-1, 1)` is continuous when it lifts along the projection from
-`ℝ × (-1, 1)` to a continuous map. -/
-private theorem continuous_of_lift
-    {g : AddCircle χ.period × Ioo (-1 : ℝ) 1 → AddCircle χ.period × Ioo (-1 : ℝ) 1}
-    {F : ℝ × Ioo (-1 : ℝ) 1 → ℝ × Ioo (-1 : ℝ) 1} (hF : Continuous F)
+/-- A map of `AddCircle L × Y` is continuous when it lifts along the projection from `ℝ × Y` to a
+continuous map. Here `Y` is the space of tangential components, `(-1, 1)` for the billiard map and
+`[-1, 1]` for its extension to the closed cylinder. -/
+theorem continuous_of_lift {Y : Type*} [TopologicalSpace Y]
+    {g : AddCircle χ.period × Y → AddCircle χ.period × Y} {F : ℝ × Y → ℝ × Y} (hF : Continuous F)
     (h : ∀ (s : ℝ) v, g (s, v) = (((F (s, v)).1 : AddCircle χ.period), (F (s, v)).2)) :
     Continuous g := by
-  rw [← χ.isOpenQuotientMap_prodMap_coe.continuous_comp_iff]
-  convert χ.isOpenQuotientMap_prodMap_coe.continuous.comp hF using 1
+  have hq : IsOpenQuotientMap (Prod.map ((↑) : ℝ → AddCircle χ.period) (id : Y → Y)) :=
+    QuotientAddGroup.isOpenQuotientMap_mk.prodMap IsOpenQuotientMap.id
+  rw [← hq.continuous_comp_iff]
+  convert hq.continuous.comp hF using 1
   funext ⟨s, v⟩
   exact h s v
 
