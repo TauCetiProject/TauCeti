@@ -30,7 +30,7 @@ noncomputable section
 
 open CategoryTheory Limits TopRep
 
-universe u v
+universe u v w₁ w₂
 
 namespace TauCeti.ContinuousCohomology
 
@@ -44,27 +44,60 @@ private def resolutionFunctor (n : ℕ) : TopRep.{v} R G ⥤ TopRep.{v} R G wher
   map_comp f g := _root_.ContinuousCohomology.resolutionMap_comp
     (ContinuousMonoidHom.id G) (ContinuousMonoidHom.id G) f g n
 
-private lemma resolutionFunctor_preservesLimits [LocallyCompactSpace G] (n : ℕ) :
-    PreservesLimits (resolutionFunctor R G n) := by
+private lemma resolutionFunctor_preservesLimitsOfSize [LocallyCompactSpace G]
+    [UnivLE.{w₂, v}] (n : ℕ) :
+    PreservesLimitsOfSize.{w₁, w₂} (resolutionFunctor R G n) := by
   induction n with
   | zero =>
     have e : 𝟭 (TopRep.{v} R G) ≅ resolutionFunctor R G 0 :=
-      NatIso.ofComponents (fun _ ↦ Iso.refl _)
+      -- The degree-zero resolution has the original representation as its object.
+      NatIso.ofComponents (fun _ ↦ Iso.refl _) (fun f ↦ by
+        change f ≫ 𝟙 _ = 𝟙 _ ≫
+          _root_.ContinuousCohomology.resolutionMap (ContinuousMonoidHom.id G) f 0
+        rw [Category.comp_id, Category.id_comp]
+        exact (_root_.ContinuousCohomology.resolutionMap_zero
+          (ContinuousMonoidHom.id G) f).symm)
     exact preservesLimits_of_natIso e
   | succ n ih =>
     have := ih
+    have : PreservesLimitsOfSize.{w₁, w₂} (coind₁Functor.{u, v, v} R G) :=
+      coind₁Functor_preservesLimitsOfSize R G
     have e : resolutionFunctor R G n ⋙ coind₁Functor R G ≅ resolutionFunctor R G (n + 1) :=
-      NatIso.ofComponents (fun _ ↦ Iso.refl _) (fun f ↦ by ext F; rfl)
+      -- Successor resolution objects are defined by applying coinduction.
+      NatIso.ofComponents (fun _ ↦ Iso.refl _) (fun f ↦ by
+        change ofHom (ContRepresentation.coind₁Map
+          (_root_.ContinuousCohomology.resolutionMap (ContinuousMonoidHom.id G) f n).hom) ≫
+            𝟙 _ = 𝟙 _ ≫
+              _root_.ContinuousCohomology.resolutionMap (ContinuousMonoidHom.id G) f (n + 1)
+        rw [Category.comp_id, Category.id_comp]
+        exact (congrArg ofHom (ContRepresentation.coind₁ResMap_id _)).symm.trans
+          (_root_.ContinuousCohomology.resolutionMap_succ
+            (ContinuousMonoidHom.id G) f n).symm)
     exact preservesLimits_of_natIso e
 
 /-- Canonical homogeneous continuous cochains preserve limits over a locally compact group. -/
-instance continuousCochainsFunctor_preservesLimits [LocallyCompactSpace G] :
-    PreservesLimits (continuousCochainsFunctor R G) where
+instance continuousCochainsFunctor_preservesLimitsOfSize [LocallyCompactSpace G]
+    [UnivLE.{w₂, v}] :
+    PreservesLimitsOfSize.{w₁, w₂} (continuousCochainsFunctor R G) where
   preservesLimitsOfShape {J} _ := HomologicalComplex.preservesLimitsOfShape_of_eval _ fun n ↦ by
-    have := resolutionFunctor_preservesLimits R G (n + 1)
+    have := resolutionFunctor_preservesLimitsOfSize.{u, v, w₁, w₂} R G (n + 1)
     have e : resolutionFunctor R G (n + 1) ⋙ invariantsFunctor R G ≅
         continuousCochainsFunctor R G ⋙ HomologicalComplex.eval _ _ n :=
-      NatIso.ofComponents (fun _ ↦ Iso.refl _) (fun f ↦ by ext F; rfl)
+      -- Homogeneous cochains are the invariants of the shifted resolution.
+      NatIso.ofComponents (fun _ ↦ Iso.refl _) (fun f ↦ by
+        change (invariantsFunctor R G).map
+          (_root_.ContinuousCohomology.resolutionMap (ContinuousMonoidHom.id G) f (n + 1)) ≫
+            𝟙 _ = 𝟙 _ ≫ ((continuousCochainsFunctor R G).map f).f n
+        rw [Category.comp_id, Category.id_comp, continuousCochainsFunctor_map,
+          ← mapHomologicalComplex_map_shiftedResolutionMap]
+        change (invariantsFunctor R G).map _ =
+          (invariantsFunctor R G).map ((shiftedResolutionMap f).f n)
+        rw [shiftedResolutionMap_f])
     exact preservesLimitsOfShape_of_natIso e
+
+/-- Canonical homogeneous continuous cochains preserve limits over a locally compact group. -/
+instance continuousCochainsFunctor_preservesLimits [LocallyCompactSpace G] :
+    PreservesLimits (continuousCochainsFunctor R G) :=
+  continuousCochainsFunctor_preservesLimitsOfSize R G
 
 end TauCeti.ContinuousCohomology
