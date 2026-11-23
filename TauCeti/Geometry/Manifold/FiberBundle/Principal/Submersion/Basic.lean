@@ -309,7 +309,9 @@ private theorem bijective_mfderiv_op_smul_section_one {U : Set B} (hU : IsOpen U
   let e : (EB × EG) ≃ EP := (Equiv.prodCongr (Equiv.refl EB) e_ker).trans
     (ContinuousLinearEquiv.equivOfRightInverse dp ds hps).symm.toEquiv
   have he : (dΨ : EB × EG → EP) = e := funext fun ⟨u, w⟩ ↦ by
-    dsimp [e, e_ker]
+    rw [Equiv.trans_apply, Equiv.prodCongr_apply, Prod.map_apply, Equiv.refl_apply,
+      LinearEquiv.coe_toEquiv, ContinuousLinearEquiv.coe_toLinearEquiv,
+      ContinuousLinearEquiv.equivOfRightInverse_symm_apply]
     exact hdecomp u w
   exact he ▸ e.bijective
 

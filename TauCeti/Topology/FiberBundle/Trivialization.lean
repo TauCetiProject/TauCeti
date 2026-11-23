@@ -48,10 +48,10 @@ fibre is a bijection onto the base.
 * `Bundle.Trivialization.coe_restrOpen`, `Bundle.Trivialization.coe_restrOpen_symm`,
   `Bundle.Trivialization.restrOpen_baseSet`: the restriction of a trivialization to an open set of
   the base keeps its forward and inverse maps and intersects its base set with that set.
-* `Bundle.Trivialization.op_smul_symm`, `Bundle.Trivialization.op_smul_symm_one`, and
-  `Bundle.Trivialization.op_snd_smul_symm_one`: for a right-equivariant trivialization, the
-  inverse turns right multiplication into the right action and recovers points over `e.baseSet`
-  from the unit section.
+* `Bundle.Trivialization.op_smul_symm`, `Bundle.Trivialization.op_smul_symm_one`,
+  `Bundle.Trivialization.op_snd_smul_symm_one`, and `Bundle.Trivialization.op_inv_mul_smul`: for a
+  right-equivariant trivialization, the inverse turns right multiplication into the right action,
+  recovers points over `e.baseSet` from the unit section, and transports points in the same fibre.
 * `Bundle.Trivialization.symm_mk_coordChange`: the inverse of `e₂` undoes the coordinate change
   from `e₁` to `e₂`, landing on the point with the original fibre coordinate in `e₁`.
 * `Bundle.Trivialization.equivAt`: a trivialization as an equivalence between the fibre over a
@@ -231,6 +231,21 @@ theorem op_snd_smul_symm_one {G : Type*} [TopologicalSpace G] [MulOneClass G] [S
     {p : Z} (hp : proj p ∈ e.baseSet) :
     op (e p).2 • e.toOpenPartialHomeomorph.symm (proj p, 1) = p :=
   (e.op_smul_symm_one hproj he hp (e p).2).trans (e.symm_apply_mk_proj (e.mem_source.2 hp))
+
+/-- Over the base set of a right-equivariant trivialization `e`, acting on `p` by
+`(e p).2⁻¹ * (e q).2` sends `p` to `q` whenever `proj p = proj q`. -/
+theorem op_inv_mul_smul {G : Type*} [TopologicalSpace G] [Group G] [SMul Gᵐᵒᵖ Z]
+    (e : Trivialization G proj)
+    (hproj : ∀ (g : G) (p : Z), proj (op g • p) = proj p)
+    (he : ∀ (g : G) (p : Z), proj p ∈ e.baseSet → (e (op g • p)).2 = (e p).2 * g)
+    {p q : Z} (hp : proj p ∈ e.baseSet) (hpq : proj p = proj q) :
+    op ((e p).2⁻¹ * (e q).2) • p = q := by
+  have hq : proj q ∈ e.baseSet := hpq ▸ hp
+  have hsrc : op ((e p).2⁻¹ * (e q).2) • p ∈ e.source :=
+    e.mem_source.2 (by rw [hproj]; exact hp)
+  refine e.toOpenPartialHomeomorph.injOn hsrc (e.mem_source.2 hq) (Prod.ext ?_ ?_)
+  · rw [e.coe_coe, e.coe_fst hsrc, e.coe_fst (e.mem_source.2 hq), hproj, hpq]
+  · rw [e.coe_coe, he _ p hp, mul_inv_cancel_left]
 
 end Equivariant
 

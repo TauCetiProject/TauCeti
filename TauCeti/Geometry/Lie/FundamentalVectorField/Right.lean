@@ -254,15 +254,24 @@ private theorem op_smul_comp_smul_inv [ContMDiffMul I 1 G] (x : M) (g : G) :
     (fun h : G => op h • (op g • x)) ∘ (Diffeomorph.smul I I 1 g⁻¹) = fun h : G => op h • x :=
   funext fun h => by simp [Diffeomorph.smul_apply, ← mul_smul, ← op_mul]
 
+private theorem mfderiv_mul_left_inv [ContMDiffMul I 1 G] (g : G) :
+    mfderiv I I (g⁻¹ * ·) g =
+      ((Diffeomorph.smul I I 1 g⁻¹).mfderivToContinuousLinearEquiv
+        one_ne_zero g).toContinuousLinearMap := by
+  have hcoe : (⇑(Diffeomorph.smul I I 1 g⁻¹) : G → G) = (g⁻¹ * ·) :=
+    funext fun h => Diffeomorph.smul_apply (g := g⁻¹) h
+  exact (mfderiv_congr hcoe).symm.trans
+    ((Diffeomorph.smul I I 1 g⁻¹).mfderivToContinuousLinearEquiv_coe one_ne_zero).symm
+
 private theorem mfderiv_op_smul_const [ContMDiffMul I 1 G] (x : M) (g : G) :
     mfderiv I I' (fun h : G => op h • x) g =
       (mfderiv I I' (fun h : G => op h • (op g • x)) 1).comp (mfderiv I I (g⁻¹ * ·) g) := by
   let φ : G ≃ₘ^(1 : ℕ∞ω)⟮I, I⟯ G := Diffeomorph.smul I I 1 g⁻¹
-  have hcoe : (⇑φ : G → G) = (g⁻¹ * ·) := funext fun h => Diffeomorph.smul_apply (g := g⁻¹) h
-  have hφg : φ g = 1 := inv_mul_cancel g
   have hcomp := φ.mfderiv_comp_diffeomorph (K := I') one_ne_zero (fun h : G => op h • (op g • x)) g
   rw [op_smul_comp_smul_inv (I := I) x g] at hcomp
-  rw [hcomp, mfderiv_congr hcoe, mfderiv_congr_point (I := I) (I' := I') hφg]
+  have hφg : φ g = 1 := inv_mul_cancel g
+  rw [hcomp, mfderiv_congr_point (I := I) (I' := I') hφg,
+    ← φ.mfderivToContinuousLinearEquiv_coe one_ne_zero, ← mfderiv_mul_left_inv (I := I) g]
   -- `TangentSpace I y` is definitionally `E` for all `y`, so `comp` matches across `φ g = 1`.
   rfl
 
@@ -278,20 +287,16 @@ if the derivative at `1` of `h ↦ op h • (op g • x)` is injective. -/
 theorem injective_mfderiv_op_smul_const_iff [ContMDiffMul I 1 G] {x : M} {g : G} :
     Injective (mfderiv I I' (fun h : G => op h • x) g) ↔
       Injective (mfderiv I I' (fun h : G => op h • (op g • x)) 1) := by
-  let φ : G ≃ₘ^(1 : ℕ∞ω)⟮I, I⟯ G := Diffeomorph.smul I I 1 g⁻¹
-  have hφ : (⇑φ : G → G) = (g⁻¹ * ·) := funext fun h => Diffeomorph.smul_apply (g := g⁻¹) h
   have hcoe : (⇑(mfderiv I I' (fun h : G => op h • x) g) : E → E') =
       (⇑(mfderiv I I' (fun h : G => op h • (op g • x)) 1) : E → E') ∘
-        (φ.mfderivToContinuousLinearEquiv one_ne_zero g) := funext fun v => by
-    have h1 := mfderiv_op_smul_const_apply (I := I) (I' := I') (x := x) (g := g) v
-    have h2 : (mfderiv I I (g⁻¹ * ·) g v : E) =
-        φ.mfderivToContinuousLinearEquiv one_ne_zero g v := by
-      rw [← mfderiv_congr hφ, φ.mfderivToContinuousLinearEquiv_apply]
-      -- `TangentSpace I (g⁻¹ * g)` and `TangentSpace I (φ g)` are both definitionally `E`.
-      rfl
-    exact h1.trans (congrArg (mfderiv I I' (fun h : G => op h • (op g • x)) 1) h2)
+        ((Diffeomorph.smul I I 1 g⁻¹).mfderivToContinuousLinearEquiv
+          one_ne_zero g) := funext fun v =>
+    (mfderiv_op_smul_const_apply (I := I) (I' := I') v).trans
+      (congrArg (mfderiv I I' (fun h : G => op h • (op g • x)) 1)
+        (DFunLike.congr_fun (mfderiv_mul_left_inv (I := I) g) v))
   exact (congrArg Injective hcoe).to_iff.trans
-    ((φ.mfderivToContinuousLinearEquiv one_ne_zero g).toEquiv.injective_comp _)
+    (((Diffeomorph.smul I I 1 g⁻¹).mfderivToContinuousLinearEquiv
+      one_ne_zero g).toEquiv.injective_comp _)
 
 /-- **Equivariance under right translation.** For a `C¹` Lie group `G`, the derivative of right
 translation `y ↦ op g • y` at `x` carries the right fundamental vector field of `ξ` at `x` to that

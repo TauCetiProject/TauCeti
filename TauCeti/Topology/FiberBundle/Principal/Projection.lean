@@ -95,6 +95,7 @@ theorem actionDivisionOrOne_of_ne {x y : E} (hxy : f x ≠ f y) :
   simp [actionDivisionOrOne, hxy]
 
 /-- Acting on `x` by `actionDivisionOrOne horbit x y` yields `y` when `f x = f y`. -/
+@[simp]
 theorem op_actionDivisionOrOne_smul {x y : E} (hxy : f x = f y) :
     op (actionDivisionOrOne horbit x y) • x = y := by
   rw [actionDivisionOrOne_of_eq horbit hxy, op_actionDivision_smul]

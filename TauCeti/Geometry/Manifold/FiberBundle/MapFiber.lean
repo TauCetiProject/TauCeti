@@ -300,17 +300,8 @@ theorem existsUnique_contMDiff_comp_eq_of_smul {A : Atlas G proj}
     {f : P → M} (hf : ContMDiff IP IM n f) (hinv : ∀ (g : G) (p : P), f (op g • p) = f p) :
     ∃! h : B → M, ContMDiff IB IM n h ∧ h ∘ proj = f := by
   refine hA.existsUnique_contMDiff_comp_eq hf fun p q hpq ↦ ?_
-  let t := A.trivAt (proj p)
-  have hp : proj p ∈ t.baseSet := A.mem_baseSet_trivAt (proj p)
-  have hq : proj q ∈ t.baseSet := hpq ▸ hp
-  let g : G := (t p).2⁻¹ * (t q).2
-  have hsrc : op g • p ∈ t.source := t.mem_source.2 (by rw [hproj (op g) p]; exact hp)
-  have hqp : op g • p = q := t.toOpenPartialHomeomorph.injOn hsrc (t.mem_source.2 hq) <|
-    Prod.ext (by rw [t.coe_coe, t.coe_fst hsrc, t.coe_fst (t.mem_source.2 hq),
-        hproj (op g) p, hpq])
-      (by rw [t.coe_coe]; dsimp only [t]; rw [hequiv (proj p) p hp g]; simp only [g, t,
-        mul_inv_cancel_left])
-  rw [← hinv g p, hqp]
+  rw [← hinv _ p, (A.trivAt (proj p)).op_inv_mul_smul (fun g x ↦ hproj (op g) x)
+    (fun g x hx ↦ hequiv (proj p) x hx g) (A.mem_baseSet_trivAt (proj p)) hpq]
 
 end IsContMDiff
 
