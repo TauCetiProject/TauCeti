@@ -240,24 +240,18 @@ private theorem ncard_wildExponent_eq_mul_one_div_pow {n j : ℕ} (hadm : IsOreA
   let : MeasurableSpace (Fin n → K) := borel _
   have : BorelSpace (Fin n → K) := ⟨rfl⟩
   obtain ⟨μ, _, hμ⟩ := exists_addHaarMeasure_integerBox_eq_one K (Fin n)
-  have h := encard_wildExponent_eq_mul_eq_mul_measure_eisensteinBox (j := j) μ hμ
+  have hid := encard_wildExponent_eq_mul_eq_mul_measure_eisensteinBox (j := j) μ hμ
   rw [← (finite_mem_totallyRamifiedOfDegree_wildExponent_eq (K := K) n j).cast_ncard_eq,
-    ENat.toENNReal_coe, measure_eisensteinBox hadm μ hμ, ← mul_assoc] at h
+    ENat.toENNReal_coe, measure_eisensteinBox hadm μ hμ, ← mul_assoc] at hid
+  set q : ℝ≥0∞ := (Nat.card 𝓀[K] : ℝ≥0∞)
   have hrhs :
-      (n : ℝ≥0∞) *
-          (1 / (Nat.card 𝓀[K] : ℝ≥0∞) ^
-            (1 + ∑ h ∈ Finset.Ico 1 n, oreCoefficientDepth K n j h) *
-            (1 - 1 / (Nat.card 𝓀[K] : ℝ≥0∞)) *
-            (if j % n = 0 then 1 else 1 - 1 / (Nat.card 𝓀[K] : ℝ≥0∞))) =
-        ((n : ℝ≥0∞) *
-          (1 / (Nat.card 𝓀[K] : ℝ≥0∞) ^
-            (1 + ∑ h ∈ Finset.Ico 1 n, oreCoefficientDepth K n j h)) *
-          (if j % n = 0 then 1 else 1 - 1 / (Nat.card 𝓀[K] : ℝ≥0∞))) *
-          (1 - 1 / (Nat.card 𝓀[K] : ℝ≥0∞)) := by
-    ring
-  rw [hrhs] at h
+      (n : ℝ≥0∞) * (1 / q ^ (1 + ∑ h ∈ Finset.Ico 1 n, oreCoefficientDepth K n j h) *
+        (1 - 1 / q) * (if j % n = 0 then 1 else 1 - 1 / q)) =
+      (n : ℝ≥0∞) * (1 / q ^ (1 + ∑ h ∈ Finset.Ico 1 n, oreCoefficientDepth K n j h)) *
+        (if j % n = 0 then 1 else 1 - 1 / q) * (1 - 1 / q) := by ring
+  rw [hrhs] at hid
   exact (ENNReal.mul_left_inj (one_sub_one_div_natCard_residueField_ne_zero (K := K))
-    (ENNReal.sub_ne_top ENNReal.one_ne_top)).mp h
+    (ENNReal.sub_ne_top ENNReal.one_ne_top)).mp hid
 
 private theorem natCast_ncard_wildExponent_eq_div_pow_real {n j : ℕ}
     (hadm : IsOreAdmissible K n j) :

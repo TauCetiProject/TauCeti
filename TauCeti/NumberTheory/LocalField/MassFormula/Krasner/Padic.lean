@@ -72,19 +72,6 @@ def krasnerCountPadic (p n j : ℕ) : ℕ :=
       p ^ (∑ i ∈ Finset.Icc 1 (j / n), n / p ^ i + (j % n) / p ^ (j / n + 1))
   else 0
 
-/-- Unfolding `TauCeti.krasnerCountPadic`. -/
-theorem krasnerCountPadic_def (p n j : ℕ) :
-    krasnerCountPadic p n j =
-      if 0 < n ∧
-          (if j % n = 0 then padicValNat p n * n
-            else min (padicValNat p (j % n) * n) (padicValNat p n * n)) ≤ j ∧
-          j ≤ padicValNat p n * n then
-        if j % n = 0 then n * p ^ (∑ i ∈ Finset.Icc 1 (j / n), n / p ^ i)
-        else n * (p - 1) *
-          p ^ (∑ i ∈ Finset.Icc 1 (j / n), n / p ^ i + (j % n) / p ^ (j / n + 1))
-      else 0 := by
-  rw [krasnerCountPadic]
-
 noncomputable section
 
 /-- **Ore's inequality over `ℚ_[p]`** (Pauli–Roblot, Proposition 3.1): a wild exponent `j` is
@@ -237,15 +224,15 @@ theorem sum_oreCoefficientDepth_padic_of_mod_pos (p : ℕ) [Fact p.Prime] {n j :
     Finset.sum_const, Nat.card_Ico, smul_eq_mul, mul_one]
   omega
 
-/-- **Krasner's count over `ℚ_[p]`, closed form** (Pauli–Roblot, Theorem 6.1): over `ℚ_[p]`,
-`{E ∈ σ_{ℚ_[p]}(n) | E.wildExponent = j}.ncard` equals `krasnerCountPadic p n j` for all `n` and
-`j`. -/
+/-- **Krasner's count over `ℚ_[p]`, closed form** (Pauli–Roblot, Theorem 6.1): for all `n` and `j`,
+`{E ∈ σ_{ℚ_[p]}(n) | E.wildExponent = j}.ncard` equals `krasnerCountPadic p n j`. -/
 theorem ncard_mem_totallyRamifiedOfDegree_wildExponent_eq_eq_krasnerCountPadic (p : ℕ)
     [Fact p.Prime] (n j : ℕ) :
     {E ∈ totallyRamifiedOfDegree ℚ_[p] n | E.wildExponent = j}.ncard =
       krasnerCountPadic p n j := by
+  rw [krasnerCountPadic]
   by_cases hadm : IsOreAdmissible ℚ_[p] n j
-  · rw [krasnerCountPadic, ite_eq_left ((isOreAdmissible_padic_iff p).mp hadm)]
+  · rw [ite_eq_left ((isOreAdmissible_padic_iff p).mp hadm)]
     have hn := hadm.pos
     have hp_pos : 0 < p := (Fact.out : p.Prime).pos
     have hnat := ncard_mem_totallyRamifiedOfDegree_wildExponent_eq_mul_pow hadm
@@ -266,8 +253,7 @@ theorem ncard_mem_totallyRamifiedOfDegree_wildExponent_eq_eq_krasnerCountPadic (
         rw [(by omega : n + j = E + (2 + S)), pow_add]; ring
       exact Nat.eq_of_mul_eq_mul_right (pow_pos hp_pos (2 + S)) (hnat.trans hrhs)
   · rw [setOf_mem_totallyRamifiedOfDegree_wildExponent_eq_eq_empty_iff.mpr hadm,
-      Set.ncard_empty, krasnerCountPadic,
-      ite_eq_right fun h ↦ hadm ((isOreAdmissible_padic_iff p).mpr h)]
+      Set.ncard_empty, ite_eq_right fun h ↦ hadm ((isOreAdmissible_padic_iff p).mpr h)]
 
 /-- **Total number of totally ramified degree-`n` extensions of `ℚ_[p]`** as a finite sum of
 `krasnerCountPadic p n j` over `0 ≤ j ≤ n * v_p(n)`. -/
