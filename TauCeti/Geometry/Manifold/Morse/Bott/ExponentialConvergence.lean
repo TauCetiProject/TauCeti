@@ -133,23 +133,16 @@ theorem exists_mul_abs_sub_le_norm_mgradient_sq_nhdsSet
   -- The function is constant on the image, since it is locally constant along `i`.
   have hconst (s : S) : f (i s) = f (i s₀) :=
     (hi.isLocallyConstant_comp (by rintro rfl; simp at hn)).apply_eq_of_preconnectedSpace s s₀
-  refine (isCompact_range i.isEmbedding.continuous).induction_on
-    (p := fun K ↦ ∃ lam > 0, ∀ᶠ y in 𝓝ˢ K, lam * |f y - f (i s₀)| ≤ ‖mgradient I f y‖ ^ 2)
-    ⟨1, one_pos, by simp⟩ (fun K K' hKK' ⟨lam, hlam, hK'⟩ ↦ ⟨lam, hlam, hK'.filter_mono
-      (nhdsSet_mono hKK')⟩) (fun K K' ⟨lam, hlam, hK⟩ ⟨lam', hlam', hK'⟩ ↦ ?_) ?_
-  · -- Two neighbourhoods combine with the smaller constant.
-    refine ⟨min lam lam', lt_min hlam hlam', ?_⟩
-    rw [nhdsSet_union, eventually_sup]
-    exact ⟨hK.mono fun y hy ↦ (mul_le_mul_of_nonneg_right (min_le_left _ _) (abs_nonneg _)).trans
-      hy, hK'.mono fun y hy ↦ (mul_le_mul_of_nonneg_right (min_le_right _ _)
-        (abs_nonneg _)).trans hy⟩
-  · -- Each point of the image has an open neighbourhood on which the inequality holds.
+  -- Each point of the image has a neighbourhood on which a nearby constant works; compactness
+  -- of the image patches these into one constant on a neighbourhood of the image.
+  have h : ∀ᶠ p : ℝ × M in 𝓝 0 ×ˢ 𝓝ˢ (range i),
+      p.1 * |f p.2 - f (i s₀)| ≤ ‖mgradient I f p.2‖ ^ 2 := by
+    refine (isCompact_range i.isEmbedding.continuous).mem_prod_nhdsSet_of_forall ?_
     rintro _ ⟨s, rfl⟩
     obtain ⟨lam, hlam, hloj⟩ := hi.exists_mul_abs_sub_le_norm_mgradient_sq hn s
-    obtain ⟨U, hU, hUo, hsU⟩ := eventually_nhds_iff.1 hloj
-    exact ⟨U, mem_nhdsWithin_of_mem_nhds (hUo.mem_nhds hsU), lam, hlam,
-      hUo.mem_nhdsSet.2 subset_rfl |> fun hmem ↦ eventually_of_mem hmem fun y hy ↦
-        hconst s ▸ hU y hy⟩
+    filter_upwards [(eventually_lt_nhds hlam).prod_mk hloj] with p hp
+    exact (mul_le_mul_of_nonneg_right hp.1.le (abs_nonneg _)).trans (hconst s ▸ hp.2)
+  exact h.curry.exists_gt
 
 /-- **A trajectory converging to a point of a Morse–Bott critical submanifold converges to it
 exponentially fast.** Let `i : S → M` be a nondegenerate critical submanifold of a `C²` function
