@@ -236,7 +236,9 @@ section Norm
 variable {k G V : Type*} [CommSemiring k] [Group G] [Fintype G] [AddCommMonoid V] [Module k V]
 
 /-- **The norm element of the group algebra acts as the norm of the representation**: the sum
-`∑ g, single g 1` of all group elements acts on `V` as `Representation.norm`, `v ↦ ∑ g, ρ g v`. -/
+`∑ g, single g 1` of all group elements acts on `V` as `Representation.norm`, `v ↦ ∑ g, ρ g v`.
+It takes priority over `map_sum`, so that `simp` folds this action into `Representation.norm`. -/
+@[simp high]
 theorem asAlgebraHom_sum_single_one (ρ : Representation k G V) :
     ρ.asAlgebraHom (∑ g, MonoidAlgebra.single g 1) = ρ.norm := by
   simp only [map_sum, asAlgebraHom_single_one, norm]

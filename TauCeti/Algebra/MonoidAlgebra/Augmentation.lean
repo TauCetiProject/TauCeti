@@ -32,7 +32,7 @@ in `TauCeti.Algebra.MonoidAlgebra.Exactness`.
 * `MonoidAlgebra.ker_augmentationLinearMap`: the linear kernel is the augmentation ideal.
 * `MonoidAlgebra.eq_sum_single_of_mul_single_eq_self`: over a semiring in which multiplication by
   `|G|` is injective, an element invariant under every right translation and with augmentation
-  `|G|` is the norm.
+  `|G| • c` is the constant combination `∑ g, single g c`; for `c = 1` this is the norm.
 * `TauCeti.augmentation_subgroupCharSum`: the augmentation of the character sum
   `∑_{h ∈ H} χ(h) h` is `∑_{h ∈ H} χ(h)`, so that of the norm element of `H` is its order.
 
@@ -116,19 +116,20 @@ theorem ker_augmentationLinearMap :
 
 /-- Over a semiring in which multiplication by `|G|` is injective (for instance an additively
 torsion-free one, or one of characteristic prime to `|G|`), an element of a finite group algebra
-invariant under right multiplication by every group element and with augmentation `|G|` is the
-norm element `∑ g, single g 1`. -/
+invariant under right multiplication by every group element and with augmentation `|G| • c` is
+the constant combination `∑ g, single g c`. For `c = 1` it is the norm element
+`∑ g, single g 1`. -/
 theorem eq_sum_single_of_mul_single_eq_self {R G : Type*} [Semiring R] [Group G] [Fintype G]
-    (hG : IsSMulRegular R (Fintype.card G)) {γ : MonoidAlgebra R G}
-    (hinv : ∀ g, γ * single g 1 = γ) (hε : augmentation R G γ = Fintype.card G) :
-    γ = ∑ g, single g (1 : R) := by
+    (hG : IsSMulRegular R (Fintype.card G)) {γ : MonoidAlgebra R G} {c : R}
+    (hinv : ∀ g, γ * single g 1 = γ) (hε : augmentation R G γ = Fintype.card G • c) :
+    γ = ∑ g, single g c := by
   -- Right invariance makes `γ` the constant combination with coefficient `γ.coeff 1`.
   have hγ := eq_sum_single_coeff_one_of_mul_single_eq_self hinv
-  -- Its augmentation is then `|G| • γ.coeff 1`, so `hε` and `hG` force `γ.coeff 1 = 1`.
-  have hγ1 : γ.coeff 1 = 1 := hG <| by
+  -- Its augmentation is then `|G| • γ.coeff 1`, so `hε` and `hG` force `γ.coeff 1 = c`.
+  have hγc : γ.coeff 1 = c := hG <| by
     rw [hγ, map_sum] at hε
     simpa using hε
-  rw [hγ, hγ1]
+  rw [hγ, hγc]
 
 end MonoidAlgebra
 
