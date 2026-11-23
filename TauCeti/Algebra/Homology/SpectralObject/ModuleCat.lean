@@ -7,11 +7,9 @@ module
 
 public import Mathlib.Algebra.Homology.SpectralObject.Basic
 public import Mathlib.Algebra.Homology.ShortComplex.ModuleCat
-public import TauCeti.Algebra.Category.ModuleCat.Finrank
+public import Mathlib.RingTheory.Finiteness.Defs
 public import TauCeti.Algebra.Homology.SpectralObject.Abutment
 import Mathlib.Algebra.Homology.SpectralObject.Page
-import Mathlib.Algebra.Order.BigOperators.Group.LocallyFinite
-import Mathlib.Order.SuccPred.Int
 import TauCeti.Algebra.Category.FGModuleCat.Basic
 import TauCeti.Algebra.Category.FGModuleCat.Exact
 
@@ -28,9 +26,8 @@ For a spectral object `X` in `ModuleCat R` indexed by `EInt`, each step
 `0 ⟶ F_q H^m ⟶ F_{q+1} H^m ⟶ cokernel (X.abutmentFiltrationMap q m) ⟶ 0` of the abutment filtration
 is short exact
 (`CategoryTheory.Abelian.SpectralObject.shortExact_cokernelSequence_abutmentFiltrationMap`).
-Inducting across a finite filtration `a ≤ q < b` therefore passes finite generation and, over any
-ring satisfying the strong rank condition and rank--nullity, additivity of `Module.finrank` from
-the starting stage `F_a H^m` and the graded pieces to `F_b H^m` and, when `F_a H^m = 0` and
+Inducting across a finite filtration `a ≤ q < b` therefore passes finite generation from the
+starting stage `F_a H^m` and the graded pieces to `F_b H^m` and, when `F_a H^m = 0` and
 `F_b H^m ≅ H^m`, to the abutment.
 
 ## Main results
@@ -49,13 +46,6 @@ the starting stage `F_a H^m` and the graded pieces to `F_b H^m` and, when `F_a H
   finite generation of the graded pieces on `Finset.Ico a b` implies finite generation of
   `X.abutmentFiltration b m` (from a finitely generated starting stage `F_a H^m` with `a ≤ b`) and
   of `X.abutment m` (from `IsZero (F_a H^m)` and exhaustiveness at `b`).
-* `CategoryTheory.Abelian.SpectralObject.finrank_abutmentFiltration_eq_add_sum_Ico` and
-  `CategoryTheory.Abelian.SpectralObject.finrank_abutment_eq_sum_Ico`: over a ring `R` with
-  `[StrongRankCondition R]` and `[HasRankNullity R]`, the `finrank` of `X.abutmentFiltration b m`
-  equals the `finrank` of `X.abutmentFiltration a m` plus the sum over `q ∈ Finset.Ico a b` of the
-  `finrank`s of `cokernel (X.abutmentFiltrationMap q m)` (for `a ≤ b`), and the `finrank` of
-  `X.abutment m` equals that sum when `F_a H^m = 0` and `X.abutmentFiltrationι b m` is an
-  isomorphism.
 
 ## References
 
@@ -200,43 +190,6 @@ theorem finite_abutment_of_finite_cokernel {a b m : ℤ}
   (ModuleCat.isFG_iff _).mp <|
     X.prop_abutment_of_prop_cokernel (ModuleCat.isFG R) ha
       fun q hq ↦ (ModuleCat.isFG_iff _).mpr (hfin q hq)
-
-/-- Over a ring satisfying the strong rank condition and rank--nullity, if `F_a H^m` and every
-graded piece `F_{q+1} H^m / F_q H^m` for `a ≤ q < b` are finitely generated, then for any `a ≤ b`
-the rank of `F_b H^m` is the rank of `F_a H^m` plus the sum of the ranks of those graded pieces. -/
-theorem finrank_abutmentFiltration_eq_add_sum_Ico [StrongRankCondition R] [HasRankNullity.{v} R]
-    {a b m : ℤ} (hab : a ≤ b) [Module.Finite R (X.abutmentFiltration a m)]
-    (hfin : ∀ q ∈ Finset.Ico a b, Module.Finite R ↑(cokernel (X.abutmentFiltrationMap q m))) :
-    finrank R (X.abutmentFiltration b m) =
-      finrank R (X.abutmentFiltration a m) +
-        ∑ q ∈ Finset.Ico a b, finrank R ↑(cokernel (X.abutmentFiltrationMap q m)) := by
-  induction b, hab using Int.leInduction with
-  | base => simp
-  | succ s has ih =>
-    have : Module.Finite R (ShortComplex.cokernelSequence (X.abutmentFiltrationMap s m)).X₂ := by
-      rw [ShortComplex.cokernelSequence_X₂]
-      exact X.finite_abutmentFiltration_of_finite_cokernel (Int.le_add_one has) hfin
-    rw [← Finset.sum_Ico_add_eq_sum_Ico_add_one has, ← add_assoc,
-      ← ih fun q hq ↦ hfin q (Finset.Ico_subset_Ico_right (Int.le_add_one le_rfl) hq)]
-    exact (X.shortExact_cokernelSequence_abutmentFiltrationMap s m).moduleCat_finrank_eq_add
-
-/-- **Rank of the abutment from its graded pieces.** Over a ring satisfying the strong rank
-condition and rank--nullity, if the filtration of `X.abutment m` starts at `0` at `a`, reaches the
-whole abutment at `b`, and has finitely generated graded pieces for `a ≤ q < b`, then the rank of
-`X.abutment m` is the sum of the ranks of those graded pieces. -/
-theorem finrank_abutment_eq_sum_Ico [StrongRankCondition R] [HasRankNullity.{v} R]
-    {a b m : ℤ} (ha : IsZero (X.abutmentFiltration a m))
-    [IsIso (X.abutmentFiltrationι b m)]
-    (hfin : ∀ q ∈ Finset.Ico a b, Module.Finite R ↑(cokernel (X.abutmentFiltrationMap q m))) :
-    finrank R (X.abutment m) =
-      ∑ q ∈ Finset.Ico a b, finrank R ↑(cokernel (X.abutmentFiltrationMap q m)) := by
-  rw [← (asIso (X.abutmentFiltrationι b m)).toLinearEquiv.finrank_eq]
-  rcases le_total a b with hab | hba
-  · have := ModuleCat.subsingleton_of_isZero ha
-    rw [X.finrank_abutmentFiltration_eq_add_sum_Ico hab hfin,
-      ModuleCat.finrank_eq_zero_of_isZero ha, zero_add]
-  · rw [Finset.Ico_eq_empty_of_le hba, Finset.sum_empty,
-      ModuleCat.finrank_eq_zero_of_isZero (X.isZero_abutmentFiltration_of_le hba ha)]
 
 end EInt
 

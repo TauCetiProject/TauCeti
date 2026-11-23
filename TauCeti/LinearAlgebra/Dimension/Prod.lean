@@ -108,8 +108,9 @@ theorem finrank_pi_fintype_of_hasRankNullity {R : Type u} {ι : Type w} [Fintype
     have : Module.Finite R (∀ j : Fin n, N ((finSuccEquiv n).symm (some j))) :=
       Module.Finite.pi
     rw [e.finrank_eq, finrank_prod_of_hasRankNullity,
-      ih (fun j ↦ N ((finSuccEquiv n).symm (some j))), Fin.sum_univ_succ]
-    rfl
+      ih (fun j ↦ N ((finSuccEquiv n).symm (some j))),
+      ← Fintype.sum_option (fun o ↦ finrank R (N ((finSuccEquiv n).symm o)))]
+    exact Fintype.sum_equiv (finSuccEquiv n).symm _ _ fun _ ↦ rfl
 
 end HasRankNullity
 

@@ -311,7 +311,7 @@ objects at `(-n - q, q)`, the positions of total degree `-n`. These pages are th
 this is the numerical form of the strong convergence
 `TauCeti.filteredSpaceSpectralSequencePageXIsoGradedOfFinite`. -/
 theorem finrank_singularHomology_eq_sum_finrank_filteredSpaceSpectralSequence_page_X {a b : ℤ}
-    (hab : a ≤ b) (ha : X a = ∅) (hb : X b = Set.univ) (n : ℕ)
+    (_hab : a ≤ b) (ha : X a = ∅) (hb : X b = Set.univ) (n : ℕ)
     [Module.Finite k (((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{w} k) n).obj V).obj
       Y)]
     {r : ℤ} (hr : 2 ≤ r) (hrab : b - a + 1 ≤ r) :
@@ -325,9 +325,14 @@ theorem finrank_singularHomology_eq_sum_finrank_filteredSpaceSpectralSequence_pa
       ((AlgebraicTopology.singularChainComplexFunctor (ModuleCat.{w} k)).obj V) hX n
   have : Module.Finite k ((filteredSpaceSpectralObject V hX).abutment (-n)) :=
     Module.Finite.equiv e.symm.toLinearEquiv
-  rw [← e.toLinearEquiv.finrank_eq, (filteredSpaceSpectralObject V hX).finrank_abutment_eq_sum hab
+  have : IsIso ((filteredSpaceSpectralObject V hX).abutmentFiltrationι b (-n)) :=
+    CochainComplex.isIso_filtrationAbutmentFiltrationι _ _ (chainFiltration_eq_top _ hb) _
+  rw [← e.toLinearEquiv.finrank_eq, (filteredSpaceSpectralObject V hX).finrank_abutment_eq_sum_Ico
+    (b := b)
     (CochainComplex.isZero_filtrationAbutmentFiltration _ _ (singularChainFiltration_eq_bot V ha) _)
-    (CochainComplex.isIso_filtrationAbutmentFiltrationι _ _ (chainFiltration_eq_top _ hb) _)]
+    fun q _ ↦ Module.Finite.of_surjective
+      (cokernel.π ((filteredSpaceSpectralObject V hX).abutmentFiltrationMap q (-n))).hom
+      ((ModuleCat.epi_iff_surjective _).1 inferInstance)]
   -- On the page `r` each object of total degree `-n` is the corresponding graded piece.
   refine Finset.sum_congr rfl fun q hq ↦ ?_
   obtain ⟨hq₁, hq₂⟩ := Finset.mem_Ico.1 hq

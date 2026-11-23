@@ -66,6 +66,17 @@ namespace TauCeti
 
 section LocallyTrivial
 
+private def locallyTrivialFiberSingularHomologyIso
+    {E B F : Type u} [TopologicalSpace E] [TopologicalSpace B] [TopologicalSpace F]
+    {p : E → B} (h : ∀ b, ∃ e : Trivialization F p, b ∈ e.baseSet)
+    (R : Type u) [Ring R] (b : B) (q : ℕ) :
+    ((singularHomologyFunctor (ModuleCat.{u} R) q).obj (ModuleCat.of R R)).obj
+        ((locallyTrivialHom h).fiber b) ≅
+      ((singularHomologyFunctor (ModuleCat.{u} R) q).obj (ModuleCat.of R R)).obj
+        (TopCat.of F) :=
+  ((singularHomologyFunctor (ModuleCat.{u} R) q).obj (ModuleCat.of R R)).mapIso
+    ((h b).choose.fiberIso (p := locallyTrivialHom h) (h b).choose_spec)
+
 variable {E B F : Type u} [TopologicalSpace E] [TopologicalSpace B] [TopologicalSpace F]
   {p : E → B} (h : ∀ b, ∃ e : Trivialization F p, b ∈ e.baseSet)
 
@@ -83,11 +94,9 @@ theorem eventually_isZero_singularHomology_of_exists_trivialization_of_eventuall
     ∀ᶠ n in Filter.atTop,
       IsZero (((singularHomologyFunctor (ModuleCat.{u} R) n).obj (ModuleCat.of R R)).obj
         (TopCat.of E)) :=
-  TopCat.eventually_isZero_singularHomology_of_mem_serreFibrations_of_forall
-    (TopCat.mem_serreFibrations_of_exists_trivialization (p := locallyTrivialHom h) h) R fun b ↦
-      hF.mono fun q hq ↦ hq.of_iso <|
-        ((singularHomologyFunctor (ModuleCat.{u} R) q).obj (ModuleCat.of R R)).mapIso
-          ((h b).choose.fiberIso (p := locallyTrivialHom h) (h b).choose_spec)
+  TopCat.eventually_isZero_singularHomology_of_mem_serreFibrations_of_iso
+    (TopCat.mem_serreFibrations_of_exists_trivialization (p := locallyTrivialHom h) h) R
+    (locallyTrivialFiberSingularHomologyIso h R) hF
 
 /-- Over a Noetherian ring `R`, if `p : E → B` is locally trivial with model fibre `F` over a space
 `B` of finite CW type and `H_q(F; R)` is finitely generated in all degrees `q ≤ n`, then
@@ -98,14 +107,9 @@ theorem finite_singularHomology_of_exists_trivialization_of_finite
       (((singularHomologyFunctor (ModuleCat.{u} R) q).obj (ModuleCat.of R R)).obj (TopCat.of F))) :
     Module.Finite R
       (((singularHomologyFunctor (ModuleCat.{u} R) n).obj (ModuleCat.of R R)).obj (TopCat.of E)) :=
-  TopCat.finite_singularHomology_of_mem_serreFibrations_of_forall
+  TopCat.finite_singularHomology_of_mem_serreFibrations_of_iso
     (TopCat.mem_serreFibrations_of_exists_trivialization (p := locallyTrivialHom h) h) R n
-    fun b q hq ↦
-      have := hF q hq
-      Module.Finite.equiv
-        (((singularHomologyFunctor (ModuleCat.{u} R) q).obj (ModuleCat.of R R)).mapIso
-          ((h b).choose.fiberIso
-            (p := locallyTrivialHom h) (h b).choose_spec)).symm.toLinearEquiv
+    (fun b q _ ↦ locallyTrivialFiberSingularHomologyIso h R b q) hF
 
 /-- Over a Noetherian ring `R` satisfying rank--nullity (such as a division ring or a Noetherian
 commutative domain), if `p : E → B` is locally trivial with model fibre `F` over a space `B` of
@@ -124,22 +128,9 @@ theorem finsum_finrank_singularHomology_of_exists_trivialization_of_finite
       eulerChar B * ∑ᶠ q : ℕ, (-1 : ℤ) ^ q * (finrank R
         (((singularHomologyFunctor (ModuleCat.{u} R) q).obj (ModuleCat.of R R)).obj
           (TopCat.of F)) : ℤ) :=
-  TopCat.finsum_finrank_singularHomology_of_mem_serreFibrations_of_forall
+  TopCat.finsum_finrank_singularHomology_of_mem_serreFibrations_of_iso
     (TopCat.mem_serreFibrations_of_exists_trivialization (p := locallyTrivialHom h) h) R
-    (fun b q ↦
-      have := hfin q
-      Module.Finite.equiv
-        (((singularHomologyFunctor (ModuleCat.{u} R) q).obj (ModuleCat.of R R)).mapIso
-          ((h b).choose.fiberIso
-            (p := locallyTrivialHom h) (h b).choose_spec)).symm.toLinearEquiv)
-    (fun b ↦ hvanish.mono fun q hq ↦
-      hq.of_iso <|
-        ((singularHomologyFunctor (ModuleCat.{u} R) q).obj (ModuleCat.of R R)).mapIso
-          ((h b).choose.fiberIso (p := locallyTrivialHom h) (h b).choose_spec))
-    (fun b ↦ finsum_congr fun q ↦ by
-      rw [(((singularHomologyFunctor (ModuleCat.{u} R) q).obj (ModuleCat.of R R)).mapIso
-        ((h b).choose.fiberIso
-          (p := locallyTrivialHom h) (h b).choose_spec)).toLinearEquiv.finrank_eq])
+    (locallyTrivialFiberSingularHomologyIso h R) hfin hvanish
 
 /-- If `p : E → B` is locally trivial with model fibre `F` and both `B` and `F` have finite CW type,
 then `H_n(E; R)` vanishes in all large degrees over any ring `R`. -/

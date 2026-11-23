@@ -11,6 +11,7 @@ public import TauCeti.AlgebraicTopology.Cellular.EulerCharacteristic.FiniteCWTyp
 public import TauCeti.AlgebraicTopology.Singular.Fibration.ArbitraryBase
 public import TauCeti.AlgebraicTopology.Singular.Fibration.Transport
 import Mathlib.LinearAlgebra.DirectSum.Finite
+import TauCeti.Algebra.Homology.SpectralObject.Finrank
 import TauCeti.Topology.CWComplex.Comparison
 
 /-!
@@ -41,24 +42,30 @@ Chapter II, Section 4, Proposition 3; see also Klein--Malkiewich--Ramzi, Introdu
   every `q ≤ n` (with no boundedness assumption on fibre homology), then `H_n(E; R)` is finitely
   generated
   (`TauCeti.TopCat.finite_singularHomology_of_mem_serreFibrations_of_isWeakHomotopyEquivalence`,
-  `TauCeti.TopCat.finite_singularHomology_of_mem_serreFibrations_of_forall`). Over a path-connected
-  base `B`, hypotheses on a single fibre `p.fiber b` suffice
-  (`TauCeti.TopCat.eventually_isZero_singularHomology_of_mem_serreFibrations_of_eventually_isZero`,
-  `TauCeti.TopCat.finite_singularHomology_of_mem_serreFibrations_of_finite`).
+  `TauCeti.TopCat.finite_singularHomology_of_mem_serreFibrations_of_forall`). When all fibres have
+  singular homology isomorphic to a fixed graded module `M`
+  (`TauCeti.TopCat.eventually_isZero_singularHomology_of_mem_serreFibrations_of_iso`,
+  `TauCeti.TopCat.finite_singularHomology_of_mem_serreFibrations_of_iso`), or in particular over a
+  path-connected base `B`, hypotheses on a single fibre `p.fiber b` suffice
+  (the `_of_pathConnectedSpace_of_eventually_isZero` counterpart and
+  `TauCeti.TopCat.finite_singularHomology_of_mem_serreFibrations_of_pathConnectedSpace_of_finite`).
 * **Multiplicativity of the Euler characteristic.** Over any Noetherian ring `R` satisfying
   rank--nullity (`[IsNoetherianRing R] [HasRankNullity.{u} R]`, covering division rings and
   Noetherian commutative domains such as `ℤ`), if each fibre has finitely generated homology
   vanishing in large degrees with alternating finrank sum `d`, then
   `∑ᶠ n, (-1)ⁿ finrank R H_n(E; R) = χ(B) · d`
-  (`TauCeti.TopCat.finsum_finrank_singularHomology_of_mem_serreFibrations_of_forall`), and in
-  particular when every fibre has finite CW type with common Euler characteristic `d`
+  (`TauCeti.TopCat.finsum_finrank_singularHomology_of_mem_serreFibrations_of_forall`, and
+  `TauCeti.TopCat.finsum_finrank_singularHomology_of_mem_serreFibrations_of_iso` when all fibres'
+  homologies are isomorphic to a fixed graded module), and in particular when every fibre has finite
+  CW type with common Euler characteristic `d`
   (`TauCeti.TopCat.finsum_finrank_singularHomology_of_mem_serreFibrations`). Over a path-connected
-  base `B`, hypotheses on a single fibre `p.fiber b` suffice, either under homological finiteness
-  (`TauCeti.TopCat.finsum_finrank_singularHomology_of_mem_serreFibrations_of_finite`) or for a
-  fibre of finite CW type
-  (`TauCeti.TopCat.finsum_finrank_singularHomology_of_mem_serreFibrations_of_pathConnectedSpace`).
+  base `B` (in `TauCeti.TopCat`), hypotheses on a single fibre `p.fiber b` suffice, either under
+  homological finiteness
+  (`finsum_finrank_singularHomology_of_mem_serreFibrations_of_pathConnectedSpace_of_finite`)
+  or for a fibre of finite CW type
+  (`finsum_finrank_singularHomology_of_mem_serreFibrations_of_pathConnectedSpace_of_finiteCWType`).
   When the total space `E` also has finite CW type, this gives multiplicativity of `eulerChar`
-  (`TauCeti.TopCat.eulerChar_eq_mul_of_mem_serreFibrations_of_pathConnectedSpace`,
+  (`TauCeti.TopCat.eulerChar_eq_mul_of_mem_serreFibrations_of_pathConnectedSpace_of_finiteCWType`,
   `TauCeti.TopCat.eulerChar_eq_mul_of_mem_serreFibrations`).
 
 ## References
@@ -514,37 +521,82 @@ theorem finsum_finrank_singularHomology_of_mem_serreFibrations_of_forall
     S.eulerChar_page_eq_of_le (le_rfl : (2 : ℤ) ≤ 2) hsupp (((K + Q : ℕ) : ℤ) + 3) (by lia),
     eulerChar_serreSpectralSequence_page_two hp univ g R hfin hK hQ hd, hB]
 
-/-! ### Specializations to path-connected bases and fibres of finite CW type -/
+/-! ### Specializations to isomorphic fibres, path-connected bases, and fibres of finite CW type -/
+
+/-- Over a base `B` of finite CW type, if the singular homology of every fibre `p.fiber b` of a
+Serre fibration `p : E ⟶ B` is isomorphic to a fixed graded module `M` that vanishes in all large
+degrees over a ring `R`, then `H_n(E; R)` vanishes in all large degrees. -/
+theorem eventually_isZero_singularHomology_of_mem_serreFibrations_of_iso
+    (R : Type u) [Ring R] {M : ℕ → ModuleCat.{u} R}
+    (e : ∀ (b : B) (q : ℕ),
+      ((singularHomologyFunctor (ModuleCat.{u} R) q).obj (ModuleCat.of R R)).obj (p.fiber b) ≅ M q)
+    (hvanish : ∀ᶠ q in Filter.atTop, IsZero (M q)) :
+    ∀ᶠ n in Filter.atTop,
+      IsZero (((singularHomologyFunctor (ModuleCat.{u} R) n).obj (ModuleCat.of R R)).obj E) :=
+  eventually_isZero_singularHomology_of_mem_serreFibrations_of_forall hp R fun b ↦
+    hvanish.mono fun q hq ↦ hq.of_iso (e b q)
+
+/-- Over a base `B` of finite CW type and a Noetherian ring `R`, if the singular homology of every
+fibre `p.fiber b` of a Serre fibration `p : E ⟶ B` in degrees `q ≤ n` is isomorphic to a finitely
+generated module `M q`, then `H_n(E; R)` is finitely generated. -/
+theorem finite_singularHomology_of_mem_serreFibrations_of_iso
+    (R : Type u) [Ring R] [IsNoetherianRing R] (n : ℕ) {M : ℕ → ModuleCat.{u} R}
+    (e : ∀ (b : B), ∀ q ≤ n,
+      ((singularHomologyFunctor (ModuleCat.{u} R) q).obj (ModuleCat.of R R)).obj (p.fiber b) ≅ M q)
+    (hfin : ∀ q ≤ n, Module.Finite R (M q)) :
+    Module.Finite R
+      (((singularHomologyFunctor (ModuleCat.{u} R) n).obj (ModuleCat.of R R)).obj E) :=
+  finite_singularHomology_of_mem_serreFibrations_of_forall hp R n fun b q hq ↦
+    have := hfin q hq
+    Module.Finite.equiv (e b q hq).symm.toLinearEquiv
+
+/-- Over a base `B` of finite CW type and a Noetherian ring `R` satisfying rank--nullity, if the
+singular homology of every fibre `p.fiber b` of a Serre fibration `p : E ⟶ B` is isomorphic to a
+fixed graded module `M` that is finitely generated in every degree and vanishes in all large
+degrees, then `∑ᶠ n, (-1)ⁿ finrank R H_n(E; R) = χ(B) · ∑ᶠ q, (-1)ᵠ finrank R (M q)`. -/
+theorem finsum_finrank_singularHomology_of_mem_serreFibrations_of_iso
+    (R : Type u) [Ring R] [IsNoetherianRing R] [HasRankNullity.{u} R] {M : ℕ → ModuleCat.{u} R}
+    (e : ∀ (b : B) (q : ℕ),
+      ((singularHomologyFunctor (ModuleCat.{u} R) q).obj (ModuleCat.of R R)).obj (p.fiber b) ≅ M q)
+    (hfin : ∀ q : ℕ, Module.Finite R (M q))
+    (hvanish : ∀ᶠ q in Filter.atTop, IsZero (M q)) :
+    ∑ᶠ n : ℕ, (-1 : ℤ) ^ n * finrank R
+      (((singularHomologyFunctor (ModuleCat.{u} R) n).obj (ModuleCat.of R R)).obj E) =
+      eulerChar B * ∑ᶠ q : ℕ, (-1 : ℤ) ^ q * finrank R (M q) :=
+  finsum_finrank_singularHomology_of_mem_serreFibrations_of_forall hp R
+    (fun b q ↦ have := hfin q; Module.Finite.equiv (e b q).symm.toLinearEquiv)
+    (fun b ↦ hvanish.mono fun q hq ↦ hq.of_iso (e b q))
+    (fun b ↦ finsum_congr fun q ↦ by rw [(e b q).toLinearEquiv.finrank_eq])
 
 /-- Over a path-connected base `B` of finite CW type, if a single fibre `p.fiber b` of a Serre
 fibration `p : E ⟶ B` has singular homology vanishing in all large degrees over a ring `R`, then
 `H_n(E; R)` vanishes in all large degrees. -/
-theorem eventually_isZero_singularHomology_of_mem_serreFibrations_of_eventually_isZero
+theorem
+eventually_isZero_singularHomology_of_mem_serreFibrations_of_pathConnectedSpace_of_eventually_isZero
     [PathConnectedSpace B] (b : B) (R : Type u) [Ring R]
     (hvanish : ∀ᶠ q in Filter.atTop,
       IsZero (((singularHomologyFunctor (ModuleCat.{u} R) q).obj (ModuleCat.of R R)).obj
         (p.fiber b))) :
     ∀ᶠ n in Filter.atTop,
       IsZero (((singularHomologyFunctor (ModuleCat.{u} R) n).obj (ModuleCat.of R R)).obj E) :=
-  eventually_isZero_singularHomology_of_mem_serreFibrations_of_forall hp R fun b' ↦
-    hvanish.mono fun q hq ↦ hq.of_iso
-      (fiberSingularHomologyIsoOfPath hp (ModuleCat.of R R)
-        (PathConnectedSpace.somePath b b') q).symm
+  eventually_isZero_singularHomology_of_mem_serreFibrations_of_iso hp R
+    (fun b' q ↦ (fiberSingularHomologyIsoOfPath hp (ModuleCat.of R R)
+      (PathConnectedSpace.somePath b b') q).symm)
+    hvanish
 
 /-- Over a path-connected base `B` of finite CW type and a Noetherian ring `R`, if a single fibre
 `p.fiber b` of a Serre fibration `p : E ⟶ B` has finitely generated singular homology in all
 degrees `q ≤ n`, then `H_n(E; R)` is finitely generated. -/
-theorem finite_singularHomology_of_mem_serreFibrations_of_finite
+theorem finite_singularHomology_of_mem_serreFibrations_of_pathConnectedSpace_of_finite
     [PathConnectedSpace B] (b : B) (R : Type u) [Ring R] [IsNoetherianRing R] (n : ℕ)
     (hfin : ∀ q ≤ n, Module.Finite R
       (((singularHomologyFunctor (ModuleCat.{u} R) q).obj (ModuleCat.of R R)).obj (p.fiber b))) :
     Module.Finite R
       (((singularHomologyFunctor (ModuleCat.{u} R) n).obj (ModuleCat.of R R)).obj E) :=
-  finite_singularHomology_of_mem_serreFibrations_of_forall hp R n fun b' q hq ↦
-    have := hfin q hq
-    Module.Finite.equiv
-      (fiberSingularHomologyIsoOfPath hp (ModuleCat.of R R)
-        (PathConnectedSpace.somePath b b') q).toLinearEquiv
+  finite_singularHomology_of_mem_serreFibrations_of_iso hp R n
+    (fun b' q _ ↦ (fiberSingularHomologyIsoOfPath hp (ModuleCat.of R R)
+      (PathConnectedSpace.somePath b b') q).symm)
+    hfin
 
 /-- **Multiplicativity of the Euler characteristic in a Serre fibration with homologically finite
 fibre** (Serre (1951), Chapter II, Section 4, Proposition 3): for a Serre fibration `p : E ⟶ B`
@@ -552,7 +604,7 @@ over a path-connected space `B` of finite CW type, if a single fibre `p.fiber b`
 generated singular homology in every degree and vanishing homology in all large degrees over a
 Noetherian ring `R` satisfying rank--nullity, then the homological Euler characteristic of `E` is
 `χ(B)` times that of `p.fiber b`. -/
-theorem finsum_finrank_singularHomology_of_mem_serreFibrations_of_finite
+theorem finsum_finrank_singularHomology_of_mem_serreFibrations_of_pathConnectedSpace_of_finite
     [PathConnectedSpace B] (b : B) (R : Type u) [Ring R] [IsNoetherianRing R]
     [HasRankNullity.{u} R]
     (hfin : ∀ q : ℕ, Module.Finite R
@@ -564,61 +616,55 @@ theorem finsum_finrank_singularHomology_of_mem_serreFibrations_of_finite
       (((singularHomologyFunctor (ModuleCat.{u} R) n).obj (ModuleCat.of R R)).obj E) =
       eulerChar B * ∑ᶠ q : ℕ, (-1 : ℤ) ^ q * finrank R
         (((singularHomologyFunctor (ModuleCat.{u} R) q).obj (ModuleCat.of R R)).obj (p.fiber b)) :=
-  finsum_finrank_singularHomology_of_mem_serreFibrations_of_forall hp R
-    (fun b' q ↦
-      have := hfin q
-      Module.Finite.equiv
-        (fiberSingularHomologyIsoOfPath hp (ModuleCat.of R R)
-          (PathConnectedSpace.somePath b b') q).toLinearEquiv)
-    (fun b' ↦ hvanish.mono fun q hq ↦
-      hq.of_iso (fiberSingularHomologyIsoOfPath hp (ModuleCat.of R R)
-        (PathConnectedSpace.somePath b b') q).symm)
-    (fun b' ↦ finsum_congr fun q ↦ by
-      rw [(fiberSingularHomologyIsoOfPath hp (ModuleCat.of R R)
-        (PathConnectedSpace.somePath b b') q).toLinearEquiv.finrank_eq])
+  finsum_finrank_singularHomology_of_mem_serreFibrations_of_iso hp R
+    (fun b' q ↦ (fiberSingularHomologyIsoOfPath hp (ModuleCat.of R R)
+      (PathConnectedSpace.somePath b b') q).symm)
+    hfin hvanish
 
 /-- Over a path-connected base `B` of finite CW type, if a single fibre `p.fiber b` of a Serre
 fibration `p : E ⟶ B` has finite CW type, then `H_n(E; R)` vanishes in all large degrees over any
 ring `R`. -/
-theorem eventually_isZero_singularHomology_of_mem_serreFibrations_of_pathConnectedSpace
+theorem
+eventually_isZero_singularHomology_of_mem_serreFibrations_of_pathConnectedSpace_of_finiteCWType
     [PathConnectedSpace B] (b : B) [FiniteCWType (p.fiber b)] (R : Type u) [Ring R] :
     ∀ᶠ n in Filter.atTop,
-      IsZero (((singularHomologyFunctor (ModuleCat.{u} R) n).obj (ModuleCat.of R R)).obj E) :=
-  eventually_isZero_singularHomology_of_mem_serreFibrations_of_eventually_isZero hp b R
-    (eventually_isZero_singularHomology_of_finiteCWType (p.fiber b) (ModuleCat.of R R))
+      IsZero (((singularHomologyFunctor (ModuleCat.{u} R) n).obj (ModuleCat.of R R)).obj E) := (
+eventually_isZero_singularHomology_of_mem_serreFibrations_of_pathConnectedSpace_of_eventually_isZero
+    hp b R (eventually_isZero_singularHomology_of_finiteCWType (p.fiber b) (ModuleCat.of R R)))
 
 /-- Over a path-connected base `B` of finite CW type, if a single fibre `p.fiber b` of a Serre
 fibration `p : E ⟶ B` has finite CW type, then `H_n(E; R)` is finitely generated in every degree
 over any Noetherian ring `R`. -/
-theorem finite_singularHomology_of_mem_serreFibrations_of_pathConnectedSpace
+theorem finite_singularHomology_of_mem_serreFibrations_of_pathConnectedSpace_of_finiteCWType
     [PathConnectedSpace B] (b : B) [FiniteCWType (p.fiber b)]
     (R : Type u) [Ring R] [IsNoetherianRing R] (n : ℕ) :
     Module.Finite R
       (((singularHomologyFunctor (ModuleCat.{u} R) n).obj (ModuleCat.of R R)).obj E) :=
-  finite_singularHomology_of_mem_serreFibrations_of_finite hp b R n fun q _ ↦
-    finite_singularHomology_of_finiteCWType (p.fiber b) (ModuleCat.of R R) q
+  finite_singularHomology_of_mem_serreFibrations_of_pathConnectedSpace_of_finite hp b R n
+    fun q _ ↦ finite_singularHomology_of_finiteCWType (p.fiber b) (ModuleCat.of R R) q
 
 /-- **Multiplicativity of the Euler characteristic in a Serre fibration** over a path-connected base
 `B` of finite CW type: if a single fibre `p.fiber b` has finite CW type, then for any Noetherian
 ring `R` satisfying rank--nullity, `∑ᶠ n, (-1)ⁿ finrank R H_n(E; R) = χ(B) · χ(p⁻¹(b))`. -/
-theorem finsum_finrank_singularHomology_of_mem_serreFibrations_of_pathConnectedSpace
+theorem finsum_finrank_singularHomology_of_mem_serreFibrations_of_pathConnectedSpace_of_finiteCWType
     [PathConnectedSpace B] (b : B) [FiniteCWType (p.fiber b)]
     (R : Type u) [Ring R] [IsNoetherianRing R] [HasRankNullity.{u} R] :
     ∑ᶠ n : ℕ, (-1 : ℤ) ^ n * finrank R
       (((singularHomologyFunctor (ModuleCat.{u} R) n).obj (ModuleCat.of R R)).obj E) =
       eulerChar B * eulerChar (p.fiber b) := by
-  rw [finsum_finrank_singularHomology_of_mem_serreFibrations_of_finite hp b R
+  rw [finsum_finrank_singularHomology_of_mem_serreFibrations_of_pathConnectedSpace_of_finite hp b R
     (fun q ↦ finite_singularHomology_of_finiteCWType (p.fiber b) (ModuleCat.of R R) q)
     (eventually_isZero_singularHomology_of_finiteCWType (p.fiber b) (ModuleCat.of R R)),
     ← eulerChar_eq_finsum_finrank_singularHomology (p.fiber b) R]
 
 /-- **Multiplicativity of `eulerChar` in a Serre fibration** over a path-connected base `B` of
 finite CW type when both `E` and `p.fiber b` have finite CW type: `χ(E) = χ(B) · χ(p⁻¹(b))`. -/
-theorem eulerChar_eq_mul_of_mem_serreFibrations_of_pathConnectedSpace
+theorem eulerChar_eq_mul_of_mem_serreFibrations_of_pathConnectedSpace_of_finiteCWType
     [PathConnectedSpace B] (b : B) [FiniteCWType (p.fiber b)] [FiniteCWType E] :
     eulerChar E = eulerChar B * eulerChar (p.fiber b) := by
   rw [eulerChar_eq_finsum_finrank_singularHomology E (ULift.{u} ℚ),
-    finsum_finrank_singularHomology_of_mem_serreFibrations_of_pathConnectedSpace hp b (ULift.{u} ℚ)]
+    finsum_finrank_singularHomology_of_mem_serreFibrations_of_pathConnectedSpace_of_finiteCWType
+      hp b (ULift.{u} ℚ)]
 
 /-- For a Serre fibration `p : E ⟶ B` over a (possibly disconnected) space `B` of finite CW type
 whose fibres all have finite CW type, `H_n(E; R)` vanishes in all large degrees over any ring

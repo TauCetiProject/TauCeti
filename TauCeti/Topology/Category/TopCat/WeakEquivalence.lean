@@ -117,8 +117,8 @@ theorem map_eq_of_homotopy {C : Type v} [Category.{w} C] {F : _root_.TopCat.{u} 
   have hi : F.map i₀ = F.map i₁ := by
     refine (cancel_mono (F.map snd)).1 ?_
     rw [← F.map_comp, ← F.map_comp]
-    have h₀ : i₀ ≫ snd = 𝟙 X := rfl
-    have h₁ : i₁ ≫ snd = 𝟙 X := rfl
+    have h₀ : i₀ ≫ snd = 𝟙 X := by ext x; simp [i₀, snd, ContinuousMap.snd]
+    have h₁ : i₁ ≫ snd = 𝟙 X := by ext x; simp [i₁, snd, ContinuousMap.snd]
     rw [h₀, h₁]
   have hf₀ : i₀ ≫ Hmap = f₀ := by
     ext x

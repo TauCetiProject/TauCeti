@@ -129,9 +129,7 @@ theorem eulerChar_forgetFG_eq_homologyEulerChar {R : Type u} [Ring R] [StrongRan
   let K' := (F.mapHomologicalComplex _).obj K
   have (i : ℤ) : Module.Finite R (K'.X i) := inferInstanceAs (Module.Finite R (K.X i))
   have hK' : {i : ℤ | ¬ IsZero (K'.X i)}.Finite :=
-    (Finset.Icc a b).finite_toSet.subset fun i hi ↦ by
-      by_contra h
-      exact hi (F.map_isZero (K.isZero_X_of_notMem_Icc a b (by simpa using h)))
+    (K.finite_not_isZero_X a b).subset fun i hi h ↦ hi (F.map_isZero h)
   exact K'.eulerChar_eq_homologyEulerChar hK'
 
 variable {R : Type u} [Ring R] [IsNoetherianRing R]
