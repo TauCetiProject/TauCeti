@@ -773,10 +773,7 @@ theorem hasDensityAt_of_mem_reducedBoundary
   · rcases Nat.le_one_iff_eq_zero_or_eq_one.1 (Nat.lt_succ_iff.1 hn) with h0 | h1
     · have : Subsingleton E := (Module.finrank_zero_iff (R := ℝ)).1 h0
       simp at hx
-    · obtain ⟨r, hr, _, ν, hν, hsH⟩ := exists_ae_eq_setOf_inner_lt_of_mem_reducedBoundary h1 hx
-      have hν0 : ν ≠ 0 := norm_ne_zero_iff.1 (hν ▸ one_ne_zero)
-      rw [hasDensityAt_congr_ae_of_mem_nhds (ball_mem_nhds x hr) hsH]
-      exact hasDensityAt_setOf_inner_lt hν0 rfl
+    · exact hasDensityAt_of_mem_reducedBoundary_of_finrank_eq_one h1 hx
   · exact hasDensityAt_of_mem_reducedBoundary_of_two_le hn hx
 
 /-! ### The density of the perimeter measure at the reduced boundary -/

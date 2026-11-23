@@ -7,17 +7,11 @@ module
 
 public import Mathlib.MeasureTheory.Measure.Lebesgue.Basic
 public import TauCeti.Analysis.BoundedVariation.Perimeter
-import Mathlib.MeasureTheory.Integral.Average
+import Mathlib.Analysis.Calculus.ContDiff.Deriv
 import Mathlib.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
-import Mathlib.MeasureTheory.Measure.Lebesgue.EqHaar
 import TauCeti.MeasureTheory.Covering.DensityTheorem
 import TauCeti.MeasureTheory.Measure.Lebesgue.Basic
-import TauCeti.Analysis.BoundedVariation.DerivativeMeasure
-import TauCeti.Analysis.BoundedVariation.Isometry
 import TauCeti.Analysis.BoundedVariation.OneDimensional.LebesguePoints
-import TauCeti.Analysis.BoundedVariation.VariationMeasure
-import TauCeti.Analysis.Distribution.TestFunction.Divergence
-import TauCeti.Analysis.InnerProductSpace.HilbertBasis.Dimension
 
 /-!
 # Perimeter on the real line
@@ -43,11 +37,7 @@ every section of perimeter less than `4` is an interval of finite length up to a
 More locally, on any open interval `Ω ⊆ ℝ` (including open rays and the whole line), a set `s`
 null-measurable for Lebesgue measure restricted to `Ω` whose perimeter with respect to Lebesgue
 measure in `Ω` is strictly less than `1` is either null or conull in `Ω`
-(`TauCeti.Real.measure_inter_eq_zero_or_sdiff_eq_zero_of_perimeter_lt_one`). Consequently, in any
-one-dimensional real inner product space carrying an additive Haar measure, a set of locally finite
-perimeter agrees almost everywhere on a sufficiently small ball around each point `x ∈ Ω` with `∅`,
-`univ`, or a single half-line `{y | ⟪y, ν⟫ < ⟪x, ν⟫}`
-(`TauCeti.exists_ae_eq_empty_or_univ_or_setOf_inner_lt_of_finrank_eq_one`).
+(`TauCeti.Real.measure_inter_eq_zero_or_sdiff_eq_zero_of_perimeter_lt_one`).
 
 ## Main results
 
@@ -56,8 +46,6 @@ perimeter agrees almost everywhere on a sufficiently small ball around each poin
 * `TauCeti.Real.measure_inter_eq_zero_or_sdiff_eq_zero_of_perimeter_lt_one`: a null-measurable
   set on an open interval `Ω ⊆ ℝ` of perimeter strictly less than `1` in `Ω` is either null or
   conull there.
-* `TauCeti.exists_ae_eq_empty_or_univ_or_setOf_inner_lt_of_finrank_eq_one`: local classification
-  of sets of locally finite perimeter in dimension one.
 
 ## References
 
@@ -99,9 +87,9 @@ private theorem exists_measurableSet_ae_eq {s : Set ℝ} (hs : NullMeasurableSet
     perimeter_congr_ae (ae_restrict_of_ae hs.toMeasurable_ae_eq.symm),
     (measure_toMeasurable s).symm⟩
 
-/-- A set `s ⊆ ℝ` of finite measure misses almost every point of each ray, so a property holding
-almost everywhere holds at some point outside `s` to the left of `b` and at some point outside `s`
-to the right of `b'`. -/
+/-- A set `s ⊆ ℝ` of finite measure has a complement of infinite measure in each ray, so a property
+holding almost everywhere holds at some point outside `s` to the left of `b` and at some point
+outside `s` to the right of `b'`. -/
 private theorem exists_notMem_lt_and_gt {s : Set ℝ} (hfin : volume s ≠ ∞) {P : ℝ → Prop}
     (hP : ∀ᵐ x, P x) (b b' : ℝ) : (∃ a < b, a ∉ s ∧ P a) ∧ ∃ c > b', c ∉ s ∧ P c := by
   obtain ⟨a, ⟨hab, has⟩, ha⟩ := Measure.exists_mem_of_measure_ne_zero_of_ae (s := Iio b \ s)
@@ -266,158 +254,3 @@ theorem measure_inter_eq_zero_or_sdiff_eq_zero_of_perimeter_lt_one {Ω : Opens �
   exact (not_le_of_gt hP) hle1
 
 end TauCeti.Real
-
-namespace TauCeti
-
-section LocalClassification
-
-open Module
-open scoped RealInnerProductSpace
-
-variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
-  [MeasurableSpace E] [BorelSpace E] {μ : Measure E} [μ.IsAddHaarMeasure] {Ω : Opens E}
-  {s : Set E} {x : E}
-
-/-- Around any `x ∈ Ω`, a set `s` of locally finite perimeter in `Ω` has volume-perimeter strictly
-below `1` on a punctured ball `ball x r \ {x} ⊆ Ω`, by applying
-`TauCeti.tendsto_totalVariationOn_ball_sdiff_singleton` to `|Dχ_s|`. -/
-private theorem exists_ball_subset_and_perimeter_sdiff_singleton_lt_one
-    (hu : LocallyIntegrableOn (s.indicator (1 : E → ℝ)) Ω μ)
-    (hfin : ∀ K, IsCompact K → K ⊆ Ω →
-      ∃ U : Opens E, K ⊆ (U : Set E) ∧ totalVariationOn μ U (s.indicator 1) ≠ ∞)
-    (hx : x ∈ Ω) :
-    ∃ r > 0, ball x r ⊆ Ω ∧
-      perimeter volume ⟨ball x r \ {x}, isOpen_ball.sdiff isClosed_singleton⟩ s < 1 := by
-  obtain ⟨δ, hδ, hδΩ⟩ := nhds_basis_ball.mem_iff.1 (Ω.isOpen.mem_nhds hx)
-  set a := Measure.addHaarScalarFactor μ volume
-  have ha0 : (a : ℝ≥0∞) ≠ 0 :=
-    ENNReal.coe_ne_zero.2 (Measure.addHaarScalarFactor_pos_of_isAddHaarMeasure μ volume).ne'
-  have hlim := tendsto_totalVariationOn_ball_sdiff_singleton hu hfin hx
-  obtain ⟨r, hlt, hr, hrδ⟩ := ((hlim.eventually (gt_mem_nhds ha0.bot_lt)).and
-    (Ioo_mem_nhdsGT hδ)).exists
-  refine ⟨r, hr, (ball_subset_ball hrδ.le).trans hδΩ, ?_⟩
-  rw [← ENNReal.mul_lt_mul_iff_left ha0 ENNReal.coe_ne_top, one_mul, mul_comm,
-    ← perimeter_eq_addHaarScalarFactor_mul volume, perimeter_def]
-  exact hlt
-
-/-- Along a linear isometry `e : E ≃ₗᵢ[ℝ] ℝ`, if `s` is null-measurable on `ball x r` (`r > 0`)
-and has volume-perimeter strictly below `1` on `ball x r \ {x}`, then on the open half-ball
-`ball x r ∩ {y | e y < e x}` either `s` or its complement is `μ`-null. -/
-private theorem measure_inter_ball_inter_lt_eq_zero_or_sdiff_eq_zero (e : E ≃ₗᵢ[ℝ] ℝ) {r : ℝ}
-    (hr : 0 < r) (hs : NullMeasurableSet s (μ.restrict (ball x r)))
-    (hP : perimeter volume ⟨ball x r \ {x}, isOpen_ball.sdiff isClosed_singleton⟩ s < 1) :
-    μ (s ∩ (ball x r ∩ {y | e y < e x})) = 0 ∨ μ ((ball x r ∩ {y | e y < e x}) \ s) = 0 := by
-  set I := Ioo (e x - r) (e x)
-  have hI : ball (e x) r ∩ Iio (e x) = I := by
-    rw [Real.ball_eq_Ioo, Set.Ioo_inter_Iio, min_eq_right (le_add_of_nonneg_right hr.le)]
-  have hpre : e ⁻¹' I = ball x r ∩ {y | e y < e x} := by
-    rw [← hI]
-    ext y
-    simp only [mem_preimage, mem_inter_iff, mem_ball, e.dist_map, mem_Iio, Set.mem_ofPred_eq]
-  have hmaps : MapsTo e.symm (⟨I, isOpen_Ioo⟩ : Opens ℝ)
-      (⟨ball x r \ {x}, isOpen_ball.sdiff isClosed_singleton⟩ : Opens E) := fun t ht => by
-    have hmem : e.symm t ∈ ball x r ∩ {y | e y < e x} := by
-      rw [← hpre]; simpa using ht
-    exact ⟨hmem.1, fun h => (ne_of_lt hmem.2) (congrArg e h)⟩
-  have hsB : NullMeasurableSet (s ∩ ball x r) volume :=
-    ((nullMeasurableSet_restrict measurableSet_ball.nullMeasurableSet).1 hs).mono_ac
-      (Measure.absolutelyContinuous_isAddHaarMeasure volume μ)
-  have hsI : NullMeasurableSet (e.symm ⁻¹' s) (volume.restrict I) := by
-    have h1 := (hsB.preimage e.symm.measurePreserving.quasiMeasurePreserving).mono
-      (Measure.restrict_le_self : volume.restrict I ≤ volume)
-    refine h1.congr (eventuallyEqSet_iff.2 ?_)
-    exact (ae_restrict_mem measurableSet_Ioo).mono fun t ht => and_iff_left (hmaps ht).1
-  have hPI : perimeter volume ⟨I, isOpen_Ioo⟩ (e.symm ⁻¹' s) < 1 :=
-    (e.symm.perimeter_preimage_le e.symm.measurePreserving hmaps).trans_lt hP
-  have hvol (A : Set ℝ) : volume (e ⁻¹' A) = volume A :=
-    e.measurePreserving.measure_preimage_emb e.toMeasurableEquiv.measurableEmbedding A
-  have hsymm : e ⁻¹' (e.symm ⁻¹' s) = s := e.toEquiv.preimage_symm_preimage s
-  rcases Real.measure_inter_eq_zero_or_sdiff_eq_zero_of_perimeter_lt_one ordConnected_Ioo hsI
-      hPI with h0 | h0
-  · refine Or.inl (Measure.absolutelyContinuous_isAddHaarMeasure μ volume ?_)
-    have heq : s ∩ (ball x r ∩ {y | e y < e x}) = e ⁻¹' (e.symm ⁻¹' s ∩ I) := by
-      rw [preimage_inter, hsymm, hpre]
-    simp only [Opens.coe_mk] at h0
-    rw [heq, hvol, h0]
-  · refine Or.inr (Measure.absolutelyContinuous_isAddHaarMeasure μ volume ?_)
-    have heq : (ball x r ∩ {y | e y < e x}) \ s = e ⁻¹' (I \ e.symm ⁻¹' s) := by
-      rw [preimage_sdiff, hsymm, hpre]
-    simp only [Opens.coe_mk] at h0
-    rw [heq, hvol, h0]
-
-/-- Combining constancy on the two half-balls around `x` along `e : E ≃ₗᵢ[ℝ] ℝ` yields `∅`, `univ`,
-or a half-line `{y | ⟪y, ν⟫ < ⟪x, ν⟫}` almost everywhere on `ball x r`. -/
-private theorem ae_eq_empty_or_univ_or_setOf_inner_lt_of_halves (e : E ≃ₗᵢ[ℝ] ℝ) {r : ℝ}
-    (hL : μ (s ∩ (ball x r ∩ {y | e y < e x})) = 0 ∨ μ ((ball x r ∩ {y | e y < e x}) \ s) = 0)
-    (hR : μ (s ∩ (ball x r ∩ {y | e x < e y})) = 0 ∨ μ ((ball x r ∩ {y | e x < e y}) \ s) = 0) :
-    s =ᵐ[μ.restrict (ball x r)] (∅ : Set E) ∨ s =ᵐ[μ.restrict (ball x r)] univ ∨
-      ∃ ν : E, ‖ν‖ = 1 ∧ s =ᵐ[μ.restrict (ball x r)] {y | ⟪y, ν⟫ < ⟪x, ν⟫} := by
-  have : Nontrivial E := ⟨⟨e.symm 1, 0, norm_ne_zero_iff.1 (by simp)⟩⟩
-  have hnull (f : E ≃ₗᵢ[ℝ] ℝ) {A : Set E}
-      (h₁ : μ (A ∩ (ball x r ∩ {y | f y < f x})) = 0)
-      (h₂ : μ (A ∩ (ball x r ∩ {y | f x < f y})) = 0) :
-      μ.restrict (ball x r) A = 0 := by
-    rw [Measure.restrict_apply' measurableSet_ball]
-    have hsub : A ∩ ball x r ⊆
-        A ∩ (ball x r ∩ {y | f y < f x}) ∪ A ∩ (ball x r ∩ {y | f x < f y}) ∪ {x} :=
-      fun y ⟨hyA, hyB⟩ => (lt_trichotomy (f y) (f x)).elim (fun h => .inl (.inl ⟨hyA, hyB, h⟩))
-        fun h => h.elim (fun heq => .inr (f.injective heq)) fun hgt => .inl (.inr ⟨hyA, hyB, hgt⟩)
-    exact measure_mono_null hsub (measure_union_null (measure_union_null h₁ h₂)
-      (measure_singleton x))
-  have hstep (f : E ≃ₗᵢ[ℝ] ℝ)
-      (hlt : μ ((ball x r ∩ {y | f y < f x}) \ s) = 0)
-      (hgt : μ (s ∩ (ball x r ∩ {y | f x < f y})) = 0) :
-      ∃ ν : E, ‖ν‖ = 1 ∧ s =ᵐ[μ.restrict (ball x r)] {y | ⟪y, ν⟫ < ⟪x, ν⟫} := by
-    have hinner (y : E) : ⟪y, f.symm 1⟫ = f y := by simp [← f.inner_map_map]
-    refine ⟨f.symm 1, by simp, ae_eq_set.2 ⟨?_, ?_⟩⟩
-    · refine hnull f ?_ ?_
-      · refine measure_mono_null ?_ measure_empty
-        exact fun _ ⟨⟨_, hy⟩, _, h⟩ => hy (by simpa [hinner] using h)
-      · refine measure_mono_null ?_ hgt
-        exact fun _ ⟨hy, hyB⟩ => ⟨hy.1, hyB⟩
-    · refine hnull f ?_ ?_
-      · refine measure_mono_null ?_ hlt
-        exact fun _ ⟨hy, hyB⟩ => ⟨hyB, hy.2⟩
-      · refine measure_mono_null ?_ measure_empty
-        exact fun _ ⟨⟨hy, _⟩, _, h⟩ => lt_asymm (by simpa [hinner] using hy) h
-  rcases hL with hL0 | hL1 <;> rcases hR with hR0 | hR1
-  · exact .inl (ae_eq_empty.2 (hnull e hL0 hR0))
-  · refine .inr (.inr (hstep (e.trans (LinearIsometryEquiv.neg ℝ)) ?_ ?_))
-    · simpa only [LinearIsometryEquiv.trans_apply, LinearIsometryEquiv.coe_neg,
-        neg_lt_neg_iff] using hR1
-    · simpa only [LinearIsometryEquiv.trans_apply, LinearIsometryEquiv.coe_neg,
-        neg_lt_neg_iff] using hL0
-  · exact .inr (.inr (hstep e hL1 hR0))
-  · exact .inr (.inl (ae_eq_univ.2 (hnull e
-      (by simpa [sdiff_eq_compl_inter, inter_comm] using hL1)
-      (by simpa [sdiff_eq_compl_inter, inter_comm] using hR1))))
-
-/-- **Local classification in dimension one.** Around every `x ∈ Ω`, a set `s` of locally finite
-perimeter in `Ω` agrees `μ`-almost everywhere on some `ball x r ⊆ Ω` (`r > 0`) with `∅`, `univ`, or
-a half-line `{y | ⟪y, ν⟫ < ⟪x, ν⟫}` (`‖ν‖ = 1`). -/
-theorem exists_ae_eq_empty_or_univ_or_setOf_inner_lt_of_finrank_eq_one
-    (hn : finrank ℝ E = 1) (hu : LocallyIntegrableOn (s.indicator (1 : E → ℝ)) Ω μ)
-    (hfin : ∀ K, IsCompact K → K ⊆ Ω →
-      ∃ U : Opens E, K ⊆ (U : Set E) ∧ totalVariationOn μ U (s.indicator 1) ≠ ∞)
-    (hx : x ∈ Ω) :
-    ∃ r > 0, ball x r ⊆ Ω ∧
-      (s =ᵐ[μ.restrict (ball x r)] (∅ : Set E) ∨ s =ᵐ[μ.restrict (ball x r)] univ ∨
-        ∃ ν : E, ‖ν‖ = 1 ∧ s =ᵐ[μ.restrict (ball x r)] {y | ⟪y, ν⟫ < ⟪x, ν⟫}) := by
-  obtain ⟨r, hr, hrΩ, hP⟩ := exists_ball_subset_and_perimeter_sdiff_singleton_lt_one hu hfin hx
-  obtain ⟨e⟩ := (nonempty_linearIsometryEquiv_iff_finrank_eq (𝕜 := ℝ) (E := E) (F := ℝ)).2
-    (hn.trans (Module.finrank_self ℝ).symm)
-  have hs : NullMeasurableSet s (μ.restrict (ball x r)) :=
-    ((aemeasurable_indicator_const_iff (1 : ℝ)).1
-      hu.aestronglyMeasurable.aemeasurable).mono (Measure.restrict_mono hrΩ le_rfl)
-  have hL := measure_inter_ball_inter_lt_eq_zero_or_sdiff_eq_zero e hr hs hP
-  have hR := measure_inter_ball_inter_lt_eq_zero_or_sdiff_eq_zero
-    (e.trans (LinearIsometryEquiv.neg ℝ)) hr hs hP
-  have hR' : μ (s ∩ (ball x r ∩ {y | e x < e y})) = 0 ∨
-      μ ((ball x r ∩ {y | e x < e y}) \ s) = 0 := by
-    simpa only [LinearIsometryEquiv.trans_apply, LinearIsometryEquiv.coe_neg, neg_lt_neg_iff]
-      using hR
-  exact ⟨r, hr, hrΩ, ae_eq_empty_or_univ_or_setOf_inner_lt_of_halves e hL hR'⟩
-
-end LocalClassification
-
-end TauCeti

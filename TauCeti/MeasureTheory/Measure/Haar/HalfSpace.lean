@@ -49,6 +49,8 @@ almost-everywhere representative of a half-space.
   density at least one half in the closed balls centred in the closed half-space.
 * `TauCeti.hasDensityAt_setOf_inner_lt`: density one half on the boundary hyperplane.
 * `TauCeti.essentialBoundary_setOf_inner_lt`: the essential boundary is the hyperplane.
+* `TauCeti.ae_eq_empty_or_univ_or_setOf_inner_lt_of_halves`: gluing local constancy on the two
+  open half-balls around a point into `∅`, `univ`, or a half-line almost everywhere on the ball.
 
 ## References
 
@@ -274,6 +276,54 @@ theorem essentialBoundary_setOf_inner_lt {c : ℝ} (hν : ν ≠ 0) :
   ext y
   simp only [mem_compl_iff, mem_union, mem_ofPred_eq, not_or, not_lt]
   exact ⟨fun h => le_antisymm h.2 h.1, fun h => ⟨h.ge, h.le⟩⟩
+
+/-- Combining constancy on the two open half-balls around `x` along `e : E ≃ₗᵢ[ℝ] ℝ` yields `∅`,
+`univ`, or a half-line `{y | ⟪y, ν⟫ < ⟪x, ν⟫}` almost everywhere on `ball x r`. -/
+theorem ae_eq_empty_or_univ_or_setOf_inner_lt_of_halves (e : E ≃ₗᵢ[ℝ] ℝ) {r : ℝ}
+    {s : Set E} {x : E}
+    (hL : μ (s ∩ (ball x r ∩ {y | e y < e x})) = 0 ∨ μ ((ball x r ∩ {y | e y < e x}) \ s) = 0)
+    (hR : μ (s ∩ (ball x r ∩ {y | e x < e y})) = 0 ∨ μ ((ball x r ∩ {y | e x < e y}) \ s) = 0) :
+    s =ᵐ[μ.restrict (ball x r)] (∅ : Set E) ∨ s =ᵐ[μ.restrict (ball x r)] univ ∨
+      ∃ ν : E, ‖ν‖ = 1 ∧ s =ᵐ[μ.restrict (ball x r)] {y | ⟪y, ν⟫ < ⟪x, ν⟫} := by
+  have : Nontrivial E := ⟨⟨e.symm 1, 0, norm_ne_zero_iff.1 (by simp)⟩⟩
+  have hnull (f : E ≃ₗᵢ[ℝ] ℝ) {A : Set E}
+      (h₁ : μ (A ∩ (ball x r ∩ {y | f y < f x})) = 0)
+      (h₂ : μ (A ∩ (ball x r ∩ {y | f x < f y})) = 0) :
+      μ.restrict (ball x r) A = 0 := by
+    rw [Measure.restrict_apply' measurableSet_ball]
+    have hsub : A ∩ ball x r ⊆
+        A ∩ (ball x r ∩ {y | f y < f x}) ∪ A ∩ (ball x r ∩ {y | f x < f y}) ∪ {x} :=
+      fun y ⟨hyA, hyB⟩ => (lt_trichotomy (f y) (f x)).elim (fun h => .inl (.inl ⟨hyA, hyB, h⟩))
+        fun h => h.elim (fun heq => .inr (f.injective heq)) fun hgt => .inl (.inr ⟨hyA, hyB, hgt⟩)
+    exact measure_mono_null hsub (measure_union_null (measure_union_null h₁ h₂)
+      (measure_singleton x))
+  have hstep (f : E ≃ₗᵢ[ℝ] ℝ)
+      (hlt : μ ((ball x r ∩ {y | f y < f x}) \ s) = 0)
+      (hgt : μ (s ∩ (ball x r ∩ {y | f x < f y})) = 0) :
+      ∃ ν : E, ‖ν‖ = 1 ∧ s =ᵐ[μ.restrict (ball x r)] {y | ⟪y, ν⟫ < ⟪x, ν⟫} := by
+    have hinner (y : E) : ⟪y, f.symm 1⟫ = f y := by simp [← f.inner_map_map]
+    refine ⟨f.symm 1, by simp, ae_eq_set.2 ⟨?_, ?_⟩⟩
+    · refine hnull f ?_ ?_
+      · refine measure_mono_null ?_ measure_empty
+        exact fun _ ⟨⟨_, hy⟩, _, h⟩ => hy (by simpa [hinner] using h)
+      · refine measure_mono_null ?_ hgt
+        exact fun _ ⟨hy, hyB⟩ => ⟨hy.1, hyB⟩
+    · refine hnull f ?_ ?_
+      · refine measure_mono_null ?_ hlt
+        exact fun _ ⟨hy, hyB⟩ => ⟨hyB, hy.2⟩
+      · refine measure_mono_null ?_ measure_empty
+        exact fun _ ⟨⟨hy, _⟩, _, h⟩ => lt_asymm (by simpa [hinner] using hy) h
+  rcases hL with hL0 | hL1 <;> rcases hR with hR0 | hR1
+  · exact .inl (ae_eq_empty.2 (hnull e hL0 hR0))
+  · refine .inr (.inr (hstep (e.trans (LinearIsometryEquiv.neg ℝ)) ?_ ?_))
+    · simpa only [LinearIsometryEquiv.trans_apply, LinearIsometryEquiv.coe_neg,
+        neg_lt_neg_iff] using hR1
+    · simpa only [LinearIsometryEquiv.trans_apply, LinearIsometryEquiv.coe_neg,
+        neg_lt_neg_iff] using hL0
+  · exact .inr (.inr (hstep e hL1 hR0))
+  · exact .inr (.inl (ae_eq_univ.2 (hnull e
+      (by simpa [sdiff_eq_compl_inter, inter_comm] using hL1)
+      (by simpa [sdiff_eq_compl_inter, inter_comm] using hR1))))
 
 end TauCeti
 

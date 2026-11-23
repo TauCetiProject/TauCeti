@@ -8,7 +8,7 @@ module
 public import TauCeti.Analysis.BoundedVariation.ReducedBoundary
 public import TauCeti.MeasureTheory.Covering.EssentialBoundary
 import TauCeti.Analysis.BoundedVariation.Hyperplane
-import TauCeti.Analysis.BoundedVariation.OneDimensional.Perimeter
+import TauCeti.Analysis.BoundedVariation.OneDimensional.LocalClassification
 import TauCeti.Analysis.InnerProductSpace.Nondegenerate
 import TauCeti.MeasureTheory.Measure.Haar.HalfSpace
 
@@ -35,7 +35,11 @@ or `1` at `x`, so `x` belongs neither to `∂*s` nor to `∂ᵉs`. In the third 
 
 * around every point of `∂*s` in dimension `1`, `s` agrees `μ`-almost everywhere on a small ball
   with a half-line `{y | ⟪y, ν⟫ < ⟪x, ν⟫}`
-  (`TauCeti.exists_ae_eq_setOf_inner_lt_of_mem_reducedBoundary`);
+  (`TauCeti.exists_ae_eq_setOf_inner_lt_of_mem_reducedBoundary`, and in equivalence form under local
+  finite perimeter `TauCeti.mem_reducedBoundary_iff_exists_ae_eq_setOf_inner_lt_of_finrank_eq_one`);
+* every point of `∂*s` in dimension `1` has density `1 / 2`
+  (`TauCeti.hasDensityAt_of_mem_reducedBoundary_of_finrank_eq_one`), so `∂*s ⊆ ∂ᵉs` in dimension
+  `≤ 1` (`TauCeti.reducedBoundary_subset_essentialBoundary_of_finrank_le_one`);
 * when `s` has locally finite perimeter in `Ω`, `∂*s = Ω ∩ ∂ᵉs` literally as sets
   (`TauCeti.reducedBoundary_eq_inter_essentialBoundary_of_finrank_le_one`).
 
@@ -128,10 +132,25 @@ theorem exists_ae_eq_setOf_inner_lt_of_mem_reducedBoundary (hn : finrank ℝ E =
   · exact (perimeter_ball_ne_zero hx hr (by rw [perimeter_congr_ae hu', perimeter_univ])).elim
   · exact ⟨r, hr, hrΩ, ν, hν, hsH⟩
 
+/-- **Characterization of the reduced boundary in dimension one.** For a set `s` of locally finite
+perimeter in `Ω` and `finrank ℝ E = 1`, `x ∈ ∂*s` if and only if `s` agrees `μ`-almost everywhere
+on some small ball `ball x r ⊆ Ω` (`r > 0`) with a half-line `{y | ⟪y, ν⟫ < ⟪x, ν⟫}`
+(`‖ν‖ = 1`). -/
+theorem mem_reducedBoundary_iff_exists_ae_eq_setOf_inner_lt_of_finrank_eq_one
+    (hn : finrank ℝ E = 1) (hu : LocallyIntegrableOn (s.indicator (1 : E → ℝ)) Ω μ)
+    (hfin : ∀ K, IsCompact K → K ⊆ Ω →
+      ∃ U : Opens E, K ⊆ (U : Set E) ∧ totalVariationOn μ U (s.indicator 1) ≠ ∞) :
+    x ∈ reducedBoundary μ Ω s ↔
+      ∃ r > 0, ball x r ⊆ Ω ∧ ∃ ν : E, ‖ν‖ = 1 ∧
+        s =ᵐ[μ.restrict (ball x r)] {y | ⟪y, ν⟫ < ⟪x, ν⟫} :=
+  ⟨exists_ae_eq_setOf_inner_lt_of_mem_reducedBoundary hn,
+    fun ⟨_, hr, hrΩ, _, hν, hsH⟩ =>
+      mem_reducedBoundary_of_ae_eq_setOf_inner_lt_of_finrank_eq_one hn hu hfin hr hrΩ hν hsH⟩
+
 /-- **Points of the reduced boundary have density one half in dimension one.** Against an additive
 Haar measure on a one-dimensional real inner product space, every point of `∂*s` has density
 `1 / 2`. -/
-private theorem hasDensityAt_of_mem_reducedBoundary_of_finrank_eq_one (hn : finrank ℝ E = 1)
+theorem hasDensityAt_of_mem_reducedBoundary_of_finrank_eq_one (hn : finrank ℝ E = 1)
     (hx : x ∈ reducedBoundary μ Ω s) : HasDensityAt μ s x (1 / 2) := by
   obtain ⟨r, hr, _, ν, hν, hsH⟩ := exists_ae_eq_setOf_inner_lt_of_mem_reducedBoundary hn hx
   have hν0 : ν ≠ 0 := norm_ne_zero_iff.1 (hν ▸ one_ne_zero)
@@ -139,18 +158,14 @@ private theorem hasDensityAt_of_mem_reducedBoundary_of_finrank_eq_one (hn : finr
   exact hasDensityAt_setOf_inner_lt hν0 rfl
 
 /-- **The reduced boundary lies in the essential boundary in dimension at most one.** -/
-private theorem reducedBoundary_subset_essentialBoundary_of_finrank_le_one (hn : finrank ℝ E ≤ 1) :
+theorem reducedBoundary_subset_essentialBoundary_of_finrank_le_one (hn : finrank ℝ E ≤ 1) :
     reducedBoundary μ Ω s ⊆ essentialBoundary μ s := by
   rcases Nat.le_one_iff_eq_zero_or_eq_one.1 hn with h0 | h1
   · have : Subsingleton E := (Module.finrank_zero_iff (R := ℝ)).1 h0
     simp
   · intro x hx
     exact (hasDensityAt_of_mem_reducedBoundary_of_finrank_eq_one h1 hx).mem_essentialBoundary
-      (by simp) (by
-        intro h
-        have h' := congrArg (2 * ·) h
-        rw [ENNReal.mul_div_cancel (by simp) (by simp), mul_one] at h'
-        norm_num at h')
+      (by simp) (by simp)
 
 /-- **Exact agreement of reduced and essential boundaries in dimension at most one.** For a set `s`
 of locally finite perimeter in `Ω` and `finrank ℝ E ≤ 1`, `∂*s = Ω ∩ ∂ᵉs` literally as sets. -/

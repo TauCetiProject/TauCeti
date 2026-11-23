@@ -146,8 +146,9 @@ private theorem normalizedRelativeIsoperimetricConst_ne_top :
     (ENNReal.rpow_pos (measure_ball_pos μ 0 one_pos) measure_ball_lt_top.ne).ne'
 
 /-- Rescaled relative isoperimetric bound on closed balls: in dimension `n ≥ 2`, there is a finite
-constant `C` depending only on `μ` such that the `(1 - 1 / n)` power of the smaller closed-ball
-volume proportion of `s` and `sᶜ` is at most `C * (P(s; ball x r) / r ^ (n - 1))`. -/
+constant `C` depending only on `μ` such that for every `r > 0` and every `s` null-measurable for
+`μ.restrict (ball x r)`, the `(1 - 1 / n)` power of the smaller closed-ball volume proportion of
+`s` and `sᶜ` is at most `C * (P(s; ball x r) / r ^ (n - 1))`. -/
 theorem exists_min_div_closedBall_rpow_le_mul_perimeter_div (hn : 2 ≤ finrank ℝ E)
     (μ : Measure E) [μ.IsAddHaarMeasure] :
     ∃ C : ℝ≥0∞, C ≠ ∞ ∧ ∀ {s : Set E} {x : E} {r : ℝ}, 0 < r →

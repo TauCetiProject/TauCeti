@@ -64,16 +64,14 @@ complement fill a fixed positive proportion of arbitrarily small closed balls.
   measure, the three sets commute with translations.
 * `TauCeti.interior_subset_essentialInterior`, `TauCeti.essentialInterior_subset_closure` and
   `TauCeti.essentialBoundary_subset_frontier`: comparison with the topological notions.
-* `TauCeti.hasDensityAt_zero_or_one_of_tendsto_min_div_of_continuousOn` and
-  `TauCeti.notMem_essentialBoundary_of_tendsto_min_div_of_continuousOn`: vanishing of the smaller
+* `TauCeti.hasDensityAt_zero_or_one_of_tendsto_min_div_of_continuousOn`: vanishing of the smaller
   closed-ball proportion forces density zero or one when closed-ball mass is positive, finite, and
   continuous on `(0, ε)`.
 * `TauCeti.essentialInterior_ae_eq` and `TauCeti.measure_essentialBoundary`: Lebesgue's density
   theorem.
 * `TauCeti.not_hasDensityAt_zero_of_eventually_ofReal_pow_le_mul_measure_inter_ball`: a lower
   volume density bound against a Haar measure rules out density zero.
-* `TauCeti.hasDensityAt_zero_or_one_of_tendsto_min_div` and
-  `TauCeti.notMem_essentialBoundary_of_tendsto_min_div`: Haar-measure specialization of the
+* `TauCeti.hasDensityAt_zero_or_one_of_tendsto_min_div`: Haar-measure specialization of the
   zero-one density dichotomy.
 * `TauCeti.exists_pos_frequently_ofReal_mul_measure_closedBall_le`: at a point of the essential
   boundary, `s` and its complement both fill a proportion at least `a > 0` of arbitrarily small
@@ -633,20 +631,6 @@ theorem hasDensityAt_zero_or_one_of_tendsto_min_div_of_continuousOn {ε : ℝ} (
     (eventually_of_mem (Ioo_mem_nhdsGT hε) fun _ hr => (hsum hr).2) hmin
   exact hdich.imp (fun h0 => by simpa using hconv h0) (fun h1 => by simpa using hconv h1)
 
-/-- If `μ` has measurable closed balls and positive, finite, continuous closed-ball mass on
-`(0, ε)` (`ε > 0`) around `x`, and
-`min (μ (s ∩ closedBall x r)) (μ (closedBall x r \ s)) / μ (closedBall x r) → 0` as `r → 0⁺`, then
-`x` does not belong to the essential boundary of `s`. No measurability of `s` is needed. -/
-theorem notMem_essentialBoundary_of_tendsto_min_div_of_continuousOn {ε : ℝ} (hε : 0 < ε)
-    (hpos : ∀ r ∈ Set.Ioo 0 ε, μ (closedBall x r) ≠ 0)
-    (hfin : ∀ r ∈ Set.Ioo 0 ε, μ (closedBall x r) ≠ ∞)
-    (hcont : ContinuousOn (fun r => μ (closedBall x r)) (Set.Ioo 0 ε))
-    (h : Tendsto (fun r =>
-      min (μ (s ∩ closedBall x r)) (μ (closedBall x r \ s)) / μ (closedBall x r)) (𝓝[>] 0) (𝓝 0)) :
-    x ∉ essentialBoundary μ s := by
-  rw [mem_essentialBoundary, not_and_or, not_not, not_not]
-  exact (hasDensityAt_zero_or_one_of_tendsto_min_div_of_continuousOn hε hpos hfin hcont h).symm
-
 end ContinuousClosedBall
 
 end PseudoMetricSpace
@@ -787,21 +771,6 @@ theorem hasDensityAt_zero_or_one_of_tendsto_min_div
       fun _ _ => congrArg (μ ·) (univ_inter _).symm)
     h
 
-/-- If `min (μ (s ∩ closedBall x r)) (μ (closedBall x r \ s)) / μ (closedBall x r) → 0` as
-`r → 0⁺` against an additive Haar measure, then `x` does not belong to the essential boundary of
-`s`. No measurability of `s` is needed. -/
-theorem notMem_essentialBoundary_of_tendsto_min_div
-    (h : Tendsto (fun r =>
-      min (μ (s ∩ closedBall x r)) (μ (closedBall x r \ s)) / μ (closedBall x r)) (𝓝[>] 0) (𝓝 0)) :
-    x ∉ essentialBoundary μ s :=
-  notMem_essentialBoundary_of_tendsto_min_div_of_continuousOn one_pos
-    (fun _ hr => (measure_closedBall_pos μ x hr.1).ne')
-    (fun _ _ => measure_closedBall_lt_top.ne)
-    (((μ.continuousOn_addHaar_inter_closedBall x univ).mono
-        (Ioo_subset_Ico_self.trans Ico_subset_Ici_self)).congr
-      fun _ _ => congrArg (μ ·) (univ_inter _).symm)
-    h
-
 /-- **Points of the essential boundary are balanced at arbitrarily small scales.** Against an
 additive Haar measure, at a point `x` of the essential boundary of any set `s`, there is `a > 0`
 such that for arbitrarily small radii `r > 0` both `s` and its complement fill a proportion at
@@ -812,7 +781,9 @@ theorem exists_pos_frequently_ofReal_mul_measure_closedBall_le (hx : x ∈ essen
         ENNReal.ofReal a * μ (closedBall x r) ≤ μ (closedBall x r \ s) := by
   have hnot : ¬Tendsto (fun r =>
       min (μ (s ∩ closedBall x r)) (μ (closedBall x r \ s)) / μ (closedBall x r)) (𝓝[>] 0) (𝓝 0) :=
-    fun h => notMem_essentialBoundary_of_tendsto_min_div h hx
+    fun h => (hasDensityAt_zero_or_one_of_tendsto_min_div h).elim
+      (fun h0 => (mem_essentialBoundary.1 hx).2 (mem_essentialExterior.2 h0))
+      (fun h1 => (mem_essentialBoundary.1 hx).1 (mem_essentialInterior.2 h1))
   rw [ENNReal.tendsto_nhds_zero] at hnot
   push Not at hnot
   obtain ⟨ε, hεpos, hfreq⟩ := hnot

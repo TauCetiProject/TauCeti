@@ -9,12 +9,12 @@ public import Mathlib.Geometry.Euclidean.Volume.Measure
 public import TauCeti.Analysis.BoundedVariation.ReducedBoundary
 public import TauCeti.MeasureTheory.Covering.EssentialBoundary
 import TauCeti.Analysis.BoundedVariation.LowerDensityEstimates
+import TauCeti.Analysis.BoundedVariation.OneDimensional.LocalClassification
 import TauCeti.Analysis.BoundedVariation.OneDimensional.ReducedBoundary
 import TauCeti.Analysis.BoundedVariation.RelativeIsoperimetric
 import TauCeti.Geometry.Euclidean.Volume.Measure
 import TauCeti.MeasureTheory.Covering.HausdorffDensity
 import TauCeti.MeasureTheory.Function.LocallyIntegrable
-import TauCeti.MeasureTheory.Measure.Haar.HalfSpace
 
 /-!
 # The essential boundary and the reduced boundary
@@ -39,38 +39,40 @@ In dimension `n ≤ 1`, `∂ᵉs ∩ Ω = ∂*s` literally as sets
 
 ## Proof
 
-In dimension `n ≥ 2`, at a point `x` of the essential boundary, the proportion of `s` in
-`closedBall x r` tends neither to `0` nor to `1` as `r → 0⁺`. It depends continuously on `r`, so for
-some `a > 0` both `s` and its complement fill a proportion at least `a` of arbitrarily small balls
-around `x`
-(`TauCeti.exists_pos_frequently_ofReal_mul_measure_closedBall_le`). The normalized relative
-isoperimetric inequality in those balls
-(`TauCeti.exists_min_div_closedBall_rpow_le_mul_perimeter_div`) then gives
-`c r ^ (n - 1) ≤ P(s; ball x r)` for arbitrarily small `r`, with `c > 0` depending on `x`
-(`TauCeti.exists_pos_frequently_ofReal_mul_pow_le_perimeter_ball`). This needs no assumption on
-the perimeter of `s` beyond null-measurability near `x`.
+At a point `x` of the essential boundary, the proportion of `s` in `closedBall x r` tends neither
+to `0` nor to `1` as `r → 0⁺`. It depends continuously on `r`, so for some `a > 0` both `s` and
+its complement fill a proportion at least `a` of arbitrarily small balls around `x`
+(`TauCeti.exists_pos_frequently_ofReal_mul_measure_closedBall_le`). When `s` is null-measurable on
+a neighborhood `U` of `x`, in dimension `n ≥ 2` the normalized relative isoperimetric inequality
+(`TauCeti.exists_min_div_closedBall_rpow_le_mul_perimeter_div`) gives
+`c r ^ (n - 1) ≤ P(s; ball x r)` for arbitrarily small `r`, with `c > 0` depending on `x`, while in
+dimension `1` local constancy below unit normalized perimeter
+(`TauCeti.ae_eq_empty_or_univ_of_perimeter_ball_lt`) gives the same bound with `n - 1 = 0` (and in
+dimension `0` the essential boundary is empty). This needs no assumption on the perimeter of `s`
+beyond null-measurability near `x`
+(`TauCeti.exists_pos_frequently_ofReal_mul_pow_le_perimeter_ball`).
 
-So the perimeter measure `|Dχ_s|` has positive upper `(n - 1)`-dimensional density at every point
-of `∂ᵉs ∩ Ω` (`TauCeti.exists_pos_frequently_ofReal_mul_pow_le_variationMeasure_closedBall`).
+The perimeter measure `|Dχ_s|` therefore has positive upper `(n - 1)`-dimensional density at every
+point of `∂ᵉs ∩ Ω` (`TauCeti.exists_pos_frequently_ofReal_mul_pow_le_variationMeasure_closedBall`).
 Since `|Dχ_s|` is outer regular and carried by the reduced boundary
-(`TauCeti.ae_mem_reducedBoundary`), it has `(n - 1)`-density zero at `μH[n - 1]`-almost every
-point of `(∂ᵉs ∩ Ω) \ ∂*s`
-(`MeasureTheory.Measure.ae_tendsto_measure_closedBall_div_of_measure_eq_zero`), forcing that
-difference to be `Hⁿ⁻¹`-null.
+(`TauCeti.ae_mem_reducedBoundary`), it has `(n - 1)`-density zero at `μH[n - 1]`-almost every point
+of `(∂ᵉs ∩ Ω) \ ∂*s` (`MeasureTheory.Measure.ae_tendsto_measure_closedBall_div_of_measure_eq_zero`),
+forcing that difference to be `Hⁿ⁻¹`-null.
 
 ## Main results
 
 * `TauCeti.reducedBoundary_subset_essentialBoundary`: `∂*s ⊆ ∂ᵉs` in every dimension.
 * `TauCeti.ae_mem_essentialBoundary`: `|Dχ_s|`-almost every point of `Ω` lies in `∂ᵉs` in every
   dimension.
-* `TauCeti.exists_pos_frequently_ofReal_mul_pow_le_perimeter_ball`: in dimension `n ≥ 2`, at a
-  point of the essential boundary, `c r ^ (n - 1) ≤ P(s; ball x r)` for some `c > 0` and
-  arbitrarily small `r > 0`.
-* `TauCeti.notMem_essentialBoundary_of_tendsto_perimeter_ball_div`: in dimension `n ≥ 2`, if
-  `P(s; ball x r) / r ^ (n - 1) → 0` as `r → 0⁺`, then `x ∉ ∂ᵉs`.
-* `TauCeti.exists_pos_frequently_ofReal_mul_pow_le_variationMeasure_closedBall`: in dimension
-  `n ≥ 2`, the perimeter measure has positive upper `(n - 1)`-dimensional density at every point of
-  `∂ᵉs ∩ Ω`.
+* `TauCeti.exists_pos_frequently_ofReal_mul_pow_le_perimeter_ball`: in every dimension, if `s` is
+  null-measurable on a neighborhood of a point `x` of its essential boundary, then
+  `c r ^ (n - 1) ≤ P(s; ball x r)` for some `c > 0` and arbitrarily small `r > 0`.
+* `TauCeti.notMem_essentialBoundary_of_tendsto_perimeter_ball_div`: in every dimension, if `s` is
+  null-measurable on a neighborhood of `x` and `P(s; ball x r) / r ^ (n - 1) → 0` as `r → 0⁺`,
+  then `x ∉ ∂ᵉs`.
+* `TauCeti.exists_pos_frequently_ofReal_mul_pow_le_variationMeasure_closedBall`: in every dimension,
+  for a set `s` of locally finite perimeter in `Ω`, the perimeter measure has positive upper
+  `(n - 1)`-dimensional density at every point of `∂ᵉs ∩ Ω`.
 * `TauCeti.euclideanHausdorffMeasure_essentialBoundary_inter_sdiff_reducedBoundary_eq_zero`:
   **Federer's theorem** in every dimension, `Hⁿ⁻¹((∂ᵉs ∩ Ω) \ ∂*s) = 0`.
 * `TauCeti.essentialBoundary_inter_ae_eq_reducedBoundary` (and its finite-perimeter
@@ -102,21 +104,8 @@ finite-dimensional real inner product space, at every point of the reduced bound
 open set `Ω`, `s` has neither density zero nor density one. -/
 theorem reducedBoundary_subset_essentialBoundary :
     reducedBoundary μ Ω s ⊆ essentialBoundary μ s := by
-  rcases lt_or_ge (finrank ℝ E) 2 with hn | hn
-  · rcases Nat.le_one_iff_eq_zero_or_eq_one.1 (Nat.lt_succ_iff.1 hn) with h0 | h1
-    · have : Subsingleton E := (Module.finrank_zero_iff (R := ℝ)).1 h0
-      simp
-    · intro x hx
-      obtain ⟨r, hr, _, ν, hν, hsH⟩ := exists_ae_eq_setOf_inner_lt_of_mem_reducedBoundary h1 hx
-      have hν0 : ν ≠ 0 := norm_ne_zero_iff.1 (hν ▸ one_ne_zero)
-      have hd : HasDensityAt μ s x (1 / 2) := by
-        rw [hasDensityAt_congr_ae_of_mem_nhds (ball_mem_nhds x hr) hsH]
-        exact hasDensityAt_setOf_inner_lt hν0 rfl
-      exact hd.mem_essentialBoundary (by simp) (by
-        intro h
-        have h' := congrArg (2 * ·) h
-        rw [ENNReal.mul_div_cancel (by simp) (by simp), mul_one] at h'
-        norm_num at h')
+  rcases le_or_gt (finrank ℝ E) 1 with hn | hn
+  · exact reducedBoundary_subset_essentialBoundary_of_finrank_le_one hn
   · intro x hx
     set q := NNReal.conjExponent (finrank ℝ E)
     have hp : NNReal.HolderConjugate (finrank ℝ E) q := .conjExponent (by exact_mod_cast hn)
@@ -145,37 +134,53 @@ theorem ae_mem_essentialBoundary :
     ∀ᵐ y : Ω ∂variationMeasure μ Ω (s.indicator 1), (y : E) ∈ essentialBoundary μ s :=
   ae_mem_reducedBoundary.mono fun _ hy => reducedBoundary_subset_essentialBoundary hy
 
-/-- **Perimeter lower bound at the essential boundary.** In dimension `n ≥ 2`, let `s` be
-null-measurable near a point `x` of its essential boundary. Then for some `c > 0` and arbitrarily
-small radii `r > 0`, the perimeter of `s` in `ball x r` is at least `c r ^ (n - 1)`. This follows
-from the relative isoperimetric inequality, since both `s` and its complement fill a fixed
-proportion of arbitrarily small balls around `x`. -/
-theorem exists_pos_frequently_ofReal_mul_pow_le_perimeter_ball (hn : 2 ≤ finrank ℝ E)
+/-- Normalized perimeter lower bound at the essential boundary: if `s` is null-measurable on a
+neighborhood `U` of `x ∈ ∂ᵉs`, then `c ≤ P(s; ball x r) / r ^ (n - 1)` for some `c > 0` and
+arbitrarily small `r > 0`. -/
+private theorem exists_pos_frequently_le_perimeter_ball_div
     {U : Set E} (hU : U ∈ 𝓝 x) (hs : NullMeasurableSet s (μ.restrict U))
     (hx : x ∈ essentialBoundary μ s) :
-    ∃ c > 0, ∃ᶠ r in 𝓝[>] 0,
-      ENNReal.ofReal (c * r ^ (finrank ℝ E - 1)) ≤ perimeter μ ⟨ball x r, isOpen_ball⟩ s := by
-  obtain ⟨a, ha, hfreq⟩ := exists_pos_frequently_ofReal_mul_measure_closedBall_le hx
-  obtain ⟨ε, hε, hεU⟩ := Metric.mem_nhds_iff.1 hU
-  obtain ⟨C, hCtop, hC⟩ := exists_min_div_closedBall_rpow_le_mul_perimeter_div hn μ
-  set C' : ℝ≥0∞ := max C 1
-  have hC'top : C' ≠ ∞ := max_ne_top hCtop ENNReal.one_ne_top
-  have hC'pos : 0 < C'.toReal := ENNReal.toReal_pos (lt_of_lt_of_le one_pos (le_max_right _ _)).ne'
-    hC'top
-  set q : ℝ := 1 - (finrank ℝ E : ℝ)⁻¹
-  have hq : 0 ≤ q :=
-    sub_nonneg.2 (inv_le_one_of_one_le₀ (by exact_mod_cast (by omega : 1 ≤ finrank ℝ E)))
-  refine ⟨a ^ q / C'.toReal, by positivity,
-    (hfreq.and_eventually (Ioo_mem_nhdsGT hε)).mono fun r ⟨⟨h₁, h₂⟩, hr0, hrε⟩ => ?_⟩
-  have hiso := hC hr0 (hs.mono (Measure.restrict_mono ((ball_subset_ball hrε.le).trans hεU) le_rfl))
-  have hcb0 : μ (closedBall x r) ≠ 0 := (measure_closedBall_pos μ x hr0).ne'
-  have hcbtop : μ (closedBall x r) ≠ ∞ := measure_closedBall_lt_top.ne
-  have hmin : ENNReal.ofReal a ≤
-      min (μ (s ∩ closedBall x r)) (μ (closedBall x r \ s)) / μ (closedBall x r) := by
-    rw [ENNReal.le_div_iff_mul_le (.inl hcb0) (.inl hcbtop)]
-    exact le_min h₁ h₂
-  have hdiv : ENNReal.ofReal (a ^ q / C'.toReal) ≤
+    ∃ c > 0, ∃ᶠ r in 𝓝[>] 0, ENNReal.ofReal c ≤
       perimeter μ ⟨ball x r, isOpen_ball⟩ s / ENNReal.ofReal r ^ (finrank ℝ E - 1) := by
+  obtain ⟨ε, hε, hεU⟩ := Metric.mem_nhds_iff.1 hU
+  rcases lt_or_ge (finrank ℝ E) 2 with hn | hn
+  · rcases Nat.le_one_iff_eq_zero_or_eq_one.1 (Nat.lt_succ_iff.1 hn) with h0 | h1
+    · have : Subsingleton E := (Module.finrank_zero_iff (R := ℝ)).1 h0
+      simp at hx
+    · set a := Measure.addHaarScalarFactor μ volume
+      refine ⟨(a : ℝ), Measure.addHaarScalarFactor_pos_of_isAddHaarMeasure μ volume,
+        (Eventually.frequently (Ioo_mem_nhdsGT hε)).mono fun r ⟨hr0, hrε⟩ => ?_⟩
+      have hsr : NullMeasurableSet s (μ.restrict (ball x r)) :=
+        hs.mono (Measure.restrict_mono ((ball_subset_ball hrε.le).trans hεU) le_rfl)
+      rw [h1, Nat.sub_self, pow_zero, div_one, ENNReal.ofReal_coe_nnreal]
+      by_contra! hlt
+      rcases ae_eq_empty_or_univ_of_perimeter_ball_lt h1 hsr hlt with he | hu'
+      · have hd0 : HasDensityAt μ s x 0 :=
+          (hasDensityAt_congr_ae_of_mem_nhds (ball_mem_nhds x hr0) he).2 hasDensityAt_empty
+        exact (mem_essentialBoundary.1 hx).2 (mem_essentialExterior.2 hd0)
+      · have hd1 : HasDensityAt μ s x 1 :=
+          (hasDensityAt_congr_ae_of_mem_nhds (ball_mem_nhds x hr0) hu').2
+            (hasDensityAt_univ (eventually_measure_closedBall_ne_zero_ne_top μ x))
+        exact (mem_essentialBoundary.1 hx).1 (mem_essentialInterior.2 hd1)
+  · obtain ⟨a, ha, hfreq⟩ := exists_pos_frequently_ofReal_mul_measure_closedBall_le hx
+    obtain ⟨C, hCtop, hC⟩ := exists_min_div_closedBall_rpow_le_mul_perimeter_div hn μ
+    set C' : ℝ≥0∞ := max C 1
+    have hC'top : C' ≠ ∞ := max_ne_top hCtop ENNReal.one_ne_top
+    have hC'pos : 0 < C'.toReal := ENNReal.toReal_pos
+      (lt_of_lt_of_le one_pos (le_max_right _ _)).ne' hC'top
+    set q : ℝ := 1 - (finrank ℝ E : ℝ)⁻¹
+    have hq : 0 ≤ q :=
+      sub_nonneg.2 (inv_le_one_of_one_le₀ (by exact_mod_cast (by omega : 1 ≤ finrank ℝ E)))
+    refine ⟨a ^ q / C'.toReal, by positivity,
+      (hfreq.and_eventually (Ioo_mem_nhdsGT hε)).mono fun r ⟨⟨h₁, h₂⟩, hr0, hrε⟩ => ?_⟩
+    have hiso := hC hr0 (hs.mono (Measure.restrict_mono ((ball_subset_ball hrε.le).trans hεU)
+      le_rfl))
+    have hcb0 : μ (closedBall x r) ≠ 0 := (measure_closedBall_pos μ x hr0).ne'
+    have hcbtop : μ (closedBall x r) ≠ ∞ := measure_closedBall_lt_top.ne
+    have hmin : ENNReal.ofReal a ≤
+        min (μ (s ∩ closedBall x r)) (μ (closedBall x r \ s)) / μ (closedBall x r) := by
+      rw [ENNReal.le_div_iff_mul_le (.inl hcb0) (.inl hcbtop)]
+      exact le_min h₁ h₂
     rw [ENNReal.ofReal_div_of_pos hC'pos]
     refine ENNReal.div_le_of_le_mul ?_
     calc ENNReal.ofReal (a ^ q) = ENNReal.ofReal a ^ q :=
@@ -190,59 +195,59 @@ theorem exists_pos_frequently_ofReal_mul_pow_le_perimeter_ball (hn : 2 ≤ finra
           exact mul_le_mul_left (le_max_left _ _) _
       _ = (perimeter μ ⟨ball x r, isOpen_ball⟩ s / ENNReal.ofReal r ^ (finrank ℝ E - 1)) *
           ENNReal.ofReal C'.toReal := mul_comm _ _
+
+/-- **Perimeter lower bound at the essential boundary.** Let `s` be null-measurable on a
+neighborhood `U` of a point `x` of its essential boundary. Then for some `c > 0` and arbitrarily
+small radii `r > 0`, the perimeter of `s` in `ball x r` is at least `c r ^ (n - 1)`, where
+`n = dim E`. -/
+theorem exists_pos_frequently_ofReal_mul_pow_le_perimeter_ball
+    {U : Set E} (hU : U ∈ 𝓝 x) (hs : NullMeasurableSet s (μ.restrict U))
+    (hx : x ∈ essentialBoundary μ s) :
+    ∃ c > 0, ∃ᶠ r in 𝓝[>] 0,
+      ENNReal.ofReal (c * r ^ (finrank ℝ E - 1)) ≤ perimeter μ ⟨ball x r, isOpen_ball⟩ s := by
+  obtain ⟨c, hc, hfreq⟩ := exists_pos_frequently_le_perimeter_ball_div hU hs hx
+  refine ⟨c, hc, (hfreq.and_eventually self_mem_nhdsWithin).mono fun r ⟨hr, (hr0 : 0 < r)⟩ => ?_⟩
   have hr0_pow : ENNReal.ofReal r ^ (finrank ℝ E - 1) ≠ 0 :=
     pow_ne_zero _ (ENNReal.ofReal_pos.2 hr0).ne'
   have hrtop_pow : ENNReal.ofReal r ^ (finrank ℝ E - 1) ≠ ∞ :=
     ENNReal.pow_ne_top ENNReal.ofReal_ne_top
-  rw [ENNReal.ofReal_mul (by positivity), ENNReal.ofReal_pow hr0.le]
-  exact (ENNReal.le_div_iff_mul_le (.inl hr0_pow) (.inl hrtop_pow)).1 hdiv
+  rw [ENNReal.ofReal_mul hc.le, ENNReal.ofReal_pow hr0.le]
+  exact (ENNReal.le_div_iff_mul_le (.inl hr0_pow) (.inl hrtop_pow)).1 hr
 
-/-- In dimension `n ≥ 2`, if `s` is null-measurable near `x` and
+/-- If `s` is null-measurable on a neighborhood `U` of `x` and
 `P(s; ball x r) / r ^ (n - 1) → 0` as `r → 0⁺`, then `x` does not lie in the essential boundary
 of `s`. -/
-theorem notMem_essentialBoundary_of_tendsto_perimeter_ball_div (hn : 2 ≤ finrank ℝ E)
+theorem notMem_essentialBoundary_of_tendsto_perimeter_ball_div
     {U : Set E} (hU : U ∈ 𝓝 x) (hs : NullMeasurableSet s (μ.restrict U))
     (htend : Tendsto (fun r : ℝ => perimeter μ ⟨ball x r, isOpen_ball⟩ s /
       ENNReal.ofReal r ^ (finrank ℝ E - 1)) (𝓝[>] 0) (𝓝 0)) :
     x ∉ essentialBoundary μ s := by
   intro hx
-  obtain ⟨c, hc, hfreq⟩ := exists_pos_frequently_ofReal_mul_pow_le_perimeter_ball hn hU hs hx
-  have hfreq' : ∃ᶠ r in 𝓝[>] 0, ENNReal.ofReal c ≤
-      perimeter μ ⟨ball x r, isOpen_ball⟩ s / ENNReal.ofReal r ^ (finrank ℝ E - 1) := by
-    refine (hfreq.and_eventually self_mem_nhdsWithin).mono fun r ⟨hr, (hr0 : 0 < r)⟩ => ?_
-    have hpow0 : ENNReal.ofReal r ^ (finrank ℝ E - 1) ≠ 0 :=
-      pow_ne_zero _ (ENNReal.ofReal_pos.2 hr0).ne'
-    have hpowtop : ENNReal.ofReal r ^ (finrank ℝ E - 1) ≠ ∞ :=
-      ENNReal.pow_ne_top ENNReal.ofReal_ne_top
-    rw [ENNReal.le_div_iff_mul_le (.inl hpow0) (.inl hpowtop),
-      ← ENNReal.ofReal_pow hr0.le, ← ENNReal.ofReal_mul hc.le]
-    exact hr
-  obtain ⟨_, hle, hlt⟩ :=
-    (hfreq'.and_eventually (htend.eventually (eventually_lt_nhds (ENNReal.ofReal_pos.2 hc)))).exists
-  exact not_le_of_gt hlt hle
+  obtain ⟨c, hc, hfreq⟩ := exists_pos_frequently_le_perimeter_ball_div hU hs hx
+  exact (ENNReal.ofReal_pos.2 hc).not_ge (ge_of_tendsto_of_frequently htend hfreq)
 
-/-- **The perimeter measure at the essential boundary.** In dimension `n ≥ 2`, for a set `s` of
-locally finite perimeter in an open set `Ω` and a point `x ∈ Ω` of the essential boundary of `s`,
-the perimeter measure `|Dχ_s|` has positive upper `(n - 1)`-dimensional density at `x`: for some
-`c > 0` and arbitrarily small radii `r > 0`, `c r ^ (n - 1) ≤ |Dχ_s|(closedBall x r)`. -/
+/-- **The perimeter measure at the essential boundary.** For a set `s` of locally finite perimeter
+in an open set `Ω` and a point `x ∈ Ω` of the essential boundary of `s`, the perimeter measure
+`|Dχ_s|` has positive upper `(n - 1)`-dimensional density at `x`: for some `c > 0` and arbitrarily
+small radii `r > 0`, `c r ^ (n - 1) ≤ |Dχ_s|(closedBall x r)`. -/
 theorem exists_pos_frequently_ofReal_mul_pow_le_variationMeasure_closedBall
-    (hn : 2 ≤ finrank ℝ E) (hu : LocallyIntegrableOn (s.indicator (1 : E → ℝ)) Ω μ)
+    (hu : LocallyIntegrableOn (s.indicator (1 : E → ℝ)) Ω μ)
     (hfin : ∀ K, IsCompact K → K ⊆ Ω →
       ∃ U : Opens E, K ⊆ (U : Set E) ∧ totalVariationOn μ U (s.indicator 1) ≠ ∞)
     (hxΩ : x ∈ Ω) (hx : x ∈ essentialBoundary μ s) :
     ∃ c > 0, ∃ᶠ r in 𝓝[>] 0, ENNReal.ofReal (c * r ^ (finrank ℝ E - 1)) ≤
       variationMeasure μ Ω (s.indicator 1) (((↑) : Ω → E) ⁻¹' closedBall x r) := by
-  obtain ⟨c, hc, hfreq⟩ := exists_pos_frequently_ofReal_mul_pow_le_perimeter_ball hn
+  obtain ⟨c, hc, hfreq⟩ := exists_pos_frequently_ofReal_mul_pow_le_perimeter_ball
     (Ω.isOpen.mem_nhds hxΩ)
     ((aemeasurable_indicator_const_iff (1 : ℝ)).1 hu.aestronglyMeasurable.aemeasurable) hx
   exact ⟨c, hc, (hfreq.and_eventually (eventually_perimeter_ball_le_variationMeasure_closedBall
     hu hfin hxΩ)).mono fun _ h => h.1.trans h.2⟩
 
-/-- **Federer's theorem in dimension `n ≥ 2`.** For a set `s` of locally finite perimeter in an
-open set `Ω`, the part of the essential boundary `∂ᵉs` in `Ω` lying off the reduced boundary `∂*s`
-is `Hⁿ⁻¹`-null. -/
-private theorem euclideanHausdorffMeasure_sdiff_reducedBoundary_of_two_le
-    (hn : 2 ≤ finrank ℝ E) (hu : LocallyIntegrableOn (s.indicator (1 : E → ℝ)) Ω μ)
+/-- **Federer's theorem.** For a set `s` of locally finite perimeter in an open set `Ω`, the part of
+the essential boundary `∂ᵉs` in `Ω` lying off the reduced boundary `∂*s` is `μHE[n - 1]`-null,
+where `n = dim E` and `n - 1` is truncated natural subtraction (so `0 - 1 = 0` when `n = 0`). -/
+theorem euclideanHausdorffMeasure_essentialBoundary_inter_sdiff_reducedBoundary_eq_zero
+    (hu : LocallyIntegrableOn (s.indicator (1 : E → ℝ)) Ω μ)
     (hfin : ∀ K, IsCompact K → K ⊆ Ω →
       ∃ U : Opens E, K ⊆ (U : Set E) ∧ totalVariationOn μ U (s.indicator 1) ≠ ∞) :
     μHE[finrank ℝ E - 1] ((essentialBoundary μ s ∩ Ω) \ reducedBoundary μ Ω s) = 0 := by
@@ -260,7 +265,7 @@ private theorem euclideanHausdorffMeasure_sdiff_reducedBoundary_of_two_le
     refine measure_mono_null (fun y hy => ?_) (ae_iff.1 hAe)
     intro hlim
     obtain ⟨c, hc, hfreq⟩ := exists_pos_frequently_ofReal_mul_pow_le_variationMeasure_closedBall
-      hn hu hfin y.property hy.1
+      hu hfin y.property hy.1
     simp_rw [Subtype.preimage_closedBall] at hfreq
     have hfreq' := Measure.frequently_ofReal_div_mul_rpow_le_measure_closedBall hfreq
     have hc_pos : (0 : ℝ≥0∞) < ENNReal.ofReal (c / 2 ^ (n - 1)) :=
@@ -273,28 +278,12 @@ private theorem euclideanHausdorffMeasure_sdiff_reducedBoundary_of_two_le
       have h2rtop : ENNReal.ofReal (2 * r) ^ d ≠ ∞ :=
         ENNReal.rpow_ne_top_of_nonneg (Nat.cast_nonneg _) ENNReal.ofReal_ne_top
       exact (ENNReal.le_div_iff_mul_le (.inl h2r0) (.inl h2rtop)).2 hr
-    obtain ⟨_, hle, hlt⟩ :=
-      (hfreq_div.and_eventually ((hlim hy).eventually (eventually_lt_nhds hc_pos))).exists
-    exact not_le_of_gt hlt hle
+    exact hc_pos.not_ge (ge_of_tendsto_of_frequently (hlim hy) hfreq_div)
   have himg : ((↑) : Ω → E) '' A = (essentialBoundary μ s ∩ Ω) \ reducedBoundary μ Ω s :=
     (Subtype.image_preimage_coe _ _).trans (by rw [← inter_sdiff_assoc, inter_comm])
   rw [Measure.euclideanHausdorffMeasure_eq_zero_iff, ← himg,
     isometry_subtypeVal.hausdorffMeasure_image (Or.inl (Nat.cast_nonneg _))]
   exact hA
-
-/-- **Federer's theorem.** For a set `s` of locally finite perimeter in an open set `Ω`, the part of
-the essential boundary `∂ᵉs` in `Ω` lying off the reduced boundary `∂*s` is `μHE[n - 1]`-null,
-where `n = dim E` and `n - 1` is truncated natural subtraction (so `0 - 1 = 0` when `n = 0`). -/
-theorem euclideanHausdorffMeasure_essentialBoundary_inter_sdiff_reducedBoundary_eq_zero
-    (hu : LocallyIntegrableOn (s.indicator (1 : E → ℝ)) Ω μ)
-    (hfin : ∀ K, IsCompact K → K ⊆ Ω →
-      ∃ U : Opens E, K ⊆ (U : Set E) ∧ totalVariationOn μ U (s.indicator 1) ≠ ∞) :
-    μHE[finrank ℝ E - 1] ((essentialBoundary μ s ∩ Ω) \ reducedBoundary μ Ω s) = 0 := by
-  rcases le_or_gt (finrank ℝ E) 1 with hn | hn
-  · rw [inter_comm, ← reducedBoundary_eq_inter_essentialBoundary_of_finrank_le_one hn hu hfin,
-      sdiff_self, measure_empty]
-  · exact euclideanHausdorffMeasure_sdiff_reducedBoundary_of_two_le
-      hn hu hfin
 
 /-- **The essential and reduced boundaries agree up to a `μHE[n - 1]`-null set.** For a set `s`
 of locally finite perimeter in an open set `Ω`, the part of the essential boundary `∂ᵉs` in `Ω` and
