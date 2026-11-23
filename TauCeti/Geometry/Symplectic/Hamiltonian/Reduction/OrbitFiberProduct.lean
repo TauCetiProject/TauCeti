@@ -152,9 +152,13 @@ private theorem range_coe_orbitFiberProduct (h : σ.IsEquivariantMomentMap μ)
 
 variable [Fintype κ] [I.Boundaryless]
 
-/-- **The moment map is transverse to the orbit map** when `c` is a regular value: at a point `x`
-over the orbit, `dμ_x` is already surjective. -/
-private theorem range_mfderiv_components_sup_eq_top (h : σ.IsEquivariantMomentMap μ)
+/-- **The moment map is transverse to the orbit map** when `c` is a regular value and `μ` is
+coadjoint-equivariant: at every point `(x, o)` of the orbit fibre product, the ranges of the
+differentials of the components of `μ` at `x` and of `ι_O` at `o`, read in the basis `b`, span
+`ℝ^κ`. Indeed `dμ_x` alone is surjective, by
+`TauCeti.SmoothTwoForm.IsEquivariantMomentMap.differential_surjective_of_apply_eq`. This is the
+transversality hypothesis of `TauCeti.transverseFiberProductChartedSpace`. -/
+theorem range_mfderiv_components_sup_eq_top (h : σ.IsEquivariantMomentMap μ)
     (hreg : ∀ x, μ x = c → Function.Surjective (h.differential x))
     (b : Basis κ ℝ (GroupLieAlgebra I G))
     (p : M × G ⧸ (Lie.coadjointRepresentation ℝ I G).stabilizer c)

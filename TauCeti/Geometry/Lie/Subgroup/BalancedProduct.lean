@@ -84,6 +84,8 @@ compared with reduction at zero of the shifted moment map on the product with th
   `G`-manifold are smooth.
 * `TauCeti.BalancedProduct.contMDiff_liftProjRightTranslation`: the map
   `[g, z] ↦ (g • ι z, g K)` is smooth.
+* `TauCeti.BalancedProduct.contMDiff_iff_liftProjRightTranslation_comp`: a map into `G ×_K Z` is
+  smooth exactly when its composite with `[g, z] ↦ (g • ι z, g K)` is, for a smooth embedding `ι`.
 * `TauCeti.BalancedProduct.isManifold_orbitRelQuotient_rightTranslation`,
   `TauCeti.BalancedProduct.isSubmersion_quotientMk_orbitRelQuotient_rightTranslation`: the orbit
   space of `G` is a smooth manifold and the orbit projection is a smooth submersion.
@@ -332,20 +334,22 @@ theorem contMDiff_liftProjRightTranslation (hι : ContMDiff IZ IM ∞ ι) :
     (contMDiff_proj_rightTranslation (I := I) (IZ := IZ) (F := F))).congr fun y ↦ ?_
   exact Prod.ext (fst_liftProjRightTranslation ι y) (snd_liftProjRightTranslation ι y)
 
-/-- Near a point `w` of a manifold `W` mapped by `e` into the image of `[g, z] ↦ (g • ι z, g K)`,
-the preimage of `e w'` is `[s (e w').2, z']`, for a smooth local section `s` of `G → G ⧸ K` and the
-point `z'` with `ι z' = (s (e w').2)⁻¹ • (e w').1`, which depends smoothly on `w'` since `ι` is a
-smooth embedding. So any map `ψ : W → G ×_K Z` lifting `e` is smooth. -/
-private theorem contMDiff_of_liftProjRightTranslation_comp_eq (hι : IsSmoothEmbedding IZ IM ∞ ι)
-    {e : W → M × G ⧸ K}
-    (he : letI := Subgroup.quotientChartedSpaceOfIsClosed I ‹IsClosed (K : Set G)›
-      ContMDiff IW (IM.prod 𝓘(ℝ, Subgroup.QuotientModelSpace I K)) ∞ e)
-    {ψ : W → BalancedProduct K K.RightTranslation Z}
-    (hψ : liftProjRightTranslation ι ∘ ψ = e) :
+/-- **Smoothness of maps into `G ×_K Z`.** For a `K`-equivariant smooth embedding `ι`, a map
+`ψ : W → G ×_K Z` is smooth exactly when its composite with `[g, z] ↦ (g • ι z, g K)` is. Near a
+point `w`, the preimage of `e w' = (g • ι z, g K)` is `[s (e w').2, z']`, for a smooth local section
+`s` of `G → G ⧸ K` and the point `z'` with `ι z' = (s (e w').2)⁻¹ • (e w').1`, which depends
+smoothly on `w'` since `ι` is a smooth embedding. -/
+theorem contMDiff_iff_liftProjRightTranslation_comp (hι : IsSmoothEmbedding IZ IM ∞ ι)
+    {ψ : W → BalancedProduct K K.RightTranslation Z} :
     letI := rightTranslationChartedSpace K Z I IZ F
-    ContMDiff IW 𝓘(ℝ, ProperSMul.QuotientModelSpace F (E × EZ)) ∞ ψ := by
+    letI := Subgroup.quotientChartedSpaceOfIsClosed I ‹IsClosed (K : Set G)›
+    ContMDiff IW 𝓘(ℝ, ProperSMul.QuotientModelSpace F (E × EZ)) ∞ ψ ↔
+      ContMDiff IW (IM.prod 𝓘(ℝ, Subgroup.QuotientModelSpace I K)) ∞
+        (liftProjRightTranslation ι ∘ ψ) := by
   let _ := rightTranslationChartedSpace K Z I IZ F
   let _ := Subgroup.quotientChartedSpaceOfIsClosed I ‹IsClosed (K : Set G)›
+  refine ⟨(contMDiff_liftProjRightTranslation (I := I) (F := F) hι.contMDiff).comp, fun he ↦ ?_⟩
+  generalize hψ : liftProjRightTranslation ι ∘ ψ = e at he
   have := topologicalGroup_of_lieGroup I ∞ (G := G)
   have hinj := liftProjRightTranslation_injective ι hι.isEmbedding.injective
   intro w
@@ -418,10 +422,10 @@ def liftProjDiffeomorphRightTranslation (hι : IsSmoothEmbedding IZ IM ∞ ι) {
     contMDiff_toFun := he.contMDiff_iff_comp.2 <|
       (contMDiff_liftProjRightTranslation (I := I) (F := F) hι.contMDiff).congr fun y ↦
         apply_liftProjEquiv hι.isEmbedding.injective he.isEmbedding.injective hrange y
-    contMDiff_invFun := contMDiff_of_liftProjRightTranslation_comp_eq (F := F) hι he.contMDiff
-      (funext fun w ↦ by
+    contMDiff_invFun := (contMDiff_iff_liftProjRightTranslation_comp (F := F) hι).2 <|
+      he.contMDiff.congr fun w ↦ by
         rw [Function.comp_apply, ← apply_liftProjEquiv hι.isEmbedding.injective
-          he.isEmbedding.injective hrange, Equiv.apply_symm_apply]) }
+          he.isEmbedding.injective hrange, Equiv.apply_symm_apply] }
 
 /-- The diffeomorphism `TauCeti.BalancedProduct.liftProjDiffeomorphRightTranslation` followed by
 `e` is `[g, z] ↦ (g • ι z, g K)`. -/
