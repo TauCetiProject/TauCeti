@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Probability.Finance.BlackScholes.Greeks
 import TauCeti.Analysis.SpecialFunctions.Exp.Limits
-import TauCeti.Analysis.SpecialFunctions.Sqrt
+import TauCeti.Analysis.Real.Sqrt
 import TauCeti.Probability.Distributions.Gaussian.Basic
 import TauCeti.Probability.Distributions.Gaussian.Cdf
 
