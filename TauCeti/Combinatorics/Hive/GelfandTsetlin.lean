@@ -75,6 +75,7 @@ onto the full weight-`(γ - λ)` fibre over `μ` (`fixedIntegerHiveEquivGTPatter
   `TauCeti.Hive.gt_completion_of_uniform_input_gap`, `TauCeti.Hive.exists_stable_gt_equiv`:
   automatic completion and full fibre equivalence in the stable range.
 * `TauCeti.Hive.isGTCompletable_two_iff`, `TauCeti.Hive.hiveCount_two_productBoundary`,
+  `TauCeti.Hive.hiveCount_three_productBoundary_eq_card_gtPattern`,
   `TauCeti.Hive.hiveCount_three_zero_adjoint_zero`: low-rank classifications and concrete counts.
 
 ## References
@@ -1062,37 +1063,47 @@ theorem hiveCount_three_zero_adjoint_zero :
     Finset.sum_range_one, zero_add, h03, hP01] at h00 h01
   omega
 
+/-- **Rank-`3` full-fibre criterion**: when `μ₀ - (γ₀ - λ₀) ≤ λ₀ - λ₁`, `μ₀ - (γ₀ - λ₀) ≤ λ₁ - λ₂`,
+and `μ₀ + μ₁ - ((γ₀ - λ₀) + (γ₁ - λ₁)) ≤ λ₁ - λ₂`, every Gelfand–Tsetlin pattern in the rank-`3`
+weight-`(γ - λ)` fibre over `μ` satisfies `IsGTCompletable lam P`, so
+`hiveCount (productBoundary lam μ γ)` equals the full fibre cardinality
+`Nat.card {P : GTPattern 3 // P.topRow = μ.val ∧ P.rowWeight = γ.val - lam.val}`. -/
+theorem hiveCount_three_productBoundary_eq_card_gtPattern (lam μ γ : DominantWeight 3)
+    (h00 : μ.val 0 - (γ.val 0 - lam.val 0) ≤ lam.val 0 - lam.val 1)
+    (h01 : μ.val 0 - (γ.val 0 - lam.val 0) ≤ lam.val 1 - lam.val 2)
+    (h11 : μ.val 0 + μ.val 1 - ((γ.val 0 - lam.val 0) + (γ.val 1 - lam.val 1)) ≤
+      lam.val 1 - lam.val 2) :
+    hiveCount (productBoundary lam μ γ) =
+      Nat.card {P : GTPattern 3 // P.topRow = μ.val ∧ P.rowWeight = γ.val - lam.val} := by
+  rw [hiveCount_productBoundary_eq_card_gtPattern]
+  refine Nat.card_congr (Equiv.subtypeEquivRight fun P =>
+    ⟨fun ⟨ht, hw, _⟩ => ⟨ht, hw⟩, fun ⟨ht, hw⟩ => ⟨ht, hw, ?_⟩⟩)
+  have h01' : P 0 1 = γ.val 0 - lam.val 0 := by
+    simpa [P.rowWeight_apply_zero] using congrFun hw 0
+  have h03 : P 0 3 = μ.val 0 := by simpa [P.topRow_apply] using congrFun ht 0
+  have h13 : P 1 3 = μ.val 1 := by simpa [P.topRow_apply] using congrFun ht 1
+  have h2 : P 0 2 + P 1 2 = (γ.val 0 - lam.val 0) + (γ.val 1 - lam.val 1) := by
+    have hp := P.prefixSum_rowWeight (j := 2) (by decide)
+    rw [hw] at hp
+    simpa [TauCeti.prefixSum_def, Finset.sum_filter, Fin.sum_univ_three, P.rowSum_def,
+      Finset.sum_range_succ, sub_add_sub_comm] using hp.symm
+  have hlo : γ.val 0 - lam.val 0 ≤ P 0 2 :=
+    h01' ▸ P.entry_le_entry_succ_row (by decide) (by decide)
+  have hhi : P 0 2 ≤ μ.val 0 := h03 ▸ P.entry_le_entry_succ_row (by decide) (by decide)
+  rw [isGTCompletable_iff_sum_sub_le]
+  intro i j hij hj
+  rcases (by omega : (i = 0 ∧ j = 0) ∨ (i = 0 ∧ j = 1) ∨ (i = 1 ∧ j = 1)) with
+    ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ <;>
+  · simp [Finset.sum_range_succ]
+    omega
+
 /-- **Rank-`3` check**: `hiveCount = 1` for `((1, 0, 0), (1, 0, 0), (2, 0, 0))`. -/
 theorem hiveCount_three_one_one_two :
     hiveCount
       (productBoundary ⟨![1, 0, 0], by decide⟩ ⟨![1, 0, 0], by decide⟩
         ⟨![2, 0, 0], by decide⟩) = 1 := by
-  rw [hiveCount_productBoundary_eq_card_gtPattern]
-  have heq :
-      Nat.card {P : GTPattern 3 //
-        P.topRow = ![1, 0, 0] ∧ P.rowWeight = ![2, 0, 0] - ![1, 0, 0] ∧
-          IsGTCompletable ⟨![1, 0, 0], by decide⟩ P} =
-      Nat.card {P : GTPattern 3 //
-        P.topRow = ![1, 0, 0] ∧ P.rowWeight = ![2, 0, 0] - ![1, 0, 0]} := by
-    refine Nat.card_congr (Equiv.subtypeEquivRight fun P =>
-      ⟨fun ⟨ht, hw, _⟩ => ⟨ht, hw⟩, fun ⟨ht, hw⟩ => ⟨ht, hw, ?_⟩⟩)
-    have h01 : P 0 1 = 1 := by simpa [P.rowWeight_apply_zero] using congrFun hw 0
-    have h03 : P 0 3 = 1 := by simpa [P.topRow_apply] using congrFun ht 0
-    have h13 : P 1 3 = 0 := by simpa [P.topRow_apply] using congrFun ht 1
-    have h2 : P 0 2 + P 1 2 = 1 := by
-      have hp := P.prefixSum_rowWeight (j := 2) (by decide)
-      rw [hw] at hp
-      simpa [TauCeti.prefixSum_def, Finset.sum_filter, Fin.sum_univ_three, P.rowSum_def,
-        Finset.sum_range_succ] using hp.symm
-    have hlo : 1 ≤ P 0 2 := h01 ▸ P.entry_le_entry_succ_row (by decide) (by decide)
-    have hhi : P 0 2 ≤ 1 := h03 ▸ P.entry_le_entry_succ_row (by decide) (by decide)
-    rw [isGTCompletable_iff_sum_sub_le]
-    intro i j hij hj
-    rcases (by omega : (i = 0 ∧ j = 0) ∨ (i = 0 ∧ j = 1) ∨ (i = 1 ∧ j = 1)) with
-      ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ <;>
-    · simp [Finset.sum_range_succ]
-      omega
-  rw [heq, GTPattern.card_topRow_rowWeight_three]
+  rw [hiveCount_three_productBoundary_eq_card_gtPattern _ _ _ (by decide) (by decide) (by decide),
+    GTPattern.card_topRow_rowWeight_three]
   decide
 
 /-- **Rank-`3` check**: `hiveCount = 2` for `((2, 1, 0), (2, 1, 0), (3, 2, 1))`, corresponding to
@@ -1101,32 +1112,8 @@ theorem hiveCount_three_two_one_two_one_three_two_one :
     hiveCount
       (productBoundary ⟨![2, 1, 0], by decide⟩ ⟨![2, 1, 0], by decide⟩
         ⟨![3, 2, 1], by decide⟩) = 2 := by
-  rw [hiveCount_productBoundary_eq_card_gtPattern]
-  have heq :
-      Nat.card {P : GTPattern 3 //
-        P.topRow = ![2, 1, 0] ∧ P.rowWeight = ![3, 2, 1] - ![2, 1, 0] ∧
-          IsGTCompletable ⟨![2, 1, 0], by decide⟩ P} =
-      Nat.card {P : GTPattern 3 //
-        P.topRow = ![2, 1, 0] ∧ P.rowWeight = ![3, 2, 1] - ![2, 1, 0]} := by
-    refine Nat.card_congr (Equiv.subtypeEquivRight fun P =>
-      ⟨fun ⟨ht, hw, _⟩ => ⟨ht, hw⟩, fun ⟨ht, hw⟩ => ⟨ht, hw, ?_⟩⟩)
-    have h01 : P 0 1 = 1 := by simpa [P.rowWeight_apply_zero] using congrFun hw 0
-    have h03 : P 0 3 = 2 := by simpa [P.topRow_apply] using congrFun ht 0
-    have h13 : P 1 3 = 1 := by simpa [P.topRow_apply] using congrFun ht 1
-    have h2 : P 0 2 + P 1 2 = 2 := by
-      have hp := P.prefixSum_rowWeight (j := 2) (by decide)
-      rw [hw] at hp
-      simpa [TauCeti.prefixSum_def, Finset.sum_filter, Fin.sum_univ_three, P.rowSum_def,
-        Finset.sum_range_succ] using hp.symm
-    have hlo : 1 ≤ P 0 2 := h01 ▸ P.entry_le_entry_succ_row (by decide) (by decide)
-    have hhi : P 0 2 ≤ 2 := h03 ▸ P.entry_le_entry_succ_row (by decide) (by decide)
-    rw [isGTCompletable_iff_sum_sub_le]
-    intro i j hij hj
-    rcases (by omega : (i = 0 ∧ j = 0) ∨ (i = 0 ∧ j = 1) ∨ (i = 1 ∧ j = 1)) with
-      ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ <;>
-    · simp [Finset.sum_range_succ]
-      omega
-  rw [heq, GTPattern.card_topRow_rowWeight_three]
+  rw [hiveCount_three_productBoundary_eq_card_gtPattern _ _ _ (by decide) (by decide) (by decide),
+    GTPattern.card_topRow_rowWeight_three]
   decide
 
 end LowRankAndChecks

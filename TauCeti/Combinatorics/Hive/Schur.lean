@@ -92,8 +92,12 @@ theorem hiveCount_productBoundary_eq_ite_detShift {n : ℕ} (lam μ γ : Dominan
           (γ.shift (-(lam.detShift + μ.detShift))).shape μ.detShiftShape)
       else 0 := by
   split_ifs with hdet
-  · rw [← natCard_fixedIntegerHive]
-    exact Nat.card_congr (fixedIntegerHiveSignedEquivLRTableau hdet)
+  · rw [← DominantWeight.shape_shift_neg_detShift lam,
+      ← DominantWeight.shape_shift_neg_detShift μ, neg_add]
+    exact hiveCount_productBoundary_eq_natCard_lrTableau_shift
+      (DominantWeight.isPolynomial_shift_neg_detShift lam)
+      (DominantWeight.isPolynomial_shift_neg_detShift μ)
+      (DominantWeight.isPolynomial_shift_of_neg_detShift_le (l := γ) (by omega))
   · exact hiveCount_productBoundary_eq_zero_of_detShift_lt (lt_of_not_ge hdet)
 
 /-- **Input-swap symmetry of `hiveCount`** for all signed dominant weights `λ, μ, γ`:

@@ -37,8 +37,6 @@ first letter `m > i` would be read before any `m - 1`. Consequently
 ## Main definitions
 
 * `TauCeti.LRTableau λ ν μ`: the Littlewood–Richardson tableaux of shape `ν / λ` and content `μ`.
-* `TauCeti.LRTableau.congr`: transport a Littlewood–Richardson tableau along equalities of shapes
-  and content.
 * `TauCeti.LRTableau.highestWeight μ`: the highest-weight tableau, the Littlewood–Richardson
   tableau of straight shape `μ / ⊥` and content `μ`.
 
@@ -165,40 +163,6 @@ theorem rowCount_eq_zero_of_lt (T : LRTableau inner outer μ) {r k : ℕ} (h : r
 theorem sum_range_rowCount_of_lt (T : LRTableau inner outer μ) {r x : ℕ} (h : r < x) :
     ∑ k ∈ Finset.range x, T.val.rowCount r k = outer.rowLen r - inner.rowLen r :=
   T.val.sum_range_rowCount_of_forall_lt fun j _ _ => (T.entry_le r j).trans_lt h
-
-/-- Transport a Littlewood–Richardson tableau along equalities of its inner shape, outer shape,
-and content. -/
-def congr {inner' outer' μ' : YoungDiagram}
-    (hinner : inner = inner') (houter : outer = outer') (hμ : μ = μ') :
-    LRTableau inner outer μ ≃ LRTableau inner' outer' μ' :=
-  Equiv.cast (by subst hinner; subst houter; subst hμ; rfl)
-
-/-- Transporting a Littlewood–Richardson tableau along shape and content equalities preserves its
-entries. -/
-@[simp]
-theorem congr_apply {inner' outer' μ' : YoungDiagram}
-    (hinner : inner = inner') (houter : outer = outer') (hμ : μ = μ')
-    (T : LRTableau inner outer μ) (i j : ℕ) :
-    (congr hinner houter hμ T).val i j = T.val i j := by
-  subst hinner; subst houter; subst hμ; rfl
-
-/-- Transporting a Littlewood–Richardson tableau along shape and content equalities preserves its
-row counts. -/
-@[simp]
-theorem rowCount_congr {inner' outer' μ' : YoungDiagram}
-    (hinner : inner = inner') (houter : outer = outer') (hμ : μ = μ')
-    (T : LRTableau inner outer μ) (r k : ℕ) :
-    (congr hinner houter hμ T).val.rowCount r k = T.val.rowCount r k := by
-  subst hinner; subst houter; subst hμ; rfl
-
-/-- Transporting a Littlewood–Richardson tableau along shape and content equalities preserves its
-reading word. -/
-@[simp]
-theorem readingWord_congr {inner' outer' μ' : YoungDiagram}
-    (hinner : inner = inner') (houter : outer = outer') (hμ : μ = μ')
-    (T : LRTableau inner outer μ) :
-    (congr hinner houter hμ T).val.readingWord = T.val.readingWord := by
-  subst hinner; subst houter; subst hμ; rfl
 
 /-- **The sizes of the shapes of a Littlewood–Richardson tableau add up**: a tableau of shape
 `ν / λ` and content `μ` forces `|ν| = |λ| + |μ|`. -/
