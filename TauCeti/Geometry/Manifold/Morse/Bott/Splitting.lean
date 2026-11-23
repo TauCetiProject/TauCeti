@@ -257,6 +257,15 @@ theorem sub_negativeNormalProjection_apply_mem {s : S} (v : i.NormalSpace s hn) 
     v - h.negativeNormalProjection hn g s v ∈ h.positiveNormalSpace hn g s :=
   Submodule.sub_projection_mem _ v
 
+/-- The projection onto the positive normal space along the negative one is the identity minus the
+projection onto the negative normal space. -/
+@[simp]
+theorem projection_positiveNormalSpace_apply {s : S} (v : i.NormalSpace s hn) :
+    (h.positiveNormalSpace hn g s).projection (h.negativeNormalSpace hn g s)
+        (h.isCompl_negativeNormalSpace_positiveNormalSpace hn g g s).symm v =
+      v - h.negativeNormalProjection hn g s v :=
+  Submodule.projection_eq_self_sub_projection _ v
+
 /-- The projection fixes the negative normal space. -/
 @[simp]
 theorem negativeNormalProjection_apply_of_mem {s : S} {v : i.NormalSpace s hn}

@@ -90,49 +90,35 @@ def normalMetricChange (s : S) : i.NormalSpace s hn ≃ₗ[ℝ] i.NormalSpace s 
     (h.isCompl_negativeNormalSpace_positiveNormalSpace hn g g' s)
     (h.isCompl_negativeNormalSpace_positiveNormalSpace hn g' g s).symm
 
-/-- The change of fibre metric projects the negative part of `v` for `g` onto the negative normal
-space for `g'`, and its positive part onto the positive normal space for `g'`. -/
-theorem normalMetricChange_apply (s : S) (v : i.NormalSpace s hn) :
-    h.normalMetricChange hn g g' s v =
-      h.negativeNormalProjection hn g' s (h.negativeNormalProjection hn g s v) +
-        (h.positiveNormalSpace hn g' s).projection (h.negativeNormalSpace hn g' s)
-          (h.isCompl_negativeNormalSpace_positiveNormalSpace hn g' g' s).symm
-          ((h.positiveNormalSpace hn g s).projection (h.negativeNormalSpace hn g s)
-            (h.isCompl_negativeNormalSpace_positiveNormalSpace hn g g s).symm v) := by
-  rw [negativeNormalProjection_def, negativeNormalProjection_def]
-  exact Submodule.splittingEquiv_apply _ _ _ _ v
-
 /-- On the negative normal space for `g`, the change of fibre metric is the projection onto the
 negative normal space for `g'` along the positive normal space for `g'`. -/
 theorem normalMetricChange_apply_of_mem_negativeNormalSpace {s : S} {v : i.NormalSpace s hn}
     (hv : v ∈ h.negativeNormalSpace hn g s) :
     h.normalMetricChange hn g g' s v = h.negativeNormalProjection hn g' s v := by
-  rw [negativeNormalProjection_def]
-  exact Submodule.splittingEquiv_apply_of_mem_left _ _ _ _ hv
+  refine (Submodule.splittingEquiv_apply_of_mem_left _ _ _ _ hv).trans ?_
+  exact (h.negativeNormalProjection_apply_eq_of_mem hn g' (Submodule.projection_apply_mem _ v)
+    (Submodule.sub_projection_mem _ v)).symm
 
 /-- On the positive normal space for `g`, the change of fibre metric is the projection onto the
 positive normal space for `g'` along the negative normal space for `g'`. -/
 theorem normalMetricChange_apply_of_mem_positiveNormalSpace {s : S} {v : i.NormalSpace s hn}
     (hv : v ∈ h.positiveNormalSpace hn g s) :
-    h.normalMetricChange hn g g' s v =
-      (h.positiveNormalSpace hn g' s).projection (h.negativeNormalSpace hn g' s)
-        (h.isCompl_negativeNormalSpace_positiveNormalSpace hn g' g' s).symm v :=
-  Submodule.splittingEquiv_apply_of_mem_right _ _ _ _ hv
+    h.normalMetricChange hn g g' s v = v - h.negativeNormalProjection hn g' s v :=
+  (Submodule.splittingEquiv_apply_of_mem_right _ _ _ _ hv).trans
+    (h.projection_positiveNormalSpace_apply hn g' v)
 
-/-- The inverse change of fibre metric projects the negative part of `v` for `g'` onto the negative
-normal space for `g` along the positive normal space for `g'`, and its positive part onto the
-positive normal space for `g` along the negative normal space for `g'`. -/
-theorem normalMetricChange_symm_apply (s : S) (v : i.NormalSpace s hn) :
-    (h.normalMetricChange hn g g' s).symm v =
-      (h.negativeNormalSpace hn g s).projection (h.positiveNormalSpace hn g' s)
-          (h.isCompl_negativeNormalSpace_positiveNormalSpace hn g g' s)
-          (h.negativeNormalProjection hn g' s v) +
-        (h.positiveNormalSpace hn g s).projection (h.negativeNormalSpace hn g' s)
-          (h.isCompl_negativeNormalSpace_positiveNormalSpace hn g' g s).symm
-          ((h.positiveNormalSpace hn g' s).projection (h.negativeNormalSpace hn g' s)
-            (h.isCompl_negativeNormalSpace_positiveNormalSpace hn g' g' s).symm v) := by
-  rw [negativeNormalProjection_def]
-  exact Submodule.splittingEquiv_symm_apply _ _ _ _ v
+/-- The change of fibre metric projects the negative part of `v` for `g` onto the negative normal
+space for `g'`, and its positive part onto the positive normal space for `g'`. -/
+theorem normalMetricChange_apply (s : S) (v : i.NormalSpace s hn) :
+    h.normalMetricChange hn g g' s v =
+      h.negativeNormalProjection hn g' s (h.negativeNormalProjection hn g s v) +
+        (v - h.negativeNormalProjection hn g s v -
+          h.negativeNormalProjection hn g' s (v - h.negativeNormalProjection hn g s v)) := by
+  conv_lhs => rw [← add_sub_cancel (h.negativeNormalProjection hn g s v) v]
+  rw [map_add, h.normalMetricChange_apply_of_mem_negativeNormalSpace hn g g'
+      (h.negativeNormalProjection_apply_mem hn g v),
+    h.normalMetricChange_apply_of_mem_positiveNormalSpace hn g g'
+      (h.sub_negativeNormalProjection_apply_mem hn g v)]
 
 /-- On the negative normal space for `g'`, the inverse change of fibre metric is the projection
 onto the negative normal space for `g` along the positive normal space for `g'`. -/
@@ -151,6 +137,23 @@ theorem normalMetricChange_symm_apply_of_mem_positiveNormalSpace {s : S}
       (h.positiveNormalSpace hn g s).projection (h.negativeNormalSpace hn g' s)
         (h.isCompl_negativeNormalSpace_positiveNormalSpace hn g' g s).symm v :=
   Submodule.splittingEquiv_symm_apply_of_mem_right _ _ _ _ hv
+
+/-- The inverse change of fibre metric projects the negative part of `v` for `g'` onto the negative
+normal space for `g` along the positive normal space for `g'`, and its positive part onto the
+positive normal space for `g` along the negative normal space for `g'`. -/
+theorem normalMetricChange_symm_apply (s : S) (v : i.NormalSpace s hn) :
+    (h.normalMetricChange hn g g' s).symm v =
+      (h.negativeNormalSpace hn g s).projection (h.positiveNormalSpace hn g' s)
+          (h.isCompl_negativeNormalSpace_positiveNormalSpace hn g g' s)
+          (h.negativeNormalProjection hn g' s v) +
+        (h.positiveNormalSpace hn g s).projection (h.negativeNormalSpace hn g' s)
+          (h.isCompl_negativeNormalSpace_positiveNormalSpace hn g' g s).symm
+          (v - h.negativeNormalProjection hn g' s v) := by
+  conv_lhs => rw [← add_sub_cancel (h.negativeNormalProjection hn g' s v) v]
+  rw [map_add, h.normalMetricChange_symm_apply_of_mem_negativeNormalSpace hn g g'
+      (h.negativeNormalProjection_apply_mem hn g' v),
+    h.normalMetricChange_symm_apply_of_mem_positiveNormalSpace hn g g'
+      (h.sub_negativeNormalProjection_apply_mem hn g' v)]
 
 /-- **A change of fibre metric carries the negative normal space for `g` onto the negative normal
 space for `g'`.** In particular the two negative normal spaces are isomorphic. -/
@@ -249,11 +252,7 @@ theorem exists_contMDiffOn_normalMetricChange {k : ℕ∞ω} [IsManifold I (k + 
     apply L.symm.injective
     rw [hL (C s hs _ u), hC s hs, ← hL, LinearEquiv.coe_coe]
     simp only [A, add_apply, ContinuousLinearMap.comp_apply, sub_apply, one_apply_eq_self, map_add,
-      map_sub, hpL, hpL', normalMetricChange_apply, Submodule.projection_eq_self_sub_projection
-        (h.isCompl_negativeNormalSpace_positiveNormalSpace hn g g s),
-      Submodule.projection_eq_self_sub_projection
-        (h.isCompl_negativeNormalSpace_positiveNormalSpace hn g' g' s),
-      negativeNormalProjection_def]
+      map_sub, hpL, hpL', normalMetricChange_apply]
     abel
   -- The change of metric read in the trivialization is a bijection, hence invertible, so its
   -- inverse is `C^k` as well and is the inverse change of metric read in the trivialization.

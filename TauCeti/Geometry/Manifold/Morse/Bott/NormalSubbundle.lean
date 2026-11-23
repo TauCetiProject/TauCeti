@@ -397,7 +397,7 @@ theorem contMDiff_projection_positiveNormalSpace
   have hlin (x : i.NormalSpace w.proj hn) : (e ⟨w.proj, x⟩).2 = e.linearMapAt ℝ w.proj x := by
     rw [e.coe_linearMapAt_of_mem hw]
   simp only [TotalSpace.mk', hlin]
-  rw [Submodule.projection_eq_self_sub_projection, map_sub, negativeNormalProjection_def]
+  rw [h.projection_positiveNormalSpace_apply hn, map_sub]
 
 /-- **The negative normal bundle does not depend on the metric, up to isomorphism.** Let `i` be a
 nondegenerate critical submanifold of `f`, with `f` of class `C^{k+2}` along it, `i` of class
@@ -603,7 +603,10 @@ theorem contMDiff_normalMetricChange
     (contMDiff_projection_negativeNormalSpace hn h hk hf hdim g₀)
   have hB := (contMDiff_projection_positiveNormalSpace hn h hk hf hdim g₁).comp
     (contMDiff_projection_positiveNormalSpace hn h hk hf hdim g₀)
-  exact (hA.add_sectionAlong hB).congr fun v ↦ by rw [normalMetricChange_apply]
+  exact (hA.add_sectionAlong hB).congr fun v ↦ by
+    dsimp only [Function.comp_apply]
+    rw [normalMetricChange_apply, projection_positiveNormalSpace_apply,
+      projection_positiveNormalSpace_apply]
 
 /-- **The change of fibre metric as a `C^k` automorphism of the normal bundle.** For two `C^k`
 fibre metrics `g₀` and `g₁` on the normal bundle, this is the `C^k` diffeomorphism of the total

@@ -8,7 +8,7 @@ module
 public import TauCeti.Geometry.Manifold.Morse.Bott.NormalSubbundle
 import TauCeti.Analysis.Calculus.Bilinear
 import TauCeti.Geometry.Manifold.Morse.Bott.Coordinates
-import TauCeti.Topology.Algebra.Module.BilinearForm
+import TauCeti.Topology.VectorBundle.Riemannian.FiniteDimensional
 
 /-!
 # The fibre metric adapted to the normal Hessian of a Morse–Bott submanifold
@@ -135,52 +135,14 @@ private theorem adaptedForm_pos {s : S} {v : i.NormalSpace s hn} (hv : v ≠ 0) 
       (h.negativeNormalProjection_apply_mem hn g v) h0
     linarith
 
-/-- The bilinear form `adaptedForm` read in the coordinates of a basis of the normal space, where
-it is a continuous bilinear map of normed spaces. -/
-private def adaptedFormCoord (s : S) :
-    (Fin (finrank ℝ (i.NormalSpace s hn)) → ℝ) →L[ℝ]
-      (Fin (finrank ℝ (i.NormalSpace s hn)) → ℝ) →L[ℝ] ℝ :=
-  ((h.adaptedForm hn g s).compl₁₂
-    (Module.finBasis ℝ (i.NormalSpace s hn)).equivFun.symm.toLinearMap
-    (Module.finBasis ℝ (i.NormalSpace s hn)).equivFun.symm.toLinearMap).toContinuousBilinearMap
-
-@[simp]
-private theorem adaptedFormCoord_apply {s : S} (x y : Fin (finrank ℝ (i.NormalSpace s hn)) → ℝ) :
-    h.adaptedFormCoord hn g s x y =
-      h.adaptedForm hn g s ((Module.finBasis ℝ (i.NormalSpace s hn)).equivFun.symm x)
-        ((Module.finBasis ℝ (i.NormalSpace s hn)).equivFun.symm y) := by
-  simp [adaptedFormCoord]
-
 /-- **The fibre metric adapted to the normal Hessian.** For a Morse–Bott submanifold with a fibre
 metric `g` on its normal bundle, the fibre metric `(v, w) ↦ (Hess (v⁺, w⁺) - Hess (v⁻, w⁻)) / 2`,
 where `v⁻` and `v⁺` are the components of `v` in the negative and positive normal spaces relative
 to `g`. In it the normal Hessian is `2 (‖v⁺‖² - ‖v⁻‖²)`
 (`normalHessian_apply_eq_two_mul_adaptedMetric_inner_sub`). -/
-def adaptedMetric : RiemannianMetric fun s ↦ i.NormalSpace s hn where
-  inner s := (h.adaptedForm hn g s).toContinuousBilinearMap
-  symm s v w := by
-    simp only [LinearMap.toContinuousBilinearMap_apply, h.adaptedForm_symm hn g v w]
-  pos s v hv := by
-    simpa only [LinearMap.toContinuousBilinearMap_apply] using h.adaptedForm_pos hn g hv
-  continuousAt s := by
-    -- Read the form through the coordinates of a basis.
-    let e := (Module.finBasis ℝ (i.NormalSpace s hn)).equivFun
-    have he : Continuous e := LinearMap.continuous_of_finiteDimensional e.toLinearMap
-    refine ((((h.adaptedFormCoord hn g s).continuous.comp he).clm_apply he).congr
-      fun v ↦ ?_).continuousAt
-    simp [e]
-  isVonNBounded s := by
-    -- In the coordinates of a basis, a positive definite form has a bounded unit set.
-    let e := (Module.finBasis ℝ (i.NormalSpace s hn)).equivFun
-    have hb : Bornology.IsVonNBounded ℝ {v | h.adaptedFormCoord hn g s v v < 1} :=
-      (h.adaptedFormCoord hn g s).isVonNBounded_setOf_lt_one_of_pos fun v hv ↦ by
-        rw [adaptedFormCoord_apply]
-        exact h.adaptedForm_pos hn g ((map_ne_zero_iff _ e.symm.injective).2 hv)
-    refine (hb.image (LinearMap.toContinuousLinearMap e.symm.toLinearMap)).subset ?_
-    intro v hv
-    refine ⟨e v, ?_, by simp⟩
-    rw [Set.mem_ofPred_eq, adaptedFormCoord_apply, LinearEquiv.symm_apply_apply]
-    simpa using hv
+def adaptedMetric : RiemannianMetric fun s ↦ i.NormalSpace s hn :=
+  .ofFiniteDimensional (h.adaptedForm hn g) (fun _ ↦ ⟨h.adaptedForm_symm hn g⟩)
+    (fun _ _ hv ↦ h.adaptedForm_pos hn g hv)
 
 /-- The adapted metric is `(Hess (v⁺, w⁺) - Hess (v⁻, w⁻)) / 2`, with `v⁻ = P v` and
 `v⁺ = v - P v` for the projection `P` onto the negative normal space along the positive one. -/
@@ -190,7 +152,7 @@ theorem adaptedMetric_inner {s : S} (v w : i.NormalSpace s hn) :
           (w - h.negativeNormalProjection hn g s w) -
         h.normalHessian hn s (h.negativeNormalProjection hn g s v)
           (h.negativeNormalProjection hn g s w)) / 2 := by
-  simp only [adaptedMetric, LinearMap.toContinuousBilinearMap_apply, adaptedForm_apply]
+  simp only [adaptedMetric, RiemannianMetric.ofFiniteDimensional_inner, adaptedForm_apply]
 
 /-- **On the negative normal space the adapted metric is `-Hess / 2`.** -/
 theorem adaptedMetric_inner_of_mem_negativeNormalSpace {s : S} {v : i.NormalSpace s hn}

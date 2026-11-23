@@ -241,8 +241,8 @@ private theorem posPart_mem : h.posPart hn g s v ∈ h.positiveNormalSpace hn g 
   Submodule.projection_apply_mem _ v
 
 private theorem negPart_add_posPart : h.negPart hn g s v + h.posPart hn g s v = v := by
-  rw [negPart, negativeNormalProjection_def]
-  exact Submodule.projection_add_projection_eq_self _ v
+  rw [posPart, h.projection_positiveNormalSpace_apply hn g]
+  exact add_sub_cancel _ _
 
 private theorem posPart_eq_zero_iff : h.posPart hn g s v = 0 ↔ v ∈ h.negativeNormalSpace hn g s :=
   Submodule.projection_apply_eq_zero_iff _
