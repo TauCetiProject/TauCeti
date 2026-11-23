@@ -13,7 +13,7 @@ public import TauCeti.Geometry.Manifold.DifferentialForm.Closed
 public import TauCeti.Geometry.Manifold.DifferentialForm.Integration.Positivity
 public import TauCeti.Geometry.Manifold.DifferentialForm.Pullback.Basic
 import TauCeti.Geometry.Manifold.DifferentialForm.VectorField
-import TauCeti.Topology.VectorBundle.ContinuousAlternatingMap
+import TauCeti.Topology.VectorBundle.ContinuousAlternatingMap.Basic
 
 /-!
 # Left-invariant differential forms on a Lie group
