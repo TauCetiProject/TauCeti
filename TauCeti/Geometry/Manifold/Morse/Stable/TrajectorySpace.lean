@@ -87,7 +87,7 @@ theorem exists_orbitQuotient_homeomorph_levelSlice
     (hab : a ≠ b) (hc : f b < c ∧ c < f a) :
     ∃ e : Quotient (Flow.connectingOrbitSetoid hX.flow a b) ≃ₜ
         ↥(hX.flow.unstableSet a ∩ hX.flow.stableSet b ∩ {x | f x = c}),
-      ∀ y, e.symm y = Quotient.mk _ ⟨y.1, y.2.1⟩ :=
+      ∀ y, e.symm y = Quotient.mk _ ⟨y.val, y.property.1⟩ :=
   ⟨_, Flow.orbitQuotientHomeomorphLevelSlice_symm_apply hX.mdifferentiable.continuous.continuousOn
     (fun _ hy ↦ hX.strictAnti_flow_of_mem_unstableSet_inter_stableSet hab hy)
     fun _ hy ↦ (hX.existsUnique_flow_eq_of_mem_unstableSet_inter_stableSet hab hy hc.1

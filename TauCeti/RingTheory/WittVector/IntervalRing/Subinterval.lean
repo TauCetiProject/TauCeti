@@ -94,7 +94,7 @@ theorem gaussValuationAway_le_max (hv : v.Integers O) (hϖ : ϖ ≠ 0) {ρ ρ₁
       max (gaussValuationAway p hv hϖ ρ₁ hρ₁ B x) (gaussValuationAway p hv hϖ ρ₂ hρ₂ B x) := by
   obtain ⟨⟨y, s⟩, rfl⟩ :=
     IsLocalization.mk'_surjective (Submonoid.powers ((p : 𝕎 O) * teichmuller p ϖ)) x
-  obtain ⟨m, hm⟩ := s.2
+  obtain ⟨m, hm⟩ := s.property
   simp only [gaussValuationAway_mk', ← hm, map_pow, map_mul, gaussValuation_p,
     gaussValuation_teichmuller, mul_pow, mul_inv, ← mul_assoc]
   rw [← max_mul_of_nonneg _ _ zero_le]

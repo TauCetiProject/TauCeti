@@ -55,7 +55,7 @@ theorem apply_eq_self_of_forall_mem_adjoin_pow_eq_one {F : Type*} [Field F] [Cha
     (IntermediateField.adjoin ℚ {z : AlgebraicClosure F | z ^ m = 1})
   exact IntermediateField.apply_eq_self_of_forall_mem_inf _
     (hM.trans (IntermediateField.adjoin.mono _ _ _ (IntermediateField.subset_adjoin ℚ _)))
-    (σ : AlgebraicClosure F ≃ₐ[F] AlgebraicClosure F) hσ x.2
+    (σ : AlgebraicClosure F ≃ₐ[F] AlgebraicClosure F) hσ x.property
 
 /-- **`ℚ(μ_m) ∩ M` generates `M` over `F`**, for `F` a field of characteristic zero and `M` a
 subfield of `F(μ_m)` inside `AlgebraicClosure F`: whatever in `G_F` fixes `ℚ(μ_m) ∩ M` fixes `M`. -/

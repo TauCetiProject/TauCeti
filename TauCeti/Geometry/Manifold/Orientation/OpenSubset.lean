@@ -47,7 +47,7 @@ variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimen
 /-- The restriction of an orientation of `M` to the open subset `U`: its pullback along the
 inclusion `U → M`. -/
 def restrict (o : Orientation I M ι) (U : Opens M) : Orientation I U ι :=
-  o.pullback contMDiff_subtype_val
+  o.pullback contMDiff_subtypeVal
     (fun x ↦ (isLocalDiffeomorph_subtype_val (n := 1) x).isInvertible_mfderiv one_ne_zero)
     o.card_eq
 

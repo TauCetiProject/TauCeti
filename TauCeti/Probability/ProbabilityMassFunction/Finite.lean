@@ -11,7 +11,7 @@ public import TauCeti.Probability.ProbabilityMassFunction.Marginal
 # Finite sums for probability mass functions
 
 This file records summation identities for probability mass functions: the total mass on a finite
-type, a bound on weighted partial sums over any type, and the finite-sum specializations of the
+type, bounds on weighted sums, and the finite-sum specializations of the
 marginal formulas of `TauCeti.Probability.ProbabilityMassFunction.Marginal`.
 
 ## Main results
@@ -19,6 +19,8 @@ marginal formulas of `TauCeti.Probability.ProbabilityMassFunction.Marginal`.
 * `PMF.sum_toReal_eq_one`: the real values of a PMF on a finite type sum to one.
 * `PMF.sum_toReal_mul_le`: a weighted sum over a finset of a function bounded above by `M ≥ 0`
   on that finset is at most `M`.
+* `PMF.sum_toReal_mul_le_of_forall_le`, `PMF.abs_sum_toReal_mul_le`: on a finite type, a weighted
+  sum of a function bounded above, or in absolute value, by `C` obeys the same bound.
 * `PMF.map_fst_apply_fintype`, `PMF.map_snd_apply_fintype`: the two marginals of a product PMF are
   its row and column sums whenever the factor being summed over is finite.
 * `PMF.map_fst_eq_iff_fintype`, `PMF.map_snd_eq_iff_fintype`: characterizations of prescribed
@@ -56,6 +58,24 @@ theorem sum_toReal_mul_le (p : PMF ι) (s : Finset ι) {ψ : ι → ℝ} {M : �
     _ = (∑ y ∈ s, (p y).toReal) * M := by rw [Finset.sum_mul]
     _ ≤ 1 * M := mul_le_mul_of_nonneg_right hs hM0
     _ = M := one_mul M
+
+/-- On a finite type, a `p`-weighted sum of a function bounded above by `C` is at most `C`. -/
+theorem sum_toReal_mul_le_of_forall_le [Fintype ι] (p : PMF ι) {ψ : ι → ℝ} {C : ℝ}
+    (hψ : ∀ i, ψ i ≤ C) : ∑ i, (p i).toReal * ψ i ≤ C :=
+  calc
+    ∑ i, (p i).toReal * ψ i ≤ ∑ i, (p i).toReal * C :=
+      Finset.sum_le_sum fun i _ ↦ mul_le_mul_of_nonneg_left (hψ i) ENNReal.toReal_nonneg
+    _ = C := by rw [← Finset.sum_mul, sum_toReal_eq_one, one_mul]
+
+/-- On a finite type, a `p`-weighted sum of a function bounded in absolute value by `C` is
+bounded in absolute value by `C`. -/
+theorem abs_sum_toReal_mul_le [Fintype ι] (p : PMF ι) {ψ : ι → ℝ} {C : ℝ}
+    (hψ : ∀ i, |ψ i| ≤ C) : |∑ i, (p i).toReal * ψ i| ≤ C :=
+  calc
+    |∑ i, (p i).toReal * ψ i| ≤ ∑ i, (p i).toReal * |ψ i| := by
+      refine (Finset.abs_sum_le_sum_abs _ _).trans_eq (Finset.sum_congr rfl fun i _ ↦ ?_)
+      rw [abs_mul, ENNReal.abs_toReal]
+    _ ≤ C := p.sum_toReal_mul_le_of_forall_le hψ
 
 variable (π : PMF (ι × κ))
 

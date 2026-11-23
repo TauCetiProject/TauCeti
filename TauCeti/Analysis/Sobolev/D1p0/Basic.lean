@@ -154,7 +154,7 @@ theorem D1p0.norm_ofTestFunctionₗ (phi : 𝓓(Omega, ℝ)) :
 /-- The test functions are dense in `D^{1,p}_0(Ω)`. -/
 theorem D1p0.denseRange_ofTestFunctionₗ : DenseRange (D1p0.ofTestFunctionₗ mu Omega p) := by
   intro u
-  have hu : (u : Lp E p (mu.restrict Omega)) ∈ (d1p0Submodule mu Omega p : Set _) := u.2
+  have hu : (u : Lp E p (mu.restrict Omega)) ∈ (d1p0Submodule mu Omega p : Set _) := u.property
   rw [coe_d1p0Submodule] at hu
   rw [Topology.IsInducing.subtypeVal.closure_eq_preimage_closure_image, Set.mem_preimage,
     ← Set.range_comp]

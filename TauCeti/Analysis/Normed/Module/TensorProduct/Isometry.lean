@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Normed.Operator.Extend
-public import TauCeti.Analysis.Normed.Module.HahnBanach
+public import TauCeti.Analysis.Normed.Module.HahnBanach.Basic
 public import TauCeti.Analysis.Normed.Module.TensorProduct.Completion
 
 /-!

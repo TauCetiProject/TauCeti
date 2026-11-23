@@ -144,7 +144,7 @@ theorem isNormMulUnit_of_norm_coeff_mul_prod_lt {f : IsRestricted.subring (R := 
     exact h0.isUnit.ne_zero (by simp [a])
   -- The Gauss norm of `f` is attained at the constant coefficient.
   have hfa : ‖f‖ = ‖a‖ := by
-    obtain ⟨t, ht⟩ := f.2.exists_achievesGaussNorm
+    obtain ⟨t, ht⟩ := f.property.exists_achievesGaussNorm
     rw [AchievesGaussNorm, ← norm_eq_gaussNorm] at ht
     rcases eq_or_ne t 0 with rfl | ht0
     · simpa [a, coeff_zero_eq_constantCoeff_apply] using ht.symm
@@ -179,7 +179,8 @@ theorem norm_coeff_mul_prod_lt_of_isUnit {f : IsRestricted.subring (R := R) c} (
   have hfg' : (f : MvPowerSeries σ R) * g = 1 := congrArg Subtype.val hfg
   have hf0 : (f : MvPowerSeries σ R) ≠ 0 := fun h ↦ zero_ne_one (by rw [← hfg', h, zero_mul])
   have hg0 : (g : MvPowerSeries σ R) ≠ 0 := fun h ↦ zero_ne_one (by rw [← hfg', h, mul_zero])
-  obtain ⟨i, j, hi, hj, himax, -, hdom'⟩ := f.2.exists_norm_coeff_mul_norm_coeff_lt g.2 hf0 hg0
+  obtain ⟨i, j, hi, hj, himax, -, hdom'⟩ := f.property.exists_norm_coeff_mul_norm_coeff_lt
+      g.property hf0 hg0
   -- The dominant summand of the coefficient of `f * g = 1` at `i + j` is nonzero, so `i = 0`.
   have hdom := antidiagonal_dominant norm (f : MvPowerSeries σ R) g i j
     IsUltrametricDist.isNonarchimedean_norm norm_mul (fun a ↦ (norm_neg a).symm)
@@ -187,8 +188,8 @@ theorem norm_coeff_mul_prod_lt_of_isUnit {f : IsRestricted.subring (R := R) c} (
   have hij : i + j = 0 := by
     by_contra hne
     rw [hfg', coeff_one, ite_eq_right hne, norm_zero, norm_mul] at hdom
-    exact mul_ne_zero (norm_ne_zero_iff.mpr (f.2.coeff_ne_zero_of_achievesGaussNorm hf0 hi))
-      (norm_ne_zero_iff.mpr (g.2.coeff_ne_zero_of_achievesGaussNorm hg0 hj)) hdom.symm
+    exact mul_ne_zero (norm_ne_zero_iff.mpr (f.property.coeff_ne_zero_of_achievesGaussNorm hf0 hi))
+      (norm_ne_zero_iff.mpr (g.property.coeff_ne_zero_of_achievesGaussNorm hg0 hj)) hdom.symm
   obtain rfl : i = 0 := (add_eq_zero.mp hij).1
   have hlt := himax t ht
   rwa [zero_add, ← hi, Finsupp.prod_zero_index, mul_one, coeff_zero_eq_constantCoeff_apply] at hlt

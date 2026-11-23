@@ -159,7 +159,7 @@ def replaceMarginal (π : MultiCoupling μ) (i : ι) [StandardBorelSpace (X i)]
     (hσ : σ.toMeasure.fst = (μ i).toMeasure) :
     MultiCoupling (@Function.update ι (fun j ↦ ProbabilityMeasure (X j))
       (Classical.decEq ι) μ i (σ.map Prod.snd)) := by
-  refine ⟨Measure.replaceMarginal π.1 i σ, ?_⟩
+  refine ⟨Measure.replaceMarginal π.val i σ, ?_⟩
   constructor
   intro j
   by_cases hji : j = i
@@ -168,8 +168,8 @@ def replaceMarginal (π : MultiCoupling μ) (i : ι) [StandardBorelSpace (X i)]
     · simp only [Function.update_self, ProbabilityMeasure.toMeasure_map]
       rw [← Measure.snd]
     · rw [hσ]
-      exact (π.2.marginal_eq i).symm
-  · rw [Measure.map_eval_replaceMarginal_of_ne π.1 i σ hji, π.2.marginal_eq,
+      exact (π.property.marginal_eq i).symm
+  · rw [Measure.map_eval_replaceMarginal_of_ne π.val i σ hji, π.property.marginal_eq,
       @Function.update_of_ne ι (fun j ↦ ProbabilityMeasure (X j)) (Classical.decEq ι)
         j i hji (σ.map Prod.snd) μ]
 
@@ -180,7 +180,7 @@ theorem coe_replaceMarginal (π : MultiCoupling μ) (i : ι) [StandardBorelSpace
     (σ : ProbabilityMeasure (X i × X i))
     (hσ : σ.toMeasure.fst = (μ i).toMeasure) :
     (π.replaceMarginal i σ hσ : ProbabilityMeasure (∀ j, X j)) =
-      Measure.replaceMarginal π.1 i σ :=
+      Measure.replaceMarginal π.val i σ :=
   by
     apply ProbabilityMeasure.toMeasure_injective
     rfl

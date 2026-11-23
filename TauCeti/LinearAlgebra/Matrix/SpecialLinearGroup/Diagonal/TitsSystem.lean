@@ -132,7 +132,7 @@ theorem slTitsSystemWeylGroupMulEquivPerm_mk (g : (slTitsSystem k n).subgroupN) 
       glTitsSystemWeylGroupMulEquivPerm k n
         (QuotientGroup.mk ⟨SpecialLinearGroup.toGL (g : SpecialLinearGroup (Fin (n + 1)) k), by
           simpa only [slTitsSystem_subgroupN, Subgroup.mem_comap, glTitsSystem_subgroupN]
-            using g.2⟩) :=
+            using g.property⟩) :=
   -- `slTitsSystem` is by definition the pullback of `glTitsSystem` along `toGL`.
   congrArg (glTitsSystemWeylGroupMulEquivPerm k n)
     ((glTitsSystem k n).comapWeylGroupMulEquiv_mk _ (exists_toGL_mul_mem_inf k n) g)

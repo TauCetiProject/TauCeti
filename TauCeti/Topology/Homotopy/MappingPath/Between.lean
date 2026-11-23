@@ -63,8 +63,8 @@ def mappingPathSpaceConstHomeomorph (b : K) :
   invFun γ := ⟨((), γ.val), γ.property⟩
   left_inv _ := Subtype.ext <| Prod.ext (Subsingleton.elim _ _) rfl
   right_inv _ := rfl
-  continuous_toFun := continuous_subtype_val.snd.subtype_mk _
-  continuous_invFun := (continuous_const.prodMk continuous_subtype_val).subtype_mk _
+  continuous_toFun := continuous_subtypeVal.snd.subtype_mk _
+  continuous_invFun := (continuous_const.prodMk continuous_subtypeVal).subtype_mk _
 
 @[simp]
 theorem coe_mappingPathSpaceConstHomeomorph (b : K)
@@ -113,7 +113,7 @@ variable (A B : Set K)
 
 /-- Starting-point projection `MappingPathBetween A B → A`. -/
 def source : C(MappingPathBetween A B, A) :=
-  ⟨fun p ↦ p.val.val.1, continuous_subtype_val.subtype_val.fst⟩
+  ⟨fun p ↦ p.val.val.1, continuous_subtypeVal.subtypeVal.fst⟩
 
 @[simp]
 theorem source_apply (p : MappingPathBetween A B) : source A B p = p.val.val.1 :=
@@ -122,7 +122,7 @@ theorem source_apply (p : MappingPathBetween A B) : source A B p = p.val.val.1 :
 /-- Final-endpoint projection `MappingPathBetween A B → B`. -/
 def target : C(MappingPathBetween A B, B) :=
   ⟨fun p ↦ ⟨MappingPathSpace.endpoint (ContinuousMap.subtypeVal A) p.val, p.property⟩,
-    ((MappingPathSpace.endpoint _).continuous.comp continuous_subtype_val).subtype_mk _⟩
+    ((MappingPathSpace.endpoint _).continuous.comp continuous_subtypeVal).subtype_mk _⟩
 
 @[simp]
 theorem coe_target (p : MappingPathBetween A B) : (target A B p : K) = p.val.val.2 1 := by
@@ -144,7 +144,7 @@ def constantSection : C(↥(A ∩ B), MappingPathBetween A B) :=
       (DFunLike.congr_fun (MappingPathSpace.endpoint_comp_incl (ContinuousMap.subtypeVal A))
         ⟨x.val, x.property.1⟩).symm ▸ x.property.2⟩,
     ((MappingPathSpace.incl _).continuous.comp
-      (continuous_subtype_val.subtype_mk _)).subtype_mk _⟩
+      (continuous_subtypeVal.subtype_mk _)).subtype_mk _⟩
 
 @[simp]
 theorem constantSection_path (x : ↥(A ∩ B)) :
@@ -170,10 +170,10 @@ def homeomorphUnitPathsBetween : MappingPathBetween A B ≃ₜ unitPathsBetween 
         ⟨(⟨q.val 0, hq.1⟩, q.val), rfl⟩).symm ▸ hq.2⟩
   left_inv p := Subtype.ext <| Subtype.ext <| Prod.ext (Subtype.ext p.val.property) rfl
   right_inv _ := rfl
-  continuous_toFun := continuous_subtype_val.subtype_val.snd.subtype_mk _
+  continuous_toFun := continuous_subtypeVal.subtypeVal.snd.subtype_mk _
   continuous_invFun :=
-    (((((continuous_eval_const (0 : I)).comp continuous_subtype_val).subtype_mk _).prodMk
-      continuous_subtype_val).subtype_mk _).subtype_mk _
+    (((((continuous_eval_const (0 : I)).comp continuous_subtypeVal).subtype_mk _).prodMk
+      continuous_subtypeVal).subtype_mk _).subtype_mk _
 
 @[simp]
 theorem coe_homeomorphUnitPathsBetween (p : MappingPathBetween A B) :

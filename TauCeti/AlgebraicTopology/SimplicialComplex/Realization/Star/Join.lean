@@ -44,26 +44,26 @@ variable {ι : Type*} [DecidableEq ι] (K : PreAbstractSimplicialComplex ι)
 /-- Tagging vertices by membership in `σ` identifies its closed star with the weak polyhedron
 of the join of the simplex on `σ` and its link. Unused tagged vertices contribute no points. -/
 def closedStarJoinHomeomorph (hσ : σ ∈ K) (hK : K ≤ A.toPreAbstractSimplicialComplex) :
-    {x : Realization A // x.1.support ∈ closedStar K σ} ≃ₜ
+    {x : Realization A // x.val.support ∈ closedStar K σ} ≃ₜ
       {y : Realization (⊤ : AbstractSimplicialComplex (ι ⊕ ι)) //
-        y.1.support ∈ PreAbstractSimplicialComplex.join (simplex σ) (link K σ)} :=
+        y.val.support ∈ PreAbstractSimplicialComplex.join (simplex σ) (link K σ)} :=
   ((closedStar K σ).relabelingHomeomorph
     (partitionEmbedding (· ∈ σ)) (closedStar_le.trans hK) (by
       rw [map_closedStar_eq_join hσ]
       exact PreAbstractSimplicialComplex.le_top _)).trans
     (Homeomorph.setCongr
       (s := {y : Realization (⊤ : AbstractSimplicialComplex (ι ⊕ ι)) |
-        y.1.support ∈ (closedStar K σ).map (partitionEmbedding (· ∈ σ))})
+        y.val.support ∈ (closedStar K σ).map (partitionEmbedding (· ∈ σ))})
       (t := {y : Realization (⊤ : AbstractSimplicialComplex (ι ⊕ ι)) |
-        y.1.support ∈ PreAbstractSimplicialComplex.join (simplex σ) (link K σ)})
+        y.val.support ∈ PreAbstractSimplicialComplex.join (simplex σ) (link K σ)})
       (by rw [map_closedStar_eq_join hσ]))
 
 /-- The join coordinates are the pushforward of the original barycentric coordinates. -/
 @[simp]
 theorem closedStarJoinHomeomorph_val (hσ : σ ∈ K) (hK : K ≤ A.toPreAbstractSimplicialComplex)
-    (x : {x : Realization A // x.1.support ∈ closedStar K σ}) :
-    (K.closedStarJoinHomeomorph hσ hK x).1.1 =
-      Finsupp.mapDomain (partitionEmbedding (· ∈ σ)) x.1.1 := by
+    (x : {x : Realization A // x.val.support ∈ closedStar K σ}) :
+    (K.closedStarJoinHomeomorph hσ hK x).val.val =
+      Finsupp.mapDomain (partitionEmbedding (· ∈ σ)) x.val.val := by
   -- `erw` reduces the set-like coercions in the intermediate subpolyhedron.
   erw [closedStarJoinHomeomorph, Homeomorph.trans_apply, Homeomorph.setCongr_apply]
   exact relabelingHomeomorph_val _ _ _ _ x
@@ -72,9 +72,9 @@ theorem closedStarJoinHomeomorph_val (hσ : σ ∈ K) (hK : K ≤ A.toPreAbstrac
 @[simp]
 theorem closedStarJoinHomeomorph_symm_val (hσ : σ ∈ K) (hK : K ≤ A.toPreAbstractSimplicialComplex)
     (y : {y : Realization (⊤ : AbstractSimplicialComplex (ι ⊕ ι)) //
-      y.1.support ∈ PreAbstractSimplicialComplex.join (simplex σ) (link K σ)}) :
-    ((K.closedStarJoinHomeomorph hσ hK).symm y).1.1 =
-      Finsupp.comapDomain (partitionEmbedding (· ∈ σ)) y.1.1
+      y.val.support ∈ PreAbstractSimplicialComplex.join (simplex σ) (link K σ)}) :
+    ((K.closedStarJoinHomeomorph hσ hK).symm y).val.val =
+      Finsupp.comapDomain (partitionEmbedding (· ∈ σ)) y.val.val
         (partitionEmbedding (· ∈ σ)).injective.injOn := by
   -- `erw` reduces the set-like coercions in the intermediate subpolyhedron.
   erw [closedStarJoinHomeomorph, Homeomorph.symm_trans_apply,
@@ -84,9 +84,9 @@ theorem closedStarJoinHomeomorph_symm_val (hσ : σ ∈ K) (hK : K ≤ A.toPreAb
 /-- The support in the left factor is precisely the part of the original support in `σ`;
 the support in the right factor is its complement. -/
 theorem closedStarJoinHomeomorph_support (hσ : σ ∈ K) (hK : K ≤ A.toPreAbstractSimplicialComplex)
-    (x : {x : Realization A // x.1.support ∈ closedStar K σ}) :
-    (K.closedStarJoinHomeomorph hσ hK x).1.1.support =
-      (x.1.1.support ∩ σ).disjSum (x.1.1.support \ σ) := by
+    (x : {x : Realization A // x.val.support ∈ closedStar K σ}) :
+    (K.closedStarJoinHomeomorph hσ hK x).val.val.support =
+      (x.val.val.support ∩ σ).disjSum (x.val.val.support \ σ) := by
   rw [closedStarJoinHomeomorph_val, Finsupp.mapDomain_support_of_injective
     (partitionEmbedding (· ∈ σ)).injective, Finset.image_partitionEmbedding]
   simp only [Finset.filter_mem_eq_inter, Finset.filter_notMem_eq_sdiff]
@@ -95,25 +95,25 @@ theorem closedStarJoinHomeomorph_support (hσ : σ ∈ K) (hK : K ≤ A.toPreAbs
 contain the whole starred face. -/
 theorem closedStarJoinHomeomorph_mem_boundary_iff (hσ : σ ∈ K)
     (hK : K ≤ A.toPreAbstractSimplicialComplex)
-    (x : {x : Realization A // x.1.support ∈ closedStar K σ}) :
-    (K.closedStarJoinHomeomorph hσ hK x).1.1.support ∈
+    (x : {x : Realization A // x.val.support ∈ closedStar K σ}) :
+    (K.closedStarJoinHomeomorph hσ hK x).val.val.support ∈
         PreAbstractSimplicialComplex.join (simplexBoundary σ) (link K σ) ↔
-      ¬ σ ⊆ x.1.1.support := by
+      ¬ σ ⊆ x.val.val.support := by
   rw [← map_closedStar_inf_deletion_eq_join hσ, closedStarJoinHomeomorph_val,
     Finsupp.mapDomain_support_of_injective (partitionEmbedding (· ∈ σ)).injective,
     mem_map_iff]
   simp only [Finset.image_inj (partitionEmbedding (· ∈ σ)).injective, exists_eq_right,
-    mem_inf, mem_deletion, x.2, true_and]
-  exact and_iff_right (closedStar_le x.2)
+    mem_inf, mem_deletion, x.property, true_and]
+  exact and_iff_right (closedStar_le x.property)
 
 /-- The part of a closed star avoiding `σ` is homeomorphic to the weak polyhedron of the
 join of the boundary of `σ` and its link. This uses the same tagging as
 `closedStarJoinHomeomorph`. -/
 def closedStarBoundaryJoinHomeomorph (hσ : σ ∈ K) (hK : K ≤ A.toPreAbstractSimplicialComplex) :
-    {x : Realization A // x.1.support ∈ closedStar K σ ⊓
+    {x : Realization A // x.val.support ∈ closedStar K σ ⊓
       deletion K σ} ≃ₜ
       {y : Realization (⊤ : AbstractSimplicialComplex (ι ⊕ ι)) //
-        y.1.support ∈ PreAbstractSimplicialComplex.join (simplexBoundary σ) (link K σ)} :=
+        y.val.support ∈ PreAbstractSimplicialComplex.join (simplexBoundary σ) (link K σ)} :=
   ((closedStar K σ ⊓
       deletion K σ).relabelingHomeomorph
     (partitionEmbedding (· ∈ σ)) (inf_le_left.trans (closedStar_le.trans hK)) (by
@@ -121,19 +121,19 @@ def closedStarBoundaryJoinHomeomorph (hσ : σ ∈ K) (hK : K ≤ A.toPreAbstrac
       exact PreAbstractSimplicialComplex.le_top _)).trans
     (Homeomorph.setCongr
       (s := {y : Realization (⊤ : AbstractSimplicialComplex (ι ⊕ ι)) |
-        y.1.support ∈ (closedStar K σ ⊓ deletion K σ).map (partitionEmbedding (· ∈ σ))})
+        y.val.support ∈ (closedStar K σ ⊓ deletion K σ).map (partitionEmbedding (· ∈ σ))})
       (t := {y : Realization (⊤ : AbstractSimplicialComplex (ι ⊕ ι)) |
-        y.1.support ∈ PreAbstractSimplicialComplex.join (simplexBoundary σ) (link K σ)})
+        y.val.support ∈ PreAbstractSimplicialComplex.join (simplexBoundary σ) (link K σ)})
       (by rw [map_closedStar_inf_deletion_eq_join hσ]))
 
 /-- The boundary join homeomorphism pushes forward the barycentric coordinates by tagging. -/
 @[simp]
 theorem closedStarBoundaryJoinHomeomorph_val (hσ : σ ∈ K)
     (hK : K ≤ A.toPreAbstractSimplicialComplex)
-    (x : {x : Realization A // x.1.support ∈ closedStar K σ ⊓
+    (x : {x : Realization A // x.val.support ∈ closedStar K σ ⊓
       deletion K σ}) :
-    (K.closedStarBoundaryJoinHomeomorph hσ hK x).1.1 =
-      Finsupp.mapDomain (partitionEmbedding (· ∈ σ)) x.1.1 := by
+    (K.closedStarBoundaryJoinHomeomorph hσ hK x).val.val =
+      Finsupp.mapDomain (partitionEmbedding (· ∈ σ)) x.val.val := by
   -- `erw` reduces the set-like coercions in the intermediate subpolyhedron.
   erw [closedStarBoundaryJoinHomeomorph, Homeomorph.trans_apply, Homeomorph.setCongr_apply]
   exact relabelingHomeomorph_val _ _ _ _ x
@@ -143,9 +143,9 @@ theorem closedStarBoundaryJoinHomeomorph_val (hσ : σ ∈ K)
 theorem closedStarBoundaryJoinHomeomorph_symm_val (hσ : σ ∈ K)
     (hK : K ≤ A.toPreAbstractSimplicialComplex)
     (y : {y : Realization (⊤ : AbstractSimplicialComplex (ι ⊕ ι)) //
-      y.1.support ∈ PreAbstractSimplicialComplex.join (simplexBoundary σ) (link K σ)}) :
-    ((K.closedStarBoundaryJoinHomeomorph hσ hK).symm y).1.1 =
-      Finsupp.comapDomain (partitionEmbedding (· ∈ σ)) y.1.1
+      y.val.support ∈ PreAbstractSimplicialComplex.join (simplexBoundary σ) (link K σ)}) :
+    ((K.closedStarBoundaryJoinHomeomorph hσ hK).symm y).val.val =
+      Finsupp.comapDomain (partitionEmbedding (· ∈ σ)) y.val.val
         (partitionEmbedding (· ∈ σ)).injective.injOn := by
   -- `erw` reduces the set-like coercions in the intermediate subpolyhedron.
   erw [closedStarBoundaryJoinHomeomorph, Homeomorph.symm_trans_apply,
@@ -155,10 +155,10 @@ theorem closedStarBoundaryJoinHomeomorph_symm_val (hσ : σ ∈ K)
 /-- The closed-star and boundary-join identifications commute with the inclusions. -/
 theorem closedStarBoundaryJoinHomeomorph_coe (hσ : σ ∈ K)
     (hK : K ≤ A.toPreAbstractSimplicialComplex)
-    (x : {x : Realization A // x.1.support ∈ closedStar K σ ⊓
+    (x : {x : Realization A // x.val.support ∈ closedStar K σ ⊓
       deletion K σ}) :
-    (K.closedStarBoundaryJoinHomeomorph hσ hK x).1 =
-      (K.closedStarJoinHomeomorph hσ hK ⟨x.1, (mem_inf.mp x.2).1⟩).1 := by
+    (K.closedStarBoundaryJoinHomeomorph hσ hK x).val =
+      (K.closedStarJoinHomeomorph hσ hK ⟨x.val, (mem_inf.mp x.property).1⟩).val := by
   apply Subtype.ext
   simp only [closedStarBoundaryJoinHomeomorph_val, closedStarJoinHomeomorph_val]
 
