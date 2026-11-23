@@ -11,8 +11,10 @@ public import Mathlib.Analysis.Normed.Module.Multilinear.Curry
 # Reindexing and currying continuous multilinear maps
 
 Mathlib's `ContinuousMultilinearMap.domDomCongrₗᵢ` packages the reindexing of the arguments of a
-continuous multilinear map along an equivalence of index types as a linear isometric equivalence.
-This file records its evaluation lemma, and how joining the last variable with Mathlib's
+continuous multilinear map along an equivalence of index types as a linear isometric equivalence,
+and `continuousMultilinearCurryLeftEquiv` packages `ContinuousMultilinearMap.curryLeft` the same
+way. This file records the evaluation lemmas identifying these equivalences with the underlying
+operations, and how joining the last variable with Mathlib's
 `continuousMultilinearCurryRightEquiv'` interacts with separating the first one.
 
 Separating the last variable of a continuous multilinear map with
@@ -29,6 +31,8 @@ sends `0` to `0`.
 * `ContinuousMultilinearMap.curryRight_zero`: separating the last variable of `0` gives `0`.
 * `ContinuousMultilinearMap.curryLeft_continuousMultilinearCurryRightEquiv'_symm`: separating the
   first variable commutes with joining the last one.
+* `continuousMultilinearCurryLeftEquiv_eq_curryLeft`: `continuousMultilinearCurryLeftEquiv`
+  applied to a map is `ContinuousMultilinearMap.curryLeft`.
 -/
 
 public section
@@ -95,3 +99,18 @@ theorem ContinuousMultilinearMap.curryLeft_continuousMultilinearCurryRightEquiv'
     simp [hw]
 
 end CurryRight
+
+section CurryLeft
+
+variable {𝕜 : Type*} [NontriviallyNormedField 𝕜] {n : ℕ} {Ei : Fin (n + 1) → Type*}
+  [∀ i, NormedAddCommGroup (Ei i)] [∀ i, NormedSpace 𝕜 (Ei i)] {G : Type*}
+  [NormedAddCommGroup G] [NormedSpace 𝕜 G]
+
+/-- Left currying of an `(n + 1)`-multilinear map by the currying equivalence is
+`ContinuousMultilinearMap.curryLeft`. -/
+theorem continuousMultilinearCurryLeftEquiv_eq_curryLeft (f : ContinuousMultilinearMap 𝕜 Ei G) :
+    continuousMultilinearCurryLeftEquiv 𝕜 Ei G f = f.curryLeft := by
+  ext x v
+  rw [continuousMultilinearCurryLeftEquiv_apply, ContinuousMultilinearMap.curryLeft_apply]
+
+end CurryLeft

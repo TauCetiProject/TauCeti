@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Probability.Distributions.DiscreteLaplace.Basic
 public import TauCeti.Probability.Distributions.Geometric.Basic
+import TauCeti.Analysis.SpecialFunctions.Log.MulExpLtOne
 import TauCeti.Probability.Distributions.Sums
 import TauCeti.Probability.Distributions.NegativeBinomial.Transforms
 
@@ -97,12 +98,7 @@ theorem integrableExpSet_intCast_discreteLaplaceMeasure (m : ℤ) {q : ℝ}
   ext t
   simp only [integrableExpSet, mem_ofPred_eq]
   rw [integrable_exp_mul_intCast_discreteLaplaceMeasure_iff m hq0.le hq1]
-  have h (s : ℝ) : q * exp s < 1 ↔ s < -log q := by
-    calc
-      q * exp s < 1 ↔ exp (log q + s) < exp 0 := by
-        rw [exp_add, exp_log hq0, exp_zero]
-      _ ↔ s < -log q := by rw [exp_lt_exp]; constructor <;> intro h <;> linarith
-  rw [h, h, abs_lt]
+  rw [mul_exp_lt_one_iff hq0, mul_exp_lt_one_iff hq0, abs_lt]
   constructor <;> rintro ⟨h₁, h₂⟩ <;> constructor <;> linarith
 
 /-- The exact-domain condition `q * exp t < 1 ∧ q * exp (-t) < 1` forces `q < 1`, since the

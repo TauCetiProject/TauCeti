@@ -26,6 +26,6 @@ variable {R : Type*} [CommRing R] [IsDomain R] [IsDiscreteValuationRing R]
 /-- The maximal-ideal completion of a discrete valuation ring is a discrete valuation ring. -/
 instance : IsDiscreteValuationRing (AdicCompletion (maximalIdeal R) R) :=
   IsRegularLocalRing.isDiscreteValuationRing_iff_ringKrullDim_eq_one.mpr
-    (ringKrullDim_eq.trans (IsDiscreteValuationRing.ringKrullDim_eq_one R))
+    ((ringKrullDim_eq le_rfl).trans (IsDiscreteValuationRing.ringKrullDim_eq_one R))
 
 end TauCeti.AdicCompletion

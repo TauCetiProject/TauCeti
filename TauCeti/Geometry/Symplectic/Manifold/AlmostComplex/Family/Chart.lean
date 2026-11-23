@@ -27,7 +27,10 @@ is the prescribed field.
 
 * `ContMDiffAlmostComplexStructureFamily.inChart`: the coordinate expression of a family.
 * `ContMDiffAlmostComplexStructureFamily.contDiffOn_inChart`: its joint regularity on the target.
-* `ContMDiffAlmostComplexStructureFamily.inChart_mk`: slices are chart fields of frozen structures.
+* `ContMDiffAlmostComplexStructureFamily.inChart_mk`: slices are chart fields of frozen structures;
+  over a normed space, of the frozen smooth structures
+  (`ContMDiffAlmostComplexStructureFamily.inChart_mk_eq_inChart_freezeSmooth`), which are therefore
+  jointly smooth (`ContMDiffAlmostComplexStructureFamily.contDiffOn_inChart_freezeSmooth`).
 * `ContMDiffAlmostComplexStructureFamily.inChart_extChartAt_eq_conj`: conjugation on overlaps.
 * `ContMDiffAlmostComplexStructureFamily.ofChart`, `inChart_ofChart`: reconstruction on the
   product of the intrinsic chart sources from a field on the product chart target.
@@ -285,6 +288,31 @@ theorem inChart_ofModel (A : P × V → V →L[ℝ] V)
     q.2 z q.2 z _).trans h
 
 end Model
+
+section NormedSpace
+
+variable {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
+
+/-- For a smooth family over a normed space, whose chart is the identity, the slice of the
+coordinate expression at the parameter `w` is the chart field of the smooth structure frozen at
+`w`. -/
+theorem inChart_mk_eq_inChart_freezeSmooth
+    (J : ContMDiffAlmostComplexStructureFamily I M 𝓘(ℝ, F) F ⊤) (q : F × M) (w : F) (y : E) :
+    J.inChart q (w, y) = (J.freezeSmooth w).inChart q.2 y := by
+  simp [inChart_mk, ContMDiffAlmostComplexStructure.inChart_def,
+    SmoothAlmostComplexStructure.inChart_def]
+
+/-- For a smooth family over a normed space, the chart fields of the frozen smooth structures are
+jointly smooth in the parameter and the chart coordinate on the chart target. -/
+theorem contDiffOn_inChart_freezeSmooth
+    (J : ContMDiffAlmostComplexStructureFamily I M 𝓘(ℝ, F) F ⊤) (x : M) :
+    ContDiffOn ℝ ∞ (fun q : F × E ↦ (J.freezeSmooth q.1).inChart x q.2)
+      (Set.univ ×ˢ (extChartAt I x).target) := by
+  have h := J.contDiffOn_inChart ((0 : F), x)
+  rw [extChartAt_prod_target, extChartAt_model_space_eq_id, PartialEquiv.refl_target] at h
+  exact h.congr fun q _ ↦ (J.inChart_mk_eq_inChart_freezeSmooth (0, x) q.1 q.2).symm
+
+end NormedSpace
 
 section ChartField
 

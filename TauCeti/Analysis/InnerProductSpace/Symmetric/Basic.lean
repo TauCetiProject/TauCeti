@@ -10,7 +10,7 @@ public import Mathlib.Analysis.InnerProductSpace.Symmetric
 /-!
 # Symmetric operators: negation and limits
 
-Two facts about symmetric operators complementing Mathlib's
+Facts about symmetric operators complementing Mathlib's
 `Mathlib.Analysis.InnerProductSpace.Symmetric`:
 
 * the negative of a symmetric linear map is symmetric (`LinearMap.IsSymmetric.neg`);
@@ -18,9 +18,20 @@ Two facts about symmetric operators complementing Mathlib's
   (`ContinuousLinearMap.isClosed_setOf_isSymmetric`), so a limit of symmetric bounded operators
   is symmetric. No completeness of `E` is needed: the condition `⟪T x, y⟫ = ⟪x, T y⟫` is closed
   in `T` for each pair `x, y`.
+
+The same argument applies to operators `A : D →L[𝕜] H` from a normed space into an inner product
+space that are symmetric relative to a fixed `ι : D →L[𝕜] H`, in the sense that
+`⟪A x, ι y⟫ = ⟪ι x, A y⟫`: a limit of operators that are frequently symmetric relative to `ι`
+along the filter is again symmetric relative to `ι`
+(`ContinuousLinearMap.inner_apply_eq_inner_apply_of_tendsto`), and the negative of an operator
+symmetric relative to `ι` is again symmetric relative to `ι`
+(`ContinuousLinearMap.inner_neg_apply_eq_inner_neg_apply`).
 -/
 
 public section
+
+open Filter
+open scoped InnerProductSpace Topology
 
 variable {𝕜 E : Type*} [RCLike 𝕜] [NormedAddCommGroup E] [InnerProductSpace 𝕜 E]
 
@@ -40,5 +51,24 @@ theorem isClosed_setOf_isSymmetric :
   simp only [LinearMap.IsSymmetric, coe_coe, Set.ofPred_forall]
   exact isClosed_iInter fun x ↦ isClosed_iInter fun y ↦
     isClosed_eq (by fun_prop) (by fun_prop)
+
+/-- **Limits preserve symmetry relative to an embedding.** If operators `A s : D →L[𝕜] H`
+converge to `B` along a filter `l` and satisfy `⟪A s x, ι y⟫ = ⟪ι x, A s y⟫` for `s` frequently
+along `l`, then `B` satisfies `⟪B x, ι y⟫ = ⟪ι x, B y⟫`. -/
+theorem inner_apply_eq_inner_apply_of_tendsto {α D H : Type*} [NormedAddCommGroup D]
+    [NormedSpace 𝕜 D] [NormedAddCommGroup H] [InnerProductSpace 𝕜 H] {ι : D →L[𝕜] H}
+    {A : α → D →L[𝕜] H} {B : D →L[𝕜] H} {l : Filter α} (hA : Tendsto A l (𝓝 B))
+    (hSymm : ∃ᶠ s in l, ∀ x y, ⟪A s x, ι y⟫_𝕜 = ⟪ι x, A s y⟫_𝕜) (x y : D) :
+    ⟪B x, ι y⟫_𝕜 = ⟪ι x, B y⟫_𝕜 :=
+  (isClosed_eq (f := fun T : D →L[𝕜] H ↦ ⟪T x, ι y⟫_𝕜) (g := fun T ↦ ⟪ι x, T y⟫_𝕜)
+    (by fun_prop) (by fun_prop)).mem_of_frequently_of_tendsto (hSymm.mono fun s hs ↦ hs x y) hA
+
+/-- **Negation preserves symmetry relative to an embedding.** If `B : D →L[𝕜] H` satisfies
+`⟪B x, ι y⟫ = ⟪ι x, B y⟫`, then so does `-B`. -/
+theorem inner_neg_apply_eq_inner_neg_apply {D H : Type*} [NormedAddCommGroup D] [NormedSpace 𝕜 D]
+    [NormedAddCommGroup H] [InnerProductSpace 𝕜 H] {ι B : D →L[𝕜] H}
+    (hB : ∀ x y, ⟪B x, ι y⟫_𝕜 = ⟪ι x, B y⟫_𝕜) (x y : D) :
+    ⟪(-B) x, ι y⟫_𝕜 = ⟪ι x, (-B) y⟫_𝕜 := by
+  simp only [neg_apply, inner_neg_left, inner_neg_right, hB]
 
 end ContinuousLinearMap
