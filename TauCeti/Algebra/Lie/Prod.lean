@@ -404,14 +404,6 @@ namespace LieIdeal
 
 variable {R L L' : Type*} [CommRing R] [LieRing L] [LieAlgebra R L] [LieRing L'] [LieAlgebra R L']
 
-/-- Elements of two disjoint ideals bracket to zero: the bracket lies in both. -/
-theorem lie_eq_zero_of_disjoint {I J : LieIdeal R L} (h : Disjoint I J) {x y : L} (hx : x ∈ I)
-    (hy : y ∈ J) : ⁅x, y⁆ = 0 := by
-  have hm : ⁅x, y⁆ ∈ I ⊓ J :=
-    ⟨by rw [← lie_skew]; exact I.neg_mem (I.lie_mem hx), J.lie_mem hy⟩
-  rw [h.eq_bot] at hm
-  exact (LieSubmodule.mem_bot _).mp hm
-
 variable (I J : LieIdeal R L) (h : IsCompl I J)
 
 /-- For complementary ideals `I` and `J` of a Lie algebra `L`, addition `I × J → L` is an

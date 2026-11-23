@@ -28,7 +28,8 @@ This file supplies general constructions for Lie modules that are missing from M
   module.
 * `LieHom.lieIdealComap`: a Lie homomorphism restricted to the preimage of a Lie ideal, as a
   Lie homomorphism into that ideal.
-* `LieHom.restrictIdeal`: a Lie homomorphism restricted to Lie ideals it maps into each other.
+* `LieHom.restrict`: a Lie homomorphism restricted to Lie subalgebras it maps into each other, and
+  its specialization `LieHom.restrictIdeal` to Lie ideals.
 
 ## Main results
 
@@ -60,6 +61,7 @@ This file supplies general constructions for Lie modules that are missing from M
   algebra commute on every Lie module.
 * `LieSubalgebra.lie_eq_zero_of_mem` and `LieIdeal.lie_eq_zero_of_mem`: two elements of an
   abelian Lie subalgebra, or of an abelian Lie ideal, have zero bracket in the ambient Lie algebra.
+* `LieIdeal.lie_eq_zero_of_disjoint`: elements of two disjoint Lie ideals have zero bracket.
 * `LieHom.map_ad_pow`: a Lie homomorphism carries `(ad x) ^ n y` to `(ad (f x)) ^ n (f y)`.
 * `LieEquiv.map_engel`: a Lie algebra isomorphism carries the Engel subalgebra of `x` onto that
   of its image.
@@ -154,6 +156,13 @@ theorem LieIdeal.lie_eq_zero_of_mem {R L : Type*} [CommRing R] [LieRing L] [LieA
     {I : LieIdeal R L} [IsLieAbelian I] {x y : L} (hx : x ∈ I) (hy : y ∈ I) : ⁅x, y⁆ = 0 :=
   have : IsLieAbelian (I : LieSubalgebra R L) := ‹IsLieAbelian I›
   LieSubalgebra.lie_eq_zero_of_mem (H := (I : LieSubalgebra R L)) hx hy
+
+/-- Elements of two disjoint Lie ideals bracket to zero: the bracket lies in both. -/
+theorem LieIdeal.lie_eq_zero_of_disjoint {R L : Type*} [CommRing R] [LieRing L] [LieAlgebra R L]
+    {I J : LieIdeal R L} (h : Disjoint I J) {x y : L} (hx : x ∈ I) (hy : y ∈ J) : ⁅x, y⁆ = 0 := by
+  have hm : ⁅x, y⁆ ∈ I ⊓ J := ⟨lie_mem_left R L I x y hx, J.lie_mem hy⟩
+  rw [h.eq_bot] at hm
+  exact (LieSubmodule.mem_bot _).mp hm
 
 section EndSubalgebra
 
@@ -548,14 +557,23 @@ theorem _root_.LieHom.lieIdealComap_injective (hf : Function.Injective f) :
     Function.Injective (f.lieIdealComap I) := fun x y h ↦
   Subtype.ext (hf (by simpa using congrArg Subtype.val h))
 
+/-- The restriction of a Lie homomorphism `f` to Lie subalgebras `S` and `T` with `f(S) ⊆ T`, as
+a Lie homomorphism `S → T`. Its linear map is `LinearMap.restrict`. -/
+def _root_.LieHom.restrict {S : LieSubalgebra R L} {T : LieSubalgebra R L'}
+    (hf : ∀ x ∈ S, f x ∈ T) : S →ₗ⁅R⁆ T :=
+  { (f : L →ₗ[R] L').restrict (p := S.toSubmodule) (q := T.toSubmodule) hf with
+    map_lie' := Subtype.ext (f.map_lie _ _) }
+
+@[simp]
+theorem _root_.LieHom.coe_restrict_apply {S : LieSubalgebra R L} {T : LieSubalgebra R L'}
+    (hf : ∀ x ∈ S, f x ∈ T) (x : S) : (f.restrict hf x : L') = f x :=
+  (rfl)
+
 /-- The restriction of a Lie homomorphism `f` to Lie ideals `J` and `J'` with `f(J) ⊆ J'`, as a Lie
-homomorphism `J → J'`. -/
+homomorphism `J → J'`: `LieHom.restrict` for the underlying Lie subalgebras. -/
 def _root_.LieHom.restrictIdeal {J : LieIdeal R L} {J' : LieIdeal R L'}
-    (hf : ∀ x ∈ J, f x ∈ J') : J →ₗ⁅R⁆ J' where
-  toFun x := ⟨f x, hf x x.property⟩
-  map_add' _ _ := Subtype.ext (map_add f _ _)
-  map_smul' _ _ := Subtype.ext (map_smul f _ _)
-  map_lie' := Subtype.ext (f.map_lie _ _)
+    (hf : ∀ x ∈ J, f x ∈ J') : J →ₗ⁅R⁆ J' :=
+  f.restrict (S := J) (T := J') hf
 
 @[simp]
 theorem _root_.LieHom.coe_restrictIdeal_apply {J : LieIdeal R L} {J' : LieIdeal R L'}
