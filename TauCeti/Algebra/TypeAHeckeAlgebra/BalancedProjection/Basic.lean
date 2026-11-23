@@ -277,8 +277,7 @@ section Generation
 @[simp]
 theorem adjoin_range_e : Algebra.adjoin R (Set.range (e (R := R) τ)) = ⊤ := by
   have h : Set.range (e (R := R) τ) = mkAlgHom R τ '' Set.range (FreeAlgebra.ι R) := by
-    rw [← Set.range_comp]
-    rfl
+    simp only [← Set.range_comp, Function.comp_def, mkAlgHom_ι]
   rw [h, Algebra.adjoin_image_eq_range _ (FreeAlgebra.adjoin_range_ι R _), AlgHom.range_eq_top]
   exact mkAlgHom_surjective
 
