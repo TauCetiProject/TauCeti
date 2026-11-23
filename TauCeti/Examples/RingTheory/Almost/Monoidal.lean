@@ -53,7 +53,7 @@ example (S : BasicSetup V) (hS : S.ideal ≠ ⊤) :
     simp only [LinearMap.coe_comp, LinearEquiv.coe_coe, Function.comp_apply,
       LinearMap.lTensor_tmul, Submodule.subtype_apply, TensorProduct.rid_tmul, LinearMap.zero_apply]
     rw [Algebra.smul_def, Ideal.Quotient.algebraMap_eq, ← map_mul, Ideal.Quotient.eq_zero_iff_mem]
-    exact S.ideal.mul_mem_right x i.2
+    exact S.ideal.mul_mem_right x i.property
   have hbij : Function.Bijective (S.ideal.subtype.lTensor (V ⧸ S.ideal)) :=
     (ConcreteCategory.isIso_iff_bijective _).mp h
   have hsurj : Function.Surjective ((TensorProduct.rid V (V ⧸ S.ideal)).toLinearMap ∘ₗ

@@ -7,14 +7,16 @@ module
 
 public import Mathlib.AlgebraicGeometry.AffineScheme
 public import Mathlib.AlgebraicGeometry.Morphisms.SchemeTheoreticallyDominant
+import TauCeti.AlgebraicGeometry.Morphisms.Dominant
 
 /-!
 # Scheme-theoretic images
 
 This file contains general results about Mathlib's scheme-theoretic image construction.
 For a quasi-compact morphism the map onto its scheme-theoretic image is
-scheme-theoretically dominant. In particular, a reduced source gives a reduced image.
-When the topological image is closed, the factorization is surjective on points.
+scheme-theoretically dominant. In particular, a reduced source gives a reduced image, and an
+integral source an integral image. The underlying set of the image is the closure of the
+topological image. When the topological image is closed, the factorization is surjective on points.
 
 ## Main declarations
 
@@ -64,8 +66,8 @@ variable {X Y : Scheme.{u}} (f : X ⟶ Y) [QuasiCompact f]
 /-- The factorization through the scheme-theoretic image is scheme-theoretically dominant. -/
 instance isSchemeTheoreticallyDominant_toImage : IsSchemeTheoreticallyDominant f.toImage := by
   let U : Y.affineOpens → f.image.affineOpens := fun U ↦
-    ⟨f.imageι ⁻¹ᵁ U, U.2.preimage _⟩
-  have hU : ⨆ V, (U V).1 = ⊤ := by
+    ⟨f.imageι ⁻¹ᵁ U, U.property.preimage _⟩
+  have hU : ⨆ V, (U V).val = ⊤ := by
     simp only [U]
     rw [← Scheme.Hom.preimage_iSup, iSup_affineOpens_eq_top, Scheme.Hom.preimage_top]
   constructor
@@ -77,6 +79,20 @@ instance isSchemeTheoreticallyDominant_toImage : IsSchemeTheoreticallyDominant f
 /-- The scheme-theoretic image of a quasi-compact morphism from a reduced scheme is reduced. -/
 instance isReduced_image [IsReduced X] : IsReduced f.image :=
   IsSchemeTheoreticallyDominant.isReduced f.toImage
+
+/-- The scheme-theoretic image of a quasi-compact morphism is supported on the closure of the
+topological image. -/
+theorem range_imageι : Set.range f.imageι = closure (Set.range f) := by
+  rw [Scheme.IdealSheafData.range_subschemeι, Scheme.Hom.support_ker]
+
+/-- The scheme-theoretic image of a quasi-compact morphism from an irreducible scheme is
+irreducible. -/
+instance irreducibleSpace_image [IrreducibleSpace X] : IrreducibleSpace f.image :=
+  f.toImage.irreducibleSpace_of_isDominant
+
+/-- The scheme-theoretic image of a quasi-compact morphism from an integral scheme is integral. -/
+instance isIntegral_image [IsIntegral X] : IsIntegral f.image :=
+  isIntegral_of_irreducibleSpace_of_isReduced _
 
 /-- If a quasi-compact morphism has closed topological image, its map to the
 scheme-theoretic image is surjective. -/

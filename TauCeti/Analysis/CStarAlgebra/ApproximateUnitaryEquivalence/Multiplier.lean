@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.CStarAlgebra.ApproximateUnitaryEquivalence.Sequential
 public import TauCeti.Analysis.CStarAlgebra.Multiplier.Nondegenerate
 public import Mathlib.Analysis.CStarAlgebra.Unitization
+public import TauCeti.Algebra.Algebra.Unitization
 
 /-!
 # Approximate unitary equivalence with multiplier unitaries
@@ -32,6 +33,9 @@ for the composites of `φ` and `ψ` with the inclusion `B → 𝓜(ℂ, B)`. Sin
   `MultiplierApproximatelyUnitarilyEquivalent.postcomp`: it is preserved by precomposition with
   any map and by postcomposition with a nondegenerate one, which extends to the multiplier
   algebras.
+* `MultiplierApproximatelyUnitarilyEquivalent.postcomp_multiplier`: postcomposition with a
+  nondegenerate star homomorphism `B → 𝓜(ℂ, C)` gives approximate unitary equivalence with
+  unitaries of `𝓜(ℂ, C)`.
 * `MultiplierApproximatelyUnitarilyEquivalent.iff_exists_unitary_seq`: for a separable source it
   is implemented by a single sequence of unitary multipliers.
 * `multiplierApproximatelyUnitarilyEquivalent_iff_approximatelyUnitarilyEquivalent`: for a unital
@@ -122,20 +126,23 @@ theorem precomp (h : MultiplierApproximatelyUnitarilyEquivalent φ ψ) (ρ : C �
     ← NonUnitalStarAlgHom.comp_assoc]
   exact ApproximatelyUnitarilyEquivalent.precomp h ρ
 
+/-- Postcomposition with a nondegenerate star homomorphism `ρ : B → 𝓜(ℂ, C)` carries the
+multiplier-unitary relation to approximate unitary equivalence with unitaries of `𝓜(ℂ, C)`.
+Nondegeneracy is what lets `ρ` extend unitally to `𝓜(ℂ, B)`. -/
+theorem postcomp_multiplier (h : MultiplierApproximatelyUnitarilyEquivalent φ ψ)
+    {ρ : B →⋆ₙₐ[ℂ] 𝓜(ℂ, C)} (hρ : ρ.IsMultiplierNondegenerate) :
+    ApproximatelyUnitarilyEquivalent (ρ.comp φ) (ρ.comp ψ) :=
+  ApproximatelyUnitarilyEquivalent.postcomp_of_comp_eq h (ρ.extendToMultiplier hρ)
+    (NonUnitalStarAlgHom.ext fun _ ↦ by simp)
+
 /-- Postcomposition with a nondegenerate star homomorphism `ρ : B → C` preserves the
 multiplier-unitary relation: the unital extension of `ρ` to the multiplier algebras carries
 implementing unitaries to implementing unitaries. -/
 theorem postcomp (h : MultiplierApproximatelyUnitarilyEquivalent φ ψ) (ρ : B →⋆ₙₐ[ℂ] C)
     (hρ : ((DoubleCentralizer.coeHom (𝕜 := ℂ)).comp ρ).IsMultiplierNondegenerate) :
     MultiplierApproximatelyUnitarilyEquivalent (ρ.comp φ) (ρ.comp ψ) := by
-  have hcomp : (((DoubleCentralizer.coeHom (𝕜 := ℂ)).comp ρ).extendToMultiplier
-      hρ).toNonUnitalStarAlgHom.comp (DoubleCentralizer.coeHom (𝕜 := ℂ)) =
-      (DoubleCentralizer.coeHom (𝕜 := ℂ)).comp ρ := by
-    refine NonUnitalStarAlgHom.ext fun b ↦ ?_
-    simp
   simpa only [multiplierApproximatelyUnitarilyEquivalent_iff_coeHom,
-    NonUnitalStarAlgHom.comp_assoc] using
-    ApproximatelyUnitarilyEquivalent.postcomp_of_comp_eq h _ hcomp
+    NonUnitalStarAlgHom.comp_assoc] using h.postcomp_multiplier hρ
 
 /-- Maps related by the multiplier-unitary relation have the same pointwise norm. -/
 theorem norm_eq (h : MultiplierApproximatelyUnitarilyEquivalent φ ψ) (a : A) :
@@ -177,13 +184,9 @@ multiplier-unitary relation. -/
 theorem of_unitization
     (h : ApproximatelyUnitarilyEquivalent ((Unitization.inrNonUnitalStarAlgHom ℂ B).comp φ)
       ((Unitization.inrNonUnitalStarAlgHom ℂ B).comp ψ)) :
-    MultiplierApproximatelyUnitarilyEquivalent φ ψ := by
-  have hcomp : (Unitization.starLift (DoubleCentralizer.coeHom (𝕜 := ℂ) (A := B))
-      ).toNonUnitalStarAlgHom.comp (Unitization.inrNonUnitalStarAlgHom ℂ B) =
-      DoubleCentralizer.coeHom (𝕜 := ℂ) := by
-    rw [← Unitization.starLift_symm_apply]
-    exact Unitization.starLift.symm_apply_apply _
-  exact ApproximatelyUnitarilyEquivalent.postcomp_of_comp_eq h _ hcomp
+    MultiplierApproximatelyUnitarilyEquivalent φ ψ :=
+  ApproximatelyUnitarilyEquivalent.postcomp_of_comp_eq h _
+    (Unitization.starLift_comp_inr (DoubleCentralizer.coeHom (𝕜 := ℂ) (A := B)))
 
 end MultiplierApproximatelyUnitarilyEquivalent
 

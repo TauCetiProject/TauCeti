@@ -125,10 +125,10 @@ circle and mapping torus components. -/
 theorem eval₂_suspensionForm (p : UnitAddCircle × SmoothMappingTorus φ)
     (v w : TangentSpace (𝓘(ℝ).prod (𝓘(ℝ).prod I)) p) :
     SmoothBundleForm.eval₂ (suspensionForm φ σ hσ) p v w =
-      (AddCircle.timeForm 1).1 p.1 ![(Manifold.tangentSpaceProdEquiv p v).1] *
-          (timeForm φ).1 p.2 ![(Manifold.tangentSpaceProdEquiv p w).2] -
-        (AddCircle.timeForm 1).1 p.1 ![(Manifold.tangentSpaceProdEquiv p w).1] *
-          (timeForm φ).1 p.2 ![(Manifold.tangentSpaceProdEquiv p v).2] +
+      (AddCircle.timeForm 1).val p.1 ![(Manifold.tangentSpaceProdEquiv p v).1] *
+          (timeForm φ).val p.2 ![(Manifold.tangentSpaceProdEquiv p w).2] -
+        (AddCircle.timeForm 1).val p.1 ![(Manifold.tangentSpaceProdEquiv p w).1] *
+          (timeForm φ).val p.2 ![(Manifold.tangentSpaceProdEquiv p v).2] +
         SmoothBundleForm.eval₂ (fiberForm φ σ hσ) p.2 (Manifold.tangentSpaceProdEquiv p v).2
           (Manifold.tangentSpaceProdEquiv p w).2 := by
   rw [suspensionForm_def, SmoothBundleForm.eval₂_add, SmoothForm.eval₂_wedge_one_one,

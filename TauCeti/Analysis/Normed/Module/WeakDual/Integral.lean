@@ -45,7 +45,7 @@ theorem integrable_norm_apply_rpow [MeasurableSpace (WeakDual 𝕜 E)]
       ((r * ‖x‖) ^ p.toReal) (ae_of_all _ fun φ ↦ by
         have hφ : ‖(φ : WeakDual 𝕜 E) x‖ ≤ r * ‖x‖ :=
           (WeakDual.toStrongDual (φ : WeakDual 𝕜 E)).le_of_opNorm_le
-            (mem_closedBall_zero_iff.1 φ.2) x
+            (mem_closedBall_zero_iff.1 φ.property) x
         simpa only [WeakDual.evalRpow_apply, Real.norm_eq_abs,
           abs_of_nonneg (Real.rpow_nonneg (norm_nonneg _) _)] using
             Real.rpow_le_rpow (norm_nonneg _) hφ ENNReal.toReal_nonneg)
