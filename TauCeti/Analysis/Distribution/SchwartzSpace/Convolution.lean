@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.Distribution.FourierMultiplier
 public import Mathlib.Analysis.Fourier.Convolution
+import TauCeti.Analysis.Convolution.Basic
 import TauCeti.Analysis.Convolution.Young
 import TauCeti.Analysis.Distribution.SchwartzSpace.Fourier
 
@@ -231,13 +232,12 @@ theorem norm_fourierInv_bilin_fourier_apply_le [CompleteSpace F₁] (B : F₁ �
   have h : (fun ξ ↦ B (σ ξ) (𝓕 f ξ)) = ⇑(𝓕 (convolution B (𝓕⁻ σ) f) : 𝓢(E, F₃)) := by
     ext ξ
     rw [fourier_convolution, fourier_fourierInv_eq, pairing_apply_apply]
+  have hM : ‖f.toLp ⊤‖ ≤ M := Lp.norm_le_of_ae_bound_top ((norm_nonneg _).trans (hf 0))
+    ((f.coeFn_toLp ⊤ volume).mono fun y hy ↦ by rw [hy]; exact hf y)
   rw [h, ← fourierInv_coe, fourierInv_fourier_eq, convolution_apply,
-    MeasureTheory.convolution_def]
-  calc ‖∫ t, B (𝓕⁻ σ t) (f (x - t))‖ ≤ ∫ t, ‖B‖ * ‖𝓕⁻ σ t‖ * M :=
-        norm_integral_le_of_norm_le (((𝓕⁻ σ).integrable.norm.const_mul _).mul_const _)
-          (.of_forall fun t ↦ (B.le_opNorm₂ _ _).trans (by gcongr; exact hf _))
-    _ = ‖B‖ * (∫ y, ‖𝓕⁻ σ y‖) * M := by
-        rw [integral_mul_const, integral_const_mul]
+    convolution_congr B (.refl _ _) (f.coeFn_toLp ⊤ volume).symm]
+  refine (norm_convolution_le_integral_norm_mul_norm B (𝓕⁻ σ).integrable (f.toLp ⊤) x).trans ?_
+  gcongr
 
 /-- **Pointwise bound for a modulated multiplier.** For a scalar Schwartz function `ρ`, a
 continuous bilinear map `B`, a Schwartz symbol `σ` and a Schwartz function `f` bounded by `M`,
