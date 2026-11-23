@@ -53,131 +53,18 @@ universe u
 
 namespace TauCeti
 
-/-! ### The radial reparametrization -/
-
-/-- The radial factor of the reparametrization of the disc used to compare a composite of two
-reattachment maps with a single one: with `m = max r (1/4)`, it is `min (m + 1/4) ((m + 1)/2) / m`.
-A vector of norm `r` is scaled by `2` when `r ≤ 1/4`, to norm `r + 1/4` when `1/4 ≤ r ≤ 1/2`, and
-to norm `(r + 1)/2` when `1/2 ≤ r`. -/
-private def composeRadialFactor (r : ℝ) : ℝ :=
-  min (max r (1 / 4) + 1 / 4) ((max r (1 / 4) + 1) / 2) / max r (1 / 4)
-
-private theorem quarter_le_max (r : ℝ) : (1 / 4 : ℝ) ≤ max r (1 / 4) :=
-  le_max_right _ _
-
-private theorem continuous_composeRadialFactor : Continuous composeRadialFactor := by
-  have hm : Continuous fun r : ℝ ↦ max r (1 / 4) := continuous_id.max continuous_const
-  exact (((hm.add continuous_const).min ((hm.add continuous_const).div_const _))).div hm
-    fun r ↦ (lt_of_lt_of_le (by norm_num) (quarter_le_max r)).ne'
-
-private theorem composeRadialFactor_pos (r : ℝ) : 0 < composeRadialFactor r := by
-  have := quarter_le_max r
-  exact div_pos (lt_min (by linarith) (by linarith)) (by linarith)
-
-private theorem composeRadialFactor_of_le {r : ℝ} (hr : r ≤ 1 / 4) : composeRadialFactor r = 2 := by
-  rw [composeRadialFactor, max_eq_right hr]
-  norm_num
-
-private theorem composeRadialFactor_mul_of_mem {r : ℝ} (h₁ : 1 / 4 ≤ r) (h₂ : r ≤ 1 / 2) :
-    composeRadialFactor r * r = r + 1 / 4 := by
-  rw [composeRadialFactor, max_eq_left h₁, min_eq_left (by linarith),
-    div_mul_cancel₀ _ (by linarith : r ≠ 0)]
-
-private theorem composeRadialFactor_mul_of_le {r : ℝ} (h : 1 / 2 ≤ r) :
-    composeRadialFactor r * r = (r + 1) / 2 := by
-  rw [composeRadialFactor, max_eq_left (by linarith), min_eq_right (by linarith),
-    div_mul_cancel₀ _ (by linarith : r ≠ 0)]
-
-private theorem composeRadialFactor_one : composeRadialFactor 1 = 1 := by
-  have h := composeRadialFactor_mul_of_le (by norm_num : (1 / 2 : ℝ) ≤ 1)
-  rw [mul_one] at h
-  rw [h]
-  norm_num
-
-private theorem composeRadialFactor_mul_le_one {r : ℝ} (h₁ : r ≤ 1) :
-    composeRadialFactor r * r ≤ 1 := by
-  rcases le_total r (1 / 4) with h | h
-  · rw [composeRadialFactor_of_le h]
-    linarith
-  rcases le_total r (1 / 2) with h' | h'
-  · rw [composeRadialFactor_mul_of_mem h h']
-    linarith
-  · rw [composeRadialFactor_mul_of_le h']
-    linarith
-
-private theorem norm_composeRadialHomotopy_le {n : ℕ} (t : I) (x : TopCat.disk.{u} n) :
-    ‖((1 - (t : ℝ)) * composeRadialFactor ‖x.down.val‖ + t) • x.down.val‖ ≤ 1 := by
-  have hx : ‖x.down.val‖ ≤ 1 := mem_closedBall_zero_iff.1 x.down.property
-  have hc := (composeRadialFactor_pos ‖x.down.val‖).le
-  have hcr := composeRadialFactor_mul_le_one hx
-  have ht₀ := t.property.1
-  have ht₁ := t.property.2
-  rw [norm_smul, Real.norm_of_nonneg (by nlinarith)]
-  nlinarith
-
-/-- The straight-line homotopy `(t, x) ↦ ((1 - t) c(‖x‖) + t) • x` of the disc, for the radial
-factor `c` of `composeRadialFactor`: it starts at the radial reparametrization sending the radii
-`1/4` and `1/2` to `1/2` and `3/4`, ends at the identity, and fixes the boundary sphere. -/
-private def composeRadialHomotopy (n : ℕ) : C(I × TopCat.disk.{u} n, TopCat.disk.{u} n) where
-  toFun q := ULift.up ⟨((1 - (q.1 : ℝ)) * composeRadialFactor ‖q.2.down.val‖ + q.1) • q.2.down.val,
-    mem_closedBall_zero_iff.2 (norm_composeRadialHomotopy_le q.1 q.2)⟩
-  continuous_toFun := by
-    have hx : Continuous fun q : I × TopCat.disk.{u} n ↦
-        (q.2.down.val : EuclideanSpace ℝ (Fin n)) :=
-      continuous_subtypeVal.comp (continuous_uliftDown.comp continuous_snd)
-    have ht : Continuous fun q : I × TopCat.disk.{u} n ↦ (q.1 : ℝ) :=
-      continuous_subtypeVal.comp continuous_fst
-    exact continuous_uliftUp.comp ((((continuous_const.sub ht).mul
-      (continuous_composeRadialFactor.comp hx.norm)).add ht).smul hx |>.subtype_mk _)
-
-private theorem coe_composeRadialHomotopy_apply_down {n : ℕ} (t : I) (x : TopCat.disk.{u} n) :
-    ((composeRadialHomotopy n (t, x)).down : EuclideanSpace ℝ (Fin n)) =
-      ((1 - (t : ℝ)) * composeRadialFactor ‖x.down.val‖ + t) • x.down.val :=
-  (rfl)
-
-private theorem coe_composeRadialHomotopy_zero_apply_down {n : ℕ} (x : TopCat.disk.{u} n) :
-    ((composeRadialHomotopy n (0, x)).down : EuclideanSpace ℝ (Fin n)) =
-      composeRadialFactor ‖x.down.val‖ • x.down.val := by
-  rw [coe_composeRadialHomotopy_apply_down]
-  simp
-
-private theorem composeRadialHomotopy_one {n : ℕ} (x : TopCat.disk.{u} n) :
-    composeRadialHomotopy n (1, x) = x :=
-  ULift.ext (Subtype.ext ((coe_composeRadialHomotopy_apply_down 1 x).trans (by simp)))
-
-private theorem composeRadialHomotopy_diskBoundaryInclusion {n : ℕ} (t : I)
-    (s : TopCat.diskBoundary.{u} n) :
-    composeRadialHomotopy n (t, TopCat.diskBoundaryInclusion n s) =
-      TopCat.diskBoundaryInclusion n s := by
-  refine ULift.ext (Subtype.ext ((coe_composeRadialHomotopy_apply_down t _).trans ?_))
-  rw [TopCat.norm_diskBoundaryInclusion, composeRadialFactor_one]
-  simp
-
-/-- The radial homotopy `composeRadialHomotopy` applied to the disc coordinate of
+/-- The radial homotopy `TauCeti.TopCat.composeRadialHomotopy` applied to the disc coordinate of
 `P × D^n`. -/
 private def composeRadialHomotopyProd (P : Type*) [TopologicalSpace P] (n : ℕ) :
     C(I × (P × TopCat.disk.{u} n), P × TopCat.disk.{u} n) :=
-  ⟨fun q ↦ (q.2.1, composeRadialHomotopy n (q.1, q.2.2)),
-    (continuous_fst.comp continuous_snd).prodMk ((composeRadialHomotopy n).continuous.comp
+  ⟨fun q ↦ (q.2.1, TopCat.composeRadialHomotopy n (q.1, q.2.2)),
+    (continuous_fst.comp continuous_snd).prodMk ((TopCat.composeRadialHomotopy n).continuous.comp
       (continuous_fst.prodMk (continuous_snd.comp continuous_snd)))⟩
 
 private theorem composeRadialHomotopyProd_apply (P : Type*) [TopologicalSpace P] (n : ℕ) (t : I)
     (x : P × TopCat.disk.{u} n) :
-    composeRadialHomotopyProd P n (t, x) = (x.1, composeRadialHomotopy n (t, x.2)) :=
+    composeRadialHomotopyProd P n (t, x) = (x.1, TopCat.composeRadialHomotopy n (t, x.2)) :=
   rfl
-
-private theorem norm_composeRadialHomotopy_zero {n : ℕ} (x : TopCat.disk.{u} n) :
-    ‖(composeRadialHomotopy n (0, x)).down.val‖ =
-      composeRadialFactor ‖x.down.val‖ * ‖x.down.val‖ := by
-  rw [coe_composeRadialHomotopy_zero_apply_down, norm_smul,
-    Real.norm_of_nonneg (composeRadialFactor_pos _).le]
-
-/-- The radial reparametrization preserves the direction of every vector. -/
-private theorem inv_norm_smul_composeRadialHomotopy_zero {n : ℕ} (x : TopCat.disk.{u} n) :
-    ‖(composeRadialHomotopy n (0, x)).down.val‖⁻¹ • (composeRadialHomotopy n (0, x)).down.val =
-      ‖x.down.val‖⁻¹ • x.down.val := by
-  rw [norm_composeRadialHomotopy_zero, coe_composeRadialHomotopy_zero_apply_down, smul_smul,
-    mul_inv_rev, mul_assoc, inv_mul_cancel₀ (composeRadialFactor_pos _).ne', mul_one]
 
 /-! ### Composing two reattachment maps -/
 
@@ -211,6 +98,15 @@ variable (α₀ α₁ α₂ : ∀ i, C(P × TopCat.diskBoundary.{u} (k i), A))
     ((K₁₂ i).trans ((K₀₁ i).compContinuousMap (ContinuousMap.fst.prodMk (h₁₂ i))))
       (t, (p, TopCat.diskBoundaryInclusion (k i) s)))
 
+include he₁₂ in
+/-- On the disc of radius `1/2`, `h₁₂ i (p, ·)` after the radial part of the reattachment map
+doubles the norm. -/
+private theorem norm_h₁₂_reattachmentRadial (i : ι) (p : P) {w : TopCat.disk.{u} (k i)}
+    (hw : ‖w.down.val‖ ≤ 1 / 2) :
+    ‖(h₁₂ i (p, TopCat.reattachmentRadial w)).down.val‖ = 2 * ‖w.down.val‖ := by
+  rw [he₁₂, LinearIsometryEquiv.norm_map, TopCat.coe_reattachmentRadial_of_norm_le hw, norm_smul,
+    Real.norm_two]
+
 include he₁₂ hh in
 /-- On the disc of radius `1/4`, both the composite of two reattachment maps and the reattachment
 map of the composed data after the radial reparametrization send `w` to `h₀₁ i (p, h₁₂ i (p, 4w))`
@@ -221,10 +117,10 @@ private theorem comp_cell_of_norm_le_quarter (i : ι) (p : P) {w : TopCat.disk.{
         (fiberwiseCellReattachment α₁ α₂ χ₁ χ₂ hχ₁ hχ₂ h₁₂ hh₁₂ K₁₂ hK₁₂
           (fiberwiseCellAttachmentCell α₂ i (p, w))) =
       fiberwiseCellReattachment α₀ α₂ χ₀ χ₂ hχ₀ hχ₂ h₀₂ hh₀₂ K₀₂ hK₀₂
-        (fiberwiseCellAttachmentCell α₂ i (p, composeRadialHomotopy (k i) (0, w))) := by
+        (fiberwiseCellAttachmentCell α₂ i (p, TopCat.composeRadialHomotopy (k i) (0, w))) := by
   have hw₂ : ‖w.down.val‖ ≤ 1 / 2 := by linarith
-  have hw'₂ : ‖(composeRadialHomotopy (k i) (0, w)).down.val‖ ≤ 1 / 2 := by
-    rw [norm_composeRadialHomotopy_zero, composeRadialFactor_of_le hw]
+  have hw'₂ : ‖(TopCat.composeRadialHomotopy (k i) (0, w)).down.val‖ ≤ 1 / 2 := by
+    rw [TopCat.norm_composeRadialHomotopy_zero, TopCat.composeRadialFactor_of_le hw]
     linarith
   rw [fiberwiseCellReattachment_fiberwiseCellAttachmentCell_of_norm_le α₁ α₂ χ₁ χ₂ hχ₁ hχ₂ h₁₂ hh₁₂
       K₁₂ hK₁₂ i p hw₂ (TopCat.coe_reattachmentRadial_of_norm_le hw₂),
@@ -232,12 +128,11 @@ private theorem comp_cell_of_norm_le_quarter (i : ι) (p : P) {w : TopCat.disk.{
       hh₀₂ K₀₂ hK₀₂ i p hw'₂ (TopCat.coe_reattachmentRadial_of_norm_le hw'₂), hh,
     fiberwiseCellReattachment_fiberwiseCellAttachmentCell_of_norm_le α₀ α₁ χ₀ χ₁ hχ₀ hχ₁ h₀₁
       hh₀₁ K₀₁ hK₀₁ i p (by
-        rw [he₁₂, LinearIsometryEquiv.norm_map, TopCat.coe_reattachmentRadial_of_norm_le hw₂,
-          norm_smul, Real.norm_two]
+        rw [norm_h₁₂_reattachmentRadial h₁₂ e₁₂ he₁₂ i p hw₂]
         linarith)]
   simp [he₁₂, TopCat.coe_reattachmentRadial_of_norm_le hw'₂,
-    TopCat.coe_reattachmentRadial_of_norm_le hw₂, coe_composeRadialHomotopy_zero_apply_down,
-    composeRadialFactor_of_le hw]
+    TopCat.coe_reattachmentRadial_of_norm_le hw₂, TopCat.coe_composeRadialHomotopy_zero_apply_down,
+    TopCat.composeRadialFactor_of_le hw]
 
 include he₁₂ hK in
 /-- On the annulus `1/4 ≤ ‖w‖ ≤ 1/2`, both the composite of two reattachment maps and the
@@ -249,20 +144,18 @@ private theorem comp_cell_of_quarter_le_of_le_half (i : ι) (p : P) {w : TopCat.
         (fiberwiseCellReattachment α₁ α₂ χ₁ χ₂ hχ₁ hχ₂ h₁₂ hh₁₂ K₁₂ hK₁₂
           (fiberwiseCellAttachmentCell α₂ i (p, w))) =
       fiberwiseCellReattachment α₀ α₂ χ₀ χ₂ hχ₀ hχ₂ h₀₂ hh₀₂ K₀₂ hK₀₂
-        (fiberwiseCellAttachmentCell α₂ i (p, composeRadialHomotopy (k i) (0, w))) := by
+        (fiberwiseCellAttachmentCell α₂ i (p, TopCat.composeRadialHomotopy (k i) (0, w))) := by
   set r := ‖w.down.val‖
-  set w' := composeRadialHomotopy (k i) (0, w)
+  set w' := TopCat.composeRadialHomotopy (k i) (0, w)
   set v := h₁₂ i (p, TopCat.reattachmentRadial w)
   -- the direction of `w'`, which is that of `w`
   set s := TopCat.annulusDir (by norm_num : (0 : ℝ) < 1 / 4) ⟨w, hw₄⟩
-  have hv : ‖v.down.val‖ = 2 * r := by
-    rw [he₁₂, LinearIsometryEquiv.norm_map, TopCat.coe_reattachmentRadial_of_norm_le hw₂,
-      norm_smul, Real.norm_two]
+  have hv : ‖v.down.val‖ = 2 * r := norm_h₁₂_reattachmentRadial h₁₂ e₁₂ he₁₂ i p hw₂
   have hv₂ : 1 / 2 ≤ ‖v.down.val‖ := by
     rw [hv]
     linarith
   have hw'n : ‖w'.down.val‖ = r + 1 / 4 := by
-    rw [norm_composeRadialHomotopy_zero, composeRadialFactor_mul_of_mem hw₄ hw₂]
+    rw [TopCat.norm_composeRadialHomotopy_zero, TopCat.composeRadialFactor_mul_of_mem hw₄ hw₂]
   have hw'₂ : 1 / 2 ≤ ‖w'.down.val‖ := by
     rw [hw'n]
     linarith
@@ -283,7 +176,7 @@ private theorem comp_cell_of_quarter_le_of_le_half (i : ι) (p : P) {w : TopCat.
       (s := TopCat.annulusDir (by norm_num) ⟨v, hv₂⟩) (TopCat.coe_annulusDir _ _),
     fiberwiseCellReattachment_fiberwiseCellAttachmentCell_of_le_norm α₀ α₂ χ₀ χ₂ hχ₀ hχ₂ h₀₂
       hh₀₂ K₀₂ hK₀₂ i p hw'₂ (TopCat.coe_reattachmentTime_of_le_norm hw'₂) (s := s)
-      ((TopCat.coe_annulusDir _ _).trans (inv_norm_smul_composeRadialHomotopy_zero w).symm)]
+      ((TopCat.coe_annulusDir _ _).trans (TopCat.inv_norm_smul_composeRadialHomotopy_zero w).symm)]
   refine congrArg (fun a ↦ fiberwiseCellAttachmentIncl α₀ (p, a)) (Subtype.ext ?_)
   dsimp only
   rw [hK, ContinuousMap.Homotopy.trans_apply_of_eq_two_mul_sub_one _ _
@@ -291,8 +184,8 @@ private theorem comp_cell_of_quarter_le_of_le_half (i : ι) (p : P) {w : TopCat.
         rw [TopCat.coe_reattachmentTime_of_le_norm hw'₂, TopCat.coe_reattachmentTime_of_le_norm hv₂,
           hw'n, hv]
         ring),
-    ContinuousMap.Homotopy.compContinuousMap_apply, ContinuousMap.prod_eval, hdir]
-  rfl
+    ContinuousMap.Homotopy.compContinuousMap_apply, ContinuousMap.prod_eval,
+    ContinuousMap.fst_apply, hdir]
 
 include hK in
 /-- On the annulus `1/2 ≤ ‖w‖`, both the composite of two reattachment maps and the reattachment
@@ -304,12 +197,12 @@ private theorem comp_cell_of_half_le (i : ι) (p : P) {w : TopCat.disk.{u} (k i)
         (fiberwiseCellReattachment α₁ α₂ χ₁ χ₂ hχ₁ hχ₂ h₁₂ hh₁₂ K₁₂ hK₁₂
           (fiberwiseCellAttachmentCell α₂ i (p, w))) =
       fiberwiseCellReattachment α₀ α₂ χ₀ χ₂ hχ₀ hχ₂ h₀₂ hh₀₂ K₀₂ hK₀₂
-        (fiberwiseCellAttachmentCell α₂ i (p, composeRadialHomotopy (k i) (0, w))) := by
-  set w' := composeRadialHomotopy (k i) (0, w)
+        (fiberwiseCellAttachmentCell α₂ i (p, TopCat.composeRadialHomotopy (k i) (0, w))) := by
+  set w' := TopCat.composeRadialHomotopy (k i) (0, w)
   -- the direction of `w`, which is that of `w'`
   set s := TopCat.annulusDir (by norm_num : (0 : ℝ) < 1 / 2) ⟨w, hw₂⟩
   have hw'n : ‖w'.down.val‖ = (‖w.down.val‖ + 1) / 2 := by
-    rw [norm_composeRadialHomotopy_zero, composeRadialFactor_mul_of_le hw₂]
+    rw [TopCat.norm_composeRadialHomotopy_zero, TopCat.composeRadialFactor_mul_of_le hw₂]
   have hw'₂ : 1 / 2 ≤ ‖w'.down.val‖ := by
     rw [hw'n]
     linarith
@@ -319,7 +212,7 @@ private theorem comp_cell_of_half_le (i : ι) (p : P) {w : TopCat.disk.{u} (k i)
     fiberwiseCellReattachment_fiberwiseCellAttachmentIncl,
     fiberwiseCellReattachment_fiberwiseCellAttachmentCell_of_le_norm α₀ α₂ χ₀ χ₂ hχ₀ hχ₂ h₀₂
       hh₀₂ K₀₂ hK₀₂ i p hw'₂ (TopCat.coe_reattachmentTime_of_le_norm hw'₂) (s := s)
-      ((TopCat.coe_annulusDir _ _).trans (inv_norm_smul_composeRadialHomotopy_zero w).symm)]
+      ((TopCat.coe_annulusDir _ _).trans (TopCat.inv_norm_smul_composeRadialHomotopy_zero w).symm)]
   refine congrArg (fun a ↦ fiberwiseCellAttachmentIncl α₀ (p, a)) (Subtype.ext ?_)
   dsimp only
   rw [hK, ContinuousMap.Homotopy.trans_apply_of_eq_two_mul _ _ (TopCat.reattachmentTime w) (by
@@ -329,14 +222,15 @@ private theorem comp_cell_of_half_le (i : ι) (p : P) {w : TopCat.disk.{u} (k i)
 
 include he₁₂ hh hK in
 /-- On the `i`-th cell, the composite of two reattachment maps is the reattachment map of the
-composed data after the radial reparametrization `composeRadialHomotopy` at time `0`. -/
+composed data after the radial reparametrization `TauCeti.TopCat.composeRadialHomotopy` at time
+`0`. -/
 private theorem fiberwiseCellReattachment_fiberwiseCellReattachment_fiberwiseCellAttachmentCell
     (i : ι) (p : P) (w : TopCat.disk.{u} (k i)) :
     fiberwiseCellReattachment α₀ α₁ χ₀ χ₁ hχ₀ hχ₁ h₀₁ hh₀₁ K₀₁ hK₀₁
         (fiberwiseCellReattachment α₁ α₂ χ₁ χ₂ hχ₁ hχ₂ h₁₂ hh₁₂ K₁₂ hK₁₂
           (fiberwiseCellAttachmentCell α₂ i (p, w))) =
       fiberwiseCellReattachment α₀ α₂ χ₀ χ₂ hχ₀ hχ₂ h₀₂ hh₀₂ K₀₂ hK₀₂
-        (fiberwiseCellAttachmentCell α₂ i (p, composeRadialHomotopy (k i) (0, w))) := by
+        (fiberwiseCellAttachmentCell α₂ i (p, TopCat.composeRadialHomotopy (k i) (0, w))) := by
   rcases le_total ‖w.down.val‖ (1 / 2) with hw₂ | hw₂
   · rcases le_total ‖w.down.val‖ (1 / 4) with hw₄ | hw₄
     · exact comp_cell_of_norm_le_quarter α₀ α₁ α₂ χ₀ χ₁ χ₂ hχ₀ hχ₁ hχ₂ h₀₁ h₁₂ h₀₂ hh₀₁ hh₁₂ hh₀₂
@@ -367,15 +261,14 @@ theorem exists_homotopyRel_fiberwiseCellReattachment_comp_fiberwiseCellReattachm
   let C : ∀ i, C(I × (P × TopCat.disk.{u} (k i)), fiberwiseCellAttachment α₀) := fun i ↦
     (fiberwiseCellAttachmentCell α₂ i ≫ E₀₂).hom.comp (composeRadialHomotopyProd P (k i))
   have hC : ∀ i t x, C i (t, x) =
-      E₀₂ (fiberwiseCellAttachmentCell α₂ i (x.1, composeRadialHomotopy (k i) (t, x.2))) :=
+      E₀₂ (fiberwiseCellAttachmentCell α₂ i (x.1, TopCat.composeRadialHomotopy (k i) (t, x.2))) :=
     fun i t x ↦ by simp [C, composeRadialHomotopyProd_apply]
   have hCb : ∀ i t p s, C i (t, (p, TopCat.diskBoundaryInclusion (k i) s)) =
       ((fiberwiseCellAttachmentIncl α₀).hom.comp ContinuousMap.snd) (t, (p, α₂ i (p, s))) :=
-    fun i t p s ↦ by
-      rw [hC, composeRadialHomotopy_diskBoundaryInclusion,
-        fiberwiseCellAttachmentCell_diskBoundaryInclusion,
-        fiberwiseCellReattachment_fiberwiseCellAttachmentIncl, ContinuousMap.comp_apply,
-        ContinuousMap.snd_apply]
+    fun i t p s ↦ by rw [hC, TopCat.composeRadialHomotopy_diskBoundaryInclusion,
+      fiberwiseCellAttachmentCell_diskBoundaryInclusion,
+      fiberwiseCellReattachment_fiberwiseCellAttachmentIncl, ContinuousMap.comp_apply,
+      ContinuousMap.snd_apply]
   have hE : ∀ x, (fiberwiseCellReattachment α₁ α₂ χ₁ χ₂ hχ₁ hχ₂ h₁₂ hh₁₂ K₁₂ hK₁₂ ≫
       fiberwiseCellReattachment α₀ α₁ χ₀ χ₁ hχ₀ hχ₁ h₀₁ hh₀₁ K₀₁ hK₀₁).hom
         (fiberwiseCellAttachmentIncl α₂ x) = fiberwiseCellAttachmentIncl α₀ x := fun x ↦ by
@@ -385,11 +278,20 @@ theorem exists_homotopyRel_fiberwiseCellReattachment_comp_fiberwiseCellReattachm
   let D := fiberwiseCellAttachmentCylinderDesc α₂
     ((fiberwiseCellAttachmentIncl α₀).hom.comp ContinuousMap.snd) C hCb
   have hD : ∀ t x, D (t, fiberwiseCellAttachmentIncl α₂ x) = fiberwiseCellAttachmentIncl α₀ x :=
-    fun t x ↦ by
-      rw [fiberwiseCellAttachmentCylinderDesc_fiberwiseCellAttachmentIncl, ContinuousMap.comp_apply,
-        ContinuousMap.snd_apply]
+    fun t x ↦ by rw [fiberwiseCellAttachmentCylinderDesc_fiberwiseCellAttachmentIncl,
+      ContinuousMap.comp_apply, ContinuousMap.snd_apply]
+  have hDproj : ∀ t y, fiberwiseCellAttachmentProj α₀ (D (t, y)) =
+      fiberwiseCellAttachmentProj α₂ y := fun t y ↦ by
+    refine fiberwiseCellAttachment_induction α₂ (fun x ↦ ?_) (fun i x ↦ ?_) y
+    · rw [hD, fiberwiseCellAttachmentProj_fiberwiseCellAttachmentIncl,
+        fiberwiseCellAttachmentProj_fiberwiseCellAttachmentIncl]
+    · rw [fiberwiseCellAttachmentCylinderDesc_fiberwiseCellAttachmentCell, hC,
+        fiberwiseCellAttachmentProj_fiberwiseCellReattachment,
+        fiberwiseCellAttachmentProj_fiberwiseCellAttachmentCell,
+        fiberwiseCellAttachmentProj_fiberwiseCellAttachmentCell]
+  -- The homotopy is the structure with underlying map `D`, so `hDproj` is its projection law.
   refine ⟨{ toFun := D, continuous_toFun := D.continuous, map_zero_left := fun y ↦ ?_,
-            map_one_left := fun y ↦ ?_, prop' := ?_ }, fun t y ↦ ?_⟩
+            map_one_left := fun y ↦ ?_, prop' := ?_ }, hDproj⟩
   · refine fiberwiseCellAttachment_induction α₂ (fun x ↦ (hD 0 x).trans (hE x).symm)
       (fun i x ↦ ?_) y
     rw [fiberwiseCellAttachmentCylinderDesc_fiberwiseCellAttachmentCell, hC, TopCat.hom_comp,
@@ -400,17 +302,9 @@ theorem exists_homotopyRel_fiberwiseCellReattachment_comp_fiberwiseCellReattachm
   · refine fiberwiseCellAttachment_induction α₂ (fun x ↦ (hD 1 x).trans
       (fiberwiseCellReattachment_fiberwiseCellAttachmentIncl ..).symm) (fun i x ↦ ?_) y
     rw [fiberwiseCellAttachmentCylinderDesc_fiberwiseCellAttachmentCell, hC,
-      composeRadialHomotopy_one]
+      TopCat.composeRadialHomotopy_one]
   · rintro t _ ⟨x, rfl⟩
     exact (hD t x).trans (hE x).symm
-  · change fiberwiseCellAttachmentProj α₀ (D (t, y)) = _
-    refine fiberwiseCellAttachment_induction α₂ (fun x ↦ ?_) (fun i x ↦ ?_) y
-    · rw [hD, fiberwiseCellAttachmentProj_fiberwiseCellAttachmentIncl,
-        fiberwiseCellAttachmentProj_fiberwiseCellAttachmentIncl]
-    · rw [fiberwiseCellAttachmentCylinderDesc_fiberwiseCellAttachmentCell, hC,
-        fiberwiseCellAttachmentProj_fiberwiseCellReattachment,
-        fiberwiseCellAttachmentProj_fiberwiseCellAttachmentCell,
-        fiberwiseCellAttachmentProj_fiberwiseCellAttachmentCell]
 
 end Composition
 
