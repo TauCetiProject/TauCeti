@@ -86,11 +86,7 @@ theorem complex_smul_apply (z : ℂ) (f : C^n⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯) (x
 /-- Evaluation at a point, as a complex algebra homomorphism from the real-smooth complex-valued
 functions to `ℂ`. This is the complex version of `ContMDiffMap.evalAlgHom`. -/
 def complexEvalAlgHom (x : M) : C^n⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯ →ₐ[ℂ] ℂ where
-  toFun f := f x
-  map_one' := rfl
-  map_mul' _ _ := rfl
-  map_zero' := rfl
-  map_add' _ _ := rfl
+  toRingHom := ContMDiffMap.evalRingHom x
   commutes' _ := rfl
 
 @[simp]

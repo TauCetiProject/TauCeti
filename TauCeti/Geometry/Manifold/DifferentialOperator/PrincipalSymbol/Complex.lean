@@ -9,6 +9,7 @@ public import TauCeti.Geometry.Manifold.Algebra.VanishingIdeal.Complex
 public import TauCeti.Geometry.Manifold.VectorField.ComplexDerivation
 public import TauCeti.RingTheory.Derivation.PrincipalSymbol
 import TauCeti.Geometry.Manifold.MFDeriv.Localized
+import TauCeti.LinearAlgebra.Multilinear.Polarization
 
 /-!
 # Principal symbols of differential operators on complex-valued smooth functions
@@ -43,14 +44,15 @@ real counterparts. Since the commutator symbol is
 complex-multilinear on the complex-valued covectors `T_x M →L[ℝ] ℂ`, it is the complex-multilinear
 extension of its restriction to real covectors, which enter as `Complex.ofRealCLM ∘ ξ`. The
 Fourier principal symbol of an operator of order `m`, in which `∂ⱼ` has symbol `i ξⱼ`, is `i ^ m`
-times the geometric one.
+times the geometric one (`TauCeti.complexSmoothFourierPrincipalSymbol`).
 
 For an operator of order at most one, the principal symbol at `df_x` is
 `(D f)(x) - f(x) (D 1)(x)`, the value of its derivation part. On a boundaryless manifold, a complex
 derivation with complexified vector field `1 ⊗ X + i ⊗ Y` therefore has principal symbol
 `ξ ↦ ξ(X_x) + i ξ(Y_x)` (`TauCeti.complexSmoothPrincipalSymbol_derivation`), so its Fourier
-principal symbol is `ξ ↦ i ξ(X_x) - ξ(Y_x)`. The splitting of the operators of order at most one
-into such a derivation and multiplication by `D 1` is
+principal symbol is `ξ ↦ i ξ(X_x) - ξ(Y_x)`
+(`TauCeti.complexSmoothFourierPrincipalSymbol_derivation`). The splitting of the operators of
+order at most one into such a derivation and multiplication by `D 1` is
 `TauCeti.complexFirstOrderOperatorsEquivComplexifiedVectorFieldProd`.
 
 ## Main definitions
@@ -59,6 +61,8 @@ into such a derivation and multiplication by `D 1` is
   complex-multilinear form on `T_x M →L[ℝ] ℂ`.
 * `TauCeti.complexSmoothPrincipalSymbol`: the principal symbol at an interior point, a homogeneous
   function of degree `m` on `T_x M →L[ℝ] ℂ`.
+* `TauCeti.complexSmoothFourierPrincipalSymbol`: the principal symbol in the Fourier convention,
+  `i ^ m` times the geometric one.
 
 ## Main results
 
@@ -71,9 +75,14 @@ into such a derivation and multiplication by `D 1` is
   `TauCeti.complexSmoothPrincipalSymbol_eq_zero_of_mem_differentialOperators`: an operator of order
   at most `m`, viewed as one of order at most `m + 1`, has vanishing commutator and principal
   symbols.
-* `TauCeti.forall_complexSmoothCommutatorSymbol_eq_zero_iff`: on a boundaryless manifold, an
-  operator of order at most `m + 1` has vanishing commutator symbol at every point exactly when it
-  has order at most `m`.
+* `TauCeti.forall_mem_complexSmoothCommutatorSymbol_eq_zero_iff`,
+  `TauCeti.forall_complexSmoothCommutatorSymbol_eq_zero_iff`,
+  `TauCeti.forall_complexSmoothPrincipalSymbol_eq_zero_iff`: an operator of order at most `m + 1`
+  has vanishing commutator symbol at every point of a dense set of interior points, or vanishing
+  commutator or principal symbol at every point of a boundaryless manifold, exactly when it has
+  order at most `m`.
+* `TauCeti.complexSmoothPrincipalSymbol_eq_apply_one`: an operator `D` of order zero has principal
+  symbol `(D 1)(x)`.
 * `TauCeti.complexSmoothPrincipalSymbol_smul_covector`: the principal symbol is homogeneous of
   degree `m` under complex scalars.
 * `TauCeti.complexSmoothPrincipalSymbol_comp`: principal symbols multiply under composition.
@@ -81,8 +90,10 @@ into such a derivation and multiplication by `D 1` is
   `TauCeti.complexSmoothPrincipalSymbol_derivation_mvfderiv`: an operator `D` of order at most one
   has principal symbol `df_x ↦ (D f)(x) - f(x) (D 1)(x)`, and a derivation `δ` has principal symbol
   `df_x ↦ (δ f)(x)`.
-* `TauCeti.complexSmoothPrincipalSymbol_derivation`: on a boundaryless manifold, the derivation
-  with complexified vector field `1 ⊗ X + i ⊗ Y` has principal symbol `ξ ↦ ξ(X_x) + i ξ(Y_x)`.
+* `TauCeti.complexSmoothPrincipalSymbol_derivation`,
+  `TauCeti.complexSmoothFourierPrincipalSymbol_derivation`: on a boundaryless manifold, the
+  derivation with complexified vector field `1 ⊗ X + i ⊗ Y` has principal symbol
+  `ξ ↦ ξ(X_x) + i ξ(Y_x)` and Fourier principal symbol `ξ ↦ i ξ(X_x) - ξ(Y_x)`.
 
 ## References
 
@@ -136,9 +147,8 @@ theorem complexSmoothCommutatorSymbol_mvfderiv (hx : I.IsInteriorPoint x) {m : �
       ((complexSmoothVanishingIdeal I x).toCotangent
         ⟨f i + algebraMap ℂ C^∞⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯ (-ContMDiffMap.complexEvalAlgHom x (f i)),
           by simp⟩) := by
-    rw [complexSmoothCotangentEquiv_toCotangent, ContMDiffMap.coe_add, hc,
-      mvfderiv_add ((f i).contMDiff.mdifferentiable (by simp) x) mdifferentiableAt_const,
-      mvfderiv_const, add_zero]
+    rw [complexSmoothCotangentEquiv_toCotangent, ContMDiffMap.coe_add, hc]
+    exact (mvfderiv_add_const _ _ x).symm
   simp only [hd]
   rw [complexSmoothCommutatorSymbol,
     pointCommutatorSymbol_toCotangent_add_algebraMap _
@@ -181,6 +191,30 @@ theorem complexSmoothCommutatorSymbol_eq_zero_of_mem_differentialOperators
     complexSmoothCommutatorSymbol I hx D = 0 :=
   pointCommutatorSymbol_eq_zero_of_mem_differentialOperators _ D hD
 
+/-- An operator of order at most `m + 1` on complex smooth functions has vanishing commutator
+symbol at every point of a dense set `s` of interior points if and only if it has order at most
+`m`. -/
+theorem forall_mem_complexSmoothCommutatorSymbol_eq_zero_iff {s : Set M} (hs : Dense s)
+    (hsI : ∀ x ∈ s, I.IsInteriorPoint x) {m : ℕ}
+    (D : differentialOperators ℂ C^∞⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯ C^∞⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯
+      C^∞⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯ (m + 1)) :
+    (∀ (x : M) (hx : x ∈ s), complexSmoothCommutatorSymbol I (hsI x hx) D = 0) ↔
+      (D : C^∞⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯ →ₗ[ℂ] C^∞⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯) ∈
+        differentialOperators ℂ C^∞⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯ C^∞⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯
+          C^∞⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯ m := by
+  rw [← commutatorSymbol_eq_zero_iff]
+  constructor
+  · intro h
+    -- The iterated commutators are linear over the complex smooth functions, so it suffices that
+    -- their values at `1` vanish. These are continuous functions vanishing on the dense set `s`.
+    refine MultilinearMap.ext fun f ↦ LinearMap.ext_ring <| ContMDiffMap.coe_injective <|
+      Continuous.ext_on hs (ContMDiffMap.contMDiff _).continuous
+      (ContMDiffMap.contMDiff _).continuous fun y hy ↦ ?_
+    rw [← complexSmoothCommutatorSymbol_mvfderiv (hsI y hy), h y hy]
+    simp
+  · exact fun h x hx ↦ complexSmoothCommutatorSymbol_eq_zero_of_mem_differentialOperators _ D
+      ((commutatorSymbol_eq_zero_iff D).1 h)
+
 /-- On a boundaryless manifold, an operator of order at most `m + 1` on complex smooth functions
 has vanishing commutator symbol at every point if and only if it has order at most `m`. -/
 theorem forall_complexSmoothCommutatorSymbol_eq_zero_iff [BoundarylessManifold I M] {m : ℕ}
@@ -191,16 +225,8 @@ theorem forall_complexSmoothCommutatorSymbol_eq_zero_iff [BoundarylessManifold I
       (D : C^∞⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯ →ₗ[ℂ] C^∞⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯) ∈
         differentialOperators ℂ C^∞⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯ C^∞⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯
           C^∞⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯ m := by
-  rw [← commutatorSymbol_eq_zero_iff]
-  constructor
-  · intro h
-    -- The iterated commutators are linear over the complex smooth functions, so it suffices that
-    -- their values at `1` vanish at every point.
-    refine MultilinearMap.ext fun f ↦ LinearMap.ext_ring <| ContMDiffMap.ext fun y ↦ ?_
-    rw [← complexSmoothCommutatorSymbol_mvfderiv BoundarylessManifold.isInteriorPoint, h y]
-    simp
-  · exact fun h x ↦ complexSmoothCommutatorSymbol_eq_zero_of_mem_differentialOperators _ D
-      ((commutatorSymbol_eq_zero_iff D).1 h)
+  simpa using forall_mem_complexSmoothCommutatorSymbol_eq_zero_iff dense_univ
+    (fun x _ ↦ BoundarylessManifold.isInteriorPoint (x := x)) D
 
 /-! ### The principal symbol -/
 
@@ -280,6 +306,17 @@ theorem complexSmoothPrincipalSymbol_sub (hx : I.IsInteriorPoint x) {m : ℕ}
       complexSmoothPrincipalSymbol I hx D₁ ξ - complexSmoothPrincipalSymbol I hx D₂ ξ :=
   pointPrincipalSymbol_sub _ _ _ D₁ D₂ ξ
 
+/-- An operator `D` of order zero is multiplication by `D 1`, and its principal symbol at `x` is
+the constant `(D 1)(x)`. -/
+theorem complexSmoothPrincipalSymbol_eq_apply_one (hx : I.IsInteriorPoint x)
+    (D : differentialOperators ℂ C^∞⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯ C^∞⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯
+      C^∞⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯ 0)
+    (ξ : TangentSpace I x →L[ℝ] ℂ) :
+    complexSmoothPrincipalSymbol I hx D ξ =
+      (D : C^∞⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯ →ₗ[ℂ] C^∞⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯) 1 x := by
+  rw [complexSmoothPrincipalSymbol, pointPrincipalSymbol_eq_apply_one,
+    ContMDiffMap.complexEvalAlgHom_apply]
+
 /-- The principal symbol of an operator of order at most `m` is homogeneous of degree `m` under
 complex scalars. -/
 theorem complexSmoothPrincipalSymbol_smul_covector (hx : I.IsInteriorPoint x) {m : ℕ}
@@ -288,7 +325,7 @@ theorem complexSmoothPrincipalSymbol_smul_covector (hx : I.IsInteriorPoint x) {m
     (ξ : TangentSpace I x →L[ℝ] ℂ) :
     complexSmoothPrincipalSymbol I hx D (c • ξ) =
       c ^ m * complexSmoothPrincipalSymbol I hx D ξ :=
-  pointPrincipalSymbol_smul_covector _ _ _ D c ξ
+  pointPrincipalSymbol_smul_right _ _ _ D c ξ
 
 /-- The principal symbol of an operator of order at most `m + 1` on complex smooth functions
 vanishes if the operator has order at most `m`. -/
@@ -302,6 +339,26 @@ theorem complexSmoothPrincipalSymbol_eq_zero_of_mem_differentialOperators
     (ξ : TangentSpace I x →L[ℝ] ℂ) :
     complexSmoothPrincipalSymbol I hx D ξ = 0 :=
   pointPrincipalSymbol_eq_zero_of_mem_differentialOperators _ D hD ξ
+
+/-- On a boundaryless manifold, an operator of order at most `m + 1` on complex smooth functions
+has vanishing principal symbol at every point if and only if it has order at most `m`. -/
+theorem forall_complexSmoothPrincipalSymbol_eq_zero_iff [BoundarylessManifold I M] {m : ℕ}
+    (D : differentialOperators ℂ C^∞⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯ C^∞⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯
+      C^∞⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯ (m + 1)) :
+    (∀ (x : M) (ξ : TangentSpace I x →L[ℝ] ℂ),
+      complexSmoothPrincipalSymbol I BoundarylessManifold.isInteriorPoint D ξ = 0) ↔
+      (D : C^∞⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯ →ₗ[ℂ] C^∞⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯) ∈
+        differentialOperators ℂ C^∞⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯ C^∞⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯
+          C^∞⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯ m := by
+  refine ⟨fun h ↦ (forall_complexSmoothCommutatorSymbol_eq_zero_iff D).1 fun x ↦ ?_,
+    fun hD x ↦ complexSmoothPrincipalSymbol_eq_zero_of_mem_differentialOperators _ D hD⟩
+  -- The commutator symbol is symmetric and vanishes on the diagonal, so it vanishes by
+  -- polarization.
+  refine MultilinearMap.eq_zero_of_apply_const_eq_zero
+    (complexSmoothCommutatorSymbol_comp_perm BoundarylessManifold.isInteriorPoint D) fun ξ ↦ ?_
+  have hξ := h x ξ
+  rw [complexSmoothPrincipalSymbol_def, mul_eq_zero, inv_eq_zero] at hξ
+  exact hξ.resolve_left (Nat.cast_ne_zero.2 (Nat.factorial_ne_zero _))
 
 /-- **Principal symbols multiply under composition.** For operators `P` and `Q` on complex smooth
 functions of orders at most `m` and `k`, the principal symbol of `P ∘ Q`, as an operator of order
@@ -359,5 +416,40 @@ theorem complexSmoothPrincipalSymbol_derivation [BoundarylessManifold I M]
   rw [complexSmoothPrincipalSymbol_derivation_mvfderiv,
     ← complexDerivationEquivComplexifiedVectorField_symm_apply_eq_mvfderiv,
     LinearEquiv.symm_apply_apply]
+
+/-! ### The Fourier principal symbol -/
+
+variable (I) in
+/-- The principal symbol of a differential operator `D` of order at most `m` on complex smooth
+functions at an interior point `x`, in the Fourier convention, in which `∂ⱼ` has symbol `i ξⱼ`:
+`i ^ m` times the geometric principal symbol `TauCeti.complexSmoothPrincipalSymbol`
+(`TauCeti.complexSmoothFourierPrincipalSymbol_def`). -/
+def complexSmoothFourierPrincipalSymbol (hx : I.IsInteriorPoint x) {m : ℕ}
+    (D : differentialOperators ℂ C^∞⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯ C^∞⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯
+      C^∞⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯ m)
+    (ξ : TangentSpace I x →L[ℝ] ℂ) : ℂ :=
+  Complex.I ^ m * complexSmoothPrincipalSymbol I hx D ξ
+
+theorem complexSmoothFourierPrincipalSymbol_def (hx : I.IsInteriorPoint x) {m : ℕ}
+    (D : differentialOperators ℂ C^∞⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯ C^∞⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯
+      C^∞⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯ m)
+    (ξ : TangentSpace I x →L[ℝ] ℂ) :
+    complexSmoothFourierPrincipalSymbol I hx D ξ =
+      Complex.I ^ m * complexSmoothPrincipalSymbol I hx D ξ :=
+  (rfl)
+
+/-- On a boundaryless manifold, a derivation `δ` of the complex smooth functions has Fourier
+principal symbol `ξ ↦ i ξ(X_x) - ξ(Y_x)`, where `1 ⊗ X + i ⊗ Y` is its complexified vector
+field. -/
+@[simp]
+theorem complexSmoothFourierPrincipalSymbol_derivation [BoundarylessManifold I M]
+    (δ : Derivation ℂ C^∞⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯ C^∞⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯)
+    (ξ : TangentSpace I x →L[ℝ] ℂ) :
+    complexSmoothFourierPrincipalSymbol I BoundarylessManifold.isInteriorPoint
+        ⟨δ, δ.mem_differentialOperators_one⟩ ξ =
+      Complex.I * ξ (realPart _ (complexDerivationEquivComplexifiedVectorField δ) x) -
+        ξ (imaginaryPart _ (complexDerivationEquivComplexifiedVectorField δ) x) := by
+  rw [complexSmoothFourierPrincipalSymbol_def, complexSmoothPrincipalSymbol_derivation, pow_one,
+    mul_add, ← mul_assoc, Complex.I_mul_I, neg_one_mul, sub_eq_add_neg]
 
 end TauCeti

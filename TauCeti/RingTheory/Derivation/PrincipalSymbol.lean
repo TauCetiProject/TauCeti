@@ -67,8 +67,9 @@ at `x`, a symmetric multilinear map `T_x*M × ⋯ × T_x*M → Hom(E_x, F_x)`.
   `TauCeti.pointCommutatorSymbol_toCotangent`, `TauCeti.pointCommutatorSymbol_comp_perm`,
   `TauCeti.pointCommutatorSymbol_comp_const`: the point commutator symbol in terms of the cotangent
   symbol, on classes of elements of `J`, its symmetry, and its composition law on the diagonal.
-* `TauCeti.pointPrincipalSymbol_smul_covector`, `TauCeti.pointPrincipalSymbol_comp`: the
-  homogeneity of the point principal symbol and its multiplicativity under composition.
+* `TauCeti.pointPrincipalSymbol_smul_right`, `TauCeti.pointPrincipalSymbol_eq_apply_one`,
+  `TauCeti.pointPrincipalSymbol_comp`: the homogeneity of the point principal symbol, its value
+  `φ (D 1)` in order zero, and its multiplicativity under composition.
 * `Polynomial.commutatorSymbol_derivative_comp_derivative`: for `∂²` on `R[X]` the commutator
   symbol at `(X, X)` is multiplication by `2`.
 
@@ -463,7 +464,7 @@ theorem cotangentSymbol_add {m : ℕ} (D₁ D₂ : differentialOperators R A M N
     cotangentSymbol R I (D₁ + D₂) = cotangentSymbol R I D₁ + cotangentSymbol R I D₂ := by
   refine MultilinearMap.ext fun ω ↦ LinearMap.ext fun q ↦ ?_
   obtain ⟨a, rfl⟩ : ∃ a : Fin m → I, (fun i ↦ I.toCotangent (a i)) = ω :=
-    ⟨fun i ↦ cotangentRep I (ω i), funext fun i ↦ toCotangent_cotangentRep _⟩
+    I.toCotangent_surjective.comp_left ω
   obtain ⟨x, rfl⟩ := Submodule.Quotient.mk_surjective _ q
   simp only [add_apply, LinearMap.add_apply, cotangentSymbol_toCotangent, map_add,
     Submodule.Quotient.mk_add]
@@ -473,7 +474,7 @@ theorem cotangentSymbol_smul {m : ℕ} (c : R) (D : differentialOperators R A M 
     (ω : Fin m → I.Cotangent) (x : M ⧸ (I • ⊤ : Submodule A M)) :
     cotangentSymbol R I (c • D) ω x = c • cotangentSymbol R I D ω x := by
   obtain ⟨a, rfl⟩ : ∃ a : Fin m → I, (fun i ↦ I.toCotangent (a i)) = ω :=
-    ⟨fun i ↦ cotangentRep I (ω i), funext fun i ↦ toCotangent_cotangentRep _⟩
+    I.toCotangent_surjective.comp_left ω
   obtain ⟨x, rfl⟩ := Submodule.Quotient.mk_surjective _ x
   rw [cotangentSymbol_toCotangent, cotangentSymbol_toCotangent, map_smul, smul_apply,
     LinearMap.smul_apply, Submodule.Quotient.mk_smul]
@@ -519,17 +520,37 @@ section Point
 variable {𝕜 A V : Type*} [CommRing 𝕜] [CommRing A] [Algebra 𝕜 A] [AddCommGroup V] [Module 𝕜 V]
   {J : Ideal A} {φ : A →ₐ[𝕜] 𝕜}
 
-/-- The `𝕜`-linear map `A ⧸ J A → 𝕜` induced by a `𝕜`-point `φ` whose kernel contains `J`. -/
+/-- The `𝕜`-linear map `A ⧸ J A → 𝕜` induced by a `𝕜`-point `φ` whose kernel contains `J`: the
+quotient lift `Ideal.Quotient.liftₐ`, transported along `J A = J`. -/
 private noncomputable def quotientEval (hJ : J ≤ RingHom.ker φ) :
     (A ⧸ (J • ⊤ : Submodule A A)) →ₗ[𝕜] 𝕜 :=
-  ((J • ⊤ : Submodule A A).restrictScalars 𝕜).liftQ φ.toLinearMap (fun a ha ↦ by
-      rw [Submodule.restrictScalars_mem, smul_eq_mul, Ideal.mul_top] at ha
-      exact hJ ha) ∘ₗ
-    (Submodule.Quotient.restrictScalarsEquiv 𝕜 _).symm.toLinearMap
+  (Ideal.Quotient.liftₐ J φ fun _ ha ↦ RingHom.mem_ker.1 (hJ ha)).toLinearMap ∘ₗ
+    ((Submodule.quotEquivOfEq _ (J : Submodule A A)
+      (by rw [smul_eq_mul, Ideal.mul_top])).restrictScalars 𝕜).toLinearMap
 
 private theorem quotientEval_mk (hJ : J ≤ RingHom.ker φ) (a : A) :
-    quotientEval hJ (Submodule.Quotient.mk a) = φ a :=
-  rfl
+    quotientEval hJ (Submodule.Quotient.mk a) = φ a := by
+  rw [quotientEval, LinearMap.comp_apply, LinearEquiv.coe_coe, LinearEquiv.restrictScalars_apply,
+    Submodule.quotEquivOfEq_mk, Ideal.Quotient.mk_eq_mk, AlgHom.toLinearMap_apply,
+    Ideal.Quotient.liftₐ_apply]
+  exact Ideal.Quotient.lift_mk _ _ _
+
+/-- The `𝕜`-multilinear form underlying `TauCeti.pointCommutatorSymbol`. -/
+private noncomputable def pointCommutatorForm (hJ : J ≤ RingHom.ker φ) (e : J.Cotangent ≃ₗ[𝕜] V)
+    {m : ℕ} (D : differentialOperators 𝕜 A A A m) :
+    MultilinearMap (RingHom.id 𝕜) (fun _ : Fin m ↦ V) 𝕜 :=
+  ((quotientEval hJ).compMultilinearMap
+    ((((LinearMap.applyₗ (Submodule.Quotient.mk 1)).compMultilinearMap
+      (cotangentSymbol 𝕜 J D)).restrictScalars A).restrictScalars 𝕜)).compLinearMap
+    fun _ ↦ e.symm.toLinearMap
+
+private theorem pointCommutatorForm_apply (hJ : J ≤ RingHom.ker φ) (e : J.Cotangent ≃ₗ[𝕜] V)
+    {m : ℕ} (D : differentialOperators 𝕜 A A A m) (v : Fin m → V) :
+    pointCommutatorForm hJ e D v =
+      quotientEval hJ (cotangentSymbol 𝕜 J D (fun i ↦ e.symm (v i)) (Submodule.Quotient.mk 1)) := by
+  simp only [pointCommutatorForm, MultilinearMap.compLinearMap_apply,
+    LinearMap.compMultilinearMap_apply, MultilinearMap.coe_restrictScalars,
+    LinearMap.applyₗ_apply_apply, LinearEquiv.coe_coe]
 
 variable (φ) in
 /-- The commutator symbol of a differential operator `D` of order at most `m` on `A` at a
@@ -542,23 +563,19 @@ cotangent space, this is the commutator symbol of `D` at `x`. -/
 noncomputable def pointCommutatorSymbol (hJ : J ≤ RingHom.ker φ) (e : J.Cotangent ≃ₗ[𝕜] V)
     {m : ℕ} :
     differentialOperators 𝕜 A A A m →ₗ[𝕜] MultilinearMap (RingHom.id 𝕜) (fun _ : Fin m ↦ V) 𝕜 where
-  toFun D := ((quotientEval hJ).compMultilinearMap
-    ((((LinearMap.applyₗ (Submodule.Quotient.mk 1)).compMultilinearMap
-      (cotangentSymbol 𝕜 J D)).restrictScalars A).restrictScalars 𝕜)).compLinearMap
-    fun _ ↦ e.symm.toLinearMap
-  map_add' D₁ D₂ := by ext; simp
+  toFun := pointCommutatorForm hJ e
+  map_add' D₁ D₂ := by ext; simp [pointCommutatorForm_apply]
   map_smul' c D := by
-    ext v
-    change quotientEval hJ (cotangentSymbol 𝕜 J (c • D) _ (Submodule.Quotient.mk 1)) =
-      c * quotientEval hJ (cotangentSymbol 𝕜 J D _ (Submodule.Quotient.mk 1))
-    rw [cotangentSymbol_smul, map_smul, smul_eq_mul]
+    ext
+    rw [smul_apply, pointCommutatorForm_apply, pointCommutatorForm_apply, cotangentSymbol_smul,
+      map_smul, RingHom.id_apply, smul_eq_mul]
 
 /-- The point commutator symbol is `φ` applied to the cotangent symbol at the class of `1`. -/
 private theorem pointCommutatorSymbol_eq_quotientEval (hJ : J ≤ RingHom.ker φ)
     (e : J.Cotangent ≃ₗ[𝕜] V) {m : ℕ} (D : differentialOperators 𝕜 A A A m) (v : Fin m → V) :
     pointCommutatorSymbol φ hJ e D v =
       quotientEval hJ (cotangentSymbol 𝕜 J D (fun i ↦ e.symm (v i)) (Submodule.Quotient.mk 1)) :=
-  rfl
+  pointCommutatorForm_apply hJ e D v
 
 variable {hJ : J ≤ RingHom.ker φ} (e : J.Cotangent ≃ₗ[𝕜] V)
 
@@ -578,12 +595,6 @@ theorem pointCommutatorSymbol_toCotangent {m : ℕ} (D : differentialOperators �
       φ (commutatorSymbol 𝕜 A A A m D (fun i ↦ a i) 1) := by
   simp only [pointCommutatorSymbol_eq_quotientEval, LinearEquiv.symm_apply_apply,
     cotangentSymbol_toCotangent, quotientEval_mk]
-
-/-- Every family of vectors of `V` is the image of classes of elements of `J`. -/
-private theorem exists_toCotangent_eq {m : ℕ} (v : Fin m → V) :
-    ∃ a : Fin m → J, (fun i ↦ e (J.toCotangent (a i))) = v := by
-  choose a ha using fun i ↦ J.toCotangent_surjective (e.symm (v i))
-  exact ⟨a, funext fun i ↦ by simp [ha]⟩
 
 /-- When `J` is the kernel of `φ`, the point commutator symbol at the classes of
 `a₁ - φ(a₁), …, aₘ - φ(aₘ) ∈ J`, for arbitrary `aᵢ ∈ A`, is `φ([⋯[D, a₁], …, aₘ] 1)`. -/
@@ -610,13 +621,12 @@ theorem mk_algebraMap_pointCommutatorSymbol (hJ : RingHom.ker φ = J) {m : ℕ}
     Submodule.Quotient.mk (p := (J • ⊤ : Submodule A A))
         (algebraMap 𝕜 A (pointCommutatorSymbol φ hJ.ge e D fun i ↦ e (u i))) =
       cotangentSymbol 𝕜 J D u (Submodule.Quotient.mk 1) := by
-  choose a ha using fun i ↦ J.toCotangent_surjective (u i)
-  obtain rfl : (fun i ↦ J.toCotangent (a i)) = u := funext ha
+  obtain ⟨a, rfl⟩ : ∃ a : Fin m → J, (fun i ↦ J.toCotangent (a i)) = u :=
+    J.toCotangent_surjective.comp_left u
   rw [pointCommutatorSymbol_toCotangent, cotangentSymbol_toCotangent,
     Submodule.Quotient.eq, smul_eq_mul, Ideal.mul_top]
   apply hJ.le
-  rw [RingHom.mem_ker, map_sub, AlgHom.commutes, Algebra.algebraMap_self, RingHom.id_apply,
-    sub_self]
+  simp [RingHom.mem_ker]
 
 /-- The point commutator symbol of an operator of order at most `m + 1` vanishes if the operator
 has order at most `m`. -/
@@ -625,7 +635,8 @@ theorem pointCommutatorSymbol_eq_zero_of_mem_differentialOperators
     (hD : (D : A →ₗ[𝕜] A) ∈ differentialOperators 𝕜 A A A m) :
     pointCommutatorSymbol φ hJ e D = 0 := by
   ext v
-  obtain ⟨a, rfl⟩ := exists_toCotangent_eq e v
+  obtain ⟨a, rfl⟩ : ∃ a : Fin (m + 1) → J, (fun i ↦ e (J.toCotangent (a i))) = v :=
+    (e.surjective.comp J.toCotangent_surjective).comp_left v
   simp [pointCommutatorSymbol_toCotangent, (commutatorSymbol_eq_zero_iff D).2 hD]
 
 /-- Composition multiplies point commutator symbols on the diagonal: for `P` of order at most `m`
@@ -701,13 +712,21 @@ theorem pointPrincipalSymbol_sub {m : ℕ} (D₁ D₂ : differentialOperators �
   rw [sub_eq_add_neg D₁ D₂, pointPrincipalSymbol_add, pointPrincipalSymbol_neg, ← sub_eq_add_neg]
 
 /-- The point principal symbol of an operator of order at most `m` is homogeneous of degree `m`. -/
-theorem pointPrincipalSymbol_smul_covector {m : ℕ} (D : differentialOperators 𝕜 A A A m) (c : 𝕜)
+theorem pointPrincipalSymbol_smul_right {m : ℕ} (D : differentialOperators 𝕜 A A A m) (c : 𝕜)
     (v : V) : pointPrincipalSymbol φ hJ e D (c • v) = c ^ m * pointPrincipalSymbol φ hJ e D v := by
   have h := (pointCommutatorSymbol φ hJ e D).map_smul_univ (fun _ ↦ c) fun _ ↦ v
   simp only [Finset.prod_const, Finset.card_univ, Fintype.card_fin, smul_eq_mul,
     RingHom.id_apply] at h
   rw [pointPrincipalSymbol_def, pointPrincipalSymbol_def, h]
   ring
+
+/-- An operator `D` of order zero is multiplication by `D 1`, and its point principal symbol is the
+constant `φ (D 1)`. -/
+theorem pointPrincipalSymbol_eq_apply_one (D : differentialOperators 𝕜 A A A 0) (v : V) :
+    pointPrincipalSymbol φ hJ e D v = φ ((D : A →ₗ[𝕜] A) 1) := by
+  rw [pointPrincipalSymbol_def, Nat.factorial_zero, Nat.cast_one, inv_one, one_mul,
+    Subsingleton.elim (fun _ ↦ v) fun i ↦ e (J.toCotangent (Fin.elim0 i)),
+    pointCommutatorSymbol_toCotangent, commutatorSymbol_zero_apply]
 
 variable {φ hJ}
 
