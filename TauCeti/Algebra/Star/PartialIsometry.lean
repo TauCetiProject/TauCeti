@@ -30,6 +30,8 @@ part of the theory.
 * `TauCeti.IsPartialIsometry.isStarProjection_star_mul_self`: the initial projection
   `star u * u` of a partial isometry is a star projection; `isStarProjection_mul_star_self` is the
   corresponding statement for the final projection `u * star u`.
+* `TauCeti.IsPartialIsometry.star_mul_eq_zero`: partial isometries with orthogonal final
+  projections satisfy `star u₁ * u₂ = 0`.
 * `TauCeti.IsPartialIsometry.of_star_mul_self_eq_one`, `TauCeti.IsPartialIsometry.of_mem_unitary`,
   `IsStarProjection.isPartialIsometry`: isometries, unitaries and star projections are partial
   isometries.
@@ -96,6 +98,24 @@ theorem isPartialIsometry_star_iff : IsPartialIsometry (star u) ↔ IsPartialIso
   ⟨fun h => by simpa only [star_star] using h.star, IsPartialIsometry.star⟩
 
 end Semigroup
+
+section SemigroupWithZero
+
+variable [SemigroupWithZero R] [StarMul R] {u₁ u₂ : R}
+
+/-- Two partial isometries with orthogonal final projections (`(u₁ * star u₁) * (u₂ * star u₂) = 0`)
+satisfy `star u₁ * u₂ = 0`. -/
+theorem IsPartialIsometry.star_mul_eq_zero (hu₁ : IsPartialIsometry u₁)
+    (hu₂ : IsPartialIsometry u₂) (h : (u₁ * star u₁) * (u₂ * star u₂) = 0) :
+    star u₁ * u₂ = 0 := by
+  calc star u₁ * u₂
+    _ = star (u₁ * star u₁ * u₁) * (u₂ * star u₂ * u₂) := by
+      rw [hu₁.mul_star_mul_self, hu₂.mul_star_mul_self]
+    _ = star u₁ * ((u₁ * star u₁) * (u₂ * star u₂)) * u₂ := by
+      simp only [star_mul, star_star, mul_assoc]
+    _ = 0 := by rw [h, mul_zero, zero_mul]
+
+end SemigroupWithZero
 
 namespace IsPartialIsometry
 

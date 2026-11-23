@@ -151,9 +151,8 @@ theorem adjoin_range_cfcHom (a : H →L[ℂ] H) [IsStarNormal a] :
     adjoin (Set.range (cfcHom (R := ℂ) (a := a) ‹_›)) = adjoin {a} := by
   refine le_antisymm (adjoin_le_iff.2 ?_) (adjoin_mono ?_)
   · rintro _ ⟨f, rfl⟩
-    exact StarSubalgebra.topologicalClosure_minimal
-      (StarAlgebra.adjoin_le (S := (adjoin {a}).toStarSubalgebra) (subset_adjoin {a}))
-      (adjoin {a}).isClosed (cfcHom_mem_elemental ‹_› f)
+    exact StarAlgebra.elemental.le_of_mem (adjoin {a}).isClosed
+      (subset_adjoin {a} (Set.mem_singleton a)) (cfcHom_mem_elemental ‹_› f)
   · rw [Set.singleton_subset_iff]
     exact ⟨(ContinuousMap.id ℂ).restrict _, cfcHom_id ‹_›⟩
 

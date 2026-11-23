@@ -139,43 +139,23 @@ theorem eq_zero_iff (h : ProjectionEquivalent M p q) : p = 0 ↔ q = 0 := by
     rwa [star_mul_self_eq_zero] at hv₁
   rw [← hv₂, hv₀, zero_mul]
 
-private theorem mul_self_of_isPartialIsometry {v q : H →L[ℂ] H}
-    (hv : v.IsPartialIsometry) (hvq : v * star v = q) : q * v = v := by
-  rw [← hvq]
-  exact (ContinuousLinearMap.isPartialIsometry_iff_starMul.1 hv).mul_star_mul_self
-
-private theorem star_mul_eq_zero_of_isPartialIsometry {v₁ v₂ q₁ q₂ : H →L[ℂ] H}
-    (hv₁ : v₁.IsPartialIsometry) (hv₂ : v₂.IsPartialIsometry)
-    (hv₁q : v₁ * star v₁ = q₁) (hv₂q : v₂ * star v₂ = q₂)
-    (hq₁₂ : q₁ * q₂ = 0) : star v₁ * v₂ = 0 := by
-  have hq₁ : IsStarProjection q₁ :=
-    hv₁q ▸ (ContinuousLinearMap.isPartialIsometry_iff_starMul.1 hv₁).isStarProjection_mul_star_self
-  calc star v₁ * v₂
-    _ = star (q₁ * v₁) * (q₂ * v₂) := by
-      rw [mul_self_of_isPartialIsometry hv₁ hv₁q, mul_self_of_isPartialIsometry hv₂ hv₂q]
-    _ = star v₁ * (q₁ * q₂) * v₂ := by
-      simp only [star_mul, hq₁.isSelfAdjoint.star_eq, mul_assoc]
-    _ = 0 := by rw [hq₁₂, mul_zero, zero_mul]
-
 /-- Orthogonal sums of pairwise Murray–von Neumann equivalent projections in `M` are equivalent. -/
 theorem add {p₁ p₂ q₁ q₂ : H →L[ℂ] H} (hp₁₂ : p₁ * p₂ = 0) (hq₁₂ : q₁ * q₂ = 0)
     (h₁ : ProjectionEquivalent M p₁ q₁) (h₂ : ProjectionEquivalent M p₂ q₂) :
     ProjectionEquivalent M (p₁ + p₂) (q₁ + q₂) := by
   obtain ⟨v₁, hv₁M, hv₁, hv₁p, hv₁q⟩ := h₁.exists_isPartialIsometry
   obtain ⟨v₂, hv₂M, hv₂, hv₂p, hv₂q⟩ := h₂.exists_isPartialIsometry
+  have hv₁' : TauCeti.IsPartialIsometry v₁ :=
+    ContinuousLinearMap.isPartialIsometry_iff_starMul.1 hv₁
+  have hv₂' : TauCeti.IsPartialIsometry v₂ :=
+    ContinuousLinearMap.isPartialIsometry_iff_starMul.1 hv₂
   have hcross₁ : star v₁ * v₂ = 0 :=
-    star_mul_eq_zero_of_isPartialIsometry hv₁ hv₂ hv₁q hv₂q hq₁₂
+    hv₁'.star_mul_eq_zero hv₂' (by rwa [hv₁q, hv₂q])
   have hcross₂ : star v₂ * v₁ = 0 := by
     simpa only [star_mul, star_star, star_zero] using congrArg star hcross₁
-  have hv₁s : (star v₁).IsPartialIsometry := by
-    rw [ContinuousLinearMap.star_eq_adjoint]
-    exact hv₁.adjoint
-  have hv₂s : (star v₂).IsPartialIsometry := by
-    rw [ContinuousLinearMap.star_eq_adjoint]
-    exact hv₂.adjoint
   have hcross₃ : v₁ * star v₂ = 0 := by
-    simpa only [star_star] using star_mul_eq_zero_of_isPartialIsometry hv₁s hv₂s
-      (by simpa only [star_star] using hv₁p) (by simpa only [star_star] using hv₂p) hp₁₂
+    simpa only [star_star] using
+      hv₁'.star.star_mul_eq_zero hv₂'.star (by simpa only [star_star, hv₁p, hv₂p] using hp₁₂)
   have hcross₄ : v₂ * star v₁ = 0 := by
     simpa only [star_mul, star_star, star_zero] using congrArg star hcross₃
   refine ⟨h₁.isStarProjection_left.add h₂.isStarProjection_left hp₁₂,
@@ -197,7 +177,9 @@ theorem centralSupport_eq (h : ProjectionEquivalent M p q) :
   obtain ⟨v, hvM, hv, hv₁, hv₂⟩ := he.exists_isPartialIsometry
   rw [centralSupportProjection_le_iff, coe_centralSupportProjection]
   set z := M.centralSupport e₂
-  have hqv : e₂ * v = v := mul_self_of_isPartialIsometry hv hv₂
+  have hqv : e₂ * v = v := by
+    rw [← hv₂]
+    exact (ContinuousLinearMap.isPartialIsometry_iff_starMul.1 hv).mul_star_mul_self
   have hzv : z * star v = star v * z :=
     (mem_commutant_iff.1 (M.centralSupport_mem_commutant e₂) (star v) (star_mem hvM)).symm
   calc z * e₁
@@ -241,8 +223,8 @@ theorem parallelogram_projectionEquivalent {M : VonNeumannAlgebra H} (p q : M.Pr
   have hfinal : x.range.topologicalClosure.starProjection =
       (p ⊔ q : M.Projection) - (p : H →L[ℂ] H) := by
     have hrange : x.range.topologicalClosure = (star x).kerᗮ := by
-      rw [← x.range.orthogonal_orthogonal_eq_closure, x.orthogonal_range,
-        ← ContinuousLinearMap.star_eq_adjoint]
+      simpa only [ContinuousLinearMap.adjoint_adjoint, ContinuousLinearMap.star_eq_adjoint] using
+        (ContinuousLinearMap.orthogonal_ker (x†)).symm
     rw [Submodule.starProjection_inj.2 hrange, hstar_x,
       Projection.starProjection_orthogonal_ker_one_sub_mul qᶜ pᶜ,
       inf_comm, ← Projection.compl_sup, Projection.coe_compl, Projection.coe_compl]

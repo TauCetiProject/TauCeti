@@ -236,10 +236,9 @@ theorem mem_closedProjectionSublattice {U : ClosedSubmodule ℂ H} :
     U ∈ closedProjectionSublattice M ↔ U.toSubmodule.starProjection ∈ M :=
   Iff.rfl
 
--- Public and `@[expose]` because `CompleteLattice M.Projection` is an exposed module instance.
 /-- Equivalence between `M.Projection` and `closedProjectionSublattice M`, shared by the
 `CompleteLattice` instance and `closedRangeOrderIso`. -/
-@[expose] noncomputable def closedRangeEquiv (M : VonNeumannAlgebra H) :
+private noncomputable def closedRangeEquiv (M : VonNeumannAlgebra H) :
     M.Projection ≃ closedProjectionSublattice M where
   toFun p := ⟨p.closedRange, mem_closedProjectionSublattice.2 p.starProjection_closedRange_mem⟩
   invFun U := ofClosedSubmodule U.val (mem_closedProjectionSublattice.1 U.property)
@@ -248,7 +247,7 @@ theorem mem_closedProjectionSublattice {U : ClosedSubmodule ℂ H} :
   right_inv U := Subtype.ext <|
     closedRange_ofClosedSubmodule U.val (mem_closedProjectionSublattice.1 U.property)
 
-noncomputable instance : CompleteLattice M.Projection :=
+@[no_expose] noncomputable instance : CompleteLattice M.Projection :=
   Equiv.completeLattice (closedRangeEquiv M)
 
 /-- Order isomorphism between `M.Projection` and `closedProjectionSublattice M`. -/
@@ -374,8 +373,9 @@ theorem coe_inf (p q : M.Projection) :
 theorem starProjection_orthogonal_ker_one_sub_mul (p q : M.Projection) :
     ((1 - (p : H →L[ℂ] H)) * q).kerᗮ.starProjection =
       (q : H →L[ℂ] H) - (p ⊓ q : M.Projection) := by
-  have : CompleteSpace ↥(p.closedRange.toSubmodule ⊓ q.closedRange.toSubmodule) :=
+  have hcomplete : CompleteSpace ↥(p.closedRange ⊓ q.closedRange).toSubmodule :=
     inferInstanceAs (CompleteSpace ↥(p.closedRange ⊓ q.closedRange))
+  rw [ClosedSubmodule.toSubmodule_inf] at hcomplete
   have h : ((1 - (p : H →L[ℂ] H)) * q).kerᗮ.starProjection =
       ((1 - p.closedRange.toSubmodule.starProjection) *
         q.closedRange.toSubmodule.starProjection).kerᗮ.starProjection := by
@@ -412,6 +412,25 @@ theorem coe_iSup {ι : Sort*} (p : ι → M.Projection) :
   simp only [← toSubmodule_closedRange, closedRange_iSup, ClosedSubmodule.toSubmodule_iSup,
     Submodule.toSubmodule_closure]
 
+/-- The meet of a set of projections in `M` is the orthogonal projection onto the intersection of
+their closed ranges. -/
+theorem coe_sInf (S : Set M.Projection) :
+    ((sInf S : M.Projection) : H →L[ℂ] H) =
+      (⨅ p ∈ S, p.closedRange).toSubmodule.starProjection := by
+  rw [← (sInf S).starProjection_range]
+  exact Submodule.starProjection_inj.2 (by
+    rw [← toSubmodule_closedRange, closedRange_sInf, sInf_image])
+
+/-- The join of a set of projections in `M` is the orthogonal projection onto the closed span of
+their ranges. -/
+theorem coe_sSup (S : Set M.Projection) :
+    ((sSup S : M.Projection) : H →L[ℂ] H) =
+      (⨆ p ∈ S, (p : H →L[ℂ] H).range).topologicalClosure.starProjection := by
+  rw [← (sSup S).starProjection_range]
+  refine Submodule.starProjection_inj.2 ?_
+  simp only [← toSubmodule_closedRange, closedRange_sSup, ClosedSubmodule.toSubmodule_sSup,
+    Submodule.toSubmodule_closure, iSup_image]
+
 /-! #### Orthocomplement and De Morgan's laws -/
 
 instance : Compl M.Projection where
@@ -433,12 +452,13 @@ theorem closedRange_compl (p : M.Projection) : pᶜ.closedRange = p.closedRange�
   apply ClosedSubmodule.toSubmodule_injective
   have h : ((pᶜ : M.Projection) : H →L[ℂ] H) = (p : H →L[ℂ] H).rangeᗮ.starProjection := by
     rw [coe_compl, Submodule.starProjection_orthogonal', starProjection_range]
-  rw [toSubmodule_closedRange, h, Submodule.range_starProjection]
-  rfl
+  rw [toSubmodule_closedRange, h, Submodule.range_starProjection,
+    ClosedSubmodule.toSubmodule_orthogonal_eq, toSubmodule_closedRange]
 
 @[simp]
 theorem compl_le_compl_iff {p q : M.Projection} : pᶜ ≤ qᶜ ↔ q ≤ p := by
-  simp only [le_iff_closedRange_le, closedRange_compl]
+  simp only [le_iff_closedRange_le, closedRange_compl,
+    ← ClosedSubmodule.toSubmodule_le_toSubmodule, ClosedSubmodule.toSubmodule_orthogonal_eq]
   exact Submodule.orthogonal_le_orthogonal_iff
 
 /-- Orthocomplementation as an order isomorphism `M.Projection ≃o M.Projectionᵒᵈ`. -/
