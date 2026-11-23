@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Algebra.Group.Action.TotalSpace
 public import TauCeti.Analysis.InnerProductSpace.PiL2
+public import TauCeti.Topology.FiberBundle.MapFiber
 public import TauCeti.Topology.VectorBundle.OrthonormalFrame.Lift
 public import TauCeti.Topology.VectorBundle.OrthonormalFrame.Reduction.Basic
 
@@ -21,7 +22,11 @@ subgroup of the orthogonal group of `V`, and `S` a set of orthonormal frames of 
 (as `exists_trivialization_unitaryFrames` and `exists_trivialization_orientedFrames` provide),
 these fibres form a principal `H`-bundle (`TauCeti.OrthonormalFrameBundle.reductionFiberBundle`,
 `TauCeti.OrthonormalFrameBundle.principalBundle_reductionFiber`): this is the reduction of the
-structure group of the orthonormal frame bundle to `H`.
+structure group of the orthonormal frame bundle to `H`. Both come from the bundle of a locally
+trivial map (`TauCeti.MapFiber.Atlas.fiberBundleOfHomeomorph`), applied to `S → X` and the
+identification `TauCeti.OrthonormalFrameBundle.reductionTotalSpaceHomeomorph` of the total space
+of the reduction with `S`. The fibres are `ReductionFiber S` rather than `TauCeti.MapFiber` so
+that they lie in the universe of `E`, as `TauCeti.OrthonormalFrameLift` requires.
 
 For `V = ℝⁿ` the inclusion of the reduced frames into all orthonormal frames makes the reduction
 a lift of the orthonormal frame bundle along `H → O(n) → GL(ℝⁿ)`
@@ -150,6 +155,14 @@ theorem continuous_coe_reductionTotalSpaceEquiv :
       (reductionTotalSpaceEquiv H S p : OrthonormalFrameBundle ℝ F E V) :=
   continuous_subtypeVal.comp (reductionTotalSpaceHomeomorph H S).continuous
 
+variable (H) in
+/-- Each fibre of the reduction is embedded in its total space, since both carry topologies
+induced from the orthonormal frame bundle. -/
+theorem ReductionFiber.isInducing_totalSpaceMk (b : B) :
+    Topology.IsInducing (TotalSpace.mk b : ReductionFiber S b → TotalSpace H (ReductionFiber S)) :=
+  (Topology.IsInducing.subtypeVal.comp
+    (reductionTotalSpaceHomeomorph H S).isInducing).of_comp_iff.1 (Topology.IsInducing.induced _)
+
 end Fiber
 
 section Bundle
@@ -158,40 +171,7 @@ variable {B : Type*} [TopologicalSpace B] {F : Type*} {E : B → Type*}
   [∀ x, NormedAddCommGroup (E x)] [∀ x, InnerProductSpace ℝ (E x)]
   [TopologicalSpace (TotalSpace F E)] {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V]
   [CompleteSpace V] {H : Subgroup (unitary (V →L[ℝ] V))}
-  {S : Set (OrthonormalFrameBundle ℝ F E V)}
-
-/-- An equivariant trivialization of `S`, as a trivialization of the total space of the
-reduction. -/
-def reductionTrivialization
-    (t : Trivialization H (fun p : S ↦ (p : OrthonormalFrameBundle ℝ F E V).proj)) :
-    Trivialization H (π H (ReductionFiber S)) :=
-  t.compHomeomorph (reductionTotalSpaceHomeomorph H S)
-
-@[simp]
-theorem reductionTrivialization_apply
-    (t : Trivialization H (fun p : S ↦ (p : OrthonormalFrameBundle ℝ F E V).proj))
-    (p : TotalSpace H (ReductionFiber S)) :
-    reductionTrivialization t p = t (reductionTotalSpaceEquiv H S p) :=
-  (rfl)
-
-@[simp]
-theorem baseSet_reductionTrivialization
-    (t : Trivialization H (fun p : S ↦ (p : OrthonormalFrameBundle ℝ F E V).proj)) :
-    (reductionTrivialization t).baseSet = t.baseSet :=
-  (rfl)
-
-/-- The reduction of an equivariant trivialization of `S` is equivariant. -/
-theorem isEquivariant_reductionTrivialization [SMulMemIff H S]
-    (t : Trivialization H (fun p : S ↦ (p : OrthonormalFrameBundle ℝ F E V).proj))
-    (ht : ∀ (g : H) (p : S), (p : OrthonormalFrameBundle ℝ F E V).proj ∈ t.baseSet →
-      t (op g • p) = ((t p).1, (t p).2 * g)) :
-    (reductionTrivialization t).IsEquivariant where
-  snd_apply_smul b hb φ g := by
-    rw [reductionTrivialization_apply, reductionTrivialization_apply,
-      ← TotalSpace.smul_mk, reductionTotalSpaceEquiv_smul,
-      ht g (reductionTotalSpaceEquiv H S ⟨b, φ⟩) hb]
-
-variable [SMulMemIff H S]
+  {S : Set (OrthonormalFrameBundle ℝ F E V)} [SMulMemIff H S]
 
 variable (H S) in
 /-- `S` is locally trivial with fibre `H`, equivariantly: every point lies in the base set of a
@@ -203,31 +183,25 @@ trivialization of `S` turning the action of `H` into right multiplication. -/
 
 variable (hS : IsLocallyTrivialReduction H S)
 
-/-- The chosen equivariant trivialization of a locally trivial reduction at a point. -/
-def IsLocallyTrivialReduction.trivializationAt (x : B) :
-    Trivialization H (π H (ReductionFiber S)) :=
-  reductionTrivialization (hS x).choose
+/-- The atlas of `S` given by the chosen equivariant trivializations of a locally trivial
+reduction. -/
+def IsLocallyTrivialReduction.atlas :
+    MapFiber.Atlas H (fun p : S ↦ (p : OrthonormalFrameBundle ℝ F E V).proj) :=
+  ⟨fun x ↦ (hS x).choose, fun x ↦ (hS x).choose_spec.1⟩
 
 /-- **A locally trivial reduction of the orthonormal frame bundle is a fibre bundle** with fibre
 `H`, with the chosen trivializations as its atlas. -/
 @[instance_reducible]
-def reductionFiberBundle : FiberBundle H (ReductionFiber S) where
-  totalSpaceMk_isInducing' _ :=
-    (Topology.IsInducing.subtypeVal.comp
-      (reductionTotalSpaceHomeomorph H S).isInducing).of_comp_iff.1 (Topology.IsInducing.induced _)
-  trivializationAtlas' := range hS.trivializationAt
-  trivializationAt' := hS.trivializationAt
-  mem_baseSet_trivializationAt' x := (hS x).choose_spec.1
-  trivialization_mem_atlas' x := mem_range_self x
+def reductionFiberBundle : FiberBundle H (ReductionFiber S) :=
+  hS.atlas.fiberBundleOfHomeomorph (reductionTotalSpaceHomeomorph H S) (fun _ ↦ rfl)
+    (ReductionFiber.isInducing_totalSpaceMk H)
 
 /-- **A locally trivial reduction of the orthonormal frame bundle is a principal `H`-bundle.** -/
 theorem principalBundle_reductionFiber :
     letI := reductionFiberBundle hS
-    PrincipalBundle H (ReductionFiber S) := by
-  let _ := reductionFiberBundle hS
-  refine ⟨fun e he ↦ ?_⟩
-  obtain ⟨x, rfl⟩ := he.out
-  exact isEquivariant_reductionTrivialization _ (hS x).choose_spec.2
+    PrincipalBundle H (ReductionFiber S) :=
+  hS.atlas.principalBundleOfHomeomorph _ _ _ (fun _ _ _ ↦ rfl)
+    fun x p hp g ↦ congrArg Prod.snd ((hS x).choose_spec.2 g p hp)
 
 end Bundle
 
@@ -245,8 +219,8 @@ under `H → O(n) → GL(ℝⁿ)`. -/
 theorem ReductionFiber.frame_smul_apply {x : X} (φ : ReductionFiber S x) (g : H)
     (v : Fin n → ℝ) :
     (op g • φ).frame (WithLp.toLp 2 v) =
-      φ.frame (WithLp.toLp 2 ((euclideanLinearEquivHom n).comp H.subtype g v)) :=
-  (rfl)
+      φ.frame (WithLp.toLp 2 ((euclideanLinearEquivHom n).comp H.subtype g v)) := by
+  simp [← Unitary.coe_linearIsometryEquiv_apply]
 
 /-- **A locally trivial reduction of the orthonormal frame bundle modelled on `ℝⁿ` is a lift of
 the orthonormal frame bundle** along `H → O(n) → GL(ℝⁿ)`: its principal bundle is the reduction,

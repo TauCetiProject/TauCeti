@@ -641,7 +641,7 @@ theorem injOn_comp_euclideanSpace_proj_preimage {ι : Type*} [Unique ι] {α : T
 
 /-- An orthogonal transformation of `EuclideanSpace ℝ (Fin n)`, as a linear automorphism of
 `Fin n → ℝ`. -/
-@[expose] def euclideanLinearEquivHom (n : ℕ) :
+def euclideanLinearEquivHom (n : ℕ) :
     unitary (EuclideanSpace ℝ (Fin n) →L[ℝ] EuclideanSpace ℝ (Fin n)) →*
       (Fin n → ℝ) ≃ₗ[ℝ] (Fin n → ℝ) where
   toFun g := (WithLp.linearEquiv 2 ℝ (Fin n → ℝ)).symm.trans
