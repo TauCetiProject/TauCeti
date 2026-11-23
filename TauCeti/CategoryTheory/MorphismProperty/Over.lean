@@ -84,6 +84,12 @@ namespace Over
 
 open CategoryTheory.Limits
 
+/-- Forgetting a restricted over object twice gives its underlying object. -/
+@[simp]
+lemma forget_obj_left {C : Type*} [Category* C] (P Q : MorphismProperty C)
+    [Q.IsMultiplicative] (X : C) (Y : P.Over Q X) :
+    ((Over.forget P Q X).obj Y).left = Y.left := rfl
+
 /-- Base change of a morphism in a restricted over category is its pullback along the first
 projection from the base change of its target. -/
 theorem isPullback_pullback_map_left {C : Type*} [Category* C]

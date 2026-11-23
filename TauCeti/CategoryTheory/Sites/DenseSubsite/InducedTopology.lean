@@ -13,6 +13,7 @@ import TauCeti.CategoryTheory.Sites.CoverPreserving
 # Restricting a generated Grothendieck topology
 
 Let `K` be a coverage on the ambient category `D` and `F : C ⥤ D` a functor.
+The refinement membership criterion itself only needs a precoverage.
 Two independent conditions on generators at objects in the image of `F` suffice for
 comparison with the generated comap topology. Covering of their pullbacks in the generated
 comap topology gives equality with the restricted topology for fully faithful `F`.
@@ -27,23 +28,57 @@ comap generator, `Coverage.comapOfRefineGenerators` supplies a coverage with thi
 ## Main results
 
 * `Coverage.comapOfRefineGenerators`: the comap coverage under generator refinements.
-* `Coverage.functorPullback_mem_and_functorPushforward_mem_of_refinement`: a comap generator
+* `Precoverage.functorPullback_mem_and_functorPushforward_mem_of_refinement`: a comap generator
   refining an ambient sieve gives covering pullback and pushforward.
-* `Coverage.functorPullback_mem_toGrothendieck_comap_of_refine_generators`: a pulled-back
+* `Coverage.functorPullback_mem_toGrothendieck_comap_of_functorPullback_mem`: a pulled-back
   ambient cover is covering for the generated comap topology.
-* `Coverage.locallyCoverDense_of_refine_generators`: covering pushforwards of pulled-back
-  generators imply local cover density for the generated topology.
-* `Coverage.toGrothendieck_comap_eq_restrictedTopology_of_refine_generators`: covering
+* `Coverage.locallyCoverDense_of_functorPushforward_functorPullback_mem`: covering pushforwards
+  of pulled-back generators imply local cover density for the generated topology.
+* `Coverage.toGrothendieck_comap_eq_restrictedTopology_of_functorPullback_mem`: covering
   pullbacks of generators give the comparison with the restricted topology.
-* `Coverage.mem_toGrothendieck_comap_iff_of_refine_generators`: the resulting cover detection
-  criterion by pushforward of sieves.
+
+The theorem
+`mem_toGrothendieck_comap_iff_of_functorPullback_mem_of_functorPushforward_functorPullback_mem`
+gives the resulting cover detection criterion by pushforward of sieves.
 -/
 
 public section
 
+namespace CategoryTheory.Precoverage
+
+variable {C D : Type*} [Category* C] [Category* D] (K : Precoverage D) (F : C ⥤ D)
+
+/-- A comap generator refining an ambient sieve makes its functor pullback covering in the
+comap topology and the pushforward of that pullback covering in the ambient topology.
+No fullness or faithfulness assumption on the functor is required. -/
+theorem functorPullback_mem_and_functorPushforward_mem_of_refinement
+    {X : C} {Q : Presieve X} {T : Sieve (F.obj X)}
+    (hQ : Q ∈ (K.comap F) X) (hle : Q.map F ≤ T.arrows) :
+    T.functorPullback F ∈ (K.comap F).toGrothendieck X ∧
+      (T.functorPullback F).functorPushforward F ∈ K.toGrothendieck (F.obj X) := by
+  have hle' : Sieve.generate Q ≤ T.functorPullback F := by
+    rw [Sieve.generate_le_iff]
+    exact Presieve.map_le_iff_le_functorPullback.mp hle
+  refine ⟨GrothendieckTopology.superset_covering _ hle'
+    (Precoverage.generate_mem_toGrothendieck hQ), ?_⟩
+  apply GrothendieckTopology.superset_covering _ (Sieve.functorPushforward_monotone F X hle')
+  rw [← Sieve.generate_map_eq_functorPushforward]
+  exact Precoverage.generate_mem_toGrothendieck hQ
+
+end CategoryTheory.Precoverage
+
 namespace CategoryTheory.Coverage
 
 variable {C D : Type*} [Category* C] [Category* D] (K : Coverage D) (F : C ⥤ D)
+
+/-- A coverage pullback witness refines the pullback of the generated sieve. -/
+private lemma exists_generate_le_pullback {Y : D} {R : Presieve Y} (hR : R ∈ K Y)
+    {X : D} (f : X ⟶ Y) :
+    ∃ P ∈ K X, Sieve.generate P ≤ (Sieve.generate R).pullback f := by
+  obtain ⟨P, hP, hf⟩ := K.pullback f R hR
+  refine ⟨P, hP, ?_⟩
+  rw [Sieve.generate_le_iff]
+  exact fun Z g hg ↦ hf hg
 
 /-- Refinements of ambient generators at image objects also refine their pullbacks along
 arbitrary arrows from image objects. -/
@@ -53,12 +88,9 @@ theorem exists_presieve_pullback_le_of_refine_generators
     {Y : D} {R : Presieve Y} (hR : R ∈ K Y) (X : C) (f : F.obj X ⟶ Y) :
     ∃ Q ∈ (K.toPrecoverage.comap F) X,
       Q.map F ≤ ((Sieve.generate R).pullback f).arrows := by
-  obtain ⟨P, hP, hf⟩ := K.pullback f R hR
-  obtain ⟨Q, hQ, hle⟩ := refineGen hP
-  have hP' : Sieve.generate P ≤ (Sieve.generate R).pullback f := by
-    rw [Sieve.generate_le_iff]
-    exact fun Z g hg ↦ hf hg
-  exact ⟨Q, hQ, hle.trans hP'⟩
+  obtain ⟨P, hP, hle⟩ := exists_generate_le_pullback K hR f
+  obtain ⟨Q, hQ, hQle⟩ := refineGen hP
+  exact ⟨Q, hQ, hQle.trans hle⟩
 
 /-- Restrict a coverage along a fully faithful functor when every ambient generator at an
 image object has a refining generator from the comap precoverage. -/
@@ -87,39 +119,20 @@ theorem comapOfRefineGenerators_toPrecoverage [F.Full] [F.Faithful]
     (K.comapOfRefineGenerators F refineGen).toPrecoverage = K.toPrecoverage.comap F := by
   rfl
 
-/-- A comap generator refining an ambient sieve makes its functor pullback covering in the
-comap topology and the pushforward of that pullback covering in the ambient topology.
-No fullness or faithfulness assumption on the functor is required. -/
-theorem functorPullback_mem_and_functorPushforward_mem_of_refinement
-    {X : C} {Q : Presieve X} {T : Sieve (F.obj X)}
-    (hQ : Q ∈ (K.toPrecoverage.comap F) X) (hle : Q.map F ≤ T.arrows) :
-    T.functorPullback F ∈ (K.toPrecoverage.comap F).toGrothendieck X ∧
-      (T.functorPullback F).functorPushforward F ∈ K.toGrothendieck (F.obj X) := by
-  have hle' : Sieve.generate Q ≤ T.functorPullback F := by
-    rw [Sieve.generate_le_iff]
-    exact Presieve.map_le_iff_le_functorPullback.mp hle
-  refine ⟨GrothendieckTopology.superset_covering _ hle'
-    (Precoverage.generate_mem_toGrothendieck hQ), ?_⟩
-  apply GrothendieckTopology.superset_covering _ (Sieve.functorPushforward_monotone F X hle')
-  rw [← Sieve.generate_map_eq_functorPushforward]
-  exact Coverage.Saturate.of _ _ hQ
-
 /-- An ambient covering sieve pulled back along an arrow from `F.obj X` and then along `F`
 covers for the generated comap topology if the pullbacks of generators at image objects cover.
 No fullness or faithfulness assumption on `F` is required. -/
-theorem functorPullback_mem_toGrothendieck_comap_of_refine_generators
-    (refineGen : ∀ {X : C} {R : Presieve (F.obj X)}, R ∈ K (F.obj X) →
+theorem functorPullback_mem_toGrothendieck_comap_of_functorPullback_mem
+    (pullbackGen : ∀ {X : C} {R : Presieve (F.obj X)}, R ∈ K (F.obj X) →
       (Sieve.generate R).functorPullback F ∈ (K.toPrecoverage.comap F).toGrothendieck X)
     {Y : D} {T : Sieve Y} (hT : T ∈ K.toGrothendieck Y) (X : C) (f : F.obj X ⟶ Y) :
     (T.pullback f).functorPullback F ∈ (K.toPrecoverage.comap F).toGrothendieck X := by
   rw [Coverage.mem_toGrothendieck] at hT
   induction hT generalizing X with
   | of Y R hR =>
-    obtain ⟨P, hP, hf⟩ := K.pullback f R hR
-    apply GrothendieckTopology.superset_covering _ ?_ (refineGen hP)
-    apply Sieve.functorPullback_monotone
-    rw [Sieve.generate_le_iff]
-    exact fun Z g hg ↦ hf hg
+    obtain ⟨P, hP, hle⟩ := exists_generate_le_pullback K hR f
+    exact GrothendieckTopology.superset_covering _
+      (Sieve.functorPullback_monotone _ _ hle) (pullbackGen hP)
   | top Y => simp
   | transitive Y R T _ _ ihR ihT =>
     apply GrothendieckTopology.transitive _ (ihR X f)
@@ -129,8 +142,8 @@ theorem functorPullback_mem_toGrothendieck_comap_of_refine_generators
 
 /-- A functor is locally cover dense for the topology generated by a coverage if the pullback
 of each generator at an image object has covering pushforward. -/
-theorem locallyCoverDense_of_refine_generators
-    (refineGen : ∀ {X : C} {R : Presieve (F.obj X)}, R ∈ K (F.obj X) →
+theorem locallyCoverDense_of_functorPushforward_functorPullback_mem
+    (pushforwardGen : ∀ {X : C} {R : Presieve (F.obj X)}, R ∈ K (F.obj X) →
       ((Sieve.generate R).functorPullback F).functorPushforward F ∈
         K.toGrothendieck (F.obj X)) :
     F.LocallyCoverDense K.toGrothendieck where
@@ -143,12 +156,10 @@ theorem locallyCoverDense_of_refine_generators
     rw [Coverage.mem_toGrothendieck] at hT
     induction hT generalizing X with
     | of Y R hR =>
-      obtain ⟨P, hP, hf⟩ := K.pullback f R hR
-      apply GrothendieckTopology.superset_covering _ ?_ (refineGen hP)
-      apply Sieve.functorPushforward_monotone
-      apply Sieve.functorPullback_monotone
-      rw [Sieve.generate_le_iff]
-      exact fun Z g hg ↦ hf hg
+      obtain ⟨P, hP, hle⟩ := exists_generate_le_pullback K hR f
+      exact GrothendieckTopology.superset_covering _
+        (Sieve.functorPushforward_monotone _ _
+          (Sieve.functorPullback_monotone _ _ hle)) (pushforwardGen hP)
     | top Y => simp
     | transitive Y R T _ _ ihR ihT =>
       apply K.toGrothendieck.functorPushforward_transitive F (ihR X f)
@@ -160,8 +171,8 @@ theorem locallyCoverDense_of_refine_generators
 generated by the ambient coverage if the pullback of each generator at an image object covers
 for the generated comap topology. Neither local cover density nor covering of the pushforwards
 of these pullbacks is required. -/
-theorem toGrothendieck_comap_eq_restrictedTopology_of_refine_generators [F.Full] [F.Faithful]
-    (refineGen : ∀ {X : C} {R : Presieve (F.obj X)}, R ∈ K (F.obj X) →
+theorem toGrothendieck_comap_eq_restrictedTopology_of_functorPullback_mem [F.Full] [F.Faithful]
+    (pullbackGen : ∀ {X : C} {R : Presieve (F.obj X)}, R ∈ K (F.obj X) →
       (Sieve.generate R).functorPullback F ∈ (K.toPrecoverage.comap F).toGrothendieck X) :
     (K.toPrecoverage.comap F).toGrothendieck = F.restrictedTopology K.toGrothendieck := by
   refine le_antisymm ?_ ?_
@@ -173,14 +184,15 @@ theorem toGrothendieck_comap_eq_restrictedTopology_of_refine_generators [F.Full]
     rw [GrothendieckTopology.mem_toPrecoverage_iff] at hR ⊢
     rw [Sieve.generate_map_eq_functorPushforward] at hR
     simpa [Sieve.functorPullback_functorPushforward_eq] using
-      K.functorPullback_mem_toGrothendieck_comap_of_refine_generators F refineGen hR X (𝟙 _)
+      K.functorPullback_mem_toGrothendieck_comap_of_functorPullback_mem F pullbackGen hR X (𝟙 _)
 
 /-- For a fully faithful functor, a sieve covers in the topology generated by the comap
 precoverage exactly when its pushforward covers in the topology generated by the ambient
 coverage, if pullbacks of generators cover in the generated comap topology and their
 pushforwards cover in the ambient topology. -/
-theorem mem_toGrothendieck_comap_iff_of_refine_generators [F.Full] [F.Faithful]
-    (refineGen : ∀ {X : C} {R : Presieve (F.obj X)}, R ∈ K (F.obj X) →
+lemma mem_toGrothendieck_comap_iff_of_functorPullback_mem_of_functorPushforward_functorPullback_mem
+    [F.Full] [F.Faithful]
+    (pullbackGen : ∀ {X : C} {R : Presieve (F.obj X)}, R ∈ K (F.obj X) →
       (Sieve.generate R).functorPullback F ∈ (K.toPrecoverage.comap F).toGrothendieck X)
     (pushforwardGen : ∀ {X : C} {R : Presieve (F.obj X)}, R ∈ K (F.obj X) →
       ((Sieve.generate R).functorPullback F).functorPushforward F ∈
@@ -188,8 +200,8 @@ theorem mem_toGrothendieck_comap_iff_of_refine_generators [F.Full] [F.Faithful]
     {X : C} {S : Sieve X} :
     S ∈ (K.toPrecoverage.comap F).toGrothendieck X ↔
       S.functorPushforward F ∈ K.toGrothendieck (F.obj X) := by
-  have := K.locallyCoverDense_of_refine_generators F pushforwardGen
-  rw [K.toGrothendieck_comap_eq_restrictedTopology_of_refine_generators F refineGen]
+  have := K.locallyCoverDense_of_functorPushforward_functorPullback_mem F pushforwardGen
+  rw [K.toGrothendieck_comap_eq_restrictedTopology_of_functorPullback_mem F pullbackGen]
   exact Functor.mem_restrictedTopology_iff
 
 end CategoryTheory.Coverage

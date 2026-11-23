@@ -13,7 +13,7 @@ public import TauCeti.CategoryTheory.Sites.DenseSubsite.InducedTopology
 
 import Mathlib.CategoryTheory.MorphismProperty.CommaSites
 import TauCeti.AlgebraicGeometry.Sites.Zariski.FiniteType
-import TauCeti.CategoryTheory.MorphismProperty.Over
+import TauCeti.CategoryTheory.Sites.MorphismProperty.Over
 import TauCeti.CategoryTheory.Sites.CoverPreserving
 
 /-!
@@ -203,7 +203,7 @@ private lemma exists_finiteType_h_refinement (S : Scheme.{u}) [QuasiSeparatedSpa
   · have hZ : Presieve.ofArrows Y f ∈ (zariskiPrecoverage.over S) _ := by
       rw [Precoverage.mem_comap_iff, Presieve.map_ofArrows, ofArrows_mem_precoverage_iff]
       exact hR
-    obtain ⟨r, hr, hle⟩ := S.exists_finiteType_zariski_refinement hZ
+    obtain ⟨r, -, hr, hle⟩ := S.exists_finiteType_zariski_refinement hZ
     refine ⟨r, ?_, hle⟩
     rw [hPrecoverage_def]
     exact Or.inl hr
@@ -233,9 +233,10 @@ private lemma finiteType_h_refine_generators (S : Scheme.{u}) [QuasiSeparatedSpa
     T ∈ ((hPrecoverage.over S).toCoverage.toPrecoverage.comap F).toGrothendieck X ∧
       T.functorPushforward F ∈ (hPrecoverage.over S).toCoverage.toGrothendieck _ := by
   obtain ⟨Q, hQ, hle⟩ := exists_finiteType_h_refinement S hR
-  exact Coverage.functorPullback_mem_and_functorPushforward_mem_of_refinement
-    (hPrecoverage.over S).toCoverage
-    (MorphismProperty.Over.forget (@LocallyOfFiniteType ⊓ @QuasiCompact) ⊤ S) hQ hle
+  simpa only [Coverage.toGrothendieck_toPrecoverage] using
+    Precoverage.functorPullback_mem_and_functorPushforward_mem_of_refinement
+      (hPrecoverage.over S).toCoverage.toPrecoverage
+      (MorphismProperty.Over.forget (@LocallyOfFiniteType ⊓ @QuasiCompact) ⊤ S) hQ hle
 
 /-- Over a quasi-separated base, the generated finite-type h-topology equals the topology
 restricted from the big h-site of schemes over the base. -/
@@ -245,7 +246,7 @@ theorem finiteTypeHTopology_eq_restrictedTopology (S : Scheme.{u}) [QuasiSeparat
         (MorphismProperty.Over.forget (@LocallyOfFiniteType ⊓ @QuasiCompact) ⊤ S)
         (hTopology.over S) := by
   rw [finiteTypeHTopology_eq_comap_toGrothendieck, hTopology_over_eq_toGrothendieck]
-  exact Coverage.toGrothendieck_comap_eq_restrictedTopology_of_refine_generators
+  exact Coverage.toGrothendieck_comap_eq_restrictedTopology_of_functorPullback_mem
     (hPrecoverage.over S).toCoverage
     (MorphismProperty.Over.forget (@LocallyOfFiniteType ⊓ @QuasiCompact) ⊤ S)
     (fun hR ↦ (finiteType_h_refine_generators S hR).1)
@@ -259,8 +260,8 @@ theorem mem_finiteTypeHTopology_iff (S : Scheme.{u}) [QuasiSeparatedSpace S]
         (MorphismProperty.Over.forget (@LocallyOfFiniteType ⊓ @QuasiCompact) ⊤ S) ∈
           hTopology.over S ((MorphismProperty.Over.forget _ ⊤ S).obj X) := by
   rw [finiteTypeHTopology_eq_comap_toGrothendieck, hTopology_over_eq_toGrothendieck]
-  exact Coverage.mem_toGrothendieck_comap_iff_of_refine_generators
-    (hPrecoverage.over S).toCoverage
+  exact (hPrecoverage.over S).toCoverage
+    |>.mem_toGrothendieck_comap_iff_of_functorPullback_mem_of_functorPushforward_functorPullback_mem
     (MorphismProperty.Over.forget (@LocallyOfFiniteType ⊓ @QuasiCompact) ⊤ S)
     (fun hR ↦ (finiteType_h_refine_generators S hR).1)
     (fun hR ↦ (finiteType_h_refine_generators S hR).2)
@@ -273,10 +274,13 @@ theorem ofArrows_mem_finiteTypeHTopology_iff
     Sieve.ofArrows Y f ∈ S.finiteTypeHTopology X ↔
       Sieve.ofArrows (fun i ↦ (Y i).left) (fun i ↦ (f i).left) ∈ hTopology X.left := by
   rw [mem_finiteTypeHTopology_iff, Sieve.functorPushforward_ofArrows,
-    GrothendieckTopology.mem_over_iff, Sieve.overEquiv_ofArrows]
-  dsimp only [MorphismProperty.Over.forget, MorphismProperty.Comma.forget,
-    Over.left, Over.Hom.left, MorphismProperty.Comma.Hom.hom]
-  exact Iff.rfl
+    GrothendieckTopology.mem_over_iff]
+  change Sieve.overEquiv
+    ((MorphismProperty.Over.forget (@LocallyOfFiniteType ⊓ @QuasiCompact) ⊤ S).obj X) _ ∈
+      hTopology X.left ↔ _
+  exact Iff.of_eq (congrArg (fun R ↦ R ∈ hTopology X.left)
+    (MorphismProperty.Over.overEquiv_ofArrows_forget
+      (@LocallyOfFiniteType ⊓ @QuasiCompact) ⊤ S Y f))
 
 /-- Change of base along any scheme morphism preserves the generators of the finite-type
 h-topology. -/
@@ -305,6 +309,7 @@ def finiteTypeHCoverage (S : Scheme.{u}) [QuasiSeparatedSpace S] : Coverage S.Fi
     (fun hR ↦ exists_finiteType_h_refinement S hR)
 
 /-- The finite-type h-coverage has exactly the generators of the finite-type h-precoverage. -/
+@[simp]
 lemma finiteTypeHCoverage_toPrecoverage (S : Scheme.{u}) [QuasiSeparatedSpace S] :
     (S.finiteTypeHCoverage).toPrecoverage = S.finiteTypeHPrecoverage := by
   calc
