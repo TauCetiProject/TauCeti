@@ -141,7 +141,7 @@ theorem exists_forall_weaklyAdmissibleAt_of_winding (c : L →+ ℚ) {a : ι →
   let incl := c.ker.subtype
   obtain ⟨N₀, hN₀⟩ := AddMonoidHom.exists_forall_exists_lt_add_mul_or_lt_sub_mul
     (a := fun i => (a i).comp incl)
-    (fun P hP => Subtype.ext (ha P P.2 (by simpa using hP)))
+    (fun P hP => Subtype.ext (ha P P.property (by simpa [incl] using hP)))
     (fun i => (p i).comp incl) (fun i => (q i).comp incl)
     (0 : c.ker →+ ℚ)
   refine ⟨N₀, fun N hN n Point Region Basepoint _ _ _ H χ x e he hc hp hq =>
@@ -149,8 +149,8 @@ theorem exists_forall_weaklyAdmissibleAt_of_winding (c : L →+ ℚ) {a : ι →
   obtain ⟨P, rfl⟩ := he D hD
   have hP : P ∈ c.ker := by rw [AddMonoidHom.mem_ker, ← hc]; exact hD0
   exact exists_pos_and_neg_of_winding (e := e.comp incl) (P := ⟨P, hP⟩)
-    (fun i => (hp i).imp fun _ hr P => by simpa using hr P)
-    (fun i => (hq i).imp fun _ hr P => by simpa using hr P)
+    (fun i => (hp i).imp fun _ hr P => by simpa [incl] using hr P)
+    (fun i => (hq i).imp fun _ hr P => by simpa [incl] using hr P)
     (hN₀ N hN) (by rintro ⟨⟩; exact hD₀ (map_zero e))
 
 /-- **Strong admissibility by winding.** Let `c : L →+ ℚ` give the Maslov indices of the
