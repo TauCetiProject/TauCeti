@@ -11,7 +11,6 @@ public import Mathlib.MeasureTheory.Group.Measure
 public import TauCeti.MeasureTheory.Integral.ContinuousMap
 import Mathlib.MeasureTheory.Integral.Bochner.Set
 import TauCeti.Analysis.Convex.Combination
-import TauCeti.Topology.Algebra.Group.ContinuousDiv
 import Mathlib.Order.Disjointed
 
 /-!
@@ -286,7 +285,7 @@ private theorem tendsto_riemannSum_integral (f : C(K, F)) :
   refine Metric.tendsto_nhds.2 fun ε hε ↦ ?_
   have hδ : 0 < ε / (μ.real univ + 1) := div_pos hε (by positivity)
   filter_upwards [isFine_mem_fineFilter fun x ↦
-    (f.continuousAt x).setOf_sub_mem_nhds (Metric.ball_mem_nhds 0 hδ)]
+    tendsto_sub_nhds_zero_iff.2 (f.continuousAt x) (Metric.ball_mem_nhds 0 hδ)]
     with P hP
   rw [dist_comm, dist_eq_norm]
   calc ‖∫ x, f x ∂μ - riemannSum μ f P‖ ≤ ε / (μ.real univ + 1) * μ.real univ :=
@@ -322,7 +321,7 @@ private theorem cauchy_map_riemannSum (f : C(K, E)) :
   have hsub : Tendsto (fun p : E × E ↦ p.1 - p.2) (𝓝 0 ×ˢ 𝓝 0) (𝓝 0) := by
     simpa [nhds_prod_eq] using (continuous_sub (G := E)).tendsto ((0 : E), (0 : E))
   obtain ⟨V, hV, hVC⟩ := mem_prod_self_iff.1 (hsub hC0)
-  have hU := fun x ↦ (f.continuousAt x).setOf_sub_mem_nhds hV
+  have hU := fun x ↦ tendsto_sub_nhds_zero_iff.2 (f.continuousAt x) hV
   refine mem_map.2 <| mem_of_superset
     (prod_mem_prod (isFine_mem_fineFilter hU) (isFine_mem_fineFilter hU)) fun PQ hPQ ↦ ?_
   have hd := hCW <| riemannSum_sub_riemannSum_mem (μ := μ) hCc (mem_of_mem_nhds hC0)
