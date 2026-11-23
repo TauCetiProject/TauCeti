@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.CharP.IntermediateField
 public import Mathlib.FieldTheory.AlgebraicClosure
 public import Mathlib.LinearAlgebra.Dimension.Constructions
 public import Mathlib.RingTheory.AlgebraicIndependent.Defs
@@ -60,10 +61,15 @@ closure of `K`, and Mathlib's `IntermediateField.LinearDisjoint.isDomain`.
   finitely generated field extension is finite over `k`.
 * `TauCeti.algebraicClosure_eq_bot_iff_isIntegrallyClosedIn`: `k` is integrally closed in `K` if
   and only if `algebraicClosure k K = ⊥`.
-* `TauCeti.algebraicClosure_eq_bot_of_isDomain_tensorProduct`: if `K ⊗[k] L` is a domain for an
-  algebraically closed field `L` over `k`, then `algebraicClosure k K = ⊥`.
+* `TauCeti.isIntegrallyClosedIn_of_isDomain_tensorProduct` and
+  `TauCeti.algebraicClosure_eq_bot_of_isDomain_tensorProduct`: if `A ⊗[k] L` is a domain for an
+  algebraically closed field `L` over `k`, then `k` is integrally closed in the commutative
+  `k`-algebra `A` (and `algebraicClosure k K = ⊥` when `K` is a field).
 * `TauCeti.isDomain_tensorProduct_of_isIntegrallyClosedIn`: exact constants give a domain after
   a separable algebraic extension of scalars.
+* `TauCeti.isAlgebraic_rat_algebraicClosure`: the algebraic closure of `ℚ` in a field `K` is
+  algebraic over `ℚ` for the `ℚ`-algebra structure `DivisionRing.toRatAlgebra` that instance
+  search finds on it, which differs from the intermediate field's own structure.
 
 ## References
 
@@ -161,25 +167,48 @@ theorem isDomain_tensorProduct_of_isIntegrallyClosedIn (hex : IsIntegrallyClosed
   exact ((Algebra.TensorProduct.congr e.equivFieldRange.symm (AlgEquiv.refl : K ≃ₐ[k] K)).trans
     (Algebra.TensorProduct.comm k L K)).symm.toMulEquiv.isDomain
 
-/-- If `K ⊗[k] L` is a domain for some algebraically closed field `L` over `k`, then `k` is
-algebraically closed in `K`. -/
-theorem algebraicClosure_eq_bot_of_isDomain_tensorProduct (L : Type*) [Field L] [Algebra k L]
-    [IsAlgClosed L] [IsDomain (K ⊗[k] L)] : algebraicClosure k K = ⊥ := by
-  let E := algebraicClosure k K
-  -- `L ⊗[k] E` is a subring of the domain `L ⊗[k] K`, since `L` is flat over the field `k`.
-  let f : L ⊗[k] E →ₐ[L] L ⊗[k] K :=
-    Algebra.TensorProduct.map (AlgHom.id L L) (IsScalarTower.toAlgHom k E K)
+/-- If `A ⊗[k] L` is a domain for some algebraically closed field `L` over `k`, then `k` is
+integrally closed in the commutative `k`-algebra `A`. -/
+theorem isIntegrallyClosedIn_of_isDomain_tensorProduct {k A : Type*} [Field k] [CommRing A]
+    [Algebra k A] (L : Type*) [Field L] [Algebra k L] [IsAlgClosed L] [IsDomain (A ⊗[k] L)] :
+    IsIntegrallyClosedIn k A := by
+  have : Nontrivial A :=
+    (Algebra.TensorProduct.includeLeftRingHom : A →+* A ⊗[k] L).domain_nontrivial
+  let E := integralClosure k A
+  -- `L ⊗[k] E` is a subring of the domain `L ⊗[k] A`, since `L` is flat over the field `k`.
+  let f : L ⊗[k] E →ₐ[L] L ⊗[k] A := Algebra.TensorProduct.map (AlgHom.id L L) E.val
   have hf : Function.Injective f :=
-    Module.Flat.lTensor_preserves_injective_linearMap (M := L)
-      (IsScalarTower.toAlgHom k E K).toLinearMap Subtype.val_injective
-  have : IsDomain (L ⊗[k] K) :=
-    (Algebra.TensorProduct.comm k K L).toMulEquiv.isDomain_iff.mp inferInstance
+    Module.Flat.lTensor_preserves_injective_linearMap (M := L) E.val.toLinearMap
+      Subtype.val_injective
+  have : IsDomain (L ⊗[k] A) :=
+    (Algebra.TensorProduct.comm k A L).toMulEquiv.isDomain_iff.mp inferInstance
   have : IsDomain (L ⊗[k] E) := hf.isDomain f.toRingHom
   -- A domain integral over the algebraically closed field `L` is `L` itself.
   have hrank := (LinearEquiv.ofBijective (Algebra.linearMap L (L ⊗[k] E))
     (IsAlgClosed.algebraMap_bijective_of_isIntegral (k := L) (K := L ⊗[k] E))).lift_rank_eq
   rw [Module.rank_self, Module.rank_baseChange, Cardinal.lift_one, Cardinal.lift_lift,
     eq_comm, Cardinal.lift_eq_one] at hrank
-  exact IntermediateField.rank_eq_one_iff.mp hrank
+  exact (IsIntegrallyClosedIn.integralClosure_eq_bot_iff A (algebraMap k A).injective).mp
+    (Subalgebra.eq_bot_of_rank_le_one hrank.le)
+
+/-- If `K ⊗[k] L` is a domain for some algebraically closed field `L` over `k`, then `k` is
+algebraically closed in `K`. -/
+theorem algebraicClosure_eq_bot_of_isDomain_tensorProduct (L : Type*) [Field L] [Algebra k L]
+    [IsAlgClosed L] [IsDomain (K ⊗[k] L)] : algebraicClosure k K = ⊥ :=
+  algebraicClosure_eq_bot_iff_isIntegrallyClosedIn.mpr
+    (isIntegrallyClosedIn_of_isDomain_tensorProduct (k := k) (A := K) L)
+
+end TauCeti
+
+namespace TauCeti
+
+variable {K : Type*} [Field K] [Algebra ℚ K]
+
+/-- The algebraic closure of `ℚ` in `K` is algebraic over `ℚ`. Since the intermediate field has
+characteristic zero, instance search finds the `ℚ`-algebra structure `DivisionRing.toRatAlgebra`
+on it rather than its own, so Mathlib's `algebraicClosure.isAlgebraic` does not apply directly. -/
+instance isAlgebraic_rat_algebraicClosure : Algebra.IsAlgebraic ℚ (algebraicClosure ℚ K) := by
+  have h := algebraicClosure.isAlgebraic (F := ℚ) (E := K)
+  rwa [Subsingleton.elim (algebraicClosure ℚ K).algebra' DivisionRing.toRatAlgebra] at h
 
 end TauCeti

@@ -15,7 +15,9 @@ Mathlib's `ContinuousLinearEquiv.automorphismGroup` makes `M ≃L[R] M` a group 
 identity, whose product is composition and whose inverse is the inverse equivalence. This file
 states these three laws (`ContinuousLinearEquiv.one_eq_refl`, `ContinuousLinearEquiv.mul_eq_trans`,
 `ContinuousLinearEquiv.inv_eq_symm`), following Mathlib's `LinearEquiv.one_eq_refl` and
-`LinearEquiv.mul_eq_trans`.
+`LinearEquiv.mul_eq_trans`. As for `LinearEquiv`, the group operations act on points as the
+identity and composition (`ContinuousLinearEquiv.coe_inv` and the `IsOneApplyEqSelf` and
+`IsMulApplyEqComp` instances).
 
 For a representation `π : G →* (M ≃L[𝕜] M)` of a topological group that is continuous in the
 topology of bounded convergence, the inverse action `g ↦ (π g)⁻¹` is continuous as well
@@ -39,6 +41,15 @@ theorem mul_eq_trans (f g : M ≃L[R] M) : f * g = g.trans f :=
 /-- The inverse in the automorphism group is the inverse equivalence. -/
 theorem inv_eq_symm (f : M ≃L[R] M) : f⁻¹ = f.symm :=
   rfl
+
+/-- The inverse in the automorphism group applies the inverse equivalence. -/
+@[simp]
+theorem coe_inv (f : M ≃L[R] M) : ⇑f⁻¹ = ⇑f.symm :=
+  rfl
+
+instance : IsOneApplyEqSelf (M ≃L[R] M) where
+
+instance : IsMulApplyEqComp (M ≃L[R] M) where
 
 end ContinuousLinearEquiv
 

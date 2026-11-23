@@ -13,6 +13,7 @@ public import Mathlib.GroupTheory.QuotientGroup.Defs
 public import Mathlib.Data.ZMod.Defs
 public import TauCeti.GroupTheory.GroupAlgGeom.Basic
 import Mathlib.Data.ZMod.Basic
+import Mathlib.Algebra.Group.TypeTags.Finite
 import TauCeti.GroupTheory.FreeGroup.Centralizer
 import Mathlib.GroupTheory.FreeGroup.CyclicallyReduced
 import Mathlib.Order.Concept
@@ -619,6 +620,14 @@ theorem quotientCoeff_def : quotientCoeff N = (QuotientGroup.mk' N).comp inl := 
 @[simp]
 theorem quotientCoeff_apply (g : G) : quotientCoeff N g = ((inl g : GX G X) : GX G X ⧸ N) := (rfl)
 
+variable {N} in
+/-- A `G`-homomorphism out of `G[X] ⧸ N` sends the class of a coefficient to its image. It is the
+simp-normal form of `GHom.map_coeff` once `quotientCoeff_apply` has rewritten the coefficient. -/
+@[simp]
+theorem map_mk_inl {K : Type*} [Group K] {κ : G →* K} (φ : GHom (quotientCoeff N) κ) (g : G) :
+    φ ((inl g : GX G X) : GX G X ⧸ N) = κ g :=
+  φ.map_coeff g
+
 variable {N}
 
 /-- A `G`-homomorphism `G[X] ⧸ N → H`, composed with the quotient map, restricts to `ι` on the
@@ -734,6 +743,13 @@ theorem coeff_def (S : Set (GX G X)) : coeff ι S = GX.quotientCoeff (Rad ι S) 
 theorem coeff_apply (S : Set (GX G X)) (g : G) :
     coeff ι S g = ((inl g : GX G X) : CoordGroup ι S) := (rfl)
 
+/-- A `G`-homomorphism out of the coordinate group sends the class of a coefficient to its image. It
+is the simp-normal form of `GHom.map_coeff` once `coeff_apply` has rewritten the coefficient. -/
+@[simp]
+theorem map_mk_inl {K : Type*} [Group K] {κ : G →* K} {S : Set (GX G X)} (φ : GHom (coeff ι S) κ)
+    (g : G) : φ ((inl g : GX G X) : CoordGroup ι S) = κ g :=
+  φ.map_coeff g
+
 variable (v) in
 /-- Evaluation at a solution `v` of `S` in `H`, as a `G`-homomorphism `G_{R(S)} → H`. -/
 def evalGHom (hv : v ∈ V ι S) : GHom (coeff ι S) ι :=
@@ -742,6 +758,15 @@ def evalGHom (hv : v ∈ V ι S) : GHom (coeff ι S) ι :=
 @[simp]
 theorem evalGHom_mk (hv : v ∈ V ι S) (w : GX G X) :
     evalGHom v hv (w : CoordGroup ι S) = eval ι v w := (rfl)
+
+/-- Evaluation at a solution `v` of `S` carries a solution in `G_{R(S)}` of a system `T` with
+coefficients in `G[X]`, read in `G_{R(S)}` through the quotient map, to a solution of `T` in `H`,
+the coefficients being evaluated at `v`. -/
+theorem eval_mem_V_of_mk_mem_V {Z : Type*} {T : Set (GX (GX G X) Z)} {s : Z → GX G X}
+    (hv : v ∈ V ι S) (hs : (fun z ↦ (s z : CoordGroup ι S)) ∈ V (QuotientGroup.mk' (Rad ι S)) T) :
+    (fun z ↦ eval ι v (s z)) ∈ V (eval ι v) T := by
+  simpa [Function.comp_def] using
+    GHom.comp_mem_V (κ := eval ι v) ⟨(evalGHom v hv).toMonoidHom, evalGHom_mk hv⟩ hs
 
 variable (ι S) in
 /-- The universal property of the coordinate group: `G`-homomorphisms `G_{R(S)} → H` correspond
@@ -953,6 +978,19 @@ theorem homEquiv_comp_homOfMapsToWordMap (w : Y → GX G X)
   simp only [homEquiv_apply_coe, GHom.coe_comp, Function.comp_apply,
     homOfMapsToWordMap_mk, evalGHom_mk, wordMap_apply, eval_inr_of]
 
+variable {ι S T} in
+/-- A word map `w` from the solutions of `S` to those of `T` carries a solution in `G_{R(T)}` of a
+system `L` with coefficients in `G[Y]` to a solution in `G_{R(S)}` of the system obtained from `L`
+by substituting the words `w` in its coefficients. -/
+theorem mk_eval_mem_V_image_map_of_mk_mem_V {w : Y → GX G X}
+    (hw : Set.MapsTo (wordMap ι w) (V ι S) (V ι T)) {Z : Type*} {L : Set (GX (GX G Y) Z)}
+    {s : Z → GX G Y} (hs : (fun z ↦ (s z : CoordGroup ι T)) ∈ V (QuotientGroup.mk' (Rad ι T)) L) :
+    (fun z ↦ (eval (inl : G →* GX G X) w (s z) : CoordGroup ι S)) ∈ V (QuotientGroup.mk' (Rad ι S))
+      (Monoid.Coprod.map (eval (inl : G →* GX G X) w) (FreeGroup.map id) '' L) := by
+  simpa [mem_V, Function.comp_def] using GHom.comp_mem_V
+    (κ := (QuotientGroup.mk' (Rad ι S)).comp (eval inl w))
+    ⟨(homOfMapsToWordMap ι S T w hw).toMonoidHom, homOfMapsToWordMap_mk ι S T w hw⟩ hs
+
 /-- A coefficient-preserving homomorphism `σ : G[Y] →* G[X]` induces a `G`-homomorphism from the
 coordinate group of the inverse-image system `σ ⁻¹' S` to that of `S`; on classes it is `σ`. -/
 def homOfWordMap {Y : Type*} (ι : G →* H)
@@ -998,6 +1036,13 @@ theorem coeff_def (S : Set (GX G X)) : coeff S = GX.quotientCoeff (normalClosure
 @[simp]
 theorem coeff_apply (S : Set (GX G X)) (g : G) :
     coeff S g = ((inl g : GX G X) : SystemGroup G S) := (rfl)
+
+/-- A `G`-homomorphism out of `G_S` sends the class of a coefficient to its image. It is the
+simp-normal form of `GHom.map_coeff` once `coeff_apply` has rewritten the coefficient. -/
+@[simp]
+theorem map_mk_inl {K : Type*} [Group K] {κ : G →* K} {S : Set (GX G X)} (φ : GHom (coeff S) κ)
+    (g : G) : φ ((inl g : GX G X) : SystemGroup G S) = κ g :=
+  φ.map_coeff g
 
 variable (ι) in
 /-- The canonical surjection `G_S →* G_{R(S)}`, a `G`-homomorphism. -/
@@ -1185,12 +1230,18 @@ theorem Rad_pow_eq_normalClosure (hι : Function.Injective ι) {n : ℕ}
   rw [Rad_def, hV, I_singleton_comp hι]
   simp [Set.range_unique]
 
+/-- In a group `H` with unique roots, the equation `u ^ n * w ^ n = 1` (`n ≠ 0`) in two words `u`
+and `w` has the same solutions as `u * w = 1`: the only `n`-th root of `(w ^ n)⁻¹` is `w⁻¹`. -/
+theorem V_pow_mul_pow [HasUniqueRoots H] {n : ℕ} (hn : n ≠ 0) (u w : GX G X) :
+    V ι {u ^ n * w ^ n} = V ι {u * w} := by
+  ext v
+  simp [mul_eq_one_iff_eq_inv, ← inv_pow, pow_left_inj hn]
+
 /-- In a group `H` with unique roots, the equation `x ^ n * b ^ n = 1` (`n ≠ 0`) has the same
 solutions as `x * b = 1`: the only `n`-th root of `(b ^ n)⁻¹` is `b⁻¹`. -/
 theorem V_pow_mul_inl_pow [HasUniqueRoots H] {n : ℕ} (hn : n ≠ 0) (x : X) (b : G) :
     V ι {(inr (of x) : GX G X) ^ n * inl (b ^ n)} = V ι {inr (of x) * inl b} := by
-  ext v
-  simp [mul_eq_one_iff_eq_inv, ← inv_pow, pow_left_inj hn]
+  rw [map_pow, V_pow_mul_pow hn]
 
 /-- In a group `H` with unique roots, the equations `x ^ n * b ^ n = 1` (`n ≠ 0`) and `x * b = 1`
 have the same radical. -/
@@ -1331,7 +1382,7 @@ generator `a` are the points whose `x`-coordinate is a power of `a`. -/
 theorem V_singleton_commutatorElement_of {α : Type*} (x : X) (a : α) :
     V (.id (FreeGroup α)) {⁅(inr (of x) : GX (FreeGroup α) X), inl (of a)⁆} =
       {v | v x ∈ zpowers (of a)} := by
-  rw [V_singleton_commutatorElement, MonoidHom.id_apply, centralizer_singleton_of]
+  rw [V_singleton_commutatorElement, MonoidHom.id_apply, centralizer_of]
 
 namespace CoordGroup
 
@@ -1364,7 +1415,7 @@ def gHomEquivZPowers {α : Type*} (a : α) : GHom (coeff (.id (FreeGroup α))
     {⁅(inr (of ()) : GX (FreeGroup α) Unit), (inl (of a) : GX (FreeGroup α) Unit)⁆})
     (.id (FreeGroup α)) ≃ zpowers (of a) :=
   (gHomEquivCentralizer (.id _) (of a)).trans <| Equiv.subtypeEquivRight fun h => by
-    rw [MonoidHom.id_apply, centralizer_singleton_of]
+    rw [MonoidHom.id_apply, centralizer_of]
 
 @[simp]
 theorem gHomEquivZPowers_apply_coe {α : Type*} (a : α) (φ : GHom (coeff (.id (FreeGroup α))

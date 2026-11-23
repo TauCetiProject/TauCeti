@@ -17,6 +17,10 @@ For finite projective modules the map is Mathlib's equivalence `TensorProduct.du
 and for linear isomorphisms `α` and `β` naturality reads: pairing with dual factors transported
 by `α⁻¹` and `β⁻¹` is pairing after `(α ⊗ β)⁻¹`
 (`TensorProduct.dualDistribEquiv_map_symm_dualMap_apply`).
+
+For finite projective modules `L` and `M`, swapping the factors and identifying `L` with its
+double dual gives the canonical isomorphism `L ⊗ M^* ≃ (M ⊗ L^*)^*`
+(`TensorProduct.dualFlipEquiv`), which pairs `l ⊗ μ` with `m ⊗ θ` to `μ m * θ l`.
 -/
 
 public section
@@ -43,6 +47,8 @@ namespace TensorProduct
 
 open Module
 
+section Naturality
+
 variable {R E F E' F' : Type*} [CommSemiring R]
   [AddCommMonoid E] [Module R E] [AddCommMonoid F] [Module R F]
   [AddCommMonoid E'] [Module R E'] [AddCommMonoid F'] [Module R F']
@@ -61,5 +67,28 @@ theorem dualDistribEquiv_map_symm_dualMap_apply (α : E ≃ₗ[R] E') (β : F �
   simpa only [← toLinearMap_dualDistribEquiv, LinearEquiv.coe_coe, LinearMap.comp_apply,
     LinearMap.dualMap_apply, congr_symm, toLinearMap_congr, hα, hβ] using
     congr($(LinearMap.dualDistrib_comp_map_dualMap α.symm.toLinearMap β.symm.toLinearMap) ψ t)
+
+end Naturality
+
+section DualFlip
+
+variable (R L M : Type*) [CommRing R] [AddCommGroup L] [Module R L] [AddCommGroup M] [Module R M]
+  [Module.Finite R L] [Projective R L] [Module.Finite R M] [Projective R M]
+
+/-- The canonical isomorphism `L ⊗ M^* ≃ (M ⊗ L^*)^*` of finite projective modules, pairing
+`l ⊗ μ` with `m ⊗ θ` to `μ m * θ l`. -/
+noncomputable def dualFlipEquiv : L ⊗[R] Dual R M ≃ₗ[R] Dual R (M ⊗[R] Dual R L) :=
+  TensorProduct.comm R L (Dual R M) ≪≫ₗ (evalEquiv R L).lTensor (Dual R M) ≪≫ₗ
+    dualDistribEquiv R M (Dual R L)
+
+variable {R L M}
+
+/-- `TensorProduct.dualFlipEquiv` pairs `l ⊗ μ` with `m ⊗ θ` to `μ m * θ l`. -/
+@[simp]
+theorem dualFlipEquiv_tmul_tmul (l : L) (μ : Dual R M) (m : M) (θ : Dual R L) :
+    dualFlipEquiv R L M (l ⊗ₜ μ) (m ⊗ₜ θ) = μ m * θ l := by
+  simp [dualFlipEquiv, mul_comm]
+
+end DualFlip
 
 end TensorProduct
