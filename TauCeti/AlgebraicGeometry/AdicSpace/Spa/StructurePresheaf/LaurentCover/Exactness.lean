@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicGeometry.AdicSpace.Spa.StructurePresheaf.SheafyRing
+public import TauCeti.AlgebraicGeometry.AdicSpace.Spa.StructurePresheaf.SheafForEveryPresentation
 public import TauCeti.RingTheory.Huber.LocalizationTopology.RationalCompletion
 
 import Mathlib.CategoryTheory.Sites.Whiskering

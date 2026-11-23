@@ -7,7 +7,6 @@ module
 
 public import Mathlib.Algebra.Algebra.Prod
 public import Mathlib.Algebra.Polynomial.AlgebraMap
-public import Mathlib.Algebra.Polynomial.Eval.Defs
 public import Mathlib.Algebra.Ring.PUnit
 public import TauCeti.RingTheory.Huber.Glueing.Square
 public import TauCeti.RingTheory.Huber.Padic.Field

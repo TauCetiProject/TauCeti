@@ -6,11 +6,12 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.AdicSpace.Spa.StructurePresheaf.LaurentCover.Exactness
+public import TauCeti.AlgebraicGeometry.AdicSpace.Spa.StructurePresheaf.SheafyRing
 public import TauCeti.RingTheory.Huber.Glueing.Square
 public import TauCeti.RingTheory.Huber.LocalizationTopology.Laurent.Restriction
 public import TauCeti.Topology.Algebra.Ring.Ideal
 
-import TauCeti.AlgebraicGeometry.AdicSpace.Spa.Localization.Proper
+import TauCeti.AlgebraicGeometry.AdicSpace.Spa.Localization.LaurentCover.Proper
 import TauCeti.RingTheory.Huber.LocalizationTopology.Laurent.RationalCompletion
 
 /-!

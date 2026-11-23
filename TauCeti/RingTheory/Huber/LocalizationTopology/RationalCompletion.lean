@@ -47,9 +47,12 @@ and universal properties of `ratLoc`.
   `Localization.Away s` in any model and its continuity for the localisation topology.
 * `TauCeti.Huber.IsRationalCompletion.ringHom_ext_of_continuous`,
   `TauCeti.Huber.IsRationalCompletion.existsUnique_continuous_algHom`,
-  `TauCeti.Huber.IsRationalCompletion.existsUnique_continuous_algHom_of_refines`, and
+  `TauCeti.Huber.IsRationalCompletion.existsUnique_continuous_algHom_of_refines`,
+  `TauCeti.Huber.IsRationalCompletion.comp_localizationAlgHom`,
+  `TauCeti.Huber.IsRationalCompletion.map_localizationAlgHom`, and
   `TauCeti.Huber.IsRationalCompletion.denseRange_of_comp_algebraMap_eq`: uniqueness, universal
-  property, functoriality along refinements, and density at a shared denominator.
+  property, functoriality along refinements, localization-map compatibility, and density at a shared
+  denominator.
 * `TauCeti.Huber.isRationalCompletion_self_denom_one` and
   `TauCeti.Huber.IsRationalCompletion.subsingleton_of_denom_zero`: behaviour at denominators `1`
   and `0`.
@@ -372,23 +375,47 @@ theorem IsRationalCompletion.denseRange_localizationAlgHom
   exact e.surjective.denseRange.comp Completion.denseRange_coe he
 
 /-- Any ring homomorphism compatible with the `A`-algebra maps between two rational completions at
+the *same* denominator `s` intertwines their canonical maps from `Localization.Away s`. -/
+theorem IsRationalCompletion.comp_localizationAlgHom
+    (hB : IsRationalCompletion P T s hT B)
+    {P' : PairOfDefinition A} {T' : Finset A}
+    {hT' : IsOpen (Ideal.span (T' : Set A) : Set A)}
+    {C : Type*} [CommRing C] [TopologicalSpace C] [Algebra A C]
+    (hC : IsRationalCompletion P' T' s hT' C)
+    {φ : B →+* C} (hφ : φ.comp (algebraMap A B) = algebraMap A C) :
+    φ.comp hB.localizationAlgHom.toRingHom = hC.localizationAlgHom.toRingHom := by
+  refine IsLocalization.ringHom_ext (Submonoid.powers s) (RingHom.ext fun a ↦ ?_)
+  simp only [RingHom.comp_apply, AlgHom.toRingHom_eq_coe, RingHom.coe_coe,
+    localizationAlgHom_algebraMap]
+  exact RingHom.congr_fun hφ a
+
+/-- Pointwise form of `IsRationalCompletion.comp_localizationAlgHom`: any ring homomorphism
+compatible with the `A`-algebra maps between two rational completions at the *same* denominator `s`
+intertwines `hB.localizationAlgHom` and `hC.localizationAlgHom`. -/
+theorem IsRationalCompletion.map_localizationAlgHom
+    (hB : IsRationalCompletion P T s hT B)
+    {P' : PairOfDefinition A} {T' : Finset A}
+    {hT' : IsOpen (Ideal.span (T' : Set A) : Set A)}
+    {C : Type*} [CommRing C] [TopologicalSpace C] [Algebra A C]
+    (hC : IsRationalCompletion P' T' s hT' C)
+    {φ : B →+* C} (hφ : φ.comp (algebraMap A B) = algebraMap A C) (x : Localization.Away s) :
+    φ (hB.localizationAlgHom x) = hC.localizationAlgHom x :=
+  RingHom.congr_fun (hB.comp_localizationAlgHom hC hφ) x
+
+/-- Any ring homomorphism compatible with the `A`-algebra maps between two rational completions at
 the *same* denominator `s` has dense range, because its range contains the canonical dense image of
 `Localization.Away s`. -/
 theorem IsRationalCompletion.denseRange_of_comp_algebraMap_eq
     (hB : IsRationalCompletion P T s hT B)
-    {T' : Finset A} {hT' : IsOpen (Ideal.span (T' : Set A) : Set A)}
+    {P' : PairOfDefinition A} {T' : Finset A}
+    {hT' : IsOpen (Ideal.span (T' : Set A) : Set A)}
     {C : Type*} [CommRing C] [TopologicalSpace C] [Algebra A C]
-    (hC : IsRationalCompletion P T' s hT' C)
+    (hC : IsRationalCompletion P' T' s hT' C)
     {φ : B →+* C} (hφ : φ.comp (algebraMap A B) = algebraMap A C) :
-    DenseRange φ := by
-  have heq : φ.comp hB.localizationAlgHom.toRingHom = hC.localizationAlgHom.toRingHom := by
-    refine IsLocalization.ringHom_ext (Submonoid.powers s) (RingHom.ext fun a ↦ ?_)
-    simp only [RingHom.comp_apply, AlgHom.toRingHom_eq_coe, RingHom.coe_coe,
-      localizationAlgHom_algebraMap]
-    exact RingHom.congr_fun hφ a
-  exact hC.denseRange_localizationAlgHom.mono fun _ hy ↦ by
+    DenseRange φ :=
+  hC.denseRange_localizationAlgHom.mono fun _ hy ↦ by
     rcases hy with ⟨x, rfl⟩
-    exact ⟨hB.localizationAlgHom x, by simpa using RingHom.congr_fun heq x⟩
+    exact ⟨hB.localizationAlgHom x, hB.map_localizationAlgHom hC hφ x⟩
 
 /-- At denominator `0`, any model of `A⟨T/0⟩` is a subsingleton, since `Localization.Away (0 : A)`
 is already trivial. -/

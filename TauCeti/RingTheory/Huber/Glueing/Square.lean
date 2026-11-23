@@ -34,6 +34,10 @@ automatically from algebraic exactness and continuity via Henkel's open mapping 
 
 * `TauCeti.Huber.GlueingSquare.comp_algebraMap_eq` and
   `TauCeti.Huber.GlueingSquare.algebraMap_algebraMap`: commutativity of the square.
+* `TauCeti.Huber.GlueingSquare.isEmbedding`, `TauCeti.Huber.GlueingSquare.range_diagonal`,
+  `TauCeti.Huber.GlueingSquare.isClosed_range_diagonal`, and
+  `TauCeti.Huber.GlueingSquare.isClosedEmbedding`: the diagonal inclusion as a closed equalizer
+  embedding.
 * `TauCeti.Huber.GlueingSquare.isOpenQuotientMap_sub`: openness of the difference quotient map
   when `R₁` and `R₂` have continuous addition.
 * `TauCeti.Huber.GlueingSquare.of_exact`: upgrades algebraic exactness, surjectivity of the
@@ -115,6 +119,27 @@ theorem GlueingSquare.algebraMap_algebraMap (h : GlueingSquare R R₁ R₂ R₁�
 theorem GlueingSquare.isEmbedding (h : GlueingSquare R R₁ R₂ R₁₂) :
     Topology.IsEmbedding fun r : R ↦ (algebraMap R R₁ r, algebraMap R R₂ r) :=
   ⟨h.isInducing, h.injective⟩
+
+/-- In a glueing square, the range of the diagonal inclusion `R → R₁ × R₂` is the equalizer of
+the two overlap maps `R₁ → R₁₂` and `R₂ → R₁₂`. -/
+theorem GlueingSquare.range_diagonal (h : GlueingSquare R R₁ R₂ R₁₂) :
+    Set.range (fun r : R ↦ (algebraMap R R₁ r, algebraMap R R₂ r)) =
+      {x : R₁ × R₂ | algebraMap R₁ R₁₂ x.1 = algebraMap R₂ R₁₂ x.2} :=
+  Set.ext fun x ↦ (h.exact_sub x).symm.trans sub_eq_zero
+
+/-- In a glueing square with Hausdorff overlap `R₁₂`, the range of the diagonal inclusion
+`R → R₁ × R₂` is closed. -/
+theorem GlueingSquare.isClosed_range_diagonal [T2Space R₁₂] (h : GlueingSquare R R₁ R₂ R₁₂) :
+    IsClosed (Set.range fun r : R ↦ (algebraMap R R₁ r, algebraMap R R₂ r)) := by
+  rw [h.range_diagonal]
+  exact isClosed_eq (h.continuous_algebraMap₁₂.comp continuous_fst)
+    (h.continuous_algebraMap₂₁₂.comp continuous_snd)
+
+/-- In a glueing square with Hausdorff overlap `R₁₂`, the diagonal inclusion `R → R₁ × R₂` is a
+closed embedding. -/
+theorem GlueingSquare.isClosedEmbedding [T2Space R₁₂] (h : GlueingSquare R R₁ R₂ R₁₂) :
+    Topology.IsClosedEmbedding fun r : R ↦ (algebraMap R R₁ r, algebraMap R R₂ r) :=
+  ⟨h.isEmbedding, h.isClosed_range_diagonal⟩
 
 /-- In a glueing square, the difference map `R₁ × R₂ → R₁₂` is a quotient map. -/
 theorem GlueingSquare.isQuotientMap_sub (h : GlueingSquare R R₁ R₂ R₁₂) :
