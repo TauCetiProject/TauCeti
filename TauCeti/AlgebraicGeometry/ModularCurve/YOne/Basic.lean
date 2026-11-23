@@ -114,8 +114,8 @@ modular curve `Y₁(N)` out of `T`:
   section. A morphism `t : S ⟶ T` factors through it exactly when the pullback of `N • (0, 0)`
   along `t` is the pullback of the zero section, an equality of morphisms rather than a condition
   at points (`TauCeti.AlgebraicGeometry.UniversalTate.exists_comp_torsionLocusι_eq_iff`);
-* `TauCeti.AlgebraicGeometry.UniversalTate.yOne N` is the open subscheme of the `N`-torsion locus
-  at whose points none of `(0, 0), 2 • (0, 0), …, (N - 1) • (0, 0)` meets the zero section
+* `TauCeti.AlgebraicGeometry.UniversalTate.yOne N` is the locus where `N • (0, 0) = 0` and
+  none of `(0, 0), 2 • (0, 0), …, (N - 1) • (0, 0)` meets the zero section
   (`TauCeti.AlgebraicGeometry.UniversalTate.exists_comp_yOneι_eq_iff`).
 
 The main result is that, for `N ≥ 4`, `Y₁(N)` is the fine moduli scheme of elliptic curves with an
@@ -144,9 +144,8 @@ condition is a condition at the points of `S`.
   `Spec ℤ[A, B][Δ⁻¹]` at whose points none of the multiples `k • (0, 0)`, `0 < k < N`, meets the
   zero section.
 * `TauCeti.AlgebraicGeometry.UniversalTate.yOne N`,
-  `TauCeti.AlgebraicGeometry.UniversalTate.yOneι N`: the modular curve `Y₁(N)`, the open subscheme
-  `yOneOpens N` of the `N`-torsion locus lying over `exactOrderOpens N`, with its immersion into
-  `Spec ℤ[A, B][Δ⁻¹]`.
+  `TauCeti.AlgebraicGeometry.UniversalTate.yOneι N`: the modular curve `Y₁(N)`, the locus where
+  `(0, 0)` has naive exact order `N`, with its immersion into `Spec ℤ[A, B][Δ⁻¹]`.
 
 ## Main results
 
@@ -252,37 +251,24 @@ theorem mem_exactOrderOpens_iff {N : ℕ} {t : Spec (.of (ULift.{u} UniversalTat
     t ∈ exactOrderOpens N ↔ ∀ k : ℕ, 0 < k → k < N → (pointHom ^ k).left t ≠ curveGeom.zero t :=
   Iff.rfl
 
-/-- The open subset of the `N`-torsion locus lying over `exactOrderOpens N`. -/
-noncomputable def yOneOpens (N : ℕ) : (torsionLocus.{u} N).Opens :=
-  torsionLocusι N ⁻¹ᵁ exactOrderOpens N
+/-- **The modular curve `Y₁(N)`** (for `N ≠ 0`): the locus of `Spec ℤ[A, B][Δ⁻¹]` over which the
+universal point `(0, 0)` of the universal Tate normal form has naive exact order `N`, on which
+`N • (0, 0) = 0` and none of `(0, 0), 2 • (0, 0), …, (N - 1) • (0, 0)` meets the zero section.
+For `N ≥ 4` it is the fine moduli scheme of elliptic curves with a point of exact order `N` in every
+fibre (`TauCeti.AlgebraicGeometry.EllipticCurveGeom.existsUnique_yOne`). -/
+noncomputable abbrev yOne (N : ℕ) [NeZero N] : Scheme.{u} :=
+  EllipticCurveGeom.naiveExactOrderPreimage N pointHom
 
-/-- The defining property of `yOneOpens N`. -/
-@[simp]
-theorem mem_yOneOpens_iff {N : ℕ} {z : torsionLocus.{u} N} :
-    z ∈ yOneOpens N ↔ torsionLocusι N z ∈ exactOrderOpens N :=
-  Iff.rfl
-
-/-- **The modular curve `Y₁(N)`**: the open subscheme of the `N`-torsion locus of the universal
-Tate normal form lying over `exactOrderOpens N`, on which `N • (0, 0) = 0` and none of
-`(0, 0), 2 • (0, 0), …, (N - 1) • (0, 0)` meets the zero section. For `N ≥ 4` it is the fine moduli
-scheme of elliptic curves with a point of exact order `N` in every fibre
-(`TauCeti.AlgebraicGeometry.EllipticCurveGeom.existsUnique_yOne`). -/
-noncomputable abbrev yOne (N : ℕ) : Scheme.{u} :=
-  (yOneOpens.{u} N).toScheme
-
-/-- The morphism `Y₁(N) ⟶ Spec ℤ[A, B][Δ⁻¹]`: the inclusion of an open subscheme of the
-`N`-torsion locus followed by the inclusion of that closed subscheme. -/
-noncomputable def yOneι (N : ℕ) : yOne.{u} N ⟶ Spec (.of (ULift.{u} UniversalTate.Ring)) :=
-  (yOneOpens.{u} N).ι ≫ torsionLocusι N
-
-/-- `yOneι N` is the inclusion of `yOneOpens N` followed by that of the `N`-torsion locus. -/
-theorem yOneι_def (N : ℕ) : yOneι.{u} N = (yOneOpens.{u} N).ι ≫ torsionLocusι N :=
-  (rfl)
+/-- The immersion `Y₁(N) ⟶ Spec ℤ[A, B][Δ⁻¹]` of the locus where `(0, 0)` has naive exact order
+`N`. -/
+noncomputable def yOneι (N : ℕ) [NeZero N] :
+    yOne.{u} N ⟶ Spec (.of (ULift.{u} UniversalTate.Ring)) :=
+  EllipticCurveGeom.naiveExactOrderPreimageι N pointHom
 
 /-- `Y₁(N)` is a locally closed subscheme of `Spec ℤ[A, B][Δ⁻¹]`. -/
-instance isImmersion_yOneι (N : ℕ) : IsImmersion (yOneι.{u} N) := by
-  rw [yOneι_def]
-  infer_instance
+instance isImmersion_yOneι (N : ℕ) [NeZero N] : IsImmersion (yOneι.{u} N) :=
+  MorphismProperty.of_isPullback
+    (EllipticCurveGeom.isPullback_naiveExactOrderPreimage N pointHom).flip inferInstance
 
 /-- **The universal property of `Y₁(N)`.** A morphism `t : S ⟶ Spec ℤ[A, B][Δ⁻¹]` factors
 through `Y₁(N)` exactly when the pullback of `N • (0, 0)` along `t` is the pullback of the zero
@@ -290,22 +276,15 @@ section and `t` lands in `exactOrderOpens N`, that is, none of the multiples `k 
 `0 < k < N`, meets the zero section at a point of the image of `t`. The factorization is unique,
 as `yOneι N` is an immersion. -/
 theorem exists_comp_yOneι_eq_iff {S : Scheme.{u}}
-    (t : S ⟶ Spec (.of (ULift.{u} UniversalTate.Ring))) (N : ℕ) :
+    (t : S ⟶ Spec (.of (ULift.{u} UniversalTate.Ring))) (N : ℕ) [NeZero N] :
     (∃ h : S ⟶ yOne.{u} N, h ≫ yOneι N = t) ↔
       t ≫ (pointHom ^ N).left = t ≫ curveGeom.zero ∧ ∀ s, t s ∈ exactOrderOpens N := by
-  constructor
-  · rintro ⟨h, rfl⟩
-    refine ⟨(exists_comp_torsionLocusι_eq_iff _ _).mp ⟨h ≫ (yOneOpens N).ι, by
-      rw [yOneι_def, Category.assoc]⟩, fun s ↦ ?_⟩
-    have : (yOneOpens N).ι (h s) ∈ yOneOpens N := (h s).property
-    simpa [yOneι_def] using this
-  · rintro ⟨hN, ht⟩
-    obtain ⟨h, rfl⟩ := (exists_comp_torsionLocusι_eq_iff _ _).mpr hN
-    refine ⟨IsOpenImmersion.lift (yOneOpens N).ι h ?_, by
-      rw [yOneι_def, ← Category.assoc, IsOpenImmersion.lift_fac]⟩
-    rintro _ ⟨s, rfl⟩
-    rw [Scheme.Opens.range_ι]
-    exact ht s
+  have h := EllipticCurveGeom.exists_lift_naiveExactOrderPreimageι_iff N pointHom
+    (Z := Over.mk t) (x := toUnit (Over.mk t) ≫ pointHom) rfl
+  simp only [Over.mk_hom, EllipticCurveGeom.isOfNaiveExactOrder_toUnit_comp_iff_forall_lt] at h
+  refine h.trans (and_congr_right fun _ ↦ ?_)
+  simp only [mem_exactOrderOpens_iff]
+  exact ⟨fun h' s k hk hkN ↦ h' k hk hkN s, fun h' k hk hkN s ↦ h' s k hk hkN⟩
 
 end TauCeti.AlgebraicGeometry.UniversalTate
 
@@ -351,7 +330,7 @@ an `S`-point of an elliptic curve `E` over `S` with `N • P = 0` such that none
 `f : S ⟶ Y₁(N)` and a unique morphism `g` from `E` to the universal Tate normal form exhibiting
 `E` as its pullback along `f`, carrying the zero section to the zero section and `P` to the point
 `(0, 0)`. -/
-theorem existsUnique_yOne {N : ℕ} (hN : 4 ≤ N) (hPN : P ^ N = 1)
+theorem existsUnique_yOne {N : ℕ} [NeZero N] (hN : 4 ≤ N) (hPN : P ^ N = 1)
     (hPk : ∀ k : ℕ, 0 < k → k < N → ∀ s, (P ^ k).left s ≠ E.zero s) :
     ∃! fg : (S ⟶ yOne.{u} N) × (E.carrier ⟶ curveGeom.{u}.carrier),
       IsPullback fg.2 E.structureMap curveGeom.structureMap (fg.1 ≫ yOneι N) ∧
@@ -383,7 +362,7 @@ over `S` is the pullback of the point `(0, 0)` of the universal Tate normal form
 morphism `S ⟶ Y₁(N)`, by a cartesian morphism carrying the zero section to the zero section,
 exactly when `N • P = 0` and none of `P, 2P, …, (N - 1)P` meets the zero section at any point
 of `S`. -/
-theorem exists_yOne_iff {N : ℕ} (hN : 4 ≤ N) :
+theorem exists_yOne_iff {N : ℕ} [NeZero N] (hN : 4 ≤ N) :
     (∃ (f : S ⟶ yOne.{u} N) (g : E.carrier ⟶ curveGeom.{u}.carrier),
       IsPullback g E.structureMap curveGeom.structureMap (f ≫ yOneι N) ∧
         E.zero ≫ g = (f ≫ yOneι N) ≫ curveGeom.zero ∧
@@ -401,14 +380,13 @@ homomorphism injective on every fibre of `E` over `S`. Then there are a unique m
 `f : S ⟶ Y₁(N)` and a unique morphism `g` from `E` to the universal Tate normal form exhibiting
 `E` as its pullback along `f`, carrying the zero section to the zero section and `φ 1` to the point
 `(0, 0)`. -/
-theorem existsUnique_yOne_of_isFiberwiseInjective {N : ℕ} (hN : 4 ≤ N)
+theorem existsUnique_yOne_of_isFiberwiseInjective {N : ℕ} [NeZero N] (hN : 4 ≤ N)
     {φ : Multiplicative (ZMod N) →* (𝟙_ (Over S) ⟶ Over.mk E.structureMap)}
     (hφ : E.IsFiberwiseInjective φ) :
     ∃! fg : (S ⟶ yOne.{u} N) × (E.carrier ⟶ curveGeom.{u}.carrier),
       IsPullback fg.2 E.structureMap curveGeom.structureMap (fg.1 ≫ yOneι N) ∧
         E.zero ≫ fg.2 = (fg.1 ≫ yOneι N) ≫ curveGeom.zero ∧
         (φ (.ofAdd 1)).left ≫ fg.2 = (fg.1 ≫ yOneι N) ≫ pointHom.left := by
-  have : NeZero N := ⟨by omega⟩
   refine existsUnique_yOne hN ?_ (isFiberwiseInjective_zmod_iff.mp hφ)
   rw [← map_pow, ← ofAdd_nsmul]
   simp
@@ -846,54 +824,6 @@ section BaseChange
 
 open UniversalTate
 
-section PreimageEquiv
-
-variable (N : ℕ) [NeZero N]
-
--- `UniversalTate.yOne N` and `naiveExactOrderPreimage N pointHom` represent the same locus of
--- `Spec ℤ[A, B][Δ⁻¹]`.
-private theorem exists_lift_naiveExactOrderPreimageι_pointHom_iff {S : Scheme.{u}}
-    (t : S ⟶ Spec (.of (ULift.{u} UniversalTate.Ring))) :
-    (∃ l : S ⟶ naiveExactOrderPreimage N pointHom,
-        l ≫ naiveExactOrderPreimageι N pointHom = t) ↔
-      ∃ h : S ⟶ UniversalTate.yOne.{u} N, h ≫ UniversalTate.yOneι N = t := by
-  have h := exists_lift_naiveExactOrderPreimageι_iff N pointHom (Z := Over.mk t)
-    (x := toUnit (Over.mk t) ≫ pointHom) rfl
-  simp only [Over.mk_hom] at h
-  refine h.trans ?_
-  rw [isOfNaiveExactOrder_toUnit_comp_iff_forall_lt, exists_comp_yOneι_eq_iff]
-  simp only [mem_exactOrderOpens_iff, Over.mk_hom]
-  exact and_congr_right fun _ ↦
-    ⟨fun h' s k hk hkN ↦ h' k hk hkN s, fun h' k hk hkN s ↦ h' s k hk hkN⟩
-
-private noncomputable def yOneIsoPreimage :
-    UniversalTate.yOne.{u} N ≅ naiveExactOrderPreimage N pointHom where
-  hom := ((exists_lift_naiveExactOrderPreimageι_pointHom_iff N (UniversalTate.yOneι N)).mpr
-    ⟨𝟙 _, Category.id_comp _⟩).choose
-  inv := ((exists_lift_naiveExactOrderPreimageι_pointHom_iff N
-    (naiveExactOrderPreimageι N pointHom)).mp ⟨𝟙 _, Category.id_comp _⟩).choose
-  hom_inv_id := by
-    refine (cancel_mono (UniversalTate.yOneι N)).mp ?_
-    have h₁ := ((exists_lift_naiveExactOrderPreimageι_pointHom_iff N (UniversalTate.yOneι N)).mpr
-      ⟨𝟙 _, Category.id_comp _⟩).choose_spec
-    have h₂ := ((exists_lift_naiveExactOrderPreimageι_pointHom_iff N
-      (naiveExactOrderPreimageι N pointHom)).mp ⟨𝟙 _, Category.id_comp _⟩).choose_spec
-    rw [Category.assoc, h₂, h₁, Category.id_comp]
-  inv_hom_id := by
-    refine (cancel_mono (naiveExactOrderPreimageι N pointHom)).mp ?_
-    have h₁ := ((exists_lift_naiveExactOrderPreimageι_pointHom_iff N (UniversalTate.yOneι N)).mpr
-      ⟨𝟙 _, Category.id_comp _⟩).choose_spec
-    have h₂ := ((exists_lift_naiveExactOrderPreimageι_pointHom_iff N
-      (naiveExactOrderPreimageι N pointHom)).mp ⟨𝟙 _, Category.id_comp _⟩).choose_spec
-    rw [Category.assoc, h₁, h₂, Category.id_comp]
-
-private theorem yOneIsoPreimage_inv_yOneι :
-    (yOneIsoPreimage N).inv ≫ UniversalTate.yOneι N = naiveExactOrderPreimageι N pointHom :=
-  ((exists_lift_naiveExactOrderPreimageι_pointHom_iff N
-    (naiveExactOrderPreimageι N pointHom)).mp ⟨𝟙 _, Category.id_comp _⟩).choose_spec
-
-end PreimageEquiv
-
 variable (B : Scheme.{u}) (N : ℕ) [NeZero N]
 
 private theorem universalTatePoint_left_prodCurveProj :
@@ -904,8 +834,7 @@ private theorem universalTatePoint_left_prodCurveProj :
 locus over `ℤ` (which is naive `Y₁(N)` over `ℤ` for `N ≥ 4`). -/
 noncomputable def yOneSnd : (yOne B N).base ⟶ UniversalTate.yOne.{u} N :=
   naiveExactOrderPreimageMap N (isPullback_prodCurveProj B curveGeom)
-    (zero_prodCurveProj B curveGeom) (universalTatePoint_left_prodCurveProj B) ≫
-    (yOneIsoPreimage N).inv
+    (zero_prodCurveProj B curveGeom) (universalTatePoint_left_prodCurveProj B)
 
 /-- The projection `yOneSnd B N` commutes with the inclusions into the base of the universal Tate
 normal form. -/
@@ -913,45 +842,28 @@ normal form. -/
 theorem yOneSnd_yOneι :
     yOneSnd B N ≫ UniversalTate.yOneι N = (yOneι B N).base ≫ prod.snd := by
   rw [yOneι_base]
-  exact (Category.assoc _ _ _).trans <|
-    (congrArg (naiveExactOrderPreimageMap _ _ _ _ ≫ ·) (yOneIsoPreimage_inv_yOneι N)).trans
-      (naiveExactOrderPreimageMap_naiveExactOrderPreimageι _ _ _ _)
+  exact naiveExactOrderPreimageMap_naiveExactOrderPreimageι _ _ _ _
 
 /-- **`yOneSnd B N` exhibits `(yOne B N).base` as the base change of `UniversalTate.yOne N` along
 `prod.snd`.** -/
 theorem isPullback_yOneSnd :
     IsPullback (yOneSnd B N) (yOneι B N).base (UniversalTate.yOneι N) prod.snd := by
-  refine (isPullback_naiveExactOrderPreimageMap N (isPullback_prodCurveProj B curveGeom)
-      (zero_prodCurveProj B curveGeom) (universalTatePoint_left_prodCurveProj B)).of_iso
-    (Iso.refl _) (yOneIsoPreimage N).symm (Iso.refl _) (Iso.refl _) ?_ ?_ ?_ ?_
-  · exact (Category.id_comp _).symm
-  · rw [yOneι_base]
-    exact (Category.id_comp _).symm
-  · simp [yOneIsoPreimage_inv_yOneι]
-  · simp
+  rw [yOneι_base]
+  exact isPullback_naiveExactOrderPreimageMap N (isPullback_prodCurveProj B curveGeom)
+    (zero_prodCurveProj B curveGeom) (universalTatePoint_left_prodCurveProj B)
 
 /-- **The base of `EllObj.yOne B N` is `B × UniversalTate.yOne N`** (`B` times the Tate
 exact-order-`N` locus over `ℤ`; for `N ≥ 4` this is naive `Y₁(N)` over `ℤ`, agreeing with
 Drinfeld `Y₁(N)` where `N` is invertible). -/
-noncomputable def yOneBaseIsoProd : (yOne B N).base ≅ B ⨯ UniversalTate.yOne.{u} N where
-  hom := prod.lift (yOne B N).structureMap (yOneSnd B N)
-  inv := (isPullback_yOneSnd B N).lift prod.snd (prod.map (𝟙 B) (UniversalTate.yOneι.{u} N))
-    (by simp)
-  hom_inv_id := by
-    refine (cancel_mono (yOneι B N).base).mp ?_
-    rw [Category.assoc, IsPullback.lift_snd, Category.id_comp]
-    refine prod.hom_ext ?_ ?_ <;> simp [yOne_structureMap]
-  inv_hom_id := by
-    refine prod.hom_ext ?_ ?_
-    · rw [Category.assoc, prod.lift_fst, yOne_structureMap, IsPullback.lift_snd_assoc,
-        prod.map_fst, Category.comp_id, Category.id_comp]
-    · rw [Category.assoc, prod.lift_snd, Category.id_comp, IsPullback.lift_fst]
+noncomputable def yOneBaseIsoProd : (yOne B N).base ≅ B ⨯ UniversalTate.yOne.{u} N :=
+  (isPullback_yOneSnd B N).flip.isoPullback ≪≫ pullbackProdSndIsoProd (UniversalTate.yOneι N) B
 
 /-- Under `yOneBaseIsoProd`, the first projection is `(yOne B N).structureMap`. -/
 @[reassoc (attr := simp)]
 theorem yOneBaseIsoProd_hom_fst :
-    (yOneBaseIsoProd B N).hom ≫ prod.fst = (yOne B N).structureMap :=
-  prod.lift_fst _ _
+    (yOneBaseIsoProd B N).hom ≫ prod.fst = (yOne B N).structureMap := by
+  rw [yOneBaseIsoProd, Iso.trans_hom, Category.assoc, pullbackProdSndIsoProd_hom_fst,
+    IsPullback.isoPullback_hom_fst_assoc, yOne_structureMap]
 
 /-- Under `(yOneBaseIsoProd B N).inv`, the structure morphism of `yOne B N` is the first
 projection. -/
@@ -963,8 +875,9 @@ theorem yOneBaseIsoProd_inv_structureMap :
 /-- Under `yOneBaseIsoProd`, the second projection is `yOneSnd B N`. -/
 @[reassoc (attr := simp)]
 theorem yOneBaseIsoProd_hom_snd :
-    (yOneBaseIsoProd B N).hom ≫ prod.snd = yOneSnd B N :=
-  prod.lift_snd _ _
+    (yOneBaseIsoProd B N).hom ≫ prod.snd = yOneSnd B N := by
+  rw [yOneBaseIsoProd, Iso.trans_hom, Category.assoc, pullbackProdSndIsoProd_hom_snd,
+    IsPullback.isoPullback_hom_snd]
 
 /-- Under `(yOneBaseIsoProd B N).inv`, `yOneSnd B N` is the second projection. -/
 @[reassoc (attr := simp)]

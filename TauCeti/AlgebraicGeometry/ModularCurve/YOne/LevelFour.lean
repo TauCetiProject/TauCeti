@@ -27,8 +27,7 @@ invertible on `B`, naive `[Γ₁(4)]` agrees with the Drinfeld moduli problem `[
 
 ## Main results
 
-* `TauCeti.AlgebraicGeometry.UniversalTate.exactOrderOpens_four` and
-  `TauCeti.AlgebraicGeometry.UniversalTate.yOneOpens_four`: the open exact-order locus for
+* `TauCeti.AlgebraicGeometry.UniversalTate.exactOrderOpens_four`: the open exact-order locus for
   `N = 4` is the whole base, so naive `Y₁(4)` is a closed subscheme of `Spec ℤ[A, B][Δ⁻¹]`
   (`UniversalTate.isClosedImmersion_yOneι_four`) and affine (`UniversalTate.isAffine_yOne_four`).
 * `TauCeti.AlgebraicGeometry.UniversalTate.yOneFourIso_hom_SpecMap` and
@@ -83,22 +82,22 @@ theorem exactOrderOpens_four : exactOrderOpens.{u} 4 = ⊤ := by
   · exact WeierstrassCurve.UniversalTate.point_projModelMulBy_two_ne_projModelZero t heq'
   · exact WeierstrassCurve.UniversalTate.point_projModelMulBy_three_ne_projModelZero t heq'
 
-/-- The open subset `yOneOpens 4` cutting naive `Y₁(4)` out of the `4`-torsion locus is the whole
-`4`-torsion locus. -/
-@[simp]
-theorem yOneOpens_four : yOneOpens.{u} 4 = ⊤ := by
-  ext z
-  simp
-
-/-- The open immersion from naive `Y₁(4)` into `torsionLocus 4` is an isomorphism. -/
-instance isIso_yOneOpens_four_ι : IsIso (yOneOpens.{u} 4).ι := by
-  rw [yOneOpens_four, ← Scheme.topIso_hom]
-  infer_instance
-
 /-- Over `ℤ`, the immersion from naive `Y₁(4)` into `Spec ℤ[A, B][Δ⁻¹]` is a closed
-immersion. -/
+immersion: since `(0, 0)`, `2 • (0, 0)`, and `3 • (0, 0)` miss the zero section everywhere,
+`yOne 4` is isomorphic over `Spec ℤ[A, B][Δ⁻¹]` to `torsionLocus 4`. -/
 instance isClosedImmersion_yOneι_four : IsClosedImmersion (yOneι.{u} 4) := by
-  rw [yOneι_def]
+  have h₁ : ∃ f : yOne.{u} 4 ⟶ torsionLocus.{u} 4, f ≫ torsionLocusι 4 = yOneι 4 :=
+    (exists_comp_torsionLocusι_eq_iff _ 4).mpr
+      ((exists_comp_yOneι_eq_iff (yOneι.{u} 4) 4).mp ⟨𝟙 _, Category.id_comp _⟩).1
+  have h₂ : ∃ g : torsionLocus.{u} 4 ⟶ yOne.{u} 4, g ≫ yOneι 4 = torsionLocusι 4 :=
+    (exists_comp_yOneι_eq_iff (torsionLocusι.{u} 4) 4).mpr
+      ⟨(exists_comp_torsionLocusι_eq_iff _ 4).mp ⟨𝟙 _, Category.id_comp _⟩, fun _ ↦ by simp⟩
+  have : IsIso h₁.choose := ⟨h₂.choose,
+    (cancel_mono (yOneι.{u} 4)).mp (by
+      rw [Category.assoc, h₂.choose_spec, h₁.choose_spec, Category.id_comp]),
+    (cancel_mono (torsionLocusι.{u} 4)).mp (by
+      rw [Category.assoc, h₁.choose_spec, h₂.choose_spec, Category.id_comp])⟩
+  rw [← h₁.choose_spec]
   infer_instance
 
 /-- Naive `Y₁(4)` over `ℤ` is affine. -/

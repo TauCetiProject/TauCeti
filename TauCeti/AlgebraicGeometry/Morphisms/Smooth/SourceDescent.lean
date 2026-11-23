@@ -398,21 +398,9 @@ private theorem finitePresentation_of_comp_etale_faithfullyFlat {R A B : Type u}
   have htop : I₀.map (algebraMap A' (A₀ ⧸ J)) = ⊤ :=
     (Ideal.faithfullyFlat_baseChange_iff_map_eq_top I₀ hI₀).mp inferInstance
   have h1 : (1 : A₀ ⧸ J) ∈ I₀.map (algebraMap A' (A₀ ⧸ J)) := by simp [htop]
-  have hx_ex : ∀ z ∈ I₀.map (algebraMap A' (A₀ ⧸ J)),
-      ∃ x ∈ I₀, algebraMap A' (A₀ ⧸ J) x = z := fun z hz ↦ by
-    change z ∈ Ideal.span (algebraMap A' (A₀ ⧸ J) '' (I₀ : Set A')) at hz
-    induction hz using Submodule.span_induction with
-    | mem _ h => exact h
-    | zero => exact ⟨0, I₀.zero_mem, map_zero _⟩
-    | add _ _ _ _ hx hy =>
-      obtain ⟨x, hx, rfl⟩ := hx
-      obtain ⟨y, hy, rfl⟩ := hy
-      exact ⟨x + y, I₀.add_mem hx hy, map_add _ _ _⟩
-    | smul c _ _ hx =>
-      obtain ⟨x, hx, rfl⟩ := hx
-      obtain ⟨c', rfl⟩ := Ideal.Quotient.factor_surjective J'.property.1 c
-      exact ⟨c' * x, I₀.mul_mem_left c' hx, by simp [smul_eq_mul, map_mul]; rfl⟩
-  obtain ⟨x, hxI₀, hx1⟩ := hx_ex 1 h1
+  obtain ⟨x, hxI₀, hx1⟩ :=
+    (Ideal.mem_map_iff_of_surjective (algebraMap A' (A₀ ⧸ J))
+      (Ideal.Quotient.factor_surjective J'.property.1)).mp h1
   obtain ⟨x₀, rfl⟩ := Ideal.Quotient.mk_surjective x
   have h1x₀ : 1 - x₀ ∈ J := by
     rw [← Ideal.Quotient.eq_zero_iff_mem, map_sub, map_one]
@@ -466,63 +454,9 @@ private theorem finitePresentation_of_comp_etale_faithfullyFlat {R A B : Type u}
   have hKFG : K.FG :=
     fg_ker_of_etale_faithfullyFlat (R := R) ePush (Ideal.Quotient.factor_surjective hJ''J)
   have hJFG : J.FG := by
-    classical
-    obtain ⟨T₁, hT₁⟩ := hJ''FG
-    obtain ⟨T₂, hT₂⟩ := hKFG
-    have hpre : ∀ k ∈ T₂, ∃ a : A₀, Ideal.Quotient.mk J'' a = k ∧ a ∈ J := fun k hkT₂ ↦ by
-      obtain ⟨a, ha⟩ := Ideal.Quotient.mk_surjective k
-      refine ⟨a, ha, ?_⟩
-      rw [← Ideal.Quotient.eq_zero_iff_mem]
-      have hk : k ∈ K := hT₂ ▸ Ideal.subset_span hkT₂
-      rw [RingHom.mem_ker] at hk
-      have hfac :
-          Ideal.Quotient.factor hJ''J (Ideal.Quotient.mk J'' a) = Ideal.Quotient.mk J a := rfl
-      rw [← hfac, ha, hk]
-    choose a ha_mk haJ using hpre
-    let T₂' : Finset A₀ := T₂.attach.image fun k ↦ a k.val k.property
-    refine ⟨T₁ ∪ T₂', le_antisymm ?_ ?_⟩
-    · rw [Ideal.span_le]
-      intro y hy
-      rcases Finset.mem_union.mp (Finset.mem_coe.mp hy) with hy | hy
-      · exact hJ''J (hT₁ ▸ Ideal.subset_span hy)
-      · rw [Finset.mem_image] at hy
-        obtain ⟨k, _, rfl⟩ := hy
-        exact haJ k.val k.property
-    · intro x hxJ
-      have hxK :
-          Ideal.Quotient.mk J'' x ∈ (Ideal.span (T₂' : Set A₀)).map (Ideal.Quotient.mk J'') := by
-        have hmk_mem : Ideal.Quotient.mk J'' x ∈ K := by
-          rw [RingHom.mem_ker]
-          exact Ideal.Quotient.eq_zero_iff_mem.mpr hxJ
-        rw [← hT₂] at hmk_mem
-        rw [Ideal.map_span]
-        refine Ideal.span_le.mpr ?_ hmk_mem
-        intro k hk
-        refine Ideal.subset_span ⟨a k hk, ?_, ha_mk k hk⟩
-        exact Finset.mem_coe.mpr (Finset.mem_image.mpr ⟨⟨k, hk⟩, Finset.mem_attach _ _, rfl⟩)
-      have hx_ex : ∀ z ∈ (Ideal.span (T₂' : Set A₀)).map (Ideal.Quotient.mk J''),
-          ∃ y ∈ Ideal.span (T₂' : Set A₀), Ideal.Quotient.mk J'' y = z := fun z hz ↦ by
-        change z ∈ Ideal.span (Ideal.Quotient.mk J'' '' (Ideal.span (T₂' : Set A₀) : Set A₀)) at hz
-        induction hz using Submodule.span_induction with
-        | mem _ h => exact h
-        | zero => exact ⟨0, Ideal.zero_mem _, map_zero _⟩
-        | add _ _ _ _ h₁ h₂ =>
-          obtain ⟨y₁, hy₁, rfl⟩ := h₁
-          obtain ⟨y₂, hy₂, rfl⟩ := h₂
-          exact ⟨y₁ + y₂, Ideal.add_mem _ hy₁ hy₂, map_add _ _ _⟩
-        | smul c _ _ h₁ =>
-          obtain ⟨y₁, hy₁, rfl⟩ := h₁
-          obtain ⟨c₀, rfl⟩ := Ideal.Quotient.mk_surjective c
-          exact ⟨c₀ * y₁, Ideal.mul_mem_left _ c₀ hy₁, by simp [smul_eq_mul, map_mul]⟩
-      obtain ⟨y, hy_span, hy_eq⟩ := hx_ex _ hxK
-      have hxy : x - y ∈ J'' := by
-        rw [← Ideal.Quotient.eq_zero_iff_mem, map_sub, hy_eq, sub_self]
-      rw [← hT₁] at hxy
-      have hxy' : x - y ∈ Ideal.span ((T₁ ∪ T₂' : Finset A₀) : Set A₀) :=
-        Ideal.span_mono (by simp) hxy
-      have hy' : y ∈ Ideal.span ((T₁ ∪ T₂' : Finset A₀) : Set A₀) :=
-        Ideal.span_mono (by simp) hy_span
-      simpa using Ideal.add_mem _ hxy' hy'
+    have hcomp := Ideal.fg_ker_comp (Ideal.Quotient.mk J'') (Ideal.Quotient.factor hJ''J)
+      (by simpa [Ideal.mk_ker] using hJ''FG) hKFG Ideal.Quotient.mk_surjective
+    simpa [Ideal.Quotient.factor_comp_mk, Ideal.mk_ker] using hcomp
   have : Algebra.FinitePresentation R (A₀ ⧸ J) := .quotient hJFG
   exact .equiv eA
 
