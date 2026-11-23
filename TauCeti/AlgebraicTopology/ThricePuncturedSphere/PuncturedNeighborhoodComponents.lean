@@ -12,7 +12,7 @@ public import TauCeti.Topology.Homotopy.Monodromy.BasepointChange
 public import TauCeti.Topology.Homotopy.Monodromy.PreimageComponents
 
 import TauCeti.GroupTheory.Perm.Basic
-import TauCeti.Topology.IsLocalHomeomorph
+import TauCeti.Topology.IsLocalHomeomorph.Basic
 
 /-!
 # The components of a cover over the punctured neighborhoods of the punctures
