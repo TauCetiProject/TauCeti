@@ -46,10 +46,11 @@ the values of `f`. Each `j < Nat.card ι` is the rank of exactly one index
 (`Set.encard_setOf_ncard_setOf_lt_eq`). For a strictly monotone map on `Fin n`, the rank of `f k`
 is `k` (`Set.ncard_setOf_lt_of_strictMono`).
 
-The same count works for an infinite set `s`, provided only finitely many of its points lie below
-each one. For `f` injective on `s`, the number of points of `s` below `f a` determines `a ∈ s`
-(`Set.InjOn.injOn_ncard_sep_lt`), and when `s` is infinite every natural number is such a count
-(`Set.Infinite.exists_mem_ncard_sep_lt_eq`). This lists `s` in increasing order of `f`, as a
+The same count works for a set `s`, provided only finitely many of its points lie below each one.
+For `f` injective on `s`, the number of points of `s` below `f a` determines `a ∈ s`
+(`Set.InjOn.injOn_ncard_sep_lt`), and every natural number `n` strictly below `s.encard` is such
+a count (`Set.exists_mem_ncard_sep_lt_eq`, and for infinite `s`,
+`Set.Infinite.exists_mem_ncard_sep_lt_eq`). This lists `s` in increasing order of `f`, as a
 sequence indexed by `ℕ`, such as the zeros of an analytic function ordered by modulus.
 
 A set covered by finitely many finite sets `C i` is finite, with at most `∑ i, |C i|` elements
@@ -246,17 +247,29 @@ theorem InjOn.injOn_ncard_sep_lt {ι α : Type*} [LinearOrder α] {f : ι → α
   · exact (ncard_sep_lt_lt_ncard_sep_lt ha hlt (hfin b hb)).ne h
   · exact (ncard_sep_lt_lt_ncard_sep_lt hb hlt (hfin a ha)).ne h.symm
 
-/-- For a map `f` into a linear order that is injective on the infinite set `s`, if only finitely
-many points of `s` have value below each point of `s`, then every natural number `n` is the number
-of points of `s` whose value lies below `f a`, for some `a ∈ s`. Together with
-`Set.InjOn.injOn_ncard_sep_lt`, this lists `s` in increasing order of `f`, indexed by `ℕ`. -/
-theorem Infinite.exists_mem_ncard_sep_lt_eq {ι α : Type*} [LinearOrder α] {f : ι → α}
-    {s : Set ι} (hs : s.Infinite) (hf : InjOn f s) (hfin : ∀ a ∈ s, {i ∈ s | f i < f a}.Finite)
-    (n : ℕ) : ∃ a ∈ s, {i ∈ s | f i < f a}.ncard = n := by
+/-- For a map `f` into a linear order that is injective on `s`, if only finitely many points of `s`
+have value below each point of `s`, then every natural number `n` strictly below `s.encard` is the
+number of points of `s` whose value lies below `f a`, for some `a ∈ s`. Together with
+`Set.InjOn.injOn_ncard_sep_lt`, this lists `s` in increasing order of `f`. -/
+theorem exists_mem_ncard_sep_lt_eq {ι α : Type*} [LinearOrder α] {f : ι → α}
+    {s : Set ι} (hf : InjOn f s) (hfin : ∀ a ∈ s, {i ∈ s | f i < f a}.Finite)
+    {n : ℕ} (hn : (n : ℕ∞) < s.encard) : ∃ a ∈ s, {i ∈ s | f i < f a}.ncard = n := by
   set r : ι → ℕ := fun a ↦ {i ∈ s | f i < f a}.ncard
   have hrinj : InjOn r s := hf.injOn_ncard_sep_lt hfin
-  -- The values of `r` on `s` are unbounded, since `s` is infinite and `r` is injective on it.
-  obtain ⟨_, ⟨b, hb, rfl⟩, hnb⟩ := (Infinite.image hrinj hs).exists_gt n
+  -- Some `b ∈ s` has rank at least `n`, since `s.encard = (r '' s).encard > n`.
+  have hge : ∃ b ∈ s, n ≤ r b := by
+    by_contra! hlt
+    have hsub : r '' s ⊆ Iio n := by
+      rintro _ ⟨b, hb, rfl⟩
+      exact hlt b hb
+    have hcard : s.encard ≤ (n : ℕ∞) := by
+      rw [← hrinj.encard_image]
+      exact (encard_le_encard hsub).trans_eq
+        (by rw [← (finite_Iio n).cast_ncard_eq, ncard_Iio_nat])
+    exact hcard.not_gt hn
+  obtain ⟨b, hb, hnb⟩ := hge
+  rcases hnb.eq_or_lt with h | h
+  · exact ⟨b, hb, h.symm⟩
   -- The `r b` points of `s` below `b` take distinct values of `r`, all below `r b`; so each value
   -- below `r b`, in particular `n`, is taken.
   have hsub : r '' {i ∈ s | f i < f b} ⊆ Iio (r b) := by
@@ -265,8 +278,17 @@ theorem Infinite.exists_mem_ncard_sep_lt_eq {ι α : Type*} [LinearOrder α] {f 
   have heq : r '' {i ∈ s | f i < f b} = Iio (r b) :=
     eq_of_subset_of_ncard_le hsub
       (by rw [ncard_Iio_nat]; exact (hrinj.mono (sep_subset s _)).ncard_image.ge) (finite_Iio _)
-  obtain ⟨a, ha, hra⟩ := heq.symm.subset (show n ∈ Iio (r b) from hnb)
+  obtain ⟨a, ha, hra⟩ := heq.symm.subset (show n ∈ Iio (r b) from h)
   exact ⟨a, ha.1, hra⟩
+
+/-- For a map `f` into a linear order that is injective on the infinite set `s`, if only finitely
+many points of `s` have value below each point of `s`, then every natural number `n` is the number
+of points of `s` whose value lies below `f a`, for some `a ∈ s`. Together with
+`Set.InjOn.injOn_ncard_sep_lt`, this lists `s` in increasing order of `f`, indexed by `ℕ`. -/
+theorem Infinite.exists_mem_ncard_sep_lt_eq {ι α : Type*} [LinearOrder α] {f : ι → α}
+    {s : Set ι} (hs : s.Infinite) (hf : InjOn f s) (hfin : ∀ a ∈ s, {i ∈ s | f i < f a}.Finite)
+    (n : ℕ) : ∃ a ∈ s, {i ∈ s | f i < f a}.ncard = n :=
+  Set.exists_mem_ncard_sep_lt_eq hf hfin (by simp [hs.encard_eq])
 
 /-- For an injective map `f` from a finite type into a linear order, the number of indices whose
 value lies below `f a` determines `a`. -/

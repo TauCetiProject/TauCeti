@@ -15,6 +15,7 @@ import TauCeti.Analysis.Analytic.IsolatedZeros
 import TauCeti.Analysis.Complex.Conformal.Rouche
 import TauCeti.Analysis.Normed.Group.BallSphere
 import TauCeti.Analysis.SpecialFunctions.Complex.Arg
+import TauCeti.Data.Set.Card
 import TauCeti.Order.Northcott.Enumeration
 
 /-!
@@ -136,7 +137,10 @@ theorem mem_sectorZeros_iff {θ₁ θ₂ : ℝ} {f : ℂ → ℂ} {z : ℂ} :
   Iff.rfl
 
 /-- The `k`-th zero (`k ≥ 1`) of `f : ℂ → ℂ` in `sectorZeros θ₁ θ₂ f`, ordered by `Complex.polarLt`
-via `Classical.epsilon`. -/
+via `Classical.epsilon`. When `f` is locally norm-finite in the sector and `(k : ℕ∞)` is at most
+`(sectorZeros θ₁ θ₂ f).encard`, `sectorZero θ₁ θ₂ f k` attains this specification
+(`TauCeti.sectorZero_spec_of_le_encard`). At `k = 0`, it equals the value at `k = 1`
+(`TauCeti.sectorZero_zero`). -/
 noncomputable def sectorZero (θ₁ θ₂ : ℝ) (f : ℂ → ℂ) (k : ℕ) : ℂ :=
   Classical.epsilon fun z : ℂ =>
     z ∈ sectorZeros θ₁ θ₂ f ∧ {w ∈ sectorZeros θ₁ θ₂ f | w.polarLt z}.ncard = k - 1
@@ -147,6 +151,12 @@ theorem sectorZero_def (θ₁ θ₂ : ℝ) (f : ℂ → ℂ) (k : ℕ) :
       Classical.epsilon fun z : ℂ =>
         z ∈ sectorZeros θ₁ θ₂ f ∧ {w ∈ sectorZeros θ₁ θ₂ f | w.polarLt z}.ncard = k - 1 :=
   (rfl)
+
+/-- At index `0`, `TauCeti.sectorZero` coincides with its value at index `1`. -/
+@[simp]
+theorem sectorZero_zero (θ₁ θ₂ : ℝ) (f : ℂ → ℂ) :
+    sectorZero θ₁ θ₂ f 0 = sectorZero θ₁ θ₂ f 1 := by
+  simp only [sectorZero_def, Nat.zero_sub, Nat.sub_self]
 
 /-- An entire function that is not identically zero has only finitely many sector zeros of norm at
 most `R` in any open sector `z ≠ 0`, `θ₁ < arg z < θ₂`. -/
@@ -180,14 +190,11 @@ private theorem ncard_Iio_sectorZeros_eq (z : sectorZeros θ₁ θ₂ f) :
     let : LinearOrder (sectorZeros θ₁ θ₂ f) := sectorZerosLinearOrder θ₁ θ₂ f
     (Set.Iio z).ncard = {w ∈ sectorZeros θ₁ θ₂ f | w.polarLt z.val}.ncard := by
   let : LinearOrder (sectorZeros θ₁ θ₂ f) := sectorZerosLinearOrder θ₁ θ₂ f
-  have himg : Subtype.val '' Set.Iio z = {w ∈ sectorZeros θ₁ θ₂ f | w.polarLt z.val} := by
-    ext w
-    constructor
-    · rintro ⟨⟨w, hw⟩, hlt, rfl⟩
-      exact ⟨hw, hlt⟩
-    · rintro ⟨hw, hlt⟩
-      exact ⟨⟨w, hw⟩, hlt, rfl⟩
-  rw [← himg, Set.ncard_image_of_injective _ Subtype.val_injective]
+  change (Set.Iio z).ncard = _
+  have hpre : Set.Iio z = Subtype.val ⁻¹' {w ∈ sectorZeros θ₁ θ₂ f | w.polarLt z.val} :=
+    Set.ext fun w => ⟨fun hw => ⟨w.property, hw⟩, fun hw => hw.2⟩
+  rw [hpre, Set.ncard_preimage_of_injective_subset_range Subtype.val_injective
+    (by rw [Subtype.range_coe]; exact Set.sep_subset _ _)]
 
 private theorem finite_Iio_sectorZeros
     (hfin : ∀ R : ℝ, {z ∈ sectorZeros θ₁ θ₂ f | ‖z‖ ≤ R}.Finite)
@@ -196,33 +203,6 @@ private theorem finite_Iio_sectorZeros
     (Set.Iio z).Finite :=
   ((finite_sectorZeroInit hfin z.val).preimage Subtype.val_injective.injOn).subset
     fun w hw => ⟨w.property, hw⟩
-
-/-- Under local norm-finiteness, strict `Complex.polarLt` inequality between two sector zeros gives
-strict inequality between the cardinalities of their initial segments. -/
-theorem ncard_sectorZeroInit_lt
-    (hfin : ∀ R : ℝ, {z ∈ sectorZeros θ₁ θ₂ f | ‖z‖ ≤ R}.Finite)
-    {z₁ z₂ : ℂ} (hz₁ : z₁ ∈ sectorZeros θ₁ θ₂ f) (h12 : z₁.polarLt z₂) :
-    {w ∈ sectorZeros θ₁ θ₂ f | w.polarLt z₁}.ncard <
-      {w ∈ sectorZeros θ₁ θ₂ f | w.polarLt z₂}.ncard := by
-  refine Set.ncard_lt_ncard
-    ⟨fun w hw => ⟨hw.1, trans_of Complex.polarLt hw.2 h12⟩, fun hsub => ?_⟩
-    (finite_sectorZeroInit hfin z₂)
-  exact irrefl_of Complex.polarLt z₁ (hsub ⟨hz₁, h12⟩).2
-
-/-- Under local norm-finiteness, two zeros in the same open sector with equal initial-segment
-cardinalities coincide. -/
-theorem eq_of_mem_sectorZeros_of_ncard_eq
-    (hfin : ∀ R : ℝ, {z ∈ sectorZeros θ₁ θ₂ f | ‖z‖ ≤ R}.Finite)
-    {z₁ z₂ : ℂ} (hz₁ : z₁ ∈ sectorZeros θ₁ θ₂ f) (hz₂ : z₂ ∈ sectorZeros θ₁ θ₂ f)
-    (hcard : {w ∈ sectorZeros θ₁ θ₂ f | w.polarLt z₁}.ncard =
-      {w ∈ sectorZeros θ₁ θ₂ f | w.polarLt z₂}.ncard) :
-    z₁ = z₂ := by
-  let : LinearOrder (sectorZeros θ₁ θ₂ f) := sectorZerosLinearOrder θ₁ θ₂ f
-  let r := ncardIioOrderEmbedding (finite_Iio_sectorZeros hfin)
-  have hEq : (⟨z₁, hz₁⟩ : sectorZeros θ₁ θ₂ f) = ⟨z₂, hz₂⟩ := by
-    apply r.injective
-    simpa [r, ncardIioOrderEmbedding_apply, ncard_Iio_sectorZeros_eq] using hcard
-  exact congrArg Subtype.val hEq
 
 /-- Under local norm-finiteness, if `z ∈ sectorZeros θ₁ θ₂ f` has initial-segment cardinality
 `k - 1`, then `sectorZero θ₁ θ₂ f k = z`. -/
@@ -235,7 +215,8 @@ theorem sectorZero_eq_of_ncard
     u ∈ sectorZeros θ₁ θ₂ f ∧ {w ∈ sectorZeros θ₁ θ₂ f | w.polarLt u}.ncard = k - 1
   have hPz : P z := ⟨hz, hcard⟩
   have hPe : P (sectorZero θ₁ θ₂ f k) := Classical.epsilon_spec ⟨z, hPz⟩
-  exact eq_of_mem_sectorZeros_of_ncard_eq hfin hPe.1 hz (hPe.2.trans hcard.symm)
+  exact Complex.toLex_norm_arg_injective.injOn.injOn_ncard_sep_lt
+    (fun a _ => finite_sectorZeroInit hfin a) hPe.1 hz (hPe.2.trans hcard.symm)
 
 /-- **Completeness of `sectorZero` under local norm-finiteness.** When `f` has finitely many sector
 zeros in every closed ball, every `z ∈ sectorZeros θ₁ θ₂ f` appears in the sequence
@@ -256,13 +237,10 @@ private theorem exists_mem_sectorZeros_ncard_eq
     {k : ℕ} (hk : 1 ≤ k)
     (hle : (k : ℕ∞) ≤ (sectorZeros θ₁ θ₂ f).encard) :
     ∃ z ∈ sectorZeros θ₁ θ₂ f,
-      {w ∈ sectorZeros θ₁ θ₂ f | w.polarLt z}.ncard = k - 1 := by
-  let : LinearOrder (sectorZeros θ₁ θ₂ f) := sectorZerosLinearOrder θ₁ θ₂ f
-  have hlt : ((k - 1 : ℕ) : ℕ∞) < ENat.card (sectorZeros θ₁ θ₂ f) := by
-    rw [ENat.card_coe_set_eq]
-    exact lt_of_lt_of_le (by exact_mod_cast Nat.sub_lt hk Nat.zero_lt_one) hle
-  obtain ⟨z, hz⟩ := exists_ncard_Iio_eq_of_finite_Iio (finite_Iio_sectorZeros hfin) hlt
-  exact ⟨z.val, z.property, by simpa [ncard_Iio_sectorZeros_eq] using hz⟩
+      {w ∈ sectorZeros θ₁ θ₂ f | w.polarLt z}.ncard = k - 1 :=
+  Set.exists_mem_ncard_sep_lt_eq (f := fun w : ℂ => toLex (‖w‖, w.arg))
+    Complex.toLex_norm_arg_injective.injOn (fun a _ => finite_sectorZeroInit hfin a)
+    (lt_of_lt_of_le (by exact_mod_cast Nat.sub_lt hk Nat.zero_lt_one) hle)
 
 /-- Under local norm-finiteness, when `1 ≤ k` and `(k : ℕ∞) ≤ (sectorZeros θ₁ θ₂ f).encard`,
 the epsilon `sectorZero θ₁ θ₂ f k` attains its defining predicate. -/
@@ -431,9 +409,9 @@ private theorem sectorZero_add_eq_of_tail
   let A' : Set (sectorZeros θ₁ θ₂ f) := Subtype.val ⁻¹' A
   let zSub : ℕ → sectorZeros θ₁ θ₂ f := fun m => ⟨zSeq m, hzS m⟩
   have hA'_fin : A'.Finite := hA_fin.preimage Subtype.val_injective.injOn
-  have hA'_card : A'.ncard = A.ncard := by
-    rw [← Set.ncard_image_of_injective A' Subtype.val_injective,
-      Set.image_preimage_eq_iff.mpr (by rw [Subtype.range_coe]; exact hA_sub)]
+  have hA'_card : A'.ncard = A.ncard :=
+    Set.ncard_preimage_of_injective_subset_range Subtype.val_injective
+      (by rw [Subtype.range_coe]; exact hA_sub)
   have hrank := ncard_Iio_eq_ncard_add_of_strictMono hA'_fin
     (z := zSub) (fun _ _ h => hstrict h)
     (fun w hw m => hA_lt w.val hw m)

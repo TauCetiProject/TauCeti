@@ -9,6 +9,7 @@ public import Mathlib.Data.Set.Card
 public import Mathlib.Order.Filter.Cofinite
 public import Mathlib.Order.OrderIsoNat
 public import Mathlib.SetTheory.Cardinal.Order
+import TauCeti.Data.Set.Card
 
 /-!
 # Enumerating a family in nondecreasing order
@@ -58,57 +59,12 @@ theorem ncardIioOrderEmbedding_apply {α : Type*} [LinearOrder α]
 /-- In a linear order whose strict initial segments `Set.Iio a` are finite, every rank `n`
 strictly below `ENat.card α` is attained as `(Set.Iio a).ncard = n`. -/
 theorem exists_ncard_Iio_eq_of_finite_Iio {α : Type*} [LinearOrder α]
-    (hfin : ∀ a : α, (Set.Iio a).Finite) :
-    ∀ {n : ℕ}, (n : ℕ∞) < ENat.card α → ∃ a : α, (Set.Iio a).ncard = n
-  | 0, hn => by
-    classical
-    have hne : Nonempty α := by
-      by_contra hempty
-      have := not_nonempty_iff.mp hempty
-      rw [← Set.encard_univ, Set.eq_empty_of_isEmpty (univ : Set α)] at hn
-      simp at hn
-    obtain ⟨x⟩ := hne
-    have hF : (Set.Iic x).Finite := Set.insert_Iio (a := x) ▸ (hfin x).insert x
-    let m : α := hF.toFinset.min' (hF.toFinset_nonempty.mpr ⟨x, le_rfl⟩)
-    have hIio : Set.Iio m = ∅ := by
-      ext y
-      simp only [Set.mem_Iio, Set.mem_empty_iff_false, iff_false, not_lt]
-      have hm_le : m ≤ x := hF.mem_toFinset.mp (Finset.min'_mem _ _)
-      by_contra hlt
-      exact (Finset.min'_le _ y (hF.mem_toFinset.mpr ((not_le.mp hlt).le.trans hm_le))).not_gt
-        (not_le.mp hlt)
-    exact ⟨m, by rw [hIio, Set.ncard_empty]⟩
-  | n + 1, hn => by
-    classical
-    obtain ⟨a, ha⟩ := exists_ncard_Iio_eq_of_finite_Iio hfin
-      (lt_of_le_of_lt (Nat.cast_le.mpr (Nat.le_succ n)) hn)
-    have ha_fin : (Set.Iic a).Finite := Set.insert_Iio (a := a) ▸ (hfin a).insert a
-    have ha_card : (Set.Iic a).ncard = n + 1 := by
-      rw [← Set.insert_Iio, Set.ncard_insert_of_notMem (lt_irrefl a) (hfin a), ha]
-    have hex : (Set.Iic a)ᶜ.Nonempty := by
-      by_contra hne
-      rw [Set.not_nonempty_iff_eq_empty, Set.compl_empty_iff] at hne
-      have hcard : ENat.card α = (n + 1 : ℕ) := by
-        rw [← Set.encard_univ, ← hne, ← ha_fin.cast_ncard_eq, ha_card]
-      rw [hcard] at hn
-      exact lt_irrefl _ hn
-    obtain ⟨y, hy⟩ := hex
-    have hay : a < y := not_le.mp hy
-    have hS : (Set.Ioc a y).Finite :=
-      (Set.insert_Iio (a := y) ▸ (hfin y).insert y).subset Set.Ioc_subset_Iic_self
-    let b : α := hS.toFinset.min' (hS.toFinset_nonempty.mpr ⟨y, hay, le_rfl⟩)
-    have hb_mem : b ∈ Set.Ioc a y := hS.mem_toFinset.mp (Finset.min'_mem _ _)
-    refine ⟨b, ?_⟩
-    have hIio : Set.Iio b = Set.Iic a := by
-      ext x
-      constructor
-      · intro hxb
-        by_contra hax
-        exact (Finset.min'_le _ x
-          (hS.mem_toFinset.mpr ⟨not_le.mp hax, hxb.le.trans hb_mem.2⟩)).not_gt hxb
-      · intro hxa
-        exact hxa.trans_lt hb_mem.1
-    rw [hIio, ha_card]
+    (hfin : ∀ a : α, (Set.Iio a).Finite) {n : ℕ} (hn : (n : ℕ∞) < ENat.card α) :
+    ∃ a : α, (Set.Iio a).ncard = n := by
+  have hn' : (n : ℕ∞) < (univ : Set α).encard := by simpa [Set.encard_univ] using hn
+  obtain ⟨a, -, ha⟩ := Set.exists_mem_ncard_sep_lt_eq (s := (univ : Set α)) (f := id)
+    Function.injective_id.injOn (fun a _ ↦ by simpa [Set.Iio] using hfin a) hn'
+  exact ⟨a, by simpa [Set.Iio] using ha⟩
 
 /-- If `A : Set α` is a finite prefix strictly preceding a strictly increasing tail `z : ℕ → α`
 that together exhaust `α`, then `z n` has rank `(Set.Iio (z n)).ncard = A.ncard + n`. -/
