@@ -47,10 +47,8 @@ variable {F : Type*} [Field F] (n : ℕ) [NeZero n]
 private theorem exists_toRatAddCircle_eq_brInv (inv : Br F →+ AddCircle (1 : ℚ))
     (x : continuousCohomology 2 (muNRep n F)) :
     inv (h2MuToBr n F x) ∈ Set.range (ZMod.toRatAddCircle n) :=
-  -- `H²(F, μₙ)` is a `ZMod n`-module, so it is killed by `n`.
   ZMod.exists_toRatAddCircle_eq_of_nsmul_eq_zero n <| by
-    rw [← map_nsmul, ← map_nsmul, ← Nat.cast_smul_eq_nsmul (ZMod n), ZMod.natCast_self, zero_smul,
-      map_zero, map_zero]
+    rw [← map_nsmul, nsmul_h2MuToBr n F x, map_zero]
 
 private def h2MuToZModOfBrInv (inv : Br F →+ AddCircle (1 : ℚ)) :
     continuousCohomology 2 (muNRep n F) →+ ZMod n :=

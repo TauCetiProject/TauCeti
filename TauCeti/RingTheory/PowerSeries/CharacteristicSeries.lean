@@ -267,16 +267,14 @@ theorem bernoulliPowerSeries_mul_rescale_exp_eq_aHatSeries :
 theorem rescale_two_bernoulliPowerSeries_mul_exp :
     rescale 2 (bernoulliPowerSeries A) * exp A = rescale 2 (aHatSeries A) := by
   have h := congrArg (rescale (2 : A)) (bernoulliPowerSeries_mul_rescale_exp_eq_aHatSeries A)
-  have h2 : algebraMap ℚ A 2⁻¹ * 2 = 1 :=
-    (mul_comm _ _).trans (ofNat_mul_algebraMap_inv two_ne_zero)
+  have h2 : algebraMap ℚ A 2⁻¹ * 2 = 1 := algebraMap_inv_mul_ofNat two_ne_zero
   simpa [map_mul, rescale_rescale, h2] using h
 
 /-- **The rescaled Â series is `X / sinh X`**: `Â(2X) · (e^X - e^{-X}) = 2X`. -/
 theorem rescale_two_aHatSeries_mul_sub :
     rescale 2 (aHatSeries A) * (exp A - rescale (-1) (exp A)) = 2 * X := by
   have h := congrArg (rescale (2 : A)) (aHatSeries_mul_sub A)
-  have h2 : algebraMap ℚ A 2⁻¹ * 2 = 1 :=
-    (mul_comm _ _).trans (ofNat_mul_algebraMap_inv two_ne_zero)
+  have h2 : algebraMap ℚ A 2⁻¹ * 2 = 1 := algebraMap_inv_mul_ofNat two_ne_zero
   have hn2 : -algebraMap ℚ A 2⁻¹ * 2 = -1 := by linear_combination -h2
   simpa [map_mul, map_sub, rescale_rescale, rescale_X, map_ofNat, h2, hn2] using h
 

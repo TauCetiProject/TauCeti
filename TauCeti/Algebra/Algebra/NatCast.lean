@@ -39,7 +39,8 @@ division semiring); in each, the inverse is taken in `K` and then mapped into th
 as a scalar.
 
 * `TauCeti.natCast_mul_algebraMap_inv`, `TauCeti.ofNat_mul_algebraMap_inv`: `m · (1 / m) = 1` in a
-  `K`-algebra, for a natural number or a numeral `m` with `(m : K) ≠ 0`.
+  `K`-algebra, for a natural number or a numeral `m` with `(m : K) ≠ 0`;
+  `TauCeti.algebraMap_inv_mul_ofNat` is the numeral form `(1 / m) · m = 1`.
 * `TauCeti.nsmul_algebraMap_inv_natCast_smul`, `TauCeti.algebraMap_inv_natCast_smul_nsmul`:
   `m • (1 / m) • a = a` and `(1 / m) • m • a = a` in a module over a `K`-algebra, when
   `(m : K) ≠ 0`.
@@ -97,6 +98,14 @@ theorem ofNat_mul_algebraMap_inv {K A : Type*} [Semifield K] [Semiring A] [Algeb
     [n.AtLeastTwo] (hn : (ofNat(n) : K) ≠ 0) :
     (ofNat(n) : A) * algebraMap K A (ofNat(n) : K)⁻¹ = 1 :=
   natCast_mul_algebraMap_inv (A := A) hn
+
+/-- Multiplying by the image of `n⁻¹ : K` and by a numeral `n` cancel in an algebra over a
+semifield `K`, provided `n` is nonzero in `K`; for instance `(1 / 2) · 2 = 1` in a `ℚ`-algebra. -/
+@[simp]
+theorem algebraMap_inv_mul_ofNat {K A : Type*} [Semifield K] [Semiring A] [Algebra K A] {n : ℕ}
+    [n.AtLeastTwo] (hn : (ofNat(n) : K) ≠ 0) :
+    algebraMap K A (ofNat(n) : K)⁻¹ * (ofNat(n) : A) = 1 :=
+  (Algebra.commutes _ _).trans (ofNat_mul_algebraMap_inv hn)
 
 /-- In a module over a `K`-algebra `R`, the natural multiple `m • ·` cancels the scalar
 `algebraMap K R m⁻¹` applied first, provided `m` is nonzero in the semifield `K`. -/

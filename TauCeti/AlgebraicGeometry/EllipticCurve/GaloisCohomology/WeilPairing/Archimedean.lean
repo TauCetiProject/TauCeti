@@ -7,6 +7,7 @@ module
 
 public import TauCeti.AlgebraicGeometry.EllipticCurve.GaloisCohomology.WeilPairing.Orthogonality
 public import TauCeti.NumberTheory.ClassFieldTheory.Brauer.Archimedean.Duality
+import TauCeti.Algebra.CharP.Lemmas
 import TauCeti.Algebra.Module.ZMod.Annihilator
 import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Point.Index.Real
 import TauCeti.AlgebraicGeometry.EllipticCurve.GaloisCohomology.Isogeny.Cardinality
@@ -113,14 +114,9 @@ private theorem natCard_torsionBy_zero_eq_zero [DecidableEq F]
     (hcase : Nonempty (F ≃+* ℝ) ∨ Subsingleton (Gal F)) :
     Nat.card (AddSubgroup.torsionBy W.toAffine.Point (0 : ℤ)) = 0 := by
   have : Infinite W.toAffine.Point := not_finite_iff_infinite.mp fun _ => by
-    -- A prime `k` above both `#E(F)` and the characteristic is invertible in `F`.
-    obtain ⟨k, hkge, hk⟩ :=
-      Nat.exists_infinite_primes (Nat.card W.toAffine.Point + ringChar F + 1)
+    obtain ⟨k, hk, hkgt, hkF₀⟩ := exists_prime_lt_natCast_ne_zero F (Nat.card W.toAffine.Point)
     have hk0 : k ≠ 0 := hk.ne_zero
-    have hkF : IsUnit (k : F) := isUnit_iff_ne_zero.mpr fun h => by
-      rcases (Nat.dvd_prime hk).mp ((CharP.cast_eq_zero_iff F (ringChar F) k).mp h) with h1 | h1
-      · exact CharP.ringChar_ne_one h1
-      · omega
+    have hkF : IsUnit (k : F) := isUnit_iff_ne_zero.mpr hkF₀
     have hkle : Nat.card (AddSubgroup.torsionBy W.toAffine.Point k) ≤
         Nat.card W.toAffine.Point := by
       rw [AddSubgroup.card_eq_card_quotient_mul_card_addSubgroup
