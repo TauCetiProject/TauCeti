@@ -64,8 +64,9 @@ its circle coordinate (`TauCeti.GLSymplectic.maslovIndex_eq_degree_polarDiscHome
 * `TauCeti.GLSymplectic.sqrt_mul_star_eq_exp_spSymmMatrix` and
   `TauCeti.GLSymplectic.coe_polarUnitary_eq_realify_diagonal_maslovPhase`: the two polar factors
   of `A` in these coordinates.
-* `TauCeti.GLSymplectic.contDiff_exp_spSymmMatrix_mul_realify`: the inverse map, extended to the
-  plane times the complex numbers, is smooth.
+* `TauCeti.GLSymplectic.contDiff_exp_spSymmMatrix_mul_realify`: the polar parametrization in
+  plane coordinates is smooth on the plane times the complex numbers. Recovering the inverse map
+  requires precomposing with `TauCeti.unitBallDiffeomorph` in the first factor.
 * `TauCeti.GLSymplectic.maslovIndex_eq_degree_polarDiscHomeomorph_snd`: the Maslov index of a loop
   is the winding number of its circle coordinate.
 
@@ -295,9 +296,11 @@ attribute [local instance] Matrix.l2OpNormedAlgebraReal
 
 omit [Unique ι] in
 /-- **The polar parametrization is smooth.** The map `((a, b), z) ↦ exp [[a, b], [b, -a]] *
-realify (z)` from the plane and the complex numbers to the `2 × 2` real matrices is smooth. On the
-unit circle in the second factor, read through the diffeomorphism `TauCeti.unitBallDiffeomorph` of
-the open disc onto the plane, it is the inverse of `TauCeti.GLSymplectic.polarDiscHomeomorph`
+realify (z)` from the plane and the complex numbers to the `2 × 2` real matrices is smooth. Its
+first argument is the plane point `(a, b)`, not the disc coordinate: precomposed with the
+diffeomorphism `TauCeti.unitBallDiffeomorph` of the open disc onto the plane in the first factor
+and restricted to the unit circle in the second, it is the inverse of
+`TauCeti.GLSymplectic.polarDiscHomeomorph`
 (`TauCeti.GLSymplectic.val_polarDiscHomeomorph_symm_apply`). -/
 theorem contDiff_exp_spSymmMatrix_mul_realify {k : ℕ∞ω} :
     ContDiff ℝ k fun p : EuclideanSpace ℝ (Fin 2) × ℂ ↦

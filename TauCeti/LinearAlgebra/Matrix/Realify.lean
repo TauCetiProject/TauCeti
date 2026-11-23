@@ -370,8 +370,9 @@ theorem commute_J_realify [Fintype ι] [DecidableEq ι]
     (A : Matrix ι ι 𝕜) : Commute (J ι ℝ) A.realify := by
   simp [Commute, SemiconjBy, J, realify, fromBlocks_multiply]
 
-/-- The realification of a scalar matrix `z • 1` is `re z • 1 + im z • J`: for `𝕜 = ℂ`,
-multiplication by `z` rotates each pair of real coordinates by the argument of `z`. -/
+/-- The realification of a scalar matrix `z • 1` is `re z • 1 + im z • J`: for `𝕜 = ℂ` and
+`z ≠ 0`, multiplication by `z` rotates each pair of real coordinates by `arg z` and scales it by
+`‖z‖`; for `z = 0` it is the zero map. -/
 theorem realify_smul_one [DecidableEq ι] (z : 𝕜) :
     (z • 1 : Matrix ι ι 𝕜).realify = RCLike.re z • 1 + RCLike.im z • J ι ℝ := by
   ext (i | i) (j | j) <;> by_cases h : i = j <;> simp [J, h]
