@@ -8,11 +8,13 @@ module
 public import Mathlib.Analysis.LocallyConvex.Bounded
 
 /-!
-# Products of von Neumann bounded sets
+# Von Neumann boundedness helpers
 
 A product `s ×ˢ t` of von Neumann bounded subsets of two topological spaces with a `𝕜`-action is
-von Neumann bounded in the product space. This is used to check the boundedness condition in
-Mathlib's `Bundle.RiemannianMetric` for the product of two Riemannian metrics.
+von Neumann bounded in the product space (`Bornology.IsVonNBounded.prod`, used to check the
+boundedness condition in Mathlib's `Bundle.RiemannianMetric` for the product of two Riemannian
+metrics). Moreover, the norms of a continuous semilinear map into a seminormed space are bounded
+above on any von Neumann bounded set (`Bornology.IsVonNBounded.bddAbove_range_norm_apply`).
 -/
 
 public section
@@ -20,6 +22,8 @@ public section
 open Set
 
 namespace Bornology
+
+section Prod
 
 variable {𝕜 E F : Type*} [SeminormedRing 𝕜]
   [Zero E] [SMul 𝕜 E] [TopologicalSpace E] [Zero F] [SMul 𝕜 F] [TopologicalSpace F]
@@ -31,5 +35,24 @@ protected theorem IsVonNBounded.prod {s : Set E} {t : Set F} (hs : IsVonNBounded
   obtain ⟨U, hU, V, hV, hUV⟩ := mem_nhds_prod_iff.mp hW
   filter_upwards [(hs hU).eventually, (ht hV).eventually] with a ha hb
   grw [← hUV, smul_set_prod, ha, hb]
+
+end Prod
+
+section Normed
+
+variable {𝕜₁ 𝕜₂ E F : Type*} [NormedDivisionRing 𝕜₁] [NontriviallyNormedField 𝕜₂]
+  {σ : 𝕜₁ →+* 𝕜₂} [RingHomSurjective σ] [RingHomIsometric σ]
+  [AddCommGroup E] [Module 𝕜₁ E] [TopologicalSpace E]
+  [SeminormedAddCommGroup F] [NormedSpace 𝕜₂ F]
+
+/-- The norms of a continuous semilinear map into a seminormed space are bounded above on any
+von Neumann bounded set. -/
+protected theorem IsVonNBounded.bddAbove_range_norm_apply {s : Set E} (hs : IsVonNBounded 𝕜₁ s)
+    (f : E →SL[σ] F) :
+    BddAbove (Set.range fun x : s ↦ ‖f x‖) := by
+  obtain ⟨r, hr⟩ := (NormedSpace.image_isVonNBounded_iff 𝕜₂).1 (hs.image f)
+  exact ⟨r, Set.forall_mem_range.2 fun x ↦ hr x x.property⟩
+
+end Normed
 
 end Bornology

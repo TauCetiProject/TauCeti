@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.LocallyConvex.DualProjectiveLimit
 public import TauCeti.Analysis.LocallyConvex.FinalTopology
 import Mathlib.Analysis.LocallyConvex.StrongTopology
+import TauCeti.Analysis.LocallyConvex.Bounded
 import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Precomp
 import TauCeti.Topology.Algebra.Module.Spaces.StrongDual
 
@@ -33,7 +34,7 @@ bounded exactly when it is the image of a bounded subset of a single space `B j`
 (`TauCeti.isVonNBounded_iff_exists_subset_image_closedBall`). Indeed, evaluations at the points
 of a bounded subset of `L` form a pointwise bounded family of functionals on the Fréchet space
 `lim_j B j′`, and such a family consists of evaluations at a bounded subset of one space `B j`
-(`TauCeti.dualProjectiveLimit.exists_subset_image_closedBall_eval`). Consequently the strong
+(`TauCeti.dualProjectiveLimit.exists_forall_exists_norm_le_eval_eq`). Consequently the strong
 topology on the dual of `L`, the topology of uniform convergence on bounded subsets, is the
 projective-limit topology, and precomposition is an isomorphism of topological vector spaces
 `L′_b ≃ lim_j B j′` (`TauCeti.dualProjectiveLimit.strongDualEquiv`).
@@ -43,8 +44,8 @@ In the dual direction, gluing the continuous stage evaluations `B j →L[𝕜] (
 continuity of `evalInductive` holds whenever the topology of `L` is at least as fine as the final
 locally convex topology of the maps `ι j`
 (`TauCeti.dualProjectiveLimit.continuous_evalInductive_of_le_finalLocallyConvexTopology`), and over
-any nontrivially normed field whenever every `𝕜`-seminorm on `L` whose composites with all `ι j`
-are continuous is itself continuous
+any nontrivially normed field whenever `L` is a topological additive group and every `𝕜`-seminorm
+on `L` whose composites with all `ι j` are continuous is itself continuous
 (`TauCeti.dualProjectiveLimit.continuous_evalInductive_of_continuous_comp_seminorm`). Over `ℝ` or
 `ℂ`, an explicit polar and bipolar comparison relates `evalInductive` to the topology of `L`: for
 any `0`-neighborhood `U` in `L`, the image under `precomp ι hι` of `StrongDual.polar 𝕜 U` is von
@@ -59,10 +60,13 @@ inducing property when continuous
 (`TauCeti.dualProjectiveLimit.isInducing_evalInductive_of_continuous`) follow from the general
 strong-dual evaluation criterion in `TauCeti.Analysis.LocallyConvex.DoubleDual`. Continuity of
 `evalInductive` in fact forces the topology of `L` to equal that final locally convex topology
-(`TauCeti.dualProjectiveLimit.finalLocallyConvexTopology_eq_of_continuous_evalInductive`), and
-conversely `T₁` spaces carrying `finalLocallyConvexTopology` automatically satisfy all scalar
-continuity, local convexity, dual separation, and `evalInductive`-continuity hypotheses
-(`TauCeti.dualProjectiveLimit.continuousSMul_separatingDual_continuous_evalInductive_of_final`).
+(`TauCeti.dualProjectiveLimit.finalLocallyConvexTopology_eq_of_continuous_evalInductive`).
+Conversely, when `L` carries a topology equal to `finalLocallyConvexTopology` via `ht`, callers
+obtain `IsTopologicalAddGroup L` and `LocallyConvexSpace ℝ L` from the `FinalLocallyConvexTopology`
+instances along `ht`, scalar continuity by transporting `FinalLocallyConvexTopology.continuousSMul`
+along `ht`, dual separation (when `T₁`) via `TauCeti.instSeparatingDualOfLocallyConvexSpace` or
+`TauCeti.FinalLocallyConvexTopology.separatingDual`, and `evalInductive`-continuity via
+`continuous_evalInductive_of_le_finalLocallyConvexTopology hι hinj hcover ht.ge`.
 When the bonding maps are weakly compact and `evalInductive` is continuous (equivalently, `L`
 carries the final locally convex topology), `L` is complete for its additive uniformity by
 transporting completeness from the strong dual of the Fréchet space `dualProjectiveLimit T` along
@@ -96,9 +100,8 @@ neighbourhoods, whose restriction maps are compact by Montel's theorem.
   `evalInductive` at `0`.
 * `TauCeti.dualProjectiveLimit.continuous_evalInductive_of_le_finalLocallyConvexTopology`,
   `TauCeti.dualProjectiveLimit.continuous_evalInductive_of_continuous_comp_seminorm`,
-  `TauCeti.dualProjectiveLimit.finalLocallyConvexTopology_eq_of_continuous_evalInductive`,
-  `TauCeti.dualProjectiveLimit.continuousSMul_separatingDual_continuous_evalInductive_of_final`:
-  forward continuity and final-topology characterization and setup.
+  `TauCeti.dualProjectiveLimit.finalLocallyConvexTopology_eq_of_continuous_evalInductive`:
+  forward continuity and final-topology characterization.
 * `TauCeti.dualProjectiveLimit.evalEquiv`: topological linear isomorphism
   `L ≃L[𝕜] StrongDual 𝕜 (dualProjectiveLimit T)` when `evalInductive` is continuous.
 * `TauCeti.dualProjectiveLimit.completeSpace_of_continuous_evalInductive`: completeness of `L` when
@@ -145,20 +148,14 @@ theorem isVonNBounded_iff_exists_subset_image_closedBall [SeparatingDual 𝕜 L]
     (ι j)).subset hA⟩
   -- Evaluation at the points of `A` is a pointwise bounded family on `lim_j B j′`.
   have hbdd (f : dualProjectiveLimit T) :
-      BddAbove (Set.range fun Φ : evalInductive hι hinj hcover '' A ↦
-        ‖(Φ : StrongDual 𝕜 (dualProjectiveLimit T)) f‖) := by
+      BddAbove (Set.range fun x : A ↦ ‖evalInductive hι hinj hcover x f‖) := by
     obtain ⟨φ, rfl⟩ := precomp_surjective hι hinj hcover hfinal f
-    have h := Bornology.IsBounded.bddAbove_norm
-      ((NormedSpace.isVonNBounded_iff 𝕜).mp (hA.image φ))
-    rw [Set.image_image, Set.image_eq_range] at h
-    refine h.mono ?_
-    rintro _ ⟨⟨_, x, hx, rfl⟩, rfl⟩
-    exact ⟨⟨x, hx⟩, by simp [evalInductive_apply_precomp]⟩
-  obtain ⟨j, R, hsub⟩ := exists_subset_image_closedBall_eval hT hbdd
+    simpa [evalInductive_apply_precomp] using hA.bddAbove_range_norm_apply φ
+  obtain ⟨j, R, hrep⟩ := exists_forall_exists_norm_le_eval_eq hT _ hbdd
   refine ⟨j, R, fun x hx ↦ ?_⟩
-  obtain ⟨z, hz, heq⟩ := hsub (Set.mem_image_of_mem _ hx)
-  exact ⟨z, hz, evalInductive_injective hι hinj hcover
-    ((evalInductive_ι hι hinj hcover j z).trans heq)⟩
+  obtain ⟨z, hz, heq⟩ := hrep ⟨x, hx⟩
+  exact ⟨z, mem_closedBall_zero_iff.2 hz,
+    evalInductive_injective hι hinj hcover ((evalInductive_ι hι hinj hcover j z).trans heq)⟩
 
 end RCLike
 
@@ -408,11 +405,11 @@ theorem continuous_of_continuous_evalInductive_of_continuous_comp
   obtain ⟨n, z, rfl⟩ := hcover x
   simp [f]
 
-/-- **Forward continuity from stagewise-tested seminorms.** If every `𝕜`-seminorm on `L` whose
-composites with all stage maps `ι n` are continuous is itself continuous, then the glued evaluation
-map `evalInductive` is continuous: on a bounded subset `Q` of `dualProjectiveLimit T`, each
-coordinate projection is norm-bounded, so the supremum seminorm over `Q` is bounded on every stage
-`B n` and therefore continuous on `L`. -/
+/-- **Forward continuity from stagewise-tested seminorms.** On a topological additive group `L`, if
+every `𝕜`-seminorm on `L` whose composites with all stage maps `ι n` are continuous is itself
+continuous, then the glued evaluation map `evalInductive` is continuous: on a bounded subset `Q` of
+`dualProjectiveLimit T`, each coordinate projection is norm-bounded, so the supremum seminorm over
+`Q` is bounded on every stage `B n` and therefore continuous on `L`. -/
 theorem continuous_evalInductive_of_continuous_comp_seminorm [IsTopologicalAddGroup L]
     (hι : ∀ n, (ι (n + 1)).comp (T n) = ι n)
     (hinj : ∀ n, Function.Injective (ι n)) (hcover : ∀ x : L, ∃ n, ∃ y, ι n y = x)
@@ -500,35 +497,6 @@ theorem finalLocallyConvexTopology_eq_of_continuous_evalInductive
     obtain ⟨n, z, rfl⟩ := hcover x
     exact (hev n z).trans (evalInductive_ι hι hinj hcover n z).symm
   rw [ht₀, heq, ← (isInducing_evalInductive_of_continuous hι hinj hcover hcont).eq_induced]
-
-/-- On a `T₁` space `L` over `ℝ` or `ℂ` carrying the final locally convex topology of compatible
-injective covering continuous linear maps `ι n : B n →L[𝕜] L`, `L` has continuous scalar
-multiplication, separating dual, and continuous glued evaluation `evalInductive hι hinj hcover`
-(which in turn supplies functional continuity via
-`continuous_of_continuous_evalInductive_of_continuous_comp` for `strongDualEquiv`, as well as the
-hypotheses for `evalEquiv`, `completeSpace_of_continuous_evalInductive`, and
-`inductiveBidualEquiv`). -/
-theorem continuousSMul_separatingDual_continuous_evalInductive_of_final
-    [∀ n, Module ℝ (B n)] [∀ n, IsScalarTower ℝ 𝕜 (B n)]
-    [Module ℝ L] [IsScalarTower ℝ 𝕜 L] [T1Space L]
-    (hι : ∀ n, (ι (n + 1)).comp (T n) = ι n)
-    (hinj : ∀ n, Function.Injective (ι n)) (hcover : ∀ x : L, ∃ n, ∃ y, ι n y = x)
-    (ht : finalLocallyConvexTopology (fun n ↦ (ι n).toLinearMap.restrictScalars ℝ) =
-      ‹TopologicalSpace L›) :
-    ContinuousSMul 𝕜 L ∧ SeparatingDual 𝕜 L ∧ Continuous (evalInductive hι hinj hcover) := by
-  have : IsTopologicalAddGroup L := by
-    rw [← ht]
-    infer_instance
-  have : LocallyConvexSpace ℝ L := by
-    rw [← ht]
-    infer_instance
-  have hsmul : ContinuousSMul 𝕜 L := by
-    rw [← ht]
-    exact FinalLocallyConvexTopology.continuousSMul _ fun n ↦ (ι n).map_smul
-  have hsep : SeparatingDual 𝕜 L := instSeparatingDualOfLocallyConvexSpace
-  have hcont : Continuous (evalInductive hι hinj hcover) :=
-    continuous_evalInductive_of_le_finalLocallyConvexTopology hι hinj hcover ht.ge
-  exact ⟨hsmul, hsep, hcont⟩
 
 /-- **Canonical evaluation isomorphism onto the strong dual of `dualProjectiveLimit T`.** Let `L`
 be a `T₁` locally convex space over `ℝ` or `ℂ`, covered by compatible injective continuous linear

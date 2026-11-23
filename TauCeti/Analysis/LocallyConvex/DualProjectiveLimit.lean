@@ -10,6 +10,7 @@ public import Mathlib.Topology.Baire.CompleteMetrizable
 public import TauCeti.Analysis.LocallyConvex.DoubleDual
 public import TauCeti.Analysis.Normed.Operator.Compact.Adjoint
 public import TauCeti.Analysis.Normed.Operator.WeaklyCompact.Bidual
+import TauCeti.Analysis.LocallyConvex.Bounded
 import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Precomp
 
 /-!
@@ -75,9 +76,11 @@ separate points of `L` and surjective when the bonding maps are weakly compact o
 ## Main declarations
 
 * `TauCeti.dualProjectiveLimit`: the projective limit `lim_j B j′` as a submodule of the product.
-* `TauCeti.dualProjectiveLimit.coord`, `TauCeti.dualProjectiveLimit.continuousLinearMap_ext`: its
-  coordinate projections to the spaces `B j′`, and coordinate extensionality for continuous linear
-  maps into `lim_j B j′`.
+* `TauCeti.dualProjectiveLimit.coord`, `TauCeti.dualProjectiveLimit.continuousLinearMap_ext`,
+  `TauCeti.dualProjectiveLimit.lift`, `TauCeti.dualProjectiveLimit.coord_comp_lift`: its
+  coordinate projections to the spaces `B j′`, coordinate extensionality for continuous linear
+  maps into `lim_j B j′`, and the universal lift assembling a compatible family of coordinate maps
+  into `lim_j B j′`.
 * `TauCeti.dualProjectiveLimit.withSeminorms`: its topology is given by the coordinate norms.
 * `TauCeti.dualProjectiveLimit.isVonNBounded_iff`: bounded sets of `lim_j B j′` are those uniformly
   bounded in each coordinate.
@@ -205,6 +208,32 @@ theorem continuousLinearMap_ext {E : Type*} [AddCommGroup E] [Module 𝕜 E] [To
     (h : ∀ n, (coord T n).comp u = (coord T n).comp v) : u = v :=
   ContinuousLinearMap.ext fun x ↦ Subtype.ext <| funext fun n ↦ congrArg (· x) (h n)
 
+/-- Assemble a compatible family of continuous linear maps `u n : E →L[𝕜] StrongDual 𝕜 (B n)`,
+`(ContinuousLinearMap.precomp 𝕜 (T n)).comp (u (n + 1)) = u n`, into a continuous linear map
+`E →L[𝕜] dualProjectiveLimit T`. -/
+def lift {E : Type*} [AddCommGroup E] [Module 𝕜 E] [TopologicalSpace E]
+    (u : ∀ n, E →L[𝕜] StrongDual 𝕜 (B n))
+    (hu : ∀ n, (ContinuousLinearMap.precomp 𝕜 (T n)).comp (u (n + 1)) = u n) :
+    E →L[𝕜] dualProjectiveLimit T :=
+  (ContinuousLinearMap.pi u).codRestrict (dualProjectiveLimit T) fun x ↦
+    mem_dualProjectiveLimit.2 fun n ↦ congrArg (· x) (hu n)
+
+@[simp]
+theorem lift_apply {E : Type*} [AddCommGroup E] [Module 𝕜 E] [TopologicalSpace E]
+    (u : ∀ n, E →L[𝕜] StrongDual 𝕜 (B n))
+    (hu : ∀ n, (ContinuousLinearMap.precomp 𝕜 (T n)).comp (u (n + 1)) = u n)
+    (x : E) (n : ℕ) :
+    (lift u hu x : ∀ k, StrongDual 𝕜 (B k)) n = u n x := by
+  simp [lift]
+
+@[simp]
+theorem coord_comp_lift {E : Type*} [AddCommGroup E] [Module 𝕜 E] [TopologicalSpace E]
+    (u : ∀ n, E →L[𝕜] StrongDual 𝕜 (B n))
+    (hu : ∀ n, (ContinuousLinearMap.precomp 𝕜 (T n)).comp (u (n + 1)) = u n) (n : ℕ) :
+    (coord T n).comp (lift u hu) = u n := by
+  ext x z
+  simp
+
 @[simp]
 theorem apply_succ_comp (f : dualProjectiveLimit T) (j : ℕ) :
     ((f : ∀ n, StrongDual 𝕜 (B n)) (j + 1)).comp (T j) = (f : ∀ n, StrongDual 𝕜 (B n)) j :=
@@ -323,10 +352,8 @@ variable (ι) in
 to the point `(φ ∘ ι j)_j` of the projective limit `lim_j B j′`. -/
 def precomp (hι : ∀ n, (ι (n + 1)).comp (T n) = ι n) :
     StrongDual 𝕜 L →L[𝕜] dualProjectiveLimit T :=
-  (ContinuousLinearMap.pi fun n ↦ ContinuousLinearMap.precomp 𝕜 (ι n)).codRestrict
-    (dualProjectiveLimit T) fun φ ↦ mem_dualProjectiveLimit.2 fun n ↦ by
-      simp only [ContinuousLinearMap.pi_apply, ContinuousLinearMap.precomp_apply,
-        comp_assoc, hι]
+  lift (fun n ↦ ContinuousLinearMap.precomp 𝕜 (ι n)) fun n ↦ by
+    rw [← ContinuousLinearMap.precomp_comp, hι n]
 
 @[simp]
 theorem precomp_apply (hι : ∀ n, (ι (n + 1)).comp (T n) = ι n) (φ : StrongDual 𝕜 L) (n : ℕ) :
@@ -335,9 +362,8 @@ theorem precomp_apply (hι : ∀ n, (ι (n + 1)).comp (T n) = ι n) (φ : Strong
 
 @[simp]
 theorem coord_comp_precomp (hι : ∀ n, (ι (n + 1)).comp (T n) = ι n) (n : ℕ) :
-    (coord T n).comp (precomp ι hι) = ContinuousLinearMap.precomp 𝕜 (ι n) := by
-  ext φ z
-  rw [comp_apply, coord_apply, precomp_apply, ContinuousLinearMap.precomp_apply]
+    (coord T n).comp (precomp ι hι) = ContinuousLinearMap.precomp 𝕜 (ι n) :=
+  coord_comp_lift _ _ n
 
 /-- A continuous functional on `L` is determined by its composites with the maps `ι j` when the
 ranges of these maps cover `L`. -/
@@ -587,13 +613,11 @@ of a closed ball of a single space `B j` under `eval T j`. -/
 theorem isVonNBounded_strongDual_iff (hT : ∀ n, (T n).IsWeaklyCompact)
     {S : Set (StrongDual 𝕜 (dualProjectiveLimit T))} :
     Bornology.IsVonNBounded 𝕜 S ↔
-      ∃ j, ∃ R : ℝ, S ⊆ eval T j '' Metric.closedBall 0 R := by
-  refine ⟨fun hS ↦ exists_subset_image_closedBall_eval hT fun f ↦ ?_, fun ⟨j, R, hS⟩ ↦
-    ((NormedSpace.isVonNBounded_closedBall 𝕜 (B j) R).image (eval T j)).subset hS⟩
-  have h := Bornology.IsBounded.bddAbove_norm
-    ((NormedSpace.isVonNBounded_iff 𝕜).mp (hS.image (strongEval 𝕜 (dualProjectiveLimit T) f)))
-  rw [Set.image_image, Set.image_eq_range] at h
-  simpa using h
+      ∃ j, ∃ R : ℝ, S ⊆ eval T j '' Metric.closedBall 0 R :=
+  ⟨fun hS ↦ exists_subset_image_closedBall_eval hT fun f ↦ by
+      simpa using hS.bddAbove_range_norm_apply (strongEval 𝕜 (dualProjectiveLimit T) f),
+    fun ⟨j, R, hS⟩ ↦
+      ((NormedSpace.isVonNBounded_closedBall 𝕜 (B j) R).image (eval T j)).subset hS⟩
 
 /-- When the bonding maps are weakly compact, `fromStrongBidual T` is also a right inverse to
 canonical evaluation `ContinuousLinearMap.applyₗ 𝕜 (RingHom.id 𝕜)`, because every continuous
