@@ -163,6 +163,11 @@ private def quotientMap {A B : Type*} [CommRing A] [CommRing B] (f : A →+* B) 
   QuotientGroup.map _ _ (D.weylSubgroupMap A f)
     (D.torusPoints_subgroupOf_le_comap_weylSubgroupMap f)
 
+private theorem quotientMap_mk {A B : Type*} [CommRing A] [CommRing B] (f : A →+* B)
+    (g : D.weylSubgroup A) :
+    D.quotientMap f (QuotientGroup.mk g) = QuotientGroup.mk (D.weylSubgroupMap A f g) :=
+  QuotientGroup.map_mk _ _ _ _ g
+
 private theorem quotientMap_comp_quotientSection
     {A B : Type*} [CommRing A] [CommRing B] (f : A →+* B) :
     (D.quotientMap f).comp (D.quotientSection A) = D.quotientSection B := by
@@ -172,7 +177,7 @@ private theorem quotientMap_comp_quotientSection
   obtain ⟨i, rfl⟩ := (t.simpleSupportEquivSimplyConnectedBase ht).surjective a
   simp only [MonoidHom.comp_apply, weylCoxeterSystem_simple,
     coe_simpleSupportEquivSimplyConnectedBase_apply, D.quotientSection_simple,
-    simpleClass, quotientMap, QuotientGroup.map_mk, simpleLift, D.weylSubgroupMap_weylElement]
+    simpleClass, D.quotientMap_mk, simpleLift, D.weylSubgroupMap_weylElement]
 
 private def fieldQuotientProjection (K : Type*) [Field K] :
     D.weylSubgroup K ⧸
@@ -183,6 +188,10 @@ private def fieldQuotientProjection (K : Type*) [Field K] :
     have hx : x = ⟨D.torusPoints K s, D.torusPoints_mem_weylSubgroup K s⟩ := Subtype.ext hs.symm
     rw [MonoidHom.mem_ker, hx, D.weylProjection_torusPoints])
 
+private theorem fieldQuotientProjection_mk (K : Type*) [Field K] (g : D.weylSubgroup K) :
+    D.fieldQuotientProjection K (QuotientGroup.mk g) = D.weylProjection K g :=
+  QuotientGroup.lift_mk' _ _ g
+
 private theorem fieldQuotientProjection_comp_quotientSection (K : Type*) [Field K] :
     (D.fieldQuotientProjection K).comp (D.quotientSection K) = MonoidHom.id _ := by
   apply (weylCoxeterSystem (t.simplyConnectedRootDatum ht)
@@ -191,7 +200,7 @@ private theorem fieldQuotientProjection_comp_quotientSection (K : Type*) [Field 
   obtain ⟨i, rfl⟩ := (t.simpleSupportEquivSimplyConnectedBase ht).surjective a
   simp only [MonoidHom.comp_apply, MonoidHom.id_apply, weylCoxeterSystem_simple,
     coe_simpleSupportEquivSimplyConnectedBase_apply, D.quotientSection_simple,
-    simpleClass, fieldQuotientProjection, QuotientGroup.lift_mk', simpleLift,
+    simpleClass, D.fieldQuotientProjection_mk, simpleLift,
     D.weylProjection_weylElement]
 
 private theorem quotientSection_injective [Nontrivial A] :
@@ -268,7 +277,7 @@ theorem weylQuotientMulEquiv_map {A : Type*} {B : Type*}
     rw [← D.weylQuotientMulEquiv_symm_apply, MulEquiv.symm_apply_apply]
   have hsecB : D.quotientSection B (D.weylQuotientMulEquiv A (QuotientGroup.mk g)) =
       QuotientGroup.mk (D.weylSubgroupMap A f g) := by
-    simpa only [MonoidHom.comp_apply, hsecA, quotientMap, QuotientGroup.map_mk] using hw.symm
+    simpa only [MonoidHom.comp_apply, hsecA, D.quotientMap_mk] using hw.symm
   apply (D.weylQuotientMulEquiv B).symm.injective
   rw [MulEquiv.symm_apply_apply, D.weylQuotientMulEquiv_symm_apply, hsecB]
 
@@ -296,10 +305,7 @@ theorem weylQuotientMulEquiv_list_prod_mul_torusPoints [Nontrivial A]
     map_list_prod (D.weylQuotientMulEquiv A), List.map_map, List.map_map]
   simp only [Function.comp_def, QuotientGroup.mk'_apply, simpleLift,
     D.weylQuotientMulEquiv_mk_weylElement]
-  clear hsub
-  induction l with
-  | nil => simp
-  | cons i l ih => simp [ih]
+  exact (t.geckWeylWordProd_eq_prod_map ht l).symm
 
 end
 
@@ -325,11 +331,8 @@ private theorem quotientSection_comp_fieldQuotientProjection :
 theorem weylQuotientMulEquiv_symm_weylProjection (g : Nₖ) :
     (D.weylQuotientMulEquiv K).symm (D.weylProjection K g) =
       QuotientGroup.mk g := by
-  rw [D.weylQuotientMulEquiv_symm_apply]
-  have hg : D.weylProjection K g = D.fieldQuotientProjection K (QuotientGroup.mk g) := by
-    simp only [fieldQuotientProjection, QuotientGroup.lift_mk]
-  rw [hg, ← MonoidHom.comp_apply, D.quotientSection_comp_fieldQuotientProjection K,
-    MonoidHom.id_apply]
+  rw [D.weylQuotientMulEquiv_symm_apply, ← D.fieldQuotientProjection_mk K g,
+    ← MonoidHom.comp_apply, D.quotientSection_comp_fieldQuotientProjection K, MonoidHom.id_apply]
 
 /-- The Weyl quotient equivalence is induced by the native Weyl projection. -/
 @[simp]

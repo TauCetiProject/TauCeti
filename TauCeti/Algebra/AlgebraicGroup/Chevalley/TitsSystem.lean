@@ -304,9 +304,12 @@ private theorem titsSystem_intersection_eq_comap :
     (D.titsSystem K).intersection =
       (((D.torusPoints K).range).subgroupOf (D.weylSubgroup K)).comap
         (D.titsSubgroupNMulEquiv K).toMonoidHom := by
-  ext n
-  rw [D.mem_titsSystem_intersection_iff K n, Subgroup.mem_comap, MulEquiv.coe_toMonoidHom,
-    Subgroup.mem_subgroupOf, D.coe_titsSubgroupNMulEquiv K]
+  change ((D.borelSubgroup K).subgroupOf (D.extendedElementarySubgroup K)).subgroupOf
+      ((D.weylSubgroup K).subgroupOf (D.extendedElementarySubgroup K)) =
+    (((D.torusPoints K).range).subgroupOf (D.weylSubgroup K)).comap
+      (Subgroup.subgroupOfEquivOfLe
+        (D.weylSubgroup_le_extendedElementarySubgroup K)).toMonoidHom
+  exact D.borelSubgroupOf_subgroupOf_weylSubgroupOf_eq K
 
 /-- The canonical isomorphism between the Weyl group of `D.titsSystem K` and the Weyl group of the
 root datum. -/
