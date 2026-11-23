@@ -226,6 +226,10 @@ instance instMonoidBoolFactors (M : Type u) (N : Type v) [Monoid M] [Monoid N] :
   | false => inferInstanceAs (Monoid (ULift M))
   | true => inferInstanceAs (Monoid (ULift N))
 
+-- Set `toMonoid := instMonoidBoolFactors G H b` explicitly rather than matching on `b` at the
+-- top level with `inferInstanceAs (Group (ULift _))`, so `(instGroupBoolFactors G H b).toMonoid`
+-- is definitionally `instMonoidBoolFactors G H b` for symbolic `b : Bool` (avoiding a `Monoid`
+-- instance diamond on `CoprodI (boolFactors G H)`).
 instance instGroupBoolFactors (G : Type u) (H : Type v) [Group G] [Group H] :
     ∀ b, Group (boolFactors G H b) := fun b =>
   { toMonoid := instMonoidBoolFactors G H b
@@ -264,26 +268,44 @@ theorem boolFactors_one_true (M : Type u) (N : Type v) [Monoid M] [Monoid N] :
 and the binary free product `M ∗ N`. -/
 def uliftBoolEquivCoprod (M : Type u) (N : Type v) [Monoid M] [Monoid N] :
     CoprodI (boolFactors M N) ≃* Coprod M N :=
-  (boolEquivCoprod (boolFactors M N)).trans
-    (MulEquiv.coprodCongr MulEquiv.ulift MulEquiv.ulift)
+  MonoidHom.toMulEquiv
+    (lift fun
+      | false => Coprod.inl.comp (MulEquiv.ulift : boolFactors M N false ≃* M).toMonoidHom
+      | true => Coprod.inr.comp (MulEquiv.ulift : boolFactors M N true ≃* N).toMonoidHom)
+    (Coprod.lift
+      ((of (i := false) (M := boolFactors M N)).comp MulEquiv.ulift.symm.toMonoidHom)
+      ((of (i := true) (M := boolFactors M N)).comp MulEquiv.ulift.symm.toMonoidHom))
+    (by
+      ext i x
+      cases i
+      · exact congrArg (of (i := false)) ((MulEquiv.ulift : ULift.{v} M ≃* M).symm_apply_apply x)
+      · exact congrArg (of (i := true)) ((MulEquiv.ulift : ULift.{u} N ≃* N).symm_apply_apply x))
+    (by
+      ext x
+      · exact congrArg Coprod.inl ((MulEquiv.ulift : ULift.{v} M ≃* M).apply_symm_apply x)
+      · exact congrArg Coprod.inr ((MulEquiv.ulift : ULift.{u} N ≃* N).apply_symm_apply x))
+
+private theorem mulEquiv_ulift_apply {α : Type*} [Mul α] (x : ULift α) :
+    MulEquiv.ulift x = x.down :=
+  rfl
 
 /-- `uliftBoolEquivCoprod` maps the `false` factor inclusion to `Coprod.inl`. -/
 @[simp]
 theorem uliftBoolEquivCoprod_of_false {M : Type u} {N : Type v} [Monoid M] [Monoid N]
     (x : ULift.{v} M) :
     uliftBoolEquivCoprod M N (of (i := false) x) = Coprod.inl x.down := by
-  simp [uliftBoolEquivCoprod]
-  -- Unfolds `MulEquiv.ulift` on `x` (`MulEquiv.ulift x = x.down` definitionally).
-  rfl
+  rw [uliftBoolEquivCoprod, MonoidHom.toMulEquiv_apply,
+    lift_of (M := boolFactors M N) (i := false) _ x]
+  exact congrArg Coprod.inl (mulEquiv_ulift_apply x)
 
 /-- `uliftBoolEquivCoprod` maps the `true` factor inclusion to `Coprod.inr`. -/
 @[simp]
 theorem uliftBoolEquivCoprod_of_true {M : Type u} {N : Type v} [Monoid M] [Monoid N]
     (y : ULift.{u} N) :
     uliftBoolEquivCoprod M N (of (i := true) y) = Coprod.inr y.down := by
-  simp [uliftBoolEquivCoprod]
-  -- Unfolds `MulEquiv.ulift` on `y` (`MulEquiv.ulift y = y.down` definitionally).
-  rfl
+  rw [uliftBoolEquivCoprod, MonoidHom.toMulEquiv_apply,
+    lift_of (M := boolFactors M N) (i := true) _ y]
+  exact congrArg Coprod.inr (mulEquiv_ulift_apply y)
 
 /-- The inverse of `uliftBoolEquivCoprod` maps `Coprod.inl x` to the `false` factor
 inclusion. -/
@@ -292,10 +314,8 @@ theorem uliftBoolEquivCoprod_symm_inl {M : Type u} {N : Type v} [Monoid M] [Mono
     (x : M) :
     (uliftBoolEquivCoprod M N).symm (Coprod.inl x) =
       of (i := false) (MulEquiv.ulift.symm x) := by
-  simp [uliftBoolEquivCoprod, MulEquiv.symm_trans_apply]
-  -- Unfolds `boolFactors M N false` to `ULift M` (and `instMonoidBoolFactors` to `ULift.monoid`)
-  -- and `MulEquiv.ulift.symm` to `Equiv.ulift.symm`.
-  rfl
+  rw [uliftBoolEquivCoprod, MonoidHom.toMulEquiv_symm_apply]
+  exact Coprod.lift_apply_inl _ _ x
 
 /-- The inverse of `uliftBoolEquivCoprod` maps `Coprod.inr y` to the `true` factor
 inclusion. -/
@@ -304,10 +324,8 @@ theorem uliftBoolEquivCoprod_symm_inr {M : Type u} {N : Type v} [Monoid M] [Mono
     (y : N) :
     (uliftBoolEquivCoprod M N).symm (Coprod.inr y) =
       of (i := true) (MulEquiv.ulift.symm y) := by
-  simp [uliftBoolEquivCoprod, MulEquiv.symm_trans_apply]
-  -- Unfolds `boolFactors M N true` to `ULift N` (and `instMonoidBoolFactors` to `ULift.monoid`)
-  -- and `MulEquiv.ulift.symm` to `Equiv.ulift.symm`.
-  rfl
+  rw [uliftBoolEquivCoprod, MonoidHom.toMulEquiv_symm_apply]
+  exact Coprod.lift_apply_inr _ _ y
 
 /-- The inverse of `uliftBoolEquivCoprod` maps the product of a word `L : List (M ⊕ N)` to the
 product of the lifted factor inclusions along `L`. -/
@@ -333,26 +351,32 @@ variable (M : Fin 2 → Type*) [∀ i, Monoid (M i)]
 members: the inclusion of `M 0` corresponds to `Monoid.Coprod.inl` and that of `M 1` to
 `Monoid.Coprod.inr`. -/
 def finTwoEquivCoprod : CoprodI M ≃* Coprod (M 0) (M 1) :=
-  (MulEquiv.coprodICongrLeft M finTwoEquiv.symm).symm.trans
-    (boolEquivCoprod (fun b => M (finTwoEquiv.symm b)))
+  MonoidHom.toMulEquiv
+    (lift fun
+      | 0 => Coprod.inl
+      | 1 => Coprod.inr)
+    (Coprod.lift (of (i := 0)) (of (i := 1)))
+    (by
+      ext i x
+      rcases i with ⟨_ | _ | i, hi⟩
+      · simp
+      · simp
+      · omega)
+    (by ext <;> simp)
 
 variable {M}
 
 /-- The inverse of `finTwoEquivCoprod` maps `Coprod.inl` to the canonical inclusion of `M 0`. -/
 @[simp]
 theorem finTwoEquivCoprod_symm_inl (x : M 0) :
-    (finTwoEquivCoprod M).symm (Coprod.inl x) = of x := by
-  simp [finTwoEquivCoprod]
-  -- `finTwoEquiv.symm false = 0` definitionally.
-  rfl
+    (finTwoEquivCoprod M).symm (Coprod.inl x) = of x :=
+  Coprod.lift_apply_inl (of (i := 0)) (of (i := 1)) x
 
 /-- The inverse of `finTwoEquivCoprod` maps `Coprod.inr` to the canonical inclusion of `M 1`. -/
 @[simp]
 theorem finTwoEquivCoprod_symm_inr (x : M 1) :
-    (finTwoEquivCoprod M).symm (Coprod.inr x) = of x := by
-  simp [finTwoEquivCoprod]
-  -- `finTwoEquiv.symm true = 1` definitionally.
-  rfl
+    (finTwoEquivCoprod M).symm (Coprod.inr x) = of x :=
+  Coprod.lift_apply_inr (of (i := 0)) (of (i := 1)) x
 
 /-- `finTwoEquivCoprod` maps the canonical inclusion of `M 0` to `Coprod.inl`. -/
 @[simp]

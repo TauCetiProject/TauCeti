@@ -134,8 +134,7 @@ theorem length_toList_of_smul_le_of_fstIdx_eq {ι : Type*} {M : ι → Type*} [�
   have hp1 : p.head ≠ 1 := fun h1 =>
     p.fstIdx_ne (by simpa [rcons, h1, hw] using congrArg fstIdx hp)
   have hw_len : w.toList.length = p.tail.toList.length + 1 := by
-    rw [← hp, rcons, dite_eq_right hp1]
-    rfl
+    rw [← hp, rcons, dite_eq_right hp1, cons_toList, List.length_cons]
   rw [of_smul_def, rcons]
   split_ifs <;> simp [p, hw_len]
 
