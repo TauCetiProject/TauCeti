@@ -50,7 +50,7 @@ preserves it. The loop-module structures of these chain complexes, and the excis
 assembles the cells of a CW complex, are not treated here.
 
 The relative homology itself, over a cube and over the cells of a CW complex, is computed in
-`TauCeti.AlgebraicTopology.DGLocalSystem.Path.Cell` by acting on a section cube
+`TauCeti.AlgebraicTopology.DGLocalSystem.Path.Cell.Basic` by acting on a section cube
 (`TauCeti.MoorePathPullback.cubicalHomologyCubeBoundaryEquiv`). This file gives the comparison on
 chains, over an arbitrary pair.
 

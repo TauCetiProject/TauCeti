@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicTopology.DGLocalSystem.Path.Cell
+public import TauCeti.AlgebraicTopology.DGLocalSystem.Path.Cell.Basic
 public import TauCeti.AlgebraicTopology.Singular.Cubical.Comparison.Excision
 public import TauCeti.AlgebraicTopology.Singular.Fibration.Sphere
 public import TauCeti.Topology.PathSpace.Moore.Replacement.Equiv

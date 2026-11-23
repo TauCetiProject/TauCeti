@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Homology.DG.Twisted.RowFinite.Basic
-public import TauCeti.AlgebraicTopology.DGLocalSystem.Path.Cell
+public import TauCeti.AlgebraicTopology.DGLocalSystem.Path.Cell.Basic
 public import TauCeti.AlgebraicTopology.DGLocalSystem.Path.Excision
 import TauCeti.Algebra.Homology.ComplexShape.Basic
 
