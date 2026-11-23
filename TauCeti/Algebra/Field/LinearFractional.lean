@@ -54,7 +54,7 @@ the disc coordinates centred at a point and at its image, in
   `1` when `θ₀ ≠ θ₂` and `y ≠ 0`, and the inverse transformation recovers
   `x / y = (θ₀ - t θ₂) / (1 - t)`. These are used in the reduction of Thue equations to unit
   equations, in `TauCeti/NumberTheory/UnitEquation/Thue/Basic.lean`.
-* `TauCeti.one_sub_inv_mul_eq_sub_div`, `TauCeti.one_sub_inv_one_sub_div`,
+* `TauCeti.one_sub_inv_one_sub_div`,
   `TauCeti.one_sub_div_eq_inv_one_sub_inv_one_sub_div`,
   `TauCeti.inv_eq_neg_inv_mul_inv_one_sub_div_mul`,
   `TauCeti.one_sub_inv_mul_mul_inv_one_sub_div`,
@@ -237,11 +237,6 @@ theorem div_sub_inv_sub_div_sq_eq_div_sub_sub_div {𝕜 : Type*} [Field 𝕜] (e
   field_simp
   ring
 
-/-- Rewriting `1 - z₀⁻¹ * t` as a single fraction `(z₀ - t) / z₀` over a field. -/
-theorem one_sub_inv_mul_eq_sub_div {𝕜 : Type*} [Field 𝕜] {z₀ : 𝕜} (hz₀ : z₀ ≠ 0) (t : 𝕜) :
-    1 - z₀⁻¹ * t = (z₀ - t) / z₀ := by
-  rw [inv_mul_eq_div, one_sub_div hz₀]
-
 /-- Complementary coordinate `1 - (1 - z / z₀)⁻¹ = -z / (z₀ - z)` for the linear fractional
 substitution `u = (1 - z / z₀)⁻¹`. -/
 theorem one_sub_inv_one_sub_div {𝕜 : Type*} [Field 𝕜] {z z₀ : 𝕜} (hz₀ : z₀ ≠ 0)
@@ -264,9 +259,11 @@ theorem one_sub_div_eq_inv_one_sub_inv_one_sub_div {𝕜 : Type*} [Field 𝕜] {
 
 /-- Factorization of `z⁻¹` in terms of `u = (1 - z / z₀)⁻¹`:
 `z⁻¹ = -z₀⁻¹ * (1 - z / z₀)⁻¹ * (1 - (1 - z / z₀)⁻¹)⁻¹`. -/
-theorem inv_eq_neg_inv_mul_inv_one_sub_div_mul {𝕜 : Type*} [Field 𝕜] {z z₀ : 𝕜} (hz : z ≠ 0)
+theorem inv_eq_neg_inv_mul_inv_one_sub_div_mul {𝕜 : Type*} [Field 𝕜] {z z₀ : 𝕜}
     (hz₀ : z₀ ≠ 0) (hzz₀ : z ≠ z₀) :
     z⁻¹ = -z₀⁻¹ * (1 - z / z₀)⁻¹ * (1 - (1 - z / z₀)⁻¹)⁻¹ := by
+  by_cases hz : z = 0
+  · simp [hz]
   rw [one_sub_inv_one_sub_div hz₀ hzz₀, one_sub_div hz₀, inv_div]
   have : z₀ - z ≠ 0 := sub_ne_zero.mpr hzz₀.symm
   field_simp
@@ -275,7 +272,7 @@ theorem inv_eq_neg_inv_mul_inv_one_sub_div_mul {𝕜 : Type*} [Field 𝕜] {z z�
 theorem one_sub_inv_mul_mul_inv_one_sub_div {𝕜 : Type*} [Field 𝕜] {z z₀ : 𝕜} (hz₀ : z₀ ≠ 0)
     (t : 𝕜) :
     (1 - z₀⁻¹ * t) * (1 - z / z₀)⁻¹ = (z₀ - t) / (z₀ - z) := by
-  rw [one_sub_inv_mul_eq_sub_div hz₀, one_sub_div hz₀, inv_div, div_mul_div_cancel₀ hz₀]
+  rw [inv_mul_eq_div, one_sub_div hz₀, one_sub_div hz₀, inv_div, div_mul_div_cancel₀ hz₀]
 
 /-- Factorization `(1 - z₀ / z) * (1 - (1 - z₀⁻¹ * t) * (1 - z / z₀)⁻¹) = 1 - z⁻¹ * t`. -/
 theorem one_sub_div_mul_one_sub_mul_inv_one_sub_div {𝕜 : Type*} [Field 𝕜] {z z₀ : 𝕜}

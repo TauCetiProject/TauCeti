@@ -49,7 +49,7 @@ of `1 / 2` is a square root of `1 + y` for `‖y‖ < 1`, in any Banach algebra 
 public section
 
 open Filter Set Topology
-open scoped ENNReal NNReal Nat
+open scoped ENNReal NNReal
 
 namespace TauCeti
 

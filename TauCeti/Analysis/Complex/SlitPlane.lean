@@ -6,8 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Complex.Convex
-import TauCeti.Algebra.Field.LinearFractional
 import TauCeti.Analysis.Complex.Basic
+import TauCeti.Analysis.Normed.Module.Convex
+import TauCeti.Topology.MetricSpace.Pseudo.Defs
 
 /-!
 # Geometry of the complex slit plane
@@ -63,7 +64,7 @@ preserved under scaling by `[0, 1]`. So, for every `m`, the pullback
   `TauCeti.div_mem_slitPlane_of_norm_sub_lt_add`
 * `TauCeti.div_mem_slitPlane_of_re_conj_mul_pos`
 * `TauCeti.re_pos_of_norm_sub_one_lt_one`, `TauCeti.one_sub_div_re_pos`,
-  `TauCeti.one_sub_inv_mem_slitPlane`
+  `TauCeti.one_sub_inv_mem_slitPlane_iff`, `TauCeti.one_sub_inv_mem_slitPlane`
 * `TauCeti.div_mem_slitPlane_of_re_pos`, `…_of_re_neg`, `…_of_im_pos`, `…_of_im_neg`
 * `TauCeti.mul_mem_slitPlane_of_re_pos`
 * `TauCeti.ofReal_mul_mem_slitPlane`, `TauCeti.div_ofReal_mem_slitPlane`
@@ -167,9 +168,7 @@ theorem one_sub_div_re_pos {z z₀ : ℂ} (h : ‖z₀‖ < ‖z - z₀‖) :
     0 < (1 - z₀ / z).re := by
   have hzz₀_pos : 0 < ‖z - z₀‖ := (norm_nonneg z₀).trans_lt h
   have hzz₀ : z - z₀ ≠ 0 := norm_pos_iff.mp hzz₀_pos
-  have hz : z ≠ 0 := by
-    rintro rfl
-    exact lt_irrefl ‖z₀‖ (by simpa only [zero_sub, norm_neg] using h)
+  have hz : z ≠ 0 := ne_of_dist_lt_dist (by simpa [dist_eq_norm] using h)
   have hinv_re : 0 < ((1 - z₀ / z)⁻¹).re := by
     have hinv : (1 - z₀ / z)⁻¹ = 1 + z₀ / (z - z₀) := by field_simp; ring
     rw [hinv]
@@ -190,30 +189,38 @@ theorem mul_mem_slitPlane_of_re_pos {z₁ z₂ : ℂ} (h₁ : 0 < z₁.re) (h₂
     exact div_pos h₂ (normSq_pos.mpr (by rintro rfl; simp at h₂))
   simpa using div_mem_slitPlane_of_re_pos hi h₁
 
+open scoped ComplexOrder in
+/-- `1 - z⁻¹` lies in the slit plane if and only if `z` does not lie on the real half-open
+interval `(0, 1]`. -/
+theorem one_sub_inv_mem_slitPlane_iff {z : ℂ} :
+    1 - z⁻¹ ∈ slitPlane ↔ z ∉ Complex.ofReal '' Set.Ioc 0 1 := by
+  rw [mem_slitPlane_iff_not_le_zero]
+  refine not_congr ⟨fun h => ?_, ?_⟩
+  · have hre : (1 - z⁻¹).re ≤ 0 := Complex.le_def.mp h |>.1
+    have him : (1 - z⁻¹).im = 0 := Complex.le_def.mp h |>.2
+    have hzinv_re : 1 ≤ (z⁻¹).re := by simpa using hre
+    have hzinv_im : (z⁻¹).im = 0 := by simpa using him
+    have hzinv : z⁻¹ = ((z⁻¹).re : ℂ) := Complex.ext rfl hzinv_im
+    have hz : z = (((z⁻¹).re⁻¹ : ℝ) : ℂ) := by conv_lhs => rw [← inv_inv z, hzinv, ← ofReal_inv]
+    exact ⟨(z⁻¹).re⁻¹, ⟨inv_pos.mpr (by linarith), inv_le_one_of_one_le₀ hzinv_re⟩, hz.symm⟩
+  · rintro ⟨t, ht, rfl⟩
+    refine Complex.le_def.mpr ⟨?_, ?_⟩
+    · simpa using (one_le_inv₀ ht.1).mpr ht.2
+    · simp
+
 /-- Under the exterior condition `max ‖z₀‖ ‖z₀ - 1‖ < ‖z - z₀‖`, the inverse argument `z⁻¹`
 stays off the branch cut `[1, ∞)`, i.e., `1 - z⁻¹ ∈ Complex.slitPlane`. -/
 theorem one_sub_inv_mem_slitPlane {z z₀ : ℂ} (h : max ‖z₀‖ ‖z₀ - 1‖ < ‖z - z₀‖) :
     1 - z⁻¹ ∈ slitPlane := by
-  by_cases hz₀ : z₀ = 0
-  · subst hz₀
-    have hz1 : 1 < ‖z‖ := by simpa using h
-    exact mem_slitPlane_iff.mpr (Or.inl (re_pos_of_norm_sub_one_lt_one
-      (by rw [sub_sub_cancel_left, norm_neg, norm_inv]; exact inv_lt_one_of_one_lt₀ hz1)))
-  · have h_ext : ‖z₀‖ < ‖z - z₀‖ := (le_max_left _ _).trans_lt h
-    have h_ext1 : ‖z₀ - 1‖ < ‖z - z₀‖ := (le_max_right _ _).trans_lt h
-    have hzz₀_pos : 0 < ‖z - z₀‖ := (norm_nonneg z₀).trans_lt h_ext
-    have hzz₀ : z ≠ z₀ := sub_ne_zero.mp (norm_pos_iff.mp hzz₀_pos)
-    have hz_ne : z ≠ 0 := by
-      rintro rfl
-      exact lt_irrefl ‖z₀‖ (by simpa only [zero_sub, norm_neg] using h_ext)
-    have hfact := one_sub_div_mul_one_sub_mul_inv_one_sub_div hz_ne hz₀ hzz₀ (1 : ℂ)
-    simp only [mul_one] at hfact
-    rw [← hfact]
-    refine mul_mem_slitPlane_of_re_pos (one_sub_div_re_pos h_ext) ?_
-    refine re_pos_of_norm_sub_one_lt_one ?_
-    rw [sub_sub_cancel_left, norm_neg, ← mul_one z₀⁻¹,
-      one_sub_inv_mul_mul_inv_one_sub_div hz₀ (1 : ℂ), norm_div, norm_sub_rev z₀ z]
-    exact (div_lt_one hzz₀_pos).mpr h_ext1
+  refine one_sub_inv_mem_slitPlane_iff.mpr ?_
+  rintro ⟨t, ht, rfl⟩
+  have hline : z₀ - (t : ℂ) = AffineMap.lineMap z₀ (z₀ - 1) t := by
+    simp [AffineMap.lineMap_apply_module]; ring
+  have hle : ‖(t : ℂ) - z₀‖ ≤ max ‖z₀‖ ‖z₀ - 1‖ := by
+    rw [norm_sub_rev]
+    exact norm_le_max_norm_of_mem_segment
+      (hline ▸ lineMap_mem_segment ℝ z₀ (z₀ - 1) (Set.Ioc_subset_Icc_self ht))
+  exact h.not_ge hle
 
 /-- Two points in the left half-plane have their ratio in the slit plane. -/
 theorem div_mem_slitPlane_of_re_neg {z₁ z₂ : ℂ} (h₁ : z₁.re < 0) (h₂ : z₂.re < 0) :

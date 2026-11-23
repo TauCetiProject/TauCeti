@@ -22,9 +22,11 @@ terms of positive norm), each term dominates the sum of its predecessors and the
 diverge in norm. In any normed ring with summable geometric series, shifted polynomial-geometric
 series `∑ (n + c) ^ k * r ^ n` are summable whenever `‖r‖ < 1`. Likewise, in a complete normed
 division ring, a power series converging at `w` remains summable at every `z` with `‖z‖ < ‖w‖`
-after multiplying its coefficients by `n ^ k`; in particular, for a real sequence whose weighted
-series `∑ f s * r ^ s` converges for all `0 ≤ r < R`, multiplying by `s` or `(s + 1)` with a
-shifted exponent preserves summability inside `R`.
+after multiplying its coefficients by `n ^ k`, without requiring completeness for absolute
+summability (`TauCeti.summable_norm_pow_mul_powerSeries_of_norm_lt`) and with ordinary summability
+when complete (`TauCeti.summable_pow_mul_powerSeries_of_norm_lt`); in particular, for a real
+sequence whose weighted series `∑ f s * r ^ s` converges for all `0 ≤ r < R`, multiplying by `s` or
+`(s + 1)` with a shifted exponent preserves summability inside `R`.
 **Dirichlet's test** holds for coefficients of bounded variation tending to zero: their
 products with a sequence of bounded partial sums have Cauchy partial sums.
 
@@ -204,17 +206,17 @@ theorem summable_add_pow_mul_geometric_of_norm_lt_one {R : Type*} [NormedRing R]
     ← mul_assoc]
 
 /-- If a power series converges at `w`, then multiplying its coefficients by `n ^ k` preserves
-summability at all `z` of smaller norm. -/
-theorem summable_pow_mul_powerSeries_of_norm_lt {α : Type*} [NormedDivisionRing α]
-    [CompleteSpace α] (k : ℕ) {f : ℕ → α} {w z : α}
+absolute summability at all `z` of smaller norm, without requiring completeness. -/
+theorem summable_norm_pow_mul_powerSeries_of_norm_lt {α : Type*} [NormedDivisionRing α]
+    (k : ℕ) {f : ℕ → α} {w z : α}
     (h : CauchySeq fun n ↦ ∑ i ∈ Finset.range n, f i * w ^ i) (hz : ‖z‖ < ‖w‖) :
-    Summable fun n : ℕ ↦ (n : α) ^ k * f n * z ^ n := by
+    Summable fun n : ℕ ↦ ‖(n : α) ^ k * f n * z ^ n‖ := by
   have hw : 0 < ‖w‖ := (norm_nonneg z).trans_lt hz
   obtain ⟨C, hC⟩ := exists_norm_le_of_cauchySeq h
   have hgeom : Summable fun n : ℕ ↦ C * ((n : ℝ) ^ k * (‖z‖ / ‖w‖) ^ n) :=
     (summable_pow_mul_geometric_of_norm_lt_one k
       (by rwa [Real.norm_of_nonneg (by positivity), div_lt_one hw])).mul_left C
-  refine Summable.of_norm_bounded hgeom fun n ↦ ?_
+  refine Summable.of_nonneg_of_le (fun _ ↦ norm_nonneg _) (fun n ↦ ?_) hgeom
   have hn : ‖((n : α) ^ k : α)‖ ≤ (n : ℝ) ^ k := by
     rw [norm_pow]
     exact pow_le_pow_left₀ (norm_nonneg _) (by simpa using Nat.norm_cast_le (α := α) n) k
@@ -225,6 +227,14 @@ theorem summable_pow_mul_powerSeries_of_norm_lt {α : Type*} [NormedDivisionRing
       = ‖(n : α) ^ k‖ * ‖f n‖ * ‖z‖ ^ n := by rw [norm_mul, norm_mul, norm_pow z]
     _ ≤ (n : ℝ) ^ k * (C / ‖w‖ ^ n) * ‖z‖ ^ n := by gcongr
     _ = C * ((n : ℝ) ^ k * (‖z‖ / ‖w‖) ^ n) := by rw [div_pow]; ring
+
+/-- If a power series converges at `w` in a complete normed division ring, then multiplying its
+coefficients by `n ^ k` preserves summability at all `z` of smaller norm. -/
+theorem summable_pow_mul_powerSeries_of_norm_lt {α : Type*} [NormedDivisionRing α]
+    [CompleteSpace α] (k : ℕ) {f : ℕ → α} {w z : α}
+    (h : CauchySeq fun n ↦ ∑ i ∈ Finset.range n, f i * w ^ i) (hz : ‖z‖ < ‖w‖) :
+    Summable fun n : ℕ ↦ (n : α) ^ k * f n * z ^ n :=
+  (summable_norm_pow_mul_powerSeries_of_norm_lt k h hz).of_norm
 
 /-- Multiplying a real sequence by the index `s` preserves weighted summability strictly inside
 the radius `R`. -/

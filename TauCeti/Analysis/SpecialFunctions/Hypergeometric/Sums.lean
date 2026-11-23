@@ -10,10 +10,12 @@ import Mathlib.LinearAlgebra.Complex.FiniteDimensional
 import TauCeti.Algebra.Field.LinearFractional
 import TauCeti.Analysis.Analytic.Binomial
 import TauCeti.Analysis.Normed.Module.Ball.Exterior
+import TauCeti.Analysis.Normed.Module.Convex
 import TauCeti.Analysis.SpecialFunctions.Pow.Complex
 import TauCeti.Analysis.SpecialFunctions.RegularizedHypergeometric.Basic
 import TauCeti.Analysis.SpecificLimits.Normed
 import TauCeti.RingTheory.Binomial
+import TauCeti.Topology.MetricSpace.Pseudo.Defs
 
 /-!
 # Inverse-argument expansions in Gauss hypergeometric polynomials
@@ -42,10 +44,10 @@ and keeps `z⁻¹` off `[1, ∞)`.
 Building on the terminating-polynomial API in
 `TauCeti.Analysis.SpecialFunctions.RegularizedHypergeometric.Basic` and
 `Complex.eulerIntegral_neg_natCast` in
-`TauCeti.Analysis.SpecialFunctions.Hypergeometric.EulerIntegral.Basic`, this file proves that the
-DLMF 15.15.1 series converges absolutely and defines a holomorphic function throughout
-`{z | max ‖z₀‖ ‖z₀ - 1‖ < ‖z - z₀‖}` for all complex parameters `a`, `b`, `c`, and establishes the
-inverse-argument expansion for:
+`TauCeti.Analysis.SpecialFunctions.Hypergeometric.EulerIntegral.Basic`, this file proves that for
+any `z₀ ≠ 0` and all complex parameters `a`, `b`, `c`, the DLMF 15.15.1 series converges absolutely
+and defines a holomorphic function throughout `{z | max ‖z₀‖ ‖z₀ - 1‖ < ‖z - z₀‖}`, and
+establishes the inverse-argument expansion for:
 * `Complex.eulerIntegral` across the full exterior domain `max ‖z₀‖ ‖z₀ - 1‖ < ‖z - z₀‖` with
   `z₀ ≠ 0` when `0 < b.re < c.re`;
 * `Complex.regularizedGaussHGFun` at all complex parameters `a`, `b`, `c` whenever `z₀ ≠ 0`,
@@ -59,7 +61,8 @@ inverse-argument expansion for:
   `max ‖z₀‖ ‖z₀ - 1‖ < ‖z - z₀‖` with `z₀ ≠ 0` when `0 < b.re < c.re`.
 * `Complex.summable_norm_regularizedGaussHGFun_neg_natCast_mul_inv_pow`,
   `Complex.analyticOnNhd_tsum_regularizedGaussHGFun_neg_natCast_mul_inv_pow`: absolute convergence
-  and holomorphy of the DLMF 15.15.1 series on `max ‖z₀‖ ‖z₀ - 1‖ < ‖z - z₀‖` for all `a`, `b`, `c`.
+  and holomorphy of the DLMF 15.15.1 series on `max ‖z₀‖ ‖z₀ - 1‖ < ‖z - z₀‖` with `z₀ ≠ 0` for
+  all `a`, `b`, `c`.
 * `Complex.hasSum_regularizedGaussHGFun_inv`, `Complex.hasSum_ordinaryHypergeometric_inv`:
   DLMF 15.15.1 for `regularizedGaussHGFun` (all `a`, `b`, `c`) and `₂F₁` (`∀ k : ℕ, c ≠ -k`) when
   `z₀ ≠ 0`, `1 < ‖z‖`, and `max ‖z₀‖ ‖z₀ - 1‖ < ‖z - z₀‖`.
@@ -82,26 +85,25 @@ namespace Complex
 
 /-! ### DLMF 15.15.1 on the Euler integral range -/
 
-private theorem ne_of_norm_lt_norm_sub {z z₀ : ℂ} (h : ‖z₀‖ < ‖z - z₀‖) : z ≠ z₀ :=
-  sub_ne_zero.mp (norm_pos_iff.mp ((norm_nonneg z₀).trans_lt h))
+/-- For `t ∈ [0, 1]`, `‖z₀ - (t : ℂ)‖ ≤ max ‖z₀‖ ‖z₀ - 1‖`. -/
+private theorem norm_sub_ofReal_le_max (z₀ : ℂ) {t : ℝ} (ht : t ∈ Icc (0 : ℝ) 1) :
+    ‖z₀ - (t : ℂ)‖ ≤ max ‖z₀‖ ‖z₀ - 1‖ := by
+  have hline : z₀ - (t : ℂ) = AffineMap.lineMap z₀ (z₀ - 1) t := by
+    simp [AffineMap.lineMap_apply_module]; ring
+  exact TauCeti.norm_le_max_norm_of_mem_segment (hline ▸ lineMap_mem_segment ℝ z₀ (z₀ - 1) ht)
 
-private theorem ne_zero_of_norm_lt_norm_sub {z z₀ : ℂ} (h : ‖z₀‖ < ‖z - z₀‖) : z ≠ 0 := by
-  rintro rfl
-  exact lt_irrefl ‖z₀‖ (by simpa only [zero_sub, norm_neg] using h)
+/-- Bound `‖(ascPochhammer ℂ n).eval x / n !‖` by `Ring.multichoose r n` when `‖x‖ ≤ r`. -/
+private theorem norm_eval_ascPochhammer_div_factorial_le {x : ℂ} {r : ℝ} (hx : ‖x‖ ≤ r) (n : ℕ) :
+    ‖(ascPochhammer ℂ n).eval x / (n ! : ℂ)‖ ≤ Ring.multichoose r n := by
+  rw [div_eq_inv_mul, ← TauCeti.Ring.multichoose_eq_inv_factorial_mul_eval_ascPochhammer]
+  exact TauCeti.norm_multichoose_le_of_norm_le hx n
 
 /-- Pointwise norm bound on the factored Euler kernel ratio on `[0, 1]`. -/
 private theorem norm_eulerKernel_ratio_le {z z₀ : ℂ} (hz₀ : z₀ ≠ 0) {t : ℝ}
     (ht : t ∈ Icc (0 : ℝ) 1) :
     ‖(1 - z₀⁻¹ * (t : ℂ)) * (1 - z / z₀)⁻¹‖ ≤ max ‖z₀‖ ‖z₀ - 1‖ / ‖z - z₀‖ := by
   rw [TauCeti.one_sub_inv_mul_mul_inv_one_sub_div hz₀ (t : ℂ), norm_div, norm_sub_rev z₀ z]
-  have hm : z₀ - (t : ℂ) ∈ Metric.closedBall (0 : ℂ) (max ‖z₀‖ ‖z₀ - 1‖) :=
-    (convex_closedBall (0 : ℂ) _).segment_subset
-      (mem_closedBall_zero_iff.mpr (le_max_left _ _))
-      (mem_closedBall_zero_iff.mpr (le_max_right _ _)) (by
-        rw [show z₀ - (t : ℂ) = AffineMap.lineMap z₀ (z₀ - 1) t by
-          simp [AffineMap.lineMap_apply_module]; ring]
-        exact lineMap_mem_segment ℝ z₀ (z₀ - 1) ht)
-  exact div_le_div_of_nonneg_right (mem_closedBall_zero_iff.mp hm) (norm_nonneg _)
+  exact div_le_div_of_nonneg_right (norm_sub_ofReal_le_max z₀ ht) (norm_nonneg _)
 
 /-- Pointwise binomial series expansion of the factored Euler kernel on `[0, 1]`. -/
 private theorem hasSum_eulerKernel_inv (a : ℂ) {z z₀ : ℂ} (hz₀ : z₀ ≠ 0)
@@ -111,6 +113,8 @@ private theorem hasSum_eulerKernel_inv (a : ℂ) {z z₀ : ℂ} (hz₀ : z₀ �
       ((1 - z₀ / z) ^ a * (1 - z⁻¹ * (t : ℂ)) ^ (-a)) := by
   have h_ext : ‖z₀‖ < ‖z - z₀‖ := (le_max_left _ _).trans_lt hz
   have hzz₀_pos : 0 < ‖z - z₀‖ := (norm_nonneg z₀).trans_lt h_ext
+  have hz_ne : z ≠ 0 := TauCeti.ne_of_dist_lt_dist (by simpa [dist_eq_norm] using h_ext)
+  have hzz₀ : z ≠ z₀ := dist_pos.mp (by simpa [dist_eq_norm] using hzz₀_pos)
   let vt : ℂ := (1 - z₀⁻¹ * (t : ℂ)) * (1 - z / z₀)⁻¹
   have hvt_lt : ‖vt‖ < 1 :=
     (norm_eulerKernel_ratio_le hz₀ ht).trans_lt ((div_lt_one hzz₀_pos).mpr hz)
@@ -121,8 +125,7 @@ private theorem hasSum_eulerKernel_inv (a : ℂ) {z z₀ : ℂ} (hz₀ : z₀ �
   have hw₂_re : 0 < (1 - vt).re :=
     TauCeti.re_pos_of_norm_sub_one_lt_one (by simpa [sub_sub_cancel_left] using hvt_lt)
   have hprod : w₁ * (1 - vt) = 1 - z⁻¹ * (t : ℂ) :=
-    TauCeti.one_sub_div_mul_one_sub_mul_inv_one_sub_div (ne_zero_of_norm_lt_norm_sub h_ext) hz₀
-      (ne_of_norm_lt_norm_sub h_ext) (t : ℂ)
+    TauCeti.one_sub_div_mul_one_sub_mul_inv_one_sub_div hz_ne hz₀ hzz₀ (t : ℂ)
   rw [← hprod, TauCeti.mul_cpow_of_re_pos hw₁_re hw₂_re (-a), cpow_neg w₁ a,
     ← mul_assoc, mul_inv_cancel₀ hw₁a_ne, one_mul]
   have hbin := TauCeti.hasSum_multichoose_mul_geometric_complex_of_norm_lt_one (r := a) hvt_lt
@@ -140,9 +143,7 @@ private theorem norm_eulerKernel_inv_term_le (a b c : ℂ) {z z₀ : ℂ} (hz₀
           (1 - z₀⁻¹ * (t : ℂ)) ^ (-(-(s : ℂ))))‖ ≤
       ‖(t : ℂ) ^ (b - 1) * (1 - (t : ℂ)) ^ (c - b - 1)‖ *
         (Ring.multichoose ‖a‖ s * (max ‖z₀‖ ‖z₀ - 1‖ / ‖z - z₀‖) ^ s) := by
-  have hpoch_norm : ‖(ascPochhammer ℂ s).eval a / (s ! : ℂ)‖ ≤ Ring.multichoose ‖a‖ s := by
-    rw [div_eq_inv_mul, ← TauCeti.Ring.multichoose_eq_inv_factorial_mul_eval_ascPochhammer]
-    exact TauCeti.norm_multichoose_le_of_norm_le le_rfl s
+  have hpoch_norm := norm_eval_ascPochhammer_div_factorial_le (x := a) le_rfl s
   let W : ℂ := (t : ℂ) ^ (b - 1) * (1 - (t : ℂ)) ^ (c - b - 1)
   let vt : ℂ := (1 - z₀⁻¹ * (t : ℂ)) * (1 - z / z₀)⁻¹
   have h_rearrange : ((ascPochhammer ℂ s).eval a / s ! * ((1 - z / z₀)⁻¹) ^ s) *
@@ -225,15 +226,9 @@ private theorem summable_norm_regularizedGaussHGFun_neg_natCast_of_euler {b c z�
       intro t ht
       rw [norm_pow]
       gcongr
-      rw [TauCeti.one_sub_inv_mul_eq_sub_div hz₀ (t : ℂ), norm_div]
-      have hm : z₀ - (t : ℂ) ∈ Metric.closedBall (0 : ℂ) M :=
-        (convex_closedBall (0 : ℂ) _).segment_subset
-          (mem_closedBall_zero_iff.mpr (le_max_left _ _))
-          (mem_closedBall_zero_iff.mpr (le_max_right _ _)) (by
-            rw [show z₀ - (t : ℂ) = AffineMap.lineMap z₀ (z₀ - 1) t by
-              simp [AffineMap.lineMap_apply_module]; ring]
-            exact lineMap_mem_segment ℝ z₀ (z₀ - 1) (Ioc_subset_Icc_self ht))
-      exact div_le_div_of_nonneg_right (mem_closedBall_zero_iff.mp hm) hz0_pos.le
+      rw [inv_mul_eq_div, one_sub_div hz₀, norm_div]
+      exact div_le_div_of_nonneg_right (norm_sub_ofReal_le_max z₀ (Ioc_subset_Icc_self ht))
+        hz0_pos.le
     calc ‖∫ t : ℝ in 0..1, W t * (1 - z₀⁻¹ * (t : ℂ)) ^ (-(-(s : ℂ)))‖
         ≤ ∫ t : ℝ in 0..1, ‖W t‖ * (M / ‖z₀‖) ^ s := by
           refine intervalIntegral.norm_integral_le_of_norm_le zero_le_one
@@ -374,9 +369,7 @@ private theorem le_radius_invExpansionSeries (a b c : ℂ) {z₀ : ℂ} (hz₀ :
   refine (invExpansionSeries a b c z₀).le_radius_of_summable_norm ?_
   refine Summable.of_nonneg_of_le (fun _ => by positivity) (fun s => ?_)
     ((summable_norm_regularizedGaussHGFun_neg_natCast_mul_pow b c hz₀ hr'_pos.le hr'R).mul_left C)
-  have hpoch_norm : ‖(ascPochhammer ℂ s).eval a / (s ! : ℂ)‖ ≤ Ring.multichoose ‖a‖ s := by
-    rw [div_eq_inv_mul, ← TauCeti.Ring.multichoose_eq_inv_factorial_mul_eval_ascPochhammer]
-    exact TauCeti.norm_multichoose_le_of_norm_le le_rfl s
+  have hpoch_norm := norm_eval_ascPochhammer_div_factorial_le (x := a) le_rfl s
   have hsC : Ring.multichoose ‖a‖ s * ((r : ℝ) / r') ^ s ≤ C := hC _ ⟨s, rfl⟩
   have hsplit : (r : ℝ) ^ s = ((r : ℝ) / r') ^ s * r' ^ s := by
     rw [← mul_pow, div_mul_cancel₀ _ hr'_pos.ne']
@@ -429,7 +422,8 @@ theorem analyticOnNhd_tsum_regularizedGaussHGFun_neg_natCast_mul_inv_pow (a b c 
     simp [FormalMultilinearSeries.sum, invExpansionSeries, mul_comm]
   rw [heq]
   intro z hz
-  have hzz₀ : z ≠ z₀ := ne_of_norm_lt_norm_sub ((le_max_left _ _).trans_lt hz)
+  have hzz₀ : z ≠ z₀ := dist_pos.mp (by
+    rw [dist_eq_norm]; exact (norm_nonneg z₀).trans_lt ((le_max_left _ _).trans_lt hz))
   have h1zz₀ : 1 - z / z₀ ≠ 0 := fun h0 =>
     hzz₀ ((div_eq_one_iff_eq hz₀).mp (sub_eq_zero.mp h0).symm)
   have hφ : AnalyticAt ℂ (fun w : ℂ => (1 - w / z₀)⁻¹) z :=
@@ -491,10 +485,8 @@ private theorem norm_doubleSeriesTerm_le (a b c z₀ u : ℂ) (k m : ℕ) :
       ‖(ascPochhammer ℂ k).eval a * (ascPochhammer ℂ k).eval b / (k ! * Gamma (c + k))‖ *
         (‖z₀‖⁻¹ * ‖u‖) ^ k * (Ring.multichoose (‖a‖ + k) m * ‖u‖ ^ m) := by
   simp only [doubleSeriesTerm, norm_mul, norm_pow, norm_neg, norm_inv, mul_pow]
-  have hm_le : ‖(ascPochhammer ℂ m).eval (a + k) / (m ! : ℂ)‖ ≤ Ring.multichoose (‖a‖ + k) m := by
-    rw [div_eq_inv_mul, ← TauCeti.Ring.multichoose_eq_inv_factorial_mul_eval_ascPochhammer]
-    exact TauCeti.norm_multichoose_le_of_norm_le
-      (by simpa [Complex.norm_natCast] using norm_add_le a k) m
+  have hm_le := norm_eval_ascPochhammer_div_factorial_le
+    (by simpa [Complex.norm_natCast] using norm_add_le a k) m
   calc ‖(ascPochhammer ℂ k).eval a * (ascPochhammer ℂ k).eval b / (k ! * Gamma (c + k))‖ *
           ‖z₀‖⁻¹ ^ k * ‖u‖ ^ k * (‖(ascPochhammer ℂ m).eval (a + k) / (m ! : ℂ)‖ * ‖u‖ ^ m)
       ≤ ‖(ascPochhammer ℂ k).eval a * (ascPochhammer ℂ k).eval b / (k ! * Gamma (c + k))‖ *
@@ -522,8 +514,10 @@ private theorem summable_norm_doubleSeriesTerm (a b c : ℂ) {z₀ u : ℂ} (hz�
   let ρ : ℝ := ‖u‖ / (‖z₀‖ * (1 - ‖u‖))
   have h1u : 0 < 1 - ‖u‖ := sub_pos.mpr hu
   have hρ0 : 0 ≤ ρ := div_nonneg (norm_nonneg u) (mul_pos (norm_pos_iff.mpr hz₀) h1u).le
-  have hout := (summable_norm_regularizedGaussHGFun a b c (z := (ρ : ℂ))
-    (by rwa [Complex.norm_real, Real.norm_of_nonneg hρ0])).mul_left ((1 - ‖u‖) ^ (-‖a‖))
+  have hout := (summable_norm_iff.mpr (summable_coeff_regularizedGaussHGFunSeries_mul_pow a b c
+    (z := (ρ : ℂ)) (by rwa [Complex.norm_real, Real.norm_of_nonneg hρ0]))).mul_left
+    ((1 - ‖u‖) ^ (-‖a‖))
+  simp only [coeff_regularizedGaussHGFunSeries] at hout
   refine Summable.of_nonneg_of_le (fun _ => tsum_nonneg fun _ => norm_nonneg _) (fun k => ?_) hout
   calc (∑' m, ‖doubleSeriesTerm a b c z₀ u (k, m)‖)
       ≤ ∑' m, ‖(ascPochhammer ℂ k).eval a * (ascPochhammer ℂ k).eval b /
@@ -552,7 +546,7 @@ private theorem hasSum_doubleSeriesTerm (a b c : ℂ) {z z₀ : ℂ} (hz₀ : z�
       ((1 - z₀ / z) ^ a * regularizedGaussHGFun a b c z⁻¹) := by
   have h_ext : ‖z₀‖ < ‖z - z₀‖ := by linarith
   have hzz₀_pos : 0 < ‖z - z₀‖ := (norm_nonneg z₀).trans_lt h_ext
-  have hzz₀ : z ≠ z₀ := ne_of_norm_lt_norm_sub h_ext
+  have hzz₀ : z ≠ z₀ := dist_pos.mp (by simpa [dist_eq_norm] using hzz₀_pos)
   have hz1 : 1 < ‖z‖ := by linarith [norm_sub_le z z₀]
   have hz_ne : z ≠ 0 := norm_pos_iff.mp (zero_lt_one.trans hz1)
   let u : ℂ := (1 - z / z₀)⁻¹
@@ -576,7 +570,7 @@ private theorem hasSum_doubleSeriesTerm (a b c : ℂ) {z z₀ : ℂ} (hz₀ : z�
     simp_rw [TauCeti.Ring.multichoose_eq_inv_factorial_mul_eval_ascPochhammer, inv_mul_eq_div,
       one_div, ← cpow_neg] at hbin
     have hzinv : z⁻¹ = -z₀⁻¹ * u * (1 - u)⁻¹ :=
-      TauCeti.inv_eq_neg_inv_mul_inv_one_sub_div_mul hz_ne hz₀ hzz₀
+      TauCeti.inv_eq_neg_inv_mul_inv_one_sub_div_mul hz₀ hzz₀
     have hcpow : (1 - u) ^ (-(a + k)) = (1 - u) ^ (-a) * ((1 - u)⁻¹) ^ k := by
       rw [neg_add, cpow_add _ _ h1u_ne, cpow_neg (1 - u) (k : ℂ), cpow_natCast, inv_pow]
     have hval : ((ascPochhammer ℂ k).eval a * (ascPochhammer ℂ k).eval b /

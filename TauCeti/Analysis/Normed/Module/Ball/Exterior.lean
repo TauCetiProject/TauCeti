@@ -17,9 +17,10 @@ import Mathlib.LinearAlgebra.Dimension.Constructions
 In a real normed space of dimension at least two the complement of a closed ball is path-connected:
 it is the image of the product of the unit sphere with the ray `(r, ∞)` of radii exceeding the
 ball's under the polar-coordinate map `(u, t) ↦ x + t • u`. By Hahn–Banach separation, every point
-outside the union of two closed balls can be pushed along a ray staying in two closed half-spaces
-avoiding both balls into the exterior of a larger ball containing them, so the complement of the
-union of two closed balls is also path-connected.
+outside the union of two bounded closed convex sets can be pushed along a ray staying in two
+closed half-spaces avoiding both sets into the exterior of a larger ball containing them, so the
+complement of their union (and in particular of the union of two closed balls) is also
+path-connected.
 
 Every unbounded complementary component of a bounded set meets the exterior of any closed ball
 containing that set. Connectedness of the exterior therefore forces all such components to
@@ -30,6 +31,9 @@ coincide. This uniqueness result and the corresponding filled-hull alternative a
 
 * `TauCeti.isPathConnected_compl_closedBall` — the exterior of a closed ball is path-connected in
   a real normed space of dimension at least two.
+* `TauCeti.isPathConnected_compl_union_of_convex_of_isClosed_of_isBounded` — the exterior of a
+  union of two bounded closed convex sets is path-connected in a real normed space of dimension at
+  least two.
 * `TauCeti.isPathConnected_compl_union_closedBall` — the exterior of a union of two closed balls
   is path-connected in a real normed space of dimension at least two.
 
@@ -65,31 +69,35 @@ theorem isPathConnected_compl_closedBall (h : 1 < Module.rank ℝ E) (x : E) (r 
   · rintro ⟨u, t, ⟨hu, ht⟩, rfl⟩
     simpa [norm_smul, hu, abs_of_nonneg (hr.trans ht.le)] using ht
 
-/-- **The exterior of a union of two closed balls is path-connected** in a real normed space of
-dimension at least two. -/
-theorem isPathConnected_compl_union_closedBall (h : 1 < Module.rank ℝ E) (x₁ x₂ : E) (r₁ r₂ : ℝ) :
-    IsPathConnected (closedBall x₁ r₁ ∪ closedBall x₂ r₂)ᶜ := by
-  rcases lt_or_ge r₁ 0 with hr₁ | hr₁
-  · simpa [closedBall_eq_empty.mpr hr₁] using isPathConnected_compl_closedBall h x₂ r₂
-  rcases lt_or_ge r₂ 0 with hr₂ | _hr₂
-  · simpa [closedBall_eq_empty.mpr hr₂] using isPathConnected_compl_closedBall h x₁ r₁
+/-- A ray along which a separating continuous linear functional is nonincreasing avoids the
+separated set. -/
+private theorem add_smul_notMem_of_continuousLinearMap_lt {s : Set E} {z : E}
+    {f : E →L[ℝ] ℝ} {c : ℝ} (hfz : f z < c) (hfs : ∀ y ∈ s, c < f y) {v : E}
+    (hfv : f v ≤ 0) {t : ℝ} (ht : 0 ≤ t) : z + t • v ∉ s := by
+  intro hmem
+  have hf_ray : f (z + t • v) < c :=
+    calc f (z + t • v) = f z + t * f v := by simp [smul_eq_mul]
+      _ ≤ f z := add_le_of_nonpos_right (mul_nonpos_of_nonneg_of_nonpos ht hfv)
+      _ < c := hfz
+  exact not_lt_of_ge hf_ray.le (hfs _ hmem)
+
+/-- **The exterior of a union of two bounded closed convex sets is path-connected** in a real
+normed space of dimension at least two. -/
+theorem isPathConnected_compl_union_of_convex_of_isClosed_of_isBounded
+    (h : 1 < Module.rank ℝ E) {s t : Set E} (hs : Convex ℝ s) (hs_closed : IsClosed s)
+    (hs_bdd : Bornology.IsBounded s) (ht : Convex ℝ t) (ht_closed : IsClosed t)
+    (ht_bdd : Bornology.IsBounded t) :
+    IsPathConnected (s ∪ t)ᶜ := by
   have : Nontrivial E := rank_pos_iff_nontrivial.mp (zero_lt_one.trans h)
-  let U : Set E := (closedBall x₁ r₁ ∪ closedBall x₂ r₂)ᶜ
-  let R : ℝ := max (‖x₁‖ + r₁) (‖x₂‖ + r₂)
-  have hR_nonneg : 0 ≤ R := le_trans (add_nonneg (norm_nonneg x₁) hr₁) (le_max_left _ _)
+  let U : Set E := (s ∪ t)ᶜ
+  obtain ⟨R₁, hs₁⟩ := hs_bdd.subset_closedBall (0 : E)
+  obtain ⟨R₂, ht₁⟩ := ht_bdd.subset_closedBall (0 : E)
+  let R : ℝ := max 0 (max R₁ R₂)
+  have hR_nonneg : 0 ≤ R := le_max_left _ _
   have hRU : (closedBall (0 : E) R)ᶜ ⊆ U := by
-    intro w hw
-    rw [mem_compl_iff, mem_closedBall_zero_iff, not_le] at hw
-    rw [mem_compl_iff, mem_union, not_or, mem_closedBall, mem_closedBall, not_le, not_le]
-    refine ⟨?_, ?_⟩
-    · have := (le_max_left (‖x₁‖ + r₁) (‖x₂‖ + r₂)).trans_lt hw
-      have htri := norm_le_norm_add_norm_sub' w x₁
-      rw [← dist_eq_norm] at htri
-      linarith
-    · have := (le_max_right (‖x₁‖ + r₁) (‖x₂‖ + r₂)).trans_lt hw
-      have htri := norm_le_norm_add_norm_sub' w x₂
-      rw [← dist_eq_norm] at htri
-      linarith
+    refine compl_subset_compl.mpr (union_subset ?_ ?_)
+    · exact hs₁.trans (closedBall_subset_closedBall ((le_max_left R₁ R₂).trans (le_max_right 0 _)))
+    · exact ht₁.trans (closedBall_subset_closedBall ((le_max_right R₁ R₂).trans (le_max_right 0 _)))
   obtain ⟨u₀, hu₀⟩ := exists_ne (0 : E)
   let p₀ : E := ((R + 1) / ‖u₀‖) • u₀
   have hp₀R : p₀ ∈ (closedBall (0 : E) R)ᶜ := by
@@ -98,29 +106,16 @@ theorem isPathConnected_compl_union_closedBall (h : 1 < Module.rank ℝ E) (x₁
     linarith
   refine ⟨p₀, hRU hp₀R, fun z hz => ?_⟩
   rw [mem_compl_iff, mem_union, not_or] at hz
-  obtain ⟨f₁, c₁, hfz₁, hfc₁⟩ := geometric_hahn_banach_point_closed (convex_closedBall x₁ r₁)
-    isClosed_closedBall hz.1
-  obtain ⟨f₂, c₂, hfz₂, hfc₂⟩ := geometric_hahn_banach_point_closed (convex_closedBall x₂ r₂)
-    isClosed_closedBall hz.2
+  obtain ⟨f₁, c₁, hfz₁, hfc₁⟩ := geometric_hahn_banach_point_closed hs hs_closed hz.1
+  obtain ⟨f₂, c₂, hfz₂, hfc₂⟩ := geometric_hahn_banach_point_closed ht ht_closed hz.2
   -- Find a nonzero vector `v₀` in `ker f₁`, then orient `v = ±v₀` so `f₂ v ≤ 0`.
-  obtain ⟨v₀, hv₀_ne, hv₀_f₁⟩ : ∃ v₀ : E, v₀ ≠ 0 ∧ f₁ v₀ = 0 := by
-    by_cases hne : ∃ u : E, f₁ u ≠ 0
-    · obtain ⟨u, hu⟩ := hne
-      have htop : Submodule.span ℝ ({u} : Set E) ≠ ⊤ := by
-        intro hspan
-        have hrank : Module.rank ℝ E ≤ 1 := by
-          rw [← rank_top ℝ E, ← hspan]
-          exact (rank_span_le ({u} : Set E)).trans (by simp)
-        exact h.not_ge hrank
-      obtain ⟨w, hw⟩ := not_forall.mp (mt Submodule.eq_top_iff'.mpr htop)
-      refine ⟨w - (f₁ w / f₁ u) • u, ?_, ?_⟩
-      · intro h0
-        apply hw
-        rw [sub_eq_zero.mp h0]
-        exact Submodule.smul_mem _ _ (Submodule.subset_span (Set.mem_singleton u))
-      · simp [map_sub, map_smul, smul_eq_mul, div_mul_cancel₀ _ hu]
-    · push Not at hne
-      exact ⟨u₀, hu₀, hne u₀⟩
+  have hnot_inj : ¬Function.Injective f₁.toLinearMap := fun hinj => by
+    have hrank := f₁.toLinearMap.lift_rank_le_of_injective hinj
+    rw [Module.rank_self, Cardinal.lift_one, Cardinal.lift_le_one_iff] at hrank
+    exact h.not_ge hrank
+  obtain ⟨v₀, hv₀_mem, hv₀_ne⟩ := (Submodule.ne_bot_iff _).mp
+    (mt LinearMap.ker_eq_bot.mp hnot_inj)
+  have hv₀_f₁ : f₁ v₀ = 0 := LinearMap.mem_ker.mp hv₀_mem
   obtain ⟨v, hv_ne, hv_f₁, hv_f₂⟩ : ∃ v : E, v ≠ 0 ∧ f₁ v ≤ 0 ∧ f₂ v ≤ 0 := by
     rcases le_total (f₂ v₀) 0 with h2 | h2
     · exact ⟨v₀, hv₀_ne, hv₀_f₁.le, h2⟩
@@ -137,30 +132,23 @@ theorem isPathConnected_compl_union_closedBall (h : 1 < Module.rank ℝ E) (x₁
       norm_neg, hnorm] at htri
     linarith
   have hjoin_ray : JoinedIn U z (z + T • v) := by
-    refine ⟨{ toFun := fun t => z + ((t : ℝ) * T) • v
+    refine ⟨{ toFun := fun τ => z + ((τ : ℝ) * T) • v
               continuous_toFun := by fun_prop
               source' := by simp
-              target' := by simp }, fun t => ?_⟩
-    have ht0 : 0 ≤ (t : ℝ) * T := mul_nonneg t.property.1 hT_pos.le
+              target' := by simp }, fun τ => ?_⟩
+    have hτ0 : 0 ≤ (τ : ℝ) * T := mul_nonneg τ.property.1 hT_pos.le
     rw [mem_compl_iff, mem_union, not_or]
-    refine ⟨fun h1 => ?_, fun h2 => ?_⟩
-    · have hc := hfc₁ _ h1
-      have hf_ray : f₁ (z + ((t : ℝ) * T) • v) < c₁ := by
-        calc f₁ (z + ((t : ℝ) * T) • v) = f₁ z + ((t : ℝ) * T) * f₁ v := by simp [smul_eq_mul]
-          _ ≤ f₁ z := add_le_of_nonpos_right (mul_nonpos_of_nonneg_of_nonpos ht0 hv_f₁)
-          _ < c₁ := hfz₁
-      change f₁ (z + ((t : ℝ) * T) • v) < c₁ at hf_ray
-      change c₁ < f₁ (z + ((t : ℝ) * T) • v) at hc
-      linarith
-    · have hc := hfc₂ _ h2
-      have hf_ray : f₂ (z + ((t : ℝ) * T) • v) < c₂ := by
-        calc f₂ (z + ((t : ℝ) * T) • v) = f₂ z + ((t : ℝ) * T) * f₂ v := by simp [smul_eq_mul]
-          _ ≤ f₂ z := add_le_of_nonpos_right (mul_nonpos_of_nonneg_of_nonpos ht0 hv_f₂)
-          _ < c₂ := hfz₂
-      change f₂ (z + ((t : ℝ) * T) • v) < c₂ at hf_ray
-      change c₂ < f₂ (z + ((t : ℝ) * T) • v) at hc
-      linarith
+    exact ⟨add_smul_notMem_of_continuousLinearMap_lt hfz₁ hfc₁ hv_f₁ hτ0,
+      add_smul_notMem_of_continuousLinearMap_lt hfz₂ hfc₂ hv_f₂ hτ0⟩
   exact ((hjoin_ray.trans ((isPathConnected_compl_closedBall h 0 R).joinedIn
     (z + T • v) hzT_R p₀ hp₀R |>.mono hRU)).symm)
+
+/-- **The exterior of a union of two closed balls is path-connected** in a real normed space of
+dimension at least two. -/
+theorem isPathConnected_compl_union_closedBall (h : 1 < Module.rank ℝ E) (x₁ x₂ : E) (r₁ r₂ : ℝ) :
+    IsPathConnected (closedBall x₁ r₁ ∪ closedBall x₂ r₂)ᶜ :=
+  isPathConnected_compl_union_of_convex_of_isClosed_of_isBounded h
+    (convex_closedBall x₁ r₁) isClosed_closedBall isBounded_closedBall
+    (convex_closedBall x₂ r₂) isClosed_closedBall isBounded_closedBall
 
 end TauCeti
