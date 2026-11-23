@@ -179,7 +179,7 @@ theorem hasProjectiveDimensionLT_tensorProduct_iff [Module.FaithfullyFlat R S]
 `pd_S (S ⊗[R] M) ≤ pd_R M` for every `R`-module `M`. -/
 theorem projectiveDimension_tensorProduct_le [Module.Flat R S] :
     projectiveDimension (ModuleCat.of S (S ⊗[R] M)) ≤ projectiveDimension (ModuleCat.of R M) :=
-  projectiveDimension_le_of_hasProjectiveDimensionLT fun _ ↦
+  projectiveDimension_le_projectiveDimension_iff.2 fun _ ↦
     hasProjectiveDimensionLT_tensorProduct S M
 
 /-- **Faithfully flat base change preserves projective dimension** of a finite module over a
@@ -189,7 +189,7 @@ theorem projectiveDimension_tensorProduct [Module.FaithfullyFlat R S] [IsNoether
     [Module.Finite R M] :
     projectiveDimension (ModuleCat.of S (S ⊗[R] M)) = projectiveDimension (ModuleCat.of R M) :=
   (projectiveDimension_tensorProduct_le S M).antisymm <|
-    projectiveDimension_le_of_hasProjectiveDimensionLT fun _ ↦
+    projectiveDimension_le_projectiveDimension_iff.2 fun _ ↦
       hasProjectiveDimensionLT_of_tensorProduct S M
 
 end ModuleCat

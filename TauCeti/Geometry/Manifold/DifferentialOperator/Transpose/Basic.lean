@@ -10,7 +10,7 @@ public import Mathlib.MeasureTheory.Integral.Bochner.Basic
 public import TauCeti.Geometry.Manifold.Algebra.VanishingIdeal.Pow
 public import TauCeti.Geometry.Manifold.ContMDiffMap.Integrable
 public import TauCeti.Geometry.Manifold.DifferentialOperator.Coordinates
-public import TauCeti.Geometry.Manifold.DifferentialOperator.PrincipalSymbol
+public import TauCeti.Geometry.Manifold.DifferentialOperator.PrincipalSymbol.Basic
 import Mathlib.Analysis.Calculus.LineDeriv.IntegrationByParts
 import Mathlib.Analysis.Distribution.AEEqOfIntegralContDiff
 import Mathlib.MeasureTheory.Integral.Bochner.ContinuousLinearMap
