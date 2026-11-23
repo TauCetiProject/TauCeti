@@ -208,12 +208,12 @@ def realSpinProdDetLinearEquiv : (𝔰 × ℝ) ≃ₗ[ℝ] 𝔤 :=
 
 /-- Reconstruction adds the Spin Lie-algebra image to the half-speed central determinant lift. -/
 theorem realSpinProdDetLinearEquiv_apply (p : 𝔰 × ℝ) :
-    realSpinProdDetLinearEquiv n hQ p = ιS p.1 + realDetLieLift n hQ p.2 :=
-  (realDetLieLinearEquiv_apply n hQ _).trans
-    (congrArg (· + realDetLieLift n hQ p.2)
-      ((LinearEquiv.coe_ofEq_apply
-        (ContinuousMonoidHom.lieWeightKerLieSubalgebra_toSubmodule _)
-        (realSpinLieEquivDetKer n hQ p.1)).trans (coe_realSpinLieEquivDetKer_apply n hQ p.1)))
+    realSpinProdDetLinearEquiv n hQ p = ιS p.1 + realDetLieLift n hQ p.2 := by
+  unfold realSpinProdDetLinearEquiv
+  rw [LinearEquiv.trans_apply, realDetLieLinearEquiv_apply, LinearEquiv.prodCongr_apply,
+    LinearEquiv.trans_apply, LieEquiv.coe_toLinearEquiv, LinearEquiv.refl_apply]
+  dsimp only
+  rw [LinearEquiv.coe_ofEq_apply, coe_realSpinLieEquivDetKer_apply]
 
 /-- Evaluating the determinant weight on `realSpinProdDetLinearEquiv (X, a)` recovers `a`. -/
 @[simp]
@@ -235,12 +235,10 @@ theorem realSpinProdDetLinearEquiv_symm_snd (Y : 𝔤) :
 `Lie(Spinᶜ(n))` removes the central determinant lift `realDetLieLift (d det(Y))`. -/
 @[simp]
 theorem lieMap_ofSpin_realSpinProdDetLinearEquiv_symm_fst (Y : 𝔤) :
-    ιS ((realSpinProdDetLinearEquiv n hQ).symm Y).1 = Y - realDetLieLift n hQ (d Y) :=
-  eq_sub_of_add_eq <|
-    (congrArg _ (congrArg (realDetLieLift n hQ)
-      (realSpinProdDetLinearEquiv_symm_snd n hQ Y).symm)).trans <|
-      (realSpinProdDetLinearEquiv_apply n hQ _).symm.trans
-        ((realSpinProdDetLinearEquiv n hQ).apply_symm_apply Y)
+    ιS ((realSpinProdDetLinearEquiv n hQ).symm Y).1 = Y - realDetLieLift n hQ (d Y) := by
+  apply eq_sub_of_add_eq
+  rw [← realSpinProdDetLinearEquiv_symm_snd n hQ Y, ← realSpinProdDetLinearEquiv_apply,
+    (realSpinProdDetLinearEquiv n hQ).apply_symm_apply]
 
 /-- The inverse splitting sends `ofSpin_* X` to `(X, 0)`. -/
 @[simp]

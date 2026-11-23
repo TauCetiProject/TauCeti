@@ -329,16 +329,14 @@ through its `SO(n)` image on the first component and trivially on the determinan
 theorem Ad_realSpecialOrthogonalProdDetLinearEquiv (g : G) (p : 𝔬 × ℝ) :
     Lie.Ad (I := IC) g (realSpecialOrthogonalProdDetLinearEquiv n hQ p) =
       realSpecialOrthogonalProdDetLinearEquiv n hQ
-        (Lie.Ad (I := ISO) (realToSpecialOrthogonalRange n hQ g) p.1, p.2) :=
-  (realSpecialOrthogonalProdDetLinearEquiv n hQ).symm.injective <|
-    (realSpecialOrthogonalProdDetLinearEquiv_symm_apply n hQ _).trans <|
-      (Prod.ext
-        ((ContinuousMonoidHom.lieMap_Ad (realToSpecialOrthogonalRange n hQ) g _).trans <|
-          congrArg _ (lieMap_realToSpecialOrthogonalRange_realSpecialOrthogonalProdDetLinearEquiv
-            n hQ p))
-        ((ContinuousMonoidHom.lieWeight_Ad (detContinuousMonoidHom _ hQ) g _).trans
-          (lieWeight_detContinuousMonoidHom_realSpecialOrthogonalProdDetLinearEquiv n hQ p))).trans
-        ((realSpecialOrthogonalProdDetLinearEquiv n hQ).symm_apply_apply _).symm
+        (Lie.Ad (I := ISO) (realToSpecialOrthogonalRange n hQ g) p.1, p.2) := by
+  apply (realSpecialOrthogonalProdDetLinearEquiv n hQ).symm.injective
+  rw [realSpecialOrthogonalProdDetLinearEquiv_symm_apply, LinearEquiv.symm_apply_apply]
+  apply Prod.ext
+  · simp only [ContinuousMonoidHom.lieMap_Ad,
+      lieMap_realToSpecialOrthogonalRange_realSpecialOrthogonalProdDetLinearEquiv]
+  · simp only [ContinuousMonoidHom.lieWeight_Ad,
+      lieWeight_detContinuousMonoidHom_realSpecialOrthogonalProdDetLinearEquiv]
 
 /-- **The `𝔰𝔬(n) × ℝ` splitting of `Lie(Spinᶜ(n))`**, lifting a skew-symmetric matrix and a real
 determinant parameter to `Lie(Spinᶜ(n))`. -/

@@ -202,9 +202,12 @@ theorem unitsLieAlgebraEquiv_lieMap_realSpinCHalfSpinUnitsSmoothHom_realDetLieLi
           (spinCGroup.realDetLieLift 4 hpos a)) =
       (Complex.I * (a / 2)) • (1 : S →L[ℂ] S) := by
   let _ : T2Space SpinC := ModelWithCorners.t2Space_of_lieGroup IC ∞
-  let Z := spinCGroup.realDetLieLift 4 hpos a
-  exact (hasDerivAt_realSpinCHalfSpinSmoothHom_lieExp_smul_zero o hQ b ρ ε Z).unique
-    (hasDerivAt_realSpinCHalfSpinSmoothHom_lieExp_smul_realDetLieLift_zero o hQ b ρ ε a)
+  refine (realSpinCHalfSpinUnitsSmoothHom o hQ b ρ ε).unitsLieAlgebraEquiv_lieMap_eq_of_hasDerivAt
+    (spinCGroup.realDetLieLift 4 hpos a) ?_
+  exact (hasDerivAt_realSpinCHalfSpinSmoothHom_lieExp_smul_realDetLieLift_zero
+    o hQ b ρ ε a).congr_of_eventuallyEq
+    (Filter.Eventually.of_forall fun s ↦
+      coe_realSpinCHalfSpinUnitsSmoothHom_apply o hQ b ρ ε _)
 
 /-- Restricting the smooth `Spinᶜ(4)` half-spin units homomorphism to `Spin(4)` along `ofSpin`
 agrees with `realHalfSpinSmoothHom` transported via

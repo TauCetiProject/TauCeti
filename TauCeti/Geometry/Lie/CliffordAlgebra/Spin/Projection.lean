@@ -285,11 +285,8 @@ noncomputable def realCliffordSpinToSpecialOrthogonalCarrierRange (n : ℕ) :
     SpinUnitsRange(n) →ₜ* SpecialOrthogonalUnitsRange(n) where
   toMonoidHom := (realCliffordSpinToSpecialOrthogonalRange n).toMonoidHom
   continuous_toFun :=
-    ((realCliffordSpecialOrthogonalContinuousMulEquivCarrierRange n).continuous.comp
-      ((realCliffordSpecialOrthogonalContinuousMulEquivRange n).symm.continuous.comp
-        (realCliffordSpinToSpecialOrthogonalRange n).continuous)).congr fun x ↦
-      (realCliffordSpecialOrthogonalContinuousMulEquivRange n).apply_symm_apply
-        (realCliffordSpinToSpecialOrthogonalRange n x)
+    (Matrix.linftyOpTopologicalSpace_eq (Fin n) (Fin n) ℝ).symm ▸
+      (realCliffordSpinToSpecialOrthogonalRange n).continuous
 
 /-- Pointwise, the Lie-group carrier projection agrees with the topological projection
 `realCliffordSpinToSpecialOrthogonalRange`. -/
