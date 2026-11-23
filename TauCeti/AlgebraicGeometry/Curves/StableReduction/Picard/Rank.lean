@@ -8,6 +8,7 @@ module
 public import Mathlib.LinearAlgebra.Dimension.Localization
 public import Mathlib.LinearAlgebra.FreeModule.PID
 public import TauCeti.AlgebraicGeometry.Curves.StableReduction.Picard.Basic
+import TauCeti.Algebra.GCDMonoid.Finset
 
 /-!
 # Rank of the Picard group of a numerical type
@@ -43,60 +44,6 @@ public section
 namespace TauCeti
 
 open Finset Matrix
-
-/-- For nonzero natural numbers `m : ι → ℕ` on a finite nonempty index type, the cross-product
-equations `m j * v i = m i * v j` hold for all `i, j` if and only if `v` lies in the `ℤ`-span of
-the primitive vector `i ↦ m i / gcd(m)`. -/
-theorem forall_nat_mul_eq_iff_mem_span_div_gcd {ι : Type*} [Fintype ι] [Nonempty ι]
-    (m : ι → ℕ) (hm : ∀ i, m i ≠ 0) (v : ι → ℤ) :
-    (∀ i j, (m j : ℤ) * v i = (m i : ℤ) * v j) ↔
-      v ∈ Submodule.span ℤ {fun i ↦ ((m i / Finset.univ.gcd m : ℕ) : ℤ)} := by
-  set d : ℕ := Finset.univ.gcd m
-  have hd_dvd (i : ι) : d ∣ m i := Finset.gcd_dvd (Finset.mem_univ i)
-  have hd_ne : d ≠ 0 := by
-    let i₀ : ι := Classical.choice inferInstance
-    exact ne_zero_of_dvd_ne_zero (hm i₀) (hd_dvd i₀)
-  have hd_ne_int : (d : ℤ) ≠ 0 := Int.natCast_ne_zero.mpr hd_ne
-  have hmul_div (i : ι) : (d : ℤ) * ((m i / d : ℕ) : ℤ) = (m i : ℤ) := by
-    exact_mod_cast Nat.mul_div_cancel' (hd_dvd i)
-  constructor
-  · intro hv
-    set dℤ : ℤ := Finset.univ.gcd (fun j : ι ↦ (m j : ℤ))
-    have hdℤ_dvd : dℤ ∣ (d : ℤ) := Int.natAbs_dvd_natAbs.mp <| by
-      rw [Int.natAbs_natCast]
-      exact Finset.dvd_gcd fun j _ ↦ by
-        simpa only [Int.natAbs_natCast] using
-          Int.natAbs_dvd_natAbs.mpr (Finset.gcd_dvd (f := fun k ↦ (m k : ℤ)) (Finset.mem_univ j))
-    obtain ⟨q, hq⟩ := hdℤ_dvd
-    obtain ⟨g, hg⟩ := Finset.gcd_eq_sum_mul Finset.univ (fun j : ι ↦ (m j : ℤ))
-    refine Submodule.mem_span_singleton.mpr ⟨∑ j : ι, v j * (g j * q), funext fun i ↦ ?_⟩
-    simp only [Pi.smul_apply, smul_eq_mul]
-    apply mul_left_cancel₀ hd_ne_int
-    calc
-      (d : ℤ) * ((∑ j : ι, v j * (g j * q)) * ((m i / d : ℕ) : ℤ))
-          = (m i : ℤ) * ∑ j : ι, v j * (g j * q) := by
-            rw [mul_comm (∑ j : ι, _), ← mul_assoc, hmul_div i]
-      _ = ∑ j : ι, ((m i : ℤ) * v j) * (g j * q) := by
-            rw [Finset.mul_sum]
-            exact Finset.sum_congr rfl fun j _ ↦ by ring
-      _ = ∑ j : ι, ((m j : ℤ) * v i) * (g j * q) := by
-            exact Finset.sum_congr rfl fun j _ ↦ by rw [hv i j]
-      _ = ((∑ j : ι, (m j : ℤ) * g j) * q) * v i := by
-            rw [Finset.sum_mul, Finset.sum_mul]
-            exact Finset.sum_congr rfl fun j _ ↦ by ring
-      _ = (d : ℤ) * v i := by rw [← hg, ← hq]
-  · intro hv i j
-    rw [Submodule.mem_span_singleton] at hv
-    obtain ⟨c, rfl⟩ := hv
-    apply mul_left_cancel₀ hd_ne_int
-    simp only [Pi.smul_apply, smul_eq_mul]
-    calc
-      (d : ℤ) * ((m j : ℤ) * (c * ((m i / d : ℕ) : ℤ)))
-          = (m j : ℤ) * c * ((d : ℤ) * ((m i / d : ℕ) : ℤ)) := by ring
-      _ = (m j : ℤ) * c * (m i : ℤ) := by rw [hmul_div i]
-      _ = (m i : ℤ) * c * ((d : ℤ) * ((m j / d : ℕ) : ℤ)) := by
-            rw [hmul_div j]; ring
-      _ = (d : ℤ) * ((m i : ℤ) * (c * ((m j / d : ℕ) : ℤ))) := by ring
 
 namespace NumericalType
 
@@ -226,7 +173,7 @@ theorem ker_vecMulLinear_intersection_eq_span :
   ext v
   rw [LinearMap.mem_ker, Matrix.vecMulLinear_apply, T.vecMul_intersection_eq_zero_iff]
   exact forall_nat_mul_eq_iff_mem_span_div_gcd (fun i ↦ (T.multiplicity i : ℕ))
-    (fun i ↦ (T.multiplicity i).ne_zero) v
+    ⟨Classical.choice inferInstance, (T.multiplicity _).ne_zero⟩ v
 
 /-- When the multiplicities of `T` are coprime (`gcd = 1`), the kernel of
 `T.intersection.vecMulLinear` is spanned over `ℤ` by the multiplicity vector `i ↦ mᵢ`. -/

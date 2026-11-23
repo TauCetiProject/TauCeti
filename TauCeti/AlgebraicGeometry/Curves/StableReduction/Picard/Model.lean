@@ -34,18 +34,20 @@ torsion specialization maps `reducedSpecialFiberNumericalPicTorsionMap`,
   `TauCeti.Model.specialFiberNumericalPicTorsionMap`, and `TauCeti.Model.numericalPicTorsionMap`:
   `ZMod ℓ`-linear specialization maps into `T.torsion ℓ` (vanishing for `ℓ > 0`).
 * `TauCeti.Model.ker_numericalPicLinear` and `TauCeti.Model.numericalPicLinear_ofMul_eq_zero_iff`:
-  [Stacks, Lemma 55.10.1 (Tag 0CDG)](https://stacks.math.columbia.edu/tag/0CDG).
-* `TauCeti.Model.finrank_ker_verticalLineBundleLinear`,
+  kernel characterization deduced from the vertical multidegree formula and
+  `Submodule.comap_map_eq` (with the numerical Picard quotient from
+  [Stacks, Definition 55.4.1 (Tag 0C7H)](https://stacks.math.columbia.edu/tag/0C7H)).
+* `TauCeti.Model.multiplicity_mem_ker_verticalLineBundleLinear`,
+  `TauCeti.Model.finrank_ker_verticalLineBundleLinear`,
   `TauCeti.Model.ker_verticalLineBundleLinear_eq_span_of_gcd_eq_one`,
   `TauCeti.Model.ker_verticalLineBundleLinear_eq_span_of_multiplicity_eq_one`, and
-  `TauCeti.Model.mem_ker_verticalLineBundleLinear_iff_of_isReduced`: rank and span of the vertical
-  Cartier kernel.
+  `TauCeti.Model.mem_ker_verticalLineBundleLinear_iff_of_isReduced`: membership, rank, and span of
+  the vertical Cartier kernel.
 
 ## References
 
-* [The Stacks Project, Tag 0C7H](https://stacks.math.columbia.edu/tag/0C7H),
-  [Section 55.9 (Tag 0C5Y)](https://stacks.math.columbia.edu/tag/0C5Y), and
-  [Lemma 55.10.1 (Tag 0CDG)](https://stacks.math.columbia.edu/tag/0CDG).
+* [The Stacks Project, Definition 55.4.1 (Tag 0C7H)](https://stacks.math.columbia.edu/tag/0C7H) and
+  [Section 55.9 (Tag 0C5Y)](https://stacks.math.columbia.edu/tag/0C5Y).
 -/
 
 public section
@@ -248,11 +250,13 @@ because `specialFiberMultidegreeOnFiber` takes values in the torsion-free group
   M.toBase.numericalPicTorsionMap_eq_zero _ _ hC _ _ hconn hℓ
 
 /-- `M.specialFiberNumericalPicTorsionMap` factors through torsion pullback to `M_{s,red}`. -/
-@[simp] lemma reducedSpecialFiberNumericalPicTorsionMap_comp_pullbackTorsionLinearMap
+@[simp] lemma
+  reducedSpecialFiberNumericalPicTorsionMap_comp_pullback_reducedSpecialFiberToSpecialFiber
     (ℓ : ℕ) : M.reducedSpecialFiberNumericalPicTorsionMap hC hconn ℓ ∘ₗ
         pullbackTorsionLinearMap (reducedSpecialFiberToSpecialFiber R M.toBase) ℓ =
       M.specialFiberNumericalPicTorsionMap hC hconn ℓ := by
-  exact M.toBase.reducedSpecialFiberNumericalPicTorsionMap_comp_pullbackTorsionLinearMap
+  let f := M.toBase; exact
+  f.reducedSpecialFiberNumericalPicTorsionMap_comp_pullback_reducedSpecialFiberToSpecialFiber
     _ _ hC _ _ hconn ℓ
 
 /-- `M.numericalPicTorsionMap` factors through torsion pullback along `M_s ⟶ M.total`. -/
@@ -312,7 +316,8 @@ theorem map_specialFiberMultidegree_range_verticalLineBundleLinear :
       0 := by
   exact M.toBase.numericalPicLinear_verticalLineBundleLinear _ _ hC _ _ hconn v
 
-/-- **[Stacks, Lemma 55.10.1 (Tag 0CDG)](https://stacks.math.columbia.edu/tag/0CDG) for `M`:**
+/-- **Kernel of `M.numericalPicLinear`**, deduced from the vertical multidegree formula and
+`Submodule.comap_map_eq`:
 `ker M.numericalPicLinear = ker specialFiberMultidegree ⊔ range verticalLineBundleLinear`. -/
 theorem ker_numericalPicLinear : LinearMap.ker (M.numericalPicLinear hC hconn) =
       LinearMap.ker (M.toBase.specialFiberMultidegree
@@ -325,9 +330,9 @@ theorem ker_numericalPicLinear : LinearMap.ker (M.numericalPicLinear hC hconn) =
           (M.toBase.base_genericPoint_ne_closedPoint (IsDiscreteValuationRing.not_a_field R))) := by
   exact M.toBase.ker_numericalPicLinear _ _ hC _ _ hconn
 
-/-- **[Stacks, Lemma 55.10.1 (Tag 0CDG)](https://stacks.math.columbia.edu/tag/0CDG).** A class `a`
-on `M.total` maps to `0` in `(𝒯ₘ).Pic` iff some vertical twist has degree zero on every component
-`Cⱼ`. -/
+/-- **Pointwise kernel characterization of `M.numericalPicLinear`**, deduced from
+`M.ker_numericalPicLinear`: a class `a` on `M.total` maps to `0` in `(𝒯ₘ).Pic` iff some vertical
+twist has degree zero on every component `Cⱼ`. -/
 theorem numericalPicLinear_ofMul_eq_zero_iff (a : LineBundleClass M.total) :
     M.numericalPicLinear hC hconn (Additive.ofMul a) = 0 ↔ ∃ v : (𝒯ₘ).Component → ℤ,
         ∀ j : (𝒯ₘ).Component,
@@ -340,6 +345,17 @@ theorem numericalPicLinear_ofMul_eq_zero_iff (a : LineBundleClass M.total) :
                 M.toBase.coheight_le_succ_of_relativeDimensionLE
                 i.val.property).toInvertibleSheaf)⁻¹ ^ v i)) = 0 := by
   exact M.toBase.numericalPicLinear_ofMul_eq_zero_iff _ _ hC _ _ hconn a
+
+/-- The multiplicity vector `i ↦ ((𝒯ₘ).multiplicity i : ℤ)` of `M` lies in
+`ker verticalLineBundleLinear`. -/
+theorem multiplicity_mem_ker_verticalLineBundleLinear :
+    (fun i : (𝒯ₘ).Component ↦ ((𝒯ₘ).multiplicity i : ℤ)) ∈
+      LinearMap.ker (M.toBase.verticalLineBundleLinear
+        M.toBase.coheight_le_succ_of_relativeDimensionLE
+        (M.toBase.base_genericPoint_ne_closedPoint (IsDiscreteValuationRing.not_a_field R))) :=
+  M.toBase.multiplicity_mem_ker_verticalLineBundleLinear _ _
+    (IsDiscreteValuationRing.exists_irreducible R).choose_spec.maximalIdeal_eq
+    (mul_right_injective₀ (IsDiscreteValuationRing.exists_irreducible R).choose_spec.ne_zero)
 
 /-- Every vertical divisor linearly equivalent to zero on `M.total` lies in `ker intersection`. -/
 theorem ker_verticalLineBundleLinear_le_ker_intersection :

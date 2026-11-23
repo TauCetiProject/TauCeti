@@ -68,7 +68,8 @@ The combinatorial theory of `TauCeti.NumericalType`, such as its signed genus
   scheme-theoretic special fibre.
 * `AlgebraicGeometry.Scheme.Hom.specialFiberNumericalType_weight_mul_genus_sub_one` and
   `specialFiberNumericalType_arithmeticGenus_eulerCharBelow_selfIntersection`:
-  `wᵢ (gᵢ - 1) = -χ_k(𝒪_{Cᵢ})` and the total arithmetic-genus identity.
+  `wᵢ (gᵢ - 1) = -χ_k(𝒪_{Cᵢ})` and the total arithmetic-genus identity, derived formally from
+  `TauCeti.NumericalType.arithmeticGenus` by substituting the component Euler characteristics.
 
 ## Implementation notes
 
@@ -88,9 +89,10 @@ statements, and checking the definition stays fast.
 
 ## References
 
-* [The Stacks Project, Section 55.3](https://stacks.math.columbia.edu/tag/0C6Y),
-  [Section 55.9](https://stacks.math.columbia.edu/tag/0C5Y), and
-  [Lemma 55.9.9 (Tag 0C9U)](https://stacks.math.columbia.edu/tag/0C9U).
+* [The Stacks Project, Section 55.3](https://stacks.math.columbia.edu/tag/0C6Y)
+  ([Tag 0C6Z](https://stacks.math.columbia.edu/tag/0C6Z), for the numerical type and its signed
+  genus `TauCeti.NumericalType.arithmeticGenus`) and
+  [Section 55.9](https://stacks.math.columbia.edu/tag/0C5Y).
 * Q. Liu, *Algebraic Geometry and Arithmetic Curves*, Section 9.1.
 -/
 

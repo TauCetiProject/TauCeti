@@ -45,6 +45,10 @@ That the weight `wᵢ` of the `i`-th component divides the `i`-th row of the int
 * `AlgebraicGeometry.Scheme.Hom.finiteDimensional_cohomology_zero_subscheme_closure_singleton`:
   `H⁰` of the structure sheaf of a reduced point closure is finite-dimensional under universal
   closedness and local finite type.
+* `AlgebraicGeometry.Scheme.Hom.SpecialFiberCohomologyFiniteDimensional`: every irreducible
+  component of the special fibre has finite-dimensional `H^n(C, 𝒪_C)` over the residue field.
+* `AlgebraicGeometry.Scheme.Hom.specialFiberCohomologyFiniteDimensional_zero`: bundled `H⁰`
+  finiteness under `UniversallyClosed` and `LocallyOfFiniteType`.
 * `AlgebraicGeometry.Scheme.Hom.HasFiniteDimensionalSpecialFiberComponentTrivialCohomologyOne`:
   the components of the special fibre have finite-dimensional `H¹` of their structure sheaves.
 * `AlgebraicGeometry.Scheme.Hom.specialFiberWeight_mul_finrank_cohomology_one`:
@@ -145,6 +149,23 @@ theorem finiteDimensional_cohomology_zero_subscheme_closure_singleton
     inferInstanceAs (LocallyOfFiniteType (subschemeToSpecialFiber hI ≫ pullback.snd toBase _))
   exact Scheme.Modules.finiteDimensional_cohomology_zero_trivial_of_universallyClosed
     (ResidueField R) _
+
+/-- Every irreducible component `C` of the special fibre of `toBase` has finite-dimensional
+`n`-th cohomology `H^n(C, 𝒪_C)` over the residue field of `R`. -/
+abbrev SpecialFiberCohomologyFiniteDimensional (n : ℕ) : Prop :=
+  ∀ (η : CodimensionOnePoint X) (hc : toBase η = closedPoint R),
+    letI :=
+      subschemeOverResidueField (toBase.ker_specialFiberι_le_vanishingIdeal_closure_singleton hc)
+    FiniteDimensional (ResidueField R) (Cohomology (InvertibleSheaf.trivial
+      (vanishingIdeal ⟨closure {(η : X)}, isClosed_closure⟩).subscheme).obj n)
+
+/-- Under `UniversallyClosed` and `LocallyOfFiniteType` (in particular, under `IsProper`), every
+component of the special fibre has finite-dimensional `H⁰` over the residue field. Bundled as a
+named theorem so callers passing it to `SpecialFiberCohomologyFiniteDimensional` binders avoid
+re-comparing `isClosed_closure` inside `Cohomology` in the kernel. -/
+theorem specialFiberCohomologyFiniteDimensional_zero [UniversallyClosed toBase]
+    [LocallyOfFiniteType toBase] : toBase.SpecialFiberCohomologyFiniteDimensional 0 :=
+  fun _ ↦ toBase.finiteDimensional_cohomology_zero_subscheme_closure_singleton
 
 variable [IsProper toBase]
 

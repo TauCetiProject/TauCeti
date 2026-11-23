@@ -302,15 +302,10 @@ theorem ker_reducedSpecialFiberι :
       Scheme.IdealSheafData.vanishingIdeal
         ⟨toBase ⁻¹' {closedPoint R},
           (isClosed_singleton_closedPoint R).preimage toBase.continuous⟩ := by
-  have hrad : (reducedSpecialFiberι R toBase).ker.radical =
-      (reducedSpecialFiberι R toBase).ker := by
-    rw [ker_reducedSpecialFiberι_eq_radical]
-    exact Scheme.IdealSheafData.ext (funext fun U ↦ Ideal.radical_idem _)
-  rw [← hrad, ← Scheme.IdealSheafData.vanishingIdeal_support]
+  rw [ker_reducedSpecialFiberι_eq_radical, ← Scheme.IdealSheafData.vanishingIdeal_support]
   congr 1; ext1
-  rw [Scheme.Hom.support_ker, range_reducedSpecialFiberι, IsClosed.closure_eq]
-  · rfl
-  · exact (isClosed_singleton_closedPoint R).preimage toBase.continuous
+  rw [← Scheme.IdealSheafData.support_radical, ← Scheme.IdealSheafData.range_subschemeι]
+  exact range_reducedSpecialFiberι R toBase
 
 variable {R toBase} in
 /-- A closed subset of `X` lies in the special fibre if and only if its vanishing ideal contains

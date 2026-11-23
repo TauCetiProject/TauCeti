@@ -30,12 +30,14 @@ uniformizer-free invariant `TauCeti.Model.numericalType`.
 * `TauCeti.Model.numericalType_weight_mul_genus_sub_one`,
   `TauCeti.Model.numericalType_arithmeticGenus_eulerCharBelow_selfIntersection`, and
   `TauCeti.Model.two_mul_numericalType_arithmeticGenus_eulerCharBelow_selfIntersection`:
-  residue-field cohomology formulas and the total arithmetic-genus identity.
+  residue-field cohomology formulas and the total arithmetic-genus identity, derived formally from
+  `TauCeti.NumericalType.arithmeticGenus` by substituting `wᵢ (gᵢ - 1) = -χ_k(𝒪_{Cᵢ})`.
 
 ## References
 
-* [The Stacks Project, Section 55.9](https://stacks.math.columbia.edu/tag/0C5Y) and
-  [Lemma 55.9.9 (Tag 0C9U)](https://stacks.math.columbia.edu/tag/0C9U).
+* [The Stacks Project, Tag 0C6Z](https://stacks.math.columbia.edu/tag/0C6Z), for the numerical
+  type and its signed genus `TauCeti.NumericalType.arithmeticGenus`.
+* [The Stacks Project, Section 55.9](https://stacks.math.columbia.edu/tag/0C5Y).
 * Q. Liu, *Algebraic Geometry and Arithmetic Curves*, Section 9.1.
 -/
 

@@ -23,8 +23,8 @@ excision (`TauCeti.AlgebraicGeometry.SpecialFiber.Picard`) and following
 [Stacks, Chapter 55](https://stacks.math.columbia.edu/tag/0C2P) (specifically
 [Tag 0CEI](https://stacks.math.columbia.edu/tag/0CEI)) and Liu, Section 9.1, this file establishes:
 
-* **Multidegrees and weighted intersection matrix** (`SpecialFiberCohomologyFiniteDimensional`,
-  `reducedSpecialFiberMultidegree`, `specialFiberMultidegreeOnFiber`, `specialFiberMultidegree`,
+* **Multidegrees and weighted intersection matrix** (`reducedSpecialFiberMultidegree`,
+  `specialFiberMultidegreeOnFiber`, `specialFiberMultidegree`,
   `specialFiberWeightedIntersectionMatrix`, `specialFiberMultidegree_comp_verticalLineBundleLinear`,
   `specialFiberMultidegree_verticalLineBundleLinear`): compatible `ℤ`-linear multidegree
   homomorphisms across `X_{s,red}`, `X_s`, and `X` sending `∏_i [𝒪_X(C_i)]^{v_i}` to `v ᵥ* A'`
@@ -65,25 +65,6 @@ open AlgebraicGeometry.Scheme.IdealSheafData (vanishingIdeal inclusion
 universe u
 
 namespace AlgebraicGeometry.Scheme.Hom
-
-/-- Every irreducible component `C` of the special fibre of `toBase` has finite-dimensional
-`n`-th cohomology `H^n(C, 𝒪_C)` over the residue field of `R`. -/
-abbrev SpecialFiberCohomologyFiniteDimensional {R : Type u} [CommRing R] [IsLocalRing R]
-    {X : Scheme.{u}} (toBase : X ⟶ Spec (.of R)) (n : ℕ) : Prop :=
-  ∀ (η : CodimensionOnePoint X) (hc : toBase η = closedPoint R),
-    letI :=
-      subschemeOverResidueField (toBase.ker_specialFiberι_le_vanishingIdeal_closure_singleton hc)
-    FiniteDimensional (ResidueField R) (Cohomology (InvertibleSheaf.trivial
-      (vanishingIdeal ⟨closure {(η : X)}, isClosed_closure⟩).subscheme).obj n)
-
-/-- Under `UniversallyClosed` and `LocallyOfFiniteType` (in particular, under `IsProper`), every
-component of the special fibre has finite-dimensional `H⁰` over the residue field. Bundled as a
-named theorem so callers passing it to `SpecialFiberCohomologyFiniteDimensional` binders avoid
-re-comparing `isClosed_closure` inside `Cohomology` in the kernel. -/
-theorem specialFiberCohomologyFiniteDimensional_zero {R : Type u} [CommRing R] [IsLocalRing R]
-    {X : Scheme.{u}} (toBase : X ⟶ Spec (.of R)) [UniversallyClosed toBase]
-    [LocallyOfFiniteType toBase] : toBase.SpecialFiberCohomologyFiniteDimensional 0 :=
-  fun _ ↦ toBase.finiteDimensional_cohomology_zero_subscheme_closure_singleton
 
 /-! ### Multidegrees across `X`, `X_s`, and `(X_s)_red`, and the weighted intersection matrix -/
 
