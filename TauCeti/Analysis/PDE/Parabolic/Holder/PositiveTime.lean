@@ -28,8 +28,8 @@ where `‖u‖_{2+α,par;[δ,T]}` is the order-two norm of the restriction of `u
 (`TauCeti.ParabolicC2HolderSpace.exists_rpow_mul_norm_restrictL_le_euclideanParabolicOperatorL`).
 The weight `δ^(1 + α/2)` is the parabolic scaling of the top-order Hölder seminorms. The constant
 is uniform in `u` and only the supremum of the initial values enters, as needed to pass to limits
-of smooth approximations of bounded uniformly continuous initial data at positive times (not
-proved here).
+of smooth approximations of bounded uniformly continuous initial data at positive times
+(`TauCeti.ParabolicC2HolderSpace.exists_rpow_mul_norm_euclideanCauchySolutionBUCRestrictL_le`).
 
 ## The argument
 

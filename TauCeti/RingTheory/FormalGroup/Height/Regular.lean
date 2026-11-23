@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RingTheory.Flat.Basic
+public import Mathlib.RingTheory.Flat.FaithfullyFlat.Basic
 public import Mathlib.RingTheory.Regular.RegularSequence
 public import Mathlib.RingTheory.RingHom.Flat
 public import TauCeti.RingTheory.FormalGroup.Height.Ideal
@@ -13,6 +14,7 @@ import Mathlib.RingTheory.Regular.Flat
 import Mathlib.Tactic.Algebraize
 import TauCeti.RingTheory.FormalGroup.NSMul.BaseChange
 import TauCeti.RingTheory.QuotSMulTop
+import TauCeti.RingTheory.Regular.Flat
 
 /-!
 # Landweber sequences and Landweber-regular modules for formal group laws
@@ -52,6 +54,8 @@ foundational invariance and functoriality properties:
   and by flat base change of rings and modules (`FormalGroup.IsLandweberRegular.lTensor`,
   `FormalGroup.IsLandweberRegular.of_flat_module`,
   `FormalGroup.IsLandweberRegular.of_flat_of_isBaseChange`).
+  A faithfully flat base change also reflects it
+  (`FormalGroup.isLandweberRegular_map_algebraMap_iff_of_faithfullyFlat_of_isBaseChange`).
 
 ## Main definitions
 
@@ -74,6 +78,8 @@ foundational invariance and functoriality properties:
   isomorphisms.
 * `FormalGroup.IsLandweberRegular.of_flat_module` and `FormalGroup.IsLandweberRegular.of_flat`:
   stability under flat modules and flat algebras.
+* `FormalGroup.isLandweberRegular_map_algebraMap_iff_of_faithfullyFlat_of_isBaseChange` and
+  `FormalGroup.isLandweberRegular_map_algebraMap_iff_of_faithfullyFlat`: faithfully flat descent.
 * `FormalGroup.isLandweberRegular_𝔾ₘ_iff` and `FormalGroup.isLandweberRegular_𝔾ₐ_iff`: explicit
   characterizations for the multiplicative and additive formal group laws.
 
@@ -353,6 +359,25 @@ theorem isLandweberRegular_map_algebraMap_iff [Algebra R S] [Module R N] [Module
     [IsScalarTower R S N] (F : FormalGroup R) :
     (F.map (algebraMap R S)).IsLandweberRegular N ↔ F.IsLandweberRegular N := by
   simp only [IsLandweberRegular, ← map_landweberSequence, isWeaklyRegular_map_algebraMap_iff]
+
+/-- **Faithfully flat descent of Landweber regularity.** If `S` is a faithfully flat `R`-algebra
+and `N` is the base change of `M` to `S`, then `F.map (algebraMap R S)` is Landweber regular on `N`
+exactly when `F` is Landweber regular on `M`. -/
+theorem isLandweberRegular_map_algebraMap_iff_of_faithfullyFlat_of_isBaseChange [Algebra R S]
+    [Module.FaithfullyFlat R S] [Module R N] [Module S N] [IsScalarTower R S N] {f : M →ₗ[R] N}
+    (hf : IsBaseChange S f) (F : FormalGroup R) :
+    (F.map (algebraMap R S)).IsLandweberRegular N ↔ F.IsLandweberRegular M := by
+  simp only [IsLandweberRegular, ← map_landweberSequence,
+    isWeaklyRegular_map_algebraMap_iff_of_faithfullyFlat_of_isBaseChange hf]
+
+/-- **Faithfully flat descent of Landweber regularity for rings.** For a faithfully flat
+`R`-algebra `S`, `F.map (algebraMap R S)` is Landweber regular on `S` exactly when `F` is Landweber
+regular on `R`. -/
+theorem isLandweberRegular_map_algebraMap_iff_of_faithfullyFlat (S : Type*) [CommRing S]
+    [Algebra R S] [Module.FaithfullyFlat R S] (F : FormalGroup R) :
+    (F.map (algebraMap R S)).IsLandweberRegular S ↔ F.IsLandweberRegular R :=
+  isLandweberRegular_map_algebraMap_iff_of_faithfullyFlat_of_isBaseChange
+    (IsBaseChange.linearMap R S) F
 
 namespace IsLandweberRegular
 

@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.Complex.Basic
 public import TauCeti.Algebra.QuadraticAlgebra.AlgEquiv
 public import TauCeti.NumberTheory.NumberField.Quadratic.InfinitePlace
+import TauCeti.Algebra.QuadraticAlgebra.Star
 import TauCeti.Analysis.Real.Sqrt
 
 /-!
@@ -32,8 +33,8 @@ chosen square root of the radicand lies in the upper half-plane.
 * `QuadraticAlgebra.complexEmbedding_star`: it intertwines `star` with complex conjugation.
 * `QuadraticAlgebra.complexEmbedding_injective`: for `a < 0`, the distinguished embedding is
   injective.
-* `QuadraticAlgebra.algHom_eq_or_eq_comp_starAlgEquiv`: every `ℚ`-algebra map to `ℂ` is the
-  distinguished embedding or its precomposition with `starAlgEquiv`.
+* `QuadraticAlgebra.norm_ringHom_eq_norm_complexEmbedding`: for all rational `a ≤ 0`, including
+  `a = 0`, every ring homomorphism to `ℂ` agrees in norm with the distinguished map.
 * `QuadraticAlgebra.complexEmbedding_comp_smulOmegaEquiv_of_pos`,
   `QuadraticAlgebra.complexEmbedding_comp_smulOmegaEquiv_of_neg`: along the rescaling isomorphism
   `QuadraticAlgebra.smulOmegaEquiv u h : ℚ(√d) ≃ₐ[ℚ] ℚ(√e)` with `d = u² e`, the distinguished
@@ -101,20 +102,16 @@ theorem complexEmbedding_injective (ha : a < 0) :
   have : Fact (¬ IsSquare a) := ⟨not_isSquare_of_neg ha⟩
   (complexEmbedding ha.le).injective
 
-/-- **The two complex embeddings of `ℚ(√a)`.** For `a ≤ 0`, every `ℚ`-algebra map
-`QuadraticAlgebra ℚ a 0 → ℂ` is the distinguished embedding or its precomposition with the
-quadratic involution, since it sends `ω` to a square root of `a`. -/
-theorem algHom_eq_or_eq_comp_starAlgEquiv (ha : a ≤ 0)
-    (φ : QuadraticAlgebra ℚ a 0 →ₐ[ℚ] ℂ) :
-    φ = complexEmbedding ha ∨
-      φ = (complexEmbedding ha).comp (starAlgEquiv : _ ≃ₐ[ℚ] _).toAlgHom := by
-  have hφ : φ ω * φ ω = a := by
-    rw [← map_mul]
-    simp [omega_mul_omega_eq_algebraMap]
-  rw [← sqrt_mul_I_mul_self ha] at hφ
-  rcases mul_self_eq_mul_self_iff.mp hφ with h | h
-  · exact Or.inl (algHom_ext (by simp [h]))
-  · exact Or.inr (algHom_ext (by simp [h]))
+/-- For any rational radicand `a ≤ 0`, every ring homomorphism from `QuadraticAlgebra ℚ a 0`
+to `ℂ` has the same image norm as the distinguished `complexEmbedding` at every element.
+This includes the degenerate algebra at `a = 0`. -/
+theorem norm_ringHom_eq_norm_complexEmbedding
+    {a : ℚ} (ha : a ≤ 0) (φ : QuadraticAlgebra ℚ a 0 →+* ℂ)
+    (z : QuadraticAlgebra ℚ a 0) :
+    ‖φ z‖ = ‖QuadraticAlgebra.complexEmbedding ha z‖ := by
+  rcases φ.toRatAlgHom.eq_or_eq_comp_starAlgEquiv (complexEmbedding ha) with h | h
+  · exact congrArg Norm.norm (AlgHom.congr_fun h z)
+  · simpa using congrArg Norm.norm (AlgHom.congr_fun h z)
 
 /-- **The upper half-plane picks out the distinguished embedding.** For `a < 0`, a ring
 homomorphism `QuadraticAlgebra ℚ a 0 →+* ℂ` is the distinguished embedding exactly when it sends
@@ -123,7 +120,7 @@ theorem ringHom_eq_complexEmbedding_iff (ha : a < 0) (φ : QuadraticAlgebra ℚ 
     φ = (complexEmbedding ha.le : QuadraticAlgebra ℚ a 0 →+* ℂ) ↔ 0 < (φ ω).im := by
   have hpos : 0 < √(-(a : ℝ)) := Real.sqrt_pos.mpr (by simpa using ha)
   refine ⟨fun h => by simpa [h] using hpos, fun h => ?_⟩
-  rcases algHom_eq_or_eq_comp_starAlgEquiv ha.le φ.toRatAlgHom with h' | h'
+  rcases φ.toRatAlgHom.eq_or_eq_comp_starAlgEquiv (complexEmbedding ha.le) with h' | h'
   · exact RingHom.ext fun z => by simpa using AlgHom.congr_fun h' z
   · have him : (φ ω).im = -√(-(a : ℝ)) := by
       simpa using congrArg Complex.im (AlgHom.congr_fun h' ω)
@@ -173,7 +170,7 @@ complex conjugate. -/
 theorem ringHom_eq_or_eq_conjugate (ha : a ≤ 0) (φ : QuadraticAlgebra ℚ a 0 →+* ℂ) :
     φ = (complexEmbedding ha : QuadraticAlgebra ℚ a 0 →+* ℂ) ∨
       φ = ComplexEmbedding.conjugate (complexEmbedding ha : QuadraticAlgebra ℚ a 0 →+* ℂ) := by
-  rcases algHom_eq_or_eq_comp_starAlgEquiv ha φ.toRatAlgHom with h | h
+  rcases φ.toRatAlgHom.eq_or_eq_comp_starAlgEquiv (complexEmbedding ha) with h | h
   · exact Or.inl (RingHom.ext fun z => by simpa using AlgHom.congr_fun h z)
   · refine Or.inr (RingHom.ext fun z => ?_)
     simpa [ComplexEmbedding.conjugate_coe_eq] using AlgHom.congr_fun h z

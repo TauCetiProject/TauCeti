@@ -246,8 +246,8 @@ theorem exists_le_mul_rpow_of_essOsc_step {α₀ C₀ K D γ : ℝ} (hα₀ : 0 
   have hR : 0 < R := by linarith only [hs, hsR]
   have hB : 0 ≤ K * F * (R / 2) ^ (γ - β) := by positivity
   have hfin := hiter hB hε₀.le hmono hφ0 (fun s ρ hs hsρ hρ => (hstep s ρ hs hsρ hρ).trans <| by
-      have := Real.rpow_le_rpow_sub_mul_rpow (hs.trans_le hsρ) hρ hβγ
       have := hs.trans_le hsρ
+      have := Real.rpow_le_rpow_sub_mul_rpow this (Real.rpow_le_rpow this.le hρ (sub_nonneg.2 hβγ))
       calc _ ≤ C₀ * (s / ρ) ^ α₀ * φ ρ + K * ((R / 2) ^ (γ - β) * ρ ^ β) * F := by gcongr
         _ = _ := by ring) s (R / 2) hs hsR le_rfl
   refine (oscillation_decay_bound_aux hs hR rfl hγ hK hD hF hQ hC₁.le hfin hφR₁ rfl rfl).trans ?_

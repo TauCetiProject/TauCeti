@@ -26,9 +26,12 @@ the single part of the coarsest partition of a non-bottom element, the fact that
 the whole element as a part is the coarsest, the characterization of the coarsest partition as the
 one with exactly one part, the partition of a type into the
 fibres of a map to a finite type, the associated indexed partition, the sizes of the traces of a
-subset on the parts, cardinality bounds for common refinements, a bound on the sum of the squared
-part sizes, the existence of a partition into at most `k` parts of size at most `#s / k + 1`, the
-refinement relations of `Finpartition.bind` and of a refining partition's parts,
+subset on the parts, cardinality bounds for common refinements, the common refinement of finitely
+many elements of a generalized Boolean algebra by a partition of their supremum whose parts lie
+below or are disjoint from each of them (`Finpartition.exists_forall_le_or_disjoint`), each element
+then being the supremum of the parts below it (`Finpartition.sup_filter_le_eq`), a bound on the sum
+of the squared part sizes, the existence of a partition into at most `k` parts of size at most
+`#s / k + 1`, the refinement relations of `Finpartition.bind` and of a refining partition's parts,
 the monotonicity of `Finpartition.bind`, products over its parts, its parts through each point,
 and the fact that it is inverse to restricting a refinement to the parts of the coarser partition,
 the fact that restriction undoes `Finpartition.extend` and deletes a singleton part,
@@ -135,6 +138,42 @@ theorem card_parts_inf_le_mul {α : Type*} [DistribLattice α] [OrderBot α] [De
   rw [Finpartition.parts_inf]
   exact Finset.card_erase_le.trans
     (Finset.card_image_le.trans_eq (Finset.card_product _ _))
+
+/-- If every part of a finite partition of `a` lies below `b` or is disjoint from it, and `b ≤ a`,
+then `b` is the supremum of the parts below it. -/
+theorem sup_filter_le_eq {α : Type*} [DistribLattice α] [OrderBot α] {a b : α}
+    (P : Finpartition a) [DecidablePred (· ≤ b)] (hb : b ≤ a)
+    (hP : ∀ p ∈ P.parts, p ≤ b ∨ Disjoint p b) : {p ∈ P.parts | p ≤ b}.sup id = b := by
+  refine le_antisymm (Finset.sup_le fun p hp => (Finset.mem_filter.1 hp).2) ?_
+  -- `b = b ⊓ a` distributes over the parts; the parts disjoint from `b` contribute `⊥`.
+  calc b = P.parts.sup fun p => b ⊓ id p := by
+        rw [← Finset.sup_inf_distrib_left, P.sup_parts, inf_eq_left.2 hb]
+    _ ≤ {p ∈ P.parts | p ≤ b}.sup id := Finset.sup_le fun p hp => by
+        rcases hP p hp with h | h
+        · exact inf_le_right.trans (Finset.le_sup (f := id) (Finset.mem_filter.2 ⟨hp, h⟩))
+        · simp [h.symm.eq_bot]
+
+/-- **Common refinement of a finite family.** In a generalized Boolean algebra, the supremum of
+finitely many elements `K i` has a finite partition each of whose parts lies below `K i` or is
+disjoint from it, for every `i`. By `Finpartition.sup_filter_le_eq`, each `K i` is then the
+supremum of the parts below it. Two finite families are refined simultaneously by applying this to
+the family indexed by their disjoint union. -/
+theorem exists_forall_le_or_disjoint {α ι : Type*} [GeneralizedBooleanAlgebra α]
+    (s : Finset ι) (K : ι → α) :
+    ∃ P : Finpartition (s.sup K), ∀ i ∈ s, ∀ p ∈ P.parts, p ≤ K i ∨ Disjoint p (K i) := by
+  classical
+  -- Cut `s.sup K` along each `K i`, then take the common refinement of all these cuts.
+  let Q : ι → Finpartition (s.sup K) := fun i =>
+    ofErase {K i ⊓ s.sup K, s.sup K \ K i}
+      (Set.PairwiseDisjoint.supIndep (by
+        simp [Set.pairwiseDisjoint_insert, disjoint_sdiff_self_right.mono_left inf_le_left]))
+      (by simp [inf_comm (K i), sup_inf_sdiff])
+  refine ⟨s.inf Q, fun i hi p hp => ?_⟩
+  obtain ⟨q, hq, hpq⟩ := le_def.1 (Finset.inf_le (f := Q) hi) p hp
+  simp only [Q, ofErase_parts, Finset.mem_erase, Finset.mem_insert, Finset.mem_singleton] at hq
+  rcases hq.2 with rfl | rfl
+  · exact .inl (hpq.trans inf_le_left)
+  · exact .inr (disjoint_sdiff_self_left.mono_left hpq)
 
 /-- The traces of a subset of `s` on the parts of a finite partition of `s` partition it, so their
 sizes sum to its size. -/

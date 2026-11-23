@@ -47,6 +47,8 @@ restriction. Inflation, the other named instance, is in
   functions of cocycles constant on classes.
 * `TauCeti.NonabelianH1.Cocycle.map` and `TauCeti.NonabelianH1.map`: the maps of cocycles and of
   classes induced by a compatible pair.
+* `TauCeti.NonabelianH1.congr`: the bijection of classes induced by a bijection of cocycles that
+  preserves and reflects the cohomology relation.
 * `TauCeti.NonabelianH1.Cocycle.liftOfMemRange`: a cocycle with values in the range of an
   equivariant topological embedding, as a cocycle of its source.
 * `TauCeti.NonabelianH1.res`: restriction to a subgroup.
@@ -330,6 +332,23 @@ theorem map_map {G'' A'' : Type*} [Group G''] [TopologicalSpace G''] [Group A'']
       map (ψ.comp ψ') (φ'.comp φ) (fun g a ↦ by simp [h, h']) c := by
   induction c using induction_on
   simpa only [map_mk] using congrArg mk (Cocycle.map_map _ ψ φ h ψ' φ' h')
+
+/-- The bijection `H¹(G, A) ≃ H¹(G', A')` induced by a bijection of cocycles that preserves and
+reflects the cohomology relation. -/
+def congr (e : Cocycle G A ≃ Cocycle G' A') (he : ∀ f f' : Cocycle G A, f ≈ f' ↔ e f ≈ e f') :
+    NonabelianH1 G A ≃ NonabelianH1 G' A' :=
+  Quotient.congr e he
+
+@[simp]
+theorem congr_mk (e : Cocycle G A ≃ Cocycle G' A') (he : ∀ f f' : Cocycle G A, f ≈ f' ↔ e f ≈ e f')
+    (f : Cocycle G A) : congr e he (mk f) = mk (e f) :=
+  (rfl)
+
+@[simp]
+theorem congr_symm_mk (e : Cocycle G A ≃ Cocycle G' A')
+    (he : ∀ f f' : Cocycle G A, f ≈ f' ↔ e f ≈ e f') (f : Cocycle G' A') :
+    (congr e he).symm (mk f) = mk (e.symm f) :=
+  (rfl)
 
 end Map
 

@@ -38,8 +38,9 @@ of that action are in `TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Basic`.
   `r T = (r₁, r₁ + r₂)`.
 * `TauCeti.ModularGroup.mul_T_zpow_apply_apply_zero`,
   `TauCeti.ModularGroup.mul_T_zpow_apply_apply_one`, `TauCeti.ModularGroup.mul_S_apply_apply_zero`,
-  `TauCeti.ModularGroup.mul_S_apply_apply_one`: the columns of `γ Tⁿ` and `γ S` in terms of those
-  of `γ`.
+  `TauCeti.ModularGroup.mul_S_apply_apply_one`, `TauCeti.ModularGroup.neg_mul_S_apply_apply_zero`,
+  `TauCeti.ModularGroup.neg_mul_S_apply_apply_one`: the columns of `γ Tⁿ`, `γ S` and `-(γ S)` in
+  terms of those of `γ`.
 * `Matrix.SpecialLinearGroup.coe_mul_T_zpow`, `Matrix.SpecialLinearGroup.coe_mul_S`: explicit
   `2 × 2` matrices of `γ * T ^ n` and `γ * S` for `γ ∈ SL₂(ℤ)`.
 -/
@@ -194,5 +195,13 @@ theorem mul_S_apply_apply_zero (γ : SL(2, ℤ)) (i : Fin 2) : (γ * S) i 0 = γ
 /-- The second column of `γ S` is minus the first column of `γ`. -/
 theorem mul_S_apply_apply_one (γ : SL(2, ℤ)) (i : Fin 2) : (γ * S) i 1 = -γ i 0 := by
   simp [Matrix.SpecialLinearGroup.coe_mul, coe_S, Matrix.mul_apply, Fin.sum_univ_two]
+
+/-- The first column of `-(γ S)` is minus the second column of `γ`. -/
+theorem neg_mul_S_apply_apply_zero (γ : SL(2, ℤ)) (i : Fin 2) : (-(γ * S)) i 0 = -γ i 1 := by
+  rw [Matrix.SpecialLinearGroup.coe_neg, Matrix.neg_apply, mul_S_apply_apply_zero]
+
+/-- The second column of `-(γ S)` is the first column of `γ`. -/
+theorem neg_mul_S_apply_apply_one (γ : SL(2, ℤ)) (i : Fin 2) : (-(γ * S)) i 1 = γ i 0 := by
+  rw [Matrix.SpecialLinearGroup.coe_neg, Matrix.neg_apply, mul_S_apply_apply_one, neg_neg]
 
 end TauCeti.ModularGroup

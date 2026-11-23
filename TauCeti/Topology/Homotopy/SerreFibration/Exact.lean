@@ -49,7 +49,9 @@ boundary lifts of homotopic loops are compared by one further relative lift over
 every boundary lift.
 
 The boundary map is natural for maps of Serre fibrations, that is, for commutative squares
-(`TauCeti.TopCat.fibrationBoundary_map`). For `n ≥ 1` it is a group homomorphism
+(`TauCeti.TopCat.fibrationBoundary_map`), also when the image of the base point is only
+propositionally the chosen point of the target (`TauCeti.TopCat.fibrationBoundary_map_of_eq`).
+For `n ≥ 1` it is a group homomorphism
 (`TauCeti.TopCat.fibrationBoundary_mul`, bundled as `TauCeti.TopCat.fibrationBoundaryHom`):
 concatenating two boundary lifts along a direction of `I^N` gives a boundary lift of the
 concatenated loops, in the order of Mathlib's `HomotopyGroup.mul_spec`.
@@ -324,6 +326,21 @@ theorem fibrationBoundary_map {E' B' : TopCat.{u}} {p' : E' ⟶ B'} {f : E ⟶ E
   refine GenLoop.ext _ _ fun t => Subtype.ext ?_
   rw [hfG.endLoop_apply_coe, ContinuousMap.comp_apply, GenLoop.map_apply]
   exact (CommSq.fiberMap_apply_coe sq b (hG.endLoop t)).symm
+
+/-- **Naturality of the boundary map, at a prescribed image point.** The form of
+`TauCeti.TopCat.fibrationBoundary_map` for a base point `b'` of `B'` that is only propositionally
+the image `g b`, and for any map of fibres `φ : p⁻¹(b) → p'⁻¹(b')` given on underlying points by
+the top of the square. -/
+theorem fibrationBoundary_map_of_eq {E' B' : TopCat.{u}} {p' : E' ⟶ B'} {f : E ⟶ E'}
+    {g : B ⟶ B'} (sq : CommSq f p p' g) (hp : serreFibrations p) (hp' : serreFibrations p')
+    [Finite N] {b' : B'} (hb : g b = b') {e' : p'.fiber b'} (φ : C(p.fiber b, p'.fiber b'))
+    (hφ : ∀ x, (φ x : E') = f x.val) (he : φ e = e') (a : HomotopyGroup (Option N) B b) :
+    fibrationBoundary hp' e' (HomotopyGroup.map g.hom hb a) =
+      HomotopyGroup.map φ he (fibrationBoundary hp e a) := by
+  subst hb he
+  obtain rfl : φ = (sq.fiberMap b).hom :=
+    ContinuousMap.ext fun x ↦ Subtype.ext ((hφ x).trans (CommSq.fiberMap_apply_coe sq b x).symm)
+  exact fibrationBoundary_map sq hp hp' a
 
 /-! ### The boundary map is a homomorphism -/
 
