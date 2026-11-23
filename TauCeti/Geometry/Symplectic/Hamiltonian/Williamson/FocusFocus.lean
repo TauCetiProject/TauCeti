@@ -12,7 +12,6 @@ import Mathlib.Tactic.FinCases
 import Mathlib.Tactic.LinearCombination
 import Mathlib.Tactic.Positivity
 import TauCeti.Algebra.Lie.SkewAdjoint
-import TauCeti.Geometry.Symplectic.Hamiltonian.Hyperbolic
 import TauCeti.Geometry.Symplectic.Hamiltonian.Williamson.Splitting
 import TauCeti.Geometry.Symplectic.Plane
 import TauCeti.Geometry.Symplectic.Spectrum
@@ -297,119 +296,6 @@ theorem isNondegenerateQuadraticFamily_of_mem_span_of_mul_self_eq_one_of_mul_sel
     (exists_isDarbouxBasis_span_eq_span_focusFocus_iff hV hQ).2 ⟨P₁, hP₁, P₂, hP₂, h₁, h₂⟩
   exact (isNondegenerateQuadraticFamily_iff_of_span_eq h).2
     hb.isNondegenerateQuadraticFamily_focusFocus
-
-/-! ### The focus-focus blocks of a Darboux basis -/
-
-omit [FiniteDimensional ℝ V] in
-/-- The **focus-focus blocks** of a basis `b` of `V` indexed as a Darboux basis with `2n` planes,
-`qᵢ = b (i, 0)` and `pᵢ = b (i, 1)`: for `j < n`, the focus-focus pair
-`Q₁ⱼ = q₂ⱼ p₂ⱼ + q₂ⱼ₊₁ p₂ⱼ₊₁` and `Q₂ⱼ = q₂ⱼ p₂ⱼ₊₁ - q₂ⱼ₊₁ p₂ⱼ` of the planes `2j` and `2j + 1`,
-indexed by `(j, 0)` and `(j, 1)`. The plane `2j + i` is `finProdFinEquiv (j, i)`. -/
-def focusFocusBlocks {n : ℕ} (b : Basis (Fin (n * 2) × Fin 2) ℝ V) (k : Fin n × Fin 2) :
-    QuadraticForm ℝ V :=
-  ![QuadraticMap.linMulLin (b.coord (finProdFinEquiv (k.1, 0), 0))
-        (b.coord (finProdFinEquiv (k.1, 0), 1)) +
-      QuadraticMap.linMulLin (b.coord (finProdFinEquiv (k.1, 1), 0))
-        (b.coord (finProdFinEquiv (k.1, 1), 1)),
-    QuadraticMap.linMulLin (b.coord (finProdFinEquiv (k.1, 0), 0))
-        (b.coord (finProdFinEquiv (k.1, 1), 1)) -
-      QuadraticMap.linMulLin (b.coord (finProdFinEquiv (k.1, 1), 0))
-        (b.coord (finProdFinEquiv (k.1, 0), 1))] k.2
-
-omit [FiniteDimensional ℝ V] in
-@[simp]
-theorem focusFocusBlocks_zero_apply {n : ℕ} (b : Basis (Fin (n * 2) × Fin 2) ℝ V) (j : Fin n)
-    (x : V) :
-    focusFocusBlocks b (j, 0) x =
-      b.coord (finProdFinEquiv (j, 0), 0) x * b.coord (finProdFinEquiv (j, 0), 1) x +
-        b.coord (finProdFinEquiv (j, 1), 0) x * b.coord (finProdFinEquiv (j, 1), 1) x := by
-  simp [focusFocusBlocks]
-
-omit [FiniteDimensional ℝ V] in
-@[simp]
-theorem focusFocusBlocks_one_apply {n : ℕ} (b : Basis (Fin (n * 2) × Fin 2) ℝ V) (j : Fin n)
-    (x : V) :
-    focusFocusBlocks b (j, 1) x =
-      b.coord (finProdFinEquiv (j, 0), 0) x * b.coord (finProdFinEquiv (j, 1), 1) x -
-        b.coord (finProdFinEquiv (j, 1), 0) x * b.coord (finProdFinEquiv (j, 0), 1) x := by
-  simp [focusFocusBlocks]
-
-variable {n : ℕ} {b : Basis (Fin (n * 2) × Fin 2) ℝ V}
-
-/-- In a Darboux basis, the Hamiltonian endomorphism of the first form `Q₁ⱼ` of the `j`-th
-focus-focus block fixes the `q`'s of that block, negates its `p`'s and kills the other blocks. -/
-theorem IsDarbouxBasis.hamiltonianEnd_focusFocusBlocks_zero_apply (hb : ω.IsDarbouxBasis b)
-    (j j' : Fin n) (i c : Fin 2) :
-    ω.hamiltonianEnd (focusFocusBlocks b (j, 0)) (b (finProdFinEquiv (j', i), c)) =
-      if j' = j then (if c = 0 then b (finProdFinEquiv (j', i), c)
-        else -b (finProdFinEquiv (j', i), c)) else 0 := by
-  simp only [focusFocusBlocks, Matrix.cons_val_zero, map_add,
-    hb.hamiltonianEnd_linMulLin_coord_apply, LinearMap.add_apply]
-  by_cases hj : j' = j
-  · subst hj
-    fin_cases i <;> fin_cases c <;> simp
-  · simp [hj, Ne.symm hj]
-
-/-- In a Darboux basis, the Hamiltonian endomorphism of the second form `Q₂ⱼ` of the `j`-th
-focus-focus block sends `q₂ⱼ ↦ q₂ⱼ₊₁ ↦ -q₂ⱼ` and `p₂ⱼ ↦ p₂ⱼ₊₁ ↦ -p₂ⱼ`, and kills the other
-blocks. -/
-theorem IsDarbouxBasis.hamiltonianEnd_focusFocusBlocks_one_apply (hb : ω.IsDarbouxBasis b)
-    (j j' : Fin n) (i c : Fin 2) :
-    ω.hamiltonianEnd (focusFocusBlocks b (j, 1)) (b (finProdFinEquiv (j', i), c)) =
-      if j' = j then (if i = 0 then b (finProdFinEquiv (j', 1), c)
-        else -b (finProdFinEquiv (j', 0), c)) else 0 := by
-  simp only [focusFocusBlocks, Matrix.cons_val_one, Matrix.cons_val_zero, map_sub,
-    hb.hamiltonianEnd_linMulLin_coord_apply, LinearMap.sub_apply]
-  by_cases hj : j' = j
-  · subst hj
-    fin_cases i <;> fin_cases c <;> simp
-  · simp [hj, Ne.symm hj]
-
-/-- In a Darboux basis, the Hamiltonian endomorphisms of focus-focus blocks `j ≠ j'` compose to
-zero: each kills the other blocks, and maps its own block into itself. -/
-private theorem IsDarbouxBasis.hamiltonianEnd_focusFocusBlocks_mul_of_ne
-    (hb : ω.IsDarbouxBasis b) {j j' : Fin n} (hjj' : j ≠ j') (l l' : Fin 2) :
-    ω.hamiltonianEnd (focusFocusBlocks b (j, l)) * ω.hamiltonianEnd (focusFocusBlocks b (j', l')) =
-      0 := by
-  refine b.ext fun ⟨m, c⟩ ↦ ?_
-  obtain ⟨⟨j'', i⟩, rfl⟩ := finProdFinEquiv.surjective m
-  rcases eq_or_ne j'' j' with rfl | hj''
-  · fin_cases l <;> fin_cases l' <;> fin_cases i <;> fin_cases c <;>
-      simp [mul_apply_eq_comp, hb.hamiltonianEnd_focusFocusBlocks_zero_apply,
-        hb.hamiltonianEnd_focusFocusBlocks_one_apply, Ne.symm hjj']
-  · fin_cases l' <;> simp [mul_apply_eq_comp, hb.hamiltonianEnd_focusFocusBlocks_zero_apply,
-      hb.hamiltonianEnd_focusFocusBlocks_one_apply, hj'']
-
-/-- In a Darboux basis, the Hamiltonian endomorphisms of the two forms of one focus-focus block
-commute. -/
-private theorem IsDarbouxBasis.commute_hamiltonianEnd_focusFocusBlocks
-    (hb : ω.IsDarbouxBasis b) (j : Fin n) :
-    Commute (ω.hamiltonianEnd (focusFocusBlocks b (j, 0)))
-      (ω.hamiltonianEnd (focusFocusBlocks b (j, 1))) := by
-  refine b.ext fun ⟨m, c⟩ ↦ ?_
-  obtain ⟨⟨j', i⟩, rfl⟩ := finProdFinEquiv.surjective m
-  rcases eq_or_ne j' j with rfl | hj'
-  · fin_cases i <;> fin_cases c <;>
-      simp [mul_apply_eq_comp, hb.hamiltonianEnd_focusFocusBlocks_zero_apply,
-        hb.hamiltonianEnd_focusFocusBlocks_one_apply]
-  · simp [mul_apply_eq_comp, hb.hamiltonianEnd_focusFocusBlocks_zero_apply,
-      hb.hamiltonianEnd_focusFocusBlocks_one_apply, hj']
-
-/-- In a Darboux basis, the focus-focus blocks Poisson-commute: within one block this is the
-commutation of its two forms, and the Hamiltonian endomorphisms of distinct blocks compose to zero
-in both orders. -/
-theorem IsDarbouxBasis.quadraticPoissonBracket_focusFocusBlocks (hb : ω.IsDarbouxBasis b)
-    (k l : Fin n × Fin 2) :
-    ω.quadraticPoissonBracket (focusFocusBlocks b k) (focusFocusBlocks b l) = 0 := by
-  obtain ⟨j, l₁⟩ := k
-  obtain ⟨j', l₂⟩ := l
-  refine (quadraticPoissonBracket_eq_zero_iff ω).2 ?_
-  rcases eq_or_ne j j' with rfl | hjj'
-  · fin_cases l₁ <;> fin_cases l₂
-    exacts [Commute.refl _, hb.commute_hamiltonianEnd_focusFocusBlocks j,
-      (hb.commute_hamiltonianEnd_focusFocusBlocks j).symm, Commute.refl _]
-  · exact (hb.hamiltonianEnd_focusFocusBlocks_mul_of_ne hjj' l₁ l₂).trans
-      (hb.hamiltonianEnd_focusFocusBlocks_mul_of_ne hjj'.symm l₂ l₁).symm
 
 /-! ### The focus-focus type in every dimension -/
 
