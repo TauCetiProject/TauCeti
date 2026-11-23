@@ -43,9 +43,10 @@ the split fibres give the divisor-sum terms and the parabolic fibres the terms w
 
 ## Proof
 
-The translation `M ↦ M + 1` preserves the fibre sums
-(`TauCeti.PopaZagier.finsum_weight_traceDetFiber_add_two`) and changes `(t, n)` to
-`(t + 2, n + t + 1)`, keeping `t² - 4 n`.
+The translation `M ↦ M + 1` changes `(t, n)` to `(t + 2, n + t + 1)`, keeping `t² - 4 n`, and
+preserves the fibre sum when the source determinant satisfies `n ≠ 0`
+(`TauCeti.PopaZagier.finsum_weight_traceDetFiber_add_two`). Every translation below starts at a
+fibre of positive determinant.
 
 For negative trace, translating upwards decreases `n`, and ends at a fibre with `n ≤ 0`, where
 every weight vanishes because every matrix of nonzero weight has positive determinant.
