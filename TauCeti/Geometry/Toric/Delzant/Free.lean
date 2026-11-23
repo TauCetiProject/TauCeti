@@ -120,7 +120,7 @@ theorem forall_isSmoothVertex_iff_forall_eq_zero_of_vadd_eq_self (hi : IsIntegra
   have hc := isCompact_facetPolyhedron_of_isBounded hb
   refine ⟨fun hv θ hθ x hx ↦ ?_, fun h y hy ↦ ?_⟩
   · -- The facets active at the moment value of `x` are active at a smooth vertex.
-    obtain ⟨y, hy⟩ := mem_delzantLevel_iff.1 x.2
+    obtain ⟨y, hy⟩ := mem_delzantLevel_iff.1 x.property
     obtain ⟨v, hv', hsub⟩ :=
       exists_mem_extremePoints_activeSet_subset hc (mem_facetPolyhedron_of_forall_eq c hy)
     exact eq_zero_of_mem_ker_facetTorusHom hi (isSmoothVertex_def.1 (hv v hv')) hθ fun j hj ↦

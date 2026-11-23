@@ -117,7 +117,7 @@ theorem IsMaximalTorus.exists_weylAdjointRepresentation_eq_iff {T : Subgroup G}
     obtain ⟨n, rfl⟩ := QuotientGroup.mk_surjective w
     exact ⟨n, (T.coe_weylAdjointRepresentation_mk_apply n X).symm⟩
   · rintro ⟨g, hg⟩
-    obtain ⟨n, hn, hnX⟩ := hT.exists_mem_normalizer_Ad_eq X.2 Y.2 hg
+    obtain ⟨n, hn, hnX⟩ := hT.exists_mem_normalizer_Ad_eq X.property Y.property hg
     refine ⟨((⟨n, hn⟩ : Subgroup.normalizer (T : Set G)) : T.normalizerQuotient), ?_⟩
     exact Subtype.ext ((T.coe_weylAdjointRepresentation_mk_apply ⟨n, hn⟩ X).trans hnX)
 

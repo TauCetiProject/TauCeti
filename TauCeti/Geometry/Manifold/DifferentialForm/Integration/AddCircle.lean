@@ -80,8 +80,8 @@ theorem integralTopForm_eq_setIntegral {φ : RoughForm 𝓘(ℝ) (AddCircle p) �
 
 /-- The time form `dt_p` integrates to the period `p` over `AddCircle p`. -/
 theorem integralTopForm_timeForm :
-    integralTopForm (AddCircle.orientation p) (timeForm p).1 = p := by
-  have hc : IsCompact (_root_.tsupport (α := ℝ [⋀^Fin 1]→L[ℝ] ℝ) (timeForm p).1) :=
+    integralTopForm (AddCircle.orientation p) (timeForm p).val = p := by
+  have hc : IsCompact (_root_.tsupport (α := ℝ [⋀^Fin 1]→L[ℝ] ℝ) (timeForm p).val) :=
     isCompact_univ.of_isClosed_subset (isClosed_tsupport _) (subset_univ _)
   rw [integralTopForm_eq_setIntegral p
     ((timeForm p).isSmoothForm.integrableTopForm hc (Module.Basis.singleton (Fin 1) ℝ)) 0,
@@ -145,7 +145,7 @@ theorem eval₂_wedge_timeForm (x : AddCircle p × AddCircle q)
 theorem integralTopForm_wedge_timeForm :
     integralTopForm ((AddCircle.orientation p).prod (AddCircle.orientation q))
       (SmoothForm.wedge (SmoothForm.mpullback Prod.fst contMDiff_fst (timeForm p))
-        (SmoothForm.mpullback Prod.snd contMDiff_snd (timeForm q))).1 = p * q := by
+        (SmoothForm.mpullback Prod.snd contMDiff_snd (timeForm q))).val = p * q := by
   have hval (x : AddCircle p × AddCircle q) :
       SmoothBundleForm.eval₂ (SmoothForm.wedge
         (SmoothForm.mpullback Prod.fst contMDiff_fst (timeForm p))

@@ -5,8 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Analysis.PDE.Parabolic.Duhamel
 public import TauCeti.Analysis.PDE.Spectrum.Operator
-public import TauCeti.Analysis.Semigroups.Generation.Form
 
 /-!
 # The Dirichlet semigroup of a divergence-form operator
@@ -22,8 +22,20 @@ Dirichlet realization `TauCeti.PDE.dirichletOperator` of `L`. The motivating exa
 
 `∂ₜu + L u = 0` in `Ω`, `u = 0` on `∂Ω`, `u(0) = u₀`.
 
-This file constructs the semigroup and describes its generator; it does not prove that
-`t ↦ e^{-tL} u₀` solves this parabolic problem.
+Weak solutions of this problem, in the sense of
+`TauCeti.PDE.exists_hasWeakLineDerivOn_gelfandDual_energyFormH1`, are given by the semigroup, and
+with a forcing term `g` by Duhamel's formula: if `u`, with values in `H¹₀(Ω)`, is a weak solution
+of `∂ₜu + L u = g` on `(t₀, t₁)` with `g` integrable with values in `L²(Ω)`, then its continuous
+`L²(Ω)`-valued representative `w` satisfies
+
+`w t = e^{-(t - t₀)L} (w t₀) + ∫_{(t₀,t]} e^{-(t - s)L} g(s) ds` for `t ∈ [t₀, t₁]`
+
+(`TauCeti.PDE.eqOn_dirichletSemigroup_add_setIntegral_of_hasWeakLineDerivOn_gelfandDual`). For
+`g = 0` it says that every weak solution with initial value `u₀` is the orbit
+`t ↦ e^{-(t - t₀)L} u₀`. Conversely, every orbit of the semigroup of a bounded coercive form on a
+Gelfand triple with separable `V` is the continuous representative of a weak solution
+(`IsCoercive.exists_hasWeakLineDerivOn_gelfandDual_ae_eq_realOperator_formSemigroup` in
+`TauCeti.Analysis.PDE.Parabolic.Autonomous`).
 
 The generator is `-TauCeti.PDE.dirichletOperator` (`TauCeti.PDE.dirichletSemigroup_generator`),
 so the description of the Dirichlet realization in `TauCeti.Analysis.PDE.Spectrum.Operator`
@@ -57,6 +69,9 @@ exists (`TauCeti.PDE.exists_hilbertBasis_hasSum_dirichletSemigroup_apply`).
 * `TauCeti.PDE.hasSum_dirichletSemigroup_apply`: the eigenfunction expansion along an orthonormal
   basis of eigenfunctions, which exists on a bounded domain for a symmetric energy form
   (`TauCeti.PDE.exists_hilbertBasis_hasSum_dirichletSemigroup_apply`).
+* `TauCeti.PDE.eqOn_dirichletSemigroup_add_setIntegral_of_hasWeakLineDerivOn_gelfandDual`:
+  weak solutions of the parabolic Dirichlet problem with time-independent coefficients are given
+  by Duhamel's formula with the Dirichlet semigroup.
 
 ## References
 
@@ -187,6 +202,39 @@ theorem exists_hilbertBasis_hasSum_dirichletSemigroup_apply
   refine ⟨s, basis, kappa, u, hbasis, hpos, heig, hvalue, heq, fun t f => ?_⟩
   exact hasSum_dirichletSemigroup_apply hcoeff hcoercive basis
     (fun e => by rw [hvalue, hbasis]) heq t f
+
+/-- **Duhamel's formula for the parabolic Dirichlet problem.** Let `L` have time-independent
+coefficients whose energy form is bounded and coercive on `H¹₀(Ω)`, and let `g` be integrable on
+`(t₀, t₁)` with values in `L²(Ω)`. Let `u` be a weak solution of `∂ₜu + L u = g` in
+`(t₀, t₁) × Ω`, `u = 0` on `(t₀, t₁) × ∂Ω`: `u` is integrable on `(t₀, t₁)`, the image of `u`
+in `H⁻¹(Ω)` has weak time derivative `u'`, and
+
+`u'(t)(v) + a(u(t), v) = ⟪g(t), v⟫_{L²(Ω)}` for all `v ∈ H¹₀(Ω)` and almost every `t`,
+
+where `a` is the energy form of `L`. If `w` is continuous on `[t₀, t₁]` and agrees with
+`t ↦ u(t) ∈ L²(Ω)` almost everywhere on `(t₀, t₁)`, then for every `t ∈ [t₀, t₁]`
+
+`w t = e^{-(t - t₀)L} (w t₀) + ∫_{(t₀,t]} e^{-(t - s)L} g(s) ds`. -/
+theorem eqOn_dirichletSemigroup_add_setIntegral_of_hasWeakLineDerivOn_gelfandDual {t₀ t₁ : ℝ}
+    {u : ℝ → W1p0 mu Omega 2} {u' : ℝ → StrongDual ℝ (W1p0 mu Omega 2)}
+    {g w : ℝ → Lp ℝ 2 (mu.restrict Omega)}
+    (h : HasWeakLineDerivOn volume ⟨Set.Ioo t₀ t₁, isOpen_Ioo⟩
+      (fun t => (W1p0.valueL (mu := mu) (Omega := Omega) (p := 2)).gelfandDual
+        (W1p0.valueL (u t))) u' 1)
+    (hu : IntegrableOn u (Set.Ioo t₀ t₁)) (hg : IntegrableOn g (Set.Ioo t₀ t₁))
+    (heq : ∀ᵐ t ∂volume.restrict (Set.Ioo t₀ t₁), ∀ v : W1p0 mu Omega 2,
+      u' t v + energyFormH1 a b c (u t : W1p mu Omega 2) (v : W1p mu Omega 2) =
+        ⟪g t, W1p0.valueL v⟫_ℝ)
+    (hw : ContinuousOn w (Set.Icc t₀ t₁))
+    (hae : (fun t => W1p0.valueL (u t)) =ᵐ[volume.restrict (Set.Ioo t₀ t₁)] w) :
+    Set.EqOn w (fun t => (dirichletSemigroup hcoeff hcoercive).realOperator (t - t₀) (w t₀) +
+      ∫ s in Set.Ioc t₀ t, (dirichletSemigroup hcoeff hcoercive).realOperator (t - s) (g s))
+      (Set.Icc t₀ t₁) := by
+  rw [dirichletSemigroup_def]
+  refine h.eqOn_formSemigroup_add_setIntegral_of_gelfandDual hcoercive W1p0.denseRange_valueL_two
+    hu hg (heq.mono fun t ht => ?_) hw hae
+  ext v
+  simpa only [add_apply, energyFormH1L0_apply, ContinuousLinearMap.gelfandDual_apply] using ht v
 
 end PDE
 

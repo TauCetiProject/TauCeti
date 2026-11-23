@@ -266,7 +266,7 @@ theorem norm_coeff_mul_pow_le_closedDiscGaussValuation (hr₀ : 0 < r) (hr₁ : 
     PowerSeries.coeff_rename, Subsingleton.elim (finOneEquiv.symm ()) 0] using
     (PowerSeries.le_gaussNorm norm r _
       (TauCeti.PowerSeries.hasGaussNorm_of_isRestricted
-        (toRestrictedSubring ((abs_of_pos hr₀).trans_le hr₁) f).2) n)
+        (toRestrictedSubring ((abs_of_pos hr₀).trans_le hr₁) f).property) n)
 
 /-- A common bound on the coefficient norms of `f` bounds its Gauss valuation, since `r ≤ 1`. -/
 theorem closedDiscGaussValuation_le_of_forall_norm_coeff_le (hr₀ : 0 < r) (hr₁ : r ≤ 1)
@@ -285,7 +285,7 @@ theorem closedDiscGaussValuation_le_closedDiscGaussValuation_of_le {s : ℝ} (hr
     closedDiscGaussValuation hr₀ hr₁ f ≤ closedDiscGaussValuation (hr₀.trans_le hrs) hs₁ f := by
   have h := TauCeti.PowerSeries.gaussNorm_le_gaussNorm_of_le (fun _ ↦ norm_nonneg _) hr₀.le hrs
     (TauCeti.PowerSeries.hasGaussNorm_of_isRestricted
-      (toRestrictedSubring ((abs_of_pos (hr₀.trans_le hrs)).trans_le hs₁) f).2)
+      (toRestrictedSubring ((abs_of_pos (hr₀.trans_le hrs)).trans_le hs₁) f).property)
   rw [← NNReal.coe_le_coe]
   simpa only [closedDiscGaussValuation, Valuation.comap_apply,
     TauCeti.PowerSeries.coe_gaussValuation, coe_toRestrictedSubring] using h
@@ -298,7 +298,7 @@ theorem tendsto_closedDiscGaussValuation {t : ℕ → ℝ} (hr₀ : 0 < r) (hrt 
     Filter.Tendsto (fun n ↦ closedDiscGaussValuation (hr₀.trans_le (hrt n)) (ht₁ n) f)
       Filter.atTop (nhds (closedDiscGaussValuation hr₀ ((hrt 0).trans (ht₁ 0)) f)) := by
   have h := TauCeti.PowerSeries.tendsto_gaussNorm_of_isRestricted hr₀ hrt ht₁ ht
-    (toRestrictedSubring (r := 1) (by simp) f).2
+    (toRestrictedSubring (r := 1) (by simp) f).property
   rw [← NNReal.tendsto_coe]
   simpa only [closedDiscGaussValuation, Valuation.comap_apply,
     TauCeti.PowerSeries.coe_gaussValuation, coe_toRestrictedSubring] using h
@@ -599,26 +599,26 @@ noncomputable def gaussPoint (hr₀ : 0 < r) (hr₁ : r ≤ 1) : closedPolydisc 
 
 /-- The underlying point in `Spv K⟨T⟩` is defined by the Gauss valuation. -/
 theorem gaussPoint_val (hr₀ : 0 < r) (hr₁ : r ≤ 1) :
-    (gaussPoint (K := K) hr₀ hr₁).1 = ofValuation (closedDiscGaussValuation hr₀ hr₁) :=
+    (gaussPoint (K := K) hr₀ hr₁).val = ofValuation (closedDiscGaussValuation hr₀ hr₁) :=
   (rfl)
 
 /-- The Gauss point `η_r` compares two series by their Gauss valuations of radius `r`. -/
 @[simp]
 theorem gaussPoint_vle_iff (hr₀ : 0 < r) (hr₁ : r ≤ 1)
     (f g : weightedRestrictedSubring (fun _ : Fin 1 ↦ ({1} : Set K)) isWeightFamily_one_weight) :
-    (gaussPoint hr₀ hr₁).1.toValuativeRel.vle f g ↔
+    (gaussPoint hr₀ hr₁).val.toValuativeRel.vle f g ↔
       closedDiscGaussValuation hr₀ hr₁ f ≤ closedDiscGaussValuation hr₀ hr₁ g := by
   rw [gaussPoint_val, vle_ofValuation]
 
 /-- A Gauss point `η_r` kills only the zero series. -/
 theorem gaussPoint_vle_zero_iff (hr₀ : 0 < r) (hr₁ : r ≤ 1)
     {f : weightedRestrictedSubring (fun _ : Fin 1 ↦ ({1} : Set K)) isWeightFamily_one_weight} :
-    (gaussPoint hr₀ hr₁).1.toValuativeRel.vle f 0 ↔ f = 0 := by
+    (gaussPoint hr₀ hr₁).val.toValuativeRel.vle f 0 ↔ f = 0 := by
   rw [gaussPoint_vle_iff, map_zero, nonpos_iff_eq_zero, closedDiscGaussValuation_eq_zero_iff]
 
 /-- **The support of a Gauss point is trivial.** -/
 @[simp]
-theorem supp_gaussPoint (hr₀ : 0 < r) (hr₁ : r ≤ 1) : (gaussPoint (K := K) hr₀ hr₁).1.supp = ⊥ :=
+theorem supp_gaussPoint (hr₀ : 0 < r) (hr₁ : r ≤ 1) : (gaussPoint (K := K) hr₀ hr₁).val.supp = ⊥ :=
   Ideal.ext fun _ ↦ by rw [mem_supp_iff, gaussPoint_vle_zero_iff, Ideal.mem_bot]
 
 /-- **Gauss points over a complete field are not classical points.** -/
@@ -635,7 +635,7 @@ theorem gaussPoint_inj {s : ℝ} (hr₀ : 0 < r) (hr₁ : r ≤ 1) (hs₀ : 0 < 
   wlog hlt : r < s generalizing r s
   · exact this hs₀ hs₁ hr₀ hr₁ h.symm (Ne.symm hne) ((not_lt.mp hlt).lt_of_ne (Ne.symm hne))
   obtain ⟨m, c, hrm, hcs⟩ := NormedField.exists_pow_lt_norm_lt_pow K hr₀ hlt
-  have key := congrArg (fun p : closedPolydisc 1 K ↦ p.1.toValuativeRel.vle
+  have key := congrArg (fun p : closedPolydisc 1 K ↦ p.val.toValuativeRel.vle
     (weightedX (fun _ : Fin 1 ↦ ({1} : Set K)) isWeightFamily_one_weight 0 ^ m)
     (weightedC _ isWeightFamily_one_weight c)) h
   simp only [gaussPoint_vle_iff, map_pow, closedDiscGaussValuation_weightedC, eq_iff_iff,
@@ -663,7 +663,8 @@ theorem closedDiscGaussValuationAbove_le_one_of_isPowerBounded (hr₀ : 0 < r) (
     exact (closedDiscGaussValuationAbove_lt_of_lt hr₀ hr₁.le (by rwa [map_one])).le
   have hF : (toRestrictedSubring hr f : PowerSeries K) ≠ 0 :=
     coe_toRestrictedSubring_ne_zero hr fun h ↦ by simp [h] at heq
-  obtain ⟨s, hs⟩ := TauCeti.PowerSeries.exists_isDistinguished hr₀ (toRestrictedSubring hr f).2 hF
+  obtain ⟨s, hs⟩ := TauCeti.PowerSeries.exists_isDistinguished hr₀
+      (toRestrictedSubring hr f).property hF
   have hs0 : s = 0 := by
     by_contra hne
     have hnorm : ‖MvPowerSeries.coeff (Finsupp.single 0 s) (f : MvPowerSeries (Fin 1) K)‖ ≤ 1 := by
@@ -692,7 +693,8 @@ theorem closedDiscGaussValuationBelow_le_one_of_isPowerBounded (hr₀ : 0 < r) (
     exact (closedDiscGaussValuationBelow_lt_of_lt hr₀ hr₁ (by rwa [map_one])).le
   have hF : (toRestrictedSubring hr f : PowerSeries K) ≠ 0 :=
     coe_toRestrictedSubring_ne_zero hr fun h ↦ by simp [h] at heq
-  obtain ⟨s, hs⟩ := TauCeti.PowerSeries.exists_isLowestDominant hr₀ (toRestrictedSubring hr f).2 hF
+  obtain ⟨s, hs⟩ := TauCeti.PowerSeries.exists_isLowestDominant hr₀
+      (toRestrictedSubring hr f).property hF
   have h1 : TauCeti.PowerSeries.IsLowestDominant r 0
       ((toRestrictedSubring hr 1 : PowerSeries.IsRestricted.subring (R := K) r) :
         PowerSeries K) := by
@@ -732,14 +734,14 @@ noncomputable def gaussPointBelow (hr₀ : 0 < r) (hr₁ : r ≤ 1) : closedPoly
 /-- The underlying point of `η_{r⁺}` in `Spv K⟨T⟩` is defined by the Gauss valuation just above
 `r`. -/
 theorem gaussPointAbove_val (hr₀ : 0 < r) (hr₁ : r < 1) :
-    (gaussPointAbove (K := K) hr₀ hr₁).1 = ofValuation (Γ₀ := WithZero (ℝ≥0ˣ ×ₗ Multiplicative ℤ))
+    (gaussPointAbove (K := K) hr₀ hr₁).val = ofValuation (Γ₀ := WithZero (ℝ≥0ˣ ×ₗ Multiplicative ℤ))
       (closedDiscGaussValuationAbove hr₀ hr₁.le) :=
   (rfl)
 
 /-- The underlying point of `η_{r⁻}` in `Spv K⟨T⟩` is defined by the Gauss valuation just below
 `r`. -/
 theorem gaussPointBelow_val (hr₀ : 0 < r) (hr₁ : r ≤ 1) :
-    (gaussPointBelow (K := K) hr₀ hr₁).1 = ofValuation (Γ₀ := WithZero (ℝ≥0ˣ ×ₗ Multiplicative ℤ))
+    (gaussPointBelow (K := K) hr₀ hr₁).val = ofValuation (Γ₀ := WithZero (ℝ≥0ˣ ×ₗ Multiplicative ℤ))
       (closedDiscGaussValuationBelow hr₀ hr₁) :=
   (rfl)
 
@@ -747,7 +749,7 @@ theorem gaussPointBelow_val (hr₀ : 0 < r) (hr₁ : r ≤ 1) :
 @[simp]
 theorem gaussPointAbove_vle_iff (hr₀ : 0 < r) (hr₁ : r < 1)
     (f g : weightedRestrictedSubring (fun _ : Fin 1 ↦ ({1} : Set K)) isWeightFamily_one_weight) :
-    (gaussPointAbove hr₀ hr₁).1.toValuativeRel.vle f g ↔
+    (gaussPointAbove hr₀ hr₁).val.toValuativeRel.vle f g ↔
       closedDiscGaussValuationAbove hr₀ hr₁.le f ≤ closedDiscGaussValuationAbove hr₀ hr₁.le g := by
   rw [gaussPointAbove_val, vle_ofValuation]
 
@@ -755,24 +757,24 @@ theorem gaussPointAbove_vle_iff (hr₀ : 0 < r) (hr₁ : r < 1)
 @[simp]
 theorem gaussPointBelow_vle_iff (hr₀ : 0 < r) (hr₁ : r ≤ 1)
     (f g : weightedRestrictedSubring (fun _ : Fin 1 ↦ ({1} : Set K)) isWeightFamily_one_weight) :
-    (gaussPointBelow hr₀ hr₁).1.toValuativeRel.vle f g ↔
+    (gaussPointBelow hr₀ hr₁).val.toValuativeRel.vle f g ↔
       closedDiscGaussValuationBelow hr₀ hr₁ f ≤ closedDiscGaussValuationBelow hr₀ hr₁ g := by
   rw [gaussPointBelow_val, vle_ofValuation]
 
 /-- **The support of `η_{r⁺}` is trivial.** -/
 @[simp]
 theorem supp_gaussPointAbove (hr₀ : 0 < r) (hr₁ : r < 1) :
-    (gaussPointAbove (K := K) hr₀ hr₁).1.supp = ⊥ :=
+    (gaussPointAbove (K := K) hr₀ hr₁).val.supp = ⊥ :=
   Ideal.ext fun _ ↦ by
-    rw [mem_supp_iff, gaussPointAbove_vle_iff, map_zero, le_zero_iff,
+    rw [mem_supp_iff, gaussPointAbove_vle_iff, map_zero, nonpos_iff_eq_zero,
       closedDiscGaussValuationAbove_eq_zero_iff, Ideal.mem_bot]
 
 /-- **The support of `η_{r⁻}` is trivial.** -/
 @[simp]
 theorem supp_gaussPointBelow (hr₀ : 0 < r) (hr₁ : r ≤ 1) :
-    (gaussPointBelow (K := K) hr₀ hr₁).1.supp = ⊥ :=
+    (gaussPointBelow (K := K) hr₀ hr₁).val.supp = ⊥ :=
   Ideal.ext fun _ ↦ by
-    rw [mem_supp_iff, gaussPointBelow_vle_iff, map_zero, le_zero_iff,
+    rw [mem_supp_iff, gaussPointBelow_vle_iff, map_zero, nonpos_iff_eq_zero,
       closedDiscGaussValuationBelow_eq_zero_iff, Ideal.mem_bot]
 
 /-- Just above `r`, the variable `T` is strictly larger than a constant `c` of norm `r`: the
@@ -923,7 +925,7 @@ points compare `T` with a constant of norm `r` differently. -/
 theorem gaussPointAbove_ne_gaussPoint (hr₀ : 0 < r) (hr₁ : r < 1) (hr : ∃ c : K, ‖c‖ = r) :
     gaussPointAbove (K := K) hr₀ hr₁ ≠ gaussPoint hr₀ hr₁.le := fun h ↦ by
   obtain ⟨c, hc⟩ := hr
-  have key := congrArg (fun p : closedPolydisc 1 K ↦ p.1.toValuativeRel.vle
+  have key := congrArg (fun p : closedPolydisc 1 K ↦ p.val.toValuativeRel.vle
     (weightedX (fun _ : Fin 1 ↦ ({1} : Set K)) isWeightFamily_one_weight 0)
     (weightedC _ isWeightFamily_one_weight c)) h
   simp only [gaussPointAbove_vle_iff, gaussPoint_vle_iff, eq_iff_iff] at key
@@ -935,7 +937,7 @@ points compare `T` with a constant of norm `r` differently. -/
 theorem gaussPointBelow_ne_gaussPoint (hr₀ : 0 < r) (hr₁ : r ≤ 1) (hr : ∃ c : K, ‖c‖ = r) :
     gaussPointBelow (K := K) hr₀ hr₁ ≠ gaussPoint hr₀ hr₁ := fun h ↦ by
   obtain ⟨c, hc⟩ := hr
-  have key := congrArg (fun p : closedPolydisc 1 K ↦ p.1.toValuativeRel.vle
+  have key := congrArg (fun p : closedPolydisc 1 K ↦ p.val.toValuativeRel.vle
     (weightedC _ isWeightFamily_one_weight c)
     (weightedX (fun _ : Fin 1 ↦ ({1} : Set K)) isWeightFamily_one_weight 0)) h
   simp only [gaussPointBelow_vle_iff, gaussPoint_vle_iff, eq_iff_iff] at key
@@ -947,7 +949,7 @@ theorem gaussPointBelow_ne_gaussPoint (hr₀ : 0 < r) (hr₁ : r ≤ 1) (hr : �
 theorem gaussPointBelow_ne_gaussPointAbove (hr₀ : 0 < r) (hr₁ : r < 1) (hr : ∃ c : K, ‖c‖ = r) :
     gaussPointBelow (K := K) hr₀ hr₁.le ≠ gaussPointAbove hr₀ hr₁ := fun h ↦ by
   obtain ⟨c, hc⟩ := hr
-  have key := congrArg (fun p : closedPolydisc 1 K ↦ p.1.toValuativeRel.vle
+  have key := congrArg (fun p : closedPolydisc 1 K ↦ p.val.toValuativeRel.vle
     (weightedX (fun _ : Fin 1 ↦ ({1} : Set K)) isWeightFamily_one_weight 0)
     (weightedC _ isWeightFamily_one_weight c)) h
   simp only [gaussPointBelow_vle_iff, gaussPointAbove_vle_iff, eq_iff_iff] at key
@@ -963,7 +965,7 @@ theorem gaussPointAbove_inj {s : ℝ} (hr₀ : 0 < r) (hr₁ : r < 1) (hs₀ : 0
   wlog hlt : r < s generalizing r s
   · exact this hs₀ hs₁ hr₀ hr₁ h.symm (Ne.symm hne) ((not_lt.mp hlt).lt_of_ne (Ne.symm hne))
   obtain ⟨m, c, hrm, hcs⟩ := NormedField.exists_pow_lt_norm_lt_pow K hr₀ hlt
-  have key := congrArg (fun p : closedPolydisc 1 K ↦ p.1.toValuativeRel.vle
+  have key := congrArg (fun p : closedPolydisc 1 K ↦ p.val.toValuativeRel.vle
     (weightedX (fun _ : Fin 1 ↦ ({1} : Set K)) isWeightFamily_one_weight 0 ^ m)
     (weightedC _ isWeightFamily_one_weight c)) h
   simp only [gaussPointAbove_vle_iff, eq_iff_iff] at key
@@ -982,7 +984,7 @@ theorem gaussPointBelow_inj {s : ℝ} (hr₀ : 0 < r) (hr₁ : r ≤ 1) (hs₀ :
   wlog hlt : r < s generalizing r s
   · exact this hs₀ hs₁ hr₀ hr₁ h.symm (Ne.symm hne) ((not_lt.mp hlt).lt_of_ne (Ne.symm hne))
   obtain ⟨m, c, hrm, hcs⟩ := NormedField.exists_pow_lt_norm_lt_pow K hr₀ hlt
-  have key := congrArg (fun p : closedPolydisc 1 K ↦ p.1.toValuativeRel.vle
+  have key := congrArg (fun p : closedPolydisc 1 K ↦ p.val.toValuativeRel.vle
     (weightedX (fun _ : Fin 1 ↦ ({1} : Set K)) isWeightFamily_one_weight 0 ^ m)
     (weightedC _ isWeightFamily_one_weight c)) h
   simp only [gaussPointBelow_vle_iff, eq_iff_iff] at key
@@ -1000,7 +1002,7 @@ theorem gaussPoint_specializes_of_lt {hr₀ : 0 < r} {hr₁ : r ≤ 1}
       isWeightFamily_one_weight)}
     (hlt : ∀ f g, closedDiscGaussValuation hr₀ hr₁ f < closedDiscGaussValuation hr₀ hr₁ g →
       ¬ x.toValuativeRel.vle g f) :
-    (gaussPoint hr₀ hr₁).1 ⤳ x := by
+    (gaussPoint hr₀ hr₁).val ⤳ x := by
   refine specializes_of_forall_mem_basicOpen fun f g hx ↦ ?_
   obtain ⟨hfg, hg⟩ := (mem_basicOpen_iff _ _ _).mp hx
   refine (mem_basicOpen_iff _ _ _).mpr ⟨?_, ?_⟩

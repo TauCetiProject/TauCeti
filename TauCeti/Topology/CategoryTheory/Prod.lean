@@ -88,26 +88,28 @@ instance instSecondCountableTopologyTotalProd [SecondCountableTopology (Quiver.T
 factors is. -/
 theorem continuous_comp_prod
     (hC : Continuous fun p : {p : Quiver.Total C × Quiver.Total C // p.1.right = p.2.left} ↦
-      (⟨p.1.1.left, p.1.2.right, p.1.1.hom ≫ eqToHom p.2 ≫ p.1.2.hom⟩ : Quiver.Total C))
+      (⟨p.val.1.left, p.val.2.right, p.val.1.hom ≫ eqToHom p.property ≫ p.val.2.hom⟩ : Quiver.Total
+          C))
     (hD : Continuous fun p : {p : Quiver.Total D × Quiver.Total D // p.1.right = p.2.left} ↦
-      (⟨p.1.1.left, p.1.2.right, p.1.1.hom ≫ eqToHom p.2 ≫ p.1.2.hom⟩ : Quiver.Total D)) :
+      (⟨p.val.1.left, p.val.2.right, p.val.1.hom ≫ eqToHom p.property ≫ p.val.2.hom⟩ : Quiver.Total
+          D)) :
     Continuous fun p : {p : Quiver.Total (C × D) × Quiver.Total (C × D) //
         p.1.right = p.2.left} ↦
-      (⟨p.1.1.left, p.1.2.right, p.1.1.hom ≫ eqToHom p.2 ≫ p.1.2.hom⟩ :
+      (⟨p.val.1.left, p.val.2.right, p.val.1.hom ≫ eqToHom p.property ≫ p.val.2.hom⟩ :
         Quiver.Total (C × D)) := by
   let e := totalProdHomeomorph C D
   let gC := fun p : {p : Quiver.Total (C × D) × Quiver.Total (C × D) // p.1.right = p.2.left} ↦
-    (⟨((e p.1.1).1, (e p.1.2).1), congrArg Prod.fst p.2⟩ :
+    (⟨((e p.val.1).1, (e p.val.2).1), congrArg Prod.fst p.property⟩ :
       {p : Quiver.Total C × Quiver.Total C // p.1.right = p.2.left})
   let gD := fun p : {p : Quiver.Total (C × D) × Quiver.Total (C × D) // p.1.right = p.2.left} ↦
-    (⟨((e p.1.1).2, (e p.1.2).2), congrArg Prod.snd p.2⟩ :
+    (⟨((e p.val.1).2, (e p.val.2).2), congrArg Prod.snd p.property⟩ :
       {p : Quiver.Total D × Quiver.Total D // p.1.right = p.2.left})
   have h₁ : Continuous fun p : {p : Quiver.Total (C × D) × Quiver.Total (C × D) //
-      p.1.right = p.2.left} ↦ e p.1.1 := e.continuous.comp (continuous_fst.comp
-    continuous_subtype_val)
+      p.1.right = p.2.left} ↦ e p.val.1 := e.continuous.comp (continuous_fst.comp
+    continuous_subtypeVal)
   have h₂ : Continuous fun p : {p : Quiver.Total (C × D) × Quiver.Total (C × D) //
-      p.1.right = p.2.left} ↦ e p.1.2 := e.continuous.comp (continuous_snd.comp
-    continuous_subtype_val)
+      p.1.right = p.2.left} ↦ e p.val.2 := e.continuous.comp (continuous_snd.comp
+    continuous_subtypeVal)
   have hgC : Continuous gC :=
     ((continuous_fst.comp h₁).prodMk (continuous_fst.comp h₂)).subtype_mk _
   have hgD : Continuous gD :=

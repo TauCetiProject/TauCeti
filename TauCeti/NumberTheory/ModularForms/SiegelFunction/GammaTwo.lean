@@ -78,14 +78,14 @@ local notation "𝕢" => Function.Periodic.qParam
 
 /-- `e^{π i / 6}⁴ = e^{2π i / 3}`. -/
 private theorem exp_pi_I_div_six_pow_four : cexp (π * I / 6) ^ 4 = cexp (2 * π * I / 3) := by
-  rw [← Complex.exp_nat_mul]
+  rw [← Complex.exp_natCast_mul]
   congr 1
   push_cast
   ring
 
 /-- `e^{2π i / 3}³ = 1`. -/
 private theorem exp_two_pi_I_div_three_pow_three : cexp (2 * π * I / 3) ^ 3 = 1 := by
-  rw [← Complex.exp_nat_mul, ← exp_two_pi_mul_I]
+  rw [← Complex.exp_natCast_mul, ← exp_two_pi_mul_I]
   congr 1
   push_cast
   ring
@@ -110,7 +110,7 @@ private theorem weberSum_T_smul (τ : ℍ) :
     weberSum ↑(ModularGroup.T • τ) = cexp (2 * π * I / 3) * weberSum τ := by
   -- `-4π i / 3 = 2π i / 3 - 2π i`.
   have h₃ : cexp (-(π * I / 3)) ^ 4 = cexp (2 * π * I / 3) := by
-    rw [← Complex.exp_nat_mul, Complex.exp_eq_exp_iff_exists_int]
+    rw [← Complex.exp_natCast_mul, Complex.exp_eq_exp_iff_exists_int]
     exact ⟨-1, by push_cast; ring⟩
   rw [weberSum, weberSum, ModularGroup.coe_T_smul, siegelFunction_zero_half_apply_add_one,
     siegelFunction_half_zero_apply_add_one, siegelFunction_half_half_apply_add_one, mul_pow,
