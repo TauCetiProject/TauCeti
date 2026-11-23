@@ -149,20 +149,9 @@ theorem isMIntegralCurve_circleCylinderField {Θ : ℝ → ℝ}
       (ContinuousLinearMap.id_comp _)
   have h₂ : HasMFDerivAt 𝓘(ℝ) 𝓘(ℝ) τ s ((1 : ℝ →L[ℝ] ℝ).smulRight (τ s * (1 - τ s ^ 2))) :=
     hasMFDerivAt_iff_hasFDerivAt.2 hτ.hasFDerivAt
-  have key : ((1 : ℝ →L[ℝ] ℝ).smulRight (2 * δ * sin (2 * (Θ (τ s) - r (τ s))))).prod
-      ((1 : ℝ →L[ℝ] ℝ).smulRight (τ s * (1 - τ s ^ 2))) =
-        (1 : ℝ →L[ℝ] ℝ).smulRight
-          (circleCylinderField δ r ((Θ (τ s) : AddCircle (2 * π)), τ s)) := by
-    rw [ContinuousLinearMap.smulRight_one_eq_toSpanSingleton,
-      ContinuousLinearMap.smulRight_one_eq_toSpanSingleton,
-      ContinuousLinearMap.smulRight_one_eq_toSpanSingleton]
-    -- The scalar action on the tangent space of the cylinder is not syntactically that of
-    -- `ℝ × ℝ`, so `toSpanSingleton_apply` and `one_smul` need `erw` there.
-    ext <;> simp only [ContinuousLinearMap.prod_apply, ContinuousLinearMap.toSpanSingleton_apply,
-      one_smul] <;> erw [ContinuousLinearMap.toSpanSingleton_apply, one_smul] <;>
-      simp [circleCylinderField_coe]
   beta_reduce
-  exact key ▸ h₁.prodMk h₂
+  rw [circleCylinderField_coe, circleContinuationField_apply]
+  exact h₁.prodMk_curve h₂
 
 /-- **Trajectories on the cylinder are graphs of slope solutions.** Let `γ` be an integral curve of
 the parameter field on the cylinder meeting the open slab `0 < t < 1`. Then there are a solution
@@ -403,6 +392,16 @@ private theorem morseContinuationMap_circleCylinderField_add_mul_single {c : ℝ
     (fun t ht ↦ by rw [h1 t (by linarith [ht.1]), mul_one])
     (by rw [add_sub_cancel_left]; linarith [pi_pos]) (by rw [add_sub_cancel_left]; exact hpq)
 
+/-- The coefficient of the half-turn `r₀ + π ρ`, whose residual rotation is `0`: it carries each
+critical point to the critical point of the end function at the same angle. -/
+private theorem morseContinuationMap_circleCylinderField_add_pi_single
+    {p : criticalPoints 𝓘(ℝ) (circleCosTwo δ r₀)}
+    {q : criticalPoints 𝓘(ℝ) (circleCosTwo δ (r₀ + π))} (hpq : (q : AddCircle (2 * π)) = p) :
+    morseContinuationMap (circleCosTwo δ r₀) (isMorse_circleCosTwo hδ.ne' (r₀ + π))
+      (circleCylinderField δ fun t ↦ r₀ + π * ρ t) (Finsupp.single p 1) = Finsupp.single q 1 :=
+  morseContinuationMap_circleCylinderField_add_mul_single hρ h0 h1 hδ hT (n := 1)
+    (by simp [div_nonneg, pi_nonneg]) (by simpa using hpq)
+
 /-- **The half-turn is the identity in fixed bases.** For the path `r = r₀ + π ρ`, from
 `δ cos (2 (θ - r₀))` to the same function `δ cos (2 (θ - r₀ - π))` (`TauCeti.circleCosTwo_add_pi`),
 the mod-two continuation map along the parameter field on the cylinder is the identity, in the
@@ -416,10 +415,8 @@ theorem morseContinuationMap_circleCylinderField_add_pi_eq_id :
       (p : criticalPoints 𝓘(ℝ) (circleCosTwo δ r₀))
       (q : criticalPoints 𝓘(ℝ) (circleCosTwo δ (r₀ + π))), (q : AddCircle (2 * π)) = p →
         morseContinuationMap (circleCosTwo δ r₀) hf (circleCylinderField δ fun t ↦ r₀ + π * ρ t)
-          (Finsupp.single p 1) = Finsupp.single q 1 := fun _ p q hpq ↦
-    morseContinuationMap_circleCylinderField_add_mul_single hρ h0 h1 hδ hT (n := 1)
-      (by rw [Int.cast_one, one_mul, sub_self, abs_zero]; positivity)
-      (by rw [Int.cast_one, one_mul, sub_self, coe_zero, add_zero, hpq])
+          (Finsupp.single p 1) = Finsupp.single q 1 := fun _ _ _ hpq ↦
+    morseContinuationMap_circleCylinderField_add_pi_single hρ h0 h1 hδ hT hpq
   rw [circleCosTwo_add_pi] at h
   exact Finsupp.lhom_ext' fun p ↦ LinearMap.ext_ring (h _ p p rfl)
 
@@ -431,11 +428,8 @@ theorem morseContinuationMap_single_circleCosTwoMaxCrit_add_pi (j : Fin 2) :
     morseContinuationMap (circleCosTwo δ r₀) (isMorse_circleCosTwo hδ.ne' (r₀ + π))
       (circleCylinderField δ fun t ↦ r₀ + π * ρ t) (Finsupp.single (circleCosTwoMaxCrit δ r₀ j) 1) =
         Finsupp.single (circleCosTwoMaxCrit δ (r₀ + π) (j + 1)) 1 :=
-  morseContinuationMap_circleCylinderField_add_mul_single hρ h0 h1 hδ hT (n := 1)
-    (by rw [Int.cast_one, one_mul, sub_self, abs_zero]; positivity)
-    (by rw [Int.cast_one, one_mul, sub_self, coe_zero, add_zero, coe_circleCosTwoMaxCrit,
-      coe_circleCosTwoMaxCrit, circleCosTwoMax_add_pi, add_assoc,
-      show (1 + 1 : Fin 2) = 0 from rfl, add_zero])
+  morseContinuationMap_circleCylinderField_add_pi_single hρ h0 h1 hδ hT
+    (by simp [coe_circleCosTwoMaxCrit, circleCosTwoMax_add_pi, add_assoc])
 
 /-- **The half-turn exchanges the tracked minima.** For the path `r = r₀ + π ρ`, the mod-two
 continuation map sends the minimum `q_j(r₀)` to the minimum `q_{j + 1}(r₀ + π)` tracked from
@@ -444,11 +438,8 @@ theorem morseContinuationMap_single_circleCosTwoMinCrit_add_pi (j : Fin 2) :
     morseContinuationMap (circleCosTwo δ r₀) (isMorse_circleCosTwo hδ.ne' (r₀ + π))
       (circleCylinderField δ fun t ↦ r₀ + π * ρ t) (Finsupp.single (circleCosTwoMinCrit δ r₀ j) 1) =
         Finsupp.single (circleCosTwoMinCrit δ (r₀ + π) (j + 1)) 1 :=
-  morseContinuationMap_circleCylinderField_add_mul_single hρ h0 h1 hδ hT (n := 1)
-    (by rw [Int.cast_one, one_mul, sub_self, abs_zero]; positivity)
-    (by rw [Int.cast_one, one_mul, sub_self, coe_zero, add_zero, coe_circleCosTwoMinCrit,
-      coe_circleCosTwoMinCrit, circleCosTwoMin_add_pi, add_assoc,
-      show (1 + 1 : Fin 2) = 0 from rfl, add_zero])
+  morseContinuationMap_circleCylinderField_add_pi_single hρ h0 h1 hδ hT
+    (by simp [coe_circleCosTwoMinCrit, circleCosTwoMin_add_pi, add_assoc])
 
 /-- **A third of a turn agrees with the tracked maxima.** For the path `r = r₀ + (π / 3) ρ`, the
 mod-two continuation map sends the maximum `p_j(r₀)` to the maximum `p_j(r₀ + π / 3)` tracked from
@@ -460,9 +451,7 @@ theorem morseContinuationMap_single_circleCosTwoMaxCrit_add_pi_div_three
         (Finsupp.single (circleCosTwoMaxCrit δ r₀ j) 1) =
       Finsupp.single (circleCosTwoMaxCrit δ (r₀ + π / 3) j) 1 :=
   morseContinuationMap_circleCylinderField_add_mul_single hρ h0 h1 hδ hT (n := 0)
-    (by rw [Int.cast_zero, zero_mul, sub_zero, abs_of_pos (by positivity)])
-    (by rw [Int.cast_zero, zero_mul, sub_zero, coe_circleCosTwoMaxCrit, coe_circleCosTwoMaxCrit,
-      circleCosTwoMax_add_coe])
+    (by simp [abs_of_pos, pi_pos]) (by simp [coe_circleCosTwoMaxCrit, circleCosTwoMax_add_coe])
 
 /-- **A third of a turn agrees with the tracked minima.** For the path `r = r₀ + (π / 3) ρ`, the
 mod-two continuation map sends the minimum `q_j(r₀)` to the minimum `q_j(r₀ + π / 3)` tracked from
@@ -474,30 +463,31 @@ theorem morseContinuationMap_single_circleCosTwoMinCrit_add_pi_div_three
         (Finsupp.single (circleCosTwoMinCrit δ r₀ j) 1) =
       Finsupp.single (circleCosTwoMinCrit δ (r₀ + π / 3) j) 1 :=
   morseContinuationMap_circleCylinderField_add_mul_single hρ h0 h1 hδ hT (n := 0)
-    (by rw [Int.cast_zero, zero_mul, sub_zero, abs_of_pos (by positivity)])
-    (by rw [Int.cast_zero, zero_mul, sub_zero, coe_circleCosTwoMinCrit, coe_circleCosTwoMinCrit,
-      circleCosTwoMin_add_coe])
+    (by simp [abs_of_pos, pi_pos]) (by simp [coe_circleCosTwoMinCrit, circleCosTwoMin_add_coe])
 
 /-- The concatenation of the third-turns `r₀ + (π / 3) ρ` and `r₀ + π / 3 + (π / 3) ρ`, run at
 double speed on `[0, 1/2]` and `[1/2, 1]`, is `r₀` on `(0, 1/6]`, `r₀ + 2 π / 3` on `[5/6, 1)`, and
-continuous: at `t = 1/2` both pieces equal `r₀ + π / 3`. -/
-private theorem morseContinuationMap_circleCylinderField_add_two_mul_pi_div_three_single {n : ℤ}
-    (hc : |2 * π / 3 - n * π| ≤ π / 3) {p : criticalPoints 𝓘(ℝ) (circleCosTwo δ r₀)}
+continuous: at `t = 1/2` both pieces equal `r₀ + π / 3`. Its residual rotation is
+`2 π / 3 - π = -π / 3`. -/
+private theorem morseContinuationMap_circleCylinderField_add_two_mul_pi_div_three_single
+    {p : criticalPoints 𝓘(ℝ) (circleCosTwo δ r₀)}
     {q : criticalPoints 𝓘(ℝ) (circleCosTwo δ (r₀ + 2 * π / 3))}
-    (hpq : (q : AddCircle (2 * π)) = p + ((2 * π / 3 - n * π : ℝ) : AddCircle (2 * π))) :
+    (hpq : (q : AddCircle (2 * π)) = p + ((2 * π / 3 - π : ℝ) : AddCircle (2 * π))) :
     morseContinuationMap (circleCosTwo δ r₀) (isMorse_circleCosTwo hδ.ne' (r₀ + 2 * π / 3))
       (circleCylinderField δ fun t ↦
         if t ≤ 1 / 2 then r₀ + π / 3 * ρ (2 * t) else r₀ + π / 3 + π / 3 * ρ (2 * t - 1))
       (Finsupp.single p 1) = Finsupp.single q 1 := by
+  have hc : |2 * π / 3 - π| ≤ π / 3 := abs_le.2 ⟨by linarith [pi_pos], by linarith [pi_pos]⟩
   have hcont : Continuous fun t : ℝ ↦
       if t ≤ 1 / 2 then r₀ + π / 3 * ρ (2 * t) else r₀ + π / 3 + π / 3 * ρ (2 * t - 1) := by
     refine Continuous.if_le (by fun_prop) (by fun_prop) continuous_id continuous_const ?_
     intro t ht
     rw [ht, h1 _ (by norm_num), h0 _ (by norm_num)]
     ring
-  refine morseContinuationMap_circleCylinderField_single (a := 1 / 6) (b := 5 / 6) (n := n) hδ
+  refine morseContinuationMap_circleCylinderField_single (a := 1 / 6) (b := 5 / 6) (n := 1) hδ
     (by norm_num) (by norm_num) (by norm_num) hcont.continuousOn (fun t ht ↦ ?_) (fun t ht ↦ ?_)
-    (by rw [add_sub_cancel_left]; linarith [pi_pos]) (by rw [add_sub_cancel_left]; exact hpq)
+    (by rw [add_sub_cancel_left, Int.cast_one, one_mul]; linarith [pi_pos])
+    (by rwa [add_sub_cancel_left, Int.cast_one, one_mul])
   · simp only [show t ≤ 1 / 2 by linarith [ht.2], ↓reduceIte,
       h0 _ (by linarith [ht.2] : 2 * t ≤ 1 / 3), mul_zero, add_zero]
   · simp only [show ¬t ≤ 1 / 2 by linarith [ht.1], ↓reduceIte,
@@ -517,14 +507,10 @@ theorem morseContinuationMap_single_circleCosTwoMaxCrit_add_two_mul_pi_div_three
         if t ≤ 1 / 2 then r₀ + π / 3 * ρ (2 * t) else r₀ + π / 3 + π / 3 * ρ (2 * t - 1))
       (Finsupp.single (circleCosTwoMaxCrit δ r₀ j) 1) =
       Finsupp.single (circleCosTwoMaxCrit δ (r₀ + 2 * π / 3) (j + 1)) 1 :=
-  morseContinuationMap_circleCylinderField_add_two_mul_pi_div_three_single hρ h0 h1 hδ hT (n := 1)
-    (by rw [Int.cast_one, one_mul, show 2 * π / 3 - π = -(π / 3) by ring, abs_neg,
-      abs_of_pos (by positivity)])
-    (by
-      rw [coe_circleCosTwoMaxCrit, coe_circleCosTwoMaxCrit, circleCosTwoMax_add_coe,
-        show r₀ + (2 * π / 3 - (1 : ℤ) * π) = r₀ + 2 * π / 3 - π by push_cast; ring,
-        ← circleCosTwoMax_add_pi, circleCosTwoMax_def, circleCosTwoMax_def]
-      exact coe_eq_coe_iff_exists_zsmul.2 ⟨1, by rw [one_zsmul]; ring⟩)
+  morseContinuationMap_circleCylinderField_add_two_mul_pi_div_three_single hρ h0 h1 hδ hT (by
+    rw [coe_circleCosTwoMaxCrit, coe_circleCosTwoMaxCrit, circleCosTwoMax_add_coe,
+      ← circleCosTwoMax_add_pi, circleCosTwoMax_def, circleCosTwoMax_def]
+    exact coe_eq_coe_iff_exists_zsmul.2 ⟨1, by rw [one_zsmul]; ring⟩)
 
 /-- **The concatenation of two third-turns exchanges the tracked minima.** For the concatenation of
 the third-turns `Γ₁ = r₀ + (π / 3) ρ` and `Γ₂ = r₀ + π / 3 + (π / 3) ρ`, run at double speed on
@@ -536,14 +522,10 @@ theorem morseContinuationMap_single_circleCosTwoMinCrit_add_two_mul_pi_div_three
         if t ≤ 1 / 2 then r₀ + π / 3 * ρ (2 * t) else r₀ + π / 3 + π / 3 * ρ (2 * t - 1))
       (Finsupp.single (circleCosTwoMinCrit δ r₀ j) 1) =
       Finsupp.single (circleCosTwoMinCrit δ (r₀ + 2 * π / 3) (j + 1)) 1 :=
-  morseContinuationMap_circleCylinderField_add_two_mul_pi_div_three_single hρ h0 h1 hδ hT (n := 1)
-    (by rw [Int.cast_one, one_mul, show 2 * π / 3 - π = -(π / 3) by ring, abs_neg,
-      abs_of_pos (by positivity)])
-    (by
-      rw [coe_circleCosTwoMinCrit, coe_circleCosTwoMinCrit, circleCosTwoMin_add_coe,
-        show r₀ + (2 * π / 3 - (1 : ℤ) * π) = r₀ + 2 * π / 3 - π by push_cast; ring,
-        ← circleCosTwoMin_add_pi, circleCosTwoMin_def, circleCosTwoMin_def]
-      exact coe_eq_coe_iff_exists_zsmul.2 ⟨1, by rw [one_zsmul]; ring⟩)
+  morseContinuationMap_circleCylinderField_add_two_mul_pi_div_three_single hρ h0 h1 hδ hT (by
+    rw [coe_circleCosTwoMinCrit, coe_circleCosTwoMinCrit, circleCosTwoMin_add_coe,
+      ← circleCosTwoMin_add_pi, circleCosTwoMin_def, circleCosTwoMin_def]
+    exact coe_eq_coe_iff_exists_zsmul.2 ⟨1, by rw [one_zsmul]; ring⟩)
 
 end Examples
 
