@@ -155,25 +155,17 @@ theorem edgeReachability_eq_pairMinimumValue_unitPairCapacity [Fintype V] {s t :
     G.edgeReachability s t =
       ((TauCeti.TerminalCut.pairMinimumValue
         (TauCeti.pairCutCapacity G.unitPairCapacity) s t : ℕ) : ℕ∞) := by
-  let e : V ≃ (Graph.ofSimpleGraph G).vertexSet := (Equiv.Set.univ V).symm
-  have heval (x : V) : (e x).val = x := rfl
-  have hemap (S : Finset V) :
-      S.map e.toEmbedding = G.toOfSimpleGraphFinset S := by
-    ext x
-    have hx : G.toOfSimpleGraphVertex x.val = x :=
-      Subtype.ext (G.toOfSimpleGraphVertex_val x.val)
-    rw [← hx, Finset.mem_map_equiv]
-    have he : e x.val = G.toOfSimpleGraphVertex x.val :=
-      Subtype.ext (by simpa using heval x.val)
-    rw [← he, Equiv.symm_apply_apply]
-    rw [he, G.mem_toOfSimpleGraphFinset]
+  let e := G.toOfSimpleGraphVertexEquiv
   have hst' : e s ≠ e t := e.injective.ne hst
   have hmulti := (Graph.ofSimpleGraph G).edgeReachability_eq_pairMinimumValue hst'
-  rw [Graph.edgeReachability_ofSimpleGraph, heval s, heval t] at hmulti
+  rw [Graph.edgeReachability_ofSimpleGraph] at hmulti
+  simp only [e, G.toOfSimpleGraphVertexEquiv_apply_val] at hmulti
   have hmap := TauCeti.TerminalCut.pairMinimumValue_map
     (f := TauCeti.pairCutCapacity G.unitPairCapacity) e
     ((Graph.ofSimpleGraph G).edgeCutCapacity fun _ ↦ (1 : ℕ))
-    (fun S ↦ by rw [hemap]; exact G.edgeCutCapacity_unit_eq_pairCutCapacity S) s t
+    (fun S ↦ by
+      rw [G.map_toOfSimpleGraphVertexEquiv]
+      exact G.edgeCutCapacity_unit_eq_pairCutCapacity S) s t
   exact hmulti.trans (congrArg (Nat.cast : ℕ → ℕ∞) hmap)
 
 end SimpleGraph

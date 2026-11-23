@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Combinatorics.Network.MinimumCut.Graph
-import TauCeti.Combinatorics.SimpleGraph.Finite
 
 /-!
 # Cut trees for simple graphs
@@ -14,8 +13,8 @@ import TauCeti.Combinatorics.SimpleGraph.Finite
 This file gives the unit-capacity Gomory--Hu theory directly on a finite simple graph. The
 capacity of an unordered pair is one exactly on the graph's edges and zero elsewhere. A cut tree
 for this capacity records the graph's native local edge reachability: the minimum weight on the
-tree path between two vertices is their local edge connectivity, and deleting a minimum-weight
-path edge recovers a minimum cut in the original graph.
+tree path between two distinct vertices is their local edge connectivity, and deleting a
+minimum-weight path edge recovers a minimum cut in the original graph.
 
 The results are stated on the original vertex type, rather than the vertex subtype of
 `Graph.ofSimpleGraph G`. The comparison with the multigraph cut theory uses the canonical vertex
@@ -27,13 +26,13 @@ threshold, cut-recovery, and global-connectivity proofs adapt
 
 * `SimpleGraph.exists_isUnitCutTree`: every nonempty finite simple graph has a unit cut tree.
 * `SimpleGraph.edgeReachability_eq_pairMinimumValue_unitPairCapacity`: unit pair cuts compute
-  native local edge reachability.
+  native local edge reachability between distinct vertices.
 * `TauCeti.TerminalCut.IsFlowEquivalentTree.reachable_deleteEdges_iff_simpleGraphEdgeReachability`:
   threshold components are the local edge-reachability classes.
 * `TauCeti.TerminalCut.IsCutTree.simpleGraphEdgeReachability_eq_pairCutCapacity_edgeSide`: a
   minimum-weight path edge recovers a minimum cut in the simple graph.
 * `TauCeti.TerminalCut.IsFlowEquivalentTree.exists_edge_simpleGraphEdgeConnectivity_eq_weight`:
-  global edge connectivity is the minimum tree-edge weight.
+  for graphs with at least two vertices, global edge connectivity is the minimum tree-edge weight.
 
 ## References
 
@@ -66,8 +65,8 @@ open SimpleGraph
 variable {V : Type*} {G : SimpleGraph V} [Fintype V]
 variable {T : SimpleGraph V} {w : Sym2 V → ℕ}
 
-/-- On a unit-capacity simple-graph flow-equivalent tree, some edge on the path from `s` to `t`
-has weight equal to `G.edgeReachability s t`. -/
+/-- On a unit-capacity simple-graph flow-equivalent tree, some edge on the path between distinct
+vertices `s` and `t` has weight equal to `G.edgeReachability s t`. -/
 theorem exists_weight_eq_simpleGraphEdgeReachability
     (hT : IsFlowEquivalentTree (TauCeti.pairCutCapacity G.unitPairCapacity) T w)
     {s t : V} (hst : s ≠ t) {p : T.Walk s t} (hp : p.IsPath) :
@@ -129,6 +128,7 @@ theorem exists_edge_simpleGraphEdgeConnectivity_eq_weight [Nontrivial V]
     ∃ u v, T.Adj u v ∧ (∀ e ∈ T.edgeSet, w s(u, v) ≤ w e) ∧
       G.edgeConnectivity = (w s(u, v) : ℕ∞) := by
   obtain ⟨u, v, huv, hmin, hvalue⟩ := hT.exists_edge_iInf_pairMinimumValue_eq_weight
+    (Nat.castOrderEmbedding : ℕ ↪o ℕ∞).toOrderHom
   refine ⟨u, v, huv, hmin, ?_⟩
   rw [G.edgeConnectivity_eq_iInf_edgeReachability]
   have hreach (s t : V) :

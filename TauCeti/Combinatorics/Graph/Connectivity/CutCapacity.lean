@@ -262,11 +262,29 @@ def toOfSimpleGraphVertex (x : V) : (Graph.ofSimpleGraph G).vertexSet :=
 theorem toOfSimpleGraphVertex_val (x : V) : (G.toOfSimpleGraphVertex x).val = x :=
   (rfl)
 
+/-- Identify the vertices of a simple graph with the full vertex set of its associated
+multigraph. -/
+def toOfSimpleGraphVertexEquiv : V ≃ (Graph.ofSimpleGraph G).vertexSet where
+  toFun := G.toOfSimpleGraphVertex
+  invFun := Subtype.val
+  left_inv _ := rfl
+  right_inv _ := Subtype.ext rfl
+
+@[simp]
+theorem toOfSimpleGraphVertexEquiv_apply_val (x : V) :
+    (G.toOfSimpleGraphVertexEquiv x).val = x := by
+  rw [toOfSimpleGraphVertexEquiv]
+  rfl
+
 /-- Include a finite vertex set in the full vertex set of `Graph.ofSimpleGraph G`. -/
 def toOfSimpleGraphFinset (S : Finset V) :
     Finset (Graph.ofSimpleGraph G).vertexSet :=
-  S.map ⟨G.toOfSimpleGraphVertex,
-    fun _ _ h ↦ congrArg Subtype.val h⟩
+  S.map G.toOfSimpleGraphVertexEquiv.toEmbedding
+
+@[simp]
+theorem map_toOfSimpleGraphVertexEquiv (S : Finset V) :
+    S.map G.toOfSimpleGraphVertexEquiv.toEmbedding = G.toOfSimpleGraphFinset S := by
+  rw [toOfSimpleGraphFinset]
 
 @[simp]
 theorem mem_toOfSimpleGraphFinset {S : Finset V} {x : V} :
@@ -293,7 +311,7 @@ theorem toOfSimpleGraphFinset_map_val
   have h :
       (⟨Subtype.val, Subtype.val_injective⟩ :
           (Graph.ofSimpleGraph G).vertexSet ↪ V).trans
-        ⟨G.toOfSimpleGraphVertex, fun _ _ h ↦ congrArg Subtype.val h⟩ =
+        G.toOfSimpleGraphVertexEquiv.toEmbedding =
           Function.Embedding.refl _ := by
     ext x
     rfl

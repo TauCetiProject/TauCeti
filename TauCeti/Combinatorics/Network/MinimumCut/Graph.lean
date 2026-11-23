@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Combinatorics.Graph.Connectivity.Menger.CutValue
 public import TauCeti.Combinatorics.Network.MinimumCut.GomoryHu
-import TauCeti.Combinatorics.SimpleGraph.Finite
 
 /-!
 # Cut trees for weighted multigraphs
@@ -149,6 +148,7 @@ theorem exists_edge_edgeConnectivity_eq_weight [Nontrivial V(G)]
     ∃ u v, T.Adj u v ∧ (∀ e ∈ T.edgeSet, w s(u, v) ≤ w e) ∧
       G.edgeConnectivity = (w s(u, v) : ℕ∞) := by
   obtain ⟨u, v, huv, hmin, hvalue⟩ := hT.exists_edge_iInf_pairMinimumValue_eq_weight
+    (Nat.castOrderEmbedding : ℕ ↪o ℕ∞).toOrderHom
   refine ⟨u, v, huv, hmin, ?_⟩
   rw [G.edgeConnectivity_eq_iInf_edgeReachability, ← iInf_subtype'']
   simp_rw [← iInf_subtype'']

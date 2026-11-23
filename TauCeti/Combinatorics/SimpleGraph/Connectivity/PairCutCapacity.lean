@@ -190,4 +190,15 @@ theorem unitPairCapacity_eq_zero_iff {e : Sym2 V} :
   classical
   simp [unitPairCapacity]
 
+@[simp]
+theorem capacitySupport_unitPairCapacity :
+    TauCeti.capacitySupport G.unitPairCapacity = G := by
+  classical
+  ext x y
+  rw [TauCeti.capacitySupport_adj]
+  change (x ≠ y ∧ 0 < if G.Adj x y then 1 else 0) ↔ G.Adj x y
+  by_cases hxy : G.Adj x y
+  · simp [hxy, hxy.ne]
+  · simp [hxy]
+
 end SimpleGraph
