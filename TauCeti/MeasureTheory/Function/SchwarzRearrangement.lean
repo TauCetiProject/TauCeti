@@ -268,6 +268,14 @@ theorem edist_schwarzRearrangement_le_essSup (f g : E → ℝ≥0∞) (x : E) :
     ⟨key f g (h.mono fun y hy ↦ ((ENNReal.edist_le_iff_le_add_right _ _ _).1 hy).1),
       key g f (h.mono fun y hy ↦ ((ENNReal.edist_le_iff_le_add_right _ _ _).1 hy).2)⟩
 
+/-- A strict superlevel set of the Schwarz rearrangement whose original superlevel set has infinite
+measure is the whole space. -/
+@[simp]
+theorem setOf_lt_schwarzRearrangement_eq_univ [ProperSpace E] [IsFiniteMeasureOnCompacts μ]
+    (f : E → ℝ≥0∞) (t : ℝ≥0∞) (h : μ {y | t < f y} = ∞) :
+    {x | t < schwarzRearrangement μ f x} = univ := by
+  simp [setOf_lt_schwarzRearrangement, h, measure_ball_lt_top]
+
 end Measure
 
 section AddHaar
@@ -307,13 +315,6 @@ theorem exists_setOf_lt_schwarzRearrangement_eq_ball [Nontrivial E] (f : E → �
   obtain ⟨r, hr₀, hr⟩ := μ.exists_nonneg_addHaar_ball_eq h
   refine ⟨r, hr₀, ?_, hr⟩
   rw [setOf_lt_schwarzRearrangement, ← hr, μ.setOf_addHaar_ball_norm_lt_addHaar_ball]
-
-omit [BorelSpace E] in
-/-- A strict superlevel set of the Schwarz rearrangement whose original superlevel set has infinite
-measure is the whole space. -/
-theorem setOf_lt_schwarzRearrangement_eq_univ (f : E → ℝ≥0∞) (t : ℝ≥0∞)
-    (h : μ {y | t < f y} = ∞) : {x | t < schwarzRearrangement μ f x} = univ := by
-  simp [setOf_lt_schwarzRearrangement, h, measure_ball_lt_top]
 
 /-- Two superlevel sets of Schwarz rearrangements are concentric, so their intersection has the
 smaller of the two original superlevel measures. No measurability or finiteness hypothesis is
