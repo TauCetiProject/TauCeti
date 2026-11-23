@@ -380,29 +380,37 @@ theorem coeff_relTrace_single_inf_centralizer [Finite G] (P : Subgroup G) (g : G
         ⟨single g r, single_mem_conjInvariants_inf_centralizer P g r⟩ : MonoidAlgebra R G).coeff h =
       if ∃ q ∈ P, q * g * q⁻¹ = h then r else 0 := by
   classical
-  let : MulAction P G := MulAction.compHom G (MulAut.conj.comp P.subtype)
-  have hsmul (q : P) (a : G) : q • a = q * a * (q : G)⁻¹ := by
-    rw [MulAction.compHom_smul_def]
-    simp
-  have hstab : MulAction.stabilizer P g = (P ⊓ Subgroup.centralizer {g}).subgroupOf P := by
-    ext q
-    rw [MulAction.mem_stabilizer_iff, hsmul, Subgroup.mem_subgroupOf, Subgroup.mem_inf,
-      Subgroup.mem_centralizer_singleton_iff, mul_inv_eq_iff_eq_mul]
-    exact ⟨fun e => ⟨q.property, e⟩, fun e => e.2⟩
-  have := Fintype.ofFinite (MulAction.orbit P g)
-  let e := MulAction.orbitEquivQuotientStabilizer P g
-  have hs (x : MulAction.orbit P g) : ((e x).out : G) * g * ((e x).out : G)⁻¹ = x := by
-    rw [← hsmul, ← MulAction.orbitEquivQuotientStabilizer_symm_apply, QuotientGroup.out_eq',
-      e.symm_apply_apply]
+  -- `P` acts on `G` by conjugation through its image `K` in `ConjAct G`.
+  let K := P.map (ConjAct.toConjAct (G := G)).toMonoidHom
+  let φ : P ≃* K := P.equivMapOfInjective _ ConjAct.toConjAct.injective
+  have hsmul (q : P) (a : G) : φ q • a = q * a * (q : G)⁻¹ := ConjAct.toConjAct_smul _ _
+  have hrel (a b : K) : QuotientGroup.leftRel (MulAction.stabilizer K g) a b ↔
+      QuotientGroup.leftRel ((P ⊓ Subgroup.centralizer {g}).subgroupOf P) (φ.symm a)
+        (φ.symm b) := by
+    obtain ⟨a, rfl⟩ := φ.surjective a
+    obtain ⟨b, rfl⟩ := φ.surjective b
+    rw [QuotientGroup.leftRel_apply, QuotientGroup.leftRel_apply, ← map_inv, ← map_mul,
+      MulAction.mem_stabilizer_iff, hsmul, Subgroup.mem_subgroupOf, Subgroup.mem_inf,
+      Subgroup.mem_centralizer_singleton_iff, mul_inv_eq_iff_eq_mul, φ.symm_apply_apply,
+      φ.symm_apply_apply]
+    exact ⟨fun hq => ⟨(a⁻¹ * b).property, hq⟩, fun hq => hq.2⟩
+  have := Fintype.ofFinite (MulAction.orbit K g)
+  let e : MulAction.orbit K g ≃ P ⧸ (P ⊓ Subgroup.centralizer {g}).subgroupOf P :=
+    (MulAction.orbitEquivQuotientStabilizer K g).trans (Quotient.congr φ.symm.toEquiv hrel)
+  have hs (x : MulAction.orbit K g) : ((e x).out : G) * g * ((e x).out : G)⁻¹ = x := by
+    have he (q : P) : (e.symm q : G) = φ q • g := rfl
+    rw [← hsmul, ← he, QuotientGroup.out_eq', e.symm_apply_apply]
   have hbij : Function.Bijective
       fun x => ((e x).out : P ⧸ (P ⊓ Subgroup.centralizer {g}).subgroupOf P) := by
-    rw [← hstab]
     simpa only [QuotientGroup.out_eq'] using e.bijective
+  have horbit : h ∈ MulAction.orbit K g ↔ ∃ q ∈ P, q * g * q⁻¹ = h := by
+    rw [MulAction.mem_orbit_iff, φ.surjective.exists]
+    simp only [hsmul, Subtype.exists, exists_prop]
   rw [relTrace_apply_eq_sum_of_bijective _ hbij, coeff_sum]
   simp only [Finsupp.finsetSum_apply, conjRepresentation_single, hs, coeff_single,
     Finsupp.single_apply]
   rw [Finset.sum_set_coe (f := fun x => if x = h then r else 0), Finset.sum_ite_eq']
-  simp [MulAction.mem_orbit_iff, hsmul]
+  simp only [Set.mem_toFinset, horbit]
 
 end OrbitSum
 
