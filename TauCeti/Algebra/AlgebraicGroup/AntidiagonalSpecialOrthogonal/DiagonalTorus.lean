@@ -222,14 +222,12 @@ theorem pointsMulEquiv_diagonalTorusPoints (A : Type w) [CommRing A] [Algebra R 
     (p : WithConv (MonoidAlgebra R (Multiplicative (ULift.{u} (Fin (l / 2)) →₀ ℤ)) →ₐ[R] A)) :
     (pointsMulEquiv R l (A := A) (diagonalTorusPoints R l A p) : GL (Fin l) A) =
       diagGL fun i ↦ torusCharacter (SplitTorus.pointsMulEquiv p) (diagonalTorusWeight l i) := by
-  -- `quotientPointsHom` is by definition the point map of the quotient coordinate morphism.
-  have hquot : CommHopfAlgCat.quotientPointsHom (GeneralLinear.coordinateHopfAlgebra R l)
-      (definingHopfIdeal R l) (CommAlgCat.of R A) (diagonalTorusPoints R l A p) =
-      (CommHopfAlgCat.Hom.mapPointsFunctor
-        (coordinateMap R l ≫ diagonalTorusCoordinateMap R l)).app (CommAlgCat.of R A) p := by
-    rw [CommHopfAlgCat.Hom.mapPointsFunctor_comp_app_apply, coordinateMap_def]
-    rfl
-  rw [← pointsMulEquiv_coe, hquot, coordinateMap_comp_diagonalTorusCoordinateMap]
+  have hquot := CommHopfAlgCat.mapPointsFunctor_eq_quotientPointsHom_of_mkQuotient_comp
+    (definingHopfIdeal R l) (diagonalTorusCoordinateMap R l)
+    (GeneralLinear.weightTorusCoordinateMap (diagonalTorusWeight l))
+    (by rw [← coordinateMap_def]; exact coordinateMap_comp_diagonalTorusCoordinateMap R l)
+    (CommAlgCat.of R A) p
+  rw [← pointsMulEquiv_coe, diagonalTorusPoints_apply, ← hquot]
   exact GeneralLinear.pointsMulEquiv_mapPointsFunctor_weightTorusCoordinateMap _
     (CommAlgCat.of R A) p
 

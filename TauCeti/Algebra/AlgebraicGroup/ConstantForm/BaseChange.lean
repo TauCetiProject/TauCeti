@@ -95,8 +95,7 @@ theorem coordinateHopfAlgebraBaseChangeIso_hom_relationMatrix
       GeneralLinear.coordinateHopfAlgebraBaseChangeIso_hom_genericMatrix R K n
   have hform : C.map (algebraMap R (GeneralLinear.coordinateHopfAlgebra K n)) =
       C'.map (algebraMap K (GeneralLinear.coordinateHopfAlgebra K n)) := by
-    rw [← hC, Matrix.map_map, IsScalarTower.algebraMap_eq R K]
-    rfl
+    rw [← hC, Matrix.map_map, IsScalarTower.algebraMap_eq R K, RingHom.coe_comp]
   have hmatrix := relationMatrix_map R n C (baseChangeAlgHom R K n)
   rw [hgeneric, hform] at hmatrix
   rw [← relationMatrix_def K n C'] at hmatrix

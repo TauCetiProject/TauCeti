@@ -326,14 +326,8 @@ theorem hopfIdealPointsSubgroup_definingHopfIdeal :
     GeneralLinear.hopfIdealPointsSubgroup l (definingHopfIdeal R l) A = pointsSubgroup l A := by
   rw [definingHopfIdeal, GeneralLinear.hopfIdealPointsSubgroup_sup,
     ConstantForm.hopfIdealPointsSubgroup_definingHopfIdeal,
+    SpecialLinear.hopfIdealPointsSubgroup_definingHopfIdeal,
     map_formMatrix R l _ (map_zero _) (map_one _), pointsSubgroup, inf_comm]
-  congr 1
-  ext g
-  have hdet := SpecialLinear.mem_definingPointsSubgroup_iff_det_eq_one R l
-    ((GeneralLinear.pointsMulEquiv (R := R) (A := A) l).symm g)
-  rw [MulEquiv.apply_symm_apply, CommHopfAlgCat.mem_quotientPointsSubgroup_iff] at hdet
-  rw [GeneralLinear.mem_hopfIdealPointsSubgroup_iff, hdet, MonoidHom.mem_ker, Units.ext_iff,
-    Matrix.GeneralLinearGroup.val_det_apply, Units.val_one]
 
 /-- **The points of `SO_l^J`**: the group of algebra-valued points of its coordinate Hopf algebra
 is `pointsSubgroup l A`, the determinant-one matrices preserving `J_l`. -/
