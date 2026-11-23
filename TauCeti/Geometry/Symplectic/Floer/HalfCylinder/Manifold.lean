@@ -425,7 +425,7 @@ theorem exists_mem_periodicSolutions_tendstoUniformly_atTop_of_floer_of_isCompac
       obtain ⟨x, hx, hxK, rfl⟩ :=
         exists_mem_periodicSolutions_comp_eq hK he_inj hde hYe hx'per hx' hx'K
       obtain ⟨V, hV, hVx⟩ := hK.exists_mem_nhds_inter_preimage_subset he.continuous.continuousOn
-        he_inj (hxK 0) (hiso x hx hxK ⟨φ, hφa, hφtop, hφx'⟩)
+        he_inj (hxK 0) (mem_nhdsWithin_of_mem_nhds (hiso x hx hxK ⟨φ, hφa, hφtop, hφx'⟩))
       obtain ⟨ε, hε, hεV⟩ := Metric.mem_nhds_iff.1 hV
       refine ⟨ε, hε, fun y' hy'per hy' hy'K ⟨ψ, hψa, hψtop, hψy'⟩ hdist ↦ ?_⟩
       obtain ⟨y, hy, hyK, rfl⟩ :=
