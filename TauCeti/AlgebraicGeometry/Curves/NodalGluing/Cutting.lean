@@ -240,21 +240,10 @@ each of the two branches of every cut node. -/
 def Marking.cut (m : Marking d L) (S : Set Flag) : Marking (d.cut S) (L ⊕ (S × Bool)) where
   point := Sum.elim m.point (fun p ↦ flagPoint d (p.1.1, p.2))
   point_injective := by
-    intro a b h
-    cases a with
-    | inl a =>
-      cases b with
-      | inl b => exact congrArg Sum.inl (m.point_injective h)
-      | inr b =>
-        exact (m.point_notMem_flagPointSet a ((flagPointSet_eq_range d).symm ▸ ⟨_, h.symm⟩)).elim
-    | inr a =>
-      cases b with
-      | inl b =>
-        exact (m.point_notMem_flagPointSet b ((flagPointSet_eq_range d).symm ▸ ⟨_, h⟩)).elim
-      | inr b =>
-        have hab := flagPoint_injective d h
-        exact congrArg Sum.inr (Prod.ext (Subtype.ext (congrArg Prod.fst hab))
-          (congrArg (fun p : Flag × Bool ↦ p.2) hab))
+    refine m.point_injective.sumElim
+      ((flagPoint_injective d).comp (Subtype.val_injective.prodMap Function.injective_id)) ?_
+    intro l p h
+    exact m.point_notMem_flagPointSet l ((flagPointSet_eq_range d).symm ▸ ⟨(p.1.1, p.2), h.symm⟩)
   point_notMem_flagPointSet := by
     intro a
     cases a with
