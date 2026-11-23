@@ -223,7 +223,7 @@ theorem isRecurrent_iff_ae_encard_setOf_succ_eq_eq_top :
   refine Filter.eventually_congr ((markovChainLaw_dirac_ae_apply_zero κ x).mono fun ω hω0 => ?_)
   rw [← Set.encard_eq_top_iff, ← Set.encard_preimage_succ_add_one (s := {n | ω n = x}) hω0,
     ENat.add_eq_top, or_iff_left ENat.one_ne_top]
-  rfl
+  simp only [Set.preimage_ofPred_eq, Nat.succ_eq_add_one]
 
 /-- A state is recurrent exactly when the chain started there has infinite mean number of
 positive-time visits to it. -/

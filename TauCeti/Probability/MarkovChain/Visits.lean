@@ -290,7 +290,7 @@ theorem lintegral_encard_setOf_succ_eq_markovChainLaw (y : α) :
       rw [← hmap, map_apply measurable_shift (hH 0), hpre]
     rw [hhit, ← lintegral_encard_setOf_eq_markovChainLaw, ← hmap,
       lintegral_map hm measurable_shift]
-    rfl
+    simp only [shift_apply]
   have hm' : Measurable fun x : ℕ → α => ({n | x (n + 1) = y}.encard : ℝ≥0∞) :=
     hm.comp measurable_shift
   rw [markovChainLaw_eq_comp, lintegral_bind (Kernel.aemeasurable _) hm'.aemeasurable,
@@ -363,8 +363,7 @@ theorem markovChainLaw_dirac_setOf_le_encard_setOf_succ_eq (y : α) (k : ℕ) :
     filter_upwards [markovChainLaw_dirac_ae_apply_zero κ y] with x hx0
     -- The positive-time visit set is the preimage of the visit set under `Nat.succ`.
     simp only [← Set.encard_preimage_succ_add_one (s := {n | x n = y}) hx0,
-      ENat.lt_add_one_iff' (ENat.natCast_ne_top k)]
-    rfl
+      ENat.lt_add_one_iff' (ENat.natCast_ne_top k), Set.preimage_ofPred_eq, Nat.succ_eq_add_one]
   rw [measure_congr hevent, Measure.markovChainLaw_setOf_lt_encard_setOf_eq,
     markovChainLaw_dirac_setOf_hittingAfter_zero_ne_top, one_mul]
 
