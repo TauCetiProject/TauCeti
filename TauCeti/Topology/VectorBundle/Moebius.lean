@@ -205,8 +205,8 @@ theorem isEmpty_vectorBundleOrientation_moebiusCore :
     (isPreconnected_moebiusBaseSet false) le_rfl le_rfl (hmem hp.ne' true) (hmem hp.ne' false)
     (hmem hq.ne true) (hmem hq.ne false) ?_ ?_
   · rw [moebiusCore.det_coordChangeL_localTriv (hmem hp.ne' true) (hmem hp.ne' false)]
-    simp [moebiusCore, moebiusSign_of_pos hp]
+    simp [moebiusSign_of_pos hp]
   · rw [moebiusCore.det_coordChangeL_localTriv (hmem hq.ne true) (hmem hq.ne false)]
-    simp [moebiusCore, moebiusSign_of_neg hq]
+    simp [moebiusSign_of_neg hq]
 
 end TauCeti
