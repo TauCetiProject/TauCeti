@@ -10,7 +10,6 @@ public import Mathlib.Analysis.Calculus.ContDiff.Operations
 public import TauCeti.Topology.Compactness.Compact
 public import TauCeti.Topology.Compactness.Normed
 import TauCeti.Analysis.Calculus.IteratedFDeriv.Prod
-import TauCeti.MeasureTheory.Constructions.UnitInterval
 
 /-!
 # Compact-parameter integration
@@ -59,10 +58,7 @@ If `F` is only `C^n` on a set `W ⊇ s × ι(α)` with unique derivatives, not n
 convex set `s` with unique derivatives, the integral is `C^n` on `s`
 (`Convex.contDiffOn_integral_smul_of_contDiffOn`), with derivative within `s` the integral of the
 partial derivatives within `s` (`Convex.hasFDerivWithinAt_integral_smul_of_contDiffOn`). This
-is the regularity of the Poincaré homotopy operator on a closed half-ball. Rescaling to the unit
-interval, a parametric primitive `(x, y) ↦ ∫ r in a..y, f (x, r)` of a function `C^n` on a product
-`s × t` of convex sets, with `a ∈ t` and `s` having unique derivatives, is `C^n` on `s × t`
-(`Convex.contDiffOn_parametric_primitive`).
+is the regularity of the Poincaré homotopy operator on a closed half-ball.
 
 For a family `f : Y → E → F` with compact topological parameter `Y`, smooth slices on an
 open set and jointly continuous spatial jets, integration preserves smoothness
@@ -697,40 +693,5 @@ theorem iteratedFDeriv_integral_of_continuous_jets (k : ℕ) {x : H} (hx : x ∈
   exact heq.symm
 
 end ContinuousJets
-
-/-! ### Variable-endpoint interval integrals up to the boundary -/
-
-section ParametricPrimitive
-
-open Set
-
-/-- **Smoothness of a parametric primitive up to the boundary.** If `f` is `C^n` on `s × t`, where
-`s` is convex with unique derivatives, `t` is convex and `a ∈ t`, then the primitive
-`(x, y) ↦ ∫ r in a..y, f (x, r)` is `C^n` on `s × t`. Neither set need be open. -/
-theorem _root_.Convex.contDiffOn_parametric_primitive {n : ℕ∞} {s : Set E} {t : Set ℝ} {a : ℝ}
-    {f : E × ℝ → F} (hs : Convex ℝ s) (ht : Convex ℝ t) (hsu : UniqueDiffOn ℝ s) (ha : a ∈ t)
-    (hf : ContDiffOn ℝ n f (s ×ˢ t)) :
-    ContDiffOn ℝ n (fun p : E × ℝ ↦ ∫ r in a..p.2, f (p.1, r)) (s ×ˢ t) := by
-  rcases t.subsingleton_or_nontrivial with htriv | hnt
-  · exact contDiffOn_const.congr fun p hp ↦ by rw [htriv hp.2 ha, intervalIntegral.integral_same]
-  have htu : UniqueDiffOn ℝ t := uniqueDiffOn_convex ht (ht.nontrivial_iff_nonempty_interior.1 hnt)
-  have hW : UniqueDiffOn ℝ ((s ×ˢ t) ×ˢ Icc (0 : ℝ) 1) :=
-    (hsu.prod htu).prod (uniqueDiffOn_Icc zero_lt_one)
-  have hmaps : MapsTo (fun q : (E × ℝ) × ℝ ↦ (q.1.1, a + q.2 • (q.1.2 - a)))
-      ((s ×ˢ t) ×ˢ Icc (0 : ℝ) 1) (s ×ˢ t) :=
-    fun q hq ↦ ⟨hq.1.1, ht.add_smul_sub_mem ha hq.1.2 hq.2⟩
-  have hF : ContDiffOn ℝ n (fun q : (E × ℝ) × ℝ ↦ (q.1.2 - a) • f (q.1.1, a + q.2 • (q.1.2 - a)))
-      ((s ×ˢ t) ×ˢ Icc (0 : ℝ) 1) :=
-    (contDiff_fst.snd.sub contDiff_const).contDiffOn.smul (hf.comp (by fun_prop) hmaps)
-  refine ((hs.prod ht).contDiffOn_integral_smul_of_contDiffOn (μ := (volume : Measure unitInterval))
-    (g := fun _ ↦ (1 : ℝ)) (integrable_const 1) continuous_subtypeVal (hsu.prod htu) hW hF
-    fun p hp τ ↦ ⟨hp, τ.property⟩).congr fun p _ ↦ ?_
-  have h := intervalIntegral.smul_integral_comp_add_mul (fun r ↦ f (p.1, r)) (a := 0) (b := 1)
-    (p.2 - a) a
-  rw [mul_zero, add_zero, mul_one, add_sub_cancel] at h
-  rw [← h, ← intervalIntegral.integral_smul, intervalIntegral_eq_integral_unitInterval]
-  simp only [one_smul, smul_eq_mul, mul_comm]
-
-end ParametricPrimitive
 
 end TauCeti

@@ -19,7 +19,6 @@ import Mathlib.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
 import Mathlib.MeasureTheory.Integral.IntervalIntegral.Periodic
 import Mathlib.Topology.Algebra.Module.FiniteDimension
 import TauCeti.Analysis.Calculus.InverseFunctionTheorem
-import TauCeti.Analysis.Calculus.ParametricIntegral.Basic
 import TauCeti.Analysis.Calculus.IntervalIntegral.ParametricPrimitive
 import TauCeti.LinearAlgebra.Determinant.Prod
 import TauCeti.Topology.Algebra.Module.Determinant
