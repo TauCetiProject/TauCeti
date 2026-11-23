@@ -730,29 +730,26 @@ namespace AlgebraicK1
 /-- The homomorphism of algebraic `K₁` induced by a ring homomorphism `f : A →+* B`, applying `f`
 to the entries of invertible matrices. -/
 def map (f : A →+* B) : AlgebraicK1 A →* AlgebraicK1 B :=
-  lift (fun n ↦ (mk B n).comp (Units.map (f.mapMatrix (m := Fin n)).toMonoidHom))
-    fun m n h u ↦ by simp only [MonoidHom.comp_apply, ← stabilizeGL_map, mk_stabilizeGL]
+  Group.Abelianization.map (StableGeneralLinearGroup.map f)
 
 /-- The induced homomorphism of algebraic `K₁` sends the class of an invertible matrix to the
 class of the matrix obtained by applying the ring homomorphism to its entries. -/
 @[simp]
 theorem map_mk (f : A →+* B) (n : ℕ) (u : GL (Fin n) A) :
-    map f (mk A n u) = mk B n (Units.map (f.mapMatrix (m := Fin n)).toMonoidHom u) :=
-  lift_mk ..
+    map f (mk A n u) = mk B n (Units.map (f.mapMatrix (m := Fin n)).toMonoidHom u) := by
+  rw [map, mk, MonoidHom.comp_apply, Group.Abelianization.map_of, StableGeneralLinearGroup.map_of]
+  rfl
 
 /-- The identity ring homomorphism induces the identity of algebraic `K₁`. -/
 @[simp]
 theorem map_id : AlgebraicK1.map (RingHom.id A) = MonoidHom.id (AlgebraicK1 A) := by
-  refine hom_ext fun n ↦ MonoidHom.ext fun u ↦ ?_
-  simp
+  rw [map, StableGeneralLinearGroup.map_id, Group.Abelianization.map_id]
 
 /-- Algebraic `K₁` is functorial. -/
 theorem map_comp (f : A →+* B) (g : B →+* C) :
     AlgebraicK1.map (g.comp f) = (AlgebraicK1.map g).comp (AlgebraicK1.map f) := by
-  refine hom_ext fun n ↦ MonoidHom.ext fun u ↦ ?_
-  simp only [MonoidHom.comp_apply, map_mk]
-  refine congrArg _ (Units.ext ?_)
-  simp [Matrix.map_map]
+  rw [map, StableGeneralLinearGroup.map_comp, ← Group.Abelianization.map_comp]
+  rfl
 
 /-- Applying the homomorphisms of algebraic `K₁` induced by `f` and then `g` is applying the one
 induced by `g.comp f`. -/
