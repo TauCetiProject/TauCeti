@@ -55,8 +55,9 @@ namespace TauCeti
 theorem lt_one_iff_le_exp_neg_one {t : ℤᵐ⁰} : t < 1 ↔ t ≤ exp (-1) := by
   rw [← lt_mul_exp_iff_le exp_ne_zero, ← exp_add, neg_add_cancel, exp_zero]
 
-/-- `exp (-1)` generates the units of `ℤᵐ⁰`: its inverse corresponds to `1` under
-`WithZero.unitsWithZeroEquiv`. -/
+/-- `exp (-1)` generates the units of `ℤᵐ⁰`: under `WithZero.unitsWithZeroEquiv`, its inverse
+corresponds to the generator `Multiplicative.ofAdd (1 : ℤ)` of `Multiplicative ℤ`. -/
+@[simp]
 theorem zpowers_mk0_exp_neg_one :
     Subgroup.zpowers (Units.mk0 (exp (-1) : ℤᵐ⁰) exp_ne_zero) = ⊤ := by
   rw [← Subgroup.zpowers_inv]

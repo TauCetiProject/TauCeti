@@ -5,8 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Order.GroupWithZero.WithZeroInt
-public import TauCeti.RingTheory.Valuation.Surjective
+public import Mathlib.RingTheory.Valuation.Discrete.Basic
+import TauCeti.Algebra.GroupWithZero.Range
+import TauCeti.Algebra.Order.GroupWithZero.WithZeroInt
 
 /-!
 # Additive orders of discrete valuations
@@ -21,15 +22,12 @@ apply to rings: for a rank-one discrete valuation, a uniformizer is an element o
 where `γ` is the generator below `1` of the value group. On a ring the valuation need not attain
 `γ` (the `t`-adic valuation on `k[t², t³]`), so a uniformizer need not exist. Inverse and
 quotient laws are stated on division rings; valuation-subring results are stated on fields.
-A surjective valuation has full value group, and for a valuation from a division ring into an
-ordered group with zero full value group means surjectivity; both facts hold for monoid-with-zero
-homomorphisms and are in `TauCeti.Algebra.GroupWithZero.Range`. The other facts about surjective
-valuations that do not involve the order are in `TauCeti.RingTheory.Valuation.Surjective`, under
-the conditions on the value group each needs: the valuation is nontrivial exactly when
-its target has an element other than `0` and `1`, equivalent surjective valuations into a linearly
-ordered commutative group with zero are equal when its units form a cyclic group, and for a
-surjective valuation from a field into a linearly ordered commutative group with zero whose units
-form a nontrivial cyclic group, the valuation ring is a discrete valuation ring.
+When the value group is all of `ℤᵐ⁰ˣ`, for instance for a valuation onto `ℤᵐ⁰`, its generator
+below `1` is `exp (-1)`, so uniformizers are the elements of order one; the valuation need not
+attain `exp (-1)` for this. A valuation from a division ring that attains `exp (-1)` is onto
+`ℤᵐ⁰`, as `exp (-1)` generates `ℤᵐ⁰ˣ`. The underlying facts about monoid-with-zero homomorphisms
+are in `TauCeti.Algebra.GroupWithZero.Range`. The facts about surjective valuations that do not
+involve the order are in `TauCeti.RingTheory.Valuation.Surjective` and the files it points to.
 As `WithZero.log 0 = 0`, the order has the junk value `ord_v f = 0` whenever `v f = 0`.
 On a division ring, `v f = 0` is equivalent to `f = 0`; hypotheses excluding zero are
 included where necessary.
@@ -128,6 +126,17 @@ theorem isUniformizer_iff_ord_eq_neg_log_generator (v : _root_.Valuation F ℤ�
   have ht0 : v t ≠ 0 := valuation_ne_zero_of_ord_ne_zero v (ht ▸ hpos.ne')
   rwa [ord_eq_iff_valuation_eq_exp_neg v ht0, neg_neg, WithZero.exp_log hg] at ht
 
+/-- **The generator of a full value group is `exp (-1)`**: for a discrete `ℤᵐ⁰`-valuation whose
+value group is all of `ℤᵐ⁰ˣ`, the generator below `1` is the generator `exp (-1)` of `ℤᵐ⁰ˣ` below
+`1`. Unlike Mathlib's `IsRankOneDiscrete.generator_eq_exp_neg_one_of_mem_range`, the valuation
+need not attain `exp (-1)`, which on a ring it may not (the `t`-adic valuation on `k[t², t³]`). -/
+theorem IsRankOneDiscrete.generator_eq_exp_neg_one_of_valueGroup_eq_top
+    {v : _root_.Valuation F ℤᵐ⁰} [v.IsRankOneDiscrete] (hv : v.valueGroup = ⊤) :
+    IsRankOneDiscrete.generator v = Units.mk0 (WithZero.exp (-1)) WithZero.exp_ne_zero := by
+  rw [← IsRankOneDiscrete.valueGroup_genLTOne_eq_generator]
+  exact (LinearOrderedCommGroup.Subgroup.genLTOne_unique _ (Units.val_lt_val.mp <| by simp)
+    (TauCeti.zpowers_mk0_exp_neg_one.trans hv.symm)).symm
+
 /-- **Uniformizers are the elements of order one** for a discrete `ℤᵐ⁰`-valuation with full value
 group: the generator below `1` of its value group is then `exp (-1)`. The valuation need not attain
 `exp (-1)`; on a ring it may not, and then neither side holds for any element. -/
@@ -135,10 +144,8 @@ theorem isUniformizer_iff_ord_eq_one_of_valueGroup_eq_top (v : _root_.Valuation 
     [v.IsRankOneDiscrete] (hv : v.valueGroup = ⊤) {t : F} :
     v.IsUniformizer t ↔ ord v t = 1 := by
   rw [isUniformizer_iff_ord_eq_neg_log_generator,
-    ← IsRankOneDiscrete.valueGroup_genLTOne_eq_generator,
-    ← LinearOrderedCommGroup.Subgroup.genLTOne_unique _ (Units.val_lt_val.mp <| by simp)
-      (TauCeti.zpowers_mk0_exp_neg_one.trans hv.symm),
-    Units.val_mk0, WithZero.log_exp, neg_neg]
+    IsRankOneDiscrete.generator_eq_exp_neg_one_of_valueGroup_eq_top hv, Units.val_mk0,
+    WithZero.log_exp, neg_neg]
 
 theorem ord_mul (v : _root_.Valuation F ℤᵐ⁰) {f g : F} (hf : v f ≠ 0) (hg : v g ≠ 0) :
     ord v (f * g) = ord v f + ord v g := by
