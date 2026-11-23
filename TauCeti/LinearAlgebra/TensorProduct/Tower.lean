@@ -84,7 +84,7 @@ theorem TensorProduct.AlgebraTensorModule.rTensor_linearMap_apply {R A B M : Typ
 /-- Cancelling the base change `B ⊗[A] (A ⊗[R] M) ≃ B ⊗[R] M` on an element `1 ⊗ x` is the
 scalar extension of `x` along the structure map `A → B`. -/
 theorem TensorProduct.AlgebraTensorModule.cancelBaseChange_one_tmul {R A B M : Type*}
-    [CommSemiring R] [CommSemiring A] [CommSemiring B] [Algebra R A] [Algebra R B] [Algebra A B]
+    [CommSemiring R] [CommSemiring A] [Semiring B] [Algebra R A] [Algebra R B] [Algebra A B]
     [IsScalarTower R A B] [AddCommMonoid M] [Module R M] (x : A ⊗[R] M) :
     cancelBaseChange R A B B M (1 ⊗ₜ x) =
       (IsScalarTower.toAlgHom R A B).toLinearMap.rTensor M x := by
