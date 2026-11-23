@@ -124,10 +124,10 @@ private theorem sum_eq_sum_sum_inf [QuasiSeparatedSpace G] {f : G → M} {ι κ 
   refine CompactOpens.ext (Set.ext fun x ↦ ⟨fun hx ↦ ?_, ?_⟩)
   · obtain ⟨j, hj, hxj⟩ := hLf x (by rwa [hv i hi x hx])
     rw [CompactOpens.coe_finsetSup]
-    exact mem_biUnion hj ⟨hx, hxj⟩
+    exact mem_biUnion hj (by rw [CompactOpens.coe_inf]; exact ⟨hx, hxj⟩)
   · rw [CompactOpens.coe_finsetSup]
-    simp only [mem_iUnion]
-    exact fun ⟨_, _, hx⟩ ↦ hx.1
+    simp only [mem_iUnion, CompactOpens.coe_inf, mem_inter_iff]
+    exact fun ⟨_, _, hx, _⟩ ↦ hx
 
 /-- **Independence of the expansion.** Two finite families of pairwise disjoint compact open sets
 adapted to the same function, each covering its support, give the same sum. -/
@@ -145,8 +145,9 @@ private theorem sum_eq_sum_of_adapted [QuasiSeparatedSpace G] {f : G → M} {ι 
   by_cases h : ∃ x, x ∈ K i ∧ x ∈ L j
   · obtain ⟨x, hxK, hxL⟩ := h
     rw [← hv i hi x hxK, ← hw j hj x hxL]
-  · have hbot : L j ⊓ K i = ⊥ := CompactOpens.ext (Set.eq_empty_of_forall_notMem fun x hx ↦
-      h ⟨x, hx.2, hx.1⟩)
+  · have hbot : L j ⊓ K i = ⊥ := CompactOpens.ext (Set.eq_empty_of_forall_notMem fun x hx ↦ by
+      rw [CompactOpens.coe_inf] at hx
+      exact h ⟨x, hx.2, hx.1⟩)
     rw [hbot, apply_bot, zero_smul, zero_smul]
 
 /-- The integral of a test function through its expansion by nonzero fibres; see
@@ -163,9 +164,7 @@ private theorem integralAux_eq_sum [QuasiSeparatedSpace G] {f : LocallyConstant 
   obtain ⟨-, hfib, hdisj, hsum⟩ :=
     (exists_pairwiseDisjoint_sum_indicator hf).choose_spec.choose_spec
   refine sum_eq_sum_of_adapted μ hdisj (fun m hm x hx ↦ ?_) (fun x hx ↦ ?_) hK hv hKf
-  · have : x ∈ ((exists_pairwiseDisjoint_sum_indicator hf).choose_spec.choose m : Set G) := hx
-    rw [hfib m hm] at this
-    exact this
+  · rwa [← SetLike.mem_coe, hfib m hm] at hx
   · -- A point outside every fibre contributes nothing to the expansion of `f`.
     by_contra! h
     refine hx ?_
