@@ -10,6 +10,7 @@ public import Mathlib.MeasureTheory.Group.Integral
 public import Mathlib.MeasureTheory.Integral.Bochner.ContinuousLinearMap
 import TauCeti.Geometry.Lie.Basic
 import TauCeti.Geometry.Manifold.ContMDiff.ParametricIntegral
+import TauCeti.MeasureTheory.Group.Convolution.Norm
 import TauCeti.MeasureTheory.Group.Convolution.Support
 import Mathlib.MeasureTheory.Integral.Prod
 
@@ -214,11 +215,8 @@ theorem integral_convolution (a b : LieTestFunction I G) :
     ∫ g, convolution μ a b g ∂μ = (∫ g, a g ∂μ) * ∫ g, b g ∂μ := by
   have := topologicalGroup_of_lieGroup I ∞ (G := G)
   simp only [convolution_apply]
-  rw [integral_integral_swap_of_hasCompactSupport (continuous_integrand a b)
-    (hasCompactSupport_uncurry_of_inv_mul_mem a.hasCompactSupport b.hasCompactSupport
-      fun _ _ ↦ mem_tsupport_of_mul_ne_zero a b), ← integral_mul_const]
-  congr 1 with x
-  rw [integral_const_mul, integral_mul_left_eq_self (fun g ↦ b g) x⁻¹]
+  exact integral_integral_mul_inv_mul μ a.continuous b.continuous a.hasCompactSupport
+    b.hasCompactSupport
 
 /-- Inversion `a g ↦ a g⁻¹` reverses convolution products with respect to a left-invariant measure:
 `(a * b)^∨ = b^∨ * a^∨`. -/
