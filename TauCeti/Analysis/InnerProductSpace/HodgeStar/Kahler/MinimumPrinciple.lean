@@ -33,7 +33,9 @@ then `B_x(v, v) ≥ min m (-k / c₀) ‖v‖²` throughout `K`
 (`TauCeti.AlmostComplexStructure.min_mul_norm_sq_le_hermitianForm_apply_self_of_laplacian_le`).
 The barrier inequality is only required at minimizing unit vectors, that is at eigenvectors for the
 least eigenvalue of `B_x`; no regularity of that eigenvalue across eigenvalue crossings is needed.
-The section `w` may be chosen freely, for instance as a moving frame adapted to a nonconstant `J`.
+Here `J` is a fixed almost complex structure on the fiber `V`, as after trivializing by a unitary
+frame, and `w` may be any `C²` local unit section through `v`, for instance one that is constant in
+that trivialization.
 The regularity hypotheses are on `F` itself: continuity on `K`, and `C²` regularity at the interior
 points where the least eigenvalue drops below `min m (-k / c₀)`.
 

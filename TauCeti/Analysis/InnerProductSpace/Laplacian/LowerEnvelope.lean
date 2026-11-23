@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.InnerProductSpace.Laplacian.DriftMaximumPrinciple
+public import TauCeti.Topology.Order.LocalExtr
 
 /-!
 # The minimum principle for lower envelopes and least eigenvalues
@@ -46,9 +47,9 @@ large-parameter Seiberg–Witten solutions from below.
 
 ## Main results
 
-* `TauCeti.isLocalMin_of_isMinOn_prod`, `TauCeti.laplacian_nonneg_of_isMinOn_prod`: an interior
-  minimizer `(x₀, s₀)` of `q` over `K × S` is a local minimum of `q · γ` for every local section
-  `γ` of `S` through `s₀`, so the Laplacian of `q · γ` is nonnegative at `x₀`.
+* `TauCeti.laplacian_nonneg_of_isMinOn_prod`: for an interior minimizer `(x₀, s₀)` of `q` over
+  `K × S` and every local section `γ` of `S` through `s₀`, the Laplacian of `q · γ` is
+  nonnegative at `x₀`.
 * `TauCeti.ge_of_laplacian_add_fderiv_neg_of_isMinOn`: the strict minimum principle for lower
   envelopes.
 * `TauCeti.min_le_of_laplacian_le_mul_add_of_isMinOn`: the quantitative minimum principle for
@@ -73,18 +74,6 @@ open InnerProductSpace Laplacian Set Metric Filter Topology
 
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
   {ι : Type*} [TopologicalSpace ι]
-
-omit [InnerProductSpace ℝ E] [FiniteDimensional ℝ E] [TopologicalSpace ι] in
-/-- **The minimum test for a lower envelope.** If `(x, s)` minimizes `q` over `K × S` and `x` lies
-in the interior of `K`, then `x` is a local minimum of `y ↦ q y (γ y)` for every local section `γ`
-of `S` through `s`. -/
-theorem isLocalMin_of_isMinOn_prod {K : Set E} {S : Set ι} {q : E → ι → ℝ} {x : E} {s : ι}
-    {γ : E → ι} (hx : x ∈ interior K) (hmin : IsMinOn (fun p : E × ι ↦ q p.1 p.2) (K ×ˢ S) (x, s))
-    (hγx : γ x = s) (hγ : ∀ᶠ y in 𝓝 x, γ y ∈ S) :
-    IsLocalMin (fun y ↦ q y (γ y)) x := by
-  filter_upwards [mem_interior_iff_mem_nhds.1 hx, hγ] with y hy hγy
-  rw [hγx]
-  exact isMinOn_iff.1 hmin (y, γ y) ⟨hy, hγy⟩
 
 omit [TopologicalSpace ι] in
 /-- **The Laplacian test for a lower envelope.** If `(x, s)` minimizes `q` over `K × S` and `x`
