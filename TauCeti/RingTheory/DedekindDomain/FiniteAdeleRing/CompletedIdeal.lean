@@ -179,24 +179,35 @@ theorem comap_completedIdeal {N : Ideal R} (hN : N ≠ ⊥) :
   Ideal.ext fun _ ↦ algebraMap_mem_completedIdeal_iff hN
 
 variable (K) in
+/-- For `N ≠ ⊥`, the kernel of the diagonal map `R → Ô ⧸ NÔ` is `N`. -/
+theorem ker_quotientMk_comp_algebraMap {N : Ideal R} (hN : N ≠ ⊥) :
+    RingHom.ker ((Ideal.Quotient.mk (completedIdeal K N)).comp
+      (algebraMap R (integralAdeles R K))) = N := by
+  rw [← RingHom.comap_ker, Ideal.mk_ker, comap_completedIdeal K hN]
+
+variable (K) in
+/-- For `N ≠ ⊥`, the diagonal map `R → Ô ⧸ NÔ` is surjective. -/
+theorem quotientMk_comp_algebraMap_surjective {N : Ideal R} (hN : N ≠ ⊥) :
+    Function.Surjective ((Ideal.Quotient.mk (completedIdeal K N)).comp
+      (algebraMap R (integralAdeles R K))) := fun x ↦ by
+  obtain ⟨x, rfl⟩ := Ideal.Quotient.mk_surjective x
+  obtain ⟨r, hr⟩ := exists_sub_mem_completedIdeal (K := K) hN x
+  exact ⟨r, (Ideal.Quotient.eq.mpr hr).symm⟩
+
+variable (K) in
 /-- For `N ≠ ⊥`, the diagonal map induces a ring isomorphism `R ⧸ N ≃ Ô ⧸ NÔ`. -/
 def quotientEquivQuotientCompletedIdeal {N : Ideal R} (hN : N ≠ ⊥) :
     R ⧸ N ≃+* integralAdeles R K ⧸ completedIdeal K N :=
-  (Ideal.quotEquivOfEq (by
-    rw [RingHom.ker_eq_comap_bot, ← Ideal.comap_comap, ← RingHom.ker_eq_comap_bot,
-      Ideal.mk_ker, comap_completedIdeal K hN])).trans
-    (RingHom.quotientKerEquivOfSurjective (f := (Ideal.Quotient.mk (completedIdeal K N)).comp
-      (algebraMap R (integralAdeles R K))) fun x ↦ by
-      obtain ⟨x, rfl⟩ := Ideal.Quotient.mk_surjective x
-      obtain ⟨r, hr⟩ := exists_sub_mem_completedIdeal (K := K) hN x
-      exact ⟨r, (Ideal.Quotient.eq.mpr hr).symm⟩)
+  (Ideal.quotEquivOfEq (ker_quotientMk_comp_algebraMap K hN).symm).trans
+    (RingHom.quotientKerEquivOfSurjective (quotientMk_comp_algebraMap_surjective K hN))
 
 /-- The isomorphism `R ⧸ N ≃ Ô ⧸ NÔ` is induced by the diagonal map. -/
 @[simp]
 theorem quotientEquivQuotientCompletedIdeal_mk {N : Ideal R} (hN : N ≠ ⊥) (r : R) :
     quotientEquivQuotientCompletedIdeal K hN (Ideal.Quotient.mk N r) =
-      Ideal.Quotient.mk _ (algebraMap R (integralAdeles R K) r) :=
-  (rfl)
+      Ideal.Quotient.mk _ (algebraMap R (integralAdeles R K) r) := by
+  rw [quotientEquivQuotientCompletedIdeal, RingEquiv.trans_apply, Ideal.quotEquivOfEq_mk,
+    RingHom.quotientKerEquivOfSurjective_apply_mk, RingHom.comp_apply]
 
 variable (K) in
 /-- For `N ≠ ⊥` with `R ⧸ N` finite, for instance over the ring of integers of a number field,

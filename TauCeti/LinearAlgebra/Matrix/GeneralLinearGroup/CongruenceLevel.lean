@@ -25,6 +25,7 @@ import Mathlib.RingTheory.LocalRing.Quotient
 -- ideal of a local ring, the quotient as a local ring and its residue field, and the properness of
 -- `𝔭ᵉ`.
 import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Conjugation
+import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Map
 import TauCeti.RingTheory.Ideal.PrincipalUnitGroup
 import TauCeti.RingTheory.LocalRing.Quotient
 import TauCeti.RingTheory.LocalRing.ResidueField.Quotient
@@ -84,8 +85,7 @@ formula for `K₀` gives `[GL₂(ℤ₂) : K₀(4)] = 6`, not five.
 
 * `TauCeti.GL2K0.mem_iff`, `TauCeti.GL2K1.mem_iff`: the entry conditions.
 * `TauCeti.GL2K0_mono`, `TauCeti.GL2K1_mono`: the levels are monotone in `I`.
-* `Matrix.GeneralLinearGroup.mem_ker_map_quotientMk_iff`, `TauCeti.GL2K1.ker_map_le`: the kernel
-  of reduction modulo `I` is the set of matrices congruent to `1` entrywise, and lies in `K₁(I)`.
+* `TauCeti.GL2K1.ker_map_le`: the kernel of reduction modulo `I` lies in `K₁(I)`.
 * `TauCeti.GL2K1.rightRel_iff`, `TauCeti.GL2K0.rightRel_iff`: right cosets are determined by the
   bottom row modulo `I`, exactly or up to a unit, over every commutative ring.
 * `TauCeti.GL2K1.rightCosetEquiv`, `TauCeti.GL2K0.rightCosetEquiv`: over a local ring, the right
@@ -212,17 +212,6 @@ theorem GL2K0_top : GL2K0 (⊤ : Ideal A) = ⊤ :=
 @[simp]
 theorem GL2K1_top : GL2K1 (⊤ : Ideal A) = ⊤ :=
   eq_top_iff.mpr fun _ _ ↦ GL2K1.mem_iff.mpr ⟨Submodule.mem_top, Submodule.mem_top⟩
-
-/-- The kernel of reduction `GL_n(A) → GL_n(A ⧸ I)`, the principal congruence level of `I`,
-consists of the matrices congruent to the identity matrix entrywise modulo `I`. -/
-theorem _root_.Matrix.GeneralLinearGroup.mem_ker_map_quotientMk_iff {n : Type*} [Fintype n]
-    [DecidableEq n] {g : GL n A} :
-    g ∈ (Matrix.GeneralLinearGroup.map (n := n) (Ideal.Quotient.mk I)).ker ↔
-      ∀ i j, (g : Matrix n n A) i j - (1 : Matrix n n A) i j ∈ I := by
-  rw [MonoidHom.mem_ker, Matrix.GeneralLinearGroup.ext_iff]
-  refine forall₂_congr fun i j ↦ ?_
-  rw [Matrix.GeneralLinearGroup.map_apply, Matrix.GeneralLinearGroup.coe_one, ← Ideal.Quotient.eq,
-    Matrix.one_apply, Matrix.one_apply, apply_ite (Ideal.Quotient.mk I), map_one, map_zero]
 
 /-- The kernel of reduction modulo `I` is contained in `K₁(I)`. -/
 theorem GL2K1.ker_map_le :

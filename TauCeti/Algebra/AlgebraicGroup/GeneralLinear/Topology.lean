@@ -143,7 +143,7 @@ image of the congruence subgroup of level `I` under the homeomorphism `pointsCon
 theorem isOpen_ker_map_quotientMk {I : Ideal R} (hI : IsOpen (I : Set R)) :
     IsOpen ((Matrix.GeneralLinearGroup.map (n := Fin n) (Ideal.Quotient.mk I)).ker :
       Set (Matrix.GeneralLinearGroup (Fin n) R)) := by
-  rw [← map_congruenceSubgroup (R := ℤ), Subgroup.coe_map]
+  rw [← map_congruenceSubgroup (R := ℤ), ← coe_pointsContinuousMulEquiv, Subgroup.coe_map]
   exact (pointsContinuousMulEquiv (k := ℤ) n).isOpenMap _ (HopfAlgebra.isOpen_congruenceSubgroup hI)
 
 end PointTopology
