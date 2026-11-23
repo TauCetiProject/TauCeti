@@ -268,7 +268,7 @@ theorem exists_norm_sub_le_mul_exp_atTop (hγ : IsIntegralCurveOn γ (fun _ x �
         linarith [(Nat.cast_nonneg n : (0 : ℝ) ≤ n)]
       rw [dist_comm, dist_eq_norm, Nat.cast_succ, ← add_assoc]
       refine (hstep _ hmem).trans_eq ?_
-      rw [hrdef, ← Real.exp_nat_mul, mul_assoc, ← Real.exp_add]
+      rw [hrdef, ← Real.exp_natCast_mul, mul_assoc, ← Real.exp_add]
       congr 2
       ring
   refine ⟨lam / 2, by linarith, q * Real.exp (lam / 2 * T) / (1 - r), by positivity, ?_⟩

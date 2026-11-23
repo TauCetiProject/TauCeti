@@ -77,7 +77,7 @@ private theorem radialExtensionFun_of_ne_zero (h : sphere (0 : E) 1 ≃ₜ spher
     (x : ({0}ᶜ : Set E)) : radialExtensionFun h x = polarCongr h x := by
   unfold radialExtensionFun
   split_ifs with hx
-  · exact absurd hx x.2
+  · exact absurd hx x.property
   · rfl
 
 private theorem radialExtensionFun_zero (h : sphere (0 : E) 1 ≃ₜ sphere (0 : F) 1) :
@@ -113,7 +113,7 @@ private theorem continuous_radialExtensionFun (h : sphere (0 : E) 1 ≃ₜ spher
       have hres : ({0}ᶜ : Set E).domRestrict (radialExtensionFun h) =
           Subtype.val ∘ polarCongr h := funext (radialExtensionFun_of_ne_zero h)
       rw [hres]
-      exact continuous_subtype_val.comp (polarCongr h).continuous
+      exact continuous_subtypeVal.comp (polarCongr h).continuous
     exact hon.continuousAt (isOpen_compl_singleton.mem_nhds hx)
 
 /-- The **radial extension** of a homeomorphism `h` from the unit sphere of a real normed space `E`
@@ -181,14 +181,14 @@ theorem exists_norm_eq_of_closedBall_glue {X W : Type*} [TopologicalSpace X] {A 
     ∃ H : W ≃ₜ W, (∀ v, ‖H v‖ = ‖v‖) ∧
       ∀ (x : X) (hxA : x ∈ A) (hxB : x ∈ B), H (eB ⟨x, hxB⟩) = eA ⟨x, hxA⟩ := by
   have memA (u : sphere (0 : W) 1) :
-      ((eB.symm ⟨u, sphere_subset_closedBall u.2⟩ : B) : X) ∈ A :=
+      ((eB.symm ⟨u, sphere_subset_closedBall u.property⟩ : B) : X) ∈ A :=
     (hBe _).2 (by simp [norm_eq_of_mem_sphere u])
   have memB (v : sphere (0 : W) 1) :
-      ((eA.symm ⟨v, sphere_subset_closedBall v.2⟩ : A) : X) ∈ B :=
+      ((eA.symm ⟨v, sphere_subset_closedBall v.property⟩ : A) : X) ∈ B :=
     (hAe _).2 (by simp [norm_eq_of_mem_sphere v])
   let t : sphere (0 : W) 1 ≃ₜ sphere (0 : W) 1 :=
-    { toFun u := ⟨eA ⟨_, memA u⟩, mem_sphere_zero_iff_norm.2 ((hAe _).1 (eB.symm _).2)⟩
-      invFun v := ⟨eB ⟨_, memB v⟩, mem_sphere_zero_iff_norm.2 ((hBe _).1 (eA.symm _).2)⟩
+    { toFun u := ⟨eA ⟨_, memA u⟩, mem_sphere_zero_iff_norm.2 ((hAe _).1 (eB.symm _).property)⟩
+      invFun v := ⟨eB ⟨_, memB v⟩, mem_sphere_zero_iff_norm.2 ((hBe _).1 (eA.symm _).property)⟩
       left_inv u := by ext; simp
       right_inv v := by ext; simp
       continuous_toFun := by fun_prop

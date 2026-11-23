@@ -10,6 +10,8 @@ public import TauCeti.Geometry.Manifold.Riemannian.Isometry.FixedPoints
 public import TauCeti.Geometry.Manifold.LinearSlice
 public import TauCeti.Geometry.Manifold.TangentCone.Basic
 
+import TauCeti.Topology.Algebra.ConstMulAction
+
 /-!
 # The fixed set of a group of isometries is an embedded submanifold
 
@@ -32,7 +34,8 @@ turns these slice charts into embedded submanifold structures.
   of `M^K` lies in one of the sets
   `M^K_d = {p ∈ M^K | dim V_p = d}` (`TauCeti.fixedPointsOfFinrank I K M d`)
   (`TauCeti.subset_fixedPointsOfFinrank_of_isPreconnected`). Different components may have
-  different dimensions.
+  different dimensions. Since the fixed set is closed, each `M^K_d` is closed in `M`
+  (`TauCeti.isClosed_fixedPointsOfFinrank`).
 * **Submanifold structure.** For a subspace `L` of the model of dimension `d`, the set `M^K_d` is a
   smooth manifold modelled on `L` whose inclusion into `M` is a smooth embedding, and the tangent
   image of the inclusion at each point `p` is exactly `V_p`
@@ -51,6 +54,7 @@ embedded submanifold structures induced by slice charts
 
 * `TauCeti.isOpen_preimage_val_fixedPointsOfFinrank`: the sets `M^K_d`, which partition the fixed
   set, are open in it.
+* `TauCeti.isClosed_fixedPointsOfFinrank`: each `M^K_d` is closed in `M`.
 * `TauCeti.finrank_fixedTangentSubspace_eq_of_mem_source`,
   `TauCeti.isLocallyConstant_finrank_fixedTangentSubspace`: the dimension of the fixed tangent
   subspace is locally constant on the fixed set.
@@ -134,10 +138,10 @@ theorem isLocallyConstant_finrank_fixedTangentSubspace :
     IsLocallyConstant fun z : MulAction.fixedPoints K M ↦
       Module.finrank ℝ (fixedTangentSubspace 𝓘(ℝ, E) K (z : M)) := by
   refine (IsLocallyConstant.iff_eventually_eq _).2 fun p ↦ ?_
-  obtain ⟨q, hq, hpq, hs⟩ := exists_mem_maximalAtlas_isSliceChart hK p.2
-  filter_upwards [continuous_subtype_val.continuousAt.preimage_mem_nhds
+  obtain ⟨q, hq, hpq, hs⟩ := exists_mem_maximalAtlas_isSliceChart hK p.property
+  filter_upwards [continuous_subtypeVal.continuousAt.preimage_mem_nhds
     (q.open_source.mem_nhds hpq)] with z hz
-  exact finrank_fixedTangentSubspace_eq_of_mem_source hK hq hs hz z.2
+  exact finrank_fixedTangentSubspace_eq_of_mem_source hK hq hs hz z.property
 
 /-- Each part of the fixed set of a given dimension is open in the fixed set. -/
 theorem isOpen_preimage_val_fixedPointsOfFinrank (d : ℕ) :
@@ -145,7 +149,23 @@ theorem isOpen_preimage_val_fixedPointsOfFinrank (d : ℕ) :
       Set (MulAction.fixedPoints K M)) := by
   convert (isLocallyConstant_finrank_fixedTangentSubspace hK).isOpen_fiber d using 1
   ext z
-  exact mem_fixedPointsOfFinrank.trans (and_iff_right z.2)
+  exact mem_fixedPointsOfFinrank.trans (and_iff_right z.property)
+
+/-- **Each part of the fixed set of a given dimension is closed.** The fixed set is closed, and the
+part of it on which the fixed tangent subspace has dimension `d` is a fiber of a locally constant
+function on it. -/
+theorem isClosed_fixedPointsOfFinrank (d : ℕ) :
+    IsClosed (fixedPointsOfFinrank 𝓘(ℝ, E) K M d) := by
+  have : ContinuousConstSMul K M :=
+    ⟨fun k ↦ (contMDiff_const_smul (I := 𝓘(ℝ, E)) (n := ∞) k).continuous⟩
+  have hcl : IsClosed (MulAction.fixedPoints K M) := isClosed_fixedPoints_of_continuousConstSMul
+  convert hcl.isClosedEmbedding_subtypeVal.isClosedMap _
+    ((isLocallyConstant_finrank_fixedTangentSubspace hK).isClosed_fiber d) using 1
+  ext z
+  refine ⟨fun hz ↦ ⟨⟨z, (mem_fixedPointsOfFinrank.1 hz).1⟩, (mem_fixedPointsOfFinrank.1 hz).2, rfl⟩,
+    ?_⟩
+  rintro ⟨y, hy, rfl⟩
+  exact mem_fixedPointsOfFinrank.2 ⟨y.property, hy⟩
 
 /-- **A connected part of the fixed set has a single dimension.** A preconnected subset of the
 fixed set containing a point `p` lies in the part of the fixed set where the fixed tangent
@@ -197,7 +217,7 @@ theorem exists_isSmoothEmbedding_fixedPointsOfFinrank {d : ℕ} {L : Submodule �
     refine mem_fixedTangentSubspace.2 fun k _ ↦ ?_
     -- Every `k •` is the identity on the fixed set, so it fixes the tangent image of `val`.
     have hcomp : ((k • ·) ∘ Subtype.val : fixedPointsOfFinrank 𝓘(ℝ, E) K M d → M) =
-        Subtype.val := funext fun z ↦ (mem_fixedPointsOfFinrank.1 z.2).1 k
+        Subtype.val := funext fun z ↦ (mem_fixedPointsOfFinrank.1 z.property).1 k
     have h := mfderiv_comp y
       ((contMDiff_const_smul (I := 𝓘(ℝ, E)) (n := ∞) k).mdifferentiableAt (by simp))
       (hemb.contMDiff.mdifferentiableAt (by simp) (x := y))
@@ -205,7 +225,7 @@ theorem exists_isSmoothEmbedding_fixedPointsOfFinrank {d : ℕ} {L : Submodule �
     exact (congrArg (fun A ↦ A u) h).symm
   refine Submodule.eq_of_le_of_finrank_eq hle ?_
   rw [LinearMap.finrank_range_of_inj (hemb.isImmersion.mfderiv_injective (by simp) y),
-    (mem_fixedPointsOfFinrank.1 y.2).2]
+    (mem_fixedPointsOfFinrank.1 y.property).2]
   exact hL
 
 end TauCeti

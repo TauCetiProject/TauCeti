@@ -7,7 +7,6 @@ module
 
 public import Mathlib.MeasureTheory.Function.LpSeminorm.Basic
 public import Mathlib.MeasureTheory.Integral.Bochner.Basic
-public import Mathlib.MeasureTheory.Measure.OpenPos
 import Mathlib.MeasureTheory.Function.Holder
 import Mathlib.MeasureTheory.Integral.IntegrableOn
 
@@ -20,6 +19,9 @@ covers the usual case of an open interval `(a, b)` inside the compact interval `
 continuous counterpart of Mathlib's `MonotoneOn.memLp_top`, and the restricted-measure counterpart
 of `Continuous.memLp_top_of_hasCompactSupport`.
 
+Without compactness, a function continuous on a measurable set `s` and bounded there lies in
+`L^∞(μ.restrict s)` (`ContinuousOn.memLp_top_restrict_of_bound`).
+
 The same bound controls a pointwise composition `x ↦ A x ∘L B x` of operator families with `A`
 continuous on `K`: `A ∘L B` lies in `Lᵖ(s)` whenever `B` does
 (`MeasureTheory.MemLp.clm_comp_of_continuousOn`, Hölder's inequality
@@ -31,9 +33,7 @@ every `Lᵖ`, so for a finite exponent `p ≠ 0` its `Lᵖ` seminorm is the inte
 
 In the other direction, for a measure that charges every nonempty open set
 (`MeasureTheory.Measure.IsOpenPosMeasure`), the `L^∞` seminorm bounds the value of `f` at every
-point where `f` is continuous (`ContinuousAt.eNorm_le_eLpNorm_top`). For such a measure, for
-instance Lebesgue measure, the `L^∞` seminorm of a continuous function is therefore its supremum
-norm `⨆ x, ‖f x‖ₑ` (`Continuous.eLpNorm_top_eq_iSup`).
+point where `f` is continuous (`ContinuousAt.eNorm_le_eLpNorm_top`).
 -/
 
 public section
@@ -53,6 +53,13 @@ theorem ContinuousOn.memLp_top_restrict_of_subset_isCompact {f : X → E} {K s :
   obtain ⟨C, hC⟩ := (hK.image_of_continuousOn (continuous_nnNorm.comp_continuousOn hf)).bddAbove
   refine memLp_top_of_bound_eNorm (hf.aestronglyMeasurable_of_subset_isCompact hK hs hsK) C ?_
   filter_upwards [ae_restrict_mem hs] with x hx using eNorm_le_coe.2 <| hC ⟨x, hsK hx, rfl⟩
+
+/-- A function continuous and bounded on a measurable set `s` is essentially bounded on `s`. -/
+theorem ContinuousOn.memLp_top_restrict_of_bound [SecondCountableTopologyEither X E] {f : X → E}
+    {s : Set X} {μ : Measure X} (hf : ContinuousOn f s) (hs : MeasurableSet s) (C : ℝ)
+    (hC : ∀ x ∈ s, ‖f x‖ ≤ C) : MemLp f ∞ (μ.restrict s) :=
+  memLp_top_of_bound_eNorm (hf.aestronglyMeasurable hs) C.toNNReal <| (ae_restrict_iff' hs).2 <|
+    .of_forall fun x hx ↦ (ofReal_norm (f x)).symm.trans_le (ENNReal.ofReal_le_ofReal (hC x hx))
 
 omit [OpensMeasurableSpace X] in
 /-- **The essential supremum dominates a value at a point of continuity.** If `f` is continuous
@@ -96,13 +103,3 @@ theorem Continuous.eLpNorm_eq_integral_rpow_norm {F : Type*} [NormedAddCommGroup
     {p : ℝ≥0∞} (hp0 : p ≠ 0) (hpt : p ≠ ∞) :
     eLpNorm f p μ = ENNReal.ofReal ((∫ x, ‖f x‖ ^ p.toReal ∂μ) ^ p.toReal⁻¹) :=
   (hf.memLp_of_hasCompactSupport (.of_compactSpace f)).eLpNorm_eq_integral_rpow_norm hp0 hpt
-
-/-- For a measure positive on nonempty open sets, the `L^∞` seminorm of a continuous function is
-its supremum norm. -/
-theorem Continuous.eLpNorm_top_eq_iSup {F : Type*} [TopologicalSpace F] [ContinuousENorm F]
-    [TopologicalSpace.PseudoMetrizableSpace F] [SecondCountableTopologyEither X F]
-    {μ : Measure X} [μ.IsOpenPosMeasure] {f : X → F} (hf : Continuous f) :
-    eLpNorm f ∞ μ = ⨆ x, ‖f x‖ₑ := by
-  rw [eLpNorm_exponent_top hf.aestronglyMeasurable, eLpNormEssSup_eq_essSup_eNorm]
-  exact (iSup_eq_essSup fun x _ ha ↦
-    (isOpen_lt continuous_const hf.eNorm).measure_ne_zero μ ⟨x, ha⟩).symm

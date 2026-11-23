@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Dynamics.Flow
 public import TauCeti.Analysis.ODE.InitialCondition
+import Mathlib.Analysis.ODE.ExistUnique
 
 /-!
 # The flow of a globally Lipschitz vector field

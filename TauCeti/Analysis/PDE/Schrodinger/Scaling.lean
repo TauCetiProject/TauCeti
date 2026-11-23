@@ -7,11 +7,9 @@ module
 
 public import TauCeti.Analysis.PDE.Schrodinger.Basic
 public import TauCeti.MeasureTheory.Function.Lp.Dilation
-import TauCeti.Analysis.Distribution.SchwartzSpace.Gaussian
-import TauCeti.Analysis.SpecialFunctions.Pow.Real
 
 /-!
-# Scaling of the Schrödinger equation and the admissible Strichartz exponents
+# Scaling of the Schrödinger equation
 
 If `u(x, t)` solves the free Schrödinger equation `i ∂ₜu + Δu = 0` on a real inner product space
 `E` of dimension `n`, then so does `u(x / λ, t / λ²)` for every `λ > 0`. For the propagator
@@ -28,13 +26,13 @@ degree two.
 
 Taking `Lʳ` norms in space and then `L^q` norms in time, the dilation multiplies the Strichartz
 norm `‖S(t) f‖_{L^q_t L^r_x}` by `λ ^ (2/q + n/r - n/2)`
-(`TauCeti.eLpNorm_eLpNorm_schrodingerPropagator_dilateLp`). A global-in-time Strichartz estimate
-`‖S(t) f‖_{L^q_t L^r_x} ≤ C ‖f‖₂` is therefore possible only on the **admissible line**
-`2/q + n/r = n/2`
-(`TauCeti.two_mul_inv_add_finrank_mul_inv_eq_of_eLpNorm_schrodingerPropagator_le`): otherwise
-dilating a fixed nonzero datum by `λ → 0` or `λ → ∞` makes the left side unbounded while the
-right side does not change. This complements `TauCeti.Analysis.PDE.Schrodinger.Strichartz`,
-which proves the estimate (in weak form) at the non-endpoint admissible pairs `2 < q < ∞`.
+(`TauCeti.eLpNorm_eLpNorm_schrodingerPropagator_dilateLp`), while it preserves `‖f‖₂`. This is
+the scaling heuristic behind the admissible line `2/q + n/r = n/2`: off that line, dilating a
+fixed nonzero datum by `λ → 0` or `λ → ∞` makes the left side of a global-in-time estimate
+`‖S(t) f‖_{L^q_t L^r_x} ≤ C ‖f‖₂` unbounded while the right side does not change. The resulting
+necessity of the admissible line is
+`TauCeti.two_mul_inv_add_finrank_mul_inv_eq_of_eLpNorm_schrodingerPropagator_le`, proved with
+Gaussian data in `TauCeti.Analysis.PDE.Schrodinger.Gaussian`.
 
 ## Main declarations
 
@@ -42,23 +40,20 @@ which proves the estimate (in weak form) at the non-endpoint admissible pairs `2
 * `TauCeti.eLpNorm_schrodingerPropagator_dilateLp`: the scaling of the `Lʳ` norms at a fixed
   time.
 * `TauCeti.eLpNorm_eLpNorm_schrodingerPropagator_dilateLp`: the scaling of the mixed norms.
-* `TauCeti.two_mul_inv_add_finrank_mul_inv_eq_of_eLpNorm_schrodingerPropagator_le`: a
-  Strichartz estimate forces `2/q + n/r = n/2`.
 
 ## References
 
 * T. Tao, *Nonlinear Dispersive Equations: Local and Global Analysis*, CBMS Regional Conference
   Series in Mathematics 106, AMS, 2006, Section 2.3 (the scaling heuristic for Strichartz
   estimates).
-* M. Keel, T. Tao, *Endpoint Strichartz estimates*, Amer. J. Math. 120 (1998), 955–980.
 -/
 
 public section
 
 noncomputable section
 
-open scoped ENNReal NNReal SchwartzMap
-open MeasureTheory MeasureTheory.Measure Module Filter
+open scoped ENNReal
+open MeasureTheory MeasureTheory.Measure Module
 
 namespace TauCeti
 
@@ -71,8 +66,8 @@ variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDim
 `D_r f = r ^ (-n/2) • f (r⁻¹ • ·)` of `L²`, this reads `S(t) (D_r f) = D_r (S(t / r²) f)`. -/
 theorem schrodingerPropagator_dilateLp {r : ℝ} (hr : 0 < r) (t : ℝ)
     (f : Lp F 2 (volume : Measure E)) :
-    schrodingerPropagator F t (dilateLp volume 2 r hr f) =
-      dilateLp volume 2 r hr (schrodingerPropagator F (t / r ^ 2) f) :=
+    schrodingerPropagator F t (dilateLp volume ℝ 2 r hr f) =
+      dilateLp volume ℝ 2 r hr (schrodingerPropagator F (t / r ^ 2) f) :=
   phasePropagator_dilateLp (fun c _ ξ ↦ laplacianSymbol_smul c ξ) hr t f
 
 /-- **Scaling of the `Lʳ` norms.** At a fixed time, the `Lʳ` norm of `S(t) (D_λ f)` is
@@ -80,7 +75,7 @@ theorem schrodingerPropagator_dilateLp {r : ℝ} (hr : 0 < r) (t : ℝ)
 `0` for `r = ∞`. -/
 theorem eLpNorm_schrodingerPropagator_dilateLp {l : ℝ} (hl : 0 < l) (t : ℝ)
     (f : Lp F 2 (volume : Measure E)) (r : ℝ≥0∞) :
-    eLpNorm (schrodingerPropagator F t (dilateLp volume 2 l hl f)) r volume =
+    eLpNorm (schrodingerPropagator F t (dilateLp volume ℝ 2 l hl f)) r volume =
       ENNReal.ofReal (l ^ ((finrank ℝ E : ℝ) / r.toReal - finrank ℝ E / 2)) *
         eLpNorm (schrodingerPropagator F (t / l ^ 2) f) r volume :=
   eLpNorm_phasePropagator_dilateLp (fun c _ ξ ↦ laplacianSymbol_smul c ξ) hl t f r
@@ -90,11 +85,11 @@ mixed norm `‖S(t) f‖_{L^q_t L^r_x}`, `t ∈ ℝ`, by `λ ^ (n/r - n/2 + 2/q)
 are `n / r.toReal` and `2 / q.toReal`, which are `0` for an infinite exponent. -/
 theorem eLpNorm_eLpNorm_schrodingerPropagator_dilateLp {l : ℝ} (hl : 0 < l)
     (f : Lp F 2 (volume : Measure E)) {q : ℝ≥0∞} (hq : q ≠ 0) (r : ℝ≥0∞) :
-    eLpNorm (fun t ↦ eLpNorm (schrodingerPropagator F t (dilateLp volume 2 l hl f)) r volume) q
+    eLpNorm (fun t ↦ eLpNorm (schrodingerPropagator F t (dilateLp volume ℝ 2 l hl f)) r volume) q
         volume =
       ENNReal.ofReal (l ^ ((finrank ℝ E : ℝ) / r.toReal - finrank ℝ E / 2 + 2 / q.toReal)) *
         eLpNorm (fun t ↦ eLpNorm (schrodingerPropagator F t f) r volume) q volume := by
-  have h : (fun t ↦ eLpNorm (schrodingerPropagator F t (dilateLp volume 2 l hl f)) r volume) =
+  have h : (fun t ↦ eLpNorm (schrodingerPropagator F t (dilateLp volume ℝ 2 l hl f)) r volume) =
       fun t ↦ ENNReal.ofReal (l ^ ((finrank ℝ E : ℝ) / r.toReal - finrank ℝ E / 2)) *
         eLpNorm (schrodingerPropagator F ((l ^ 2)⁻¹ • t) f) r volume := by
     funext t
@@ -106,61 +101,5 @@ theorem eLpNorm_eLpNorm_schrodingerPropagator_dilateLp {l : ℝ} (hl : 0 < l)
     ← Real.rpow_natCast_mul hl.le, ← Real.rpow_add hl]
   congr 3
   ring
-
-/-- The Strichartz norm of the evolution of a nonzero datum is nonzero. -/
-private theorem eLpNorm_eLpNorm_schrodingerPropagator_ne_zero {q r : ℝ≥0∞} (hq : q ≠ 0)
-    (hr : r ≠ 0) {f : Lp F 2 (volume : Measure E)} (hf : f ≠ 0) :
-    eLpNorm (fun t ↦ eLpNorm (schrodingerPropagator F t f) r volume) q volume ≠ 0 := by
-  intro h0
-  rw [eLpNorm_eq_zero_iff hq] at h0
-  obtain ⟨t, ht⟩ := h0.exists
-  rw [Pi.zero_apply, eLpNorm_eq_zero_iff hr] at ht
-  have hS : schrodingerPropagator F t f = 0 := Lp.ext (ht.trans (Lp.coeFn_zero _ _ _).symm)
-  have hn := norm_phasePropagator_apply (F := F) (laplacianSymbol (E := E)) t f
-  rw [← schrodingerPropagator_def, hS, norm_zero] at hn
-  exact hf (norm_eq_zero.1 hn.symm)
-
-/-- **The admissibility condition is necessary for the Strichartz estimate.** Let `E` have
-dimension `n` and let `q, r` be nonzero exponents. If the global-in-time homogeneous Strichartz
-estimate
-
-`‖S(t) f‖_{L^q_t L^r_x} ≤ C ‖f‖₂`, `t ∈ ℝ`,
-
-holds for the Schrödinger propagator `S(t) = exp(itΔ)` and every `f ∈ L²(E)`, with a constant
-independent of `f`, then `(q, r)` lies on the admissible line `2/q + n/r = n/2`, where `1 / ∞ = 0`.
-Replacing `f` by its dilate `D_λ f`, which has the same `L²` norm, multiplies the left side by
-`λ ^ (2/q + n/r - n/2)` (`TauCeti.eLpNorm_eLpNorm_schrodingerPropagator_dilateLp`), and this
-factor is unbounded in `λ > 0` off the admissible line. -/
-theorem two_mul_inv_add_finrank_mul_inv_eq_of_eLpNorm_schrodingerPropagator_le {q r : ℝ≥0∞}
-    (hq : q ≠ 0) (hr : r ≠ 0)
-    (h : ∃ C : ℝ≥0, ∀ f : Lp ℂ 2 (volume : Measure E),
-      eLpNorm (fun t ↦ eLpNorm (schrodingerPropagator ℂ t f) r volume) q volume ≤ C * ‖f‖ₑ) :
-    2 * (q⁻¹).toReal + finrank ℝ E * (r⁻¹).toReal = finrank ℝ E / 2 := by
-  obtain ⟨C, hC⟩ := h
-  set N : Lp ℂ 2 (volume : Measure E) → ℝ≥0∞ :=
-    fun g ↦ eLpNorm (fun t ↦ eLpNorm (schrodingerPropagator ℂ t g) r volume) q volume
-  -- A nonzero datum: the Gaussian `exp(-π ‖x‖²)`.
-  have hπ : 0 < (Real.pi : ℂ).re := by simpa using Real.pi_pos
-  set f : Lp ℂ 2 (volume : Measure E) := (SchwartzMap.gaussian (V := E) hπ).toLp 2
-  have hf : f ≠ 0 := by
-    intro h0
-    have h1 : SchwartzMap.gaussian (V := E) hπ = 0 := SchwartzMap.injective_toLp 2 volume
-      (h0.trans (by simpa using (map_zero (SchwartzMap.toLpCLM ℝ ℂ 2 (volume : Measure E))).symm))
-    simpa [SchwartzMap.gaussian_apply] using congr($h1 0)
-  have hN0 : N f ≠ 0 := eLpNorm_eLpNorm_schrodingerPropagator_ne_zero hq hr hf
-  have hNtop : N f ≠ ∞ := ne_top_of_le_ne_top (by finiteness) (hC f)
-  -- The dilates of `f` all have the norm of `f`, so the scaling factor stays bounded.
-  set a : ℝ := (finrank ℝ E : ℝ) / r.toReal - finrank ℝ E / 2 + 2 / q.toReal
-  have ha : a = 0 := by
-    refine Real.eq_zero_of_forall_rpow_mul_le (B := C * ‖f‖) (ENNReal.toReal_pos hN0 hNtop)
-      fun l hl ↦ ?_
-    have h1 := hC (dilateLp volume 2 l hl f)
-    rw [eLpNorm_eLpNorm_schrodingerPropagator_dilateLp hl f hq, ← ofReal_norm,
-      LinearIsometryEquiv.norm_map, ofReal_norm] at h1
-    have h2 := ENNReal.toReal_mono (by finiteness) h1
-    rwa [ENNReal.toReal_mul, ENNReal.toReal_ofReal (by positivity), ENNReal.toReal_mul,
-      ENNReal.coe_toReal, toReal_eNorm] at h2
-  simp only [a, ENNReal.toReal_inv] at ha ⊢
-  linear_combination ha
 
 end TauCeti

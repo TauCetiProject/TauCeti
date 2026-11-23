@@ -117,7 +117,7 @@ noncomputable def coweightLatticeBasis : Basis b.support ℤ P.coweightLattice :
       (b.fundamentalCoweightBasis.linearIndependent.restrict_scalars' ℤ))
     (fun x _ ↦ by
       classical
-      choose z hz using b.mem_coweightLattice_iff.1 x.2
+      choose z hz using b.mem_coweightLattice_iff.1 x.property
       refine (mem_span_range_iff_exists_fun ℤ).2 ⟨z, Subtype.ext ?_⟩
       refine b.fundamentalCoweightBasis.ext_elem fun i ↦ ?_
       simp [hz, Finsupp.single_apply])

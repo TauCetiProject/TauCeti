@@ -113,7 +113,7 @@ two and a continuous homomorphism `y : G → 𝔽₂`, the graph class of `y|_U`
 class of the character of `U`. -/
 theorem graphClass_comp_subtype [LocallyCompactSpace G] (U : OpenSubgroup G)
     (hU : U.toSubgroup.index = 2) (y : G →* Multiplicative (ZMod 2)) (hy : Continuous y) :
-    graphClass U hU (y.comp U.toSubgroup.subtype) (hy.comp continuous_subtype_val) =
+    graphClass U hU (y.comp U.toSubgroup.subtype) (hy.comp continuous_subtypeVal) =
       (trivialF2TopPairing G).cup 1 1
           ((eqToHom (congrArg (continuousCohomology 1) (ofDiscreteModule_trivialF2 G))).hom
             (explicitH1AddEquivContinuousCohomology G (trivialF2 G).V

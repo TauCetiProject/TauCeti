@@ -137,12 +137,12 @@ theorem unitRight_val (a : ι) : (N.unitRight a : ℕ) = 0 := (rfl)
 /-- `TauCeti.FusionRules.unitLeft a` is the only index of `Hom(u ⊗ a, a)`. -/
 instance (a : ι) : Unique (Fin (N.N N.unit a a)) where
   default := N.unitLeft a
-  uniq i := Fin.ext <| by simpa using i.2
+  uniq i := Fin.ext <| by simpa using i.isLt
 
 /-- `TauCeti.FusionRules.unitRight a` is the only index of `Hom(a ⊗ u, a)`. -/
 instance (a : ι) : Unique (Fin (N.N a N.unit a)) where
   default := N.unitRight a
-  uniq i := Fin.ext <| by simpa using i.2
+  uniq i := Fin.ext <| by simpa using i.isLt
 
 end FusionRules
 

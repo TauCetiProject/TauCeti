@@ -404,6 +404,6 @@ theorem isSmoothEmbedding_projectivePlaneEmbedding {r : ℕ∞ω} (hr : 1 ≤ r)
       one_ne_zero) ?_,
     isClosedEmbedding_projectivePlaneEmbedding.isEmbedding⟩
   simpa only [Function.comp_def, stereoInvFunAux_sum_projectivePlaneEmbedding_smul] using
-    (isSmoothEmbedding_traceFreeProjector hr).1
+    (isSmoothEmbedding_traceFreeProjector hr).isImmersion
 
 end Projectivization
