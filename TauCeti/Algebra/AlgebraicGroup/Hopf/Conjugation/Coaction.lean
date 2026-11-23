@@ -160,7 +160,7 @@ theorem assoc_comp_map_conjugationCoactAlgHom :
     rw [AlgHom.comp_assoc, Algebra.TensorProduct.map_comp_includeLeft, AlgHom.comp_assoc]
   have hcomul : toConv ((Algebra.TensorProduct.map (AlgHom.id R H)
       (Bialgebra.comulAlgHom R H)).comp Algebra.TensorProduct.includeRight) = g₁ * g₂ := by
-    rw [Algebra.TensorProduct.map_comp_includeRight, Bialgebra.toConv_comp_comulAlgHom]
+    rw [Algebra.TensorProduct.map_comp_includeRight, AlgHom.toConv_comp_comulAlgHom]
   have hmapLeft : (Algebra.TensorProduct.map (AlgHom.id R H)
       (Bialgebra.comulAlgHom R H)).comp Algebra.TensorProduct.includeLeft =
       (Algebra.TensorProduct.includeLeft : H →ₐ[R] H ⊗[R] (H ⊗[R] H)) := by
