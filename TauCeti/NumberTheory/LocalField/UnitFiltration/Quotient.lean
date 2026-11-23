@@ -60,7 +60,7 @@ private def scaledElemOfUnit {c β : 𝒪[K]} (hc : Irreducible c) {n n₁ : ℕ
     (hvβ : valuation K (β : K) = valuation K (c : K) ^ n) (hn₁ : n₁ = n + 1)
     (u : unitFiltration K n₁) : 𝒪[K] :=
   ⟨(((u : Kˣ) : K) - 1) / (β : K), by
-    have hu := (mem_unitFiltration_iff_valuation_sub_one_le (by omega) hc).mp u.2
+    have hu := (mem_unitFiltration_iff_valuation_sub_one_le (by omega) hc).mp u.property
     rw [Valuation.mem_integer_iff, map_div₀, hvβ]
     refine ((div_le_iff₀ (pow_pos (Valuation.integer.v_irreducible_pos hc) n)).mpr ?_).trans
       (Valuation.integer.v_irreducible_lt_one hc).le
@@ -78,7 +78,7 @@ private theorem scaledElemOfUnit_mem_maximalIdeal {c β : 𝒪[K]} (hc : Irreduc
   rw [← SetLike.mem_coe, hc.maximalIdeal_eq_setOfPred_le_v_coe (valuation K), Set.mem_ofPred_eq,
     coe_scaledElemOfUnit, map_div₀, hvβ,
     div_le_iff₀ (pow_pos (Valuation.integer.v_irreducible_pos hc) n), mul_comm, ← pow_succ, ← hn₁]
-  exact (mem_unitFiltration_iff_valuation_sub_one_le (by omega) hc).mp u.2
+  exact (mem_unitFiltration_iff_valuation_sub_one_le (by omega) hc).mp u.property
 
 private theorem scaledElemOfUnit_mkScaledUnit {c β : 𝒪[K]} (hc : Irreducible c) {n n₁ : ℕ}
     (hvβ : valuation K (β : K) = valuation K (c : K) ^ n) (hn₁ : n₁ = n + 1)
@@ -95,7 +95,7 @@ private theorem scaledElemOfUnit_sub_mem_iff {c β : 𝒪[K]} (hc : Irreducible 
     scaledElemOfUnit hc hvβ hn₁ u₁ - scaledElemOfUnit hc hvβ hn₁ u₂ ∈ 𝓂[K] ^ (m + 1) ↔
       u₁⁻¹ * u₂ ∈ (unitFiltration K n₂).subgroupOf (unitFiltration K n₁) := by
   have hu₁ : valuation K ((u₁ : Kˣ) : K) = 1 :=
-    (mem_unitFiltration_zero _).mp (unitFiltration_antitone (Nat.zero_le _) u₁.2)
+    (mem_unitFiltration_zero _).mp (unitFiltration_antitone (Nat.zero_le _) u₁.property)
   rw [← SetLike.mem_coe,
     Set.ext_iff.mp (hc.maximalIdeal_pow_eq_setOfPred_le_v_coe_pow (valuation K) (m + 1)) _,
     Set.mem_ofPred_eq, Subgroup.mem_subgroupOf, Subgroup.coe_mul, Subgroup.coe_inv,

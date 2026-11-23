@@ -142,6 +142,15 @@ instance : TopologicalSpace (KummerCoeff K n) := ⊥
 
 instance : DiscreteTopology (KummerCoeff K n) := ⟨rfl⟩
 
+variable {K n} in
+/-- Two Kummer coefficients are equal as soon as their underlying elements of the separable
+closure are. -/
+@[ext]
+theorem KummerCoeff.ext {x y : KummerCoeff K n}
+    (h : ((x.toMul : (SeparableClosure K)ˣ) : SeparableClosure K) =
+      ((y.toMul : (SeparableClosure K)ˣ) : SeparableClosure K)) : x = y :=
+  Additive.toMul.injective <| rootsOfUnity.coe_injective h
+
 /-- **`μₙ` is a discrete `G_K`-module**: the stabilizer of a root of unity is the stabilizer of
 the underlying unit of `Kˢ`, which is open. -/
 instance kummerCoeff_continuousSMul :
@@ -161,11 +170,11 @@ theorem smul_kummerCoeff_eq_self [NeZero n] {ζ : K} (hζ : IsPrimitiveRoot ζ n
     (g : AbsoluteGaloisGroup K) (x : KummerCoeff K n) : g • x = x := by
   have hζs := (hζ.map_of_injective (algebraMap K (SeparableClosure K)).injective).isUnit_unit
     (NeZero.ne n)
-  obtain ⟨i, -, hi⟩ := hζs.eq_pow_of_mem_rootsOfUnity x.toMul.2
+  obtain ⟨i, -, hi⟩ := hζs.eq_pow_of_mem_rootsOfUnity x.toMul.property
   have hx : (((x.toMul : rootsOfUnity n (SeparableClosure K)) : (SeparableClosure K)ˣ) :
       SeparableClosure K) = algebraMap K _ ζ ^ i := by
     rw [← hi, Units.val_pow_eq_pow_val, IsUnit.unit_spec]
-  refine Additive.toMul.injective (Subtype.ext (Units.ext ?_))
+  refine KummerCoeff.ext ?_
   simp only [Additive.toMul_smul, rootsOfUnity.coe_smul, AlgEquiv.smul_units_def, Units.coe_map,
     MonoidHom.coe_ofClass]
   rw [hx, map_pow, AlgEquiv.commutes]
@@ -276,7 +285,7 @@ theorem kummerSequence_exact : Function.Exact (kummerCoeffIncl K n) (unitsCoeffP
   · rintro ⟨y, rfl⟩
     exact Additive.toMul.injective <| by
       simpa only [toMul_unitsCoeffPow, toMul_kummerCoeffIncl, toMul_zero] using
-        (mem_rootsOfUnity n _).1 y.toMul.2
+        (mem_rootsOfUnity n _).1 y.toMul.property
 
 /-- **The `n`-th power map on the units of a separable closure is surjective** when `n` is
 invertible in `K`: `Xⁿ - a` is then separable, and `Kˢ` is separably closed. -/
@@ -376,7 +385,7 @@ def baseUnitsEquivInvariants :
           congrArg (fun v : H0 (AbsoluteGaloisGroup K) (UnitsCoeff K) =>
             (((v : UnitsCoeff K).toMul : (SeparableClosure K)ˣ) : SeparableClosure K)) h,
       fun u => by
-        obtain ⟨a, ha⟩ := mem_H0_unitsCoeff_iff.1 u.2
+        obtain ⟨a, ha⟩ := mem_H0_unitsCoeff_iff.1 u.property
         exact ⟨Additive.ofMul a, Subtype.ext (Additive.toMul.injective ha)⟩⟩
 
 @[simp]
@@ -404,7 +413,7 @@ theorem mem_H0_kummerCoeff_iff {x : KummerCoeff K n} :
     obtain ⟨a, ha⟩ := mem_H0_unitsCoeff_iff.mp hu
     rw [toMul_kummerCoeffIncl] at ha
     have hpow : a ^ n = 1 := Units.map_injective (algebraMap K (SeparableClosure K)).injective
-      (by rw [map_pow, map_one, ha]; exact (mem_rootsOfUnity n _).mp x.toMul.2)
+      (by rw [map_pow, map_one, ha]; exact (mem_rootsOfUnity n _).mp x.toMul.property)
     exact ⟨⟨a, (mem_rootsOfUnity n a).mpr hpow⟩, Subtype.ext ha⟩
   · rintro ⟨a, ha⟩
     rw [FixedPoints.mem_addSubgroup]
@@ -427,7 +436,7 @@ def baseRootsOfUnityEquivInvariants :
           (congrArg (fun x : H0 (AbsoluteGaloisGroup K) (KummerCoeff K n) ↦
             (x : KummerCoeff K n).toMul) h),
       fun x ↦ by
-        obtain ⟨a, ha⟩ := (mem_H0_kummerCoeff_iff n).mp x.2
+        obtain ⟨a, ha⟩ := (mem_H0_kummerCoeff_iff n).mp x.property
         exact ⟨Additive.ofMul a, Subtype.ext (Additive.toMul.injective ha)⟩⟩
 
 /-- The invariant associated to a base-field root of unity is its usual image in `Kˢ`. -/
@@ -449,7 +458,7 @@ def embeddedUnitsInvariants (b : Lˣ) : H0 ↥σ.fieldRange.fixingSubgroup (Unit
     refine (FixedPoints.mem_addSubgroup _ _ _).2 fun h => ?_
     rw [Subgroup.smul_def (α := UnitsCoeff K), ← Additive.ofMul_smul]
     exact congrArg Additive.ofMul (Units.ext
-      ((IntermediateField.mem_fixingSubgroup_iff _ _).1 h.2 (σ b) ⟨b, rfl⟩))⟩
+      ((IntermediateField.mem_fixingSubgroup_iff _ _).1 h.property (σ b) ⟨b, rfl⟩))⟩
 
 /-- The invariant attached to a unit of `L` is the image of that unit in `(Kˢ)ˣ`. -/
 @[simp]
@@ -505,7 +514,7 @@ theorem mem_H0_fixingSubgroup_unitsCoeff_iff {u : UnitsCoeff K} :
     have hu : u = embeddedUnitsInvariants K L σ b :=
       Additive.toMul.injective (hb.symm.trans (toMul_coe_embeddedUnitsInvariants K L σ b).symm)
     rw [hu]
-    exact (embeddedUnitsInvariants K L σ b).2
+    exact (embeddedUnitsInvariants K L σ b).property
 
 /-- **The invariants of `(Kˢ)ˣ` under `Gal(Kˢ/σ(L))` are the units of `L`**, that is
 `H⁰(Gal(Kˢ/σ(L)), (Kˢ)ˣ) ≅ Lˣ`: the additive equivalence whose forward map is
@@ -521,7 +530,7 @@ def embeddedUnitsEquivInvariants :
         simpa using congrArg (fun v : H0 ↥σ.fieldRange.fixingSubgroup (UnitsCoeff K) =>
           ((v : UnitsCoeff K).toMul : (SeparableClosure K)ˣ)) h,
       fun u => by
-        obtain ⟨b, hb⟩ := mem_H0_fixingSubgroup_unitsCoeff_iff.1 u.2
+        obtain ⟨b, hb⟩ := mem_H0_fixingSubgroup_unitsCoeff_iff.1 u.property
         exact ⟨Additive.ofMul b, Subtype.ext (Additive.toMul.injective
           ((toMul_coe_embeddedUnitsInvariants K L σ b).trans hb))⟩⟩
 

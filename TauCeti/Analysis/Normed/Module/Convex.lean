@@ -26,6 +26,11 @@ set `K` has its closed `δ`-thickening inside `ball z (r / 2)` and `t * (dist x 
 that translated closed ball either lies in `interior s` or is disjoint from `K`
 (`TauCeti.closedBall_add_smul_sub_subset_interior_or_disjoint_of_forall_starConvex`). For a
 convex set containing `ball x r`, this yields `Convex.ball_add_smul_sub_subset`.
+
+In a nontrivial real seminormed space a punctured ball `ball c r \ {c}`, `r > 0`, is not convex
+(`TauCeti.not_convex_ball_sdiff_singleton`), so it is neither an open nor a closed ball
+(`TauCeti.ball_sdiff_singleton_ne_ball`, `TauCeti.ball_sdiff_singleton_ne_closedBall`), although it
+agrees with `ball c r` up to a null set for every measure without atoms.
 -/
 
 public section
@@ -155,3 +160,42 @@ theorem Convex.ball_add_smul_sub_subset {E : Type*} [SeminormedAddCommGroup E] [
     (ht₀ : 0 ≤ t) (ht : t ≤ 1) : Metric.ball (x + t • (y - x)) ((1 - t) * r) ⊆ s :=
   (TauCeti.ball_add_smul_sub_subset_interior_of_forall_starConvex
     (fun _ hz => hs.starConvex (hball hz)) (subset_closure hy) ht₀ ht).trans interior_subset
+
+namespace TauCeti
+
+open Metric Set
+
+variable {E : Type*} [SeminormedAddCommGroup E] [NormedSpace ℝ E] [Nontrivial E] {r : ℝ}
+
+/-- **A punctured ball is not convex.** In a nontrivial real seminormed space, a ball of positive
+radius with its centre removed is not convex: the centre is the midpoint of two of its points. -/
+theorem not_convex_ball_sdiff_singleton (c : E) (hr : 0 < r) : ¬Convex ℝ (ball c r \ {c}) := by
+  -- For a small multiple `w ≠ 0` of a nonzero vector, the points `c ± w` lie in the punctured
+  -- ball, and their midpoint `c` does not.
+  obtain ⟨v, hv⟩ := exists_ne (0 : E)
+  set t := r / (2 * (‖v‖ + 1))
+  have ht : 0 < t := by positivity
+  have hw : ‖t • v‖ < r := by
+    rw [norm_smul, Real.norm_of_nonneg ht.le, div_mul_eq_mul_div, div_lt_iff₀ (by positivity)]
+    nlinarith [norm_nonneg v]
+  have hw0 : t • v ≠ 0 := smul_ne_zero ht.ne' hv
+  have hmem {w : E} (hw : ‖w‖ < r) (hw0 : w ≠ 0) : c + w ∈ ball c r \ {c} :=
+    ⟨by rwa [mem_ball, dist_self_add_left], by simpa using hw0⟩
+  intro hconv
+  refine (hconv (hmem hw hw0) (hmem (by rwa [norm_neg]) (neg_ne_zero.2 hw0))
+    (by norm_num : (0 : ℝ) ≤ 1 / 2) (by norm_num : (0 : ℝ) ≤ 1 / 2) (by norm_num)).2 ?_
+  rw [mem_singleton_iff]
+  module
+
+/-- In a nontrivial real seminormed space, a punctured ball of positive radius is not a ball. -/
+theorem ball_sdiff_singleton_ne_ball (c : E) (hr : 0 < r) (c' : E) (r' : ℝ) :
+    ball c r \ {c} ≠ ball c' r' :=
+  fun h => not_convex_ball_sdiff_singleton c hr (h ▸ convex_ball c' r')
+
+/-- In a nontrivial real seminormed space, a punctured ball of positive radius is not a closed
+ball. -/
+theorem ball_sdiff_singleton_ne_closedBall (c : E) (hr : 0 < r) (c' : E) (r' : ℝ) :
+    ball c r \ {c} ≠ closedBall c' r' :=
+  fun h => not_convex_ball_sdiff_singleton c hr (h ▸ convex_closedBall c' r')
+
+end TauCeti

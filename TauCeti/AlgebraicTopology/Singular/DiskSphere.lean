@@ -236,16 +236,16 @@ lemma diskBoundaryPairToComplDiskCenter_fst :
 private def complDiskCenterHomeomorph :
     ↥(Metric.closedBall (0 : EuclideanSpace ℝ (Fin n)) 1 \ {0}) ≃ₜ
       ↥({diskCenter n}ᶜ : Set (TopCat.disk.{w} n)) where
-  toFun z := ⟨(ULift.up ⟨z, z.2.1⟩ :
+  toFun z := ⟨(ULift.up ⟨z, z.property.1⟩ :
       ULift.{w} (Metric.closedBall (0 : EuclideanSpace ℝ (Fin n)) 1)),
-    fun h ↦ z.2.2 ((congrArg (fun w : TopCat.disk.{w} n ↦
+    fun h ↦ z.property.2 ((congrArg (fun w : TopCat.disk.{w} n ↦
       ((w : ULift.{w} (Metric.closedBall (0 : EuclideanSpace ℝ (Fin n)) 1)).down :
         EuclideanSpace ℝ (Fin n))) h).trans (coe_diskCenter_down n))⟩
   invFun w := ⟨((w : TopCat.disk.{w} n) :
       ULift.{w} (Metric.closedBall (0 : EuclideanSpace ℝ (Fin n)) 1)).down,
     ((w : TopCat.disk.{w} n) :
-      ULift.{w} (Metric.closedBall (0 : EuclideanSpace ℝ (Fin n)) 1)).down.2,
-    fun h ↦ w.2 (ULift.ext (Subtype.ext ((Set.mem_singleton_iff.1 h).trans
+      ULift.{w} (Metric.closedBall (0 : EuclideanSpace ℝ (Fin n)) 1)).down.property,
+    fun h ↦ w.property (ULift.ext (Subtype.ext ((Set.mem_singleton_iff.1 h).trans
       (coe_diskCenter_down n).symm)))⟩
   left_inv _ := rfl
   right_inv _ := rfl

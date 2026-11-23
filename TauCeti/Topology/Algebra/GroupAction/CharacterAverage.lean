@@ -146,7 +146,7 @@ theorem exists_continuousOn_smul_eq_mul_of_stabilizer_eq_bot [NormalSpace X] [T2
   let χ (j : ι) : T →* Circle := (Pi.evalMonoidHom (fun _ : ι ↦ Circle) j).comp (e : T →* _)
   have hχ (j : ι) : Continuous (χ j) := (continuous_apply j).comp e.continuous
   choose f hf using fun j ↦ exists_continuousMap_apply_smul_eq_of_stabilizer_eq_bot hx₀
-    ((ContinuousMap.mk ((↑) : Circle → ℂ) continuous_subtype_val).comp ⟨χ j, hχ j⟩)
+    ((ContinuousMap.mk ((↑) : Circle → ℂ) continuous_subtypeVal).comp ⟨χ j, hχ j⟩)
   let F (j : ι) : X → ℂ := characterAverage (χ j) (f j)
   have hF (j : ι) : Continuous (F j) := continuous_characterAverage (hχ j) (f j).continuous
   have hF₀ (j : ι) : F j x₀ = 1 := characterAverage_eq_one (χ j) (hf j)
@@ -158,10 +158,11 @@ theorem exists_continuousOn_smul_eq_mul_of_stabilizer_eq_bot [NormalSpace X] [T2
     simp [v, hx]
   have hv (j : ι) : ContinuousOn (v j) {x | F j x ≠ 0} := by
     rw [continuousOn_iff_continuous_domRestrict]
-    have hc : Continuous fun x : {x | F j x ≠ 0} ↦ (⟨F j x / ‖F j x‖, hmem _ x.2⟩ : Circle) :=
-      Continuous.subtype_mk (((hF j).comp continuous_subtype_val).div (by fun_prop)
-        fun x ↦ Complex.ofReal_ne_zero.2 (norm_ne_zero_iff.2 x.2)) _
-    exact hc.congr fun x ↦ by simp [v, domRestrict, x.2.out]
+    have hc : Continuous fun x : {x | F j x ≠ 0} ↦ (⟨F j x / ‖F j x‖, hmem _ x.property⟩ : Circle)
+        :=
+      Continuous.subtype_mk (((hF j).comp continuous_subtypeVal).div (by fun_prop)
+        fun x ↦ Complex.ofReal_ne_zero.2 (norm_ne_zero_iff.2 x.property)) _
+    exact hc.congr fun x ↦ by simp [v, domRestrict, x.property.out]
   let V : Set X := {x | ∀ j, F j x ≠ 0}
   have hV : V = ⋂ j, {x | F j x ≠ 0} := by ext; simp [V]
   have hVsmul (g : T) (x : X) (hx : x ∈ V) : g • x ∈ V := fun j ↦ by

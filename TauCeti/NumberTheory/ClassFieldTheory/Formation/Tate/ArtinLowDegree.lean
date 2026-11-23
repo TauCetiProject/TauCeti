@@ -31,7 +31,7 @@ of Galois groups.
 
 ## References
 
-* E. Artin and J. Tate, *Class Field Theory*, Chapter XIV, Section 4.
+* E. Artin and J. Tate, *Class Field Theory*, Chapter XIV, §§4–5.
 * J.-P. Serre, *Local Fields*, Chapter XI, Section 3.
 -/
 
@@ -55,7 +55,7 @@ theorem tateHMinusTwoEquivAbelianization_trivialTateRes
   rw [NormalLayer.tateHMinusTwoEquivAbelianization_apply,
     NormalLayer.tateHMinusTwoEquivAbelianization_apply, map_neg, neg_inj,
     T.trivialTateRes_neg_two, ModuleCat.comp_apply]
-  rw [T.transferHom_eq_map_comp_lift_transfer, AddMonoidHom.comp_apply]
+  rw [T.transferHom_eq_map_comp_transfer, AddMonoidHom.comp_apply]
   apply (MonoidHom.ofInjective T.galHom_injective).abelianizationCongr.toAdditive.injective
   have hc := T.HNegTwoAddEquivAbelianization_trivialTateRangeIso_hom_neg_two
     ((T.trivialTateRangeIso (-2)).inv
@@ -71,9 +71,7 @@ theorem tateHMinusTwoEquivAbelianization_trivialTateRes
           (Rep.res T.galHom.range.subtype (Rep.trivial ℤ big.Gal ℤ))
           (TauCeti.TateCohomology.HNegTwoRes (Rep.trivial ℤ big.Gal ℤ)
             T.galHom.range x)) := hc.symm
-    _ = (Group.Abelianization.lift
-        (Group.Abelianization.of : T.galHom.range →* Group.Abelianization
-            T.galHom.range).transfer).toAdditive
+    _ = (Group.Abelianization.transfer T.galHom.range).toAdditive
           (TauCeti.TateCohomology.HNegTwoAddEquivAbelianization x) := hr
     _ = _ := by
       let E := (MonoidHom.ofInjective T.galHom_injective).abelianizationCongr.toAdditive

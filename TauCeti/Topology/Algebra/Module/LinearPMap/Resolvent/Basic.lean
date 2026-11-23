@@ -100,6 +100,11 @@ theorem IsResolventAt.smul_sub_bijective (h : IsResolventAt A lambda R) :
     Function.Bijective fun x : A.domain => lambda • (x : X) - A x :=
   ⟨h.smul_sub_injective, h.smul_sub_surjective⟩
 
+/-- The right-inverse identity solved for `A`: `A (R y) = lambda • R y - y`. -/
+theorem IsResolventAt.apply_eq_smul_sub (h : IsResolventAt A lambda R) (y : X) :
+    A ⟨R y, h.mem_domain y⟩ = lambda • R y - y :=
+  eq_sub_of_add_eq (sub_eq_iff_eq_add'.mp (h.smul_sub_apply y)).symm
+
 /-- The graph form of `IsResolventAt`: `R` inverts `lambda • I - A` exactly when every
 `(R y, lambda • R y - y)` lies on the graph of `A`, and `R (lambda • x - w) = x` for every point
 `(x, w)` of that graph. This form transfers along any construction described by its graph. -/
@@ -110,7 +115,7 @@ theorem isResolventAt_iff_forall_mem_graph :
   constructor
   · intro h
     refine ⟨fun y => (A.mem_graph_iff).mpr ⟨⟨R y, h.mem_domain y⟩, rfl, ?_⟩, fun p hp => ?_⟩
-    · exact eq_sub_of_add_eq (sub_eq_iff_eq_add'.mp (h.smul_sub_apply y)).symm
+    · exact h.apply_eq_smul_sub y
     · obtain ⟨u, hu, hAu⟩ := (A.mem_graph_iff).mp hp
       rw [← hu, ← hAu]
       exact h.apply_smul_sub u
@@ -200,8 +205,8 @@ theorem smul_sub_apply_resolvent (h : lambda ∈ resolventSet A) (y : X) :
 
 /-- The right-inverse identity solved for `A`: `A R(lambda) y = lambda • R(lambda) y - y`. -/
 @[simp] theorem apply_resolvent (h : lambda ∈ resolventSet A) (y : X) :
-    A ⟨resolvent A lambda y, resolvent_mem_domain h y⟩ = lambda • resolvent A lambda y - y := by
-  exact eq_sub_of_add_eq (sub_eq_iff_eq_add'.mp (smul_sub_apply_resolvent h y)).symm
+    A ⟨resolvent A lambda y, resolvent_mem_domain h y⟩ = lambda • resolvent A lambda y - y :=
+  (isResolventAt_resolvent h).apply_eq_smul_sub y
 
 /-- At a point of the resolvent set, `lambda • I - A : D(A) → X` is a bijection. -/
 theorem smul_sub_bijective (h : lambda ∈ resolventSet A) :
@@ -365,7 +370,7 @@ theorem _root_.ContinuousLinearMap.isResolventAt_vadd_of_isUnit_one_sub_mul_reso
       abel
     rw [hstep, smul_sub_apply_resolvent h (U y), hcancel y]
   · have hx : R (lambda • (x : X) - A x) = (x : X) :=
-      resolvent_smul_sub_apply h ⟨(x : X), x.2⟩
+      resolvent_smul_sub_apply h ⟨(x : X), x.property⟩
     have hstep : lambda • (x : X) - ((B : X →ₗ[𝕜] X) +ᵥ A) x
         = (lambda • (x : X) - A x) - B (R (lambda • (x : X) - A x)) := by
       rw [LinearPMap.vadd_apply, hx]

@@ -271,16 +271,16 @@ theorem mem_starRoseSpokes_iff {e : (starRose ι X).E} :
 
 -- A dart of a spoke is not a loop.
 private theorem ne_of_mem_starRoseSpokes {a b : (starRose ι X).V} (e : a ⟶ b)
-    (he : e.1 ∈ starRoseSpokes ι X) : a ≠ b := by
+    (he : e.val ∈ starRoseSpokes ι X) : a ≠ b := by
   obtain ⟨e, rfl, rfl⟩ := e
   cases e using starRose.dart_cases <;> simp_all
 
 -- Two consecutive darts, the second not reversing the first, meet at the center.
 private theorem eq_center_of_ne_rev {a b c : (starRose ι X).V} (e : a ⟶ b) (f : b ⟶ c)
-    (hef : f.1 ≠ (starRose ι X).rev e.1) : b = starRose.center ι X := by
+    (hef : f.val ≠ (starRose ι X).rev e.val) : b = starRose.center ι X := by
   obtain rfl | ⟨i, rfl⟩ := starRose.eq_center_or_eq_tip b
   · rfl
-  · rw [starRose_src_eq_tip_iff.mp f.2.1, starRose_tgt_eq_tip_iff.mp e.2.2] at hef
+  · rw [starRose_src_eq_tip_iff.mp f.property.1, starRose_tgt_eq_tip_iff.mp e.property.2] at hef
     exact absurd rfl hef
 
 variable (ι X)
@@ -299,15 +299,15 @@ theorem isTree_restrict_starRoseSpokes :
     refine (isAcyclic_restrict_iff _ _ _).mpr fun u p hp hpS => ?_
     rcases p with _ | ⟨_ | ⟨_ | ⟨q, d⟩, e⟩, f⟩
     · rfl
-    · exact absurd rfl (ne_of_mem_starRoseSpokes f (hpS f.1 (by simp)))
+    · exact absurd rfl (ne_of_mem_starRoseSpokes f (hpS f.val (by simp)))
     · have hef := ((Path.isReduced_cons_cons _ _ _ _).mp hp).2
       -- Read cyclically, the closed path also turns from `f` to `e` without backtracking.
-      have hfe : e.1 ≠ (starRose ι X).rev f.1 := fun h => hef (by rw [h, rev_rev])
+      have hfe : e.val ≠ (starRose ι X).rev f.val := fun h => hef (by rw [h, rev_rev])
       exact absurd ((eq_center_of_ne_rev f e hfe).trans (eq_center_of_ne_rev e f hef).symm)
-        (ne_of_mem_starRoseSpokes e (hpS e.1 (by simp)))
+        (ne_of_mem_starRoseSpokes e (hpS e.val (by simp)))
     · have hp' := (Path.isReduced_cons_cons _ _ _ _).mp hp
       exact absurd ((eq_center_of_ne_rev d e ((Path.isReduced_cons_cons _ _ _ _).mp hp'.1).2).trans
-        (eq_center_of_ne_rev e f hp'.2).symm) (ne_of_mem_starRoseSpokes e (hpS e.1 (by simp)))
+        (eq_center_of_ne_rev e f hp'.2).symm) (ne_of_mem_starRoseSpokes e (hpS e.val (by simp)))
 
 /-- The spanning tree of the star of a rose formed by its spokes. -/
 def starRoseTree : (starRose ι X).SpanningTree where
@@ -330,7 +330,7 @@ instance : Unique (starRose ι X).SpanningTree where
       obtain ⟨p, -, hpT⟩ := T.exists_path (starRose.center ι X) (starRose.tip X i)
       -- The path is not empty, since the center is not a tip.
       obtain _ | ⟨q, f⟩ := p
-      exact starRose_tgt_eq_tip_iff.mp f.2.2 ▸ hpT f.1 (by simp)
+      exact starRose_tgt_eq_tip_iff.mp f.property.2 ▸ hpT f.val (by simp)
     ext e
     simp only [starRoseTree_darts]
     refine ⟨fun he => hT he, fun he => ?_⟩

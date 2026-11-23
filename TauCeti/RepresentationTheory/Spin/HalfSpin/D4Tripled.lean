@@ -70,14 +70,14 @@ private theorem W_ne_bot (b : Module.Basis (Fin 4) ℚ P.W) : P.W ≠ ⊥ := by
 /-- An even exterior-basis vector, regarded as an element of the even half-spin module. -/
 noncomputable def d4SpinPlusExteriorBasis
     (s : {s : Finset (Fin 4) // Even s.card}) : spinPlus Q P :=
-  ⟨b.ExteriorAlgebra s, (TauCeti.basis_mem_spinPlus_iff P b s).2 s.2⟩
+  ⟨b.ExteriorAlgebra s, (TauCeti.basis_mem_spinPlus_iff P b s).2 s.property⟩
 
 private theorem d4SpinPlusBasisVector_linearIndependent :
     LinearIndependent ℚ (P.d4SpinPlusExteriorBasis b) := by
   apply LinearIndependent.of_comp (spinPlus Q P).subtype
   -- Coercing the half-spin subtype exposes the underlying exterior-basis family.
   change LinearIndependent ℚ (fun s : {s : Finset (Fin 4) // Even s.card} ↦
-    b.ExteriorAlgebra s.1)
+    b.ExteriorAlgebra s.val)
   exact b.ExteriorAlgebra.linearIndependent.comp Subtype.val Subtype.val_injective
 
 private noncomputable def d4SpinPlusBasis :
@@ -92,14 +92,14 @@ private noncomputable def d4SpinPlusBasis :
 /-- An odd exterior-basis vector, regarded as an element of the odd half-spin module. -/
 noncomputable def d4SpinMinusExteriorBasis
     (s : {s : Finset (Fin 4) // Odd s.card}) : spinMinus Q P :=
-  ⟨b.ExteriorAlgebra s, (TauCeti.basis_mem_spinMinus_iff P b s).2 s.2⟩
+  ⟨b.ExteriorAlgebra s, (TauCeti.basis_mem_spinMinus_iff P b s).2 s.property⟩
 
 private theorem d4SpinMinusBasisVector_linearIndependent :
     LinearIndependent ℚ (P.d4SpinMinusExteriorBasis b) := by
   apply LinearIndependent.of_comp (spinMinus Q P).subtype
   -- Coercing the half-spin subtype exposes the underlying exterior-basis family.
   change LinearIndependent ℚ (fun s : {s : Finset (Fin 4) // Odd s.card} ↦
-    b.ExteriorAlgebra s.1)
+    b.ExteriorAlgebra s.val)
   exact b.ExteriorAlgebra.linearIndependent.comp Subtype.val Subtype.val_injective
 
 private noncomputable def d4SpinMinusBasis :
@@ -230,7 +230,7 @@ private theorem d4Block_raisingMatrixQ_mulVec_single
     (hreflect : ∀ i s, p s → p (typeDSpinReflection i s))
     (i : Fin 4) (s : {s : Finset (Fin 4) // p s}) :
     (if typeDSpinWeight s i = -1 then
-        Pi.single (e ⟨typeDSpinReflection i s, hreflect i s s.2⟩) 1 else 0) =
+        Pi.single (e ⟨typeDSpinReflection i s, hreflect i s s.property⟩) 1 else 0) =
       (D4Tripled.weightTable.raisingMatrixQ i).submatrix Subtype.val Subtype.val *ᵥ
         Pi.single (e s) 1 := by
   classical
@@ -243,7 +243,7 @@ private theorem d4Block_raisingMatrixQ_mulVec_single
     simp only [D4Tripled.weightTable_weight, hcoe, d4TripledWeight_d4SpinIndex, hs,
       true_and, Pi.single_apply]
     have hindex : (a : Fin 24) = d4TripledReflection i (d4SpinIndex s) ↔
-        a = e ⟨typeDSpinReflection i s, hreflect i s s.2⟩ := by
+        a = e ⟨typeDSpinReflection i s, hreflect i s s.property⟩ := by
       constructor
       · intro h
         apply Subtype.ext
@@ -268,7 +268,7 @@ private theorem d4Block_loweringMatrixQ_mulVec_single
     (hreflect : ∀ i s, p s → p (typeDSpinReflection i s))
     (i : Fin 4) (s : {s : Finset (Fin 4) // p s}) :
     (if typeDSpinWeight s i = 1 then
-        Pi.single (e ⟨typeDSpinReflection i s, hreflect i s s.2⟩) 1 else 0) =
+        Pi.single (e ⟨typeDSpinReflection i s, hreflect i s s.property⟩) 1 else 0) =
       (D4Tripled.weightTable.loweringMatrixQ i).submatrix Subtype.val Subtype.val *ᵥ
         Pi.single (e s) 1 := by
   classical
@@ -281,7 +281,7 @@ private theorem d4Block_loweringMatrixQ_mulVec_single
     simp only [D4Tripled.weightTable_weight, hcoe, d4TripledWeight_d4SpinIndex, hs,
       true_and, Pi.single_apply]
     have hindex : (a : Fin 24) = d4TripledReflection i (d4SpinIndex s) ↔
-        a = e ⟨typeDSpinReflection i s, hreflect i s s.2⟩ := by
+        a = e ⟨typeDSpinReflection i s, hreflect i s s.property⟩ := by
       constructor
       · intro h
         apply Subtype.ext
@@ -335,7 +335,7 @@ private theorem d4SpinPlusBlockEquiv_serreE_exteriorBasis (hline : P.line = ⊥)
             (P.d4SpinPlusExteriorBasis b s) =
           P.d4SpinPlusExteriorBasis b
             ⟨typeDSpinReflection i s,
-              (even_card_typeDSpinReflection_iff (by omega) i s).2 s.2⟩ := by
+              (even_card_typeDSpinReflection_iff (by omega) i s).2 s.property⟩ := by
       apply Subtype.ext
       simp only [coe_typeDSpinPlusLieRep_apply, typeDSpinLieRep_apply,
         P.typeDQuadraticEquiv_rootGenerator b (by omega) hline (.inl i)]
@@ -377,7 +377,7 @@ private theorem d4SpinPlusBlockEquiv_serreF_exteriorBasis (hline : P.line = ⊥)
             (P.d4SpinPlusExteriorBasis b s) =
           P.d4SpinPlusExteriorBasis b
             ⟨typeDSpinReflection i s,
-              (even_card_typeDSpinReflection_iff (by omega) i s).2 s.2⟩ := by
+              (even_card_typeDSpinReflection_iff (by omega) i s).2 s.property⟩ := by
       apply Subtype.ext
       simp only [coe_typeDSpinPlusLieRep_apply, typeDSpinLieRep_apply,
         P.typeDQuadraticEquiv_rootGenerator b (by omega) hline (.inr i)]
@@ -501,7 +501,7 @@ private theorem d4SpinMinusBlockEquiv_serreE_exteriorBasis (hline : P.line = ⊥
         P.typeDSpinMinusLieRep b hline (TypeDStd.rootGenerator 4 (by omega) (.inl i))
             (P.d4SpinMinusExteriorBasis b s) =
           P.d4SpinMinusExteriorBasis b
-            ⟨typeDSpinReflection i s, (odd_card_typeDSpinReflection_iff i s).2 s.2⟩ := by
+            ⟨typeDSpinReflection i s, (odd_card_typeDSpinReflection_iff i s).2 s.property⟩ := by
       apply Subtype.ext
       simp only [coe_typeDSpinMinusLieRep_apply, typeDSpinLieRep_apply,
         P.typeDQuadraticEquiv_rootGenerator b (by omega) hline (.inl i)]
@@ -542,7 +542,7 @@ private theorem d4SpinMinusBlockEquiv_serreF_exteriorBasis (hline : P.line = ⊥
         P.typeDSpinMinusLieRep b hline (TypeDStd.rootGenerator 4 (by omega) (.inr i))
             (P.d4SpinMinusExteriorBasis b s) =
           P.d4SpinMinusExteriorBasis b
-            ⟨typeDSpinReflection i s, (odd_card_typeDSpinReflection_iff i s).2 s.2⟩ := by
+            ⟨typeDSpinReflection i s, (odd_card_typeDSpinReflection_iff i s).2 s.property⟩ := by
       apply Subtype.ext
       simp only [coe_typeDSpinMinusLieRep_apply, typeDSpinLieRep_apply,
         P.typeDQuadraticEquiv_rootGenerator b (by omega) hline (.inr i)]

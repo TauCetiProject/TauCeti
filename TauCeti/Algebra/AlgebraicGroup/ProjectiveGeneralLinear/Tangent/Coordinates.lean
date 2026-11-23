@@ -63,7 +63,7 @@ theorem tangentEquivPi_apply_of_tangentEnd_eq
     (hX : tangentEnd (r + 1) d = LieAlgebra.ad B _ X)
     (ij : {ij : Fin (r + 1) × Fin (r + 1) // ij ≠ (Fin.last r, Fin.last r)}) :
     tangentEquivPi r d ij =
-      X ij.1.1 ij.1.2 - if ij.1.1 = ij.1.2 then X (Fin.last r) (Fin.last r) else 0 := by
+      X ij.val.1 ij.val.2 - if ij.val.1 = ij.val.2 then X (Fin.last r) (Fin.last r) else 0 := by
   have h : tangentLieEquivInnerDerivations (r + 1) d =
       (LieAlgebra.ad B (Matrix (Fin (r + 1)) (Fin (r + 1)) B)).rangeRestrict X := by
     apply Subtype.ext
@@ -109,7 +109,7 @@ theorem tangentEnd_tangentBasis
     (ij : {ij : Fin (r + 1) × Fin (r + 1) // ij ≠ (Fin.last r, Fin.last r)}) :
     tangentEnd (r + 1) (tangentBasis (R := R) (B := B) r ij) =
       LieAlgebra.ad B (Matrix (Fin (r + 1)) (Fin (r + 1)) B)
-        (single ij.1.1 ij.1.2 1) := by
+        (single ij.val.1 ij.val.2 1) := by
   rw [← tangentLieEquivInnerDerivations_apply (R := R) (B := B) (r + 1)]
   simp only [tangentBasis, Module.Basis.coe_ofEquivFun, tangentEquivPi,
     LinearEquiv.trans_symm, LinearEquiv.trans_apply, ← LieEquiv.coe_toLinearEquiv,

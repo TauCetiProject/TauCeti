@@ -271,11 +271,11 @@ theorem exists_forall_div_prod_mem_filtration (y : ℕ → Lˣ) (hy : ∀ n, y n
 
 /-- The coordinate `a ∈ A` of an element `x = 1 + ϖ ^ j • a` of the `j`-th step. -/
 private def coord {j : ℕ} (x : hA.filtration j) : A :=
-  ⟨x.2.choose, x.2.choose_spec.1⟩
+  ⟨x.property.choose, x.property.choose_spec.1⟩
 
 private theorem coe_coord {j : ℕ} (x : hA.filtration j) :
     ((x : Lˣ) : L) = ((1 + ϖ ^ j • (hA.coord x : 𝒪[L]) : 𝒪[L]) : L) :=
-  x.2.choose_spec.2
+  x.property.choose_spec.2
 
 private theorem coord_eq {j : ℕ} (x : hA.filtration j) {a : 𝒪[L]}
     (hx : ((x : Lˣ) : L) = ((1 + ϖ ^ j • a : 𝒪[L]) : L)) : (hA.coord x : 𝒪[L]) = a :=
@@ -292,7 +292,7 @@ def filtrationToQuotient (j : ℕ) :
     have h : hA.coord (1 : hA.filtration j) = 0 := Subtype.ext (hA.coord_eq 1 (by simp))
     rw [h, Submodule.Quotient.mk_zero, ofAdd_zero]
   map_mul' x y := by
-    obtain ⟨c, hc, h⟩ := hA.exists_one_add_mul_one_add j (hA.coord x).2 (hA.coord y).2
+    obtain ⟨c, hc, h⟩ := hA.exists_one_add_mul_one_add j (hA.coord x).property (hA.coord y).property
     have hxy : (hA.coord (x * y) : 𝒪[L]) = hA.coord x + hA.coord y + c := by
       refine hA.coord_eq (x * y) ?_
       rw [Subgroup.coe_mul, Units.val_mul, hA.coe_coord x, hA.coe_coord y, ← Subring.coe_mul, h]
@@ -315,7 +315,7 @@ piece of the unit filtration of `A` at `j` embeds into `A ⧸ ϖ • A`. -/
 theorem ker_filtrationToQuotient (j : ℕ) :
     (hA.filtrationToQuotient j).ker = (hA.filtration (j + 1)).subgroupOf (hA.filtration j) := by
   ext x
-  obtain ⟨a, ha, hx⟩ := x.2
+  obtain ⟨a, ha, hx⟩ := x.property
   rw [MonoidHom.mem_ker, Subgroup.mem_subgroupOf, hA.filtrationToQuotient_apply x ha hx,
     ofAdd_eq_one, Submodule.Quotient.mk_eq_zero, ← ideal_span_singleton_smul, mem_smul_top_iff,
     ideal_span_singleton_smul, mem_smul_pointwise_iff_exists]

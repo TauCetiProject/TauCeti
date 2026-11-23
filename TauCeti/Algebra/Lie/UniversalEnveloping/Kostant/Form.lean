@@ -496,7 +496,8 @@ noncomputable def kostantFormRep
     kostantForm e h →ₐ[ℤ] Module.End ℤ N where
   toFun u := {
     toFun v := ⟨ρ (u : _root_.UniversalEnvelopingAlgebra ℚ L) (v : V),
-      kostantForm_apply_mem e h ρ N he hh (u : _root_.UniversalEnvelopingAlgebra ℚ L) u.2 v.2⟩
+      kostantForm_apply_mem e h ρ N he hh (u : _root_.UniversalEnvelopingAlgebra ℚ L) u.property
+          v.property⟩
     map_add' v w := Subtype.ext (by simp)
     map_smul' z v := Subtype.ext
       (map_zsmul (ρ (u : _root_.UniversalEnvelopingAlgebra ℚ L)) z (v : V))

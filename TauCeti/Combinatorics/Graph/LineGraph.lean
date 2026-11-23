@@ -8,7 +8,7 @@ module
 public import Mathlib.Combinatorics.SimpleGraph.Coloring.Vertex
 public import Mathlib.Combinatorics.SimpleGraph.LineGraph
 public import TauCeti.Combinatorics.Graph.Incidence.Basic
-public import TauCeti.Combinatorics.Graph.Isomorphism
+public import TauCeti.Combinatorics.Graph.Isomorphism.Basic
 public import TauCeti.Combinatorics.SimpleGraph.Coloring.Edge
 
 /-!
@@ -40,6 +40,8 @@ bound. The converse bound for bipartite multigraphs is Kőnig's edge-colouring t
   graph.
 * `Graph.Iso.lineGraph`: isomorphic multigraphs have isomorphic line graphs.
 * `Graph.lineGraphOfSimpleGraphIso`: the line graph of `Graph.ofSimpleGraph H` is `H.lineGraph`.
+* `SimpleGraph.edgeColoringEquivOfSimpleGraph`: colourings of `H.lineGraph` are proper
+  edge-colourings of `Graph.ofSimpleGraph H`.
 * `Graph.EdgeColoring G C`: proper edge-colourings of `G` by `C`, with the constructor
   `Graph.EdgeColoring.mk` and the restriction `Graph.EdgeColoring.ofLE` to subgraphs, such as
   `G.deleteEdges F`.
@@ -98,7 +100,7 @@ private theorem pairwise_lineGraph_adj_inclusion (G : Graph α β) (x : α) :
     Pairwise fun e f : G.incidenceSet x ↦ G.lineGraph.Adj
       (inclusion (G.incidenceSet_subset_edgeSet x) e)
       (inclusion (G.incidenceSet_subset_edgeSet x) f) :=
-  fun e f hef ↦ G.isClique_lineGraph_incidenceSet x e.2 f.2
+  fun e f hef ↦ G.isClique_lineGraph_incidenceSet x e.property f.property
     ((inclusion_injective (G.incidenceSet_subset_edgeSet x)).ne hef)
 
 /-- The line graph of a subgraph `H ≤ G` is the subgraph of the line graph of `G` induced on the
@@ -108,7 +110,8 @@ def lineGraphEmbeddingOfLE (h : H ≤ G) : H.lineGraph ↪g G.lineGraph where
   inj' := inclusion_injective h.edgeSet_mono
   map_rel_iff' {e f} := by
     simp only [Function.Embedding.coeFn_mk, lineGraph_adj, ne_eq,
-      (inclusion_injective h.edgeSet_mono).eq_iff, ← h.inc_congr e.2, ← h.inc_congr f.2]
+      (inclusion_injective h.edgeSet_mono).eq_iff, ← h.inc_congr e.property,
+          ← h.inc_congr f.property]
 
 /-- The embedding of line graphs induced by `H ≤ G` keeps each edge identity. -/
 @[simp]
@@ -282,8 +285,8 @@ banana graph is complete. -/
 @[simp]
 theorem lineGraph_banana (u v : α) (F : Set β) : (banana u v F).lineGraph = ⊤ := by
   ext e f
-  have he : (e : β) ∈ F := by simpa using e.2
-  have hf : (f : β) ∈ F := by simpa using f.2
+  have he : (e : β) ∈ F := by simpa using e.property
+  have hf : (f : β) ∈ F := by simpa using f.property
   simp only [lineGraph_adj, banana_inc, SimpleGraph.top_adj, and_iff_left_iff_imp]
   exact fun _ ↦ ⟨u, ⟨he, Or.inl rfl⟩, hf, Or.inl rfl⟩
 
@@ -295,3 +298,9 @@ theorem chromaticNumber_lineGraph_banana (u v : α) (F : Set β) :
     edgeSet_banana]
 
 end Graph
+
+namespace SimpleGraph
+
+variable {α : Type u} {C : Type w}
+
+end SimpleGraph

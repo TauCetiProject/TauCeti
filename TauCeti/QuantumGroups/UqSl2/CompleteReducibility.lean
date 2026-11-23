@@ -119,10 +119,10 @@ private theorem isSemisimpleModule_of_casimirBlock_casimirScalar_eq_top :
     e_smul_eq_zero_of_casimirBlock_eq_top hq hc hw
   -- Each vector of `W` is the image of `v₀` under a module map from `L_m^ε`.
   have hW (w : genWeightSpace q V (ε * q ^ m)) : (w : V) ∈ weightSpace q V (ε * q ^ m) :=
-    mem_weightSpace_of_e_smul_eq_zero hq w.2 (hE w w.2)
+    mem_weightSpace_of_e_smul_eq_zero hq w.property (hE w w.property)
   let L (w : genWeightSpace q V (ε * q ^ m)) : Submodule (UqSl2 q) V :=
-    LinearMap.range (LadderModule.lift hq (hW w) (hE w w.2)
-      (f_pow_smul_eq_zero_of_e_smul_eq_zero hq w.2 (hE w w.2)))
+    LinearMap.range (LadderModule.lift hq (hW w) (hE w w.property)
+      (f_pow_smul_eq_zero_of_e_smul_eq_zero hq w.property (hE w w.property)))
   have : IsSimpleModule (UqSl2 q) (LadderModule q m ε) := LadderModule.isSimpleModule hq
   refine isSemisimpleModule_of_isSemisimpleModule_submodule'
     (p := L) (fun w => IsSemisimpleModule.range _) ?_

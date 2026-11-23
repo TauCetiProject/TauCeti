@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Fredholm.Parametric
+public import TauCeti.Analysis.ODE.EnergyEstimate.WeightCrossing
 public import TauCeti.Analysis.ODE.TrajectoryOperator
 public import TauCeti.Analysis.Sobolev.GraphStep.ZeroAtInfty
 import TauCeti.Analysis.ODE.TrajectoryOperator.Tanh
@@ -51,9 +52,32 @@ with `AL` the class of `A - w' • id`. The results are:
   (`TauCeti.exp_mul_abs_mul_norm_sub_le`);
 * **the kernel of the extended operator** (`TauCeti.WeakDerivStep.coprod_endTailL_eq_zero_iff`):
   `(ξ, v)` lies in it exactly when `u = exp (-w) • ξ + ∑ i, χ i • v i` solves `u' + A u = 0`. So
-  the kernel corresponds to the solutions of this form;
+  the kernel corresponds to the solutions of this form. For a weight bounded below, `u` tends at
+  each end to the free variable attached there
+  (`TauCeti.WeakDerivStep.tendsto_exp_neg_smul_toZeroAtInfty_add_sum`);
 * **the index** (`TauCeti.WeakDerivStep.index_coprod_endTailL`): when the weighted operator is
-  Fredholm, the extended operator has index `index D_{A - w'} + ∑ i, dim K i`.
+  Fredholm, so is the extended operator
+  (`ContinuousLinearMap.IsFredholm.coprod_of_finiteDimensional`), and its index is
+  `index D_{A - w'} + ∑ i, dim K i`.
+
+**Symmetric limits and the Morse–Bott count.** For finite-dimensional `E` and symmetric limits
+`A±`, the weighted operator is Fredholm as soon as the limits `δ±` of the slope `w'` are not
+eigenvalues of `A±` (`TauCeti.WeakDerivStep.isFredholm_trajectoryOperator_sub_smul_id`), and its
+index is `n_{< δ⁻}(A⁻) - n_{< δ⁺}(A⁺)`, where `n_{< δ}(B)` counts the eigenvalues of `B` below
+`δ` with multiplicity. So the extended operator has index
+`n_{< δ⁻}(A⁻) - n_{< δ⁺}(A⁺) + ∑ i, dim K i`
+(`TauCeti.WeakDerivStep.index_coprod_endTailL_eq_finrank_pointSpectralSubspace_sub_finrank_add`).
+Along a trajectory between critical manifolds `C` and `D` of a Morse–Bott function, the limits are
+the Hessians at the ends, with `n_{< 0}(A⁻) = λ_C`, `ker A⁻ = T C`, `n_{< 0}(A⁺) = λ_D` and
+`ker A⁺ = T D`. A decay weight at both ends below the spectral gaps, `δ⁻ < 0 < δ⁺` with no
+eigenvalue of `A⁻` in `[δ⁻, 0)` and none of `A⁺` in `(0, δ⁺]`, counts the eigenvalue `0` of `A⁺`,
+which lies below `δ⁺`, but not that of `A⁻`, which lies above `δ⁻`: the weighted operator has
+index `λ_C - λ_D - dim D`. Adjoining the free variables `ker A⁻` at `-∞` and `ker A⁺` at `+∞`
+adds `dim C + dim D`, and the extended operator has index `λ_C - λ_D + dim C`
+(`index_coprod_endTailL_ker_eq_finrank_pointSpectralSubspace_sub_finrank_add`, in the namespace
+`TauCeti.WeakDerivStep`). This is the dimension of the space of trajectories from `C` to `D`
+before dividing by the translations of time. When `C` and `D` are critical points, the free
+variables are zero and it is the Morse count `λ_C - λ_D`.
 
 For the constant trajectory at a critical manifold filling `E`, the coefficient is `A = 0`. With
 the weight `log cosh` the weighted operator is `d/ds - tanh s`, of index `-dim E`, and the two end
@@ -191,7 +215,7 @@ omit [Fact (1 ≤ p)] [∀ i, FiniteDimensional ℝ (K i)] in
 private theorem memLp_sum_endTail (hmem : ∀ i, ∀ v ∈ K i, MemLp (endTail w (χ i) A v) p)
     (v : Π i, K i) :
     MemLp (fun s ↦ ∑ i, endTail w (χ i) A (v i) s) p (volume.restrict ((⊤ : Opens ℝ) : Set ℝ)) :=
-  (memLp_finsetSum _ fun i _ ↦ hmem i (v i) (v i).2).restrict _
+  (memLp_finsetSum _ fun i _ ↦ hmem i (v i) (v i).property).restrict _
 
 /-- The **free endpoint variables** of a finite family of ends: the map sending `(v i)ᵢ`, with
 `v i` in the space `K i` of free variables at the end `i` with cutoff `χ i`, to the class in `Lᵖ`
@@ -240,8 +264,8 @@ private theorem coprod_endTailL_eq_zero_iff_ae [CompleteSpace F] (hp : p ≠ ∞
   have hE := endTailL_apply_ae hmem v
   have hsum := Lp.coeFn_add (trajectoryOperator (p := p) AL ξ) (endTailL w χ A hmem v)
   have hprev := ae_restrict_of_ae (s := ((⊤ : Opens ℝ) : Set ℝ)) (prev_ae_eq_toZeroAtInfty hp ξ)
-  have hae : ae (volume.restrict ((⊤ : Opens ℝ) : Set ℝ)) = ae volume := by simp
-  rw [ContinuousLinearMap.coprod_apply, Lp.eq_zero_iff_ae_eq_zero, ← hae]
+  rw [ContinuousLinearMap.coprod_apply, Lp.eq_zero_iff_ae_eq_zero,
+    ← Measure.ae_restrict_coe_opens_top (volume : Measure ℝ)]
   constructor
   · intro h
     filter_upwards [hD, hE, hsum, hprev, hAL, h] with s hDs hEs hsums hprevs hALs h0s
@@ -291,6 +315,32 @@ theorem coprod_endTailL_eq_zero_iff [CompleteSpace F] (hp : p ≠ ∞) {w' : ℝ
   rw [coprod_endTailL_eq_zero_iff_ae hp hAL hmem ξ v, ← forall_hasDerivAt_toZeroAtInfty_iff hp ξ hg]
   exact TauCeti.forall_hasDerivAt_iff_forall_hasDerivAt_exp_neg_smul_add hw hS
 
+omit [∀ i, FiniteDimensional ℝ (K i)] in
+/-- **The free endpoint variables are the limits of the solution.** If the weight `w` is
+eventually bounded below along a filter `l` at infinity and each cutoff `χ i` tends to `a i` along
+`l`, the path
+`u = exp (-w) • ξ + ∑ i, χ i • v i` of a pair `(ξ, v)`, with `ξ` read through its continuous
+representative, tends to `∑ i, a i • v i` along `l`. For two ends with cutoffs `χ 0` equal to `1`
+near `-∞` and `0` near `+∞`, and `χ 1` the other way round, `u` tends to `v 0` at `-∞` and to
+`v 1` at `+∞`. Together with `TauCeti.WeakDerivStep.coprod_endTailL_eq_zero_iff`, the kernel of the
+extended operator consists of solutions of `u' + A u = 0` whose limits at the ends are the free
+variables, and the projections to the free variables are the endpoint evaluations. -/
+theorem tendsto_exp_neg_smul_toZeroAtInfty_add_sum [CompleteSpace F] (hp : p ≠ ∞) {l : Filter ℝ}
+    (hl : l ≤ cocompact ℝ) {C : ℝ} (hw : ∀ᶠ s in l, C ≤ w s) {a : ι → ℝ}
+    (hχ : ∀ i, Tendsto (χ i) l (𝓝 (a i)))
+    (ξ : WeakDerivStep volume ⊤ p
+      (ContinuousLinearMap.id ℝ (Lp F p (volume.restrict ((⊤ : Opens ℝ) : Set ℝ)))))
+    (v : Π i, K i) :
+    Tendsto (fun s ↦ Real.exp (-w s) • toZeroAtInfty hp ξ s + ∑ i, χ i s • (v i : F)) l
+      (𝓝 (∑ i, a i • (v i : F))) := by
+  -- The weighted path vanishes at infinity, and `exp (-w)` is bounded by `exp (-C)`.
+  have hbdd : IsBoundedUnder (· ≤ ·) l (norm ∘ fun s ↦ Real.exp (-w s)) :=
+    isBoundedUnder_of_eventually_le (a := Real.exp (-C)) (hw.mono fun s hs ↦ by
+      rw [Function.comp_apply, Real.norm_eq_abs, abs_of_pos (Real.exp_pos _)]
+      exact Real.exp_le_exp.2 (neg_le_neg hs))
+  simpa using (hbdd.smul_tendsto_zero ((zero_at_infty (toZeroAtInfty hp ξ)).mono_left hl)).add
+    (tendsto_finsetSum _ fun i _ ↦ (hχ i).smul_const (v i : F))
+
 /-- **The index of the extended operator.** If the weighted trajectory operator is Fredholm,
 adjoining the free endpoint variables raises its index by their number of dimensions. -/
 theorem index_coprod_endTailL [CompleteSpace F]
@@ -302,6 +352,106 @@ theorem index_coprod_endTailL [CompleteSpace F]
   have := hD.finite_ker
   let : FiniteDimensional ℝ (_ ⧸ (trajectoryOperator (p := p) AL).range) := hD.finite_coker
   rw [ContinuousLinearMap.index_coprod, Module.finrank_pi_fintype, Nat.cast_sum]
+
+section SymmetricLimits
+
+/-! ### Symmetric limits and the Morse–Bott count -/
+
+variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
+
+/-- **The index of the extended operator with symmetric limits.** Let `A` be a continuous family
+of operators on a finite-dimensional real inner product space with symmetric limits `A±` at `±∞`,
+and let `c` be a continuous slope tending to `δ±` at `±∞`, where `δ±` is not an eigenvalue of
+`A±`. Adjoining free endpoint variables in subspaces `K i` to the trajectory operator
+`u ↦ u' + (A - c) u` from `W^{1,2}(ℝ, E)` to `L²(ℝ, E)` gives an operator of index
+`n_{< δ⁻}(A⁻) - n_{< δ⁺}(A⁺) + ∑ i, dim K i`, where `n_{< δ}(B)` is the number of eigenvalues of
+`B` below `δ`, counted with multiplicity. For `c = w'` the trajectory operator is the conjugate of
+`D_A` on the spaces weighted by `exp w`, and the extended operator is the weighted operator with
+free endpoint variables. Both operators are Fredholm, by
+`TauCeti.WeakDerivStep.isFredholm_trajectoryOperator_sub_smul_id` and
+`ContinuousLinearMap.IsFredholm.coprod_of_finiteDimensional`. -/
+theorem index_coprod_endTailL_eq_finrank_pointSpectralSubspace_sub_finrank_add
+    {A : ℝ → E →L[ℝ] E} (hA : Continuous A) {Aminus Aplus : E →L[ℝ] E}
+    (hsymminus : (Aminus : E →ₗ[ℝ] E).IsSymmetric) (hsymplus : (Aplus : E →ₗ[ℝ] E).IsSymmetric)
+    (hbot : Tendsto A atBot (𝓝 Aminus)) (htop : Tendsto A atTop (𝓝 Aplus))
+    {c : ℝ → ℝ} (hc : Continuous c) {δminus δplus : ℝ}
+    (hcbot : Tendsto c atBot (𝓝 δminus)) (hctop : Tendsto c atTop (𝓝 δplus))
+    (hδminus : ¬Module.End.HasEigenvalue (Aminus : E →ₗ[ℝ] E) δminus)
+    (hδplus : ¬Module.End.HasEigenvalue (Aplus : E →ₗ[ℝ] E) δplus)
+    {w : ℝ → ℝ} {χ : ι → ℝ → ℝ} {K : ι → Submodule ℝ E}
+    (hmem : ∀ i, ∀ v ∈ K i, MemLp (endTail w (χ i) A v) 2)
+    (AL : Lp (E →L[ℝ] E) ∞ (volume.restrict ((⊤ : Opens ℝ) : Set ℝ)))
+    (hAL : AL =ᵐ[volume.restrict ((⊤ : Opens ℝ) : Set ℝ)]
+      fun s ↦ A s - c s • ContinuousLinearMap.id ℝ E) :
+    ((trajectoryOperator (p := 2) AL).coprod (endTailL w χ A hmem)).index =
+      (Module.finrank ℝ (Module.End.pointSpectralSubspace (Aminus : E →ₗ[ℝ] E) (Iio δminus)) : ℤ) -
+        Module.finrank ℝ (Module.End.pointSpectralSubspace (Aplus : E →ₗ[ℝ] E) (Iio δplus)) +
+        ∑ i, (Module.finrank ℝ (K i) : ℤ) := by
+  rw [index_coprod_endTailL (isFredholm_trajectoryOperator_sub_smul_id hA hsymminus hsymplus hbot
+      htop hc hcbot hctop hδminus hδplus AL hAL) hmem,
+    index_trajectoryOperator_sub_smul_id_eq_finrank_pointSpectralSubspace_sub_finrank hA hsymminus
+      hsymplus hbot htop hc hcbot hctop hδminus hδplus AL hAL]
+
+/-- **The Morse–Bott index of a linearized trajectory.** Let `A` be a continuous family of
+operators on a finite-dimensional real inner product space with symmetric limits `A±` at `±∞`,
+and let `c` be a continuous slope tending to `δ⁻ < 0` at `-∞` and to `δ⁺ > 0` at `+∞`, below the
+spectral gaps at zero: `A⁻` has no eigenvalue in `[δ⁻, 0)` and `A⁺` has none in `(0, δ⁺]`. Adjoin
+to the trajectory operator `u ↦ u' + (A - c) u` from `W^{1,2}(ℝ, E)` to `L²(ℝ, E)` the free
+endpoint variables `ker A⁻` and `ker A⁺`, through any cutoffs `χ 0` and `χ 1`. The resulting
+operator, which is Fredholm, has index `n_{< 0}(A⁻) - n_{< 0}(A⁺) + dim ker A⁻`, where
+`n_{< 0}(B)` is the number of negative eigenvalues of `B`, counted with multiplicity.
+
+For the linearization of the negative gradient flow of a Morse–Bott function along a trajectory
+from a critical manifold `C` to a critical manifold `D`, with `ker A⁻ = T C` and `ker A⁺ = T D`
+and the cutoffs attached to `-∞` and `+∞`, this is the count `λ_C - λ_D + dim C` of the dimension
+of the trajectories from `C` to `D` before dividing by the translations of time. The weight counts
+the eigenvalue `0` of `A⁺`, which lies below `δ⁺`, but not that of `A⁻`, which lies above `δ⁻`;
+the free variables `ker A⁺` cancel the first, and `ker A⁻` contributes `dim C`. -/
+theorem index_coprod_endTailL_ker_eq_finrank_pointSpectralSubspace_sub_finrank_add
+    {A : ℝ → E →L[ℝ] E} (hA : Continuous A) {Aminus Aplus : E →L[ℝ] E}
+    (hsymminus : (Aminus : E →ₗ[ℝ] E).IsSymmetric) (hsymplus : (Aplus : E →ₗ[ℝ] E).IsSymmetric)
+    (hbot : Tendsto A atBot (𝓝 Aminus)) (htop : Tendsto A atTop (𝓝 Aplus))
+    {c : ℝ → ℝ} (hc : Continuous c) {δminus δplus : ℝ}
+    (hcbot : Tendsto c atBot (𝓝 δminus)) (hctop : Tendsto c atTop (𝓝 δplus))
+    (hδminus : δminus < 0) (hδplus : 0 < δplus)
+    (hgapminus : ∀ μ ∈ Ico δminus 0, ¬Module.End.HasEigenvalue (Aminus : E →ₗ[ℝ] E) μ)
+    (hgapplus : ∀ μ ∈ Ioc 0 δplus, ¬Module.End.HasEigenvalue (Aplus : E →ₗ[ℝ] E) μ)
+    {w : ℝ → ℝ} {χ : Fin 2 → ℝ → ℝ}
+    (hmem : ∀ i, ∀ v ∈ ![LinearMap.ker (Aminus : E →ₗ[ℝ] E), LinearMap.ker (Aplus : E →ₗ[ℝ] E)] i,
+      MemLp (endTail w (χ i) A v) 2)
+    (AL : Lp (E →L[ℝ] E) ∞ (volume.restrict ((⊤ : Opens ℝ) : Set ℝ)))
+    (hAL : AL =ᵐ[volume.restrict ((⊤ : Opens ℝ) : Set ℝ)]
+      fun s ↦ A s - c s • ContinuousLinearMap.id ℝ E) :
+    ((trajectoryOperator (p := 2) AL).coprod (endTailL w χ A hmem)).index =
+      (Module.finrank ℝ (Module.End.pointSpectralSubspace (Aminus : E →ₗ[ℝ] E) (Iio 0)) : ℤ) -
+        Module.finrank ℝ (Module.End.pointSpectralSubspace (Aplus : E →ₗ[ℝ] E) (Iio 0)) +
+        Module.finrank ℝ (LinearMap.ker (Aminus : E →ₗ[ℝ] E)) := by
+  rw [index_coprod_endTailL_eq_finrank_pointSpectralSubspace_sub_finrank_add hA hsymminus
+      hsymplus hbot htop hc hcbot hctop (hgapminus δminus ⟨le_rfl, hδminus⟩)
+      (hgapplus δplus ⟨hδplus, le_rfl⟩) hmem AL hAL,
+    Fin.sum_univ_two, Matrix.cons_val_zero, Matrix.cons_val_one, Matrix.cons_val_zero]
+  -- No eigenvalue of `A⁻` lies in `[δ⁻, 0)`, and the only one of `A⁺` in `[0, δ⁺)` is `0`.
+  have hminus : Module.End.pointSpectralSubspace (Aminus : E →ₗ[ℝ] E) (Ico δminus 0) = ⊥ :=
+    eq_bot_iff.2 (Module.End.pointSpectralSubspace_le_iff.2 fun μ hμ ↦
+      (not_not.1 (Module.End.hasEigenvalue_iff.not.1 (hgapminus μ hμ))).le)
+  have hplus : Module.End.pointSpectralSubspace (Aplus : E →ₗ[ℝ] E) (Ico 0 δplus) =
+      LinearMap.ker (Aplus : E →ₗ[ℝ] E) := by
+    rw [Module.End.pointSpectralSubspace_eq_eigenspace (𝕜 := ℝ) (Ω := Ico 0 δplus) (μ := 0)
+      ⟨le_rfl, hδplus⟩
+      fun ν hν hν0 ↦ not_not.1 (Module.End.hasEigenvalue_iff.not.1
+        (hgapplus ν ⟨lt_of_le_of_ne hν.1 hν0.symm, hν.2.le⟩))]
+    simp
+  have h₁ := Module.End.finrank_pointSpectralSubspace_Iio_eq_add
+    (A := (Aminus : E →ₗ[ℝ] E)) hδminus.le
+  have h₂ := Module.End.finrank_pointSpectralSubspace_Iio_eq_add
+    (A := (Aplus : E →ₗ[ℝ] E)) hδplus.le
+  rw [hminus, finrank_bot, add_zero] at h₁
+  rw [hplus] at h₂
+  rw [h₁, h₂]
+  push_cast
+  ring
+
+end SymmetricLimits
 
 section ConstantTrajectory
 

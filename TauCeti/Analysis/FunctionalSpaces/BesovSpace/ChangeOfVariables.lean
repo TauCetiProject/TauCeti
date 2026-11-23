@@ -9,7 +9,9 @@ public import TauCeti.Analysis.Distribution.TemperedDistribution.ChangeOfVariabl
 public import TauCeti.Analysis.FunctionalSpaces.BesovSpace.Basic
 import TauCeti.Analysis.Calculus.ContDiff.Bounds
 import TauCeti.Analysis.Calculus.IteratedFDeriv.Basic
+import TauCeti.Analysis.Calculus.IteratedFDeriv.CompLinear
 import TauCeti.Analysis.Calculus.IteratedFDeriv.FDerivApply
+import TauCeti.Analysis.Calculus.IteratedFDeriv.OrthonormalBasis
 import TauCeti.Analysis.Distribution.SchwartzSpace.ChangeOfVariables
 import TauCeti.Analysis.Distribution.TemperateGrowth
 import TauCeti.Analysis.Distribution.TemperedDistribution.Bernstein
@@ -17,6 +19,7 @@ import TauCeti.Analysis.Distribution.TemperedDistribution.FourierMultiplier
 import TauCeti.Analysis.Distribution.TemperedDistribution.Lp
 import TauCeti.Analysis.Distribution.TemperedDistribution.SmulLeft
 import TauCeti.Analysis.FunctionalSpaces.BesovSpace.AlmostDiagonal
+import TauCeti.Analysis.InnerProductSpace.Orthonormal.Coordinates
 import TauCeti.MeasureTheory.Function.Jacobian
 
 /-!
@@ -63,9 +66,19 @@ is bounded below in terms of the derivative of `Φ⁻¹`, so `Φ^*` is bounded o
 * `TauCeti.BesovSpace.exists_toDistr_eq_compCLM_and_norm_le`: `Φ^*` maps `B^s_{p,q}` to itself with
   norm at most a constant depending only on `φ`, `s`, `N` and the derivative bounds.
 * `TemperedDistribution.MemBesov.compCLM`: `B^s_{p,q}` is stable under pullback along `Φ`.
+* `TemperedDistribution.memBesov_compCLM_iff`: `u ∈ B^s_{p,q}` if and only if `Φ^* u ∈ B^s_{p,q}`.
 * `TauCeti.BesovSpace.compCLE`: the pullback as an isomorphism of `B^s_{p,q}`, with inverse the
-  pullback along `Φ⁻¹` (`TauCeti.BesovSpace.compCLE_symm`) and norm bounded uniformly in `p` and
-  `q` (`TauCeti.BesovSpace.exists_norm_compCLE_le`).
+  pullback along `Φ⁻¹` (`TauCeti.BesovSpace.compCLE_symm`), contravariantly functorial
+  (`TauCeti.BesovSpace.compCLE_refl`, `TauCeti.BesovSpace.compCLE_trans`), and with norm bounded
+  uniformly in `p` and `q` (`TauCeti.BesovSpace.exists_norm_compCLE_le`).
+* `TauCeti.BesovSpace.compCLM`: the pullback as a bounded operator on `B^s_{p,q}` under the weaker
+  derivative bounds of `TemperedDistribution.MemBesov.compCLM`, with norm bounded uniformly in `p`
+  and `q` (`TauCeti.BesovSpace.exists_norm_compCLM_le`).
+* `TauCeti.BesovSpace.compCLEOfContDiff`: the isomorphism for a smooth diffeomorphism with bounded
+  derivatives of every positive order.
+* `TauCeti.BesovSpace.translateEquiv`, `TauCeti.BesovSpace.compContinuousLinearEquiv`: translations,
+  with norms bounded uniformly in the translation
+  (`TauCeti.BesovSpace.exists_norm_translateEquiv_le`), and continuous linear automorphisms of `E`.
 
 ## References
 
@@ -89,29 +102,6 @@ namespace TauCeti
 open TemperedDistribution
 
 omit [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] in
-private theorem norm_iteratedFDeriv_repr_fderiv_apply_le {ι : Type*} [Fintype ι]
-    (b : OrthonormalBasis ι ℝ E) {Φ : E → E} (hΦ : ContDiff ℝ ∞ Φ) {M : ℕ} {L : ℝ}
-    (hL : ∀ n, 1 ≤ n → n ≤ M + 1 → ∀ x, ‖iteratedFDeriv ℝ n Φ x‖ ≤ L) (v : E) (i : ι) :
-    ∀ n ≤ M, ∀ x,
-      ‖iteratedFDeriv ℝ n (fun x ↦ ((b.toBasis.repr (fderiv ℝ Φ x v) i : ℝ) : ℂ)) x‖ ≤ L * ‖v‖ := by
-  intro n hn x
-  set A : E →L[ℝ] ℂ := Complex.ofRealCLM.comp (innerSL ℝ (b i))
-  have hA : ‖A‖ ≤ 1 := by
-    refine A.opNorm_le_bound zero_le_one fun y ↦ ?_
-    simpa [A, b.orthonormal.1 i] using norm_inner_le_norm (𝕜 := ℝ) (b i) y
-  have hfun : (fun x ↦ ((b.toBasis.repr (fderiv ℝ Φ x v) i : ℝ) : ℂ)) =
-      A ∘ fun x ↦ fderiv ℝ Φ x v := by
-    ext x
-    simp [A, b.repr_apply_apply]
-  have hd : ContDiff ℝ ∞ (fun x ↦ fderiv ℝ Φ x v) :=
-    (hΦ.fderiv_right (m := ∞) (by simp)).clm_apply contDiff_const
-  rw [hfun]
-  refine (A.norm_iteratedFDeriv_comp_left hd.contDiffAt (mod_cast le_top)).trans ?_
-  refine (mul_le_of_le_one_left (norm_nonneg _) hA).trans ?_
-  refine (hΦ.norm_iteratedFDeriv_fderiv_apply_le (by simp) v x).trans ?_
-  exact mul_le_mul_of_nonneg_right (hL (n + 1) (by omega) (by omega) x) (norm_nonneg v)
-
-omit [MeasurableSpace E] [BorelSpace E] in
 private theorem norm_iteratedFDeriv_repr_fderiv_comp_le {ι : Type*} [Fintype ι]
     (b : OrthonormalBasis ι ℝ E) {Φ Ψ : E → E} (hΦ : ContDiff ℝ ∞ Φ) (hΨ : ContDiff ℝ ∞ Ψ) {M : ℕ}
     {L : ℝ} (hΦL : ∀ n, 1 ≤ n → n ≤ M → ∀ x, ‖iteratedFDeriv ℝ n Φ x‖ ≤ L)
@@ -120,19 +110,13 @@ private theorem norm_iteratedFDeriv_repr_fderiv_comp_le {ι : Type*} [Fintype ι
       (fun x ↦ ((b.toBasis.repr (fderiv ℝ Ψ (Φ x) v) i : ℝ) : ℂ)) x‖ ≤
         M.factorial * (L * ‖v‖) * max 1 L ^ M := by
   intro n hn x
-  have hd : ContDiff ℝ ∞ (fun y ↦ ((b.toBasis.repr (fderiv ℝ Ψ y v) i : ℝ) : ℂ)) := by
-    have : ContDiff ℝ ∞ (fun y ↦ fderiv ℝ Ψ y v) :=
-      (hΨ.fderiv_right (m := ∞) (by simp)).clm_apply contDiff_const
-    exact (Complex.ofRealCLM.contDiff.comp
-      ((b.toBasis.coord i).toContinuousLinearMap.contDiff)).comp this
-  have hc := norm_iteratedFDeriv_repr_fderiv_apply_le b hΨ hΨL v i
-  have hL0 : 0 ≤ L * ‖v‖ := (norm_nonneg _).trans (hc 0 (Nat.zero_le _) x)
-  refine (norm_iteratedFDeriv_comp_le (g := fun y ↦ ((b.toBasis.repr (fderiv ℝ Ψ y v) i : ℝ) : ℂ))
-    hd hΦ (mod_cast le_top) x (fun k hk ↦ hc k (hk.trans hn) (Φ x))
-    (fun k hk₁ hk₂ ↦ ((hΦL k hk₁ (hk₂.trans hn) x).trans (le_max_right 1 L)).trans
-      (le_self_pow₀ (le_max_left 1 L) (by omega)))).trans ?_
-  gcongr
-  exact le_max_left 1 L
+  obtain ⟨A, hA, hAy⟩ := b.exists_clm_norm_le_one_and_repr_eq i
+  have hL0 : 0 ≤ L * ‖v‖ :=
+    mul_nonneg ((norm_nonneg _).trans (hΨL 1 le_rfl (by omega) x)) (norm_nonneg v)
+  simp only [hAy]
+  refine (hΨ.norm_iteratedFDeriv_clm_fderiv_comp_apply_le hΦ (by simp) A hΦL hΨL v n hn x).trans ?_
+  gcongr _ * ?_ * _
+  exact mul_le_of_le_one_left hL0 hA
 
 /-- The pullback of an `Lᵖ` function, with the `p`-independent bound `J` for `J⁻¹ ≤ |det DΦ|`. -/
 private theorem exists_compCLM_eq_and_norm_le {p : ℝ≥0∞} [Fact (1 ≤ p)] {Φ : E ≃ E}
@@ -165,8 +149,11 @@ private theorem hasTemperateGrowth_and_norm_iteratedFDeriv_repr_fderiv_mul_le {�
           2 ^ M * (L * ‖w‖ * G) := by
   have hc : (fun x ↦ ((b.toBasis.repr (fderiv ℝ Φ x w) i : ℝ) : ℂ)).HasTemperateGrowth :=
     hΦ.basis_repr_fderiv_apply b.toBasis w i
-  exact ⟨hc.mul hg, (hc.1.of_le (mod_cast le_top)).norm_iteratedFDeriv_mul_le_two_pow
-    (hg.1.of_le (mod_cast le_top)) (norm_iteratedFDeriv_repr_fderiv_apply_le b hΦ.1 hΦL w i) hgG⟩
+  exact ⟨hc.mul hg, fun n hn x ↦ (hc.1.of_le (mod_cast le_top)).norm_iteratedFDeriv_mul_le_two_pow
+    (hg.1.of_le (mod_cast le_top)) (fun n hn ↦
+      (hΦ.1.norm_iteratedFDeriv_basis_repr_fderiv_apply_le (mod_cast le_top) b w i x).trans
+        (mul_le_mul_of_nonneg_right (hΦL (n + 1) (by omega) (by omega) x) (norm_nonneg w)))
+    (fun n hn ↦ hgG n hn x) n hn⟩
 
 omit [MeasurableSpace E] [BorelSpace E] [CompleteSpace F] in
 /-- One derivative of `g Φ^* T`, by the Leibniz rule and the chain rule:
@@ -367,7 +354,7 @@ private theorem exists_littlewoodPaleyBlock_smulLeftCLM_compCLM_eq_and_norm_le_o
   · rw [div_pow, pow_succ, mul_pow, mul_pow, mul_pow]
     field_simp
 
-omit [MeasurableSpace E] [BorelSpace E] in
+omit [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] in
 /-- The coefficients `dₗ` of `DΦ⁻¹(Φ x) v = ∑ₗ dₗ(x) bₗ`, multiplied by a function `g` of temperate
 growth, have temperate growth, and the derivatives of `dₗ g` of order at most `M` are bounded in
 terms of those of `Φ`, `Φ⁻¹` and `g`. -/
@@ -384,9 +371,10 @@ private theorem hasTemperateGrowth_and_norm_iteratedFDeriv_repr_fderiv_comp_mul_
           2 ^ M * (M.factorial * (L * ‖v‖) * max 1 L ^ M * G) := by
   have hd : (fun x ↦ ((b.toBasis.repr (fderiv ℝ Φ.symm (Φ x) v) l : ℝ) : ℂ)).HasTemperateGrowth :=
     (hΨ.basis_repr_fderiv_apply b.toBasis v l).comp hΦ
-  exact ⟨hd.mul hg, (hd.1.of_le (mod_cast le_top)).norm_iteratedFDeriv_mul_le_two_pow
-    (hg.1.of_le (mod_cast le_top)) (norm_iteratedFDeriv_repr_fderiv_comp_le b hΦ.1 hΨ.1 hΦL hΨL v l)
-    hgG⟩
+  exact ⟨hd.mul hg, fun n hn x ↦ (hd.1.of_le (mod_cast le_top)).norm_iteratedFDeriv_mul_le_two_pow
+    (hg.1.of_le (mod_cast le_top))
+    (fun n hn ↦ norm_iteratedFDeriv_repr_fderiv_comp_le b hΦ.1 hΨ.1 hΦL hΨL v l n hn x)
+    (fun n hn ↦ hgG n hn x) n hn⟩
 
 omit [InnerProductSpace ℝ E] [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E]
   [NormedAddCommGroup F] [NormedSpace ℂ F] [CompleteSpace F] in
@@ -396,29 +384,6 @@ private theorem norm_sub_le_add_one_mul {X : Type*} [SeminormedAddCommGroup X] {
     {a t Q h : ℝ} (ht : 1 ≤ t) (hQh : 0 ≤ Q * h) (hy : ‖y‖ ≤ a * t * (Q * h))
     (hz : ‖z‖ ≤ Q * h) : ‖y - z‖ ≤ (a + 1) * t * (Q * h) :=
   (norm_sub_le _ _).trans (by nlinarith)
-
-omit [MeasurableSpace E] [BorelSpace E] [CompleteSpace F] in
-/-- The chain rule for `Φ⁻¹` and the Leibniz rule move a derivative off `T`:
-`g Φ^* (∂_v T) = ∑ₗ (∂_{bₗ} (dₗ g Φ^* T) - ∂_{bₗ} (dₗ g) Φ^* T)`, where
-`DΦ⁻¹(Φ x) v = ∑ₗ dₗ(x) bₗ`. -/
-private theorem smulLeftCLM_compCLM_lineDerivOp {ι : Type*} [Fintype ι]
-    (b : OrthonormalBasis ι ℝ E) {Φ : E ≃ E} (hΦ : (Φ : E → E).HasTemperateGrowth)
-    (hΨ : (Φ.symm : E → E).HasTemperateGrowth) {g : E → ℂ} (hg : g.HasTemperateGrowth)
-    (T : 𝓢'(E, F)) (v : E) :
-    smulLeftCLM F g (compCLM F Φ hΦ hΨ (∂_{v} T)) = ∑ l,
-      (∂_{b l} (smulLeftCLM F
-          ((fun x ↦ ((b.toBasis.repr (fderiv ℝ Φ.symm (Φ x) v) l : ℝ) : ℂ)) * g)
-          (compCLM F Φ hΦ hΨ T)) -
-        smulLeftCLM F (fun x ↦ fderiv ℝ
-          ((fun x ↦ ((b.toBasis.repr (fderiv ℝ Φ.symm (Φ x) v) l : ℝ) : ℂ)) * g) x (b l))
-          (compCLM F Φ hΦ hΨ T)) := by
-  rw [compCLM_lineDerivOp b.toBasis hΦ hΨ, map_sum]
-  refine Finset.sum_congr rfl fun l _ ↦ ?_
-  have hd : (fun x ↦ ((b.toBasis.repr (fderiv ℝ Φ.symm (Φ x) v) l : ℝ) : ℂ)).HasTemperateGrowth :=
-    (hΨ.basis_repr_fderiv_apply b.toBasis v l).comp hΦ
-  rw [smulLeftCLM_smulLeftCLM_apply hd hg, lineDerivOp_smulLeftCLM (hd.mul hg),
-    OrthonormalBasis.coe_toBasis]
-  abel
 
 /-- The inductive step of
 `exists_littlewoodPaleyBlock_smulLeftCLM_compCLM_eq_and_norm_le_of_annulus`. On the annulus,
@@ -486,7 +451,8 @@ private theorem exists_littlewoodPaleyBlock_smulLeftCLM_compCLM_eq_and_norm_le_o
     j hR (h i) (hh i).1
   refine ⟨∑ i, ∑ l, (y' i l - z i l), ?_, ?_⟩
   · rw [hfh, map_sum, map_sum, map_sum]
-    simp_rw [smulLeftCLM_compCLM_lineDerivOp b hΦ hΨ hg, map_sum, map_sub,
+    simp_rw [smulLeftCLM_compCLM_lineDerivOp b.toBasis hΦ hΨ hg, OrthonormalBasis.coe_toBasis,
+      map_sum, map_sub,
       littlewoodPaleyBlock_lineDerivOp, hy, hy', hz, Lp.toTemperedDistribution_sum,
       Lp.toTemperedDistribution_sub]
   · -- Each term is at most `(CB φ.rOut + 1) 2^j Q ‖hᵢ‖`, and `‖hᵢ‖ ≤ Crep R⁻¹ ‖f‖`.
@@ -582,16 +548,19 @@ theorem exists_littlewoodPaleyBlock_smulLeftCLM_compCLM_eq_and_norm_le (φ : Con
   refine ⟨K₁ + K₂ * (2 / φ.rIn) ^ M + K₀, by positivity,
     fun {p} _ {Φ} hΦ hΨ hΦL hΨL {g G} hg hgG j k u f hf ↦ ?_⟩
   -- The Jacobian is bounded below in terms of `DΦ⁻¹`.
-  have hdet (x : E) : J⁻¹ ≤ |(fderiv ℝ Φ x).det| :=
-    Φ.inv_pow_le_abs_det_fderiv (hΦ.1.differentiable (by simp) x)
-      (hΨ.1.differentiable (by simp) _) (by
-        simpa using (hΨL 1 le_rfl (by omega) (Φ x)).trans (le_max_right 1 L))
+  have hdet : ∀ x, J⁻¹ ≤ |(fderiv ℝ Φ x).det| :=
+    Φ.inv_max_one_pow_le_abs_det_fderiv (hΦ.1.differentiable (by simp))
+      (hΨ.1.differentiable (by simp)) fun y ↦ by simpa using hΨL 1 le_rfl (by omega) y
   obtain ⟨hG, hg₀⟩ := nonneg_and_norm_le_of_norm_iteratedFDeriv_le hgG
-  obtain ⟨v, hv, hvn⟩ := exists_littlewoodPaleyBlock_eq_and_norm_le_of_ball_of_annulus φ
+  obtain ⟨v, hv, hvn⟩ := exists_littlewoodPaleyBlock_eq_and_norm_le_of_block_le φ
     (fun T ↦ smulLeftCLM F g (compCLM F Φ hΦ hΨ T)) (mul_nonneg hK₀ hG) (mul_nonneg hK₁ hG)
-    (mul_nonneg hK₂ hG) (fun j f ↦ h₀ hΦ hΨ hdet hg hg₀ j f)
-    (fun hkj f hf ↦ h₁ hΦ hΨ hdet hΦL hg hgG hkj f hf)
-    (fun j _ hR f hf ↦ h₂ hΦ hΨ hdet hΦL hΨL hg hgG j hR f hf) j k u f hf
+    (mul_nonneg hK₂ hG) (fun k _ f _ ↦ h₀ hΦ hΨ hdet hg hg₀ k f)
+    (fun hkj u f hf ↦ h₁ hΦ hΨ hdet hΦL hg hgG hkj f
+      (hf ▸ isVanishingOn_fourier_littlewoodPaleyBlock φ _ u))
+    (fun j k u f hf ↦ h₂ hΦ hΨ hdet hΦL hΨL hg hgG j (R := 2 ^ k * φ.rIn) (by positivity) f (by
+      rw [φ.two_mul_rOut_div_rIn_mul, ← hf]
+      simpa only [Set.compl_sdiff, Set.union_comm] using
+        isVanishingOn_fourier_littlewoodPaleyBlock_succ φ k u)) j k u f hf
   exact ⟨v, hv, hvn.trans_eq (by ring)⟩
 
 /-- **Off-diagonal decay of a pullback between Littlewood–Paley blocks.** Let `M` be a natural
@@ -677,6 +646,18 @@ theorem MemBesov.compCLM {u : 𝓢'(E, F)} (hu : u.MemBesov φ s p q) {Φ : E �
   obtain ⟨v, hv, -⟩ := hC hu.toBesovSpace
   rw [← hu.toDistr_toBesovSpace, ← hv]
   exact v.memBesov_toDistr
+
+/-- **Pullback invariance of `MemBesov`.** If `Φ` and `Φ⁻¹` have temperate growth and bounded
+derivatives of orders `1` to `⌊|s|⌋₊ + 2`, a tempered distribution `u` lies in `B^s_{p,q}` if and
+only if its pullback `Φ^* u` does. -/
+theorem memBesov_compCLM_iff {u : 𝓢'(E, F)} {Φ : E ≃ E}
+    (hΦ : (Φ : E → E).HasTemperateGrowth) (hΨ : (Φ.symm : E → E).HasTemperateGrowth)
+    (hΦb : ∀ n, 1 ≤ n → n ≤ ⌊|s|⌋₊ + 2 → ∃ C, ∀ x, ‖iteratedFDeriv ℝ n Φ x‖ ≤ C)
+    (hΨb : ∀ n, 1 ≤ n → n ≤ ⌊|s|⌋₊ + 2 → ∃ C, ∀ x, ‖iteratedFDeriv ℝ n Φ.symm x‖ ≤ C) :
+    (compCLM F Φ hΦ hΨ u).MemBesov φ s p q ↔ u.MemBesov φ s p q := by
+  refine ⟨fun h ↦ ?_, fun h ↦ h.compCLM hΦ hΨ (fun n h₁ h₂ ↦ hΦb n h₁ (by omega)) hΨb⟩
+  simpa only [compCLM_symm_compCLM hΦ hΨ hΦ] using
+    h.compCLM hΨ hΦ (fun n h₁ h₂ ↦ hΨb n h₁ (by omega)) hΦb
 
 end TemperedDistribution
 
@@ -766,5 +747,339 @@ theorem exists_norm_compCLE_le (φ : ContDiffBump (0 : E)) (s L : ℝ) :
   obtain ⟨v, hv, hvn⟩ := hpull hΦ hΨ (fun n h₁ h₂ ↦ hΦL n h₁ (by omega)) hΨL (p := p) (q := q) u
   have : compCLE F φ s p q Φ hΦ hΨ hΦb hΨb u = v := ext (by simp [hv])
   simpa [this] using hvn
+
+@[simp]
+theorem compCLE_refl (h₁ : (Equiv.refl E : E → E).HasTemperateGrowth)
+    (h₂ : ((Equiv.refl E).symm : E → E).HasTemperateGrowth)
+    (hb₁ : ∀ n, 1 ≤ n → n ≤ ⌊|s|⌋₊ + 2 → ∃ C, ∀ x, ‖iteratedFDeriv ℝ n (Equiv.refl E) x‖ ≤ C)
+    (hb₂ : ∀ n, 1 ≤ n → n ≤ ⌊|s|⌋₊ + 2 →
+      ∃ C, ∀ x, ‖iteratedFDeriv ℝ n (Equiv.refl E).symm x‖ ≤ C) :
+    compCLE F φ s p q (Equiv.refl E) h₁ h₂ hb₁ hb₂ = ContinuousLinearEquiv.refl ℂ _ := by
+  ext u : 3
+  simp [TemperedDistribution.compCLM_refl]
+
+/-- **Contravariant functoriality of the pullback on Besov spaces**: `(Φ₂ ∘ Φ₁)^* = Φ₁^* ∘ Φ₂^*`. -/
+theorem compCLE_trans {Φ₁ Φ₂ : E ≃ E}
+    (hΦ₁ : (Φ₁ : E → E).HasTemperateGrowth) (hΨ₁ : (Φ₁.symm : E → E).HasTemperateGrowth)
+    (hΦ₁b : ∀ n, 1 ≤ n → n ≤ ⌊|s|⌋₊ + 2 → ∃ C, ∀ x, ‖iteratedFDeriv ℝ n Φ₁ x‖ ≤ C)
+    (hΨ₁b : ∀ n, 1 ≤ n → n ≤ ⌊|s|⌋₊ + 2 → ∃ C, ∀ x, ‖iteratedFDeriv ℝ n Φ₁.symm x‖ ≤ C)
+    (hΦ₂ : (Φ₂ : E → E).HasTemperateGrowth) (hΨ₂ : (Φ₂.symm : E → E).HasTemperateGrowth)
+    (hΦ₂b : ∀ n, 1 ≤ n → n ≤ ⌊|s|⌋₊ + 2 → ∃ C, ∀ x, ‖iteratedFDeriv ℝ n Φ₂ x‖ ≤ C)
+    (hΨ₂b : ∀ n, 1 ≤ n → n ≤ ⌊|s|⌋₊ + 2 → ∃ C, ∀ x, ‖iteratedFDeriv ℝ n Φ₂.symm x‖ ≤ C)
+    (h₁ : (Φ₁.trans Φ₂ : E → E).HasTemperateGrowth)
+    (h₂ : ((Φ₁.trans Φ₂).symm : E → E).HasTemperateGrowth)
+    (hb₁ : ∀ n, 1 ≤ n → n ≤ ⌊|s|⌋₊ + 2 → ∃ C, ∀ x, ‖iteratedFDeriv ℝ n (Φ₁.trans Φ₂) x‖ ≤ C)
+    (hb₂ : ∀ n, 1 ≤ n → n ≤ ⌊|s|⌋₊ + 2 →
+      ∃ C, ∀ x, ‖iteratedFDeriv ℝ n (Φ₁.trans Φ₂).symm x‖ ≤ C) :
+    compCLE F φ s p q (Φ₁.trans Φ₂) h₁ h₂ hb₁ hb₂ =
+      (compCLE F φ s p q Φ₂ hΦ₂ hΨ₂ hΦ₂b hΨ₂b).trans (compCLE F φ s p q Φ₁ hΦ₁ hΨ₁ hΦ₁b hΨ₁b) := by
+  ext u : 3
+  simp [TemperedDistribution.compCLM_trans hΦ₁ hΨ₁ hΦ₂ hΨ₂ h₁ h₂]
+
+/-! ### Pullback by a diffeomorphism as a bounded operator -/
+
+variable (F φ s p q) in
+/-- **Pullback by a diffeomorphism with bounded derivatives**, as a bounded operator on
+`B^s_{p,q}`, under the derivative bounds of `TemperedDistribution.MemBesov.compCLM`: those of `Φ`
+of orders `1` to `⌊|s|⌋₊ + 1` and those of `Φ⁻¹` of orders `1` to `⌊|s|⌋₊ + 2`. Its norm is
+bounded uniformly in `p` and `q` (`TauCeti.BesovSpace.exists_norm_compCLM_le`). When `Φ` also has
+bounded derivatives of order `⌊|s|⌋₊ + 2`, it is the isomorphism `TauCeti.BesovSpace.compCLE`
+(`TauCeti.BesovSpace.compCLE_apply`). -/
+def compCLM (Φ : E ≃ E) (hΦ : (Φ : E → E).HasTemperateGrowth)
+    (hΨ : (Φ.symm : E → E).HasTemperateGrowth)
+    (hΦb : ∀ n, 1 ≤ n → n ≤ ⌊|s|⌋₊ + 1 → ∃ C, ∀ x, ‖iteratedFDeriv ℝ n Φ x‖ ≤ C)
+    (hΨb : ∀ n, 1 ≤ n → n ≤ ⌊|s|⌋₊ + 2 → ∃ C, ∀ x, ‖iteratedFDeriv ℝ n Φ.symm x‖ ≤ C) :
+    BesovSpace F φ s p q →L[ℂ] BesovSpace F φ s p q :=
+  LinearMap.mkContinuousOfExistsBound
+    { toFun u := (u.memBesov_toDistr.compCLM hΦ hΨ hΦb hΨb).toBesovSpace
+      map_add' _ _ := ext (by simp)
+      map_smul' _ _ := ext (by simp) }
+    (exists_norm_compCLM_toBesovSpace_le hΦ hΨ hΦb hΨb)
+
+section CompCLM
+
+variable {Φ : E ≃ E} {hΦ : (Φ : E → E).HasTemperateGrowth}
+  {hΨ : (Φ.symm : E → E).HasTemperateGrowth}
+  {hΦb : ∀ n, 1 ≤ n → n ≤ ⌊|s|⌋₊ + 1 → ∃ C, ∀ x, ‖iteratedFDeriv ℝ n Φ x‖ ≤ C}
+  {hΨb : ∀ n, 1 ≤ n → n ≤ ⌊|s|⌋₊ + 2 → ∃ C, ∀ x, ‖iteratedFDeriv ℝ n Φ.symm x‖ ≤ C}
+
+@[simp]
+theorem toDistr_compCLM (u : BesovSpace F φ s p q) :
+    (compCLM F φ s p q Φ hΦ hΨ hΦb hΨb u).toDistr =
+      TemperedDistribution.compCLM F Φ hΦ hΨ u.toDistr := by
+  simp [compCLM]
+
+/-- The isomorphism `TauCeti.BesovSpace.compCLE` acts as the operator
+`TauCeti.BesovSpace.compCLM`. -/
+theorem compCLE_apply
+    (hΦb' : ∀ n, 1 ≤ n → n ≤ ⌊|s|⌋₊ + 2 → ∃ C, ∀ x, ‖iteratedFDeriv ℝ n Φ x‖ ≤ C)
+    (u : BesovSpace F φ s p q) :
+    compCLE F φ s p q Φ hΦ hΨ hΦb' hΨb u = compCLM F φ s p q Φ hΦ hΨ hΦb hΨb u :=
+  ext (by simp)
+
+/-- Pulling back along `Φ` and then along `Φ⁻¹` gives back the Besov element. -/
+@[simp]
+theorem compCLM_symm_compCLM
+    (hΦ' : (Φ.symm.symm : E → E).HasTemperateGrowth)
+    (hΨb' : ∀ n, 1 ≤ n → n ≤ ⌊|s|⌋₊ + 1 → ∃ C, ∀ x, ‖iteratedFDeriv ℝ n Φ.symm x‖ ≤ C)
+    (hΦb' : ∀ n, 1 ≤ n → n ≤ ⌊|s|⌋₊ + 2 → ∃ C, ∀ x, ‖iteratedFDeriv ℝ n Φ.symm.symm x‖ ≤ C)
+    (u : BesovSpace F φ s p q) :
+    compCLM F φ s p q Φ.symm hΨ hΦ' hΨb' hΦb' (compCLM F φ s p q Φ hΦ hΨ hΦb hΨb u) = u :=
+  ext (by simp)
+
+/-- Pulling back along `Φ⁻¹` and then along `Φ` gives back the Besov element. -/
+@[simp]
+theorem compCLM_compCLM_symm
+    (hΦ' : (Φ.symm.symm : E → E).HasTemperateGrowth)
+    (hΨb' : ∀ n, 1 ≤ n → n ≤ ⌊|s|⌋₊ + 1 → ∃ C, ∀ x, ‖iteratedFDeriv ℝ n Φ.symm x‖ ≤ C)
+    (hΦb' : ∀ n, 1 ≤ n → n ≤ ⌊|s|⌋₊ + 2 → ∃ C, ∀ x, ‖iteratedFDeriv ℝ n Φ.symm.symm x‖ ≤ C)
+    (u : BesovSpace F φ s p q) :
+    compCLM F φ s p q Φ hΦ hΨ hΦb hΨb (compCLM F φ s p q Φ.symm hΨ hΦ' hΨb' hΦb' u) = u :=
+  ext (by simp)
+
+end CompCLM
+
+/-- **The norm of the pullback on Besov spaces.** Let `N` be a natural number with `|s| < N`.
+There is `C`, depending only on `φ`, `s`, `N` and `L`, with the following property. If the
+derivatives of `Φ` of orders `1` to `N` and those of `Φ⁻¹` of orders `1` to `N + 1` are bounded by
+`L`, then `TauCeti.BesovSpace.compCLM` has operator norm at most `C` on `B^s_{p,q}` for all
+`1 ≤ p, q ≤ ∞`. -/
+theorem exists_norm_compCLM_le (φ : ContDiffBump (0 : E)) {N : ℕ} (hN : |s| < N) (L : ℝ) :
+    ∃ C : ℝ, 0 ≤ C ∧ ∀ {p q : ℝ≥0∞} [Fact (1 ≤ p)] [Fact (1 ≤ q)] {Φ : E ≃ E}
+      (hΦ : (Φ : E → E).HasTemperateGrowth) (hΨ : (Φ.symm : E → E).HasTemperateGrowth)
+      (hΦb : ∀ n, 1 ≤ n → n ≤ ⌊|s|⌋₊ + 1 → ∃ C, ∀ x, ‖iteratedFDeriv ℝ n Φ x‖ ≤ C)
+      (hΨb : ∀ n, 1 ≤ n → n ≤ ⌊|s|⌋₊ + 2 → ∃ C, ∀ x, ‖iteratedFDeriv ℝ n Φ.symm x‖ ≤ C),
+      (∀ n, 1 ≤ n → n ≤ N → ∀ x, ‖iteratedFDeriv ℝ n Φ x‖ ≤ L) →
+      (∀ n, 1 ≤ n → n ≤ N + 1 → ∀ x, ‖iteratedFDeriv ℝ n Φ.symm x‖ ≤ L) →
+      ‖compCLM F φ s p q Φ hΦ hΨ hΦb hΨb‖ ≤ C := by
+  obtain ⟨C, hC, hpull⟩ := exists_toDistr_eq_compCLM_and_norm_le (F := F) φ hN L
+  refine ⟨C, hC, fun {p q} _ _ Φ hΦ hΨ hΦb hΨb hΦL hΨL ↦
+    ContinuousLinearMap.opNorm_le_bound _ hC fun u ↦ ?_⟩
+  obtain ⟨v, hv, hvn⟩ := hpull hΦ hΨ hΦL hΨL (p := p) (q := q) u
+  have : compCLM F φ s p q Φ hΦ hΨ hΦb hΨb u = v := ext (by simp [hv])
+  rwa [this]
+
+/-- Pullback along the identity is the identity of `B^s_{p,q}`. -/
+@[simp]
+theorem compCLM_refl (h₁ : (Equiv.refl E : E → E).HasTemperateGrowth)
+    (h₂ : ((Equiv.refl E).symm : E → E).HasTemperateGrowth)
+    (hb₁ : ∀ n, 1 ≤ n → n ≤ ⌊|s|⌋₊ + 1 → ∃ C, ∀ x, ‖iteratedFDeriv ℝ n (Equiv.refl E) x‖ ≤ C)
+    (hb₂ : ∀ n, 1 ≤ n → n ≤ ⌊|s|⌋₊ + 2 →
+      ∃ C, ∀ x, ‖iteratedFDeriv ℝ n (Equiv.refl E).symm x‖ ≤ C) :
+    compCLM F φ s p q (Equiv.refl E) h₁ h₂ hb₁ hb₂ = ContinuousLinearMap.id ℂ _ := by
+  ext u : 2
+  simp [TemperedDistribution.compCLM_refl]
+
+/-- **Contravariant functoriality of the pullback on Besov spaces**: `(Φ₂ ∘ Φ₁)^* = Φ₁^* ∘ Φ₂^*`. -/
+theorem compCLM_trans {Φ₁ Φ₂ : E ≃ E}
+    (hΦ₁ : (Φ₁ : E → E).HasTemperateGrowth) (hΨ₁ : (Φ₁.symm : E → E).HasTemperateGrowth)
+    (hΦ₁b : ∀ n, 1 ≤ n → n ≤ ⌊|s|⌋₊ + 1 → ∃ C, ∀ x, ‖iteratedFDeriv ℝ n Φ₁ x‖ ≤ C)
+    (hΨ₁b : ∀ n, 1 ≤ n → n ≤ ⌊|s|⌋₊ + 2 → ∃ C, ∀ x, ‖iteratedFDeriv ℝ n Φ₁.symm x‖ ≤ C)
+    (hΦ₂ : (Φ₂ : E → E).HasTemperateGrowth) (hΨ₂ : (Φ₂.symm : E → E).HasTemperateGrowth)
+    (hΦ₂b : ∀ n, 1 ≤ n → n ≤ ⌊|s|⌋₊ + 1 → ∃ C, ∀ x, ‖iteratedFDeriv ℝ n Φ₂ x‖ ≤ C)
+    (hΨ₂b : ∀ n, 1 ≤ n → n ≤ ⌊|s|⌋₊ + 2 → ∃ C, ∀ x, ‖iteratedFDeriv ℝ n Φ₂.symm x‖ ≤ C)
+    (h₁ : (Φ₁.trans Φ₂ : E → E).HasTemperateGrowth)
+    (h₂ : ((Φ₁.trans Φ₂).symm : E → E).HasTemperateGrowth)
+    (hb₁ : ∀ n, 1 ≤ n → n ≤ ⌊|s|⌋₊ + 1 → ∃ C, ∀ x, ‖iteratedFDeriv ℝ n (Φ₁.trans Φ₂) x‖ ≤ C)
+    (hb₂ : ∀ n, 1 ≤ n → n ≤ ⌊|s|⌋₊ + 2 →
+      ∃ C, ∀ x, ‖iteratedFDeriv ℝ n (Φ₁.trans Φ₂).symm x‖ ≤ C) :
+    compCLM F φ s p q (Φ₁.trans Φ₂) h₁ h₂ hb₁ hb₂ =
+      compCLM F φ s p q Φ₁ hΦ₁ hΨ₁ hΦ₁b hΨ₁b ∘L compCLM F φ s p q Φ₂ hΦ₂ hΨ₂ hΦ₂b hΨ₂b := by
+  ext u : 2
+  simp [TemperedDistribution.compCLM_trans hΦ₁ hΨ₁ hΦ₂ hΨ₂ h₁ h₂]
+
+/-! ### Smooth diffeomorphisms with bounded derivatives of every positive order -/
+
+variable (F φ s p q) in
+/-- **Pullback by a smooth diffeomorphism with bounded derivatives**, as an isomorphism of
+`B^s_{p,q}`. Here `Φ` and `Φ⁻¹` are smooth with bounded derivatives of every positive order, so
+they have temperate growth (`Function.HasTemperateGrowth.of_norm_iteratedFDeriv_le_of_pos`). This
+is `TauCeti.BesovSpace.compCLE` with these hypotheses. -/
+def compCLEOfContDiff (Φ : E ≃ E) (hΦ : ContDiff ℝ ∞ Φ) (hΨ : ContDiff ℝ ∞ Φ.symm)
+    (hΦb : ∀ n, 1 ≤ n → ∃ C, ∀ x, ‖iteratedFDeriv ℝ n Φ x‖ ≤ C)
+    (hΨb : ∀ n, 1 ≤ n → ∃ C, ∀ x, ‖iteratedFDeriv ℝ n Φ.symm x‖ ≤ C) :
+    BesovSpace F φ s p q ≃L[ℂ] BesovSpace F φ s p q :=
+  compCLE F φ s p q Φ (.of_norm_iteratedFDeriv_le_of_pos hΦ hΦb)
+    (.of_norm_iteratedFDeriv_le_of_pos hΨ hΨb) (fun n h₁ _ ↦ hΦb n h₁) (fun n h₁ _ ↦ hΨb n h₁)
+
+@[simp]
+theorem toDistr_compCLEOfContDiff {Φ : E ≃ E} (hΦ : ContDiff ℝ ∞ Φ) (hΨ : ContDiff ℝ ∞ Φ.symm)
+    (hΦb : ∀ n, 1 ≤ n → ∃ C, ∀ x, ‖iteratedFDeriv ℝ n Φ x‖ ≤ C)
+    (hΨb : ∀ n, 1 ≤ n → ∃ C, ∀ x, ‖iteratedFDeriv ℝ n Φ.symm x‖ ≤ C)
+    (u : BesovSpace F φ s p q) :
+    (compCLEOfContDiff F φ s p q Φ hΦ hΨ hΦb hΨb u).toDistr =
+      TemperedDistribution.compCLM F Φ (.of_norm_iteratedFDeriv_le_of_pos hΦ hΦb)
+        (.of_norm_iteratedFDeriv_le_of_pos hΨ hΨb) u.toDistr := by
+  simp [compCLEOfContDiff]
+
+/-- The inverse of the pullback along `Φ` is the pullback along `Φ⁻¹`. -/
+@[simp]
+theorem compCLEOfContDiff_symm {Φ : E ≃ E} (hΦ : ContDiff ℝ ∞ Φ) (hΨ : ContDiff ℝ ∞ Φ.symm)
+    (hΦb : ∀ n, 1 ≤ n → ∃ C, ∀ x, ‖iteratedFDeriv ℝ n Φ x‖ ≤ C)
+    (hΨb : ∀ n, 1 ≤ n → ∃ C, ∀ x, ‖iteratedFDeriv ℝ n Φ.symm x‖ ≤ C) :
+    (compCLEOfContDiff F φ s p q Φ hΦ hΨ hΦb hΨb).symm =
+      compCLEOfContDiff F φ s p q Φ.symm hΨ hΦ hΨb hΦb :=
+  compCLE_symm
+
+@[simp]
+theorem compCLEOfContDiff_refl (h₁ : ContDiff ℝ ∞ (Equiv.refl E))
+    (h₂ : ContDiff ℝ ∞ (Equiv.refl E).symm)
+    (hb₁ : ∀ n, 1 ≤ n → ∃ C, ∀ x, ‖iteratedFDeriv ℝ n (Equiv.refl E) x‖ ≤ C)
+    (hb₂ : ∀ n, 1 ≤ n → ∃ C, ∀ x, ‖iteratedFDeriv ℝ n (Equiv.refl E).symm x‖ ≤ C) :
+    compCLEOfContDiff F φ s p q (Equiv.refl E) h₁ h₂ hb₁ hb₂ = ContinuousLinearEquiv.refl ℂ _ :=
+  compCLE_refl _ _ _ _
+
+/-- **Contravariant functoriality of the pullback on Besov spaces**: `(Φ₂ ∘ Φ₁)^* = Φ₁^* ∘ Φ₂^*`. -/
+theorem compCLEOfContDiff_trans {Φ₁ Φ₂ : E ≃ E}
+    (hΦ₁ : ContDiff ℝ ∞ Φ₁) (hΨ₁ : ContDiff ℝ ∞ Φ₁.symm)
+    (hΦ₁b : ∀ n, 1 ≤ n → ∃ C, ∀ x, ‖iteratedFDeriv ℝ n Φ₁ x‖ ≤ C)
+    (hΨ₁b : ∀ n, 1 ≤ n → ∃ C, ∀ x, ‖iteratedFDeriv ℝ n Φ₁.symm x‖ ≤ C)
+    (hΦ₂ : ContDiff ℝ ∞ Φ₂) (hΨ₂ : ContDiff ℝ ∞ Φ₂.symm)
+    (hΦ₂b : ∀ n, 1 ≤ n → ∃ C, ∀ x, ‖iteratedFDeriv ℝ n Φ₂ x‖ ≤ C)
+    (hΨ₂b : ∀ n, 1 ≤ n → ∃ C, ∀ x, ‖iteratedFDeriv ℝ n Φ₂.symm x‖ ≤ C)
+    (h₁ : ContDiff ℝ ∞ (Φ₁.trans Φ₂)) (h₂ : ContDiff ℝ ∞ (Φ₁.trans Φ₂).symm)
+    (hb₁ : ∀ n, 1 ≤ n → ∃ C, ∀ x, ‖iteratedFDeriv ℝ n (Φ₁.trans Φ₂) x‖ ≤ C)
+    (hb₂ : ∀ n, 1 ≤ n → ∃ C, ∀ x, ‖iteratedFDeriv ℝ n (Φ₁.trans Φ₂).symm x‖ ≤ C) :
+    compCLEOfContDiff F φ s p q (Φ₁.trans Φ₂) h₁ h₂ hb₁ hb₂ =
+      (compCLEOfContDiff F φ s p q Φ₂ hΦ₂ hΨ₂ hΦ₂b hΨ₂b).trans
+        (compCLEOfContDiff F φ s p q Φ₁ hΦ₁ hΨ₁ hΦ₁b hΨ₁b) :=
+  compCLE_trans _ _ _ _ _ _ _ _ _ _ _ _
+
+/-- **The norm of the pullback by a smooth diffeomorphism.** There is `C`, depending only on `φ`,
+`s` and `L`, with the following property. If the derivatives of `Φ` and of `Φ⁻¹` of orders `1` to
+`⌊|s|⌋₊ + 2` are bounded by `L`, then the pullback along `Φ` and its inverse have operator norm at
+most `C` on `B^s_{p,q}` for all `1 ≤ p, q ≤ ∞`. -/
+theorem exists_norm_compCLEOfContDiff_le (φ : ContDiffBump (0 : E)) (s L : ℝ) :
+    ∃ C : ℝ, 0 ≤ C ∧ ∀ {p q : ℝ≥0∞} [Fact (1 ≤ p)] [Fact (1 ≤ q)] {Φ : E ≃ E}
+      (hΦ : ContDiff ℝ ∞ Φ) (hΨ : ContDiff ℝ ∞ Φ.symm)
+      (hΦb : ∀ n, 1 ≤ n → ∃ C, ∀ x, ‖iteratedFDeriv ℝ n Φ x‖ ≤ C)
+      (hΨb : ∀ n, 1 ≤ n → ∃ C, ∀ x, ‖iteratedFDeriv ℝ n Φ.symm x‖ ≤ C),
+      (∀ n, 1 ≤ n → n ≤ ⌊|s|⌋₊ + 2 → ∀ x, ‖iteratedFDeriv ℝ n Φ x‖ ≤ L) →
+      (∀ n, 1 ≤ n → n ≤ ⌊|s|⌋₊ + 2 → ∀ x, ‖iteratedFDeriv ℝ n Φ.symm x‖ ≤ L) →
+      ‖(compCLEOfContDiff F φ s p q Φ hΦ hΨ hΦb hΨb :
+        BesovSpace F φ s p q →L[ℂ] BesovSpace F φ s p q)‖ ≤ C ∧
+      ‖((compCLEOfContDiff F φ s p q Φ hΦ hΨ hΦb hΨb).symm :
+        BesovSpace F φ s p q →L[ℂ] BesovSpace F φ s p q)‖ ≤ C := by
+  obtain ⟨C, hC, hnorm⟩ := exists_norm_compCLE_le (F := F) φ s L
+  refine ⟨C, hC, fun {p q} _ _ Φ hΦ hΨ hΦb hΨb hΦL hΨL ↦ ⟨hnorm _ _ _ _ hΦL hΨL, ?_⟩⟩
+  rw [compCLEOfContDiff_symm]
+  exact hnorm _ _ _ _ hΨL hΦL
+
+/-! ### Translations and continuous linear automorphisms -/
+
+omit [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] [CompleteSpace F] in
+private theorem compCLM_congr_equiv {Φ₁ Φ₂ : E ≃ E} (h : Φ₁ = Φ₂)
+    (hΦ₁ : (Φ₁ : E → E).HasTemperateGrowth) (hΨ₁ : (Φ₁.symm : E → E).HasTemperateGrowth)
+    (hΦ₂ : (Φ₂ : E → E).HasTemperateGrowth) (hΨ₂ : (Φ₂.symm : E → E).HasTemperateGrowth) :
+    TemperedDistribution.compCLM F Φ₁ hΦ₁ hΨ₁ = TemperedDistribution.compCLM F Φ₂ hΦ₂ hΨ₂ := by
+  subst h
+  rfl
+
+variable (F φ s p q) in
+/-- **Translation on Besov spaces.** Translating by `a ∈ E`, `u ↦ u(· + a)`, is an isomorphism of
+`B^s_{p,q}` whose operator norm is bounded uniformly in `a`, `p` and `q`
+(`TauCeti.BesovSpace.exists_norm_translateEquiv_le`). -/
+def translateEquiv (a : E) : BesovSpace F φ s p q ≃L[ℂ] BesovSpace F φ s p q :=
+  compCLE F φ s p q (Equiv.addRight a)
+    (by dsimp only [Equiv.coe_addRight]; fun_prop)
+    (by dsimp only [Equiv.addRight_symm_apply]; fun_prop)
+    (fun _ hn _ ↦ ⟨1, norm_iteratedFDeriv_addRight_le a hn⟩)
+    (fun _ hn _ ↦ ⟨1, norm_iteratedFDeriv_addRight_le (-a) hn⟩)
+
+@[simp]
+theorem toDistr_translateEquiv (a : E) (u : BesovSpace F φ s p q) :
+    (translateEquiv F φ s p q a u).toDistr =
+      TemperedDistribution.compCLM F (Equiv.addRight a)
+        (by dsimp only [Equiv.coe_addRight]; fun_prop)
+        (by dsimp only [Equiv.addRight_symm_apply]; fun_prop) u.toDistr := by
+  rw [translateEquiv, toDistr_compCLE]
+
+@[simp]
+theorem translateEquiv_zero :
+    translateEquiv F φ s p q (0 : E) = ContinuousLinearEquiv.refl ℂ _ := by
+  ext u : 3
+  have h := DFunLike.congr_fun (compCLM_congr_equiv (F := F)
+    (Φ₁ := Equiv.addRight (0 : E)) (Φ₂ := Equiv.refl E) (by ext x; simp)
+    (by dsimp only [Equiv.coe_addRight]; fun_prop)
+    (by dsimp only [Equiv.addRight_symm_apply]; fun_prop) .id .id) u.toDistr
+  exact (toDistr_translateEquiv 0 u).trans
+    (h.trans (DFunLike.congr_fun (TemperedDistribution.compCLM_refl .id .id) u.toDistr))
+
+@[simp]
+theorem translateEquiv_symm (a : E) :
+    (translateEquiv F φ s p q a).symm = translateEquiv F φ s p q (-a) := by
+  ext u : 3
+  rw [translateEquiv, compCLE_symm, toDistr_compCLE, toDistr_translateEquiv,
+    compCLM_congr_equiv (Equiv.addRight_symm a)]
+
+theorem translateEquiv_add (a b : E) :
+    translateEquiv F φ s p q (a + b) =
+      (translateEquiv F φ s p q b).trans (translateEquiv F φ s p q a) := by
+  ext u : 3
+  have hab : Equiv.addRight (a + b) = (Equiv.addRight a).trans (Equiv.addRight b) := by
+    ext x; simp [add_assoc]
+  have h₁ : ((Equiv.addRight a).trans (Equiv.addRight b) : E → E).HasTemperateGrowth := by
+    rw [← hab, Equiv.coe_addRight]; fun_prop
+  have h₂ : (((Equiv.addRight a).trans (Equiv.addRight b)).symm : E → E).HasTemperateGrowth := by
+    rw [← hab, Equiv.addRight_symm, Equiv.coe_addRight]; fun_prop
+  rw [ContinuousLinearEquiv.trans_apply, toDistr_translateEquiv, toDistr_translateEquiv,
+    toDistr_translateEquiv, compCLM_congr_equiv hab _ _ h₁ h₂,
+    TemperedDistribution.compCLM_trans, ContinuousLinearMap.comp_apply]
+
+/-- **Uniform translation invariance of Besov norms.** There is `C`, depending only on `φ` and
+`s`, such that translation by any `a ∈ E` has operator norm at most `C` on `B^s_{p,q}` for all
+`1 ≤ p, q ≤ ∞`. -/
+theorem exists_norm_translateEquiv_le (φ : ContDiffBump (0 : E)) (s : ℝ) :
+    ∃ C : ℝ, 0 ≤ C ∧ ∀ {p q : ℝ≥0∞} [Fact (1 ≤ p)] [Fact (1 ≤ q)] (a : E),
+      ‖(translateEquiv F φ s p q a : BesovSpace F φ s p q →L[ℂ] BesovSpace F φ s p q)‖ ≤ C := by
+  obtain ⟨C, hC, hnorm⟩ := exists_norm_compCLE_le (F := F) φ s 1
+  exact ⟨C, hC, fun {p q} _ _ a ↦ hnorm _ _ _ _
+    (fun _ hn _ x ↦ norm_iteratedFDeriv_addRight_le a hn x)
+    (fun _ hn _ x ↦ norm_iteratedFDeriv_addRight_le (-a) hn x)⟩
+
+variable (F φ s p q) in
+/-- **Pullback along a continuous linear automorphism** `e` of `E`, as an isomorphism of
+`B^s_{p,q}`. -/
+def compContinuousLinearEquiv (e : E ≃L[ℝ] E) :
+    BesovSpace F φ s p q ≃L[ℂ] BesovSpace F φ s p q :=
+  compCLE F φ s p q e.toEquiv e.hasTemperateGrowth e.symm.hasTemperateGrowth
+    (fun _ hn _ ↦ ⟨‖(e : E →L[ℝ] E)‖, (e : E →L[ℝ] E).norm_iteratedFDeriv_le_norm hn⟩)
+    (fun _ hn _ ↦ ⟨‖(e.symm : E →L[ℝ] E)‖, (e.symm : E →L[ℝ] E).norm_iteratedFDeriv_le_norm hn⟩)
+
+@[simp]
+theorem toDistr_compContinuousLinearEquiv (e : E ≃L[ℝ] E) (u : BesovSpace F φ s p q) :
+    (compContinuousLinearEquiv F φ s p q e u).toDistr =
+      TemperedDistribution.compCLM F e.toEquiv e.hasTemperateGrowth e.symm.hasTemperateGrowth
+        u.toDistr :=
+  toDistr_compCLE u
+
+@[simp]
+theorem compContinuousLinearEquiv_symm (e : E ≃L[ℝ] E) :
+    (compContinuousLinearEquiv F φ s p q e).symm = compContinuousLinearEquiv F φ s p q e.symm :=
+  compCLE_symm
+
+@[simp]
+theorem compContinuousLinearEquiv_refl :
+    compContinuousLinearEquiv F φ s p q (ContinuousLinearEquiv.refl ℝ E) =
+      ContinuousLinearEquiv.refl ℂ _ := by
+  ext u : 3
+  have h := DFunLike.congr_fun (compCLM_congr_equiv (F := F)
+    (Φ₁ := (ContinuousLinearEquiv.refl ℝ E).toEquiv) (Φ₂ := Equiv.refl E) rfl
+    (ContinuousLinearEquiv.refl ℝ E).hasTemperateGrowth
+    (ContinuousLinearEquiv.refl ℝ E).symm.hasTemperateGrowth .id .id) u.toDistr
+  exact (toDistr_compContinuousLinearEquiv _ u).trans
+    (h.trans (DFunLike.congr_fun (TemperedDistribution.compCLM_refl .id .id) u.toDistr))
+
+theorem compContinuousLinearEquiv_trans (e₁ e₂ : E ≃L[ℝ] E) :
+    compContinuousLinearEquiv F φ s p q (e₁.trans e₂) =
+      (compContinuousLinearEquiv F φ s p q e₂).trans (compContinuousLinearEquiv F φ s p q e₁) := by
+  ext u : 3
+  rw [ContinuousLinearEquiv.trans_apply, toDistr_compContinuousLinearEquiv,
+    toDistr_compContinuousLinearEquiv, toDistr_compContinuousLinearEquiv]
+  exact DFunLike.congr_fun (TemperedDistribution.compCLM_trans
+    (φ := e₁.toEquiv) (χ := e₂.toEquiv)
+    e₁.hasTemperateGrowth e₁.symm.hasTemperateGrowth
+    e₂.hasTemperateGrowth e₂.symm.hasTemperateGrowth
+    (e₁.trans e₂).hasTemperateGrowth (e₁.trans e₂).symm.hasTemperateGrowth) u.toDistr
 
 end TauCeti.BesovSpace

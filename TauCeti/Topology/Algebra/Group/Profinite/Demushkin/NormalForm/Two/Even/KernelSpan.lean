@@ -215,7 +215,7 @@ theorem gradedFunctional_basisModificationDelta_demushkinWordTwoEven_eq_zero (hn
   -- `χ` is trivial on `X ∩ λ_m(F)`: its values at the generators other than `x₄` are `±1`.
   have hw (i : Fin n) : χ (w i) = 1 := by
     refine χ.apply_eq_one_of_mem_exponentSumKer_of_mem_pLowerCentralSeries_one (fun j hj ↦ ?_)
-      (hwX i) (pLowerCentralSeries_antitone hm (w i).2)
+      (hwX i) (pLowerCentralSeries_antitone hm (w i).property)
     by_cases hj₁ : j = ⟨1, by omega⟩
     · rw [hj₁, h₁, neg_one_sq]
     · rw [h j hj₁ hj, one_pow]
@@ -271,7 +271,7 @@ private theorem gradedFunctional_sum_smul_gradedPowIter_gradedMkZero (hn3 : 3 < 
   rw [map_sum]
   refine Finset.sum_congr rfl fun a _ ↦ ?_
   rw [map_smul, IsCrossedHom.gradedFunctional_gradedPowIter_gradedMkZero _ _ _ _
-    (h a a.2.2 a.2.1), crossedHom_of, Pi.single_apply, smul_eq_mul]
+    (h a a.property.2 a.property.1), crossedHom_of, Pi.single_apply, smul_eq_mul]
   split_ifs <;> simp
 
 /-- **The image of `δ_ρ` on `gr_m(X)^n` is the common kernel in `gr_{m+1}(X)` of the graded
@@ -327,15 +327,15 @@ theorem mem_map_basisModificationDelta_demushkinWordTwoEven_iff_forall_gradedFun
         map_smul,
         gradedFunctional_crossedHom_gradedPowIterBracket_of_apply_eq_neg_one hn3 h₁ m
           (Fin.ne_of_val_ne (by norm_num)), ite_eq_left rfl, smul_eq_mul, mul_one, zero_add,
-        Finset.sum_eq_zero fun a _ ↦ by rw [ite_eq_right a.2.1, mul_zero], zero_add] at h4
+        Finset.sum_eq_zero fun a _ ↦ by rw [ite_eq_right a.property.1, mul_zero], zero_add] at h4
       exact h4
     -- `Δ_{m+1}(D_a)` reads off `c_a` for `a ≠ 2, 4`.
     have hc (a : {a : Fin n // a ≠ ⟨3, hn3⟩ ∧ a ≠ ⟨1, by omega⟩}) : c a = 0 := by
-      have ha := hΔ a a.2.2
+      have ha := hΔ a a.property.2
       rw [map_add, map_add, hΔv, gradedFunctional_sum_smul_gradedPowIter_gradedMkZero hn3 h m _ c,
         map_smul,
-        gradedFunctional_crossedHom_gradedPowIterBracket_of_apply_eq_neg_one hn3 h₁ m a.2.2,
-        ite_eq_right a.2.1, smul_zero, add_zero, zero_add,
+        gradedFunctional_crossedHom_gradedPowIterBracket_of_apply_eq_neg_one hn3 h₁ m a.property.2,
+        ite_eq_right a.property.1, smul_zero, add_zero, zero_add,
         Finset.sum_eq_single a
           (fun b _ hb ↦ by rw [ite_eq_right fun e ↦ hb (Subtype.ext e), mul_zero])
           fun hb ↦ (hb (Finset.mem_univ _)).elim,
