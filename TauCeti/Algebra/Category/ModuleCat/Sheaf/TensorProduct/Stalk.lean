@@ -270,9 +270,11 @@ def tensorStalkEquivMonoidal :
 
 /-- The monoidal tensor stalk equivalence sends the germ of a pure tensor, mapped into the
 underlying presheaf by the tensor comparison, to the tensor of the two germs. -/
+@[simp]
 theorem tensorStalkEquivMonoidal_germ (U : Opens X) (hx : x ∈ U)
     (m : M.val.obj (op U)) (n : N.val.obj (op U)) :
-    dsimp% only [PresheafOfModules.presheaf_obj_coe, Functor.id_obj, Functor.comp_obj]
+    dsimp% only [PresheafOfModules.presheaf_obj_coe, Functor.id_obj, sheafCompose_obj_obj,
+      Functor.comp_obj, CommRingCat.forgetToRingCat_obj]
     (tensorStalkEquivMonoidal R M N x
       (TopCat.Presheaf.germ (M ⊗ N).val.presheaf U x hx
         ((Functor.LaxMonoidal.μ (_root_.SheafOfModules.forget (ringCatSheaf R)) M N).app
@@ -306,12 +308,7 @@ theorem tensorStalkEquivMonoidal_germ (U : Opens X) (hx : x ∈ U)
     tensorStalkEquiv R M N x (TopCat.Presheaf.germ (tensorProduct R M N).val.presheaf
       U x hx (k.app (op U) (m ⊗ₜ[R.obj.obj (op U)] n)))) h).trans ?_
   rw [tensorStalkEquiv_apply]
-  have hunit : (sheafificationForgetAdjunction R).unit.app (M.val ⊗ N.val) =
-      (PresheafOfModules.sheafificationAdjunction (𝟙 (ringCatSheaf R).obj)).unit.app
-        (M.val ⊗ N.val) := by
-    unfold sheafificationForgetAdjunction
-    rfl
-  rw [hunit]
+  rw [sheafificationForgetAdjunction_unit_app R (M.val ⊗ N.val)]
   dsimp only [_root_.SheafOfModules.forget_obj, Functor.id_obj]
   exact tensorStalkComparison_germ_unit_tmul R M N x U hx m n
 

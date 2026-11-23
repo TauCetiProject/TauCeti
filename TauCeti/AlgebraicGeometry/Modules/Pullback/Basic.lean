@@ -76,6 +76,8 @@ local data on the preimage cover.
   `AlgebraicGeometry.Scheme.Modules.pullback_δ`;
 * `AlgebraicGeometry.Scheme.Modules.isIso_pullback_δ`: pullback preserves tensor products of
   arbitrary module sheaves;
+* `AlgebraicGeometry.Scheme.Modules.pullbackBraided`: pullback is strong symmetric monoidal on
+  all module sheaves;
 * `AlgebraicGeometry.Scheme.Modules.isMonoidal_pushforwardComp_hom` and
   `AlgebraicGeometry.Scheme.Modules.pullback_comp_δ`: the composition isomorphisms of pushforward
   and pullback respect the lax and oplax monoidal structures;
@@ -488,6 +490,12 @@ lemma pullback_map_braiding_hom_comp_δ (M N : Y.Modules) :
 instance : IsIso (Functor.OplaxMonoidal.η (pullback f)) := by
   rw [pullback_η]
   infer_instance
+
+/-- Pullback of module sheaves along any scheme morphism is strong symmetric monoidal,
+with comparisons inverse to the canonical oplax comparisons. -/
+instance pullbackBraided : (pullback f).Braided := by
+  letI := Functor.Monoidal.ofOplaxMonoidal (pullback f)
+  exact (pullbackPushforwardAdjunction f).leftAdjointBraided
 
 variable {Z : Scheme.{u}} (g : Y ⟶ Z)
 

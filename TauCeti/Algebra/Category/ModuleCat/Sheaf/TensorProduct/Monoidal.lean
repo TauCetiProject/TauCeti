@@ -286,13 +286,20 @@ variable (R)
 /-- Sheafification of presheaves of modules is left adjoint to the inclusion
 `SheafOfModules.forget` of sheaves of modules. This is Mathlib's
 `PresheafOfModules.sheafificationAdjunction` along the identity of the sheaf of rings, whose
-right adjoint `forget ⋙ restrictScalars (𝟙 _)` is definitionally `forget`. Its body is exposed
-so that its unit agrees definitionally with Mathlib's adjunction unit in importing modules. -/
-@[expose]
+right adjoint `forget ⋙ restrictScalars (𝟙 _)` is definitionally `forget`. -/
 def sheafificationForgetAdjunction :
     PresheafOfModules.sheafification.{u} (𝟙 (ringCatSheaf R).obj) ⊣
       _root_.SheafOfModules.forget (ringCatSheaf R) :=
   PresheafOfModules.sheafificationAdjunction (𝟙 (ringCatSheaf R).obj)
+
+/-- The unit of `sheafificationForgetAdjunction` is the unit of the original sheafification
+adjunction along the identity of the sheaf of rings. -/
+lemma sheafificationForgetAdjunction_unit_app
+    (M : PresheafOfModules.{u} (ringCatSheaf R).obj) :
+    (sheafificationForgetAdjunction R).unit.app M =
+      (PresheafOfModules.sheafificationAdjunction (𝟙 (ringCatSheaf R).obj)).unit.app M := by
+  unfold sheafificationForgetAdjunction
+  rfl
 
 /-- The counit of `sheafificationForgetAdjunction` at a sheaf of modules `M` is the
 identification `sheafificationIso` of the sheafification of `M.val` with `M`. -/

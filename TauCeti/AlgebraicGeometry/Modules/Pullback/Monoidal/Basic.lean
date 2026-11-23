@@ -51,58 +51,21 @@ variable {X Y : Scheme.{u}} (f : X ⟶ Y)
 
 open _root_.AlgebraicGeometry.Scheme.Modules
 
-/-- Pulling back a tensor product with a fixed left factor commutes with tensoring
-by its pullback, naturally in the other sheaf of modules. -/
-def _root_.AlgebraicGeometry.Scheme.Modules.pullbackTensorLeftIso
-    (M : Y.Modules) :
-    tensorLeft M ⋙ pullback f ≅ pullback f ⋙ tensorLeft ((pullback f).obj M) := by
-  have : IsIso ((pullback f).oplaxCommTensorLeft M) := by
-    rw [NatTrans.isIso_iff_isIso_app]
-    intro N
-    rw [Functor.oplaxCommTensorLeft_app]
-    infer_instance
-  exact asIso ((pullback f).oplaxCommTensorLeft M)
-
-/-- The left tensor comparison is the canonical oplax tensor map of pullback. -/
-@[simp]
-theorem _root_.AlgebraicGeometry.Scheme.Modules.pullbackTensorLeftIso_hom_app
-    (M N : Y.Modules) :
-    (pullbackTensorLeftIso f M).hom.app N = δ (pullback f) M N :=
-  Functor.oplaxCommTensorLeft_app _ _ _
-
-/-- Pulling back a tensor product with a fixed right factor commutes with tensoring
-by its pullback, naturally in the other sheaf of modules. -/
-def _root_.AlgebraicGeometry.Scheme.Modules.pullbackTensorRightIso
-    (N : Y.Modules) :
-    tensorRight N ⋙ pullback f ≅ pullback f ⋙ tensorRight ((pullback f).obj N) := by
-  have : IsIso ((pullback f).oplaxCommTensorRight N) := by
-    rw [NatTrans.isIso_iff_isIso_app]
-    intro M
-    rw [Functor.oplaxCommTensorRight_app]
-    infer_instance
-  exact asIso ((pullback f).oplaxCommTensorRight N)
-
-/-- The right tensor comparison is the canonical oplax tensor map of pullback. -/
-@[simp]
-theorem _root_.AlgebraicGeometry.Scheme.Modules.pullbackTensorRightIso_hom_app
-    (M N : Y.Modules) :
-    (pullbackTensorRightIso f N).hom.app M = δ (pullback f) M N :=
-  Functor.oplaxCommTensorRight_app _ _ _
-
-/-- Pullback from quasicoherent sheaves to all modules on the source is strong monoidal,
-with inverse comparisons inherited from module pullback. -/
-instance _root_.AlgebraicGeometry.Scheme.Modules.pullbackToModulesMonoidal :
-    ((ObjectProperty.ι _ : QuasicoherentSheaf Y ⥤ Y.Modules) ⋙ pullback f).Monoidal := by
-  let I : QuasicoherentSheaf Y ⥤ Y.Modules := ObjectProperty.ι _
-  have : I.Monoidal := @ObjectProperty.monoidalι Y.Modules _ _ _
-    (Scheme.Modules.isMonoidal_isQuasicoherent Y)
-  have : IsIso (η (I ⋙ pullback f)) := by
-    rw [Functor.OplaxMonoidal.comp_η]
-    infer_instance
-  have (E F : QuasicoherentSheaf Y) : IsIso (δ (I ⋙ pullback f) E F) := by
-    rw [Functor.OplaxMonoidal.comp_δ]
-    infer_instance
-  exact Functor.Monoidal.ofOplaxMonoidal (I ⋙ pullback f)
+/-- Pullback from quasicoherent sheaves to modules inherits symmetry from the inclusion and
+module pullback. The scheme module carriers are explicit because typeclass search does not
+unfold them when matching Mathlib's composite instance. -/
+instance _root_.AlgebraicGeometry.Scheme.Modules.pullbackToModulesBraided :
+    ((ObjectProperty.ι _ : QuasicoherentSheaf Y ⥤ Y.Modules) ⋙ pullback f).Braided :=
+  @Functor.Braided.instComp (QuasicoherentSheaf Y) _
+    (instMonoidalCategoryQuasicoherentSheaf Y)
+    (instSymmetricCategoryQuasicoherentSheaf Y).toBraidedCategory
+    Y.Modules _ (Scheme.Modules.instMonoidalCategory Y)
+    (Scheme.Modules.instSymmetricCategory Y).toBraidedCategory
+    X.Modules _ (Scheme.Modules.instMonoidalCategory X)
+    (Scheme.Modules.instSymmetricCategory X).toBraidedCategory
+    (ObjectProperty.ι _ : QuasicoherentSheaf Y ⥤ Y.Modules) (pullback f)
+    (@ObjectProperty.instBraidedFullSubcategoryι Y.Modules _ _ _
+      (Scheme.Modules.isMonoidal_isQuasicoherent Y) _) (Scheme.Modules.pullbackBraided f)
 
 /-- The inverse tensor comparison is the canonical module-pullback tensor comparison. -/
 @[simp]
@@ -123,43 +86,6 @@ theorem _root_.AlgebraicGeometry.Scheme.Modules.pullbackToModules_η :
   exact (congrArg (· ≫ η (pullback f))
     ((pullback f).map_id (𝟙_ Y.Modules))).trans
       ((Category.id_comp _).trans (pullback_η f))
-
-/-- The tensor comparison inverts the canonical module-pullback tensor comparison. -/
-@[simp]
-theorem _root_.AlgebraicGeometry.Scheme.Modules.pullbackToModules_μ
-    (E F : QuasicoherentSheaf Y) :
-    haveI := isIso_pullback_δ f E.obj F.obj
-    μ ((ObjectProperty.ι _ : QuasicoherentSheaf Y ⥤ Y.Modules) ⋙ pullback f) E F =
-      inv (δ (pullback f) E.obj F.obj) :=
-  haveI := isIso_pullback_δ f E.obj F.obj
-  IsIso.eq_inv_of_hom_inv_id ((congrArg (· ≫ _) (pullbackToModules_δ f E F).symm).trans
-    (Functor.Monoidal.δ_μ _ E F))
-
-/-- The unit comparison inverts the canonical structure-sheaf identification. -/
-@[simp]
-theorem _root_.AlgebraicGeometry.Scheme.Modules.pullbackToModules_ε :
-    ε ((ObjectProperty.ι _ : QuasicoherentSheaf Y ⥤ Y.Modules) ⋙ pullback f) =
-      (pullbackObjUnitIso f).inv :=
-  (Iso.comp_hom_eq_id _).mp ((congrArg (_ ≫ ·) (pullbackToModules_η f).symm).trans
-    (Functor.Monoidal.ε_η _))
-
-/-- Pullback of quasicoherent sheaves, viewed in all modules, respects symmetry. -/
-instance _root_.AlgebraicGeometry.Scheme.Modules.pullbackToModulesBraided :
-    ((ObjectProperty.ι _ : QuasicoherentSheaf Y ⥤ Y.Modules) ⋙ pullback f).Braided where
-  toMonoidal := pullbackToModulesMonoidal f
-  braided E F := by
-    let H := (ObjectProperty.ι _ : QuasicoherentSheaf Y ⥤ Y.Modules) ⋙ pullback f
-    rw [← cancel_epi (δ H E F)]
-    erw [Functor.Monoidal.δ_μ_assoc]
-    rw [pullbackToModules_δ]
-    -- The full-subcategory braiding is the ambient braiding on underlying objects.
-    have hb : H.map (β_ E F).hom =
-        (pullback f).map (@BraidedCategory.braiding Y.Modules _ _ _ E.obj F.obj).hom := rfl
-    rw [hb]
-    erw [← pullback_map_braiding_hom_comp_δ_assoc, ← pullbackToModules_δ]
-    exact ((congrArg ((pullback f).map
-      (@BraidedCategory.braiding Y.Modules _ _ _ E.obj F.obj).hom ≫ ·)
-      (Functor.Monoidal.δ_μ H F E)).trans (Category.comp_id _)).symm
 
 namespace QuasicoherentSheaf
 
@@ -217,7 +143,7 @@ instance pullbackBraided : (pullback f).Braided := by
             Scheme.Modules.pullback f) E F) := by
         rw [← Functor.Monoidal.inv_δ, ObjectProperty.hom_inv]
         rfl
-      rw [hμ, hμ]
+      rw [hμ, hμ, Functor.Monoidal.inv_δ, Functor.Monoidal.inv_δ]
       exact @Functor.LaxBraided.braided _ _ _ _ _ _ _ _
         ((ObjectProperty.ι _ : QuasicoherentSheaf Y ⥤ Y.Modules) ⋙ Scheme.Modules.pullback f)
         inferInstance E F }

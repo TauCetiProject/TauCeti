@@ -51,7 +51,7 @@ def pullbackIhomComparison :
       Scheme.Modules.pullback f ⋙ ihom ((Scheme.Modules.pullback f).obj M) :=
   (mateEquiv (ihom.adjunction M)
     (ihom.adjunction ((Scheme.Modules.pullback f).obj M))
-    (.mk _ _ _ _ (Scheme.Modules.pullbackTensorLeftIso f M).inv))
+    (.mk _ _ _ _ (Functor.Monoidal.commTensorLeft (Scheme.Modules.pullback f) M).hom))
 
 /-- Evaluation after the base-change comparison is the pullback of evaluation, preceded by
 the inverse canonical tensor comparison. This characterizes the base-change map. -/
@@ -64,21 +64,18 @@ theorem whiskerLeft_pullbackIhomComparison_app_comp_ev (F : Y.Modules) :
         (Scheme.Modules.pullback f).map ((ihom.ev M).app F) := by
   have h := mateEquiv_counit (ihom.adjunction M)
     (ihom.adjunction ((Scheme.Modules.pullback f).obj M))
-    (.mk _ _ _ _ (Scheme.Modules.pullbackTensorLeftIso f M).inv) F
+    (.mk _ _ _ _ (Functor.Monoidal.commTensorLeft (Scheme.Modules.pullback f) M).hom) F
   -- Express the mate equation using module whiskering and evaluation, rather than
   -- `tensorLeft.map`, `TwoSquare.app`, and the adjunction counits.
   change (Scheme.Modules.pullback f).obj M ◁
       (pullbackIhomComparison M f).app F ≫
         (ihom.ev ((Scheme.Modules.pullback f).obj M)).app
           ((Scheme.Modules.pullback f).obj F) =
-    (Scheme.Modules.pullbackTensorLeftIso f M).inv.app
+    (Functor.Monoidal.commTensorLeft (Scheme.Modules.pullback f) M).hom.app
       ((ihom M).obj F) ≫ (Scheme.Modules.pullback f).map ((ihom.ev M).app F) at h
-  have hd : (Scheme.Modules.pullbackTensorLeftIso f M).inv.app
+  have hd : (Functor.Monoidal.commTensorLeft (Scheme.Modules.pullback f) M).hom.app
       ((ihom M).obj F) = inv (δ (Scheme.Modules.pullback f) M
-        ((ihom M).obj F)) := by
-    apply IsIso.eq_inv_of_inv_hom_id
-    rw [← Scheme.Modules.pullbackTensorLeftIso_hom_app]
-    exact (Scheme.Modules.pullbackTensorLeftIso f M).inv_hom_id_app _
+        ((ihom M).obj F)) := (Functor.Monoidal.inv_δ _ _ _).symm
   exact h.trans (congrArg (· ≫ (Scheme.Modules.pullback f).map
     ((ihom.ev M).app F)) hd)
 
@@ -122,7 +119,7 @@ private theorem ev_comp_pullbackIhomIso_hom_app (D : Y.Modules)
     (F : Y.Modules) :
     (Scheme.Modules.pullback f).obj M ◁
         (isoWhiskerRight (ihomIsoTensorLeft D M) (Scheme.Modules.pullback f) ≪≫
-          Scheme.Modules.pullbackTensorLeftIso f D ≪≫
+          (Functor.Monoidal.commTensorLeft (Scheme.Modules.pullback f) D).symm ≪≫
             isoWhiskerLeft (Scheme.Modules.pullback f)
               (ihomIsoTensorLeft ((Scheme.Modules.pullback f).obj D)
                 ((Scheme.Modules.pullback f).obj M)).symm).hom.app F ≫
@@ -135,7 +132,7 @@ private theorem ev_comp_pullbackIhomIso_hom_app (D : Y.Modules)
   rw [MonoidalCategory.whiskerLeft_comp, MonoidalCategory.whiskerLeft_comp,
     Category.assoc, Category.assoc,
     whiskerLeft_ihomIsoTensorLeft_inv_app_comp_ev,
-    Scheme.Modules.pullbackTensorLeftIso_hom_app,
+    Functor.Monoidal.commTensorLeft_inv_app,
     Functor.OplaxMonoidal.δ_natural_right_assoc]
   -- Unfold left tensoring to match the oplax associativity equation.
   dsimp only [curriedTensor_obj_obj]
@@ -168,7 +165,7 @@ theorem isIso_pullbackIhomComparison_of_exactPairing [M.IsQuasicoherent]
   -- comparison is invertible even for an arbitrary right factor.
   let i : ihom M ⋙ P ≅ P ⋙ ihom (P.obj M) :=
     isoWhiskerRight (ihomIsoTensorLeft D M) P ≪≫
-      Scheme.Modules.pullbackTensorLeftIso f D ≪≫
+      (Functor.Monoidal.commTensorLeft (Scheme.Modules.pullback f) D).symm ≪≫
         isoWhiskerLeft P (ihomIsoTensorLeft (P.obj D) (P.obj M)).symm
   -- The image pairing comes from strong monoidal pullback on quasicoherent sheaves.
   have he : ε_ (P.obj D) (P.obj M) =
