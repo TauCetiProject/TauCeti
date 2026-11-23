@@ -286,11 +286,11 @@ theorem tendsto_integral_pow_two_mul_add_one_spectralMeasure_wignerMatrix_probab
       (tendsto_integral_integral_pow_two_mul_add_one_spectralMeasure_wignerMatrix
         hindep hξzero hηzero (fun n ij ↦ (hξp n ij).mono_exponent hle)
         (fun n i ↦ (hηp n i).mono_exponent hle)
-        (fun n ij ↦ (hξp n ij).integrable_norm_pow'
-          |>.integral_norm_pow_le_sqrt_integral_norm_pow_two_mul.trans
+        (fun n ij ↦ ((hξp n ij).integrable_norm_pow'
+          |>.integral_norm_pow_le_sqrt_integral_norm_pow_two_mul prob_le_one).trans
             (Real.sqrt_le_sqrt (hξ n ij)))
-        (fun n i ↦ (hηp n i).integrable_norm_pow'
-          |>.integral_norm_pow_le_sqrt_integral_norm_pow_two_mul.trans
+        (fun n i ↦ ((hηp n i).integrable_norm_pow'
+          |>.integral_norm_pow_le_sqrt_integral_norm_pow_two_mul prob_le_one).trans
             (Real.sqrt_le_sqrt (hη n i)))).abs
   have hev : ∀ᶠ n in atTop,
       P n {ω | ε ≤ |M n ω|} ≤ P n {ω | ε / 2 ≤ |M n ω - ∫ ω', M n ω' ∂P n|} := by
