@@ -63,7 +63,7 @@ def spherePole : EuclideanSpace ℝ ι :=
   sphereOnePointEquiv h ∞
 
 theorem spherePole_mem_sphere : spherePole h ∈ sphere (0 : EuclideanSpace ℝ ι) 1 :=
-  (sphereOnePointEquiv h ∞).2
+  (sphereOnePointEquiv h ∞).property
 
 /-- A point of `Sⁿ` other than the pole comes from a finite point of the one-point
 compactification. -/
@@ -86,7 +86,7 @@ def sphereTopCellMap : PartialEquiv (Fin n → ℝ) (EuclideanSpace ℝ ι) wher
   source := ball 0 1
   target := sphere 0 1 \ {spherePole h}
   map_source' x hx := by
-    refine ⟨(sphereOnePointEquiv h _).2, fun h' ↦ ?_⟩
+    refine ⟨(sphereOnePointEquiv h _).property, fun h' ↦ ?_⟩
     have : unitBallToOnePoint x = ∞ := (sphereOnePointEquiv h).injective (Subtype.ext h')
     exact (unitBallToOnePoint_apply_eq_infty_iff.1 this).not_gt (mem_ball_zero_iff.1 hx)
   map_target' y hy := by
@@ -125,7 +125,7 @@ theorem sphereTopCellMap_symm_apply {y : EuclideanSpace ℝ ι} (hy : y ∈ sphe
 
 theorem sphereTopCellMap_mem_sphere (x : Fin n → ℝ) :
     sphereTopCellMap h x ∈ sphere (0 : EuclideanSpace ℝ ι) 1 :=
-  (sphereOnePointEquiv h _).2
+  (sphereOnePointEquiv h _).property
 
 /-- The pole `TauCeti.spherePole h`, as a point of the unit sphere `Sⁿ`. -/
 def spherePolePoint : sphere (0 : EuclideanSpace ℝ ι) 1 :=
@@ -155,7 +155,7 @@ theorem sphereTopCellMap_apply_of_norm_eq_one {x : Fin n → ℝ} (hx : ‖x‖ 
 /-- The characteristic map of the top cell of `Sⁿ` is continuous on the closed unit ball, as a
 CW characteristic map must be. -/
 theorem continuousOn_sphereTopCellMap : ContinuousOn (sphereTopCellMap h) (closedBall 0 1) :=
-  (continuous_subtype_val.comp ((sphereOnePointEquiv h).continuous.comp
+  (continuous_subtypeVal.comp ((sphereOnePointEquiv h).continuous.comp
     continuous_unitBallToOnePoint)).continuousOn
 
 /-- The inverse of the characteristic map of the top cell of `Sⁿ` is continuous on the open
@@ -166,9 +166,9 @@ theorem continuousOn_sphereTopCellMap_symm :
   -- On the target, the inverse is `unitBallToOnePoint.symm` after the inverse homeomorphism.
   refine (continuousOn_unitBallToOnePoint_symm.comp_continuous
     ((sphereOnePointEquiv h).symm.continuous.comp
-      (continuous_subtype_val.subtype_mk fun y ↦ y.2.1))
-    fun y ↦ sphereOnePointEquiv_symm_mem_target h y.2).congr fun y ↦ ?_
-  exact (sphereTopCellMap_symm_apply h y.2.1).symm
+      (continuous_subtypeVal.subtype_mk fun y ↦ y.property.1))
+    fun y ↦ sphereOnePointEquiv_symm_mem_target h y.property).congr fun y ↦ ?_
+  exact (sphereTopCellMap_symm_apply h y.property.1).symm
 
 /-- The cells of dimension `m` of the CW structure on `Sⁿ`: one if `m = 0` and one if `m = n`. -/
 private abbrev SphereCell (n m : ℕ) : Type u := ULift.{u} (PLift (m = 0) ⊕ PLift (m = n))
@@ -324,7 +324,7 @@ instance finiteCWType_sphere {E : Type u} [NormedAddCommGroup E] [NormedSpace �
     [FiniteDimensional ℝ E] : FiniteCWType (sphere (0 : E) 1) := by
   rcases (finrank ℝ E).eq_zero_or_pos with hE | hE
   · have : IsEmpty (sphere (0 : E) 1) := ⟨fun x ↦ by
-      simpa [finrank_zero_iff_forall_zero.1 hE x] using x.2⟩
+      simpa [finrank_zero_iff_forall_zero.1 hE x] using x.property⟩
     exact FiniteCWType.of_discreteTopology _
   obtain ⟨n, hn⟩ := Nat.exists_eq_add_one_of_ne_zero hE.ne'
   have h : Fintype.card (ULift.{u} (Fin (n + 1))) = n + 1 := by simp

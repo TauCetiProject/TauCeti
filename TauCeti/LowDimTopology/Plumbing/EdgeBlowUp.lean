@@ -730,7 +730,7 @@ theorem characteristicWeight_le_blowUpEdgeCharacteristic (u v : V)
   have hδ : Odd ((δ : ℤ)) := by
     rcases Int.units_eq_one_or δ with rfl | rfl <;> norm_num
   have h' := P.two_mul_characteristicWeight_blowUpEdgeCharacteristic u v h k (δ : ℤ) hδ x s
-  have hnn := Int.zero_le_mul_sub_units δ s
+  have hnn := Int.zero_le_mul_sub_of_abs_le_one (Int.isUnit_iff_abs_eq.mp δ.isUnit).le s
   linarith
 
 /-- **The infimum of the characteristic weight is an edge-blow-up invariant.** -/

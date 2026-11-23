@@ -73,7 +73,8 @@ theorem map_bijective_of_inf :
     have hvu₂ : v * u₂ = (g₂ : G)⁻¹ * x⁻¹ * (g₁ : G) := by rw [← hfact]; group
     exact mk_eq_mk_of_mem (mem_doubleCoset.mpr ⟨x, hxH, v * u₂, (hmem_iff _).mpr
       ⟨H'.mul_mem hxu₁ hu₂,
-        hvu₂ ▸ P.mul_mem (P.mul_mem (P.inv_mem (hΔP g₂.2)) (P.inv_mem (hleP hxH))) (hΔP g₁.2)⟩,
+        hvu₂ ▸ P.mul_mem (P.mul_mem (P.inv_mem (hΔP g₂.property)) (P.inv_mem (hleP hxH)))
+            (hΔP g₁.property)⟩,
       hfact.symm⟩)
   · induction E using HeckeCoset.induction with | h δ' =>
     obtain ⟨u, huH', huΔ⟩ := hsurj δ'
@@ -145,7 +146,8 @@ theorem mapSubgroupLinearEquiv_structureConstants (D₁ D₂ : HeckeCoset Δ H H
   rw [mapSubgroupLinearEquiv_apply_map, structureConstants_apply, structureConstants_apply,
     HeckeCoset.multiplicity_map_rep hΔ (hHP ▸ inf_le_left) (hHP ▸ inf_le_left) (hHP ▸ inf_le_left)
       D₁ D₂ D,
-    multiplicity_eq_of_inf hHP (hΔP D₁.rep.2) (hΔP D₂.rep.2) (hΔP D.rep.2) (hstab D₁.rep)
+    multiplicity_eq_of_inf hHP (hΔP D₁.rep.property) (hΔP D₂.rep.property) (hΔP D.rep.property)
+        (hstab D₁.rep)
       (hstab D₂.rep)]
 
 /-- `mapSubgroupLinearEquiv` preserves the Hecke product. -/

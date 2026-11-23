@@ -6,6 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.LineBundle.Stalk
+import Mathlib.AlgebraicGeometry.Morphisms.Affine
+import Mathlib.AlgebraicGeometry.Morphisms.QuasiSeparated
+import TauCeti.AlgebraicGeometry.Modules.Localization
 
 /-!
 # The nonvanishing locus of a section of an invertible sheaf
@@ -26,6 +29,12 @@ The section `s` is a basis of `M` exactly over its nonvanishing locus: an open `
 `X_s` if and only if, on every open `W' ⊆ W`, every section of `M` is a unique regular multiple
 of the restriction of `s`. In other words, `s` trivializes `M` over `X_s`.
 
+On an affine open `U`, the nonvanishing locus of every section over `U` is affine: over a cover of
+`U` by basic opens trivializing `M` it is a basic open of each member. Moreover the sections over
+`U` generate every stalk, since the sections over a basic open `D(f) ⊆ U` are the localization at
+`f` of the sections over `U`. These are the two facts making every invertible sheaf on an affine
+scheme ample.
+
 ## Main definitions
 
 * `AlgebraicGeometry.Scheme.Modules.nonvanishingLocus`: the open set `X_s` of points at which the
@@ -45,12 +54,21 @@ of the restriction of `s`. In other words, `s` trivializes `M` over `X_s`.
 * `AlgebraicGeometry.Scheme.Modules.range_nonvanishingLocus_eq_of_iso`: isomorphic invertible
   sheaves have the same nonvanishing loci of sections over each open;
 * `AlgebraicGeometry.Scheme.Modules.nonvanishingLocus_unit`: on the structure sheaf, `X_r` is the
-  basic open set of the regular function `r`.
+  basic open set of the regular function `r`;
+* `AlgebraicGeometry.Scheme.Modules.basicOpen_eq_inf_nonvanishingLocus`: if `s|_V = f • e` with
+  `e` nonvanishing on `V`, then `X_s ∩ V` is the basic open set of `f`;
+* `AlgebraicGeometry.Scheme.Modules.quasiSeparatedSpace_of_forall_isAffineOpen_nonvanishingLocus`:
+  a scheme covered by affine nonvanishing loci of global sections of `M` is quasi-separated;
+* `AlgebraicGeometry.IsAffineOpen.nonvanishingLocus`: on an affine open, `X_s` is affine;
+* `AlgebraicGeometry.Scheme.Modules.exists_mem_nonvanishingLocus_of_isAffineOpen`: every point of
+  an affine open `U` lies in `X_s` for some section `s` over `U`.
 
 ## References
 
 * The Stacks Project, Tag 01CT (the open `X_s` attached to a section of an invertible sheaf) and
   Tag 01PS (ample invertible sheaves).
+* The Stacks Project, *Properties of Schemes*, the section on ample invertible sheaves (around
+  Tag 01PS), for the affineness of `X_s` on an affine scheme.
 * R. Hartshorne, *Algebraic Geometry*, Chapter II, Section 7.
 -/
 
@@ -185,12 +203,13 @@ theorem surjective_smul_of_le_nonvanishingLocus {U : X.Opens} {s : Γ(M, U)}
   -- multiple `r x • s` on a neighbourhood `N x ⊆ U` of `x`.
   have hloc (x : U) : ∃ (N : X.Opens) (_ : (x : X) ∈ N) (k : N ⟶ U) (r : Γ(X, N)),
       r • M.presheaf.map k.op s = M.presheaf.map k.op m := by
-    have hs := (mem_nonvanishingLocus_iff_of_mem x.2).mp (h x.2)
-    obtain ⟨a, ha⟩ := (Submodule.span_singleton_eq_top_iff _ _).mp hs (M.presheaf.germ U x x.2 m)
+    have hs := (mem_nonvanishingLocus_iff_of_mem x.property).mp (h x.property)
+    obtain ⟨a, ha⟩ := (Submodule.span_singleton_eq_top_iff _ _).mp hs
+        (M.presheaf.germ U x x.property m)
     obtain ⟨W, hxW, r, rfl⟩ := X.presheaf.exists_germ_eq a
     let p : W ⊓ U ⟶ W := homOfLE inf_le_left
     let q : W ⊓ U ⟶ U := homOfLE inf_le_right
-    have hxWU : (x : X) ∈ W ⊓ U := ⟨hxW, x.2⟩
+    have hxWU : (x : X) ∈ W ⊓ U := ⟨hxW, x.property⟩
     have ha' : M.presheaf.germ (W ⊓ U) x hxWU
         (X.presheaf.map p.op r • M.presheaf.map q.op s) =
           M.presheaf.germ (W ⊓ U) x hxWU (M.presheaf.map q.op m) := by
@@ -286,6 +305,35 @@ theorem range_nonvanishingLocus_eq_of_iso {N : X.Modules}
   exact ⟨fun ⟨s, hs⟩ ↦ ⟨φ.hom.app U s, (nonvanishingLocus_hom_app φ s).trans hs⟩,
     fun ⟨s, hs⟩ ↦ ⟨φ.symm.hom.app U s, (nonvanishingLocus_hom_app φ.symm s).trans hs⟩⟩
 
+/-- If `e` vanishes nowhere on `V ≤ U` and `s|_V = f • e`, then `X_s ∩ V` is the basic open set
+of `f`. -/
+theorem basicOpen_eq_inf_nonvanishingLocus {U V : X.Opens} (i : V ⟶ U) (s : Γ(M, U))
+    {e : Γ(M, V)} (he : V ≤ M.nonvanishingLocus e) {f : Γ(X, V)}
+    (hf : f • e = M.presheaf.map i.op s) : X.basicOpen f = V ⊓ M.nonvanishingLocus s := by
+  rw [← inf_eq_left.mpr ((X.basicOpen_le f).trans he), ← nonvanishingLocus_smul, hf,
+    nonvanishingLocus_map]
+
+/-- A scheme covered by affine nonvanishing loci of global sections of an invertible sheaf is
+quasi-separated: two such loci `X_s` and `X_t` meet in the basic open of `X_s` cut out by the
+function `t / s`, which is affine. -/
+theorem quasiSeparatedSpace_of_forall_isAffineOpen_nonvanishingLocus
+    (h : ∀ x : X, ∃ s : Γ(M, ⊤), x ∈ M.nonvanishingLocus s ∧
+      IsAffineOpen (M.nonvanishingLocus s)) :
+    QuasiSeparatedSpace X := by
+  let S := {s : Γ(M, ⊤) // IsAffineOpen (M.nonvanishingLocus s)}
+  refine Scheme.quasiSeparatedSpace_of_isOpenCover (fun s : S ↦ M.nonvanishingLocus s.val)
+    (top_unique fun x _ ↦ ?_) (fun s ↦ s.property) fun s t ↦ ?_
+  · obtain ⟨s, hxs, hs⟩ := h x
+    exact Opens.mem_iSup.mpr ⟨⟨s, hs⟩, hxs⟩
+  -- On `X_s`, write `t = g • s`; then `X_s ∩ X_t` is the basic open of `g` in `X_s`.
+  let j : M.nonvanishingLocus s.val ⟶ ⊤ := homOfLE le_top
+  have hss : M.nonvanishingLocus s.val ≤ M.nonvanishingLocus (M.presheaf.map j.op s.val) := by
+    rw [nonvanishingLocus_map]
+    exact le_inf le_rfl le_rfl
+  obtain ⟨g, hg⟩ := surjective_smul_of_le_nonvanishingLocus hss (M.presheaf.map j.op t.val)
+  rw [← Opens.coe_inf, ← basicOpen_eq_inf_nonvanishingLocus j t.val hss hg]
+  exact (s.property.basicOpen g).isCompact
+
 /-- On the structure sheaf `𝒪_X`, regarded as an invertible sheaf, the nonvanishing locus of a
 regular function `r` is its basic open set `X_r`. -/
 @[simp]
@@ -305,5 +353,51 @@ theorem nonvanishingLocus_unit {U : X.Opens} (r : Γ(X, U)) :
   · exact congrArg _ (mul_one r).symm
   · rw [hone]
     exact (inf_eq_left.mpr (X.basicOpen_le r)).symm
+
+/-- **Nonvanishing loci in an affine open are affine.** If `U` is an affine open of `X`, then the
+nonvanishing locus `X_s` of every section `s` of an invertible sheaf over `U` is affine. -/
+theorem _root_.AlgebraicGeometry.IsAffineOpen.nonvanishingLocus {U : X.Opens}
+    (hU : IsAffineOpen U) (s : Γ(M, U)) : IsAffineOpen (M.nonvanishingLocus s) := by
+  -- Cover `U` by basic opens `D(f)` on which `M` is trivial; on each of them `X_s` is the basic
+  -- open of the coordinate of `s`, so affine.
+  have H (x : U) : ∃ f : Γ(X, U), (x : X) ∈ X.basicOpen f ∧
+      IsAffineOpen (M.nonvanishingLocus s ⊓ X.basicOpen f) := by
+    obtain ⟨V, t, hxV⟩ := exists_mem_trivialization M x
+    obtain ⟨f, hfV, hxf⟩ := hU.exists_basicOpen_le ⟨x, hxV⟩ x.property
+    refine ⟨f, hxf, ?_⟩
+    rw [inf_comm, ← nonvanishingLocus_map (homOfLE (X.basicOpen_le f)),
+      nonvanishingLocus_eq_basicOpen t (homOfLE hfV)]
+    exact (hU.basicOpen f).basicOpen _
+  choose f hxf hf using H
+  -- The restrictions of the functions `f` to `X_s` generate the unit ideal, and their basic opens
+  -- are the affine opens `X_s ∩ D(f)`.
+  let j : M.nonvanishingLocus s ⟶ U := homOfLE (M.nonvanishingLocus_le s)
+  refine isAffineOpen_of_isAffineOpen_basicOpen _ (X.presheaf.map j.op '' Set.range f) ?_ ?_
+  · rw [← Ideal.map_span, (hU.self_le_iSup_basicOpen_iff (s := Set.range f)).mp, Ideal.map_top]
+    exact fun x hx ↦ Opens.mem_iSup.mpr ⟨⟨f ⟨x, hx⟩, ⟨x, hx⟩, rfl⟩, hxf ⟨x, hx⟩⟩
+  · rintro _ ⟨_, ⟨x, rfl⟩, rfl⟩
+    rw [X.basicOpen_res]
+    exact hf x
+
+variable (M) in
+/-- **Sections over an affine open generate the stalks.** Every point `x` of an affine open `U`
+lies in the nonvanishing locus of some section of an invertible sheaf over `U`. -/
+theorem exists_mem_nonvanishingLocus_of_isAffineOpen {U : X.Opens} (hU : IsAffineOpen U)
+    {x : X} (hx : x ∈ U) : ∃ s : Γ(M, U), x ∈ M.nonvanishingLocus s := by
+  have : M.IsQuasicoherent :=
+    TauCeti.AlgebraicGeometry.InvertibleSheaf.isQuasicoherent_obj ⟨M, ‹_›⟩
+  obtain ⟨V, t, hxV⟩ := exists_mem_trivialization M x
+  obtain ⟨f, hfV, hxf⟩ := hU.exists_basicOpen_le ⟨x, hxV⟩ hx
+  -- A power of `f` times the basis section over `D(f) ⊆ V` extends to a section `s` over `U`,
+  -- so `s` vanishes nowhere on `D(f)`.
+  obtain ⟨n, s, hs⟩ := M.exists_pow_smul_eq_map hU f rfl (X.basicOpen_le f)
+    (M.presheaf.map (homOfLE hfV).op (trivializationGenerator M t))
+  refine ⟨s, (inf_le_right : X.basicOpen f ⊓ _ ≤ _) ?_⟩
+  rw [← nonvanishingLocus_map (homOfLE (X.basicOpen_le f)), ← hs,
+    nonvanishingLocus_smul, nonvanishingLocus_map,
+    nonvanishingLocus_trivializationGenerator, ← map_pow, X.basicOpen_res]
+  refine ⟨⟨hxf, ?_⟩, hxf, hxV⟩
+  rw [SetLike.mem_coe, X.mem_basicOpen _ _ hx, map_pow]
+  exact ((X.mem_basicOpen _ _ hx).mp hxf).pow n
 
 end AlgebraicGeometry.Scheme.Modules

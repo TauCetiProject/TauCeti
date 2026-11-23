@@ -161,7 +161,7 @@ theorem exists_measurePreserving_finset_of_countable (S : Set ι) [Countable S]
     (hP : IsProjectiveMeasureFamily P) :
     ∃ μ : Measure (∀ i : S, X i), IsProbabilityMeasure μ ∧
       ∀ (I : Finset ι) (hI : (I : Set ι) ⊆ S),
-        MeasurePreserving (fun x (i : I) ↦ x ⟨i.1, hI i.2⟩) μ (P I) := by
+        MeasurePreserving (fun x (i : I) ↦ x ⟨i.val, hI i.property⟩) μ (P I) := by
   let e : S ↪ ι := ⟨Subtype.val, Subtype.val_injective⟩
   obtain ⟨μ, hprob, hμ⟩ := e.exists_measurePreserving_finset_map_of_countable P hP
   have hlimit := (e.isProjectiveLimit_reindexFamily_iff P μ).mpr (fun J ↦ (hμ J).map_eq)

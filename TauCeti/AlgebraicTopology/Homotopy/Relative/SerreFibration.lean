@@ -56,23 +56,24 @@ fibration, `A ⊆ B` and `e ∈ p⁻¹(A)`, and the relative homotopy set `π_{n
 trivial, then so is `π_{n+1}(E, p⁻¹(A), e)`, where `n` is the cardinality of `N`. -/
 theorem subsingleton_relHomotopyGroup_preimage_of_mem_serreFibrations (hp : serreFibrations p)
     {N : Type v} [Finite N] {A : Set B} (e : p ⁻¹' A)
-    (h : Subsingleton (RelHomotopyGroup N ⟨TopPair.ofSubset A, ⟨p e, e.2⟩⟩)) :
+    (h : Subsingleton (RelHomotopyGroup N ⟨TopPair.ofSubset A, ⟨p e, e.property⟩⟩)) :
     Subsingleton (RelHomotopyGroup N ⟨TopPair.ofSubset (p ⁻¹' A), e⟩) := by
   refine RelHomotopyGroup.subsingleton_iff.2 fun γ ↦ ?_
   -- The projection of `γ` is a relative cube of `(B, A, p e)`.
-  let π : (⟨TopPair.ofSubset (p ⁻¹' A), e⟩ : BasedTopPair) ⟶ ⟨TopPair.ofSubset A, ⟨p e, e.2⟩⟩ :=
+  let π : (⟨TopPair.ofSubset (p ⁻¹' A), e⟩ : BasedTopPair) ⟶ ⟨TopPair.ofSubset A, ⟨p e, e.property⟩⟩
+      :=
     ⟨TopPair.ofSubsetMap p fun _ h ↦ h, Subtype.ext (TopPair.ofSubsetMap_snd_apply _ _ _)⟩
   let q := RelGenLoop.map π γ
-  have hq (z : I × (N → I)) : q.1 z = p (γ.1 z) :=
+  have hq (z : I × (N → I)) : q.val z = p (γ.val z) :=
     (RelGenLoop.map_apply π γ z).trans (TopPair.ofSubsetMap_fst_apply _ _ _)
   obtain ⟨q', ⟨F⟩, hq'⟩ := RelHomotopyGroup.subsingleton_iff.1 h q
   -- Lift the compression `F` of `q`, read on the cube `I^(Option N)`, starting at `γ` and
   -- stationary on the boundary of the cube.
   let φ := piOptionEquivProdHomeomorph (fun _ : Option N ↦ I)
   let f : C(cylinderExtensionDomain (Cube.boundary (Option N)), E) :=
-    γ.1.comp ((φ : C(Option N → I, I × (N → I))).comp
+    γ.val.comp ((φ : C(Option N → I, I × (N → I))).comp
       (ContinuousMap.snd.comp ⟨Subtype.val, by fun_prop⟩))
-  have hf₀ (x) : f x = γ.1 (φ x.1.2) := rfl
+  have hf₀ (x) : f x = γ.val (φ x.val.2) := rfl
   let H : C(I × (Option N → I), B) :=
     ⟨fun x ↦ F (x.1, φ x.2), (map_continuous F).comp (by fun_prop)⟩
   have hf : ∀ x, p (f x) = H x := by
@@ -103,7 +104,7 @@ theorem subsingleton_relHomotopyGroup_preimage_of_mem_serreFibrations (hp : serr
   have := hG' (1, φ.symm z)
   simp only [Homeomorph.apply_symm_apply, F.apply_one] at this
   rw [mem_preimage, this, ← ha]
-  exact a.2
+  exact a.property
 
 /-- **A Serre fibration pulls back path-connectedness to a subspace.** If `p : E ⟶ B` is a Serre
 fibration and every point of `B` is joined by a path to a point of `A ⊆ B`, then every point of

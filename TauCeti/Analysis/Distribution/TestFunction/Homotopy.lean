@@ -14,6 +14,7 @@ import Mathlib.MeasureTheory.Integral.IntervalIntegral.IntegrationByParts
 import TauCeti.Analysis.Calculus.ContDiff.ContinuousAlternatingMap
 import TauCeti.Analysis.Calculus.FDeriv.Prod
 import TauCeti.Analysis.Distribution.TestFunction.PartitionOfUnity
+import TauCeti.Analysis.Normed.Module.Alternating.Curry
 
 /-!
 # The homotopy formula for currents
@@ -278,9 +279,9 @@ private theorem cylinderHomotopy_reparam
           (F := E') (G := F) (ι := Fin (k + 1)) 0).continuous.continuousAt.comp hD).clm_apply hω
       have hc : Continuous fun α : (E × ℝ) [⋀^Fin (k + 1)]→L[ℝ] F ↦
           (α.curryLeft (0, 1)).compContinuousLinearMap (.inl ℝ E ℝ) :=
-        (compContinuousLinearMapCLM (.inl ℝ E ℝ)).continuous.comp
-          ((curryLeftLI (𝕜 := ℝ) (E := E × ℝ) (F := F) (n := k)).toContinuousLinearMap.flip
-            (0, 1)).continuous
+        ((compContinuousLinearMapCLM (.inl ℝ E ℝ)).continuous.comp
+          (curryLeftFlipL (𝕜 := ℝ) (F := F) (n := k) ((0, 1) : E × ℝ)).continuous).congr
+            fun α ↦ by simp
       exact (hc.continuousAt.comp hP).continuousWithinAt
     · rintro _ ⟨t, -, rfl⟩
       exact ⟨Real.smoothTransition.nonneg t, Real.smoothTransition.le_one t⟩

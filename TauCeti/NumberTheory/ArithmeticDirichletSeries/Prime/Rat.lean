@@ -10,19 +10,25 @@ public import TauCeti.NumberTheory.ArithmeticDirichletSeries.Counting
 import TauCeti.NumberTheory.NumberField.Ideal.IntegersRat
 
 /-!
-# Prime summatory functions over `ℚ`
+# Prime summatory functions and the prime count over `ℚ`
 
 The nonzero primes of `𝓞 ℚ` correspond to the rational primes through their absolute norms
 (Mathlib's `Rat.HeightOneSpectrum.primesEquiv`, with `Rat.HeightOneSpectrum.absNorm_asIdeal`
 identifying the norm of `v` with its generator). This file transports a prime summatory function
 over `ℚ` whose weight depends only on the norm to the corresponding sum over Mathlib's
 `Nat.primesLE`, so that results stated for the primes of a number field specialize to the
-classical sums over rational primes.
+classical sums over rational primes. In particular the number-field prime count
+`TauCeti.primeCount ℚ Set.univ` is the classical prime counting function. Both cutoffs are
+inclusive: at `x = 2` both counts are `1`.
 
 ## Main results
 
+* `TauCeti.image_absNorm_primesLE_rat`: the image of `primesLE ℚ x` under absolute norm is
+  `Nat.primesLE ⌊x⌋₊`.
 * `TauCeti.primeSummatory_rat_eq_sum_primesLE`: for a weight `f : ℕ → M`,
   `∑_{N𝔭 ≤ x} f (N𝔭)` over the primes of `𝓞 ℚ` is `∑_{p ∈ Nat.primesLE ⌊x⌋₊} f p`.
+* `TauCeti.primeCount_rat_univ`: `primeCount ℚ Set.univ x = Nat.primeCounting ⌊x⌋₊` for every real
+  `x`.
 -/
 
 public section
@@ -48,5 +54,32 @@ theorem primeSummatory_rat_eq_sum_primesLE {M : Type*} [AddCommMonoid M] (f : �
     fun _ _ ↦ rfl
   obtain ⟨v, hv⟩ := Rat.HeightOneSpectrum.exists_absNorm_eq (Nat.prime_of_mem_primesLE hp)
   exact ⟨v, (hmem v).mpr (hv ▸ hp), hv⟩
+
+/-- The image of `primesLE ℚ x` under absolute norm is `Nat.primesLE ⌊x⌋₊`. -/
+theorem image_absNorm_primesLE_rat (x : ℝ) :
+    (primesLE ℚ x).image (fun v ↦ Ideal.absNorm v.asIdeal) = Nat.primesLE ⌊x⌋₊ := by
+  ext p
+  simp only [Finset.mem_image, mem_normLE, Nat.mem_primesLE]
+  constructor
+  · rintro ⟨v, hv, rfl⟩
+    rw [Rat.HeightOneSpectrum.absNorm_asIdeal] at hv ⊢
+    exact ⟨Nat.le_floor hv, Rat.HeightOneSpectrum.prime_natGenerator v⟩
+  · rintro ⟨hple, hp⟩
+    obtain ⟨v, hv⟩ := Rat.HeightOneSpectrum.exists_absNorm_eq hp
+    have hx0 : 0 ≤ x := by
+      by_contra hlt
+      have hfl : ⌊x⌋₊ = 0 := Nat.floor_of_nonpos (le_of_not_ge hlt)
+      have hp2 := hp.two_le
+      omega
+    exact ⟨v, hv.symm ▸ (Nat.cast_le.mpr hple).trans (Nat.floor_le hx0), hv⟩
+
+/-- The number of primes of `𝓞 ℚ` of absolute norm at most `x` is the number `π(⌊x⌋₊)` of rational
+primes `p ≤ x`. -/
+theorem primeCount_rat_univ (x : ℝ) :
+    primeCount ℚ Set.univ x = Nat.primeCounting ⌊x⌋₊ := by
+  classical
+  rw [primeCount_eq_card, Finset.filter_true_of_mem fun _ _ ↦ Set.mem_univ _,
+    ← Nat.primesLE_card_eq_primeCounting, ← image_absNorm_primesLE_rat,
+    Finset.card_image_of_injective _ Rat.HeightOneSpectrum.absNorm_asIdeal_injective]
 
 end TauCeti

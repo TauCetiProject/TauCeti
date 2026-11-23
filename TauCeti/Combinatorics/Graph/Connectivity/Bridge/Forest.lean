@@ -77,12 +77,12 @@ def bridgeComponentOf (G : Graph α β) (x : α) (hx : x ∈ V(G)) : G.BridgeCom
 deleted. -/
 @[simp]
 theorem mem_vertexSet_bridgeComponentOf_iff (hx : x ∈ V(G)) :
-    y ∈ V((G.bridgeComponentOf x hx).1) ↔ (G.deleteEdges G.bridgeSet).Reachable x y :=
+    y ∈ V((G.bridgeComponentOf x hx).val) ↔ (G.deleteEdges G.bridgeSet).Reachable x y :=
   mem_vertexSet_connectedComponentOf_iff _
 
 /-- An actual vertex lies in its own bridge component. -/
 theorem mem_vertexSet_bridgeComponentOf_self (hx : x ∈ V(G)) :
-    x ∈ V((G.bridgeComponentOf x hx).1) :=
+    x ∈ V((G.bridgeComponentOf x hx).val) :=
   mem_vertexSet_connectedComponentOf_self _
 
 /-- Two actual vertices have the same bridge component exactly when they are reachable from each
@@ -94,24 +94,24 @@ theorem bridgeComponentOf_eq_bridgeComponentOf_iff (hx : x ∈ V(G)) (hy : y ∈
   connectedComponentOf_eq_connectedComponentOf_iff _ _
 
 /-- A vertex of a bridge component is an actual vertex of `G`. -/
-theorem BridgeComponent.mem_vertexSet {C : G.BridgeComponent} (hx : x ∈ V(C.1)) : x ∈ V(G) := by
-  simpa using C.2.le.vertexSet_mono hx
+theorem BridgeComponent.mem_vertexSet {C : G.BridgeComponent} (hx : x ∈ V(C.val)) : x ∈ V(G) := by
+  simpa using C.property.le.vertexSet_mono hx
 
 /-- A bridge component is the bridge component of each of its vertices. -/
-theorem BridgeComponent.eq_bridgeComponentOf {C : G.BridgeComponent} (hx : x ∈ V(C.1)) :
+theorem BridgeComponent.eq_bridgeComponentOf {C : G.BridgeComponent} (hx : x ∈ V(C.val)) :
     C = G.bridgeComponentOf x (BridgeComponent.mem_vertexSet hx) :=
   ConnectedComponent.eq_connectedComponentOf hx
 
 /-- Any two vertices of a bridge component are reachable from each other once all bridges are
 deleted. -/
-theorem BridgeComponent.reachable {C : G.BridgeComponent} (hx : x ∈ V(C.1)) (hy : y ∈ V(C.1)) :
+theorem BridgeComponent.reachable {C : G.BridgeComponent} (hx : x ∈ V(C.val)) (hy : y ∈ V(C.val)) :
     (G.deleteEdges G.bridgeSet).Reachable x y :=
-  (C.2.connected.reachable hx hy).mono C.2.le
+  (C.property.connected.reachable hx hy).mono C.property.le
 
 /-- Every bridge component is the bridge component of some actual vertex. -/
 theorem BridgeComponent.exists_bridgeComponentOf_eq (C : G.BridgeComponent) :
     ∃ x, ∃ hx : x ∈ V(G), G.bridgeComponentOf x hx = C := by
-  obtain ⟨x, hx⟩ := C.2.nonempty
+  obtain ⟨x, hx⟩ := C.property.nonempty
   exact ⟨x, BridgeComponent.mem_vertexSet hx, (BridgeComponent.eq_bridgeComponentOf hx).symm⟩
 
 /-- The ends of a bridge lie in distinct bridge components. -/
@@ -122,8 +122,9 @@ theorem IsBridge.bridgeComponentOf_ne (he : G.IsBridge e) (h : G.IsLink e x y) :
     (hxy.mono (G.deleteEdges_anti_right (singleton_subset_iff.mpr (mem_bridgeSet.mpr he))))
 
 /-- Every bridge component is a graph without bridges. -/
-theorem BridgeComponent.not_isBridge (C : G.BridgeComponent) (e : β) : ¬ C.1.IsBridge e :=
-  fun he ↦ G.not_isBridge_deleteEdges_bridgeSet e (he.of_isClosedSubgraph C.2.isClosedSubgraph)
+theorem BridgeComponent.not_isBridge (C : G.BridgeComponent) (e : β) : ¬ C.val.IsBridge e :=
+  fun he ↦ G.not_isBridge_deleteEdges_bridgeSet e
+      (he.of_isClosedSubgraph C.property.isClosedSubgraph)
 
 /-! ### The bridge forest -/
 
@@ -132,7 +133,7 @@ components left after deleting every bridge, and its edges are the bridges of `G
 the bridge components that contain its two ends. -/
 def bridgeForest (G : Graph α β) : Graph G.BridgeComponent β where
   vertexSet := univ
-  IsLink e C D := G.IsBridge e ∧ ∃ x ∈ V(C.1), ∃ y ∈ V(D.1), G.IsLink e x y
+  IsLink e C D := G.IsBridge e ∧ ∃ x ∈ V(C.val), ∃ y ∈ V(D.val), G.IsLink e x y
   isLink_symm _ _ := ⟨fun _ _ ⟨he, x, hx, y, hy, h⟩ ↦ ⟨he, y, hy, x, hx, h.symm⟩⟩
   eq_or_eq_of_isLink_of_isLink := by
     rintro e C D C' D' ⟨-, x, hx, y, _, h⟩ ⟨-, x', hx', y', hy', h'⟩
@@ -146,7 +147,7 @@ theorem vertexSet_bridgeForest : V(G.bridgeForest) = univ := (rfl)
 
 @[simp]
 theorem bridgeForest_isLink {C D : G.BridgeComponent} :
-    G.bridgeForest.IsLink e C D ↔ G.IsBridge e ∧ ∃ x ∈ V(C.1), ∃ y ∈ V(D.1), G.IsLink e x y :=
+    G.bridgeForest.IsLink e C D ↔ G.IsBridge e ∧ ∃ x ∈ V(C.val), ∃ y ∈ V(D.val), G.IsLink e x y :=
   (Iff.rfl)
 
 /-- A bridge joins the bridge components of its ends in the bridge forest. -/
@@ -244,7 +245,7 @@ private theorem Walk.reachable_bridgeForest_deleteEdges {F : Set β} {x y : α} 
 between any vertices of its end components. -/
 private theorem Walk.reachable_deleteEdges_of_bridgeForest {F : Set β} (hF : F ⊆ G.bridgeSet)
     {C D : G.BridgeComponent} (q : G.bridgeForest.Walk C D) (hq : ∀ f ∈ q.edges, f ∉ F)
-    (hx : x ∈ V(C.1)) (hy : y ∈ V(D.1)) : (G.deleteEdges F).Reachable x y := by
+    (hx : x ∈ V(C.val)) (hy : y ∈ V(D.val)) : (G.deleteEdges F).Reachable x y := by
   induction q generalizing x with
   | nil => exact (BridgeComponent.reachable hx hy).mono (G.deleteEdges_anti_right hF)
   | cons e h q ih =>
@@ -259,7 +260,7 @@ private theorem Walk.reachable_deleteEdges_of_bridgeForest {F : Set β} (hF : F 
 /-- A bridge-forest walk admits a path lift between any prescribed vertices of its endpoint
 components. The lift uses no bridge identity absent from the forest walk. -/
 theorem Walk.exists_liftBridgeForest_isPath {C D : G.BridgeComponent}
-    (q : G.bridgeForest.Walk C D) (hx : x ∈ V(C.1)) (hy : y ∈ V(D.1)) :
+    (q : G.bridgeForest.Walk C D) (hx : x ∈ V(C.val)) (hy : y ∈ V(D.val)) :
     ∃ p : G.Walk x y, p.IsPath ∧ ∀ e, e ∈ p.edges → G.IsBridge e → e ∈ q.edges := by
   classical
   let F : Set β := G.bridgeSet \ {e | e ∈ q.edges}
@@ -280,19 +281,19 @@ theorem Walk.exists_liftBridgeForest_isPath {C D : G.BridgeComponent}
 
 /-- Lift a bridge-forest walk to a path between prescribed vertices in its endpoint components. -/
 noncomputable def Walk.liftBridgeForest {C D : G.BridgeComponent}
-    (q : G.bridgeForest.Walk C D) (hx : x ∈ V(C.1)) (hy : y ∈ V(D.1)) : G.Walk x y :=
+    (q : G.bridgeForest.Walk C D) (hx : x ∈ V(C.val)) (hy : y ∈ V(D.val)) : G.Walk x y :=
   Classical.choose (q.exists_liftBridgeForest_isPath hx hy)
 
 /-- A lifted bridge-forest walk is a path. -/
 @[simp]
 theorem Walk.isPath_liftBridgeForest {C D : G.BridgeComponent}
-    (q : G.bridgeForest.Walk C D) (hx : x ∈ V(C.1)) (hy : y ∈ V(D.1)) :
+    (q : G.bridgeForest.Walk C D) (hx : x ∈ V(C.val)) (hy : y ∈ V(D.val)) :
     (q.liftBridgeForest hx hy).IsPath :=
   (Classical.choose_spec (q.exists_liftBridgeForest_isPath hx hy)).1
 
 /-- Every bridge in a lifted path already occurs in the bridge-forest walk. -/
 theorem Walk.mem_edges_of_mem_edges_liftBridgeForest {C D : G.BridgeComponent}
-    (q : G.bridgeForest.Walk C D) (hx : x ∈ V(C.1)) (hy : y ∈ V(D.1))
+    (q : G.bridgeForest.Walk C D) (hx : x ∈ V(C.val)) (hy : y ∈ V(D.val))
     (he : e ∈ (q.liftBridgeForest hx hy).edges) (heBridge : G.IsBridge e) : e ∈ q.edges :=
   (Classical.choose_spec (q.exists_liftBridgeForest_isPath hx hy)).2 e he heBridge
 
@@ -344,21 +345,23 @@ private noncomputable def toSimpleGraphComponentEquivBridgeForest (G : Graph α 
     G.toSimpleGraph.ConnectedComponent ≃ G.bridgeForest.toSimpleGraph.ConnectedComponent := by
   refine Equiv.ofBijective (SimpleGraph.ConnectedComponent.lift
     (fun z ↦ G.bridgeForest.toSimpleGraph.connectedComponentMk
-      ⟨G.bridgeComponentOf z.1 z.2, by simp⟩) fun z w p _ ↦ ?_) ⟨fun C D hCD ↦ ?_, fun C ↦ ?_⟩
+      ⟨G.bridgeComponentOf z.val z.property, by simp⟩) fun z w p _ ↦ ?_) ⟨fun C D hCD ↦ ?_,
+          fun C ↦ ?_⟩
   · rw [toSimpleGraph_connectedComponentMk_eq_iff, ← reachable_iff_reachable_bridgeForest]
     exact toSimpleGraph_reachable_iff.mp p.reachable
   · induction C using SimpleGraph.ConnectedComponent.ind with | h z => ?_
     induction D using SimpleGraph.ConnectedComponent.ind with | h w => ?_
     simp only [SimpleGraph.ConnectedComponent.lift_mk,
       toSimpleGraph_connectedComponentMk_eq_iff] at hCD ⊢
-    exact (reachable_iff_reachable_bridgeForest z.2 w.2).mpr hCD
+    exact (reachable_iff_reachable_bridgeForest z.property w.property).mpr hCD
   · induction C using SimpleGraph.ConnectedComponent.ind with | h c => ?_
-    obtain ⟨x, hx, hc⟩ := c.1.exists_bridgeComponentOf_eq
+    obtain ⟨x, hx, hc⟩ := c.val.exists_bridgeComponentOf_eq
     exact ⟨G.toSimpleGraph.connectedComponentMk ⟨x, hx⟩, by simp [hc]⟩
 
 private theorem toSimpleGraphComponentEquivBridgeForest_connectedComponentMk (z : V(G)) :
     G.toSimpleGraphComponentEquivBridgeForest (G.toSimpleGraph.connectedComponentMk z) =
-      G.bridgeForest.toSimpleGraph.connectedComponentMk ⟨G.bridgeComponentOf z.1 z.2, by simp⟩ :=
+      G.bridgeForest.toSimpleGraph.connectedComponentMk ⟨G.bridgeComponentOf z.val z.property,
+          by simp⟩ :=
   rfl
 
 /-- The connected components of `G` correspond to those of its bridge forest: the component of an

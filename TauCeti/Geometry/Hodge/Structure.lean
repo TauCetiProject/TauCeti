@@ -227,8 +227,8 @@ onto its conjugate `H^{n-p,p}`. It is not complex-linear: it is conjugate-linear
 isomorphism after restricting scalars to `ℝ`. -/
 def pieceConjEquiv (hs : HodgeStructureOn W ω n) (p : ℤ) :
     hs.piece p ≃ₗ[ℝ] hs.piece (n - p) where
-  toFun x := ⟨ω.toEquiv x, hs.conj_mem_piece x.2⟩
-  invFun y := ⟨ω.toEquiv y, by simpa only [sub_sub_cancel] using hs.conj_mem_piece y.2⟩
+  toFun x := ⟨ω.toEquiv x, hs.conj_mem_piece x.property⟩
+  invFun y := ⟨ω.toEquiv y, by simpa only [sub_sub_cancel] using hs.conj_mem_piece y.property⟩
   map_add' x y := by ext; exact map_add _ _ _
   map_smul' r x := by
     ext
