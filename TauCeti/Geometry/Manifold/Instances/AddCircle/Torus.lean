@@ -8,6 +8,9 @@ module
 public import Mathlib.LinearAlgebra.Matrix.GeneralLinearGroup.Defs
 public import TauCeti.Geometry.Manifold.Algebra.SMul
 public import TauCeti.Geometry.Manifold.Instances.AddCircle
+public import TauCeti.Geometry.Manifold.LocalDiffeomorph.Basic
+public import TauCeti.Geometry.Manifold.LocalDiffeomorph.Constructions
+public import TauCeti.Topology.Covering.Pi
 public import TauCeti.Geometry.Manifold.MFDeriv.Pi
 public import TauCeti.LinearAlgebra.Matrix.Module
 
@@ -27,8 +30,10 @@ circle. This is an action of the group `GL(ι, ℤ)` by additive maps
 torus, with inverse `x ↦ A⁻¹ • x` (`Diffeomorph.constSmul`), and the cotangent bundle `T*Tⁿ`
 inherits the cotangent-lifted action (`TauCeti.CotangentBundle.instMulAction`).
 
-The covering map `(ι → ℝ) → Tⁿ`, `t ↦ ([t i])ᵢ`, is smooth (`AddCircle.contMDiff_coe_pi`), has
-derivative the identity of `ι → ℝ` at every point (`AddCircle.hasMFDerivAt_coe_pi`), and it
+The covering map `(ι → ℝ) → Tⁿ`, `t ↦ ([t i])ᵢ`, is a covering map
+(`AddCircle.isCoveringMap_coe_pi`) and a smooth local diffeomorphism
+(`AddCircle.isLocalDiffeomorph_coe_pi`), has derivative the identity of `ι → ℝ` at every point
+(`AddCircle.hasMFDerivAt_coe_pi`), and it
 intertwines the action of `A` on the torus with multiplication of real vectors by the matrix `A`
 (`AddCircle.generalLinearGroup_smul_coe_pi`).
 Hence the derivative of `x ↦ A • x` at every point is the matrix `A`, acting on `ι → ℝ`
@@ -47,6 +52,10 @@ For a torus `∀ i, AddCircle (p i)` with arbitrary positive periods, every tran
 * `AddCircle.contMDiff_coe_pi`: the covering map `(ι → ℝ) → Tⁿ` is smooth.
 * `AddCircle.hasMFDerivAt_coe_pi`, `AddCircle.mfderiv_coe_pi`: the covering map `(ι → ℝ) → Tⁿ` has
   derivative the identity.
+* `AddCircle.isCoveringMap_coe_pi`, `AddCircle.isLocalDiffeomorph_coe_pi`: it is a covering map
+  and a local diffeomorphism.
+* `AddCircle.coe_extChartAt_pi_apply`: the extended charts of `Tⁿ` are local inverses of the
+  covering map.
 * `AddCircle.hasMFDerivAt_pi_add_right`, `AddCircle.mfderiv_pi_add_right`: translations of a torus
   `∀ i, AddCircle (p i)` have derivative the identity.
 * `AddCircle.hasMFDerivAt_generalLinearGroup_smul`,
@@ -103,7 +112,32 @@ theorem contMDiff_coe_pi (n : ℕ∞ω) :
   contMDiff_pi_iff.2 fun i ↦ (contMDiff_coe p n).comp
     (ContinuousLinearMap.proj (R := ℝ) (φ := fun _ : ι ↦ ℝ) i).contMDiff
 
+/-- The covering map `(ι → ℝ) → (ι → AddCircle p)`, `t ↦ ([t i])ᵢ`, is a `C^n` local
+diffeomorphism, its derivative being the identity at every point. -/
+theorem isLocalDiffeomorph_coe_pi (n : ℕ∞ω) :
+    IsLocalDiffeomorph 𝓘(ℝ, ι → ℝ) (ModelWithCorners.pi fun _ : ι ↦ 𝓘(ℝ)) n
+      (fun t : ι → ℝ ↦ fun i ↦ (t i : AddCircle p)) :=
+  (TauCeti.isLocalDiffeomorph_of_mfderiv_eq (contMDiff_coe_pi p ω) le_top fun t ↦
+    ⟨ContinuousLinearEquiv.refl ℝ (ι → ℝ), (mfderiv_coe_pi p t).symm⟩).of_le le_top
+
+/-- The extended charts of the torus `ι → AddCircle p` are local lifts to `ℝ^ι`: an extended chart
+sends each point of its source to angles representing it. -/
+theorem coe_extChartAt_pi_apply (x : ι → AddCircle p) {y : ι → AddCircle p}
+    (hy : y ∈ (extChartAt (ModelWithCorners.pi fun _ : ι ↦ 𝓘(ℝ)) x).source) :
+    (fun j ↦ (extChartAt (ModelWithCorners.pi fun _ : ι ↦ 𝓘(ℝ)) x y j : AddCircle p)) = y := by
+  have hy' : y ∈ (PartialEquiv.pi fun j ↦ extChartAt 𝓘(ℝ) (x j)).source := by
+    rwa [← TauCeti.extChartAt_pi]
+  funext j
+  rw [TauCeti.extChartAt_pi_apply]
+  exact coe_extChartAt_apply _ (hy' j (Set.mem_univ j))
+
 end Cover
+
+omit [Fintype ι] in
+/-- The covering map `(ι → ℝ) → (ι → AddCircle p)`, `t ↦ ([t i])ᵢ`, is a covering map. -/
+theorem isCoveringMap_coe_pi [Finite ι] :
+    IsCoveringMap fun t : ι → ℝ ↦ fun i ↦ (t i : AddCircle p) :=
+  IsCoveringMap.piMap fun _ ↦ isCoveringMap_coe p
 
 /-! ### Translations -/
 

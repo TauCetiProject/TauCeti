@@ -115,7 +115,7 @@ theorem topologicalKrullDim_compl_lt {X : Type*} [TopologicalSpace X]
   have hCc := isClosed_of_mem_irreducibleComponents _ C.property
   exact (C.property.1.topologicalKrullDim_lt (hCc.sdiff hU)
     (Set.sdiff_ssubset_left_iff.mpr ⟨y, hVC hyV, hyU⟩)
-    (ne_top_of_le_ne_top hdim (topologicalKrullDim_subspace_le X C.val))).trans_le
+    (ne_top_of_le_ne_top hdim (topologicalKrullDim_subspace_le X _))).trans_le
       (topologicalKrullDim_subspace_le X C.val)
 
 end IsOpen

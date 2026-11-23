@@ -204,46 +204,11 @@ theorem scSteinberg_pow_twistOrder :
     (show _root_.Monoid.End _ from d.scSteinberg A) ^ d.twistOrder =
       kostantToralFrobenius _ _ _ _ _ _ _ _ d.val.characteristic
         (d.val.fieldExponent * d.twistOrder) A := by
-  let γ := d.val.dynkinType.scToralDiagramAutPoints
-    d.val.dynkinType_valid d.diagramPerm_mem_diagramSymmetry A
-  have hγ : γ ^ d.twistOrder = 1 :=
-    d.val.dynkinType.scToralDiagramAutPoints_pow_eq_one
-      d.val.dynkinType_valid d.diagramPerm_mem_diagramSymmetry A d.diagramPerm_pow_twistOrder
-  let G := ↥(kostantToralPointsSubgroup
-      (d.val.dynkinType.lieBasis d.val.dynkinType_valid).rootGenerator
-      (d.val.dynkinType.lieBasis d.val.dynkinType_valid).h
-      (representation ℚ (d.val.dynkinType.lieAlgebra d.val.dynkinType_valid)
-        (d.val.dynkinType.scModule d.val.dynkinType_valid))
-      (d.val.dynkinType.scLattice d.val.dynkinType_valid).toAddSubgroup
-      (d.val.dynkinType.kostantForm_apply_mem_scLattice d.val.dynkinType_valid)
-      (d.val.dynkinType.isNilpotent_representation_scModule_rootGenerator d.val.dynkinType_valid)
-      (d.val.dynkinType.scWeightBasis d.val.dynkinType_valid)
-      (d.val.dynkinType.scWeight d.val.dynkinType_valid) A)
-  let φ := MulDistribMulAction.toMonoidEnd (MulAut G) G
-  -- The evaluation action forgets only the inverse, so its image is the underlying
-  -- endomorphism whose power occurs in the generic Steinberg power law.
-  have hφ : φ γ = (show _root_.Monoid.End G from γ.toMonoidHom) := rfl
-  have hp := (φ.map_pow γ d.twistOrder).symm.trans ((congrArg φ hγ).trans φ.map_one)
-  simp only [hφ] at hp
-  -- Identify the generic numbered symmetry with the indexed diagram action, so that
-  -- the transported twist-order relation applies to the graph factor of that law.
-  have hsym : kostantNumberedSymmetryPoints
-      (d.val.dynkinType.scLattice d.val.dynkinType_valid).toAddSubgroup
-      (d.val.dynkinType.scWeightBasis d.val.dynkinType_valid)
-      (d.val.dynkinType.scModuleDiagramEquiv d.val.dynkinType_valid
-        d.diagramPerm_mem_diagramSymmetry)
-      (fun _ => d.val.dynkinType.scModuleDiagramEquiv_mem_scLattice_iff
-        d.val.dynkinType_valid d.diagramPerm_mem_diagramSymmetry) A _
-      (map_kostantToralPointsSubgroup_conj_numberedSymmetryMatrix
-        _ _ _ _ _ _ _ _ (DynkinType.diagramRootGeneratorPerm d.diagramPerm) _ _
-        (d.val.dynkinType.scModuleDiagramEquiv_representation_rootGenerator
-          d.val.dynkinType_valid d.diagramPerm_mem_diagramSymmetry)
-        (DynkinType.diagramRootGeneratorPerm d.diagramPerm).surjective d.diagramPerm
-        (fun _ _ hxy => d.val.dynkinType.scWeight_apply_eq_of_repr_scModuleDiagramEquiv_ne_zero
-          d.val.dynkinType_valid d.diagramPerm_mem_diagramSymmetry hxy) A) = γ := rfl
   dsimp only [scSteinberg]
-  simp only [kostantToralSteinberg_pow, hsym, hp]
-  exact one_mul _
+  exact kostantToralSteinberg_pow_eq_kostantToralFrobenius_of_numberedSymmetryMatrix_pow_eq_one
+    _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+    (d.val.dynkinType.kostantNumberedSymmetryMatrix_scModuleDiagramEquiv_pow_eq_one
+      d.val.dynkinType_valid d.diagramPerm_mem_diagramSymmetry A d.diagramPerm_pow_twistOrder)
 
 end
 

@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.SpecialFunctions.Trigonometric.Basic
-public import TauCeti.NumberTheory.BernoulliPolynomials
+public import TauCeti.NumberTheory.Bernoulli.Polynomials
 
 /-!
 # Bernoulli coefficients and parity cancellations for single-valued polylogarithms
