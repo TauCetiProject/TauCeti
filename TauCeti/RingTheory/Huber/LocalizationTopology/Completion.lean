@@ -352,7 +352,7 @@ theorem mem_localizationUniform_idealOfDefinition [IsTopologicalRing A] (P : Pai
       (localizationUniform P T s S hden).ringOfDefinition} :
     letI := locUniformSpace P T s S hden
     x ∈ (localizationUniform P T s S hden).idealOfDefinition ↔
-      (⟨x, by rw [← localizationUniform_ringOfDefinition P T s S hden]; exact x.2⟩ :
+      (⟨x, by rw [← localizationUniform_ringOfDefinition P T s S hden]; exact x.property⟩ :
         locSubring P T s S) ∈ locIdeal P T s S :=
   mem_localization_idealOfDefinition P T s S hden
 
@@ -458,7 +458,7 @@ theorem mem_completionLocalization_idealOfDefinition [IsTopologicalRing A] (P : 
     ∀ {x : (completionLocalization P T s S hden).ringOfDefinition},
       x ∈ (completionLocalization P T s S hden).idealOfDefinition ↔
         (⟨x, by
-            rw [← completionLocalization_ringOfDefinition P T s S hden]; exact x.2⟩ :
+            rw [← completionLocalization_ringOfDefinition P T s S hden]; exact x.property⟩ :
           (localizationUniform P T s S hden).completionRingOfDefinition)
             ∈ (localizationUniform P T s S hden).completionIdeal := by
   let _ := locUniformSpace P T s S hden

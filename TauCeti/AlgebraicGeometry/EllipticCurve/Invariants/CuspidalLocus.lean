@@ -91,7 +91,7 @@ theorem irreducible_c₄ : Irreducible curve.c₄ := by
   rw [c₄_eq]
   refine irreducible_mul_X_add _ _ _ (by simp) (by rw [vars_C]; simp) (fun h ↦ ?_) ?_
   · obtain ⟨i, -, hi⟩ := Finset.mem_image.mp (vars_rename _ _ h)
-    exact i.2 hi
+    exact i.property hi
   · -- The coefficient `-48 = -3 · 2⁴` of `a₄` is coprime to the rest of `c₄`.
     have h48 : (C (-48) : MvPolynomial Coeff ℤ) = -(C 3 * C 2 ^ 4) := by
       simp only [← map_pow, ← map_mul, ← map_neg]

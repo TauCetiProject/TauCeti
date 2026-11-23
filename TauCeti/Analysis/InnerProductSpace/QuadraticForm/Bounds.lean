@@ -1,10 +1,11 @@
 /-
 Copyright (c) 2026 Kitware, Inc. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: Jon Crall, GPT 5.6 High
+Authors: Jon Crall, GPT 5.6 High, Claude Opus 5, OpenAI gpt-6.1-sol
 -/
 module
 
+public import TauCeti.Analysis.InnerProductSpace.Complexification
 public import Mathlib.Analysis.InnerProductSpace.Positive
 public import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.RealAlgebra
 
@@ -30,6 +31,12 @@ close, relative to its norm, to one at which it is coercive
   in the DKPS formalization at commit `df036cd`.
 * Authors: Jon Crall and GPT 5.6 High; Copyright (c) 2026 Kitware, Inc.;
   released under Apache 2.0.
+-/
+
+/-!
+The Hilbert complexification form-bound equivalences are adapted from DKPS
+`DavisKahan/SpectralTheory/Complexification/FormTransport.lean`
+(Jon Crall and Claude Opus 5; Kitware 2026, Apache-2.0).
 -/
 
 public section
@@ -175,3 +182,58 @@ theorem re_inner_apply_nonneg_of_norm_sub_le {B : E →L[𝕜] E} {c δ : ℝ} (
 end Perturbation
 
 end ContinuousLinearMap
+
+section RealComplexification
+
+open TauCeti WithLp
+open scoped InnerProductSpace
+
+namespace ContinuousLinearMap
+
+variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
+
+/-- Lower form bounds are preserved and reflected by Hilbert complexification. -/
+@[simp]
+theorem lowerFormBoundOn_complexifyL2_iff (A : E →L[ℝ] E) (U : Submodule ℝ E) (c : ℝ) :
+    A.complexifyL2.LowerFormBoundOn U.complexifyL2 c ↔ A.LowerFormBoundOn U c := by
+  rw [lowerFormBoundOn_iff, lowerFormBoundOn_iff]
+  constructor
+  · intro h x hx
+    have hx' : toLp 2 (Complexification.ofReal x) ∈ U.complexifyL2 := by
+      simpa only [Submodule.mem_complexifyL2, ofLp_toLp,
+        Complexification.ofReal_re, Complexification.ofReal_im] using And.intro hx U.zero_mem
+    simpa using h _ hx'
+  · intro h z hz
+    rw [Submodule.mem_complexifyL2] at hz
+    -- The coordinate lemma uses Complex.re rather than the RCLike projection.
+    change c * ‖z‖ ^ 2 ≤ (⟪A.complexifyL2 z, z⟫_ℂ).re
+    rw [WithLp.complexification_norm_sq_eq, WithLp.complexification_re_inner]
+    simp only [ofLp_complexifyL2_apply, complexify_apply_re, complexify_apply_im]
+    -- On real scalars the RCLike real-part map is the identity.
+    change ∀ x ∈ U, c * ‖x‖ ^ 2 ≤ ⟪A x, x⟫_ℝ at h
+    linarith [h _ hz.1, h _ hz.2]
+
+/-- Upper form bounds are preserved and reflected by Hilbert complexification. -/
+@[simp]
+theorem upperFormBoundOn_complexifyL2_iff (A : E →L[ℝ] E) (U : Submodule ℝ E) (c : ℝ) :
+    A.complexifyL2.UpperFormBoundOn U.complexifyL2 c ↔ A.UpperFormBoundOn U c := by
+  rw [upperFormBoundOn_iff, upperFormBoundOn_iff]
+  constructor
+  · intro h x hx
+    have hx' : toLp 2 (Complexification.ofReal x) ∈ U.complexifyL2 := by
+      simpa only [Submodule.mem_complexifyL2, ofLp_toLp,
+        Complexification.ofReal_re, Complexification.ofReal_im] using And.intro hx U.zero_mem
+    simpa using h _ hx'
+  · intro h z hz
+    rw [Submodule.mem_complexifyL2] at hz
+    -- The coordinate lemma uses Complex.re rather than the RCLike projection.
+    change (⟪A.complexifyL2 z, z⟫_ℂ).re ≤ c * ‖z‖ ^ 2
+    rw [WithLp.complexification_norm_sq_eq, WithLp.complexification_re_inner]
+    simp only [ofLp_complexifyL2_apply, complexify_apply_re, complexify_apply_im]
+    -- On real scalars the RCLike real-part map is the identity.
+    change ∀ x ∈ U, ⟪A x, x⟫_ℝ ≤ c * ‖x‖ ^ 2 at h
+    linarith [h _ hz.1, h _ hz.2]
+
+end ContinuousLinearMap
+
+end RealComplexification

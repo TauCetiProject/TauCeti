@@ -153,7 +153,7 @@ theorem etale_pullback_snd_puncturedSpectrum {B : Type u} [CommRing B] [Algebra 
     let q : PrimeSpectrum B := pullback.fst g U.ι x
     have hq : g q ∈ U := by
       rw [← Scheme.Hom.comp_apply, pullback.condition, Scheme.Hom.comp_apply]
-      exact (pullback.snd g U.ι x).2
+      exact (pullback.snd g U.ι x).property
     obtain ⟨O, hqO, hO⟩ := (Scheme.Hom.etaleAt_spec_iff q).mpr <| h q.asIdeal fun he ↦
       (mem_puncturedSpectrum_iff A (g q)).mp hq (PrimeSpectrum.ext he)
     refine ⟨pullback.fst g U.ι ⁻¹ᵁ O, hqO, ?_⟩
@@ -164,9 +164,7 @@ theorem etale_pullback_snd_puncturedSpectrum {B : Type u} [CommRing B] [Algebra 
       exact .of_comp _ O.ι
     rw [← Scheme.Hom.resLE_comp_ι_assoc (e := le_rfl)]
     exact IsZariskiLocalAtSource.comp hO _
-  choose V hxV hV using key
-  exact IsZariskiLocalAtSource.of_iSup_eq_top V
-    (top_le_iff.mp fun x _ ↦ TopologicalSpace.Opens.mem_iSup.mpr ⟨x, hxV x⟩) hV
+  exact IsZariskiLocalAtSource.of_forall_exists_ι_comp key
 
 variable [IsNoetherianRing A]
 

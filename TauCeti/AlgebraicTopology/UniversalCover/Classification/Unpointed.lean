@@ -121,7 +121,7 @@ theorem exists_homeomorph_comp_eq_of_range_eq_map_conj
     ∃ h : E ≃ₜ F, q ∘ h = p := by
   let e : p ⁻¹' {x} := ⟨e₀, Set.mem_singleton_iff.mpr hpe⟩
   let e₁ : p ⁻¹' {x} := hp.monodromy γ.toPath e
-  have hpe₁ : p (e₁ : E) = x := Set.mem_singleton_iff.mp e₁.2
+  have hpe₁ : p (e₁ : E) = x := Set.mem_singleton_iff.mp e₁.property
   have hrange₁ :
       (mapOfEq ⟨p, hp.continuous⟩ hpe₁).range =
         (mapOfEq ⟨q, hq.continuous⟩ hqf).range := by
