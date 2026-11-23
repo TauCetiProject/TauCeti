@@ -8,6 +8,8 @@ module
 public import Mathlib.CategoryTheory.Bicategory.Functor.LocallyDiscrete
 public import Mathlib.CategoryTheory.Bicategory.FunctorBicategory.Pseudo
 public import Mathlib.CategoryTheory.Bicategory.Strict.Pseudofunctor
+public import Mathlib.CategoryTheory.Groupoid
+public import TauCeti.CategoryTheory.Category.Cat
 
 /-!
 # Whiskering strong transformations by a pseudofunctor
@@ -24,7 +26,9 @@ Whiskering preserves identities and composites up to the invertible modification
 identities. The file also records `Pseudofunctor.StrongTrans.isoApp`, the component
 `η.app a ≅ θ.app a` of an invertible modification `η ≅ θ`, analogous to `Iso.app` for natural
 isomorphisms. Conversely, `StrongTrans.isIso_of_isIso_app` proves that a modification is
-invertible whenever all its components are invertible.
+invertible whenever all its components are invertible. Consequently, strong transformations into
+a `Cat`-valued pseudofunctor whose fibres are groupoids form a groupoid
+(`Pseudofunctor.isGroupoid_hom`).
 
 The last section restates the unit and composition conditions of a strong transformation for the
 comparisons `F.mapId'` and `F.mapComp'` at `1`-morphisms that are only propositionally identities
@@ -105,6 +109,15 @@ lemma StrongTrans.isIso_of_isIso_app {F G : B ⥤ᵖ C} {η θ : F ⟶ G} (Θ : 
   have he : e.hom = Θ := homCategory.ext (fun a => by simp [e])
   rw [← he]
   infer_instance
+
+/-- Strong transformations into a `Cat`-valued pseudofunctor whose fibres are groupoids form a
+groupoid, with modifications as morphisms: the components of a modification are natural
+transformations between functors into groupoids, hence invertible. -/
+instance isGroupoid_hom {F G : B ⥤ᵖ Cat.{v₃, w₃}} [∀ a, IsGroupoid (G.obj a)] :
+    IsGroupoid (F ⟶ G) where
+  all_isIso Θ := by
+    have (a : B) : IsIso (Θ.as.app a) := Cat.Hom₂.isIso_of_isIso_app _
+    exact StrongTrans.isIso_of_isIso_app Θ
 
 /-- The components of the modification `eqToHom e` between equal strong transformations are the
 `eqToHom` of the equality of their components. -/

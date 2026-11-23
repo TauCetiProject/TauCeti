@@ -16,15 +16,18 @@ A continuous multilinear map `D` on `E × F` in `j + l` variables, evaluated on 
 of variables are estimated by a full Fréchet derivative.
 
 Postcomposition with a continuous linear map `g` is Lipschitz on continuous multilinear maps,
-with constant `‖g‖`. For a normed `𝕜`-algebra `𝕜'` and scalar towers `𝕜 / 𝕜' / G / G'`,
-postcomposing a `𝕜`-multilinear map with a continuous `𝕜'`-linear map is itself a continuous
-bilinear map over `𝕜'` (`ContinuousLinearMap.compContinuousMultilinearMapMixedL`).
+with constant `‖g‖`, and as a continuous linear map it has operator norm at most `‖g‖`.
+For a normed `𝕜`-algebra `𝕜'` and scalar towers `𝕜 / 𝕜' / G / G'`, postcomposing a `𝕜`-multilinear
+map with a continuous `𝕜'`-linear map is itself a continuous bilinear map over `𝕜'`
+(`ContinuousLinearMap.compContinuousMultilinearMapMixedL`).
 
 ## Main declarations
 
 * `ContinuousMultilinearMap.norm_apply_append_prod_le`: the operator-norm bound on
   `Fin.append (fun i ↦ (u i, 0)) (fun i ↦ (0, w i))`.
 * `ContinuousLinearMap.norm_compContinuousMultilinearMap_sub_le`: the Lipschitz bound for
+  postcomposition with a continuous linear map.
+* `ContinuousLinearMap.norm_compContinuousMultilinearMapL_le`: the operator-norm bound for
   postcomposition with a continuous linear map.
 * `ContinuousLinearMap.compContinuousMultilinearMapMixedL`: mixed-scalar postcomposition of a
   continuous multilinear map with a continuous linear map, as a continuous bilinear map, with
@@ -68,6 +71,12 @@ theorem norm_compContinuousMultilinearMap_sub_le (g : G →L[𝕜] G')
     simp
   rw [this]
   exact g.norm_compContinuousMultilinearMap_le _
+
+/-- Postcomposition with `g` on continuous multilinear maps, as a continuous linear map, has
+operator norm at most `‖g‖`. -/
+theorem norm_compContinuousMultilinearMapL_le (g : G →L[𝕜] G') :
+    ‖compContinuousMultilinearMapL 𝕜 E G G' g‖ ≤ ‖g‖ :=
+  opNorm_le_bound _ (norm_nonneg g) g.norm_compContinuousMultilinearMap_le
 
 /-- Postcomposition of a continuous `𝕜`-multilinear map with a continuous `𝕜'`-linear map over a
 normed `𝕜`-algebra `𝕜'`, bundled as a continuous `𝕜'`-bilinear map. -/
