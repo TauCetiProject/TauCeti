@@ -59,6 +59,23 @@ theorem of_mem_center_iff (a : G) :
   · intro h b
     rw [commute_iff_eq, of_mul_of, of_mul_of, h b, mul_comm a b]
 
+/-- Opposite weighted coefficients suffice for centrality without index cancellation. -/
+theorem mem_center_of_coeff (f : twistedMonoidAlgebra R G α)
+    (h : ∀ a b, (basis R G α).repr f a * (α a b : R) =
+      (basis R G α).repr f a * (α b a : R)) :
+    f ∈ Subalgebra.center R (twistedMonoidAlgebra R G α) :=
+  (mem_center_iff_commute_of f).mpr fun b ↦ commute_of_coeff f b fun a ↦ h a b
+
+/-- Support on symmetric factor-set indices suffices for centrality without cancellation. -/
+theorem mem_center_of_support (f : twistedMonoidAlgebra R G α)
+    (h : ∀ a ∈ ((basis R G α).repr f).support, ∀ b, α a b = α b a) :
+    f ∈ Subalgebra.center R (twistedMonoidAlgebra R G α) := by
+  apply mem_center_of_coeff
+  intro a b
+  by_cases ha : a ∈ ((basis R G α).repr f).support
+  · rw [h a ha b]
+  · simp [Finsupp.notMem_support_iff.mp ha]
+
 /-- The submonoid of indices whose normalized basis elements are central. -/
 def centralIndices (α : G → G → Rˣ) [IsFactorSet α] : Submonoid G where
   carrier := {a | ∀ b, α a b = α b a}
@@ -145,7 +162,7 @@ end CommMonoid
 
 section CancelCommMonoid
 
-variable {R G : Type*} [CommSemiring R] [CancelCommMonoid G]
+variable {R G : Type*} [CommSemiring R] [CommMonoid G] [IsRightCancelMul G]
   {α : G → G → Rˣ} [IsFactorSet α]
 
 /-- Centrality means that every coefficient multiplied by either opposite factor-set value
@@ -203,8 +220,14 @@ noncomputable def centerEquiv [IsLeftCancelMulZero R] :
       Subalgebra.center R (twistedMonoidAlgebra R G α) :=
   AlgEquiv.ofBijective (centerHom α) ⟨centerHom_injective, centerHom_surjective⟩
 
-/-- The restricted center equivalence preserves bundled normalized basis elements. -/
+/-- Direct applications of the restricted center equivalence are the canonical inclusion. -/
 @[simp]
+theorem centerEquiv_apply [IsLeftCancelMulZero R]
+    (f : twistedMonoidAlgebra R (centralIndices α) (fun a b ↦ α a b)) :
+    centerEquiv (α := α) f = centerHom α f :=
+  AlgEquiv.ofBijective_apply _ _ _
+
+/-- The restricted center equivalence preserves bundled normalized basis elements. -/
 theorem centerEquiv_of [IsLeftCancelMulZero R] (a : centralIndices α) :
     centerEquiv (α := α) (of a) =
       ⟨of (a : G), (of_mem_center_iff _).mpr ((mem_centralIndices _).mp a.property)⟩ :=

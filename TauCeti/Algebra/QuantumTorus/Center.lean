@@ -8,7 +8,6 @@ module
 public import TauCeti.Algebra.QuantumTorus.Basic
 public import TauCeti.Algebra.MonoidAlgebra.Twisted.Center
 public import TauCeti.LinearAlgebra.BilinearForm.QuantumTorusCentralExponents
-import Mathlib.Algebra.Algebra.Bilinear
 import Mathlib.LinearAlgebra.Basis.Bilinear
 
 /-!
@@ -57,8 +56,9 @@ theorem mem_center_iff_coeff (f : QuantumTorus R L u Λ) :
     (TwistedMonoidAlgebra.mem_center_iff_coeff (α := factorSet u Λ) f)
 
 private theorem centralIndices_eq (u : Rˣ) (Λ : LinearMap.BilinForm ℤ L) :
-    (u.quantumTorusCentralExponents Λ).toSubgroup.toSubmonoid =
+    (u.quantumTorusCentralExponents Λ).toIntSubmodule.toAddSubgroup.toSubgroup.toSubmonoid =
       TwistedMonoidAlgebra.centralIndices (factorSet u Λ) := by
+  rw [AddSubgroup.toIntSubmodule_toAddSubgroup]
   ext a
   simp only [Subgroup.mem_toSubmonoid, Multiplicative.mem_toSubgroup,
     TwistedMonoidAlgebra.mem_centralIndices, Units.mem_quantumTorusCentralExponents,
@@ -68,7 +68,8 @@ private theorem mem_centralIndices_iff (u : Rˣ) (Λ : LinearMap.BilinForm ℤ L
     Multiplicative.ofAdd a ∈ TwistedMonoidAlgebra.centralIndices (factorSet u Λ) ↔
       a ∈ u.quantumTorusCentralExponents Λ := by
   rw [← centralIndices_eq]
-  simp only [Subgroup.mem_toSubmonoid, Multiplicative.mem_toSubgroup, toAdd_ofAdd]
+  simp only [Subgroup.mem_toSubmonoid, Multiplicative.mem_toSubgroup, toAdd_ofAdd,
+    AddSubgroup.toIntSubmodule_toAddSubgroup]
 
 /-- A normalized monomial is central precisely at the central exponent subgroup.
 No cancellation or nontriviality assumption is needed for its scalar coefficient one. -/
@@ -87,6 +88,16 @@ theorem mem_center_iff_support [IsLeftCancelMulZero R] (f : QuantumTorus R L u �
   simpa only [← TwistedMonoidAlgebra.mem_centralIndices, Multiplicative.forall,
     Finsupp.mem_support_iff, ← basis_repr_apply, mem_centralIndices_iff] using
     (TwistedMonoidAlgebra.mem_center_iff_support (α := factorSet u Λ) f)
+
+/-- Support on central exponents suffices for centrality without scalar cancellation. -/
+theorem mem_center_of_support (f : QuantumTorus R L u Λ)
+    (h : ∀ a ∈ ((basis u Λ).repr f).support, a ∈ u.quantumTorusCentralExponents Λ) :
+    f ∈ Subalgebra.center R (QuantumTorus R L u Λ) := by
+  apply TwistedMonoidAlgebra.mem_center_of_support
+  intro a ha
+  exact (TwistedMonoidAlgebra.mem_centralIndices a).mp
+    ((mem_centralIndices_iff u Λ a.toAdd).mpr
+      (h a.toAdd (by simpa only [Finsupp.mem_support_iff, basis_repr_apply, ofAdd_toAdd] using ha)))
 
 /-- The center is the span of its normalized central monomials when scalar coefficients cancel. -/
 theorem center_toSubmodule_eq_span [IsLeftCancelMulZero R] :
@@ -108,104 +119,109 @@ theorem center_toSubmodule_eq_span [IsLeftCancelMulZero R] :
   exact TwistedMonoidAlgebra.center_toSubmodule_eq_span (R := R) (α := factorSet u Λ)
 
 private def centralIndexEquiv (u : Rˣ) (Λ : LinearMap.BilinForm ℤ L) :
-    Multiplicative (u.quantumTorusCentralExponents Λ) ≃*
+    Multiplicative (u.quantumTorusCentralExponents Λ).toIntSubmodule ≃*
       TwistedMonoidAlgebra.centralIndices (factorSet u Λ) :=
   MulEquiv.submonoidCongr (centralIndices_eq u Λ)
 
 private theorem centralIndexEquiv_apply_coe (u : Rˣ) (Λ : LinearMap.BilinForm ℤ L)
-    (a : Multiplicative (u.quantumTorusCentralExponents Λ)) :
+    (a : Multiplicative (u.quantumTorusCentralExponents Λ).toIntSubmodule) :
     ((centralIndexEquiv u Λ) a : Multiplicative L) =
       Multiplicative.ofAdd (a.toAdd : L) := rfl
 
-private theorem centralForm_apply (u : Rˣ) (Λ : LinearMap.BilinForm ℤ L)
-    (a b : u.quantumTorusCentralExponents Λ) :
-    (Λ.compl₁₂ (u.quantumTorusCentralExponents Λ).subtype.toIntLinearMap
-      (u.quantumTorusCentralExponents Λ).subtype.toIntLinearMap) a b = Λ (a : L) (b : L) := by
-  simp only [LinearMap.compl₁₂_apply, AddMonoidHom.coe_toIntLinearMap,
-    AddSubgroup.subtype_apply]
+private noncomputable def centralSourceBasis (u : Rˣ) (Λ : LinearMap.BilinForm ℤ L) :
+    Module.Basis (Multiplicative (u.quantumTorusCentralExponents Λ).toIntSubmodule) R
+      (QuantumTorus R (u.quantumTorusCentralExponents Λ).toIntSubmodule u
+        (Λ.restrict (u.quantumTorusCentralExponents Λ).toIntSubmodule)) :=
+  TwistedMonoidAlgebra.basis R _ _
+
+private noncomputable def centralTargetBasis (u : Rˣ) (Λ : LinearMap.BilinForm ℤ L) :
+    Module.Basis (TwistedMonoidAlgebra.centralIndices (factorSet u Λ)) R
+      (twistedMonoidAlgebra R (TwistedMonoidAlgebra.centralIndices (factorSet u Λ))
+        (fun a b ↦ factorSet u Λ a b)) :=
+  TwistedMonoidAlgebra.basis R _ _
+
+private noncomputable def centralTorusLinearEquiv (u : Rˣ) (Λ : LinearMap.BilinForm ℤ L) :
+    QuantumTorus R (u.quantumTorusCentralExponents Λ).toIntSubmodule u
+        (Λ.restrict (u.quantumTorusCentralExponents Λ).toIntSubmodule) ≃ₗ[R]
+      twistedMonoidAlgebra R (TwistedMonoidAlgebra.centralIndices (factorSet u Λ))
+        (fun a b ↦ factorSet u Λ a b) :=
+  (centralSourceBasis u Λ).equiv (centralTargetBasis u Λ) (centralIndexEquiv u Λ).toEquiv
+
+private theorem centralTorusLinearEquiv_of (u : Rˣ) (Λ : LinearMap.BilinForm ℤ L)
+    (a : Multiplicative (u.quantumTorusCentralExponents Λ).toIntSubmodule) :
+    centralTorusLinearEquiv u Λ (TwistedMonoidAlgebra.of a) =
+      TwistedMonoidAlgebra.of (centralIndexEquiv u Λ a) := by
+  simpa only [centralTorusLinearEquiv, centralSourceBasis, centralTargetBasis,
+    TwistedMonoidAlgebra.basis_apply, MulEquiv.toEquiv_eq_coe, MulEquiv.coe_toEquiv] using
+    Module.Basis.equiv_apply (centralSourceBasis u Λ) a (centralTargetBasis u Λ)
+      (centralIndexEquiv u Λ).toEquiv
 
 private noncomputable def centralTorusEquiv (u : Rˣ) (Λ : LinearMap.BilinForm ℤ L) :
-    let S := u.quantumTorusCentralExponents Λ
-    QuantumTorus R S u (Λ.compl₁₂ S.subtype.toIntLinearMap S.subtype.toIntLinearMap) ≃ₐ[R]
+    let S := (u.quantumTorusCentralExponents Λ).toIntSubmodule
+    QuantumTorus R S u (Λ.restrict S) ≃ₐ[R]
       twistedMonoidAlgebra R (TwistedMonoidAlgebra.centralIndices (factorSet u Λ))
         (fun a b ↦ factorSet u Λ a b) := by
-  let S := u.quantumTorusCentralExponents Λ
-  let ΛS := Λ.compl₁₂ S.subtype.toIntLinearMap S.subtype.toIntLinearMap
-  let bs := TwistedMonoidAlgebra.basis R (Multiplicative S) (factorSet u ΛS)
-  let bt := TwistedMonoidAlgebra.basis R (TwistedMonoidAlgebra.centralIndices (factorSet u Λ))
-    (fun a b ↦ factorSet u Λ a b)
-  let e := bs.equiv bt (centralIndexEquiv u Λ).toEquiv
-  have he (a : Multiplicative S) : e (TwistedMonoidAlgebra.of a) =
-      TwistedMonoidAlgebra.of (centralIndexEquiv u Λ a) := by
-    simpa only [e, bs, bt, TwistedMonoidAlgebra.basis_apply,
-      MulEquiv.toEquiv_eq_coe, MulEquiv.coe_toEquiv] using
-      Module.Basis.equiv_apply bs a bt (centralIndexEquiv u Λ).toEquiv
+  let e := centralTorusLinearEquiv u Λ
   refine AlgEquiv.ofLinearEquiv e ?_ ?_
-  · simpa only [TwistedMonoidAlgebra.of_one, map_one] using he 1
+  · simpa only [TwistedMonoidAlgebra.of_one, map_one] using centralTorusLinearEquiv_of u Λ 1
   · apply (LinearMap.map_mul_iff e.toLinearMap).mpr
-    apply (LinearMap.ext_iff_basis bs bs).mpr
+    apply (LinearMap.ext_iff_basis (centralSourceBasis u Λ) (centralSourceBasis u Λ)).mpr
     intro a b
-    change e (bs a * bs b) = e (bs a) * e (bs b)
-    simp only [bs, TwistedMonoidAlgebra.basis_apply, TwistedMonoidAlgebra.of_mul_of,
-      map_smul, he, map_mul]
+    simp only [LinearMap.compr₂_apply, LinearMap.compl₂_apply, LinearMap.comp_apply,
+      LinearMap.mul_apply', LinearEquiv.coe_coe, centralSourceBasis,
+      TwistedMonoidAlgebra.basis_apply]
+    simp only [e, TwistedMonoidAlgebra.of_mul_of, map_smul,
+      centralTorusLinearEquiv_of, map_mul]
     congr 1
-    simp only [factorSet_apply, centralIndexEquiv_apply_coe, toAdd_ofAdd, ΛS, S,
-      centralForm_apply]
+    simp only [factorSet_apply, centralIndexEquiv_apply_coe, toAdd_ofAdd,
+      LinearMap.BilinForm.restrict_apply, LinearMap.domRestrict_apply]
+
+private theorem centralTorusEquiv_toLinearEquiv (u : Rˣ) (Λ : LinearMap.BilinForm ℤ L) :
+    (centralTorusEquiv u Λ).toLinearEquiv = centralTorusLinearEquiv u Λ := by
+  simp only [centralTorusEquiv, AlgEquiv.toLinearEquiv_ofLinearEquiv]
 
 private theorem centralTorusEquiv_monomial (u : Rˣ) (Λ : LinearMap.BilinForm ℤ L)
-    (a : u.quantumTorusCentralExponents Λ) :
+    (a : (u.quantumTorusCentralExponents Λ).toIntSubmodule) :
     centralTorusEquiv u Λ (monomial u _ a) =
       TwistedMonoidAlgebra.of (centralIndexEquiv u Λ (Multiplicative.ofAdd a)) := by
-  let S := u.quantumTorusCentralExponents Λ
-  let ΛS := Λ.compl₁₂ S.subtype.toIntLinearMap S.subtype.toIntLinearMap
-  let bs := TwistedMonoidAlgebra.basis R (Multiplicative S) (factorSet u ΛS)
-  let bt := TwistedMonoidAlgebra.basis R (TwistedMonoidAlgebra.centralIndices (factorSet u Λ))
-    (fun a b ↦ factorSet u Λ a b)
-  rw [monomial_def]
-  change (bs.equiv bt (centralIndexEquiv u Λ).toEquiv)
-    (TwistedMonoidAlgebra.of (Multiplicative.ofAdd a)) = _
-  simpa only [bs, bt, TwistedMonoidAlgebra.basis_apply,
-    MulEquiv.toEquiv_eq_coe, MulEquiv.coe_toEquiv] using
-    Module.Basis.equiv_apply bs (Multiplicative.ofAdd a) bt (centralIndexEquiv u Λ).toEquiv
+  rw [← AlgEquiv.toLinearEquiv_apply, centralTorusEquiv_toLinearEquiv, monomial_def]
+  exact centralTorusLinearEquiv_of u Λ _
 
 private theorem centralTorusEquiv_repr (u : Rˣ) (Λ : LinearMap.BilinForm ℤ L)
-    (f : let S := u.quantumTorusCentralExponents Λ
-      QuantumTorus R S u (Λ.compl₁₂ S.subtype.toIntLinearMap S.subtype.toIntLinearMap))
-    (a : u.quantumTorusCentralExponents Λ) :
-    (TwistedMonoidAlgebra.basis R (TwistedMonoidAlgebra.centralIndices (factorSet u Λ))
-      (fun a b ↦ factorSet u Λ a b)).repr (centralTorusEquiv u Λ f)
+    (f : let S := (u.quantumTorusCentralExponents Λ).toIntSubmodule
+      QuantumTorus R S u (Λ.restrict S))
+    (a : (u.quantumTorusCentralExponents Λ).toIntSubmodule) :
+    (centralTargetBasis u Λ).repr (centralTorusEquiv u Λ f)
         (centralIndexEquiv u Λ (Multiplicative.ofAdd a)) =
-      (basis u (Λ.compl₁₂ (u.quantumTorusCentralExponents Λ).subtype.toIntLinearMap
-        (u.quantumTorusCentralExponents Λ).subtype.toIntLinearMap)).repr f a := by
-  let S := u.quantumTorusCentralExponents Λ
-  let ΛS := Λ.compl₁₂ S.subtype.toIntLinearMap S.subtype.toIntLinearMap
-  let bs := TwistedMonoidAlgebra.basis R (Multiplicative S) (factorSet u ΛS)
-  let bt := TwistedMonoidAlgebra.basis R (TwistedMonoidAlgebra.centralIndices (factorSet u Λ))
-    (fun a b ↦ factorSet u Λ a b)
+      (basis u (Λ.restrict (u.quantumTorusCentralExponents Λ).toIntSubmodule)).repr f a := by
   let e := (centralIndexEquiv u Λ).toEquiv
-  have hr : (bt.reindex e.symm).repr (centralTorusEquiv u Λ f) = bs.repr f := by
-    change (bt.reindex e.symm).repr (bs.equiv bt e f) = bs.repr f
-    simp only [Module.Basis.equiv, LinearEquiv.trans_apply, LinearEquiv.apply_symm_apply]
+  have hr : ((centralTargetBasis u Λ).reindex e.symm).repr (centralTorusEquiv u Λ f) =
+      (centralSourceBasis u Λ).repr f := by
+    rw [← AlgEquiv.toLinearEquiv_apply, centralTorusEquiv_toLinearEquiv]
+    simp only [centralTorusLinearEquiv, Module.Basis.equiv, e,
+      MulEquiv.toEquiv_eq_coe,
+      LinearEquiv.trans_apply, LinearEquiv.apply_symm_apply]
   have hc := congrArg (fun l ↦ l (Multiplicative.ofAdd a)) hr
   simpa only [Module.Basis.repr_reindex_apply, Equiv.symm_symm,
-    bs, bt, e, S, ΛS, MulEquiv.toEquiv_eq_coe, MulEquiv.coe_toEquiv,
+    centralSourceBasis, e, MulEquiv.toEquiv_eq_coe, MulEquiv.coe_toEquiv,
     ← basis_repr_apply] using hc
 
 /-- The canonical map from the torus on central exponents to the center, preserving its
 restricted bilinear twist. It reuses the arbitrary-factor-set restricted center map. -/
 noncomputable def _root_.Units.quantumTorusCenterHom (u : Rˣ)
     (Λ : LinearMap.BilinForm ℤ L) :
-    let S := u.quantumTorusCentralExponents Λ
-    QuantumTorus R S u (Λ.compl₁₂ S.subtype.toIntLinearMap S.subtype.toIntLinearMap) →ₐ[R]
+    let S := (u.quantumTorusCentralExponents Λ).toIntSubmodule
+    QuantumTorus R S u (Λ.restrict S) →ₐ[R]
       Subalgebra.center R (QuantumTorus R L u Λ) :=
   (TwistedMonoidAlgebra.centerHom (factorSet u Λ)).comp (centralTorusEquiv u Λ).toAlgHom
 
 /-- The restricted map preserves normalized monomials inside the bundled center. -/
 @[simp]
 theorem _root_.Units.quantumTorusCenterHom_monomial (u : Rˣ)
-    (Λ : LinearMap.BilinForm ℤ L) (a : u.quantumTorusCentralExponents Λ) :
+    (Λ : LinearMap.BilinForm ℤ L) (a : (u.quantumTorusCentralExponents Λ).toIntSubmodule) :
     (u.quantumTorusCenterHom Λ) (monomial u _ a) =
-      ⟨monomial u Λ (a : L), (monomial_mem_center_iff _).mpr a.property⟩ := by
+      ⟨monomial u Λ (a : L), (monomial_mem_center_iff _).mpr (by
+        simpa only [← SetLike.mem_coe, AddSubgroup.coe_toIntSubmodule] using a.property)⟩ := by
   apply Subtype.ext
   simp only [Units.quantumTorusCenterHom, AlgHom.comp_apply, AlgEquiv.toAlgHom_apply,
     centralTorusEquiv_monomial, TwistedMonoidAlgebra.centerHom_of]
@@ -215,13 +231,12 @@ theorem _root_.Units.quantumTorusCenterHom_monomial (u : Rˣ)
 @[simp]
 theorem _root_.Units.basis_repr_quantumTorusCenterHom_apply (u : Rˣ)
     (Λ : LinearMap.BilinForm ℤ L)
-    (f : let S := u.quantumTorusCentralExponents Λ
-      QuantumTorus R S u (Λ.compl₁₂ S.subtype.toIntLinearMap S.subtype.toIntLinearMap))
-    (a : u.quantumTorusCentralExponents Λ) :
+    (f : let S := (u.quantumTorusCentralExponents Λ).toIntSubmodule
+      QuantumTorus R S u (Λ.restrict S))
+    (a : (u.quantumTorusCentralExponents Λ).toIntSubmodule) :
     (basis u Λ).repr ((u.quantumTorusCenterHom Λ f :
       Subalgebra.center R (QuantumTorus R L u Λ)) : QuantumTorus R L u Λ) (a : L) =
-      (basis u (Λ.compl₁₂ (u.quantumTorusCentralExponents Λ).subtype.toIntLinearMap
-        (u.quantumTorusCentralExponents Λ).subtype.toIntLinearMap)).repr f a := by
+      (basis u (Λ.restrict (u.quantumTorusCentralExponents Λ).toIntSubmodule)).repr f a := by
   have h := TwistedMonoidAlgebra.repr_centerHom_apply (centralTorusEquiv u Λ f)
     (centralIndexEquiv u Λ (Multiplicative.ofAdd a))
   simpa only [Units.quantumTorusCenterHom, AlgHom.comp_apply, AlgEquiv.toAlgHom_apply,
@@ -231,8 +246,8 @@ theorem _root_.Units.basis_repr_quantumTorusCenterHom_apply (u : Rˣ)
 /-- Ambient exponent coefficients outside the central subgroup vanish under the center map. -/
 theorem _root_.Units.basis_repr_quantumTorusCenterHom_apply_eq_zero (u : Rˣ)
     (Λ : LinearMap.BilinForm ℤ L)
-    (f : let S := u.quantumTorusCentralExponents Λ
-      QuantumTorus R S u (Λ.compl₁₂ S.subtype.toIntLinearMap S.subtype.toIntLinearMap))
+    (f : let S := (u.quantumTorusCentralExponents Λ).toIntSubmodule
+      QuantumTorus R S u (Λ.restrict S))
     (a : L) (ha : a ∉ u.quantumTorusCentralExponents Λ) :
     (basis u Λ).repr ((u.quantumTorusCenterHom Λ f :
       Subalgebra.center R (QuantumTorus R L u Λ)) : QuantumTorus R L u Λ) a = 0 := by
@@ -255,8 +270,8 @@ theorem _root_.Units.quantumTorusCenterHom_surjective [IsLeftCancelMulZero R] (u
 /-- With nonzero-scalar cancellation, the restricted central torus is the actual center. -/
 noncomputable def _root_.Units.quantumTorusCenterEquiv [IsLeftCancelMulZero R] (u : Rˣ)
     (Λ : LinearMap.BilinForm ℤ L) :
-    let S := u.quantumTorusCentralExponents Λ
-    QuantumTorus R S u (Λ.compl₁₂ S.subtype.toIntLinearMap S.subtype.toIntLinearMap) ≃ₐ[R]
+    let S := (u.quantumTorusCentralExponents Λ).toIntSubmodule
+    QuantumTorus R S u (Λ.restrict S) ≃ₐ[R]
       Subalgebra.center R (QuantumTorus R L u Λ) :=
   (centralTorusEquiv u Λ).trans (TwistedMonoidAlgebra.centerEquiv (α := factorSet u Λ))
 
@@ -273,21 +288,32 @@ theorem _root_.Units.quantumTorusCenterEquiv_toAlgHom [IsLeftCancelMulZero R] (u
     exact congrArg (fun f ↦ f (centralTorusEquiv u Λ x))
       (TwistedMonoidAlgebra.centerEquiv_toAlgHom (α := factorSet u Λ))
 
-/-- The center equivalence preserves normalized monomials inside the bundled center. -/
+/-- Direct applications of the center equivalence are its canonical center map. -/
 @[simp]
+theorem _root_.Units.quantumTorusCenterEquiv_apply [IsLeftCancelMulZero R] (u : Rˣ)
+    (Λ : LinearMap.BilinForm ℤ L)
+    (f : let S := (u.quantumTorusCentralExponents Λ).toIntSubmodule
+      QuantumTorus R S u (Λ.restrict S)) :
+    u.quantumTorusCenterEquiv Λ f = u.quantumTorusCenterHom Λ f := by
+  rw [← AlgEquiv.toAlgHom_apply, Units.quantumTorusCenterEquiv_toAlgHom]
+
+/-- The center equivalence preserves normalized monomials inside the bundled center. -/
 theorem _root_.Units.quantumTorusCenterEquiv_monomial [IsLeftCancelMulZero R] (u : Rˣ)
-    (Λ : LinearMap.BilinForm ℤ L) (a : u.quantumTorusCentralExponents Λ) :
+    (Λ : LinearMap.BilinForm ℤ L) (a : (u.quantumTorusCentralExponents Λ).toIntSubmodule) :
     (u.quantumTorusCenterEquiv Λ) (monomial u _ a) =
-      ⟨monomial u Λ (a : L), (monomial_mem_center_iff _).mpr a.property⟩ := by
+      ⟨monomial u Λ (a : L), (monomial_mem_center_iff _).mpr (by
+        simpa only [← SetLike.mem_coe, AddSubgroup.coe_toIntSubmodule] using a.property)⟩ := by
   rw [← AlgEquiv.toAlgHom_apply, Units.quantumTorusCenterEquiv_toAlgHom]
   exact u.quantumTorusCenterHom_monomial Λ a
 
 /-- The inverse center equivalence sends a bundled central monomial to its restricted monomial. -/
 @[simp]
 theorem _root_.Units.quantumTorusCenterEquiv_symm_monomial [IsLeftCancelMulZero R] (u : Rˣ)
-    (Λ : LinearMap.BilinForm ℤ L) (a : u.quantumTorusCentralExponents Λ) :
+    (Λ : LinearMap.BilinForm ℤ L) (a : (u.quantumTorusCentralExponents Λ).toIntSubmodule) :
     (u.quantumTorusCenterEquiv Λ).symm
-      ⟨monomial u Λ (a : L), (monomial_mem_center_iff _).mpr a.property⟩ = monomial u _ a := by
+      ⟨monomial u Λ (a : L), (monomial_mem_center_iff _).mpr (by
+        simpa only [← SetLike.mem_coe, AddSubgroup.coe_toIntSubmodule] using a.property)⟩ =
+        monomial u _ a := by
   apply (u.quantumTorusCenterEquiv Λ).symm_apply_eq.mpr
   exact (u.quantumTorusCenterEquiv_monomial Λ a).symm
 
@@ -296,14 +322,19 @@ theorem _root_.Units.quantumTorusCenterEquiv_symm_monomial [IsLeftCancelMulZero 
 theorem _root_.Units.basis_repr_quantumTorusCenterEquiv_symm_apply
     [IsLeftCancelMulZero R] (u : Rˣ) (Λ : LinearMap.BilinForm ℤ L)
     (f : Subalgebra.center R (QuantumTorus R L u Λ))
-    (a : u.quantumTorusCentralExponents Λ) :
-    (basis u (Λ.compl₁₂ (u.quantumTorusCentralExponents Λ).subtype.toIntLinearMap
-      (u.quantumTorusCentralExponents Λ).subtype.toIntLinearMap)).repr
+    (a : (u.quantumTorusCentralExponents Λ).toIntSubmodule) :
+    (basis u (Λ.restrict (u.quantumTorusCentralExponents Λ).toIntSubmodule)).repr
       ((u.quantumTorusCenterEquiv Λ).symm f) a =
         (basis u Λ).repr (f : QuantumTorus R L u Λ) (a : L) := by
   simpa only [← Units.quantumTorusCenterEquiv_toAlgHom, AlgEquiv.toAlgHom_apply,
     AlgEquiv.apply_symm_apply] using
     (u.basis_repr_quantumTorusCenterHom_apply Λ ((u.quantumTorusCenterEquiv Λ).symm f) a).symm
+
+private def centralRadicalEquiv (hΛ : Λ.IsAlt) (hu : ¬ IsOfFinOrder (u ^ 2)) :
+    (u.quantumTorusCentralExponents Λ).toIntSubmodule ≃+
+      (LinearMap.ker Λ).toAddSubgroup :=
+  AddEquiv.addSubgroupCongr ((AddSubgroup.toIntSubmodule_toAddSubgroup _).trans
+    (hΛ.quantumTorusCentralExponents_eq_ker hu))
 
 /-- For an alternating form, when the parameter square has infinite order and nonzero scalar
 coefficients cancel, the center is the ordinary additive group algebra on the radical. -/
@@ -311,32 +342,40 @@ noncomputable def _root_.LinearMap.BilinForm.IsAlt.quantumTorusCenterEquivGroupA
     [IsLeftCancelMulZero R] (hΛ : Λ.IsAlt) (hu : ¬ IsOfFinOrder (u ^ 2)) :
     Subalgebra.center R (QuantumTorus R L u Λ) ≃ₐ[R]
       AddMonoidAlgebra R (LinearMap.ker Λ).toAddSubgroup := by
-  let S := u.quantumTorusCentralExponents Λ
-  let ΛS := Λ.compl₁₂ S.subtype.toIntLinearMap S.subtype.toIntLinearMap
+  let S := (u.quantumTorusCentralExponents Λ).toIntSubmodule
+  let ΛS := Λ.restrict S
   have ht : ∀ a b : S, u ^ (ΛS a b) = 1 := by
     intro a b
     have ha : (a : L) ∈ (LinearMap.ker Λ).toAddSubgroup := by
       rw [← hΛ.quantumTorusCentralExponents_eq_ker hu]
-      exact a.property
+      simpa only [S, ← SetLike.mem_coe, AddSubgroup.coe_toIntSubmodule] using a.property
     have he := LinearMap.congr_fun (LinearMap.mem_ker.mp ha) (b : L)
-    simpa only [ΛS, S, centralForm_apply, he, LinearMap.zero_apply] using zpow_zero u
+    simpa only [ΛS, S, LinearMap.BilinForm.restrict_apply, LinearMap.domRestrict_apply,
+      he, LinearMap.zero_apply] using zpow_zero u
   exact (u.quantumTorusCenterEquiv Λ).symm.trans
     ((untwistedEquiv u ΛS ht).trans (AddMonoidAlgebra.domCongr R R
-      (AddEquiv.addSubgroupCongr (hΛ.quantumTorusCentralExponents_eq_ker hu))))
+      (centralRadicalEquiv hΛ hu)))
 
 /-- The ordinary radical-algebra identification sends central normalized monomials
 to basis terms. -/
 @[simp]
 theorem _root_.LinearMap.BilinForm.IsAlt.quantumTorusCenterEquivGroupAlgebra_monomial
     [IsLeftCancelMulZero R] (hΛ : Λ.IsAlt) (hu : ¬ IsOfFinOrder (u ^ 2))
-    (a : u.quantumTorusCentralExponents Λ) :
+    (a : (u.quantumTorusCentralExponents Λ).toIntSubmodule) :
     hΛ.quantumTorusCenterEquivGroupAlgebra hu
-      ⟨monomial u Λ (a : L), (monomial_mem_center_iff _).mpr a.property⟩ =
+      ⟨monomial u Λ (a : L), (monomial_mem_center_iff _).mpr (by
+        simpa only [← SetLike.mem_coe, AddSubgroup.coe_toIntSubmodule] using a.property)⟩ =
         AddMonoidAlgebra.single
-          (AddEquiv.addSubgroupCongr (hΛ.quantumTorusCentralExponents_eq_ker hu) a) 1 := by
+          (⟨(a : L), by
+            rw [← hΛ.quantumTorusCentralExponents_eq_ker hu]
+            simpa only [← SetLike.mem_coe, AddSubgroup.coe_toIntSubmodule] using
+              a.property⟩) 1 := by
   simp only [LinearMap.BilinForm.IsAlt.quantumTorusCenterEquivGroupAlgebra,
     AlgEquiv.trans_apply, Units.quantumTorusCenterEquiv_symm_monomial,
-    untwistedEquiv_monomial, AddMonoidAlgebra.domCongr_single]
+    untwistedEquiv_monomial]
+  refine (AddMonoidAlgebra.domCongr_single (R := R) (A := R)
+    (centralRadicalEquiv hΛ hu) a (1 : R)).trans ?_
+  congr 1
 
 /-- The inverse radical-algebra equivalence sends each basis singleton to its scalar
 multiple of the bundled central monomial, indexed directly by the radical. -/
@@ -351,10 +390,14 @@ theorem _root_.LinearMap.BilinForm.IsAlt.quantumTorusCenterEquivGroupAlgebra_sym
   have ha : (a : L) ∈ u.quantumTorusCentralExponents Λ := by
     rw [hΛ.quantumTorusCentralExponents_eq_ker hu]
     exact a.property
-  let b : u.quantumTorusCentralExponents Λ := ⟨a, ha⟩
-  have hb : AddEquiv.addSubgroupCongr (hΛ.quantumTorusCentralExponents_eq_ker hu) b = a := by
+  let b : (u.quantumTorusCentralExponents Λ).toIntSubmodule := ⟨a, by
+    simpa only [← SetLike.mem_coe, AddSubgroup.coe_toIntSubmodule] using ha⟩
+  have hb : (⟨(b : L), by
+      rw [← hΛ.quantumTorusCentralExponents_eq_ker hu]
+      simpa only [← SetLike.mem_coe, AddSubgroup.coe_toIntSubmodule] using b.property⟩ :
+      (LinearMap.ker Λ).toAddSubgroup) = a := by
     apply Subtype.ext
-    simp only [AddEquiv.addSubgroupCongr_apply, b]
+    rfl
   apply (hΛ.quantumTorusCenterEquivGroupAlgebra hu).symm_apply_eq.mpr
   rw [map_smul, hΛ.quantumTorusCenterEquivGroupAlgebra_monomial hu b, hb]
   simp

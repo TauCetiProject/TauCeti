@@ -407,6 +407,19 @@ theorem repr_mul (f g : twistedMonoidAlgebra k G α) :
   simp only [Finsupp.linearCombination_apply, Finsupp.sum, Finset.sum_mul_sum, smul_mul_smul_comm,
     map_sum, map_smul, basis_apply, of_mul_of, repr_of, Finsupp.smul_single, smul_eq_mul, mul_one]
 
+open scoped Pointwise
+
+/-- The coefficient support of a twisted product lies in the product of the two supports. -/
+theorem support_repr_mul_subset [DecidableEq G] (f g : twistedMonoidAlgebra k G α) :
+    ((basis k G α).repr (f * g)).support ⊆
+      ((basis k G α).repr f).support * ((basis k G α).repr g).support := by
+  rw [repr_mul]
+  grw [Finsupp.support_sum, Finset.biUnion_subset]
+  intro a ha
+  grw [Finsupp.support_sum, Finset.biUnion_subset]
+  exact fun b hb ↦ Finsupp.support_single_subset.trans <|
+    Finset.singleton_subset_iff.mpr (Finset.mem_image₂_of_mem ha hb)
+
 /-- If no pair in the supports of `f` and `g` other than `(a, b)` has product `a * b`, the
 coefficient of `f * g` at `a * b` is
 `(basis k G α).repr f a * (basis k G α).repr g b * α a b`. -/
@@ -432,6 +445,21 @@ section MonoidCoefficients
 
 variable {R H : Type*} [CommSemiring R] [Monoid H]
   {β : H → H → Rˣ} [IsFactorSet β]
+
+/-- Right multiplication by a normalized basis element expands as a single weighted sum. -/
+theorem repr_mul_of (f : twistedMonoidAlgebra R H β) (b : H) :
+    (basis R H β).repr (f * of b) =
+      ((basis R H β).repr f).sum fun a r ↦ Finsupp.single (a * b) (r * (β a b : R)) := by
+  rw [repr_mul, repr_of]
+  simp only [Finsupp.sum_single_index, zero_mul, mul_zero, Finsupp.single_zero, mul_one]
+
+/-- Left multiplication by a normalized basis element expands as a single weighted sum. -/
+theorem repr_of_mul (f : twistedMonoidAlgebra R H β) (b : H) :
+    (basis R H β).repr (of b * f) =
+      ((basis R H β).repr f).sum fun a r ↦ Finsupp.single (b * a) (r * (β b a : R)) := by
+  rw [repr_mul, repr_of]
+  simp only [Finsupp.sum_single_index, zero_mul, Finsupp.single_zero,
+    Finsupp.sum_fun_zero, one_mul]
 
 /-- The coefficient at `a * b` when no support index other than `a` maps there under right
 multiplication by `b`; the coefficient at `a` is allowed to be zero. -/
@@ -498,30 +526,26 @@ theorem repr_mul_of_apply_eq_zero (f : twistedMonoidAlgebra R H β) (b c : H)
     (hc : c ∉ (fun a : H ↦ a * b) '' ↑((basis R H β).repr f).support) :
     (basis R H β).repr (f * of b) c = 0 := by
   classical
-  have hn : ∀ a ∈ ((basis R H β).repr f).support, a * b ≠ c :=
-    fun a ha he ↦ hc ⟨a, ha, he⟩
-  rw [repr_mul, repr_of]
-  simp only [Finsupp.sum_single_index, zero_mul, mul_zero, Finsupp.single_zero,
-    mul_one]
-  simp only [Finsupp.sum, Finsupp.finsetSum_apply, Finsupp.single_apply]
-  apply Finset.sum_eq_zero
-  intro a ha
-  simp only [ite_eq_right (hn a ha)]
+  apply Finsupp.notMem_support_iff.mp
+  intro hn
+  have hs := support_repr_mul_subset f (of b) hn
+  obtain ⟨a, ha, d, hd, he⟩ := Finset.mem_mul.mp hs
+  have hd' : d = b := Finset.mem_singleton.mp
+    (Finsupp.support_single_subset (by simpa only [repr_of] using hd))
+  exact hc ⟨a, ha, hd' ▸ he⟩
 
 /-- A coefficient outside the left translate of the actual coefficient support vanishes. -/
 theorem repr_of_mul_apply_eq_zero (f : twistedMonoidAlgebra R H β) (b c : H)
     (hc : c ∉ (fun a : H ↦ b * a) '' ↑((basis R H β).repr f).support) :
     (basis R H β).repr (of b * f) c = 0 := by
   classical
-  have hn : ∀ a ∈ ((basis R H β).repr f).support, b * a ≠ c :=
-    fun a ha he ↦ hc ⟨a, ha, he⟩
-  rw [repr_mul, repr_of]
-  simp only [Finsupp.sum_single_index, zero_mul, Finsupp.single_zero,
-    Finsupp.sum_fun_zero, one_mul]
-  simp only [Finsupp.sum, Finsupp.finsetSum_apply, Finsupp.single_apply]
-  apply Finset.sum_eq_zero
-  intro a ha
-  simp only [ite_eq_right (hn a ha)]
+  apply Finsupp.notMem_support_iff.mp
+  intro hn
+  have hs := support_repr_mul_subset (of b) f hn
+  obtain ⟨d, hd, a, ha, he⟩ := Finset.mem_mul.mp hs
+  have hd' : d = b := Finset.mem_singleton.mp
+    (Finsupp.support_single_subset (by simpa only [repr_of] using hd))
+  exact hc ⟨a, ha, hd' ▸ he⟩
 
 /-- The coefficient at a free index after right multiplication by a unit-index basis element. -/
 @[simp]
@@ -569,6 +593,17 @@ section CommMonoidCoefficients
 variable {R H : Type*} [CommSemiring R] [CommMonoid H]
   {β : H → H → Rˣ} [IsFactorSet β]
 
+/-- Opposite weighted coefficients suffice for commutation, without index cancellation. -/
+theorem commute_of_coeff (f : twistedMonoidAlgebra R H β) (b : H)
+    (h : ∀ a, (basis R H β).repr f a * (β a b : R) =
+      (basis R H β).repr f a * (β b a : R)) : Commute f (of b) := by
+  rw [commute_iff_eq]
+  apply (basis R H β).repr.injective
+  rw [repr_mul_of, repr_of_mul]
+  apply Finsupp.sum_congr
+  intro a _
+  rw [mul_comm b a, h a]
+
 /-- If right translation by the tested index is injective on the coefficient support,
 commutation is equality of the opposite factor-set-weighted coefficients. -/
 theorem commute_of_iff_of_injOn (f : twistedMonoidAlgebra R H β) (b : H)
@@ -587,13 +622,7 @@ theorem commute_of_iff_of_injOn (f : twistedMonoidAlgebra R H β) (b : H)
           hb hx ha (by simpa only [mul_comm b] using he))] at he
       exact he
     · simp [Finsupp.notMem_support_iff.mp ha]
-  · intro h
-    apply (basis R H β).repr.injective
-    simp only [repr_mul, repr_of, Finsupp.sum_single_index, zero_mul, mul_zero,
-      Finsupp.single_zero, Finsupp.sum_fun_zero, mul_one, one_mul]
-    apply Finsupp.sum_congr
-    intro a _
-    rw [mul_comm b a, h a]
+  · exact commute_of_coeff f b
 
 /-- A right regular tested index gives the coefficientwise commutation criterion. -/
 theorem commute_of_iff_of_isRightRegular (f : twistedMonoidAlgebra R H β) (b : H)
@@ -605,7 +634,7 @@ theorem commute_of_iff_of_isRightRegular (f : twistedMonoidAlgebra R H β) (b : 
 
 
 /-- Coefficientwise commutation with a basis element over a cancellative commutative monoid. -/
-theorem commute_of_iff [IsCancelMul H] (f : twistedMonoidAlgebra R H β) (b : H) :
+theorem commute_of_iff [IsRightCancelMul H] (f : twistedMonoidAlgebra R H β) (b : H) :
     Commute f (of b) ↔ ∀ a,
       (basis R H β).repr f a * (β a b : R) =
         (basis R H β).repr f a * (β b a : R) :=

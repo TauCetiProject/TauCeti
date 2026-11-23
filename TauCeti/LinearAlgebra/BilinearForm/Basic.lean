@@ -7,7 +7,7 @@ module
 
 public import Mathlib.GroupTheory.OrderOfElement
 public import Mathlib.LinearAlgebra.Determinant
-public import Mathlib.LinearAlgebra.BilinearForm.Properties
+public import TauCeti.LinearAlgebra.BilinearForm.Flip
 public import TauCeti.LinearAlgebra.QuadraticForm.Basic
 public import Mathlib.Tactic.LinearCombination
 import Mathlib.Tactic.Ring

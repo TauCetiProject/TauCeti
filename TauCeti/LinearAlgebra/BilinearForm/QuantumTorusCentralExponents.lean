@@ -5,9 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Group.Subgroup.Ker
 public import Mathlib.GroupTheory.OrderOfElement
-public import Mathlib.LinearAlgebra.BilinearForm.Properties
+public import TauCeti.LinearAlgebra.BilinearForm.Flip
 
 /-!
 # Central exponents for a bilinear twist
@@ -40,11 +39,19 @@ theorem mem_quantumTorusCentralExponents (u : Rˣ) (Λ : LinearMap.BilinForm ℤ
   rw [quantumTorusCentralExponents, AddSubgroup.mem_iInf]
   constructor
   · intro h b
-    have hb : Additive.ofMul (u ^ (Λ a b)) = Additive.ofMul (u ^ (Λ b a)) :=
-      AddMonoidHom.mem_eqLocusM.mp (h b)
-    exact congrArg Additive.toMul hb
+    have hb := AddMonoidHom.mem_eqLocusM.mp (h b)
+    simp only [AddMonoidHom.comp_apply, MonoidHom.coe_toAdditiveRight,
+      Function.comp_apply, LinearMap.toAddMonoidHom_coe, zpowersHom_apply] at hb
+    have hf : (Λ.flip b) a = Λ a b := LinearMap.flip_apply Λ a b
+    rw [hf] at hb
+    exact Additive.ofMul.injective hb
   · intro h b
-    exact AddMonoidHom.mem_eqLocusM.mpr (congrArg Additive.ofMul (h b))
+    apply AddMonoidHom.mem_eqLocusM.mpr
+    simp only [AddMonoidHom.comp_apply, MonoidHom.coe_toAdditiveRight,
+      Function.comp_apply, LinearMap.toAddMonoidHom_coe, zpowersHom_apply]
+    have hf : (Λ.flip b) a = Λ a b := LinearMap.flip_apply Λ a b
+    rw [hf]
+    exact congrArg Additive.ofMul (h b)
 
 /-- The skew part of any bilinear form detects central exponents, including at finite order. -/
 theorem mem_quantumTorusCentralExponents_iff (u : Rˣ) (Λ : LinearMap.BilinForm ℤ L) (a : L) :
@@ -77,15 +84,6 @@ namespace LinearMap.BilinForm.IsAlt
 
 variable {R L : Type*} [Monoid R] [AddCommGroup L]
   {u : Rˣ} {Λ : LinearMap.BilinForm ℤ L}
-
-/-- The skew part of an alternating integral bilinear form is twice that form. -/
-theorem sub_flip_apply_eq_two_mul (hΛ : Λ.IsAlt) (a b : L) :
-    (Λ - Λ.flip) a b = 2 * Λ a b := by
-  have hf : (Λ.flip a) b = Λ b a := LinearMap.flip_apply Λ b a
-  simp only [LinearMap.sub_apply]
-  rw [hf]
-  have h := hΛ.neg_eq a b
-  omega
 
 /-- For an alternating form, central exponents are detected by the commutation factors.
 The parameter may have finite order. -/
