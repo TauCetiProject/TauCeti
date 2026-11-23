@@ -10,7 +10,7 @@ public import TauCeti.Topology.Covering.Category
 public import TauCeti.Topology.Covering.Quotient
 import TauCeti.Topology.Covering.Clopen
 import TauCeti.Topology.Homotopy.Monodromy.Functoriality
-import TauCeti.Topology.IsLocalHomeomorph
+import TauCeti.Topology.IsLocalHomeomorph.Basic
 import TauCeti.Topology.SeparatedMap
 
 /-!
