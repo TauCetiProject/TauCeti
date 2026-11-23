@@ -112,7 +112,7 @@ theorem hasSum_propagatorDysonTerm [CompleteSpace E] (hP : IntegrableOn P (Icc a
   have hD (n : ℕ) {r : ℝ} (hr : r ∈ Icc a b) : ‖D n r‖ ≤ C ^ n / n ! :=
     (norm_propagatorDysonTerm_le hP hs n hr).trans (by
       gcongr
-      exact abs_integral_norm_le hP hs hr)
+      exact intervalIntegral.abs_integral_norm_le hP hs hr)
   have hsum := Real.summable_pow_div_factorial C
   let S : ℝ → E →L[𝕜] E := fun r ↦ ∑' n, D n r
   have hS {r : ℝ} (hr : r ∈ Icc a b) : HasSum (fun n ↦ D n r) (S r) :=

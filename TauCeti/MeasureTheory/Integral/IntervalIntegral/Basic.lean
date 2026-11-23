@@ -56,6 +56,8 @@ not belong to any particular application.
   `TauCeti.intervalIntegral.norm_integral_le_abs_of_ae_norm_le`: for such a function
   and measure, the integral between two points of `[a, b]` is bounded by the `L¹(a, b)` norm, and
   by the integral of a function dominating `‖f‖` almost everywhere on `(a, b)`.
+* `TauCeti.intervalIntegral.abs_integral_norm_le`: for `M` integrable on `[a, b]`, the integral
+  of `‖M‖` between two points of `[a, b]` is at most its integral over `[a, b]`.
 * `MeasureTheory.IntegrableOn.setIntegral_Ioo_eq_sub`: for `f` integrable on `(a, b)`, the
   integral over a subinterval `(s, t)` is a difference of primitives based at any `c ∈ [a, b]`.
 * `MeasureTheory.Integrable.norm_intervalIntegral_le_integral_norm`: an interval integral of an
@@ -526,6 +528,19 @@ theorem norm_integral_le_abs_of_ae_norm_le {g : ℝ → ℝ}
   exact _root_.intervalIntegral.norm_integral_le_abs_of_norm_le
     (ae_restrict_of_ae_restrict_of_subset (uIoc_subset_uIcc.trans (uIcc_subset_Icc hs ht)) hfg)
     (hg.intervalIntegrable_of_mem_Icc hs ht)
+
+/-- For a function `M` into a normed group, integrable on `[a, b]`, the integral of `‖M‖` between
+two points of `[a, b]` is at most its integral over `[a, b]`. -/
+theorem abs_integral_norm_le {G : Type*} [NormedAddCommGroup G] {M : ℝ → G}
+    (hM : IntegrableOn M (Icc a b)) {c d : ℝ} (hc : c ∈ Icc a b) (hd : d ∈ Icc a b) :
+    |∫ s in c..d, ‖M s‖| ≤ ∫ s in a..b, ‖M s‖ := by
+  rw [_root_.intervalIntegral.abs_integral_eq_abs_integral_uIoc,
+    abs_of_nonneg (setIntegral_nonneg measurableSet_uIoc fun _ _ ↦ norm_nonneg _),
+    _root_.intervalIntegral.integral_of_le (hc.1.trans hc.2)]
+  have hsub : Ι c d ⊆ Ioc a b := fun x hx ↦
+    ⟨(le_min hc.1 hd.1).trans_lt hx.1, hx.2.trans (max_le hc.2 hd.2)⟩
+  exact setIntegral_mono_set (IntegrableOn.mono_set hM.norm Ioc_subset_Icc_self)
+    (ae_of_all _ fun _ ↦ norm_nonneg _) hsub.eventuallySubset
 
 end TauCeti.intervalIntegral
 

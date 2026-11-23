@@ -14,6 +14,7 @@ import Mathlib.MeasureTheory.Integral.IntervalIntegral.LebesgueDifferentiationTh
 import Mathlib.Topology.Algebra.Order.Floor
 import TauCeti.Analysis.ODE.Gronwall.Integrable
 import TauCeti.MeasureTheory.Integral.IntervalIntegral.AbsolutelyContinuousFun
+import TauCeti.MeasureTheory.Integral.IntervalIntegral.Basic
 
 /-!
 # Linear differential equations with integrable coefficients
@@ -158,7 +159,7 @@ include ht₀ hM hF in
 private theorem exists_contractingWith_iterate_next :
     ∃ (n : ℕ) (C : ℝ≥0), ContractingWith C (next ht₀ hM hF x₀)^[n] := by
   set L := ∫ s in a..b, ‖M s‖
-  have hL₀ : 0 ≤ L := (abs_nonneg _).trans (abs_integral_norm_le hM ht₀ ht₀)
+  have hL₀ : 0 ≤ L := (abs_nonneg _).trans (intervalIntegral.abs_integral_norm_le hM ht₀ ht₀)
   obtain ⟨n, hn⟩ := FloorSemiring.tendsto_pow_div_factorial_atTop L
     |>.eventually (gt_mem_nhds zero_lt_one) |>.exists
   refine ⟨n, (L ^ n / n !).toNNReal, Real.toNNReal_lt_one.2 hn,
@@ -167,7 +168,7 @@ private theorem exists_contractingWith_iterate_next :
   intro t
   refine (dist_iterate_next_apply_le ht₀ hM hF n y z t).trans ?_
   gcongr
-  exact abs_integral_norm_le hM ht₀ t.property
+  exact intervalIntegral.abs_integral_norm_le hM ht₀ t.property
 
 include ht₀ hM hF in
 /-- A curve continuous on `[a, b]` solving the integral equation there restricts to a fixed point of

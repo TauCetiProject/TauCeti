@@ -310,19 +310,6 @@ namespace TauCeti
 open intervalIntegral
 open scoped Nat
 
-/-- For a function `M` into a normed group, integrable on `[a, b]`, the integral of `‖M‖` between
-two points of `[a, b]` is at most its integral over `[a, b]`. -/
-theorem abs_integral_norm_le {G : Type*} [NormedAddCommGroup G] {M : ℝ → G} {a b : ℝ}
-    (hM : IntegrableOn M (Icc a b)) {c d : ℝ}
-    (hc : c ∈ Icc a b) (hd : d ∈ Icc a b) :
-    |∫ s in c..d, ‖M s‖| ≤ ∫ s in a..b, ‖M s‖ := by
-  rw [abs_integral_eq_abs_integral_uIoc, abs_of_nonneg (setIntegral_nonneg measurableSet_uIoc
-    fun _ _ ↦ norm_nonneg _), integral_of_le (hc.1.trans hc.2)]
-  have hsub : uIoc c d ⊆ Ioc a b := fun x hx ↦
-    ⟨(le_min hc.1 hd.1).trans_lt hx.1, hx.2.trans (max_le hc.2 hd.2)⟩
-  exact setIntegral_mono_set (IntegrableOn.mono_set hM.norm Ioc_subset_Icc_self)
-    (ae_of_all _ fun _ ↦ norm_nonneg _) hsub.eventuallySubset
-
 /-- With `Λ s = ∫ r in t₀..s, ‖M r‖` for a function `M` into a normed group, the integral of
 `‖M‖ |Λ| ^ n` from `t₀` to `t` is `|Λ t| ^ (n + 1) / (n + 1)`, in either order of `t₀` and `t`. -/
 theorem abs_integral_norm_mul_abs_pow {G : Type*} [NormedAddCommGroup G] {M : ℝ → G} {t₀ t : ℝ}
