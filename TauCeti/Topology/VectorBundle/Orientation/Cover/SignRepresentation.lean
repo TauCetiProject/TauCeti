@@ -104,7 +104,7 @@ lemma associatedLocalSystemSignIso_hom_app_coinvariantsTensorMk
 
 /-- The inverse identification of the orientation local system with the local system of the sign
 representation sends `f` to the class of `f o ⊗ [o]`, for any orientation `o` of the fibre. -/
-@[simp]
+-- Not a simp lemma: the orientation `o` occurs only on the right-hand side.
 lemma associatedLocalSystemSignIso_inv_app_apply {x : FundamentalGroupoid (TopCat.of B)}
     (o : (TopCat.ofHom (projection (F := F) (E := E) (ι := ι))) ⁻¹' {x.as})
     (f : (signLocalSystem F E k hι).obj x) :

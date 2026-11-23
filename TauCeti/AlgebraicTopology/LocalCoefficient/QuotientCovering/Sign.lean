@@ -146,7 +146,7 @@ lemma associatedLocalSystemSignIso_hom_app_coinvariantsTensorMk {x : Fundamental
 /-- The inverse identification of the sign local system with the local system of the sign
 representation sends a function changing sign under `σ` to the class of `f e ⊗ [e]`, for any sheet
 `e` over the point. -/
-@[simp]
+-- Not a simp lemma: the sheet `e` occurs only on the right-hand side.
 lemma associatedLocalSystemSignIso_inv_app_apply {x : FundamentalGroupoid B}
     (e : p ⁻¹' {x.as})
     (f : (hG.isCoveringMap.signLocalSystem k σ (hG.comp_eq_of_forall_eq_neg_one_smul hσ)).obj x) :
