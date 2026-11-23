@@ -5,6 +5,13 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.CategoryTheory.Sites.LeftExact
+public import TauCeti.CategoryTheory.Sites.Equivalence
+public import Mathlib.Topology.Sheaves.Abelian
+public import TauCeti.CategoryTheory.Sites.Continuous
+public import TauCeti.CategoryTheory.Sites.GlobalSections
+public import TauCeti.CategoryTheory.Sites.Over
+
 public import Mathlib.Topology.Sheaves.Over
 public import Mathlib.Topology.Category.TopCat.Opens
 
@@ -127,5 +134,332 @@ instance isLeftAdjoint_sheafRestrict {X : TopCat} (U : Opens X) {A : Type*} [Cat
     [((Opens.grothendieckTopology X).overPullback A U).IsLeftAdjoint] :
     (U.sheafRestrict (C := A)).IsLeftAdjoint :=
   Functor.isLeftAdjoint_of_iso U.overPullbackSheafEquivOver
+
+/-- Open restriction is additive because it is continuous pushforward on sheaves. -/
+instance sheafRestrict_additive {X : Type*} [TopologicalSpace X] (U : Opens X)
+    {A : Type*} [Category* A] [Preadditive A] :
+    (U.sheafRestrict (X := TopCat.of X) (C := A)).Additive := by
+  unfold TopologicalSpace.Opens.sheafRestrict
+  infer_instance
+
+end TopologicalSpace.Opens
+
+/-! ### Sections and actual nested restriction -/
+
+public noncomputable section
+open CategoryTheory Limits Opposite
+namespace TopologicalSpace.Opens
+universe uA vA
+variable {X : TopCat.{u}} {A : Type uA} [Category.{vA} A]
+/-- Sections on an open set are sections at the top of the actual restricted sheaf. -/
+def sheafRestrictSectionsTopIso (U : Opens X) :
+    (sheafSections (Opens.grothendieckTopology X) A).obj (op U) ≅
+      U.sheafRestrict ⋙
+        (sheafSections (Opens.grothendieckTopology U) A).obj
+          (op (⊤ : Opens U)) := by
+  have hU : (Topology.IsOpenEmbedding.functor (f := U.inclusion') U.isOpenEmbedding).obj
+      (⊤ : Opens U) = U := by
+    ext x
+    change (x ∈ Subtype.val '' (Set.univ : Set U)) ↔ x ∈ U
+    simp
+  refine NatIso.ofComponents (fun F ↦ F.obj.mapIso (eqToIso hU).op) ?_
+  intro F G f
+  exact (f.hom.naturality (eqToIso hU).hom.op).symm
+
+/-- Sections on an open set are the global sections of the actual restricted sheaf. -/
+def sheafRestrictΓIso (U : Opens X)
+    [HasWeakSheafify (Opens.grothendieckTopology U) A] :
+    (sheafSections (Opens.grothendieckTopology X) A).obj (op U) ≅
+      U.sheafRestrict ⋙ Sheaf.Γ (Opens.grothendieckTopology U) A :=
+  sheafRestrictSectionsTopIso U ≪≫
+    Functor.isoWhiskerLeft U.sheafRestrict
+      (Sheaf.ΓNatIsoSheafSections (Opens.grothendieckTopology U)
+        A isTerminalTop).symm
+
+/-- The open/global-sections comparison cancels against restriction to the top. -/
+@[reassoc]
+lemma sheafRestrictΓIso_hom_app_ΓRes (U : Opens X)
+    [HasWeakSheafify (Opens.grothendieckTopology U) A] (F : X.Sheaf A) :
+    (sheafRestrictΓIso U).hom.app F ≫ (U.sheafRestrict.obj F).ΓRes (op ⊤) =
+      (sheafRestrictSectionsTopIso U).hom.app F := by
+  simp only [sheafRestrictΓIso, Iso.trans_hom, NatTrans.comp_app,
+    Functor.isoWhiskerLeft_hom, Functor.whiskerLeft_app, Iso.symm_hom]
+  rw [Category.assoc, Sheaf.ΓNatIsoSheafSections_inv_app_ΓRes]
+  -- Direct evaluation and evaluation on the pushforward use the same restricted section carrier.
+  erw [Category.comp_id]
+
+/-- The top-sections comparison is evaluation along the actual over-site terminal map. -/
+@[simp]
+lemma sheafRestrictSectionsTopIso_hom_app (U : Opens X) (F : X.Sheaf A) :
+    (sheafRestrictSectionsTopIso U).hom.app F =
+      F.obj.map ((Over.mkIdTerminal (X := U)).from (U.overEquivalence.inverse.obj ⊤)).left.op := by
+  change F.obj.map _ = F.obj.map _
+  congr 1
+  exact Subsingleton.elim _ _
+
+variable {U V : Opens X}
+
+private def inclusionSites (h : V ≤ U) : Opens V ⥤ Opens U :=
+  Topology.IsOpenEmbedding.functor (X := TopCat.of V) (Y := TopCat.of U)
+    (f := (Opens.toTopCat X).map (homOfLE h)) (isOpenEmbedding_of_le h)
+private instance inclusionSites_continuous (h : V ≤ U) :
+    (inclusionSites h).IsContinuous (Opens.grothendieckTopology V) (Opens.grothendieckTopology U) :=
+  Topology.IsOpenEmbedding.functor_isContinuous (X := TopCat.of V) (Y := TopCat.of U)
+    (f := (Opens.toTopCat X).map (homOfLE h)) (isOpenEmbedding_of_le h)
+
+private def inclusionSitesCompIso (h : V ≤ U) :
+    inclusionSites h ⋙ U.isOpenEmbedding.functor ≅ V.isOpenEmbedding.functor :=
+  NatIso.ofComponents (fun T ↦ eqToIso (by
+    apply Opens.ext
+    change Subtype.val '' (Set.inclusion h '' (T : Set V)) = Subtype.val '' (T : Set V)
+    rw [← Set.image_comp]
+    rfl)) (by intro T T' f; exact Subsingleton.elim _ _)
+private def restrictAlongInclusion (h : V ≤ U) :
+    (TopCat.of U).Sheaf A ⥤ (TopCat.of V).Sheaf A :=
+  (inclusionSites h).sheafPushforwardContinuous A
+    (Opens.grothendieckTopology V) (Opens.grothendieckTopology U)
+private def sheafRestrictionCompositionIso (h : V ≤ U) :
+    U.sheafRestrict ⋙ restrictAlongInclusion (A := A) h ≅
+      V.sheafRestrict (C := A) := by
+  exact @Functor.sheafPushforwardContinuousComp'
+    (Opens V) _ (Opens U) _ (Opens X) _
+    (inclusionSites h) U.isOpenEmbedding.functor V.isOpenEmbedding.functor
+    (inclusionSitesCompIso h) A _
+    (Opens.grothendieckTopology V) (Opens.grothendieckTopology U) (Opens.grothendieckTopology X)
+    (inclusionSites_continuous h) U.isOpenEmbedding.functor_isContinuous
+    V.isOpenEmbedding.functor_isContinuous
+
+
+/-- The open V viewed as an open of the subspace U. -/
+abbrev relativeOpen (_h : V ≤ U) : Opens U := (Opens.map U.inclusion').obj V
+/-- The relative open in U is canonically the same topological space as V. -/
+private def relativeHomeomorph (h : V ≤ U) : (relativeOpen h) ≃ₜ V where
+  toFun w := ⟨w.val.val, w.property⟩
+  invFun v := ⟨⟨v.val, h v.property⟩, v.property⟩
+  left_inv _ := rfl
+  right_inv _ := rfl
+  continuous_toFun := by fun_prop
+  continuous_invFun := by fun_prop
+/-- The canonical isomorphism from the relative open to the direct open subspace. -/
+def relativeOpenIso (h : V ≤ U) :
+    TopCat.of (relativeOpen h) ≅ TopCat.of V :=
+  @TopCat.isoOfHomeo (TopCat.of (relativeOpen h)) (TopCat.of V) (relativeHomeomorph h)
+/-- The relative-open identification forgets the intermediate subtype. -/
+@[simp]
+lemma relativeOpenIso_hom_apply (h : V ≤ U) (w : relativeOpen h) :
+    (relativeOpenIso h).hom w = ⟨w.val.val, w.property⟩ := by
+  rfl
+
+/-- The inverse identification inserts the proof that the point belongs to `U`. -/
+@[simp]
+lemma relativeOpenIso_inv_apply (h : V ≤ U) (v : V) :
+    (relativeOpenIso h).inv v = ⟨⟨v.val, h v.property⟩, v.property⟩ := by
+  rfl
+
+/-- The inverse image open is tested on the same underlying point of `V`. -/
+@[simp]
+lemma mem_map_relativeOpenIso_hom_obj (h : V ≤ U) (D : Opens V) (w : relativeOpen h) :
+    w ∈ (Opens.map (relativeOpenIso h).hom).obj D ↔ (⟨w.val.val, w.property⟩ : V) ∈ D :=
+  Iff.rfl
+
+private abbrev relativeSites (h : V ≤ U) : Opens (relativeOpen h) ≌ Opens V :=
+  (Opens.mapMapIso (relativeOpenIso h)).symm
+/-- The canonical relative-open site equivalence is cocontinuous. -/
+instance relativeSites_functor_cocontinuous (h : V ≤ U) :
+    ((Opens.mapMapIso (relativeOpenIso h)).symm).functor.IsCocontinuous
+      (Opens.grothendieckTopology (relativeOpen h))
+      (Opens.grothendieckTopology V) := by
+  apply ((relativeSites h).toAdjunction.isCocontinuous_iff_coverPreserving _ _).2
+  exact coverPreserving_opens_map (relativeOpenIso h).hom
+/-- The inverse relative-open site equivalence is cocontinuous. -/
+instance relativeSites_inverse_cocontinuous (h : V ≤ U) :
+    ((Opens.mapMapIso (relativeOpenIso h)).symm).inverse.IsCocontinuous
+      (Opens.grothendieckTopology V)
+      (Opens.grothendieckTopology (relativeOpen h)) := by
+  apply ((relativeSites h).symm.toAdjunction.isCocontinuous_iff_coverPreserving _ _).2
+  exact coverPreserving_opens_map (relativeOpenIso h).inv
+/-- The inverse relative-open site functor is a dense subsite. -/
+instance relativeSites_inverse_dense (h : V ≤ U) :
+    ((Opens.mapMapIso (relativeOpenIso h)).symm).inverse.IsDenseSubsite
+      (Opens.grothendieckTopology V)
+      (Opens.grothendieckTopology (relativeOpen h)) := by
+  exact Equivalence.isDenseSubsite_inverse_of_isCocontinuous _ _
+    ((Opens.mapMapIso (relativeOpenIso h)).symm)
+/-- Transport sheaves from the relative open in U to the same open as a subspace of X. -/
+abbrev relativeSheafEquivalence (h : V ≤ U) :
+    (TopCat.of (relativeOpen h)).Sheaf A ≌
+      (TopCat.of V).Sheaf A :=
+  ((Opens.mapMapIso (relativeOpenIso h)).symm).sheafCongr
+    (Opens.grothendieckTopology (relativeOpen h))
+    (Opens.grothendieckTopology V) A
+/-- Transported sheaf sections are sections on the homeomorphism's inverse image open. -/
+@[simp]
+lemma relativeSheafEquivalence_functor_obj_obj (h : V ≤ U)
+    (F : (TopCat.of (relativeOpen h)).Sheaf A) (D : Opens V) :
+    ((relativeSheafEquivalence (A := A) h).functor.obj F).obj.obj (op D) =
+      F.obj.obj (op ((Opens.map (relativeOpenIso h).hom).obj D)) := rfl
+/-- Restriction in the transported sheaf is restriction on the homeomorphism's inverse image. -/
+@[simp]
+lemma relativeSheafEquivalence_functor_obj_map (h : V ≤ U)
+    (F : (TopCat.of (relativeOpen h)).Sheaf A)
+    {D D' : Opens V} (f : D ⟶ D') :
+    ((relativeSheafEquivalence (A := A) h).functor.obj F).obj.map f.op =
+      F.obj.map ((Opens.map (relativeOpenIso h).hom).map f).op := rfl
+
+private lemma relativeSites_inverse_top (h : V ≤ U) :
+    (relativeSites h).inverse.obj (⊤ : Opens V) = ⊤ := rfl
+private def relativeSectionsTopIso (h : V ≤ U) :
+    (sheafSections (Opens.grothendieckTopology (relativeOpen h)) A).obj (op ⊤) ≅
+    (relativeSheafEquivalence (A := A) h).functor ⋙
+      (sheafSections (Opens.grothendieckTopology V) A).obj (op ⊤) :=
+  NatIso.ofComponents (fun F ↦ F.obj.mapIso (eqToIso (relativeSites_inverse_top h)).op)
+    (fun f ↦ (f.hom.naturality (eqToIso (relativeSites_inverse_top h)).hom.op).symm)
+/-- The canonical relative-open equivalence identifies the actual global-sections functors. -/
+def relativeGammaIso (h : V ≤ U)
+    [HasWeakSheafify (Opens.grothendieckTopology (relativeOpen h)) A]
+    [HasWeakSheafify (Opens.grothendieckTopology V) A] :
+    Sheaf.Γ (Opens.grothendieckTopology (relativeOpen h)) A ≅
+      (relativeSheafEquivalence (A := A) h).functor ⋙
+        Sheaf.Γ (Opens.grothendieckTopology V) A :=
+  Sheaf.ΓNatIsoSheafSections _ _ isTerminalTop ≪≫ relativeSectionsTopIso h ≪≫
+    Functor.isoWhiskerLeft _ (Sheaf.ΓNatIsoSheafSections _ _ isTerminalTop).symm
+private lemma relativeGammaIso_hom_app_ΓRes_top (h : V ≤ U)
+    [HasWeakSheafify (Opens.grothendieckTopology (relativeOpen h)) A]
+    [HasWeakSheafify (Opens.grothendieckTopology V) A]
+    (F : (TopCat.of (relativeOpen h)).Sheaf A) :
+    (relativeGammaIso h).hom.app F ≫
+      ((relativeSheafEquivalence (A := A) h).functor.obj F).ΓRes (op ⊤) = F.ΓRes (op ⊤) := by
+  let G := (relativeSheafEquivalence (A := A) h).functor.obj F
+  let a : (Sheaf.Γ (Opens.grothendieckTopology (relativeOpen h)) A).obj F ⟶
+      ((sheafSections (Opens.grothendieckTopology V) A).obj (op ⊤)).obj G :=
+    (Sheaf.ΓNatIsoSheafSections _ _ isTerminalTop).hom.app F ≫
+      F.obj.map (eqToIso (relativeSites_inverse_top h)).hom.op
+  have hc := Sheaf.ΓNatIsoSheafSections_inv_app_ΓRes
+    (Opens.grothendieckTopology V) A isTerminalTop G
+  have ha : a ≫ (Sheaf.ΓNatIsoSheafSections _ _ isTerminalTop).inv.app G ≫
+      G.ΓRes (op ⊤) = a := by
+    simpa only [Category.assoc, Category.comp_id] using congrArg (a ≫ ·) hc
+  have hfactor : (relativeGammaIso h).hom.app F =
+      a ≫ (Sheaf.ΓNatIsoSheafSections _ _ isTerminalTop).inv.app G := by
+    simp only [relativeGammaIso, relativeSectionsTopIso, a, G, Iso.trans_hom,
+      NatTrans.comp_app, Functor.isoWhiskerLeft_hom, Functor.whiskerLeft_app,
+      NatIso.ofComponents, Functor.mapIso, Iso.op_hom, Iso.symm_hom]
+    exact (Category.assoc
+      ((Sheaf.ΓNatIsoSheafSections _ A isTerminalTop).hom.app F)
+      (F.obj.map (eqToIso (relativeSites_inverse_top h)).hom.op)
+      ((Sheaf.ΓNatIsoSheafSections _ A isTerminalTop).inv.app G)).symm
+  have hstart : (relativeGammaIso h).hom.app F ≫ G.ΓRes (op ⊤) =
+      a ≫ (Sheaf.ΓNatIsoSheafSections _ _ isTerminalTop).inv.app G ≫ G.ΓRes (op ⊤) :=
+    (congrArg (· ≫ G.ΓRes (op ⊤)) hfactor).trans (Category.assoc _ _ _)
+  have hend : a = F.ΓRes (op ⊤) := by
+    have hi := F.obj.map_id (op (⊤ : Opens (relativeOpen h)))
+    have he := congrArg
+      ((Sheaf.ΓNatIsoSheafSections _ _ isTerminalTop).hom.app F ≫ ·) hi
+    exact he.trans (Category.comp_id _ |>.trans
+      (Sheaf.ΓNatIsoSheafSections_hom_app_eq_ΓRes
+        (Opens.grothendieckTopology (relativeOpen h)) A isTerminalTop F))
+  exact hstart.trans (ha.trans hend)
+
+/-- Relative global-sections transport acts by the actual restriction on every open. -/
+@[reassoc]
+lemma relativeGammaIso_hom_app_ΓRes (h : V ≤ U)
+    [HasWeakSheafify (Opens.grothendieckTopology (relativeOpen h)) A]
+    [HasWeakSheafify (Opens.grothendieckTopology V) A]
+    (F : (TopCat.of (relativeOpen h)).Sheaf A) (D : Opens V) :
+    (relativeGammaIso h).hom.app F ≫
+      ((relativeSheafEquivalence (A := A) h).functor.obj F).ΓRes (op D) =
+      F.ΓRes (op ((Opens.map (relativeOpenIso h).hom).obj D)) := by
+  rw [← Sheaf.ΓRes_map _ (homOfLE (show D ≤ ⊤ from le_top)).op, ← Category.assoc]
+  erw [relativeGammaIso_hom_app_ΓRes_top]
+  -- Sections precompose with the canonical homeomorphism's opens map.
+  change F.ΓRes (op ⊤) ≫ F.obj.map _ = _
+  exact Sheaf.ΓRes_map F _
+
+private abbrev relativeInclusionSites (h : V ≤ U) : Opens (relativeOpen h) ⥤ Opens U :=
+  @Topology.IsOpenEmbedding.functor (TopCat.of (relativeOpen h)) (TopCat.of U)
+    (Opens.inclusion' (X := TopCat.of U) (relativeOpen h))
+    (Opens.isOpenEmbedding (X := TopCat.of U) (relativeOpen h))
+private def relativeRestrictionSitesIso (h : V ≤ U) :
+    Opens.map (relativeOpenIso h).hom ⋙ (relativeInclusionSites h) ≅
+      inclusionSites h :=
+  NatIso.ofComponents (fun D ↦ eqToIso (by
+    apply Opens.ext
+    let f : relativeOpen h → V := (relativeHomeomorph h)
+    let g : V → U := fun v ↦ ⟨v.val, h v.property⟩
+    change Subtype.val '' (f ⁻¹' (D : Set V)) = g '' (D : Set V)
+    calc
+      Subtype.val '' (f ⁻¹' (D : Set V)) = g '' (f '' (f ⁻¹' (D : Set V))) := by
+        rw [← Set.image_comp]
+        rfl
+      _ = g '' (D : Set V) :=
+        congrArg (g '' ·) (Set.image_preimage_eq _ (relativeHomeomorph h).surjective)))
+    (by intro D D' f; exact Subsingleton.elim _ _)
+private def relativeRestrictionIso (h : V ≤ U) :
+    (relativeOpen h).sheafRestrict ⋙ (relativeSheafEquivalence (A := A) h).functor ≅
+      restrictAlongInclusion (A := A) h := by
+  exact @Functor.sheafPushforwardContinuousComp'
+    (Opens V) _ (Opens (relativeOpen h)) _ (Opens U) _
+    (Opens.map (relativeOpenIso h).hom) (relativeInclusionSites h)
+    (inclusionSites h) (relativeRestrictionSitesIso h) A _
+    (Opens.grothendieckTopology V) (Opens.grothendieckTopology (relativeOpen h))
+    (Opens.grothendieckTopology U)
+    (by
+      apply Functor.isContinuous_of_coverPreserving
+      · exact compatiblePreserving_opens_map (relativeOpenIso h).hom
+      · exact coverPreserving_opens_map (relativeOpenIso h).hom)
+    (@Topology.IsOpenEmbedding.functor_isContinuous (TopCat.of (relativeOpen h)) (TopCat.of U)
+      (Opens.inclusion' (X := TopCat.of U) (relativeOpen h))
+      (Opens.isOpenEmbedding (X := TopCat.of U) (relativeOpen h)))
+    (inclusionSites_continuous h)
+/-- The coefficient isomorphism comparing actual nested restriction with direct restriction. -/
+def actualNestedRestrictionIso (h : V ≤ U) :
+    U.sheafRestrict ⋙ (relativeOpen h).sheafRestrict (X := TopCat.of U) ⋙
+      (relativeSheafEquivalence (A := A) h).functor ≅ V.sheafRestrict (C := A) :=
+  Functor.isoWhiskerLeft U.sheafRestrict (relativeRestrictionIso h) ≪≫
+    sheafRestrictionCompositionIso h
+
+private def totalNestedSitesIso (h : V ≤ U) :
+    (relativeSites h).inverse ⋙ relativeInclusionSites h ⋙ U.isOpenEmbedding.functor ≅
+      V.isOpenEmbedding.functor :=
+  Functor.isoWhiskerRight (relativeRestrictionSitesIso h) U.isOpenEmbedding.functor ≪≫
+    inclusionSitesCompIso h
+/-- The composed image open in X equals the direct image of the open in V. -/
+lemma nestedOpen_image_eq (h : V ≤ U) (D : Opens V) :
+    U.isOpenEmbedding.functor.obj
+      ((@Topology.IsOpenEmbedding.functor (TopCat.of (relativeOpen h)) (TopCat.of U)
+        (Opens.inclusion' (X := TopCat.of U) (relativeOpen h))
+        (Opens.isOpenEmbedding (X := TopCat.of U) (relativeOpen h))).obj
+          ((Opens.map (relativeOpenIso h).hom).obj D)) =
+      V.isOpenEmbedding.functor.obj D := by
+  exact le_antisymm (leOfHom ((totalNestedSitesIso h).hom.app D))
+    (leOfHom ((totalNestedSitesIso h).inv.app D))
+
+/-- The nested coefficient isomorphism is the section map along the image-open equality. -/
+lemma actualNestedRestrictionIso_hom_app_hom_app (h : V ≤ U)
+    (F : X.Sheaf A) (D : Opens V) :
+    ((actualNestedRestrictionIso h).hom.app F).hom.app (op D) =
+      F.obj.map (eqToHom (nestedOpen_image_eq h D).symm).op := by
+  simp only [actualNestedRestrictionIso, Iso.trans_hom, NatTrans.comp_app,
+    Functor.isoWhiskerLeft_hom, Functor.whiskerLeft_app, ObjectProperty.FullSubcategory.comp_hom,
+    NatTrans.comp_app]
+  simp only [relativeRestrictionIso, sheafRestrictionCompositionIso,
+    Functor.sheafPushforwardContinuousComp'_hom_app_hom_app]
+  erw [Functor.sheafPushforwardContinuousComp'_hom_app_hom_app]
+  change F.obj.map _ ≫ F.obj.map _ = F.obj.map _
+  erw [← CategoryTheory.Functor.map_comp]
+  congr 1
+
+/-- Every sheaf on the empty subspace is zero when the coefficient category has zero morphisms. -/
+lemma isZero_sheaf_bot [HasZeroMorphisms A]
+    (F : (TopCat.of (⊥ : Opens X)).Sheaf A) : IsZero F := by
+  apply (IsZero.iff_id_eq_zero F).2
+  apply Sheaf.hom_ext
+  apply NatTrans.ext
+  funext T
+  have hT : T.unop = ⊥ := by
+    apply Opens.ext
+    ext x
+    exact False.elim x.property
+  exact (F.isTerminalOfEqEmpty hT).hom_ext _ _
 
 end TopologicalSpace.Opens
