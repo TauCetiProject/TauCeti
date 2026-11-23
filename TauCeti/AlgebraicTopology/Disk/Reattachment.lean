@@ -164,6 +164,11 @@ to norm `(r + 1)/2` when `1/2 ≤ r`. -/
 def composeRadialFactor (r : ℝ) : ℝ :=
   min (max r (1 / 4) + 1 / 4) ((max r (1 / 4) + 1) / 2) / max r (1 / 4)
 
+theorem composeRadialFactor_def (r : ℝ) :
+    composeRadialFactor r =
+      min (max r (1 / 4) + 1 / 4) ((max r (1 / 4) + 1) / 2) / max r (1 / 4) :=
+  (rfl)
+
 private theorem quarter_le_max (r : ℝ) : (1 / 4 : ℝ) ≤ max r (1 / 4) :=
   le_max_right _ _
 
@@ -176,22 +181,25 @@ theorem composeRadialFactor_pos (r : ℝ) : 0 < composeRadialFactor r := by
   have := quarter_le_max r
   exact div_pos (lt_min (by linarith) (by linarith)) (by linarith)
 
-theorem composeRadialFactor_of_le {r : ℝ} (hr : r ≤ 1 / 4) : composeRadialFactor r = 2 := by
+theorem composeRadialFactor_of_le_quarter {r : ℝ} (hr : r ≤ 1 / 4) :
+    composeRadialFactor r = 2 := by
   rw [composeRadialFactor, max_eq_right hr]
   norm_num
 
-theorem composeRadialFactor_mul_of_mem {r : ℝ} (h₁ : 1 / 4 ≤ r) (h₂ : r ≤ 1 / 2) :
+theorem composeRadialFactor_mul_of_quarter_le_of_le_half {r : ℝ} (h₁ : 1 / 4 ≤ r)
+    (h₂ : r ≤ 1 / 2) :
     composeRadialFactor r * r = r + 1 / 4 := by
   rw [composeRadialFactor, max_eq_left h₁, min_eq_left (by linarith),
     div_mul_cancel₀ _ (by linarith : r ≠ 0)]
 
-theorem composeRadialFactor_mul_of_le {r : ℝ} (h : 1 / 2 ≤ r) :
+theorem composeRadialFactor_mul_of_half_le {r : ℝ} (h : 1 / 2 ≤ r) :
     composeRadialFactor r * r = (r + 1) / 2 := by
   rw [composeRadialFactor, max_eq_left (by linarith), min_eq_right (by linarith),
     div_mul_cancel₀ _ (by linarith : r ≠ 0)]
 
+@[simp]
 theorem composeRadialFactor_one : composeRadialFactor 1 = 1 := by
-  have h := composeRadialFactor_mul_of_le (by norm_num : (1 / 2 : ℝ) ≤ 1)
+  have h := composeRadialFactor_mul_of_half_le (by norm_num : (1 / 2 : ℝ) ≤ 1)
   rw [mul_one] at h
   rw [h]
   norm_num
@@ -199,12 +207,12 @@ theorem composeRadialFactor_one : composeRadialFactor 1 = 1 := by
 private theorem composeRadialFactor_mul_le_one {r : ℝ} (h₁ : r ≤ 1) :
     composeRadialFactor r * r ≤ 1 := by
   rcases le_total r (1 / 4) with h | h
-  · rw [composeRadialFactor_of_le h]
+  · rw [composeRadialFactor_of_le_quarter h]
     linarith
   rcases le_total r (1 / 2) with h' | h'
-  · rw [composeRadialFactor_mul_of_mem h h']
+  · rw [composeRadialFactor_mul_of_quarter_le_of_le_half h h']
     linarith
-  · rw [composeRadialFactor_mul_of_le h']
+  · rw [composeRadialFactor_mul_of_half_le h']
     linarith
 
 private theorem norm_composeRadialHomotopy_le (t : I) (x : TopCat.disk.{u} k) :
@@ -245,9 +253,11 @@ theorem coe_composeRadialHomotopy_zero_apply_down (x : TopCat.disk.{u} k) :
   rw [coe_composeRadialHomotopy_apply_down]
   simp
 
+@[simp]
 theorem composeRadialHomotopy_one (x : TopCat.disk.{u} k) : composeRadialHomotopy k (1, x) = x :=
   ULift.ext (Subtype.ext ((coe_composeRadialHomotopy_apply_down 1 x).trans (by simp)))
 
+@[simp]
 theorem composeRadialHomotopy_diskBoundaryInclusion (t : I) (s : TopCat.diskBoundary.{u} k) :
     composeRadialHomotopy k (t, TopCat.diskBoundaryInclusion k s) =
       TopCat.diskBoundaryInclusion k s := by

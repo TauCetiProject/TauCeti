@@ -120,7 +120,7 @@ private theorem comp_cell_of_norm_le_quarter (i : ι) (p : P) {w : TopCat.disk.{
         (fiberwiseCellAttachmentCell α₂ i (p, TopCat.composeRadialHomotopy (k i) (0, w))) := by
   have hw₂ : ‖w.down.val‖ ≤ 1 / 2 := by linarith
   have hw'₂ : ‖(TopCat.composeRadialHomotopy (k i) (0, w)).down.val‖ ≤ 1 / 2 := by
-    rw [TopCat.norm_composeRadialHomotopy_zero, TopCat.composeRadialFactor_of_le hw]
+    rw [TopCat.norm_composeRadialHomotopy_zero, TopCat.composeRadialFactor_of_le_quarter hw]
     linarith
   rw [fiberwiseCellReattachment_fiberwiseCellAttachmentCell_of_norm_le α₁ α₂ χ₁ χ₂ hχ₁ hχ₂ h₁₂ hh₁₂
       K₁₂ hK₁₂ i p hw₂ (TopCat.coe_reattachmentRadial_of_norm_le hw₂),
@@ -132,7 +132,7 @@ private theorem comp_cell_of_norm_le_quarter (i : ι) (p : P) {w : TopCat.disk.{
         linarith)]
   simp [he₁₂, TopCat.coe_reattachmentRadial_of_norm_le hw'₂,
     TopCat.coe_reattachmentRadial_of_norm_le hw₂, TopCat.coe_composeRadialHomotopy_zero_apply_down,
-    TopCat.composeRadialFactor_of_le hw]
+    TopCat.composeRadialFactor_of_le_quarter hw]
 
 include he₁₂ hK in
 /-- On the annulus `1/4 ≤ ‖w‖ ≤ 1/2`, both the composite of two reattachment maps and the
@@ -155,7 +155,8 @@ private theorem comp_cell_of_quarter_le_of_le_half (i : ι) (p : P) {w : TopCat.
     rw [hv]
     linarith
   have hw'n : ‖w'.down.val‖ = r + 1 / 4 := by
-    rw [TopCat.norm_composeRadialHomotopy_zero, TopCat.composeRadialFactor_mul_of_mem hw₄ hw₂]
+    rw [TopCat.norm_composeRadialHomotopy_zero,
+      TopCat.composeRadialFactor_mul_of_quarter_le_of_le_half hw₄ hw₂]
   have hw'₂ : 1 / 2 ≤ ‖w'.down.val‖ := by
     rw [hw'n]
     linarith
@@ -202,7 +203,7 @@ private theorem comp_cell_of_half_le (i : ι) (p : P) {w : TopCat.disk.{u} (k i)
   -- the direction of `w`, which is that of `w'`
   set s := TopCat.annulusDir (by norm_num : (0 : ℝ) < 1 / 2) ⟨w, hw₂⟩
   have hw'n : ‖w'.down.val‖ = (‖w.down.val‖ + 1) / 2 := by
-    rw [TopCat.norm_composeRadialHomotopy_zero, TopCat.composeRadialFactor_mul_of_le hw₂]
+    rw [TopCat.norm_composeRadialHomotopy_zero, TopCat.composeRadialFactor_mul_of_half_le hw₂]
   have hw'₂ : 1 / 2 ≤ ‖w'.down.val‖ := by
     rw [hw'n]
     linarith
