@@ -8,7 +8,6 @@ module
 public import Mathlib.MeasureTheory.Integral.RieszMarkovKakutani.Real
 public import Mathlib.MeasureTheory.Measure.HasOuterApproxClosed
 public import Mathlib.Topology.ContinuousMap.CocompactMap
-import Mathlib.MeasureTheory.Integral.Bochner.Set
 import Mathlib.Topology.Order.LiminfLimsup
 import Mathlib.Topology.Metrizable.Urysohn
 import TauCeti.MeasureTheory.Integral.CompactlySupported

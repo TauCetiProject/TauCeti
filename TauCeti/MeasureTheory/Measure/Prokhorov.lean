@@ -155,7 +155,8 @@ lemma exists_subseq_tendsto_integral_of_isTightMeasureSet [PseudoMetrizableSpace
   -- Pass to a subsequence `σ ∘ ψ` in `S`.
   obtain ⟨ψ, hψ, hψS⟩ := extraction_of_frequently_atTop hσ
   obtain ⟨ρ, hρ⟩ : ∃ ρ : ℕ → FiniteMeasure α, ∀ n, (ρ n : Measure α) = σ (ψ n) :=
-    ⟨fun n => ⟨σ (ψ n), ⟨(hmass _ (hψS n)).trans_lt ENNReal.coe_lt_top⟩⟩, fun _ => rfl⟩
+    ⟨fun n => ⟨σ (ψ n), ⟨(hmass _ (hψS n)).trans_lt ENNReal.coe_lt_top⟩⟩,
+      fun _ => FiniteMeasure.toMeasure_mk ..⟩
   -- Every measure of `S` lives on the separable measurable set `T = ⋃ j, K j`, a union of compact
   -- sets with uniform tail bounds. We find the limit on `T`, where `FiniteMeasure T` is first
   -- countable.

@@ -113,10 +113,10 @@ instance instFirstCountableTopology : FirstCountableTopology (FiniteMeasure X) w
       rw [h]
       infer_instance
     · -- Away from `0`, weak convergence is convergence of the mass and of the normalization.
-      -- Normalization needs `X` nonempty; on an empty space every finite measure is zero.
-      have : Nonempty X := not_isEmpty_iff.mp fun _ ↦ hzero <| toMeasure_injective <| by
-        rw [toMeasure_zero]
-        exact Measure.eq_zero_of_isEmpty _
+      -- Normalization needs `X` nonempty, which the nonzero measure `μ` provides.
+      have : NeZero (μ : Measure X) :=
+        ⟨fun h ↦ hzero <| toMeasure_injective <| h.trans toMeasure_zero.symm⟩
+      have : Nonempty X := Measure.nonempty_of_neZero (μ : Measure X)
       let p : FiniteMeasure X → ℝ≥0 × ProbabilityMeasure X := fun ν ↦ (ν.mass, ν.normalize)
       have h : 𝓝 μ = Filter.comap p (𝓝 (p μ)) := by
         refine le_antisymm (Tendsto.le_comap <| continuous_mass.continuousAt.prodMk_nhds
