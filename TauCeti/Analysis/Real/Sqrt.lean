@@ -332,13 +332,14 @@ theorem abs_div_sqrt_sq_add_le_one {p : ℝ} (hp : 0 ≤ p) (t : ℝ) :
 
 /-- The modular `√(1 + t²) - 1` grows at most linearly: `√(1 + t²) - 1 ≤ |t|`. -/
 theorem sqrt_one_add_sq_sub_one_le_abs (t : ℝ) : √(1 + t ^ 2) - 1 ≤ |t| := by
-  rw [sub_le_iff_le_add', sqrt_le_left (by positivity)]
-  nlinarith [abs_nonneg t, sq_abs t]
+  rw [sub_le_iff_le_add']
+  have h := sqrt_add_le_add_sqrt 1 (t ^ 2)
+  rwa [sqrt_one, sqrt_sq_eq_abs] at h
 
 /-- The modular `√(1 + t²) - 1` is at most quadratic: `√(1 + t²) - 1 ≤ t² / 2`. -/
 theorem sqrt_one_add_sq_sub_one_le_sq_div_two (t : ℝ) : √(1 + t ^ 2) - 1 ≤ t ^ 2 / 2 := by
-  rw [sub_le_iff_le_add', sqrt_le_left (by positivity)]
-  nlinarith [sq_nonneg (t ^ 2)]
+  rw [sub_le_iff_le_add']
+  exact sqrt_one_add_le (by linarith [sq_nonneg t])
 
 /-- The modular `√(1 + t²) - 1` is locally Lipschitz with a linear modulus:
 `|√(1 + a²) - √(1 + b²)| ≤ |a - b| (|a| + |b|)`. -/
