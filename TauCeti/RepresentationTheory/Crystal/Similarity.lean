@@ -30,9 +30,8 @@ satisfying `d.eIter i n (ψ x) = (c.e i x).map ψ`. Note that `ε_i`-scaling is 
 ## Main definitions
 
 * `TauCeti.NormalCrystal.SimilarityHom`: a similarity morphism of scale factor `n` between normal
-  crystals, with identity at `n = 1`, multiplicative composition, `compStrictHom` /
-  `StrictHom.compSimilarityHom`, duality, equivalence with `TauCeti.NormalCrystal.StrictHom` at
-  `n = 1`, and restriction to connected components.
+  crystals, with identity at `n = 1`, multiplicative composition, duality, equivalence with
+  `TauCeti.NormalCrystal.StrictHom` at `n = 1`, and restriction to connected components.
 
 ## Main results
 
@@ -54,7 +53,8 @@ satisfying `d.eIter i n (ψ x) = (c.e i x).map ψ`. Note that `ε_i`-scaling is 
 
 ## References
 
-* M. Kashiwara, *Similarity of crystal bases*, Duke Math. J. 84 (1996), 251--277, §§2–3.
+* M. Kashiwara, *Similarity of crystal bases*, in Lie algebras and their representations (Seoul,
+  1995), Contemp. Math. 194, Amer. Math. Soc. (1996), 177–186, §§2–3.
 * P. Littelmann, *Paths and root operators in representation theory*, Ann. of Math. 142 (1995),
   499--525, §5.
 -/
@@ -260,12 +260,6 @@ def ofStrictHom (ψ : StrictHom c d) : SimilarityHom 1 c d where
 @[simp]
 theorem coe_ofStrictHom (ψ : StrictHom c d) : ⇑(ofStrictHom ψ) = ψ := (rfl)
 
-@[simp]
-theorem toStrictHom_ofStrictHom (φ : StrictHom c d) : (ofStrictHom φ).toStrictHom = φ := (rfl)
-
-@[simp]
-theorem ofStrictHom_toStrictHom (ψ : SimilarityHom 1 c d) : ofStrictHom ψ.toStrictHom = ψ := (rfl)
-
 /-- Similarity morphisms of scale factor `1` are in canonical bijection with strict morphisms. -/
 def equivStrictHom : SimilarityHom 1 c d ≃ StrictHom c d where
   toFun := toStrictHom
@@ -288,16 +282,6 @@ def id : SimilarityHom 1 c c := ofStrictHom (StrictHom.id c)
 @[simp]
 theorem id_apply (x : B) : SimilarityHom.id c x = x := by simp [id]
 
-@[simp]
-theorem toStrictHom_id (c : NormalCrystal P b B) :
-    (SimilarityHom.id c).toStrictHom = StrictHom.id c :=
-  StrictHom.ext fun _ ↦ by simp
-
-@[simp]
-theorem ofStrictHom_id (c : NormalCrystal P b B) :
-    ofStrictHom (StrictHom.id c) = SimilarityHom.id c :=
-  ext fun _ ↦ by simp
-
 /-- Composition of similarity morphisms multiplies their scale factors. -/
 def comp (χ : SimilarityHom m d d') (ψ : SimilarityHom n c d) :
     SimilarityHom (m * n) c d' where
@@ -310,78 +294,6 @@ def comp (χ : SimilarityHom m d d') (ψ : SimilarityHom n c d) :
 theorem comp_apply (χ : SimilarityHom m d d') (ψ : SimilarityHom n c d) (x : B) :
     χ.comp ψ x = χ (ψ x) := (rfl)
 
-@[simp]
-theorem cast_apply (h : m = n) (ψ : SimilarityHom m c d) (x : B) :
-    (h ▸ ψ) x = ψ x := by
-  subst h
-  rfl
-
-/-- Two similarity morphisms at propositionally equal scale factors are equal up to cast
-provided they agree pointwise. -/
-theorem eq_cast_of_forall {k l : ℕ} (h : k = l) {ψ : SimilarityHom l c d}
-    {χ : SimilarityHom k c d} (happly : ∀ x, ψ x = χ x) :
-    ψ = h ▸ χ := by
-  subst h
-  exact ext happly
-
-@[simp]
-theorem comp_id (ψ : SimilarityHom n c d) :
-    ψ.comp (SimilarityHom.id c) = (Nat.mul_one n).symm ▸ ψ :=
-  eq_cast_of_forall (Nat.mul_one n).symm fun _ ↦ by simp
-
-@[simp]
-theorem id_comp (ψ : SimilarityHom n c d) :
-    (SimilarityHom.id d).comp ψ = (Nat.one_mul n).symm ▸ ψ :=
-  eq_cast_of_forall (Nat.one_mul n).symm fun _ ↦ by simp
-
-theorem comp_assoc {B''' : Type*} {d'' : NormalCrystal P b B'''} {k : ℕ}
-    (θ : SimilarityHom k d' d'') (χ : SimilarityHom m d d') (ψ : SimilarityHom n c d) :
-    (θ.comp χ).comp ψ = (Nat.mul_assoc k m n).symm ▸ θ.comp (χ.comp ψ) :=
-  eq_cast_of_forall (Nat.mul_assoc k m n).symm fun _ ↦ rfl
-
-@[simp]
-theorem toStrictHom_comp (χ : SimilarityHom 1 d d') (ψ : SimilarityHom 1 c d) :
-    (χ.comp ψ).toStrictHom = χ.toStrictHom.comp ψ.toStrictHom :=
-  StrictHom.ext fun _ ↦ by simp; rfl
-
-/-- Precomposing a scale-factor-`n` similarity morphism with a strict crystal morphism keeps the
-scale factor definitionally equal to `n`. -/
-def compStrictHom (ψ : SimilarityHom n d d') (φ : StrictHom c d) : SimilarityHom n c d' where
-  toFun x := ψ (φ x)
-  wt_toFun x := by simp
-  ε_toFun i x := by simp
-  eIter_toFun i x := by
-    rw [ψ.eIter_self, φ.e_apply, Option.map_map]
-    rfl
-
-@[simp]
-theorem compStrictHom_apply (ψ : SimilarityHom n d d') (φ : StrictHom c d) (x : B) :
-    ψ.compStrictHom φ x = ψ (φ x) :=
-  (rfl)
-
-@[simp]
-theorem compStrictHom_id (ψ : SimilarityHom n c d) : ψ.compStrictHom (StrictHom.id c) = ψ :=
-  ext fun _ ↦ by simp
-
-theorem compStrictHom_comp {B''' : Type*} {d'' : NormalCrystal P b B'''}
-    (θ : SimilarityHom n d' d'') (χ : StrictHom d d') (ψ : StrictHom c d) :
-    θ.compStrictHom (χ.comp ψ) = (θ.compStrictHom χ).compStrictHom ψ :=
-  ext fun _ ↦ by simp
-
-theorem compStrictHom_eq_comp_ofStrictHom (ψ : SimilarityHom n d d') (φ : StrictHom c d) :
-    ψ.compStrictHom φ = Nat.mul_one n ▸ ψ.comp (ofStrictHom φ) :=
-  eq_cast_of_forall (Nat.mul_one n) fun _ ↦ rfl
-
-theorem comp_compStrictHom {B''' : Type*} {d'' : NormalCrystal P b B'''}
-    (θ : SimilarityHom m d' d'') (χ : SimilarityHom n d d') (φ : StrictHom c d) :
-    (θ.comp χ).compStrictHom φ = θ.comp (χ.compStrictHom φ) :=
-  (rfl)
-
-@[simp]
-theorem toStrictHom_compStrictHom (ψ : SimilarityHom 1 d d') (φ : StrictHom c d) :
-    (ψ.compStrictHom φ).toStrictHom = ψ.toStrictHom.comp φ :=
-  StrictHom.ext fun _ ↦ by simp
-
 /-- A similarity morphism induces a similarity morphism of the same scale factor between the dual
 crystals. -/
 def dual (ψ : SimilarityHom n c d) : SimilarityHom n c.dual d.dual where
@@ -392,16 +304,6 @@ def dual (ψ : SimilarityHom n c d) : SimilarityHom n c.dual d.dual where
 
 @[simp]
 theorem dual_apply (ψ : SimilarityHom n c d) (x : B) : ψ.dual x = ψ x := (rfl)
-
-@[simp]
-theorem dual_comp (χ : SimilarityHom m d d') (ψ : SimilarityHom n c d) :
-    (χ.comp ψ).dual = χ.dual.comp ψ.dual :=
-  (rfl)
-
-@[simp]
-theorem dual_compStrictHom (ψ : SimilarityHom n d d') (φ : StrictHom c d) :
-    (ψ.compStrictHom φ).dual = ψ.dual.compStrictHom φ.dual :=
-  ext fun _ ↦ by simp
 
 /-- The map on connected components of the crystal graph induced by a similarity morphism. -/
 def mapConnectedComponent (ψ : SimilarityHom n c d) (C : c.graph.ConnectedComponent) :
@@ -521,70 +423,5 @@ theorem injective_of_unique_highest [Finite ι] [P.IsReduced] [Finite B]
   ψ.injective_of_forall_exists_fWord_eq_some (c.exists_fWord_eq_some_of_unique_highest hh)
 
 end SimilarityHom
-
-namespace StrictHom
-
-variable {c : NormalCrystal P b B} {d : NormalCrystal P b B'} {d' : NormalCrystal P b B''} {n : ℕ}
-
-/-- Postcomposing a scale-factor-`n` similarity morphism with a strict crystal morphism keeps the
-scale factor definitionally equal to `n`. -/
-def compSimilarityHom (φ : StrictHom d d') (ψ : SimilarityHom n c d) : SimilarityHom n c d' where
-  toFun x := φ (ψ x)
-  wt_toFun x := by simp
-  ε_toFun i x := by simp
-  eIter_toFun i x := by
-    rw [φ.eIter_apply, ψ.eIter_self, Option.map_map]
-    rfl
-
-@[simp]
-theorem compSimilarityHom_apply (φ : StrictHom d d') (ψ : SimilarityHom n c d) (x : B) :
-    φ.compSimilarityHom ψ x = φ (ψ x) :=
-  (rfl)
-
-@[simp]
-theorem id_compSimilarityHom (ψ : SimilarityHom n c d) :
-    (StrictHom.id d).compSimilarityHom ψ = ψ :=
-  SimilarityHom.ext fun _ ↦ by simp
-
-theorem comp_compSimilarityHom {B''' : Type*} {d'' : NormalCrystal P b B'''}
-    (θ : StrictHom d' d'') (χ : StrictHom d d') (ψ : SimilarityHom n c d) :
-    (θ.comp χ).compSimilarityHom ψ = θ.compSimilarityHom (χ.compSimilarityHom ψ) :=
-  SimilarityHom.ext fun _ ↦ by simp
-
-theorem compSimilarityHom_compStrictHom {B''' : Type*} {d'' : NormalCrystal P b B'''}
-    (θ : StrictHom d' d'') (ψ : SimilarityHom n d d') (φ : StrictHom c d) :
-    (θ.compSimilarityHom ψ).compStrictHom φ = θ.compSimilarityHom (ψ.compStrictHom φ) :=
-  (rfl)
-
-theorem compSimilarityHom_eq_ofStrictHom_comp (φ : StrictHom d d') (ψ : SimilarityHom n c d) :
-    φ.compSimilarityHom ψ = Nat.one_mul n ▸ (SimilarityHom.ofStrictHom φ).comp ψ :=
-  SimilarityHom.eq_cast_of_forall (Nat.one_mul n) fun _ ↦ rfl
-
-theorem compSimilarityHom_comp {B''' : Type*} {d'' : NormalCrystal P b B'''} {m : ℕ}
-    (φ : StrictHom d' d'') (χ : SimilarityHom m d d') (ψ : SimilarityHom n c d) :
-    φ.compSimilarityHom (χ.comp ψ) = (φ.compSimilarityHom χ).comp ψ :=
-  (rfl)
-
-end StrictHom
-
-theorem SimilarityHom.comp_compSimilarityHom {B''' : Type*} {d'' : NormalCrystal P b B'''} {m n : ℕ}
-    {c : NormalCrystal P b B} {d : NormalCrystal P b B'} {d' : NormalCrystal P b B''}
-    (θ : SimilarityHom m d' d'') (φ : StrictHom d d') (ψ : SimilarityHom n c d) :
-    θ.comp (φ.compSimilarityHom ψ) = (θ.compStrictHom φ).comp ψ :=
-  (rfl)
-
-@[simp]
-theorem SimilarityHom.toStrictHom_compSimilarityHom
-    {c : NormalCrystal P b B} {d : NormalCrystal P b B'} {d' : NormalCrystal P b B''}
-    (φ : StrictHom d d') (ψ : SimilarityHom 1 c d) :
-    (φ.compSimilarityHom ψ).toStrictHom = φ.comp ψ.toStrictHom :=
-  StrictHom.ext fun _ ↦ by simp
-
-@[simp]
-theorem SimilarityHom.dual_compSimilarityHom
-    {c : NormalCrystal P b B} {d : NormalCrystal P b B'} {d' : NormalCrystal P b B''}
-    {n : ℕ} (φ : StrictHom d d') (ψ : SimilarityHom n c d) :
-    (φ.compSimilarityHom ψ).dual = φ.dual.compSimilarityHom ψ.dual :=
-  SimilarityHom.ext fun _ ↦ by simp
 
 end TauCeti.NormalCrystal

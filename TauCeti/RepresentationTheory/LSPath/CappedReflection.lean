@@ -412,47 +412,4 @@ theorem cappedReflection_map_smul {a : 𝕜} (ha : 0 < a) (c : 𝕜) (p : PLPath
     Pi.smul_def, LinearMap.id_apply] using
     congrArg (ofSegments 𝕜) (reflectRecords_map_smul (f := f) ha c l)
 
-/-! ## Special cases of capped reflection -/
-
-/-- Any cap at or above the endpoint height gives the same capped reflection as capping at the
-endpoint height. -/
-theorem cappedReflection_eq_of_apply_endpoint_le {c : 𝕜} (p : PLPath 𝕜 V)
-    (hc : f p.endpoint ≤ c) :
-    cappedReflection f x c p = cappedReflection f x (f p.endpoint) p := by
-  rw [endpoint_def] at hc
-  rw [cappedReflection, cappedReflection, endpoint_def, reflectRecords_of_apply_sum_le hc]
-
-/-- When the minimal height equals the endpoint height, capped reflection fixes the path for every
-cap. -/
--- Lower priority than `cappedReflection_one` and `cappedReflection_straight_of_nonpos`.
-@[simp low]
-theorem cappedReflection_eq_self_of_minHeight_eq_apply_endpoint (c : 𝕜) (p : PLPath 𝕜 V)
-    (hp : p.minHeight f = f p.endpoint) :
-    cappedReflection f x c p = p := by
-  rw [minHeight_def, endpoint_def] at hp
-  rw [cappedReflection, reflectRecords_of_listMinHeight_eq_apply_sum c hp, ofSegments_segments]
-
-/-- Capped reflection fixes any straight path of nonpositive height. -/
-@[simp]
-theorem cappedReflection_straight_of_nonpos (c : 𝕜) {v : V} (hv : f v ≤ 0) :
-    cappedReflection f x c (straight 𝕜 v) = straight 𝕜 v :=
-  cappedReflection_eq_self_of_minHeight_eq_apply_endpoint c (straight 𝕜 v)
-    (by simp [min_eq_right hv])
-
-/-- On a straight path of positive height, capped reflection reflects the initial fraction
-`max 0 (min (f v) c) / f v` and keeps the complementary fraction. -/
-theorem cappedReflection_straight_of_pos (c : 𝕜) {v : V} (hv : 0 < f v) :
-    cappedReflection f x c (straight 𝕜 v) =
-      straight 𝕜 (preReflection x f ((max 0 (min (f v) c) / f v) • v)) *
-        straight 𝕜 ((1 - max 0 (min (f v) c) / f v) • v) := by
-  by_cases hc : 0 < c
-  · have hpos : 0 < min (f v + listMinHeight f ([] : List V)) c := by
-      simpa using lt_min hv hc
-    rw [max_eq_right (le_min hv.le hc.le), straight_def, cappedReflection_ofSegments,
-      reflectRecords_cons_of_pos hpos]
-    simp [ofSegments_cons]
-  · have hmax : max 0 (min (f v) c) = 0 := max_eq_left (min_le_of_right_le (not_lt.mp hc))
-    simpa [hmax] using
-      cappedReflection_eq_self (straight 𝕜 v) (by simpa [min_eq_left hv.le] using not_lt.mp hc)
-
 end TauCeti.PLPath
