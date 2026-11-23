@@ -170,8 +170,11 @@ theorem summable_pi_int_one_add_norm_rpow {d : Type*} [Fintype d] (r : ℝ)
 /-- The series `∑ n, ((1 + ‖n‖) ^ r)⁻¹` over the integer vectors `n : d → ℤ`, with the sup norm,
 converges once the natural number `r` exceeds `card d`. -/
 theorem summable_pi_int_one_add_norm_pow_inv {d : Type*} [Fintype d] {r : ℕ}
-    (hr : Fintype.card d < r) : Summable fun n : d → ℤ ↦ ((1 + ‖n‖) ^ r)⁻¹ :=
-  (summable_pi_int_one_add_norm_rpow (-r) (neg_lt_neg (by exact_mod_cast hr))).congr fun n ↦ by
-    rw [Real.rpow_neg (by positivity), Real.rpow_natCast]
+    (hr : Fintype.card d < r) : Summable fun n : d → ℤ ↦ ((1 + ‖n‖) ^ r)⁻¹ := by
+  have hL := ZLattice.summable_one_add_norm_pow_inv
+    (Submodule.span ℤ (Set.range (Pi.basisFun ℝ d)))
+    (by rwa [ZLattice.rank ℝ, Module.finrank_fintype_fun_eq_card])
+  simpa only [pi_norm_intCast_real] using
+    (summable_pi_int_iff_summable_span (f := fun x ↦ ((1 + ‖x‖) ^ r)⁻¹)).2 hL
 
 end TauCeti
