@@ -10,7 +10,7 @@ public import Mathlib.Algebra.Algebra.Subalgebra.Lattice
 /-!
 # Supplements to the lattice of subalgebras
 
-This file collects five small facts about subalgebras that Mathlib's
+This file collects six small facts about subalgebras that Mathlib's
 `Mathlib.Algebra.Algebra.Subalgebra.Lattice` does not state.
 
 For an injective `algebraMap R A`, `Algebra.botEquivOfInjective` identifies the bottom subalgebra
@@ -21,6 +21,9 @@ element itself.
 
 Adjoining a multiplicatively closed set containing `1` (a submonoid, subring, subalgebra, …)
 creates nothing beyond its span: the products that `Algebra.adjoin` forms lie in the set again.
+
+If a set `s` generates `A` as an `R`-algebra, then its image under an algebra map `f : A →ₐ[R] B`
+generates the range of `f`.
 
 Restricting a linear map whose image generates an algebra to a spanning family of submodules still
 yields an algebra-generating image.
@@ -38,6 +41,8 @@ The bottom subalgebra `⊥`, the image of the scalars, is commutative.
   `x : (⊥ : Subalgebra R A)`.
 * `Algebra.adjoin_coe_eq_span`: for a submonoid-like `M` of `A`, `Algebra.adjoin R (M : Set A)`,
   as a submodule, is `Submodule.span R (M : Set A)`.
+* `Algebra.adjoin_image_eq_range`: if `Algebra.adjoin R s = ⊤`, then
+  `Algebra.adjoin R (f '' s) = f.range`.
 * `TauCeti.Algebra.adjoin_range_sigma_eq_top`: restricting a linear map with algebra-generating
   range to a spanning family of submodules still has algebra-generating range.
 * `Submodule.smul_mem_of_mem_adjoin`: an `R`-submodule stable under the action of `s` is stable
@@ -69,6 +74,12 @@ theorem adjoin_coe_eq_span {M₀ : Type*} [SetLike M₀ A] [SubmonoidClass M₀ 
   adjoin_eq_span_of_subset R <| .trans
     (SetLike.coe_subset_coe.2 <| (Submonoid.closure_le (S := .ofClass M)).2 subset_rfl)
     Submodule.subset_span
+
+/-- If `s` generates `A` as an `R`-algebra, then the image of `s` under an algebra map `f`
+generates the range of `f`. -/
+theorem adjoin_image_eq_range {B : Type*} [Semiring B] [Algebra R B] (f : A →ₐ[R] B) {s : Set A}
+    (hs : adjoin R s = ⊤) : adjoin R (f '' s) = f.range := by
+  rw [adjoin_image, hs, map_top]
 
 end Algebra
 

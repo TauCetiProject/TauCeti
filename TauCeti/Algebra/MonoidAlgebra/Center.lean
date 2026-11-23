@@ -26,6 +26,7 @@ centre of `R[G]` into the centre of `S[G]` (`MonoidAlgebra.mapRingHom_mem_center
 ## Main results
 
 * `MonoidAlgebra.mapRingHom_mem_center`: the coefficient map preserves centrality.
+* `MonoidAlgebra.centerMapRingHom_algebraMap`: the map on centres is compatible with the scalars.
 -/
 
 public section
@@ -60,5 +61,12 @@ noncomputable def centerMapRingHom (f : R →+* S) :
 theorem coe_centerMapRingHom (f : R →+* S) (x : Subalgebra.center R R[G]) :
     (centerMapRingHom G f x : S[G]) = mapRingHom G f x := by
   simp [centerMapRingHom]
+
+/-- The map on centres sends the scalar `r` to the scalar `f r`. -/
+@[simp]
+theorem centerMapRingHom_algebraMap (f : R →+* S) (r : R) :
+    centerMapRingHom G f (algebraMap R (Subalgebra.center R R[G]) r) =
+      algebraMap S (Subalgebra.center S S[G]) (f r) :=
+  Subtype.ext <| RingHom.congr_fun (mapRingHom_comp_algebraMap f) r
 
 end MonoidAlgebra
