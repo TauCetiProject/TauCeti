@@ -184,18 +184,9 @@ def derivedExtendRestrictScalarsAdj
       (Functor.whiskerRight eR.inv G ≫ (Functor.associator _ _ _).hom) W_S :=
     Functor.isRightDerivedFunctor_of_inverts W_S (R' ⋙ G)
       ((Functor.associator DerivedCategory.Q R' G).symm ≪≫ Functor.isoWhiskerRight eR G)
-  have hDerivesComp : (CochainComplex.KFlat.localizerMorphism (ModuleCat.{u} R)).Derives
-      ((complexBaseChange f ⋙ DerivedCategory.Q) ⋙ R') :=
-    MorphismProperty.IsInvertedBy.of_comp _ _ (localizerMorphism_derives_complexBaseChange f) R'
   have : (G ⋙ R').IsLeftDerivedFunctor
-      ((Functor.associator _ _ _).inv ≫ Functor.whiskerRight α R') W_R := by
-    refine hDerivesComp.isLeftDerivedFunctor_of_isIso _ fun P ↦ ?_
-    have : IsIso (α.app ((CochainComplex.KFlat.localizerMorphism
-        (ModuleCat.{u} R)).functor.obj P)) :=
-      (localizerMorphism_derives_complexBaseChange f).isIso' α P
-    dsimp
-    rw [Category.id_comp]
-    infer_instance
+      ((Functor.associator _ _ _).inv ≫ Functor.whiskerRight α R') W_R :=
+    (localizerMorphism_derives_complexBaseChange f).isLeftDerivedFunctor_comp α R'
   exact ((ModuleCat.extendRestrictScalarsAdj f).mapHomologicalComplex
     (ComplexShape.up ℤ)).derived W_R W_S α eR.inv
 

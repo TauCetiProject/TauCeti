@@ -9,7 +9,7 @@ public import Mathlib.SetTheory.Cardinal.NatCard
 public import TauCeti.GroupTheory.Perm.Partition
 import Mathlib.Logic.Equiv.Option
 import TauCeti.GroupTheory.GroupAction.Closure
-import TauCeti.GroupTheory.Perm.Basic
+import TauCeti.GroupTheory.Perm.Cycle.Colouring
 import TauCeti.GroupTheory.Perm.ProdCongr
 
 /-!
@@ -29,12 +29,14 @@ permutations of the same type.
 * `TauCeti.orbitCount_mul_comm` and `Equiv.Perm.sameCycle_mul_comm_iff`: the two products `σ * τ`
   and `τ * σ` are conjugate, so they have the same number of orbits, and their cycles correspond
   under `σ`.
+* `Function.Involutive.orbitCount_eq_natCard_le`: an involution of a linear order has one orbit
+  for each point `i` with `i ≤ f i`.
 * `TauCeti.orbitCount_prodCongrRight_const`: permuting the second factor of a product by the same
   permutation over every point of the first multiplies the number of orbits by the size of the
   first factor.
 * `Equiv.Perm.orbitCount_eq_card_parts_partition`: on a finite type, the orbit count is the number
-  of parts in Mathlib's full, fixed-point-aware permutation partition, through the decomposition
-  `Equiv.Perm.orbitQuotientEquivCycleFactorsSumFixedPoints` of `TauCeti.GroupTheory.Perm.Partition`.
+  of parts in Mathlib's full, fixed-point-aware permutation partition, through
+  `Equiv.Perm.card_fullCycleType` of `TauCeti.GroupTheory.Perm.Partition`.
 * `TauCeti.orbitCount_eq_one_of_forall_sameCycle`: a transitive permutation of a nonempty type has
   orbit count one.
 * `TauCeti.exists_not_sameCycle_apply_of_isPretransitive_closure`: if `σ` has more than one
@@ -42,6 +44,9 @@ permutations of the same type.
   moves a point to another orbit of `σ`.
 * `Equiv.Perm.orbitCount_le_card`: on a finite type, a permutation has at most as many orbits as
   the type has points, the orbits being the classes of a partition of it.
+* `Equiv.Perm.card_image_invariantColouringEquiv_le_orbitCount` and
+  `Equiv.Perm.card_image_invariantColouringEquiv_eq_orbitCount_iff`: an invariant colouring uses at
+  most one colour per orbit and attains the bound exactly when its orbit labels are injective.
 * `Equiv.Perm.SameCycle.of_forall_sameCycle_apply`: a permutation moving every point within its
   cycle of `π` has each of its cycles inside a cycle of `π`.
 * `TauCeti.orbitCount_le_card_orbitRelQuotient`: a subgroup of permutations moving every point
@@ -50,6 +55,9 @@ permutations of the same type.
   order of the permutation times its number of orbits, each orbit length dividing the order.
 * `Equiv.Perm.sign_eq_neg_one_pow_card_sub_orbitCount`: the sign is determined by the parity of
   the number of points minus the number of orbits.
+* `Equiv.Perm.mul_orbitCount_of_pow_prime_eq_one`: if `σ ^ p = 1` for a prime `p`, then
+  `p` times the number of orbits is the number of points plus `p - 1` times the number of fixed
+  points.
 * `TauCeti.orbitCount_add_one_eq_of_semiconj`: if `σ : Equiv.Perm α` is carried by an injection
   `f : α → β` to `τ : Equiv.Perm β`, and `f` misses exactly one point `p` of `β`, then `τ` has one
   orbit more than `σ` — the extra orbit is the fixed point `p`.
@@ -92,6 +100,7 @@ public section
 namespace TauCeti
 
 open Equiv Equiv.Perm
+open scoped Finset
 
 variable {α β : Type*}
 
@@ -106,6 +115,24 @@ noncomputable def orbitCount (σ : Equiv.Perm α) : ℕ :=
 /-- The orbit count is the cardinality of the type of orbits. -/
 theorem orbitCount_def (σ : Equiv.Perm α) :
     orbitCount σ = Nat.card (Quotient (Equiv.Perm.SameCycle.setoid σ)) := (rfl)
+
+/-- An invariant colouring uses at most one colour per orbit. -/
+theorem _root_.Equiv.Perm.card_image_invariantColouringEquiv_le_orbitCount
+    {ι γ : Type*} [Fintype ι] [DecidableEq γ] (π : Perm ι) (f : Quotient (SameCycle.setoid π) → γ) :
+    (Finset.univ.image (invariantColouringEquiv π f).val).card ≤ orbitCount π := by
+  rw [π.card_image_invariantColouringEquiv, orbitCount_def]
+  exact Finite.card_range_le f
+
+/-- An invariant colouring uses as many colours as there are orbits exactly when its orbit labels
+are injective. -/
+theorem _root_.Equiv.Perm.card_image_invariantColouringEquiv_eq_orbitCount_iff
+    {ι γ : Type*} [Fintype ι] [DecidableEq γ] (π : Perm ι) (f : Quotient (SameCycle.setoid π) → γ) :
+    (Finset.univ.image (invariantColouringEquiv π f).val).card = orbitCount π ↔
+      Function.Injective f := by
+  rw [π.card_image_invariantColouringEquiv, orbitCount_def]
+  have h : (Set.univ : Set (Quotient (SameCycle.setoid π))).Finite := Set.finite_univ
+  simpa only [Set.image_univ, Set.injOn_univ, ← Nat.card_coe_set_eq, Nat.card_univ] using
+    Set.ncard_image_iff (f := f) h
 
 /-- Each point of `α` is its own orbit under the identity permutation. -/
 @[simp]
@@ -211,6 +238,35 @@ theorem _root_.Equiv.orbitCount_permCongr (e : α ≃ β) (σ : Equiv.Perm α) :
     rw [← hz, Equiv.permCongr_apply, Equiv.symm_apply_apply] at hi
     exact hi
 
+/-- An involution of a linearly ordered type has one orbit for each point `i` with `i ≤ f i`:
+each orbit `{i, f i}` is represented by its least element. -/
+theorem _root_.Function.Involutive.orbitCount_eq_natCard_le [LinearOrder α] {f : Equiv.Perm α}
+    (hf : Function.Involutive f) : orbitCount f = Nat.card {i : α // i ≤ f i} := by
+  -- each orbit `{i, f i}` is sent to its least element
+  let r : α → {i : α // i ≤ f i} := fun i ↦ ⟨min i (f i), by
+    rcases le_total i (f i) with h | h
+    · rwa [min_eq_left h]
+    · rw [min_eq_right h, hf i]
+      exact h⟩
+  have hr : Function.Surjective r := fun i ↦ ⟨i, Subtype.ext (min_eq_left i.property)⟩
+  have hker (i j : α) : f.SameCycle i j ↔ r i = r j := by
+    rw [hf.sameCycle_iff, Subtype.ext_iff]
+    constructor
+    · rintro (rfl | rfl)
+      · rfl
+      · simp only [r, hf j, min_comm]
+    · intro h
+      simp only [r] at h
+      rcases min_choice i (f i) with hi | hi <;>
+        rcases min_choice j (f j) with hj | hj <;> rw [hi, hj] at h
+      · exact Or.inl h
+      · exact Or.inr h
+      · exact Or.inr (by rw [← h, hf i])
+      · exact Or.inl (f.injective h)
+  rw [orbitCount_def]
+  exact Nat.card_congr ((Quotient.congrRight (r := SameCycle.setoid f) (r' := Setoid.ker r)
+    hker).trans (Setoid.quotientKerEquivOfSurjective r hr))
+
 /-- Rotating the second coordinate of `α × β` by the same permutation `τ` over every point of `α`
 has one copy of each orbit of `τ` over every point of `α`. -/
 theorem orbitCount_prodCongrRight_const (τ : Equiv.Perm β) :
@@ -230,12 +286,7 @@ variable [Fintype α] [DecidableEq α]
 identifies `orbitCount`, defined from `SameCycle`, with Mathlib's fixed-point-aware cycle data. -/
 theorem _root_.Equiv.Perm.orbitCount_eq_card_parts_partition (σ : Equiv.Perm α) :
     orbitCount σ = σ.partition.parts.card := by
-  classical
-  rw [orbitCount, Nat.card_eq_fintype_card,
-    Fintype.card_congr σ.orbitQuotientEquivCycleFactorsSumFixedPoints, Fintype.card_sum,
-    Fintype.card_coe]
-  rw [Equiv.Perm.card_subtype_apply_eq, Equiv.Perm.card_parts_partition, Equiv.Perm.cycleType_def]
-  simp
+  rw [orbitCount_def, ← Equiv.Perm.card_fullCycleType, Equiv.Perm.fullCycleType_def]
 
 /-- The sign of a finite permutation is the parity of the number of points minus the number of
 orbits. Fixed points contribute once to both numbers and hence do not affect the sign. -/
@@ -248,6 +299,22 @@ theorem _root_.Equiv.Perm.sign_eq_neg_one_pow_card_sub_orbitCount (σ : Equiv.Pe
     omega
   rw [h, pow_add, pow_mul]
   simp
+
+/-- If `σ ^ p = 1` for a prime `p`, every orbit of `σ` is a fixed point or has exactly `p` points,
+so `p` times the number of orbits is the number of points plus `p - 1` times the number of fixed
+points. -/
+theorem _root_.Equiv.Perm.mul_orbitCount_of_pow_prime_eq_one {p : ℕ} [Fact p.Prime]
+    {σ : Equiv.Perm α} (hσ : σ ^ p = 1) :
+    p * orbitCount σ = Fintype.card α + (p - 1) * #{x | σ x = x} := by
+  have hfix : #{x | σ x = x} = Fintype.card α - #σ.support := by
+    rw [← count_one_fullCycleType_eq_card_filter, count_one_fullCycleType]
+  have hsum := σ.sum_cycleType
+  rw [cycleType_of_pow_prime_eq_one hσ, Multiset.sum_replicate, smul_eq_mul] at hsum
+  obtain ⟨F, hF⟩ := Nat.exists_eq_add_of_le (Finset.card_le_univ σ.support)
+  obtain ⟨q, rfl⟩ := Nat.exists_eq_add_of_lt (Fact.out : p.Prime).pos
+  rw [orbitCount_eq_card_parts_partition, card_parts_partition, hfix, hF, ← hsum]
+  simp only [zero_add, Nat.add_sub_cancel_left, Nat.add_sub_cancel]
+  ring
 
 end Finite
 

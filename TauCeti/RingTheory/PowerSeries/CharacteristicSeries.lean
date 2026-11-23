@@ -48,12 +48,9 @@ products are expressed in the elementary symmetric polynomials `pᵢ` of the `x�
 coefficients behind the classical expansions `Td = 1 + c₁/2 + (c₁² + c₂)/12 + …`,
 `Â = 1 - p₁/24 + …` and `L = 1 + p₁/3 + …`.
 
-The logarithm of the Â series is `log Â(X) = -∑_{n ≥ 2} Bₙ Xⁿ / (n · n!)`, so
-`log Â = -X²/24 + X⁴/2880 + …`. It comes from the differential equation
-`X Â'(X) = (1 - (X/2) / tanh (X/2)) Â(X)`, whose coefficient `(X/2) / tanh (X/2) = L(X/2)` is
-the half-argument L series `∑_{n ≠ 1} Bₙ Xⁿ / n!`. Up to the factor `2 / n!`, these coefficients
-are the constant terms `-Bₙ / (2n)` of the Eisenstein series `Gₙ`; they are the `q⁰` part of the
-logarithm of the characteristic series of the Witten genus.
+The formal logarithm of the Â series is `log Â(X) = -∑_{n ≥ 2} Bₙ Xⁿ / (n · n!)`, read off from
+its logarithmic derivative `1 / X - coth (X / 2) / 2`. Its even coefficients `-B₂ₖ / (2k (2k)!)`
+are the constant terms of the logarithm of the characteristic series of the Witten genus.
 
 ## Main definitions
 
@@ -78,9 +75,10 @@ logarithm of the characteristic series of the Witten genus.
   `B(X) e^{X/2} = Â(X)` and `B(2X) e^X = Â(2X)`.
 * `TauCeti.map_aHatSeries`, `TauCeti.map_hirzebruchLSeries`: `Â` and `L` commute with ring
   homomorphisms between `ℚ`-algebras.
-* `TauCeti.X_mul_derivative_aHatSeries`: `X Â'(X) = (1 - L(X/2)) Â(X)`.
-* `TauCeti.logOf_aHatSeries`, `TauCeti.coeff_logOf_aHatSeries`: the logarithm of the Â series,
-  `log Â(X) = -∑_{n ≠ 1} Bₙ Xⁿ / (n · n!)`.
+* `TauCeti.logOf_aHatSeries`, `TauCeti.coeff_logOf_aHatSeries`:
+  `log Â(X) = -∑_{n ≥ 2} Bₙ Xⁿ / (n · n!)`; its odd coefficients vanish
+  (`TauCeti.coeff_logOf_aHatSeries_of_odd`), and `TauCeti.coeff_two_logOf_aHatSeries` and
+  `TauCeti.coeff_four_logOf_aHatSeries` give `log Â(X) = -X²/24 + X⁴/2880 + …`.
 
 ## References
 
@@ -293,6 +291,84 @@ theorem map_aHatSeries {R S : Type*} [CommRing R] [Algebra ℚ R]
   ext n
   simp [coeff_aHatSeries]
 
+/-- **The logarithm of the Â series**:
+`log ((X / 2) / sinh (X / 2)) = -∑_{n ≥ 2} Bₙ Xⁿ / (n · n!)`. Only even `n` contribute, since
+the odd Bernoulli numbers beyond `B₁` vanish; the coefficient of `X²` is `-1/24`. -/
+theorem logOf_aHatSeries :
+    logOf (aHatSeries A) =
+      mk fun n ↦ if n = 1 then 0 else algebraMap ℚ A (-bernoulli n / (n * n !)) := by
+  set s : ℕ → A := fun n ↦ if n = 1 then 0 else algebraMap ℚ A (-bernoulli n / n !) with hs
+  have hmk : (mk fun n ↦ if n = 1 then 0 else algebraMap ℚ A (-bernoulli n / (n * n !))) =
+      mk fun n ↦ (n : ℚ)⁻¹ • s n := by
+    ext n
+    simp only [coeff_mk, hs]
+    split_ifs
+    · simp
+    · rw [Algebra.smul_def, ← map_mul]
+      congr 1
+      field_simp
+  -- The claim is that `T = ∑ sₙ₊₁ Xⁿ` is the logarithmic derivative `Â' / Â`.
+  rw [hmk, logOf_eq_mk_iff (constantCoeff_aHatSeries A)]
+  set c := algebraMap ℚ A 2⁻¹
+  set h := rescale c (exp A)
+  set k := rescale (-c) (exp A)
+  set Â := aHatSeries A
+  set T : A⟦X⟧ := mk fun n ↦ s (n + 1)
+  have h2 : (2 : A) * c = 1 := mod_cast natCast_mul_algebraMap_inv (K := A) two_ne_zero
+  have h2C : (2 : A⟦X⟧) * C c = 1 := by rw [← map_ofNat C 2, ← map_mul, h2, map_one]
+  have hhk : h * k = 1 := rescale_exp_mul_rescale_neg_exp c
+  -- `Â (e^{X/2} - e^{-X/2}) = X`, and its derivative
+  have hA : Â * (h - k) = X := aHatSeries_mul_sub A
+  have hB : bernoulliPowerSeries A * h = Â := bernoulliPowerSeries_mul_rescale_exp_eq_aHatSeries A
+  have hd : d⁄dX Â * (h - k) + Â * (C c * h + C c * k) = 1 := by
+    have := congrArg (d⁄dX) hA
+    rw [Derivation.leibniz, map_sub, derivative_rescale, derivative_rescale, derivative_exp,
+      derivative_X, smul_eq_mul, smul_eq_mul, map_neg] at this
+    linear_combination this
+  -- `X T = 1 - B - X / 2`, where `B = X / (e^X - 1) = Â e^{-X/2}` is the Bernoulli series
+  have hXT : X * T = 1 - Â * k - C c * X := by
+    have hXT' : X * T = 1 - bernoulliPowerSeries A - C c * X := by
+      ext (_ | _ | n)
+      · rw [coeff_zero_eq_constantCoeff_apply]
+        simp [bernoulliPowerSeries]
+      · simp [T, hs, c, bernoulliPowerSeries]
+      · simp [T, hs, bernoulliPowerSeries, coeff_succ_X_mul, neg_div]
+    linear_combination hXT' + bernoulliPowerSeries A * hhk - k * hB
+  -- Hence `(T Â - Â') X² = 0`, and `X` is not a zero divisor.
+  have key : (T * Â - d⁄dX Â) * X * X = 0 := by
+    linear_combination (Â * X) * hXT + (d⁄dX Â * X + C c * X * Â) * hA - (X * Â) * hd +
+      (Â ^ 2 * k * X) * h2C
+  exact sub_eq_zero.1 (mul_X_cancel (mul_X_cancel (by simpa using key)))
+
+/-- The coefficients of the logarithm of the Â series: for `n ≠ 1`, the coefficient of `Xⁿ` in
+`log Â(X)` is `-Bₙ / (n · n!)`. -/
+theorem coeff_logOf_aHatSeries {n : ℕ} (hn : n ≠ 1) :
+    coeff n (logOf (aHatSeries A)) = algebraMap ℚ A (-bernoulli n / (n * n !)) := by
+  simp [logOf_aHatSeries, hn]
+
+/-- The odd coefficients of the logarithm of the Â series vanish. -/
+@[simp]
+theorem coeff_logOf_aHatSeries_of_odd {n : ℕ} (hn : Odd n) :
+    coeff n (logOf (aHatSeries A)) = 0 := by
+  obtain rfl | hlt : n = 1 ∨ 1 < n := by have := hn.pos; omega
+  · simp [logOf_aHatSeries]
+  · simp [coeff_logOf_aHatSeries A hlt.ne', bernoulli_eq_zero_of_odd hn hlt]
+
+/-- `log Â(X) = -X²/24 + …`, so `log Â(X)` has `X²`-coefficient `2 G₂(0) / 2!`. -/
+@[simp]
+theorem coeff_two_logOf_aHatSeries :
+    coeff 2 (logOf (aHatSeries A)) = algebraMap ℚ A (-1 / 24) := by
+  rw [coeff_logOf_aHatSeries A (by decide), bernoulli_two]
+  norm_num [Nat.factorial]
+
+/-- `log Â(X) = -X²/24 + X⁴/2880 + …`, so `log Â(X)` has `X⁴`-coefficient `2 G₄(0) / 4!`. -/
+@[simp]
+theorem coeff_four_logOf_aHatSeries :
+    coeff 4 (logOf (aHatSeries A)) = algebraMap ℚ A (1 / 2880) := by
+  rw [coeff_logOf_aHatSeries A (by decide), bernoulli_eq_bernoulli'_of_ne_one (by decide),
+    bernoulli'_four]
+  norm_num [Nat.factorial]
+
 /-! ### The L series -/
 
 /-- **Hirzebruch's L series** `X / tanh X = X (e^X + e^{-X}) / (e^X - e^{-X})`, the characteristic
@@ -404,89 +480,5 @@ theorem map_hirzebruchLSeries {R S : Type*} [CommRing R] [Algebra ℚ R]
   · subst hn
     simp [coeff_hirzebruchLSeries_of_odd _ odd_one]
   · simp [coeff_hirzebruchLSeries _ hn]
-
-/-! ### The logarithm of the Â series -/
-
-/-- The half-argument L series `L(X / 2) = (X / 2) / tanh (X / 2)`: its product with
-`2 sinh (X / 2) = e^{X/2} - e^{-X/2}` is `(X / 2) (e^{X/2} + e^{-X/2})`. -/
-theorem rescale_half_hirzebruchLSeries_mul_sub :
-    rescale (algebraMap ℚ A 2⁻¹) (hirzebruchLSeries A) *
-        (rescale (algebraMap ℚ A 2⁻¹) (exp A) - rescale (-algebraMap ℚ A 2⁻¹) (exp A)) =
-      C (algebraMap ℚ A 2⁻¹) * X *
-        (rescale (algebraMap ℚ A 2⁻¹) (exp A) + rescale (-algebraMap ℚ A 2⁻¹) (exp A)) := by
-  simpa [rescale_rescale, rescale_X, mul_comm] using
-    congrArg (rescale (algebraMap ℚ A 2⁻¹)) (hirzebruchLSeries_mul_sub A)
-
-/-- **The differential equation of the Â series**: `X Â'(X) = (1 - L(X/2)) Â(X)`, where
-`L(X/2) = (X/2) / tanh (X/2)` is the half-argument L series. Equivalently, the logarithmic
-derivative of `Â` is `1 / X - (1/2) coth (X/2)`. -/
-theorem X_mul_derivative_aHatSeries :
-    X * d⁄dX (aHatSeries A) =
-      (1 - rescale (algebraMap ℚ A 2⁻¹) (hirzebruchLSeries A)) * aHatSeries A := by
-  set c := algebraMap ℚ A 2⁻¹
-  set h := rescale c (exp A)
-  set k := rescale (-c) (exp A)
-  set τ := rescale c (hirzebruchLSeries A)
-  set a := aHatSeries A
-  have H₁ : a * (h - k) = X := aHatSeries_mul_sub A
-  have H₃ : τ * (h - k) = C c * X * (h + k) := rescale_half_hirzebruchLSeries_mul_sub A
-  -- Differentiate `Â(X) (e^{X/2} - e^{-X/2}) = X`.
-  have H₂ : d⁄dX a * (h - k) + a * (C c * (h + k)) = 1 := by
-    have := congrArg (d⁄dX) H₁
-    rw [Derivation.leibniz, map_sub, derivative_rescale, derivative_rescale, derivative_exp,
-      derivative_X, smul_eq_mul, smul_eq_mul, map_neg] at this
-    linear_combination this
-  refine mul_X_cancel ?_
-  linear_combination (a * X) * H₂ + a ^ 2 * H₃ - (a + X * d⁄dX a - (1 - τ) * a) * H₁
-
-/-- **The logarithm of the Â series**: `log Â(X) = -∑ cₙ Xⁿ / n`, where `cₙ` are the coefficients
-of the half-argument L series `L(X/2) = (X/2) / tanh (X/2)`. -/
-theorem logOf_aHatSeries :
-    logOf (aHatSeries A) = mk fun n ↦
-      (n : ℚ)⁻¹ • -coeff n (rescale (algebraMap ℚ A 2⁻¹) (hirzebruchLSeries A)) := by
-  set τ := rescale (algebraMap ℚ A 2⁻¹) (hirzebruchLSeries A)
-  rw [logOf_eq_mk_iff (constantCoeff_aHatSeries A)]
-  -- `X ∑ cₙ₊₁ Xⁿ = L(X/2) - 1`, so the claim is the differential equation divided by `X`.
-  have hτ : constantCoeff τ = 1 := by simp [τ, constantCoeff_rescale]
-  have hshift := sub_const_eq_X_mul_shift τ
-  rw [hτ, map_one] at hshift
-  have hneg : (mk fun n ↦ -coeff (n + 1) τ) = -mk fun n ↦ coeff (n + 1) τ := by
-    ext
-    simp
-  refine X_mul_cancel ?_
-  rw [X_mul_derivative_aHatSeries, hneg]
-  linear_combination aHatSeries A * hshift
-
-/-- The coefficients of the logarithm of the Â series: `log Â(X) = -∑_{n ≠ 1} Bₙ Xⁿ / (n · n!)`.
-Its linear coefficient vanishes (`TauCeti.coeff_logOf_aHatSeries_of_odd`). -/
-theorem coeff_logOf_aHatSeries {n : ℕ} (hn : n ≠ 1) :
-    coeff n (logOf (aHatSeries A)) = algebraMap ℚ A (-bernoulli n / (n * n !)) := by
-  rw [logOf_aHatSeries, coeff_mk, coeff_rescale, coeff_hirzebruchLSeries A hn, Algebra.smul_def,
-    ← map_pow, ← map_mul, ← map_neg, ← map_mul]
-  congr 1
-  rw [inv_pow]
-  field_simp
-
-/-- The odd coefficients of the logarithm of the Â series vanish. -/
-@[simp]
-theorem coeff_logOf_aHatSeries_of_odd {n : ℕ} (hn : Odd n) :
-    coeff n (logOf (aHatSeries A)) = 0 := by
-  rw [logOf_aHatSeries, coeff_mk, coeff_rescale, coeff_hirzebruchLSeries_of_odd A hn]
-  simp
-
-/-- `log Â(X) = -X²/24 + …`. -/
-@[simp]
-theorem coeff_two_logOf_aHatSeries :
-    coeff 2 (logOf (aHatSeries A)) = algebraMap ℚ A (-1 / 24) := by
-  rw [coeff_logOf_aHatSeries A (by decide), bernoulli_two]
-  norm_num [Nat.factorial]
-
-/-- `log Â(X) = -X²/24 + X⁴/2880 + …`. -/
-@[simp]
-theorem coeff_four_logOf_aHatSeries :
-    coeff 4 (logOf (aHatSeries A)) = algebraMap ℚ A (1 / 2880) := by
-  rw [coeff_logOf_aHatSeries A (by decide), bernoulli_eq_bernoulli'_of_ne_one (by decide),
-    bernoulli'_four]
-  norm_num [Nat.factorial]
 
 end TauCeti

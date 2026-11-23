@@ -54,14 +54,17 @@ The straight path `t ↦ t λ` (`TauCeti.LSPath.straight`) and, for a simple roo
 * `TauCeti.LSPath.timed`: the distinguished timed presentation, running with constant velocity
   `τ_j λ` for time `a_{j+1} - a_j`.
 * `TauCeti.LSPath.toPLPath`: the piecewise-linear path presented by it.
-* `TauCeti.LSPath.straight` and `TauCeti.LSPath.simple`: the straight path and the
-  two-direction paths along a simple root.
+* `TauCeti.LSPath.straight`, `TauCeti.LSPath.single`, and `TauCeti.LSPath.simple`: the straight
+  path, the zero-break path along any minimal coset representative, and the two-direction paths
+  along a simple root.
 
 ## Main results
 
 * `TauCeti.LSPath.finite`: **for dominant `λ` there are finitely many Lakshmibai–Seshadri paths
   of shape `λ`.**
-* `TauCeti.LSPath.bruhatLE_dir_succ` and `TauCeti.LSPath.strictAnti_length_dir`: the directions
+* `TauCeti.LSPath.instCountable`: for any weight `λ`, `LSPath P b lam` is countable.
+* `TauCeti.LSPath.bruhatLE_dir_succ`, `TauCeti.LSPath.strictAnti_dir`,
+  `TauCeti.LSPath.bruhatLE_dir_of_le`, and `TauCeti.LSPath.strictAnti_length_dir`: the directions
   strictly decrease in the Bruhat order, and so do their lengths.
 * `TauCeti.LSPath.sum_duration`, `TauCeti.LSPath.isTimed_timed` and
   `TauCeti.LSPath.duration_timed`: the distinguished presentation is a timed presentation of
@@ -70,6 +73,11 @@ The straight path `t ↦ t λ` (`TauCeti.LSPath.straight`) and, for a simple roo
 * `TauCeti.LSPath.endpoint_toPLPath`: the endpoint is `∑_j (a_{j+1} - a_j) τ_j λ`.
 * `TauCeti.LSPath.isAChain`: for dominant `λ`, every saturated chain from `τ_j` down to `τ_{j+1}`
   is an `a_{j+1}`-chain, not only the one witnessing the definition.
+* `TauCeti.LSPath.one_lt_den_time`,
+  `TauCeti.LSPath.den_time_dvd_natAbs_reflectionBond_of_length_eq_succ`, and
+  `TauCeti.LSPath.dir_succ_ne_one_of_dir_castSucc_eq_simple`: every internal break has denominator
+  greater than `1`, divides the reflection bond across a length-one step, and therefore cannot step
+  from `sᵢ` to `1` when `|⟨λ, αᵢ^∨⟩| = 1`.
 
 ## References
 
@@ -141,6 +149,26 @@ theorem bruhatLE_dir_succ (π : LSPath P b lam) (j : Fin π.length) :
     (weylCoxeterSystem P b).BruhatLE (π.dir j.succ) (π.dir j.castSucc) := by
   obtain ⟨C, hhead, hlast, -⟩ := π.exists_isAChain j
   exact hhead ▸ hlast ▸ C.bruhatLE_last_head
+
+/-- The directions of a Lakshmibai–Seshadri path strictly decrease in the Bruhat order of
+`W / W_λ`. -/
+theorem strictAnti_dir (π : LSPath P b lam) :
+    letI : PartialOrder P.weylGroup := (weylCoxeterSystem P b).bruhatPartialOrder
+    StrictAnti π.dir := by
+  let : PartialOrder P.weylGroup := (weylCoxeterSystem P b).bruhatPartialOrder
+  exact Fin.strictAnti_iff_succ_lt.mpr fun j ↦
+    lt_of_le_of_ne
+      (by simpa only [← Subtype.coe_le_coe, CoxeterSystem.bruhatPartialOrder_le] using
+        π.bruhatLE_dir_succ j)
+      (π.dir_succ_ne j)
+
+/-- The directions of a Lakshmibai–Seshadri path weakly decrease in the Bruhat order: if `i ≤ j`
+then `π.dir j ≤ π.dir i`. -/
+theorem bruhatLE_dir_of_le (π : LSPath P b lam) {i j : Fin (π.length + 1)} (h : i ≤ j) :
+    (weylCoxeterSystem P b).BruhatLE (π.dir j).val (π.dir i).val := by
+  let : PartialOrder P.weylGroup := (weylCoxeterSystem P b).bruhatPartialOrder
+  simpa only [← Subtype.coe_le_coe, CoxeterSystem.bruhatPartialOrder_le] using
+    π.strictAnti_dir.antitone h
 
 /-- The Coxeter lengths of the directions of a Lakshmibai–Seshadri path strictly decrease. -/
 theorem strictAnti_length_dir (π : LSPath P b lam) :
@@ -295,6 +323,69 @@ theorem toPLPath_straight :
     (straight lam : LSPath P b lam).toPLPath 𝕜 f = PLPath.straight 𝕜 (f lam) := by
   simp [toPLPath, timed, duration, straight, PLPath.straight_def]
 
+/-- The zero-break Lakshmibai–Seshadri path running along a single minimal coset representative `τ`
+for `P.wallIndices b lam` from time `0` to time `1`. When `τ = 1` this is
+`TauCeti.LSPath.straight`. -/
+noncomputable def single
+    (τ : {w // (weylCoxeterSystem P b).IsMinimalCosetRep (P.wallIndices b lam) w}) :
+    LSPath P b lam where
+  length := 0
+  dir _ := τ
+  time := ![0, 1]
+  time_zero := rfl
+  time_last := rfl
+  strictMono_time := Fin.strictMono_iff_lt_succ.mpr fun j ↦ by
+    fin_cases j
+    simp
+  dir_succ_ne j := j.elim0
+  exists_isAChain j := j.elim0
+
+/-- `LSPath.single τ` has zero internal breaks. -/
+@[simp]
+theorem length_single
+    (τ : {w // (weylCoxeterSystem P b).IsMinimalCosetRep (P.wallIndices b lam) w}) :
+    (single τ : LSPath P b lam).length = 0 :=
+  (rfl)
+
+/-- The sole segment direction of `LSPath.single τ` is `τ`. -/
+@[simp]
+theorem dir_single
+    (τ : {w // (weylCoxeterSystem P b).IsMinimalCosetRep (P.wallIndices b lam) w})
+    (j : Fin ((single τ : LSPath P b lam).length + 1)) :
+    (single τ : LSPath P b lam).dir j = τ :=
+  (rfl)
+
+/-- `LSPath.single τ` has the single segment from time `0` to time `1`. -/
+@[simp]
+theorem time_single
+    (τ : {w // (weylCoxeterSystem P b).IsMinimalCosetRep (P.wallIndices b lam) w})
+    (k : Fin ((single τ : LSPath P b lam).length + 2)) :
+    (single τ : LSPath P b lam).time k = k.val := by
+  fin_cases k <;> rfl
+
+/-- The sole segment of `LSPath.single τ` has duration `1`. -/
+@[simp]
+theorem duration_single
+    (τ : {w // (weylCoxeterSystem P b).IsMinimalCosetRep (P.wallIndices b lam) w})
+    (j : Fin ((single τ : LSPath P b lam).length + 1)) :
+    (single τ : LSPath P b lam).duration j = 1 := by
+  fin_cases j
+  simp [duration_def]
+
+/-- At the identity minimal coset representative, `LSPath.single` is `LSPath.straight`. -/
+@[simp]
+theorem single_one :
+    (single ⟨1, (weylCoxeterSystem P b).isMinimalCosetRep_one _⟩ : LSPath P b lam) =
+      straight lam :=
+  (rfl)
+
+/-- The piecewise-linear path of `LSPath.single τ` is the straight path along `f (τ • lam)`. -/
+@[simp]
+theorem toPLPath_single
+    (τ : {w // (weylCoxeterSystem P b).IsMinimalCosetRep (P.wallIndices b lam) w}) :
+    (single τ : LSPath P b lam).toPLPath 𝕜 f = PLPath.straight 𝕜 (f (τ.val • lam)) := by
+  simp [toPLPath, timed, duration, single, PLPath.straight_def]
+
 /-- The **two-direction** Lakshmibai–Seshadri path `(sᵢ, 1; 0, a, 1)` along a simple root `αᵢ`
 with `⟨λ, αᵢ^∨⟩ ≠ 0`, for `0 < a < 1` with `a ⟨λ, αᵢ^∨⟩ ∈ ℤ`. It runs along `sᵢ λ` until time
 `a`, then along `λ`. The chain `sᵢ ⋗ 1` has the single bond `⟨λ, αᵢ^∨⟩`. -/
@@ -426,6 +517,13 @@ theorem finite (hlam : lam ∈ dominantChamber P b) : Finite (LSPath P b lam) :=
   · have := congrArg (List.map Subtype.val ∘ Subtype.val) (Prod.ext_iff.mp h).2
     simpa [e, List.map_ofFn, Function.comp_def] using this
 
+/-- For any weight `λ` (not necessarily dominant), `LSPath P b lam` is countable. -/
+instance instCountable : Countable (LSPath P b lam) := by
+  have := P.finite_weylGroup_of_base b
+  exact Function.Injective.countable
+    (f := fun π : LSPath P b lam ↦ (List.ofFn π.dir, List.ofFn π.time))
+    (fun π₁ π₂ h ↦ ext (Prod.ext_iff.mp h).1 (Prod.ext_iff.mp h).2)
+
 end Finite
 
 section Chains
@@ -441,6 +539,63 @@ theorem isAChain (hlam : lam ∈ dominantChamber P b) (π : LSPath P b lam) (j :
   obtain ⟨C₀, hhead₀, hlast₀, hC₀⟩ := π.exists_isAChain j
   rw [isAChain_iff_den_dvd_intervalBondGcd hlam] at hC₀ ⊢
   rwa [hhead, hlast, ← hhead₀, ← hlast₀]
+
+/-- Every internal break time of a Lakshmibai–Seshadri path lies strictly between `0` and `1`, so
+its reduced denominator is strictly greater than `1`. -/
+theorem one_lt_den_time (π : LSPath P b lam) (j : Fin π.length) :
+    1 < (π.time j.castSucc.succ).den := by
+  by_contra! hle
+  have hden : (π.time j.castSucc.succ).den = 1 :=
+    le_antisymm hle (Rat.den_pos (π.time j.castSucc.succ))
+  have h0 : (0 : ℚ) < π.time j.castSucc.succ := by
+    rw [← π.time_zero]
+    exact π.strictMono_time (Fin.succ_pos _)
+  have h1 : π.time j.castSucc.succ < 1 := by
+    rw [← π.time_last]
+    exact π.strictMono_time (Fin.mk_lt_mk.mpr (by simp))
+  have hnum : ((π.time j.castSucc.succ).num : ℚ) = π.time j.castSucc.succ :=
+    Rat.intCast_num_of_den_eq_one hden
+  rw [← hnum] at h0 h1
+  have h0' : (0 : ℤ) < (π.time j.castSucc.succ).num := Int.cast_pos.mp h0
+  have h1' : (π.time j.castSucc.succ).num < 1 := by exact_mod_cast h1
+  omega
+
+/-- At an internal break between directions whose Coxeter lengths differ by `1`, any witnessing
+saturated chain has length `1`, so the denominator of the break time divides the absolute value of
+the reflection bond between the two orbit weights. -/
+theorem den_time_dvd_natAbs_reflectionBond_of_length_eq_succ (π : LSPath P b lam)
+    (j : Fin π.length)
+    (hlen : (weylCoxeterSystem P b).length (π.dir j.castSucc).val =
+      (weylCoxeterSystem P b).length (π.dir j.succ).val + 1) :
+    (π.time j.castSucc.succ).den ∣
+      (P.reflectionBond b ((π.dir j.castSucc).val • lam) ((π.dir j.succ).val • lam)).natAbs := by
+  obtain ⟨C, hhead, hlast, hC⟩ := π.exists_isAChain j
+  have hClen : C.length = 1 := by
+    have h := C.length_last_add_length
+    rw [hhead, hlast] at h
+    omega
+  let k : Fin C.length := ⟨0, by omega⟩
+  have hstep := (isAChain_iff_den_dvd_bondGcd.mp hC).trans (bondGcd_dvd k)
+  have h0 : C k.castSucc = π.dir j.castSucc :=
+    (congrArg C (show k.castSucc = 0 from Fin.ext (by simp [k]))).trans hhead
+  have h1 : C k.succ = π.dir j.succ :=
+    (congrArg C (show k.succ = Fin.last C.length from Fin.ext (by simp [k, hClen]))).trans hlast
+  rwa [h0, h1] at hstep
+
+/-- An internal break of a Lakshmibai–Seshadri path cannot step from a simple reflection `sᵢ`
+directly to `1` when `|⟨λ, αᵢ^∨⟩| = 1`. This holds for every weight `λ` (not necessarily dominant)
+in every finite reduced root datum. -/
+theorem dir_succ_ne_one_of_dir_castSucc_eq_simple (π : LSPath P b lam) {j : Fin π.length}
+    {i : b.support} (hi : (P.coroot' i lam).natAbs = 1)
+    (hj : (π.dir j.castSucc).val = (weylCoxeterSystem P b).simple i) :
+    (π.dir j.succ).val ≠ 1 := by
+  intro h1
+  have hlen : (weylCoxeterSystem P b).length (π.dir j.castSucc).val =
+      (weylCoxeterSystem P b).length (π.dir j.succ).val + 1 := by
+    rw [hj, h1, CoxeterSystem.length_simple, CoxeterSystem.length_one]
+  have hdvd := π.den_time_dvd_natAbs_reflectionBond_of_length_eq_succ j hlen
+  rw [hj, h1, reflectionBond_simple_smul_one_smul i, hi] at hdvd
+  exact (Nat.dvd_one.mp hdvd ▸ π.one_lt_den_time j).false
 
 end Chains
 

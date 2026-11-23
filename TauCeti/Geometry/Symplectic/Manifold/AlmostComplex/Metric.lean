@@ -44,7 +44,16 @@ symplectic form on an oriented four-manifold, these are exactly the metrics of t
 * `TauCeti.SmoothAlmostComplexStructure.toEndomorphism_eq_innerOperator` and
   `TauCeti.SmoothAlmostComplexStructure.eq_of_inner_eq`: a smooth `J` with
   `g(u, v) = σ(u, J v)` is the operator of `σ`, so it is unique.
+* `TauCeti.SmoothAlmostComplexStructure.inner_apply_apply_of_inner_eq` and
+  `TauCeti.SmoothAlmostComplexStructure.inner_apply_left_of_inner_eq`: such a `J` is orthogonal,
+  and `g(J u, w) = σ(u, w)`.
 * `TauCeti.SmoothTwoForm.compatible_of_inner_eq`: such a `J` is compatible with `σ`.
+* `TauCeti.SmoothAlmostComplexStructure.kahlerTwoForm_eq_of_inner_eq`: the Kähler two-form
+  `⟪J ·, ·⟫` of such a `J` is `σ`.
+* `TauCeti.SmoothAlmostComplexStructure.inner_eq_eval₂_kahlerTwoForm` and
+  `TauCeti.SmoothAlmostComplexStructure.compatible_kahlerTwoForm`: conversely, an orthogonal `J`
+  satisfies `g(u, v) = ω(u, J v)` for its Kähler two-form `ω`, which is therefore compatible with
+  `J`.
 * `TauCeti.SmoothTwoForm.exists_smoothAlmostComplexStructure_inner_eq_iff`: on an oriented
   four-manifold, such a `J` exists if and only if `⋆σ = ±σ` and `|σ|² = 2` at every point.
 * `TauCeti.SmoothTwoForm.exists_smoothAlmostComplexStructure_inner_eq_iff_of_pos`: for the
@@ -153,9 +162,11 @@ end SmoothTwoForm
 
 variable {σ : SmoothTwoForm I M} {J K : SmoothAlmostComplexStructure I M}
 
+namespace SmoothAlmostComplexStructure
+
 omit [FiniteDimensional ℝ E] in
 /-- A smooth almost complex structure with `g(u, v) = σ(u, J v)` is orthogonal. -/
-private theorem inner_apply_apply_of_inner_eq
+theorem inner_apply_apply_of_inner_eq
     (hJ : ∀ x u v, ⟪u, v⟫ = σ.eval₂ x u (J x v)) (x : M) (u v : TangentSpace I x) :
     ⟪J x u, J x v⟫ = ⟪u, v⟫ := by
   rw [hJ, SmoothAlmostComplexStructure.apply_apply, SmoothBundleForm.eval₂_neg_right,
@@ -164,12 +175,14 @@ private theorem inner_apply_apply_of_inner_eq
 omit [FiniteDimensional ℝ E] in
 /-- A smooth almost complex structure with `g(u, v) = σ(u, J v)` represents `σ` through the
 metric: `g(J u, w) = σ(u, w)`. -/
-private theorem inner_apply_left_of_inner_eq
+theorem inner_apply_left_of_inner_eq
     (hJ : ∀ x u v, ⟪u, v⟫ = σ.eval₂ x u (J x v)) (x : M) (u w : TangentSpace I x) :
     ⟪J x u, w⟫ = σ.eval₂ x u w := by
   rw [← inner_apply_apply_of_inner_eq hJ x (J x u) w, SmoothAlmostComplexStructure.apply_apply,
     inner_neg_left, hJ x u (J x w), SmoothAlmostComplexStructure.apply_apply,
-    SmoothBundleForm.eval₂_neg_right, neg_neg]
+    SmoothBundleForm.eval₂_neg_right, _root_.neg_neg]
+
+end SmoothAlmostComplexStructure
 
 namespace SmoothTwoForm
 
@@ -180,7 +193,7 @@ theorem compatible_of_inner_eq (hJ : ∀ x u v, ⟪u, v⟫ = σ.eval₂ x u (J x
     σ.Compatible J where
   invariant := invariant_iff.2 fun x u v ↦ by
     rw [← hJ]
-    exact inner_apply_left_of_inner_eq hJ x u v
+    exact SmoothAlmostComplexStructure.inner_apply_left_of_inner_eq hJ x u v
   tames := tames_iff.2 fun x v hv ↦ by
     rw [← hJ]
     exact real_inner_self_pos.2 hv
@@ -207,6 +220,25 @@ theorem toEndomorphism_eq_innerOperator (hJ : ∀ x u v, ⟪u, v⟫ = σ.eval₂
       rw [inner_apply_left_of_inner_eq hJ, SmoothTwoForm.inner_innerOperator_apply]
   ext x u
   exact h x u
+
+/-- **The Kähler form of a compatible metric.** If the metric of `M` is `g(u, w) = σ(u, J w)`,
+the Kähler two-form `⟪J ·, ·⟫` of `J` is `σ`. -/
+theorem kahlerTwoForm_eq_of_inner_eq (hg : ∀ x u w, ⟪u, w⟫ = σ.eval₂ x u (J x w)) :
+    J.kahlerTwoForm (inner_apply_apply_of_inner_eq hg) = σ :=
+  SmoothBundleForm.ext_eval₂ fun x u w ↦ by
+    rw [SmoothBundleForm.eval₂_apply, kahlerTwoForm_apply_two, inner_apply_left_of_inner_eq hg]
+
+/-- The metric of `M` is `⟪u, w⟫ = ω(u, J w)` for the Kähler two-form `ω` of an orthogonal `J`. -/
+theorem inner_eq_eval₂_kahlerTwoForm
+    (hJ : ∀ (x : M) (u w : TangentSpace I x), ⟪J x u, J x w⟫ = ⟪u, w⟫) (x : M)
+    (u w : TangentSpace I x) : ⟪u, w⟫ = (J.kahlerTwoForm hJ).eval₂ x u (J x w) := by
+  rw [SmoothBundleForm.eval₂_apply, kahlerTwoForm_apply_two, hJ]
+
+/-- The Kähler two-form of an orthogonal smooth almost complex structure is compatible with it. -/
+theorem compatible_kahlerTwoForm
+    (hJ : ∀ (x : M) (u w : TangentSpace I x), ⟪J x u, J x w⟫ = ⟪u, w⟫) :
+    SmoothTwoForm.Compatible (J.kahlerTwoForm hJ) J :=
+  SmoothTwoForm.compatible_of_inner_eq (inner_eq_eval₂_kahlerTwoForm hJ)
 
 end SmoothAlmostComplexStructure
 

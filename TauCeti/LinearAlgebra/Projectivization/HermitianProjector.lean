@@ -355,3 +355,13 @@ theorem affineChart_eq_hermitianProjector_div {n : ℕ} (i : Fin (n + 1))
 end RCLike
 
 end Projectivization
+
+namespace TauCeti
+
+/-- The Hermitian square norm of the homogeneous coordinates `(t, 1)` of a point `[t : 1]` of the
+projective line over `ℝ` or `ℂ` is `1 + |t|²`. -/
+theorem star_vec2_one_dotProduct_self {𝕜 : Type*} [RCLike 𝕜] (z : 𝕜) :
+    star ![z, 1] ⬝ᵥ ![z, 1] = ((1 + ‖z‖ ^ 2 : ℝ) : 𝕜) := by
+  simp [dotProduct, Fin.sum_univ_two, RCLike.conj_mul, add_comm]
+
+end TauCeti

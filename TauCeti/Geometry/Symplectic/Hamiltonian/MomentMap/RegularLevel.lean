@@ -53,9 +53,18 @@ variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [Topological
 variable {ι : Type*} [Fintype ι]
 
 /-- The components of a moment map in a basis of `𝔤` form a differentiable map to `ι → ℝ`. -/
-private theorem mdifferentiableAt_components (h : σ.IsMomentMap a μ) (b : Basis ι ℝ 𝔤) (x : M) :
+theorem mdifferentiableAt_components (h : σ.IsMomentMap a μ) (b : Basis ι ℝ 𝔤) (x : M) :
     MDifferentiableAt I 𝓘(ℝ, ι → ℝ) (fun y i ↦ μ y (b i)) x :=
   mdifferentiableAt_pi_space.2 fun i ↦ h.mdifferentiableAt (b i) x
+
+/-- The derivative of the components of a moment map in a basis `b` of `𝔤` is the differential
+`dμ_x` read in that basis. -/
+theorem mfderiv_components_apply (h : σ.IsMomentMap a μ) (b : Basis ι ℝ 𝔤) (x : M)
+    (v : TangentSpace I x) (i : ι) :
+    mfderiv I 𝓘(ℝ, ι → ℝ) (fun y i ↦ μ y (b i)) x v i = h.differential x v (b i) := by
+  have := congrArg (fun L ↦ L v) (mvfderiv_apply (h.mdifferentiableAt_components b x) i)
+  simp only [ContinuousLinearMap.comp_apply, ContinuousLinearMap.proj_apply] at this
+  rw [h.differential_apply, this, mvfderiv_apply_eq_mfderiv_apply]
 
 variable [FiniteDimensional ℝ E]
 
@@ -66,15 +75,11 @@ theorem isRegularPoint_iff_isotropy_eq_bot (h : σ.IsMomentMap a μ) (b : Basis 
     (hσx : (σ.bilinFormAt x).Nondegenerate) :
     IsRegularPoint I 𝓘(ℝ, ι → ℝ) (fun y i ↦ μ y (b i)) x ↔ a.isotropy x = ⊥ := by
   classical
-  have hd := h.mdifferentiableAt_components b x
   -- The derivative of the components is the differential read in the dual basis.
   have heq : ⇑(mfderiv I 𝓘(ℝ, ι → ℝ) (fun y i ↦ μ y (b i)) x) =
       ⇑b.dualBasis.equivFun ∘ ⇑(h.differential x) := by
     funext v i
-    have := congrArg (fun L ↦ L v) (mvfderiv_apply hd i)
-    simp only [ContinuousLinearMap.comp_apply, ContinuousLinearMap.proj_apply] at this
-    rw [Function.comp_apply, Basis.dualBasis_equivFun, h.differential_apply, this,
-      mvfderiv_apply_eq_mfderiv_apply]
+    rw [Function.comp_apply, Basis.dualBasis_equivFun, h.mfderiv_components_apply]
   rw [isRegularPoint_iff, heq]
   exact (EquivLike.comp_surjective _ b.dualBasis.equivFun).trans (h.differential_surjective_iff hσx)
 

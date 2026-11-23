@@ -32,9 +32,6 @@ as a ring homomorphism. It is an involution.
   inner variable of `G` to zero.
 * `PowerSeries.coeff_swap_derivative`: after exchanging the variables, the derivative in the outer
   variable becomes the derivative of each coefficient in the inner variable.
-* `PowerSeries.coeff_swap_derivative_swap`, `PowerSeries.swap_derivative_swap_mul`: the
-  derivative `swap ∘ d⁄dX ∘ swap` in the inner variable differentiates each coefficient and
-  satisfies the Leibniz rule.
 * `Polynomial.coeff_coeff_swapPowerSeries`: the coefficient of `Xⁱ` in the `tᵏ`-coefficient of
   `swapPowerSeries Q` is the `tᵏ`-coefficient of the coefficient of `Xⁱ` in `Q`.
 * `Polynomial.swapPowerSeries_C`, `Polynomial.swapPowerSeries_X`: the values of
@@ -43,7 +40,8 @@ as a ring homomorphism. It is an involution.
 * `Polynomial.coeff_swapPowerSeries_mem_degreeLT`: `swapPowerSeries` preserves degree bounds
   coefficientwise.
 * `Polynomial.exists_monic_swapPowerSeries_eq`: the power series with monic constant coefficient
-  and degree-bounded higher coefficients are exactly images of monic polynomials.
+  and degree-bounded higher coefficients are exactly images of monic polynomials; the converse
+  degree bound is `Polynomial.Monic.coeff_swapPowerSeries_mem_degreeLT_of_ne_zero`.
 -/
 
 public section
@@ -114,19 +112,6 @@ theorem coeff_swap_derivative {R : Type*} [CommSemiring R] (G : R⟦X⟧⟦X⟧)
   simp only [coeff_coeff_swap, coeff_derivative]
   -- the factor `a + 1` is a natural number cast into `R⟦X⟧`, which `coeff N` passes through
   exact_mod_cast coeff_mul_natCast
-
-/-- **The derivative in the inner variable** `u`, written `swap ∘ d⁄dX ∘ swap`, differentiates each
-coefficient: the coefficient of `vᴺ` in `swap (d⁄dX (swap G))` is the derivative of the
-coefficient of `vᴺ` in `G`. -/
-theorem coeff_swap_derivative_swap {R : Type*} [CommSemiring R] (G : R⟦X⟧⟦X⟧) (N : ℕ) :
-    coeff N (swap (d⁄dX (swap G))) = d⁄dX (coeff N G) := by
-  simpa only [swap_swap] using coeff_swap_derivative (swap G) N
-
-/-- The **Leibniz rule for the derivative in the inner variable** `swap ∘ d⁄dX ∘ swap`. -/
-theorem swap_derivative_swap_mul {R : Type*} [CommSemiring R] (G H : R⟦X⟧⟦X⟧) :
-    swap (d⁄dX (swap (G * H))) = swap (d⁄dX (swap G)) * H + G * swap (d⁄dX (swap H)) := by
-  simp only [map_mul, Derivation.leibniz, smul_eq_mul, map_add, swap_swap]
-  ring
 
 end PowerSeries
 
@@ -227,5 +212,16 @@ theorem exists_monic_swapPowerSeries_eq {g : R[X]} (hg : g.Monic)
     · rw [PowerSeries.coeff_zero_eq_constantCoeff_apply, hF₀, coeff_eq_zero_of_natDegree_lt hi]
     · exact (coeff_eq_zero_of_degree_lt ((mem_degreeLT.mp
         (hF k (Nat.one_le_iff_ne_zero.mpr hk))).trans (by exact_mod_cast hi))).symm
+
+/-- For `k ≠ 0`, the `tᵏ`-coefficient of a monic polynomial `G` over `R⟦t⟧` has degree
+`< G.natDegree`: the leading coefficient `1` of `G` has no higher `t`-coefficients. -/
+theorem Monic.coeff_swapPowerSeries_mem_degreeLT_of_ne_zero {G : R⟦X⟧[X]} (hG : G.Monic) {k : ℕ}
+    (hk : k ≠ 0) : PowerSeries.coeff k (swapPowerSeries G) ∈ degreeLT R G.natDegree := by
+  rw [mem_degreeLT, degree_lt_iff_coeff_zero]
+  intro i hi
+  rw [coeff_coeff_swapPowerSeries]
+  rcases hi.eq_or_lt with rfl | hi
+  · rw [hG.coeff_natDegree, PowerSeries.coeff_one, ite_eq_right hk]
+  · rw [coeff_eq_zero_of_natDegree_lt hi, map_zero]
 
 end Polynomial

@@ -83,6 +83,20 @@ theorem ramificationDegree_def (f : X → Y) :
     ramificationDegree f = ∑ᶠ x, (localMultiplicity f x - 1) :=
   (rfl)
 
+/-- **A degree-one map is unramified.** A finite holomorphic map of degree `1` has ramification
+degree `0`. -/
+theorem FiniteHolomorphicMap.ramificationDegree_eq_zero_of_degree_eq_one
+    {f : FiniteHolomorphicMap X Y} (hf : degree f = 1) : ramificationDegree f = 0 := by
+  have hbdd : BddAbove (Set.range (fiberMultiplicitySum f)) := by
+    by_contra h
+    rw [degree_def, Nat.iSup_of_not_bddAbove h] at hf
+    exact zero_ne_one hf
+  rw [ramificationDegree_def]
+  refine finsum_eq_zero_of_forall_eq_zero fun x ↦ Nat.sub_eq_zero_of_le ?_
+  rw [← hf, degree_def]
+  exact (localMultiplicity_le_fiberMultiplicitySum (f.finite_fiber (f x)) rfl).trans
+    (le_ciSup hbdd (f x))
+
 variable [IsManifold 𝓘(ℂ) 1 X] [IsManifold 𝓘(ℂ) 1 Y]
 
 /-- The ramification points of a finite holomorphic map from a Riemann surface are

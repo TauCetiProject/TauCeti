@@ -153,11 +153,9 @@ theorem _root_.HasFDerivAt.exists_negativeDisc_homotopy
   let N : E →L[ℝ] E := (ContinuousLinearMap.fst ℝ E F).comp C
   have hN : ∀ u, ‖u‖ ≤ ‖N u‖ := C.norm_le_norm_fst_of_norm_sq_sub hC
   -- Its polar factor is a linear isometry.
-  let h₀ : E →ₗᵢ[ℝ] E :=
-    { toLinearMap := N.polarFactor
-      norm_map' := N.norm_polarFactor_apply_of_injective
-        (ContinuousLinearMap.injective_of_forall_norm_le (M := 1) fun x ↦ by simpa using hN x) }
-  refine ⟨h₀, rfl, δ₀, hδ₀, fun δ hδ ↦ ?_⟩
+  let h₀ : E →ₗᵢ[ℝ] E := N.polarIsometry
+    (ContinuousLinearMap.injective_of_forall_norm_le (M := 1) fun x ↦ by simpa using hN x)
+  refine ⟨h₀, N.coe_polarIsometry _, δ₀, hδ₀, fun δ hδ ↦ ?_⟩
   let ι : C(closedBall (0 : E) δ, E) := ⟨Subtype.val, continuous_subtypeVal⟩
   have hw (w : closedBall (0 : E) δ) : ((w : E), (0 : F)) ∈ closedBall (0 : E × F) δ₀ := by
     have := mem_closedBall_zero_iff.mp w.property
@@ -199,7 +197,7 @@ theorem _root_.HasFDerivAt.exists_negativeDisc_homotopy
       prop' := fun t w ↦ hP w (G.prop t (ι' w)).1 (G.prop t (ι' w)).2 }
   let H := H₁.trans H₂
   exact ⟨fun w hw' ↦ hδU (hw ⟨w, hw'⟩), H.toContinuousMap, fun w ↦ H.apply_zero w,
-    fun w ↦ H.apply_one w, fun t w ↦ H.prop t w⟩
+    fun w ↦ (H.apply_one w).trans (by simp [h₀]), fun t w ↦ H.prop t w⟩
 
 section Family
 

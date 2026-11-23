@@ -5,9 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.GroupTheory.GroupAlgGeom.Basic
+public import TauCeti.GroupTheory.GroupAlgGeom.Automorphism
 public import Mathlib.GroupTheory.FreeGroup.CyclicallyReduced
 import Mathlib.Algebra.Group.End
+import Mathlib.Algebra.Group.Submonoid.BigOperators
 import Mathlib.Tactic.Group
 import TauCeti.GroupTheory.FreeGroup.Basic
 
@@ -37,10 +38,11 @@ the start and `h` at the end with `h * g = 1`; if `h * g ≠ 1`, then `g m' h` i
 `m' (h * g)` by `g`, so `g` merges into the coefficient at the end.
 
 Counting the letters `x^{±1}` of the reduced word gives the number of occurrences of a variable in
-an element of `G[X]`. Cyclic reduction replaces an equation `w = 1` over `G` by an equation with
-the same solutions whose left side is cyclically reduced; in a quadratic equation, the variables
-of the conjugator disappear from it. This is a step towards the standard form of strictly
-quadratic words [IFT, §2.7, Lemma 1].
+an element of `G[X]`; a word without letters `x^{±1}` spells an element of the subgroup
+`GX.avoiding x` of the words in which `x` does not occur. Cyclic reduction replaces an equation
+`w = 1` over `G` by an equation with the same solutions whose left side is cyclically reduced; in a
+quadratic equation, the variables of the conjugator disappear from it. This is a step towards the
+standard form of strictly quadratic words [IFT, §2.7, Lemma 1].
 
 Mathlib has no normal form for the binary free product `Monoid.Coprod`, and the source's reduced
 forms write each syllable from `F(X)` as a reduced word of `F(X)`, so the normal form is proved
@@ -122,6 +124,12 @@ theorem prod_map_letter_map_inr (L : List (X × Bool)) :
   rw [MonoidHom.apply_freeGroup_mk (inr : FreeGroup X →* GX G X), List.map_map]
   exact congrArg List.prod <| List.map_congr_left fun ⟨_, b⟩ _ => by cases b <;> rfl
 
+/-- The product of a word in coefficients is the image in `G[X]` of the product of the
+coefficients. -/
+theorem prod_map_letter_map_inl (L : List G) :
+    ((L.map Sum.inl : List (G ⊕ X × Bool)).map letter).prod = inl L.prod := by
+  simp [Function.comp_def, map_list_prod]
+
 theorem letter_inr (p : X × Bool) : letter (.inr p : G ⊕ X × Bool) = inr (FreeGroup.mk [p]) := by
   simpa using prod_map_letter_map_inr (G := G) [p]
 
@@ -195,6 +203,26 @@ theorem countVar_map_inl (x : X) (L : List G) :
 theorem countVar_map_inr [DecidableEq X] (x : X) (L : List (X × Bool)) :
     countVar x (L.map Sum.inr : List (G ⊕ X × Bool)) = L.countP fun p => p.1 = x := by
   simp [countVar_eq_countP, Function.comp_def]
+
+/-- A word without variable letters is a word in coefficients. -/
+theorem exists_eq_map_inl {l : List (G ⊕ X × Bool)} (h : ∀ x, countVar x l = 0) :
+    ∃ L : List G, l = L.map Sum.inl := by
+  induction l with
+  | nil => exact ⟨[], rfl⟩
+  | cons a l ih =>
+    rcases a with g | ⟨x, b⟩
+    · obtain ⟨L, rfl⟩ := ih fun x => by simpa using h x
+      exact ⟨g :: L, rfl⟩
+    · simpa using h x
+
+/-- A variable that is not spelled in a word does not occur in its product. -/
+theorem prod_map_letter_mem_avoiding [Group G] [DecidableEq X] {x : X} {l : List (G ⊕ X × Bool)}
+    (h : countVar x l = 0) : (l.map letter).prod ∈ avoiding x :=
+  list_prod_mem <| List.forall_mem_map.2 fun
+    | .inl g, _ => by simp
+    | .inr (y, b), hm => by
+      have hy : y ≠ x := by rintro rfl; exact countVar_eq_zero.1 h b hm
+      cases b <;> simp [hy]
 
 end CountVar
 

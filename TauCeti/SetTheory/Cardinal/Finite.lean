@@ -36,6 +36,8 @@ particular is a subsingleton.
 
 * `Finite.eq_or_eq_of_card_le_two`: two distinct elements exhaust a finite type of
   cardinality at most two.
+* `Fintype.sum_eq_add_of_natCard_le_two`: so a sum over such a type is the sum of the values at
+  the two elements.
 
 * `Nat.card_pi_eq_prod_of_card_eq_one`: `Nat.card (∀ i, X i) = ∏ i ∈ s, Nat.card (X i)` when every
   factor outside `s` has cardinality one.
@@ -171,3 +173,17 @@ theorem eq_or_eq_of_card_le_two {K : Type*} [Finite K] (hK : Nat.card K ≤ 2)
   omega
 
 end Finite
+
+namespace Fintype
+
+/-- Over a finite type of cardinality at most two, a product is the product of the values at any
+two distinct elements `i` and `j`. -/
+@[to_additive /-- Over a finite type of cardinality at most two, a sum is the sum of the values at
+any two distinct elements `i` and `j`. -/]
+theorem prod_eq_mul_of_natCard_le_two {K M : Type*} [Fintype K] [CommMonoid M]
+    (hK : Nat.card K ≤ 2) {i j : K} (hij : i ≠ j) (f : K → M) :
+    ∏ k, f k = f i * f j :=
+  prod_eq_mul i j hij fun k hk ↦
+    ((Finite.eq_or_eq_of_card_le_two hK hij k).elim hk.1 hk.2).elim
+
+end Fintype

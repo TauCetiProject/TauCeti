@@ -34,6 +34,8 @@ transitions whose last leg runs where the fields agree
 * `TauCeti.flowOf_eq_of_eqOn`, `TauCeti.eventually_flowOf_eq_of_eqOn`: the flows of fields
   agreeing on an open set containing the trajectory of `x` from time `0` to `t` agree at `(t, x)`
   and on a neighbourhood of `(t, x)`.
+* `TauCeti.mfderiv_flowOf_add_eq_of_eqOn`: after reaching the trajectory at time `τ`, the flow of
+  `w` continues as the flow of `v`, and the derivatives of the time maps compose accordingly.
 
 ## References
 
@@ -125,6 +127,31 @@ theorem flowOf_eq_of_eqOn (ht : (t, x) ∈ flowDomain v)
     (htU : MapsTo (fun s ↦ flowOf v s x) (uIcc 0 t) U) :
     (t, x) ∈ flowDomain w ∧ flowOf w t x = flowOf v t x :=
   (eventually_flowOf_eq_of_eqOn hv hw hU hvw ht htU).self_of_nhds
+
+/-- **Flowing on along a segment where the fields agree.** Let `w` carry `p` to `x` at time `τ`,
+and let `w` agree with `v` on an open set `U` containing the trajectory of `x` under `v` from time
+`0` to time `t`. Then `w` carries `p` at time `τ + t` to the point `flowOf v t x`, and the
+derivative of its time-`(τ + t)` map at `p` is that of its time-`τ` map followed by that of the
+time-`t` map of `v` at `x`. -/
+theorem mfderiv_flowOf_add_eq_of_eqOn {τ : ℝ} {p : M} (hτ : (τ, p) ∈ flowDomain w)
+    (hx : flowOf w τ p = x) (ht : (t, x) ∈ flowDomain v)
+    (htU : MapsTo (fun s ↦ flowOf v s x) (uIcc 0 t) U) :
+    (τ + t, p) ∈ flowDomain w ∧ flowOf w (τ + t) p = flowOf v t x ∧
+      ∀ ξ : TangentSpace I p,
+        -- The tangent spaces at the two values are both the model space `E`.
+        @Eq E (mfderiv I I (flowOf w (τ + t)) p ξ)
+          (mfderiv I I (flowOf v t) x (mfderiv I I (flowOf w τ) p ξ)) := by
+  have h := eventually_flowOf_eq_of_eqOn hv hw hU hvw ht htU
+  obtain ⟨htw, hteq⟩ := h.self_of_nhds
+  obtain ⟨hdom, hval⟩ := flowOf_add hw hτ (hx ▸ htw)
+  refine ⟨hdom, by rw [← hval, hx, hteq], fun ξ ↦ ?_⟩
+  -- Near `x` the time-`t` maps of `w` and `v` agree, so they have the same derivative at `x`.
+  have hev : flowOf w t =ᶠ[𝓝 x] flowOf v t := by
+    filter_upwards [((continuous_const.prodMk continuous_id).tendsto x).eventually h] with y hy
+    exact hy.2
+  rw [← mfderiv_flowOf_add_apply hw hτ hx htw ξ, hev.mfderiv_eq]
+  -- `tangentSpaceCast` is the identity of the model space.
+  rfl
 
 end Flow
 

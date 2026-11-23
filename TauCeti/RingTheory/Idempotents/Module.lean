@@ -11,6 +11,7 @@ public import TauCeti.Algebra.Module.Submodule.Pointwise
 public import TauCeti.Algebra.Star.Projection.Family
 public import TauCeti.LinearAlgebra.Dimension.DirectSum
 public import TauCeti.RingTheory.Idempotents.Corner.Basic
+public import TauCeti.RingTheory.KrullSchmidt.Indecomposable
 import Mathlib.LinearAlgebra.Basis.VectorSpace
 
 /-!
@@ -64,6 +65,7 @@ hypothesis in the intended applications.
 * `IsIdempotentElem.mem_smul_top_iff_smul_eq_self`: for an idempotent `e`, membership in
   `e • M` is the fixed-point condition `e • x = x`. The scalar `e` needs only a distributive
   monoid action on `M`.
+* `Module.End.smul_top_eq_range`: for an endomorphism `f`, the piece `f • M` is `range f`.
 * `TauCeti.isInternal_smul_top`: **the decomposition** `M = ⨁ᵢ eᵢ M`, with the component of `x` at
   `i` being `eᵢ • x` (`TauCeti.coe_ofBijective_coeLinearMap_symm_apply_smul_top`).
 * `TauCeti.smul_coeLinearMap_smul_top`: multiplying by `eᵢ` reads off the `i`-th component of a
@@ -76,6 +78,10 @@ hypothesis in the intended applications.
   corner functor `M ↦ eM` of Morita theory is built on.
 * `TauCeti.isIdempotentElem_of_smul_eq_self`: an element `e ∈ A` that fixes `S` pointwise and
   annihilates the kernel of `Algebra.lsmul` is automatically idempotent.
+* `TauCeti.IsIndecomposableModule.existsUnique_forall_smul_eq_self`: a central idempotent acts on
+  a module by an idempotent endomorphism, which is `0` or `1` on an indecomposable module, so an
+  indecomposable module is fixed by exactly one term of a complete orthogonal family of central
+  idempotents and killed by the others.
 
 ## References
 
@@ -108,6 +114,20 @@ theorem smul_eq_self_of_mem_smul_top {e : R} (he : IsIdempotentElem e) {x : M}
   he.mem_smul_top_iff_smul_eq_self.1 hx
 
 end IsIdempotentElem
+
+namespace Module.End
+
+variable {S M : Type*} [CommSemiring S] [AddCommMonoid M] [Module S M]
+
+/-- **An endomorphism acting on `⊤` gives its range**: the piece `f • M` cut out by an
+endomorphism `f : Module.End S M`, acting through Mathlib's pointwise action, is `range f`. -/
+theorem smul_top_eq_range (f : Module.End S M) :
+    f • (⊤ : Submodule S M) = LinearMap.range f := by
+  rw [Submodule.pointwise_smul_def, Submodule.map_top]
+  exact congrArg LinearMap.range <| LinearMap.ext fun x ↦ by
+    rw [DistribSMul.toLinearMap_apply, Module.End.smul_def]
+
+end Module.End
 
 namespace TauCeti
 
@@ -328,6 +348,40 @@ theorem isIdempotentElem_of_smul_eq_self {k A S : Type*} [CommSemiring k] [Semir
     ext s
     simp [heS s]
   simpa only [IsIdempotentElem, mul_one] using hker e 1 he1
+
+section Indecomposable
+
+variable {A : Type*} [Ring A] {M : Type*} [AddCommGroup M] [Module A M]
+
+/-- **An indecomposable module lies over exactly one central idempotent of a decomposition.**
+Each central idempotent `e i` acts on `M` by an idempotent module endomorphism, which is `0` or
+`1` because `M` is indecomposable. Not all of them act by `0`, because they sum to `1` and `M` is
+nonzero, and two of them cannot act by `1`, because their product is `0` (P. Webb, *A Course in
+Finite Group Representation Theory*, Corollary 12.1.3). -/
+theorem IsIndecomposableModule.existsUnique_forall_smul_eq_self (hM : IsIndecomposableModule A M)
+    {ι : Type*} [Fintype ι] {e : ι → A} (he : CompleteOrthogonalIdempotents e)
+    (hc : ∀ i, e i ∈ Set.center A) :
+    ∃! i, ∀ m : M, e i • m = m := by
+  have : Nontrivial M := hM.nontrivial
+  obtain ⟨φ, hφe⟩ : ∃ φ : ι → Module.End A M, ∀ i m, φ i m = e i • m :=
+    ⟨fun i ↦ .smulLeft (e i) (hc i), fun i m ↦ Module.End.smulLeft_apply ..⟩
+  have hφ (i : ι) : φ i = 0 ∨ φ i = 1 := hM.eq_zero_or_eq_one_of_isIdempotentElem <|
+    LinearMap.ext fun m ↦ by rw [mul_apply_eq_comp, hφe, hφe, smul_smul, (he.idem i).eq]
+  have hφ₁ (i : ι) : φ i = 1 ↔ ∀ m : M, e i • m = m := by
+    simp only [LinearMap.ext_iff, hφe, one_apply_eq_self]
+  obtain ⟨m, hm⟩ := exists_ne (0 : M)
+  have hex : ∃ i, φ i = 1 := by
+    by_contra! h
+    refine hm ?_
+    calc m = (∑ i, e i) • m := by rw [he.complete, one_smul]
+      _ = ∑ i, φ i m := by simp only [Finset.sum_smul, hφe]
+      _ = 0 := Finset.sum_eq_zero fun i _ ↦ by rw [(hφ i).resolve_right (h i), LinearMap.zero_apply]
+  obtain ⟨i, hi⟩ := hex
+  refine ⟨i, (hφ₁ i).mp hi, fun j hj ↦ by_contra fun hji ↦ hm ?_⟩
+  calc m = e j • e i • m := by rw [(hφ₁ i).mp hi, hj]
+    _ = 0 := by rw [smul_smul, he.ortho hji, zero_smul]
+
+end Indecomposable
 
 end TauCeti
 
