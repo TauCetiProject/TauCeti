@@ -12,7 +12,7 @@ import TauCeti.Geometry.Manifold.DifferentialForm.Interior
 import TauCeti.Geometry.Manifold.DifferentialForm.ParametricPrimitive
 import TauCeti.Geometry.Manifold.Flow.Parametric
 import TauCeti.Geometry.Manifold.Instances.Icc
-import TauCeti.Geometry.Manifold.MFDeriv.Prod
+import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
 
 /-!
 # Diffeotopies whose velocity fields are Hamiltonian
@@ -138,7 +138,8 @@ theorem HasHamiltonian.isHamiltonianVectorField_velocity {F : M × unitInterval 
       (mfderiv J J (Φ.timeSlice t) x v) = mvfderiv J (fun x ↦ F (x, t)) x v :=
     (mpullback_cylinderMap_apply_eq_eval₂_velocity (x, t) v).symm.trans
       ((hF.mpullback_cylinderMap_apply (x, t) v).trans
-        ((hF.contMDiff.mdifferentiableAt (by simp)).mvfderiv_apply_mk_zero (p := (x, t)) v))
+        ((hF.contMDiff.mdifferentiableAt (by simp)).mvfderiv_prod_eq_apply_of_snd_eq_zero
+          (v := (v, 0)) rfl))
   rw [h₁, ← h₂, hy]
   exact congrArg (SmoothBundleForm.eval₂ σ y (Φ.velocity t y)) hw.symm
 
@@ -179,7 +180,8 @@ theorem exists_hasHamiltonian_iff :
   obtain ⟨F, hF, -, hFB⟩ := exists_contMDiff_mvfderiv_eq_of_forall_exists
     isSmoothForm_interior_mpullback_cylinderMap hslice x₀
   refine ⟨F, hasHamiltonian_iff.2 ⟨hF, fun p v ↦ ?_⟩⟩
-  refine Eq.trans ?_ ((hF.mdifferentiableAt (by simp)).mvfderiv_apply_mk_zero (p := p) v).symm
+  refine Eq.trans ?_
+    ((hF.mdifferentiableAt (by simp)).mvfderiv_prod_eq_apply_of_snd_eq_zero (v := (v, 0)) rfl).symm
   rw [hFB, timeContraction, RoughForm.interior_apply, verticalField_apply, Prod.mk.eta]
   -- The two sides agree up to the implicit base points `(p.1, p.2).2` and `p.2` of the unit time
   -- vector, which are equal by eta for pairs.
