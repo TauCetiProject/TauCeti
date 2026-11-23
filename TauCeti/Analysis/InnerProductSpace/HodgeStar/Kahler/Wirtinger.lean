@@ -49,9 +49,8 @@ In degree two (`r = 1`), the Lagrange-type identity also characterizes non-ortho
 
 In the namespace `TauCeti.AlmostComplexStructure`, for an orthogonal `J`:
 
-* `norm_kahlerPowerForm_le`, `norm_kahlerPowerForm`, and `isCalibratedFrame_kahlerPowerForm_iff`:
-  the Wirtinger inequality and calibrated-frame classification for every power index `r` (form
-  degree `2 * r`).
+* `isCalibratedFrame_kahlerPowerForm_iff`: the calibrated-frame classification for every power
+  index `r` (form degree `2 * r`).
 * `norm_alternatingFormEquiv_kahlerForm` and
   `isCalibratedFrame_alternatingFormEquiv_kahlerForm_iff`: degree-two comass one and calibrated
   pairs `(v, J v)` with `‖v‖ = 1` for `alternatingFormEquiv V 2 J.kahlerForm`.
@@ -144,7 +143,7 @@ private theorem exists_normalForm_eval_of_orthonormal {J : AlmostComplexStructur
   refine ⟨fun i ↦ (b i : V), μ, ε, hw, fun j ↦ ⟨hμ0 j, hμ1 j⟩, hε, hι, ?_, fun j hμj ↦ ?_⟩
   · have hcomp : P.subtypeL ∘ vP = v := funext fun _ ↦ Submodule.subtypeL_apply _ _
     have heval := DFunLike.congr_fun
-      (kahlerPowerForm_compContinuousLinearMap J P.subtypeL FP
+      (kahlerPowerForm_compContinuousLinearMap_eq J P.subtypeL FP
         (LinearEquiv.apply_symm_apply _ _).symm r) vP
     rw [ContinuousAlternatingMap.compContinuousLinearMap_apply, hcomp,
       ContinuousAlternatingMap.smul_apply, smul_eq_mul, alternatingFormEquiv_apply,
@@ -156,38 +155,6 @@ private theorem exists_normalForm_eval_of_orthonormal {J : AlmostComplexStructur
     ring
   · exact apply_eq_of_norm_starProjection_eq_one hJ (b.orthonormal.1 _) (b.orthonormal.1 _)
       (by simpa [hproj, hμj] using congrArg Subtype.val (hcontr0 j))
-
-/-- **The Wirtinger comass bound** for an orthogonal almost complex structure: `‖ωʳ / r!‖ ≤ 1`
-for every power index `r` (form degree `2 * r`, including form degrees exceeding `finrank ℝ V`).
--/
-theorem norm_kahlerPowerForm_le {J : AlmostComplexStructure V}
-    (hJ : ∀ u w, ⟪J u, J w⟫ = ⟪u, w⟫) (r : ℕ) :
-    ‖J.kahlerPowerForm r‖ ≤ 1 := by
-  refine (ContinuousAlternatingMap.opNorm_le_iff_le_orthonormal zero_le_one).2 fun v hv ↦ ?_
-  obtain ⟨_, μ, ε, _, hμ, hε, _, heval, _⟩ := exists_normalForm_eval_of_orthonormal hJ hv
-  rw [heval, Real.norm_eq_abs, abs_mul, hε, one_mul,
-    abs_of_nonneg (Finset.prod_nonneg fun j _ ↦ (hμ j).1)]
-  exact Finset.prod_le_one₀ (fun j _ ↦ (hμ j).1) (fun j _ ↦ (hμ j).2)
-
-/-- **The Wirtinger inequality in every degree** for an orthogonal almost complex structure: when
-`2 * r ≤ finrank ℝ V`, the normalized Kähler power `ωʳ / r!` (power index `r`, form degree `2 * r`)
-has comass equal to one. -/
-theorem norm_kahlerPowerForm {J : AlmostComplexStructure V}
-    (hJ : ∀ u w, ⟪J u, J w⟫ = ⟪u, w⟫) {r : ℕ} (hr : 2 * r ≤ finrank ℝ V) :
-    ‖J.kahlerPowerForm r‖ = 1 := by
-  obtain ⟨n, hn⟩ := J.even_finrank_real
-  have hdim : finrank ℝ V = 2 * n := by omega
-  obtain ⟨b, hb⟩ := J.exists_adapted_orthonormalBasis (J.norm_apply hJ) n hdim
-  let ι : Fin (2 * r) → Fin (2 * n) := fun i ↦ ⟨(i : ℕ), by have := i.isLt; omega⟩
-  let w : Fin (2 * r) → V := b ∘ ι
-  have hw : Orthonormal ℝ w :=
-    b.orthonormal.comp ι (fun i j hij ↦ Fin.ext (by simpa [ι] using congrArg Fin.val hij))
-  have hadapt (j : Fin r) : w ⟨2 * (j : ℕ) + 1, by omega⟩ = J (w ⟨2 * (j : ℕ), by omega⟩) := by
-    simpa [w, ι] using hb ⟨(j : ℕ), by omega⟩
-  have hcal : (J.kahlerPowerForm r).IsCalibratedFrame w :=
-    ContinuousAlternatingMap.isCalibratedFrame_iff.2
-      ⟨hw, kahlerPowerForm_apply_of_adapted hw hadapt⟩
-  exact le_antisymm (norm_kahlerPowerForm_le hJ r) hcal.one_le_norm
 
 /-- **Equality case of the Wirtinger inequality** for an orthogonal almost complex structure: a
 `2r`-frame `v` is calibrated by `ωʳ / r!` precisely when `v` is real-orthonormal and shares its
