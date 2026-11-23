@@ -172,8 +172,10 @@ theorem norm_fourierMultiplierCLM_le : ‖fourierMultiplierCLM (E := E) F m‖ �
 /-- A symbol given by a function bounded by `C` almost everywhere gives a multiplier of operator
 norm at most `C`. -/
 theorem norm_fourierMultiplierCLM_toLp_le {g : E → ℂ} (hg : MemLp g ∞ volume) {C : ℝ}
-    (hC : 0 ≤ C) (h : ∀ᵐ ξ ∂volume, ‖g ξ‖ ≤ C) : ‖fourierMultiplierCLM F (hg.toLp g)‖ ≤ C :=
-  (norm_fourierMultiplierCLM_le _).trans (Lp.norm_le_of_ae_bound_top hC
+    (h : ∀ᵐ ξ ∂volume, ‖g ξ‖ ≤ C) : ‖fourierMultiplierCLM F (hg.toLp g)‖ ≤ C :=
+  -- `volume` on `E` is nonzero, so the bound is attained somewhere and `C ≥ 0`.
+  have ⟨_, hξ⟩ := h.exists
+  (norm_fourierMultiplierCLM_le _).trans (Lp.norm_le_of_ae_bound_top ((norm_nonneg _).trans hξ)
     (by filter_upwards [hg.coeFn_toLp, h] with ξ hξ hξ'; rwa [hξ]))
 
 /-- The `L²` operator norm of the multiplier with symbol `m` is exactly `‖m‖_∞`, for nonzero

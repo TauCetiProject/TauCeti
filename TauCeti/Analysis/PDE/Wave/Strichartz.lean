@@ -258,8 +258,8 @@ private theorem exists_eLpNorm_halfWavePropagator_comp_fourierMultiplierCLM_appl
   refine ⟨C ^ (1 - 2 * (r⁻¹).toReal) * ((B + 1) ^ 2) ^ (2 * (r⁻¹).toReal), by positivity,
     fun j m hm s t hst g ↦ ?_⟩
   have hU (t : ℝ) : ‖halfWavePropagator ℂ t ∘L Lp.fourierMultiplierCLM ℂ m‖ ≤ B + 1 :=
-    (norm_halfWavePropagator_comp_fourierMultiplierCLM_le hB0 (hm.mono fun ξ h ↦ h ▸ hB _)
-      t).trans (by linarith)
+    (norm_halfWavePropagator_comp_fourierMultiplierCLM_le (B := B)
+      (hm.mono fun ξ h ↦ h ▸ hB _) t).trans (by linarith)
   rw [← ContinuousLinearMap.comp_apply]
   rcases Nat.eq_zero_or_pos (Module.finrank ℝ E) with hE | hE
   · -- In dimension `0` the symbol of `Pⱼ` vanishes, and with it the time pairing.

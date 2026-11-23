@@ -401,7 +401,7 @@ theorem exists_besselPotential_fourierMultiplierCLM_eq_and_norm_le_and_tendsto (
   · rw [besselPotential_fourierMultiplierCLM (hg ε), hv,
       Lp.fourierMultiplierCLM_toTemperedDistribution_eq (hg := hg ε) (hg' := hm ε)]
   · exact (Lp.fourierMultiplierCLM F _).le_of_opNorm_le
-      (Lp.norm_fourierMultiplierCLM_toLp_le (hm ε) (by positivity) (.of_forall (hb ε))) v
+      (Lp.norm_fourierMultiplierCLM_toLp_le (hm ε) (.of_forall (hb ε))) v
   · -- Along every sequence `εₙ → 0`, dominated convergence on the Fourier side applies, since
     -- `θ(εₙ ζ) → θ 0 = 1` for every `ζ` and `‖θ(εₙ ζ)‖ ≤ sup ‖θ‖`.
     have h1 : MemLp (fun _ : E ↦ (1 : ℂ)) ∞ volume := memLp_top_const 1
