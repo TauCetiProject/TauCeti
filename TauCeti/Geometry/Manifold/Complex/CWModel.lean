@@ -13,6 +13,7 @@ public import TauCeti.Geometry.Manifold.Morse.CWModel.Relative
 public import TauCeti.Geometry.Manifold.RegularValue.Polynomial
 import Mathlib.Analysis.InnerProductSpace.PiL2
 import TauCeti.AlgebraicTopology.Cellular.Dimension
+import TauCeti.Geometry.Manifold.Exhaustion
 import TauCeti.Geometry.Manifold.Immersion.Basic
 import TauCeti.Topology.CWComplex.Classical.Finite
 
@@ -116,24 +117,6 @@ universe u
 
 namespace TauCeti
 
-/-- A nonempty complex manifold admitting a continuous proper map to `ℝ` has a finite-dimensional
-complex model space. -/
-private theorem finiteDimensional_complex_of_isProperMap {E : Type*} {M : Type u}
-    [NormedAddCommGroup E] [NormedSpace ℂ E] [TopologicalSpace M] [ChartedSpace E M]
-    [T2Space M] [Nonempty M] {f : M → ℝ} (hf : Continuous f)
-    (hp : IsProperMap f) : FiniteDimensional ℂ E := by
-  obtain ⟨x₀⟩ := ‹Nonempty M›
-  let U : TopologicalSpace.Opens M :=
-    ⟨f ⁻¹' Ioo (f x₀ - 1) (f x₀ + 1), isOpen_Ioo.preimage hf⟩
-  have : Nonempty U := ⟨⟨x₀, by linarith, by linarith⟩⟩
-  have : CompactSpace (f ⁻¹' Icc (f x₀ - 1) (f x₀ + 1)) :=
-    isCompact_iff_compactSpace.1 (hp.isCompact_preimage isCompact_Icc)
-  have : LocallyCompactSpace U :=
-    (Topology.IsOpenEmbedding.inclusion (s := (U : Set M))
-      (t := f ⁻¹' Icc (f x₀ - 1) (f x₀ + 1)) (fun _ hx ↦ Ioo_subset_Icc_self hx)
-      (U.isOpen.preimage continuous_subtypeVal)).locallyCompactSpace
-  exact FiniteDimensional.of_locallyCompact_manifold U 𝓘(ℂ, E)
-
 /-! ### Strongly `q`-pseudoconvex Morse exhaustions and compact regular bands -/
 
 namespace IsMorse
@@ -217,7 +200,7 @@ theorem exists_cwComplex_homotopyEquiv_of_isManifoldStrictlyPlurisubharmonicAt
           ⟨fun x ↦ hM.elim x.val⟩
         ⟨Equiv.equivOfIsEmpty _ _⟩,
       fun m _ ↦ hemptyCell m⟩
-  · have := finiteDimensional_complex_of_isProperMap (E := E) hf.contMDiff.continuous hp
+  · have := hp.finiteDimensional_of_manifold 𝓘(ℂ, E)
     simpa only [add_zero] using
       hf.exists_cwComplex_homotopyEquiv_of_isManifoldStronglyPseudoconvexAt (q := 0) hp hbdd
         fun x hx ↦ (hpos x hx).isManifoldStronglyPseudoconvexAt 0
@@ -350,7 +333,7 @@ theorem exists_cwComplex_homotopyEquiv_of_isProperMap_of_isManifoldStrictlyPluri
       hm.exists_cwComplex_homotopyEquiv_of_isManifoldStrictlyPlurisubharmonicAt hp hbdd
         fun x _ ↦ hM.elim x
     exact ⟨X, instTop, instT2, instCW, hfd, h, hempty⟩
-  · have := finiteDimensional_complex_of_isProperMap (E := E) hf.continuous hp
+  · have := hp.finiteDimensional_of_manifold 𝓘(ℂ, E)
     simpa only [add_zero] using
       exists_cwComplex_homotopyEquiv_of_isProperMap_of_isManifoldStronglyPseudoconvexAt (q := 0)
         hf hp hbdd fun x ↦ (hpos x).isManifoldStronglyPseudoconvexAt 0
