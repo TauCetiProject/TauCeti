@@ -98,6 +98,8 @@ theorem transpose_cast {a b c d : O} {p p' : Edge V a b} {q q' : Edge V c d}
   subst hp hq hl hr
   rfl
 
+/-- Transposing the data of a double category twice recovers its original cells, identity
+cells and pastings. -/
 @[simp]
 theorem transpose_transpose : D.transpose.transpose = D :=
   rfl
@@ -132,6 +134,8 @@ theorem transpose_toDoubleCategoryStruct :
     D.transpose.toDoubleCategoryStruct = D.toDoubleCategoryStruct.transpose :=
   rfl
 
+/-- Transposition is an involution: transposing a strict double category twice recovers the
+original strict double category. -/
 @[simp]
 theorem transpose_transpose : D.transpose.transpose = D :=
   rfl

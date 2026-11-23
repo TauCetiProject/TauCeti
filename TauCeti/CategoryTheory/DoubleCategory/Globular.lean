@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.CategoryTheory.Iso
+public import Mathlib.CategoryTheory.Products.Basic
 public import TauCeti.CategoryTheory.DoubleCategory.Transpose
 
 /-!
@@ -26,8 +27,9 @@ boundaries are identity edges:
 
 For fixed objects `a` and `b`, the horizontal edges `a ⟶ b` and the horizontal globular cells
 between them form a category `D.HorizontalGlobular a b`, composed by vertical pasting and read
-from top to bottom. Pasting horizontally with the vertical identity cell of an edge gives the
-whiskering functors `D.hWhiskerLeft` and `D.hWhiskerRight` between these categories.
+from top to bottom. Horizontal pasting is a functor `D.hCompFunctor` from the product of two
+such categories, and restricting it to the vertical identity cell of a fixed edge gives the
+whiskering functors `D.hWhiskerLeft` and `D.hWhiskerRight`.
 
 Dually, a vertical globular cell has identity horizontal boundaries; these form the category
 `D.VerticalGlobular a b` of vertical edges `a ⟶ b`, composed by horizontal pasting and read from
@@ -40,8 +42,8 @@ double category compares an edge path with a single generating edge.
 ## Main declarations
 
 * `TauCeti.StrictDoubleCategory.HorizontalGlobular` and its `Category` instance;
-* `TauCeti.StrictDoubleCategory.hComp_comp_cell`: horizontal pasting of horizontal globular
-  cells is functorial in both arguments;
+* `TauCeti.StrictDoubleCategory.hCompFunctor`: horizontal pasting of horizontal globular cells,
+  as a functor in both arguments;
 * `TauCeti.StrictDoubleCategory.hWhiskerLeft` and `TauCeti.StrictDoubleCategory.hWhiskerRight`;
 * `TauCeti.StrictDoubleCategory.VerticalGlobular`, with `VerticalGlobular.homEquiv_comp`
   describing its composition by horizontal pasting;
@@ -152,33 +154,44 @@ theorem hComp_comp_cell {p q t : D.HorizontalGlobular a b} {p' q' t' : D.Horizon
   rw [HorizontalGlobular.comp_cell, HorizontalGlobular.comp_cell, hComp_cast_cast,
     ← D.interchange]
 
-/-- Right whiskering of horizontal globular cells by a horizontal edge `r`: composition with
-`r` on edges, and horizontal pasting with the vertical identity cell of `r` on cells. -/
+/-- Horizontal pasting of horizontal globular cells, as a functor of both arguments: composition
+on edges and horizontal pasting on cells. -/
 @[expose]
-def hWhiskerRight (r : Edge H b c) : D.HorizontalGlobular a b ⥤ D.HorizontalGlobular a c where
-  obj p := ⟨edgeComp H p.edge r⟩
-  map α := ⟨D.hComp α.cell (D.vId r)⟩
+def hCompFunctor :
+    D.HorizontalGlobular a b × D.HorizontalGlobular b c ⥤ D.HorizontalGlobular a c where
+  obj p := ⟨edgeComp H p.1.edge p.2.edge⟩
+  map α := ⟨D.hComp α.1.cell α.2.cell⟩
   map_id p := by
     ext
-    exact (D.vId_comp p.edge r).symm
+    rw [prod_id, HorizontalGlobular.id_cell, HorizontalGlobular.id_cell,
+      HorizontalGlobular.id_cell, D.vId_comp]
   map_comp α β := by
     ext
-    have h := D.hComp_comp_cell α β (𝟙 (⟨r⟩ : D.HorizontalGlobular b c)) (𝟙 _)
-    rwa [Category.comp_id] at h
+    rw [prod_comp, D.hComp_comp_cell, HorizontalGlobular.comp_cell]
+
+@[simp]
+theorem hCompFunctor_obj (p : D.HorizontalGlobular a b × D.HorizontalGlobular b c) :
+    D.hCompFunctor.obj p = ⟨edgeComp H p.1.edge p.2.edge⟩ :=
+  rfl
+
+@[simp]
+theorem hCompFunctor_map_cell {p q : D.HorizontalGlobular a b × D.HorizontalGlobular b c}
+    (α : p ⟶ q) : (D.hCompFunctor.map α).cell = D.hComp α.1.cell α.2.cell :=
+  rfl
+
+/-- Right whiskering of horizontal globular cells by a horizontal edge `r`: composition with
+`r` on edges, and horizontal pasting with the vertical identity cell of `r` on cells. It is the
+restriction of `D.hCompFunctor` to the identity of `r` in the second argument. -/
+@[expose]
+def hWhiskerRight (r : Edge H b c) : D.HorizontalGlobular a b ⥤ D.HorizontalGlobular a c :=
+  Prod.sectL _ (⟨r⟩ : D.HorizontalGlobular b c) ⋙ D.hCompFunctor
 
 /-- Left whiskering of horizontal globular cells by a horizontal edge `p`: composition with
-`p` on edges, and horizontal pasting with the vertical identity cell of `p` on cells. -/
+`p` on edges, and horizontal pasting with the vertical identity cell of `p` on cells. It is the
+restriction of `D.hCompFunctor` to the identity of `p` in the first argument. -/
 @[expose]
-def hWhiskerLeft (p : Edge H a b) : D.HorizontalGlobular b c ⥤ D.HorizontalGlobular a c where
-  obj q := ⟨edgeComp H p q.edge⟩
-  map α := ⟨D.hComp (D.vId p) α.cell⟩
-  map_id q := by
-    ext
-    exact (D.vId_comp p q.edge).symm
-  map_comp α β := by
-    ext
-    have h := D.hComp_comp_cell (𝟙 (⟨p⟩ : D.HorizontalGlobular a b)) (𝟙 _) α β
-    rwa [Category.comp_id] at h
+def hWhiskerLeft (p : Edge H a b) : D.HorizontalGlobular b c ⥤ D.HorizontalGlobular a c :=
+  Prod.sectR (⟨p⟩ : D.HorizontalGlobular a b) _ ⋙ D.hCompFunctor
 
 @[simp]
 theorem hWhiskerRight_obj (r : Edge H b c) (p : D.HorizontalGlobular a b) :
@@ -233,8 +246,9 @@ theorem homEquiv_symm_apply_cell {l r : D.VerticalGlobular a b}
   (rfl)
 
 @[simp]
-theorem homEquiv_id (l : D.VerticalGlobular a b) : homEquiv l l (𝟙 l) = D.hId l.edge :=
-  (rfl)
+theorem homEquiv_id (l : D.VerticalGlobular a b) : homEquiv l l (𝟙 l) = D.hId l.edge := by
+  rw [homEquiv_apply, HorizontalGlobular.id_cell]
+  exact DoubleCategoryStruct.transpose_vId D.toDoubleCategoryStruct l.edge
 
 /-- Composition of vertical globular cells is horizontal pasting, transported back from the
 horizontal boundaries `𝟙 ≫ 𝟙` to identity edges. -/
@@ -242,8 +256,9 @@ horizontal boundaries `𝟙 ≫ 𝟙` to identity edges. -/
 theorem homEquiv_comp {l r t : D.VerticalGlobular a b} (α : l ⟶ r) (β : r ⟶ t) :
     homEquiv l t (α ≫ β) = (D.hComp (homEquiv l r α) (homEquiv r t β)).cast
       (Category.id_comp (self := H) _) (Category.id_comp (self := H) _) rfl rfl := by
-  rw [homEquiv_apply, HorizontalGlobular.comp_cell]
-  exact DoubleCategoryStruct.transpose_cast D.toDoubleCategoryStruct _ _ _ _ _
+  rw [homEquiv_apply, homEquiv_apply, homEquiv_apply, HorizontalGlobular.comp_cell]
+  exact (DoubleCategoryStruct.transpose_cast D.toDoubleCategoryStruct _ _ _ _ _).trans
+    (congrArg _ (DoubleCategoryStruct.transpose_vComp D.toDoubleCategoryStruct α.cell β.cell))
 
 end VerticalGlobular
 
