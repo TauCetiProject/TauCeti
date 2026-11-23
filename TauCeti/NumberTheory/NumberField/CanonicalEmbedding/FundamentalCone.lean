@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.NumberTheory.NumberField.CanonicalEmbedding.FundamentalCone
+import TauCeti.NumberTheory.NumberField.CanonicalEmbedding.IdealLattice
 import TauCeti.NumberTheory.NumberField.CanonicalEmbedding.UnitAction
 import TauCeti.RingTheory.ClassGroup.Basic
 
@@ -292,19 +293,16 @@ noncomputable def interIdealLatticeEquiv {I₁ I₂ : (FractionalIdeal (𝓞 K)�
       (fundamentalCone K ∩ idealLattice K I₂ : Set (mixedSpace K)) :=
   Equiv.subtypeEquiv (MulAction.toPerm (Units.mk0 (q : ℝ) (Rat.cast_ne_zero.mpr hq))) fun x ↦ by
     have hqR : (q : ℝ) ≠ 0 := Rat.cast_ne_zero.mpr hq
-    have hq_emb (z : K) : mixedEmbedding K ((q : K) * z) = (q : ℝ) • mixedEmbedding K z := by
-      ext w <;> simp [mixedEmbedding, Complex.real_smul]
+    let a : Kˣ := Units.mk0 (q : K) (Rat.cast_ne_zero.mpr hq)
+    have ha : mixedEmbedding K (a : K) * x = (q : ℝ) • x := by
+      ext w <;> simp [a, mixedEmbedding, Complex.real_smul]
+    have hI' : I₂ = toPrincipalIdeal (𝓞 K) K a * I₁ :=
+      Units.ext (by simpa [a, coe_toPrincipalIdeal] using hI)
     simp only [Set.mem_inter_iff, SetLike.mem_coe, MulAction.toPerm_apply,
-      Units.smul_def, Units.val_mk0, mem_idealLattice]
-    refine and_congr (smul_mem_iff_mem hqR).symm
-      ⟨fun ⟨b, hb, hbx⟩ ↦ ⟨(q : K) * b, ?_, ?_⟩, fun ⟨y, hy, hyx⟩ ↦ ?_⟩
-    · rw [hI]
-      exact FractionalIdeal.mem_singleton_mul.mpr ⟨b, hb, rfl⟩
-    · rw [hq_emb, hbx]
-    · rw [hI, FractionalIdeal.mem_singleton_mul] at hy
-      obtain ⟨b, hb, rfl⟩ := hy
-      refine ⟨b, hb, smul_right_injective (mixedSpace K) hqR ?_⟩
-      rwa [hq_emb] at hyx
+      Units.smul_def, Units.val_mk0]
+    refine and_congr (smul_mem_iff_mem hqR).symm ?_
+    rw [hI', ← ha]
+    exact (mixedEmbedding_mul_mem_idealLattice_iff a I₁).symm
 
 /-- Underlying mixed-space point of `interIdealLatticeEquiv`. -/
 @[simp]

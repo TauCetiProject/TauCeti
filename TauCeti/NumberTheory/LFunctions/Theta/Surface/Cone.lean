@@ -155,15 +155,13 @@ absolute value `1` at every infinite place, so `unitScale` factors through the t
 Scoped to `TauCeti.LFunctions` so it does not leak globally onto
 `realSpace K = InfinitePlace K → ℝ`. -/
 scoped instance instMulActionQuotientTorsionRealSpace :
-    MulAction ((𝓞 K)ˣ ⧸ torsion K) (realSpace K) where
-  smul g y := Quotient.liftOn' g (fun u ↦ unitScale u y) fun u v huv ↦ by
-    have hmem : u⁻¹ * v ∈ torsion K := QuotientGroup.leftRel_apply.mp huv
-    have hv : v = u * (u⁻¹ * v) := (mul_inv_cancel_left u v).symm
-    ext w
-    rw [unitScale_apply, unitScale_apply, hv, Units.val_mul, map_mul, map_mul,
-      (mem_torsion K).mp hmem w, mul_one]
-  one_smul := unitScale_one
-  mul_smul g₁ g₂ y := Quotient.inductionOn₂' g₁ g₂ fun u v ↦ (unitScale_unitScale u v y).symm
+    MulAction ((𝓞 K)ˣ ⧸ torsion K) (realSpace K) :=
+  let unitScaleHom : (𝓞 K)ˣ →* Function.End (realSpace K) :=
+    { toFun := unitScale
+      map_one' := funext unitScale_one
+      map_mul' u v := funext fun y ↦ (unitScale_unitScale u v y).symm }
+  MulAction.ofEndHom <| QuotientGroup.lift (torsion K) unitScaleHom fun _ hu ↦
+    funext (unitScale_eq_self_of_mem_torsion hu)
 
 /-- On cosets `QuotientGroup.mk u`, the scoped `(𝓞 K)ˣ ⧸ torsion K` action on `realSpace K` is
 `unitScale u`. -/
@@ -181,21 +179,14 @@ theorem archNorm_quotientTorsion_smul (g : (𝓞 K)ˣ ⧸ torsion K) (y : realSp
 /-- Each element of `(𝓞 K)ˣ ⧸ torsion K` acts continuously on `realSpace K`. -/
 scoped instance instContinuousConstSMulQuotientTorsionRealSpace :
     ContinuousConstSMul ((𝓞 K)ˣ ⧸ torsion K) (realSpace K) :=
-  ⟨fun g ↦ QuotientGroup.induction_on g fun u ↦ continuous_pi fun w ↦ by
-    simp only [mk_smul_realSpace, unitScale_apply]
-    exact continuous_const.mul (continuous_apply w)⟩
+  ⟨fun g ↦ QuotientGroup.induction_on g continuous_unitScale⟩
 
 /-- The multiplicative Haar measure `archHaar K` is invariant under the scoped
 `(𝓞 K)ˣ ⧸ torsion K` action on `realSpace K`. -/
 scoped instance instSMulInvariantMeasureQuotientTorsionRealSpace :
     SMulInvariantMeasure ((𝓞 K)ˣ ⧸ torsion K) (realSpace K) (archHaar K) :=
-  ⟨fun g s hs ↦ QuotientGroup.induction_on g fun u ↦ by
-    set c : realSpace K := fun w ↦ w (u : K) ^ 2
-    have hmap := map_archHaar_mul_left (c := c) fun w ↦ pow_pos (pos_iff.mpr (by simp)) 2
-    have heq : ((QuotientGroup.mk u : (𝓞 K)ˣ ⧸ torsion K) • ·) = (c * ·) := by
-      ext y w
-      simp [c, unitScale_apply]
-    rw [← Measure.map_apply (measurable_const_smul _) hs, heq, hmap]⟩
+  ⟨fun g _ hs ↦ QuotientGroup.induction_on g fun u ↦
+    (measurePreserving_unitScale u).measure_preimage hs.nullMeasurableSet⟩
 
 /-- For any unit fundamental domain `D` on the norm-one hypersurface, the cone `unitCone D` is a
 measure-theoretic fundamental domain for `(𝓞 K)ˣ ⧸ torsion K` on `realSpace K` with respect to

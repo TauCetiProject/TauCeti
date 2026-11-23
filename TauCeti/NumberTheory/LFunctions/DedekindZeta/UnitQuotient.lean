@@ -13,6 +13,7 @@ import TauCeti.NumberTheory.ArithmeticDirichletSeries.Estimates
 import TauCeti.NumberTheory.NumberField.CanonicalEmbedding.IdealLattice
 import TauCeti.NumberTheory.NumberField.Global.RayClass.Integral
 import TauCeti.NumberTheory.NumberField.Units.Dirichlet
+import TauCeti.RingTheory.ClassGroup.Basic
 import TauCeti.RingTheory.FractionalIdeal.Norm
 
 /-!
@@ -267,8 +268,8 @@ theorem hasSum_norm_cpow_fundamentalCone_inter_idealLattice {c : RayClassGroup (
         ((mixedEmbedding.norm (a : mixedSpace K) : ℝ) : ℂ) ^ (-s))
       (torsionOrder K * (FractionalIdeal.absNorm (I : FractionalIdeal (𝓞 K)⁰ K) : ℂ) ^ (-s) *
         LSeries (normCoeff K (rayClassCoeff (Modulus.one K) c)) s) := by
-  obtain ⟨n, hn, J, hJ⟩ := exists_mk0_eq_toPrincipalIdeal_natCast_mul I
-  have hn' : n ≠ 0 := fun h ↦ hn (by simp [h])
+  obtain ⟨n, hn', J, hJ⟩ := FractionalIdeal.exists_mk0_eq_toPrincipalIdeal_natCast_mul I
+  have hn : (n : K) ≠ 0 := Nat.cast_ne_zero.mpr hn'
   have hn0 : (n : ℝ) ≠ 0 := Nat.cast_ne_zero.mpr hn'
   -- `J = n I` has the class of `I`, since `(n)` is principal
   have hJc := idealClass_eq_of_mk0_eq_toPrincipalIdeal_mul hI hJ
