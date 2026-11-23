@@ -243,7 +243,7 @@ namespace SmallDegreeRecord
 record has the degree and the unordered cycle data of `t`. -/
 theorem exists_isoClass_eq_smul_mk_iff {r : SmallDegreeRecord} {n : ℕ} (t : ConnectedTriple n) :
     (∃ ρ : (Perm (Fin 3))ᵐᵒᵖ, r.isoClass = ⟨n, ρ • ConnectedIsoClass.mk t⟩) ↔
-      computedUnorderedCycleData r = (n, t.1.unorderedCycleData) := by
+      computedUnorderedCycleData r = (n, t.val.unorderedCycleData) := by
   obtain ⟨_, m, s, hm⟩ := r
   simp only [isoClass_def, computedUnorderedCycleData, Sigma.mk.inj_iff, Prod.mk.injEq]
   constructor
@@ -298,8 +298,8 @@ theorem existsUnique_isoClass_eq_smul {n : ℕ} (hn : n ≤ 4) (c : ConnectedIso
     ∃! r, r ∈ smallDegreeRecords ∧ ∃ ρ : (Perm (Fin 3))ᵐᵒᵖ, r.isoClass = ⟨n, ρ • c⟩ := by
   obtain ⟨t, rfl⟩ := ConnectedIsoClass.mk_surjective c
   simp only [SmallDegreeRecord.exists_isoClass_eq_smul_mk_iff]
-  have ht : t.1.unorderedCycleData ∈ (Finset.univ : Finset (ConnectedTriple n)).image
-      (fun t ↦ t.1.unorderedCycleData) := Finset.mem_image_of_mem _ (Finset.mem_univ t)
+  have ht : t.val.unorderedCycleData ∈ (Finset.univ : Finset (ConnectedTriple n)).image
+      (fun t ↦ t.val.unorderedCycleData) := Finset.mem_image_of_mem _ (Finset.mem_univ t)
   rw [← unorderedCycleData_eq_classification n hn] at ht
   simp only [List.mem_toFinset, List.mem_map, List.mem_filter, decide_eq_true_eq] at ht
   obtain ⟨r, ⟨hr, hrn⟩, hrt⟩ := ht
