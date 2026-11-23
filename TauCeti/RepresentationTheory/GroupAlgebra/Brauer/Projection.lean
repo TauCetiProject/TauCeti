@@ -27,10 +27,17 @@ transpositions, `Br_P(x²) = 1 + r + r²` but `Br_P(x)² = 0`.
 For `Q ≤ P`, `C_G(P) ≤ C_G(Q)` and `Br_P` factors through `Br_Q`
 (`TauCeti.brauerProjection_eq_comapDomain`).
 
-For a `p`-group `P` in characteristic `p`, the kernel of `brauerHom` contains the relative
-trace ideals `R[G]^P_Q` (`TauCeti.relTraceIdeal`) for `Q < P`, and the defect groups of the
-blocks of `R[G]` are the maximal `p`-subgroups `P` on which the Brauer homomorphism of the block
-idempotent is nonzero. Neither statement is formalized here.
+The Brauer projection of an element of `R[G]` invariant under conjugation by `N_G(P)` is again
+invariant under `N_G(P)`, which acts on `C_G(P)`
+(`TauCeti.coeff_brauerProjection_conj_of_mem_conjInvariants`). In particular the image of
+`Z(R[G])` lies in `R[C_G(P)]^{N_G(P)}`.
+
+For a `p`-group `P` in characteristic `p`, the kernel of `brauerHom` is the sum of the relative
+trace ideals `R[G]^P_Q` (`TauCeti.relTraceIdeal`) over `Q < P`: see
+`TauCeti.brauerProjection_relTrace_eq_zero` and `TauCeti.ker_brauerHom` in
+`TauCeti.RepresentationTheory.GroupAlgebra.Brauer.Kernel`. The defect groups of the blocks of
+`R[G]` are the maximal `p`-subgroups `P` on which the Brauer homomorphism of the block idempotent
+is nonzero; this is not formalized here.
 
 ## Main definitions
 
@@ -41,6 +48,8 @@ idempotent is nonzero. Neither statement is formalized here.
 ## Main results
 
 * `TauCeti.brauerProjection_mul`: `Br_P(x y) = Br_P(x) Br_P(y)` for `x, y ∈ R[G]^P`.
+* `TauCeti.coeff_brauerProjection_conj_of_mem_conjInvariants`: `Br_P` of an element invariant
+  under conjugation by `N_G(P)`, for instance a central one, is invariant under `N_G(P)`.
 
 ## References
 
@@ -107,6 +116,20 @@ theorem brauerProjection_eq_comapDomain {Q P : Subgroup G} (hQP : Q ≤ P) (x : 
         (Subgroup.inclusion_injective _) (brauerProjection Q x) := by
   ext c
   simp
+
+/-- **The Brauer projection is invariant under the normalizer.** If `z` is fixed by conjugation
+by `H` and `n ∈ H` normalizes `P`, then `Br_P(z)` is fixed by conjugation by `n`, which acts on
+`C_G(P)`. For `H = G`, so `z` is central (`TauCeti.center_le_conjInvariants`), the image of
+`Z(R[G])` lies in `R[C_G(P)]^{N_G(P)}`. -/
+theorem coeff_brauerProjection_conj_of_mem_conjInvariants {P H : Subgroup G}
+    {z : MonoidAlgebra R G} (hz : z ∈ conjInvariants R H) {n : G} (hnH : n ∈ H)
+    (hn : n ∈ Subgroup.normalizer (P : Set G)) (c : Subgroup.centralizer (P : Set G)) :
+    (brauerProjection P z).coeff
+        ⟨n * c * n⁻¹, (Subgroup.normal_subgroupOf_iff (Subgroup.centralizer_le_normalizer _)).1
+          inferInstance (c : G) n c.property hn⟩ =
+      (brauerProjection P z).coeff c := by
+  rw [coeff_brauerProjection, coeff_brauerProjection]
+  exact mem_conjInvariants_iff_coeff.1 hz n hnH c
 
 /-- **The Brauer map is multiplicative.** For a `p`-subgroup `P` of a finite group `G` and `R` of
 characteristic `p`, the Brauer projection is multiplicative on the elements of `R[G]` fixed by
