@@ -322,8 +322,9 @@ transport over `K` from `k₀` to `k₁`. -/
 theorem fiberHomologyTransport_map {K : TopCat.{u}} [ContractibleSpace K] (g : K ⟶ B)
     {k₀ k₁ : K} (ε : Path k₀ k₁) :
     fiberHomologyTransport hp M n (ε.map g.hom.continuous) =
-      pullbackFiberTransport hp M n g (rfl : g k₀ = g k₀) (rfl : g k₁ = g k₁) :=
-  pullbackFiberTransport_comp_left hp M n g _ (TopCat.pathEquiv.symm ε).hom
+      pullbackFiberTransport hp M n g (rfl : g k₀ = g k₀) (rfl : g k₁ = g k₁) := by
+  rw [fiberHomologyTransport_eq_pullbackFiberTransport]
+  exact pullbackFiberTransport_comp_left hp M n g _ (TopCat.pathEquiv.symm ε).hom
     (TopCat.pathEquiv_symm_map_hom ε g).symm (TopCat.pathEquiv.symm ε).hom₀
     (TopCat.pathEquiv.symm ε).hom₁ _ _ _ _
 
@@ -333,8 +334,10 @@ theorem fiberHomologyTransport_comp_app {M' : ModuleCat.{u} R} (ψ : M ⟶ M') (
     fiberHomologyTransport hp M n γ ≫
         ((singularHomologyFunctor (ModuleCat.{u} R) n).map ψ).app (p.fiber b₁) =
       ((singularHomologyFunctor (ModuleCat.{u} R) n).map ψ).app (p.fiber b₀) ≫
-        fiberHomologyTransport hp M' n γ :=
-  pullbackFiberTransport_comp_app hp M n ψ _ _ _
+        fiberHomologyTransport hp M' n γ := by
+  rw [fiberHomologyTransport_eq_pullbackFiberTransport,
+    fiberHomologyTransport_eq_pullbackFiberTransport]
+  exact pullbackFiberTransport_comp_app hp M n ψ _ _ _
 
 /-- **Transport along a constant path is the identity.** -/
 @[simp]
@@ -475,6 +478,22 @@ theorem serreFiberLocalSystemMapCoeff_app {M' : ModuleCat.{u} R} (ψ : M ⟶ M')
         ((singularHomologyFunctor (ModuleCat.{u} R) n).map ψ).app (p.fiber b.as) ≫
           (serreFiberLocalSystemObjIso hp M' n b).inv :=
   (rfl)
+
+/-- Changing coefficients along the identity is the identity morphism of local systems. -/
+@[simp]
+theorem serreFiberLocalSystemMapCoeff_id :
+    serreFiberLocalSystemMapCoeff hp M n (𝟙 M) = 𝟙 _ := by
+  ext b : 2
+  simp
+
+/-- Changing coefficients along a composite is the composite of the coefficient changes. -/
+@[simp, reassoc]
+theorem serreFiberLocalSystemMapCoeff_comp {M' M'' : ModuleCat.{u} R} (ψ : M ⟶ M')
+    (ψ' : M' ⟶ M'') :
+    serreFiberLocalSystemMapCoeff hp M n (ψ ≫ ψ') =
+      serreFiberLocalSystemMapCoeff hp M n ψ ≫ serreFiberLocalSystemMapCoeff hp M' n ψ' := by
+  ext b : 2
+  simp
 
 /-! ### Comparison with the transport of a lifting function -/
 
