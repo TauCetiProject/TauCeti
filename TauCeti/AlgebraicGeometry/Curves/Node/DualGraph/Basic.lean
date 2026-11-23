@@ -99,8 +99,9 @@ private theorem atWorstNodal : AtWorstNodalOfRelativeDimensionOne (X ↘ Spec (.
   PrestableFamily.atWorstNodalOfRelativeDimensionOne
 
 /-- The blowup of a prestable curve along its singular subscheme is regular. -/
-private instance isRegular_blowup : IsRegular (X.singularLocus K).blowup :=
-  X.isRegular_blowup_singularLocus (atWorstNodal K X)
+instance isRegular_blowup_singularLocus_of_prestableFamily :
+    IsRegular (X.singularLocus K).blowup :=
+  X.isRegular_blowup_singularLocus PrestableFamily.atWorstNodalOfRelativeDimensionOne
 
 /-- An irreducible component of the blowup of a prestable curve along its singular subscheme, as
 an open subscheme: the blowup is regular, so its irreducible components are disjoint and open. Each

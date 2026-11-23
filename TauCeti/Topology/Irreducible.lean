@@ -46,6 +46,21 @@ theorem Function.Surjective.bijOn_preimage_irreducibleComponents {f : X → Y}
   have hle : T ⊆ f ⁻¹' Z := image_subset_iff.mp (subset_closure.trans hTZ)
   exact ⟨Z, hZ, subset_antisymm (hT.2 (hmaps hZ).1 hle) hle⟩
 
+/-- A homeomorphism `h : X ≃ₜ Y` induces a bijection of irreducible components, sending a
+component to its image under `h` (`Homeomorph.coe_irreducibleComponentsEquiv_apply`). -/
+def Homeomorph.irreducibleComponentsEquiv (h : X ≃ₜ Y) :
+    irreducibleComponents X ≃ irreducibleComponents Y :=
+  (irreducibleComponentsEquivOfIsPreirreducibleFiber h h.continuous h.isOpenMap
+    (fun _ ↦ (subsingleton_singleton.preimage h.injective).isPreirreducible)
+    h.surjective).symm.toEquiv
+
+/-- The bijection of irreducible components induced by a homeomorphism sends a component to its
+image. -/
+@[simp]
+theorem Homeomorph.coe_irreducibleComponentsEquiv_apply (h : X ≃ₜ Y) (c : irreducibleComponents X) :
+    (h.irreducibleComponentsEquiv c : Set Y) = h '' c :=
+  (rfl)
+
 namespace TauCeti
 
 variable {α : Type*} [TopologicalSpace α]
