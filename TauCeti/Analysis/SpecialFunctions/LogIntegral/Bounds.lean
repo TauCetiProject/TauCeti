@@ -9,7 +9,6 @@ public import TauCeti.Analysis.SpecialFunctions.LogIntegral.Unoffset
 import Mathlib.Analysis.Complex.ExponentialBounds
 import TauCeti.Analysis.SpecialFunctions.Log.Bounds
 import TauCeti.Analysis.SpecialFunctions.Log.Deriv
-import TauCeti.Data.Nat.Factorial.Basic
 
 /-!
 # Explicit bounds for the logarithmic integral
@@ -85,7 +84,7 @@ private theorem liSeries_le_partial_add (N : ℕ) {y : ℝ} (hy0 : 0 ≤ y) (hyN
         (y ^ (N + 1) / (((N : ℝ) + 1) * ((N + 1)! : ℝ))) * r ^ m := by
     intro m
     have hfac : ((N + 1)! : ℝ) * ((N : ℝ) + 2) ^ m ≤ ((m + N + 1)! : ℝ) := by
-      have h := Nat.factorial_mul_pow_le_factorial_add (N + 1) m
+      have h := Nat.factorial_mul_pow_le_factorial (m := N + 1) (n := m)
       rw [show N + 1 + m = m + N + 1 by omega] at h
       exact_mod_cast h
     have hmul : (((N : ℝ) + 1) * ((N + 1)! : ℝ)) * ((N : ℝ) + 2) ^ m ≤
@@ -116,12 +115,6 @@ private theorem liSeries_le_partial_add (N : ℕ) {y : ℝ} (hy0 : 0 ≤ y) (hyN
   rw [hsub, inv_div]
 
 /-! ### Enclosures of `li 2` and `li (3 / 2)` -/
-
-private theorem log_two_lower_q : (6931471803 / 10000000000 : ℝ) < Real.log 2 := by
-  linarith [Real.log_two_gt_d9]
-
-private theorem log_two_upper_q : Real.log 2 < (6931471808 / 10000000000 : ℝ) := by
-  linarith [Real.log_two_lt_d9]
 
 private theorem liSeries_log_two_lower :
     (0.834461034 : ℝ) ≤
@@ -413,7 +406,7 @@ private theorem log_x_enclosure {x d_lo d_hi : ℝ} (hx : 4 ≤ x)
   have hlo := hd_lo.trans (Real.two_mul_artanhPartial_le_log hx4 6)
   have hhi := (Real.log_le_two_mul_artanhPartial_add hx4 6).trans hd_hi
   rw [hsplit]
-  exact ⟨by linarith [log_two_lower_q], by linarith [log_two_upper_q]⟩
+  exact ⟨by linarith [Real.log_two_gt_d9], by linarith [Real.log_two_lt_d9]⟩
 
 private theorem log_log_x_enclosure {lx lx_lo lx_hi dlx_lo dlx_hi : ℝ}
     (hlx_lo : lx_lo ≤ lx) (hlx_hi : lx ≤ lx_hi)
@@ -437,7 +430,7 @@ private theorem log_log_x_enclosure {lx lx_lo lx_hi dlx_lo dlx_hi : ℝ}
   have hhi := (Real.log_le_neg_two_mul_artanhPartial
     (by linarith [hlx_lo0.trans_le (hlx_lo.trans hlx_hi)]) (by linarith) 3).trans hdlx_hi
   rw [hsplit]
-  exact ⟨by linarith [log_two_lower_q], by linarith [log_two_upper_q]⟩
+  exact ⟨by linarith [Real.log_two_gt_d9], by linarith [Real.log_two_lt_d9]⟩
 
 private theorem liSeries_fourteen_lower {y lx_lo c : ℝ} (hy : lx_lo ≤ y) (h0 : 0 ≤ lx_lo)
     (hc : c ≤ liSeriesPartial 14 lx_lo) : c ≤ liSeries y :=
