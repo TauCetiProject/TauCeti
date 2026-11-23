@@ -201,7 +201,9 @@ theorem IsHermitian.det_one_add_I_smul_map_ofReal {A : Matrix n n ℝ} (hA : A.I
     (1 + I • A.map ((↑) : ℝ → ℂ)).det = ∏ j, (1 + (hA.eigenvalues j : ℂ) * I) := by
   have hchar : (A.map ((↑) : ℝ → ℂ)).charpoly =
       ∏ j, (Polynomial.X - Polynomial.C (hA.eigenvalues j : ℂ)) := by
-    have hmap : A.map ((↑) : ℝ → ℂ) = A.map Complex.ofRealHom := rfl
+    have hmap : A.map ((↑) : ℝ → ℂ) = A.map Complex.ofRealHom := by
+      ext i j
+      simp only [map_apply, Complex.ofRealHom_eq_coe]
     rw [hmap, charpoly_map, hA.charpoly_eq, Polynomial.map_prod]
     simp
   have heval := eval_charpoly (A.map ((↑) : ℝ → ℂ)) I
@@ -236,8 +238,7 @@ theorem IsSymm.inv_one_add_I_smul_map_ofReal {A : Matrix n n ℝ} (hA : A.IsSymm
     rw [Matrix.map_add _ Complex.ofReal_add, map_ofReal_mul, map_ofReal_one]
     simp [add_mul, mul_sub, smul_smul]
     abel
-  have hpos : (1 + A * A).PosDef := by
-    simpa [conjTranspose_eq_transpose_of_trivial, hA.eq] using posDef_one_add_mul_conjTranspose A
+  have hpos : (1 + A * A).PosDef := (isHermitian_iff_isSymm.mpr hA).posDef_one_add_mul_self
   refine inv_eq_right_inv ?_
   rw [← Matrix.mul_assoc, h1, ← map_ofReal_mul,
     mul_nonsing_inv _ ((isUnit_iff_isUnit_det _).1 hpos.isUnit),
@@ -248,8 +249,7 @@ the rank-one matrices `ξ ξᵀ`: `tr ((1 + A²)⁻¹ ξ ξᵀ) > 0` for every n
 theorem IsSymm.trace_inv_one_add_mul_self_mul_vecMulVec_pos {A : Matrix n n ℝ}
     (hA : A.IsSymm) {ξ : n → ℝ} (hξ : ξ ≠ 0) :
     0 < trace ((1 + A * A)⁻¹ * vecMulVec ξ ξ) := by
-  have hpos : (1 + A * A).PosDef := by
-    simpa [conjTranspose_eq_transpose_of_trivial, hA.eq] using posDef_one_add_mul_conjTranspose A
+  have hpos : (1 + A * A).PosDef := (isHermitian_iff_isSymm.mpr hA).posDef_one_add_mul_self
   rw [mul_vecMulVec, trace_vecMulVec, dotProduct_comm]
   simpa using hpos.inv.dotProduct_mulVec_pos hξ
 

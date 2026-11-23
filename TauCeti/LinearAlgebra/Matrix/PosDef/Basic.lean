@@ -37,6 +37,8 @@ the positive definiteness of `1 + A Aᴴ` over a star-ordered ring with a proper
   entry is positive.
 * `Matrix.posDef_one_add_mul_conjTranspose`: `1 + A Aᴴ` is positive definite over a star-ordered
   ring with a proper star.
+* `Matrix.IsHermitian.posDef_one_add_mul_self`: `1 + A²` is positive definite for Hermitian `A`
+  over such a ring.
 * `TauCeti.Matrix.posDef_map_intCast`: an integer matrix that is positive definite over `ℤ` is
   positive definite over `ℚ`.
 * `TauCeti.Matrix.posDef_map_intCast_iff`: positive definiteness over `ℤ` and over `ℚ` agree.
@@ -95,6 +97,13 @@ theorem _root_.Matrix.posDef_one_add_mul_conjTranspose {m R : Type*} [Ring R] [P
     [StarRing R] [StarOrderedRing R] [IsProperStar R] [Fintype m] [DecidableEq n]
     (A : _root_.Matrix n m R) : (1 + A * Aᴴ).PosDef :=
   _root_.Matrix.PosDef.one.add_posSemidef (_root_.Matrix.posSemidef_self_mul_conjTranspose A)
+
+/-- **`1 + A²` is positive definite** for every Hermitian matrix `A` over a star-ordered ring with
+a proper star, such as a real symmetric matrix: it is `1 + A Aᴴ`. -/
+theorem _root_.Matrix.IsHermitian.posDef_one_add_mul_self {R : Type*} [Ring R] [PartialOrder R]
+    [StarRing R] [StarOrderedRing R] [IsProperStar R] [Fintype n] [DecidableEq n]
+    {A : _root_.Matrix n n R} (hA : A.IsHermitian) : (1 + A * A).PosDef := by
+  simpa only [hA.eq] using _root_.Matrix.posDef_one_add_mul_conjTranspose A
 
 /-- A `1 × 1` matrix over a nontrivial star-ordered ring without zero divisors, such as `ℝ` or
 `ℂ`, is positive definite exactly when its single entry is positive. -/
