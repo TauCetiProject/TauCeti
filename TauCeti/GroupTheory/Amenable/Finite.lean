@@ -87,7 +87,7 @@ def average (F : Finset G) (hF : F.Nonempty) : Mean G :=
       map_add' f f' := by simp [Finset.expect_add_distrib]
       map_smul' c f := by simp [Finset.mul_expect] }
     (fun f hf => Finset.expect_nonneg fun x _ => UCB.le_def.1 hf x)
-    (by simp only [LinearMap.coe_mk, AddHom.coe_mk, ← eval_apply, map_one, Finset.expect_const hF])
+    (by simp [hF])
 
 section Average
 

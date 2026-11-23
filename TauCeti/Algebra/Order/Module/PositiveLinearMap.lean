@@ -77,7 +77,9 @@ order-preserving algebra equivalence. -/
 def normalizedEquivOfAlgEquiv (e : U ≃ₐ[R] V)
     (hle : ∀ {f g : V}, e.symm f ≤ e.symm g ↔ f ≤ g) {w : W} :
     {m : U →ₚ[R] W // m 1 = w} ≃ {m : V →ₚ[R] W // m 1 = w} :=
-  let hle' : ∀ {f g : V}, e.toLinearEquiv.symm f ≤ e.toLinearEquiv.symm g ↔ f ≤ g := hle
+  let hle' : ∀ {f g : V}, e.toLinearEquiv.symm f ≤ e.toLinearEquiv.symm g ↔ f ≤ g :=
+    fun {f g} => by
+      simpa only [← AlgEquiv.toLinearEquiv_symm, AlgEquiv.toLinearEquiv_apply] using hle
   (equivOfLinearEquiv e.toLinearEquiv hle').subtypeEquiv fun m => by
     simp
 

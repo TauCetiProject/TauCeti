@@ -146,14 +146,10 @@ attribute [to_additive existing addAmenable_iSup_of_directed] amenable_iSup_of_d
 /-- An additive topological group which is the supremum of a directed family of amenable additive
 subgroups is amenable. -/
 theorem AddAmenable.of_directed_of_iSup_eq_top {ι : Type*} {H : ι → AddSubgroup A}
-    (hH : Directed (· ≤ ·) H) (htop : ⨆ i, H i = ⊤) [∀ i, AddAmenable (H i)] : AddAmenable A := by
-  have : ∀ i, Amenable ((H i).toSubgroup) :=
-    fun i => (H i).toSubgroupContinuousMulEquiv.amenable_iff.1 inferInstance
-  have hdir : Directed (· ≤ ·) fun i => (H i).toSubgroup := fun i j => by
-    obtain ⟨k, hik, hjk⟩ := hH i j
-    exact ⟨k, AddSubgroup.toSubgroup.monotone hik, AddSubgroup.toSubgroup.monotone hjk⟩
-  refine ⟨.of_directed_of_iSup_eq_top hdir ?_⟩
-  rw [← OrderIso.map_iSup AddSubgroup.toSubgroup, htop, OrderIso.map_top]
+    (hH : Directed (· ≤ ·) H) (htop : ⨆ i, H i = ⊤) [∀ i, AddAmenable (H i)] : AddAmenable A :=
+  have := addAmenable_iSup_of_directed hH
+  .of_denseRange (ContinuousAddMonoidHom.addSubgroupSubtype (⨆ i, H i))
+    (Function.Surjective.denseRange fun x => ⟨⟨x, htop ▸ AddSubgroup.mem_top x⟩, rfl⟩)
 
 attribute [to_additive existing] Amenable.of_directed_of_iSup_eq_top
 
