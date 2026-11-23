@@ -58,12 +58,9 @@ open scoped CStarAlgebra ComplexOrder
 
 namespace TauCeti
 
-variable {A B : Type*} [NonUnitalCStarAlgebra A] [PartialOrder A] [StarOrderedRing A]
-  [NonUnitalCStarAlgebra B] [PartialOrder B] [StarOrderedRing B]
-
 section Def
 
-omit [PartialOrder A] [StarOrderedRing A] [PartialOrder B] [StarOrderedRing B]
+variable {A B : Type*} [AddCommMonoid A] [Module ℂ A] [AddCommMonoid B] [Module ℂ B]
 
 /-- The extension `λ + a ↦ t λ + φ a` of a complex-linear map `φ : A → B` to the unitizations
 `A⁺¹ → B⁺¹`. -/
@@ -92,6 +89,9 @@ theorem unitizationMap_one (t : ℂ) (φ : A →ₗ[ℂ] B) :
   simp [unitizationMap_apply]
 
 end Def
+
+variable {A B : Type*} [NonUnitalCStarAlgebra A] [PartialOrder A] [StarOrderedRing A]
+  [NonUnitalCStarAlgebra B] [PartialOrder B] [StarOrderedRing B]
 
 /-- The compression `[e aᵢⱼ e + λᵢⱼ e²]` of a positive matrix `[λᵢⱼ + aᵢⱼ]` over `A⁺¹` by a
 self-adjoint `e ∈ A` is a positive matrix over `A`. -/
