@@ -47,6 +47,8 @@ This is the symbol of an operator of Laplace type with constant `1`. For a metri
 * `CovariantDerivative.contMDiff_roughLaplacian`: the rough Laplacian of every section is smooth.
 * `CovariantDerivative.smoothRoughLaplacian`: the rough Laplacian as a real-linear endomorphism of
   the smooth sections.
+* `CovariantDerivative.smulCommutator_smoothRoughLaplacian_apply`: with the Levi-Civita
+  connection on the tangent bundle, the commutators `[∇*∇, f] σ = -2 ∇_{grad f} σ - (Δ f) σ`.
 * `CovariantDerivative.smulCommutator_smulCommutator_smoothRoughLaplacian_apply`: the double
   commutators `[[∇*∇, f], g] σ = -2 ⟪grad f, grad g⟫ σ`.
 * `CovariantDerivative.smoothRoughLaplacian_mem_differentialOperators_two`: `∇*∇` has order at
@@ -136,6 +138,20 @@ def smoothRoughLaplacian : Cₛ^∞⟮I; F, V⟯ →ₗ[ℝ] Cₛ^∞⟮I; F, V�
 theorem smoothRoughLaplacian_apply (σ : Cₛ^∞⟮I; F, V⟯) (x : M) :
     cov.smoothRoughLaplacian covT σ x = cov.roughLaplacian covT σ x :=
   (rfl)
+
+/-- **The commutator of the rough Laplacian with multiplication.** With the Levi-Civita connection
+on the tangent bundle, `[∇*∇, f] σ = ∇*∇(f σ) - f ∇*∇ σ = -2 ∇_{grad f} σ - (Δ f) σ`, where
+`Δ = div ∘ grad` is the Laplace–Beltrami operator. The leading part `-2 ∇_{grad f}` of this
+first-order operator is where the connection `∇` enters. -/
+theorem smulCommutator_smoothRoughLaplacian_apply (f : C^∞⟮I, M; ℝ⟯) (σ : Cₛ^∞⟮I; F, V⟯) (x : M) :
+    smulCommutator ℝ f (cov.smoothRoughLaplacian (leviCivitaConnection I M)) σ x =
+      -(2 : ℝ) • cov σ x (TauCeti.Manifold.mgradient I f x) -
+        TauCeti.Manifold.laplaceBeltrami I f x • σ x := by
+  have hfun : ⇑(f • σ) = ⇑f • ⇑σ := funext fun y ↦ ContMDiffSection.smul_apply f σ y
+  simp only [smulCommutator_apply_apply, ContMDiffSection.coe_sub, Pi.sub_apply,
+    smoothRoughLaplacian_apply, hfun, ContMDiffSection.smul_apply,
+    roughLaplacian_smul cov f.contMDiff σ.contMDiff x]
+  module
 
 /-- The double commutator of the rough Laplacian with multiplication by smooth functions is
 multiplication by `-2` times the inner product of their gradients:
