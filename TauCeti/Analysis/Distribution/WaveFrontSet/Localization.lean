@@ -528,35 +528,18 @@ theorem exists_isOpen_cone_forall_decay_of_isCompact {T : 𝓓'(Ω, ℂ)} {K : S
   refine ⟨⋃ x ∈ t, interior (U x), isOpen_biUnion fun _ _ ↦ isOpen_interior, ht, ⋂ x ∈ t, Γ x,
     hΓt, hξΓt, hconet, fun ψ hψ N ↦ ?_⟩
   -- Split `ψ` into pieces supported in these neighbourhoods and one piece off the support of `T`.
-  let V : Option t → Set E := fun i ↦ i.elim (dsupport T)ᶜ fun x ↦ interior (U x)
-  have hV : ∀ i, IsOpen (V i) := by
-    rintro (_ | x)
-    exacts [isClosed_dsupport.isOpen_compl, isOpen_interior]
-  have hcover : tsupport ψ ⊆ ⋃ i, V i := fun z hz ↦ by
-    rcases hψ hz with hz | hz
-    · obtain ⟨x, hx, hzx⟩ := mem_iUnion₂.1 hz
-      exact mem_iUnion.2 ⟨some ⟨x, hx⟩, hzx⟩
-    · exact mem_iUnion.2 ⟨none, hz⟩
-  obtain ⟨s, ψs, hψs, hsum, -⟩ := ψ.exists_sum_subordinate V hV hcover
-  have hpiece (i : s) :
-      ∃ C, ∀ η ∈ ⋂ x ∈ t, Γ x, (1 + ‖η‖) ^ N * ‖T.localFourier (ψs i) η‖ ≤ C := by
-    obtain ⟨i, hi⟩ := i
-    cases i with
-    | none => exact ⟨0, fun η _ ↦ by
-        simp [localFourier_eq_zero_of_disjoint_dsupport
-          (disjoint_left.2 fun _ hz ↦ hψs ⟨none, hi⟩ hz)]⟩
-    | some x =>
-      obtain ⟨C, hC⟩ := hdecay x (ψs ⟨some x, hi⟩) ((hψs _).trans interior_subset) N
-      exact ⟨C, fun η hη ↦ hC η (mem_iInter₂.1 hη x x.property)⟩
-  choose C hC using hpiece
-  refine ⟨∑ i, C i, fun η hη ↦ ?_⟩
-  rw [← hsum, localFourier_sum_cutoff]
-  calc (1 + ‖η‖) ^ N * ‖∑ i, T.localFourier (ψs i) η‖
-      ≤ ∑ i, (1 + ‖η‖) ^ N * ‖T.localFourier (ψs i) η‖ := by
+  obtain ⟨ψ₀, ψs, hψ₀, hψs, hsum⟩ := ψ.exists_add_sum_eq_of_tsupport_subset_biUnion_union
+    (fun _ ↦ isOpen_interior) isClosed_dsupport.isOpen_compl hψ
+  choose C hC using fun x : t ↦ hdecay x (ψs x) ((hψs x).trans interior_subset) N
+  refine ⟨∑ x, C x, fun η hη ↦ ?_⟩
+  rw [← hsum, localFourier_add_cutoff, localFourier_eq_zero_of_disjoint_dsupport
+    (disjoint_left.2 fun _ hz ↦ hψ₀ hz), zero_add, localFourier_sum_cutoff]
+  calc (1 + ‖η‖) ^ N * ‖∑ x, T.localFourier (ψs x) η‖
+      ≤ ∑ x, (1 + ‖η‖) ^ N * ‖T.localFourier (ψs x) η‖ := by
         rw [← Finset.mul_sum]
         gcongr
         exact norm_sum_le _ _
-    _ ≤ ∑ i, C i := Finset.sum_le_sum fun i _ ↦ hC i η hη
+    _ ≤ ∑ x, C x := Finset.sum_le_sum fun x _ ↦ hC x η (mem_iInter₂.1 hη x x.property)
 
 /-- **Rapid decay on a closed cone.** If `V` is a closed cone of frequencies such that no point of
 the wave front set of `T` lies over the support of `φ` in a direction of `V`, then the localized

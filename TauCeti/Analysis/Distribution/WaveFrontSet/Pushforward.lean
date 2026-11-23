@@ -13,6 +13,7 @@ import TauCeti.Analysis.Calculus.BumpFunction.FiniteDimension
 import TauCeti.Analysis.Distribution.TestFunction.PartitionOfUnity
 import TauCeti.Analysis.Fourier.NonstationaryPhase.Basic
 import TauCeti.Analysis.Normed.Module.Cone
+import TauCeti.Analysis.Normed.Operator.Prod
 import TauCeti.Analysis.PositiveDefinite.FourierAtom
 import TauCeti.Analysis.Distribution.WaveFrontSet.Localization
 
@@ -150,33 +151,17 @@ private theorem pairCovector_comp_prod (m : E) (η : E') (D : E →L[ℝ] E') :
 omit [FiniteDimensional ℝ E'] [FiniteDimensional ℝ E] in
 private theorem norm_add_norm_le_two_mul_norm_pairCovector (m : E) (η : E') :
     ‖m‖ + ‖η‖ ≤ 2 * ‖pairCovector m η‖ := by
-  have key {a : ℝ} (ha : 0 ≤ a) (h : a ^ 2 ≤ ‖pairCovector m η‖ * a) :
-      a ≤ ‖pairCovector m η‖ := by
-    rcases ha.eq_or_lt with h0 | h0
-    · rw [← h0]; exact (pairCovector m η).opNorm_nonneg
-    · exact le_of_mul_le_mul_right (by nlinarith) h0
-  have h1 := (pairCovector m η).le_opNorm (m, 0)
-  have h2 := (pairCovector m η).le_opNorm (0, η)
-  rw [pairCovector_apply, real_inner_self_eq_norm_sq, inner_zero_right, add_zero,
-    Real.norm_eq_abs, abs_of_nonneg (by positivity), Prod.norm_def, norm_zero,
-    max_eq_left (norm_nonneg _)] at h1
-  rw [pairCovector_apply, real_inner_self_eq_norm_sq, inner_zero_right, zero_add,
-    Real.norm_eq_abs, abs_of_nonneg (by positivity), Prod.norm_def, norm_zero,
-    max_eq_right (norm_nonneg _)] at h2
-  linarith [key (norm_nonneg m) h1, key (norm_nonneg η) h2]
+  have h1 := (innerSL ℝ m).opNorm_le_opNorm_coprod_left (innerSL ℝ η)
+  have h2 := (innerSL ℝ m).opNorm_le_opNorm_coprod_right (innerSL ℝ η)
+  rw [innerSL_apply_norm] at h1 h2
+  rw [pairCovector]
+  linarith
 
 omit [FiniteDimensional ℝ E'] [FiniteDimensional ℝ E] in
 private theorem norm_pairCovector_le (m : E) (η : E') :
-    ‖pairCovector m η‖ ≤ ‖m‖ + ‖η‖ := by
-  refine (pairCovector m η).opNorm_le_bound (by positivity) fun z ↦ ?_
-  obtain ⟨u, w⟩ := z
-  rw [pairCovector_apply, Real.norm_eq_abs]
-  have hu : ‖u‖ ≤ ‖(u, w)‖ := norm_fst_le (u, w)
-  have hw : ‖w‖ ≤ ‖(u, w)‖ := norm_snd_le (u, w)
-  calc |⟪m, u⟫ + ⟪η, w⟫| ≤ ‖m‖ * ‖u‖ + ‖η‖ * ‖w‖ :=
-        (abs_add_le _ _).trans (add_le_add (abs_real_inner_le_norm _ _)
-          (abs_real_inner_le_norm _ _))
-    _ ≤ (‖m‖ + ‖η‖) * ‖(u, w)‖ := by nlinarith [norm_nonneg m, norm_nonneg η]
+    ‖pairCovector m η‖ ≤ ‖m‖ + ‖η‖ :=
+  ((innerSL ℝ m).opNorm_coprod_le (innerSL ℝ η)).trans_eq
+    (by rw [innerSL_apply_norm, innerSL_apply_norm])
 
 omit [FiniteDimensional ℝ E'] [FiniteDimensional ℝ E] in
 /-- **The phase is non-stationary away from the decay cone.** Let `ξ` be a covector with
@@ -226,6 +211,23 @@ private theorem contDiffOn_fourierChar_neg_inner {Φ : E → E'} (hΦ : ContDiff
     (TauCeti.fourierAtom_eq_fourierChar _ _).symm
 
 omit [FiniteDimensional ℝ E'] in
+/-- The product of a test function `φ` with the phase factor `𝐞 (-⟪Φ ·, η⟫)` of a map `Φ` smooth
+on `Ω` is a test function. -/
+private theorem exists_eq_mul_fourierChar {Φ : E → E'} (hΦ : ContDiffOn ℝ ∞ Φ Ω) (φ : 𝓓(Ω, ℂ))
+    (η : E') : ∃ ψ : 𝓓(Ω, ℂ), ∀ y, ψ y = φ y * 𝐞 (-⟪Φ y, η⟫) := by
+  -- Multiply `φ` by a smooth function equal to the phase factor near `tsupport φ`.
+  obtain ⟨g, hg, -, -, -, hgφ⟩ :=
+    (contDiffOn_fourierChar_neg_inner hΦ η).exists_contDiff_eventuallyEq_on_isCompact
+      φ.hasCompactSupport Ω.isOpen φ.tsupport_subset
+  refine ⟨bilinLeftCLM (ContinuousLinearMap.mul ℝ ℂ) hg φ, fun y ↦ ?_⟩
+  have h : bilinLeftCLM (ContinuousLinearMap.mul ℝ ℂ) hg φ y = φ y * g y := by
+    simp [bilinLeftCLM_apply]
+  rw [h]
+  by_cases hy : φ y = 0
+  · simp [hy]
+  · rw [(hgφ y (subset_tsupport _ hy)).eq_of_nhds]
+
+omit [FiniteDimensional ℝ E'] in
 /-- A smooth map `Ψ` on all of `E` agreeing with `Φ` near a compact set `K ⊆ Ω`, written as an
 oscillatory phase `x ↦ (x, Ψ x)`: the Fourier coefficients of `χ (𝐞 (-⟪Φ ·, η⟫))` on the support
 of `χ` are oscillatory integrals with the phase `pairCovector m η ∘ (x ↦ (x, Ψ x))`. -/
@@ -244,7 +246,7 @@ private theorem exists_contDiff_fourier_eq [MeasurableSpace E] [BorelSpace E] {�
   · simp [hx]
   · rw [pairCovector_apply, (hΨK x (subset_tsupport _ hx)).eq_of_nhds, neg_add,
       AddChar.map_add_eq_mul, real_inner_comm m x, real_inner_comm η (Φ x)]
-    simp [Circle.smul_def]
+    simp only [Circle.smul_def, smul_eq_mul, Circle.coe_mul]
     ring
 
 omit [FiniteDimensional ℝ E'] [FiniteDimensional ℝ E] in
@@ -385,13 +387,16 @@ cone `Γ'` around `η` such that for every cutoff `φ` supported in `V` the pair
 `T (φ 𝐞 (-⟪Φ ·, η'⟫))` decay rapidly for `η' ∈ Γ'`. For linear `Φ` this is
 `Distribution.IsMicrolocallySmoothAt.exists_nhds_cone` along the transposed frequency. -/
 theorem IsMicrolocallySmoothAt.exists_nhds_cone_forall_decay_fourierChar {T : 𝓓'(Ω, ℂ)}
-    {Φ : E → E'} (hΦ : ContDiffOn ℝ ∞ Φ Ω) {x : E} (hx : x ∈ Ω) {η : E'}
-    (hξ : ((fderiv ℝ Φ x)†) η ≠ 0) (h : T.IsMicrolocallySmoothAt x (((fderiv ℝ Φ x)†) η)) :
+    {Φ : E → E'} (hΦ : ContDiffOn ℝ ∞ Φ Ω) {x : E} {η : E'} (hξ : ((fderiv ℝ Φ x)†) η ≠ 0)
+    (h : T.IsMicrolocallySmoothAt x (((fderiv ℝ Φ x)†) η)) :
     ∃ V : Set E, IsOpen V ∧ x ∈ V ∧ ∃ Γ' : Set E', IsOpen Γ' ∧ η ∈ Γ' ∧
       (∀ t : ℝ, 0 < t → ∀ η' ∈ Γ', t • η' ∈ Γ') ∧
       ∀ φ : 𝓓(Ω, ℂ), tsupport φ ⊆ V → ∀ N : ℕ, ∃ C, ∀ η' ∈ Γ', ∀ ψ : 𝓓(Ω, ℂ),
         (∀ y, ψ y = φ y * 𝐞 (-⟪Φ y, η'⟫)) → (1 + ‖η'‖) ^ N * ‖T.complexPairing ψ‖ ≤ C := by
   set ξ := ((fderiv ℝ Φ x)†) η
+  have hx : x ∈ Ω := by
+    obtain ⟨φ, hφ, -⟩ := isMicrolocallySmoothAt_iff.1 h
+    exact φ.tsupport_subset (subset_tsupport _ hφ)
   obtain ⟨U, hU, Γ, hΓ, hξΓ, hcone, hdec⟩ := h.exists_nhds_cone
   obtain ⟨Γ₁, hΓ₁, hξΓ₁, hcone₁, c₁, hc₁, hball⟩ := hΓ.exists_cone_closedBall_subset hcone hξΓ
   have hη : 0 < ‖η‖ := norm_pos_iff.2 fun h0 ↦ hξ (by simp [ξ, h0])
@@ -441,48 +446,39 @@ theorem IsMicrolocallySmoothAt.exists_nhds_cone_forall_decay_fourierChar {T : �
       (norm_nonneg _))).trans (hball _ (hVΓ' x' hx' η' hη').1)
 
 omit [FiniteDimensional ℝ E'] in
-/-- A bound on the pairings of `T` with the pieces `φᵢ 𝐞 (-⟪Φ ·, η⟫)` of a partition
-`φ = ∑ᵢ φᵢ`, with `|φᵢ| ≤ |φ|`, bounds the pairing with `φ 𝐞 (-⟪Φ ·, η⟫)` by their sum. -/
+/-- Let `φ = φ₀ + ∑ᵢ φᵢ` with `φ₀` supported off the support of `T`. A bound on the pairings of
+`T` with the pieces `φᵢ 𝐞 (-⟪Φ ·, η⟫)` bounds the pairing with `φ 𝐞 (-⟪Φ ·, η⟫)` by their sum. -/
 private theorem one_add_pow_mul_norm_complexPairing_le_sum {T : 𝓓'(Ω, ℂ)} {Φ : E → E'}
-    (hΦ : ContDiffOn ℝ ∞ Φ Ω) {φ : 𝓓(Ω, ℂ)} {ι : Type*} [Fintype ι] {φs : ι → 𝓓(Ω, ℂ)}
-    (hsum : ∑ i, φs i = φ) (hle : ∀ i x, ‖φs i x‖ ≤ ‖φ x‖) {η : E'} {N : ℕ} {C : ι → ℝ}
-    (hC : ∀ i, ∀ ψ : 𝓓(Ω, ℂ), (∀ y, ψ y = φs i y * 𝐞 (-⟪Φ y, η⟫)) →
+    (hΦ : ContDiffOn ℝ ∞ Φ Ω) {φ φ₀ : 𝓓(Ω, ℂ)} {ι : Type*} [Fintype ι] {φs : ι → 𝓓(Ω, ℂ)}
+    (hsum : φ₀ + ∑ i, φs i = φ) (hφ₀ : Disjoint (tsupport φ₀) (dsupport T)) {η : E'} {N : ℕ}
+    {C : ι → ℝ} (hC : ∀ i, ∀ ψ : 𝓓(Ω, ℂ), (∀ y, ψ y = φs i y * 𝐞 (-⟪Φ y, η⟫)) →
       (1 + ‖η‖) ^ N * ‖T.complexPairing ψ‖ ≤ C i)
     {ψ : 𝓓(Ω, ℂ)} (hψ : ∀ y, ψ y = φ y * 𝐞 (-⟪Φ y, η⟫)) :
     (1 + ‖η‖) ^ N * ‖T.complexPairing ψ‖ ≤ ∑ i, C i := by
-  -- Multiply the pieces by a smooth function equal to the phase factor on `tsupport φ`.
-  obtain ⟨g, hg, -, -, -, hgφ⟩ :=
-    (contDiffOn_fourierChar_neg_inner hΦ η).exists_contDiff_eventuallyEq_on_isCompact
-      φ.hasCompactSupport Ω.isOpen φ.tsupport_subset
-  have hψs (i : ι) (y : E) :
-      bilinLeftCLM (ContinuousLinearMap.mul ℝ ℂ) hg (φs i) y = φs i y * 𝐞 (-⟪Φ y, η⟫) := by
-    have h : bilinLeftCLM (ContinuousLinearMap.mul ℝ ℂ) hg (φs i) y = φs i y * g y := by
-      simp [bilinLeftCLM_apply]
-    rw [h]
-    by_cases hy : φs i y = 0
-    · simp [hy]
-    · have hφy : φ y ≠ 0 := fun h0 ↦ hy (norm_le_zero_iff.1 ((hle i y).trans (by simp [h0])))
-      rw [(hgφ y (subset_tsupport _ hφy)).eq_of_nhds]
-  have hψsum : ψ = ∑ i, bilinLeftCLM (ContinuousLinearMap.mul ℝ ℂ) hg (φs i) := by
+  obtain ⟨ψ₀, hψ₀⟩ := exists_eq_mul_fourierChar hΦ φ₀ η
+  choose ψs hψs using fun i ↦ exists_eq_mul_fourierChar hΦ (φs i) η
+  have hψsum : ψ = ψ₀ + ∑ i, ψs i := by
     ext y
-    simp only [hψ, sum_apply, hψs, ← Finset.sum_mul, ← hsum]
-  rw [hψsum, map_sum]
-  calc (1 + ‖η‖) ^ N * ‖∑ i, T.complexPairing (bilinLeftCLM (ContinuousLinearMap.mul ℝ ℂ) hg
-        (φs i))‖
-      ≤ ∑ i, (1 + ‖η‖) ^ N * ‖T.complexPairing (bilinLeftCLM (ContinuousLinearMap.mul ℝ ℂ) hg
-        (φs i))‖ := by
+    simp only [hψ, add_apply, sum_apply, hψ₀, hψs, ← Finset.sum_mul, ← add_mul, ← hsum]
+  -- The piece `ψ₀` is supported off the support of `T`.
+  have hψ₀T : T.complexPairing ψ₀ = 0 := by
+    rw [← localFourier_at_zero, localFourier_eq_zero_of_disjoint_dsupport
+      (hφ₀.mono_left (closure_mono fun y hy ↦ left_ne_zero_of_mul (by rwa [← hψ₀])))]
+  rw [hψsum, map_add, hψ₀T, zero_add, map_sum]
+  calc (1 + ‖η‖) ^ N * ‖∑ i, T.complexPairing (ψs i)‖
+      ≤ ∑ i, (1 + ‖η‖) ^ N * ‖T.complexPairing (ψs i)‖ := by
         rw [← Finset.mul_sum]
         gcongr
         exact norm_sum_le _ _
     _ ≤ ∑ i, C i := Finset.sum_le_sum fun i _ ↦ hC i _ (hψs i)
 
 /-- **Uniform localization along a smooth map over a compact set.** If `DΦ(x)ᵀ η ≠ 0` and `T` is
-microlocally smooth at `(x, DΦ(x)ᵀ η)` for every `x` in a compact set `K ⊆ Ω`, then there are an
+microlocally smooth at `(x, DΦ(x)ᵀ η)` for every `x` in a compact set `K`, then there are an
 open set `W ⊇ K` and an open cone `Γ'` around `η` such that for every cutoff `φ` whose support
 meets the support of `T` only inside `W`, the pairings `T (φ 𝐞 (-⟪Φ ·, η'⟫))` decay rapidly for
 `η' ∈ Γ'`. -/
 theorem exists_isOpen_cone_forall_decay_fourierChar_of_isCompact {T : 𝓓'(Ω, ℂ)} {Φ : E → E'}
-    (hΦ : ContDiffOn ℝ ∞ Φ Ω) {K : Set E} (hK : IsCompact K) (hKΩ : K ⊆ Ω) {η : E'}
+    (hΦ : ContDiffOn ℝ ∞ Φ Ω) {K : Set E} (hK : IsCompact K) {η : E'}
     (h : ∀ x ∈ K, ((fderiv ℝ Φ x)†) η ≠ 0 ∧ T.IsMicrolocallySmoothAt x (((fderiv ℝ Φ x)†) η)) :
     ∃ W : Set E, IsOpen W ∧ K ⊆ W ∧ ∃ Γ' : Set E', IsOpen Γ' ∧ η ∈ Γ' ∧
       (∀ t : ℝ, 0 < t → ∀ η' ∈ Γ', t • η' ∈ Γ') ∧
@@ -490,41 +486,18 @@ theorem exists_isOpen_cone_forall_decay_fourierChar_of_isCompact {T : 𝓓'(Ω, 
         (∀ y, ψ y = φ y * 𝐞 (-⟪Φ y, η'⟫)) → (1 + ‖η'‖) ^ N * ‖T.complexPairing ψ‖ ≤ C := by
   -- Finitely many of the neighbourhoods given by the pointwise statement cover `K`.
   choose V hV hxV Γ' hΓ' hηΓ' hcone hdecay using fun x : K ↦
-    IsMicrolocallySmoothAt.exists_nhds_cone_forall_decay_fourierChar hΦ (hKΩ x.property)
-      (h x x.property).1 (h x x.property).2
-  obtain ⟨t, ht⟩ := hK.elim_finite_subcover V hV fun x hx ↦ mem_iUnion.2 ⟨⟨x, hx⟩, hxV _⟩
-  refine ⟨⋃ x ∈ t, V x, isOpen_biUnion fun x _ ↦ hV x, ht, ⋂ x ∈ t, Γ' x,
-    isOpen_biInter_finset fun x _ ↦ hΓ' x, mem_iInter₂.2 fun x _ ↦ hηΓ' x,
-    fun s hs η' hη' ↦ mem_iInter₂.2 fun x hx ↦ hcone x s hs η' (mem_iInter₂.1 hη' x hx),
-    fun φ hφ N ↦ ?_⟩
+    IsMicrolocallySmoothAt.exists_nhds_cone_forall_decay_fourierChar hΦ (h x x.property).1
+      (h x x.property).2
+  obtain ⟨t, ht, hΓt, hηΓt, hconet⟩ := TauCeti.exists_finset_subset_biUnion_interior_and_isOpen_cone
+    hK (fun x ↦ (hV x).mem_nhds (hxV x)) hΓ' hηΓ' hcone
+  refine ⟨⋃ x ∈ t, interior (V x), isOpen_biUnion fun _ _ ↦ isOpen_interior, ht, ⋂ x ∈ t, Γ' x,
+    hΓt, hηΓt, hconet, fun φ hφ N ↦ ?_⟩
   -- Split `φ` into pieces supported in these neighbourhoods and one piece off the support of `T`.
-  let U : Option t → Set E := fun i ↦ i.elim (dsupport T)ᶜ fun x ↦ V x
-  have hU : ∀ i, IsOpen (U i) := by
-    rintro (_ | x)
-    exacts [isClosed_dsupport.isOpen_compl, hV x]
-  have hcover : tsupport φ ⊆ ⋃ i, U i := fun z hz ↦ by
-    rcases hφ hz with hz | hz
-    · obtain ⟨x, hx, hzx⟩ := mem_iUnion₂.1 hz
-      exact mem_iUnion.2 ⟨some ⟨x, hx⟩, hzx⟩
-    · exact mem_iUnion.2 ⟨none, hz⟩
-  obtain ⟨s, φs, hφs, hsum, hle⟩ := φ.exists_sum_subordinate U hU hcover
-  have hpiece (i : s) : ∃ C, ∀ η' ∈ ⋂ x ∈ t, Γ' x, ∀ ψ : 𝓓(Ω, ℂ),
-      (∀ y, ψ y = φs i y * 𝐞 (-⟪Φ y, η'⟫)) → (1 + ‖η'‖) ^ N * ‖T.complexPairing ψ‖ ≤ C := by
-    obtain ⟨i, hi⟩ := i
-    cases i with
-    | none =>
-      refine ⟨0, fun η' _ ψ hψ ↦ ?_⟩
-      have hψs : tsupport ψ ⊆ tsupport (φs ⟨none, hi⟩) :=
-        closure_mono fun y hy ↦ left_ne_zero_of_mul (by rwa [← hψ])
-      rw [← localFourier_at_zero, localFourier_eq_zero_of_disjoint_dsupport
-        (disjoint_left.2 fun _ hz ↦ hφs ⟨none, hi⟩ (hψs hz))]
-      simp
-    | some x =>
-      obtain ⟨C, hC⟩ := hdecay x (φs ⟨some x, hi⟩) (hφs _) N
-      exact ⟨C, fun η' hη' ↦ hC η' (mem_iInter₂.1 hη' x x.property)⟩
-  choose C hC using hpiece
-  exact ⟨∑ i, C i, fun η' hη' ψ hψ ↦ one_add_pow_mul_norm_complexPairing_le_sum hΦ hsum hle
-    (fun i ↦ hC i η' hη') hψ⟩
+  obtain ⟨φ₀, φs, hφ₀, hφs, hsum⟩ := φ.exists_add_sum_eq_of_tsupport_subset_biUnion_union
+    (fun _ ↦ isOpen_interior) isClosed_dsupport.isOpen_compl hφ
+  choose C hC using fun x : t ↦ hdecay x (φs x) ((hφs x).trans interior_subset) N
+  exact ⟨∑ x, C x, fun η' hη' ψ hψ ↦ one_add_pow_mul_norm_complexPairing_le_sum hΦ hsum
+    (disjoint_left.2 fun _ hz ↦ hφ₀ hz) (fun x ↦ hC x η' (mem_iInter₂.1 hη' x x.property)) hψ⟩
 
 section Pushforward
 
@@ -562,8 +535,7 @@ theorem IsMicrolocallySmoothAt.cutoffPushforwardCLM {T : 𝓓'(Ω, ℂ)} {y η :
     ((hΦ.continuousOn.mono hDΩ).preimage_isClosed_of_isClosed hD.isClosed isClosed_singleton)
     inter_subset_left
   obtain ⟨W, hW, hKW, Γ', hΓ', hηΓ', hcone', hdecay⟩ :=
-    exists_isOpen_cone_forall_decay_fourierChar_of_isCompact hΦ hDy
-      (inter_subset_left.trans hDΩ) fun x hx ↦ h x hx.1 hx.2
+    exists_isOpen_cone_forall_decay_fourierChar_of_isCompact hΦ hDy fun x hx ↦ h x hx.1 hx.2
   -- The compact set `Φ (D \ W)` misses `y`, so a cutoff `f` around `y` pulls back into
   -- `W ∪ (supp T)ᶜ`.
   have hC : IsCompact (Φ '' (D \ W)) :=
@@ -582,17 +554,7 @@ theorem IsMicrolocallySmoothAt.cutoffPushforwardCLM {T : 𝓓'(Ω, ℂ)} {y η :
   obtain ⟨C, hC⟩ := hdecay ψ₀ hψ₀ N
   refine ⟨C, fun η' hη' ↦ ?_⟩
   -- The localized Fourier transform is `T` paired with `ψ₀ 𝐞 (-⟪Φ ·, η'⟫)`.
-  obtain ⟨g, hg, -, -, -, hgψ₀⟩ :=
-    (contDiffOn_fourierChar_neg_inner hΦ η').exists_contDiff_eventuallyEq_on_isCompact
-      ψ₀.hasCompactSupport Ω.isOpen ψ₀.tsupport_subset
-  have hψ (x : E) : bilinLeftCLM (ContinuousLinearMap.mul ℝ ℂ) hg ψ₀ x =
-      ψ₀ x * 𝐞 (-⟪Φ x, η'⟫) := by
-    have h : bilinLeftCLM (ContinuousLinearMap.mul ℝ ℂ) hg ψ₀ x = ψ₀ x * g x := by
-      simp [bilinLeftCLM_apply]
-    rw [h]
-    by_cases hx : ψ₀ x = 0
-    · simp [hx]
-    · rw [(hgψ₀ x (subset_tsupport _ hx)).eq_of_nhds]
+  obtain ⟨ψ, hψ⟩ := exists_eq_mul_fourierChar hΦ ψ₀ η'
   rw [localFourier_cutoffPushforwardCLM_eq_complexPairing T f η' hψ]
   exact hC η' hη' _ hψ
 

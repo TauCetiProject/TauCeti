@@ -11,7 +11,7 @@ import Mathlib.Analysis.Calculus.LineDeriv.IntegrationByParts
 import Mathlib.Analysis.InnerProductSpace.Calculus
 import Mathlib.Analysis.InnerProductSpace.Dual
 import Mathlib.Analysis.InnerProductSpace.PiL2
-import Mathlib.Analysis.SpecialFunctions.SmoothTransition
+import TauCeti.Analysis.SpecialFunctions.SmoothTransition
 import Mathlib.MeasureTheory.Integral.Bochner.Basic
 
 /-!
@@ -76,29 +76,6 @@ namespace NonstationaryPhaseAux
 variable {E F : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
   [NormedAddCommGroup F] [NormedSpace ℝ F]
 
-/-- A smooth function equal to `t` for `t ≥ 2 δ` and bounded below by `δ`. -/
-private def floorFn (δ t : ℝ) : ℝ :=
-  δ + (t - δ) * Real.smoothTransition ((t - δ) / δ)
-
-private theorem contDiff_floorFn (δ : ℝ) : ContDiff ℝ ∞ (floorFn δ) := by
-  unfold floorFn
-  exact contDiff_const.add ((contDiff_id.sub contDiff_const).mul
-    (Real.smoothTransition.contDiff.comp ((contDiff_id.sub contDiff_const).div_const δ)))
-
-private theorem le_floorFn {δ : ℝ} (hδ : 0 < δ) (t : ℝ) : δ ≤ floorFn δ t := by
-  unfold floorFn
-  rcases le_or_gt t δ with ht | ht
-  · rw [Real.smoothTransition.zero_of_nonpos (div_nonpos_of_nonpos_of_nonneg (by linarith)
-      hδ.le)]
-    simp
-  · have := Real.smoothTransition.nonneg ((t - δ) / δ)
-    nlinarith
-
-private theorem floorFn_of_le {δ t : ℝ} (hδ : 0 < δ) (ht : 2 * δ ≤ t) : floorFn δ t = t := by
-  unfold floorFn
-  rw [Real.smoothTransition.one_of_one_le ((le_div_iff₀ hδ).2 (by linarith))]
-  ring
-
 /-- The differential `θ ∘ DΦ(x)` of the phase `x ↦ θ (Φ x)`, as a function of `p = (θ, x)`. -/
 private def dphase (Φ : E → F) (p : (F →L[ℝ] ℝ) × E) : E →L[ℝ] ℝ :=
   p.1.comp (fderiv ℝ Φ p.2)
@@ -116,7 +93,9 @@ private theorem hasFDerivAt_osc {Φ : E → F} (hΦ : ContDiff ℝ ∞ Φ) (Λ :
     Λ.hasFDerivAt.comp y hΦy
   convert! (Real.hasDerivAt_fourierChar (-Λ (Φ y))).hasFDerivAt.comp y ha.neg using 1
   ext u
-  simp [osc]
+  simp only [neg_mul, osc, smul_apply, ContinuousLinearMap.comp_apply, ofRealCLM_apply, smul_eq_mul,
+    ContinuousLinearMap.comp_neg, neg_apply, ContinuousLinearMap.toSpanSingleton_apply, real_smul,
+    neg_inj]
   ring
 
 private theorem continuous_osc {Φ : E → F} (hΦ : ContDiff ℝ ∞ Φ) (Λ : F →L[ℝ] ℝ) :
@@ -135,7 +114,7 @@ private def grad (Φ : E → F) (p : (F →L[ℝ] ℝ) × E) : E :=
 /-- The vector field `∇ψ / ‖∇ψ‖²` along which the phase `ψ` has derivative one, with `‖∇ψ‖²`
 replaced by a smooth function bounded below by `δ` and equal to it where `‖∇ψ‖² ≥ 2 δ`. -/
 private def field (Φ : E → F) (δ : ℝ) (p : (F →L[ℝ] ℝ) × E) : E :=
-  (floorFn δ (‖grad Φ p‖ ^ 2))⁻¹ • grad Φ p
+  (smoothLowerClamp δ (‖grad Φ p‖ ^ 2))⁻¹ • grad Φ p
 
 private theorem norm_grad (Φ : E → F) (p : (F →L[ℝ] ℝ) × E) : ‖grad Φ p‖ = ‖dphase Φ p‖ := by
   simp [grad]
@@ -147,14 +126,14 @@ private theorem contDiff_field {Φ : E → F} (hΦ : ContDiff ℝ ∞ Φ) {δ : 
     ContDiff ℝ ∞ (field Φ δ) := by
   have hg := contDiff_grad hΦ
   refine ContDiff.smul ?_ hg
-  exact ((contDiff_floorFn δ).comp (hg.norm_sq ℝ)).inv fun p ↦
-    (hδ.trans_le (le_floorFn hδ _)).ne'
+  exact ((contDiff_smoothLowerClamp δ).comp (hg.norm_sq ℝ)).inv fun p ↦
+    (hδ.trans_le (le_smoothLowerClamp hδ _)).ne'
 
 /-- Where `‖∇ψ‖² ≥ 2 δ`, the phase has derivative one along the vector field. -/
 private theorem dphase_field {Φ : E → F} {δ : ℝ} (hδ : 0 < δ) {p : (F →L[ℝ] ℝ) × E}
     (hp : 2 * δ ≤ ‖dphase Φ p‖ ^ 2) : dphase Φ p (field Φ δ p) = 1 := by
   have hpos : 0 < ‖dphase Φ p‖ ^ 2 := by linarith
-  rw [field, norm_grad, floorFn_of_le hδ hp, map_smul, smul_eq_mul, grad,
+  rw [field, norm_grad, smoothLowerClamp_of_two_mul_le hδ hp, map_smul, smul_eq_mul, grad,
     ← InnerProductSpace.toDual_symm_apply, real_inner_self_eq_norm_sq, ← grad, norm_grad]
   exact inv_mul_cancel₀ hpos.ne'
 
@@ -217,7 +196,8 @@ private theorem fderiv_osc_apply {Φ : E → F} (hΦ : ContDiff ℝ ∞ Φ) {Λ 
     congr 1
     simp [dphase, ← mul_assoc, mul_inv_cancel₀ (norm_ne_zero_iff.2 hΛ)]
   rw [(hasFDerivAt_osc hΦ Λ y).fderiv, mul_assoc (-2 * (Real.pi : ℂ) * I), h]
-  simp
+  simp only [neg_mul, smul_apply, ContinuousLinearMap.comp_apply, ofRealCLM_apply, smul_eq_mul,
+    neg_inj]
   ring
 
 omit [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] in
