@@ -40,6 +40,8 @@ derivative of a map into the `m`-th derivative of its directional derivative in 
   first variable commutes with joining the last one.
 * `continuousMultilinearCurryLeftEquiv_eq_curryLeft`: `continuousMultilinearCurryLeftEquiv`
   applied to a map is `ContinuousMultilinearMap.curryLeft`.
+* `ContinuousLinearMap.compContinuousMultilinearMap_curryLeft`: separating the first variable
+  commutes with postcomposition by a continuous linear map.
 * `ContinuousMultilinearMap.applyLastL`: evaluation with `h` in the last argument, as a
   continuous linear map; `ContinuousMultilinearMap.norm_applyLastL_le` bounds its operator norm
   by `‖h‖`, so it is `‖h‖`-Lipschitz (`ContinuousMultilinearMap.lipschitzWith_applyLastL`), and
@@ -123,6 +125,15 @@ theorem continuousMultilinearCurryLeftEquiv_eq_curryLeft (f : ContinuousMultilin
     continuousMultilinearCurryLeftEquiv 𝕜 Ei G f = f.curryLeft := by
   ext x v
   rw [continuousMultilinearCurryLeftEquiv_apply, ContinuousMultilinearMap.curryLeft_apply]
+
+/-- Separating the first variable commutes with postcomposition by a continuous linear map. -/
+theorem ContinuousLinearMap.compContinuousMultilinearMap_curryLeft {G' : Type*}
+    [NormedAddCommGroup G'] [NormedSpace 𝕜 G'] (g : G →L[𝕜] G')
+    (f : ContinuousMultilinearMap 𝕜 Ei G) :
+    (g.compContinuousMultilinearMap f).curryLeft =
+      (compContinuousMultilinearMapL 𝕜 (fun i : Fin n ↦ Ei i.succ) G G' g).comp f.curryLeft := by
+  ext x v
+  simp
 
 end CurryLeft
 

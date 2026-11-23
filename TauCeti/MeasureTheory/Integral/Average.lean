@@ -14,6 +14,7 @@ import TauCeti.MeasureTheory.Function.Lp.Norm
 import TauCeti.MeasureTheory.Integral.Bochner.Basic
 import TauCeti.Analysis.Convex.Continuous
 import Mathlib.Analysis.Convex.Integral
+import Mathlib.Analysis.InnerProductSpace.OfNorm
 import Mathlib.MeasureTheory.Integral.DominatedConvergence
 
 /-!
@@ -123,11 +124,16 @@ applied to an integrable function that is almost everywhere at least `a`.
   `TauCeti.setIntegral_norm_sub_setAverage_sq_le_setIntegral_norm_sub_sq`: in an inner product
   space the square mean oscillation about a constant splits orthogonally, so the average is the
   best constant, with no loss.
+* `TauCeti.setIntegral_norm_sub_starProjection_setAverage_sq_le`: for `f` almost everywhere
+  strongly measurable on a set `s` of finite measure and a subspace `K` over `ℝ` or `ℂ` that admits
+  an orthogonal projection, the projection of the average onto `K` is the best constant in `K`.
 * `TauCeti.setIntegral_norm_sub_setAverage_sq_le_add_of_subset`: the decay of the square mean
   oscillation from `t` to `s ⊆ t` passes from a comparison function `H` to `f`.
-* `TauCeti.setIntegral_norm_sub_inner_setAverage_div_smul_sq_le_of_subset`: among the multiples
-  of `ν`, the projection of the average of `f` over `s ⊆ t` is no farther from `f` on `s` than any
-  multiple of `ν` is from `f` on `t`.
+* `TauCeti.setIntegral_norm_sub_starProjection_setAverage_sq_le_of_subset`,
+  `TauCeti.setIntegral_norm_sub_inner_setAverage_div_smul_sq_le_of_subset`: for `s ⊆ t` with
+  `μ t < ∞` and `f` square integrable on `t`, among the constants in `K`, or the real multiples of
+  `ν`, the integrated squared error on `s` of the projection of the average of `f` over `s` is at
+  most the integrated squared error on `t` of any of them.
 * `TauCeti.setIntegral_norm_sub_toLp_fst_setAverage_sq_le`: for a function with values in the
   Euclidean product `ℝ × E`, the best constant of the form `(c, 0)`.
 * `TauCeti.sq_setAverage_norm_le_setAverage_norm_sq`: Jensen's inequality
@@ -966,48 +972,81 @@ theorem setIntegral_norm_sub_setAverage_sq_le_add_of_subset {t : Set X} {f H : X
   have := mul_le_mul_of_nonneg_left step3 hK
   linarith
 
-/-- **The best constant on a line.** Among the multiples `t ν` of a vector `ν`, the orthogonal
-projection `(⟪f_s, ν⟫ / ‖ν‖²) ν` of the average `f_s` of `f` over a set `s` of finite measure
-minimizes the square mean distance to `f` on `s`. -/
-theorem setIntegral_norm_sub_inner_setAverage_div_smul_sq_le (hs : μ s ≠ ⊤)
-    (hf : MemLp f 2 (μ.restrict s)) (ν : F) (t : ℝ) :
-    ∫ x in s, ‖f x - (⟪⨍ y in s, f y ∂μ, ν⟫_ℝ / ‖ν‖ ^ 2) • ν‖ ^ 2 ∂μ ≤
-      ∫ x in s, ‖f x - t • ν‖ ^ 2 ∂μ := by
+end InnerProduct
+
+section Subspace
+
+variable {X 𝕜 F : Type*} [MeasurableSpace X] {μ : Measure X} [RCLike 𝕜] [NormedAddCommGroup F]
+  [InnerProductSpace 𝕜 F] [NormedSpace ℝ F] [CompleteSpace F] {s : Set X} {f : X → F}
+
+/-- **The best constant in a subspace.** Let `f` be almost everywhere strongly measurable on a set
+`s` of finite measure. Among the constants `c` in a `𝕜`-subspace `K` that admits an orthogonal
+projection, the projection `K.starProjection f_s` of the average `f_s` of `f` over `s` minimizes
+the integrated squared error `∫_s ‖f - c‖²`. If such an `f` is not square integrable on `s`, both
+sides are `0`. -/
+theorem setIntegral_norm_sub_starProjection_setAverage_sq_le (hs : μ s ≠ ⊤)
+    (hfm : AEStronglyMeasurable f (μ.restrict s)) (K : Submodule 𝕜 F) [K.HasOrthogonalProjection]
+    {c : F} (hc : c ∈ K) :
+    ∫ x in s, ‖f x - K.starProjection (⨍ y in s, f y ∂μ)‖ ^ 2 ∂μ ≤
+      ∫ x in s, ‖f x - c‖ ^ 2 ∂μ := by
   have : IsFiniteMeasure (μ.restrict s) := isFiniteMeasure_restrict.2 hs
+  by_cases hf : MemLp f 2 (μ.restrict s)
+  swap
+  · -- Off `L²`, no `‖f - d‖²` is integrable, since `f - d ∈ L²` would put `f` in `L²`.
+    have h0 (d : F) : ∫ x in s, ‖f x - d‖ ^ 2 ∂μ = 0 := integral_undef fun hi => hf <| by
+      simpa using ((memLp_two_iff_integrable_sq_norm (hfm.sub aestronglyMeasurable_const)).2
+        hi).add (memLp_const d)
+    rw [h0, h0]
   have hint : IntegrableOn f s μ := hf.integrable one_le_two
   have hsq := hf.integrableOn_norm_sub_sq_of_subset subset_rfl hs
   set m := ⨍ y in s, f y ∂μ
+  -- The norm also comes from a real inner product on the real scalars of `F`, so the square mean
+  -- oscillation about a constant splits orthogonally.
+  let : InnerProductSpace ℝ F := InnerProductSpace.ofNorm ℝ (parallelogram_law_with_norm_mul 𝕜)
   rw [setIntegral_norm_sub_sq_eq_setIntegral_norm_sub_setAverage_sq_add hs hint
-      (hsq ((⟪m, ν⟫_ℝ / ‖ν‖ ^ 2) • ν)),
-    setIntegral_norm_sub_sq_eq_setIntegral_norm_sub_setAverage_sq_add hs hint (hsq (t • ν))]
+      (hsq (K.starProjection m)),
+    setIntegral_norm_sub_sq_eq_setIntegral_norm_sub_setAverage_sq_add hs hint (hsq c)]
   refine add_le_add_right (mul_le_mul_of_nonneg_left ?_ measureReal_nonneg) _
-  -- `m - p ⊥ ν` for the projection `p` of `m`, so `‖m - t ν‖² = ‖m - p‖² + ‖p - t ν‖²`.
-  rcases eq_or_ne ν 0 with rfl | hν
-  · simp
-  have hν2 : ‖ν‖ ^ 2 ≠ 0 := by positivity
-  have horth : ⟪m - (⟪m, ν⟫_ℝ / ‖ν‖ ^ 2) • ν, ν⟫_ℝ = 0 := by
-    rw [inner_sub_left, inner_smul_left, real_inner_self_eq_norm_sq, RCLike.conj_to_real,
-      div_mul_cancel₀ _ hν2, sub_self]
-  have hsplit : m - t • ν = (m - (⟪m, ν⟫_ℝ / ‖ν‖ ^ 2) • ν) + (⟪m, ν⟫_ℝ / ‖ν‖ ^ 2 - t) • ν := by
-    rw [sub_smul]; abel
-  rw [hsplit, norm_add_sq_real, inner_smul_right, horth, mul_zero, mul_zero, add_zero]
-  exact le_add_of_nonneg_right (sq_nonneg _)
+  -- The projection of `m` onto `K` is at least as close to `m` as `c ∈ K`.
+  have h := (K.dist_starProjection_eq_infDist m).trans_le (Metric.infDist_le_dist_of_mem hc)
+  rw [dist_eq_norm, dist_eq_norm] at h
+  exact pow_le_pow_left₀ (norm_nonneg _) h 2
 
-/-- **The best constant on a line, on nested sets.** Let `s ⊆ t` with `μ t < ∞` and let `f` be
-square integrable on `t`. The square mean distance on `s` from `f` to the projection
-`(⟪f_s, ν⟫ / ‖ν‖²) ν` of its average `f_s` is at most the square mean distance on `t` from `f` to
-any multiple `c ν`. -/
-theorem setIntegral_norm_sub_inner_setAverage_div_smul_sq_le_of_subset {t : Set X} (hst : s ⊆ t)
-    (ht : μ t ≠ ⊤) (hf : MemLp f 2 (μ.restrict t)) (ν : F) (c : ℝ) :
-    ∫ x in s, ‖f x - (⟪⨍ y in s, f y ∂μ, ν⟫_ℝ / ‖ν‖ ^ 2) • ν‖ ^ 2 ∂μ ≤
-      ∫ x in t, ‖f x - c • ν‖ ^ 2 ∂μ :=
-  (setIntegral_norm_sub_inner_setAverage_div_smul_sq_le
-    (ne_top_of_le_ne_top ht (measure_mono hst))
-    (hf.mono_measure (Measure.restrict_mono hst le_rfl)) ν c).trans
+/-- **The best constant in a subspace, on nested sets.** Let `s ⊆ t` with `μ t < ∞`, let `f` be
+square integrable on `t`, and let `K` be a `𝕜`-subspace that admits an orthogonal projection. The
+integrated squared error `∫_s ‖f - K.starProjection f_s‖²` on `s` of the projection of the average
+`f_s` is at most the integrated squared error `∫_t ‖f - c‖²` on `t` of any constant `c ∈ K`. -/
+theorem setIntegral_norm_sub_starProjection_setAverage_sq_le_of_subset {t : Set X} (hst : s ⊆ t)
+    (ht : μ t ≠ ⊤) (hf : MemLp f 2 (μ.restrict t)) (K : Submodule 𝕜 F) [K.HasOrthogonalProjection]
+    {c : F} (hc : c ∈ K) :
+    ∫ x in s, ‖f x - K.starProjection (⨍ y in s, f y ∂μ)‖ ^ 2 ∂μ ≤
+      ∫ x in t, ‖f x - c‖ ^ 2 ∂μ :=
+  (setIntegral_norm_sub_starProjection_setAverage_sq_le (ne_top_of_le_ne_top ht (measure_mono hst))
+    (hf.aestronglyMeasurable.mono_measure (Measure.restrict_mono hst le_rfl)) K hc).trans
     (setIntegral_mono_set (hf.integrableOn_norm_sub_sq_of_subset subset_rfl ht _)
       (ae_of_all _ fun _ => by positivity) hst.eventuallySubset)
 
-end InnerProduct
+end Subspace
+
+section Line
+
+variable {X F : Type*} [MeasurableSpace X] {μ : Measure X} [NormedAddCommGroup F]
+  [InnerProductSpace ℝ F] [CompleteSpace F] {s : Set X} {f : X → F}
+
+/-- **The best constant on a line, on nested sets.** Let `s ⊆ t` with `μ t < ∞` and let `f` be
+square integrable on `t`. The integrated squared error on `s` of the projection
+`(⟪f_s, ν⟫ / ‖ν‖²) ν` of the average `f_s` is at most the integrated squared error on `t` of any
+multiple `c ν`. This is `setIntegral_norm_sub_starProjection_setAverage_sq_le_of_subset` for the
+real line `ℝ ∙ ν`, with the projection written out. -/
+theorem setIntegral_norm_sub_inner_setAverage_div_smul_sq_le_of_subset {t : Set X} (hst : s ⊆ t)
+    (ht : μ t ≠ ⊤) (hf : MemLp f 2 (μ.restrict t)) (ν : F) (c : ℝ) :
+    ∫ x in s, ‖f x - (⟪⨍ y in s, f y ∂μ, ν⟫_ℝ / ‖ν‖ ^ 2) • ν‖ ^ 2 ∂μ ≤
+      ∫ x in t, ‖f x - c • ν‖ ^ 2 ∂μ := by
+  have h := setIntegral_norm_sub_starProjection_setAverage_sq_le_of_subset hst ht hf (ℝ ∙ ν)
+    (Submodule.smul_mem _ c (Submodule.mem_span_singleton_self ν))
+  rwa [Submodule.starProjection_singleton, RCLike.ofReal_real_eq_id, id_eq, real_inner_comm] at h
+
+end Line
 
 section NormalConstant
 
