@@ -9,7 +9,7 @@ public import Mathlib.Algebra.BigOperators.Associated
 public import Mathlib.GroupTheory.MonoidLocalization.Away
 import Mathlib.GroupTheory.MonoidLocalization.Divisibility
 import TauCeti.Algebra.BigOperators.Associated
-import TauCeti.Algebra.Divisibility.Basic
+import TauCeti.Algebra.Regular.Basic
 
 /-!
 # Units of monoid localizations away from primes and products of primes

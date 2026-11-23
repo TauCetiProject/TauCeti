@@ -6,10 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Divisibility.Basic
-import Mathlib.Algebra.Regular.Basic
+public import Mathlib.Algebra.Regular.Basic
 
 /-!
-# Divisibility of left-regular elements
+# Regular elements and divisibility
 
 In a commutative semigroup, every divisor of a left-regular element is left-regular.
 -/
