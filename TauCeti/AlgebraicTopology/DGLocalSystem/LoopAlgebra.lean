@@ -174,9 +174,7 @@ theorem loopPointChain_mul (γ δ : MooreLoopSpace B b) :
   have h : (mulMap (MooreLoopSpace B b)).comp
       (SingularCube.crossProduct (SingularCube.point γ) (SingularCube.point δ)) =
         SingularCube.point (γ * δ) := by
-    refine ContinuousMap.ext fun t ↦ ?_
-    rw [ContinuousMap.comp_apply, SingularCube.crossProduct_apply, mulMap_apply,
-      SingularCube.point_apply, SingularCube.point_apply, SingularCube.point_apply]
+    rw [SingularCube.crossProduct_point_point, SingularCube.comp_point, mulMap_apply]
   rw [loopPointChain_def, loopPointChain_def, loopPointChain_def, cubicalChainLof_mul,
     NormalizedCubicalChain.mul_ofCube, h]
 
@@ -236,10 +234,8 @@ theorem loopChainAugmentation_comp_loopChainMap (f : C(B, B')) (hf : f b = b') :
 theorem loopChainMap_loopPointChain (f : C(B, B')) (hf : f b = b') (γ : MooreLoopSpace B b) :
     loopChainMap R f hf (loopPointChain R γ) = loopPointChain R (MooreLoopSpace.map f hf γ) := by
   have h : (MooreLoopSpace.map f hf).toContinuousMap.comp (SingularCube.point γ) =
-      SingularCube.point (MooreLoopSpace.map f hf γ) := by
-    refine ContinuousMap.ext fun t ↦ ?_
-    rw [ContinuousMap.comp_apply, SingularCube.point_apply, SingularCube.point_apply,
-      ContinuousMonoidHom.coe_toContinuousMap, ContinuousMap.coe_ofClass]
+      SingularCube.point (MooreLoopSpace.map f hf γ) :=
+    SingularCube.comp_point _ γ
   rw [loopPointChain_def, loopPointChain_def, loopChainMap_lof, NormalizedCubicalChain.map_ofCube,
     h]
 

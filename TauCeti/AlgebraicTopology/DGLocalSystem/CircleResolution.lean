@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Topology.Covering.FundamentalGroupCircle
 public import TauCeti.AlgebraicTopology.DGLocalSystem.Aspherical
 public import TauCeti.Algebra.Homology.DG.Twisted.RowFinite.Attach.Basic
 public import TauCeti.Algebra.MonoidAlgebra.Eigenvector

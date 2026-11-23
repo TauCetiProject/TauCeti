@@ -96,16 +96,12 @@ theorem _root_.MulEquiv.zpowers_eq_top_of_apply_eq_ofAdd_one {G : Type*} [Group 
 /-- An element generates a group equivalent to `Multiplicative ℤ` iff it is sent to `±1`. -/
 theorem _root_.MulEquiv.zpowers_eq_top_iff_isUnit_toAdd {G : Type*} [Group G] {g : G}
     (e : G ≃* Multiplicative ℤ) : Subgroup.zpowers g = ⊤ ↔ IsUnit (e g).toAdd := by
-  refine ⟨fun h ↦ ?_, fun hg ↦ ?_⟩
-  · obtain ⟨k, hk⟩ := Subgroup.mem_zpowers_iff.mp (h ▸ Subgroup.mem_top (e.symm (.ofAdd 1)))
-    rw [e.eq_symm_apply, map_zpow, ← ofAdd_toAdd (e g), ← ofAdd_zsmul,
-      EmbeddingLike.apply_eq_iff_eq, smul_eq_mul] at hk
-    exact .of_mul_eq_one_right _ hk
-  rcases Int.isUnit_iff.mp hg with hg | hg
-  · exact e.zpowers_eq_top_of_apply_eq_ofAdd_one (by rw [← ofAdd_toAdd (e g), hg])
-  · rw [← Subgroup.zpowers_inv]
-    exact e.zpowers_eq_top_of_apply_eq_ofAdd_one
-      (by rw [map_inv, ← ofAdd_toAdd (e g), hg, ofAdd_neg, inv_inv])
+  rw [← (Subgroup.map_injective (f := e.toMonoidHom) e.injective).eq_iff,
+    Subgroup.map_top_of_surjective _ e.surjective, MonoidHom.map_zpowers,
+    MulEquiv.coe_toMonoidHom]
+  change AddSubgroup.toSubgroup (AddSubgroup.zmultiples (e g).toAdd) = ⊤ ↔ _
+  rw [map_eq_top_iff, ← Int.zmultiples_one, le_antisymm_iff, Int.zmultiples_le_zmultiples_iff,
+    Int.zmultiples_le_zmultiples_iff, isUnit_iff_dvd_one, and_iff_right (one_dvd _)]
 
 /-- An element of a group equivalent to `Multiplicative ℤ` has finite order iff it is sent to
 `0`. -/
