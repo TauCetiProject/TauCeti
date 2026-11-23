@@ -33,6 +33,8 @@ the fundamental theorem of calculus applied to `t ↦ t / log t`, together with 
 ## Main declarations
 
 * `TauCeti.Real.logIntegral` — the offset logarithmic integral.
+* `TauCeti.Real.logIntegral_sub_logIntegral_eq_integral_inv_log` —
+  `Li b - Li a = ∫ t in a..b, (log t)⁻¹` for `a, b > 1`.
 * `TauCeti.Real.hasDerivAt_logIntegral` — its derivative `(log x)⁻¹` for `x > 1`.
 * `TauCeti.Real.le_logIntegral` — the elementary lower bound `(x - 2) / log x ≤ Li x`.
 * `TauCeti.Real.logIntegral_eq_div_log_sub_add` — the antiderivative identity above.
@@ -85,6 +87,14 @@ theorem logIntegral_def (x : ℝ) : logIntegral x = ∫ t in (2 : ℝ)..x, (Real
 @[simp]
 theorem logIntegral_two : logIntegral 2 = 0 := by
   rw [logIntegral_def, intervalIntegral.integral_same]
+
+/-- An increment of the offset logarithmic integral equals the interval integral of `(log t)⁻¹`:
+`Li b - Li a = ∫ t in a..b, (log t)⁻¹` for `1 < a` and `1 < b`. -/
+theorem logIntegral_sub_logIntegral_eq_integral_inv_log {a b : ℝ} (ha : 1 < a) (hb : 1 < b) :
+    logIntegral b - logIntegral a = ∫ t in a..b, (Real.log t)⁻¹ := by
+  simpa only [logIntegral_def, pow_one] using
+    intervalIntegral.integral_interval_sub_left (intervalIntegrable_inv_log_pow 1 one_lt_two hb)
+      (intervalIntegrable_inv_log_pow 1 one_lt_two ha)
 
 /-- The offset logarithmic integral has derivative `(log x)⁻¹` to the right of `1`. -/
 theorem hasDerivAt_logIntegral {x : ℝ} (hx : 1 < x) :
@@ -167,11 +177,7 @@ theorem integral_inv_log_sq_eq_logIntegral_sub_div_log_sub {a b : ℝ} (ha : 1 <
       logIntegral b - b / Real.log b - (logIntegral a - a / Real.log a) := by
   have hparts := integral_inv_log_pow_eq_sub_add 1 ha hb
   norm_num only [pow_one, Nat.cast_one, one_mul] at hparts
-  have hLi : logIntegral b - logIntegral a = ∫ t in a..b, (Real.log t)⁻¹ := by
-    simpa only [logIntegral_def, pow_one] using
-      intervalIntegral.integral_interval_sub_left (intervalIntegrable_inv_log_pow 1 one_lt_two hb)
-        (intervalIntegrable_inv_log_pow 1 one_lt_two ha)
-  linarith
+  linarith [logIntegral_sub_logIntegral_eq_integral_inv_log ha hb]
 
 /-- **A linear bound on one interval.**  If `|f t| ≤ c t` on `[a, b]` with `1 < a ≤ b`, then
 `|∫ t in a..b, f t / (t log² t)|` is at most `c` times the increment of `x ↦ Li x - x / log x`

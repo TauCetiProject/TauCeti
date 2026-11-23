@@ -122,6 +122,7 @@ theorem hasDerivAt_li {x : ℝ} (hx0 : 0 < x) (hx1 : x ≠ 1) :
   ring
 
 /-- The derivative of `li` is `(log x)⁻¹` for every `x > 0`, `x ≠ 1`. -/
+@[simp]
 theorem deriv_li {x : ℝ} (hx0 : 0 < x) (hx1 : x ≠ 1) : deriv li x = (log x)⁻¹ :=
   (hasDerivAt_li hx0 hx1).deriv
 
