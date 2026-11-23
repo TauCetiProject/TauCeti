@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.AlgebraicTopology.ExtraDegeneracy
+public import TauCeti.Algebra.Homology.Homotopy
 public import TauCeti.AlgebraicTopology.AlternatingCofaceMapComplex
 
 /-!
@@ -29,11 +30,17 @@ this file follows.
 * `ExtraCodegeneracy.homotopyEquiv`: in a preadditive category with a zero object, the
   augmentation `AlgebraicTopology.AlternatingCofaceMapComplex.ε` of an augmented cosimplicial
   object with an extra codegeneracy is a homotopy equivalence from the augmentation object in
-  degree `0` to the alternating coface map complex.
+  degree `0` to the alternating coface map complex. Its inverse is the retraction `s'` in degree
+  `0` and its contracting homotopy is `-s n` from degree `n + 1` to degree `n`
+  (`ExtraCodegeneracy.homotopyEquiv_inv`,
+  `ExtraCodegeneracy.homotopyEquiv_homotopyInvHomId_hom_succ`).
 * `ExtraCodegeneracy.homotopyEquivOfOpFunctor`: the same conclusion from an extra
-  codegeneracy of the reversal `CosimplicialObject.Augmented.opFunctor.obj X`, that is, from a
-  contraction splitting the *last* cofaces of `X`. It is transported along the sign comparison
-  `AlgebraicTopology.opFunctorCompAlternatingCofaceMapComplexIso`.
+  codegeneracy of the reversal `CosimplicialObject.Augmented.opFunctor.obj X`, that is, from maps
+  splitting the *last* cofaces of `X` and a retraction of its augmentation which, once reversed,
+  satisfy all the identities of an extra codegeneracy, including those involving the
+  augmentation. It is transported along the sign comparison
+  `AlgebraicTopology.opFunctorCompAlternatingCofaceMapComplexIso`, which multiplies the
+  contracting homotopy by `(-1) ^ (n + 1)` in degree `n + 1`.
 
 ## References
 
@@ -124,89 +131,90 @@ lemma objD_succ_comp_s_add_s_comp_objD (ed : ExtraCodegeneracy X) (n : ℕ) :
     Finset.sum_neg_distrib]
   abel
 
-/-- The components of the contracting homotopy: `-s j` from degree `j + 1` to degree `j`, and
-zero otherwise. It is stated for a plain cosimplicial object `Y`, so that its computations do not
-pass through the projections of augmented objects. -/
-private def negSuccHom {Y : CosimplicialObject C} (s : ∀ n : ℕ, Y.obj ⦋n + 1⦌ ⟶ Y.obj ⦋n⦌)
-    (i j : ℕ) :
-    ((alternatingCofaceMapComplex C).obj Y).X i ⟶ ((alternatingCofaceMapComplex C).obj Y).X j :=
-  Pi.single (M := fun i ↦ ((alternatingCofaceMapComplex C).obj Y).X i ⟶
-    ((alternatingCofaceMapComplex C).obj Y).X j) (j + 1) (-s j) i
-
-private lemma negSuccHom_eq_zero {Y : CosimplicialObject C}
-    (s : ∀ n : ℕ, Y.obj ⦋n + 1⦌ ⟶ Y.obj ⦋n⦌) {i j : ℕ} (h : i ≠ j + 1) :
-    negSuccHom s i j = 0 :=
-  Pi.single_eq_of_ne h _
-
-private lemma negSuccHom_succ {Y : CosimplicialObject C}
-    (s : ∀ n : ℕ, Y.obj ⦋n + 1⦌ ⟶ Y.obj ⦋n⦌) (j : ℕ) :
-    negSuccHom s (j + 1) j = -s j :=
-  Pi.single_eq_same _ _
-
-/-- The homotopy relation in degree `0`, from the contraction identity in degree `0`. -/
-private lemma comp_eq_dNext_zero_negSuccHom {Y : CosimplicialObject C} {A : C}
-    (s : ∀ n : ℕ, Y.obj ⦋n + 1⦌ ⟶ Y.obj ⦋n⦌) (e : A ⟶ Y.obj ⦋0⦌) (s' : Y.obj ⦋0⦌ ⟶ A)
-    (h : AlternatingCofaceMapComplex.objD Y 0 ≫ s 0 = 𝟙 _ - s' ≫ e) :
-    s' ≫ e = dNext 0 (negSuccHom s) + prevD 0 (negSuccHom s) +
-      𝟙 (((alternatingCofaceMapComplex C).obj Y).X 0) := by
-  rw [Homotopy.dNext_cochainComplex, Homotopy.prevD_zero_cochainComplex,
-    alternatingCofaceMapComplex_obj_d, negSuccHom_succ]
+/-- The homotopy identity in degree `0`, from the contraction identity in degree `0`. It is
+stated for a plain cosimplicial object `Y`, so that its computations do not pass through the
+projections of augmented objects. -/
+private lemma sub_id_eq_d_zero_comp_neg {Y : CosimplicialObject C} {A : C}
+    (s₀ : Y.obj ⦋1⦌ ⟶ Y.obj ⦋0⦌) (e : A ⟶ Y.obj ⦋0⦌) (s' : Y.obj ⦋0⦌ ⟶ A)
+    (h : AlternatingCofaceMapComplex.objD Y 0 ≫ s₀ = 𝟙 _ - s' ≫ e) :
+    s' ≫ e - 𝟙 _ = ((alternatingCofaceMapComplex C).obj Y).d 0 1 ≫ (-s₀) := by
+  rw [alternatingCofaceMapComplex_obj_d]
   -- The terms of the alternating coface map complex are those of `Y`, by definition.
-  have key : s' ≫ e = AlternatingCofaceMapComplex.objD Y 0 ≫ (-s 0) + 0 + 𝟙 (Y.obj ⦋0⦌) := by
-    rw [Preadditive.comp_neg, h]
-    abel
+  have key : s' ≫ e - 𝟙 (Y.obj ⦋0⦌) = AlternatingCofaceMapComplex.objD Y 0 ≫ (-s₀) := by
+    rw [Preadditive.comp_neg, h, neg_sub]
   exact key
 
-/-- The homotopy relation in positive degrees, from the contraction identity there. -/
-private lemma dNext_succ_negSuccHom_add_prevD {Y : CosimplicialObject C}
+/-- The homotopy identity in positive degrees, from the contraction identity there. -/
+private lemma zero_sub_id_eq_d_comp_neg_add {Y : CosimplicialObject C}
     (s : ∀ n : ℕ, Y.obj ⦋n + 1⦌ ⟶ Y.obj ⦋n⦌) (n : ℕ)
     (h : AlternatingCofaceMapComplex.objD Y (n + 1) ≫ s (n + 1) +
       s n ≫ AlternatingCofaceMapComplex.objD Y n = 𝟙 _) :
-    0 = dNext (n + 1) (negSuccHom s) + prevD (n + 1) (negSuccHom s) +
-      𝟙 (((alternatingCofaceMapComplex C).obj Y).X (n + 1)) := by
-  rw [Homotopy.dNext_cochainComplex, Homotopy.prevD_succ_cochainComplex,
-    alternatingCofaceMapComplex_obj_d, alternatingCofaceMapComplex_obj_d, negSuccHom_succ,
-    negSuccHom_succ]
+    0 - 𝟙 (((alternatingCofaceMapComplex C).obj Y).X (n + 1)) =
+      (((alternatingCofaceMapComplex C).obj Y).d (n + 1) (n + 2) ≫ (-s (n + 1)) :
+        ((alternatingCofaceMapComplex C).obj Y).X (n + 1) ⟶
+          ((alternatingCofaceMapComplex C).obj Y).X (n + 1)) +
+        ((-s n) ≫ ((alternatingCofaceMapComplex C).obj Y).d n (n + 1) :
+          ((alternatingCofaceMapComplex C).obj Y).X (n + 1) ⟶
+            ((alternatingCofaceMapComplex C).obj Y).X (n + 1)) := by
+  rw [alternatingCofaceMapComplex_obj_d, alternatingCofaceMapComplex_obj_d]
   -- The terms of the alternating coface map complex are those of `Y`, by definition.
-  have key : (0 : Y.obj ⦋n + 1⦌ ⟶ Y.obj ⦋n + 1⦌) =
+  have key : (0 : Y.obj ⦋n + 1⦌ ⟶ Y.obj ⦋n + 1⦌) - 𝟙 _ =
       AlternatingCofaceMapComplex.objD Y (n + 1) ≫ (-s (n + 1)) +
-        (-s n) ≫ AlternatingCofaceMapComplex.objD Y n + 𝟙 _ := by
-    rw [Preadditive.comp_neg, Preadditive.neg_comp, ← h]
-    abel
+        (-s n) ≫ AlternatingCofaceMapComplex.objD Y n := by
+    rw [Preadditive.comp_neg, Preadditive.neg_comp, ← neg_add, h, zero_sub]
   exact key
 
 variable [HasZeroObject C]
 
+/-- The retraction `s'` of an extra codegeneracy, as a cochain map to the augmentation object in
+degree `0`, is a left inverse of the augmentation cochain map. -/
+@[reassoc]
+lemma ε_app_comp_toSingle₀Equiv_symm_s' (ed : ExtraCodegeneracy X) :
+    AlternatingCofaceMapComplex.ε.app X ≫
+      (CochainComplex.toSingle₀Equiv ((alternatingCofaceMapComplex C).obj X.right) X.left).symm
+        ed.s' = 𝟙 _ :=
+  -- The projections of augmented objects are stated for `Comma`, so `simp` and `rw` cannot
+  -- match the degree `0` components of these cochain maps; we compose the component equations
+  -- directly instead.
+  HomologicalComplex.from_single_hom_ext <|
+    ((HomologicalComplex.comp_f _ _ 0).trans
+      ((congrArg₂ (· ≫ ·) (AlternatingCofaceMapComplex.ε_app_f_zero X)
+        (CochainComplex.toSingle₀Equiv_symm_apply_f_zero ed.s')).trans ed.ε_comp_s')).trans
+      (HomologicalComplex.id_f _ 0).symm
+
 /-- If `X` is an augmented cosimplicial object in a preadditive category with an extra
 codegeneracy, then the augmentation `AlternatingCofaceMapComplex.ε.app X`, from the augmentation
-object placed in degree `0` to the alternating coface map complex, is a homotopy equivalence. -/
+object placed in degree `0` to the alternating coface map complex, is a homotopy equivalence. Its
+inverse is the retraction `s'` in degree `0`, and its contracting homotopy is `-s n` from degree
+`n + 1` to degree `n`. -/
 def homotopyEquiv (ed : ExtraCodegeneracy X) :
     HomotopyEquiv ((CochainComplex.single₀ C).obj X.left)
       ((alternatingCofaceMapComplex C).obj X.right) where
   hom := AlternatingCofaceMapComplex.ε.app X
   inv := (CochainComplex.toSingle₀Equiv _ _).symm ed.s'
-  -- The projections of augmented objects are stated for `Comma`, so `simp` and `rw` cannot
-  -- match the degree `0` components of these cochain maps; we compose the component equations
-  -- directly instead.
-  homotopyHomInvId := Homotopy.ofEq <| HomologicalComplex.from_single_hom_ext <|
-    ((HomologicalComplex.comp_f _ _ 0).trans
-      ((congrArg₂ (· ≫ ·) (AlternatingCofaceMapComplex.ε_app_f_zero X)
-        (CochainComplex.toSingle₀Equiv_symm_apply_f_zero ed.s')).trans ed.ε_comp_s')).trans
-      (HomologicalComplex.id_f _ 0).symm
-  homotopyInvHomId :=
-    { hom := negSuccHom ed.s
-      zero _ _ h := negSuccHom_eq_zero ed.s (Ne.symm h)
-      comm
-        | 0 => by
-          have h := CochainComplex.toSingle₀Equiv_symm_apply_f_zero
-            (C := (alternatingCofaceMapComplex C).obj X.right) ed.s'
-          exact ((HomologicalComplex.comp_f _ _ 0).trans (congrArg₂ (· ≫ ·) h
-            (AlternatingCofaceMapComplex.ε_app_f_zero X))).trans
-            (comp_eq_dNext_zero_negSuccHom ed.s _ _ ed.objD_zero_comp_s_zero)
-        | n + 1 =>
-          ((HomologicalComplex.comp_f _ _ _).trans ((congrArg (· ≫ _)
-            (CochainComplex.toSingle₀Equiv_symm_apply_f_succ ed.s' n)).trans zero_comp)).trans
-            (dNext_succ_negSuccHom_add_prevD ed.s n (ed.objD_succ_comp_s_add_s_comp_objD n)) }
+  homotopyHomInvId := Homotopy.ofEq ed.ε_app_comp_toSingle₀Equiv_symm_s'
+  homotopyInvHomId := Homotopy.equivSubZero.symm <|
+    Homotopy.mkCochainComplex _ (fun n ↦ -ed.s n)
+      -- The projections of augmented objects are stated for `Comma`, so `simp` and `rw` cannot
+      -- match the components of these cochain maps; we compose the component equations directly.
+      (by
+        have h : ((CochainComplex.toSingle₀Equiv ((alternatingCofaceMapComplex C).obj X.right)
+            X.left).symm ed.s' ≫ AlternatingCofaceMapComplex.ε.app X).f 0 =
+              ed.s' ≫ X.hom.app ⦋0⦌ :=
+          (HomologicalComplex.comp_f _ _ 0).trans (congrArg₂ (· ≫ ·)
+            (CochainComplex.toSingle₀Equiv_symm_apply_f_zero _)
+            (AlternatingCofaceMapComplex.ε_app_f_zero X))
+        exact (HomologicalComplex.sub_f_apply _ _ 0).trans
+          ((congrArg (fun a : X.right.obj ⦋0⦌ ⟶ X.right.obj ⦋0⦌ ↦ a - _) h).trans
+            (sub_id_eq_d_zero_comp_neg (ed.s 0) _ _ ed.objD_zero_comp_s_zero)))
+      (fun n ↦ by
+        have h : ((CochainComplex.toSingle₀Equiv ((alternatingCofaceMapComplex C).obj X.right)
+            X.left).symm ed.s' ≫ AlternatingCofaceMapComplex.ε.app X).f (n + 1) = 0 :=
+          (HomologicalComplex.comp_f _ _ _).trans ((congrArg (· ≫ _)
+            (CochainComplex.toSingle₀Equiv_symm_apply_f_succ ed.s' n)).trans zero_comp)
+        exact (HomologicalComplex.sub_f_apply _ _ _).trans
+          ((congrArg (fun a : X.right.obj ⦋n + 1⦌ ⟶ X.right.obj ⦋n + 1⦌ ↦ a - _) h).trans
+            (zero_sub_id_eq_d_comp_neg_add ed.s n (ed.objD_succ_comp_s_add_s_comp_objD n))))
 
 /-- The homotopy equivalence of an extra codegeneracy is the augmentation. -/
 @[simp]
@@ -214,25 +222,92 @@ lemma homotopyEquiv_hom (ed : ExtraCodegeneracy X) :
     ed.homotopyEquiv.hom = AlternatingCofaceMapComplex.ε.app X := (rfl)
 
 /-- The homotopy inverse of an extra codegeneracy is its retraction `s'` in degree `0`. -/
+@[simp]
 lemma homotopyEquiv_inv (ed : ExtraCodegeneracy X) :
     ed.homotopyEquiv.inv = (CochainComplex.toSingle₀Equiv _ _).symm ed.s' := (rfl)
 
-/-- An extra codegeneracy of the reversal of `X`, that is, a contraction splitting the last cofaces
-of `X`, also makes the augmentation of `X` a homotopy equivalence: the homotopy equivalence of
-`homotopyEquiv` is transported along the sign comparison
-`opFunctorCompAlternatingCofaceMapComplexIso` between the two alternating coface map complexes. -/
+/-- The contracting homotopy of an extra codegeneracy is `-s n` from degree `n + 1` to
+degree `n`. -/
+@[simp]
+lemma homotopyEquiv_homotopyInvHomId_hom_succ (ed : ExtraCodegeneracy X) (n : ℕ) :
+    ed.homotopyEquiv.homotopyInvHomId.hom (n + 1) n = -ed.s n :=
+  Homotopy.mkCochainComplex_hom_succ _ _ _ _ n
+
+/-- An extra codegeneracy of the reversal of `X` also makes the augmentation of `X` a homotopy
+equivalence: the homotopy equivalence of `homotopyEquiv` is transported along the sign comparison
+`opFunctorCompAlternatingCofaceMapComplexIso` between the two alternating coface map complexes.
+Such an extra codegeneracy consists of maps splitting the last cofaces of `X` and a retraction of
+its augmentation, subject to all the identities of an extra codegeneracy of the reversal. -/
 def homotopyEquivOfOpFunctor (ed : ExtraCodegeneracy (opFunctor.obj X)) :
     HomotopyEquiv ((CochainComplex.single₀ C).obj X.left)
-      ((alternatingCofaceMapComplex C).obj X.right) :=
-  ed.homotopyEquiv.trans
-    (HomotopyEquiv.ofIso (opFunctorCompAlternatingCofaceMapComplexIso.app X.right))
+      ((alternatingCofaceMapComplex C).obj X.right) where
+  hom := AlternatingCofaceMapComplex.ε.app X
+  inv := (opFunctorCompAlternatingCofaceMapComplexIso.inv.app X.right) ≫ ed.homotopyEquiv.inv
+  -- The projections of augmented objects are stated for `Comma`, so `simp` and `rw` cannot
+  -- rewrite these composites; we compose the equations directly. The augmentation of `X` is that
+  -- of its reversal followed by the sign comparison.
+  homotopyHomInvId := Homotopy.ofEq <|
+    (congrArg (· ≫ _) (ε_app_comp_opFunctorCompAlternatingCofaceMapComplexIso_hom_app X).symm).trans
+      ((assoc _ _ _).trans ((congrArg (AlternatingCofaceMapComplex.ε.app (opFunctor.obj X) ≫ ·)
+        (opFunctorCompAlternatingCofaceMapComplexIso.hom_inv_id_app_assoc X.right _)).trans
+          ed.ε_app_comp_toSingle₀Equiv_symm_s'))
+  homotopyInvHomId :=
+    (Homotopy.ofEq ((congrArg (_ ≫ ·)
+      (ε_app_comp_opFunctorCompAlternatingCofaceMapComplexIso_hom_app X).symm).trans
+        ((assoc _ _ _).trans (congrArg (_ ≫ ·) (assoc _ _ _).symm)))).trans
+      (((ed.homotopyEquiv.homotopyInvHomId.compRight
+        (opFunctorCompAlternatingCofaceMapComplexIso.hom.app X.right)).compLeft
+          (opFunctorCompAlternatingCofaceMapComplexIso.inv.app X.right)).trans
+        (Homotopy.ofEq ((congrArg (_ ≫ ·) (id_comp _)).trans (Iso.inv_hom_id_app _ _))))
 
 /-- The homotopy equivalence obtained from an extra codegeneracy of the reversal is the
 augmentation of `X`. -/
 @[simp]
 lemma homotopyEquivOfOpFunctor_hom (ed : ExtraCodegeneracy (opFunctor.obj X)) :
-    ed.homotopyEquivOfOpFunctor.hom = AlternatingCofaceMapComplex.ε.app X :=
-  ε_app_comp_opFunctorCompAlternatingCofaceMapComplexIso_hom_app X
+    ed.homotopyEquivOfOpFunctor.hom = AlternatingCofaceMapComplex.ε.app X := (rfl)
+
+/-- The homotopy inverse obtained from an extra codegeneracy of the reversal is the retraction
+`s'` in degree `0`, precomposed with the identity isomorphism `opObjIso`. -/
+@[simp]
+lemma homotopyEquivOfOpFunctor_inv (ed : ExtraCodegeneracy (opFunctor.obj X)) :
+    ed.homotopyEquivOfOpFunctor.inv =
+      (CochainComplex.toSingle₀Equiv _ _).symm (CosimplicialObject.opObjIso.inv ≫ ed.s') := by
+  apply HomologicalComplex.to_single_hom_ext
+  exact (HomologicalComplex.comp_f _ _ 0).trans ((congrArg₂ (· ≫ ·)
+    (opFunctorCompAlternatingCofaceMapComplexIso_inv_app_f_zero X.right)
+    (CochainComplex.toSingle₀Equiv_symm_apply_f_zero
+      (C := (alternatingCofaceMapComplex C).obj (opFunctor.obj X).right) ed.s')).trans
+    (CochainComplex.toSingle₀Equiv_symm_apply_f_zero
+      (C := (alternatingCofaceMapComplex C).obj X.right) (X := X.left)
+      (CosimplicialObject.opObjIso.inv ≫ ed.s')).symm)
+
+/-- The contracting homotopy obtained from an extra codegeneracy of the reversal is
+`-(-1) ^ (n + 1) • s n`, conjugated by the identity isomorphisms `opObjIso`, from degree `n + 1`
+to degree `n`. -/
+@[simp]
+lemma homotopyEquivOfOpFunctor_homotopyInvHomId_hom_succ
+    (ed : ExtraCodegeneracy (opFunctor.obj X)) (n : ℕ) :
+    ed.homotopyEquivOfOpFunctor.homotopyInvHomId.hom (n + 1) n =
+      -((-1 : ℤˣ) ^ (n + 1) •
+        (CosimplicialObject.opObjIso.inv ≫ ed.s n ≫ CosimplicialObject.opObjIso.hom)) := by
+  have h : ed.homotopyEquivOfOpFunctor.homotopyInvHomId.hom (n + 1) n =
+      (opFunctorCompAlternatingCofaceMapComplexIso.inv.app X.right).f (n + 1) ≫
+        ed.homotopyEquiv.homotopyInvHomId.hom (n + 1) n ≫
+          (opFunctorCompAlternatingCofaceMapComplexIso.hom.app X.right).f n :=
+    (zero_add _).trans (add_zero _)
+  rw [h, homotopyEquiv_homotopyInvHomId_hom_succ,
+    opFunctorCompAlternatingCofaceMapComplexIso_inv_app_f,
+    opFunctorCompAlternatingCofaceMapComplexIso_hom_app_f,
+    TauCeti.neg_one_pow_mul_succ_div_two_succ]
+  -- The signs combine as `v * (u * v)⁻¹ = u`, since every unit of `ℤ` is its own inverse. We
+  -- state this for plain objects, as the terms of the complexes are only definitionally those of
+  -- the cosimplicial objects.
+  have key {P Q R S : C} (i : P ⟶ Q) (s : Q ⟶ R) (h : R ⟶ S) (u v : ℤˣ) :
+      ((u * v)⁻¹ • i) ≫ (-s) ≫ (v • h) = -(u • (i ≫ s ≫ h)) := by
+    simp only [Units.smul_def, Preadditive.zsmul_comp, Preadditive.comp_zsmul,
+      Preadditive.neg_comp, Preadditive.comp_neg, smul_neg, smul_smul]
+    rw [Int.units_inv_eq_self, ← Units.val_mul, mul_left_comm, Int.units_mul_self, mul_one]
+  exact key _ _ _ _ _
 
 end Preadditive
 

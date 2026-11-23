@@ -9,7 +9,7 @@ public import Mathlib.Algebra.BigOperators.Group.Finset.Lemmas
 public import Mathlib.Algebra.BigOperators.GroupWithZero.Action
 public import Mathlib.Algebra.Category.Grp.Preadditive
 public import Mathlib.AlgebraicTopology.AlternatingFaceMapComplex
-public import Mathlib.Tactic.Ring
+public import TauCeti.Algebra.Ring.NegOnePow
 public import TauCeti.AlgebraicTopology.CosimplicialObject.Op
 
 /-!
@@ -31,13 +31,15 @@ of cofaces as differentials.
   counterpart of Mathlib's `AlgebraicTopology.AlternatingFaceMapComplex.ε`.
 * `AlgebraicTopology.opFunctorCompAlternatingCofaceMapComplexIso` compares the complex of the
   reversal `CosimplicialObject.opFunctor.obj X` with that of `X`. Reversing the cofaces
-  multiplies the degree `n` differential by `(-1) ^ (n + 1)`, so the identity maps are not a
-  cochain map; multiplying by `q n = (-1) ^ (n * (n + 1) / 2)` in degree `n` is, because
-  `q (n + 1) = (-1) ^ (n + 1) * q n`. Since `q 0 = 1`, the comparison is compatible with the
+  multiplies the degree `n` differential by `(-1) ^ (n + 1)`, so the identity maps need not form
+  a cochain map; multiplying by `q n = (-1) ^ (n * (n + 1) / 2)` in degree `n` always does,
+  because `q (n + 1) = (-1) ^ (n + 1) * q n`. Since `q 0 = 1`, the comparison is compatible with the
   augmentations (`ε_app_comp_opFunctorCompAlternatingCofaceMapComplexIso_hom_app`).
 
-The comparison is what transports a contraction of a reversed complex, obtained for example from
-a family of maps splitting the last cofaces, to the original complex.
+The comparison is what transports a contraction of the complex of a reversed object to the
+original complex. Such a contraction comes, for example, from an extra codegeneracy of the
+reversal: maps splitting the last cofaces of the original object, together with a retraction of
+its augmentation, that satisfy all the identities of an extra codegeneracy once reversed.
 -/
 
 public noncomputable section
@@ -149,14 +151,6 @@ lemma objD_opFunctor_obj (X : CosimplicialObject C) (n : ℕ) :
 
 end AlternatingCofaceMapComplex
 
-/-- The sign `q n = (-1) ^ (n * (n + 1) / 2)` satisfies `q (n + 1) = (-1) ^ (n + 1) * q n`. -/
-private lemma neg_one_pow_triangle_succ (n : ℕ) :
-    (-1 : ℤˣ) ^ ((n + 1) * (n + 1 + 1) / 2) = (-1) ^ (n + 1) * (-1) ^ (n * (n + 1) / 2) := by
-  have h : (n + 1) * (n + 1 + 1) / 2 = n * (n + 1) / 2 + (n + 1) := by
-    rw [show (n + 1) * (n + 1 + 1) = n * (n + 1) + 2 * (n + 1) by ring,
-      Nat.add_mul_div_left _ _ two_pos]
-  rw [h, pow_add, mul_comm]
-
 /-- Multiplying by `(-1) ^ (n * (n + 1) / 2)` in degree `n` intertwines the differentials of the
 alternating coface map complexes of the reversal of `X` and of `X`. -/
 private lemma neg_one_pow_triangle_smul_comp_objD (X : CosimplicialObject C) (n : ℕ) :
@@ -164,7 +158,7 @@ private lemma neg_one_pow_triangle_smul_comp_objD (X : CosimplicialObject C) (n 
         AlternatingCofaceMapComplex.objD X n =
       AlternatingCofaceMapComplex.objD (CosimplicialObject.opFunctor.obj X) n ≫
         ((-1 : ℤˣ) ^ ((n + 1) * (n + 1 + 1) / 2) • CosimplicialObject.opObjIso.hom) := by
-  rw [AlternatingCofaceMapComplex.objD_opFunctor_obj, neg_one_pow_triangle_succ]
+  rw [AlternatingCofaceMapComplex.objD_opFunctor_obj, TauCeti.neg_one_pow_mul_succ_div_two_succ]
   simp only [Units.smul_def, Preadditive.zsmul_comp, Preadditive.comp_zsmul, assoc, Iso.inv_hom_id,
     comp_id, smul_smul]
   congr 1
@@ -226,6 +220,15 @@ lemma opFunctorCompAlternatingCofaceMapComplexIso_hom_app_f_zero (X : Cosimplici
       (CosimplicialObject.opObjIso.hom : (CosimplicialObject.opFunctor.obj X).obj ⦋0⦌ ⟶ _) := by
   rw [opFunctorCompAlternatingCofaceMapComplexIso_hom_app_f, Nat.zero_mul, Nat.zero_div, pow_zero,
     one_smul]
+
+/-- In degree `0` the sign is `1`, so the inverse comparison is the inverse of the identity
+isomorphism `opObjIso`. -/
+lemma opFunctorCompAlternatingCofaceMapComplexIso_inv_app_f_zero (X : CosimplicialObject C) :
+    (opFunctorCompAlternatingCofaceMapComplexIso.inv.app X).f 0 =
+      (CosimplicialObject.opObjIso.inv :
+        X.obj ⦋0⦌ ⟶ (CosimplicialObject.opFunctor.obj X).obj ⦋0⦌) := by
+  rw [opFunctorCompAlternatingCofaceMapComplexIso_inv_app_f, Nat.zero_mul, Nat.zero_div, pow_zero,
+    inv_one, one_smul]
 
 /-- The sign comparison of the complexes of `X` and of its reversal is compatible with the
 augmentations. -/
