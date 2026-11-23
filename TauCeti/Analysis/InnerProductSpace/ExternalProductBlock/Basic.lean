@@ -285,8 +285,9 @@ inclusion is its first component. -/
 theorem map_subtype_kerExternalProductBlockEquiv_apply_fst (A : V₀ →L[𝕜] V₁) (B : W₀ →L[𝕜] W₁)
     (w : (externalProductBlock A B).ker) :
     TensorProduct.map A.ker.subtype B.ker.subtype (kerExternalProductBlockEquiv A B w).1 =
-      (w : WithLp 2 ((V₀ ⊗[𝕜] W₀) × (V₁ ⊗[𝕜] W₁))).fst :=
-  apply_kerEquivProdOfInjective_apply_fst _ _ _ _ w
+      (w : WithLp 2 ((V₀ ⊗[𝕜] W₀) × (V₁ ⊗[𝕜] W₁))).fst := by
+  obtain ⟨p, rfl⟩ := (kerExternalProductBlockEquiv A B).symm.surjective w
+  simp
 
 /-- `kerExternalProductBlockEquiv` sends a kernel vector to the tensor of kernel vectors whose
 inclusion is its second component. -/
@@ -295,8 +296,9 @@ theorem map_subtype_kerExternalProductBlockEquiv_apply_snd (A : V₀ →L[𝕜] 
     (w : (externalProductBlock A B).ker) :
     TensorProduct.map A.adjoint.ker.subtype B.adjoint.ker.subtype
         (kerExternalProductBlockEquiv A B w).2 =
-      (w : WithLp 2 ((V₀ ⊗[𝕜] W₀) × (V₁ ⊗[𝕜] W₁))).snd :=
-  apply_kerEquivProdOfInjective_apply_snd _ _ _ _ w
+      (w : WithLp 2 ((V₀ ⊗[𝕜] W₀) × (V₁ ⊗[𝕜] W₁))).snd := by
+  obtain ⟨p, rfl⟩ := (kerExternalProductBlockEquiv A B).symm.surjective w
+  simp
 
 /-- The dimension of the kernel of the external product block is
 `dim ker A · dim ker B + dim ker A† · dim ker B†`. -/
