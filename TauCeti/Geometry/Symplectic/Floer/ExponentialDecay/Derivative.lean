@@ -607,7 +607,7 @@ theorem exists_pos_eventually_norm_sub_le_exp_and_norm_fderiv_sub_le_exp {L b : 
   -- The `∂ₛ` part.
   have hvs' : ‖fderiv ℝ u (s, t) (1, 0)‖ ≤ √D * Real.exp (-(κ' * s)) := by
     have hrhs : (√D * Real.exp (-(κ' * s))) ^ 2 = D * Real.exp (-(2 * κ' * s)) := by
-      rw [mul_pow, Real.sq_sqrt hD₀, ← Real.exp_nat_mul]; ring_nf
+      rw [mul_pow, Real.sq_sqrt hD₀, ← Real.exp_natCast_mul]; ring_nf
     rw [← pow_le_pow_iff_left₀ (norm_nonneg _) (by positivity) two_ne_zero, hrhs]
     exact (hvs t ht).trans (mul_le_mul_of_nonneg_left (Real.exp_le_exp.2 (by nlinarith)) hD₀)
   -- The `∂ₜ` part: `∂ₜu - X_{H_t}(x) = J ∂ₛu + X_{H_t}(u) - X_{H_t}(x)`.
