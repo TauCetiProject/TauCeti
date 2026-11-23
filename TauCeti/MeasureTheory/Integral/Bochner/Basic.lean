@@ -284,10 +284,10 @@ theorem integral_norm_sq_le_of_ae_bound {Ω E : Type*} [MeasurableSpace Ω]
     {μ : Measure Ω} [IsFiniteMeasure μ] [SeminormedAddGroup E] {f : Ω → E} {C : ℝ}
     (hb : ∀ᵐ ω ∂μ, ‖f ω‖ ≤ C) : ∫ ω, ‖f ω‖ ^ 2 ∂μ ≤ C ^ 2 * μ.real Set.univ := by
   calc
-    _ ≤ ∫ _ : Ω, C ^ 2 ∂μ := integral_mono_of_nonneg
-      (Filter.Eventually.of_forall fun _ ↦ sq_nonneg _) (integrable_const _)
-      (hb.mono fun ω hω ↦ pow_le_pow_left₀ (norm_nonneg _) hω 2)
-    _ = _ := by simp [mul_comm]
+    _ ≤ ‖∫ ω, ‖f ω‖ ^ 2 ∂μ‖ := le_abs_self _
+    _ ≤ _ := norm_integral_le_of_norm_le_const (hb.mono fun ω hω ↦ by
+      rw [Real.norm_of_nonneg (sq_nonneg _)]
+      exact pow_le_pow_left₀ (norm_nonneg _) hω 2)
 
 /-- A family bounded in norm almost everywhere by a common real function, with uniformly bounded
 `L¹` deviations from given centers, has uniformly bounded centers under any nonzero measure.

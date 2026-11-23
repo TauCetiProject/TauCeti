@@ -28,11 +28,10 @@ control on small sets from a uniform bound on `∫ Φ(‖fᵢ‖)`.
   measurable functions with such a bound is uniformly integrable in Mathlib's sense
   (`TauCeti.unifIntegrable_of_lintegral_ofReal_le`).
 * On a finite measure space, the same superlinear bound gives `UniformIntegrable`
-  (`TauCeti.uniformIntegrable_of_lintegral_ofReal_le`) and turns almost-everywhere convergence
-  along countably generated filters into convergence of Bochner integrals
-  (`TauCeti.tendsto_integral_of_lintegral_ofReal_le`), requiring measurability and the bound
-  only eventually along the filter. The square-integrable specialization along the same filters
-  uses eventually uniformly bounded integrals of squared norms
+  (`TauCeti.uniformIntegrable_of_lintegral_ofReal_le`) and turns convergence in measure
+  into convergence of Bochner integrals (`TauCeti.tendsto_integral_of_lintegral_ofReal_le`),
+  requiring measurability and the bound only eventually along the filter.
+  The square-integrable specialization uses eventually uniformly bounded integrals of squared norms
   (`TauCeti.tendsto_integral_of_integral_norm_sq_le`).
 
 ## Implementation notes
@@ -235,43 +234,57 @@ theorem uniformIntegrable_of_lintegral_ofReal_le [IsFiniteMeasure μ] {Φ : ℝ 
   simpa only [eLpNorm_one_eq_lintegral_eNorm (hfm i), Measure.restrict_univ] using hT i univ
 
 /-- On a finite measure space, a uniform integral bound on a superlinear function of the
-norms turns almost-everywhere convergence along a countably generated filter into convergence
-of Bochner integrals. Measurability and the bound are required only eventually along the filter.
-No integrability assumption on the limit is needed. -/
+norms turns convergence in measure into convergence of Bochner integrals. Measurability
+and the bound are required only eventually along the filter. No integrability assumption on
+the limit is needed. -/
 theorem tendsto_integral_of_lintegral_ofReal_le [NormedSpace ℝ F] [IsFiniteMeasure μ]
     {Φ : ℝ → ℝ} (hΦ : Tendsto (fun t ↦ Φ t / t) atTop atTop) {f : ι → α → F}
-    {l : Filter ι} [l.IsCountablyGenerated]
+    {l : Filter ι}
     (hfm : ∀ᶠ i in l, AEStronglyMeasurable (f i) μ) {C : ℝ≥0∞} (hC : C ≠ ∞)
     (hf : ∀ᶠ i in l, ∫⁻ a, ENNReal.ofReal (Φ ‖f i a‖) ∂μ ≤ C) {g : α → F}
-    (hlim : ∀ᵐ x ∂μ, Tendsto (fun i ↦ f i x) l (𝓝 (g x))) :
+    (hlim : TendstoInMeasure μ f l g) :
     Tendsto (fun i ↦ ∫ x, f i x ∂μ) l (𝓝 (∫ x, g x ∂μ)) := by
+  -- Positive rational thresholds suffice, so pass to a countably generated coarser filter.
+  let A : Set ι := {i | AEStronglyMeasurable (f i) μ ∧
+    ∫⁻ a, ENNReal.ofReal (Φ ‖f i a‖) ∂μ ≤ C}
+  let tail (ε : ℝ) (i : ι) := μ {x | ε ≤ ‖f i x - g x‖}
+  let l' := 𝓟 A ⊓ ⨅ q : {q : ℚ // 0 < q}, comap (tail q.val) (𝓝 0)
+  have hl : l ≤ l' := le_inf (le_principal_iff.mpr (hfm.and hf)) <| le_iInf fun q ↦
+    tendsto_iff_comap.mp (tendstoInMeasure_iff_norm.mp hlim q.val (by exact_mod_cast q.property))
+  have hlim₀ : TendstoInMeasure μ f l' g := by
+    refine tendstoInMeasure_iff_norm.mpr fun ε hε ↦ ?_
+    obtain ⟨q, hq, hqε⟩ := exists_rat_btwn hε
+    let r : {q : ℚ // 0 < q} := ⟨q, by exact_mod_cast hq⟩
+    have hr : Tendsto (tail q) l' (𝓝 0) :=
+      tendsto_comap.mono_left (inf_le_right.trans (iInf_le _ r))
+    exact tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds hr (fun _ ↦ zero_le)
+      (fun _ ↦ measure_mono fun _ hx ↦ hqε.le.trans hx)
+  suffices h : Tendsto (fun i ↦ ∫ x, f i x ∂μ) l' (𝓝 (∫ x, g x ∂μ)) from h.mono_left hl
   refine tendsto_iff_seq_tendsto.2 fun u hu ↦ ?_
-  obtain ⟨N, hN⟩ := eventually_atTop.1 (hu.eventually (hfm.and hf))
+  have hA : A ∈ l' := le_principal_iff.mp inf_le_left
+  obtain ⟨N, hN⟩ := eventually_atTop.1 (hu.eventually_mem hA)
   have hm (k : ℕ) := (hN (k + N) (Nat.le_add_left N k)).1
   have hb (k : ℕ) := (hN (k + N) (Nat.le_add_left N k)).2
-  have hlim' : ∀ᵐ x ∂μ, Tendsto (fun k ↦ f (u (k + N)) x) atTop (𝓝 (g x)) :=
-    hlim.mono fun _ hx ↦ hx.comp (hu.comp (tendsto_add_atTop_nat N))
+  have hlim' : TendstoInMeasure μ (fun k ↦ f (u (k + N))) atTop g :=
+    hlim₀.comp (hu.comp (tendsto_add_atTop_nat N))
   have hUI' := uniformIntegrable_of_lintegral_ofReal_le hΦ hm hC hb
-  have hL1 := tendsto_Lp_finite_of_tendsto_ae le_rfl ENNReal.one_ne_top
-    hm (hUI'.memLp_of_ae_tendsto hlim') hUI'.unifIntegrable hlim'
+  have hL1 := tendsto_Lp_finite_of_tendstoInMeasure le_rfl ENNReal.one_ne_top
+    hm (hUI'.memLp_of_tendstoInMeasure hlim') hUI'.unifIntegrable hlim'
   exact (tendsto_add_atTop_iff_nat N).1 (tendsto_integral_of_L1' g
     (Eventually.of_forall fun k ↦ memLp_one_iff_integrable.mp (hUI'.memLp k)) hL1)
 
-/-- On a finite measure space, almost-everywhere convergence along a countably generated
-filter of eventually square-integrable (`MemLp · 2 μ`) functions with eventually uniformly
-bounded integrals of squared norms (`∫ x, ‖f i x‖ ^ 2 ∂μ ≤ B`) implies convergence of
-Bochner integrals. No integrability assumption on the limit is needed. -/
+/-- On a finite measure space, convergence in measure of eventually square-integrable
+(`MemLp · 2 μ`) functions with eventually uniformly bounded integrals of squared norms
+(`∫ x, ‖f i x‖ ^ 2 ∂μ ≤ B`) implies convergence of Bochner integrals. No integrability
+assumption on the limit is needed. -/
 theorem tendsto_integral_of_integral_norm_sq_le [NormedSpace ℝ F] [IsFiniteMeasure μ]
-    {f : ι → α → F} {l : Filter ι} [l.IsCountablyGenerated] {g : α → F}
+    {f : ι → α → F} {l : Filter ι} {g : α → F}
     (hf : ∀ᶠ i in l, MemLp (f i) 2 μ) {B : ℝ}
     (hbound : ∀ᶠ i in l, ∫ x, ‖f i x‖ ^ 2 ∂μ ≤ B)
-    (hlim : ∀ᵐ x ∂μ, Tendsto (fun i ↦ f i x) l (𝓝 (g x))) :
+    (hlim : TendstoInMeasure μ f l g) :
     Tendsto (fun i ↦ ∫ x, f i x ∂μ) l (𝓝 (∫ x, g x ∂μ)) := by
-  have hΦ : Tendsto (fun x : ℝ ↦ x ^ 2 / x) atTop atTop := by
-    have he : (fun x : ℝ ↦ x ^ 2 / x) =ᶠ[atTop] fun x ↦ x := by
-      filter_upwards [eventually_gt_atTop (0 : ℝ)] with x hx
-      field_simp
-    exact tendsto_id.congr' he.symm
+  have hΦ : Tendsto (fun x : ℝ ↦ x ^ 2 / x) atTop atTop :=
+    tendsto_id.congr fun x ↦ by simp only [id_eq, pow_two, mul_self_div_self]
   have hbound' : ∀ᶠ i in l,
       ∫⁻ x, ENNReal.ofReal (‖f i x‖ ^ 2) ∂μ ≤ ENNReal.ofReal B := by
     filter_upwards [hf, hbound] with i hi hbi

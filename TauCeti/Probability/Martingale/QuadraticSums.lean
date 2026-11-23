@@ -73,13 +73,11 @@ theorem integral_sq_sum_mul_sub_of_pairwise_disjoint
         hσ (sigmaFiniteTrim_mono (ℱ.le (s j)) (ℱ.mono hij))
       have hs : ¬SigmaFinite (P.trim (ℱ.le (s i))) := fun _ ↦
         ht (sigmaFiniteTrim_mono (ℱ.le (t i)) (ℱ.mono (hst i hi)))
-      have hti := hM.condExp_ae_eq (i := t i) le_rfl
-      have hsi := hM.condExp_ae_eq (i := s i) le_rfl
-      simp only [condExp_of_not_sigmaFinite _ ht, condExp_of_not_sigmaFinite _ hs] at hti hsi
       apply integral_eq_zero_of_ae
-      filter_upwards [hti, hsi] with ω htω hsω
+      filter_upwards [hM.ae_eq_zero_of_not_sigmaFinite ht, hM.ae_eq_zero_of_not_sigmaFinite hs]
+        with ω htω hsω
       simp only [Pi.zero_apply] at htω hsω
-      simp [Z, ← htω, ← hsω]
+      simp [Z, htω, hsω]
   apply TauCeti.integral_sq_sum_of_pairwise_integral_mul_eq_zero hZ
   intro i hi j hj hij
   rcases hdisj hi hj hij with h | h

@@ -84,7 +84,8 @@ theorem ae_eq_of_boundedVariationOn_of_bound (hM : Martingale M ℱ P) {S T : �
     simpa only [pow_two, Pi.sub_def] using hd.fun_mul hd
   -- The moment bound replaces domination by the random variation.
   have hmean := TauCeti.tendsto_integral_of_integral_norm_sq_le (Filter.Eventually.of_forall hQ₂)
-    (Filter.Eventually.of_forall (by simpa only [Real.norm_eq_abs, sq_abs] using hbound)) hQlim
+    (Filter.Eventually.of_forall (by simpa only [Real.norm_eq_abs, sq_abs] using hbound))
+    (tendstoInMeasure_of_tendsto_ae (fun k ↦ (hQ₂ k).aestronglyMeasurable) hQlim)
   simp only [integral_zero] at hmean
   -- Isometry makes every quadratic-sum expectation the same terminal second moment.
   have heq (k : ℕ) : ∫ ω, Q k ω ∂P = ∫ ω, (M T ω - M S ω) ^ 2 ∂P := by

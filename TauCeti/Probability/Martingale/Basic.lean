@@ -53,6 +53,8 @@ increment has mean zero when the product is integrable
 `MeasureTheory.Martingale.integral_smul_sub_eq_zero`. Martingale values inherit deterministic
 norm bounds and, for `p ≥ 1`, Lᵖ integrability from later values
 (`MeasureTheory.Martingale.ae_norm_le_of_le`, `MeasureTheory.Martingale.memLp_of_le`).
+A martingale value vanishes a.e. at any date whose filtration trim is not sigma-finite
+(`MeasureTheory.Martingale.ae_eq_zero_of_not_sigmaFinite`).
 Shorter increments with the same starting date inherit deterministic norm bounds
 (`MeasureTheory.Martingale.ae_norm_sub_le_of_le`), whereas increments over any contained interval
 inherit Lᵖ integrability for `p ≥ 1` from the containing increment
@@ -202,6 +204,14 @@ theorem Martingale.memLp_of_le (hX : Martingale X ℱ μ) {i j : ι} (hij : i �
     {p : ℝ≥0∞} (hp : 1 ≤ p) (hj : MemLp (X j) p μ) : MemLp (X i) p μ :=
   (hj.condExp (m := ℱ i) hp).ae_eq (hX.condExp_ae_eq hij)
 
+omit [CompleteSpace E] in
+/-- A martingale value vanishes almost everywhere if the measure trimmed to the filtration at
+that date is not sigma-finite. -/
+theorem Martingale.ae_eq_zero_of_not_sigmaFinite (hX : Martingale X ℱ μ) {i : ι}
+    (hi : ¬SigmaFinite (μ.trim (ℱ.le i))) : X i =ᵐ[μ] 0 := by
+  simpa only [condExp_of_not_sigmaFinite (ℱ.le i) hi] using
+    (hX.condExp_ae_eq (i := i) le_rfl).symm
+
 /-- Conditioning a martingale increment on an intermediate date keeps its past part. -/
 theorem Martingale.condExp_sub_ae_eq (hX : Martingale X ℱ μ) {s t u : ι}
     (hst : s ≤ t) (htu : t ≤ u) : μ[X u - X s | ℱ t] =ᵐ[μ] X t - X s := by
@@ -211,9 +221,8 @@ theorem Martingale.condExp_sub_ae_eq (hX : Martingale X ℱ μ) {s t u : ι}
         ((hX.stronglyMeasurable s).mono (ℱ.mono hst)) (hX.integrable s))
     · have hs : ¬SigmaFinite (μ.trim (ℱ.le s)) := fun hs ↦
         ht (sigmaFiniteTrim_mono (ℱ.le t) (ℱ.mono hst))
-      simpa only [condExp_of_not_sigmaFinite (ℱ.le s) hs,
-        condExp_of_not_sigmaFinite (ℱ.le t) ht] using
-        hX.condExp_ae_eq (i := s) le_rfl
+      rw [condExp_of_not_sigmaFinite (ℱ.le t) ht]
+      exact (hX.ae_eq_zero_of_not_sigmaFinite hs).symm
   exact (condExp_sub (hX.integrable u) (hX.integrable s) _).trans
     ((hX.condExp_ae_eq htu).sub hs)
 
