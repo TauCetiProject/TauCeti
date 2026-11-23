@@ -48,7 +48,8 @@ curve need not carry a `HasMFDerivWithinAt` witness for it.
   with `TauCeti.Manifold.hasDerivAt_comp_curve` its unrestricted case.
 * `TauCeti.Manifold.hasMFDerivWithinAt_curve_iff`: a curve has a given velocity within a
   parameter set exactly when it is continuous there and its reading in the chart centred at the
-  current point has that velocity as its derivative.
+  current point has that velocity as its derivative, with
+  `TauCeti.Manifold.hasMFDerivAt_curve_iff` its unrestricted case.
 * `TauCeti.Manifold.exists_contMDiffAt_curveVelocity_eq`: every tangent vector on a
   manifold interior point is realized by a curve of the given regularity at the given parameter.
 * `TauCeti.Manifold.fromTangentSpace_curveVelocityWithin`: the velocity of a curve in an open
@@ -196,6 +197,16 @@ theorem hasMFDerivWithinAt_curve_iff :
   -- `(1 : 𝕜 →L[𝕜] 𝕜).smulRight w`, and `tangentSpaceCastModel` is the identity of the model
   -- spaces, so the two sides agree.
   rfl
+
+/-- The unrestricted case of `TauCeti.Manifold.hasMFDerivWithinAt_curve_iff`. -/
+theorem hasMFDerivAt_curve_iff :
+    HasMFDerivAt 𝓘(𝕜, 𝕜) I γ t ((1 : 𝕜 →L[𝕜] 𝕜).smulRight w) ↔
+      ContinuousAt γ t ∧ HasDerivAt (extChartAt I (γ t) ∘ γ) w t := by
+  refine hasMFDerivWithinAt_univ.symm.trans ?_
+  rw [hasMFDerivWithinAt_curve_iff, continuousWithinAt_univ]
+  -- `w` lives in `TangentSpace I (γ t)`, so `rw` cannot match `hasDerivWithinAt_univ`, whose
+  -- derivative lives in `E`; the two types agree up to unfolding.
+  exact and_congr_right' hasDerivWithinAt_univ
 
 /-! ### The velocity of a curve -/
 
