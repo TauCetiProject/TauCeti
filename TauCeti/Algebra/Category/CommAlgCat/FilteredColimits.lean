@@ -81,7 +81,7 @@ end
 
 /-- The forgetful functor from commutative algebras to commutative rings creates filtered
 colimits. -/
-@[no_expose] noncomputable instance forget₂CommRingCat_createsColimitsOfShape [IsFiltered J] :
+@[no_expose] noncomputable instance forget₂CommRingCatCreatesColimitsOfShape [IsFiltered J] :
     CreatesColimitsOfShape J (forget₂ (CommAlgCat.{v} Base) CommRingCat.{v}) where
   CreatesColimit := createsColimitOfReflectsIso fun _ hc ↦
     -- The lifted cocone is mapped back to `c` itself.
