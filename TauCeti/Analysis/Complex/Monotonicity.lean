@@ -35,18 +35,7 @@ curve passing through the centre of the standard ball of radius `r`, without bou
 ball, has area at least `π r²` there. The bound is sharp, with equality for a complex line through
 the centre.
 
-## Proof
-
-Put `ρ = ‖u - c‖²` and `q = ⟪u - c, u'⟫`. For a `C¹` function `χ` vanishing on `[r², ∞)`, the
-function `χ(ρ) q` has compact support, and its antiholomorphic derivative `(∂ₓ + i ∂_y) / 2` is
-`χ'(ρ) |q|² + χ(ρ) ‖u'‖²`, so the integral of the latter vanishes. With the Cauchy–Schwarz
-inequality `|q|² ≤ ρ ‖u'‖²`, a nonincreasing `χ` gives `∫ (t χ(t))'|_{t = ρ} ‖u'‖² ≤ 0`.
-For `t χ(t) = Φ(t / ε²) - Φ(t / r²)`, where `Φ` is an antiderivative of a nonincreasing profile `φ`
-equal to `0` on `[1, ∞)`, this says that `ε⁻² ∫ φ(ρ / ε²) ‖u'‖²` is nondecreasing in `ε`; letting
-`φ` increase to the indicator of `(-∞, 1)` gives the monotonicity formula. Near an immersed point
-`z₀` the curve covers a disc of area close to `π ε²` in the ball of radius `ε`, so the monotonicity
-formula gives the lower bound. At a critical point, compare instead with balls about the images of
-nearby immersed points.
+The monotonicity formula follows the test-function method of Simon §17.
 
 ## References
 
@@ -93,9 +82,9 @@ private theorem fderiv_one_add_I_mul_fderiv_I {u : ℂ → E} {z : ℂ} {χ : �
     funext y
     simp only [Function.comp_apply, reCLM_apply, inner_self_eq_norm_sq_to_K]
     norm_cast
-  have hf := (hχ.hasDerivAt.comp_hasFDerivAt z hρ).smul hq
-  rw [show (fun y ↦ χ (‖u y‖ ^ 2) • ⟪u y, deriv u y⟫_ℂ) =
-    (χ ∘ fun y ↦ ‖u y‖ ^ 2) • fun t ↦ ⟪u t, deriv u t⟫_ℂ from rfl, hf.fderiv]
+  have hf : HasFDerivAt (fun y ↦ χ (‖u y‖ ^ 2) • ⟪u y, deriv u y⟫_ℂ) _ z :=
+    (hχ.hasDerivAt.comp_hasFDerivAt z hρ).fun_smul hq
+  rw [hf.fderiv]
   simp only [fderivInnerCLM_apply, inner_smul_left, inner_smul_right,
     ← inner_conj_symm (u z) (deriv u z), add_apply, FunLike.coe_smul, Pi.smul_apply,
     ContinuousLinearMap.coe_comp, Function.comp_apply, ContinuousLinearMap.prod_apply,
@@ -112,20 +101,8 @@ private theorem contDiffAt_smul_inner {u : ℂ → E} {z : ℂ} (ha : AnalyticAt
     ContDiffAt ℝ 1 (fun y ↦ χ (‖u y‖ ^ 2) • ⟪u y, deriv u y⟫_ℂ) z := by
   have h1 : ContDiffAt ℝ 1 u z := (ha.contDiffAt (n := 1)).restrict_scalars ℝ
   have h2 : ContDiffAt ℝ 1 (deriv u) z := (ha.deriv.contDiffAt (n := 1)).restrict_scalars ℝ
-  have hρ : ContDiffAt ℝ 1 (fun y ↦ ‖u y‖ ^ 2) z := by
-    refine (reCLM.contDiff.contDiffAt.comp z (h1.inner ℂ h1)).congr_of_eventuallyEq
-      (Eventually.of_forall fun y ↦ ?_)
-    simp only [Function.comp_apply, reCLM_apply, inner_self_eq_norm_sq_to_K]
-    norm_cast
+  have hρ : ContDiffAt ℝ 1 (fun y ↦ ‖u y‖ ^ 2) z := h1.norm_sq ℂ
   exact (hχ.contDiffAt.comp z hρ).smul (h1.inner ℂ h2)
-
-/-- A function continuous on `U` that vanishes on `U` outside a compact subset `K` of `U` is
-integrable on `U`. -/
-private theorem integrableOn_of_continuousOn_of_eq_zero {U K : Set ℂ} (hU : IsOpen U)
-    (hK : IsCompact K) (hKU : K ⊆ U) {g : ℂ → ℝ} (hg : ContinuousOn g U)
-    (h0 : ∀ z ∈ U, z ∉ K → g z = 0) : IntegrableOn g U :=
-  ((hg.mono hKU).integrableOn_compact hK).of_forall_sdiff_eq_zero hU.measurableSet
-    fun z hz ↦ h0 z hz.1 hz.2
 
 omit [InnerProductSpace ℂ E] [CompleteSpace E] in
 /-- A point of `U` outside `U ∩ u⁻¹(closedBall 0 R)` has `R² < ‖u z‖²`. -/
@@ -133,26 +110,6 @@ private theorem lt_norm_sq_of_notMem {U : Set ℂ} {u : ℂ → E} {R : ℝ} (hR
     (hz : z ∈ U) (hzK : z ∉ U ∩ u ⁻¹' closedBall 0 R) : R ^ 2 < ‖u z‖ ^ 2 := by
   have : R < ‖u z‖ := by simpa [hz, mem_closedBall, dist_zero_right] using hzK
   exact pow_lt_pow_left₀ this hR two_ne_zero
-
-/-- A function vanishing on `[T, ∞)` vanishes, together with its derivative, beyond `T`. -/
-private theorem apply_eq_zero_and_deriv_eq_zero_of_lt {χ : ℝ → ℝ} {T t : ℝ}
-    (hχT : ∀ s, T ≤ s → χ s = 0) (ht : T < t) : χ t = 0 ∧ deriv χ t = 0 := by
-  refine ⟨hχT t ht.le, ?_⟩
-  have : χ =ᶠ[𝓝 t] fun _ ↦ 0 := eventually_of_mem (Ioi_mem_nhds ht) fun s hs ↦ hχT s (le_of_lt hs)
-  rw [this.deriv_eq, deriv_const]
-
-omit [InnerProductSpace ℂ E] [CompleteSpace E] in
-/-- Shrinking the ball keeps the preimage sublevel set compact. -/
-private theorem isCompact_inter_preimage_closedBall_of_subset {U : Set ℂ} {u : ℂ → E}
-    (hu : ContinuousOn u U) {c c' : E} {r s : ℝ} (hK : IsCompact (U ∩ u ⁻¹' closedBall c r))
-    (h : closedBall c' s ⊆ closedBall c r) : IsCompact (U ∩ u ⁻¹' closedBall c' s) := by
-  have : U ∩ u ⁻¹' closedBall c' s = (U ∩ u ⁻¹' closedBall c r) ∩ u ⁻¹' closedBall c' s := by
-    ext z
-    simp only [mem_inter_iff, mem_preimage]
-    exact ⟨fun hz ↦ ⟨⟨hz.1, h hz.2⟩, hz.2⟩, fun hz ↦ ⟨hz.1.1, hz.2⟩⟩
-  rw [this]
-  exact hK.of_isClosed_subset ((hu.mono inter_subset_left).preimage_isClosed_of_isClosed
-    hK.isClosed isClosed_closedBall) inter_subset_left
 
 variable {U : Set ℂ} {u : ℂ → E}
 
@@ -223,18 +180,22 @@ private theorem setIntegral_deriv_mul_self_mul_norm_deriv_sq_nonpos
   have hcu' : ContinuousOn (deriv u) U := (hu.deriv hU).continuousOn
   have hcχ : Continuous χ := hχ.continuous
   have hχ0 : ∀ z ∈ U, z ∉ U ∩ u ⁻¹' closedBall 0 R →
-      χ (‖u z‖ ^ 2) = 0 ∧ deriv χ (‖u z‖ ^ 2) = 0 := fun z hz hzK ↦
-    apply_eq_zero_and_deriv_eq_zero_of_lt hχR (lt_norm_sq_of_notMem hR hz hzK)
+      χ (‖u z‖ ^ 2) = 0 ∧ deriv χ (‖u z‖ ^ 2) = 0 := fun z hz hzK ↦ by
+    have ht := lt_norm_sq_of_notMem hR hz hzK
+    have : χ =ᶠ[𝓝 (‖u z‖ ^ 2)] fun _ ↦ 0 :=
+      eventually_of_mem (Ioi_mem_nhds ht) fun s hs ↦ hχR s (le_of_lt hs)
+    exact ⟨hχR _ ht.le, by rw [this.deriv_eq, deriv_const]⟩
   have hd : ∀ t, deriv (fun t ↦ t * χ t) t = χ t + t * deriv χ t := fun t ↦ by
     simpa using ((hasDerivAt_id' t).fun_mul (hχ.differentiable one_ne_zero t).hasDerivAt).deriv
   have hAB : IntegrableOn (fun z ↦ deriv χ (‖u z‖ ^ 2) * ‖⟪u z, deriv u z⟫_ℂ‖ ^ 2 +
       χ (‖u z‖ ^ 2) * ‖deriv u z‖ ^ 2) U :=
-    integrableOn_of_continuousOn_of_eq_zero hU hK inter_subset_left (by fun_prop)
-      fun z hz hzK ↦ by simp [(hχ0 z hz hzK).1, (hχ0 z hz hzK).2]
+    ((ContinuousOn.mono (by fun_prop) inter_subset_left).integrableOn_compact
+      hK).of_forall_sdiff_eq_zero hU.measurableSet fun z hz ↦ by
+        simp [(hχ0 z hz.1 hz.2).1, (hχ0 z hz.1 hz.2).2]
   have hC : IntegrableOn (fun z ↦ deriv χ (‖u z‖ ^ 2) *
       (‖u z‖ ^ 2 * ‖deriv u z‖ ^ 2 - ‖⟪u z, deriv u z⟫_ℂ‖ ^ 2)) U :=
-    integrableOn_of_continuousOn_of_eq_zero hU hK inter_subset_left (by fun_prop)
-      fun z hz hzK ↦ by simp [(hχ0 z hz hzK).2]
+    ((ContinuousOn.mono (by fun_prop) inter_subset_left).integrableOn_compact
+      hK).of_forall_sdiff_eq_zero hU.measurableSet fun z hz ↦ by simp [(hχ0 z hz.1 hz.2).2]
   calc ∫ z in U, deriv (fun t ↦ t * χ t) (‖u z‖ ^ 2) * ‖deriv u z‖ ^ 2
       = ∫ z in U, ((deriv χ (‖u z‖ ^ 2) * ‖⟪u z, deriv u z⟫_ℂ‖ ^ 2 +
           χ (‖u z‖ ^ 2) * ‖deriv u z‖ ^ 2) + deriv χ (‖u z‖ ^ 2) *
@@ -399,10 +360,10 @@ private theorem setIntegral_profile_div_sq_le (hU : IsOpen U) (hu : Differentiab
   simp_rw [deriv_mul_profileTest hφ] at key
   have hint : ∀ s, 0 < s → s ≤ R →
       IntegrableOn (fun z ↦ φ (‖u z‖ ^ 2 / s ^ 2) * ‖deriv u z‖ ^ 2) U := fun s hs hsR ↦
-    integrableOn_of_continuousOn_of_eq_zero hU hK inter_subset_left
-      (by have := hu.continuousOn; have := (hu.deriv hU).continuousOn; fun_prop)
-      fun z hz hzK ↦ by
-        have := lt_norm_sq_of_notMem hR.le hz hzK
+    (((by have := hu.continuousOn; have := (hu.deriv hU).continuousOn; fun_prop :
+      ContinuousOn _ U).mono inter_subset_left).integrableOn_compact hK).of_forall_sdiff_eq_zero
+      hU.measurableSet fun z hz ↦ by
+        have := lt_norm_sq_of_notMem hR.le hz.1 hz.2
         rw [hφ1 _ ((one_le_div (by positivity)).2
           ((pow_le_pow_left₀ hs.le hsR 2).trans this.le)), zero_mul]
   have hsplit : ∀ z, (φ (‖u z‖ ^ 2 / ε ^ 2) / ε ^ 2 - φ (‖u z‖ ^ 2 / R ^ 2) / R ^ 2) *
@@ -457,11 +418,11 @@ private theorem integrableOn_stepProfile_mul (hU : IsOpen U) (hu : Differentiabl
     {c : E} {r : ℝ} (hK : IsCompact (U ∩ u ⁻¹' closedBall c r)) (n : ℕ) {w : ℝ} (hw : 0 < w)
     (hwr : w ≤ r) :
     IntegrableOn (fun z ↦ stepProfile n (‖u z - c‖ ^ 2 / w ^ 2) * ‖deriv u z‖ ^ 2) U :=
-  integrableOn_of_continuousOn_of_eq_zero hU hK inter_subset_left
-    (by have := hu.continuousOn; have := (hu.deriv hU).continuousOn
-        have := continuous_stepProfile n; fun_prop)
-    fun z hz hzK ↦ by
-      have : r < ‖u z - c‖ := by simpa [hz, mem_closedBall, dist_eq_norm] using hzK
+  (((by have := hu.continuousOn; have := (hu.deriv hU).continuousOn
+        have := continuous_stepProfile n; fun_prop : ContinuousOn _ U).mono
+    inter_subset_left).integrableOn_compact hK).of_forall_sdiff_eq_zero hU.measurableSet
+    fun z hz ↦ by
+      have : r < ‖u z - c‖ := by simpa [hz.1, mem_closedBall, dist_eq_norm] using hz.2
       rw [stepProfile_div_eq_zero n hw (hwr.trans this.le), zero_mul]
 
 omit [CompleteSpace E] in
@@ -496,8 +457,12 @@ private theorem tendsto_setIntegral_stepProfile (hU : IsOpen U) (hu : Differenti
     (hsr : s ≤ r) :
     Tendsto (fun n ↦ ∫ z in U, stepProfile n (‖u z - c‖ ^ 2 / s ^ 2) * ‖deriv u z‖ ^ 2) atTop
       (𝓝 (∫ z in U ∩ u ⁻¹' ball c s, ‖deriv u z‖ ^ 2)) := by
-  have hKs := isCompact_inter_preimage_closedBall_of_subset hu.continuousOn hK
-    (closedBall_subset_closedBall hsr)
+  have hKs : IsCompact (U ∩ u ⁻¹' closedBall c s) := by
+    have := hK.of_isClosed_subset ((hu.continuousOn.mono inter_subset_left)
+      |>.preimage_isClosed_of_isClosed hK.isClosed (isClosed_closedBall (x := c) (ε := s)))
+      inter_subset_left
+    rwa [inter_assoc, ← preimage_inter, inter_eq_right.2 (closedBall_subset_closedBall hsr)]
+      at this
   rw [← setIntegral_indicator_preimage_ball hU hu]
   refine tendsto_integral_of_dominated_convergence
     ((U ∩ u ⁻¹' closedBall c s).indicator fun z ↦ ‖deriv u z‖ ^ 2)
@@ -536,8 +501,12 @@ theorem monotoneOn_setIntegral_norm_deriv_sq_div_sq (hU : IsOpen U) (hu : Differ
     (c : E) {r : ℝ} (hK : IsCompact (U ∩ u ⁻¹' closedBall c r)) :
     MonotoneOn (fun s ↦ (∫ z in U ∩ u ⁻¹' ball c s, ‖deriv u z‖ ^ 2) / s ^ 2) (Ioc 0 r) := by
   intro s hs t ht hst
-  have hKt := isCompact_inter_preimage_closedBall_of_subset hu.continuousOn hK
-    (closedBall_subset_closedBall ht.2)
+  have hKt : IsCompact (U ∩ u ⁻¹' closedBall c t) := by
+    have := hK.of_isClosed_subset ((hu.continuousOn.mono inter_subset_left)
+      |>.preimage_isClosed_of_isClosed hK.isClosed (isClosed_closedBall (x := c) (ε := t)))
+      inter_subset_left
+    rwa [inter_assoc, ← preimage_inter, inter_eq_right.2 (closedBall_subset_closedBall ht.2)]
+      at this
   have hcb : (fun z ↦ u z - c) ⁻¹' closedBall 0 t = u ⁻¹' closedBall c t := by
     ext z; simp [dist_eq_norm]
   rw [← hcb] at hKt
@@ -675,8 +644,12 @@ theorem pi_mul_sq_le_setIntegral_norm_deriv_sq (hU : IsOpen U) (hu : Differentia
     have hsub : s + dist (u z₁) (u z₀) ≤ r := by
       have : dist (u z₁) (u z₀) < r - s := hz₁r
       linarith
-    have h₁ := pi_mul_sq_le_setIntegral_norm_deriv_sq_of_deriv_ne_zero hU hu hz₁U hd₁ hs0
-      (isCompact_inter_preimage_closedBall_of_subset hcu hK (closedBall_subset_closedBall' hsub))
+    have hK₁ : IsCompact (U ∩ u ⁻¹' closedBall (u z₁) s) := by
+      have := hK.of_isClosed_subset ((hcu.mono inter_subset_left).preimage_isClosed_of_isClosed
+        hK.isClosed (isClosed_closedBall (x := u z₁) (ε := s))) inter_subset_left
+      rwa [inter_assoc, ← preimage_inter, inter_eq_right.2 (closedBall_subset_closedBall' hsub)]
+        at this
+    have h₁ := pi_mul_sq_le_setIntegral_norm_deriv_sq_of_deriv_ne_zero hU hu hz₁U hd₁ hs0 hK₁
     exact h₁.trans (setIntegral_mono_set hint (ae_of_all _ fun _ ↦ sq_nonneg _)
       (ae_of_all _
         (inter_subset_inter_right _ (preimage_mono (ball_subset_ball' hsub)))))
