@@ -1,0 +1,143 @@
+/-
+Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: The Tau Ceti contributors
+-/
+module
+
+public import Mathlib.Analysis.Normed.Operator.Extend
+public import TauCeti.Analysis.CStarAlgebra.GNS.Basic
+
+/-!
+# The modular conjugation of a tracial functional
+
+Let `f` be a tracial positive functional on a possibly nonunital C⋆-algebra `A`,
+`f (a * b) = f (b * a)`. On the GNS space `L²(A, f)` the classes `[a]` of `a` and `[a⋆]` of `a⋆`
+have the same norm, `f (a⋆ a) = f (a a⋆)`, so `[a] ↦ [a⋆]` extends to a conjugate-linear isometry
+`J` of the GNS space, the *modular conjugation*. It is an involution, it is antiunitary,
+`⟪J x, J y⟫ = ⟪y, x⟫`, and for unital `A` it fixes the cyclic vector `Ω = [1]`. Conjugating the
+GNS representation by `J` gives right multiplication: `J π(a) J [b] = [b a⋆]`.
+
+## Main definitions
+
+* `PositiveLinearMap.gnsConj f hf`: the modular conjugation `[a] ↦ [a⋆]`, a conjugate-linear
+  isometric equivalence `f.GNS ≃ₗᵢ⋆[ℂ] f.GNS`.
+
+## Main results
+
+* `PositiveLinearMap.gnsConj_toGNS`, `PositiveLinearMap.gnsConj_coe_toPreGNS`: `J [a] = [a⋆]`.
+* `PositiveLinearMap.gnsConj_gnsConj`, `PositiveLinearMap.gnsConj_symm`: `J` is an involution.
+* `PositiveLinearMap.inner_gnsConj_gnsConj`: `⟪J x, J y⟫ = ⟪y, x⟫`.
+* `PositiveLinearMap.gnsConj_gnsVector`: `J Ω = Ω`.
+* `PositiveLinearMap.gnsConj_gnsNonUnitalStarAlgHom_gnsConj_toGNS`: `J π(a) J [b] = [b a⋆]`.
+
+## References
+
+* N. P. Brown, *Invariant means and finite representation theory of C⋆-algebras*, Mem. Amer.
+  Math. Soc. 184 (2006), Chapter 2, for the GNS representation of a tracial state.
+-/
+
+public section
+
+open UniformSpace
+open scoped ComplexOrder
+
+namespace PositiveLinearMap
+
+variable {A : Type*} [NonUnitalCStarAlgebra A] [PartialOrder A] [StarOrderedRing A]
+  (f : A →ₚ[ℂ] ℂ)
+
+/-- The conjugation `a ↦ a⋆` of the pre-GNS space of a tracial functional, a conjugate-linear
+isometry. -/
+private noncomputable def preGNSConj (hf : ∀ a b, f (a * b) = f (b * a)) :
+    f.PreGNS →ₗᵢ⋆[ℂ] f.PreGNS where
+  toFun x := f.toPreGNS (star (f.ofPreGNS x))
+  map_add' _ _ := by simp
+  map_smul' _ _ := by simp
+  norm_map' x := by simp [preGNS_norm_def, hf (f.ofPreGNS x)]
+
+/-- The extension of `preGNSConj` to the GNS space. -/
+private noncomputable def gnsConjL (hf : ∀ a b, f (a * b) = f (b * a)) :
+    f.GNS →SL[starRingEnd ℂ] f.GNS :=
+  (preGNSConj f hf).toContinuousLinearMap.completion
+
+private theorem gnsConjL_coe (hf : ∀ a b, f (a * b) = f (b * a)) (x : f.PreGNS) :
+    gnsConjL f hf x = (f.toPreGNS (star (f.ofPreGNS x)) : f.GNS) :=
+  ContinuousLinearMap.completion_apply_coe _ x
+
+private theorem involutive_gnsConjL (hf : ∀ a b, f (a * b) = f (b * a)) :
+    Function.Involutive (gnsConjL f hf) := fun x ↦ by
+  induction x using Completion.induction_on with
+  | hp =>
+    exact isClosed_eq ((gnsConjL f hf).continuous.comp (gnsConjL f hf).continuous)
+      continuous_id
+  | ih x =>
+    rw [gnsConjL_coe, gnsConjL_coe]
+    simp
+
+private theorem norm_gnsConjL (hf : ∀ a b, f (a * b) = f (b * a)) (x : f.GNS) :
+    ‖gnsConjL f hf x‖ = ‖x‖ := by
+  induction x using Completion.induction_on with
+  | hp => exact isClosed_eq (gnsConjL f hf).continuous.norm continuous_norm
+  | ih x =>
+    rw [gnsConjL_coe, Completion.norm_coe, Completion.norm_coe]
+    exact (preGNSConj f hf).norm_map x
+
+/-- The **modular conjugation** of a tracial positive functional `f`: the conjugate-linear
+isometric involution of the GNS space extending `[a] ↦ [a⋆]`. -/
+noncomputable def gnsConj (hf : ∀ a b, f (a * b) = f (b * a)) : f.GNS ≃ₗᵢ⋆[ℂ] f.GNS :=
+  LinearIsometryEquiv.ofSurjective ⟨(gnsConjL f hf).toLinearMap, norm_gnsConjL f hf⟩
+    (involutive_gnsConjL f hf).surjective
+
+variable (hf : ∀ a b, f (a * b) = f (b * a))
+
+/-- The modular conjugation sends the class of `a` to the class of `a⋆`. -/
+@[simp]
+theorem gnsConj_coe_toPreGNS (a : A) :
+    gnsConj f hf (f.toPreGNS a : f.GNS) = (f.toPreGNS (star a) : f.GNS) :=
+  gnsConjL_coe f hf (f.toPreGNS a)
+
+/-- The modular conjugation sends the class of `a` to the class of `a⋆`, in terms of the class
+map `f.toGNS`. -/
+-- Not a simp lemma: `toGNS_apply` already rewrites the class map to the completion embedding.
+theorem gnsConj_toGNS (a : A) : gnsConj f hf (f.toGNS a) = f.toGNS (star a) := by
+  simp
+
+/-- The modular conjugation is an involution. -/
+@[simp]
+theorem gnsConj_gnsConj (x : f.GNS) : gnsConj f hf (gnsConj f hf x) = x :=
+  involutive_gnsConjL f hf x
+
+/-- The modular conjugation is its own inverse. -/
+@[simp]
+theorem gnsConj_symm : (gnsConj f hf).symm = gnsConj f hf :=
+  LinearIsometryEquiv.ext fun x ↦ (gnsConj f hf).symm_apply_eq.2 (gnsConj_gnsConj f hf x).symm
+
+/-- The modular conjugation is antiunitary: `⟪J x, J y⟫ = ⟪y, x⟫`. -/
+theorem inner_gnsConj_gnsConj (x y : f.GNS) :
+    inner ℂ (gnsConj f hf x) (gnsConj f hf y) = inner ℂ y x := by
+  induction x, y using Completion.induction_on₂ with
+  | hp => exact isClosed_eq (by fun_prop) (by fun_prop)
+  | ih x y =>
+    have hx : (x : f.GNS) = f.toGNS (f.ofPreGNS x) := by simp
+    have hy : (y : f.GNS) = f.toGNS (f.ofPreGNS y) := by simp
+    rw [hx, hy, gnsConj_toGNS, gnsConj_toGNS]
+    simp only [toGNS_apply, Completion.inner_coe, preGNS_inner_def, ofPreGNS_toPreGNS, star_star]
+    exact hf _ _
+
+/-- Conjugating the GNS representation by the modular conjugation gives right multiplication by
+the adjoint: `J π(a) J [b] = [b a⋆]`. -/
+theorem gnsConj_gnsNonUnitalStarAlgHom_gnsConj_toGNS (a b : A) :
+    gnsConj f hf (f.gnsNonUnitalStarAlgHom a (gnsConj f hf (f.toGNS b))) =
+      f.toGNS (b * star a) := by
+  rw [gnsConj_toGNS, gnsNonUnitalStarAlgHom_apply_toGNS, gnsConj_toGNS, star_mul, star_star]
+
+/-- For a unital algebra, the modular conjugation fixes the cyclic vector `Ω = [1]`. -/
+@[simp]
+theorem gnsConj_gnsVector {B : Type*} [CStarAlgebra B] [PartialOrder B] [StarOrderedRing B]
+    (f : B →ₚ[ℂ] ℂ) (hf : ∀ a b, f (a * b) = f (b * a)) :
+    gnsConj f hf f.gnsVector = f.gnsVector := by
+  have h : f.gnsVector = f.toGNS 1 := by simp [gnsVector_def]
+  rw [h, gnsConj_toGNS, star_one]
+
+end PositiveLinearMap
