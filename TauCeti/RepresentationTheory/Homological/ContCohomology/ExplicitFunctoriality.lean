@@ -37,12 +37,11 @@ The constructions
 `explicitCoeff2Equiv` upgrade a continuous equivariant additive equivalence of coefficient modules
 to additive equivalences on explicit `H¹` and `H²`, and `explicitCoeff1_bijective` and
 `explicitCoeff2_bijective` record that a bijective equivariant homomorphism of discrete coefficient
-modules induces bijections, `explicitCoeff1_explicitCoeff1_eq_zero` that coefficient maps
-with zero composite compose to zero on `H¹`, and `explicitCoeff1_explicitMap1` and
-`explicitCoeff2_explicitMap2` compose a coefficient map after a pullback. The lemmas
-`explicitCoeff1_eq_nsmul` and `explicitCoeff2_eq_nsmul` identify coefficient maps given by
-multiplication by a natural number, while `explicitCoeff2_eq_card_nsmul` records that the norm of a
-finite normal subgroup `N`, as a coefficient map, acts on `H²` as multiplication by `#N`.
+modules induces bijections, and `explicitCoeff1_explicitCoeff1_eq_zero` that coefficient maps
+with zero composite compose to zero on `H¹`. The lemmas `explicitCoeff1_eq_nsmul` and
+`explicitCoeff2_eq_nsmul` identify coefficient maps given by multiplication by a natural number,
+while `explicitCoeff2_eq_card_nsmul` records that the norm of a finite normal subgroup `N`, as a
+coefficient map, acts on `H²` as multiplication by `#N`.
 
 This is functoriality of the *explicit* model: the carriers are the quotients `Z¹/B¹` and `Z²/B²`
 of plain continuous cochains. Mathlib's `ContinuousCohomology.map` is the compatible-pair pullback
@@ -853,27 +852,6 @@ theorem explicitCoeff1_comp {N : Type uN} [AddCommGroup N] [TopologicalSpace N]
     (fun g n => q.map_smul g n) (fun g m => (q.comp f).map_smul g m) using 1 <;>
     ext <;> rfl
 
-/-- Composing pullback along a compatible pair with a coefficient map on explicit `H¹` is pullback
-along the composite coefficient map. -/
-theorem explicitCoeff1_explicitMap1
-    {H : Type uH} [Monoid H] [TopologicalSpace H]
-    {N : Type uN} [AddCommGroup N] [TopologicalSpace N] [IsTopologicalAddGroup N]
-    [DistribMulAction H N] [ContinuousSMul H N]
-    {P : Type uP} [AddCommGroup P] [TopologicalSpace P] [IsTopologicalAddGroup P]
-    [DistribMulAction H P] [ContinuousSMul H P]
-    (φ : H →ₜ* G) (f : M →+ N) (hf : Continuous f)
-    (hequiv : ∀ (h : H) (m : M), f (φ h • m) = h • f m)
-    (q : N →+[H] P) (hq : Continuous q) (x : H1 G M) :
-    explicitCoeff1 H N q hq (explicitMap1 G M H N φ f hf hequiv x) =
-      explicitMap1 G M H P φ ((q : N →+ P).comp f) (hq.comp hf)
-        (fun h m => by simp only [AddMonoidHom.comp_apply, AddMonoidHom.coe_ofClass, hequiv,
-          map_smul])
-        x := by
-  rw [explicitCoeff1_eq_explicitMap1, ← AddMonoidHom.comp_apply,
-    ← explicitMap1_comp G M H N φ f hf hequiv H P (ContinuousMonoidHom.id H) (q : N →+ P) hq
-      (fun h n => q.map_smul h n)]
-  exact DFunLike.congr_fun (explicitMap1_congr_of_eq G M H P _ _ _ _ (by ext; rfl) rfl) x
-
 /-- **Coefficient maps with zero composite compose to zero on explicit `H¹`**: if `q ∘ f = 0`
 on coefficients, then the map `explicitCoeff1 q` kills the image of `explicitCoeff1 f`. -/
 theorem explicitCoeff1_explicitCoeff1_eq_zero {N : Type uN} [AddCommGroup N] [TopologicalSpace N]
@@ -994,27 +972,6 @@ theorem explicitCoeff2_comp [ContinuousMul G]
     (fun g m => f.map_smul g m) G P (ContinuousMonoidHom.id G) q hq
     (fun g n => q.map_smul g n) using 1 <;>
     ext <;> rfl
-
-/-- Composing pullback along a compatible pair with a coefficient map on explicit `H²` is pullback
-along the composite coefficient map. -/
-theorem explicitCoeff2_explicitMap2 [ContinuousMul G]
-    {H : Type uH} [Monoid H] [TopologicalSpace H] [ContinuousMul H]
-    {N : Type uN} [AddCommGroup N] [TopologicalSpace N] [IsTopologicalAddGroup N]
-    [DistribMulAction H N] [ContinuousSMul H N]
-    {P : Type uP} [AddCommGroup P] [TopologicalSpace P] [IsTopologicalAddGroup P]
-    [DistribMulAction H P] [ContinuousSMul H P]
-    (φ : H →ₜ* G) (f : M →+ N) (hf : Continuous f)
-    (hequiv : ∀ (h : H) (m : M), f (φ h • m) = h • f m)
-    (q : N →+[H] P) (hq : Continuous q) (x : H2 G M) :
-    explicitCoeff2 H N q hq (explicitMap2 G M H N φ f hf hequiv x) =
-      explicitMap2 G M H P φ ((q : N →+ P).comp f) (hq.comp hf)
-        (fun h m => by simp only [AddMonoidHom.comp_apply, AddMonoidHom.coe_ofClass, hequiv,
-          map_smul])
-        x := by
-  rw [explicitCoeff2_eq_explicitMap2, ← AddMonoidHom.comp_apply,
-    ← explicitMap2_comp G M H N φ f hf hequiv H P (ContinuousMonoidHom.id H) (q : N →+ P) hq
-      (fun h n => q.map_smul h n)]
-  exact DFunLike.congr_fun (explicitMap2_congr_of_eq G M H P _ _ _ _ (by ext; rfl) rfl) x
 
 /-- An equivariant additive equivalence of topological coefficient modules induces an additive
 equivalence on explicit second continuous cohomology. Both directions are required to be

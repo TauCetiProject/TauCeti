@@ -133,21 +133,11 @@ theorem sum_ringEquivCongr_localTateKerWeilPairing_eq_zero_of_mem_selmerGroup_re
       ZMod.ringEquivCongr (φ.degree_baseChange (K := v.adicCompletion K))
         ((φ.baseChange (v.adicCompletion K)).localTateKerWeilPairing
           (φ.isUnit_degree_baseChange (v.adicCompletion K))
-          (φ.kerRes (τ (.inl v)) a) (φ.dualKerRes (τ (.inl v)) b)) = 0 :=
-  have ha' := φ.kerRes_mem_ker_of_mem_selmerGroup_relax τ S ha
-  have hb' := φ.dual.kerRes_mem_ker_of_mem_selmerGroup_relax τ S hb
-  φ.sum_ringEquivCongr_localTateKerWeilPairing_eq_zero a b
-    (fun v ↦ τ (.inl v)) (fun w ↦ τ (.inr w)) S
-    (fun v hv ↦ by rw [pointRes_kerCoeffIncl, ← AddMonoidHom.mem_ker]; exact ha'.1 v hv)
-    (fun v hv ↦ by
-      rw [pointRes_dualKerCoeffIncl, ← AddMonoidHom.mem_ker, AddMonoidHom.mem_ker,
-        φ.explicitCoeff1_kerCoeffIncl_dualKerRes]
-      exact hb'.1 v hv)
-    (fun w ↦ by rw [pointRes_kerCoeffIncl, ← AddMonoidHom.mem_ker]; exact ha'.2 w)
-    (fun w ↦ by
-      rw [pointRes_dualKerCoeffIncl, ← AddMonoidHom.mem_ker, AddMonoidHom.mem_ker,
-        φ.explicitCoeff1_kerCoeffIncl_dualKerRes]
-      exact hb'.2 w)
+          (φ.kerRes (τ (.inl v)) a) (φ.dualKerRes (τ (.inl v)) b)) = 0 := by
+  apply ZMod.toRatAddCircle_injective φ.degree
+  rw [map_zero, map_sum]
+  simp_rw [ZMod.toRatAddCircle_ringEquivCongr]
+  exact φ.sum_toRatAddCircle_localTateKerWeilPairing_eq_zero_of_mem_selmerGroup_relax τ S ha hb
 
 /-- **Single-place Selmer orthogonality.** Two global classes `a ∈ H¹(K, E₁[φ])` and
 `b ∈ H¹(K, E₂[φ̂])` satisfying their respective local Selmer conditions at every place except

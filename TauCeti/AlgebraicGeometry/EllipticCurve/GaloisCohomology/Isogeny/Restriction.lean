@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicGeometry.EllipticCurve.GaloisCohomology.Isogeny.Congr
 public import TauCeti.AlgebraicGeometry.EllipticCurve.GaloisCohomology.Isogeny.Map
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.BaseChange.Separability
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.Dual.Basic
@@ -46,7 +45,6 @@ the image of a local Kummer map of `φ` serve as the local condition of the `φ`
   restriction commutes with `H¹(G, E₁[φ]) → H¹(G, E₁)` and `H¹(G, E₂[φ̂]) → H¹(G, E₂)`.
 * `TauCeti.Isogeny.dualKerRes_eq_explicitMap1`: `dualKerRes` is the pullback along `τ` and
   `dualKerCoeffBaseChange`.
-* `TauCeti.Isogeny.kerH1Congr_kerRes`: compatibility of restriction with kernel congruence.
 * `TauCeti.Isogeny.kerRes_kummerMap`: restriction commutes with the Kummer maps of `φ`.
 * `TauCeti.Isogeny.explicitCoeff1_kerCoeffIncl_dualKerRes`: `dualKerRes` and the restriction
   `TauCeti.Isogeny.kerRes` of `φ̂` agree after inclusion into `H¹(G_L, E₂)`.
@@ -66,14 +64,12 @@ namespace TauCeti.Isogeny
 
 open WeierstrassCurve WeierstrassCurve.Affine TauCeti.ContCohomology
 
-open Hom (ofIsogeny kerH1Congr)
+open Hom (ofIsogeny)
 
 variable {K : Type*} [Field K] {W₁ W₂ : WeierstrassCurve K} [W₁.IsElliptic] [W₂.IsElliptic]
 
 variable {L : Type*} [Field L] [Algebra K L]
   (τ : SeparableClosure K →ₐ[K] SeparableClosure L)
-
-section
 
 variable (φ : Isogeny W₁.toAffine W₂.toAffine)
 
@@ -264,23 +260,5 @@ theorem dualKerRes_kummerMap
   refine Subtype.ext <| funext fun g ↦ Subtype.ext ?_
   rw [cocyclesMap1_apply, coe_dualKerCoeffBaseChange, Hom.coe_kummerCocycle,
     Hom.coe_kummerCocycle, _root_.map_sub, pointCoeffBaseChange_smul]
-
-end
-
-/-- Restriction along a field extension commutes with `kerH1Congr` for an equality of base-changed
-isogenies. -/
-@[simp]
-theorem kerH1Congr_kerRes {φ ψ : Isogeny W₁.toAffine W₂.toAffine}
-    (h : ofIsogeny (φ.baseChange L) = ofIsogeny (ψ.baseChange L))
-    (c : H1 (AbsoluteGaloisGroup K) (ofIsogeny φ).KerCoeff) :
-    kerH1Congr h (φ.kerRes τ c) =
-      ψ.kerRes τ (kerH1Congr
-        (Hom.map_injective (algebraMap K L)
-          ((Hom.ofIsogeny_map φ (algebraMap K L)).trans
-            (h.trans (Hom.ofIsogeny_map ψ (algebraMap K L)).symm))) c) := by
-  obtain rfl : φ = ψ := Hom.ofIsogeny_injective <| Hom.map_injective (algebraMap K L) <|
-    (Hom.ofIsogeny_map φ (algebraMap K L)).trans
-      (h.trans (Hom.ofIsogeny_map ψ (algebraMap K L)).symm)
-  simp
 
 end TauCeti.Isogeny
