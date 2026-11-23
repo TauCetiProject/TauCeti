@@ -185,20 +185,14 @@ section OrthonormalBasisLowerBound
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
 
 /-- The operator norm of an iterated gradient is bounded by the sum of the norms of its entries
-along a finite orthonormal basis `b`. Completeness of `E` is derived from the finite basis rather
-than assumed. -/
+along a finite orthonormal basis `b`. -/
 theorem norm_le_sum_norm_evalL_apply_orthonormalBasis {ι : Type*} [Fintype ι] (j : ℕ)
     (G : IteratedGradient E j) (b : OrthonormalBasis ι ℝ E) :
     ‖G‖ ≤ ∑ r : Fin (j + 1) → ι, ‖evalL j (fun k => b (r k)) G‖ := by
-  have : FiniteDimensional ℝ E := b.toBasis.finiteDimensional_of_finite
-  rw [← (toContinuousMultilinearMapₗᵢ E j).norm_map G]
-  have h := (toContinuousMultilinearMapₗᵢ E j G).opNorm_le_sum_norm_apply_orthonormalBasis
+  rw [← (toContinuousMultilinearMap E j).norm_map G]
+  convert (toContinuousMultilinearMap E j G).opNorm_le_sum_norm_apply_orthonormalBasis
     (fun _ => b)
-  simp only [toContinuousMultilinearMapₗᵢ_apply] at h
-  refine h.trans_eq ?_
-  congr 1
-  ext r
-  simp
+  simp only [toContinuousMultilinearMap_apply]
 
 end OrthonormalBasisLowerBound
 

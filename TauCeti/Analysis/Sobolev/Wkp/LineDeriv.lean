@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.Sobolev.Wkp.Basic
 public import Mathlib.Analysis.InnerProductSpace.Adjoint
 import Mathlib.Analysis.InnerProductSpace.PiL2
+import TauCeti.Analysis.Calculus.IteratedGradient.Contraction
 import TauCeti.Analysis.Sobolev.W1p.Symmetry
 import TauCeti.Analysis.Sobolev.WeakDeriv.Coordinates
 import TauCeti.Analysis.Sobolev.WeakDeriv.NormalTangential
@@ -895,9 +896,9 @@ theorem Wkp.norm_iteratedGradient_lineDerivL_le (v : E) (j : ℕ) (u : Wkp mu Om
     ‖Wkp.iteratedGradient j (Wkp.lineDerivL v (j + 1) u)‖ ≤
       ‖v‖ * ‖Wkp.iteratedGradient (j + 1) u‖ := by
   rw [Wkp.iteratedGradient_lineDerivL]
-  have hv : ‖ContinuousLinearMap.apply ℝ (IteratedGradient E j) v‖ ≤ ‖v‖ :=
-    ContinuousLinearMap.opNorm_le_bound _ (norm_nonneg v) fun G =>
-      (G.le_opNorm v).trans_eq (mul_comm _ _)
+  have hv : ‖ContinuousLinearMap.apply ℝ (IteratedGradient E j) v‖ ≤ ‖v‖ := by
+    simpa only [IteratedGradient.contractL_one, pow_one] using
+      IteratedGradient.norm_contractL_le j 1 v
   exact ((ContinuousLinearMap.apply ℝ (IteratedGradient E j) v).norm_compLp_le _).trans
     (mul_le_mul_of_nonneg_right hv (norm_nonneg _))
 
