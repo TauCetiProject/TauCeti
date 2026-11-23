@@ -153,7 +153,8 @@ theorem not_memVMO_radialCoefficient_apply_self {α : ℝ} (hn : 2 ≤ n) (hb : 
   have hfar : ∀ y ∈ ball z (r / 8),
       ENNReal.ofReal (|b| / 10) ≤ ‖radialCoefficient α b y i i - a‖ₑ := fun y hy => by
     have heq : radialCoefficient α b y i i - a = b * (y i ^ 2 / ‖y‖ ^ 2 - (a - α) / b) := by
-      rw [mul_sub, mul_div_cancel₀ _ hb, radialCoefficient_apply_apply, if_pos rfl]
+      rw [mul_sub, mul_div_cancel₀ _ hb]
+      simp only [radialCoefficient_apply_apply, ↓reduceIte]
       ring
     rw [Real.eNorm_eq_ofReal_abs, heq, abs_mul]
     exact ENNReal.ofReal_le_ofReal (by nlinarith [hz y hy, abs_nonneg b])
