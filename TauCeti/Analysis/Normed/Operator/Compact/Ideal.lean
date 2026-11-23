@@ -302,6 +302,31 @@ end ContinuousLinearMap
 
 section RankOneAndSimplicity
 
+namespace InnerProductSpace
+
+/-- Every rank-one operator is compact. -/
+theorem isCompactOperator_rankOne {𝕜 E F : Type*} [RCLike 𝕜]
+    [SeminormedAddCommGroup E] [NormedSpace 𝕜 E]
+    [SeminormedAddCommGroup F] [InnerProductSpace 𝕜 F] (x : E) (y : F) :
+    IsCompactOperator (rankOne 𝕜 x y) := by
+  rw [rankOne_def']
+  exact (isCompactOperator_of_locallyCompactSpace_rng
+    (ContinuousLinearMap.toSpanSingleton 𝕜 x)).comp_clm _
+
+end InnerProductSpace
+
+namespace TauCeti
+
+/-- Every normalized rank-one operator `TauCeti.rankOneDivNormSq 𝕜 y x` is compact. -/
+theorem isCompactOperator_rankOneDivNormSq {𝕜 E F : Type*} [RCLike 𝕜]
+    [NormedAddCommGroup E] [InnerProductSpace 𝕜 E]
+    [NormedAddCommGroup F] [NormedSpace 𝕜 F] (y : F) (x : E) :
+    IsCompactOperator (rankOneDivNormSq 𝕜 y x) := by
+  rw [rankOneDivNormSq_def]
+  exact (InnerProductSpace.isCompactOperator_rankOne y x).smul _
+
+end TauCeti
+
 namespace ContinuousLinearMap
 
 variable {𝕜 H : Type*} [RCLike 𝕜] [NormedAddCommGroup H] [InnerProductSpace 𝕜 H]
@@ -310,9 +335,7 @@ variable {𝕜 H : Type*} [RCLike 𝕜] [NormedAddCommGroup H] [InnerProductSpac
 theorem rankOne_mem_of_ne_zero {I : TwoSidedIdeal (H →L[𝕜] H)} {T : H →L[𝕜] H}
     (hTI : T ∈ I) (hT0 : T ≠ 0) (u v : H) : rankOne 𝕜 u v ∈ I := by
   obtain ⟨x, hx⟩ := DFunLike.ne_iff.mp hT0
-  have hprod : TauCeti.rankOneDivNormSq 𝕜 u (T x) * T * rankOne 𝕜 x v = rankOne 𝕜 u v := by
-    simpa [mul_def, comp_assoc] using rankOneDivNormSq_comp_comp_rankOne hx u v
-  rw [← hprod]
+  rw [← rankOneDivNormSq_mul_mul_rankOne hx u v]
   exact I.mul_mem_right _ _ (I.mul_mem_left _ _ hTI)
 
 section Complete
@@ -354,7 +377,7 @@ theorem twoSidedIdeal_compactIdeal_eq_bot_or_eq_top_of_isClosed
     let R : ↥(compactIdeal 𝕜 H) :=
       ⟨rankOne 𝕜 x v, mem_compactIdeal.mpr (InnerProductSpace.isCompactOperator_rankOne x v)⟩
     refine ⟨L * T * R, J.mul_mem_right _ R (J.mul_mem_left L T hTJ), ?_⟩
-    simpa [L, R, mul_def, comp_assoc] using rankOneDivNormSq_comp_comp_rankOne hx u v
+    simpa [L, R] using rankOneDivNormSq_mul_mul_rankOne hx u v
   obtain ⟨K', hK'J, hK'eq⟩ :=
     mem_of_isCompactOperator_of_forall_rankOne_mem hs_closed hrank (mem_compactIdeal.mp K.property)
   have hK' : K' = K := Subtype.ext hK'eq

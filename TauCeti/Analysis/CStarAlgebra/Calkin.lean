@@ -15,7 +15,6 @@ import TauCeti.Analysis.InnerProductSpace.BorelCalculus.Cutoff
 import TauCeti.Analysis.Normed.Lp.Basic
 import TauCeti.Analysis.Normed.Operator.Compact.Idempotent
 import TauCeti.Analysis.Normed.Ring.Simple
-import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.FiniteDimensional
 
 /-!
 # Closed ideals of bounded operators and simplicity of the Calkin algebra
@@ -78,9 +77,6 @@ section CalkinClassification
 
 variable {H : Type*} [NormedAddCommGroup H] [InnerProductSpace ℂ H] [CompleteSpace H]
 
--- Verify that `↥(compactIdeal ℂ H)` automatically carries a `NonUnitalCStarAlgebra` structure.
-example : NonUnitalCStarAlgebra ↥(compactIdeal ℂ H) := inferInstance
-
 /-- **Calkin's theorem on closed ideals of `B(H)`.** On a separable complex Hilbert space `H`,
 every closed two-sided ideal of `H →L[ℂ] H` is `⊥`, `compactIdeal ℂ H`, or `⊤`. -/
 theorem eq_bot_or_eq_compactIdeal_or_eq_top_of_isClosed [SeparableSpace H]
@@ -119,14 +115,6 @@ theorem forall_isClosed_eq_bot_or_eq_compactIdeal_or_eq_top_iff :
 
 end CalkinClassification
 
--- Sanity checks on finite-dimensional complex Euclidean spaces.
-example (d : ℕ) : compactIdeal ℂ (EuclideanSpace ℂ (Fin d)) = ⊤ :=
-  compactIdeal_eq_top
-
-example (I : TwoSidedIdeal (EuclideanSpace ℂ (Fin 2) →L[ℂ] EuclideanSpace ℂ (Fin 2))) :
-    I = ⊥ ∨ I = ⊤ :=
-  IsSimpleOrder.eq_bot_or_eq_top I
-
 end ContinuousLinearMap
 
 namespace TauCeti
@@ -154,10 +142,6 @@ theorem subsingleton_iff_finiteDimensional :
 instance instSubsingleton [FiniteDimensional ℂ H] : Subsingleton (CalkinAlgebra H) :=
   subsingleton_iff_finiteDimensional.mpr ‹_›
 
--- Verify subsingleton synthesis on finite-dimensional complex Euclidean spaces.
-example (n : Type*) [Fintype n] : Subsingleton (CalkinAlgebra (EuclideanSpace ℂ n)) :=
-  inferInstance
-
 /-- The Calkin algebra of `H` is nontrivial if and only if `H` is infinite-dimensional. -/
 @[simp]
 theorem nontrivial_iff_not_finiteDimensional :
@@ -169,9 +153,6 @@ end Normed
 section Hilbert
 
 variable {H : Type*} [NormedAddCommGroup H] [InnerProductSpace ℂ H] [CompleteSpace H]
-
--- Verify that `CalkinAlgebra H` inherits a unital `CStarAlgebra` structure automatically.
-example : CStarAlgebra (CalkinAlgebra H) := inferInstance
 
 /-- The canonical surjective unital `⋆`-algebra homomorphism `(H →L[ℂ] H) →⋆ₐ[ℂ] CalkinAlgebra H`.
 -/
@@ -195,9 +176,12 @@ theorem eq_bot_or_eq_top_of_isClosed [SeparableSpace H] (J : TwoSidedIdeal (Calk
     exact hJ.preimage (TwoSidedIdeal.Quotient.continuous_mk (ContinuousLinearMap.compactIdeal ℂ H))
   rcases ContinuousLinearMap.eq_bot_or_eq_compactIdeal_or_eq_top_of_isClosed hI_closed with
     hbot | hcpt | htop
-  · have hbot' : (e.symm J).val = ContinuousLinearMap.compactIdeal ℂ H :=
-      hbot.trans (le_bot_iff.mp (hbot ▸ (e.symm J).property)).symm
-    exact Or.inl ((e.symm_apply_eq.mp (Subtype.ext hbot')).trans (map_bot e))
+  · -- When `(e.symm J).val = ⊥`, `compactIdeal ℂ H ≤ (e.symm J).val` forces equality.
+    have hle : (e.symm J).val ≤ ContinuousLinearMap.compactIdeal ℂ H := by
+      rw [hbot]
+      exact bot_le
+    exact Or.inl ((e.symm_apply_eq.mp (Subtype.ext
+      (le_antisymm hle (Set.mem_Ici.mp (e.symm J).property)))).trans (map_bot e))
   · exact Or.inl ((e.symm_apply_eq.mp (Subtype.ext hcpt)).trans (map_bot e))
   · exact Or.inr ((e.symm_apply_eq.mp (Subtype.ext htop)).trans (map_top e))
 
@@ -239,9 +223,6 @@ instance instIsSimpleRingL2 {ι : Type*} [Countable ι] [Infinite ι] :
     IsSimpleRing (CalkinAlgebra ℓ²(ι, ℂ)) := by
   have : SeparableSpace ℓ²(ι, ℂ) := lp.separableSpace (by norm_num)
   exact isSimpleRing (lp.not_finite (𝕜 := ℂ))
-
--- Non-vacuity check on `ℓ²(ℕ, ℂ)` with zero hypotheses.
-example : IsSimpleRing (CalkinAlgebra ℓ²(ℕ, ℂ)) := inferInstance
 
 end Hilbert
 

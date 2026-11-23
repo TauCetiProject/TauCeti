@@ -22,6 +22,8 @@ quotient.
 
 ## Main definitions and results
 
+* `TwoSidedIdeal.coe_map_of_surjective` and `TwoSidedIdeal.mem_map_iff_of_surjective`: pushforward
+  along a surjective nonunital ring homomorphism has carrier equal to the set-theoretic image.
 * `TwoSidedIdeal.instHasQuotient` and `TwoSidedIdeal.Quotient.nonUnitalRing`: the quotient `A ⧸ I`
   of a possibly nonunital ring by a two-sided ideal.
 * `TwoSidedIdeal.Quotient.mk`: the canonical surjective nonunital ring homomorphism `A →ₙ+* A ⧸ I`,
@@ -29,13 +31,53 @@ quotient.
 * `TwoSidedIdeal.Quotient.lift` and `TwoSidedIdeal.Quotient.factor`: universal descent of nonunital
   ring homomorphisms through `A ⧸ I` and canonical maps between quotients.
 * `TwoSidedIdeal.quotEquivOfEq`: ring equivalence between quotients by equal two-sided ideals.
-* `TwoSidedIdeal.Quotient.idealCorrespondence`: order isomorphism between two-sided ideals of `A`
-  containing `I` and two-sided ideals of `A ⧸ I`.
+* `TwoSidedIdeal.Quotient.comap_map_mk` and `TwoSidedIdeal.Quotient.idealCorrespondence`: order
+  isomorphism between two-sided ideals of `A` containing `I` and two-sided ideals of `A ⧸ I`.
 -/
 
 public section
 
 namespace TwoSidedIdeal
+
+section NonUnitalNonAssocRing
+
+variable {R S F : Type*} [NonUnitalNonAssocRing R] [NonUnitalNonAssocRing S]
+  [FunLike F R S] [NonUnitalRingHomClass F R S]
+
+/-- The pushforward of a two-sided ideal along a surjective nonunital ring homomorphism has
+carrier equal to its set-theoretic image. -/
+theorem coe_map_of_surjective (f : F) (hf : Function.Surjective f) (I : TwoSidedIdeal R) :
+    (I.map f : Set S) = f '' I := by
+  let M : TwoSidedIdeal S := TwoSidedIdeal.mk' (f '' I)
+    ⟨0, I.zero_mem, map_zero f⟩
+    (by
+      rintro _ _ ⟨x, hx, rfl⟩ ⟨y, hy, rfl⟩
+      exact ⟨x + y, I.add_mem hx hy, map_add f x y⟩)
+    (by
+      rintro _ ⟨x, hx, rfl⟩
+      exact ⟨-x, I.neg_mem hx, map_neg f x⟩)
+    (by
+      rintro x _ ⟨y, hy, rfl⟩
+      obtain ⟨r, rfl⟩ := hf x
+      exact ⟨r * y, I.mul_mem_left r y hy, map_mul f r y⟩)
+    (by
+      rintro _ y ⟨x, hx, rfl⟩
+      obtain ⟨r, rfl⟩ := hf y
+      exact ⟨x * r, I.mul_mem_right x r hx, map_mul f x r⟩)
+  have hle : I.map f ≤ M :=
+    span_le.mpr fun _ hx => (mem_mk' _ _ _ _ _ _ _).mpr hx
+  have hge : M ≤ I.map f := fun _ hy =>
+    subset_span ((mem_mk' _ _ _ _ _ _ _).mp hy)
+  exact (congrArg SetLike.coe (le_antisymm hle hge)).trans (coe_mk' _ _ _ _ _ _)
+
+/-- Membership in the pushforward of a two-sided ideal along a surjective nonunital ring
+homomorphism. -/
+theorem mem_map_iff_of_surjective (f : F) (hf : Function.Surjective f) {I : TwoSidedIdeal R}
+    {y : S} : y ∈ I.map f ↔ ∃ x ∈ I, f x = y := by
+  rw [← SetLike.mem_coe, coe_map_of_surjective f hf I]
+  rfl
+
+end NonUnitalNonAssocRing
 
 section NonUnitalRing
 
@@ -121,8 +163,9 @@ protected theorem eq {I : TwoSidedIdeal A} {x y : A} :
 protected theorem subsingleton_iff {I : TwoSidedIdeal A} :
     Subsingleton (A ⧸ I) ↔ I = ⊤ :=
   (QuotientAddGroup.subsingleton_iff (N := AddSubgroup.ofClass I)).trans <| by
-    simp only [SetLike.ext_iff, AddSubgroup.mem_top, iff_true, mem_top]
-    rfl
+    rw [← SetLike.coe_set_eq, AddSubgroup.coe_ofClass, AddSubgroup.coe_top,
+      Set.eq_univ_iff_forall, SetLike.ext_iff]
+    simp only [SetLike.mem_coe, mem_top, iff_true]
 
 /-- The quotient `A ⧸ I` is nontrivial if and only if `I ≠ ⊤`. -/
 protected theorem nontrivial_iff {I : TwoSidedIdeal A} :
@@ -204,32 +247,16 @@ theorem factor_surjective {I J : TwoSidedIdeal A} (h : I ≤ J) :
     Function.Surjective (factor h) :=
   lift_surjective_of_surjective _ (mk_surjective J)
 
-private theorem comap_map_mk (I : TwoSidedIdeal A) (K : Set.Ici I) :
-    (K.val.map (mk I)).comap (mk I) = K.val := by
-  refine le_antisymm (fun a ha => ?_)
-    (fun a ha => (TwoSidedIdeal.mem_comap (mk I)).mpr (TwoSidedIdeal.subset_span ⟨a, ha, rfl⟩))
-  rw [TwoSidedIdeal.mem_comap] at ha
-  let M : TwoSidedIdeal (A ⧸ I) := TwoSidedIdeal.mk' (mk I '' K.val)
-    ⟨0, K.val.zero_mem, map_zero _⟩
-    (by
-      rintro _ _ ⟨x, hx, rfl⟩ ⟨y, hy, rfl⟩
-      exact ⟨x + y, K.val.add_mem hx hy, map_add _ _ _⟩)
-    (by
-      rintro _ ⟨x, hx, rfl⟩
-      exact ⟨-x, K.val.neg_mem hx, map_neg _ _⟩)
-    (by
-      rintro x _ ⟨y, hy, rfl⟩
-      obtain ⟨r, rfl⟩ := mk_surjective I x
-      exact ⟨r * y, K.val.mul_mem_left r y hy, map_mul _ _ _⟩)
-    (by
-      rintro _ y ⟨x, hx, rfl⟩
-      obtain ⟨r, rfl⟩ := mk_surjective I y
-      exact ⟨x * r, K.val.mul_mem_right x r hx, map_mul _ _ _⟩)
-  have hle : K.val.map (mk I) ≤ M :=
-    TwoSidedIdeal.span_le.mpr fun _ hx => (TwoSidedIdeal.mem_mk' _ _ _ _ _ _ _).mpr hx
-  obtain ⟨b, hbK, hba⟩ := (TwoSidedIdeal.mem_mk' _ _ _ _ _ _ _).mp (hle ha)
+/-- For any two-sided ideal `K` containing `I`, pulling back `K.map (mk I)` along `mk I` recovers
+`K`. -/
+theorem comap_map_mk {I K : TwoSidedIdeal A} (h : I ≤ K) :
+    (K.map (mk I)).comap (mk I) = K := by
+  ext a
+  rw [TwoSidedIdeal.mem_comap, TwoSidedIdeal.mem_map_iff_of_surjective (mk I) (mk_surjective I)]
+  refine ⟨?_, fun ha => ⟨a, ha, rfl⟩⟩
+  rintro ⟨b, hbK, hba⟩
   have hsub : a - b ∈ I := Quotient.eq.mp hba.symm
-  simpa using K.val.add_mem (K.property hsub) hbK
+  simpa using K.add_mem (h hsub) hbK
 
 /-- Correspondence theorem for two-sided ideals: two-sided ideals of `A ⧸ I` correspond
 order-isomorphically to two-sided ideals of `A` containing `I`, via `map (mk I)` and
@@ -239,17 +266,18 @@ def idealCorrespondence (I : TwoSidedIdeal A) :
   toFun K := K.val.map (mk I)
   invFun J := ⟨J.comap (mk I), fun _ ha =>
     (TwoSidedIdeal.mem_comap (mk I)).mpr ((eq_zero_iff_mem.mpr ha).symm ▸ J.zero_mem)⟩
-  left_inv K := Subtype.ext (comap_map_mk I K)
-  right_inv J := le_antisymm
-    (TwoSidedIdeal.span_le.mpr <| by
-      rintro _ ⟨a, ha, rfl⟩
-      exact (TwoSidedIdeal.mem_comap (mk I)).mp ha)
-    (fun x hx => by
-      obtain ⟨a, rfl⟩ := mk_surjective I x
-      exact TwoSidedIdeal.subset_span ⟨a, (TwoSidedIdeal.mem_comap (mk I)).mpr hx, rfl⟩)
+  left_inv K := Subtype.ext (comap_map_mk K.property)
+  right_inv J := by
+    ext x
+    rw [TwoSidedIdeal.mem_map_iff_of_surjective (mk I) (mk_surjective I)]
+    refine ⟨?_, fun hx => ?_⟩
+    · rintro ⟨a, ha, rfl⟩
+      exact (TwoSidedIdeal.mem_comap (mk I)).mp ha
+    · obtain ⟨a, rfl⟩ := mk_surjective I x
+      exact ⟨a, (TwoSidedIdeal.mem_comap (mk I)).mpr hx, rfl⟩
   map_rel_iff' {K₁ K₂} :=
     ⟨fun h => Subtype.coe_le_coe.mp <| by
-      rw [← comap_map_mk I K₁, ← comap_map_mk I K₂]
+      rw [← comap_map_mk K₁.property, ← comap_map_mk K₂.property]
       exact TwoSidedIdeal.comap_le_comap (mk I) h,
      fun h => TwoSidedIdeal.map_mono (mk I) h⟩
 
