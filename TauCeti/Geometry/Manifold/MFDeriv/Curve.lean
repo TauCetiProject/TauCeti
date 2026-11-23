@@ -359,17 +359,25 @@ theorem curveVelocity_chartInverse_eq
   rw [hbase] at hvel
   exact hvel.unique (hγ.congr_of_eventuallyEq heq)
 
-/-- The derivative within `s` of a differentiable curve read in the chart centred at the current
-point is its velocity within `s`.  Where the derivative within `s` is not unique, both sides are
-Mathlib's junk value `0`. -/
-theorem derivWithin_extChartAt_comp_curve (hγ : MDifferentiableWithinAt 𝓘(𝕜, 𝕜) I γ s t) :
+/-- The derivative within `s` of a curve continuous within `s` at `t`, read in the chart centred
+at the current point, is its velocity within `s`.  Where the curve is not differentiable within `s`
+at `t`, or where the derivative within `s` is not unique, both sides are Mathlib's junk value
+`0`. -/
+theorem derivWithin_extChartAt_comp_curve (hγ : ContinuousWithinAt γ s t) :
     derivWithin (extChartAt I (γ t) ∘ γ) s t = curveVelocityWithin I γ s t := by
-  by_cases hs : UniqueDiffWithinAt 𝕜 s t
-  · exact (hasDerivWithinAt_extChartAt_comp_curve
-      (hasMFDerivWithinAt_curveVelocityWithin hγ)).derivWithin hs
-  · rw [derivWithin_zero_of_not_uniqueDiffWithinAt hs,
-      curveVelocityWithin_eq_zero_of_not_uniqueDiffWithinAt hs]
-    -- The zero of `E` and the zero of `TangentSpace I (γ t)` agree by definition.
+  by_cases hd : MDifferentiableWithinAt 𝓘(𝕜, 𝕜) I γ s t
+  · by_cases hs : UniqueDiffWithinAt 𝕜 s t
+    · exact (hasDerivWithinAt_extChartAt_comp_curve
+        (hasMFDerivWithinAt_curveVelocityWithin hd)).derivWithin hs
+    · rw [derivWithin_zero_of_not_uniqueDiffWithinAt hs,
+        curveVelocityWithin_eq_zero_of_not_uniqueDiffWithinAt hs]
+      -- The zero of `E` and the zero of `TangentSpace I (γ t)` agree by definition.
+      rfl
+  · -- A continuous curve whose chart reading is differentiable is differentiable as a curve.
+    have hchart : ¬ DifferentiableWithinAt 𝕜 (extChartAt I (γ t) ∘ γ) s t := fun h ↦
+      hd (hasMFDerivWithinAt_curve_iff.2 ⟨hγ, h.hasDerivWithinAt⟩).mdifferentiableWithinAt
+    rw [derivWithin_zero_of_not_differentiableWithinAt hchart, curveVelocityWithin_apply,
+      mfderivWithin_zero_of_not_mdifferentiableWithinAt hd]
     rfl
 
 /-- For a `C²` manifold-valued curve, the second within-derivative of its reading in the chart at
