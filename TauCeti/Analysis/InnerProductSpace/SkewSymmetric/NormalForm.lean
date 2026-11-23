@@ -6,8 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.InnerProductSpace.JointEigenspace
-public import TauCeti.Analysis.InnerProductSpace.Adjoint
 public import TauCeti.Analysis.InnerProductSpace.SkewSymmetric.Basic
+import Mathlib.Analysis.InnerProductSpace.ProdL2
 import TauCeti.Analysis.InnerProductSpace.Orthonormal.Cons
 
 /-!

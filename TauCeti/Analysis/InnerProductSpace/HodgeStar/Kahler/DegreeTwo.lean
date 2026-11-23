@@ -18,34 +18,27 @@ public import TauCeti.Geometry.Symplectic.Wirtinger
 This file develops the degree-two Wirtinger theory for orthogonal almost complex structures and
 complex inner product spaces:
 
-* On any complex inner product space (without finite-dimensionality), `TauCeti.kahlerTwoForm E` has
-  comass at most `1` (`TauCeti.norm_kahlerTwoForm_le`), comass equal to `1` when `E` is nontrivial
-  (`TauCeti.norm_kahlerTwoForm`), and calibrates precisely the ordered pairs `(v₀, i • v₀)` with
-  `‖v₀‖ = 1` (`TauCeti.isCalibratedFrame_kahlerTwoForm_iff`).
-* For linearly independent `(v, w)` in a finite-dimensional real inner product space with an
-  orthogonal almost complex structure `J` (`AlmostComplexStructure.inner_apply_eq_norm_ιMulti_iff`),
-  or in a finite-dimensional Hermitian space (`TauCeti.kahlerTwoForm_apply_eq_norm_ιMulti_iff`),
-  `ω(v, w) = ‖v ∧ w‖` holds exactly when `w = a • v + b • J v` with `0 < b`.
-* In finite dimensions, `TauCeti.alternatingFormEquiv_ofComplexModule_kahlerForm` identifies
-  `kahlerTwoForm E` as the Riesz dual of `(AlmostComplexStructure.ofComplexModule E).kahlerForm`,
-  and `TauCeti.ofComplexModule_kahlerForm_eq_sum` expands that bivector in any complex orthonormal
-  basis.
+* On any complex inner product space (including seminormed spaces, without finite-dimensionality),
+  `TauCeti.kahlerTwoForm E` has comass at most `1` (`TauCeti.norm_kahlerTwoForm_le`). On any
+  nontrivial normed complex inner product space (without finite-dimensionality), its comass equals
+  `1` (`TauCeti.norm_kahlerTwoForm`). On any normed complex inner product space with a compatible
+  real inner product (without finite-dimensionality), `TauCeti.kahlerTwoForm E` calibrates precisely
+  the ordered pairs `(v₀, i • v₀)` with `‖v₀‖ = 1` (`TauCeti.isCalibratedFrame_kahlerTwoForm_iff`).
+* In finite dimensions, `TauCeti.ofComplexModule_kahlerForm_eq_sum` expands
+  `(AlmostComplexStructure.ofComplexModule E).kahlerForm` in any complex orthonormal basis.
 
 ## Main results
 
 * `TauCeti.AlmostComplexStructure.norm_ιMulti_two_eq_wedgeNorm_symplecticForm`: `‖v ∧ w‖` is the
   wedge norm of the canonical symplectic form `J.symplecticForm hJ`.
-* `TauCeti.AlmostComplexStructure.inner_apply_eq_norm_ιMulti_iff`: non-orthonormal degree-two
-  Wirtinger equality for an orthogonal almost complex structure.
-* `TauCeti.norm_kahlerTwoForm_le`, `TauCeti.norm_kahlerTwoForm`: degree-two Wirtinger comass
-  bound and equality on arbitrary complex inner product spaces.
-* `TauCeti.isCalibratedFrame_kahlerTwoForm_iff`: calibrated-pair classification on arbitrary
-  complex inner product spaces.
-* `TauCeti.kahlerTwoForm_apply_eq_norm_ιMulti_iff`: non-orthonormal degree-two Wirtinger equality
-  on finite-dimensional Hermitian vector spaces.
-* `TauCeti.alternatingFormEquiv_ofComplexModule_kahlerForm` and
-  `TauCeti.ofComplexModule_kahlerForm_eq_sum`: Riesz identification and orthonormal basis expansion
-  of `(AlmostComplexStructure.ofComplexModule E).kahlerForm`.
+* `TauCeti.norm_kahlerTwoForm_le`: degree-two Wirtinger comass upper bound on any (possibly
+  seminormed) complex inner product space.
+* `TauCeti.norm_kahlerTwoForm`: degree-two Wirtinger comass equality on any nontrivial normed
+  complex inner product space.
+* `TauCeti.isCalibratedFrame_kahlerTwoForm_iff`: calibrated-pair classification on any normed
+  complex inner product space with a compatible real inner product.
+* `TauCeti.ofComplexModule_kahlerForm_eq_sum`: orthonormal basis expansion of
+  `(AlmostComplexStructure.ofComplexModule E).kahlerForm`.
 
 ## References
 
@@ -76,15 +69,6 @@ theorem norm_ιMulti_two_eq_wedgeNorm_symplecticForm {J : AlmostComplexStructure
   simp only [SymplecticForm.associatedBilinForm_apply, symplecticForm_apply, hJ,
     real_inner_comm v w, sq]
 
-/-- **Non-orthonormal degree-two Wirtinger equality** for an orthogonal almost complex structure:
-for linearly independent `v` and `w`, `⟪J v, w⟫ = ‖v ∧ w‖` exactly when `w = a • v + b • J v`
-with `0 < b`. -/
-theorem inner_apply_eq_norm_ιMulti_iff {J : AlmostComplexStructure V}
-    (hJ : ∀ u w, ⟪J u, J w⟫ = ⟪u, w⟫) {v w : V} (h : LinearIndependent ℝ ![v, w]) :
-    ⟪J v, w⟫ = ‖ιMulti ℝ 2 ![v, w]‖ ↔ ∃ a b : ℝ, 0 < b ∧ w = a • v + b • J v := by
-  rw [← J.symplecticForm_apply hJ, norm_ιMulti_two_eq_wedgeNorm_symplecticForm hJ]
-  exact (symplecticForm_compatible hJ).apply_eq_wedgeNorm_iff_of_linearIndependent h
-
 end AlmostComplexStructure
 
 section DegreeTwo
@@ -92,7 +76,8 @@ section DegreeTwo
 variable {E : Type*} [SeminormedAddCommGroup E] [NormedSpace ℝ E] [InnerProductSpace ℂ E]
   [IsScalarTower ℝ ℂ E]
 
-/-- The Kähler two-form has comass at most one on every complex inner product space. -/
+/-- The Kähler two-form has comass at most one on every (possibly seminormed) complex inner product
+space. -/
 theorem norm_kahlerTwoForm_le : ‖kahlerTwoForm E‖ ≤ 1 := by
   refine (kahlerTwoForm E).opNorm_le_bound zero_le_one fun v ↦ ?_
   rw [kahlerTwoForm_apply, Real.norm_eq_abs, one_mul, Fin.prod_univ_two]
@@ -102,8 +87,8 @@ end DegreeTwo
 
 section DegreeTwoNormed
 
-/-- **Wirtinger inequality in degree two**: on every nontrivial complex inner product space (no
-finite-dimensionality required), the Kähler two-form has comass one. -/
+/-- **Wirtinger inequality in degree two**: on every nontrivial normed complex inner product space
+(no finite-dimensionality required), the Kähler two-form has comass one. -/
 theorem norm_kahlerTwoForm {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
     [InnerProductSpace ℂ E] [IsScalarTower ℝ ℂ E] [Nontrivial E] :
     ‖kahlerTwoForm E‖ = 1 := by
@@ -123,9 +108,9 @@ section DegreeTwoEquality
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [InnerProductSpace ℂ E]
   [IsScalarTower ℝ ℂ E]
 
-/-- **Equality case of degree-two Wirtinger** on any Hermitian inner product space (no
-finite-dimensionality required): an ordered pair `(v₀, v₁)` is calibrated by `kahlerTwoForm E`
-precisely when `‖v₀‖ = 1` and `v₁ = i • v₀`. -/
+/-- **Equality case of degree-two Wirtinger** on any normed complex inner product space with a
+compatible real inner product (no finite-dimensionality required): an ordered pair `(v₀, v₁)` is
+calibrated by `kahlerTwoForm E` precisely when `‖v₀‖ = 1` and `v₁ = i • v₀`. -/
 theorem isCalibratedFrame_kahlerTwoForm_iff (v : Fin 2 → E) :
     (kahlerTwoForm E).IsCalibratedFrame v ↔ ‖v 0‖ = 1 ∧ v 1 = Complex.I • v 0 := by
   rw [ContinuousAlternatingMap.isCalibratedFrame_iff]
@@ -151,37 +136,12 @@ theorem isCalibratedFrame_kahlerTwoForm_iff (v : Fin 2 → E) :
           inner_self_eq_norm_sq_to_K, norm_smul, hv0]
     · simp [kahlerTwoForm_apply, hv1, inner_smul_right, hv0]
 
-/-- **Non-orthonormal degree-two Wirtinger equality**: for linearly independent `v` and `w` in a
-finite-dimensional Hermitian vector space, `ω(v, w) = ‖v ∧ w‖` exactly when
-`w = a • v + b • (i • v)` with `0 < b`. -/
-theorem kahlerTwoForm_apply_eq_norm_ιMulti_iff [FiniteDimensional ℝ E] {v w : E}
-    (h : LinearIndependent ℝ ![v, w]) :
-    kahlerTwoForm E ![v, w] = ‖ιMulti ℝ 2 ![v, w]‖ ↔
-      ∃ a b : ℝ, 0 < b ∧ w = a • v + b • (Complex.I • v) := by
-  rw [kahlerTwoForm_apply_eq_inner]
-  simpa only [AlmostComplexStructure.ofComplexModule_apply] using
-    AlmostComplexStructure.inner_apply_eq_norm_ιMulti_iff
-      (J := AlmostComplexStructure.ofComplexModule E)
-      AlmostComplexStructure.real_inner_ofComplexModule_ofComplexModule h
-
 end DegreeTwoEquality
 
 section FiniteDimensional
 
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [InnerProductSpace ℂ E]
   [IsScalarTower ℝ ℂ E] [FiniteDimensional ℝ E]
-
-/-- The Riesz dual of `(AlmostComplexStructure.ofComplexModule E).kahlerForm` is
-`kahlerTwoForm E`. -/
-@[simp]
-theorem alternatingFormEquiv_ofComplexModule_kahlerForm :
-    alternatingFormEquiv E 2 (AlmostComplexStructure.ofComplexModule E).kahlerForm =
-      kahlerTwoForm E := by
-  ext v
-  rw [show v = ![v 0, v 1] from (FinVec.etaExpand_eq v).symm, alternatingFormEquiv_apply,
-    AlmostComplexStructure.inner_kahlerForm_ιMulti
-      AlmostComplexStructure.real_inner_ofComplexModule_ofComplexModule,
-    AlmostComplexStructure.ofComplexModule_apply, kahlerTwoForm_apply_eq_inner]
 
 /-- In any complex orthonormal basis `b` of `E`, the Kähler bivector is
 `∑ j, b j ∧ (i • b j)`. -/
@@ -206,7 +166,7 @@ theorem ofComplexModule_kahlerForm_eq_sum {ι : Type*} [Fintype ι] (b : Orthono
       b₀ ⟨2 * (k : ℕ) + 1, by omega⟩ =
         AlmostComplexStructure.ofComplexModule E (b₀ ⟨2 * (k : ℕ), by omega⟩) := by
     simp only [hb₀]
-    exact complexToRealFamily_odd_eq_ofComplexModule ⇑bC k
+    simp
   rw [AlmostComplexStructure.kahlerForm_eq_sum_of_adapted b₀ hadapt]
   simp_rw [hb₀, complexToRealFamily_even, complexToRealFamily_odd, bC, Basis.coe_reindex,
     OrthonormalBasis.coe_toBasis, Function.comp_apply]

@@ -178,7 +178,8 @@ theorem alternatingFormEquiv_pow {k : ℕ} (x : ⋀[ℝ]^k V) (r : ℕ) :
 
 /-- **Pullback–contraction law for two-forms**: under the Riesz identification
 `alternatingFormEquiv`, pulling back the two-form of `B ∈ ⋀² W` along a continuous linear map
-`L : V →L[ℝ] W` conjugates its contraction `TauCeti.twoVectorContraction` to `L† ∘ (· ⌟ B) ∘ L`. -/
+`L : V →L[ℝ] W` replaces the contraction operator `T := TauCeti.twoVectorContraction B` by
+`L† ∘ T ∘ L`. -/
 theorem twoVectorContraction_alternatingFormEquiv_symm_compContinuousLinearMap
     {W : Type*} [NormedAddCommGroup W] [InnerProductSpace ℝ W] [FiniteDimensional ℝ W]
     (L : V →L[ℝ] W) (B : ⋀[ℝ]^2 W) :

@@ -62,6 +62,8 @@ skew endomorphism `u ↦ u ⌟ F` of a two-vector `F`, the operator that represe
   `⋀ⁿ E` is skew-adjoint, `⟪D_A x, y⟫ = -⟪x, D_A y⟫`.
 * `OrthonormalBasis.sum_norm_sq_ιMulti_two`: contraction of squared wedge norms in a basis.
 * `OrthonormalBasis.inner_toBasis_exteriorPower`: the induced basis of `⋀ⁿ E` is orthonormal.
+* `OrthonormalBasis.inner_sum_ιMulti_two_apply_eq_sub`: pairing `∑ i, b i ∧ T (b i)` with
+  `u ∧ w` evaluates the skew-symmetrization `⟪T u, w⟫ - ⟪T w, u⟫`.
 * `OrthonormalBasis.ιMulti_two_eq_sum`, `OrthonormalBasis.inner_ιMulti_two_eq_sum`,
   `OrthonormalBasis.eq_sum_inner_smul_ιMulti_two`,
   `OrthonormalBasis.norm_sq_eq_sum_sq_inner_ιMulti_two`: the coordinates of two-vectors in the
@@ -378,6 +380,20 @@ theorem inner_toBasis_exteriorPower [LinearOrder ι] (b : OrthonormalBasis ι �
     ⟪b.toBasis.exteriorPower n u, b.toBasis.exteriorPower n v⟫ = if u = v then 1 else 0 := by
   rw [← OrthonormalBasis.toBasis_exteriorPower, OrthonormalBasis.coe_toBasis,
     OrthonormalBasis.inner_eq_ite]
+
+/-- In any orthonormal basis `b` of a finite-dimensional real inner product space, pairing
+`∑ i, b i ∧ T (b i)` with `u ∧ w` for a real linear endomorphism `T` evaluates the
+skew-symmetrization `⟪T u, w⟫ - ⟪T w, u⟫`. -/
+theorem inner_sum_ιMulti_two_apply_eq_sub (b : OrthonormalBasis ι ℝ E) (T : E →ₗ[ℝ] E)
+    (u w : E) :
+    ⟪∑ i, exteriorPower.ιMulti ℝ 2 ![b i, T (b i)], exteriorPower.ιMulti ℝ 2 ![u, w]⟫ =
+      ⟪T u, w⟫ - ⟪T w, u⟫ := by
+  have hsum (x y : E) : ∑ i, ⟪b i, x⟫ * ⟪T (b i), y⟫ = ⟪T x, y⟫ := by
+    calc ∑ i, ⟪b i, x⟫ * ⟪T (b i), y⟫
+        = ⟪T (∑ i, ⟪b i, x⟫ • b i), y⟫ := by
+          simp only [map_sum, map_smul, sum_inner, real_inner_smul_left]
+      _ = ⟪T x, y⟫ := by rw [b.sum_repr' x]
+  simp only [sum_inner, exteriorPower.inner_ιMulti_two, Finset.sum_sub_distrib, hsum]
 
 /-! ### Two-vectors in an orthonormal frame of a four-dimensional space -/
 

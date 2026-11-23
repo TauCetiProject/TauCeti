@@ -9,6 +9,7 @@ public import Mathlib.Algebra.Module.Projective
 public import Mathlib.Data.Fintype.Perm
 public import Mathlib.LinearAlgebra.ExteriorPower.Basis
 public import Mathlib.LinearAlgebra.ExteriorPower.WedgePairing
+public import TauCeti.Data.Fin.StrictMono
 import TauCeti.Algebra.BigOperators.Ring.SquareZero
 
 /-!
@@ -85,7 +86,8 @@ two-vectors.
   and `⋀ʲ M` (`TauCeti.ExteriorAlgebra.mul_eq_neg_one_pow_smul_mul_of_mem`); elements of even
   degree are central (`TauCeti.ExteriorAlgebra.mem_center_of_mem_of_even`).
 * `TauCeti.ExteriorAlgebra.prod_map_finRange_smul_ιMulti_two`,
-  `TauCeti.ExteriorAlgebra.noncommProd_univ_smul_ιMulti_two`, and
+  `TauCeti.ExteriorAlgebra.noncommProd_univ_smul_ιMulti_two`,
+  `TauCeti.ExteriorAlgebra.noncommProd_powersetCard_smul_ιMulti_two`, and
   `TauCeti.ExteriorAlgebra.pow_sum_smul_ιMulti_two`: products and `r`-th powers of weighted
   decomposable two-vectors in the exterior algebra.
 * `exteriorPower.pow_sum_smul_ιMulti_two` and
@@ -607,7 +609,7 @@ theorem prod_map_finRange_smul_ιMulti_two {r : ℕ} (μ : Fin r → R) (v : Fin
   | zero =>
     simp [_root_.ExteriorAlgebra.ιMulti_zero_apply]
   | succ r ih =>
-    let v' : Fin (2 * r) → M := fun i ↦ v ⟨(i : ℕ), by omega⟩
+    let v' : Fin (2 * r) → M := v ∘ Fin.castAdd 2
     rw [List.finRange_succ_last, List.map_append, List.prod_append, List.map_map,
       List.map_singleton, List.prod_singleton]
     have hih : ((List.finRange r).map ((fun j : Fin (r + 1) ↦ μ j •
@@ -618,21 +620,12 @@ theorem prod_map_finRange_smul_ιMulti_two {r : ℕ} (μ : Fin r → R) (v : Fin
     rw [hih, Fin.prod_univ_castSucc, smul_mul_smul_comm, _root_.ExteriorAlgebra.ιMulti_mul_ιMulti]
     congr 1
     apply congrArg (_root_.ExteriorAlgebra.ιMulti R (2 * (r + 1)))
-    ext i
-    by_cases hi : (i : ℕ) < 2 * r
-    · have hcast : i = Fin.castAdd 2 ⟨(i : ℕ), hi⟩ := Fin.ext rfl
-      rw [hcast, Fin.append_left]
-      simp only [v', Fin.castAdd_mk]
-    · have hcast : i = Fin.natAdd (2 * r) ⟨(i : ℕ) - 2 * r, by omega⟩ := Fin.ext (by simp; omega)
-      rw [hcast, Fin.append_right]
-      have hidx : (i : ℕ) - 2 * r = 0 ∨ (i : ℕ) - 2 * r = 1 := by omega
-      rcases hidx with h0 | h1
-      · have hfin : (⟨(i : ℕ) - 2 * r, by omega⟩ : Fin 2) = 0 := Fin.ext h0
-        rw [hfin, Matrix.cons_val_zero]
-        exact congrArg v (Fin.ext (by simp))
-      · have hfin : (⟨(i : ℕ) - 2 * r, by omega⟩ : Fin 2) = 1 := Fin.ext h1
-        rw [hfin, Matrix.cons_val_one]
-        exact congrArg v (Fin.ext (by simp))
+    have hpair : ![v ⟨2 * ↑(Fin.last r), by omega⟩, v ⟨2 * ↑(Fin.last r) + 1, by omega⟩] =
+        v ∘ Fin.natAdd (2 * r) := by
+      ext k
+      fin_cases k <;> rfl
+    rw [hpair]
+    exact Fin.append_castAdd_natAdd
 
 /-- The noncommutative product of `r` weighted consecutive pairs `μ j • (v_{2j} ∧ v_{2j+1})` in
 the exterior algebra is `(∏ j, μ j) • (v₀ ∧ ⋯ ∧ v_{2r-1})`. -/
@@ -647,6 +640,38 @@ theorem noncommProd_univ_smul_ιMulti_two {r : ℕ} (μ : Fin r → R) (v : Fin 
   exact ((Finset.noncommProd_congr (List.toFinset_finRange r).symm (fun _ _ ↦ rfl) hcomm).trans
     (Finset.noncommProd_toFinset _ _ _ (List.nodup_finRange r))).trans
     (prod_map_finRange_smul_ιMulti_two μ v)
+
+/-- The noncommutative product over an `r`-element subset `s` of `Fin n` of weighted consecutive
+pairs `μ k • (v_{2k} ∧ v_{2k+1})` in the exterior algebra is `(∏ k ∈ s, μ k)` times the
+`2r`-fold wedge product of the selected pairs
+`v ∘ TauCeti.doubleOrderEmb (Set.powersetCard.ofFinEmbEquiv.symm s)`. -/
+theorem noncommProd_powersetCard_smul_ιMulti_two {n r : ℕ} (μ : Fin n → R) (v : Fin (2 * n) → M)
+    (s : Set.powersetCard (Fin n) r)
+    (hcomm : (s.val : Set (Fin n)).Pairwise (Commute on fun k : Fin n ↦
+      μ k • _root_.ExteriorAlgebra.ιMulti R 2
+        ![v ⟨2 * (k : ℕ), by omega⟩, v ⟨2 * (k : ℕ) + 1, by omega⟩])) :
+    s.val.noncommProd (fun k : Fin n ↦ μ k • _root_.ExteriorAlgebra.ιMulti R 2
+        ![v ⟨2 * (k : ℕ), by omega⟩, v ⟨2 * (k : ℕ) + 1, by omega⟩]) hcomm =
+      (∏ k ∈ (s : Finset (Fin n)), μ k) •
+        _root_.ExteriorAlgebra.ιMulti R (2 * r)
+          (v ∘ TauCeti.doubleOrderEmb (Set.powersetCard.ofFinEmbEquiv.symm s)) := by
+  let e : Fin r ↪o Fin n := Set.powersetCard.ofFinEmbEquiv.symm s
+  have hs_eq : s.val = ((List.finRange r).map e).toFinset := by
+    apply Finset.coe_injective
+    rw [List.toFinset_map, List.toFinset_finRange, Fintype.coe_image_univ]
+    dsimp only [e]
+    rw [Set.powersetCard.ofFinEmbEquiv_symm_apply]
+    exact (Finset.range_orderEmbOfFin s.val (Set.powersetCard.card_eq s)).symm
+  have hnodup : ((List.finRange r).map e).Nodup := (List.nodup_finRange r).map e.injective
+  have hprod := (Finset.noncommProd_congr hs_eq (fun _ _ ↦ rfl) hcomm).trans
+    (Finset.noncommProd_toFinset _ _ _ hnodup)
+  have hwt : ∏ j : Fin r, μ (e j) = ∏ k ∈ (s : Finset (Fin n)), μ k := by
+    have himg : (Finset.univ.image e : Finset (Fin n)) = s.val := by
+      rw [hs_eq, List.toFinset_map, List.toFinset_finRange]
+    rw [← himg, Finset.prod_image (fun _ _ _ _ h ↦ e.injective h)]
+  rw [hprod, List.map_map, ← hwt]
+  simpa only [Function.comp_def, TauCeti.doubleOrderEmb_even, TauCeti.doubleOrderEmb_odd] using
+    prod_map_finRange_smul_ιMulti_two (μ ∘ e) (v ∘ TauCeti.doubleOrderEmb e)
 
 /-- The `r`-th exterior power of a sum of `r` weighted decomposable two-vectors is `r!` times the
 product of the weights times the `2r`-fold wedge product of the frame. -/

@@ -131,24 +131,13 @@ theorem kahlerForm_def (J : AlmostComplexStructure V) :
     J.kahlerForm = (2⁻¹ : ℝ) • ∑ i,
       ιMulti ℝ 2 ![stdOrthonormalBasis ℝ V i, J (stdOrthonormalBasis ℝ V i)] := (rfl)
 
-/-- In any orthonormal basis `b`, pairing `∑ᵢ bᵢ ∧ J bᵢ` with `u ∧ w` evaluates the
-skew-symmetrization `⟪J u, w⟫ - ⟪J w, u⟫`. -/
-private theorem inner_sum_ιMulti_apply_eq_sub {ι : Type*} [Fintype ι]
-    (J : AlmostComplexStructure V) (b : OrthonormalBasis ι ℝ V) (u w : V) :
-    ⟪∑ i, ιMulti ℝ 2 ![b i, J (b i)], ιMulti ℝ 2 ![u, w]⟫ = ⟪J u, w⟫ - ⟪J w, u⟫ := by
-  have hsum (x y : V) : ∑ i, ⟪b i, x⟫ * ⟪J (b i), y⟫ = ⟪J x, y⟫ := by
-    calc ∑ i, ⟪b i, x⟫ * ⟪J (b i), y⟫
-        = ⟪J (∑ i, ⟪b i, x⟫ • b i), y⟫ := by
-          simp only [map_sum, map_smul, sum_inner, real_inner_smul_left]
-      _ = ⟪J x, y⟫ := by rw [b.sum_repr' x]
-  simp only [sum_inner, inner_ιMulti_two, Finset.sum_sub_distrib, hsum]
-
 /-- For any almost complex structure `J` (not necessarily orthogonal), pairing `J.kahlerForm` with
 `u ∧ w` evaluates the skew-symmetrization `(⟪J u, w⟫ - ⟪J w, u⟫) / 2`. -/
 theorem inner_kahlerForm_ιMulti_eq_inv_two_mul_sub (J : AlmostComplexStructure V) (u w : V) :
     ⟪J.kahlerForm, ιMulti ℝ 2 ![u, w]⟫ = (2⁻¹ : ℝ) * (⟪J u, w⟫ - ⟪J w, u⟫) := by
-  rw [kahlerForm, real_inner_smul_left,
-    inner_sum_ιMulti_apply_eq_sub J (stdOrthonormalBasis ℝ V)]
+  rw [kahlerForm, real_inner_smul_left]
+  exact congrArg ((2⁻¹ : ℝ) * ·)
+    ((stdOrthonormalBasis ℝ V).inner_sum_ιMulti_two_apply_eq_sub J.toLinearMap u w)
 
 /-! ### The derivation action of `J` on two-vectors -/
 
@@ -197,7 +186,9 @@ theorem inner_apply_left (v w : V) : ⟪J v, w⟫ = -⟪v, J w⟫ :=
 /-- In any orthonormal basis `b`, `⟪∑ᵢ bᵢ ∧ J bᵢ, u ∧ w⟫ = 2 ⟪J u, w⟫`. -/
 private theorem inner_sum_ιMulti_apply {ι : Type*} [Fintype ι] (b : OrthonormalBasis ι ℝ V)
     (u w : V) : ⟪∑ i, ιMulti ℝ 2 ![b i, J (b i)], ιMulti ℝ 2 ![u, w]⟫ = 2 * ⟪J u, w⟫ := by
-  rw [inner_sum_ιMulti_apply_eq_sub J b u w, inner_apply_left hJ w u, real_inner_comm w (J u)]
+  have h : ⟪∑ i, ιMulti ℝ 2 ![b i, J (b i)], ιMulti ℝ 2 ![u, w]⟫ = ⟪J u, w⟫ - ⟪J w, u⟫ :=
+    b.inner_sum_ιMulti_two_apply_eq_sub J.toLinearMap u w
+  rw [h, inner_apply_left hJ w u, real_inner_comm w (J u)]
   ring
 
 /-- **The Kähler two-vector represents the Kähler form**: `⟪ω, u ∧ w⟫ = ⟪J u, w⟫`. -/

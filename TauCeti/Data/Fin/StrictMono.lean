@@ -186,7 +186,6 @@ namespace TauCeti
 
 /-- Lifting an order embedding `Fin r ↪o Fin n` to consecutive pairs `Fin (2 * r) ↪o Fin (2 * n)`
 by `i ↦ 2 * e (i / 2) + i % 2`. -/
-@[expose]
 def doubleOrderEmb {n r : ℕ} (e : Fin r ↪o Fin n) : Fin (2 * r) ↪o Fin (2 * n) :=
   OrderEmbedding.ofStrictMono
     (fun i ↦ ⟨2 * (e ⟨(i : ℕ) / 2, by omega⟩ : ℕ) + (i : ℕ) % 2, by omega⟩)
@@ -205,7 +204,7 @@ def doubleOrderEmb {n r : ℕ} (e : Fin r ↪o Fin n) : Fin (2 * r) ↪o Fin (2 
 @[simp]
 theorem doubleOrderEmb_apply_val {n r : ℕ} (e : Fin r ↪o Fin n) (i : Fin (2 * r)) :
     (doubleOrderEmb e i : ℕ) = 2 * (e ⟨(i : ℕ) / 2, by omega⟩ : ℕ) + (i : ℕ) % 2 :=
-  rfl
+  (rfl)
 
 /-- At even index `2 * j`, `doubleOrderEmb e` evaluates to `2 * e j`. -/
 @[simp]

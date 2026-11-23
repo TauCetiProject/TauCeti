@@ -11,6 +11,7 @@ public import TauCeti.Analysis.InnerProductSpace.Orthonormal.CalibratedFrame
 public import TauCeti.Geometry.Symplectic.Wirtinger
 import TauCeti.Analysis.InnerProductSpace.Complex
 import TauCeti.Analysis.InnerProductSpace.ExteriorPower.NormalForm
+import TauCeti.Analysis.InnerProductSpace.HodgeStar.Kahler.DegreeTwo
 import TauCeti.Analysis.InnerProductSpace.Orthonormal.Complex
 import TauCeti.Analysis.InnerProductSpace.Projection.Basic
 import TauCeti.Geometry.Symplectic.Finrank
@@ -252,8 +253,9 @@ variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [InnerProd
 
 /-- The normalized `r`-th Kähler power `ωʳ / r!` (power index `r`, form degree `2 * r`) has comass
 at most one for every power index `r`. -/
-theorem norm_kahlerPowerForm_le (r : ℕ) : ‖kahlerPowerForm E r‖ ≤ 1 :=
-  AlmostComplexStructure.norm_kahlerPowerForm_le
+theorem norm_kahlerPowerForm_le (r : ℕ) : ‖kahlerPowerForm E r‖ ≤ 1 := by
+  rw [kahlerPowerForm_eq_ofComplexModule]
+  exact AlmostComplexStructure.norm_kahlerPowerForm_le
     AlmostComplexStructure.real_inner_ofComplexModule_ofComplexModule r
 
 /-- **The Wirtinger inequality in every degree**: on a finite-dimensional Hermitian vector space
@@ -261,6 +263,7 @@ theorem norm_kahlerPowerForm_le (r : ℕ) : ‖kahlerPowerForm E r‖ ≤ 1 :=
 `2 * r`) has comass one. -/
 theorem norm_kahlerPowerForm {r : ℕ} (hr : r ≤ finrank ℂ E) : ‖kahlerPowerForm E r‖ = 1 := by
   have : FiniteDimensional ℂ E := Module.Finite.of_restrictScalars_finite ℝ ℂ E
+  rw [kahlerPowerForm_eq_ofComplexModule]
   refine AlmostComplexStructure.norm_kahlerPowerForm
     AlmostComplexStructure.real_inner_ofComplexModule_ofComplexModule ?_
   rw [finrank_real_eq_two_mul_finrank_complex]
@@ -274,8 +277,9 @@ theorem isCalibratedFrame_kahlerPowerForm_iff {r : ℕ} (v : Fin (2 * r) → E) 
     (kahlerPowerForm E r).IsCalibratedFrame v ↔
       Orthonormal ℝ v ∧ ∃ u : Fin r → E, Orthonormal ℂ u ∧
         ιMulti ℝ (2 * r) v = ιMulti ℝ (2 * r) (complexToRealFamily u) := by
-  rw [kahlerPowerForm, AlmostComplexStructure.isCalibratedFrame_kahlerPowerForm_iff
-    AlmostComplexStructure.real_inner_ofComplexModule_ofComplexModule v]
+  rw [kahlerPowerForm_eq_ofComplexModule,
+    AlmostComplexStructure.isCalibratedFrame_kahlerPowerForm_iff
+      AlmostComplexStructure.real_inner_ofComplexModule_ofComplexModule v]
   refine and_congr_right fun _ ↦ ⟨?_, ?_⟩
   · rintro ⟨w, hw, hadapt, hι⟩
     let evenIdx : Fin r → Fin (2 * r) := fun j ↦ ⟨2 * (j : ℕ), by omega⟩
@@ -300,7 +304,7 @@ theorem isCalibratedFrame_kahlerPowerForm_iff {r : ℕ} (v : Fin (2 * r) → E) 
     exact ⟨u, hu, by rwa [hw_eq]⟩
   · rintro ⟨u, hu, hι⟩
     exact ⟨complexToRealFamily u, orthonormal_complexToRealFamily hu,
-      complexToRealFamily_odd_eq_ofComplexModule u, hι⟩
+      fun _ ↦ by simp, hι⟩
 
 /-- **Non-orthonormal degree-two Wirtinger equality**: for `v ≠ 0` in a finite-dimensional
 Hermitian vector space, `kahlerTwoForm E` attains the area `‖v ∧ w‖` exactly when `w` is a complex

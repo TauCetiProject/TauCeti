@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.InnerProductSpace.HodgeStar.Kahler.DegreeTwo
 public import TauCeti.Analysis.InnerProductSpace.HodgeStar.Kahler.Mass
 public import TauCeti.Analysis.InnerProductSpace.Orthonormal.CalibratedFrame
 public import TauCeti.Analysis.InnerProductSpace.Orthonormal.Wedge
@@ -15,29 +14,34 @@ import TauCeti.Analysis.Normed.Module.Alternating.Bilinear
 import TauCeti.Data.Fin.StrictMono
 import TauCeti.Geometry.Symplectic.CompatibleMetric
 import TauCeti.Geometry.Symplectic.Finrank
+import TauCeti.LinearAlgebra.ExteriorPower.Basis
 import TauCeti.Topology.Algebra.Module.Alternating.TopDegree
 
 /-!
 # Normalized powers of the Kähler form and the Wirtinger inequality
 
-Let `J` be an orthogonal almost complex structure on a finite-dimensional real inner product space
-`V`, with Kähler form `ω(u, w) = ⟪J u, w⟫`, the form of the Kähler two-vector
-`TauCeti.AlmostComplexStructure.kahlerForm J`. The **normalized Kähler power**
+Let `J` be an almost complex structure on a finite-dimensional real inner product space `V`, and let
+`ω := alternatingFormEquiv V 2 J.kahlerForm` be the alternating two-form corresponding to the
+Kähler two-vector `TauCeti.AlmostComplexStructure.kahlerForm J`. For general `J` (not necessarily
+orthogonal), `ω` has skew-symmetrized evaluation `ω(u, w) = (⟪J u, w⟫ - ⟪J w, u⟫) / 2`, which
+reduces to `ω(u, w) = ⟪J u, w⟫` when `J` is orthogonal. The **normalized Kähler power**
 `TauCeti.AlmostComplexStructure.kahlerPowerForm J r` is the real `2r`-form `ω ^ r / r!`, for the
 wedge powers `ContinuousAlternatingMap.wedgePow` in the determinant normalization; via
 `TauCeti.alternatingFormEquiv_pow`, it equals `(r!)⁻¹ • alternatingFormEquiv V (2 * r)
 (exteriorPower.pow J.kahlerForm r)`. Specializing `J` to multiplication by `i`
 (`AlmostComplexStructure.ofComplexModule E`) defines `TauCeti.kahlerPowerForm E r` on any
-finite-dimensional Hermitian vector space `E`.
+finite-dimensional Hermitian vector space `E`, where `ω = TauCeti.kahlerTwoForm E` evaluates as
+`Im ⟪u, w⟫_ℂ = ⟪i • u, w⟫_ℝ` (`TauCeti.kahlerPowerForm_eq_wedgePow`).
 
 For a family `u` of `r` vectors, `TauCeti.AlmostComplexStructure.complexRealFrame J u` is the real
-frame `(u₀, J u₀, u₁, J u₁, …)`. It is orthonormal exactly when `u` is orthonormal for the
-Hermitian metric of `J`: `u` is orthonormal and `⟪J uᵢ, uⱼ⟫ = 0` for all `i` and `j`. Such frames
-are positively oriented orthonormal frames of complex `r`-planes with their complex orientation
-(every complex `r`-plane has one), and `ω ^ r / r!` takes the value `1` on each of them.
+frame `(u₀, J u₀, u₁, J u₁, …)`. When `J` is orthogonal, it is orthonormal exactly when `u` is
+orthonormal for the Hermitian metric of `J`: `u` is orthonormal and `⟪J uᵢ, uⱼ⟫ = 0` for all `i`
+and `j`. Such frames are positively oriented orthonormal frames of complex `r`-planes with their
+complex orientation (every complex `r`-plane has one), and `ω ^ r / r!` takes the value `1` on each
+of them.
 
-The **Wirtinger inequality** says that `ω ^ r / r!` has comass at most one. It follows from the
-comass bound `‖ω ^ r‖ ≤ r! ‖ω‖ ^ r` for wedge powers of real two-forms
+The **Wirtinger inequality** says that for an orthogonal `J`, `ω ^ r / r!` has comass at most one.
+It follows from the comass bound `‖ω ^ r‖ ≤ r! ‖ω‖ ^ r` for wedge powers of real two-forms
 (`ContinuousAlternatingMap.norm_wedgePow_le`) and the bound `‖ω‖ ≤ 1` on the Kähler form. So
 the complex frames are calibrated by `ω ^ r / r!`, and its comass is exactly one whenever
 `2r ≤ dim V`; for `2r > dim V` the form vanishes. Its Hilbert norm is `√(dim V / 2 choose r)`.
@@ -46,10 +50,11 @@ the unitary group of `J`.
 
 ## Main definitions
 
-* `TauCeti.AlmostComplexStructure.kahlerPowerForm J r`: the normalized Kähler power `ω ^ r / r!`.
+* `TauCeti.AlmostComplexStructure.kahlerPowerForm J r`: the normalized Kähler power `ω ^ r / r!`,
+  where `ω := alternatingFormEquiv V 2 J.kahlerForm` evaluates as `(⟪J u, w⟫ - ⟪J w, u⟫) / 2`.
 * `TauCeti.AlmostComplexStructure.complexRealFrame J u`: the real frame `(u₀, J u₀, u₁, J u₁, …)`.
-* `TauCeti.kahlerPowerForm E r`: the normalized `r`-th Kähler power `ωʳ / r!` on a
-  finite-dimensional Hermitian vector space.
+* `TauCeti.kahlerPowerForm E r`: the normalized `r`-th Kähler power `(kahlerTwoForm E) ^ r / r!`
+  on a finite-dimensional Hermitian vector space (`TauCeti.kahlerPowerForm_eq_wedgePow`).
 
 ## Main results
 
@@ -164,8 +169,9 @@ section KahlerPower
 variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] [FiniteDimensional ℝ V]
 
 /-- The **normalized Kähler power** `ω ^ r / r!`, the real `2r`-form given by the `r`-th wedge
-power of the alternating form of the Kähler two-vector `J.kahlerForm`, divided by `r!`. When `J`
-is orthogonal, `ω` is the two-form `ω(u, w) = ⟪J u, w⟫`. -/
+power of `ω := alternatingFormEquiv V 2 J.kahlerForm`, divided by `r!`. For an arbitrary almost
+complex structure `J`, `ω` has skew-symmetrized evaluation
+`ω(u, w) = (⟪J u, w⟫ - ⟪J w, u⟫) / 2`, reducing to `ω(u, w) = ⟪J u, w⟫` when `J` is orthogonal. -/
 def kahlerPowerForm (J : AlmostComplexStructure V) (r : ℕ) : V [⋀^Fin (2 * r)]→L[ℝ] ℝ :=
   (r.factorial : ℝ)⁻¹ • (alternatingFormEquiv V 2 J.kahlerForm).wedgePow r
 
@@ -368,42 +374,6 @@ theorem kahlerPowerForm_compContinuousLinearMap {V' : Type*} [NormedAddCommGroup
 
 end Orthogonal
 
-private theorem noncommProd_adapted_eq_exteriorPowerBasis {n r : ℕ}
-    (b : OrthonormalBasis (Fin (2 * n)) ℝ V) (s : Set.powersetCard (Fin n) r)
-    (hcs : (s.val : Set (Fin n)).Pairwise (Function.onFun Commute fun k : Fin n ↦
-      _root_.ExteriorAlgebra.ιMulti ℝ 2
-        ![b ⟨2 * (k : ℕ), by omega⟩, b ⟨2 * (k : ℕ) + 1, by omega⟩])) :
-    s.val.noncommProd (fun k : Fin n ↦
-      _root_.ExteriorAlgebra.ιMulti ℝ 2
-        ![b ⟨2 * (k : ℕ), by omega⟩, b ⟨2 * (k : ℕ) + 1, by omega⟩]) hcs =
-      (b.exteriorPower (2 * r)
-        (Set.powersetCard.ofFinEmbEquiv (doubleOrderEmb (Set.powersetCard.ofFinEmbEquiv.symm s))) :
-        _root_.ExteriorAlgebra ℝ V) := by
-  let e : Fin r ↪o Fin n := Set.powersetCard.ofFinEmbEquiv.symm s
-  have hB_coe : (b.exteriorPower (2 * r) (Set.powersetCard.ofFinEmbEquiv (doubleOrderEmb e)) :
-      _root_.ExteriorAlgebra ℝ V) =
-      _root_.ExteriorAlgebra.ιMulti ℝ (2 * r) (b ∘ doubleOrderEmb e) := by
-    have hBs : b.exteriorPower (2 * r) (Set.powersetCard.ofFinEmbEquiv (doubleOrderEmb e)) =
-        ιMulti ℝ (2 * r) (b ∘ Set.powersetCard.ofFinEmbEquiv.symm
-          (Set.powersetCard.ofFinEmbEquiv (doubleOrderEmb e))) := by
-      rw [← OrthonormalBasis.coe_toBasis, OrthonormalBasis.toBasis_exteriorPower,
-        exteriorPower.basis_apply, exteriorPower.ιMulti_family, OrthonormalBasis.coe_toBasis]
-    rw [hBs, exteriorPower.ιMulti_apply_coe, Equiv.symm_apply_apply]
-  have hs_eq : s.val = ((List.finRange r).map e).toFinset := by
-    apply Finset.coe_injective
-    rw [List.toFinset_map, List.toFinset_finRange, Fintype.coe_image_univ]
-    dsimp only [e]
-    rw [Set.powersetCard.ofFinEmbEquiv_symm_apply]
-    exact (Finset.range_orderEmbOfFin s.val (Set.powersetCard.card_eq s)).symm
-  have hnodup : ((List.finRange r).map e).Nodup := (List.nodup_finRange r).map e.injective
-  have hprod := (Finset.noncommProd_congr hs_eq (fun _ _ ↦ rfl) hcs).trans
-    (Finset.noncommProd_toFinset _ _ _ hnodup)
-  rw [hprod, List.map_map, hB_coe]
-  simpa only [Function.comp_def, doubleOrderEmb_even, doubleOrderEmb_odd, one_smul,
-    Finset.prod_const_one] using
-    TauCeti.ExteriorAlgebra.prod_map_finRange_smul_ιMulti_two
-      (fun _ : Fin r ↦ (1 : ℝ)) (b ∘ doubleOrderEmb e)
-
 private theorem kahlerPowerForm_symm_eq_sum_adapted {J : AlmostComplexStructure V} {n : ℕ}
     (b : OrthonormalBasis (Fin (2 * n)) ℝ V)
     (hb : ∀ j : Fin n, b ⟨2 * (j : ℕ) + 1, by omega⟩ = J (b ⟨2 * (j : ℕ), by omega⟩)) (r : ℕ) :
@@ -412,14 +382,16 @@ private theorem kahlerPowerForm_symm_eq_sum_adapted {J : AlmostComplexStructure 
         (Set.powersetCard.ofFinEmbEquiv
           (doubleOrderEmb (Set.powersetCard.ofFinEmbEquiv.symm s))) := by
   let x : Fin n → _root_.ExteriorAlgebra ℝ V := fun k ↦
-    _root_.ExteriorAlgebra.ιMulti ℝ 2 ![b ⟨2 * (k : ℕ), by omega⟩, b ⟨2 * (k : ℕ) + 1, by omega⟩]
+    (1 : ℝ) • _root_.ExteriorAlgebra.ιMulti ℝ 2
+      ![b ⟨2 * (k : ℕ), by omega⟩, b ⟨2 * (k : ℕ) + 1, by omega⟩]
   have hcoe : (J.kahlerForm : _root_.ExteriorAlgebra ℝ V) = ∑ k : Fin n, x k := by
-    rw [kahlerForm_eq_sum_of_adapted b hb]; simp [x]
-  have hcomm : Pairwise (Function.onFun Commute x) := fun _ _ _ ↦ by
-    simpa [x] using TauCeti.ExteriorAlgebra.commute_smul_ιMulti_two (1 : ℝ) 1
+    rw [kahlerForm_eq_sum_of_adapted b hb]
+    simp [x]
+  have hcomm : Pairwise (Function.onFun Commute x) := fun _ _ _ ↦
+    TauCeti.ExteriorAlgebra.commute_smul_ιMulti_two (1 : ℝ) 1
       (b ⟨2 * _, _⟩) (b ⟨2 * _ + 1, _⟩) (b ⟨2 * _, _⟩) (b ⟨2 * _ + 1, _⟩)
-  have hsq : ∀ k ∈ (Finset.univ : Finset (Fin n)), x k * x k = 0 := fun k _ ↦ by
-    simpa [x] using TauCeti.ExteriorAlgebra.smul_ιMulti_two_mul_self (1 : ℝ)
+  have hsq : ∀ k ∈ (Finset.univ : Finset (Fin n)), x k * x k = 0 := fun k _ ↦
+    TauCeti.ExteriorAlgebra.smul_ιMulti_two_mul_self (1 : ℝ)
       (b ⟨2 * (k : ℕ), by omega⟩) (b ⟨2 * (k : ℕ) + 1, by omega⟩)
   rw [alternatingFormEquiv_symm_kahlerPowerForm]
   apply Subtype.ext
@@ -428,17 +400,16 @@ private theorem kahlerPowerForm_symm_eq_sum_adapted {J : AlmostComplexStructure 
     ← Nat.cast_smul_eq_nsmul ℝ, smul_smul,
     inv_mul_cancel₀ (Nat.cast_ne_zero (R := ℝ).mpr (Nat.factorial_ne_zero r)), one_smul,
     ← Finset.sum_coe_sort ((Finset.univ : Finset (Fin n)).powersetCard r)]
-  refine Finset.sum_bij
-    (fun (s : ((Finset.univ : Finset (Fin n)).powersetCard r)) _ ↦
-      Set.powersetCard.ofCard (Finset.mem_powersetCard.mp s.property).2)
-    (fun _ _ ↦ Finset.mem_univ _)
-    (fun s₁ _ s₂ _ h ↦ Subtype.ext (by
-      simpa [Set.powersetCard.ofCard] using congrArg Subtype.val h))
-    (fun s _ ↦
-      ⟨⟨s.val, Finset.mem_powersetCard.mpr ⟨Finset.subset_univ _, Set.powersetCard.card_eq s⟩⟩,
-        Finset.mem_univ _, rfl⟩)
-    (fun s _ ↦ noncommProd_adapted_eq_exteriorPowerBasis b
-      (Set.powersetCard.ofCard (Finset.mem_powersetCard.mp s.property).2) _)
+  refine Fintype.sum_equiv (Set.equivOfEq (Set.powersetCard.coe_finset (Fin n) r).symm) _ _
+    fun s ↦ ?_
+  have hs : s.val = ((Set.equivOfEq (Set.powersetCard.coe_finset (Fin n) r).symm s :
+      Set.powersetCard (Fin n) r) : Finset (Fin n)) := rfl
+  rw [Finset.noncommProd_congr hs (fun _ _ ↦ rfl)]
+  simpa only [x, Finset.prod_const_one, one_smul, OrthonormalBasis.coe_toBasis,
+    ← OrthonormalBasis.toBasis_exteriorPower] using
+    b.toBasis.noncommProd_smul_ιMulti_two_eq_exteriorPower (fun _ ↦ (1 : ℝ))
+      (Set.equivOfEq (Set.powersetCard.coe_finset (Fin n) r).symm s)
+      (fun _ _ _ _ _ ↦ TauCeti.ExteriorAlgebra.commute_smul_ιMulti_two _ _ _ _ _ _)
 
 /-- **Hilbert norm of the normalized Kähler power**: for an orthogonal almost complex structure `J`
 on a `2n`-dimensional real inner product space, the Hilbert norm `√⟨ωʳ / r!, ωʳ / r!⟩` equals
@@ -481,25 +452,39 @@ variable {E F : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [InnerPr
   [IsScalarTower ℝ ℂ F] [FiniteDimensional ℝ F]
 
 variable (E) in
-/-- The normalized `r`-th Kähler power `ωʳ / r!` (power index `r`, form degree `2 * r`) on a
-finite-dimensional Hermitian vector space `E`, as a real continuous alternating `2r`-form. -/
-@[expose] def kahlerPowerForm (r : ℕ) : E [⋀^Fin (2 * r)]→L[ℝ] ℝ :=
+/-- The normalized `r`-th Kähler power `(kahlerTwoForm E) ^ r / r!` (power index `r`, form
+degree `2 * r`) on a finite-dimensional Hermitian vector space `E`, as a real continuous
+alternating `2r`-form (`TauCeti.kahlerPowerForm_eq_wedgePow`). -/
+def kahlerPowerForm (r : ℕ) : E [⋀^Fin (2 * r)]→L[ℝ] ℝ :=
   (AlmostComplexStructure.ofComplexModule E).kahlerPowerForm r
+
+/-- Specialization of `AlmostComplexStructure.kahlerPowerForm` to `ofComplexModule E`. -/
+theorem kahlerPowerForm_eq_ofComplexModule (r : ℕ) :
+    kahlerPowerForm E r = (AlmostComplexStructure.ofComplexModule E).kahlerPowerForm r :=
+  (rfl)
+
+/-- The normalized Kähler power on a Hermitian vector space is the normalized wedge power of
+`TauCeti.kahlerTwoForm E`. -/
+theorem kahlerPowerForm_eq_wedgePow (r : ℕ) :
+    kahlerPowerForm E r = (r.factorial : ℝ)⁻¹ • (kahlerTwoForm E).wedgePow r := by
+  rw [kahlerPowerForm_eq_ofComplexModule, AlmostComplexStructure.kahlerPowerForm_def,
+    alternatingFormEquiv_ofComplexModule_kahlerForm]
 
 /-- Unfolding lemma for `TauCeti.kahlerPowerForm`. -/
 theorem kahlerPowerForm_def (r : ℕ) :
     kahlerPowerForm E r = (r.factorial : ℝ)⁻¹ •
       alternatingFormEquiv E (2 * r)
-        (exteriorPower.pow (AlmostComplexStructure.ofComplexModule E).kahlerForm r) :=
-  AlmostComplexStructure.kahlerPowerForm_eq_alternatingFormEquiv_pow _ r
+        (exteriorPower.pow (AlmostComplexStructure.ofComplexModule E).kahlerForm r) := by
+  rw [kahlerPowerForm_eq_ofComplexModule,
+    AlmostComplexStructure.kahlerPowerForm_eq_alternatingFormEquiv_pow]
 
 /-- Evaluation formula for `TauCeti.kahlerPowerForm` on an arbitrary `2r`-frame. -/
 theorem kahlerPowerForm_apply (r : ℕ) (v : Fin (2 * r) → E) :
     kahlerPowerForm E r v =
       ⟪(r.factorial : ℝ)⁻¹ •
           exteriorPower.pow (AlmostComplexStructure.ofComplexModule E).kahlerForm r,
-        ιMulti ℝ (2 * r) v⟫ :=
-  AlmostComplexStructure.kahlerPowerForm_apply _ r v
+        ιMulti ℝ (2 * r) v⟫ := by
+  rw [kahlerPowerForm_eq_ofComplexModule, AlmostComplexStructure.kahlerPowerForm_apply]
 
 /-- Under the Riesz identification `alternatingFormEquiv`, `TauCeti.kahlerPowerForm E r`
 corresponds to `(r!)⁻¹ • exteriorPower.pow (AlmostComplexStructure.ofComplexModule E).kahlerForm r`.
@@ -508,19 +493,20 @@ corresponds to `(r!)⁻¹ • exteriorPower.pow (AlmostComplexStructure.ofComple
 theorem alternatingFormEquiv_symm_kahlerPowerForm (r : ℕ) :
     (alternatingFormEquiv E (2 * r)).symm (kahlerPowerForm E r) =
       (r.factorial : ℝ)⁻¹ •
-        exteriorPower.pow (AlmostComplexStructure.ofComplexModule E).kahlerForm r :=
-  AlmostComplexStructure.alternatingFormEquiv_symm_kahlerPowerForm _ r
+        exteriorPower.pow (AlmostComplexStructure.ofComplexModule E).kahlerForm r := by
+  rw [kahlerPowerForm_eq_ofComplexModule,
+    AlmostComplexStructure.alternatingFormEquiv_symm_kahlerPowerForm]
 
 /-- For power index `r = 0` (form degree `0`), `ω⁰ / 0!` is the constant form `1`. -/
 @[simp]
 theorem kahlerPowerForm_zero :
-    kahlerPowerForm E 0 = ContinuousAlternatingMap.constOfIsEmpty ℝ E (Fin 0) 1 :=
-  AlmostComplexStructure.kahlerPowerForm_zero _
+    kahlerPowerForm E 0 = ContinuousAlternatingMap.constOfIsEmpty ℝ E (Fin 0) 1 := by
+  rw [kahlerPowerForm_eq_ofComplexModule, AlmostComplexStructure.kahlerPowerForm_zero]
 
 /-- For power index `r = 1` (form degree `2`), `ω¹ / 1!` is `TauCeti.kahlerTwoForm E`. -/
 @[simp]
 theorem kahlerPowerForm_one : kahlerPowerForm E 1 = kahlerTwoForm E := by
-  rw [kahlerPowerForm, AlmostComplexStructure.kahlerPowerForm_one,
+  rw [kahlerPowerForm_eq_ofComplexModule, AlmostComplexStructure.kahlerPowerForm_one,
     alternatingFormEquiv_ofComplexModule_kahlerForm]
 
 /-- Wedge recurrence for normalized Kähler powers on a Hermitian vector space:
@@ -528,14 +514,15 @@ theorem kahlerPowerForm_one : kahlerPowerForm E 1 = kahlerTwoForm E := by
 theorem kahlerPowerForm_succ (r : ℕ) :
     kahlerPowerForm E (r + 1) =
       ((r + 1 : ℕ) : ℝ)⁻¹ • (kahlerPowerForm E r).wedge (kahlerTwoForm E) := by
-  rw [kahlerPowerForm, AlmostComplexStructure.kahlerPowerForm_succ,
-    alternatingFormEquiv_ofComplexModule_kahlerForm, kahlerPowerForm]
+  rw [kahlerPowerForm_eq_ofComplexModule, AlmostComplexStructure.kahlerPowerForm_succ,
+    alternatingFormEquiv_ofComplexModule_kahlerForm, ← kahlerPowerForm_eq_ofComplexModule]
 
 /-- Normalized Kähler powers vanish whenever the power index exceeds the complex dimension
 (`r > finrank ℂ E`, equivalently form degree `2 * r > finrank ℝ E`). -/
 theorem kahlerPowerForm_eq_zero_of_finrank_lt {r : ℕ} (hr : finrank ℂ E < r) :
     kahlerPowerForm E r = 0 := by
   have : FiniteDimensional ℂ E := Module.Finite.of_restrictScalars_finite ℝ ℂ E
+  rw [kahlerPowerForm_eq_ofComplexModule]
   refine AlmostComplexStructure.kahlerPowerForm_eq_zero _ ?_
   rw [finrank_real_eq_two_mul_finrank_complex]
   omega
@@ -548,6 +535,7 @@ theorem kahlerPowerForm_comp_linearIsometry (f : E →ₗᵢ[ℂ] F) (r : ℕ) :
   let fR : E →ₗᵢ[ℝ] F :=
     { toLinearMap := f.toLinearMap.restrictScalars ℝ
       norm_map' := f.norm_map }
+  rw [kahlerPowerForm_eq_ofComplexModule, kahlerPowerForm_eq_ofComplexModule]
   exact AlmostComplexStructure.kahlerPowerForm_comp_linearIsometry fR
     (fun v ↦ by
       rw [AlmostComplexStructure.ofComplexModule_apply,
@@ -557,9 +545,10 @@ theorem kahlerPowerForm_comp_linearIsometry (f : E →ₗᵢ[ℂ] F) (r : ℕ) :
 /-- The normalized Kähler power `ωʳ / r!` evaluates to `1` on the real frame
 `TauCeti.complexToRealFamily u` of every complex-orthonormal family `u : Fin r → E`. -/
 theorem kahlerPowerForm_complexToRealFamily {r : ℕ} {u : Fin r → E} (hu : Orthonormal ℂ u) :
-    kahlerPowerForm E r (complexToRealFamily u) = 1 :=
-  AlmostComplexStructure.kahlerPowerForm_apply_of_adapted
-    (orthonormal_complexToRealFamily hu) (complexToRealFamily_odd_eq_ofComplexModule u)
+    kahlerPowerForm E r (complexToRealFamily u) = 1 := by
+  rw [kahlerPowerForm_eq_ofComplexModule]
+  exact AlmostComplexStructure.kahlerPowerForm_apply_of_adapted
+    (orthonormal_complexToRealFamily hu) (fun _ ↦ by simp)
 
 /-- **Hilbert norm of the normalized Kähler power**:
 `√⟨ωʳ / r!, ωʳ / r!⟩ = √((finrank ℂ E).choose r)`. -/
@@ -567,7 +556,8 @@ theorem sqrt_alternatingFormInner_kahlerPowerForm (r : ℕ) :
     √(alternatingFormInner E (2 * r) (kahlerPowerForm E r) (kahlerPowerForm E r)) =
       √((finrank ℂ E).choose r) := by
   have : FiniteDimensional ℂ E := Module.Finite.of_restrictScalars_finite ℝ ℂ E
-  rw [kahlerPowerForm, AlmostComplexStructure.sqrt_alternatingFormInner_kahlerPowerForm
+  rw [kahlerPowerForm_eq_ofComplexModule,
+    AlmostComplexStructure.sqrt_alternatingFormInner_kahlerPowerForm
       AlmostComplexStructure.real_inner_ofComplexModule_ofComplexModule r,
     finrank_real_eq_two_mul_finrank_complex, Nat.mul_div_right _ (by decide : 0 < 2)]
 
