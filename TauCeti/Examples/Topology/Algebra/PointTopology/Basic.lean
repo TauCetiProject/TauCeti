@@ -6,10 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 import Mathlib.Analysis.SpecialFunctions.Exp
+import Mathlib.Data.ZMod.Basic
 import Mathlib.NumberTheory.Padics.PadicNumbers
 import Mathlib.Topology.Instances.ZMod
 import TauCeti.Topology.Algebra.PointTopology.Localization
-import TauCeti.Topology.Algebra.PointTopology.Separation
 
 /-!
 # Examples of the point topology on points of an affine algebra
@@ -40,7 +40,7 @@ noncomputable example : (MvPolynomial ℕ (ZMod 2) →ₐ[ZMod 2] ZMod 2) ≃ₜ
 
 /-- These points are not discrete, although `𝔽₂` is. -/
 example : ¬DiscreteTopology (MvPolynomial ℕ (ZMod 2) →ₐ[ZMod 2] ZMod 2) :=
-  have : Nontrivial (ZMod 2) := inferInstanceAs (Nontrivial (Fin 2))
+  have : Nontrivial (ZMod 2) := ZMod.nontrivial_iff.mpr (by decide)
   not_discreteTopology_mvPolynomial ℕ
 
 /-- For comparison, the points of a finite type algebra over a discrete ring are discrete. -/
@@ -96,10 +96,8 @@ example {k R : Type*} [CommRing k] [CommRing R] [Algebra k R] [TopologicalSpace 
   convert ((tensorProductHomeomorph k k[X] k[X] R).trans
     ((polynomialHomeomorph k R).prodCongr (polynomialHomeomorph k R))).isHomeomorph using 1
   funext x
-  rw [Homeomorph.trans_apply, Homeomorph.coe_prodCongr]
-  exact Prod.ext (by rw [Prod.map_fst, polynomialHomeomorph_apply,
-    tensorProductHomeomorph_apply_fst]) (by rw [Prod.map_snd, polynomialHomeomorph_apply,
-    tensorProductHomeomorph_apply_snd])
+  ext <;> simp [polynomialHomeomorph_apply, tensorProductHomeomorph_apply_fst,
+    tensorProductHomeomorph_apply_snd]
 
 /-- The coefficient inclusion `ℝ → ℂ` maps the real points of the affine line continuously to its
 complex points. -/
