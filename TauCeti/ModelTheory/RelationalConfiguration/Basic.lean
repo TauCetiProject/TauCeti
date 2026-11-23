@@ -92,6 +92,11 @@ theorem Atom.induction_atom {motive : Atom L V → Prop}
   obtain ⟨n, R, x⟩ := a
   exact h R x
 
+/-- An atom is the atom of its relation symbol and its tuple. -/
+@[simp]
+theorem Atom.eta (p : Atom L V) : atom p.2.1 p.2.2 = p :=
+  (rfl)
+
 /-- Relabel the arguments of an atom along a vertex map. -/
 def Atom.map (f : V → W) (a : Atom L V) : Atom L W := ⟨a.1, a.2.1, f ∘ a.2.2⟩
 

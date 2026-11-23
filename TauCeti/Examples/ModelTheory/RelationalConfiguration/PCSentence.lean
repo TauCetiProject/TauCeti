@@ -21,7 +21,7 @@ open FirstOrder FirstOrder.Language Descriptive Descriptive.Tree TauCeti Relatio
 example {L : Language} [∀ n, Countable (L.Relations n)] (M : Type) [L.Structure M]
     [pcWitnessLanguage.Structure M] :
     ¬ SentenceInf.Realize (pcSentence (L := L) (⊥ : tree (Bool × ℕ))) M := fun h => by
-  obtain ⟨e, g, hg⟩ := exists_mem_body_of_realize_pcSentence h
+  obtain ⟨e, g, -, -, -, hg⟩ := exists_mem_body_of_realize_pcSentence h
   rw [body_bot] at hg
   exact hg
 

@@ -15,8 +15,10 @@ public import TauCeti.ModelTheory.RelationalConfiguration.Structure
 Let `T` be a tree on `Bool × ℕ`. Through the query code, `T` describes the set of configurations
 `c` on `ℕ` for which some `g : ℕ → ℕ` makes `n ↦ (queryCode c n, g n)` a branch of `T`; every
 analytic set of configurations has this form (`exists_tree_of_analyticSet`). This file writes down
-an `L_{ω₁ω}` sentence `pcSentence T` in the language `L.sum pcWitnessLanguage` whose models are
-exactly the structures that, enumerated by `ℕ`, carry such a branch.
+an `L_{ω₁ω}` sentence `pcSentence T` in the language `L.sum pcWitnessLanguage` such that in each
+model the interpretations of `zero` and `succ` enumerate the domain by `ℕ`, and the interpretation
+of `branch` is the graph of a function `g` whose pairing with the query code of the `L`-reduct,
+read along that enumeration, lies in `body T`.
 
 The witness language `pcWitnessLanguage` is relational, with a unary symbol `zero` and binary
 symbols `succ` and `branch`. Writing `νₖ(x)` for the first-order numeral formula
@@ -43,20 +45,21 @@ conjunction of:
   `n ↦ (queryCode c n, g n)` is a branch of `T`, then `ℕ` with `c.toStructure` and
   `standardWitness g` is a model of `pcSentence T`.
 * `TauCeti.RelationalConfiguration.exists_mem_body_of_realize_pcSentence` (**soundness**): every
-  model `M`, of any cardinality and in any universe, has a bijection `e : M ≃ ℕ` and some
-  `g : ℕ → ℕ` making `n ↦ (queryCode e.encodeVia n, g n)` a branch of `T`.
+  model `M`, of any cardinality and in any universe, has a bijection `e : M ≃ ℕ` sending `zero`
+  to `0` and `succ` to the successor, and some `g : ℕ → ℕ` whose graph is `branch` read through
+  `e`, making `n ↦ (queryCode e.encodeVia n, g n)` a branch of `T`.
 
 ## Implementation notes
 
-The sentence `χᵢ` reads the atom decoded from `i` through a presentation `atom R a` chosen with
-`Atom.induction_atom`: the body of `atom` is not exposed, so the components of a decoded atom
-cannot otherwise be matched with the atom API (`Equiv.eval_encodeVia`, `toStructure_relMap`).
+The sentence `χᵢ` reads the atom `p` decoded from `i` through its components `p.2.1` and `p.2.2`,
+matched with the atom API by `Atom.eta`.
 
 ## References
 
-* D. Marker, *Lectures on Infinitary Model Theory*, Lecture Notes in Logic 46, Cambridge University
-  Press, 2016, Lemma 4.24. There the successor and the branch are function symbols and zero is a
-  constant; here they are relational graphs, and the numeral axiom makes every model countable.
+* D. Marker, *Infinitary Logic*, lecture notes for Math 512, University of Illinois at Chicago,
+  Fall 2013, Lemma 4.24, pp. 50–51. There the successor and the branch are function symbols and
+  zero is a constant; here they are relational graphs, and the numeral axiom makes every model
+  countable.
 -/
 
 public section
@@ -89,17 +92,34 @@ instance instIsRelationalPcWitnessLanguage : pcWitnessLanguage.IsRelational :=
 
 /-- The relations of the standard witness structure on `ℕ` for a branch `g`: zero is `{0}`, the
 successor graph is `n ↦ n + 1`, the branch graph is `n ↦ g n`. -/
-@[expose]
 def standardWitnessRel (g : ℕ → ℕ) : {n : ℕ} → PCWitnessRel n → (Fin n → ℕ) → Prop
   | _, .zero, v => v 0 = 0
   | _, .succ, v => v 1 = v 0 + 1
   | _, .branch, v => v 1 = g (v 0)
 
 /-- The standard witness structure on `ℕ` for a branch `g`. -/
-@[instance_reducible, expose]
+@[instance_reducible]
 def standardWitness (g : ℕ → ℕ) : pcWitnessLanguage.Structure ℕ where
   funMap f := isEmptyElim f
   RelMap := standardWitnessRel g
+
+/-- In the standard witness structure, `zero` holds exactly at `0`. -/
+@[simp]
+theorem standardWitness_relMap_zero (g : ℕ → ℕ) (v : Fin 1 → ℕ) :
+    (standardWitness g).RelMap PCWitnessRel.zero v ↔ v 0 = 0 :=
+  (Iff.rfl)
+
+/-- In the standard witness structure, `succ` is the graph of `n ↦ n + 1`. -/
+@[simp]
+theorem standardWitness_relMap_succ (g : ℕ → ℕ) (v : Fin 2 → ℕ) :
+    (standardWitness g).RelMap PCWitnessRel.succ v ↔ v 1 = v 0 + 1 :=
+  (Iff.rfl)
+
+/-- In the standard witness structure, `branch` is the graph of `g`. -/
+@[simp]
+theorem standardWitness_relMap_branch (g : ℕ → ℕ) (v : Fin 2 → ℕ) :
+    (standardWitness g).RelMap PCWitnessRel.branch v ↔ v 1 = g (v 0) :=
+  (Iff.rfl)
 
 /-! ### Numerals -/
 
@@ -215,18 +235,12 @@ variable {L}
 
 /-- The sentence saying that `R` holds at the numerals of the entries of `a`. -/
 private def relFormula {l : ℕ} (R : L.Relations l) (a : Fin l → ℕ) : (LW).Sentenceω :=
-  (BoundedFormulaInf.iInf (fun j : ℕ => if h : j < l then numeral L (a ⟨j, h⟩) ⟨j, h⟩
-    else ⊤) ⊓ .rel (Sum.inl R) fun j => Term.var (Sum.inr j)).exs
-
-/-- Every atom is `atom R a` for some relation symbol `R` and tuple `a`. -/
-private theorem exists_eq_atom (p : Atom L ℕ) :
-    ∃ q : Σ l, L.Relations l × (Fin l → ℕ), p = atom q.2.1 q.2.2 := by
-  induction p using Atom.induction_atom with
-  | h R a => exact ⟨⟨_, R, a⟩, rfl⟩
+  (BoundedFormulaInf.iInfAlong (IndexCoding.ofEncodable (Fin l)) (fun j => numeral L (a j) j) ⊓
+    .rel (Sum.inl R) fun j => Term.var (Sum.inr j)).exs
 
 /-- The sentence saying that an atom holds at the numerals of its arguments. -/
-private noncomputable def atomFormula (p : Atom L ℕ) : (LW).Sentenceω :=
-  relFormula (Classical.choose (exists_eq_atom p)).2.1 (Classical.choose (exists_eq_atom p)).2.2
+private def atomFormula (p : Atom L ℕ) : (LW).Sentenceω :=
+  relFormula p.2.1 p.2.2
 
 variable [∀ n, Countable (L.Relations n)]
 
@@ -245,9 +259,8 @@ variable (L) in
 /-- The sentence saying that a node `s` describes the first `s.length` values of the query code and
 the branch. -/
 private noncomputable def nodeSentence (s : List (Bool × ℕ)) : (LW).Sentenceω :=
-  .iInf fun i : ℕ => if h : i < s.length then
+  BoundedFormulaInf.iInfAlong (IndexCoding.ofEncodable (Fin s.length)) fun i =>
     (if s[i].1 then atomSentence L i else (atomSentence L i).not) ⊓ branchSentence L i s[i].2
-  else ⊤
 
 end Formulas
 
@@ -257,16 +270,24 @@ section Realize
 
 variable {L : Language.{u, v}} {M : Type w} [L.Structure M] [pcWitnessLanguage.Structure M]
 
+/-- A witness relation applied to bound variables holds when the relation holds at their values:
+`wRel` is an atomic formula of the `pcWitnessLanguage` summand, realized through the sum
+structure. -/
+private theorem realize_wRel {n l : ℕ} (R : PCWitnessRel l) (is : Fin l → Fin n) (v : Empty → M)
+    (xs : Fin n → M) :
+    (wRel L R is).Realize v xs ↔ RelMap (L := pcWitnessLanguage) R (fun j => xs (is j)) :=
+  Iff.rfl
+
 private theorem realize_wRel₁ {n : ℕ} (R : PCWitnessRel 1) (a : Fin n) (v : Empty → M)
     (xs : Fin n → M) :
     (wRel L R ![a]).Realize v xs ↔ RelMap (L := pcWitnessLanguage) R ![xs a] := by
-  change RelMap (L := pcWitnessLanguage) R (fun j => xs (![a] j)) ↔ _
+  rw [realize_wRel]
   exact iff_of_eq (congrArg _ (funext fun j => by fin_cases j; rfl))
 
 private theorem realize_wRel₂ {n : ℕ} (R : PCWitnessRel 2) (a b : Fin n) (v : Empty → M)
     (xs : Fin n → M) :
     (wRel L R ![a, b]).Realize v xs ↔ RelMap (L := pcWitnessLanguage) R ![xs a, xs b] := by
-  change RelMap (L := pcWitnessLanguage) R (fun j => xs (![a, b] j)) ↔ _
+  rw [realize_wRel]
   exact iff_of_eq (congrArg _ (funext fun j => by fin_cases j <;> rfl))
 
 private theorem realize_eqv {n : ℕ} (i j : Fin n) (v : Empty → M) (xs : Fin n → M) :
@@ -313,12 +334,8 @@ private theorem realize_numeralSentence :
 private theorem realize_relFormula {l : ℕ} (R : L.Relations l) (a : Fin l → ℕ) :
     (Holds relFormula R a) ↔ ∃ ys : Fin l → M, (∀ j, IsNumeral (a j) (ys j)) ∧ RelMap R ys := by
   simp only [relFormula, BoundedFormulaInf.realize_exs, BoundedFormulaInf.realize_inf,
-    BoundedFormulaInf.realize_iInf]
-  refine exists_congr fun ys => and_congr ⟨fun h j => ?_, fun h i => ?_⟩ Iff.rfl
-  · simpa [j.isLt, realize_numeral] using h j
-  · split_ifs with hi
-    · exact (realize_numeral _ _ _ _).2 (h _)
-    · exact BoundedFormulaInf.realize_top.2 trivial
+    BoundedFormulaInf.realize_iInfAlong, realize_numeral]
+  rfl
 
 section Enumerated
 
@@ -330,10 +347,11 @@ private theorem realize_atomSentence (he : ∀ k (x : M), IsNumeral k x ↔ e x 
   · simp [atomSentence, h, queryCode_of_decode_eq_none h]
   · rw [atomSentence, h, Option.map_some, Option.getD_some, atomFormula, realize_relFormula,
       queryCode_of_decode_eq_some h]
-    conv_rhs => rw [Classical.choose_spec (exists_eq_atom p)]
+    conv_rhs => rw [← Atom.eta p]
     simp only [Equiv.eval_encodeVia, decide_eq_true_iff, he, ← Equiv.eq_symm_apply]
-    exact ⟨fun ⟨ys, hys, hR⟩ => by rwa [show ys = _ from funext hys] at hR,
-      fun hR => ⟨_, fun _ => rfl, hR⟩⟩
+    refine ⟨fun ⟨ys, hys, hR⟩ => ?_, fun hR => ⟨_, fun _ => rfl, hR⟩⟩
+    have hys' : ys = fun j => e.symm (p.2.2 j) := funext hys
+    rwa [hys'] at hR
 
 omit [∀ n, Countable (L.Relations n)] in
 private theorem realize_branchSentence (he : ∀ k (x : M), IsNumeral k x ↔ e x = k)
@@ -349,14 +367,11 @@ private theorem realize_nodeSentence (he : ∀ k (x : M), IsNumeral k x ↔ e x 
     (Holds nodeSentence L s) ↔ ∀ i (hi : i < s.length),
       queryCode (e.encodeVia (L := L)) i = s[i].1 ∧
         RelMap (L := pcWitnessLanguage) PCWitnessRel.branch ![e.symm i, e.symm s[i].2] := by
-  simp only [nodeSentence, BoundedFormulaInf.realize_iInf]
-  refine forall_congr' fun i => ?_
-  by_cases hi : i < s.length
-  · simp only [hi, dite_true, forall_true_left, BoundedFormulaInf.realize_inf,
-      realize_branchSentence he]
-    refine and_congr_left' ?_
-    cases s[i].1 <;> simp [realize_atomSentence he]
-  · simp [hi]
+  simp only [nodeSentence, BoundedFormulaInf.realize_iInfAlong, Fin.forall_iff]
+  refine forall_congr' fun i => forall_congr' fun hi => ?_
+  simp only [Fin.getElem_fin, BoundedFormulaInf.realize_inf, realize_branchSentence he]
+  refine and_congr_left' ?_
+  cases s[i].1 <;> simp [realize_atomSentence he]
 
 end Enumerated
 
@@ -367,11 +382,12 @@ variable {L : Language.{u, v}} [∀ n, Countable (L.Relations n)]
 /-- **The PC sentence of a tree** `T` on `Bool × ℕ`: in a model, the numerals of `zero` and
 `succ` enumerate the universe without repetition, `branch` is the graph of a total function `g`,
 and the code read along the numerals, together with `g`, is a branch of `T`. -/
-noncomputable def pcSentence (T : tree (Bool × ℕ)) : (L.sum pcWitnessLanguage).Sentenceω := by
-  classical
-  exact numeralSentence L ⊓ graphSentence L PCWitnessRel.branch ⊓
-    .iInf fun n : ℕ => BoundedFormulaInf.iSupAlong (IndexCoding.ofEncodable (List (Bool × ℕ)))
-      fun s => if s ∈ T ∧ s.length = n then nodeSentence L s else ⊥
+noncomputable def pcSentence (T : tree (Bool × ℕ)) : (L.sum pcWitnessLanguage).Sentenceω :=
+  numeralSentence L ⊓ graphSentence L PCWitnessRel.branch ⊓
+    .iInf fun n : ℕ => BoundedFormulaInf.iSupAlong
+      (IndexCoding.ofEncodableWith (Encodable.ofCountable {s : List (Bool × ℕ) //
+        s ∈ T ∧ s.length = n}))
+      fun s => nodeSentence L s.val
 
 /-! ### Completeness and soundness -/
 
@@ -388,12 +404,7 @@ private theorem realize_pcSentence_iff {T : tree (Bool × ℕ)} :
         BoundedFormulaInf.Realize (nodeSentence L s) (Empty.elim : Empty → M) default := by
   simp only [pcSentence, SentenceInf.realize_def, FormulaInf.realize_def,
     BoundedFormulaInf.realize_inf, BoundedFormulaInf.realize_iInf,
-    BoundedFormulaInf.realize_iSupAlong, and_assoc]
-  refine and_congr_right' (and_congr_right' (forall_congr' fun n => exists_congr fun s => ?_))
-  split_ifs with h
-  · simp [h]
-  · simp only [BoundedFormulaInf.realize_bot, false_iff, not_and]
-    exact fun h₁ h₂ _ => h ⟨h₁, h₂⟩
+    BoundedFormulaInf.realize_iSupAlong, and_assoc, Subtype.exists, exists_prop]
 
 omit [∀ n, Countable (L.Relations n)] in
 /-- Under the axioms of clause 1, the numerals enumerate `M` by a bijection with `ℕ`. -/
@@ -408,17 +419,31 @@ private theorem exists_equiv_isNumeral
   exact ⟨.ofBijective f hbij, fun k x => ⟨fun hx => (hf x).inj hinj hmiss hx, fun h => h ▸ hf x⟩⟩
 
 /-- **Soundness of the PC sentence.** Every model `M` of `pcSentence T`, of any cardinality and in
-any universe, is countably infinite, and some bijection `e : M ≃ ℕ` (the one given by the numerals)
-and some `g : ℕ → ℕ` (read off `branch`) make `n ↦ (queryCode e.encodeVia n, g n)` a branch
-of `T`. -/
+any universe, is countably infinite: there are a bijection `e : M ≃ ℕ` sending the `zero` of `M`
+to `0` and its `succ` to the successor, and a function `g : ℕ → ℕ` whose graph is the `branch` of
+`M` read through `e`, such that `n ↦ (queryCode e.encodeVia n, g n)` is a branch of `T`. -/
 theorem exists_mem_body_of_realize_pcSentence {T : tree (Bool × ℕ)}
     (h : SentenceInf.Realize (pcSentence (L := L) T) M) :
     ∃ e : M ≃ ℕ, ∃ g : ℕ → ℕ,
+      (∀ x, RelMap (L := pcWitnessLanguage) PCWitnessRel.zero ![x] ↔ e x = 0) ∧
+      (∀ x y, RelMap (L := pcWitnessLanguage) PCWitnessRel.succ ![x, y] ↔ e y = e x + 1) ∧
+      (∀ x y, RelMap (L := pcWitnessLanguage) PCWitnessRel.branch ![x, y] ↔ e y = g (e x)) ∧
       (fun n => (queryCode (e.encodeVia (L := L)) n, g n)) ∈ body T := by
   obtain ⟨hnum, hbr, htree⟩ := realize_pcSentence_iff.1 h
   obtain ⟨e, he⟩ := exists_equiv_isNumeral hnum
   rw [realize_graphSentence] at hbr
-  refine ⟨e, fun k => e (hbr.1 (e.symm k)).choose, mem_body.2 fun n => ?_⟩
+  choose f hf using hbr.1
+  have hfx (x y : M) : RelMap (L := pcWitnessLanguage) PCWitnessRel.branch ![x, y] ↔ y = f x :=
+    ⟨fun hxy => hbr.2 x y (f x) hxy (hf x), fun hy => hy ▸ hf x⟩
+  refine ⟨e, fun k => e (f (e.symm k)), fun x => ?_, fun x y => ?_, fun x y => ?_,
+    mem_body.2 fun n => ?_⟩
+  · rw [← he 0 x, isNumeral_zero_iff]
+  · rw [← he]
+    refine ⟨fun hxy => .succ ((he _ x).2 rfl) hxy, fun hy => ?_⟩
+    obtain ⟨x', hx', hx'y⟩ := isNumeral_succ_iff.1 hy
+    obtain rfl : x' = x := e.injective ((he _ x').1 hx')
+    exact hx'y
+  · simp only [hfx, Equiv.symm_apply_apply, e.injective.eq_iff]
   obtain ⟨s, ⟨hsT, rfl⟩, hs⟩ := htree n
   rw [realize_nodeSentence he] at hs
   convert hsT using 1
@@ -426,7 +451,7 @@ theorem exists_mem_body_of_realize_pcSentence {T : tree (Bool × ℕ)}
   obtain ⟨hq, hb⟩ := hs i hi'
   simp only [initialSegment_def, List.getElem_ofFn]
   refine Prod.ext hq ?_
-  rw [hbr.2 _ _ _ (hbr.1 (e.symm i)).choose_spec hb, Equiv.apply_symm_apply]
+  simp only [← (hfx _ _).1 hb, Equiv.apply_symm_apply]
 
 /-- **Completeness of the PC sentence.** If `n ↦ (queryCode c n, g n)` is a branch of `T`, then
 `ℕ`, with the structure decoded from `c` and the standard witness structure of `g`, is a model of
@@ -438,27 +463,36 @@ theorem realize_pcSentence_standardWitness [L.IsRelational] {T : tree (Bool × �
       (@Language.sumStructure L pcWitnessLanguage ℕ c.toStructure (standardWitness g)) := by
   let := c.toStructure
   let := standardWitness g
+  -- The witness relations of `ℕ` are those of `standardWitness g`.
+  have hz (x : ℕ) : RelMap (L := pcWitnessLanguage) PCWitnessRel.zero ![x] ↔ x = 0 :=
+    standardWitness_relMap_zero g _
+  have hs (x y : ℕ) : RelMap (L := pcWitnessLanguage) PCWitnessRel.succ ![x, y] ↔ y = x + 1 :=
+    standardWitness_relMap_succ g _
+  have hb (x y : ℕ) : RelMap (L := pcWitnessLanguage) PCWitnessRel.branch ![x, y] ↔ y = g x :=
+    standardWitness_relMap_branch g _
   have hnum : ∀ k (x : ℕ), IsNumeral k x ↔ (Equiv.refl ℕ) x = k := by
     intro k
     induction k with
-    | zero => exact fun x => isNumeral_zero_iff
+    | zero => exact fun x => isNumeral_zero_iff.trans (hz x)
     | succ k ih =>
       intro x
-      simp only [isNumeral_succ_iff, ih, Equiv.refl_apply, exists_eq_left]
-      exact Iff.rfl
+      simp only [isNumeral_succ_iff, ih, Equiv.refl_apply, exists_eq_left, hs]
   have hc : (Equiv.refl ℕ).encodeVia (L := L) = c := by
     rw [Equiv.encodeVia_refl, ofStructure_toStructure]
   rw [realize_pcSentence_iff, realize_numeralSentence, realize_graphSentence]
-  refine ⟨⟨⟨0, rfl⟩, fun x y hx hy => hx.trans hy.symm, fun x => ⟨x + 1, rfl⟩,
-    fun x y z hy hz => hy.trans hz.symm, fun x y z hx hy => Nat.succ_injective (hx.symm.trans hy),
-    fun x y hxy hy => ?_, fun x => ⟨x, (hnum x x).2 rfl⟩⟩,
-    ⟨fun x => ⟨g x, rfl⟩, fun x y z hy hz => hy.trans hz.symm⟩,
+  refine ⟨⟨⟨0, (hz 0).2 rfl⟩, fun x y hx hy => ((hz x).1 hx).trans ((hz y).1 hy).symm,
+    fun x => ⟨x + 1, (hs x _).2 rfl⟩,
+    fun x y z hy hz' => ((hs x y).1 hy).trans ((hs x z).1 hz').symm,
+    fun x y z hx hy => Nat.succ_injective (((hs x z).1 hx).symm.trans ((hs y z).1 hy)),
+    fun x y hxy hy => Nat.succ_ne_zero x (((hs x y).1 hxy).symm.trans ((hz y).1 hy)),
+    fun x => ⟨x, (hnum x x).2 rfl⟩⟩,
+    ⟨fun x => ⟨g x, (hb x _).2 rfl⟩,
+      fun x y z hy hz' => ((hb x y).1 hy).trans ((hb x z).1 hz').symm⟩,
     fun n => ⟨initialSegment _ n, ⟨mem_body.1 hcg n, length_initialSegment _ _⟩, ?_⟩⟩
-  · exact Nat.succ_ne_zero x (hxy.symm.trans hy)
-  · rw [realize_nodeSentence hnum, hc]
-    intro i hi
-    simp only [initialSegment_def, List.getElem_ofFn, Equiv.refl_symm, Equiv.refl_apply]
-    exact ⟨trivial, rfl⟩
+  rw [realize_nodeSentence hnum, hc]
+  intro i hi
+  simp only [initialSegment_def, List.getElem_ofFn, Equiv.refl_symm, Equiv.refl_apply]
+  exact ⟨trivial, (hb _ _).2 rfl⟩
 
 end Realize
 
