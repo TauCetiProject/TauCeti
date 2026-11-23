@@ -137,16 +137,22 @@ theorem coeff_ofCoeffList_reverse_length_sub_one (l : List R) :
       List.getD_append_right _ _ _ _ (by simp)]
     simp
 
+/-- A list of `n` coefficients defines a polynomial of natural degree at most `n - 1`. -/
+theorem natDegree_ofCoeffList_reverse_le (l : List R) :
+    (ofCoeffList l.reverse).natDegree ≤ l.length - 1 := by
+  by_cases hp : ofCoeffList l.reverse = 0
+  · simp [hp]
+  have := (natDegree_lt_iff_degree_lt hp).2 (degree_ofCoeffList_reverse_lt l)
+  omega
+
 /-- A list with no leading zero has exactly one more entry than the degree of the polynomial it
 defines. The empty list is allowed: it defines `0`, of natural degree `0`. -/
 theorem natDegree_ofCoeffList_reverse {l : List R} (h : l = [] ∨ l.headD 0 ≠ 0) :
     (ofCoeffList l.reverse).natDegree = l.length - 1 := by
   rcases h with rfl | h
   · simp
-  refine natDegree_eq_of_le_of_coeff_ne_zero ?_ (by rwa [coeff_ofCoeffList_reverse_length_sub_one])
-  rw [natDegree_le_iff_coeff_eq_zero]
-  intro N hN
-  rw [coeff_ofCoeffList, List.getD_eq_default _ _ (by simp; omega)]
+  exact natDegree_eq_of_le_of_coeff_ne_zero (natDegree_ofCoeffList_reverse_le l)
+    (by rwa [coeff_ofCoeffList_reverse_length_sub_one])
 
 /-- A list with no leading zero has its head as the leading coefficient of the polynomial it
 defines.  The empty list is allowed: it defines `0`, whose leading coefficient is `0`. -/
@@ -171,20 +177,24 @@ theorem ofCoeffList_reverse_inj {l l' : List R} (hlen : l.length = l'.length) :
     ofCoeffList l.reverse = ofCoeffList l'.reverse ↔ l = l' :=
   (ofCoeffList_inj (by simpa using hlen)).trans List.reverse_inj
 
-/-- Recovering a descending list with no leading zero from its polynomial. -/
-theorem coeffList_ofCoeffList_reverse {l : List R} (h : l = [] ∨ l.headD 0 ≠ 0) :
+/-- Recovering a descending list with no leading zero from its polynomial.  The hypothesis
+`l.head? ≠ some 0` says that `l` is empty or has a nonzero head, as the hypothesis
+`l = [] ∨ l.headD 0 ≠ 0` of `TauCeti.Polynomial.natDegree_ofCoeffList_reverse` does; it is stated
+through `List.head?` because that form is in simp normal form, so `simp` can discharge it. -/
+@[simp]
+theorem coeffList_ofCoeffList_reverse {l : List R} (h : l.head? ≠ some 0) :
     (ofCoeffList l.reverse).coeffList = l := by
   classical
   -- both lists define the same polynomial, so it suffices to compare their lengths
   refine (ofCoeffList_reverse_inj ?_).1 (ofCoeffList_reverse_coeffList _)
-  rcases h with rfl | h
+  rcases l with _ | ⟨a, l⟩
   · simp
-  have hne : ofCoeffList l.reverse ≠ 0 := by
+  replace h : (a :: l).headD 0 ≠ 0 := by simpa using h
+  have hne : ofCoeffList (a :: l).reverse ≠ 0 := by
     rw [← leadingCoeff_ne_zero, leadingCoeff_ofCoeffList_reverse (.inr h)]
     exact h
-  have hl : l ≠ [] := by rintro rfl; exact h rfl
   rw [length_coeffList_eq_ite, ite_eq_right hne, natDegree_ofCoeffList_reverse (.inr h),
-    Nat.sub_add_cancel (List.length_pos_iff.2 hl)]
+    List.length_cons, Nat.add_sub_cancel]
 
 /-- Multiplication of descending coefficient lists, by convolving them in ascending degree order.
 The output has the usual `l.length + m.length - 1` slots; if either input is empty, all of those
@@ -204,13 +214,17 @@ theorem ofCoeffList_reverse_mulCoeffList (l m : List R) :
   · rw [mulCoeffList, List.reverse_reverse, List.getD_eq_getElem]
     · simp
     · simpa using hn
-  · rw [List.getD_eq_default _ _ (by simp [mulCoeffList]; omega)]
-    refine (Finset.sum_eq_zero fun jk hjk => ?_).symm
-    rw [Finset.mem_antidiagonal] at hjk
-    simp only [coeff_ofCoeffList]
-    by_cases hl : jk.1 < l.length
-    · rw [List.getD_eq_default m.reverse _ (by simp; omega), mul_zero]
-    · rw [List.getD_eq_default l.reverse _ (by simpa using hl), zero_mul]
+  · rw [List.getD_eq_default _ _ (by simp [mulCoeffList]; omega), ← coeff_mul]
+    by_cases hl : l = []
+    · simp [hl]
+    by_cases hm : m = []
+    · simp [hm]
+    -- both lists are nonempty, so `n` exceeds the bound on the natural degree of the product
+    have := List.length_pos_iff.2 hl
+    have := List.length_pos_iff.2 hm
+    have := natDegree_ofCoeffList_reverse_le l
+    have := natDegree_ofCoeffList_reverse_le m
+    exact (coeff_eq_zero_of_natDegree_lt (natDegree_mul_le.trans_lt (by omega))).symm
 
 /-- The divisor `X ^ t.length + ofCoeffList t.reverse` of `TauCeti.Polynomial.divModByMonicList` is
 monic. -/
