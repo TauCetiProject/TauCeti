@@ -19,9 +19,11 @@ import TauCeti.Topology.Compactness.LocallyCompact
 # Characters and the radical of commutative Banach algebras
 
 A character of a complex algebra `A` is an algebra homomorphism `A → ℂ`. In the nonunital setting
-it is a nonunital algebra homomorphism, and the zero map is allowed. A nonunital character of a
-Banach algebra is bounded by the norm, with no unit and no continuity assumption, because its
-values lie in the quasispectrum.
+it is a nonunital algebra homomorphism, and the zero map is allowed. By Mathlib's
+`NonUnitalAlgHom.norm_apply_le_self`, a nonunital character of a Banach algebra is bounded by the
+norm, with no unit and no continuity assumption, because its values lie in the quasispectrum; hence
+it defines a continuous linear functional `NonUnitalAlgHom.toStrongDual` of operator norm at most
+`1` (`NonUnitalAlgHom.norm_toStrongDual_le`).
 
 Every character kills the Jacobson radical. In a commutative complex Banach algebra the converse
 holds. By Gelfand–Mazur every point of the spectrum is the value of a character, so an element
@@ -36,10 +38,9 @@ Banach algebras are automatically continuous.
 
 ## Main results
 
-* `NonUnitalAlgHom.norm_apply_le_self`, `NonUnitalAlgHom.instContinuousLinearMapClass`,
-  `NonUnitalAlgHom.toStrongDual`, `NonUnitalAlgHom.norm_toStrongDual_le`:
-  nonunital characters of Banach algebras are contractive, hence continuous linear functionals of
-  operator norm at most `1`.
+* `NonUnitalAlgHom.toStrongDual_injective`, `NonUnitalAlgHom.toStrongDual_inj`,
+  `NonUnitalAlgHom.toStrongDual_zero`, `NonUnitalAlgHom.toStrongDual_eq_zero`: injectivity and
+  zero-character characterization of `NonUnitalAlgHom.toStrongDual`.
 * `NonUnitalAlgHom.tendsto_one_of_tendsto_mul_right`,
   `NonUnitalAlgHom.tendsto_one_of_isApproximateUnit`,
   `NonUnitalAlgHom.norm_toStrongDual_eq_one_of_tendsto_mul_right`: a nonzero character tends to `1`

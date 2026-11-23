@@ -40,15 +40,15 @@ concentrated near `1`. Neither σ-finiteness of `μ` nor any countability of `G`
 
 ## Main results
 
-* `MeasureTheory.Lp.norm_convolutionL_sub_le_of_integral_eq_one`,
+* `MeasureTheory.Lp.norm_convolutionL_sub_le_left_of_integral_eq_one`,
   `MeasureTheory.Lp.exists_mem_nhds_one_forall_norm_convolutionL_sub_le_left`: quantitative left
   approximate-identity estimates on `Lᵖ` (`1 ≤ p < ∞`) over any `RCLike` scalar field.
 * `MeasureTheory.Lp.tendsto_convolutionL_left_of_norm_le`,
   `MeasureTheory.Lp.tendsto_convolutionL_left`: `k i ⋆ u → u` in `Lᵖ` for kernels
   concentrating at the identity (`1 ≤ p < ∞`), over any `RCLike` scalar field and for nonnegative
   real kernels.
-* `MeasureTheory.Lp.norm_convolutionL_sub_le_of_rightTranslation_of_integral_eq_one`,
-  `MeasureTheory.Lp.exists_mem_nhds_one_forall_norm_convolutionL_sub_le`: quantitative right
+* `MeasureTheory.Lp.norm_convolutionL_sub_le_right_of_integral_eq_one`,
+  `MeasureTheory.Lp.exists_mem_nhds_one_forall_norm_convolutionL_sub_le_right`: quantitative right
   approximate-identity estimates on `L¹`.
 * `MeasureTheory.Lp.tendsto_convolutionL_right_of_norm_le`,
   `MeasureTheory.Lp.tendsto_convolutionL_ofRealCLM_compLp_right`,
@@ -85,7 +85,7 @@ variable {𝕜 : Type*} [RCLike 𝕜] [NormedSpace 𝕜 E] [SMulCommClass ℝ �
 /-- Over an `RCLike` scalar field, if `k ∈ L¹(G, μ; 𝕜)` has integral one and vanishes outside
 `S`, and every left translate `L_y u` with `y ∈ S` lies within `ε` of `u`, then
 `‖k ⋆ u - u‖_p ≤ ε * ‖k‖₁`. -/
-theorem norm_convolutionL_sub_le_of_integral_eq_one {hp : p ≠ ∞} {k : Lp 𝕜 1 μ}
+theorem norm_convolutionL_sub_le_left_of_integral_eq_one {hp : p ≠ ∞} {k : Lp 𝕜 1 μ}
     (hk1 : ∫ y, k y ∂μ = 1) {S : Set G} (hkS : ∀ᵐ y ∂μ, y ∉ S → k y = 0) {u : Lp E p μ}
     {ε : ℝ} (hu : ∀ y ∈ S, ‖leftTranslation μ p 𝕜 y u - u‖ ≤ ε) :
     ‖convolutionL μ p hp k u - u‖ ≤ ε * ‖k‖ := by
@@ -144,7 +144,7 @@ variable [LocallyCompactSpace G] [μ.IsHaarMeasure] [μ.Regular]
 /-- Over an `RCLike` scalar field, if `k ∈ L¹(G, μ; 𝕜)` has integral one and vanishes almost
 everywhere outside `U`, then `‖h ⋆ k - h‖₁ ≤ C * ‖k‖₁` for any bound `C` on `‖R_(z⁻¹) h - h‖₁`
 over `z ∈ U`. -/
-theorem norm_convolutionL_sub_le_of_rightTranslation_of_integral_eq_one {𝕜 : Type*} [RCLike 𝕜]
+theorem norm_convolutionL_sub_le_right_of_integral_eq_one {𝕜 : Type*} [RCLike 𝕜]
     {h k : Lp 𝕜 1 μ} (hk1 : ∫ z, k z ∂μ = 1) {U : Set G}
     (hkU : ∀ᵐ z ∂μ, z ∉ U → k z = 0) {C : ℝ}
     (hC : ∀ z ∈ U, ‖rightTranslation μ 1 𝕜 z⁻¹ h - h‖ ≤ C) :
@@ -159,7 +159,7 @@ theorem norm_convolutionL_sub_le_of_rightTranslation_of_integral_eq_one {𝕜 : 
 `h ∈ L¹(G, μ; 𝕜)`, `C : ℝ`, and `ε > 0`, there is a neighbourhood `U` of `1` such that
 `‖h ⋆ k - h‖₁ ≤ ε` for every `k ∈ L¹(G, μ; 𝕜)` with `‖k‖₁ ≤ C` and `∫ k = 1` vanishing almost
 everywhere outside `U`. -/
-theorem exists_mem_nhds_one_forall_norm_convolutionL_sub_le {𝕜 : Type*} [RCLike 𝕜]
+theorem exists_mem_nhds_one_forall_norm_convolutionL_sub_le_right {𝕜 : Type*} [RCLike 𝕜]
     (h : Lp 𝕜 1 μ) (C : ℝ) {ε : ℝ} (hε : 0 < ε) :
     ∃ U ∈ 𝓝 (1 : G), ∀ k : Lp 𝕜 1 μ, ‖k‖ ≤ C → ∫ z, k z ∂μ = 1 →
       (∀ᵐ z ∂μ, z ∉ U → k z = 0) → ‖convolutionL μ 1 ENNReal.one_ne_top h k - h‖ ≤ ε := by

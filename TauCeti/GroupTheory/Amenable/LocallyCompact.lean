@@ -32,7 +32,7 @@ rests on the identity `m ((h ⋆ e) ⋆ φ) = (∫ h) * m (e ⋆ φ)` for left-i
 (`TauCeti.Mean.IsLeftInvariant.apply_convolutionUCB_convolutionL`) together with a **right
 approximate identity** in `L¹(G, μ)`: `h ⋆ e` is close to `h` in `L¹` when `e` is a nonnegative
 kernel of integral one vanishing outside a small neighbourhood of `1`
-(`MeasureTheory.Lp.exists_mem_nhds_one_forall_norm_convolutionL_sub_le`).
+(`MeasureTheory.Lp.exists_mem_nhds_one_forall_norm_convolutionL_sub_le_right`).
 
 The right approximate identity comes from writing a convolution as an average of right
 translates, `h ⋆ k = ∫ z, k z • R_(z⁻¹) h ∂μ`
@@ -89,8 +89,10 @@ theorem IsLeftInvariant.integral_mul_apply_convolutionUCB {m : Mean G} (hm : m.I
   -- values of `m` by at most `δ * ‖φ‖`, and turns them into `a * m (e ⋆ φ)` and `b * m (e ⋆ φ)`.
   have key (δ : ℝ) (hδ : 0 < δ) : |b * m (Lp.convolutionUCB h φ) - a * m (Lp.convolutionUCB k φ)|
       ≤ (|a| + |b|) * ‖φ‖ * δ := by
-    obtain ⟨U₁, hU₁, hh⟩ := Lp.exists_mem_nhds_one_forall_norm_convolutionL_sub_le (μ := μ) h 1 hδ
-    obtain ⟨U₂, hU₂, hk⟩ := Lp.exists_mem_nhds_one_forall_norm_convolutionL_sub_le (μ := μ) k 1 hδ
+    obtain ⟨U₁, hU₁, hh⟩ :=
+      Lp.exists_mem_nhds_one_forall_norm_convolutionL_sub_le_right (μ := μ) h 1 hδ
+    obtain ⟨U₂, hU₂, hk⟩ :=
+      Lp.exists_mem_nhds_one_forall_norm_convolutionL_sub_le_right (μ := μ) k 1 hδ
     obtain ⟨e, -, he₁, hen, heU⟩ :=
       exists_nonneg_integral_eq_one_norm_eq_one μ (x₀ := 1) (inter_mem hU₁ hU₂)
     have hU (U : Set G) (hU : U₁ ∩ U₂ ⊆ U) : ∀ᵐ z ∂μ, z ∉ U → e z = 0 := by
