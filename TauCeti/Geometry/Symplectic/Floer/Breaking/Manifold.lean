@@ -6,14 +6,14 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Symplectic.Floer.HalfCylinder.Manifold
-public import TauCeti.Geometry.Symplectic.Floer.Rotation
-public import TauCeti.Geometry.Symplectic.Floer.Stationary
 import Mathlib.Analysis.Complex.Tietze
 import TauCeti.Analysis.Calculus.StripTranslate
 import TauCeti.Geometry.Manifold.Immersion.Curve
 import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
 import TauCeti.Geometry.Manifold.VectorField.Regularity
 import TauCeti.Geometry.Symplectic.Floer.Manifold.Limit
+import TauCeti.Geometry.Symplectic.Floer.Rotation
+import TauCeti.Geometry.Symplectic.Floer.Stationary
 import TauCeti.MeasureTheory.Integral.Lebesgue.Strip
 import TauCeti.MeasureTheory.Integral.Rectangle
 import TauCeti.MeasureTheory.Measure.Haar.Prod
@@ -325,8 +325,9 @@ theorem IsNondegenerate.exists_hasMFDerivWithinAt_of_tendstoLocallyUniformlyOn_c
     hdΦ hv
   -- Read the limit back in `M`: it is `e ∘ x` for a path `x` in `K`.
   obtain ⟨x, hxK, hvx, hconv, hxc⟩ := exists_eq_comp_tendsto_of_tendstoLocallyUniformlyOn
-    he.continuous hK he_inj (fun z hz ↦ (hW z.1 z.1).mono fun k hk ↦
-      huK k _ (hk ⟨⟨by simp, by simp⟩, by simpa using hz.2⟩)) hv hstat
+    he.continuous hK he_inj (fun z hz ↦
+      (eventually_add_mem_of_eventually_Icc_prod_subset hW z hz).mono fun k hk ↦ huK k _ hk) hv
+    hstat
     fun t ht ↦ (hy t ht).continuousWithinAt
   refine ⟨x, hxK, hvx, hconv, fun t ht ↦ ?_⟩
   -- Since `d e` is injective, `x` has velocity `X_{H_t}(x)`.
@@ -487,13 +488,6 @@ theorem isComplexLinearMap_perturbedMFDeriv_of_tendsto_mfderiv_comp_add (hω : �
     (Kt := fun w ↦ H w.2) (J := fun w x ↦ J w.2 x) (u := fun k w ↦ u (w + (s k, 0)))
     tendsto_const_nhds (hdu z hz) hJ' hω.continuous_hamiltonianVectorField_zero.continuousAt
     (hω.continuous_hamiltonianVectorField_cylindrical hH).continuousAt hsol
-
-/-- If every window `[a + s_k, b + s_k] × [0, 1]` eventually lies in `D`, then so do the translates
-`z + (s_k, 0)` of every point `z` of the strip `ℝ × [0, 1]`. -/
-private theorem eventually_add_mem_of_eventually_Icc_prod_subset
-    (hW : ∀ a b : ℝ, ∀ᶠ k in atTop, Icc (a + s k) (b + s k) ×ˢ Icc 0 1 ⊆ D) :
-    ∀ z ∈ (univ : Set ℝ) ×ˢ Icc 0 1, ∀ᶠ k in atTop, z + (s k, 0) ∈ D :=
-  fun z hz ↦ (hW z.1 z.1).mono fun _ hk ↦ hk ⟨⟨by simp, by simp⟩, by simpa using hz.2⟩
 
 /-- **The limit of translated Floer cylinders is independent of `s`.** Under the hypotheses of
 `TauCeti.SmoothTwoForm.lintegral_floerEnergyDensity_eq_zero_of_tendsto_mfderiv_comp_add` and
