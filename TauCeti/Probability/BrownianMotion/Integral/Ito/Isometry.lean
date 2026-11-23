@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Probability.BrownianMotion.Integral.Integrable
 public import TauCeti.Probability.BrownianMotion.Integral.Ito.Basic
-import Mathlib.MeasureTheory.OuterMeasure.BorelCantelli
 import TauCeti.MeasureTheory.Function.ConvergenceInMeasure
 import TauCeti.MeasureTheory.Function.Lp.Norm
 import TauCeti.MeasureTheory.Function.LpSeminorm.Lintegral
@@ -281,54 +280,20 @@ private theorem exists_martingale_simpleGains_eq_on_Iic
     (hK : MemLp (Function.uncurry (Finance.simpleHolding τ n a)) 2 ((timeMeasure T).prod P)) :
     ∃ M : ℝ≥0 → Ω → ℝ, Martingale M ℱ P ∧ (∀ᵐ ω ∂P, Continuous fun t ↦ M t ω) ∧
       ∀ t ≤ T, ∀ ω, M t ω = Finance.simpleGains τ n a W t ω := by
-  classical
   have : IsProbabilityMeasure P := (hW.hasLaw_eval 0).isProbabilityMeasure
-  let a' (j : ℕ) : Ω → ℝ := if min (τ j) T < min (τ (j + 1)) T then a j else 0
-  have ha' (j : ℕ) (hj : j < n) : StronglyMeasurable[ℱ (τ j)] (a' j) := by
-    dsimp only [a']
-    split_ifs
-    · exact ha j hj
-    · exact stronglyMeasurable_zero
-  have ha'₂ (j : ℕ) (hj : j < n) : MemLp (a' j) 2 P := by
-    dsimp only [a']; split_ifs with hlt
-    · have hτj : τ j < T := lt_of_not_ge fun hle ↦ hlt.not_ge <| by
-        simpa only [min_eq_right hle] using min_le_right (τ (j + 1)) T
-      have hne : timeMeasure T (Ioc (τ j) (τ (j + 1))) ≠ 0 := by
-        rw [timeMeasure_Ioc]
-        exact (ENNReal.ofReal_pos.2 (sub_pos.2 (by
-          exact_mod_cast (min_eq_left hτj.le ▸ hlt)))).ne'
-      have hsec : ∀ᵐ s ∂timeMeasure T, MemLp (fun ω ↦ Finance.simpleHolding τ n a s ω) 2 P := by
-        simpa only [Function.uncurry_apply_pair] using hK.ae_memLp_prod_right
-      have hex : ∃ s ∈ Ioc (τ j) (τ (j + 1)),
-          MemLp (fun ω ↦ Finance.simpleHolding τ n a s ω) 2 P := by
-        by_contra hnot; push Not at hnot
-        exact hne (measure_mono_null (fun s hs ↦ hnot s hs) (ae_iff.1 hsec))
-      obtain ⟨s, hs, hs_mem⟩ := hex
-      exact hs_mem.ae_eq (.of_forall fun ω ↦ Finance.simpleHolding_of_mem_Ioc hτ hj hs ω)
-    · exact MemLp.zero
+  obtain ⟨a', ha', ha'₂, -, hgain⟩ :=
+    Finance.exists_memLp_simpleHolding_simpleGains_eq_on_Iic hτ ha hK
   refine ⟨Finance.simpleGains τ n a' W, hW.martingale.simpleGains hτ ha' fun j hj t ↦ ?_,
-    hWc.mono fun _ hω ↦ Finance.continuous_simpleGains hω, fun t ht ω ↦ ?_⟩
-  · by_cases hjt : τ j ≤ t
-    · change Integrable (fun ω ↦ a' j ω * (W (min (τ (j + 1)) t) ω - W (min (τ j) t) ω)) P
-      rw [min_eq_left hjt]
-      exact (hW.memLp_mul_sub (le_min (hτ hj.le hj (Nat.le_succ j)) hjt)
-        (ha' j hj) (ha'₂ j hj)).integrable one_le_two
-    · have htj : t ≤ τ j := (not_le.1 hjt).le
-      simp only [min_eq_right htj, min_eq_right (htj.trans (hτ hj.le hj (Nat.le_succ j))),
-        sub_self, mul_zero]
-      exact integrable_zero _ _ _
-  · simp only [Finance.simpleGains_def]
-    refine Finset.sum_congr rfl fun j hj ↦ ?_
-    have hj' := Finset.mem_range.1 hj
-    dsimp only [a']; split_ifs with hlt
-    · rfl
-    · have heq : min (τ j) T = min (τ (j + 1)) T :=
-        le_antisymm (min_le_min_right T (hτ hj'.le hj' (Nat.le_succ j))) (not_lt.1 hlt)
-      have hmin : min (τ j) t = min (τ (j + 1)) t := calc
-        min (τ j) t = min (min (τ j) T) t := by rw [min_assoc, min_eq_right ht]
-        _ = min (min (τ (j + 1)) T) t := by rw [heq]
-        _ = min (τ (j + 1)) t := by rw [min_assoc, min_eq_right ht]
-      simp [hmin]
+    hWc.mono fun _ hω ↦ Finance.continuous_simpleGains hω, hgain W⟩
+  by_cases hjt : τ j ≤ t
+  · change Integrable (fun ω ↦ a' j ω * (W (min (τ (j + 1)) t) ω - W (min (τ j) t) ω)) P
+    rw [min_eq_left hjt]
+    exact (hW.memLp_mul_sub (le_min (hτ hj.le hj (Nat.le_succ j)) hjt)
+      (ha' j hj) (ha'₂ j hj)).integrable one_le_two
+  · have htj : t ≤ τ j := (not_le.1 hjt).le
+    simp only [min_eq_right htj, min_eq_right (htj.trans (hτ hj.le hj (Nat.le_succ j))),
+      sub_self, mul_zero]
+    exact integrable_zero _ _ _
 
 /-- **Finite-horizon uniform `L²` convergence of elementary approximants.** Against an almost
 surely continuous filtered pre-Brownian motion `W`, any family of left-measurable simple holdings
@@ -413,15 +378,15 @@ private theorem IsItoIntegral.exists_approx_subseq_tendsto_ae
   obtain ⟨n₂, τ₂, a₂, hτ₂, ha₂, hE₂, _⟩ := hI.exists_approx T
   let G₂ (m : ℕ) := Finance.simpleGains (τ₂ m) (n₂ m) (a₂ m) W
   let K₂ (m : ℕ) := Finance.simpleHolding (τ₂ m) (n₂ m) (a₂ m)
-  have hcauchy (m : ℕ) : ∃ N, ∀ p ≥ N, ∀ q ≥ N,
-      P {ω | ∃ t ≤ T, (2⁻¹ ^ m : ℝ) < ‖G₂ p t ω - G₂ q t ω‖} ≤ (2⁻¹ ^ m : ℝ≥0∞) := by
-    have hlim : Tendsto (fun p : ℕ × ℕ ↦ P {ω | ∃ t ≤ T, (2⁻¹ ^ m : ℝ) <
+  have hC (ε : ℝ) (hε : 0 < ε) (δ : ℝ≥0∞) (hδ : 0 < δ) : ∃ N, ∀ p ≥ N, ∀ q ≥ N,
+      P {ω | ∃ t ≤ T, ε < ‖G₂ p t ω - G₂ q t ω‖} ≤ δ := by
+    have hlim : Tendsto (fun p : ℕ × ℕ ↦ P {ω | ∃ t ≤ T, ε <
         ‖G₂ p.1 t ω - G₂ p.2 t ω‖}) (atTop ×ˢ atTop) (𝓝 0) := by
-      refine tendsto_measure_of_le_ofReal_div_sq_add (ε := (2⁻¹ ^ m : ℝ)) (fun δ hδ ↦ ?_)
-        fun δ _ p ↦ by
+      refine tendsto_measure_of_le_ofReal_div_sq_add (ε := ε) (fun γ hγ ↦ ?_)
+        fun γ _ p ↦ by
           simpa only [G₂, K₂, Real.norm_eq_abs] using
             hW.measure_exists_le_abs_simpleGains_sub_gt_le hWc (hτ₂ p.1) (hτ₂ p.2)
-              (ha₂ p.1) (ha₂ p.2) T (by positivity)
+              (ha₂ p.1) (ha₂ p.2) T hε
       refine tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds
         (tendsto_measure_lintegral_enorm_sub_sq (l := atTop ×ˢ atTop)
           (f := fun p ↦ K₂ p.1) (g := fun p ↦ K₂ p.2) (h := fun _ ↦ H)
@@ -430,88 +395,37 @@ private theorem IsItoIntegral.exists_approx_subseq_tendsto_ae
               (hI.isStronglyPredictable.stronglyMeasurable_path ω)).eNorm.pow_const 2
               |>.aemeasurable)
           (fun _ hγ ↦ (hE₂ _ hγ).comp tendsto_fst)
-          (fun _ hγ ↦ (hE₂ _ hγ).comp tendsto_snd) (ENNReal.ofReal_pos.2 hδ))
-        (fun _ ↦ zero_le) fun _ ↦ measure_mono fun _ (hω : ENNReal.ofReal δ < _) ↦ hω.le
-    obtain ⟨U, hU, hUU⟩ := mem_prod_self_iff.1 (hlim (gt_mem_nhds
-      (show (0 : ℝ≥0∞) < 2⁻¹ ^ m from ENNReal.pow_pos (by norm_num) m)))
+          (fun _ hγ ↦ (hE₂ _ hγ).comp tendsto_snd) (ENNReal.ofReal_pos.2 hγ))
+        (fun _ ↦ zero_le) fun _ ↦ measure_mono fun _ (hω : ENNReal.ofReal γ < _) ↦ hω.le
+    obtain ⟨U, hU, hUU⟩ := mem_prod_self_iff.1 (hlim (gt_mem_nhds hδ))
     obtain ⟨N, hN⟩ := mem_atTop_sets.1 hU
     exact ⟨N, fun p hp q hq ↦ (hUU (show (p, q) ∈ U ×ˢ U from ⟨hN p hp, hN q hq⟩)).le⟩
-  choose N hN using hcauchy
-  let k : ℕ → ℕ := Nat.rec (N 0) fun m km ↦ max (km + 1) (N (m + 1))
-  have hk_ge (m : ℕ) : N m ≤ k m := by
-    cases m with | zero => exact le_rfl | succ m => exact le_max_right _ _
-  have hk_succ (m : ℕ) : N m ≤ k (m + 1) :=
-    (hk_ge m).trans (Nat.le_succ _ |>.trans (le_max_left _ _))
-  have hk_mono : StrictMono k := strictMono_nat_of_lt_succ fun m ↦
-    (Nat.lt_succ_self (k m)).trans_le (le_max_left _ _)
-  have hbc : ∀ᵐ ω ∂P, ∀ᶠ m in atTop, ∀ t ≤ T, ‖G₂ (k (m + 1)) t ω - G₂ (k m) t ω‖ ≤ 2⁻¹ ^ m := by
-    refine (ae_eventually_notMem (ne_top_of_le_ne_top (by
-      rw [ENNReal.tsum_geometric]; norm_num) (tsum_le_tsum fun m ↦
-      hN m (k (m + 1)) (hk_succ m) (k m) (hk_ge m)))).mono fun ω hω ↦ hω.mono fun m hm t ht ↦ ?_
-    have hm' : ¬ ∃ t ≤ T, (2⁻¹ ^ m : ℝ) < ‖G₂ (k (m + 1)) t ω - G₂ (k m) t ω‖ := hm
-    push Not at hm'
-    exact hm' t ht
+  obtain ⟨L, -, k, hk_mono, hL_ae⟩ := exists_tendsto_uniformlyInMeasure_Iic_of_cauchy
+    (fun m ↦ hWc.mono fun _ hω ↦ (Finance.continuous_simpleGains hω).continuousOn) hC
+  -- Identify the extracted continuous limit `L` with `I` on `[0, T]` via a countable dense set.
   obtain ⟨S, hSc, hST, hS⟩ := TopologicalSpace.exists_countable_subset_Iic_exists_mem_lt (α := ℝ) T
   have hW_meas : ∀ s, AEStronglyMeasurable (W s) P :=
     fun s ↦ ((hW.martingale.stronglyAdapted s).mono (ℱ.le s)).aestronglyMeasurable
   have hG₂_meas (m : ℕ) (s : ℝ≥0) : AEStronglyMeasurable (G₂ m s) P :=
     Finance.aestronglyMeasurable_simpleGains
       (fun j hj ↦ ((ha₂ m j hj).mono (ℱ.le _)).aestronglyMeasurable) fun _ _ ↦ hW_meas _
-  have hS_lim : ∀ᵐ ω ∂P, ∀ s ∈ S, Tendsto (fun m ↦ G₂ (k m) s ω) atTop (𝓝 (I s ω)) := by
+  have hS_lim : ∀ᵐ ω ∂P, ∀ s ∈ S, L s ω = I s ω := by
     rw [ae_ball_iff hSc]
     intro s hs
-    have hcau : ∀ᵐ ω ∂P, CauchySeq (fun m ↦ G₂ (k m) s ω) := hbc.mono fun ω hω ↦ by
-      obtain ⟨M, hM⟩ := eventually_atTop.1 hω
-      have hshift : CauchySeq (fun m ↦ G₂ (k (m + M)) s ω) :=
-        cauchySeq_of_le_geometric 2⁻¹ 1 (by norm_num) fun m ↦ by
-          simpa only [one_mul, Real.dist_eq, abs_sub_comm, Real.norm_eq_abs, Nat.add_right_comm]
-            using (hM (m + M) (Nat.le_add_left M m) s (hST hs)).trans
-              (pow_le_pow_of_le_one (by norm_num) (by norm_num) (Nat.le_add_right m M))
-      rw [Metric.cauchySeq_iff] at hshift ⊢
-      intro δ hδ
-      obtain ⟨K, hK⟩ := hshift δ hδ
-      exact ⟨K + M, fun p hp q hq ↦ by
-        simpa only [Nat.sub_add_cancel (le_trans (Nat.le_add_left M K) hp),
-          Nat.sub_add_cancel (le_trans (Nat.le_add_left M K) hq)] using
-          hK (p - M) (Nat.le_sub_of_add_le hp) (q - M) (Nat.le_sub_of_add_le hq)⟩
     have hlim_in : TendstoInMeasure P (fun m ↦ G₂ (k m) s) atTop (I s) :=
       (hI.tendstoInMeasure_simpleGains_of_le hW (hST hs) hτ₂ ha₂ hE₂).comp hk_mono.tendsto_atTop
-    let L (ω : Ω) := limUnder atTop fun m ↦ G₂ (k m) s ω
-    have hae_L : ∀ᵐ ω ∂P, Tendsto (fun m ↦ G₂ (k m) s ω) atTop (𝓝 (L ω)) :=
-      hcau.mono fun ω hω ↦ hω.tendsto_limUnder
-    have hIL : I s =ᵐ[P] L := tendstoInMeasure_ae_unique hlim_in
-      (tendstoInMeasure_of_tendsto_ae (fun m ↦ hG₂_meas _ s) hae_L)
-    filter_upwards [hae_L, hIL] with ω hω hωL
-    exact hωL ▸ hω
+    have hae_L : ∀ᵐ ω ∂P, Tendsto (fun m ↦ G₂ (k m) s ω) atTop (𝓝 (L s ω)) :=
+      hL_ae.mono fun ω hω ↦ hω.2.tendsto_at (hST hs)
+    exact (tendstoInMeasure_ae_unique hlim_in
+      (tendstoInMeasure_of_tendsto_ae (fun m ↦ hG₂_meas _ s) hae_L)).symm
   refine ⟨n₂, τ₂, a₂, k, hτ₂, ha₂, hE₂, hk_mono.tendsto_atTop, ?_⟩
-  filter_upwards [hbc, hWc, hI.ae_continuous, hS_lim] with ω hωbc hωW hωI hωS
-  let L (t : ℝ≥0) := limUnder atTop fun m ↦ G₂ (k m) t ω
-  have hs := tendstoUniformlyOn_tsum_nat_eventually
-    (f := fun m t ↦ G₂ (k (m + 1)) t ω - G₂ (k m) t ω) (s := Iic T)
-    (by simpa only [one_div] using summable_geometric_two) hωbc
-  have hconst : TendstoUniformlyOn (fun (_ : ℕ) t ↦ G₂ (k 0) t ω)
-      (fun t ↦ G₂ (k 0) t ω) atTop (Iic T) := by
-    intro V hV; exact Eventually.of_forall fun _ _ _ ↦ refl_mem_uniformity hV
-  have ht : TendstoUniformlyOn (fun m t ↦ G₂ (k m) t ω)
-      (fun t ↦ (∑' m, (G₂ (k (m + 1)) t ω - G₂ (k m) t ω)) + G₂ (k 0) t ω)
-      atTop (Iic T) := by
-    have htel (m : ℕ) (t : ℝ≥0) :
-        ∑ i ∈ Finset.range m, (G₂ (k (i + 1)) t ω - G₂ (k i) t ω) = G₂ (k m) t ω - G₂ (k 0) t ω :=
-      Finset.sum_range_sub (fun i ↦ G₂ (k i) t ω) m
-    simpa only [Pi.add_def, htel, sub_add_cancel] using hs.add hconst
-  have hL_unif : TendstoUniformlyOn (fun m t ↦ G₂ (k m) t ω) L atTop (Iic T) :=
-    ht.congr_right fun t ht' ↦ (ht.tendsto_at ht').limUnder_eq.symm
-  have hL_cont : ContinuousOn L (Iic T) :=
-    hL_unif.continuousOn
-      (Frequently.of_forall fun _ ↦ (Finance.continuous_simpleGains hωW).continuousOn)
-  intro t htT
-  have hLI : L t = I t ω := by
+  filter_upwards [hL_ae, hI.ae_continuous, hS_lim] with ω ⟨hL_cont, hL_unif⟩ hωI hωS t htT
+  have hLI : L t ω = I t ω := by
     by_contra hne
-    obtain ⟨s, hs, hspos⟩ := hS (g := fun u ↦ ‖L u - I u ω‖) (fun u hu ↦
+    obtain ⟨s, hs, hspos⟩ := hS (g := fun u ↦ ‖L u ω - I u ω‖) (fun u hu ↦
       (((hL_cont u hu.le).mono_of_mem_nhdsWithin (nhdsWithin_le_nhds (Iic_mem_nhds hu))).sub
         hωI.continuousAt.continuousWithinAt).norm) htT (norm_sub_pos_iff.2 hne)
-    dsimp only [L] at hspos
-    rw [(hωS s hs).limUnder_eq, sub_self, norm_zero] at hspos
+    rw [hωS s hs, sub_self, norm_zero] at hspos
     exact lt_irrefl 0 hspos
   exact hLI ▸ hL_unif.tendsto_at htT
 

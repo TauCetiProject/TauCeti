@@ -23,10 +23,10 @@ Where `MemLp (Function.uncurry H) 2 ((Probability.timeMeasure t).prod P)`, this 
 `TauCeti.Probability.IsItoIntegral` almost surely with `IsFilteredPreBrownianReal.l2Integral`
 (`ae_eq_l2Integral`) and deduces zero expectation (`integral_eq_zero`), covariance
 (`integral_mul`), increment square integrability (`memLp_sub`, `memLp_sub_restrict`),
-unconditional and event-wise increment Itô isometries (`integral_sub_sq_of_memLp`,
-`setIntegral_sub_sq_of_memLp`), finite-horizon `L²(P)` continuity (`continuous_toLp`), and for
-deterministic `L²` integrands identification with `wienerIntegral` (`ae_eq_wienerIntegral`) and
-its centered Gaussian law (`hasLaw_gaussianReal`).
+unconditional, event-wise, and conditional increment Itô isometries (`integral_sub_sq_of_memLp`,
+`setIntegral_sub_sq_of_memLp`, `condExp_sub_sq_of_memLp`), finite-horizon `L²(P)` continuity
+(`continuous_toLp`), and for deterministic `L²` integrands identification with `wienerIntegral`
+(`ae_eq_wienerIntegral`) and its centered Gaussian law (`hasLaw_gaussianReal`).
 
 ## References
 
@@ -57,7 +57,7 @@ theorem ae_eq_l2Integral (hW : IsFilteredPreBrownianReal ℱ W P)
       (((ℱ.memLp_predictableMeasure_iff P hI.isStronglyPredictable t 2).2 hH).toLp
         (Function.uncurry H)) := by
   let := (hW.hasLaw_eval 0).isProbabilityMeasure
-  choose n τ a C _ hτ ha hb herr using fun m : ℕ ↦
+  choose n τ a _ _ hτ ha _ herr using fun m : ℕ ↦
     ℱ.exists_simpleHolding_eLpNorm_sub_lt_timeMeasure P t hI.isStronglyPredictable hH
       (ε := (m : ℝ≥0∞)⁻¹) (ENNReal.inv_pos.2 (ENNReal.natCast_ne_top m))
   have hhold := tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds
@@ -67,9 +67,7 @@ theorem ae_eq_l2Integral (hW : IsFilteredPreBrownianReal ℱ W P)
       TauCeti.tendsto_measure_lintegral_enorm_pow_of_tendsto_eLpNorm two_ne_zero hhold hε)
     (tendstoInMeasure_of_tendsto_eLpNorm (by norm_num : (2 : ℝ≥0∞) ≠ 0)
       (hW.tendsto_eLpNorm_simpleGains_l2Integral hI.isStronglyPredictable hH
-        (fun m ↦ (hτ m).monotoneOn) ha
-        (fun m j hj ↦ .of_bound ((ha m j hj).mono (ℱ.le _)).aestronglyMeasurable (C m)
-          (.of_forall (hb m j hj))) hhold))
+        (fun m ↦ (hτ m).monotoneOn) ha hhold))
 
 /-- Against a filtered pre-Brownian motion, every Itô integral of a deterministic `L²` integrand
 `u` agrees almost surely at horizon `t` with `hW.toIsPreBrownianReal.wienerIntegral`. -/
@@ -194,6 +192,33 @@ theorem integral_sub_sq_of_memLp (hW : IsFilteredPreBrownianReal ℱ W P)
       ∫ p in Ioc s t ×ˢ Set.univ, H p.1 p.2 ^ 2 ∂(timeMeasure t).prod P := by
   simpa only [setIntegral_univ] using
     hI.setIntegral_sub_sq_of_memLp hW hst (MeasurableSet.univ : MeasurableSet[ℱ s] Set.univ) hH
+
+/-- **Conditional Itô increment `L²` isometry.** For `s ≤ t`, if `H` has finite expected square
+energy on `(s, t]`, then the conditional second moment of `I t - I s` given `ℱ s` equals the
+conditional expectation of the pathwise square energy of `H` over `(s, t]` given `ℱ s`. -/
+theorem condExp_sub_sq_of_memLp (hW : IsFilteredPreBrownianReal ℱ W P)
+    (hI : IsItoIntegral ℱ P W H I) {s t : ℝ≥0} (hst : s ≤ t)
+    (hH : MemLp (Function.uncurry H) 2 (((timeMeasure t).prod P).restrict (Ioc s t ×ˢ Set.univ))) :
+    P[fun ω ↦ (I t ω - I s ω) ^ 2 | ℱ s] =ᵐ[P]
+      P[fun ω ↦ ∫ u in Ioc s t, H u ω ^ 2 ∂timeMeasure t | ℱ s] := by
+  have := (hW.hasLaw_eval 0).isProbabilityMeasure
+  have hsq_mem : Integrable (fun p : ℝ≥0 × Ω ↦ H p.1 p.2 ^ 2)
+      (((timeMeasure t).restrict (Ioc s t)).prod P) := by
+    rw [Measure.restrict_prod_eq_prod_univ]
+    simpa only [Function.uncurry_def, Real.norm_eq_abs, sq_abs] using hH.integrable_sq
+  have henergy : Integrable (fun ω ↦ ∫ u in Ioc s t, H u ω ^ 2 ∂timeMeasure t) P :=
+    hsq_mem.integral_prod_right
+  have hsub_sq : Integrable (fun ω ↦ (I t ω - I s ω) ^ 2) P :=
+    (hI.memLp_sub hW hst hH).integrable_sq
+  refine (ae_eq_condExp_of_forall_setIntegral_eq (ℱ.le s) hsub_sq
+    (fun _ _ _ ↦ integrable_condExp.integrableOn) (fun A hA _ ↦ ?_)
+    stronglyMeasurable_condExp.aestronglyMeasurable).symm
+  rw [setIntegral_condExp (ℱ.le s) henergy hA,
+    hI.setIntegral_sub_sq_of_memLp hW hst hA
+      (hH.mono_measure (Measure.restrict_mono (Set.prod_mono_right (Set.subset_univ _)) le_rfl)),
+    ← Measure.prod_restrict (Ioc s t) A,
+    (integral_prod_symm (fun p : ℝ≥0 × Ω ↦ H p.1 p.2 ^ 2)
+      (hsq_mem.mono_measure (Measure.prod_mono le_rfl Measure.restrict_le_self))).symm]
 
 /-- **Finite-horizon `L²(P)` continuity of the Itô integral.** When `H` has finite expected square
 energy on `(0, T]`, the map taking `t ∈ [0, T]` to the `L²(P)` class of `I t` is continuous. -/
