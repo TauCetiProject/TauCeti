@@ -19,18 +19,17 @@ in `S₃` with `P = ⟨(12)⟩` and `r` a `3`-cycle, `Br_P(r · r²) = 1` while 
 
 When `P` is a `p`-group and `R` has characteristic `p`, `Br_P` is multiplicative on the fixed
 points `R[G]^P` of conjugation by `P` (`TauCeti.brauerProjection_mul`), and so restricts to an
-algebra homomorphism `R[G]^P → R[C_G(P)]`, the **Brauer homomorphism** (`TauCeti.brauerHom`). The
-proof counts the `P`-orbits on the elements `g` of `G`, acting by conjugation, in the coefficient
-`∑_g x_g y_{g⁻¹ c}` of `x y` at `c ∈ C_G(P)`: an orbit of size `p^n` with `n ≥ 1` contributes `0`,
-and the fixed points are `C_G(P)`. Both hypotheses are needed: over `ℚ`, `x = r + r²` gives
+algebra homomorphism `R[G]^P → R[C_G(P)]`, the **Brauer homomorphism** (`TauCeti.brauerHom`).
+Both hypotheses are needed: over `ℚ`, `x = r + r²` gives
 `Br_P(x²) = 2` but `Br_P(x)² = 0`; and over `𝔽₂` with `P = C₃` and `x` the sum of the
 transpositions, `Br_P(x²) = 1 + r + r²` but `Br_P(x)² = 0`.
 
 For `Q ≤ P`, `C_G(P) ≤ C_G(Q)` and `Br_P` factors through `Br_Q`
 (`TauCeti.brauerProjection_eq_comapDomain`).
 
-This is the Brauer homomorphism of the ModularCharactersAndBlocks roadmap, §6.1, from which the
-defect groups of §6.2 are defined.
+Its kernel contains the relative trace ideals `R[G]^P_Q` for `Q < P`
+(`TauCeti.relTraceIdeal`), and the defect groups of the blocks of `R[G]` are the maximal
+`p`-subgroups `P` on which the Brauer homomorphism of the block idempotent is nonzero.
 
 ## Main definitions
 
@@ -75,17 +74,29 @@ theorem coeff_brauerProjection (P : Subgroup G) (x : MonoidAlgebra R G)
     (brauerProjection P x).coeff c = x.coeff c := by
   simp [brauerProjection]
 
+/-- `Br_P` keeps a basis element `single c r` with `c ∈ C_G(P)`. -/
+@[simp]
+theorem brauerProjection_single_coe (P : Subgroup G) (c : Subgroup.centralizer (P : Set G))
+    (r : R) : brauerProjection P (single (c : G) r) = single c r :=
+  comapDomain_single_map Subtype.val Subtype.val_injective c r
+
+/-- `Br_P` keeps a basis element `single g r` with `g ∈ C_G(P)`. -/
+theorem brauerProjection_single_of_mem (P : Subgroup G) {g : G}
+    (hg : g ∈ Subgroup.centralizer (P : Set G)) (r : R) :
+    brauerProjection P (single g r) = single ⟨g, hg⟩ r :=
+  brauerProjection_single_coe P ⟨g, hg⟩ r
+
+/-- `Br_P` discards a basis element `single g r` with `g ∉ C_G(P)`. -/
+theorem brauerProjection_single_of_notMem (P : Subgroup G) {g : G}
+    (hg : g ∉ Subgroup.centralizer (P : Set G)) (r : R) :
+    brauerProjection P (single g r) = 0 :=
+  comapDomain_single_of_notMem_range (by simpa using hg) Subtype.val_injective
+
 /-- `Br_P(1) = 1`, since `1 ∈ C_G(P)`. -/
 @[simp]
 theorem brauerProjection_one (P : Subgroup G) :
     brauerProjection P (1 : MonoidAlgebra R G) = 1 := by
-  ext c
-  rw [coeff_brauerProjection, one_def, one_def, coeff_single, coeff_single]
-  by_cases h : c = 1
-  · subst h
-    rw [Finsupp.single_eq_same, OneMemClass.coe_one, Finsupp.single_eq_same]
-  · rw [Finsupp.single_eq_of_ne h,
-      Finsupp.single_eq_of_ne (show (c : G) ≠ 1 from fun e => h (Subtype.ext e))]
+  rw [one_def, one_def, ← brauerProjection_single_coe, OneMemClass.coe_one]
 
 /-- **The Brauer projection factors through smaller subgroups.** For `Q ≤ P`, `Br_P` is `Br_Q`
 followed by restriction of coefficients from `C_G(Q)` to `C_G(P) ≤ C_G(Q)`. -/
