@@ -27,8 +27,8 @@ gives the scalar inequalities
 `-Δ|α|² / 2 + |∇_a α|² + (r / 4) (|α|² + |β|² - 1) |α|² ≤ c |α| (|∇β| + |α| + |β|)`,
 `-Δ|β|² / 2 + |∇β|² + (r / 4) (|α|² + |β|² + 1) |β|² ≤ c |β| (|∇_a α| + |α| + |β|)`.
 
-This file derives from them, by the maximum principle on a closed manifold, two of Taubes's
-coarse pointwise bounds, with constants depending only on `c`:
+This file derives, by the maximum principle on a closed manifold, three of Taubes's coarse
+pointwise bounds. Two come from the inequalities above, with constants depending only on `c`:
 
 * `|α|² + |β|² ≤ 1 + (c² + 8 c) / r` everywhere
   (`TauCeti.SeibergWitten.norm_sq_add_norm_sq_le_one_add_div`). At a maximum of `|α|² + |β|²` the
@@ -50,8 +50,9 @@ coarse pointwise bounds, with constants depending only on `c`:
   bounds of `TauCeti.Analysis.PDE.SeibergWitten.CoarseBounds`, such as
   `TauCeti.SeibergWitten.integral_norm_sq_le_div_sq`, take it as a hypothesis.
 
-Once `|α|`, `|β|` and `|∇β|` are bounded, dropping `|∇_a α|²` and `(r / 4)|β|²|α|²` from the `α`
-inequality leaves `-Δ|α|² / 2 - (r / 4)(1 - |α|²)|α|² ≤ K₁` with `K₁` independent of `r`. At a
+The third comes from the `α` inequality in its `K₁` form. Once `|α|`, `|β|` and `|∇β|` are
+bounded, dropping `|∇_a α|²` and `(r / 4)|β|²|α|²` from the `α` inequality leaves
+`-Δ|α|² / 2 - (r / 4)(1 - |α|²)|α|² ≤ K₁` with `K₁` independent of `r`. At a
 maximum of `|α|²`, where `Δ|α|² ≤ 0`, this gives `(r / 4)(|α|² - 1)|α|² ≤ K₁`, hence the coarse
 bound `|α|² ≤ 1 + 4 K₁ / r` everywhere (`TauCeti.SeibergWitten.norm_sq_le_one_add_mul_div`).
 With `K₃ = 4 K₁` it supplies the hypothesis `|α|² ≤ 1 + K₃ / r` of the `β` bound
@@ -86,6 +87,8 @@ scalar inequalities from the Seiberg–Witten equations is not done here.
   J. Amer. Math. Soc. 9 (1996), 845–918, Section 2.
 * C. H. Taubes, *The Seiberg–Witten invariants and symplectic forms*, Math. Res. Lett. 1 (1994),
   809–822.
+* C. H. Taubes, *The Seiberg–Witten equations and the Weinstein conjecture*, Geom. Topol. 11
+  (2007), 2117–2202, Section 2.
 -/
 
 public section
