@@ -5,9 +5,15 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Geometry.Manifold.IsManifold.InteriorBoundary
+public import TauCeti.Geometry.Manifold.LocalDiffeomorph.OpenSubset
+public import TauCeti.Geometry.Manifold.MFDeriv.Basic
 public import TauCeti.Geometry.Manifold.Riemannian.Isometry.Curvature
 public import TauCeti.Geometry.Manifold.Riemannian.Isometry.Pullback
 public import TauCeti.Geometry.Manifold.Riemannian.Restriction.Basic
+import TauCeti.Geometry.Manifold.ContMDiff.Subtype
+import TauCeti.Geometry.Manifold.LocalDiffeomorph.Basic
+import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
 
 /-!
 # Curvature of a metric restricted to an open submanifold
@@ -29,14 +35,29 @@ differential, so its scalar curvature at `(x, t)` is that of the metric at `(x, 
 
 ## Main results
 
+* `TauCeti.IsLocalRiemannianIsometry.subtype_val` and
+  `TauCeti.IsLocalRiemannianIsometry.inclusion`: the inclusions of open submanifolds equipped
+  with `TauCeti.Manifold.instRiemannianBundleOpen` are local Riemannian isometries.
+* `TauCeti.RiemannianIsometry.inner_mfderiv_liftOpens`: reading a smooth Riemannian isometry
+  between open submanifolds as an ambient partial diffeomorphism preserves tangent-space inner
+  products on the domain open set.
+* `TauCeti.exists_riemannianIsometry_ball_of_inner_mfderiv_eq`: a smooth map into an inner-product
+  space `F` whose differential is a linear isometry near an interior point restricts to a smooth
+  `RiemannianIsometry` from an open submanifold onto an open ball around `0 : F`.
 * `Bundle.ContMDiffRiemannianMetric.isLocalRiemannianIsometry_restrictOpenTangentSpace`: the
   inclusion of an open submanifold is a local Riemannian isometry from the restricted metric.
 * `Bundle.ContMDiffRiemannianMetric.scalarCurvature_restrictOpenTangentSpace`: the scalar
   curvature of the restricted metric is the scalar curvature of the metric.
 * `Bundle.ContMDiffRiemannianMetric.scalarCurvature_eq_of_eventually_inner_eq`: metrics that agree
-  near a point have the same scalar curvature there.
+  near a point have the same scalar curvature at `x`.
 * `Bundle.ContMDiffRiemannianMetric.eqOn_scalarCurvature`: metrics that agree on an open set have
   the same scalar curvature on it.
+* `curvatureTensor_leviCivitaConnection_restrictOpenTangentSpace_eq_zero_iff` (in
+  `Bundle.ContMDiffRiemannianMetric`): vanishing of the curvature tensor is preserved and reflected
+  on an open submanifold.
+* `curvatureTensor_leviCivitaConnection_eq_of_eventually_inner_eq` (in
+  `Bundle.ContMDiffRiemannianMetric`): metrics that agree near a point have the same Levi-Civita
+  curvature tensor there.
 * `Bundle.ContMDiffRiemannianMetric.scalarCurvature_restrictIcc`: restriction to `M × [a, b]`
   preserves scalar curvature.
 
@@ -48,10 +69,183 @@ differential, so its scalar curvature at `(x, t)` is that of the metric at `(x, 
 
 public section
 
-open Bundle Manifold Filter TopologicalSpace
+open Bundle Manifold Filter Set TopologicalSpace
 open scoped ContDiff Manifold Topology
 
 noncomputable section
+
+namespace TauCeti
+
+open scoped TauCeti
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+  {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
+  {M : Type*} [TopologicalSpace M] [ChartedSpace H M]
+
+/-- The inclusion `(Subtype.val : U → M)` of an open submanifold, equipped with the restricted
+Riemannian bundle `TauCeti.Manifold.instRiemannianBundleOpen U`, is a local Riemannian isometry. -/
+theorem IsLocalRiemannianIsometry.subtype_val
+    [RiemannianBundle (fun x : M ↦ TangentSpace I x)] (U : Opens M) :
+    IsLocalRiemannianIsometry I I (Subtype.val : U → M) where
+  contMDiff := contMDiff_subtypeVal
+  isInvertible_mfderiv x :=
+    ⟨Manifold.tangentSpaceOpenEquiv (I := I) x, (Manifold.mfderiv_subtype_val x).symm⟩
+  inner_mfderiv x v w := by
+    rw [Manifold.inner_tangentSpace_open U x v w, Manifold.mfderiv_subtype_val,
+      ContinuousLinearEquiv.coe_coe]
+    -- `RiemannianBundle` installs `RiemannianBundle.g.inner` as the fibre `Inner.inner`.
+    rfl
+
+/-- The inclusion `Opens.inclusion h : U → V` between nested open submanifolds, each equipped with
+the restricted Riemannian bundle `TauCeti.Manifold.instRiemannianBundleOpen`, is a local
+Riemannian isometry. -/
+theorem IsLocalRiemannianIsometry.inclusion
+    [RiemannianBundle (fun x : M ↦ TangentSpace I x)] {U V : Opens M} (h : U ≤ V) :
+    IsLocalRiemannianIsometry I I (Opens.inclusion h) where
+  contMDiff := contMDiff_inclusion h
+  isInvertible_mfderiv x :=
+    ⟨(Manifold.tangentSpaceOpenEquiv (I := I) x).trans
+      (Manifold.tangentSpaceOpenEquiv (I := I) (Opens.inclusion h x)).symm, by
+      ext v
+      apply (Manifold.tangentSpaceOpenEquiv (I := I) (Opens.inclusion h x)).injective
+      simpa only [ContinuousLinearEquiv.coe_coe, ContinuousLinearEquiv.trans_apply,
+        ContinuousLinearEquiv.apply_symm_apply] using
+        (Manifold.tangentSpaceOpenEquiv_mfderiv_inclusion_apply h x v).symm⟩
+  inner_mfderiv x v w := by
+    rw [Manifold.inner_tangentSpace_open V, Manifold.inner_tangentSpace_open U,
+      Manifold.tangentSpaceOpenEquiv_mfderiv_inclusion_apply,
+      Manifold.tangentSpaceOpenEquiv_mfderiv_inclusion_apply]
+
+/-- Reading a smooth Riemannian isometry `Ψ : U → V` between open submanifolds as an ambient
+partial diffeomorphism (`PartialDiffeomorph.liftOpens`) preserves tangent-space inner products at
+every point of `U`. -/
+theorem RiemannianIsometry.inner_mfderiv_liftOpens
+    [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
+    {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
+    {H' : Type*} [TopologicalSpace H'] {J : ModelWithCorners ℝ F H'}
+    {N : Type*} [TopologicalSpace N] [ChartedSpace H' N]
+    [RiemannianBundle (fun y : N ↦ TangentSpace J y)]
+    {U : Opens M} {V : Opens N} (Ψ : RiemannianIsometry I J U V) (hU : Nonempty U)
+    (hV : Nonempty V) {y : M} (hy : y ∈ U) (u v : TangentSpace I y) :
+    inner ℝ (mfderiv I J (Ψ.toDiffeomorph.toPartialDiffeomorph.liftOpens hU hV) y u)
+      (mfderiv I J (Ψ.toDiffeomorph.toPartialDiffeomorph.liftOpens hU hV) y v) =
+        inner ℝ u v := by
+  let e := Ψ.toDiffeomorph.toPartialDiffeomorph.liftOpens hU hV
+  let yU : U := ⟨y, hy⟩
+  have hιU := IsLocalRiemannianIsometry.subtype_val (I := I) U
+  have hιV := IsLocalRiemannianIsometry.subtype_val (I := J) V
+  have he_apply (x : U) : e x = (Ψ x : N) := by
+    simp [e, Diffeomorph.toPartialDiffeomorph_toPartialEquiv]
+  have hy_src : y ∈ e.source := by
+    rw [PartialDiffeomorph.liftOpens_source]
+    exact ⟨yU, by simp [Diffeomorph.toPartialDiffeomorph_toPartialEquiv], rfl⟩
+  have he_diff : MDifferentiableAt I J e y :=
+    (e.contMDiffOn.contMDiffAt (e.open_source.mem_nhds hy_src)).mdifferentiableAt (by simp)
+  have he_comp : (e : M → N) ∘ (Subtype.val : U → M) = (Subtype.val : V → N) ∘ Ψ :=
+    funext he_apply
+  have he_val : e y = (Ψ yU : N) := he_apply yU
+  have hmf (w : TangentSpace I yU) :
+      ((mfderiv I J e y (mfderiv I I (Subtype.val : U → M) yU w) : TangentSpace J (e y)) : F) =
+        ((mfderiv J J (Subtype.val : V → N) (Ψ yU) (mfderiv I J Ψ yU w) :
+          TangentSpace J (Ψ yU : N)) : F) := by
+    have h₁ := mfderiv_comp_apply yU he_diff (hιU.mdifferentiableAt yU) w
+    have h₂ := mfderiv_comp_apply yU (hιV.mdifferentiableAt (Ψ yU)) (Ψ.mdifferentiableAt yU) w
+    have h₃ := DFunLike.congr_fun (mfderiv_congr (I := I) (I' := J) (x := yU) he_comp) w
+    exact h₁.symm.trans (h₃.trans h₂)
+  let u' : TangentSpace I yU := (Manifold.tangentSpaceOpenEquiv (I := I) yU).symm u
+  let v' : TangentSpace I yU := (Manifold.tangentSpaceOpenEquiv (I := I) yU).symm v
+  have hu : mfderiv I I (Subtype.val : U → M) yU u' = u := by
+    rw [Manifold.mfderiv_subtype_val, ContinuousLinearEquiv.coe_coe,
+      ContinuousLinearEquiv.apply_symm_apply]
+  have hv : mfderiv I I (Subtype.val : U → M) yU v' = v := by
+    rw [Manifold.mfderiv_subtype_val, ContinuousLinearEquiv.coe_coe,
+      ContinuousLinearEquiv.apply_symm_apply]
+  rw [← hu, ← hv,
+    inner_tangentSpace_congr (I := J) he_val (hmf u') (hmf v'),
+    hιV.inner_mfderiv (Ψ yU), Ψ.inner_mfderiv yU, ← hιU.inner_mfderiv yU]
+
+/-- If a smooth map `Φ : M → F` sends an interior point `x₀` to `0`, has differential `L` at `x₀`
+for a linear isometric equivalence `L : TangentSpace I x₀ ≃ₗᵢ[ℝ] F`, and preserves inner products on
+tangent spaces across an open neighbourhood `W₂ ⊆ U` of `x₀`, then `Φ` restricts to a smooth
+`RiemannianIsometry` from an open neighbourhood `W ⊆ U` of `x₀` onto an open ball around `0 : F`. -/
+theorem exists_riemannianIsometry_ball_of_inner_mfderiv_eq
+    [FiniteDimensional ℝ E] [IsManifold I ∞ M] [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
+    {F : Type*} [NormedAddCommGroup F] [InnerProductSpace ℝ F]
+    {x₀ : M} (hx₀ : I.IsInteriorPoint x₀) {U W₂ : Set M} (hW₂open : IsOpen W₂)
+    (hx₀W₂ : x₀ ∈ W₂) (hW₂U : W₂ ⊆ U) (L : TangentSpace I x₀ ≃ₗᵢ[ℝ] F)
+    {Φ : M → F} (hΦ_smooth : CMDiff ∞ Φ) (hΦ_x₀ : Φ x₀ = 0)
+    (hΦ_mv_x₀ : ∀ v : TangentSpace I x₀, mvfderiv I Φ x₀ v = L v)
+    (hΦ_inner : ∀ {y : M}, y ∈ W₂ → ∀ v w : TangentSpace I y,
+      inner ℝ (mfderiv I 𝓘(ℝ, F) Φ y v) (mfderiv I 𝓘(ℝ, F) Φ y w) = inner ℝ v w) :
+    ∃ (W : Opens M) (hx₀W : x₀ ∈ W) (r : ℝ) (_ : 0 < r)
+      (Ψ : RiemannianIsometry I 𝓘(ℝ, F) W (⟨Metric.ball (0 : F) r, Metric.isOpen_ball⟩ : Opens F)),
+      (W : Set M) ⊆ U ∧ (Ψ ⟨x₀, hx₀W⟩ : F) = 0 ∧
+      ∀ v : TangentSpace I (⟨x₀, hx₀W⟩ : W),
+        mvfderiv I ((Subtype.val : (⟨Metric.ball (0 : F) r, Metric.isOpen_ball⟩ : Opens F) → F) ∘ Ψ)
+            ⟨x₀, hx₀W⟩ v =
+          L (Manifold.tangentSpaceOpenEquiv (I := I) ⟨x₀, hx₀W⟩ v) := by
+  have : FiniteDimensional ℝ F := L.toLinearEquiv.finiteDimensional
+  let e₀ : TangentSpace I x₀ ≃L[ℝ] TangentSpace 𝓘(ℝ, F) (Φ x₀) :=
+    L.toLinearEquiv.toContinuousLinearEquiv.trans (NormedSpace.fromTangentSpace (Φ x₀)).symm
+  have he₀ : (e₀ : TangentSpace I x₀ →L[ℝ] TangentSpace 𝓘(ℝ, F) (Φ x₀)) =
+      mfderiv I 𝓘(ℝ, F) Φ x₀ := by
+    ext v
+    apply (NormedSpace.fromTangentSpace (Φ x₀)).injective
+    simpa [e₀, mvfderiv] using (hΦ_mv_x₀ v).symm
+  have hloc : IsLocalDiffeomorphAt I 𝓘(ℝ, F) ∞ Φ x₀ :=
+    isLocalDiffeomorphAt_of_mfderiv_eq hΦ_smooth.contMDiffOn isOpen_univ (mem_univ x₀) hx₀
+      (by simp) he₀
+  let ψ := hloc.localInverse
+  let S : Set F := ψ.source ∩ ψ ⁻¹' W₂
+  have hS_open : IsOpen S :=
+    hloc.contMDiffOn_localInverse.continuousOn.isOpen_inter_preimage ψ.open_source hW₂open
+  have h0S : (0 : F) ∈ S := by
+    refine ⟨hΦ_x₀ ▸ hloc.localInverse_mem_source, ?_⟩
+    simpa only [mem_preimage, ψ, ← hΦ_x₀,
+      hloc.localInverse_left_inv hloc.localInverse_mem_target] using hx₀W₂
+  obtain ⟨r, hr, hr_sub⟩ := Metric.isOpen_iff.1 hS_open 0 h0S
+  let W_set : Set M := (ψ.target ∩ W₂) ∩ Φ ⁻¹' Metric.ball (0 : F) r
+  have hW_open : IsOpen W_set :=
+    (ψ.open_target.inter hW₂open).inter (Metric.isOpen_ball.preimage hΦ_smooth.continuous)
+  have hx₀W : x₀ ∈ W_set := ⟨⟨hloc.localInverse_mem_target, hx₀W₂⟩, by simp [hΦ_x₀, hr]⟩
+  let W : Opens M := ⟨W_set, hW_open⟩
+  let B : Opens F := ⟨Metric.ball (0 : F) r, Metric.isOpen_ball⟩
+  have hψ_maps {z : F} (hz : z ∈ Metric.ball (0 : F) r) : ψ z ∈ W_set := by
+    obtain ⟨hz_src, hψW₂⟩ := hr_sub hz
+    refine ⟨⟨ψ.map_source hz_src, hψW₂⟩, ?_⟩
+    simpa only [mem_preimage, ψ, hloc.localInverse_right_inv hz_src] using hz
+  let d : Diffeomorph I 𝓘(ℝ, F) W B ∞ :=
+    { toFun := fun y ↦ ⟨Φ y.val, y.property.2⟩
+      invFun := fun z ↦ ⟨ψ z.val, hψ_maps z.property⟩
+      left_inv := fun y ↦ Subtype.ext (hloc.localInverse_left_inv y.property.1.1)
+      right_inv := fun z ↦ Subtype.ext (hloc.localInverse_right_inv (hr_sub z.property).1)
+      contMDiff_toFun :=
+        (ContMDiff.subtypeVal_comp_iff B _).mp (hΦ_smooth.comp contMDiff_subtypeVal)
+      contMDiff_invFun := (ContMDiff.subtypeVal_comp_iff W _).mp <|
+        contMDiffOn_univ.1 <|
+          hloc.contMDiffOn_localInverse.comp contMDiff_subtypeVal.contMDiffOn
+            fun z _ ↦ (hr_sub z.property).1 }
+  have hcomp_coe : ((Subtype.val : B → F) ∘ d) = (Φ ∘ (Subtype.val : W → M)) := rfl
+  let Ψ : RiemannianIsometry I 𝓘(ℝ, F) W B :=
+    { toDiffeomorph := d
+      inner_mfderiv' := fun y v w ↦ by
+        have hιB := IsLocalRiemannianIsometry.subtype_val (I := 𝓘(ℝ, F)) B
+        have hιW := IsLocalRiemannianIsometry.subtype_val (I := I) W
+        have hdf (u : TangentSpace I y) :
+            mfderiv 𝓘(ℝ, F) 𝓘(ℝ, F) (Subtype.val : B → F) (d y) (mfderiv I 𝓘(ℝ, F) d y u) =
+              mfderiv I 𝓘(ℝ, F) Φ y.val (mfderiv I I (Subtype.val : W → M) y u) := by
+          rw [← mfderiv_comp_apply y (hιB.mdifferentiableAt (d y))
+              (d.contMDiff.mdifferentiableAt (by simp)),
+            hcomp_coe,
+            mfderiv_comp_apply y (hΦ_smooth.mdifferentiableAt (by simp)) (hιW.mdifferentiableAt y)]
+        rw [← hιB.inner_mfderiv (d y), hdf v, hdf w, hΦ_inner y.property.1.2, hιW.inner_mfderiv y] }
+  refine ⟨W, hx₀W, r, hr, Ψ, fun y hy ↦ hW₂U hy.1.2, hΦ_x₀, fun v ↦ ?_⟩
+  have hmv := mvfderiv_comp_apply (⟨x₀, hx₀W⟩ : W) (hΦ_smooth.mdifferentiableAt (by simp))
+    ((IsLocalRiemannianIsometry.subtype_val (I := I) W).mdifferentiableAt ⟨x₀, hx₀W⟩) v
+  rw [Manifold.mfderiv_subtype_val, hΦ_mv_x₀] at hmv
+  exact hmv
+
+end TauCeti
 
 namespace Bundle.ContMDiffRiemannianMetric
 
@@ -66,19 +260,10 @@ theorem isLocalRiemannianIsometry_restrictOpenTangentSpace [IsManifold I 1 M] {n
     letI : RiemannianBundle (fun x : U ↦ TangentSpace I x) :=
       ⟨(g.restrictOpenTangentSpace U).toRiemannianMetric⟩
     letI : RiemannianBundle (fun x : M ↦ TangentSpace I x) := ⟨g.toRiemannianMetric⟩
-    TauCeti.IsLocalRiemannianIsometry I I (Subtype.val : U → M) :=
-  letI : RiemannianBundle (fun x : U ↦ TangentSpace I x) :=
-    ⟨(g.restrictOpenTangentSpace U).toRiemannianMetric⟩
-  letI : RiemannianBundle (fun x : M ↦ TangentSpace I x) := ⟨g.toRiemannianMetric⟩
-  { contMDiff := contMDiff_subtype_val
-    isInvertible_mfderiv := fun x ↦
-      ⟨TauCeti.Manifold.tangentSpaceOpenEquiv (I := I) x,
-        (TauCeti.Manifold.mfderiv_subtype_val x).symm⟩
-    inner_mfderiv := fun x v w ↦ by
-      have h := g.toRiemannianMetric.restrictOpenTangentSpace_inner_mfderiv_subtype_val U x v w
-      rw [← restrictOpenTangentSpace_toRiemannianMetric] at h
-      rw [inner_riemannianBundle g, inner_riemannianBundle (g.restrictOpenTangentSpace U)]
-      exact h.symm }
+    TauCeti.IsLocalRiemannianIsometry I I (Subtype.val : U → M) := by
+  let _ : RiemannianBundle (fun x : M ↦ TangentSpace I x) := ⟨g.toRiemannianMetric⟩
+  exact g.riemannianBundle_restrictOpenTangentSpace_eq U ▸
+    TauCeti.IsLocalRiemannianIsometry.subtype_val U
 
 variable [FiniteDimensional ℝ E] [T2Space M] [IsManifold I ∞ M]
 
@@ -111,6 +296,66 @@ theorem eqOn_scalarCurvature
     (hU : IsOpen U) (h : ∀ x ∈ U, g₁.inner x = g₂.inner x) :
     Set.EqOn g₁.scalarCurvature g₂.scalarCurvature U := fun _ hx ↦
   scalarCurvature_eq_of_eventually_inner_eq (eventually_of_mem (hU.mem_nhds hx) h)
+
+/-- **Flatness of the restriction to an open submanifold.** The restriction of a smooth metric `g`
+to an open submanifold `U` has vanishing curvature tensor at `x : U` if and only if `g` has
+vanishing curvature tensor at `(x : M)`. -/
+@[simp]
+theorem curvatureTensor_leviCivitaConnection_restrictOpenTangentSpace_eq_zero_iff
+    (g : ContMDiffRiemannianMetric I ∞ E (fun x : M ↦ TangentSpace I x)) (U : Opens M) (x : U) :
+    (letI : RiemannianBundle (fun y : U ↦ TangentSpace I y) :=
+        ⟨(g.restrictOpenTangentSpace U).toRiemannianMetric⟩;
+      (CovariantDerivative.leviCivitaConnection I U).curvatureTensor x) = 0 ↔
+    (letI : RiemannianBundle (fun y : M ↦ TangentSpace I y) := ⟨g.toRiemannianMetric⟩;
+      (CovariantDerivative.leviCivitaConnection I M).curvatureTensor (x : M)) = 0 := by
+  let _ : RiemannianBundle (fun y : U ↦ TangentSpace I y) :=
+    ⟨(g.restrictOpenTangentSpace U).toRiemannianMetric⟩
+  let _ : RiemannianBundle (fun y : M ↦ TangentSpace I y) := ⟨g.toRiemannianMetric⟩
+  exact ((g.isLocalRiemannianIsometry_restrictOpenTangentSpace U).curvatureTensor_eq_zero_iff
+    x).symm
+
+/-- **Locality of the Riemann curvature tensor.** Two smooth metrics that agree on a neighbourhood
+of `x` have the same Levi-Civita curvature tensor at `x`. -/
+theorem curvatureTensor_leviCivitaConnection_eq_of_eventually_inner_eq
+    {g₁ g₂ : ContMDiffRiemannianMetric I ∞ E (fun x : M ↦ TangentSpace I x)} {x : M}
+    (h : ∀ᶠ y in 𝓝 x, g₁.inner y = g₂.inner y) :
+    (letI : RiemannianBundle (fun y : M ↦ TangentSpace I y) := ⟨g₁.toRiemannianMetric⟩;
+      (CovariantDerivative.leviCivitaConnection I M).curvatureTensor x) =
+    (letI : RiemannianBundle (fun y : M ↦ TangentSpace I y) := ⟨g₂.toRiemannianMetric⟩;
+      (CovariantDerivative.leviCivitaConnection I M).curvatureTensor x) := by
+  obtain ⟨U, hU, hUo, hxU⟩ := eventually_nhds_iff.1 h
+  let W : Opens M := ⟨U, hUo⟩
+  let xW : W := ⟨x, hxU⟩
+  have hres : g₁.restrictOpenTangentSpace W = g₂.restrictOpenTangentSpace W :=
+    restrictOpenTangentSpace_eq_of_inner_eq W hU
+  have hcurv : ∀ (g : ContMDiffRiemannianMetric I ∞ E (fun y : M ↦ TangentSpace I y))
+      (u' v' w' : TangentSpace I xW),
+      (letI : RiemannianBundle (fun y : M ↦ TangentSpace I y) := ⟨g.toRiemannianMetric⟩;
+        (CovariantDerivative.leviCivitaConnection I M).curvatureTensor x
+          (mfderiv I I (Subtype.val : W → M) xW u')
+          (mfderiv I I (Subtype.val : W → M) xW v')
+          (mfderiv I I (Subtype.val : W → M) xW w')) =
+      mfderiv I I (Subtype.val : W → M) xW
+        (letI : RiemannianBundle (fun y : W ↦ TangentSpace I y) :=
+            ⟨(g.restrictOpenTangentSpace W).toRiemannianMetric⟩;
+          (CovariantDerivative.leviCivitaConnection I W).curvatureTensor xW u' v' w') := by
+    intro g u' v' w'
+    let _ : RiemannianBundle (fun y : W ↦ TangentSpace I y) :=
+      ⟨(g.restrictOpenTangentSpace W).toRiemannianMetric⟩
+    let _ : RiemannianBundle (fun y : M ↦ TangentSpace I y) := ⟨g.toRiemannianMetric⟩
+    exact ((g.isLocalRiemannianIsometry_restrictOpenTangentSpace W).mfderiv_curvatureTensor
+      xW u' v' w').symm
+  ext u v w
+  let _ : RiemannianBundle (fun y : W ↦ TangentSpace I y) :=
+    ⟨(g₁.restrictOpenTangentSpace W).toRiemannianMetric⟩
+  let _ : RiemannianBundle (fun y : M ↦ TangentSpace I y) := ⟨g₁.toRiemannianMetric⟩
+  obtain ⟨u', rfl⟩ := (g₁.isLocalRiemannianIsometry_restrictOpenTangentSpace W).mfderiv_surjective
+    xW u
+  obtain ⟨v', rfl⟩ := (g₁.isLocalRiemannianIsometry_restrictOpenTangentSpace W).mfderiv_surjective
+    xW v
+  obtain ⟨w', rfl⟩ := (g₁.isLocalRiemannianIsometry_restrictOpenTangentSpace W).mfderiv_surjective
+    xW w
+  rw [hcurv g₁, hcurv g₂, hres]
 
 /-- The scalar curvature of the restriction of a metric `G` on `M × ℝ` to `M × [a, b]` at
 `(x, t)` is that of `G` at `(x, t)`. -/

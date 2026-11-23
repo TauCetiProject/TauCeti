@@ -20,28 +20,18 @@ surface the Liouville measure of a symplectic form is its measure `|σ|`
 Liouville measure (`Orientation.liouvilleMeasure_sphereVolumeForm_univ`). Rescaling the form by
 `r` gives Liouville measure `4π |r|` (`Orientation.liouvilleMeasure_smul_sphereVolumeForm_univ`).
 
-For the unit sphere of `ℝ³`, the area form `σ_x(v, w) = x ⬝ (v × w)` (`TauCeti.sphereAreaForm`)
-has area `4π` (`TauCeti.liouvilleMeasure_sphereAreaForm_univ`), and rescaled by `r` it has area
-`4π |r|` (`TauCeti.liouvilleMeasure_smul_sphereAreaForm_univ`). By
-`TauCeti.mul_eval₂_sphereAreaForm_sphereRotationAction`, on the infinitesimal rotations, which span
-every tangent plane, `r σ` is the Kirillov–Kostant–Souriau form of the coadjoint orbit of `SO(3)` of
-radius `r > 0`, carried to `S²` along `x ↦ r x`. So for `r > 0` this is the KKS area `4π r` of
-that orbit.
+For the unit sphere of `ℝ³` the volume form is the area form `σ_x(v, w) = x ⬝ (v × w)`
+(`TauCeti.sphereAreaForm_eq_sphereVolumeForm`). Its areas `4π` and `4π |r|`
+(`TauCeti.liouvilleMeasure_sphereAreaForm_univ`, `TauCeti.liouvilleMeasure_smul_sphereAreaForm_univ`)
+are computed independently, through the height function, in
+`TauCeti.Geometry.Symplectic.Manifold.DuistermaatHeckman.Sphere`. This file obtains them for every
+oriented three-dimensional inner product space.
 
 ## Main results
 
 * `Orientation.liouvilleMeasure_sphereVolumeForm_univ`: the Liouville measure of `S²` is `4π`.
 * `Orientation.liouvilleMeasure_smul_sphereVolumeForm_univ`: the volume form of `S²` scaled by `r`
   has Liouville measure `4π |r|`.
-* `TauCeti.liouvilleMeasure_sphereAreaForm_univ`: the area form of the unit sphere of `ℝ³` has
-  Liouville measure `4π`.
-* `TauCeti.liouvilleMeasure_smul_sphereAreaForm_univ`: the area form of the unit sphere of `ℝ³`
-  scaled by `r` has Liouville measure `4π |r|`.
-
-## References
-
-* A. A. Kirillov, *Lectures on the Orbit Method*, Graduate Studies in Mathematics 64, AMS, 2004,
-  Section 1.2 (the coadjoint orbits of `SO(3)`).
 -/
 
 public section
@@ -82,26 +72,5 @@ theorem _root_.Orientation.liouvilleMeasure_smul_sphereVolumeForm_univ
     ← ENNReal.ofReal_mul (abs_nonneg r), mul_comm]
 
 end Orientation
-
-/-- **The area of the unit sphere of `ℝ³`.** The area form `σ_x(v, w) = x ⬝ (v × w)` of the unit
-sphere of `ℝ³` has total Liouville measure `4π`. -/
-theorem liouvilleMeasure_sphereAreaForm_univ :
-    sphereAreaForm.liouvilleMeasure 1 (univ : Set (sphere (0 : EuclideanSpace ℝ (Fin 3)) 1)) =
-      ENNReal.ofReal (4 * Real.pi) := by
-  rw [sphereAreaForm_eq_sphereVolumeForm]
-  exact Orientation.liouvilleMeasure_sphereVolumeForm_univ (E := EuclideanSpace ℝ (Fin 3)) _
-
-/-- **The KKS area of the coadjoint spheres of `SO(3)`.** The area form `σ` of the unit sphere of
-`ℝ³`, rescaled by `r`, has total Liouville measure `4π |r|`. On the infinitesimal rotations, which
-span every tangent plane, `r σ` is the Kirillov–Kostant–Souriau form of the coadjoint orbit of
-`SO(3)` of radius `r`, carried to the unit sphere along `x ↦ r x`
-(`TauCeti.mul_eval₂_sphereAreaForm_sphereRotationAction`). So for `r > 0` that orbit has KKS area
-`4π r`. -/
-theorem liouvilleMeasure_smul_sphereAreaForm_univ (r : ℝ) :
-    (r • sphereAreaForm).liouvilleMeasure 1
-        (univ : Set (sphere (0 : EuclideanSpace ℝ (Fin 3)) 1)) =
-      ENNReal.ofReal (4 * Real.pi * |r|) := by
-  rw [sphereAreaForm_eq_sphereVolumeForm]
-  exact Orientation.liouvilleMeasure_smul_sphereVolumeForm_univ (E := EuclideanSpace ℝ (Fin 3)) _ r
 
 end TauCeti

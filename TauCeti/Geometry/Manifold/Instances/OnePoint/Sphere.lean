@@ -9,7 +9,7 @@ public import TauCeti.Geometry.Manifold.Instances.OnePoint.FubiniStudy
 public import TauCeti.Geometry.Manifold.Orientation.Sphere
 public import TauCeti.Geometry.Manifold.Riemannian.Sphere.Basic
 import TauCeti.Analysis.InnerProductSpace.Sphere.Stereographic
-import TauCeti.Geometry.Manifold.ContMDiff.RestrictScalars
+import TauCeti.Geometry.Manifold.Orientation.Pullback
 import TauCeti.Geometry.Manifold.Riemannian.Sphere.Stereographic
 
 /-!
@@ -43,18 +43,20 @@ is the conformal factor of inverse stereographic projection
 `(π (1 + |c|²)²)⁻¹`. The factor `4π` is the area of the unit sphere, matching the normalization of
 `ω_FS` to total area one (`OnePoint.integral_fubiniStudyDensity`).
 
-This gives the area of the two-sphere. For an orientation `o` of `E`, the volume form
-`vol(u, ·, ·)` of `S²` (`Orientation.sphereVolumeForm`) has total measure `4π`
-(`Orientation.measure_sphereVolumeForm_univ`). At a point `u` of the sphere, the area
-`|vol(u, a, b)|` of two tangent vectors is `√(|a|² |b|² - ⟪a, b⟫²)`, as `u` is a unit normal
-(`Orientation.abs_volumeForm_cons_eq_norm_mul_sqrt_det_gram`). With Lagrange's identity
-`|a|² |b|² - (Re (conj a * b))² = (Im (conj a * b))²` this gives
+The area forms compare in the same way, up to orientation. For an orientation `o` of `E`, the
+outward-normal area form `(a, b) ↦ vol(u, a, b)` of `S²` (`Orientation.sphereVolumeForm`) pulls
+back along `σ` to `-4π ε ω_FS`, where `ε = ±1` is the volume of the orthonormal frame
+`(v, ι 1, ι i)` (`OnePoint.mpullback_diffeomorphSphere_sphereVolumeForm`). Its absolute value at
+a point is `4π ρ(c)`, since `dσ` is conformal with the factor above and `dσ 1`, `dσ i` are
+orthogonal to each other and to `σ x`. Its sign is constant, because the Riemann sphere is
+connected, so the orientation pulled back along `σ` from the outward-normal orientation is the
+complex orientation or its opposite. At the origin, where `σ 0 = -v` and `dσ a = 2 ι a`, the sign
+is that of `vol(-v, ι 1, ι i) = -ε`.
 
-`|σ^* vol| = 4π |ω_FS|`
-
-pointwise (`Orientation.abs_mpullback_diffeomorphSphere_sphereVolumeForm_apply`), and `ω_FS` has
-total measure one (`OnePoint.measure_fubiniStudyForm_univ`). No orientation of the Riemann sphere
-is compared: the measure of a top form only depends on its absolute value.
+This gives the area of the two-sphere. The measure `|vol|` of the area form only depends on its
+absolute value, which pulls back to `4π |ω_FS|`, and `ω_FS` has total measure one
+(`OnePoint.measure_fubiniStudyForm_univ`). So the area form of `S²` has total measure `4π`
+(`Orientation.measure_sphereVolumeForm_univ`).
 
 ## Main definitions
 
@@ -70,9 +72,9 @@ is compared: the measure of a top form only depends on its absolute value.
   projection from `v`.
 * `OnePoint.inner_mfderiv_diffeomorphSphere`: the round metric pulls back to `4π` times the
   Fubini–Study metric.
-* `Orientation.abs_mpullback_diffeomorphSphere_sphereVolumeForm_apply`: the volume form of `S²`
-  pulls back to the Riemann sphere with absolute value `4π |ω_FS|`.
-* `Orientation.measure_sphereVolumeForm_univ`: the volume form of `S²` has total measure `4π`.
+* `OnePoint.mpullback_diffeomorphSphere_sphereVolumeForm`: the outward-normal area form pulls back
+  to `∓4π` times the Fubini–Study form.
+* `Orientation.measure_sphereVolumeForm_univ`: the area form of `S²` has total measure `4π`.
 
 ## References
 
@@ -204,7 +206,7 @@ private theorem toSphere_symm_eq_invChart_symm {p : sphere (0 : E) 1} (hp : p �
   have split : (p : E) = t • (v : E) + (y : E) := by
     rw [← ((ℝ ∙ (v : E)).starProjection_add_starProjection_orthogonal p),
       Submodule.starProjection_unit_singleton ℝ hv p, Submodule.starProjection_apply]
-  have hvy : ⟪(v : E), y⟫_ℝ = 0 := Submodule.mem_orthogonal_singleton_iff_inner_right.mp y.2
+  have hvy : ⟪(v : E), y⟫_ℝ = 0 := Submodule.mem_orthogonal_singleton_iff_inner_right.mp y.property
   have pythag : t ^ 2 + ‖y‖ ^ 2 = 1 := by
     have hvy' : ⟪t • (v : E), (y : E)⟫_ℝ = 0 := by simp only [inner_smul_left, hvy, mul_zero]
     have h := norm_add_sq_eq_norm_sq_add_norm_sq_of_inner_eq_zero _ _ hvy'
@@ -240,15 +242,6 @@ private theorem toSphere_symm_eq_invChart_symm {p : sphere (0 : E) 1} (hp : p �
 
 /-! ### Smoothness -/
 
-/-- The inclusion `ℂ → OnePoint ℂ` is smooth for the underlying real structure. -/
-private theorem contMDiff_coe_real : ContMDiff 𝓘(ℝ, ℂ) 𝓘(ℝ, ℂ) ω ((↑) : ℂ → OnePoint ℂ) := by
-  simpa using (contMDiff_coe (𝕜 := ℂ)).restrictScalars ℝ
-
-/-- The inverse of the inverted chart is smooth for the underlying real structure. -/
-private theorem contMDiff_invChart_symm_real :
-    ContMDiff 𝓘(ℝ, ℂ) 𝓘(ℝ, ℂ) ω (invChart.symm : ℂ → OnePoint ℂ) := by
-  simpa using (contMDiff_invChart_symm (𝕜 := ℂ)).restrictScalars ℝ
-
 private theorem contMDiff_coe_toSphere :
     ContMDiff 𝓘(ℝ, ℂ) 𝓘(ℝ, E) ω fun x : OnePoint ℂ ↦ (toSphere v ι x : E) := by
   intro x
@@ -267,7 +260,7 @@ private theorem contMDiff_coe_toSphere :
     simp [coe_toSphere_eq_invExpr v ι hy]
 
 private theorem contMDiff_toSphere : ContMDiff 𝓘(ℝ, ℂ) (𝓡 2) ω (toSphere v ι) :=
-  (contMDiff_coe_toSphere v ι).codRestrict_sphere fun x ↦ (toSphere v ι x).2
+  (contMDiff_coe_toSphere v ι).codRestrict_sphere fun x ↦ (toSphere v ι x).property
 
 private theorem contMDiff_toSphere_symm : ContMDiff (𝓡 2) 𝓘(ℝ, ℂ) ω (toSphere v ι).symm := by
   have hv : ‖(v : E)‖ = 1 := norm_eq_of_mem_sphere v
@@ -398,7 +391,8 @@ private theorem inner_mvfderiv_coe_toSphere (x : OnePoint ℂ) (a b : ℂ) :
     -- `affineExpr` is inverse stereographic projection from `v` read through `2 ι`.
     simp only [elim_some, chartAt_coe, affineChart_coe]
     exact (inner_fderiv_stereoInvFunAux_two_smul hv
-      ((ℝ ∙ (v : E))ᗮ.subtypeₗᵢ.comp ι.toLinearIsometry) (fun c ↦ (ι c).2) z a b).trans (h4 _)
+      ((ℝ ∙ (v : E))ᗮ.subtypeₗᵢ.comp ι.toLinearIsometry) (fun c ↦ (ι c).property) z a b).trans
+          (h4 _)
   | infty =>
     -- `invExpr` is inverse stereographic projection from `-v` read through `2 ι ∘ conj`.
     simp only [elim_infty, chartAt_infty, invChart_infty]
@@ -407,7 +401,17 @@ private theorem inner_mvfderiv_coe_toSphere (x : OnePoint ℂ) (a b : ℂ) :
       (fun c ↦ ?_) 0 a b).trans (h4 _)
     rw [Submodule.mem_orthogonal_singleton_iff_inner_right, inner_neg_left, neg_eq_zero,
       ← Submodule.mem_orthogonal_singleton_iff_inner_right]
-    exact (ι _).2
+    exact (ι _).property
+
+/-- The differential of `σ = diffeomorphSphere v ι` read in `E` is the differential of `σ` followed
+by that of the inclusion of the sphere into `E`. -/
+private theorem mvfderiv_coe_toSphere_eq_comp (x : OnePoint ℂ) (c : TangentSpace 𝓘(ℝ, ℂ) x) :
+    mvfderiv 𝓘(ℝ, ℂ) (fun y ↦ (toSphere v ι y : E)) x c =
+      mvfderiv (𝓡 2) ((↑) : sphere (0 : E) 1 → E) (diffeomorphSphere v ι x)
+        (mfderiv 𝓘(ℝ, ℂ) (𝓡 2) (diffeomorphSphere v ι) x c) :=
+  -- The composite `(↑) ∘ diffeomorphSphere v ι` is `fun y ↦ (toSphere v ι y : E)` by definition.
+  mvfderiv_comp_apply x ((contMDiff_coe_sphere _).mdifferentiableAt one_ne_zero)
+    ((diffeomorphSphere v ι).mdifferentiable (by simp) x) c
 
 /-- **The round metric is `4π` times the Fubini–Study metric.** Along the diffeomorphism
 `σ = diffeomorphSphere v ι`, the round metric of the unit sphere pulls back to `4π` times the
@@ -417,62 +421,236 @@ theorem inner_mfderiv_diffeomorphSphere (x : OnePoint ℂ) (a b : ℂ) :
     ⟪mfderiv 𝓘(ℝ, ℂ) (𝓡 2) (diffeomorphSphere v ι) x a,
       mfderiv 𝓘(ℝ, ℂ) (𝓡 2) (diffeomorphSphere v ι) x b⟫_ℝ =
       4 * Real.pi * SmoothBundleForm.eval₂ fubiniStudyForm x a (Complex.I * b) := by
-  have hσ : MDifferentiableAt 𝓘(ℝ, ℂ) (𝓡 2) (diffeomorphSphere v ι) x :=
-    (diffeomorphSphere v ι).mdifferentiable (by simp) x
-  have hcoe : MDifferentiableAt (𝓡 2) 𝓘(ℝ, E) ((↑) : sphere (0 : E) 1 → E)
-      (diffeomorphSphere v ι x) := (contMDiff_coe_sphere _).mdifferentiableAt one_ne_zero
-  have hd (c : ℂ) : mvfderiv (𝓡 2) ((↑) : sphere (0 : E) 1 → E) (diffeomorphSphere v ι x)
-      (mfderiv 𝓘(ℝ, ℂ) (𝓡 2) (diffeomorphSphere v ι) x c) =
-      mvfderiv 𝓘(ℝ, ℂ) (fun y ↦ (toSphere v ι y : E)) x c :=
-    -- The composite `(↑) ∘ diffeomorphSphere v ι` is `fun y ↦ (toSphere v ι y : E)` by definition.
-    (mvfderiv_comp_apply x hcoe hσ c).symm
-  rw [inner_tangentSpace_sphere, hd a, hd b, inner_mvfderiv_coe_toSphere]
+  rw [inner_tangentSpace_sphere, ← mvfderiv_coe_toSphere_eq_comp v ι x a,
+    ← mvfderiv_coe_toSphere_eq_comp v ι x b, inner_mvfderiv_coe_toSphere]
   rw [eval₂_fubiniStudyForm_I_mul, fubiniStudyDensity_def]
   field_simp
 
-/-! ### The area of the two-sphere -/
+/-! ### The round area form is `±4π` times the Fubini–Study form -/
 
 section Area
 
-/-- **The volume form of `S²` on the Riemann sphere.** Along the inverse stereographic projection
-`σ = diffeomorphSphere v ι`, the volume form of the unit sphere pulls back to a form with the
-absolute values of `4π ω_FS`, where `ω_FS` is the Fubini–Study form. -/
-theorem _root_.Orientation.abs_mpullback_diffeomorphSphere_sphereVolumeForm_apply
-    (o : Orientation ℝ E (Fin (2 + 1))) (x : OnePoint ℂ) (u : Fin 2 → TangentSpace 𝓘(ℝ, ℂ) x) :
-    |mpullback 𝓘(ℝ, ℂ) (𝓡 2) (diffeomorphSphere v ι) o.sphereVolumeForm.1 x u| =
-      |4 * Real.pi * fubiniStudyForm.1 x u| := by
-  -- The round metric pulls back to `4π` times the Fubini–Study metric.
-  have hinner (p q : ℂ) :
-      ⟪mvfderiv (𝓡 2) ((↑) : sphere (0 : E) 1 → E) (diffeomorphSphere v ι x)
-          (mfderiv 𝓘(ℝ, ℂ) (𝓡 2) (diffeomorphSphere v ι) x p),
-        mvfderiv (𝓡 2) ((↑) : sphere (0 : E) 1 → E) (diffeomorphSphere v ι x)
-          (mfderiv 𝓘(ℝ, ℂ) (𝓡 2) (diffeomorphSphere v ι) x q)⟫_ℝ =
-        4 * Real.pi * fubiniStudyDensity (chartAt ℂ x x) * (conj p * q).re := by
-    rw [← inner_tangentSpace_sphere, inner_mfderiv_diffeomorphSphere, eval₂_fubiniStudyForm_I_mul]
-    ring
-  -- The point is a unit normal to the tangent vectors, so only their Gram determinant remains.
-  rw [mpullback_apply, Orientation.sphereVolumeForm_apply,
-    o.abs_volumeForm_cons_eq_norm_mul_sqrt_det_gram
-      fun i ↦ inner_coe_mvfderiv_subtypeVal_sphere _ _, norm_eq_of_mem_sphere, one_mul,
-    Matrix.det_fin_two, SmoothBundleForm.apply_eq_eval₂]
-  obtain ⟨a, b, rfl⟩ : ∃ a b : ℂ, u = ![a, b] :=
-    ⟨u 0, u 1, funext fun i ↦ by fin_cases i <;> rfl⟩
-  simp only [Matrix.gram_apply, Matrix.cons_val_zero, Matrix.cons_val_one, hinner,
-    eval₂_fubiniStudyForm]
-  rw [← Real.sqrt_sq_eq_abs]
+variable (o : Orientation ℝ E (Fin 3))
+
+/-- The pulled-back area form, read in `E`: `vol(σ x, dσ a, dσ b)`. -/
+private theorem mpullback_sphereVolumeForm_apply (x : OnePoint ℂ) (a b : TangentSpace 𝓘(ℝ, ℂ) x) :
+    mpullback 𝓘(ℝ, ℂ) (𝓡 2) (diffeomorphSphere v ι) o.sphereVolumeForm.val x ![a, b] =
+      o.volumeForm ![(toSphere v ι x : E),
+        mvfderiv 𝓘(ℝ, ℂ) (fun y ↦ (toSphere v ι y : E)) x a,
+        mvfderiv 𝓘(ℝ, ℂ) (fun y ↦ (toSphere v ι y : E)) x b] := by
+  rw [mpullback_apply_pair, Orientation.sphereVolumeForm_apply]
   congr 1
-  -- Lagrange's identity `|a|² |b|² - (Re (conj a * b))² = (Im (conj a * b))²`.
-  simp only [Complex.mul_re, Complex.mul_im, Complex.conj_re, Complex.conj_im]
+  funext i
+  fin_cases i
+  · rfl
+  · exact (mvfderiv_coe_toSphere_eq_comp v ι x a).symm
+  · exact (mvfderiv_coe_toSphere_eq_comp v ι x b).symm
+
+/-- The differential of `σ` read in `E` takes values orthogonal to the point `σ x`. -/
+private theorem inner_coe_toSphere_mvfderiv (x : OnePoint ℂ) (c : TangentSpace 𝓘(ℝ, ℂ) x) :
+    ⟪(toSphere v ι x : E), mvfderiv 𝓘(ℝ, ℂ) (fun y ↦ (toSphere v ι y : E)) x c⟫_ℝ = 0 := by
+  rw [mvfderiv_coe_toSphere_eq_comp]
+  exact inner_coe_mvfderiv_subtypeVal_sphere (diffeomorphSphere v ι x) _
+
+/-- The area of the image of the square spanned by `1` and `i`:
+`|vol(σ x, dσ 1, dσ i)| = 4 (1 + |c|²)⁻²` for the chart coordinate `c` of `x`. -/
+private theorem abs_volumeForm_mvfderiv_coe_toSphere (x : OnePoint ℂ) :
+    |o.volumeForm ![(toSphere v ι x : E),
+      mvfderiv 𝓘(ℝ, ℂ) (fun y ↦ (toSphere v ι y : E)) x (1 : ℂ),
+      mvfderiv 𝓘(ℝ, ℂ) (fun y ↦ (toSphere v ι y : E)) x Complex.I]| =
+      4 * ((1 + ‖chartAt ℂ x x‖ ^ 2) ^ 2)⁻¹ := by
+  set D := mvfderiv 𝓘(ℝ, ℂ) (fun y ↦ (toSphere v ι y : E)) x
+  set r := 4 * ((1 + ‖chartAt ℂ x x‖ ^ 2) ^ 2)⁻¹
+  have hr : 0 ≤ r := by positivity
+  have hD1 : ⟪D (1 : ℂ), D Complex.I⟫_ℝ = 0 := by
+    rw [inner_mvfderiv_coe_toSphere]
+    simp
+  have hn (c : ℂ) (hc : ‖c‖ = 1) : ‖D c‖ ^ 2 = r := by
+    rw [← real_inner_self_eq_norm_sq, inner_mvfderiv_coe_toSphere, Complex.conj_mul',
+      ← Complex.ofReal_pow, Complex.ofReal_re, hc, one_pow, mul_one]
+  have horth : Pairwise fun i j ↦
+      ⟪![(toSphere v ι x : E), D (1 : ℂ), D Complex.I] i,
+        ![(toSphere v ι x : E), D (1 : ℂ), D Complex.I] j⟫_ℝ = 0 := by
+    have h0 (c : ℂ) : ⟪(toSphere v ι x : E), D c⟫_ℝ = 0 := inner_coe_toSphere_mvfderiv v ι x c
+    have h0' (c : ℂ) : ⟪D c, (toSphere v ι x : E)⟫_ℝ = 0 := by rw [real_inner_comm]; exact h0 c
+    have hD1' : ⟪D Complex.I, D (1 : ℂ)⟫_ℝ = 0 := by rw [real_inner_comm]; exact hD1
+    intro i j hij
+    fin_cases i <;> fin_cases j <;> simp_all
+  rw [o.abs_volumeForm_apply_of_pairwise_orthogonal horth, Fin.prod_univ_three]
+  simp only [Fin.isValue, Matrix.cons_val_zero, Matrix.cons_val_one, Matrix.cons_val_two,
+    Matrix.tail_cons, Matrix.head_cons, norm_eq_of_mem_sphere, one_mul]
+  have hprod : (‖D (1 : ℂ)‖ * ‖D Complex.I‖) ^ 2 = r ^ 2 := by
+    rw [mul_pow, hn (1 : ℂ) norm_one, hn Complex.I Complex.norm_I, sq]
+  exact (sq_eq_sq₀ (by positivity) hr).1 hprod
+
+/-- At the origin, the differential of `σ` read in `E` is `a ↦ 2 ι a`. -/
+private theorem mvfderiv_coe_toSphere_zero (a : ℂ) :
+    mvfderiv 𝓘(ℝ, ℂ) (fun y ↦ (toSphere v ι y : E)) ((0 : ℂ) : OnePoint ℂ) a =
+      (2 : ℝ) • (ι a : E) := by
+  set L : ℂ →L[ℝ] E :=
+    (2 : ℝ) • ((ℝ ∙ (v : E))ᗮ.subtypeL.comp ι.toContinuousLinearEquiv.toContinuousLinearMap)
+  have hS := ((contDiff_stereoInvFunAux (v := (v : E)) (m := 1)).differentiable one_ne_zero
+    (L 0)).hasFDerivAt.comp (0 : ℂ) L.hasFDerivAt
+  -- `affineExpr v ι` is the composite of `L` and inverse stereographic projection from `v`.
+  have he : affineExpr v ι = stereoInvFunAux (v : E) ∘ L := rfl
+  refine (DFunLike.congr_fun (mfderiv_coe_toSphere v ι _) a).trans ?_
+  have hval : (fderiv ℝ (stereoInvFunAux (v : E)) (L 0)).comp L a = (2 : ℝ) • (ι a : E) := by
+    rw [ContinuousLinearMap.comp_apply, map_zero, fderiv_stereoInvFunAux_apply]
+    simp [L]
+  simp only [elim_some, chartAt_coe, affineChart_coe]
+  rw [he, hS.fderiv]
+  exact hval
+
+/-- The frame `(v, ι 1, ι i)` of `E` is orthonormal, so its volume is `±1`. -/
+private theorem abs_volumeForm_frame :
+    |o.volumeForm ![(v : E), (ι 1 : E), (ι Complex.I : E)]| = 1 := by
+  have hv (c : ℂ) : ⟪(v : E), (ι c : E)⟫_ℝ = 0 :=
+    Submodule.mem_orthogonal_singleton_iff_inner_right.mp (ι c).property
+  have hv' (c : ℂ) : ⟪(ι c : E), (v : E)⟫_ℝ = 0 := by rw [real_inner_comm]; exact hv c
+  have hι (c d : ℂ) : ⟪(ι c : E), (ι d : E)⟫_ℝ = ⟪c, d⟫_ℝ := by
+    rw [← Submodule.coe_inner, LinearIsometryEquiv.inner_map_map]
+  have horth : Pairwise fun i j ↦ ⟪![(v : E), (ι 1 : E), (ι Complex.I : E)] i,
+      ![(v : E), (ι 1 : E), (ι Complex.I : E)] j⟫_ℝ = 0 := by
+    intro i j hij
+    fin_cases i <;> fin_cases j <;> simp_all [Complex.inner]
+  rw [o.abs_volumeForm_apply_of_pairwise_orthogonal horth, Fin.prod_univ_three]
+  simp [norm_eq_of_mem_sphere, Submodule.norm_coe]
+
+/-- At the origin, `vol(σ 0, dσ 1, dσ i) = vol(-v, 2 ι 1, 2 ι i) = -4 vol(v, ι 1, ι i)`. -/
+private theorem volumeForm_mvfderiv_coe_toSphere_zero :
+    o.volumeForm ![(toSphere v ι ((0 : ℂ) : OnePoint ℂ) : E),
+      mvfderiv 𝓘(ℝ, ℂ) (fun y ↦ (toSphere v ι y : E)) ((0 : ℂ) : OnePoint ℂ) (1 : ℂ),
+      mvfderiv 𝓘(ℝ, ℂ) (fun y ↦ (toSphere v ι y : E)) ((0 : ℂ) : OnePoint ℂ) Complex.I] =
+      -4 * o.volumeForm ![(v : E), (ι 1 : E), (ι Complex.I : E)] := by
+  have h0 : (toSphere v ι ((0 : ℂ) : OnePoint ℂ) : E) = -(v : E) :=
+    congrArg Subtype.val (diffeomorphSphere_zero v ι)
+  have hcons : ![(toSphere v ι ((0 : ℂ) : OnePoint ℂ) : E),
+      mvfderiv 𝓘(ℝ, ℂ) (fun y ↦ (toSphere v ι y : E)) ((0 : ℂ) : OnePoint ℂ) (1 : ℂ),
+      mvfderiv 𝓘(ℝ, ℂ) (fun y ↦ (toSphere v ι y : E)) ((0 : ℂ) : OnePoint ℂ) Complex.I] =
+      fun i ↦ ![(-1 : ℝ), 2, 2] i • ![(v : E), (ι 1 : E), (ι Complex.I : E)] i := by
+    funext i
+    fin_cases i <;> simp [h0, mvfderiv_coe_toSphere_zero]
+  rw [hcons, AlternatingMap.map_smul_univ, Fin.prod_univ_three]
+  simp only [Fin.isValue, Matrix.cons_val_zero, Matrix.cons_val_one, Matrix.cons_val_two,
+    Matrix.tail_cons, Matrix.head_cons, smul_eq_mul]
   ring
+
+/-- At a point `y`, `vol(σ y, dσ 1, dσ i)` is positive exactly when the orientation of the Riemann
+sphere pulled back along `σ` from the outward-normal orientation is that of the basis `(1, i)`
+at `y`. -/
+private theorem volumeForm_mvfderiv_coe_toSphere_pos_iff_orientationAt
+    (hf : ContMDiff 𝓘(ℝ, ℂ) (𝓡 2) 1 (diffeomorphSphere v ι))
+    (hdf : ∀ y, (mfderiv 𝓘(ℝ, ℂ) (𝓡 2) (diffeomorphSphere v ι) y).IsInvertible)
+    (hcard : Fintype.card (Fin 2) = finrank ℝ ℂ) (y : OnePoint ℂ) :
+    0 < o.volumeForm ![(toSphere v ι y : E),
+      mvfderiv 𝓘(ℝ, ℂ) (fun y ↦ (toSphere v ι y : E)) y (1 : ℂ),
+      mvfderiv 𝓘(ℝ, ℂ) (fun y ↦ (toSphere v ι y : E)) y Complex.I] ↔
+      (o.sphereOrientation.pullback hf hdf hcard).orientationAt y = Complex.orientation := by
+  set D := (diffeomorphSphere v ι).mfderivToContinuousLinearEquiv (by simp) y
+  have hmap := Manifold.Orientation.map_orientationAt_pullback o.sphereOrientation hf hdf hcard
+    y D ((diffeomorphSphere v ι).mfderivToContinuousLinearEquiv_coe (by simp))
+  -- The basis `(1, i)` of the tangent space at `y`, which is `ℂ`.
+  let b : Module.Basis (Fin 2) ℝ (TangentSpace 𝓘(ℝ, ℂ) y) := Complex.basisOneI
+  have h1 := (Orientation.map (Fin 2) D.toLinearEquiv).injective.eq_iff
+    (a := (o.sphereOrientation.pullback hf hdf hcard).orientationAt y) (b := b.orientation)
+  rw [hmap, ← Module.Basis.orientation_map, eq_comm,
+    o.orientation_eq_orientationAt_sphereOrientation_iff] at h1
+  refine Iff.trans (iff_of_eq (congrArg (fun w ↦ 0 < o.volumeForm w) (funext fun i ↦ ?_))) h1
+  have hb (c : TangentSpace 𝓘(ℝ, ℂ) y) : mvfderiv 𝓘(ℝ, ℂ) (fun y ↦ (toSphere v ι y : E)) y c =
+      mvfderiv (𝓡 2) ((↑) : sphere (0 : E) 1 → E) (diffeomorphSphere v ι y) (D c) :=
+    (mvfderiv_coe_toSphere_eq_comp v ι y c).trans (congrArg _ (DFunLike.congr_fun
+      ((diffeomorphSphere v ι).mfderivToContinuousLinearEquiv_coe (by simp)).symm c))
+  fin_cases i
+  · rfl
+  · exact (hb _).trans (congrArg _ (congrArg D (congrFun Complex.coe_basisOneI 0).symm))
+  · exact (hb _).trans (congrArg _ (congrArg D (congrFun Complex.coe_basisOneI 1).symm))
+
+/-- The sign of `vol(σ x, dσ 1, dσ i)` is the same at every point: since the Riemann sphere is
+connected, the orientation pulled back along `σ` from the outward-normal orientation is the
+complex orientation or its opposite. -/
+private theorem volumeForm_mvfderiv_coe_toSphere_pos_iff (x : OnePoint ℂ) :
+    0 < o.volumeForm ![(toSphere v ι x : E),
+      mvfderiv 𝓘(ℝ, ℂ) (fun y ↦ (toSphere v ι y : E)) x (1 : ℂ),
+      mvfderiv 𝓘(ℝ, ℂ) (fun y ↦ (toSphere v ι y : E)) x Complex.I] ↔
+    0 < o.volumeForm ![(toSphere v ι ((0 : ℂ) : OnePoint ℂ) : E),
+      mvfderiv 𝓘(ℝ, ℂ) (fun y ↦ (toSphere v ι y : E)) ((0 : ℂ) : OnePoint ℂ) (1 : ℂ),
+      mvfderiv 𝓘(ℝ, ℂ) (fun y ↦ (toSphere v ι y : E)) ((0 : ℂ) : OnePoint ℂ) Complex.I] := by
+  have hf : ContMDiff 𝓘(ℝ, ℂ) (𝓡 2) 1 (diffeomorphSphere v ι) :=
+    (diffeomorphSphere v ι).contMDiff.of_le (by simp)
+  have hdf (y : OnePoint ℂ) : (mfderiv 𝓘(ℝ, ℂ) (𝓡 2) (diffeomorphSphere v ι) y).IsInvertible :=
+    (diffeomorphSphere v ι).isInvertible_mfderiv (by simp)
+  have hcard : Fintype.card (Fin 2) = finrank ℝ ℂ := by simp
+  have h2 : 2 * finrank ℂ ℂ = 2 :=
+    (finrank_real_of_complex ℂ).symm.trans Complex.finrank_real_complex
+  rw [volumeForm_mvfderiv_coe_toSphere_pos_iff_orientationAt v ι o hf hdf hcard,
+    volumeForm_mvfderiv_coe_toSphere_pos_iff_orientationAt v ι o hf hdf hcard]
+  rcases (o.sphereOrientation.pullback hf hdf hcard).eq_or_eq_neg
+      ((complexManifoldOrientation ℂ (OnePoint ℂ)).reindex (finCongr h2)) with h | h <;>
+    simp only [h, orientationAt_reindex_complexManifoldOrientation_complex,
+      Manifold.Orientation.orientationAt_neg]
+  -- Both sides now state the same equation of orientations of `ℂ`, read as the tangent spaces at
+  -- `x` and at `0`.
+  all_goals exact Iff.rfl
+
+/-- On the basis `(1, i)`, `vol(σ x, dσ 1, dσ i) = -4π vol(v, ι 1, ι i) ρ(c)` for the chart
+coordinate `c` of `x`. -/
+private theorem volumeForm_mvfderiv_coe_toSphere (x : OnePoint ℂ) :
+    o.volumeForm ![(toSphere v ι x : E),
+      mvfderiv 𝓘(ℝ, ℂ) (fun y ↦ (toSphere v ι y : E)) x (1 : ℂ),
+      mvfderiv 𝓘(ℝ, ℂ) (fun y ↦ (toSphere v ι y : E)) x Complex.I] =
+      -(4 * Real.pi * o.volumeForm ![(v : E), (ι 1 : E), (ι Complex.I : E)]) *
+        fubiniStudyDensity (chartAt ℂ x x) := by
+  have habs := abs_volumeForm_mvfderiv_coe_toSphere v ι o x
+  have hpos := volumeForm_mvfderiv_coe_toSphere_pos_iff v ι o x
+  rw [volumeForm_mvfderiv_coe_toSphere_zero] at hpos
+  have hρ : 4 * ((1 + ‖chartAt ℂ x x‖ ^ 2) ^ 2)⁻¹ =
+      4 * Real.pi * fubiniStudyDensity (chartAt ℂ x x) := by
+    rw [fubiniStudyDensity_def]
+    field_simp
+  -- The frame `(v, ι 1, ι i)` has volume `±1`, and the sign at `0` decides the sign everywhere.
+  rcases (abs_eq zero_le_one).1 (abs_volumeForm_frame v ι o) with hc | hc <;> rw [hc] at hpos ⊢
+  · rw [abs_of_nonpos (not_lt.1 (fun h ↦ by linarith [hpos.1 h])), hρ] at habs
+    linarith
+  · rw [abs_of_pos (hpos.2 (by norm_num)), hρ] at habs
+    linarith
+
+/-- **The round area form is `∓4π` times the Fubini–Study form.** Along the diffeomorphism
+`σ = diffeomorphSphere v ι`, the outward-normal area form `(a, b) ↦ vol(u, a, b)` of the unit
+sphere of `E`, for an orientation `o` of `E`, pulls back to `-4π ε ω_FS`, where `ε = ±1` is the
+volume of the orthonormal frame `(v, ι 1, ι i)`. In particular the pullback is a positive
+multiple of `ω_FS` exactly when `(-v, ι 1, ι i)` is a positive basis of `E`, and its absolute value
+is the factor `4π` of the comparison `inner_mfderiv_diffeomorphSphere` of metrics. -/
+theorem mpullback_diffeomorphSphere_sphereVolumeForm :
+    mpullback 𝓘(ℝ, ℂ) (𝓡 2) (diffeomorphSphere v ι) o.sphereVolumeForm.val =
+      (-(4 * Real.pi * o.volumeForm ![(v : E), (ι 1 : E), (ι Complex.I : E)])) •
+        fubiniStudyForm.val := by
+  funext x
+  rw [← sub_eq_zero]
+  set F := mpullback 𝓘(ℝ, ℂ) (𝓡 2) (diffeomorphSphere v ι) o.sphereVolumeForm.val x -
+    (-(4 * Real.pi * o.volumeForm ![(v : E), (ι 1 : E), (ι Complex.I : E)])) •
+      fubiniStudyForm.val x
+  -- Two top-degree alternating maps on `ℂ` agree once they agree on the basis `(1, i)`.
+  have h1 := mpullback_sphereVolumeForm_apply v ι o x (1 : ℂ) Complex.I
+  have h2 := (SmoothBundleForm.eval₂_apply fubiniStudyForm x (1 : ℂ) Complex.I).symm.trans
+    (eval₂_fubiniStudyForm x 1 Complex.I)
+  simp only [map_one, one_mul, Complex.I_im, mul_one] at h2
+  have hF : F ![(1 : ℂ), Complex.I] = 0 := by
+    rw [ContinuousAlternatingMap.sub_apply, ContinuousAlternatingMap.smul_apply, h1, h2,
+      volumeForm_mvfderiv_coe_toSphere, smul_eq_mul, sub_self]
+  refine ContinuousAlternatingMap.toAlternatingMap_injective
+    ((AlternatingMap.map_basis_eq_zero_iff
+      (Complex.basisOneI : Module.Basis (Fin 2) ℝ (TangentSpace 𝓘(ℝ, ℂ) x)) _).1 ?_)
+  exact (congrArg F Complex.coe_basisOneI).trans hF
 
 variable [MeasurableSpace E] [BorelSpace E] [FiniteDimensional ℝ E]
 
 attribute [local instance] finrank_euclideanSpace_fin_succ_fact Complex.finrank_real_complex_fact
 
-/-- **The area of the two-sphere is `4π`.** The measure `|vol|` of the volume form of the unit
-sphere of an oriented three-dimensional inner product space gives the whole sphere measure `4π`. -/
-theorem _root_.Orientation.measure_sphereVolumeForm_univ (o : Orientation ℝ E (Fin (2 + 1))) :
-    RoughForm.measure o.sphereVolumeForm.1 (univ : Set (sphere (0 : E) 1)) =
+/-- **The area of the two-sphere is `4π`.** The measure `|vol|` of the outward-normal area form of
+the unit sphere of an oriented three-dimensional inner product space gives the whole sphere
+measure `4π`. -/
+theorem _root_.Orientation.measure_sphereVolumeForm_univ :
+    RoughForm.measure o.sphereVolumeForm.val (univ : Set (sphere (0 : E) 1)) =
       ENNReal.ofReal (4 * Real.pi) := by
   -- Transport along inverse stereographic projection from a point `v` of the sphere.
   have : Nontrivial E :=
@@ -480,20 +658,19 @@ theorem _root_.Orientation.measure_sphereVolumeForm_univ (o : Orientation ℝ E 
   obtain ⟨w, hw⟩ := exists_ne (0 : E)
   have : Fact (finrank ℝ E = 3) := ⟨Fact.out (p := finrank ℝ E = 2 + 1)⟩
   set v : sphere (0 : E) 1 := ⟨‖w‖⁻¹ • w, by simp [norm_smul, hw]⟩
-  set Φ := diffeomorphSphere v
-    (complexIsometryOrthogonalSpanSingleton (ne_zero_of_mem_unit_sphere v))
+  set ι := complexIsometryOrthogonalSpanSingleton (ne_zero_of_mem_unit_sphere v)
   let _ : MeasurableSpace (OnePoint ℂ) := borel _
   have : BorelSpace (OnePoint ℂ) := ⟨rfl⟩
-  have hΦ := Φ.toHomeomorph.measurePreserving_measure_mpullback (Φ.mdifferentiable (by simp))
-    o.sphereVolumeForm.1
-  have habs (x : OnePoint ℂ) (u : Fin 2 → TangentSpace 𝓘(ℝ, ℂ) x) :
-      |mpullback 𝓘(ℝ, ℂ) (𝓡 2) Φ.toHomeomorph o.sphereVolumeForm.1 x u| =
-        |((4 * Real.pi) • fubiniStudyForm.1) x u| :=
-    o.abs_mpullback_diffeomorphSphere_sphereVolumeForm_apply v _ x u
-  rw [← hΦ.map_eq, Measure.map_apply hΦ.measurable MeasurableSet.univ, preimage_univ,
-    RoughForm.measure_eq_of_forall_abs_apply_eq habs, RoughForm.measure_smul, FunLike.coe_smul,
-    Pi.smul_apply, measure_fubiniStudyForm_univ, smul_eq_mul, mul_one,
-    abs_of_pos (by positivity)]
+  have hΦ := (diffeomorphSphere v ι).toHomeomorph.measurePreserving_measure_mpullback
+    ((diffeomorphSphere v ι).mdifferentiable (by simp)) o.sphereVolumeForm.val
+  -- The frame `(v, ι 1, ι i)` has volume `±1`, so the pullback is `±4π ω_FS`.
+  have hc : |-(4 * Real.pi * o.volumeForm ![(v : E), (ι 1 : E), (ι Complex.I : E)])| =
+      4 * Real.pi := by
+    rw [abs_neg, abs_mul, abs_volumeForm_frame v ι o, mul_one, abs_of_pos (by positivity)]
+  rw [← hΦ.map_eq, Measure.map_apply hΦ.measurable MeasurableSet.univ, preimage_univ]
+  rw [Diffeomorph.coe_toHomeomorph, mpullback_diffeomorphSphere_sphereVolumeForm v ι o]
+  rw [RoughForm.measure_smul, hc, smul_apply, measure_fubiniStudyForm_univ, smul_eq_mul,
+    mul_one]
 
 end Area
 

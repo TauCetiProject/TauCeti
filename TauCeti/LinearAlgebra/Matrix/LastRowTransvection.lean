@@ -7,6 +7,7 @@ module
 
 public import Mathlib.LinearAlgebra.Matrix.RowCol
 import Mathlib.Algebra.BigOperators.Fin
+import Mathlib.Algebra.Module.BigOperators
 
 /-!
 # Adding multiples of rows to the last row
@@ -14,7 +15,11 @@ import Mathlib.Algebra.BigOperators.Fin
 `TauCeti.lastRowTransvection d b` is the lower unitriangular `(d + 1) × (d + 1)` matrix which
 agrees with the identity except in its last row, where it is `(b 0, …, b (d - 1), 1)`.
 Multiplying by it on the left adds `b k` times row `k` to the last row, for every `k < d`. These
-matrices compose by adding their multipliers, so each is a unit.
+matrices compose by adding their multipliers, so each is a unit. Transposing produces the
+corresponding column operation `(lastRowTransvection d b)ᵀ`, which updates the last column of a
+matrix `N` on the right to `N *ᵥ Fin.snoc b 1` (`mul_transpose_lastRowTransvection`) and shears a
+module-valued tuple `(x₀, …, x_d)` to `(x₀ + b₀ • x_d, …, x_{d-1} + b_{d-1} • x_d, x_d)`
+(`sum_mul_transpose_lastRowTransvection_smul`).
 
 ## Main results
 
@@ -22,6 +27,9 @@ matrices compose by adding their multipliers, so each is a unit.
 * `TauCeti.isUnit_lastRowTransvection`: each `lastRowTransvection d b` is a unit.
 * `TauCeti.lastRowTransvection_mul_diagonal`: right multiplication by `diagonal (1, …, 1, x)`
   scales the last column by `x`.
+* `TauCeti.transpose_lastRowTransvection`, `TauCeti.mul_transpose_lastRowTransvection`,
+  `TauCeti.sum_mul_transpose_lastRowTransvection_smul`: transpose column operation and its linear
+  action on module-valued coordinate tuples.
 -/
 
 public section
@@ -66,6 +74,13 @@ theorem lastRowTransvection_zero : lastRowTransvection d (0 : Fin d → A) = 1 :
     | cast j => simp [(Fin.castSucc_lt_last j).ne']
   · rfl
 
+/-- The transpose of `lastRowTransvection d b` is the identity matrix with its last column replaced
+by `Fin.snoc b 1`. -/
+theorem transpose_lastRowTransvection (b : Fin d → A) :
+    (lastRowTransvection d b)ᵀ =
+      (1 : Matrix (Fin (d + 1)) (Fin (d + 1)) A).updateCol (Fin.last d) (Fin.snoc b 1) := by
+  rw [lastRowTransvection, ← updateCol_transpose, transpose_one]
+
 end ZeroOne
 
 section Semiring
@@ -103,6 +118,25 @@ theorem lastRowTransvection_mul_diagonal (b : Fin d → A) (x : A) :
   · induction i using Fin.lastCases with
     | last => exact absurd rfl hi
     | cast i => simp [diagonal_apply, Matrix.one_apply]
+
+/-- Right multiplication by `(lastRowTransvection d b)ᵀ` replaces the last column of `N` with
+`N *ᵥ Fin.snoc b 1`. -/
+theorem mul_transpose_lastRowTransvection {ι : Type*} (N : Matrix ι (Fin (d + 1)) A)
+    (b : Fin d → A) :
+    N * (lastRowTransvection d b)ᵀ = N.updateCol (Fin.last d) (N *ᵥ Fin.snoc b 1) := by
+  rw [transpose_lastRowTransvection, mul_updateCol, Matrix.mul_one]
+
+/-- Acting by row `i` of `N * (lastRowTransvection d b)ᵀ` on a module-valued tuple
+`x : Fin (d + 1) → M` evaluates row `i` of `N` against the sheared coordinates
+`l ↦ x l.castSucc + b l • x (Fin.last d)` together with `x (Fin.last d)`. -/
+theorem sum_mul_transpose_lastRowTransvection_smul {ι M : Type*} [AddCommMonoid M] [Module A M]
+    (N : Matrix ι (Fin (d + 1)) A) (b : Fin d → A) (x : Fin (d + 1) → M) (i : ι) :
+    ∑ m : Fin (d + 1), (N * (lastRowTransvection d b)ᵀ) i m • x m =
+      (∑ l : Fin d, N i l.castSucc • (x l.castSucc + b l • x (Fin.last d))) +
+        N i (Fin.last d) • x (Fin.last d) := by
+  rw [mul_transpose_lastRowTransvection, Fin.sum_univ_castSucc]
+  simp [mulVec, dotProduct, Fin.sum_univ_castSucc, smul_add, add_smul, Finset.sum_add_distrib,
+    Finset.sum_smul, mul_smul, add_assoc]
 
 end Semiring
 

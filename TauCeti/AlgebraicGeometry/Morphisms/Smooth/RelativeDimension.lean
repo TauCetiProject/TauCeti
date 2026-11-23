@@ -97,7 +97,7 @@ theorem smoothOfRelativeDimension_iff_ringKrullDim_stalk_eq (n : ℕ) :
   refine ⟨fun _ ↦ ⟨SmoothOfRelativeDimension.smooth n f, fun x hx ↦ ?_⟩, fun ⟨_, hdim⟩ ↦ ⟨?_⟩⟩
   · obtain ⟨W, hxW, h⟩ :=
       SmoothOfRelativeDimension.exists_isStandardSmoothOfRelativeDimension_appLE_top f n x
-    exact ringKrullDim_stalk_eq_of_isStandardSmoothOfRelativeDimension f W.2 h hxW hx
+    exact ringKrullDim_stalk_eq_of_isStandardSmoothOfRelativeDimension f W.property h hxW hx
   · intro x
     obtain ⟨U, hU, V, hV, hxV, e, hst⟩ := (Smooth.iff_forall_exists_isStandardSmooth f).mp ‹_› x
     -- The only nonempty open of `Spec k` is `⊤`.

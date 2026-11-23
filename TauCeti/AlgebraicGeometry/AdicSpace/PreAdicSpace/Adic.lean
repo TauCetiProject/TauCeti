@@ -37,6 +37,10 @@ subspaces (`isPreAdic.isSheafy_iff`), the mechanism of Wedhorn's Remark 8.27.
 * `TauCeti.PreAdicSpace.isAdic`: the adic spaces among the objects of `𝒱^pre`.
 * `TauCeti.AdicSpace`: Wedhorn's category `(Adic)`, the full subcategory of `𝒱^pre` of adic
   spaces.
+* `TauCeti.AdicSpace.restrict`, `TauCeti.AdicSpace.ofRestrict`,
+  `TauCeti.AdicSpace.restrictPreimage`, `TauCeti.AdicSpace.liftRestrict`: open adic subspaces
+  `X.restrict U`, their canonical open immersions `X.ofRestrict U`, and restrictions of morphisms
+  in `AdicSpace`.
 
 ## Main results
 
@@ -119,7 +123,8 @@ along every open embedding `f` whose image lies in the image of `g`: `X|_f` is t
 theorem isSheafy_restrict_of_range_subset {V : TopCat.{u}} {g : V ⟶ X.toTopCat}
     (hg : IsOpenEmbedding g) (hfg : Set.range f ⊆ Set.range g) (hX : isSheafy (X.restrict hg)) :
     isSheafy (X.restrict h) := by
-  let W : Opens (X.restrict hg) := ⟨g ⁻¹' Set.range f, h.isOpenMap.isOpen_range.preimage g.hom.2⟩
+  let W : Opens (X.restrict hg) := ⟨g ⁻¹' Set.range f, h.isOpenMap.isOpen_range.preimage
+      g.hom.continuous_toFun⟩
   -- the image of `W` in `X` is the image of `f`; the open `W` of the restriction is an open of
   -- `V` only up to unfolding, so the image is compared pointwise rather than rewritten
   have hW : Set.range (Opens.inclusion' (hg.isOpenMap.functor.obj W)) = Set.range f := by
@@ -258,6 +263,117 @@ abbrev AdicSpace : Type (u + 1) :=
 pre-adic spaces. -/
 abbrev AdicSpace.toSheafyPreAdicSpace : AdicSpace.{u} ⥤ SheafyPreAdicSpace.{u} :=
   ObjectProperty.ιOfLE PreAdicSpace.isAdic_le_isSheafy
+
+namespace AdicSpace
+
+variable {X Y : AdicSpace.{u}}
+
+/-- The open subspace `X|_U` of an adic space `X` associated to an open `U : Opens X.obj`, packaged
+as an object of `AdicSpace`. Marked `abbrev` so `(X.restrict U).obj` reduces definitionally to
+`X.obj.restrict U.isOpenEmbedding`. -/
+noncomputable abbrev restrict (X : AdicSpace.{u}) (U : Opens X.obj) : AdicSpace.{u} :=
+  ⟨X.obj.restrict U.isOpenEmbedding, PreAdicSpace.isAdic_restrict U.isOpenEmbedding X.property⟩
+
+/-- The underlying pre-adic space of `X.restrict U` is `X.obj.restrict U.isOpenEmbedding`. -/
+theorem restrict_obj (X : AdicSpace.{u}) (U : Opens X.obj) :
+    (X.restrict U).obj = X.obj.restrict U.isOpenEmbedding :=
+  (rfl)
+
+/-- The canonical open immersion `X.restrict U ⟶ X` in `AdicSpace`. -/
+noncomputable def ofRestrict (X : AdicSpace.{u}) (U : Opens X.obj) : X.restrict U ⟶ X :=
+  ObjectProperty.homMk (X.obj.ofRestrict U.isOpenEmbedding)
+
+@[simp]
+theorem ofRestrict_hom (X : AdicSpace.{u}) (U : Opens X.obj) :
+    (X.ofRestrict U).hom = X.obj.ofRestrict U.isOpenEmbedding :=
+  (rfl)
+
+/-- On underlying topological spaces, `X.ofRestrict U` is the open inclusion `U.inclusion'`. -/
+theorem ofRestrict_base (X : AdicSpace.{u}) (U : Opens X.obj) :
+    (X.ofRestrict U).hom.base = U.inclusion' := by
+  rw [ofRestrict_hom, PreAdicSpace.ofRestrict_base]
+
+/-- On points, `X.ofRestrict U` is the subtype coercion `U → X.obj`. -/
+theorem ofRestrict_base_apply (X : AdicSpace.{u}) (U : Opens X.obj) (x : (X.restrict U).obj) :
+    (X.ofRestrict U).hom.base x = x.val :=
+  (congrArg (fun f ↦ f x) (ofRestrict_base X U)).trans (congrFun Opens.coe_inclusion' x)
+
+instance (X : AdicSpace.{u}) (U : Opens X.obj) :
+    PreAdicSpace.IsOpenImmersion (X.ofRestrict U).hom :=
+  PreAdicSpace.IsOpenImmersion.ofRestrict X.obj U.isOpenEmbedding
+
+/-- Any morphism in `AdicSpace` whose underlying morphism of pre-adic spaces is an open immersion is
+a monomorphism in `AdicSpace`. -/
+instance mono_of_isOpenImmersion (i : X ⟶ Y) [PreAdicSpace.IsOpenImmersion i.hom] : Mono i :=
+  (ObjectProperty.ι PreAdicSpace.isAdic).mono_of_mono_map (inferInstanceAs (Mono i.hom))
+
+/-- The restriction `X|_{f⁻¹(V)} ⟶ Y|_V` of a morphism `f : X ⟶ Y` of adic spaces over an open
+`V : Opens Y.obj`. -/
+noncomputable def restrictPreimage (f : X ⟶ Y) (V : Opens Y.obj) :
+    X.restrict ((Opens.map f.hom.base).obj V) ⟶ Y.restrict V :=
+  ObjectProperty.homMk (f.hom.restrictPreimage V)
+
+@[simp]
+theorem restrictPreimage_hom (f : X ⟶ Y) (V : Opens Y.obj) :
+    (restrictPreimage f V).hom = f.hom.restrictPreimage V :=
+  (rfl)
+
+@[reassoc (attr := simp)]
+theorem restrictPreimage_ofRestrict (f : X ⟶ Y) (V : Opens Y.obj) :
+    restrictPreimage f V ≫ Y.ofRestrict V =
+      X.ofRestrict ((Opens.map f.hom.base).obj V) ≫ f := by
+  ext1
+  exact f.hom.restrictPreimage_ofRestrict V
+
+/-- Uniqueness of `restrictPreimage f V` as the morphism commuting with the open inclusions. -/
+theorem restrictPreimage_uniq (f : X ⟶ Y) (V : Opens Y.obj)
+    (g : X.restrict ((Opens.map f.hom.base).obj V) ⟶ Y.restrict V)
+    (hg : g ≫ Y.ofRestrict V = X.ofRestrict ((Opens.map f.hom.base).obj V) ≫ f) :
+    g = restrictPreimage f V := by
+  ext1
+  exact f.hom.restrictPreimage_uniq V g.hom (congrArg InducedCategory.Hom.hom hg)
+
+/-- On points, `restrictPreimage f V` evaluates as `f.hom.base` with codomain restricted to `V`. -/
+theorem restrictPreimage_base_apply (f : X ⟶ Y) (V : Opens Y.obj)
+    (x : (X.restrict ((Opens.map f.hom.base).obj V)).obj) :
+    (restrictPreimage f V).hom.base x = ⟨f.hom.base x.val, Opens.mem_map.mp x.property⟩ := by
+  rw [restrictPreimage_hom, PreAdicSpace.Hom.restrictPreimage_base_apply]
+
+/-- Lifting a morphism `f : X ⟶ Y` restricted to `O ≤ f⁻¹(U)` across `Y.ofRestrict U` in
+`AdicSpace`. -/
+noncomputable def liftRestrict (f : X ⟶ Y) {O : Opens X.obj} {U : Opens Y.obj}
+    (hOU : O ≤ (Opens.map f.hom.base).obj U) :
+    X.restrict O ⟶ Y.restrict U :=
+  ObjectProperty.homMk (f.hom.liftRestrict hOU)
+
+@[simp]
+theorem liftRestrict_hom (f : X ⟶ Y) {O : Opens X.obj} {U : Opens Y.obj}
+    (hOU : O ≤ (Opens.map f.hom.base).obj U) :
+    (liftRestrict f hOU).hom = f.hom.liftRestrict hOU :=
+  (rfl)
+
+@[reassoc (attr := simp)]
+theorem liftRestrict_ofRestrict (f : X ⟶ Y) {O : Opens X.obj} {U : Opens Y.obj}
+    (hOU : O ≤ (Opens.map f.hom.base).obj U) :
+    liftRestrict f hOU ≫ Y.ofRestrict U = X.ofRestrict O ≫ f := by
+  ext1
+  exact f.hom.liftRestrict_ofRestrict hOU
+
+/-- Uniqueness of `liftRestrict f hOU` as the morphism commuting with the open inclusions. -/
+theorem liftRestrict_uniq (f : X ⟶ Y) {O : Opens X.obj} {U : Opens Y.obj}
+    (hOU : O ≤ (Opens.map f.hom.base).obj U) (g : X.restrict O ⟶ Y.restrict U)
+    (hg : g ≫ Y.ofRestrict U = X.ofRestrict O ≫ f) :
+    g = liftRestrict f hOU := by
+  ext1
+  exact f.hom.liftRestrict_uniq hOU g.hom (congrArg InducedCategory.Hom.hom hg)
+
+/-- On points, `liftRestrict f hOU` evaluates as `f.hom.base` with codomain restricted to `U`. -/
+theorem liftRestrict_base_apply (f : X ⟶ Y) {O : Opens X.obj} {U : Opens Y.obj}
+    (hOU : O ≤ (Opens.map f.hom.base).obj U) (x : (X.restrict O).obj) :
+    (liftRestrict f hOU).hom.base x = ⟨f.hom.base x.val, hOU x.property⟩ := by
+  rw [liftRestrict_hom, PreAdicSpace.Hom.liftRestrict_base_apply]
+
+end AdicSpace
 
 namespace ValuationSpectrum
 

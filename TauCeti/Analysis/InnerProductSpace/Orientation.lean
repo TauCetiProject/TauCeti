@@ -12,6 +12,7 @@ public import Mathlib.LinearAlgebra.Alternating.Curry
 public import Mathlib.Analysis.Normed.Module.Alternating.Basic
 public import TauCeti.Topology.Algebra.Module.Alternating.TopDegree
 import TauCeti.Analysis.InnerProductSpace.Projection.Basic
+import TauCeti.LinearAlgebra.Determinant.Basic
 
 /-!
 # Continuous oriented volume forms
@@ -23,7 +24,10 @@ It also evaluates the volume form on an arbitrary, not necessarily orthonormal, 
 its absolute value is the square root of the Gram determinant, it vanishes exactly on linearly
 dependent families, and on a basis its sign records whether the basis is positively oriented. In
 a coordinate frame of a Riemannian manifold this is the familiar formula
-`vol = ±√(det g) dx¹ ∧ ⋯ ∧ dxⁿ`.
+`vol = ±√(det g) dx¹ ∧ ⋯ ∧ dxⁿ`. A linear endomorphism scales the volume form by its determinant
+(`Orientation.volumeForm_comp_linearMap`). A linear equivalence to another inner product space,
+oriented by transport, preserves positivity of the volume form
+(`Orientation.volumeForm_map_comp_pos_iff`).
 
 Two oriented inner product spaces of the same positive finite dimension are related by an
 orientation-preserving linear isometric equivalence
@@ -34,9 +38,7 @@ The orthogonal complement `(ℝ ∙ p)ᗮ` of a nonzero vector `p` is oriented w
 normal: a basis of `(ℝ ∙ p)ᗮ` is positive exactly when `p` followed by it is a positive basis of
 the whole space (`Orientation.orthogonalSpanSingleton`,
 `Orientation.orientation_eq_orthogonalSpanSingleton_iff`). This orients the tangent hyperplanes of
-spheres. For a normal `p`, the volume `|vol(p, w₁, …, wₘ)|` is `‖p‖` times the square root of the
-Gram determinant of the `wᵢ` alone (`Orientation.abs_volumeForm_cons_eq_norm_mul_sqrt_det_gram`),
-the `m`-dimensional volume of their parallelepiped in the hyperplane.
+spheres.
 -/
 
 public section
@@ -141,6 +143,43 @@ theorem volumeForm_apply_eq_neg_sqrt_det_gram (o : Orientation ℝ E (Fin n))
   have h := (-o).volumeForm_apply_eq_sqrt_det_gram b hb'
   rwa [volumeForm_neg_orientation, neg_apply, neg_eq_iff_eq_neg] at h
 
+/-- The volume form scales under a linear endomorphism `f` by its determinant:
+`vol(f v₁, …, f vₙ) = det f · vol(v₁, …, vₙ)`. -/
+theorem volumeForm_comp_linearMap (o : Orientation ℝ E (Fin n)) (f : E →ₗ[ℝ] E)
+    (v : Fin n → E) :
+    o.volumeForm (f ∘ v) = LinearMap.det f * o.volumeForm v := by
+  rcases n with - | n
+  · rw [LinearMap.det_eq_one_of_finrank_eq_zero Fact.out, one_mul]
+    refine o.eq_or_eq_neg_of_isEmpty.elim ?_ ?_ <;> rintro rfl <;> simp
+  have : FiniteDimensional ℝ E := .of_fact_finrank_eq_succ n
+  let b := Module.finBasisOfFinrankEq ℝ E (Fact.out : Module.finrank ℝ E = n + 1)
+  exact congr($(AlternatingMap.compLinearMap_eq_det_smul b o.volumeForm f) v)
+
+/-- A linear equivalence `f` preserves positivity of the volume form when the target carries the
+transported orientation: the volume form of `o.map f` is positive on the image of a family of
+vectors exactly when the volume form of `o` is positive on the family. -/
+theorem volumeForm_map_comp_pos_iff {F : Type*} [NormedAddCommGroup F] [InnerProductSpace ℝ F]
+    [Fact (Module.finrank ℝ F = n)] (o : Orientation ℝ E (Fin n)) (f : E ≃ₗ[ℝ] F)
+    (v : Fin n → E) :
+    0 < (Orientation.map (Fin n) f o).volumeForm (f ∘ v) ↔ 0 < o.volumeForm v := by
+  rcases n with - | n
+  · refine o.eq_or_eq_neg_of_isEmpty.elim ?_ ?_ <;> rintro rfl <;>
+      simp [Orientation.map_positiveOrientation_of_isEmpty]
+  by_cases hv : LinearIndependent ℝ v
+  · have hcard : Fintype.card (Fin (n + 1)) = Module.finrank ℝ E := by
+      simp [Fact.out (p := Module.finrank ℝ E = n + 1)]
+    let b := basisOfLinearIndependentOfCardEqFinrank hv hcard
+    have hb : ⇑b = v := coe_basisOfLinearIndependentOfCardEqFinrank hv hcard
+    have hbf : ⇑(b.map f) = f ∘ v := by
+      ext i
+      simp [hb]
+    rw [← hbf, ← hb, volumeForm_apply_pos_iff, volumeForm_apply_pos_iff,
+      Module.Basis.orientation_map]
+    exact (Orientation.map (Fin (n + 1)) f).injective.eq_iff
+  · have hfv : ¬LinearIndependent ℝ (f ∘ v) := fun h ↦ hv (h.of_comp f.toLinearMap)
+    rw [not_ne_iff.mp (mt volumeForm_apply_ne_zero_iff.mp hv),
+      not_ne_iff.mp (mt volumeForm_apply_ne_zero_iff.mp hfv)]
+
 section LinearIsometryEquiv
 
 variable {V W : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] [NormedAddCommGroup W]
@@ -173,21 +212,6 @@ variable {m : ℕ}
 
 variable [Fact (Module.finrank ℝ E = m + 1)]
 
-/-- **The volume of a normal followed by a family of vectors.** If `p` is orthogonal to every
-`wᵢ`, then `|vol(p, w₁, …, wₘ)| = ‖p‖ √(det ⟪wᵢ, wⱼ⟫)`: `‖p‖` times the `m`-dimensional volume
-of the parallelepiped spanned by the `wᵢ`. -/
-theorem abs_volumeForm_cons_eq_norm_mul_sqrt_det_gram (o : Orientation ℝ E (Fin (m + 1))) {p : E}
-    {w : Fin m → E} (hw : ∀ i, inner ℝ p (w i) = 0) :
-    |o.volumeForm (Fin.cons p w)| = ‖p‖ * √(Matrix.gram ℝ w).det := by
-  -- The Gram matrix of `(p, w)` is block diagonal, with blocks `‖p‖²` and the Gram matrix of `w`.
-  rw [o.abs_volumeForm_apply_eq_sqrt_det_gram, Matrix.det_succ_row_zero, Fin.sum_univ_succ,
-    Finset.sum_eq_zero fun j _ ↦ ?_]
-  · simp only [Matrix.gram_apply, Fin.cons_zero, real_inner_self_eq_norm_sq, Fin.val_zero,
-      pow_zero, one_mul, Fin.succAbove_zero, add_zero]
-    rw [Real.sqrt_mul (sq_nonneg _), Real.sqrt_sq (norm_nonneg _)]
-    congr 3
-  · simp [Matrix.gram_apply, hw]
-
 /-- The top form `w ↦ vol(p, w₀, …, wₘ₋₁)` on the orthogonal complement of `p`. -/
 private def orthogonalSpanSingletonForm (o : Orientation ℝ E (Fin (m + 1))) (p : E) :
     (ℝ ∙ p)ᗮ [⋀^Fin m]→ₗ[ℝ] ℝ :=
@@ -207,7 +231,7 @@ private theorem orthogonalSpanSingletonForm_apply_ne_zero (o : Orientation ℝ E
   rw [orthogonalSpanSingletonForm_apply]
   exact volumeForm_apply_ne_zero_iff.2
     (LinearIndependent.finCons_orthogonal_span_singleton hp
-      (b.linearIndependent.map' _ (Submodule.ker_subtype _)) fun i ↦ (b i).2)
+      (b.linearIndependent.map' _ (Submodule.ker_subtype _)) fun i ↦ (b i).property)
 
 /-- The orientation of the orthogonal complement `(ℝ ∙ p)ᗮ` of a nonzero vector `p` of an
 oriented space for which `p` is a positive normal: a basis `b` of `(ℝ ∙ p)ᗮ` is positive exactly

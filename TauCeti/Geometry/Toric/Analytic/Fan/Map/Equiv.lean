@@ -94,7 +94,7 @@ private theorem image_analyticMap_range_subset (σ : Φ.cones) :
     e.toFanHom.analyticMap hΦ hΨ '' range (Φ.analyticAffineChartι hΦ σ) ⊆
       range (Ψ.analyticAffineChartι hΨ (e.coneEquiv σ)) := by
   rintro _ ⟨_, ⟨x, rfl⟩, rfl⟩
-  have h := e.toFanHom.mapsTo_leastCone σ.2
+  have h := e.toFanHom.mapsTo_leastCone σ.property
   rw [toFanHom_leastCone] at h
   exact ⟨_, (e.toFanHom.analyticMap_analyticAffineChartι_of_mapsTo hΦ hΨ h x).symm⟩
 

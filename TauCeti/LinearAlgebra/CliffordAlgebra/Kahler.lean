@@ -73,9 +73,7 @@ include hQ in
 `⁅c₂(ω), c(v)⁆ = 2 c(J v)`. -/
 theorem bivectorExterior_kahlerForm_lie_ι (hJ : ∀ v w, ⟪J v, J w⟫ = ⟪v, w⟫) (v : V) :
     ⁅bivectorExterior Q J.kahlerForm, ι Q v⁆ = ι Q ((2 : ℝ) • J v) := by
-  have hpolar (x y : V) : QuadraticMap.polar Q x y = -2 * ⟪x, y⟫ := by
-    simp only [QuadraticMap.polar, hQ, norm_add_sq_real]
-    ring
+  have hpolar := QuadraticMap.polar_eq_neg_two_inner hQ
   rw [kahlerForm_def, map_smul, map_sum, Ring.lie_def, smul_mul_assoc, mul_smul_comm, ← smul_sub,
     Finset.sum_mul, Finset.mul_sum, ← Finset.sum_sub_distrib]
   simp only [← Ring.lie_def, bivectorExterior_apply_ιMulti, bivector_lie_ι, ← map_sum]

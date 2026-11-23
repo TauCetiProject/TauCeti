@@ -84,7 +84,7 @@ theorem _root_.Transcendental.linearIndepOn_pow_mul_pow {K : Type*} [Field K] [A
   -- over `K`.
   have h := linearIndependent_smul (R := R) hx.linearIndependent_pow (linearIndependent_pow y)
   have hinj : Function.Injective fun p : {p : ℕ × ℕ | p.2 < (minpoly K y).natDegree} ↦
-      ((p : ℕ × ℕ).1, (⟨(p : ℕ × ℕ).2, p.2⟩ : Fin (minpoly K y).natDegree)) :=
+      ((p : ℕ × ℕ).1, (⟨(p : ℕ × ℕ).2, p.property⟩ : Fin (minpoly K y).natDegree)) :=
     fun p q hpq ↦ by grind
   rw [← linearIndependent_set_coe_iff]
   convert h.comp _ hinj using 1

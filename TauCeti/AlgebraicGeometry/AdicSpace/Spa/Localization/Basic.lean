@@ -123,7 +123,7 @@ theorem spaComapLoc_val (P : PairOfDefinition A) (Aplus : Subring A) (T : Finset
     letI := isUniformAddGroup_locUniformSpace P T s S hden
     letI := isTopologicalRing_locUniformSpace P T s S hden
     ∀ v : spa (completedPlusSubring P Aplus T s S hden),
-      (spaComapLoc P Aplus T s S hden v).1 = comap (toCompletionLoc P T s S hden) v.1 := by
+      (spaComapLoc P Aplus T s S hden v).val = comap (toCompletionLoc P T s S hden) v.val := by
   let _ := locUniformSpace P T s S hden
   have _ := isUniformAddGroup_locUniformSpace P T s S hden
   have _ := isTopologicalRing_locUniformSpace P T s S hden
@@ -194,7 +194,7 @@ theorem spaComapLoc_mem_rationalSubset (P : PairOfDefinition A) (Aplus : Subring
     letI := isUniformAddGroup_locUniformSpace P T s S hden
     letI := isTopologicalRing_locUniformSpace P T s S hden
     ∀ v : spa (completedPlusSubring P Aplus T s S hden),
-      (spaComapLoc P Aplus T s S hden v).1 ∈ rationalSubset Aplus T s := by
+      (spaComapLoc P Aplus T s S hden v).val ∈ rationalSubset Aplus T s := by
   let _ := locUniformSpace P T s S hden
   have _ := isUniformAddGroup_locUniformSpace P T s S hden
   have _ := isTopologicalRing_locUniformSpace P T s S hden
@@ -208,7 +208,7 @@ theorem spaComapLoc_mem_rationalSubset (P : PairOfDefinition A) (Aplus : Subring
   rw [spaComapLoc_val]
   refine comap_mem_rationalSubset (continuous_toCompletionLoc P T s S hden)
     (fun _ ha ↦ toCompletionLoc_mem_completedPlusSubring P Aplus T s S hden ha) T s hc
-    (fun t ht ↦ ?_) v.2
+    (fun t ht ↦ ?_) v.property
   -- and `t` times that inverse is the fraction `t/s`, which lies in `A_U⁺`
   rw [toCompletionLoc_mul_unit_inv_eq_divBy P T s S hden t hu]
   exact divBy_mem_completedPlusSubring P Aplus T s S hden ht
@@ -255,7 +255,7 @@ theorem spaLocToRationalSubset_val (P : PairOfDefinition A) (Aplus : Subring A) 
     letI := isUniformAddGroup_locUniformSpace P T s S hden
     letI := isTopologicalRing_locUniformSpace P T s S hden
     ∀ v : spa (completedPlusSubring P Aplus T s S hden),
-      (spaLocToRationalSubset P Aplus T s S hden v).1 = spaComapLoc P Aplus T s S hden v := by
+      (spaLocToRationalSubset P Aplus T s S hden v).val = spaComapLoc P Aplus T s S hden v := by
   let _ := locUniformSpace P T s S hden
   have _ := isUniformAddGroup_locUniformSpace P T s S hden
   have _ := isTopologicalRing_locUniformSpace P T s S hden
