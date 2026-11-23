@@ -124,7 +124,7 @@ theorem mem_padicIntEntries_iff_norm_le_one {g : GL (Fin n) ℚ_[p]} :
   refine ⟨?_, fun h ↦ ⟨Matrix.of fun i j ↦ ⟨_, h i j⟩, by ext; rfl⟩⟩
   rintro ⟨A, hA⟩ i j
   rw [← hA]
-  exact (A i j).2
+  exact (A i j).property
 
 /-- The image of every invertible matrix over `ℤ_p` lies in `GL_n(ℤ_p)`. -/
 theorem map_mem_GLnZp (u : GL (Fin n) ℤ_[p]) :
