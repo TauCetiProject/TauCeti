@@ -466,7 +466,7 @@ private theorem cochainPeriodicity_cycleForm_succ (hd₁ : IsDGAlgebra 𝒜₁ d
     set w := hochschildFace (Fin.last (n + 2)).castSucc a
     have hpow (r : Fin (n + 2)) :
         (-1 : ℤ) ^ ((Fin.last (n + 1) : ℕ) - r) = (-1 : ℤ) ^ (n + 1) * (-1 : ℤ) ^ (r : ℕ) := by
-      have hr : (r : ℕ) ≤ n + 1 := Nat.le_of_lt_succ r.2
+      have hr : (r : ℕ) ≤ n + 1 := Nat.le_of_lt_succ r.isLt
       have hrr : (-1 : ℤ) ^ ((r : ℕ) + r) = 1 := Even.neg_one_pow ⟨r, by omega⟩
       rw [Fin.val_last, show (-1 : ℤ) ^ (n + 1) = (-1 : ℤ) ^ (n + 1 - (r : ℕ) + r) by
         congr 1; omega, pow_add, mul_assoc, ← pow_add, hrr, mul_one]

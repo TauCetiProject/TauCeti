@@ -35,7 +35,7 @@ theorem exists_injective_into_eqOn_of_finite {ι : Type*} [Countable ι]
   obtain ⟨f, hf⟩ := Countable.exists_injective_nat ι
   let e := (hS.sdiff hF).natEmbedding
   let g : ι → ι := fun i ↦ e (f i)
-  have hg : ∀ i, g i ∈ S \ F := fun i ↦ (e (f i)).2
+  have hg : ∀ i, g i ∈ S \ F := fun i ↦ (e (f i)).property
   refine ⟨F.piecewise id g, (F.injective_piecewise_iff).2 ⟨Set.injOn_id F, ?_, ?_⟩,
     fun i hi ↦ by simp [hi], fun k ↦ ?_⟩
   · exact (Subtype.val_injective.comp (e.injective.comp hf)).injOn
@@ -60,6 +60,6 @@ theorem forall_exists_injective_iff_infinite {α : Type*} (s : Set α) :
   · exact ⟨fun i => (hs.natEmbedding s i : α),
       fun i j hij => Fin.val_injective ((hs.natEmbedding s).injective
         (Subtype.val_injective hij)),
-      fun i => (hs.natEmbedding s i).2⟩
+      fun i => (hs.natEmbedding s i).property⟩
 
 end Set

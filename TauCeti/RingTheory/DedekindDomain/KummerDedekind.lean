@@ -155,7 +155,7 @@ theorem inertiaDeg_primesOverEquivNormalizedFactorsMinPolyMk_symm_apply {d : (R 
     (((primesOverEquivNormalizedFactorsMinPolyMk hp hp0 hx hx').symm ⟨d, hd⟩ :
       p.primesOver S) : Ideal S).inertiaDeg R = d.natDegree := by
   obtain ⟨Q, rfl⟩ := Polynomial.map_surjective _ Ideal.Quotient.mk_surjective d
-  have hmem := ((primesOverEquivNormalizedFactorsMinPolyMk hp hp0 hx hx').symm ⟨_, hd⟩).2
+  have hmem := ((primesOverEquivNormalizedFactorsMinPolyMk hp hp0 hx hx').symm ⟨_, hd⟩).property
   have hspan := primesOverEquivNormalizedFactorsMinPolyMk_symm_apply_coe hp hp0 hx hx' hd
   have hmax : (span (p.map (algebraMap R S) ∪ {aeval x Q})).IsMaximal :=
     hspan ▸ hmem.1.isMaximal (Ideal.ne_bot_of_mem_primesOver hp0 hmem)
@@ -178,7 +178,7 @@ theorem ramificationIdx_primesOverEquivNormalizedFactorsMinPolyMk_symm_apply {d 
     (((primesOverEquivNormalizedFactorsMinPolyMk hp hp0 hx hx').symm ⟨d, hd⟩ :
         p.primesOver S) : Ideal S).ramificationIdx R =
       multiplicity d ((minpoly R x).map (Ideal.Quotient.mk p)) := by
-  have hmem := ((primesOverEquivNormalizedFactorsMinPolyMk hp hp0 hx hx').symm ⟨d, hd⟩).2
+  have hmem := ((primesOverEquivNormalizedFactorsMinPolyMk hp hp0 hx hx').symm ⟨d, hd⟩).property
   rw [IsDedekindDomain.ramificationIdx_eq_multiplicity p _ (Ideal.map_ne_bot_of_ne_bot hp0)]
   refine multiplicity_eq_of_emultiplicity_eq ?_
   have hfac := (Ideal.mem_primesOver_iff_mem_normalizedFactors S hp0).mp hmem

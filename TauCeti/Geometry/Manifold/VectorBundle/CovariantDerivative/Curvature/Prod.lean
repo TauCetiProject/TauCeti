@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.Ricci
-public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.Scalar
+public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.Scalar.Basic
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.LeviCivita.Prod
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.LeviCivita.Regularity
 import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Regularity
@@ -52,6 +52,8 @@ whose Lie brackets are computed factor by factor
   metric is the sum of the scalar curvatures.
 * `Bundle.ContMDiffRiemannianMetric.scalarCurvature_prodTangentSpace`: the same for the product
   `Bundle.ContMDiffRiemannianMetric.prodTangentSpace` of two smooth metrics.
+* `Bundle.ContMDiffRiemannianMetric.ricciTensor_prodTangentSpace`: its Ricci tensor is the sum
+  of the factor Ricci tensors, with each metric installed locally.
 
 ## References
 
@@ -64,9 +66,11 @@ public section
 noncomputable section
 
 open Bundle CovariantDerivative FiberBundle Manifold VectorField
-open scoped ContDiff Manifold TauCeti
+open scoped ContDiff Manifold
 
 namespace TauCeti.Manifold
+
+open scoped TauCeti
 
 variable
   {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
@@ -211,6 +215,7 @@ theorem scalarCurvature_prodTangentSpace
   rw [scalarCurvature_def, scalarCurvature_def, scalarCurvature_def]
   let _ : RiemannianBundle (fun x : M ↦ TangentSpace I x) := ⟨g₁.toRiemannianMetric⟩
   let _ : RiemannianBundle (fun y : N ↦ TangentSpace J y) := ⟨g₂.toRiemannianMetric⟩
+  let _ := TauCeti.Manifold.instRiemannianBundleProd (I := I) (J := J) (M := M) (N := N)
   -- With the factor metrics installed, the product metric `g₁ × g₂` is the installed product
   -- metric `TauCeti.Manifold.instRiemannianBundleProd`.
   have hg : (⟨(g₁.prodTangentSpace g₂).toRiemannianMetric⟩ :
@@ -220,5 +225,44 @@ theorem scalarCurvature_prodTangentSpace
     exact congrArg RiemannianBundle.mk TauCeti.Manifold.riemannianBundleProd_g.symm
   -- `convert` identifies the two product-metric instances through `hg`.
   convert TauCeti.Manifold.scalarCurvature_leviCivitaConnection_prod (I := I) (J := J) p using 3
+
+/-- The Ricci tensor of the product of two supplied smooth metrics is the sum of the factor
+Ricci tensors. Each metric is installed only in its own curvature expression. -/
+theorem ricciTensor_prodTangentSpace
+    (g₁ : ContMDiffRiemannianMetric I ∞ E (fun x : M ↦ TangentSpace I x))
+    (g₂ : ContMDiffRiemannianMetric J ∞ F (fun y : N ↦ TangentSpace J y))
+    (p : M × N) (u v : TangentSpace (I.prod J) p) :
+    (letI : RiemannianBundle (fun p : M × N ↦ TangentSpace (I.prod J) p) :=
+      ⟨(g₁.prodTangentSpace g₂).toRiemannianMetric⟩;
+      (leviCivitaConnection (I.prod J) (M × N)).ricciTensor p u v) =
+    (letI : RiemannianBundle (fun x : M ↦ TangentSpace I x) := ⟨g₁.toRiemannianMetric⟩;
+      (leviCivitaConnection I M).ricciTensor p.1 (TauCeti.Manifold.tangentSpaceProdEquiv p u).1
+        (TauCeti.Manifold.tangentSpaceProdEquiv p v).1) +
+    (letI : RiemannianBundle (fun y : N ↦ TangentSpace J y) := ⟨g₂.toRiemannianMetric⟩;
+      (leviCivitaConnection J N).ricciTensor p.2 (TauCeti.Manifold.tangentSpaceProdEquiv p u).2
+        (TauCeti.Manifold.tangentSpaceProdEquiv p v).2) := by
+  let _ : RiemannianBundle (fun x : M ↦ TangentSpace I x) := ⟨g₁.toRiemannianMetric⟩
+  let _ : RiemannianBundle (fun y : N ↦ TangentSpace J y) := ⟨g₂.toRiemannianMetric⟩
+  let _ := TauCeti.Manifold.instRiemannianBundleProd (I := I) (J := J) (M := M) (N := N)
+  have hg : (⟨(g₁.prodTangentSpace g₂).toRiemannianMetric⟩ :
+      RiemannianBundle (fun p : M × N ↦ TangentSpace (I.prod J) p)) =
+      TauCeti.Manifold.instRiemannianBundleProd := by
+    rw [prodTangentSpace_toRiemannianMetric]
+    exact congrArg RiemannianBundle.mk TauCeti.Manifold.riemannianBundleProd_g.symm
+  let _ := TauCeti.Manifold.instIsContMDiffRiemannianBundleProd
+    (I := I) (J := J) (M := M) (N := N) (n := ∞)
+  let S := {g : RiemannianBundle (fun p : M × N ↦ TangentSpace (I.prod J) p) //
+    letI := g
+    IsContMDiffRiemannianBundle (I.prod J) ∞ (E × F)
+      (fun p : M × N ↦ TangentSpace (I.prod J) p)}
+  let A : S := ⟨⟨(g₁.prodTangentSpace g₂).toRiemannianMetric⟩, inferInstance⟩
+  let B : S := ⟨TauCeti.Manifold.instRiemannianBundleProd, inferInstance⟩
+  let χ : S → ℝ := fun g ↦
+    letI := g.val
+    letI := g.property
+    (leviCivitaConnection (I.prod J) (M × N)).ricciTensor p u v
+  have heq : A = B := Subtype.ext hg
+  exact (congrArg χ heq).trans
+    (TauCeti.Manifold.ricciTensor_leviCivitaConnection_prod (I := I) (J := J) p u v)
 
 end Bundle.ContMDiffRiemannianMetric

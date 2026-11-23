@@ -21,24 +21,25 @@ viewed in the derived category of `R`-modules. It is functorial in both variable
 replacement functor `TauCeti.kInjectiveReplacement` is, and because the linear Hom complex
 descends to homotopy categories (`TauCeti.linearHomComplexHomotopyFunctor`).
 
-The basic input is that the cohomology of the linear Hom complex into a K-injective complex `L`
-computes morphisms into shifts of `L` in the derived category
-(`TauCeti.linearHomComplexHomologyLinearEquivOfIsKInjective`). Hence the cohomology of the
-derived Hom complex computes morphisms in the derived category: for every integer `n` the
+Its cohomology computes morphisms in the derived category: for every integer `n` the
 `n`-th cohomology of `RHom(L, M)` is the `R`-module of morphisms `L ⟶ M⟦n⟧` in `D(C)`
 (`TauCeti.derivedHomHomologyLinearEquiv`), naturally in `L` and in `M`. No boundedness of `L` or
 `M` is assumed. The main example is `C = ModuleCat A` for a commutative ring `A` and `R = A`:
 module categories have K-injective resolutions (`TauCeti.Algebra.Homology.ModuleCat.KInjective`),
 and `derivedHom A (ModuleCat A)` is then the derived Hom `RHom_A(L, M)` in `D(A)`.
 
+The basic computation behind this needs no resolutions: when `L` is itself a K-injective complex,
+the `n`-th cohomology of the linear Hom complex from any complex `K` to `L` is the module of
+morphisms `K ⟶ L⟦n⟧` in `D(C)` (`TauCeti.linearHomComplexHomologyLinearEquivOfIsKInjective`).
+
 ## Main definitions
 
-* `TauCeti.linearHomComplexHomologyLinearEquivOfIsKInjective`: for a K-injective complex `L`,
-  the identification of the `n`-th cohomology of the linear Hom complex from `K` to `L` with
-  `Q K ⟶ (Q L)⟦n⟧`.
 * `TauCeti.derivedHom`: the derived Hom bifunctor.
 * `TauCeti.derivedHomHomologyLinearEquiv`: the identification of `Hⁿ RHom(L, M)` with
   `L ⟶ M⟦n⟧`.
+* `TauCeti.linearHomComplexHomologyLinearEquivOfIsKInjective`: for a K-injective complex `L`,
+  the identification of the `n`-th cohomology of the linear Hom complex from `K` to `L` with
+  `K ⟶ L⟦n⟧` in the derived category.
 
 ## Main results
 
@@ -63,7 +64,7 @@ namespace TauCeti
 
 universe t w' w v u
 
-section KInjective
+section IsKInjective
 
 variable (R : Type w) [Ring R] {C : Type u} [Category.{v} C] [Abelian C] [Linear R C]
   [HasDerivedCategory.{t} C]
@@ -73,31 +74,31 @@ private def qhShiftIso (L : CochainComplex C ℤ) (n : ℤ) :
     Qh.obj ((HomotopyCategory.quotient C _).obj (L⟦n⟧)) ≅ (Q.obj L)⟦n⟧ :=
   (quotientCompQhIso C).app _ ≪≫ (Q.commShiftIso n).app L
 
-/-- When `L` is K-injective, the `n`-th cohomology of the `R`-linear Hom complex from `K` to `L`
-is the `R`-module of morphisms `Q K ⟶ (Q L)⟦n⟧` in the derived category. No boundedness of `K`
-or `L` is assumed. -/
-def linearHomComplexHomologyLinearEquivOfIsKInjective (K L : CochainComplex C ℤ)
-    [L.IsKInjective] (n : ℤ) :
+/-- For a K-injective complex `L`, the `n`-th cohomology of the linear Hom complex
+`CochainComplex.linearHomComplex R K L` is the `R`-module of morphisms `K ⟶ L⟦n⟧` in the derived
+category. No boundedness of `K` or `L` is assumed. -/
+def linearHomComplexHomologyLinearEquivOfIsKInjective (K L : CochainComplex C ℤ) [L.IsKInjective]
+    (n : ℤ) :
     (CochainComplex.linearHomComplex R K L).homology n ≃ₗ[R] (Q.obj K ⟶ (Q.obj L)⟦n⟧) :=
   linearHomComplexHomologyLinearEquiv R K L n ≪≫ₗ
-    -- The ascription states bijectivity of the coerced linear map, so that
-    -- `LinearEquiv.ofBijective_apply` applies to the result.
-    LinearEquiv.ofBijective (Qh.mapLinearMap R)
-      (show Function.Bijective (Qh.mapLinearMap R) from
-        CochainComplex.IsKInjective.Qh_map_bijective _ _) ≪≫ₗ
+    LinearEquiv.ofBijective (Qh.mapLinearMap R) (by
+      rw [Functor.coe_mapLinearMap]
+      exact CochainComplex.IsKInjective.Qh_map_bijective _ _) ≪≫ₗ
     Linear.homCongr R ((quotientCompQhIso C).app K) (qhShiftIso L n)
 
-/-- The class of a cocycle `x` of degree `n` corresponds to the image in the derived category of
-the chain map `K ⟶ L⟦n⟧` defined by `x`, followed by the commutation of `Q` with shifts. -/
+/-- The class of a cocycle `x` of degree `n` corresponds to the image under `Q` of the chain map
+`K ⟶ L⟦n⟧` defined by `x`, followed by the commutation of `Q` with the shift. -/
 @[simp]
 theorem linearHomComplexHomologyLinearEquivOfIsKInjective_symm_mk {K L : CochainComplex C ℤ}
     [L.IsKInjective] {n : ℤ} (x : Cocycle K L n) :
     linearHomComplexHomologyLinearEquivOfIsKInjective R K L n
         ((homologyLinearEquiv R K L n).symm (CohomologyClass.mk x)) =
       Q.map (Cocycle.equivHomShift.symm x) ≫ (Q.commShiftIso n).hom.app L := by
-  rw [linearHomComplexHomologyLinearEquivOfIsKInjective, LinearEquiv.trans_apply,
-    LinearEquiv.trans_apply, linearHomComplexHomologyLinearEquiv_symm_mk]
-  simp [qhShiftIso, Linear.homCongr_apply, quotientCompQhIso_hom_naturality_assoc]
+  simp only [linearHomComplexHomologyLinearEquivOfIsKInjective, qhShiftIso,
+    LinearEquiv.trans_apply, linearHomComplexHomologyLinearEquiv_symm_mk,
+    LinearEquiv.ofBijective_apply, Functor.coe_mapLinearMap, Linear.homCongr_apply,
+    Iso.trans_hom, Iso.app_hom, Iso.app_inv, Category.assoc]
+  rw [quotientCompQhIso_hom_naturality_assoc, Iso.inv_hom_id_app_assoc]
 
 /-- Transporting the identification along isomorphisms out of the derived-category images of
 `K` and of `L⟦n⟧` amounts to transporting the image of a homotopy class under `Qh`. -/
@@ -111,7 +112,7 @@ private lemma homCongr_linearHomComplexHomologyLinearEquivOfIsKInjective
       (e.inv ≫ Qh.map (linearHomComplexHomologyLinearEquiv R K L n a)) ≫ e'.hom := by
   simp [linearHomComplexHomologyLinearEquivOfIsKInjective, Linear.homCongr_apply]
 
-end KInjective
+end IsKInjective
 
 variable (R : Type w) [Ring R] (C : Type u) [Category.{v} C] [Abelian C] [Linear R C]
   [HasKInjectiveResolutions C] [HasDerivedCategory.{t} C]

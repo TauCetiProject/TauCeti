@@ -9,12 +9,18 @@ public import Mathlib.NumberTheory.Height.Basic
 
 import all Mathlib.NumberTheory.Height.Basic
 import TauCeti.Algebra.Field.LinearFractional
+import TauCeti.NumberTheory.Height.Affine
 
 /-!
 # Height bounds for coordinate ratios and from local estimates
 
 The height of a ratio of two coordinates is bounded by the projective height of the tuple, and
-the height of a quotient by the sum of the heights of its numerator and denominator. If
+the height of a quotient by the sum of the heights of its numerator and denominator. Conversely,
+normalizing at any nonzero coordinate `x i₀ ≠ 0` bounds `mulHeight x` by the product of
+`mulHeight₁ (x i / x i₀)` over `i ≠ i₀` (`Height.mulHeight_le_prod_mulHeight₁_div`), so on a
+nontrivial index type at least one ratio has logarithmic height at least `h(x) / (card ι - 1)`
+(`Height.exists_ne_logHeight_le_mul_logHeight₁_div`,
+`Height.exists_logHeight_le_mul_logHeight₁_div`). If
 `t (x - θ₂ y) = x - θ₀ y`, the formula `x / y = (θ₀ - t θ₂) / (1 - t)` bounds the height of
 `x / y` by those of `t`, `θ₀` and `θ₂`; this recovers a Thue solution from a unit equation.
 These bounds control the affine coordinates of a projective point after normalization.
@@ -50,12 +56,15 @@ is reached by `import all`, as in `TauCeti/NumberTheory/Height/LinearForm.lean`.
 
 The ratio bounds are adapted from Ralf Stephan's `ArithmeticHeights/Northcott.lean` in
 [`rwst/Subspace-Theorems`](https://github.com/rwst/Subspace-Theorems/blob/e443c2479e19f7665b31d8e94e2317c8ced1ca06/ArithmeticHeights/Northcott.lean),
-commit `e443c2479e19f7665b31d8e94e2317c8ced1ca06` (Apache 2.0). The local-to-global bound follows
+commit `e443c2479e19f7665b31d8e94e2317c8ced1ca06` (Apache 2.0), and the converse Segre ratio lower
+bound follows E. Bombieri and W. Gubler, *Heights in Diophantine Geometry* (2006), proof of
+Lemma 7.5.19, and `DiophantineApproximation/GeneralizedRothLemma.lean` in `rwst/Subspace-Theorems`,
+commit `09835cb23557ae5ae0cf55a9c4ab9055f5d60338` (Apache 2.0). The local-to-global bound follows
 `DiophantineApproximation/HeightTransport.lean` in the same repository, snapshot
-`c26d909dc48cf7fe` (Apache 2.0); see also E. Bombieri and W. Gubler,
-*Heights in Diophantine Geometry* (2006), §1.6. The constant bound, the bound for natural numbers
-and the height of the tuple of powers follow `DiophantineApproximation/MonomialHeight.lean` in
-the same repository, commit `09835cb23557ae5ae0cf55a9c4ab9055f5d60338` (Apache 2.0).
+`c26d909dc48cf7fe` (Apache 2.0); see also Bombieri–Gubler, §1.6. The constant bound, the bound for
+natural numbers and the height of the tuple of powers follow
+`DiophantineApproximation/MonomialHeight.lean` in the same repository, commit
+`09835cb23557ae5ae0cf55a9c4ab9055f5d60338` (Apache 2.0).
 -/
 
 public section
@@ -76,6 +85,84 @@ lemma logHeight₁_div_le_logHeight (x : ι → K) (i j : ι) :
     logHeight₁ (x i / x j) ≤ logHeight x := by
   rw [logHeight₁_div_eq_logHeight]
   simpa only [Matrix.vecCons, Fin.comp_cons, Matrix.empty_eq] using logHeight_comp_le ![i, j] x
+
+omit [Finite ι] in
+/-- For any nonzero coordinate `x i₀ ≠ 0`, the multiplicative height `mulHeight x` is at most the
+product of the heights `mulHeight₁ (x i / x i₀)` of the coordinate ratios for `i ≠ i₀`. -/
+lemma mulHeight_le_prod_mulHeight₁_div [Fintype ι] [DecidableEq ι] {x : ι → K} {i₀ : ι}
+    (hx₀ : x i₀ ≠ 0) :
+    mulHeight x ≤ ∏ i ∈ Finset.univ.erase i₀, mulHeight₁ (x i / x i₀) := by
+  -- Normalize `x` by `(x i₀)⁻¹` and bound the affine height by the product of coordinate heights.
+  calc mulHeight x
+      = mulHeight ((x i₀)⁻¹ • x) := (mulHeight_smul_eq_mulHeight x (inv_ne_zero hx₀)).symm
+    _ = mulHeight (fun i ↦ x i / x i₀) :=
+        congrArg mulHeight (funext fun i ↦ (div_eq_inv_mul (x i) (x i₀)).symm)
+    _ ≤ mulHeightAff (fun i ↦ x i / x i₀) := mulHeight_le_mulHeightAff _
+    _ ≤ ∏ i, mulHeight₁ (x i / x i₀) := mulHeightAff_le_prod_mulHeight₁ _
+    _ = ∏ i ∈ Finset.univ.erase i₀, mulHeight₁ (x i / x i₀) := by
+        rw [← Finset.mul_prod_erase _ _ (Finset.mem_univ i₀), div_self hx₀, mulHeight₁_one, one_mul]
+
+omit [Finite ι] in
+/-- For any nonzero coordinate `x i₀ ≠ 0`, the logarithmic height `logHeight x` is at most the sum
+of the logarithmic heights `logHeight₁ (x i / x i₀)` of the coordinate ratios for `i ≠ i₀`. -/
+lemma logHeight_le_sum_logHeight₁_div [Fintype ι] [DecidableEq ι] {x : ι → K} {i₀ : ι}
+    (hx₀ : x i₀ ≠ 0) :
+    logHeight x ≤ ∑ i ∈ Finset.univ.erase i₀, logHeight₁ (x i / x i₀) := by
+  rw [logHeight_eq_log_mulHeight]
+  refine (Real.log_le_log (mulHeight_pos x) (mulHeight_le_prod_mulHeight₁_div hx₀)).trans_eq ?_
+  rw [Real.log_prod fun i _ ↦ (mulHeight₁_pos _).ne']
+  exact Finset.sum_congr rfl fun i _ ↦ (logHeight₁_eq_log_mulHeight₁ _).symm
+
+/-- For any nonzero coordinate `x i₀ ≠ 0` of a tuple on a nontrivial finite index type `ι`, there
+exists `i₁ ≠ i₀` such that `mulHeight x ≤ mulHeight₁ (x i₁ / x i₀) ^ (Nat.card ι - 1)`. -/
+lemma exists_ne_mulHeight_le_mulHeight₁_div_pow [Nontrivial ι] {x : ι → K} {i₀ : ι}
+    (hx₀ : x i₀ ≠ 0) :
+    ∃ i₁ ≠ i₀, mulHeight x ≤ mulHeight₁ (x i₁ / x i₀) ^ (Nat.card ι - 1) := by
+  classical
+  cases nonempty_fintype ι
+  obtain ⟨j, hj⟩ := exists_ne i₀
+  have hs : (Finset.univ.erase i₀).Nonempty := ⟨j, Finset.mem_erase.mpr ⟨hj, Finset.mem_univ j⟩⟩
+  obtain ⟨i₁, hi₁, hmax⟩ := Finset.exists_max_image _ (fun i ↦ mulHeight₁ (x i / x i₀)) hs
+  refine ⟨i₁, Finset.ne_of_mem_erase hi₁, ?_⟩
+  calc mulHeight x
+      ≤ ∏ i ∈ Finset.univ.erase i₀, mulHeight₁ (x i / x i₀) :=
+        mulHeight_le_prod_mulHeight₁_div hx₀
+    _ ≤ ∏ _ ∈ Finset.univ.erase i₀, mulHeight₁ (x i₁ / x i₀) := by
+        gcongr with i hi
+        exact hmax i hi
+    _ = mulHeight₁ (x i₁ / x i₀) ^ (Nat.card ι - 1) := by
+        rw [Finset.prod_const, Finset.card_erase_of_mem (Finset.mem_univ i₀), Finset.card_univ,
+          Nat.card_eq_fintype_card]
+
+/-- Every nonzero tuple on a nontrivial finite index type `ι` has two distinct coordinates `i₀ ≠ i₁`
+with `x i₀ ≠ 0` such that `mulHeight x ≤ mulHeight₁ (x i₁ / x i₀) ^ (Nat.card ι - 1)`. -/
+lemma exists_mulHeight_le_mulHeight₁_div_pow [Nontrivial ι] {x : ι → K} (hx : x ≠ 0) :
+    ∃ i₀ i₁ : ι, i₀ ≠ i₁ ∧ x i₀ ≠ 0 ∧
+      mulHeight x ≤ mulHeight₁ (x i₁ / x i₀) ^ (Nat.card ι - 1) := by
+  obtain ⟨i₀, hx₀⟩ := Function.ne_iff.mp hx
+  obtain ⟨i₁, hi₁, hle⟩ := exists_ne_mulHeight_le_mulHeight₁_div_pow hx₀
+  exact ⟨i₀, i₁, hi₁.symm, hx₀, hle⟩
+
+/-- For any nonzero coordinate `x i₀ ≠ 0` of a tuple on a nontrivial finite index type `ι`, there
+exists `i₁ ≠ i₀` such that `logHeight x ≤ (Nat.card ι - 1) * logHeight₁ (x i₁ / x i₀)`. -/
+lemma exists_ne_logHeight_le_mul_logHeight₁_div [Nontrivial ι] {x : ι → K} {i₀ : ι}
+    (hx₀ : x i₀ ≠ 0) :
+    ∃ i₁ ≠ i₀, logHeight x ≤ (Nat.card ι - 1 : ℝ) * logHeight₁ (x i₁ / x i₀) := by
+  obtain ⟨i₁, hi₁, hle⟩ := exists_ne_mulHeight_le_mulHeight₁_div_pow hx₀
+  refine ⟨i₁, hi₁, ?_⟩
+  have hcard : 1 ≤ Nat.card ι := Nat.one_le_iff_ne_zero.mpr Nat.card_pos.ne'
+  rw [logHeight_eq_log_mulHeight]
+  refine (Real.log_le_log (mulHeight_pos x) hle).trans_eq ?_
+  rw [Real.log_pow, Nat.cast_sub hcard, Nat.cast_one, logHeight₁_eq_log_mulHeight₁]
+
+/-- Every nonzero tuple on a nontrivial finite index type `ι` has two distinct coordinates `i₀ ≠ i₁`
+with `x i₀ ≠ 0` such that `logHeight x ≤ (Nat.card ι - 1) * logHeight₁ (x i₁ / x i₀)`. -/
+lemma exists_logHeight_le_mul_logHeight₁_div [Nontrivial ι] {x : ι → K} (hx : x ≠ 0) :
+    ∃ i₀ i₁ : ι, i₀ ≠ i₁ ∧ x i₀ ≠ 0 ∧
+      logHeight x ≤ (Nat.card ι - 1 : ℝ) * logHeight₁ (x i₁ / x i₀) := by
+  obtain ⟨i₀, hx₀⟩ := Function.ne_iff.mp hx
+  obtain ⟨i₁, hi₁, hle⟩ := exists_ne_logHeight_le_mul_logHeight₁_div hx₀
+  exact ⟨i₀, i₁, hi₁.symm, hx₀, hle⟩
 
 /-- The logarithmic height of a quotient is at most the sum of the logarithmic heights. -/
 lemma logHeight₁_div_le (x y : K) : logHeight₁ (x / y) ≤ logHeight₁ x + logHeight₁ y := by
@@ -99,36 +186,25 @@ lemma logHeight₁_div_le_of_mul_sub_mul_eq {θ₀ θ₂ x y t : K} (hθ : θ₀
   linarith [logHeight₁_div_le (θ₀ - t * θ₂) (1 - t), logHeight₁_sub_le θ₀ (t * θ₂),
     logHeight₁_mul_le t θ₂]
 
-omit [Finite ι] in
-/-- The multiplicative height is unchanged by changing the signs of some coordinates. -/
-lemma mulHeight_eq_of_forall_eq_or_eq_neg {x y : ι → K} (h : ∀ i, y i = x i ∨ y i = -x i) :
-    mulHeight y = mulHeight x := by
-  have hv (v : AbsoluteValue K ℝ) : ⨆ i, v (y i) = ⨆ i, v (x i) :=
-    iSup_congr fun i ↦ by rcases h i with h | h <;> simp [h]
-  have hy : y = 0 ↔ x = 0 := by
-    simp only [funext_iff, Pi.zero_apply]
-    exact forall_congr' fun i ↦ by rcases h i with h | h <;> simp [h]
-  rcases eq_or_ne x 0 with hx | hx
-  · rw [hy.2 hx, hx]
-  · rw [mulHeight_eq hx, mulHeight_eq (hy.not.2 hx)]
-    simp only [hv]
-
-omit [Finite ι] in
-/-- The logarithmic height is unchanged by changing the signs of some coordinates. -/
-lemma logHeight_eq_of_forall_eq_or_eq_neg {x y : ι → K} (h : ∀ i, y i = x i ∨ y i = -x i) :
-    logHeight y = logHeight x := by
-  rw [logHeight_eq_log_mulHeight, logHeight_eq_log_mulHeight,
-    mulHeight_eq_of_forall_eq_or_eq_neg h]
-
 open AdmissibleAbsValues in
 /-- **Local-to-global height bound.** Suppose that at every archimedean absolute value `v` the
 local factor `⨆ i, v (z i)` is at most `C * (⨆ j, v (x j)) ^ p`, and at every nonarchimedean one
 it is at most `(⨆ j, v (x j)) ^ p`. Then `mulHeight z ≤ C ^ totalWeight K * mulHeight x ^ p`. -/
-lemma mulHeight_le_of_forall_iSup_le {ι' : Type*} [Finite ι'] {x : ι → K} (hx : x ≠ 0)
-    (z : ι' → K) {C : ℝ} (hC : 1 ≤ C) {p : ℕ}
+lemma mulHeight_le_of_forall_iSup_le {ι' : Type*} [Finite ι'] (x : ι → K) (z : ι' → K) {C : ℝ}
+    (hC : 1 ≤ C) {p : ℕ}
     (harch : ∀ v ∈ archAbsVal (K := K), ⨆ i, v (z i) ≤ C * (⨆ j, v (x j)) ^ p)
     (hnon : ∀ v ∈ nonarchAbsVal (K := K), ⨆ i, v (z i) ≤ (⨆ j, v (x j)) ^ p) :
     mulHeight z ≤ C ^ totalWeight K * mulHeight x ^ p := by
+  wlog hx : x ≠ 0 generalizing ι x
+  · -- Replace `x = 0` by `Sum.elim 1 0`, which has the same height `1` and larger local factors.
+    obtain rfl := not_ne_iff.mp hx
+    have hle (v : AbsoluteValue K ℝ) :
+        (⨆ j, v ((0 : ι → K) j)) ^ p ≤ (⨆ s, v (Sum.elim (1 : Unit → K) (0 : ι → K) s)) ^ p := by
+      rw [show (⨆ j, v ((0 : ι → K) j)) = 0 by simp]
+      exact pow_le_pow_left₀ le_rfl (Real.iSup_nonneg fun _ ↦ v.nonneg _) p
+    simpa [mulHeight_sumElim_zero_eq] using this (Sum.elim (1 : Unit → K) (0 : ι → K))
+      (fun v hv ↦ (harch v hv).trans (mul_le_mul_of_nonneg_left (hle v) (zero_le_one.trans hC)))
+      (fun v hv ↦ (hnon v hv).trans (hle v)) (Function.ne_iff.mpr ⟨.inl (), by simp⟩)
   rcases eq_or_ne z 0 with rfl | hz
   · rw [mulHeight_zero]
     exact one_le_mul_of_one_le_of_one_le (one_le_pow₀ hC) (one_le_pow₀ (one_le_mulHeight x))
@@ -160,9 +236,7 @@ lemma ne_zero_of_forall_iSup_eq {ι' : Type*} {x : ι → K} {y : ι' → K} (hx
       rintro _ ⟨j, rfl⟩
       by_cases hj : x j = 0 <;> simp [AbsoluteValue.trivial_apply, hj]⟩ i
       (by simp [AbsoluteValue.trivial_apply hi])
-  rw [h AbsoluteValue.trivial] at h1
-  have h0 : (⨆ i, (AbsoluteValue.trivial : AbsoluteValue K ℝ) ((0 : ι' → K) i)) = 0 := by simp
-  exact absurd (h0 ▸ h1) zero_lt_one.not_ge
+  norm_num [h AbsoluteValue.trivial] at h1
 
 omit [Finite ι] in
 /-- Two tuples with the same local factor `⨆ i, v (x i)` at every absolute value have the same
@@ -177,6 +251,20 @@ lemma mulHeight_eq_of_forall_iSup_eq {ι' : Type*} {x : ι → K} {y : ι' → K
     rw [mulHeight_zero, mulHeight_zero]
   · simp only [mulHeight_eq hx, mulHeight_eq (ne_zero_of_forall_iSup_eq hx h), h]
 
+omit [Finite ι] in
+/-- The multiplicative height is unchanged by changing the signs of some coordinates. -/
+lemma mulHeight_eq_of_forall_eq_or_eq_neg {x y : ι → K} (h : ∀ i, y i = x i ∨ y i = -x i) :
+    mulHeight y = mulHeight x :=
+  -- A sign change keeps every coordinate's value at every absolute value.
+  mulHeight_eq_of_forall_iSup_eq fun v ↦ iSup_congr fun i ↦ by rcases h i with h | h <;> simp [h]
+
+omit [Finite ι] in
+/-- The logarithmic height is unchanged by changing the signs of some coordinates. -/
+lemma logHeight_eq_of_forall_eq_or_eq_neg {x y : ι → K} (h : ∀ i, y i = x i ∨ y i = -x i) :
+    logHeight y = logHeight x := by
+  rw [logHeight_eq_log_mulHeight, logHeight_eq_log_mulHeight,
+    mulHeight_eq_of_forall_eq_or_eq_neg h]
+
 open AdmissibleAbsValues in
 /-- A tuple whose local factor `⨆ i, v (x i)` is at most `C` at every archimedean absolute value
 and at most `1` at every nonarchimedean one has height at most `C ^ totalWeight K`. -/
@@ -184,8 +272,7 @@ lemma mulHeight_le_pow_totalWeight {x : ι → K} {C : ℝ} (hC : 1 ≤ C)
     (harch : ∀ v ∈ archAbsVal (K := K), ⨆ i, v (x i) ≤ C)
     (hnon : ∀ v ∈ nonarchAbsVal (K := K), ⨆ i, v (x i) ≤ 1) :
     mulHeight x ≤ C ^ totalWeight K := by
-  simpa using mulHeight_le_of_forall_iSup_le (x := fun _ : Unit ↦ (1 : K))
-    (Function.ne_iff.mpr ⟨(), one_ne_zero⟩) x hC (p := 0)
+  simpa using mulHeight_le_of_forall_iSup_le (0 : Unit → K) x hC (p := 0)
     (by simpa using harch) (by simpa using hnon)
 
 omit [Finite ι] in
@@ -197,13 +284,14 @@ lemma mulHeight_natCast_le {n : ι → ℕ} {N : ℕ} (hN : 1 ≤ N) (hn : ∀ i
   have : Finite (Set.range n) :=
     ((Set.finite_Iic N).subset (by rintro _ ⟨i, rfl⟩; exact hn i)).to_subtype
   have hsurj : Function.Surjective (Set.rangeFactorization n) := Set.rangeFactorization_surjective
-  refine (mulHeight_eq_of_forall_iSup_eq (y := fun s : Set.range n ↦ ((s.1 : ℕ) : K))
-    fun v ↦ Function.Surjective.iSup_comp hsurj fun s : Set.range n ↦ v ((s.1 : ℕ) : K)).trans_le ?_
-  have hs (s : Set.range n) : (s.1 : ℕ) ≤ N := by
-    obtain ⟨i, hi⟩ := s.2
+  refine (mulHeight_eq_of_forall_iSup_eq (y := fun s : Set.range n ↦ ((s.val : ℕ) : K))
+    fun v ↦ Function.Surjective.iSup_comp hsurj fun s : Set.range n ↦ v
+        ((s.val : ℕ) : K)).trans_le ?_
+  have hs (s : Set.range n) : (s.val : ℕ) ≤ N := by
+    obtain ⟨i, hi⟩ := s.property
     exact hi ▸ hn i
   refine mulHeight_le_pow_totalWeight (mod_cast hN) (fun v _ ↦ ?_) fun v hv ↦ ?_
-  · exact Real.iSup_le (fun s ↦ (v.apply_nat_le_self s.1).trans (mod_cast hs s))
+  · exact Real.iSup_le (fun s ↦ (v.apply_nat_le_self s.val).trans (mod_cast hs s))
       (Nat.cast_nonneg N)
   · exact Real.iSup_le (fun s ↦ (isNonarchimedean v hv).apply_natCast_le_one (by simp) (by simp))
       zero_le_one
