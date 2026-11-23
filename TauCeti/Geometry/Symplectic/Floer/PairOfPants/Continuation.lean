@@ -1027,56 +1027,14 @@ section Necks
 
 variable {L : Puncture → ℝ} {q : Puncture}
 
-omit [FiniteDimensional ℝ V] in
-/-- The components of the perturbation are differentiable in the target point at every point
-of `S`. -/
-private theorem differentiableAt_pairOfPantsContinuationPerturbation
-    (hG : ∀ r, Periodic (G r) 1) (hH : ∀ r, Periodic (H r) 1)
-    (hGs : ∀ r, ContDiff ℝ 1 (uncurry (G r))) (hHs : ∀ r, ContDiff ℝ 1 (uncurry (H r)))
-    (L : Puncture → ℝ) {z : ℝ × ℝ} (hz : z ∈ thricePuncturedSphereReal) (x : V) (v : ℂ) :
-    DifferentiableAt ℝ
-      (fun y ↦ pairOfPantsContinuationPerturbation G H L (Complex.equivRealProdCLM.symm z) y v) x :=
-  differentiableAt_target_of_differentiableAt
-    ((contDiffAt_pairOfPantsContinuationPerturbation_prod hG hH hGs hHs L hz x).differentiableAt
-      one_ne_zero) v
-
-/-- On the neck of the end `q`, beyond the collar, the pullback of the perturbation along the
-translated positive end chart is the continuation datum. -/
-private theorem perturbedFDeriv_comp_positiveEndChart_add_eq (ω : SymplecticForm V)
-    (hG : ∀ r, Periodic (G r) 1) (hH : ∀ r, Periodic (H r) 1) (u : ℝ × ℝ → V) {w : ℝ × ℝ}
-    (hw : 2 ≤ w.1 + L q) :
-    ω.perturbedFDeriv (fun _ _ ↦ 0)
-        (continuationHomotopy (positiveEndHamiltonian G q) (positiveEndHamiltonian H q))
-        (fun w ↦ u (positiveEndChart q (w + (L q, 0)))) w =
-      ω.perturbedFDeriv
-        (perturbationPullback (fun w ↦ positiveEndChart q (w + (L q, 0)))
-          (fun z x ↦
-            pairOfPantsContinuationPerturbation G H L (Complex.equivRealProdCLM.symm z) x 1)
-          (fun z x ↦
-            pairOfPantsContinuationPerturbation G H L (Complex.equivRealProdCLM.symm z) x Complex.I)
-          stdComplexLineReal)
-        (perturbationPullback (fun w ↦ positiveEndChart q (w + (L q, 0)))
-          (fun z x ↦
-            pairOfPantsContinuationPerturbation G H L (Complex.equivRealProdCLM.symm z) x 1)
-          (fun z x ↦
-            pairOfPantsContinuationPerturbation G H L (Complex.equivRealProdCLM.symm z) x Complex.I)
-          stdComplexLineImag)
-        (fun w ↦ u (positiveEndChart q (w + (L q, 0)))) w := by
-  refine ω.perturbedFDeriv_congr _ (funext fun x ↦ ?_) (funext fun x ↦ ?_)
-  · rw [perturbationPullback_comp_add_right,
-      perturbationPullback_positiveEndChart_pairOfPantsContinuationPerturbation_stdComplexLineReal
-        (hG q) (hH q) (by simp only [Prod.fst_add]; linarith)]
-  · rw [perturbationPullback_comp_add_right,
-      perturbationPullback_positiveEndChart_pairOfPantsContinuationPerturbation_stdComplexLineImag
-        (hG q) (hH q) (by simpa only [Prod.fst_add] using hw)]
-    simp
-
 /-- **The necks solve the continuation equation.** Let `u` solve the Floer equation of the
 pair-of-pants perturbation with continuation necks at the point `φ'_q(w + (L_q, 0))` of the end
 `q`, read in its positive end chart `φ'_q` translated by the neck position `L_q`, with
 `w.1 + L_q ≥ 2`. Then the translated map `w ↦ u(φ'_q(w + (L_q, 0)))` solves at `w` the Floer
 equation of the continuation datum `C'_q(s, t) dt` from the end Hamiltonian `G'_q` to `H'_q` of
-the positive end. -/
+the positive end. This is the vector-space case of
+`SmoothTwoForm.isComplexLinearMap_perturbedMFDeriv_continuationHomotopy_comp_positiveEndChart_add`.
+-/
 theorem isComplexLinearMap_perturbedFDeriv_continuationHomotopy_comp_positiveEndChart_add
     (ω : SymplecticForm V) (hG : ∀ r, Periodic (G r) 1) (hH : ∀ r, Periodic (H r) 1)
     (hGs : ∀ r, ContDiff ℝ 1 (uncurry (G r))) (hHs : ∀ r, ContDiff ℝ 1 (uncurry (H r)))
@@ -1092,16 +1050,13 @@ theorem isComplexLinearMap_perturbedFDeriv_continuationHomotopy_comp_positiveEnd
       (ω.perturbedFDeriv (fun _ _ ↦ 0)
         (continuationHomotopy (positiveEndHamiltonian G q) (positiveEndHamiltonian H q))
         (fun w ↦ u (positiveEndChart q (w + (L q, 0)))) w : ℝ × ℝ →ₗ[ℝ] V) := by
-  have hS : positiveEndChart q (w + (L q, 0)) ∈ thricePuncturedSphereReal :=
-    positiveEndChart_mem_thricePuncturedSphereReal (by simp only [Prod.fst_add]; linarith)
-  rw [perturbedFDeriv_comp_positiveEndChart_add_eq ω hG hH u hw]
-  refine ω.isComplexLinearMap_perturbedFDeriv_perturbationPullback (u := u)
-    (φ := fun w ↦ positiveEndChart q (w + (L q, 0)))
-    (differentiableAt_positiveEndChart_add q (L q) w) hu
-    (differentiableAt_pairOfPantsContinuationPerturbation hG hH hGs hHs L hS _ 1)
-    (differentiableAt_pairOfPantsContinuationPerturbation hG hH hGs hHs L hS _ Complex.I) ?_ hfloer
-  rw [fderiv_comp_add_right]
-  exact isComplexLinearMap_fderiv_positiveEndChart q _
+  -- This is the manifold statement for the constant form.
+  rw [← toLinearMap_perturbedMFDeriv_constSmooth] at hfloer ⊢
+  exact
+    ω.constSmooth.isComplexLinearMap_perturbedMFDeriv_continuationHomotopy_comp_positiveEndChart_add
+      hG hH (fun r ↦ contMDiff_prod_modelWithCornersSelf_iff.2 (hGs r).contMDiff)
+      (fun r ↦ contMDiff_prod_modelWithCornersSelf_iff.2 (hHs r).contMDiff) hw
+      hu.mdifferentiableAt hfloer
 
 /-- **The energy density of a neck.** Where `w.1 + L_q ≥ 2`, the energy density of the translated
 map `w ↦ u(φ'_q(w + (L_q, 0)))` for the continuation datum `C'_q(s, t) dt` is the Jacobian
