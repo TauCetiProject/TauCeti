@@ -8,10 +8,13 @@ module
 public import Mathlib.Analysis.Calculus.ContDiff.Operations
 public import Mathlib.Analysis.Calculus.FDeriv.Mul
 public import Mathlib.Analysis.SpecialFunctions.Pow.Real
+public import Mathlib.Topology.MetricSpace.Holder
 public import TauCeti.Analysis.Calculus.IteratedFDeriv.Bilinear
 import TauCeti.Analysis.Calculus.ContDiffZPow
+import TauCeti.Analysis.Calculus.ContDiff.Puncture
 import Mathlib.Analysis.SpecialFunctions.Pow.Continuity
 import Mathlib.Analysis.Asymptotics.Lemmas
+import TauCeti.Analysis.Holder.MeanValue
 
 /-!
 # Symbol classes at a puncture
@@ -49,6 +52,23 @@ The last two are proved by induction on the order of the derivative: the derivat
 `(D^j g) ∘ φ` is a bilinear expression in `(D^{j+1} g) ∘ φ` and `Dφ`, so the product rule at
 lower derivative orders controls the next order.
 
+**Removability at the puncture.** Nothing is asked of a symbol at `0`, but a symbol vanishing at
+`0` is as regular across the puncture as its order allows:
+
+* of positive order it is continuous at `0` (`IsPuncturedSymbol.continuousAt`), of order `ℓ > 1`
+  it is differentiable at `0` with derivative `0` (`IsPuncturedSymbol.hasFDerivAt`), and of order
+  `ℓ > k` it is `Cᵏ` at `0` and on a neighbourhood of `0` (`IsPuncturedSymbol.contDiffAt`,
+  `IsPuncturedSymbol.eventually_nhds_contDiffAt`);
+* it is `α`-Hölder on a ball about `0` for every `α ≤ min ℓ 1`
+  (`IsPuncturedSymbol.exists_holderOnWith`), and `C¹` with `α`-Hölder derivative for every
+  `0 < α ≤ 1` with `α + 1 ≤ ℓ` (`IsPuncturedSymbol.exists_contDiffOn_holderOnWith_fderiv`). In
+  particular a symbol of order `ℓ ≥ 2` is `C^{1,1}` near `0`, hence, for a symbol on the plane
+  with values in a finite-dimensional space, locally `W^{2,∞}`
+  (`TauCeti.IsPuncturedSymbol.exists_memWkpLoc_two`).
+
+So symbols of order at least two, such as the deviations of coefficients from their values at a
+critical point, can serve as `C^{1,α}` coefficients of elliptic equations across the puncture.
+
 ## References
 
 * D. McDuff and D. Salamon, *J-holomorphic Curves and Symplectic Topology*, 2nd ed., AMS
@@ -60,7 +80,7 @@ lower derivative orders controls the next order.
 public section
 
 open Set Filter Asymptotics
-open scoped Topology ContDiff
+open scoped Topology ContDiff NNReal
 
 namespace TauCeti
 
@@ -495,5 +515,125 @@ theorem IsPuncturedSymbol.comp (hg : IsPuncturedSymbol ℓ g) (hφ : IsPunctured
     exact h.of_norm_left.congr' EventuallyEq.rfl (Eventually.of_forall fun z ↦ by simp)
 
 end Composition
+
+/-! ### Removability at the puncture -/
+
+section Removable
+
+namespace IsPuncturedSymbol
+
+variable {ℓ : ℝ} {f : E → F}
+
+/-- Points near `0` other than `0` itself are points of smoothness of a punctured symbol, read on
+the full neighbourhood filter. -/
+private theorem eventually_nhds_contDiffAt_of_ne (hf : IsPuncturedSymbol ℓ f) :
+    ∀ᶠ z in 𝓝 (0 : E), z ≠ 0 → ContDiffAt ℝ ∞ f z :=
+  eventually_nhdsWithin_iff.1 hf.1
+
+/-- A punctured symbol of positive order which vanishes at `0` is continuous at `0`. -/
+theorem continuousAt (hf : IsPuncturedSymbol ℓ f) (hℓ : 0 < ℓ) (h0 : f 0 = 0) :
+    ContinuousAt f 0 := by
+  rw [continuousAt_iff_punctured_nhds, h0]
+  exact hf.tendsto_zero hℓ
+
+/-- A punctured symbol of order `ℓ > 1` which vanishes at `0` is differentiable at `0`, with
+derivative `0`. -/
+theorem hasFDerivAt (hf : IsPuncturedSymbol ℓ f) (hℓ : 1 < ℓ) (h0 : f 0 = 0) :
+    HasFDerivAt f (0 : E →L[ℝ] F) 0 :=
+  hasFDerivAt_zero_of_isBigO_rpow h0 (by simpa using hf.isBigO) hℓ
+
+universe u v in
+/-- `IsPuncturedSymbol.contDiffAt` for a codomain in a universe at least that of `E`, where the
+induction on `k`, which passes from `f` to `fderiv ℝ f`, stays in one universe. -/
+private theorem contDiffAt_aux {E : Type u} [NormedAddCommGroup E] [NormedSpace ℝ E] (k : ℕ) :
+    ∀ {F : Type max u v} [NormedAddCommGroup F] [NormedSpace ℝ F] {ℓ : ℝ} {f : E → F},
+      IsPuncturedSymbol ℓ f → (k : ℝ) < ℓ → f 0 = 0 → ContDiffAt ℝ k f 0 := by
+  -- the derivative is a punctured symbol of order `ℓ - 1 > k - 1` vanishing at `0`
+  induction k with
+  | zero =>
+    intro F _ _ ℓ f hf hk h0
+    refine contDiffAt_zero.2 ⟨_, hf.eventually_nhds_contDiffAt_of_ne, fun z hz ↦ ?_⟩
+    rcases eq_or_ne z 0 with rfl | hz0
+    · exact (hf.continuousAt (by simpa using hk) h0).continuousWithinAt
+    · exact (hz hz0).continuousAt.continuousWithinAt
+  | succ k ih =>
+    intro F _ _ ℓ f hf hk h0
+    have hk' : (k : ℝ) + 1 < ℓ := by exact_mod_cast hk
+    have hD := hf.hasFDerivAt (by linarith [k.cast_nonneg (α := ℝ)]) h0
+    rw [Nat.cast_succ]
+    refine contDiffAt_succ_iff_hasFDerivAt.2 ⟨fderiv ℝ f, ⟨_, hf.eventually_nhds_contDiffAt_of_ne,
+      fun z hz ↦ ?_⟩, ih hf.fderiv (by linarith) hD.fderiv⟩
+    rcases eq_or_ne z 0 with rfl | hz0
+    · rwa [hD.fderiv]
+    · exact ((hz hz0).differentiableAt (by simp)).hasFDerivAt
+
+/-- **Removability.** A punctured symbol of order `ℓ > k` which vanishes at `0` is `Cᵏ` at `0`.
+-/
+theorem contDiffAt.{u, v} {E : Type u} {F : Type v} [NormedAddCommGroup E] [NormedSpace ℝ E]
+    [NormedAddCommGroup F] [NormedSpace ℝ F] {f : E → F} {k : ℕ} (hf : IsPuncturedSymbol ℓ f)
+    (hk : (k : ℝ) < ℓ) (h0 : f 0 = 0) : ContDiffAt ℝ k f 0 := by
+  -- lift the codomain to a universe containing that of `E`, as `contDiffAt_aux` needs
+  let e : ULift.{u} F ≃L[ℝ] F := ContinuousLinearEquiv.ulift
+  have h := contDiffAt_aux k (hf.continuousLinearMap_comp (e.symm : F →L[ℝ] ULift F)) hk
+    (by rw [h0]; exact map_zero _)
+  -- `h` is about `fun z ↦ (e.symm : F →L[ℝ] ULift F) (f z)`, that is `⇑e.symm ∘ f`
+  exact e.symm.comp_contDiffAt_iff.1 (by simpa only [ContinuousLinearEquiv.coe_coe,
+    Function.comp_def] using h)
+
+/-- A punctured symbol of order `ℓ > k` which vanishes at `0` is `Cᵏ` on a neighbourhood of `0`. -/
+theorem eventually_nhds_contDiffAt {k : ℕ} (hf : IsPuncturedSymbol ℓ f) (hk : (k : ℝ) < ℓ)
+    (h0 : f 0 = 0) : ∀ᶠ z in 𝓝 (0 : E), ContDiffAt ℝ k f z := by
+  filter_upwards [hf.eventually_nhds_contDiffAt_of_ne] with z hz
+  rcases eq_or_ne z 0 with rfl | hz0
+  · exact hf.contDiffAt hk h0
+  · exact (hz hz0).of_le (by exact_mod_cast le_top)
+
+/-- The constants of a punctured symbol on a ball: differentiability off the centre and the bounds
+`‖f z‖ ≤ A ‖z‖ ^ ℓ` and `‖Df z‖ ≤ B ‖z‖ ^ (ℓ - 1)`. -/
+private theorem exists_ball_bounds (hf : IsPuncturedSymbol ℓ f) :
+    ∃ r > 0, ∃ A B : ℝ≥0, ∀ z ∈ Metric.ball (0 : E) r, z ≠ 0 →
+      DifferentiableAt ℝ f z ∧ ‖f z‖ ≤ A * ‖z‖ ^ ℓ ∧ ‖fderiv ℝ f z‖ ≤ B * ‖z‖ ^ (ℓ - 1) := by
+  obtain ⟨A, hA, hAf⟩ := hf.isBigO.exists_nonneg
+  obtain ⟨B, hB, hBf⟩ := hf.fderiv.isBigO.exists_nonneg
+  have h := hf.1.and (hAf.bound.and hBf.bound)
+  obtain ⟨r, hr, hrf⟩ := Metric.eventually_nhds_iff_ball.1 (eventually_nhdsWithin_iff.1 h)
+  refine ⟨r, hr, A.toNNReal, B.toNNReal, fun z hz hz0 ↦ ?_⟩
+  obtain ⟨h1, h2, h3⟩ := hrf z hz hz0
+  have hn : ∀ a : ℝ, ‖‖z‖ ^ a‖ = ‖z‖ ^ a := fun a ↦
+    Real.norm_of_nonneg (Real.rpow_nonneg (norm_nonneg z) a)
+  rw [hn] at h2 h3
+  rw [Real.coe_toNNReal _ hA, Real.coe_toNNReal _ hB]
+  exact ⟨h1.differentiableAt (by simp), h2, h3⟩
+
+/-- **Hölder continuity across the puncture.** A punctured symbol of order `ℓ` which vanishes at
+`0` is `α`-Hölder on a ball about `0` for every exponent `α ≤ min ℓ 1`. -/
+theorem exists_holderOnWith (hf : IsPuncturedSymbol ℓ f) {α : ℝ≥0} (hαℓ : (α : ℝ) ≤ ℓ)
+    (hα1 : α ≤ 1) (h0 : f 0 = 0) :
+    ∃ C : ℝ≥0, ∃ r > 0, HolderOnWith C α f (Metric.ball (0 : E) r) := by
+  obtain ⟨r, hr, A, B, hbd⟩ := exists_ball_bounds (hf.mono hαℓ)
+  exact ⟨B + 4 * A, r, hr, holderOnWith_ball_of_norm_le_rpow_of_norm_fderiv_le_rpow hα1 h0
+    (fun z hz hz0 ↦ (hbd z hz hz0).1) (fun z hz hz0 ↦ (hbd z hz hz0).2.1)
+    (fun z hz hz0 ↦ (hbd z hz hz0).2.2)⟩
+
+/-- **`C^{1,α}` regularity across the puncture.** A punctured symbol of order `ℓ` which vanishes
+at `0` is `C¹` on a ball about `0`, with `α`-Hölder derivative, for every exponent
+`0 < α ≤ 1` with `α + 1 ≤ ℓ`. For `ℓ ≥ 2` this applies with `α = 1`: the derivative is Lipschitz
+on the ball, so the symbol is `C^{1,1}` there. -/
+theorem exists_contDiffOn_holderOnWith_fderiv (hf : IsPuncturedSymbol ℓ f) {α : ℝ≥0}
+    (hα : 0 < α) (hαℓ : (α : ℝ) + 1 ≤ ℓ) (hα1 : α ≤ 1) (h0 : f 0 = 0) :
+    ∃ r > 0, ContDiffOn ℝ 1 f (Metric.ball (0 : E) r) ∧
+      ∃ C : ℝ≥0, HolderOnWith C α (fderiv ℝ f) (Metric.ball (0 : E) r) := by
+  have hα' : (0 : ℝ) < α := hα
+  obtain ⟨C, r₁, hr₁, hC⟩ := hf.fderiv.exists_holderOnWith (by linarith) hα1
+    (hf.hasFDerivAt (by linarith) h0).fderiv
+  obtain ⟨r₂, hr₂, hr₂f⟩ := Metric.eventually_nhds_iff_ball.1
+    (hf.eventually_nhds_contDiffAt (k := 1) (by push_cast; linarith) h0)
+  refine ⟨min r₁ r₂, lt_min hr₁ hr₂, fun z hz ↦ ?_, C,
+    hC.mono (Metric.ball_subset_ball (min_le_left _ _))⟩
+  exact (hr₂f z (Metric.ball_subset_ball (min_le_right _ _) hz)).contDiffWithinAt
+
+end IsPuncturedSymbol
+
+end Removable
 
 end TauCeti

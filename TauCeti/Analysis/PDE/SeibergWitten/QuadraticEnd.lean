@@ -86,8 +86,9 @@ theorem quadraticEnd_apply (ψ v : E) :
 theorem quadraticEnd_zero : quadraticEnd (0 : E) = 0 := by
   ext; simp
 
-/-- `ψ` is an eigenvector of `Q₀(ψ)` with eigenvalue `‖ψ‖² / 2`. As a simp lemma it takes
-priority over `quadraticEnd_apply`, which would leave `Q₀(ψ) ψ` as an unreduced difference. -/
+/-- `Q₀(ψ)` maps `ψ` to `(‖ψ‖² / 2) ψ`; in particular a nonzero `ψ` is an eigenvector of `Q₀(ψ)`
+with eigenvalue `‖ψ‖² / 2`. As a simp lemma it takes priority over `quadraticEnd_apply`, which
+would leave `Q₀(ψ) ψ` as an unreduced difference. -/
 @[simp high]
 theorem quadraticEnd_apply_self (ψ : E) :
     quadraticEnd ψ ψ = ((‖ψ‖ : ℂ) ^ 2 / 2) • ψ := by
