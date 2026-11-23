@@ -8,28 +8,27 @@ module
 public import Mathlib.NumberTheory.Harmonic.ZetaAsymp
 public import Mathlib.NumberTheory.ZetaValues
 import Mathlib.Analysis.Real.Pi.Bounds
-import Mathlib.MeasureTheory.Function.Floor
 import TauCeti.Analysis.MellinTransform.UpperTail
+import TauCeti.Analysis.SpecialFunctions.Integrals.MellinWeight
 import TauCeti.MeasureTheory.Integral.Bochner.Set
 import TauCeti.NumberTheory.LSeries.RiemannZeta.Basic
 import TauCeti.NumberTheory.LSeries.RiemannZeta.EulerMaclaurin
-import TauCeti.NumberTheory.LSeries.SumCoeff
 
 /-!
 # Right-half-plane integral representation and bounds for `riemannZeta`
 
-On `Re s > 1`, Euler–Maclaurin / Abel summation expresses the Riemann zeta function as
+On `Re s > 0`, `s ≠ 1`, the first-order Euler–Maclaurin formula cut at `1` expresses the Riemann
+zeta function as
 
 `ζ(s) = s / (s - 1) - s ∫₁^∞ {t} t^{-(s + 1)} dt`,
 
 where `{t} = t - ⌊t⌋₊ ∈ [0, 1)` is the fractional part of `t`. Subtracting `(s - 1)⁻¹` gives
 
-`riemannZeta₀ s = 1 - s ∫₁^∞ {t} t^{-(s + 1)} dt`.
+`riemannZeta₀ s = 1 - s ∫₁^∞ {t} t^{-(s + 1)} dt`
 
-Because `{t}` is bounded by `1`, the right-hand side is holomorphic on the entire open right
-half-plane `Re s > 0`, so the identity principle extends both formulas from `Re s > 1` to
-`Re s > 0`. Bounding `|{t}| ≤ 1` in the integral immediately gives the explicit vertical-line growth
-bounds
+on all of `Re s > 0`. Both come from the sawtooth formula
+`TauCeti.riemannZeta₀_eq_one_half_sub_integral_sawtooth` by writing `{t} = B₁({t}) + 1/2`.
+Bounding `|{t}| ≤ 1` in the integral immediately gives the explicit vertical-line growth bounds
 
 `‖riemannZeta₀ s‖ ≤ 1 + ‖s‖ / Re s`   and   `‖riemannZeta s‖ ≤ ‖s - 1‖⁻¹ + 1 + ‖s‖ / Re s`
 
@@ -62,9 +61,8 @@ formula and `0 ≤ {t} < 1` give `1/(σ - 1) < ζ(σ) < 1 + 1/(σ - 1)` for real
 * `TauCeti.norm_riemannZeta₀_sub_one_half_le`: `‖riemannZeta₀ s - 1/2‖ ≤ ‖s‖/(2 Re s)` on
   `Re s > 0`.
 * `TauCeti.norm_riemannZeta_le_one_half_add_inv_add_div`,
-  `TauCeti.norm_riemannZeta_le_three_halves_add_norm`, `TauCeti.norm_riemannZeta_le_linear` and
-  `TauCeti.norm_riemannZeta_le_of_mem_closedBall`: linear bounds in the right half-plane and on the
-  discs about `3/2 + it`.
+  `TauCeti.norm_riemannZeta_le_three_halves_add_norm` and `TauCeti.norm_riemannZeta_le_linear`:
+  linear bounds in the right half-plane and on the discs about `3/2 + it`.
 * `TauCeti.one_div_sub_one_lt_riemannZeta_re`, `TauCeti.riemannZeta_re_lt_one_add_one_div_sub_one`
   and `TauCeti.norm_riemannZeta_lt_one_add_one_div_sub_one`: `1/(σ - 1) < ζ(σ) < 1 + 1/(σ - 1)`
   for real `σ > 0`, `σ ≠ 1`, and `‖ζ(s)‖ < 1 + 1/(Re s - 1)` on `Re s > 1`.
@@ -87,52 +85,14 @@ namespace TauCeti
 theorem riemannZeta₀_eq_one_sub_mul_integral {s : ℂ} (hs : 0 < s.re) :
     riemannZeta₀ s =
       1 - s * ∫ t in Set.Ioi (1 : ℝ), ((t - ⌊t⌋₊ : ℝ) : ℂ) * (t : ℂ) ^ (-(s + 1)) := by
-  have hopen : IsOpen {z : ℂ | 0 < z.re} := isOpen_lt continuous_const continuous_re
-  have hLHS : AnalyticOnNhd ℂ riemannZeta₀ {z : ℂ | 0 < z.re} :=
-    differentiable_riemannZeta₀.differentiableOn.analyticOnNhd hopen
-  have hO_frac : (fun t : ℝ ↦ ((t - ⌊t⌋₊ : ℝ) : ℂ)) =O[atTop] fun t ↦ t ^ (0 : ℝ) :=
-    isBigO_iff.mpr ⟨1, (eventually_ge_atTop (0 : ℝ)).mono fun t ht ↦ by
-      simpa only [Real.rpow_zero, Real.norm_eq_abs, abs_one, mul_one, norm_real] using
-        Nat.abs_sub_floor_le ht⟩
-  have hRHS : AnalyticOnNhd ℂ
-      (fun z ↦ 1 - z * ∫ t in Set.Ioi (1 : ℝ), ((t - ⌊t⌋₊ : ℝ) : ℂ) * (t : ℂ) ^ (-(z + 1)))
-      {z : ℂ | 0 < z.re} :=
-    ((differentiableOn_const 1).sub (differentiableOn_id.mul
-      (differentiableOn_integral_mul_cpow_of_isBigO one_pos hO_frac))).analyticOnNhd hopen
-  refine (hLHS.eqOn_of_preconnected_of_eventuallyEq hRHS
-    (convex_halfSpace_re_gt 0).isPreconnected (by norm_num : (2 : ℂ) ∈ {z : ℂ | 0 < z.re}) ?_) hs
-  filter_upwards [(isOpen_lt continuous_const continuous_re).mem_nhds
-    (by norm_num : (2 : ℂ) ∈ {z : ℂ | 1 < z.re})] with z (hz : 1 < z.re)
-  have hz1 : z ≠ 1 := fun h ↦ by simp [h] at hz
-  have hO1 : (fun n : ℕ ↦ ∑ _k ∈ Finset.Icc 1 n, (1 : ℂ)) =O[atTop] fun n : ℕ ↦ (n : ℝ) ^ (1 : ℝ) :=
-    isBigO_iff.mpr ⟨1, Eventually.of_forall fun n ↦ by simp⟩
-  have hζ : riemannZeta z =
-      z * ∫ t in Set.Ioi (1 : ℝ), (⌊t⌋₊ : ℂ) * (t : ℂ) ^ (-(z + 1)) := by
-    rw [← LSeries_one_eq_riemannZeta hz, LSeries_eq_mul_integral _ zero_le_one hz
-      (LSeriesSummable_one_iff.mpr hz) hO1]
-    simp
-  have hint_t : IntegrableOn (fun t : ℝ ↦ (t : ℂ) ^ (-z)) (Set.Ioi 1) :=
-    integrableOn_Ioi_cpow_of_lt (by simpa using hz) zero_lt_one
-  have hint_fl : IntegrableOn (fun t : ℝ ↦ (⌊t⌋₊ : ℂ) * (t : ℂ) ^ (-(z + 1))) (Set.Ioi 1) := by
-    simpa using LSeries.integrableOn_sum_mul_cpow_of_isBigO (fun _ ↦ (1 : ℂ)) hO1 hz
-  have hsub_eq : ∫ t in Set.Ioi (1 : ℝ), ((t - ⌊t⌋₊ : ℝ) : ℂ) * (t : ℂ) ^ (-(z + 1)) =
-      (∫ t in Set.Ioi (1 : ℝ), (t : ℂ) ^ (-z)) -
-        ∫ t in Set.Ioi (1 : ℝ), (⌊t⌋₊ : ℂ) * (t : ℂ) ^ (-(z + 1)) := by
-    rw [← integral_sub hint_t hint_fl]
-    refine setIntegral_congr_fun measurableSet_Ioi fun t (ht : 1 < t) ↦ ?_
-    have ht_ne : (t : ℂ) ≠ 0 := ofReal_ne_zero.mpr (zero_lt_one.trans ht).ne'
-    have hpow : (t : ℂ) * (t : ℂ) ^ (-(z + 1)) = (t : ℂ) ^ (-z) :=
-      calc (t : ℂ) * (t : ℂ) ^ (-(z + 1))
-          = (t : ℂ) ^ (1 : ℂ) * (t : ℂ) ^ (-(z + 1)) := by rw [cpow_one]
-        _ = (t : ℂ) ^ (-z) := by rw [← cpow_add _ _ ht_ne]; ring_nf
-    push_cast
-    rw [sub_mul, hpow]
-  have hint_val : ∫ t in Set.Ioi (1 : ℝ), (t : ℂ) ^ (-z) = 1 / (z - 1) := by
-    rw [integral_Ioi_cpow_of_lt (by simpa using hz) zero_lt_one, ofReal_one, one_cpow,
-      ← neg_div_neg_eq (1 : ℂ)]
-    congr 1; ring
-  rw [riemannZeta₀, ite_eq_right hz1, hsub_eq, hint_val, mul_sub, ← hζ]
-  field_simp [sub_ne_zero.mpr hz1]
+  have hs₀ : s ≠ 0 := fun h ↦ by simp [h] at hs
+  have hfract : ∫ t in Set.Ioi (1 : ℝ), ((t - ⌊t⌋₊ : ℝ) : ℂ) * (t : ℂ) ^ (-(s + 1)) =
+      ∫ t in Set.Ioi (1 : ℝ), ((Int.fract t : ℝ) : ℂ) * (t : ℂ) ^ (-(s + 1)) :=
+    setIntegral_congr_fun measurableSet_Ioi fun t (ht : 1 < t) ↦ by
+      rw [Int.fract, natCast_floor_eq_intCast_floor (by linarith : (0 : ℝ) ≤ t)]
+  rw [hfract, integral_fract_mul_cpow_eq_integral_sawtooth_add one_pos hs, ofReal_one, one_cpow,
+    riemannZeta₀_eq_one_half_sub_integral_sawtooth hs]
+  field_simp
   ring
 
 /-- **Fractional-part integral representation of `riemannZeta`.** For `Re s > 0` and `s ≠ 1`,
@@ -264,80 +224,62 @@ theorem norm_riemannZeta_le_one_half_add_inv_add_div {z : ℂ} (hz : 0 < z.re) (
   have htri2 := norm_add_le (1 / 2 : ℂ) (z - 1)⁻¹
   linarith [norm_riemannZeta₀_sub_one_half_le hz]
 
-/-- For `1/2 ≤ Re z` and `1 ≤ |Im z|`, `‖ζ(z)‖ ≤ 3/2 + ‖z‖`. -/
+/-- For `1/2 ≤ Re z` and `1 ≤ ‖z - 1‖`, `‖ζ(z)‖ ≤ 3/2 + ‖z‖`. -/
 theorem norm_riemannZeta_le_three_halves_add_norm {z : ℂ} (hre : 1 / 2 ≤ z.re)
-    (him : 1 ≤ |z.im|) :
+    (hpole : 1 ≤ ‖z - 1‖) :
     ‖riemannZeta z‖ ≤ 3 / 2 + ‖z‖ := by
   have hz₁ : z ≠ 1 := fun h ↦ by
-    rw [h, one_im, abs_zero] at him
+    rw [h, sub_self, norm_zero] at hpole
     linarith
-  have hpole : 1 ≤ ‖z - 1‖ :=
-    him.trans ((by simp : |z.im| = |(z - 1).im|).trans_le (abs_im_le_norm (z - 1)))
   have hinv : 1 / ‖z - 1‖ ≤ 1 := div_le_one_of_le₀ hpole (norm_nonneg _)
   have hdiv : ‖z‖ / (2 * z.re) ≤ ‖z‖ := div_le_self (norm_nonneg z) (by linarith)
   linarith [norm_riemannZeta_le_one_half_add_inv_add_div (by linarith) hz₁]
 
-/-- **A linear bound on the discs about `3/2 + it`.** For real `t` with `2 ≤ |t|` and `‖w‖ ≤ 1`,
-`‖ζ(w + 3/2 + it)‖ ≤ 4 + |t|`. -/
-theorem norm_riemannZeta_le_linear {t : ℝ} (ht : 2 ≤ |t|) {w : ℂ} (hw : ‖w‖ ≤ 1) :
-    ‖riemannZeta (w + 3 / 2 + t * I)‖ ≤ 4 + |t| := by
-  set z : ℂ := w + 3 / 2 + t * I
-  have hw_re : |w.re| ≤ 1 := (abs_re_le_norm w).trans hw
-  have hw_im : |w.im| ≤ 1 := (abs_im_le_norm w).trans hw
+/-- **A linear bound on the discs about `3/2 + it`.** For real `t` with `2 ≤ |t|` and
+`z ∈ Metric.closedBall (3/2 + it) 1`, `‖ζ(z)‖ ≤ 4 + |t|`. -/
+theorem norm_riemannZeta_le_linear {t : ℝ} (ht : 2 ≤ |t|) {z : ℂ}
+    (hz : z ∈ Metric.closedBall (3 / 2 + t * I) 1) :
+    ‖riemannZeta z‖ ≤ 4 + |t| := by
+  rw [Metric.mem_closedBall, dist_eq_norm] at hz
+  set w : ℂ := z - (3 / 2 + t * I)
+  have hzw : z = w + 3 / 2 + t * I := by simp only [w]; ring
+  have hw_re : |w.re| ≤ 1 := (abs_re_le_norm w).trans hz
+  have hw_im : |w.im| ≤ 1 := (abs_im_le_norm w).trans hz
   have hz_re : 1 / 2 ≤ z.re := by
-    have hre_eq : z.re = w.re + 3 / 2 := by simp [z]
+    have hre_eq : z.re = w.re + 3 / 2 := by rw [hzw]; simp
     linarith [(abs_le.mp hw_re).1]
-  have hz_im : 1 ≤ |z.im| := by
-    have him_eq : z.im = w.im + t := by simp [z]
+  have hpole : 1 ≤ ‖z - 1‖ := by
+    have him_eq : (z - 1).im = w.im + t := by rw [hzw]; simp
     have htri : |t| - |w.im| ≤ |w.im + t| := by
       simpa only [abs_neg, sub_neg_eq_add, add_comm t] using abs_sub_abs_le_abs_sub t (-w.im)
-    rw [him_eq]
+    have := abs_im_le_norm (z - 1)
+    rw [him_eq] at this
     linarith
   have hnorm : ‖z‖ ≤ 5 / 2 + |t| := by
     have h32 : ‖(3 / 2 : ℂ)‖ = 3 / 2 := by norm_num
     have htI : ‖(t : ℂ) * I‖ = |t| := by simp [norm_real]
     have htri1 := norm_add_le (w + 3 / 2) ((t : ℂ) * I)
     have htri2 := norm_add_le w (3 / 2 : ℂ)
+    rw [hzw]
     linarith
-  linarith [norm_riemannZeta_le_three_halves_add_norm hz_re hz_im]
-
-/-- `TauCeti.norm_riemannZeta_le_linear` on the closed disc: for real `t` with `2 ≤ |t|` and
-`z ∈ Metric.closedBall (3/2 + it) 1`, `‖ζ(z)‖ ≤ 4 + |t|`. -/
-theorem norm_riemannZeta_le_of_mem_closedBall {t : ℝ} (ht : 2 ≤ |t|) {z : ℂ}
-    (hz : z ∈ Metric.closedBall (3 / 2 + t * I) 1) :
-    ‖riemannZeta z‖ ≤ 4 + |t| := by
-  rw [Metric.mem_closedBall, dist_eq_norm] at hz
-  have hdecomp : z = (z - (3 / 2 + t * I)) + 3 / 2 + t * I := by ring
-  rw [hdecomp]
-  exact norm_riemannZeta_le_linear ht hz
+  linarith [norm_riemannZeta_le_three_halves_add_norm hz_re hpole]
 
 /-! ### Comparison with `1/(σ - 1)` on the real axis -/
 
-/-- The fractional-part kernel `{t} t^(-(σ+1))` is integrable on `(1, ∞)` for `σ > 0`. -/
-private theorem integrableOn_sub_floor_mul_rpow {σ : ℝ} (hσ : 0 < σ) :
-    IntegrableOn (fun t : ℝ ↦ (t - ⌊t⌋₊) * t ^ (-(σ + 1))) (Set.Ioi 1) := by
-  refine Integrable.mono' (integrableOn_Ioi_rpow_of_lt (by linarith : -(σ + 1) < -1) one_pos)
-    ((measurable_id.sub (measurable_from_nat.comp Nat.measurable_floor)).mul
-      (measurable_id.pow_const _)).aestronglyMeasurable ?_
-  filter_upwards [ae_restrict_mem measurableSet_Ioi] with t (ht : 1 < t)
-  rw [norm_mul, Real.norm_eq_abs, Real.norm_of_nonneg (by positivity)]
-  exact mul_le_of_le_one_left (by positivity) (Nat.abs_sub_floor_le (by linarith))
-
 /-- The real form of `TauCeti.riemannZeta_eq_div_sub_mul_integral` at real `σ > 0`, `σ ≠ 1`. -/
 private theorem riemannZeta_re_eq_div_sub_mul_integral {σ : ℝ} (hσ : 0 < σ) (hσ₁ : σ ≠ 1) :
-    (riemannZeta σ).re = σ / (σ - 1) - σ * ∫ t in Set.Ioi (1 : ℝ), (t - ⌊t⌋₊) * t ^ (-(σ + 1)) := by
+    (riemannZeta σ).re = σ / (σ - 1) - σ * ∫ t in Set.Ioi (1 : ℝ), t ^ (-1 - σ) * (t - ⌊t⌋₊) := by
   have h := riemannZeta_eq_div_sub_mul_integral (s := σ) (by simpa using hσ)
     (by exact_mod_cast hσ₁)
   have hI : ∫ t in Set.Ioi (1 : ℝ), ((t - ⌊t⌋₊ : ℝ) : ℂ) * (t : ℂ) ^ (-((σ : ℂ) + 1)) =
-      ((∫ t in Set.Ioi (1 : ℝ), (t - ⌊t⌋₊) * t ^ (-(σ + 1)) : ℝ) : ℂ) := by
+      ((∫ t in Set.Ioi (1 : ℝ), t ^ (-1 - σ) * (t - ⌊t⌋₊) : ℝ) : ℂ) := by
     rw [← integral_complex_ofReal]
     refine setIntegral_congr_fun measurableSet_Ioi fun t (ht : 1 < t) ↦ ?_
-    rw [ofReal_mul, ofReal_cpow (by linarith : (0 : ℝ) ≤ t)]
-    push_cast
-    rfl
+    rw [show -((σ : ℂ) + 1) = ((-1 - σ : ℝ) : ℂ) by push_cast; ring,
+      ← ofReal_cpow (by linarith : (0 : ℝ) ≤ t), ← ofReal_mul, mul_comm]
   rw [hI] at h
   have h' : riemannZeta σ = ((σ / (σ - 1) - σ *
-      ∫ t in Set.Ioi (1 : ℝ), (t - ⌊t⌋₊) * t ^ (-(σ + 1)) : ℝ) : ℂ) := by
+      ∫ t in Set.Ioi (1 : ℝ), t ^ (-1 - σ) * (t - ⌊t⌋₊) : ℝ) : ℂ) := by
     rw [h]
     push_cast
     rfl
@@ -346,20 +288,20 @@ private theorem riemannZeta_re_eq_div_sub_mul_integral {σ : ℝ} (hσ : 0 < σ)
 /-- **The lower bound by the pole.** For real `σ > 0`, `σ ≠ 1`, `1/(σ - 1) < Re ζ(σ)`. -/
 theorem one_div_sub_one_lt_riemannZeta_re {σ : ℝ} (hσ0 : 0 < σ) (hσ₁ : σ ≠ 1) :
     1 / (σ - 1) < (riemannZeta σ).re := by
-  have hint_f := integrableOn_sub_floor_mul_rpow hσ0
-  have hint_r : IntegrableOn (fun t : ℝ ↦ t ^ (-(σ + 1))) (Set.Ioi 1) :=
+  have hint_f := integrableOn_rpow_mul_sub_natFloor hσ0
+  have hint_r : IntegrableOn (fun t : ℝ ↦ t ^ (-1 - σ)) (Set.Ioi 1) :=
     integrableOn_Ioi_rpow_of_lt (by linarith) one_pos
-  have hpos : 0 < ∫ t in Set.Ioi (1 : ℝ), (t ^ (-(σ + 1)) - (t - ⌊t⌋₊) * t ^ (-(σ + 1))) := by
+  have hpos : 0 < ∫ t in Set.Ioi (1 : ℝ), (t ^ (-1 - σ) - t ^ (-1 - σ) * (t - ⌊t⌋₊)) := by
     refine setIntegral_pos_of_ae_pos (by simp) (hint_r.sub hint_f) ?_
     filter_upwards [ae_restrict_mem measurableSet_Ioi] with t (ht : 1 < t)
     have hlt : t - ⌊t⌋₊ < 1 := by linarith [Nat.lt_floor_add_one t]
-    have hp : 0 < t ^ (-(σ + 1)) := Real.rpow_pos_of_pos (by linarith) _
+    have hp : 0 < t ^ (-1 - σ) := Real.rpow_pos_of_pos (by linarith) _
     nlinarith
-  have hr : ∫ t in Set.Ioi (1 : ℝ), t ^ (-(σ + 1)) = 1 / σ := by
+  have hr : ∫ t in Set.Ioi (1 : ℝ), t ^ (-1 - σ) = 1 / σ := by
     rw [integral_Ioi_rpow_of_lt (by linarith) one_pos, Real.one_rpow,
-      show -(σ + 1) + 1 = -σ by ring, neg_div_neg_eq]
+      show -1 - σ + 1 = -σ by ring, neg_div_neg_eq]
   rw [integral_sub hint_r hint_f, hr] at hpos
-  have hmul : σ * ∫ t in Set.Ioi (1 : ℝ), (t - ⌊t⌋₊) * t ^ (-(σ + 1)) < 1 := by
+  have hmul : σ * ∫ t in Set.Ioi (1 : ℝ), t ^ (-1 - σ) * (t - ⌊t⌋₊) < 1 := by
     have := mul_lt_mul_of_pos_left hpos hσ0
     rw [mul_sub, mul_one_div_cancel hσ0.ne'] at this
     linarith
@@ -372,19 +314,19 @@ theorem one_div_sub_one_lt_riemannZeta_re {σ : ℝ} (hσ0 : 0 < σ) (hσ₁ : �
 /-- **The upper bound by the pole.** For real `σ > 0`, `σ ≠ 1`, `Re ζ(σ) < 1 + 1/(σ - 1)`. -/
 theorem riemannZeta_re_lt_one_add_one_div_sub_one {σ : ℝ} (hσ0 : 0 < σ) (hσ₁ : σ ≠ 1) :
     (riemannZeta σ).re < 1 + 1 / (σ - 1) := by
-  have hint := integrableOn_sub_floor_mul_rpow hσ0
-  have hIoo : 0 < ∫ t in Set.Ioo (1 : ℝ) 2, (t - ⌊t⌋₊) * t ^ (-(σ + 1)) := by
+  have hint := integrableOn_rpow_mul_sub_natFloor hσ0
+  have hIoo : 0 < ∫ t in Set.Ioo (1 : ℝ) 2, t ^ (-1 - σ) * (t - ⌊t⌋₊) := by
     refine setIntegral_pos_of_ae_pos (by simp) (hint.mono_set Set.Ioo_subset_Ioi_self) ?_
     filter_upwards [ae_restrict_mem measurableSet_Ioo] with t ⟨ht1, ht2⟩
     have hfl : ⌊t⌋₊ = 1 := Nat.floor_eq_iff (by linarith) |>.mpr ⟨by simpa using ht1.le, by
       norm_num; linarith⟩
     rw [hfl, Nat.cast_one]
-    exact mul_pos (by linarith) (Real.rpow_pos_of_pos (by linarith) _)
-  have hpos : 0 < ∫ t in Set.Ioi (1 : ℝ), (t - ⌊t⌋₊) * t ^ (-(σ + 1)) :=
+    exact mul_pos (Real.rpow_pos_of_pos (by linarith) _) (by linarith)
+  have hpos : 0 < ∫ t in Set.Ioi (1 : ℝ), t ^ (-1 - σ) * (t - ⌊t⌋₊) :=
     hIoo.trans_le (setIntegral_mono_set hint
       (ae_restrict_of_forall_mem measurableSet_Ioi fun t (ht : 1 < t) ↦
-        mul_nonneg (by linarith [Nat.floor_le (by linarith : (0 : ℝ) ≤ t)])
-          (Real.rpow_nonneg (by linarith) _))
+        mul_nonneg (Real.rpow_nonneg (by linarith) _)
+          (by linarith [Nat.floor_le (by linarith : (0 : ℝ) ≤ t)]))
       Set.Ioo_subset_Ioi_self.eventuallySubset)
   have halg : σ / (σ - 1) = 1 + 1 / (σ - 1) := by
     field_simp [sub_ne_zero.mpr hσ₁]

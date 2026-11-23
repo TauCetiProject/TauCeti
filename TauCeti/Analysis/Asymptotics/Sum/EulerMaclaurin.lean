@@ -34,6 +34,8 @@ It is the basic tool for the asymptotics of sums `∑_{j<n} f(j)` as `n → ∞`
 * `TauCeti.sum_Ioc_floor_eq_eulerMaclaurin_one`: the first-order formula for nonnegative real
   endpoints and a real Banach-valued function with pointwise derivative and integrable derivative.
   The finite sum is over the natural indices between the endpoint floors.
+* `TauCeti.abs_bernoulliFun_one_fract_le` and `TauCeti.isBigO_bernoulliFun_one_fract`: the sawtooth
+  `B₁({x}) = {x} - 1/2` is bounded by `1/2`, hence `O(1)` along every filter.
 * `IntervalIntegrable.bernoulliFun_fract_smul`: the remainder integrands
   `Bₖ({x}) g(x)` are interval integrable whenever `g` is.
 * `TauCeti.sum_Icc_eq_eulerMaclaurin_of_hasDerivAt`: the formula of any order `k ≥ 1`, for a
@@ -93,6 +95,12 @@ value at most `1/2`. -/
 theorem abs_bernoulliFun_one_fract_le (x : ℝ) : |bernoulliFun 1 (Int.fract x)| ≤ 1 / 2 := by
   rw [bernoulliFun_one, abs_le]
   constructor <;> linarith [Int.fract_nonneg x, Int.fract_lt_one x]
+
+/-- The sawtooth `B₁({x}) = {x} - 1/2` is bounded, so it is `O(1)` along every filter. -/
+theorem isBigO_bernoulliFun_one_fract (l : Filter ℝ) :
+    (fun x ↦ bernoulliFun 1 (Int.fract x)) =O[l] fun _ ↦ (1 : ℝ) :=
+  Asymptotics.IsBigO.of_bound (1 / 2) (Filter.Eventually.of_forall fun x ↦ by
+    simpa only [Real.norm_eq_abs, norm_one, mul_one] using abs_bernoulliFun_one_fract_le x)
 
 /-- One integration by parts against a shifted Bernoulli polynomial on `[t, t + 1]`. -/
 private theorem integral_bernoulliFun_sub_smul {u u' : ℝ → E} {t : ℝ} (k : ℕ)
