@@ -73,11 +73,11 @@ attribute [local instance] Classical.decEq
 -- An equality transport of topological rings is undone by the reverse transport. This is
 -- `(eqToIso e).hom_inv_id_apply x` restated with `.1`, so that `rw` matches the `.1` terms here.
 private theorem eqToHom_symm_apply_eqToHom_apply {X Y : TopCommRingCat.{v}} (e : X = Y) (x : X) :
-    (eqToHom e.symm).1 ((eqToHom e).1 x) = x := (eqToIso e).hom_inv_id_apply x
+    (eqToHom e.symm).val ((eqToHom e).val x) = x := (eqToIso e).hom_inv_id_apply x
 
 -- The underlying map of an equality transport of topological rings is injective.
 private theorem injective_eqToHom {X Y : TopCommRingCat.{v}} (e : X = Y) :
-    Function.Injective (eqToHom e).1 :=
+    Function.Injective (eqToHom e).val :=
   Function.LeftInverse.injective (eqToHom_symm_apply_eqToHom_apply e)
 
 /-! ### Restriction between rational opens -/
@@ -123,17 +123,17 @@ private theorem rationalIso_map_apply (p q : Presentation P)
     (hT : ∀ t ∈ p.num, t * r ∈ q.num)
     (h : spaBasicOpen Aplus q.num q.den ≤ spaBasicOpen Aplus p.num p.den)
     (z : presentationLimit (P := P) Aplus (spaBasicOpen Aplus p.num p.den)) :
-    (eqToHom (completionLocObj_obj P q.num q.den _ q.hasDenominatorPower)).1
-        ((presentationLimitRationalIso Aplus hAplus q hq).hom.hom.1
-          ((presentationLimitMap h).hom.1 z)) =
+    (eqToHom (completionLocObj_obj P q.num q.den _ q.hasDenominatorPower)).val
+        ((presentationLimitRationalIso Aplus hAplus q hq).hom.hom.val
+          ((presentationLimitMap h).hom.val z)) =
       restrictionRingHom P p.num p.den _ p.hasDenominatorPower q.num q.den _ q.hasDenominatorPower r
-        hr hT ((eqToHom (completionLocObj_obj P p.num p.den _ p.hasDenominatorPower)).1
-          ((presentationLimitRationalIso Aplus hAplus p hp).hom.hom.1 z)) := by
+        hr hT ((eqToHom (completionLocObj_obj P p.num p.den _ p.hasDenominatorPower)).val
+          ((presentationLimitRationalIso Aplus hAplus p hp).hom.hom.val z)) := by
   have key := (Iso.inv_comp_eq _).1 <|
     (presentationLimitRationalIso_inv_comp_map_comp_hom Aplus hAplus p q hp hq h).trans <|
       (restrictionHom_eq_homOfRationalSubsetSubset Aplus hAplus
         (Presentation.le_def.mpr ⟨r, hr, hT⟩)).symm.trans (Presentation.restrictionHom_eq _ r hr hT)
-  refine (congrArg (fun g ↦ (eqToHom (completionLocObj_obj ..)).1 (g.hom.1 z)) key).trans ?_
+  refine (congrArg (fun g ↦ (eqToHom (completionLocObj_obj ..)).val (g.hom.val z)) key).trans ?_
   rw [ObjectProperty.FullSubcategory.comp_hom, restrictionObjHom_eq_completionLocObjHom,
     completionLocObjHom_hom]
   exact eqToHom_symm_apply_eqToHom_apply _ _
@@ -152,14 +152,14 @@ variable {A : Type v} [CommRing A] [UniformSpace A] [IsUniformAddGroup A] [IsTop
 -- structure map `A → A⟨p⟩`.
 private theorem rationalIso_map_top_apply (p : Presentation P)
     (hp : IsOpen (Ideal.span (p.num : Set A) : Set A)) (c : CompleteSeparatedTopCommRingCat.of A) :
-    (eqToHom (completionLocObj_obj P p.num p.den _ p.hasDenominatorPower)).1
-        ((presentationLimitRationalIso Aplus hAplus p hp).hom.hom.1
-          ((presentationLimitMap le_top).hom.1 ((toPresentationLimit Aplus ⊤).hom.1 c))) =
+    (eqToHom (completionLocObj_obj P p.num p.den _ p.hasDenominatorPower)).val
+        ((presentationLimitRationalIso Aplus hAplus p hp).hom.hom.val
+          ((presentationLimitMap le_top).hom.val ((toPresentationLimit Aplus ⊤).hom.val c))) =
       toCompletionLoc P p.num p.den _ p.hasDenominatorPower
-        ((eqToHom (CompleteSeparatedTopCommRingCat.of_obj A)).1 c) := by
+        ((eqToHom (CompleteSeparatedTopCommRingCat.of_obj A)).val c) := by
   have key : toPresentationLimit Aplus ⊤ ≫ presentationLimitMap le_top ≫
       (presentationLimitRationalIso Aplus hAplus p hp).hom = p.toCompletionLocObjHom := by simp
-  refine (congrArg (fun g ↦ (eqToHom (completionLocObj_obj ..)).1 (g.hom.1 c)) key).trans ?_
+  refine (congrArg (fun g ↦ (eqToHom (completionLocObj_obj ..)).val (g.hom.val c)) key).trans ?_
   rw [Presentation.toCompletionLocObjHom_hom]
   exact eqToHom_symm_apply_eqToHom_apply _ _
 
@@ -168,11 +168,11 @@ private theorem rationalIso_map_top_apply (p : Presentation P)
 private theorem presentationLimitMap_apply_toPresentationLimit_apply_eq_iff (p : Presentation P)
     (hp : IsOpen (Ideal.span (p.num : Set A) : Set A)) {c : CompleteSeparatedTopCommRingCat.of A}
     {z : presentationLimit (P := P) Aplus (spaBasicOpen Aplus p.num p.den)} :
-    (presentationLimitMap le_top).hom.1 ((toPresentationLimit Aplus ⊤).hom.1 c) = z ↔
+    (presentationLimitMap le_top).hom.val ((toPresentationLimit Aplus ⊤).hom.val c) = z ↔
       toCompletionLoc P p.num p.den _ p.hasDenominatorPower
-          ((eqToHom (CompleteSeparatedTopCommRingCat.of_obj A)).1 c) =
-        (eqToHom (completionLocObj_obj P p.num p.den _ p.hasDenominatorPower)).1
-          ((presentationLimitRationalIso Aplus hAplus p hp).hom.hom.1 z) :=
+          ((eqToHom (CompleteSeparatedTopCommRingCat.of_obj A)).val c) =
+        (eqToHom (completionLocObj_obj P p.num p.den _ p.hasDenominatorPower)).val
+          ((presentationLimitRationalIso Aplus hAplus p hp).hom.hom.val z) :=
   (bijective_presentationLimitRationalIso_hom Aplus hAplus p hp).1.eq_iff.symm.trans
     (rationalIso_map_top_apply hAplus p hp c).congr_left
 
@@ -206,8 +206,8 @@ theorem laurentCoverOpen_inv_mul_true [DecidableEq A] (u : Aˣ) (g : A) :
     laurentCoverOpen Aplus (↑u⁻¹ * g) true = spaBasicOpen Aplus {g, ↑u} u := by
   ext v
   have hu : (v : Spv A).valuation u ≠ 0 := (u.isUnit.map (v : Spv A).valuation).ne_zero
-  simp [laurentCoverOpen, ← valuation_le_iff, map_units_inv, hu, v.2,
-    inv_mul_le_iff₀ (zero_lt_iff.mpr hu)]
+  simp [laurentCoverOpen, ← valuation_le_iff, map_units_inv, hu, v.property,
+    inv_mul_le_iff₀ (pos_iff_ne_zero.mpr hu)]
 
 omit [IsUniformAddGroup A] [IsTopologicalRing A] [CompleteSpace A] [T0Space A] in
 variable (Aplus) in
@@ -217,8 +217,8 @@ theorem laurentCoverOpen_inv_mul_false (u : Aˣ) (g : A) :
     laurentCoverOpen Aplus (↑u⁻¹ * g) false = spaBasicOpen Aplus {↑u} g := by
   ext v
   have hu : (v : Spv A).valuation u ≠ 0 := (u.isUnit.map (v : Spv A).valuation).ne_zero
-  simp [laurentCoverOpen, ← valuation_le_iff, map_units_inv, hu, v.2,
-    le_inv_mul_iff₀ (zero_lt_iff.mpr hu)]
+  simp [laurentCoverOpen, ← valuation_le_iff, map_units_inv, hu, v.property,
+    le_inv_mul_iff₀ (pos_iff_ne_zero.mpr hu)]
 
 /-! ### Transport from the completed rational localisations -/
 
@@ -243,7 +243,7 @@ theorem injective_presentationLimitMap_laurentCoverOpen_of_injective_toCompletio
         (RingHom.prod (toCompletionLoc P ({f, 1} : Finset A) 1 _ hden₁)
             (toCompletionLoc P ({1} : Finset A) f _ hden₂))) :
     Function.Injective fun (x : presentationLimit (P := P) Aplus ⊤) (b : Bool) ↦
-      (presentationLimitMap (P := P) (le_top : laurentCoverOpen Aplus f b ≤ ⊤)).hom.1 x := by
+      (presentationLimitMap (P := P) (le_top : laurentCoverOpen Aplus f b ≤ ⊤)).hom.val x := by
   have := isIso_toPresentationLimit_top (P := P) Aplus hAplus
   let p := laurentPresentation P f
   have hp := isOpen_span_laurentPresentation P f
@@ -280,9 +280,9 @@ theorem isClosedEmbedding_presentationLimitMap_laurentCoverOpen_of_isClosedEmbed
           (toCompletionLoc P ({1} : Finset A) f _ hden₂))) :
     IsClosedEmbedding fun x : presentationLimit (P := P) Aplus ⊤ ↦
       ((presentationLimitMap (P := P)
-          (le_top : laurentCoverOpen Aplus f true ≤ ⊤)).hom.1 x,
+          (le_top : laurentCoverOpen Aplus f true ≤ ⊤)).hom.val x,
         (presentationLimitMap (P := P)
-          (le_top : laurentCoverOpen Aplus f false ≤ ⊤)).hom.1 x) := by
+          (le_top : laurentCoverOpen Aplus f false ≤ ⊤)).hom.val x) := by
   let p := laurentPresentation P f
   have hp := isOpen_span_laurentPresentation P f
   -- Identify global sections with `A` and the sections on each Laurent piece with its completed
@@ -300,11 +300,11 @@ theorem isClosedEmbedding_presentationLimitMap_laurentCoverOpen_of_isClosedEmbed
   -- `hemb`; it remains to verify that the resulting square commutes.
   have E_apply (b : Bool) (z : presentationLimit (P := P) Aplus (laurentCoverOpen Aplus f b)) :
       E b z = (eqToHom (completionLocObj_obj P (p b).num (p b).den _
-        (p b).hasDenominatorPower)).1
-          ((presentationLimitRationalIso Aplus hAplus (p b) (hp b)).hom.hom.1 z) := (rfl)
+        (p b).hasDenominatorPower)).val
+          ((presentationLimitRationalIso Aplus hAplus (p b) (hp b)).hom.hom.val z) := (rfl)
   have d_apply (z : presentationLimit (P := P) Aplus ⊤) : d z =
-      (eqToHom (CompleteSeparatedTopCommRingCat.of_obj A)).1
-        ((presentationLimitTopIso (P := P) Aplus hAplus).hom.hom.1 z) := (rfl)
+      (eqToHom (CompleteSeparatedTopCommRingCat.of_obj A)).val
+        ((presentationLimitTopIso (P := P) Aplus hAplus).hom.hom.val z) := (rfl)
   -- Transport the closed embedding `hemb ∘ d` along the coordinate change on the target; the
   -- remaining goal is the commuting square of the two functions underlying the embeddings.
   refine ((E true).prodCongr (E false)).isClosedEmbedding.of_comp_iff.mp
@@ -313,16 +313,16 @@ theorem isClosedEmbedding_presentationLimitMap_laurentCoverOpen_of_isClosedEmbed
   -- Check commutativity pointwise after writing a global section as the image of some `c : A`.
   funext x
   have := isIso_toPresentationLimit_top (P := P) Aplus hAplus
-  obtain ⟨c, rfl⟩ : ∃ c, (toPresentationLimit (P := P) Aplus ⊤).hom.1 c = x :=
+  obtain ⟨c, rfl⟩ : ∃ c, (toPresentationLimit (P := P) Aplus ⊤).hom.val c = x :=
     Function.RightInverse.surjective
       (asIso (toPresentationLimit (P := P) Aplus ⊤)).inv_hom_id_apply x
   -- The source comparison cancels on `c`; the target comparisons are `rationalIso_map_top_apply`.
-  have hd : d ((toPresentationLimit (P := P) Aplus ⊤).hom.1 c) =
-      (eqToHom (CompleteSeparatedTopCommRingCat.of_obj A)).1 c := by
+  have hd : d ((toPresentationLimit (P := P) Aplus ⊤).hom.val c) =
+      (eqToHom (CompleteSeparatedTopCommRingCat.of_obj A)).val c := by
     rw [d_apply]
     have h := (presentationLimitTopIso (P := P) Aplus hAplus).inv_hom_id_apply c
     rw [presentationLimitTopIso_inv] at h
-    exact congrArg (eqToHom (CompleteSeparatedTopCommRingCat.of_obj A)).1 h
+    exact congrArg (eqToHom (CompleteSeparatedTopCommRingCat.of_obj A)).val h
   simp only [Function.comp_apply, RingHom.prod_apply, Homeomorph.coe_prodCongr]
   rw [hd]
   exact Prod.ext
@@ -364,15 +364,15 @@ private theorem exists_toCompletionLoc_eq_of_laurentCoverOpen
               (UniformSpace.Completion (Localization.Away f)))))
     (x : ∀ b, presentationLimit (P := P) Aplus (laurentCoverOpen Aplus f b))
     (hx : (presentationLimitMap (P := P) (inf_le_left : laurentCoverOpen Aplus f true ⊓
-        laurentCoverOpen Aplus f false ≤ _)).hom.1 (x true) =
+        laurentCoverOpen Aplus f false ≤ _)).hom.val (x true) =
       (presentationLimitMap (P := P) (inf_le_right : laurentCoverOpen Aplus f true ⊓
-        laurentCoverOpen Aplus f false ≤ _)).hom.1 (x false)) :
+        laurentCoverOpen Aplus f false ≤ _)).hom.val (x false)) :
     ∃ c : CompleteSeparatedTopCommRingCat.of A, ∀ b, letI p := laurentPresentation P f b
       toCompletionLoc P p.num p.den _ p.hasDenominatorPower
-          ((eqToHom (CompleteSeparatedTopCommRingCat.of_obj A)).1 c) =
-        (eqToHom (completionLocObj_obj P p.num p.den _ p.hasDenominatorPower)).1
+          ((eqToHom (CompleteSeparatedTopCommRingCat.of_obj A)).val c) =
+        (eqToHom (completionLocObj_obj P p.num p.den _ p.hasDenominatorPower)).val
           ((presentationLimitRationalIso Aplus hAplus p
-            (isOpen_span_laurentPresentation P f b)).hom.hom.1 (x b)) := by
+            (isOpen_span_laurentPresentation P f b)).hom.hom.val (x b)) := by
   let p := laurentPresentation P f
   let q := laurentOverlapPresentation P f
   have hp := isOpen_span_laurentPresentation P f
@@ -387,14 +387,14 @@ private theorem exists_toCompletionLoc_eq_of_laurentCoverOpen
   -- restricted further to `R(q)` and read through `presentationLimitRationalIso`, `hx` says that
   -- the pair of sections is in the kernel of the difference of 8.33's restriction maps
   have h := congrArg (fun z ↦
-    (eqToHom (completionLocObj_obj P q.num q.den _ q.hasDenominatorPower)).1
-      ((presentationLimitRationalIso Aplus hAplus q hq).hom.hom.1
-        ((presentationLimitMap (le_inf (hU true) (hU false))).hom.1 z))) hx
+    (eqToHom (completionLocObj_obj P q.num q.den _ q.hasDenominatorPower)).val
+      ((presentationLimitRationalIso Aplus hAplus q hq).hom.hom.val
+        ((presentationLimitMap (le_inf (hU true) (hU false))).hom.val z))) hx
   simp only [presentationLimitMap_apply_presentationLimitMap_apply,
     rationalIso_map_apply hAplus (p true) q (hp true) hq f rfl hT₁,
     rationalIso_map_apply hAplus (p false) q (hp false) hq 1 (mul_comm 1 f) hT₂] at h
   obtain ⟨c, hc⟩ := (hexact (p false).hasDenominatorPower (_, _)).1 (sub_eq_zero.2 h)
-  refine ⟨(eqToHom (CompleteSeparatedTopCommRingCat.of_obj A).symm).1 c, fun b ↦ ?_⟩
+  refine ⟨(eqToHom (CompleteSeparatedTopCommRingCat.of_obj A).symm).val c, fun b ↦ ?_⟩
   rw [eqToHom_symm_apply_eqToHom_apply]
   exact b.rec (congrArg Prod.snd hc) (congrArg Prod.fst hc)
 
@@ -437,17 +437,17 @@ theorem exists_presentationLimitMap_eq_of_laurentCoverOpen_of_exact_toCompletion
               (UniformSpace.Completion (Localization.Away f)))))
     (x : ∀ b, presentationLimit (P := P) Aplus (laurentCoverOpen Aplus f b))
     (hx : (presentationLimitMap (P := P) (inf_le_left :
-        laurentCoverOpen Aplus f true ⊓ laurentCoverOpen Aplus f false ≤ _)).hom.1 (x true) =
+        laurentCoverOpen Aplus f true ⊓ laurentCoverOpen Aplus f false ≤ _)).hom.val (x true) =
       (presentationLimitMap (P := P) (inf_le_right :
-        laurentCoverOpen Aplus f true ⊓ laurentCoverOpen Aplus f false ≤ _)).hom.1
+        laurentCoverOpen Aplus f true ⊓ laurentCoverOpen Aplus f false ≤ _)).hom.val
           (x false)) :
     ∃ a : presentationLimit (P := P) Aplus ⊤, ∀ b,
-      (presentationLimitMap (P := P) (le_top : laurentCoverOpen Aplus f b ≤ ⊤)).hom.1 a =
+      (presentationLimitMap (P := P) (le_top : laurentCoverOpen Aplus f b ≤ ⊤)).hom.val a =
         x b := by
   -- `hexact` gives `c : A` with the right structure maps; its image in `presentationLimit ⊤`
   -- restricts to `x b`, since both agree after `presentationLimitRationalIso`
   obtain ⟨c, hc⟩ := exists_toCompletionLoc_eq_of_laurentCoverOpen P hAplus f hexact x hx
-  exact ⟨(toPresentationLimit Aplus ⊤).hom.1 c, fun b ↦
+  exact ⟨(toPresentationLimit Aplus ⊤).hom.val c, fun b ↦
     (presentationLimitMap_apply_toPresentationLimit_apply_eq_iff hAplus _
       (isOpen_span_laurentPresentation P f b)).2 (hc b)⟩
 
@@ -465,7 +465,7 @@ section over `Spa(A, A⁺)`: `exists_presentationLimitMap_eq_of_laurentCoverOpen
 theorem injective_presentationLimitMap_laurentCoverOpen
     (hAplus : ∀ ⦃a⦄, a ∈ Aplus → IsPowerBounded a) (f : A) :
     Function.Injective fun (x : presentationLimit (P := P) Aplus ⊤) (b : Bool) ↦
-      (presentationLimitMap (P := P) (le_top : laurentCoverOpen Aplus f b ≤ ⊤)).hom.1 x :=
+      (presentationLimitMap (P := P) (le_top : laurentCoverOpen Aplus f b ≤ ⊤)).hom.val x :=
   injective_presentationLimitMap_laurentCoverOpen_of_injective_toCompletionLoc P hAplus f <|
     laurentCover_injective P f _ _
 
@@ -480,12 +480,12 @@ theorem exists_presentationLimitMap_eq_of_laurentCoverOpen
     (hAplus : ∀ ⦃a⦄, a ∈ Aplus → IsPowerBounded a) (f : A)
     (x : ∀ b, presentationLimit (P := P) Aplus (laurentCoverOpen Aplus f b))
     (hx : (presentationLimitMap (P := P) (inf_le_left :
-        laurentCoverOpen Aplus f true ⊓ laurentCoverOpen Aplus f false ≤ _)).hom.1 (x true) =
+        laurentCoverOpen Aplus f true ⊓ laurentCoverOpen Aplus f false ≤ _)).hom.val (x true) =
       (presentationLimitMap (P := P) (inf_le_right :
-        laurentCoverOpen Aplus f true ⊓ laurentCoverOpen Aplus f false ≤ _)).hom.1
+        laurentCoverOpen Aplus f true ⊓ laurentCoverOpen Aplus f false ≤ _)).hom.val
           (x false)) :
     ∃ a : presentationLimit (P := P) Aplus ⊤, ∀ b,
-      (presentationLimitMap (P := P) (le_top : laurentCoverOpen Aplus f b ≤ ⊤)).hom.1 a =
+      (presentationLimitMap (P := P) (le_top : laurentCoverOpen Aplus f b ≤ ⊤)).hom.val a =
         x b :=
   exists_presentationLimitMap_eq_of_laurentCoverOpen_of_exact_toCompletionLoc P hAplus f
     (fun hden₂ ↦ laurentCover_exact P f _ _ _ hden₂) x hx
@@ -501,9 +501,9 @@ theorem surjective_presentationLimitMap_sub_laurentCoverOpen
         presentationLimit (P := P) Aplus (laurentCoverOpen Aplus f true) ×
           presentationLimit (P := P) Aplus (laurentCoverOpen Aplus f false)) ↦
       (presentationLimitMap (P := P) (inf_le_left :
-        laurentCoverOpen Aplus f true ⊓ laurentCoverOpen Aplus f false ≤ _)).hom.1 x.1 -
+        laurentCoverOpen Aplus f true ⊓ laurentCoverOpen Aplus f false ≤ _)).hom.val x.1 -
       (presentationLimitMap (P := P) (inf_le_right :
-        laurentCoverOpen Aplus f true ⊓ laurentCoverOpen Aplus f false ≤ _)).hom.1 x.2 := by
+        laurentCoverOpen Aplus f true ⊓ laurentCoverOpen Aplus f false ≤ _)).hom.val x.2 := by
   classical
   let p := laurentPresentation P f
   let q := laurentOverlapPresentation P f
@@ -523,8 +523,8 @@ theorem surjective_presentationLimitMap_sub_laurentCoverOpen
     simp only [Opens.coe_inf, Set.mem_inter_iff, SetLike.mem_coe, mem_spaBasicOpen]
     rw [← Set.mem_inter_iff, rationalSubset_inter]
     simp [q, hnum]
-  have hInv : Function.LeftInverse (presentationLimitMap (P := P) hEq.ge).hom.1
-      (presentationLimitMap (P := P) hEq.le).hom.1 := fun z ↦ by
+  have hInv : Function.LeftInverse (presentationLimitMap (P := P) hEq.ge).hom.val
+      (presentationLimitMap (P := P) hEq.le).hom.val := fun z ↦ by
     rw [presentationLimitMap_apply_presentationLimitMap_apply, presentationLimitMap_refl]
     exact ConcreteCategory.id_apply z
   -- Transport `laurentCover_surjective` through the rational-section isomorphisms.
@@ -533,9 +533,9 @@ theorem surjective_presentationLimitMap_sub_laurentCoverOpen
   intro z
   obtain ⟨⟨u, v⟩, huv⟩ := laurentCover_surjective P f (Localization.Away (1 : A))
     (Localization.Away f) (Localization.Away (1 * f)) (p false).hasDenominatorPower
-    ((eqToHom (completionLocObj_obj P q.num q.den _ q.hasDenominatorPower)).1
-      ((presentationLimitRationalIso Aplus hAplus q hq).hom.hom.1
-        ((presentationLimitMap hEq.le).hom.1 z)))
+    ((eqToHom (completionLocObj_obj P q.num q.den _ q.hasDenominatorPower)).val
+      ((presentationLimitRationalIso Aplus hAplus q hq).hom.hom.val
+        ((presentationLimitMap hEq.le).hom.val z)))
   obtain ⟨x₁, rfl⟩ :=
     (bijective_presentationLimitRationalIso_hom Aplus hAplus (p true) (hp true)).2 u
   obtain ⟨x₂, rfl⟩ :=

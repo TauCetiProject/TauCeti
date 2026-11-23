@@ -84,15 +84,15 @@ empty subfan is proper, but `0` lies in the inverse image of every cone and in n
 empty fan. -/
 theorem preimage_realMap_eq_iUnion_of_isProperMap (hΦ0 : Nonempty Φ.cones)
     (hf : IsProperMap (f.analyticMap hΦ hΨ)) (τ : Ψ.cones) :
-    f.realMap ⁻¹' (τ.1 : Set V') =
-      ⋃ σ : Φ.cones, ⋃ (_ : σ.1.map f.realMap ≤ τ.1), (σ.1 : Set V) := by
+    f.realMap ⁻¹' (τ.val : Set V') =
+      ⋃ σ : Φ.cones, ⋃ (_ : σ.val.map f.realMap ≤ τ.val), (σ.val : Set V) := by
   refine Subset.antisymm (fun w hw ↦ ?_) (iUnion₂_subset fun σ hστ x hx ↦
     hστ (Submodule.mem_map_of_mem hx))
   -- The torus points `t k` with `‖t k m‖ = exp (-k ⟨m, w⟩)` are sent into the compact part `K`
   -- of the chart of `τ` where every monomial has absolute value at most `1`.
   choose t ht using fun k : ℕ ↦ Φ.lattice.exists_complexTorus_norm_eq ((k : ℝ) • w)
   let K := Ψ.analyticAffineChartι hΨ τ ''
-    {x : AffineSemigroupComplexPoint (dualSemigroup Ψ.lattice τ.1) |
+    {x : AffineSemigroupComplexPoint (dualSemigroup Ψ.lattice τ.val) |
       ∀ s, ‖x (MonoidAlgebra.single (Multiplicative.ofAdd s) 1)‖ ≤ 1}
   have hK : IsCompact K :=
     Ψ.isCompact_image_analyticAffineChartι_setOf_forall_norm_apply_single_le_one hΨ τ
@@ -100,7 +100,7 @@ theorem preimage_realMap_eq_iUnion_of_isProperMap (hΦ0 : Nonempty Φ.cones)
     rw [f.analyticMap_analyticTorusι]
     refine Ψ.analyticTorusι_mem_image_setOf_forall_norm_apply_single_le_one hΨ _ fun m ↦ ?_
     have hm : 0 ≤ Ψ.lattice.realCharacter m (f.realMap ((k : ℝ) • w)) :=
-      (mem_dualSemigroup _ _).1 m.2 (by rw [map_smul]; exact τ.1.smul_mem k.cast_nonneg hw)
+      (mem_dualSemigroup _ _).1 m.property (by rw [map_smul]; exact τ.val.smul_mem k.cast_nonneg hw)
     rw [complexTorusMap_apply, characterEvaluation_apply, ← Real.exp_zero]
     convert Real.exp_le_exp.2 (neg_nonpos.2 hm) using 1
     rw [← LinearMap.comp_apply, ← Φ.lattice.realCharacter_comp Ψ.lattice f.latticeMap
@@ -123,12 +123,12 @@ theorem preimage_realMap_eq_iUnion_of_isProperMap (hΦ0 : Nonempty Φ.cones)
 map sends into the part of the chart of a target cone `τ` where the generators of the dual
 semigroup of `τ` have absolute value less than `R` is contained in a compact set. -/
 private theorem exists_isCompact_preimage_analyticMap_subset (hΦ0 : Nonempty Φ.cones)
-    (h : ∀ τ : Ψ.cones, f.realMap ⁻¹' (τ.1 : Set V') ⊆
-      ⋃ σ : Φ.cones, ⋃ (_ : σ.1.map f.realMap ≤ τ.1), (σ.1 : Set V))
+    (h : ∀ τ : Ψ.cones, f.realMap ⁻¹' (τ.val : Set V') ⊆
+      ⋃ σ : Φ.cones, ⋃ (_ : σ.val.map f.realMap ≤ τ.val), (σ.val : Set V))
     (τ : Ψ.cones) (R : ℝ) :
     ∃ L : Set (Φ.analyticRealization hΦ), IsCompact L ∧
       f.analyticMap hΦ hΨ ⁻¹' (Ψ.analyticAffineChartι hΨ τ ''
-        {y : AffineSemigroupComplexPoint (dualSemigroup Ψ.lattice τ.1) |
+        {y : AffineSemigroupComplexPoint (dualSemigroup Ψ.lattice τ.val) |
           ∀ j, ‖y (MonoidAlgebra.single (ofAdd ((Ψ.analyticChartGenerators τ).2.toFun j)) 1)‖ <
             R}) ⊆ L := by
   let g := (Ψ.analyticChartGenerators τ).2
@@ -143,7 +143,7 @@ private theorem exists_isCompact_preimage_analyticMap_subset (hΦ0 : Nonempty Φ
   let c := Real.log (max R 1)
   have hc : 0 ≤ c := Real.log_nonneg (le_max_right _ _)
   let L := ⋃ σ : Φ.cones, Φ.analyticAffineChartι hΦ σ ''
-    {x : AffineSemigroupComplexPoint (dualSemigroup Φ.lattice σ.1) |
+    {x : AffineSemigroupComplexPoint (dualSemigroup Φ.lattice σ.val) |
       ∀ k, ‖x (MonoidAlgebra.single (ofAdd ((G σ).toFun k)) 1)‖ ≤ Real.exp (C * c)}
   have hL : IsCompact L := isCompact_iUnion fun σ ↦
     Φ.isCompact_image_analyticAffineChartι_setOf_forall_norm_apply_single_toFun_le hΦ σ (G σ) _
@@ -171,19 +171,20 @@ private theorem exists_isCompact_preimage_analyticMap_subset (hΦ0 : Nonempty Φ
     exact Real.log_le_log (norm_pos_iff.2 (Units.ne_zero _)) (hj.le.trans (le_max_left _ _))
   obtain ⟨w', hw', hww'⟩ := hC c hc w ha
   -- The nearby point `w'` lies in a source cone `σ` mapped into `τ`.
-  have hw'τ : f.realMap w' ∈ τ.1 :=
+  have hw'τ : f.realMap w' ∈ τ.val :=
     (IsRegularCone.mem_iff_forall_realCharacter_nonneg_of_closure_range_eq_top Ψ.lattice
-      ((Fan.isRegular_iff.mp hΨ) τ.1 τ.2) g.spans).2 fun j ↦ by
+      ((Fan.isRegular_iff.mp hΨ) τ.val τ.property) g.spans).2 fun j ↦ by
       simpa only [LinearMap.comp_apply] using hw' j
   obtain ⟨σ, _, hw'σ⟩ := mem_iUnion₂.1 (h τ hw'τ)
   -- Hence the generators of the dual semigroup of `σ` are bounded at `t`.
-  refine mem_iUnion.2 ⟨σ, t • (default : AffineSemigroupComplexPoint (dualSemigroup Φ.lattice σ.1)),
+  refine mem_iUnion.2 ⟨σ, t • (default : AffineSemigroupComplexPoint
+      (dualSemigroup Φ.lattice σ.val)),
     fun k ↦ ?_, (Φ.analyticTorusι_eq_analyticAffineChartι hΦ hΦ0 σ t).symm⟩
   rw [AffineSemigroupComplexPoint.ambient_smul_apply_single, default_apply_single, mul_one,
     ← Real.log_le_iff_le_exp (norm_pos_iff.2 (Units.ne_zero _))]
   have hk := hww' ⟨σ, k⟩
   have hσk : 0 ≤ Φ.lattice.realCharacter ((G σ).toFun k : N →+ ℤ) w' :=
-    (mem_dualSemigroup _ _).1 ((G σ).toFun k).2 hw'σ
+    (mem_dualSemigroup _ _).1 ((G σ).toFun k).property hw'σ
   rw [map_sub, hw] at hk
   linarith [(abs_le.1 hk).1]
 
@@ -191,8 +192,8 @@ private theorem exists_isCompact_preimage_analyticMap_subset (hΦ0 : Nonempty Φ
 the source cones mapped into `τ`, then the analytic map of a morphism of regular fans is proper.
 The inverse inclusion always holds. -/
 theorem isProperMap_analyticMap_of_preimage_realMap_subset
-    (h : ∀ τ : Ψ.cones, f.realMap ⁻¹' (τ.1 : Set V') ⊆
-      ⋃ σ : Φ.cones, ⋃ (_ : σ.1.map f.realMap ≤ τ.1), (σ.1 : Set V)) :
+    (h : ∀ τ : Ψ.cones, f.realMap ⁻¹' (τ.val : Set V') ⊆
+      ⋃ σ : Φ.cones, ⋃ (_ : σ.val.map f.realMap ≤ τ.val), (σ.val : Set V)) :
     IsProperMap (f.analyticMap hΦ hΨ) := by
   refine isProperMap_iff_isCompact_preimage.2
     ⟨(f.analyticMap hΦ hΨ).hom.continuous, fun K hK ↦ ?_⟩
@@ -202,14 +203,14 @@ theorem isProperMap_analyticMap_of_preimage_realMap_subset
   -- Cover `K` by finitely many parts of charts where the generators are bounded.
   let U : Ψ.cones × ℕ → Set (Ψ.analyticRealization hΨ) := fun p ↦
     Ψ.analyticAffineChartι hΨ p.1 ''
-      {y : AffineSemigroupComplexPoint (dualSemigroup Ψ.lattice p.1.1) |
+      {y : AffineSemigroupComplexPoint (dualSemigroup Ψ.lattice p.1.val) |
         ∀ j, ‖y (MonoidAlgebra.single
           (ofAdd ((Ψ.analyticChartGenerators p.1).2.toFun j)) 1)‖ < p.2}
   have hUo (p : Ψ.cones × ℕ) : IsOpen (U p) :=
     Ψ.isOpen_image_analyticAffineChartι_setOf_forall_norm_apply_single_toFun_lt hΨ p.1 _ _
   have hcover : K ⊆ ⋃ p, U p := fun x _ ↦ by
     obtain ⟨τ, y, rfl⟩ := Ψ.exists_analyticAffineChartι_apply_eq hΨ x
-    let y' : AffineSemigroupComplexPoint (dualSemigroup Ψ.lattice τ.1) := y
+    let y' : AffineSemigroupComplexPoint (dualSemigroup Ψ.lattice τ.val) := y
     let b := fun j ↦ ‖y' (MonoidAlgebra.single (ofAdd ((Ψ.analyticChartGenerators τ).2.toFun j)) 1)‖
     obtain ⟨n, hn⟩ := exists_nat_gt (∑ j, b j)
     exact mem_iUnion.2 ⟨(τ, n), y, fun j ↦
@@ -230,8 +231,8 @@ hypothesis is necessary: the inclusion of the empty subfan is proper, but `0` li
 image of every cone and in no cone of the empty fan. See
 `TauCeti.Toric.FanHom.isProperMap_analyticMap_iff_isEmpty_or` for the form without it. -/
 theorem isProperMap_analyticMap_iff (hΦ0 : Nonempty Φ.cones) :
-    IsProperMap (f.analyticMap hΦ hΨ) ↔ ∀ τ : Ψ.cones, f.realMap ⁻¹' (τ.1 : Set V') =
-      ⋃ σ : Φ.cones, ⋃ (_ : σ.1.map f.realMap ≤ τ.1), (σ.1 : Set V) :=
+    IsProperMap (f.analyticMap hΦ hΨ) ↔ ∀ τ : Ψ.cones, f.realMap ⁻¹' (τ.val : Set V') =
+      ⋃ σ : Φ.cones, ⋃ (_ : σ.val.map f.realMap ≤ τ.val), (σ.val : Set V) :=
   ⟨fun hf ↦ f.preimage_realMap_eq_iUnion_of_isProperMap hΦ hΨ hΦ0 hf, fun h ↦
     f.isProperMap_analyticMap_of_preimage_realMap_subset hΦ hΨ fun τ ↦ (h τ).subset⟩
 
@@ -248,10 +249,10 @@ nonemptiness hypothesis of `TauCeti.Toric.FanHom.isProperMap_analyticMap_iff` ca
 the inclusion of the empty subfan of a nonempty fan is such a morphism. -/
 theorem not_forall_preimage_realMap_eq_iUnion_of_isEmpty [IsEmpty Φ.cones]
     (hΨ0 : Nonempty Ψ.cones) :
-    ¬ ∀ τ : Ψ.cones, f.realMap ⁻¹' (τ.1 : Set V') =
-      ⋃ σ : Φ.cones, ⋃ (_ : σ.1.map f.realMap ≤ τ.1), (σ.1 : Set V) := fun h ↦ by
+    ¬ ∀ τ : Ψ.cones, f.realMap ⁻¹' (τ.val : Set V') =
+      ⋃ σ : Φ.cones, ⋃ (_ : σ.val.map f.realMap ≤ τ.val), (σ.val : Set V) := fun h ↦ by
   obtain ⟨τ⟩ := hΨ0
-  have h0 : (0 : V) ∈ f.realMap ⁻¹' (τ.1 : Set V') := by simp
+  have h0 : (0 : V) ∈ f.realMap ⁻¹' (τ.val : Set V') := by simp
   rw [h τ] at h0
   simp at h0
 
@@ -262,8 +263,8 @@ mapped into `τ`. By `TauCeti.Toric.FanHom.not_forall_preimage_realMap_eq_iUnion
 first case cannot be absorbed into the second when the target fan is nonempty. -/
 theorem isProperMap_analyticMap_iff_isEmpty_or :
     IsProperMap (f.analyticMap hΦ hΨ) ↔ IsEmpty Φ.cones ∨ ∀ τ : Ψ.cones,
-      f.realMap ⁻¹' (τ.1 : Set V') =
-        ⋃ σ : Φ.cones, ⋃ (_ : σ.1.map f.realMap ≤ τ.1), (σ.1 : Set V) := by
+      f.realMap ⁻¹' (τ.val : Set V') =
+        ⋃ σ : Φ.cones, ⋃ (_ : σ.val.map f.realMap ≤ τ.val), (σ.val : Set V) := by
   rcases isEmpty_or_nonempty Φ.cones with hΦ0 | hΦ0
   · exact iff_of_true (f.isProperMap_analyticMap_of_isEmpty hΦ hΨ) (Or.inl hΦ0)
   · rw [or_iff_right (not_isEmpty_of_nonempty _), f.isProperMap_analyticMap_iff hΦ hΨ hΦ0]

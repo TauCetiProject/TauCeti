@@ -9,6 +9,7 @@ public import TauCeti.Probability.Distributions.InverseGaussian.Basic
 public import TauCeti.Probability.Distributions.Levy.Basic
 public import Mathlib.Probability.Moments.IntegrableExpMul
 import TauCeti.Probability.Distributions.Levy.Moments
+import TauCeti.MeasureTheory.Integral.Bochner.WithDensity
 
 /-!
 # Exponential moments of inverse Gaussian laws
@@ -82,7 +83,7 @@ theorem integrableExpSet_id_inverseGaussianMeasure (hμ : 0 < μ) (hlam : 0 < la
     simpa only [integrableExpSet, mem_ofPred_eq, id_eq, mem_Iic] using
       Set.ext_iff.mp (integrableExpSet_id_levyMeasure hlam 0) (t - lam / (2 * μ ^ 2))
   rw [levyMeasure_eq_withDensity, funext (levyPDF_eq_ofReal 0 lam)] at htransfer
-  rw [integrable_withDensity_ofReal_iff (measurable_levyPDFReal 0 lam).aemeasurable
+  rw [MeasureTheory.integrable_withDensity_ofReal_iff (measurable_levyPDFReal 0 lam).aemeasurable
     (ae_of_all _ (levyPDFReal_nonneg 0 lam))] at htransfer
   simp only [integrableExpSet, mem_ofPred_eq, id_eq, mem_Iic]
   rw [integrable_inverseGaussianMeasure_iff]

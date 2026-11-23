@@ -137,7 +137,7 @@ theorem reverseOpAlgEquiv_symm_mem_grade {n : ℕ} {x : (pathAlgebra k Q)ᵐᵒ�
   rw [grade_eq_span_range] at hx'
   have h : ∀ y ∈ Submodule.span k
       (Set.range fun p : {p : Quiver.TotalPath Q // p.2.2.length = n} =>
-        (ofPath p.1 : pathAlgebra k Q)),
+        (ofPath p.val : pathAlgebra k Q)),
       (reverseOpAlgEquiv k Q).symm (MulOpposite.op y) ∈ grade k Q n := by
     intro y hy
     induction hy using Submodule.span_induction with

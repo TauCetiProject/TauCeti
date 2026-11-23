@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Topology.VectorBundle.Constructions
-public import TauCeti.Topology.VectorBundle.ComplexSmulI
+public import TauCeti.Topology.VectorBundle.Complex.SmulI
 public import TauCeti.Topology.Algebra.Module.Complexification
 
 /-!
@@ -25,7 +25,7 @@ Hom-bundle continuity for `realPartCLM`, `imaginaryPartCLM`, `oneTmulCLM`, `ITmu
 General scalar restriction (`VectorBundle.restrictScalars`, `VectorBundle.ofLinear`) and
 multiplication by `Complex.I` on complex vector bundles (`VectorBundle.ofMapISmul`,
 `TauCeti.smulIHomeomorph`, `TauCeti.continuous_smulIEquiv_bundle`) live in
-`TauCeti.Topology.VectorBundle.RestrictScalars` and `TauCeti.Topology.VectorBundle.ComplexSmulI`.
+`TauCeti.Topology.VectorBundle.RestrictScalars` and `TauCeti.Topology.VectorBundle.Complex.SmulI`.
 
 ## References
 
@@ -55,8 +55,8 @@ variable {B : Type*} [TopologicalSpace B] {F : Type*} [NormedAddCommGroup F] [No
 `fun x ↦ ℂ ⊗[ℝ] E x` with model fibre `TauCeti.Complexification F`. -/
 def complexification (e : Trivialization F (π F E)) [e.IsLinear ℝ] :
     Pretrivialization (Complexification F) (π (Complexification F) fun x ↦ ℂ ⊗[ℝ] E x) where
-  toFun p := ⟨p.1, ⟨e.linearMapAt ℝ p.1 (realPart (E p.1) p.2),
-    e.linearMapAt ℝ p.1 (imaginaryPart (E p.1) p.2)⟩⟩
+  toFun p := ⟨p.proj, ⟨e.linearMapAt ℝ p.proj (realPart (E p.proj) p.snd),
+    e.linearMapAt ℝ p.proj (imaginaryPart (E p.proj) p.snd)⟩⟩
   invFun p := ⟨p.1, 1 ⊗ₜ[ℝ] e.symm p.1 p.2.re + Complex.I ⊗ₜ[ℝ] e.symm p.1 p.2.im⟩
   source := TotalSpace.proj ⁻¹' e.baseSet
   target := e.baseSet ×ˢ univ
@@ -84,8 +84,8 @@ instance complexification_isLinear (e : Trivialization F (π F E)) [e.IsLinear �
           imaginaryPart_smul, add_comm] }
 
 theorem complexification_apply (p : TotalSpace (Complexification F) fun x ↦ ℂ ⊗[ℝ] E x) :
-    complexification e p = (p.1, ⟨e.linearMapAt ℝ p.1 (realPart (E p.1) p.2),
-      e.linearMapAt ℝ p.1 (imaginaryPart (E p.1) p.2)⟩) := (rfl)
+    complexification e p = (p.proj, ⟨e.linearMapAt ℝ p.proj (realPart (E p.proj) p.snd),
+      e.linearMapAt ℝ p.proj (imaginaryPart (E p.proj) p.snd)⟩) := (rfl)
 
 @[simp] theorem baseSet_complexification : (complexification e).baseSet = e.baseSet := (rfl)
 
@@ -195,17 +195,34 @@ instance memTrivializationAtlas_complexification : MemTrivializationAtlas e.comp
 
 @[simp] theorem baseSet_complexification : e.complexification.baseSet = e.baseSet := (rfl)
 
+/-- Complexifying a family of atlas frames preserves all prescribed frame domains. -/
+theorem subset_baseSet_complexification {ι : Type*}
+    (frames : ι → Trivialization F (π F E)) [∀ i, MemTrivializationAtlas (frames i)]
+    {U : ι → Set B} (hU : ∀ i, U i ⊆ (frames i).baseSet) :
+    ∀ i, U i ⊆ (frames i).complexification.baseSet := by
+  simpa only [baseSet_complexification] using hU
+
 theorem complexification_apply (p : TotalSpace (Complexification F) fun x ↦ ℂ ⊗[ℝ] E x) :
-    e.complexification p = (p.1, ⟨e.linearMapAt ℝ p.1 (realPart (E p.1) p.2),
-      e.linearMapAt ℝ p.1 (imaginaryPart (E p.1) p.2)⟩) := (rfl)
+    e.complexification p = (p.proj, ⟨e.linearMapAt ℝ p.proj (realPart (E p.proj) p.snd),
+      e.linearMapAt ℝ p.proj (imaginaryPart (E p.proj) p.snd)⟩) := (rfl)
 
 @[simp] theorem complexification_apply_re
     (p : TotalSpace (Complexification F) fun x ↦ ℂ ⊗[ℝ] E x) :
-    (e.complexification p).2.re = e.linearMapAt ℝ p.1 (realPart (E p.1) p.2) := (rfl)
+    (e.complexification p).2.re = e.linearMapAt ℝ p.proj (realPart (E p.proj) p.snd) := (rfl)
 
 @[simp] theorem complexification_apply_im
     (p : TotalSpace (Complexification F) fun x ↦ ℂ ⊗[ℝ] E x) :
-    (e.complexification p).2.im = e.linearMapAt ℝ p.1 (imaginaryPart (E p.1) p.2) := (rfl)
+    (e.complexification p).2.im = e.linearMapAt ℝ p.proj (imaginaryPart (E p.proj) p.snd) := (rfl)
+
+open scoped TauCeti.Complexification in
+/-- The complexification of a real fibre frame is the scalar extension of that frame,
+followed by the canonical tensor-to-model equivalence. -/
+theorem continuousLinearEquivAt_complexification {x : B} (hx : x ∈ e.baseSet) :
+    e.complexification.continuousLinearEquivAt ℂ x (by simpa using hx) =
+      (e.continuousLinearEquivAt ℝ x hx).baseChangeComplex.trans
+        (tensorContinuousLinearEquivComplexification F) := by
+  ext u <;> simp [Trivialization.continuousLinearEquivAt_apply,
+    Trivialization.complexification_apply, e.coe_linearMapAt_of_mem hx]
 
 theorem complexification_symm_apply {b : B} (hb : b ∈ e.baseSet) (z : Complexification F) :
     e.complexification.symm b z = 1 ⊗ₜ[ℝ] e.symm b z.re + Complex.I ⊗ₜ[ℝ] e.symm b z.im :=
@@ -299,9 +316,9 @@ theorem continuousWithinAt_complexification_totalSpace_iff {X : Type*} [Topologi
     {f : X → TotalSpace (Complexification F) fun x ↦ ℂ ⊗[ℝ] E x} {s : Set X} {x₀ : X} :
     ContinuousWithinAt f s x₀ ↔
       ContinuousWithinAt
-        (fun y ↦ (⟨(f y).proj, realPart (E (f y).proj) (f y).2⟩ : TotalSpace F E)) s x₀ ∧
+        (fun y ↦ (⟨(f y).proj, realPart (E (f y).proj) (f y).snd⟩ : TotalSpace F E)) s x₀ ∧
       ContinuousWithinAt
-        (fun y ↦ (⟨(f y).proj, imaginaryPart (E (f y).proj) (f y).2⟩ : TotalSpace F E)) s x₀ := by
+        (fun y ↦ (⟨(f y).proj, imaginaryPart (E (f y).proj) (f y).snd⟩ : TotalSpace F E)) s x₀ := by
   simp only [FiberBundle.continuousWithinAt_totalSpace,
     (Complexification.equivProd F).toHomeomorph.isInducing.continuousWithinAt_iff,
     continuousWithinAt_prod_iff, Function.comp_def, ContinuousLinearEquiv.coe_toHomeomorph,
@@ -328,9 +345,9 @@ theorem continuousWithinAt_complexification_totalSpace_iff {X : Type*} [Topologi
 theorem continuous_complexification_totalSpace_iff {X : Type*} [TopologicalSpace X]
     {f : X → TotalSpace (Complexification F) fun x ↦ ℂ ⊗[ℝ] E x} :
     Continuous f ↔
-      Continuous (fun y ↦ (⟨(f y).proj, realPart (E (f y).proj) (f y).2⟩ : TotalSpace F E)) ∧
+      Continuous (fun y ↦ (⟨(f y).proj, realPart (E (f y).proj) (f y).snd⟩ : TotalSpace F E)) ∧
       Continuous
-        (fun y ↦ (⟨(f y).proj, imaginaryPart (E (f y).proj) (f y).2⟩ : TotalSpace F E)) := by
+        (fun y ↦ (⟨(f y).proj, imaginaryPart (E (f y).proj) (f y).snd⟩ : TotalSpace F E)) := by
   simp_rw [continuous_iff_continuousAt, ← continuousWithinAt_univ,
     continuousWithinAt_complexification_totalSpace_iff, forall_and]
 
@@ -349,15 +366,15 @@ def tmulConjHomeomorph :
     TotalSpace (Complexification F) (fun x ↦ ℂ ⊗[ℝ] E x) ≃ₜ
       TotalSpace (Complexification F) (fun x ↦ ℂ ⊗[ℝ] E x) :=
   have hcont : Continuous (fun p : TotalSpace (Complexification F) (fun x ↦ ℂ ⊗[ℝ] E x) ↦
-      (⟨p.proj, tmulConj (E p.proj) p.2⟩ :
+      (⟨p.proj, tmulConj (E p.proj) p.snd⟩ :
         TotalSpace (Complexification F) fun x ↦ ℂ ⊗[ℝ] E x)) := by
     obtain ⟨hre, him⟩ := (continuous_complexification_totalSpace_iff (F := F) (E := E)).mp
       continuous_id
     refine (continuous_complexification_totalSpace_iff (F := F) (E := E)).mpr
       ⟨by simpa using hre, ?_⟩
     simpa [neg_one_smul] using (continuous_const (y := (-1 : ℝ))).smul_totalSpace him
-  { toFun p := ⟨p.proj, tmulConj (E p.proj) p.2⟩
-    invFun p := ⟨p.proj, tmulConj (E p.proj) p.2⟩
+  { toFun p := ⟨p.proj, tmulConj (E p.proj) p.snd⟩
+    invFun p := ⟨p.proj, tmulConj (E p.proj) p.snd⟩
     left_inv := fun ⟨x, u⟩ ↦ congrArg (TotalSpace.mk x) (tmulConj_tmulConj (E x) u)
     right_inv := fun ⟨x, u⟩ ↦ congrArg (TotalSpace.mk x) (tmulConj_tmulConj (E x) u)
     continuous_toFun := hcont, continuous_invFun := hcont }
@@ -367,8 +384,8 @@ variable (F E) in
 total space of the direct-sum bundle `E ×ᵇ E`, valid without any finite-rank assumption on `F`. -/
 def complexificationTotalSpaceHomeomorphProd :
     TotalSpace (Complexification F) (fun x ↦ ℂ ⊗[ℝ] E x) ≃ₜ TotalSpace (F × F) (E ×ᵇ E) where
-  toFun p := ⟨p.proj, complexificationEquivProd (E p.proj) p.2⟩
-  invFun p := ⟨p.proj, (complexificationEquivProd (E p.proj)).symm p.2⟩
+  toFun p := ⟨p.proj, complexificationEquivProd (E p.proj) p.snd⟩
+  invFun p := ⟨p.proj, (complexificationEquivProd (E p.proj)).symm p.snd⟩
   left_inv p := by simp
   right_inv p := by simp
   continuous_toFun := by
@@ -385,19 +402,19 @@ def complexificationTotalSpaceHomeomorphProd :
 
 @[simp] theorem tmulConjHomeomorph_apply
     (p : TotalSpace (Complexification F) fun x ↦ ℂ ⊗[ℝ] E x) :
-    tmulConjHomeomorph F E p = ⟨p.proj, tmulConj (E p.proj) p.2⟩ := (rfl)
+    tmulConjHomeomorph F E p = ⟨p.proj, tmulConj (E p.proj) p.snd⟩ := (rfl)
 @[simp] theorem tmulConjHomeomorph_symm :
     (tmulConjHomeomorph F E).symm = tmulConjHomeomorph F E := (rfl)
 @[simp] theorem complexificationTotalSpaceHomeomorphProd_apply
     (p : TotalSpace (Complexification F) fun x ↦ ℂ ⊗[ℝ] E x) :
     complexificationTotalSpaceHomeomorphProd F E p =
-      ⟨p.proj, (realPart (E p.proj) p.2, imaginaryPart (E p.proj) p.2)⟩ :=
-  congrArg (TotalSpace.mk p.proj) (complexificationEquivProd_apply p.2)
+      ⟨p.proj, (realPart (E p.proj) p.snd, imaginaryPart (E p.proj) p.snd)⟩ :=
+  congrArg (TotalSpace.mk p.proj) (complexificationEquivProd_apply p.snd)
 @[simp] theorem complexificationTotalSpaceHomeomorphProd_symm_apply
     (p : TotalSpace (F × F) (E ×ᵇ E)) :
     (complexificationTotalSpaceHomeomorphProd F E).symm p =
-      ⟨p.proj, 1 ⊗ₜ[ℝ] p.2.1 + Complex.I ⊗ₜ[ℝ] p.2.2⟩ :=
-  congrArg (TotalSpace.mk p.proj) (complexificationEquivProd_symm_apply p.2)
+      ⟨p.proj, 1 ⊗ₜ[ℝ] p.snd.1 + Complex.I ⊗ₜ[ℝ] p.snd.2⟩ :=
+  congrArg (TotalSpace.mk p.proj) (complexificationEquivProd_symm_apply p.snd)
 theorem proj_complexificationTotalSpaceHomeomorphProd
     (p : TotalSpace (Complexification F) fun x ↦ ℂ ⊗[ℝ] E x) :
     (complexificationTotalSpaceHomeomorphProd F E p).proj = p.proj := (rfl)

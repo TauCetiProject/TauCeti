@@ -47,10 +47,10 @@ theorem Delineation.isLocallyConstant_root_of_locally (D : Delineation P) (q : X
   obtain ⟨U, hU, hxU, D', hq⟩ := hlocal x
   have : Nonempty U := ⟨⟨x, hxU⟩⟩
   -- Restricting the global stack gives the unique delineation of the local family.
-  have hD : D.comp Subtype.val continuous_subtype_val = D' := Subsingleton.elim _ _
+  have hD : D.comp Subtype.val continuous_subtypeVal = D' := Subsingleton.elim _ _
   rw [← hD] at hq
   filter_upwards [hU.mem_nhds hxU] with y hy
-  have h := hq (Fin.cast (D.comp_count Subtype.val continuous_subtype_val).symm i)
+  have h := hq (Fin.cast (D.comp_count Subtype.val continuous_subtypeVal).symm i)
     ⟨y, hy⟩ ⟨x, hxU⟩
   simpa only [Delineation.comp_root, Fin.cast_cast, Fin.cast_refl, id_eq] using h
 

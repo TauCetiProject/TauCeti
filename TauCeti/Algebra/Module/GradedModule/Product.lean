@@ -39,7 +39,7 @@ section BaseSemiring
 
 variable {R : Type u} [Semiring R] {J : Type v} {M : J → Type w}
   [∀ j, AddCommMonoid (M j)] [∀ j, Module R (M j)]
-  (G : ∀ j, InternalGrading R (M j))
+  (G : ∀ j, InternalGrading R (M j) ℤ)
 
 /-- Families all of whose components have degree `p`. -/
 def productPiece (p : ℤ) : Submodule R (∀ j, M j) :=
@@ -63,7 +63,7 @@ theorem productPiece_le_productCarrier (p : ℤ) : productPiece G p ≤ productC
 
 private def productCoordinate (j : J) (p : ℤ) :
     productPiece G p →ₗ[R] (G j).piece p where
-  toFun x := ⟨x.1 j, (mem_productPiece_iff G p x.1).mp x.2 j⟩
+  toFun x := ⟨x.val j, (mem_productPiece_iff G p x.val).mp x.property j⟩
   map_add' _ _ := rfl
   map_smul' _ _ := rfl
 
@@ -72,7 +72,7 @@ private noncomputable def productComponent (j : J) :
   DirectSum.lmap (productCoordinate G j)
 
 private theorem productComponent_apply (j : J) (x : ⨁ p, productPiece G p) (p : ℤ) :
-    (productComponent G j x p).1 = (x p).1 j := by
+    (productComponent G j x p).val = (x p).val j := by
   rw [productComponent, DirectSum.lmap_apply]
   rfl
 
@@ -106,13 +106,13 @@ theorem mem_productCarrier_iff (x : ∀ j, M j) :
     by_contra hps
     apply hp
     have hy : y p = 0 := DFinsupp.notMem_support_iff.mp hps
-    have hz := congrArg (fun t : productPiece G p ↦ t.1 j) hy
+    have hz := congrArg (fun t : productPiece G p ↦ t.val j) hy
     simpa only [productComponent_decompose, productComponent_apply,
       Submodule.coe_zero, Pi.zero_apply] using hz
   · rintro ⟨s, hs⟩
     let t (p : ℤ) : productPiece G p :=
       ⟨fun j ↦ (DirectSum.decompose (G j).piece (x j) p : M j),
-        (mem_productPiece_iff G p _).mpr fun j ↦ (DirectSum.decompose (G j).piece (x j) p).2⟩
+        (mem_productPiece_iff G p _).mpr fun j ↦ (DirectSum.decompose (G j).piece (x j) p).property⟩
     refine ⟨∑ p ∈ s, DirectSum.lof R ℤ (fun q ↦ productPiece G q) p (t p), ?_⟩
     funext j
     simp only [map_sum, DirectSum.coeLinearMap_lof, Finset.sum_apply, t]
@@ -138,7 +138,7 @@ private theorem product_recompose_injective :
   funext j
   have hj : productComponent G j x = productComponent G j y := by
     rw [← productComponent_decompose, ← productComponent_decompose, hxy]
-  simpa only [productComponent_apply] using congrArg (fun t ↦ (t p).1) hj
+  simpa only [productComponent_apply] using congrArg (fun t ↦ (t p).val) hj
 
 /-- The sum of the degreewise products is the total graded product. -/
 noncomputable def productEquiv :
@@ -155,20 +155,20 @@ theorem productEquiv_apply (x : ⨁ p, productPiece G p) :
   exact LinearEquiv.ofInjective_apply _ _
 
 /-- The internal grading on the product, obtained from its degreewise product presentation. -/
-noncomputable def product : InternalGrading R (productCarrier G) :=
+noncomputable def product : InternalGrading R (productCarrier G) ℤ :=
   (ofDecomposition (DirectSum.summand R (fun p : ℤ ↦ productPiece G p))).map (productEquiv G)
 
 /-- An element of the graded product has degree `p` exactly when each component does. -/
 @[simp]
 theorem mem_product_piece_iff (p : ℤ) (x : productCarrier G) :
-    x ∈ (product G).piece p ↔ ∀ j, x.1 j ∈ (G j).piece p := by
+    x ∈ (product G).piece p ↔ ∀ j, x.val j ∈ (G j).piece p := by
   rw [product, map_piece, ofDecomposition_piece, DirectSum.summand_def]
   constructor
   · rintro ⟨y, ⟨t, rfl⟩, rfl⟩
     simpa only [LinearEquiv.coe_coe, productEquiv_apply, DirectSum.coeLinearMap_lof] using
-      (mem_productPiece_iff G p t.1).mp t.2
+      (mem_productPiece_iff G p t.val).mp t.property
   · intro hx
-    let t : productPiece G p := ⟨x.1, (mem_productPiece_iff G p x.1).mpr hx⟩
+    let t : productPiece G p := ⟨x.val, (mem_productPiece_iff G p x.val).mpr hx⟩
     refine ⟨DirectSum.lof R ℤ (fun q ↦ productPiece G q) p t, ⟨t, rfl⟩, ?_⟩
     apply Subtype.ext
     simp only [LinearEquiv.coe_coe, productEquiv_apply, DirectSum.coeLinearMap_lof, t]
@@ -179,13 +179,13 @@ def productEval (j : J) : productCarrier G →ₗ[R] M j :=
 
 /-- Evaluation is the corresponding coordinate of the underlying family. -/
 @[simp]
-theorem productEval_apply (j : J) (x : productCarrier G) : productEval G j x = x.1 j :=
+theorem productEval_apply (j : J) (x : productCarrier G) : productEval G j x = x.val j :=
   by simp only [productEval, LinearMap.comp_apply, LinearMap.proj_apply,
     Submodule.subtype_apply]
 
 section Lift
 
-variable {N : Type z} [AddCommMonoid N] [Module R N] (H : InternalGrading R N)
+variable {N : Type z} [AddCommMonoid N] [Module R N] (H : InternalGrading R N ℤ)
   (r : ℤ) (f : ∀ j, N →ₗ[R] M j)
   (hf : ∀ j, LinearMap.IsHomogeneous (f j) H.piece (G j).piece r)
 
@@ -203,7 +203,7 @@ theorem productLift_mem (x : N) : (fun j ↦ f j x) ∈ productCarrier G := by
   intro p _
   apply productPiece_le_productCarrier G (p + r)
   exact (mem_productPiece_iff G (p + r) _).mpr fun j ↦
-    (hf j).map_mem (DirectSum.decompose H.piece x p).2
+    (hf j).map_mem (DirectSum.decompose H.piece x p).property
 
 /-- The componentwise lift of homogeneous maps into the graded product. -/
 noncomputable def productLiftLinear : N →ₗ[R] productCarrier G :=
@@ -212,7 +212,7 @@ noncomputable def productLiftLinear : N →ₗ[R] productCarrier G :=
 /-- The homogeneous lift has the prescribed components. -/
 @[simp]
 theorem productLiftLinear_apply (x : N) (j : J) :
-    (productLiftLinear G H r f hf x).1 j = f j x := by
+    (productLiftLinear G H r f hf x).val j = f j x := by
   rw [productLiftLinear]
   exact (congrFun (LinearMap.codRestrict_apply (productCarrier G) (LinearMap.pi f)
     (h := productLift_mem G H r f hf) x) j).trans (LinearMap.pi_apply f x j)
@@ -232,7 +232,7 @@ section Scalars
 
 variable {R : Type u} [Semiring R] {J : Type v} {M : J → Type w}
   [∀ j, AddCommMonoid (M j)] [∀ j, Module R (M j)]
-  (G : ∀ j, InternalGrading R (M j))
+  (G : ∀ j, InternalGrading R (M j) ℤ)
   {S : Type*} [Semiring S] [∀ j, Module S (M j)]
   {σ : Type*} [SetLike σ S] [AddSubmonoidClass σ S]
   (𝒜 : ℤ → σ) [DirectSum.Decomposition 𝒜]
@@ -257,7 +257,7 @@ theorem productCarrier_smul_mem (a : S) {x : ∀ j, M j} (hx : x ∈ productCarr
     apply productPiece_le_productCarrier G (q + p)
     exact (mem_productPiece_iff G (q + p) _).mpr fun j ↦
       SetLike.GradedSMul.smul_mem (B := (G j).piece)
-        (DirectSum.decompose 𝒜 a q).2 ((mem_productPiece_iff G p y.1).mp y.2 j)
+        (DirectSum.decompose 𝒜 a q).property ((mem_productPiece_iff G p y.val).mp y.property j)
 
 /-- The same graded product as a submodule over the acting graded scalars. -/
 @[expose, implicit_reducible]
@@ -276,7 +276,7 @@ theorem productScalarSubmodule_restrictScalars :
   rfl
 
 variable {N : Type z} [AddCommMonoid N] [Module R N] [Module S N] [IsScalarTower R S N]
-  (H : InternalGrading R N) (r : ℤ) (f : ∀ j, N →ₗ[S] M j)
+  (H : InternalGrading R N ℤ) (r : ℤ) (f : ∀ j, N →ₗ[S] M j)
   (hf : ∀ j, LinearMap.IsHomogeneous ((f j).restrictScalars R) H.piece (G j).piece r)
 
 /-- The componentwise lift is linear over the acting scalars as well as the base ring. -/
@@ -287,7 +287,7 @@ noncomputable def productLift : N →ₗ[S] productScalarSubmodule G 𝒜 :=
 /-- The scalar-linear product lift is computed componentwise. -/
 @[simp]
 theorem productLift_apply (x : N) (j : J) :
-    (productLift G 𝒜 H r f hf x).1 j = f j x := by
+    (productLift G 𝒜 H r f hf x).val j = f j x := by
   rw [productLift]
   exact (congrFun (LinearMap.codRestrict_apply (productScalarSubmodule G 𝒜) (LinearMap.pi f)
     (h := productLift_mem G H r (fun j ↦ (f j).restrictScalars R) hf) x) j).trans

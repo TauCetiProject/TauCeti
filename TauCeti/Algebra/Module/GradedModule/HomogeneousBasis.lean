@@ -52,7 +52,7 @@ namespace TauCeti.InternalGrading
 universe u
 
 variable {k : Type*} {M : Type u} [Field k] [AddCommGroup M] [Module k M] [Module k[X] M]
-  [IsScalarTower k k[X] M] [Module.Finite k[X] M] {G : InternalGrading k M} {d : ℕ}
+  [IsScalarTower k k[X] M] [Module.Finite k[X] M] {G : InternalGrading k M ℤ} {d : ℕ}
 
 omit [Module.Finite k[X] M] in
 /-- The union over all degrees `p` of `k`-bases `s p` of complements `C p` to `X` times the
@@ -71,7 +71,7 @@ private theorem linearIndependent_sigma_of_disjoint_torsion
     LinearIndependent k[X] (fun i : (Σ p : ℤ, s p) ↦ (i.2 : M)) := by
   classical
   have hspanL : Submodule.span k[X] (Set.range fun i : (Σ p : ℤ, s p) ↦ (i.2 : M)) ≤ L :=
-    Submodule.span_le.mpr fun _ ⟨i, hi⟩ ↦ hi ▸ hCL _ (hsC _ i.2.2)
+    Submodule.span_le.mpr fun _ ⟨i, hi⟩ ↦ hi ▸ hCL _ (hsC _ i.2.property)
   refine LinearIndependent.polynomial ?_ (fun x hx hXx ↦ ?_) fun z hz y hy hzy ↦ ?_
   · -- Over `k`, the `C p` are independent because they lie in distinct pieces.
     refine linearIndependent_iUnion_finite (f := fun p (x : s p) ↦ (x : M)) hli
@@ -89,7 +89,7 @@ private theorem linearIndependent_sigma_of_disjoint_torsion
       rw [hzy, ← pow_one (X : k[X]), coe_decompose_X_pow_smul hX, Nat.cast_one, one_mul,
         pow_one]
       exact ⟨_, Submodule.mem_inf.mpr
-        ⟨(DirectSum.decompose G.piece y (p + d)).2, hL _ (hspanL hy)⟩, rfl⟩
+        ⟨(DirectSum.decompose G.piece y (p + d)).property, hL _ (hspanL hy)⟩, rfl⟩
     rw [← DirectSum.sum_support_decompose G.piece z]
     exact Finset.sum_eq_zero fun p _ ↦ hzero p
 
@@ -125,7 +125,7 @@ theorem exists_linearIndependent_span_eq_of_disjoint_torsion (hd : d ≠ 0)
   have hspan' (p : ℤ) : Submodule.span k (s p) = C p := by rw [hspan p, Submodule.span_eq]
   -- The family `b` collects the bases `s p` of all degrees.
   let b : (Σ p : ℤ, s p) → M := fun i ↦ i.2
-  have hbC (i : Σ p : ℤ, s p) : b i ∈ C i.1 := hsC i.1 i.2.2
+  have hbC (i : Σ p : ℤ, s p) : b i ∈ C i.1 := hsC i.1 i.2.property
   have hbG (i : Σ p : ℤ, s p) : b i ∈ G.piece i.1 := hCG _ (hbC i)
   have hspanL : Submodule.span k[X] (Set.range b) ≤ L :=
     Submodule.span_le.mpr fun _ ⟨i, hi⟩ ↦ hi ▸ hCL _ (hbC i)

@@ -14,6 +14,8 @@ public import Mathlib.LinearAlgebra.Matrix.GeneralLinearGroup.Projective
 public import TauCeti.LinearAlgebra.Matrix.ProjectiveSpecialLinearGroup.FinTwo
 -- `sl2zToPSL2R` occurs in `TauCeti.sl2zToPSL2R_smul_infty_eq_infty_iff`.
 public import TauCeti.LinearAlgebra.Matrix.ProjectiveSpecialLinearGroup
+-- `IsAlgClosed` occurs in `Matrix.ProjectiveSpecialLinearGroup.exists_smul_eq_self`.
+public import Mathlib.FieldTheory.IsAlgClosed.Basic
 
 /-!
 # Möbius transformations of the projective line
@@ -65,6 +67,8 @@ stabilizer of a cusp, moved to `∞`, consists of translations.
   class of `!![a, b; c, d]` sends the points `0` and `∞`, in terms of its entries, and
   `TauCeti.sl2zToPSL2R_smul_infty_eq_infty_iff`: the image of `g ∈ SL(2, ℤ)` in `PSL(2, ℝ)` fixes
   `∞` exactly when `g 1 0 = 0`.
+* `Matrix.ProjectiveSpecialLinearGroup.exists_smul_eq_self`: over an algebraically closed field
+  every element of `PSL(2, K)` has a fixed point.
 * `Matrix.ProjectiveSpecialLinearGroup.IsParabolic.smul_eq_self_iff`: a parabolic element fixes
   a point exactly when it is `parabolicFixedPoint g` (in characteristic other than two).
 * `Matrix.ProjectiveSpecialLinearGroup.isParabolic_iff_exists_eq_upperRightHom`: an element
@@ -281,9 +285,9 @@ theorem exists_smul_zero_infty_eq {a b : OnePoint K} (h : a ≠ b) :
     (Function.Embedding.embFinTwo (e.injective.ne h))
   have h₀ := DFunLike.congr_fun hγ 0
   have h₁ := DFunLike.congr_fun hγ 1
-  rw [Function.Embedding.smul_apply, Function.Embedding.embFinTwo_apply_zero,
+  rw [smul_apply, Function.Embedding.embFinTwo_apply_zero,
     Function.Embedding.embFinTwo_apply_zero] at h₀
-  rw [Function.Embedding.smul_apply, Function.Embedding.embFinTwo_apply_one,
+  rw [smul_apply, Function.Embedding.embFinTwo_apply_one,
     Function.Embedding.embFinTwo_apply_one] at h₁
   refine ⟨γ, by simp, ?_, ?_⟩
   · rw [← e.symm_apply_apply ((0 : K) : OnePoint K), equivProjectivization_symm_toGL_smul, h₀,
@@ -347,6 +351,23 @@ theorem mk_smul_infty_eq_coe_iff {A : SL(2, K)} {e : K} :
   · simp [h]
   · simp only [h, ↓reduceIte, OnePoint.coe_eq_coe, ne_eq, not_false_eq_true, true_and]
     exact ⟨fun h' ↦ by rw [← h']; field_simp, fun h' ↦ by rw [h']; field_simp⟩
+
+/-- **Möbius transformations over an algebraically closed field have fixed points.** Every element
+of `PSL(2, K)` fixes a point of the projective line: `∞`, or a root of its fixed-point polynomial.
+-/
+theorem exists_smul_eq_self [IsAlgClosed K] (g : PSL(2, K)) : ∃ p : OnePoint K, g • p = p := by
+  induction g using QuotientGroup.induction_on with | H A => ?_
+  by_cases h : A 1 0 = 0
+  · exact ⟨∞, (mk_smul_infty_eq_infty_iff A).2 h⟩
+  · have hdeg : (A : GL (Fin 2) K).fixpointPolynomial.degree ≠ 0 := by
+      rw [GeneralLinearGroup.fixpointPolynomial, sub_eq_add_neg, ← Polynomial.C_neg,
+        Polynomial.degree_quadratic (by simpa using h)]
+      decide
+    obtain ⟨c, hc⟩ := IsAlgClosed.exists_root _ hdeg
+    refine ⟨c, ?_⟩
+    rw [pslMk_smul, ← GeneralLinearGroup.fixpointPolynomial_aeval_eq_zero_iff,
+      Polynomial.coe_aeval_eq_eval]
+    exact hc.eq_zero
 
 /-- The fixed point of a parabolic element of `PSL(2, K)`, well defined because the formula
 `Matrix.GeneralLinearGroup.parabolicFixedPoint` is unchanged by negating the representative. For a

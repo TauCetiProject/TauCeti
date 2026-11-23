@@ -184,14 +184,19 @@ theorem newtonPolygon_X_pow_mul (k : ℕ) :
   simp only [newtonPolygon_def, coeff_X_pow_mul', apply_ite v, AddValuation.map_zero]
   exact lowerConvexEnvelope_shift (fun n => v (coeff n f)) k
 
+section CommRing
+
+variable {R : Type*} [CommRing R] (f : R⟦X⟧) (v : AddValuation R (WithTop ℝ))
+
 /-- Substituting `c X` for `X` shears the Newton polygon by the valuation of `c`, provided
 that valuation is finite. -/
-theorem newtonPolygon_rescale {R : Type*} [CommRing R] (f : R⟦X⟧)
-    (v : AddValuation R (WithTop ℝ)) {c : R} (hc : v c ≠ ⊤) :
+theorem newtonPolygon_rescale {c : R} (hc : v c ≠ ⊤) :
     (rescale c f).newtonPolygon v = fun n => f.newtonPolygon v n + n • v c := by
   simp only [newtonPolygon_def, coeff_rescale, AddValuation.map_mul, AddValuation.map_pow,
     add_comm (_ • _)]
   exact lowerConvexEnvelope_add_nsmul _ hc
+
+end CommRing
 
 /-- Mapping the coefficients along a ring homomorphism compatible with the valuations
 preserves the Newton polygon. -/
@@ -388,6 +393,13 @@ theorem newtonPolygon_natTrailingDegree :
     f.newtonPolygon v f.natTrailingDegree = v f.trailingCoeff :=
   lowerConvexEnvelope_eq_of_forall_lt (isAdmissible_addValuation_coeff f v) fun i hi => by
     rw [coeff_eq_zero_of_lt_natTrailingDegree hi, AddValuation.map_zero]
+
+variable {f v} in
+/-- If the trailing coefficient has finite valuation and the Newton polygon is infinite before
+`l`, then `l` is at most the order of vanishing at zero. -/
+theorem le_natTrailingDegree_of_forall_lt_newtonPolygon_eq_top (htr : v f.trailingCoeff ≠ ⊤)
+    {l : ℕ} (hl : ∀ n < l, f.newtonPolygon v n = ⊤) : l ≤ f.natTrailingDegree :=
+  le_of_not_gt fun hlt => htr (f.newtonPolygon_natTrailingDegree v ▸ hl _ hlt)
 
 /-- At any index `n` at least the degree, the Newton polygon is the height of the coefficient
 of `X ^ n`: the leading coefficient when `n` is the degree, and `⊤` beyond it. -/

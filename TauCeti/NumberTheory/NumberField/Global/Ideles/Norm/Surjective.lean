@@ -117,7 +117,8 @@ public section
 noncomputable section
 
 open IsDedekindDomain IsDedekindDomain.HeightOneSpectrum NumberField NumberField.InfinitePlace
-open scoped TensorProduct AdicCompletionExtension NumberField.LiesOver Pointwise
+open scoped TensorProduct AdicCompletionExtension Pointwise
+attribute [local instance] AbsoluteValue.Completion.algebraOfLiesOver
 
 namespace TauCeti.GlobalNumberFields
 
@@ -182,12 +183,12 @@ variable (L) in
 norm from `K_v ⊗[K] L` is then onto, the factor `L_w = K_v` alone providing every unit. -/
 theorem range_normUnits_adicCompletion_eq_top_of_finrank_eq_one (v : HeightOneSpectrum (𝓞 K))
     (w : {w : HeightOneSpectrum (𝓞 L) // w.asIdeal.LiesOver v.asIdeal})
-    (hw : Module.finrank (v.adicCompletion K) (w.1.adicCompletion L) = 1) :
+    (hw : Module.finrank (v.adicCompletion K) (w.val.adicCompletion L) = 1) :
     (Algebra.normUnits (v.adicCompletion K) (S := v.adicCompletion K ⊗[K] L)).range = ⊤ := by
   classical
   refine eq_top_iff.mpr fun a _ ↦ (mem_range_normUnits_adicCompletion_iff K L v a).mpr ?_
   obtain ⟨b, hb⟩ := Algebra.pow_finrank_mem_range_normUnits (v.adicCompletion K)
-    (S := w.1.adicCompletion L) a
+    (S := w.val.adicCompletion L) a
   refine ⟨Pi.mulSingle w b, ?_⟩
   rw [finprod_eq_single _ w fun w' hw' ↦ by rw [Pi.mulSingle_eq_of_ne hw', map_one],
     Pi.mulSingle_eq_same, hb, hw, pow_one]
@@ -224,7 +225,7 @@ finite place `v` of `K` outside a finite set `S` has a place `w` of `L` above it
 theorem ideleClassNormMap_surjective_of_forall_exists_finrank_eq_one
     (S : Finset (HeightOneSpectrum (𝓞 K)))
     (hS : ∀ v ∉ S, ∃ w : {w : HeightOneSpectrum (𝓞 L) // w.asIdeal.LiesOver v.asIdeal},
-      Module.finrank (v.adicCompletion K) (w.1.adicCompletion L) = 1) :
+      Module.finrank (v.adicCompletion K) (w.val.adicCompletion L) = 1) :
     Function.Surjective (ideleClassNormMap K L) :=
   ideleClassNormMap_surjective_of_forall_range_normUnits_eq_top S fun v hv ↦
     (hS v hv).elim (range_normUnits_adicCompletion_eq_top_of_finrank_eq_one L v)
@@ -237,7 +238,7 @@ degree one over `v`. -/
 theorem ideleClassNormMap_fixedField_surjective_of_stabilizer_le [IsGalois K L]
     (H : Subgroup (L ≃ₐ[K] L)) (S : Finset (HeightOneSpectrum (𝓞 K)))
     (hS : ∀ v ∉ S, ∃ w : {w : HeightOneSpectrum (𝓞 L) // w.asIdeal.LiesOver v.asIdeal},
-      MulAction.stabilizer (L ≃ₐ[K] L) w.1.asIdeal ≤ H) :
+      MulAction.stabilizer (L ≃ₐ[K] L) w.val.asIdeal ≤ H) :
     Function.Surjective (ideleClassNormMap K (IntermediateField.fixedField H)) := by
   refine ideleClassNormMap_surjective_of_forall_exists_finrank_eq_one S fun v hv ↦ ?_
   obtain ⟨⟨w, _⟩, hle⟩ := hS v hv
@@ -258,11 +259,11 @@ Frobenius elements at the places of `L` outside `S`, once `S` contains the ramif
 theorem ideleClassNormMap_fixedField_surjective_of_isArithFrobAt_mem [IsGalois K L]
     (H : Subgroup (L ≃ₐ[K] L)) (S : Finset (HeightOneSpectrum (𝓞 K)))
     (hS : ∀ v ∉ S, ∃ w : {w : HeightOneSpectrum (𝓞 L) // w.asIdeal.LiesOver v.asIdeal},
-      ∀ σ : L ≃ₐ[K] L, IsArithFrobAt (𝓞 K) σ w.1.asIdeal → σ ∈ H) :
+      ∀ σ : L ≃ₐ[K] L, IsArithFrobAt (𝓞 K) σ w.val.asIdeal → σ ∈ H) :
     Function.Surjective (ideleClassNormMap K (IntermediateField.fixedField H)) :=
   ideleClassNormMap_fixedField_surjective_of_stabilizer_le H S fun v hv ↦
     (hS v hv).imp fun w hw ↦
-      Ideal.stabilizer_le_of_forall_isArithFrobAt_mem w.1.asIdeal w.1.ne_bot hw
+      Ideal.stabilizer_le_of_forall_isArithFrobAt_mem w.val.asIdeal w.val.ne_bot hw
 
 /-- **Every idele class is a norm when `S`-units control the local power classes at `T`**
 (Milne, *Class Field Theory*, VII, Proposition 6.10). Let `S` and `T` be finite sets of
@@ -286,11 +287,11 @@ theorem ideleClassNormMap_surjective_of_forall_exists_mem_unit
       (Algebra.normUnits w.Completion (S := w.Completion ⊗[K] L)).range = ⊤)
     (hunr : ∀ v ∉ S, v ∉ T →
       ∃ w : {w : HeightOneSpectrum (𝓞 L) // w.asIdeal.LiesOver v.asIdeal},
-        Algebra.IsUnramifiedAt (𝓞 K) w.1.asIdeal)
-    (hT : ∀ y : (v : T) → (v.1.adicCompletion K)ˣ,
-      (∀ v, Valued.v (y v : v.1.adicCompletion K) = 1) →
+        Algebra.IsUnramifiedAt (𝓞 K) w.val.asIdeal)
+    (hT : ∀ y : (v : T) → (v.val.adicCompletion K)ˣ,
+      (∀ v, Valued.v (y v : v.val.adicCompletion K) = 1) →
       ∃ u ∈ (S : Set (HeightOneSpectrum (𝓞 K))).unit K, ∀ v : T,
-        (Units.map (algebraMap K (v.1.adicCompletion K)).toMonoidHom u)⁻¹ * y v ∈
+        (Units.map (algebraMap K (v.val.adicCompletion K)).toMonoidHom u)⁻¹ * y v ∈
           (powMonoidHom n).range) :
     Function.Surjective (ideleClassNormMap K L) := by
   classical
@@ -300,11 +301,11 @@ theorem ideleClassNormMap_surjective_of_forall_exists_mem_unit
   obtain ⟨a, ha⟩ := IdeleGroup.exists_valued_ideleFiniteCoord_mul_unitEmbedding_eq_one hcl x
   set x' := x * IdeleGroup.unitEmbedding (𝓞 K) K a with hx'
   -- At a place of `S ∩ T` the family is `1`: the local norm condition there comes from `hS`.
-  obtain ⟨u, huS, hu⟩ := hT (fun v ↦ if v.1 ∈ S then 1 else v.1.ideleFiniteCoord x')
+  obtain ⟨u, huS, hu⟩ := hT (fun v ↦ if v.val ∈ S then 1 else v.val.ideleFiniteCoord x')
     fun v ↦ by
-      by_cases hv : v.1 ∈ S
+      by_cases hv : v.val ∈ S
       · simp [hv]
-      · simpa [hv] using ha v.1 hv
+      · simpa [hv] using ha v.val hv
   have hu' := (IdeleGroup.forall_valued_ideleFiniteCoord_unitEmbedding_eq_one_iff
     (R := 𝓞 K) (T := (S : Set (HeightOneSpectrum (𝓞 K)))) u).mpr huS
   set z := x' * IdeleGroup.unitEmbedding (𝓞 K) K u⁻¹ with hz
@@ -351,7 +352,7 @@ theorem exists_finrank_prime_ideleClassNormMap_surjective [IsGalois K L]
     (H : Subgroup (L ≃ₐ[K] L)) [H.Normal] [Group.IsSolvable ((L ≃ₐ[K] L) ⧸ H)] (hH : H ≠ ⊤)
     (S : Finset (HeightOneSpectrum (𝓞 K)))
     (hS : ∀ v ∉ S, ∃ w : {w : HeightOneSpectrum (𝓞 L) // w.asIdeal.LiesOver v.asIdeal},
-      MulAction.stabilizer (L ≃ₐ[K] L) w.1.asIdeal ≤ H) :
+      MulAction.stabilizer (L ≃ₐ[K] L) w.val.asIdeal ≤ H) :
     ∃ E : IntermediateField K L, E ≤ IntermediateField.fixedField H ∧ IsGalois K E ∧
       (Module.finrank K E).Prime ∧ Function.Surjective (ideleClassNormMap K E) := by
   -- The fixed field of a normal subgroup `B ⊇ H` of prime index.
@@ -374,7 +375,7 @@ theorem exists_finrank_prime_ideleClassNormMap_surjective_of_stabilizer_eq_bot [
     [Group.IsSolvable (L ≃ₐ[K] L)] (hL : 1 < Module.finrank K L)
     (S : Finset (HeightOneSpectrum (𝓞 K)))
     (hS : ∀ v ∉ S, ∃ w : {w : HeightOneSpectrum (𝓞 L) // w.asIdeal.LiesOver v.asIdeal},
-      MulAction.stabilizer (L ≃ₐ[K] L) w.1.asIdeal = ⊥) :
+      MulAction.stabilizer (L ≃ₐ[K] L) w.val.asIdeal = ⊥) :
     ∃ E : IntermediateField K L, IsGalois K E ∧ (Module.finrank K E).Prime ∧
       Function.Surjective (ideleClassNormMap K E) := by
   have : Nontrivial (L ≃ₐ[K] L) :=
@@ -399,20 +400,20 @@ theorem exists_finrank_prime_ideleClassNormMap_surjective_of_closure_isArithFrob
     [IsGalois K L] (S : Finset (HeightOneSpectrum (𝓞 K)))
     [Group.IsSolvable ((L ≃ₐ[K] L) ⧸ Subgroup.normalClosure {σ : L ≃ₐ[K] L | ∃ v ∉ S,
       ∃ w : {w : HeightOneSpectrum (𝓞 L) // w.asIdeal.LiesOver v.asIdeal},
-        IsArithFrobAt (𝓞 K) σ w.1.asIdeal})]
+        IsArithFrobAt (𝓞 K) σ w.val.asIdeal})]
     (hgen : Subgroup.closure {σ : L ≃ₐ[K] L | ∃ v ∉ S,
       ∃ w : {w : HeightOneSpectrum (𝓞 L) // w.asIdeal.LiesOver v.asIdeal},
-        IsArithFrobAt (𝓞 K) σ w.1.asIdeal} ≠ ⊤) :
+        IsArithFrobAt (𝓞 K) σ w.val.asIdeal} ≠ ⊤) :
     ∃ E : IntermediateField K L, IsGalois K E ∧ (Module.finrank K E).Prime ∧
       Function.Surjective (ideleClassNormMap K E) := by
   set X : Set (L ≃ₐ[K] L) := {σ | ∃ v ∉ S,
     ∃ w : {w : HeightOneSpectrum (𝓞 L) // w.asIdeal.LiesOver v.asIdeal},
-      IsArithFrobAt (𝓞 K) σ w.1.asIdeal}
+      IsArithFrobAt (𝓞 K) σ w.val.asIdeal}
   have : (Subgroup.closure X).Normal := by
     refine Subgroup.closure_normal_of_forall_conj_mem fun τ σ ⟨v, hv, w, hσ⟩ ↦ ?_
     -- `τ σ τ⁻¹` is a Frobenius element at the place `τ • w`, which again lies over `v`.
     let w' := (liesOverEquivPrimesOver (𝓞 L) v).symm (τ • liesOverEquivPrimesOver (𝓞 L) v w)
-    have hw' : w'.1.asIdeal = τ • w.1.asIdeal := by
+    have hw' : w'.val.asIdeal = τ • w.val.asIdeal := by
       simp [w', coe_smul_primesOver_ringOfIntegers]
     exact ⟨v, hv, w', hw' ▸ hσ.conj τ⟩
   have hX : Subgroup.normalClosure X = Subgroup.closure X := by
@@ -421,7 +422,7 @@ theorem exists_finrank_prime_ideleClassNormMap_surjective_of_closure_isArithFrob
     (Subgroup.normalClosure X) (hX ▸ hgen) S fun v hv ↦ by
       obtain ⟨Q⟩ := v.asIdeal.nonempty_primesOver (S := 𝓞 L)
       let w := (liesOverEquivPrimesOver (𝓞 L) v).symm Q
-      exact ⟨w, Ideal.stabilizer_le_of_forall_isArithFrobAt_mem w.1.asIdeal w.1.ne_bot
+      exact ⟨w, Ideal.stabilizer_le_of_forall_isArithFrobAt_mem w.val.asIdeal w.val.ne_bot
         fun σ hσ ↦ Subgroup.subset_normalClosure ⟨v, hv, w, hσ⟩⟩
   exact ⟨E, hE⟩
 

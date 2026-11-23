@@ -158,9 +158,8 @@ theorem index_mul_index_dual_eq_degree_pow [Module.Finite ℤ (PointModTorsion W
   have : Module.Finite ℤ (PointModTorsion W₁) := .of_injective _ (pointModTorsionMap_injective hf)
   let b₁ := finBasisOfFinrankEq ℤ (PointModTorsion W₁) rfl
   let b₂ := finBasisOfFinrankEq ℤ (PointModTorsion W₂) (finrank_pointModTorsion_eq hf).symm
-  have hb₁ := LinearMap.index_range_eq_natAbs_det_toMatrix b₁ b₂ (pointModTorsionMap_injective hf)
-  have hb₂ := LinearMap.index_range_eq_natAbs_det_toMatrix b₂ b₁
-    (pointModTorsionMap_injective (dual_eq_zero_iff.not.2 hf))
+  have hb₁ := LinearMap.index_range_eq_natAbs_det_toMatrix b₁ b₂ f.pointModTorsionMap
+  have hb₂ := LinearMap.index_range_eq_natAbs_det_toMatrix b₂ b₁ f.dual.pointModTorsionMap
   -- in these bases the indices are the absolute determinants of the matrices of `f` and `f̂`,
   -- so their product is the absolute determinant of the matrix of `f̂ ∘ f`
   have hprod : (LinearMap.range f.pointModTorsionMap).toAddSubgroup.index *
