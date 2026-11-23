@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Analysis.Asymptotics.Sum.EulerMaclaurin
 public import TauCeti.Analysis.MellinTransform.UpperTail
-import Mathlib.Analysis.SpecialFunctions.ImproperIntegrals
 import Mathlib.MeasureTheory.Function.Floor
 
 /-!
@@ -36,18 +35,13 @@ open Complex MeasureTheory
 
 namespace TauCeti
 
-/-- The sawtooth `B₁({x})`, viewed in `ℂ`, has norm at most `1/2`. -/
-private theorem norm_sawtooth_le (x : ℝ) : ‖(bernoulliFun 1 (Int.fract x) : ℂ)‖ ≤ 1 / 2 := by
-  rw [norm_real, Real.norm_eq_abs]
-  exact abs_bernoulliFun_one_fract_le x
-
 /-- The sawtooth viewed in `ℂ` is `O(x ^ 0)` at infinity, the form of growth hypothesis taken by
 `TauCeti.differentiableOn_integral_mul_cpow_of_isBigO`; see `TauCeti.isBigO_bernoulliFun_one_fract`
 for the real sawtooth. -/
 theorem isBigO_sawtooth :
     (fun x : ℝ ↦ (bernoulliFun 1 (Int.fract x) : ℂ)) =O[Filter.atTop] fun x : ℝ ↦ x ^ (0 : ℝ) :=
-  (((isBigO_bernoulliFun_one_fract Filter.atTop).norm_left.congr_left fun _ ↦
-    (norm_real _).symm).of_norm_left).congr_right fun x ↦ (Real.rpow_zero x).symm
+  (isBigO_ofReal_left.mpr (isBigO_bernoulliFun_one_fract Filter.atTop)).congr_right fun x ↦
+    (Real.rpow_zero x).symm
 
 /-- The tail integral of the sawtooth `B₁({x}) = {x} - 1/2` against `x^(-s-1)` converges
 absolutely on `(a, ∞)` for `a > 0` and `0 < Re s`. -/
@@ -56,14 +50,15 @@ theorem integrableOn_sawtooth_mul_cpow {a : ℝ} (ha : 0 < a) {s : ℂ} (hs : 0 
       (Set.Ioi a) :=
   integrableOn_mul_cpow_of_bound ha
     ((continuous_ofReal.comp (continuous_bernoulliFun 1)).measurable.comp
-      measurable_fract).aestronglyMeasurable (fun x _ ↦ norm_sawtooth_le x) hs
+      measurable_fract).aestronglyMeasurable (fun x _ ↦ norm_bernoulliFun_one_fract_le x) hs
 
 /-- **The bound for the sawtooth tail.** For `a > 0` and `σ = Re s > 0`,
 `‖∫_a^∞ B₁({x}) x^(-s-1) dx‖ ≤ a^(-σ)/(2σ)`, where `B₁({x}) = {x} - 1/2`. -/
 theorem norm_integral_sawtooth_mul_cpow_le {a : ℝ} (ha : 0 < a) {s : ℂ} (hs : 0 < s.re) :
     ‖∫ x in Set.Ioi a, (bernoulliFun 1 (Int.fract x) : ℂ) * (x : ℂ) ^ (-(s + 1))‖ ≤
       a ^ (-s.re) / (2 * s.re) :=
-  (norm_integral_mul_cpow_le_of_bound ha (fun x _ ↦ norm_sawtooth_le x) hs).trans_eq (by ring)
+  (norm_integral_mul_cpow_le_of_bound ha (fun x _ ↦ norm_bernoulliFun_one_fract_le x) hs).trans_eq
+    (by ring)
 
 /-- On `(a, ∞)`, `a > 0`, writing the fractional part as `{x} = B₁({x}) + 1/2` splits its tail
 integral: `∫_a^∞ {x} x^(-s-1) dx = ∫_a^∞ B₁({x}) x^(-s-1) dx + a^(-s)/(2s)` for `0 < Re s`. -/
@@ -83,7 +78,8 @@ theorem integral_fract_mul_cpow_eq_integral_sawtooth_add {a : ℝ} (ha : 0 < a) 
     rw [bernoulliFun_one]
     push_cast
     ring
-  rw [hsplit, integral_Ioi_cpow_of_lt hre ha, show -(s + 1) + 1 = -s by ring]
+  have hexp : -(s + 1) + 1 = -s := by ring
+  rw [hsplit, integral_Ioi_cpow_of_lt hre ha, hexp]
   field_simp
 
 end TauCeti

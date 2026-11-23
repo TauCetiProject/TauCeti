@@ -8,13 +8,9 @@ module
 public import Mathlib.NumberTheory.Harmonic.ZetaAsymp
 public import Mathlib.NumberTheory.ZetaValues
 import Mathlib.Analysis.PSeriesComplex
-import Mathlib.Analysis.SpecialFunctions.ImproperIntegrals
-import Mathlib.MeasureTheory.Function.Floor
 import TauCeti.Algebra.Order.Floor.Ring
 import TauCeti.Algebra.Order.Floor.Semifield
-import TauCeti.Analysis.Asymptotics.Sum.EulerMaclaurin
 import TauCeti.Analysis.MellinTransform.Sawtooth
-import TauCeti.Analysis.MellinTransform.UpperTail
 import TauCeti.Analysis.SpecialFunctions.Pow.Complex
 
 /-!
@@ -45,6 +41,7 @@ The absolute convergence of the tail integral and its bound are
   fractional part, `ζ(s) = 1 + (s - 1)⁻¹ - s ∫_1^∞ {x} x^(-s-1) dx`.
 * `TauCeti.riemannZeta₀_eq_one_sub_mul_integral`: the same at `a = 1` for `riemannZeta₀`, on all
   of `0 < Re s`.
+* `TauCeti.riemannZeta_re_eq_one_add_inv_sub_mul_integral`: its real form at real `σ > 0`, `σ ≠ 1`.
 * `TauCeti.riemannZeta₁_eq_add_mul_sum_sawtooth` and
   `TauCeti.riemannZeta₀_eq_one_half_sub_integral_sawtooth`: integral formulas for Mathlib's entire
   functions `riemannZeta₁` and `riemannZeta₀`, the extensions of `(s - 1) ζ(s)` and
@@ -281,6 +278,28 @@ theorem riemannZeta_eq_one_add_inv_sub_integral_fract {s : ℂ} (hs : 0 < s.re) 
   rw [riemannZeta_eq_inv_sub_add hs₁, riemannZeta₀_eq_one_sub_mul_integral hs]
   ring
 
+/-- The real form of `TauCeti.riemannZeta_eq_one_add_inv_sub_integral_fract`: for real `σ > 0`,
+`σ ≠ 1`, `Re ζ(σ) = 1 + (σ - 1)⁻¹ - σ ∫_1^∞ x^(-1-σ) {x} dx`. -/
+theorem riemannZeta_re_eq_one_add_inv_sub_mul_integral {σ : ℝ} (hσ : 0 < σ)
+    (hσ₁ : σ ≠ 1) :
+    (riemannZeta σ).re =
+      1 + (σ - 1)⁻¹ - σ * ∫ t in Set.Ioi (1 : ℝ), t ^ (-1 - σ) * Int.fract t := by
+  have h := riemannZeta_eq_one_add_inv_sub_integral_fract (s := σ) (by simpa using hσ)
+    (by exact_mod_cast hσ₁)
+  have hI : ∫ t in Set.Ioi (1 : ℝ), ((Int.fract t : ℝ) : ℂ) * (t : ℂ) ^ (-((σ : ℂ) + 1)) =
+      ((∫ t in Set.Ioi (1 : ℝ), t ^ (-1 - σ) * Int.fract t : ℝ) : ℂ) := by
+    rw [← integral_complex_ofReal]
+    refine setIntegral_congr_fun measurableSet_Ioi fun t (ht : 1 < t) ↦ ?_
+    have hexp : -((σ : ℂ) + 1) = ((-1 - σ : ℝ) : ℂ) := by push_cast; ring
+    rw [hexp, ← ofReal_cpow (by linarith : (0 : ℝ) ≤ t), ← ofReal_mul, mul_comm]
+  rw [hI] at h
+  have h' : riemannZeta σ = ((1 + (σ - 1)⁻¹ - σ *
+      ∫ t in Set.Ioi (1 : ℝ), t ^ (-1 - σ) * Int.fract t : ℝ) : ℂ) := by
+    rw [h]
+    push_cast
+    ring
+  rw [h', ofReal_re]
+
 /-! ### The regularized formula and the Euler–Mascheroni constant -/
 
 /-- **The regularized Euler–Maclaurin formula.** For real `a > 0` and every `s` with `0 < Re s`,
@@ -336,7 +355,8 @@ theorem eulerMascheroniConstant_eq_sum_sub_log_add_sawtooth {a : ℝ} (ha : 0 < 
       ((∫ x in Set.Ioi a, bernoulliFun 1 (Int.fract x) / x ^ 2 : ℝ) : ℂ) := by
     rw [← integral_complex_ofReal]
     refine setIntegral_congr_fun measurableSet_Ioi fun x _ ↦ ?_
-    rw [show -((1 : ℂ) + 1) = -(2 : ℕ) by norm_num, cpow_neg, cpow_natCast]
+    have hexp : -((1 : ℂ) + 1) = -(2 : ℕ) := by norm_num
+    rw [hexp, cpow_neg, cpow_natCast]
     push_cast
     ring
   have hval : sawtoothReg a 1 = ((∑ n ∈ Finset.Icc 1 ⌊a⌋₊, (n : ℝ)⁻¹ +

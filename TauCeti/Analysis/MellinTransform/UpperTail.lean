@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.MellinTransform.Basic
-import Mathlib.Analysis.SpecialFunctions.ImproperIntegrals
 import TauCeti.MeasureTheory.Function.LocallyIntegrable
 
 /-!

@@ -9,7 +9,6 @@ public import Mathlib.MeasureTheory.Function.LpSeminorm.Basic
 public import Mathlib.MeasureTheory.Integral.IntegrableOn
 public import Mathlib.MeasureTheory.Measure.Lebesgue.Basic
 public import Mathlib.Analysis.SpecialFunctions.Pow.Real
-import Mathlib.Analysis.SpecialFunctions.Integrability.Basic
 import Mathlib.Analysis.SpecialFunctions.ImproperIntegrals
 import Mathlib.MeasureTheory.Function.Floor
 
@@ -59,12 +58,10 @@ theorem integrableOn_Ioo_sub_rpow_iff {a b s : ℝ} (hab : a < b) :
 /-- The fractional part `{t} ∈ [0, 1)` weighted by `t^p` is integrable on `(a, ∞)` for `a > 0`
 and `p < -1`. -/
 theorem integrableOn_rpow_mul_fract {p a : ℝ} (hp : p < -1) (ha : 0 < a) :
-    IntegrableOn (fun t : ℝ ↦ t ^ p * Int.fract t) (Ioi a) := by
-  refine (integrableOn_Ioi_rpow_of_lt hp ha).mono'
-    ((measurable_id.pow_const _).mul measurable_fract).aestronglyMeasurable ?_
-  refine (ae_restrict_iff' measurableSet_Ioi).2 (ae_of_all _ fun t (ht : a < t) ↦ ?_)
-  rw [norm_mul, Real.norm_of_nonneg (Real.rpow_nonneg (by linarith) _),
-    Real.norm_of_nonneg (Int.fract_nonneg t)]
-  exact mul_le_of_le_one_right (Real.rpow_nonneg (by linarith) _) (Int.fract_lt_one t).le
+    IntegrableOn (fun t : ℝ ↦ t ^ p * Int.fract t) (Ioi a) :=
+  (integrableOn_Ioi_rpow_of_lt hp ha).mul_bdd measurable_fract.aestronglyMeasurable
+    (ae_of_all _ fun t ↦ by
+      rw [Real.norm_of_nonneg (Int.fract_nonneg t)]
+      exact (Int.fract_lt_one t).le)
 
 end TauCeti

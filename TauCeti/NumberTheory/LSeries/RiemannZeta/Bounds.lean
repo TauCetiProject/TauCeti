@@ -212,28 +212,6 @@ theorem norm_riemannZeta_le_linear {t : ℝ} (ht : 2 ≤ |t|) {z : ℂ}
 
 /-! ### Comparison with `1/(σ - 1)` on the real axis -/
 
-/-- The real form of `TauCeti.riemannZeta_eq_one_add_inv_sub_integral_fract` at real `σ > 0`,
-`σ ≠ 1`. -/
-private theorem riemannZeta_re_eq_one_add_inv_sub_mul_integral {σ : ℝ} (hσ : 0 < σ)
-    (hσ₁ : σ ≠ 1) :
-    (riemannZeta σ).re =
-      1 + (σ - 1)⁻¹ - σ * ∫ t in Set.Ioi (1 : ℝ), t ^ (-1 - σ) * Int.fract t := by
-  have h := riemannZeta_eq_one_add_inv_sub_integral_fract (s := σ) (by simpa using hσ)
-    (by exact_mod_cast hσ₁)
-  have hI : ∫ t in Set.Ioi (1 : ℝ), ((Int.fract t : ℝ) : ℂ) * (t : ℂ) ^ (-((σ : ℂ) + 1)) =
-      ((∫ t in Set.Ioi (1 : ℝ), t ^ (-1 - σ) * Int.fract t : ℝ) : ℂ) := by
-    rw [← integral_complex_ofReal]
-    refine setIntegral_congr_fun measurableSet_Ioi fun t (ht : 1 < t) ↦ ?_
-    rw [show -((σ : ℂ) + 1) = ((-1 - σ : ℝ) : ℂ) by push_cast; ring,
-      ← ofReal_cpow (by linarith : (0 : ℝ) ≤ t), ← ofReal_mul, mul_comm]
-  rw [hI] at h
-  have h' : riemannZeta σ = ((1 + (σ - 1)⁻¹ - σ *
-      ∫ t in Set.Ioi (1 : ℝ), t ^ (-1 - σ) * Int.fract t : ℝ) : ℂ) := by
-    rw [h]
-    push_cast
-    ring
-  rw [h', ofReal_re]
-
 /-- **The lower bound by the pole.** For real `σ > 0`, `σ ≠ 1`, `1/(σ - 1) < Re ζ(σ)`. -/
 theorem one_div_sub_one_lt_riemannZeta_re {σ : ℝ} (hσ0 : 0 < σ) (hσ₁ : σ ≠ 1) :
     1 / (σ - 1) < (riemannZeta σ).re := by
@@ -246,8 +224,8 @@ theorem one_div_sub_one_lt_riemannZeta_re {σ : ℝ} (hσ0 : 0 < σ) (hσ₁ : �
     have hp : 0 < t ^ (-1 - σ) := Real.rpow_pos_of_pos (by linarith) _
     nlinarith [Int.fract_lt_one t]
   have hr : ∫ t in Set.Ioi (1 : ℝ), t ^ (-1 - σ) = 1 / σ := by
-    rw [integral_Ioi_rpow_of_lt (by linarith) one_pos, Real.one_rpow,
-      show -1 - σ + 1 = -σ by ring, neg_div_neg_eq]
+    have hexp : -1 - σ + 1 = -σ := by ring
+    rw [integral_Ioi_rpow_of_lt (by linarith) one_pos, Real.one_rpow, hexp, neg_div_neg_eq]
   rw [integral_sub hint_r hint_f, hr] at hpos
   have hmul : σ * ∫ t in Set.Ioi (1 : ℝ), t ^ (-1 - σ) * Int.fract t < 1 := by
     have := mul_lt_mul_of_pos_left hpos hσ0
@@ -260,20 +238,13 @@ theorem one_div_sub_one_lt_riemannZeta_re {σ : ℝ} (hσ0 : 0 < σ) (hσ₁ : �
 theorem riemannZeta_re_lt_one_add_one_div_sub_one {σ : ℝ} (hσ0 : 0 < σ) (hσ₁ : σ ≠ 1) :
     (riemannZeta σ).re < 1 + 1 / (σ - 1) := by
   have hint := integrableOn_rpow_mul_fract (by linarith : -1 - σ < -1) one_pos
-  have hIoo : 0 < ∫ t in Set.Ioo (1 : ℝ) 2, t ^ (-1 - σ) * Int.fract t := by
-    refine setIntegral_pos_of_ae_pos (by simp) (hint.mono_set Set.Ioo_subset_Ioi_self) ?_
-    filter_upwards [ae_restrict_mem measurableSet_Ioo] with t ⟨ht1, ht2⟩
-    have hfl : ⌊t⌋ = 1 := Int.floor_eq_iff.mpr ⟨by exact_mod_cast ht1.le, by
-      push_cast; linarith⟩
-    have hfr : 0 < Int.fract t := by
-      rw [Int.fract, hfl, Int.cast_one]
-      linarith
-    exact mul_pos (Real.rpow_pos_of_pos (by linarith) _) hfr
-  have hpos : 0 < ∫ t in Set.Ioi (1 : ℝ), t ^ (-1 - σ) * Int.fract t :=
-    hIoo.trans_le (setIntegral_mono_set hint
-      (ae_restrict_of_forall_mem measurableSet_Ioi fun t (ht : 1 < t) ↦
-        mul_nonneg (Real.rpow_nonneg (by linarith) _) (Int.fract_nonneg t))
-      Set.Ioo_subset_Ioi_self.eventuallySubset)
+  have hpos : 0 < ∫ t in Set.Ioi (1 : ℝ), t ^ (-1 - σ) * Int.fract t := by
+    refine setIntegral_pos_of_ae_pos (by simp) hint ?_
+    filter_upwards [ae_restrict_mem measurableSet_Ioi,
+      ae_restrict_of_ae ((Set.countable_range (Int.cast : ℤ → ℝ)).ae_notMem volume)]
+      with t (ht : 1 < t) htZ
+    exact mul_pos (Real.rpow_pos_of_pos (by linarith) _)
+      ((Int.fract_nonneg t).lt_of_ne (Int.fract_ne_zero_iff.mpr htZ).symm)
   rw [riemannZeta_re_eq_one_add_inv_sub_mul_integral hσ0 hσ₁, one_div]
   linarith [mul_pos hσ0 hpos]
 
