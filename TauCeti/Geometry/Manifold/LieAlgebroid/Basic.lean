@@ -205,6 +205,18 @@ def anchorDerivₗ (a : Cₛ^∞⟮I; F, V⟯) : C^∞⟮I, M; ℝ⟯ →ₗ[ℝ
 theorem anchorDerivₗ_apply (a : Cₛ^∞⟮I; F, V⟯) (f : C^∞⟮I, M; ℝ⟯) :
     A.anchorDerivₗ a f = A.anchorDeriv a f := (rfl)
 
+/-- The derivative along the anchor commutes with integer scalar multiplication. -/
+theorem anchorDeriv_zsmul_right (a : Cₛ^∞⟮I; F, V⟯) (n : ℤ) (f : C^∞⟮I, M; ℝ⟯) :
+    A.anchorDeriv a (n • f) = n • A.anchorDeriv a f :=
+  map_zsmul (A.anchorDerivₗ a) n f
+
+/-- The derivative along the anchor commutes with finite sums of smooth functions. -/
+@[simp]
+theorem anchorDeriv_sum_right {ι : Type*} (a : Cₛ^∞⟮I; F, V⟯) (s : Finset ι)
+    (f : ι → C^∞⟮I, M; ℝ⟯) :
+    A.anchorDeriv a (∑ i ∈ s, f i) = ∑ i ∈ s, A.anchorDeriv a (f i) :=
+  map_sum (A.anchorDerivₗ a) f s
+
 /-- The product rule `ρ(a) (f * g) = f * ρ(a) g + ρ(a) f * g`. -/
 @[simp]
 theorem anchorDeriv_mul_right (a : Cₛ^∞⟮I; F, V⟯) (f g : C^∞⟮I, M; ℝ⟯) :

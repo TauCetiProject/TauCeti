@@ -62,8 +62,7 @@ theorem d_smul_apply {R A L : Type*} [CommRing R] [CommRing A] [Algebra R A]
         ∑ i : Fin (n + 1), (-1 : ℤ) ^ (i : ℕ) • (⁅v i, a⁆ * η (i.removeNth v)) := by
   cases n with
   | zero =>
-    rw [d_zero_apply, d_zero_apply, smul_apply, smul_eq_mul, LieRinehartRing.leibniz_mul_right,
-      smul_eq_mul, sum_univ_one, val_zero, pow_zero, one_smul,
+    simp [d_zero_apply, LieRinehartRing.leibniz_mul_right,
       Subsingleton.elim ((0 : Fin 1).removeNth v) ![]]
   | succ m =>
     rw [d_succ_apply, d_succ_apply]
@@ -207,8 +206,9 @@ private theorem curryLeft_d_restrictScalars_smul {n : ℕ} (ω : L [⋀^Fin n]�
     obtain rfl : v = ![] := Subsingleton.elim v ![]
     simp [LieModule.Cohomology.curryLeft_d_zero, AlternatingMap.lie_apply]
   | succ m =>
-    have hcurry : (ω.restrictScalars R).curryLeft (a • x) = a • (ω.restrictScalars R).curryLeft x :=
-      ext fun w ↦ by simp [Matrix.vecCons]
+    have hcurry :
+        (ω.restrictScalars R).curryLeft (a • x) = a • (ω.restrictScalars R).curryLeft x := by
+      simp only [curryLeft_restrictScalars, map_smul, restrictScalars_smul]
     rw [LieModule.Cohomology.curryLeft_d_succ, LieModule.Cohomology.curryLeft_d_succ, hcurry,
       ← restrictScalars_lieDeriv (a • x) ω, ← restrictScalars_lieDeriv x ω]
     ext v
