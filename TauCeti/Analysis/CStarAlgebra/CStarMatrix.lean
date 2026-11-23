@@ -61,11 +61,15 @@ diagonal embedding `b ↦ diag(b, …, b)`.
 * `CStarMatrix.isSelfAdjoint_of_forall_isSelfAdjoint_sum`: a matrix all of whose quadratic forms
   are self-adjoint is self-adjoint. This is purely algebraic, and holds over any complex
   star-algebra whose star is proper.
+* `CStarMatrix.sum_star_mul_mul_eq_dotProduct_mulVec`: rewriting a quadratic form as a
+  dot product with `mulVec`.
 * `CStarMatrix.nonneg_iff_forall_sum_nonneg`: the quadratic-form criterion for positivity.
 * `CStarMatrix.diag_nonneg_of_nonneg`: the diagonal entries of a positive matrix are positive.
 * `CStarMatrix.submatrix_nonneg` and `CStarMatrix.extend_nonneg`: reindexing a positive matrix
   along any map of indices, or extending it by zero along an injective one, gives a positive
   matrix.
+* `CStarMatrix.map_fromBlocks_inl_nonneg` and `CStarMatrix.map_toBlocks₂₂_nonneg`: embedding a
+  block matrix into the top-left corner and extracting the bottom-right block preserve positivity.
 * `CStarMatrix.norm_sq_smul_sub_mulLeft_nonneg`: positivity of the matrix
   `(‖c‖ ^ 2 • (star (a i) * a j) - star (c * a i) * (c * a j))`.
 * `WithCStarModule.norm_equiv_symm_pi_smul`: the vector `(vᵢ a)ᵢ` of the Hilbert `A`-module `Aᵐ`
@@ -300,7 +304,9 @@ theorem map_smul_linearMap {m B : Type*} [CommSemiring R] [AddCommMonoid A] [Mod
   ext
   simp [smul_apply]
 
-private lemma sum_star_mul_mul_eq_dotProduct_mulVec [Fintype n] [NonUnitalSemiring A] [Star A]
+/-- The quadratic form `∑ i, ∑ j, star (x i) * M i j * x j` written as the matrix-vector
+product `star x ⬝ᵥ (ofMatrix.symm M *ᵥ x)`. -/
+theorem sum_star_mul_mul_eq_dotProduct_mulVec [Fintype n] [NonUnitalSemiring A] [Star A]
     (M : CStarMatrix n n A) (x : n → A) :
     ∑ i, ∑ j, star (x i) * M i j * x j = star x ⬝ᵥ (ofMatrix.symm M *ᵥ x) := by
   rw [dot_mulVec_eq_sum_sum, Finset.sum_comm]
@@ -439,11 +445,41 @@ theorem extend_nonneg {m : Type*} [Fintype m] {f : m → n} (hf : Function.Injec
   · simp [hf.extend_apply, Function.extend_apply' _ _ _ (by simpa using hl : ¬∃ a, f a = l)]
   simp [hf.extend_apply]
 
+/-- Embedding a positive block matrix `M : CStarMatrix k k (CStarMatrix n n A)` into the top-left
+block of `CStarMatrix k k (CStarMatrix (n ⊕ m) (n ⊕ m) A)` preserves positivity. -/
+theorem map_fromBlocks_inl_nonneg {k m : Type*} [Fintype k] [Fintype m]
+    {M : CStarMatrix k k (CStarMatrix n n A)} (hM : 0 ≤ M) :
+    0 ≤ M.map fun B =>
+      ofMatrix (Matrix.fromBlocks (ofMatrix.symm B) 0 0 0 : Matrix (n ⊕ m) (n ⊕ m) A) := by
+  let e₁ := compStarAlgEquiv ℂ k n A
+  let e₂ := compStarAlgEquiv ℂ k (n ⊕ m) A
+  have hM₁ : 0 ≤ e₁ M := by simpa using (map_le_map_iff e₁).mpr hM
+  rw [← map_le_map_iff e₂, map_zero, nonneg_iff_forall_sum_nonneg]
+  intro y
+  convert nonneg_iff_forall_sum_nonneg.mp hM₁ (fun ⟨i, x⟩ => y (i, Sum.inl x)) using 1
+  simp only [Fintype.sum_prod_type, Fintype.sum_sum_type, e₂, e₁, compStarAlgEquiv_apply,
+    map_apply, ofMatrix_apply, ofMatrix_symm_apply, Matrix.fromBlocks_apply₁₁,
+    Matrix.fromBlocks_apply₁₂, Matrix.fromBlocks_apply₂₁, Matrix.fromBlocks_apply₂₂,
+    Matrix.zero_apply, mul_zero, zero_mul, add_zero, Finset.sum_const_zero]
+
+/-- Extracting the bottom-right block of each entry of a positive block matrix
+`M : CStarMatrix k k (CStarMatrix (n ⊕ m) (n ⊕ m) A)` preserves positivity. -/
+theorem map_toBlocks₂₂_nonneg {k m : Type*} [Fintype k] [Fintype m]
+    {M : CStarMatrix k k (CStarMatrix (n ⊕ m) (n ⊕ m) A)} (hM : 0 ≤ M) :
+    0 ≤ M.map fun B => ofMatrix (ofMatrix.symm B).toBlocks₂₂ := by
+  let e₂ := compStarAlgEquiv ℂ k (n ⊕ m) A
+  let e₃ := compStarAlgEquiv ℂ k m A
+  have hM₂ : 0 ≤ e₂ M := by simpa using (map_le_map_iff e₂).mpr hM
+  rw [← map_le_map_iff e₃, map_zero]
+  convert submatrix_nonneg (Prod.map id Sum.inr) hM₂ using 1
+  ext ⟨i, p⟩ ⟨j, q⟩
+  simp [e₃, e₂, Matrix.toBlocks₂₂]
+
 /-- For any `c : A` and finite family `a : n → A`, the matrix with `(i, j)`-entry
 `‖c‖ ^ 2 • (star (a i) * a j) - star (c * a i) * (c * a j)` is positive in `CStarMatrix n n A`. -/
 theorem norm_sq_smul_sub_mulLeft_nonneg (c : A) (a : n → A) :
     0 ≤ ofMatrix (Matrix.of fun i j =>
-      ((‖c‖ ^ 2 : ℝ) : ℂ) • (star (a i) * a j) - star (c * a i) * (c * a j)) := by
+      (‖c‖ ^ 2 : ℝ) • (star (a i) * a j) - star (c * a i) * (c * a j)) := by
   rw [nonneg_iff_forall_sum_nonneg]
   intro y
   have hvec (b : n → A) : star y ⬝ᵥ (Matrix.vecMulVec (star b) b *ᵥ y) =
@@ -451,14 +487,14 @@ theorem norm_sq_smul_sub_mulLeft_nonneg (c : A) (a : n → A) :
     rw [Matrix.dotProduct_mulVec, Matrix.vecMul_vecMulVec, smul_dotProduct, smul_eq_mul,
       Matrix.star_dotProduct_star]
   let M : Matrix n n A :=
-    ((‖c‖ ^ 2 : ℝ) : ℂ) • Matrix.vecMulVec (star a) a - Matrix.vecMulVec (star (c • a)) (c • a)
+    (‖c‖ ^ 2 : ℝ) • Matrix.vecMulVec (star a) a - Matrix.vecMulVec (star (c • a)) (c • a)
   have hM : ofMatrix (Matrix.of fun i j =>
-      ((‖c‖ ^ 2 : ℝ) : ℂ) • (star (a i) * a j) - star (c * a i) * (c * a j)) = ofMatrix M := by
+      (‖c‖ ^ 2 : ℝ) • (star (a i) * a j) - star (c * a i) * (c * a j)) = ofMatrix M := by
     ext i j
     simp [M, Matrix.vecMulVec_apply]
   rw [hM, sum_star_mul_mul_eq_dotProduct_mulVec, ofMatrix.symm_apply_apply]
   simp only [M, sub_mulVec, smul_mulVec, dotProduct_sub, dotProduct_smul, hvec, smul_dotProduct,
-    smul_eq_mul, Complex.coe_smul, star_mul, mul_assoc]
+    smul_eq_mul, star_mul, mul_assoc]
   rw [sub_nonneg, sq, ← CStarRing.norm_star_mul_self (x := c)]
   simpa only [← mul_assoc] using CStarAlgebra.star_left_conjugate_le_norm_smul (a ⬝ᵥ y) (star c * c)
 

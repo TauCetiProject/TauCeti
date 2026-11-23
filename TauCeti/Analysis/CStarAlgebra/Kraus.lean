@@ -23,8 +23,8 @@ The normalization criterion connects the Heisenberg and Schrödinger pictures of
 a finite-dimensional quantum channel.
 
 The construction uses Mathlib's `CompletelyPositiveMap` and derives complete positivity of
-matrix conjugation from `CompletelyPositiveMap.conj` via `CStarMatrix.extend_nonneg` and
-`CStarMatrix.submatrix_nonneg`.
+matrix conjugation from `CompletelyPositiveMap.conj` via `CStarMatrix.map_fromBlocks_inl_nonneg`
+and `CStarMatrix.map_toBlocks₂₂_nonneg`.
 
 ## References
 
@@ -56,47 +56,19 @@ noncomputable def conjugateCP (V : Matrix n m ℂ) :
     simp only [map_smul, Matrix.mul_smul, Matrix.smul_mul, RingHom.id_apply]
     rfl
   map_cstarMatrix_nonneg' k M hM := by
-    classical
-    let e₁ := CStarMatrix.compStarAlgEquiv ℂ (Fin k) n ℂ
-    let e₂ := CStarMatrix.compStarAlgEquiv ℂ (Fin k) (n ⊕ m) ℂ
-    let e₃ := CStarMatrix.compStarAlgEquiv ℂ (Fin k) m ℂ
-    have hM₁ : 0 ≤ e₁ M := by simpa using (map_le_map_iff e₁).mpr hM
-    let f : Fin k × n → Fin k × (n ⊕ m) := Prod.map id Sum.inl
-    have hf : Function.Injective f := fun _ _ h => by simpa [f, Prod.ext_iff] using h
     let M' : CStarMatrix (Fin k) (Fin k) (CStarMatrix (n ⊕ m) (n ⊕ m) ℂ) :=
       M.map fun A => ofMatrix (Matrix.fromBlocks (ofMatrix.symm A) 0 0 0)
-    have hM' : 0 ≤ M' := by
-      rw [← map_le_map_iff e₂, map_zero]
-      convert CStarMatrix.extend_nonneg hf hM₁ using 2
-      ext ⟨i, x⟩ ⟨j, y⟩
-      simp only [e₂, e₁, M', compStarAlgEquiv_apply, CStarMatrix.map_apply, ofMatrix_apply,
-        of_apply, ofMatrix_symm_apply]
-      rcases x with x | x <;> rcases y with y | y
-      · rw [show (i, Sum.inl x) = f (i, x) from rfl, show (j, Sum.inl y) = f (j, y) from rfl,
-          hf.extend_apply, hf.extend_apply]
-        simp
-      · rw [show (i, Sum.inl x) = f (i, x) from rfl, hf.extend_apply,
-          Function.extend_apply' _ _ _ (by simp [f] : ¬∃ a, f a = (j, Sum.inr y))]
-        simp
-      · rw [Function.extend_apply' _ _ _ (by simp [f] : ¬∃ a, f a = (i, Sum.inr x))]
-        simp
-      · rw [Function.extend_apply' _ _ _ (by simp [f] : ¬∃ a, f a = (i, Sum.inr x))]
-        simp
+    have hM' : 0 ≤ M' := CStarMatrix.map_fromBlocks_inl_nonneg hM
     let B : CStarMatrix (n ⊕ m) (n ⊕ m) ℂ := ofMatrix (Matrix.fromBlocks 0 V 0 0)
-    have hconj := (CompletelyPositiveMap.conj B).map_cstarMatrix_nonneg _ hM'
-    have hconj' : M'.map (CompletelyPositiveMap.conj B) =
-        M.map fun A => ofMatrix (Matrix.fromBlocks 0 0 0 (Vᴴ * ofMatrix.symm A * V)) := by
+    have hconj : 0 ≤ M.map fun A =>
+        ofMatrix (Matrix.fromBlocks 0 0 0 (Vᴴ * ofMatrix.symm A * V) :
+          Matrix (n ⊕ m) (n ⊕ m) ℂ) := by
+      convert (CompletelyPositiveMap.conj B).map_cstarMatrix_nonneg M' hM' using 1
       refine CStarMatrix.ext fun i j => ofMatrix.symm.injective ?_
       simp [B, M', Matrix.fromBlocks_conjTranspose, Matrix.fromBlocks_multiply]
-    have hconj₂ : 0 ≤ e₂ (M.map fun A =>
-        ofMatrix (Matrix.fromBlocks 0 0 0 (Vᴴ * ofMatrix.symm A * V))) := by
-      rw [← map_zero e₂, map_le_map_iff e₂]
-      exact hconj' ▸ hconj
-    have hsub := CStarMatrix.submatrix_nonneg (Prod.map id Sum.inr) hconj₂
-    rw [← map_le_map_iff e₃, map_zero]
-    convert hsub using 1
-    ext ⟨i, p⟩ ⟨j, q⟩
-    simp [e₃, e₂]
+    convert CStarMatrix.map_toBlocks₂₂_nonneg hconj using 1
+    ext i j p q
+    simp [Matrix.toBlocks₂₂]
 
 /-- The conjugation map evaluates to the usual matrix formula. -/
 @[simp] theorem conjugateCP_apply (V : Matrix n m ℂ) (a : CStarMatrix n n ℂ) :

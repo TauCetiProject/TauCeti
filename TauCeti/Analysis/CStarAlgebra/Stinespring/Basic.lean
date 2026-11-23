@@ -273,10 +273,7 @@ private theorem norm_leftMulPreStinespring_sum_le {n : ℕ} (c : A) (a : Fin n �
     CStarMatrix.ofMatrix (Matrix.of fun i j => star (c * a i) * (c * a j))
   let M₂ : CStarMatrix (Fin n) (Fin n) A :=
     CStarMatrix.ofMatrix (Matrix.of fun i j => (‖c‖ ^ 2 : ℝ) • (star (a i) * a j))
-  have hle : 0 ≤ M₂ - M₁ := by
-    convert CStarMatrix.norm_sq_smul_sub_mulLeft_nonneg c a using 1
-    ext i j
-    simp [M₁, M₂, -Complex.ofReal_pow, Complex.coe_smul]
+  have hle : 0 ≤ M₂ - M₁ := CStarMatrix.norm_sq_smul_sub_mulLeft_nonneg c a
   have hre : 0 ≤ (∑ i, ∑ j, ⟪ξ i, (M₂ - M₁).map φ i j (ξ j)⟫_ℂ).re :=
     (RCLike.nonneg_iff.mp
       ((CStarMatrix.nonneg_iff_forall_sum_inner_nonneg.mp
@@ -640,7 +637,7 @@ theorem stinespringOp_eq_toStinespring_one : φ.stinespringOp = φ.toStinespring
   simpa [stinespringHom_one, ContinuousLinearMap.one_def] using φ.stinespring_eq 1
 
 theorem norm_stinespringOp_sq_eq_norm_map_one : ‖φ.stinespringOp‖ ^ 2 = ‖φ 1‖ := by
-  rw [← φ.stinespringOp_adjoint_comp_self, ContinuousLinearMap.norm_adjoint_comp_self, sq]
+  simp
 
 /-- The Stinespring operator is an isometry if and only if `φ` is unital (`φ 1 = 1`). -/
 theorem isometry_stinespringOp_iff : Isometry φ.stinespringOp ↔ φ 1 = 1 := by

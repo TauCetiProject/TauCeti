@@ -9,7 +9,6 @@ public import Mathlib.Analysis.CStarAlgebra.CompletelyPositiveMap
 public import Mathlib.Analysis.CStarAlgebra.PositiveLinearMap
 public import TauCeti.Analysis.CStarAlgebra.CompletelyPositiveMap
 public import TauCeti.Analysis.CStarAlgebra.Matrix.Order
-import Mathlib.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Order
 import TauCeti.Analysis.CStarAlgebra.CStarMatrix
 
 /-!
@@ -22,15 +21,12 @@ linear functional is completely positive (`PositiveLinearMap.toCompletelyPositiv
 `PositiveLinearMap.toCompletelyPositiveMapCLM`).
 Equipping `A₁ →CP A₂` with the *completely positive order* `ψ ≤ φ ↔ ∃ θ : A₁ →CP A₂, φ = ψ + θ`
 makes it a partially ordered cancellative `ℝ≥0`-cone with bottom element `0`, used in Arveson's
-Radon–Nikodym theorem. On a unital domain `D`, this file also records the subunital Kadison–Schwarz
-inequality `CompletelyPositiveMap.star_map_mul_map_le_of_map_one_le` (`φ 1 ≤ 1`).
+Radon–Nikodym theorem.
 
 ## References
 
 * W. F. Stinespring, *Positive functions on C⋆-algebras*, Proc. Amer. Math. Soc. 6 (1955), Thm. 3.
 * W. B. Arveson, *Subalgebras of C⋆-algebras*, Acta Math. 123 (1969), §1.4.
-* M.-D. Choi, *A Schwarz inequality for positive linear maps on C*-algebras*, Illinois J. Math. 18
-  (1974), 565–574.
 * V. Paulsen, *Completely Bounded Maps and Operator Algebras*, Chapter 3.
 -/
 
@@ -138,8 +134,6 @@ variable (A₁) in
 protected def id : A₁ →CP A₁ :=
   ⟨LinearMap.id, fun _ M hM => by convert hM; ext; rfl⟩
 
-@[simp] theorem coe_id : ⇑(CompletelyPositiveMap.id A₁) = id := (rfl)
-
 @[simp] theorem id_apply (a : A₁) : CompletelyPositiveMap.id A₁ a = a := (rfl)
 
 @[simp] theorem toLinearMap_id : (CompletelyPositiveMap.id A₁).toLinearMap = LinearMap.id := (rfl)
@@ -149,22 +143,11 @@ def comp (ψ : A₂ →CP A₃) (φ : A₁ →CP A₂) : A₁ →CP A₃ :=
   ⟨ψ.toLinearMap.comp φ.toLinearMap, fun _ M hM => by
     convert ψ.map_cstarMatrix_nonneg _ (φ.map_cstarMatrix_nonneg M hM); ext; rfl⟩
 
-@[simp] theorem coe_comp (ψ : A₂ →CP A₃) (φ : A₁ →CP A₂) : ⇑(ψ.comp φ) = ψ ∘ φ := (rfl)
-
 @[simp] theorem comp_apply (ψ : A₂ →CP A₃) (φ : A₁ →CP A₂) (a : A₁) :
     (ψ.comp φ) a = ψ (φ a) := (rfl)
 
 @[simp] theorem toLinearMap_comp (ψ : A₂ →CP A₃) (φ : A₁ →CP A₂) :
     (ψ.comp φ).toLinearMap = ψ.toLinearMap.comp φ.toLinearMap := (rfl)
-
-/-- Composition of completely positive maps is associative. -/
-theorem comp_assoc {A₄ : Type*} [NonUnitalCStarAlgebra A₄] [PartialOrder A₄] [StarOrderedRing A₄]
-    (χ : A₃ →CP A₄) (ψ : A₂ →CP A₃) (φ : A₁ →CP A₂) :
-    (χ.comp ψ).comp φ = χ.comp (ψ.comp φ) := by ext; rfl
-
-@[simp] theorem id_comp (φ : A₁ →CP A₂) : (CompletelyPositiveMap.id A₂).comp φ = φ := by ext; rfl
-
-@[simp] theorem comp_id (φ : A₁ →CP A₂) : φ.comp (CompletelyPositiveMap.id A₁) = φ := by ext; rfl
 
 /-- The *completely positive order* on `A₁ →CP A₂`: `ψ ≤ φ` means `φ = ψ + θ` for some
 `θ : A₁ →CP A₂`. -/
@@ -199,20 +182,6 @@ theorem zero_le (φ : A₁ →CP A₂) : 0 ≤ φ := bot_le
 instance : IsOrderedAddMonoid (A₁ →CP A₂) where
   add_le_add_left ψ _ h χ := by obtain ⟨θ, rfl⟩ := h; exact ⟨θ, add_right_comm ψ θ χ⟩
 
-/-- If `ψ ≤ φ` in the completely positive order, then `ψ` is dominated in the C⋆-matrix order after
-entrywise application by `φ` on positive matrices indexed by any finite type. -/
-theorem map_cstarMatrix_le_of_le {n : Type*} [Fintype n] {ψ φ : A₁ →CP A₂} (h : ψ ≤ φ)
-    {M : CStarMatrix n n A₁} (hM : 0 ≤ M) : M.map ψ ≤ M.map φ := by
-  obtain ⟨θ, rfl⟩ := h
-  have hadd : M.map (ψ + θ) = M.map ψ + M.map θ :=
-    CStarMatrix.map_add_linearMap M ψ.toLinearMap θ.toLinearMap
-  exact hadd ▸ le_add_of_nonneg_right (θ.map_cstarMatrix_nonneg M hM)
-
-/-- If `ψ ≤ φ` in the completely positive order, then `ψ a ≤ φ a` for every positive `a`. -/
-theorem apply_le_of_le {ψ φ : A₁ →CP A₂} (h : ψ ≤ φ) {a : A₁} (ha : 0 ≤ a) : ψ a ≤ φ a := by
-  obtain ⟨θ, rfl⟩ := h
-  simpa using le_add_of_nonneg_right (a := ψ a) (map_nonneg θ ha)
-
 /-- Conjugation `a ↦ star b * a * b` on a C⋆-algebra as a completely positive map. -/
 def conj (b : A₁) : A₁ →CP A₁ where
   toLinearMap := LinearMap.mulLeftRight ℂ (star b, b)
@@ -232,25 +201,17 @@ def conj (b : A₁) : A₁ →CP A₁ where
 
 end General
 
-section KadisonSchwarz
+section UnitalDomain
 
-variable {D E : Type*}
-  [CStarAlgebra D] [PartialOrder D] [StarOrderedRing D]
-  [CStarAlgebra E] [PartialOrder E] [StarOrderedRing E]
+/-- A completely positive map from a unital C⋆-algebra attains its operator norm at `1`:
+`‖φ.toContinuousLinearMap‖ = ‖φ 1‖`. -/
+@[simp] theorem norm_toContinuousLinearMap {D A₂ : Type*}
+    [CStarAlgebra D] [PartialOrder D] [StarOrderedRing D]
+    [NonUnitalCStarAlgebra A₂] [PartialOrder A₂] [StarOrderedRing A₂]
+    (φ : D →CP A₂) : ‖φ.toContinuousLinearMap‖ = ‖φ 1‖ :=
+  (φ.isNPositive 2).opNorm_eq_norm_map_one
 
-/-- **Kadison–Schwarz inequality** (subunital form): if `φ : D →CP E` satisfies `φ 1 ≤ 1`, then
-`star (φ a) * φ a ≤ φ (star a * a)` for every `a : D`. -/
-theorem star_map_mul_map_le_of_map_one_le (φ : D →CP E) (hφ : φ 1 ≤ 1) (a : D) :
-    star (φ a) * φ a ≤ φ (star a * a) := by
-  have hnorm : ‖φ 1‖ ≤ 1 :=
-    (CStarAlgebra.norm_le_one_iff_of_nonneg (φ 1) (map_nonneg φ zero_le_one)).mpr hφ
-  calc star (φ a) * φ a
-      ≤ ‖φ 1‖ • φ (star a * a) := CompletelyPositiveMapClass.star_map_mul_map_le φ a
-    _ ≤ (1 : ℝ) • φ (star a * a) :=
-        smul_le_smul_of_nonneg_right hnorm (map_nonneg φ (star_mul_self_nonneg a))
-    _ = φ (star a * a) := one_smul ℝ _
-
-end KadisonSchwarz
+end UnitalDomain
 
 end CompletelyPositiveMap
 
