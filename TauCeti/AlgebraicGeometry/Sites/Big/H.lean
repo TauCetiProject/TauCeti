@@ -87,29 +87,31 @@ lemma ofArrows_mem_hPrecoverage_iff {X : Scheme.{u}} {ι : Type v} {Y : ι → S
 /-- A singleton proper surjection belongs to the generating h-precoverage. -/
 lemma _root_.AlgebraicGeometry.Scheme.Hom.singleton_mem_hPrecoverage
     {X Y : Scheme.{u}} (f : X ⟶ Y) [IsProper f]
-    [Surjective f] : Presieve.singleton f ∈ hPrecoverage Y :=
-  Or.inr ((Scheme.singleton_mem_precoverage_iff (@IsProper ⊓ @Surjective) f).mpr
-    ⟨(inferInstance : Surjective f).surj, ⟨inferInstance, inferInstance⟩⟩)
+    [Surjective f] : Presieve.singleton f ∈ hPrecoverage Y := by
+  rw [mem_hPrecoverage_iff]
+  refine Or.inr ⟨⟨X, f, Presieve.singleton_self f⟩, ?_⟩
+  rintro Z g ⟨⟩
+  exact ⟨inferInstance, inferInstance⟩
 
 /-- A singleton is a generating h-cover exactly when its arrow is proper and surjective. -/
 @[simp]
 lemma _root_.AlgebraicGeometry.Scheme.Hom.singleton_mem_hPrecoverage_iff
     {X Y : Scheme.{u}} (f : X ⟶ Y) :
     Presieve.singleton f ∈ hPrecoverage Y ↔ IsProper f ∧ Surjective f := by
+  rw [mem_hPrecoverage_iff]
   constructor
-  · intro hf
-    rcases hf with hf | hf
+  · rintro (hf | ⟨_, hf⟩)
     · obtain ⟨hs, ho⟩ := (Scheme.singleton_mem_precoverage_iff @IsOpenImmersion f).mp hf
       let : IsOpenImmersion f := ho
       let : Surjective f := ⟨hs⟩
       let : IsIso f := (isIso_iff_isOpenImmersion_and_surjective f).mpr
         ⟨inferInstance, inferInstance⟩
       exact ⟨inferInstance, inferInstance⟩
-    · exact ((Scheme.singleton_mem_precoverage_iff (@IsProper ⊓ @Surjective) f).mp hf).2
+    · exact hf (Presieve.singleton_self f)
   · rintro ⟨hp, hs⟩
     let := hp
     let := hs
-    exact f.singleton_mem_hPrecoverage
+    exact mem_hPrecoverage_iff.mp f.singleton_mem_hPrecoverage
 
 instance : hPrecoverage.{u}.IsStableUnderBaseChange := by
   let : MorphismProperty.IsStableUnderBaseChange
@@ -165,10 +167,11 @@ lemma hTopology_le_iff
 /-- Every h-covering sieve is jointly surjective on scheme points. -/
 lemma hTopology_le_jointlySurjectiveTopology :
     hTopology.{u} ≤ jointlySurjectiveTopology := by
-  rw [hTopology_eq_toGrothendieck,
+  rw [hTopology_eq_toGrothendieck, hPrecoverage_def,
     jointlySurjectiveTopology_eq_toGrothendieck_jointlySurjectivePretopology,
     jointlySurjectivePretopology, Precoverage.toGrothendieck_toPretopology_eq_toGrothendieck]
   apply Precoverage.toGrothendieck_mono
+  unfold zariskiPrecoverage Scheme.precoverage
   exact sup_le inf_le_left inf_le_left
 
 /-- Every point lifts along some arrow of an h-covering sieve. -/

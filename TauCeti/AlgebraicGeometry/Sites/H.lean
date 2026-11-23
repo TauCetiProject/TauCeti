@@ -165,6 +165,7 @@ private lemma exists_finiteType_proper_refinement (S : Scheme.{u}) {X : S.Finite
           (Sieve.generate (Presieve.singleton f)).arrows := by
   have hle : Scheme.precoverage (@IsProper ⊓ @Surjective) ≤
       (@LocallyOfFiniteType ⊓ @QuasiCompact : MorphismProperty Scheme.{u}).precoverage := by
+    unfold Scheme.precoverage
     refine le_trans inf_le_right (MorphismProperty.precoverage_monotone ?_)
     intro Z W g hg
     let := hg.1
@@ -201,8 +202,8 @@ private lemma exists_finiteType_h_refinement (S : Scheme.{u}) [QuasiSeparatedSpa
       exact hR
     obtain ⟨r, -, hr, hle⟩ := S.exists_finiteType_zariski_refinement hZ
     refine ⟨r, ?_, hle⟩
-    rw [hPrecoverage_def]
-    exact Or.inl hr
+    rw [Precoverage.mem_comap_iff] at hr
+    exact mem_hPrecoverage_iff.mpr (Or.inl hr)
   · obtain ⟨r, hr, hle⟩ := exists_finiteType_proper_refinement S (f i) (hR i)
     exact ⟨r, hr, hle.trans (Sieve.generate_mono
       (by rw [Presieve.singleton_le_iff]; exact ⟨i⟩))⟩
