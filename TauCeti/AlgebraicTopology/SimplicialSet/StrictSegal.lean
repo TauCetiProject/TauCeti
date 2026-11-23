@@ -7,9 +7,9 @@ module
 
 public import Mathlib.AlgebraicTopology.Quasicategory.InnerFibration
 public import Mathlib.AlgebraicTopology.Quasicategory.StrictSegal
-public import Mathlib.CategoryTheory.Adjunction.Evaluation
-public import Mathlib.CategoryTheory.Limits.Types.Filtered
 public import TauCeti.AlgebraicTopology.SimplicialSet.BoundaryColimits
+public import TauCeti.AlgebraicTopology.SimplicialSet.Colimits
+public import TauCeti.AlgebraicTopology.SimplicialSet.Truncated
 
 /-!
 # Strict Segal simplicial sets
@@ -331,14 +331,6 @@ lemma spine_app {m : ℕ} (hm : m ≤ n + 1) (f : V ⟶ W) (x : V _⦋m⦌ₙ₊
     W.spine m hm (f.app _ x) = (V.spine m hm x).map f := by
   ext i <;> simp [← NatTrans.naturality_apply]
 
-/-- In a truncated simplicial set, the target (`δ 0`) of the degenerate edge on a vertex `z` is
-`z`. -/
-private lemma map_δ_map_σ (Z : SSet.Truncated.{u} (n + 1)) (z : Z _⦋0⦌ₙ₊₁) :
-    Z.map (tr (SimplexCategory.δ 0)).op (Z.map (tr (SimplexCategory.σ 0)).op z) = z := by
-  have fac := δ_comp_σ_self (i := (0 : Fin 1))
-  dsimp at fac
-  simp [← Functor.map_comp_apply, ← op_comp, ← tr_comp, fac]
-
 /-- A morphism of truncated simplicial sets that is bijective on edges is bijective on
 vertices. -/
 lemma bijective_app_zero_of_bijective_app_one (f : V ⟶ W)
@@ -346,10 +338,11 @@ lemma bijective_app_zero_of_bijective_app_one (f : V ⟶ W)
   refine ⟨fun x y hxy ↦ ?_, fun w ↦ ?_⟩
   · have := h₁.injective ((NatTrans.naturality_apply f (tr (SimplexCategory.σ 0)).op x).trans
       ((congrArg _ hxy).trans (NatTrans.naturality_apply f (tr (SimplexCategory.σ 0)).op y).symm))
-    rw [← map_δ_map_σ V x, ← map_δ_map_σ V y, this]
+    rw [← δ_zero_comp_σ_zero_apply V x, ← δ_zero_comp_σ_zero_apply V y, this]
   · obtain ⟨s, hs⟩ := h₁.surjective (W.map (tr (SimplexCategory.σ 0)).op w)
     exact ⟨V.map (tr (SimplexCategory.δ 0)).op s,
-      (NatTrans.naturality_apply f _ s).trans ((congrArg _ hs).trans (map_δ_map_σ W w))⟩
+      (NatTrans.naturality_apply f _ s).trans
+        ((congrArg _ hs).trans (δ_zero_comp_σ_zero_apply W w))⟩
 
 /-- A morphism of strict Segal truncated simplicial sets that is bijective on edges is an
 isomorphism. -/
@@ -387,25 +380,6 @@ end Truncated
 section Colimit
 
 variable {J : Type*} [Category* J] {F : J ⥤ SSet.{u}} {c : Cocone F} (hc : IsColimit c)
-
-include hc in
-private lemma exists_ι_app_eq_of_isColimit {m : ℕ} (x : c.pt _⦋m⦌) :
-    ∃ j y, (c.ι.app j).app _ y = x :=
-  Types.jointly_surjective_of_isColimit
-    (isColimitOfPreserves ((evaluation _ _).obj (op ⦋m⦌)) hc) x
-
-include hc in
-private lemma ι_app_eq_ι_app_iff_of_isColimit [IsFilteredOrEmpty J] {m : ℕ} {j : J}
-    (x y : (F.obj j) _⦋m⦌) :
-    (c.ι.app j).app _ x = (c.ι.app j).app _ y ↔
-      ∃ (k : J) (f : j ⟶ k), (F.map f).app _ x = (F.map f).app _ y :=
-  Types.FilteredColimit.isColimit_eq_iff'
-    (isColimitOfPreserves ((evaluation _ _).obj (op ⦋m⦌)) hc) x y
-
-private lemma ι_app_map_app {j k : J} (f : j ⟶ k) {m : ℕ} (x : (F.obj j) _⦋m⦌) :
-    (c.ι.app k).app _ ((F.map f).app _ x) = (c.ι.app j).app _ x := by
-  rw [← c.w f]
-  rfl
 
 variable [IsFilteredOrEmpty J] [∀ j, (F.obj j).IsStrictSegal]
 

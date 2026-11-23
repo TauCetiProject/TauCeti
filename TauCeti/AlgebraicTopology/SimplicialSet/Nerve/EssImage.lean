@@ -5,8 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.AlgebraicTopology.Quasicategory.CompStruct
-public import Mathlib.AlgebraicTopology.Quasicategory.TwoTruncatedQuasicategory
 public import Mathlib.AlgebraicTopology.SimplicialSet.NerveAdjunction
 public import TauCeti.AlgebraicTopology.Quasicategory.HomotopyCategory
 public import TauCeti.AlgebraicTopology.SimplicialSet.StrictSegal
@@ -21,13 +19,12 @@ unit `X ⟶ nerve X.HomotopyCategory` of Mathlib's adjunction `nerveAdjunction` 
 exactly when `X` is strict Segal (`SSet.isIso_nerveAdjunction_unit_app_iff`).
 
 The point is that the morphisms of the homotopy category of a strict Segal simplicial set are
-exactly its edges (`SSet.HomotopyCategory.homMk_bijective`). Mathlib's homotopy category is a
-quotient of the category of paths of edges, so this needs two facts. Every composite of edges is
-again an edge, the third edge of the triangle with the given spine, so every morphism is
-represented by an edge. Two edges that represent the same morphism are homotopic in the sense of
-Mathlib's `SSet.Truncated.HomotopyCategory₂`, through a triangle whose spine is the first edge
-followed by an identity; in a strict Segal simplicial set that triangle is degenerate, so the two
-edges are equal.
+exactly its edges (`SSet.HomotopyCategory.homMk_bijective`). A strict Segal simplicial set is a
+quasicategory (Mathlib's `SSet.StrictSegal.quasicategory'`), so every morphism of its homotopy
+category is represented by an edge (`SSet.HomotopyCategory.homMk_surjective`), and two edges that
+represent the same morphism are related by a triangle whose spine is an identity followed by the
+first edge (`SSet.HomotopyCategory.homMk_eq_homMk_iff`). In a strict Segal simplicial set that
+triangle is degenerate, so the two edges are equal.
 
 Hence the morphism from the `2`-truncation of `X` to the `2`-truncated nerve of its homotopy
 category that corresponds to the identity functor under Mathlib's
@@ -64,34 +61,17 @@ variable {X : SSet.{u}} [X.IsStrictSegal]
 
 namespace HomotopyCategory
 
-/-- In a strict Segal simplicial set, every morphism of the homotopy category is represented by
-an edge. -/
-lemma exists_homMk_eq {x y : X.HomotopyCategory} (f : x ⟶ y) :
-    ∃ e : Edge (objEquiv x) (objEquiv y), homMk e = f := by
-  induction f using hom_rec with
-  | homMk e => exact ⟨e, rfl⟩
-  | comp f g hf hg =>
-    obtain ⟨e, rfl⟩ := hf
-    obtain ⟨e', rfl⟩ := hg
-    exact ⟨e.comp e', (homMk_comp_homMk (e.compStruct e')).symm⟩
-
 /-- In a strict Segal simplicial set, two parallel edges representing the same morphism of the
 homotopy category are equal. -/
 lemma homMk_injective {x y : X _⦋0⦌} :
-    Function.Injective (homMk : Edge x y → (mk x ⟶ mk y)) := by
-  intro e e' h
-  -- Compare with the homotopy category whose morphisms are homotopy classes of edges.
-  have h' := congr_arg (Truncated.HomotopyCategory.toHomotopyCategory₂ ((truncation 2).obj X)).map h
-  simp only [HomotopyCategory.homMk, Truncated.HomotopyCategory.toHomotopyCategory₂_map_homMk,
-    cancel_epi, cancel_mono] at h'
-  obtain ⟨hc⟩ := (Truncated.HomotopyCategory₂.homMk_eq_iff_homotopicL).1 h'
-  exact (Edge.CompStruct.compId e).eq_of_isStrictSegal (Edge.CompStruct.ofTruncated hc)
+    Function.Injective (homMk : Edge x y → (mk x ⟶ mk y)) := fun e e' h ↦
+  (Edge.CompStruct.idComp e).eq_of_isStrictSegal ((homMk_eq_homMk_iff e e').1 h).some
 
 /-- In a strict Segal simplicial set, the edges from `x` to `y` are exactly the morphisms from `x`
 to `y` in the homotopy category. -/
 theorem homMk_bijective {x y : X _⦋0⦌} :
     Function.Bijective (homMk : Edge x y → (mk x ⟶ mk y)) :=
-  ⟨homMk_injective, exists_homMk_eq⟩
+  ⟨homMk_injective, homMk_surjective⟩
 
 /-- In a strict Segal simplicial set, two edges define the same arrow of the homotopy category
 exactly when they are equal as `1`-simplices. -/
@@ -121,8 +101,10 @@ instance isIso_homToNerveMk_id :
         (h.trans (Truncated.HomotopyCategory.homToNerveMk_app_edge _ (Edge.mk' t).toTruncated))
     exact (arrowMk_homMk_eq_arrowMk_homMk_iff (e := Edge.mk' s) (e' := Edge.mk' t)).1
       (congr_arg ComposableArrows.arrowEquiv h)
-  · obtain ⟨_, _, f, rfl⟩ := ComposableArrows.mk₁_surjective A
-    obtain ⟨e, rfl⟩ := exists_homMk_eq f
+  · obtain ⟨x, y, f, rfl⟩ := ComposableArrows.mk₁_surjective A
+    induction x with | mk x => ?_
+    induction y with | mk y => ?_
+    obtain ⟨e, rfl⟩ := homMk_surjective f
     exact ⟨e.edge, Truncated.HomotopyCategory.homToNerveMk_app_edge _ e.toTruncated⟩
 
 /-- A simplicial set is isomorphic to the nerve of a category exactly when it is strict Segal. See
