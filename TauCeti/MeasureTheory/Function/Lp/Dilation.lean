@@ -47,6 +47,7 @@ continuous extended norm.
 * `MeasureTheory.Measure.toReal_ofReal_abs_inv_rpow`,
   `MeasureTheory.Measure.abs_inv_det_smulLeft_rpow`: real-valued Jacobian-factor identities for
   affine and homothetic `Lᵖ` scaling.
+* `MeasureTheory.Lp.norm_le_mul_det_inv_of_ae_le`: affine `Lᵖ` norm comparison on arbitrary sets.
 -/
 
 public section
@@ -244,3 +245,38 @@ theorem dilateLp_symm (hr : 0 < r) :
   simp only [mul_inv_cancel₀ hr.ne', dilateLp_one]
 
 end MeasureTheory.Measure
+
+namespace MeasureTheory.Lp
+
+open scoped ENNReal
+
+/-- **Affine `Lᵖ` norm comparison on arbitrary sets.** If `f ∈ Lᵖ(μ.restrict s)` and
+`g ∈ Lᵖ(μ.restrict t)` satisfy `‖f x‖ ≤ M * ‖g (B x + b)‖` for `μ.restrict s`-a.e. `x`, where
+`x ↦ B x + b` maps `s` into `t` for a linear automorphism `B : E ≃L[ℝ] E` and `0 ≤ M`, then
+`‖f‖ ≤ M * |det B|⁻¹ ^ (1 / p).toReal * ‖g‖`. -/
+theorem norm_le_mul_det_inv_of_ae_le {E G H : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+    [MeasurableSpace E] [BorelSpace E] [FiniteDimensional ℝ E]
+    {μ : Measure E} [μ.IsAddHaarMeasure] {p : ℝ≥0∞} {s t : Set E}
+    [NormedAddCommGroup G] [NormedAddCommGroup H]
+    (B : E ≃L[ℝ] E) (b : E) (hst : Set.MapsTo (fun x ↦ B x + b) s t)
+    {f : Lp G p (μ.restrict s)} {g : Lp H p (μ.restrict t)} {M : ℝ} (hM : 0 ≤ M)
+    (hpt : ∀ᵐ x ∂μ.restrict s, ‖f x‖ ≤ M * ‖g (B x + b)‖) :
+    ‖f‖ ≤ M * |LinearMap.det (B : E →ₗ[ℝ] E)|⁻¹ ^ (1 / p).toReal * ‖g‖ := by
+  have he : eLpNorm f p (μ.restrict s) ≤ ENNReal.ofReal M *
+      (ENNReal.ofReal |(LinearMap.det (B : E →ₗ[ℝ] E))⁻¹| ^ (1 / p).toReal *
+        eLpNorm g p (μ.restrict t)) :=
+    (eLpNorm_le_mul_eLpNorm_of_ae_le_mul (Lp.aestronglyMeasurable _) hpt p).trans <|
+      mul_le_mul_of_nonneg_left ((eLpNorm_mono_measure _
+        (Measure.restrict_mono hst.subset_preimage le_rfl)).trans_eq
+        (Measure.eLpNorm_comp_continuousLinearEquiv_add_restrict_preimage μ _ B b p)) zero_le
+  have hfin : ENNReal.ofReal M *
+      (ENNReal.ofReal |(LinearMap.det (B : E →ₗ[ℝ] E))⁻¹| ^ (1 / p).toReal *
+        eLpNorm g p (μ.restrict t)) ≠ ⊤ :=
+    ENNReal.mul_ne_top ENNReal.ofReal_ne_top <| ENNReal.mul_ne_top
+      (ENNReal.rpow_ne_top_of_nonneg ENNReal.toReal_nonneg ENNReal.ofReal_ne_top)
+      (Lp.eLpNorm_ne_top _)
+  simpa only [ENNReal.toReal_mul, ENNReal.toReal_ofReal hM,
+    Measure.toReal_ofReal_abs_inv_rpow _ (1 / p).toReal, ← Lp.norm_def, mul_assoc] using
+    ENNReal.toReal_mono hfin he
+
+end MeasureTheory.Lp

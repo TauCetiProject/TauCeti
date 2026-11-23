@@ -27,16 +27,25 @@ reflections.
 
 ## Main declarations
 
-* `ContinuousLinearEquiv.transportSupportedIn`: transport of tests supported in a compact `K` to
-  tests supported in `e '' K`, as a continuous linear map.
+* `ContinuousLinearEquiv.transportSupportedIn`,
+  `ContinuousLinearEquiv.transportAddSupportedIn`: linear and affine transport of tests supported
+  in a compact `K` to tests supported in `e '' K` and `(fun x ↦ e x + b) '' K`, respectively, as
+  continuous linear maps.
 * `ContinuousLinearEquiv.transportTestFunction`: transport of test functions along a continuous
   linear equivalence, changing their domain, as a continuous linear map.
 * `ContinuousLinearEquiv.transportTestFunction_apply`: evaluation of a transported test function.
 * `ContinuousLinearEquiv.transportAddTestFunction`,
-  `ContinuousLinearEquiv.transportAddTestFunction_apply`: affine transport of test functions
-  along `x ↦ e x + b`, and its evaluation law.
+  `ContinuousLinearEquiv.transportAddTestFunction_apply`,
+  `ContinuousLinearEquiv.transportAddTestFunction_ofSupportedIn`,
+  `ContinuousLinearEquiv.transportAddTestFunction_zero`: affine transport of test functions
+  along `x ↦ e x + b`, its evaluation law, compatibility with `ofSupportedIn`, and reduction at
+  `b = 0` to `transportTestFunction`.
 * `ContinuousLinearEquiv.transportTestFunction_trans`,
-  `ContinuousLinearEquiv.transportTestFunction_transportTestFunction_symm`: functoriality.
+  `ContinuousLinearEquiv.transportTestFunction_transportTestFunction_symm`,
+  `ContinuousLinearEquiv.transportAddTestFunction_trans`,
+  `ContinuousLinearEquiv.transportAddTestFunction_transportAddTestFunction_symm`,
+  `ContinuousLinearEquiv.transportAddTestFunction_symm_transportAddTestFunction`: functoriality
+  and inverse laws for linear and affine transport.
 * `ContinuousLinearEquiv.transportTestFunction_postcompCLM`: transport commutes with
   postcomposition by a continuous linear map.
 * `ContinuousLinearEquiv.fderiv_transportTestFunction`,
@@ -131,7 +140,7 @@ theorem transportTestFunction_apply (e : E ≃L[ℝ] E') (hVO : MapsTo e V Ω) (
 
 /-- Affine transport along `x ↦ e x + b` of tests supported in a compact `K`, which are supported
 in `(fun x ↦ e x + b) '' K`, as a continuous linear map. -/
-private def transportAddSupportedIn (e : E ≃L[ℝ] E') (b : E') (K : Compacts E) :
+def transportAddSupportedIn (e : E ≃L[ℝ] E') (b : E') (K : Compacts E) :
     𝓓^{n}_{K}(E, F) →L[ℝ]
       𝓓^{n}_{K.map (fun x ↦ e x + b) (e.continuous.add continuous_const)}(E', F) :=
   letI P : 𝓓^{n}_{K}(E, F) →ₗ[ℝ]
@@ -155,6 +164,13 @@ private def transportAddSupportedIn (e : E ≃L[ℝ] E') (b : E') (K : Compacts 
       exact (e.symm.norm_iteratedFDeriv_comp_right_le φ (y - b) i).trans <|
         mul_le_mul_of_nonneg_left
           (ContDiffMapSupportedIn.norm_iteratedFDeriv_apply_le_seminorm ℝ hi) (by positivity) }
+
+/-- An affine-transported test supported in `K` is evaluated at `e.symm (y - b)`. -/
+@[simp]
+theorem transportAddSupportedIn_apply (e : E ≃L[ℝ] E') (b : E') (K : Compacts E)
+    (φ : 𝓓^{n}_{K}(E, F)) (y : E') :
+    transportAddSupportedIn e b K φ y = φ (e.symm (y - b)) :=
+  (rfl)
 
 /-- Transport test functions on `V` along the invertible affine map `x ↦ e x + b`, regarding the
 result `y ↦ φ (e.symm (y - b))` as a test function on an open set `Ω` containing
@@ -190,6 +206,25 @@ theorem transportAddTestFunction_apply (e : E ≃L[ℝ] E') (b : E')
     transportAddTestFunction e b hVO φ y = φ (e.symm (y - b)) :=
   (rfl)
 
+/-- Affine transport commutes with viewing a function supported in `K` as a test function. -/
+theorem transportAddTestFunction_ofSupportedIn (e : E ≃L[ℝ] E') (b : E')
+    (hVO : MapsTo (fun x ↦ e x + b) V Ω) {K : Compacts E} (hK : (K : Set E) ⊆ V)
+    (φ : 𝓓^{n}_{K}(E, F)) :
+    transportAddTestFunction e b hVO (ofSupportedIn hK φ) =
+      ofSupportedIn (by rw [Compacts.coe_map]; exact image_subset_iff.2 fun x hx ↦ hVO (hK hx))
+        (transportAddSupportedIn e b K φ) := by
+  ext y
+  simp
+
+/-- Affine test-function transport with zero translation reduces to linear transport. -/
+@[simp]
+theorem transportAddTestFunction_zero (e : E ≃L[ℝ] E')
+    (hVO : MapsTo (fun x ↦ e x + (0 : E')) V Ω) (φ : 𝓓^{n}(V, F)) :
+    transportAddTestFunction e 0 hVO φ =
+      transportTestFunction e (by simpa only [add_zero] using hVO : MapsTo e V Ω) φ := by
+  ext y
+  simp
+
 /-- Transporting along a composite of continuous linear equivalences is transporting along each
 in turn. -/
 theorem transportTestFunction_trans {E'' : Type*} [NormedAddCommGroup E''] [NormedSpace ℝ E'']
@@ -206,6 +241,37 @@ theorem transportTestFunction_transportTestFunction_symm (e : E ≃L[ℝ] E') (h
     (hOV : MapsTo e.symm Ω V) (φ : 𝓓^{n}(Ω, F)) :
     e.transportTestFunction hVO (e.symm.transportTestFunction hOV φ) = φ := by
   ext y
+  simp
+
+/-- Affine-transporting along `x ↦ e₁ x + b₁` and then along `z ↦ e₂ z + b₂` equals
+affine-transporting along the composite map `x ↦ (e₁.trans e₂) x + (e₂ b₁ + b₂)`. -/
+theorem transportAddTestFunction_trans {E'' : Type*} [NormedAddCommGroup E''] [NormedSpace ℝ E'']
+    {W : Opens E''} (e₁ : E ≃L[ℝ] E') (b₁ : E') (e₂ : E' ≃L[ℝ] E'') (b₂ : E'')
+    (h₁ : MapsTo (fun x ↦ e₁ x + b₁) V Ω) (h₂ : MapsTo (fun z ↦ e₂ z + b₂) Ω W)
+    (h : MapsTo (fun x ↦ (e₁.trans e₂) x + (e₂ b₁ + b₂)) V W) (φ : 𝓓^{n}(V, F)) :
+    (e₁.trans e₂).transportAddTestFunction (e₂ b₁ + b₂) h φ =
+      e₂.transportAddTestFunction b₂ h₂ (e₁.transportAddTestFunction b₁ h₁ φ) := by
+  ext y
+  simp [sub_sub, add_comm]
+
+/-- Affine-transporting along `y ↦ e.symm y + (-e.symm b)` and then along `x ↦ e x + b` gives back
+the original test function. -/
+@[simp]
+theorem transportAddTestFunction_transportAddTestFunction_symm (e : E ≃L[ℝ] E') (b : E')
+    (hVO : MapsTo (fun x ↦ e x + b) V Ω) (hOV : MapsTo (fun y ↦ e.symm y + -e.symm b) Ω V)
+    (φ : 𝓓^{n}(Ω, F)) :
+    e.transportAddTestFunction b hVO (e.symm.transportAddTestFunction (-e.symm b) hOV φ) = φ := by
+  ext y
+  simp
+
+/-- Affine-transporting along `x ↦ e x + b` and then along `y ↦ e.symm y + (-e.symm b)` gives back
+the original test function. -/
+@[simp]
+theorem transportAddTestFunction_symm_transportAddTestFunction (e : E ≃L[ℝ] E') (b : E')
+    (hVO : MapsTo (fun x ↦ e x + b) V Ω) (hOV : MapsTo (fun y ↦ e.symm y + -e.symm b) Ω V)
+    (φ : 𝓓^{n}(V, F)) :
+    e.symm.transportAddTestFunction (-e.symm b) hOV (e.transportAddTestFunction b hVO φ) = φ := by
+  ext x
   simp
 
 /-- Transport commutes with postcomposition by a continuous linear map. -/

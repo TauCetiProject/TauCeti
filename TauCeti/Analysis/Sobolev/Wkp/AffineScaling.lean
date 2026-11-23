@@ -17,6 +17,7 @@ public import TauCeti.MeasureTheory.Function.Lp.Dilation
 -- pushforward bounds are used only inside proofs and private helpers.
 import Mathlib.Topology.Algebra.Module.Equiv.Submodule
 import TauCeti.MeasureTheory.Measure.Lebesgue.EqHaar
+import TauCeti.Topology.Sets.Opens
 
 /-!
 # Affine transport and order-by-order seminorm scaling in `W^{k,p}`
@@ -660,29 +661,6 @@ variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDim
 
 namespace Wkp
 
-omit [Fact (1 ≤ p)] in
-private theorem norm_le_mul_det_inv_of_ae_le {G H : Type*} [NormedAddCommGroup G]
-    [NormedAddCommGroup H] (B : E ≃L[ℝ] E) (b : E) (hUW : MapsTo (fun x ↦ B x + b) U W)
-    {f : Lp G p (μ.restrict U)} {g : Lp H p (μ.restrict W)} {M : ℝ} (hM : 0 ≤ M)
-    (hpt : ∀ᵐ x ∂μ.restrict U, ‖f x‖ ≤ M * ‖g (B x + b)‖) :
-    ‖f‖ ≤ M * |LinearMap.det (B : E →ₗ[ℝ] E)|⁻¹ ^ (1 / p).toReal * ‖g‖ := by
-  have he : eLpNorm f p (μ.restrict U) ≤ ENNReal.ofReal M *
-      (ENNReal.ofReal |(LinearMap.det (B : E →ₗ[ℝ] E))⁻¹| ^ (1 / p).toReal *
-        eLpNorm g p (μ.restrict W)) :=
-    (eLpNorm_le_mul_eLpNorm_of_ae_le_mul (Lp.aestronglyMeasurable _) hpt p).trans <|
-      mul_le_mul_of_nonneg_left ((eLpNorm_mono_measure _
-        (Measure.restrict_mono hUW.subset_preimage le_rfl)).trans_eq
-        (Measure.eLpNorm_comp_continuousLinearEquiv_add_restrict_preimage μ _ B b p)) zero_le
-  have hfin : ENNReal.ofReal M *
-      (ENNReal.ofReal |(LinearMap.det (B : E →ₗ[ℝ] E))⁻¹| ^ (1 / p).toReal *
-        eLpNorm g p (μ.restrict W)) ≠ ⊤ :=
-    ENNReal.mul_ne_top ENNReal.ofReal_ne_top <| ENNReal.mul_ne_top
-      (ENNReal.rpow_ne_top_of_nonneg ENNReal.toReal_nonneg ENNReal.ofReal_ne_top)
-      (Lp.eLpNorm_ne_top _)
-  simpa only [ENNReal.toReal_mul, ENNReal.toReal_ofReal hM,
-    Measure.toReal_ofReal_abs_inv_rpow _ (1 / p).toReal, ← Lp.norm_def, mul_assoc] using
-    ENNReal.toReal_mono hfin he
-
 /-- **Order-zero upper bound under `MapsTo`.** For `x ↦ B x + b` mapping `U` into `W`, the `Lᵖ`
 value norm of `compAffineL μ B b hUW k u` is bounded by `|det B|⁻¹ ^ (1 / p).toReal * ‖value k u‖`
 (with exponent `0`, hence factor `1`, at `p = ∞`). -/
@@ -690,7 +668,7 @@ theorem norm_value_compAffineL_le (B : E ≃L[ℝ] E) (b : E)
     (hUW : MapsTo (fun x ↦ B x + b) U W) (k : ℕ) (u : Wkp μ W p k) :
     ‖value k (compAffineL μ B b hUW k u)‖ ≤
       |LinearMap.det (B : E →ₗ[ℝ] E)|⁻¹ ^ (1 / p).toReal * ‖value k u‖ := by
-  simpa only [one_mul] using norm_le_mul_det_inv_of_ae_le B b hUW zero_le_one
+  simpa only [one_mul] using Lp.norm_le_mul_det_inv_of_ae_le B b hUW zero_le_one
     ((value_compAffineL_ae μ B b hUW k u).mono fun x hx ↦ by rw [hx, one_mul])
 
 /-- **Order-`k + 1` upper bound under `MapsTo`.** For `x ↦ B x + b` mapping `U` into `W`, the
@@ -701,7 +679,7 @@ theorem norm_iteratedGradient_compAffineL_le (B : E ≃L[ℝ] E) (b : E)
     ‖iteratedGradient k (compAffineL μ B b hUW (k + 1) u)‖ ≤
       ‖(B : E →L[ℝ] E)‖ ^ (k + 1) * |LinearMap.det (B : E →ₗ[ℝ] E)|⁻¹ ^ (1 / p).toReal *
         ‖iteratedGradient k u‖ :=
-  norm_le_mul_det_inv_of_ae_le B b hUW (by positivity)
+  Lp.norm_le_mul_det_inv_of_ae_le B b hUW (by positivity)
     ((iteratedGradient_compAffineL_ae μ B b hUW k u).mono fun x hx ↦ by
       rw [hx]; exact (B : E →L[ℝ] E).norm_iteratedGradientPullback_apply_le k _)
 
@@ -752,7 +730,7 @@ theorem norm_compAffineL_le (B : E ≃L[ℝ] E) (b : E)
             (((B : E →L[ℝ] E).adjoint.le_opNorm _).trans ?_) 2
           rw [LinearIsometryEquiv.norm_map]
           exact mul_le_mul_of_nonneg_right (le_max_right _ _) (norm_nonneg _)
-      have h1 := norm_le_mul_det_inv_of_ae_le B b hUW hM hpt
+      have h1 := Lp.norm_le_mul_det_inv_of_ae_le B b hUW hM hpt
       rw [Submodule.norm_coe, Submodule.norm_coe, mul_comm (max 1 ‖(B : E →L[ℝ] E)‖)] at h1
       dsimp only [v₁, u₁] at h1; rwa [pow_one]
   | k + 2, u => by
@@ -962,33 +940,31 @@ end Scaling
 
 section Examples
 
-private def realOpenIoo (a b : ℝ) : Opens ℝ := ⟨Ioo a b, isOpen_Ioo⟩
-
-private theorem realOpenIoo_0_1_eq : (realOpenIoo 0 1 : Set ℝ) =
+private theorem opensIoo_0_1_eq : (Opens.Ioo (0 : ℝ) 1 : Set ℝ) =
     (fun x : ℝ ↦ (ContinuousLinearEquiv.smulLeft (Units.mk0 (2 : ℝ) two_ne_zero) : ℝ ≃L[ℝ] ℝ)
-      x + 1) ⁻¹' (realOpenIoo 1 3 : Set ℝ) := by
+      x + 1) ⁻¹' (Opens.Ioo (1 : ℝ) 3 : Set ℝ) := by
   ext x
-  simp only [realOpenIoo, Opens.coe_mk, mem_preimage, mem_Ioo,
+  simp only [Opens.coe_Ioo, mem_preimage, mem_Ioo,
     ContinuousLinearEquiv.smulLeft_apply_apply, Units.smul_def, Units.val_mk0, smul_eq_mul]
   exact ⟨fun h ↦ ⟨by linarith [h.1], by linarith [h.2]⟩,
     fun h ↦ ⟨by linarith [h.1], by linarith [h.2]⟩⟩
 
-example (u : Wkp volume (realOpenIoo 1 3) 2 1) :
-    ‖Wkp.value 1 (Wkp.compAffineEquiv volume _ 1 realOpenIoo_0_1_eq 1 u)‖ =
+example (u : Wkp volume (Opens.Ioo (1 : ℝ) 3) 2 1) :
+    ‖Wkp.value 1 (Wkp.compAffineEquiv volume _ 1 opensIoo_0_1_eq 1 u)‖ =
         (2 : ℝ)⁻¹ ^ (1 / 2 : ℝ) * ‖Wkp.value 1 u‖ ∧
-      ‖Wkp.iteratedGradient 0 (Wkp.compAffineEquiv volume _ 1 realOpenIoo_0_1_eq 1 u)‖ =
+      ‖Wkp.iteratedGradient 0 (Wkp.compAffineEquiv volume _ 1 opensIoo_0_1_eq 1 u)‖ =
         2 * (2 : ℝ)⁻¹ ^ (1 / 2 : ℝ) * ‖Wkp.iteratedGradient 0 u‖ := by
   refine ⟨?_, ?_⟩
   · simpa [Module.finrank_self] using
-      Wkp.norm_value_compAffineEquiv_smulLeft two_ne_zero (1 : ℝ) realOpenIoo_0_1_eq 1 u
+      Wkp.norm_value_compAffineEquiv_smulLeft two_ne_zero (1 : ℝ) opensIoo_0_1_eq 1 u
   · simpa [Module.finrank_self] using
-      Wkp.norm_iteratedGradient_compAffineEquiv_smulLeft two_ne_zero (1 : ℝ) realOpenIoo_0_1_eq 0 u
+      Wkp.norm_iteratedGradient_compAffineEquiv_smulLeft two_ne_zero (1 : ℝ) opensIoo_0_1_eq 0 u
 
-example (u : Wkp volume (realOpenIoo 1 3) ⊤ 2) :
-    ‖Wkp.iteratedGradient 1 (Wkp.compAffineEquiv volume _ 1 realOpenIoo_0_1_eq 2 u)‖ =
+example (u : Wkp volume (Opens.Ioo (1 : ℝ) 3) ⊤ 2) :
+    ‖Wkp.iteratedGradient 1 (Wkp.compAffineEquiv volume _ 1 opensIoo_0_1_eq 2 u)‖ =
       4 * ‖Wkp.iteratedGradient 1 u‖ := by
   have h := Wkp.norm_iteratedGradient_compAffineEquiv_smulLeft two_ne_zero (1 : ℝ)
-    realOpenIoo_0_1_eq 1 u
+    opensIoo_0_1_eq 1 u
   norm_num [ENNReal.toReal_top] at h
   exact h
 
