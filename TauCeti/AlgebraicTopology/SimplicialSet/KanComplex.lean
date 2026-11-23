@@ -23,7 +23,7 @@ since two facets meet in a codimension-two face
 (`Convexity.StdSimplex.exists_map_succAbove_of_map_succAbove_eq`).  They therefore glue to a
 continuous map on the topological horn, and composing with a retraction of the topological
 simplex onto its horn extends it to the whole simplex
-(`Convexity.StdSimplex.exists_continuousMap_comp_map_succAbove`).  This extension is a singular
+(`Convexity.StdSimplex.exists_continuousMap_comp_faceInclusion`).  This extension is a singular
 `(n + 1)`-simplex filling the horn.
 
 The Kan condition is what makes the combinatorial homotopy groups of the simplicial set
@@ -72,7 +72,7 @@ instance kanComplex_toSSet_obj (X : TopCat.{u}) : (toSSet.obj X).KanComplex := b
     · rw [StdSimplex.map_injective Fin.succAbove_right_injective h]
     · exact (key k hk j hj z y hjk h.symm).symm
   -- They extend to the simplex, and the extension fills the horn.
-  obtain ⟨F, hF⟩ := StdSimplex.exists_continuousMap_comp_map_succAbove i g hg
+  obtain ⟨F, hF⟩ := StdSimplex.exists_continuousMap_comp_faceInclusion i g hg
   refine ⟨SSet.yonedaEquiv.symm ((X.toSSetObjEquiv _).symm F), fun j hj => ?_⟩
   rw [SSet.stdSimplex.δ_comp_yonedaEquiv_symm]
   apply SSet.yonedaEquiv.injective
