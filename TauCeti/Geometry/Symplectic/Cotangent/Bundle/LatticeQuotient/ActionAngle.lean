@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Symplectic.Cotangent.Bundle.ActionAngle.Basic
-public import TauCeti.Geometry.Symplectic.Cotangent.Bundle.LatticeQuotient
+public import TauCeti.Geometry.Symplectic.Cotangent.Bundle.LatticeQuotient.Basic
 
 import TauCeti.Geometry.Manifold.DifferentialForm.Pullback.LocalDiffeomorph
 import TauCeti.Geometry.Manifold.LocalDiffeomorph.Basic
