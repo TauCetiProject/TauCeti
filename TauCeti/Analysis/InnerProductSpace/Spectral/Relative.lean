@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.InnerProductSpace.PointSpectrum
 public import TauCeti.LinearAlgebra.BilinearForm.RelativeEigenspace
 public import Mathlib.LinearAlgebra.QuadraticForm.Signature
+public import Mathlib.LinearAlgebra.SesquilinearForm.Basic
 import Mathlib.Analysis.InnerProductSpace.PiL2
 import TauCeti.Analysis.InnerProductSpace.Nondegenerate
 
@@ -28,6 +29,12 @@ negative spectral subspace is negative definite for `q` and the nonnegative one 
 semidefinite, and by Sylvester's law of inertia the dimension of the negative spectral subspace is
 the negative index of inertia of `q`, whatever positive definite `g` is used. When `q` is
 nondegenerate the negative and positive spectral subspaces are complementary.
+
+Applied to the symmetrization `s = g + g.flip` and the form `(v, w) ↦ s (f v) w`, this gives the
+spectral theorem for an endomorphism `f` self-adjoint for a positive definite, not necessarily
+symmetric, form `g`: its eigenspaces span `V`. This is how operators such as `ad X`, for `X` in
+the `-1`-eigenspace of a Cartan involution, are diagonalized without choosing an inner product
+space structure.
 
 ## Main declarations
 
@@ -50,9 +57,10 @@ nondegenerate the negative and positive spectral subspaces are complementary.
   and positive indices of inertia of `q`.
 * `LinearMap.BilinForm.isCompl_relativeSpectralSubspace_Iio_Ioi`: for nondegenerate `q`, the
   negative and positive spectral subspaces are complementary.
-* `LinearMap.BilinForm.exists_eigenbasis_of_isSelfAdjoint` and
-  `LinearMap.BilinForm.iSup_eigenspace_eq_top_of_isSelfAdjoint`: an operator self-adjoint for a
-  positive definite symmetric `g` admits an eigenbasis and its eigenspaces span `V`.
+* `LinearMap.BilinForm.exists_eigenbasis_of_isSelfAdjoint`: an operator self-adjoint for a
+  positive definite symmetric `g` admits an eigenbasis.
+* `LinearMap.IsSelfAdjoint.iSup_eigenspace_eq_top`: an endomorphism self-adjoint for a positive
+  definite form is diagonalizable.
 
 The Euclidean isometry is built from a `g`-orthogonal basis
 (`LinearMap.BilinForm.exists_orthogonal_basis`), and the spectral input is the point-spectral
@@ -302,22 +310,34 @@ theorem exists_eigenbasis_of_isSelfAdjoint (hg : g.IsSymm) (hpos : ∀ v, v ≠ 
     _ = e (hS.eigenvalues hn i • ob i) := congrArg e (hS.apply_eigenvectorBasis hn i)
     _ = hS.eigenvalues hn i • (ob.toBasis.map e) i := map_smul e _ _
 
-/-- **Spectral theorem for a self-adjoint operator (spanning).** An operator `T` self-adjoint for
-a symmetric positive definite bilinear form `g` on a finite-dimensional real space has eigenspaces
-spanning the whole space. -/
-theorem iSup_eigenspace_eq_top_of_isSelfAdjoint (hg : g.IsSymm) (hpos : ∀ v, v ≠ 0 → 0 < g v v)
-    {T : V →ₗ[ℝ] V} (hT : g.IsSelfAdjoint T) :
-    ⨆ μ : ℝ, Module.End.eigenspace T μ = ⊤ := by
-  let q : LinearMap.BilinForm ℝ V := g.compl₁₂ T LinearMap.id
-  have hq : q.IsSymm := isSymm_iff.mpr ⟨fun y z ↦ by
-    simp only [q, compl₁₂_apply, LinearMap.id_apply, RingHom.id_apply]
-    exact (hT y z).trans (hg.eq y (T z))⟩
-  have hgsep : g.SeparatingLeft := fun v hv ↦ by_contra fun hv0 ↦ (hpos v hv0).ne' (hv v)
-  have huniv := relativeSpectralSubspace_univ hg hpos hq
-  rw [relativeSpectralSubspace_def] at huniv
-  simpa only [Set.mem_univ, iSup_pos,
-    relativeEigenspace_eq_eigenspace (q := q) (T := T) hgsep fun _ _ ↦ by simp [q]] using huniv
-
 end SelfAdjoint
 
 end LinearMap.BilinForm
+
+namespace LinearMap.IsSelfAdjoint
+
+open LinearMap.BilinForm
+
+variable {V : Type*} [AddCommGroup V] [Module ℝ V] [FiniteDimensional ℝ V]
+  {g : LinearMap.BilinForm ℝ V} {f : Module.End ℝ V}
+
+/-- **Self-adjoint endomorphisms are diagonalizable.** On a finite-dimensional real space, the
+eigenspaces of an endomorphism self-adjoint for a positive definite bilinear form span the space.
+The form need not be symmetric. -/
+theorem iSup_eigenspace_eq_top (hpos : ∀ v, v ≠ 0 → 0 < g v v) (hf : g.IsSelfAdjoint f) :
+    ⨆ μ : ℝ, f.eigenspace μ = ⊤ := by
+  -- Pass to the symmetrization `s`, for which `f` is still self-adjoint.
+  set s := g + g.flip
+  have hs : s.IsSymm := ⟨fun v w ↦ by simp [s, add_comm]⟩
+  have hspos (v) (hv : v ≠ 0) : 0 < s v v := by
+    simpa [s] using add_pos (hpos v hv) (hpos v hv)
+  have hfs (v w : V) : s (f v) w = s v (f w) := by
+    simp [s, hf v w, hf w v]
+  have hsep : s.SeparatingLeft :=
+    separatingLeft_of_anisotropic (QuadraticMap.PosDef.anisotropic hspos)
+  have hq : (s.compLeft f).IsSymm := ⟨fun v w ↦ by
+    simp only [LinearMap.BilinForm.compLeft_apply, hfs, hs.eq v]⟩
+  simpa [relativeSpectralSubspace_def, relativeEigenspace_compLeft hsep] using
+    relativeSpectralSubspace_univ hs hspos hq
+
+end LinearMap.IsSelfAdjoint

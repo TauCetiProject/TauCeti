@@ -376,7 +376,7 @@ theorem IsCartanInvolution.iSup_eigenspace_ad_eq_top {θ : L ≃ₗ⁅ℝ⁆ L}
     (hθ : θ.IsCartanInvolution) {x : L} (hx : x ∈ θ.cartanP) :
     ⨆ μ : ℝ, Module.End.eigenspace (ad ℝ L x) μ = ⊤ :=
   have := hθ.finiteDimensional
-  LinearMap.BilinForm.iSup_eigenspace_eq_top_of_isSelfAdjoint hθ.isSymm_twistedKillingForm
+  LinearMap.IsSelfAdjoint.iSup_eigenspace_eq_top
     (fun _ hv ↦ hθ.twistedKillingForm_self_pos hv)
     ((LinearMap.mem_selfAdjointSubmodule _).mp (ad_mem_selfAdjointSubmodule_twistedKillingForm hx))
 

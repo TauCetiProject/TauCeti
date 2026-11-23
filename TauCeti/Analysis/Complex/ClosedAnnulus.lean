@@ -8,7 +8,7 @@ module
 public import Mathlib.Analysis.Complex.Basic
 public import Mathlib.Analysis.Normed.Module.Ball.RadialEquiv
 public import Mathlib.Topology.MetricSpace.ProperSpace
-public import TauCeti.Analysis.Complex.Circle
+public import TauCeti.Analysis.Complex.Circle.Basic
 
 /-!
 # The closed annulus in the complex plane

@@ -17,7 +17,7 @@ A nonnegative finite sequence in which every term is at most half of the previou
 most twice its first term. In Roth's lemma this bounds the sum of the weights `rᵢ` by `2 r₀`.
 
 The partial products of a sequence of terms at least `1`, and the partial sums of a nonnegative
-sequence, are monotone.
+sequence, are monotone, so each partial product through an entry is at most the full product.
 
 A nonnegative monotone sequence of length `D * k` bounds the `D`-th power of the product of `k`
 of its terms, the `j`-th of which is taken no later than position `D * j`. This converts bounds
@@ -32,6 +32,9 @@ of the whole sequence.
   `∑ᵢ rᵢ ≤ 2 r₀`.
 * `Fin.monotone_partialProd`, `Fin.monotone_partialSum`: the partial products of entries at least
   `1` (the partial sums of nonnegative entries) are monotone.
+* `Fin.partialProd_castSucc_mul_le`, `Fin.partialSum_castSucc_add_le`: for entries at least `1`
+  (nonnegative entries), the partial product (sum) through the `i`-th entry is at most the full
+  product (sum).
 * `Fin.prod_pow_le_prod_of_monotone`: if `c` is nonnegative and monotone on `Fin (D * k)` and
   `s j ≤ D * j`, then `(∏ⱼ c (s j)) ^ D ≤ ∏ᵢ cᵢ`.
 * `Fin.pow_sub_le_prod_of_monotone`: if `c : Fin n → R` is monotone with `1 ≤ cⱼ`, then
@@ -92,6 +95,16 @@ theorem monotone_partialProd {M : Type*} [Monoid M] [Preorder M] [MulLeftMono M]
   monotone_iff_le_succ.2 fun i ↦ by
     rw [partialProd_succ]
     exact le_mul_of_one_le_right' (hf i)
+
+/-- For entries at least `1`, the partial product through the `i`-th entry is at most the full
+product. -/
+@[to_additive /-- For nonnegative entries, the partial sum through the `i`-th entry is at most the
+full sum. -/]
+theorem partialProd_castSucc_mul_le {M : Type*} [Monoid M] [Preorder M] [MulLeftMono M] {n : ℕ}
+    {f : Fin n → M} (hf : ∀ i, 1 ≤ f i) (i : Fin n) :
+    partialProd f i.castSucc * f i ≤ partialProd f (last n) := by
+  rw [← partialProd_succ]
+  exact monotone_partialProd hf (le_last _)
 
 /-- In a monotone sequence `c : Fin n → R` of terms at least `1`, the `i`-th term raised to the
 power `n - i` is at most the product of the whole sequence: the `n - i` terms from position `i`

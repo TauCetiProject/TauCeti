@@ -29,8 +29,9 @@ groups by closed normal subgroups.
 
 The charts of a Lie group can also be pulled back along a locally homeomorphic homomorphism
 from a topological group, giving the source a Lie-group structure over the same model, or
-transported along a `C^n` diffeomorphism of model spaces via `ChartedSpace.comp` (in particular,
-re-modelling any finite-dimensional Lie group over `ℝ` or `ℂ` on `EuclideanSpace 𝕜 (Fin d)`).
+transported along a `C^n` diffeomorphism of model spaces via `Homeomorph.chartedSpaceComp` (in
+particular, re-modelling any finite-dimensional Lie group over `ℝ` or `ℂ` on
+`EuclideanSpace 𝕜 (Fin d)`).
 
 This file also proves that the integer power maps of a `C^n` Lie group are `C^n`, and packages
 inversion as a `C^n` diffeomorphism.
@@ -180,18 +181,16 @@ end Pullback
 section ModelTransport
 
 /-- Changing the model space of a `C^n` Lie group along a `C^n` diffeomorphism of models
-`Φ : H ≃ₘ^n⟮I, I'⟯ H'` makes `G` a `C^n` Lie group over `I'` for the composite charts
-`ChartedSpace.comp H' H G`. -/
+`Φ : H ≃ₘ^n⟮I, I'⟯ H'` makes `G` a `C^n` Lie group over `I'` for the charts
+`Φ.toHomeomorph.chartedSpaceComp G`. -/
 @[to_additive /-- Changing the model space of a `C^n` additive Lie group along a `C^n`
 diffeomorphism of models `Φ : H ≃ₘ^n⟮I, I'⟯ H'` makes `G` a `C^n` additive Lie group over `I'`
-for the composite charts `ChartedSpace.comp H' H G`. -/]
+for the charts `Φ.toHomeomorph.chartedSpaceComp G`. -/]
 theorem Diffeomorph.lieGroup_chartedSpaceComp (Φ : H ≃ₘ^n⟮I, I'⟯ H') (G : Type*)
     [TopologicalSpace G] [ChartedSpace H G] [Group G] [LieGroup I n G] :
-    letI := Φ.toHomeomorph.toOpenPartialHomeomorph.singletonChartedSpace (by simp)
-    letI := ChartedSpace.comp H' H G
+    letI := Φ.toHomeomorph.chartedSpaceComp G
     LieGroup I' n G := by
-  let _ := Φ.toHomeomorph.toOpenPartialHomeomorph.singletonChartedSpace (by simp)
-  let _ := ChartedSpace.comp H' H G
+  let _ := Φ.toHomeomorph.chartedSpaceComp G
   let _ : IsManifold I' n G := Φ.isManifold_chartedSpaceComp G
   have hid : ContMDiff I' I n (id : G → G) :=
     (Φ.contMDiff_chartedSpaceComp_iff (I'' := I') (f := (id : G → G))).mp (contMDiff_id (I := I'))
@@ -225,10 +224,7 @@ theorem TauCeti.exists_chartedSpace_euclideanSpace_lieGroup
     { toEquiv := ψLin.toContinuousLinearEquiv.toEquiv
       contMDiff_toFun := ψLin.toContinuousLinearEquiv.contDiff.contMDiff
       contMDiff_invFun := ψLin.toContinuousLinearEquiv.symm.contDiff.contMDiff }
-  have hlie := Φ.lieGroup_chartedSpaceComp G
-  let _ : ChartedSpace (EuclideanSpace 𝕜 (Fin (Module.finrank 𝕜 E))) E :=
-    Φ.toHomeomorph.toOpenPartialHomeomorph.singletonChartedSpace (by simp)
-  exact ⟨ChartedSpace.comp (EuclideanSpace 𝕜 (Fin (Module.finrank 𝕜 E))) E G, hlie⟩
+  exact ⟨Φ.toHomeomorph.chartedSpaceComp G, Φ.lieGroup_chartedSpaceComp G⟩
 
 end ModelTransport
 

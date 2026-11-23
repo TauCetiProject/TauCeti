@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RingTheory.RootsOfUnity.PrimitiveRoots
+public import Mathlib.Data.ZMod.Units
 public import Mathlib.FieldTheory.Normal.Defs
 public import Mathlib.GroupTheory.Abelianization.Defs
 public import Mathlib.RingTheory.Polynomial.Cyclotomic.Basic
@@ -63,6 +64,9 @@ evaluated scalar form.
   cyclotomic character is read off from the action on a primitive `d`-th root of unity.
 * `IsPrimitiveRoot.cast_autToPow_restrictNormalHom_eq`: the same for the restriction of an
   automorphism of an extension field to a normal intermediate field containing the root.
+* `IsPrimitiveRoot.autToPow_restrictNormal`: the cyclotomic character of the restriction of an
+  automorphism to a normal subextension, at a primitive `m`-th root `ζ ^ (n / m)` of unity, is its
+  cyclotomic character at the primitive `n`-th root `ζ` reduced modulo `m`.
 * `AlgEquiv.apply_eq_apply_of_abelianization_of_eq`: two automorphisms with the same image in the
   abelianization agree on every root of unity.
 * `IsPrimitiveRoot.exists_algEquiv_apply_eq_pow_of_coprime`: every coprime power of a primitive
@@ -229,6 +233,20 @@ theorem _root_.IsPrimitiveRoot.cast_autToPow_restrictNormalHom_eq {K L : Type*} 
       rw [IntermediateField.coe_pow, IntermediateField.coe_pow]
       exact hκ _ (by rw [← pow_mul, Nat.div_mul_cancel hd,
         (IsPrimitiveRoot.coe_submonoidClass_iff.2 hζ').pow_eq_one])
+
+/-- **Restriction reduces the cyclotomic character.** Let `E` be a normal subextension of `L / K`,
+`ζ ∈ L` a primitive `n`-th root of unity and `ζ' ∈ E` a primitive `m`-th root of unity mapping to
+`ζ ^ (n / m)`, where `m ∣ n`. If an automorphism `σ` of `L / K` raises `ζ` to the power `a`, then
+its restriction to `E` raises `ζ'` to the power `a` modulo `m`. -/
+theorem _root_.IsPrimitiveRoot.autToPow_restrictNormal {K E L : Type*} [Field K] [Field E]
+    [Field L] [Algebra K E] [Algebra K L] [Algebra E L] [IsScalarTower K E L] [Normal K E]
+    {m n : ℕ} [NeZero m] [NeZero n] (hmn : m ∣ n) {ζ : L} (hζ : IsPrimitiveRoot ζ n) {ζ' : E}
+    (hζ' : IsPrimitiveRoot ζ' m) (h : algebraMap E L ζ' = ζ ^ (n / m)) (σ : L ≃ₐ[K] L) :
+    hζ'.autToPow K (σ.restrictNormal E) = ZMod.unitsMap hmn (hζ.autToPow K σ) := by
+  refine Units.ext ?_
+  rw [ZMod.unitsMap_val, ← ZMod.natCast_zmod_val (hζ'.autToPow K (σ.restrictNormal E) : ZMod m)]
+  refine ((hζ.cast_autToPow_eq_natCast_iff hmn).2 ?_).symm
+  rw [← h, ← AlgEquiv.restrictNormal_commutes, ← map_pow, hζ'.autToPow_spec K]
 
 /-- **Roots of unity only see the abelianization.** Two automorphisms with the same image in the
 abelianization agree on every root of unity: on the roots of unity of order `d` they act through

@@ -7,10 +7,10 @@ module
 
 public import Mathlib.Algebra.BigOperators.Group.Finset.Basic
 public import Mathlib.Data.Finset.BooleanAlgebra
+public import Mathlib.Data.Finset.Lattice.Fold
 public import Mathlib.Data.Fintype.Basic
 public import Mathlib.Order.Fin.Basic
 import Mathlib.Algebra.Order.BigOperators.Group.Finset
-import Mathlib.Data.Finset.Lattice.Fold
 import Mathlib.Data.Fintype.Card
 import TauCeti.Data.Fin.StrictAnti
 
@@ -38,6 +38,8 @@ while remaining strictly increasing and below `p`.
 * `StrictMono.exists_strictMono_nat_extending_fin`: the extension, without the translation clause.
 * `StrictMono.add_sub_le_nat`: a strictly monotone sequence of naturals grows by at least the index
   gap; the increasing counterpart of `StrictAnti.add_sub_le_nat`.
+* `StrictMono.le_univ_sup_nat`: a path `x₀, …, xₙ` in a finite type along which a height strictly
+  increases has `n` at most the largest height.
 * `StrictMono.antitone_sub_sub`, `StrictMono.sum_sub_add_sum_sub_eq_mul`: for `p : Fin r → Fin n`
   strictly increasing, `n - r + i - p i` is antitone in `i` and
   `∑ i, (p i - i) + ∑ i, (n - r + i - p i) = r (n - r)`.
@@ -99,6 +101,15 @@ theorem StrictMono.add_sub_le_nat {η : Fin m → ℕ} (hη : StrictMono η) {i 
   have := Fin.le_def.mp hij
   have := j.isLt
   simp only [Function.comp_apply, Fin.rev_rev, Fin.val_rev] at h
+  omega
+
+/-- **A height strictly increasing along a path bounds its length**: if a height `h` on a finite
+type strictly increases along the path `x₀, …, xₙ`, then `n` is at most the largest height. -/
+theorem StrictMono.le_univ_sup_nat {α : Type*} [Fintype α] {h : α → ℕ} {n : ℕ}
+    {x : Fin (n + 1) → α} (hx : StrictMono (h ∘ x)) : n ≤ Finset.univ.sup h := by
+  have := hx.add_sub_le_nat (Fin.zero_le (Fin.last n))
+  simp only [Function.comp_apply, Fin.val_last, Fin.val_zero, Nat.sub_zero] at this
+  have := Finset.le_sup (f := h) (Finset.mem_univ (x (Fin.last n)))
   omega
 
 namespace StrictMono
