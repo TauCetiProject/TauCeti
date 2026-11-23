@@ -111,6 +111,12 @@ theorem coe_padicUnitPart_apply (x : ℚ_[p]ˣ) :
   (PadicInt.mkUnits_eq ((PadicInt.norm_coe _).trans (Padic.norm_unitPart x.ne_zero))).trans
     (Padic.coe_unitPart _)
 
+/-- On nonzero `p`-adic numbers, the unit part `TauCeti.padicUnitPart` is the total unit part
+`Padic.unitPart`. -/
+theorem coe_padicUnitPart_eq_unitPart (x : ℚ_[p]ˣ) :
+    ((padicUnitPart p x : ℤ_[p]ˣ) : ℤ_[p]) = Padic.unitPart (x : ℚ_[p]) :=
+  (rfl)
+
 /-- **Every nonzero `p`-adic number is `p ^ v(x)` times its unit part.** -/
 theorem coe_eq_zpow_valuation_mul_padicUnitPart (x : ℚ_[p]ˣ) :
     (x : ℚ_[p]) = (p : ℚ_[p]) ^ (x : ℚ_[p]).valuation * (padicUnitPart p x : ℤ_[p]) := by

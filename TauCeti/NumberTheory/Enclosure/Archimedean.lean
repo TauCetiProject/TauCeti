@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.Order.Interval.Basic
 public import Mathlib.Analysis.Complex.Norm
+import TauCeti.Order.Interval.Basic
 
 /-!
 # Rational enclosures of real and complex numbers
@@ -46,7 +47,10 @@ An enclosure of width zero, on the other hand, determines the enclosed number
 * `TauCeti.RealEnclosure.ofRat`, `TauCeti.RealEnclosure.ofLE`: the degenerate enclosure `[q, q]`
   of a rational `q`, and the enlargement of an enclosure to a larger interval.
 * `TauCeti.ComplexEnclosure.max_abs_sub_le_width`: every point `w` of the box satisfies
-  `max (|Re z - Re w|, |Im z - Im w|) ≤ width`.
+  `max (|Re z - Re w|, |Im z - Im w|) ≤ width`; at absolute precision `n` the bound is `2⁻ⁿ`
+  (`TauCeti.ComplexEnclosure.HasPrecision.max_abs_sub_le`).
+* `TauCeti.ComplexEnclosure.ratCast_add_ratCast_mul_I_mem_box_iff`: a point `a + b i` with
+  rational coordinates lies in the box exactly when `a` and `b` lie in the rational intervals.
 * `TauCeti.ComplexEnclosure.normSq_le_normSqBound`:
   `|z|² ≤ max (l_R², u_R²) + max (l_I², u_I²)`.
 
@@ -93,7 +97,7 @@ theorem abs_sub_le_length (E : RealEnclosure t) {u : ℝ}
 of the interval. -/
 theorem abs_sub_ratCast_le_length (E : RealEnclosure t) {q : ℚ} (hq : q ∈ E.interval) :
     |t - q| ≤ E.interval.length :=
-  E.abs_sub_le_length ⟨by exact_mod_cast hq.1, by exact_mod_cast hq.2⟩
+  E.abs_sub_le_length ((NonemptyInterval.apply_mem_Icc_iff Rat.cast_strictMono).mpr hq)
 
 /-- The enclosed number is within the width of the interval of its lower endpoint. -/
 theorem abs_sub_fst_le_length (E : RealEnclosure t) :
@@ -163,7 +167,7 @@ theorem HasPrecision.abs_sub_le {E : RealEnclosure t} {n : ℕ} (h : E.HasPrecis
 number up to `2⁻ⁿ`. -/
 theorem HasPrecision.abs_sub_ratCast_le {E : RealEnclosure t} {n : ℕ} (h : E.HasPrecision n)
     {q : ℚ} (hq : q ∈ E.interval) : |t - q| ≤ ((2 : ℝ) ^ n)⁻¹ :=
-  h.abs_sub_le ⟨by exact_mod_cast hq.1, by exact_mod_cast hq.2⟩
+  h.abs_sub_le ((NonemptyInterval.apply_mem_Icc_iff Rat.cast_strictMono).mpr hq)
 
 /-- The degenerate enclosure of a rational number has every absolute precision. -/
 @[simp]
@@ -204,6 +208,14 @@ theorem box_def (E : ComplexEnclosure z) :
 theorem self_mem_box (E : ComplexEnclosure z) : z ∈ E.box :=
   mem_reProdIm.mpr ⟨E.re.mem_Icc, E.im.mem_Icc⟩
 
+/-- A point `a + b i` with rational coordinates lies in the box exactly when `a` lies in the real
+interval and `b` in the imaginary interval of the enclosure. -/
+theorem ratCast_add_ratCast_mul_I_mem_box_iff (E : ComplexEnclosure z) (a b : ℚ) :
+    (a + b * I : ℂ) ∈ E.box ↔ a ∈ E.re.interval ∧ b ∈ E.im.interval := by
+  rw [box_def, mem_reProdIm, ← NonemptyInterval.apply_mem_Icc_iff (Rat.cast_strictMono (K := ℝ)),
+    ← NonemptyInterval.apply_mem_Icc_iff (Rat.cast_strictMono (K := ℝ))]
+  simp
+
 /-- The coordinatewise error bound of a complex enclosure: the larger of the widths of its two
 intervals. It bounds the errors of the real and of the imaginary part separately, not the modulus
 of the error. -/
@@ -232,7 +244,7 @@ theorem eq_of_width_eq_zero (E : ComplexEnclosure z) (h : E.width = 0) :
     (le_antisymm (h ▸ le_max_left _ _) E.re.interval.length_nonneg)
   have him := E.im.eq_of_length_eq_zero
     (le_antisymm (h ▸ le_max_right _ _) E.im.interval.length_nonneg)
-  apply Complex.ext <;> simp [hre, him]
+  simpa [hre, him] using (re_add_im z).symm
 
 /-- A complex enclosure has *absolute precision* `n` when both of its intervals have width at
 most `2⁻ⁿ`. -/
@@ -257,6 +269,13 @@ instance (E : ComplexEnclosure z) (n : ℕ) : Decidable (E.HasPrecision n) :=
 theorem HasPrecision.mono {E : ComplexEnclosure z} {m n : ℕ} (h : E.HasPrecision n)
     (hmn : m ≤ n) : E.HasPrecision m :=
   ⟨h.1.mono hmn, h.2.mono hmn⟩
+
+/-- At absolute precision `n`, every point `w` of the box approximates the enclosed number
+coordinatewise up to `2⁻ⁿ`. -/
+theorem HasPrecision.max_abs_sub_le {E : ComplexEnclosure z} {n : ℕ} (h : E.HasPrecision n)
+    {w : ℂ} (hw : w ∈ E.box) : max |z.re - w.re| |z.im - w.im| ≤ ((2 : ℝ) ^ n)⁻¹ := by
+  rw [box_def, mem_reProdIm] at hw
+  exact max_le (h.1.abs_sub_le hw.1) (h.2.abs_sub_le hw.2)
 
 /-- The rational upper bound `max (l_R², u_R²) + max (l_I², u_I²)` for `|z|²` read off from a
 complex enclosure `([l_R, u_R], [l_I, u_I])`. -/
@@ -302,7 +321,7 @@ real number `Re z`, which is enclosed by the real interval of the enclosure. -/
 theorem re_eq_self_of_im_interval_eq_pure_zero (E : ComplexEnclosure z)
     (h : E.im.interval = NonemptyInterval.pure 0) : (z.re : ℂ) = z := by
   have him := E.im.eq_of_interval_eq_pure h
-  apply Complex.ext <;> simp [him]
+  simpa [him] using re_add_im z
 
 end ComplexEnclosure
 

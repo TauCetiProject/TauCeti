@@ -365,8 +365,9 @@ theorem norm_mul_zpow_neg_valuation {x : ℚ_[p]} (hx : x ≠ 0) :
     neg_neg, ← zpow_add₀ hp, neg_add_cancel, _root_.zpow_zero]
 
 /-- The unit part `x p ^ (-v(x))` of `x : ℚ_[p]`, as a `p`-adic integer, extended by `0` at
-`x = 0`. On nonzero `x` it is the unit `TauCeti.padicUnitPart p x` of `ℤ_[p]`; this total version
-is the one to use when `x` may vanish. -/
+`x = 0`. On nonzero `x` it is the unit `TauCeti.padicUnitPart p x` of `ℤ_[p]`
+(`TauCeti.coe_padicUnitPart_eq_unitPart`); this total version is the one to use when `x` may
+vanish. -/
 noncomputable def unitPart (x : ℚ_[p]) : ℤ_[p] :=
   ⟨x * (p : ℚ_[p]) ^ (-x.valuation), by
     by_cases hx : x = 0

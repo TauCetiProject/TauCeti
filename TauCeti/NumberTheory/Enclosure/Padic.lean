@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.NumberTheory.Padics.RingHoms
+public import Mathlib.NumberTheory.Padics.PadicNumbers
 import TauCeti.Analysis.Normed.Group.Ultra
 import TauCeti.NumberTheory.Padics.PadicIntegers
 import TauCeti.NumberTheory.Padics.RingHoms
@@ -47,6 +47,8 @@ A zero-centred enclosure does not certify vanishing: at `p = 3`, the enclosure `
 
 ## Main results
 
+* `TauCeti.PadicEnclosure.ratCast_mem_closedBall_iff`: a rational `q` lies in the ball exactly
+  when `q = c` or `N ≤ v_p(q - c)`.
 * `TauCeti.PadicEnclosure.zpow_neg_normalizedVal`: `p ^ (-v) = max (‖c‖, p ^ (-N))`.
 * `TauCeti.PadicEnclosure.normalizedResidue_lt`, `TauCeti.PadicEnclosure.coprime_normalizedResidue`:
   the residue lies in `[0, p ^ (N - v))` and is prime to `p` when `v < N`.
@@ -91,6 +93,14 @@ theorem mem_closedBall (E : PadicEnclosure p x) :
   rw [Metric.mem_closedBall, dist_eq_norm]
   exact E.norm_sub_le
 
+/-- A rational number `q` lies in the ball of an enclosure exactly when `q` is the centre or the
+`p`-adic valuation of `q - c` is at least the precision. -/
+theorem ratCast_mem_closedBall_iff (E : PadicEnclosure p x) (q : ℚ) :
+    (q : ℚ_[p]) ∈ Metric.closedBall (E.center : ℚ_[p]) ((p : ℝ) ^ (-E.prec)) ↔
+      q = E.center ∨ E.prec ≤ padicValRat p (q - E.center) := by
+  rw [Metric.mem_closedBall, dist_eq_norm, ← Rat.cast_sub, Padic.norm_ratCast_le_zpow_neg_iff,
+    sub_eq_zero]
+
 /-- The exact enclosure `(q, N)` of a rational number `q`, at any precision `N`. -/
 def ofRat (q : ℚ) (N : ℤ) : PadicEnclosure p q where
   center := q
@@ -129,8 +139,11 @@ def ofNormSubLe (E : PadicEnclosure p x) (c : ℚ)
     (h : ‖(E.center : ℚ_[p]) - c‖ ≤ (p : ℝ) ^ (-E.prec)) : PadicEnclosure p x where
   center := c
   prec := E.prec
-  norm_sub_le := (IsUltrametricDist.norm_sub_le_max_norm_sub _ (E.center : ℚ_[p]) _).trans
-    (max_le E.norm_sub_le (by rwa [norm_sub_rev]))
+  norm_sub_le := by
+    have hx := E.mem_closedBall
+    rwa [IsUltrametricDist.closedBall_eq_of_mem (y := (c : ℚ_[p]))
+      (by rwa [Metric.mem_closedBall, dist_eq_norm, norm_sub_rev]), Metric.mem_closedBall,
+      dist_eq_norm] at hx
 
 @[simp]
 theorem ofNormSubLe_center (E : PadicEnclosure p x) (c : ℚ)
@@ -335,10 +348,12 @@ theorem normalizedVal_eq_and_normalizedResidue_eq_iff {y : ℚ_[p]} (E : PadicEn
   · rintro ⟨hv, hs⟩
     have hEF : E.normalizedCenter = F.normalizedCenter := by
       rw [normalizedCenter_def, normalizedCenter_def, hv, hs]
-    have hF := F.norm_center_sub_normalizedCenter_le
-    rw [← hN, ← hEF] at hF
-    exact (IsUltrametricDist.norm_sub_le_max_norm_sub _ (E.normalizedCenter : ℚ_[p]) _).trans
-      (max_le E.norm_center_sub_normalizedCenter_le hF)
+    -- The centre of `E` lies in its own ball, which is the ball of the common normalized centre.
+    have hc := Metric.mem_closedBall_self (x := (E.center : ℚ_[p]))
+      (zpow_nonneg (Nat.cast_nonneg (α := ℝ) p) (-E.prec))
+    rw [← E.closedBall_normalizedCenter, hEF, hN, F.closedBall_normalizedCenter,
+      Metric.mem_closedBall, dist_eq_norm] at hc
+    rwa [hN]
   · intro h
     have hv : E.normalizedVal = F.normalizedVal := by
       have h' : (p : ℝ) ^ (-E.normalizedVal) = (p : ℝ) ^ (-F.normalizedVal) := by
@@ -347,10 +362,11 @@ theorem normalizedVal_eq_and_normalizedResidue_eq_iff {y : ℚ_[p]} (E : PadicEn
       exact neg_inj.mp (zpow_right_injective₀ (Nat.cast_pos.mpr hp.out.pos)
         (Nat.one_lt_cast.mpr hp.out.one_lt).ne' h')
     refine ⟨hv, E.normalizedResidue_eq_of_norm_sub_le (hv ▸ hN ▸ F.normalizedResidue_lt) ?_⟩
-    have hF := F.norm_center_sub_normalizedCenter_le
-    rw [ratCast_normalizedCenter, ← hN, ← hv] at hF
-    exact (IsUltrametricDist.norm_sub_le_max_norm_sub _ (F.center : ℚ_[p]) _).trans
-      (max_le h (by rwa [norm_sub_rev]))
+    -- The centre of `E` lies in the ball of `F`, which is the ball of its normalized centre.
+    have hc : (E.center : ℚ_[p]) ∈ Metric.closedBall (F.center : ℚ_[p]) ((p : ℝ) ^ (-F.prec)) := by
+      rwa [Metric.mem_closedBall, dist_eq_norm, ← hN]
+    rwa [← F.closedBall_normalizedCenter, Metric.mem_closedBall, dist_eq_norm,
+      ratCast_normalizedCenter, ← hN, ← hv] at hc
 
 /-- Normalizing an enclosure does not change the valuation component of its record. -/
 @[simp]
