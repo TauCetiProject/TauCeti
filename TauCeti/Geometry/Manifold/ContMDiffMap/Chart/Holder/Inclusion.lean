@@ -27,7 +27,7 @@ the Euclidean inclusion `TauCeti.HolderSpace.inclusionL`.
 
 ## Main results
 
-* `TauCeti.CompactChartAtlas.CkHolderSpace.holderWith_chartIteratedFDeriv_of_le`: the `k`th
+* `TauCeti.CompactChartAtlas.CkHolderSpace.holderWith_restrict_chartIteratedFDeriv_of_le`: the `k`th
   coordinate derivative of an element of `C^{k,α}(M, F)` is `β`-Hölder on each piece.
 * `TauCeti.CompactChartAtlas.CkHolderSpace.norm_inclusionL_le`: the inclusion has norm at most
   `2 N + 1`.
@@ -57,7 +57,7 @@ variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
 /-- For `β ≤ α`, the `k`th coordinate derivative of an element `f` of `C^{k,α}(M, F)` is
 `β`-Hölder on each piece of the atlas, with constant `max (2 ‖f‖) [D^k f]_α`: nearby points are
 controlled by the `α`-Hölder bound and distant ones by the bound `‖f‖` on the derivative. -/
-theorem holderWith_chartIteratedFDeriv_of_le (hβα : β ≤ α) (f : A.CkHolderSpace k α F)
+theorem holderWith_restrict_chartIteratedFDeriv_of_le (hβα : β ≤ α) (f : A.CkHolderSpace k α F)
     (i : A.ι) :
     HolderWith (max (2 * ‖f‖₊) (ContMDiffMap.chartHolderNorm (A.center i) (A.piece i) k le_rfl α
         (toContMDiffMap A k α F f))) β
@@ -75,8 +75,9 @@ private theorem chartHolderNorm_le_of_le (hβα : β ≤ α) (f : A.CkHolderSpac
         (toContMDiffMap A k α F f) : ℝ) ≤
       2 * ‖f‖ + ContMDiffMap.chartHolderNorm (A.center i) (A.piece i) k le_rfl α
         (toContMDiffMap A k α F f) := by
-  have h := NNReal.coe_le_coe.2 (holderWith_chartIteratedFDeriv_of_le hβα f i).nnholderNorm_le
-  rw [NNReal.coe_max, NNReal.coe_mul, NNReal.coe_ofNat, coe_nnNorm] at h
+  have h := NNReal.coe_le_coe.2
+    (holderWith_restrict_chartIteratedFDeriv_of_le hβα f i).nnholderNorm_le
+  push_cast at h
   rw [ContMDiffMap.chartHolderNorm_def]
   exact h.trans (max_le_add_of_nonneg (by positivity) (NNReal.coe_nonneg _))
 
@@ -88,16 +89,15 @@ most `2 N + 1`, for `N` the number of pieces of the atlas
 noncomputable def inclusionL (hβα : β ≤ α) : A.CkHolderSpace k α F →L[𝕜] A.CkHolderSpace k β F :=
   LinearMap.mkContinuous
     { toFun f := mk (toContMDiffMap A k α F f) fun i ↦
-        ContMDiffMap.memChartHolder_iff.2 ⟨_, holderWith_chartIteratedFDeriv_of_le hβα f i⟩
+        ContMDiffMap.memChartHolder_iff.2 ⟨_, holderWith_restrict_chartIteratedFDeriv_of_le hβα f i⟩
       map_add' _ _ := ext fun _ ↦ by simp
       map_smul' _ _ := ext fun _ ↦ by simp }
     (2 * Fintype.card A.ι + 1) fun f ↦ by
-      change ‖mk (toContMDiffMap A k α F f) _‖ ≤ _
-      rw [norm_def, toContMDiffMap_mk]
+      rw [LinearMap.coe_mk, AddHom.coe_mk, norm_def, toContMDiffMap_mk]
       have hf := norm_def f
       have hsum := Finset.sum_le_sum fun i (_ : i ∈ Finset.univ) ↦ chartHolderNorm_le_of_le hβα f i
       rw [Finset.sum_add_distrib, Finset.sum_const, Finset.card_univ, nsmul_eq_mul] at hsum
-      nlinarith
+      linarith
 
 @[simp]
 theorem coe_inclusionL (hβα : β ≤ α) (f : A.CkHolderSpace k α F) :
