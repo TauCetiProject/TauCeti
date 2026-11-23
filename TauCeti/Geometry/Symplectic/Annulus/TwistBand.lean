@@ -65,7 +65,7 @@ band, and when `F` preserves area and the line `y = 0`:
 These are the global generating functions of the twist factors in the generating-function proof of
 the Poincaré–Birkhoff theorem. With the convention `y = -∂₁ S'`, `Y = ∂₂ S'`, a positive twist
 `(x, y) ↦ (x + c y, y)`, `c > 0`, has the generator `(X - x)² / (2c)`, with `∂₁ ∂₂ S' = -1 / c`.
-More generally, for `c ≠ 0` the band generating function of the affine shear
+More generally, the band generating function of the affine shear
 `(x, y) ↦ (x + a + c y, y)` over the whole plane is `(X - x - a)² / (2c)`
 (`TauCeti.stripBandGeneratingFunction_affineShear`).
 
@@ -413,14 +413,18 @@ theorem fderiv_fderiv_stripBandGeneratingFunction_apply (hJ : IsOpen J) (hJc : J
 
 /-! ### Affine shears -/
 
-/-- **The band generating function of an affine shear.** For `c ≠ 0`, the affine shear
-`(x, y) ↦ (x + a + c y, y)` twists everywhere, and its band generating function over the whole
-plane is `S'(x, X) = (X - x - a)² / (2c)`. For instance the negative twist
-`(x, y) ↦ (x - (6y + 1) / 8, y)` (`a = -1 / 8`, `c = -3 / 4`) has the generator
+/-- **The band generating function of an affine shear.** The band generating function of the
+affine shear `(x, y) ↦ (x + a + c y, y)` over the whole plane is
+`S'(x, X) = (X - x - a)² / (2c)`. For `c ≠ 0` the shear twists everywhere; for `c = 0` both sides
+are `0`, since the strip generating function `c y² / 2` vanishes and `x / 0 = 0`. For instance the
+negative twist `(x, y) ↦ (x - (6y + 1) / 8, y)` (`a = -1 / 8`, `c = -3 / 4`) has the generator
 `-(2/3) (x - X)² + (x - X) / 6 - 1 / 96`. -/
-theorem stripBandGeneratingFunction_affineShear {a c : ℝ} (hc : c ≠ 0) (z : ℝ × ℝ) :
+theorem stripBandGeneratingFunction_affineShear (a c : ℝ) (z : ℝ × ℝ) :
     stripBandGeneratingFunction (fun q : ℝ × ℝ ↦ (q.1 + a + c * q.2, q.2)) univ z =
       (z.2 - z.1 - a) ^ 2 / (2 * c) := by
+  obtain rfl | hc := eq_or_ne c 0
+  · rw [stripBandGeneratingFunction_def, stripGeneratingFunction_affineShear]
+    simp
   set F : ℝ × ℝ → ℝ × ℝ := fun q ↦ (q.1 + a + c * q.2, q.2)
   have hinj : InjOn (stripTwistCoord F) (Prod.snd ⁻¹' univ) := by
     rintro ⟨x, y⟩ - ⟨x', y'⟩ - h
