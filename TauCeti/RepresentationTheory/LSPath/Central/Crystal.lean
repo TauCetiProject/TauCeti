@@ -68,9 +68,8 @@ theorem crystal_f_centralTransport (i : b.support) (π : LSPath P b lam) :
   have := P.finite_weylGroup_of_base b
   let f₀ : X →+ (ℚ ⊗[ℤ] X) := (TensorProduct.mk ℤ ℚ X 1).toAddMonoidHom
   let F₀ : Module.Dual ℚ (ℚ ⊗[ℤ] X) := Module.Dual.baseChange ℚ (P.coroot' i)
-  have hF₀ (x : X) : F₀ (f₀ x) = (P.coroot' i x : ℚ) := by
-    rw [LinearMap.toAddMonoidHom_coe, TensorProduct.mk_apply,
-      Module.Dual.baseChange_apply_one_tmul, eq_intCast]
+  have hF₀ (x : X) : F₀ (f₀ x) = (P.coroot' i x : ℚ) :=
+    Module.Dual.baseChange_apply_toAddMonoidHom_mk_one (P.coroot' i) x
   have hFχ : F₀ (f₀ χ) = 0 := by rw [hF₀ χ, hχ i i.property, Int.cast_zero]
   have hS : (Set.range fun w : P.weylGroup ↦ f₀ (w • lam)).Pairwise fun u v ↦ ¬ SameRay ℚ u v := by
     simpa only [f₀, LinearMap.toAddMonoidHom_coe] using

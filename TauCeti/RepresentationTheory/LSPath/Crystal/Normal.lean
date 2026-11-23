@@ -61,21 +61,15 @@ variable {ι X Y : Type*} [AddCommGroup X] [AddCommGroup Y]
 
 /-! ### Construction of the normal crystal on `LSPath P b λ` -/
 
-omit [Finite ι] [P.IsReduced] in
-private theorem baseChange_coroot'_mk_one (i : b.support) (x : X) :
-    Module.Dual.baseChange ℚ (P.coroot' i)
-      ((TensorProduct.mk ℤ ℚ X 1).toAddMonoidHom x) = (P.coroot' i x : ℚ) := by
-  rw [LinearMap.toAddMonoidHom_coe, TensorProduct.mk_apply,
-    Module.Dual.baseChange_apply_one_tmul, eq_intCast]
-
 private noncomputable abbrev ratCrystalOn (hlam : lam ∈ dominantChamber P b) :
     NormalCrystal P b (Set.range (toRatPLPath (P := P) (b := b) (lam := lam))) :=
   PLPath.normalCrystalOn (P := P) (b := b) (𝕜 := ℚ) (V := ℚ ⊗[ℤ] X)
     (f := (TensorProduct.mk ℤ ℚ X 1).toAddMonoidHom)
     (F := fun i ↦ Module.Dual.baseChange ℚ (P.coroot' i))
     (by simpa only [LinearMap.toAddMonoidHom_coe] using P.tensorProduct_mk_injective ℚ)
-    baseChange_coroot'_mk_one
-    (isCrystalSet_range_toPLPath hlam _ baseChange_coroot'_mk_one)
+    (fun i ↦ Module.Dual.baseChange_apply_toAddMonoidHom_mk_one (P.coroot' i))
+    (isCrystalSet_range_toPLPath hlam _ fun i ↦
+      Module.Dual.baseChange_apply_toAddMonoidHom_mk_one (P.coroot' i))
 
 private noncomputable abbrev toRatRangeEquiv (hlam : lam ∈ dominantChamber P b) :
     LSPath P b lam ≃ Set.range (toRatPLPath (P := P) (b := b) (lam := lam)) :=
@@ -335,8 +329,11 @@ noncomputable def dualIso (hlam : lam ∈ dominantChamber P b)
   e_toFun i π := by
     simp only [Equiv.toFun_as_coe]
     apply Option.map_injective (toRatPLPath_injective hlam')
-    rw [← raise_toPLPath hlam' _ i _ (baseChange_coroot'_mk_one i), toPLPath_dual,
-      PLPath.raise_reverse, lower_toPLPath hlam _ i _ (baseChange_coroot'_mk_one i),
+    rw [← raise_toPLPath hlam' _ i _
+        (Module.Dual.baseChange_apply_toAddMonoidHom_mk_one (P.coroot' i)),
+      toPLPath_dual, PLPath.raise_reverse,
+      lower_toPLPath hlam _ i _
+        (Module.Dual.baseChange_apply_toAddMonoidHom_mk_one (P.coroot' i)),
       NormalCrystal.dual_e, Option.map_map, Option.map_map]
     exact congrArg (Option.map · _) (funext fun ρ : LSPath P b lam ↦ (toPLPath_dual ρ ℚ _).symm)
 
@@ -363,9 +360,11 @@ theorem forall_crystal_e_eq_none_iff (π : LSPath P b lam) :
     (∀ i, (crystal hlam).e i π = none) ↔ π = straight lam := by
   have := P.flip_isReduced
   rw [← π.forall_raise_eq_none_iff hlam (TensorProduct.mk ℤ ℚ X 1).toAddMonoidHom
-    (fun i ↦ Module.Dual.baseChange ℚ (P.coroot' i)) baseChange_coroot'_mk_one]
+    (fun i ↦ Module.Dual.baseChange ℚ (P.coroot' i))
+    (fun i ↦ Module.Dual.baseChange_apply_toAddMonoidHom_mk_one (P.coroot' i))]
   exact forall_congr' fun i ↦ by
-    rw [raise_toPLPath hlam _ i _ (baseChange_coroot'_mk_one i), Option.map_eq_none_iff]
+    rw [raise_toPLPath hlam _ i _
+      (Module.Dual.baseChange_apply_toAddMonoidHom_mk_one (P.coroot' i)), Option.map_eq_none_iff]
 
 @[simp]
 theorem crystal_e_straight (i : b.support) : (crystal hlam).e i (straight lam) = none :=

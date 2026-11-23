@@ -155,53 +155,24 @@ section Semilinear
 variable {R S T M V : Type*} [CommSemiring R] [Semiring S] [Algebra R S] [Semiring T]
   {σ : S →+* T} [AddCommMonoid M] [Module R M] [AddCommMonoid V] [Module T V]
 
-private theorem compHom_smul {A B V : Type*} [Semiring A] [Semiring B] (τ : A →+* B)
-    [AddCommMonoid V] [Module B V] (a : A) (v : V) :
-    letI : Module A V := Module.compHom V τ
-    a • v = τ a • v :=
-  rfl
-
-private theorem compHomIsScalarTower (R S T V : Type*) [CommSemiring R] [Semiring S] [Algebra R S]
-    [Semiring T] (σ : S →+* T) [AddCommMonoid V] [Module T V] :
-    letI : Module S V := Module.compHom V σ
-    letI : Module R V := Module.compHom V (σ.comp (algebraMap R S))
-    IsScalarTower R S V :=
-  letI : Module S V := Module.compHom V σ
-  letI : Module R V := Module.compHom V (σ.comp (algebraMap R S))
-  ⟨fun r s v ↦ by
-    rw [compHom_smul (σ.comp (algebraMap R S)), compHom_smul σ, compHom_smul σ,
-      RingHom.comp_apply, Algebra.smul_def, map_mul, mul_smul]⟩
-
-private theorem compHomSMulCommClass (R S T V : Type*) [CommSemiring R] [Semiring S] [Algebra R S]
-    [Semiring T] (σ : S →+* T) [AddCommMonoid V] [Module T V] :
-    letI : Module S V := Module.compHom V σ
-    letI : Module R V := Module.compHom V (σ.comp (algebraMap R S))
-    SMulCommClass R S V :=
-  letI : Module S V := Module.compHom V σ
-  letI : Module R V := Module.compHom V (σ.comp (algebraMap R S))
-  ⟨fun r s v ↦ by
-    rw [compHom_smul (σ.comp (algebraMap R S)), compHom_smul σ, compHom_smul σ,
-      compHom_smul (σ.comp (algebraMap R S)), RingHom.comp_apply,
-      ← mul_smul, ← mul_smul, ← map_mul, ← map_mul, Algebra.commutes]⟩
-
 private def liftBaseChangeSemilinearAux (f : M →ₛₗ[σ.comp (algebraMap R S)] V) :
     { g : (S ⊗[R] M) →ₛₗ[σ] V // ∀ s m, g (s ⊗ₜ[R] m) = σ s • f m } :=
   letI : Module S V := Module.compHom V σ
-  letI : Module R V := Module.compHom V (σ.comp (algebraMap R S))
-  haveI : IsScalarTower R S V := compHomIsScalarTower R S T V σ
-  haveI : SMulCommClass R S V := compHomSMulCommClass R S T V σ
+  letI : Module R V := Module.compHom V (algebraMap R S)
+  haveI : IsScalarTower R S V := IsScalarTower.of_compHom R S V
   let f' : M →ₗ[R] V :=
     { toFun := f, map_add' := f.map_add, map_smul' := fun r m ↦ (f.map_smulₛₗ r m).trans
-        (compHom_smul (σ.comp (algebraMap R S)) r (f m)).symm }
+        ((MulAction.compHom_smul_def σ.toMonoidHom (algebraMap R S r) (f m)).symm.trans
+          (MulAction.compHom_smul_def (algebraMap R S : R →* S) r (f m)).symm) }
   let g : @LinearMap S S _ _ (RingHom.id S) (S ⊗[R] M) V _ _ _ (Module.compHom V σ) :=
     AlgebraTensorModule.lift ((LinearMap.ringLmapEquivSelf S ℕ (M →ₗ[R] V)).symm f')
   ⟨{ toFun := g, map_add' := g.map_add, map_smul' := fun s z ↦ (g.map_smul s z).trans
-      (compHom_smul σ s (g z)) },
+      (MulAction.compHom_smul_def σ.toMonoidHom s (g z)) },
    fun s m ↦ by
      dsimp only [g, f']
      rw [LinearMap.coe_mk, AddHom.coe_mk, AlgebraTensorModule.lift_tmul,
        LinearMap.ringLmapEquivSelf_symm_apply]
-     exact compHom_smul σ s (f m)⟩
+     exact MulAction.compHom_smul_def σ.toMonoidHom s (f m)⟩
 
 /-- Lift `f : M →ₛₗ[σ.comp (algebraMap R S)] V` to `(S ⊗[R] M) →ₛₗ[σ] V` via `s ⊗ₜ m ↦ σ s • f m`,
 generalizing Mathlib's linear construction `LinearMap.liftBaseChangeEquiv`. -/

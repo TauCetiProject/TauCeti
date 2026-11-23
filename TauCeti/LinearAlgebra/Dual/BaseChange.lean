@@ -27,8 +27,9 @@ is faithful, as recorded by `IsBaseChange.toDual_ne_zero`.
 * `TauCeti.Module.Dual.baseChangeEvaluation_tmul`: its value on two pure tensors.
 * `Module.Dual.baseChangeEvaluation_one_tmul_baseChange`: naturality of evaluation
   with respect to a base-changed linear map.
-* `Module.Dual.baseChange_apply_one_tmul`, `Module.Dual.baseChange_apply_one`: the value of a
-  base-changed functional at `1 ⊗ m`, and at the unit of a base-changed algebra.
+* `Module.Dual.baseChange_apply_one_tmul`, `Module.Dual.baseChange_apply_toAddMonoidHom_mk_one`,
+  `Module.Dual.baseChange_apply_one`: the value of a base-changed functional at `1 ⊗ m`, at
+  `(TensorProduct.mk ℤ A M 1).toAddMonoidHom m`, and at the unit of a base-changed algebra.
 * `AddMonoidHom.apply_liftBaseChangeSemilinear_baseChange`: compatibility between a semilinear
   extension of `f : X →+ V` and the base change of an integral linear form agreeing with a linear
   form on `f(X)`.
@@ -99,6 +100,14 @@ theorem _root_.Module.Dual.baseChangeEvaluation_one_tmul_baseChange
 theorem _root_.Module.Dual.baseChange_apply_one_tmul (φ : Module.Dual R M) (m : M) :
     φ.baseChange A (1 ⊗ₜ[R] m) = algebraMap R A (φ m) := by
   rw [Module.Dual.baseChange_apply_tmul, Algebra.algebraMap_eq_smul_one]
+
+/-- The base change of an integral functional `φ : Module.Dual ℤ M` evaluated at
+`(TensorProduct.mk ℤ A M 1).toAddMonoidHom m` yields `(φ m : A)`. -/
+theorem _root_.Module.Dual.baseChange_apply_toAddMonoidHom_mk_one {M A : Type*} [AddCommGroup M]
+    [CommRing A] (φ : Module.Dual ℤ M) (m : M) :
+    φ.baseChange A ((TensorProduct.mk ℤ A M 1).toAddMonoidHom m) = (φ m : A) := by
+  rw [LinearMap.toAddMonoidHom_coe, TensorProduct.mk_apply,
+    Module.Dual.baseChange_apply_one_tmul, eq_intCast]
 
 /-- The base change of a functional `φ` on an `R`-algebra `S` takes the unit of `A ⊗[R] S` to
 the image of `φ 1` in `A`. -/

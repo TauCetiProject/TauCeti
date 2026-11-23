@@ -505,17 +505,9 @@ omit [CharZero R] in
 /-- **A weight killed by the simple coroots is killed by every coroot**, since every coroot is an
 integer combination of the simple coroots. -/
 theorem _root_.RootPairing.coroot'_eq_zero_of_forall_mem_support {x : M}
-    (hx : ∀ i ∈ b.support, P.coroot' i x = 0) (j : ι) : P.coroot' j x = 0 := by
-  suffices ∀ n ∈ Submodule.span ℤ (P.coroot '' b.support), P.toLinearMap.flip n x = 0
-    from this _ (b.coroot_mem_span_int j)
-  intro n hn
-  induction hn using Submodule.span_induction with
-  | mem n hn =>
-    obtain ⟨i, hi, rfl⟩ := hn
-    exact hx i hi
-  | zero => simp
-  | add n n' _ _ hn hn' => simp [hn, hn']
-  | smul z n _ hn => simp [hn]
+    (hx : ∀ i ∈ b.support, P.coroot' i x = 0) (j : ι) : P.coroot' j x = 0 :=
+  LinearMap.eqOn_span (R := ℤ) (f := (P.toLinearMap x).toAddMonoidHom.toIntLinearMap) (g := 0)
+    (by rintro _ ⟨i, hi, rfl⟩; exact hx i hi) (b.coroot_mem_span_int j)
 
 omit [CharZero R] in
 /-- **Scalar proportionality of simple coroot pairings extends to all coroots**, since every
@@ -525,19 +517,13 @@ theorem _root_.RootPairing.mul_coroot'_eq_of_forall_mem_support {𝕜 : Type*} [
     (hsimple : ∀ i ∈ b.support,
       r₁ * algebraMap R 𝕜 (P.coroot' i x₁) = r₂ * algebraMap R 𝕜 (P.coroot' i x₂))
     (j : ι) :
-    r₁ * algebraMap R 𝕜 (P.coroot' j x₁) = r₂ * algebraMap R 𝕜 (P.coroot' j x₂) := by
-  suffices ∀ n ∈ Submodule.span ℤ (P.coroot '' b.support),
-      r₁ * algebraMap R 𝕜 (P.toLinearMap.flip n x₁) = r₂ * algebraMap R 𝕜 (P.toLinearMap.flip n x₂)
-    from this _ (b.coroot_mem_span_int j)
-  intro n hn
-  induction hn using Submodule.span_induction with
-  | mem n hn =>
-    obtain ⟨i, hi, rfl⟩ := hn
-    exact hsimple i hi
-  | zero => simp
-  | add n n' _ _ hn hn' => simp only [map_add, LinearMap.add_apply, mul_add, hn, hn']
-  | smul z n _ hn =>
-    simp only [map_zsmul, LinearMap.smul_apply, mul_smul_comm, hn]
+    r₁ * algebraMap R 𝕜 (P.coroot' j x₁) = r₂ * algebraMap R 𝕜 (P.coroot' j x₂) :=
+  LinearMap.eqOn_span (R := ℤ)
+    (f := ((AddMonoidHom.mulLeft r₁).comp
+      ((algebraMap R 𝕜).toAddMonoidHom.comp (P.toLinearMap x₁).toAddMonoidHom)).toIntLinearMap)
+    (g := ((AddMonoidHom.mulLeft r₂).comp
+      ((algebraMap R 𝕜).toAddMonoidHom.comp (P.toLinearMap x₂).toAddMonoidHom)).toIntLinearMap)
+    (by rintro _ ⟨i, hi, rfl⟩; exact hsimple i hi) (b.coroot_mem_span_int j)
 
 omit [CharZero R] in
 variable {P} in
