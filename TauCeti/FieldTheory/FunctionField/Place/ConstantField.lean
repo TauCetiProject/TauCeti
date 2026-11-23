@@ -38,7 +38,7 @@ theorem finrank_algebraicClosure_dvd_degree (P : Place k F) :
     Module.finrank k (algebraicClosure k F) ∣ P.degree := by
   let : Algebra (algebraicClosure k F) P.integers :=
     ((algebraicClosure k F).val.toRingHom.codRestrict P.integers
-      fun x ↦ P.mem_integers_of_mem_algebraicClosure x.2).toAlgebra
+      fun x ↦ P.mem_integers_of_mem_algebraicClosure x.property).toAlgebra
   have : IsScalarTower k (algebraicClosure k F) P.integers :=
     .of_algebraMap_eq fun c ↦ Subtype.ext rfl
   have : IsScalarTower k (algebraicClosure k F) P.ResidueField :=

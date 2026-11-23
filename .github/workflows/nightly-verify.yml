@@ -1,7 +1,8 @@
-name: Nightly verification
+name: Nightly verification (called)
 
-# Rebuild main from source with the Lake artifact cache switched off, and check that a clean
-# compile agrees byte for byte with what the cache serves.
+# Rebuild main's own modules from source without restoring any cached build outputs (Mathlib's
+# prebuilt oleans are still fetched, and the build still writes a workspace-local Lake cache), and
+# check that this clean compile agrees byte for byte with what the cache serves.
 #
 # ci.yml used to be this check by accident: it recompiled the whole library on every push, so main
 # was an independent root of trust that never took a compiled artifact on faith. Restoring the cache
@@ -35,19 +36,19 @@ name: Nightly verification
 # `reference/.lake` writable. The clean build runs in a separate job; only its digest manifest
 # crosses jobs. Both manifests and the comparator remain outside the sandbox mount set.
 
+# Called only by nightly-verify-schedule.yml, which owns the triggers, admits only main and holds the
+# concurrency group that keeps verifications one at a time. Everything below may therefore say
+# "main": `github.ref` and `github.sha` are the caller's, and the ref is exactly refs/heads/main.
 on:
-  schedule:
-  - cron: "25 15 * * *"   # daily, offset from stuck-alerts (:50) and housekeeping (:20)
-  workflow_dispatch: {}
+  workflow_call:
+    secrets:
+      ZULIP_API_KEY:
+        required: true
+      ZULIP_EMAIL:
+        required: true
 
 permissions:
   contents: read
-
-concurrency:
-  group: nightly-verify
-  # Never cancel mid-run: a partial verification tells us nothing, and killing a run after the
-  # from-source build but before the report wastes the expensive part.
-  cancel-in-progress: false
 
 env:
   # Temporary escape hatch for `lake exe cache get`, kept only for an easy rollback
@@ -61,21 +62,20 @@ jobs:
   # The hard signal runs independently of cache verification, without secrets.
   verify:
     if: github.repository == 'TauCetiProject/TauCeti'
-    # A clean build alone now exceeds GitHub-hosted runners' six-hour platform limit.
-    # Like dependency warming and performance profiling, this singleton maintenance job
-    # uses the already provisioned sixteen-core Namespace build profile directly. Do not route it
-    # through the ordinary picker: its GitHub fallback cannot finish this workload.
-    # Workflow concurrency above bounds this exception to one source verification at a time;
-    # the reference job still selects ordinary shared build capacity below.
+    # A clean build alone now exceeds GitHub-hosted runners' six-hour platform limit, so this
+    # singleton maintenance job targets the Fleet PR class directly. Do not route it through the
+    # ordinary picker: its GitHub fallback cannot finish this workload. The caller's concurrency group
+    # bounds this exception to one source verification at a time; the reference job still selects
+    # ordinary shared build capacity below. The PR class excludes staging-only and queue-control
+    # reservations. Its runners must hold more disk than a cache-backed PR build needs: the clean
+    # build also packs every output into a workspace-local Lake cache, and passed 56 GiB in
+    # November 2026.
     runs-on:
-      # Match the current build priority so old default-priority queues cannot starve it.
-      # A run-specific label prevents another queued job taking its ephemeral runner.
-      - nscloud-ubuntu-24.04-amd64-16x32-with-features;job.priority=1
-      - namespace-features:container.privileged=true;github.run-id=${{ github.run_id }}
-    # Namespace runners support longer jobs; allow headroom for source growth and audits.
+      group: TauCetiFleet
+      labels: [self-hosted, linux, x64, tauceti-fleet-pr]
+    # Full clean builds retain their twelve-hour budget; allow headroom for source growth and audits.
     timeout-minutes: 720
     outputs:
-      sha: ${{ steps.rev.outputs.sha }}
       build: ${{ steps.fresh_build.outcome }}
       audit: ${{ steps.fresh_audit.outcome }}
       manifest: ${{ steps.rev.outputs.manifest }}
@@ -92,30 +92,27 @@ jobs:
           now="$(cat /proc/sys/vm/max_map_count)"
           echo "vm.max_map_count=$now"
           [ "$now" -ge "$target" ] || echo "::warning::vm.max_map_count is $now, below $target"
-      - name: Check out main
+      # The triggering commit rather than `main`, so the report can name the commit under test
+      # even when this job dies before publishing its outputs. The caller admits only main, so
+      # `github.sha` is the head of main when the run was created.
+      - name: Check out the commit under test
         uses: actions/checkout@v4
         with:
-          ref: main
+          ref: ${{ github.sha }}
           path: fresh
           # This job executes repository code; keep the token out of its git config.
           persist-credentials: false
           fetch-depth: 1
 
       - name: Prepare pinned shared tools
-        uses: TauCetiProject/TauCetiTools/.github/actions/setup@9244a654823e62f85361e9ce3c7a100f3eed94c8
+        uses: TauCetiProject/TauCetiTools/.github/actions/setup@main
         with:
           tools-repository: TauCetiProject/TauCetiTools
-          tools-ref: 9244a654823e62f85361e9ce3c7a100f3eed94c8
           project-directory: fresh
 
-      - name: Resolve the commit under test
+      - name: Name the clean-build manifest
         id: rev
-        run: |
-          set -euo pipefail
-          sha=$(git -C fresh rev-parse HEAD)
-          echo "sha=$sha" >> "$GITHUB_OUTPUT"
-          echo "manifest=nightly-clean-manifest-${{ github.run_attempt }}" >> "$GITHUB_OUTPUT"
-          echo "verifying $sha"
+        run: echo "manifest=nightly-clean-manifest-${{ github.run_attempt }}" >> "$GITHUB_OUTPUT"
 
       # Both jobs use the same verified installer. scripts/test_elan_pin.py checks these copies.
       - name: Install elan (pinned + checksum)
@@ -150,7 +147,7 @@ jobs:
       # LAKE_RESTORE_ARTIFACTS=false and a workspace-local LAKE_CACHE_DIR that is never fetched into
       # are what make this from scratch. LAKE_ARTIFACT_CACHE stays true only so the build packs its
       # own outputs locally for the audits that follow; nothing is ever read from the network.
-      - name: Build main from source, with no cached artifacts
+      - name: Build main from source, restoring no cached build outputs
         id: fresh_build
         env:
           LAKE_ARTIFACT_CACHE: "true"
@@ -221,10 +218,10 @@ jobs:
             && needs.verify.outputs.manifest_upload == 'success' && github.repository == 'TauCetiProject/TauCeti' }}
     # Nineteen native concurrency groups cap all hosted bulk builds across
     # workflows, leaving one of the organization's 20 slots for small jobs and
-    # roadmap merge builds. Waiting here consumes no runner. Other pools retain
-    # their existing concurrency; failed pickers share conservative slot zero.
+    # roadmap merge builds. Namespace uses the same runtime-cap slot groups as
+    # PR builds. Waiting consumes no runner; failed pickers share slot zero.
     concurrency:
-      group: ${{ contains(fromJSON('["ubuntu-latest","ubuntu-24.04","ubuntu-22.04"]'), fromJSON(needs.pick-reference-runner.outputs.attempt == format('{0}', github.run_attempt) && needs.pick-reference-runner.outputs.runner || '"ubuntu-24.04"')) && format('tauceti-hosted-bulk-{0}', needs.pick-reference-runner.outputs.hosted-slot || '0') || format('unlimited-reference-{0}', github.run_id) }}
+      group: ${{ needs.pick-reference-runner.outputs.attempt == format('{0}', github.run_attempt) && (contains(needs.pick-reference-runner.outputs.runner, 'nscloud-') || contains(needs.pick-reference-runner.outputs.runner, 'namespace-profile-') || contains(needs.pick-reference-runner.outputs.runner, 'namespace-features:')) && format('tauceti-namespace-build-{0}', contains(fromJSON('["0","1","2","3","4","5","6","7","8","9","10","11","12","13","14","15","16","17","18","19","20","21","22","23","24","25","26","27","28","29","30","31","32","33","34","35","36","37","38","39","40","41","42","43","44","45","46","47","48","49","50","51","52","53","54","55","56","57","58","59","60","61","62","63"]'), needs.pick-reference-runner.outputs.namespace-slot) && contains(fromJSON('["1","2","3","4","5","6","7","8","9","10","11","12","13","14","15","16","17","18","19","20","21","22","23","24","25","26","27","28","29","30","31","32","33","34","35","36","37","38","39","40","41","42","43","44","45","46","47","48","49","50","51","52","53","54","55","56","57","58","59","60","61","62","63","64"]'), needs.pick-reference-runner.outputs.namespace_cap) && fromJSON(needs.pick-reference-runner.outputs.namespace-slot) < fromJSON(needs.pick-reference-runner.outputs.namespace_cap) && needs.pick-reference-runner.outputs.namespace-slot || '0') || contains(fromJSON('["ubuntu-latest","ubuntu-24.04","ubuntu-22.04"]'), fromJSON(needs.pick-reference-runner.outputs.attempt == format('{0}', github.run_attempt) && needs.pick-reference-runner.outputs.runner || '"ubuntu-24.04"')) && format('tauceti-hosted-bulk-{0}', needs.pick-reference-runner.outputs.hosted-slot || '0') || format('unlimited-reference-{0}', github.run_id) }}
       queue: max
       cancel-in-progress: false
     runs-on: ${{ fromJSON(needs.pick-reference-runner.outputs.attempt == format('{0}', github.run_attempt) && needs.pick-reference-runner.outputs.runner || '"ubuntu-24.04"') }}
@@ -248,15 +245,14 @@ jobs:
       - name: Check out helpers for the verified commit
         uses: actions/checkout@v4
         with:
-          ref: ${{ needs.verify.outputs.sha }}
+          ref: ${{ github.sha }}
           path: fresh
           persist-credentials: false
 
       - name: Prepare pinned shared tools
-        uses: TauCetiProject/TauCetiTools/.github/actions/setup@9244a654823e62f85361e9ce3c7a100f3eed94c8
+        uses: TauCetiProject/TauCetiTools/.github/actions/setup@main
         with:
           tools-repository: TauCetiProject/TauCetiTools
-          tools-ref: 9244a654823e62f85361e9ce3c7a100f3eed94c8
           project-directory: fresh
 
       # Pin the reference workspace to the SAME commit, by SHA rather than by branch: main advances
@@ -264,7 +260,7 @@ jobs:
       - name: Check out the same commit for the reference build
         uses: actions/checkout@v4
         with:
-          ref: ${{ needs.verify.outputs.sha }}
+          ref: ${{ github.sha }}
           path: reference
           persist-credentials: false
           fetch-depth: 100
@@ -616,12 +612,13 @@ jobs:
           ZULIP_EMAIL: ${{ secrets.ZULIP_EMAIL }}
           ZULIP_SITE: https://leanprover.zulipchat.com
           ZULIP_CHANNEL: Tau Ceti
-          # A topic of its own, not "Stuck PRs": stuck_alerts.py reconciles that topic by marker and
-          # edits messages it recognises, so an unrelated post would sit inside its bookkeeping.
+          # A topic of its own, so these posts stay together and apart from other announcements.
           ZULIP_TOPIC: Nightly verification
           RESULT: ${{ needs.verify.result }}
           REFERENCE_RESULT: ${{ needs.reference.result }}
-          SHA: ${{ needs.verify.outputs.sha }}
+          # The commit every job checked out. A job whose runner is lost publishes no outputs, so
+          # this must not come from `needs.verify.outputs`.
+          SHA: ${{ github.sha }}
           BUILD: ${{ needs.verify.outputs.build }}
           AUDIT: ${{ needs.verify.outputs.audit }}
           COMPARE: ${{ needs.reference.outputs.compare }}
@@ -637,24 +634,30 @@ jobs:
           import urllib.parse
           import urllib.request
 
-          sha = os.environ.get("SHA") or ""
-          where = (f"[`{sha[:8]}`](https://github.com/TauCetiProject/TauCeti/commit/{sha})"
-                   if sha else "an unresolved commit")
+          sha = os.environ["SHA"]
+          where = f"[`{sha[:8]}`](https://github.com/TauCetiProject/TauCeti/commit/{sha})"
           lines = [f"**Nightly verification did not come back clean** on {where}."]
 
           # Deliberately does not claim the cached per-push CI passed for this SHA: main's CI
           # coalesces intermediate commits, so this workflow's commit may never have had its own run.
           if os.environ.get("RESULT") != "success":
               if os.environ.get("BUILD") == "failure":
-                  lines.append("The from-source build FAILED with the artifact cache disabled. "
+                  lines.append("The from-source build FAILED with cached build outputs not restored. "
                                "Treat the published Lake cache as suspect until this is explained.")
               elif os.environ.get("AUDIT") == "failure":
                   lines.append("main built from source, but an audit or lint FAILED there. "
                                "Treat the published Lake cache as suspect until this is explained.")
-              else:
+              elif os.environ.get("BUILD"):
                   lines.append(f"The from-source verification did not complete "
                                f"(result: `{os.environ.get('RESULT')}`, "
-                               f"build: `{os.environ.get('BUILD') or 'not run'}`). "
+                               f"build: `{os.environ.get('BUILD')}`). "
+                               "No complete independent verification was established for this commit.")
+              else:
+                  # A job that loses its runner publishes no outputs, even for steps that ran, so
+                  # a missing outcome is not evidence that the build never started.
+                  lines.append(f"The from-source verification did not complete "
+                               f"(result: `{os.environ.get('RESULT')}`) and recorded no build outcome. "
+                               "The run log shows how far it got. "
                                "No complete independent verification was established for this commit.")
           elif os.environ.get("REFERENCE_RESULT") != "success":
               lines.append(f"The from-source build and audits passed, but cache verification "

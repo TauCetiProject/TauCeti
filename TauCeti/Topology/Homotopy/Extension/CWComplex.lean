@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Topology.CWComplex.Classical.Subcomplex
+public import TauCeti.Topology.CWComplex.Classical.Subcomplex
 public import TauCeti.Topology.CWComplex.Classical.Skeleton.Induction
 public import TauCeti.Topology.Homotopy.Extension.Ball
 
@@ -13,7 +14,7 @@ public import TauCeti.Topology.Homotopy.Extension.Ball
 # Relative CW inclusions are closed cofibrations
 
 The base `D` of a relative CW complex `C` has the homotopy extension property inside `C`, and so
-does every skeleton of `C`.  As `X` is Hausdorff, these subsets are closed
+do every skeleton and every subcomplex of `C`.  As `X` is Hausdorff, these subsets are closed
 (`TauCeti.HasHomotopyExtensionProperty.isClosed`), so their inclusions are closed cofibrations.
 This is what makes skeletal induction and homotopy-invariance arguments for CW pairs work: maps
 and homotopies can be modified on the base or on a skeleton and extended over the whole complex.
@@ -26,6 +27,11 @@ and homotopies can be modified on the base or on a skeleton and extended over th
   property inside the complex.
 * `TauCeti.hasHomotopyExtensionProperty_base`: **the base of a relative CW complex has the
   homotopy extension property inside the complex.**
+* `Topology.RelCWComplex.Subcomplex.hasHomotopyExtensionProperty`: a subcomplex has the homotopy
+  extension property inside the complex, since the complex is a CW complex relative to it.
+* `TauCeti.hasHomotopyExtensionProperty_range_of_coe_map_eq`: the range of a map between CW
+  complexes carrying every cell onto a cell, characteristic maps included, has the homotopy
+  extension property, being a subcomplex.
 
 ## Related results
 
@@ -61,31 +67,35 @@ theorem hasHomotopyExtensionProperty_skeletonLT_succ (n : ℕ) :
   -- Extend `G` over every closed `n`-cell, by the homotopy extension property of the boundary
   -- sphere inside the closed ball.
   have hext : ∀ j : cell C n, ∃ K : C(I × closedBall (0 : Fin n → ℝ) 1, Y),
-      (∀ y, K (0, y) = f ⟨map n j y, map_mem_skeletonLT_succ j (mem_closedBall_zero_iff.1 y.2)⟩) ∧
+      (∀ y, K (0, y) = f ⟨map n j y, map_mem_skeletonLT_succ j
+          (mem_closedBall_zero_iff.1 y.property)⟩) ∧
       ∀ t (y : closedBall (0 : Fin n → ℝ) 1) (hy : (y : Fin n → ℝ) ∈ sphere 0 1),
-        K (t, y) = G (t, ⟨⟨map n j y, map_mem_skeletonLT_succ j (mem_closedBall_zero_iff.1 y.2)⟩,
+        K (t, y) = G (t, ⟨⟨map n j y, map_mem_skeletonLT_succ j
+            (mem_closedBall_zero_iff.1 y.property)⟩,
           cellFrontier_subset_skeletonLT n j ⟨y, hy, rfl⟩⟩) := by
     intro j
     obtain ⟨K, hK0, hKs⟩ :=
       (hasHomotopyExtensionProperty_sphere_closedBall (E := Fin n → ℝ)).exists_extension_of_isClosed
-        (isClosed_sphere.preimage continuous_subtype_val)
-        (f.comp ⟨fun y ↦ ⟨map n j y, map_mem_skeletonLT_succ j (mem_closedBall_zero_iff.1 y.2)⟩,
+        (isClosed_sphere.preimage continuous_subtypeVal)
+        (f.comp ⟨fun y ↦ ⟨map n j y, map_mem_skeletonLT_succ j
+            (mem_closedBall_zero_iff.1 y.property)⟩,
           (continuous_map_closedBall j).subtype_mk _⟩)
         (G.comp ⟨fun p ↦ (p.1, ⟨⟨map n j p.2,
-          map_mem_skeletonLT_succ j (mem_closedBall_zero_iff.1 p.2.1.2)⟩,
-          cellFrontier_subset_skeletonLT n j ⟨p.2, p.2.2, rfl⟩⟩),
+          map_mem_skeletonLT_succ j (mem_closedBall_zero_iff.1 p.2.val.property)⟩,
+          cellFrontier_subset_skeletonLT n j ⟨p.2, p.2.property, rfl⟩⟩),
           continuous_fst.prodMk ((((continuous_map_closedBall j).comp
-            (continuous_subtype_val.comp continuous_snd)).subtype_mk _).subtype_mk _)⟩)
+            (continuous_subtypeVal.comp continuous_snd)).subtype_mk _).subtype_mk _)⟩)
         fun a ↦ hG _
     exact ⟨K, hK0, fun t y hy ↦ hKs t ⟨y, hy⟩⟩
   choose K hK0 hKs using hext
   -- Glue `G` and the extensions `K j` over the closed `n`-cells.
   obtain ⟨F, hFG, hFK⟩ := exists_continuousMap_prod_skeletonLT_succ
     (G.comp ⟨fun p : I × (skeletonLT C n : Set X) ↦
-      (p.1, ⟨⟨(p.2 : X), skeletonLT_mono (by exact_mod_cast n.le_succ) p.2.2⟩, p.2.2⟩),
+      (p.1, ⟨⟨(p.2 : X), skeletonLT_mono
+          (by exact_mod_cast n.le_succ) p.2.property⟩, p.2.property⟩),
       by fun_prop⟩) K hKs
-  refine ⟨F, fun x ↦ ?_, fun t a ↦ hFG t a.1 a.2⟩
-  obtain hx | ⟨j, y, hy, hxy⟩ := mem_skeletonLT_or_exists_map x.2
+  refine ⟨F, fun x ↦ ?_, fun t a ↦ hFG t a.val a.property⟩
+  obtain hx | ⟨j, y, hy, hxy⟩ := mem_skeletonLT_or_exists_map x.property
   · rw [hFG 0 x hx]
     exact hG ⟨x, hx⟩
   · obtain rfl : x = ⟨map n j y, map_mem_skeletonLT_succ j hy.le⟩ := Subtype.ext hxy.symm
@@ -102,24 +112,25 @@ variable (k f H) in
 `TauCeti.hasHomotopyExtensionProperty_skeletonLT_succ`. -/
 private def extensionSeq (hH : ∀ a, H (0, a) = f a) : (j : ℕ) →
     {G : C(I × (skeletonLT C ((k + j : ℕ) : ℕ∞) : Set X), Y) //
-      ∀ x, G (0, x) = f ⟨x, (skeletonLT C _).subset_complex x.2⟩}
-  | 0 => ⟨H.comp ⟨fun p ↦ (p.1, ⟨⟨p.2, (skeletonLT C _).subset_complex p.2.2⟩, p.2.2⟩),
+      ∀ x, G (0, x) = f ⟨x, (skeletonLT C _).subset_complex x.property⟩}
+  | 0 => ⟨H.comp ⟨fun p ↦ (p.1, ⟨⟨p.2, (skeletonLT C _).subset_complex p.2.property⟩,
+      p.2.property⟩),
       by fun_prop⟩, fun x ↦ hH _⟩
   | j + 1 =>
     have h := (hasHomotopyExtensionProperty_skeletonLT_succ (C := C) (k + j)).exists_extension
-      (f.comp ⟨fun x ↦ ⟨x, (skeletonLT C _).subset_complex x.2⟩, by fun_prop⟩)
-      ((extensionSeq hH j).1.comp ⟨fun p ↦ (p.1, ⟨p.2, p.2.2⟩), by fun_prop⟩)
-      fun a ↦ (extensionSeq hH j).2 _
+      (f.comp ⟨fun x ↦ ⟨x, (skeletonLT C _).subset_complex x.property⟩, by fun_prop⟩)
+      ((extensionSeq hH j).val.comp ⟨fun p ↦ (p.1, ⟨p.2, p.2.property⟩), by fun_prop⟩)
+      fun a ↦ (extensionSeq hH j).property _
     ⟨h.choose, h.choose_spec.1⟩
 
 private lemma extensionSeq_succ_apply {hH : ∀ a, H (0, a) = f a} (j : ℕ) (t : I)
     (x : X) (hx : x ∈ (skeletonLT C ((k + j : ℕ) : ℕ∞) : Set X)) :
-    (extensionSeq k f H hH (j + 1)).1
+    (extensionSeq k f H hH (j + 1)).val
         (t, ⟨x, skeletonLT_mono (by exact_mod_cast (k + j).le_succ) hx⟩) =
-      (extensionSeq k f H hH j).1 (t, ⟨x, hx⟩) := by
+      (extensionSeq k f H hH j).val (t, ⟨x, hx⟩) := by
   rw [extensionSeq]
   exact ((hasHomotopyExtensionProperty_skeletonLT_succ (C := C) (k + j)).exists_extension _ _
-    fun a ↦ (extensionSeq k f H hH j).2 _).choose_spec.2 t ⟨_, hx⟩
+    fun a ↦ (extensionSeq k f H hH j).property _).choose_spec.2 t ⟨_, hx⟩
 
 end Glue
 
@@ -131,10 +142,10 @@ theorem hasHomotopyExtensionProperty_skeletonLT (k : ℕ) :
   intro Y _ f H hH
   -- Solve the problem on the successive skeleta and glue the solutions.
   obtain ⟨G, hG⟩ := exists_continuousMap_prod_complex_of_skeletonLT
-    (fun j ↦ (extensionSeq k f H hH j).1) (extensionSeq_succ_apply (hH := hH))
-  refine ⟨G, fun x ↦ ?_, fun t a ↦ hG 0 t a.1 a.2⟩
-  obtain ⟨j, hj⟩ := exists_mem_skeletonLT_add k x.2
-  exact (hG j 0 x hj).trans ((extensionSeq k f H hH j).2 _)
+    (fun j ↦ (extensionSeq k f H hH j).val) (extensionSeq_succ_apply (hH := hH))
+  refine ⟨G, fun x ↦ ?_, fun t a ↦ hG 0 t a.val a.property⟩
+  obtain ⟨j, hj⟩ := exists_mem_skeletonLT_add k x.property
+  exact (hG j 0 x hj).trans ((extensionSeq k f H hH j).property _)
 
 /-- **Relative CW inclusions are cofibrations: the base of a relative CW complex has the homotopy
 extension property inside the complex.**  The base is also closed
@@ -143,5 +154,47 @@ theorem hasHomotopyExtensionProperty_base :
     HasHomotopyExtensionProperty (Subtype.val ⁻¹' D : Set C) := by
   simpa only [Nat.cast_zero, skeletonLT_zero_eq_base] using
     hasHomotopyExtensionProperty_skeletonLT (C := C) 0
+
+/-- **CW pairs are cofibrations: a subcomplex has the homotopy extension property inside the
+complex.** The complex is a CW complex relative to the subcomplex
+(`Topology.RelCWComplex.Subcomplex.relCWComplex`), whose base has the homotopy extension property.
+-/
+theorem _root_.Topology.RelCWComplex.Subcomplex.hasHomotopyExtensionProperty
+    (E : Subcomplex C) : HasHomotopyExtensionProperty (Subtype.val ⁻¹' (E : Set X) : Set C) :=
+  @hasHomotopyExtensionProperty_base X _ _ C E E.relCWComplex
+
+/-- **The range of a map carrying cells onto cells has the homotopy extension property.** Let `W`
+and `Y` carry CW structures on `univ`, and let `g : W → Y` carry every `n`-cell `i` of `W` onto an
+`n`-cell `ι n i` of `Y`, in the sense that `map n (ι n i) = g ∘ map n i`. Then the range of `g`
+is the subcomplex of `Y` made of these cells, so it has the homotopy extension property. -/
+theorem hasHomotopyExtensionProperty_range_of_coe_map_eq {W Y : Type*} [TopologicalSpace W]
+    [CWComplex (univ : Set W)] [TopologicalSpace Y] [T2Space Y] [CWComplex (univ : Set Y)]
+    {g : W → Y} (ι : ∀ n, cell (univ : Set W) n → cell (univ : Set Y) n)
+    (hι : ∀ n i, ⇑(map n (ι n i)) = g ∘ map n i) :
+    HasHomotopyExtensionProperty (range g) := by
+  have himage (n : ℕ) (i : cell (univ : Set W) n) (s : Set (Fin n → ℝ)) :
+      map n (ι n i) '' s = g '' (map n i '' s) := by
+    rw [hι, image_comp]
+  -- The range of `g` is the subcomplex of `Y` whose cells are those in the range of `ι`.
+  let E : Subcomplex (univ : Set Y) :=
+    CWComplex.Subcomplex.mk' _ (range g) (fun n ↦ range (ι n))
+    (fun n j ↦ by
+      obtain ⟨_, i, rfl⟩ := j
+      rw [closedCell, himage]
+      exact image_subset_range _ _)
+    (by
+      refine Subset.antisymm (iUnion₂_subset fun n j ↦ ?_) ?_
+      · obtain ⟨_, i, rfl⟩ := j
+        rw [openCell, himage]
+        exact image_subset_range _ _
+      · rintro _ ⟨w, rfl⟩
+        obtain ⟨n, i, hw⟩ := mem_iUnion₂.1 <|
+          (CWComplex.iUnion_openCell_eq_complex (C := (univ : Set W))).symm ▸ mem_univ w
+        refine mem_iUnion₂.2 ⟨n, ⟨ι n i, i, rfl⟩, ?_⟩
+        rw [openCell, himage]
+        exact mem_image_of_mem g hw)
+  have h := E.hasHomotopyExtensionProperty.image (Homeomorph.Set.univ Y)
+  rwa [Homeomorph.Set.univ_apply, image_preimage_eq_range_inter, Subtype.range_coe, univ_inter]
+    at h
 
 end TauCeti

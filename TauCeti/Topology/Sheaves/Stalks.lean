@@ -12,6 +12,7 @@ public import Mathlib.CategoryTheory.Sites.PreservesSheafification
 
 public import Mathlib.Algebra.Category.Grp.Colimits
 public import Mathlib.Algebra.Category.Grp.Zero
+public import Mathlib.Algebra.Category.ModuleCat.FilteredColimits
 public import Mathlib.Topology.Sheaves.Abelian
 public import Mathlib.Topology.Sheaves.Sheafify
 public import Mathlib.Topology.Sheaves.Stalks
@@ -26,9 +27,13 @@ transport of complexes through the stalk comparison for an embedding.
 
 The stalk of an additive-group-valued presheaf at `x` vanishes exactly when every section over a
 neighbourhood of `x` restricts to zero on a smaller neighbourhood of `x`
-(`TopCat.Presheaf.isZero_stalk_iff`). Since sheafification does not change stalks
-(`TopCat.Presheaf.isZero_stalk_sheafify_iff`), the sheafification of a presheaf vanishes exactly
-when every section is locally zero (`TopCat.Presheaf.isZero_presheafToSheaf_obj_iff`).
+(`TopCat.Presheaf.isZero_stalk_iff`). If a morphism of presheaves valued in a category with zero
+morphisms vanishes on all opens inside `V`, its induced map on stalks vanishes at every point of `V`
+(`TopCat.Presheaf.stalkFunctor_map_eq_zero_of_app_eq_zero`). Since sheafification does not change
+stalks (`TopCat.Presheaf.isZero_stalk_sheafify_iff`), the sheafification of a presheaf vanishes
+exactly when every section is locally zero (`TopCat.Presheaf.isZero_presheafToSheaf_obj_iff`). The
+same criteria hold for module-valued presheaves (`TopCat.Presheaf.isZero_stalk_iff_moduleCat` and
+`TopCat.Presheaf.isZero_presheafToSheaf_obj_iff_moduleCat`).
 
 Taking stalks commutes with a coefficient functor preserving the neighborhood colimit,
 even after sheafifying the composed presheaf
@@ -48,6 +53,26 @@ noncomputable section
 
 namespace TopCat.Presheaf
 
+section ZeroMorphisms
+
+/-- A morphism of presheaves valued in a category with zero morphisms that vanishes on all opens
+inside `V` induces the zero map on stalks at every point of `V`. -/
+theorem stalkFunctor_map_eq_zero_of_app_eq_zero
+    {C : Type*} [Category.{u} C] [HasZeroMorphisms C] [HasColimits C]
+    {X : TopCat.{u}} {F G : X.Presheaf C} (α : F ⟶ G) {V : Opens X}
+    (hα : ∀ ⦃W : Opens X⦄, W ≤ V → α.app (op W) = 0) {x : X} (hx : x ∈ V) :
+    (stalkFunctor C x).map α = 0 := by
+  refine F.stalk_hom_ext fun U hxU ↦ ?_
+  have hxUV : x ∈ U ⊓ V := ⟨hxU, hx⟩
+  have hUV : F.germ (U ⊓ V) x hxUV ≫ (stalkFunctor C x).map α = 0 :=
+    (stalkFunctor_map_germ (U ⊓ V) x hxUV α).trans
+      ((congrArg (· ≫ G.germ (U ⊓ V) x hxUV) (hα inf_le_right)).trans zero_comp)
+  have hres := F.germ_res_assoc (homOfLE inf_le_left : U ⊓ V ⟶ U) x hxUV
+    ((stalkFunctor C x).map α)
+  exact (hres.symm.trans ((congrArg (_ ≫ ·) hUV).trans comp_zero)).trans comp_zero.symm
+
+end ZeroMorphisms
+
 variable {X : TopCat.{u}} (F : X.Presheaf AddCommGrpCat.{u}) (x : X)
   {T : Type u} [AddCommGroup T]
 
@@ -60,10 +85,10 @@ def stalkLiftAddHom
   (colimit.desc ((OpenNhds.inclusion x).op ⋙ F)
     { pt := AddCommGrpCat.of T
       ι :=
-        { app := fun U ↦ AddCommGrpCat.ofHom (f U.unop.1 U.unop.2)
+        { app := fun U ↦ AddCommGrpCat.ofHom (f U.unop.val U.unop.property)
           naturality := fun {U V} i ↦ by
             ext m
-            exact hf i.unop V.unop.2 m } }).hom
+            exact hf i.unop V.unop.property m } }).hom
 
 /-- The additive map induced from compatible section maps takes a germ to its prescribed value. -/
 @[simp]
@@ -122,6 +147,40 @@ theorem isZero_presheafToSheaf_obj_iff :
     ((presheafToSheaf (Opens.grothendieckTopology X) AddCommGrpCat.{u}).obj F)).trans
       (forall_congr' fun x ↦ ?_)
   exact (isZero_stalk_sheafify_iff x F).trans (isZero_stalk_iff F x)
+
+section ModuleCat
+
+variable {R : Type u} [Ring R] (P : X.Presheaf (ModuleCat.{u} R))
+
+/-- The stalk of a module-valued presheaf at `x` vanishes if and only if every section over a
+neighbourhood of `x` restricts to zero on some smaller neighbourhood of `x`. -/
+theorem isZero_stalk_iff_moduleCat (x : X) :
+    IsZero (P.stalk x) ↔ ∀ (U : Opens X) (s : P.obj (op U)), x ∈ U →
+      ∃ (V : Opens X) (h : V ≤ U), x ∈ V ∧ P.map (homOfLE h).op s = 0 := by
+  rw [ModuleCat.isZero_iff_subsingleton]
+  constructor
+  · intro _ U s hx
+    obtain ⟨W, hxW, iU, iV, e⟩ := P.germ_eq x hx hx s 0 (Subsingleton.elim _ _)
+    exact ⟨W, iU.le, hxW, e.trans (map_zero _)⟩
+  · intro h
+    refine subsingleton_of_forall_eq 0 fun t ↦ ?_
+    obtain ⟨U, hx, s, rfl⟩ := P.exists_germ_eq t
+    obtain ⟨V, hVU, hxV, hs⟩ := h U s hx
+    rw [← P.germ_res_apply (homOfLE hVU) x hxV, hs, map_zero]
+
+/-- The sheafification of a module-valued presheaf vanishes if and only if every section of the
+presheaf is locally zero: each point of its domain has a neighbourhood on which it restricts to
+zero. -/
+theorem isZero_presheafToSheaf_obj_iff_moduleCat :
+    IsZero ((presheafToSheaf (Opens.grothendieckTopology X) (ModuleCat.{u} R)).obj P) ↔
+      ∀ (x : X) (U : Opens X) (s : P.obj (op U)), x ∈ U →
+        ∃ (V : Opens X) (h : V ≤ U), x ∈ V ∧ P.map (homOfLE h).op s = 0 := by
+  refine (TopCat.Sheaf.isZero_iff_stalkFunctor_obj_isZero (X := X)
+    ((presheafToSheaf (Opens.grothendieckTopology X) (ModuleCat.{u} R)).obj P)).trans
+      (forall_congr' fun x ↦ ?_)
+  exact (isZero_stalk_sheafify_iff x P).trans (P.isZero_stalk_iff_moduleCat x)
+
+end ModuleCat
 
 end TopCat.Presheaf
 

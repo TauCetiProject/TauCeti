@@ -66,13 +66,13 @@ variable {k : Type*} [Ring k] [Linear k C]
 /-- The Ext class of a cocycle in the covariant Hom complex of an injective resolution. -/
 private noncomputable def linearCoyonedaCycleExt (n : ℕ) :
     LinearMap.ker ((R.linearCoyonedaComplex k X).d n (n + 1)).hom →ₗ[k] Ext.{w} X Y n where
-  toFun z := R.extMk z.1 (n + 1) rfl z.2
-  map_add' z z' := (R.add_extMk z.1 z'.1 (n + 1) rfl z.2 z'.2).symm
-  map_smul' c z := (R.smul_extMk c z.1 (n + 1) rfl z.2).symm
+  toFun z := R.extMk z.val (n + 1) rfl z.property
+  map_add' z z' := (R.add_extMk z.val z'.val (n + 1) rfl z.property z'.property).symm
+  map_smul' c z := (R.smul_extMk c z.val (n + 1) rfl z.property).symm
 
 private lemma linearCoyonedaCycleExt_apply (n : ℕ)
     (z : LinearMap.ker ((R.linearCoyonedaComplex k X).d n (n + 1)).hom) :
-    R.linearCoyonedaCycleExt n z = R.extMk z.1 (n + 1) rfl z.2 :=
+    R.linearCoyonedaCycleExt n z = R.extMk z.val (n + 1) rfl z.property :=
   (rfl)
 
 /-- Every Ext class is represented by a cocycle of the linear covariant Hom complex. -/
@@ -91,10 +91,10 @@ private lemma linearCoyonedaCycleExt_eq_zero_iff (n : ℕ)
   rw [HomologicalComplex.moduleCatKerHomologyClass_eq_moduleCatHomologyClass,
     linearCoyonedaCycleExt_apply,
     (R.linearCoyonedaComplex k X).moduleCatHomologyClass_eq_zero_iff
-      (by simp) (Submodule.subtype _) (fun z ↦ z.2) rfl z]
+      (by simp) (Submodule.subtype _) (fun z ↦ z.property) rfl z]
   cases n with
   | zero =>
-    have h := R.extMk_eq_zero_iff_eq_zero z.1 1 rfl z.2
+    have h := R.extMk_eq_zero_iff_eq_zero z.val 1 rfl z.property
     rw [CochainComplex.prev_nat_zero]
     rw [(R.linearCoyonedaComplex k X).shape 0 0 (by simp)]
     refine h.trans ?_
@@ -102,7 +102,7 @@ private lemma linearCoyonedaCycleExt_eq_zero_iff (n : ℕ)
     exact eq_comm
   | succ n =>
     rw [CochainComplex.prev_nat_succ]
-    exact R.extMk_eq_zero_iff z.1 (n + 1 + 1) rfl z.2 n rfl
+    exact R.extMk_eq_zero_iff z.val (n + 1 + 1) rfl z.property n rfl
 
 /-- The cohomology of `Hom(X, I)` for an injective resolution `I` of `Y` is `Extⁿ(X,Y)`,
 linearly over any ring making the category linear. -/
@@ -115,7 +115,7 @@ noncomputable def homologyLinearCoyonedaEquiv (n : ℕ) :
     dsimp only [a]
     rw [HomologicalComplex.moduleCatKerHomologyClass_eq_moduleCatHomologyClass]
     exact (R.linearCoyonedaComplex k X).moduleCatHomologyClass_surjective
-      (by simp) (Submodule.subtype _) (fun z ↦ z.2) (fun x hx ↦ ⟨⟨x, hx⟩, rfl⟩)
+      (by simp) (Submodule.subtype _) (fun z ↦ z.property) (fun x hx ↦ ⟨⟨x, hx⟩, rfl⟩)
   have hab : LinearMap.ker a = LinearMap.ker b := by
     ext z
     exact (R.linearCoyonedaCycleExt_eq_zero_iff n z).symm
@@ -131,7 +131,7 @@ lemma homologyLinearCoyonedaEquiv_moduleCatKerHomologyClass (n : ℕ)
     R.homologyLinearCoyonedaEquiv n
         ((R.linearCoyonedaComplex k X).moduleCatKerHomologyClass
           (n := n) (m := n + 1) (by simp) z) =
-      R.extMk z.1 (n + 1) rfl z.2 := by
+      R.extMk z.val (n + 1) rfl z.property := by
   dsimp only [homologyLinearCoyonedaEquiv, LinearEquiv.trans_apply]
   rw [LinearMap.quotKerEquivOfSurjective_symm_apply]
   simp only [Submodule.quotEquivOfEq_mk, LinearMap.quotKerEquivOfSurjective_apply_mk]
@@ -152,7 +152,7 @@ lemma homologyLinearCoyonedaEquiv_naturality {Y' : C} (R' : InjectiveResolution 
   rw [HomologicalComplex.homologyMap_moduleCatKerHomologyClass,
     homologyLinearCoyonedaEquiv_moduleCatKerHomologyClass,
     homologyLinearCoyonedaEquiv_moduleCatKerHomologyClass]
-  exact (R.extMk_comp_mk₀ z.1 (n + 1) rfl z.2 φ).symm
+  exact (R.extMk_comp_mk₀ z.val (n + 1) rfl z.property φ).symm
 
 /-- Computing Ext by an injective resolution commutes with precomposition in its first
 argument. -/
@@ -170,7 +170,7 @@ lemma homologyLinearCoyonedaEquiv_naturality_left {X' : C} (g : X' ⟶ X) (n : �
   rw [HomologicalComplex.homologyMap_moduleCatKerHomologyClass,
     homologyLinearCoyonedaEquiv_moduleCatKerHomologyClass,
     homologyLinearCoyonedaEquiv_moduleCatKerHomologyClass]
-  exact (R.mk₀_comp_extMk z.1 (n + 1) rfl z.2 g).symm
+  exact (R.mk₀_comp_extMk z.val (n + 1) rfl z.property g).symm
 
 end CategoryTheory.InjectiveResolution
 
@@ -214,7 +214,7 @@ noncomputable def rightDerivedLinearCoyonedaIsoExt (n : ℕ) :
           ext x
           exact (injectiveResolution Y).homologyLinearCoyonedaEquiv_naturality
             (injectiveResolution Y')
-            ⟨φ, by simpa using InjectiveResolution.desc_commutes_zero g _ _⟩ n x
+            ⟨φ, by simp [φ]⟩ n x
 
 /-- On each coefficient object the derived Hom comparison is computed by its chosen
 injective resolution and the cocycle-to-Ext equivalence. -/

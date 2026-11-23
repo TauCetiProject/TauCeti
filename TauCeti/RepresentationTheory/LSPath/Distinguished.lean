@@ -9,6 +9,7 @@ public import Mathlib.Data.List.ChainOfFn
 public import TauCeti.RepresentationTheory.LSPath.Basic
 public import TauCeti.RepresentationTheory.LSPath.Central.Shift
 public import TauCeti.RepresentationTheory.LSPath.ConvexHull
+import TauCeti.Algebra.GroupWithZero.Action.Basic
 
 /-!
 # Distinguished presentations of paths with velocities in a Weyl orbit
@@ -431,13 +432,13 @@ theorem isDistinguished_timed (hlam : lam ∈ dominantChamber P b)
   refine ⟨π.isTimed_timed 𝕜 f, π.duration_timed 𝕜 f,
     fun _ hy ↦ π.inv_smul_mem_range_of_mem_timed 𝕜 f hy, ?_⟩
   have hslope (j : Fin (π.length + 1)) :
-      ((π.duration j : 𝕜))⁻¹ • ((π.duration j : 𝕜) • f ((π.dir j).1 • lam)) =
-        f ((π.dir j).1 • lam) :=
+      ((π.duration j : 𝕜))⁻¹ • ((π.duration j : 𝕜) • f ((π.dir j).val • lam)) =
+        f ((π.dir j).val • lam) :=
     inv_smul_smul₀ (Rat.cast_ne_zero.mpr (π.duration_pos j).ne') _
   simp only [timed_def, List.map_ofFn, Function.comp_def, hslope, List.isChain_ofFn]
   intro i hi heq
-  have hj := eq_of_isMinimalCosetRep_of_smul_eq hlam (π.dir ⟨i, by omega⟩).2
-    (π.dir ⟨i + 1, hi⟩).2 (hf ⟨_, rfl⟩ ⟨_, rfl⟩ heq)
+  have hj := eq_of_isMinimalCosetRep_of_smul_eq hlam (π.dir ⟨i, by omega⟩).property
+    (π.dir ⟨i + 1, hi⟩).property (hf ⟨_, rfl⟩ ⟨_, rfl⟩ heq)
   exact π.dir_succ_ne ⟨i, by omega⟩ (Subtype.ext hj.symm)
 
 omit [P.flip.IsReduced] in

@@ -186,7 +186,7 @@ theorem realCliffordThreeZeroEvenUnitaryGroup_le_lipschitzGroup :
   have hUnits : spinGroup.toUnits s = x := by
     simpa using congrArg Subtype.val hs
   rw [← hUnits]
-  exact spinGroup.units_mem_lipschitzGroup s.2
+  exact spinGroup.units_mem_lipschitzGroup s.property
 
 /-- The compact real three-dimensional Spin group is the group of unit Hamilton quaternions. -/
 noncomputable def realSpinThreeEquivQuaternionUnitary :

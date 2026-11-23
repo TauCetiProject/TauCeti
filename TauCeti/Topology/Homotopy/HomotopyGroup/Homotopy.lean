@@ -72,14 +72,14 @@ theorem map_homotopic_of_homotopicRel {f g : C(X, Y)} (hf : f x = y) {S : Set X}
     (hx : x ∈ S) (H : f.HomotopicRel g S) (p : Ω^ N X x) :
     _root_.GenLoop.Homotopic (map f hf p) (map g ((H.fst_eq_snd hx).symm.trans hf) p) := by
   obtain ⟨H⟩ := H
-  refine ⟨⟨⟨⟨fun tp ↦ H (tp.1, p.1 tp.2), ?_⟩, ?_, ?_⟩, ?_⟩⟩
+  refine ⟨⟨⟨⟨fun tp ↦ H (tp.1, p.val tp.2), ?_⟩, ?_, ?_⟩, ?_⟩⟩
   · fun_prop
   · intro t
-    exact (H.apply_zero (p.1 t)).trans (map_apply f hf p t).symm
+    exact (H.apply_zero (p.val t)).trans (map_apply f hf p t).symm
   · intro t
-    exact (H.apply_one (p.1 t)).trans (map_apply g _ p t).symm
+    exact (H.apply_one (p.val t)).trans (map_apply g _ p t).symm
   · intro t u hu
-    have hpu : p.1 u ∈ S := by rw [p.2 u hu]; exact hx
+    have hpu : p.val u ∈ S := by rw [p.property u hu]; exact hx
     refine (H.eq_fst t hpu).trans ?_
     exact (map_apply f hf p u).symm
 

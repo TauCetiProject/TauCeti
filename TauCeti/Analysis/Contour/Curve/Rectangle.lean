@@ -40,6 +40,8 @@ the form used by Mathlib's Cauchy theorem for rectangles,
 * `Complex.image_rectBoundary`: the trace of the curve is `frontier (Rectangle z w)`.
 * `Complex.integral_rectBoundary`: its contour integral is the signed sum of the four edge
   integrals.
+* `Complex.integral_rectBoundary_congr_codiscreteWithin`: codiscrete changes on the frontier
+  do not affect the derivative-weighted integral, including for collapsed edges.
 -/
 
 public section
@@ -150,6 +152,49 @@ theorem isPiecewiseC1On_rectBoundary (z w : ℂ) :
   simpa [rectBoundary_def] using
     (rectPolygon z w).isPolygonalOnInterval_boundaryParam.isPiecewiseC1On
 
+/-- Two rectangles with the same real-part bounds have `rectBoundary` curves with identical real
+parts at every time `t`. -/
+theorem re_rectBoundary_eq_of_re_eq {z₁ w₁ z₂ w₂ : ℂ} (hz : z₁.re = z₂.re) (hw : w₁.re = w₂.re)
+    (t : ℝ) : (rectBoundary z₁ w₁ t).re = (rectBoundary z₂ w₂ t).re := by
+  simp only [rectBoundary_def, Polygon.boundaryParam_eq_edgePath_edgeIndexAt,
+    Polygon.edgePath, AffineMap.lineMap_apply_module]
+  generalize Polygon.edgeIndexAt 4 t = i
+  fin_cases i <;> simp [finRotate_apply, hz, hw]
+
+/-- Two rectangles with the same imaginary-part bounds have `rectBoundary` curves with identical
+imaginary parts at every time `t`. -/
+theorem im_rectBoundary_eq_of_im_eq {z₁ w₁ z₂ w₂ : ℂ} (hz : z₁.im = z₂.im) (hw : w₁.im = w₂.im)
+    (t : ℝ) : (rectBoundary z₁ w₁ t).im = (rectBoundary z₂ w₂ t).im := by
+  simp only [rectBoundary_def, Polygon.boundaryParam_eq_edgePath_edgeIndexAt,
+    Polygon.edgePath, AffineMap.lineMap_apply_module]
+  generalize Polygon.edgeIndexAt 4 t = i
+  fin_cases i <;> simp [finRotate_apply, hz, hw]
+
+private theorem rectBoundary_eq_linear_comb (z w : ℂ) (t : ℝ) :
+    rectBoundary z w t =
+      z.re • rectBoundary 1 0 t + z.im • rectBoundary I 0 t +
+        w.re • rectBoundary 0 1 t + w.im • rectBoundary 0 I t := by
+  simp only [rectBoundary_def, Polygon.boundaryParam_eq_edgePath_edgeIndexAt,
+    Polygon.edgePath, AffineMap.lineMap_apply_module]
+  generalize Polygon.edgeIndexAt 4 t = i
+  fin_cases i <;> (apply Complex.ext <;> simp [finRotate_apply] <;> ring)
+
+/-- The rectangle boundary `rectBoundary z w` is continuous on `ℝ`. -/
+theorem continuous_rectBoundary (z w : ℂ) : Continuous (rectBoundary z w) :=
+  (rectPolygon z w).continuous_boundaryParam
+
+/-- The rectangle boundary `rectBoundary z w t` is jointly continuous in `(z, w)` and `t : ℝ`. -/
+theorem continuous_uncurry_rectBoundary :
+    Continuous (fun p : (ℂ × ℂ) × ℝ ↦ rectBoundary p.1.1 p.1.2 p.2) := by
+  have hbase (a b : ℂ) : Continuous (rectBoundary a b) := continuous_rectBoundary a b
+  have heq : (fun p : (ℂ × ℂ) × ℝ ↦ rectBoundary p.1.1 p.1.2 p.2) =
+      fun p : (ℂ × ℂ) × ℝ ↦
+        p.1.1.re • rectBoundary 1 0 p.2 + p.1.1.im • rectBoundary I 0 p.2 +
+          p.1.2.re • rectBoundary 0 1 p.2 + p.1.2.im • rectBoundary 0 I p.2 :=
+    funext fun p ↦ rectBoundary_eq_linear_comb p.1.1 p.1.2 p.2
+  rw [heq]
+  fun_prop
+
 /-- The trace of the rectangle boundary over `[0, 4]` is the frontier of the rectangle. -/
 theorem image_rectBoundary (z w : ℂ) :
     rectBoundary z w '' Icc 0 4 = frontier (Rectangle z w) := by
@@ -213,5 +258,81 @@ theorem integral_rectBoundary {f : ℂ → E} (hf : ContinuousOn f (frontier (Re
   all_goals simp [finRotate_apply]
 
 end Integral
+
+section Congruence
+
+variable {E : Type*} [Zero E] [SMulWithZero ℂ E]
+
+open Filter Topology
+
+private theorem ae_rectBoundary_integrand_eq_on_cell {f g : ℂ → E}
+    (hfg : f =ᶠ[codiscreteWithin (frontier (Rectangle z w))] g) (i : Fin 4) :
+    ∀ᵐ t : ℝ, t ∈ Ioo ((i : ℕ) : ℝ) ((i : ℕ) + 1) →
+      deriv (rectBoundary z w) t • f (rectBoundary z w t) =
+        deriv (rectBoundary z w) t • g (rectBoundary z w t) := by
+  let a := rectPolygon z w i
+  let v := rectPolygon z w (finRotate 4 i) - a
+  let p : ℝ → ℂ := fun t ↦ (t - (i : ℕ)) • v + a
+  have heq (t : ℝ) (ht : t ∈ Icc ((i : ℕ) : ℝ) ((i : ℕ) + 1)) :
+      rectBoundary z w t = p t := by
+    rw [rectBoundary_eq_lineMap i ht, AffineMap.lineMap_apply_module']
+  have hd (t : ℝ) : HasDerivAt p v t := by
+    simpa [p] using (((hasDerivAt_id t).sub_const ((i : ℕ) : ℝ)).smul_const v).add_const a
+  have hcurve (t : ℝ) (ht : t ∈ Ioo ((i : ℕ) : ℝ) ((i : ℕ) + 1)) :
+      HasDerivAt (rectBoundary z w) v t := by
+    refine (hd t).congr_of_eventuallyEq ?_
+    filter_upwards [Icc_mem_nhds ht.1 ht.2] with u hu
+    exact heq u hu
+  by_cases hv : v = 0
+  · filter_upwards [] with t ht
+    rw [(hcurve t ht).deriv, hv]
+    simp
+  · have hinj : Function.Injective p := by
+      intro t u htu
+      have hsmul : (t - (i : ℕ)) • v = (u - (i : ℕ)) • v := add_right_cancel htu
+      have hsub : t - (i : ℕ) = u - (i : ℕ) := (smul_left_injective ℝ hv) hsmul
+      exact sub_left_injective hsub
+    have hcompact : IsCompact (frontier (Rectangle z w)) :=
+      (isCompact_uIcc.reProdIm isCompact_uIcc).of_isClosed_subset isClosed_frontier
+        (isClosed_rectangle z w).frontier_subset
+    have hbad := hcompact.finite_sdiff_of_mem_codiscreteWithin hfg
+    have hpre := Set.Finite.preimage hinj.injOn hbad
+    filter_upwards [hpre.countable.ae_notMem volume] with t ht hcell
+    have hpt : p t ∈ frontier (Rectangle z w) := by
+      rw [← heq t (Ioo_subset_Icc_self hcell)]
+      exact rectBoundary_mem_frontier t
+    have hfg' : f (p t) = g (p t) := by
+      by_contra h
+      exact ht ⟨hpt, h⟩
+    rw [heq t (Ioo_subset_Icc_self hcell), hfg']
+
+variable {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] [SMulWithZero ℂ F]
+
+/-- The derivative-weighted rectangle integral ignores changes on a subset codiscrete
+within its frontier. No integrability or completeness assumption is needed; a collapsed
+edge has zero velocity and hence contributes zero. -/
+theorem integral_rectBoundary_congr_codiscreteWithin {f g : ℂ → F}
+    (hfg : f =ᶠ[codiscreteWithin (frontier (Rectangle z w))] g) :
+    (∫ t in (0 : ℝ)..4, deriv (rectBoundary z w) t • f (rectBoundary z w t)) =
+      ∫ t in (0 : ℝ)..4, deriv (rectBoundary z w) t • g (rectBoundary z w t) := by
+  have hcell := ae_all_iff.2 (fun i : Fin 4 ↦ ae_rectBoundary_integrand_eq_on_cell hfg i)
+  have hfinite : ({(1 : ℝ), 2, 3, 4} : Set ℝ).Finite := by simp
+  refine intervalIntegral.integral_congr_ae ?_
+  filter_upwards [hcell, hfinite.countable.ae_notMem volume] with t hc hn ht
+  simp only [mem_insert_iff, mem_singleton_iff, not_or] at hn
+  rw [uIoc_of_le (by norm_num : (0 : ℝ) ≤ 4)] at ht
+  have ht4 : t < 4 := lt_of_le_of_ne ht.2 hn.2.2.2
+  by_cases h1 : t < 1
+  · exact hc 0 (by simpa using And.intro ht.1 h1)
+  · have h1' : 1 < t := lt_of_le_of_ne (le_of_not_gt h1) (Ne.symm hn.1)
+    by_cases h2 : t < 2
+    · exact hc 1 (by norm_num; exact And.intro h1' h2)
+    · have h2' : 2 < t := lt_of_le_of_ne (le_of_not_gt h2) (Ne.symm hn.2.1)
+      by_cases h3 : t < 3
+      · exact hc 2 (by norm_num; exact And.intro h2' h3)
+      · have h3' : 3 < t := lt_of_le_of_ne (le_of_not_gt h3) (Ne.symm hn.2.2.1)
+        exact hc 3 (by norm_num; exact And.intro h3' ht4)
+
+end Congruence
 
 end Complex
