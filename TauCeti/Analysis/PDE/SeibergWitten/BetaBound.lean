@@ -64,16 +64,9 @@ If the `β` inequality keeps the term `(r / 4)|β|⁴`, that is if it reads
 `|β|² ≤ (4 c² / r) (w₊ + (4 + 8 K₁ + K₃) / r)`
 
 (`TauCeti.SeibergWitten.norm_sq_le_div_mul_max_one_sub_add_div`). In particular `β = 0` when
-`c = 0`.
-
-That coarse bound on `α` also follows from the `α` inequality alone, even without its term
-`|∇_a α|²`: at a maximum of `|α|²`, where `Δ|α|² ≤ 0`, the inequality
-`-Δ|α|² / 2 - (r / 4)(1 - |α|²)|α|² ≤ K₁` gives `(r / 4)(|α|² - 1)|α|² ≤ K₁`, hence
-`|α|² ≤ 1 + 4 K₁ / r` everywhere (`TauCeti.SeibergWitten.le_one_add_mul_div_of_isLocalMax`,
-`TauCeti.SeibergWitten.norm_sq_le_one_add_mul_div`). With
-`K₃ = 4 K₁` this supplies the coarse hypothesis of
-`TauCeti.SeibergWitten.norm_sq_le_div_mul_max_one_sub_add_div`, and that of the gradient bound
-`TauCeti.SeibergWitten.norm_sq_le_mul_max_one_sub_add`.
+`c = 0`. The `α` inequality alone supplies this coarse bound with `K₃ = 4 K₁`
+(`TauCeti.SeibergWitten.norm_sq_le_one_add_mul_div` in
+`TauCeti.Analysis.PDE.SeibergWitten.PointwiseBounds`).
 
 The sections and their covariant derivatives are arbitrary dependent functions with values in
 seminormed groups, such as the fibres of vector bundles. Only `|α|²` and `|β|²` need to be `C²`.
@@ -91,11 +84,6 @@ seminormed groups, such as the fibres of vector bundles. Only `|α|²` and `|β|
 * `TauCeti.SeibergWitten.norm_sq_le_div_mul_max_one_sub_add_div`: then
   `|β|² ≤ (4 c² / r) (w₊ + (4 + 8 K₁ + K₃) / r)` on a compact boundaryless Riemannian manifold,
   for every `r > 0`, from the coarse bound `|α|² ≤ 1 + K₃ / r` on `α` alone.
-* `TauCeti.SeibergWitten.le_one_add_mul_div_of_isLocalMax`: the bound `u ≤ 1 + 4 K₁ / r` at a
-  local maximum of a function `u` satisfying `-Δu / 2 - (r / 4)(1 - u) u ≤ K₁` there, on any
-  boundaryless Riemannian manifold.
-* `TauCeti.SeibergWitten.norm_sq_le_one_add_mul_div`: the coarse bound `|α|² ≤ 1 + 4 K₁ / r` on a
-  compact boundaryless Riemannian manifold, from the `α` inequality alone.
 
 ## References
 
@@ -324,36 +312,6 @@ theorem norm_sq_le_div_mul_max_one_sub_add_div_of_isLocalMax (hr : 0 < r) (hK₁
     ‖β x₀‖ ^ 2 ≤ 4 * c ^ 2 / r * (max (1 - ‖α x₀‖ ^ 2) 0 + 4 * (1 + 2 * K₁) / r) := by
   exact sq_le_of_add_div_mul_nonpos hr hK₁ hWβ hWα
     (Manifold.laplaceBeltrami_add_mul_nonpos_of_isLocalMax hβ hα hmax)
-
-/-- **Taubes's coarse bound at a maximum point.** If a function `u` that is `C²` at `x₀` has a
-local maximum there and satisfies `-Δu / 2 - (r / 4)(1 - u) u ≤ K₁` at `x₀`, with `0 < r`, then
-`u(x₀) ≤ 1 + 4 K₁ / r`. For `u = |α|²` this is the projected Weitzenböck inequality for `α` after
-dropping `|∇_a α|²`. -/
-theorem le_one_add_mul_div_of_isLocalMax (hr : 0 < r) {u : M → ℝ} {x₀ : M}
-    (hu : ContMDiffAt I 𝓘(ℝ) 2 u x₀) (hmax : IsLocalMax u x₀)
-    (hW : -(Manifold.laplaceBeltrami I u x₀ / 2) - r / 4 * (1 - u x₀) * u x₀ ≤ K₁) :
-    u x₀ ≤ 1 + 4 * K₁ / r := by
-  -- The Laplacian is nonpositive at `x₀`, so `(r / 4)(u - 1) u ≤ K₁` there.
-  have hΔ := Manifold.laplaceBeltrami_nonpos_of_isLocalMax hu hmax
-  -- Since `r (u - 1) ≤ r (u - 1) u`, this gives `r (u - 1) ≤ 4 K₁`.
-  rw [← sub_le_iff_le_add', le_div_iff₀ hr]
-  nlinarith [mul_nonneg hr.le (sq_nonneg (u x₀ - 1))]
-
-/-- **Taubes's coarse bound** `|α|² ≤ 1 + C / r`. On a compact boundaryless Riemannian manifold,
-suppose `|α|²` is `C²` and satisfies `-Δ|α|² / 2 - (r / 4)(1 - |α|²)|α|² ≤ K₁` everywhere, as the
-projected Weitzenböck inequality for `α` gives after dropping `|∇_a α|²`, with `0 < r`. Then
-`|α|² ≤ 1 + 4 K₁ / r` everywhere. -/
-theorem norm_sq_le_one_add_mul_div [CompactSpace M] (hr : 0 < r)
-    (hα : ContMDiff I 𝓘(ℝ) 2 fun y ↦ ‖α y‖ ^ 2)
-    (hWα : ∀ y, -(Manifold.laplaceBeltrami I (fun y ↦ ‖α y‖ ^ 2) y / 2) -
-      r / 4 * (1 - ‖α y‖ ^ 2) * ‖α y‖ ^ 2 ≤ K₁) (y : M) :
-    ‖α y‖ ^ 2 ≤ 1 + 4 * K₁ / r := by
-  -- Apply the bound at a maximum `x₀` of `|α|²`.
-  obtain ⟨x₀, -, hx₀⟩ :=
-    isCompact_univ.exists_isMaxOn ⟨y, Set.mem_univ y⟩ hα.continuous.continuousOn
-  exact (hx₀ (Set.mem_univ y)).trans
-    (le_one_add_mul_div_of_isLocalMax (u := fun y ↦ ‖α y‖ ^ 2) hr (hα x₀)
-      (hx₀.isLocalMax Filter.univ_mem) (hWα x₀))
 
 /-- **Taubes's pointwise bound** `|β|² ≤ (C / r) w₊ + C / r²`, with `w₊ = max (1 - |α|²) 0`.
 On a compact boundaryless Riemannian manifold, suppose `|α|²` and `|β|²` are `C²` and satisfy
