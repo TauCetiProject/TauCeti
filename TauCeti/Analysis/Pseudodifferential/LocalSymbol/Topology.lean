@@ -48,8 +48,8 @@ compactly supported cutoffs are continuous families of symbols on `ℝⁿ`
 for local symbols, for instance for parameter families or after a change of chart, to the global
 symbol class `TauCeti.Symbol n V W m`.
 
-Every mixed derivative at a point of `U` is a continuous function of the local symbol
-(`TauCeti.LocalSymbol.continuous_mixedDeriv`).
+Every mixed derivative at a point of `U` is a continuous linear function of the local symbol
+(`TauCeti.LocalSymbol.mixedDerivCLM`, `TauCeti.LocalSymbol.continuous_mixedDeriv`).
 
 ## References
 
@@ -75,14 +75,6 @@ namespace LocalSymbol
 
 variable {U U' : TopologicalSpace.Opens (CoordinateSpace n)} {V W : Type*}
   [NormedAddCommGroup V] [NormedSpace ℂ V] [NormedAddCommGroup W] [NormedSpace ℂ W] {m m' : ℝ}
-
-/-- At a position near which the cutoff `ψ` equals `1`, the cut-off extension of a local symbol has
-the mixed derivatives of the local symbol. -/
-theorem mixedDeriv_extend_of_eventuallyEq_one {ψ : CoordinateSpace n → ℝ} (hψ : ContDiff ℝ ∞ ψ)
-    (hψU : tsupport ψ ⊆ U) {x : CoordinateSpace n} (hx : ψ =ᶠ[𝓝 x] 1) (α β : List (Fin n))
-    (a : LocalSymbol U V W m) (ξ : CoordinateSpace n) :
-    mixedDeriv α β (extend ψ hψ hψU a).coefficient x ξ = mixedDeriv α β a.coefficient x ξ :=
-  mixedDeriv_congr_of_eventually (by filter_upwards [hx] with y hy η using by simp [hy]) α β ξ
 
 section Seminorm
 
@@ -362,7 +354,7 @@ theorem exists_seminorm_extend_le (hL : (L : Set (CoordinateSpace n)) ⊆ U)
           Finset.sum_le_sum fun i hi => mul_le_mul_of_nonneg_right
             (Finset.single_le_sum (fun j _ => hc j) hi) (mul_nonneg (hS i) hw)
       _ = _ := by rw [← Finset.mul_sum, ← Finset.sum_mul, mul_assoc]
-  · rw [a.mixedDeriv_cutoff_smul_eq_zero hxψ, norm_zero]
+  · rw [mixedDeriv_comp_fst_smul_eq_zero_of_notMem_tsupport (a := a.coefficient) hxψ, norm_zero]
     exact mul_nonneg (mul_nonneg (Finset.sum_nonneg fun i _ => hc i)
       (Finset.sum_nonneg fun i _ => hS i)) hw
 
@@ -418,16 +410,6 @@ def extendCLM : LocalSymbol U V W m →L[ℂ] Symbol n V W m where
 theorem extendCLM_apply (a : LocalSymbol U V W m) :
     extendCLM hψ hψU a = extend ψ hψ hψU a := (rfl)
 
-/-- Every mixed derivative `∂_x^α ∂_ξ^β a(x, ξ)` at a point with `x ∈ U` is a continuous function
-of the local symbol `a`; in particular so is the value `a(x, ξ)`. -/
-theorem continuous_mixedDeriv {x : CoordinateSpace n} (hx : x ∈ U) (α β : List (Fin n))
-    (ξ : CoordinateSpace n) :
-    Continuous fun a : LocalSymbol U V W m => mixedDeriv α β a.coefficient x ξ := by
-  obtain ⟨ψ, hψ, -, hψ1, -, hψU⟩ :=
-    isCompact_singleton.exists_contDiff_cutoff_eventuallyEq_one U.isOpen (singleton_subset_iff.2 hx)
-  simp_rw [← mixedDeriv_extend_of_eventuallyEq_one hψ hψU (hψ1 x rfl) α β]
-  exact (Symbol.continuous_mixedDeriv α β x ξ).comp (continuous_extend hψ hψU)
-
 /-- **Continuity through cut-off extensions.** A family of local symbols on `U`, parametrized by a
 topological space, is continuous exactly when its cut-off extensions `ψ(x) a_t(x, ξ)` are
 continuous families of symbols on `ℝⁿ` for all compactly supported cutoffs `ψ` whose support is
@@ -448,6 +430,52 @@ theorem continuous_iff_forall_continuous_extend {X : Type*} [TopologicalSpace X]
     seminorm_extend_of_eventuallyEq_one hψ hψU hK hψ1] at ht
 
 end Extend
+
+section MixedDeriv
+
+variable {x : CoordinateSpace n}
+
+/-- At a position `x ∈ U`, the mixed derivatives of a local symbol are those of its extension by a
+cutoff equal to `1` near `x`. -/
+private theorem exists_mixedDeriv_eq_extend (hx : x ∈ U) (α β : List (Fin n))
+    (ξ : CoordinateSpace n) :
+    ∃ (ψ : CoordinateSpace n → ℝ) (hψ : ContDiff ℝ ∞ ψ) (hψU : tsupport ψ ⊆ U),
+      ∀ a : LocalSymbol U V W m, mixedDeriv α β a.coefficient x ξ =
+        Symbol.mixedDerivCLM n V W m α β x ξ (extend ψ hψ hψU a) := by
+  obtain ⟨ψ, hψ, -, hψ1, -, hψU⟩ :=
+    isCompact_singleton.exists_contDiff_cutoff_eventuallyEq_one U.isOpen (singleton_subset_iff.2 hx)
+  exact ⟨ψ, hψ, hψU, fun a => by
+    rw [Symbol.mixedDerivCLM_apply, mixedDeriv_extend_of_eventuallyEq_one hψ hψU (hψ1 x rfl)]⟩
+
+variable (V W m) in
+/-- The mixed derivative `a ↦ ∂_x^α ∂_ξ^β a(x, ξ)` at a point with `x ∈ U`, as a continuous linear
+map on the local symbols of order `m`; in particular the value `a ↦ a(x, ξ)` for `α = β = []`. -/
+def mixedDerivCLM (hx : x ∈ U) (α β : List (Fin n)) (ξ : CoordinateSpace n) :
+    LocalSymbol U V W m →L[ℂ] V →L[ℂ] W where
+  toFun a := mixedDeriv α β a.coefficient x ξ
+  map_add' a b := by
+    obtain ⟨ψ, hψ, hψU, h⟩ := exists_mixedDeriv_eq_extend (V := V) (W := W) (m := m) hx α β ξ
+    simp only [h, map_add]
+  map_smul' c a := by
+    obtain ⟨ψ, hψ, hψU, h⟩ := exists_mixedDeriv_eq_extend (V := V) (W := W) (m := m) hx α β ξ
+    simp only [h, map_smul, RingHom.id_apply]
+  cont := by
+    obtain ⟨ψ, hψ, hψU, h⟩ := exists_mixedDeriv_eq_extend (V := V) (W := W) (m := m) hx α β ξ
+    simp_rw [h]
+    exact (Symbol.mixedDerivCLM n V W m α β x ξ).continuous.comp (continuous_extend hψ hψU)
+
+@[simp]
+theorem mixedDerivCLM_apply (hx : x ∈ U) (α β : List (Fin n)) (ξ : CoordinateSpace n)
+    (a : LocalSymbol U V W m) :
+    mixedDerivCLM V W m hx α β ξ a = mixedDeriv α β a.coefficient x ξ := (rfl)
+
+/-- Every mixed derivative `∂_x^α ∂_ξ^β a(x, ξ)` at a point with `x ∈ U` is a continuous function
+of the local symbol `a`; in particular so is the value `a(x, ξ)`. -/
+theorem continuous_mixedDeriv (hx : x ∈ U) (α β : List (Fin n)) (ξ : CoordinateSpace n) :
+    Continuous fun a : LocalSymbol U V W m => mixedDeriv α β a.coefficient x ξ :=
+  (mixedDerivCLM V W m hx α β ξ).continuous
+
+end MixedDeriv
 
 end LocalSymbol
 

@@ -47,8 +47,9 @@ global one. It does extend after multiplication by a cutoff:
   to an open set on which `ψ = 1` recovers the restriction of the original symbol
   (`TauCeti.LocalSymbol.restrict_extend_of_eqOn_one`). The mixed derivatives of the extension obey
   the Leibniz bound `TauCeti.LocalSymbol.norm_mixedDeriv_cutoff_smul_le` in terms of those of the
-  original symbol, and vanish outside `tsupport ψ`
-  (`TauCeti.LocalSymbol.mixedDeriv_cutoff_smul_eq_zero`).
+  original symbol, vanish outside `tsupport ψ`
+  (`TauCeti.mixedDeriv_comp_fst_smul_eq_zero_of_notMem_tsupport`), and are those of the original
+  symbol near positions where `ψ = 1` (`TauCeti.LocalSymbol.mixedDeriv_extend_of_eventuallyEq_one`).
 
 The order inclusions `TauCeti.LocalSymbol.inclusion` commute with restriction and extension.
 The smoothing symbols on `U` (`TauCeti.LocalSymbol.IsSmoothing`), of every real order on `U`, are
@@ -492,15 +493,6 @@ theorem norm_mixedDeriv_cutoff_smul_le (a : LocalSymbol U V W m) (hψ : ContDiff
   refine Finset.sum_congr rfl fun w _ => ?_
   rw [← mixedDeriv_def, mixedDeriv_congr_of_eventually hab]
 
-/-- At a position outside the support of `ψ`, every mixed derivative of the cut-off coefficient
-`ψ(x) a(x, ξ)` vanishes. -/
-theorem mixedDeriv_cutoff_smul_eq_zero (a : LocalSymbol U V W m) {x : CoordinateSpace n}
-    (hx : x ∉ tsupport ψ) (α β : List (Fin n)) (ξ : CoordinateSpace n) :
-    mixedDeriv α β (fun p => ψ p.1 • a.coefficient p) x ξ = 0 := by
-  refine mixedDeriv_eq_zero_of_eventually ?_ α β ξ
-  filter_upwards [notMem_tsupport_iff_eventuallyEq.1 hx] with y hy η
-  simp [hy]
-
 /-- The cut-off coefficient `ψ(x) a(x, ξ)` satisfies the symbol estimates on every compact set of
 positions. -/
 private theorem exists_bound_extend (a : LocalSymbol U V W m) (hψ : ContDiff ℝ ∞ ψ)
@@ -533,7 +525,7 @@ private theorem exists_bound_extend (a : LocalSymbol U V W m) (hψ : ContDiff �
     calc _ ≤ (α.length.choose i : ℝ) * max (B i) 0 * ∑ w : Fin (α.length - i) → Fin n,
           C (List.ofFn w) * (1 + ‖ξ‖ ^ 2) ^ ((m - β.length) / 2) := by gcongr
       _ = _ := by simp only [Finset.sum_mul, mul_assoc]
-  · rw [a.mixedDeriv_cutoff_smul_eq_zero hxψ, norm_zero]
+  · rw [mixedDeriv_comp_fst_smul_eq_zero_of_notMem_tsupport (a := a.coefficient) hxψ, norm_zero]
     exact mul_nonneg hC' (Real.rpow_pos_of_pos (by positivity) _).le
 
 /-- The extension by zero of the cut-off symbol `ψ(x) a(x, ξ)`, for a smooth cutoff `ψ` whose
@@ -586,6 +578,13 @@ restriction of the original symbol. -/
 theorem restrict_extend_of_eqOn_one (h : U' ≤ U) (hψ1 : EqOn ψ 1 U')
     (a : LocalSymbol U V W m) : (extend ψ hψ hψU a).restrict U' = restrict h a :=
   ext_of_mem fun x hx ξ => by simp [hx, (hψ1 hx).trans (Pi.one_apply x)]
+
+/-- At a position near which the cutoff `ψ` equals `1`, the cut-off extension of a local symbol has
+the mixed derivatives of the local symbol. -/
+theorem mixedDeriv_extend_of_eventuallyEq_one {x : CoordinateSpace n} (hx : ψ =ᶠ[𝓝 x] 1)
+    (α β : List (Fin n)) (a : LocalSymbol U V W m) (ξ : CoordinateSpace n) :
+    mixedDeriv α β (extend ψ hψ hψU a).coefficient x ξ = mixedDeriv α β a.coefficient x ξ :=
+  mixedDeriv_congr_of_eventually (by filter_upwards [hx] with y hy η using by simp [hy]) α β ξ
 
 /-- For a cutoff supported in a smaller open set `U' ⊆ U`, extending the restriction to `U'` is
 extending the original symbol. -/
