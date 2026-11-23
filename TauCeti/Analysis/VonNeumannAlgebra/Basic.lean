@@ -7,6 +7,8 @@ module
 
 public import Mathlib.Analysis.VonNeumannAlgebra.Basic
 public import Mathlib.Analysis.CStarAlgebra.ContinuousLinearMap
+public import Mathlib.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Range
+public import Mathlib.Analysis.InnerProductSpace.StarOrder
 import TauCeti.Algebra.Group.Center
 
 /-!
@@ -19,7 +21,8 @@ be applied directly to concrete algebras, including those acting on the zero Hil
 (`instSubsingleton`, `subsingleton_coe_iff`).
 
 The instances use Mathlib's generic subobject constructions, in particular
-`StarSubalgebra.cstarAlgebra`. The underlying star subalgebra has the same instances;
+`StarSubalgebra.cstarAlgebra` and, for the order inherited from the Loewner order on operators,
+`Subtype.starOrderedRing`. The underlying star subalgebra has the same instances;
 no new norm, completion, or algebra carrier is introduced.
 
 Conjugation along a linear isometric equivalence `U : H₁ ≃ₗᵢ[ℂ] H₂` transports concrete von Neumann
@@ -47,6 +50,15 @@ instance isClosed (M : VonNeumannAlgebra H) : IsClosed (M : Set (H →L[ℂ] H))
 instance instIsClosedToStarSubalgebra (M : VonNeumannAlgebra H) :
     IsClosed (M.toStarSubalgebra : Set (H →L[ℂ] H)) := by
   simpa only [coe_toStarSubalgebra] using M.isClosed
+
+/-- The order on a von Neumann algebra inherited from the Loewner order on operators makes it a
+star-ordered ring, so that positive functionals on it are those of the C⋆-algebra `M`. This
+specializes `Subtype.starOrderedRing`, whose instance search over the operators on a concrete
+Hilbert space, such as a GNS space, otherwise rebuilds their continuous functional calculus and
+fails. -/
+instance instStarOrderedRingToStarSubalgebra (M : VonNeumannAlgebra H) :
+    StarOrderedRing M.toStarSubalgebra :=
+  Subtype.starOrderedRing _
 
 /-- On a subsingleton Hilbert space there is only one concrete von Neumann algebra. -/
 instance instSubsingleton [Subsingleton H] : Subsingleton (VonNeumannAlgebra H) where
@@ -127,14 +139,15 @@ theorem mapLinearIsometryEquiv_trans (U : H₁ ≃ₗᵢ[ℂ] H₂) (V : H₂ �
 von Neumann algebra `mapLinearIsometryEquiv U M`. -/
 noncomputable def equivMapLinearIsometryEquiv (U : H₁ ≃ₗᵢ[ℂ] H₂) (M : VonNeumannAlgebra H₁) :
     M ≃⋆ₐ[ℂ] mapLinearIsometryEquiv U M :=
-  { toFun := fun x ↦ ⟨U.conjStarAlgEquiv x.1, conjStarAlgEquiv_mem_mapLinearIsometryEquiv.2 x.2⟩
-    invFun := fun y ↦ ⟨U.symm.conjStarAlgEquiv y.1, mem_mapLinearIsometryEquiv.1 y.2⟩
+  { toFun := fun x ↦
+      ⟨U.conjStarAlgEquiv x.val, conjStarAlgEquiv_mem_mapLinearIsometryEquiv.2 x.property⟩
+    invFun := fun y ↦ ⟨U.symm.conjStarAlgEquiv y.val, mem_mapLinearIsometryEquiv.1 y.property⟩
     left_inv := fun x ↦ Subtype.ext <| by simp [← LinearIsometryEquiv.symm_conjStarAlgEquiv]
-    right_inv := fun y ↦ Subtype.ext <| U.conjStarAlgEquiv.apply_symm_apply y.1
-    map_mul' := fun x y ↦ Subtype.ext <| map_mul U.conjStarAlgEquiv x.1 y.1
-    map_add' := fun x y ↦ Subtype.ext <| map_add U.conjStarAlgEquiv x.1 y.1
-    map_smul' := fun c x ↦ Subtype.ext <| map_smul U.conjStarAlgEquiv c x.1
-    map_star' := fun x ↦ Subtype.ext <| map_star U.conjStarAlgEquiv x.1 }
+    right_inv := fun y ↦ Subtype.ext <| U.conjStarAlgEquiv.apply_symm_apply y.val
+    map_mul' := fun x y ↦ Subtype.ext <| map_mul U.conjStarAlgEquiv x.val y.val
+    map_add' := fun x y ↦ Subtype.ext <| map_add U.conjStarAlgEquiv x.val y.val
+    map_smul' := fun c x ↦ Subtype.ext <| map_smul U.conjStarAlgEquiv c x.val
+    map_star' := fun x ↦ Subtype.ext <| map_star U.conjStarAlgEquiv x.val }
 @[simp, norm_cast] theorem coe_equivMapLinearIsometryEquiv (U : H₁ ≃ₗᵢ[ℂ] H₂)
     (M : VonNeumannAlgebra H₁) (x : M) :
     (equivMapLinearIsometryEquiv U M x : H₂ →L[ℂ] H₂) = U.conjStarAlgEquiv x := (rfl)

@@ -283,7 +283,7 @@ private theorem exists_eventuallyEq_connectedSumFun (h₁ : IsConnectedSumPositi
     ∃ G : SmoothCircleEmbedding (𝓡 n) (sphere (0 : E) 1), connectedSumFun ι K₁ K₂ =ᶠ[𝓝 z] ⇑G := by
   rcases lt_trichotomy (z : ℂ).im 0 with hz | hz | hz
   · refine ⟨turnOver ι K₂, ?_⟩
-    filter_upwards [(isOpen_lt (Complex.continuous_im.comp continuous_subtype_val)
+    filter_upwards [(isOpen_lt (Complex.continuous_im.comp continuous_subtypeVal)
       continuous_const).mem_nhds hz] with w (hw : (w : ℂ).im < 0)
     simp [connectedSumFun, hw.not_ge]
   · refine ⟨greatCircle ι, ?_⟩
@@ -293,7 +293,7 @@ private theorem exists_eventuallyEq_connectedSumFun (h₁ : IsConnectedSumPositi
     split_ifs <;> assumption
   · refine ⟨K₁, ?_⟩
     filter_upwards [(isOpen_lt continuous_const
-      (Complex.continuous_im.comp continuous_subtype_val)).mem_nhds hz] with w (hw : 0 < (w : ℂ).im)
+      (Complex.continuous_im.comp continuous_subtypeVal)).mem_nhds hz] with w (hw : 0 < (w : ℂ).im)
     simp [connectedSumFun, hw.le]
 
 /-- The height of the connected sum has the sign of `Im z`. -/

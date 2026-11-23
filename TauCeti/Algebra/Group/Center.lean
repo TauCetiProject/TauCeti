@@ -9,14 +9,20 @@ public import Mathlib.Algebra.Group.Center
 public import Mathlib.Algebra.Group.Units.Defs
 
 /-!
-# Centralizers, multiplicative equivalences, and conjugation by units
+# Centralizers, multiplicative equivalences, conjugation by units, and commutative magmas
 
-Multiplicative equivalences commute with taking centralizers (`Set.image_centralizer`). If
-conjugation by the inverse of a unit `u` maps a set `S` of a monoid into itself, then conjugation
-by `u` maps the centralizer of `S` into itself (`Set.conj_mem_centralizer`). Applying this twice
-shows that a double commutant is preserved by every unit whose conjugations preserve the original
-set in both directions, which is how spatially implemented automorphisms extend to von Neumann
-algebras.
+Basic lemmas for `Set.centralizer`:
+
+* `Set.image_centralizer` (and its additive counterpart `Set.image_addCentralizer`): multiplicative
+  equivalences commute with taking centralizers.
+* `Set.conj_mem_centralizer`: if conjugation by the inverse of a unit `u` maps a set `S` of a
+  monoid into itself, then conjugation by `u` maps the centralizer of `S` into itself. Applying
+  this twice shows that a double commutant is preserved by every unit whose conjugations preserve
+  the original set in both directions, which is how spatially implemented automorphisms extend to
+  von Neumann algebras.
+* `Set.apply_mem_centralizer_range` (and its additive counterpart
+  `Set.apply_mem_addCentralizer_range`): every value of a multiplicative homomorphism from a
+  commutative magma lies in the centralizer of its range.
 -/
 
 public section
@@ -25,7 +31,9 @@ namespace Set
 
 /-- A multiplicative equivalence maps the centralizer of a set onto the centralizer of its
 image. -/
-@[to_additive image_addCentralizer]
+@[to_additive image_addCentralizer
+  /-- An additive equivalence maps the additive centralizer of a set onto the additive centralizer
+  of its image. -/]
 theorem image_centralizer {A B F : Type*} [Mul A] [Mul B] [EquivLike F A B]
     [MulEquivClass F A B] (e : F) (s : Set A) : (e '' s).centralizer = e '' s.centralizer := by
   ext b; refine ⟨fun hb ↦ ?_, ?_⟩
@@ -33,6 +41,8 @@ theorem image_centralizer {A B F : Type*} [Mul A] [Mul B] [EquivLike F A B]
     exact ⟨c, fun a ha ↦ EquivLike.injective e <| by
       rw [map_mul, map_mul]; exact hb (e a) ⟨a, ha, rfl⟩, rfl⟩
   · rintro ⟨a, ha, rfl⟩ _ ⟨x, hx, rfl⟩; rw [← map_mul, ← map_mul, ha x hx]
+
+section Monoid
 
 variable {M : Type*} [Monoid M] {S : Set M}
 
@@ -47,5 +57,19 @@ theorem conj_mem_centralizer (u : Mˣ) (hS : ∀ s ∈ S, ↑u⁻¹ * s * ↑u �
     _ = ↑u * (x * (↑u⁻¹ * s * ↑u)) * ↑u⁻¹ := by rw [h]
     _ = ↑u * x * ↑u⁻¹ * s := by
         simp only [mul_assoc, Units.mul_inv, mul_one]
+
+end Monoid
+
+/-- Every value of a multiplicative homomorphism from a commutative magma lies in the centralizer
+of its range. -/
+@[to_additive (attr := simp) apply_mem_addCentralizer_range
+  /-- Every value of an additive homomorphism from a commutative additive magma lies in the
+  additive centralizer of its range. -/]
+theorem apply_mem_centralizer_range {F M N : Type*} [Mul M] [IsMulCommutative M] [Mul N]
+    [FunLike F M N] [MulHomClass F M N] (f : F) (x : M) :
+    f x ∈ Set.centralizer (Set.range f) := by
+  rw [mem_centralizer_iff]
+  rintro _ ⟨y, rfl⟩
+  rw [← map_mul, mul_comm' y x, map_mul]
 
 end Set

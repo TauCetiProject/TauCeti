@@ -23,12 +23,16 @@ for `τ` in the upper half-plane, complementing `Mathlib.Analysis.Complex.UpperH
   `e^{2π i (x τ + y)} → 0` as `Im τ → ∞`.
 * `TauCeti.UpperHalfPlane.norm_exp_two_pi_I_mul_le`: `|q| ≤ e^{-2π t}` when `t ≤ Im τ`.
 * `TauCeti.UpperHalfPlane.norm_exp_two_pi_I_mul_lt_one_iff`: `|q| < 1` iff `0 < Im τ`.
+* `TauCeti.UpperHalfPlane.exists_cexp_two_pi_I_mul_eq`: every `q ≠ 0` with `|q| < 1` is
+  `e^{2π i τ}` for some `τ` in the upper half-plane.
 * `TauCeti.UpperHalfPlane.norm_one_sub_exp_two_pi_I_mul`: `|1 - e^{2π i y}| = |2 sin (π y)|`.
 * `TauCeti.UpperHalfPlane.norm_exp_pi_I_lt_one`: `‖e^{π i τ}‖ < 1` on the upper half-plane.
 * `TauCeti.UpperHalfPlane.one_sub_exp_two_pi_I_ne_zero`: `1 - e^{2π i (x τ + y)}` has no zero in
   the upper half-plane unless `x = 0` and `y ∈ ℤ`.
 * `TauCeti.UpperHalfPlane.exp_two_pi_I_zpow_mul_exp`:
   `qᵏ e^{2π i (x τ + y)} = e^{2π i ((k + x) τ + y)}` for `k ∈ ℤ`.
+* `TauCeti.UpperHalfPlane.expTwoPiIMulHom`: the exponential `x ↦ e^{2π i x}` as a homomorphism
+  from `ℂ` onto the units of `ℂ`, written additively (`surjective_expTwoPiIMulHom`).
 -/
 
 public section
@@ -41,7 +45,7 @@ namespace TauCeti.UpperHalfPlane
 
 /-- `q = e^{2π i τ}` is the square of `e^{π i τ}`. -/
 theorem exp_two_pi_I_eq_exp_pi_I_sq (τ : ℂ) : cexp (2 * π * I * τ) = cexp (π * I * τ) ^ 2 := by
-  rw [← Complex.exp_nat_mul]
+  rw [← Complex.exp_natCast_mul]
   congr 1
   push_cast
   ring
@@ -100,6 +104,13 @@ theorem norm_exp_pi_I_lt_one {τ : ℂ} (hτ : 0 < τ.im) : ‖cexp (π * I * τ
   rw [Complex.norm_exp, Real.exp_lt_one_iff]
   simpa using mul_pos Real.pi_pos hτ
 
+/-- Every `q ≠ 0` with `|q| < 1` is `e^{2π i τ}` for some `τ` in the upper half-plane, namely
+`τ = log q / (2π i)` (Mathlib's `Function.Periodic.invQParam`). -/
+theorem exists_cexp_two_pi_I_mul_eq {q : ℂ} (hq₀ : q ≠ 0) (hq : ‖q‖ < 1) :
+    ∃ τ : ℍ, cexp (2 * π * I * τ) = q :=
+  ⟨⟨_, Function.Periodic.im_invQParam_pos_of_norm_lt_one one_pos hq hq₀⟩, by
+    simpa [Function.Periodic.qParam] using Function.Periodic.qParam_right_inv one_ne_zero hq₀⟩
+
 /-- `1 - e^{2π i (x τ + y)}` vanishes at a point `τ` of the upper half-plane only when `x = 0` and
 `y` is an integer. -/
 theorem one_sub_exp_two_pi_I_ne_zero {x y : ℝ} {τ : ℂ} (hτ : 0 < τ.im)
@@ -122,8 +133,30 @@ theorem one_sub_exp_two_pi_I_ne_zero {x y : ℝ} {τ : ℂ} (hτ : 0 < τ.im)
 theorem exp_two_pi_I_zpow_mul_exp (k : ℤ) (x y : ℝ) (τ : ℂ) :
     cexp (2 * π * I * τ) ^ k * cexp (2 * π * I * (x * τ + y)) =
       cexp (2 * π * I * (((k + x : ℝ) : ℂ) * τ + y)) := by
-  rw [← Complex.exp_int_mul, ← Complex.exp_add]
+  rw [← Complex.exp_intCast_mul, ← Complex.exp_add]
   push_cast
   ring_nf
+
+/-- The exponential `x ↦ e^{2π i x}` as a homomorphism from `ℂ` to the units of `ℂ`, written
+additively. -/
+noncomputable def expTwoPiIMulHom : ℂ →+ Additive ℂˣ :=
+  Complex.expMonoidHom.toHomUnits.toAdditiveLeft.comp (AddMonoidHom.mulLeft (2 * π * I))
+
+/-- `TauCeti.UpperHalfPlane.expTwoPiIMulHom` sends `x` to `e^{2π i x}`. -/
+@[simp]
+theorem expTwoPiIMulHom_apply (x : ℂ) :
+    expTwoPiIMulHom x = .ofMul (Units.mk0 (cexp (2 * π * I * x)) (Complex.exp_ne_zero _)) :=
+  Units.ext rfl
+
+/-- Every unit of `ℂ` is `e^{2π i x}` for some `x`, namely `x = log t / (2π i)` (Mathlib's
+`Function.Periodic.invQParam`). -/
+theorem surjective_expTwoPiIMulHom : Function.Surjective expTwoPiIMulHom := by
+  intro t
+  refine ⟨Function.Periodic.invQParam 1 (t.toMul : ℂ), ?_⟩
+  rw [expTwoPiIMulHom_apply, ← ofMul_toMul t]
+  congr 1
+  ext
+  simpa [Function.Periodic.qParam] using
+    Function.Periodic.qParam_right_inv one_ne_zero t.toMul.ne_zero
 
 end TauCeti.UpperHalfPlane

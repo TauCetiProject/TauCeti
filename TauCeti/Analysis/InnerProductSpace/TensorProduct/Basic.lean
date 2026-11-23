@@ -38,7 +38,23 @@ when endomorphisms are identified with tensors, without adding an instance on th
 * `TensorProduct.instCompleteSpaceOfFiniteDimensional`: the tensor product of two
   finite-dimensional inner product spaces is complete, which discharges completeness hypotheses
   on tensor products in adjoint statements for finite-dimensional factors.
+* `TensorProduct.norm_mapL` and `TensorProduct.denseRange_mapL`: the tensor product `f ⊗ g` of
+  bounded operators has norm `‖f‖ * ‖g‖` and preserves dense range;
+  `ContinuousLinearMap.norm_rTensor` and `ContinuousLinearMap.norm_lTensor` (`rTensorₗᵢ`,
+  `lTensorₗᵢ`, `rTensor_inj`, `lTensor_inj`) are the cases `f ⊗ 1` and `1 ⊗ g` for a nonzero other
+  factor (`rTensor_eq_zero`, `lTensor_eq_zero` on subsingletons).
+* `TensorProduct.inner_mapL_left`: if `f'` and `g'` are formal adjoints of `f` and `g`, then
+  `mapL f' g'` is a formal adjoint of `mapL f g`.
 * `ContinuousLinearMap.rTensor_lTensor_apply_comm`: `f ⊗ 1` and `1 ⊗ g` commute.
+* `ContinuousLinearMap.rTensor_adjoint_inner_left` and
+  `ContinuousLinearMap.lTensor_adjoint_inner_left`, with their `_right` forms: `f† ⊗ 1` and
+  `1 ⊗ g†` are formal adjoints of `f ⊗ 1` and `1 ⊗ g` on the algebraic tensor product, which
+  need not be complete, so that Mathlib's `ContinuousLinearMap.adjoint_rTensor` does not apply.
+* `rTensor_adjoint_comp_self_apply_add_lTensor_adjoint_comp_self_apply_eq_zero_iff`, in the
+  `ContinuousLinearMap` namespace: the positive tensor sum `A†A ⊗ 1 + 1 ⊗ B†B` vanishes exactly
+  on the common kernel of `A ⊗ 1` and `1 ⊗ B`.
+* `ContinuousLinearMap.denseRange_rTensor` and `ContinuousLinearMap.denseRange_lTensor`: if `f` has
+  dense range then so do `f ⊗ 1` and `1 ⊗ f`.
 * `InnerProductSpace.tensorDualMetric_tmul`: on pure tensors, the metric on `F ⊗ E*` is the
   product of the inner product of `F` and the dual metric of `E`.
 * `InnerProductSpace.tensorDualMetric_eq_trace`: evaluation carries this metric to the
@@ -49,7 +65,7 @@ when endomorphisms are identified with tensors, without adding an instance on th
 
 public section
 
-open scoped TensorProduct ComplexOrder
+open scoped TensorProduct ComplexOrder InnerProductSpace
 
 namespace TauCeti
 
@@ -130,6 +146,69 @@ end TauCeti
 
 namespace TensorProduct
 
+section mapL
+
+variable {𝕜 E E' F F' : Type*} [RCLike 𝕜] [NormedAddCommGroup E] [InnerProductSpace 𝕜 E]
+  [NormedAddCommGroup E'] [InnerProductSpace 𝕜 E'] [NormedAddCommGroup F] [InnerProductSpace 𝕜 F]
+  [NormedAddCommGroup F'] [InnerProductSpace 𝕜 F']
+
+/-- The tensor product `f ⊗ g` of bounded operators has norm `‖f‖ * ‖g‖`, sharpening Mathlib's
+`TensorProduct.norm_mapL_le`. -/
+@[simp]
+theorem norm_mapL (f : E →L[𝕜] E') (g : F →L[𝕜] F') : ‖mapL f g‖ = ‖f‖ * ‖g‖ := by
+  refine le_antisymm (norm_mapL_le f g) ?_
+  set C := ‖mapL f g‖
+  have h (x : E) (y : F) : ‖f x‖ * ‖g y‖ ≤ C * ‖y‖ * ‖x‖ := by
+    have := (mapL f g).le_opNorm (x ⊗ₜ[𝕜] y)
+    simp only [mapL_tmul, norm_tmul] at this
+    exact this.trans_eq (by ring)
+  -- Testing on `x ⊗ₜ y` bounds `‖f‖ * ‖g y‖`, and then `‖f‖ * ‖g‖`.
+  have hy (y : F) : ‖f‖ * ‖g y‖ ≤ C * ‖y‖ := by
+    rcases (norm_nonneg (g y)).eq_or_lt with h0 | hpos
+    · rw [← h0, mul_zero]
+      positivity
+    · refine (le_div_iff₀ hpos).1 <| f.opNorm_le_bound (by positivity) fun x ↦ ?_
+      rw [div_mul_eq_mul_div, le_div_iff₀ hpos]
+      exact h x y
+  rcases (norm_nonneg f).eq_or_lt with h0 | hpos
+  · rw [← h0, zero_mul]
+    positivity
+  · rw [mul_comm ‖f‖]
+    refine (le_div_iff₀ hpos).1 <| g.opNorm_le_bound (by positivity) fun y ↦ ?_
+    rw [div_mul_eq_mul_div, le_div_iff₀ hpos]
+    exact (mul_comm _ _).trans_le (hy y)
+
+/-- If `f'` and `g'` are formal adjoints of `f` and `g`, then `mapL f' g'` is a formal adjoint of
+`mapL f g`. No completeness is needed. -/
+theorem inner_mapL_left {f : E →L[𝕜] E'} {f' : E' →L[𝕜] E} {g : F →L[𝕜] F'} {g' : F' →L[𝕜] F}
+    (hf : ∀ x y, ⟪f x, y⟫_𝕜 = ⟪x, f' y⟫_𝕜) (hg : ∀ x y, ⟪g x, y⟫_𝕜 = ⟪x, g' y⟫_𝕜)
+    (u : E ⊗[𝕜] F) (v : E' ⊗[𝕜] F') : ⟪mapL f g u, v⟫_𝕜 = ⟪u, mapL f' g' v⟫_𝕜 := by
+  induction u using TensorProduct.inductionOn with
+  | add u₁ u₂ h₁ h₂ => simp only [map_add, inner_add_left, h₁, h₂]
+  | tmul x y =>
+    induction v using TensorProduct.inductionOn with
+    | add v₁ v₂ h₁ h₂ => simp only [map_add, inner_add_right, h₁, h₂]
+    | tmul x' y' => simp [hf, hg]
+
+/-- The tensor product of two bounded linear maps with dense range has dense range. -/
+theorem denseRange_mapL {f : E →L[𝕜] E'} {g : F →L[𝕜] F'} (hf : DenseRange f) (hg : DenseRange g) :
+    DenseRange (mapL f g) := by
+  let R : Submodule 𝕜 (E' ⊗[𝕜] F') := LinearMap.range (mapL f g).toLinearMap
+  have hmem (z : E' ⊗[𝕜] F') : z ∈ R.topologicalClosure := by
+    induction z using TensorProduct.inductionOn with
+    | tmul y w =>
+      refine hf.induction_on y
+        (R.isClosed_topologicalClosure.preimage ((mkL 𝕜 E' F').flip w).continuous)
+        fun x ↦ hg.induction_on w
+          (R.isClosed_topologicalClosure.preimage (mkL 𝕜 E' F' (f x)).continuous)
+          fun z ↦ R.le_topologicalClosure ⟨x ⊗ₜ[𝕜] z, rfl⟩
+    | add _ _ hz₁ hz₂ => exact add_mem hz₁ hz₂
+  intro z
+  have hz : z ∈ (R.topologicalClosure : Set (E' ⊗[𝕜] F')) := hmem z
+  rwa [Submodule.topologicalClosure_coe, LinearMap.coe_range, ContinuousLinearMap.coe_coe] at hz
+
+end mapL
+
 variable {𝕜 E F : Type*} [RCLike 𝕜] [NormedAddCommGroup E] [InnerProductSpace 𝕜 E]
   [FiniteDimensional 𝕜 E] [NormedAddCommGroup F] [InnerProductSpace 𝕜 F] [FiniteDimensional 𝕜 F]
 
@@ -151,6 +230,142 @@ variable {𝕜 X₀ X₁ Y₀ Y₁ : Type*} [RCLike 𝕜] [NormedAddCommGroup X�
 theorem rTensor_lTensor_apply_comm (f : X₀ →L[𝕜] X₁) (g : Y₀ →L[𝕜] Y₁) (x : X₀ ⊗[𝕜] Y₀) :
     f.rTensor Y₁ (g.lTensor X₀ x) = g.lTensor X₁ (f.rTensor Y₀ x) := by
   rw [← comp_apply, rTensor_comp_lTensor, ← comp_apply, lTensor_comp_rTensor]
+
+/-- Tensoring with a nonzero space `Y₀` on the right preserves the operator norm, sharpening
+Mathlib's `ContinuousLinearMap.norm_rTensor_le`. -/
+@[simp]
+theorem norm_rTensor [Nontrivial Y₀] (f : X₀ →L[𝕜] X₁) : ‖f.rTensor Y₀‖ = ‖f‖ := by
+  rw [rTensor_eq_mapL, TensorProduct.norm_mapL, norm_id, mul_one]
+
+/-- Tensoring with a nonzero space `X₀` on the left preserves the operator norm, sharpening
+Mathlib's `ContinuousLinearMap.norm_lTensor_le`. -/
+@[simp]
+theorem norm_lTensor [Nontrivial X₀] (g : Y₀ →L[𝕜] Y₁) : ‖g.lTensor X₀‖ = ‖g‖ := by
+  rw [lTensor_eq_mapL, TensorProduct.norm_mapL, norm_id, one_mul]
+
+variable (𝕜 X₀ X₁ Y₀) in
+/-- Tensoring on the right with the identity of a nontrivial space, as a linear isometry. -/
+noncomputable def rTensorₗᵢ [Nontrivial Y₀] :
+    (X₀ →L[𝕜] X₁) →ₗᵢ[𝕜] ((X₀ ⊗[𝕜] Y₀) →L[𝕜] (X₁ ⊗[𝕜] Y₀)) where
+  toLinearMap := ⟨⟨fun f ↦ f.rTensor Y₀, rTensor_add Y₀⟩, rTensor_smul Y₀⟩
+  norm_map' := norm_rTensor
+
+@[simp]
+theorem rTensorₗᵢ_apply [Nontrivial Y₀] (f : X₀ →L[𝕜] X₁) :
+    rTensorₗᵢ 𝕜 X₀ X₁ Y₀ f = f.rTensor Y₀ := (rfl)
+
+variable (𝕜 X₀ Y₀ Y₁) in
+/-- Tensoring on the left with the identity of a nontrivial space, as a linear isometry. -/
+noncomputable def lTensorₗᵢ [Nontrivial X₀] :
+    (Y₀ →L[𝕜] Y₁) →ₗᵢ[𝕜] ((X₀ ⊗[𝕜] Y₀) →L[𝕜] (X₀ ⊗[𝕜] Y₁)) where
+  toLinearMap := ⟨⟨fun g ↦ g.lTensor X₀, lTensor_add X₀⟩, lTensor_smul X₀⟩
+  norm_map' := norm_lTensor
+
+@[simp]
+theorem lTensorₗᵢ_apply [Nontrivial X₀] (g : Y₀ →L[𝕜] Y₁) :
+    lTensorₗᵢ 𝕜 X₀ Y₀ Y₁ g = g.lTensor X₀ := (rfl)
+
+/-- Tensoring on the right with the identity of a nontrivial inner product space is injective. -/
+@[simp]
+theorem rTensor_inj [Nontrivial Y₀] {f g : X₀ →L[𝕜] X₁} :
+    f.rTensor Y₀ = g.rTensor Y₀ ↔ f = g :=
+  (rTensorₗᵢ 𝕜 X₀ X₁ Y₀).injective.eq_iff
+
+/-- Tensoring on the left with the identity of a nontrivial inner product space is injective. -/
+@[simp]
+theorem lTensor_inj [Nontrivial X₀] {f g : Y₀ →L[𝕜] Y₁} :
+    f.lTensor X₀ = g.lTensor X₀ ↔ f = g :=
+  (lTensorₗᵢ 𝕜 X₀ Y₀ Y₁).injective.eq_iff
+
+/-- Tensoring on the right with a subsingleton space produces the zero operator. -/
+@[simp]
+theorem rTensor_eq_zero [Subsingleton Y₀] (f : X₀ →L[𝕜] X₁) : f.rTensor Y₀ = 0 :=
+  Subsingleton.elim _ _
+
+/-- Tensoring on the left with a subsingleton space produces the zero operator. -/
+@[simp]
+theorem lTensor_eq_zero [Subsingleton X₀] (g : Y₀ →L[𝕜] Y₁) : g.lTensor X₀ = 0 :=
+  Subsingleton.elim _ _
+
+variable (Y₀) in
+/-- If `f` has dense range then so does `f ⊗ 1`: the pure tensors `c ⊗ₜ y` span `X₁ ⊗[𝕜] Y₀`, and
+each lies in the closure of the range of `f ⊗ 1`. -/
+theorem denseRange_rTensor {f : X₀ →L[𝕜] X₁} (hf : DenseRange f) :
+    DenseRange (f.rTensor Y₀) := by
+  let T := LinearMap.range (f.rTensor Y₀).toLinearMap
+  have htmul (c : X₁) (y : Y₀) : c ⊗ₜ[𝕜] y ∈ T.topologicalClosure := by
+    induction c using hf.induction_on with
+    | hp =>
+      exact T.isClosed_topologicalClosure.preimage
+        ((TensorProduct.mkL 𝕜 X₁ Y₀).flip y).continuous
+    | ih x => exact T.le_topologicalClosure ⟨x ⊗ₜ[𝕜] y, by simp⟩
+  have hT : T.topologicalClosure = ⊤ := eq_top_iff.2 <|
+    (TensorProduct.span_tmul_eq_top 𝕜 X₁ Y₀).ge.trans <|
+      Submodule.span_le.2 fun _ ⟨c, y, h⟩ ↦ h ▸ htmul c y
+  exact Submodule.dense_iff_topologicalClosure_eq_top.2 hT
+
+variable (X₀) in
+/-- If `g` has dense range then so does `1 ⊗ g`. -/
+theorem denseRange_lTensor {g : Y₀ →L[𝕜] Y₁} (hg : DenseRange g) :
+    DenseRange (g.lTensor X₀) := by
+  rw [lTensor_eq_mapL]
+  exact TensorProduct.denseRange_mapL denseRange_id hg
+
+section Adjoint
+
+open scoped InnerProductSpace
+
+/-- `f† ⊗ 1` is a formal adjoint of `f ⊗ 1`, even when the tensor products are not complete. -/
+theorem rTensor_adjoint_inner_left [CompleteSpace X₀] [CompleteSpace X₁] (f : X₀ →L[𝕜] X₁)
+    (x : X₁ ⊗[𝕜] Y₀) (y : X₀ ⊗[𝕜] Y₀) :
+    ⟪f.adjoint.rTensor Y₀ x, y⟫_𝕜 = ⟪x, f.rTensor Y₀ y⟫_𝕜 := by
+  induction x using TensorProduct.inductionOn with
+  | add x₁ x₂ h₁ h₂ => simp only [map_add, inner_add_left, h₁, h₂]
+  | tmul a b =>
+    induction y using TensorProduct.inductionOn with
+    | add y₁ y₂ h₁ h₂ => simp only [map_add, inner_add_right, h₁, h₂]
+    | tmul c d => simp [adjoint_inner_left]
+
+/-- `f† ⊗ 1` is a formal adjoint of `f ⊗ 1`, even when the tensor products are not complete. -/
+theorem rTensor_adjoint_inner_right [CompleteSpace X₀] [CompleteSpace X₁] (f : X₀ →L[𝕜] X₁)
+    (x : X₀ ⊗[𝕜] Y₀) (y : X₁ ⊗[𝕜] Y₀) :
+    ⟪x, f.adjoint.rTensor Y₀ y⟫_𝕜 = ⟪f.rTensor Y₀ x, y⟫_𝕜 := by
+  rw [← inner_conj_symm, rTensor_adjoint_inner_left, inner_conj_symm]
+
+/-- `1 ⊗ g†` is a formal adjoint of `1 ⊗ g`, even when the tensor products are not complete. -/
+theorem lTensor_adjoint_inner_left [CompleteSpace Y₀] [CompleteSpace Y₁] (g : Y₀ →L[𝕜] Y₁)
+    (x : X₀ ⊗[𝕜] Y₁) (y : X₀ ⊗[𝕜] Y₀) :
+    ⟪g.adjoint.lTensor X₀ x, y⟫_𝕜 = ⟪x, g.lTensor X₀ y⟫_𝕜 := by
+  induction x using TensorProduct.inductionOn with
+  | add x₁ x₂ h₁ h₂ => simp only [map_add, inner_add_left, h₁, h₂]
+  | tmul a b =>
+    induction y using TensorProduct.inductionOn with
+    | add y₁ y₂ h₁ h₂ => simp only [map_add, inner_add_right, h₁, h₂]
+    | tmul c d => simp [adjoint_inner_left]
+
+/-- `1 ⊗ g†` is a formal adjoint of `1 ⊗ g`, even when the tensor products are not complete. -/
+theorem lTensor_adjoint_inner_right [CompleteSpace Y₀] [CompleteSpace Y₁] (g : Y₀ →L[𝕜] Y₁)
+    (x : X₀ ⊗[𝕜] Y₀) (y : X₀ ⊗[𝕜] Y₁) :
+    ⟪x, g.adjoint.lTensor X₀ y⟫_𝕜 = ⟪g.lTensor X₀ x, y⟫_𝕜 := by
+  rw [← inner_conj_symm, lTensor_adjoint_inner_left, inner_conj_symm]
+
+/-- The positive tensor sum `A†A ⊗ 1 + 1 ⊗ B†B` vanishes exactly on the common kernel of `A ⊗ 1`
+and `1 ⊗ B`. The tensor products need not be complete. -/
+theorem rTensor_adjoint_comp_self_apply_add_lTensor_adjoint_comp_self_apply_eq_zero_iff
+    [CompleteSpace X₀] [CompleteSpace X₁] [CompleteSpace Y₀] [CompleteSpace Y₁]
+    (A : X₀ →L[𝕜] X₁) (B : Y₀ →L[𝕜] Y₁) (x : X₀ ⊗[𝕜] Y₀) :
+    (A.adjoint ∘L A).rTensor Y₀ x + (B.adjoint ∘L B).lTensor X₀ x = 0 ↔
+      A.rTensor Y₀ x = 0 ∧ B.lTensor X₀ x = 0 := by
+  refine ⟨fun h ↦ ?_, fun h ↦ by simp [rTensor_comp, lTensor_comp, h.1, h.2]⟩
+  -- Pairing with `x` gives `‖(A ⊗ 1) x‖ ^ 2 + ‖(1 ⊗ B) x‖ ^ 2 = 0`.
+  have hx := congrArg (fun y ↦ RCLike.re ⟪y, x⟫_𝕜) h
+  simp only [inner_add_left, map_add, rTensor_comp, lTensor_comp, comp_apply,
+    rTensor_adjoint_inner_left, lTensor_adjoint_inner_left, inner_self_eq_norm_sq,
+    inner_zero_left, map_zero] at hx
+  obtain ⟨hA, hB⟩ := (add_eq_zero_iff_of_nonneg (by positivity) (by positivity)).mp hx
+  exact ⟨by simpa using hA, by simpa using hB⟩
+
+end Adjoint
 
 end ContinuousLinearMap
 

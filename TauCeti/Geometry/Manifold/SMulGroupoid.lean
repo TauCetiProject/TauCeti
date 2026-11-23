@@ -11,7 +11,7 @@ public import Mathlib.Geometry.Manifold.Instances.Quotient
 public import Mathlib.Geometry.Manifold.LocalInvariantProperties
 public import TauCeti.Geometry.Manifold.ContMDiff.Groupoid
 public import TauCeti.Topology.Algebra.ConstMulAction
-public import TauCeti.Topology.IsLocalHomeomorph
+public import TauCeti.Topology.IsLocalHomeomorph.Basic
 import TauCeti.Geometry.Manifold.MFDeriv.Chart.Basic
 
 /-!

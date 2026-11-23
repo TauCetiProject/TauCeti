@@ -38,14 +38,15 @@ separability, nontriviality, or completeness assumptions on `G`). -/
     Continuous fun A : ContinuousLinearMapUltraweak 𝕜 E F ↦
       ofCLM (A.toCLM.rTensorCompletion G) := by
   obtain ⟨w, b, -⟩ := exists_hilbertBasis 𝕜 (Completion G)
-  let uE := (completionLTensorEquiv 𝕜 E G).symm.trans (b.tensorCompletionEquiv E)
-  let uF := (completionLTensorEquiv 𝕜 F G).symm.trans (b.tensorCompletionEquiv F)
+  let uE := (completionRightIsometry 𝕜 E G).trans (b.tensorCompletionEquiv E)
+  let uF := (completionRightIsometry 𝕜 F G).trans (b.tensorCompletionEquiv F)
   refine ((continuous_linearIsometryEquiv_comp_left uF.symm).comp
     ((continuous_comp_right uE.toLinearIsometry.toContinuousLinearMap).comp
       (continuous_ampliation w))).congr fun A ↦ congrArg ofCLM ?_
-  refine continuousLinearMap_ext_completion fun x z ↦ uF.injective ?_
-  simpa [uE, uF] using (congr($(b.tensorCompletionEquiv_comp_rTensorCompletion A.toCLM)
-    ((x ⊗ₜ[𝕜] (z : Completion G) : E ⊗[𝕜] Completion G) : Completion (E ⊗[𝕜] Completion G)))).symm
+  refine completion_ext fun x z ↦ uF.injective ?_
+  simpa [uE, uF] using
+    (congr($(b.tensorCompletionEquiv_comp_rTensorCompletion A.toCLM)
+      ((x ⊗ₜ[𝕜] (z : Completion G) : E ⊗[𝕜] Completion G) : Completion (E ⊗[𝕜] Completion G)))).symm
 /-- Right-factor amplification `A ↦ 1 ⊗ A` (`ContinuousLinearMap.lTensorCompletion E`) between
 complete spaces `F` and `G` is ultraweakly continuous for any inner product space `E` (without
 separability, nontriviality, or completeness assumptions on `E`). -/
@@ -58,7 +59,7 @@ separability, nontriviality, or completeness assumptions on `E`). -/
   refine ((continuous_linearIsometryEquiv_comp_left cGE).comp
     ((continuous_comp_right cEF.toLinearIsometry.toContinuousLinearMap).comp
       (continuous_rTensorCompletion E))).congr fun _ ↦
-    congrArg ofCLM <| continuousLinearMap_ext_completion fun _ _ ↦ by simp [cEF, cGE]
+    congrArg ofCLM <| completion_ext fun _ _ ↦ by simp [cEF, cGE]
 /-- Every right slice map `T ↦ sliceRight ξ η T` (with `E₂` complete) is ultraweakly continuous. -/
 @[fun_prop] theorem continuous_sliceRight [CompleteSpace E₂] (ξ : F₁) (η : F₂) :
     Continuous fun A : ContinuousLinearMapUltraweak 𝕜 (Completion (E₁ ⊗[𝕜] F₁))

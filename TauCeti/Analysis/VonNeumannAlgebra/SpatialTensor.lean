@@ -25,7 +25,7 @@ completeness and sharp injectivity / isometry characterizations (`inlSpatialTens
 `isometry_inlSpatialTensor_iff`); slice invariance (`sliceRight_mem_of_mem_spatialTensor`,
 `sliceLeft_mem_of_mem_spatialTensor`), pure-amplification membership
 (`rTensorCompletion_mem_spatialTensor_iff`), flip symmetry, scalar units, and associativity along
-`TensorProduct.assocCompletion`; `B(K)` commutation (`commutant_spatialTensor_top_right`,
+`TensorProduct.assocIsometryCompletion`; `B(K)` commutation (`commutant_spatialTensor_top_right`,
 `commutant_spatialTensor_bot_right`), equivalences `inlSpatialTensorBotEquiv` /
 `inrSpatialTensorBotEquiv`, unique splitting (`spatialTensor_bot_top_le_iff_existsUnique`), and
 center formulas (`spatialTensor_inf_commutant_eq_bot`, `spatialTensor_inf_commutant_eq_bot_iff`).
@@ -63,9 +63,9 @@ theorem rTensorCompletion_mem_spatialTensor {A : Set (E →L[ℂ] E)} {B : Set (
 theorem lTensorCompletion_mem_spatialTensor {A : Set (E →L[ℂ] E)} {B : Set (F →L[ℂ] F)}
     {y : F →L[ℂ] F} (hy : y ∈ B) : y.lTensorCompletion E ∈ spatialTensor A B :=
   subset_adjoin _ (Or.inr ⟨y, hy, rfl⟩)
-theorem mapL_completion_mem_spatialTensor {A : Set (E →L[ℂ] E)} {B : Set (F →L[ℂ] F)}
+theorem mapLCompletion_mem_spatialTensor {A : Set (E →L[ℂ] E)} {B : Set (F →L[ℂ] F)}
     {x : E →L[ℂ] E} {y : F →L[ℂ] F} (hx : x ∈ A) (hy : y ∈ B) :
-    (TensorProduct.mapL x y).completion ∈ spatialTensor A B := by
+    TensorProduct.mapLCompletion x y ∈ spatialTensor A B := by
   rw [← ContinuousLinearMap.rTensorCompletion_comp_lTensorCompletion, ← ContinuousLinearMap.mul_def]
   exact mul_mem (rTensorCompletion_mem_spatialTensor hx) (lTensorCompletion_mem_spatialTensor hy)
 @[simp] theorem spatialTensor_le_iff {A : Set (E →L[ℂ] E)} {B : Set (F →L[ℂ] F)}
@@ -119,14 +119,14 @@ noncomputable def inlSpatialTensor [CompleteSpace E] (M : VonNeumannAlgebra E)
     (B : Set (F →L[ℂ] F)) : M →⋆ₐ[ℂ] spatialTensor (M : Set (E →L[ℂ] E)) B :=
   ((ContinuousLinearMap.rTensorCompletionStarAlgHom ℂ E F).comp
     M.toStarSubalgebra.subtype).codRestrict _ fun x ↦ by
-      simpa using rTensorCompletion_mem_spatialTensor (B := B) x.2
+      simpa using rTensorCompletion_mem_spatialTensor (B := B) x.property
 /-- Right factor unital `⋆`-algebra homomorphism `y ↦ 1 ⊗ y` into `spatialTensor A N`, requiring
 completeness only on `F`. -/
 noncomputable def inrSpatialTensor [CompleteSpace F] (A : Set (E →L[ℂ] E))
     (N : VonNeumannAlgebra F) : N →⋆ₐ[ℂ] spatialTensor A (N : Set (F →L[ℂ] F)) :=
   ((ContinuousLinearMap.lTensorCompletionStarAlgHom ℂ E F).comp
     N.toStarSubalgebra.subtype).codRestrict _ fun y ↦ by
-      simpa using lTensorCompletion_mem_spatialTensor (A := A) y.2
+      simpa using lTensorCompletion_mem_spatialTensor (A := A) y.property
 @[simp, norm_cast] theorem coe_inlSpatialTensor [CompleteSpace E] (M : VonNeumannAlgebra E)
     (B : Set (F →L[ℂ] F)) (x : M) :
     (inlSpatialTensor M B x : _ →L[ℂ] _) = (x : E →L[ℂ] E).rTensorCompletion F :=
@@ -140,23 +140,24 @@ theorem commute_inlSpatialTensor_inrSpatialTensor [CompleteSpace E] [CompleteSpa
     (M : VonNeumannAlgebra E) (N : VonNeumannAlgebra F) (x : M) (y : N) :
     Commute (inlSpatialTensor M (N : Set (F →L[ℂ] F)) x)
       (inrSpatialTensor (M : Set (E →L[ℂ] E)) N y) :=
-  Subtype.ext <| by simp [ContinuousLinearMap.rTensorCompletion_mul_lTensorCompletion_comm]
+  Subtype.ext <| by
+    simpa using (ContinuousLinearMap.commute_rTensorCompletion_lTensorCompletion x.val y.val).eq
 theorem norm_inlSpatialTensor_le [CompleteSpace E] (M : VonNeumannAlgebra E) (B : Set (F →L[ℂ] F))
     (x : M) : ‖inlSpatialTensor M B x‖ ≤ ‖x‖ :=
-  (congrArg norm (coe_inlSpatialTensor M B x)).trans_le x.1.norm_rTensorCompletion_le
+  (congrArg norm (coe_inlSpatialTensor M B x)).trans_le x.val.norm_rTensorCompletion_le
 theorem norm_inrSpatialTensor_le [CompleteSpace F] (A : Set (E →L[ℂ] E)) (N : VonNeumannAlgebra F)
     (y : N) : ‖inrSpatialTensor A N y‖ ≤ ‖y‖ :=
-  (congrArg norm (coe_inrSpatialTensor A N y)).trans_le y.1.norm_lTensorCompletion_le
+  (congrArg norm (coe_inrSpatialTensor A N y)).trans_le y.val.norm_lTensorCompletion_le
 theorem norm_inlSpatialTensor [CompleteSpace E] [Nontrivial F] (M : VonNeumannAlgebra E)
     (B : Set (F →L[ℂ] F)) (x : M) : ‖inlSpatialTensor M B x‖ = ‖x‖ := by simp
 theorem norm_inrSpatialTensor [CompleteSpace F] [Nontrivial E] (A : Set (E →L[ℂ] E))
     (N : VonNeumannAlgebra F) (y : N) : ‖inrSpatialTensor A N y‖ = ‖y‖ := by simp
 @[simp] theorem inlSpatialTensor_eq_zero [CompleteSpace E] [Subsingleton F]
     (M : VonNeumannAlgebra E) (B : Set (F →L[ℂ] F)) (x : M) : inlSpatialTensor M B x = 0 :=
-  Subtype.ext <| by simp [ContinuousLinearMap.rTensorCompletion_eq_zero]
+  Subtype.ext <| by simp [ContinuousLinearMap.rTensorCompletion_of_subsingleton]
 @[simp] theorem inrSpatialTensor_eq_zero [CompleteSpace F] [Subsingleton E]
     (A : Set (E →L[ℂ] E)) (N : VonNeumannAlgebra F) (y : N) : inrSpatialTensor A N y = 0 :=
-  Subtype.ext <| by simp [ContinuousLinearMap.lTensorCompletion_eq_zero]
+  Subtype.ext <| by simp [ContinuousLinearMap.lTensorCompletion_of_subsingleton]
 theorem inlSpatialTensor_injective [CompleteSpace E] [Nontrivial F] (M : VonNeumannAlgebra E)
     (B : Set (F →L[ℂ] F)) : Function.Injective (inlSpatialTensor M B) := fun _ _ h ↦ by
   simpa using congrArg Subtype.val h
@@ -264,7 +265,8 @@ private theorem spatialTensor_le_commutant_spatialTensor_commutant_empty [Comple
     · rw [← star_star w, ← hEq, ContinuousLinearMap.star_rTensorCompletion]
       exact h (star a) (star_mem ha)
   refine spatialTensor_le_iff.2 ⟨fun x hx ↦ hmem fun a ha ↦ ?_,
-    fun y _ ↦ hmem fun a _ ↦ ContinuousLinearMap.rTensorCompletion_mul_lTensorCompletion_comm a y⟩
+    fun y _ ↦ hmem fun a _ ↦
+      (ContinuousLinearMap.commute_rTensorCompletion_lTensorCompletion a y).eq⟩
   rw [← ContinuousLinearMap.rTensorCompletion_mul, ← ContinuousLinearMap.rTensorCompletion_mul,
     (mem_commutant_iff.1 ha) x hx]
 /-- **Right slice-map invariance**: right slices of `T ∈ spatialTensor M B` belong to `M`. -/
@@ -345,10 +347,11 @@ theorem mapLinearIsometryEquiv_ridCompletionEquiv_spatialTensor [CompleteSpace E
     mapLinearIsometryEquiv (ridCompletionEquiv ℂ E)
       (spatialTensor (M : Set (E →L[ℂ] E)) ((⊥ : VonNeumannAlgebra ℂ) : Set (ℂ →L[ℂ] ℂ))) = M := by
   rw [spatialTensor_bot_right]; simp [spatialTensor_def, Set.image_image]
-/-- **Associativity** of the spatial tensor product along `TensorProduct.assocCompletion`. -/
-@[simp] theorem mapLinearIsometryEquiv_assocCompletion_spatialTensor
+/-- **Associativity** of the spatial tensor product along
+`TensorProduct.assocIsometryCompletion`. -/
+@[simp] theorem mapLinearIsometryEquiv_assocIsometryCompletion_spatialTensor
     (A : Set (E →L[ℂ] E)) (B : Set (F →L[ℂ] F)) (C : Set (G →L[ℂ] G)) :
-    mapLinearIsometryEquiv (assocCompletion ℂ E F G)
+    mapLinearIsometryEquiv (assocIsometryCompletion ℂ E F G)
       (spatialTensor (spatialTensor A B : Set _) C) =
       spatialTensor A (spatialTensor B C : Set _) := by
   rw [spatialTensor_def (A := A) (B := B), spatialTensor_adjoin_left,
@@ -440,7 +443,7 @@ noncomputable def inlSpatialTensorBotEquiv [Nontrivial F] (M : VonNeumannAlgebra
     M ≃⋆ₐ[ℂ] spatialTensor (M : Set (E →L[ℂ] E)) ((⊥ : VonNeumannAlgebra F) : Set (F →L[ℂ] F)) :=
   StarAlgEquiv.ofBijective (inlSpatialTensor M ((⊥ : VonNeumannAlgebra F) : Set (F →L[ℂ] F)))
     ⟨inlSpatialTensor_injective M _, fun T ↦ by
-      obtain ⟨x, hx, hEq⟩ := coe_spatialTensor_bot_right (F := F) M ▸ SetLike.mem_coe.2 T.2
+      obtain ⟨x, hx, hEq⟩ := coe_spatialTensor_bot_right (F := F) M ▸ SetLike.mem_coe.2 T.property
       exact ⟨⟨x, hx⟩, Subtype.ext <| by simpa using hEq⟩⟩
 @[simp] theorem inlSpatialTensorBotEquiv_apply [Nontrivial F] (M : VonNeumannAlgebra E) (x : M) :
     inlSpatialTensorBotEquiv M x =
@@ -471,7 +474,7 @@ noncomputable def inrSpatialTensorBotEquiv [Nontrivial E] (N : VonNeumannAlgebra
     N ≃⋆ₐ[ℂ] spatialTensor ((⊥ : VonNeumannAlgebra E) : Set (E →L[ℂ] E)) (N : Set (F →L[ℂ] F)) :=
   StarAlgEquiv.ofBijective (inrSpatialTensor ((⊥ : VonNeumannAlgebra E) : Set (E →L[ℂ] E)) N)
     ⟨inrSpatialTensor_injective _ N, fun T ↦ by
-      obtain ⟨y, hy, hEq⟩ := coe_spatialTensor_bot_left (E := E) N ▸ SetLike.mem_coe.2 T.2
+      obtain ⟨y, hy, hEq⟩ := coe_spatialTensor_bot_left (E := E) N ▸ SetLike.mem_coe.2 T.property
       exact ⟨⟨y, hy⟩, Subtype.ext <| by simpa using hEq⟩⟩
 @[simp] theorem inrSpatialTensorBotEquiv_apply [Nontrivial E] (N : VonNeumannAlgebra F) (y : N) :
     inrSpatialTensorBotEquiv N y =
@@ -572,7 +575,8 @@ theorem spatialTensor_inf_commutant_eq_of_inf_commutant_eq_bot_left
   · exact lTensorCompletion_mem_spatialTensor (mem_inf.2
       ⟨lTensorCompletion_mem_spatialTensor_iff.1 hTMN,
        lTensorCompletion_mem_commutant_spatialTensor_iff.1 hTcomm⟩)
-  · rw [not_nontrivial_iff_subsingleton] at hE; simp
+  · rw [not_nontrivial_iff_subsingleton] at hE
+    simp [ContinuousLinearMap.lTensorCompletion_of_subsingleton]
 /-- **Center with scalar center on the right**: if `N ⊓ N.commutant = ⊥`, then
 `(spatialTensor M N) ⊓ (spatialTensor M N)' = spatialTensor (M ⊓ M') ⊥`. -/
 theorem spatialTensor_inf_commutant_eq_of_inf_commutant_eq_bot_right

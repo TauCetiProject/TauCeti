@@ -30,6 +30,8 @@ what makes the fields usable as a mutable array inside a computation checked by 
 * `Nat.bitField_setBitField`: reading after writing returns the written value at the written
   index, and the old contents everywhere else.
 * `Nat.bitField_lt`: a field of width `w` is less than `2 ^ w`.
+* `Nat.bitField_mul_of_forall_bitField_mul_lt`: multiplication by `r` acts on a field as long as
+  neither it nor a lower field overflows.
 -/
 
 public section
@@ -60,6 +62,30 @@ theorem bitField_zero (w i : ℕ) : bitField w 0 i = 0 := by
 theorem testBit_bitField (w M i k : ℕ) :
     (bitField w M i).testBit k = (decide (k < w) && M.testBit (w * i + k)) := by
   rw [bitField, testBit_mod_two_pow, testBit_div_two_pow, add_comm k]
+
+/-- Field `i + 1` of `M` is field `i` of `M / 2 ^ w`: dividing by `2 ^ w` drops the lowest
+field. -/
+theorem bitField_succ (w M i : ℕ) : bitField w M (i + 1) = bitField w (M / 2 ^ w) i := by
+  rw [bitField, bitField, Nat.div_div_eq_div_mul, ← pow_add, Nat.mul_succ, Nat.add_comm]
+
+/-- **Multiplication without carries.** If each of the fields `0, …, i` of `M`, multiplied by `r`,
+still fits in `w` bits, then field `i` of `M * r` is field `i` of `M` multiplied by `r`. -/
+theorem bitField_mul_of_forall_bitField_mul_lt {w M r i : ℕ}
+    (h : ∀ j ≤ i, bitField w M j * r < 2 ^ w) :
+    bitField w (M * r) i = bitField w M i * r := by
+  induction i generalizing M with
+  | zero =>
+    have h0 := h 0 le_rfl
+    simp only [bitField, Nat.mul_zero, pow_zero, Nat.div_one] at h0 ⊢
+    exact (Nat.mod_mul_mod M r (2 ^ w)).symm.trans (Nat.mod_eq_of_lt h0)
+  | succ i ih =>
+    have h0 := h 0 (Nat.zero_le _)
+    simp only [bitField, Nat.mul_zero, pow_zero, Nat.div_one] at h0
+    have hdiv : M * r / 2 ^ w = M / 2 ^ w * r := by
+      conv_lhs => rw [← Nat.mod_add_div M (2 ^ w), Nat.add_mul, Nat.mul_assoc]
+      rw [Nat.add_mul_div_left _ _ (Nat.two_pow_pos w), Nat.div_eq_of_lt h0, Nat.zero_add]
+    rw [bitField_succ, hdiv,
+      ih fun j hj ↦ by simpa [bitField_succ] using h (j + 1) (Nat.succ_le_succ hj), bitField_succ]
 
 /-- **Reading after writing.** Field `j` of `setBitField w M i v` is `v` if `j = i` and `v` fits
 in `w` bits, and is field `j` of `M` otherwise. -/

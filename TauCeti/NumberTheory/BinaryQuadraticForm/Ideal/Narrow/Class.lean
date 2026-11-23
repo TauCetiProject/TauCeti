@@ -7,8 +7,8 @@ module
 
 public import TauCeti.NumberTheory.BinaryQuadraticForm.Ideal.Proper
 public import TauCeti.NumberTheory.BinaryQuadraticForm.Ideal.Change
+public import TauCeti.NumberTheory.BinaryQuadraticForm.Ideal.Class
 public import TauCeti.NumberTheory.NumberField.Global.Orders.Quadratic.NarrowPic
-public import Mathlib.GroupTheory.GroupAction.Quotient
 import TauCeti.Algebra.QuadraticAlgebra.Discriminant
 import Mathlib.RingTheory.Norm.Basic
 import Mathlib.Tactic.Ring
@@ -21,9 +21,22 @@ For every nonsquare discriminant, this correction makes proper changes of variab
 scale the ideal by a positive-norm element (for negative discriminant every nonzero element
 has positive norm). The resulting class in the existing narrow Picard group is therefore
 invariant under the left special-linear action, and the oriented ideal descends to proper
-classes. The dictionary with the narrow Picard group, in `Narrow/Equivalence.lean`, is for
-positive discriminant; for negative discriminant the positive definite classes map to the
-Picard group instead (`posDefProperClassToPic`).
+classes; forgetting positivity maps `narrowPicClass` to the wide Picard class `picClass`
+(`narrowToPic_narrowPicClass`). The dictionary with the narrow Picard group, in
+`Narrow/Equivalence.lean`, is for positive discriminant; for negative discriminant the positive
+definite classes map to the Picard group instead (`posDefProperClassToPic`).
+
+## Main definitions and results
+
+* `TauCeti.BinaryQuadraticForm.idealSignFactor`: the sign correction, `1` for a positive
+  leading coefficient and `√D` otherwise.
+* `TauCeti.BinaryQuadraticForm.orientedInvertibleFractionalIdeal`: the form ideal corrected by
+  `idealSignFactor`.
+* `TauCeti.BinaryQuadraticForm.narrowPicClass`: the class of the oriented ideal in the narrow
+  Picard group, with `TauCeti.BinaryQuadraticForm.narrowPicClass_smul` showing that it is
+  invariant under `SL(2, ℤ)`.
+* `TauCeti.BinaryQuadraticForm.properClassToNarrowPic`: the resulting map from proper classes of
+  primitive forms of a nonsquare discriminant to the narrow Picard group.
 
 ## References
 
@@ -104,7 +117,8 @@ def orientedIdealChangeFactor (hf : f.discrim = D) (γ : SL(2, ℤ)) :
       (a_ne_zero_of_not_isSquare_discrim (hf ▸ Fact.out)) γ) *
       (f.idealSignFactor D)⁻¹
 
-/-- The corrected change factor is the old factor conjugated by the sign corrections. -/
+/-- The corrected change factor is the old factor multiplied by the sign correction of the
+transformed form and divided by that of the original form. -/
 theorem coe_orientedIdealChangeFactor (hf : f.discrim = D) (γ : SL(2, ℤ)) :
     (f.orientedIdealChangeFactor D hf γ : QuadraticAlgebra ℚ (D : ℚ) 0) =
       ((γ • f).idealSignFactor D : QuadraticAlgebra ℚ (D : ℚ) 0) *
@@ -211,6 +225,17 @@ theorem narrowPicClass_eq_mk_of_smul_a_pos (hf : f.discrim = D) (hprim : f.IsPri
         ((isPrimitive_smul_iff f γ).mpr hprim)) := by
   rw [← narrowPicClass_smul f D hf hprim γ, narrowPicClass_def,
     orientedInvertibleFractionalIdeal_of_a_pos _ _ _ _ ha]
+
+/-- Forgetting positivity maps the oriented narrow class of a primitive form to its wide Picard
+class, because the orientation factor `idealSignFactor` generates a principal ideal. -/
+@[simp] theorem narrowToPic_narrowPicClass (D : ℤ) (hD : D % 4 = 0 ∨ D % 4 = 1)
+    [Fact (¬ IsSquare D)] {f : BinaryQuadraticForm ℤ} (hf : f.discrim = D)
+    (hprim : f.IsPrimitive) :
+    (QuadraticOrder.numberFieldOrder D hD).narrowToPic (f.narrowPicClass D hf hprim) =
+      picClass D hD ⟨f, (mem_primitiveForms D f).mpr ⟨hf, hprim⟩⟩ := by
+  rw [narrowPicClass_def, GlobalNumberFields.NumberFieldOrder.narrowToPic_mk,
+    orientedInvertibleFractionalIdeal_def, map_mul, ClassGroup.mk_toPrincipalIdeal, one_mul,
+    picClass_def]
 
 /-- The oriented ideal construction descends to proper classes of primitive forms of nonsquare
 discriminant, with values in the supplier's narrow Picard group. For positive discriminant this

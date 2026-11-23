@@ -37,11 +37,16 @@ A window sum `∑_{j - L ≤ k < j + L} f k` is the sum over `d < 2 L` of the sh
 
 ## Main results
 
+* `Finset.sum_range_sum_range_ite_int_sub_eq_nsmul`: pairs `i, j < N` with integer difference
+  `k` contribute `N - k.natAbs` copies of a fixed element of an additive commutative monoid.
+
 * `Finset.sum_Ico_eq_sum_Ico_add`: the regrouping of `∑ k ∈ Ico m (n + 1), f k` into the pairs
   `β k + γ (k + 1)`.
 * `Finset.sum_Ico_one_sub_one_const`: `∑ _k ∈ Ico 1 (n - 1), c = (n - 2) * c` for `2 ≤ n`.
 * `Finset.sum_Icc_eq_add_sum_range`: `(∑ i ∈ Icc (-(a : ℤ)) b, F i) + F 0` equals the sum of `F j`
   over `j ∈ range (b + 1)` plus the sum of `F (-(j : ℤ))` over `j ∈ range (a + 1)`.
+* `Finset.sum_Ioc_neg_zero_eq_sum_range`: the sum of `F j` over `-a < j ≤ 0` is the sum of
+  `F (-(k : ℤ))` over `k < a`.
 * `Finset.sum_range_natCast_mul_two`, `Finset.sum_range_id_sq_mul_six`, `Finset.sum_range_id_sq`,
   `Finset.sum_range_natCast_sq_mul_six`: Gauss's sum in a ring and the sum of squares below `n`.
 * `Finset.sum_range_sub_mul_two`: twice the sum of `r + 1 - j` over `j < e` is `e (2 r + 3 - e)`.
@@ -56,6 +61,43 @@ A window sum `∑_{j - L ≤ k < j + L} f k` is the sum over `d < 2 L` of the sh
 public section
 
 namespace Finset
+
+/-- Counting pairs of natural numbers below `N` with prescribed integer difference, with
+one copy of `c` for each pair. There are `N - |k|` such pairs, truncated to zero. -/
+theorem sum_range_sum_range_ite_int_sub_eq_nsmul {M : Type*} [AddCommMonoid M]
+    (N : ℕ) (k : ℤ) (c : M) :
+    (∑ i ∈ range N, ∑ j ∈ range N, if (i : ℤ) - j = k then c else 0) =
+      (N - k.natAbs) • c := by
+  have hnat (m : ℕ) :
+      (∑ i ∈ range N, ∑ j ∈ range N, if (i : ℤ) - j = (m : ℤ) then c else 0) =
+        (N - m) • c := by
+    have hi (i : ℕ) (hi : i ∈ range N) :
+        (∑ j ∈ range N, if (i : ℤ) - j = (m : ℤ) then c else 0) =
+          if m ≤ i then c else 0 := by
+      by_cases hmi : m ≤ i
+      · rw [ite_eq_left hmi, sum_eq_single (i - m)]
+        · rw [ite_eq_left (by omega)]
+        · intro j _hj hne
+          rw [ite_eq_right (by omega)]
+        · intro hnot
+          exact (hnot (mem_range.mpr
+            (lt_of_le_of_lt (Nat.sub_le i m) (mem_range.mp hi)))).elim
+      · rw [ite_eq_right hmi]
+        apply sum_eq_zero
+        intro j _
+        rw [ite_eq_right (by omega)]
+    rw [sum_congr rfl hi, ← sum_filter, sum_const]
+    have hs : (range N).filter (m ≤ ·) = Ico m N := by
+      ext i
+      simp only [mem_filter, mem_range, mem_Ico]
+      omega
+    rw [hs, Nat.card_Ico]
+  rcases k.eq_nat_or_neg with ⟨m, rfl | rfl⟩
+  · simpa using hnat m
+  · rw [sum_comm]
+    have heq (i j : ℕ) : (i : ℤ) - j = -(m : ℤ) ↔ (j : ℤ) - i = (m : ℤ) := by omega
+    simp_rw [heq]
+    simpa using hnat m
 
 /-- If `m < n`, the summands `f m = β m`, `f n = γ n`, and `f k = γ k + β k` for
 `m < k < n` regroup as the adjacent pairs `β k + γ (k + 1)` over `m ≤ k < n`. -/
@@ -109,6 +151,21 @@ theorem sum_Icc_eq_add_sum_range {M : Type*} [AddCommMonoid M] (F : ℤ → M) (
   rw [hunion, hinter, sum_singleton] at hkey
   rw [hkey, hs, ht, sum_image (fun _ _ _ _ h ↦ by exact_mod_cast h),
     sum_image (fun _ _ _ _ h ↦ by omega)]
+
+/-- Reindexing a nonpositive integer interval: the sum of `F j` over `-a < j ≤ 0` is the sum of
+`F (-(k : ℤ))` over `k < a`. -/
+theorem sum_Ioc_neg_zero_eq_sum_range {M : Type*} [AddCommMonoid M] (F : ℤ → M) (a : ℕ) :
+    ∑ j ∈ Ioc (-(a : ℤ)) 0, F j = ∑ k ∈ range a, F (-(k : ℤ)) := by
+  refine sum_nbij' (fun j ↦ (-j).toNat) (fun k ↦ -(k : ℤ)) (fun j hj ↦ ?_) (fun k hk ↦ ?_)
+    (fun j hj ↦ ?_) (fun k _ ↦ by simp) (fun j hj ↦ ?_)
+  · simp only [mem_Ioc, mem_range] at hj ⊢
+    omega
+  · simp only [mem_Ioc, mem_range] at hk ⊢
+    omega
+  · simp only [mem_Ioc] at hj
+    omega
+  · simp only [mem_Ioc] at hj
+    rw [Int.toNat_of_nonneg (by omega), neg_neg]
 
 /-- Gauss's sum cast into a not necessarily associative ring: twice the sum of the natural numbers
 below `n` is `n (n - 1)`. -/

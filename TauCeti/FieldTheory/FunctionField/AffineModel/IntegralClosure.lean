@@ -139,7 +139,7 @@ theorem isIntegral_map_holomorphyRing_setOf_mem (hF : IsFunctionField k F) {x : 
   -- `z` is integral over `k[x]` inside `F`, hence inside `A`.
   have hzF : IsIntegral (Algebra.adjoin k {x}) (z : F) := (mem_integralClosure_iff _ _).mp <|
     (Subalgebra.ext_iff.mp (restrictScalars_integralClosure_adjoin_eq_holomorphyRing hF x) z).mpr
-      z.2
+      z.property
   let val : A →ₐ[Algebra.adjoin k {x}] F := { A.val.toRingHom with commutes' := fun _ ↦ rfl }
   have hz : IsIntegral (Algebra.adjoin k {x}) z :=
     (isIntegral_algHom_iff val Subtype.val_injective).mp hzF
@@ -260,8 +260,8 @@ theorem integralClosureAdjoinHeightOneSpectrumEquiv_apply
     integralClosureAdjoinHeightOneSpectrumEquiv x P =
       (P : Place k F).center
         (fun r : integralClosure (Algebra.adjoin k {x}) F ↦ (P : Place k F).mem_integers_iff.mpr
-          ((P : Place k F).forall_algebraMap_mem_integers_integralClosure_adjoin_iff.mpr P.2
-            (r : F) r.2)) :=
+          ((P : Place k F).forall_algebraMap_mem_integers_integralClosure_adjoin_iff.mpr P.property
+            (r : F) r.property)) :=
   Place.heightOneSpectrumEquiv_apply k F _
 
 @[simp]

@@ -79,7 +79,7 @@ private theorem hopfIdealPointsSubgroupMulEquiv_apply_eq (A : CommAlgCat.{w} R)
 
 /-- A quotient point, viewed through `hopfIdealPointsSubgroupMulEquiv`, is its included ambient
 point read as an invertible matrix. -/
-@[simp]
+@[simp↓]
 theorem coe_hopfIdealPointsSubgroupMulEquiv_apply (A : CommAlgCat.{w} R)
     (f : HopfAlgebra.points
       (R := R) (H := CommHopfAlgCat.quotient (coordinateHopfAlgebra R n) I) A) :
@@ -121,7 +121,7 @@ theorem mem_quotientPointsSubgroup_iff_mem_of_surjective
 
 /-- Including the ambient Hopf-algebra point underlying the inverse matrix-subgroup equivalence
 recovers the point corresponding to the underlying matrix. -/
-@[simp]
+@[simp↓]
 theorem quotientPointsHom_hopfIdealPointsSubgroupMulEquiv_symm
     (A : CommAlgCat.{w} R) (g : hopfIdealPointsSubgroup n I A) :
     CommHopfAlgCat.quotientPointsHom (coordinateHopfAlgebra R n) I A
@@ -181,7 +181,7 @@ theorem hopfIdealPointsSubgroupFunctor_map_apply {A B : CommAlgCat.{w} R} (f : A
   (rfl)
 
 /-- The matrix-subgroup equivalence is natural in the value algebra. -/
-@[simp]
+@[simp↓]
 theorem hopfIdealPointsSubgroupMulEquiv_mapPoints {A B : CommAlgCat.{w} R} (f : A ⟶ B)
     (q : HopfAlgebra.points
       (R := R) (H := CommHopfAlgCat.quotient (coordinateHopfAlgebra R n) I) A) :
@@ -213,7 +213,7 @@ def hopfIdealPointsSubgroupNatIso :
 
 /-- After transport along `hopfIdealPointsSubgroupFunctor_obj`, the forward component of the
 representing natural isomorphism is the pointwise matrix-subgroup equivalence. -/
-@[simp]
+-- Not `@[simp]`: `simp` never matches the `eqToHom` applied to an element; use `rw`.
 theorem hopfIdealPointsSubgroupNatIso_hom_app_apply (A : CommAlgCat.{w} R)
     (q : HopfAlgebra.points
       (R := R) (H := CommHopfAlgCat.quotient (coordinateHopfAlgebra R n) I) A) :
@@ -224,7 +224,7 @@ theorem hopfIdealPointsSubgroupNatIso_hom_app_apply (A : CommAlgCat.{w} R)
 
 /-- After transport back along `hopfIdealPointsSubgroupFunctor_obj`, the inverse component of the
 representing natural isomorphism is the inverse pointwise matrix-subgroup equivalence. -/
-@[simp]
+-- Not `@[simp]`: `simp` never matches the `eqToHom` applied to an element; use `rw`.
 theorem hopfIdealPointsSubgroupNatIso_inv_app_apply (A : CommAlgCat.{w} R)
     (g : ULift.{u, w} (hopfIdealPointsSubgroup n I A)) :
     (hopfIdealPointsSubgroupNatIso n I).inv.app A
