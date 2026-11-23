@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.AlgebraicTopology.Cellular.EulerCharacteristic.Genus
 public import TauCeti.Analysis.Complex.Fuchsian.Compactification.Cocompact
 public import TauCeti.Analysis.Complex.Fuchsian.Compactification.RamificationDegree
 public import TauCeti.Analysis.Complex.Fuchsian.DirichletDomain.SidePairing
@@ -23,9 +24,11 @@ for that polygon becomes an intrinsic statement about `Γ`:
 
 `covolume Γ = 2π (-χ(X(Γ)) + ∑ₑ (1 - 1 / mₑ))`,
 
-the sum running over the elliptic orbits of `Γ`, with stabilizer orders `mₑ`. Writing
-`χ(X(Γ)) = 2 - 2g` for the topological genus `g` of the compact Riemann surface `X(Γ)`, this is
-the signature form `2π (2g - 2 + ∑ₑ (1 - 1 / mₑ))` of the area of a cocompact group. Since the
+the sum running over the elliptic orbits of `Γ`, with stabilizer orders `mₑ`. The cell count of
+a side-paired polygon is at most `2` and even (`SidePairing.cellEulerChar_le_two`,
+`SidePairing.even_cellEulerChar`), so `χ(X(Γ)) = 2 - 2g` for the topological genus `g` of the
+compact Riemann surface `X(Γ)`, and the area formula takes the signature form
+`2π (2g - 2 + ∑ₑ (1 - 1 / mₑ))` of the area of a cocompact group. Since the
 covolume is positive, the signature satisfies the hyperbolicity inequality
 `χ(X(Γ)) < ∑ₑ (1 - 1 / mₑ)`, that is, `2g - 2 + ∑ₑ (1 - 1 / mₑ) > 0`.
 
@@ -48,6 +51,10 @@ cocompact groups, independent of the branched-cover Morse proof in
   `χ(X(Γ)) = χ(Γ \ ℍ)`.
 * `Subgroup.covolume_eq_two_pi_mul_neg_eulerChar_add`: the orbifold area formula
   `covolume Γ = 2π (-χ(X(Γ)) + ∑ₑ (1 - 1 / mₑ))`.
+* `Subgroup.eulerChar_compactifiedQuotient_eq_two_sub_two_mul_genus`: `χ(X(Γ)) = 2 - 2g` for
+  the topological genus `g` of `X(Γ)`.
+* `Subgroup.covolume_eq_two_pi_mul_two_mul_genus_sub_two_add`: the signature area formula
+  `covolume Γ = 2π (2g - 2 + ∑ₑ (1 - 1 / mₑ))`.
 * `Subgroup.eulerChar_compactifiedQuotient_lt_finsum_mem_ellipticOrbits`: the hyperbolicity
   inequality `χ(X(Γ)) < ∑ₑ (1 - 1 / mₑ)`.
 * `Subgroup.eulerChar_sub_finsum_mem_ellipticOrbits_eq_index_mul`: multiplicativity of the
@@ -126,10 +133,32 @@ the elliptic orbits with stabilizer orders `mₑ`. With `χ = 2 - 2g` this is
 theorem eulerChar_compactifiedQuotient_lt_finsum_mem_ellipticOrbits :
     (eulerChar Γ.CompactifiedQuotient : ℝ) <
       ∑ᶠ e ∈ Γ.ellipticOrbits, (1 - (cardStabilizerOnOrbit e : ℝ)⁻¹) := by
-  have hpos : 0 < covolume Γ ℍ := covolume_pos <|
-    Measure.measure_univ_pos.mp (isOpen_univ.measure_pos volume univ_nonempty)
+  have hpos := Γ.covolume_pos
   rw [covolume_eq_two_pi_mul_neg_eulerChar_add, ENNReal.ofReal_pos] at hpos
   nlinarith [Real.pi_pos]
+
+/-- **The Euler number of the compactified quotient of a cocompact Fuchsian group.** For a
+cocompact `Γ`, `χ(X(Γ)) = 2 - 2g` for the topological genus `g` of `X(Γ)`. -/
+theorem eulerChar_compactifiedQuotient_eq_two_sub_two_mul_genus :
+    eulerChar Γ.CompactifiedQuotient = 2 - 2 * RiemannSurface.genus Γ.CompactifiedQuotient := by
+  obtain ⟨n, _, P, σ, hmap, hlf, hdisj⟩ := exists_compactConvexPolygon_sidePairing (Γ := Γ)
+  have hχ : eulerChar Γ.CompactifiedQuotient = σ.cellEulerChar := by
+    rw [eulerChar_compactifiedQuotient_eq_eulerChar_orbitRel_quotient,
+      σ.eulerChar_orbitRel_quotient_eq_cellEulerChar hmap hlf hdisj]
+  rw [RiemannSurface.eulerChar_eq_two_sub_two_mul_genus_iff, hχ]
+  exact ⟨σ.cellEulerChar_le_two, σ.even_cellEulerChar⟩
+
+/-- **The signature area formula for a cocompact Fuchsian group.** The covolume of `Γ` is
+`2π (2g - 2 + ∑ₑ (1 - 1 / mₑ))`, where `g` is the topological genus of the compactified quotient
+`X(Γ)` and `e` runs over the elliptic orbits of `Γ`, with stabilizer orders `mₑ`. -/
+theorem covolume_eq_two_pi_mul_two_mul_genus_sub_two_add :
+    covolume Γ ℍ = ENNReal.ofReal (2 * π * (2 * (RiemannSurface.genus Γ.CompactifiedQuotient : ℝ) -
+      2 + ∑ᶠ e ∈ Γ.ellipticOrbits, (1 - (cardStabilizerOnOrbit e : ℝ)⁻¹))) := by
+  rw [covolume_eq_two_pi_mul_neg_eulerChar_add,
+    eulerChar_compactifiedQuotient_eq_two_sub_two_mul_genus]
+  congr 1
+  push_cast
+  ring
 
 /-- **Multiplicativity of the orbifold Euler characteristic for cocompact groups.** Let `Γ` be a
 cocompact Fuchsian group and `Δ ≤ Γ` a subgroup of finite index, so that `Δ` is cocompact as

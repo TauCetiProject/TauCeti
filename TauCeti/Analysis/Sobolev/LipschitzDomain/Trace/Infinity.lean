@@ -7,9 +7,10 @@ module
 
 public import TauCeti.Analysis.Sobolev.LipschitzDomain.Trace.Frontier
 import TauCeti.Analysis.Sobolev.LipschitzDomain.GlobalExtension
-import TauCeti.Analysis.Sobolev.W1p.Convex
+import TauCeti.Analysis.Sobolev.W1p.BoundedContinuous
 import TauCeti.Analysis.Sobolev.W1p.Infinity
 import TauCeti.MeasureTheory.Function.Lp.Norm
+import TauCeti.MeasureTheory.Measure.OpenPos
 
 /-!
 # The trace of `W^{1,∞}` on a bounded Lipschitz domain
@@ -31,7 +32,9 @@ the unique map sending each `u` with a representative `f` continuous on `closure
 restriction of `f` to the frontier (`TauCeti.W1p.frontierTraceTop_ae_eq_of_continuousOn`,
 `TauCeti.W1p.eq_frontierTraceTop`). It agrees with the traces at the finite exponents: on the
 bounded set `Ω`, `W^{1,∞}(Ω) ⊆ W^{1,p}(Ω)`, and the `W^{1,p}` trace of `u` is its `W^{1,∞}` trace
-(`TauCeti.W1p.frontierTrace_ae_eq_frontierTraceTop`).
+(`TauCeti.W1p.frontierTrace_ae_eq_frontierTraceTop`). The trace does not increase the essential
+supremum of the value (`TauCeti.W1p.norm_frontierTraceTop_le`) and commutes with multiplication
+by a smooth cutoff (`TauCeti.W1p.frontierTraceTop_contDiffSMul_ae`).
 
 The closure `W^{1,∞}_0(Ω)` of the test functions lies in the kernel of the trace
 (`TauCeti.W1p.w1p0Submodule_le_ker_frontierTraceTop`). Unlike for `p < ∞`, where the kernel is
@@ -42,8 +45,9 @@ of `Ω` has zero trace but stays at distance at least `1` from `W^{1,∞}_0(Ω)`
 
 The Lipschitz representative is built by extension: the extension operator
 `TauCeti.W1p.exists_extensionL_of_isLipschitzDomainWith` is bounded on `W^{1,∞}`, and on the whole
-space the precise representative of a `W^{1,∞}` function is Lipschitz with constant the
-essential supremum of its gradient (`TauCeti.W1p.lipschitzWith_preciseRepresentative`).
+space the bounded continuous representative of a `W^{1,∞}` function has Lipschitz constant at
+most the essential supremum of its gradient
+(`TauCeti.W1p.lipschitzWith_boundedContinuousRepresentativeL`).
 
 ## References
 
@@ -58,7 +62,7 @@ public section
 noncomputable section
 
 open Bornology MeasureTheory Metric Module Set TopologicalSpace TauCeti.MeasureTheory
-open scoped ENNReal NNReal
+open scoped ENNReal NNReal BoundedContinuousFunction
 
 namespace TauCeti
 
@@ -76,26 +80,20 @@ theorem W1p.exists_lipschitzWith_ae_eq_of_isLipschitzDomainWith
       LipschitzWith (C * ‖u‖₊) f ∧ (∀ x, ‖f x‖ ≤ C * ‖u‖) ∧
         W1p.value u =ᵐ[volume.restrict (Ω : Set (WithLp 2 (ℝ × E)))] f := by
   obtain ⟨X, hX, -⟩ := W1p.exists_extensionL_of_isLipschitzDomainWith (p := ∞) hΩ hb
-  -- The whole-space Sobolev functions live on `volume` restricted to `⊤`, which is `volume`.
-  have : (volume.restrict ((⊤ : Opens (WithLp 2 (ℝ × E))) :
-      Set (WithLp 2 (ℝ × E)))).IsOpenPosMeasure := by
-    rw [Opens.coe_top, Measure.restrict_univ]
-    infer_instance
-  refine ⟨‖X‖₊, fun u ↦ ⟨preciseRepresentative volume (W1p.value (X u)), ?_, fun x ↦ ?_, ?_⟩⟩
-  · refine (W1p.lipschitzWith_preciseRepresentative (X u)).weaken ?_
+  refine ⟨‖X‖₊, fun u ↦ ⟨W1p.boundedContinuousRepresentativeL (X u), ?_, fun x ↦ ?_, ?_⟩⟩
+  · refine (W1p.lipschitzWith_boundedContinuousRepresentativeL (X u)).weaken ?_
     rw [← NNReal.coe_le_coe]
     push_cast
     exact (W1p.norm_gradient_le (X u)).trans (X.le_opNorm u)
-  · calc ‖preciseRepresentative volume (W1p.value (X u)) x‖ ≤ ‖W1p.value (X u)‖ :=
-          Lp.norm_le_norm_top_of_ae_eq_of_continuousAt (W1p.ae_eq_preciseRepresentative (X u))
-            (W1p.lipschitzWith_preciseRepresentative (X u)).continuous.continuousAt
-      _ ≤ ‖X u‖ := W1p.norm_value_le (X u)
+  · calc
+      ‖W1p.boundedContinuousRepresentativeL (X u) x‖ ≤
+          ‖W1p.boundedContinuousRepresentativeL (X u)‖ :=
+        BoundedContinuousFunction.norm_coe_le_norm _ x
+      _ = ‖W1p.value (X u)‖ := W1p.norm_boundedContinuousRepresentativeL _
+      _ ≤ ‖X u‖ := W1p.norm_value_le _
       _ ≤ ‖X‖₊ * ‖u‖ := X.le_opNorm u
-  · have hu : W1p.restrictL le_top (X u) = u := by simpa using congrArg (· u) hX
-    have h := W1p.value_restrictL_ae (le_top : Ω ≤ ⊤) (X u)
-    rw [hu] at h
-    exact h.trans (ae_restrict_of_ae_restrict_of_subset (fun _ _ ↦ by simp)
-      (W1p.ae_eq_preciseRepresentative (X u)))
+  · exact (W1p.value_ae_eq_of_restrictL_comp_eq_id (le_top : Ω ≤ ⊤) hX u).symm.trans
+      (ae_restrict_of_ae (W1p.value_ae_eq_boundedContinuousRepresentativeL (X u)))
 
 /-- **Existence of the trace at the infinite exponent.** On a bounded Lipschitz domain there is a
 bounded linear operator `W^{1,∞}(Ω) → L^∞(frontier Ω)`, for normalized Euclidean Hausdorff measure
@@ -171,6 +169,71 @@ theorem W1p.frontierTraceTop_ae_eq_of_continuousOn
     W1p.frontierTraceTop hΩ hb u =ᵐ[(μHE[finrank ℝ E] : Measure (WithLp 2 (ℝ × E))).restrict
       (frontier (Ω : Set (WithLp 2 (ℝ × E))))] f :=
   (W1p.exists_frontierTraceTop hΩ hb).choose_spec u f hf hu
+
+/-- Every `W^{1,∞}` class has a globally Lipschitz, bounded continuous representative whose
+boundary values give its `L∞` trace. -/
+theorem W1p.exists_lipschitzWith_ae_eq_frontierTraceTop
+    (hΩ : (Ω : Set (WithLp 2 (ℝ × E))).IsLipschitzDomainWith L)
+    (hb : IsBounded (Ω : Set (WithLp 2 (ℝ × E)))) (u : W1p volume Ω ∞) :
+    ∃ (f : WithLp 2 (ℝ × E) →ᵇ ℝ) (K : ℝ≥0), LipschitzWith K f ∧
+      (W1p.value u =ᵐ[volume.restrict (Ω : Set (WithLp 2 (ℝ × E)))] f) ∧
+      (W1p.frontierTraceTop hΩ hb u =ᵐ[
+        (μHE[finrank ℝ E] : Measure (WithLp 2 (ℝ × E))).restrict
+          (frontier (Ω : Set (WithLp 2 (ℝ × E))))] f) := by
+  obtain ⟨C, hC⟩ := W1p.exists_lipschitzWith_ae_eq_of_isLipschitzDomainWith hΩ hb
+  obtain ⟨f, hf, hbound, hu⟩ := hC u
+  refine ⟨BoundedContinuousFunction.ofNormedAddCommGroup f hf.continuous _ hbound,
+    C * ‖u‖₊, ?_⟩
+  simp only [BoundedContinuousFunction.coe_ofNormedAddCommGroup]
+  exact ⟨hf, hu, W1p.frontierTraceTop_ae_eq_of_continuousOn hΩ hb hf.continuous.continuousOn hu⟩
+
+open scoped ContDiff Gradient in
+/-- The `L∞` trace commutes with multiplication by a smooth function bounded together
+with its gradient on the domain. -/
+theorem W1p.frontierTraceTop_contDiffSMul_ae
+    (hΩ : (Ω : Set (WithLp 2 (ℝ × E))).IsLipschitzDomainWith L)
+    (hb : IsBounded (Ω : Set (WithLp 2 (ℝ × E))))
+    {ψ : WithLp 2 (ℝ × E) → ℝ} {M : ℝ} (hψ : ContDiff ℝ ∞ ψ) (hM : 0 ≤ M)
+    (hψM : ∀ x ∈ Ω, |ψ x| ≤ M) (hgM : ∀ x ∈ Ω, ‖∇ ψ x‖ ≤ M)
+    (u : W1p volume Ω ∞) :
+    W1p.frontierTraceTop hΩ hb (W1p.contDiffSMul ψ hψ hM hψM hgM u) =ᵐ[
+      (μHE[finrank ℝ E] : Measure (WithLp 2 (ℝ × E))).restrict
+        (frontier (Ω : Set (WithLp 2 (ℝ × E))))]
+      fun x ↦ ψ x * W1p.frontierTraceTop hΩ hb u x := by
+  obtain ⟨f, _, _, hu, hf⟩ := W1p.exists_lipschitzWith_ae_eq_frontierTraceTop hΩ hb u
+  have hprod := Filter.EventuallyEq.trans (W1p.value_contDiffSMul_ae hψ hM hψM hgM u)
+    (Filter.EventuallyEq.rfl.smul hu)
+  exact (W1p.frontierTraceTop_ae_eq_of_continuousOn hΩ hb
+    (hψ.continuous.mul f.continuous).continuousOn hprod).trans
+      (Filter.EventuallyEq.rfl.mul hf.symm)
+
+/-- Taking the boundary trace does not increase the essential supremum of the value. -/
+theorem W1p.norm_frontierTraceTop_le
+    (hΩ : (Ω : Set (WithLp 2 (ℝ × E))).IsLipschitzDomainWith L)
+    (hb : IsBounded (Ω : Set (WithLp 2 (ℝ × E)))) (u : W1p volume Ω ∞) :
+    ‖W1p.frontierTraceTop hΩ hb u‖ ≤ ‖W1p.value u‖ := by
+  obtain ⟨f, _, _, hu, hf⟩ := W1p.exists_lipschitzWith_ae_eq_frontierTraceTop hΩ hb u
+  have hc : IsClosed {x | ‖f x‖ ≤ ‖W1p.value u‖} :=
+    isClosed_le f.continuous.norm continuous_const
+  have hbound : ∀ᵐ x ∂volume, x ∈ Ω → ‖f x‖ ≤ ‖W1p.value u‖ := by
+    apply (ae_restrict_iff' Ω.isOpen.measurableSet).1
+    filter_upwards [hu, Lp.ae_norm_le_norm_top (W1p.value u)] with x hx hnorm
+    exact hx ▸ hnorm
+  have hclosure : closure (Ω : Set (WithLp 2 (ℝ × E))) ⊆ {x | ‖f x‖ ≤ ‖W1p.value u‖} :=
+    closure_minimal ((Ω.isOpen.subset_closure_of_ae_le
+      (t := {x | ‖f x‖ ≤ ‖W1p.value u‖}) hbound).trans hc.closure_subset) hc
+  apply Lp.norm_le_of_ae_bound_top (norm_nonneg _)
+  filter_upwards [hf, ae_restrict_mem isClosed_frontier.measurableSet] with x hx hxF
+  rw [hx]
+  exact hclosure (frontier_subset_closure hxF)
+
+/-- The `L∞` trace has operator norm at most one in the Sobolev norm. -/
+theorem W1p.opNorm_frontierTraceTop_le
+    (hΩ : (Ω : Set (WithLp 2 (ℝ × E))).IsLipschitzDomainWith L)
+    (hb : IsBounded (Ω : Set (WithLp 2 (ℝ × E)))) :
+    ‖W1p.frontierTraceTop hΩ hb‖ ≤ 1 :=
+  ContinuousLinearMap.opNorm_le_bound _ zero_le_one fun u ↦ by
+    simpa only [one_mul] using (W1p.norm_frontierTraceTop_le hΩ hb u).trans (W1p.norm_value_le u)
 
 /-- **Uniqueness of the trace at the infinite exponent.** A bounded linear operator
 `W^{1,∞}(Ω) → L^∞(frontier Ω)` sending every function continuous up to the boundary to its
