@@ -101,9 +101,6 @@ are those of its summands, so its tangent coordinate changes are those of the su
   tangent bundle of the tangent bundle.
 * `TauCeti.Manifold.continuousLinearMapAt_symmL_coordChange`: reading a tangent vector through the
   preferred trivializations of two charts is the tangent coordinate change between them.
-* `TauCeti.Manifold.fderiv_comp_symmL_eq_fderiv_extChartAt_symm`: the derivative along the fibre
-  of a function on `TM`, read in the trivialization at the base point of a preferred chart of `TM`,
-  is the derivative in the fibre coordinate of the function read in that chart.
 * `TauCeti.Manifold.tangentCoordChange_toMatrix`: in a finite basis, this coordinate change is the
   change-of-basis matrix between the corresponding chart-local frames.
 * `TauCeti.Manifold.tangentSpaceOpenEquiv`: the canonical continuous linear equivalence between
@@ -512,8 +509,8 @@ theorem contMDiffAt_tangentCoordChange {n : ℕ∞ω} [IsManifold I (n + 1) M] {
 /-- A point of `TM` in the common domain of the tangent charts at `z` and `q` is sent by the
 change from the chart at `z` to the chart at `q` to the pair consisting of the base coordinate
 change and the fibre coordinate change. -/
-theorem extChartAt_tangent_extChartAt_symm_eq_tangentCoordChange [IsManifold I 1 M]
-    (z q : TangentBundle I M) {a : E × E}
+private theorem extChartAt_tangent_symm_trans_eq [IsManifold I 1 M] (z q : TangentBundle I M)
+    {a : E × E}
     (ha : a ∈ ((extChartAt I.tangent z).symm ≫ extChartAt I.tangent q).source) :
     extChartAt I.tangent q ((extChartAt I.tangent z).symm a) =
       (extChartAt I q.proj ((extChartAt I z.proj).symm a.1),
@@ -640,7 +637,7 @@ private theorem tangentCoordChange_tangent_eventuallyEq [IsManifold I 1 M] {x x�
   have hN := (I.tangent.extendCoordChange_source_mem_nhdsWithin'
     (e := chartAt (ModelProd H E) z) (e' := chartAt (ModelProd H E) q) hz hzq)
   filter_upwards [hN] with a ha
-  exact extChartAt_tangent_extChartAt_symm_eq_tangentCoordChange z q ha
+  exact extChartAt_tangent_symm_trans_eq z q ha
 
 private theorem fderivWithin_tangentCoordChange_tangent_model [IsManifold I 2 M] {x x₀ : M}
     (hx₀ : x ∈ (extChartAt I x₀).source) (u w : E) :
@@ -782,39 +779,6 @@ theorem continuousLinearMapAt_symmL_coordChange {x x₀ y : M}
   have hy3 : y ∈ (extChartAt I x₀).source := by rw [extChartAt_source]; exact hyx₀
   exact tangentCoordChange_comp (I := I) (w := x) (x := y) (y := x₀) (z := y) (v := u)
     ⟨⟨hy1, hy2⟩, hy3⟩
-
-/-- The derivative along the fibre of a function `f` on `TM`, at a point of the target of the
-preferred chart at `z₀` and read in the trivialization at `z₀.proj`, is the derivative in the
-fibre coordinate of `f` read in that chart. -/
-theorem fderiv_comp_symmL_eq_fderiv_extChartAt_symm {F : Type*} [NormedAddCommGroup F]
-    [NormedSpace 𝕜 F] (f : TangentBundle I M → F) (z₀ : TangentBundle I M) {p : E × E}
-    (hp : p ∈ (extChartAt I.tangent z₀).target) :
-    fderiv 𝕜 (fun u : E ↦ f (TotalSpace.mk' E ((extChartAt I.tangent z₀).symm p).proj u))
-        ((extChartAt I.tangent z₀).symm p).2 ∘L
-      (trivializationAt E (TangentSpace I) z₀.proj).symmL 𝕜
-        ((extChartAt I.tangent z₀).symm p).proj =
-      fderiv 𝕜 (fun u ↦ f ((extChartAt I.tangent z₀).symm (p.1, u))) p.2 := by
-  set e := trivializationAt E (TangentSpace I) z₀.proj
-  set w := (extChartAt I.tangent z₀).symm p
-  have hb : w.proj ∈ e.baseSet := Bundle.proj_extChartAt_symm_mem_baseSet z₀ hp
-  have hwp : (extChartAt I z₀.proj).symm p.1 = w.proj :=
-    (Bundle.proj_extChartAt_symm z₀ hp).symm
-  set A : E ≃L[𝕜] E := e.continuousLinearEquivAt 𝕜 w.proj hb
-  have hA : ((A.symm : E →L[𝕜] E) : E → E) = e.symmL 𝕜 w.proj :=
-    e.symm_continuousLinearEquivAt_eq hb
-  -- Along the fibre, the inverse chart is the inverse trivialization over `w.proj`.
-  have hfun : (fun u ↦ f ((extChartAt I.tangent z₀).symm (p.1, u))) =
-      (fun u : E ↦ f (TotalSpace.mk' E w.proj u)) ∘ A.symm := by
-    funext u
-    rw [Bundle.extChartAt_symm_apply_of_mem_baseSet z₀ (hwp ▸ hb) u, hwp, Function.comp_apply,
-      hA, Trivialization.symmL_apply _ hb]
-    rfl
-  have hv : A.symm p.2 = w.2 := by
-    rw [hA, ← Bundle.trivializationAt_extChartAt_symm_snd z₀ hp, Trivialization.symmL_apply _ hb,
-      e.symm_proj_apply w hb]
-  rw [hfun, A.symm.comp_right_fderiv, hv]
-  ext u
-  exact congrArg (fderiv 𝕜 (fun u : E ↦ f (TotalSpace.mk' E w.proj u)) w.2) (congrFun hA u).symm
 
 /-- The matrix of a tangent coordinate change in a finite basis of the model space is the
 change-of-basis matrix between the corresponding chart-local frames. -/

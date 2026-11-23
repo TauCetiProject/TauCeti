@@ -56,6 +56,10 @@ coordinates `(q, v)`, and let `ℓ = L ∘ (chart at w₀)⁻¹` be the local La
 
 `d/dt ∂_v ℓ(q, v) = ∂_q ℓ(q, v)` at `t`.
 
+Only data at `t` enters: the equations hold at `t` for any curve whose velocity `X` at `t` satisfies
+`ι_X ω_L = dE_L` at `γ t`, provided the fibre Hessian at `γ t` is invertible
+(`TauCeti.eulerLagrange_extChartAt_of_hasMFDerivAt`). So `L` need only be regular along the curve.
+
 In the chart at `γ t` itself this is a computation at a single point. There the Legendre map reads
 as the Legendre map `(q, u) ↦ (q, ∂_u ℓ(q, u))` of `ℓ`
 (`TauCeti.mfderiv_legendreMap_eq_fderiv_linearLegendreMap`), `ω_L` as the pullback of the
@@ -88,6 +92,9 @@ this is Hamilton's first equation `dq/dt = ∂H/∂p`, in intrinsic form.
   velocity lifts of their base curves.
 * `TauCeti.IsRegularLagrangian.eq_curveVelocityLiftWithin_of_isMIntegralCurveOn`: the same within
   parameter sets with unique derivatives.
+* `TauCeti.eulerLagrange_extChartAt_of_hasMFDerivAt`: a curve whose velocity at `t` solves
+  `ι_X ω_L = dE_L` where the fibre Hessian is invertible solves the Euler–Lagrange equations at `t`
+  in every chart.
 * `TauCeti.IsRegularLagrangian.eulerLagrange_extChartAt_of_isMIntegralCurveAt`: local integral
   curves of the Lagrangian vector field solve the Euler–Lagrange equations in every chart.
 * `TauCeti.IsHyperregularLagrangian.eq_legendreMap_curveVelocityLift_of_isMIntegralCurve`: along
@@ -276,13 +283,14 @@ variable {E H : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSp
 
 variable [I.Boundaryless]
 
-/-- The Euler–Lagrange equations in the tangent-bundle chart at the current point of a local
-integral curve of the Lagrangian vector field. -/
-private theorem IsRegularLagrangian.eulerLagrange_extChartAt_self_of_isMIntegralCurveAt
-    (hL : ContMDiff I.tangent 𝓘(ℝ, ℝ) ∞ L) (hreg : IsRegularLagrangian L)
-    {X : (v : TangentBundle I M) → TangentSpace I.tangent v}
-    (hX : (cartanTwoForm L hL).IsHamiltonianVectorField (lagrangianEnergy L) X)
-    {γ : ℝ → TangentBundle I M} {t : ℝ} (hγ : IsMIntegralCurveAt γ X t) :
+/-- The Euler–Lagrange equations in the tangent-bundle chart at `γ t`, for a curve whose velocity
+`X` at `t` solves `ι_X ω_L = dE_L` at a tangent vector where the fibre Hessian is invertible. -/
+private theorem eulerLagrange_extChartAt_self_of_hasMFDerivAt
+    (hL : ContMDiff I.tangent 𝓘(ℝ, ℝ) ∞ L) {γ : ℝ → TangentBundle I M} {t : ℝ}
+    (hv : (fiberHessian L (γ t)).IsInvertible) {X : TangentSpace I.tangent (γ t)}
+    (hX : ∀ W, SmoothBundleForm.eval₂ (cartanTwoForm L hL) (γ t) X W =
+      mvfderiv I.tangent (lagrangianEnergy L) (γ t) W)
+    (hγ : HasMFDerivAt 𝓘(ℝ, ℝ) I.tangent γ t ((1 : ℝ →L[ℝ] ℝ).smulRight X)) :
     HasDerivAt (fun s ↦ (extChartAt I.tangent (γ t) (γ s)).1)
         (extChartAt I.tangent (γ t) (γ t)).2 t ∧
       HasDerivAt (fun s ↦ fderiv ℝ (fun u ↦ L ((extChartAt I.tangent (γ t)).symm
@@ -290,11 +298,11 @@ private theorem IsRegularLagrangian.eulerLagrange_extChartAt_self_of_isMIntegral
         (fderiv ℝ (fun y ↦ L ((extChartAt I.tangent (γ t)).symm
           (y, (extChartAt I.tangent (γ t) (γ t)).2))) (extChartAt I.tangent (γ t) (γ t)).1) t := by
   set Φ := extChartAt I.tangent (γ t)
-  have hchart : HasDerivAt (fun s ↦ ((Φ (γ s)).1, (Φ (γ s)).2)) (X (γ t)) t :=
-    Manifold.hasDerivAt_extChartAt_comp_curve hγ.hasMFDerivAt
-  -- The base component of `X (γ t)` is `γ t` itself, which is its own fibre coordinate.
-  have hX₁ : (X (γ t)).1 = (Φ (γ t)).2 := by
-    have h := hreg.mfderiv_proj_eq_snd_of_isHamiltonianVectorField hL hX (γ t)
+  have hchart : HasDerivAt (fun s ↦ ((Φ (γ s)).1, (Φ (γ s)).2)) X t :=
+    Manifold.hasDerivAt_extChartAt_comp_curve hγ
+  -- The base component of `X` is `γ t` itself, which is its own fibre coordinate.
+  have hX₁ : X.1 = (Φ (γ t)).2 := by
+    have h := mfderiv_proj_eq_snd_of_eval₂_cartanTwoForm hL hv hX
     rw [Bundle.mfderiv_proj] at h
     rw [Manifold.extChartAt_tangent_self_snd, ← h]
     -- `dπ` is the first projection of `E × E`, read on the tangent space of `TM`.
@@ -302,21 +310,22 @@ private theorem IsRegularLagrangian.eulerLagrange_extChartAt_self_of_isMIntegral
   exact eulerLagrange_of_hasDerivAt_of_symplecticForm (L := L ∘ Φ.symm)
     (((hL (γ t)).contDiffAt_comp_extChartAt_symm).of_le (by norm_num)) hchart hX₁ fun W ↦
     (eval₂_cartanTwoForm_eq_fderiv_linearLegendreMap hL (γ t) _ W).symm.trans
-      ((SmoothTwoForm.isHamiltonianVectorField_iff.1 hX (γ t) W).trans
+      ((hX W).trans
         (DFunLike.congr_fun (mvfderiv_lagrangianEnergy_eq_fderiv hL (by simp) (γ t)) W))
 
-/-- **Integral curves of the Lagrangian vector field solve the Euler–Lagrange equations in every
-chart.** Let `L` be a smooth regular Lagrangian on a boundaryless manifold, and let `γ` be an
-integral curve, defined near `t`, of a Hamiltonian vector field `X` of the energy for the Cartan
-two-form. Read `γ` in the tangent-bundle chart at any `w₀` whose source contains `γ t`, with
-coordinates `(q s, v s)`, and let `ℓ = L ∘ (chart at w₀)⁻¹` be the local Lagrangian. Then
-`q'(t) = v(t)` and `d/dt ∂_v ℓ(q, v) = ∂_q ℓ(q, v)` at `t`. -/
-theorem IsRegularLagrangian.eulerLagrange_extChartAt_of_isMIntegralCurveAt
-    (hL : ContMDiff I.tangent 𝓘(ℝ, ℝ) ∞ L) (hreg : IsRegularLagrangian L)
-    {X : (v : TangentBundle I M) → TangentSpace I.tangent v}
-    (hX : (cartanTwoForm L hL).IsHamiltonianVectorField (lagrangianEnergy L) X)
-    {γ : ℝ → TangentBundle I M} {t : ℝ} (hγ : IsMIntegralCurveAt γ X t) (w₀ : TangentBundle I M)
-    (ht : γ t ∈ (extChartAt I.tangent w₀).source) :
+/-- **The Euler–Lagrange equations in every chart, along a curve.** Let `L` be a smooth
+Lagrangian on a boundaryless manifold, and let `γ` be a curve in `TM` whose velocity `X` at `t`
+satisfies `ι_X ω_L = dE_L` at `γ t`, where the fibre Hessian of `L` is invertible. Read `γ` in the
+tangent-bundle chart at any `w₀` whose source contains `γ t`, with coordinates `(q s, v s)`, and
+let `ℓ = L ∘ (chart at w₀)⁻¹` be the local Lagrangian. Then `q'(t) = v(t)` and
+`d/dt ∂_v ℓ(q, v) = ∂_q ℓ(q, v)` at `t`. -/
+theorem eulerLagrange_extChartAt_of_hasMFDerivAt (hL : ContMDiff I.tangent 𝓘(ℝ, ℝ) ∞ L)
+    {γ : ℝ → TangentBundle I M} {t : ℝ} (hv : (fiberHessian L (γ t)).IsInvertible)
+    {X : TangentSpace I.tangent (γ t)}
+    (hX : ∀ W, SmoothBundleForm.eval₂ (cartanTwoForm L hL) (γ t) X W =
+      mvfderiv I.tangent (lagrangianEnergy L) (γ t) W)
+    (hγ : HasMFDerivAt 𝓘(ℝ, ℝ) I.tangent γ t ((1 : ℝ →L[ℝ] ℝ).smulRight X))
+    (w₀ : TangentBundle I M) (ht : γ t ∈ (extChartAt I.tangent w₀).source) :
     HasDerivAt (fun s ↦ (extChartAt I.tangent w₀ (γ s)).1) (extChartAt I.tangent w₀ (γ t)).2 t ∧
       HasDerivAt (fun s ↦ fderiv ℝ (fun u ↦ L ((extChartAt I.tangent w₀).symm
           ((extChartAt I.tangent w₀ (γ s)).1, u))) (extChartAt I.tangent w₀ (γ s)).2)
@@ -325,7 +334,7 @@ theorem IsRegularLagrangian.eulerLagrange_extChartAt_of_isMIntegralCurveAt
   -- The equations hold in the chart `Φ` at `γ t`. Near `t` the coordinates in `Φ` and in the chart
   -- `Ψ` at `w₀` are related by the tangent map of the change of base charts, which carries the
   -- equations from `Φ` to `Ψ`.
-  obtain ⟨hq, hEL⟩ := hreg.eulerLagrange_extChartAt_self_of_isMIntegralCurveAt hL hX hγ
+  obtain ⟨hq, hEL⟩ := eulerLagrange_extChartAt_self_of_hasMFDerivAt hL hv hX hγ
   set Ψ := extChartAt I.tangent w₀
   set Φ := extChartAt I.tangent (γ t)
   -- The changes of base charts between the two tangent charts, in both directions.
@@ -333,7 +342,7 @@ theorem IsRegularLagrangian.eulerLagrange_extChartAt_of_isMIntegralCurveAt
   set ψ := extChartAt I w₀.proj ∘ (extChartAt I (γ t).proj).symm
   have htΦ : γ t ∈ Φ.source := mem_extChartAt_source _
   have hev : ∀ᶠ s in 𝓝 t, γ s ∈ Ψ.source ∧ γ s ∈ Φ.source :=
-    hγ.hasMFDerivAt.continuousAt.eventually
+    hγ.continuousAt.eventually
       (Filter.inter_mem (extChartAt_source_mem_nhds' ht) (extChartAt_source_mem_nhds' htΦ))
   have hΦ : ∀ᶠ s in 𝓝 t, Φ (γ s) = (φ (Ψ (γ s)).1, fderiv ℝ φ (Ψ (γ s)).1 (Ψ (γ s)).2) :=
     hev.mono fun s hs ↦ Manifold.extChartAt_tangent_eq_fderiv hs.1 hs.2
@@ -363,7 +372,7 @@ theorem IsRegularLagrangian.eulerLagrange_extChartAt_of_isMIntegralCurveAt
   · have hsmooth : ∀ᶠ y in 𝓝 (Φ (γ t)), ContDiffAt ℝ 2 (L ∘ Φ.symm) y :=
       ((hL (γ t)).contDiffAt_comp_extChartAt_symm.of_le (by norm_num)).eventually (by simp)
     filter_upwards
-      [((continuousAt_extChartAt (γ t)).comp hγ.hasMFDerivAt.continuousAt).eventually hsmooth, hΦ]
+      [((continuousAt_extChartAt (γ t)).comp hγ.continuousAt).eventually hsmooth, hΦ]
       with s hs hs'
     rw [← hs']
     exact hs.differentiableAt (by norm_num)
@@ -375,6 +384,26 @@ theorem IsRegularLagrangian.eulerLagrange_extChartAt_of_isMIntegralCurveAt
     rw [Prod.ext_iff] at ht'
     simp only [ht'.1, ht'.2] at hEL
     exact hEL.congr_of_eventuallyEq hEq
+
+/-- **Integral curves of the Lagrangian vector field solve the Euler–Lagrange equations in every
+chart.** Let `L` be a smooth regular Lagrangian on a boundaryless manifold, and let `γ` be an
+integral curve, defined near `t`, of a Hamiltonian vector field `X` of the energy for the Cartan
+two-form. Read `γ` in the tangent-bundle chart at any `w₀` whose source contains `γ t`, with
+coordinates `(q s, v s)`, and let `ℓ = L ∘ (chart at w₀)⁻¹` be the local Lagrangian. Then
+`q'(t) = v(t)` and `d/dt ∂_v ℓ(q, v) = ∂_q ℓ(q, v)` at `t`. -/
+theorem IsRegularLagrangian.eulerLagrange_extChartAt_of_isMIntegralCurveAt
+    (hL : ContMDiff I.tangent 𝓘(ℝ, ℝ) ∞ L) (hreg : IsRegularLagrangian L)
+    {X : (v : TangentBundle I M) → TangentSpace I.tangent v}
+    (hX : (cartanTwoForm L hL).IsHamiltonianVectorField (lagrangianEnergy L) X)
+    {γ : ℝ → TangentBundle I M} {t : ℝ} (hγ : IsMIntegralCurveAt γ X t) (w₀ : TangentBundle I M)
+    (ht : γ t ∈ (extChartAt I.tangent w₀).source) :
+    HasDerivAt (fun s ↦ (extChartAt I.tangent w₀ (γ s)).1) (extChartAt I.tangent w₀ (γ t)).2 t ∧
+      HasDerivAt (fun s ↦ fderiv ℝ (fun u ↦ L ((extChartAt I.tangent w₀).symm
+          ((extChartAt I.tangent w₀ (γ s)).1, u))) (extChartAt I.tangent w₀ (γ s)).2)
+        (fderiv ℝ (fun y ↦ L ((extChartAt I.tangent w₀).symm
+          (y, (extChartAt I.tangent w₀ (γ t)).2))) (extChartAt I.tangent w₀ (γ t)).1) t :=
+  eulerLagrange_extChartAt_of_hasMFDerivAt hL (isRegularLagrangian_iff.1 hreg (γ t))
+    (SmoothTwoForm.isHamiltonianVectorField_iff.1 hX (γ t)) hγ.hasMFDerivAt w₀ ht
 
 end Chart
 
