@@ -19,8 +19,9 @@ null-homotopic (`TauCeti.IsRotationalInvariantCurve`). Non-null-homotopy exclude
 curves bounding a disc in the annulus, such as a small circle around a fixed point. For a genuine
 annulus, with `ℓ ≠ 0` and `Y` a nonempty interval of `ℝ`, the second factor is contractible, so a
 loop that is not null-homotopic winds around the circle factor; for an arbitrary `Y` the
-nontrivial homotopy class may come from `Y` instead. This is the notion of Birkhoff's theorem on invariant
-curves of twist maps, and of the rotational caustics of convex billiards (Bialy–Mironov).
+nontrivial homotopy class may come from `Y` instead. This is the notion of Birkhoff's theorem on
+invariant curves of twist maps, and of the rotational caustics of convex billiards
+(Bialy–Mironov).
 
 The definition asks only `f '' C = C` of an arbitrary self-map `f`. We record:
 
