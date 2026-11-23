@@ -10,7 +10,7 @@ public import Mathlib.MeasureTheory.Measure.AEMeasurable
 public import Mathlib.MeasureTheory.Measure.Typeclasses.SFinite
 import TauCeti.MeasureTheory.Constructions.Polish.Analytic
 import TauCeti.MeasureTheory.MeasurableSpace.Analytic
-import TauCeti.Topology.MetricSpace.PiNat
+import TauCeti.Topology.MetricSpace.PiNat.Basic
 
 /-!
 # The Jankov–von Neumann uniformization theorem

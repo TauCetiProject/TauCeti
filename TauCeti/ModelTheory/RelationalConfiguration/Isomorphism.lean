@@ -9,7 +9,6 @@ public import TauCeti.ModelTheory.RelationalConfiguration.Structure
 public import TauCeti.ModelTheory.RelationalConfiguration.Topology
 public import TauCeti.MeasureTheory.Constructions.Polish.Analytic
 public import Mathlib.GroupTheory.GroupAction.Blocks
-import TauCeti.Algebra.GroupAction.OrbitRelQuotient
 
 /-!
 # Isomorphism of relational configurations

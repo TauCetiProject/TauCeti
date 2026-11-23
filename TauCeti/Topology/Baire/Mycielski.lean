@@ -15,7 +15,7 @@ import Mathlib.Topology.Baire.CompleteMetrizable
 import Mathlib.Topology.MetricSpace.CantorScheme
 import TauCeti.Topology.Constructions.Pi
 import TauCeti.Topology.MetricSpace.Perfect
-import TauCeti.Topology.MetricSpace.PiNat
+import TauCeti.Topology.MetricSpace.PiNat.Basic
 
 /-!
 # Mycielski's theorem
