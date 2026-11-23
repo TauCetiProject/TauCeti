@@ -5,10 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.MeasureTheory.Integral.IntervalIntegral.Basic
-public import TauCeti.Analysis.PDE.Wave.Propagator
-import Mathlib.Analysis.InnerProductSpace.Calculus
-import Mathlib.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
+public import TauCeti.Analysis.PDE.Wave.Energy
 
 /-!
 # Weak solutions of the forced wave equation on `L²`
@@ -26,13 +23,16 @@ is solved by Duhamel's formula
 in terms of the propagators `cos (tD)` (`TauCeti.waveCosPropagator`) and `D⁻¹ sin (tD)`
 (`TauCeti.waveSinPropagator`). A strong solution on an order-connected set of times containing
 `0` and `t`, whose forcing is integrable between `0` and `t`, is given at time `t` by this formula
-(`TauCeti.IsWaveSolutionOn.eq_waveCosPropagator_add_waveSinPropagator_add_integral`). Conversely,
+(`TauCeti.IsWaveSolutionOn.eq_waveCosPropagator_add_waveSinPropagator_add_integral`; for the
+initial time `0`, `TauCeti.IsWaveSolutionOn.eq_waveDuhamelSolution`). Conversely,
 this file shows that the formula `TauCeti.waveDuhamelSolution f g G` solves the forced problem
 for all data `f, g ∈ L²` and every continuous forcing `G : ℝ → L²`, in the weak sense.
 
-The solution starts from `f` (`TauCeti.waveDuhamelSolution_zero`), it is continuous in time
-(`TauCeti.continuous_waveDuhamelSolution`), linear in the data and the forcing
-(`TauCeti.waveDuhamelSolution_add`, `TauCeti.waveDuhamelSolution_smul`), it is bounded by
+The solution starts from `f` (`TauCeti.waveDuhamelSolution_zero`). At time `t` it is
+homogeneous in the data and the forcing (`TauCeti.waveDuhamelSolution_smul`), and additive in the
+data and in forcings integrable between `0` and `t` (`TauCeti.waveDuhamelSolution_add`); so it is
+linear on pairs of data `f, g ∈ L²` and continuous forcings. For continuous forcing it is
+continuous in time (`TauCeti.continuous_waveDuhamelSolution`), it is bounded by
 `‖u(t)‖ ≤ ‖f‖ + |t| ‖g‖ + |∫₀ᵗ |t - s| ‖G(s)‖ ds|` (`TauCeti.norm_waveDuhamelSolution_le`), and
 for every `φ ∈ L²` whose distributional Laplacian `ψ = Δφ` lies in `L²`, the scalar function
 `t ↦ ⟪φ, u(t)⟫` is twice differentiable, with
@@ -47,19 +47,25 @@ for every `φ ∈ L²` whose distributional Laplacian `ψ = Δφ` lies in `L²`,
 with `ψ = Δφ`, so `u` solves the wave equation in the sense of distributions in space
 (`TauCeti.hasDerivAt_deriv_inner_toLp_waveDuhamelSolution`).
 
-The Duhamel term is differentiated through the subtraction formula
-`D⁻¹ sin ((t - s)D) = D⁻¹ sin (tD) cos (sD) - cos (tD) D⁻¹ sin (sD)`
-(`TauCeti.waveSinPropagator_sub`), which splits it into bounded operators of `t` applied to
-integrals from `0` to `t`. The propagators are self-adjoint
-(`TauCeti.isSelfAdjoint_waveCosPropagator`, `TauCeti.isSelfAdjoint_waveSinPropagator`), so they
-can be moved onto the test function `φ`, where the time derivatives of
-`TauCeti.Analysis.PDE.Wave.Propagator` apply.
+By the subtraction formula `TauCeti.waveSinPropagator_sub`, the retarded term is
+
+`∫₀ᵗ D⁻¹ sin ((t - s)D) G(s) ds =`
+`D⁻¹ sin (tD) ∫₀ᵗ cos (sD) G(s) ds - cos (tD) ∫₀ᵗ D⁻¹ sin (sD) G(s) ds`.
+
+The propagators are self-adjoint (`TauCeti.isSelfAdjoint_waveCosPropagator`,
+`TauCeti.isSelfAdjoint_waveSinPropagator`), so they can be moved onto the test function `φ`. There
+they are differentiated by `TauCeti.hasDerivAt_waveSinPropagator_apply`,
+`∂ₜ (D⁻¹ sin (tD) φ) = cos (tD) φ` for every `φ ∈ L²`, and by
+`TauCeti.hasDerivAt_waveCosPropagator_apply`, `∂ₜ (cos (tD) φ) = D⁻¹ sin (tD) ψ` when
+`Δφ = ψ ∈ L²`.
 
 ## Main declarations
 
 * `TauCeti.waveDuhamelSolution`: the solution formula, with
   `TauCeti.continuous_waveDuhamelSolution`, `TauCeti.waveDuhamelSolution_add` and
-  `TauCeti.waveDuhamelSolution_smul`; and
+  `TauCeti.waveDuhamelSolution_smul`;
+* `TauCeti.IsWaveSolutionOn.eq_waveDuhamelSolution`: strong solutions are given by the formula;
+  and
   `TauCeti.hasDerivAt_inner_waveDuhamelSolution`,
   `TauCeti.hasDerivAt_deriv_inner_waveDuhamelSolution`: the weak wave equation.
 
@@ -117,6 +123,22 @@ theorem waveDuhamelSolution_zero_forcing (f g : Lp F 2 (volume : Measure E)) (t 
     waveDuhamelSolution F f g 0 t = waveCosPropagator F t f + waveSinPropagator F t g := by
   simp [waveDuhamelSolution_def]
 
+/-- With zero data and zero forcing, the solution vanishes at all times. -/
+@[simp]
+theorem waveDuhamelSolution_zero_zero_zero :
+    waveDuhamelSolution F (0 : Lp F 2 (volume : Measure E)) 0 0 = 0 :=
+  funext fun t ↦ by simp
+
+/-- A strong solution of `∂ₜ²u - Δu = G` on an order-connected set of times containing `0` and
+`t`, whose forcing is integrable between `0` and `t`, is given at time `t` by Duhamel's formula
+with data `u(0)` and `u'(0)`. -/
+theorem IsWaveSolutionOn.eq_waveDuhamelSolution {u u' u'' G : ℝ → Lp F 2 (volume : Measure E)}
+    {s : Set ℝ} [s.OrdConnected] (hu : IsWaveSolutionOn u u' u'' G s) (h₀ : 0 ∈ s) {t : ℝ}
+    (ht : t ∈ s) (hG : IntervalIntegrable G volume 0 t) :
+    u t = waveDuhamelSolution F (u 0) (u' 0) G t := by
+  simpa [waveDuhamelSolution_def] using
+    hu.eq_waveCosPropagator_add_waveSinPropagator_add_integral h₀ ht hG
+
 /-- The solution is homogeneous in the data and the forcing. -/
 theorem waveDuhamelSolution_smul (c : ℂ) (f g : Lp F 2 (volume : Measure E))
     (G : ℝ → Lp F 2 (volume : Measure E)) (t : ℝ) :
@@ -124,19 +146,15 @@ theorem waveDuhamelSolution_smul (c : ℂ) (f g : Lp F 2 (volume : Measure E))
   simp only [waveDuhamelSolution_def, map_smul, Pi.smul_apply, intervalIntegral.integral_smul,
     smul_add]
 
-/-- **Superposition**: for continuous forcings, the solution is additive in the data and the
-forcing. -/
+/-- **Superposition**: for forcings integrable between `0` and `t`, the solution at time `t` is
+additive in the data and the forcing. -/
 theorem waveDuhamelSolution_add (f₁ f₂ g₁ g₂ : Lp F 2 (volume : Measure E))
-    {G₁ G₂ : ℝ → Lp F 2 (volume : Measure E)} (hG₁ : Continuous G₁) (hG₂ : Continuous G₂)
-    (t : ℝ) :
+    {G₁ G₂ : ℝ → Lp F 2 (volume : Measure E)} {t : ℝ} (hG₁ : IntervalIntegrable G₁ volume 0 t)
+    (hG₂ : IntervalIntegrable G₂ volume 0 t) :
     waveDuhamelSolution F (f₁ + f₂) (g₁ + g₂) (G₁ + G₂) t =
       waveDuhamelSolution F f₁ g₁ G₁ t + waveDuhamelSolution F f₂ g₂ G₂ t := by
-  have hint {G : ℝ → Lp F 2 (volume : Measure E)} (hG : Continuous G) :
-      IntervalIntegrable (fun s ↦ waveSinPropagator F (t - s) (G s)) volume 0 t :=
-    (continuous_waveSinPropagator_uncurry.comp
-      ((continuous_const.sub continuous_id).prodMk hG)).intervalIntegrable 0 t
   simp only [waveDuhamelSolution_def, map_add, Pi.add_apply,
-    intervalIntegral.integral_add (hint hG₁) (hint hG₂)]
+    intervalIntegral.integral_add hG₁.waveSinPropagator_sub_apply hG₂.waveSinPropagator_sub_apply]
   abel
 
 /-- The **a priori bound** `‖u(t)‖ ≤ ‖f‖ + |t| ‖g‖ + |∫₀ᵗ |t - s| ‖G(s)‖ ds|`. -/
@@ -194,15 +212,11 @@ private theorem integral_waveSinPropagator_sub_apply (hG : Continuous G) (t : �
 
 /-- For continuous forcing, the solution is continuous in time with values in `L²`. -/
 theorem continuous_waveDuhamelSolution (f g : Lp F 2 (volume : Measure E)) (hG : Continuous G) :
-    Continuous (waveDuhamelSolution F f g G) := by
-  have hcos : Continuous (duhamelCos G) :=
-    continuous_iff_continuousAt.2 fun t ↦ (hasDerivAt_duhamelCos hG t).continuousAt
-  have hsin : Continuous (duhamelSin G) :=
-    continuous_iff_continuousAt.2 fun t ↦ (hasDerivAt_duhamelSin hG t).continuousAt
-  rw [funext fun t ↦ (waveDuhamelSolution_def f g G t).trans
-    (by rw [integral_waveSinPropagator_sub_apply hG])]
-  exact ((continuous_waveCosPropagator_apply f).add (continuous_waveSinPropagator_apply g)).add
-    (hcos.waveSinPropagator_apply.sub hsin.waveCosPropagator_apply)
+    Continuous (waveDuhamelSolution F f g G) :=
+  ((continuous_waveCosPropagator_apply f).add (continuous_waveSinPropagator_apply g)).add
+    (intervalIntegral.continuous_parametric_intervalIntegral_of_continuous (a₀ := 0)
+      (f := fun t s ↦ waveSinPropagator F (t - s) (G s)) (continuous_waveSinPropagator_uncurry.comp
+        ((continuous_fst.sub continuous_snd).prodMk (hG.comp continuous_snd))) continuous_id)
 
 variable {φ ψ : Lp F 2 (volume : Measure E)}
 

@@ -10,6 +10,7 @@ public import Mathlib.Analysis.SpecialFunctions.Trigonometric.Sinc
 import Mathlib.Analysis.Calculus.MeanValue
 import Mathlib.Analysis.SpecialFunctions.Trigonometric.Deriv
 import TauCeti.Analysis.SpecialFunctions.Trigonometric.Sinc
+import TauCeti.MeasureTheory.Function.Holder
 import TauCeti.MeasureTheory.Function.Lp.Star
 import TauCeti.MeasureTheory.Integral.Prod
 
@@ -70,7 +71,8 @@ identity and Duhamel's formula.
 * `TauCeti.norm_waveSinPropagator_sub_le`: `t ↦ D⁻¹ sin(tD)` is `1`-Lipschitz in operator norm,
   and `TauCeti.continuous_waveSinPropagator_uncurry`: `(t, g) ↦ D⁻¹ sin(tD) g` is jointly
   continuous. Hence retarded Duhamel integrals are measurable in time
-  (`TauCeti.aestronglyMeasurable_setIntegral_Iio_waveSinPropagator_sub`).
+  (`TauCeti.aestronglyMeasurable_setIntegral_Iio_waveSinPropagator_sub`), and integrable between
+  any two times at which the forcing is (`IntervalIntegrable.waveSinPropagator_sub_apply`).
 * `TauCeti.hasDerivAt_waveSinPropagator_apply`, `TauCeti.hasDerivAt_waveCosPropagator_apply`:
   the time derivatives.
 
@@ -351,17 +353,8 @@ theorem waveSinPropagator_sub (s t : ℝ) :
   rw [waveSinPropagator_def, waveSinPropagator_def, waveSinPropagator_def, waveCosPropagator_def,
     waveCosPropagator_def, Lp.fourierMultiplierCLM_compL_fourierMultiplierCLM,
     Lp.fourierMultiplierCLM_compL_fourierMultiplierCLM, ← Lp.fourierMultiplierCLM_sub]
-  congr 1
-  have hS (τ : ℝ) := (memLp_waveSinSymbol (E := E) τ).coeFn_toLp
-  have hC (τ : ℝ) := (memLp_waveCosSymbol (E := E) τ).coeFn_toLp
-  refine Lp.ext ((hS (t - s)).trans (EventuallyEq.trans ?_ (Lp.coeFn_sub _ _).symm))
-  filter_upwards [hS t, hC s, hC t, hS s,
-    Lp.coeFn_lpSMul (r := ∞) ((memLp_waveSinSymbol (E := E) t).toLp _)
-      ((memLp_waveCosSymbol (E := E) s).toLp _),
-    Lp.coeFn_lpSMul (r := ∞) ((memLp_waveCosSymbol (E := E) t).toLp _)
-      ((memLp_waveSinSymbol (E := E) s).toLp _)] with ξ h₁ h₂ h₃ h₄ h₅ h₆
-  rw [Pi.sub_apply, h₅, h₆, Pi.smul_apply', Pi.smul_apply', h₁, h₂, h₃, h₄, waveSinSymbol_sub,
-    smul_eq_mul, smul_eq_mul]
+  rw [MemLp.toLp_smul_toLp, MemLp.toLp_smul_toLp, ← MemLp.toLp_sub]
+  exact congrArg _ (MemLp.toLp_congr _ _ (.of_forall fun ξ ↦ waveSinSymbol_sub s t ξ))
 
 /-- **The subtraction formula for `cos(tD)`**, on the domain of the Laplacian: if the
 distributional Laplacian of `φ ∈ L²` is the `L²` function `ψ`, then
@@ -455,6 +448,20 @@ theorem continuous_waveCosPropagator_uncurry :
   exact ((continuous_phasePropagator_uncurry _).add ((continuous_phasePropagator_uncurry _).comp
     ((continuous_neg.comp continuous_fst).prodMk continuous_snd))).const_smul (2⁻¹ : ℂ)
 
+/-- **Retarded integrability**: if `G : ℝ → L²` is integrable between `t₀` and `t`, then so is
+`τ ↦ D⁻¹ sin((t - τ)D) G(τ)`, since `‖D⁻¹ sin((t - τ)D)‖ ≤ |t - τ| ≤ |t - t₀|` there. -/
+theorem _root_.IntervalIntegrable.waveSinPropagator_sub_apply
+    {G : ℝ → Lp F 2 (volume : Measure E)} {t₀ t : ℝ} (hG : IntervalIntegrable G volume t₀ t) :
+    IntervalIntegrable (fun τ ↦ waveSinPropagator F (t - τ) (G τ)) volume t₀ t := by
+  refine (hG.smul |t - t₀|).mono_fun ?_ ?_
+  · exact continuous_waveSinPropagator_uncurry.comp_aestronglyMeasurable
+      ((continuous_const.sub continuous_id).aestronglyMeasurable.prodMk hG.def'.1)
+  · filter_upwards [ae_restrict_mem measurableSet_uIoc] with τ hτ
+    rw [Pi.smul_apply, norm_smul, Real.norm_eq_abs, abs_abs]
+    exact ((waveSinPropagator F (t - τ)).le_opNorm _).trans
+      (mul_le_mul_of_nonneg_right ((norm_waveSinPropagator_le _).trans
+        (Set.abs_sub_right_of_mem_uIcc (Set.uIoc_subset_uIcc hτ))) (norm_nonneg _))
+
 /-- For a continuous `G : ℝ → L²`, the map `t ↦ cos(tD) G(t)` is continuous. -/
 theorem _root_.Continuous.waveCosPropagator_apply {G : ℝ → Lp F 2 (volume : Measure E)}
     (hG : Continuous G) :
@@ -469,11 +476,8 @@ theorem _root_.Continuous.waveSinPropagator_apply {G : ℝ → Lp F 2 (volume : 
 
 /-- `t ↦ cos(tD) f` is continuous for every `f ∈ L²`. -/
 theorem continuous_waveCosPropagator_apply (f : Lp F 2 (volume : Measure E)) :
-    Continuous fun t ↦ waveCosPropagator F t f := by
-  simp only [waveCosPropagator_eq_halfWavePropagator, _root_.smul_apply,
-    _root_.add_apply]
-  exact ((continuous_phasePropagator_apply _ f).add
-    ((continuous_phasePropagator_apply _ f).comp continuous_neg)).const_smul (2⁻¹ : ℂ)
+    Continuous fun t ↦ waveCosPropagator F t f :=
+  continuous_waveCosPropagator_uncurry.comp (continuous_id.prodMk continuous_const)
 
 /-- **The derivative of `D⁻¹ sin(tD) g`**: `∂ₜ (D⁻¹ sin(tD) g) = cos(tD) g` in `L²`, for every
 `g ∈ L²`. -/
