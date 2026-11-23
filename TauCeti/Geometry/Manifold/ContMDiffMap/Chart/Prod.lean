@@ -128,8 +128,9 @@ theorem continuous_prodMk_manifoldWeakWhitney :
   dsimp only [D]
   rw [iteratedFDerivWithin_extChartAt_prodMk f g w.property (hf w hw).1 (hg w hw).1 hm,
     iteratedFDerivWithin_extChartAt_prodMk f₀ g₀ w.property (hsrc w hw).1 (hsrc w hw).2 hm]
-  rw [dist_eq_norm, ← ContinuousMultilinearMap.sub_prod_sub, ContinuousMultilinearMap.opNorm_prod,
-    max_lt_iff, ← dist_eq_norm, ← dist_eq_norm]
-  exact ⟨(hf w hw).2, (hg w hw).2⟩
+  -- `ContinuousMultilinearMap.prodL` is an isometry, so the distance of the pairs is the larger
+  -- of the distances of the components.
+  exact (((ContinuousMultilinearMap.prodL 𝕜 (fun _ : Fin m ↦ E) F F').dist_map (_, _) (_, _)).trans
+    Prod.dist_eq).trans_lt (max_lt (hf w hw).2 (hg w hw).2)
 
 end ContMDiffMap

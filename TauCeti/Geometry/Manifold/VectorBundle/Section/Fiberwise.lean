@@ -111,11 +111,10 @@ theorem continuous_map_frameTopology (hcover : ∀ x : M, ∃ i, x ∈ U i) :
   -- The bundled maps evaluate by their defining formulas.
   have hg (p : D i × F) : g p = ((e' j) ⟨((p.1 : U' j) : M), ϕ _ ((e i).symm _ p.2)⟩).2 := rfl
   have hincl (x : D i) : incl x = ⟨((x : U' j) : M), x.property⟩ := rfl
-  have hid (x : D i) : (ContMDiffMap.id : C^n⟮I, D i; I, D i⟯) x = x := rfl
   refine hc.congr fun s ↦ ?_
   ext x
   simp only [ContMDiffMap.restrict_apply, ContMDiffMap.comp_apply, ContMDiffMap.prodMk_apply,
-    Bundle.Trivialization.frameCoordinates_apply, map_apply, hg, hincl, hid]
+    ContMDiffMap.id_apply, Bundle.Trivialization.frameCoordinates_apply, map_apply, hg, hincl]
   have hx : ((x : U' j) : M) ∈ (e i).baseSet := hU i x.property
   rw [(e i).symm_apply_apply_mk hx]
 
