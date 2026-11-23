@@ -9,7 +9,6 @@ public import TauCeti.Analysis.ODE.Propagator
 public import Mathlib.Analysis.Normed.Algebra.Exponential
 public import Mathlib.LinearAlgebra.Determinant
 public import Mathlib.LinearAlgebra.Trace
-public import TauCeti.Topology.Algebra.Module.Trace
 import Mathlib.Analysis.SpecialFunctions.Exponential
 import Mathlib.MeasureTheory.Integral.IntervalIntegral.LebesgueDifferentiationThm
 import TauCeti.Analysis.Calculus.FDeriv.Det.Basic
@@ -31,17 +30,15 @@ both sides `1`.
 
 The proof differentiates `t ↦ det N_P(t, s)`. At an invertible `A` with inverse `B`, the
 derivative of the determinant is `H ↦ det A * trace (B H)`
-(`TauCeti.hasFDerivAt_linearMapDet_of_comp_eq_one`, from Jacobi's formula at the identity for
-matrices). Along the propagator, at almost every `t`, `H = P(t) N` with `N = N_P(t, s)` and
-`B = N⁻¹`, so the derivative is `det N * trace P(t)`. The determinant of the absolutely
-continuous curve `N_P(·, s)` is absolutely continuous, so it is the absolutely continuous solution
-of the scalar equation `y' = trace P(t) y`, `y(s) = 1`, which is `exp (∫ trace P)` by uniqueness
-in the linear Carathéodory theorem.
+(`ContinuousLinearMap.hasFDerivAt_det_of_comp_eq_one`, Jacobi's formula). Along the propagator,
+at almost every `t`, `H = P(t) N` with `N = N_P(t, s)` and `B = N⁻¹`, so the derivative is
+`det N * trace P(t)`. The determinant of the absolutely continuous curve `N_P(·, s)` is absolutely
+continuous, so it is the absolutely continuous solution of the scalar equation
+`y' = trace P(t) y`, `y(s) = 1`, which is `exp (∫ trace P)` by uniqueness in the linear
+Carathéodory theorem.
 
 ## Main results
 
-* `TauCeti.hasFDerivAt_linearMapDet_one`, `TauCeti.hasFDerivAt_linearMapDet_of_comp_eq_one`:
-  Jacobi's formula for the determinant of continuous endomorphisms of a finite-dimensional space.
 * `TauCeti.ae_hasDerivAt_det_propagator`: `t ↦ det N_P(t, s)` has derivative
   `trace P(t) * det N_P(t, s)` at almost every `t`.
 * `TauCeti.det_propagator`, `TauCeti.det_toMatrix'_propagator`: Liouville's formula, basis-free
@@ -57,61 +54,6 @@ public section
 open MeasureTheory Set intervalIntegral
 
 namespace TauCeti
-
-section Jacobi
-
-variable {𝕜 : Type*} [RCLike 𝕜] {E : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E]
-  [FiniteDimensional 𝕜 E]
-
-open scoped Matrix.Norms.Operator in
-/-- **Jacobi's formula at the identity.** The derivative of `f ↦ det f` at `1` is the trace. -/
-theorem hasFDerivAt_linearMapDet_one :
-    HasFDerivAt (fun f : E →L[𝕜] E ↦ LinearMap.det (f : E →ₗ[𝕜] E)) (traceCLM 𝕜 E) 1 := by
-  let b := Module.finBasis 𝕜 E
-  let L := ContinuousLinearMap.toMatrixCLM b
-  have hdet : HasFDerivAt (Matrix.det : Matrix (Fin (Module.finrank 𝕜 E))
-      (Fin (Module.finrank 𝕜 E)) 𝕜 → 𝕜)
-      ⟨Matrix.traceLinearMap (Fin (Module.finrank 𝕜 E)) 𝕜 𝕜, continuous_id.matrix_trace⟩ (L 1) := by
-    rw [ContinuousLinearMap.toMatrixCLM_apply, ContinuousLinearMap.toLinearMap_one,
-      Module.End.one_eq_id, LinearMap.toMatrix_id]
-    exact Matrix.hasFDerivAt_det_one
-  convert hdet.comp _ L.hasFDerivAt using 1
-  · funext f
-    simp [L]
-  · ext H
-    simp only [traceCLM_apply, LinearMap.trace_eq_matrix_trace 𝕜 b]
-    rfl
-
-/-- **Jacobi's formula at an invertible endomorphism.** If `A ∘ B = 1`, the derivative of
-`f ↦ det f` at `A` is `H ↦ det A * trace (B ∘ H)`. -/
-theorem hasFDerivAt_linearMapDet_of_comp_eq_one {A B : E →L[𝕜] E} (hAB : A ∘L B = 1) :
-    HasFDerivAt (fun f : E →L[𝕜] E ↦ LinearMap.det (f : E →ₗ[𝕜] E))
-      (LinearMap.det (A : E →ₗ[𝕜] E) • (traceCLM 𝕜 E).comp
-        (ContinuousLinearMap.compL 𝕜 E E E B)) A := by
-  -- In finite dimension a right inverse is a left inverse.
-  have hBA : B ∘L A = 1 := by
-    have h : (B : E →ₗ[𝕜] E) ∘ₗ (A : E →ₗ[𝕜] E) = LinearMap.id :=
-      (LinearMap.comp_eq_id_comm 𝕜 E).1 (by
-        ext x
-        simpa using congrArg (fun F : E →L[𝕜] E ↦ F x) hAB)
-    ext x
-    simpa using congrArg (fun F : E →ₗ[𝕜] E ↦ F x) h
-  have hdet : HasFDerivAt (fun f : E →L[𝕜] E ↦ LinearMap.det (f : E →ₗ[𝕜] E)) (traceCLM 𝕜 E)
-      (ContinuousLinearMap.compL 𝕜 E E E B A) := by
-    rw [ContinuousLinearMap.compL_apply, hBA]
-    exact hasFDerivAt_linearMapDet_one
-  have h := (hdet.comp A (ContinuousLinearMap.compL 𝕜 E E E B).hasFDerivAt).const_mul
-    (LinearMap.det (A : E →ₗ[𝕜] E))
-  refine (h.congr_of_eventuallyEq (Filter.Eventually.of_forall fun f ↦ ?_)).congr_fderiv ?_
-  · simp only [Function.comp_apply, ContinuousLinearMap.compL_apply]
-    rw [← LinearMap.det_comp]
-    congr 1
-    ext x
-    simpa using congrArg (fun F : E →L[𝕜] E ↦ F (f x)) hAB.symm
-  · ext H
-    simp
-
-end Jacobi
 
 variable {𝕜 : Type*} [RCLike 𝕜] {E : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E]
   [NormedSpace ℝ E] [IsScalarTower ℝ 𝕜 E] {P : ℝ → E →L[𝕜] E} {a b s t : ℝ}
@@ -129,7 +71,8 @@ theorem ae_hasDerivAt_det_propagator (hP : IntegrableOn P (Icc a b)) (hs : s ∈
   have := FiniteDimensional.completeSpace 𝕜 E
   filter_upwards [ae_hasDerivAt_propagator_left hP hs] with t hd ht
   have ht' : t ∈ Icc a b := Ioo_subset_Icc_self ht
-  have hJ := hasFDerivAt_linearMapDet_of_comp_eq_one (propagator_comp_propagator_swap hP ht' hs)
+  have hJ := ContinuousLinearMap.hasFDerivAt_det_of_comp_eq_one
+    (propagator_comp_propagator_swap hP ht' hs)
   refine ((hJ.restrictScalars ℝ).comp_hasDerivAt (f := fun r ↦ propagator P r s) t
     (hd ht)).congr_deriv ?_
   simp only [ContinuousLinearMap.coe_restrictScalars', smul_apply,
@@ -182,7 +125,7 @@ theorem det_propagator (hP : IntegrableOn P (Icc a b)) (hs : s ∈ Icc a b) (ht 
       have hd := ((hasFDerivAt_exp (𝕂 := ℝ)).comp_hasDerivAt r
         (hr (by rw [uIcc_of_le hab]; exact Ioo_subset_Icc_self hr') s hs'))
       convert hd using 1
-      · rfl
+      · simp only [w, Function.comp_def]
       · simp [M, w, mul_comm])
   have hyc : ContinuousOn y (Icc a b) := by simpa [uIcc_of_le hab] using hyac.continuousOn
   have hwc : ContinuousOn w (Icc a b) := by simpa [uIcc_of_le hab] using hwac.continuousOn
