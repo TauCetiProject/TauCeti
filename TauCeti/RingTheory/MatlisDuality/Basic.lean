@@ -42,9 +42,8 @@ Right `A`-modules are modules over `Aᵐᵒᵖ`.
 ## Main results
 
 * `TauCeti.subsingleton_matlisDual_iff`: `D_R N` is zero exactly when `N` is, for every `N`.
-* `TauCeti.MatlisDual.bijective_map` and `TauCeti.MatlisDual.bijective_mapOp`: for modules of
-  finite length over `R`, dualizing is a bijection on morphisms; for right modules only the target
-  needs finite length.
+* `TauCeti.MatlisDual.bijective_map` and `TauCeti.MatlisDual.bijective_mapOp`: dualizing is a
+  bijection on morphisms into a module of finite length over `R`.
 * `TauCeti.MatlisDual.exists_retract_of_retract`: a retract of `D_R N` dualizes to a retract of
   `N`, for `N` of finite length over `R`.
 
@@ -421,21 +420,28 @@ theorem MatlisDual.evalEquivOp_apply [Module Aᵐᵒᵖ N] [IsScalarTower R Aᵐ
   (rfl)
 
 /-- **Matlis duality is fully faithful on left modules.** Dualizing is a bijection from morphisms
-of left `A`-modules of finite length over `R` to morphisms of their dual right modules. -/
+of left `A`-modules `N → N'` to morphisms of their dual right modules, for `N'` of finite length
+over `R`; the source `N` is arbitrary. -/
 theorem MatlisDual.bijective_map [Module A N] [IsScalarTower R A N]
     {N' : Type*} [AddCommGroup N'] [Module R N'] [Module A N'] [IsScalarTower R A N']
     (hE : ∀ 𝔪 : Ideal R, 𝔪.IsMaximal → Module.length R (R ⧸ 𝔪 →ₗ[R] E) = 1)
-    (hN : IsFiniteLength R N) (hN' : IsFiniteLength R N') :
+    (hN' : IsFiniteLength R N') :
     Function.Bijective (map (R := R) (A := A) (E := E) : (N →ₗ[A] N') → _) := by
+  -- Evaluation `N → D (D N)` is a map of left modules for every `N`.
+  let ev : N →ₗ[A] MatlisDual R E (MatlisDual R E N) :=
+    { evalₗ R E N with
+      map_smul' := fun a x => by
+        ext φ
+        simp }
   refine ⟨fun g h hgh => ?_, fun F => ⟨(evalEquiv hE hN').symm.toLinearMap ∘ₗ
-    mapOp F ∘ₗ (evalEquiv hE hN).toLinearMap, ?_⟩⟩
+    mapOp F ∘ₗ ev, ?_⟩⟩
   · ext x
     refine (bijective_evalₗ hE hN').1 (MatlisDual.ext fun φ => ?_)
     simpa using congr(equivLinearMap R E N ($hgh φ) x)
   · ext φ x
     rw [map_apply, ← evalEquiv_apply (A := A) hE hN', LinearMap.comp_apply,
       LinearEquiv.coe_coe, LinearEquiv.apply_symm_apply]
-    simp
+    simp [ev]
 
 /-- **Matlis duality is fully faithful on right modules.** Dualizing is a bijection from morphisms
 of right `A`-modules `N → N'` to morphisms of their dual left modules, for `N'` of finite length
