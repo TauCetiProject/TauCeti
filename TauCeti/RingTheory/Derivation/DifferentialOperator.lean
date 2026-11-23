@@ -481,6 +481,14 @@ theorem _root_.LinearMap.mulLeft_mem_differentialOperators_zero {R A : Type*} [C
     LinearMap.mulLeft R a ∈ differentialOperators R A A A 0 :=
   mem_differentialOperators_zero_iff.2 fun b x ↦ by simp [mul_left_comm]
 
+/-- Multiplication by an element of `A` on an `A`-module is a differential operator of order
+`0`. -/
+theorem _root_.Algebra.lsmul_mem_differentialOperators_zero {R A M : Type*} [CommSemiring R]
+    [CommSemiring A] [Algebra R A] [AddCommGroup M] [Module R M] [Module A M]
+    [IsScalarTower R A M] (a : A) :
+    Algebra.lsmul R R M a ∈ differentialOperators R A M M 0 :=
+  mem_differentialOperators_zero_iff.2 fun b x ↦ smul_comm a b x
+
 /-! ### First-order operators on the algebra -/
 
 section FirstOrder
