@@ -9,7 +9,12 @@ public import Mathlib.Algebra.Polynomial.Eval.Defs
 public import Mathlib.Analysis.Complex.Basic
 public import Mathlib.Data.Set.Finite.Basic
 import Mathlib.Algebra.Polynomial.AlgebraMap
-import TauCeti.Analysis.Complex.CanonicalProduct.Quadratic.Basic
+import Mathlib.Algebra.Polynomial.BigOperators
+import Mathlib.Data.Finset.Interval
+import Mathlib.Tactic.ComputeDegree
+import Mathlib.Topology.Algebra.InfiniteSum.Basic
+import TauCeti.Algebra.Polynomial.Coeff.Basic
+import TauCeti.Analysis.Complex.CanonicalProduct.Quadratic.Factor
 
 /-!
 # Polynomial representation of finite paired quadratic products
@@ -25,6 +30,9 @@ When only finitely many `γ n` are nonzero, the entire product is therefore a co
 
 * `TauCeti.pairedPartialPoly`: the finite partial-product real polynomial.
 * `TauCeti.eval_map_pairedPartialPoly`: evaluation of its complexification on `ℂ`.
+* `TauCeti.coeff_pairedPartialPoly_nonneg`: nonnegativity of coefficients when `0 ≤ c`.
+* `TauCeti.coeff_pairedPartialPoly_mono`: monotonicity of coefficients in `s : Finset ℕ`.
+* `TauCeti.coeff_pairedPartialPoly_top_pos`: strict positivity of the top-degree coefficient.
 * `TauCeti.exists_polynomial_eval_of_eq_mul_pow_tprod_one_add_div_sq`: a paired quadratic product
   with finitely many nonzero `γ n` is a complex polynomial.
 -/
@@ -59,6 +67,52 @@ theorem eval_map_pairedPartialPoly (c : ℝ) (m : ℕ) (γ : ℕ → ℝ) (s : F
   rw [one_add_div_sq_eq_one_add_inv_sq_mul]
   push_cast
   ring
+
+/-- Every coefficient of `pairedPartialPoly c m γ s` is nonnegative when `0 ≤ c`. -/
+theorem coeff_pairedPartialPoly_nonneg {c : ℝ} (hc : 0 ≤ c) (m : ℕ) (γ : ℕ → ℝ)
+    (s : Finset ℕ) : ∀ d, 0 ≤ (pairedPartialPoly c m γ s).coeff d := by
+  classical
+  have hC : ∀ d, 0 ≤ (C c).coeff d := fun d ↦ by rw [coeff_C]; split_ifs <;> positivity
+  have hX : ∀ d, 0 ≤ (X ^ m : ℝ[X]).coeff d := fun d ↦ by
+    rw [coeff_X_pow]; split_ifs <;> norm_num
+  have hfactor (n : ℕ) : ∀ d, 0 ≤ (1 + C ((γ n)⁻¹ ^ 2) * X ^ 2).coeff d := fun d ↦ by
+    rw [coeff_add, coeff_one, coeff_C_mul_X_pow]; split_ifs <;> positivity
+  have hprod : ∀ d, 0 ≤ (∏ n ∈ s, (1 + C ((γ n)⁻¹ ^ 2) * X ^ 2)).coeff d := by
+    refine Finset.prod_induction _ (fun p : ℝ[X] ↦ ∀ d, 0 ≤ p.coeff d)
+      (fun _ _ hp hq d ↦ coeff_mul_nonneg hp hq d) (fun d ↦ ?_) (fun n _ ↦ hfactor n)
+    rw [coeff_one]; split_ifs <;> norm_num
+  rw [pairedPartialPoly_def]
+  exact coeff_mul_nonneg (coeff_mul_nonneg hC hX) hprod
+
+/-- The coefficients of `pairedPartialPoly c m γ s` are monotone with respect to `s : Finset ℕ`. -/
+theorem coeff_pairedPartialPoly_mono {c : ℝ} (hc : 0 ≤ c) (m : ℕ) (γ : ℕ → ℝ)
+    {t s : Finset ℕ} (hts : t ⊆ s) (d : ℕ) :
+    (pairedPartialPoly c m γ t).coeff d ≤ (pairedPartialPoly c m γ s).coeff d := by
+  classical
+  have hmono : Monotone (fun u ↦ (pairedPartialPoly c m γ u).coeff d) :=
+    Finset.monotone_iff_forall_le_insert.mpr fun u n hn ↦ by
+      have hstep : pairedPartialPoly c m γ (insert n u) =
+          pairedPartialPoly c m γ u * (1 + C ((γ n)⁻¹ ^ 2) * X ^ 2) := by
+        simp only [pairedPartialPoly_def, Finset.prod_insert hn]; ring
+      rw [hstep]
+      exact coeff_le_coeff_mul_one_add_C_mul_X_pow (coeff_pairedPartialPoly_nonneg hc m γ u)
+        (sq_nonneg _) 2 d
+  exact hmono hts
+
+/-- If every `n ∈ t` has `γ n ≠ 0`, the degree-`(m + 2 * t.card)` coefficient of
+`pairedPartialPoly c m γ t` is `c * ∏ n ∈ t, (γ n)⁻¹ ^ 2 > 0`. -/
+theorem coeff_pairedPartialPoly_top_pos {c : ℝ} (hc : 0 < c) (m : ℕ) (γ : ℕ → ℝ)
+    (t : Finset ℕ) (ht : ∀ n ∈ t, γ n ≠ 0) :
+    0 < (pairedPartialPoly c m γ t).coeff (m + 2 * t.card) := by
+  classical
+  rw [pairedPartialPoly_def]
+  rw [mul_assoc, coeff_C_mul, mul_comm (X ^ m), add_comm m, coeff_mul_X_pow]
+  have hdeg : ∀ n ∈ t, (1 + C ((γ n)⁻¹ ^ 2) * X ^ 2 : ℝ[X]).natDegree ≤ 2 := fun n _ ↦ by
+    compute_degree!
+  rw [mul_comm 2 t.card,
+    coeff_prod_of_natDegree_le t (fun n ↦ 1 + C ((γ n)⁻¹ ^ 2) * X ^ 2) 2 hdeg]
+  refine mul_pos hc (Finset.prod_pos fun n hn ↦ ?_)
+  simp [coeff_one, sq_pos_of_ne_zero (ht n hn)]
 
 /-- A paired quadratic product with only finitely many nonzero entries `γ n` is the evaluation of a
 complex polynomial. -/

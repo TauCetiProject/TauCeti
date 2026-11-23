@@ -89,7 +89,8 @@ example :
   constructor
   · have hpow : AnalyticAt ℂ (fun z : ℂ ↦ z ^ 2) 0 := by fun_prop
     have hexp : AnalyticAt ℂ exp 0 := by fun_prop
-    have hmul : (fun z : ℂ ↦ z ^ 2 * exp z) = (fun z : ℂ ↦ z ^ 2) * exp := rfl
+    have hmul : (fun z : ℂ ↦ z ^ 2 * exp z) = (fun z : ℂ ↦ z ^ 2) * exp := by
+      ext z; rw [Pi.mul_apply]
     rw [hmul, analyticOrderAt_mul hpow hexp, hexp.analyticOrderAt_eq_zero.mpr (exp_ne_zero 0),
       add_zero]
     have hmono : analyticOrderAt (fun z : ℂ ↦ (z - 0) ^ 2) 0 = 2 :=

@@ -200,7 +200,8 @@ theorem AnalyticOnNhd.divisor_eq_of_eq_sub_pow_smul_of_ne
     (hfg : ∀ z, f z = (z - z₀) ^ m • g z) (hw : w ≠ z₀) :
     MeromorphicOn.divisor g U w = MeromorphicOn.divisor f U w := by
   by_cases hwU : w ∈ U
-  · have hsmul : f = (fun z : 𝕜 ↦ (z - z₀) ^ m) • g := funext hfg
+  · have hsmul : f = (fun z : 𝕜 ↦ (z - z₀) ^ m) • g := by
+      ext z; simp only [hfg, Pi.smul_apply']
     have hf : AnalyticOnNhd 𝕜 f U := fun z hz ↦ by
       rw [hsmul]
       exact ((analyticAt_id.sub analyticAt_const).pow m).smul (hg z hz)

@@ -37,45 +37,40 @@ private theorem re_eq_zero_of_mem_divisor_support {g : ℂ → ℂ} (hg : Differ
     (hρ : ρ ∈ (MeromorphicOn.divisor g Set.univ).support) : ρ.re = 0 :=
   hzeros ρ ((hg.analyticAt ρ).apply_eq_zero_of_divisor_ne_zero hρ)
 
-/-- Pairing equivalence between `(Σ _ : {ρ ∈ S | 0 < ρ.im}, Bool)` and `S` for a
-negation-invariant set `S ⊆ ℂ` with `ρ.im ≠ 0` on `S`, sending `(ρ, true) ↦ ρ` and
-`(ρ, false) ↦ -ρ`. -/
+/-- Pairing equivalence between `Spos ⊕ Spos` and `S` for a negation-invariant set `S ⊆ ℂ` with
+`ρ.im ≠ 0` on `S`, where `Spos = {ρ ∈ S | 0 < ρ.im}`, sending `Sum.inl ρ ↦ ρ` and
+`Sum.inr ρ ↦ -ρ`. -/
 private noncomputable def imagPairEquiv {S : Set ℂ} (hneg : ∀ {ρ}, ρ ∈ S → -ρ ∈ S)
     (him : ∀ {ρ}, ρ ∈ S → ρ.im ≠ 0) :
-    (Σ _ : {ρ : ℂ | ρ ∈ S ∧ 0 < ρ.im}, Bool) ≃ S where
-  toFun
-    | ⟨ρ, true⟩ => ⟨ρ.val, ρ.property.1⟩
-    | ⟨ρ, false⟩ => ⟨-ρ.val, hneg ρ.property.1⟩
-  invFun σ :=
-    letI := Classical.propDecidable
-    if h : 0 < (σ : ℂ).im then ⟨⟨σ, σ.property, h⟩, true⟩
-    else ⟨⟨-σ, hneg σ.property, lt_of_le_of_ne (by simpa using not_lt.mp h)
-      (Ne.symm (by simpa using him σ.property))⟩, false⟩
-  left_inv
-    | ⟨ρ, true⟩ => by
-      dsimp only
-      split_ifs with h
-      · rfl
-      · exact absurd ρ.property.2 h
-    | ⟨ρ, false⟩ => by
-      dsimp only
-      split_ifs with h
-      · simp only [neg_im, Left.neg_pos_iff] at h
-        exact absurd h (not_lt.mpr ρ.property.2.le)
-      · simp
-  right_inv σ := by
-    dsimp only
-    split_ifs <;> simp
+    {ρ : ℂ | ρ ∈ S ∧ 0 < ρ.im} ⊕ {ρ : ℂ | ρ ∈ S ∧ 0 < ρ.im} ≃ S :=
+  letI := Classical.propDecidable
+  let P : Set S := {ρ : S | 0 < (ρ : ℂ).im}
+  let ePos : {ρ : ℂ | ρ ∈ S ∧ 0 < ρ.im} ≃ P :=
+    (Equiv.subtypeSubtypeEquivSubtypeInter (· ∈ S) (fun ρ : ℂ ↦ 0 < ρ.im)).symm
+  let eNegS : S ≃ S :=
+    Equiv.subtypeEquiv (Equiv.neg ℂ) fun _ ↦ ⟨fun h ↦ hneg h, fun h ↦ by simpa using hneg h⟩
+  let eComp : P ≃ (Pᶜ : Set S) :=
+    Equiv.subtypeEquiv eNegS fun ρ ↦ by
+      have him_neg : ((eNegS ρ : S) : ℂ).im = -(ρ : ℂ).im := by
+        simp [eNegS]
+      simp only [P, Set.mem_compl_iff, Set.mem_ofPred_eq, him_neg, Left.neg_pos_iff, not_lt]
+      exact ⟨fun h ↦ h.le, fun h ↦ lt_of_le_of_ne h (Ne.symm (him ρ.property))⟩
+  (Equiv.sumCongr ePos (ePos.trans eComp)).trans (Equiv.Set.sumCompl P)
 
-private theorem imagPairEquiv_true {S : Set ℂ} (hneg : ∀ {ρ}, ρ ∈ S → -ρ ∈ S)
+private theorem imagPairEquiv_inl {S : Set ℂ} (hneg : ∀ {ρ}, ρ ∈ S → -ρ ∈ S)
     (him : ∀ {ρ}, ρ ∈ S → ρ.im ≠ 0) (ρ : {ρ : ℂ | ρ ∈ S ∧ 0 < ρ.im}) :
-    ((imagPairEquiv hneg him ⟨ρ, true⟩ : S) : ℂ) = ρ :=
-  rfl
+    ((imagPairEquiv hneg him (Sum.inl ρ) : S) : ℂ) = ρ := by
+  dsimp only [imagPairEquiv]
+  rw [Equiv.trans_apply, Equiv.sumCongr_apply, Sum.map_inl, Equiv.Set.sumCompl_apply_inl,
+    Equiv.subtypeSubtypeEquivSubtypeInter_symm_apply_coe_coe]
 
-private theorem imagPairEquiv_false {S : Set ℂ} (hneg : ∀ {ρ}, ρ ∈ S → -ρ ∈ S)
+private theorem imagPairEquiv_inr {S : Set ℂ} (hneg : ∀ {ρ}, ρ ∈ S → -ρ ∈ S)
     (him : ∀ {ρ}, ρ ∈ S → ρ.im ≠ 0) (ρ : {ρ : ℂ | ρ ∈ S ∧ 0 < ρ.im}) :
-    ((imagPairEquiv hneg him ⟨ρ, false⟩ : S) : ℂ) = -ρ :=
-  rfl
+    ((imagPairEquiv hneg him (Sum.inr ρ) : S) : ℂ) = -ρ := by
+  dsimp only [imagPairEquiv]
+  rw [Equiv.trans_apply, Equiv.sumCongr_apply, Sum.map_inr, Equiv.Set.sumCompl_apply_inr]
+  simp only [Equiv.trans_apply, Equiv.subtypeEquiv_apply, Equiv.neg_apply]
+  rw [Equiv.subtypeSubtypeEquivSubtypeInter_symm_apply_coe_coe]
 
 /-- Grouping each upper-half-plane zero `ρ` (`Im ρ > 0`) of an even entire function `g` with `-ρ`
 rewrites `divisorProductOne g z` as a product over `{ρ ∈ d.support | 0 < ρ.im}`. -/
@@ -94,11 +89,8 @@ theorem divisorProductOne_eq_tprod_im_pos {g : ℂ → ℂ} (hg : Differentiable
   have hdiv_neg (ρ : ℂ) :
       MeromorphicOn.divisor g Set.univ (-ρ) = MeromorphicOn.divisor g Set.univ ρ :=
     (Complex.analyticOnNhd_univ_iff_differentiable.mpr hg).divisor_neg_eq_of_even heven ρ
-  have hF_mult : Multipliable (fun σ : (MeromorphicOn.divisor g Set.univ).support ↦
-      weierstrassFactor 1 ((σ : ℂ)⁻¹ * z) ^ (MeromorphicOn.divisor g Set.univ σ).toNat) :=
-    (hasProd_divisorProductOne_support hsum z).multipliable
   rw [divisorProductOne_def]
-  generalize MeromorphicOn.divisor g Set.univ = d at h0_notMem hsupp_re hdiv_neg hsum hF_mult ⊢
+  generalize MeromorphicOn.divisor g Set.univ = d at h0_notMem hsupp_re hdiv_neg hsum ⊢
   have hsupp_im_ne {ρ : ℂ} (hρ : ρ ∈ d.support) : ρ.im ≠ 0 := fun him ↦ by
     have hρ0 : ρ = 0 := Complex.ext (by simp [hsupp_re hρ]) (by simp [him])
     exact h0_notMem (hρ0 ▸ hρ)
@@ -106,17 +98,33 @@ theorem divisorProductOne_eq_tprod_im_pos {g : ℂ → ℂ} (hg : Differentiable
     rw [Function.mem_support, hdiv_neg]; exact hρ
   let e := imagPairEquiv hsupp_neg hsupp_im_ne
   let F : d.support → ℂ := fun σ ↦ weierstrassFactor 1 ((σ : ℂ)⁻¹ * z) ^ (d σ).toNat
-  -- Reindex along `±ρ`, split the sigma product, and collapse each pair.
+  let Spos : Set ℂ := {ρ : ℂ | ρ ∈ d.support ∧ 0 < ρ.im}
+  have hSpos_sub : Spos ⊆ d.support := fun _ h ↦ h.1
+  have hsum_pos : Summable (fun ρ : Spos ↦ ((d ρ.val).toNat : ℝ) * ‖(ρ.val)⁻¹‖ ^ 2) :=
+    (hsum.comp_injective (Set.inclusion_injective hSpos_sub)).congr fun _ ↦
+      by simp only [Function.comp_apply]
+  have h1 : Multipliable (fun ρ ↦ F (e (Sum.inl ρ))) := by
+    have h := ((Complex.hasProdLocallyUniformlyOn_weierstrassFactor_one_pow
+      (fun ρ : Spos ↦ (ρ.val)⁻¹)
+      (fun ρ ↦ (d ρ.val).toNat) hsum_pos).hasProd (Set.mem_univ z)).multipliable
+    simpa only [F, e, Spos, imagPairEquiv_inl] using h
+  have h2 : Multipliable (fun ρ ↦ F (e (Sum.inr ρ))) := by
+    have hsum_neg : Summable (fun ρ : Spos ↦ ((d ρ.val).toNat : ℝ) * ‖(-(ρ.val))⁻¹‖ ^ 2) := by
+      simpa only [inv_neg, norm_neg] using hsum_pos
+    have h := ((Complex.hasProdLocallyUniformlyOn_weierstrassFactor_one_pow
+      (fun ρ : Spos ↦ (-(ρ.val))⁻¹)
+      (fun ρ ↦ (d ρ.val).toNat) hsum_neg).hasProd (Set.mem_univ z)).multipliable
+    simpa only [F, e, Spos, imagPairEquiv_inr, hdiv_neg] using h
+  -- Reindex along `±ρ`, split the sum product, and collapse each pair.
   calc (∏' σ : d.support, F σ)
-      = ∏' p : Σ _ : {ρ : ℂ | ρ ∈ d.support ∧ 0 < ρ.im}, Bool, F (e p) := (e.tprod_eq F).symm
-    _ = ∏' ρ : {ρ : ℂ | ρ ∈ d.support ∧ 0 < ρ.im}, ∏' b : Bool, F (e ⟨ρ, b⟩) :=
-        Multipliable.tprod_sigma' (fun _ ↦ Multipliable.of_finite) (e.multipliable_iff.mpr hF_mult)
+      = ∏' p, F (e p) := (e.tprod_eq F).symm
+    _ = (∏' ρ, F (e (Sum.inl ρ))) * (∏' ρ, F (e (Sum.inr ρ))) := h1.tprod_sum h2
+    _ = ∏' ρ, F (e (Sum.inl ρ)) * F (e (Sum.inr ρ)) := (h1.tprod_mul h2).symm
     _ = ∏' ρ : {ρ : ℂ | ρ ∈ d.support ∧ 0 < ρ.im},
           (1 + z ^ 2 / (ρ.val.im : ℂ) ^ 2) ^ (d ρ.val).toNat := by
         refine tprod_congr fun ρ ↦ ?_
-        rw [tprod_fintype, Fintype.prod_bool]
         dsimp only [F]
-        rw [imagPairEquiv_true, imagPairEquiv_false, hdiv_neg]
+        rw [imagPairEquiv_inl, imagPairEquiv_inr, hdiv_neg]
         exact weierstrassFactor_one_imag_pair (hsupp_re ρ.property.1) (d ρ.val).toNat z
 
 /-- Every entire even function `g` with `g 0 ≠ 0`, zeros on the imaginary axis, and inverse-square

@@ -10,6 +10,7 @@ public import Mathlib.Topology.Algebra.InfiniteSum.UniformOn
 import Mathlib.Analysis.Normed.Module.MultipliableUniformlyOn
 import Mathlib.Analysis.SpecialFunctions.Log.Summable
 import Mathlib.Topology.Algebra.InfiniteSum.Order
+import TauCeti.Analysis.Complex.CanonicalProduct.Quadratic.Factor
 import TauCeti.Topology.Algebra.InfiniteSum.Real
 import TauCeti.Topology.UniformSpace.UniformConvergence.Comp
 
@@ -23,8 +24,6 @@ entries, avoiding conditional branching in convergence and coefficient proofs.
 
 ## Main results
 
-* `TauCeti.one_add_div_sq_eq_one_add_inv_sq_mul`: algebraic normal form of the paired quadratic
-  factor.
 * `TauCeti.hasProdUniformlyOn_one_add_div_sq`, `TauCeti.hasProd_one_add_div_sq`, and
   `TauCeti.tendstoUniformlyOn_mul_pow_one_add_div_sq`: compact uniform and pointwise convergence
   from inverse-square summability `∑' n, (γ n)⁻¹ ^ 2 < ∞`.
@@ -42,13 +41,6 @@ open Complex Filter Metric Topology
 open scoped BigOperators
 
 namespace TauCeti
-
-/-- Under totalized division, `1 + z ^ 2 / (y : ℂ) ^ 2` equals `1 + ((y⁻¹ ^ 2 : ℝ) : ℂ) * z ^ 2`
-for every `y : ℝ` (including `y = 0`). -/
-theorem one_add_div_sq_eq_one_add_inv_sq_mul (y : ℝ) (z : ℂ) :
-    1 + z ^ 2 / (y : ℂ) ^ 2 = 1 + (((y⁻¹ ^ 2 : ℝ) : ℂ)) * z ^ 2 := by
-  push_cast
-  rw [div_eq_inv_mul, inv_pow, mul_comm]
 
 /-- Square-summability of `(γ n)⁻¹` yields uniform convergence on every compact set `K ⊆ ℂ` of the
 paired quadratic infinite product. -/

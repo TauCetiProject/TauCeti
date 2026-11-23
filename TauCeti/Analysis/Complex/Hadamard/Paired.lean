@@ -7,7 +7,6 @@ module
 
 public import Mathlib.Analysis.Analytic.Order
 public import TauCeti.Analysis.Complex.GrowthOrder.Centered
-import Mathlib.Analysis.Calculus.LogDeriv
 import TauCeti.Analysis.Calculus.Deriv.Parity
 import TauCeti.Analysis.Complex.CanonicalProduct.Quadratic.Basic
 import TauCeti.Analysis.Complex.CanonicalProduct.Quadratic.Divisor
