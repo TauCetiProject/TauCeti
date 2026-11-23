@@ -35,7 +35,9 @@ term by `2^{ks} 2^{-ks} = 1` the series is bounded by Hölder's inequality in `�
 
 `‖⟨u, w⟩‖ ≤ C ‖B‖ ‖u‖_{B^s_{p,q}} ‖w‖_{B^{-s}_{p',q'}}`,
 
-where `C` is independent of the exponents, of `B` and of `u, w`.
+where `C` is independent of the exponents, of `B` and of `u, w`. The double series
+`∑ₖ ∑_{|j - k| < L} ∫ B ((Δₖ u) x) ((Δⱼ w) x) dx` converges absolutely, so the pairing is symmetric:
+pairing `w` with `u` through the flipped map `(w, u) ↦ B u w` gives `⟨u, w⟩`.
 
 The pairing extends the action of tempered distributions on test functions, from either side. If
 `w` is a scalar Schwartz function `ψ`, then `⟨u, w⟩ = u ψ` for the pairing `B v c = c • v`
@@ -60,9 +62,13 @@ the half of the duality `(B^s_{p,q})* = B^{-s}_{p',q'}`, `p, q < ∞`, that hold
   pairing is the sum of the series `∑ₖ ∑_{k + 1 - L ≤ j < k + L} ∫ B ((Δₖ u) x) ((Δⱼ w) x) dx`.
 * `ContinuousLinearMap.exists_norm_besovPairing_le`: `‖⟨u, w⟩‖ ≤ C ‖B‖ ‖u‖ ‖w‖`, with `C`
   independent of the exponents, of `B` and of `u, w`.
+* `ContinuousLinearMap.besovPairing_flip_apply`: the pairing through `B.flip` at smoothness `-s`
+  and swapped exponents is the pairing through `B` with its arguments swapped.
 * `TauCeti.BesovSpace.toDistr_apply_eq_besovPairing` and
   `TauCeti.BesovSpace.besovPairing_eq_toDistr_apply`: on scalar Schwartz functions the pairing is
-  the action of a tempered distribution.
+  the action of a tempered distribution; `TauCeti.BesovSpace.besovPairing_toBesovSpaceCLM_left`
+  and `TauCeti.BesovSpace.besovPairing_toBesovSpaceCLM_right` are their `simp` forms for the
+  canonical inclusion `SchwartzMap.toBesovSpaceCLM`.
 * `TauCeti.BesovSpace.exists_norm_toDistr_apply_le`: the duality bound
   `‖⟨v, f⟩‖ ≤ C ‖v‖_{B^{-s}_{p',q'}} ‖f‖_{B^s_{p,q}}`.
 
@@ -101,28 +107,33 @@ private def enlargedBlock (w : BesovSpace G φ s p q) (k : ℕ) : Lp G p (volume
   ∑ j ∈ Finset.Ico (k + 1 - φ.littlewoodPaleyOverlap φ) (k + φ.littlewoodPaleyOverlap φ), w.block j
 
 omit [Fact (1 ≤ q)] in
+/-- The weighted sum `2^{ks} ∑_{k + 1 - L ≤ j < k + L} ‖Δⱼ w‖` of the norms of the blocks of `w`
+near `k` is controlled by the weighted blocks of `w` of index within `L` of `k`. -/
+private theorem mul_sum_norm_block_le (w : BesovSpace G φ s p q) (k : ℕ) :
+    2 ^ (s * k) * ∑ j ∈ Finset.Ico (k + 1 - φ.littlewoodPaleyOverlap φ)
+        (k + φ.littlewoodPaleyOverlap φ), ‖w.block j‖ ≤
+      2 ^ (|s| * φ.littlewoodPaleyOverlap φ) * ∑ j ∈ Finset.Ico (k - φ.littlewoodPaleyOverlap φ)
+        (k + φ.littlewoodPaleyOverlap φ), w.weightedBlockNorms j := by
+  have hsub : Finset.Ico (k + 1 - φ.littlewoodPaleyOverlap φ) (k + φ.littlewoodPaleyOverlap φ) ⊆
+      Finset.Ico (k - φ.littlewoodPaleyOverlap φ) (k + φ.littlewoodPaleyOverlap φ) :=
+    Finset.Ico_subset_Ico (by omega) le_rfl
+  rw [Finset.mul_sum, Finset.mul_sum]
+  refine (Finset.sum_le_sum fun j hj ↦ ?_).trans (Finset.sum_le_sum_of_subset_of_nonneg hsub
+    fun j _ _ ↦ by rw [weightedBlockNorms_apply]; positivity)
+  rw [weightedBlockNorms_apply, ← mul_assoc]
+  exact mul_le_mul_of_nonneg_right
+    (Real.rpow_mul_natCast_le_of_mem_Ico' one_le_two s (hsub hj)) (norm_nonneg _)
+
+omit [Fact (1 ≤ q)] in
 /-- The weighted enlarged block `2^{ks} Δ⁺ₖ w` is controlled by the weighted blocks of `w` of index
 within `L` of `k`. -/
 private theorem norm_smul_enlargedBlock_le (w : BesovSpace G φ s p q) (k : ℕ) :
     ‖(((2 : ℝ) ^ (s * k) : ℝ) : ℂ) • enlargedBlock w k‖ ≤
       2 ^ (|s| * φ.littlewoodPaleyOverlap φ) * ∑ j ∈ Finset.Ico (k - φ.littlewoodPaleyOverlap φ)
         (k + φ.littlewoodPaleyOverlap φ), w.weightedBlockNorms j := by
-  rw [norm_smul, Complex.norm_of_nonneg (by positivity), Finset.mul_sum]
-  calc 2 ^ (s * k) * ‖enlargedBlock w k‖ ≤
-        ∑ j ∈ Finset.Ico (k + 1 - φ.littlewoodPaleyOverlap φ) (k + φ.littlewoodPaleyOverlap φ),
-          2 ^ (s * k) * ‖w.block j‖ := by
-        rw [← Finset.mul_sum]
-        exact mul_le_mul_of_nonneg_left (norm_sum_le _ _) (by positivity)
-    _ ≤ ∑ j ∈ Finset.Ico (k + 1 - φ.littlewoodPaleyOverlap φ) (k + φ.littlewoodPaleyOverlap φ),
-          2 ^ (|s| * φ.littlewoodPaleyOverlap φ) * w.weightedBlockNorms j := by
-        refine Finset.sum_le_sum fun j hj ↦ ?_
-        rw [weightedBlockNorms_apply, ← mul_assoc]
-        refine mul_le_mul_of_nonneg_right ?_ (norm_nonneg _)
-        rw [Finset.mem_Ico] at hj
-        refine Real.rpow_mul_le_rpow_abs_mul_mul_rpow_mul one_le_two s (abs_sub_le_iff.2 ⟨?_, ?_⟩)
-        all_goals rw [sub_le_iff_le_add']; exact_mod_cast (by omega)
-    _ ≤ _ := Finset.sum_le_sum_of_subset_of_nonneg (Finset.Ico_subset_Ico (by omega) le_rfl)
-          fun j _ _ ↦ by rw [weightedBlockNorms_apply]; positivity
+  rw [norm_smul, Complex.norm_of_nonneg (by positivity), enlargedBlock]
+  exact (mul_le_mul_of_nonneg_left (norm_sum_le _ _) (by positivity)).trans
+    (mul_sum_norm_block_le w k)
 
 /-- The weighted enlarged blocks `(2^{ks} Δ⁺ₖ w)ₖ` of `w ∈ B^s_{p,q}`, an `ℓ^q` sequence of `Lᵖ`
 functions. -/
@@ -233,10 +244,9 @@ private theorem summable_lpPairing (B : F →L[ℂ] G →L[ℂ] K) (u : BesovSpa
     (w : BesovSpace G φ (-s) p' q') :
     Summable fun k ↦
       B.lpPairing volume p p' (u.weightedBlocks k) (enlargedWeightedBlocks w k) :=
-  .of_norm (by
-    simpa using (lp.holder (p := q) (q := q') 1 (fun _ : ℕ ↦ B.lpPairing volume p p')
-      (K := ‖B.lpPairing volume p p'‖) (fun _ ↦ le_rfl) u.weightedBlocks
-      (enlargedWeightedBlocks w)).property.summable (by simp))
+  ((lp.memℓp u.weightedBlocks).holder 1 (lp.memℓp (enlargedWeightedBlocks w))
+    (fun _ : ℕ ↦ B.lpPairing volume p p') (K := ‖B.lpPairing volume p p'‖)
+    fun _ ↦ le_rfl).summable_of_one
 
 omit [Fact (1 ≤ q)] [Fact (1 ≤ q')] [q.HolderConjugate q'] in
 /-- The `k`-th term of the pairing is `∫ B ((Δₖ u) x) ((Δ⁺ₖ w) x) dx`: the weights `2^{ks}` and
@@ -285,17 +295,95 @@ theorem besovPairing_apply (B : F →L[ℂ] G →L[ℂ] K) (u : BesovSpace F φ 
         ∫ x, B (u.block k x) (w.block j x) :=
   (hasSum_besovPairing B u w).tsum_eq.symm
 
+omit [Fact (1 ≤ q)] [Fact (1 ≤ q')] in
+/-- The integrals `∫ B ((Δₖ u) x) ((Δⱼ w) x) dx` over the pairs `(k, j)` with
+`k + 1 - L ≤ j < k + L` form a summable family: they are bounded by
+`‖B‖ 2^{|s| L} (2^{ks} ‖Δₖ u‖) ∑_{k - L ≤ i < k + L} 2^{-is} ‖Δᵢ w‖`, an `ℓ¹` sequence by
+Hölder's inequality in `ℓ^q × ℓ^{q'}`. -/
+private theorem summable_integral_block (B : F →L[ℂ] G →L[ℂ] K) (u : BesovSpace F φ s p q)
+    (w : BesovSpace G φ (-s) p' q') :
+    Summable fun x : ℕ × ℕ ↦
+      if x.2 ∈ Finset.Ico (x.1 + 1 - φ.littlewoodPaleyOverlap φ) (x.1 + φ.littlewoodPaleyOverlap φ)
+      then ∫ y, B (u.block x.1 y) (w.block x.2 y) else 0 := by
+  set L := φ.littlewoodPaleyOverlap φ
+  have hub : Summable fun k ↦
+      u.weightedBlockNorms k * ∑ j ∈ Finset.Ico (k - L) (k + L), w.weightedBlockNorms j :=
+    ((lp.memℓp u.weightedBlockNorms).holder 1 ((lp.memℓp w.weightedBlockNorms).sum_Ico_sub_add L)
+      (fun _ ↦ ContinuousLinearMap.mul ℝ ℝ)
+      fun _ ↦ ContinuousLinearMap.opNorm_mul_le ℝ ℝ).summable_of_one
+  refine .of_norm_bounded (g := fun x ↦ if x.2 ∈ Finset.Ico (x.1 + 1 - L) (x.1 + L)
+    then ‖B‖ * (‖u.block x.1‖ * ‖w.block x.2‖) else 0) ?_ fun x ↦ ?_
+  · refine (summable_prod_of_nonneg fun x ↦ by dsimp only; split_ifs <;> positivity).2
+      ⟨fun k ↦ summable_of_ne_finset_zero (s := Finset.Ico (k + 1 - L) (k + L))
+          fun j hj ↦ ite_eq_right hj,
+        .of_nonneg_of_le (fun k ↦ tsum_nonneg fun j ↦ by dsimp only; split_ifs <;> positivity)
+          (fun k ↦ ?_) (hub.mul_left (‖B‖ * 2 ^ (|-s| * L)))⟩
+    rw [tsum_eq_sum (s := Finset.Ico (k + 1 - L) (k + L)) fun j hj ↦ ite_eq_right hj,
+      Finset.sum_ite_of_true fun j hj ↦ hj]
+    simp only [← Finset.mul_sum]
+    -- Split `‖Δₖ u‖ = 2^{ks} ‖Δₖ u‖ ⬝ 2^{-ks}` and bound the second factor by the window sum.
+    have hweight : (2 : ℝ) ^ (s * k) * 2 ^ (-s * k) = 1 := by
+      rw [← Real.rpow_add two_pos]
+      simp
+    calc ‖B‖ * (‖u.block k‖ * ∑ j ∈ Finset.Ico (k + 1 - L) (k + L), ‖w.block j‖) =
+          ‖B‖ * u.weightedBlockNorms k *
+            (2 ^ (-s * k) * ∑ j ∈ Finset.Ico (k + 1 - L) (k + L), ‖w.block j‖) := by
+          rw [weightedBlockNorms_apply]
+          linear_combination (‖B‖ * ‖u.block k‖ *
+            ∑ j ∈ Finset.Ico (k + 1 - L) (k + L), ‖w.block j‖) * hweight.symm
+      _ ≤ ‖B‖ * u.weightedBlockNorms k *
+            (2 ^ (|-s| * L) * ∑ j ∈ Finset.Ico (k - L) (k + L), w.weightedBlockNorms j) := by
+          refine mul_le_mul_of_nonneg_left (mul_sum_norm_block_le w k) ?_
+          rw [weightedBlockNorms_apply]
+          positivity
+      _ = _ := by ring
+  · split_ifs
+    · rw [← lpPairing_eq_integral (p := p) (q := p'), ← mul_assoc]
+      exact norm_lpPairing_apply_apply_le B _ _
+    · simp
+
+/-- **The flipped pairing.** Pairing `w ∈ B^{-s}_{p',q'}` with `u ∈ B^s_{p,q}` through the flipped
+bilinear map `(w, u) ↦ B u w` is the pairing of `u` with `w` through `B`. Here `u'` is `u` viewed as
+an element of `B^{-(-s)}_{p,q}`, that is, any element with the same distribution as `u`. -/
+theorem besovPairing_flip_apply (B : F →L[ℂ] G →L[ℂ] K) (u : BesovSpace F φ s p q)
+    (w : BesovSpace G φ (-s) p' q') {u' : BesovSpace F φ (-(-s)) p q}
+    (hu : u'.toDistr = u.toDistr) :
+    B.flip.besovPairing φ (-s) p' p q' q w u' = B.besovPairing φ s p p' q q' u w := by
+  obtain ⟨S, hf⟩ := summable_integral_block B u w
+  set L := φ.littlewoodPaleyOverlap φ
+  -- Both series are fiberwise sums of the same summable family over the pairs `|j - k| < L`.
+  have hR : HasSum (fun k ↦ ∑ j ∈ Finset.Ico (k + 1 - L) (k + L),
+      ∫ y, B (u.block k y) (w.block j y)) S := by
+    refine hf.prod_fiberwise fun k ↦ ?_
+    rw [← Finset.sum_ite_of_true (fun j hj ↦ hj) _ fun _ ↦ (0 : K)]
+    exact hasSum_sum_of_ne_finset_zero fun j hj ↦ ite_eq_right hj
+  have hL : HasSum (fun k ↦ ∑ j ∈ Finset.Ico (k + 1 - L) (k + L),
+      ∫ y, B.flip (w.block k y) (u'.block j y)) S := by
+    refine ((Equiv.prodComm ℕ ℕ).hasSum_iff.2 hf).prod_fiberwise fun k ↦ ?_
+    have hmem : ∀ j, j ∈ Finset.Ico (k + 1 - L) (k + L) ↔ k ∈ Finset.Ico (j + 1 - L) (j + L) :=
+      fun j ↦ by simp only [Finset.mem_Ico]; omega
+    have hterm : ∀ j, (if k ∈ Finset.Ico (j + 1 - L) (j + L) then
+        ∫ y, B (u.block j y) (w.block k y) else 0) =
+        if j ∈ Finset.Ico (k + 1 - L) (k + L) then
+          ∫ y, B.flip (w.block k y) (u'.block j y) else 0 := fun j ↦ by
+      simp only [hmem, flip_apply, block_eq_of_toDistr_eq hu]
+    have h := hasSum_sum_of_ne_finset_zero (L := .unconditional ℕ)
+      (f := fun j ↦ if k ∈ Finset.Ico (j + 1 - L) (j + L) then
+        ∫ y, B (u.block j y) (w.block k y) else 0)
+      (s := Finset.Ico (k + 1 - L) (k + L)) fun j hj ↦ ite_eq_right (mt (hmem j).2 hj)
+    rw [Finset.sum_congr rfl fun j hj ↦ (hterm j).trans (ite_eq_left hj)] at h
+    exact h
+  rw [(hasSum_besovPairing B.flip w u').unique hL, (hasSum_besovPairing B u w).unique hR]
+
 /-- **The pairing as a limit.** If the `k`-th term `∫ B ((Δₖ u) x) ((Δ⁺ₖ w) x) dx` of the pairing
 is `a k` and the partial sums of `a` tend to `y`, then the pairing is `y`. -/
 private theorem besovPairing_eq_of_tendsto (B : F →L[ℂ] G →L[ℂ] K) {u : BesovSpace F φ s p q}
     {w : BesovSpace G φ (-s) p' q'} {a : ℕ → K}
     (ha : ∀ k, ∫ x, B (u.block k x) (enlargedBlock w k x) = a k) {y : K}
     (hy : Tendsto (fun N ↦ ∑ k ∈ Finset.range N, a k) atTop (𝓝 y)) :
-    B.besovPairing φ s p p' q q' u w = y := by
-  refine tendsto_nhds_unique ?_ hy
-  rw [besovPairing_apply_eq_tsum_lpPairing]
-  simpa only [lpPairing_weightedBlocks_enlargedWeightedBlocks, ha] using
-    (summable_lpPairing B u w).hasSum.tendsto_sum_nat
+    B.besovPairing φ s p p' q q' u w = y :=
+  tendsto_nhds_unique (by simpa only [← integral_enlargedBlock, ha] using
+    (hasSum_besovPairing B u w).tendsto_sum_nat) hy
 
 variable (φ s) in
 /-- **Hölder's inequality for the Besov pairing.** There is `C`, independent of the exponents, of
@@ -331,18 +419,15 @@ namespace TauCeti.BesovSpace
 variable {φ : ContDiffBump (0 : E)} {s : ℝ} {p p' q q' : ℝ≥0∞} [Fact (1 ≤ p)] [Fact (1 ≤ p')]
   [Fact (1 ≤ q)] [Fact (1 ≤ q')] [p.HolderConjugate p'] [q.HolderConjugate q']
 
-omit [Fact (1 ≤ q)] in
 /-- The `Lᵖ` block of an element of a Besov space whose distribution is a scalar Schwartz function
 `ψ` is the Schwartz function `Δⱼ ψ`. -/
 private theorem block_eq_toLp {u : BesovSpace ℂ φ s p q} {ψ : 𝓢(E, ℂ)}
     (hu : u.toDistr = (ψ : 𝓢'(E, ℂ))) (j : ℕ) :
     u.block j = (SchwartzMap.fourierMultiplierCLM ℂ
       (fun ξ ↦ (φ.inhomogeneousLittlewoodPaley j ξ : ℂ)) ψ).toLp p volume :=
-  LinearMap.ker_eq_bot.1 Lp.ker_toTemperedDistributionCLM_eq_bot <| by
-    simp only [ContinuousLinearMap.coe_coe, Lp.toTemperedDistributionCLM_apply, coe_block, hu,
-      littlewoodPaleyBlock_toTemperedDistributionCLM_eq, Lp.toTemperedDistribution_toLp_eq]
+  (block_eq_of_toDistr_eq (hu.trans (SchwartzMap.toDistr_toBesovSpaceCLM φ s p q ψ).symm) j).trans
+    (block_toBesovSpaceCLM ψ j)
 
-omit [Fact (1 ≤ q)] in
 /-- The enlarged block of an element of a Besov space whose distribution is a scalar Schwartz
 function `ψ` is the Schwartz function `∑ⱼ Δⱼ ψ`. -/
 private theorem enlargedBlock_eq_toLp {u : BesovSpace ℂ φ s p q} {ψ : 𝓢(E, ℂ)}
@@ -406,6 +491,22 @@ theorem besovPairing_eq_toDistr_apply {u : BesovSpace ℂ φ s p q} {ψ : 𝓢(E
         rw [← sum_apply, ← sum_apply, ← enlargedLittlewoodPaleyBlock_eq_sum_Ico,
           enlargedLittlewoodPaleyBlock_littlewoodPaleyBlock φ
             fun _ _ hjk ξ ↦ φ.inhomogeneousLittlewoodPaley_mul_eq_zero φ hjk ξ]
+
+/-- The pairing of a scalar Schwartz function `ψ ∈ B^s_{p,q}` with `w ∈ B^{-s}_{p',q'}(E, G)` for
+the scalar multiplication `(c, v) ↦ c • v` is the action `w ψ` of the tempered distribution `w`. -/
+@[simp]
+theorem besovPairing_toBesovSpaceCLM_left (ψ : 𝓢(E, ℂ)) (w : BesovSpace G φ (-s) p' q') :
+    (ContinuousLinearMap.lsmul ℂ ℂ).besovPairing φ s p p' q q'
+      (SchwartzMap.toBesovSpaceCLM ℂ φ s p q ψ) w = w.toDistr ψ :=
+  besovPairing_eq_toDistr_apply (SchwartzMap.toDistr_toBesovSpaceCLM φ s p q ψ) w
+
+/-- The pairing of `u ∈ B^s_{p,q}(E, F)` with a scalar Schwartz function `ψ ∈ B^{-s}_{p',q'}` for
+the scalar multiplication `(v, c) ↦ c • v` is the action `u ψ` of the tempered distribution `u`. -/
+@[simp]
+theorem besovPairing_toBesovSpaceCLM_right (u : BesovSpace F φ s p q) (ψ : 𝓢(E, ℂ)) :
+    (ContinuousLinearMap.lsmul ℂ ℂ).flip.besovPairing φ s p p' q q' u
+      (SchwartzMap.toBesovSpaceCLM ℂ φ (-s) p' q' ψ) = u.toDistr ψ :=
+  (toDistr_apply_eq_besovPairing u (SchwartzMap.toDistr_toBesovSpaceCLM φ (-s) p' q' ψ)).symm
 
 /-- **The duality bound.** There is a constant `C`, depending only on the bump function `φ` and
 on `s`, such that for all Hölder conjugate pairs `p, p'` and `q, q'` of exponents in `[1, ∞]`,
