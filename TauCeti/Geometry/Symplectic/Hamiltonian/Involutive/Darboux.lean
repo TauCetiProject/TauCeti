@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Geometry.Manifold.LocalDiffeomorph
+public import TauCeti.Geometry.Symplectic.Hamiltonian.DarbouxChart
 public import TauCeti.Geometry.Symplectic.Hamiltonian.Involutive
 import TauCeti.Geometry.Manifold.DifferentialForm.Pullback.PartialDiffeomorph
 import TauCeti.Geometry.Manifold.Flow.Straightening
@@ -211,9 +212,7 @@ private theorem exists_darbouxChart_of_shear (hx : I.IsInteriorPoint x)
             fderiv ℝ a (Φ y).2 (mvfderiv I Φ y w).2 i) * (mvfderiv I Φ y v).2 i)) :
     ∃ chart : PartialDiffeomorph I 𝓘(ℝ, (ι → ℝ) × (ι → ℝ)) M ((ι → ℝ) × (ι → ℝ)) ∞,
       x ∈ chart.source ∧ chart x = (0, F x) ∧ (∀ y ∈ chart.source, (chart y).2 = F y) ∧
-        ∀ y ∈ chart.source, ∀ v w : TangentSpace I y, SmoothBundleForm.eval₂ σ y v w =
-          ∑ i, ((mvfderiv I chart y v).1 i * (mvfderiv I chart y w).2 i -
-            (mvfderiv I chart y w).1 i * (mvfderiv I chart y v).2 i) := by
+        σ.IsDarbouxChart chart := by
   set χ : (ι → ℝ) × (ι → ℝ) → (ι → ℝ) × (ι → ℝ) := fun q ↦ (q.1 - (Φ x).1 + a q.2, q.2) with hχ
   have hball {q : (ι → ℝ) × (ι → ℝ)} (hq : q ∈ Metric.ball (Φ x) r) :
       q.2 ∈ Metric.ball (Φ x).2 r :=
@@ -248,7 +247,7 @@ private theorem exists_darbouxChart_of_shear (hx : I.IsInteriorPoint x)
     (hχs.contMDiffOn.comp (Φ.contMDiffOn_toFun.mono inter_subset_left) fun _ hy ↦ hy.2) hSo hxS
     hx (by simp) (injective_mvfderiv_iff.1 hinj) (by simp [finrank_prod, ← hdim, two_mul])
   obtain ⟨chart, hxc, hcS, hcκ⟩ := hloc.exists_partialDiffeomorph_eqOn hSo hxS
-  refine ⟨chart, hxc, ?_, fun y hy ↦ ?_, fun y hy v w ↦ ?_⟩
+  refine ⟨chart, hxc, ?_, fun y hy ↦ ?_, ⟨fun y hy v w ↦ ?_⟩⟩
   · have ha0' : a (F x) = 0 := hΦF x hxΦ ▸ ha0
     rw [← hcκ hxc]
     simp [hχ, ha0', hΦF x hxΦ]
@@ -268,9 +267,7 @@ theorem exists_darbouxChart_snd_eq_of_isInteriorPoint (hx : I.IsInteriorPoint x)
     (hreg : IsRegularPoint I 𝓘(ℝ, ι → ℝ) F x) (hdim : 2 * Fintype.card ι = finrank ℝ E) :
     ∃ chart : PartialDiffeomorph I 𝓘(ℝ, (ι → ℝ) × (ι → ℝ)) M ((ι → ℝ) × (ι → ℝ)) ∞,
       x ∈ chart.source ∧ chart x = (0, F x) ∧ (∀ y ∈ chart.source, (chart y).2 = F y) ∧
-        ∀ y ∈ chart.source, ∀ v w : TangentSpace I y, SmoothBundleForm.eval₂ σ y v w =
-          ∑ i, ((mvfderiv I chart y v).1 i * (mvfderiv I chart y w).2 i -
-            (mvfderiv I chart y w).1 i * (mvfderiv I chart y v).2 i) := by
+        σ.IsDarbouxChart chart := by
   classical
   obtain ⟨Φ, hxΦ, hΦ⟩ :=
     exists_partialDiffeomorph_mvfderiv_hamiltonianVectorField_eq_of_isInteriorPoint hσ hF hcomm
@@ -278,12 +275,9 @@ theorem exists_darbouxChart_snd_eq_of_isInteriorPoint (hx : I.IsInteriorPoint x)
   -- The second component of the differential of `Φ` is `dF`.
   have hsnd {y : M} (hy : y ∈ Φ.source) (v : TangentSpace I y) :
       (mvfderiv I Φ y v).2 = mvfderiv I F y v := by
-    have h := (ContinuousLinearMap.snd ℝ (ι → ℝ) (ι → ℝ)).mvfderiv_comp_apply
-      (Φ.mdifferentiableAt (by simp) hy) v
-    simp only [ContinuousLinearMap.coe_snd'] at h
-    have heq : (Prod.snd ∘ Φ : M → ι → ℝ) =ᶠ[𝓝 y] F :=
+    have heq : (fun z ↦ (Φ z).2) =ᶠ[𝓝 y] F :=
       eventuallyEq_of_mem (Φ.open_source.mem_nhds hy) fun z hz ↦ (hΦ z hz).1
-    rw [← h, heq.mvfderiv_eq]
+    rw [← (Φ.mdifferentiableAt (by simp) hy).mvfderiv_snd_apply, heq.mvfderiv_eq]
   -- In the flow box, `σ` is a closed two-form `μ` with `μ(∂_{tᵢ}, ·) = dcᵢ`.
   obtain ⟨μ, hμdef⟩ : ∃ μ : (ι → ℝ) × (ι → ℝ) → ((ι → ℝ) × (ι → ℝ)) [⋀^Fin 2]→L[ℝ] ℝ,
       μ = mpullbackWithin 𝓘(ℝ, (ι → ℝ) × (ι → ℝ)) I Φ.symm Φ.target σ.val := ⟨_, rfl⟩
@@ -324,9 +318,7 @@ theorem exists_darbouxChart_snd_eq [BoundarylessManifold I M]
     (hreg : IsRegularPoint I 𝓘(ℝ, ι → ℝ) F x) (hdim : 2 * Fintype.card ι = finrank ℝ E) :
     ∃ chart : PartialDiffeomorph I 𝓘(ℝ, (ι → ℝ) × (ι → ℝ)) M ((ι → ℝ) × (ι → ℝ)) ∞,
       x ∈ chart.source ∧ chart x = (0, F x) ∧ (∀ y ∈ chart.source, (chart y).2 = F y) ∧
-        ∀ y ∈ chart.source, ∀ v w : TangentSpace I y, SmoothBundleForm.eval₂ σ y v w =
-          ∑ i, ((mvfderiv I chart y v).1 i * (mvfderiv I chart y w).2 i -
-            (mvfderiv I chart y w).1 i * (mvfderiv I chart y v).2 i) :=
+        σ.IsDarbouxChart chart :=
   exists_darbouxChart_snd_eq_of_isInteriorPoint hσ hF hcomm BoundarylessManifold.isInteriorPoint
     hreg hdim
 
@@ -388,9 +380,7 @@ theorem exists_darbouxChart_castLE_eq [BoundarylessManifold I M] [T2Space M] {n 
         ((Fin n → ℝ) × (Fin n → ℝ)) ∞,
       x ∈ chart.source ∧ (chart x).1 = 0 ∧
         (∀ y ∈ chart.source, ∀ i, (chart y).2 (Fin.castLE hkn i) = F y i) ∧
-        (∀ y ∈ chart.source, ∀ v w : TangentSpace I y, SmoothBundleForm.eval₂ σ y v w =
-          ∑ i, ((mvfderiv I chart y v).1 i * (mvfderiv I chart y w).2 i -
-            (mvfderiv I chart y w).1 i * (mvfderiv I chart y v).2 i)) ∧
+        σ.IsDarbouxChart chart ∧
         ∀ y ∈ chart.source, ∀ i, mvfderiv I chart y (σ.hamiltonianVectorField (F · i) y) =
           (Pi.single (Fin.castLE hkn i) 1, 0) := by
   -- Extend the `F_i` to `n` functions with the same properties, and take Darboux coordinates
@@ -402,7 +392,7 @@ theorem exists_darbouxChart_castLE_eq [BoundarylessManifold I M] [T2Space M] {n 
       (chart y).2 (Fin.castLE hkn i) = F y i := by
     rw [hcG y hy, ← congrFun (hGF i) y]
   refine ⟨chart, hx, by rw [hcx], fun y hy ↦ hcF hy, hform, fun y hy i ↦ ?_⟩
-  exact chart.mvfderiv_hamiltonianVectorField_eq_of_eval₂_eq hy (hform y hy)
+  exact chart.mvfderiv_hamiltonianVectorField_eq_of_eval₂_eq hy (hform.eval₂_eq y hy)
     (eventuallyEq_of_mem (chart.open_source.mem_nhds hy) fun z hz ↦ (hcF hz i).symm)
 
 end IsSymplectic

@@ -202,9 +202,9 @@ theorem tendsto_hamiltonianAction_of_tendsto_integral_norm_sq_sliceDefect
   have hX : Continuous (uncurry X) :=
     (ω.contDiff_hamiltonianVectorField_uncurry (n := 0) (by simpa using hH)).continuous
   have hloop : ∀ i, Continuous fun t ↦ u (φ i, t) := fun i ↦
-    continuous_slice_of_continuousOn hu.continuousOn (hφa i)
+    continuous_slice_of_continuousOn hu.continuousOn fun t ↦ ⟨hφa i, mem_univ t⟩
   have hdefc : ∀ i, Continuous fun t ↦ sliceDefect X u (φ i, t) := fun i ↦
-    continuous_sliceDefect_slice hu hX (hφa i)
+    continuous_sliceDefect_slice (isOpen_Ioi.prod isOpen_univ) hu hX fun t ↦ ⟨hφa i, mem_univ t⟩
   -- Integrals of continuous functions of `(t, u(s_i, t))` over a period converge.
   have hdct : ∀ Φ : ℝ × V → ℝ, Continuous Φ →
       Tendsto (fun i ↦ ∫ t in (0 : ℝ)..1, Φ (t, u (φ i, t))) l
