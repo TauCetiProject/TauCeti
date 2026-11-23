@@ -23,7 +23,7 @@ linear trivialization also induces the original fibre equivalence at the image p
 `Bundle.Trivialization.continuousLinearMapAt_pullback`), and reads coordinates back into the fibre
 as the original one does (`Bundle.Trivialization.symm_pullback`). Hom coordinates between
 pullbacks by two different base maps agree with the original source and target coordinates
-(`ContinuousLinearMap.inCoordinates_pullback_of_mem`), yielding continuity comparisons in
+(`ContinuousLinearMap.inCoordinates_pullback`), yielding continuity comparisons in
 coordinates (`TauCeti.continuousAt_inCoordinates_pullback_iff`); Hom-bundle continuity statements
 live in `TauCeti.Topology.VectorBundle.Pullback.Hom`.
 -/
@@ -138,6 +138,21 @@ theorem continuousLinearMapAt_pullback (e : Trivialization F (π F V)) [e.IsLine
     pullback_apply]
   exact ((congrFun (e.continuousLinearMapAt_apply 𝕜 (f x)) v).trans (e.linearMapAt_apply v)).symm
 
+/-- A pulled-back continuous linear fibre chart inverse, extended by zero off the base set, is
+the original one at the image point. -/
+@[simp]
+theorem symmL_pullback (e : Trivialization F (π F V)) [e.IsLinear 𝕜]
+    (f : K) (x : B') :
+    (e.pullback f).symmL 𝕜 x = e.symmL 𝕜 (f x) := by
+  ext y
+  by_cases hx : x ∈ (e.pullback f).baseSet
+  · have hx' : f x ∈ e.baseSet := by simpa only [pullback_baseSet, Set.mem_preimage] using hx
+    rw [symmL_apply _ hx, symm_pullback e f hx']
+    exact (symmL_apply e hx' y).symm
+  · have hx' : f x ∉ e.baseSet := by simpa only [pullback_baseSet, Set.mem_preimage] using hx
+    rw [symmL_apply_of_notMem _ hx]
+    exact (symmL_apply_of_notMem e hx' y).symm
+
 end Bundle.Trivialization
 
 namespace Bundle.Trivialization
@@ -168,20 +183,29 @@ variable {𝕜 B C X F G K L : Type*} [NontriviallyNormedField 𝕜]
   [FunLike L X C] [ContinuousMapClass L X C]
 
 /-- The hom-bundle coordinates between two pullbacks are the original source and target
-coordinates at their image points, on the common chart domain. -/
-theorem inCoordinates_pullback_of_mem (f : K) (g : L) (x₀ x y₀ y : X)
-    (A : V (f x) →L[𝕜] W (g y))
-    (hV : f x ∈ (trivializationAt F V (f x₀)).baseSet)
-    (hW : g y ∈ (trivializationAt G W (g y₀)).baseSet) :
+coordinates at their image points. -/
+@[simp]
+theorem inCoordinates_pullback (f : K) (g : L) (x₀ x y₀ y : X)
+    (A : V (f x) →L[𝕜] W (g y)) :
     inCoordinates F ((f : X → B) *ᵖ V) G ((g : X → C) *ᵖ W) x₀ x y₀ y A =
       inCoordinates F V G W (f x₀) (f x) (g y₀) (g y) A := by
-  have hV' : x ∈ (trivializationAt F ((f : X → B) *ᵖ V) x₀).baseSet := hV
-  have hW' : y ∈ (trivializationAt G ((g : X → C) *ᵖ W) y₀).baseSet := hW
-  -- The pullback fibres inherit the original module instances; `erw` resolves these synonyms.
-  erw [inCoordinates_eq hV' hW', inCoordinates_eq hV hW]
-  simp only [trivializationAt, FiberBundle.pullback_trivializationAt',
-    Trivialization.continuousLinearEquivAt_pullback]
-  rfl
+  ext v
+  have h1 : (trivializationAt G ((g : X → C) *ᵖ W) y₀).continuousLinearMapAt 𝕜 y =
+      (trivializationAt G W (g y₀)).continuousLinearMapAt 𝕜 (g y) := by
+    simp only [trivializationAt, FiberBundle.pullback_trivializationAt',
+      Trivialization.continuousLinearMapAt_pullback]
+    rfl
+  have h2 : (trivializationAt F ((f : X → B) *ᵖ V) x₀).symmL 𝕜 x =
+      (trivializationAt F V (f x₀)).symmL 𝕜 (f x) := by
+    simp only [trivializationAt, FiberBundle.pullback_trivializationAt',
+      Trivialization.symmL_pullback]
+    rfl
+  erw [inCoordinates, inCoordinates, ContinuousLinearMap.comp_apply,
+    ContinuousLinearMap.comp_apply, ContinuousLinearMap.comp_apply,
+    ContinuousLinearMap.comp_apply]
+  exact (congrFun (congrArg DFunLike.coe h1) _).trans
+    (congrArg ((trivializationAt G W (g y₀)).continuousLinearMapAt 𝕜 (g y))
+      (congrArg A (congrFun (congrArg DFunLike.coe h2) v)))
 
 end ContinuousLinearMap
 
@@ -203,20 +227,12 @@ variable {𝕜 B C M X F G K L : Type*} [NontriviallyNormedField 𝕜]
 /-- At `m₀`, coordinate continuity of a Hom family between pulled-back bundles agrees with
 coordinate continuity in the original bundles along the composed base maps. -/
 theorem continuousAt_inCoordinates_pullback_iff {m₀ : M}
-    (f : K) (g : L) {a b : M → X} (ha : ContinuousAt a m₀) (hb : ContinuousAt b m₀)
+    (f : K) (g : L) (a b : M → X)
     (ϕ : ∀ m, V (f (a m)) →L[𝕜] W (g (b m))) :
     ContinuousAt (fun m ↦ inCoordinates F ((f : X → B) *ᵖ V) G ((g : X → C) *ᵖ W)
         (a m₀) (a m) (b m₀) (b m) (ϕ m)) m₀ ↔
       ContinuousAt (fun m ↦ inCoordinates F V G W
         (f (a m₀)) (f (a m)) (g (b m₀)) (g (b m)) (ϕ m)) m₀ := by
-  refine continuousAt_congr ?_
-  filter_upwards
-    [((map_continuous f).continuousAt.comp ha).preimage_mem_nhds
-      ((trivializationAt F V (f (a m₀))).open_baseSet.mem_nhds
-        (mem_baseSet_trivializationAt F V (f (a m₀)))),
-     ((map_continuous g).continuousAt.comp hb).preimage_mem_nhds
-      ((trivializationAt G W (g (b m₀))).open_baseSet.mem_nhds
-        (mem_baseSet_trivializationAt G W (g (b m₀))))] with m hV hW
-  exact inCoordinates_pullback_of_mem f g (a m₀) (a m) (b m₀) (b m) (ϕ m) hV hW
+  simp only [inCoordinates_pullback]
 
 end TauCeti

@@ -220,13 +220,12 @@ def ofContDiff (A : D × V → D →L[ℝ] V) (hA : ContDiff ℝ n A) :
       (horizontalTangentBundle 𝓘(ℝ, V) V 𝓘(ℝ, D) D) V
       (verticalTangentBundle 𝓘(ℝ, V) V 𝓘(ℝ, D) D) q y q y (A y)) = A := by
     funext y
-    erw [ContinuousLinearMap.inCoordinates_pullback_of_mem
+    erw [ContinuousLinearMap.inCoordinates_pullback
       (V := (TangentSpace 𝓘(ℝ, D) : D → Type _))
       (W := (TangentSpace 𝓘(ℝ, V) : V → Type _))
       (ContMDiffMap.fst : C^∞⟮𝓘(ℝ, D).prod 𝓘(ℝ, V), D × V; 𝓘(ℝ, D), D⟯)
       (ContMDiffMap.snd : C^∞⟮𝓘(ℝ, D).prod 𝓘(ℝ, V), D × V; 𝓘(ℝ, V), V⟯)
-      q y q y (A y) (by simp [TangentBundle.trivializationAt_baseSet])
-        (by simp [TangentBundle.trivializationAt_baseSet])]
+      q y q y (A y)]
     exact inCoordinates_tangent_bundle_core_model_space _ _ _ _ _
   have hA' : ContMDiffAt (𝓘(ℝ, D).prod 𝓘(ℝ, V)) 𝓘(ℝ, D →L[ℝ] V) n A q := by
     rw [← modelWithCornersSelf_prod, chartedSpaceSelf_prod]

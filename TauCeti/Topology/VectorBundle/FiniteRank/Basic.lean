@@ -611,6 +611,22 @@ theorem isoFiberEquiv_isoOfTotalSpaceContinuous
   ext v
   simp
 
+/-- The forward total-space map induced by `isoFiberEquiv` is continuous. -/
+theorem continuous_totalSpaceMap_isoFiberEquiv (e : A ≅ D) :
+    Continuous fun p : A.core.TotalSpace ↦
+      (⟨p.proj, isoFiberEquiv e p.proj p.snd⟩ : D.core.TotalSpace) := by
+  refine e.hom.continuous_totalSpaceMap.congr fun ⟨x, v⟩ ↦ ?_
+  rw [CoordinateHom.totalSpaceMap_mk]
+  exact congrArg (TotalSpace.mk' (Fin D.rank → 𝕜) x) (isoFiberEquiv_apply e x v).symm
+
+/-- The inverse total-space map induced by `isoFiberEquiv` is continuous. -/
+theorem continuous_totalSpaceMap_isoFiberEquiv_symm (e : A ≅ D) :
+    Continuous fun p : D.core.TotalSpace ↦
+      (⟨p.proj, (isoFiberEquiv e p.proj).symm p.snd⟩ : A.core.TotalSpace) := by
+  refine e.inv.continuous_totalSpaceMap.congr fun ⟨x, v⟩ ↦ ?_
+  rw [CoordinateHom.totalSpaceMap_mk]
+  exact congrArg (TotalSpace.mk' (Fin A.rank → 𝕜) x) (isoFiberEquiv_symm_apply e x v).symm
+
 end TotalSpace
 
 section IsoTrivial

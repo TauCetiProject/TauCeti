@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Topology.Homotopy.Cylinder.Basic
 public import TauCeti.Topology.VectorBundle.FiniteRank.Biproduct
 public import Mathlib.CategoryTheory.IsomorphismClasses
 public import Mathlib.Topology.VectorBundle.Constructions
@@ -25,7 +24,7 @@ bundle maps, and preserves addition. Identity and composition of base maps give
 strict equalities of functors, not just equality of bundle classes, and `pullbackRankClass`
 gives the induced contravariant action on isomorphism classes of fixed rank. Pullback is also
 strictly compatible with trivial cores, constant maps, constant intertwining morphisms and
-isomorphisms, cylinder slices (`pullback_cylinderSlice_pullback_fst`), Whitney sums, and actual
+isomorphisms, Whitney sums, and actual
 bundles (`pullback_trivial`, `pullback_const`, `pullbackMap_constHom`, `pullbackMap_constIso_hom`,
 `pullbackMap_constIso_inv`, `pullback_whitneySum`, `pullback_ofBundle`) together with the Whitney
 projections, inclusions, pairings, copairings, and direct sums of maps.
@@ -43,7 +42,6 @@ and `VectorBundleCore.CoordinateHom` for descent of continuous linear bundle map
 public section
 
 open Bundle CategoryTheory VectorBundleCore
-open scoped unitInterval
 
 namespace TauCeti.FiniteRankBundleCore
 
@@ -220,11 +218,6 @@ instance (f : C(X, Y)) : (pullbackFunctor (𝕜 := 𝕜) f).Additive where
 /-- Iterated pullback and pullback by a composite have literally the same coordinate data. -/
 @[simp] theorem pullback_comp (A : FiniteRankBundleCore 𝕜 Z) (f : C(X, Y)) (g : C(Y, Z)) :
     (A.pullback g).pullback f = A.pullback (g.comp f) := (rfl)
-
-/-- Pulling back `A.pullback ContinuousMap.fst` along any time-`t` cylinder slice recovers `A`. -/
-theorem pullback_cylinderSlice_pullback_fst (A : FiniteRankBundleCore 𝕜 X) (t : I) :
-    (A.pullback ContinuousMap.fst).pullback (cylinderSlice X t) = A := by
-  rw [pullback_comp, fst_comp_cylinderSlice, pullback_id]
 
 /-- Pullback by the identity is the identity functor, including on morphisms. -/
 @[simp] theorem pullbackFunctor_id :

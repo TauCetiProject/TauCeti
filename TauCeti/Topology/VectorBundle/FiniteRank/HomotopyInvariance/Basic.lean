@@ -59,6 +59,12 @@ section Cylinder
 
 universe u v
 
+/-- Pulling back `A.pullback ContinuousMap.fst` along any time-`t` cylinder slice recovers `A`. -/
+theorem pullback_cylinderSlice_pullback_fst {𝕜 : Type v} [NontriviallyNormedField 𝕜]
+    {X : Type u} [TopologicalSpace X] (A : FiniteRankBundleCore 𝕜 X) (t : I) :
+    (A.pullback ContinuousMap.fst).pullback (cylinderSlice X t) = A := by
+  rw [pullback_comp, fst_comp_cylinderSlice, pullback_id]
+
 variable {𝕜 : Type v} [NontriviallyNormedField 𝕜] [NormedAlgebra ℝ 𝕜] [CompleteSpace 𝕜]
   {X : Type u} [TopologicalSpace X] [R1Space X] [ParacompactSpace X]
 

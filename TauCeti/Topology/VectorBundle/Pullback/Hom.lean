@@ -58,7 +58,7 @@ theorem continuousAt_hom_bundle_pullback_iff
       ContinuousAt (fun m ↦ inCoordinates F V G W (f m₀) (f m) (g m₀) (g m) (ϕ m)) m₀ := by
   rw [continuousAt_hom_bundle]
   exact (and_iff_right continuousAt_id).trans
-    (continuousAt_inCoordinates_pullback_iff f g continuousAt_id continuousAt_id ϕ)
+    (continuousAt_inCoordinates_pullback_iff f g id id ϕ)
 
 /-- A family of Hom maps between pullbacks by `f` and `g` is continuous as a Hom-bundle section
 exactly when its coordinate expression in the original bundles is continuous at every point. -/
@@ -118,8 +118,7 @@ theorem continuousAt_hom_bundle_over_pullback_iff
         (f (b m₀)) (f (b m)) (g (b m₀)) (g (b m)) (ϕ m)) m₀ := by
   rw [continuousAt_hom_bundle]
   exact (and_iff_right (map_continuous b).continuousAt).trans
-    (continuousAt_inCoordinates_pullback_iff f g (map_continuous b).continuousAt
-      (map_continuous b).continuousAt ϕ)
+    (continuousAt_inCoordinates_pullback_iff f g b b ϕ)
 
 /-- A Hom family over a continuous map `b` into the Hom bundle between pullbacks `f *ᵖ V` and
 `g *ᵖ W` is continuous exactly when it is continuous as a section of the composite pullback Hom
@@ -151,8 +150,7 @@ theorem continuousAt_hom_bundle_over_pullback_left_iff
         (f (b m₀)) (f (b m)) (b m₀) (b m) (ϕ m)) m₀ := by
   rw [continuousAt_hom_bundle]
   exact (and_iff_right (map_continuous b).continuousAt).trans
-    (continuousAt_inCoordinates_pullback_iff f (ContinuousMap.id X)
-      (map_continuous b).continuousAt (map_continuous b).continuousAt ϕ)
+    (continuousAt_inCoordinates_pullback_iff f (ContinuousMap.id X) b b ϕ)
 
 /-- A Hom family over `b : C(M, X)` into `(f *ᵖ V) →L W'` is continuous exactly when it is
 continuous as a section of `(f.comp b) *ᵖ V →L b *ᵖ W'`. -/
@@ -183,8 +181,7 @@ theorem continuousAt_hom_bundle_pullback_pullback_iff
         m (ϕ m)) m₀ := by
   refine (continuousAt_hom_bundle_pullback_iff
     (V := (f : X → B) *ᵖ V) (W := (g : X → C) *ᵖ W) b₀ b₁ ϕ).trans ?_
-  refine (continuousAt_inCoordinates_pullback_iff f g
-    b₀.continuous.continuousAt b₁.continuous.continuousAt ϕ).trans ?_
+  refine (continuousAt_inCoordinates_pullback_iff f g b₀ b₁ ϕ).trans ?_
   exact (continuousAt_hom_bundle_pullback_iff (f.comp b₀) (g.comp b₁) ϕ).symm
 
 /-- A Hom family into `(b₀ *ᵖ (f *ᵖ V)) →L (b₁ *ᵖ (g *ᵖ W))` is continuous exactly when it is
