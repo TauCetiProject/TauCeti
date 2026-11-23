@@ -87,11 +87,19 @@ instance specialLinearGroupMulSemiringAction :
   MulSemiringAction.compHom (Matrix n n R)
     (toConjAct.toMonoidHom.comp (SpecialLinearGroup.toGL.comp ofConjAct.toMonoidHom))
 
+/-- Conjugating a matrix by the image of `s ∈ SL(n, R)` in `GL(n, R)` is conjugating it by `s`. -/
+@[simp]
+theorem toConjAct_toGL_smul (s : SpecialLinearGroup n R) (M : Matrix n n R) :
+    toConjAct (SpecialLinearGroup.toGL s) • M = toConjAct s • M :=
+  rfl
+
 /-- The conjugation action of `SL(n, R)` on matrices is `g • M = g M g⁻¹`. -/
 theorem specialLinearGroup_smul_def (g : ConjAct (SpecialLinearGroup n R)) (M : Matrix n n R) :
     g • M = ((ofConjAct g : SpecialLinearGroup n R) : Matrix n n R) * M *
-      ((ofConjAct g)⁻¹ : SpecialLinearGroup n R) :=
-  rfl
+      ((ofConjAct g)⁻¹ : SpecialLinearGroup n R) := by
+  obtain ⟨s, rfl⟩ := toConjAct.surjective g
+  simp only [← toConjAct_toGL_smul, units_smul_def, ofConjAct_toConjAct, ← map_inv,
+    SpecialLinearGroup.coe_GL_coe_matrix]
 
 /-- Conjugation by `SL(n, R)` preserves the trace. -/
 @[simp]
@@ -113,12 +121,6 @@ theorem adjugate_specialLinearGroup_smul (g : ConjAct (SpecialLinearGroup n R))
   -- `adjugate g = g⁻¹` and `adjugate g⁻¹ = g` for `g ∈ SL(n, R)`
   simp [specialLinearGroup_smul_def, adjugate_mul_distrib, Matrix.mul_assoc,
     ← SpecialLinearGroup.coe_inv]
-
-/-- Conjugating a matrix by the image of `s ∈ SL(n, R)` in `GL(n, R)` is conjugating it by `s`. -/
-@[simp]
-theorem toConjAct_toGL_smul (s : SpecialLinearGroup n R) (M : Matrix n n R) :
-    toConjAct (SpecialLinearGroup.toGL s) • M = toConjAct s • M :=
-  rfl
 
 end ConjAct
 
@@ -225,8 +227,9 @@ def traceDetFiberAddScalarEquiv (t d r : R) :
   invFun M := ⟨M.val - scalar (Fin 2) r, by
     -- translating back by `-r` lands in the fibre of trace `t` and determinant `d`
     have h := add_scalar_mem_traceDetFiber M.property (-r)
-    rw [map_neg, ← sub_eq_add_neg] at h
-    convert h using 2 <;> ring⟩
+    have ht : t + 2 * r + 2 * -r = t := by ring
+    have hd : d + r * t + r ^ 2 + -r * (t + 2 * r) + (-r) ^ 2 = d := by ring
+    rwa [map_neg, ← sub_eq_add_neg, ht, hd] at h⟩
   left_inv M := Subtype.ext (add_sub_cancel_right _ _)
   right_inv M := Subtype.ext (sub_add_cancel _ _)
 
