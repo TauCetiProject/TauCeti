@@ -119,8 +119,8 @@ section JointContinuity
 
 variable [TopologicalSpace G] [ContinuousInv G]
 
-/-- If `M` is discrete and `G` acts jointly continuously on `M`, then the contragredient action
-of `G` on `ModulePontryaginDual R E M` is jointly continuous. -/
+/-- If `G` has continuous inversion, `M` is discrete, and `G` acts jointly continuously on `M`,
+then the contragredient action of `G` on `ModulePontryaginDual R E M` is jointly continuous. -/
 theorem continuous_contragredient_of_discrete [DiscreteTopology M]
     (ρ : ContRepresentation R G M) (hρ : Continuous (fun p : G × M ↦ ρ p.1 p.2)) :
     Continuous (fun p : G × ModulePontryaginDual R E M ↦ ρ.contragredient E p.1 p.2) :=
@@ -131,8 +131,9 @@ theorem continuous_contragredient_of_discrete [DiscreteTopology M]
       (hρ.comp ((continuous_inv.comp continuous_fst).prodMk (continuous_const (y := x)))).prodMk
         continuous_snd).congr fun _ ↦ (ρ.contragredient_apply E _ _ _).symm
 
-/-- If `M` is compact, `E` is discrete, and `G` acts jointly continuously on `M`, then the
-contragredient action of `G` on `ModulePontryaginDual R E M` is jointly continuous. -/
+/-- If `G` has continuous inversion, `M` is compact, `E` is discrete, and `G` acts jointly
+continuously on `M`, then the contragredient action of `G` on `ModulePontryaginDual R E M` is
+jointly continuous. -/
 theorem continuous_contragredient_of_compact [CompactSpace M] [DiscreteTopology E]
     (ρ : ContRepresentation R G M) (hρ : Continuous (fun p : G × M ↦ ρ p.1 p.2)) :
     Continuous (fun p : G × ModulePontryaginDual R E M ↦ ρ.contragredient E p.1 p.2) :=
@@ -143,16 +144,18 @@ theorem continuous_contragredient_of_compact [CompactSpace M] [DiscreteTopology 
           (hρ.comp ((continuous_inv.comp continuous_fst).prodMk continuous_snd))).congr
             fun _ ↦ by simp [Function.uncurry]
 
-/-- For a compact continuous `G`-module `M` and discrete `E`, every level set
-`{g : G | ρ.contragredient E g φ = ψ}` is open in `G`. -/
+/-- If `G` has continuous inversion, `M` is compact, `E` is discrete, and `G` acts jointly
+continuously on `M`, then every level set `{g : G | ρ.contragredient E g φ = ψ}` is open in
+`G`. -/
 theorem isOpen_setOf_contragredient_eq_of_compact [CompactSpace M] [DiscreteTopology E]
     (ρ : ContRepresentation R G M) (hρ : Continuous (fun p : G × M ↦ ρ p.1 p.2))
     (φ ψ : ModulePontryaginDual R E M) : IsOpen {g : G | ρ.contragredient E g φ = ψ} :=
   (isOpen_discrete {ψ}).preimage
     ((continuous_contragredient_of_compact E ρ hρ).comp (continuous_id.prodMk continuous_const))
 
-/-- If `M` is compact, `E` is discrete, and `G` acts jointly continuously on `M`, then every
-element of `ModulePontryaginDual R E M` has an open stabilizer in `G`. -/
+/-- If `G` has continuous inversion, `M` is compact, `E` is discrete, and `G` acts jointly
+continuously on `M`, then every element of `ModulePontryaginDual R E M` has an open stabilizer in
+`G`. -/
 theorem isOpen_stabilizer_contragredient_of_compact [CompactSpace M] [DiscreteTopology E]
     (ρ : ContRepresentation R G M) (hρ : Continuous (fun p : G × M ↦ ρ p.1 p.2))
     (φ : ModulePontryaginDual R E M) : IsOpen {g : G | ρ.contragredient E g φ = φ} :=
@@ -160,16 +163,9 @@ theorem isOpen_stabilizer_contragredient_of_compact [CompactSpace M] [DiscreteTo
 
 end JointContinuity
 
-private theorem comp_intertwining_apply {P : Type*} [AddCommGroup P] [Module R P]
-    [TopologicalSpace P] [IsTopologicalAddGroup P] {ρ₁ : ContRepresentation R G M}
-    {ρ₂ : ContRepresentation R G N} {ρ₃ : ContRepresentation R G P}
-    (g : ρ₂ →ⁱL ρ₃) (f : ρ₁ →ⁱL ρ₂) (x : M) :
-    (g.comp f) x = g (f x) :=
-  rfl
-
 /-- Full faithfulness of `ContIntertwiningMap.contragredient` follows from `G`-equivariant
 biduality equivalences. -/
-private theorem bijective_mapIntertwining_of_equiv
+private theorem contragredient_bijective_of_equiv
     {ρ₁ : ContRepresentation R G M} {ρ₂ : ContRepresentation R G N}
     (e₁ : ρ₁.Equiv ((ρ₁.contragredient E).contragredient E))
     (e₂ : ρ₂.Equiv ((ρ₂.contragredient E).contragredient E))
@@ -182,15 +178,28 @@ private theorem bijective_mapIntertwining_of_equiv
       ext x
       have h2 : (f.contragredient E).contragredient E (e₁ x) = e₂ (f x) :=
         ext fun φ ↦ by simp [he₁, he₂]
-      simp only [ContIntertwiningMap.toContinuousLinearMap_apply, comp_intertwining_apply,
-        ContRepresentation.Equiv.coe_toContIntertwiningMap]
-      rw [h2, e₂.symm_apply_apply],
+      rw [ContIntertwiningMap.toContinuousLinearMap_comp, ContinuousLinearMap.comp_apply,
+        ContIntertwiningMap.toContinuousLinearMap_comp, ContinuousLinearMap.comp_apply,
+        ContIntertwiningMap.toContinuousLinearMap_apply,
+        ContIntertwiningMap.toContinuousLinearMap_apply,
+        ContIntertwiningMap.toContinuousLinearMap_apply,
+        ContIntertwiningMap.toContinuousLinearMap_apply,
+        ContRepresentation.Equiv.coe_toContIntertwiningMap,
+        ContRepresentation.Equiv.coe_toContIntertwiningMap, h2, e₂.symm_apply_apply],
     fun g ↦ by
       ext φ x
-      simp only [ContIntertwiningMap.toContinuousLinearMap_apply,
-        ContIntertwiningMap.contragredient_apply, comp_intertwining_apply,
-        ContRepresentation.Equiv.coe_toContIntertwiningMap]
-      rw [← he₂ _ φ, e₂.apply_symm_apply, ContIntertwiningMap.contragredient_apply, he₁]⟩
+      rw [ContIntertwiningMap.toContinuousLinearMap_apply,
+        ContIntertwiningMap.toContinuousLinearMap_apply,
+        ContIntertwiningMap.contragredient_apply,
+        ← ContIntertwiningMap.toContinuousLinearMap_apply (e₂.symm.toContIntertwiningMap.comp _),
+        ContIntertwiningMap.toContinuousLinearMap_comp, ContinuousLinearMap.comp_apply,
+        ContIntertwiningMap.toContinuousLinearMap_comp, ContinuousLinearMap.comp_apply,
+        ContIntertwiningMap.toContinuousLinearMap_apply,
+        ContIntertwiningMap.toContinuousLinearMap_apply,
+        ContIntertwiningMap.toContinuousLinearMap_apply,
+        ContRepresentation.Equiv.coe_toContIntertwiningMap,
+        ContRepresentation.Equiv.coe_toContIntertwiningMap,
+        ← he₂ _ φ, e₂.apply_symm_apply, ContIntertwiningMap.contragredient_apply, he₁]⟩
 
 end Basic
 
@@ -225,14 +234,14 @@ noncomputable def evalEquivOfCompactRep
 
 /-- Full faithfulness of `ContIntertwiningMap.contragredient` on compact `ContRepresentation`s
 (operatorwise continuous `G`-actions). -/
-theorem bijective_mapIntertwining_of_compact {N₁ N₂ : Type*}
+theorem contragredient_bijective_of_compact {N₁ N₂ : Type*}
     [AddCommGroup N₁] [Module R N₁] [TopologicalSpace N₁] [IsTopologicalAddGroup N₁]
     [AddCommGroup N₂] [Module R N₂] [TopologicalSpace N₂] [IsTopologicalAddGroup N₂]
     (hN₁ : IsCompactModule R N₁) (hN₂ : IsCompactModule R N₂)
     (ρ₁ : ContRepresentation R G N₁) (ρ₂ : ContRepresentation R G N₂) :
     Function.Bijective
       (ContIntertwiningMap.contragredient (E := E) (ρ₁ := ρ₁) (ρ₂ := ρ₂)) :=
-  bijective_mapIntertwining_of_equiv E
+  contragredient_bijective_of_equiv E
     (evalEquivOfCompactRep E hE hN₁ ρ₁) (evalEquivOfCompactRep E hE hN₂ ρ₂)
     (evalEquivOfCompactRep_apply E hE hN₁ ρ₁) (evalEquivOfCompactRep_apply E hE hN₂ ρ₂)
 
@@ -269,7 +278,7 @@ noncomputable def evalEquivOfDiscreteRep
 
 /-- Full faithfulness of `ContIntertwiningMap.contragredient` on discrete `ContRepresentation`s
 (operatorwise continuous `G`-actions) with continuous `R`-action. -/
-theorem bijective_mapIntertwining_of_discrete {M₁ M₂ : Type*}
+theorem contragredient_bijective_of_discrete {M₁ M₂ : Type*}
     [AddCommGroup M₁] [Module R M₁] [TopologicalSpace M₁] [DiscreteTopology M₁]
     [ContinuousSMul R M₁]
     [AddCommGroup M₂] [Module R M₂] [TopologicalSpace M₂] [DiscreteTopology M₂]
@@ -277,7 +286,7 @@ theorem bijective_mapIntertwining_of_discrete {M₁ M₂ : Type*}
     (ρ₁ : ContRepresentation R G M₁) (ρ₂ : ContRepresentation R G M₂) :
     Function.Bijective
       (ContIntertwiningMap.contragredient (E := E) (ρ₁ := ρ₁) (ρ₂ := ρ₂)) :=
-  bijective_mapIntertwining_of_equiv E
+  contragredient_bijective_of_equiv E
     (evalEquivOfDiscreteRep E hE ρ₁) (evalEquivOfDiscreteRep E hE ρ₂)
     (evalEquivOfDiscreteRep_apply E hE ρ₁) (evalEquivOfDiscreteRep_apply E hE ρ₂)
 

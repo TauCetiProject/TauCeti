@@ -6,15 +6,12 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Module.Injective.PrincipalIdealRing
-public import TauCeti.NumberTheory.LocalField.AlgebraicExtension.Basic
 public import TauCeti.NumberTheory.LocalField.Different.Quotient
 public import TauCeti.NumberTheory.LocalField.IntegerRing.Quotient
 public import TauCeti.NumberTheory.LocalField.Topology
 public import TauCeti.RepresentationTheory.Continuous.Basic
 public import TauCeti.RepresentationTheory.Continuous.Pontryagin.Module
-public import TauCeti.RingTheory.DedekindDomain.Different.Quotient
 public import TauCeti.Topology.Algebra.ValuativeRel.AdicTopology
-import TauCeti.RingTheory.Length
 import TauCeti.Topology.Algebra.Nonarchimedean.AdicTopology.Basic
 
 /-!
@@ -49,29 +46,13 @@ section SingleField
 variable (L : Type*) [Field L] [ValuativeRel L] [TopologicalSpace L]
   [IsNonarchimedeanLocalField L]
 
-/-- **Cogenerator condition for `L ⧸ 𝒪[L]`**: `Hom_𝒪[L](𝒪[L] ⧸ 𝔪, L ⧸ 𝒪[L])` has length `1` for
-every maximal ideal `𝔪` of `𝒪[L]`. -/
-theorem length_linearMap_quotient_maximalIdeal_eq_one :
-    ∀ 𝔪 : Ideal 𝒪[L], 𝔪.IsMaximal →
-      Module.length 𝒪[L] ((𝒪[L] ⧸ 𝔪) →ₗ[𝒪[L]] (L ⧸ (1 : Submodule 𝒪[L] L))) = 1 := by
-  intro 𝔪 h𝔪; obtain rfl := IsLocalRing.eq_maximalIdeal h𝔪
-  obtain ⟨ϖ, hϖ⟩ := IsDiscreteValuationRing.exists_irreducible 𝒪[L]
-  have hpow : (𝓂[L] ^ 1 : Ideal 𝒪[L]) = 𝓂[L] := pow_one _
-  have e : ((𝒪[L] ⧸ 𝓂[L]) →ₗ[𝒪[L]] (L ⧸ (1 : Submodule 𝒪[L] L))) ≃ₗ[𝒪[L]] (𝒪[L] ⧸ 𝓂[L]) :=
-    (𝓂[L].quotientLinearMapEquivTorsionBySet _).trans
-      ((LinearEquiv.ofEq _ _ (by rw [hpow])).symm.trans
-        ((quotientMaximalIdealPowEquivTorsionBySet hϖ 1).symm.trans
-          (Submodule.quotEquivOfEq _ _ hpow)))
-  rw [e.length_eq, Module.length_eq_one_iff]
-  exact isSimpleModule_iff_isCoatom.mpr (IsLocalRing.maximalIdeal.isMaximal 𝒪[L]).out
-
 /-- **Compactness of the dual of a discrete torsion `𝒪[L]`-module**: `Hom_𝒪[L](M, L ⧸ 𝒪[L])` is
 a compact `𝒪[L]`-module whenever `M` is discrete and torsion. -/
 theorem isCompactModule_dual_of_isTorsion {M : Type*} [AddCommGroup M] [Module 𝒪[L] M]
     [TopologicalSpace M] [DiscreteTopology M] (hM : Module.IsTorsion 𝒪[L] M) :
     IsCompactModule 𝒪[L] (ModulePontryaginDual 𝒪[L] (L ⧸ (1 : Submodule 𝒪[L] L)) M) := by
   have := continuousSMul_iff_isTorsion.mpr hM
-  exact isCompactModule_of_discrete (length_linearMap_quotient_maximalIdeal_eq_one L)
+  exact isCompactModule_dual_of_discrete (length_linearMap_quotient_maximalIdeal_eq_one L)
 
 /-- **The dual of a compact `𝒪[L]`-module is torsion**: every continuous `𝒪[L]`-linear functional
 on a compact `𝒪[L]`-module into `L ⧸ 𝒪[L]` is killed by a nonzero element of `𝒪[L]`. -/

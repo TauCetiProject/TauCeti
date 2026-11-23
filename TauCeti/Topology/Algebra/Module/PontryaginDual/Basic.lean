@@ -5,8 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Topology.Algebra.Group.Basic
-public import Mathlib.Topology.Algebra.Module.ContinuousLinearMap.Basic
 public import Mathlib.Topology.Algebra.Module.Equiv.Basic
 public import Mathlib.Topology.ContinuousMap.Algebra
 import TauCeti.Topology.CompactOpen
@@ -17,9 +15,10 @@ import TauCeti.Topology.CompactOpen
 For a commutative topological semiring `R` and topological `R`-modules `E` and `M`,
 `TauCeti.ModulePontryaginDual R E M` is the `R`-module of continuous `R`-linear maps `M →L[R] E`
 with the compact-open topology induced from `C(M, E)`. For discrete `M` this coincides with
-pointwise convergence (`isClosedEmbedding_coe`); for compact `M` and discrete `E` it is discrete
-(`instDiscreteTopology`). We provide contravariant (`ContinuousLinearMap.pontryaginDualMap`,
-`ContinuousLinearEquiv.pontryaginDualCongr`) and covariant
+pointwise convergence (`isEmbedding_coe`, which is moreover a closed embedding
+`isClosedEmbedding_coe` when `E` is Hausdorff with continuous addition and scalar action); for
+compact `M` and discrete `E` it is discrete (`instDiscreteTopology`). We provide contravariant
+(`ContinuousLinearMap.pontryaginDualMap`, `ContinuousLinearEquiv.pontryaginDualCongr`) and covariant
 (`ContinuousLinearMap.pontryaginDualMapCodomain`,
 `ContinuousLinearEquiv.pontryaginDualCongrCodomain`) functoriality and evaluation (`eval`,
 continuous when `M` is discrete via `continuous_eval_of_discrete` or when `M` is compact and `E`
@@ -136,13 +135,14 @@ theorem isEmbedding_coe [DiscreteTopology M] :
     IsEmbedding ((⇑) : ModulePontryaginDual R E M → M → E) :=
   ContinuousMap.isHomeomorph_coe.isEmbedding.comp isEmbedding_toContinuousMap
 
-/-- For discrete `M`, `ModulePontryaginDual R E M` embeds as a closed subspace of `M → E`. -/
+/-- For discrete `M` and Hausdorff `E` with continuous addition and scalar action,
+`ModulePontryaginDual R E M` embeds as a closed subspace of `M → E`. -/
 theorem isClosedEmbedding_coe [DiscreteTopology M] [ContinuousAdd E] [ContinuousConstSMul R E]
     [T2Space E] : IsClosedEmbedding ((⇑) : ModulePontryaginDual R E M → M → E) :=
   ContinuousMap.isHomeomorph_coe.isClosedEmbedding.comp isClosedEmbedding_toContinuousMap
 
-/-- Universal property of the pointwise topology on `ModulePontryaginDual R E M` for discrete `M`:
-a map into it is continuous iff evaluation at every element of `M` is continuous. -/
+/-- For discrete `M`, a map into `ModulePontryaginDual R E M` is continuous if evaluation at every
+element of `M` is continuous. -/
 theorem continuous_of_continuous_eval [DiscreteTopology M] {X : Type*} [TopologicalSpace X]
     {f : X → ModulePontryaginDual R E M} (h : ∀ x : M, Continuous fun a : X ↦ f a x) :
     Continuous f := isEmbedding_coe.continuous_iff.mpr (continuous_pi h)

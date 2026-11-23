@@ -5,16 +5,15 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Topology.Algebra.Module.ContinuousLinearMap.Quotient
 public import Mathlib.Topology.Homeomorph.Lemmas
 public import TauCeti.Algebra.Module.Injective.Cogenerator
 public import TauCeti.Topology.Algebra.Module.Compact
 public import TauCeti.Topology.Algebra.Module.PontryaginDual.Basic
-import Mathlib.Topology.Algebra.Nonarchimedean.Basic
-import Mathlib.Topology.Algebra.OpenSubgroup
+import Mathlib.Topology.Algebra.Module.Equiv.Submodule
 import Mathlib.Topology.Compactness.Compact
-import TauCeti.RingTheory.Length
+import Mathlib.Topology.Maps.Strict.Module
 import TauCeti.Topology.Algebra.Module.Submodule
+import TauCeti.Topology.Algebra.Ring.Compact
 
 /-!
 # Compact–discrete Pontryagin duality for modules over a compact local ring
@@ -56,7 +55,7 @@ theorem isOpen_ker [DiscreteTopology E] {M : Type w} [AddCommGroup M] [Module R 
   (isOpen_discrete {(0 : E)}).preimage (map_continuous φ)
 
 /-- A surjective continuous linear map induces an injective dual map. -/
-theorem map_injective_of_surjective {M N : Type*} [AddCommGroup M] [Module R M]
+theorem pontryaginDualMap_injective_of_surjective {M N : Type*} [AddCommGroup M] [Module R M]
     [TopologicalSpace M] [AddCommGroup N] [Module R N] [TopologicalSpace N]
     {f : M →L[R] N} (hf : Function.Surjective f) :
     Function.Injective (f.pontryaginDualMap (E := E)) := fun _ _ h ↦ ext fun y ↦ by
@@ -65,8 +64,8 @@ theorem map_injective_of_surjective {M N : Type*} [AddCommGroup M] [Module R M]
 
 /-- An injective continuous linear map into a discrete module induces a surjective dual map when `E`
 is injective. -/
-theorem map_surjective_of_injective_of_discrete [Module.Injective R E] [Small.{v} R] {M N : Type*}
-    [AddCommGroup M] [Module R M] [TopologicalSpace M] [AddCommGroup N] [Module R N]
+theorem pontryaginDualMap_surjective_of_injective_of_discrete [Module.Injective R E] [Small.{v} R]
+    {M N : Type*} [AddCommGroup M] [Module R M] [TopologicalSpace M] [AddCommGroup N] [Module R N]
     [TopologicalSpace N] [DiscreteTopology N] {f : M →L[R] N} (hf : Function.Injective f) :
     Function.Surjective (f.pontryaginDualMap (E := E)) := fun φ ↦ by
   obtain ⟨g, hg⟩ := Module.Injective.extension_property R E M N f.toLinearMap hf
@@ -99,7 +98,7 @@ private theorem liftExactRange_apply {f : M₁ →L[R] M₂} {g : M₂ →L[R] M
     liftExactRange hex φ hφ ⟨g.toLinearMap x, x, rfl⟩ = φ x :=
   g.toLinearMap.rangeRestrict.equivOfSurjective_apply g.toLinearMap.surjective_rangeRestrict _
 
-private theorem exact_map_of_lift {f : M₁ →L[R] M₂} {g : M₂ →L[R] M₃}
+private theorem exact_pontryaginDualMap_of_lift {f : M₁ →L[R] M₂} {g : M₂ →L[R] M₃}
     (hex : Function.Exact f.toLinearMap g.toLinearMap)
     (hlift : ∀ φ : ModulePontryaginDual R E M₂, f.pontryaginDualMap (E := E) φ = 0 →
       ∃ ψ : ModulePontryaginDual R E M₃, g.pontryaginDualMap (E := E) ψ = φ) :
@@ -115,14 +114,14 @@ end ExactHelper
 
 /-- Exactness of `ModulePontryaginDual R E` on continuous linear maps ending in a discrete module
 when `E` is injective. -/
-theorem exact_map_of_discrete [Module.Injective R E] [Small.{v} R] {M₁ M₂ M₃ : Type*}
+theorem exact_pontryaginDualMap_of_discrete [Module.Injective R E] [Small.{v} R] {M₁ M₂ M₃ : Type*}
     [AddCommGroup M₁] [Module R M₁] [TopologicalSpace M₁]
     [AddCommGroup M₂] [Module R M₂] [TopologicalSpace M₂]
     [AddCommGroup M₃] [Module R M₃] [TopologicalSpace M₃] [DiscreteTopology M₃]
     {f : M₁ →L[R] M₂} {g : M₂ →L[R] M₃} (hex : Function.Exact f.toLinearMap g.toLinearMap) :
     Function.Exact (g.pontryaginDualMap (E := E)).toLinearMap
       (f.pontryaginDualMap (E := E)).toLinearMap :=
-  exact_map_of_lift hex fun φ hφ ↦ by
+  exact_pontryaginDualMap_of_lift hex fun φ hφ ↦ by
     obtain ⟨ψ, hψ⟩ := Module.Injective.extension_property R E _ M₃
       (LinearMap.range g.toLinearMap).subtype (Submodule.subtype_injective _)
       (liftExactRange hex φ hφ)
@@ -137,9 +136,9 @@ end ModulePontryaginDual
 
 end TauCeti
 
-/-- For a submodule `U` of `N`, the range of `U.mkQL.pontryaginDualMap` consists precisely of the
-continuous functionals vanishing on `U`. -/
-theorem Submodule.range_pontryaginDualMap_mkQL {R : Type u} {E : Type v} {N : Type w}
+/-- For a submodule `U` of `N`, a continuous functional lies in the range of
+`U.mkQL.pontryaginDualMap` if and only if it vanishes on `U`. -/
+theorem Submodule.mem_range_pontryaginDualMap_mkQL_iff {R : Type u} {E : Type v} {N : Type w}
     [CommRing R] [AddCommGroup E] [Module R E] [TopologicalSpace E] [IsTopologicalAddGroup E]
     [ContinuousConstSMul R E] [AddCommGroup N] [Module R N] [TopologicalSpace N]
     (U : Submodule R N) (φ : TauCeti.ModulePontryaginDual R E N) :
@@ -162,13 +161,13 @@ variable {R : Type u} {E : Type v}
 
 /-- **Colimit compatibility over open quotients**: when `E` is discrete, every element of `N^∨`
 lies in the image of `(N ⧸ U)^∨` for some open submodule `U` of `N`. -/
-theorem iSup_range_map_mkQL_eq_top [DiscreteTopology E] {N : Type w} [AddCommGroup N] [Module R N]
-    [TopologicalSpace N] :
+theorem iSup_range_pontryaginDualMap_mkQL_eq_top [DiscreteTopology E] {N : Type w}
+    [AddCommGroup N] [Module R N] [TopologicalSpace N] :
     ⨆ U : {U : Submodule R N // IsOpen (U : Set N)},
       LinearMap.range (U.val.mkQL.pontryaginDualMap (E := E)).toLinearMap = ⊤ :=
   eq_top_iff.mpr fun φ _ ↦
     Submodule.mem_iSup_of_mem ⟨LinearMap.ker φ.toContinuousLinearMap.toLinearMap, isOpen_ker φ⟩
-      ((Submodule.range_pontryaginDualMap_mkQL _ φ).mpr le_rfl)
+      ((Submodule.mem_range_pontryaginDualMap_mkQL_iff _ φ).mpr le_rfl)
 
 /-- **Inverse-limit compatibility over finitely generated submodules**: a compatible family of
 elements in `K^∨` for finitely generated submodules `K` of a discrete module `M` comes from a
@@ -218,7 +217,7 @@ theorem subsingleton_iff_of_discrete [Module.Injective R E] [Small.{v} R]
 
 /-- Full faithfulness of `ContinuousLinearMap.pontryaginDualMap` follows directly from continuous
 biduality equivalences. -/
-private theorem bijective_map_of_evalEquiv {M₁ M₂ : Type*}
+private theorem bijective_pontryaginDualMap_of_evalEquiv {M₁ M₂ : Type*}
     [AddCommGroup M₁] [Module R M₁] [TopologicalSpace M₁]
     [AddCommGroup M₂] [Module R M₂] [TopologicalSpace M₂]
     (e₁ : M₁ ≃L[R] ModulePontryaginDual R E (ModulePontryaginDual R E M₁))
@@ -246,8 +245,9 @@ variable {R : Type u} {E : Type v}
   [AddCommGroup E] [Module R E] [TopologicalSpace E] [DiscreteTopology E]
   [IsTopologicalAddGroup E] [ContinuousConstSMul R E] [Module.Injective R E] [Small.{v} R]
 
-/-- An injective continuous linear map between compact `R`-modules induces a surjective dual map. -/
-theorem map_surjective_of_injective_of_compact {N₁ N₂ : Type*}
+/-- Over a compact ring `R` and a discrete injective `R`-module `E` with continuous operations, an
+injective continuous linear map between compact `R`-modules induces a surjective dual map. -/
+theorem pontryaginDualMap_surjective_of_injective_of_compact {N₁ N₂ : Type*}
     [AddCommGroup N₁] [Module R N₁] [TopologicalSpace N₁]
     [AddCommGroup N₂] [Module R N₂] [TopologicalSpace N₂]
     (hN₁ : IsCompactModule R N₁) (hN₂ : IsCompactModule R N₂)
@@ -276,8 +276,9 @@ theorem map_surjective_of_injective_of_compact {N₁ N₂ : Type*}
     simpa [fbar, ContinuousLinearMap.pontryaginDualMap_apply] using
       LinearMap.congr_fun hψbar (Submodule.Quotient.mk x)⟩
 
-/-- Exactness of `ModulePontryaginDual R E` on compact `R`-modules. -/
-theorem exact_map_of_compact {N₁ N₂ N₃ : Type*}
+/-- Exactness of `ModulePontryaginDual R E` on compact `R`-modules when `R` is compact and `E` is
+discrete and injective with continuous operations. -/
+theorem exact_pontryaginDualMap_of_compact {N₁ N₂ N₃ : Type*}
     [AddCommGroup N₁] [Module R N₁] [TopologicalSpace N₁]
     [AddCommGroup N₂] [Module R N₂] [TopologicalSpace N₂]
     [AddCommGroup N₃] [Module R N₃] [TopologicalSpace N₃]
@@ -285,7 +286,7 @@ theorem exact_map_of_compact {N₁ N₂ N₃ : Type*}
     {f : N₁ →L[R] N₂} {g : N₂ →L[R] N₃} (hex : Function.Exact f.toLinearMap g.toLinearMap) :
     Function.Exact (g.pontryaginDualMap (E := E)).toLinearMap
       (f.pontryaginDualMap (E := E)).toLinearMap :=
-  exact_map_of_lift hex fun φ hφ ↦ by
+  exact_pontryaginDualMap_of_lift hex fun φ hφ ↦ by
     have := hN₂.compactSpace; have := hN₃.t2Space; have := hN₃.isTopologicalAddGroup
     have := hN₃.continuousSMul; have := hN₃.totallyDisconnectedSpace
     let K := LinearMap.range g.toLinearMap; let ψ₀ := liftExactRange hex φ hφ
@@ -299,7 +300,7 @@ theorem exact_map_of_compact {N₁ N₂ N₃ : Type*}
     have hKmod : IsCompactModule R K :=
       ⟨inferInstance, inferInstance,
         ⟨Set.image_univ_of_surjective hg'_surj ▸ isCompact_univ.image hg'_cont⟩, inferInstance⟩
-    obtain ⟨ψ, hψ⟩ := map_surjective_of_injective_of_compact (E := E) hKmod hN₃
+    obtain ⟨ψ, hψ⟩ := pontryaginDualMap_surjective_of_injective_of_compact (E := E) hKmod hN₃
       (f := K.subtypeL) (Submodule.subtype_injective K) ⟨⟨ψ₀, hψ₀_cont⟩⟩
     refine ⟨ψ, ext fun x ↦ ?_⟩
     have hψg : ψ (g x) = ψ₀ ⟨g.toLinearMap x, x, rfl⟩ := by
@@ -379,15 +380,23 @@ def evalEquivOfCompact {N : Type w} [AddCommGroup N] [Module R N] [TopologicalSp
       let fL : (N ⧸ U.val) →L[R] (N ⧸ V.val) :=
         ⟨Submodule.factor h, continuous_of_discreteTopology⟩
       have hcomp : U.val.mkQL.pontryaginDualMap (E := E) (fL.pontryaginDualMap (E := E) ψ) =
-          V.val.mkQL.pontryaginDualMap (E := E) ψ := ext fun _ ↦ by simp [fL]
-      have hV' := hxU V ψ
-      simp only [LinearMap.comp_apply, ContinuousLinearMap.coe_coe] at hV'
-      simpa [LinearMap.applyₗ_apply_apply, fL, ψ, hcomp, ← hV'] using
-        hxU U (fL.pontryaginDualMap (E := E) ψ)
+          V.val.mkQL.pontryaginDualMap (E := E) ψ := ext fun x ↦ by
+        simp only [ContinuousLinearMap.pontryaginDualMap_apply, Submodule.mkQL_apply, fL,
+          ContinuousLinearMap.coe_mk']
+        exact congrArg ψ (Submodule.factor_mk h x)
+      calc
+        LinearMap.applyₗ (Submodule.factor h (xU U)) f
+          = (fL.pontryaginDualMap (E := E) ψ) (xU U) := by
+              simp [fL, ψ, LinearMap.applyₗ_apply_apply]
+        _ = Φ (U.val.mkQL.pontryaginDualMap (E := E) (fL.pontryaginDualMap (E := E) ψ)) :=
+            hxU U (fL.pontryaginDualMap (E := E) ψ)
+        _ = Φ (V.val.mkQL.pontryaginDualMap (E := E) ψ) := by rw [hcomp]
+        _ = ψ (xU V) := (hxU V ψ).symm
+        _ = LinearMap.applyₗ (xU V) f := by simp [ψ, LinearMap.applyₗ_apply_apply]
     obtain ⟨x, hx, -⟩ := hN.existsUnique_forall_mkQ_eq xU hcompat
     refine ⟨x, ext fun φ ↦ ?_⟩
     let U : {U : Submodule R N // IsOpen (U : Set N)} := ⟨_, isOpen_ker φ⟩
-    obtain ⟨ψ, hψ⟩ := (U.val.range_pontryaginDualMap_mkQL (E := E) φ).mpr le_rfl
+    obtain ⟨ψ, hψ⟩ := (U.val.mem_range_pontryaginDualMap_mkQL_iff (E := E) φ).mpr le_rfl
     have hψ' : U.val.mkQL.pontryaginDualMap (E := E) ψ = φ := hψ
     rw [eval_apply, ← hψ', ContinuousLinearMap.pontryaginDualMap_apply, Submodule.mkQL_apply,
       hx U, hxU U ψ]
@@ -402,13 +411,13 @@ def evalEquivOfCompact {N : Type w} [AddCommGroup N] [Module R N] [TopologicalSp
 
 /-- **Full faithfulness on compact modules**: `ContinuousLinearMap.pontryaginDualMap` is a
 bijection on continuous linear maps between compact `R`-modules. -/
-theorem bijective_map_of_compact {N₁ N₂ : Type*}
+theorem bijective_pontryaginDualMap_of_compact {N₁ N₂ : Type*}
     [AddCommGroup N₁] [Module R N₁] [TopologicalSpace N₁]
     [AddCommGroup N₂] [Module R N₂] [TopologicalSpace N₂]
     (hN₁ : IsCompactModule R N₁) (hN₂ : IsCompactModule R N₂) :
     Function.Bijective
       (ContinuousLinearMap.pontryaginDualMap (R := R) (E := E) (M := N₁) (N := N₂)) :=
-  bijective_map_of_evalEquiv (evalEquivOfCompact hE hN₁) (evalEquivOfCompact hE hN₂)
+  bijective_pontryaginDualMap_of_evalEquiv (evalEquivOfCompact hE hN₁) (evalEquivOfCompact hE hN₂)
     (evalEquivOfCompact_apply hE hN₁) (evalEquivOfCompact_apply hE hN₂)
 
 end CompactExact
@@ -441,8 +450,10 @@ private theorem finite_torsionBySet_annihilator (m : M) :
   rw [← (I.quotientLinearMapEquivTorsionBySet E).length_eq, length_linearMap_of_forall_isMaximal hE]
   exact Module.length_ne_top_iff.mpr IsFiniteLength.of_finite
 
-/-- **The dual of a discrete module with continuous `R`-action is a compact `R`-module.** -/
-theorem isCompactModule_of_discrete : IsCompactModule R (ModulePontryaginDual R E M) := by
+/-- Over a compact totally disconnected commutative local topological ring `R` and a discrete
+injective cogenerator `E` with continuous `R`-action and `length_R(Hom_R(R ⧸ 𝔪, E)) = 1`, the dual
+of a discrete module with continuous `R`-action is a compact `R`-module. -/
+theorem isCompactModule_dual_of_discrete : IsCompactModule R (ModulePontryaginDual R E M) := by
   let T (m : M) : Type v :=
     Submodule.torsionBySet R E (LinearMap.ker (LinearMap.toSpanSingleton R M m) : Set R)
   let ι : ModulePontryaginDual R E M → ∀ m : M, T m := fun φ m ↦
@@ -464,7 +475,7 @@ theorem isCompactModule_of_discrete : IsCompactModule R (ModulePontryaginDual R 
 
 /-- **Biduality for discrete modules with continuous `R`-action**: `M ≃L[R] (M^∨)^∨`. -/
 def evalEquivOfDiscrete : M ≃L[R] ModulePontryaginDual R E (ModulePontryaginDual R E M) := by
-  have := (isCompactModule_of_discrete hE (M := M)).compactSpace
+  have := (isCompactModule_dual_of_discrete hE (M := M)).compactSpace
   have hinj : Function.Injective (eval R E M) := fun x y hxy ↦
     injective_applyₗ_of_forall_isMaximal (nontrivial_linearMap_of_isMaximal hE) <|
       LinearMap.ext fun f ↦ by
@@ -488,7 +499,7 @@ def evalEquivOfDiscrete : M ≃L[R] ModulePontryaginDual R E (ModulePontryaginDu
         rw [hφm]; exact (hV m hm).right
     let Φ₀ : ModulePontryaginDual R E M₀ →ₗ[R] E :=
       (M₀.subtypeL.pontryaginDualMap (E := E)).toLinearMap.liftOfSurjective
-        (map_surjective_of_injective_of_discrete (Submodule.subtype_injective M₀))
+        (pontryaginDualMap_surjective_of_injective_of_discrete (Submodule.subtype_injective M₀))
         ⟨Φ.toContinuousLinearMap.toLinearMap, hker⟩
     obtain ⟨x₀, hx₀⟩ := exists_eval_eq_of_finite_discrete hE Φ₀
     refine ⟨x₀.val, ext fun φ ↦ ?_⟩
@@ -496,7 +507,8 @@ def evalEquivOfDiscrete : M ≃L[R] ModulePontryaginDual R E (ModulePontryaginDu
     rw [ContinuousLinearMap.pontryaginDualMap_apply, Submodule.subtypeL_apply] at hx
     rw [eval_apply, hx]
     exact LinearMap.equivOfSurjective_apply
-      (map_surjective_of_injective_of_discrete (Submodule.subtype_injective M₀)) hker (m := φ)
+      (pontryaginDualMap_surjective_of_injective_of_discrete (Submodule.subtype_injective M₀))
+      hker (m := φ)
   exact ⟨LinearEquiv.ofBijective (eval R E M) ⟨hinj, hsurj⟩,
     continuous_eval_of_discrete, continuous_of_discreteTopology⟩
 @[simp] theorem evalEquivOfDiscrete_apply (x : M) (φ : ModulePontryaginDual R E M) :
@@ -506,14 +518,14 @@ end SingleDiscrete
 
 /-- **Full faithfulness on discrete modules**: `ContinuousLinearMap.pontryaginDualMap` is a
 bijection on continuous linear maps between discrete `R`-modules with continuous `R`-action. -/
-theorem bijective_map_of_discrete {M₁ M₂ : Type*}
+theorem bijective_pontryaginDualMap_of_discrete {M₁ M₂ : Type*}
     [AddCommGroup M₁] [Module R M₁] [TopologicalSpace M₁] [DiscreteTopology M₁]
     [ContinuousSMul R M₁]
     [AddCommGroup M₂] [Module R M₂] [TopologicalSpace M₂] [DiscreteTopology M₂]
     [ContinuousSMul R M₂] :
     Function.Bijective
       (ContinuousLinearMap.pontryaginDualMap (R := R) (E := E) (M := M₁) (N := M₂)) :=
-  bijective_map_of_evalEquiv (evalEquivOfDiscrete hE) (evalEquivOfDiscrete hE)
+  bijective_pontryaginDualMap_of_evalEquiv (evalEquivOfDiscrete hE) (evalEquivOfDiscrete hE)
     (evalEquivOfDiscrete_apply hE) (evalEquivOfDiscrete_apply hE)
 
 end CompactLocalRing
@@ -538,18 +550,16 @@ def Submodule.quotKerPontryaginDualMapSubtypeEquiv {R : Type u} {E : Type v} {M 
     (hE : ∀ 𝔪 : Ideal R, 𝔪.IsMaximal → Module.length R (R ⧸ 𝔪 →ₗ[R] E) = 1) :
     (ModulePontryaginDual R E M ⧸
       LinearMap.ker (M₀.subtypeL.pontryaginDualMap (E := E)).toLinearMap) ≃L[R]
-      ModulePontryaginDual R E M₀ := by
-  have hclosed : IsClosed (LinearMap.ker (M₀.subtypeL.pontryaginDualMap (E := E)).toLinearMap :
-      Set (ModulePontryaginDual R E M)) :=
-    isClosed_singleton.preimage (M₀.subtypeL.pontryaginDualMap (E := E)).continuous
-  have := ((isCompactModule_of_discrete hE).quotient _ hclosed).compactSpace
-  let e := LinearMap.quotKerEquivOfSurjective (M₀.subtypeL.pontryaginDualMap (E := E)).toLinearMap
-    (map_surjective_of_injective_of_discrete (Submodule.subtype_injective M₀))
-  have hcont : Continuous e :=
-    (LinearMap.ker _).isQuotientMap_mkQ.continuous_iff.mpr
-      (M₀.subtypeL.pontryaginDualMap (E := E)).continuous
-  let eh := hcont.homeoOfEquivCompactToT2 (f := e.toEquiv)
-  exact ⟨e, eh.continuous_toFun, eh.continuous_invFun⟩
+      ModulePontryaginDual R E M₀ :=
+  have := (isCompactModule_dual_of_discrete hE (M := M)).compactSpace
+  let f := (M₀.subtypeL.pontryaginDualMap (E := E)).toLinearMap
+  have hfcont : Continuous f := (M₀.subtypeL.pontryaginDualMap (E := E)).continuous
+  have hf : Topology.IsStrictMap f := hfcont.isClosedMap.isStrictMap hfcont
+  have hrange : LinearMap.range f = ⊤ :=
+    LinearMap.range_eq_top.mpr
+      (pontryaginDualMap_surjective_of_injective_of_discrete (Submodule.subtype_injective M₀))
+  ((ContinuousLinearEquiv.quotKerEquivRange hf).trans
+    (ContinuousLinearEquiv.ofEq _ _ hrange)).trans Submodule.topContEquiv
 
 @[simp] theorem Submodule.quotKerPontryaginDualMapSubtypeEquiv_mk {R : Type u} {E : Type v}
     {M : Type w} [CommRing R] [IsLocalRing R] [TopologicalSpace R] [IsTopologicalRing R]
@@ -561,8 +571,8 @@ def Submodule.quotKerPontryaginDualMapSubtypeEquiv {R : Type u} {E : Type v} {M 
     (hE : ∀ 𝔪 : Ideal R, 𝔪.IsMaximal → Module.length R (R ⧸ 𝔪 →ₗ[R] E) = 1)
     (φ : ModulePontryaginDual R E M) :
     M₀.quotKerPontryaginDualMapSubtypeEquiv hE (Submodule.Quotient.mk φ) =
-      M₀.subtypeL.pontryaginDualMap (E := E) φ :=
-  LinearMap.quotKerEquivOfSurjective_apply_mk (M₀.subtypeL.pontryaginDualMap (E := E)).toLinearMap
-    (map_surjective_of_injective_of_discrete (Submodule.subtype_injective M₀)) φ
+      M₀.subtypeL.pontryaginDualMap (E := E) φ := by
+  dsimp [Submodule.quotKerPontryaginDualMapSubtypeEquiv]
+  rfl
 
 end SubmoduleQuotientEquiv

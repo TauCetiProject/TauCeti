@@ -10,15 +10,10 @@ public import Mathlib.LinearAlgebra.Quotient.Basic
 public import Mathlib.RingTheory.Finiteness.Basic
 public import Mathlib.Topology.Algebra.LinearTopology
 public import Mathlib.Topology.Algebra.Nonarchimedean.TotallyDisconnected
-public import Mathlib.RingTheory.FiniteLength
-public import Mathlib.RingTheory.LocalRing.MaximalIdeal.Defs
 public import TauCeti.Topology.Algebra.Group.OpenSubgroup.Compact
 public import TauCeti.Topology.Algebra.Module.Quotient
 public import TauCeti.Topology.Algebra.Nonarchimedean.Quotient
-import Mathlib.GroupTheory.QuotientGroup.Finite
-import Mathlib.Topology.Algebra.OpenSubgroup
 import Mathlib.Topology.Separation.Connected
-import TauCeti.RingTheory.Length
 
 /-!
 # Compact modules over a compact ring
@@ -374,47 +369,10 @@ theorem quotient (N : Submodule R M) (hN : IsClosed (N : Set M)) : IsCompactModu
 end IsCompactModule
 
 /-- Over a compact ring, every finitely generated submodule of a discrete module with continuous
-scalar action is finite. -/
+scalar action has a finite underlying set. -/
 theorem _root_.Submodule.FG.finite_of_discrete {R M : Type*} [CommRing R] [TopologicalSpace R]
     [CompactSpace R] [AddCommGroup M] [Module R M] [TopologicalSpace M] [DiscreteTopology M]
     [ContinuousSMul R M] {M₀ : Submodule R M} (hM₀ : M₀.FG) : Finite M₀ :=
   hM₀.isCompact.finite_of_discrete.to_subtype
-
-section CompactLocal
-
-variable {R : Type*} [CommRing R] [IsLocalRing R] [TopologicalSpace R] [IsTopologicalRing R]
-  [CompactSpace R] [TotallyDisconnectedSpace R]
-
-/-- In a compact totally disconnected commutative local topological ring, the maximal ideal is
-open. -/
-theorem isOpen_maximalIdeal_of_compact : IsOpen (IsLocalRing.maximalIdeal R : Set R) := by
-  have ⟨I, hIopen, h1⟩ : ∃ I : Ideal R, IsOpen (I : Set R) ∧ (1 : R) ∉ I := by
-    by_contra h; push Not at h
-    exact one_ne_zero (IsCompactModule.self.eq_zero_of_forall_mem_of_isOpen h)
-  exact Ideal.isOpen_of_isOpen_subideal (U := I) (I := IsLocalRing.maximalIdeal R)
-    (IsLocalRing.le_maximalIdeal fun htop ↦ h1 (htop ▸ Submodule.mem_top)) hIopen
-
-/-- Over a compact totally disconnected commutative local topological ring, every module of finite
-length is finite. -/
-theorem _root_.IsFiniteLength.finite {M : Type*} [AddCommGroup M] [Module R M]
-    (hM : IsFiniteLength R M) : Finite M := by
-  have : Finite (R ⧸ IsLocalRing.maximalIdeal R) :=
-    AddSubgroup.quotient_finite_of_isOpen (IsLocalRing.maximalIdeal R).toAddSubgroup
-      (isOpen_maximalIdeal_of_compact (R := R))
-  induction hM with
-  | of_subsingleton => infer_instance
-  | @of_simple_quotient M _ _ N _ _ ih =>
-    obtain ⟨𝔪, h𝔪, ⟨e⟩⟩ := isSimpleModule_iff_quot_maximal.mp ‹IsSimpleModule R (M ⧸ N)›
-    rw [IsLocalRing.eq_maximalIdeal h𝔪] at e
-    have : Finite (M ⧸ N.toAddSubgroup) := Finite.of_equiv _ e.symm.toEquiv
-    exact Finite.of_addSubgroup_quotient N.toAddSubgroup
-
-/-- Over a compact totally disconnected commutative local topological ring, a module has finite
-length if and only if it is finite. -/
-theorem isFiniteLength_iff_finite {M : Type*} [AddCommGroup M] [Module R M] :
-    IsFiniteLength R M ↔ Finite M :=
-  ⟨IsFiniteLength.finite, fun _ ↦ IsFiniteLength.of_finite⟩
-
-end CompactLocal
 
 end TauCeti

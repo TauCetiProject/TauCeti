@@ -61,7 +61,8 @@ applies to the quotients appearing here without any further appeal to defeq.
   length.
 * `TauCeti.isFiniteLength_of_tower`: finite length over `R` gives finite length over any `A`
   acting compatibly.
-* `IsFiniteLength.of_finite`: every finite module over any ring has finite length.
+* `IsFiniteLength.of_finite`: every module with a finite underlying set over any ring has finite
+  length.
 * `TauCeti.surjective_of_injective_of_length_eq` and
   `TauCeti.injective_of_surjective_of_length_eq`: an injective map between modules of the same
   finite length is surjective, and a surjective one is injective.
@@ -183,7 +184,7 @@ theorem isFiniteLength_of_tower (R : Type*) [Ring R] [SMul R A] [Module R M]
   exact isFiniteLength_iff_isNoetherian_isArtinian.mpr
     ⟨isNoetherian_of_tower R inferInstance, isArtinian_of_tower R inferInstance⟩
 
-/-- Every finite module over any ring has finite length. -/
+/-- Every module with a finite underlying set over any ring has finite length. -/
 theorem _root_.IsFiniteLength.of_finite [Finite M] : IsFiniteLength A M :=
   isFiniteLength_iff_isNoetherian_isArtinian.mpr ⟨isNoetherian_of_finite A M, isArtinian_of_finite⟩
 

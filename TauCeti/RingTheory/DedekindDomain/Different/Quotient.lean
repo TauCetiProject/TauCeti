@@ -7,6 +7,7 @@ module
 
 public import TauCeti.RingTheory.DedekindDomain.Different.Basic
 public import TauCeti.RingTheory.DedekindDomain.Different.DualFamily
+import TauCeti.Algebra.Module.LinearMap.Precomp
 
 /-!
 # Trace-dual quotient comparison for linear maps
@@ -71,101 +72,7 @@ end TraceDualQuotient
 
 section TraceDualEquiv
 
-/-- `Hom_A(B, N)` equipped with the precomposition `B`-module structure `(b • f) b' = f (b' * b)`.
-Kept private to keep `traceDualLinearMapEquiv` universe-polymorphic across `A`, `K`, `B`, `L`, `M`
-without requiring `ModuleCat`. -/
-private structure PrecompLinearMap (A B N : Type*) [CommRing A] [CommRing B]
-    [Algebra A B] [AddCommGroup N] [Module A N] where
-  toLinearMap : B →ₗ[A] N
-
-private def PrecompLinearMap.equiv (A B N : Type*) [CommRing A] [CommRing B]
-    [Algebra A B] [AddCommGroup N] [Module A N] :
-    PrecompLinearMap A B N ≃ (B →ₗ[A] N) where
-  toFun := PrecompLinearMap.toLinearMap
-  invFun := PrecompLinearMap.mk
-
-private instance {A B N : Type*} [CommRing A] [CommRing B] [Algebra A B]
-    [AddCommGroup N] [Module A N] : AddCommGroup (PrecompLinearMap A B N) :=
-  (PrecompLinearMap.equiv A B N).addCommGroup
-
-@[simp] private theorem PrecompLinearMap.add_apply {A B N : Type*} [CommRing A] [CommRing B]
-    [Algebra A B] [AddCommGroup N] [Module A N] (f g : PrecompLinearMap A B N) (b : B) :
-    (f + g).toLinearMap b = f.toLinearMap b + g.toLinearMap b :=
-  LinearMap.add_apply f.toLinearMap g.toLinearMap b
-
-private instance {A B N : Type*} [CommRing A] [CommRing B] [Algebra A B]
-    [AddCommGroup N] [Module A N] : Module B (PrecompLinearMap A B N) where
-  smul b f := ⟨{
-    toFun := fun b' ↦ f.toLinearMap (b' * b)
-    map_add' := fun _ _ ↦ by simp [add_mul]
-    map_smul' := fun _ _ ↦ by simp }⟩
-  one_smul f := (PrecompLinearMap.equiv A B N).injective <| by
-    ext b'; change f.toLinearMap (b' * 1) = f.toLinearMap b'; rw [mul_one]
-  mul_smul b₁ b₂ f := (PrecompLinearMap.equiv A B N).injective <| by
-    ext b'; change f.toLinearMap (b' * (b₁ * b₂)) = f.toLinearMap (b' * b₁ * b₂); rw [mul_assoc]
-  smul_zero b := (PrecompLinearMap.equiv A B N).injective <| by ext b'; rfl
-  smul_add b f g := (PrecompLinearMap.equiv A B N).injective <| by
-    ext b'; change (f + g).toLinearMap (b' * b) = f.toLinearMap (b' * b) + g.toLinearMap (b' * b)
-    exact PrecompLinearMap.add_apply f g (b' * b)
-  add_smul b₁ b₂ f := (PrecompLinearMap.equiv A B N).injective <| by
-    ext b'
-    change f.toLinearMap (b' * (b₁ + b₂)) = f.toLinearMap (b' * b₁) + f.toLinearMap (b' * b₂)
-    rw [mul_add, map_add]
-  zero_smul f := (PrecompLinearMap.equiv A B N).injective <| by
-    ext b'; change f.toLinearMap (b' * 0) = 0; rw [mul_zero, map_zero]
-
-private instance {A B N : Type*} [CommRing A] [CommRing B] [Algebra A B]
-    [AddCommGroup N] [Module A N] : Module A (PrecompLinearMap A B N) :=
-  Module.compHom (PrecompLinearMap A B N) (algebraMap A B)
-
-private instance {A B N : Type*} [CommRing A] [CommRing B] [Algebra A B]
-    [AddCommGroup N] [Module A N] : IsScalarTower A B (PrecompLinearMap A B N) :=
-  IsScalarTower.of_algebraMap_smul fun _ _ ↦ rfl
-
-private theorem PrecompLinearMap.smul_apply {A B N : Type*} [CommRing A] [CommRing B]
-    [Algebra A B] [AddCommGroup N] [Module A N] (b b' : B) (f : PrecompLinearMap A B N) :
-    (b • f).toLinearMap b' = f.toLinearMap (b' * b) := rfl
-
-private theorem PrecompLinearMap.smul_apply_ring {A B N : Type*} [CommRing A] [CommRing B]
-    [Algebra A B] [AddCommGroup N] [Module A N] (a : A) (f : PrecompLinearMap A B N) (b : B) :
-    (a • f).toLinearMap b = a • f.toLinearMap b := by
-  change (algebraMap A B a • f).toLinearMap b = a • f.toLinearMap b
-  rw [PrecompLinearMap.smul_apply, mul_comm, ← Algebra.smul_def, map_smul]
-
-/-- Adjunction-like `A`-linear equivalence `(M →ₗ[B] Hom_A(B, N)) ≃ₗ[A] (M →ₗ[A] N)` for
-universe-polymorphic `A`, `B`, `N`, `M`. -/
-private def coextendHomEquiv (A B N M : Type*) [CommRing A] [CommRing B] [Algebra A B]
-    [AddCommGroup N] [Module A N] [AddCommGroup M] [Module B M] [Module A M]
-    [IsScalarTower A B M] :
-    (M →ₗ[B] PrecompLinearMap A B N) ≃ₗ[A] (M →ₗ[A] N) where
-  toFun φ :=
-    { toFun := fun m ↦ (φ m).toLinearMap 1
-      map_add' := fun m₁ m₂ ↦ by rw [map_add, PrecompLinearMap.add_apply]
-      map_smul' := fun a m ↦ by
-        have hsm : a • φ m = algebraMap A B a • φ m := rfl
-        rw [RingHom.id_apply, ← algebraMap_smul B a m, map_smul, ← hsm,
-          PrecompLinearMap.smul_apply_ring] }
-  invFun ψ :=
-    { toFun := fun m ↦ ⟨{
-        toFun := fun b ↦ ψ (b • m)
-        map_add' := fun b₁ b₂ ↦ by rw [add_smul, map_add]
-        map_smul' := fun a b ↦ by rw [RingHom.id_apply, smul_assoc, map_smul] }⟩
-      map_add' := fun m₁ m₂ ↦ (PrecompLinearMap.equiv A B N).injective <| by
-        ext b
-        change ψ (b • (m₁ + m₂)) =
-          ((⟨_⟩ : PrecompLinearMap A B N) + (⟨_⟩ : PrecompLinearMap A B N)).toLinearMap b
-        rw [PrecompLinearMap.add_apply, smul_add, map_add]; rfl
-      map_smul' := fun b m ↦ (PrecompLinearMap.equiv A B N).injective <| by
-        ext b'
-        change ψ (b' • (b • m)) = (b • (⟨_⟩ : PrecompLinearMap A B N)).toLinearMap b'
-        rw [PrecompLinearMap.smul_apply, ← mul_smul]; rfl }
-  left_inv φ := LinearMap.ext fun m ↦ (PrecompLinearMap.equiv A B N).injective <| by
-    ext b
-    change (φ (b • m)).toLinearMap 1 = (φ m).toLinearMap b
-    rw [map_smul, PrecompLinearMap.smul_apply, one_mul]
-  right_inv ψ := LinearMap.ext fun m ↦ by simp [one_smul]
-  map_add' _ _ := LinearMap.ext fun m ↦ PrecompLinearMap.add_apply _ _ 1
-  map_smul' _ _ := LinearMap.ext fun m ↦ PrecompLinearMap.smul_apply_ring _ _ 1
+open TauCeti.Algebra
 
 variable (A K B L : Type*) [CommRing A] [Field K] [CommRing B] [Field L]
   [Algebra A K] [Algebra B L] [Algebra A B] [Algebra K L] [Algebra A L]
@@ -237,21 +144,26 @@ private theorem traceDualQuotientMap_smul_mulByTraceDualQuotientMap
   _ = a • k := by rw [← ha, mul_comm, ← Algebra.smul_def]
 
 omit [IsDomain A] [IsFractionRing A K] in
-/-- The `B`-linear trace-dual comparison map `L ⧸ Bᵛ →ₗ[B] Hom_A(B, K ⧸ A)`. -/
+/-- The `B`-linear trace-dual comparison map `L ⧸ Bᵛ →ₗ[B] PrecompLinearMap A B (K ⧸ A)`. -/
 private def traceDualToPrecomp :
     (L ⧸ Submodule.traceDual A K (1 : Submodule B L)) →ₗ[B]
       PrecompLinearMap A B (K ⧸ (1 : Submodule A K)) where
-  toFun q := ⟨{
-    toFun := fun b ↦ traceDualQuotientMap A K B L (b • q)
-    map_add' := fun _ _ ↦ by rw [add_smul, map_add]
-    map_smul' := fun a b ↦ by rw [RingHom.id_apply, smul_assoc, map_smul] }⟩
-  map_add' _ _ := (PrecompLinearMap.equiv A B _).injective <| by
-    ext b; simp [PrecompLinearMap.equiv, PrecompLinearMap.add_apply, smul_add]
-  map_smul' b₁ q := (PrecompLinearMap.equiv A B _).injective <| by
-    ext b₂
-    change traceDualQuotientMap A K B L (b₂ • b₁ • q) =
-      traceDualQuotientMap A K B L ((b₂ * b₁) • q)
-    rw [mul_smul]
+  toFun q := PrecompLinearMap.ofLinearMap
+    { toFun := fun b ↦ traceDualQuotientMap A K B L (b • q)
+      map_add' := fun _ _ ↦ by rw [add_smul, map_add]
+      map_smul' := fun a b ↦ by rw [RingHom.id_apply, smul_assoc, map_smul] }
+  map_add' _ _ := PrecompLinearMap.ext fun b ↦ by
+    simp [PrecompLinearMap.add_apply, PrecompLinearMap.ofLinearMap_apply, smul_add]
+  map_smul' b₁ q := PrecompLinearMap.ext fun b₂ ↦ by
+    simp [PrecompLinearMap.smul_apply, PrecompLinearMap.ofLinearMap_apply, smul_eq_mul,
+      ← mul_smul, mul_comm b₂ b₁]
+
+omit [IsDomain A] [IsFractionRing A K] [FiniteDimensional K L] [Algebra.IsSeparable K L]
+  [IsIntegralClosure B A L] in
+@[simp] private theorem traceDualToPrecomp_apply
+    (q : L ⧸ Submodule.traceDual A K (1 : Submodule B L)) (b : B) :
+    traceDualToPrecomp A K B L q b = traceDualQuotientMap A K B L (b • q) := by
+  simp [traceDualToPrecomp]
 
 omit [IsDomain A] [IsFractionRing A K] in
 /-- `traceDualToPrecomp` is invertible via any finite trace-dual family `(b, y)`. -/
@@ -260,49 +172,46 @@ private theorem traceDualToPrecomp_sum_mulBy {n : ℕ} (b : Fin n → B) (y : Fi
     (hsum : ∀ x : L, ∑ i, Algebra.trace K L (x * algebraMap B L (b i)) • y i = x)
     (f : PrecompLinearMap A B (K ⧸ (1 : Submodule A K))) :
     traceDualToPrecomp A K B L
-        (∑ i, mulByTraceDualQuotientMap A K B L (y i) (hy i) (f.toLinearMap (b i))) = f := by
-  apply (PrecompLinearMap.equiv A B _).injective
-  ext c
+        (∑ i, mulByTraceDualQuotientMap A K B L (y i) (hy i) (f (b i))) = f := by
+  apply PrecompLinearMap.ext
+  intro c
   have hmem (i : Fin n) :
       ∃ a : A, algebraMap A K a = Algebra.trace K L (y i * algebraMap B L c) := by
     simpa [Algebra.traceForm_apply, mul_comm (y i)] using
       Submodule.mem_traceDual.mp (hy i) (algebraMap B L c) (Submodule.mem_one.mpr ⟨c, rfl⟩)
   choose a ha using hmem
   have ha_sum : ∑ i, a i • b i = c := sum_smul_eq_of_dualFamily A K B L b y hsum c a ha
-  calc (traceDualToPrecomp A K B L
-        (∑ i, mulByTraceDualQuotientMap A K B L (y i) (hy i) (f.toLinearMap (b i)))).toLinearMap c
+  calc traceDualToPrecomp A K B L
+        (∑ i, mulByTraceDualQuotientMap A K B L (y i) (hy i) (f (b i))) c
     = ∑ i, traceDualQuotientMap A K B L
-        (c • mulByTraceDualQuotientMap A K B L (y i) (hy i) (f.toLinearMap (b i))) := by
-        change traceDualQuotientMap A K B L (c • ∑ i, _) = _
-        simp only [Finset.smul_sum, map_sum]
-  _ = ∑ i, a i • f.toLinearMap (b i) :=
+        (c • mulByTraceDualQuotientMap A K B L (y i) (hy i) (f (b i))) := by
+        rw [traceDualToPrecomp_apply, Finset.smul_sum, map_sum]
+  _ = ∑ i, a i • f (b i) :=
         Finset.sum_congr rfl fun i _ ↦
           traceDualQuotientMap_smul_mulByTraceDualQuotientMap A K B L
             (y i) (hy i) c (a i) (ha i) _
-  _ = f.toLinearMap (∑ i, a i • b i) := by simp only [map_sum, map_smul]
-  _ = f.toLinearMap c := by rw [ha_sum]
+  _ = f.linearMap (∑ i, a i • b i) := by simp only [map_sum, map_smul]
+  _ = f c := by rw [ha_sum]
 
 section FiniteProjective
 
 variable [Module.Finite A B] [Module.Projective A B]
 
-/-- Trace-specific `B`-linear equivalence `L ⧸ Bᵛ ≃ₗ[B] Hom_A(B, K ⧸ A)`. -/
+/-- Trace-specific `B`-linear equivalence `L ⧸ Bᵛ ≃ₗ[B] PrecompLinearMap A B (K ⧸ A)`. -/
 private def traceDualQuotientEquiv :
     (L ⧸ Submodule.traceDual A K (1 : Submodule B L)) ≃ₗ[B]
       PrecompLinearMap A B (K ⧸ (1 : Submodule A K)) :=
   LinearEquiv.ofBijective (traceDualToPrecomp A K B L) <| by
     obtain ⟨n, b, y, hy, hsum⟩ := exists_sum_trace_mul_smul_eq A K (B := B) (L := L)
     refine Function.bijective_iff_has_inverse.mpr
-      ⟨fun f ↦ ∑ i, mulByTraceDualQuotientMap A K B L (y i) (hy i) (f.toLinearMap (b i)),
+      ⟨fun f ↦ ∑ i, mulByTraceDualQuotientMap A K B L (y i) (hy i) (f (b i)),
         fun q ↦ ?_, traceDualToPrecomp_sum_mulBy A K B L b y hy hsum⟩
     obtain ⟨x, rfl⟩ := Submodule.Quotient.mk_surjective _ q
     have hbi (i : Fin n) :
         traceDualQuotientMap A K B L (b i • Submodule.Quotient.mk x) =
           Submodule.Quotient.mk (Algebra.trace K L (x * algebraMap B L (b i))) := by
       rw [← Submodule.Quotient.mk_smul, traceDualQuotientMap_mk, Algebra.smul_def, mul_comm]
-    change ∑ i, mulByTraceDualQuotientMap A K B L (y i) (hy i)
-      (traceDualQuotientMap A K B L (b i • Submodule.Quotient.mk x)) = Submodule.Quotient.mk x
-    simp only [hbi, mulByTraceDualQuotientMap_mk]
+    simp only [traceDualToPrecomp_apply, hbi, mulByTraceDualQuotientMap_mk]
     simp_rw [← Submodule.mkQ_apply]
     rw [← map_sum, hsum x]
 
@@ -312,24 +221,23 @@ def traceDualLinearMapEquiv (M : Type*) [AddCommGroup M] [Module B M] [Module A 
     [IsScalarTower A B M] :
     (M →ₗ[B] (L ⧸ Submodule.traceDual A K (1 : Submodule B L))) ≃ₗ[A]
       (M →ₗ[A] (K ⧸ (1 : Submodule A K))) :=
+  letI : SMulCommClass B A (L ⧸ Submodule.traceDual A K (1 : Submodule B L)) :=
+    ⟨fun b a q ↦ by rw [← algebraMap_smul B a, ← mul_smul, mul_comm b, mul_smul, algebraMap_smul]⟩
   let e := traceDualQuotientEquiv A K B L
   let congrR :
       (M →ₗ[B] (L ⧸ Submodule.traceDual A K (1 : Submodule B L))) ≃ₗ[A]
         (M →ₗ[B] PrecompLinearMap A B (K ⧸ (1 : Submodule A K))) :=
-    { toFun := fun φ ↦ e.toLinearMap ∘ₗ φ
-      invFun := fun φ ↦ e.symm.toLinearMap ∘ₗ φ
-      left_inv := fun φ ↦ LinearMap.ext fun m ↦ e.symm_apply_apply (φ m)
-      right_inv := fun φ ↦ LinearMap.ext fun m ↦ e.apply_symm_apply (φ m)
-      map_add' := fun _ _ ↦ LinearMap.ext fun _ ↦ map_add e _ _
-      map_smul' := fun _ _ ↦ LinearMap.ext fun _ ↦ map_smul (e.restrictScalars A) _ _ }
-  congrR.trans (coextendHomEquiv A B (K ⧸ (1 : Submodule A K)) M)
+    LinearEquiv.ofLinearMap
+      (LinearMap.compRight A e.toLinearMap) (LinearMap.compRight A e.symm.toLinearMap)
+      (LinearMap.ext fun φ ↦ LinearMap.ext fun m ↦ e.apply_symm_apply (φ m))
+      (LinearMap.ext fun φ ↦ LinearMap.ext fun m ↦ e.symm_apply_apply (φ m))
+  congrR.trans (PrecompLinearMap.coextendHomEquiv A B (K ⧸ (1 : Submodule A K)) M)
 
 @[simp] theorem traceDualLinearMapEquiv_apply {M : Type*} [AddCommGroup M] [Module B M]
     [Module A M] [IsScalarTower A B M]
     (φ : M →ₗ[B] (L ⧸ Submodule.traceDual A K (1 : Submodule B L))) (m : M) :
     traceDualLinearMapEquiv A K B L M φ m = traceDualQuotientMap A K B L (φ m) := by
-  change traceDualQuotientMap A K B L ((1 : B) • φ m) = traceDualQuotientMap A K B L (φ m)
-  rw [one_smul]
+  simp [traceDualLinearMapEquiv, traceDualQuotientEquiv, LinearMap.compRight_apply, one_smul]
 
 /-- `traceDualLinearMapEquiv` is compatible with the `B`-module structure on `M`. -/
 theorem traceDualLinearMapEquiv_smul_apply {M : Type*} [AddCommGroup M] [Module B M] [Module A M]
@@ -347,16 +255,16 @@ theorem traceDualLinearMapEquiv_symm_apply_of_dualFamily {M : Type*} [AddCommGro
     (traceDualLinearMapEquiv A K B L M).symm ψ m =
       ∑ i, mulByTraceDualQuotientMap A K B L (y i) (hy i) (ψ (b i • m)) := by
   let f : PrecompLinearMap A B (K ⧸ (1 : Submodule A K)) :=
-    (coextendHomEquiv A B (K ⧸ (1 : Submodule A K)) M).symm ψ m
+    (PrecompLinearMap.coextendHomEquiv A B (K ⧸ (1 : Submodule A K)) M).symm ψ m
   have hf :
       traceDualQuotientEquiv A K B L
-          (∑ i, mulByTraceDualQuotientMap A K B L (y i) (hy i) (ψ (b i • m))) = f :=
-    traceDualToPrecomp_sum_mulBy A K B L b y hy hsum f
+          (∑ i, mulByTraceDualQuotientMap A K B L (y i) (hy i) (ψ (b i • m))) = f := by
+    simpa [f, traceDualQuotientEquiv] using traceDualToPrecomp_sum_mulBy A K B L b y hy hsum f
   have hsymm :
       (traceDualQuotientEquiv A K B L).symm f =
         ∑ i, mulByTraceDualQuotientMap A K B L (y i) (hy i) (ψ (b i • m)) :=
     (traceDualQuotientEquiv A K B L).symm_apply_eq.mpr hf.symm
-  exact hsymm
+  simpa [traceDualLinearMapEquiv, LinearMap.compRight_apply, f] using hsymm
 
 end FiniteProjective
 
