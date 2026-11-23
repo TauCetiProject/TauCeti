@@ -578,7 +578,7 @@ theorem postcompBaseL_comp [IsLocallyFiniteMeasure (mu.restrict Omega)]
         (postcompBaseL base T₂) =
       postcompBaseL base (T₁.comp T₂) := by
   ext1 u
-  refine ext_prev_weakFDeriv (by simp [ContinuousLinearMap.compLp_compLp]) ?_
+  refine ext_prev_weakFDeriv (by simp) ?_
   rw [ContinuousLinearMap.comp_apply, weakFDeriv_postcompBaseL, weakFDeriv_postcompBaseL,
     weakFDeriv_postcompBaseL, ContinuousLinearMap.compLp_compLp]
   congr 1

@@ -41,7 +41,8 @@ the factors.
 
 An endomorphism is invertible exactly when it is a unit of the endomorphism ring
 (`ContinuousLinearMap.isInvertible_iff_isUnit`). A map is invertible exactly when its negation is
-(`ContinuousLinearMap.isInvertible_neg_iff`).
+(`ContinuousLinearMap.isInvertible_neg_iff`), and negating a map negates its totalized inverse
+(`ContinuousLinearMap.inverse_neg`).
 
 A map agreeing pointwise with an equality cast is invertible
 (`ContinuousLinearMap.isInvertible_of_eq_cast`), including zero modules.
@@ -130,6 +131,14 @@ variable {R E F : Type*} [Ring R] [TopologicalSpace E] [AddCommGroup E] [Module 
 theorem isInvertible_neg_iff {f : E →L[R] F} : (-f).IsInvertible ↔ f.IsInvertible := by
   have h : -f = (ContinuousLinearEquiv.neg R : F ≃L[R] F) ∘L f := by ext; simp
   rw [h, isInvertible_equiv_comp]
+
+/-- Negating a continuous linear map negates its totalized inverse. -/
+@[simp]
+theorem inverse_neg [IsTopologicalAddGroup E] (f : E →L[R] F) : (-f).inverse = -f.inverse := by
+  have hneg : -f = ((ContinuousLinearEquiv.neg R : F ≃L[R] F) : F →L[R] F) ∘L f := by
+    ext; simp
+  rw [hneg, inverse_equiv_comp]
+  ext; simp
 
 end Neg
 
@@ -334,29 +343,6 @@ theorem inverse_smul_of_isScalarTower {𝕜 S : Type*} [Semifield 𝕜] [Semifie
     map_inv₀]
 
 end Smul
-
-section Neg
-
-variable {R M M₂ : Type*} [Ring R]
-  [TopologicalSpace M] [AddCommGroup M] [Module R M]
-  [TopologicalSpace M₂] [AddCommGroup M₂] [Module R M₂] [IsTopologicalAddGroup M₂]
-
-/-- Negating a continuous linear map negates its totalized inverse. -/
-@[simp]
-theorem inverse_neg [IsTopologicalAddGroup M] (f : M →L[R] M₂) : (-f).inverse = -f.inverse := by
-  have hneg : -f = ((ContinuousLinearEquiv.neg R : M₂ ≃L[R] M₂) : M₂ →L[R] M₂) ∘L f := by
-    ext; simp
-  rw [hneg, inverse_equiv_comp]
-  ext; simp
-
-/-- Negating a continuous linear map preserves invertibility. -/
-@[simp]
-theorem isInvertible_neg_iff (f : M →L[R] M₂) : (-f).IsInvertible ↔ f.IsInvertible := by
-  have hneg : -f = ((ContinuousLinearEquiv.neg R : M₂ ≃L[R] M₂) : M₂ →L[R] M₂) ∘L f := by
-    ext; simp
-  rw [hneg, isInvertible_equiv_comp]
-
-end Neg
 
 section SMulId
 
