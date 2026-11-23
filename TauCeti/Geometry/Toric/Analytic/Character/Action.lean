@@ -250,7 +250,7 @@ theorem continuousSMul_complexTorus_affinePointTopology
   intro m
   simp only [ambient_smul_apply_single]
   exact (Units.continuous_val.comp
-    ((continuous_complexTorus_apply m.1).comp continuous_fst)).mul
+    ((continuous_complexTorus_apply m.val).comp continuous_fst)).mul
     ((continuous_apply_single g m).comp continuous_snd)
 
 end Ambient

@@ -65,7 +65,7 @@ private theorem tendsto_two_mul_four_pow_mul_exp {a : ℝ} (ha : 0 < a) :
     Tendsto (fun n : ℕ => 2 * 4 ^ n * Real.exp (-(a * n - 1) ^ 2 / 2)) atTop (𝓝 0) := by
   have hexp : ∀ n : ℕ, 2 * 4 ^ n * Real.exp (-(a * n - 1) ^ 2 / 2) =
       2 * Real.exp (n * (Real.log 4 + a - a ^ 2 / 2 * n) + -(1 / 2)) := fun n => by
-    rw [← Real.exp_log (by norm_num : (0 : ℝ) < 4), ← Real.exp_nat_mul, mul_assoc,
+    rw [← Real.exp_log (by norm_num : (0 : ℝ) < 4), ← Real.exp_natCast_mul, mul_assoc,
       ← Real.exp_add, Real.log_exp]
     ring_nf
   simp_rw [hexp]

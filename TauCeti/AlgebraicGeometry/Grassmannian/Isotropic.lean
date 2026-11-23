@@ -146,8 +146,8 @@ the inclusion into the Grassmannian scheme, is the morphism classifying `N`. -/
 theorem schemeIsotropicLocusHomEquiv_apply_comp_subschemeι (ω : LinearMap.BilinForm R M)
     {A : Type u} [CommRing A] [Algebra R A]
     (N : {N : G(k, A ⊗[R] M; A) // N.toSubmodule ≤ (ω.baseChange A).orthogonal N.toSubmodule}) :
-    (schemeIsotropicLocusHomEquiv k ω A N).1 ≫ (schemeIsotropicLocus k ω).subschemeι =
-      toSchemeHom N.1 :=
+    (schemeIsotropicLocusHomEquiv k ω A N).val ≫ (schemeIsotropicLocus k ω).subschemeι =
+      toSchemeHom N.val :=
   schemeIdealLocusHomEquiv_apply_comp_subschemeι (R := R) (M := M) (k := k)
     (fun N ↦ N.isotropicLocus ω) (fun f N ↦ isotropicLocus_map f N ω) _
 
@@ -159,8 +159,8 @@ theorem toSchemeHom_schemeIsotropicLocusHomEquiv_symm_apply (ω : LinearMap.Bili
     (h : {h : Spec (.of A) ⟶ (schemeIsotropicLocus k ω).subscheme //
       h ≫ (schemeIsotropicLocus k ω).subschemeι ≫ toSpec R M k =
         Spec.map (CommRingCat.ofHom (algebraMap R A))}) :
-    toSchemeHom ((schemeIsotropicLocusHomEquiv k ω A).symm h).1 =
-      h.1 ≫ (schemeIsotropicLocus k ω).subschemeι :=
+    toSchemeHom ((schemeIsotropicLocusHomEquiv k ω A).symm h).val =
+      h.val ≫ (schemeIsotropicLocus k ω).subschemeι :=
   toSchemeHom_schemeIdealLocusHomEquiv_symm_apply (R := R) (M := M) (k := k)
     (fun N ↦ N.isotropicLocus ω) (fun f N ↦ isotropicLocus_map f N ω) h
 
@@ -217,9 +217,10 @@ theorem nonempty_subscheme_schemeIsotropicLocus_of_toMatrix_eq_J [Nontrivial R] 
     Fintype.equivFinOfCardEq (by simp; omega) |>.symm
   -- the base point of the standard isotropic chart, an isotropic point over `R`
   let N := (isotropicChartEquiv b' e R hb').symm 0
-  let h := schemeIsotropicLocusHomEquiv k ω R ⟨N.1.1, (isotropicLocus_eq_bot_iff _ ω).mp N.2⟩
+  let h := schemeIsotropicLocusHomEquiv k ω R
+    ⟨N.val.val, (isotropicLocus_eq_bot_iff _ ω).mp N.property⟩
   obtain ⟨p⟩ : Nonempty (Spec (.of R)) := inferInstance
-  exact ⟨h.1 p⟩
+  exact ⟨h.val p⟩
 
 /-- **The nonemptiness range of the isotropic Grassmannian.** Let `b` be a symplectic basis of `M`
 indexed by `ι ⊕ ι`, with Gram matrix `Matrix.J` for `ω`, so `M` has rank `2m` with `m = |ι|`. Over

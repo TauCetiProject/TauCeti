@@ -192,7 +192,7 @@ theorem explicitDelta1_shortExact (x : H1 G (ULift.{u} (ZMod p))) :
         ((H1EquivOfSmulEqSelf htriv).symm (Additive.ofMul χ)) x := by
   induction x using QuotientAddGroup.induction_on with
   | _ f =>
-    obtain ⟨hfc, hf1⟩ := mem_Z1_iff.1 f.2
+    obtain ⟨hfc, hf1⟩ := mem_Z1_iff.1 f.property
     -- the lift `g ↦ (0, ψ g)` of the cocycle `ψ`, whose coboundary is `(g, h) ↦ (χ g ψ h, 0)`
     have hec : Continuous fun g : G ↦ (⟨0, ((f : G → ULift (ZMod p)) g).down⟩ :
         CharacterExtension χ) :=
@@ -247,7 +247,7 @@ include htriv hN in
 private theorem inclSnd_smul (n : N) (b : ZMod p) :
     inclSnd χ (n • b) = n • inclSnd χ b := by
   rw [Subgroup.smul_def, htriv, Subgroup.smul_def,
-    smul_eq_self_of_apply_eq_one χ (hN n n.2)]
+    smul_eq_self_of_apply_eq_one χ (hN n n.property)]
 
 /-- **The trace map `Coind_N^G 𝔽_p → E(χ)`** for a subgroup `N` of finite index on which `χ`
 vanishes: coinduce the `N`-equivariant inclusion `b ↦ (0, b)` of the second coordinate, and take
@@ -283,7 +283,7 @@ include htriv hN in
 /-- The element of `Coind_N^G 𝔽_p` that is `b` on `ker χ` and `0` off it. -/
 private noncomputable def kerIndicator (b : ZMod p) : DiscreteCoind G N (ZMod p) :=
   DiscreteCoind.mk G N (ZMod p) (fun g ↦ if χ g = 1 then b else 0) (isLocallyConstant_ite χ b)
-    fun n g ↦ by simp only [map_mul, hN n n.2, one_mul, Subgroup.smul_def, htriv]
+    fun n g ↦ by simp only [map_mul, hN n n.property, one_mul, Subgroup.smul_def, htriv]
 
 omit [ContinuousMul G] [N.FiniteIndex] in
 private theorem kerIndicator_apply (b : ZMod p) (g : G) :

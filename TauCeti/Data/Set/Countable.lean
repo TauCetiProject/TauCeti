@@ -26,6 +26,12 @@ values of countably many sentences.
   countable range.
 * `Finset.countable_range_sup`: the pointwise finite supremum of countable-range functions
   has countable range.
+* `Function.Injective.exists_injOn_comp_eq_inl`: an injective map `g : α → β` has a left inverse
+  `β → α ⊕ ℕ`, through `Sum.inl`, that is injective on the range of `g` together with a given
+  countable set.
+* `TauCeti.exists_countable_forall_exists_mem`: for a relation between a countable type and an
+  arbitrary type, countably many elements of the second type serve as witnesses for every element
+  of the first that has a witness.
 * `TauCeti.exists_countable_exceptions_of_splits`: outside one countable set, every `P i` is
   constant.
 * `TauCeti.countable_range_of_splits`: a map that depends only on the truth values of the `P i`
@@ -41,6 +47,9 @@ values of countably many sentences.
 * Divergences from that source: the constancy result is stated for any map determined by the
   predicates, with the separating-tests form as a corollary, and assumes only that the domain is
   nonempty rather than uncountable.
+  `TauCeti.exists_countable_forall_exists_mem` is not from that source; it is the choice of
+  witnesses in the proof of Lemma 2.9 of V. Guirardel and G. Levitt, *JSJ decompositions of
+  groups*, Astérisque 395 (2017).
 -/
 
 public section
@@ -66,9 +75,39 @@ theorem Finset.countable_range_sup {κ α Ω : Type*} [SemilatticeSup α] [Order
   have heq : s.sup f = fun ω ↦ s.sup (fun j ↦ f j ω) := funext (s.sup_apply f)
   exact heq ▸ h
 
+/-- An injective map `g : α → β` has a left inverse `β → α ⊕ ℕ`, through `Sum.inl`, that is
+injective on the range of `g` together with a given countable set. -/
+theorem Function.Injective.exists_injOn_comp_eq_inl {α β : Type*} {g : α → β}
+    (hg : Function.Injective g) {S : Set β} (hS : S.Countable) :
+    ∃ p : β → α ⊕ ℕ, (Set.range g ∪ S).InjOn p ∧ p ∘ g = Sum.inl := by
+  classical
+  obtain ⟨e, he⟩ := Set.countable_iff_exists_injOn.mp hS
+  refine ⟨Function.extend g Sum.inl (Sum.inr ∘ e), fun y hy z hz hyz => ?_,
+    funext fun x => hg.extend_apply _ _ x⟩
+  by_cases hy' : ∃ x, g x = y <;> by_cases hz' : ∃ x, g x = z
+  · obtain ⟨x, rfl⟩ := hy'
+    obtain ⟨x', rfl⟩ := hz'
+    rw [hg.extend_apply, hg.extend_apply, Sum.inl.injEq] at hyz
+    rw [hyz]
+  · obtain ⟨x, rfl⟩ := hy'
+    simp [hg.extend_apply, Function.extend_apply' _ _ _ hz'] at hyz
+  · obtain ⟨x, rfl⟩ := hz'
+    simp [hg.extend_apply, Function.extend_apply' _ _ _ hy'] at hyz
+  · simp only [Function.extend_apply' _ _ _ hy', Function.extend_apply' _ _ _ hz',
+      Function.comp_apply, Sum.inr.injEq] at hyz
+    exact he (hy.resolve_left hy') (hz.resolve_left hz') hyz
+
 namespace TauCeti
 
 open Set
+
+/-- **Countably many witnesses.** For a relation `P` between a countable type and an arbitrary
+type, some countable set of elements of the second type contains, for every `a` with `P a i` for
+some `i`, an element `j` with `P a j`. -/
+theorem exists_countable_forall_exists_mem {α : Sort*} {ι : Type*} [Countable α]
+    (P : α → ι → Prop) : ∃ J : Set ι, J.Countable ∧ ∀ a i, P a i → ∃ j ∈ J, P a j :=
+  ⟨range fun a : {a // ∃ i, P a i} => a.property.choose, countable_range _,
+    fun a i hi => ⟨_, ⟨⟨a, i, hi⟩, rfl⟩, (⟨i, hi⟩ : ∃ i, P a i).choose_spec⟩⟩
 
 variable {X : Type u} {ι : Type v} [Countable ι]
 

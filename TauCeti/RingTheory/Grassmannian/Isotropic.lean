@@ -10,6 +10,7 @@ public import Mathlib.RingTheory.Finiteness.Bilinear
 public import TauCeti.LinearAlgebra.BilinearForm.BaseChange
 public import TauCeti.RingTheory.Grassmannian.Basic
 public import TauCeti.LinearAlgebra.BilinearForm.Isometry
+import TauCeti.LinearAlgebra.BilinearForm.Isotropic
 import TauCeti.LinearAlgebra.BilinearForm.Orthogonal
 
 /-!
@@ -195,8 +196,9 @@ theorem exists_mem_isometryGroup_grassmannianCongr_eq {ω : LinearMap.BilinForm 
   have h := Submodule.finrank_quotient_add_finrank N.toSubmodule
   have h' := Submodule.finrank_quotient_add_finrank N'.toSubmodule
   rw [finrank_quotient] at h h'
-  obtain ⟨g, hg, hgN⟩ := hω.exists_mem_isometryGroup_map_eq hnd hN hN' (by omega)
-  exact ⟨g, hg, Module.Grassmannian.ext <| by simpa using hgN⟩
+  obtain ⟨g, hgN⟩ := hω.exists_isometryEquiv_map_eq hnd hN hN' (by omega)
+  exact ⟨g.toLinearEquiv, LinearMap.BilinForm.mem_isometryGroup_iff.mpr fun x y ↦ g.map_app y x,
+    Module.Grassmannian.ext <| by simpa using hgN⟩
 
 end Field
 

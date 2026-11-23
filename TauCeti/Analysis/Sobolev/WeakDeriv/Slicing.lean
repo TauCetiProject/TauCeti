@@ -62,7 +62,7 @@ theorem integral_divergence_mul_integral_line_eq {w : E → ℝ} (hw : ContDiff 
       fderiv ℝ w (orthogonalLineEquiv e he p) (φ p.1)) (volume.prod volume) := by
     refine Integrable.mono' ((hL.integrable_comp_of_integrable hDint).mul_const Cφ)
       ((hD.comp (orthogonalLineEquiv e he).continuous).clm_apply
-        ((continuous_subtype_val.comp φ.continuous).comp continuous_fst)).aestronglyMeasurable
+        ((continuous_subtypeVal.comp φ.continuous).comp continuous_fst)).aestronglyMeasurable
       (.of_forall fun p => ?_)
     exact (fderiv ℝ w _).le_opNorm_of_le (by simpa using hCφ p.1)
   have hprod : Integrable (fun p : (ℝ ∙ e)ᗮ × ℝ =>

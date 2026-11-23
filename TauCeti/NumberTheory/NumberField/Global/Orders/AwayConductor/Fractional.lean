@@ -87,7 +87,7 @@ carrier. -/
 theorem exists_integralIdealsAwayConductor_div (I : O.fractionalIdealsAwayConductor) :
     ∃ A B : O.integralIdealsAwayConductor,
       I = O.integralIdealsAwayConductorHom A / O.integralIdealsAwayConductorHom B := by
-  obtain ⟨A, B, h⟩ := I.2
+  obtain ⟨A, B, h⟩ := I.property
   exact ⟨A, B, Subtype.ext h⟩
 
 /-- Localization of the integral conductor-prime monoid inside the actual invertible fractional
