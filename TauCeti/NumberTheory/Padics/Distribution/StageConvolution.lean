@@ -28,6 +28,8 @@ limit, the distribution space, or measure convolution.
 
 ## Main results
 
+* `TauCeti.LocallyAnalyticDistribution.convolveFunRightStage_def`: defining composition
+  `(compLeft φ _).comp (comulCurried K)`.
 * `TauCeti.LocallyAnalyticDistribution.opNorm_convolveFunRightStage_le`: operator norm bound
   `‖convolveFunRightStage φ‖ ≤ ‖φ‖`.
 * `TauCeti.LocallyAnalyticDistribution.eval_convolveFunRightStage`: evaluation gives
@@ -39,8 +41,9 @@ limit, the distribution space, or measure convolution.
   `TauCeti.LocallyAnalyticDistribution.convolveFunRightStage_transitionLE`: compatibility with
   stage transitions.
 * `TauCeti.LocallyAnalyticDistribution.convolveFunRightStage_comp`,
-  `TauCeti.LocallyAnalyticDistribution.convolveFunRightStage_evalCLM_zero`: associativity and
-  unit law.
+  `TauCeti.LocallyAnalyticDistribution.convolveFunRightStage_evalCLM_comp_eval`,
+  `TauCeti.LocallyAnalyticDistribution.convolveFunRightStage_evalCLM_zero`: associativity,
+  point-evaluation translation law, and unit law.
 
 ## References
 
@@ -73,7 +76,8 @@ noncomputable def convolveFunRightStage {h : ℕ} :
     rw [compLeft_smul a φ (φ.bound.imp fun _ hb ↦ hb.2), ContinuousLinearMap.smul_comp,
       RingHom.id_apply]
 
-private theorem convolveFunRightStage_def {h : ℕ} (φ : AnalyticStage p h K →L[K] K) :
+/-- Stage-level right convolution of `φ` is `compLeft φ ∘ comulCurried K`. -/
+theorem convolveFunRightStage_def {h : ℕ} (φ : AnalyticStage p h K →L[K] K) :
     convolveFunRightStage φ =
       (compLeft φ (φ.bound.imp fun _ hb ↦ hb.2)).comp (comulCurried K) :=
   (rfl)
@@ -85,30 +89,11 @@ theorem convolveFunRightStage_apply {h : ℕ} (φ : AnalyticStage p h K →L[K] 
     convolveFunRightStage φ c i = φ (comulCurried K c i) := by
   simp [convolveFunRightStage]
 
-private theorem convolveFunRightStage_apply_eq {h : ℕ} (φ : AnalyticStage p h K →L[K] K)
-    (c : AnalyticStage p h K) :
-    convolveFunRightStage φ c =
-      compLeft φ (φ.bound.imp fun _ hb ↦ hb.2) (comulCurried K c) :=
-  (rfl)
-
-omit [Fact p.Prime] [Algebra ℤ_[p] K] [IsBoundedSMul ℤ_[p] K] [IsUltrametricDist K]
-  [CompleteSpace K] in
-private theorem compLeft_comp_clm {h : ℕ} {E F G : Type*}
-    [NormedAddCommGroup E] [NormedSpace K E]
-    [NormedAddCommGroup F] [NormedSpace K F]
-    [NormedAddCommGroup G] [NormedSpace K G]
-    (v : F →L[K] G) (u : E →L[K] F) (f : AnalyticStage p h E) :
-    compLeft (v.comp u) ((v.comp u).bound.imp fun _ hb ↦ hb.2) f =
-      compLeft v (v.bound.imp fun _ hb ↦ hb.2)
-        (compLeft u (u.bound.imp fun _ hb ↦ hb.2) f) := by
-  rw [compLeft_comp v u (v.bound.imp fun _ hb ↦ hb.2) (u.bound.imp fun _ hb ↦ hb.2)
-    ((v.comp u).bound.imp fun _ hb ↦ hb.2), ContinuousLinearMap.comp_apply]
-
 /-- `convolveFunRightStage φ` is bounded by `‖φ‖`. -/
 theorem norm_convolveFunRightStage_apply_le {h : ℕ} (φ : AnalyticStage p h K →L[K] K)
     (c : AnalyticStage p h K) :
     ‖convolveFunRightStage φ c‖ ≤ ‖φ‖ * ‖c‖ := by
-  rw [convolveFunRightStage_apply_eq]
+  rw [convolveFunRightStage_def, ContinuousLinearMap.comp_apply]
   exact (norm_compLeft_apply_le φ φ.le_opNorm _).trans (by rw [norm_comulCurried])
 
 /-- The operator norm of `convolveFunRightStage φ` is at most `‖φ‖`. -/
@@ -121,7 +106,8 @@ theorem opNorm_convolveFunRightStage_le {h : ℕ} (φ : AnalyticStage p h K →L
 theorem eval_convolveFunRightStage {h : ℕ} (φ : AnalyticStage p h K →L[K] K)
     (c : AnalyticStage p h K) (x : ℤ_[p]) :
     AnalyticStage.eval K (convolveFunRightStage φ c) x = φ (AnalyticStage.translate K x c) := by
-  rw [convolveFunRightStage_apply_eq, eval_compLeft K, translate_eq_eval_comulCurried]
+  rw [convolveFunRightStage_def, ContinuousLinearMap.comp_apply, eval_compLeft K,
+    translate_eq_eval_comulCurried]
 
 /-- Evaluating `convolveFunRightStage φ c` at `0` recovers `φ c`. -/
 theorem eval_convolveFunRightStage_zero {h : ℕ} (φ : AnalyticStage p h K →L[K] K)
@@ -143,9 +129,11 @@ theorem convolveFunRightStage_transition {h : ℕ} (ψ : AnalyticStage p (h + 1)
     (c : AnalyticStage p h K) :
     convolveFunRightStage ψ (transition K c) =
       transition K (convolveFunRightStage (ψ.comp (transition K)) c) := by
-  rw [convolveFunRightStage_apply_eq, convolveFunRightStage_apply_eq,
-    ← transition_compLeft_transition_comulCurried K c, ← transition_compLeft K,
-    compLeft_comp_clm]
+  rw [convolveFunRightStage_def, convolveFunRightStage_def, ContinuousLinearMap.comp_apply,
+    ContinuousLinearMap.comp_apply, ← transition_compLeft_transition_comulCurried K c,
+    ← transition_compLeft K,
+    compLeft_comp ψ (transition K) (ψ.bound.imp fun _ hb ↦ hb.2) (exists_norm_transition_le K),
+    ContinuousLinearMap.comp_apply]
 
 /-- Stage-level right convolution commutes with multi-level stage transitions. -/
 theorem convolveFunRightStage_transitionLE {h k : ℕ} (hhk : h ≤ k)
@@ -163,15 +151,30 @@ functionals. -/
 theorem convolveFunRightStage_comp {h : ℕ} (φ ψ : AnalyticStage p h K →L[K] K) :
     convolveFunRightStage (φ.comp (convolveFunRightStage ψ)) =
       (convolveFunRightStage φ).comp (convolveFunRightStage ψ) := by
-  refine ContinuousLinearMap.ext fun c ↦ ?_
-  have hinner : compLeft (convolveFunRightStage ψ)
-        ((convolveFunRightStage ψ).bound.imp fun _ hb ↦ hb.2) (comulCurried K c) =
-      comulCurried K (convolveFunRightStage ψ c) := by
+  have hinner :
+      (compLeft (convolveFunRightStage ψ)
+          ((convolveFunRightStage ψ).bound.imp fun _ hb ↦ hb.2)).comp (comulCurried K) =
+        (comulCurried K).comp (convolveFunRightStage ψ) := by
+    refine ContinuousLinearMap.ext fun c ↦ ?_
+    rw [ContinuousLinearMap.comp_apply, ContinuousLinearMap.comp_apply]
     conv_lhs => simp only [convolveFunRightStage_def]
-    rw [compLeft_comp_clm, ← comulCurried_comulCurried, ← comulCurried_compLeft,
-      ← convolveFunRightStage_apply_eq]
-  rw [ContinuousLinearMap.comp_apply, convolveFunRightStage_apply_eq, compLeft_comp_clm, hinner,
-    ← convolveFunRightStage_apply_eq]
+    rw [compLeft_comp (compLeft ψ (ψ.bound.imp fun _ hb ↦ hb.2)) (comulCurried K)
+        (exists_norm_compLeft_apply_le _ _) (exists_norm_comulCurried_le K),
+      ContinuousLinearMap.comp_apply, ← comulCurried_comulCurried, ← comulCurried_compLeft,
+      ← ContinuousLinearMap.comp_apply (compLeft ψ _), ← convolveFunRightStage_def]
+  rw [convolveFunRightStage_def (φ.comp (convolveFunRightStage ψ)), convolveFunRightStage_def φ,
+    compLeft_comp φ (convolveFunRightStage ψ)
+      (φ.bound.imp fun _ hb ↦ hb.2) ((convolveFunRightStage ψ).bound.imp fun _ hb ↦ hb.2),
+    ContinuousLinearMap.comp_assoc, hinner, ← ContinuousLinearMap.comp_assoc]
+
+/-- Stage-level right convolution with point evaluation at `x` is stage translation by `x`. -/
+@[simp]
+theorem convolveFunRightStage_evalCLM_comp_eval (h : ℕ) (x : ℤ_[p]) :
+    convolveFunRightStage
+        ((ContinuousMap.evalCLM K x).comp (AnalyticStage.eval (p := p) (h := h) K)) =
+      (AnalyticStage.translate K x).toLinearIsometry.toContinuousLinearMap := by
+  ext c i
+  simp [eval_comulCurried_apply]
 
 /-- Stage-level right convolution with coordinate evaluation at `(0, 0)` is the identity
 operator. -/
@@ -179,7 +182,12 @@ operator. -/
 theorem convolveFunRightStage_evalCLM_zero (h : ℕ) :
     convolveFunRightStage (evalCLM K (0, 0) : AnalyticStage p h K →L[K] K) =
       ContinuousLinearMap.id K _ := by
-  ext c i
+  have heval : (evalCLM K (0, 0) : AnalyticStage p h K →L[K] K) =
+      (ContinuousMap.evalCLM K (0 : ℤ_[p])).comp (AnalyticStage.eval K) := by
+    ext c
+    simp [eval_apply_zero]
+  rw [heval, convolveFunRightStage_evalCLM_comp_eval]
+  ext c
   simp
 
 end TauCeti.LocallyAnalyticDistribution
