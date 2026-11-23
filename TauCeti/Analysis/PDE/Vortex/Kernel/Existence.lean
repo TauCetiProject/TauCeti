@@ -9,6 +9,7 @@ public import TauCeti.Analysis.PDE.Vortex.LogVariation
 public import TauCeti.Analysis.Complex.ZeroMultiplicity
 public import Mathlib.Data.Multiset.Fintype
 import Mathlib.Analysis.Calculus.BumpFunction.InnerProduct
+import TauCeti.Analysis.PDE.Vortex.ExteriorEstimate
 import TauCeti.Analysis.PDE.Vortex.PotentialSolve
 import TauCeti.Analysis.PDE.Vortex.Zeros
 

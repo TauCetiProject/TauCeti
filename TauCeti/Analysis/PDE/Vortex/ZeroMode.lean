@@ -472,7 +472,7 @@ theorem exists_gaugeFixedOperator_eq_zero_eq_logVariation (hx : ContDiff ℝ ∞
     rw [hηuv]
     refine laplacian_add_sub_eq_smul hh2.contDiffAt (hu z hz) hv.contDiffAt ?_
     have hPz : (P z : ℂ) = starRingEnd ℂ (sectionValue x z) * sectionValue x z / 4 :=
-      ofReal_potential_eq x z
+      ofReal_sq_add_sq_eq x z
     rw [hΔh z, ← hρu z, hPz]
     simp only [hgdef]
     linear_combination (-(ρ z : ℂ) * starRingEnd ℂ (sectionValue x z) / 4) * hαu z hz

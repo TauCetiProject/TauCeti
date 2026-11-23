@@ -25,7 +25,6 @@ by the kernel constructions in `TauCeti.Analysis.PDE.Vortex.ZeroMode` and
 
 ## Main results
 
-* `TauCeti.Vortex.memLp_top_apply`: the section coordinates `x₂` and `x₃` are bounded.
 * `TauCeti.Vortex.exists_contDiff_laplacian_eq_mul_sub`: for a smooth field and a smooth
   `g ∈ L²(ℂ; ℂ)`, the smooth `H²(ℂ; ℂ)` solution of `Δh = P h - g`.
 
@@ -43,20 +42,6 @@ open MeasureTheory Filter Complex TemperedDistribution
 open scoped Laplacian ContDiff Topology
 
 variable {x : ℂ → EuclideanSpace ℝ (Fin 4)}
-
-/-- The section coordinates of a continuous field whose section has unit modulus at infinity are
-bounded. -/
-theorem memLp_top_apply (hx : Continuous x)
-    (hlim : Tendsto (fun z ↦ 4 * (x z 2 ^ 2 + x z 3 ^ 2)) (cocompact ℂ) (𝓝 1)) {i : Fin 4}
-    (hi : i = 2 ∨ i = 3) : MemLp (fun z ↦ x z i) ⊤ volume := by
-  obtain ⟨M, hM⟩ := exists_forall_sq_add_sq_le hx hlim
-  have hxi : Continuous fun z ↦ x z i := by fun_prop
-  refine memLp_top_of_bound hxi.aestronglyMeasurable (M + 1) (ae_of_all _ fun z ↦ ?_)
-  rw [Real.norm_eq_abs]
-  have hz := hM z
-  rcases hi with rfl | rfl
-  · nlinarith [sq_nonneg (|x z 2| - 1), sq_abs (x z 2), sq_nonneg (x z 3), abs_nonneg (x z 2)]
-  · nlinarith [sq_nonneg (|x z 3| - 1), sq_abs (x z 3), sq_nonneg (x z 2), abs_nonneg (x z 3)]
 
 /-- For a smooth field whose section has unit modulus at infinity and a smooth `g ∈ L²(ℂ; ℂ)`,
 the equation `Δh = P h - g`, `P = |α|² / 4`, has a smooth solution `h ∈ H²(ℂ; ℂ)`. -/
