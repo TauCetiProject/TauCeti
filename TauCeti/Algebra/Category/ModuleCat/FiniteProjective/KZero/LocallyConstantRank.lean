@@ -5,18 +5,14 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.RingTheory.Spectrum.Maximal.Defs
 public import TauCeti.Algebra.Category.ModuleCat.FiniteProjective.Clopen
 public import TauCeti.Algebra.Category.ModuleCat.FiniteProjective.KZero.Rank
 public import TauCeti.Algebra.Category.ModuleCat.FiniteProjective.KZero.ScalarChange
 
-import Mathlib.LinearAlgebra.FreeModule.PID
-import Mathlib.RingTheory.Flat.TorsionFree
 import TauCeti.Order.Disjoint
 import TauCeti.RingTheory.Flat.Semilocal
 import TauCeti.RingTheory.Idempotents.BalancedExtension
 import TauCeti.RingTheory.Idempotents.Module
-import TauCeti.RingTheory.Idempotents.Projective
 import TauCeti.RingTheory.Idempotents.TensorProduct
 import TauCeti.Topology.LocallyConstant.Connected
 
@@ -56,11 +52,9 @@ Thus `K₀(proj R)` splits additively as `LocallyConstant (PrimeSpectrum R) ℤ 
 * `TauCeti.FiniteProjectiveModules.rankEquivOfFiniteMaximalSpectrum`: for a commutative semilocal
   ring (`Finite (MaximalSpectrum R)`), the ring isomorphism
   `K₀(proj R) ≃+* LocallyConstant (PrimeSpectrum R) ℤ`.
-* `TauCeti.FiniteProjectiveModules.rankEquivIntOfForallIsStablyFree`,
-  `rankEquivIntOfFiniteMaximalSpectrum`, and `rankEquivIntOfIsPrincipalIdealRing`: the ring
-  isomorphism `K₀(proj R) ≃+* ℤ` whenever every finite projective `R`-module is stably free (over a
-  nontrivial commutative ring) — in particular for connected semilocal rings (including all
-  commutative local rings) and principal ideal domains.
+* `TauCeti.FiniteProjectiveModules.rankEquivIntOfFiniteMaximalSpectrum`: the ring isomorphism
+  `K₀(proj R) ≃+* ℤ` for a commutative semilocal ring with connected prime spectrum (including all
+  commutative local rings).
 
 ## Main results
 
@@ -76,6 +70,9 @@ Thus `K₀(proj R)` splits additively as `LocallyConstant (PrimeSpectrum R) ℤ 
 * `TauCeti.FiniteProjectiveModules.reducedK0_eq_bot_of_finite_maximalSpectrum` and
   `reducedK0_eq_bot_of_forall_isStablyFree`: vanishing of reduced `K₀` for semilocal rings and rings
   whose finitely generated projective modules are stably free.
+* `TauCeti.FiniteProjectiveModules.rankEquivIntOfForallIsStablyFree_apply`,
+  `rankEquivIntOfFiniteMaximalSpectrum_apply`, and `rankEquivIntOfIsPrincipalIdealRing_apply`:
+  evaluation of the integer rank equivalences via `rankHom`.
 
 ## References
 
@@ -667,11 +664,6 @@ theorem mem_reducedK0_iff_forall_localization
         (IsLocalization.AtPrime.under_maximalIdeal (Localization.AtPrime p.asIdeal) p.asIdeal)
     rwa [rankHom_extend_apply, hpt, map_zero, LocallyConstant.zero_apply] at h
 
-private theorem of_finiteProjectiveModulesRegular_eq_one :
-    SplitK0.of.{u} (finiteProjectiveModulesRegular R) = 1 := by
-  rw [SplitK0.one_def]
-  exact SplitK0.of_congr (ObjectProperty.isoMk _ (eqToIso (tensorUnit_obj R).symm))
-
 /-- If every finitely generated projective `R`-module is stably free, then `rankSection R` is a
 left inverse to `rankHom R`. -/
 theorem rankSection_comp_rankHom_of_forall_isStablyFree
@@ -692,34 +684,23 @@ theorem reducedK0_eq_bot_of_forall_isStablyFree
   reducedK0_eq_bot_of_rankSection_comp_rankHom R
     (rankSection_comp_rankHom_of_forall_isStablyFree R h)
 
-/-- If `R` is nontrivial and every finitely generated projective `R`-module is stably free, then
-the integer cast gives a ring isomorphism `K₀(proj R) ≃+* ℤ`. -/
-noncomputable def rankEquivIntOfForallIsStablyFree [Nontrivial R]
-    (h : ∀ P : (finiteProjectiveModules R).FullSubcategory, Module.IsStablyFree R P.obj) :
-    SplitK0.{u} (finiteProjectiveModules R).FullSubcategory ≃+* ℤ :=
-  (RingEquiv.ofBijective
-    (Int.castRingHom (SplitK0.{u} (finiteProjectiveModules R).FullSubcategory))
-    (by
-      convert (rankEquiv R h).symm.bijective using 1
-      ext z
-      simp [of_finiteProjectiveModulesRegular_eq_one R])).symm
+private theorem rankEquivInt_apply_eq_rankHom
+    (h : ∀ P : (finiteProjectiveModules R).FullSubcategory, Module.IsStablyFree R P.obj)
+    (e : SplitK0.{u} (finiteProjectiveModules R).FullSubcategory ≃+* ℤ)
+    (hsymm : ∀ n : ℤ, e.symm n = n)
+    (x : SplitK0.{u} (finiteProjectiveModules R).FullSubcategory) (p : PrimeSpectrum R) :
+    e x = rankHom R x p := by
+  obtain ⟨z, rfl⟩ := exists_zsmul_of_finiteProjectiveModulesRegular_eq R h x
+  rw [of_finiteProjectiveModulesRegular_eq_one R, zsmul_one]
+  conv_lhs => rw [← hsymm z, RingEquiv.apply_symm_apply]
+  rw [← LocallyConstant.evalRingHom_apply p, map_intCast, map_intCast, Int.cast_id]
 
 theorem rankEquivIntOfForallIsStablyFree_apply [Nontrivial R]
     (h : ∀ P : (finiteProjectiveModules R).FullSubcategory, Module.IsStablyFree R P.obj)
     (x : SplitK0.{u} (finiteProjectiveModules R).FullSubcategory) (p : PrimeSpectrum R) :
-    rankEquivIntOfForallIsStablyFree R h x = rankHom R x p := by
-  obtain ⟨z, rfl⟩ := exists_zsmul_of_finiteProjectiveModulesRegular_eq R h x
-  rw [of_finiteProjectiveModulesRegular_eq_one R, zsmul_one, map_intCast, map_intCast]
-  rfl
-
-@[simp]
-theorem rankEquivIntOfForallIsStablyFree_of [Nontrivial R]
-    (h : ∀ P : (finiteProjectiveModules R).FullSubcategory, Module.IsStablyFree R P.obj)
-    (P : (finiteProjectiveModules R).FullSubcategory) [Module.Free R P.obj] :
-    rankEquivIntOfForallIsStablyFree R h (SplitK0.of.{u} P) = (Module.finrank R P.obj : ℤ) := by
-  obtain ⟨p₀⟩ : Nonempty (PrimeSpectrum R) := inferInstance
-  rw [rankEquivIntOfForallIsStablyFree_apply R h _ p₀, rankHom_of_free,
-    LocallyConstant.coe_const, Function.const_apply]
+    rankEquivIntOfForallIsStablyFree R h x = rankHom R x p :=
+  rankEquivInt_apply_eq_rankHom R h (rankEquivIntOfForallIsStablyFree R h)
+    (rankEquivIntOfForallIsStablyFree_symm_apply R h) x p
 
 /-- **Connected semilocal / local `K₀` classification.** Over a commutative semilocal ring with
 connected prime spectrum (in particular, over any commutative local ring), stalk rank gives a ring
@@ -729,6 +710,11 @@ noncomputable def rankEquivIntOfFiniteMaximalSpectrum
     SplitK0.{u} (finiteProjectiveModules R).FullSubcategory ≃+* ℤ :=
   (rankEquivOfFiniteMaximalSpectrum R).trans
     (LocallyConstant.constRingEquiv (PrimeSpectrum R) ℤ).symm
+
+theorem rankEquivIntOfFiniteMaximalSpectrum_symm_apply
+    [Finite (MaximalSpectrum R)] [ConnectedSpace (PrimeSpectrum R)] (n : ℤ) :
+    (rankEquivIntOfFiniteMaximalSpectrum R).symm n = n := by
+  simp
 
 theorem rankEquivIntOfFiniteMaximalSpectrum_apply
     [Finite (MaximalSpectrum R)] [ConnectedSpace (PrimeSpectrum R)]
@@ -747,25 +733,13 @@ theorem rankEquivIntOfFiniteMaximalSpectrum_of
   rw [rankEquivIntOfFiniteMaximalSpectrum_apply R _ p₀, rankHom_of_free,
     LocallyConstant.coe_const, Function.const_apply]
 
-/-- **PID `K₀` classification.** Over a principal ideal domain `R`, every finitely generated
-projective module is free, so stalk rank gives a ring isomorphism `K₀(proj R) ≃+* ℤ`. -/
-noncomputable def rankEquivIntOfIsPrincipalIdealRing [IsDomain R] [IsPrincipalIdealRing R] :
-    SplitK0.{u} (finiteProjectiveModules R).FullSubcategory ≃+* ℤ :=
-  rankEquivIntOfForallIsStablyFree R fun P ↦
-    have : Module.Free R P.obj := Module.free_of_finite_type_torsion_free'
-    inferInstance
-
 theorem rankEquivIntOfIsPrincipalIdealRing_apply [IsDomain R] [IsPrincipalIdealRing R]
     (x : SplitK0.{u} (finiteProjectiveModules R).FullSubcategory) (p : PrimeSpectrum R) :
     rankEquivIntOfIsPrincipalIdealRing R x = rankHom R x p :=
-  rankEquivIntOfForallIsStablyFree_apply R _ x p
-
-@[simp]
-theorem rankEquivIntOfIsPrincipalIdealRing_of [IsDomain R] [IsPrincipalIdealRing R]
-    (P : (finiteProjectiveModules R).FullSubcategory) :
-    rankEquivIntOfIsPrincipalIdealRing R (SplitK0.of.{u} P) = (Module.finrank R P.obj : ℤ) :=
-  haveI : Module.Free R P.obj := Module.free_of_finite_type_torsion_free'
-  rankEquivIntOfForallIsStablyFree_of R _ P
+  rankEquivInt_apply_eq_rankHom R
+    (fun P ↦ have : Module.Free R P.obj := Module.free_of_finite_type_torsion_free'; inferInstance)
+    (rankEquivIntOfIsPrincipalIdealRing R)
+    (rankEquivIntOfIsPrincipalIdealRing_symm_apply R) x p
 
 end Classification
 

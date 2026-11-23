@@ -5,8 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Topology.LocallyConstant.Basic
-public import Mathlib.Topology.Sets.Closeds
 public import TauCeti.Topology.LocallyConstant.Basic
 public import TauCeti.Topology.Sets.Clopens
 

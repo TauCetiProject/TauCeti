@@ -26,7 +26,6 @@ instance instCompactSpace [TopologicalSpace X] [CompactSpace X] (s : Clopens X) 
   isCompact_iff_compactSpace.mp s.isClosed.isCompact
 
 /-- The preimage of a clopen subset along a continuous map, as a clopen subset. -/
-@[expose]
 def comap {X Y : Type*} [TopologicalSpace X] [TopologicalSpace Y]
     (g : C(Y, X)) (U : Clopens X) : Clopens Y :=
   ⟨g ⁻¹' U, U.isClopen.preimage g.continuous⟩
@@ -44,5 +43,44 @@ theorem mem_comap {X Y : Type*} [TopologicalSpace X] [TopologicalSpace Y]
     {g : C(Y, X)} {U : Clopens X} {y : Y} :
     y ∈ comap g U ↔ g y ∈ U :=
   Iff.rfl
+
+@[simp]
+theorem comap_id {X : Type*} [TopologicalSpace X] (U : Clopens X) :
+    comap (ContinuousMap.id X) U = U :=
+  Clopens.ext Set.preimage_id
+
+@[simp]
+theorem comap_comp {X Y Z : Type*} [TopologicalSpace X] [TopologicalSpace Y] [TopologicalSpace Z]
+    (g : C(Y, X)) (h : C(Z, Y)) (U : Clopens X) :
+    comap (g.comp h) U = comap h (comap g U) :=
+  Clopens.ext Set.preimage_comp
+
+@[simp]
+theorem comap_top {X Y : Type*} [TopologicalSpace X] [TopologicalSpace Y] (g : C(Y, X)) :
+    comap g ⊤ = ⊤ :=
+  Clopens.ext Set.preimage_univ
+
+@[simp]
+theorem comap_bot {X Y : Type*} [TopologicalSpace X] [TopologicalSpace Y] (g : C(Y, X)) :
+    comap g ⊥ = ⊥ :=
+  Clopens.ext Set.preimage_empty
+
+@[simp]
+theorem comap_inf {X Y : Type*} [TopologicalSpace X] [TopologicalSpace Y] (g : C(Y, X))
+    (U V : Clopens X) :
+    comap g (U ⊓ V) = comap g U ⊓ comap g V :=
+  Clopens.ext Set.preimage_inter
+
+@[simp]
+theorem comap_sup {X Y : Type*} [TopologicalSpace X] [TopologicalSpace Y] (g : C(Y, X))
+    (U V : Clopens X) :
+    comap g (U ⊔ V) = comap g U ⊔ comap g V :=
+  Clopens.ext Set.preimage_union
+
+@[simp]
+theorem comap_compl {X Y : Type*} [TopologicalSpace X] [TopologicalSpace Y] (g : C(Y, X))
+    (U : Clopens X) :
+    comap g Uᶜ = (comap g U)ᶜ :=
+  Clopens.ext Set.preimage_compl
 
 end TopologicalSpace.Clopens

@@ -115,17 +115,20 @@ theorem rankAtStalk_eq (p : PrimeSpectrum R) :
   have (k : f.range_finite.toFinset) : Module.Flat R (Fin k.val →
       (Ideal.span {(isIdempotentElemEquivClopens.symm (f.fiberClopens k.val)).val} : Ideal R)) :=
     Module.Flat.of_projective
+  have hfactor (k : f.range_finite.toFinset) :
+      Module.rankAtStalk (R := R) (Fin k.val →
+        (Ideal.span {(isIdempotentElemEquivClopens.symm (f.fiberClopens k.val)).val} : Ideal R)) p =
+        if f p = k.val then k.val else 0 := by
+    rw [Module.rankAtStalk_pi, finsum_eq_sum_of_fintype]
+    simp [(isIdempotentElemEquivClopens.symm _).property.rankAtStalk_span_singleton,
+      PrimeSpectrum.mem_asIdeal_isIdempotentElemEquivClopens_symm_iff]
   rw [Module.rankAtStalk_eq_of_equiv (equivPi R f), Module.rankAtStalk_pi,
     finsum_eq_sum_of_fintype,
     Finset.sum_eq_single_of_mem ⟨f p, f.range_finite.mem_toFinset.2 ⟨p, rfl⟩⟩ (Finset.mem_univ _)]
-  · rw [Module.rankAtStalk_pi, finsum_eq_sum_of_fintype]
-    simp [(isIdempotentElemEquivClopens.symm _).property.rankAtStalk_span_singleton,
-      PrimeSpectrum.mem_asIdeal_isIdempotentElemEquivClopens_symm_iff]
+  · simpa using hfactor ⟨f p, f.range_finite.mem_toFinset.2 ⟨p, rfl⟩⟩
   · intro k _ hkne
-    rw [Module.rankAtStalk_pi, finsum_eq_sum_of_fintype]
     have hne : f p ≠ k.val := fun h ↦ hkne (Subtype.ext h.symm)
-    simp [(isIdempotentElemEquivClopens.symm _).property.rankAtStalk_span_singleton,
-      PrimeSpectrum.mem_asIdeal_isIdempotentElemEquivClopens_symm_iff, hne]
+    simp [hfactor, hne]
 
 /-- The clopen-glued module for the zero rank function is trivial. -/
 instance subsingleton_zero : Subsingleton (ClopenRankModule R 0) :=

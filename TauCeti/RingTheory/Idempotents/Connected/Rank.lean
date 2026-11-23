@@ -8,7 +8,6 @@ module
 public import Mathlib.RingTheory.Flat.Rank
 public import TauCeti.RingTheory.Idempotents.Connected.Spectrum
 
-import Mathlib.Algebra.Module.FinitePresentation
 import TauCeti.RingTheory.Idempotents.Projective
 import TauCeti.RingTheory.Spectrum.Prime.FreeLocus
 

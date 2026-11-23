@@ -411,6 +411,12 @@ public theorem piRestrictOfSubsingleton_symm_apply_of_mem {s t : Set ι} (hst : 
     (piRestrictOfSubsingleton R M hst hsub).symm y i = y ⟨i.val, hi⟩ := by
   simp [piRestrictOfSubsingleton, hi]
 
+@[simp]
+public theorem piRestrictOfSubsingleton_symm_apply_of_notMem {s t : Set ι} (hst : s ⊆ t)
+    (hsub : ∀ i ∈ t, i ∉ s → Subsingleton (M i)) (y : ∀ i : s, M i) (i : t) (hi : i.val ∉ s) :
+    (piRestrictOfSubsingleton R M hst hsub).symm y i = 0 := by
+  simp [piRestrictOfSubsingleton, hi]
+
 end RestrictOfSubsingleton
 
 end LinearEquiv

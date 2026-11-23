@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.RingTheory.Ideal.Quotient.Operations
 public import TauCeti.RingTheory.Idempotents.Primitive.Basic
 
 /-!
@@ -29,62 +28,33 @@ section CommRing
 
 variable {R : Type*} [CommRing R] {e : R}
 
-private def spanSingletonQuotientFwd (e : R) :
-    (Ideal.span {e} : Ideal R) →ₗ[R] R ⧸ Ideal.span {1 - e} :=
-  (Ideal.span {1 - e} : Ideal R).mkQ.comp (Ideal.span {e} : Ideal R).subtype
-
-private theorem spanSingletonQuotientFwd_apply (e : R) (x : (Ideal.span {e} : Ideal R)) :
-    spanSingletonQuotientFwd e x = Ideal.Quotient.mk (Ideal.span {1 - e}) x.val := (rfl)
-
-private def spanSingletonQuotientInv (he : IsIdempotentElem e) :
-    (R ⧸ Ideal.span {1 - e}) →ₗ[R] (Ideal.span {e} : Ideal R) :=
-  (Ideal.span {1 - e}).liftQ
-    (LinearMap.toSpanSingleton R (Ideal.span {e} : Ideal R) (TauCeti.spanSingletonGenerator e))
-    (fun r hr ↦ by
-      obtain ⟨a, rfl⟩ := Ideal.mem_span_singleton'.1 hr
-      exact LinearMap.mem_ker.2 <| Subtype.ext <| by
-        simp [mul_assoc, sub_mul, he.eq])
-
-private theorem spanSingletonQuotientInv_mk (he : IsIdempotentElem e) (r : R) :
-    spanSingletonQuotientInv he (Ideal.Quotient.mk (Ideal.span {1 - e}) r) =
-      r • TauCeti.spanSingletonGenerator e :=
-  (rfl)
-
-private theorem coe_spanSingletonQuotientInv_mk (he : IsIdempotentElem e) (r : R) :
-    (spanSingletonQuotientInv he (Ideal.Quotient.mk (Ideal.span {1 - e}) r) : R) = r * e := by
-  simp [spanSingletonQuotientInv_mk]
-
 /-- In a commutative ring, the principal ideal `Re` of an idempotent `e` is linearly isomorphic to
 the quotient `R ⧸ (1 - e)`. -/
-def spanSingletonEquivQuotientOneSub (he : IsIdempotentElem e) :
+noncomputable def spanSingletonEquivQuotientOneSub (he : IsIdempotentElem e) :
     (Ideal.span {e} : Ideal R) ≃ₗ[R] R ⧸ Ideal.span {1 - e} :=
-  LinearEquiv.ofLinearMap (spanSingletonQuotientFwd e) (spanSingletonQuotientInv he)
-    (LinearMap.ext fun q ↦ by
-      obtain ⟨r, rfl⟩ := Ideal.Quotient.mk_surjective q
-      simp only [LinearMap.comp_apply, LinearMap.id_apply, spanSingletonQuotientFwd_apply,
-        coe_spanSingletonQuotientInv_mk]
-      refine Ideal.Quotient.eq.2 ?_
-      exact (Ideal.mem_span_singleton'.2 ⟨-r, by ring⟩ : r * e - r ∈ Ideal.span {1 - e}))
-    (LinearMap.ext fun x ↦ Subtype.ext <| by
-      simp only [LinearMap.comp_apply, LinearMap.id_apply, spanSingletonQuotientFwd_apply,
-        coe_spanSingletonQuotientInv_mk]
-      exact (TauCeti.mem_span_singleton_iff_mul_eq_self he).1 x.property)
+  (Submodule.quotientEquivOfIsCompl (Ideal.span {1 - e} : Ideal R) (Ideal.span {e} : Ideal R)
+    he.isCompl_span_singleton_one_sub.symm).symm
 
 @[simp]
 theorem spanSingletonEquivQuotientOneSub_apply (he : IsIdempotentElem e)
     (x : (Ideal.span {e} : Ideal R)) :
     he.spanSingletonEquivQuotientOneSub x = Ideal.Quotient.mk (Ideal.span {1 - e}) x.val :=
-  (rfl)
+  congrFun (congrArg DFunLike.coe (Submodule.toLinearMap_symm_quotientEquivOfIsCompl
+    he.isCompl_span_singleton_one_sub.symm)) x
 
 theorem spanSingletonEquivQuotientOneSub_symm_mk (he : IsIdempotentElem e) (r : R) :
     he.spanSingletonEquivQuotientOneSub.symm (Ideal.Quotient.mk _ r) =
-      r • TauCeti.spanSingletonGenerator e :=
-  (rfl)
+      r • TauCeti.spanSingletonGenerator e := by
+  symm
+  rw [LinearEquiv.eq_symm_apply, spanSingletonEquivQuotientOneSub_apply]
+  refine Ideal.Quotient.eq.2 ?_
+  exact Ideal.mem_span_singleton'.2 ⟨-r, by simp [mul_sub]; ring⟩
 
 @[simp]
 theorem coe_spanSingletonEquivQuotientOneSub_symm_mk (he : IsIdempotentElem e) (r : R) :
-    (he.spanSingletonEquivQuotientOneSub.symm (Ideal.Quotient.mk _ r) : R) = r * e :=
-  coe_spanSingletonQuotientInv_mk he r
+    (he.spanSingletonEquivQuotientOneSub.symm (Ideal.Quotient.mk _ r) : R) = r * e := by
+  rw [spanSingletonEquivQuotientOneSub_symm_mk]
+  simp
 
 end CommRing
 

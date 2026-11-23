@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Module.Projective
 public import TauCeti.RingTheory.Idempotents.Quotient.Principal
 
 /-!

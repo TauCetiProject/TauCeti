@@ -11,7 +11,6 @@ public import Mathlib.Algebra.Category.ModuleCat.Biproducts
 public import Mathlib.Algebra.Category.ModuleCat.Projective
 public import Mathlib.Algebra.Module.FinitePresentation
 public import Mathlib.RingTheory.Finiteness.Prod
-public import Mathlib.RingTheory.Flat.Basic
 public import Mathlib.RingTheory.SimpleModule.InjectiveProjective
 public import TauCeti.CategoryTheory.GrothendieckGroup.ProjectiveResolution
 public import TauCeti.Algebra.Category.FGModuleCat.Basic

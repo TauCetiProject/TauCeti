@@ -27,7 +27,6 @@ isomorphic.
 
 * `IsIdempotentElem.exists_units_mul_mul_eq_of_linearEquiv`: if `Ae ≅ Af` and
   `A(1 - e) ≅ A(1 - f)`, then `f = u⁻¹ e u` for a unit `u`.
-* `IsIdempotentElem.isCompl_span_singleton_one_sub`: `Ay` and `A(1 - y)` are complementary.
 * `OrthogonalIdempotents.span_singleton_sum_eq_sup`: the left ideal of a partial sum of orthogonal
   idempotents is the sum of the left ideals of its terms.
 * `CompleteOrthogonalIdempotents.exists_units_mul_mul_eq_sum`: every idempotent is conjugate to a
@@ -72,19 +71,6 @@ theorem exists_units_mul_mul_eq_of_linearEquiv (he : IsIdempotentElem e) (hf : I
   -- Unfold the unit `u` to its underlying elements `a + a'` and `b + b'`.
   change (b + b') * e * (a + a') = f
   rw [mul_assoc, heu, add_mul, hba, h₄, add_zero]
-
-/-- The left ideals `Ay` and `A(1 - y)` of an idempotent `y` are complementary. -/
-theorem isCompl_span_singleton_one_sub {y : A} (hy : IsIdempotentElem y) :
-    IsCompl (Ideal.span {y} : Ideal A) (Ideal.span {1 - y}) := by
-  refine ⟨Submodule.disjoint_def.2 fun z hz hz' ↦ ?_, codisjoint_iff.2 ?_⟩
-  · obtain ⟨a, rfl⟩ := Ideal.mem_span_singleton'.mp hz
-    obtain ⟨b, hb⟩ := Ideal.mem_span_singleton'.mp hz'
-    -- `z y = z` as `z ∈ Ay`, and `z y = 0` as `z ∈ A(1 - y)`.
-    have h₁ : b * (1 - y) * y = 0 := by rw [mul_assoc, hy.one_sub_mul_self, mul_zero]
-    rwa [hb, mul_assoc, hy.eq] at h₁
-  · refine Ideal.eq_top_of_isUnit_mem _ ?_ isUnit_one
-    simpa using Submodule.add_mem_sup (Ideal.mem_span_singleton_self y)
-      (Ideal.mem_span_singleton_self (1 - y))
 
 end IsIdempotentElem
 

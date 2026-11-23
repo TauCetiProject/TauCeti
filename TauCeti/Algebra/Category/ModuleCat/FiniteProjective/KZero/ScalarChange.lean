@@ -9,8 +9,6 @@ public import TauCeti.Algebra.Category.ModuleCat.FiniteProjective.Monoidal
 public import TauCeti.Algebra.Category.ModuleCat.FiniteProjective.ScalarChange
 public import TauCeti.CategoryTheory.GrothendieckGroup.Monoidal.Basic
 
-import Mathlib.LinearAlgebra.TensorProduct.Tower
-
 /-!
 # Scalar extension as a ring homomorphism on split `K₀`
 

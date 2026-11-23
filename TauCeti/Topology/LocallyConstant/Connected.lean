@@ -20,7 +20,8 @@ equivalences whenever `Y` carries the corresponding algebraic structure.
 * `LocallyConstant.constEquiv`: `Y ≃ LocallyConstant X Y` on a connected space `X`.
 * `LocallyConstant.constMulEquiv` and `LocallyConstant.constAddEquiv`: the multiplicative and
   additive equivalences.
-* `LocallyConstant.constRingEquiv`: `Y ≃+* LocallyConstant X Y` for a non-associative semiring `Y`.
+* `LocallyConstant.constRingEquiv`: `Y ≃+* LocallyConstant X Y` for a type `Y` with addition
+  and multiplication.
 -/
 
 public section
@@ -64,17 +65,17 @@ theorem constMulEquiv_symm_apply [Mul Y] (f : LocallyConstant X Y) (x : X) :
   constEquiv_symm_apply X Y f x
 
 /-- On a connected space, constant functions give a ring equivalence `Y ≃+* LocallyConstant X Y`. -/
-noncomputable def constRingEquiv [NonAssocSemiring Y] : Y ≃+* LocallyConstant X Y where
+noncomputable def constRingEquiv [Add Y] [Mul Y] : Y ≃+* LocallyConstant X Y where
   toEquiv := constEquiv X Y
   map_mul' _ _ := rfl
   map_add' _ _ := rfl
 
 @[simp]
-theorem constRingEquiv_apply [NonAssocSemiring Y] (y : Y) :
+theorem constRingEquiv_apply [Add Y] [Mul Y] (y : Y) :
     constRingEquiv X Y y = const X y :=
   (rfl)
 
-theorem constRingEquiv_symm_apply [NonAssocSemiring Y] (f : LocallyConstant X Y) (x : X) :
+theorem constRingEquiv_symm_apply [Add Y] [Mul Y] (f : LocallyConstant X Y) (x : X) :
     (constRingEquiv X Y).symm f = f x :=
   constEquiv_symm_apply X Y f x
 

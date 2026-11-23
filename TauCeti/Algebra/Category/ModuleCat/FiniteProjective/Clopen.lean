@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Category.ModuleCat.CartanMap.Basic
-public import TauCeti.RingTheory.Idempotents.Clopen.Basic
 public import TauCeti.RingTheory.Idempotents.Clopen.RankModule
 
 import TauCeti.RingTheory.Idempotents.Projective

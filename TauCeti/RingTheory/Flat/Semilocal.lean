@@ -5,16 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Module.FinitePresentation
-public import Mathlib.RingTheory.Flat.Basic
-public import Mathlib.RingTheory.Spectrum.Maximal.Defs
-public import Mathlib.RingTheory.Spectrum.Prime.Topology
 public import TauCeti.RingTheory.Idempotents.Clopen.RankModule
 
-import Mathlib.RingTheory.LocalRing.Module
-import TauCeti.RingTheory.Idempotents.Quotient.Principal
 import TauCeti.RingTheory.Spectrum.Maximal.Basic
-import TauCeti.RingTheory.Spectrum.Prime.FreeLocus
 import TauCeti.RingTheory.Spectrum.Prime.RankDecomposition
 
 /-!
@@ -28,11 +21,11 @@ finitely presented flat module `M` is free over its quotient ring by
 
 ## Main results
 
-* `TauCeti.free_of_finite_maximalSpectrum_of_preconnectedSpace`: a finitely presented flat module
-  over a commutative semilocal ring with preconnected prime spectrum is free.
 * `TauCeti.nonempty_linearEquiv_clopenRankModule_of_finite_maximalSpectrum`: over a commutative
   semilocal ring, every finitely presented flat module is isomorphic to the clopen-glued module of
   its rank function.
+* `TauCeti.free_of_finite_maximalSpectrum_of_preconnectedSpace`: a finitely presented flat module
+  over a commutative semilocal ring with preconnected prime spectrum is free.
 
 ## References
 
@@ -45,21 +38,6 @@ open scoped TensorProduct
 open PrimeSpectrum (isIdempotentElemEquivClopens)
 
 namespace TauCeti
-
-/-- Over a commutative semilocal ring with preconnected prime spectrum (for instance a local ring
-or a connected semilocal domain), every finitely presented flat module is free. -/
-theorem free_of_finite_maximalSpectrum_of_preconnectedSpace
-    {R : Type*} [CommRing R] [Finite (MaximalSpectrum R)] [PreconnectedSpace (PrimeSpectrum R)]
-    (M : Type*) [AddCommGroup M] [Module R M] [Module.FinitePresentation R M] [Module.Flat R M] :
-    Module.Free R M := by
-  rcases subsingleton_or_nontrivial R with _ | _
-  · have : Subsingleton M := Module.subsingleton R M
-    exact Module.Free.of_subsingleton R M
-  · obtain ⟨p₀⟩ : Nonempty (PrimeSpectrum R) := inferInstance
-    refine Module.free_of_flat_of_finrank_eq R M (Module.rankAtStalk M p₀) fun P ↦ ?_
-    rw [Module.finrank_quotient_tensorProduct_eq_rankAtStalk]
-    exact (Module.isLocallyConstant_rankAtStalk (R := R) (M := M)).apply_eq_of_preconnectedSpace
-      P.toPrimeSpectrum p₀
 
 /-- **Semilocal module classification.** Over a commutative semilocal ring, every finitely
 presented flat module `M` is linearly isomorphic to `ClopenRankModule R (rank M)`. -/
@@ -84,5 +62,25 @@ theorem nonempty_linearEquiv_clopenRankModule_of_finite_maximalSpectrum
   exact ⟨(Module.equivPiRankPieces R M).trans
     ((LinearEquiv.piCongrRight fun k ↦ Classical.choice (hpiece k)).trans
       (ClopenRankModule.equivPi R r).symm)⟩
+
+/-- Over a commutative semilocal ring with preconnected prime spectrum (for instance a local ring
+or a connected semilocal domain), every finitely presented flat module is free. -/
+theorem free_of_finite_maximalSpectrum_of_preconnectedSpace
+    {R : Type*} [CommRing R] [Finite (MaximalSpectrum R)] [PreconnectedSpace (PrimeSpectrum R)]
+    (M : Type*) [AddCommGroup M] [Module R M] [Module.FinitePresentation R M] [Module.Flat R M] :
+    Module.Free R M := by
+  rcases subsingleton_or_nontrivial R with _ | _
+  · have : Subsingleton M := Module.subsingleton R M
+    exact Module.Free.of_subsingleton R M
+  · obtain ⟨p₀⟩ : Nonempty (PrimeSpectrum R) := inferInstance
+    obtain ⟨e⟩ := nonempty_linearEquiv_clopenRankModule_of_finite_maximalSpectrum (R := R) M
+    have hr : Module.rankLocallyConstant R M =
+        LocallyConstant.const (PrimeSpectrum R) (Module.rankAtStalk (R := R) M p₀) := by
+      ext p
+      simpa using
+        (Module.isLocallyConstant_rankAtStalk (R := R) (M := M)).apply_eq_of_preconnectedSpace
+          p p₀
+    exact Module.Free.of_equiv
+      (e.trans ((ClopenRankModule.equivOfEq R hr).trans (ClopenRankModule.constEquiv R _))).symm
 
 end TauCeti

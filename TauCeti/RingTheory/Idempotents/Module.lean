@@ -12,7 +12,6 @@ public import TauCeti.Algebra.Star.Projection.Family
 public import TauCeti.LinearAlgebra.Dimension.DirectSum
 public import TauCeti.RingTheory.Idempotents.Corner.Basic
 public import TauCeti.RingTheory.Idempotents.Primitive.Basic
-public import TauCeti.RingTheory.KrullSchmidt.Indecomposable
 import Mathlib.LinearAlgebra.Basis.VectorSpace
 
 /-!
