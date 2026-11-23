@@ -241,11 +241,21 @@ instance. -/
 abbrev thomPairSndMulAction :
     MulAction ℤˣ (thomPair F ((projection : C(VectorBundleOrientationCover F E ι, B)) *ᵖ E)).snd
     where
-  smul u v := ⟨u • v.val, mem_zeroSectionCompl.2 (mem_zeroSectionCompl.1 v.property :)⟩
+  smul u v := ⟨u • v.val, (preimage_pullbackLift_zeroSectionCompl _).subset <| by
+    rw [Set.mem_preimage, lift_smul]
+    exact (preimage_pullbackLift_zeroSectionCompl (F := F) (E := E) projection).superset v.property⟩
   one_smul v := Subtype.ext (one_smul ℤˣ v.val)
   mul_smul u u' v := Subtype.ext (mul_smul u u' v.val)
 
 attribute [local instance] thomPairFstMulAction thomPairSndMulAction
+
+/-- The action `thomPairSndMulAction` of `ℤˣ` on the nonzero vectors `E'₀` of the bundle pulled back
+to the orientation double cover is the action `pullbackMulAction` on the underlying vectors. -/
+@[simp]
+theorem coe_thomPairSnd_smul (u : ℤˣ)
+    (v : (thomPair F ((projection : C(VectorBundleOrientationCover F E ι, B)) *ᵖ E)).snd) :
+    (u • v).val = u • v.val :=
+  (rfl)
 
 /-- The embedding `E'₀ → E'` of the Thom pair of the bundle pulled back to the orientation double
 cover commutes with the actions `thomPairSndMulAction` and `thomPairFstMulAction` of `ℤˣ`. -/
@@ -285,10 +295,10 @@ theorem isQuotientCoveringMap_pullbackThomPairMap_snd :
   -- underlie is the restriction of `Pullback.lift`.
   have h : Set.MapsTo (Pullback.lift (projection : C(VectorBundleOrientationCover F E ι, B)))
       (zeroSectionCompl F (_ *ᵖ E)) (zeroSectionCompl F E) :=
-    fun _ hv ↦ mem_zeroSectionCompl.2 (mem_zeroSectionCompl.1 hv :)
+    Set.mapsTo_iff_subset_preimage.2 (preimage_pullbackLift_zeroSectionCompl _).superset
   rw [show ⇑(TopPair.Hom.snd (pullbackThomPairMap F E projection)) = h.restrict _ _ _ from
     funext fun v ↦ Subtype.ext (pullbackThomPairMap_snd_apply F E _ v)]
-  exact (isQuotientCoveringMap_lift (F := F) (E := E) hι).restrict (fun _ _ ↦ rfl) h
+  exact (isQuotientCoveringMap_lift (F := F) (E := E) hι).restrict coe_thomPairSnd_smul h
     (preimage_pullbackLift_zeroSectionCompl _).subset
 
 end ThomPair
