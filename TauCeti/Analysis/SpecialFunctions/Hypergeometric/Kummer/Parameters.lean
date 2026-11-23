@@ -79,8 +79,7 @@ theorem norm_regularizedHGFunCoeff_singleton_mul_pow_le {a b z : ℂ} {A R : ℝ
   have hpoch (m : ℕ) : ‖(ascPochhammer ℂ m).eval a‖ ≤ ‖(ascPochhammer ℂ m).eval (A : ℂ)‖ := by
     have h := TauCeti.norm_ascPochhammer_eval_le_of_norm_le m ha
     have hcast : (ascPochhammer ℂ m).eval (A : ℂ) = (((ascPochhammer ℝ m).eval A : ℝ) : ℂ) := by
-      rw [← ascPochhammer_map ofRealHom, ← ofRealHom_eq_coe, Polynomial.eval_map_apply,
-        ofRealHom_eq_coe]
+      simpa using Polynomial.eval_map_apply ofRealHom A (p := ascPochhammer ℝ m)
     rwa [hcast, norm_real, Real.norm_of_nonneg ((norm_nonneg _).trans h)]
   have hshift : 1 - (N : ℂ) + ((n + N : ℕ) : ℂ) = n + 1 := by push_cast; ring
   have hΓ : Gamma (1 - (N : ℂ) + ((n + N : ℕ) : ℂ)) = n ! := by
