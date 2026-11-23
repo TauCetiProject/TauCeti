@@ -7,7 +7,7 @@ module
 
 public import TauCeti.LinearAlgebra.Matrix.Cartan.ColumnReflection
 
-import Mathlib.Data.Finset.Piecewise
+public import TauCeti.Algebra.BigOperators.GroupWithZero.Action
 
 /-!
 # Truncated reflections on coefficient columns
@@ -16,6 +16,8 @@ Truncated simple reflections replace the other coefficients in a Cartan reflecti
 positive parts. They are involutions on the entire integer coefficient lattice; this does not
 assert that an arbitrary matrix preserves a root system. Reflections at nonadjacent vertices
 commute, and an independent finite colour class has an involutive simultaneous update.
+These updates give the coefficient-lattice formulas underlying the bipartite involutions
+τ₊ and τ₋, before any restriction to almost-positive roots.
 
 The convention is that `A j i` pairs the root at `j` with the coroot at `i`, as in
 `Matrix.columnReflection`. Consequently the matrix in Fomin--Zelevinsky's coordinate formula
@@ -56,19 +58,8 @@ theorem truncatedColumnReflection_apply_of_ne {i k : ι} (hki : k ≠ i) (c : ι
     A.truncatedColumnReflection i c k = c k := by
   simp [truncatedColumnReflection, hki]
 
-private theorem sum_positivePart_congr (i : ι) (c d : ι → ℤ)
-    (h : ∀ j, j ≠ i → A j i ≠ 0 → c j = d j) :
-    (∑ j ∈ Finset.univ.erase i, A j i * max (c j) 0) =
-      ∑ j ∈ Finset.univ.erase i, A j i * max (d j) 0 := by
-  apply Finset.sum_congr rfl
-  intro j hj
-  by_cases hji : A j i = 0
-  · simp [hji]
-  · rw [h j (Finset.ne_of_mem_erase hj) hji]
-
 /-- On columns whose nonzero-weight other coordinates are nonnegative, truncation agrees with the
-usual
-Cartan reflection. The diagonal hypothesis also supplies the existing linear reflection. -/
+usual Cartan reflection. The diagonal hypothesis also supplies the existing linear reflection. -/
 theorem truncatedColumnReflection_eq_columnReflection (hA : ∀ i, A i i = 2)
     (i : ι) (c : ι → ℤ) (hc : ∀ j, j ≠ i → A j i ≠ 0 → 0 ≤ c j) :
     A.truncatedColumnReflection i c = A.columnReflection hA i c := by
@@ -79,11 +70,10 @@ theorem truncatedColumnReflection_eq_columnReflection (hA : ∀ i, A i i = 2)
       ← Finset.sum_erase_add _ _ (Finset.mem_univ i)]
     have hs : (∑ j ∈ Finset.univ.erase i, A j i * max (c j) 0) =
         ∑ j ∈ Finset.univ.erase i, A j i * c j := by
-      apply Finset.sum_congr rfl
-      intro j hj
-      by_cases hji : A j i = 0
-      · simp [hji]
-      · rw [max_eq_left (hc j (Finset.ne_of_mem_erase hj) hji)]
+      simpa only [smul_eq_mul] using
+        Finset.sum_smul_congr_of_ne_zero (Finset.univ.erase i) (fun j ↦ A j i)
+          (fun j ↦ max (c j) 0) c
+          (fun j hj hji ↦ max_eq_left (hc j (Finset.ne_of_mem_erase hj) hji))
     rw [hs, hA]
     ring
   · simp [hki]
@@ -94,11 +84,10 @@ theorem truncatedColumnReflection_eq_update_of_nonpos (i : ι) (c : ι → ℤ)
     (hc : ∀ j, j ≠ i → A j i ≠ 0 → c j ≤ 0) :
     A.truncatedColumnReflection i c = Function.update c i (-c i) := by
   have hs : (∑ j ∈ Finset.univ.erase i, A j i * max (c j) 0) = 0 := by
-    apply Finset.sum_eq_zero
-    intro j hj
-    by_cases hji : A j i = 0
-    · simp [hji]
-    · rw [max_eq_right (hc j (Finset.ne_of_mem_erase hj) hji), mul_zero]
+    simpa only [smul_eq_mul, mul_zero, Finset.sum_const_zero] using
+      Finset.sum_smul_congr_of_ne_zero (Finset.univ.erase i) (fun j ↦ A j i)
+        (fun j ↦ max (c j) 0) (fun _ ↦ (0 : ℤ))
+        (fun j hj hji ↦ max_eq_right (hc j (Finset.ne_of_mem_erase hj) hji))
   unfold truncatedColumnReflection
   rw [hs, sub_zero]
 
@@ -107,10 +96,10 @@ original column. Independence is needed for involutivity, not for this definitio
 def truncatedColumnReflections (s : Finset ι) (c : ι → ℤ) : ι → ℤ :=
   s.piecewise (fun i ↦ A.truncatedColumnReflection i c i) c
 
-/-- The unconditional coordinate formula for a simultaneous update. -/
-theorem truncatedColumnReflections_apply (s : Finset ι) (c : ι → ℤ) (i : ι) :
-    A.truncatedColumnReflections s c i =
-      if i ∈ s then A.truncatedColumnReflection i c i else c i := by rfl
+/-- The whole-column finite-piecewise formula for a simultaneous update. -/
+theorem truncatedColumnReflections_def (s : Finset ι) (c : ι → ℤ) :
+    A.truncatedColumnReflections s c =
+      s.piecewise (fun i ↦ A.truncatedColumnReflection i c i) c := by rfl
 
 /-- The selected coordinate formula for a simultaneous truncated reflection. -/
 @[simp]
@@ -123,6 +112,14 @@ theorem truncatedColumnReflections_apply_of_mem {s : Finset ι} {i : ι} (hi : i
 theorem truncatedColumnReflections_apply_of_notMem {s : Finset ι} {i : ι} (hi : i ∉ s)
     (c : ι → ℤ) : A.truncatedColumnReflections s c i = c i :=
   Finset.piecewise_eq_of_notMem _ _ _ hi
+
+/-- The unconditional coordinate formula for a simultaneous update. -/
+theorem truncatedColumnReflections_apply (s : Finset ι) (c : ι → ℤ) (i : ι) :
+    A.truncatedColumnReflections s c i =
+      if i ∈ s then A.truncatedColumnReflection i c i else c i := by
+  by_cases hi : i ∈ s
+  · rw [truncatedColumnReflections_apply_of_mem A hi, ite_eq_left hi]
+  · rw [truncatedColumnReflections_apply_of_notMem A hi, ite_eq_right hi]
 
 /-- The empty colour class does nothing. -/
 @[simp]
@@ -142,10 +139,12 @@ theorem truncatedColumnReflections_insert (s : Finset ι) (i : ι) (hi : i ∉ s
     simp only [Function.update_self, truncatedColumnReflection_apply_same,
       truncatedColumnReflections_apply_of_notMem A hi]
     congr 1
-    apply A.sum_positivePart_congr
-    intro j _ hji
-    have hjs : j ∉ s := fun hj ↦ hji (hs j hj)
-    exact (A.truncatedColumnReflections_apply_of_notMem hjs c).symm
+    simpa only [smul_eq_mul] using
+      Finset.sum_smul_congr_of_ne_zero (Finset.univ.erase i) (fun j ↦ A j i)
+        (fun j ↦ max (c j) 0) (fun j ↦ max (A.truncatedColumnReflections s c j) 0) (by
+          intro j _ hji
+          have hjs : j ∉ s := fun hj ↦ hji (hs j hj)
+          rw [A.truncatedColumnReflections_apply_of_notMem hjs])
   · simp [Function.update_of_ne hki, truncatedColumnReflection_apply_of_ne A hki,
       truncatedColumnReflections]
 
@@ -153,7 +152,8 @@ theorem truncatedColumnReflections_insert (s : Finset ι) (i : ι) (hi : i ∉ s
 @[simp]
 theorem truncatedColumnReflections_singleton (i : ι) (c : ι → ℤ) :
     A.truncatedColumnReflections {i} c = A.truncatedColumnReflection i c := by
-  simpa using A.truncatedColumnReflections_insert ∅ i (by simp) (by simp) c
+  rw [truncatedColumnReflections_def, Finset.piecewise_singleton,
+    truncatedColumnReflection_apply_same, truncatedColumnReflection_def]
 
 /-- A finite independent colour class gives an involution. The condition only concerns
 entries between distinct selected indices; the matrix need not be Cartan or symmetrizable. -/
@@ -165,10 +165,15 @@ theorem truncatedColumnReflections_involutive (s : Finset ι)
   by_cases hi : i ∈ s
   · simp only [truncatedColumnReflections_apply_of_mem A hi,
       truncatedColumnReflection_apply_same]
-    have he := A.sum_positivePart_congr i (A.truncatedColumnReflections s c) c (by
-      intro j hji hAji
-      have hjs : j ∉ s := fun hj ↦ hAji (hs hi hj hji.symm)
-      exact A.truncatedColumnReflections_apply_of_notMem hjs c)
+    have he : (∑ j ∈ Finset.univ.erase i,
+        A j i * max (A.truncatedColumnReflections s c j) 0) =
+        ∑ j ∈ Finset.univ.erase i, A j i * max (c j) 0 := by
+      simpa only [smul_eq_mul] using
+        Finset.sum_smul_congr_of_ne_zero (Finset.univ.erase i) (fun j ↦ A j i)
+          (fun j ↦ max (A.truncatedColumnReflections s c j) 0) (fun j ↦ max (c j) 0) (by
+            intro j hj hAji
+            have hjs : j ∉ s := fun h ↦ hAji (hs hi h (Finset.ne_of_mem_erase hj).symm)
+            rw [A.truncatedColumnReflections_apply_of_notMem hjs])
     rw [he]
     omega
   · simp [hi]
@@ -247,55 +252,41 @@ theorem commute_truncatedColumnReflection {i j : ι}
     intro c
     rfl
   intro c
-  ext k
-  by_cases hki : k = i
-  · subst k
-    simp only [truncatedColumnReflection_apply_same,
-      truncatedColumnReflection_apply_of_ne A hij]
-    congr 1
-    apply A.sum_positivePart_congr
-    intro k _ hk
-    have hkj : k ≠ j := by
-      intro h
-      subst k
-      exact hk hjiA
-    exact A.truncatedColumnReflection_apply_of_ne hkj c
-  · by_cases hkj : k = j
-    · subst k
-      simp only [truncatedColumnReflection_apply_same,
-        truncatedColumnReflection_apply_of_ne A hki]
-      congr 1
-      symm
-      apply A.sum_positivePart_congr
-      intro k _ hk
-      have hki : k ≠ i := by
-        intro h
-        subst k
-        exact hk hijA
-      exact A.truncatedColumnReflection_apply_of_ne hki c
-    · simp [hki, hkj]
+  have hi := A.truncatedColumnReflections_insert {j} i (by simpa using hij)
+    (by simpa using hjiA) c
+  have hj := A.truncatedColumnReflections_insert {i} j (by simpa using Ne.symm hij)
+    (by simpa using hijA) c
+  calc
+    A.truncatedColumnReflection i (A.truncatedColumnReflection j c) =
+        A.truncatedColumnReflections {i, j} c := by
+      simpa only [truncatedColumnReflections_singleton] using hi.symm
+    _ = A.truncatedColumnReflections {j, i} c := by rw [Finset.pair_comm]
+    _ = A.truncatedColumnReflection j (A.truncatedColumnReflection i c) := by
+      simpa only [truncatedColumnReflections_singleton] using hj
 
-/-- If coordinates seen with nonzero weight by the selected vertices are nonnegative,
-an independent simultaneous update equals the ordinary Cartan reflections in any
-duplicate-free enumeration. In particular this applies to every nonnegative column. -/
+/-- For each selected `i`, only the other coordinates `j ≠ i` with `A j i ≠ 0` must be
+nonnegative; its own coordinate may be negative. If entries from later vertices into earlier
+vertices vanish, the simultaneous update equals the ordered ordinary Cartan reflections. -/
 theorem truncatedColumnReflections_eq_foldr_columnReflection (hA : ∀ i, A i i = 2)
-    (w : List ι) (hw : w.Nodup)
-    (hs : (w.toFinset : Set ι).Pairwise fun i j ↦ A j i = 0)
+    (w : List ι) (hs : w.Pairwise fun i j ↦ A j i = 0)
     (c : ι → ℤ) (hc : ∀ i ∈ w, ∀ j, j ≠ i → A j i ≠ 0 → 0 ≤ c j) :
     A.truncatedColumnReflections w.toFinset c =
       w.foldr (fun i d ↦ A.columnReflection hA i d) c := by
   induction w with
   | nil => simp
   | cons i w ih =>
+    have hw : (i :: w).Nodup := List.nodup_iff_pairwise_ne.mpr (hs.imp (by
+      intro j k hjk h
+      subst k
+      simp [hA j] at hjk))
     have hi : i ∉ w.toFinset := by simpa using (List.nodup_cons.mp hw).1
-    have ht : (w.toFinset : Set ι).Pairwise fun i j ↦ A j i = 0 :=
-      hs.mono (by intro j hj; simpa using Or.inr hj)
+    have ht : w.Pairwise fun i j ↦ A j i = 0 := (List.pairwise_cons.mp hs).2
     have he : ∀ j ∈ w.toFinset, A j i = 0 := by
       intro j hj
-      exact hs (by simp) (by simpa using Or.inr hj) (fun h ↦ hi (h.symm ▸ hj))
+      exact (List.pairwise_cons.mp hs).1 j (by simpa using hj)
     rw [List.toFinset_cons, A.truncatedColumnReflections_insert w.toFinset i hi he,
       A.truncatedColumnReflection_eq_columnReflection hA]
-    · rw [ih (List.nodup_cons.mp hw).2 ht (fun k hk ↦ hc k (List.mem_cons_of_mem i hk))]
+    · rw [ih ht (fun k hk ↦ hc k (List.mem_cons_of_mem i hk))]
       rfl
     · intro j hji hAji
       have hj : j ∉ w.toFinset := fun hj ↦ hAji (he j hj)

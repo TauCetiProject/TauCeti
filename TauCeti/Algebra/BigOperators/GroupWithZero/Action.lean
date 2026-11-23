@@ -6,10 +6,11 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Group.Action.Defs
+public import Mathlib.Algebra.GroupWithZero.Action.Defs
 public import Mathlib.Data.Finset.NoncommProd
 
 /-!
-# Scalar multiplication of noncommutative products
+# Scalar multiplication in finite sums and noncommutative products
 
 Mathlib's `Finset.smul_prod` says that scaling every factor of a product over `s` by `b` scales
 the product by `b ^ s.card`. This file proves the same for the product `Finset.noncommProd` of a
@@ -25,6 +26,18 @@ public section
 open scoped Function
 
 namespace Finset
+
+/-- A weighted finite sum is unchanged when its values agree at every nonzero weight.
+The weights and values may have different types, and no distributive scalar action is needed. -/
+theorem sum_smul_congr_of_ne_zero {ι R A : Type*} [Zero R] [AddCommMonoid A]
+    [SMulWithZero R A] (s : Finset ι) (w : ι → R) (f g : ι → A)
+    (h : ∀ i ∈ s, w i ≠ 0 → f i = g i) :
+    ∑ i ∈ s, w i • f i = ∑ i ∈ s, w i • g i := by
+  apply sum_congr rfl
+  intro i hi
+  by_cases hw : w i = 0
+  · simp [hw]
+  · rw [h i hi hw]
 
 variable {ι M N : Type*}
 
