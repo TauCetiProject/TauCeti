@@ -9,6 +9,7 @@ public import Mathlib.LinearAlgebra.AffineSpace.AffineSubspace.Basic
 public import Mathlib.LinearAlgebra.LinearIndependent.Basic
 public import Mathlib.LinearAlgebra.Quotient.Basic
 public import Mathlib.RingTheory.SimpleModule.Basic
+import TauCeti.LinearAlgebra.AffineSpace.Span
 
 /-!
 # Transverse lines and affine subspaces
@@ -82,22 +83,10 @@ theorem subsingleton_affineSpan_range_inter (S : AffineSubspace k P) {n : ℕ}
     {p : Fin (n + 1) → P}
     (hp : LinearIndependent k (S.direction.mkQ ∘ fun j : Fin n => p j.succ -ᵥ p 0)) :
     ((affineSpan k (Set.range p) : Set P) ∩ S).Subsingleton := by
-  intro x hx y hy
-  have hxy : x -ᵥ y ∈ Submodule.span k (Set.range fun j : Fin n => p j.succ -ᵥ p 0) := by
-    have hmem := (affineSpan k (Set.range p)).vsub_mem_direction hx.1 hy.1
-    rw [direction_affineSpan, vectorSpan_range_eq_span_range_vsub_right_ne k p 0] at hmem
-    convert hmem using 2
-    ext w
-    constructor
-    · rintro ⟨j, rfl⟩
-      exact ⟨⟨j.succ, Fin.succ_ne_zero j⟩, rfl⟩
-    · rintro ⟨⟨l, hl⟩, rfl⟩
-      obtain ⟨j, rfl⟩ := Fin.exists_succ_eq.mpr hl
-      exact ⟨j, rfl⟩
-  apply vsub_eq_zero_iff_eq.mp
-  refine Submodule.disjoint_def.mp (Submodule.range_ker_disjoint hp) _ hxy ?_
-  rw [Submodule.ker_mkQ]
-  exact S.vsub_mem_direction hx.2 hy.2
+  apply (affineSpan k (Set.range p)).subsingleton_inter_of_disjoint_direction S
+  rw [direction_affineSpan, ← TauCeti.span_range_succ_vsub_zero_eq_vectorSpan p,
+    ← S.direction.ker_mkQ]
+  exact Submodule.range_ker_disjoint hp
 
 end Ring
 

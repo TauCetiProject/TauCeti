@@ -49,10 +49,10 @@ theorem spinToSpecialOrthogonal_surjective_of_pinToOrthogonal_surjective
     (Q : QuadraticForm R M) (hpin : Function.Surjective (pinToOrthogonal Q)) :
     Function.Surjective (spinToSpecialOrthogonal Q) := by
   intro g
-  have hg := QuadraticMap.mem_specialOrthogonalGroup_iff.1 g.2
+  have hg := QuadraticMap.mem_specialOrthogonalGroup_iff.1 g.property
   obtain ⟨p, hp⟩ := hpin ⟨g, hg.1⟩
   let s : spinGroup Q :=
-    ⟨p, p.2, mem_even_of_det_pinToOrthogonal_eq_one Q p (by rw [hp]; exact hg.2)⟩
+    ⟨p, p.property, mem_even_of_det_pinToOrthogonal_eq_one Q p (by rw [hp]; exact hg.2)⟩
   refine ⟨s, ?_⟩
   apply Subtype.ext
   apply LinearEquiv.ext

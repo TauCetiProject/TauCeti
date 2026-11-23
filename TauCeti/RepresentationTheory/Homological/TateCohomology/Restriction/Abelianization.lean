@@ -41,7 +41,7 @@ that the reciprocity isomorphism `Gᵃᵇ ≃ H_Tate⁰(G, C)` inherits.
 ## References
 
 * J.-P. Serre, *Local Fields*, Chapter VII, §8 and Chapter XI, §3.
-* E. Artin and J. Tate, *Class Field Theory*, Chapter XIV, §4.
+* E. Artin and J. Tate, *Class Field Theory*, Chapter XIV, §§4–5.
 -/
 
 public noncomputable section
@@ -63,14 +63,13 @@ attribute [local instance] Subgroup.fintypeOfFinite
 
 /-- **Restriction in Tate degree `-2` is the Verlagerung.** For a subgroup `S` of a finite group
 `G` and trivial coefficients `A`, restriction `H_Tate⁻²(G, A) ⟶ H_Tate⁻²(S, A)` becomes
-`V ⊗ id : Gᵃᵇ ⊗ A → Sᵃᵇ ⊗ A` under the identifications `H_Tate⁻² ≃ (-)ᵃᵇ ⊗ A`, where `V` is the
-group-theoretic transfer. -/
+`V ⊗ id : Gᵃᵇ ⊗ A → Sᵃᵇ ⊗ A` under the identifications `H_Tate⁻² ≃ (-)ᵃᵇ ⊗ A`, where `V` is
+`Group.Abelianization.transfer S`. -/
 @[simp]
 theorem HNegTwoAddEquivTensorOfIsTrivial_HNegTwoRes [A.IsTrivial] (x : tateCohomology A (-2)) :
     HNegTwoAddEquivTensorOfIsTrivial (res S.subtype A) (HNegTwoRes A S x) =
       LinearMap.rTensor A (AddMonoidHom.toIntLinearMap
-        (Group.Abelianization.lift (Group.Abelianization.of : S →* Group.Abelianization
-            S).transfer).toAdditive)
+        (Group.Abelianization.transfer S).toAdditive)
         (HNegTwoAddEquivTensorOfIsTrivial A x) := by
   rw [HNegTwoAddEquivTensorOfIsTrivial_apply,
     HNegTwoAddEquivTensorOfIsTrivial_apply,
@@ -114,8 +113,7 @@ theorem HNegTwoAddEquivAbelianization_HNegTwoRes (S : Subgroup G)
         (HNegTwoAddEquivTensorOfIsTrivial
           (Rep.res S.subtype (Rep.trivial ℤ G ℤ))
           (HNegTwoRes (Rep.trivial ℤ G ℤ) S x)) =
-      (Group.Abelianization.lift
-        (Group.Abelianization.of : S →* Group.Abelianization S).transfer).toAdditive
+      (Group.Abelianization.transfer S).toAdditive
         (HNegTwoAddEquivAbelianization x) := by
   rw [HNegTwoAddEquivTensorOfIsTrivial_HNegTwoRes,
     LinearMap.rid_rTensor_apply, HNegTwoAddEquivAbelianization_apply,

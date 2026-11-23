@@ -67,9 +67,9 @@ theorem isPIndependentPair_iff_linearIndependent [ExpChar k p] :
   rw [Fintype.linearIndependent_iff]
   constructor
   · intro h g hg ij
-    choose c hc using fun ij ↦ RingHom.mem_fieldRange.mp (g ij).2
+    choose c hc using fun ij ↦ RingHom.mem_fieldRange.mp (g ij).property
     have := h (fun i j ↦ if h : i < p ∧ j < p then c (⟨i, h.1⟩, ⟨j, h.2⟩) else 0) ?_
-      ij.1 ij.1.2 ij.2 ij.2.2
+      ij.1 ij.1.isLt ij.2 ij.2.isLt
     · rw [Subtype.ext_iff, ← hc]
       simpa using this
     · rw [Fintype.sum_prod_type] at hg

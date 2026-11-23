@@ -78,13 +78,13 @@ sides, the face `a₀ ⋯ aₚ₋₁ d` has `p + 1` sides and the face `d⁻¹ a
 It is reducible, so that the positions along the faces of `C.splitFace f p` are indices in these
 explicit ranges. -/
 abbrev splitFaceSides : {g : C.Face // g ≠ f} ⊕ Bool → ℕ
-  | .inl g => C.sides g.1
+  | .inl g => C.sides g.val
   | .inr true => p + 1
   | .inr false => C.sides f - p + 1
 
 theorem splitFaceSides_pos (g : {g : C.Face // g ≠ f} ⊕ Bool) : 0 < C.splitFaceSides f p g := by
   obtain g | _ | _ := g
-  exacts [C.sides_pos g.1, Nat.succ_pos _, Nat.succ_pos _]
+  exacts [C.sides_pos g.val, Nat.succ_pos _, Nat.succ_pos _]
 
 /-- The side occurrence of `C`, or the new dart, at a position along a face of `C.splitFace f p`.
 On the face `a₀ ⋯ aₚ₋₁ d` the positions before `p` are the sides `a₀, …, aₚ₋₁` of `f` and the
@@ -93,10 +93,11 @@ position `p` is the new dart `d`, namely `Sum.inr true`. On the face `d⁻¹ a�
 `f`. -/
 def splitFaceCornerOrigin :
     (Σ g : {g : C.Face // g ≠ f} ⊕ Bool, Fin (C.splitFaceSides f p g)) → C.Corner ⊕ Bool
-  | ⟨.inl g, k⟩ => .inl ⟨g.1, k⟩
-  | ⟨.inr true, k⟩ => if h : (k : ℕ) < p then .inl ⟨f, ⟨k, h.trans p.2⟩⟩ else .inr true
+  | ⟨.inl g, k⟩ => .inl ⟨g.val, k⟩
+  | ⟨.inr true, k⟩ => if h : (k : ℕ) < p then .inl ⟨f, ⟨k, h.trans p.isLt⟩⟩ else .inr true
   | ⟨.inr false, k⟩ => if (k : ℕ) = 0 then .inr false else
-      .inl ⟨f, ⟨p + k - 1, by have := k.2; have := p.2; simp only [splitFaceSides] at *; omega⟩⟩
+      .inl ⟨f, ⟨p + k - 1, by have := k.isLt; have := p.isLt; simp only
+          [splitFaceSides] at *; omega⟩⟩
 
 /-- The dart of `C.splitFace f p` along which a side of one of its faces is attached. -/
 def splitFaceSide (g : {g : C.Face // g ≠ f} ⊕ Bool) (k : Fin (C.splitFaceSides f p g)) :
@@ -105,11 +106,11 @@ def splitFaceSide (g : {g : C.Face // g ≠ f} ⊕ Bool) (k : Fin (C.splitFaceSi
 
 variable {C f p}
 
-@[simp] theorem splitFaceCornerOrigin_inl (g : {g : C.Face // g ≠ f}) (k : Fin (C.sides g.1)) :
-    C.splitFaceCornerOrigin f p ⟨.inl g, k⟩ = .inl ⟨g.1, k⟩ := (rfl)
+@[simp] theorem splitFaceCornerOrigin_inl (g : {g : C.Face // g ≠ f}) (k : Fin (C.sides g.val)) :
+    C.splitFaceCornerOrigin f p ⟨.inl g, k⟩ = .inl ⟨g.val, k⟩ := (rfl)
 
 theorem splitFaceCornerOrigin_inr_true_of_lt {k : Fin (p + 1)} (h : (k : ℕ) < p) :
-    C.splitFaceCornerOrigin f p ⟨.inr true, k⟩ = .inl ⟨f, ⟨k, h.trans p.2⟩⟩ := by
+    C.splitFaceCornerOrigin f p ⟨.inr true, k⟩ = .inl ⟨f, ⟨k, h.trans p.isLt⟩⟩ := by
   simp [splitFaceCornerOrigin, h]
 
 theorem splitFaceCornerOrigin_inr_true_of_not_lt {k : Fin (p + 1)} (h : ¬(k : ℕ) < p) :
@@ -128,12 +129,12 @@ theorem splitFaceCornerOrigin_inr_false_of_ne_zero {k : Fin (C.sides f - p + 1)}
 theorem splitFaceSide_def (g : {g : C.Face // g ≠ f} ⊕ Bool) (k : Fin (C.splitFaceSides f p g)) :
     C.splitFaceSide f p g k = Sum.map C.outgoing id (C.splitFaceCornerOrigin f p ⟨g, k⟩) := (rfl)
 
-private theorem splitFaceSide_inl (g : {g : C.Face // g ≠ f}) (k : Fin (C.sides g.1)) :
-    C.splitFaceSide f p (.inl g) k = .inl (C.side g.1 k) := by
+private theorem splitFaceSide_inl (g : {g : C.Face // g ≠ f}) (k : Fin (C.sides g.val)) :
+    C.splitFaceSide f p (.inl g) k = .inl (C.side g.val k) := by
   rw [splitFaceSide_def, splitFaceCornerOrigin_inl, Sum.map_inl, outgoing_def]
 
 private theorem splitFaceSide_true_of_lt {k : Fin (p + 1)} (h : (k : ℕ) < p) :
-    C.splitFaceSide f p (.inr true) k = .inl (C.side f ⟨k, h.trans p.2⟩) := by
+    C.splitFaceSide f p (.inr true) k = .inl (C.side f ⟨k, h.trans p.isLt⟩) := by
   rw [splitFaceSide_def, splitFaceCornerOrigin_inr_true_of_lt h, Sum.map_inl, outgoing_def]
 
 private theorem splitFaceSide_true_of_not_lt {k : Fin (p + 1)} (h : ¬(k : ℕ) < p) :
@@ -179,7 +180,7 @@ private theorem tgt_splitFaceSide_false (k : Fin (C.sides f - p + 1)) :
       (C.graph.addEdge (C.graph.src (C.side f p)) (C.graph.src (C.side f ⟨0, C.sides_pos f⟩))).src
         (C.splitFaceSide f p (.inr false) (finRotate (C.sides f - p + 1) k)) := by
   have hr := Fin.coe_finRotate_eq_ite k
-  have hp := p.2
+  have hp := p.isLt
   by_cases hk : (k : ℕ) = 0
   · rw [splitFaceSide_false_of_eq_zero hk,
       splitFaceSide_false_of_ne_zero (by split_ifs at hr <;> omega)]
@@ -208,7 +209,7 @@ abbrev splitFace : PolygonalComplex.{u, v, w} where
   tgt_side g k := by
     obtain g | _ | _ := g
     · rw [splitFaceSide_inl, splitFaceSide_inl]
-      exact C.tgt_side g.1 k
+      exact C.tgt_side g.val k
     · exact C.tgt_splitFaceSide_false f p k
     · exact C.tgt_splitFaceSide_true f p k
 
@@ -265,7 +266,7 @@ def splitFaceCornerOfOrigin [DecidableEq C.Face] : C.Corner ⊕ Bool → (C.spli
   | .inl ⟨g, k⟩ => if h : g = f then
       if hk : (k : ℕ) < p then ⟨.inr true, ⟨k, Nat.lt_succ_of_lt hk⟩⟩
       else ⟨.inr false, ⟨k - p + 1, by
-        subst h; exact Nat.succ_lt_succ (Nat.sub_lt_sub_right (not_lt.1 hk) k.2)⟩⟩
+        subst h; exact Nat.succ_lt_succ (Nat.sub_lt_sub_right (not_lt.1 hk) k.isLt)⟩⟩
     else ⟨.inl ⟨g, h⟩, k⟩
   | .inr true => ⟨.inr true, ⟨p, Nat.lt_succ_self _⟩⟩
   | .inr false => ⟨.inr false, ⟨0, Nat.succ_pos _⟩⟩
@@ -292,7 +293,7 @@ theorem splitFaceCornerOfOrigin_splitFaceCornerOrigin [DecidableEq C.Face]
     (c : (C.splitFace f p).Corner) :
     C.splitFaceCornerOfOrigin f p (C.splitFaceCornerOrigin f p c) = c := by
   obtain ⟨g | _ | _, k⟩ := c
-  · simp [splitFaceCornerOfOrigin, g.2]
+  · simp [splitFaceCornerOfOrigin, g.property]
   · by_cases hk : (k : ℕ) = 0
     · rw [splitFaceCornerOrigin_inr_false_of_eq_zero hk]
       exact congrArg (Sigma.mk _) (Fin.ext hk.symm)
@@ -300,7 +301,7 @@ theorem splitFaceCornerOfOrigin_splitFaceCornerOrigin [DecidableEq C.Face]
       have hlt : ¬p + (k : ℕ) - 1 < p := by omega
       simp only [splitFaceCornerOfOrigin, hlt, ↓reduceDIte]
       exact congrArg (Sigma.mk _) (Fin.ext (by dsimp only; omega))
-  · have hk2 : (k : ℕ) < p + 1 := k.2
+  · have hk2 : (k : ℕ) < p + 1 := k.isLt
     by_cases hk : (k : ℕ) < p
     · rw [splitFaceCornerOrigin_inr_true_of_lt hk]
       simp [splitFaceCornerOfOrigin, hk]
@@ -333,8 +334,9 @@ private noncomputable def outgoingFiberSplitFaceEquiv (e : C.graph.E) :
     {c : C.Corner // C.outgoing c = e} ≃
       {c : (C.splitFace f p).Corner // (C.splitFace f p).outgoing c = .inl e} := by
   classical
-  refine Equiv.ofBijective (fun c => ⟨C.splitFaceCornerOfOrigin f p (.inl c.1),
-    outgoing_splitFace_eq_inl_iff.2 ⟨c.1, splitFaceCornerOrigin_splitFaceCornerOfOrigin _, c.2⟩⟩)
+  refine Equiv.ofBijective (fun c => ⟨C.splitFaceCornerOfOrigin f p (.inl c.val),
+    outgoing_splitFace_eq_inl_iff.2 ⟨c.val, splitFaceCornerOrigin_splitFaceCornerOfOrigin _,
+        c.property⟩⟩)
     ⟨fun c c' h => ?_, fun ⟨c, hc⟩ => ?_⟩
   · exact Subtype.ext (Sum.inl_injective
       ((C.splitFaceCornerEquiv f p).symm.injective (congrArg Subtype.val h)))
@@ -355,7 +357,8 @@ the two new faces. -/
   classical
   rw [sideCount_def, Nat.card_eq_one_iff_unique]
   exact ⟨⟨fun c c' => Subtype.ext (C.splitFaceCornerOrigin_injective f p
-      ((outgoing_splitFace_eq_inr_iff.1 c.2).trans (outgoing_splitFace_eq_inr_iff.1 c'.2).symm))⟩,
+      ((outgoing_splitFace_eq_inr_iff.1 c.property).trans (outgoing_splitFace_eq_inr_iff.1
+          c'.property).symm))⟩,
     ⟨⟨C.splitFaceCornerOfOrigin f p (.inr b), outgoing_splitFace_eq_inr_iff.2
       (splitFaceCornerOrigin_splitFaceCornerOfOrigin _)⟩⟩⟩
 
@@ -395,11 +398,11 @@ theorem card_face_splitFace [Finite C.Face] :
 
 /-- The face of `C` containing a face of `C.splitFace f p`. -/
 def splitFaceOriginFace : (C.splitFace f p).Face → C.Face
-  | .inl g => g.1
+  | .inl g => g.val
   | .inr _ => f
 
 @[simp] theorem splitFaceOriginFace_inl (g : {g : C.Face // g ≠ f}) :
-    C.splitFaceOriginFace f p (.inl g) = g.1 := (rfl)
+    C.splitFaceOriginFace f p (.inl g) = g.val := (rfl)
 
 @[simp] theorem splitFaceOriginFace_inr (b : Bool) : C.splitFaceOriginFace f p (.inr b) = f :=
   (rfl)
@@ -521,7 +524,7 @@ theorem IsOrientable.of_splitFace (h : (C.splitFace f p).IsOrientable) : C.IsOri
   let σ : C.Face → Bool := fun g => if hg : g = f then σ' (.inr true) else σ' (.inl ⟨g, hg⟩)
   have hσ : ∀ g', σ' g' = σ (C.splitFaceOriginFace f p g') := by
     rintro (g | _ | _)
-    · simp [σ, g.2]
+    · simp [σ, g.property]
     · simp [σ, hs]
     · simp [σ]
   refine C.isOrientable_iff.2 ⟨σ, fun c₀ c₀' hc hg => ?_⟩

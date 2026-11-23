@@ -38,11 +38,11 @@ variable {N N' N'' V V' V'' : Type} [AddCommGroup N] [AddCommGroup N'] [AddCommG
   {Φ : Fan i} {Ψ : Fan i'} {Ω : Fan i''} (f : FanHom Φ Ψ)
 
 private theorem spec_map_comp_affineToricChartMap (σ : Φ.cones)
-    (x : AffineSemigroupComplexPoint (dualSemigroup Φ.lattice σ.1)) :
+    (x : AffineSemigroupComplexPoint (dualSemigroup Φ.lattice σ.val)) :
     Spec.map (CommRingCat.ofHom x.toRingHom) ≫ f.affineToricChartMap σ =
       Spec.map (CommRingCat.ofHom (x.comp
         (affineCoordinateRingMap Φ.lattice Ψ.lattice f.latticeMap f.realMap
-          f.map_lattice (f.mapsTo_leastCone σ.2))).toRingHom) := by
+          f.map_lattice (f.mapsTo_leastCone σ.property))).toRingHom) := by
   rw [affineToricChartMap_def, affineToricSchemeMap_def, ← Spec.map_comp,
     ← CommRingCat.ofHom_comp]
   exact congrArg (Spec.map ∘ CommRingCat.ofHom) (AlgHom.comp_toRingHom x _).symm
@@ -51,12 +51,12 @@ private theorem spec_map_comp_affineToricChartMap (σ : Φ.cones)
 semigroups into the least target cone. This holds without regularity of either fan. -/
 @[simp]
 theorem algebraicComplexPointMap_ofAffinePoint (σ : Φ.cones)
-    (x : AffineSemigroupComplexPoint (dualSemigroup Φ.lattice σ.1)) :
+    (x : AffineSemigroupComplexPoint (dualSemigroup Φ.lattice σ.val)) :
     f.algebraicComplexPointMap (Fan.AlgebraicComplexPoint.ofAffinePoint σ x) =
       Fan.AlgebraicComplexPoint.ofAffinePoint
-        (Φ := Ψ) ⟨f.leastCone σ.2, f.leastCone_mem σ.2⟩
-        (f.analyticChartMap (υ := ⟨f.leastCone σ.2, f.leastCone_mem σ.2⟩)
-          (f.mapsTo_leastCone σ.2) x) := by
+        (Φ := Ψ) ⟨f.leastCone σ.property, f.leastCone_mem σ.property⟩
+        (f.analyticChartMap (υ := ⟨f.leastCone σ.property, f.leastCone_mem σ.property⟩)
+          (f.mapsTo_leastCone σ.property) x) := by
   ext1
   -- The analytic chart map has the bundled chart carrier; full transparency identifies it
   -- with the affine complex-point carrier used by `ofAffinePoint`.
@@ -66,9 +66,9 @@ theorem algebraicComplexPointMap_ofAffinePoint (σ : Φ.cones)
   congr 2
   erw [analyticChartMap_apply]
   have hp : x.comp (affineCoordinateRingMap Φ.lattice Ψ.lattice f.latticeMap f.realMap
-      f.map_lattice (f.mapsTo_leastCone σ.2)) =
+      f.map_lattice (f.mapsTo_leastCone σ.property)) =
       AffineSemigroupComplexPoint.comap (dualSemigroupMap Φ.lattice Ψ.lattice f.latticeMap
-        f.realMap f.map_lattice (f.mapsTo_leastCone σ.2)) x := by
+        f.realMap f.map_lattice (f.mapsTo_leastCone σ.property)) x := by
     apply AffineSemigroupComplexPoint.ext
     intro m
     simp
@@ -81,10 +81,11 @@ theorem continuous_algebraicComplexPointMap : Continuous f.algebraicComplexPoint
   refine continuous_iSup_dom.2 fun σ ↦ continuous_coinduced_dom.2 ?_
   have h : f.algebraicComplexPointMap ∘
       (fun x : Φ.analyticAffineChart σ ↦ Fan.AlgebraicComplexPoint.ofAffinePoint σ x) =
-      (fun x : Ψ.analyticAffineChart ⟨f.leastCone σ.2, f.leastCone_mem σ.2⟩ ↦
-        Fan.AlgebraicComplexPoint.ofAffinePoint ⟨f.leastCone σ.2, f.leastCone_mem σ.2⟩ x) ∘
-      f.analyticChartMap (υ := ⟨f.leastCone σ.2, f.leastCone_mem σ.2⟩)
-        (f.mapsTo_leastCone σ.2) :=
+      (fun x : Ψ.analyticAffineChart ⟨f.leastCone σ.property, f.leastCone_mem σ.property⟩ ↦
+        Fan.AlgebraicComplexPoint.ofAffinePoint ⟨f.leastCone σ.property,
+            f.leastCone_mem σ.property⟩ x) ∘
+      f.analyticChartMap (υ := ⟨f.leastCone σ.property, f.leastCone_mem σ.property⟩)
+        (f.mapsTo_leastCone σ.property) :=
     funext (f.algebraicComplexPointMap_ofAffinePoint σ)
   rw [h]
   exact (Fan.AlgebraicComplexPoint.continuous_ofAffinePoint _).comp

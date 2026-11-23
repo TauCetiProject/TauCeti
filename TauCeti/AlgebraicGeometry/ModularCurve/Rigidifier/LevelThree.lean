@@ -157,7 +157,7 @@ theorem existsUnique_hom_universalLevelThree
       (EllipticCurveGeom.left_comp_structureMap Q) hP₀ hQ₀ (h₃ P hP₃) (h₃ Q hQ₃) hQP
   refine ⟨⟨(f, g), hg, h₀⟩, ⟨(pointsPullback_prodCurvePoint_eq_iff _ _ _).mpr ?_,
     (pointsPullback_prodCurvePoint_eq_iff _ _ _).mpr ?_⟩, fun fg hfg ↦ Subtype.ext (huniq _
-      ⟨fg.2.1, fg.2.2, ?_, ?_⟩)⟩
+      ⟨fg.property.1, fg.property.2, ?_, ?_⟩)⟩
   · rw [Equiv.apply_symm_apply]
     exact hgP
   · rw [Equiv.apply_symm_apply]
@@ -190,7 +190,7 @@ variable {B}
 -- pullback of the point `(0, 0)` along `k`.
 private theorem naiveLevelEquiv_map_universalStructure_fst {X : EllObj B}
     (k : X ⟶ universalLevelThree B) :
-    (naiveLevelEquiv X ((gammaNaive B 3).map k.op (universalStructure B))).1 (.ofAdd (1, 0)) =
+    (naiveLevelEquiv X ((gammaNaive B 3).map k.op (universalStructure B))).val (.ofAdd (1, 0)) =
       EllipticCurveGeom.pointsPullback k.isPullback k.zero_total
         (prodCurvePoint B firstPointHom) := by
   simp [universalStructure, curveGeomStructure_ofAdd_one_zero, prodCurvePoint_def]
@@ -199,7 +199,7 @@ private theorem naiveLevelEquiv_map_universalStructure_fst {X : EllObj B}
 -- pullback of the second basis point along `k`.
 private theorem naiveLevelEquiv_map_universalStructure_snd {X : EllObj B}
     (k : X ⟶ universalLevelThree B) :
-    (naiveLevelEquiv X ((gammaNaive B 3).map k.op (universalStructure B))).1 (.ofAdd (0, 1)) =
+    (naiveLevelEquiv X ((gammaNaive B 3).map k.op (universalStructure B))).val (.ofAdd (0, 1)) =
       EllipticCurveGeom.pointsPullback k.isPullback k.zero_total
         (prodCurvePoint B secondPointHom) := by
   simp [universalStructure, curveGeomStructure_ofAdd_zero_one, prodCurvePoint_def]
@@ -226,9 +226,9 @@ private theorem bijective_map_universalStructure (X : EllObj B) :
   constructor
   · -- two arrows pulling back the same structure pull back the universal basis to the same points
     intro k k' h
-    have hα := (naiveLevelEquiv X ((gammaNaive B 3).map k'.op (universalStructure B))).2
-    have hP := congrArg (fun α ↦ (naiveLevelEquiv X α).1 (.ofAdd (1, 0))) h
-    have hQ := congrArg (fun α ↦ (naiveLevelEquiv X α).1 (.ofAdd (0, 1))) h
+    have hα := (naiveLevelEquiv X ((gammaNaive B 3).map k'.op (universalStructure B))).property
+    have hP := congrArg (fun α ↦ (naiveLevelEquiv X α).val (.ofAdd (1, 0))) h
+    have hQ := congrArg (fun α ↦ (naiveLevelEquiv X α).val (.ofAdd (0, 1))) h
     simp only [naiveLevelEquiv_map_universalStructure_fst,
       naiveLevelEquiv_map_universalStructure_snd] at hP hQ
     exact (existsUnique_hom_of_isFiberwiseInjective hα).unique
@@ -238,7 +238,8 @@ private theorem bijective_map_universalStructure (X : EllObj B) :
         (naiveLevelEquiv_map_universalStructure_snd k').symm⟩
   · -- the arrow classifying the basis of a structure pulls back the universal structure to it
     intro α
-    obtain ⟨k, ⟨hkP, hkQ⟩, -⟩ := existsUnique_hom_of_isFiberwiseInjective (naiveLevelEquiv X α).2
+    obtain ⟨k, ⟨hkP, hkQ⟩, -⟩ := existsUnique_hom_of_isFiberwiseInjective
+        (naiveLevelEquiv X α).property
     refine ⟨k, (naiveLevelEquiv X).injective (Subtype.ext ?_)⟩
     refine (zmodProdMonoidHomEquiv 3 _).injective (Prod.ext (Subtype.ext ?_) (Subtype.ext ?_))
     · rw [coe_zmodProdMonoidHomEquiv_apply_fst, coe_zmodProdMonoidHomEquiv_apply_fst,
@@ -269,7 +270,7 @@ sends `(1, 0)` to the pullback along `k` of the point `(0, 0)` of the universal 
 form. -/
 theorem naiveLevelEquiv_gammaNaiveThreeRepresentableBy_homEquiv_fst {X : EllObj B}
     (k : X ⟶ universalLevelThree B) :
-    (naiveLevelEquiv X ((gammaNaiveThreeRepresentableBy B).homEquiv k)).1 (.ofAdd (1, 0)) =
+    (naiveLevelEquiv X ((gammaNaiveThreeRepresentableBy B).homEquiv k)).val (.ofAdd (1, 0)) =
       EllipticCurveGeom.pointsPullback k.isPullback k.zero_total
         (prodCurvePoint B firstPointHom) :=
   naiveLevelEquiv_map_universalStructure_fst k
@@ -279,7 +280,7 @@ sends `(0, 1)` to the pullback along `k` of the point `(-(μ² + μ + 1), (μ² 
 universal level-three normal form. -/
 theorem naiveLevelEquiv_gammaNaiveThreeRepresentableBy_homEquiv_snd {X : EllObj B}
     (k : X ⟶ universalLevelThree B) :
-    (naiveLevelEquiv X ((gammaNaiveThreeRepresentableBy B).homEquiv k)).1 (.ofAdd (0, 1)) =
+    (naiveLevelEquiv X ((gammaNaiveThreeRepresentableBy B).homEquiv k)).val (.ofAdd (0, 1)) =
       EllipticCurveGeom.pointsPullback k.isPullback k.zero_total
         (prodCurvePoint B secondPointHom) :=
   naiveLevelEquiv_map_universalStructure_snd k
