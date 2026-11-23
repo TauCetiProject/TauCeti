@@ -392,7 +392,13 @@ theorem linearIndependent_diagramSchurPoly {N : ℕ} (h : n ≤ N) :
       (fun ν : n.Partition => diagramSchurPoly N R (YoungDiagram.ofPartition ν)) := by
   have heq : (fun ν : n.Partition => diagramSchurPoly N R (YoungDiagram.ofPartition ν)) =
       schurPoly (Fin N) R := funext fun ν => by
-    rw [schurPoly_eq_rename, rename_diagramSchurPoly]
+    rw [← schurPoly_fin_shapePartition N (YoungDiagram.ofPartition ν)]
+    have halign : ∀ {m : ℕ} (_ : m = n) (μ : m.Partition),
+        YoungDiagram.ofPartition μ = YoungDiagram.ofPartition ν →
+        schurPoly (Fin N) R μ = schurPoly (Fin N) R ν := by
+      rintro _ rfl μ hμ
+      rw [YoungDiagram.ofPartition_injective hμ]
+    exact halign (YoungDiagram.card_ofPartition ν) _ (ofPartition_shapePartition _)
   rw [heq]
   exact linearIndependent_schurPoly (h.trans_eq (Fintype.card_fin N).symm)
 

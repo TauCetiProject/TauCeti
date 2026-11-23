@@ -191,28 +191,6 @@ theorem rowCount_congr {inner' outer' μ' : YoungDiagram}
     (congr hinner houter hμ T).val.rowCount r k = T.val.rowCount r k := by
   subst hinner; subst houter; subst hμ; rfl
 
-/-- The inverse of `TauCeti.LRTableau.congr` transports along the symmetric equalities. -/
-@[simp]
-theorem congr_symm {inner' outer' μ' : YoungDiagram}
-    (hinner : inner = inner') (houter : outer = outer') (hμ : μ = μ') :
-    (congr hinner houter hμ).symm = congr hinner.symm houter.symm hμ.symm := by
-  subst hinner; subst houter; subst hμ; rfl
-
-/-- Transporting a Littlewood–Richardson tableau along reflexive equalities is the identity. -/
-@[simp]
-theorem congr_rfl :
-    congr (rfl : inner = inner) (rfl : outer = outer) (rfl : μ = μ) = Equiv.refl _ :=
-  Equiv.ext fun _ => rfl
-
-/-- Composing two transports of Littlewood–Richardson tableaux composes the equalities. -/
-@[simp]
-theorem congr_trans {inner' outer' μ' inner'' outer'' μ'' : YoungDiagram}
-    (hinner : inner = inner') (houter : outer = outer') (hμ : μ = μ')
-    (hinner' : inner' = inner'') (houter' : outer' = outer'') (hμ' : μ' = μ'') :
-    (congr hinner houter hμ).trans (congr hinner' houter' hμ') =
-      congr (hinner.trans hinner') (houter.trans houter') (hμ.trans hμ') := by
-  subst hinner; subst houter; subst hμ; subst hinner'; subst houter'; subst hμ'; rfl
-
 /-- Transporting a Littlewood–Richardson tableau along shape and content equalities preserves its
 reading word. -/
 @[simp]

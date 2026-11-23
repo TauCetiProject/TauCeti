@@ -538,10 +538,8 @@ theorem fixedIntegerHiveShiftEquivLRTableau_symm_apply_ofChart
     fixedIntegerHiveShapeEquivLRTableau_symm_apply_ofChart, affine_apply,
     Vertex.ofChart_y, Vertex.ofChart_z]
   have hpref : prefixSum j (lam.shift a).val = prefixSum j lam.val + (j : ℤ) * a := by
-    have hshift : (lam.shift a).val = lam.val + fun _ => a := rfl
-    have hconst : prefixSum j (fun _ : Fin n => a) = (j : ℤ) * a := by
-      simpa [min_eq_left hj] using TauCeti.prefixSum_eq_sum_range (n := n) j (fun _ => a)
-    rw [hshift, TauCeti.prefixSum_add, hconst]
+    simpa only [gtCompletion_zero_left] using
+      gtCompletion_shift_dominantWeight lam a (0 : GTPattern n) 0 hj
   rw [hpref, nsmul_eq_mul, nsmul_eq_mul, Nat.cast_sub hij]
   ring
 
@@ -596,38 +594,6 @@ def lrTableauShiftEquiv :
   (fixedIntegerHiveShiftEquivLRTableau a₁ b₁ hlam₁ hμ₁ hγ₁).symm.trans
     (fixedIntegerHiveShiftEquivLRTableau a₂ b₂ hlam₂ hμ₂ hγ₂)
 
-@[simp]
-theorem lrTableauShiftEquiv_symm :
-    (lrTableauShiftEquiv a₁ b₁ hlam₁ hμ₁ hγ₁ a₂ b₂ hlam₂ hμ₂ hγ₂).symm =
-      lrTableauShiftEquiv a₂ b₂ hlam₂ hμ₂ hγ₂ a₁ b₁ hlam₁ hμ₁ hγ₁ := by
-  ext T; simp [lrTableauShiftEquiv]
-
-@[simp]
-theorem lrTableauShiftEquiv_trans (a₃ b₃ : ℤ)
-    (hlam₃ : (lam.shift a₃).IsPolynomial) (hμ₃ : (μ.shift b₃).IsPolynomial)
-    (hγ₃ : (γ.shift (a₃ + b₃)).IsPolynomial) :
-    (lrTableauShiftEquiv a₁ b₁ hlam₁ hμ₁ hγ₁ a₂ b₂ hlam₂ hμ₂ hγ₂).trans
-        (lrTableauShiftEquiv a₂ b₂ hlam₂ hμ₂ hγ₂ a₃ b₃ hlam₃ hμ₃ hγ₃) =
-      lrTableauShiftEquiv a₁ b₁ hlam₁ hμ₁ hγ₁ a₃ b₃ hlam₃ hμ₃ hγ₃ := by
-  ext T; simp [lrTableauShiftEquiv]
-
-/-- Compatibility of `lrTableauShiftEquiv` with `fixedIntegerHiveShiftEquivLRTableau`. -/
-@[simp]
-theorem fixedIntegerHiveShiftEquivLRTableau_trans_lrTableauShiftEquiv :
-    (fixedIntegerHiveShiftEquivLRTableau a₁ b₁ hlam₁ hμ₁ hγ₁).trans
-        (lrTableauShiftEquiv a₁ b₁ hlam₁ hμ₁ hγ₁ a₂ b₂ hlam₂ hμ₂ hγ₂) =
-      fixedIntegerHiveShiftEquivLRTableau a₂ b₂ hlam₂ hμ₂ hγ₂ := by
-  ext h; simp [lrTableauShiftEquiv]
-
-/-- `lrTableauShiftEquiv` preserves the hive recovered by `fixedIntegerHiveShiftEquivLRTableau`. -/
-@[simp]
-theorem fixedIntegerHiveShiftEquivLRTableau_symm_lrTableauShiftEquiv
-    (T : LRTableau (lam.shift a₁).shape (γ.shift (a₁ + b₁)).shape (μ.shift b₁).shape) :
-    (fixedIntegerHiveShiftEquivLRTableau a₂ b₂ hlam₂ hμ₂ hγ₂).symm
-        (lrTableauShiftEquiv a₁ b₁ hlam₁ hμ₁ hγ₁ a₂ b₂ hlam₂ hμ₂ hγ₂ T) =
-      (fixedIntegerHiveShiftEquivLRTableau a₁ b₁ hlam₁ hμ₁ hγ₁).symm T := by
-  simp [lrTableauShiftEquiv]
-
 /-- Exact integer row-count shift formula for `lrTableauShiftEquiv`: off-diagonal counts are
 preserved and diagonal counts (`r < n`) shift by `b₂ - b₁`, independently of `a₁` and `a₂`. -/
 theorem natCast_rowCount_lrTableauShiftEquiv
@@ -671,13 +637,6 @@ theorem rowCount_lrTableauShiftEquiv
     (natCast_rowCount_lrTableauShiftEquiv a₁ b₁ hlam₁ hμ₁ hγ₁ a₂ b₂ hlam₂ hμ₂ hγ₂ T r k)
 
 end
-
-@[simp]
-theorem lrTableauShiftEquiv_self {lam μ γ : DominantWeight n} (a b : ℤ)
-    (hlam : (lam.shift a).IsPolynomial) (hμ : (μ.shift b).IsPolynomial)
-    (hγ : (γ.shift (a + b)).IsPolynomial) :
-    lrTableauShiftEquiv a b hlam hμ hγ a b hlam hμ hγ = Equiv.refl _ :=
-  Equiv.symm_trans_self _
 
 section
 variable {lam μ γ : DominantWeight n} (hdet : lam.detShift + μ.detShift ≤ γ.detShift)
