@@ -52,8 +52,9 @@ controls. So `‖v(s, t)‖² ≤ D e^{-κ s}`. Finally
 Lipschitz constant times `‖u - x‖`.
 
 The almost complex structures enter through their values along `u`, as in
-`TauCeti.Geometry.Symplectic.Floer.ExponentialDecay`; bounds on their first two derivatives as
-functions of the domain point are hypotheses. No Sobolev completion or optimal rate is asserted.
+`TauCeti.Geometry.Symplectic.Floer.ExponentialDecay`; bounds on them and their first two
+derivatives as functions of the domain point, over the strip `t ∈ (-1, 2)` around one period, are
+hypotheses. No Sobolev completion or optimal rate is asserted.
 
 ## Main results
 
@@ -81,19 +82,6 @@ namespace TauCeti.SymplecticForm
 variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] [FiniteDimensional ℝ V]
   {ω : SymplecticForm V} {H : ℝ → V → ℝ} {x : ℝ → V} {u : ℝ × ℝ → V}
   {J : ℝ × ℝ → AlmostComplexStructure V} {a c M : ℝ}
-
-/-- The Floer equation `∂ₛu + J (∂ₜu - X_{H_t}(u)) = 0`, solved for `∂ₜu`. -/
-private theorem fderiv_apply_zero_one_eq_of_floer {z : ℝ × ℝ}
-    (hfloer : IsComplexLinearMap (AlmostComplexStructure.product ℝ) (J z)
-      (ω.perturbedFDeriv (fun _ _ ↦ 0) (fun w ↦ H w.2) u z : ℝ × ℝ →ₗ[ℝ] V)) :
-    fderiv ℝ u z (0, 1) = J z (fderiv ℝ u z (1, 0)) + ω.hamiltonianVectorField (H z.2) (u z) := by
-  have h := (ω.isComplexLinearMap_perturbedFDeriv_iff (J z) _ _ u z).1 hfloer
-  simp only [stdComplexLineReal_eq, stdComplexLineImag_eq, hamiltonianVectorField_const,
-    Pi.zero_apply, sub_zero] at h
-  have h' := congrArg (J z) h
-  rw [map_add, AlmostComplexStructure.apply_apply, map_zero, add_neg_eq_zero] at h'
-  rw [h']
-  abel
 
 /-- **The `s`-derivative of a Floer solution solves a linear Cauchy–Riemann equation.** On an open
 set where `u` is a `C²` solution of `∂ₛu + J (∂ₜu - X_{H_t}(u)) = 0` and `J` is a `C¹` family, the
@@ -125,24 +113,24 @@ theorem fderiv_fderiv_apply_one_zero_apply_zero_one_eq_of_floer (hH : ContDiff �
   have hXg : DifferentiableAt ℝ X (z.2, u z) := (hX.differentiable (by norm_num)).differentiableAt
   -- Near `z` the Floer equation reads `∂ₜu = J ∂ₛu + X(t, u)`.
   have heq : (fun w ↦ fderiv ℝ u w (0, 1)) =ᶠ[𝓝 z]
-      fun w ↦ Jc w (fderiv ℝ u w (1, 0)) + X (w.2, u w) := by
+      fun w ↦ Jc w (fderiv ℝ u w (1, 0)) + (X ∘ fun w ↦ (w.2, u w)) w := by
     filter_upwards [hU.mem_nhds hz] with w hw
+    rw [Function.comp_apply]
     simpa [hJc_def, hX_def] using fderiv_apply_zero_one_eq_of_floer (hfloer w hw)
   -- Differentiate in the direction `(1, 0)`, using the symmetry of the second derivative of `u`.
   have hvs : DifferentiableAt ℝ (fun w ↦ fderiv ℝ u w (1, 0)) z :=
     hDu.clm_apply (differentiableAt_const _)
   have hsymm : fderiv ℝ (fderiv ℝ u) z (0, 1) (1, 0) = fderiv ℝ (fderiv ℝ u) z (1, 0) (0, 1) :=
     huz.isSymmSndFDerivAt (by norm_num [minSmoothness_of_isRCLikeNormedField]) _ _
-  have hcomp : fderiv ℝ (fun w : ℝ × ℝ ↦ X (w.2, u w)) z (1, 0) =
+  have hcomp : fderiv ℝ (X ∘ fun w : ℝ × ℝ ↦ (w.2, u w)) z (1, 0) =
       fderiv ℝ X (z.2, u z) (0, fderiv ℝ u z (1, 0)) := by
-    rw [show (fun w : ℝ × ℝ ↦ X (w.2, u w)) = X ∘ fun w ↦ (w.2, u w) from rfl,
-      fderiv_comp z hXg hg, ContinuousLinearMap.comp_apply,
+    rw [fderiv_comp z hXg hg, ContinuousLinearMap.comp_apply,
       DifferentiableAt.fderiv_prodMk differentiableAt_snd hud]
     simp [fderiv_snd]
   have h := congrArg (fun L : ℝ × ℝ →L[ℝ] V ↦ L (1, 0)) heq.fderiv_eq
   have hXg' : DifferentiableAt ℝ (X ∘ fun w : ℝ × ℝ ↦ (w.2, u w)) z := hXg.comp z hg
   rw [fderiv_clm_apply_const_apply hDu, fderiv_fun_add (f := fun w ↦ Jc w (fderiv ℝ u w (1, 0)))
-    (g := fun w ↦ X (w.2, u w)) (hJz.clm_apply hvs) hXg',
+    (g := X ∘ fun w ↦ (w.2, u w)) (hJz.clm_apply hvs) hXg',
     fderiv_clm_apply hJz hvs] at h
   rw [fderiv_clm_apply_const_apply hDu, hsymm, h, add_apply, hcomp]
   simp only [add_apply, ContinuousLinearMap.comp_apply, fderiv_clm_apply_const_apply hDu,
@@ -173,7 +161,8 @@ derivative. Then for every disc `ball y r` of the complex coordinate whose closu
 with `16 K r² ≤ 1` for the constant `K` of
 `TauCeti.neg_mul_norm_sq_le_laplacian_of_fderiv_I_eq`, `π r² ‖∂ₛu‖²` at the centre is at most
 fifteen times the integral of `‖∂ₛu‖²` over the disc. -/
-private theorem pi_mul_sq_mul_norm_sq_le_of_floer (hH : ContDiff ℝ 3 (uncurry H))
+private theorem pi_mul_sq_mul_norm_fderiv_apply_one_zero_sq_le_of_floer
+    (hH : ContDiff ℝ 3 (uncurry H))
     {U : Set (ℝ × ℝ)} (hU : IsOpen U) (hu : ContDiffOn ℝ 3 u U)
     (hJ : ContDiffOn ℝ 2 (fun z ↦ (J z).toLinearMap.toContinuousLinearMap) U)
     (hfloer : ∀ z ∈ U, IsComplexLinearMap (AlmostComplexStructure.product ℝ) (J z)
@@ -294,20 +283,18 @@ private theorem ofReal_setIntegral_ball_le_mul_setLIntegral
         rw [← Complex.preimage_equivRealProd_prod]
         exact congrArg _ (Complex.volume_preserving_equiv_real_prod.setLIntegral_comp_preimage_emb
           Complex.measurableEquivRealProd.measurableEmbedding _ _)
-    _ ≤ 2 * ∫⁻ z in Ici s ×ˢ Icc 0 1, ENNReal.ofReal (2 / c) *
-          ENNReal.ofReal (ω.floerEnergyDensity (fun _ _ ↦ 0) (fun w ↦ H w.2) u z) := by
-        refine mul_le_mul' le_rfl (setLIntegral_mono' (measurableSet_Ici.prod measurableSet_Icc)
-          fun z hz ↦ ?_)
-        rw [← ENNReal.ofReal_mul (by positivity)]
-        refine ENNReal.ofReal_le_ofReal ?_
-        -- The `ds`-component of the perturbation vanishes, so `‖∂ₛu‖² ≤ (2 / c) e`.
-        simpa [hamiltonianVectorField_const, stdComplexLineReal_eq] using
-          ω.norm_fderiv_stdComplexLineReal_sq_le hc (hJc z ⟨hs.trans_le hz.1, hz.2⟩)
-            (hfloer z ⟨hs.trans_le hz.1, mem_univ _⟩)
+    _ = 2 * ∫⁻ z in Ici s ×ˢ Icc 0 1, ‖fderiv ℝ u z stdComplexLineReal‖ₑ ^ 2 := by
+        simp only [F, stdComplexLineReal_eq, ENNReal.ofReal_pow (norm_nonneg _), ofReal_norm]
+    -- `‖∂ₛu‖² ≤ (2 / c) e` on `[s, ∞) × [0, 1]`.
+    _ ≤ 2 * (ENNReal.ofReal (2 / c) * ∫⁻ z in Ici s ×ˢ Icc 0 1,
+          ENNReal.ofReal (ω.floerEnergyDensity (fun _ _ ↦ 0) (fun w ↦ H w.2) u z)) := by
+        gcongr
+        exact ω.setLIntegral_enorm_fderiv_stdComplexLineReal_sq_le hc
+          (measurableSet_Ici.prod measurableSet_Icc) (fun z hz ↦ hJc z ⟨hs.trans_le hz.1, hz.2⟩)
+          fun z hz ↦ hfloer z ⟨hs.trans_le hz.1, mem_univ _⟩
     _ = ENNReal.ofReal (2 * (2 / c)) * ∫⁻ z in Ici s ×ˢ Icc 0 1,
           ENNReal.ofReal (ω.floerEnergyDensity (fun _ _ ↦ 0) (fun w ↦ H w.2) u z) := by
-        rw [lintegral_const_mul' _ _ ENNReal.ofReal_ne_top, ← mul_assoc,
-          ENNReal.ofReal_mul (by norm_num : (0 : ℝ) ≤ 2), ENNReal.ofReal_ofNat]
+        rw [← mul_assoc, ENNReal.ofReal_mul (by norm_num : (0 : ℝ) ≤ 2), ENNReal.ofReal_ofNat]
 
 /-- **The Floer equation bounds the full derivative.** Since `∂ₜu = J ∂ₛu + X_{H_t}(u)`, bounds
 `‖∂ₛu‖ ≤ L`, `‖J v‖ ≤ M ‖v‖` and `‖X_{H_t}(u)‖ ≤ G` at `z` give `‖du‖ ≤ L + M L + G` there. -/
@@ -352,10 +339,11 @@ private theorem norm_fderiv_floerCoeff_le (hH : ContDiff ℝ 3 (uncurry H)) {U :
     differentiableAt_snd.prodMk hud
   have hYg : DifferentiableAt ℝ (Y ∘ fun w : ℝ × ℝ ↦ (w.2, u w)) z :=
     (hY.differentiable (by norm_num)).differentiableAt.comp z hg
-  rw [fderiv_fun_add (f := fun w ↦ fderiv ℝ Jc w (1, 0)) (g := fun w ↦ Y (w.2, u w))
+  change ‖fderiv ℝ (fun w ↦ fderiv ℝ Jc w (1, 0) + (Y ∘ fun w ↦ (w.2, u w)) w) z‖ ≤ b + G * L
+  rw [fderiv_fun_add (f := fun w ↦ fderiv ℝ Jc w (1, 0)) (g := Y ∘ fun w ↦ (w.2, u w))
     (hDJ.clm_apply (differentiableAt_const _)) hYg]
   refine (norm_add_le (fderiv ℝ (fun w ↦ fderiv ℝ Jc w (1, 0)) z)
-    (fderiv ℝ (fun w ↦ Y (w.2, u w)) z)).trans (add_le_add ?_ ?_)
+    (fderiv ℝ (Y ∘ fun w ↦ (w.2, u w)) z)).trans (add_le_add ?_ ?_)
   · -- The derivative of `∂ₛJ` is bounded by the second derivative of `J`.
     rw [← norm_iteratedFDeriv_fderiv, norm_iteratedFDeriv_one] at hJ₂
     refine ContinuousLinearMap.opNorm_le_bound _ hb fun w ↦ ?_
@@ -368,19 +356,19 @@ private theorem norm_fderiv_floerCoeff_le (hH : ContDiff ℝ 3 (uncurry H)) {U :
       rw [DifferentiableAt.fderiv_prodMk differentiableAt_snd hud, fderiv_snd,
         ContinuousLinearMap.opNorm_prod, Prod.norm_def]
       exact max_le (hsnd.trans hL) hDu
-    rw [show (fun w : ℝ × ℝ ↦ Y (w.2, u w)) = Y ∘ fun w ↦ (w.2, u w) from rfl,
-      fderiv_comp z ((hY.differentiable (by norm_num)).differentiableAt) hg]
+    rw [fderiv_comp z ((hY.differentiable (by norm_num)).differentiableAt) hg]
     exact (ContinuousLinearMap.opNorm_comp_le _ _).trans (mul_le_mul hX hnorm_g (norm_nonneg _) hG)
 
 /-- **The coefficients near the orbit.** Once the loops stay within `1` of the orbit, for
 `s ≥ s₁`, the coefficients `J` and `B = ∂ₛJ + dX_{H_t}(u)` of the linear equation of `∂ₛu`, and
 their derivatives, are bounded on `(max a s₁, ∞) × (-1, 2)`. -/
 private theorem exists_bounds_of_floer {L b : ℝ} (hH : ContDiff ℝ 3 (uncurry H))
-    (hu : ContDiffOn ℝ 3 u (Ioi a ×ˢ univ)) (hJM : ∀ z ∈ Ioi a ×ˢ univ, ∀ v, ‖J z v‖ ≤ M * ‖v‖)
+    (hu : ContDiffOn ℝ 3 u (Ioi a ×ˢ univ))
+    (hJM : ∀ z ∈ Ioi a ×ˢ Ioo (-1) 2, ∀ v, ‖J z v‖ ≤ M * ‖v‖)
     (hJ : ContDiffOn ℝ 2 (fun z ↦ (J z).toLinearMap.toContinuousLinearMap) (Ioi a ×ˢ univ))
-    (hJ₁ : ∀ z ∈ Ioi a ×ˢ univ,
+    (hJ₁ : ∀ z ∈ Ioi a ×ˢ Ioo (-1) 2,
       ‖fderiv ℝ (fun z ↦ (J z).toLinearMap.toContinuousLinearMap) z‖ ≤ b)
-    (hJ₂ : ∀ z ∈ Ioi a ×ˢ univ,
+    (hJ₂ : ∀ z ∈ Ioi a ×ˢ Ioo (-1) 2,
       ‖iteratedFDeriv ℝ 2 (fun z ↦ (J z).toLinearMap.toContinuousLinearMap) z‖ ≤ b)
     (hfloer : ∀ z ∈ Ioi a ×ˢ univ, IsComplexLinearMap (AlmostComplexStructure.product ℝ) (J z)
       (ω.perturbedFDeriv (fun _ _ ↦ 0) (fun w ↦ H w.2) u z : ℝ × ℝ →ₗ[ℝ] V))
@@ -405,6 +393,7 @@ private theorem exists_bounds_of_floer {L b : ℝ} (hH : ContDiff ℝ 3 (uncurry
     (hY.continuous_fderiv (by norm_num)).continuousOn
   set U : Set (ℝ × ℝ) := Ioi (max a s₁) ×ˢ Ioo (-1) 2
   have hUa : U ⊆ Ioi a ×ˢ univ := fun z hz ↦ ⟨(le_max_left _ _).trans_lt hz.1, mem_univ _⟩
+  have hUb : U ⊆ Ioi a ×ˢ Ioo (-1) 2 := fun z hz ↦ ⟨(le_max_left _ _).trans_lt hz.1, hz.2⟩
   have hUK : ∀ z ∈ U, (z.2, u z) ∈ Kc := fun z hz ↦
     ⟨(z.2, u z - x z.2), ⟨Ioo_subset_Icc_self hz.2, by
       simpa [dist_eq_norm] using hs₁ z.1 ((le_max_right _ _).trans hz.1.le) z.2⟩, by simp⟩
@@ -415,36 +404,36 @@ private theorem exists_bounds_of_floer {L b : ℝ} (hH : ContDiff ℝ 3 (uncurry
   have h10 : ‖((1 : ℝ), (0 : ℝ))‖ ≤ 1 := by simp [Prod.norm_def]
   set L₂ := 1 + max L 0 + max M 0 * max L 0 + max G₀ 0
   have hJM' : ∀ z ∈ U, ∀ v, ‖J z v‖ ≤ max M 0 * ‖v‖ := fun z hz v ↦
-    (hJM z (hUa hz) v).trans (mul_le_mul_of_nonneg_right (le_max_left _ _) (norm_nonneg v))
+    (hJM z (hUb hz) v).trans (mul_le_mul_of_nonneg_right (le_max_left _ _) (norm_nonneg v))
   refine ⟨max M 0, max b 0, max b 0 + max G₁ 0, max b 0 + max G₂ 0 * L₂,
     hM₀, add_nonneg hb₀ (mul_nonneg (le_max_right _ _) (by positivity)),
     fun z hz ↦ ⟨?_, ?_, ?_, ?_⟩⟩
   · exact ContinuousLinearMap.opNorm_le_bound _ hM₀ (hJM' z hz)
-  · exact (hJ₁ z (hUa hz)).trans (le_max_left _ _)
+  · exact (hJ₁ z (hUb hz)).trans (le_max_left _ _)
   · rw [floerCoeff_eq]
     refine (norm_add_le _ _).trans (add_le_add ?_ ((hG₁ _ (hUK z hz)).trans (le_max_left _ _)))
-    exact ((fderiv ℝ Jc z).le_of_opNorm_le_of_le ((hJ₁ z (hUa hz)).trans (le_max_left _ _))
+    exact ((fderiv ℝ Jc z).le_of_opNorm_le_of_le ((hJ₁ z (hUb hz)).trans (le_max_left _ _))
       h10).trans_eq (mul_one _)
   -- The full derivative of `u` is bounded on `U`, since `∂ₜu = J ∂ₛu + X_{H_t}(u)` there.
   have hDu := norm_fderiv_le_of_floer hM₀ (hJM' z hz) (hfloer z (hUa hz))
     ((hL z (hUa hz)).trans (le_max_left L 0)) ((hG₀ _ (hUK z hz)).trans (le_max_left G₀ 0))
   have hML := mul_nonneg hM₀ hL₀
   exact norm_fderiv_floerCoeff_le hH (isOpen_Ioi.prod isOpen_univ) (hu.of_le (by norm_num)) hJ
-    (hUa hz) hb₀ (le_max_right _ _) ((hJ₂ z (hUa hz)).trans (le_max_left _ _))
+    (hUa hz) hb₀ (le_max_right _ _) ((hJ₂ z (hUb hz)).trans (le_max_left _ _))
     ((hG₂ _ (hUK z hz)).trans (le_max_left _ _)) (by simp only [L₂]; linarith)
     (by simp only [L₂]; linarith)
 
 /-- **Pointwise exponential decay of `∂ₛu`.** If the energy of `[s, ∞) × [0, 1]` is at most
 `C₁ e^{-κ s}` eventually, then `‖∂ₛu(s, t)‖² ≤ D e^{-κ s}` eventually, for `t ∈ [0, 1]`. -/
-private theorem exists_eventually_norm_sq_fderiv_le_exp {L b κ C₁ : ℝ}
+private theorem exists_eventually_norm_fderiv_apply_one_zero_sq_le_exp {L b κ C₁ : ℝ}
     (hH : ContDiff ℝ 3 (uncurry H))
     (hu : ContDiffOn ℝ 3 u (Ioi a ×ˢ univ)) (hper : ∀ s, a < s → Periodic (fun t ↦ u (s, t)) 1)
     (hc : 0 < c) (hJc : ∀ z ∈ Ioi a ×ˢ Icc 0 1, ∀ v, c * ‖v‖ ^ 2 ≤ ω v (J z v))
-    (hJM : ∀ z ∈ Ioi a ×ˢ univ, ∀ v, ‖J z v‖ ≤ M * ‖v‖)
+    (hJM : ∀ z ∈ Ioi a ×ˢ Ioo (-1) 2, ∀ v, ‖J z v‖ ≤ M * ‖v‖)
     (hJ : ContDiffOn ℝ 2 (fun z ↦ (J z).toLinearMap.toContinuousLinearMap) (Ioi a ×ˢ univ))
-    (hJ₁ : ∀ z ∈ Ioi a ×ˢ univ,
+    (hJ₁ : ∀ z ∈ Ioi a ×ˢ Ioo (-1) 2,
       ‖fderiv ℝ (fun z ↦ (J z).toLinearMap.toContinuousLinearMap) z‖ ≤ b)
-    (hJ₂ : ∀ z ∈ Ioi a ×ˢ univ,
+    (hJ₂ : ∀ z ∈ Ioi a ×ˢ Ioo (-1) 2,
       ‖iteratedFDeriv ℝ 2 (fun z ↦ (J z).toLinearMap.toContinuousLinearMap) z‖ ≤ b)
     (hfloer : ∀ z ∈ Ioi a ×ˢ univ, IsComplexLinearMap (AlmostComplexStructure.product ℝ) (J z)
       (ω.perturbedFDeriv (fun _ _ ↦ 0) (fun w ↦ H w.2) u z : ℝ × ℝ →ₗ[ℝ] V))
@@ -501,9 +490,10 @@ private theorem exists_eventually_norm_sq_fderiv_le_exp {L b κ C₁ : ℝ}
     obtain ⟨h1, h2, h3⟩ := hdisc w hw
     simp only [mem_preimage, Complex.equivRealProdCLM_apply, U, mem_prod, mem_Ioi, mem_Ioo]
     exact ⟨by linarith, by linarith [ht.1], by linarith [ht.2]⟩
-  have hmv := pi_mul_sq_mul_norm_sq_le_of_floer hH hU (hu.mono hUa) (hJ.mono hUa)
-    (fun z hz ↦ hfloer z (hUa hz)) (fun z hz ↦ (hbd z hz).1) (fun z hz ↦ (hbd z hz).2.1)
-    (fun z hz ↦ (hbd z hz).2.2.1) (fun z hz ↦ (hbd z hz).2.2.2) hKr hr₀.le hU'
+  have hmv := pi_mul_sq_mul_norm_fderiv_apply_one_zero_sq_le_of_floer hH hU (hu.mono hUa)
+    (hJ.mono hUa) (fun z hz ↦ hfloer z (hUa hz)) (fun z hz ↦ (hbd z hz).1)
+    (fun z hz ↦ (hbd z hz).2.1) (fun z hz ↦ (hbd z hz).2.2.1) (fun z hz ↦ (hbd z hz).2.2.2) hKr
+    hr₀.le hU'
   rw [hey] at hmv
   have hint := ofReal_setIntegral_ball_le_mul_setLIntegral hper hc hJc hfloer has hr2
     (by linarith [hy.1])
@@ -521,26 +511,6 @@ private theorem exists_eventually_norm_sq_fderiv_le_exp {L b κ C₁ : ℝ}
     le_div_iff₀ hpr]
   linarith [hmv, hE', mul_comm (‖fderiv ℝ u (s, t) (1, 0)‖ ^ 2) (π * r ^ 2)]
 
-/-- **The `C¹` deviation from a loop.** By the Floer equation `∂ₜu = J ∂ₛu + X_{H_t}(u)`, so
-`‖du - dt ⊗ X_{H_t}(y)‖ ≤ (1 + M) ‖∂ₛu‖ + K ‖u - y‖` at `z` whenever `‖J v‖ ≤ M ‖v‖` and
-`‖X_{H_t}(u) - X_{H_t}(y)‖ ≤ K ‖u - y‖` there. -/
-private theorem norm_fderiv_sub_smulRight_le_of_floer {z : ℝ × ℝ} {y : V} {K : ℝ}
-    (hJM : ∀ v, ‖J z v‖ ≤ M * ‖v‖)
-    (hfloer : IsComplexLinearMap (AlmostComplexStructure.product ℝ) (J z)
-      (ω.perturbedFDeriv (fun _ _ ↦ 0) (fun w ↦ H w.2) u z : ℝ × ℝ →ₗ[ℝ] V))
-    (hX : ‖ω.hamiltonianVectorField (H z.2) (u z) - ω.hamiltonianVectorField (H z.2) y‖ ≤
-      K * ‖u z - y‖) :
-    ‖fderiv ℝ u z - (ContinuousLinearMap.snd ℝ ℝ ℝ).smulRight
-        (ω.hamiltonianVectorField (H z.2) y)‖ ≤
-      (1 + M) * ‖fderiv ℝ u z (1, 0)‖ + K * ‖u z - y‖ := by
-  refine (ContinuousLinearMap.opNorm_le_norm_apply_one_zero_add_norm_apply_zero_one _).trans ?_
-  simp only [sub_apply, ContinuousLinearMap.smulRight_apply, ContinuousLinearMap.coe_snd',
-    zero_smul, sub_zero, one_smul]
-  rw [fderiv_apply_zero_one_eq_of_floer hfloer, add_sub_assoc]
-  linarith [norm_add_le (J z (fderiv ℝ u z (1, 0)))
-    (ω.hamiltonianVectorField (H z.2) (u z) - ω.hamiltonianVectorField (H z.2) y),
-    hJM (fderiv ℝ u z (1, 0))]
-
 /-- **Reduction to one period.** Since `u`, its derivative, `x` and `H` are `1`-periodic in `t`,
 bounds on `‖u(s, t) - x(t)‖` and `‖du(s, t) - dt ⊗ X_{H_t}(x(t))‖` for `t ∈ [0, 1]` hold for every
 `t`. -/
@@ -551,21 +521,22 @@ private theorem norm_sub_le_and_norm_fderiv_sub_le_of_mem_Icc (hHper : Periodic 
         (ω.hamiltonianVectorField (H t) (x t))‖ ≤ B) (t : ℝ) :
     ‖u (s, t) - x t‖ ≤ A ∧ ‖fderiv ℝ u (s, t) - (ContinuousLinearMap.snd ℝ ℝ ℝ).smulRight
       (ω.hamiltonianVectorField (H t) (x t))‖ ≤ B := by
-  obtain ⟨t', ht', hut, hxt, hHt, hdut⟩ : ∃ t' ∈ Icc (0 : ℝ) 1, u (s, t') = u (s, t) ∧
-      x t' = x t ∧ H t' = H t ∧ fderiv ℝ u (s, t') = fderiv ℝ u (s, t) := by
-    refine ⟨toIcoMod one_pos 0 t,
-      Ico_subset_Icc_self (by simpa using toIcoMod_mem_Ico one_pos 0 t), ?_⟩
-    rw [← self_sub_toIcoDiv_zsmul]
-    exact ⟨(hper s hs).sub_zsmul_eq _, hxper.sub_zsmul_eq _, hHper.sub_zsmul_eq _,
-      (periodic_fderiv_mk_of_isOpen isOpen_Ioi hper hs).sub_zsmul_eq _⟩
-  rw [← hut, ← hxt, ← hHt, ← hdut]
-  exact h t' ht'
+  -- The data at `t` are those at some `t' ∈ [0, 1)`.
+  have hP : Periodic (fun t ↦ (u (s, t), x t, H t, fderiv ℝ u (s, t))) 1 := fun t ↦ by
+    simp only [Prod.mk.injEq]
+    exact ⟨hper s hs t, hxper t, hHper t, periodic_fderiv_mk_of_isOpen isOpen_Ioi hper hs t⟩
+  obtain ⟨t', ht', heq⟩ := hP.exists_mem_Ico₀ one_pos t
+  simp only [Prod.mk.injEq] at heq
+  obtain ⟨hut, hxt, hHt, hdut⟩ := heq
+  rw [hut, hxt, hHt, hdut]
+  exact h t' (Ico_subset_Icc_self ht')
 
 /-- **Exponential convergence in `C¹` at a nondegenerate end.** Let `u` be a `C³` finite-energy
 solution of the Floer equation `∂ₛu + J (∂ₜu - X_{H_t}(u)) = 0` on the half-cylinder `s > a`, for
 a `C³` Hamiltonian `H` and a `C²` family `J` of almost complex structures, uniformly tame over
-`t ∈ [0, 1]`, whose first and second derivatives are bounded, with `∂ₛu` bounded over `t ∈ [0, 1]`
-and `1`-periodic loops converging uniformly to a nondegenerate `1`-periodic orbit `x`. Then `u`
+`t ∈ [0, 1]`, which together with its first and second derivatives is bounded over `t ∈ (-1, 2)`,
+with `∂ₛu` bounded over `t ∈ [0, 1]` and `1`-periodic loops converging uniformly to a nondegenerate
+`1`-periodic orbit `x`. Then `u`
 converges to `x` exponentially fast in `C¹`: for some `κ > 0` and `C`, eventually in `s` and for
 all `t`,
 
@@ -589,11 +560,11 @@ theorem exists_pos_eventually_norm_sub_le_exp_and_norm_fderiv_sub_le_exp {L b : 
     (hH : ContDiff ℝ 3 (uncurry H)) (hHper : Periodic H 1)
     (hu : ContDiffOn ℝ 3 u (Ioi a ×ˢ univ)) (hper : ∀ s, a < s → Periodic (fun t ↦ u (s, t)) 1)
     (hc : 0 < c) (hJc : ∀ z ∈ Ioi a ×ˢ Icc 0 1, ∀ v, c * ‖v‖ ^ 2 ≤ ω v (J z v))
-    (hJM : ∀ z ∈ Ioi a ×ˢ univ, ∀ v, ‖J z v‖ ≤ M * ‖v‖)
+    (hJM : ∀ z ∈ Ioi a ×ˢ Ioo (-1) 2, ∀ v, ‖J z v‖ ≤ M * ‖v‖)
     (hJ : ContDiffOn ℝ 2 (fun z ↦ (J z).toLinearMap.toContinuousLinearMap) (Ioi a ×ˢ univ))
-    (hJ₁ : ∀ z ∈ Ioi a ×ˢ univ,
+    (hJ₁ : ∀ z ∈ Ioi a ×ˢ Ioo (-1) 2,
       ‖fderiv ℝ (fun z ↦ (J z).toLinearMap.toContinuousLinearMap) z‖ ≤ b)
-    (hJ₂ : ∀ z ∈ Ioi a ×ˢ univ,
+    (hJ₂ : ∀ z ∈ Ioi a ×ˢ Ioo (-1) 2,
       ‖iteratedFDeriv ℝ 2 (fun z ↦ (J z).toLinearMap.toContinuousLinearMap) z‖ ≤ b)
     (hfloer : ∀ z ∈ Ioi a ×ˢ univ, IsComplexLinearMap (AlmostComplexStructure.product ℝ) (J z)
       (ω.perturbedFDeriv (fun _ _ ↦ 0) (fun w ↦ H w.2) u z : ℝ × ℝ →ₗ[ℝ] V))
@@ -611,6 +582,7 @@ theorem exists_pos_eventually_norm_sub_le_exp_and_norm_fderiv_sub_le_exp {L b : 
   have hxc : Continuous x := continuous_iff_continuousAt.2 fun t ↦ (hx t).continuousAt
   have hH2 : ContDiff ℝ 2 (uncurry H) := hH.of_le (by norm_num)
   have hsub : Ioi a ×ˢ Icc (0 : ℝ) 1 ⊆ Ioi a ×ˢ univ := prod_mono le_rfl (subset_univ _)
+  have hIcc : Icc (0 : ℝ) 1 ⊆ Ioo (-1) 2 := Icc_subset_Ioo (by norm_num) (by norm_num)
   -- `∂ₛu` is `1`-periodic in `t`, so the bound `L` holds on the whole half-cylinder.
   have hL' : ∀ z ∈ Ioi a ×ˢ univ, ‖fderiv ℝ u z (1, 0)‖ ≤ L := fun z hz ↦ by
     obtain ⟨t, ht, heq⟩ :=
@@ -619,13 +591,13 @@ theorem exists_pos_eventually_norm_sub_le_exp_and_norm_fderiv_sub_le_exp {L b : 
     exact hL (z.1, t) ⟨hz.1, Ico_subset_Icc_self ht⟩
   -- The loops converge exponentially, and the energy of `[s, ∞) × [0, 1]` decays exponentially.
   obtain ⟨κ₀, hκ₀, C₀, hC₀⟩ := exists_pos_eventually_norm_sub_le_exp hH2 hHper
-    (hu.of_le (by norm_num)) hper hc hJc (fun z hz ↦ hJM z (hsub hz))
+    (hu.of_le (by norm_num)) hper hc hJc (fun z hz ↦ hJM z ⟨hz.1, hIcc hz.2⟩)
     (fun z hz ↦ hfloer z (hsub hz)) hE hL hxper hx hnd hux
   obtain ⟨κ, hκ, C₁, hC₁⟩ := exists_pos_eventually_setLIntegral_floerEnergyDensity_Ici_le_exp hH2
-    hHper (hu.of_le (by norm_num)) hper hc hJc (fun z hz ↦ hJM z (hsub hz))
+    hHper (hu.of_le (by norm_num)) hper hc hJc (fun z hz ↦ hJM z ⟨hz.1, hIcc hz.2⟩)
     (fun z hz ↦ hfloer z (hsub hz)) hE hxper hx hnd hux
-  obtain ⟨D, hD₀, hv⟩ := exists_eventually_norm_sq_fderiv_le_exp hH hu hper hc hJc hJM hJ hJ₁ hJ₂
-    hfloer hL' hxc hux hC₁
+  obtain ⟨D, hD₀, hv⟩ := exists_eventually_norm_fderiv_apply_one_zero_sq_le_exp hH hu hper hc hJc
+    hJM hJ hJ₁ hJ₂ hfloer hL' hxc hux hC₁
   -- `X_{H_t}` is uniformly Lipschitz near the orbit, for `t ∈ [0, 1]`.
   obtain ⟨δ₁, hδ₁, Lx, hLx⟩ :=
     (isCompact_Icc (a := (0 : ℝ)) (b := 1)).exists_pos_forall_norm_sub_le_mul
@@ -664,7 +636,7 @@ theorem exists_pos_eventually_norm_sub_le_exp_and_norm_fderiv_sub_le_exp {L b : 
   have hd : ‖fderiv ℝ u (s, t) - (ContinuousLinearMap.snd ℝ ℝ ℝ).smulRight
       (ω.hamiltonianVectorField (H t) (x t))‖ ≤
       (1 + a') * ‖fderiv ℝ u (s, t) (1, 0)‖ + Lx' * ‖u (s, t) - x t‖ :=
-    norm_fderiv_sub_smulRight_le_of_floer (fun v ↦ (hJM _ hz v).trans
+    norm_fderiv_sub_smulRight_le_of_floer (fun v ↦ (hJM (s, t) ⟨hsa, hIcc ht⟩ v).trans
       (mul_le_mul_of_nonneg_right (le_max_left M 0) (norm_nonneg _))) (hfloer _ hz)
       ((hLx t ht _ (by rw [← dist_eq_norm, dist_comm]; exact (hδs t).le)).trans
         (mul_le_mul_of_nonneg_right (le_max_left Lx 0) (norm_nonneg _)))

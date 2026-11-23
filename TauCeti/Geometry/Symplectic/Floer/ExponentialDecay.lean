@@ -131,6 +131,8 @@ Cauchy–Riemann equation solved by `∂ₛu`.
   half-cylinder with bounded `∂_s u` converges exponentially to its nondegenerate asymptotic orbit.
 * `TauCeti.SymplecticForm.exists_pos_eventually_norm_fderiv_apply_one_zero_le_exp`: `∂_s u`
   decays exponentially at a nondegenerate end.
+* `TauCeti.SymplecticForm.norm_fderiv_sub_smulRight_le_of_floer`: pointwise, the deviation of `du`
+  from `dt ⊗ X_{H_t}(y)` is controlled by `‖∂ₛu‖` and `‖u - y‖`.
 * `TauCeti.SymplecticForm.exists_pos_eventually_norm_fderiv_sub_smulRight_le_exp`: the derivative
   of `u` converges exponentially to the derivative of the stationary cylinder.
 * `TauCeti.SymplecticForm.exists_pos_eventually_norm_sub_add_norm_fderiv_sub_smulRight_le_exp`: a
@@ -332,6 +334,40 @@ theorem exists_abs_hamiltonianAction_sub_le_of_nondegenerate (hH : ContDiff ℝ 
     _ ≤ _ := mul_le_mul_of_nonneg_left hN2 (by positivity)
 
 variable {u : ℝ × ℝ → V} {J : ℝ × ℝ → AlmostComplexStructure V} {U : Set (ℝ × ℝ)} {a c M s : ℝ}
+
+/-- **The Floer equation solved for `∂ₜu`.** If `u` solves `∂ₛu + J (∂ₜu - X_{H_t}(u)) = 0` at `z`
+for the cylindrical perturbation `H_t dt`, then `∂ₜu = J ∂ₛu + X_{H_t}(u)` at `z`. -/
+theorem fderiv_apply_zero_one_eq_of_floer {z : ℝ × ℝ}
+    (hfloer : IsComplexLinearMap (AlmostComplexStructure.product ℝ) (J z)
+      (ω.perturbedFDeriv (fun _ _ ↦ 0) (fun w ↦ H w.2) u z : ℝ × ℝ →ₗ[ℝ] V)) :
+    fderiv ℝ u z (0, 1) = J z (fderiv ℝ u z (1, 0)) + ω.hamiltonianVectorField (H z.2) (u z) := by
+  have h := (ω.isComplexLinearMap_perturbedFDeriv_iff (J z) _ _ u z).1 hfloer
+  simp only [stdComplexLineReal_eq, stdComplexLineImag_eq, hamiltonianVectorField_const,
+    Pi.zero_apply, sub_zero] at h
+  have h' := congrArg (J z) h
+  rw [map_add, AlmostComplexStructure.apply_apply, map_zero, add_neg_eq_zero] at h'
+  rw [h']
+  abel
+
+/-- **The `C¹` deviation from a loop.** If `u` solves the Floer equation for `H_t dt` at `z`, then
+`‖du - dt ⊗ X_{H_t}(y)‖ ≤ (1 + M) ‖∂ₛu‖ + K ‖u - y‖` at `z`, whenever `‖J v‖ ≤ M ‖v‖` and
+`‖X_{H_t}(u) - X_{H_t}(y)‖ ≤ K ‖u - y‖` there, since `∂ₜu = J ∂ₛu + X_{H_t}(u)`. -/
+theorem norm_fderiv_sub_smulRight_le_of_floer {z : ℝ × ℝ} {y : V} {K : ℝ}
+    (hJM : ∀ v, ‖J z v‖ ≤ M * ‖v‖)
+    (hfloer : IsComplexLinearMap (AlmostComplexStructure.product ℝ) (J z)
+      (ω.perturbedFDeriv (fun _ _ ↦ 0) (fun w ↦ H w.2) u z : ℝ × ℝ →ₗ[ℝ] V))
+    (hX : ‖ω.hamiltonianVectorField (H z.2) (u z) - ω.hamiltonianVectorField (H z.2) y‖ ≤
+      K * ‖u z - y‖) :
+    ‖fderiv ℝ u z - (ContinuousLinearMap.snd ℝ ℝ ℝ).smulRight
+        (ω.hamiltonianVectorField (H z.2) y)‖ ≤
+      (1 + M) * ‖fderiv ℝ u z (1, 0)‖ + K * ‖u z - y‖ := by
+  refine (ContinuousLinearMap.opNorm_le_norm_apply_one_zero_add_norm_apply_zero_one _).trans ?_
+  simp only [sub_apply, ContinuousLinearMap.smulRight_apply,
+    ContinuousLinearMap.coe_snd', zero_smul, sub_zero, one_smul]
+  rw [fderiv_apply_zero_one_eq_of_floer hfloer, add_sub_assoc]
+  linarith [norm_add_le (J z (fderiv ℝ u z (1, 0)))
+    (ω.hamiltonianVectorField (H z.2) (u z) - ω.hamiltonianVectorField (H z.2) y),
+    hJM (fderiv ℝ u z (1, 0))]
 
 /-- On the slice at `s` of a `C¹` Floer solution with uniformly tame `J`, defined on an open set
 containing the line `{s} × ℝ`, the squared `L²` norm of the defect `∂_t u - X_{H_t}(u)` is at most
@@ -828,27 +864,13 @@ theorem exists_pos_eventually_norm_fderiv_sub_smulRight_le_exp (hH : ContDiff �
     (h₁.and (h₂.and (eventually_ge_atTop (max (a + 1) 0)))).mono fun s ⟨hs₁, hs₂, hs⟩ t ↦ ?_⟩
   have hsa : a < s := by linarith [le_max_left (a + 1) 0]
   have hs0 : 0 ≤ s := (le_max_right _ _).trans hs
-  set D := fderiv ℝ u (s, t) -
-    (ContinuousLinearMap.snd ℝ ℝ ℝ).smulRight (ω.hamiltonianVectorField (H t) (x t))
-  -- The Floer equation: `∂ₜu - X_{H_t}(u) = J_t(u) ∂ₛu`.
-  have hdef : fderiv ℝ u (s, t) (0, 1) - ω.hamiltonianVectorField (H t) (u (s, t)) =
-      J t (u (s, t)) (fderiv ℝ u (s, t) (1, 0)) := by
-    have h := (isComplexLinearMap_perturbedFDeriv_of_periodic hHper hJper isOpen_Ioi hper hfloer
-      (z := (s, t)) ⟨hsa, mem_univ _⟩).apply_stdComplexLineImag
-    simp only [ContinuousLinearMap.coe_coe, perturbedFDeriv_apply_stdComplexLineImag,
-      perturbedFDeriv_apply_stdComplexLineReal] at h
-    simpa [stdComplexLineReal_eq, stdComplexLineImag_eq, hamiltonianVectorField_const] using h
-  have hD₁ : D (1, 0) = fderiv ℝ u (s, t) (1, 0) := by simp [D]
-  have hD₂ : ‖D (0, 1)‖ ≤ M' * ‖fderiv ℝ u (s, t) (1, 0)‖ + Lx * ‖u (s, t) - x t‖ := by
-    have h : D (0, 1) = J t (u (s, t)) (fderiv ℝ u (s, t) (1, 0)) +
-        (ω.hamiltonianVectorField (H t) (u (s, t)) - ω.hamiltonianVectorField (H t) (x t)) := by
-      rw [← hdef]
-      simp [D]
-    rw [h]
-    refine norm_add_le_of_le (((hcM t _ (huK s hsa t) _).2).trans ?_)
-      ((hLx t).norm_sub_le (Or.inl (huK s hsa t)) (Or.inr (mem_range_self t)))
-    gcongr
-    exact le_max_left _ _
+  -- The Floer equation `∂ₜu = J_t(u) ∂ₛu + X_{H_t}(u)` bounds the deviation from `x`.
+  have hD := norm_fderiv_sub_smulRight_le_of_floer (J := fun z ↦ J z.2 (u z)) (M := M')
+    (fun v ↦ (hcM t _ (huK s hsa t) v).2.trans
+      (mul_le_mul_of_nonneg_right (le_max_left _ _) (norm_nonneg v)))
+    (isComplexLinearMap_perturbedFDeriv_of_periodic hHper hJper isOpen_Ioi hper hfloer
+      (z := (s, t)) ⟨hsa, mem_univ _⟩)
+    ((hLx t).norm_sub_le (Or.inl (huK s hsa t)) (Or.inr (mem_range_self t)))
   have he₁ : Real.exp (-(κ₁ * s)) ≤ Real.exp (-(min κ₁ κ₂ * s)) :=
     Real.exp_le_exp.2 (neg_le_neg (mul_le_mul_of_nonneg_right (min_le_left _ _) hs0))
   have he₂ : Real.exp (-(κ₂ * s)) ≤ Real.exp (-(min κ₁ κ₂ * s)) :=
@@ -861,12 +883,7 @@ theorem exists_pos_eventually_norm_fderiv_sub_smulRight_le_exp (hH : ContDiff �
       (mul_le_mul_of_nonneg_left he₂ (le_max_right _ _)))
   have : 0 ≤ M' := le_max_right _ _
   have : (0 : ℝ) ≤ Lx := Lx.coe_nonneg
-  calc ‖D‖ ≤ ‖fderiv ℝ u (s, t) (1, 0)‖ +
-        (M' * ‖fderiv ℝ u (s, t) (1, 0)‖ + Lx * ‖u (s, t) - x t‖) := by
-        refine D.opNorm_le_norm_apply_one_zero_add_norm_apply_zero_one.trans ?_
-        rw [hD₁]
-        exact add_le_add le_rfl hD₂
-    _ = (1 + M') * ‖fderiv ℝ u (s, t) (1, 0)‖ + Lx * ‖u (s, t) - x t‖ := by ring
+  calc _ ≤ (1 + M') * ‖fderiv ℝ u (s, t) (1, 0)‖ + Lx * ‖u (s, t) - x t‖ := hD
     _ ≤ (1 + M') * (max C₁ 0 * Real.exp (-(min κ₁ κ₂ * s))) +
         Lx * (max C₂ 0 * Real.exp (-(min κ₁ κ₂ * s))) := by gcongr
     _ = _ := by ring

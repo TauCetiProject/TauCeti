@@ -66,7 +66,8 @@ The same bounds hold for a solution `u : ℝ × ℝ → V` of the Floer equation
 `K` containing the image of `u`, with finite Floer energy over `(a, ∞) × [0, 1]`. Read in the
 complex coordinate, `u` solves the coordinate equation above with `J(z, x) = J_(im z)(x)` and the
 `dt`-component of `X` given by `X_{H_(im z)}`. The taming constant of `J` on `[0, 1] × K` bounds
-`‖∂ₛu‖²` by a multiple of the Floer energy density, so the energy `∫ ‖∂ₛu‖²` is finite too. Hence
+`‖∂ₛu‖²` by a multiple of the Floer energy density, so the energy `∫ ‖∂ₛu‖²` is finite too
+(`TauCeti.SymplecticForm.setLIntegral_enorm_fderiv_stdComplexLineReal_sq_le`). Hence
 `du` is bounded and `u` is Lipschitz on every half-cylinder `s ≥ b` with `b > a`
 (`TauCeti.SymplecticForm.exists_forall_norm_fderiv_le_of_floer`,
 `TauCeti.SymplecticForm.exists_lipschitzOnWith_of_floer`). Likewise, small Floer energy over a
@@ -579,25 +580,26 @@ theorem isComplexLinearMap_perturbedFDeriv_of_periodic (hHper : Periodic H 1)
   rw [hJz, hu z hz.1, ← ω.perturbedFDeriv_comp_add_right, hKt] at h
   rwa [ω.perturbedFDeriv_congr_of_eventuallyEq _ _ hloc]
 
-/-- On a Floer solution over `S × [0, 1]` for a family `J_t(x)` with taming constant `c` on
-`ℝ × K`, the energy `∫ ‖∂ₛu‖²` over `A × [0, 1]`, for `A ⊆ S`, is at most `2 / c` times the Floer
-energy there. -/
-private theorem setLIntegral_enorm_fderiv_stdComplexLineReal_sq_le {S A : Set ℝ} {c : ℝ}
-    (hc : 0 < c) (hcK : ∀ t, ∀ x ∈ K, ∀ v, c * ‖v‖ ^ 2 ≤ ω v (J t x v))
-    (huK : ∀ s ∈ S, ∀ t, u (s, t) ∈ K)
-    (hfloer : ∀ z ∈ S ×ˢ Icc 0 1, IsComplexLinearMap (AlmostComplexStructure.product ℝ)
-      (J z.2 (u z)) (ω.perturbedFDeriv (fun _ _ ↦ 0) (fun w ↦ H w.2) u z : ℝ × ℝ →ₗ[ℝ] V))
-    (hA : MeasurableSet A) (hAS : A ⊆ S) :
-    ∫⁻ z in A ×ˢ Icc 0 1, ‖fderiv ℝ u z stdComplexLineReal‖ₑ ^ 2 ≤
-      ENNReal.ofReal (2 / c) * ∫⁻ z in A ×ˢ Icc 0 1,
+/-- **The energy of `∂ₛu` is controlled by the Floer energy.** On a Floer solution for the
+cylindrical perturbation `H_t dt` over a measurable set `S` of the domain, for a family `J'` of
+almost complex structures given along `u` as a function of the domain point and tamed with
+constant `c` on `S`, the energy `∫ ‖∂ₛu‖²` over `S` is at most `2 / c` times the Floer energy
+there. -/
+theorem setLIntegral_enorm_fderiv_stdComplexLineReal_sq_le {S : Set (ℝ × ℝ)}
+    {J' : ℝ × ℝ → AlmostComplexStructure V} {c : ℝ} (hc : 0 < c) (hS : MeasurableSet S)
+    (hJc : ∀ z ∈ S, ∀ v, c * ‖v‖ ^ 2 ≤ ω v (J' z v))
+    (hfloer : ∀ z ∈ S, IsComplexLinearMap (AlmostComplexStructure.product ℝ) (J' z)
+      (ω.perturbedFDeriv (fun _ _ ↦ 0) (fun w ↦ H w.2) u z : ℝ × ℝ →ₗ[ℝ] V)) :
+    ∫⁻ z in S, ‖fderiv ℝ u z stdComplexLineReal‖ₑ ^ 2 ≤
+      ENNReal.ofReal (2 / c) * ∫⁻ z in S,
         ENNReal.ofReal (ω.floerEnergyDensity (fun _ _ ↦ 0) (fun w ↦ H w.2) u z) := by
   rw [← lintegral_const_mul' _ _ ENNReal.ofReal_ne_top]
-  refine setLIntegral_mono' (hA.prod measurableSet_Icc) fun z hz ↦ ?_
+  refine setLIntegral_mono' hS fun z hz ↦ ?_
   rw [← ENNReal.ofReal_mul (by positivity), ← ofReal_norm, ← ENNReal.ofReal_pow (norm_nonneg _)]
   refine ENNReal.ofReal_le_ofReal ?_
   -- The `ds`-component of the perturbation vanishes, so `‖∂ₛu‖² ≤ (2 / c) e`.
-  simpa [hamiltonianVectorField_const] using ω.norm_fderiv_stdComplexLineReal_sq_le hc
-    (hcK z.2 _ (huK z.1 (hAS hz.1) z.2)) (hfloer z ⟨hAS hz.1, hz.2⟩)
+  simpa [hamiltonianVectorField_const] using
+    ω.norm_fderiv_stdComplexLineReal_sq_le hc (hJc z hz) (hfloer z hz)
 
 /-- In the complex coordinate `e = equivRealProdCLM`, the cylindrical datum `K = H_t dt` of a `C³`
 `1`-periodic Hamiltonian gives the `C²` coefficient `X(z, x) = X_K(e z, x) ∘ e`, periodic under
@@ -746,8 +748,10 @@ theorem exists_pos_forall_norm_fderiv_le_of_setLIntegral_floerEnergyDensity_le
   calc ∫⁻ z in Ioo (p.1 - r) (p.1 + r) ×ˢ Icc 0 1, ‖fderiv ℝ u z stdComplexLineReal‖ₑ ^ 2
       ≤ ENNReal.ofReal (2 / c) * ∫⁻ z in Ioo (p.1 - r) (p.1 + r) ×ˢ Icc 0 1,
           ENNReal.ofReal (ω.floerEnergyDensity (fun _ _ ↦ 0) (fun w ↦ H w.2) u z) :=
-        setLIntegral_enorm_fderiv_stdComplexLineReal_sq_le hc (fun t x hx v ↦ (hcM t x hx v).1)
-          huK hfloer measurableSet_Ioo (Ioo_subset_Icc_self.trans hpS)
+        setLIntegral_enorm_fderiv_stdComplexLineReal_sq_le hc
+          (measurableSet_Ioo.prod measurableSet_Icc)
+          (fun z hz v ↦ (hcM z.2 _ (huK z.1 (Ioo_subset_Icc_self.trans hpS hz.1) z.2) v).1)
+          fun z hz ↦ hfloer z ⟨Ioo_subset_Icc_self.trans hpS hz.1, hz.2⟩
     _ ≤ ENNReal.ofReal (2 / c) * ENNReal.ofReal (c * ε / 2) := by
         gcongr
         exact (lintegral_mono_set (Set.prod_mono Ioo_subset_Icc_self le_rfl)).trans hE
@@ -784,8 +788,9 @@ theorem exists_forall_norm_fderiv_le_of_floer (hH : ContDiff ℝ 3 (uncurry H))
   have hfin : ∫⁻ z in Ioi a ×ℂ Icc 0 1, ‖fderiv ℝ v z 1‖ₑ ^ 2 ≠ ⊤ := by
     rw [hEv _ measurableSet_Ioi subset_rfl]
     exact ne_top_of_le_ne_top (ENNReal.mul_ne_top ENNReal.ofReal_ne_top hE)
-      (setLIntegral_enorm_fderiv_stdComplexLineReal_sq_le hc (fun t x hx v ↦ (hcM t x hx v).1)
-        huK hfloer measurableSet_Ioi subset_rfl)
+      (setLIntegral_enorm_fderiv_stdComplexLineReal_sq_le hc
+        (measurableSet_Ioi.prod measurableSet_Icc)
+        (fun z hz v ↦ (hcM z.2 _ (huK z.1 hz.1 z.2) v).1) hfloer)
   obtain ⟨M, hM⟩ := Floer.exists_forall_norm_fderiv_le_of_lintegral_ne_top hWc hJc hXc hK hKWc
     hJsq (fun x ↦ by simpa using hJτ x 1) hJI (fun x ↦ by simpa using hXτ x 1) hXI hab hv hvper
     hCR hvK hfin
@@ -909,7 +914,9 @@ theorem exists_forall_ofReal_norm_fderiv_sq_le_mul_setLIntegral_floerEnergyDensi
       ).setLIntegral_ball_le_two_mul_setLIntegral_reProdIm_Ioo y hr2
   -- Combine with `‖∂ₛu‖² ≤ (2 / c) e` on the band.
   have hstrip := setLIntegral_enorm_fderiv_stdComplexLineReal_sq_le hc
-    (fun t x hx v ↦ (hcM t x hx v).1) huK hfloer measurableSet_Ioo hband
+    (measurableSet_Ioo.prod measurableSet_Icc)
+    (fun p hp v ↦ (hcM p.2 _ (huK p.1 (hband hp.1) p.2) v).1)
+    fun p hp ↦ hfloer p ⟨hband hp.1, hp.2⟩
   have hpt : ‖fderiv ℝ u z (1, 0)‖ ^ 2 ≤ 15 / (π * r ^ 2) *
       ∫ w in ball y r, ‖fderiv ℝ v w 1‖ ^ 2 := by
     rw [div_mul_eq_mul_div, le_div_iff₀ hπr]

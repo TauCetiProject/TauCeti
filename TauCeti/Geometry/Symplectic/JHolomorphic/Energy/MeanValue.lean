@@ -100,6 +100,9 @@ The `s`-derivative of a Floer cylinder solves such an equation.
 * `exists_nonneg_forall_pi_mul_sq_mul_norm_fderiv_one_sub_sq_le_fifteen_mul_setIntegral_ball`:
   the resulting mean-value inequality for `‖∂ₛu - e₀‖²` on discs of radius `r ≤ 1 / (4 m √A)`,
   uniformly over curves with image in a compact set.
+* `TauCeti.fderiv_fderiv_apply_I_eq_of_fderiv_I_eq`, `TauCeti.laplacian_eq_of_fderiv_I_eq`: a
+  linear Cauchy–Riemann equation differentiated once, and the resulting first-order formula for
+  the Laplacian of a solution.
 * `TauCeti.neg_mul_norm_sq_le_laplacian_of_fderiv_I_eq`: the differential inequality
   `Δ ‖v‖² ≥ -K ‖v‖²` for a solution of a linear Cauchy–Riemann equation.
 * `TauCeti.pi_mul_sq_mul_norm_sq_le_fifteen_mul_setIntegral_ball_of_fderiv_I_eq`: the mean-value
@@ -194,10 +197,12 @@ private theorem laplacian_fderiv_one_eq (hu : ContDiffAt ℝ 3 u z) (hJ : ContDi
   have h₁ := fderiv_fderiv_fderiv_apply_I_eq hu hJ hCR 1 I
   have h₂ := fderiv_fderiv_fderiv_apply_I_eq hu hJ hCR 1 1
   rw [fderiv_fderiv_fderiv_apply_comm hu (by simp) 1 I 1, h₂, hsymm₂] at h₁
-  rw [laplacian_eq_iteratedFDeriv_complexPlane]
-  simp only [iteratedFDeriv_two_apply, Fin.isValue, Matrix.cons_val_zero, Matrix.cons_val_one,
-    Matrix.cons_val_fin_one]
-  rw [fderiv_fderiv_fderiv_apply hu, fderiv_fderiv_fderiv_apply hu, hsymm₃, h₁]
+  have hDf : DifferentiableAt ℝ (fderiv ℝ fun y ↦ fderiv ℝ u y 1) z :=
+    ((hDu.clm_apply contDiffAt_const).fderiv_right (m := 1) (by norm_num)).differentiableAt
+      (by norm_num)
+  rw [laplacian_eq_fderiv_fderiv_apply_one_add_fderiv_fderiv_apply_I hDf,
+    fderiv_clm_apply_const_apply hDf 1 1, fderiv_clm_apply_const_apply hDf I I,
+    fderiv_fderiv_fderiv_apply hu, fderiv_fderiv_fderiv_apply hu, hsymm₃, h₁]
   simp only [map_add, hJsq]
   module
 
@@ -435,6 +440,21 @@ theorem exists_pos_forall_pi_mul_sq_mul_norm_fderiv_one_sq_le_eight_mul_setInteg
       (fun q hq ↦ hKW hq.2) fun _ _ ↦ hJsq
   exact ⟨δ, hδ, h (Set.mem_univ ())⟩
 
+/-- The mean-value inequality
+`TauCeti.mul_le_fifteen_mul_setIntegral_ball_of_neg_mul_le_laplacian` on a disc of the complex
+plane: if `w ≥ 0` is `C²` on `ball z₀ r` and continuous on its closure, with `Δ w ≥ -A w` there and
+`16 A r² ≤ 1`, then `π r² w(z₀) ≤ 15 ∫_{B_r(z₀)} w`. -/
+private theorem pi_mul_sq_mul_le_fifteen_mul_setIntegral_ball_of_neg_mul_le_laplacian
+    {w : ℂ → ℝ} {z₀ : ℂ} {r A : ℝ} (hr : 0 ≤ r) (hw : ContDiffOn ℝ 2 w (ball z₀ r))
+    (hwc : ContinuousOn w (closedBall z₀ r)) (hw0 : ∀ y ∈ ball z₀ r, 0 ≤ w y)
+    (hΔ : ∀ y ∈ ball z₀ r, -(A * w y) ≤ Δ w y) (hAr : 16 * A * r ^ 2 ≤ 1) :
+    π * r ^ 2 * w z₀ ≤ 15 * ∫ y in ball z₀ r, w y := by
+  have h := mul_le_fifteen_mul_setIntegral_ball_of_neg_mul_le_laplacian (μ := volume) (by simp)
+    hw hwc hw0 hΔ (by
+      rw [Complex.volume_real_ball z₀ hr, Complex.volume_real_ball 0 zero_le_one]
+      nlinarith [Real.pi_pos])
+  rwa [Complex.volume_real_ball z₀ hr] at h
+
 /-- **The mean-value inequality for `∂ₛu - e₀`.** Let `J` be invariant under the translations
 along a vector `e₀`, and let `u : ℂ → V` be `C³` on the open disk `ball z₀ r`, with `∂ₛu`
 continuous on its closure, solving `∂ₜu = J(u) ∂ₛu` on the disk. Suppose that on the disk `J` is
@@ -459,19 +479,16 @@ theorem pi_mul_sq_mul_norm_fderiv_one_sub_sq_le_fifteen_mul_setIntegral_ball {z�
       15 * ∫ y in ball z₀ r, ‖fderiv ℝ u y 1 - e₀‖ ^ 2 := by
   have hDu : ContDiffOn ℝ 2 (fderiv ℝ u) (ball z₀ r) :=
     hu.fderiv_of_isOpen isOpen_ball (by norm_num)
-  have h := mul_le_fifteen_mul_setIntegral_ball_of_neg_mul_le_laplacian (μ := volume)
-    (by simp) (w := fun y ↦ ‖fderiv ℝ u y 1 - e₀‖ ^ 2) (x₀ := z₀) (r := r)
-    (A := (4 * a * c + 2 * b ^ 2 + 8 * a ^ 2 * b ^ 2) * m ^ 2)
+  exact pi_mul_sq_mul_le_fifteen_mul_setIntegral_ball_of_neg_mul_le_laplacian
+    (w := fun y ↦ ‖fderiv ℝ u y 1 - e₀‖ ^ 2)
+    (A := (4 * a * c + 2 * b ^ 2 + 8 * a ^ 2 * b ^ 2) * m ^ 2) hr
     (((hDu.clm_apply contDiffOn_const).sub contDiffOn_const).norm_sq ℝ)
     ((hu'.sub continuousOn_const).norm.pow 2) (fun _ _ ↦ by positivity)
     (fun y hy ↦ neg_mul_norm_fderiv_one_sub_sq_le_laplacian hJe
         (hu.contDiffAt (isOpen_ball.mem_nhds hy)) (hJ y hy)
         (eventually_of_mem (isOpen_ball.mem_nhds hy) hCR) (hJsq y hy) (ha y hy) (hb y hy)
         (hc y hy) (hm y hy) (hm' y hy))
-    (by
-      rw [Complex.volume_real_ball z₀ hr, Complex.volume_real_ball 0 zero_le_one]
-      nlinarith [Real.pi_pos])
-  rwa [Complex.volume_real_ball z₀ hr] at h
+    (by linarith)
 
 /-- **The mean-value inequality for `∂ₛu - e₀` in a compact set.** Let `J` be `C²` on an open set
 `W` containing a compact set `K`, with `J(x)² = -1` on `K`, and invariant under the translations
@@ -508,8 +525,11 @@ section Linear
 
 variable {v : ℂ → V} {J B : ℂ → V →L[ℝ] V}
 
-/-- The linear equation `∂ₜv = J ∂ₛv + B v` differentiated once at `z`, in the direction `w`. -/
-private theorem fderiv_fderiv_apply_I_eq_of_linear (hv : ContDiffAt ℝ 2 v z)
+/-- **The differentiated linear Cauchy–Riemann equation.** If `v` is `C²` at `z` and solves
+`∂ₜv = J ∂ₛv + B v` near `z`, with `J` and `B` differentiable at `z`, then differentiating the
+equation at `z` in the direction `w` gives
+`∂_w ∂ₜv = (∂_w J) ∂ₛv + J ∂_w ∂ₛv + (∂_w B) v + B ∂_w v`. -/
+theorem fderiv_fderiv_apply_I_eq_of_fderiv_I_eq (hv : ContDiffAt ℝ 2 v z)
     (hJ : DifferentiableAt ℝ J z) (hB : DifferentiableAt ℝ B z)
     (heq : ∀ᶠ y in 𝓝 z, fderiv ℝ v y I = J y (fderiv ℝ v y 1) + B y (v y)) (w : ℂ) :
     fderiv ℝ (fderiv ℝ v) z w I =
@@ -530,10 +550,11 @@ private theorem fderiv_fderiv_apply_I_eq_of_linear (hv : ContDiffAt ℝ 2 v z)
   rw [h]
   abel
 
-/-- The Laplacian of a solution of `∂ₜv = J ∂ₛv + B v` with `J(z)² = -1`: the second derivatives
-of `v` drop out, leaving first-order terms in `v` whose coefficients involve `J`, `B` and their
-first derivatives. -/
-private theorem laplacian_eq_of_linear (hv : ContDiffAt ℝ 2 v z) (hJ : DifferentiableAt ℝ J z)
+/-- **The Laplacian of a solution of a linear Cauchy–Riemann equation.** If `v` is `C²` at `z` and
+solves `∂ₜv = J ∂ₛv + B v` near `z`, with `J` and `B` differentiable at `z` and `J(z)² = -1`, then
+the second derivatives of `v` drop out of `Δ v z`, leaving first-order terms in `v` whose
+coefficients involve `J`, `B` and their first derivatives. -/
+theorem laplacian_eq_of_fderiv_I_eq (hv : ContDiffAt ℝ 2 v z) (hJ : DifferentiableAt ℝ J z)
     (hB : DifferentiableAt ℝ B z)
     (heq : ∀ᶠ y in 𝓝 z, fderiv ℝ v y I = J y (fderiv ℝ v y 1) + B y (v y))
     (hJsq : ∀ w, J z (J z w) = -w) :
@@ -542,13 +563,13 @@ private theorem laplacian_eq_of_linear (hv : ContDiffAt ℝ 2 v z) (hJ : Differe
       J z (fderiv ℝ B z 1 (v z)) + fderiv ℝ B z I (v z) := by
   have hsymm : fderiv ℝ (fderiv ℝ v) z I 1 = fderiv ℝ (fderiv ℝ v) z 1 I :=
     hv.isSymmSndFDerivAt (by norm_num [minSmoothness_of_isRCLikeNormedField]) I 1
-  have h₁ := fderiv_fderiv_apply_I_eq_of_linear hv hJ hB heq I
-  have h₂ := fderiv_fderiv_apply_I_eq_of_linear hv hJ hB heq 1
+  have hDv : DifferentiableAt ℝ (fderiv ℝ v) z :=
+    (hv.fderiv_right (m := 1) (by norm_num)).differentiableAt (by norm_num)
+  have h₁ := fderiv_fderiv_apply_I_eq_of_fderiv_I_eq hv hJ hB heq I
+  have h₂ := fderiv_fderiv_apply_I_eq_of_fderiv_I_eq hv hJ hB heq 1
   rw [hsymm, h₂] at h₁
-  rw [laplacian_eq_iteratedFDeriv_complexPlane]
-  simp only [iteratedFDeriv_two_apply, Fin.isValue, Matrix.cons_val_zero, Matrix.cons_val_one,
-    Matrix.cons_val_fin_one]
-  rw [h₁]
+  rw [laplacian_eq_fderiv_fderiv_apply_one_add_fderiv_fderiv_apply_I hDv,
+    fderiv_clm_apply_const_apply hDv 1 1, fderiv_clm_apply_const_apply hDv I I, h₁]
   simp only [map_add, hJsq]
   abel
 
@@ -581,7 +602,7 @@ theorem neg_mul_norm_sq_le_laplacian_of_fderiv_I_eq {a b β γ : ℝ} (hv : Cont
     ((fderiv ℝ B z).le_of_opNorm₂_le_of_le hγ hd le_rfl).trans_eq (by ring)
   -- `‖Δ v‖ ≤ (b + ab + aβ) ‖∂ₛv‖ + β ‖∂ₜv‖ + (aγ + γ) ‖v‖`.
   have hL : ‖Δ v z‖ ≤ (b + a * b + a * β) * ‖vs‖ + β * ‖vt‖ + (a * γ + γ) * ‖v z‖ := by
-    rw [laplacian_eq_of_linear hv hJ hB heq hJsq]
+    rw [laplacian_eq_of_fderiv_I_eq hv hJ hB heq hJsq]
     have h1 := hJ₁ I vs (by simp)
     have h2 : ‖J z (fderiv ℝ J z 1 vs)‖ ≤ a * (b * ‖vs‖) :=
       (hJ₀ _).trans (by gcongr; exact hJ₁ 1 vs (by simp))
@@ -621,18 +642,12 @@ theorem pi_mul_sq_mul_norm_sq_le_fifteen_mul_setIntegral_ball_of_fderiv_I_eq {z�
     (hγ : ∀ y ∈ ball z₀ r, ‖fderiv ℝ B y‖ ≤ γ)
     (hKr : 16 * (((b + a * b + a * β) ^ 2 + β ^ 2) / 2 + 2 * (a * γ + γ)) * r ^ 2 ≤ 1) :
     π * r ^ 2 * ‖v z₀‖ ^ 2 ≤ 15 * ∫ y in ball z₀ r, ‖v y‖ ^ 2 := by
-  have h := mul_le_fifteen_mul_setIntegral_ball_of_neg_mul_le_laplacian (μ := volume)
-    (by simp) (w := fun y ↦ ‖v y‖ ^ 2) (x₀ := z₀) (r := r)
-    (A := ((b + a * b + a * β) ^ 2 + β ^ 2) / 2 + 2 * (a * γ + γ)) (hv.norm_sq ℝ)
-    (hvc.norm.pow 2) (fun _ _ ↦ by positivity)
+  exact pi_mul_sq_mul_le_fifteen_mul_setIntegral_ball_of_neg_mul_le_laplacian
+    (w := fun y ↦ ‖v y‖ ^ 2) hr (hv.norm_sq ℝ) (hvc.norm.pow 2) (fun _ _ ↦ by positivity)
     (fun y hy ↦ neg_mul_norm_sq_le_laplacian_of_fderiv_I_eq
       (hv.contDiffAt (isOpen_ball.mem_nhds hy)) (hJ y hy) (hB y hy)
       (eventually_of_mem (isOpen_ball.mem_nhds hy) heq) (hJsq y hy) (ha y hy) (hb y hy)
-      (hβ y hy) (hγ y hy))
-    (by
-      rw [Complex.volume_real_ball z₀ hr, Complex.volume_real_ball 0 zero_le_one]
-      nlinarith [Real.pi_pos])
-  rwa [Complex.volume_real_ball z₀ hr] at h
+      (hβ y hy) (hγ y hy)) hKr
 
 end Linear
 
