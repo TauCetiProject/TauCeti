@@ -8,7 +8,7 @@ module
 public import TauCeti.Algebra.Category.ModuleCat.CartanMap.Basic
 public import TauCeti.CategoryTheory.Functor.MapBijective
 public import TauCeti.CategoryTheory.ObjectProperty.Retract
-public import TauCeti.CategoryTheory.Preadditive.AdditiveClosure
+public import TauCeti.CategoryTheory.Preadditive.AdditiveClosure.Basic
 public import TauCeti.CategoryTheory.Preadditive.Yoneda
 
 /-!
@@ -16,8 +16,8 @@ public import TauCeti.CategoryTheory.Preadditive.Yoneda
 
 Let `C` be a preadditive category with finite biproducts, `M` an object of `C` and
 `Γ = End M`. The **additive closure** `add M` (`TauCeti.additiveClosure M`, in
-`TauCeti.CategoryTheory.Preadditive.AdditiveClosure`) consists of the direct summands of finite
-biproducts `Mⁿ`. The functor `Hom(M, -)` takes values in right
+`TauCeti.CategoryTheory.Preadditive.AdditiveClosure.Basic`) consists of the direct summands of
+finite biproducts `Mⁿ`. The functor `Hom(M, -)` takes values in right
 `Γ`-modules, that is in `Γᵐᵒᵖ`-modules (Mathlib's `CategoryTheory.preadditiveCoyonedaObj M`), and
 **projectivization** says that it identifies `add M` with the finitely generated projective right
 `Γ`-modules:

@@ -115,7 +115,7 @@ theorem mem_graph_formOperator_iff_formSolutionOperator (hB : IsCoercive B) (hJ 
   simp only [formOperator_def, formGenerator_def, neg_neg, mem_graph_iff]
   constructor
   · rintro ⟨y, hy, hxy⟩
-    refine ⟨⟨y, by simpa using y.2⟩, hy, ?_⟩
+    refine ⟨⟨y, by simpa using y.property⟩, hy, ?_⟩
     rw [← hxy, subScalar_apply, ← hy, sub_add_cancel]
   · rintro ⟨y, hy, hxy⟩
     refine ⟨⟨y, by simp⟩, hy, ?_⟩

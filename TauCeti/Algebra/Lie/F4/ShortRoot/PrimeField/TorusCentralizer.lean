@@ -102,7 +102,7 @@ theorem mem_centralizer_range_weightTorusPoints_iff_isDiag_of_weightChar_injecti
   rw [mem_centralizer_range_weightTorusPoints_iff_apply_eq_zero_of_weightChar_injective hchar]
   constructor
   · exact Matrix.isDiag_of_preserves_f4ShortRootBracket_of_weight_support _
-      (preservesBracket_of_mem_points g.2)
+      (preservesBracket_of_mem_points g.property)
   · intro h i j hij
     exact h (fun heq ↦ hij (congrArg f4ShortRootWeight heq))
 

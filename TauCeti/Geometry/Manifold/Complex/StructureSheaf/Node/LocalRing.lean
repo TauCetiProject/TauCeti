@@ -102,10 +102,10 @@ def eval : nodeLocalRing I J p q →+* ℂ :=
 variable {I J p q}
 
 /-- The first branch restriction is the first component of the pair of germs. -/
-theorem fst_apply (f : nodeLocalRing I J p q) : fst I J p q f = f.1.1 := (rfl)
+theorem fst_apply (f : nodeLocalRing I J p q) : fst I J p q f = f.val.1 := (rfl)
 
 /-- The second branch restriction is the second component of the pair of germs. -/
-theorem snd_apply (f : nodeLocalRing I J p q) : snd I J p q f = f.1.2 := (rfl)
+theorem snd_apply (f : nodeLocalRing I J p q) : snd I J p q f = f.val.2 := (rfl)
 
 /-- The value at the node is the value of the first branch germ at `p`. -/
 @[simp]
@@ -116,7 +116,7 @@ theorem eval_fst (f : nodeLocalRing I J p q) :
 @[simp]
 theorem eval_snd (f : nodeLocalRing I J p q) :
     holomorphicStructureSheaf.eval J Y q (snd I J p q f) = eval I J p q f :=
-  f.2.symm
+  f.property.symm
 
 /-- A germ at the node is determined by its two branch germs. -/
 @[ext]

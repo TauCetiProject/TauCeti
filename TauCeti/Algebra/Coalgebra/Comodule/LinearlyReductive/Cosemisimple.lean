@@ -50,7 +50,7 @@ theorem iSup_matrixCoefficientSubmodule_eq_top (hC : IsLinearlyReductive.{u, v, 
   rw [eq_top_iff, ← Subcomodule.top_toSubmodule (R := k) (C := C) (M := C),
     ← hC.sSup_atoms_eq_top, Subcomodule.sSup_toSubmodule]
   exact iSup_le fun S ↦
-    S.1.toSubmodule_le_matrixCoefficientSubmodule.trans (le_iSup₂_of_le S.1 S.2 le_rfl)
+    S.val.toSubmodule_le_matrixCoefficientSubmodule.trans (le_iSup₂_of_le S.val S.property le_rfl)
 
 end Coalgebra.IsLinearlyReductive
 

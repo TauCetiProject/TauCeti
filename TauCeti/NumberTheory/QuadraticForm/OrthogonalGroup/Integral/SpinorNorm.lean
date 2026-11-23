@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.NumberTheory.QuadraticForm.OrthogonalGroup.Integral.Basic
+public import TauCeti.NumberTheory.QuadraticForm.OrthogonalGroup.Integral.Reflection
 public import TauCeti.NumberTheory.LocalField.UnitSquareClasses
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.SpinorNorm.Basic
 import TauCeti.LinearAlgebra.QuadraticForm.CartanDieudonne.SpecialOrthogonal
@@ -86,19 +86,9 @@ private theorem polar_mem_subring (hpolar : ∀ i j, polar Q (b i) (b j) ∈ Pad
   | add_left x y z _ _ _ hx hy => rw [polar_add_left]; exact add_mem hx hy
   | add_right x y z _ _ _ hy hz => rw [polar_add_right]; exact add_mem hy hz
   | smul_left c x y _ _ h =>
-    rw [Subring.smul_def, polar_smul_left, smul_eq_mul]; exact mul_mem c.2 h
+    rw [Subring.smul_def, polar_smul_left, smul_eq_mul]; exact mul_mem c.property h
   | smul_right c x y _ _ h =>
-    rw [Subring.smul_def, polar_smul_right, smul_eq_mul]; exact mul_mem c.2 h
-
-/-- The reflection in an integral vector of unit norm preserves integral vectors. -/
-private theorem reflection_mem_span
-    (hpolar : ∀ i j, polar Q (b i) (b j) ∈ PadicInt.subring p) {v : V} [Invertible (Q v)]
-    (hv : v ∈ Submodule.span (PadicInt.subring p) (Set.range b)) (hQv : ‖Q v‖ = 1) {x : V}
-    (hx : x ∈ Submodule.span (PadicInt.subring p) (Set.range b)) :
-    reflection Q v x ∈ Submodule.span (PadicInt.subring p) (Set.range b) := by
-  rw [reflection_apply, invOf_eq_inv]
-  exact sub_mem hx (Submodule.smul_mem _ (⟨_, mul_mem (inv_mem_subring_of_norm_eq_one hQv)
-    (polar_mem_subring hpolar hv hx)⟩ : PadicInt.subring p) hv)
+    rw [Subring.smul_def, polar_smul_right, smul_eq_mul]; exact mul_mem c.property h
 
 /-- Two has norm one in `ℚ_[p]` for an odd prime `p`. -/
 private theorem norm_two_eq_one (hp : p ≠ 2) : ‖(2 : ℚ_[p])‖ = 1 := by
@@ -145,11 +135,11 @@ norm is an integral isometry. -/
 theorem reflectionOrthogonal_mem_integralOrthogonalSubgroup
     (hpolar : ∀ i j, polar Q (b i) (b j) ∈ PadicInt.subring p) {v : V} [Invertible (Q v)]
     (hv : v ∈ Submodule.span (PadicInt.subring p) (Set.range b)) (hQv : ‖Q v‖ = 1) :
-    reflectionOrthogonal Q v ∈ integralOrthogonalSubgroup Q b := by
-  rw [mem_integralOrthogonalSubgroup_iff_mem_span, reflectionOrthogonal_inv,
-    coe_reflectionOrthogonal]
-  exact ⟨fun x hx ↦ reflection_mem_span hpolar hv hQv hx,
-    fun x hx ↦ reflection_mem_span hpolar hv hQv hx⟩
+    reflectionOrthogonal Q v ∈ integralOrthogonalSubgroup Q b :=
+  reflectionOrthogonal_mem_integralOrthogonalSubgroup_of_norm_polar_le hv fun i ↦ by
+    rw [hQv]
+    exact (PadicInt.mem_subring_iff p).mp
+      (polar_mem_subring hpolar hv (Submodule.subset_span ⟨i, rfl⟩))
 
 section Orthogonal
 
@@ -206,7 +196,7 @@ private theorem exists_mem_closure_mul_apply_basis_eq_of_norm_add_eq_one {g : or
     ∃ r ∈ Subgroup.closure (integralReflections Q b),
       ((r * g : orthogonalGroup Q) : V ≃ₗ[ℚ_[p]] V) e = e ∧
         ∀ i ∈ s, ((r * g : orthogonalGroup Q) : V ≃ₗ[ℚ_[p]] V) (b i) = b i := by
-  have hfe : Q f = Q e := hgf ▸ map_app_of_mem_orthogonalGroup g.2 e
+  have hfe : Q f = Q e := hgf ▸ map_app_of_mem_orthogonalGroup g.property e
   let _ : Invertible (Q (f + e)) :=
     invertibleOfNonzero (norm_ne_zero_iff.mp (hnorm.symm ▸ one_ne_zero))
   let _ : Invertible (Q e) :=
@@ -220,7 +210,7 @@ private theorem exists_mem_closure_mul_apply_basis_eq_of_norm_add_eq_one {g : or
     simp only [Subgroup.coe_mul, mul_apply_eq_comp, coe_reflectionOrthogonal]
     rw [hneg, map_neg, reflection_apply_self, neg_neg]
   · have horth' : polar Q f (b i) = 0 := by
-      rw [← hgf, ← hfix i hi, polar_apply_of_mem_orthogonalGroup g.2]
+      rw [← hgf, ← hfix i hi, polar_apply_of_mem_orthogonalGroup g.property]
       exact horth i hi
     have hpolar : polar Q (f + e) (b i) = 0 := by
       rw [polar_add_left, horth i hi, horth', add_zero]
@@ -242,11 +232,11 @@ private theorem exists_mem_closure_mul_apply_basis_eq (hp : p ≠ 2) (s : Set ι
   have he : e ∈ Submodule.span (PadicInt.subring p) (Set.range b) := Submodule.subset_span ⟨j, rfl⟩
   have hf : f ∈ Submodule.span (PadicInt.subring p) (Set.range b) :=
     ((mem_integralOrthogonalSubgroup_iff_mem_span Q b g).mp hg).1 e he
-  have hfe : Q f = Q e := map_app_of_mem_orthogonalGroup g.2 e
+  have hfe : Q f = Q e := map_app_of_mem_orthogonalGroup g.property e
   have horth (i : ι) (hi : i ∈ s) : polar Q e (b i) = 0 :=
     polar_basis_eq_zero hb fun h ↦ hj (h ▸ hi)
   have horth' (i : ι) (hi : i ∈ s) : polar Q f (b i) = 0 := by
-    rw [← hfix i hi, polar_apply_of_mem_orthogonalGroup g.2]
+    rw [← hfix i hi, polar_apply_of_mem_orthogonalGroup g.property]
     exact horth i hi
   rcases norm_sub_eq_one_or_norm_add_eq_one hp (polar_basis_mem_subring hb hunit) he hf hfe.symm
       (hunit j) with h | h

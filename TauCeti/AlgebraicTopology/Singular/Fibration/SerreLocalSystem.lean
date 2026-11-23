@@ -174,7 +174,7 @@ theorem pullbackFiberTransport_eq_id (g : K ⟶ B) {k₀ k₁ : K} {b : B}
     pullbackFiberTransport hp M n g h₀ h₁ = 𝟙 _ := by
   refine ((eq_pullbackFiberTransport_iff hp M n g h₀ h₁ _).2 ?_).symm
   let H : _root_.TopCat.Homotopy (p.pullbackFiberι g h₁) (p.pullbackFiberι g h₀) :=
-    { toFun x := ⟨(γ (σ x.1), x.2.1), (hγ _).trans (x.2.2 : p x.2.1 = b).symm⟩
+    { toFun x := ⟨(γ (σ x.1), x.2.val), (hγ _).trans (x.2.property : p x.2.val = b).symm⟩
       continuous_toFun := by fun_prop
       map_zero_left x := Subtype.ext (by rw [TopCat.Hom.coe_pullbackFiberι_apply]; simp)
       map_one_left x := Subtype.ext (by rw [TopCat.Hom.coe_pullbackFiberι_apply]; simp) }
@@ -414,8 +414,8 @@ theorem fiberHomologyTransport_eq_singularHomologyMap_fiberTransport
       (p.pullbackFiberι (TopCat.pathEquiv.symm γ).hom (k := 0) (TopCat.pathEquiv.symm γ).hom₀)
       (fiberTransport Λ γ ≫
         p.pullbackFiberι (TopCat.pathEquiv.symm γ).hom (k := 1) (TopCat.pathEquiv.symm γ).hom₁) :=
-    { toFun x := ⟨(TopCat.I.homeomorph.symm x.1, Λ.lift x.2.1 γ.toContinuousMap
-          (γ.source.trans (x.2.2 : p x.2.1 = b₀).symm) x.1),
+    { toFun x := ⟨(TopCat.I.homeomorph.symm x.1, Λ.lift x.2.val γ.toContinuousMap
+          (γ.source.trans (x.2.property : p x.2.val = b₀).symm) x.1),
         (Λ.apply_lift _ _ _ x.1).symm⟩
       continuous_toFun := by
         refine Continuous.subtype_mk (Continuous.prodMk (by fun_prop) ?_) _

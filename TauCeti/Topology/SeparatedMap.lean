@@ -1,7 +1,7 @@
 /-
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: The Tau Ceti contributors
+Authors: The Tau Ceti contributors, Axel Delaval, Zhiyuan Zhang, Leheng Chen
 -/
 module
 
@@ -22,11 +22,18 @@ The fibers of a locally injective map are discrete
 On a Hausdorff space, the neighbourhoods on which a locally injective map is injective can be
 chosen pairwise disjoint over any finite set
 (`IsLocallyInjective.exists_isOpen_injOn_pairwiseDisjoint`).
+For a continuous locally injective map into a Hausdorff space, distinct equal-image pairs
+form a closed set (`IsLocallyInjective.isClosed_setOf_apply_eq_and_ne`).
 A continuous section of a continuous locally injective map over an open set has open image
 (`IsLocallyInjective.isOpen_image_of_leftInvOn`).
 For a separated, locally injective map, such as a covering map or any locally injective map with
 Hausdorff total space, two sections over a preconnected set that are continuous on that set and
 agree at one of its points agree on all of it (`IsSeparatedMap.eqOn_of_leftInvOn`).
+
+## References
+
+* https://github.com/frenzymath/lean-eval-submissions
+* https://github.com/frenzymath/PoincareConjecture
 -/
 
 public section
@@ -51,15 +58,33 @@ section IsLocallyInjective
 
 open Set
 
+/-- For a continuous locally injective map into a Hausdorff space, the set of distinct
+pairs with the same image is closed. No separation assumption on the domain is needed. -/
+theorem IsLocallyInjective.isClosed_setOf_apply_eq_and_ne
+    {E X : Type*} [TopologicalSpace E] [TopologicalSpace X] [T2Space X]
+    {f : E → X} (hinj : IsLocallyInjective f) (hf : Continuous f) :
+    IsClosed {z : E × E | f z.1 = f z.2 ∧ z.1 ≠ z.2} := by
+  have heq : IsClosed {z : E × E | f z.1 = f z.2} :=
+    isClosed_eq (hf.comp continuous_fst) (hf.comp continuous_snd)
+  have hopen : IsOpen {z : {z : E × E | f z.1 = f z.2} | z.val.1 = z.val.2} :=
+    hinj.isOpen_eqLocus (by fun_prop) (by fun_prop) (funext fun z ↦ z.property)
+  convert heq.isClosedMap_subtypeVal _ hopen.isClosed_compl using 1
+  ext z
+  constructor
+  · rintro ⟨hz, hne⟩
+    exact ⟨⟨z, hz⟩, hne, rfl⟩
+  · rintro ⟨w, hne, rfl⟩
+    exact ⟨w.property, hne⟩
+
 variable {E B : Type*} [TopologicalSpace E] {p : E → B}
 
 /-- The fibers of a locally injective map, such as a local homeomorphism, are discrete. -/
 theorem IsLocallyInjective.isDiscrete_preimage_singleton (hp : IsLocallyInjective p) (b : B) :
     IsDiscrete (p ⁻¹' {b}) := by
   -- `p` is constant on the fiber and locally injective.
-  have hb : p ∘ ((↑) : ↥(p ⁻¹' {b}) → E) = fun _ ↦ b := funext fun e ↦ e.2
+  have hb : p ∘ ((↑) : ↥(p ⁻¹' {b}) → E) = fun _ ↦ b := funext fun e ↦ e.property
   exact ⟨(discreteTopology_iff_locallyInjective b).2 <|
-    hb ▸ hp.comp_right continuous_subtype_val Subtype.val_injective⟩
+    hb ▸ hp.comp_right continuous_subtypeVal Subtype.val_injective⟩
 
 /-- A compact set of points in one fiber of a locally injective map, such as a local
 homeomorphism, is finite. -/

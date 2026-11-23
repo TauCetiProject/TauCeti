@@ -61,7 +61,7 @@ theorem contMDiff_normalRepresentative_normalClass
     (f : SmoothEmbedding I J n M N) (hn : n ≠ 0) (hm : m + 1 ≤ n) :
     ContMDiff (I.prod 𝓘(ℝ, V)) (J.prod 𝓘(ℝ, V)) m
       (fun p : TotalSpace V ((f : M → N) *ᵖ (TangentSpace J)) =>
-        (⟨f p.proj, f.normalRepresentative p.proj hn (f.normalClass p.proj hn p.2)⟩ :
+        (⟨f p.proj, f.normalRepresentative p.proj hn (f.normalClass p.proj hn p.snd)⟩ :
           TangentBundle J N)) := by
   have hlift : ContMDiff (I.prod 𝓘(ℝ, V)) (J.prod 𝓘(ℝ, V)) m
       (Pullback.lift (f : M → N)) :=
@@ -72,7 +72,7 @@ theorem contMDiff_normalRepresentative_normalClass
     (f.isImmersion.mfderiv_injective hn p.proj) hm)).congr_of_eventuallyEq
     (Filter.Eventually.of_forall fun q ↦ ?_)
   exact congrArg (TotalSpace.mk (f q.proj))
-    (f.normalRepresentative_normalClass_eq_starProjection_orthogonalNormalSpace q.proj hn q.2)
+    (f.normalRepresentative_normalClass_eq_starProjection_orthogonalNormalSpace q.proj hn q.snd)
 
 /-- The map taking an intrinsic normal vector to its orthogonal representative in the ambient
 tangent bundle is `C^m` for a `C^n` embedding with `m + 1 ≤ n` and a `C^m` ambient metric. -/
@@ -84,7 +84,7 @@ theorem contMDiff_normalRepresentative
     letI := f.normalSpaceFiberBundle hn hdim
     ContMDiff (I.prod 𝓘(ℝ, P)) (J.prod 𝓘(ℝ, V)) m
       (fun p : TotalSpace P (fun x => f.NormalSpace x hn) =>
-        (⟨f p.proj, f.normalRepresentative p.proj hn p.2⟩ : TangentBundle J N)) := by
+        (⟨f p.proj, f.normalRepresentative p.proj hn p.snd⟩ : TangentBundle J N)) := by
   have : IsManifold I 1 M := .of_le (n := m + 1) le_add_self
   exact f.contMDiff_normalBundle_of_contMDiff_normalClass hn hm hdim
     (fun x v ↦ f.normalRepresentative x hn v)
