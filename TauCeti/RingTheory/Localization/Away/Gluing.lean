@@ -98,14 +98,14 @@ theorem existsUnique_algebraMap_eq_of_span_eq_top (x : ∀ i, Bi i)
   classical
   -- Index the members of the range of `g` by a chosen preimage.
   let s : Set B := Set.range g
-  choose k hk using fun a : s ↦ a.2
+  choose k hk using fun a : s ↦ a.property
   -- Ring homomorphisms between `B[1/g (k a)]` and `Localization.Away a` in both directions.
-  have hu₁ (a : s) : IsUnit (algebraMap B (Localization.Away a.1) (g (k a))) :=
+  have hu₁ (a : s) : IsUnit (algebraMap B (Localization.Away a.val) (g (k a))) :=
     hk a ▸ IsLocalization.Away.algebraMap_isUnit _
-  have hu₂ (a : s) : IsUnit (algebraMap B (Bi (k a)) a.1) :=
+  have hu₂ (a : s) : IsUnit (algebraMap B (Bi (k a)) a.val) :=
     hk a ▸ IsLocalization.Away.algebraMap_isUnit _
-  let φ (a : s) : Bi (k a) →+* Localization.Away a.1 := IsLocalization.Away.lift _ (hu₁ a)
-  let ψ (a : s) : Localization.Away a.1 →+* Bi (k a) := IsLocalization.Away.lift _ (hu₂ a)
+  let φ (a : s) : Bi (k a) →+* Localization.Away a.val := IsLocalization.Away.lift _ (hu₁ a)
+  let ψ (a : s) : Localization.Away a.val →+* Bi (k a) := IsLocalization.Away.lift _ (hu₂ a)
   have hφ (a : s) (b : B) : φ a (algebraMap B _ b) = algebraMap B _ b :=
     IsLocalization.Away.lift_eq _ _ b
   have hψφ (a : s) (y : Bi (k a)) : ψ a (φ a y) = y :=
@@ -114,23 +114,23 @@ theorem existsUnique_algebraMap_eq_of_span_eq_top (x : ∀ i, Bi i)
       RingHom.ext fun b ↦ by simp [φ, ψ, IsLocalization.Away.lift_eq]) y
   -- The images `φ a (x (k a))` are compatible in the sense of Mathlib's statement for subsets.
   have hu₃ (a c : s) :
-      IsUnit (algebraMap B (Localization.Away (a.1 * c.1)) (g (k a) * g (k c))) :=
+      IsUnit (algebraMap B (Localization.Away (a.val * c.val)) (g (k a) * g (k c))) :=
     hk a ▸ hk c ▸ IsLocalization.Away.algebraMap_isUnit _
-  let θ (a c : s) : Bij (k a) (k c) →+* Localization.Away (a.1 * c.1) :=
+  let θ (a c : s) : Bij (k a) (k c) →+* Localization.Away (a.val * c.val) :=
     IsLocalization.Away.lift _ (hu₃ a c)
   have hθ (a c : s) (b : B) : θ a c (algebraMap B _ b) = algebraMap B _ b :=
     IsLocalization.Away.lift_eq _ _ b
   have hleft (a c : s) (y : Bi (k a)) :
-      IsLocalization.Away.awayToAwayRight a.1 c.1 (φ a y) = θ a c (ρl _ _ y) :=
+      IsLocalization.Away.awayToAwayRight a.val c.val (φ a y) = θ a c (ρl _ _ y) :=
     RingHom.congr_fun (f := (IsLocalization.Away.awayToAwayRight
-      (P := Localization.Away (a.1 * c.1)) a.1 c.1).comp (φ a)) (g := (θ a c).comp (ρl _ _))
+      (P := Localization.Away (a.val * c.val)) a.val c.val).comp (φ a)) (g := (θ a c).comp (ρl _ _))
       (IsLocalization.ringHom_ext
       (.powers (g (k a))) <| RingHom.ext fun b ↦ by
         simp [hφ, hθ, hρl, IsLocalization.Away.awayToAwayRight_eq]) y
   have hright (a c : s) (y : Bi (k c)) :
-      IsLocalization.Away.awayToAwayLeft c.1 a.1 (φ c y) = θ a c (ρr _ _ y) :=
+      IsLocalization.Away.awayToAwayLeft c.val a.val (φ c y) = θ a c (ρr _ _ y) :=
     RingHom.congr_fun (f := (IsLocalization.Away.awayToAwayLeft
-      (P := Localization.Away (a.1 * c.1)) c.1 a.1).comp (φ c)) (g := (θ a c).comp (ρr _ _))
+      (P := Localization.Away (a.val * c.val)) c.val a.val).comp (φ c)) (g := (θ a c).comp (ρr _ _))
       (IsLocalization.ringHom_ext
       (.powers (g (k c))) <| RingHom.ext fun b ↦ by
         simp [hφ, hθ, hρr, IsLocalization.Away.awayToAwayLeft_eq]) y
@@ -139,7 +139,7 @@ theorem existsUnique_algebraMap_eq_of_span_eq_top (x : ∀ i, Bi i)
   -- `b` is a preimage of each chosen `x (k a)`, and so of every `x i` by compatibility.
   have hbk (a : s) : algebraMap B (Bi (k a)) b = x (k a) := by
     rw [← hψφ a (x (k a)), ← hb a]
-    exact (IsLocalization.Away.lift_eq a.1 (hu₂ a) b).symm
+    exact (IsLocalization.Away.lift_eq a.val (hu₂ a) b).symm
   refine ⟨b, fun i ↦ algebraMap_eq_of_eq hρl hρr hx (hk ⟨g i, i, rfl⟩) (hbk _),
     fun b' hb' ↦ hbu b' fun a ↦ ?_⟩
   rw [← hb' (k a), hφ]

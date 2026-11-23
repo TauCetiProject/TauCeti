@@ -94,7 +94,7 @@ noncomputable def presentationLimitRingEquivOfDiscreteTopology (T : Finset A) (s
     (fun _ _ ↦ isPowerBounded_iff.mpr (isBounded_of_discreteTopology _)) p (isOpen_discrete _)
   let f : presentationLimit (P := P) Aplus (spaBasicOpen Aplus T s) →+* Localization.Away s :=
     (completionLocEquivOfDiscreteTopology P T s _ p.hasDenominatorPower).symm.toRingHom.comp
-      ((eqToHom (completionLocObj_obj P T s _ p.hasDenominatorPower)).1.comp iso.hom.hom.1)
+      ((eqToHom (completionLocObj_obj P T s _ p.hasDenominatorPower)).val.comp iso.hom.hom.val)
   RingEquiv.ofBijective f <|
     (completionLocEquivOfDiscreteTopology P T s _ p.hasDenominatorPower).symm.bijective.comp
       (bijective_presentationLimitRationalIso_hom Aplus
@@ -108,7 +108,8 @@ comparison map of Proposition 8.2(1) for a discrete ring. -/
 theorem presentationLimitRingEquivOfDiscreteTopology_presentationLimitMap {T T' : Finset A}
     {s s' : A} (h : spaBasicOpen Aplus T' s' ≤ spaBasicOpen Aplus T s)
     (x : presentationLimit (P := P) Aplus (spaBasicOpen Aplus T s)) :
-    presentationLimitRingEquivOfDiscreteTopology P Aplus T' s' ((presentationLimitMap h).hom.1 x) =
+    presentationLimitRingEquivOfDiscreteTopology P Aplus T' s'
+        ((presentationLimitMap h).hom.val x) =
       IsLocalization.Away.lift s (isUnit_algebraMap_of_rationalSubset_subset _
         (fun _ _ ↦ isOpen_discrete _) (spaBasicOpen_le_spaBasicOpen_iff.mp h))
         (presentationLimitRingEquivOfDiscreteTopology P Aplus T s x) := by
@@ -128,32 +129,32 @@ theorem presentationLimitRingEquivOfDiscreteTopology_presentationLimitMap {T T' 
   have H := presentationLimitRationalIso_inv_comp_map_comp_hom Aplus hAplus p q
     (isOpen_discrete _) (isOpen_discrete _) h
   rw [Iso.inv_comp_eq] at H
-  have Hx : (presentationLimitRationalIso Aplus hAplus q (isOpen_discrete _)).hom.hom.1
-      ((presentationLimitMap h).hom.1 x) =
-      (homOfRationalSubsetSubset Aplus hAplus (spaBasicOpen_le_spaBasicOpen_iff.mp h)).hom.1
-        ((presentationLimitRationalIso Aplus hAplus p (isOpen_discrete _)).hom.hom.1 x) :=
-    congrArg (fun f ↦ f.hom.1 x) H
+  have Hx : (presentationLimitRationalIso Aplus hAplus q (isOpen_discrete _)).hom.hom.val
+      ((presentationLimitMap h).hom.val x) =
+      (homOfRationalSubsetSubset Aplus hAplus (spaBasicOpen_le_spaBasicOpen_iff.mp h)).hom.val
+        ((presentationLimitRationalIso Aplus hAplus p (isOpen_discrete _)).hom.hom.val x) :=
+    congrArg (fun f ↦ f.hom.val x) H
   rw [Hx]
   -- Read through the transports, the comparison morphism is the comparison ring homomorphism.
   have hY := congrArg (fun f ↦ f.hom ((presentationLimitRationalIso Aplus hAplus p
-      (isOpen_discrete _)).hom.hom.1 x))
+      (isOpen_discrete _)).hom.hom.val x))
     (map_homOfRationalSubsetSubset_comp_completionLocObjCommRingCatIso_hom (p := p) (q := q)
       hAplus (spaBasicOpen_le_spaBasicOpen_iff.mp h))
   simp only [Presentation.completionLocObjCommRingCatIso_hom] at hY
-  have hY' : (eqToHom (completionLocObj_obj P T' s' _ q.hasDenominatorPower)).1
+  have hY' : (eqToHom (completionLocObj_obj P T' s' _ q.hasDenominatorPower)).val
       ((homOfRationalSubsetSubset (p := p) (q := q) Aplus hAplus
-        (spaBasicOpen_le_spaBasicOpen_iff.mp h)).hom.1
-          ((presentationLimitRationalIso Aplus hAplus p (isOpen_discrete _)).hom.hom.1 x)) =
+        (spaBasicOpen_le_spaBasicOpen_iff.mp h)).hom.val
+          ((presentationLimitRationalIso Aplus hAplus p (isOpen_discrete _)).hom.hom.val x)) =
       ringHomOfRationalSubsetSubset P Aplus hAplus T s _ p.hasDenominatorPower T' s' _
         q.hasDenominatorPower (spaBasicOpen_le_spaBasicOpen_iff.mp h)
-        ((eqToHom (completionLocObj_obj P T s _ p.hasDenominatorPower)).1
-          ((presentationLimitRationalIso Aplus hAplus p (isOpen_discrete _)).hom.hom.1 x)) :=
+        ((eqToHom (completionLocObj_obj P T s _ p.hasDenominatorPower)).val
+          ((presentationLimitRationalIso Aplus hAplus p (isOpen_discrete _)).hom.hom.val x)) :=
     hY
   rw [hY']
   -- Over a discrete ring the comparison ring homomorphism is the localisation map.
   obtain ⟨w, hw⟩ := (completionLocEquivOfDiscreteTopology P T s _ p.hasDenominatorPower).surjective
-    ((eqToHom (completionLocObj_obj P T s _ p.hasDenominatorPower)).1
-      ((presentationLimitRationalIso Aplus hAplus p (isOpen_discrete _)).hom.hom.1 x))
+    ((eqToHom (completionLocObj_obj P T s _ p.hasDenominatorPower)).val
+      ((presentationLimitRationalIso Aplus hAplus p (isOpen_discrete _)).hom.hom.val x))
   rw [← hw, RingEquiv.symm_apply_apply, completionLocEquivOfDiscreteTopology_apply]
   exact (congrArg _ (ringHomOfRationalSubsetSubset_coe_of_discreteTopology P Aplus hAplus T s _
     p.hasDenominatorPower T' s' _ q.hasDenominatorPower (spaBasicOpen_le_spaBasicOpen_iff.mp h)
@@ -173,7 +174,7 @@ theorem discreteTopology_presentationLimit_spaBasicOpen (T : Finset A) (s : A) :
     fun _ _ ↦ isPowerBounded_iff.mpr (isBounded_of_discreteTopology _)
   let iso := presentationLimitRationalIso Aplus hAplus p (isOpen_discrete _)
   let e := eqToHom (completionLocObj_obj P T s _ p.hasDenominatorPower)
-  exact DiscreteTopology.of_continuous_injective (e.2.comp iso.hom.hom.2)
+  exact DiscreteTopology.of_continuous_injective (e.property.comp iso.hom.hom.property)
     (bijective_presentationLimitRationalIso_hom Aplus hAplus p (isOpen_discrete _)).1
 
 /-! ### Gluing along rational covers -/
@@ -200,11 +201,11 @@ private theorem existsUnique_presentationLimitMap_eq {T : Finset A} {s : A} {ι 
     (hcov : ⨆ i, spaBasicOpen Aplus (T' i) (σ i) = spaBasicOpen Aplus T s)
     (x : ∀ i, presentationLimit (P := P) Aplus (spaBasicOpen Aplus (T' i) (σ i)))
     (hx : ∀ i j, (presentationLimitMap (P := P) (inf_le_left :
-        spaBasicOpen Aplus (T' i) (σ i) ⊓ spaBasicOpen Aplus (T' j) (σ j) ≤ _)).hom.1 (x i) =
+        spaBasicOpen Aplus (T' i) (σ i) ⊓ spaBasicOpen Aplus (T' j) (σ j) ≤ _)).hom.val (x i) =
       (presentationLimitMap (P := P) (inf_le_right :
-        spaBasicOpen Aplus (T' i) (σ i) ⊓ spaBasicOpen Aplus (T' j) (σ j) ≤ _)).hom.1 (x j)) :
+        spaBasicOpen Aplus (T' i) (σ i) ⊓ spaBasicOpen Aplus (T' j) (σ j) ≤ _)).hom.val (x j)) :
     ∃! a : presentationLimit (P := P) Aplus (spaBasicOpen Aplus T s), ∀ i,
-      (presentationLimitMap (P := P) ((le_iSup _ i).trans_eq hcov)).hom.1 a = x i := by
+      (presentationLimitMap (P := P) ((le_iSup _ i).trans_eq hcov)).hom.val a = x i := by
   classical
   let U (i : ι) := spaBasicOpen Aplus (T' i) (σ i)
   have hle (i : ι) : U i ≤ spaBasicOpen Aplus T s := (le_iSup _ i).trans_eq hcov
@@ -233,11 +234,11 @@ private theorem existsUnique_presentationLimitMap_eq {T : Finset A} {s : A} {ι 
     IsLocalization.Away.lift (σ j) (isUnit_algebraMap_of_rationalSubset_subset _ hopen
       (spaBasicOpen_le_spaBasicOpen_iff.mp (hr i j)))
   have hρ (i : ι) (a : presentationLimit (P := P) Aplus (spaBasicOpen Aplus T s)) :
-      ei i ((presentationLimitMap (P := P) (hle i)).hom.1 a) = ρ i (e a) :=
+      ei i ((presentationLimitMap (P := P) (hle i)).hom.val a) = ρ i (e a) :=
     presentationLimitRingEquivOfDiscreteTopology_presentationLimitMap P Aplus (hle i) a
   -- The family of sections becomes a compatible family of elements of the localisations.
   have hcompat (i j : ι) : ρl i j (ei i (x i)) = ρr i j (ei j (x j)) := by
-    have := congrArg (fun z ↦ eij i j ((presentationLimitMap (P := P) (hinter i j).le).hom.1 z))
+    have := congrArg (fun z ↦ eij i j ((presentationLimitMap (P := P) (hinter i j).le).hom.val z))
       (hx i j)
     simp only [presentationLimitMap_apply_presentationLimitMap_apply] at this
     rwa [presentationLimitRingEquivOfDiscreteTopology_presentationLimitMap,
@@ -259,7 +260,7 @@ private theorem isInducing_presentationLimitMap {T : Finset A} {s : A} {ι : Typ
     {T' : ι → Finset A} {σ : ι → A}
     (hcov : ⨆ i, spaBasicOpen Aplus (T' i) (σ i) = spaBasicOpen Aplus T s) :
     Topology.IsInducing fun (a : presentationLimit (P := P) Aplus (spaBasicOpen Aplus T s))
-      (i : ι) ↦ (presentationLimitMap (P := P) ((le_iSup _ i).trans_eq hcov)).hom.1 a := by
+      (i : ι) ↦ (presentationLimitMap (P := P) ((le_iSup _ i).trans_eq hcov)).hom.val a := by
   classical
   have _ : IsHuberRing A := ⟨⟨P⟩⟩
   let U (i : ι) := spaBasicOpen Aplus (T' i) (σ i)
@@ -276,18 +277,18 @@ private theorem isInducing_presentationLimitMap {T : Finset A} {s : A} {ι : Typ
     exact Opens.mem_iSup.mpr ⟨⟨i, hi⟩, hvi⟩
   -- Restriction to the finite subcover is injective.
   have hinj (a b : presentationLimit (P := P) Aplus (spaBasicOpen Aplus T s))
-      (hab : ∀ j ∈ J, (presentationLimitMap (P := P) (hle j)).hom.1 a =
-        (presentationLimitMap (P := P) (hle j)).hom.1 b) : a = b := by
+      (hab : ∀ j ∈ J, (presentationLimitMap (P := P) (hle j)).hom.val a =
+        (presentationLimitMap (P := P) (hle j)).hom.val b) : a = b := by
     obtain ⟨c, -, hc⟩ := existsUnique_presentationLimitMap_eq P Aplus hcovJ
-      (fun j ↦ (presentationLimitMap (P := P) (hle j)).hom.1 a) fun j k ↦ by
+      (fun j ↦ (presentationLimitMap (P := P) (hle j)).hom.val a) fun j k ↦ by
         simp only [presentationLimitMap_apply_presentationLimitMap_apply]
-    exact (hc a fun _ ↦ rfl).trans (hc b fun j ↦ (hab j j.2).symm).symm
+    exact (hc a fun _ ↦ rfl).trans (hc b fun j ↦ (hab j j.property).symm).symm
   -- A section is the only one with its restrictions to the finite subcover, and these
   -- restrictions are isolated points.
   have _ := discreteTopology_presentationLimit_spaBasicOpen P Aplus T s
   have _ (i : ι) := discreteTopology_presentationLimit_spaBasicOpen P Aplus (T' i) (σ i)
   refine ⟨DiscreteTopology.eq_bot.trans (eq_bot_of_singletons_open fun a ↦ ?_).symm⟩
-  refine ⟨(J : Set ι).pi fun j ↦ {(presentationLimitMap (P := P) (hle j)).hom.1 a},
+  refine ⟨(J : Set ι).pi fun j ↦ {(presentationLimitMap (P := P) (hle j)).hom.val a},
     isOpen_set_pi J.finite_toSet fun _ _ ↦ isOpen_discrete _, Set.ext fun b ↦ ?_⟩
   simp only [Set.mem_preimage, Set.mem_pi, Finset.mem_coe, Set.mem_singleton_iff]
   exact ⟨fun hb ↦ hinj b a hb, fun hb _ _ ↦ hb ▸ rfl⟩
