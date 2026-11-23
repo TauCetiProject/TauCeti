@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.VectorBundle.Sobolev.CauchyRiemann
-public import TauCeti.Geometry.Manifold.VectorBundle.Sobolev.ChartDeriv
+public import TauCeti.Geometry.Manifold.VectorBundle.Sobolev.Chart.Deriv
 import TauCeti.Analysis.Sobolev.Wkp.SmoothCoefficients
 
 /-!
@@ -20,8 +20,9 @@ A smooth real Cauchy–Riemann operator `D` on `V` extends to a bounded operator
 
 for every natural number `k` and every `1 ≤ p ≤ ∞`
 (`TauCeti.IsRealCauchyRiemannOperator.sobolevSuccL`). This is McDuff–Salamon's realization
-`W^{k,q} → W^{k-1,q}` of a real Cauchy–Riemann operator for a smooth operator on a closed surface,
-at every order `k ≥ 1`; at `k = 1` it is `TauCeti.IsRealCauchyRiemannOperator.sobolevL`
+`W^{l,q} → W^{l-1,q}` of a real Cauchy–Riemann operator for a smooth operator on a closed surface,
+at every order `l = k + 1 ≥ 1`. The case `k = 0`, from `W^{1,p}`, is
+`TauCeti.IsRealCauchyRiemannOperator.sobolevL`
 (`TauCeti.IsRealCauchyRiemannOperator.sobolevSuccL_zero`).
 
 In chart `i` a Sobolev section with chart data `uᵢ` is sent to `∂bar uᵢ + Zᵢ uᵢ`, where `Zᵢ` is the
@@ -42,10 +43,13 @@ a `(0,1)`-form.
 
 * `TauCeti.IsRealCauchyRiemannOperator.chartValueL_sobolevSuccL_ae`: in chart `i` the realization
   is `∂bar uᵢ + Zᵢ uᵢ`, for the weak derivative of the chart data `uᵢ`.
-* `TauCeti.IsRealCauchyRiemannOperator.sobolevSuccL_zero`: at order one it is the realization
+* `TauCeti.IsRealCauchyRiemannOperator.sobolevSuccL_zero`: at `k = 0` it is the realization
   `TauCeti.IsRealCauchyRiemannOperator.sobolevL`.
-* `TauCeti.IsRealCauchyRiemannOperator.zeroOneLowerOrdersL_sobolevSuccL`: the realizations at
-  successive orders commute with forgetting the highest weak derivative.
+* `TauCeti.IsRealCauchyRiemannOperator.zeroOneLowerOrdersL_sobolevSuccL_add`: the realizations at
+  orders `k + d` and `k` commute with forgetting `d` weak derivatives, and
+  `TauCeti.IsRealCauchyRiemannOperator.zeroOneLowerOrdersL_sobolevSuccL` for `d = 1`.
+* `TauCeti.IsRealCauchyRiemannOperator.chartValueL_sobolevSuccL_sub_ae`: the realizations of two
+  operators differ by a zeroth-order term.
 * `TauCeti.IsRealCauchyRiemannOperator.chartValueL_sobolevSuccL_ofContMDiffSection_ae`: on
   `C^{k+1}` sections the realization is `D`.
 
@@ -159,6 +163,14 @@ private def dataSuccL :
     (Wkp.restrictL (sectionChartData_image_tangentHom A i).le k).comp
       (chartSuccL A hD hDs μ p k i c)
 
+/-- The components of `dataSuccL` are the restrictions of those of `chartSuccL`. -/
+private theorem dataSuccL_apply (w : A.sectionChartData.SobolevData μ p (k + 1)) (i : Fin A.n)
+    (c : Fin (finrank ℝ (ℂ →L[ℝ] F))) :
+    dataSuccL A hD hDs μ p k w i c =
+      Wkp.restrictL (sectionChartData_image_tangentHom A i).le k
+        (chartSuccL A hD hDs μ p k i c w) :=
+  rfl
+
 /-- The weak derivative of the chart data in chart `i`, assembled from its components. -/
 private def chartDeriv (i : Fin A.n) (w : A.sectionChartData.SobolevData μ p (k + 1))
     (y : ℂ) : ℂ →L[ℝ] F :=
@@ -195,10 +207,7 @@ private theorem chartValueL_dataSuccL_ae (w : A.sectionChartData.SobolevData μ 
             (fun a ↦ Wkp.value k (A.sectionChartData.chartDerivDataL μ p k i w a) y) c +
         (finBasis ℝ (ℂ →L[ℝ] F)).repr (A.chartZeroOrder D i y
           (A.sectionChartData.chartValueL μ p (k + 1) i w y)) c := by
-    have hd : (dataSuccL A hD hDs μ p k w) i c =
-        Wkp.restrictL (sectionChartData_image_tangentHom A i).le k
-          (chartSuccL A hD hDs μ p k i c w) := rfl
-    rw [hd, h₂ c]
+    rw [dataSuccL_apply, h₂ c]
     refine (h₃ c).trans ?_
     rw [Pi.add_apply, h₄ c, h₅ c]
   have hL := Matrix.toLin_apply (finBasis ℝ (ℂ →L[ℝ] F)) (finBasis ℝ (ℂ →L[ℝ] F))
@@ -293,8 +302,9 @@ theorem chartValueL_sobolevSuccL_ae (w : SobolevSection A μ p (k + 1)) {i : Fin
   rw [← hy]
   exact h
 
-/-- **Agreement at order one.** The realization from `W^{1,p}` is
+/-- **Agreement at order one.** The realization from `W^{1,p}` (the case `k = 0`) is
 `TauCeti.IsRealCauchyRiemannOperator.sobolevL`. -/
+@[simp]
 theorem sobolevSuccL_zero : hD.sobolevSuccL A hDs μ p 0 = hD.sobolevL A hDs μ p := by
   refine ContinuousLinearMap.ext fun w ↦ Subtype.ext <|
     SectionChartData.eq_of_chartValueL_ae_eq fun (i : Fin A.n) ↦
@@ -304,9 +314,41 @@ theorem sobolevSuccL_zero : hD.sobolevSuccL A hDs μ p 0 = hD.sobolevL A hDs μ 
     chartValueL_sobolevL_ae A hD hDs μ p w hDu] with y h₁ h₂
   rw [h₁, h₂]
 
+/-- **Compatibility with the order.** Forgetting the `d` highest weak derivatives of the
+realization of a Sobolev section of order `k + d + 1` gives the realization of the section regarded
+as one of order `k + 1`. -/
+theorem zeroOneLowerOrdersL_sobolevSuccL_add (d : ℕ) (w : SobolevSection A μ p (k + d + 1)) :
+    zeroOneLowerOrdersL A μ p k d (hD.sobolevSuccL A hDs μ p (k + d) w) =
+      hD.sobolevSuccL A hDs μ p k
+        (A.sectionChartData.lowerOrdersL μ p (k + 1) d ((Nat.add_right_comm k d 1) ▸ w)) := by
+  refine Subtype.ext <| SectionChartData.eq_of_chartValueL_ae_eq fun (i : Fin A.n) ↦
+    (ae_image_tangentHom_iff A μ i).2 ?_
+  have hDu := A.sectionChartData.hasWeakFDerivOn_chartValueL_chartDerivDataL μ p (k + d) i w
+  have hlow : A.sectionChartData.chartValueL μ p (k + 1) i
+      (A.sectionChartData.lowerOrdersL μ p (k + 1) d ((Nat.add_right_comm k d 1) ▸ w)) =
+        A.sectionChartData.chartValueL μ p (k + d + 1) i w :=
+    (A.sectionChartData.chartValueL_lowerOrdersL μ p (k + 1) d _ i).trans
+      (A.sectionChartData.chartValueL_eqRec μ p (Nat.add_right_comm k d 1) w i)
+  have hDu' : HasWeakFDerivOn μ (A.image i) (A.sectionChartData.chartValueL μ p (k + 1) i
+      (A.sectionChartData.lowerOrdersL μ p (k + 1) d ((Nat.add_right_comm k d 1) ▸ w))) _ :=
+    hlow ▸ hDu
+  have hcoe : A.tangentHom.sectionChartData.chartValueL μ p k i
+      ((zeroOneLowerOrdersL A μ p k d (hD.sobolevSuccL A hDs μ p (k + d) w) :
+        SobolevSection A.tangentHom μ p k) : A.tangentHom.sectionChartData.SobolevData μ p k) =
+      A.tangentHom.sectionChartData.chartValueL μ p (k + d) i
+        ((hD.sobolevSuccL A hDs μ p (k + d) w : SobolevSection A.tangentHom μ p (k + d)) :
+          A.tangentHom.sectionChartData.SobolevData μ p (k + d)) := by
+    rw [coe_zeroOneLowerOrdersL]
+    exact A.tangentHom.sectionChartData.chartValueL_lowerOrdersL μ p k d _ i
+  rw [hcoe]
+  filter_upwards [chartValueL_sobolevSuccL_ae A hD hDs μ p (k + d) w hDu,
+    chartValueL_sobolevSuccL_ae A hD hDs μ p k _ hDu'] with y h₁ h₂
+  rw [h₁, h₂, hlow]
+
 /-- **Compatibility with the order.** Forgetting the highest weak derivative of the realization of
 a Sobolev section of order `k + 2` gives the realization of the section regarded as one of order
 `k + 1`. -/
+@[simp]
 theorem zeroOneLowerOrdersL_sobolevSuccL (w : SobolevSection A μ p (k + 1 + 1)) :
     zeroOneLowerOrdersL A μ p k 1 (hD.sobolevSuccL A hDs μ p (k + 1) w) =
       hD.sobolevSuccL A hDs μ p k (A.sectionChartData.lowerOrderL μ p (k + 1) w) := by
@@ -351,6 +393,35 @@ theorem chartValueL_sobolevSuccL_ofContMDiffSection_ae
   rw [h, hc']
   exact (A.coord_tangentHom_eq_complexAntilinearPartL_fderiv_add_chartZeroOrder hD hy
     ((s.contMDiff _).mdifferentiableAt (by simp))).symm
+
+/-- **Zeroth-order perturbations.** The realizations at order `k + 1` of two smooth real
+Cauchy–Riemann operators `D` and `D'` differ by a zeroth-order term: in chart `i`, the difference
+sends a Sobolev section with chart data `uᵢ` to `(Zᵢ' - Zᵢ) uᵢ`, where `Zᵢ` and `Zᵢ'` are the
+zeroth-order terms of `D` and `D'`. No derivative of `uᵢ` enters. -/
+theorem chartValueL_sobolevSuccL_sub_ae
+    {D' : (Π x : M, V x) → Π x : M, TangentSpace 𝓘(ℝ, ℂ) x →L[ℝ] V x}
+    (hD' : IsRealCauchyRiemannOperator F (ofComplexManifold ℂ M) D')
+    (hD's : ContMDiffCovariantDerivativeOn F ∞ D' univ) (w : SobolevSection A μ p (k + 1))
+    (i : Fin A.n) :
+    A.tangentHom.sectionChartData.chartValueL μ p k i
+        (((hD'.sobolevSuccL A hD's μ p k w - hD.sobolevSuccL A hDs μ p k w :
+          zeroOneSobolevSections A μ p k) : SobolevSection A.tangentHom μ p k) :
+            A.tangentHom.sectionChartData.SobolevData μ p k)
+      =ᵐ[μ.restrict (A.image i)] fun y ↦
+        (A.chartZeroOrder D' i y - A.chartZeroOrder D i y)
+          (A.sectionChartData.chartValueL μ p (k + 1) i w y) := by
+  have hDu := A.sectionChartData.hasWeakFDerivOn_chartValueL_chartDerivDataL μ p k i w
+  have h₃ := (ae_image_tangentHom_iff A μ i).1 (Lp.coeFn_sub
+    (A.tangentHom.sectionChartData.chartValueL μ p k i
+      ((hD'.sobolevSuccL A hD's μ p k w : SobolevSection A.tangentHom μ p k) :
+        A.tangentHom.sectionChartData.SobolevData μ p k))
+    (A.tangentHom.sectionChartData.chartValueL μ p k i
+      ((hD.sobolevSuccL A hDs μ p k w : SobolevSection A.tangentHom μ p k) :
+        A.tangentHom.sectionChartData.SobolevData μ p k)))
+  filter_upwards [chartValueL_sobolevSuccL_ae A hD' hD's μ p k w hDu,
+    chartValueL_sobolevSuccL_ae A hD hDs μ p k w hDu, h₃] with y h₁ h₂ h₃
+  rw [Submodule.coe_sub, Submodule.coe_sub, map_sub, h₃, Pi.sub_apply, h₁, h₂,
+    sub_apply, add_sub_add_left_eq_sub]
 
 end IsRealCauchyRiemannOperator
 
