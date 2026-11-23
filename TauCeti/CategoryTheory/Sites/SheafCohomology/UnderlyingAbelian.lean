@@ -38,7 +38,7 @@ developed in `TauCeti.Topology.Sheaves.SupportedCohomology.UnderlyingAbelian`.
 
 * `TauCeti.CategoryTheory.relativeFreeYonedaSheafToForget J R i`: the morphism
   `ℤ_{V,U} ⟶ R_{V,U}` of abelian sheaves, characterized by
-  `TauCeti.CategoryTheory.coe_relativeFreeYonedaSheafHomEquiv_toForget_comp`;
+  `TauCeti.CategoryTheory.coe_relativeFreeYonedaSheafHomEquiv_relativeFreeYonedaSheafToForget_comp`;
 * `TauCeti.CategoryTheory.relativeExtToForget J R i F n`: the comparison
   `Extⁿ(R_{V,U}, F) →+ Hⁿ(V, U; F)`;
 * `TauCeti.CategoryTheory.relativeExtToForget_comp`: naturality in `Ext` classes between
@@ -97,8 +97,8 @@ lemma coe_relativeFreeYonedaSheafHomEquiv_relativeFreeYonedaSheafToForget {U V :
 /-- Under the identifications of morphisms out of relative free sheaves with sections, composing
 `relativeFreeYonedaSheafToForget` with the underlying morphism of abelian sheaves of
 `g : R_{V,U} ⟶ F` gives the same section of `F` as `g`. -/
-lemma coe_relativeFreeYonedaSheafHomEquiv_toForget_comp {U V : C} (i : U ⟶ V)
-    (F : Sheaf J (ModuleCat.{v} R)) (g : relativeFreeModuleYonedaSheaf J R i ⟶ F) :
+lemma coe_relativeFreeYonedaSheafHomEquiv_relativeFreeYonedaSheafToForget_comp {U V : C}
+    (i : U ⟶ V) (F : Sheaf J (ModuleCat.{v} R)) (g : relativeFreeModuleYonedaSheaf J R i ⟶ F) :
     ((relativeFreeYonedaSheafHomEquiv J i _ (relativeFreeYonedaSheafToForget J R i ≫
         (sheafCompose J (forget₂ (ModuleCat.{v} R) AddCommGrpCat.{v})).map g)).1 :
         F.obj.obj (op V)) =
@@ -123,7 +123,7 @@ lemma relativeFreeYonedaSheafMap_comp_relativeFreeYonedaSheafToForget {U' V' U V
   rw [coe_relativeFreeYonedaSheafHomEquiv_map_comp,
     coe_relativeFreeYonedaSheafHomEquiv_relativeFreeYonedaSheafToForget]
   -- and so is the right side
-  rw [coe_relativeFreeYonedaSheafHomEquiv_toForget_comp,
+  rw [coe_relativeFreeYonedaSheafHomEquiv_relativeFreeYonedaSheafToForget_comp,
     ← Category.comp_id (relativeFreeModuleYonedaSheafMap J R i' i a b w),
     coe_relativeFreeModuleYonedaSheafHomEquiv_map_comp]
   -- the restriction maps of the underlying abelian sheaf are those of the sheaf of modules
@@ -207,7 +207,7 @@ lemma coe_relativeH'_zeroEquiv_relativeExtToForget {U V : C} (i : U ⟶ V)
   rw [Sheaf.relativeH'.coe_zeroEquiv_apply, coe_relativeFreeModuleYonedaExtZeroEquiv_apply,
     ext_addEquiv₀_relativeExtToForget, ← coe_relativeFreeYonedaSheafHomEquiv_apply,
     ← coe_relativeFreeModuleYonedaSheafHomEquiv_apply]
-  exact coe_relativeFreeYonedaSheafHomEquiv_toForget_comp J R i F _
+  exact coe_relativeFreeYonedaSheafHomEquiv_relativeFreeYonedaSheafToForget_comp J R i F _
 
 /-- In degree zero the comparison is bijective. -/
 theorem relativeExtToForget_zero_bijective {U V : C} (i : U ⟶ V)

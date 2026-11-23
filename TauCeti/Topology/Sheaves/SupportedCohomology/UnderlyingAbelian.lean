@@ -37,7 +37,8 @@ sheaves and with the connecting maps of short exact sequences of coefficients. A
 `W ↦ H_Sⁿ(W, F)` computed with module coefficients has underlying presheaf of abelian groups
 `W ↦ H_Sⁿ(W, F)` computed with abelian coefficients
 (`CategoryTheory.Sheaf.supportedModuleHPresheafForgetIso`). This is how statements about the
-abelian theory, such as support truncation, transfer to sheaves of modules.
+abelian theory transfer to sheaves of modules, for instance the vanishing criterion
+`CategoryTheory.Sheaf.isZero_supportedHSheaf_iff_isZero_supportedModuleHSheaf` for `𝓗_Sⁿ(F)`.
 
 ## Main declarations
 
