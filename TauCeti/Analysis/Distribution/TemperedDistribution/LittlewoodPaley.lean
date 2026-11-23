@@ -92,6 +92,8 @@ blocks `Δⱼ u`.
   `𝓕⁻ (φ (R⁻¹ ·) • 𝓕 u)` converge to `u` as `R → ∞`.
 * `TemperedDistribution.tendsto_sum_littlewoodPaleyBlock`: `u = ∑ⱼ Δⱼ u` in `𝓢'(E, F)`; in
   particular `u` is determined by its blocks (`eq_of_forall_littlewoodPaleyBlock_eq`).
+* `TemperedDistribution.tendsto_sum_littlewoodPaleyBlock_apply`: its tested form
+  `u f = ∑ⱼ (Δⱼ u) f` for scalar Schwartz functions `f`.
 * `TemperedDistribution.isVanishingOn_fourier_littlewoodPaleyBlock`: the Fourier transform of
   `Δⱼ u` vanishes outside the ball of radius `2^j φ.rOut`, and for `j ≥ 1` also inside the ball of
   radius `2^{j-1} φ.rIn` (`isVanishingOn_fourier_littlewoodPaleyBlock_succ`); the Fourier transform
@@ -541,6 +543,13 @@ theorem tendsto_sum_littlewoodPaleyBlock (u : 𝓢'(E, F)) :
     littlewoodPaleyLowPass_succ_eq_fourierMultiplierCLM]
   exact tendsto_fourierMultiplierCLM_contDiffBump φ
     (tendsto_pow_atTop_atTop_of_one_lt one_lt_two) u
+
+/-- **Littlewood–Paley reconstruction, tested.** For every scalar Schwartz function `f`, the
+series `∑ⱼ (Δⱼ u) f` converges to `u f`. -/
+theorem tendsto_sum_littlewoodPaleyBlock_apply (u : 𝓢'(E, F)) (f : 𝓢(E, ℂ)) :
+    Tendsto (fun N ↦ ∑ j ∈ Finset.range N, littlewoodPaleyBlock F φ j u f) atTop (𝓝 (u f)) := by
+  simpa only [sum_apply] using PointwiseConvergenceCLM.tendsto_iff_forall_tendsto.1
+    (tendsto_sum_littlewoodPaleyBlock φ u) f
 
 /-- A tempered distribution is determined by its Littlewood–Paley blocks. -/
 theorem eq_of_forall_littlewoodPaleyBlock_eq {u v : 𝓢'(E, F)}
