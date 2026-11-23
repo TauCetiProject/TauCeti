@@ -36,8 +36,8 @@ where `S_{bⱼ}` are the components in `(t, c)` along the basis `(bⱼ) = Module
 (`Bundle.Trivialization.restrictCLM_chartComponent_eq_sum`). The transition `κ` is smooth with
 smooth inverse (`OpenPartialHomeomorph.contDiffOn_symm_trans_and_symm_of_contMDiffOn`), and the
 coefficients `gⱼ` are smooth on the source of `κ`
-(`Bundle.Trivialization.contDiffOn_transitionCoeff`), so near every point of the source of `κ` the
-formula holds with globally smooth coefficients
+(`Bundle.Trivialization.contDiffOn_abs_det_fderiv_mul_coord_coordChangeL`), so near every point
+of the source of `κ` the formula holds with globally smooth coefficients
 (`Bundle.Trivialization.exists_restrictCLM_chartComponent_eq_sum`). Any property of distributions
 at a point that is preserved by pullback, smooth multiples and finite sums, such as local Sobolev
 regularity, is therefore independent of the chart and the frame. Microlocal smoothness transfers
@@ -57,7 +57,8 @@ which carries the Jacobian `|det Dκ⁻¹|` (`TestFunction.pushforwardCLM`), giv
   `T` in a chart and a frame, as a complex distribution on the chart target.
 * `Bundle.Trivialization.restrictCLM_chartComponent_eq_sum`: the change of chart and frame for the
   components.
-* `Bundle.Trivialization.contDiffOn_transitionCoeff`: the smoothness of the coefficients.
+* `Bundle.Trivialization.contDiffOn_abs_det_fderiv_mul_coord_coordChangeL`: the smoothness of the
+  coefficients.
 * `Bundle.Trivialization.exists_restrictCLM_chartComponent_eq_sum`: the change of chart and frame
   near a point, with globally smooth coefficients.
 -/
@@ -267,7 +268,7 @@ omit [FiniteDimensional ℝ E] [T2Space M] [IsManifold I ∞ M] in
 include hct hct' in
 /-- The coefficient `z ↦ |det Dκ(z)| bⱼ*(G(c'⁻¹ z) v)` of the change of chart and frame is smooth
 on the source of the transition `κ = c ∘ c'⁻¹`, where `G = t ∘ t'⁻¹` is the change of frame. -/
-theorem contDiffOn_transitionCoeff
+theorem contDiffOn_abs_det_fderiv_mul_coord_coordChangeL
     (he : ContDiffOn ℝ (⊤ : ℕ∞) (c'.symm.trans c) (c'.symm.trans c).source)
     (he' : ContDiffOn ℝ (⊤ : ℕ∞) (c'.symm.trans c).symm (c'.symm.trans c).target)
     (hcs' : ContMDiffOn 𝓘(ℝ, E) I ∞ c'.symm c'.target) (v : F) (j : Fin (Module.finrank ℝ F)) :
@@ -308,7 +309,7 @@ theorem exists_restrictCLM_chartComponent_eq_sum
   have hB : W ⊆ (c'.symm.trans c).source := subset_closure.trans hWs
   -- Globally smooth coefficients agreeing with those of the change of chart and frame on `B`.
   choose g hg _ _ _ hgf using fun j ↦
-    (contDiffOn_transitionCoeff (hct := hct) (hct' := hct') he he' hcs' v
+    (contDiffOn_abs_det_fderiv_mul_coord_coordChangeL (hct := hct) (hct' := hct') he he' hcs' v
       j).exists_contDiff_eventuallyEq_on_isCompact hWc (c'.symm.trans c).open_source hWs
   exact ⟨⟨W, hWo⟩, hB, fun z hz ↦ ((c'.symm.trans c).map_source (hB hz)).1, g, hg,
     singleton_subset_iff.1 hyW, restrictCLM_chartComponent_eq_sum T v he he' hB _ hg
