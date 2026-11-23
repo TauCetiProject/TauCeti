@@ -88,7 +88,7 @@ universe u v w
 variable {k : Type u} [Ring k] [TopologicalSpace k] {G : Type v} [Group G] [TopologicalSpace G]
   {M : TopRep.{max v w} k G} {ℳ : ℤ → Submodule k M.V}
   {hρ : ∀ n g x, x ∈ ℳ n → M.ρ g x ∈ ℳ n} {d : M ⟶ M}
-  {hd : TauCeti.LinearMap.IsHomogeneous d.hom.toLinearMap ℳ ℳ 1} {hdd : d ≫ d = 0}
+  {hd : LinearMap.IsHomogeneous d.hom.toLinearMap ℳ ℳ 1} {hdd : d ≫ d = 0}
 
 namespace ResolutionContraction
 
@@ -108,7 +108,7 @@ degrees and a homotopy `h` of degree `-1` vanishing in degree zero, with `π ∘
 automatically between smooth discrete representations (`TauCeti.IsSmoothDiscrete.continuous_conj`).
 -/
 noncomputable def ofGraded (X : TopRep.{max v w} k G) (ι : X ⟶ M) (hι : ∀ x, ι.hom x ∈ ℳ 0)
-    (π : M.V →ₗ[k] X.V) (h : M.V →ₗ[k] M.V) (hh : TauCeti.LinearMap.IsHomogeneous h ℳ ℳ (-1))
+    (π : M.V →ₗ[k] X.V) (h : M.V →ₗ[k] M.V) (hh : LinearMap.IsHomogeneous h ℳ ℳ (-1))
     (hπι : ∀ x, π (ι.hom x) = x) (hπ : ∀ (n : ℕ), ∀ v ∈ ℳ (n + 1 : ℕ), π v = 0)
     (hh₀ : ∀ v ∈ ℳ 0, h v = 0) (hdh : ∀ v, d.hom (h v) + h (d.hom v) = v - ι.hom (π v))
     (hπc : Continuous fun p : M.V × G ↦ X.ρ p.2 (π (M.ρ p.2⁻¹ p.1)))
@@ -138,7 +138,7 @@ noncomputable def ofGraded (X : TopRep.{max v w} k G) (ι : X ⟶ M) (hι : ∀ 
 section ofGraded
 
 variable (X : TopRep.{max v w} k G) (ι : X ⟶ M) (hι : ∀ x, ι.hom x ∈ ℳ 0)
-  (π : M.V →ₗ[k] X.V) (h : M.V →ₗ[k] M.V) (hh : TauCeti.LinearMap.IsHomogeneous h ℳ ℳ (-1))
+  (π : M.V →ₗ[k] X.V) (h : M.V →ₗ[k] M.V) (hh : LinearMap.IsHomogeneous h ℳ ℳ (-1))
   (hπι : ∀ x, π (ι.hom x) = x) (hπ : ∀ (n : ℕ), ∀ v ∈ ℳ (n + 1 : ℕ), π v = 0)
   (hh₀ : ∀ v ∈ ℳ 0, h v = 0) (hdh : ∀ v, d.hom (h v) + h (d.hom v) = v - ι.hom (π v))
   (hπc : Continuous fun p : M.V × G ↦ X.ρ p.2 (π (M.ρ p.2⁻¹ p.1)))
@@ -207,9 +207,9 @@ that of `c'`. Then a homogeneous cocycle `z` of `M` fixed by `G` and its image `
 class in `Hⁿ(G, X)`. -/
 theorem gradedCohomologyClass_map [LocallyCompactSpace G] {M' : TopRep.{max v w} k G}
     {ℳ' : ℤ → Submodule k M'.V} {hρ' : ∀ n g x, x ∈ ℳ' n → M'.ρ g x ∈ ℳ' n} {d' : M' ⟶ M'}
-    {hd' : TauCeti.LinearMap.IsHomogeneous d'.hom.toLinearMap ℳ' ℳ' 1} {hdd' : d' ≫ d' = 0}
+    {hd' : LinearMap.IsHomogeneous d'.hom.toLinearMap ℳ' ℳ' 1} {hdd' : d' ≫ d' = 0}
     (c' : ResolutionContraction X (M'.gradedCochainComplex ℳ' hρ' d' hd' hdd')) (F : M ⟶ M')
-    (hF : TauCeti.LinearMap.IsHomogeneous F.hom.toLinearMap ℳ ℳ' 0) (hFd : d ≫ F = F ≫ d')
+    (hF : LinearMap.IsHomogeneous F.hom.toLinearMap ℳ ℳ' 0) (hFd : d ≫ F = F ≫ d')
     (hι : ∀ x, F.hom (c.ι.hom x).val = (c'.ι.hom x).val)
     {n : ℕ} {z : M.V} (hz : z ∈ ℳ n) (hinv : ∀ g, M.ρ g z = z) (hdz : d.hom z = 0) :
     c'.gradedCohomologyClass (F.hom z)
