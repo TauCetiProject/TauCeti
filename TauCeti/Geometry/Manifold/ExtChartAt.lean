@@ -42,14 +42,16 @@ function itself, read in the chart of `M` (`TauCeti.comp_extChartAt_symm_prodMk_
 `TauCeti.comp_extChartAt_symm_prodMk_right`), and local independence of the last coordinate
 passes to coordinate expressions (`TauCeti.eventually_comp_extChartAt_symm_eq`).
 
-Coordinate changes transport images of subsets of chart overlaps and are injective there,
-without differentiability assumptions, and they take values in the range of the model; for a
-boundaryless model, their domains are open. A compact coordinate set of a chart is covered by
-finitely many compact pieces, each in the overlap with one of a given family of charts at points of
-the manifold. On an open subset, extended chart targets lie in the ambient chart targets, and
-inverse charts agree through inclusion on the smaller target. Near a chart point the inverse charts
-of nested open subsets likewise differ only by the inclusion. Over `ℝ`, every chart point has a
-convex neighbourhood within the model range, inside the chart target, on which flat calculus
+Coordinate changes transport images of subsets of chart overlaps and are injective there, without
+differentiability assumptions, and they take values in the range of the model; for a boundaryless
+model, their domains are open, and on a boundaryless `C^n` manifold the change between two preferred
+extended charts is an ordinary `C^n` map near every point of their common domain
+(`TauCeti.contDiffAt_extChartAt_comp_extChartAt_symm`). A compact coordinate set of a chart is
+covered by finitely many compact pieces, each in the overlap with one of a given family of charts at
+points of the manifold. On an open subset, extended chart targets lie in the ambient chart targets,
+and inverse charts agree through inclusion on the smaller target. Near a chart point the inverse
+charts of nested open subsets likewise differ only by the inclusion. Over `ℝ`, every chart point has
+a convex neighbourhood within the model range, inside the chart target, on which flat calculus
 applies even when the manifold has boundary.
 
 For a boundaryless model `I`, a chart `c` read in the model vector space and then moved by a
@@ -297,6 +299,18 @@ theorem mapsTo_extChartAt_comp_extChartAt_symm (j k : M) (s : Set E) :
     Set.MapsTo (extChartAt I j ∘ (extChartAt I k).symm) s (Set.range I) := fun _ _ ↦ by
   rw [Function.comp_apply, extChartAt_coe]
   exact Set.mem_range_self _
+
+/-- On a boundaryless `C^n` manifold, the change between the preferred extended charts at `x` and
+at `x'` is `C^n` at the `x`-coordinates of every point `y` of their common domain. -/
+theorem contDiffAt_extChartAt_comp_extChartAt_symm [I.Boundaryless] {n : WithTop ℕ∞}
+    [IsManifold I n M] {x x' y : M} (hy : y ∈ (extChartAt I x).source)
+    (hy' : y ∈ (extChartAt I x').source) :
+    ContDiffAt 𝕜 n (extChartAt I x' ∘ (extChartAt I x).symm) (extChartAt I x y) := by
+  have h := contDiffWithinAt_ext_coord_change (I := I) (n := n) x' x (y := extChartAt I x y)
+    ⟨(extChartAt I x).map_source hy, by
+      rw [Set.mem_preimage, PartialEquiv.symm_symm, (extChartAt I x).left_inv hy]
+      exact hy'⟩
+  rwa [ModelWithCorners.Boundaryless.range_eq_univ, contDiffWithinAt_univ] at h
 
 omit [ChartedSpace H M] in
 /-- For a boundaryless model, the domain of the change of coordinates between two charts is

@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Geometry.Symplectic.Cotangent.Bundle.LagrangianVectorField
 public import TauCeti.Geometry.Symplectic.Cotangent.Bundle.Legendre.Chart
-import TauCeti.Geometry.Manifold.ContMDiff.Atlas
+import TauCeti.Geometry.Manifold.ExtChartAt
 import TauCeti.Geometry.Manifold.VectorBundle.Submersion
 import TauCeti.Geometry.Manifold.VectorBundle.Tangent.ChartChange
 import Mathlib.Geometry.Manifold.ContMDiff.NormedSpace

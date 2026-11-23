@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.VectorBundle.Tangent.Basic
-import TauCeti.Geometry.Manifold.ContMDiff.Atlas
+import TauCeti.Geometry.Manifold.ExtChartAt
 import TauCeti.Geometry.Manifold.VectorBundle.Submersion
 
 /-!
@@ -61,7 +61,7 @@ theorem extChartAt_tangent_extChartAt_symm (z z' : TangentBundle I M) {a : E × 
     extChartAt I.tangent z' ((extChartAt I.tangent z).symm a) =
       ((extChartAt I z'.proj ∘ (extChartAt I z.proj).symm) a.1,
         fderiv 𝕜 (extChartAt I z'.proj ∘ (extChartAt I z.proj).symm) a.1 a.2) := by
-  rw [extChartAt_tangent_symm_trans_eq z z' ⟨ha, ha'⟩, tangentCoordChange_eq_fderiv,
+  rw [extChartAt_tangent_extChartAt_symm_eq_tangentCoordChange z z' ⟨ha, ha'⟩, tangentCoordChange_eq_fderiv,
     (extChartAt I z.proj).right_inv (fst_mem_extChartAt_target z ha)]
   rfl
 
