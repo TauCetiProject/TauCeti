@@ -53,6 +53,8 @@ group. It is a genuine invariant beyond rank and discriminant: over `ℝ` the fo
   presentations.
 * `TauCeti.RegularFormClass.hasseInvariant_add`: the formula for arbitrary classes, with its
   cross term expressed through their discriminants.
+* `TauCeti.RegularFormClass.hasseInvariant_natCast`: the sum of `n` squares `n⟨1⟩` has trivial
+  Hasse invariant.
 * `TauCeti.RegularFormClass.hasseInvariant_mk_scale`: the formula for scaling a diagonal
   presentation by a unit.
 * `TauCeti.RegularFormClass.hasseInvariant_mk_rankOne_mul_mk`: the same scaling formula for
@@ -247,6 +249,21 @@ theorem hasseInvariant_add (x y : RegularFormClass K) :
     | h q =>
       simpa only [discr_mk, quaternionClassOnSquareClasses_squareClass] using
         hasseInvariant_add_mk p q
+
+/-- The sum of `n` squares `n⟨1⟩` has trivial Hasse invariant. -/
+@[simp]
+theorem hasseInvariant_natCast (n : ℕ) : hasseInvariant (n : RegularFormClass K) = 1 := by
+  induction n with
+  | zero => rw [Nat.cast_zero, hasseInvariant_zero]
+  | succ n ih =>
+    rw [Nat.cast_succ, hasseInvariant_add, ih, hasseInvariant_one, discr_natCast, discr_one,
+      quaternionClassOnSquareClasses_zero_left, one_mul, one_mul]
+
+/-- The sum of `n` squares `n⟨1⟩` has trivial Hasse invariant, for a numeral `n ≥ 2`. -/
+@[simp]
+theorem hasseInvariant_ofNat (n : ℕ) [n.AtLeastTwo] :
+    hasseInvariant (ofNat(n) : RegularFormClass K) = 1 :=
+  hasseInvariant_natCast n
 
 /-- **Scaling formula** for any regular-form class: multiplying by `⟨a⟩` changes the Hasse
 invariant by a rank-dependent sign symbol and a symbol with its discriminant. -/

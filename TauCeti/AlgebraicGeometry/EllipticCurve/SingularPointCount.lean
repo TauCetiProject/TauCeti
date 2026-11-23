@@ -63,13 +63,13 @@ private noncomputable def equationPointEquiv :
   classical
   let nonsingularEquiv :
       {p : {q : F × F // W.toAffine.Equation q.1 q.2} //
-          W.toAffine.Nonsingular p.1.1 p.1.2} ≃
+          W.toAffine.Nonsingular p.val.1 p.val.2} ≃
         {p : F × F // W.toAffine.Nonsingular p.1 p.2} :=
     Equiv.subtypeSubtypeEquivSubtype fun {p : F × F}
       (h : W.toAffine.Nonsingular p.1 p.2) ↦ h.1
   let singularEquiv :
       {p : {q : F × F // W.toAffine.Equation q.1 q.2} //
-          ¬ W.toAffine.Nonsingular p.1.1 p.1.2} ≃
+          ¬ W.toAffine.Nonsingular p.val.1 p.val.2} ≃
         {p : F × F // W.toAffine.IsSingular p.1 p.2} :=
     (Equiv.subtypeSubtypeEquivSubtypeInter
       (fun p : F × F ↦ W.toAffine.Equation p.1 p.2)
@@ -78,7 +78,8 @@ private noncomputable def equationPointEquiv :
           (WeierstrassCurve.Affine.isSingular_iff_equation_and_not_nonsingular
             (W := W.toAffine) (x := p.1) (y := p.2)).symm)
   exact (Equiv.sumCompl fun p : {q : F × F // W.toAffine.Equation q.1 q.2} ↦
-    W.toAffine.Nonsingular p.1.1 p.1.2).symm.trans (Equiv.sumCongr nonsingularEquiv singularEquiv)
+    W.toAffine.Nonsingular p.val.1 p.val.2).symm.trans (Equiv.sumCongr nonsingularEquiv
+        singularEquiv)
 
 /-- **The projective equation count is the nonsingular point count plus the number of rational
 singular affine points.** The point at infinity occurs in both `pointCount` and Mathlib's point
@@ -141,7 +142,7 @@ theorem _root_.WeierstrassCurve.pointCount_eq_card_point_add_one_iff
     have hs : Nat.card {p : F × F // W.toAffine.IsSingular p.1 p.2} = 1 :=
       Nat.add_left_cancel (W.pointCount_eq_card_point_add_card_singular.symm.trans h)
     obtain ⟨p⟩ := (Nat.card_eq_one_iff_unique.1 hs).2
-    exact ⟨p.1.1, p.1.2, p.2⟩
+    exact ⟨p.val.1, p.val.2, p.property⟩
   · rintro ⟨x, y, h⟩
     exact W.pointCount_eq_card_point_add_one_of_isSingular h
 
@@ -166,7 +167,7 @@ private theorem card_equation_add_card_rootSet_of_isSingular_zero [Finite F]
   have hE := WeierstrassCurve.Affine.equation_iff_of_isSingular_zero h
   set S := {p : F × F // W.toAffine.Equation p.1 p.2}
   -- the only solution with `x = 0` is the origin
-  have hx : ∀ p : S, p.1.1 = 0 → p.1 = 0 := by
+  have hx : ∀ p : S, p.val.1 = 0 → p.val = 0 := by
     rintro ⟨⟨x, y⟩, hp⟩ (rfl : x = 0)
     have : y ^ 2 = 0 := by simpa using (hE 0 y).1 hp
     simp [pow_eq_zero_iff two_ne_zero |>.1 this]
@@ -174,10 +175,11 @@ private theorem card_equation_add_card_rootSet_of_isSingular_zero [Finite F]
       (y / x) ^ 2 + W.a₁ * (y / x) - W.a₂ = x := fun hx0 hp ↦ by
     field_simp
     linear_combination (hE _ _).1 hp
-  let e : {p : S // p.1.1 ≠ 0} ≃ {t : F // ¬ t ^ 2 + W.a₁ * t - W.a₂ = 0} :=
-    { toFun p := ⟨p.1.1.2 / p.1.1.1, by rw [hslope p.2 p.1.2]; exact p.2⟩
-      invFun t := ⟨⟨(t.1 ^ 2 + W.a₁ * t.1 - W.a₂, t.1 * (t.1 ^ 2 + W.a₁ * t.1 - W.a₂)),
-        (hE _ _).2 (by ring)⟩, t.2⟩
+  let e : {p : S // p.val.1 ≠ 0} ≃ {t : F // ¬ t ^ 2 + W.a₁ * t - W.a₂ = 0} :=
+    { toFun p := ⟨p.val.val.2 / p.val.val.1, by rw [hslope p.property p.val.property]; exact
+        p.property⟩
+      invFun t := ⟨⟨(t.val ^ 2 + W.a₁ * t.val - W.a₂, t.val * (t.val ^ 2 + W.a₁ * t.val - W.a₂)),
+        (hE _ _).2 (by ring)⟩, t.property⟩
       left_inv := by
         rintro ⟨⟨⟨x, y⟩, hp⟩, hx0⟩
         ext <;> simp only [hslope hx0 hp]
@@ -192,10 +194,10 @@ private theorem card_equation_add_card_rootSet_of_isSingular_zero [Finite F]
       simpa using congrArg (fun p : F[X] ↦ p.coeff 2) h0
     rw [mem_rootSet, and_iff_right h0]
     simp [sub_eq_add_neg]
-  have h1 : Nat.card {p : S // p.1.1 = 0} = 1 :=
+  have h1 : Nat.card {p : S // p.val.1 = 0} = 1 :=
     Nat.card_eq_one_iff_exists.2 ⟨⟨⟨0, (hE 0 0).2 (by ring)⟩, rfl⟩,
-      fun p ↦ Subtype.ext (Subtype.ext (hx p.1 p.2))⟩
-  rw [hroot, ← Nat.card_congr (Equiv.sumCompl fun p : S ↦ p.1.1 = 0), Nat.card_sum, h1,
+      fun p ↦ Subtype.ext (Subtype.ext (hx p.val p.property))⟩
+  rw [hroot, ← Nat.card_congr (Equiv.sumCompl fun p : S ↦ p.val.1 = 0), Nat.card_sum, h1,
     Nat.card_congr e, ← Nat.card_congr (Equiv.sumCompl fun t : F ↦ t ^ 2 + W.a₁ * t - W.a₂ = 0),
     Nat.card_sum]
   omega
@@ -233,7 +235,7 @@ theorem _root_.WeierstrassCurve.frobeniusTrace_eq_zero_of_c₄_eq_zero [Finite F
     simpa [discrim, WeierstrassCurve.b₂] using
       (pow_eq_zero_iff two_ne_zero).1 (hb ▸ hc.trans hc₄)
   rw [htr, Nat.card_eq_fintype_card, card_rootSet_quadratic_of_discrim_eq_zero one_ne_zero
-    (splits_quadratic_of_discrim_eq_zero one_ne_zero hd0) hd0]
+    (splits_quadratic_of_discrim_eq_zero hd0) hd0]
   norm_num
 
 /-- **The Frobenius trace at a split node is `1`.** A singular model over a finite field with
@@ -266,7 +268,7 @@ theorem _root_.WeierstrassCurve.frobeniusTrace_eq_neg_one_of_not_splits [Finite 
   have ht : ¬ (tangentQuadratic V).Splits := fun ht ↦ hs ((Splits.C _).mul ht)
   rw [splits_quadratic_iff_exists_root one_ne_zero] at ht
   have : IsEmpty ((tangentQuadratic V).rootSet F) :=
-    ⟨fun t ↦ ht ⟨t.1, by simpa [aeval_def] using (mem_rootSet.1 t.2).2⟩⟩
+    ⟨fun t ↦ ht ⟨t.val, by simpa [aeval_def] using (mem_rootSet.1 t.property).2⟩⟩
   rw [htr, Nat.card_of_isEmpty]
   norm_num
 

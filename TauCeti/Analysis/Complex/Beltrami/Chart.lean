@@ -7,7 +7,9 @@ module
 
 public import TauCeti.Analysis.Complex.Beltrami.Holder
 public import TauCeti.Analysis.Complex.Beltrami.Linear
+public import TauCeti.Analysis.Complex.Pompeiu.Basic
 public import Mathlib.Analysis.Calculus.InverseFunctionTheorem.FDeriv
+import TauCeti.Analysis.Calculus.InverseFunctionTheorem
 
 /-!
 # Planar `J`-holomorphic charts from the Beltrami equation
@@ -136,12 +138,13 @@ with `‖h‖ ≤ 2 ‖μ‖`, such that `ψ = z + T h`
 * is `C¹` on `ball c (r + 1)` and solves `\bar∂ψ = μ ∂ψ` there;
 * has real derivative within `C ‖μ‖` of the identity on the disc, `α`-Hölder with constant
   `C ‖μ‖` there;
+* has an invertible strict derivative at every point of the disc;
 * has a differential that is complex linear from `J` to `i` at every point of the disc;
 * has nonzero holomorphic derivative `∂ψ(c)`;
 
 and the normalized map `φ = (ψ - ψ(c)) / ∂ψ(c)` is `C¹` on `ball c (r + 1)`, has `φ(c) = 0` and
 `∂φ(c) = 1`, has a differential complex linear from `J` to `i` at every point of the disc, and is
-an open partial homeomorphism on a neighbourhood of `c` inside `ball c r`. -/
+an open partial homeomorphism on a neighbourhood of `c` inside `ball c r`, with `C¹` inverse. -/
 theorem exists_isComplexLinear_chart {α : ℝ≥0} {r : ℝ} (hα : 0 < α) (hα1 : α < 1) (c : ℂ)
     (hr : 0 < r) :
     ∃ δ > 0, ∃ C : ℝ≥0, ∀ (J : ℂ → AlmostComplexStructure ℂ)
@@ -156,6 +159,8 @@ theorem exists_isComplexLinear_chart {α : ℝ≥0} {r : ℝ} (hα : 0 < α) (h�
         (∀ z ∈ closedBall c r,
           ‖fderiv ℝ (cauchySolution h) z - ContinuousLinearMap.id ℝ ℂ‖ ≤ C * ‖μ‖) ∧
         HolderOnWith (C * ‖μ‖₊) α (fderiv ℝ (cauchySolution h)) (closedBall c r) ∧
+        (∀ z ∈ closedBall c r,
+          ∃ L : ℂ ≃L[ℝ] ℂ, HasStrictFDerivAt (cauchySolution h) (L : ℂ →L[ℝ] ℂ) z) ∧
         (∀ z ∈ closedBall c r, IsComplexLinear (J z).toLinearMap
           (AlmostComplexStructure.ofComplexModule ℂ).toLinearMap
           (fderiv ℝ (cauchySolution h) z).toLinearMap) ∧
@@ -167,8 +172,8 @@ theorem exists_isComplexLinear_chart {α : ℝ≥0} {r : ℝ} (hα : 0 < α) (h�
           (AlmostComplexStructure.ofComplexModule ℂ).toLinearMap
           (fderiv ℝ (normalizedChart (cauchySolution h) c) z).toLinearMap) ∧
         ∃ e : OpenPartialHomeomorph ℂ ℂ, ⇑e = normalizedChart (cauchySolution h) c ∧
-          c ∈ e.source ∧ e.source ⊆ ball c r := by
-  obtain ⟨δ, hδ, C, hsol⟩ := exists_conjWirtingerDeriv_eq_mul_wirtingerDeriv hα hα1 c hr.le
+          c ∈ e.source ∧ e.source ⊆ ball c r ∧ ∀ z ∈ e.target, ContDiffAt ℝ 1 e.symm z := by
+  obtain ⟨δ, hδ, C, hsol⟩ := exists_conjWirtingerDeriv_eq_mul_wirtingerDeriv hα hα1 c r
   refine ⟨δ, hδ, C, fun J hJ μ hμ hμJ hμδ => ?_⟩
   obtain ⟨h, hh, hhμ, hC1, -, hbel, hnear, hhol, hinv⟩ := hsol μ hμ hμδ
   -- The solver states its conclusions for the explicit map `w ↦ w + T h(w)`; fold it.
@@ -195,8 +200,9 @@ theorem exists_isComplexLinear_chart {α : ℝ≥0} {r : ℝ} (hα : 0 < α) (h�
     exact one_ne_zero (L.injective (hzero.trans L.map_zero.symm))
   set a := wirtingerDeriv ψ c 1
   set φ := normalizedChart ψ c
-  refine ⟨h, hh, hhμ, hC1, hbel, hnear, hhol, hlin, ha, ?_, normalizedChart_self ψ c, ?_, ?_, ?_⟩
-  · exact (hC1.sub contDiffOn_const).const_smul a⁻¹
+  have hφ : ContDiffOn ℝ 1 φ (ball c (r + 1)) := (hC1.sub contDiffOn_const).const_smul a⁻¹
+  refine ⟨h, hh, hhμ, hC1, hbel, hnear, hhol, hinv, hlin, ha, hφ, normalizedChart_self ψ c, ?_, ?_,
+    ?_⟩
   · exact wirtingerDeriv_normalizedChart_self ha
   · intro z hz
     rw [fderiv_normalizedChart]
@@ -207,21 +213,16 @@ theorem exists_isComplexLinear_chart {α : ℝ≥0} {r : ℝ} (hα : 0 < α) (h�
     rw [this]
     simp only [AlmostComplexStructure.ofComplexModule_apply, smul_eq_mul]
     ring
-  · -- The inverse function theorem at `c`, restricted to `ball c r`.
+  · -- The inverse function theorem at `c`, inside `ball c r`.
     obtain ⟨L, hL⟩ := hinv c hc
     let M : ℂ ≃L[ℝ] ℂ := ContinuousLinearEquiv.smulLeft (Units.mk0 a⁻¹ (inv_ne_zero ha))
     have hφs : HasStrictFDerivAt φ ((L.trans M : ℂ ≃L[ℝ] ℂ) : ℂ →L[ℝ] ℂ) c := by
-      have hLM : ((L.trans M : ℂ ≃L[ℝ] ℂ) : ℂ →L[ℝ] ℂ) = a⁻¹ • (L : ℂ →L[ℝ] ℂ) :=
-        ContinuousLinearMap.ext fun v ↦ by simp [M, Units.smul_def]
-      rw [hLM]
+      rw [show ((L.trans M : ℂ ≃L[ℝ] ℂ) : ℂ →L[ℝ] ℂ) = a⁻¹ • (L : ℂ →L[ℝ] ℂ) from
+        ContinuousLinearMap.ext fun v ↦ by simp [M, Units.smul_def]]
       exact (hL.sub_const (ψ c)).const_smul a⁻¹
-    let e := hφs.toOpenPartialHomeomorph φ
-    refine ⟨e.restrOpen (ball c r) isOpen_ball, ?_, ?_, ?_⟩
-    · rw [OpenPartialHomeomorph.coe_restrOpen]
-      exact hφs.toOpenPartialHomeomorph_coe
-    · rw [OpenPartialHomeomorph.restrOpen_source]
-      exact ⟨hφs.mem_toOpenPartialHomeomorph_source, mem_ball_self hr⟩
-    · rw [OpenPartialHomeomorph.restrOpen_source]
-      exact Set.inter_subset_right
+    obtain ⟨e, he, hce, hes, hesymm⟩ := TauCeti.ContDiffOn.exists_openPartialHomeomorph
+      (hφ.mono (ball_subset_ball (by linarith))) isOpen_ball (mem_ball_self hr) le_rfl
+      hφs.hasFDerivAt.fderiv.symm
+    exact ⟨e, he, hce, hes, fun z hz ↦ (hesymm z hz).contDiffAt (e.open_target.mem_nhds hz)⟩
 
 end TauCeti.Beltrami

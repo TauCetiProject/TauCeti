@@ -61,7 +61,7 @@ theorem isEmbedding_psl2zToPSL2R :
     dsimp only [Function.comp_apply, p, q, f]
     rw [psl2zToPSL2R_mk]
     exact sl2zToPSL2R_apply g
-  · exact Real.isClosedEmbedding_intCast.specialLinearGroup_map.1.isInducing
+  · exact Real.isClosedEmbedding_intCast.specialLinearGroup_map.toIsEmbedding.isInducing
   · exact QuotientGroup.isQuotientMap_mk _
   · exact QuotientGroup.isOpenQuotientMap_mk
   · exact psl2zToPSL2R_injective

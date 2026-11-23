@@ -27,16 +27,9 @@ of the Hermitian matrix `a Π_{L₁} + b Π_P + c Π_L`:
 (`TauCeti.BottSamelson.moment`, built on `Submodule.projectorDiagonal`). This file works with this
 map on triples of subspaces directly; no symplectic form enters the statements.
 
-Writing `ij` for the plane `span(eᵢ, eⱼ)` and `eᵢ` for the line spanned by `eᵢ`, the eight
-triples of coordinate subspaces
-
-`(e₀, 01, e₀)`, `(e₀, 01, e₁)`, `(e₀, 02, e₀)`, `(e₀, 02, e₂)`,
-`(e₁, 01, e₀)`, `(e₁, 01, e₁)`, `(e₁, 12, e₁)`, `(e₁, 12, e₂)`
-
-satisfy the incidence conditions, and their moment values are, in this order, the rows of
-`TauCeti.BottSamelson.fixedMoment` (`TauCeti.BottSamelson.exists_moment_eq_fixedMoment`).
-These triples are the torus-fixed points of `X`; this file neither defines the torus action on
-`X` nor proves that classification.
+The torus-fixed points of `X` are eight triples of coordinate subspaces, and their moment values
+are the rows of `TauCeti.BottSamelson.fixedMoment`; both facts are proved in
+`TauCeti.Geometry.Symplectic.BottSamelson.FixedFlag`.
 
 For nonnegative weights `a, b, c`, every value of `μ` lies in the hexagon
 `TauCeti.BottSamelson.momentPolygon`, the convex hull of these eight values
@@ -44,7 +37,8 @@ For nonnegative weights `a, b, c`, every value of `μ` lies in the hexagon
 projector lie in `[0, 1]` and sum to its rank, which gives the trace and the first five bounds, and
 the third diagonal entry of `Π_{L₁}` vanishes because `L₁ ⊆ P₀`, which gives `z ≤ b + c`. This is
 one inclusion of the description of the image of `μ` as the hexagon; the other one, that every
-point of the hexagon is a moment value, is the content of the convexity theorem for torus actions.
+point of the hexagon is a moment value, is proved in
+`TauCeti.Geometry.Symplectic.BottSamelson.Image`.
 
 ## Main definitions
 
@@ -53,8 +47,6 @@ point of the hexagon is a moment value, is the content of the convexity theorem 
 
 ## Main results
 
-* `TauCeti.BottSamelson.exists_moment_eq_fixedMoment`: each row of `fixedMoment` is the moment
-  value of a triple of coordinate subspaces in `X`.
 * `TauCeti.BottSamelson.sum_moment`: on `X`, the coordinates of `μ` sum to `a + 2b + c`.
 * `TauCeti.BottSamelson.moment_mem_momentPolygon`,
   `TauCeti.BottSamelson.moment_mem_convexHull`: for nonnegative weights, every moment value lies
@@ -147,43 +139,7 @@ theorem sum_moment (hL₁ : finrank ℂ L₁ = 1) (hP : finrank ℂ P = 2) (hL :
 
 end Moment
 
-/-! ### Moment values -/
-
-/-- Each fixed value is the moment value of a triple of coordinate subspaces in the Bott–Samelson
-variety of the word `121`: a line `L₁ ⊆ P₀`, a plane `P ⊇ L₁` and a line `L ⊆ P`. -/
-theorem exists_moment_eq_fixedMoment (a b c : ℝ) (k : Fin 8) :
-    ∃ L₁ P L : Submodule ℂ (EuclideanSpace ℂ (Fin 3)), finrank ℂ L₁ = 1 ∧ finrank ℂ P = 2 ∧
-      finrank ℂ L = 1 ∧ L₁ ≤ initialPlane ∧ L₁ ≤ P ∧ L ≤ P ∧
-        moment a b c L₁ P L = fixedMoment a b c k := by
-  -- the coordinate subspace spanned by the `eᵢ` with `i ∈ s`
-  let C : Finset (Fin 3) → Submodule ℂ (EuclideanSpace ℂ (Fin 3)) :=
-    fun s ↦ span ℂ ((fun i ↦ EuclideanSpace.single i (1 : ℂ)) '' s)
-  have hC : ∀ {s t : Finset (Fin 3)}, s ⊆ t → C s ≤ C t :=
-    fun h ↦ span_mono (image_mono (Finset.coe_subset.2 h))
-  have key : ∀ i j l : Fin 3, i ≠ j → i ∈ ({0, 1} : Finset (Fin 3)) → l ∈ ({i, j} : Finset _) →
-      moment a b c (C {i}) (C {i, j}) (C {l}) = fixedMoment a b c k →
-      ∃ L₁ P L : Submodule ℂ (EuclideanSpace ℂ (Fin 3)), finrank ℂ L₁ = 1 ∧ finrank ℂ P = 2 ∧
-        finrank ℂ L = 1 ∧ L₁ ≤ initialPlane ∧ L₁ ≤ P ∧ L ≤ P ∧
-          moment a b c L₁ P L = fixedMoment a b c k := by
-    intro i j l hij hi hl hμ
-    refine ⟨C {i}, C {i, j}, C {l}, finrank_span_image_single _, ?_, finrank_span_image_single _,
-      ?_, hC (by simp), hC (by simpa using hl), hμ⟩
-    · rw [finrank_span_image_single, Finset.card_pair hij]
-    · rw [initialPlane_eq_span_image, ← Finset.coe_pair]
-      exact hC (by simpa using hi)
-  have hμ : ∀ s t u : Finset (Fin 3), moment a b c (C s) (C t) (C u) =
-      a • (s : Set (Fin 3)).indicator 1 + b • (t : Set (Fin 3)).indicator 1 +
-        c • (u : Set (Fin 3)).indicator 1 := by
-    intro s t u
-    simp only [moment, C, projectorDiagonal_span_single]
-  -- the indices `(i, j, l)` of the triple `(eᵢ, span(eᵢ, eⱼ), eₗ)` with moment value the row `k`
-  let f : Fin 8 → Fin 3 × Fin 3 × Fin 3 := ![(0, 1, 0), (0, 1, 1), (0, 2, 0), (0, 2, 2),
-    (1, 0, 0), (1, 0, 1), (1, 2, 1), (1, 2, 2)]
-  refine key (f k).1 (f k).2.1 (f k).2.2 (by fin_cases k <;> decide)
-    (by fin_cases k <;> decide) (by fin_cases k <;> decide) ?_
-  rw [hμ]
-  ext i
-  fin_cases k <;> fin_cases i <;> simp [f, fixedMoment_def]
+/-! ### The moment hexagon -/
 
 /-- Every moment value of the Bott–Samelson variety of the word `121` lies in the hexagon, for
 nonnegative weights. The incidences `L₁ ⊆ P` and `L ⊆ P` are not needed. -/
@@ -216,8 +172,7 @@ theorem moment_mem_momentPolygon {a b c : ℝ} (ha : 0 ≤ a) (hb : 0 ≤ b) (hc
     nlinarith [mul_le_mul_of_nonneg_left (h4 2) hb, mul_le_mul_of_nonneg_left (h5 2) hc]
 
 /-- For nonnegative weights, every moment value of the Bott–Samelson variety of the word `121`
-lies in the convex hull of the eight rows of `fixedMoment`, the moment values of the coordinate
-triples of `exists_moment_eq_fixedMoment`. -/
+lies in the convex hull of the eight rows of `fixedMoment`. -/
 theorem moment_mem_convexHull {a b c : ℝ} (ha : 0 ≤ a) (hb : 0 ≤ b) (hc : 0 ≤ c)
     {L₁ P L : Submodule ℂ (EuclideanSpace ℂ (Fin 3))} (hL₁ : finrank ℂ L₁ = 1)
     (hP : finrank ℂ P = 2) (hL : finrank ℂ L = 1) (h : L₁ ≤ initialPlane) :

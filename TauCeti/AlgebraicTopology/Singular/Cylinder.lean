@@ -78,10 +78,10 @@ def cylinderBoundaryι₁ : X ⟶ (cylinderBoundaryPair X).snd :=
   TopCat.ofHom ⟨fun x ↦ ⟨(x, 1), (mem_cylinderBoundary X).2 (Or.inr rfl)⟩, by fun_prop⟩
 
 @[simp]
-lemma cylinderBoundaryι₀_apply (x : X) : (cylinderBoundaryι₀ X x).1 = (x, 0) := (rfl)
+lemma cylinderBoundaryι₀_apply (x : X) : (cylinderBoundaryι₀ X x).val = (x, 0) := (rfl)
 
 @[simp]
-lemma cylinderBoundaryι₁_apply (x : X) : (cylinderBoundaryι₁ X x).1 = (x, 1) := (rfl)
+lemma cylinderBoundaryι₁_apply (x : X) : (cylinderBoundaryι₁ X x).val = (x, 1) := (rfl)
 
 lemma isEmbedding_cylinderBoundaryι₀ : IsEmbedding (cylinderBoundaryι₀ X) :=
   (isEmbedding_prodMkLeft (0 : I)).codRestrict (cylinderBoundary X) fun _ ↦
@@ -108,7 +108,7 @@ variable {X} in
 @[simp]
 lemma cylinderBoundaryPairMap_snd_apply {Y : TopCat.{w}} (g : X ⟶ Y)
     (p : (cylinderBoundaryPair X).snd) :
-    (TopPair.Hom.snd (cylinderBoundaryPairMap g) p).1 = (g p.1.1, p.1.2) :=
+    (TopPair.Hom.snd (cylinderBoundaryPairMap g) p).val = (g p.val.1, p.val.2) :=
   TopPair.ofSubsetMap_snd_apply _ _ _
 
 @[simp]
@@ -182,26 +182,17 @@ private lemma isZero_singularHomology_cylinderBottom (n : ℕ) :
     intro τ p hp
     rw [mem_cylinderBottom] at hp ⊢
     exact (congrArg (σ τ * ·) hp).trans (mul_zero _)
-  let g : TopCat.of (X × I) ⟶
-      (TopPair.ofSubset (X := TopCat.of (X × I)) (cylinderBottom X)).snd :=
-    TopCat.ofHom ⟨fun p ↦ ⟨(p.1, 0), (mem_cylinderBottom X).2 rfl⟩, by fun_prop⟩
-  have hc : Set.MapsTo c (cylinderBottom X) (cylinderBottom X) := fun p _ ↦
-    (mem_cylinderBottom X).2 rfl
-  have H : TopPair.Homotopy (𝟙 _) (TopPair.ofSubsetMap c hc) := by
-    rw [← TopPair.ofSubsetMap_id (X := TopCat.of (X × I)) (B := cylinderBottom X) fun _ hx ↦ hx]
-    exact TopPair.ofSubsetHomotopy F hF
-  -- By construction, `g` followed by the inclusion of the bottom end is the collapse `c`.
-  exact TopPair.isZero_singularHomology_of_homotopy H g
-    ((rfl : g ≫ _ = c).trans (TopPair.ofSubsetMap_fst _ _).symm) R n
+  exact TopPair.isZero_singularHomology_ofSubset_of_homotopy F hF
+    (fun _ ↦ (mem_cylinderBottom X).2 rfl) R n
 
 /-- The pair `(X × I, X × {0})` as a subset pair maps isomorphically onto the total pair of
 `cylinderTriple X`. -/
 private def cylinderBottomToTotal :
     TopPair.ofSubset (X := TopCat.of (X × I)) (cylinderBottom X) ⟶
       TopTriple.totalPair.obj (cylinderTriple X) :=
-  TopPair.ofHom (𝟙 _) (TopCat.ofHom ⟨fun p ↦ p.1.1, by fun_prop⟩) (by
+  TopPair.ofHom (𝟙 _) (TopCat.ofHom ⟨fun p ↦ p.val.1, by fun_prop⟩) (by
     ext p
-    exact Prod.ext rfl ((mem_cylinderBottom X).1 p.2).symm)
+    exact Prod.ext rfl ((mem_cylinderBottom X).1 p.property).symm)
 
 private instance : IsIso (cylinderBottomToTotal X) :=
   have : IsIso (TopPair.Hom.fst (cylinderBottomToTotal X)) :=
@@ -234,20 +225,20 @@ private instance isIso_singularHomologyMap_cylinderTopToInner (n : ℕ) :
     IsIso (TopPair.singularHomologyMap (cylinderTopToInner X) R n) := by
   refine TopPair.isIso_singularHomologyMap_of_open_cover R (cylinderTopToInner X)
     (isEmbedding_cylinderBoundaryι₁ X) ?_
-    (fun b : Bool ↦ (fun p : (cylinderBoundaryPair X).snd ↦ p.1.2) ⁻¹' {bif b then 0 else 1}ᶜ)
+    (fun b : Bool ↦ (fun p : (cylinderBoundaryPair X).snd ↦ p.val.2) ⁻¹' {bif b then 0 else 1}ᶜ)
     (fun b ↦ isClosed_singleton.isOpen_compl.preimage (by fun_prop)) ?_ ?_ n
   · rintro x ⟨y, hy⟩
-    exact absurd (congrArg (fun p : (cylinderBoundaryPair X).snd ↦ p.1.2) hy) zero_ne_one
+    exact absurd (congrArg (fun p : (cylinderBoundaryPair X).snd ↦ p.val.2) hy) zero_ne_one
   · refine Set.eq_univ_of_forall fun p ↦ Set.mem_iUnion.2 ?_
-    by_cases hp : p.1.2 = 0
+    by_cases hp : p.val.2 = 0
     · exact ⟨false, by simp [hp]⟩
     · exact ⟨true, by simpa using hp⟩
   · intro b
     cases b
-    · refine Or.inl fun p hp ↦ ⟨p.1.1, Subtype.ext (Prod.ext rfl ?_)⟩
-      exact (((mem_cylinderBoundary X).1 p.2).resolve_right (by simpa using hp)).symm
-    · refine Or.inr fun p hp ↦ ⟨p.1.1, Subtype.ext (Prod.ext rfl ?_)⟩
-      exact (((mem_cylinderBoundary X).1 p.2).resolve_left (by simpa using hp)).symm
+    · refine Or.inl fun p hp ↦ ⟨p.val.1, Subtype.ext (Prod.ext rfl ?_)⟩
+      exact (((mem_cylinderBoundary X).1 p.property).resolve_right (by simpa using hp)).symm
+    · refine Or.inr fun p hp ↦ ⟨p.val.1, Subtype.ext (Prod.ext rfl ?_)⟩
+      exact (((mem_cylinderBoundary X).1 p.property).resolve_left (by simpa using hp)).symm
 
 /-- The comparison `Hₙ(X) ⟶ Hₙ(X × ∂I, X)` induced by the top end. -/
 private abbrev cylinderTopComparison (n : ℕ) :
