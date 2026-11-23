@@ -8,6 +8,7 @@ module
 public import TauCeti.Topology.Homotopy.Extension.Basic
 public import Mathlib.Analysis.Convex.Contractible
 public import Mathlib.Analysis.Normed.Module.Convex
+import TauCeti.Analysis.Convex.Contractible
 
 /-!
 # The unit sphere is a closed cofibration in the closed unit ball
@@ -319,8 +320,6 @@ theorem nullhomotopic_iff_exists_extension_closedBall (g : C(sphere (0 : E) 1, Y
       (hK 1 ⟨⟨y, sphere_subset_closedBall y.property⟩, y.property⟩).trans (H.apply_one y)⟩
   · -- The closed ball is contractible, so every map out of it is null-homotopic.
     rintro ⟨G, hG⟩
-    have : ContractibleSpace (closedBall (0 : E) 1) :=
-      (convex_closedBall 0 1).contractibleSpace ⟨0, mem_closedBall_self zero_le_one⟩
     let ι : C(sphere (0 : E) 1, closedBall (0 : E) 1) :=
       ⟨fun y ↦ ⟨y, sphere_subset_closedBall y.property⟩, by fun_prop⟩
     have hg : g = (G.comp (ContinuousMap.id _)).comp ι := by

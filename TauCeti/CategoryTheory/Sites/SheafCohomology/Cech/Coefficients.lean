@@ -74,24 +74,6 @@ variable {C : Type u} [Category.{v} C] [HasFiniteProducts C]
   {ι : Type w} (U : ι → C) (F : A ⥤ B)
   [∀ n : ℕ, PreservesLimitsOfShape (Discrete (Fin (n + 1) → ι)) F]
 
-/-- The degree `n` term of a Čech complex is, up to unfolding, the product of the values of `P`
-on the `(n + 1)`-fold products of members. -/
-private def cechXIso (P : Cᵒᵖ ⥤ A) (n : ℕ) :
-    ((cechComplexFunctor U).obj P).X n ≅
-      ∏ᶜ fun a : Fin (n + 1) → ι ↦ P.obj (op (∏ᶜ fun j ↦ U (a j))) :=
-  Iso.refl _
-
-/-- `cechComplexFunctor_obj_d_comp_π`, stated through `cechXIso`. -/
-@[reassoc]
-private lemma cechComplexFunctor_obj_d_comp_cechXIso_hom_π (P : Cᵒᵖ ⥤ A) (n : ℕ)
-    (k : Fin (n + 2) → ι) :
-    ((cechComplexFunctor U).obj P).d n (n + 1) ≫ (cechXIso U P (n + 1)).hom ≫ Pi.π _ k =
-      ∑ m : Fin (n + 2), (-1 : ℤ) ^ (m : ℕ) • ((cechXIso U P n).hom ≫ Pi.π _ (k ∘ m.succAbove) ≫
-        P.map (Pi.lift fun x ↦ Pi.π (fun j ↦ U (k j)) (m.succAbove x)).op) :=
-  -- `cechXIso` is the identity
-  (_ ≫= Category.id_comp _).trans <| (cechComplexFunctor_obj_d_comp_π U P n k).trans <|
-    Finset.sum_congr rfl fun _ _ ↦ congrArg _ (Category.id_comp _).symm
-
 /-- The degree `n` component of `cechComplexFunctorMapIso`: `F` preserves the product indexed by
 `Fin (n + 1) → ι` which is the degree `n` term of the Čech complex. -/
 private def cechComplexFunctorMapXIso (P : Cᵒᵖ ⥤ A) (n : ℕ) :
@@ -107,16 +89,6 @@ private lemma cechComplexFunctorMapXIso_hom_π (P : Cᵒᵖ ⥤ A) (n : ℕ) (a 
       F.map ((cechXIso U P n).hom ≫ Pi.π _ a) := by
   simp [cechComplexFunctorMapXIso]
 
-/-- `cechComplexFunctor_map_f_π`, stated through `cechXIso`. -/
-@[reassoc]
-private lemma cechComplexFunctor_map_f_cechXIso_hom_π {P Q : Cᵒᵖ ⥤ A} (α : P ⟶ Q) (n : ℕ)
-    (a : Fin (n + 1) → ι) :
-    ((cechComplexFunctor U).map α).f n ≫ (cechXIso U Q n).hom ≫ Pi.π _ a =
-      (cechXIso U P n).hom ≫ Pi.π _ a ≫ α.app (op (∏ᶜ fun j ↦ U (a j))) :=
-  -- `cechXIso` is the identity
-  (_ ≫= Category.id_comp _).trans <| (cechComplexFunctor_map_f_π U P α n a).trans
-    (Category.id_comp _).symm
-
 /-- The components `cechComplexFunctorMapXIso` are natural in the presheaf. -/
 private lemma cechComplexFunctorMapXIso_hom_naturality {P Q : Cᵒᵖ ⥤ A} (α : P ⟶ Q) (n : ℕ) :
     F.map (((cechComplexFunctor U).map α).f n) ≫ (cechComplexFunctorMapXIso U F Q n).hom =
@@ -125,8 +97,8 @@ private lemma cechComplexFunctorMapXIso_hom_naturality {P Q : Cᵒᵖ ⥤ A} (α
   rw [← cancel_mono (cechXIso U (Q ⋙ F) n).hom]
   refine Pi.hom_ext _ _ fun a ↦ ?_
   simp only [Category.assoc]
-  rw [cechComplexFunctorMapXIso_hom_π, ← F.map_comp, cechComplexFunctor_map_f_cechXIso_hom_π,
-    cechComplexFunctor_map_f_cechXIso_hom_π]
+  rw [cechComplexFunctorMapXIso_hom_π, ← F.map_comp, cechComplexFunctor_map_f_comp_cechXIso_hom_π,
+    cechComplexFunctor_map_f_comp_cechXIso_hom_π]
   dsimp only [Functor.comp_obj, Functor.whiskerRight_app]
   rw [cechComplexFunctorMapXIso_hom_π_assoc]
   simp only [Functor.map_comp, Category.assoc]
@@ -172,9 +144,9 @@ image under `F` of the projection onto the factor indexed by `a`. -/
 theorem cechComplexFunctorMapIso_hom_app_f_π (P : Cᵒᵖ ⥤ A) (n : ℕ) (a : Fin (n + 1) → ι) :
     ((cechComplexFunctorMapIso U F).hom.app P).f n ≫ Pi.π _ a =
       F.map (Pi.π (fun a : Fin (n + 1) → ι ↦ P.obj (op (∏ᶜ fun j ↦ U (a j)))) a) :=
-  -- `cechXIso` is the identity
-  (_ ≫= (Category.id_comp _).symm).trans <| (cechComplexFunctorMapXIso_hom_π U F P n a).trans
-    (congrArg F.map (Category.id_comp _))
+  (_ ≫= (cechXIso_hom_π U (P ⋙ F) n a).symm).trans <|
+    (cechComplexFunctorMapXIso_hom_π U F P n a).trans
+      (congrArg F.map (cechXIso_hom_π U P n a))
 
 /-- **`cechComplexFunctorMapIso` commutes with refinement maps.** For a morphism `φ` from the
 family `U` to a family `V`, applying `F` to the map `Č(V, P) ⟶ Č(U, P)` induced by `φ` and then

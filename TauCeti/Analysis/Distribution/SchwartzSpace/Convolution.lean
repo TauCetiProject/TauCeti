@@ -239,6 +239,14 @@ theorem fourier_smulLeftCLM_apply (φ : 𝓢(E, ℂ)) (f : 𝓢(E, F)) (ξ : E) 
     simp only [lsmul_apply]
   · simp [fourier_eq_zero_of_not_completeSpace hF]
 
+/-- The convolution formula `SchwartzMap.fourier_smulLeftCLM_apply` with the frequency of `f` as
+the integration variable: `𝓕 (φ • f) ξ = ∫ y, 𝓕 φ (ξ - y) • 𝓕 f y`. -/
+theorem fourier_smulLeftCLM_apply_eq_integral_sub (φ : 𝓢(E, ℂ)) (f : 𝓢(E, F)) (ξ : E) :
+    𝓕 (smulLeftCLM F (φ : E → ℂ) f) ξ = ∫ y, 𝓕 φ (ξ - y) • 𝓕 f y := by
+  rw [fourier_smulLeftCLM_apply,
+    ← integral_sub_left_eq_self (fun y ↦ 𝓕 φ (ξ - y) • 𝓕 f y) volume ξ]
+  simp only [sub_sub_cancel]
+
 end Bilinear
 
 end SchwartzMap

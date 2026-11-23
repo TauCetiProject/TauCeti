@@ -10,6 +10,7 @@ public import TauCeti.Analysis.Normed.Module.GaussianSum.Cotype
 import Mathlib.MeasureTheory.Integral.Prod
 import Mathlib.Probability.Distributions.Gaussian.Fernique
 import Mathlib.Topology.Instances.RealVectorSpace
+import TauCeti.Analysis.Normed.Module.GaussianSum.Rademacher
 import TauCeti.Analysis.Normed.Module.RademacherSum.Contraction
 import TauCeti.Analysis.Normed.Module.WeakDual.Integral
 import TauCeti.Analysis.Normed.Operator.AbsolutelySumming.Gaussian
@@ -29,16 +30,14 @@ domination to the canonical operator `EuclideanSpace ℝ ι →L[ℝ] Y` associa
 each standard Gaussian coordinate at a threshold `t` with
 `C * (𝔼[g² 1_{|g| > t}])^(1/2) ≤ 1 / 2`, bounds the truncated sum by `t * R₂(y)` (by sign-flip
 invariance and Rademacher contraction) and the tail sum by `(1 / 2) * G₂(y)` (by Pietsch
-domination and Fubini). Absorption yields `G₂(y) ≤ 2 * t * R₂(y)` (Pisier, Lemma 3.8). Choosing
-`t = 4 * C` via `𝔼[g⁴] = 3` gives the explicit bound `G₂(y) ≤ 8 * C * R₂(y)`, and hence Gaussian
-cotype `2` implies Rademacher cotype `2` with constant `8 * C²`.
+domination and Fubini). Absorption yields `G₂(y) ≤ 2 * t * R₂(y)` (Pisier, Lemma 3.8). Combining
+`HasGaussianCotype.gaussianSecondMoment_le` (`G₂(y) ≤ 4 √3 C R₂(y)`) with Gaussian cotype `2`
+gives Rademacher cotype `2` with constant `8 * C²`.
 
 ## Main declarations
 
 * `TauCeti.gaussianSecondMoment_le_two_mul_rademacherSecondMoment`:
   `G₂(y) ≤ 2 * t * R₂(y)` when `C * √(∫_{|r| > t} r² dγ₁) ≤ 1 / 2`.
-* `TauCeti.gaussianSecondMoment_le_eight_mul_rademacherSecondMoment`:
-  `G₂(y) ≤ 8 * C * R₂(y)` under Gaussian cotype `2`.
 * `TauCeti.HasGaussianCotype.hasCotype_two`: Gaussian cotype `2` implies Rademacher cotype `2`
   with constant `8 * C²`.
 
@@ -263,27 +262,21 @@ theorem gaussianSecondMoment_le_two_mul_rademacherSecondMoment
         mul_le_mul_of_nonneg_right ht (gaussianSecondMoment_nonneg y)
     linarith
 
-/-- **Pisier's Gaussian-to-Rademacher comparison (explicit constant).** In a real normed space of
-Gaussian cotype `2` with constant `C`, the Gaussian second moment of every finite family is at most
-`8 * C` times its Rademacher second moment. -/
-theorem gaussianSecondMoment_le_eight_mul_rademacherSecondMoment
-    {ι Y : Type*} [Fintype ι] [DecidableEq ι]
-    [NormedAddCommGroup Y] [NormedSpace ℝ Y]
-    {C : ℝ≥0} (hY : HasGaussianCotype Y 2 C) (y : ι → Y) :
-    gaussianSecondMoment y ≤ 8 * C * rademacherSecondMoment y :=
-  (gaussianSecondMoment_le_two_mul_rademacherSecondMoment hY
-    (Probability.mul_sqrt_setIntegral_sq_tail_four_mul_le C) y).trans_eq (by ring)
-
 /-- Gaussian cotype `2` with constant `C` implies Rademacher cotype `2` with constant `8 * C²`. -/
 theorem HasGaussianCotype.hasCotype_two {Y : Type*} [NormedAddCommGroup Y] [NormedSpace ℝ Y]
     {C : ℝ≥0} (hY : HasGaussianCotype Y 2 C) : HasCotype Y 2 (8 * C ^ 2) := by
   rw [hasCotype_iff]
   intro n y
+  have h3 : √3 ≤ 2 := Real.sqrt_le_iff.2 ⟨by norm_num, by norm_num⟩
+  have hr : 0 ≤ rademacherSecondMoment y := rademacherSecondMoment_nonneg y
   calc
     ‖WithLp.toLp 2 y‖ ≤ C * gaussianSecondMoment y := hY.norm_toLp_le y
+    _ ≤ C * (4 * √3 * C * rademacherSecondMoment y) := by
+      gcongr
+      exact hY.gaussianSecondMoment_le y
     _ ≤ C * (8 * C * rademacherSecondMoment y) := by
       gcongr
-      exact gaussianSecondMoment_le_eight_mul_rademacherSecondMoment hY y
+      linarith
     _ = ((8 * C ^ 2 : ℝ≥0) : ℝ) * rademacherSecondMoment y := by push_cast; ring
 
 end TauCeti

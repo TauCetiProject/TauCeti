@@ -60,7 +60,8 @@ Whether `β` is still a homeomorphism when `χ` is only `C¹` is not treated her
   direction and of `∂_s S`, jointly in both endpoints.
 * `TauCeti.StrictConvexBilliardTable.contDiffAt_nextParam`,
   `TauCeti.StrictConvexBilliardTable.contDiffAt_nextTangential`,
-  `TauCeti.StrictConvexBilliardTable.contDiffOn_nextCollision`: the next-collision map is `C^n`
+  `TauCeti.StrictConvexBilliardTable.contDiffOn_nextCollision`,
+  `TauCeti.StrictConvexBilliardTable.contDiffAt_nextCollision`: the next-collision map is `C^n`
   on the strip when `χ` is `C^(n+1)`.
 * `TauCeti.StrictConvexBilliardTable.nextCollisionPartialDiffeomorph`: the next-collision map as a
   `C^n` diffeomorphism of the strip, with inverse `τ⁻¹ ∘ ι ∘ B ∘ ι`.
@@ -228,6 +229,13 @@ theorem contDiffOn_nextCollision (hn : n ≠ 0) (hχ : ContDiff ℝ (n + 1) χ) 
     funext χ.nextCollision_apply]
   exact ((χ.contDiffAt_nextParam hn hχ hv).prodMk
     (χ.contDiffAt_nextTangential hn hχ hv)).contDiffWithinAt
+
+/-- **Smoothness of the billiard map at a state.** If `χ` is `C^(n+1)` with `n ≠ 0`, the
+next-collision map is `C^n` at every state of the open strip `ℝ × (-1, 1)`. -/
+theorem contDiffAt_nextCollision (hn : n ≠ 0) (hχ : ContDiff ℝ (n + 1) χ) {x : ℝ × ℝ}
+    (hx : x.2 ∈ Ioo (-1) 1) : ContDiffAt ℝ n χ.nextCollision x :=
+  (χ.contDiffOn_nextCollision hn hχ).contDiffAt
+    ((isOpen_univ.prod isOpen_Ioo).mem_nhds ⟨mem_univ _, hx⟩)
 
 /-- The inverse `(t, w) ↦ (s - L, -v)` of the next-collision map, where `(s, v)` is the next
 collision of `(t, -w)`, is `C^n` on the strip when `χ` is `C^(n+1)` with `n ≠ 0`. -/

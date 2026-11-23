@@ -85,6 +85,12 @@ lemma map_map_symm {i : cell C n} {x : X} (hx : x ∈ openCell (C := C) n i) :
     map n i ((map n i).symm x) = x :=
   (map n i).right_inv (by rwa [target_map_eq_openCell])
 
+/-- The inverse of a characteristic map sends a point of the open cell other than its centre to
+a nonzero vector. -/
+lemma map_symm_ne_zero {i : cell C n} {x : X} (hx : x ∈ openCell (C := C) n i)
+    (hb : x ≠ map n i 0) : (map n i).symm x ≠ 0 :=
+  fun h ↦ hb (by rw [← map_map_symm n hx, h])
+
 /-- **The characteristic map of a cell is a homeomorphism from the open unit ball onto the open
 cell.**  Its forward and inverse maps are described by `TauCeti.openCellHomeomorph_apply` and
 `TauCeti.openCellHomeomorph_symm_apply`. -/

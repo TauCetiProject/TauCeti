@@ -37,6 +37,10 @@ order at most `k + 1` of the `uₙ` are bounded on each compact subset of `Ω`, 
 then along a subsequence the `uₙ` converge to a `Cᵏ` map together with their derivatives of order
 at most `k`, locally uniformly on `Ω`. Locally uniform convergence of the derivatives of order `0`
 is that of the maps themselves (`TauCeti.tendstoLocallyUniformlyOn_iteratedFDeriv_zero_iff`).
+
+For `1`-periodic curves on `ℝ`, a bound on the velocities over one period suffices: such curves in
+a compact set are uniformly Lipschitz, so a subsequence converges uniformly on `ℝ` to a continuous
+`1`-periodic curve (`TauCeti.exists_strictMono_tendstoUniformly_of_periodic_of_norm_deriv_le`).
 -/
 
 public section
@@ -221,5 +225,23 @@ theorem exists_strictMono_tendstoLocallyUniformlyOn_iteratedFDeriv [FiniteDimens
     rcases (show j ≤ k ∨ j = k + 1 by omega) with hj | rfl
     · exact (hconv j hj).comp_tendsto hψ.tendsto_atTop
     · exact hlast
+
+/-- **Periodic Arzelà–Ascoli for curves of bounded velocity.** A sequence of `1`-periodic curves
+`u n` in a compact set `K`, whose derivatives `u' n` are bounded on `[0, 1]` uniformly in `n`, has
+a subsequence converging uniformly on `ℝ` to a continuous `1`-periodic curve. -/
+theorem exists_strictMono_tendstoUniformly_of_periodic_of_norm_deriv_le {K : Set F}
+    (hK : IsCompact K) {u u' : ℕ → ℝ → F} (hper : ∀ n, Function.Periodic (u n) 1)
+    (huK : ∀ n t, u n t ∈ K) (hu : ∀ n t, HasDerivAt (u n) (u' n t) t) {B : ℝ}
+    (hB : ∀ n, ∀ t ∈ Icc (0 : ℝ) 1, ‖u' n t‖ ≤ B) :
+    ∃ ψ : ℕ → ℕ, StrictMono ψ ∧ ∃ z : ℝ → F, Function.Periodic z 1 ∧ Continuous z ∧
+      TendstoUniformly (fun n ↦ u (ψ n)) z atTop := by
+  -- The curves are uniformly Lipschitz on `[0, 1]`, by the mean value inequality.
+  refine exists_tendstoUniformly_subseq_of_periodic_of_modulus hK
+    (fun n ↦ continuous_iff_continuousAt.2 fun t ↦ (hu n t).continuousAt) hper huK
+    (ρ := fun h ↦ B * h) (by simpa using (continuous_const_mul B).tendsto 0)
+    fun n t₁ ht₁ t₂ ht₂ h₁₂ ↦ ?_
+  rw [dist_eq_norm]
+  exact norm_image_sub_le_of_norm_deriv_le_segment' (fun t _ ↦ (hu n t).hasDerivWithinAt)
+    (fun t ht ↦ hB n t ⟨ht₁.1.trans ht.1, ht.2.le.trans ht₂.2⟩) t₂ ⟨h₁₂, le_rfl⟩
 
 end TauCeti

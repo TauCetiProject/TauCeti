@@ -5,8 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Symplectic.Cotangent.Bundle.ActionAngle
-public import TauCeti.Geometry.Symplectic.Cotangent.Bundle.LatticeQuotient
+public import TauCeti.Geometry.Symplectic.Cotangent.Bundle.ActionAngle.Basic
+public import TauCeti.Geometry.Symplectic.Cotangent.Bundle.LatticeQuotient.Basic
 
 import TauCeti.Geometry.Manifold.DifferentialForm.Pullback.LocalDiffeomorph
 import TauCeti.Geometry.Manifold.LocalDiffeomorph.Basic
@@ -32,7 +32,7 @@ A covector `ξ` over `x` has coordinates `c(ξ)` in the frame, `ξ = ∑ i, c_i(
 
 The lattice translations shift `c` by integer vectors, which `κ` absorbs since it is
 `p`-periodic in the angles, so `Φ` is well defined on `T*B/Λ`. Its actions are the values of the
-developing map, `Φ(z)(e_i) = a_i(π z)` (`actionAngleChart_snd_apply_single`), and:
+developing map, `Φ(z)(e_i) = a_i(π z)` (`torusActions_actionAngleChart`), and:
 
 * `Φ` is a local diffeomorphism (`isLocalDiffeomorph_actionAngleChart`);
 * `Φ` pulls the canonical form of `T*Tⁿ` back to the symplectic form of `T*B/Λ`
@@ -57,7 +57,7 @@ the Liouville forms are related by `Ψ^* λ = G^* λ + d (p c ⬝ a)`, where `Ψ
 
 ## Main results
 
-* `actionAngleChart_snd_apply_single`: the actions of `Φ(z)` are `a(π z)`.
+* `torusActions_actionAngleChart`: the actions of `Φ(z)` are `a(π z)`.
 * `contMDiff_actionAngleChart`, `isLocalDiffeomorph_actionAngleChart`: `Φ` is a smooth local
   diffeomorphism.
 * `mpullback_actionAngleChart_symplecticForm`: `Φ` is symplectic.
@@ -150,10 +150,10 @@ theorem actionAngleChart_mk_sum_smul (x : B) (c : ι → ℝ) :
 /-- **The actions of the action–angle chart are the values of `a`**: the covector `Φ(z)` takes the
 value `a_i(π z)` on the `i`-th coordinate vector of the torus. -/
 @[simp]
-theorem actionAngleChart_snd_apply_single [DecidableEq ι] (z : LatticeQuotient α hα) (i : ι) :
-    (actionAngleChart hα p a z).snd (Pi.single i 1) = a (proj hα z) i := by
+theorem torusActions_actionAngleChart [DecidableEq ι] (z : LatticeQuotient α hα) :
+    torusActions p (actionAngleChart hα p a z) = a (proj hα z) := by
   obtain ⟨z, rfl⟩ := mk_surjective hα z
-  rw [actionAngleChart_mk, actionAngleCover_snd_apply_single, proj_mk]
+  rw [actionAngleChart_mk, torusActions_actionAngleCover, proj_mk]
 
 /-! ### The cover by frame coordinates -/
 
@@ -389,14 +389,14 @@ theorem actionAngleChart_injective_iff : Injective (actionAngleChart hα p a) �
 /-- **The range of the action–angle chart** is the set of covectors of `T*Tⁿ` whose actions are
 values of the developing map `a`. -/
 theorem range_actionAngleChart [DecidableEq ι] :
-    range (actionAngleChart hα p a) = {z | (fun i ↦ z.snd (Pi.single i 1)) ∈ range a} := by
+    range (actionAngleChart hα p a) = {z | torusActions p z ∈ range a} := by
   refine Subset.antisymm ?_ fun z ⟨x, hx⟩ ↦ ?_
   · rintro _ ⟨z, rfl⟩
-    exact ⟨proj hα z, funext fun i ↦ (actionAngleChart_snd_apply_single hα p a z i).symm⟩
+    exact ⟨proj hα z, (torusActions_actionAngleChart hα p a z).symm⟩
   obtain ⟨⟨θ, J⟩, rfl⟩ := surjective_actionAngleCover p z
   have hJ : J = a x := by
     rw [hx]
-    exact funext fun i ↦ (actionAngleCover_snd_apply_single p (θ, J) i).symm
+    exact (torusActions_actionAngleCover p (θ, J)).symm
   refine ⟨mk hα (frameCover α (-(p⁻¹ • θ), x)), ?_⟩
   rw [frameCover, actionAngleChart_mk_sum_smul, hJ]
   congr 2
@@ -410,7 +410,7 @@ omit [Fact (0 < p)] [FiniteDimensional ℝ E] [T2Space B] [BoundarylessManifold 
 include hα in
 /-- The developing map has injective differential: its differentials, scaled by `p`, span every
 cotangent space. -/
-private theorem injective_mfderiv
+theorem injective_mfderiv
     (hαa : ∀ i x v, SmoothForm.degreeOneEquiv (α i) x v = p * mfderiv I 𝓘(ℝ, ι → ℝ) a x v i)
     (x : B) : Injective (mfderiv I 𝓘(ℝ, ι → ℝ) a x) := by
   refine (injective_iff_map_eq_zero _).2 fun v hv ↦ ?_
