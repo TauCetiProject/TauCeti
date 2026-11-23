@@ -182,42 +182,26 @@ namespace SimpleGraph
 
 variable {V : Type*}
 
-/-- The unit capacity of a vertex cut in a simple graph. Every graph edge crossing the cut
-contributes one, while nonedges and diagonal pairs contribute zero. -/
-noncomputable def unitCutCapacity [Fintype V] (G : SimpleGraph V) (S : Finset V) : ℕ :=
-  TauCeti.pairCutCapacity (G.edgeSet.indicator fun _ ↦ 1) S
+/-- The unit capacity of a vertex cut in a finite simple graph: the number of graph edges
+crossing the cut. -/
+noncomputable def unitCutCapacity [Finite V] (G : SimpleGraph V) (S : Finset V) : ℕ :=
+  (Set.toFinite (G.edgeSet ∩ {e | e.Crosses (S : Set V)})).toFinset.card
+
+/-- Unit cut capacity is the number of actual simple-graph edges crossing the cut. -/
+theorem unitCutCapacity_eq_ncard [Finite V] (G : SimpleGraph V) (S : Finset V) :
+    G.unitCutCapacity S =
+      (G.edgeSet ∩ {e | e.Crosses (S : Set V)}).ncard := by
+  rw [unitCutCapacity]
+  exact (Set.ncard_eq_toFinset_card _ _).symm
 
 /-- The defining pair-capacity formula for the unit cut capacity of a simple graph. -/
 theorem unitCutCapacity_def [Fintype V] (G : SimpleGraph V) (S : Finset V) :
     G.unitCutCapacity S =
-      TauCeti.pairCutCapacity (G.edgeSet.indicator fun _ ↦ 1) S :=
-  (rfl)
-
-/-- The empty cut has unit capacity zero. -/
-@[simp]
-theorem unitCutCapacity_empty [Fintype V] (G : SimpleGraph V) :
-    G.unitCutCapacity ∅ = 0 := by
-  rw [unitCutCapacity_def, TauCeti.pairCutCapacity_empty]
-
-/-- The universal cut has unit capacity zero. -/
-@[simp]
-theorem unitCutCapacity_univ [Fintype V] (G : SimpleGraph V) :
-    G.unitCutCapacity Finset.univ = 0 := by
-  rw [unitCutCapacity_def, TauCeti.pairCutCapacity_univ]
-
-/-- Exchanging the two sides of a cut does not change its unit capacity. -/
-@[simp]
-theorem unitCutCapacity_compl [Fintype V] [DecidableEq V] (G : SimpleGraph V) (S : Finset V) :
-    G.unitCutCapacity Sᶜ = G.unitCutCapacity S := by
-  rw [unitCutCapacity_def, unitCutCapacity_def, TauCeti.pairCutCapacity_compl]
-
-/-- Unit cut capacity is the number of actual simple-graph edges crossing the cut. -/
-theorem unitCutCapacity_eq_ncard [Fintype V] (G : SimpleGraph V) (S : Finset V) :
-    G.unitCutCapacity S =
-      (G.edgeSet ∩ {e | e.Crosses (S : Set V)}).ncard := by
+      TauCeti.pairCutCapacity (G.edgeSet.indicator fun _ ↦ 1) S := by
   classical
-  rw [unitCutCapacity_def, TauCeti.pairCutCapacity_def]
+  rw [TauCeti.pairCutCapacity_def]
   let C := G.edgeSet ∩ {e | e.Crosses (S : Set V)}
+  symm
   calc
     (∑ p : Sym2 V, if p.Crosses (S : Set V) then G.edgeSet.indicator (fun _ ↦ 1) p else 0) =
         #(Finset.univ.filter fun p : Sym2 V ↦ p ∈ C) := by
@@ -231,5 +215,36 @@ theorem unitCutCapacity_eq_ncard [Fintype V] (G : SimpleGraph V) (S : Finset V) 
       congr 1
       ext p
       simp [C]
+    _ = G.unitCutCapacity S := (G.unitCutCapacity_eq_ncard S).symm
+
+/-- The empty cut has unit capacity zero. -/
+@[simp]
+theorem unitCutCapacity_empty [Finite V] (G : SimpleGraph V) :
+    G.unitCutCapacity ∅ = 0 := by
+  rw [unitCutCapacity_eq_ncard, Set.ncard_eq_zero]
+  apply Set.eq_empty_iff_forall_notMem.mpr
+  rintro e ⟨-, he⟩
+  induction e using Sym2.inductionOn with
+  | _ x y => simp at he
+
+/-- The universal cut has unit capacity zero. -/
+@[simp]
+theorem unitCutCapacity_univ [Fintype V] (G : SimpleGraph V) :
+    G.unitCutCapacity Finset.univ = 0 := by
+  rw [unitCutCapacity_def, TauCeti.pairCutCapacity_univ]
+
+/-- Exchanging the two sides of a cut does not change its unit capacity. -/
+@[simp]
+theorem unitCutCapacity_compl [Fintype V] [DecidableEq V] (G : SimpleGraph V) (S : Finset V) :
+    G.unitCutCapacity Sᶜ = G.unitCutCapacity S := by
+  rw [unitCutCapacity_def, unitCutCapacity_def, TauCeti.pairCutCapacity_compl]
+
+/-- Unit cut capacity is a symmetric submodular set function. -/
+theorem isSymmSubmodular_unitCutCapacity [Fintype V] [DecidableEq V]
+    (G : SimpleGraph V) : TauCeti.IsSymmSubmodular G.unitCutCapacity := by
+  rw [show G.unitCutCapacity =
+    TauCeti.pairCutCapacity (G.edgeSet.indicator fun _ ↦ 1) from
+      funext G.unitCutCapacity_def]
+  exact TauCeti.isSymmSubmodular_pairCutCapacity _ (by simp)
 
 end SimpleGraph

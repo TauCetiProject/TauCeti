@@ -239,11 +239,8 @@ nonempty proper vertex sets. -/
 theorem exists_edgeSide_apply_le (hT : IsCutTree f T w) [Nontrivial V] :
     ∃ u v, T.Adj u v ∧ ∀ S : Finset V, S.Nonempty → S ≠ univ →
       f (T.edgeSide u v) ≤ f S := by
-  have hTne : T ≠ ⊥ := by
-    intro h
-    rw [h] at hT
-    exact SimpleGraph.not_preconnected_bot hT.isTree.connected.preconnected
-  obtain ⟨u, v, huv, hmin⟩ := T.exists_minimum_weight_edge hTne w
+  obtain ⟨u, v, huv, hmin, -⟩ :=
+    hT.toIsFlowEquivalentTree.exists_edge_weight_le_pairMinimumValue
   refine ⟨u, v, huv, fun S hS hSuniv ↦ ?_⟩
   obtain ⟨s, hs⟩ := hS
   obtain ⟨t, ht⟩ : ∃ t, t ∉ S := by

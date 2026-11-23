@@ -56,9 +56,8 @@ theorem exists_isUnitCutTree [Fintype V] [Nonempty V] (G : SimpleGraph V) :
     ∃ (T : SimpleGraph V) (w : Sym2 V → ℕ),
       TauCeti.TerminalCut.IsCutTree G.unitCutCapacity T w := by
   classical
-  rw [show G.unitCutCapacity =
-    TauCeti.pairCutCapacity (G.edgeSet.indicator fun _ ↦ 1) from
-      funext G.unitCutCapacity_def]
+  have hcapacity := funext G.unitCutCapacity_def
+  rw [hcapacity]
   apply TauCeti.TerminalCut.exists_isCutTree_pairCutCapacity
   intro x y _
   simp
@@ -69,26 +68,28 @@ namespace TauCeti.TerminalCut.IsFlowEquivalentTree
 
 open SimpleGraph
 
-variable {V : Type*} {G : SimpleGraph V} [Fintype V]
+variable {V : Type*} {G : SimpleGraph V} [Finite V]
 variable {T : SimpleGraph V} {w : Sym2 V → ℕ}
 
-/-- On a unit cut tree of a simple graph, some edge on every nontrivial tree path has weight equal
-to the local edge reachability of its endpoints. -/
+/-- On a unit cut tree of a simple graph, some minimum-weight edge on every nontrivial tree path
+has weight equal to the local edge reachability of its endpoints. -/
 theorem exists_weight_eq_simpleGraph_edgeReachability
     (hT : IsFlowEquivalentTree G.unitCutCapacity T w)
     {s t : V} (hst : s ≠ t) {p : T.Walk s t} (hp : p.IsPath) :
-    ∃ e ∈ p.edges, G.edgeReachability s t = (w e : ℕ∞) := by
+    ∃ e ∈ p.edges, G.edgeReachability s t = (w e : ℕ∞) ∧
+      ∀ e' ∈ p.edges, w e ≤ w e' := by
   obtain ⟨e, he, hwe⟩ := hT.exists_weight_eq hst hp
-  refine ⟨e, he, ?_⟩
+  refine ⟨e, he, ?_, fun e' he' ↦ hwe.trans_le (hT.le_weight hp he')⟩
   rw [G.edgeReachability_eq_pairMinimumValue_unitCutCapacity hst, ← hwe]
 
 /-- Deleting the cut-tree edges of weight below `k` leaves two vertices connected exactly when
-they are equal or are locally `k`-edge-reachable in the original simple graph. -/
+they are locally `k`-edge-reachable in the original simple graph. -/
 theorem reachable_deleteEdges_iff_simpleGraph_edgeReachability
     (hT : IsFlowEquivalentTree G.unitCutCapacity T w) (k : ℕ) {s t : V} :
     (T.deleteEdges {e | w e < k}).Reachable s t ↔
-      s = t ∨ (k : ℕ∞) ≤ G.edgeReachability s t := by
-  rw [hT.reachable_deleteEdges_iff]
+      G.IsEdgeReachable (k : ℕ∞) s t := by
+  rw [hT.reachable_deleteEdges_iff,
+    SimpleGraph.isEdgeReachable_iff_le_edgeReachability]
   by_cases hst : s = t
   · simp [hst]
   · simp only [hst, false_or]

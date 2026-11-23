@@ -262,11 +262,37 @@ def toOfSimpleGraphVertex (x : V) : (Graph.ofSimpleGraph G).vertexSet :=
 theorem toOfSimpleGraphVertex_val (x : V) : (G.toOfSimpleGraphVertex x).val = x :=
   (rfl)
 
+/-- The canonical equivalence between the vertices of a simple graph and the full vertex set of
+its multigraph realization. -/
+def ofSimpleGraphVertexEquiv : V ≃ (Graph.ofSimpleGraph G).vertexSet where
+  toFun := G.toOfSimpleGraphVertex
+  invFun := Subtype.val
+  left_inv := fun _ ↦ rfl
+  right_inv := fun _ ↦ Subtype.ext rfl
+
+@[simp]
+theorem ofSimpleGraphVertexEquiv_apply (x : V) :
+    G.ofSimpleGraphVertexEquiv x = G.toOfSimpleGraphVertex x := by
+  change G.toOfSimpleGraphVertex x = G.toOfSimpleGraphVertex x
+  rfl
+
+@[simp]
+theorem ofSimpleGraphVertexEquiv_symm_apply
+    (x : (Graph.ofSimpleGraph G).vertexSet) :
+    G.ofSimpleGraphVertexEquiv.symm x = x.val := by
+  change x.val = x.val
+  rfl
+
 /-- Include a finite vertex set in the full vertex set of `Graph.ofSimpleGraph G`. -/
 def toOfSimpleGraphFinset (S : Finset V) :
     Finset (Graph.ofSimpleGraph G).vertexSet :=
-  S.map ⟨G.toOfSimpleGraphVertex,
-    fun _ _ h ↦ congrArg Subtype.val h⟩
+  S.map G.ofSimpleGraphVertexEquiv.toEmbedding
+
+/-- Including a finite vertex set is the map of the canonical vertex equivalence. -/
+theorem toOfSimpleGraphFinset_eq_map (S : Finset V) :
+    G.toOfSimpleGraphFinset S = S.map G.ofSimpleGraphVertexEquiv.toEmbedding := by
+  change S.map G.ofSimpleGraphVertexEquiv.toEmbedding = _
+  rfl
 
 @[simp]
 theorem mem_toOfSimpleGraphFinset {S : Finset V} {x : V} :
@@ -293,7 +319,7 @@ theorem toOfSimpleGraphFinset_map_val
   have h :
       (⟨Subtype.val, Subtype.val_injective⟩ :
           (Graph.ofSimpleGraph G).vertexSet ↪ V).trans
-        ⟨G.toOfSimpleGraphVertex, fun _ _ h ↦ congrArg Subtype.val h⟩ =
+        G.ofSimpleGraphVertexEquiv.toEmbedding =
           Function.Embedding.refl _ := by
     ext x
     rfl

@@ -152,22 +152,15 @@ variable {V : Type*}
 
 /-- For distinct vertices, simple-graph edge reachability is the minimum unit cut value, viewed
 in `ℕ∞`. -/
-theorem edgeReachability_eq_pairMinimumValue_unitCutCapacity [Fintype V] (G : SimpleGraph V)
+theorem edgeReachability_eq_pairMinimumValue_unitCutCapacity [Finite V] (G : SimpleGraph V)
     {s t : V} (hst : s ≠ t) :
     G.edgeReachability s t =
       ((TerminalCut.pairMinimumValue G.unitCutCapacity s t : ℕ) : ℕ∞) := by
-  let e : V ≃ V(Graph.ofSimpleGraph G) :=
-    { toFun := fun x ↦ ⟨x, by simp⟩
-      invFun := Subtype.val
-      left_inv := fun _ ↦ rfl
-      right_inv := fun _ ↦ Subtype.ext rfl }
+  let _ := Fintype.ofFinite V
+  let e := G.ofSimpleGraphVertexEquiv
   have hmap (S : Finset V) :
       S.map e.toEmbedding = G.toOfSimpleGraphFinset S := by
-    ext x
-    have hx : x = G.toOfSimpleGraphVertex x.val :=
-      Subtype.ext (G.toOfSimpleGraphVertex_val x.val).symm
-    rw [hx]
-    simp [e]
+    exact (G.toOfSimpleGraphFinset_eq_map S).symm
   have he (S : Finset V) :
       (Graph.ofSimpleGraph G).edgeCutCapacity (fun _ ↦ (1 : ℕ))
           (S.map e.toEmbedding) = G.unitCutCapacity S := by
@@ -178,6 +171,10 @@ theorem edgeReachability_eq_pairMinimumValue_unitCutCapacity [Fintype V] (G : Si
     (Graph.ofSimpleGraph G).edgeReachability_eq_pairMinimumValue (s := e s) (t := e t) hst'
   have hmin := TerminalCut.pairMinimumValue_map G.unitCutCapacity e
     ((Graph.ofSimpleGraph G).edgeCutCapacity fun _ ↦ (1 : ℕ)) he s t
-  simpa [e, Graph.edgeReachability_ofSimpleGraph] using hreach.trans (congrArg (↑· : ℕ → ℕ∞) hmin)
+  rw [G.ofSimpleGraphVertexEquiv_apply, G.ofSimpleGraphVertexEquiv_apply] at hmin
+  rw [Graph.edgeReachability_ofSimpleGraph] at hreach
+  rw [G.ofSimpleGraphVertexEquiv_apply, G.toOfSimpleGraphVertex_val,
+    G.ofSimpleGraphVertexEquiv_apply, G.toOfSimpleGraphVertex_val] at hreach
+  exact hreach.trans (congrArg (↑· : ℕ → ℕ∞) hmin)
 
 end SimpleGraph
