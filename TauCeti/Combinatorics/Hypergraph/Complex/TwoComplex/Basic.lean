@@ -6,7 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Combinatorics.Hypergraph.Complex.Basic
+public import Mathlib.Algebra.BigOperators.Group.Finset.Basic
 public import Mathlib.Data.Finset.Powerset
+public import Mathlib.Data.Fintype.Prod
 public import Mathlib.Data.Nat.Choose.Cast
 import Mathlib.RingTheory.Polynomial.Pochhammer
 import Mathlib.Tactic.IntervalCases
@@ -311,6 +313,80 @@ theorem adj_complete [Fintype V] (u v : V) : (complete V).Adj u v ↔ u ≠ v :=
   · simp [adj_iff_pair_mem_edges, mem_edges_complete, card_pair huv, huv]
 
 end Adjacency
+
+section EdgeEval
+
+/-- Evaluate a pair function `f : V → V → M` on an unoriented edge `e ∈ X.edges` by picking a
+canonical pair of endpoints, returning `0` when `e ∉ X.edges`. Whenever `f` is symmetric on
+adjacent vertex pairs, this does not depend on the chosen endpoint ordering. -/
+noncomputable def edgeEval {M : Type*} [Zero M] (X : TwoComplex V) (f : V → V → M)
+    (e : Finset V) : M := by
+  classical
+  exact if he : e ∈ X.edges then
+    f (X.exists_vertices_of_mem_edges he).choose
+      (X.exists_vertices_of_mem_edges he).choose_spec.choose
+  else 0
+
+/-- Evaluating `edgeEval` on an edge `e ∈ X.edges` via any two distinct endpoints, provided `f` is
+symmetric on adjacent pairs. -/
+theorem edgeEval_of_mem_edges {M : Type*} [Zero M] (X : TwoComplex V) {f : V → V → M}
+    (hf : ∀ u v, X.Adj u v → f v u = f u v) {e : Finset V} (he : e ∈ X.edges) {u v : V}
+    (huv : u ≠ v) (hu : u ∈ e) (hv : v ∈ e) :
+    X.edgeEval f e = f u v := by
+  classical
+  simp only [edgeEval, he, ↓reduceDIte]
+  obtain ⟨hu'v', hu', hv'⟩ := (X.exists_vertices_of_mem_edges he).choose_spec.choose_spec
+  have he₁ :
+      ({(X.exists_vertices_of_mem_edges he).choose,
+        (X.exists_vertices_of_mem_edges he).choose_spec.choose} : Finset V) = e :=
+    eq_of_subset_of_card_le (insert_subset_iff.mpr ⟨hu', singleton_subset_iff.mpr hv'⟩)
+      (by rw [X.edge_card e he, card_pair hu'v'])
+  have he₂ : ({u, v} : Finset V) = e :=
+    eq_of_subset_of_card_le (by simp [insert_subset_iff, hu, hv])
+      (by rw [X.edge_card e he, card_pair huv])
+  have hpair := he₁.trans he₂.symm
+  rw [← coe_inj, coe_pair, coe_pair, Set.pair_eq_pair_iff] at hpair
+  rcases hpair with ⟨h₁, h₂⟩ | ⟨h₁, h₂⟩
+  · rw [h₂, h₁]
+  · rw [h₂, h₁]; exact hf u v (X.adj_of_mem_edges he hu hv huv)
+
+/-- Evaluating `edgeEval` directly on a pair `{u, v} ∈ X.edges`. -/
+@[simp, grind =]
+theorem edgeEval_pair {M : Type*} [Zero M] [DecidableEq V] (X : TwoComplex V) {f : V → V → M}
+    (hf : ∀ u v, X.Adj u v → f v u = f u v) {u v : V} (he : ({u, v} : Finset V) ∈ X.edges) :
+    X.edgeEval f {u, v} = f u v :=
+  X.edgeEval_of_mem_edges hf he ((X.adj_iff_pair_mem_edges u v).mpr he).ne (by simp) (by simp)
+
+@[simp]
+theorem edgeEval_of_notMem_edges {M : Type*} [Zero M] (X : TwoComplex V) (f : V → V → M)
+    {e : Finset V} (he : e ∉ X.edges) : X.edgeEval f e = 0 := by
+  classical simp [edgeEval, he]
+
+theorem edgeEval_nonneg {M : Type*} [Zero M] [Preorder M] (X : TwoComplex V) {f : V → V → M}
+    (hf : ∀ u v, 0 ≤ f u v) (e : Finset V) : 0 ≤ X.edgeEval f e := by
+  classical
+  by_cases he : e ∈ X.edges <;> simp [edgeEval, he, hf]
+
+/-- Summing a function of unoriented edges over positively oriented pairs `u < v` equals summing
+over `X.edges`. -/
+theorem sum_filter_lt_mem_edges [Fintype V] [LinearOrder V] {M : Type*} [AddCommMonoid M]
+    (X : TwoComplex V) (f : Finset V → M) :
+    ∑ p ∈ univ.filter (fun p : V × V => p.1 < p.2 ∧ ({p.1, p.2} : Finset V) ∈ X.edges),
+      f ({p.1, p.2} : Finset V) = ∑ e ∈ X.edges, f e := by
+  refine sum_bij (fun p _ => ({p.1, p.2} : Finset V)) (fun p hp => (mem_filter.mp hp).2.2)
+    ?_ ?_ (fun _ _ => rfl)
+  · rintro ⟨u₁, v₁⟩ hp₁ ⟨u₂, v₂⟩ hp₂ hpair
+    have hlt₁ : u₁ < v₁ := (mem_filter.mp hp₁).2.1
+    have hlt₂ : u₂ < v₂ := (mem_filter.mp hp₂).2.1
+    rw [← coe_inj, coe_pair, coe_pair, Set.pair_eq_pair_iff] at hpair
+    rcases hpair with ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩
+    · rfl
+    · exact (lt_asymm hlt₁ hlt₂).elim
+  · intro e he
+    obtain ⟨u, v, hlt, hset⟩ := X.exists_increasing_of_mem_edges he
+    exact ⟨(u, v), mem_filter.mpr ⟨mem_univ _, hlt, hset ▸ he⟩, hset⟩
+
+end EdgeEval
 
 end TwoComplex
 

@@ -25,10 +25,13 @@ both `Finset`/`Equiv` pair sums and `TauCeti.Cochain` / `TauCeti.h1Err`:
 * **Unequal-degree threshold exactness**
   (`Finset.ciInf_sum_distErr_mul_inv_le_of_le_card_div_add_one`,
   `Finset.ciInf₂_sum_distErr_mul_inv_eq_ciInf_of_le_card_div_add_one`,
-  `Finset.ciInf₂_sum_distErr_mul_inv_eq_ciInf_sum_movedNorm_div_of_le`, and
-  `TauCeti.Cochain.gaugeDistErr_eq_gaugeDist_div_of_le`): on any two-complex `X`, if the
-  equal-degree `movedNorm (Fin n)` gauge distance (`2 ≤ n`) is at most `n * #X.edges / (n + 1)`
-  (`3 * #X.edges / 4` when `n = 3`), then `α.gaugeDistErr = α.gaugeDist (movedNorm (Fin n)) / n`.
+  `Finset.ciInf₂_sum_distErr_mul_inv_eq_ciInf_sum_movedNorm_div_of_le`,
+  `TauCeti.Cochain.gaugeDistErr_eq_ciInf_sum_edgeCost_div_of_le`, and
+  `TauCeti.Cochain.gaugeDistErr_eq_gaugeDist_div_of_le`): on any two-complex `X` (without
+  requiring `V` to be finite or ordered), if the equal-degree `movedNorm (Fin n)` unoriented
+  edge-cost infimum (`2 ≤ n`) is at most `n * #X.edges / (n + 1)` (`3 * #X.edges / 4` when
+  `n = 3`), then `α.gaugeDistErr` equals `1 / n` times that infimum (and
+  `α.gaugeDist (movedNorm (Fin n)) / n` when `[Fintype V] [LinearOrder V]`).
 * **Cross-degree star bound on the complete complex** (`TauCeti.Cochain.card_mul_gaugeDistErr_le`,
   `TauCeti.Cochain.card_div_three_le_defect_div_gaugeDistErr`,
   `TauCeti.card_div_three_le_h1Err_of_exists`, and `TauCeti.card_div_three_le_h1Err`): using the
@@ -413,32 +416,34 @@ namespace Cochain
 
 section CochainThreshold
 
-variable {V : Type*} [Fintype V] [LinearOrder V] {X : TwoComplex V} {n m : ℕ}
+variable {V : Type*} {X : TwoComplex V} {n m : ℕ}
 
 /-- Whenever the equal-degree `costErr` infimum on `X` is at most `#X.edges / (n + 1)`, it is a
 lower bound for the degree-`m` `costErr` infimum in every degree `m : ℕ`. -/
 theorem ciInf_costErr_le_of_le_card_div_add_one (α : Cochain X (Perm (Fin n)))
     (hle : (⨅ β : V → Perm (Fin n), α.costErr β) ≤ (#X.edges : ℝ) / (n + 1)) (m : ℕ) :
     (⨅ β : V → Perm (Fin n), α.costErr β) ≤ ⨅ β : V → Perm (Fin m), α.costErr β := by
-  set E : Finset (V × V) :=
-    univ.filter (fun p : V × V => p.1 < p.2 ∧ ({p.1, p.2} : Finset V) ∈ X.edges)
-  have hcard : #E = X.edges.card := by
-    refine card_bij (fun p _ => ({p.1, p.2} : Finset V)) (fun p hp => (mem_filter.mp hp).2.2)
-      ?_ ?_
-    · rintro ⟨u₁, v₁⟩ hp₁ ⟨u₂, v₂⟩ hp₂ hpair
-      have hlt₁ : u₁ < v₁ := (mem_filter.mp hp₁).2.1
-      have hlt₂ : u₂ < v₂ := (mem_filter.mp hp₂).2.1
-      rw [← coe_inj, coe_pair, coe_pair, Set.pair_eq_pair_iff] at hpair
-      rcases hpair with ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩
-      · rfl
-      · exact (lt_asymm hlt₁ hlt₂).elim
-    · intro e he
-      obtain ⟨u, v, hlt, hset⟩ := X.exists_increasing_of_mem_edges he
-      exact ⟨(u, v), mem_filter.mpr ⟨mem_univ _, hlt, hset ▸ he⟩, hset⟩
-  have hle' : (⨅ β : V → Perm (Fin n),
-      ∑ e ∈ E, distErr (α e.1 e.2) (β e.1 * (β e.2)⁻¹)) ≤ (#E : ℝ) / (n + 1) := by
-    simpa only [E, hcard, costErr_def] using hle
-  simpa only [E, costErr_def] using E.ciInf_sum_distErr_mul_inv_le_of_le_card_div_add_one α hle' m
+  rcases eq_or_ne m n with rfl | hmn
+  · exact le_rfl
+  · refine le_ciInf fun β => hle.trans ?_
+    have hattach :
+        (∑ e ∈ X.edges.attach,
+            distErr
+              (α (X.exists_vertices_of_mem_edges e.property).choose
+                (X.exists_vertices_of_mem_edges e.property).choose_spec.choose)
+              (β (X.exists_vertices_of_mem_edges e.property).choose *
+                (β (X.exists_vertices_of_mem_edges e.property).choose_spec.choose)⁻¹)) =
+          α.costErr β := by
+      rw [costErr_def, ← sum_attach X.edges]
+      refine sum_congr rfl fun e _ => ?_
+      obtain ⟨huv, hu, hv⟩ := (X.exists_vertices_of_mem_edges e.property).choose_spec.choose_spec
+      exact (α.edgeCostErr_of_mem_edges β e.property huv hu hv).symm
+    rw [← hattach]
+    simpa using X.edges.attach.card_div_add_one_le_sum_distErr_of_ne
+      (fun e => α (X.exists_vertices_of_mem_edges e.property).choose
+        (X.exists_vertices_of_mem_edges e.property).choose_spec.choose)
+      (fun e => β (X.exists_vertices_of_mem_edges e.property).choose *
+        (β (X.exists_vertices_of_mem_edges e.property).choose_spec.choose)⁻¹) hmn.symm
 
 /-- When `2 ≤ n` and the equal-degree `costErr` infimum on `X` is at most `#X.edges / (n + 1)`,
 `α.gaugeDistErr` equals the equal-degree `costErr` infimum. -/
@@ -449,17 +454,31 @@ theorem gaugeDistErr_eq_ciInf_costErr_of_le (α : Cochain X (Perm (Fin n))) (hn 
   rw [gaugeDistErr_def]
   exact le_ciInf fun m => α.ciInf_costErr_le_of_le_card_div_add_one hle (m + 2)
 
-/-- When `2 ≤ n` and `α.gaugeDist (movedNorm (Fin n)) ≤ n * #X.edges / (n + 1)`,
-`α.gaugeDistErr` equals `α.gaugeDist (movedNorm (Fin n)) / n`. -/
-theorem gaugeDistErr_eq_gaugeDist_div_of_le (α : Cochain X (Perm (Fin n))) (hn : 2 ≤ n)
-    (hle : α.gaugeDist (movedNorm (Fin n)) ≤ (n : ℝ) * #X.edges / (n + 1)) :
-    α.gaugeDistErr = α.gaugeDist (movedNorm (Fin n)) / n := by
+/-- When `2 ≤ n` and the equal-degree `movedNorm (Fin n)` unoriented edge-sum infimum on `X` is at
+most `n * #X.edges / (n + 1)`, `α.gaugeDistErr` equals `1 / n` times that infimum. -/
+theorem gaugeDistErr_eq_ciInf_sum_edgeCost_div_of_le (α : Cochain X (Perm (Fin n))) (hn : 2 ≤ n)
+    (hle : (⨅ β : V → Perm (Fin n), ∑ e ∈ X.edges, α.edgeCost (movedNorm (Fin n)) β e) ≤
+      (n : ℝ) * #X.edges / (n + 1)) :
+    α.gaugeDistErr =
+      (⨅ β : V → Perm (Fin n), ∑ e ∈ X.edges, α.edgeCost (movedNorm (Fin n)) β e) / n := by
   have : NeZero n := ⟨by omega⟩
   have hn_pos : (0 : ℝ) < n := by positivity
   have hle' : (⨅ β : V → Perm (Fin n), α.costErr β) ≤ (#X.edges : ℝ) / (n + 1) := by
-    rw [α.ciInf_costErr_eq_gaugeDist_div, div_le_iff₀ hn_pos]
+    rw [α.ciInf_costErr_eq_ciInf_sum_edgeCost_div, div_le_iff₀ hn_pos]
     exact hle.trans_eq (by ring)
-  rw [α.gaugeDistErr_eq_ciInf_costErr_of_le hn hle', α.ciInf_costErr_eq_gaugeDist_div]
+  rw [α.gaugeDistErr_eq_ciInf_costErr_of_le hn hle', α.ciInf_costErr_eq_ciInf_sum_edgeCost_div]
+
+/-- When `2 ≤ n` and `α.gaugeDist (movedNorm (Fin n)) ≤ n * #X.edges / (n + 1)`,
+`α.gaugeDistErr` equals `α.gaugeDist (movedNorm (Fin n)) / n`. -/
+theorem gaugeDistErr_eq_gaugeDist_div_of_le [Fintype V] [LinearOrder V]
+    (α : Cochain X (Perm (Fin n))) (hn : 2 ≤ n)
+    (hle : α.gaugeDist (movedNorm (Fin n)) ≤ (n : ℝ) * #X.edges / (n + 1)) :
+    α.gaugeDistErr = α.gaugeDist (movedNorm (Fin n)) / n := by
+  have hle' : (⨅ β : V → Perm (Fin n), ∑ e ∈ X.edges, α.edgeCost (movedNorm (Fin n)) β e) ≤
+      (n : ℝ) * #X.edges / (n + 1) := by
+    simpa only [← α.cost_eq_sum_edges (movedNorm (Fin n)), ← gaugeDist_def] using hle
+  simpa only [← α.cost_eq_sum_edges (movedNorm (Fin n)), ← gaugeDist_def] using
+    α.gaugeDistErr_eq_ciInf_sum_edgeCost_div_of_le hn hle'
 
 end CochainThreshold
 
@@ -600,14 +619,16 @@ end Cochain
 
 section CrossDegreeStarBound
 
-variable {V : Type*} [Fintype V] [LinearOrder V]
+variable {V : Type*} [Fintype V]
 
 /-- The star bound as a lower bound on `h1Err (complete V)`, whenever some cochain of degree at
 least `2` has strictly positive cross-degree gauge distance. -/
 theorem card_div_three_le_h1Err_of_exists
     (hne : ∃ (n : ℕ) (α : Cochain (complete V) (Perm (Fin (n + 2)))), 0 < α.gaugeDistErr) :
-    (Fintype.card V : ℝ) / 3 ≤ h1Err (complete V) :=
-  le_h1Err_of_forall hne fun _ _ hα =>
+    (Fintype.card V : ℝ) / 3 ≤ h1Err (complete V) := by
+  let _ : LinearOrder V :=
+    LinearOrder.lift' (Fintype.equivFin V) (Fintype.equivFin V).injective
+  exact le_h1Err_of_forall_defect hne fun _ _ hα =>
     Cochain.card_div_three_le_defect_div_gaugeDistErr (by omega) hα
 
 /-- Unconditional cross-degree star bound: when `3 ≤ Fintype.card V`,
