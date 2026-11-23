@@ -51,6 +51,11 @@ is its everywhere-defined equivalence. -/
 theorem toPartialDiffeomorph_toPartialEquiv (h : M ≃ₘ^n⟮I, J⟯ N) :
     h.toPartialDiffeomorph.toPartialEquiv = h.toEquiv.toPartialEquiv := (rfl)
 
+/-- Double inversion of a diffeomorphism is the original diffeomorphism. -/
+@[simp]
+theorem symm_symm (h : M ≃ₘ^n⟮I, J⟯ N) : h.symm.symm = h :=
+  ext fun _ ↦ rfl
+
 /-- Pulling back a chart `φ` of the maximal `C^m` atlas of `N'` along a `C^n` diffeomorphism
 `h : M ≃ₘ^n⟮I, I⟯ N'` (`m ≤ n`) produces a chart of the maximal `C^m` atlas of `M`. -/
 theorem trans_mem_maximalAtlas {N' : Type*} [TopologicalSpace N'] [ChartedSpace H N']
