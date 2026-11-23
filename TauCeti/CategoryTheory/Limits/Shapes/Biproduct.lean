@@ -43,7 +43,9 @@ satisfying a predicate `p` is an isomorphism whenever all excluded summands are 
 (`TauCeti.biproductSubtypeIsoOfIsZero`). Reindexing the family of a biproduct descent or lift along
 an equivalence preserves and reflects being an isomorphism
 (`TauCeti.isIso_biproductDesc_iff_of_equiv`, `TauCeti.isIso_biproductLift_iff_of_equiv`). A
-biproduct over an empty index type is zero (`TauCeti.isZero_biproduct_of_isEmpty`). The comparison
+biproduct over an empty index type is zero (`TauCeti.isZero_biproduct_of_isEmpty`), and the
+inclusion of a nonzero summand into an object decomposed as a biproduct is nonzero
+(`TauCeti.biproduct_ι_comp_inv_ne_zero`). The comparison
 isomorphism between the points of two limit bicones of one family carries inclusions to inclusions
 (`CategoryTheory.Limits.Bicone.ι_comp_conePointUniqueUpToIso_hom`).
 An additive functor which
@@ -394,6 +396,18 @@ theorem isZero_biproduct_of_isEmpty {J : Type w} [IsEmpty J] (f : J → C) [HasB
   (IsZero.iff_id_eq_zero _).2 (biproduct.hom_ext' _ _ fun j ↦ isEmptyElim j)
 
 end IsEmpty
+
+section NonzeroSummand
+
+variable {C : Type u} [Category.{v} C] [HasZeroMorphisms C]
+
+/-- The inclusion of a nonzero summand into an object decomposed as a biproduct is nonzero. -/
+theorem biproduct_ι_comp_inv_ne_zero {ι : Type*} {a : ι → C} [HasBiproduct a] {Y : C}
+    (e : Y ≅ ⨁ a) (i : ι) (h : ¬IsZero (a i)) :
+    biproduct.ι a i ≫ e.inv ≠ 0 := fun h' ↦
+  h (.of_mono_eq_zero _ h')
+
+end NonzeroSummand
 
 section SubtypeNe
 

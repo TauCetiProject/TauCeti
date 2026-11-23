@@ -10,6 +10,7 @@ public import Mathlib.CategoryTheory.Adjunction.Limits
 public import Mathlib.CategoryTheory.Preadditive.Biproducts
 public import Mathlib.CategoryTheory.Preadditive.Schur
 public import TauCeti.CategoryTheory.Abelian.Injective.Basic
+public import TauCeti.CategoryTheory.Limits.Shapes.Biproduct
 public import TauCeti.CategoryTheory.Simple.Basic
 
 /-!
@@ -187,7 +188,7 @@ theorem exists_simple_hom_ne_zero {C : Type u} [Category.{v} C] [Abelian C]
     [IsFiniteSemisimpleCategory C] {Y : C} (hY : ¬IsZero Y) :
     ∃ (S : C) (_ : Simple S) (f : S ⟶ Y), f ≠ 0 := by
   obtain ⟨ι, _, a, ha, _, ⟨e⟩⟩ := IsFiniteSemisimpleCategory.exists_biproduct_simples Y
-  exact exists_simple_hom_ne_zero_of_iso_biproduct hY ha e
+  exact exists_simple_hom_ne_zero_of_iso_sigma hY ha (e ≪≫ biproduct.isoCoproduct a)
 
 namespace IsFiniteSemisimpleCategory
 
