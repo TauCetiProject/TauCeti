@@ -6,8 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Data.Finset.Max
-public import Mathlib.Order.GaloisConnection.Defs
-public import Mathlib.Order.Hom.Basic
 
 /-!
 # Adjoints of endpoint-preserving monotone maps on finite linear orders
@@ -72,11 +70,14 @@ theorem galoisConnection_leftAdjoint (f : α →o β) (hf : f ⊤ = ⊤) :
     GaloisConnection (f.leftAdjoint hf) f :=
   leftAdjointFun_gc f hf
 
+/-- Inequality characterization of the left adjoint: `f.leftAdjoint hf y ≤ x ↔ y ≤ f x`. -/
 @[simp]
 theorem leftAdjoint_le_iff (f : α →o β) (hf : f ⊤ = ⊤) {y : β} {x : α} :
     f.leftAdjoint hf y ≤ x ↔ y ≤ f x :=
   f.galoisConnection_leftAdjoint hf y x
 
+/-- The left adjoint of a top-preserving map automatically preserves `⊥` when both orders have
+bottom elements. -/
 @[simp]
 theorem leftAdjoint_bot [OrderBot α] [OrderBot β] (f : α →o β) (hf : f ⊤ = ⊤) :
     f.leftAdjoint hf ⊥ = ⊥ :=
@@ -90,11 +91,14 @@ theorem leftAdjoint_eq_of_galoisConnection {f : α →o β} (hf : f ⊤ = ⊤) {
 
 end LeftAdjoint
 
+/-- The left adjoint of the identity monotone map is the identity. -/
 @[simp]
 theorem leftAdjoint_id {α : Type*} [LinearOrder α] [Fintype α] [OrderTop α] :
     (OrderHom.id : α →o α).leftAdjoint rfl = OrderHom.id :=
   leftAdjoint_eq_of_galoisConnection rfl GaloisConnection.id
 
+/-- Contravariant functoriality of `OrderHom.leftAdjoint`: for top-preserving maps `f` and `g`,
+`(g.comp f).leftAdjoint` equals `(f.leftAdjoint hf).comp (g.leftAdjoint hg)`. -/
 @[simp]
 theorem leftAdjoint_comp {α β γ : Type*} [LinearOrder α] [Fintype α] [OrderTop α]
     [LinearOrder β] [Fintype β] [OrderTop β] [Preorder γ] [OrderTop γ] [DecidableLE γ]
@@ -119,11 +123,14 @@ theorem galoisConnection_rightAdjoint (g : β →o α) (hg : g ⊥ = ⊥) :
     GaloisConnection g (g.rightAdjoint hg) :=
   ((OrderHom.dual g).galoisConnection_leftAdjoint hg).dual
 
+/-- Inequality characterization of the right adjoint: `y ≤ g.rightAdjoint hg x ↔ g y ≤ x`. -/
 @[simp]
 theorem le_rightAdjoint_iff (g : β →o α) (hg : g ⊥ = ⊥) {y : β} {x : α} :
     y ≤ g.rightAdjoint hg x ↔ g y ≤ x :=
   (g.galoisConnection_rightAdjoint hg y x).symm
 
+/-- The right adjoint of a bottom-preserving map automatically preserves `⊤` when both orders have
+top elements. -/
 @[simp]
 theorem rightAdjoint_top [OrderTop α] [OrderTop β] (g : β →o α) (hg : g ⊥ = ⊥) :
     g.rightAdjoint hg ⊤ = ⊤ :=
@@ -137,11 +144,14 @@ theorem rightAdjoint_eq_of_galoisConnection {g : β →o α} (hg : g ⊥ = ⊥) 
 
 end RightAdjoint
 
+/-- The right adjoint of the identity monotone map is the identity. -/
 @[simp]
 theorem rightAdjoint_id {β : Type*} [LinearOrder β] [Fintype β] [OrderBot β] :
     (OrderHom.id : β →o β).rightAdjoint rfl = OrderHom.id :=
   OrderHom.dual.symm_apply_eq.mpr leftAdjoint_id
 
+/-- Contravariant functoriality of `OrderHom.rightAdjoint`: for bottom-preserving maps `g` and `h`,
+`(h.comp g).rightAdjoint` equals `(g.rightAdjoint hg).comp (h.rightAdjoint hh)`. -/
 @[simp]
 theorem rightAdjoint_comp {α β γ : Type*} [LinearOrder α] [Fintype α] [OrderBot α]
     [LinearOrder β] [Fintype β] [OrderBot β] [Preorder γ] [OrderBot γ] [DecidableLE γ]
@@ -157,12 +167,16 @@ section Inverse
 variable {α β : Type*} [LinearOrder α] [Fintype α] [BoundedOrder α]
   [LinearOrder β] [Fintype β] [BoundedOrder β]
 
+/-- On finite bounded linear orders, taking the right adjoint of `f.leftAdjoint hf` (which preserves
+`⊥` by `OrderHom.leftAdjoint_bot`) recovers `f`. -/
 @[simp]
 theorem rightAdjoint_leftAdjoint (f : α →o β) (hf : f ⊤ = ⊤)
     (hbot : f.leftAdjoint hf ⊥ = ⊥ := f.leftAdjoint_bot hf) :
     (f.leftAdjoint hf).rightAdjoint hbot = f :=
   rightAdjoint_eq_of_galoisConnection hbot (f.galoisConnection_leftAdjoint hf)
 
+/-- On finite bounded linear orders, taking the left adjoint of `g.rightAdjoint hg` (which preserves
+`⊤` by `OrderHom.rightAdjoint_top`) recovers `g`. -/
 @[simp]
 theorem leftAdjoint_rightAdjoint (g : β →o α) (hg : g ⊥ = ⊥)
     (htop : g.rightAdjoint hg ⊤ = ⊤ := g.rightAdjoint_top hg) :

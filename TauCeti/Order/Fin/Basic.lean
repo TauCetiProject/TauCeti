@@ -5,9 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Data.Fin.SuccPred
 public import Mathlib.Order.Fin.Basic
-public import Mathlib.Order.GaloisConnection.Defs
 
 /-!
 # Order characterizations on `Fin`
@@ -82,30 +80,23 @@ theorem eq_iff_forall_castSucc_lt_and_le {k : ℕ} {r j : Fin (k + 1)} :
 `i.castSucc.succAbove`. -/
 theorem galoisConnection_predAbove_castSucc_succAbove {n : ℕ} (i : Fin (n + 1)) :
     GaloisConnection i.predAbove i.castSucc.succAbove := by
-  intro x y
-  rcases le_or_gt x i.castSucc with hx | hx
-  · rw [Fin.predAbove_of_le_castSucc i x hx]
-    simp only [Fin.succAbove, Fin.le_def, Fin.lt_def, Fin.val_castSucc, Fin.coe_castPred] at hx ⊢
-    split_ifs <;> simp only [Fin.val_castSucc, Fin.val_succ] at *
-    omega
-  · rw [Fin.predAbove_of_castSucc_lt i x hx]
-    simp only [Fin.succAbove, Fin.le_def, Fin.lt_def, Fin.val_castSucc, Fin.val_pred] at hx ⊢
-    split_ifs <;> simp only [Fin.val_castSucc, Fin.val_succ] at *
-    all_goals omega
+  refine GaloisConnection.monotone_intro (Fin.succAboveOrderEmb i.castSucc).monotone
+    (Fin.predAbove_right_monotone i) (fun y ↦ ?_) fun x ↦ ?_
+  · by_cases hy : y = i.castSucc
+    · subst hy
+      rw [Fin.predAbove_of_le_castSucc i i.castSucc le_rfl, Fin.castPred_castSucc,
+        Fin.succAbove_castSucc_self]
+      exact Fin.castSucc_le_succ i
+    · rw [Fin.succAbove_predAbove hy]
+  · rw [Fin.predAbove_succAbove]
 
 /-- For `i : Fin (n + 1)`, the coface map `i.succ.succAbove` is left adjoint to the codegeneracy
 map `i.predAbove`. -/
 theorem galoisConnection_succ_succAbove_predAbove {n : ℕ} (i : Fin (n + 1)) :
     GaloisConnection i.succ.succAbove i.predAbove := by
   intro y x
-  rcases le_or_gt x i.castSucc with hx | hx
-  · rw [Fin.predAbove_of_le_castSucc i x hx]
-    simp only [Fin.succAbove, Fin.le_def, Fin.lt_def, Fin.val_castSucc, Fin.coe_castPred] at hx ⊢
-    split_ifs <;> simp only [Fin.val_castSucc, Fin.val_succ] at *
-    omega
-  · rw [Fin.predAbove_of_castSucc_lt i x hx]
-    simp only [Fin.succAbove, Fin.le_def, Fin.lt_def, Fin.val_castSucc, Fin.val_pred] at hx ⊢
-    split_ifs <;> simp only [Fin.val_castSucc, Fin.val_succ] at *
-    all_goals omega
+  have h := (galoisConnection_predAbove_castSucc_succAbove i.rev x.rev y.rev).symm
+  rwa [← Fin.rev_succ, ← Fin.rev_succAbove, ← Fin.rev_predAbove,
+    Fin.rev_le_rev, Fin.rev_le_rev] at h
 
 end Fin

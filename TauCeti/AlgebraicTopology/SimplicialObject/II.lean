@@ -9,24 +9,29 @@ public import Mathlib.AlgebraicTopology.SimplicialObject.II
 import Mathlib.Order.Interval.Finset.Fin
 
 /-!
-# Cut-counting and Galois properties of `SimplexCategory.II.map'`
+# Cut-counting and Galois properties of `SimplexCategory.II`
 
-This file supplements `Mathlib.AlgebraicTopology.SimplicialObject.II` with two characterizations of
-Gabriel–Zisman's cut map `SimplexCategory.II.map'`:
+This file supplements `Mathlib.AlgebraicTopology.SimplicialObject.II` with characterizations of
+Gabriel–Zisman's cut map `SimplexCategory.II.map'` and `SimplexCategory.II.map`:
 
-* `SimplexCategory.II.map'_val_eq_card`: `(II.map' α x : ℕ)` equals the cardinality of
+* `OrderHom.iiMap'_val_eq_card`: `(SimplexCategory.II.map' α x : ℕ)` equals the cardinality of
   `{i | (α i).castSucc < x}`.
-* `SimplexCategory.II.map'_le_castSucc_iff`: `II.map' α x ≤ y.castSucc ↔ x ≤ (α y).castSucc`,
-  showing that `II.map' α` is left adjoint to `α` across the `castSucc` embedding.
+* `OrderHom.iiMap'_le_castSucc_iff`:
+  `SimplexCategory.II.map' α x ≤ y.castSucc ↔ x ≤ (α y).castSucc`, showing that
+  `SimplexCategory.II.map' α` is left adjoint to `α` across the `castSucc` embedding.
+* `SimplexCategory.Hom.iiMap_unop_toOrderHom_apply`:
+  `(SimplexCategory.II.map α).unop.toOrderHom t = SimplexCategory.II.map' α.toOrderHom t`.
 -/
 
 public section
 
-namespace SimplexCategory.II
+namespace OrderHom
+
+open SimplexCategory.II
 
 /-- Cut-counting formula for `SimplexCategory.II.map'`: for `α : Fin (k + 1) →o Fin (m + 1)` and
 cut `x : Fin (m + 2)`, `(II.map' α x : ℕ)` counts the indices `i` with `(α i).castSucc < x`. -/
-theorem map'_val_eq_card {k m : ℕ} (α : Fin (k + 1) →o Fin (m + 1)) (x : Fin (m + 2)) :
+theorem iiMap'_val_eq_card {k m : ℕ} (α : Fin (k + 1) →o Fin (m + 1)) (x : Fin (m + 2)) :
     (map' α x : ℕ) = (Finset.univ.filter fun i : Fin (k + 1) ↦ (α i).castSucc < x).card := by
   obtain ⟨y, hy⟩ | hx := Fin.eq_castSucc_or_eq_last (map' α x)
   · rw [hy, Fin.val_castSucc]
@@ -46,7 +51,7 @@ theorem map'_val_eq_card {k m : ℕ} (α : Fin (k + 1) →o Fin (m + 1)) (x : Fi
 
 /-- Galois characterization of `SimplexCategory.II.map'`:
 `II.map' α x ≤ y.castSucc ↔ x ≤ (α y).castSucc`. -/
-theorem map'_le_castSucc_iff {k m : ℕ} (α : Fin (k + 1) →o Fin (m + 1)) (x : Fin (m + 2))
+theorem iiMap'_le_castSucc_iff {k m : ℕ} (α : Fin (k + 1) →o Fin (m + 1)) (x : Fin (m + 2))
     (y : Fin (k + 1)) :
     map' α x ≤ y.castSucc ↔ x ≤ (α y).castSucc := by
   constructor
@@ -60,4 +65,14 @@ theorem map'_le_castSucc_iff {k m : ℕ} (α : Fin (k + 1) →o Fin (m + 1)) (x 
   · intro h
     exact Finset.min'_le (finset α x) y.castSucc ((castSucc_mem_finset_iff α x y).mpr h)
 
-end SimplexCategory.II
+end OrderHom
+
+namespace SimplexCategory.Hom
+
+/-- Underlying monotone-map evaluation of `(SimplexCategory.II.map α).unop`. -/
+@[simp]
+theorem iiMap_unop_toOrderHom_apply {x y : SimplexCategory} (α : x ⟶ y) (t : Fin (y.len + 2)) :
+    (II.map α).unop.toOrderHom t = II.map' α.toOrderHom t :=
+  rfl
+
+end SimplexCategory.Hom
