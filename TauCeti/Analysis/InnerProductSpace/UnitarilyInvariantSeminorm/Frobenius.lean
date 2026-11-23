@@ -34,8 +34,10 @@ calculations: in orthonormal eigenbases, for instance, it turns the coordinate f
 * `LinearMap.trace_adjoint_comp_self_eq_sum_norm_apply_sq`: `tr (A† A) = ∑ᵢ ‖A bᵢ‖²` for every
   orthonormal basis `(bᵢ)`.
 * `LinearMap.trace_adjoint_comp_self_eq_sum_sq_singularValues`: `tr (A† A) = ∑ᵢ σᵢ(A)²`.
-* `LinearMap.frobenius_norm_toMatrix`: the Frobenius norm of the coordinate matrix equals the
-  operator Frobenius seminorm.
+* `LinearMap.frobenius_norm_toMatrix`: the Frobenius norm of the coordinate matrix in
+  orthonormal bases equals the operator Frobenius seminorm.
+* `Matrix.frobenius_toEuclideanLin`: the Frobenius seminorm of `A.toEuclideanLin` equals the
+  scoped Frobenius norm of `A`.
 * `LinearMap.sum_norm_apply_sq_eq_sum_norm_apply_sq`: `∑ᵢ ‖A bᵢ‖²` is independent of the
   orthonormal basis.
 * `LinearMap.sum_sq_norm_apply_orthonormal_le`: compression to an orthonormal family
@@ -194,6 +196,24 @@ theorem frobenius_norm_toMatrix [DecidableEq n] (A : E →ₗ[𝕜] F) (b : Orth
     (c.sum_sq_norm_inner_right (A (b i))).symm
 
 end LinearMap
+
+section Matrix
+
+open scoped Matrix.Norms.Frobenius
+
+/-- The Frobenius seminorm of `A.toEuclideanLin` is the scoped Frobenius norm of `A`. -/
+theorem _root_.Matrix.frobenius_toEuclideanLin {m n : Type*} [Fintype m] [Fintype n]
+    [DecidableEq n] (A : Matrix m n 𝕜) :
+    TauCeti.UnitarilyInvariantSeminorm.frobenius 𝕜
+        (EuclideanSpace 𝕜 n) (EuclideanSpace 𝕜 m) A.toEuclideanLin =
+      ‖A‖ := by
+  classical
+  have h := LinearMap.frobenius_norm_toMatrix A.toEuclideanLin
+    (EuclideanSpace.basisFun n 𝕜) (EuclideanSpace.basisFun m 𝕜)
+  rw [Matrix.toEuclideanLin_eq_toLin_orthonormal, LinearMap.toMatrix_toLin] at h
+  exact h.symm
+
+end Matrix
 
 section SingularValues
 

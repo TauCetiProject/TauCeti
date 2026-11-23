@@ -9,8 +9,6 @@ public import TauCeti.Analysis.InnerProductSpace.HoffmanWielandt.Basic
 public import TauCeti.Analysis.InnerProductSpace.HoffmanWielandt.Singular
 public import TauCeti.Analysis.Matrix.SpectralMeasure.Basic
 
-import TauCeti.Analysis.Matrix.Frobenius
-
 /-!
 # The Hoffman–Wielandt inequality for Hermitian matrices
 

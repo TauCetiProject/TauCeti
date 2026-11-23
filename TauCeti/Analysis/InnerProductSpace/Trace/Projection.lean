@@ -127,10 +127,6 @@ theorem trace_adjoint_sub_starProjection_comp_eq_zero (Δ : E →ₗ[𝕜] F) (W
   set PK : E →ₗ[𝕜] E := K.starProjection.toLinearMap
   have hPW_adj : adjoint PW = PW := W.starProjection_isSymmetric.adjoint_eq
   have hPK_adj : adjoint PK = PK := K.starProjection_isSymmetric.adjoint_eq
-  have hPW_idem : PW ∘ₗ PW = PW := (Module.End.mul_eq_comp PW PW).symm.trans
-    (ContinuousLinearMap.IsIdempotentElem.toLinearMap W.isIdempotentElem_starProjection).eq
-  have hPK_idem : PK ∘ₗ PK = PK := (Module.End.mul_eq_comp PK PK).symm.trans
-    (ContinuousLinearMap.IsIdempotentElem.toLinearMap K.isIdempotentElem_starProjection).eq
   set Δ₂ : E →ₗ[𝕜] F := PW ∘ₗ Δ ∘ₗ PK
   -- `B ↦ P_W B P_K` is self-adjoint for the Hilbert–Schmidt trace pairing.
   have hself (A B : E →ₗ[𝕜] F) :
@@ -143,7 +139,8 @@ theorem trace_adjoint_sub_starProjection_comp_eq_zero (Δ : E →ₗ[𝕜] F) (W
           simp only [adjoint_comp, hPW_adj, hPK_adj, comp_assoc]
   have hidem : PW ∘ₗ Δ₂ ∘ₗ PK = Δ₂ := by
     simp only [Δ₂, comp_assoc]
-    rw [hPK_idem, ← comp_assoc, hPW_idem]
+    rw [Submodule.starProjection_toLinearMap_comp_self, ← comp_assoc,
+      Submodule.starProjection_toLinearMap_comp_self]
   have htr : trace 𝕜 E (adjoint Δ ∘ₗ Δ₂) = trace 𝕜 E (adjoint Δ₂ ∘ₗ Δ₂) := by
     conv_lhs => rw [← hidem, hself]
   rw [map_sub, sub_comp, map_sub, htr, sub_self]

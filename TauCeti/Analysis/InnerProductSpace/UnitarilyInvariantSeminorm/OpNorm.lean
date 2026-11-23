@@ -76,8 +76,8 @@ theorem opNorm_add_eq_max_of_twoSidedOrthogonal [FiniteDimensional 𝕜 F] {A B 
     rw [← LinearMap.orthogonal_ker, Submodule.orthogonal_orthogonal]
   have hA_orth (x : E) : A (Vᗮ.starProjection x) = 0 :=
     LinearMap.mem_ker.mp (hV_orth ▸ Vᗮ.starProjection_apply_mem x)
-  have hBA : B ∘ₗ LinearMap.adjoint A = 0 := by
-    simpa [LinearMap.adjoint_comp] using congrArg LinearMap.adjoint h₂
+  have hBA : B ∘ₗ LinearMap.adjoint A = 0 :=
+    LinearMap.comp_adjoint_eq_zero_comm.mp h₂
   have hB_proj (x : E) : B (V.starProjection x) = 0 := by
     obtain ⟨y, hy⟩ := V.starProjection_apply_mem x
     exact hy ▸ LinearMap.congr_fun hBA y

@@ -677,6 +677,25 @@ theorem adjoint_comp_eq_zero_of_range_le {E₁ E₂ E₃ E₄ : Type*}
   rw [← range_le_ker_iff, ← orthogonal_range] at h ⊢
   exact hT.trans (h.trans (Submodule.orthogonal_le hS))
 
+/-- `X† Y = 0` if and only if `Y† X = 0`. -/
+theorem adjoint_comp_eq_zero_comm {E' : Type*}
+    [NormedAddCommGroup E'] [InnerProductSpace 𝕜 E'] [FiniteDimensional 𝕜 E']
+    {X : E →ₗ[𝕜] F} {Y : E' →ₗ[𝕜] F} :
+    adjoint X ∘ₗ Y = 0 ↔ adjoint Y ∘ₗ X = 0 := by
+  refine ⟨fun h ↦ ?_, fun h ↦ ?_⟩
+  · have h' := congrArg adjoint h
+    rwa [adjoint_comp, adjoint_adjoint, map_zero] at h'
+  · have h' := congrArg adjoint h
+    rwa [adjoint_comp, adjoint_adjoint, map_zero] at h'
+
+/-- `X Y† = 0` if and only if `Y X† = 0`. -/
+theorem comp_adjoint_eq_zero_comm {F' : Type*}
+    [NormedAddCommGroup F'] [InnerProductSpace 𝕜 F'] [FiniteDimensional 𝕜 F']
+    {X : E →ₗ[𝕜] F} {Y : E →ₗ[𝕜] F'} :
+    X ∘ₗ adjoint Y = 0 ↔ Y ∘ₗ adjoint X = 0 := by
+  have h := adjoint_comp_eq_zero_comm (X := adjoint X) (Y := adjoint Y)
+  rwa [adjoint_adjoint, adjoint_adjoint] at h
+
 /-- Passing a finite-dimensional operator to continuous linear maps preserves its adjoint. -/
 theorem toContinuousLinearMap_star {𝕜 E : Type*} [RCLike 𝕜]
     [NormedAddCommGroup E] [InnerProductSpace 𝕜 E] [FiniteDimensional 𝕜 E] [CompleteSpace E]

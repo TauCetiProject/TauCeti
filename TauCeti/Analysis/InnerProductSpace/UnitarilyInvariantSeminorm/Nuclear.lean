@@ -188,9 +188,9 @@ theorem exists_nuclear_le_one_trace_adjoint_comp_eq_opNorm (A : E →ₗ[𝕜] F
           (InnerProductSpace.rankOne 𝕜
             (LinearMap.adjoint A (A.leftSingularVector i₀))
             (A.rightSingularBasis i₀)).toLinearMap := by
-        rw [← LinearMap.coe_toContinuousLinearMap (LinearMap.adjoint A),
-          ← ContinuousLinearMap.toLinearMap_comp, InnerProductSpace.comp_rankOne]
-        rfl
+        nth_rw 1 [← LinearMap.coe_toContinuousLinearMap (LinearMap.adjoint A)]
+        rw [← ContinuousLinearMap.toLinearMap_comp, InnerProductSpace.comp_rankOne,
+          LinearMap.coe_toContinuousLinearMap']
       rw [hcomp]
       simp only [InnerProductSpace.trace_rankOne, A.adjoint_leftSingularVector i₀,
         inner_smul_right, orthonormal_iff_ite.mp A.rightSingularBasis.orthonormal i₀ i₀, ↓reduceIte,
@@ -232,15 +232,15 @@ theorem nuclear_add_of_twoSidedOrthogonal {A B : E →ₗ[𝕜] F}
     LinearMap.adjoint_comp_eq_zero_of_range_le h₁ hU_rng hV_rng
   have hUV₂ : U ∘ₗ LinearMap.adjoint V = 0 := by
     have h₂' : LinearMap.adjoint (LinearMap.adjoint A) ∘ₗ LinearMap.adjoint B = 0 := by
-      simpa only [LinearMap.adjoint_adjoint] using h₂
-    simpa only [LinearMap.adjoint_adjoint] using
+      rwa [LinearMap.adjoint_adjoint]
+    have hUV₂' : LinearMap.adjoint (LinearMap.adjoint U) ∘ₗ LinearMap.adjoint V = 0 :=
       LinearMap.adjoint_comp_eq_zero_of_range_le h₂' hU_adj_rng hV_adj_rng
+    rwa [LinearMap.adjoint_adjoint] at hUV₂'
   have hUB : LinearMap.adjoint U ∘ₗ B = 0 :=
     LinearMap.adjoint_comp_eq_zero_of_range_le h₁ hU_rng le_rfl
-  have hVA : LinearMap.adjoint V ∘ₗ A = 0 := by
-    have h₁' : LinearMap.adjoint B ∘ₗ A = 0 := by
-      simpa [LinearMap.adjoint_comp] using congrArg LinearMap.adjoint h₁
-    exact LinearMap.adjoint_comp_eq_zero_of_range_le h₁' hV_rng le_rfl
+  have hVA : LinearMap.adjoint V ∘ₗ A = 0 :=
+    LinearMap.adjoint_comp_eq_zero_of_range_le
+      (LinearMap.adjoint_comp_eq_zero_comm.mp h₁) hV_rng le_rfl
   have hUV_norm : opNorm 𝕜 E F (U + V) ≤ 1 := by
     rw [opNorm_add_eq_max_of_twoSidedOrthogonal hUV₁ hUV₂]
     exact max_le hU_norm hV_norm
@@ -308,8 +308,8 @@ theorem nuclear_add_normalPart_sub_le_nuclear_add (Θ Δ : E →ₗ[𝕜] F) :
   simpa only [sub_add_cancel] using
     nuclear_add_sub_le_nuclear_add_of_twoSidedOrthogonal
       (Δ₁ := Δ - Θ.normalPart Δ)
-      (LinearMap.adjoint_comp_normalPart Θ Δ)
-      (LinearMap.comp_adjoint_normalPart Θ Δ)
+      (LinearMap.adjoint_comp_normalPart_eq_zero Θ Δ)
+      (LinearMap.comp_adjoint_normalPart_eq_zero Θ Δ)
 
 /-- **Wainwright's low-rank tangent–normal decomposition**: if `rank Θ ≤ r`, then every
 perturbation `Δ` splits as `Δ = Δ₁ + Δ₂` where `Δ₁` has rank at most `2 r`, `Δ₂` is two-sided
@@ -334,8 +334,8 @@ theorem exists_lowRank_decomposition {r : ℕ} {Θ : E →ₗ[𝕜] F}
     gcongr
   exact ⟨Δ₁, Δ₂, sub_add_cancel Δ Δ₂,
     (Θ.finrank_range_sub_normalPart_le Δ).trans (Nat.mul_le_mul_left 2 hΘ),
-    LinearMap.adjoint_comp_normalPart Θ Δ,
-    LinearMap.comp_adjoint_normalPart Θ Δ,
+    LinearMap.adjoint_comp_normalPart_eq_zero Θ Δ,
+    LinearMap.comp_adjoint_normalPart_eq_zero Θ Δ,
     Θ.trace_adjoint_sub_normalPart_comp_normalPart_eq_zero Δ,
     nuclear_add_normalPart_sub_le_nuclear_add Θ Δ, hnuc⟩
 
