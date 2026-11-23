@@ -61,7 +61,9 @@ For a scalar symbol `a`, the same argument runs once on all tempered distributio
 * `TauCeti.Symbol.memBesov_smulLeftCLM_of_memBesov_quantizeTempered`: interior regularity on the
   Besov scale, for all `1 ≤ p, q ≤ ∞`: if `u ∈ B^r_{p,q}` and `Op(c) u ∈ B^s_{p,q}`, then
   `ψ u ∈ B^{s + m}_{p,q}`, by the Besov mapping of symbols with uniform estimates
-  (`TemperedDistribution.MemBesov.quantizeTempered`).
+  (`TemperedDistribution.MemBesov.quantizeTempered`). For an elliptic scalar symbol and a scalar
+  tempered distribution `u`, the hypothesis `u ∈ B^r_{p,q}` can be dropped
+  (`TauCeti.Symbol.IsEllipticAbove.memBesov_smulLeftCLM_of_memBesov_quantizeTempered`).
 
 ## The local parametrix
 
@@ -441,7 +443,9 @@ variable {φ : ContDiffBump (0 : CoordinateSpace n)} {p q : ℝ≥0∞} [Fact (1
 scalar symbol `a` of order `m`, `1 ∼ ∑ₖ sharpTerm b a k`, let `ψ` be a compactly supported Schwartz
 function, and `c` a symbol with compact spatial support which agrees with `a` at all positions near
 the support of `ψ`. If the tempered distribution `u` lies in `B^r_{p,q}` and `Op(c) u` lies in
-`B^s_{p,q}`, then `ψ u ∈ B^{s + m}_{p,q}`. -/
+`B^s_{p,q}`, then `ψ u ∈ B^{s + m}_{p,q}`. For a scalar symbol `a` elliptic above some radius
+and a scalar tempered distribution `u`, the hypothesis `u ∈ B^r_{p,q}` can be dropped
+(`TauCeti.Symbol.IsEllipticAbove.memBesov_smulLeftCLM_of_memBesov_quantizeTempered`). -/
 theorem memBesov_smulLeftCLM_of_memBesov_quantizeTempered [CompleteSpace F]
     (hab : IsAsymptoticSum (m := fun k : ℕ ↦ -m + m - k)
       (inclusion (by simp) (const (.id ℂ ℂ))) (b.sharpTerm a))
