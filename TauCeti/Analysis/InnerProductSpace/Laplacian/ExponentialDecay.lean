@@ -524,10 +524,28 @@ private theorem laplacian_cosh_mul_inner_sub (c : ℝ) {θ : E} (hθ : ‖θ‖ 
     Real.deriv_sinh, hθ, one_pow, one_smul, smul_eq_mul]
 
 omit [FiniteDimensional ℝ E] in
+/-- The plane wave `cosh (c ⟪θ, z - x⟫)` is `C²`. -/
+private theorem contDiff_cosh_mul_inner_sub (c : ℝ) (θ x : E) :
+    ContDiff ℝ 2 (fun z ↦ Real.cosh (c * ⟪θ, z - x⟫_ℝ)) :=
+  -- `fun_prop` has no rules for the inner product, so the composition is assembled by hand.
+  Real.contDiff_cosh.comp
+    (contDiff_const.mul (contDiff_const.inner ℝ (contDiff_id.sub contDiff_const)))
+
+/-- A sum of plane waves `∑_θ cosh (c ⟪θ, z - x⟫)` along unit vectors `θ` is an eigenfunction of
+`Δ` with eigenvalue `c²`. -/
+private theorem laplacian_sum_cosh_mul_inner_sub {S : Finset E} (hS : ∀ θ ∈ S, ‖θ‖ = 1) (c : ℝ)
+    (x y : E) :
+    Δ (fun z ↦ ∑ θ ∈ S, Real.cosh (c * ⟪θ, z - x⟫_ℝ)) y =
+      c ^ 2 * ∑ θ ∈ S, Real.cosh (c * ⟪θ, y - x⟫_ℝ) := by
+  rw [laplacian_fun_sum (f := fun θ z ↦ Real.cosh (c * ⟪θ, z - x⟫_ℝ)) fun θ _ ↦
+    (contDiff_cosh_mul_inner_sub c θ x).contDiffAt, Finset.mul_sum]
+  exact Finset.sum_congr rfl fun θ hθ ↦ laplacian_cosh_mul_inner_sub c (hS θ hθ) x y
+
+omit [FiniteDimensional ℝ E] in
 /-- On the sphere `‖y - x‖ = R`, the sum of the plane waves `cosh (c ⟪θ, y - x⟫)` over directions
 `θ` as in `exists_finset_forall_exists_le_inner` is at least `exp (κ c R) / 2`. -/
 private theorem exp_div_two_le_sum_cosh_mul_inner_sub {S : Finset E} {κ : ℝ}
-    (hS : ∀ v : E, ‖v‖ = 1 → ∃ θ ∈ S, max κ 0 ≤ ⟪θ, v⟫_ℝ) {x y : E} {R c : ℝ} (hR : 0 < R)
+    (hS : ∀ v : E, ‖v‖ = 1 → ∃ θ ∈ S, κ ≤ ⟪θ, v⟫_ℝ) {x y : E} {R c : ℝ} (hR : 0 < R)
     (hc : 0 ≤ c) (hy : y ∈ sphere x R) :
     Real.exp (κ * c * R) / 2 ≤ ∑ θ ∈ S, Real.cosh (c * ⟪θ, y - x⟫_ℝ) := by
   have hyR : ‖y - x‖ = R := by simpa [dist_eq_norm] using hy
@@ -536,7 +554,7 @@ private theorem exp_div_two_le_sum_cosh_mul_inner_sub {S : Finset E} {κ : ℝ}
   rw [real_inner_smul_right, le_inv_mul_iff₀ hR] at hθ
   -- The plane wave along `θ` alone is at least `exp (κ c R) / 2`.
   have h1 : κ * c * R ≤ c * ⟪θ, y - x⟫_ℝ := by
-    nlinarith [le_max_left κ 0, mul_nonneg hc hR.le, mul_le_mul_of_nonneg_left hθ hc]
+    linarith [mul_le_mul_of_nonneg_left hθ hc]
   have h2 : Real.exp (c * ⟪θ, y - x⟫_ℝ) / 2 ≤ Real.cosh (c * ⟪θ, y - x⟫_ℝ) := by
     rw [Real.cosh_eq]
     linarith [Real.exp_pos (-(c * ⟪θ, y - x⟫_ℝ))]
@@ -562,53 +580,42 @@ theorem exists_forall_le_mul_mul_exp_of_sq_mul_le_laplacian {κ : ℝ} (hκ : κ
       ContinuousOn u (closedBall x R) → (∀ y ∈ ball x R, 0 < u y → ContDiffAt ℝ 2 u y) →
       (∀ y ∈ ball x R, 0 < u y → c ^ 2 * u y ≤ Δ u y) →
       (∀ y ∈ sphere x R, u y ≤ M) → u x ≤ N * M * Real.exp (-(κ * c * R)) := by
-  obtain ⟨S, hSunit, hS⟩ := exists_finset_forall_exists_le_inner (F := E) (max_lt hκ one_pos)
+  obtain ⟨S, hSunit, hS⟩ := exists_finset_forall_exists_le_inner (F := E) hκ
   refine ⟨2 * (S.card + 1), by positivity, fun u x R c M hR hc hM hcont hcd hsub hbdry ↦ ?_⟩
   rcases hR.eq_or_lt with rfl | hR
   · have := hbdry x (by simp)
     rw [mul_zero, neg_zero, Real.exp_zero, mul_one]
     nlinarith
-  -- The barrier `g = A ∑_θ cosh (c ⟪θ, y - x⟫)`, with `A = 2 M exp (-κ c R)`.
+  -- The barrier `A • w`, with `w = ∑_θ cosh (c ⟪θ, y - x⟫)` and `A = 2 M exp (-κ c R)`.
   set A := 2 * M * Real.exp (-(κ * c * R)) with hA
   have hA0 : 0 ≤ A := by positivity
   set w : E → ℝ := fun y ↦ ∑ θ ∈ S, Real.cosh (c * ⟪θ, y - x⟫_ℝ) with hw
-  have hθcd (θ y : E) : ContDiffAt ℝ 2 (fun z ↦ Real.cosh (c * ⟪θ, z - x⟫_ℝ)) y :=
-    (Real.contDiff_cosh.comp (contDiff_const.mul
-      (contDiff_const.inner ℝ (contDiff_id.sub contDiff_const)))).contDiffAt
-  have hwcd (y : E) : ContDiffAt ℝ 2 w y := ContDiffAt.sum fun θ _ ↦ hθcd θ y
+  have hw2 : ContDiff ℝ 2 w := ContDiff.sum fun θ _ ↦ contDiff_cosh_mul_inner_sub c θ x
+  have hAw : ContDiff ℝ 2 (A • w) := hw2.const_smul A
   have hw0 (y : E) : 0 ≤ w y := Finset.sum_nonneg fun θ _ ↦ (Real.cosh_pos _).le
-  have hlap (y : E) : Δ (A • w) y = c ^ 2 * (A • w) y := by
-    rw [laplacian_smul A (hwcd y), hw, laplacian_fun_sum
-      (f := fun θ z ↦ Real.cosh (c * ⟪θ, z - x⟫_ℝ)) fun θ _ ↦ hθcd θ y]
-    simp only [Pi.smul_apply, smul_eq_mul, Finset.mul_sum]
-    refine Finset.sum_congr rfl fun θ hθ ↦ ?_
-    rw [laplacian_cosh_mul_inner_sub c (hSunit θ hθ)]
-    ring
   have hint : interior (closedBall x R) = ball x R := interior_closedBall x hR.ne'
   -- The maximum principle above `0` for `u - A • w`, which is positive only where `u` is.
   have hpos {y : E} (hy : 0 < (u - A • w) y) : 0 < u y := by
     rw [Pi.sub_apply, Pi.smul_apply, smul_eq_mul] at hy
     linarith [mul_nonneg hA0 (hw0 y)]
   have hle := le_of_laplacian_nonneg_of_lt_le_frontier (f := u - A • w) (m := 0)
-    (isCompact_closedBall x R)
-    (hcont.sub fun y _ ↦ ((hwcd y).const_smul A).continuousAt.continuousWithinAt)
-    (fun y hy hy0 ↦ (hcd y (hint ▸ hy) (hpos hy0)).sub ((hwcd y).const_smul A))
+    (isCompact_closedBall x R) (hcont.sub hAw.continuous.continuousOn)
+    (fun y hy hy0 ↦ (hcd y (hint ▸ hy) (hpos hy0)).sub hAw.contDiffAt)
     (fun y hy hy0 ↦ by
       have hy' : y ∈ ball x R := hint ▸ hy
       have h2 := mul_nonneg (sq_nonneg c) hy0.le
       rw [Pi.sub_apply, mul_sub] at h2
-      have hAw : ContDiffAt ℝ 2 (A • w) y := (hwcd y).const_smul A
-      rw [(hcd y hy' (hpos hy0)).laplacian_sub hAw, hlap]
+      rw [(hcd y hy' (hpos hy0)).laplacian_sub hAw.contDiffAt, laplacian_smul A hw2.contDiffAt,
+        laplacian_sum_cosh_mul_inner_sub hSunit]
+      simp only [hw, Pi.smul_apply, smul_eq_mul] at h2 ⊢
       linarith [hsub y hy' (hpos hy0)])
     (fun y hy ↦ by
       rw [frontier_closedBall x hR.ne'] at hy
       rw [Pi.sub_apply, sub_nonpos]
-      have hexp : Real.exp (-(κ * c * R)) * Real.exp (κ * c * R) = 1 := by
-        rw [← Real.exp_add, neg_add_cancel, Real.exp_zero]
       calc u y ≤ M := hbdry y hy
         _ = A * (Real.exp (κ * c * R) / 2) := by
-          rw [hA, show 2 * M * Real.exp (-(κ * c * R)) * (Real.exp (κ * c * R) / 2) =
-            M * (Real.exp (-(κ * c * R)) * Real.exp (κ * c * R)) by ring, hexp, mul_one]
+          rw [hA, Real.exp_neg]
+          field_simp
         _ ≤ (A • w) y := mul_le_mul_of_nonneg_left
           (exp_div_two_le_sum_cosh_mul_inner_sub hS hR hc hy) hA0)
     (mem_closedBall_self hR.le)

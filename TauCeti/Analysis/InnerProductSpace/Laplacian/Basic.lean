@@ -13,8 +13,10 @@ public import Mathlib.Analysis.Normed.Affine.Isometry
 public import Mathlib.Analysis.SpecialFunctions.Log.Basic
 public import TauCeti.Analysis.Matrix.EuclideanLin
 import Mathlib.Analysis.SpecialFunctions.Log.Deriv
+import TauCeti.Analysis.Calculus.FDeriv.Comp
 import TauCeti.Analysis.Calculus.FDeriv.ContinuousLinearMap
 import TauCeti.Analysis.Calculus.SecondDerivative
+import TauCeti.Analysis.InnerProductSpace.Calculus
 import TauCeti.Analysis.Normed.Operator.Basic
 
 /-!
@@ -699,28 +701,6 @@ theorem _root_.ContDiffAt.laplacian_comp {F : ℝ → ℝ} {q : E → ℝ} {x : 
     congrFun (laplacian_eq_iteratedFDeriv_orthonormalBasis q b) x, hgrad]
   simp_rw [hterm, Finset.sum_add_distrib, ← Finset.mul_sum]
 
-omit [FiniteDimensional ℝ E] in
-/-- The derivative of a plane wave `z ↦ g ⟪θ, z⟫` along a nonzero vector `θ` is
-`v ↦ ⟪θ, v⟫ • g' ⟪θ, y⟫`, with no differentiability hypothesis on `g`: the plane wave is
-differentiable at `y` exactly when `g` is differentiable at `⟪θ, y⟫`. -/
-private theorem fderiv_comp_inner (g : ℝ → F) {θ : E} (hθ : θ ≠ 0) (y : E) :
-    fderiv ℝ (fun z ↦ g ⟪θ, z⟫_ℝ) y = (innerSL ℝ θ).smulRight (deriv g ⟪θ, y⟫_ℝ) := by
-  by_cases hd : DifferentiableAt ℝ g ⟪θ, y⟫_ℝ
-  · refine (hd.hasFDerivAt.comp y (innerSL ℝ θ).hasFDerivAt).fderiv.trans ?_
-    ext v
-    simp [fderiv_eq_smul_deriv]
-  -- Otherwise neither side is differentiable: `g` is the plane wave along an affine section.
-  have hn : ¬ DifferentiableAt ℝ (fun z ↦ g ⟪θ, z⟫_ℝ) y := fun hf ↦ hd <| by
-    have hA : (fun t : ℝ ↦ y + (t - ⟪θ, y⟫_ℝ) • (‖θ‖ ^ 2)⁻¹ • θ) ⟪θ, y⟫_ℝ = y := by simp
-    have hc := (hA ▸ hf).comp ⟪θ, y⟫_ℝ (by fun_prop :
-      DifferentiableAt ℝ (fun t : ℝ ↦ y + (t - ⟪θ, y⟫_ℝ) • (‖θ‖ ^ 2)⁻¹ • θ) ⟪θ, y⟫_ℝ)
-    convert hc using 1
-    funext t
-    simp [inner_add_right, inner_smul_right, hθ]
-  rw [fderiv_zero_of_not_differentiableAt hn, deriv_zero_of_not_differentiableAt hd]
-  ext v
-  simp
-
 /-- **The Laplacian of a plane wave.** For a vector `θ` and a function `g : ℝ → F`, the function
 `z ↦ g ⟪θ, z⟫`, constant on the hyperplanes orthogonal to `θ`, has Laplacian `‖θ‖² g'' (⟪θ, y⟫)`
 at `y`. For instance `cosh (c ⟪θ, z⟫)` with `‖θ‖ = 1` is an eigenfunction of `Δ` with eigenvalue
@@ -730,20 +710,15 @@ theorem laplacian_comp_inner (g : ℝ → F) (θ y : E) :
   rcases eq_or_ne θ 0 with rfl | hθ
   · simp
   set Ψ := ContinuousLinearMap.smulRightL ℝ ℝ ℝ E F (innerSL ℝ θ)
-  have hD : fderiv ℝ (fun z ↦ g ⟪θ, z⟫_ℝ) = fun z ↦ Ψ (deriv g ⟪θ, z⟫_ℝ) :=
-    funext (fderiv_comp_inner g hθ)
+  have hD : fderiv ℝ (fun z ↦ g ⟪θ, z⟫_ℝ) = fun z ↦ Ψ (deriv g ⟪θ, z⟫_ℝ) := by
+    funext z
+    rw [fderiv_comp_inner, ContinuousLinearMap.smulRightL_apply_apply]
   -- `Ψ` has the left inverse given by evaluation at `θ / ‖θ‖²`, so it commutes with `fderiv`.
-  have hD2 : fderiv ℝ (fun z ↦ Ψ (deriv g ⟪θ, z⟫_ℝ)) y =
-      Ψ.comp (fderiv ℝ (fun z ↦ deriv g ⟪θ, z⟫_ℝ) y) := by
-    by_cases hd : DifferentiableAt ℝ (fun z ↦ deriv g ⟪θ, z⟫_ℝ) y
-    · exact (Ψ.hasFDerivAt.comp y hd.hasFDerivAt).fderiv
-    have hn : ¬ DifferentiableAt ℝ (fun z ↦ Ψ (deriv g ⟪θ, z⟫_ℝ)) y := fun hf ↦ hd <| by
-      convert hf.clm_apply (differentiableAt_const ((‖θ‖ ^ 2)⁻¹ • θ)) using 1
-      funext z
-      simp [Ψ, hθ]
-    rw [fderiv_zero_of_not_differentiableAt hn, fderiv_zero_of_not_differentiableAt hd,
-      ContinuousLinearMap.comp_zero]
-  rw [laplacian_eq_traceL, traceL_apply, hD, hD2, fderiv_comp_inner _ hθ]
+  have hΨ : Function.LeftInverse (ContinuousLinearMap.apply ℝ F ((‖θ‖ ^ 2)⁻¹ • θ)) Ψ :=
+    fun a ↦ by simp [Ψ, hθ]
+  have hD2 := Ψ.fderiv_comp_left_of_leftInverse _ hΨ (fun z ↦ deriv g ⟪θ, z⟫_ℝ) y
+  rw [Function.comp_def] at hD2
+  rw [laplacian_eq_traceL, traceL_apply, hD, hD2, fderiv_comp_inner]
   simp only [ContinuousLinearMap.comp_apply, ContinuousLinearMap.smulRight_apply,
     innerSL_apply_apply, Ψ, ContinuousLinearMap.smulRightL_apply_apply,
     smul_smul, ← Finset.sum_smul]
