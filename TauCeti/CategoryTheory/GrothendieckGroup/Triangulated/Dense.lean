@@ -93,7 +93,7 @@ namespace TauCeti
 
 open CategoryTheory CategoryTheory.Limits CategoryTheory.Pretriangulated ZeroObject
 
-universe w w' v u
+universe w w' w'' v u
 
 variable {C : Type u} [Category.{v} C] [Preadditive C] [HasZeroObject C] [HasShift C ℤ]
   [∀ n : ℤ, (shiftFunctor C n).Additive] [Pretriangulated C]
@@ -135,6 +135,15 @@ theorem fromK0_comp_map_ι (A : ObjectProperty C) [A.IsTriangulated] [A.IsClosed
     (fromK0 A hdense).comp (TriangulatedK0.map A.ι) = 0 := by
   ext X
   simp [X.property]
+
+/-- Evaluating `TauCeti.StableClasses.fromK0` on the image of `TriangulatedK0.map A.ι` gives
+`0`. -/
+@[simp]
+theorem fromK0_map_ι (A : ObjectProperty C) [A.IsTriangulated] [A.IsClosedUnderIsomorphisms]
+    [EssentiallySmall.{w'} A.FullSubcategory] (hdense : A.retractClosure = ⊤)
+    (x : TriangulatedK0 A.FullSubcategory) :
+    fromK0 A hdense (TriangulatedK0.map A.ι x) = 0 :=
+  DFunLike.congr_fun (fromK0_comp_map_ι A hdense) x
 
 /-- **Kernel of `TauCeti.StableClasses.fromK0`**: an element of `TriangulatedK0 C` has zero stable
 class modulo a strictly full dense triangulated subcategory `A` if and only if it lies in the range
@@ -381,17 +390,37 @@ theorem range_map_ι_classSubcategory
     [EssentiallySmall.{w'} (classSubcategory H).FullSubcategory] :
     (map (classSubcategory H).ι).range = H := by
   ext x
-  obtain ⟨X, rfl⟩ := of_surjective x
-  rw [← DenseClasses.membership_iff (classSubcategory H)
-    (retractClosure_classSubcategory_eq_top H) X]
-  rfl
+  rw [mem_range_map_ι_iff]
+  constructor
+  · rintro ⟨X, hX, rfl⟩
+    exact (prop_classSubcategory_iff H X).1 hX
+  · intro hx
+    obtain ⟨X, rfl⟩ := of_surjective x
+    exact ⟨X, (prop_classSubcategory_iff H X).2 hx, rfl⟩
 
 /-- **Thomason's classification**, in the other direction: a dense triangulated subcategory
 closed under isomorphisms is the subcategory attached to the image of its `K₀`. -/
 theorem classSubcategory_range_map_ι (A : ObjectProperty C) [A.IsTriangulated]
     [A.IsClosedUnderIsomorphisms] [EssentiallySmall.{w'} A.FullSubcategory]
-    (hA : A.retractClosure = ⊤) : classSubcategory (map A.ι).range = A :=
-  funext fun X => propext (DenseClasses.membership_iff A hA X).symm
+    (hA : A.retractClosure = ⊤) : classSubcategory (map A.ι).range = A := by
+  ext X
+  exact (prop_classSubcategory_iff _ X).trans (DenseClasses.membership_iff A hA X).symm
+
+/-- For strictly full triangulated subcategories `A` and `B` with `B` dense and closed under
+isomorphisms, `(map A.ι).range ≤ (map B.ι).range` if and only if `A ≤ B`. -/
+theorem range_map_ι_le_iff {A B : ObjectProperty C} [A.IsTriangulated]
+    [EssentiallySmall.{w'} A.FullSubcategory] [B.IsTriangulated]
+    [B.IsClosedUnderIsomorphisms] [EssentiallySmall.{w''} B.FullSubcategory]
+    (hB : B.retractClosure = ⊤) :
+    (map A.ι).range ≤ (map B.ι).range ↔ A ≤ B := by
+  constructor
+  · intro h X hAX
+    exact (DenseClasses.membership_iff B hB X).2
+      (h ((mem_range_map_ι_iff A).2 ⟨X, hAX, rfl⟩))
+  · intro h x hx
+    rw [mem_range_map_ι_iff] at hx ⊢
+    obtain ⟨X, hAX, rfl⟩ := hx
+    exact ⟨X, h X hAX, rfl⟩
 
 /-- **Thomason's classification as an order isomorphism** (Thomason 1997, Theorem 2.1): strictly
 full dense triangulated subcategories of `C`, ordered by inclusion, correspond order-isomorphically
@@ -409,17 +438,10 @@ noncomputable def classSubcategoryOrderIso :
     exact Subtype.ext (classSubcategory_range_map_ι A hdense)
   right_inv H := range_map_ι_classSubcategory H
   map_rel_iff' {A B} := by
-    rcases A with ⟨A, hAtri, hAiso, hAdense⟩
-    rcases B with ⟨B, hBtri, hBiso, hBdense⟩
-    dsimp only [Equiv.coe_fn_mk]
-    constructor
-    · intro h X hX
-      exact (DenseClasses.membership_iff B hBdense X).2
-        (h ((DenseClasses.membership_iff A hAdense X).1 hX))
-    · intro h x hx
-      rw [mem_range_map_ι_iff] at hx ⊢
-      obtain ⟨X, hAX, rfl⟩ := hx
-      exact ⟨X, h X hAX, rfl⟩
+    have _ := A.property.1
+    have _ := B.property.1
+    have _ := B.property.2.1
+    exact range_map_ι_le_iff B.property.2.2
 
 /-- `TauCeti.TriangulatedK0.classSubcategoryOrderIso` sends a strictly full dense triangulated
 subcategory `A` to the range of `TriangulatedK0.map A.ι`. -/

@@ -7,7 +7,7 @@ module
 
 public import Mathlib.CategoryTheory.ObjectProperty.Shift
 public import TauCeti.CategoryTheory.ObjectProperty
-public import TauCeti.CategoryTheory.Limits.Shapes.Biproduct
+public import TauCeti.CategoryTheory.Limits.Shapes.Biproduct.Elementary
 import Mathlib.CategoryTheory.Adjunction.Limits
 
 /-!
@@ -34,7 +34,9 @@ to stable equivalence, giving `TauCeti.StableClasses.shift`.
 ## Main results
 
 * `TauCeti.StableEquiv.shift` and `TauCeti.StableClasses.shift_mk`: stable equivalence and stable
-  classes are compatible with shifts leaving `A` stable.
+  classes are compatible with shifts leaving `A` stable, with additivity and action laws
+  `TauCeti.StableClasses.shift_add`, `TauCeti.StableClasses.shift_zero`,
+  `TauCeti.StableClasses.zero_shift`, and `TauCeti.StableClasses.shift_shift`.
 * `TauCeti.StableClasses.mk_eq_zero_of_prop`: every object satisfying `A` has zero stable class
   modulo `A`.
 * `TauCeti.StableClasses.lift_mk` and `TauCeti.StableClasses.lift_unique`: computation and
@@ -195,6 +197,14 @@ noncomputable instance : Add (StableClasses A) :=
 theorem mk_biprod (X Y : C) : mk A (X ⊞ Y) = mk A X + mk A Y :=
   (rfl)
 
+/-- The stable classes modulo the top object property form a subsingleton. -/
+instance [(⊤ : ObjectProperty C).Nonempty] :
+    Subsingleton (StableClasses (⊤ : ObjectProperty C)) where
+  allEq x y := by
+    induction x using induction_on with | h X =>
+    induction y using induction_on with | h Y =>
+    exact mk_eq_iff.2 ⟨Y, X, trivial, trivial, ⟨biprod.braiding X Y⟩⟩
+
 end StableClasses
 
 section AddCommMonoid
@@ -281,13 +291,6 @@ theorem lift_unique {G : Type*} [AddMonoid G] (f : C → G)
     φ = lift A f hiso hbiprod hA :=
   hom_ext fun X => by rw [hφ, lift_mk]
 
-/-- The stable classes modulo the top object property form a subsingleton. -/
-instance : Subsingleton (StableClasses (⊤ : ObjectProperty C)) where
-  allEq x y := by
-    induction x using induction_on with | h X =>
-    induction y using induction_on with | h Y =>
-    rw [mk_eq_zero_of_prop (A := ⊤) trivial, mk_eq_zero_of_prop (A := ⊤) trivial]
-
 end StableClasses
 
 end AddCommMonoid
@@ -327,6 +330,50 @@ theorem StableClasses.shift_mk {A : ObjectProperty C} [A.Nonempty]
     [(shiftFunctor C n).PreservesZeroMorphisms] (X : C) :
     StableClasses.shift n (StableClasses.mk A X) = StableClasses.mk A (X⟦n⟧) :=
   StableClasses.liftOn_mk ..
+
+/-- Shifting commutes with addition of stable classes. -/
+@[simp]
+theorem StableClasses.shift_add {A : ObjectProperty C} [A.Nonempty]
+    [A.IsClosedUnderBinaryProducts] (n : M) [A.IsStableUnderShiftBy n]
+    [(shiftFunctor C n).PreservesZeroMorphisms] (x y : StableClasses A) :
+    StableClasses.shift n (x + y) = StableClasses.shift n x + StableClasses.shift n y := by
+  induction x using StableClasses.induction_on with | h X =>
+  induction y using StableClasses.induction_on with | h Y =>
+  let : PreservesBinaryBiproducts (shiftFunctor C n) :=
+    preservesBinaryBiproducts_of_preservesBinaryProducts _
+  simpa only [← StableClasses.mk_biprod, StableClasses.shift_mk] using
+    StableClasses.mk_congr ((shiftFunctor C n).mapBiprod X Y)
+
+/-- Shifting preserves the zero stable class. -/
+@[simp]
+theorem StableClasses.shift_zero {A : ObjectProperty C} [HasZeroObject C] [A.Nonempty]
+    [A.IsClosedUnderBinaryProducts] (n : M) [A.IsStableUnderShiftBy n]
+    [(shiftFunctor C n).PreservesZeroMorphisms] :
+    StableClasses.shift n (0 : StableClasses A) = 0 := by
+  rw [← StableClasses.mk_zero, StableClasses.shift_mk]
+  exact StableClasses.mk_eq_zero_of_isZero ((shiftFunctor C n).map_isZero (isZero_zero C))
+
+/-- The zero shift acts as the identity on stable classes. -/
+@[simp]
+theorem StableClasses.zero_shift {A : ObjectProperty C} [A.Nonempty]
+    [A.IsClosedUnderBinaryProducts] [A.IsStableUnderShiftBy (0 : M)]
+    [(shiftFunctor C (0 : M)).PreservesZeroMorphisms] (x : StableClasses A) :
+    StableClasses.shift (0 : M) x = x := by
+  induction x using StableClasses.induction_on with | h X =>
+  rw [StableClasses.shift_mk]
+  exact StableClasses.mk_congr ((shiftFunctorZero C M).app X)
+
+/-- Composing two shifts on stable classes shifts by their sum. -/
+@[simp]
+theorem StableClasses.shift_shift {A : ObjectProperty C} [A.Nonempty]
+    [A.IsClosedUnderBinaryProducts] (n m : M) [A.IsStableUnderShiftBy n]
+    [A.IsStableUnderShiftBy m] [A.IsStableUnderShiftBy (n + m)]
+    [(shiftFunctor C n).PreservesZeroMorphisms] [(shiftFunctor C m).PreservesZeroMorphisms]
+    [(shiftFunctor C (n + m)).PreservesZeroMorphisms] (x : StableClasses A) :
+    StableClasses.shift m (StableClasses.shift n x) = StableClasses.shift (n + m) x := by
+  induction x using StableClasses.induction_on with | h X =>
+  rw [StableClasses.shift_mk, StableClasses.shift_mk, StableClasses.shift_mk]
+  exact StableClasses.mk_congr ((shiftFunctorAdd C n m).symm.app X)
 
 end Shift
 
