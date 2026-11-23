@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Category.ModuleCat.Monoidal.Basic
 public import Mathlib.LinearAlgebra.ExteriorAlgebra.Product
 public import TauCeti.Algebra.Homology.Monoidal.Tensor.Differential
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Contraction
@@ -12,6 +13,7 @@ public import TauCeti.LinearAlgebra.ExteriorPower.Prod
 public import TauCeti.LinearAlgebra.ExteriorPower.WedgePairing
 public import TauCeti.LinearAlgebra.Pi
 public import TauCeti.RingTheory.KoszulComplex.Basic
+import TauCeti.Algebra.Homology.ComplexShape.Signs
 
 /-!
 # The Koszul complex of a direct sum
@@ -276,33 +278,30 @@ private theorem toKoszul_comm (n : ℕ) :
     toKoszul φ ψ (n + 1) ≫ (koszulComplex (φ.coprod ψ)).d (n + 1) n =
       (koszulComplex φ ⊗ koszulComplex ψ).d (n + 1) n ≫ toKoszul φ ψ n := by
   refine mapBifunctor.hom_ext fun p q h ↦ ?_
-  have hd : (koszulComplex φ ⊗ koszulComplex ψ).d (n + 1) n =
-      mapBifunctor.D₁ (koszulComplex φ) (koszulComplex ψ) (curriedTensor (ModuleCat.{u} R))
-          (ComplexShape.down ℕ) (n + 1) n +
-        mapBifunctor.D₂ (koszulComplex φ) (koszulComplex ψ) (curriedTensor (ModuleCat.{u} R))
-          (ComplexShape.down ℕ) (n + 1) n :=
-    mapBifunctor.d_eq _ _ _ _ _ _
-  rw [hd, Preadditive.add_comp, Preadditive.comp_add]
-  -- `h` is stated with `ComplexShape.π`, which on `ComplexShape.down ℕ` is addition by definition.
-  change p + q = n + 1 at h
+  rw [ComplexShape.π_eq_add] at h
+  rw [HomologicalComplex.tensor_d]
   rcases p with _ | r <;> rcases q with _ | s
   · omega
   · obtain rfl : s = n := by omega
-    rw [ChainComplex.ιTensorObj_D₁_zero_assoc, Limits.zero_comp, zero_add,
-      ChainComplex.ιTensorObj_D₂_succ_assoc, Preadditive.zsmul_comp, Category.assoc]
+    rw [ιTensorObj_d_of_not_rel_left_assoc _ _ h (by simp) (ComplexShape.down_mk (s + 1) s rfl)
+        (by omega),
+      ComplexShape.ε_down_ℕ, Units.smul_def, Units.val_pow_eq_pow_val, Units.val_neg,
+      Units.val_one, Preadditive.zsmul_comp, Category.assoc]
     refine summand_hom_ext φ ψ fun a b ↦ ?_
     exact (ιTensorObj_toKoszul_d_tmul φ ψ _ _ _ h a b).trans
       ((koszulDifferential_wedgeTensor_zero_succ φ ψ _ a b).trans
         (congrArg (_ • ·) (whiskerLeft_d_ιTensorObj_toKoszul_tmul φ ψ 0 _ _ _ a b).symm))
   · obtain rfl : r = n := by omega
-    rw [ChainComplex.ιTensorObj_D₂_zero_assoc, Limits.zero_comp, add_zero,
-      ChainComplex.ιTensorObj_D₁_succ_assoc]
+    rw [ιTensorObj_d_of_not_rel_right_assoc _ _ h (ComplexShape.down_mk (r + 1) r rfl) (by simp)
+      (by omega)]
     refine summand_hom_ext φ ψ fun a b ↦ ?_
     exact (ιTensorObj_toKoszul_d_tmul φ ψ _ _ _ h a b).trans
       ((koszulDifferential_wedgeTensor_succ_zero φ ψ _ a b).trans
         (whiskerRight_d_ιTensorObj_toKoszul_tmul φ ψ _ 0 _ _ a b).symm)
-  · rw [ChainComplex.ιTensorObj_D₁_succ_assoc, ChainComplex.ιTensorObj_D₂_succ_assoc,
-      Preadditive.zsmul_comp, Category.assoc]
+  · rw [ιTensorObj_d_of_rel_assoc _ _ h (ComplexShape.down_mk (r + 1) r rfl)
+        (ComplexShape.down_mk (s + 1) s rfl) (by omega),
+      Preadditive.add_comp, ComplexShape.ε_down_ℕ, Units.smul_def, Units.val_pow_eq_pow_val,
+      Units.val_neg, Units.val_one, Preadditive.zsmul_comp, Category.assoc]
     refine summand_hom_ext φ ψ fun a b ↦ ?_
     exact (ιTensorObj_toKoszul_d_tmul φ ψ _ _ _ h a b).trans
       ((koszulDifferential_wedgeTensor_succ_succ φ ψ r s n h a b).trans
