@@ -16,9 +16,10 @@ module `M` over `A ⊗[k] B` is an exterior tensor product `V ⊗[k] W` of a fin
 simple `A`-module `V` and a finite-dimensional simple `B`-module `W`
 (`TauCeti.exists_tensorProduct_equiv_of_isSimpleModule`). This is the finite-dimensional step of
 Flath's factorization of irreducible admissible representations of a restricted tensor product
-(Flath, Theorem 1 and its proof).
+(Flath, Theorem 1 and its proof). The factors are unique up to isomorphism
+(`TauCeti.nonempty_linearEquiv_of_tensorPairAction_equiv`).
 
-The proof restricts `M` to the commuting actions of the two factors
+The existence proof restricts `M` to the commuting actions of the two factors
 (`TauCeti.Algebra.TensorProduct.moduleLeft` and `moduleRight`). A simple `A`-submodule `V` exists
 by finite-dimensionality, and its isotypic component is stable under `B`, so it is all of `M`.
 Evaluation identifies `V ⊗[k] (V →ₗ[A] M)` with `M` (`TauCeti.isotypicTensorEquiv`, which uses
@@ -28,8 +29,14 @@ Schur's lemma and density over the algebraically closed field `k`). The multipli
 that `W` is simple (`TauCeti.isotypicComponent_eq_top_of_commuting` and
 `TauCeti.isSimpleModule_linearMap_of_commuting`).
 
-Algebraic closedness cannot be dropped: `ℂ ⊗[ℝ] ℂ ≅ ℂ × ℂ` has the simple module `ℂ` of real
-dimension `2`, while a tensor product of two simple `ℂ`-modules over `ℝ` has real dimension `4`.
+For uniqueness, the restriction of `V ⊗[k] W` to `A` is a direct sum of copies of `V`
+(choose a basis of `W`), and Schur's lemma identifies `V` with `V'` as soon as such sums are
+isomorphic (`TauCeti.nonempty_linearEquiv_of_finsupp_linearEquiv`). This half needs neither
+finiteness nor algebraic closedness.
+
+Algebraic closedness cannot be dropped from the existence statement: `ℂ ⊗[ℝ] ℂ ≅ ℂ × ℂ` has
+the simple module `ℂ` of real dimension `2`, while a tensor product of two simple `ℂ`-modules
+over `ℝ` has real dimension `4`.
 
 ## Main results
 
@@ -38,6 +45,9 @@ dimension `2`, while a tensor product of two simple `ℂ`-modules over `ℝ` has
 * `TauCeti.exists_tensorProduct_equiv_of_isSimpleModule`: **a finite-dimensional simple
   `A ⊗[k] B`-module is `V ⊗[k] W`** for finite-dimensional simple modules `V` over `A` and `W`
   over `B`.
+* `TauCeti.nonempty_linearEquiv_of_tensorPairAction_equiv`: **the factors are unique**: an
+  isomorphism `V ⊗[k] W ≅ V' ⊗[k] W'` of `A ⊗[k] B`-modules between exterior tensor products of
+  simple modules gives `V ≅ V'` over `A` and `W ≅ W'` over `B`.
 
 ## References
 
@@ -149,5 +159,103 @@ theorem exists_tensorProduct_equiv_of_isSimpleModule [IsScalarTower k (A ⊗[k] 
       rw [h, mul_smul, ← Algebra.TensorProduct.smul_moduleRight,
         ← Algebra.TensorProduct.smul_moduleLeft]
       exact (smul_comm a b (f v)).symm
+
+
+section Uniqueness
+
+/-- **Schur's lemma for multiples of simple modules.** If direct sums of copies of the simple
+modules `V` and `V'` are isomorphic, with at least one copy of `V`, then `V ≅ V'`: some
+coordinate of the image of a copy of `V` is a nonzero map `V → V'`. -/
+theorem nonempty_linearEquiv_of_finsupp_linearEquiv {R V V' ι ι' : Type*} [Ring R]
+    [AddCommGroup V] [Module R V] [AddCommGroup V'] [Module R V'] [IsSimpleModule R V]
+    [IsSimpleModule R V'] [Nonempty ι] (e : (ι →₀ V) ≃ₗ[R] (ι' →₀ V')) :
+    Nonempty (V ≃ₗ[R] V') := by
+  obtain ⟨j⟩ := ‹Nonempty ι›
+  have : Nontrivial V := IsSimpleModule.nontrivial R V
+  obtain ⟨v, hv⟩ := exists_ne (0 : V)
+  have hx : e (Finsupp.single j v) ≠ 0 := by simpa using hv
+  obtain ⟨i, hi⟩ : ∃ i, e (Finsupp.single j v) i ≠ 0 := by
+    by_contra! h
+    exact hx (Finsupp.ext h)
+  let φ : V →ₗ[R] V' := Finsupp.lapply i ∘ₗ e.toLinearMap ∘ₗ Finsupp.lsingle j
+  have hφ : φ ≠ 0 := fun h ↦ hi (by simpa [φ] using LinearMap.congr_fun h v)
+  exact ⟨.ofBijective φ (LinearMap.bijective_of_ne_zero hφ)⟩
+
+variable {k A V V' W W' : Type*} [CommSemiring k] [Ring A] [Algebra k A]
+  [AddCommGroup V] [Module k V] [Module A V] [IsScalarTower k A V]
+  [AddCommGroup V'] [Module k V'] [Module A V'] [IsScalarTower k A V']
+  [AddCommGroup W] [Module k W] [AddCommGroup W'] [Module k W']
+
+/-- **Cancelling a vector space from a simple module.** If `V ⊗[k] W ≅ V' ⊗[k] W'` as
+`A`-modules, with `A` acting on the left factors, `V` and `V'` simple, `W` and `W'` free over `k`
+and `W` nonzero, then `V ≅ V'`: choosing bases writes both sides as direct sums of copies of `V`
+and `V'`. -/
+theorem nonempty_linearEquiv_of_tensorProduct_linearEquiv [IsSimpleModule A V]
+    [IsSimpleModule A V'] [Module.Free k W] [Module.Free k W'] [Nontrivial W]
+    (e : V ⊗[k] W ≃ₗ[A] V' ⊗[k] W') :
+    Nonempty (V ≃ₗ[A] V') := by
+  let b := Module.Free.chooseBasis k W
+  let b' := Module.Free.chooseBasis k W'
+  have : Nonempty (Module.Free.ChooseBasisIndex k W) := b.index_nonempty
+  let f := AlgebraTensorModule.congr (.refl A V) b.repr ≪≫ₗ finsuppScalarRight k A V _
+  let f' := AlgebraTensorModule.congr (.refl A V') b'.repr ≪≫ₗ finsuppScalarRight k A V' _
+  exact nonempty_linearEquiv_of_finsupp_linearEquiv (f.symm ≪≫ₗ e ≪≫ₗ f')
+
+/-- The element `a ⊗ 1` acts on `V ⊗[k] W` through the left factor. -/
+theorem BialgebraModule.tensorPairAction_tmul_one {B : Type*} [Ring B] [Algebra k B]
+    [Module B W] [IsScalarTower k B W] (a : A) (x : V ⊗[k] W) :
+    BialgebraModule.tensorPairAction k V W (a ⊗ₜ[k] (1 : B)) x = a • x := by
+  induction x using TensorProduct.inductionOn with
+  | add x y hx hy => rw [map_add, hx, hy, smul_add]
+  | tmul v w => rw [BialgebraModule.tensorPairAction_tmul, one_smul, smul_tmul']
+
+/-- The element `1 ⊗ b` acts on `V ⊗[k] W` through the right factor, which is the left factor
+of `W ⊗[k] V`. -/
+theorem BialgebraModule.comm_tensorPairAction_one_tmul {B : Type*} [Ring B] [Algebra k B]
+    [Module B W] [IsScalarTower k B W] (b : B) (x : V ⊗[k] W) :
+    TensorProduct.comm k V W (BialgebraModule.tensorPairAction k V W ((1 : A) ⊗ₜ[k] b) x) =
+      b • TensorProduct.comm k V W x := by
+  induction x using TensorProduct.inductionOn with
+  | add x y hx hy => rw [map_add, map_add, hx, hy, map_add, smul_add]
+  | tmul v w => rw [BialgebraModule.tensorPairAction_tmul, one_smul, TensorProduct.comm_tmul,
+      TensorProduct.comm_tmul, smul_tmul']
+
+/-- **Flath's finite-dimensional factorization** (uniqueness of the factors). If `V ⊗[k] W` and
+`V' ⊗[k] W'` are isomorphic as `A ⊗[k] B`-modules
+(`TauCeti.BialgebraModule.tensorPairAction`), where `V`, `V'` are simple `A`-modules and `W`,
+`W'` are simple `B`-modules, then `V ≅ V'` and `W ≅ W'`. Restricted to `A`, both sides are
+direct sums of copies of `V` and of `V'`, and Schur's lemma compares them; the same argument
+applies to `B`. No finiteness or algebraic closedness is needed, and over a commutative ring
+`k` it suffices that all four modules be free over `k`. Together with
+`TauCeti.exists_tensorProduct_equiv_of_isSimpleModule`, this shows that a finite-dimensional
+simple `A ⊗[k] B`-module determines its factors up to isomorphism. -/
+theorem nonempty_linearEquiv_of_tensorPairAction_equiv {B : Type*} [Ring B] [Algebra k B]
+    [Module B W] [IsScalarTower k B W] [Module B W'] [IsScalarTower k B W']
+    [IsSimpleModule A V] [IsSimpleModule A V'] [IsSimpleModule B W] [IsSimpleModule B W']
+    [Module.Free k V] [Module.Free k V'] [Module.Free k W] [Module.Free k W']
+    (e : V ⊗[k] W ≃ₗ[k] V' ⊗[k] W')
+    (he : ∀ (t : A ⊗[k] B) x, e (BialgebraModule.tensorPairAction k V W t x) =
+      BialgebraModule.tensorPairAction k V' W' t (e x)) :
+    Nonempty (V ≃ₗ[A] V') ∧ Nonempty (W ≃ₗ[B] W') := by
+  have : Nontrivial W := IsSimpleModule.nontrivial B W
+  have : Nontrivial V := IsSimpleModule.nontrivial A V
+  let eA : V ⊗[k] W ≃ₗ[A] V' ⊗[k] W' :=
+    { e with
+      map_smul' := fun a x ↦ by
+        have h := he (a ⊗ₜ[k] (1 : B)) x
+        rwa [BialgebraModule.tensorPairAction_tmul_one,
+          BialgebraModule.tensorPairAction_tmul_one] at h }
+  let c := (TensorProduct.comm k V W).symm ≪≫ₗ e ≪≫ₗ TensorProduct.comm k V' W'
+  let eB : W ⊗[k] V ≃ₗ[B] W' ⊗[k] V' :=
+    { c with
+      map_smul' := fun b x ↦ by
+        obtain ⟨y, rfl⟩ := (TensorProduct.comm k V W).surjective x
+        have h := congrArg (TensorProduct.comm k V' W') (he ((1 : A) ⊗ₜ[k] b) y)
+        rw [BialgebraModule.comm_tensorPairAction_one_tmul (A := A)] at h
+        simpa [c, ← BialgebraModule.comm_tensorPairAction_one_tmul (A := A) (V := V)] using h }
+  exact ⟨nonempty_linearEquiv_of_tensorProduct_linearEquiv eA,
+    nonempty_linearEquiv_of_tensorProduct_linearEquiv eB⟩
+
+end Uniqueness
 
 end TauCeti
