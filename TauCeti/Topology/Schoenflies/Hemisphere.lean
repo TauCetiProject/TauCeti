@@ -101,8 +101,8 @@ theorem IsCellularSet.exists_homeomorph_preimage_hemisphere
     have hlt : 0 < ⟪((h₀ x : sphere (0 : F) 1) : F), (p : F)⟫ ↔ 0 < ⟪(g x : F), (p : F)⟫ := by
       simpa only [hH', mem_ofPred_eq, mem_preimage] using hin x
     have h₀H : 0 ≤ ⟪((h₀ x : sphere (0 : F) 1) : F), (p : F)⟫ := by
-      simpa only [hH, mem_ofPred_eq] using (h₀ x).2
-    have hxH : 0 ≤ ⟪(g x : F), (p : F)⟫ := x.2
+      simpa only [hH, mem_ofPred_eq] using (h₀ x).property
+    have hxH : 0 ≤ ⟪(g x : F), (p : F)⟫ := x.property
     rw [he]
     simpa only [h₀H.lt_iff_ne', hxH.lt_iff_ne', ne_eq, not_iff_not] using hlt
 

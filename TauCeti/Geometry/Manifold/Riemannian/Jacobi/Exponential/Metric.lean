@@ -5,18 +5,26 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.InnerProductSpace.NormDet
 public import TauCeti.Geometry.Manifold.Riemannian.Jacobi.Model
 public import TauCeti.Geometry.Manifold.Riemannian.Jacobi.Exponential.Basic
 public import TauCeti.Geometry.Manifold.Riemannian.Geodesic.Gauss.Basic
+import TauCeti.Analysis.InnerProductSpace.NormDet
+import TauCeti.Analysis.InnerProductSpace.Projection.Basic
+import TauCeti.Geometry.Manifold.IsManifold.Basic
+import TauCeti.Geometry.Manifold.Riemannian.Geodesic.Gauss.NormDet
 
 /-!
 # The exponential metric in constant curvature
 
-If the radial segment from `p` to `exp_p v` has constant sectional curvature `κ`, the
-exponential differential multiplies lengths perpendicular to `v` by
-`|curvatureSine (κ * ‖v‖²) 1|`. Together with the Gauss lemma this computes its full
-pullback metric: radial lengths are unchanged, radial and angular vectors stay orthogonal,
-and angular inner products are multiplied by the square of this coefficient.
+If every tangent two-plane along the closed radial segment from `p` to `exp_p v` has constant
+sectional curvature `κ` (`HasSectionalCurvatureAt`), the exponential differential multiplies lengths
+perpendicular to `v` by `|curvatureSine (κ * ‖v‖²) 1|`. Together with the Gauss lemma this computes
+its full pullback metric: radial lengths are unchanged, radial and angular vectors stay orthogonal,
+and angular inner products are multiplied by the square of this coefficient. Factoring `normDet`
+along the radial-angular splitting yields the exact exponential Jacobian
+`|curvatureSine (κ * ‖v‖²) 1| ^ (finrank ℝ E - 1)`
+(`normDet_mfderiv_riemannianExp_of_hasSectionalCurvatureAt`).
 
 These identities are valid on the natural exponential domain, even at conjugate vectors.
 They do not require completeness or injectivity of the exponential map. The curvature
@@ -168,5 +176,30 @@ theorem inner_mfderiv_riemannianExp_of_hasSectionalCurvatureAt
       real_inner_self_eq_norm_sq, mul_assoc]
   exact hmetric.trans (congrArg (fun r ↦ r + curvatureSine (κ * ‖v‖ ^ 2) 1 ^ 2 *
     ⟪w - (ℝ ∙ v).starProjection w, z - (ℝ ∙ v).starProjection z⟫_ℝ) hrad.symm)
+
+/-- **Exact exponential Jacobian in constant sectional curvature.** Along a closed radial segment
+`[0, 1]` in `expDomain I M p` where every tangent two-plane has sectional curvature `κ`
+(`HasSectionalCurvatureAt`), the Jacobian `normDet` of `d(exp_p)_v` is
+`|curvatureSine (κ * ‖v‖ ^ 2) 1| ^ (finrank ℝ E - 1)` (valid even at conjugate vectors). -/
+theorem normDet_mfderiv_riemannianExp_of_hasSectionalCurvatureAt
+    (hv : v ∈ expDomain I M p)
+    (hK : ∀ t ∈ Icc (0 : ℝ) 1, (leviCivitaConnection I M).HasSectionalCurvatureAt
+      (isMetricCompatible_leviCivitaConnection I) (riemannianExp I M p (t • v)) κ) :
+    LinearMap.normDet (U := TangentSpace I p)
+        (mfderiv 𝓘(ℝ, TangentSpace I p) I (riemannianExp I M p) v).toLinearMap =
+      |curvatureSine (κ * ‖v‖ ^ 2) 1| ^ (Module.finrank ℝ E - 1) := by
+  rcases eq_or_ne v 0 with rfl | hv0
+  · simp [normDet_mfderiv_riemannianExp_zero]
+  · have hdim : Module.finrank ℝ (ℝ ∙ v)ᗮ = Module.finrank ℝ E - 1 :=
+      (Submodule.finrank_orthogonal_span_singleton_eq_finrank_sub_one hv0).trans
+        (by rw [TauCeti.finrank_tangentSpace])
+    rw [normDet_mfderiv_riemannianExp_eq_orthogonal hv hv0, ← hdim]
+    let L : TangentSpace I p →L[ℝ] TangentSpace I (riemannianExp I M p v) :=
+      mfderiv 𝓘(ℝ, TangentSpace I p) I (riemannianExp I M p) v
+    refine (L.toLinearMap ∘ₗ (ℝ ∙ v)ᗮ.subtype).normDet_eq_pow_finrank_of_norm_eq fun w ↦ ?_
+    simp only [LinearMap.comp_apply, Submodule.coe_subtype, ContinuousLinearMap.coe_coe,
+      ← Submodule.norm_coe]
+    exact norm_mfderiv_riemannianExp_of_inner_eq_zero_of_hasSectionalCurvatureAt hv hK w.val
+      (Submodule.mem_orthogonal_singleton_iff_inner_left.mp w.property)
 
 end TauCeti.Manifold

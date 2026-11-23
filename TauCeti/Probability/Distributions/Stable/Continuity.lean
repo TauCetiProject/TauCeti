@@ -44,11 +44,11 @@ theorem continuous_stableMeasure :
     Continuous (Y := ProbabilityMeasure ℝ) (fun p :
         (Ioc (0 : ℝ) 2 × Icc (-1 : ℝ) 1) × ℝ≥0 × ℝ ↦
       (⟨stableMeasure p.1.1 p.1.2 p.2.1 p.2.2,
-        isProbabilityMeasure_stableMeasure p.1.1.2 (abs_le.mpr p.1.2.2) _ _⟩ :
+        isProbabilityMeasure_stableMeasure p.1.1.property (abs_le.mpr p.1.2.property) _ _⟩ :
         ProbabilityMeasure ℝ)) := by
   let μ (p : Ioc (0 : ℝ) 2 × Icc (-1 : ℝ) 1) : ProbabilityMeasure ℝ :=
     ⟨stableMeasure p.1 p.2 1 0,
-      isProbabilityMeasure_stableMeasure p.1.2 (abs_le.mpr p.2.2) 1 0⟩
+      isProbabilityMeasure_stableMeasure p.1.property (abs_le.mpr p.2.property) 1 0⟩
   have hμ (p) : (μ p : Measure ℝ) = stableMeasure p.1 p.2 1 0 := (rfl)
   have hstd : Continuous μ := by
     apply continuous_iff_seqContinuous.mpr
@@ -57,9 +57,10 @@ theorem continuous_stableMeasure :
     intro t
     have hc := (Complex.continuous_exp.comp
       ((continuous_stableCharacteristicExponent_params t).comp
-        (continuous_fst.prodMk (continuous_subtype_val.comp continuous_snd)))).tendsto a
-    simpa only [hμ, charFun_stableMeasure (p _).1.2 (abs_le.mpr (p _).2.2),
-      charFun_stableMeasure a.1.2 (abs_le.mpr a.2.2), NNReal.coe_one, one_mul, zero_mul,
+        (continuous_fst.prodMk (continuous_subtypeVal.comp continuous_snd)))).tendsto a
+    simpa only [hμ, charFun_stableMeasure (p _).1.property (abs_le.mpr (p _).2.property),
+      charFun_stableMeasure a.1.property (abs_le.mpr a.2.property), NNReal.coe_one, one_mul,
+          zero_mul,
       Complex.ofReal_zero, zero_add, Function.comp_def] using hc.comp hp
   have hm := ProbabilityMeasure.continuous_map_of_continuous_uncurry
     (f := fun q : ℝ≥0 × ℝ ↦ fun x : ℝ ↦ q.2 + q.1 * x) (by fun_prop)
@@ -71,8 +72,8 @@ theorem continuous_stableMeasure :
     ProbabilityMeasure.coe_mk]
   apply Measure.ext_of_charFun
   funext t
-  rw [charFun_map_affine, charFun_stableMeasure p.1.1.2 (abs_le.mpr p.1.2.2),
-    charFun_stableMeasure p.1.1.2 (abs_le.mpr p.1.2.2)]
+  rw [charFun_map_affine, charFun_stableMeasure p.1.1.property (abs_le.mpr p.1.2.property),
+    charFun_stableMeasure p.1.1.property (abs_le.mpr p.1.2.property)]
   simp only [NNReal.coe_one, one_mul, zero_mul, Complex.ofReal_zero, zero_add,
     Complex.exp_add, Complex.ofReal_mul]
 

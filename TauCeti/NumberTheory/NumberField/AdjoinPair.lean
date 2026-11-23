@@ -5,7 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Group.Pi.Hom
 public import Mathlib.FieldTheory.IntermediateField.Adjoin.Basic
+public import Mathlib.GroupTheory.Finiteness
 public import Mathlib.NumberTheory.NumberField.Basic
 
 /-!
@@ -22,6 +24,8 @@ numbers in an arbitrary characteristic-zero field to the number-field API.
   number field.
 * `TauCeti.exists_numberField_comp`: a finite tuple of algebraic elements of `F` is the image of a
   tuple in an intermediate number field.
+* `Subgroup.FG.exists_numberField_map_eq`: a finitely generated group of algebraic tuples
+  descends to a finitely generated group over one intermediate number field, with the same image.
 -/
 
 public section
@@ -50,3 +54,36 @@ theorem exists_numberField_comp {ι : Type*} [Finite ι] {x : ι → F}
   simp
 
 end TauCeti
+
+namespace Subgroup.FG
+
+variable {ι F : Type*} [Finite ι] [Field F] [CharZero F]
+
+/-- A finitely generated group of algebraic tuples descends, with its entire group structure,
+to a finitely generated group of tuples over a single intermediate number field. -/
+theorem exists_numberField_map_eq {Γ : Subgroup (ι → Fˣ)} (hΓ : Γ.FG)
+    (hΓalg : ∀ x ∈ Γ, ∀ i, IsAlgebraic ℚ ((x i : Fˣ) : F)) :
+    ∃ (E : IntermediateField ℚ F) (_ : NumberField E) (Δ : Subgroup (ι → Eˣ)),
+      Δ.FG ∧ Δ.map ((Units.map (algebraMap E F).toMonoidHom).compLeft ι) = Γ := by
+  classical
+  obtain ⟨s, hs⟩ := Subgroup.exists_of_isMulFG Γ
+  obtain ⟨E, hE, y, hy⟩ := TauCeti.exists_numberField_comp
+    (x := fun p : s × ι ↦ ((p.1.val p.2 : Fˣ) : F))
+    (fun p ↦ hΓalg p.1.val (hs ▸ Subgroup.subset_closure p.1.property) p.2)
+  have hy' (x : s) (i : ι) : algebraMap E F (y (x, i)) = (x.val i : F) := by
+    simpa only [Function.comp_apply] using congr_fun hy (x, i)
+  have hy0 (x : s) (i : ι) : y (x, i) ≠ 0 := by
+    intro h
+    exact (x.val i).ne_zero (by rw [← hy' x i, h, map_zero])
+  let g : s → ι → Eˣ := fun x i ↦ Units.mk0 (y (x, i)) (hy0 x i)
+  let f := (Units.map (algebraMap E F).toMonoidHom).compLeft ι
+  have hfg (x : s) : f (g x) = x.val := by
+    ext i
+    simp [f, g, hy']
+  have himage : f '' Set.range g = (s : Set (ι → Fˣ)) := by
+    simp [← Set.range_comp, Function.comp_def, hfg]
+  refine ⟨E, hE, Subgroup.closure (Set.range g), inferInstance, ?_⟩
+  rw [MonoidHom.map_closure, himage]
+  exact hs
+
+end Subgroup.FG

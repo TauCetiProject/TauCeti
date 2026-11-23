@@ -11,6 +11,7 @@ import Mathlib.Analysis.Calculus.LineDeriv.IntegrationByParts
 import TauCeti.Analysis.InnerProductSpace.NormPow
 import TauCeti.Analysis.SpecialFunctions.Pow.Real
 import TauCeti.Analysis.SpecialFunctions.Pow.Regularization
+import TauCeti.Analysis.Sobolev.WeakDeriv.Coordinates
 import TauCeti.Analysis.Sobolev.WeakDeriv.Limit
 import TauCeti.Analysis.Sobolev.WeakDeriv.Local
 import TauCeti.Analysis.Sobolev.WeakDeriv.Removable
@@ -37,10 +38,18 @@ This adapts the regularization proof first given for the Newtonian kernel in Tau
 (`TauCeti/Analysis/PDE/FundamentalSolution/Euclidean/DistributionalLaplacian.lean`), replacing the
 exponent `2 - n` by an arbitrary exponent; that theorem is derived from the general one here.
 
-The same regularization at `s = 1` shows that if `d ≥ 2`, the coordinates `‖x‖⁻¹ ⟪x, v⟫` of the
-unit radial field `x / ‖x‖`, which is the weak gradient of the norm, are weakly differentiable on
-every open set: their regularizations `(‖x‖ ^ 2 + t) ^ (-1 / 2) ⟪x, v⟫` and the derivatives of
-those converge in `L¹` on the unit ball, dominated by `‖v‖` and by `2 ‖v‖ ‖x‖⁻¹`.
+The same regularization shows that for `s > -d` the products `‖x‖ ^ s ⟪x, v⟫` are weakly
+differentiable on every open set, with their classical derivatives
+`‖x‖ ^ s ⟪v, ·⟫ + s ‖x‖ ^ (s - 2) ⟪x, v⟫ ⟪x, ·⟫`: for `s ≤ 0` their regularizations
+`(‖x‖ ^ 2 + t) ^ (s / 2) ⟪x, v⟫` and the derivatives of those converge in `L¹` on the unit ball,
+dominated by `‖v‖ ‖x‖ ^ (s + 1)` and by `(1 + |s|) ‖v‖ ‖x‖ ^ s`. At `s = -1` these are the
+coordinates of the unit radial field `x / ‖x‖`, the weak gradient of the norm, and at `s = p - 2`
+they are multiples of the coordinates of the gradient `p ‖x‖ ^ (p - 2) x` of `‖x‖ ^ p`, so the
+second weak derivatives of norm powers are their classical ones.
+
+The radial field `x ↦ ‖x‖ ^ p • x`, the gradient of `‖x‖ ^ (p + 2) / (p + 2)`, is weakly
+differentiable with its classical derivative for `p > -1`, where it is continuous, by the removable
+point lemma; at `p = -1`, the unit radial field, it is assembled from the coordinates above.
 
 ## Main declarations
 
@@ -50,11 +59,16 @@ those converge in `L¹` on the unit ball, dominated by `‖v‖` and by `2 ‖v�
   `1 - d < s ≤ 0`.
 * `TauCeti.hasWeakFDerivOn_norm_rpow`: the classical derivative is a weak derivative on every
   open set for `s > 1 - d`.
-* `TauCeti.hasWeakFDerivOn_norm_rpow_neg_one_mul_inner`: for `d ≥ 2`, the coordinates of the unit
-  radial field are weakly differentiable on every open set, with their classical derivatives.
-* `TauCeti.abs_norm_rpow_neg_one_mul_inner_le`,
-  `TauCeti.norm_norm_rpow_neg_one_smul_innerSL_sub_le`: the coordinates are bounded by `‖v‖` and
-  their derivatives by `2 ‖v‖ ‖x‖⁻¹`.
+* `TauCeti.HasWeakFDerivOn.neg_finrank_lt_sub_one_mul_of_integrableOn`: for `s ≠ 0`, a weak
+  derivative of the power agrees with the classical one away from the origin, so it is
+  `p`-integrable near the origin only when `(s - 1) p > -d`.
+* `TauCeti.hasWeakFDerivOn_norm_rpow_mul_inner`: for `s > -d`, the products `‖x‖ ^ s ⟪x, v⟫` are
+  weakly differentiable on every open set, with their classical derivatives.
+* `TauCeti.abs_norm_rpow_mul_inner_le`, `TauCeti.norm_norm_rpow_smul_innerSL_add_le`: the products
+  are bounded by `‖v‖ ‖x‖ ^ (s + 1)` and their derivatives by `(1 + |s|) ‖v‖ ‖x‖ ^ s`.
+* `TauCeti.hasWeakFDerivOn_norm_rpow_smul_self`: for `p > -1`, the radial field `‖x‖ ^ p • x` is
+  weakly differentiable on every open set, with its classical derivative.
+* `TauCeti.hasWeakFDerivOn_norm_rpow_neg_one_smul_self`: for `d ≥ 2`, so is the unit radial field.
 -/
 
 public section
@@ -73,18 +87,26 @@ variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] {s : ℝ}
 private def regPow (s t : ℝ) (x : E) : ℝ :=
   (‖x‖ ^ 2 + t) ^ (s / 2)
 
+/-- The regularization `(‖x‖ ^ 2 + t) ^ (s / 2) ⟪x, v⟫` of `‖x‖ ^ s ⟪x, v⟫`. -/
+private def regMulInner (s : ℝ) (v : E) (t : ℝ) (x : E) : ℝ :=
+  regPow s t x * ⟪x, v⟫
+
 /-- The derivative of the regularized norm power in the direction `v`. -/
 private def regPowDeriv (s : ℝ) (v : E) (t : ℝ) (x : E) : ℝ :=
-  s * (‖x‖ ^ 2 + t) ^ (s / 2 - 1) * ⟪x, v⟫
+  s * regMulInner (s - 2) v t x
 
 omit [InnerProductSpace ℝ E] in
 private lemma regPow_zero (s : ℝ) (x : E) : regPow s 0 x = ‖x‖ ^ s := by
   rw [regPow, add_zero, Real.sq_rpow_div_two (norm_nonneg x)]
 
+private lemma regMulInner_zero (s : ℝ) (v : E) :
+    regMulInner s v 0 = fun x ↦ ‖x‖ ^ s * ⟪x, v⟫ := by
+  funext x
+  rw [regMulInner, regPow_zero]
+
 private lemma regPowDeriv_zero (s : ℝ) (v : E) (x : E) :
     regPowDeriv s v 0 x = ((s * ‖x‖ ^ (s - 2)) • innerSL ℝ x) v := by
-  have hs : s / 2 - 1 = (s - 2) / 2 := by ring
-  rw [regPowDeriv, add_zero, hs, Real.sq_rpow_div_two (norm_nonneg x)]
+  rw [regPowDeriv, regMulInner_zero]
   simp [mul_assoc]
 
 private lemma hasLineDerivAt_regPow (s : ℝ) (v : E) {t : ℝ} (ht : 0 < t) (x : E) :
@@ -93,22 +115,29 @@ private lemma hasLineDerivAt_regPow (s : ℝ) (v : E) {t : ℝ} (ht : 0 < t) (x 
   have h := ((hasStrictFDerivAt_norm_sq x).hasFDerivAt.add_const t).rpow_const
     (p := s / 2) (Or.inl hpos.ne')
   refine (h.hasLineDerivAt v).congr_deriv ?_
-  rw [regPowDeriv, smul_apply, smul_apply,
-    innerSL_apply_apply, smul_eq_mul, nsmul_eq_mul]
+  rw [regPowDeriv, regMulInner, regPow, show (s - 2) / 2 = s / 2 - 1 by ring, smul_apply,
+    smul_apply, innerSL_apply_apply, smul_eq_mul, nsmul_eq_mul]
   ring
 
 omit [InnerProductSpace ℝ E] in
 private lemma continuous_regPow (s : ℝ) {t : ℝ} (ht : 0 < t) : Continuous (regPow (E := E) s t) :=
   continuous_norm_sq_add_rpow ht _
 
+private lemma continuous_regMulInner (s : ℝ) (v : E) {t : ℝ} (ht : 0 < t) :
+    Continuous (regMulInner s v t) :=
+  (continuous_regPow s ht).mul (continuous_id.inner continuous_const)
+
 private lemma continuous_regPowDeriv (s : ℝ) (v : E) {t : ℝ} (ht : 0 < t) :
     Continuous (regPowDeriv s v t) :=
-  (continuous_const.mul (continuous_norm_sq_add_rpow ht _)).mul
-    (continuous_id.inner continuous_const)
+  continuous_const.mul (continuous_regMulInner (s - 2) v ht)
+
+private lemma tendsto_regMulInner (s : ℝ) (v : E) {x : E} (hx : x ≠ 0) :
+    Tendsto (fun t ↦ regMulInner s v t x) (𝓝[>] 0) (𝓝 (regMulInner s v 0 x)) :=
+  (tendsto_sq_add_rpow (norm_ne_zero_iff.mpr hx) _).mul_const _
 
 private lemma tendsto_regPowDeriv (s : ℝ) (v : E) {x : E} (hx : x ≠ 0) :
     Tendsto (fun t ↦ regPowDeriv s v t x) (𝓝[>] 0) (𝓝 (regPowDeriv s v 0 x)) :=
-  ((tendsto_sq_add_rpow (norm_ne_zero_iff.mpr hx) _).const_mul _).mul_const _
+  (tendsto_regMulInner (s - 2) v hx).const_mul s
 
 variable [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] {μ : Measure E}
   [μ.IsAddHaarMeasure]
@@ -137,16 +166,20 @@ private lemma abs_regPow_le (hs : s ≤ 0) {t : ℝ} (ht : 0 ≤ t) {x : E} (hx 
   exact norm_sq_add_rpow_div_two_le ht hx hs
 
 omit [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] in
+/-- For `s ≤ 0`, the regularizations of `‖x‖ ^ s ⟪x, v⟫` are dominated by the regularization at
+`t = 0` away from the origin. -/
+private lemma abs_regMulInner_le (hs : s ≤ 0) (v : E) {t : ℝ} (ht : 0 ≤ t) {x : E}
+    (hx : x ≠ 0) : |regMulInner s v t x| ≤ |regMulInner s v 0 x| := by
+  rw [regMulInner, regMulInner, abs_mul, abs_mul]
+  exact mul_le_mul_of_nonneg_right (abs_regPow_le hs ht hx) (abs_nonneg _)
+
+omit [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] in
 /-- For `s ≤ 2`, the derivatives of the regularized powers are dominated by the regularization at
 `t = 0` away from the origin. -/
 private lemma abs_regPowDeriv_le (hs : s ≤ 2) (v : E) {t : ℝ} (ht : 0 ≤ t) {x : E}
     (hx : x ≠ 0) : |regPowDeriv s v t x| ≤ |regPowDeriv s v 0 x| := by
-  simp only [regPowDeriv, abs_mul,
-    abs_of_nonneg (Real.rpow_nonneg (add_nonneg (sq_nonneg ‖x‖) ht) _),
-    abs_of_nonneg (Real.rpow_nonneg (add_nonneg (sq_nonneg ‖x‖) le_rfl) _)]
-  gcongr ?_ * _
-  exact mul_le_mul_of_nonneg_left (sq_add_rpow_le (norm_ne_zero_iff.mpr hx) ht (by linarith))
-    (abs_nonneg s)
+  rw [regPowDeriv, regPowDeriv, abs_mul, abs_mul]
+  exact mul_le_mul_of_nonneg_left (abs_regMulInner_le (by linarith) v ht hx) (abs_nonneg s)
 
 /-- **Integration by parts against a singular norm power.** For `1 - dim E < s ≤ 0` and a `C¹`
 function `g` with compact support, `∫ ‖x‖ ^ s ∂ᵥg = -∫ s ‖x‖ ^ (s - 2) ⟪x, v⟫ g`, although for
@@ -222,197 +255,313 @@ theorem hasWeakFDerivOn_norm_rpow (hs : 1 - (Module.finrank ℝ E : ℝ) < s) (�
         locallyIntegrable_norm_sub_rpow (mu := μ) (s := s) (by linarith) (0 : E))
       (locallyIntegrable_norm_rpow_smul_innerSL hs) (fun _ hg hc v ↦ by
         simpa only [smul_eq_mul, mul_comm] using
-          integral_norm_rpow_mul_fderiv_eq_neg hs0 hs hg hc v) Ω
+          integral_norm_rpow_mul_fderiv_eq_neg hs0 hs (hg.of_le (by simp)) hc v) Ω
   · exact hasWeakFDerivOn_of_hasFDerivAt_off_countable (countable_singleton 0)
       (continuous_norm.rpow_const fun _ ↦ Or.inr hs0.le).continuousOn
       ((locallyIntegrable_norm_rpow_smul_innerSL hs).locallyIntegrableOn _)
       fun x hx ↦ hasFDerivAt_norm_rpow_of_ne s hx.2
 
-/-! ### The unit radial field -/
+/-- **Weak derivatives of non-integrable norm powers.** Let `s ≠ 0` and let `D` be a weak
+derivative of `x ↦ ‖x‖ ^ s` on an open set containing a ball `B(0, r)` with `r > 0`. If
+`‖D‖ ^ p` is integrable on that ball, then `(s - 1) p > -dim E`. -/
+theorem HasWeakFDerivOn.neg_finrank_lt_sub_one_mul_of_integrableOn [Nontrivial E]
+    {Ω : Opens E} {D : E → E →L[ℝ] ℝ} (hD : HasWeakFDerivOn μ Ω (fun x : E => ‖x‖ ^ s) D)
+    (hs0 : s ≠ 0) {r : ℝ} (hr : 0 < r) (hrΩ : Metric.ball (0 : E) r ⊆ Ω) {p : ℝ}
+    (hint : IntegrableOn (fun x => ‖D x‖ ^ p) (Metric.ball 0 r) μ) :
+    -(Module.finrank ℝ E : ℝ) < (s - 1) * p := by
+  -- On the punctured ball, `D` is the classical derivative.
+  let W : Opens E := ⟨Metric.ball 0 r, Metric.isOpen_ball⟩ ⊓ ⟨{0}ᶜ, isOpen_compl_singleton⟩
+  have hdiff : ∀ x ∈ (W : Set E), HasFDerivAt (fun x : E => ‖x‖ ^ s)
+      ((s * ‖x‖ ^ (s - 2)) • innerSL ℝ x) x := fun x hx => hasFDerivAt_norm_rpow_of_ne s hx.2
+  have hcont : ContinuousOn (fderiv ℝ fun x : E => ‖x‖ ^ s) W := by
+    have hc : ContinuousOn (fun x : E => (s * ‖x‖ ^ (s - 2)) • innerSL ℝ x) W :=
+      fun x hx => ((continuousAt_const.mul ((continuous_norm.continuousAt).rpow_const
+        (Or.inl (norm_ne_zero_iff.2 hx.2)))).smul
+          (innerSL ℝ).continuous.continuousAt).continuousWithinAt
+    exact hc.congr fun x hx => (hdiff x hx).fderiv
+  have hae := (hD.mono (fun x hx => hrΩ hx.1 : W ≤ Ω)).ae_eq_fderiv
+    (hcont.locallyIntegrableOn W.isOpen.measurableSet)
+    fun x hx => (hdiff x hx).differentiableAt
+  have hae' := (ae_restrict_iff' W.isOpen.measurableSet).1 hae
+  -- So `|s| ‖x‖ ^ (s - 1)` is `p`-integrable on the ball.
+  have hball : IntegrableOn (fun x : E => |s| ^ p * ‖x‖ ^ ((s - 1) * p))
+      (Metric.ball 0 r) μ := by
+    refine hint.congr ?_
+    filter_upwards [ae_restrict_of_ae hae', ae_restrict_mem measurableSet_ball,
+      ae_restrict_of_ae (Measure.ae_ne μ (0 : E))] with x hx hxb hx0
+    rw [hx ⟨hxb, hx0⟩, norm_fderiv_norm_rpow_of_ne s hx0,
+      Real.mul_rpow (abs_nonneg s) (Real.rpow_nonneg (norm_nonneg x) _),
+      ← Real.rpow_mul (norm_nonneg x)]
+  have hpos : (0 : ℝ) < |s| ^ p := Real.rpow_pos_of_pos (abs_pos.2 hs0) _
+  rwa [IntegrableOn, integrable_const_mul_iff hpos.ne'.isUnit, ← IntegrableOn,
+    integrableOn_norm_rpow_ball_iff hr] at hball
 
-section UnitRadial
+/-! ### Norm powers times a coordinate -/
+
+section RpowMulInner
 
 omit [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E]
 
-/-- The derivative of `regPowDeriv 1 v t`, which regularizes the coordinate `‖x‖⁻¹ ⟪x, v⟫` of
-the unit radial field. -/
-private def regPowDerivOneDeriv (v : E) (t : ℝ) (x : E) : E →L[ℝ] ℝ :=
-  (‖x‖ ^ 2 + t) ^ (-1 / 2 : ℝ) • innerSL ℝ v -
-    ((‖x‖ ^ 2 + t) ^ (-3 / 2 : ℝ) * ⟪x, v⟫) • innerSL ℝ x
+/-- The derivative of `regMulInner s v t`. -/
+private def regMulInnerDeriv (s : ℝ) (v : E) (t : ℝ) (x : E) : E →L[ℝ] ℝ :=
+  (‖x‖ ^ 2 + t) ^ (s / 2) • innerSL ℝ v +
+    (s * (‖x‖ ^ 2 + t) ^ (s / 2 - 1) * ⟪x, v⟫) • innerSL ℝ x
 
-private lemma regPowDeriv_one (v : E) (t : ℝ) (x : E) :
-    regPowDeriv 1 v t x = (‖x‖ ^ 2 + t) ^ (-1 / 2 : ℝ) * ⟪x, v⟫ := by
-  rw [regPowDeriv, one_mul]
-  norm_num
-
-private lemma regPowDeriv_one_zero (v : E) :
-    regPowDeriv 1 v 0 = fun x ↦ ‖x‖ ^ (-1 : ℝ) * ⟪x, v⟫ := by
-  funext x
-  rw [regPowDeriv_one, add_zero, Real.sq_rpow_div_two (norm_nonneg x)]
-
-private lemma regPowDerivOneDeriv_zero (v x : E) :
-    regPowDerivOneDeriv v 0 x =
-      ‖x‖ ^ (-1 : ℝ) • innerSL ℝ v - (‖x‖ ^ (-3 : ℝ) * ⟪x, v⟫) • innerSL ℝ x := by
-  rw [regPowDerivOneDeriv, add_zero, Real.sq_rpow_div_two (norm_nonneg x),
+private lemma regMulInnerDeriv_zero (s : ℝ) (v x : E) :
+    regMulInnerDeriv s v 0 x =
+      ‖x‖ ^ s • innerSL ℝ v + (s * ‖x‖ ^ (s - 2) * ⟪x, v⟫) • innerSL ℝ x := by
+  have hs : s / 2 - 1 = (s - 2) / 2 := by ring
+  rw [regMulInnerDeriv, add_zero, hs, Real.sq_rpow_div_two (norm_nonneg x),
     Real.sq_rpow_div_two (norm_nonneg x)]
 
-private lemma hasFDerivAt_regPowDeriv_one (v : E) {t : ℝ} {x : E} (hx : 0 < ‖x‖ ^ 2 + t) :
-    HasFDerivAt (regPowDeriv 1 v t) (regPowDerivOneDeriv v t x) x := by
+private lemma hasFDerivAt_regMulInner (s : ℝ) (v : E) {t : ℝ} {x : E}
+    (hx : 0 < ‖x‖ ^ 2 + t) :
+    HasFDerivAt (regMulInner s v t) (regMulInnerDeriv s v t x) x := by
   have h := (((hasStrictFDerivAt_norm_sq x).hasFDerivAt.add_const t).rpow_const
-    (p := -1 / 2) (Or.inl hx.ne')).mul (innerSL ℝ v).hasFDerivAt
-  have h32 : (-1 / 2 - 1 : ℝ) = -3 / 2 := by norm_num
+    (p := s / 2) (Or.inl hx.ne')).mul (innerSL ℝ v).hasFDerivAt
   convert h using 1
   · funext y
-    rw [regPowDeriv_one, Pi.mul_apply, innerSL_apply_apply, real_inner_comm]
+    rw [regMulInner, regPow, Pi.mul_apply, innerSL_apply_apply, real_inner_comm]
   · ext w
-    simp only [regPowDerivOneDeriv, sub_apply, add_apply, smul_apply, smul_eq_mul,
-      innerSL_apply_apply, nsmul_eq_mul, h32]
+    simp only [regMulInnerDeriv, add_apply, smul_apply, smul_eq_mul, innerSL_apply_apply,
+      nsmul_eq_mul]
     rw [real_inner_comm v x]
     ring
 
-private lemma continuous_regPowDerivOneDeriv (v : E) {t : ℝ} (ht : 0 < t) :
-    Continuous (regPowDerivOneDeriv v t) :=
-  ((continuous_norm_sq_add_rpow ht _).smul continuous_const).sub
-    (((continuous_norm_sq_add_rpow ht _).mul (continuous_id.inner continuous_const)).smul
-      (innerSL ℝ (E := E)).continuous)
+private lemma continuous_regMulInnerDeriv (s : ℝ) (v : E) {t : ℝ} (ht : 0 < t) :
+    Continuous (regMulInnerDeriv s v t) :=
+  ((continuous_norm_sq_add_rpow ht _).smul continuous_const).add
+    (((continuous_const.mul (continuous_norm_sq_add_rpow ht _)).mul
+      (continuous_id.inner continuous_const)).smul (innerSL ℝ (E := E)).continuous)
 
-private lemma tendsto_regPowDerivOneDeriv (v : E) {x : E} (hx : x ≠ 0) :
-    Tendsto (fun t ↦ regPowDerivOneDeriv v t x) (𝓝[>] 0) (𝓝 (regPowDerivOneDeriv v 0 x)) :=
-  ((((continuousAt_sq_add_rpow (norm_ne_zero_iff.2 hx) _).smul continuousAt_const).sub
-    (((continuousAt_sq_add_rpow (norm_ne_zero_iff.2 hx) _).mul continuousAt_const).smul
-      continuousAt_const)).tendsto).mono_left nhdsWithin_le_nhds
+private lemma tendsto_regMulInnerDeriv (s : ℝ) (v : E) {x : E} (hx : x ≠ 0) :
+    Tendsto (fun t ↦ regMulInnerDeriv s v t x) (𝓝[>] 0) (𝓝 (regMulInnerDeriv s v 0 x)) :=
+  ((((continuousAt_sq_add_rpow (norm_ne_zero_iff.2 hx) _).smul continuousAt_const).add
+    (((continuousAt_const.mul (continuousAt_sq_add_rpow (norm_ne_zero_iff.2 hx) _)).mul
+      continuousAt_const).smul continuousAt_const)).tendsto).mono_left nhdsWithin_le_nhds
 
-/-- The coordinate `‖x‖⁻¹ ⟪x, v⟫` of the unit radial field is bounded by `‖v‖`. -/
-theorem abs_norm_rpow_neg_one_mul_inner_le (v x : E) : |‖x‖ ^ (-1 : ℝ) * ⟪x, v⟫| ≤ ‖v‖ := by
+/-- The product `‖x‖ ^ s ⟪x, v⟫` is bounded by `‖v‖ ‖x‖ ^ (s + 1)`. -/
+theorem abs_norm_rpow_mul_inner_le (s : ℝ) (v x : E) :
+    |‖x‖ ^ s * ⟪x, v⟫| ≤ ‖v‖ * ‖x‖ ^ (s + 1) := by
   rcases eq_or_ne x 0 with rfl | hx
-  · simp
-  rw [abs_mul, abs_of_nonneg (by positivity), Real.rpow_neg_one]
-  calc _ ≤ ‖x‖⁻¹ * (‖x‖ * ‖v‖) := by gcongr; exact abs_real_inner_le_norm x v
-    _ = ‖v‖ := by field_simp
-
-private lemma abs_regPowDeriv_one_le (v : E) {t : ℝ} (ht : 0 ≤ t) (x : E) :
-    |regPowDeriv 1 v t x| ≤ ‖v‖ := by
-  rcases eq_or_ne x 0 with rfl | hx
-  · simp [regPowDeriv]
-  refine (abs_regPowDeriv_le one_le_two v ht hx).trans ?_
-  rw [regPowDeriv_one_zero]
-  exact abs_norm_rpow_neg_one_mul_inner_le v x
-
-private lemma norm_regPowDerivOneDeriv_le (v : E) {t : ℝ} (ht : 0 ≤ t) {x : E} (hx : x ≠ 0) :
-    ‖regPowDerivOneDeriv v t x‖ ≤ 2 * ‖v‖ * ‖x‖ ^ (-1 : ℝ) := by
-  have hs : 0 < ‖x‖ ^ 2 + t := by have := norm_pos_iff.2 hx; positivity
-  have h1 : (‖x‖ ^ 2 + t) ^ (-1 / 2 : ℝ) ≤ ‖x‖ ^ (-1 : ℝ) :=
-    norm_sq_add_rpow_div_two_le ht hx (by norm_num)
-  have h3 : (‖x‖ ^ 2 + t) ^ (-3 / 2 : ℝ) * ‖x‖ ^ 2 ≤ (‖x‖ ^ 2 + t) ^ (-1 / 2 : ℝ) := by
-    calc _ ≤ (‖x‖ ^ 2 + t) ^ (-3 / 2 : ℝ) * (‖x‖ ^ 2 + t) := by gcongr; linarith
-      _ = _ := by rw [← Real.rpow_add_one hs.ne']; norm_num
-  refine (norm_sub_le _ _).trans ?_
-  rw [norm_smul, norm_smul, norm_mul, innerSL_apply_norm, innerSL_apply_norm,
-    Real.norm_of_nonneg (by positivity), Real.norm_of_nonneg (by positivity), Real.norm_eq_abs]
-  calc _ ≤ (‖x‖ ^ 2 + t) ^ (-1 / 2 : ℝ) * ‖v‖ +
-        (‖x‖ ^ 2 + t) ^ (-3 / 2 : ℝ) * (‖x‖ * ‖v‖) * ‖x‖ := by
-        gcongr; exact abs_real_inner_le_norm x v
-    _ = ‖v‖ * ((‖x‖ ^ 2 + t) ^ (-1 / 2 : ℝ) + (‖x‖ ^ 2 + t) ^ (-3 / 2 : ℝ) * ‖x‖ ^ 2) := by
-        ring
-    _ ≤ ‖v‖ * (2 * ‖x‖ ^ (-1 : ℝ)) := by gcongr; linarith
+  · simp only [inner_zero_left, mul_zero, abs_zero]
+    positivity
+  rw [abs_mul, abs_of_nonneg (by positivity), Real.rpow_add_one (norm_ne_zero_iff.2 hx)]
+  calc _ ≤ ‖x‖ ^ s * (‖x‖ * ‖v‖) := by gcongr; exact abs_real_inner_le_norm x v
     _ = _ := by ring
 
-/-- Away from the origin, the derivative `‖x‖⁻¹ ⟪v, ·⟫ - ‖x‖⁻³ ⟪x, v⟫ ⟪x, ·⟫` of the coordinate
-`‖x‖⁻¹ ⟪x, v⟫` of the unit radial field has norm at most `2 ‖v‖ ‖x‖⁻¹`. -/
-theorem norm_norm_rpow_neg_one_smul_innerSL_sub_le (v x : E) :
-    ‖‖x‖ ^ (-1 : ℝ) • innerSL ℝ v - (‖x‖ ^ (-3 : ℝ) * ⟪x, v⟫) • innerSL ℝ x‖ ≤
-      2 * ‖v‖ * ‖x‖ ^ (-1 : ℝ) := by
+/-- Away from the origin, the derivative `‖x‖ ^ s ⟪v, ·⟫ + s ‖x‖ ^ (s - 2) ⟪x, v⟫ ⟪x, ·⟫` of
+`x ↦ ‖x‖ ^ s ⟪x, v⟫` has norm at most `(1 + |s|) ‖v‖ ‖x‖ ^ s`. -/
+theorem norm_norm_rpow_smul_innerSL_add_le (s : ℝ) (v x : E) :
+    ‖‖x‖ ^ s • innerSL ℝ v + (s * ‖x‖ ^ (s - 2) * ⟪x, v⟫) • innerSL ℝ x‖ ≤
+      (1 + |s|) * ‖v‖ * ‖x‖ ^ s := by
   rcases eq_or_ne x 0 with rfl | hx
-  · simp
-  rw [← regPowDerivOneDeriv_zero]
-  exact norm_regPowDerivOneDeriv_le v le_rfl hx
+  · simp only [inner_zero_left, mul_zero, zero_smul, add_zero, norm_smul, innerSL_apply_norm,
+      Real.norm_of_nonneg (Real.rpow_nonneg (norm_nonneg (0 : E)) s)]
+    have : 0 ≤ ‖(0 : E)‖ ^ s * ‖v‖ := by positivity
+    nlinarith [abs_nonneg s]
+  have h2 : ‖x‖ ^ (s - 2) * ‖x‖ ^ 2 = ‖x‖ ^ s := by
+    rw [← Real.rpow_natCast, ← Real.rpow_add (norm_pos_iff.2 hx)]
+    norm_num
+  refine (norm_add_le _ _).trans ?_
+  rw [norm_smul, norm_smul, innerSL_apply_norm, innerSL_apply_norm,
+    Real.norm_of_nonneg (by positivity), Real.norm_eq_abs, abs_mul, abs_mul,
+    abs_of_nonneg (by positivity : (0 : ℝ) ≤ ‖x‖ ^ (s - 2))]
+  calc _ ≤ ‖x‖ ^ s * ‖v‖ + |s| * ‖x‖ ^ (s - 2) * (‖x‖ * ‖v‖) * ‖x‖ := by
+        gcongr; exact abs_real_inner_le_norm x v
+    _ = (1 + |s|) * ‖v‖ * ‖x‖ ^ s := by rw [← h2]; ring
 
-end UnitRadial
+/-- For `s ≤ 0`, the derivatives of the regularizations are dominated by
+`(1 + |s|) ‖v‖ ‖x‖ ^ s` away from the origin. -/
+private lemma norm_regMulInnerDeriv_le {s : ℝ} (hs : s ≤ 0) (v : E) {t : ℝ} (ht : 0 ≤ t)
+    {x : E} (hx : x ≠ 0) : ‖regMulInnerDeriv s v t x‖ ≤ (1 + |s|) * ‖v‖ * ‖x‖ ^ s := by
+  have hpos : 0 < ‖x‖ ^ 2 + t := by have := norm_pos_iff.2 hx; positivity
+  have h1 : (‖x‖ ^ 2 + t) ^ (s / 2) ≤ ‖x‖ ^ s := norm_sq_add_rpow_div_two_le ht hx hs
+  have h3 : (‖x‖ ^ 2 + t) ^ (s / 2 - 1) * ‖x‖ ^ 2 ≤ (‖x‖ ^ 2 + t) ^ (s / 2) := by
+    calc _ ≤ (‖x‖ ^ 2 + t) ^ (s / 2 - 1) * (‖x‖ ^ 2 + t) := by gcongr; linarith
+      _ = _ := by rw [← Real.rpow_add_one hpos.ne']; norm_num
+  refine (norm_add_le _ _).trans ?_
+  rw [norm_smul, norm_smul, innerSL_apply_norm, innerSL_apply_norm,
+    Real.norm_of_nonneg (by positivity), Real.norm_eq_abs, abs_mul, abs_mul,
+    abs_of_nonneg (by positivity : (0 : ℝ) ≤ (‖x‖ ^ 2 + t) ^ (s / 2 - 1))]
+  calc _ ≤ (‖x‖ ^ 2 + t) ^ (s / 2) * ‖v‖ +
+        |s| * (‖x‖ ^ 2 + t) ^ (s / 2 - 1) * (‖x‖ * ‖v‖) * ‖x‖ := by
+        gcongr; exact abs_real_inner_le_norm x v
+    _ = ‖v‖ * ((‖x‖ ^ 2 + t) ^ (s / 2) + |s| * ((‖x‖ ^ 2 + t) ^ (s / 2 - 1) * ‖x‖ ^ 2)) := by
+        ring
+    _ ≤ ‖v‖ * (‖x‖ ^ s + |s| * ‖x‖ ^ s) := by gcongr; exact h3.trans h1
+    _ = _ := by ring
 
-private lemma locallyIntegrable_norm_rpow_neg_one_mul_inner (v : E) :
-    LocallyIntegrable (fun x : E ↦ ‖x‖ ^ (-1 : ℝ) * ⟪x, v⟫) μ :=
-  (locallyIntegrable_const ‖v‖).mono (by fun_prop : Measurable _).aestronglyMeasurable
-    (Eventually.of_forall fun x ↦ by simpa using abs_norm_rpow_neg_one_mul_inner_le v x)
+end RpowMulInner
 
-private lemma locallyIntegrable_norm_rpow_neg_one_smul_innerSL_sub
-    (hd : 1 < Module.finrank ℝ E) (v : E) :
+private lemma locallyIntegrable_norm_rpow_smul_innerSL_add {s : ℝ}
+    (hs : -(Module.finrank ℝ E : ℝ) < s) (v : E) :
     LocallyIntegrable
-      (fun x : E ↦ ‖x‖ ^ (-1 : ℝ) • innerSL ℝ v - (‖x‖ ^ (-3 : ℝ) * ⟪x, v⟫) • innerSL ℝ x) μ := by
-  have h := (locallyIntegrable_norm_sub_rpow (mu := μ) (s := -1)
-    (by simpa using (Nat.one_lt_cast (α := ℝ)).2 hd) 0).smul (2 * ‖v‖)
+      (fun x : E ↦ ‖x‖ ^ s • innerSL ℝ v + (s * ‖x‖ ^ (s - 2) * ⟪x, v⟫) • innerSL ℝ x) μ := by
+  have h := (locallyIntegrable_norm_sub_rpow (mu := μ) hs 0).smul ((1 + |s|) * ‖v‖)
   refine h.mono (by fun_prop : Measurable _).aestronglyMeasurable (Eventually.of_forall fun x ↦ ?_)
   rw [Pi.smul_apply, zero_sub, norm_neg, smul_eq_mul, Real.norm_of_nonneg (by positivity)]
-  exact norm_norm_rpow_neg_one_smul_innerSL_sub_le v x
+  exact norm_norm_rpow_smul_innerSL_add_le s v x
 
-private lemma hasWeakFDerivOn_regPowDeriv_one_ball (hd : 1 < Module.finrank ℝ E) (v : E) :
-    HasWeakFDerivOn μ ⟨Metric.ball 0 1, Metric.isOpen_ball⟩ (fun x : E ↦ ‖x‖ ^ (-1 : ℝ) * ⟪x, v⟫)
-      (fun x ↦ ‖x‖ ^ (-1 : ℝ) • innerSL ℝ v - (‖x‖ ^ (-3 : ℝ) * ⟪x, v⟫) • innerSL ℝ x) := by
-  have : Nontrivial E := Module.nontrivial_of_finrank_pos (zero_lt_one.trans hd)
-  have hd' : -(Module.finrank ℝ E : ℝ) < -1 := by
-    simpa using (Nat.one_lt_cast (α := ℝ)).2 hd
+private lemma hasWeakFDerivOn_regMulInner_ball {s : ℝ} (hs0 : s ≤ 0)
+    (hs : -(Module.finrank ℝ E : ℝ) < s) (v : E) :
+    HasWeakFDerivOn μ ⟨Metric.ball 0 1, Metric.isOpen_ball⟩ (fun x : E ↦ ‖x‖ ^ s * ⟪x, v⟫)
+      (fun x ↦ ‖x‖ ^ s • innerSL ℝ v + (s * ‖x‖ ^ (s - 2) * ⟪x, v⟫) • innerSL ℝ x) := by
+  have hs1 : -(Module.finrank ℝ E : ℝ) < s + 1 := by linarith
+  have : Nontrivial E := Module.nontrivial_of_finrank_pos (R := ℝ) (by exact_mod_cast
+    (neg_neg_iff_pos.1 (hs.trans_le hs0) : (0 : ℝ) < Module.finrank ℝ E))
   set c : ℕ → ℝ := fun n ↦ 1 / ((n : ℝ) + 1)
   have hc0 : ∀ n, 0 < c n := fun n ↦ Nat.one_div_pos_of_nat
   have hc : Tendsto c atTop (𝓝[>] 0) :=
     tendsto_nhdsWithin_iff.2 ⟨tendsto_one_div_add_atTop_nhds_zero_nat, Eventually.of_forall hc0⟩
+  have hloc : LocallyIntegrable (fun x : E ↦ ‖x‖ ^ s * ⟪x, v⟫) μ := by
+    refine ((locallyIntegrable_norm_sub_rpow (mu := μ) hs1 0).smul ‖v‖).mono
+      (by fun_prop : Measurable _).aestronglyMeasurable (Eventually.of_forall fun x ↦ ?_)
+    rw [Pi.smul_apply, zero_sub, norm_neg, smul_eq_mul,
+      Real.norm_of_nonneg (by positivity : (0 : ℝ) ≤ ‖v‖ * ‖x‖ ^ (s + 1))]
+    exact abs_norm_rpow_mul_inner_le s v x
   refine hasWeakFDerivOn_of_tendsto_lintegral_enorm_sub (l := atTop)
-    (u := fun n ↦ regPowDeriv 1 v (c n)) (U := fun n ↦ regPowDerivOneDeriv v (c n))
-    ((locallyIntegrable_norm_rpow_neg_one_mul_inner v).locallyIntegrableOn _)
+    (u := fun n ↦ regMulInner s v (c n)) (U := fun n ↦ regMulInnerDeriv s v (c n))
+    (hloc.locallyIntegrableOn _)
     (fun w ↦ by
       simpa only [Function.comp_def, ContinuousLinearMap.apply_apply] using
         (ContinuousLinearMap.apply ℝ ℝ w).locallyIntegrableOn_comp
-          ((locallyIntegrable_norm_rpow_neg_one_smul_innerSL_sub hd v).locallyIntegrableOn _))
+          ((locallyIntegrable_norm_rpow_smul_innerSL_add hs v).locallyIntegrableOn _))
     (fun n ↦ ?_) ?_ ?_
   · exact hasWeakFDerivOn_of_hasFDerivAt_off_countable countable_empty
-      (continuous_regPowDeriv 1 v (hc0 n)).continuousOn
-      ((continuous_regPowDerivOneDeriv v (hc0 n)).locallyIntegrable.locallyIntegrableOn _)
-      fun x _ ↦ hasFDerivAt_regPowDeriv_one v (by have := hc0 n; positivity)
+      (continuous_regMulInner s v (hc0 n)).continuousOn
+      ((continuous_regMulInnerDeriv s v (hc0 n)).locallyIntegrable.locallyIntegrableOn _)
+      fun x _ ↦ hasFDerivAt_regMulInner s v (by have := hc0 n; positivity)
   · simpa only [ofReal_norm, Opens.coe_mk] using
       tendsto_lintegral_norm_of_dominated_convergence
-        (μ := μ.restrict (Metric.ball 0 1)) (bound := fun _ ↦ ‖v‖)
-        (fun n ↦ (continuous_regPowDeriv 1 v (hc0 n)).aestronglyMeasurable)
-        (integrableOn_const measure_ball_lt_top.ne).hasFiniteIntegral
-        (fun n ↦ Eventually.of_forall fun x ↦ abs_regPowDeriv_one_le v (hc0 n).le x)
-        (ae_restrict_of_ae <| by
-          filter_upwards [μ.ae_ne 0] with x hx
-          simpa only [regPowDeriv_one_zero, Function.comp_def] using
-            (tendsto_regPowDeriv 1 v hx).comp hc)
-  · simpa only [ofReal_norm, Opens.coe_mk] using
-      tendsto_lintegral_norm_of_dominated_convergence
-        (μ := μ.restrict (Metric.ball 0 1)) (bound := fun x ↦ 2 * ‖v‖ * ‖x‖ ^ (-1 : ℝ))
-        (fun n ↦ (continuous_regPowDerivOneDeriv v (hc0 n)).aestronglyMeasurable)
-        ((integrableOn_norm_rpow_ball (mu := μ) hd').const_mul (2 * ‖v‖)).hasFiniteIntegral
+        (μ := μ.restrict (Metric.ball 0 1)) (bound := fun x ↦ ‖v‖ * ‖x‖ ^ (s + 1))
+        (fun n ↦ (continuous_regMulInner s v (hc0 n)).aestronglyMeasurable)
+        ((integrableOn_norm_rpow_ball (mu := μ) hs1).const_mul ‖v‖).hasFiniteIntegral
         (fun n ↦ ae_restrict_of_ae <| by
           filter_upwards [μ.ae_ne 0] with x hx
-          exact norm_regPowDerivOneDeriv_le v (hc0 n).le hx)
+          exact (abs_regMulInner_le hs0 v (hc0 n).le hx).trans
+            (by simpa only [regMulInner_zero] using abs_norm_rpow_mul_inner_le s v x))
         (ae_restrict_of_ae <| by
           filter_upwards [μ.ae_ne 0] with x hx
-          simpa only [regPowDerivOneDeriv_zero, Function.comp_def] using
-            (tendsto_regPowDerivOneDeriv v hx).comp hc)
+          simpa only [regMulInner_zero, Function.comp_def] using
+            (tendsto_regMulInner s v hx).comp hc)
+  · simpa only [ofReal_norm, Opens.coe_mk] using
+      tendsto_lintegral_norm_of_dominated_convergence
+        (μ := μ.restrict (Metric.ball 0 1)) (bound := fun x ↦ (1 + |s|) * ‖v‖ * ‖x‖ ^ s)
+        (fun n ↦ (continuous_regMulInnerDeriv s v (hc0 n)).aestronglyMeasurable)
+        ((integrableOn_norm_rpow_ball (mu := μ) hs).const_mul ((1 + |s|) * ‖v‖)).hasFiniteIntegral
+        (fun n ↦ ae_restrict_of_ae <| by
+          filter_upwards [μ.ae_ne 0] with x hx
+          exact norm_regMulInnerDeriv_le hs0 v (hc0 n).le hx)
+        (ae_restrict_of_ae <| by
+          filter_upwards [μ.ae_ne 0] with x hx
+          simpa only [regMulInnerDeriv_zero, Function.comp_def] using
+            (tendsto_regMulInnerDeriv s v hx).comp hc)
 
-/-- **The unit radial field is weakly differentiable.** If `dim E ≥ 2`, then on every open set the
-classical derivative `‖x‖⁻¹ ⟪v, ·⟫ - ‖x‖⁻³ ⟪x, v⟫ ⟪x, ·⟫` of the coordinate `‖x‖⁻¹ ⟪x, v⟫` of the
-unit radial field `x / ‖x‖`, which exists away from the origin, is a weak derivative of the
-coordinate, although the coordinate is discontinuous at the origin. The derivative has size
-`‖x‖⁻¹`, which is locally integrable exactly when `dim E ≥ 2`. -/
-theorem hasWeakFDerivOn_norm_rpow_neg_one_mul_inner (hd : 1 < Module.finrank ℝ E) (v : E)
-    (Ω : Opens E) :
-    HasWeakFDerivOn μ Ω (fun x : E ↦ ‖x‖ ^ (-1 : ℝ) * ⟪x, v⟫)
-      (fun x ↦ ‖x‖ ^ (-1 : ℝ) • innerSL ℝ v - (‖x‖ ^ (-3 : ℝ) * ⟪x, v⟫) • innerSL ℝ x) := by
-  have hderiv : ∀ x : E, x ≠ 0 → HasFDerivAt (fun x : E ↦ ‖x‖ ^ (-1 : ℝ) * ⟪x, v⟫)
-      (‖x‖ ^ (-1 : ℝ) • innerSL ℝ v - (‖x‖ ^ (-3 : ℝ) * ⟪x, v⟫) • innerSL ℝ x) x :=
+/-- **Norm powers times a coordinate are weakly differentiable.** For `s > -dim E`, on every open
+set the classical derivative `‖x‖ ^ s ⟪v, ·⟫ + s ‖x‖ ^ (s - 2) ⟪x, v⟫ ⟪x, ·⟫` of
+`x ↦ ‖x‖ ^ s ⟪x, v⟫`, which exists away from the origin, is a weak derivative of the product,
+although for `s ≤ -1` the product is discontinuous at the origin. The derivative has size
+`‖x‖ ^ s`, which is locally integrable exactly when `s > -dim E`. For `s = -1` the product is a
+coordinate of the unit radial field `x / ‖x‖`, the weak gradient of the norm; for `s = p - 2` it is
+`p⁻¹` times a coordinate of the gradient of `‖x‖ ^ p`. -/
+theorem hasWeakFDerivOn_norm_rpow_mul_inner {s : ℝ} (hs : -(Module.finrank ℝ E : ℝ) < s)
+    (v : E) (Ω : Opens E) :
+    HasWeakFDerivOn μ Ω (fun x : E ↦ ‖x‖ ^ s * ⟪x, v⟫)
+      (fun x ↦ ‖x‖ ^ s • innerSL ℝ v + (s * ‖x‖ ^ (s - 2) * ⟪x, v⟫) • innerSL ℝ x) := by
+  have hderiv : ∀ x : E, x ≠ 0 → HasFDerivAt (fun x : E ↦ ‖x‖ ^ s * ⟪x, v⟫)
+      (‖x‖ ^ s • innerSL ℝ v + (s * ‖x‖ ^ (s - 2) * ⟪x, v⟫) • innerSL ℝ x) x :=
     fun x hx ↦ by
-      simpa only [regPowDeriv_one_zero, regPowDerivOneDeriv_zero] using
-        hasFDerivAt_regPowDeriv_one (t := 0) v (by have := norm_pos_iff.2 hx; positivity)
+      simpa only [regMulInner_zero, regMulInnerDeriv_zero] using
+        hasFDerivAt_regMulInner (t := 0) s v (by have := norm_pos_iff.2 hx; positivity)
+  have hD := (locallyIntegrable_norm_rpow_smul_innerSL_add (μ := μ) hs v).locallyIntegrableOn
+  rcases lt_or_ge 0 s with hs0 | hs0
+  · exact hasWeakFDerivOn_of_hasFDerivAt_off_countable (countable_singleton 0)
+      (((continuous_norm.rpow_const fun _ ↦ Or.inr hs0.le).mul
+        (continuous_id.inner continuous_const)).continuousOn) (hD _) fun x hx ↦ hderiv x hx.2
   have hcompl : HasWeakFDerivOn μ ⟨{0}ᶜ, isOpen_compl_singleton⟩
-      (fun x : E ↦ ‖x‖ ^ (-1 : ℝ) * ⟪x, v⟫)
-      (fun x ↦ ‖x‖ ^ (-1 : ℝ) • innerSL ℝ v - (‖x‖ ^ (-3 : ℝ) * ⟪x, v⟫) • innerSL ℝ x) :=
+      (fun x : E ↦ ‖x‖ ^ s * ⟪x, v⟫)
+      (fun x ↦ ‖x‖ ^ s • innerSL ℝ v + (s * ‖x‖ ^ (s - 2) * ⟪x, v⟫) • innerSL ℝ x) :=
     hasWeakFDerivOn_of_hasFDerivAt_off_countable countable_empty
-      (fun x hx ↦ (hderiv x hx).continuousAt.continuousWithinAt)
-      ((locallyIntegrable_norm_rpow_neg_one_smul_innerSL_sub hd v).locallyIntegrableOn _)
-      fun x hx ↦ hderiv x hx.1
-  refine ((hasWeakFDerivOn_regPowDeriv_one_ball hd v).sup hcompl).mono fun x _ ↦ ?_
+      (fun x hx ↦ (hderiv x hx).continuousAt.continuousWithinAt) (hD _) fun x hx ↦ hderiv x hx.1
+  refine ((hasWeakFDerivOn_regMulInner_ball hs0 hs v).sup hcompl).mono fun x _ ↦ ?_
   rcases eq_or_ne x 0 with rfl | hx
   · exact Or.inl (Metric.mem_ball_self one_pos)
   · exact Or.inr hx
+
+/-! ### The radial field `x ↦ ‖x‖ ^ p • x` -/
+
+section RadialField
+
+/-- For `p > -dim E` the classical derivative of the radial field `x ↦ ‖x‖ ^ p • x` away from the
+origin is locally integrable: it is `O(‖x‖ ^ p)`. -/
+theorem locallyIntegrable_rpow_smul_id_add_smulRight {p : ℝ}
+    (hp : -(Module.finrank ℝ E : ℝ) < p) :
+    LocallyIntegrable (fun x : E ↦ ‖x‖ ^ p • ContinuousLinearMap.id ℝ E +
+      ((p * ‖x‖ ^ (p - 2)) • innerSL ℝ x).smulRight x) μ := by
+  have hpow : LocallyIntegrable (fun x : E ↦ ‖x‖ ^ p) μ := by
+    simpa only [zero_sub, norm_neg] using locallyIntegrable_norm_sub_rpow (mu := μ) hp (0 : E)
+  have hbound : LocallyIntegrable (fun x : E ↦ (1 + |p|) * ‖x‖ ^ p) μ := hpow.smul (1 + |p|)
+  -- The rank-one term is a continuous bilinear expression in `‖x‖`-weighted `innerSL ℝ x` and `x`.
+  have hsr : Continuous fun q : StrongDual ℝ E × E ↦ q.1.smulRight q.2 := by
+    convert (ContinuousLinearMap.smulRightL ℝ ℝ ℝ E E).continuous₂ using 1
+    funext q
+    ext v
+    simp [Function.uncurry]
+  have hmeas : Measurable fun x : E ↦ ‖x‖ ^ p • ContinuousLinearMap.id ℝ E +
+      ((p * ‖x‖ ^ (p - 2)) • innerSL ℝ x).smulRight x :=
+    (by fun_prop : Measurable fun x : E ↦ ‖x‖ ^ p • ContinuousLinearMap.id ℝ E).add
+      (hsr.measurable2 (by fun_prop) measurable_id)
+  refine hbound.mono hmeas.aestronglyMeasurable (ae_of_all _ fun x ↦ ?_)
+  rw [Real.norm_of_nonneg (by positivity)]
+  exact norm_rpow_smul_id_add_smulRight_le p x
+
+/-- **The weak derivative of the radial field.** For `p > -1`, the radial field
+`x ↦ ‖x‖ ^ p • x` has its classical derivative `‖x‖ ^ p id + p ‖x‖ ^ (p - 2) ⟪x, ·⟫ x`, taken away
+from the origin, as weak derivative on every open set. -/
+theorem hasWeakFDerivOn_norm_rpow_smul_self {p : ℝ} (hp : -1 < p) (Ω : Opens E) :
+    HasWeakFDerivOn μ Ω (fun x : E ↦ ‖x‖ ^ p • x)
+      (fun x ↦ ‖x‖ ^ p • ContinuousLinearMap.id ℝ E +
+        ((p * ‖x‖ ^ (p - 2)) • innerSL ℝ x).smulRight x) := by
+  refine hasWeakFDerivOn_of_hasFDerivAt_off_countable (countable_singleton 0)
+    (continuous_norm_rpow_smul_self hp).continuousOn (LocallyIntegrable.locallyIntegrableOn ?_ _)
+    fun _ hx ↦ hasFDerivAt_norm_rpow_smul_self_of_ne p hx.2
+  rcases Nat.eq_zero_or_pos (Module.finrank ℝ E) with hd | hd
+  · -- A space of dimension zero is a point, on which every function is constant.
+    have : Subsingleton E := Module.finrank_zero_iff.1 hd
+    exact (continuous_of_const fun x y ↦ by rw [Subsingleton.elim x y]).locallyIntegrable
+  · have : (1 : ℝ) ≤ Module.finrank ℝ E := by exact_mod_cast hd
+    exact locallyIntegrable_rpow_smul_id_add_smulRight (by linarith)
+
+/-- **The weak derivative of the unit radial field.** If `dim E ≥ 2`, the unit radial field
+`x ↦ ‖x‖⁻¹ • x`, which is discontinuous at the origin, has its classical derivative
+`‖x‖⁻¹ id - ‖x‖⁻³ ⟪x, ·⟫ x`, taken away from the origin, as weak derivative on every open set. This
+is the exponent `p = -1` of `TauCeti.hasWeakFDerivOn_norm_rpow_smul_self`. -/
+theorem hasWeakFDerivOn_norm_rpow_neg_one_smul_self (hd : 1 < Module.finrank ℝ E)
+    (Ω : Opens E) :
+    HasWeakFDerivOn μ Ω (fun x : E ↦ ‖x‖ ^ (-1 : ℝ) • x)
+      (fun x ↦ ‖x‖ ^ (-1 : ℝ) • ContinuousLinearMap.id ℝ E +
+        ((-1 * ‖x‖ ^ ((-1 : ℝ) - 2)) • innerSL ℝ x).smulRight x) := by
+  set b := stdOrthonormalBasis ℝ E
+  refine (hasWeakFDerivOn_iff_coordinates b.toBasis).2 fun i ↦ ?_
+  -- The coordinates are the components `‖x‖⁻¹ ⟪x, bᵢ⟫` of the unit radial field.
+  have hs : -(Module.finrank ℝ E : ℝ) < -1 := by
+    have : (1 : ℝ) < Module.finrank ℝ E := by exact_mod_cast hd
+    linarith
+  convert hasWeakFDerivOn_norm_rpow_mul_inner (μ := μ) hs (b i) Ω using 1
+  · funext x
+    simp [OrthonormalBasis.repr_apply_apply, real_inner_comm]
+  · funext x
+    ext v
+    simp only [ContinuousLinearMap.comp_apply, LinearMap.coe_toContinuousLinearMap',
+      Module.Basis.coord_apply, OrthonormalBasis.coe_toBasis_repr_apply,
+      OrthonormalBasis.repr_apply_apply]
+    rw [show (-1 : ℝ) - 2 = -3 by norm_num]
+    simp only [add_apply, smul_apply, ContinuousLinearMap.id_apply,
+      ContinuousLinearMap.smulRight_apply, coe_innerSL_apply, smul_eq_mul, inner_add_right,
+      inner_smul_right, real_inner_comm]
+    ring
+
+end RadialField
 
 end TauCeti

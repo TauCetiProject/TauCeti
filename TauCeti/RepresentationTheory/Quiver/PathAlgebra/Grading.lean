@@ -134,7 +134,7 @@ theorem gradeBy_eq_span_image_basis (m : M) :
 theorem gradeBy_eq_span_range (m : M) :
     gradeBy k wt m = Submodule.span k
       (Set.range fun x : {x : Quiver.TotalPath Q // x.2.2.addWeight wt = m} =>
-        (ofPath x.1 : pathAlgebra k Q)) := by
+        (ofPath x.val : pathAlgebra k Q)) := by
   simp only [gradeBy, Set.image_eq_range]
   -- `↥{x | x.2.2.addWeight wt = m}` and `{x // x.2.2.addWeight wt = m}` are the same type by
   -- definition.
@@ -233,7 +233,7 @@ variable {k wt}
 @[simp]
 theorem coe_gradeByBasis_apply {m : M}
     (x : {x : Quiver.TotalPath Q // x.2.2.addWeight wt = m}) :
-    (gradeByBasis k wt m x : pathAlgebra k Q) = ofPath x.1 := by
+    (gradeByBasis k wt m x : pathAlgebra k Q) = ofPath x.val := by
   rw [gradeByBasis, Module.Basis.map_apply, Module.Basis.span_apply, LinearEquiv.coe_ofEq_apply]
 
 variable (k wt) [DecidableEq M] in
@@ -384,7 +384,7 @@ membership proof; each step supplies its own. -/
 private theorem decomposeAlgHom_apply_aux {m : M} {f : pathAlgebra k Q}
     (hf : f ∈ Submodule.span k
       (Set.range fun x : {x : Quiver.TotalPath Q // x.2.2.addWeight wt = m} =>
-        (ofPath x.1 : pathAlgebra k Q))) :
+        (ofPath x.val : pathAlgebra k Q))) :
     ∀ h : f ∈ gradeBy k wt m,
       decomposeAlgHom k wt f = DirectSum.of (fun m' => gradeBy k wt m') m ⟨f, h⟩ := by
   induction hf using Submodule.span_induction with
@@ -416,7 +416,7 @@ noncomputable instance gradeBy.gradedAlgebra : GradedAlgebra (gradeBy k wt) :=
       simp only [AlgHom.comp_toLinearMap, LinearMap.coe_comp, Function.comp_apply,
         AlgHom.toLinearMap_apply, coe_pathAlgebraBasis, decomposeAlgHom_ofPath,
         DirectSum.coeAlgHom_of, AlgHom.coe_id, id_eq])
-    fun _ f => decomposeAlgHom_of_mem k wt f.2
+    fun _ f => decomposeAlgHom_of_mem k wt f.property
 
 /-- The decomposition sends a basis path to the summand its weight names. -/
 @[simp]
@@ -496,7 +496,7 @@ theorem grade_eq_span_image_basis (n : ℕ) :
 theorem grade_eq_span_range (n : ℕ) :
     grade k Q n = Submodule.span k
       (Set.range fun x : {x : Quiver.TotalPath Q // x.2.2.length = n} =>
-        (ofPath x.1 : pathAlgebra k Q)) := by
+        (ofPath x.val : pathAlgebra k Q)) := by
   simp only [grade_eq_span_image_basis, coe_pathAlgebraBasis, Set.image_eq_range]
   -- `↥{x | x.2.2.length = n}` and `{x // x.2.2.length = n}` are the same type by definition.
   rfl
@@ -564,7 +564,7 @@ variable {k Q}
 /-- The basis of the degree-`n` piece consists of the paths of length `n`. -/
 @[simp]
 theorem coe_gradeBasis_apply {n : ℕ} (x : {x : Quiver.TotalPath Q // x.2.2.length = n}) :
-    (gradeBasis k Q n x : pathAlgebra k Q) = ofPath x.1 := by
+    (gradeBasis k Q n x : pathAlgebra k Q) = ofPath x.val := by
   rw [gradeBasis, Module.Basis.map_apply, Module.Basis.span_apply, LinearEquiv.coe_ofEq_apply]
 
 variable (k Q)

@@ -73,17 +73,9 @@ variable {δ Q}
 `R` for every `g`. -/
 theorem mem_pseudomeasures_iff {z : Q} :
     z ∈ pseudomeasures δ Q ↔ ∀ g : G, ∃ r : R, algebraMap R Q r = algebraMap R Q (δ g - 1) * z := by
-  simp_rw [pseudomeasures, mem_div_iff_forall_mul_mem, mem_one]
-  constructor
-  · intro h g
-    simpa [mul_comm] using h _ (subset_span ⟨g, rfl⟩)
-  · intro h y hy
-    have hle : span R (Set.range fun g : G => algebraMap R Q (δ g - 1)) ≤
-        (1 : Submodule R Q).comap (LinearMap.mulLeft R z) := by
-      rw [span_le]
-      rintro _ ⟨g, rfl⟩
-      simpa [mem_one, mul_comm] using h g
-    simpa [mem_one] using hle hy
+  -- `z ∈ 1 / span R S` means `span R {z} * span R S ≤ 1`, and that product is `span R ({z} * S)`.
+  rw [pseudomeasures, ← span_singleton_le_iff_mem, Submodule.le_div_iff_mul_le, span_mul_span]
+  simp [span_le, Set.range_subset_iff, mem_one, mul_comm]
 
 /-- If every `δ g` is `1`, every element of `Q` is a pseudo-measure. -/
 theorem pseudomeasures_eq_top (h : ∀ g, δ g = 1) : pseudomeasures δ Q = ⊤ :=
@@ -119,9 +111,7 @@ def numerator (g : G) : pseudomeasures δ Q →ₗ[R] R :=
   (LinearEquiv.ofInjective (Algebra.linearMap R Q)
       (FaithfulSMul.algebraMap_injective R Q)).symm.toLinearMap ∘ₗ
     ((LinearMap.mulLeft R (algebraMap R Q (δ g - 1))).comp (pseudomeasures δ Q).subtype
-      |>.codRestrict _ fun z => by
-        obtain ⟨r, hr⟩ := mem_pseudomeasures_iff.1 z.2 g
-        exact ⟨r, by simpa using hr⟩)
+      |>.codRestrict _ fun z => by simpa using mem_pseudomeasures_iff.1 z.property g)
 
 /-- The defining property of the cleared numerator: its image in `Q` is `(δ g - 1) * z`. -/
 @[simp]
@@ -193,7 +183,7 @@ theorem evalAt_cross (g h : G) (hg : IsUnit (algebraMap R A (δ g - 1)))
 @[simp]
 theorem evalAt_integral (g : G) (hg : IsUnit (algebraMap R A (δ g - 1))) (r : R) :
     evalAt δ Q A g hg (integral δ Q r) = algebraMap R A r := by
-  rw [evalAt_apply, numerator_integral, map_mul, ← mul_assoc, IsUnit.val_inv_mul, one_mul]
+  rw [← hg.mul_right_inj, evalAt_spec, numerator_integral, map_mul]
 
 /-- Uniqueness of admissible evaluation: an `R`-linear map on pseudo-measures extending the
 structure map `R → A` on integral elements is the evaluation at any admissible `g`. -/

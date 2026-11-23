@@ -20,6 +20,8 @@ norm-equation Hilbert symbol.
 
 * `TauCeti.anisotropic_pfisterFormClass_two_iff_hilbertSymbol_eq_neg_one`: `<<a, b>>` is
   anisotropic exactly when the Hilbert symbol `(a, b)` is `-1`.
+* `TauCeti.pfisterClass_two_eq_zero_iff_hilbertSymbol_eq_one`: the Witt class of `<<a, b>>`
+  vanishes exactly when `(a, b) = 1`.
 
 ## References
 
@@ -42,5 +44,12 @@ theorem anisotropic_pfisterFormClass_two_iff_hilbertSymbol_eq_neg_one (a b : Kˣ
     (hilbertSymbol_eq_one_iff_nonempty_algEquiv_matrix a b).trans
       ((pfisterFormClass_two_tfae a b).out 1 2)
   rw [← not_iff_not, ← h, ← ne_eq, Int.units_ne_iff_eq_neg, neg_neg]
+
+/-- **Vanishing of `<<a, b>>` in the Witt ring is read off the Hilbert symbol**: the Witt class of
+the two-fold Pfister form `<<a, b>>` is zero exactly when `(a, b) = 1`. -/
+theorem pfisterClass_two_eq_zero_iff_hilbertSymbol_eq_one (a b : Kˣ) :
+    pfisterClass ![a, b] = 0 ↔ hilbertSymbol a b = 1 :=
+  (pfisterClass_two_eq_zero_iff a b).trans
+    (hilbertSymbol_eq_one_iff_nonempty_algEquiv_matrix a b).symm
 
 end TauCeti

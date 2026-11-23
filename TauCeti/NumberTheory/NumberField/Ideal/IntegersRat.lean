@@ -12,9 +12,11 @@ public import Mathlib.RingTheory.DedekindDomain.Different
 public import Mathlib.RingTheory.Frobenius
 public import Mathlib.RingTheory.RamificationInertia.Inertia
 public import Mathlib.RingTheory.RamificationInertia.Ramification
+public import Mathlib.Topology.Algebra.InfiniteSum.Defs
 public import TauCeti.Algebra.Squarefree
 public import TauCeti.RingTheory.DedekindDomain.AdicValuation.Basic
 import Mathlib.RingTheory.DedekindDomain.AdicValuation.Ramification
+import Mathlib.Topology.Algebra.InfiniteSum.Basic
 import TauCeti.RingTheory.Ideal.Norm.AbsNorm
 import TauCeti.RingTheory.RamificationInertia.Bijective
 import TauCeti.NumberTheory.NumberField.Frobenius.DecompositionGroup
@@ -56,8 +58,11 @@ at its primes.
 * `Ideal.primesOver_under_ringOfIntegers_rat_eq`: for an ideal `Q` lying over an ideal `p` of
   `ℤ`, the primes above `Q ∩ 𝓞 ℚ` are the primes above `p`.
 * `Rat.HeightOneSpectrum.absNorm_asIdeal`: the absolute norm of a height-one prime of `𝓞 ℚ` is
-  the rational prime it corresponds to, and `Rat.HeightOneSpectrum.exists_absNorm_eq` shows
-  every rational prime arises this way.
+  the rational prime it corresponds to; `Rat.HeightOneSpectrum.exists_absNorm_eq` and
+  `Rat.HeightOneSpectrum.absNorm_asIdeal_injective` show every rational prime arises uniquely.
+* `TauCeti.tsum_heightOneSpectrum_rat_eq_tsum_primes`: an unconditional series over the
+  height-one primes of `𝓞 ℚ` depending only on the absolute norm equals the corresponding series
+  over `Nat.Primes`.
 * `Rat.HeightOneSpectrum.liesOver_span_absNorm`: a prime above a height-one prime `v` of `𝓞 ℚ`
   lies over the rational prime of `v` in `ℤ`.
 * `Rat.HeightOneSpectrum.valuation_natGenerator` and
@@ -254,6 +259,13 @@ theorem asIdeal_eq_span_natGenerator (v : HeightOneSpectrum (𝓞 ℚ)) :
     v.asIdeal = Ideal.span {((natGenerator v : ℕ) : 𝓞 ℚ)} := by
   rw [← absNorm_asIdeal, Rat.RingOfIntegers.ideal_span_absNorm_eq_self]
 
+/-- Distinct height-one primes of `𝓞 ℚ` have distinct absolute norms. -/
+theorem absNorm_asIdeal_injective :
+    Function.Injective fun v : HeightOneSpectrum (𝓞 ℚ) ↦ Ideal.absNorm v.asIdeal :=
+  fun v w h ↦ HeightOneSpectrum.asIdeal_injective <| by
+    simpa only [Rat.RingOfIntegers.ideal_span_absNorm_eq_self] using
+      congrArg (fun n : ℕ ↦ Ideal.span {(n : 𝓞 ℚ)}) h
+
 /-- The rational prime of a height-one prime `v` of `𝓞 ℚ` is a uniformizer at `v`: its
 valuation there is `exp (-1)`. -/
 @[simp]
@@ -270,7 +282,7 @@ theorem valuation_natGenerator_of_ne {v w : HeightOneSpectrum (𝓞 ℚ)} (hw : 
   rw [← map_natCast (algebraMap (𝓞 ℚ) ℚ), w.valuation_of_algebraMap,
     HeightOneSpectrum.intValuation_eq_one_iff, natCast_mem_iff_absNorm_asIdeal_dvd,
     absNorm_asIdeal, Nat.prime_dvd_prime_iff_eq (prime_natGenerator w) (prime_natGenerator v)]
-  exact fun h ↦ hw (primesEquiv.injective (Subtype.ext h))
+  exact fun h ↦ hw (absNorm_asIdeal_injective (by simpa only [absNorm_asIdeal] using h))
 
 /-- The valuation of an integer at a height-one prime `v` of `𝓞 ℚ` is at most `exp (-k)` exactly
 when the `k`-th power of the rational prime of `v` divides it. -/
@@ -288,6 +300,21 @@ theorem exp_neg_one_le_valuation_intCast (v : HeightOneSpectrum (𝓞 ℚ)) {n :
   exact (TauCeti.squarefree_map_iff Rat.ringOfIntegersEquiv).1 (by simpa using hn)
 
 end Rat.HeightOneSpectrum
+
+namespace TauCeti
+
+/-- An unconditional series over the height-one primes of `𝓞 ℚ` depending only on the absolute norm
+equals the corresponding series over `Nat.Primes`. -/
+theorem tsum_heightOneSpectrum_rat_eq_tsum_primes {α : Type*} [AddCommMonoid α]
+    [TopologicalSpace α] (f : ℕ → α) :
+    (∑' v : IsDedekindDomain.HeightOneSpectrum (𝓞 ℚ), f (Ideal.absNorm v.asIdeal)) =
+      ∑' p : Nat.Primes, f p := by
+  refine (tsum_congr fun v ↦ ?_).trans
+    ((Rat.HeightOneSpectrum.primesEquiv (R := 𝓞 ℚ)).tsum_eq (fun p : Nat.Primes ↦ f p))
+  rw [Rat.HeightOneSpectrum.absNorm_asIdeal, Rat.HeightOneSpectrum.primesEquiv]
+  rfl
+
+end TauCeti
 
 namespace IsDedekindDomain.HeightOneSpectrum
 
