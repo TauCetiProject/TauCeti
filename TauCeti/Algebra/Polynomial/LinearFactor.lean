@@ -34,8 +34,8 @@ at most one, is `a` times that of `g` plus `derivative a` times the Hasse deriva
 `k`. For `a = X - C r` over a ring the second term is the Hasse derivative of `g` of order `k`.
 
 A Hasse derivative of order `k` lowers the power of a polynomial `q` that is a left factor of a
-polynomial by at most `k`, provided `q` commutes with its own Hasse derivatives. This holds over any
-commutative semiring, and for `q = X - C r` over any ring.
+polynomial by at most `k`, provided `q` commutes with its own Hasse derivatives of order at most
+`k`. This holds over any commutative semiring, and for `q = X - C r` over any ring.
 
 ## Main results
 
@@ -51,8 +51,8 @@ commutative semiring, and for `q = X - C r` over any ring.
   the Leibniz rule for Hasse derivatives of a polynomial with a left factor of degree at most one,
   over any semiring, and of a polynomial with left factor `X - C r`, over any ring.
 * `Polynomial.pow_sub_dvd_hasseDeriv_of_pow_dvd_of_commute`: if `q ^ n` is a left factor of `p`
-  and `q` commutes with its Hasse derivatives, then `q ^ (n - k)` is a left factor of the Hasse
-  derivative of `p` of order `k`, over any semiring.
+  and `q` commutes with its Hasse derivatives of order at most `k`, then `q ^ (n - k)` is a left
+  factor of the Hasse derivative of `p` of order `k`, over any semiring.
 * `Polynomial.pow_sub_dvd_hasseDeriv_of_pow_dvd`,
   `Polynomial.X_sub_C_pow_sub_dvd_hasseDeriv_of_pow_dvd`: its cases over a commutative semiring,
   and for `q = X - C r` over any ring.
@@ -201,13 +201,14 @@ theorem hasseDeriv_succ_X_sub_C_mul (k : ℕ) (r : R) (g : R[X]) :
     hasseDeriv (k + 1) ((X - C r) * g) = (X - C r) * hasseDeriv (k + 1) g + hasseDeriv k g := by
   simpa using hasseDeriv_succ_mul_of_natDegree_le_one (natDegree_X_sub_C_le r) k g
 
-/-- If `q ^ n` is a left factor of `p` and `q` commutes with its own Hasse derivatives, then
-`q ^ (n - k)` is a left factor of the Hasse derivative of `p` of order `k`. This is the analogue of
+/-- If `q ^ n` is a left factor of `p` and `q` commutes with its own Hasse derivatives of order at
+most `k`, then `q ^ (n - k)` is a left factor of the Hasse derivative of `p` of order `k`. Only
+these orders occur in the Leibniz rule for the order-`k` derivative. This is the analogue of
 `Polynomial.pow_sub_dvd_iterate_derivative_of_pow_dvd` for Hasse derivatives. That result only
 gives the divisibility for `k !` times the Hasse derivative, and the factor `k !` cannot in general
 be cancelled. -/
 theorem pow_sub_dvd_hasseDeriv_of_pow_dvd_of_commute {S : Type*} [Semiring S] {p q : S[X]} {n : ℕ}
-    (hq : ∀ i, Commute q (hasseDeriv i q)) (k : ℕ) (h : q ^ n ∣ p) :
+    (k : ℕ) (hq : ∀ i ≤ k, Commute q (hasseDeriv i q)) (h : q ^ n ∣ p) :
     q ^ (n - k) ∣ hasseDeriv k p := by
   obtain ⟨s, rfl⟩ := h
   induction n generalizing k with
@@ -216,14 +217,15 @@ theorem pow_sub_dvd_hasseDeriv_of_pow_dvd_of_commute {S : Type*} [Semiring S] {p
     rw [pow_succ', mul_assoc, hasseDeriv_mul]
     refine Finset.dvd_sum fun ij hij => ?_
     rw [Finset.mem_antidiagonal] at hij
-    obtain ⟨t, ht⟩ := ih ij.2
+    have hjk : ij.2 ≤ k := by omega
+    obtain ⟨t, ht⟩ := ih ij.2 fun i hi => hq i (hi.trans hjk)
     rw [ht, ← mul_assoc]
     rcases Nat.eq_zero_or_pos ij.1 with h0 | h0
     · -- In order zero the factor `q` itself joins the power.
       rw [h0, hasseDeriv_zero', ← pow_succ']
       exact (pow_dvd_pow q (by omega)).trans (dvd_mul_right _ _)
     · -- In positive order the derivative of `q` moves past the power, losing one factor `q`.
-      rw [((hq ij.1).pow_left (n - ij.2)).symm.eq, mul_assoc]
+      rw [((hq ij.1 (by omega)).pow_left (n - ij.2)).symm.eq, mul_assoc]
       exact (pow_dvd_pow q (by omega)).trans (dvd_mul_right _ _)
 
 /-- If `q ^ n` divides `p`, then `q ^ (n - k)` divides the Hasse derivative of `p` of order `k`.
@@ -232,13 +234,13 @@ derivatives. That result only gives the divisibility for `k !` times the Hasse d
 factor `k !` cannot in general be cancelled. -/
 theorem pow_sub_dvd_hasseDeriv_of_pow_dvd {S : Type*} [CommSemiring S] {p q : S[X]} {n : ℕ}
     (k : ℕ) (h : q ^ n ∣ p) : q ^ (n - k) ∣ hasseDeriv k p :=
-  pow_sub_dvd_hasseDeriv_of_pow_dvd_of_commute (fun _ => Commute.all _ _) k h
+  pow_sub_dvd_hasseDeriv_of_pow_dvd_of_commute k (fun _ _ => Commute.all _ _) h
 
 /-- If `(X - C r) ^ n` is a left factor of `p`, then `(X - C r) ^ (n - k)` is a left factor of the
 Hasse derivative of `p` of order `k`, over any ring. -/
 theorem X_sub_C_pow_sub_dvd_hasseDeriv_of_pow_dvd {p : R[X]} {r : R} {n : ℕ} (k : ℕ)
     (h : (X - C r) ^ n ∣ p) : (X - C r) ^ (n - k) ∣ hasseDeriv k p := by
-  refine pow_sub_dvd_hasseDeriv_of_pow_dvd_of_commute (fun i => ?_) k h
+  refine pow_sub_dvd_hasseDeriv_of_pow_dvd_of_commute k (fun i _ => ?_) h
   -- The Hasse derivatives of `X - C r` are `X - C r`, `1` and then `0`.
   rcases i with _ | _ | i
   · simp
