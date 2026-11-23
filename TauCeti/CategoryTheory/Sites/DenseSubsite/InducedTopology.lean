@@ -26,6 +26,11 @@ Grothendieck topologies: `K` need not be stable under composition, and the comap
 need not itself be a coverage. When every ambient generator at an image object has a refining
 comap generator, `Coverage.comapOfRefineGenerators` supplies a coverage with this precoverage.
 
+The comparison and local cover density criteria extend Mathlib's
+`Precoverage.toGrothendieck_comap_eq_restrictedTopology` and
+`Precoverage.locallyCoverDense_of_map_functorPullback_mem`, respectively. Both Mathlib theorems
+assume stability under composition.
+
 ## Main results
 
 * `Coverage.comapOfRefineGenerators`: the comap coverage under generator refinements.
