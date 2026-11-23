@@ -12,6 +12,9 @@ public import Mathlib.RingTheory.Ideal.BigOperators
 public import Mathlib.RingTheory.Ideal.Maps
 public import Mathlib.RingTheory.Ideal.Operations
 public import Mathlib.RingTheory.Ideal.Quotient.Defs
+public import Mathlib.SetTheory.Cardinal.Finite
+
+import Mathlib.LinearAlgebra.Matrix.GeneralLinearGroup.Card
 
 /-!
 # Matrix entries lying in an ideal
@@ -38,6 +41,8 @@ matrix identity.
   with entries in `J` vanishes when `I * J = ⊥`.
 * `Matrix.forall_mem_ker_iff_map_eq_zero`: the entries of a matrix lie in the kernel of a ring
   homomorphism exactly when its image under that homomorphism is zero.
+* `RingHom.natCard_ker_mapMatrix`: so the kernel of `f` applied entrywise to `n × n` matrices
+  has `|ker f| ^ (n * n)` elements.
 * `Matrix.map_mk_eq_map_mk_iff`: two matrices agree modulo `r` exactly when they differ by `r`
   times a matrix.
 * `Matrix.pow_apply_mem_pow`, `Matrix.isNilpotent_of_forall_apply_mem`: the `k`-th power of a
@@ -84,6 +89,22 @@ theorem forall_mem_ker_iff_map_eq_zero {R : Type*} [Semiring R] [Semiring S] {F 
     [FunLike F R S] [RingHomClass F R S] {f : F} {D : Matrix m n R} :
     (∀ i j, D i j ∈ RingHom.ker f) ↔ D.map f = 0 := by
   simp only [RingHom.mem_ker, ← Matrix.ext_iff, map_apply, Matrix.zero_apply]
+
+/-- **The kernel of an entrywise ring homomorphism** consists of the matrices with entries in
+`ker f`, so it has `|ker f| ^ (n * n)` elements. -/
+theorem _root_.RingHom.natCard_ker_mapMatrix {R : Type*} [Semiring R] [Semiring S] [Fintype n]
+    [DecidableEq n] (f : R →+* S) :
+    Nat.card (RingHom.ker (f.mapMatrix : Matrix n n R →+* Matrix n n S)) =
+      Nat.card (RingHom.ker f) ^ (Fintype.card n * Fintype.card n) := by
+  let e : RingHom.ker (f.mapMatrix : Matrix n n R →+* Matrix n n S) ≃
+      Matrix n n (RingHom.ker f) :=
+    { toFun M := of fun i j ↦
+        ⟨M.val i j, forall_mem_ker_iff_map_eq_zero.mpr (RingHom.mem_ker.mp M.property) i j⟩
+      invFun M := ⟨of fun i j ↦ (M i j).val,
+        RingHom.mem_ker.mpr (forall_mem_ker_iff_map_eq_zero.mp fun i j ↦ (M i j).property)⟩
+      left_inv _ := rfl
+      right_inv _ := rfl }
+  rw [Nat.card_congr e, card_matrix, Nat.card_eq_fintype_card (α := n)]
 
 /-- Two matrices have the same image modulo `r` exactly when they differ by `r` times a
 matrix. -/
