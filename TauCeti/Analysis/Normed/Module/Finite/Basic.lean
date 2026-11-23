@@ -115,7 +115,9 @@ commutative topological Tate ring, and let `S` be a seminormed ring with a multi
 pseudo-uniformiser acting on `R`. Let `M` be a finite seminormed module and `N` a complete normed
 module, both with contractive `S`-actions and with continuous `R`-actions compatible with `S`.
 Every injective `R`-linear map `f : M → N` with closed range is antilipschitz, so
-`‖x‖ ≤ C ‖f x‖` for some `C`. -/
+`‖x‖ ≤ C ‖f x‖` for some `C`. Unlike
+`ContinuousLinearMap.antilipschitz_of_injective_of_isClosed_range_of_isTate`, `f` need not be
+continuous and `M` need not be complete: finiteness of `M` replaces both. -/
 theorem antilipschitz_of_injective_of_isClosed_range [Module.Finite R M] (f : M →ₗ[R] N)
     (hf : Function.Injective f) (hclosed : IsClosed (Set.range f)) :
     ∃ C, AntilipschitzWith C f := by
