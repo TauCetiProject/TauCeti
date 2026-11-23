@@ -91,7 +91,7 @@ theorem mem_pi_iff {s : Sym α n} :
   rw [pi_eq_range]
   constructor
   · rintro ⟨x, rfl⟩
-    exact ⟨fun i => (x i : α), fun i => (x i).2, rfl⟩
+    exact ⟨fun i => (x i : α), fun i => (x i).property, rfl⟩
   · rintro ⟨x, hx, rfl⟩
     exact ⟨fun i => ⟨x i, hx i⟩, rfl⟩
 
@@ -194,7 +194,7 @@ product of its members.** For the attaching curves of a Heegaard diagram this id
 with `α₁ × ⋯ × α_g`. -/
 noncomputable def piEquiv (h : Pairwise (Function.onFun Disjoint A)) :
     (∀ i, ↥(A i)) ≃ ↥(pi A) :=
-  Equiv.ofBijective (fun x => ⟨ofFn fun i => (x i : α), ofFn_mem_pi fun i => (x i).2⟩)
+  Equiv.ofBijective (fun x => ⟨ofFn fun i => (x i : α), ofFn_mem_pi fun i => (x i).property⟩)
     ⟨fun _ _ hxy => ofFn_subtypeVal_injective h (congrArg Subtype.val hxy), by
       rintro ⟨s, hs⟩
       obtain ⟨x, hx, rfl⟩ := mem_pi_iff.1 hs
@@ -232,7 +232,7 @@ of `A i ∩ B (σ i)` for each `i` determines an unordered tuple lying in both `
 `Sym.pi B`. -/
 def matchingTuple (p : (σ : Equiv.Perm (Fin n)) × ∀ i, ↥(A i ∩ B (σ i))) : ↥(pi A ∩ pi B) :=
   ⟨ofFn fun i => ((p.2 i : α)),
-    ofFn_mem_pi_inter_pi (fun i => (p.2 i).2.1) fun i => (p.2 i).2.2⟩
+    ofFn_mem_pi_inter_pi (fun i => (p.2 i).property.1) fun i => (p.2 i).property.2⟩
 
 /-- The unordered tuple of a matching is the tuple of its chosen points. -/
 @[simp]
@@ -257,8 +257,8 @@ theorem matching_ext (hB : Pairwise (Function.onFun Disjoint B))
   have hσ : σ = τ := by
     refine Equiv.ext fun i => ?_
     by_contra hne
-    refine Set.disjoint_left.1 (hB hne) (p i).2.2 ?_
-    exact (hpts i).symm ▸ (q i).2.2
+    refine Set.disjoint_left.1 (hB hne) (p i).property.2 ?_
+    exact (hpts i).symm ▸ (q i).property.2
   cases hσ
   congr 1
   funext i
@@ -271,8 +271,8 @@ theorem matchingTuple_injective (hA : Pairwise (Function.onFun Disjoint A))
     Function.Injective (matchingTuple (A := A) (B := B)) := by
   rintro ⟨σ, p⟩ ⟨τ, q⟩ hpq
   have hpts : (fun i => ((p i : α))) = fun i => ((q i : α)) :=
-    ofFn_injOn_univ_pi hA (Set.mem_univ_pi.2 fun i => (p i).2.1)
-      (Set.mem_univ_pi.2 fun i => (q i).2.1) (congrArg Subtype.val hpq)
+    ofFn_injOn_univ_pi hA (Set.mem_univ_pi.2 fun i => (p i).property.1)
+      (Set.mem_univ_pi.2 fun i => (q i).property.1) (congrArg Subtype.val hpq)
   apply matching_ext hB
   exact fun i => congrFun hpts i
 

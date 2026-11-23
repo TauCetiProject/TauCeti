@@ -42,33 +42,33 @@ variable {X V W : Scheme.{u}} (p : V ⟶ X) [IsAffineHom p]
 /-- The affine chart of the relative spectrum of `p_* 𝒪_V`, mapped to `V` using the
 identification of its sections with regular functions on `p⁻¹ U`. -/
 private def functionChart (U : X.AffineZariskiSite) :
-    Spec (CommRingCat.of Γ(p.pushforwardStructureAlgebra.X, U.1)) ⟶ V :=
-  Spec.map (p.pushforwardStructureAlgebraPresheafIso.inv.app (op U.1)) ≫
-    (U.2.preimage p).fromSpec
+    Spec (CommRingCat.of Γ(p.pushforwardStructureAlgebra.X, U.val)) ⟶ V :=
+  Spec.map (p.pushforwardStructureAlgebraPresheafIso.inv.app (op U.val)) ≫
+    (U.property.preimage p).fromSpec
 
 private lemma functionChart_naturality {U U' : X.AffineZariskiSite} (h : U ⟶ U') :
     p.pushforwardStructureAlgebra.relativeSpecGluingData.functor.map h ≫
       functionChart p U' = functionChart p U := by
   -- Explicit section-ring endpoints let ordinary rewriting use `Spec.map_comp_assoc`.
-  let r : CommRingCat.of Γ(p.pushforwardStructureAlgebra.X, U'.1) ⟶
-      CommRingCat.of Γ(p.pushforwardStructureAlgebra.X, U.1) :=
+  let r : CommRingCat.of Γ(p.pushforwardStructureAlgebra.X, U'.val) ⟶
+      CommRingCat.of Γ(p.pushforwardStructureAlgebra.X, U.val) :=
     p.pushforwardStructureAlgebra.sectionsPresheaf.map ((toOpensFunctor X).map h).op
-  let k : CommRingCat.of Γ(V, p ⁻¹ᵁ U.1) ⟶
-      CommRingCat.of Γ(p.pushforwardStructureAlgebra.X, U.1) :=
-    p.pushforwardStructureAlgebraPresheafIso.inv.app (op U.1)
-  let k' : CommRingCat.of Γ(V, p ⁻¹ᵁ U'.1) ⟶
-      CommRingCat.of Γ(p.pushforwardStructureAlgebra.X, U'.1) :=
-    p.pushforwardStructureAlgebraPresheafIso.inv.app (op U'.1)
-  let s : CommRingCat.of Γ(V, p ⁻¹ᵁ U'.1) ⟶ CommRingCat.of Γ(V, p ⁻¹ᵁ U.1) :=
+  let k : CommRingCat.of Γ(V, p ⁻¹ᵁ U.val) ⟶
+      CommRingCat.of Γ(p.pushforwardStructureAlgebra.X, U.val) :=
+    p.pushforwardStructureAlgebraPresheafIso.inv.app (op U.val)
+  let k' : CommRingCat.of Γ(V, p ⁻¹ᵁ U'.val) ⟶
+      CommRingCat.of Γ(p.pushforwardStructureAlgebra.X, U'.val) :=
+    p.pushforwardStructureAlgebraPresheafIso.inv.app (op U'.val)
+  let s : CommRingCat.of Γ(V, p ⁻¹ᵁ U'.val) ⟶ CommRingCat.of Γ(V, p ⁻¹ᵁ U.val) :=
     V.presheaf.map ((TopologicalSpace.Opens.map p.base).map ((toOpensFunctor X).map h)).op
   have hring : k' ≫ r = s ≫ k :=
     (p.pushforwardStructureAlgebraPresheafIso.inv.naturality
       ((toOpensFunctor X).map h).op).symm
-  have hchart : Spec.map r ≫ (Spec.map k' ≫ (U'.2.preimage p).fromSpec) =
-      Spec.map k ≫ (U.2.preimage p).fromSpec := by
+  have hchart : Spec.map r ≫ (Spec.map k' ≫ (U'.property.preimage p).fromSpec) =
+      Spec.map k ≫ (U.property.preimage p).fromSpec := by
     rw [← Spec.map_comp_assoc, hring, Spec.map_comp_assoc]
     exact congrArg (Spec.map k ≫ ·)
-      ((U'.2.preimage p).map_fromSpec (U.2.preimage p)
+      ((U'.property.preimage p).map_fromSpec (U.property.preimage p)
         ((TopologicalSpace.Opens.map p.base).map ((toOpensFunctor X).map h)).op)
   exact (congrArg (· ≫ functionChart p U')
     (p.pushforwardStructureAlgebra.relativeSpecGluingData_functor_map h)).trans hchart
@@ -90,8 +90,8 @@ affine chart map on its inverse image. -/
 lemma _root_.AlgebraicGeometry.Scheme.Hom.relativeSpecCover_f_relativeSpecFunctionsToScheme
     (U : X.AffineZariskiSite) :
     p.pushforwardStructureAlgebra.relativeSpecCover.f U ≫ p.relativeSpecFunctionsToScheme =
-      Spec.map (p.pushforwardStructureAlgebraPresheafIso.inv.app (op U.1)) ≫
-        (U.2.preimage p).fromSpec :=
+      Spec.map (p.pushforwardStructureAlgebraPresheafIso.inv.app (op U.val)) ≫
+        (U.property.preimage p).fromSpec :=
   colimit.ι_desc _ _
 
 /-- Recovery from the function algebra respects the structure morphism to the base. -/
@@ -103,32 +103,32 @@ lemma _root_.AlgebraicGeometry.Scheme.Hom.relativeSpecFunctionsToScheme_comp :
   intro U
   rw [Scheme.Hom.relativeSpecCover_f_relativeSpecFunctionsToScheme_assoc]
   have hring :
-      p.pushforwardStructureAlgebra.toSectionsPresheaf.app (op U.1) ≫
-        p.pushforwardStructureAlgebraPresheafIso.hom.app (op U.1) =
-      p.appLE U.1 (p ⁻¹ᵁ U.1) le_rfl := by
+      p.pushforwardStructureAlgebra.toSectionsPresheaf.app (op U.val) ≫
+        p.pushforwardStructureAlgebraPresheafIso.hom.app (op U.val) =
+      p.appLE U.val (p ⁻¹ᵁ U.val) le_rfl := by
     have h := NatTrans.congr_app
-      p.pushforwardStructureAlgebra_toSectionsPresheaf_comp (op U.1)
+      p.pushforwardStructureAlgebra_toSectionsPresheaf_comp (op U.val)
     rw [NatTrans.comp_app] at h
     exact h.trans (Scheme.Hom.app_eq_appLE p)
-  have hinv : p.appLE U.1 (p ⁻¹ᵁ U.1) le_rfl ≫
-      p.pushforwardStructureAlgebraPresheafIso.inv.app (op U.1) =
-      p.pushforwardStructureAlgebra.toSectionsPresheaf.app (op U.1) := by
+  have hinv : p.appLE U.val (p ⁻¹ᵁ U.val) le_rfl ≫
+      p.pushforwardStructureAlgebraPresheafIso.inv.app (op U.val) =
+      p.pushforwardStructureAlgebra.toSectionsPresheaf.app (op U.val) := by
     rw [← hring]
     simp only [Category.assoc, Iso.hom_inv_id_app, Category.comp_id]
-  have hspec := congrArg (fun f ↦ Spec.map f ≫ U.2.fromSpec) hinv
+  have hspec := congrArg (fun f ↦ Spec.map f ≫ U.property.fromSpec) hinv
   simp only [Spec.map_comp_assoc,
-    IsAffineOpen.SpecMap_appLE_fromSpec p U.2 (U.2.preimage p) le_rfl] at hspec
+    IsAffineOpen.SpecMap_appLE_fromSpec p U.property (U.property.preimage p) le_rfl] at hspec
   exact (Category.assoc _ _ _).trans
     (hspec.trans (p.pushforwardStructureAlgebra.relativeSpecCover_f_relativeSpecToBase U).symm)
 
 /-- The affine chart of the function algebra is the affine inverse image of the base chart. -/
 private def functionChartIso (U : X.AffineZariskiSite) :
-    Spec (CommRingCat.of Γ(p.pushforwardStructureAlgebra.X, U.1)) ≅ (p ⁻¹ᵁ U.1 : Scheme) :=
-  Scheme.Spec.mapIso (p.pushforwardStructureAlgebraPresheafIso.app (op U.1)).symm.op ≪≫
-    (U.2.preimage p).isoSpec.symm
+    Spec (CommRingCat.of Γ(p.pushforwardStructureAlgebra.X, U.val)) ≅ (p ⁻¹ᵁ U.val : Scheme) :=
+  Scheme.Spec.mapIso (p.pushforwardStructureAlgebraPresheafIso.app (op U.val)).symm.op ≪≫
+    (U.property.preimage p).isoSpec.symm
 
 private lemma functionChartIso_hom_ι (U : X.AffineZariskiSite) :
-    (functionChartIso p U).hom ≫ (p ⁻¹ᵁ U.1).ι =
+    (functionChartIso p U).hom ≫ (p ⁻¹ᵁ U.val).ι =
       p.pushforwardStructureAlgebra.relativeSpecCover.f U ≫ p.relativeSpecFunctionsToScheme := by
   dsimp only [functionChartIso, Iso.trans, Functor.mapIso, Iso.op, Iso.symm, Iso.app,
     Scheme.Spec_map]
@@ -139,33 +139,33 @@ private lemma functionChartIso_hom_ι (U : X.AffineZariskiSite) :
 instance _root_.AlgebraicGeometry.Scheme.Hom.isIso_relativeSpecFunctionsToScheme :
     IsIso p.relativeSpecFunctionsToScheme := by
   refine (IsZariskiLocalAtTarget.iff_of_openCover (P := .isomorphisms _)
-    (V.openCoverOfIsOpenCover (fun U : X.AffineZariskiSite ↦ p ⁻¹ᵁ U.1)
+    (V.openCoverOfIsOpenCover (fun U : X.AffineZariskiSite ↦ p ⁻¹ᵁ U.val)
       (p.iSup_preimage_eq_top (iSup_affineOpens_eq_top X)))).mpr
     fun (U : X.AffineZariskiSite) ↦ ?_
   -- Check recovery over `p⁻¹ U`, using the same affine chart on both sides.
-  let a : Spec (CommRingCat.of Γ(p.pushforwardStructureAlgebra.X, U.1)) ⟶
+  let a : Spec (CommRingCat.of Γ(p.pushforwardStructureAlgebra.X, U.val)) ⟶
       p.pushforwardStructureAlgebra.relativeSpec :=
     p.pushforwardStructureAlgebra.relativeSpecCover.f U
   have : IsOpenImmersion a :=
     CommMon.isOpenImmersion_relativeSpecCover_f p.pushforwardStructureAlgebra U
-  have hr : Set.range (pullback.fst p.relativeSpecFunctionsToScheme (p ⁻¹ᵁ U.1).ι) =
+  have hr : Set.range (pullback.fst p.relativeSpecFunctionsToScheme (p ⁻¹ᵁ U.val).ι) =
       Set.range a := by
     rw [Scheme.Pullback.range_fst, Scheme.Opens.range_ι,
       ← Scheme.Hom.coe_preimage, ← Scheme.Hom.comp_preimage,
       Scheme.Hom.relativeSpecFunctionsToScheme_comp]
-    exact congrArg (fun q : p.pushforwardStructureAlgebra.relativeSpec.Opens ↦ q.1)
+    exact congrArg (fun q : p.pushforwardStructureAlgebra.relativeSpec.Opens ↦ q.carrier)
       (p.pushforwardStructureAlgebra.relativeSpecToBase_preimage U)
   let e := IsOpenImmersion.isoOfRangeEq
-    (pullback.fst p.relativeSpecFunctionsToScheme (p ⁻¹ᵁ U.1).ι) a hr
+    (pullback.fst p.relativeSpecFunctionsToScheme (p ⁻¹ᵁ U.val).ι) a hr
   have he : e.hom ≫ (functionChartIso p U).hom =
-      pullback.snd p.relativeSpecFunctionsToScheme (p ⁻¹ᵁ U.1).ι := by
-    have hchart : (functionChartIso p U).hom ≫ (p ⁻¹ᵁ U.1).ι =
+      pullback.snd p.relativeSpecFunctionsToScheme (p ⁻¹ᵁ U.val).ι := by
+    have hchart : (functionChartIso p U).hom ≫ (p ⁻¹ᵁ U.val).ι =
         a ≫ p.relativeSpecFunctionsToScheme := functionChartIso_hom_ι p U
-    rw [← cancel_mono (p ⁻¹ᵁ U.1).ι, Category.assoc, hchart, ← Category.assoc]
+    rw [← cancel_mono (p ⁻¹ᵁ U.val).ι, Category.assoc, hchart, ← Category.assoc]
     rw [IsOpenImmersion.isoOfRangeEq_hom_fac]
     exact pullback.condition
   -- The local recovery map is the composite of two canonical affine isomorphisms.
-  have : IsIso (pullback.snd p.relativeSpecFunctionsToScheme (p ⁻¹ᵁ U.1).ι) := by
+  have : IsIso (pullback.snd p.relativeSpecFunctionsToScheme (p ⁻¹ᵁ U.val).ι) := by
     rw [← he]
     infer_instance
   exact this
@@ -174,12 +174,12 @@ variable {p} {q : W ⟶ X} [IsAffineHom q]
 
 omit [IsAffineHom p] [IsAffineHom q] in
 private lemma functionChart_ring_naturality (g : V ⟶ W) (h : g ≫ q = p)
-    (U : X.AffineZariskiSite) (i : p ⁻¹ᵁ U.1 ≤ g ⁻¹ᵁ (q ⁻¹ᵁ U.1)) :
-    q.pushforwardStructureAlgebraPresheafIso.inv.app (op U.1) ≫
+    (U : X.AffineZariskiSite) (i : p ⁻¹ᵁ U.val ≤ g ⁻¹ᵁ (q ⁻¹ᵁ U.val)) :
+    q.pushforwardStructureAlgebraPresheafIso.inv.app (op U.val) ≫
       CommRingCat.ofHom
-        (CommMon.sectionsAlgHom (Scheme.Hom.pushforwardStructureAlgebraMap g h) U.1).toRingHom =
-      g.appLE (q ⁻¹ᵁ U.1) (p ⁻¹ᵁ U.1) i ≫
-        p.pushforwardStructureAlgebraPresheafIso.inv.app (op U.1) := by
+        (CommMon.sectionsAlgHom (Scheme.Hom.pushforwardStructureAlgebraMap g h) U.val).toRingHom =
+      g.appLE (q ⁻¹ᵁ U.val) (p ⁻¹ᵁ U.val) i ≫
+        p.pushforwardStructureAlgebraPresheafIso.inv.app (op U.val) := by
   rw [Scheme.Hom.pushforwardStructureAlgebraPresheafIso_inv_app,
     Scheme.Hom.pushforwardStructureAlgebraPresheafIso_inv_app]
   apply ConcreteCategory.hom_ext
@@ -187,10 +187,10 @@ private lemma functionChart_ring_naturality (g : V ⟶ W) (h : g ≫ q = p)
   -- The iso components retain presheaf-object coercions; `CommRingCat.comp_apply`
   -- and `hom_comp` do not match them at rewriting transparency. `change` identifies
   -- these presentations before evaluating the maps on the section rings.
-  change CommMon.sectionsAlgHom (Scheme.Hom.pushforwardStructureAlgebraMap g h) U.1
-    ((q.pushforwardStructureAlgebraSectionsRingEquiv U.1).symm x) =
-    (p.pushforwardStructureAlgebraSectionsRingEquiv U.1).symm
-    (g.appLE (q ⁻¹ᵁ U.1) (p ⁻¹ᵁ U.1) i x)
+  change CommMon.sectionsAlgHom (Scheme.Hom.pushforwardStructureAlgebraMap g h) U.val
+    ((q.pushforwardStructureAlgebraSectionsRingEquiv U.val).symm x) =
+    (p.pushforwardStructureAlgebraSectionsRingEquiv U.val).symm
+    (g.appLE (q ⁻¹ᵁ U.val) (p ⁻¹ᵁ U.val) i x)
   rw [Scheme.Hom.sectionsAlgHom_pushforwardStructureAlgebraMap_apply,
     RingEquiv.apply_symm_apply]
 
@@ -203,31 +203,31 @@ lemma _root_.AlgebraicGeometry.Scheme.Hom.relativeSpecFunctionsToScheme_naturali
         q.relativeSpecFunctionsToScheme = p.relativeSpecFunctionsToScheme ≫ g := by
   apply p.pushforwardStructureAlgebra.relativeSpec_hom_ext
   intro U
-  let i : p ⁻¹ᵁ U.1 ≤ g ⁻¹ᵁ (q ⁻¹ᵁ U.1) := by
+  let i : p ⁻¹ᵁ U.val ≤ g ⁻¹ᵁ (q ⁻¹ᵁ U.val) := by
     rw [← Scheme.Hom.comp_preimage, h]
-  let fU : CommRingCat.of Γ(q.pushforwardStructureAlgebra.X, U.1) ⟶
-      CommRingCat.of Γ(p.pushforwardStructureAlgebra.X, U.1) := CommRingCat.ofHom
-    (CommMon.sectionsAlgHom (Scheme.Hom.pushforwardStructureAlgebraMap g h) U.1).toRingHom
-  let kP : CommRingCat.of Γ(V, p ⁻¹ᵁ U.1) ⟶
-      CommRingCat.of Γ(p.pushforwardStructureAlgebra.X, U.1) :=
-    p.pushforwardStructureAlgebraPresheafIso.inv.app (op U.1)
-  let kQ : CommRingCat.of Γ(W, q ⁻¹ᵁ U.1) ⟶
-      CommRingCat.of Γ(q.pushforwardStructureAlgebra.X, U.1) :=
-    q.pushforwardStructureAlgebraPresheafIso.inv.app (op U.1)
+  let fU : CommRingCat.of Γ(q.pushforwardStructureAlgebra.X, U.val) ⟶
+      CommRingCat.of Γ(p.pushforwardStructureAlgebra.X, U.val) := CommRingCat.ofHom
+    (CommMon.sectionsAlgHom (Scheme.Hom.pushforwardStructureAlgebraMap g h) U.val).toRingHom
+  let kP : CommRingCat.of Γ(V, p ⁻¹ᵁ U.val) ⟶
+      CommRingCat.of Γ(p.pushforwardStructureAlgebra.X, U.val) :=
+    p.pushforwardStructureAlgebraPresheafIso.inv.app (op U.val)
+  let kQ : CommRingCat.of Γ(W, q ⁻¹ᵁ U.val) ⟶
+      CommRingCat.of Γ(q.pushforwardStructureAlgebra.X, U.val) :=
+    q.pushforwardStructureAlgebraPresheafIso.inv.app (op U.val)
   -- Prove the chart identity at explicit spectrum sources: rewriting in the original
   -- goal retains opaque cover-object accessors that prevent ordinary `rw` and `simp`.
-  suffices hchart : Spec.map fU ≫ (Spec.map kQ ≫ (U.2.preimage q).fromSpec) =
-      (Spec.map kP ≫ (U.2.preimage p).fromSpec) ≫ g by
+  suffices hchart : Spec.map fU ≫ (Spec.map kQ ≫ (U.property.preimage q).fromSpec) =
+      (Spec.map kP ≫ (U.property.preimage p).fromSpec) ≫ g by
     exact (CommMon.relativeSpecCover_f_relativeSpecMap_assoc
       (Scheme.Hom.pushforwardStructureAlgebraMap g h) U _).trans
       ((congrArg (Spec.map fU ≫ ·)
         (q.relativeSpecCover_f_relativeSpecFunctionsToScheme U)).trans
         (hchart.trans (p.relativeSpecCover_f_relativeSpecFunctionsToScheme_assoc U g).symm))
-  have hring : kQ ≫ fU = g.appLE (q ⁻¹ᵁ U.1) (p ⁻¹ᵁ U.1) i ≫ kP :=
+  have hring : kQ ≫ fU = g.appLE (q ⁻¹ᵁ U.val) (p ⁻¹ᵁ U.val) i ≫ kP :=
     functionChart_ring_naturality g h U i
-  have hspec : Spec.map (g.appLE (q ⁻¹ᵁ U.1) (p ⁻¹ᵁ U.1) i) ≫
-      (U.2.preimage q).fromSpec = (U.2.preimage p).fromSpec ≫ g :=
-    IsAffineOpen.SpecMap_appLE_fromSpec g (U.2.preimage q) (U.2.preimage p) i
+  have hspec : Spec.map (g.appLE (q ⁻¹ᵁ U.val) (p ⁻¹ᵁ U.val) i) ≫
+      (U.property.preimage q).fromSpec = (U.property.preimage p).fromSpec ≫ g :=
+    IsAffineOpen.SpecMap_appLE_fromSpec g (U.property.preimage q) (U.property.preimage p) i
   rw [← Spec.map_comp_assoc, hring]
   simp only [Spec.map_comp_assoc, hspec, Category.assoc]
 

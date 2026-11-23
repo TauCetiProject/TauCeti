@@ -7,12 +7,11 @@ module
 
 public import TauCeti.NumberTheory.QuadraticForm.Global.Predicates
 import TauCeti.LinearAlgebra.QuadraticForm.Witt.TotallyIsotropic
-import TauCeti.NumberTheory.HilbertSymbol.Basic
-import TauCeti.NumberTheory.HilbertSymbol.NormSubgroup
 import TauCeti.NumberTheory.QuadraticForm.Global.Cancellation
 import TauCeti.NumberTheory.QuadraticForm.Global.HigherRank
 import TauCeti.NumberTheory.QuadraticForm.Global.LowRank
 import TauCeti.NumberTheory.QuadraticForm.Global.Quaternary
+import TauCeti.NumberTheory.QuadraticForm.Global.Ternary.Basic
 
 /-!
 # The Hasse–Minkowski theorem for quadratic forms over number fields
@@ -36,16 +35,11 @@ nondegeneracy hypothesis on any form:
 ## Proof outline
 
 The binary and lower-rank isotropy cases come from
-`QuadraticForm.not_anisotropic_iff_isLocallyIsotropic_of_finrank_le_two`. For ternary forms,
-scaling reduces to `⟨1, -d, -a⟩`, whose local isotropy translates via the Hilbert symbol
-(`TauCeti.hilbertSymbol_eq_one_iff_not_anisotropic_weightedSumSquares` and
-`TauCeti.mem_unitValueSet_binary_one_neg_iff_hilbertSymbol_eq_one`) into local representation of `a`
-by `⟨1, -d⟩`, which
-`QuadraticForm.represents_weightedSumSquares_one_neg_iff_locallyRepresentsScalar`
-upgrades to a global representation. Quaternary descent
-(`QuadraticForm.not_anisotropic_of_isLocallyIsotropic_quaternary`) and the higher-rank induction
-step (`QuadraticForm.not_anisotropic_of_isLocallyIsotropic_of_five_le_finrank`) then close
-isotropy in all dimensions.
+`QuadraticForm.not_anisotropic_iff_isLocallyIsotropic_of_finrank_le_two`, the ternary case from
+`QuadraticForm.not_anisotropic_of_isLocallyIsotropic_ternary`, and the quaternary case from
+`QuadraticForm.not_anisotropic_of_isLocallyIsotropic_quaternary`. The higher-rank induction step
+(`QuadraticForm.not_anisotropic_of_isLocallyIsotropic_of_five_le_finrank`) then closes isotropy in
+all dimensions.
 
 Scalar representation follows for regular forms by applying isotropy to `⟨-a⟩ ⊥ Q`, and for
 arbitrary forms by splitting off the radical (`QuadraticForm.exists_equivalent_zero_radical_prod`).
@@ -93,107 +87,26 @@ section Isotropy
 
 variable {K : Type u} [Field K] [NumberField K]
 
-/-- **Ternary Hasse–Minkowski for diagonal forms.** Every locally isotropic diagonal regular form
-of rank three over a number field is isotropic. -/
-private theorem not_anisotropic_presentedForm_three {w : Fin 3 → Kˣ}
-    (hloc : (presentedForm ⟨3, w⟩).IsLocallyIsotropic) :
-    ¬(presentedForm ⟨3, w⟩).Anisotropic := by
-  let _ : Invertible (2 : K) := invertibleOfNonzero two_ne_zero
-  set a₀ := w 0
-  set d : Kˣ := -(a₀⁻¹ * w 1)
-  set a : Kˣ := -(a₀⁻¹ * w 2)
-  have hscale : (((a₀⁻¹ : Kˣ) : K) • presentedForm ⟨3, w⟩) =
-      weightedSumSquares K ![1, -(d : K), -(a : K)] := by
-    ext x
-    rw [_root_.smul_apply, presentedForm_apply, weightedSumSquares_apply,
-      Fin.sum_univ_three, Fin.sum_univ_three]
-    simp only [Matrix.cons_val_zero, Matrix.cons_val_one, Fin.isValue, Matrix.cons_val,
-      d, a, Units.val_neg, Units.val_mul, Units.val_inv_eq_inv_val, smul_eq_mul, neg_neg,
-      one_mul]
-    rw [mul_add, mul_add, ← mul_assoc, inv_mul_cancel₀ a₀.ne_zero]
-    ring
-  have hloc' : IsLocallyIsotropic (weightedSumSquares K ![1, -(d : K), -(a : K)]) :=
-    hscale ▸ isLocallyIsotropic_smul _ hloc
-  have hloc_bin : LocallyRepresentsScalar (weightedSumSquares K ![(1 : K), -(d : K)]) (a : K) := by
-    refine (locallyRepresentsScalar_iff _ _).mpr ⟨fun v ↦ ?_, fun w' ↦ ?_⟩
-    · let _ : Invertible (2 : v.adicCompletion K) :=
-        (Invertible.map (algebraMap K (v.adicCompletion K)) 2).copy 2 (map_ofNat _ _).symm
-      have hv := (QuadraticMap.Equivalent.anisotropic_iff
-        ⟨atFinitePlaceWeightedSumSquares v ![1, -(d : K), -(a : K)]⟩).not.mp
-          (((isLocallyIsotropic_iff _).mp hloc').1 v)
-      have hv' : ¬(weightedSumSquares (v.adicCompletion K)
-          ![1, -(v.unitAtFinitePlace d : v.adicCompletion K),
-            -(v.unitAtFinitePlace a : v.adicCompletion K)]).Anisotropic := by
-        simpa [show (fun i : Fin 3 ↦
-            algebraMap K (v.adicCompletion K) (![1, -(d : K), -(a : K)] i)) =
-            ![1, -(v.unitAtFinitePlace d : v.adicCompletion K),
-              -(v.unitAtFinitePlace a : v.adicCompletion K)] by
-          ext i; fin_cases i <;> simp [d, a]] using hv
-      have hsym := (hilbertSymbol_eq_one_iff_not_anisotropic_weightedSumSquares
-        (v.unitAtFinitePlace d) (v.unitAtFinitePlace a)).mpr hv'
-      have hbin := (mem_unitValueSet_binary_one_neg_iff_hilbertSymbol_eq_one
-        (v.unitAtFinitePlace d) (v.unitAtFinitePlace a)).mpr hsym
-      rw [mem_unitValueSet] at hbin
-      refine (atFinitePlaceWeightedSumSquares v ![(1 : K), -(d : K)]).represents_iff _ |>.mpr ?_
-      simpa [show (fun i : Fin 2 ↦
-          algebraMap K (v.adicCompletion K) (![(1 : K), -(d : K)] i)) =
-          ![1, -(v.unitAtFinitePlace d : v.adicCompletion K)] by
-        ext i; fin_cases i <;> simp [d]] using hbin
-    · have hw := (QuadraticMap.Equivalent.anisotropic_iff
-        ⟨atRealPlaceWeightedSumSquares w' ![1, -(d : K), -(a : K)]⟩).not.mp
-          (((isLocallyIsotropic_iff _).mp hloc').2 w')
-      have hw' : ¬(weightedSumSquares ℝ
-          ![1, -(unitAtRealPlace w' d : ℝ), -(unitAtRealPlace w' a : ℝ)]).Anisotropic := by
-        simpa [show (fun i : Fin 3 ↦
-            embedding_of_isReal w'.2 (![1, -(d : K), -(a : K)] i)) =
-            ![1, -(unitAtRealPlace w' d : ℝ), -(unitAtRealPlace w' a : ℝ)] by
-          ext i; fin_cases i <;> simp [d, a]] using hw
-      have hsym := (hilbertSymbol_eq_one_iff_not_anisotropic_weightedSumSquares
-        (unitAtRealPlace w' d) (unitAtRealPlace w' a)).mpr hw'
-      have hbin := (mem_unitValueSet_binary_one_neg_iff_hilbertSymbol_eq_one
-        (unitAtRealPlace w' d) (unitAtRealPlace w' a)).mpr hsym
-      rw [mem_unitValueSet] at hbin
-      refine (atRealPlaceWeightedSumSquares w' ![(1 : K), -(d : K)]).represents_iff _ |>.mpr ?_
-      simpa [show (fun i : Fin 2 ↦
-          embedding_of_isReal w'.2 (![(1 : K), -(d : K)] i)) =
-          ![1, -(unitAtRealPlace w' d : ℝ)] by
-        ext i; fin_cases i <;> simp [d]] using hbin
-  have hrep : a ∈ unitValueSet (weightedSumSquares K ![(1 : K), -(d : K)]) :=
-    mem_unitValueSet.mpr
-      ((represents_weightedSumSquares_one_neg_iff_locallyRepresentsScalar
-        (d : K) (a : K)).mpr hloc_bin)
-  have hiso : ¬(weightedSumSquares K ![1, -(d : K), -(a : K)]).Anisotropic :=
-    (hilbertSymbol_eq_one_iff_not_anisotropic_weightedSumSquares d a).mp
-      ((mem_unitValueSet_binary_one_neg_iff_hilbertSymbol_eq_one d a).mp hrep)
-  intro hani
-  refine hiso fun x hx ↦ hani x ?_
-  have hxs : (((a₀⁻¹ : Kˣ) : K) • presentedForm ⟨3, w⟩) x = 0 := hscale.symm ▸ hx
-  simpa [_root_.smul_apply, smul_eq_mul, Units.ne_zero] using hxs
-
 /-- Every locally isotropic diagonal regular form over a number field is isotropic, proved by
-strong induction on the rank across all number fields in a fixed universe. -/
+strong induction on the rank. -/
 private theorem not_anisotropic_presentedForm_aux :
-    ∀ n : ℕ, ∀ (L : Type u) [Field L] [NumberField L] (p : RegularFormPresentation L),
+    ∀ n : ℕ, ∀ (p : RegularFormPresentation K),
       p.1 = n → (presentedForm p).IsLocallyIsotropic → ¬(presentedForm p).Anisotropic := by
   intro n
   induction n using Nat.strong_induction_on with
   | ind n ih =>
-    intro L _ _ p hp hloc
-    let _ : Invertible (2 : L) := invertibleOfNonzero two_ne_zero
+    intro p hp hloc
+    let _ : Invertible (2 : K) := invertibleOfNonzero two_ne_zero
     by_cases h2 : n ≤ 2
     · exact (not_anisotropic_iff_isLocallyIsotropic_of_finrank_le_two (presentedForm p)
         (by simpa [hp] using h2)).mpr hloc
     by_cases h3 : n = 3
-    · rcases p with ⟨m, w⟩
-      obtain rfl : m = 3 := hp.trans h3
-      exact not_anisotropic_presentedForm_three hloc
+    · exact not_anisotropic_of_isLocallyIsotropic_ternary (by simpa [hp] using h3) hloc
     by_cases h4 : n = 4
-    · exact not_anisotropic_of_isLocallyIsotropic_quaternary (nondegenerate_presentedForm p)
-        (by simpa [hp] using h4) hloc fun E _ _ q hq hqloc =>
-          ih 3 (by omega) E q hq hqloc
+    · exact not_anisotropic_of_isLocallyIsotropic_quaternary (by simpa [hp] using h4) hloc
     · exact not_anisotropic_of_isLocallyIsotropic_of_five_le_finrank
         (nondegenerate_presentedForm p) (by rw [Module.finrank_fin_fun]; omega) hloc
-        fun q hq hqloc => ih q.1 (by rw [Module.finrank_fin_fun] at hq; omega) L q rfl hqloc
+        fun q hq hqloc => ih q.1 (by rw [Module.finrank_fin_fun] at hq; omega) q rfl hqloc
 
 variable {V : Type v} [AddCommGroup V] [Module K V] [FiniteDimensional K V]
 
@@ -205,7 +118,7 @@ theorem IsLocallyIsotropic.not_anisotropic {Q : _root_.QuadraticForm K V}
   intro hA
   let _ : Invertible (2 : K) := invertibleOfNonzero two_ne_zero
   obtain ⟨p, hQp⟩ := exists_presentedForm_equivalent Q hA.nondegenerate
-  exact not_anisotropic_presentedForm_aux p.1 K p rfl
+  exact not_anisotropic_presentedForm_aux p.1 p rfl
     ((QuadraticForm.QuadraticMap.Equivalent.isLocallyIsotropic_iff hQp).mp h)
     (hQp.anisotropic_iff.mp hA)
 
@@ -259,7 +172,7 @@ theorem LocallyRepresentsScalar.represents [FiniteDimensional K V] {Q : _root_.Q
           (((locallyRepresentsScalar_iff _ _).mp hzero_loc).1 v)
       refine (represents_iff _ _).mpr ⟨x, ?_⟩
       simpa [atFinitePlace_def, baseChange_zero] using hx
-    · let _ : Algebra K ℝ := (embedding_of_isReal w.2).toAlgebra
+    · let _ : Algebra K ℝ := (embedding_of_isReal w.property).toAlgebra
       obtain ⟨⟨r, x⟩, hx⟩ := (represents_iff _ _).mp <|
         (atRealPlaceProd _ _ w).represents_iff _ |>.mp
           (((locallyRepresentsScalar_iff _ _).mp hzero_loc).2 w)
@@ -357,7 +270,7 @@ private theorem zero_fin_isRepresentedBy_presentedForm :
         exact zero_baseChange_isRepresentedBy_of_hyperbolicPlane_prod
           (by simpa only [atFinitePlace_def] using ((locallyRepresents_iff _ _).mp hprod_loc).1 v)
           (by simp)
-      · let _ : Algebra K ℝ := (embedding_of_isReal w.2).toAlgebra
+      · let _ : Algebra K ℝ := (embedding_of_isReal w.property).toAlgebra
         rw [atRealPlace_def, atRealPlace_def]
         exact zero_baseChange_isRepresentedBy_of_hyperbolicPlane_prod
           (by simpa only [atRealPlace_def] using ((locallyRepresents_iff _ _).mp hprod_loc).2 w)
@@ -374,7 +287,7 @@ private theorem zero_fin_isRepresentedBy_presentedForm :
         ((0 : _root_.QuadraticForm K K).prod (0 : _root_.QuadraticForm K (Fin k → K))) :=
       (zero_equivalent_zero_of_finrank_eq (by simp [Module.finrank_prod]; omega)).trans <|
         ⟨{ toLinearEquiv := LinearEquiv.refl K (K × (Fin k → K))
-           map_app' := fun _ => by simp [QuadraticMap.prod_apply] }⟩
+           map_app' := fun _ => by simp }⟩
     exact (hzero_split.isRepresentedBy_congr hq).mpr hprod_rep
 
 /-- A zero form locally represented by `0_Z ⊥ T` (with `T` regular) is globally represented by
@@ -398,7 +311,7 @@ private theorem zero_isRepresentedBy_zero_prod_of_locallyRepresents
         exact zero_baseChange_isRepresentedBy_of_zero_prod
           (by simpa only [atFinitePlace_def] using ((locallyRepresents_iff _ _).mp hloc).1 v)
           (by simp [hk])
-      · let _ : Algebra K ℝ := (embedding_of_isReal w.2).toAlgebra
+      · let _ : Algebra K ℝ := (embedding_of_isReal w.property).toAlgebra
         rw [atRealPlace_def, atRealPlace_def]
         exact zero_baseChange_isRepresentedBy_of_zero_prod
           (by simpa only [atRealPlace_def] using ((locallyRepresents_iff _ _).mp hloc).2 w)
@@ -412,7 +325,7 @@ private theorem zero_isRepresentedBy_zero_prod_of_locallyRepresents
         ((0 : _root_.QuadraticForm K Z).prod (0 : _root_.QuadraticForm K (Fin k → K))) :=
       (zero_equivalent_zero_of_finrank_eq (by simp [Module.finrank_prod]; omega)).trans <|
         ⟨{ toLinearEquiv := LinearEquiv.refl K (Z × (Fin k → K))
-           map_app' := fun _ => by simp [QuadraticMap.prod_apply] }⟩
+           map_app' := fun _ => by simp }⟩
     exact hsplit.isRepresentedBy.trans ((IsRepresentedBy.refl _).prod hT_rep)
 
 /-- **Hasse–Minkowski theorem for representation of forms** (O'Meara 66:3): a quadratic form over a
@@ -437,7 +350,7 @@ theorem LocallyRepresents.isRepresentedBy {Q : _root_.QuadraticForm K V}
     · rw [atFinitePlace_def, atFinitePlace_def]
       exact baseChange_isRepresentedBy_of_zero_prod hC₁
         (by simpa only [atFinitePlace_def] using ((locallyRepresents_iff _ _).mp hQ₁_zero_loc).1 v)
-    · let _ : Algebra K ℝ := (embedding_of_isReal w.2).toAlgebra
+    · let _ : Algebra K ℝ := (embedding_of_isReal w.property).toAlgebra
       rw [atRealPlace_def, atRealPlace_def]
       exact baseChange_isRepresentedBy_of_zero_prod hC₁
         (by simpa only [atRealPlace_def] using ((locallyRepresents_iff _ _).mp hQ₁_zero_loc).2 w)

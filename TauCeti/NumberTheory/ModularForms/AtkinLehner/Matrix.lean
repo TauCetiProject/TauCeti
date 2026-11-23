@@ -312,8 +312,8 @@ theorem IsAtkinLehnerMatrix.exists_mem_Gamma0_eq_mul_left (hQ : Q ≠ 0) (hQN : 
     rw [Matrix.det_mul, h.det_eq, h'.det_eq] at hd
     exact mul_right_cancel₀ hQ' (by rw [one_mul]; exact hd)
   have hdvd : (N : ℤ) ∣ G 1 0 := ⟨c' * d - c * d', by rw [hG, hN]; simp⟩
-  exact ⟨⟨G, hdetG⟩,
-    mem_Gamma0_iff_dvd.mpr hdvd, hmul.symm⟩
+  refine ⟨.mk G hdetG, mem_Gamma0_iff_dvd.mpr ?_, ?_⟩ <;> rw [Matrix.SpecialLinearGroup.coe_mk]
+  exacts [hdvd, hmul.symm]
 
 /-- **Two Atkin–Lehner matrices for the same `Q` differ by `Γ₀(N)` on the right**, the mirror of
 `IsAtkinLehnerMatrix.exists_mem_Gamma0_eq_mul_left` with witness `W⁻¹ W'`. -/
@@ -342,8 +342,8 @@ theorem IsAtkinLehnerMatrix.exists_mem_Gamma0_eq_mul_right (hQ : Q ≠ 0) (hQN :
     rw [Matrix.det_mul, h.det_eq, h'.det_eq] at hd
     exact mul_left_cancel₀ hQ' (by rw [mul_one]; exact hd)
   have hdvd : (N : ℤ) ∣ G 1 0 := ⟨a * c' - a' * c, by rw [hG, hN]; simp⟩
-  exact ⟨⟨G, hdetG⟩,
-    mem_Gamma0_iff_dvd.mpr hdvd, hmul.symm⟩
+  refine ⟨.mk G hdetG, mem_Gamma0_iff_dvd.mpr ?_, ?_⟩ <;> rw [Matrix.SpecialLinearGroup.coe_mk]
+  exacts [hdvd, hmul.symm]
 
 /-- At level `N = 0`, an Atkin–Lehner matrix for `Q = 0` has only its upper-right entry nonzero. -/
 private lemma IsAtkinLehnerMatrix.eq_of_eq_zero (hQ : Q = 0) (hN : N = 0)
@@ -415,7 +415,7 @@ theorem IsAtkinLehnerMatrix.exists_mem_Gamma0_mul_self (h : IsAtkinLehnerMatrix 
     rw [hG, Matrix.sub_apply, Matrix.smul_apply, Matrix.one_apply_ne (by decide), hc]
     simp only [smul_eq_mul, sub_zero]
     ring⟩
-  refine ⟨⟨G, hdetG⟩, mem_Gamma0_iff_dvd.mpr hdvd, ?_⟩
+  refine ⟨.mk G hdetG, mem_Gamma0_iff_dvd.mpr hdvd, ?_⟩
   rw [Matrix.SpecialLinearGroup.coe_mk, ← sq, Matrix.sq_eq_trace_smul_sub_det_smul_one_fin_two,
     htr, h.det_eq, hG, smul_sub, smul_smul]
 

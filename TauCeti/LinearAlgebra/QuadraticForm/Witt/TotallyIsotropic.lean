@@ -127,7 +127,7 @@ private theorem maximal_comap_orthogonal_span_pair (hW : Maximal Q.IsTotallyIsot
     obtain ⟨c, rfl⟩ := Submodule.mem_span_singleton.mp hy
     obtain ⟨s, hs, rfl⟩ := Submodule.mem_map.mp hz
     obtain ⟨hws, -⟩ : polar Q w s = 0 ∧ polar Q f s = 0 := by
-      simpa [U, LinearMap.BilinForm.orthogonal] using s.2
+      simpa [U, LinearMap.BilinForm.orthogonal] using s.property
     rw [QuadraticMap.map_add Q, Q.map_smul, hTI.apply_eq_zero hwW,
       (isTotallyIsotropic_restrict_iff.mp hT).apply_eq_zero (Submodule.mem_map_of_mem hs),
       polar_smul_left, Submodule.subtype_apply, hws]
@@ -335,11 +335,11 @@ theorem zero_isRepresentedBy_of_hyperbolicPlane_prod
             apply Subtype.ext
             rw [← sub_eq_zero]
             have hmem : (x : U) - y ∈ LinearMap.ker φ ⊓ LinearMap.ker f₂ :=
-              ⟨Submodule.sub_mem _ x.2 y.2, by
+              ⟨Submodule.sub_mem _ x.property y.property, by
                 simp only [SetLike.mem_coe, LinearMap.mem_ker, map_sub, sub_eq_zero]
                 exact hxy⟩
             rwa [hdisj, Submodule.mem_bot] at hmem,
-          fun x ↦ hvanish x.1 x.2⟩
+          fun x ↦ hvanish x.val x.property⟩
     exact (zero_isRepresentedBy_zero_of_finrank_le hker_dim).trans hker_Q
   rcases hker_disj with h | h
   · exact of_ker phiPos h fun u hu ↦ by

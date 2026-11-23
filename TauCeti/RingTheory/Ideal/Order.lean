@@ -8,6 +8,7 @@ module
 public import Mathlib.Data.ENat.Lattice
 public import Mathlib.RingTheory.Filtration
 public import Mathlib.RingTheory.Localization.AtPrime.Basic
+public import TauCeti.RingTheory.Ideal.AssociatedGraded
 import Mathlib.RingTheory.LocalRing.RingHom.Basic
 
 /-!
@@ -21,7 +22,14 @@ is needed to characterize infinite order by vanishing.
 
 `Ideal.orderAt` applies this construction after localization at a prime. It is the local
 algebraic order used in order-threshold loci of marked ideals, rather than the order of their
-reduced supports. Multiplicativity is not asserted for arbitrary local rings.
+reduced supports.
+
+Order is superadditive on products and powers of ideals. It is additive on products, and so
+multiplies by `n` on `n`-th powers, when the associated graded ring `gr_𝔪 R` has no zero divisors,
+in particular in a regular local ring, where `gr_𝔪 R` is a polynomial ring over the residue field
+(`TauCeti.IsRegularLocalRing.isDomain_associatedGraded`).
+It is not multiplicative in an arbitrary local ring: in `k[ε] ⧸ (ε²)` the maximal ideal has
+order one while its square is zero, of order `∞`.
 
 This is the order convention of Bierstone–Milman, *Canonical desingularization in
 characteristic zero by blowing up the maximum strata of a local invariant* (1997),
@@ -141,6 +149,72 @@ theorem localOrder_span_range {ι : Type*} (f : ι → R) :
     (span (Set.range f)).localOrder = ⨅ i, (span {f i}).localOrder := by
   rw [span_range_eq_iSup, localOrder_iSup]
 
+/-- An ideal of finite order `r` contains an element outside the `(r + 1)`-st power of the
+maximal ideal. -/
+theorem exists_mem_notMem_maximalIdeal_pow_succ {I : Ideal R} {r : ℕ}
+    (h : I.localOrder = r) : ∃ x ∈ I, x ∉ maximalIdeal R ^ (r + 1) := by
+  refine Set.not_subset.mp fun hI ↦ ?_
+  have := (natCast_le_localOrder_iff I (r + 1)).mpr hI
+  rw [h, Nat.cast_le] at this
+  omega
+
+/-- Local order is superadditive on products. Equality holds in a regular local ring, but not
+in general: in `k[ε] ⧸ (ε²)` the maximal ideal has order one and its square has order `∞`. -/
+theorem localOrder_add_le_localOrder_mul (I J : Ideal R) :
+    I.localOrder + J.localOrder ≤ (I * J).localOrder := by
+  cases hI : I.localOrder with
+  | top => rw [top_add, ← hI]; exact localOrder_anti mul_le_left
+  | coe r =>
+    cases hJ : J.localOrder with
+    | top => rw [add_top, ← hJ]; exact localOrder_anti mul_le_right
+    | coe s =>
+      rw [← Nat.cast_add, natCast_le_localOrder_iff, pow_add]
+      exact mul_mono ((natCast_le_localOrder_iff I r).mp hI.ge)
+        ((natCast_le_localOrder_iff J s).mp hJ.ge)
+
+/-- The `n`-th power of an ideal has at least `n` times its order. -/
+theorem nsmul_localOrder_le_localOrder_pow (I : Ideal R) (n : ℕ) :
+    n • I.localOrder ≤ (I ^ n).localOrder := by
+  induction n with
+  | zero => simp
+  | succ n ih =>
+    rw [succ_nsmul, pow_succ]
+    exact (add_le_add ih le_rfl).trans (localOrder_add_le_localOrder_mul _ _)
+
+/-- **Ideal order is multiplicative when initial forms multiply.** If the associated graded ring
+`gr_𝔪 R` has no zero divisors, as for a regular local ring, then the order of a product of ideals
+is the sum of their orders. -/
+@[simp]
+theorem localOrder_mul [NoZeroDivisors (maximalIdeal R).AssociatedGraded] (I J : Ideal R) :
+    (I * J).localOrder = I.localOrder + J.localOrder := by
+  refine le_antisymm ?_ (localOrder_add_le_localOrder_mul I J)
+  cases hI : I.localOrder with
+  | top => simp
+  | coe r =>
+    cases hJ : J.localOrder with
+    | top => simp
+    | coe s =>
+      obtain ⟨x, hxI, hx⟩ := exists_mem_notMem_maximalIdeal_pow_succ hI
+      obtain ⟨y, hyJ, hy⟩ := exists_mem_notMem_maximalIdeal_pow_succ hJ
+      have hxy := AssociatedGraded.mul_notMem_pow_succ
+        ((natCast_le_localOrder_iff I r).mp hI.ge hxI) hx
+        ((natCast_le_localOrder_iff J s).mp hJ.ge hyJ) hy
+      have hlt : (I * J).localOrder < ((r + s : ℕ) : ℕ∞) + 1 := by
+        refine lt_of_not_ge fun h ↦ hxy ?_
+        rw [← Nat.cast_add_one, natCast_le_localOrder_iff] at h
+        exact h (mul_mem_mul hxI hyJ)
+      rwa [ENat.lt_add_one_iff (ENat.natCast_ne_top _), Nat.cast_add] at hlt
+
+/-- **Ideal order of a power.** If `gr_𝔪 R` has no zero divisors, as for a regular local ring, the
+`n`-th power of an ideal has exactly `n` times its order. This includes `n = 0`, where both sides
+vanish, and the zero ideal, of order `∞`. -/
+@[simp]
+theorem localOrder_pow [NoZeroDivisors (maximalIdeal R).AssociatedGraded] (I : Ideal R) (n : ℕ) :
+    (I ^ n).localOrder = n • I.localOrder := by
+  induction n with
+  | zero => simp
+  | succ n ih => rw [pow_succ, localOrder_mul, ih, succ_nsmul]
+
 /-- Over a Noetherian local ring, only the zero ideal has infinite order. -/
 @[simp]
 theorem localOrder_eq_top_iff_eq_bot [IsNoetherianRing R] (I : Ideal R) :
@@ -221,6 +295,33 @@ theorem orderAt_sup (I J : Ideal R) (p : PrimeSpectrum R) :
 theorem orderAt_span_range {ι : Type*} (f : ι → R) (p : PrimeSpectrum R) :
     (span (Set.range f)).orderAt p = ⨅ i, (span {f i}).orderAt p := by
   simp only [orderAt, span_range_eq_iSup, map_iSup, localOrder_iSup]
+
+/-- Order at a prime is superadditive on products. -/
+theorem orderAt_add_le_orderAt_mul (I J : Ideal R) (p : PrimeSpectrum R) :
+    I.orderAt p + J.orderAt p ≤ (I * J).orderAt p := by
+  simpa only [orderAt, Ideal.map_mul] using localOrder_add_le_localOrder_mul _ _
+
+/-- At a prime, the `n`-th power of an ideal has at least `n` times its order. -/
+theorem nsmul_orderAt_le_orderAt_pow (I : Ideal R) (n : ℕ) (p : PrimeSpectrum R) :
+    n • I.orderAt p ≤ (I ^ n).orderAt p := by
+  simpa only [orderAt, Ideal.map_pow] using nsmul_localOrder_le_localOrder_pow _ n
+
+/-- At a prime whose local ring has an associated graded ring without zero divisors, for instance
+a prime with regular localization, ideal order is multiplicative. -/
+@[simp]
+theorem orderAt_mul (I J : Ideal R) (p : PrimeSpectrum R)
+    [NoZeroDivisors (maximalIdeal (Localization.AtPrime p.asIdeal)).AssociatedGraded] :
+    (I * J).orderAt p = I.orderAt p + J.orderAt p := by
+  simp only [orderAt_def, Ideal.map_mul, localOrder_mul]
+
+/-- At a prime whose local ring has an associated graded ring without zero divisors, for instance
+a prime with regular localization, the `n`-th power of an ideal has exactly `n` times its
+order. -/
+@[simp]
+theorem orderAt_pow (I : Ideal R) (n : ℕ) (p : PrimeSpectrum R)
+    [NoZeroDivisors (maximalIdeal (Localization.AtPrime p.asIdeal)).AssociatedGraded] :
+    (I ^ n).orderAt p = n • I.orderAt p := by
+  simp only [orderAt_def, Ideal.map_pow, localOrder_pow]
 
 end AtPrime
 

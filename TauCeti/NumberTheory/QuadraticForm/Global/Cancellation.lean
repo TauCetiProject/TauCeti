@@ -57,7 +57,7 @@ theorem locallyEquivalent_of_prod_locallyEquivalent_prod
     refine equivalent_of_equivalent_prod (Nondegenerate.atFinitePlace hQ₀ v) ?_
     exact QuadraticMap.Equivalent.trans ⟨(atFinitePlaceProd Q₀ Q₁ v).symm⟩
       ((((locallyEquivalent_iff _ _).mp h).1 v).trans ⟨atFinitePlaceProd Q₀ Q₂ v⟩)
-  · let _ : Algebra K ℝ := (embedding_of_isReal w.2).toAlgebra
+  · let _ : Algebra K ℝ := (embedding_of_isReal w.property).toAlgebra
     refine equivalent_of_equivalent_prod (Nondegenerate.atRealPlace hQ₀ w) ?_
     exact QuadraticMap.Equivalent.trans ⟨(atRealPlaceProd Q₀ Q₁ w).symm⟩
       ((((locallyEquivalent_iff _ _).mp h).2 w).trans ⟨atRealPlaceProd Q₀ Q₂ w⟩)
@@ -90,7 +90,7 @@ theorem locallyRepresents_of_prod_locallyRepresents_prod
     refine isRepresentedBy_of_prod_isRepresentedBy_prod (Nondegenerate.atFinitePlace hQ₀ v) ?_
     exact (Equivalent.isRepresentedBy_congr ⟨atFinitePlaceProd Q₀ Q₁ v⟩
       ⟨atFinitePlaceProd Q₀ Q₂ v⟩).mp (((locallyRepresents_iff _ _).mp h).1 v)
-  · let _ : Algebra K ℝ := (embedding_of_isReal w.2).toAlgebra
+  · let _ : Algebra K ℝ := (embedding_of_isReal w.property).toAlgebra
     refine isRepresentedBy_of_prod_isRepresentedBy_prod (Nondegenerate.atRealPlace hQ₀ w) ?_
     exact (Equivalent.isRepresentedBy_congr ⟨atRealPlaceProd Q₀ Q₁ w⟩
       ⟨atRealPlaceProd Q₀ Q₂ w⟩).mp (((locallyRepresents_iff _ _).mp h).2 w)

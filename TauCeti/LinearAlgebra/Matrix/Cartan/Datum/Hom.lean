@@ -33,6 +33,7 @@ coweights.
 * `TauCeti.CartanDatum.Hom D D'`: morphisms of Cartan data with the same index type.
 * `TauCeti.CartanDatum.Hom.weightMap`: the induced map `X' → X` of weight lattices.
 * `TauCeti.CartanDatum.Hom.id` and `TauCeti.CartanDatum.Hom.comp`.
+* `TauCeti.CartanDatum.Hom.inverse`: the inverse of a morphism that is bijective on coweights.
 
 ## Main results
 
@@ -41,6 +42,7 @@ coweights.
 * `TauCeti.CartanDatum.Hom.weightMap_root`: `f^* α'ᵢ = αᵢ`.
 * `TauCeti.CartanDatum.Hom.weightMap_reflection`: `f^*` intertwines the reflections of weights.
 * `TauCeti.CartanDatum.Hom.weightMap_comp`: `(g ∘ f)^* = f^* ∘ g^*`.
+* `TauCeti.CartanDatum.Hom.weightMap_bijective`: `f^*` is bijective when `f` is.
 
 ## References
 
@@ -121,6 +123,11 @@ lemma cartan_eq : D'.cartan = D.cartan := by
   ext i j
   rw [cartan_apply, ← f.map_coroot, f.pairing_root_map, pairing_root_coroot]
 
+include f in
+/-- A morphism preserves the Serre lengths. -/
+lemma serreLength_eq (i j : ι) : D'.serreLength i j = D.serreLength i j := by
+  rw [serreLength_def, serreLength_def, f.cartan_eq]
+
 @[simp]
 lemma map_simpleTorus (i : ι) : f.toLinearMap (D.simpleTorus i) = D'.simpleTorus i := by
   rw [simpleTorus_def, map_nsmul, f.map_coroot, simpleTorus_def, f.symmetrizer_eq]
@@ -172,6 +179,37 @@ lemma weightMap_id : (Hom.id D).weightMap = .id :=
 /-- Taking transposes is contravariant: `(g ∘ f)^* = f^* ∘ g^*`. -/
 lemma weightMap_comp (g : Hom D' D'') : (g.comp f).weightMap = f.weightMap ∘ₗ g.weightMap :=
   ((g.comp f).eq_weightMap fun _ _ ↦ by simp).symm
+
+/-- The transpose of a morphism with bijective map of coweights is bijective. -/
+lemma weightMap_bijective (hf : Function.Bijective f.toLinearMap) :
+    Function.Bijective f.weightMap :=
+  (D'.pairing.toPerfPair.trans
+    ((LinearEquiv.ofBijective f.toLinearMap hf).dualMap.trans D.pairing.toPerfPair.symm)).bijective
+
+/-- The **inverse of a morphism of Cartan data** whose map of coweight lattices is bijective. -/
+noncomputable def inverse (hf : Function.Bijective f.toLinearMap) : Hom D' D where
+  toLinearMap := (LinearEquiv.ofBijective f.toLinearMap hf).symm.toLinearMap
+  map_coroot i := (LinearEquiv.ofBijective f.toLinearMap hf).symm_apply_eq.mpr (f.map_coroot i).symm
+  pairing_root_map i y := by
+    rw [← f.pairing_root_map, LinearEquiv.coe_coe]
+    exact congrArg _ ((LinearEquiv.ofBijective f.toLinearMap hf).apply_symm_apply y)
+  symmetrizer_eq := f.symmetrizer_eq.symm
+
+-- `(rfl)`, not `rfl`, for the same reason as `id_toLinearMap`.
+@[simp]
+lemma inverse_toLinearMap (hf : Function.Bijective f.toLinearMap) :
+    (f.inverse hf).toLinearMap = (LinearEquiv.ofBijective f.toLinearMap hf).symm.toLinearMap :=
+  (rfl)
+
+@[simp]
+lemma inverse_comp (hf : Function.Bijective f.toLinearMap) : (f.inverse hf).comp f = .id D := by
+  ext y
+  simp
+
+@[simp]
+lemma comp_inverse (hf : Function.Bijective f.toLinearMap) : f.comp (f.inverse hf) = .id D' := by
+  ext y
+  simp
 
 end Hom
 
