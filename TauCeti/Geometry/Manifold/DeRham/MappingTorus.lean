@@ -8,7 +8,6 @@ module
 public import TauCeti.Geometry.Manifold.DeRham.AddCircle
 public import TauCeti.Geometry.Manifold.DifferentialForm.MappingTorus.Iterate
 public import TauCeti.Geometry.Manifold.Instances.MappingTorus.ClosedOrbit.Homology
-public import TauCeti.Geometry.Manifold.MFDeriv.FixedPoint
 import TauCeti.Dynamics.PeriodicPts.Finite
 
 /-!
@@ -40,9 +39,10 @@ This file computes `N`:
 * `N` is natural: on the image `f_* c` of a class under a smooth map `f : X → Y_φ` it is the
   period of `f^* dt`. In particular it is preserved by the map of mapping tori induced by a smooth
   semiconjugacy, and the integer-iterate map `Y_(φ^k) → Y_φ` multiplies it by `k`;
-* if `M` is compact and `φ` is nondegenerate up to every period, then for distinct points `x i` of
-  positive periods `d i` the time periods `N [γ_(x i)] = d i` tend to infinity, so only finitely
-  many of these closed orbit classes lie below each bound on `N`.
+* if each positive iterate of `φ` has finitely many fixed points (for instance, `M` compact and `φ`
+  nondegenerate up to every period), then for distinct points `x i` of positive periods `d i` the
+  time periods `N [γ_(x i)] = d i` tend to infinity, so only finitely many of these closed orbit
+  classes lie below each bound on `N`.
 
 The opposite convention of circle-valued Morse theory integrates the closed form `α = -dt`, for
 which the suspension flow is the flow of `-α♯` in a metric making the suspension vector field dual

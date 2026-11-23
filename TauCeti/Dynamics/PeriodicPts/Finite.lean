@@ -35,7 +35,10 @@ theorem tendsto_cofinite_atTop_of_finite_ptsOfPeriod {α ι : Type*} {f : α →
   rw [← Nat.cofinite_eq_atTop]
   refine Tendsto.cofinite_of_finite_preimage_singleton fun n ↦ Set.Finite.to_subtype ?_
   rcases Nat.eq_zero_or_pos n with rfl | hn
-  · exact Set.finite_empty.subset fun i hi ↦ (hd i).ne' hi
-  · exact ((hfin n hn).preimage hx.injOn).subset fun i hi ↦ (hi : d i = n) ▸ hxd i
+  · exact Set.finite_empty.subset fun i hi ↦
+      (hd i).ne' (Set.mem_singleton_iff.mp (Set.mem_preimage.mp hi))
+  · refine ((hfin n hn).preimage hx.injOn).subset fun i hi ↦ ?_
+    rw [Set.mem_preimage, mem_ptsOfPeriod, ← Set.mem_singleton_iff.mp (Set.mem_preimage.mp hi)]
+    exact hxd i
 
 end Function

@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.DeRham.MappingTorus
+public import TauCeti.Geometry.Manifold.MFDeriv.FixedPoint
 public import TauCeti.RingTheory.NovikovSeries.OrbitZeta.Basic
 import TauCeti.Dynamics.PeriodicPts.PeriodicPair
 
