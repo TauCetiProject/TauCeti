@@ -9,6 +9,7 @@ public import TauCeti.Geometry.Manifold.DeRham.AddCircle
 public import TauCeti.Geometry.Manifold.DifferentialForm.MappingTorus.Iterate
 public import TauCeti.Geometry.Manifold.Instances.MappingTorus.ClosedOrbit.Homology
 public import TauCeti.Geometry.Manifold.MFDeriv.FixedPoint
+import TauCeti.Dynamics.PeriodicPts.Finite
 
 /-!
 # The time period homomorphism of a mapping torus
@@ -259,15 +260,13 @@ include hfin hx hd in
 finitely many fixed points, as for a diffeomorphism of a compact manifold nondegenerate up to every
 period (`TauCeti.IsNondegenerateUpToPeriod.finite_ptsOfPeriod`), the time periods
 `N [γ_(x i)] = d i` of the closed orbits through distinct points `x i` of positive periods `d i`
-tend to infinity along the cofinite filter. -/
+tend to infinity along the cofinite filter
+(`Function.tendsto_cofinite_atTop_of_finite_ptsOfPeriod`). -/
 theorem tendsto_timePeriodHom_closedOrbitHomologyClass :
     Tendsto (fun i ↦ timePeriodHom φ (closedOrbitHomologyClass (hxd i))) cofinite atTop := by
   simp only [timePeriodHom_closedOrbitHomologyClass]
-  refine tendsto_natCast_atTop_atTop.comp (tendsto_atTop.2 fun N ↦ eventually_cofinite.2 ?_)
-  -- A point of positive period below `N` is a fixed point of some `φ^[n]` with `0 < n < N`.
-  have hN : {n | 0 < n ∧ n < N}.Finite := (Set.finite_Iio N).subset fun _ hn ↦ hn.2
-  exact ((hN.biUnion fun n hn ↦ hfin n hn.1).preimage hx.injOn).subset
-    fun i hi ↦ Set.mem_biUnion (x := d i) ⟨hd i, not_le.1 hi⟩ (hxd i)
+  exact tendsto_natCast_atTop_atTop.comp
+    (tendsto_cofinite_atTop_of_finite_ptsOfPeriod hfin hx hxd hd)
 
 end Finiteness
 
