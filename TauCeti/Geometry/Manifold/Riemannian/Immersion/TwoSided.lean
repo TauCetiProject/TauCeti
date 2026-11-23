@@ -189,6 +189,67 @@ theorem nonempty_vectorBundleOrientation_of_continuous {f : K} (hf : ContMDiff I
         (finrank_orthogonalNormalSpace_eq_one (hinj x) hr) _ (hne x))
       fun i ↦ by simpa only [FiniteDimensional.basisSingleton_apply, id_eq] using hσ)⟩
 
+/-- Near a point, the unit normal vectors `w x` that are positive for an orientation `o` of
+`ν_f` are the values of a local unit normal field `τ`, or their opposites: the set where `τ x` is
+positive for `o x`, and the set where `-τ x` is, are open. -/
+private theorem eventually_eq_or_eq_neg_of_orientation {f : K} (hf : ContMDiff I J n f)
+    (hinj : ∀ x, Function.Injective (mfderiv I J f x)) (hm : m + 1 ≤ n)
+    (hr : finrank ℝ V = finrank ℝ E + 1) :
+    letI := orthogonalNormalFiberBundle hf hinj hm hr
+    letI := orthogonalNormalVectorBundle hf hinj hm hr
+    ∀ (o : VectorBundleOrientation (Fin 1 → ℝ) (fun x ↦ orthogonalNormalSpace I J f x) (Fin 1))
+      (w : ∀ x, orthogonalNormalSpace I J f x) (hw₀ : ∀ x, w x ≠ 0), (∀ x, ‖w x‖ = 1) →
+      (∀ x, (FiniteDimensional.basisSingleton (Fin 1)
+        (finrank_orthogonalNormalSpace_eq_one (hinj x) hr) (w x) (hw₀ x)).orientation = o x) →
+      ∀ {U : Set M} {τ : ∀ x, TangentSpace J (f x)} {x₀ : M}, IsOpen U → x₀ ∈ U →
+      ContMDiffOn I (I.prod 𝓘(ℝ, V)) m
+        (fun x ↦ (⟨x, τ x⟩ : TotalSpace V ((f : M → N) *ᵖ (TangentSpace J)))) U →
+      (∀ x, τ x ∈ orthogonalNormalSpace I J f x) → (∀ x ∈ U, ‖τ x‖ = 1) →
+      (∀ᶠ x in 𝓝 x₀, (w x : TangentSpace J (f x)) = τ x) ∨
+        ∀ᶠ x in 𝓝 x₀, (w x : TangentSpace J (f x)) = -τ x := by
+  let := orthogonalNormalFiberBundle hf hinj hm hr
+  let := orthogonalNormalVectorBundle hf hinj hm hr
+  intro o w hw₀ hw₁ hwo U τ x₀ hU hx₀ hτ hτf hτ₁
+  have hline (x : M) := finrank_orthogonalNormalSpace_eq_one (hinj x) hr
+  have hτ₀ {x : M} (hx : x ∈ U) : (⟨τ x, hτf x⟩ : orthogonalNormalSpace I J f x) ≠ 0 :=
+    norm_ne_zero_iff.1 ((hτ₁ x hx).trans_ne one_ne_zero)
+  -- The orientations given by `τ` on `U`, as a continuous map into the orientation cover.
+  let g : U → VectorBundleOrientationCover (Fin 1 → ℝ)
+      (fun x ↦ orthogonalNormalSpace I J f x) (Fin 1) := fun x ↦
+    ⟨x, (FiniteDimensional.basisSingleton (Fin 1) (hline x) _ (hτ₀ x.property)).orientation⟩
+  have hg : Continuous g := by
+    have hσ : ContinuousOn (fun x ↦ (⟨x, ⟨τ x, hτf x⟩⟩ :
+        TotalSpace (Fin 1 → ℝ) fun x ↦ orthogonalNormalSpace I J f x)) U :=
+      ((contMDiffOn_orthogonalNormalSpace_mk_iff hf hinj hm hr le_rfl (b := id) (w := τ)
+        hτf).2 hτ).continuousOn
+    exact VectorBundleOrientationCover.continuous_mk_basis_orientation continuous_subtypeVal
+      _ fun i ↦ by
+        simp only [FiniteDimensional.basisSingleton_apply]
+        exact continuousOn_iff_continuous_domRestrict.1 hσ
+  have hA := (VectorBundleOrientation.isOpen_setOf_orientation_eq o).preimage hg
+  have hB := ((VectorBundleOrientation.isOpen_setOf_orientation_eq o).preimage
+    VectorBundleOrientationCover.deck.continuous).preimage hg
+  rcases Module.Basis.orientation_eq_or_eq_neg
+    (FiniteDimensional.basisSingleton (Fin 1) (hline x₀) _ (hτ₀ hx₀)) (o x₀) with h | h
+  · refine .inl ?_
+    filter_upwards [(hU.isOpenMap_subtypeVal _ hA).mem_nhds ⟨⟨x₀, hx₀⟩, h.symm, rfl⟩]
+    rintro _ ⟨x, hx, rfl⟩
+    exact congrArg Subtype.val (eq_of_orientation_basisSingleton_eq (hline x)
+      ((hw₁ x).trans (hτ₁ x x.property).symm) (hτ₀ x.property) (hw₀ x)
+      ((hwo x).trans hx.symm))
+  · refine .inr ?_
+    filter_upwards [(hU.isOpenMap_subtypeVal _ hB).mem_nhds ⟨⟨x₀, hx₀⟩,
+      by rw [mem_preimage, mem_preimage, VectorBundleOrientationCover.deck_apply]; exact h.symm,
+      rfl⟩]
+    rintro _ ⟨x, hx, rfl⟩
+    rw [mem_preimage, mem_preimage, VectorBundleOrientationCover.deck_apply] at hx
+    have hx' : -(FiniteDimensional.basisSingleton (Fin 1) (hline x) _
+        (hτ₀ x.property)).orientation = o x := hx
+    rw [← orientation_basisSingleton_neg] at hx'
+    exact congrArg Subtype.val (eq_of_orientation_basisSingleton_eq (hline x)
+      ((hw₁ x).trans ((norm_neg _).trans (hτ₁ x x.property)).symm) _ (hw₀ x)
+      ((hwo x).trans hx'.symm))
+
 /-- An orientation of the normal bundle `ν_f` of an immersion of codimension one gives a `C^m`
 unit normal field: at `x`, the unit vector of `ν_f x` that is positive for the orientation.
 Near each point it is plus or minus a local `C^m` unit normal field
@@ -225,56 +286,17 @@ theorem isTwoSidedHypersurface_of_vectorBundleOrientation {f : K} (hf : ContMDif
   refine ⟨fun x ↦ (w x : TangentSpace J (f x)), fun x₀ ↦ ?_, fun x ↦ ⟨hw₁ x, (w x).property⟩⟩
   obtain ⟨U, hU, hx₀, τ, hτ, hτf, hτ₁⟩ :=
     exists_contMDiffOn_unit_orthogonalNormalSpace hf hinj hm hr x₀
-  have hτ₀ {x : M} (hx : x ∈ U) : (⟨τ x, hτf x⟩ : orthogonalNormalSpace I J f x) ≠ 0 :=
-    norm_ne_zero_iff.1 ((hτ₁ x hx).trans_ne one_ne_zero)
-  -- The orientations given by `τ` on `U`, as a continuous map into the orientation cover.
-  let g : U → VectorBundleOrientationCover (Fin 1 → ℝ)
-      (fun x ↦ orthogonalNormalSpace I J f x) (Fin 1) := fun x ↦
-    ⟨x, (FiniteDimensional.basisSingleton (Fin 1) (hline x) _ (hτ₀ x.property)).orientation⟩
-  have hg : Continuous g := by
-    have hσ : ContinuousOn (fun x ↦ (⟨x, ⟨τ x, hτf x⟩⟩ :
-        TotalSpace (Fin 1 → ℝ) fun x ↦ orthogonalNormalSpace I J f x)) U :=
-      ((contMDiffOn_orthogonalNormalSpace_mk_iff hf hinj hm hr le_rfl (b := id) (w := τ)
-        hτf).2 hτ).continuousOn
-    exact VectorBundleOrientationCover.continuous_mk_basis_orientation continuous_subtypeVal
-      _ fun i ↦ by
-        simp only [FiniteDimensional.basisSingleton_apply]
-        exact continuousOn_iff_continuous_domRestrict.1 hσ
-  -- Near `x₀`, `w` is `τ` or `-τ`, according to the sign of `o x₀` against `τ x₀`.
-  have hev : (∀ᶠ x in 𝓝 x₀, (w x : TangentSpace J (f x)) = τ x) ∨
-      ∀ᶠ x in 𝓝 x₀, (w x : TangentSpace J (f x)) = -τ x := by
-    have hA := (VectorBundleOrientation.isOpen_setOf_orientation_eq o).preimage hg
-    have hB := ((VectorBundleOrientation.isOpen_setOf_orientation_eq o).preimage
-      VectorBundleOrientationCover.deck.continuous).preimage hg
-    rcases Module.Basis.orientation_eq_or_eq_neg
-      (FiniteDimensional.basisSingleton (Fin 1) (hline x₀) _ (hτ₀ hx₀)) (o x₀) with h | h
-    · refine .inl ?_
-      filter_upwards [(hU.isOpenMap_subtypeVal _ hA).mem_nhds ⟨⟨x₀, hx₀⟩, h.symm, rfl⟩]
-      rintro _ ⟨x, hx, rfl⟩
-      exact congrArg Subtype.val (eq_of_orientation_basisSingleton_eq (hline x)
-        ((hw₁ x).trans (hτ₁ x x.property).symm) (hτ₀ x.property) (hw₀ x) ((hwo x).trans hx.symm))
-    · refine .inr ?_
-      filter_upwards [(hU.isOpenMap_subtypeVal _ hB).mem_nhds ⟨⟨x₀, hx₀⟩,
-        by rw [mem_preimage, mem_preimage, VectorBundleOrientationCover.deck_apply]; exact h.symm,
-        rfl⟩]
-      rintro _ ⟨x, hx, rfl⟩
-      rw [mem_preimage, mem_preimage, VectorBundleOrientationCover.deck_apply] at hx
-      have hx' : -(FiniteDimensional.basisSingleton (Fin 1) (hline x) _
-          (hτ₀ x.property)).orientation = o x := hx
-      rw [← orientation_basisSingleton_neg] at hx'
-      exact congrArg Subtype.val (eq_of_orientation_basisSingleton_eq (hline x)
-        ((hw₁ x).trans ((norm_neg _).trans (hτ₁ x x.property)).symm) _ (hw₀ x)
-        ((hwo x).trans hx'.symm))
-  have hτ₀' : ContMDiffAt I (I.prod 𝓘(ℝ, V)) m
+  have hτ₀ : ContMDiffAt I (I.prod 𝓘(ℝ, V)) m
       (fun x ↦ (⟨x, τ x⟩ : TotalSpace V ((f : M → N) *ᵖ (TangentSpace J)))) x₀ :=
     hτ.contMDiffAt (hU.mem_nhds hx₀)
   have hsec : ContMDiffAt I (I.prod 𝓘(ℝ, V)) m
       (fun x ↦ (⟨x, (w x : TangentSpace J (f x))⟩ :
         TotalSpace V ((f : M → N) *ᵖ (TangentSpace J)))) x₀ := by
-    rcases hev with h | h
-    · exact hτ₀'.congr_of_eventuallyEq (h.mono fun x hx ↦
+    rcases eventually_eq_or_eq_neg_of_orientation hf hinj hm hr o w hw₀ hw₁ hwo hU hx₀ hτ hτf
+      hτ₁ with h | h
+    · exact hτ₀.congr_of_eventuallyEq (h.mono fun x hx ↦
         congrArg (fun v ↦ (⟨x, v⟩ : TotalSpace V ((f : M → N) *ᵖ (TangentSpace J)))) hx)
-    · exact (ContMDiffAt.neg_section hτ₀').congr_of_eventuallyEq (h.mono fun x hx ↦
+    · exact (ContMDiffAt.neg_section hτ₀).congr_of_eventuallyEq (h.mono fun x hx ↦
         congrArg (fun v ↦ (⟨x, v⟩ : TotalSpace V ((f : M → N) *ᵖ (TangentSpace J)))) hx)
   exact (Pullback.contMDiffAt_lift (E := TangentSpace J) f (hf' x₀)).comp x₀ hsec
 
