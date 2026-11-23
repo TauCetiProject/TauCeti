@@ -51,8 +51,7 @@ graded isomorphism.
 * `TauCeti.GradedAlgebra.gradedSMul_shift`: shifting the degree of a compatible module grading
   preserves compatibility with the scalar grading.
 * `TauCeti.GradedAlgebra.shiftClass_shift`: for every `d : ℤ`, the translated grading
-  `fun n ↦ 𝒜 (n + d)` equipped with `DirectSum.Decomposition.compEquiv` and `gradedSMul_shift`
-  has `shiftClass` equal to `(d : ShiftClassGroup 𝒜)`.
+  `fun n ↦ 𝒜 (n + d)` has `shiftClass` equal to `(d : ShiftClassGroup 𝒜)`.
 -/
 
 public section
@@ -179,18 +178,12 @@ theorem shiftClass_eq_iff :
   rw [hN, shiftClass_eq_mk_iff]
   exact φN.exists_forall_iff_of_forall_iff hφN
 
-/-- For every `d : ℤ`, the translated grading `fun n ↦ 𝒜 (n + d)` equipped with
-`DirectSum.Decomposition.compEquiv 𝒜 (Equiv.addRight d)` and `gradedSMul_shift 𝒜 𝒜 d` has shift
-class `(d : ShiftClassGroup 𝒜)`. -/
-theorem shiftClass_shift (d : ℤ) :
-    let _ : Decomposition (fun n ↦ 𝒜 (n + d)) :=
-      DirectSum.Decomposition.compEquiv 𝒜 (Equiv.addRight d)
-    have _ := gradedSMul_shift 𝒜 𝒜 d
-    shiftClass 𝒜 (fun n ↦ 𝒜 (n + d)) = (d : ShiftClassGroup 𝒜) := by
-  let _ : Decomposition (fun n ↦ 𝒜 (n + d)) :=
-    DirectSum.Decomposition.compEquiv 𝒜 (Equiv.addRight d)
-  have _ := gradedSMul_shift 𝒜 𝒜 d
-  exact (shiftClass_eq_mk_iff 𝒜 (fun n ↦ 𝒜 (n + d))).mpr
+/-- For every `d : ℤ`, the translated grading `fun n ↦ 𝒜 (n + d)` has shift class
+`(d : ShiftClassGroup 𝒜)`. -/
+theorem shiftClass_shift (d : ℤ) [Decomposition (fun n ↦ 𝒜 (n + d))]
+    [SetLike.GradedSMul 𝒜 (fun n ↦ 𝒜 (n + d))] :
+    shiftClass 𝒜 (fun n ↦ 𝒜 (n + d)) = (d : ShiftClassGroup 𝒜) :=
+  (shiftClass_eq_mk_iff 𝒜 (fun n ↦ 𝒜 (n + d))).mpr
     ⟨LinearEquiv.refl A A, fun _ _ ↦ Iff.rfl⟩
 
 end ShiftClass

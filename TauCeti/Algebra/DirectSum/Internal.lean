@@ -42,8 +42,9 @@ agree as soon as they agree on the homogeneous singles `Finsupp.single x c`,
 
 `DirectSum.IsInternal.iSup_fiber` collects an internal decomposition along the fibers of any map,
 `DirectSum.IsInternal.comp_equiv` and `DirectSum.Decomposition.compEquiv` reindex one along an
-equivalence of the index types, and `DirectSum.IsInternal.nat_cons_bot` prepends the zero submodule
-to a natural-number-indexed internal decomposition.
+equivalence of the index types (with `DirectSum.decompose_compEquiv` computing the reindexed
+decomposition), and `DirectSum.IsInternal.nat_cons_bot` prepends the zero submodule to a
+natural-number-indexed internal decomposition.
 
 `DirectSum.IsInternal.iSup_inf_eq_of_component_mem` restricts an internal decomposition to any
 submodule that contains the canonical components of each of its elements,
@@ -460,11 +461,7 @@ theorem coeAddMonoidHom_equivCongrLeft {M S κ κ' : Type*} [AddCommMonoid M]
     obtain ⟨i, rfl⟩ := e.surjective k
     have heq : equivCongrLeft e.symm (of (fun k ↦ A k) (e i) y) =
         of (fun i ↦ (A ∘ e) i) i y := by
-      ext j
-      rw [equivCongrLeft_apply]
-      by_cases hij : i = j
-      · subst hij; simp
-      · simp [of_apply, hij, e.apply_eq_iff_eq]
+      simpa using equivCongrLeft_of (β := fun k ↦ A k) e.symm i y
     rw [AddMonoidHom.comp_apply, AddEquiv.coe_toAddMonoidHom, heq,
       DirectSum.coeAddMonoidHom_of, DirectSum.coeAddMonoidHom_of]
   exact DFunLike.congr_fun h x
@@ -494,6 +491,17 @@ noncomputable def Decomposition.compEquiv {M S κ κ' : Type*} [AddCommMonoid M]
     [SetLike S M] [AddSubmonoidClass S M] [DecidableEq κ] [DecidableEq κ']
     (A : κ' → S) [Decomposition A] (e : κ ≃ κ') : Decomposition (A ∘ e) :=
   ((Decomposition.isInternal A).comp_equiv e).chooseDecomposition
+
+/-- Decomposing an element with respect to a reindexed family `A ∘ e` is reindexing its
+`A`-decomposition along `e.symm`. -/
+@[simp]
+theorem decompose_compEquiv {M S κ κ' : Type*} [AddCommMonoid M]
+    [SetLike S M] [AddSubmonoidClass S M] [DecidableEq κ] [DecidableEq κ']
+    (A : κ' → S) [Decomposition A] (e : κ ≃ κ') [Decomposition (A ∘ e)] (x : M) :
+    decompose (A ∘ e) x = equivCongrLeft e.symm (decompose A x) := by
+  apply (decompose (A ∘ e)).symm.injective
+  exact ((decompose (A ∘ e)).left_inv x).trans
+    ((coeAddMonoidHom_equivCongrLeft A e (decompose A x)).trans ((decompose A).left_inv x)).symm
 
 end DirectSum
 
