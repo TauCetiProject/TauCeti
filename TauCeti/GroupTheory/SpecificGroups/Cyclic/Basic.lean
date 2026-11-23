@@ -98,10 +98,13 @@ theorem _root_.MulEquiv.zpowers_eq_top_iff_isUnit_toAdd {G : Type*} [Group G] {g
     (e : G ≃* Multiplicative ℤ) : Subgroup.zpowers g = ⊤ ↔ IsUnit (e g).toAdd := by
   rw [← (Subgroup.map_injective (f := e.toMonoidHom) e.injective).eq_iff,
     Subgroup.map_top_of_surjective _ e.surjective, MonoidHom.map_zpowers,
-    MulEquiv.coe_toMonoidHom]
-  change AddSubgroup.toSubgroup (AddSubgroup.zmultiples (e g).toAdd) = ⊤ ↔ _
-  rw [map_eq_top_iff, ← Int.zmultiples_one, le_antisymm_iff, Int.zmultiples_le_zmultiples_iff,
-    Int.zmultiples_le_zmultiples_iff, isUnit_iff_dvd_one, and_iff_right (one_dvd _)]
+    MulEquiv.coe_toMonoidHom, isUnit_iff_dvd_one]
+  refine ⟨fun h => ?_, fun ⟨c, hc⟩ => (Subgroup.eq_top_iff' _).2 fun x =>
+    Subgroup.zpowers_le.2 ?_ (Int.mem_zpowers_ofAdd_one x)⟩
+  · obtain ⟨k, hk⟩ := Subgroup.mem_zpowers_iff.1 (h ▸ Subgroup.mem_top (Multiplicative.ofAdd 1))
+    exact ⟨k, by rw [mul_comm, ← smul_eq_mul, ← toAdd_zpow, hk, toAdd_ofAdd]⟩
+  · exact Subgroup.mem_zpowers_iff.2 ⟨c, Multiplicative.toAdd.injective (by
+      rw [toAdd_zpow, toAdd_ofAdd, smul_eq_mul, mul_comm, ← hc])⟩
 
 /-- An element of a group equivalent to `Multiplicative ℤ` has finite order iff it is sent to
 `0`. -/

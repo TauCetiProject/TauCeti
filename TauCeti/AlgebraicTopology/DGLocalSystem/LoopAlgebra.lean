@@ -163,8 +163,7 @@ theorem loopChainAugmentation_loopPointChain (γ : MooreLoopSpace B b) :
 /-- The point chain of the constant loop is the unit of `C_*(Ω_b B; R)`. -/
 @[simp]
 theorem loopPointChain_one : loopPointChain R (1 : MooreLoopSpace B b) = 1 := by
-  rw [loopPointChain_def, DirectSum.one_def, ← DirectSum.lof_eq_of R,
-    NormalizedCubicalChain.gOne_one, NormalizedCubicalChain.one_def]
+  rw [loopPointChain_def, ← NormalizedCubicalChain.one_def, cubicalChainLof_one]
 
 /-- The point chain of a concatenation of Moore loops is the Pontryagin product of their point
 chains. -/
