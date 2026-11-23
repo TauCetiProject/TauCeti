@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Homology.Double
+public import TauCeti.Algebra.Homology.Single.Basic
 
 /-!
 # Two-term presentation complexes
@@ -180,7 +181,9 @@ lemma resolutionComplexIsoDouble_inv_f_one (S : ShortComplex C) :
   rfl
 
 /-- The augmentation `S.g : S.X₂ ⟶ S.X₃` of `S.resolutionComplex`, as a chain map to the single
-complex on `S.X₃`. -/
+complex on `S.X₃`. Its component in degree `0` is `S.g` (`resolutionπ_f_zero`); in positive
+degrees it vanishes, as does every chain map into a single complex
+(`HomologicalComplex.Hom.to_single_f_eq_zero`). -/
 def resolutionπ (S : ShortComplex C) :
     S.resolutionComplex ⟶ (ChainComplex.single₀ C).obj S.X₃ :=
   (ChainComplex.toSingle₀Equiv _ _).symm ⟨S.g, S.zero⟩
@@ -189,15 +192,6 @@ def resolutionπ (S : ShortComplex C) :
 @[simp]
 lemma resolutionπ_f_zero (S : ShortComplex C) : S.resolutionπ.f 0 = S.g :=
   ChainComplex.toSingle₀Equiv_symm_apply_f_zero _ _
-
-/-- Every chain map into the single complex on `A` in degree `j` vanishes in degrees `i ≠ j`,
-since its target does. For instance, the augmentation `S.resolutionπ` vanishes in positive
-degrees. -/
-@[simp]
-lemma _root_.HomologicalComplex.Hom.to_single_f_eq_zero {ι : Type*} [DecidableEq ι]
-    {c : ComplexShape ι} {K : HomologicalComplex C c} {j : ι} {A : C}
-    (f : K ⟶ (HomologicalComplex.single C c j).obj A) {i : ι} (hi : i ≠ j) : f.f i = 0 :=
-  (HomologicalComplex.isZero_single_obj_X c j A i hi).eq_of_tgt _ _
 
 /-- A morphism of short complexes induces the chain map of the associated complexes given by its
 first two components. -/
