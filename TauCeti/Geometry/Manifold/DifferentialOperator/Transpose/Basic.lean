@@ -70,6 +70,9 @@ compositions.
 * `LinearMap.IsFormalTranspose.withDensity`: if `D'` is a transpose of `D` with respect to `μ`,
   `ρ ≥ 0` is smooth and `ρ D'' g = D' (ρ g)` for all `g`, then `D''` is a transpose of `D` with
   respect to the weighted measure `ρ μ` (for `ρ > 0`, `D'' g = ρ⁻¹ D' (ρ g)`).
+* `LinearMap.isFormalTranspose_withDensity_iff`, `LinearMap.formalTranspose_withDensity`: for a
+  smooth positive density `ρ`, `D'` is a transpose of `D` for `ρ μ` if and only if `ρ D' ρ⁻¹` is
+  one for `μ`, so the formal transpose for `ρ μ` is `g ↦ ρ⁻¹ Dᵗ (ρ g)`.
 * `LinearMap.IsFormalTranspose.mem_differentialOperators`: a formal transpose of a differential
   operator of order at most `m` that is a differential operator has order at most `m`.
 * `LinearMap.IsFormalTranspose.smoothPrincipalSymbol_eq`: on a boundaryless manifold, its principal
@@ -323,6 +326,36 @@ theorem IsFormalTranspose.withDensity [OpensMeasurableSpace M] (h : D.IsFormalTr
         simp only [ContMDiffMap.coe_mul, Pi.mul_apply]
         ring
 
+/-- **Change of density**, as an equivalence. For a smooth positive density `ρ`, that is a unit of
+`C^∞(M)` with `ρ ≥ 0`, an operator `D'` is a formal transpose of `D` with respect to the weighted
+measure `ρ μ` if and only if `ρ D' ρ⁻¹` is one with respect to `μ`. -/
+theorem isFormalTranspose_withDensity_iff [OpensMeasurableSpace M] (ρ : (C^∞⟮I, M; ℝ⟯)ˣ)
+    (hρ : ∀ x, 0 ≤ (ρ : C^∞⟮I, M; ℝ⟯) x) :
+    D.IsFormalTranspose D' (μ.withDensity fun x ↦ ENNReal.ofReal ((ρ : C^∞⟮I, M; ℝ⟯) x)) ↔
+      D.IsFormalTranspose (mulLeft ℝ (ρ : C^∞⟮I, M; ℝ⟯) ∘ₗ D' ∘ₗ mulLeft ℝ ↑ρ⁻¹) μ := by
+  refine ⟨fun h f g hfg ↦ ?_, fun h ↦ h.withDensity hρ fun g ↦ ?_⟩
+  · have hρm : Measurable fun x ↦ ENNReal.ofReal ((ρ : C^∞⟮I, M; ℝ⟯) x) :=
+      ENNReal.measurable_ofReal.comp (ρ : C^∞⟮I, M; ℝ⟯).contMDiff.continuous.measurable
+    have hρt : ∀ᵐ x ∂μ, ENNReal.ofReal ((ρ : C^∞⟮I, M; ℝ⟯) x) < ⊤ :=
+      .of_forall fun _ ↦ ENNReal.ofReal_lt_top
+    have hρρ (x : M) : (ρ : C^∞⟮I, M; ℝ⟯) x * (↑ρ⁻¹ : C^∞⟮I, M; ℝ⟯) x = 1 := by
+      simpa only [ContMDiffMap.coe_mul, Pi.mul_apply, ContMDiffMap.coe_one, Pi.one_apply] using
+        congrArg (fun φ : C^∞⟮I, M; ℝ⟯ ↦ φ x) ρ.mul_inv
+    have key := h f (↑ρ⁻¹ * g)
+      (hfg.imp _root_.id fun hg ↦ by simpa only [ContMDiffMap.coe_mul] using hg.mul_left)
+    simp only [integral_withDensity_eq_integral_toReal_smul hρm hρt,
+      ENNReal.toReal_ofReal (hρ _), smul_eq_mul, ContMDiffMap.coe_mul, Pi.mul_apply] at key
+    calc ∫ x, D f x * g x ∂μ
+        = ∫ x, (ρ : C^∞⟮I, M; ℝ⟯) x * (D f x * ((↑ρ⁻¹ : C^∞⟮I, M; ℝ⟯) x * g x)) ∂μ := by
+          congr 1 with x
+          linear_combination (-(D f x * g x)) * hρρ x
+      _ = ∫ x, (ρ : C^∞⟮I, M; ℝ⟯) x * (f x * D' (↑ρ⁻¹ * g) x) ∂μ := key
+      _ = _ := by
+          congr 1 with x
+          simp only [comp_apply, mulLeft_apply, ContMDiffMap.coe_mul, Pi.mul_apply]
+          ring
+  · rw [comp_apply, comp_apply, mulLeft_apply, mulLeft_apply, Units.inv_mul_cancel_left]
+
 /-! ### Uniqueness -/
 
 section Unique
@@ -428,6 +461,43 @@ theorem formalTranspose_mulLeft [FiniteDimensional ℝ E] [IsManifold I ∞ M] [
     (c : C^∞⟮I, M; ℝ⟯) :
     (mulLeft ℝ c).formalTranspose μ = mulLeft ℝ c :=
   (isFormalTranspose_mulLeft c).formalTranspose_eq
+
+/-- **The formal transpose for a density.** For a smooth positive density `ρ`, the formal
+transpose of `D` with respect to the weighted measure `ρ μ` is `g ↦ ρ⁻¹ Dᵗ (ρ g)`, where `Dᵗ` is
+its formal transpose with respect to `μ`. -/
+theorem formalTranspose_withDensity [OpensMeasurableSpace M] [FiniteDimensional ℝ E]
+    [IsManifold I ∞ M] [T2Space M] [SigmaCompactSpace M] [BorelSpace M]
+    [IsLocallyFiniteMeasure μ] [μ.IsOpenPosMeasure] (ρ : (C^∞⟮I, M; ℝ⟯)ˣ)
+    (hρ : ∀ x, 0 ≤ (ρ : C^∞⟮I, M; ℝ⟯) x) (D : C^∞⟮I, M; ℝ⟯ →ₗ[ℝ] C^∞⟮I, M; ℝ⟯) :
+    D.formalTranspose (μ.withDensity fun x ↦ ENNReal.ofReal ((ρ : C^∞⟮I, M; ℝ⟯) x)) =
+      mulLeft ℝ ↑ρ⁻¹ ∘ₗ D.formalTranspose μ ∘ₗ mulLeft ℝ ↑ρ := by
+  -- Conjugation by multiplication by the unit `u` is invertible.
+  have hc (u : (C^∞⟮I, M; ℝ⟯)ˣ) (X : C^∞⟮I, M; ℝ⟯ →ₗ[ℝ] C^∞⟮I, M; ℝ⟯) :
+      mulLeft ℝ (u : C^∞⟮I, M; ℝ⟯) ∘ₗ mulLeft ℝ ↑u⁻¹ ∘ₗ X = X := by
+    rw [← comp_assoc, ← mulLeft_mul, u.mul_inv, mulLeft_one, id_comp]
+  have hc' (X : C^∞⟮I, M; ℝ⟯ →ₗ[ℝ] C^∞⟮I, M; ℝ⟯) :
+      mulLeft ℝ (↑ρ⁻¹ : C^∞⟮I, M; ℝ⟯) ∘ₗ mulLeft ℝ ↑ρ ∘ₗ X = X := by
+    simpa only [inv_inv] using hc ρ⁻¹ X
+  have hM := hc ρ id
+  have hM' := hc' id
+  rw [comp_id] at hM hM'
+  have hiff (D' : C^∞⟮I, M; ℝ⟯ →ₗ[ℝ] C^∞⟮I, M; ℝ⟯) :=
+    isFormalTranspose_withDensity_iff (μ := μ) (D := D) (D' := D') ρ hρ
+  by_cases h : ∃ T, D.IsFormalTranspose T μ
+  · obtain ⟨T, hT⟩ := h
+    have hR : D.IsFormalTranspose (mulLeft ℝ ↑ρ⁻¹ ∘ₗ D.formalTranspose μ ∘ₗ mulLeft ℝ ↑ρ)
+        (μ.withDensity fun x ↦ ENNReal.ofReal ((ρ : C^∞⟮I, M; ℝ⟯) x)) := by
+      rw [hiff]
+      simpa only [comp_assoc, hM, hc, comp_id] using hT.isFormalTranspose_formalTranspose
+    -- Both transposes for `ρ μ` conjugate to transposes for `μ`, which are unique.
+    have key := ((hiff _).mp hR.isFormalTranspose_formalTranspose).unique ((hiff _).mp hR)
+    have := congrArg (fun X ↦ mulLeft ℝ ↑ρ⁻¹ ∘ₗ X ∘ₗ mulLeft ℝ ↑ρ) key
+    simpa only [comp_assoc, hM', hc', comp_id] using this
+  · -- A transpose `S` for `ρ μ` would give the transpose `ρ S ρ⁻¹` for `μ`.
+    rw [formalTranspose_eq_zero_of_not_exists h, zero_comp, comp_zero,
+      formalTranspose_eq_zero_of_not_exists]
+    rintro ⟨S, hS⟩
+    exact h ⟨_, (hiff S).mp hS⟩
 
 /-! ### Differential operators -/
 
