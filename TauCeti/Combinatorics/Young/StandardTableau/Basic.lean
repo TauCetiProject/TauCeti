@@ -17,13 +17,12 @@ defines standard Young tableaux, their finite cardinality `standardCount`, and t
 underlying labeling is the existing `YoungTableau μ` type, so the general tableau API applies
 without converting between parallel representations.
 
-The labels start at zero, following the `Fin μ.card` convention in the Schur--Weyl roadmap.
+The labels are the elements of `Fin μ.card`, so they start at zero rather than at one as in the
+classical convention.
 
 ## References
 
 * [W. Fulton, *Young Tableaux*][fulton1997], Section 1.1.
-* [Schur--Weyl roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/SchurWeyl/README.md),
-  Layer 0.
 * Mathlib's `Mathlib.Combinatorics.Young.YoungDiagram`, for Young diagrams and their
   transposition.
 -/
@@ -73,6 +72,11 @@ theorem toTableau_apply {μ : YoungDiagram} (T : StandardYoungTableau μ) (c : �
 @[ext]
 theorem ext {μ : YoungDiagram} {T U : StandardYoungTableau μ} (h : ∀ c, T c = U c) : T = U :=
   DFunLike.ext T U h
+
+/-- A standard Young tableau is determined by its underlying tableau. -/
+theorem toTableau_injective {μ : YoungDiagram} :
+    Function.Injective (toTableau : StandardYoungTableau μ → YoungTableau μ) :=
+  fun T U h => ext fun c => by rw [← toTableau_apply, h, toTableau_apply]
 
 /-- The entries of a standard Young tableau form a bijection. -/
 theorem bijective {μ : YoungDiagram} (T : StandardYoungTableau μ) :
@@ -126,11 +130,11 @@ theorem transpose_toTableau {μ : YoungDiagram} (T : StandardYoungTableau μ) :
 @[simp]
 theorem transpose_apply_val {μ : YoungDiagram} (T : StandardYoungTableau μ)
     (c : ↥μ.transpose.cells) : (T.transpose c).val =
-      (T ⟨c.1.swap, YoungDiagram.mem_transpose.mp c.2⟩).val :=
+      (T ⟨c.val.swap, YoungDiagram.mem_transpose.mp c.property⟩).val :=
   calc
     (T.transpose c).val = (T.transpose.toTableau c).val :=
       congrArg Fin.val (toTableau_apply T.transpose c).symm
-    _ = (T ⟨c.1.swap, YoungDiagram.mem_transpose.mp c.2⟩).val := by
+    _ = (T ⟨c.val.swap, YoungDiagram.mem_transpose.mp c.property⟩).val := by
       simp only [transpose, YoungTableau.transpose_apply, YoungDiagram.transposeCellsEquiv_apply,
         Fin.val_cast, toTableau_apply]
 
@@ -150,11 +154,11 @@ private def untranspose {μ : YoungDiagram} (T : StandardYoungTableau μ.transpo
 
 private theorem untranspose_apply_val {μ : YoungDiagram}
     (T : StandardYoungTableau μ.transpose) (c : ↥μ.cells) : (untranspose T c).val =
-      (T ⟨c.1.swap, YoungDiagram.mem_transpose.mpr c.2⟩).val :=
+      (T ⟨c.val.swap, YoungDiagram.mem_transpose.mpr c.property⟩).val :=
   calc
     (untranspose T c).val = ((untranspose T).toTableau c).val :=
       congrArg Fin.val (toTableau_apply (untranspose T) c).symm
-    _ = (T ⟨c.1.swap, YoungDiagram.mem_transpose.mpr c.2⟩).val := by
+    _ = (T ⟨c.val.swap, YoungDiagram.mem_transpose.mpr c.property⟩).val := by
       simp only [untranspose, Equiv.trans_apply, YoungDiagram.transposeCellsEquiv_symm_apply,
         finCongr_apply, Fin.val_cast, toTableau_apply]
 
@@ -184,7 +188,7 @@ theorem transposeEquiv_apply {μ : YoungDiagram} (T : StandardYoungTableau μ) :
 @[simp]
 theorem transposeEquiv_symm_apply_val {μ : YoungDiagram}
     (T : StandardYoungTableau μ.transpose) (c : ↥μ.cells) : (((transposeEquiv μ).symm T) c).val =
-      (T ⟨c.1.swap, YoungDiagram.mem_transpose.mpr c.2⟩).val :=
+      (T ⟨c.val.swap, YoungDiagram.mem_transpose.mpr c.property⟩).val :=
   untranspose_apply_val T c
 
 /-- Standard Young tableaux of a fixed shape form a finite type. -/

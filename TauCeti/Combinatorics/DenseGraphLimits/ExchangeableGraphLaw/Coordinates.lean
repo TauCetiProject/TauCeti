@@ -9,6 +9,7 @@ public import Mathlib.Data.Set.BoolIndicator
 public import TauCeti.Combinatorics.SimpleGraph.Measurable
 import Mathlib.Data.Finset.Sym
 import Mathlib.Order.Sym2
+import TauCeti.Data.Sym.Sym2
 
 /-!
 # Edge coordinates of an infinite simple graph
@@ -64,7 +65,7 @@ abbrev EdgeIndex : Type := {e : Sym2 ℕ // ¬ e.IsDiag}
 
 /-- An infinite simple graph is equivalently a Boolean assignment to its possible edges. -/
 def graphCoordEquiv : SimpleGraph ℕ ≃ (EdgeIndex → Bool) where
-  toFun G e := G.edgeSet.boolIndicator e.1
+  toFun G e := G.edgeSet.boolIndicator e.val
   invFun f := SimpleGraph.fromEdgeSet {s : Sym2 ℕ | ∃ h : ¬ s.IsDiag, f ⟨s, h⟩ = true}
   left_inv G := by
     -- The coordinate predicate cuts out exactly `G.edgeSet`, so `fromEdgeSet_edgeSet` applies.
@@ -80,7 +81,7 @@ def graphCoordEquiv : SimpleGraph ℕ ≃ (EdgeIndex → Bool) where
     simp only [SimpleGraph.edgeSet_fromEdgeSet, Set.mem_sdiff, Set.mem_ofPred_eq,
       Sym2.mem_diagSet]
     exact ⟨fun ⟨⟨h, htrue⟩, _⟩ => (Subtype.ext rfl : (⟨(e : Sym2 ℕ), h⟩ : EdgeIndex) = e) ▸ htrue,
-      fun htrue => ⟨⟨e.2, htrue⟩, e.2⟩⟩
+      fun htrue => ⟨⟨e.property, htrue⟩, e.property⟩⟩
 
 end DenseGraphLimits
 
@@ -93,7 +94,7 @@ open TauCeti.DenseGraphLimits
 /-- The coordinate at `e` is true exactly when `e` is an edge of the graph. -/
 @[simp]
 theorem graphCoordEquiv_apply (G : SimpleGraph ℕ) (e : EdgeIndex) :
-    graphCoordEquiv G e = true ↔ e.1 ∈ G.edgeSet :=
+    graphCoordEquiv G e = true ↔ e.val ∈ G.edgeSet :=
   (Set.mem_iff_boolIndicator _ _).symm
 
 end SimpleGraph
@@ -107,7 +108,7 @@ open MeasureTheory
 /-- An edge coordinate is an edge of the decoded graph exactly when its value is true. -/
 @[simp]
 theorem mem_edgeSet_graphCoordEquiv_symm (f : EdgeIndex → Bool) (e : EdgeIndex) :
-    e.1 ∈ (graphCoordEquiv.symm f).edgeSet ↔ f e = true := by
+    e.val ∈ (graphCoordEquiv.symm f).edgeSet ↔ f e = true := by
   rw [← SimpleGraph.graphCoordEquiv_apply, Equiv.apply_symm_apply]
 
 /-- The graph-to-coordinate map is measurable for Mathlib's adjacency-generated measurable space
@@ -118,10 +119,10 @@ theorem measurable_graphCoordEquiv : Measurable ⇑graphCoordEquiv := by
   intro e
   refine measurable_to_bool ?_
   have hpre : (fun G : SimpleGraph ℕ => graphCoordEquiv G e) ⁻¹' {true} =
-      {G : SimpleGraph ℕ | e.1 ∈ G.edgeSet} := Set.ext fun G =>
+      {G : SimpleGraph ℕ | e.val ∈ G.edgeSet} := Set.ext fun G =>
     SimpleGraph.graphCoordEquiv_apply G e
   rw [hpre]
-  exact (measurable_set_iff.1 SimpleGraph.measurable_edgeSet e.1).setOf
+  exact (measurable_set_iff.1 SimpleGraph.measurable_edgeSet e.val).setOf
 
 /-- The coordinate-to-graph map is measurable, so `graphCoordEquiv` is a measurable equivalence in
 substance. -/
@@ -158,19 +159,19 @@ def edgeWindow (n : ℕ) : Finset EdgeIndex :=
 /-- Membership in `edgeWindow n` means that both endpoints are below `n`. -/
 @[simp]
 theorem mem_edgeWindow {n : ℕ} {e : EdgeIndex} :
-    e ∈ edgeWindow n ↔ ∀ a ∈ e.1, a < n := by
+    e ∈ edgeWindow n ↔ ∀ a ∈ e.val, a < n := by
   simp [edgeWindow, Finset.mem_sym2_iff]
 
 /-- A bound below which all endpoints of the coordinates in `J` lie. -/
 def windowBound (J : Finset EdgeIndex) : ℕ :=
-  J.sup fun e => e.1.sup + 1
+  J.sup fun e => e.val.sup + 1
 
 /-- Every coordinate in a finite set lies in the window at its `windowBound`. -/
 theorem subset_edgeWindow_windowBound (J : Finset EdgeIndex) :
     J ⊆ edgeWindow (windowBound J) := by
   intro e he
   refine mem_edgeWindow.2 fun a ha => Nat.lt_of_lt_of_le ?_
-    (Finset.le_sup (f := fun e : EdgeIndex => e.1.sup + 1) he)
+    (Finset.le_sup (f := fun e : EdgeIndex => e.val.sup + 1) he)
   obtain ⟨s, hs⟩ := e
   induction s using Sym2.ind with
   | _ x y =>
@@ -208,61 +209,41 @@ namespace Equiv.Perm
 
 open TauCeti.DenseGraphLimits
 
-/-- A permutation of the vertices relabels the unordered non-diagonal edge coordinates. -/
-def edgeIndexMap (e : Equiv.Perm ℕ) : EdgeIndex ≃ EdgeIndex where
-  toFun p := ⟨Sym2.map e p.1, fun h => p.2 ((Sym2.isDiag_map e.injective).mp h)⟩
-  invFun p := ⟨Sym2.map e.symm p.1, fun h => p.2 ((Sym2.isDiag_map e.symm.injective).mp h)⟩
-  left_inv p := by
-    apply Subtype.ext
-    -- The subtype coercions hide the two successive `Sym2.map`s from rewriting.
-    change Sym2.map e.symm (Sym2.map e p.1) = p.1
-    rw [Sym2.map_map, e.symm_comp_self, Sym2.map_id]
-    rfl
-  right_inv p := by
-    apply Subtype.ext
-    -- The subtype coercions hide the two successive `Sym2.map`s from rewriting.
-    change Sym2.map e (Sym2.map e.symm p.1) = p.1
-    rw [Sym2.map_map, e.self_comp_symm, Sym2.map_id]
-    rfl
+/-- A permutation of the vertices relabels the unordered non-diagonal edge coordinates: it is
+the restriction of `Sym2.equivCongr e` to the non-diagonal pairs, which it preserves. -/
+def edgeIndexMap (e : Equiv.Perm ℕ) : EdgeIndex ≃ EdgeIndex :=
+  (Sym2.equivCongr e).subtypeEquiv fun p ↦ by
+    rw [Sym2.equivCongr_apply, Sym2.isDiag_map e.injective]
 
 /-- Vertex relabelling acts on an edge coordinate by applying the permutation to both endpoints. -/
 @[simp]
 theorem edgeIndexMap_val (e : Equiv.Perm ℕ) (p : EdgeIndex) :
-    (edgeIndexMap e p).1 = Sym2.map e p.1 := (rfl)
+    (edgeIndexMap e p).val = Sym2.map e p.val := by
+  simp only [edgeIndexMap, Equiv.subtypeEquiv_apply, Sym2.equivCongr_apply]
 
 /-- The identity vertex relabelling induces the identity edge-coordinate relabelling. -/
 @[simp]
-theorem edgeIndexMap_refl : edgeIndexMap (Equiv.refl ℕ) = Equiv.refl EdgeIndex := by
-  apply Equiv.ext
-  intro p
-  apply Subtype.ext
-  exact congrFun Sym2.map_id p.1
+theorem edgeIndexMap_refl : edgeIndexMap (Equiv.refl ℕ) = Equiv.refl EdgeIndex :=
+  Equiv.ext fun p ↦ Subtype.ext <| by simp
 
 /-- Successive vertex relabellings induce the corresponding successive coordinate relabellings. -/
 @[simp]
 theorem edgeIndexMap_trans (e₁ e₂ : Equiv.Perm ℕ) :
-    edgeIndexMap (e₁.trans e₂) = (edgeIndexMap e₁).trans (edgeIndexMap e₂) := by
-  apply Equiv.ext
-  intro p
-  apply Subtype.ext
-  -- Unfold the two equivalence applications so functoriality of `Sym2.map` applies.
-  change Sym2.map ⇑(e₁.trans e₂) p.1 = Sym2.map ⇑e₂ (Sym2.map ⇑e₁ p.1)
-  rw [Sym2.map_map, Equiv.coe_trans]
+    edgeIndexMap (e₁.trans e₂) = (edgeIndexMap e₁).trans (edgeIndexMap e₂) :=
+  Equiv.ext fun p ↦ Subtype.ext <| by simp [Sym2.map_map]
 
 /-- Inverting a vertex relabelling inverts the induced edge-coordinate relabelling. -/
 @[simp]
 theorem edgeIndexMap_symm (e : Equiv.Perm ℕ) :
-    (edgeIndexMap e).symm = edgeIndexMap e.symm := by
-  apply Equiv.ext
-  intro p
-  rfl
+    (edgeIndexMap e).symm = edgeIndexMap e.symm :=
+  Equiv.ext fun p ↦ (edgeIndexMap e).symm_apply_eq.mpr <| Subtype.ext <| by simp [Sym2.map_map]
 
 /-- Relabelling an infinite graph is the same as relabelling its Boolean edge coordinates. -/
 @[simp]
 theorem graphCoordEquiv_comap (e : Equiv.Perm ℕ) (G : SimpleGraph ℕ) (p : EdgeIndex) :
     graphCoordEquiv (SimpleGraph.comap ⇑e G) p = graphCoordEquiv G (edgeIndexMap e p) := by
   -- `e` is a graph isomorphism from the pullback onto `G`, so it preserves edge-set membership.
-  have h := (SimpleGraph.Iso.comap e G).map_mem_edgeSet_iff (e := p.1)
+  have h := (SimpleGraph.Iso.comap e G).map_mem_edgeSet_iff (e := p.val)
   -- The bundled graph isomorphism and the vertex permutation have distinct coercion paths.
   rw [show ⇑(SimpleGraph.Iso.comap e G) = ⇑e from funext (SimpleGraph.Iso.comap_apply e G)] at h
   apply Bool.eq_iff_iff.mpr

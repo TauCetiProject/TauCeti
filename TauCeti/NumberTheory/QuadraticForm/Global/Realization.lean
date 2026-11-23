@@ -17,9 +17,9 @@ import TauCeti.NumberTheory.QuadraticForm.Global.Rank.Three
 /-!
 # Realization of admissible global invariant systems
 
-Every admissible system of local invariants over a number field `K` is the system of a regular
-global quadratic form: a rank `n ≥ 1`, a global discriminant, finite Hasse signs and real
-positive indices satisfying the admissibility conditions are realized by a regular form on
+Every admissible system of local invariants over a number field `K` in any universe is the system
+of a regular global quadratic form: a rank `n ≥ 1`, a global discriminant, finite Hasse signs and
+real positive indices satisfying the admissibility conditions are realized by a regular form on
 `Kⁿ`. Conversely the system of a regular form of positive rank is admissible, so admissibility
 characterizes the systems that arise from forms. Such a form is isometric, at every finite and
 real place, to any prescribed family of local forms realizing the system.
@@ -57,7 +57,7 @@ open IsDedekindDomain NumberField NumberField.InfinitePlace QuadraticMap TauCeti
 
 namespace TauCeti.NumberField.QuadraticForm.GlobalFormInvariants
 
-variable {K : Type} [Field K] [NumberField K]
+variable {K : Type*} [Field K] [NumberField K]
 
 /-- The system complementary to the line `⟨c⟩` in a system `I` whose discriminant is the class
 of `d`: rank `n - 1`, discriminant the class of `c d`, finite Hasse signs `s_v · (c, c d)_v`, and
@@ -70,7 +70,7 @@ private noncomputable def complementLine (I : GlobalFormInvariants K) (c d : Kˣ
     I.finiteHasse v * hilbertSymbol (v.unitAtFinitePlace c) (v.unitAtFinitePlace (c * d))
   realPositiveIndex w := by
     classical
-    exact if 0 < embedding_of_isReal w.2 (c : K) then I.realPositiveIndex w - 1
+    exact if 0 < embedding_of_isReal w.property (c : K) then I.realPositiveIndex w - 1
       else I.realPositiveIndex w
 
 variable {I : GlobalFormInvariants K} {c d : Kˣ}
@@ -78,24 +78,24 @@ variable {I : GlobalFormInvariants K} {c d : Kˣ}
 section complementLine
 
 variable (hc : ∀ w : {w : InfinitePlace K // w.IsReal},
-    embedding_of_isReal w.2 (c : K) < 0 ↔ I.realPositiveIndex w = 0)
+    embedding_of_isReal w.property (c : K) < 0 ↔ I.realPositiveIndex w = 0)
 include hc
 
 /-- Where `c` is positive the positive index of `I` is nonzero. -/
 private theorem realPositiveIndex_ne_zero_of_pos {w : {w : InfinitePlace K // w.IsReal}}
-    (hw : 0 < embedding_of_isReal w.2 (c : K)) : I.realPositiveIndex w ≠ 0 :=
+    (hw : 0 < embedding_of_isReal w.property (c : K)) : I.realPositiveIndex w ≠ 0 :=
   fun h => hw.not_gt ((hc w).mpr h)
 
 /-- Where `c` is not positive the positive index of `I` is zero. -/
 private theorem realPositiveIndex_eq_zero_of_not_pos {w : {w : InfinitePlace K // w.IsReal}}
-    (hw : ¬0 < embedding_of_isReal w.2 (c : K)) : I.realPositiveIndex w = 0 := by
+    (hw : ¬0 < embedding_of_isReal w.property (c : K)) : I.realPositiveIndex w = 0 := by
   refine (hc w).mp (lt_of_le_of_ne (not_lt.mp hw) ?_)
   rw [← unitAtRealPlace_apply]
   exact (unitAtRealPlace w c).ne_zero
 
 /-- Where `c` is not positive the negative index of `I` is its rank, which is a successor. -/
 private theorem exists_realNegativeIndex_eq_add_one_of_not_pos (hI : I.IsAdmissible)
-    {w : {w : InfinitePlace K // w.IsReal}} (hw : ¬0 < embedding_of_isReal w.2 (c : K)) :
+    {w : {w : InfinitePlace K // w.IsReal}} (hw : ¬0 < embedding_of_isReal w.property (c : K)) :
     ∃ m, I.realNegativeIndex w = m + 1 := by
   refine ⟨I.rank - 1, ?_⟩
   have := hI.one_le_rank
@@ -107,7 +107,7 @@ one less where `c` is negative. -/
 private theorem realNegativeIndex_complementLine (hI : I.IsAdmissible)
     (w : {w : InfinitePlace K // w.IsReal}) :
     (complementLine I c d).realNegativeIndex w =
-      if 0 < embedding_of_isReal w.2 (c : K) then I.realNegativeIndex w
+      if 0 < embedding_of_isReal w.property (c : K) then I.realNegativeIndex w
         else I.realNegativeIndex w - 1 := by
   have hp := hI.realPositiveIndex_le_rank w
   simp only [realNegativeIndex_def, complementLine]
@@ -127,11 +127,11 @@ private theorem realHasse_complementLine (hI : I.IsAdmissible) (hd : squareClass
   · -- Here `p_w = 0`, so the negative index of `I` is the rank `m + 1`, and `(c, c d)_w` is
     -- `-1` exactly when `d` is positive, that is, when `m` is odd.
     have hp := realPositiveIndex_eq_zero_of_not_pos hc hw
-    have hcn : embedding_of_isReal w.2 (c : K) < 0 := (hc w).mpr hp
+    have hcn : embedding_of_isReal w.property (c : K) < 0 := (hc w).mpr hp
     obtain ⟨m, hm⟩ := exists_realNegativeIndex_eq_add_one_of_not_pos hc hI hw
-    have hdn : embedding_of_isReal w.2 (d : K) < 0 ↔ Even m := by
+    have hdn : embedding_of_isReal w.property (d : K) < 0 ↔ Even m := by
       rw [hI.embedding_of_isReal_neg_iff_odd hd w, hm, Nat.odd_add_one, Nat.not_odd_iff_even]
-    have hd0 : embedding_of_isReal w.2 (d : K) ≠ 0 := by
+    have hd0 : embedding_of_isReal w.property (d : K) ≠ 0 := by
       rw [← unitAtRealPlace_apply]
       exact (unitAtRealPlace w d).ne_zero
     have hsymb : hilbertSymbol (unitAtRealPlace w c) (unitAtRealPlace w (c * d)) = (-1) ^ m := by
@@ -139,7 +139,7 @@ private theorem realHasse_complementLine (hI : I.IsAdmissible) (hd : squareClass
       · rw [he.neg_one_pow, hilbertSymbol_unitAtRealPlace_eq_one_iff]
         simpa using Or.inr (mul_pos_of_neg_of_neg hcn (hdn.mpr he))
       · rw [ho.neg_one_pow, hilbertSymbol_unitAtRealPlace_eq_neg_one_iff]
-        have hdp : 0 < embedding_of_isReal w.2 (d : K) :=
+        have hdp : 0 < embedding_of_isReal w.property (d : K) :=
           lt_of_le_of_ne (not_lt.mp (hdn.not.mpr (Nat.not_even_iff_odd.mpr ho))) hd0.symm
         simpa using ⟨hcn, mul_neg_of_neg_of_pos hcn hdp⟩
     have hch : (m + 1).choose 2 = m.choose 2 + m := by
@@ -161,10 +161,10 @@ private theorem discrAtRealPlace_complementLine (hI : I.IsAdmissible)
   split_ifs with hw
   · rw [(Units.squareClass_eq_zero_iff_pos _).mpr (by simpa using hw)]
     exact zero_add (I.realNegativeIndex w • squareClass (-1 : ℝˣ))
-  · have hcn : embedding_of_isReal w.2 (c : K) < 0 :=
+  · have hcn : embedding_of_isReal w.property (c : K) < 0 :=
       (hc w).mpr (realPositiveIndex_eq_zero_of_not_pos hc hw)
     obtain ⟨m, hm⟩ := exists_realNegativeIndex_eq_add_one_of_not_pos hc hI hw
-    have hc1 : squareClass (Units.map (embedding_of_isReal w.2).toMonoidHom c) =
+    have hc1 : squareClass (Units.map (embedding_of_isReal w.property).toMonoidHom c) =
         squareClass (-1 : ℝˣ) :=
       (Units.squareClass_eq_squareClass_neg_one_iff_neg _).mpr (by simpa using hcn)
     have h2 : squareClass (-1 : ℝˣ) + (m + 1) • squareClass (-1 : ℝˣ) =
@@ -210,7 +210,7 @@ end complementLine
 `⟨c⟩ ⊥ Q'` realizes `I`. -/
 private theorem globalInvariants_prod_complementLine (hd : squareClass d = I.discr)
     (hn : 1 ≤ I.rank) (hc : ∀ w : {w : InfinitePlace K // w.IsReal},
-      embedding_of_isReal w.2 (c : K) < 0 ↔ I.realPositiveIndex w = 0)
+      embedding_of_isReal w.property (c : K) < 0 ↔ I.realPositiveIndex w = 0)
     {Q' : _root_.QuadraticForm K (Fin (complementLine I c d).rank → K)} (hQ' : Q'.Nondegenerate)
     (hQI : Q'.globalInvariants hQ' = complementLine I c d) :
     letI : Invertible (2 : K) := invertibleOfNonzero two_ne_zero
@@ -275,7 +275,8 @@ private theorem exists_globalForm_of_rank_eq_add_three :
     obtain ⟨x, hx0, hx⟩ :=
       _root_.NumberField.exists_ne_zero_neg_iff_mem {w | I.realPositiveIndex w = 0}
     have hc : ∀ w : {w : InfinitePlace K // w.IsReal},
-        embedding_of_isReal w.2 ((Units.mk0 x hx0 : Kˣ) : K) < 0 ↔ I.realPositiveIndex w = 0 :=
+        embedding_of_isReal w.property ((Units.mk0 x hx0 : Kˣ) : K) < 0 ↔ I.realPositiveIndex w = 0
+            :=
       fun w => by rw [Units.val_mk0]; exact hx w
     have hI' := isAdmissible_complementLine hc hI hd (by omega)
     obtain ⟨Q', hQ', hQI'⟩ := exists_globalForm_of_rank_eq_add_three n hI'

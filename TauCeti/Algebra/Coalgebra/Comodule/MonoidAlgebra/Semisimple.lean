@@ -33,8 +33,8 @@ induced endomorphism.
 * W. C. Waterhouse, *Introduction to Affine Group Schemes*, §3.2.
 * J. S. Milne, *Algebraic Groups* (2017), §12.c.
 
-This supplies generic comodule infrastructure used by the semisimple-points results for
-diagonalizable groups in Layer 4 of the ReductiveGroups roadmap.
+`TauCeti.Algebra.AlgebraicGroup.DiagonalizableGroup.Semisimple` uses these results to show that
+every point of a diagonalizable group is semisimple.
 -/
 
 public section

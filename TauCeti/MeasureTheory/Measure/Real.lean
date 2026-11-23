@@ -11,16 +11,22 @@ public import Mathlib.MeasureTheory.Measure.Real
 /-!
 # Elementary real-measure identities and maps
 
-This file records elementary identities about measures on the real line. The absolute-value map
-folds the negative half-line onto the positive half-line. Squaring loses the sign of a real number
+This file records elementary identities for real-valued measures and for measures on the real
+line. Bounds by finite sums divided by a nonzero constant pass from extended to real values
+when every measure in the sum is finite.
+The absolute-value map folds the negative half-line onto the positive half-line. Squaring loses
+the sign of a real number
 and nothing else, so it determines a measure on the line as soon as the measure cannot tell the two
 signs apart. For a reflection-invariant measure, the pushforward under squaring is a complete
 invariant: such a measure is determined by its mass on subsets of `(0, ∞)` and on `{0}`, and the
 squared pushforward records both. For a measure carried by the nonnegative
-half-line, squaring is undone by `Real.sqrt`, so the pushforward determines the measure outright.
+half-line, squaring and `Real.sqrt` induce mutually inverse pushforwards, so either pushforward
+determines the measure outright.
 
 ## Main results
 
+* `MeasureTheory.Measure.measureReal_le_sum_div_of_le` — a bound by a finite sum divided by a
+  nonzero constant passes to real-valued measures when each summand is finite;
 * `TauCeti.volume_Ioc_inter_Ioo_of_le_of_le` — the portion of an interval inside a larger open
   interval keeps its full length;
 * `MeasureTheory.Measure.map_abs_eq_restrict_add_restrict` — decomposition of the image under
@@ -34,13 +40,26 @@ half-line, squaring is undone by `Real.sqrt`, so the pushforward determines the 
   measures with the same pushforward after squaring are equal.
 * `MeasureTheory.Measure.map_sqrt_map_sq` — on the nonnegative half-line, taking square roots
   undoes squaring.
+* `MeasureTheory.Measure.map_sq_map_sqrt` — on the nonnegative half-line, squaring undoes
+  taking square roots.
 -/
 
 public section
 
 open MeasureTheory Set
+open scoped Pointwise ENNReal
 
 namespace MeasureTheory.Measure
+
+/-- A bound by a finite sum of measures divided by a nonzero constant passes to real-valued
+measures when each summand is finite. -/
+theorem measureReal_le_sum_div_of_le {Ω ι : Type*} [MeasurableSpace Ω]
+    (P : Measure Ω) {I : Finset ι} {s : Set Ω} {t : ι → Set Ω} {c : ℝ≥0∞}
+    (hc : c ≠ 0) (h : P s ≤ (∑ i ∈ I, P (t i)) / c)
+    (ht : ∀ i ∈ I, P (t i) ≠ ∞ := by finiteness) :
+    P.real s ≤ (∑ i ∈ I, P.real (t i)) / c.toReal := by
+  simpa only [ENNReal.toReal_div, ENNReal.toReal_sum ht, measureReal_def] using
+    ENNReal.toReal_mono (ENNReal.div_ne_top (ENNReal.sum_ne_top.mpr ht) hc) h
 
 /-- **The folded law.** Folding keeps the nonnegative half of `μ` in place and reflects its
 negative half onto the positive half-line. -/
@@ -86,7 +105,8 @@ theorem ae_eq_preimage_Ioc (hs₁ : Real.toEReal ⁻¹' Ioo l r ⊆ s)
   have hopen {t : Set ℝ} (h₁ : Real.toEReal ⁻¹' Ioo l r ⊆ t)
       (h₂ : t ⊆ Real.toEReal ⁻¹' Icc l r) :
       t =ᵐ[μ] Real.toEReal ⁻¹' Ioo l r :=
-    (ae_le_set.2 (measure_mono_null (sdiff_subset_sdiff_left h₂) hnull)).antisymm h₁.eventuallyLE
+    (ae_subset.2 (measure_mono_null (sdiff_subset_sdiff_left h₂) hnull)).antisymm
+        h₁.eventuallySubset
   exact (hopen hs₁ hs₂).trans (hopen (preimage_mono Ioo_subset_Ioc_self)
     (preimage_mono Ioc_subset_Icc_self)).symm
 
@@ -151,12 +171,22 @@ theorem eq_of_map_sq_eq_of_map_neg_eq_self (μ ν : Measure ℝ)
 
 /-- **Square roots undo squaring** for a measure carried by the nonnegative half-line: the
 pushforward of `μ` under `x ↦ x ^ 2` returns to `μ` under `Real.sqrt`. -/
+@[simp]
 theorem map_sqrt_map_sq (μ : Measure ℝ) (hμ : ∀ᵐ t ∂μ, 0 ≤ t) :
     (μ.map fun t : ℝ ↦ t ^ 2).map Real.sqrt = μ := by
   rw [Measure.map_map (by fun_prop) (by fun_prop)]
   refine (Measure.map_congr ?_).trans Measure.map_id
   filter_upwards [hμ] with t ht
   simpa using Real.sqrt_sq ht
+
+/-- **Squaring undoes square roots** for a measure carried by the nonnegative half-line. -/
+@[simp]
+theorem map_sq_map_sqrt (μ : Measure ℝ) (hμ : ∀ᵐ t ∂μ, 0 ≤ t) :
+    (μ.map Real.sqrt).map (fun t : ℝ ↦ t ^ 2) = μ := by
+  rw [Measure.map_map (by fun_prop) (by fun_prop)]
+  refine (Measure.map_congr ?_).trans Measure.map_id
+  filter_upwards [hμ] with t ht
+  exact Real.sq_sqrt ht
 
 end MeasureTheory.Measure
 

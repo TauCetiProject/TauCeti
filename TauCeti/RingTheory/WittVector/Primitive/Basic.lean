@@ -5,10 +5,12 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.RingTheory.AdicCompletion.Topology
 public import TauCeti.RingTheory.WittVector.Complete
 public import TauCeti.RingTheory.WittVector.TeichmullerCoeff
 public import TauCeti.RingTheory.WittVector.Units
-public import TauCeti.Topology.Algebra.TopologicallyNilpotent.Basic
+
+import Mathlib.RingTheory.Ideal.Quotient.Nilpotent
 
 /-!
 # Primitive and distinguished Witt vectors
@@ -30,7 +32,9 @@ The remaining results assume that `S` has characteristic `p`, that every topolog
 element of `S` lies in the Jacobson radical (for instance, `S` is adically complete with respect to
 an open ideal, by `topologicalNilradical_le_jacobson_bot`), and that the topology of `S` is linear.
 In characteristic `p` the first Witt coordinate of a product is `(x y)₁ = x₀ ^ p y₁ + y₀ ^ p x₁`
-(`WittVector.mul_coeff_one_charP`). Hence `p + [ϖ] α` is primitive for every topologically
+(`WittVector.mul_coeff_one_charP`). So when `ξ₀` lies in the Jacobson radical, `y ξ` is
+distinguished exactly when `y` is a unit and `ξ` is distinguished, with no topology involved.
+Hence `p + [ϖ] α` is primitive for every topologically
 nilpotent `ϖ` and every `α`, primitivity is invariant under multiplication by units, and a multiple
 of a primitive element that is itself distinguished is a unit multiple. Over a perfect ring, every
 primitive element is moreover a unit multiple of some `p + [ϖ] α`.
@@ -57,11 +61,19 @@ properties used to construct the untilt `𝕎 R⁺ ⧸ (ξ)`.
 * `WittVector.isPrimitive_p`: `p` is primitive, and
   `WittVector.not_isDistinguished_of_mem_span_p_sq`, `WittVector.not_isDistinguished_teichmuller`:
   over a nonzero ring no element of `(p ^ 2)` and no Teichmüller representative is.
-* `WittVector.IsPrimitive.map`, `WittVector.IsPrimitive.frobenius`: functoriality and Frobenius.
-* `WittVector.isPrimitive_p_add_teichmuller_mul`: `p + [ϖ] α` is primitive.
+* `WittVector.isDistinguished_sum_teichmuller_pow_of_pow_eq_one`: a Teichmüller geometric sum
+  for a `p`-th root of one is distinguished.
+* `WittVector.IsPrimitive.map`, `WittVector.IsPrimitive.frobenius`: functoriality and Frobenius;
+  `WittVector.isDistinguished_frobenius_iff`: Frobenius preserves and reflects distinguishedness.
+* `WittVector.isPrimitive_p_add_teichmuller_mul`,
+  `WittVector.isPrimitive_p_add_teichmuller_mul_of_isAdic`,
+  `WittVector.isDistinguished_p_add_teichmuller_mul_of_isAdicComplete`: `p + [ϖ] α` is primitive
+  (and distinguished over an `I`-adically complete ring with `ϖ ∈ I`).
 * `WittVector.isPrimitive_iff_exists_eq_unit_mul`: the primitive elements are exactly the unit
   multiples of the elements `p + [ϖ] α` with `ϖ` topologically nilpotent.
 * `WittVector.isPrimitive_units_mul`: primitivity is invariant under multiplication by units.
+* `WittVector.isDistinguished_mul_iff_of_coeff_zero_mem_jacobson`: if `ξ₀` lies in the Jacobson
+  radical, `y ξ` is distinguished exactly when `y` is a unit and `ξ` is distinguished.
 * `WittVector.IsPrimitive.isUnit_of_eq_mul`: if `ξ` is primitive and `ξ' = y ξ` is distinguished,
   `y` is a unit, and `WittVector.IsPrimitive.associated_of_dvd`: a primitive element dividing a
   distinguished one is associated to it.
@@ -101,6 +113,40 @@ def IsDistinguished (ξ : 𝕎 S) : Prop := IsUnit (ξ.coeff 1)
 
 theorem isDistinguished_iff {ξ : 𝕎 S} : ξ.IsDistinguished ↔ IsUnit (ξ.coeff 1) := .rfl
 
+/-- If `a ^ p = 1` in characteristic `p`, its Teichmüller geometric sum is distinguished. -/
+theorem isDistinguished_sum_teichmuller_pow_of_pow_eq_one
+    {p : ℕ} [Fact p.Prime] {S : Type*} [CommRing S] [CharP S p]
+    (a : S) (ha : a ^ p = 1) :
+    (∑ j ∈ Finset.range p, teichmuller p a ^ j : WittVector p S).IsDistinguished := by
+  let : Nontrivial S := CharP.nontrivial_of_char_ne_one (R := S) (Fact.out : p.Prime).ne_one
+  let I : Ideal S := Ideal.span {a - 1}
+  have hI : IsNilpotent I := by
+    refine ⟨p, ?_⟩
+    dsimp only [I]
+    rw [Ideal.zero_eq_bot, Ideal.span_singleton_pow, Ideal.span_singleton_eq_bot,
+      sub_pow_char, ha, one_pow, sub_self]
+  have haI : Ideal.Quotient.mk I a = 1 := by
+    rw [← map_one (Ideal.Quotient.mk I), Ideal.Quotient.eq]
+    exact Ideal.mem_span_singleton_self _
+  have hproper : I ≠ ⊤ := by
+    intro h
+    obtain ⟨n, hn⟩ := hI
+    rw [h, ← Ideal.one_eq_top, one_pow] at hn
+    exact one_ne_zero hn
+  let : Nontrivial (S ⧸ I) := Ideal.Quotient.nontrivial_iff.mpr hproper
+  let : CharP (S ⧸ I) p := (CharP.charP_iff_prime_eq_zero (Fact.out : p.Prime)).mpr
+    (by simpa only [map_natCast, map_zero] using
+      congrArg (Ideal.Quotient.mk I) (CharP.cast_eq_zero S p))
+  have hmap : WittVector.map (Ideal.Quotient.mk I)
+      (∑ j ∈ Finset.range p, teichmuller p a ^ j) = (p : WittVector p (S ⧸ I)) := by
+    simp [map_sum, map_pow, map_teichmuller, haI]
+  rw [WittVector.isDistinguished_iff]
+  apply hI.isUnit_quotient_mk_iff.mp
+  have hcoeff := congrArg (fun x : WittVector p (S ⧸ I) ↦ x.coeff 1) hmap
+  rw [WittVector.map_coeff, WittVector.coeff_p_one] at hcoeff
+  rw [hcoeff]
+  exact isUnit_one
+
 /-- A Witt vector `ξ` over a topological ring is *primitive of degree one* if its zeroth Witt
 coordinate is topologically nilpotent and its first Witt coordinate is a unit (Kedlaya–Liu,
 Definition 3.2.3; Kedlaya, *Sheaves, stacks, and shtukas*, Definition 2.3.4). Over a perfect ring,
@@ -114,7 +160,7 @@ structure IsPrimitive [TopologicalSpace S] (ξ : 𝕎 S) : Prop where
 
 theorem isPrimitive_iff [TopologicalSpace S] {ξ : 𝕎 S} :
     ξ.IsPrimitive ↔ IsTopologicallyNilpotent (ξ.coeff 0) ∧ IsUnit (ξ.coeff 1) :=
-  ⟨fun h ↦ ⟨h.1, h.2⟩, fun h ↦ ⟨h.1, h.2⟩⟩
+  ⟨fun h ↦ ⟨h.isTopologicallyNilpotent_coeff_zero, h.isDistinguished⟩, fun h ↦ ⟨h.1, h.2⟩⟩
 
 /-- Over the zero ring every Witt vector is primitive. -/
 theorem isPrimitive_of_subsingleton [TopologicalSpace S] [Subsingleton S] (ξ : 𝕎 S) :
@@ -132,7 +178,7 @@ theorem IsDistinguished.map {S' : Type*} [CommRing S'] {ξ : 𝕎 S} (h : ξ.IsD
 /-- A continuous ring homomorphism carries primitive Witt vectors to primitive Witt vectors. -/
 theorem IsPrimitive.map [TopologicalSpace S] {S' : Type*} [CommRing S'] [TopologicalSpace S']
     {ξ : 𝕎 S} (h : ξ.IsPrimitive) {f : S →+* S'} (hf : Continuous f) : (map f ξ).IsPrimitive :=
-  ⟨by rw [map_coeff]; exact h.1.map hf, h.2.map f⟩
+  ⟨by rw [map_coeff]; exact h.isTopologicallyNilpotent_coeff_zero.map hf, h.isDistinguished.map f⟩
 
 /-- Over a nonzero ring, no Teichmüller representative is distinguished: its first Witt
 coordinate vanishes. -/
@@ -172,12 +218,34 @@ theorem not_isDistinguished_of_mem_span_p_sq [Nontrivial S] {ξ : 𝕎 S}
   rw [isDistinguished_iff, mul_comm, mul_pow_charP_coeff_zero y one_lt_two]
   exact not_isUnit_zero
 
+/-- In characteristic `p`, the Witt vector Frobenius of `ξ` is distinguished exactly when `ξ` is:
+it raises the first Witt coordinate to the `p`-th power. -/
+@[simp]
+theorem isDistinguished_frobenius_iff {ξ : 𝕎 S} :
+    (frobenius ξ).IsDistinguished ↔ ξ.IsDistinguished := by
+  rw [isDistinguished_iff, isDistinguished_iff, coeff_frobenius_charP,
+    isUnit_pow_iff hp.out.ne_zero]
+
 /-- In characteristic `p`, the Witt vector Frobenius carries primitive elements to primitive
 elements: it raises every Witt coordinate to the `p`-th power. -/
 theorem IsPrimitive.frobenius [TopologicalSpace S] {ξ : 𝕎 S} (h : ξ.IsPrimitive) :
     (frobenius ξ).IsPrimitive :=
-  ⟨by rw [coeff_frobenius_charP]; exact h.1.pow hp.out.ne_zero, by
-    rw [isDistinguished_iff, coeff_frobenius_charP]; exact h.2.pow p⟩
+  ⟨by rw [coeff_frobenius_charP]; exact h.isTopologicallyNilpotent_coeff_zero.pow hp.out.ne_zero,
+    isDistinguished_frobenius_iff.mpr h.isDistinguished⟩
+
+/-- **Distinguishedness of a product.** In characteristic `p`, if the zeroth Witt coordinate of
+`ξ` lies in the Jacobson radical, then `y ξ` is distinguished exactly when `y` is a unit and `ξ` is
+distinguished: the first Witt coordinate of `y ξ` is `y₀ ^ p ξ₁ + ξ₀ ^ p y₁`
+(`WittVector.mul_coeff_one_charP`). -/
+theorem isDistinguished_mul_iff_of_coeff_zero_mem_jacobson {ξ : 𝕎 S}
+    (hξ : ξ.coeff 0 ∈ Ring.jacobson S) (y : 𝕎 S) :
+    (y * ξ).IsDistinguished ↔ IsUnit y ∧ ξ.IsDistinguished := by
+  have := isLocalHom_of_le_jacobson (le_refl (Ring.jacobson S))
+  have h₀ : Ideal.Quotient.mk (Ring.jacobson S) (ξ.coeff 0) = 0 :=
+    Ideal.Quotient.eq_zero_iff_mem.mpr hξ
+  rw [isDistinguished_iff, isDistinguished_iff, isUnit_iff_isUnit_coeff_zero (x := y),
+    mul_coeff_one_charP, ← isUnit_map_iff (Ideal.Quotient.mk (Ring.jacobson S))]
+  simp [h₀, hp.out.ne_zero, IsUnit.mul_iff]
 
 section Jacobson
 
@@ -218,24 +286,21 @@ theorem isPrimitive_units_mul (u : (𝕎 S)ˣ) {ξ : 𝕎 S} :
   suffices H : ∀ (u : (𝕎 S)ˣ) {ξ : 𝕎 S}, ξ.IsPrimitive → (u * ξ : 𝕎 S).IsPrimitive from
     ⟨fun h ↦ by simpa using H u⁻¹ h, H u⟩
   intro u ξ h
-  refine ⟨by rw [mul_coeff_zero]; exact h.1.mul_left _, ?_⟩
+  refine ⟨by rw [mul_coeff_zero]; exact h.isTopologicallyNilpotent_coeff_zero.mul_left _, ?_⟩
   rw [isDistinguished_iff, mul_coeff_one_charP]
-  exact ((h.1.pow hp.out.ne_zero).mul_right _).isUnit_add_left
+  exact ((h.isTopologicallyNilpotent_coeff_zero.pow hp.out.ne_zero).mul_right _).isUnit_add_left
       (by simpa only [Ideal.jacobson_bot] using hS)
-    (((isUnit_iff_isUnit_coeff_zero.mp u.isUnit).pow p).mul h.2)
+    (((isUnit_iff_isUnit_coeff_zero.mp u.isUnit).pow p).mul h.isDistinguished)
 
 /-- **The unit criterion.** Let `S` have characteristic `p` and a linear topology, and suppose its
 topological nilradical lies in the Jacobson radical (for instance, `S` is adically complete with
 respect to an open ideal). If `ξ` is primitive and a multiple `ξ' = y ξ` is distinguished, then `y`
 is a unit (Kedlaya, *Sheaves, stacks, and shtukas*, Remark 2.3.5). -/
 theorem IsPrimitive.isUnit_of_eq_mul {ξ ξ' y : 𝕎 S} (hξ : ξ.IsPrimitive)
-    (hξ' : ξ'.IsDistinguished) (h : ξ' = y * ξ) : IsUnit y := by
-  rw [isDistinguished_iff, h, mul_coeff_one_charP] at hξ'
-  have hy := ((hξ.1.pow hp.out.ne_zero).mul_right (-y.coeff 1)).isUnit_add_left
-      (by simpa only [Ideal.jacobson_bot] using hS) hξ'
-  rw [mul_neg, add_neg_cancel_right] at hy
-  exact isUnit_iff_isUnit_coeff_zero.mpr <|
-    (isUnit_pow_iff hp.out.ne_zero).mp (isUnit_of_mul_isUnit_left hy)
+    (hξ' : ξ'.IsDistinguished) (h : ξ' = y * ξ) : IsUnit y :=
+  ((isDistinguished_mul_iff_of_coeff_zero_mem_jacobson
+    (hS (IsTopologicallyNilpotent.mem_topologicalNilradical_iff.mpr
+        hξ.isTopologicallyNilpotent_coeff_zero)) y).mp (h ▸ hξ')).1
 
 /-- **A primitive element dividing a distinguished element is associated to it.** Under the
 hypotheses of `WittVector.IsPrimitive.isUnit_of_eq_mul`, if a primitive `ξ` divides a
@@ -248,6 +313,23 @@ theorem IsPrimitive.associated_of_dvd {ξ ξ' : 𝕎 S} (hξ : ξ.IsPrimitive)
   exact associated_mul_unit_right ξ y (hξ.isUnit_of_eq_mul hS hξ' (mul_comm ξ y))
 
 end Jacobson
+
+/-- Over an `I`-adically complete ring `S` of characteristic `p` equipped with the `I`-adic
+topology, every Witt vector of the form `p + [ϖ] α` with `ϖ ∈ I` is primitive. -/
+theorem isPrimitive_p_add_teichmuller_mul_of_isAdic {I : Ideal S} [TopologicalSpace S]
+    (hI : IsAdic I) [IsAdicComplete I S] {ϖ : S} (hϖ : ϖ ∈ I) (α : 𝕎 S) :
+    ((p : 𝕎 S) + teichmuller p ϖ * α).IsPrimitive := by
+  have := hI.isLinearTopology
+  exact isPrimitive_p_add_teichmuller_mul hI.topologicalNilradical_le_jacobson
+    (hI.isTopologicallyNilpotent_of_mem hϖ) α
+
+/-- **Elements of the form `p + [ϖ] α` are distinguished.** Over an `I`-adically complete ring `S`
+of characteristic `p`, `p + [ϖ] α` is distinguished for every `ϖ ∈ I` and `α : 𝕎 S`. -/
+theorem isDistinguished_p_add_teichmuller_mul_of_isAdicComplete {I : Ideal S}
+    [IsAdicComplete I S] {ϖ : S} (hϖ : ϖ ∈ I) (α : 𝕎 S) :
+    ((p : 𝕎 S) + teichmuller p ϖ * α).IsDistinguished := by
+  let _ : WithIdeal S := ⟨I⟩
+  exact (isPrimitive_p_add_teichmuller_mul_of_isAdic (I := I) rfl hϖ α).isDistinguished
 
 variable [PerfectRing S p]
 
@@ -270,7 +352,7 @@ theorem isPrimitive_iff_exists_unit [TopologicalSpace S] {ξ : 𝕎 S} :
     ξ.IsPrimitive ↔ IsTopologicallyNilpotent (ξ.coeff 0) ∧
       ∃ u : (𝕎 S)ˣ, ξ = teichmuller p (ξ.coeff 0) + p * u := by
   rw [← isDistinguished_iff_exists_unit]
-  exact ⟨fun h ↦ ⟨h.1, h.2⟩, fun h ↦ ⟨h.1, h.2⟩⟩
+  exact ⟨fun h ↦ ⟨h.isTopologicallyNilpotent_coeff_zero, h.isDistinguished⟩, fun h ↦ ⟨h.1, h.2⟩⟩
 
 /-- A primitive element is a unit multiple of `p + [ξ₀] α`, with `ξ₀` topologically nilpotent:
 if `ξ = [ξ₀] + p u` then `ξ = u (p + [ξ₀] u⁻¹)`. -/

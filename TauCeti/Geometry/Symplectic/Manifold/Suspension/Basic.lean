@@ -58,6 +58,10 @@ holds with that `d`.
   of `(ℝ / ℤ) × Y_φ`, through their components.
 * `TauCeti.SmoothMappingTorus.eval₂_suspensionForm_mk`: in the coordinates `(s, t, x)`, `Ω` pairs
   `a ∂_s + b ∂_t + v` with `a' ∂_s + b' ∂_t + v'` to `a b' - a' b + σ(v, v')`.
+* `TauCeti.SmoothMappingTorus.exists_eq_symm_tangentSpaceProdEquiv`,
+  `TauCeti.SmoothMappingTorus.symm_tangentSpaceProdEquiv_eq_zero_iff`: every tangent vector of
+  `(ℝ / ℤ) × Y_φ` at `(θ, [t, x])` is `a ∂_s + b ∂_t + v` in the coordinates `(s, t, x)`, and it
+  vanishes exactly when `a`, `b` and `v` do.
 * `TauCeti.SmoothMappingTorus.ker_bilinFormAt_fiberForm`: the kernel of the fiber form `σ_v` of a
   nondegenerate `σ` is the line spanned by `T = ∂_t`.
 * `TauCeti.SmoothMappingTorus.mpullback_prodMap_map_suspensionForm`: for a smooth map `g`
@@ -69,8 +73,9 @@ holds with that `d`.
   `TauCeti.SmoothMappingTorus.isSymplectic_suspensionForm_iff`: `Ω` is closed, nondegenerate or
   symplectic exactly when `σ` is.
 * `TauCeti.SmoothMappingTorus.mpullback_orbitTorus_mpullback_snd_fiberForm`,
+  `TauCeti.SmoothMappingTorus.mpullback_orbitTorus_wedge_timeForm`,
   `TauCeti.SmoothMappingTorus.mpullback_orbitTorus_suspensionForm`: the orbit torus pulls `σ_v`
-  back to zero and `Ω` back to `ds ∧ dt_d`.
+  back to zero, and both `ds ∧ dt` and `Ω` back to `ds ∧ dt_d`.
 
 ## References
 
@@ -120,10 +125,10 @@ circle and mapping torus components. -/
 theorem eval₂_suspensionForm (p : UnitAddCircle × SmoothMappingTorus φ)
     (v w : TangentSpace (𝓘(ℝ).prod (𝓘(ℝ).prod I)) p) :
     SmoothBundleForm.eval₂ (suspensionForm φ σ hσ) p v w =
-      (AddCircle.timeForm 1).1 p.1 ![(Manifold.tangentSpaceProdEquiv p v).1] *
-          (timeForm φ).1 p.2 ![(Manifold.tangentSpaceProdEquiv p w).2] -
-        (AddCircle.timeForm 1).1 p.1 ![(Manifold.tangentSpaceProdEquiv p w).1] *
-          (timeForm φ).1 p.2 ![(Manifold.tangentSpaceProdEquiv p v).2] +
+      (AddCircle.timeForm 1).val p.1 ![(Manifold.tangentSpaceProdEquiv p v).1] *
+          (timeForm φ).val p.2 ![(Manifold.tangentSpaceProdEquiv p w).2] -
+        (AddCircle.timeForm 1).val p.1 ![(Manifold.tangentSpaceProdEquiv p w).1] *
+          (timeForm φ).val p.2 ![(Manifold.tangentSpaceProdEquiv p v).2] +
         SmoothBundleForm.eval₂ (fiberForm φ σ hσ) p.2 (Manifold.tangentSpaceProdEquiv p v).2
           (Manifold.tangentSpaceProdEquiv p w).2 := by
   rw [suspensionForm_def, SmoothBundleForm.eval₂_add, SmoothForm.eval₂_wedge_one_one,
@@ -156,7 +161,7 @@ theorem eval₂_suspensionForm_mk (θ : UnitAddCircle) (t : ℝ) (x : M) (a a' b
 omit [T2Space M] [LocallyCompactSpace M] in
 /-- Every tangent vector of `(ℝ / ℤ) × Y_φ` at `(θ, [t, x])` is `a ∂_s + b ∂_t + v` in the
 coordinates `(s, t, x)`. -/
-private theorem exists_eq_symm_tangentSpaceProdEquiv [T2Space M] [LocallyCompactSpace M]
+theorem exists_eq_symm_tangentSpaceProdEquiv [T2Space M] [LocallyCompactSpace M]
     (θ : UnitAddCircle) (t : ℝ) (x : M)
     (V : TangentSpace (𝓘(ℝ).prod (𝓘(ℝ).prod I)) (θ, mk φ t x)) :
     ∃ (a b : ℝ) (v : TangentSpace I x), V = (Manifold.tangentSpaceProdEquiv _).symm
@@ -173,7 +178,7 @@ private theorem exists_eq_symm_tangentSpaceProdEquiv [T2Space M] [LocallyCompact
 omit [T2Space M] [LocallyCompactSpace M] in
 /-- In the coordinates `(s, t, x)`, the vector `a ∂_s + b ∂_t + v` vanishes exactly when `a`, `b`
 and `v` do. -/
-private theorem symm_tangentSpaceProdEquiv_eq_zero_iff [T2Space M] [LocallyCompactSpace M]
+theorem symm_tangentSpaceProdEquiv_eq_zero_iff [T2Space M] [LocallyCompactSpace M]
     (θ : UnitAddCircle) (t : ℝ) (x : M) (a b : ℝ) (v : TangentSpace I x) :
     (Manifold.tangentSpaceProdEquiv (I := 𝓘(ℝ)) (J := 𝓘(ℝ).prod I) (θ, mk φ t x)).symm
         (a, mfderiv (𝓘(ℝ).prod I) (𝓘(ℝ).prod I) (uncurry (mk φ)) (t, x)
@@ -313,41 +318,31 @@ theorem mpullback_prodMap_map_suspensionForm {E' : Type*} [NormedAddCommGroup E'
         (contMDiff_id.prodMap (contMDiff_map φ ψ g h hg)) (suspensionForm ψ τ hτ) =
       suspensionForm φ σ hσ := by
   have hm : ContMDiff (𝓘(ℝ).prod I) (𝓘(ℝ).prod J) ∞ (map φ ψ g h) := contMDiff_map φ ψ g h hg
-  have hfst : Prod.fst ∘ Prod.map id (map φ ψ g h) =
-      (Prod.fst : UnitAddCircle × SmoothMappingTorus φ → _) :=
-    rfl
-  have hsnd : Prod.snd ∘ Prod.map (id : UnitAddCircle → UnitAddCircle) (map φ ψ g h) =
-      map φ ψ g h ∘ Prod.snd :=
-    rfl
-  -- Pulling back along `Prod.map id (map φ ψ g h)` fixes the forms pulled back from the circle
-  -- factor, and pulls back along `map φ ψ g h` the forms pulled back from the mapping torus factor.
-  have hcircle : SmoothForm.mpullback (Prod.map id (map φ ψ g h)) (contMDiff_id.prodMap hm)
-      (SmoothForm.mpullback Prod.fst contMDiff_fst (AddCircle.timeForm 1)) =
-        SmoothForm.mpullback Prod.fst contMDiff_fst (AddCircle.timeForm 1) := by
-    rw [← LinearMap.comp_apply, ← SmoothForm.mpullback_comp]
-    simp only [hfst]
-  have htorus {k : ℕ} (β : SmoothForm (𝓘(ℝ).prod J) (SmoothMappingTorus ψ) ℝ k) :
-      SmoothForm.mpullback (Prod.map id (map φ ψ g h)) (contMDiff_id.prodMap hm)
-          (SmoothForm.mpullback (I := 𝓘(ℝ).prod (𝓘(ℝ).prod J))
-            (Prod.snd : UnitAddCircle × SmoothMappingTorus ψ → SmoothMappingTorus ψ)
-            contMDiff_snd β) =
-        SmoothForm.mpullback (I := 𝓘(ℝ).prod (𝓘(ℝ).prod I))
-          (Prod.snd : UnitAddCircle × SmoothMappingTorus φ → SmoothMappingTorus φ) contMDiff_snd
-          (SmoothForm.mpullback (map φ ψ g h) hm β) := by
-    rw [← LinearMap.comp_apply, ← SmoothForm.mpullback_comp, ← LinearMap.comp_apply,
-      ← SmoothForm.mpullback_comp]
-    simp only [hsnd]
-  rw [suspensionForm_def, suspensionForm_def, map_add, htorus, mpullback_map_fiberForm h hg hτ hgτ]
+  rw [suspensionForm_def, suspensionForm_def, map_add,
+    SmoothForm.mpullback_prodMap_mpullback_snd contMDiff_id hm, mpullback_map_fiberForm h hg hτ hgτ]
   -- The wedge `ds ∧ dt` has degree `1 + 1`, which `rw` does not match with the degree `2` of `Ω`.
-  refine congrArg (· + _) ((SmoothForm.mpullback_wedge (k := 1) (l := 1)
-    (Prod.map id (map φ ψ g h)) (contMDiff_id.prodMap hm) _ _).trans ?_)
-  rw [hcircle, htorus, mpullback_map_timeForm φ ψ h hg]
+  refine congrArg (· + _) ((SmoothForm.mpullback_prodMap_wedge_mpullback_fst_snd (k := 1) (l := 1)
+    contMDiff_id hm _ _).trans ?_)
+  rw [SmoothForm.mpullback_id, LinearMap.id_apply, mpullback_map_timeForm φ ψ h hg]
 
 /-! ### Orbit tori -/
 
 section OrbitTorus
 
 variable {d : ℕ} {x : M} (h : IsPeriodicPt φ d x) [Fact (0 < (d : ℝ))]
+
+/-- The orbit torus pulls the wedge `ds ∧ dt` of the time forms of `(ℝ / ℤ) × Y_φ` back to
+`ds ∧ dt_d`, the wedge of the time forms of the circles `ℝ / ℤ` and `ℝ / dℤ`. -/
+@[simp]
+theorem mpullback_orbitTorus_wedge_timeForm :
+    SmoothForm.mpullback (orbitTorus φ h) (contMDiff_orbitTorus h)
+        (SmoothForm.wedge (SmoothForm.mpullback Prod.fst contMDiff_fst (AddCircle.timeForm 1))
+          (SmoothForm.mpullback Prod.snd contMDiff_snd (timeForm φ))) =
+      SmoothForm.wedge (SmoothForm.mpullback Prod.fst contMDiff_fst (AddCircle.timeForm 1))
+        (SmoothForm.mpullback Prod.snd contMDiff_snd (AddCircle.timeForm (d : ℝ))) := by
+  simp only [orbitTorus_eq_prodMap]
+  rw [SmoothForm.mpullback_prodMap_wedge_mpullback_fst_snd contMDiff_id (contMDiff_closedOrbit h),
+    SmoothForm.mpullback_id, LinearMap.id_apply, mpullback_closedOrbit_timeForm]
 
 /-- The orbit torus pulls the form `Ω = ds ∧ dt + σ_v` back to `ds ∧ dt_d`, the wedge of the time
 forms of the circles `ℝ / ℤ` and `ℝ / dℤ`: the fiber form `σ_v` vanishes on it. -/
@@ -356,27 +351,9 @@ theorem mpullback_orbitTorus_suspensionForm :
     SmoothForm.mpullback (orbitTorus φ h) (contMDiff_orbitTorus h) (suspensionForm φ σ hσ) =
       SmoothForm.wedge (SmoothForm.mpullback Prod.fst contMDiff_fst (AddCircle.timeForm 1))
         (SmoothForm.mpullback Prod.snd contMDiff_snd (AddCircle.timeForm (d : ℝ))) := by
-  have hfst : Prod.fst ∘ orbitTorus φ h = Prod.fst :=
-    funext fun p ↦ congrArg Prod.fst (orbitTorus_apply h p)
-  have hsnd : Prod.snd ∘ orbitTorus φ h = closedOrbit φ h ∘ Prod.snd :=
-    funext fun p ↦ congrArg Prod.snd (orbitTorus_apply h p)
-  have hds : SmoothForm.mpullback (orbitTorus φ h) (contMDiff_orbitTorus h)
-      (SmoothForm.mpullback Prod.fst contMDiff_fst (AddCircle.timeForm 1)) =
-        SmoothForm.mpullback Prod.fst contMDiff_fst (AddCircle.timeForm 1) := by
-    rw [← LinearMap.comp_apply, ← SmoothForm.mpullback_comp]
-    simp only [hfst]
-  have hdt : SmoothForm.mpullback (orbitTorus φ h) (contMDiff_orbitTorus h)
-      (SmoothForm.mpullback Prod.snd contMDiff_snd (timeForm φ)) =
-        SmoothForm.mpullback Prod.snd contMDiff_snd (AddCircle.timeForm (d : ℝ)) := by
-    rw [← LinearMap.comp_apply, ← SmoothForm.mpullback_comp]
-    simp only [hsnd]
-    rw [SmoothForm.mpullback_comp _ _ contMDiff_snd (contMDiff_closedOrbit h),
-      LinearMap.comp_apply, mpullback_closedOrbit_timeForm]
   rw [suspensionForm_def, map_add, mpullback_orbitTorus_mpullback_snd_fiberForm h two_ne_zero,
     add_zero]
-  -- `Ω` has degree `2`, while the wedge of two one-forms has degree `1 + 1`.
-  exact (SmoothForm.mpullback_wedge (k := 1) (l := 1) _ (contMDiff_orbitTorus h) _ _).trans
-    (by rw [hds, hdt])
+  exact mpullback_orbitTorus_wedge_timeForm h
 
 end OrbitTorus
 

@@ -45,17 +45,13 @@ multiplicity, and hence each multiplicity, of every other partition of `ν`.
 * `TauCeti.kostantPartition_root_of_mem_support`: `P(αᵢ) = 1` for a simple root `αᵢ`, which is the
   statement that a simple root is a sum of positive roots in only the obvious way.
 
-## Roadmap
+## Implementation notes
 
-This is the “Kostant partition function” item of Layer 3 of
-`TauCetiRoadmap/RepresentationTheory/LieHighestWeight/README.md`, which asks for it “**here** in
-Layer 3 as a combinatorial object attached to the positive roots”, to be consumed by the weight
-multiplicities of a Verma module in that layer and by Kostant's multiplicity formula in Layer 6.
-The target signature in that roadmap's `Suggested.lean` is `kostantPartition base nu` for a base of
-the root system of a Killing-semisimple Lie algebra; nothing in the definition uses the Lie algebra,
-so it is stated here for a base of an arbitrary root pairing, alongside
-`TauCeti.posRoots` in `TauCeti/LinearAlgebra/RootSystem/Positive.lean`, and specializes to that
-signature.
+The Kostant partition function is a combinatorial object attached to the positive roots: it gives
+the weight multiplicities of a Verma module and enters Kostant's multiplicity formula. Nothing in
+the definition uses a Lie algebra, so it is stated here for a base of an arbitrary root pairing,
+alongside `TauCeti.posRoots` in `TauCeti/LinearAlgebra/RootSystem/Positive.lean`, and specializes
+to a base of the root system of a Killing-semisimple Lie algebra.
 
 ## References
 
@@ -209,8 +205,8 @@ roots. -/
 @[simp] theorem kostantPartition_zero : kostantPartition P b (0 : M) = 1 := by
   rw [kostantPartition_def, Nat.card_eq_one_iff_unique]
   refine ⟨⟨fun x y ↦ Subtype.ext ?_⟩, ⟨⟨0, (isKostantPartition_zero_iff P b).mpr rfl⟩⟩⟩
-  exact ((isKostantPartition_zero_iff P b).mp x.2).trans
-    ((isKostantPartition_zero_iff P b).mp y.2).symm
+  exact ((isKostantPartition_zero_iff P b).mp x.property).trans
+    ((isKostantPartition_zero_iff P b).mp y.property).symm
 
 /-- A positive root is a sum of positive roots, namely of itself. -/
 theorem isKostantPartition_single [DecidableEq ι] {i : ι} (hi : i ∈ posRoots P b) :
@@ -282,7 +278,7 @@ theorem eq_single_of_isKostantPartition_root_of_mem_support [DecidableEq ι] {i 
   have hipos : i ∈ posRoots P b := support_subset_posRoots P b hi
   rw [kostantPartition_def, Nat.card_eq_one_iff_unique]
   refine ⟨⟨fun x y ↦ Subtype.ext ?_⟩, ⟨⟨_, isKostantPartition_single P b hipos⟩⟩⟩
-  exact (eq_single_of_isKostantPartition_root_of_mem_support P b hi x.2).trans
-    (eq_single_of_isKostantPartition_root_of_mem_support P b hi y.2).symm
+  exact (eq_single_of_isKostantPartition_root_of_mem_support P b hi x.property).trans
+    (eq_single_of_isKostantPartition_root_of_mem_support P b hi y.property).symm
 
 end TauCeti

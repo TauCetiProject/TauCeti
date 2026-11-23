@@ -30,7 +30,7 @@ open Finset IncidenceAlgebra
 
 namespace TauCeti
 
-variable {R A α : Type*} [NormedCommRing R] [NormOneClass R] [Monoid A] [LinearOrder α]
+variable {R A α : Type*} [NormedCommRing R] [Monoid A] [LinearOrder α]
 
 /-- *Uniform bound for free cumulants*: if the positive-order moments of `x` up to `#s` satisfy
 `‖φ (x ^ k)‖ ≤ M k`, then the free cumulant of the constant word `(x, …, x)` along `s` is bounded
@@ -38,12 +38,14 @@ by `∑_{π ∈ NC(s)} ‖μ(π, 1_s)‖ ∏_{B ∈ π} M #B`, which depends on 
 theorem norm_freeCumulant_const_le (φ : A → R) (x : A) {s : Finset α} {M : ℕ → ℝ}
     (hM : ∀ k, 0 < k → k ≤ #s → ‖φ (x ^ k)‖ ≤ M k) :
     ‖freeCumulant φ (fun _ => x) s‖ ≤
-      ∑ π : NoncrossingPartition s, ‖mu R π ⊤‖ * ∏ B ∈ π.1.parts, M #B := by
+      ∑ π : NoncrossingPartition s, ‖mu R π ⊤‖ * ∏ B ∈ π.val.parts, M #B := by
   rw [freeCumulant_eq_sum_mu_mul_partitionMoment]
   refine (norm_sum_le _ _).trans (sum_le_sum fun π _ => ?_)
   rw [partitionMoment_const]
+  rcases π.val.parts.eq_empty_or_nonempty with h | h
+  · simp [h]
   refine (norm_mul_le _ _).trans (mul_le_mul_of_nonneg_left ?_ (norm_nonneg _))
-  exact (Finset.norm_prod_le _ _).trans (prod_le_prod₀ (fun _ _ => norm_nonneg _)
-    fun B hB => hM _ (π.1.nonempty_of_mem_parts hB).card_pos (card_le_card (π.1.le hB)))
+  exact (Finset.norm_prod_le' _ h _).trans (prod_le_prod₀ (fun _ _ => norm_nonneg _)
+    fun B hB => hM _ (π.val.nonempty_of_mem_parts hB).card_pos (card_le_card (π.val.le hB)))
 
 end TauCeti

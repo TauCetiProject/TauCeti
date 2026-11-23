@@ -15,9 +15,6 @@ This file connects the finite multi-marginal coupling API with the two-marginal 
 A multi-marginal coupling can be projected to any ordered pair of coordinates. Conversely, a
 coupling indexed by `Fin 2` is precisely a two-marginal coupling, transported along
 `MeasurableEquiv.piFinTwo`.
-
-This supplies the reduction to the two-marginal API in Layer 0, item 5 of the optimal-transport
-roadmap.
 -/
 
 public section
@@ -105,7 +102,7 @@ variable {ι : Type u} {X : ι → Type v} [∀ i, MeasurableSpace (X i)]
 def projectPairCoupling (π : MultiCoupling μ) (i j : ι) : Coupling (μ i) (μ j) :=
   ⟨π.projectPair i j, by
     rw [π.coe_projectPair]
-    exact π.2.isCoupling_map_pair i j⟩
+    exact π.property.isCoupling_map_pair i j⟩
 
 /-- The probability measure underlying `projectPairCoupling` is the pair projection. -/
 @[simp]
@@ -136,15 +133,15 @@ variable {X : Fin 2 → Type v} [∀ i, MeasurableSpace (X i)]
 
 /-- A two-marginal coupling, viewed as a `Fin 2`-indexed multi-marginal coupling. -/
 def toMultiCouplingFinTwo (π : Coupling (μ 0) (μ 1)) : MultiCoupling μ :=
-  ⟨π.1.map (MeasurableEquiv.piFinTwo X).symm,
-    π.2.isMultiCoupling_piFinTwo⟩
+  ⟨π.val.map (MeasurableEquiv.piFinTwo X).symm,
+    π.property.isMultiCoupling_piFinTwo⟩
 
 /-- The measure underlying `toMultiCouplingFinTwo` is the pushforward along the inverse of the
 explicit measurable equivalence between a `Fin 2` product and an ordinary product. -/
 @[simp]
 theorem coe_toMultiCouplingFinTwo (π : Coupling (μ 0) (μ 1)) :
     (π.toMultiCouplingFinTwo : ProbabilityMeasure (∀ i, X i)) =
-      π.1.map (MeasurableEquiv.piFinTwo X).symm :=
+      π.val.map (MeasurableEquiv.piFinTwo X).symm :=
   (rfl)
 
 end Coupling
@@ -159,21 +156,21 @@ theorem Coupling.toCouplingFinTwo_toMultiCouplingFinTwo (π : Coupling (μ 0) (�
     π.toMultiCouplingFinTwo.toCouplingFinTwo = π := by
   apply Coupling.ext
   calc
-    (π.toMultiCouplingFinTwo.toCouplingFinTwo.1).toMeasure =
+    (π.toMultiCouplingFinTwo.toCouplingFinTwo.val).toMeasure =
         (π.toMultiCouplingFinTwo.projectPair 0 1).toMeasure :=
       congrArg ProbabilityMeasure.toMeasure
         (MultiCoupling.coe_toCouplingFinTwo π.toMultiCouplingFinTwo)
-    _ = π.toMultiCouplingFinTwo.1.toMeasure.map (fun x ↦ (x 0, x 1)) :=
+    _ = π.toMultiCouplingFinTwo.val.toMeasure.map (fun x ↦ (x 0, x 1)) :=
       π.toMultiCouplingFinTwo.coe_projectPair 0 1
-    _ = (π.1.toMeasure.map (MeasurableEquiv.piFinTwo X).symm).map
+    _ = (π.val.toMeasure.map (MeasurableEquiv.piFinTwo X).symm).map
         (MeasurableEquiv.piFinTwo X) := by
       rw [congrArg ProbabilityMeasure.toMeasure (Coupling.coe_toMultiCouplingFinTwo π)]
       rfl
-    _ = π.1.toMeasure.map ((MeasurableEquiv.piFinTwo X) ∘
+    _ = π.val.toMeasure.map ((MeasurableEquiv.piFinTwo X) ∘
         (MeasurableEquiv.piFinTwo X).symm) :=
       Measure.map_map (MeasurableEquiv.piFinTwo X).measurable
         (MeasurableEquiv.piFinTwo X).symm.measurable
-    _ = π.1.toMeasure := by
+    _ = π.val.toMeasure := by
       have h_comp : (MeasurableEquiv.piFinTwo X) ∘ (MeasurableEquiv.piFinTwo X).symm = id := by
         funext x
         exact (MeasurableEquiv.piFinTwo X).apply_symm_apply x
@@ -186,22 +183,22 @@ theorem MultiCoupling.toMultiCouplingFinTwo_toCouplingFinTwo (π : MultiCoupling
     π.toCouplingFinTwo.toMultiCouplingFinTwo = π := by
   apply MultiCoupling.ext
   calc
-    (π.toCouplingFinTwo.toMultiCouplingFinTwo.1).toMeasure =
-        π.toCouplingFinTwo.1.toMeasure.map (MeasurableEquiv.piFinTwo X).symm := by
+    (π.toCouplingFinTwo.toMultiCouplingFinTwo.val).toMeasure =
+        π.toCouplingFinTwo.val.toMeasure.map (MeasurableEquiv.piFinTwo X).symm := by
       simpa only [ProbabilityMeasure.toMeasure_map] using
         congrArg ProbabilityMeasure.toMeasure
           (Coupling.coe_toMultiCouplingFinTwo π.toCouplingFinTwo)
     _ = (π.projectPair 0 1).toMeasure.map (MeasurableEquiv.piFinTwo X).symm := by
       rw [← congrArg ProbabilityMeasure.toMeasure (MultiCoupling.coe_toCouplingFinTwo π)]
-    _ = (π.1.toMeasure.map (MeasurableEquiv.piFinTwo X)).map
+    _ = (π.val.toMeasure.map (MeasurableEquiv.piFinTwo X)).map
         (MeasurableEquiv.piFinTwo X).symm := by
       rw [π.coe_projectPair]
       rfl
-    _ = π.1.toMeasure.map ((MeasurableEquiv.piFinTwo X).symm ∘
+    _ = π.val.toMeasure.map ((MeasurableEquiv.piFinTwo X).symm ∘
         (MeasurableEquiv.piFinTwo X)) :=
       Measure.map_map (MeasurableEquiv.piFinTwo X).symm.measurable
         (MeasurableEquiv.piFinTwo X).measurable
-    _ = π.1.toMeasure := by
+    _ = π.val.toMeasure := by
       have h_comp : (MeasurableEquiv.piFinTwo X).symm ∘ MeasurableEquiv.piFinTwo X = id := by
         funext x
         exact (MeasurableEquiv.piFinTwo X).symm_apply_apply x

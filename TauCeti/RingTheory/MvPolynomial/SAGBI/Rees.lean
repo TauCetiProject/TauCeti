@@ -123,7 +123,7 @@ theorem exists_finsupp_sub_sum_mem_weightFiltrationLT
   rw [heq]
   refine add_mem (mem_weightFiltrationLT_iff.2 fun x hx ↦ ?_)
     (Submodule.sum_mem _ fun j _ ↦ mem_weightFiltrationLT_iff.2 fun x hx ↦ ?_)
-  · rw [mem_support_iff, coeff_sub, coeff_weightedHomogeneousComponent] at hx
+  · rw [mem_support_iff, AddMonoidAlgebra.coeff_sub_apply, coeff_weightedHomogeneousComponent] at hx
     have hxn : Finsupp.weight d x ≠ n := fun h ↦ hx (by simp [h])
     have hxP : x ∈ P.support := mem_support_iff.2 fun h ↦ hx (by simp [h])
     exact lt_of_le_of_ne (mem_weightFiltration_iff.1 hP x hxP) hxn
@@ -202,7 +202,7 @@ theorem ker_weightReesAeval_eq_span
       have h0 : Polynomial.mapAlgHom (aeval c) G = 0 := by
         rw [← AlgHom.comp_apply, ← weightReesAeval_eq_comp]
         exact hf
-      simpa using congr(Polynomial.coeff $h0 n)
+      simpa using congr(($h0).coeff n)
     obtain ⟨h, hsum, hdeg⟩ :=
       exists_finsupp_sum_eq_of_aeval_eq_zero_of_mem_weightFiltration hc hg hJ hr hQ hQc
         (f.coeff_weightReesHom_mem_weightFiltration n) hG0
@@ -262,9 +262,7 @@ theorem ker_weightReesAeval_eq_span_of_toricIdeal_eq_span
   rcases subsingleton_or_nontrivial R with hR | hR
   · rw [Subsingleton.elim (monomial (u j) (1 : R) - monomial (v j) 1) 0]
     exact isWeightedHomogeneous_zero R _ _
-  have huv : Finsupp.linearCombination ℕ a (u j) = Finsupp.linearCombination ℕ a (v j) :=
-    TauCeti.monomial_sub_monomial_mem_toricIdeal_iff.1
-      (by rw [hJ]; exact Ideal.subset_span ⟨j, rfl⟩)
+  have huv := TauCeti.linearCombination_eq_of_toricIdeal_eq_span hJ j
   have hw (x : ι →₀ ℕ) : Finsupp.weight (fun i ↦ Finsupp.weight w (a i)) x =
       Finsupp.weight w (Finsupp.linearCombination ℕ a x) :=
     Finsupp.weight_comp_eq_apply_linearCombination (Finsupp.weight w) a x

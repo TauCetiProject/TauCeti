@@ -12,9 +12,9 @@ public import TauCeti.LowDimTopology.Plumbing.Cube.Face.Basic
 
 The lattice-homology cube weight `characteristicCubeWeight k x S` is the maximum of the point
 weights `χ_k` over the `2 ^ |S|` vertices of the cube with base point `x` and directions `S`
-(`CubeWeight.lean`). The two faces of this cube in a direction `v ∈ S` are themselves cubes one
+(`Cube/Weight/Basic`). The two faces of this cube in a direction `v ∈ S` are themselves cubes one
 dimension lower: the lower face is the cube based at `x` with directions `S.erase v`, and the
-upper face is the cube based at `x + E_v` with directions `S.erase v` (`CubeFace.lean`). Every
+upper face is the cube based at `x + E_v` with directions `S.erase v` (`Cube/Face/Basic`). Every
 vertex of the ambient cube belongs to exactly one of the two faces, according to whether its
 direction subset contains `v`, so the vertex set splits as a union of the two face vertex sets.
 
@@ -44,9 +44,7 @@ that the two opposite codimension-one faces in a direction never both carry a po
 
 ## References
 
-This supplies a prerequisite for `TauCetiRoadmap/CombinatorialHeegaardFloer/README.md`, Lane L
-("lattice homology"), whose differential is built from the cubical face weights of a plumbing
-lattice. The recursive maximum and the resulting `U`-exponent bookkeeping are standard in Némethi,
+The recursive maximum and the resulting `U`-exponent bookkeeping are standard in Némethi,
 [arXiv:0709.0841](https://arxiv.org/abs/0709.0841).
 -/
 

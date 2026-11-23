@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Analysis.SpecialFunctions.Gamma.Deligne
 public import Mathlib.Analysis.Complex.CauchyIntegral
-public import Mathlib.Analysis.Meromorphic.Order
+public import Mathlib.Analysis.Meromorphic.TrailingCoefficient
 public import Mathlib.Analysis.Meromorphic.Complex
 public import Mathlib.Analysis.SpecialFunctions.Complex.Analytic
 
@@ -15,9 +15,15 @@ public import Mathlib.Analysis.SpecialFunctions.Complex.Analytic
 # Exact orders of Gamma and the archimedean factors
 
 The entire reciprocal of `Complex.Gamma` has a simple zero at each nonpositive integer,
-with derivative `(-1)^n n!` at `-n`. Hence Gamma has a simple pole at each such point
-and has order zero everywhere else. Deligne's factors inherit exactly the pole lattices
-`-2n` and `-n`. Their meromorphic orders are nonpositive: none has a zero as a meromorphic germ.
+with derivative `(-1)^n n!` at `-n`. Hence Gamma has a simple pole at each such point, with
+leading Laurent coefficient `(-1)^n / n!` (`Complex.tendsto_add_natCast_mul_Gamma`,
+`Complex.meromorphicTrailingCoeffAt_Gamma_neg_nat`,
+`Complex.meromorphicTrailingCoeffAt_Gamma_zero`), and has order zero everywhere else. In particular,
+`Complex.Gamma` and the shifted Gamma–power kernel `s ↦ Γ(s - β) * x ^ (β - s)` are analytic
+wherever the Gamma argument avoids the nonpositive integers (`Complex.analyticAt_Gamma`,
+`Complex.analyticAt_Gamma_sub_mul_cpow`). Deligne's
+factors inherit exactly the pole lattices `-2n` and `-n`. Their meromorphic orders are
+nonpositive: none has a zero as a meromorphic germ.
 
 The total values at poles are zero by Mathlib's convention. The zero-order characterizations
 therefore use nonzero total values, while the negative-order characterizations identify the
@@ -63,6 +69,18 @@ theorem hasDerivAt_inv_Gamma_neg_nat (n : ℕ) :
     simp only [Nat.factorial_succ, pow_succ, Nat.cast_mul, Nat.cast_add, Nat.cast_one]
     ring
 
+/-- **The residue of `Γ` at `−n`**: `(a + n) Γ(a) → (−1)ⁿ/n!` as `a → −n`. -/
+theorem tendsto_add_natCast_mul_Gamma (n : ℕ) :
+    Tendsto (fun a : ℂ ↦ (a + n) * Gamma a) (𝓝[≠] (-(n : ℂ)))
+      (𝓝 ((-1) ^ n / (n.factorial : ℂ))) := by
+  have hd : (-1 : ℂ) ^ n * n.factorial ≠ 0 :=
+    mul_ne_zero (pow_ne_zero _ (by norm_num)) (Nat.cast_ne_zero.mpr (Nat.factorial_ne_zero n))
+  have hlim : ((-1 : ℂ) ^ n * n.factorial)⁻¹ = (-1) ^ n / (n.factorial : ℂ) := by
+    rw [mul_inv, ← inv_pow, inv_neg, inv_one, div_eq_mul_inv]
+  rw [← hlim]
+  refine ((hasDerivAt_inv_Gamma_neg_nat n).tendsto_slope.inv₀ hd).congr fun a ↦ ?_
+  simp [slope_def_field, Gamma_neg_nat_eq_zero]
+
 /-- The entire reciprocal Gamma function has a simple zero at each nonpositive integer. -/
 @[simp]
 theorem analyticOrderAt_inv_Gamma_neg_nat (n : ℕ) :
@@ -85,11 +103,41 @@ theorem meromorphicOrderAt_Gamma_neg_nat (n : ℕ) :
   have h := congrArg Neg.neg hq
   simpa only [neg_neg] using h
 
+/-- The leading Laurent coefficient of `Complex.Gamma` at `-n` is `(-1)^n / n!`. -/
+@[simp]
+theorem meromorphicTrailingCoeffAt_Gamma_neg_nat (n : ℕ) :
+    meromorphicTrailingCoeffAt Gamma (-(n : ℂ)) = (-1) ^ n / (n.factorial : ℂ) := by
+  refine tendsto_nhds_unique
+    ((Meromorphic.Gamma (-(n : ℂ))).tendsto_nhds_meromorphicTrailingCoeffAt.congr fun a ↦ ?_)
+    (tendsto_add_natCast_mul_Gamma n)
+  simp [meromorphicOrderAt_Gamma_neg_nat, Pi.smul_apply', sub_neg_eq_add, smul_eq_mul]
+
+/-- The leading Laurent coefficient of `Complex.Gamma` at `0` is `1`. -/
+@[simp]
+theorem meromorphicTrailingCoeffAt_Gamma_zero : meromorphicTrailingCoeffAt Gamma 0 = 1 := by
+  simpa using meromorphicTrailingCoeffAt_Gamma_neg_nat 0
+
 /-- Gamma is analytic away from the nonpositive integers. -/
 @[fun_prop]
 theorem analyticAt_Gamma {s : ℂ} (hs : ∀ n : ℕ, s ≠ -(n : ℂ)) : AnalyticAt ℂ Gamma s := by
   have h := (differentiable_one_div_Gamma.analyticAt s).inv (inv_ne_zero (Gamma_ne_zero hs))
   simpa only [Pi.inv_def, inv_inv] using h
+
+/-- For any complex base `x` and shift `β`, the shifted Gamma–power kernel
+`s ↦ Γ(s - β) * x ^ (β - s)` is analytic at every `s₀` where `s₀ - β` is not a nonpositive
+integer (including `x = 0`, where `β - s₀ ≠ 0` forces `0 ^ (β - s) = 0` near `s₀`). -/
+theorem analyticAt_Gamma_sub_mul_cpow {s₀ β : ℂ} (x : ℂ) (hs : ∀ n : ℕ, s₀ - β ≠ -(n : ℂ)) :
+    AnalyticAt ℂ (fun s ↦ Gamma (s - β) * x ^ (β - s)) s₀ := by
+  have hne : β - s₀ ≠ 0 := fun h ↦ hs 0 (by simpa [sub_eq_zero] using (sub_eq_zero.mp h).symm)
+  rcases eq_or_ne x 0 with rfl | hx
+  · refine (analyticAt_const (v := (0 : ℂ))).congr ?_
+    filter_upwards [(continuous_const.sub continuous_id).continuousAt.eventually_ne hne]
+      with s (hs' : β - s ≠ 0)
+    simp [zero_cpow hs']
+  · have hcpow : AnalyticAt ℂ (fun s : ℂ ↦ x ^ (β - s)) s₀ :=
+      (((differentiable_const β).sub differentiable_id).const_cpow (.inl hx)).analyticAt s₀
+    exact (AnalyticAt.comp (g := Gamma) (f := fun s : ℂ ↦ s - β) (analyticAt_Gamma hs)
+      (by fun_prop)).mul hcpow
 
 /-- Gamma has order zero at every regular point. -/
 theorem meromorphicOrderAt_Gamma_of_ne_neg_nat {s : ℂ}

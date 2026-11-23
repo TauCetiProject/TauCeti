@@ -46,7 +46,7 @@ integer-order `H^{k,p}`. The product has a real `Lᵖ` representative with the a
 regularity. The coefficient need not decay or be integrable. -/
 theorem exists_mem_realSobolevSubmodule_ae_eq_mul_of_bounded_derivatives
     {p : ENNReal} [Fact (1 ≤ p)] (hp : 1 < p) (hp_top : p ≠ ⊤) (k : ℕ)
-    {ψ : E → ℝ} (hψ : ContDiff ℝ ∞ ψ) {M : ℝ} (hM : 0 ≤ M)
+    {ψ : E → ℝ} (hψ : ContDiff ℝ ∞ ψ) {M : ℝ}
     (hbound : ∀ j ≤ k, ∀ x, ‖iteratedFDeriv ℝ j ψ x‖ ≤ M)
     {u : Lp ℝ p (volume : Measure E)} (hu : u ∈ realSobolevSubmodule E k p) :
     ∃ v : Lp ℝ p (volume : Measure E), v ∈ realSobolevSubmodule E k p ∧
@@ -65,7 +65,7 @@ theorem exists_mem_realSobolevSubmodule_ae_eq_mul_of_bounded_derivatives
   have hvval (x : E) : v x = Wkp.value k v₀.val x := coeFn_castLpₗᵢ hvolume _ x
   have hv : (v : E → ℝ) =ᵐ[volume] fun x ↦ ψ x * Wkp.value k w x := by
     have h := Wkp0.value_contDiffSMulL_ae (mu := (volume : Measure E)) (Omega := ⊤)
-      (p := p) k hψ hM (fun j hj x _ ↦ hbound j hj x) ⟨w, hw₀⟩
+      (p := p) k hψ (fun j hj x _ ↦ hbound j hj x) ⟨w, hw₀⟩
     have h' := (ae_restrict_iff' (⊤ : TopologicalSpace.Opens E).isOpen.measurableSet).mp h
     filter_upwards [h'] with x hx
     exact (hvval x).trans (hx (Set.mem_univ x))
@@ -93,7 +93,7 @@ theorem mul_mem_realSobolevFunctions_of_bounded_derivatives
         (Finset.mem_range.2 (Nat.lt_succ_of_le hj))
   obtain ⟨u, huf, hu⟩ := mem_realSobolevFunctions.1 hf
   obtain ⟨v, hv, hvu⟩ := exists_mem_realSobolevSubmodule_ae_eq_mul_of_bounded_derivatives hp
-    hp_top k hψ (Finset.sum_nonneg fun i _ ↦ abs_nonneg (C i)) hM
+    hp_top k hψ hM
     (mem_realSobolevSubmodule.2 hu)
   refine mem_realSobolevFunctions_of_ae_eq (coeFn_mem_realSobolevFunctions hv) ?_
   filter_upwards [hvu, huf] with x hx hux

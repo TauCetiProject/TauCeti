@@ -7,15 +7,15 @@ module
 
 public import TauCeti.RingTheory.Trace.IntegralBasis
 public import Mathlib.RingTheory.OrderOfVanishing.Basic
-import TauCeti.LinearAlgebra.Matrix.SmithNormalForm.Length
+import TauCeti.RingTheory.Length.Determinant
 
 /-!
 # Discriminants as complementary-module lengths
 
-For a finite free order over a principal ideal domain, the order of the discriminant equals
-the length of the complementary module modulo the order. This holds for nonmaximal orders
-and does not require separable residue fields. In the discrete valuation ring case, it is
-the discriminant valuation formula.
+For a finite free order over a Noetherian domain of Krull dimension at most one, the order of
+the discriminant equals the length of the complementary module modulo the order. This holds for
+nonmaximal orders and does not require separable residue fields. In the discrete valuation ring
+case, it is the discriminant valuation formula.
 
 `Module.Basis.traceDualQuotientEquiv` identifies this quotient with the cokernel of the
 trace Gram matrix. The matrix cokernel-length formula then computes its length.
@@ -34,21 +34,23 @@ open scoped nonZeroDivisors
 
 namespace Module.Basis
 
-variable {A K B L ι : Type*} [CommRing A] [IsDomain A] [IsPrincipalIdealRing A] [Field K]
+variable {A K B L ι : Type*} [CommRing A] [Field K]
   [CommRing B] [Field L] [Algebra A K] [Algebra A B] [Algebra B L]
   [Algebra K L] [Algebra A L] [IsScalarTower A K L] [IsScalarTower A B L]
   [IsFractionRing A K]
   [IsLocalization (Algebra.algebraMapSubmonoid B A⁰) L]
-  [FiniteDimensional K L] [Algebra.IsSeparable K L] [Fintype ι] [DecidableEq ι]
 
-/-- The complementary module modulo a finite free order over a principal ideal domain has
-length equal to the order of the discriminant of an integral basis. No maximality of the
-order or separability of residue extensions is assumed. -/
-theorem length_traceDual_quotient_eq_ord_discr (b : Basis ι A B) :
+/-- The complementary module modulo a finite free order over a Noetherian domain of Krull
+dimension at most one has length equal to the order of the discriminant of an integral basis.
+No maximality of the order or separability of residue extensions is assumed. -/
+theorem length_traceDual_quotient_eq_ord_discr [IsNoetherianRing A] [Ring.KrullDimLE 1 A]
+    [Algebra.IsSeparable K L] [Fintype ι] [DecidableEq ι] (b : Basis ι A B) :
     Module.length A
       (((Algebra.traceForm K L).dualSubmodule ((1 : Submodule B L).restrictScalars A)) ⧸
         LinearMap.range (b.algebraToTraceDual (K := K) (L := L))) =
       Ring.ord A (Algebra.discr A b) := by
+  have : IsDomain A := .of_faithfulSMul A K
+  have : FiniteDimensional K L := .of_basis (b.localizationLocalization K A⁰ L)
   have hdiscr : Algebra.discr A b ≠ 0 := by
     intro h
     have hz := Algebra.discr_localizationLocalization A A⁰ L (Rₘ := K) b
@@ -58,8 +60,6 @@ theorem length_traceDual_quotient_eq_ord_discr (b : Basis ι A B) :
   apply Matrix.length_quotient_range_mulVecLin_eq_ord_det
   simpa only [Algebra.discr_def] using hdiscr
 
-omit [IsDomain A] [IsPrincipalIdealRing A] [FiniteDimensional K L] [Algebra.IsSeparable K L]
-  [Fintype ι] [DecidableEq ι] in
 /-- The quotient of the complementary module `Submodule.traceDual A K 1` by the integral elements
 has the same length as its integral-basis presentation, the quotient by the range of
 `Module.Basis.algebraToTraceDual`. -/

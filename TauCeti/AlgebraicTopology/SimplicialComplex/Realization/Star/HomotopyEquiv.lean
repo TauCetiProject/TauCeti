@@ -43,7 +43,7 @@ simplicial inclusion. -/
 def openStarHomotopyEquiv :
     ContinuousMap.HomotopyEquiv (K.openStarRealizationSet s) (Realization (K.restrict s)) := by
   let e : ContinuousMap.HomotopyEquiv (K.openStarRealizationSet s)
-      {x : Realization K | (x.1.support : Set ι) ⊆ s} :=
+      {x : Realization K | (x.val.support : Set ι) ⊆ s} :=
     { toFun := K.openStarRetraction s
       invFun := ContinuousMap.inclusion (K.setOf_support_subset_subset_openStarRealizationSet s)
       left_inv := ⟨(K.openStarDeformation s).toHomotopy.symm⟩

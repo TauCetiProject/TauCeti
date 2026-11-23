@@ -59,10 +59,10 @@ noncomputable def artinSymbol {L : Type*} [Field L] [NumberField L] [Algebra K L
     (hur : ∀ (Q : Ideal (𝓞 L)) [Q.IsPrime] [Q.LiesOver 𝔭],
       Algebra.IsUnramifiedAt (𝓞 K) Q) : ConjClasses (L ≃ₐ[K] L) := by
   let P : 𝔭.primesOver (𝓞 L) := Classical.choice inferInstance
-  let _ : P.1.IsPrime := P.2.1
-  let _ : P.1.LiesOver 𝔭 := P.2.2
-  let _ : Algebra.IsUnramifiedAt (𝓞 K) P.1 := hur P.1
-  exact ConjClasses.mk (arithFrobAt (𝓞 K) (L ≃ₐ[K] L) P.1)
+  let _ : P.val.IsPrime := P.property.1
+  let _ : P.val.LiesOver 𝔭 := P.property.2
+  let _ : Algebra.IsUnramifiedAt (𝓞 K) P.val := hur P.val
+  exact ConjClasses.mk (arithFrobAt (𝓞 K) (L ≃ₐ[K] L) P.val)
 
 /-- Every arithmetic Frobenius at a prime over `𝔭` represents `artinSymbol 𝔭 hur`.
 
@@ -89,17 +89,17 @@ theorem artinSymbol_eq_mk_of_isArithFrobAt {L : Type*} [Field L] [NumberField L]
     exact IsArithFrobAt.of_le hσ hle (hQunder.trans hunder.symm).symm
   have : Q.IsPrime := hQp
   let P : 𝔭.primesOver (𝓞 L) := Classical.choice inferInstance
-  let _ : P.1.IsPrime := P.2.1
-  let _ : P.1.LiesOver 𝔭 := P.2.2
+  let _ : P.val.IsPrime := P.property.1
+  let _ : P.val.LiesOver 𝔭 := P.property.2
   have hpne : 𝔭 ≠ ⊥ := NeZero.ne 𝔭
   have hQne : Q ≠ ⊥ := Ideal.ne_bot_of_liesOver_of_ne_bot hpne Q
-  let _ : P.1.IsMaximal := Ring.DimensionLEOne.maximalOfPrime
-    (Ideal.ne_bot_of_liesOver_of_ne_bot hpne P.1) inferInstance
+  let _ : P.val.IsMaximal := Ring.DimensionLEOne.maximalOfPrime
+    (Ideal.ne_bot_of_liesOver_of_ne_bot hpne P.val) inferInstance
   let _ : Q.IsMaximal := Ring.DimensionLEOne.maximalOfPrime hQne inferInstance
   rw [artinSymbol]
   apply ConjClasses.mk_eq_mk_iff_isConj.mpr
-  have hconj := isConj_arithFrobAt (𝓞 K) (L ≃ₐ[K] L) P.1 Q
-    ((Ideal.LiesOver.over (p := 𝔭) (P := P.1)).symm.trans
+  have hconj := isConj_arithFrobAt (𝓞 K) (L ≃ₐ[K] L) P.val Q
+    ((Ideal.LiesOver.over (p := 𝔭) (P := P.val)).symm.trans
       (Ideal.LiesOver.over (p := 𝔭) (P := Q)))
   have hQeq : arithFrobAt (𝓞 K) (L ≃ₐ[K] L) Q = σ := by
     -- `IsArithFrobAt` is an abbreviation for the action's induced algebra homomorphism;
@@ -134,18 +134,18 @@ theorem artinSymbol_map_restrictNormalHom {M L : Type*} [Field M] [NumberField M
         TauCeti.RamificationInertia.isUnramifiedAt_of_isUnramifiedIn (S := 𝓞 L)
           (fun Q hQ hQ' ↦ @hur Q hQ hQ') P) := by
   let Q : 𝔭.primesOver (𝓞 L) := Classical.choice inferInstance
-  let _ : Q.1.IsPrime := Q.2.1
-  let _ : Q.1.LiesOver 𝔭 := Q.2.2
+  let _ : Q.val.IsPrime := Q.property.1
+  let _ : Q.val.LiesOver 𝔭 := Q.property.2
   have h𝔭ne : 𝔭 ≠ ⊥ :=
     (𝔭.bot_lt_of_maximal (RingOfIntegers.not_isField K)).ne'
-  obtain ⟨σ, hσ⟩ := exists_isArithFrobAt K Q.1
-    (Ideal.ne_bot_of_liesOver_of_ne_bot h𝔭ne Q.1)
-  rw [artinSymbol_eq_mk_of_isArithFrobAt 𝔭 hur Q.1 σ hσ,
+  obtain ⟨σ, hσ⟩ := exists_isArithFrobAt K Q.val
+    (Ideal.ne_bot_of_liesOver_of_ne_bot h𝔭ne Q.val)
+  rw [artinSymbol_eq_mk_of_isArithFrobAt 𝔭 hur Q.val σ hσ,
     artinSymbol_eq_mk_of_isArithFrobAt 𝔭
       (fun P _ _ ↦
         TauCeti.RamificationInertia.isUnramifiedAt_of_isUnramifiedIn (S := 𝓞 L)
           (fun Q hQ hQ' ↦ @hur Q hQ hQ') P)
-      (Q.1.under (𝓞 M))
+      (Q.val.under (𝓞 M))
       (σ.restrictNormal M) hσ.restrictNormal]
   -- `AlgEquiv.restrictNormalHom M σ` is `σ.restrictNormal M`, so this is exactly the computation
   -- rule for `ConjClasses.map` on representatives.
@@ -158,7 +158,7 @@ theorem exists_isArithFrobAt_of_artinSymbol_eq_mk {L : Type*} [Field L] [NumberF
     (hur : ∀ (Q : Ideal (𝓞 L)) [Q.IsPrime] [Q.LiesOver 𝔭],
       Algebra.IsUnramifiedAt (𝓞 K) Q) {σ : L ≃ₐ[K] L}
     (h : artinSymbol 𝔭 hur = ConjClasses.mk σ) :
-    ∃ Q : 𝔭.primesOver (𝓞 L), IsArithFrobAt (𝓞 K) σ Q.1 := by
+    ∃ Q : 𝔭.primesOver (𝓞 L), IsArithFrobAt (𝓞 K) σ Q.val := by
   obtain ⟨Q₀, _, _⟩ := (inferInstance : Nonempty (𝔭.primesOver (𝓞 L)))
   obtain ⟨σ₀, hσ₀⟩ := exists_isArithFrobAt K Q₀
     (Ideal.ne_bot_of_liesOver_of_ne_bot (NeZero.ne 𝔭) Q₀)
@@ -254,10 +254,6 @@ section BaseChange
 The companion to `artinSymbol_map_restrictNormalHom`. That law shrinks the top field of a normal
 tower and takes no power; this one raises the base field and takes the power `f(𝔓/𝔭)`.
 -/
-
--- Source. Both transport laws are specified by `TauCetiRoadmap/Chebotarev/README.md` Layer 1,
--- which asks for closed transport lemmas derived from `artinSymbol_map_restrictNormalHom` and
--- `exists_isArithFrobAt_pow_inertiaDeg`. This is the second of the two.
 
 /-- **Raising the base field raises the Artin symbol to the residue degree.** For number fields
 `K ⊆ M ⊆ L` with `L / K` Galois, `𝔭` a prime of `𝓞 K` unramified in `L / K`, and `𝔓` a prime of

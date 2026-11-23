@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.LinearAlgebra.Matrix.ProjectiveSpecialLinearGroup.SpecialUnitary
-public import TauCeti.RepresentationTheory.ClassicalGroups.SymmetricPower
+public import TauCeti.RepresentationTheory.ClassicalGroups.SymmetricPower.Basic
 public import TauCeti.RepresentationTheory.SU2.Basic
 import TauCeti.Algebra.GroupWithZero.Units.Basic
 import TauCeti.RingTheory.MvPolynomial.Symmetric.Complete.Basic
@@ -27,10 +27,9 @@ each of the `d + 1` weights `d, d-2, …, -d` occurring exactly once.  This is w
 highest-weight classification of the irreducible representations of `SU(2)` runs on, and the
 value at the identity is the dimension `d + 1`, the number of those weights.
 
-The route is Layer 1's `TauCeti.char_symPowerRep_diagonal`, which gives the character at a
-diagonal matrix as the complete homogeneous symmetric polynomial `h_d` in the diagonal entries,
-together with its rank-two evaluation `TauCeti.eval_hsymm_fin_two`: the geometric-looking sum
-`∑ᵢ x^i y^{d-i}`.
+The route is `TauCeti.char_symPowerRep_diagonal`, which gives the character at a diagonal matrix
+as the complete homogeneous symmetric polynomial `h_d` in the diagonal entries, together with its
+rank-two evaluation `TauCeti.eval_hsymm_fin_two`: the geometric-looking sum `∑ᵢ x^i y^{d-i}`.
 
 ## Main definitions
 
@@ -50,9 +49,6 @@ together with its rank-two evaluation `TauCeti.eval_hsymm_fin_two`: the geometri
 
 ## References
 
-* [Compact-groups roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/CompactGroups/README.md),
-  Layer 6, the `SU(2)` engine: the irreducibles `Symⁿ(ℂ²)` and the weight/string decomposition of
-  their characters on the maximal torus.
 * Daniel Bump, *Lie Groups*, second edition, Chapter 3.
 -/
 
@@ -152,7 +148,7 @@ theorem character_symPower_torusExp (θ : ℝ) :
       = ∑ i ∈ range (d + 1), Complex.exp ((2 * (i : ℂ) - d) * (θ * Complex.I)) := by
   rw [torusExp_def, character_symPower_torusHom_zpow]
   refine sum_congr rfl fun i _ => ?_
-  rw [Circle.coe_exp, ← Complex.exp_int_mul]
+  rw [Circle.coe_exp, ← Complex.exp_intCast_mul]
   push_cast
   ring_nf
 

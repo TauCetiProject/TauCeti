@@ -11,6 +11,8 @@ public import Mathlib.RingTheory.DedekindDomain.Ideal.Lemmas
 public import Mathlib.RingTheory.RamificationInertia.Inertia
 public import Mathlib.RingTheory.RamificationInertia.Ramification
 
+import TauCeti.RingTheory.UniqueFactorizationDomain.NormalizedFactors
+
 /-!
 # Kummer–Dedekind: the primes over `p`, with their residue degrees and ramification indices
 
@@ -153,7 +155,7 @@ theorem inertiaDeg_primesOverEquivNormalizedFactorsMinPolyMk_symm_apply {d : (R 
     (((primesOverEquivNormalizedFactorsMinPolyMk hp hp0 hx hx').symm ⟨d, hd⟩ :
       p.primesOver S) : Ideal S).inertiaDeg R = d.natDegree := by
   obtain ⟨Q, rfl⟩ := Polynomial.map_surjective _ Ideal.Quotient.mk_surjective d
-  have hmem := ((primesOverEquivNormalizedFactorsMinPolyMk hp hp0 hx hx').symm ⟨_, hd⟩).2
+  have hmem := ((primesOverEquivNormalizedFactorsMinPolyMk hp hp0 hx hx').symm ⟨_, hd⟩).property
   have hspan := primesOverEquivNormalizedFactorsMinPolyMk_symm_apply_coe hp hp0 hx hx' hd
   have hmax : (span (p.map (algebraMap R S) ∪ {aeval x Q})).IsMaximal :=
     hspan ▸ hmem.1.isMaximal (Ideal.ne_bot_of_mem_primesOver hp0 hmem)
@@ -176,7 +178,7 @@ theorem ramificationIdx_primesOverEquivNormalizedFactorsMinPolyMk_symm_apply {d 
     (((primesOverEquivNormalizedFactorsMinPolyMk hp hp0 hx hx').symm ⟨d, hd⟩ :
         p.primesOver S) : Ideal S).ramificationIdx R =
       multiplicity d ((minpoly R x).map (Ideal.Quotient.mk p)) := by
-  have hmem := ((primesOverEquivNormalizedFactorsMinPolyMk hp hp0 hx hx').symm ⟨d, hd⟩).2
+  have hmem := ((primesOverEquivNormalizedFactorsMinPolyMk hp hp0 hx hx').symm ⟨d, hd⟩).property
   rw [IsDedekindDomain.ramificationIdx_eq_multiplicity p _ (Ideal.map_ne_bot_of_ne_bot hp0)]
   refine multiplicity_eq_of_emultiplicity_eq ?_
   have hfac := (Ideal.mem_primesOver_iff_mem_normalizedFactors S hp0).mp hmem
@@ -197,21 +199,13 @@ theorem irreducible_minpoly_of_irreducible_map (hp : p.IsMaximal)
   have hp0 : p ≠ ⊥ := by
     rintro rfl
     exact h.ne_zero (by simp)
-  have hm0 : (minpoly R x).map (Ideal.Quotient.mk p) ≠ 0 :=
-    Polynomial.map_monic_ne_zero (minpoly.monic hx')
   -- The prime factors of `p S` form a singleton, and they are the image of the normalized factors
   -- of `minpoly R x` modulo `p` under the Kummer–Dedekind bijection.
   have hcard : Multiset.card (normalizedFactors ((minpoly R x).map (Ideal.Quotient.mk p))) = 1 := by
     simpa [normalizedFactors_irreducible h] using (congrArg Multiset.card
       (KummerDedekind.normalizedFactors_ideal_map_eq_normalizedFactors_min_poly_mk_map hp hp0 hx
         hx')).symm
-  obtain ⟨d, hd⟩ := Multiset.card_eq_one.mp hcard
-  have hdirr : Irreducible d :=
-    irreducible_of_normalized_factor d (by rw [hd]; exact Multiset.mem_singleton_self d)
-  -- Hence `minpoly R x` modulo `p` is associated to the irreducible `d`.
-  have hassoc := prod_normalizedFactors hm0
-  rw [hd, Multiset.prod_singleton] at hassoc
-  exact hassoc.irreducible hdirr
+  exact card_normalizedFactors_eq_one_iff.mp hcard
 
 /-- **The Kummer–Dedekind irreducibility criterion.** `p` stays prime in `S` exactly when
 `minpoly R x` is irreducible modulo `p`. -/

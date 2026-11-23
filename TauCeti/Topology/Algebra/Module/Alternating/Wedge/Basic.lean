@@ -79,7 +79,7 @@ theorem pairingLinear_tmul (μ : F₁ →L[ℝ] F₂ →L[ℝ] F₃) (x : F₁) 
 /-- The unalternated multilinear pairing underlying the paired wedge. -/
 noncomputable def wedgeWithUnalternated {k l : ℕ} (μ : F₁ →L[ℝ] F₂ →L[ℝ] F₃)
     (φ : E [⋀^Fin k]→L[ℝ] F₁) (ψ : E [⋀^Fin l]→L[ℝ] F₂) :
-    MultilinearMap ℝ (fun _ : Fin (k + l) => E) F₃ :=
+    MultilinearMap (RingHom.id ℝ) (fun _ : Fin (k + l) => E) F₃ :=
   (pairingLinear μ).compMultilinearMap <|
     (MultilinearMap.domCoprod φ.toAlternatingMap.toMultilinearMap
       ψ.toAlternatingMap.toMultilinearMap).domDomCongr finSumFinEquiv
@@ -203,7 +203,8 @@ twice cancel the determinant normalization. -/
 theorem pairedWedge_toAlternatingMap_of_eq_alternatization {k l : ℕ}
     (μ : F₁ →L[ℝ] F₂ →L[ℝ] F₃) (hμ : Continuous (Function.uncurry fun x y ↦ μ x y))
     {φ : E [⋀^Fin k]→L[ℝ] F₁} {ψ : E [⋀^Fin l]→L[ℝ] F₂}
-    {f : MultilinearMap ℝ (fun _ : Fin k => E) F₁} {g : MultilinearMap ℝ (fun _ : Fin l => E) F₂}
+    {f : MultilinearMap (RingHom.id ℝ) (fun _ : Fin k => E) F₁} {g : MultilinearMap (RingHom.id ℝ)
+        (fun _ : Fin l => E) F₂}
     (hf : φ.toAlternatingMap = f.alternatization) (hg : ψ.toAlternatingMap = g.alternatization) :
     (pairedWedge μ hμ φ ψ).toAlternatingMap =
       ((pairingLinear μ).compMultilinearMap
@@ -496,10 +497,11 @@ theorem pairedWedge_flip [IsTopologicalAddGroup F₂] [ContinuousConstSMul ℝ F
     (hmu : Continuous (Function.uncurry fun x y ↦ mu x y))
     (phi : E [⋀^Fin k]→L[ℝ] F₁) (psi : E [⋀^Fin l]→L[ℝ] F₂) (v : Fin (k + l) → E) :
     pairedWedge mu hmu phi psi v =
-      (-1 : ℝ) ^ (k * l) • pairedWedge (mu.pairingFlip hmu)
-        (mu.pairingFlip_continuous hmu) psi phi (v ∘ Fin.cast (Nat.add_comm l k)) :=
-  pairedWedge_flip_of_forall_apply_eq mu hmu _ (mu.pairingFlip_continuous hmu)
-    (fun a b ↦ ContinuousLinearMap.pairingFlip_apply mu hmu b a) phi psi v
+      (-1 : ℝ) ^ (k * l) • pairedWedge (mu.toLinearMap.pairingFlip hmu)
+        (mu.toLinearMap.continuous_uncurry_pairingFlip hmu) psi phi
+        (v ∘ Fin.cast (Nat.add_comm l k)) :=
+  pairedWedge_flip_of_forall_apply_eq mu hmu _ (mu.toLinearMap.continuous_uncurry_pairingFlip hmu)
+    (fun a b ↦ mu.toLinearMap.pairingFlip_apply hmu b a) phi psi v
 
 /-- Anticommutation of a paired wedge along a skew-symmetric pairing. -/
 theorem pairedWedge_anticomm {k l : ℕ} {mu : F₁ →L[ℝ] F₁ →L[ℝ] F₃}

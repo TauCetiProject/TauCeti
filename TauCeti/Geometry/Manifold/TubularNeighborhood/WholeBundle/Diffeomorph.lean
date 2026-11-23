@@ -88,7 +88,7 @@ theorem exists_diffeomorph_wholeNormalBundle_subset {f : M → V}
         contMDiff_toFun := by
           apply (_root_.ContMDiff.subtypeVal_comp_iff W _).mp
           exact hforward
-        contMDiff_invFun := Ψ.contMDiffOn_invFun.comp_contMDiff contMDiff_subtype_val
+        contMDiff_invFun := Ψ.contMDiffOn_invFun.comp_contMDiff contMDiff_subtypeVal
           (fun y => y.property) }
     exact ⟨W, htarget, Φ, hzero⟩
 

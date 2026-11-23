@@ -216,7 +216,7 @@ theorem coe_trace_integerRing (y : 𝒪[L]) :
 
 /-- The norm of an element of `𝒪[L]` lies in `𝒪[K]`. -/
 theorem norm_mem_integer {y : L} (hy : y ∈ 𝒪[L]) : Algebra.norm K y ∈ 𝒪[K] := by
-  simpa using (Algebra.norm 𝒪[K] (⟨y, hy⟩ : 𝒪[L])).2
+  simpa using (Algebra.norm 𝒪[K] (⟨y, hy⟩ : 𝒪[L])).property
 
 variable (K L) in
 /-- The norm of a uniformizer of `𝒪[L]` is associated to the residue-degree power of a
@@ -567,8 +567,8 @@ the Galois conjugates of `z`. -/
 theorem algebraMap_norm_integerRing_eq_prod_automorphisms (z : 𝒪[L]) :
     algebraMap 𝒪[K] 𝒪[L] (Algebra.norm 𝒪[K] z) = ∏ σ : L ≃ₐ[K] L, σ • z := by
   apply Subtype.ext
-  rw [coe_algebraMap_integerRing, coe_norm_integerRing, Algebra.norm_eq_prod_automorphisms,
-    SubmonoidClass.coe_finsetProd]
+  rw [Valuation.HasExtension.val_algebraMap, coe_norm_integerRing,
+    Algebra.norm_eq_prod_automorphisms, SubmonoidClass.coe_finsetProd]
   simp only [AlgEquiv.coe_smul_integerRing]
 
 /-- In a Galois extension, the trace of an integer `z` of `L`, read in `𝒪[L]`, is the sum of the
@@ -576,8 +576,8 @@ Galois conjugates of `z`. -/
 theorem algebraMap_trace_integerRing_eq_sum_automorphisms (z : 𝒪[L]) :
     algebraMap 𝒪[K] 𝒪[L] (Algebra.trace 𝒪[K] 𝒪[L] z) = ∑ σ : L ≃ₐ[K] L, σ • z := by
   apply Subtype.ext
-  rw [coe_algebraMap_integerRing, coe_trace_integerRing, _root_.trace_eq_sum_automorphisms,
-    AddSubmonoidClass.coe_finsetSum]
+  rw [Valuation.HasExtension.val_algebraMap, coe_trace_integerRing,
+    _root_.trace_eq_sum_automorphisms, AddSubmonoidClass.coe_finsetSum]
   simp only [AlgEquiv.coe_smul_integerRing]
 
 end Galois

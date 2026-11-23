@@ -31,9 +31,7 @@ lattice cube indexed by a base point and a finite set of basis directions.
 
 ## References
 
-This supplies a small prerequisite for `TauCetiRoadmap/CombinatorialHeegaardFloer/README.md`,
-Lane L ("lattice homology"), whose cubical complex is built from plumbing-lattice cubes and their
-finite vertex sets. The convention is the standard cubical one used in Némethi,
+The convention is the standard cubical one used in Némethi,
 [arXiv:0709.0841](https://arxiv.org/abs/0709.0841).
 -/
 
@@ -69,29 +67,29 @@ plumbing-lattice cube. This is the precise "one vertex for each subset of direct
 behind the cardinality formula. -/
 noncomputable def cubeVertexSubsetEquiv (x : V → ℤ) (S : Finset V) :
     {T : Finset V // T ⊆ S} ≃ {y : V → ℤ // y ∈ cubeVertices x S} where
-  toFun T := ⟨cubeVertex x T.1, cubeVertex_subset_mem_cubeVertices T.2 x⟩
+  toFun T := ⟨cubeVertex x T.val, cubeVertex_subset_mem_cubeVertices T.property x⟩
   invFun y :=
-    ⟨Classical.choose ((mem_cubeVertices x S y.1).mp y.2),
-      (Classical.choose_spec ((mem_cubeVertices x S y.1).mp y.2)).1⟩
+    ⟨Classical.choose ((mem_cubeVertices x S y.val).mp y.property),
+      (Classical.choose_spec ((mem_cubeVertices x S y.val).mp y.property)).1⟩
   left_inv T := by
     apply Subtype.ext
     exact cubeVertex_injective x
       (Classical.choose_spec
-        ((mem_cubeVertices x S (cubeVertex x T.1)).mp
-          (cubeVertex_subset_mem_cubeVertices T.2 x))).2
+        ((mem_cubeVertices x S (cubeVertex x T.val)).mp
+          (cubeVertex_subset_mem_cubeVertices T.property x))).2
   right_inv y := by
     apply Subtype.ext
-    exact (Classical.choose_spec ((mem_cubeVertices x S y.1).mp y.2)).2
+    exact (Classical.choose_spec ((mem_cubeVertices x S y.val).mp y.property)).2
 
 private theorem cubeVertexSubsetEquiv_apply_aux
     (x : V → ℤ) (S : Finset V) (T : {T : Finset V // T ⊆ S}) :
-    (cubeVertexSubsetEquiv x S T).1 = cubeVertex x T.1 :=
+    (cubeVertexSubsetEquiv x S T).val = cubeVertex x T.val :=
   rfl
 
 /-- The subset-to-vertex equivalence sends a subset of directions to its cube vertex. -/
 @[simp]
 theorem cubeVertexSubsetEquiv_apply (x : V → ℤ) (S : Finset V) (T : {T : Finset V // T ⊆ S}) :
-    (cubeVertexSubsetEquiv x S T).1 = cubeVertex x T.1 :=
+    (cubeVertexSubsetEquiv x S T).val = cubeVertex x T.val :=
   cubeVertexSubsetEquiv_apply_aux x S T
 
 /-- The inverse of the subset-to-vertex equivalence returns a subset whose vertex is the
@@ -99,7 +97,7 @@ specified cube vertex. -/
 @[simp]
 theorem cubeVertexSubsetEquiv_apply_symm_apply (x : V → ℤ) (S : Finset V)
     (y : {y : V → ℤ // y ∈ cubeVertices x S}) :
-    cubeVertex x ((cubeVertexSubsetEquiv x S).symm y).1 = y.1 := by
+    cubeVertex x ((cubeVertexSubsetEquiv x S).symm y).val = y.val := by
   exact Subtype.ext_iff.mp ((cubeVertexSubsetEquiv x S).right_inv y)
 
 /-- The vertex set of the cube with direction set `S` is exactly the image of the powerset of

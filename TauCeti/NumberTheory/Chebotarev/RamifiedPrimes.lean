@@ -26,8 +26,8 @@ form Chebotarev's exceptional set is used in: the density statements discard `ra
 and argue about the complement.
 
 The ramification condition is spelled out with Mathlib's `Algebra.IsUnramifiedAt` rather than
-wrapped in a named predicate, matching how the roadmap states it. A `Prop`-valued abbreviation for
-"`𝔭` is unramified in `L`" would duplicate `Algebra.IsUnramifiedIn`.
+wrapped in a named predicate. A `Prop`-valued abbreviation for "`𝔭` is unramified in `L`" would
+duplicate `Algebra.IsUnramifiedIn`.
 
 ## Main definitions
 
@@ -63,10 +63,9 @@ i.e. the same short names, in the same shape. They are kept apart rather than un
 * The carriers genuinely differ: `Set ℕ` against `Finset (HeightOneSpectrum (𝓞 K))`. For `K = ℚ`
   the two agree only through `𝓞 ℚ ≃ ℤ` and `HeightOneSpectrum ℤ ≃` the rational primes, and
   neither identification is definitional.
-* Generalising the absolute version instead would change its carrier, and Tau Ceti keeps no
-  compatibility shims, so every use would have to move in this PR — ten files on `main` reference
-  that API, seven of them under `Multiquadratic/`. Its `Set ℕ` packaging is, in its own docstring,
-  "the form in which `t` is counted" for genus theory.
+* Generalising the absolute version instead would change its carrier, and with it every use of
+  that API. Its `Set ℕ` packaging is, in its own docstring, "the form in which `t` is counted" for
+  genus theory.
 
 Two consequences to be aware of when using this file. First, `NumberField.Chebotarev` is nested
 inside `NumberField`, so within it a bare `ramifiedPrimes` or `mem_ramifiedPrimes_iff` resolves to
@@ -83,7 +82,8 @@ Adapted from `finite_ramifiedIn` in `CebotarevDensity/Frobenius.lean` of
 [CBirkbeck/chebotarev-density](https://github.com/CBirkbeck/chebotarev-density) (Apache-2.0,
 Birkbeck--Brasca) at commit `8575c9df1ae0a61120ab5c964c7911414254bec7`, where the statement is a
 `Set.Finite` over `Ideal (𝓞 K)` phrased through a source-local unramifiedness predicate. The
-covering argument through the different ideal is the source's; the carrier is the roadmap's.
+covering argument through the different ideal is the source's; the
+`Finset (HeightOneSpectrum (𝓞 K))` carrier is new here.
 -/
 
 public section
@@ -182,13 +182,13 @@ variable (K L : Type*) [Field K] [NumberField K] [Field L] [NumberField L] [Alge
 theorem eventually_isUnramifiedAt_liesOver :
     ∀ᶠ v : HeightOneSpectrum (𝓞 K) in Filter.cofinite,
       ∀ w : {w : HeightOneSpectrum (𝓞 L) // w.asIdeal.LiesOver v.asIdeal},
-        Algebra.IsUnramifiedAt (𝓞 K) w.1.asIdeal := by
+        Algebra.IsUnramifiedAt (𝓞 K) w.val.asIdeal := by
   classical
   refine Filter.eventually_cofinite.mpr
     ((NumberField.Chebotarev.ramifiedPrimes K L).finite_toSet.subset ?_)
   intro v hv
   apply (NumberField.Chebotarev.mem_ramifiedPrimes_iff v).mpr
   intro h
-  exact hv fun w ↦ @h w.1.asIdeal w.1.isPrime w.2
+  exact hv fun w ↦ @h w.val.asIdeal w.val.isPrime w.property
 
 end TauCeti

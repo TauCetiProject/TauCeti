@@ -11,7 +11,7 @@ public import TauCeti.RingTheory.MvPowerSeries.TateAlgebra.Basic
 /-!
 # Units of restricted power series
 
-Let `R` be a complete ultrametric normed ring with `‖1‖ = 1`, and let `c` be positive polyradii.
+Let `R` be a complete ultrametric normed ring, and let `c` be positive polyradii.
 A restricted series `f ∈ R{X/c}` close to a constant `a` that is a multiplicative unit of `R`
 (`TauCeti.IsNormMulUnit`), in the sense that `‖f - a‖ < ‖a‖` for the Gauss norm, factors as
 
@@ -77,11 +77,8 @@ private theorem codRestrict_C_eq (a : R) :
 
 variable [∀ i, Fact (0 < c i)]
 
-section NormOne
+section Complete
 
-variable [NormOneClass R]
-
-omit [NormOneClass R] in
 /-- Constant series preserve multiplicative units, since taking constant series is a
 norm-preserving ring homomorphism. -/
 theorem isNormMulUnit_C {u : R} (hu : IsNormMulUnit u) :
@@ -91,7 +88,6 @@ theorem isNormMulUnit_C {u : R} (hu : IsNormMulUnit u) :
 
 variable [CompleteSpace R]
 
-omit [NormOneClass R] in
 /-- **Neumann series criterion.** Over a complete ultrametric ring, a restricted series
 whose distance from a constant multiplicative unit `a` is less than `‖a‖` is a multiplicative
 unit. -/
@@ -100,7 +96,6 @@ theorem isNormMulUnit_of_norm_sub_C_lt {a : R} (ha : IsNormMulUnit a)
     IsNormMulUnit f :=
   (isNormMulUnit_C ha).of_norm_sub_lt (by rwa [norm_C])
 
-omit [NormOneClass R] in
 /-- **The Neumann series of the inverse.** If `‖f - a‖ < ‖a‖` for a constant multiplicative unit
 `a`, then `x = a⁻¹ * (a - f)` has norm less than one and `f⁻¹ = ∑ₙ xⁿ * a⁻¹`. -/
 theorem hasSum_inverse_of_norm_sub_C_lt {a : Rˣ} (ha : IsNormMulUnit (a : R))
@@ -121,7 +116,6 @@ theorem hasSum_inverse_of_norm_sub_C_lt {a : Rˣ} (ha : IsNormMulUnit (a : R))
     (by rwa [hA, norm_C])
   rwa [hA, hA'] at h
 
-omit [NormOneClass R] in
 /-- If `‖f - a‖ < ‖a‖` for a constant multiplicative unit `a`, then the inverse of `f` has norm
 `‖a‖⁻¹`. -/
 theorem norm_inverse_of_norm_sub_C_lt {a : R} (ha : IsNormMulUnit a)
@@ -129,7 +123,7 @@ theorem norm_inverse_of_norm_sub_C_lt {a : R} (ha : IsNormMulUnit a)
     ‖Ring.inverse f‖ = ‖a‖⁻¹ := by
   rw [(isNormMulUnit_C ha).norm_inverse_of_norm_sub_lt (by rwa [norm_C]), norm_C]
 
-/-- **Dominant constant coefficient.** Over a complete ultrametric norm-one ring, a restricted
+/-- **Dominant constant coefficient.** Over a complete ultrametric ring, a restricted
 series whose constant coefficient is a multiplicative unit strictly dominating the weighted norm
 of every other coefficient is a multiplicative unit. -/
 theorem isNormMulUnit_of_norm_coeff_mul_prod_lt {f : IsRestricted.subring (R := R) c}
@@ -138,14 +132,19 @@ theorem isNormMulUnit_of_norm_coeff_mul_prod_lt {f : IsRestricted.subring (R := 
       ‖constantCoeff (f : MvPowerSeries σ R)‖) :
     IsNormMulUnit f := by
   classical
+  rcases subsingleton_or_nontrivial R with hR | hR
+  · have : Subsingleton (IsRestricted.subring (R := R) c) :=
+      ⟨fun x y ↦ Subtype.ext (MvPowerSeries.ext fun _ ↦ Subsingleton.elim _ _)⟩
+    rw [isNormMulUnit_iff]
+    exact ⟨isUnit_of_subsingleton f, fun x ↦ by
+      rw [Subsingleton.elim x 0, mul_zero, norm_zero, mul_zero]⟩
   set a := constantCoeff (f : MvPowerSeries σ R)
-  have : Nontrivial R := NormOneClass.nontrivial
   have hf0 : f ≠ 0 := by
     rintro rfl
     exact h0.isUnit.ne_zero (by simp [a])
   -- The Gauss norm of `f` is attained at the constant coefficient.
   have hfa : ‖f‖ = ‖a‖ := by
-    obtain ⟨t, ht⟩ := exists_achievesGaussNorm f
+    obtain ⟨t, ht⟩ := f.property.exists_achievesGaussNorm
     rw [AchievesGaussNorm, ← norm_eq_gaussNorm] at ht
     rcases eq_or_ne t 0 with rfl | ht0
     · simpa [a, coeff_zero_eq_constantCoeff_apply] using ht.symm
@@ -154,7 +153,7 @@ theorem isNormMulUnit_of_norm_coeff_mul_prod_lt {f : IsRestricted.subring (R := 
       simpa [a, coeff_zero_eq_constantCoeff_apply] using norm_coeff_mul_prod_le f 0
   -- Restrictedness bounds the nonconstant weighted coefficients uniformly below `‖a‖`.
   obtain ⟨ε, hε0, hεf, hε⟩ := exists_norm_coeff_mul_prod_gap f hf0
-  refine isNormMulUnit_of_norm_sub_C_lt h0 (lt_of_le_of_lt ((norm_le_iff hε0).mpr fun t ↦ ?_)
+  refine isNormMulUnit_of_norm_sub_C_lt h0 (lt_of_le_of_lt (norm_le_iff.mpr fun t ↦ ?_)
     (hfa ▸ hεf))
   rw [AddSubgroupClass.coe_sub, map_sub, coeff_C]
   split_ifs with ht
@@ -162,7 +161,7 @@ theorem isNormMulUnit_of_norm_coeff_mul_prod_lt {f : IsRestricted.subring (R := 
   · rw [sub_zero]
     exact hε t (hfa ▸ h t ht)
 
-end NormOne
+end Complete
 
 section NormMulClass
 
@@ -180,7 +179,8 @@ theorem norm_coeff_mul_prod_lt_of_isUnit {f : IsRestricted.subring (R := R) c} (
   have hfg' : (f : MvPowerSeries σ R) * g = 1 := congrArg Subtype.val hfg
   have hf0 : (f : MvPowerSeries σ R) ≠ 0 := fun h ↦ zero_ne_one (by rw [← hfg', h, zero_mul])
   have hg0 : (g : MvPowerSeries σ R) ≠ 0 := fun h ↦ zero_ne_one (by rw [← hfg', h, mul_zero])
-  obtain ⟨i, j, hi, hj, himax, -, hdom'⟩ := f.2.exists_norm_coeff_mul_norm_coeff_lt g.2 hf0 hg0
+  obtain ⟨i, j, hi, hj, himax, -, hdom'⟩ := f.property.exists_norm_coeff_mul_norm_coeff_lt
+      g.property hf0 hg0
   -- The dominant summand of the coefficient of `f * g = 1` at `i + j` is nonzero, so `i = 0`.
   have hdom := antidiagonal_dominant norm (f : MvPowerSeries σ R) g i j
     IsUltrametricDist.isNonarchimedean_norm norm_mul (fun a ↦ (norm_neg a).symm)
@@ -188,8 +188,8 @@ theorem norm_coeff_mul_prod_lt_of_isUnit {f : IsRestricted.subring (R := R) c} (
   have hij : i + j = 0 := by
     by_contra hne
     rw [hfg', coeff_one, ite_eq_right hne, norm_zero, norm_mul] at hdom
-    exact mul_ne_zero (norm_ne_zero_iff.mpr (f.2.coeff_ne_zero_of_achievesGaussNorm hf0 hi))
-      (norm_ne_zero_iff.mpr (g.2.coeff_ne_zero_of_achievesGaussNorm hg0 hj)) hdom.symm
+    exact mul_ne_zero (norm_ne_zero_iff.mpr (f.property.coeff_ne_zero_of_achievesGaussNorm hf0 hi))
+      (norm_ne_zero_iff.mpr (g.property.coeff_ne_zero_of_achievesGaussNorm hg0 hj)) hdom.symm
   obtain rfl : i = 0 := (add_eq_zero.mp hij).1
   have hlt := himax t ht
   rwa [zero_add, ← hi, Finsupp.prod_zero_index, mul_one, coeff_zero_eq_constantCoeff_apply] at hlt
@@ -202,7 +202,6 @@ theorem isUnit_iff_isUnit_constantCoeff_and_norm_coeff_mul_prod_lt [CompleteSpac
     IsUnit f ↔ IsUnit (constantCoeff (f : MvPowerSeries σ R)) ∧
       ∀ t ≠ 0, ‖coeff t (f : MvPowerSeries σ R)‖ * t.prod (c · ^ ·) <
         ‖constantCoeff (f : MvPowerSeries σ R)‖ := by
-  have := NormMulClass.toNormOneClass (α := R)
   refine ⟨fun hf ↦ ⟨(hf.map (IsRestricted.subring (R := R) c).subtype).map _,
     fun t ht ↦ norm_coeff_mul_prod_lt_of_isUnit hf ht⟩, fun ⟨h0, h⟩ ↦ ?_⟩
   exact (isNormMulUnit_of_norm_coeff_mul_prod_lt ((isNormMulUnit_iff_isUnit _).mpr h0) h).isUnit

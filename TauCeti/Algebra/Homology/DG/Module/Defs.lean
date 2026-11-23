@@ -17,7 +17,7 @@ import TauCeti.Algebra.Module.GradedModule.Internal
 Let `d` be a differential on an internally `ℤ`-graded `R`-algebra `𝒜` on a carrier `A`, in the
 sense of `TauCeti.IsDGAlgebra`.  A **differential graded left module** over it is an `A`-module `M`
 with an internal `ℤ`-grading `ℳ` for which the action adds degrees, together with an `R`-linear
-differential `dM` of degree `+1`, in the sense of `TauCeti.LinearMap.IsHomogeneous`, which squares
+differential `dM` of degree `+1`, in the sense of `LinearMap.IsHomogeneous`, which squares
 to zero and satisfies the graded Leibniz rule
 
 `dM (a • x) = d a • x + (-1) ^ |a| • (a • dM x)`.
@@ -62,6 +62,8 @@ a differential graded algebra be a module over itself with no twist.
 * `TauCeti.IsDGLeftModule.exists_mem_of_forall_exists`: if every relative cycle of a degree-zero
   map of differential graded left modules is a relative boundary, then a homogeneous relative cycle
   is the relative boundary of homogeneous elements of the matching degrees.
+  Conversely (`TauCeti.IsDGLeftModule.exists_of_forall_mem_exists`), if every homogeneous
+  relative cycle is a relative boundary, then so is every relative cycle.
 * `TauCeti.IsDGLeftModule.leibniz_of_map_eq_zero`: the Leibniz rule for an arbitrary scalar against
   a cycle, with no sign and no homogeneity hypothesis.
 * `TauCeti.IsDGLeftModule.smul_mem_range_of_map_eq_zero`: a cycle of `A` carries a boundary of `M`
@@ -159,6 +161,35 @@ theorem map_decompose_eq_zero (hM : IsDGLeftModule h ℳ dM) {x : M} (hx : dM x 
     dM (decompose ℳ x p : M) = 0 := by
   rw [hM.map_decompose, hx, DirectSum.decompose_zero, DirectSum.zero_apply,
     ZeroMemClass.coe_zero]
+
+/-- The converse of `exists_mem_of_forall_exists`: if every **homogeneous** relative cycle of a
+degree-zero map `f` is a relative boundary, then so is every relative cycle. This is
+`TauCeti.exists_relative_boundary_of_forall_homogeneous` with the zero submodules for the relative
+cycles and boundaries and the whole module for the second chain. -/
+theorem exists_of_forall_mem_exists {N : Type*} [AddCommGroup N] [Module R N] [Module A N]
+    [IsScalarTower R A N] {𝒩 : ℤ → Submodule R N} [SetLike.GradedSMul 𝒜 𝒩]
+    [DirectSum.Decomposition 𝒩] {dN : N →ₗ[R] N} (hM : IsDGLeftModule h ℳ dM)
+    (hN : IsDGLeftModule h 𝒩 dN) {f : M →ₗ[A] N} (hf : LinearMap.IsHomogeneous f ℳ 𝒩 0)
+    (hrel : ∀ n c w, c ∈ ℳ n → w ∈ 𝒩 (n - 1) → dM c = 0 → f c = dN w →
+      ∃ u v, dM u = c ∧ f u + dN v = w)
+    (c : M) (w : N) (hc : dM c = 0) (hcw : f c = dN w) :
+    ∃ u v, dM u = c ∧ f u + dN v = w := by
+  have hrel' : ∀ n, ∀ c ∈ ℳ n, ∀ w ∈ 𝒩 (n - 1), dM c ∈ (⊥ : Submodule R M) →
+      w ∈ (⊤ : Submodule R N) → f.restrictScalars R c - dN w ∈ (⊥ : Submodule R N) →
+      ∃ u v, v ∈ (⊤ : Submodule R N) ∧ dM u - c ∈ (⊥ : Submodule R M) ∧
+        f.restrictScalars R u + dN v - w ∈ (⊥ : Submodule R N) := by
+    intro n c hc w hw hdc _ hcw
+    obtain ⟨u, v, hu, huv⟩ :=
+      hrel n c w hc hw (by simpa using hdc) (by simpa [sub_eq_zero] using hcw)
+    exact ⟨u, v, Submodule.mem_top, by simp [hu], by simp [huv]⟩
+  obtain ⟨u, v, -, hu, huv⟩ := exists_relative_boundary_of_forall_homogeneous
+    hM.isHomogeneous hN.isHomogeneous (Φ := f.restrictScalars R)
+    (LinearMap.isHomogeneous_def.mpr fun _ _ hx ↦ hf.map_mem hx)
+    (fun _ _ hx ↦ by simp [(Submodule.mem_bot R).1 hx])
+    (fun _ _ hx ↦ by simp [(Submodule.mem_bot R).1 hx])
+    (fun _ _ _ ↦ Submodule.mem_top) hrel' (by simpa using hc) Submodule.mem_top
+    (by simpa [sub_eq_zero] using hcw)
+  exact ⟨u, v, by simpa [sub_eq_zero] using hu, by simpa [sub_eq_zero] using huv⟩
 
 /-- The Leibniz rule against a cycle: the sign disappears with the term it multiplies, so the
 scalar need not be homogeneous. -/

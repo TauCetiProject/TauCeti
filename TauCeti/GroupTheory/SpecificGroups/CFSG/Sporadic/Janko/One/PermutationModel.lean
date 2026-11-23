@@ -6,8 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.GroupTheory.SpecificGroups.CFSG.Sporadic.Presentation
+import TauCeti.GroupTheory.Perm.Fin
 import Mathlib.Data.Fin.VecNotation
 import Mathlib.Algebra.Group.Subgroup.Pointwise
+import Mathlib.Tactic.FinCases
 import Mathlib.Tactic.IntervalCases
 
 /-!
@@ -21,7 +23,8 @@ The tables below subtract one from both the source points and their images, and 
 The existing presentation uses left-to-right products, whereas Mathlib composes permutations
 right to left. Assigning its generators to the inverses of the two ATLAS permutations satisfies
 all five transcribed relators and generates exactly this model. Consequently the presented group
-surjects onto the model. No order or simplicity assertion is made here.
+surjects onto the model, by the canonical homomorphism `TauCeti.Sporadic.J1.presentationHom`.
+No order or simplicity assertion is made here.
 
 ## References
 
@@ -154,7 +157,9 @@ theorem presentationImage_zero : presentationImage ⟨0, by simp⟩ = a⁻¹ := 
 @[simp]
 theorem presentationImage_one : presentationImage ⟨1, by simp⟩ = b⁻¹ := (rfl)
 
--- Separate kernel checks keep each declaration within the default heartbeat budget.
+-- Check the long relators one row at a time with `Equiv.Perm.eq_one_of_rows`. Each kernel
+-- decision covers only fourteen points, avoiding the large intermediate terms from checking all
+-- 266 points together.
 private theorem relator_zero :
     Relator.eval presentationImage (Sporadic.j1Presentation.transcribed[0]'(by simp)) = 1 := by
   simp only [Sporadic.j1Presentation_transcribed, List.getElem_cons_zero,
@@ -172,21 +177,27 @@ private theorem relator_two :
   simp only [Sporadic.j1Presentation_transcribed, List.getElem_cons_succ, List.getElem_cons_zero,
     Relator.eval_pow, Relator.eval_mul, Relator.eval_gen,
     presentationImage_zero, presentationImage_one]
-  decide +kernel
+  apply Equiv.Perm.eq_one_of_rows (m := 19) (n := 14)
+  intro i
+  fin_cases i <;> decide +kernel
 
 private theorem relator_three :
     Relator.eval presentationImage (Sporadic.j1Presentation.transcribed[3]'(by simp)) = 1 := by
   simp only [Sporadic.j1Presentation_transcribed, List.getElem_cons_succ, List.getElem_cons_zero,
     Relator.eval_pow, Relator.eval_mul, Relator.eval_inv, Relator.eval_gen,
     presentationImage_zero, presentationImage_one]
-  decide +kernel
+  apply Equiv.Perm.eq_one_of_rows (m := 19) (n := 14)
+  intro i
+  fin_cases i <;> decide +kernel
 
 private theorem relator_four :
     Relator.eval presentationImage (Sporadic.j1Presentation.transcribed[4]'(by simp)) = 1 := by
   simp only [Sporadic.j1Presentation_transcribed, List.getElem_cons_succ, List.getElem_cons_zero,
     Relator.eval_pow, Relator.eval_mul, Relator.eval_inv, Relator.eval_gen,
     presentationImage_zero, presentationImage_one]
-  decide +kernel
+  apply Equiv.Perm.eq_one_of_rows (m := 19) (n := 14)
+  intro i
+  fin_cases i <;> decide +kernel
 
 /-- All five transcribed relators hold on the inverse ATLAS pair. -/
 theorem lift_presentationImage_toFreeGroup_eq_one
@@ -211,6 +222,59 @@ theorem closure_range_presentationImage :
   rw [hrange, J1_def]
   simpa only [Set.inv_insert, Set.inv_singleton] using
     Subgroup.closure_inv ({a, b} : Set (Equiv.Perm (Fin 266)))
+
+/-- The presentation generators of `SporadicName.J1.Group` are those of `j1Presentation`. -/
+private theorem generatorCount_eq :
+    SporadicName.J1.presentation.generatorCount = Sporadic.j1Presentation.generatorCount :=
+  congrArg GroupPresentation.generatorCount SporadicName.presentation_J1
+
+/-- The assignment `presentationImage`, indexed by the generators of `SporadicName.J1.Group`. -/
+private def groupImage (i : Fin SporadicName.J1.presentation.generatorCount) :
+    Equiv.Perm (Fin 266) :=
+  presentationImage (Fin.cast generatorCount_eq i)
+
+/-- `groupImage` is `presentationImage` precomposed with the cast of generator indices. -/
+private theorem groupImage_eq : groupImage = presentationImage ∘ finCongr generatorCount_eq :=
+  funext fun i ↦ by simp only [groupImage, Function.comp_apply, finCongr_apply]
+
+/-- All five transcribed relators hold on `groupImage`. -/
+private theorem lift_groupImage_toFreeGroup_eq_one
+    (t : Relator (Fin SporadicName.J1.presentation.generatorCount))
+    (ht : t ∈ SporadicName.J1.presentation.transcribed) :
+    FreeGroup.lift groupImage t.toFreeGroup = 1 := by
+  -- The type of `groupImage` mentions `SporadicName.J1.presentation`, so the statement is first
+  -- abstracted over the presentation and then specialized along `presentation_J1`.
+  suffices key : ∀ (P : GroupPresentation)
+      (hP : P.generatorCount = j1Presentation.generatorCount), P = j1Presentation →
+      ∀ t ∈ P.transcribed,
+        FreeGroup.lift (fun i ↦ presentationImage (Fin.cast hP i)) t.toFreeGroup = 1 from
+    key _ generatorCount_eq SporadicName.presentation_J1 t ht
+  rintro P hP rfl
+  simpa only [Fin.cast_eq_self] using lift_presentationImage_toFreeGroup_eq_one
+
+/-- The homomorphism from the presented group of `J₁` to `Equiv.Perm (Fin 266)` sending the
+presentation generators to `presentationImage`. -/
+def presentationHom : SporadicName.J1.Group →* Equiv.Perm (Fin 266) :=
+  SporadicName.J1.presentation.homEquiv.symm ⟨groupImage, lift_groupImage_toFreeGroup_eq_one⟩
+
+/-- The canonical presentation homomorphism sends the first presentation generator to the inverse
+of the ATLAS generator `a`. -/
+@[simp]
+theorem presentationHom_of_zero :
+    presentationHom (PresentedGroup.of ⟨0, by simp⟩) = a⁻¹ :=
+  (GroupPresentation.homEquiv_symm_apply_of _ _ _).trans presentationImage_zero
+
+/-- The canonical presentation homomorphism sends the second presentation generator to the
+inverse of the ATLAS generator `b`. -/
+@[simp]
+theorem presentationHom_of_one :
+    presentationHom (PresentedGroup.of ⟨1, by simp⟩) = b⁻¹ :=
+  (GroupPresentation.homEquiv_symm_apply_of _ _ _).trans presentationImage_one
+
+/-- The range of `presentationHom` is the permutation model `J1`. -/
+theorem range_presentationHom : presentationHom.range = J1 := by
+  rw [← closure_range_presentationImage, presentationHom, GroupPresentation.range_homEquiv_symm,
+    Subtype.coe_mk, groupImage_eq, EquivLike.range_comp]
 
 -- Direction and product checks on the literal image data.
 example : b 0 = 145 := by decide +kernel

@@ -38,9 +38,6 @@ of the multiplication image with products of points of the two source subgroups.
 
 * A. Borel, *Linear Algebraic Groups*, Theorem 4.8 and Proposition 14.4.
 * T. A. Springer, *Linear Algebraic Groups*, Proposition 2.4.12.
-
-This supplies the representation-theoretic product step in Layer 5, "The unipotent radical", of
-the ReductiveGroups roadmap.
 -/
 
 public section
@@ -89,7 +86,7 @@ private theorem exists_common_fixed_vector_of_normal_isUnipotent_aux
     rwa [heq]
   obtain ⟨y, hy, hyW⟩ :=
     _root_.Representation.exists_common_fixed_vector_of_isUnipotent rhoW hW'
-  refine ⟨y, fun h ↦ hy (Subtype.ext h), y.2, fun w ↦ ?_⟩
+  refine ⟨y, fun h ↦ hy (Subtype.ext h), y.property, fun w ↦ ?_⟩
   exact congrArg Subtype.val (hyW w)
 
 /-- **Common fixed vector for two unipotent subgroups, one normalized by the other.**
@@ -107,14 +104,14 @@ theorem exists_common_fixed_vector_of_le_normalizer_isUnipotent
   let rhoJ : Representation K (W ⊔ U : Subgroup G) V := rho.comp (W ⊔ U).subtype
   let _ : U'.Normal := Subgroup.normal_subgroupOf_sup_of_le_normalizer hWU
   have hU' (u : U') : IsNilpotent (rhoJ u - 1) := by
-    exact hU ⟨u, u.2⟩
+    exact hU ⟨u, u.property⟩
   have hW' (w : W') : IsNilpotent (rhoJ w - 1) := by
-    exact hW ⟨w, w.2⟩
+    exact hW ⟨w, w.property⟩
   obtain ⟨x, hx, hxU, hxW⟩ :=
     rhoJ.exists_common_fixed_vector_of_normal_isUnipotent_aux U' W' hU' hW'
   refine ⟨x, hx, fun u ↦ ?_, fun w ↦ ?_⟩
-  · exact hxU (⟨⟨u, (le_sup_right : U ≤ W ⊔ U) u.2⟩, u.2⟩ : U')
-  · exact hxW (⟨⟨w, (le_sup_left : W ≤ W ⊔ U) w.2⟩, w.2⟩ : W')
+  · exact hxU (⟨⟨u, (le_sup_right : U ≤ W ⊔ U) u.property⟩, u.property⟩ : U')
+  · exact hxW (⟨⟨w, (le_sup_left : W ≤ W ⊔ U) w.property⟩, w.property⟩ : W')
 
 /-- If one subgroup is normalized by a second subgroup, they generate the ambient group, and each
 acts unipotently, then the whole group acts unipotently. -/
@@ -197,11 +194,11 @@ theorem isNilpotent_sub_one_of_mem_sup_of_le_normalizer_isUnipotent
     ext x
     simp only [Subgroup.mem_comap, Subgroup.mem_top, iff_true]
     rw [sup_comm]
-    exact x.2
+    exact x.property
   have hU' (u : U') : IsNilpotent (rhoJ u - 1) := by
-    exact hU ⟨u, u.2⟩
+    exact hU ⟨u, u.property⟩
   have hW' (w : W') : IsNilpotent (rhoJ w - 1) := by
-    exact hW ⟨w, w.2⟩
+    exact hW ⟨w, w.property⟩
   have hgJ : g ∈ J := by
     have hJ : J = U ⊔ W := sup_comm W U
     rw [hJ]

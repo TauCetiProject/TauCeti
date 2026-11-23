@@ -25,9 +25,8 @@ ambient Lie algebra; only its generated subalgebra acts in the argument.
 
 The result is the rank-one symmetry needed for Weyl invariance of weight multiplicities. For a root
 `α`, restriction to its `sl₂` triple identifies the reflection of a weight `λ` with the opposite
-weight on the corresponding `α`-string. Applying the theorem below to every such string gives the
-direct rank-one proof required by Layer 2 of the highest-weight roadmap, independently of Weyl's
-complete reducibility theorem.
+weight on the corresponding `α`-string. Applying the theorem below to every such string gives a
+direct rank-one proof, independently of Weyl's complete reducibility theorem.
 
 The construction uses `TauCeti.exists_isInternal_isIrreducible` to decompose the module under the
 generated `sl₂`. On each irreducible summand,
@@ -46,9 +45,6 @@ algebraic closure, which leaves both eigenspace dimensions unchanged.
   the triple, an eigenvalue of `h` is an integer and its negative is an eigenvalue too.
 
 ## References
-
-This is the rank-one input to the "Weyl-invariance of multiplicities, directly from `sl₂`" target
-in Layer 2 of `TauCetiRoadmap/RepresentationTheory/LieHighestWeight/README.md`.
 
 See J. E. Humphreys, *Introduction to Lie Algebras and Representation Theory*, §13.2.
 -/
@@ -237,7 +233,7 @@ theorem exists_int_and_toEnd_apply_eq_neg_smul (t : IsSl2Triple h e f) {x : H}
     rw [hbot, finrank_bot] at hsym
     exact hnB (Submodule.finrank_eq_zero.1 hsym)
   obtain ⟨u, humem, hu0⟩ := (Submodule.ne_bot_iff _).1 hnegB
-  refine ⟨m, hm, u, u.2, fun h0 ↦ hu0 (Subtype.ext h0), ?_⟩
+  refine ⟨m, hm, u, u.property, fun h0 ↦ hu0 (Subtype.ext h0), ?_⟩
   have h2 := congrArg Subtype.val (Module.End.mem_eigenspace_iff.1 humem)
   rw [hBA] at h2
   exact h2

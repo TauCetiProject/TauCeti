@@ -287,13 +287,13 @@ theorem gnsHamiltonian_hasCore :
     rintro _ ⟨a, ha, rfl⟩
     simpa using α.toPreGNS_mem_gnsHamiltonian_domain hf ⟨a, ha⟩
   -- Each point of the graph of `H` is a limit of points of the graph of the restriction.
-  refine .of_graph_subset_closure (α.isSelfAdjoint_gnsHamiltonian hf).isClosed hS ?_
+  refine ((α.isSelfAdjoint_gnsHamiltonian hf).isClosed.hasCore_iff_graph_subset_closure hS).2 ?_
   intro p hp
   obtain ⟨ξ, rfl⟩ := H.mem_graph_iff'.mp hp
   obtain ⟨b, hb, hHb⟩ := α.exists_tendsto_gnsHamiltonian hf ξ
   refine mem_closure_of_tendsto (hb.prodMk_nhds hHb) (Eventually.of_forall fun n => ?_)
   have hmem : (f.toPreGNS (b n) : f.GNS) ∈ (H.domRestrict S).domain :=
-    ⟨Submodule.mem_map.mpr ⟨b n, (b n).2, by simp⟩,
+    ⟨Submodule.mem_map.mpr ⟨b n, (b n).property, by simp⟩,
       α.toPreGNS_mem_gnsHamiltonian_domain hf (b n)⟩
   exact (H.domRestrict S).mem_graph_iff.mpr
     ⟨⟨_, hmem⟩, rfl, LinearPMap.domRestrict_apply rfl⟩

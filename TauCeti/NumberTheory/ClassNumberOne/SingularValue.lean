@@ -86,7 +86,7 @@ private theorem false_of_norm_le {τ : ℍ} {v : ℂ} (hj : j τ = v ^ 3) {α α
   have hQ := div_le_div₀ (hA.trans hq') hq' (by linarith) (by linarith : 1 - 2 * α' ≤ 1 - 2 * A)
   have hP : (1 + A / (1 - 2 * A)) ^ 24 ≤ U := le_trans (by gcongr) hU
   have hx : ‖siegelFunction ![0, 1 / 2] τ ^ 12‖ ≤ 4096 * A * U :=
-    (norm_siegelFunction_zero_half_pow_twelve_le τ.im_pos (by linarith)).trans (by gcongr)
+    (norm_siegelFunction_zero_half_pow_twelve_le (by linarith)).trans (by gcongr)
   set t := ‖siegelFunction ![0, 1 / 2] τ ^ 12‖
   have ht : t ≤ 4096 * α * U := hx.trans (by gcongr)
   -- `16 - t ≤ |x + 16|`.
@@ -120,8 +120,8 @@ private theorem false_of_le_norm {τ : ℍ} {v : ℂ} (hj : j τ = v ^ 3) {α β
   have hQ := div_le_div₀ hα₀ hq (by linarith) (by linarith : 1 - 2 * α ≤ 1 - 2 * A)
   have hP : (1 + A / (1 - 2 * A)) ^ 24 ≤ U := le_trans (by gcongr) hU
   have hP' : L ≤ (1 - A / (1 - 2 * A)) ^ 24 := hL.trans (by gcongr)
-  have hlo := le_norm_siegelFunction_zero_half_pow_twelve τ.im_pos (by linarith)
-  have hhi := norm_siegelFunction_zero_half_pow_twelve_le τ.im_pos (by linarith)
+  have hlo := le_norm_siegelFunction_zero_half_pow_twelve (by linarith)
+  have hhi := norm_siegelFunction_zero_half_pow_twelve_le (by linarith)
   set t := ‖siegelFunction ![0, 1 / 2] τ ^ 12‖
   have ha : 4096 * β * L ≤ t := le_trans (by gcongr) hlo
   have hb : t ≤ 4096 * α * U := hhi.trans (by gcongr)
@@ -156,7 +156,7 @@ private theorem exp_neg_le_of_le {x c : ℝ} (k : ℕ) (hc : 0 ≤ c) (hx : k + 
     positivity
   calc Real.exp (-x) ≤ Real.exp (-(k + c)) := Real.exp_le_exp.2 (by linarith)
     _ = (Real.exp 1 ^ k * Real.exp c)⁻¹ := by
-      rw [Real.exp_neg, Real.exp_add, ← Real.exp_nat_mul, mul_one]
+      rw [Real.exp_neg, Real.exp_add, ← Real.exp_natCast_mul, mul_one]
     _ ≤ _ := inv_anti₀ (by positivity) (mul_le_mul (pow_le_pow_left₀ (by norm_num)
       Real.exp_one_gt_d9.le k) (Real.sum_le_exp_of_nonneg hc 6) hS.le (by positivity))
 
@@ -169,7 +169,7 @@ private theorem le_exp_neg_of_le {x d : ℝ} (k : ℕ) (hd : 0 ≤ d) (hx : x �
         · exact Real.sum_le_exp_of_nonneg hd 6
         · exact Real.exp_one_lt_d9.le
     _ = Real.exp (-(k - d)) := by
-      rw [← Real.exp_nat_mul, mul_one, ← Real.exp_sub]
+      rw [← Real.exp_natCast_mul, mul_one, ← Real.exp_sub]
       ring_nf
     _ ≤ Real.exp (-x) := Real.exp_le_exp.2 (by linarith)
 

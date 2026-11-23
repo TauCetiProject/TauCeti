@@ -7,15 +7,18 @@ module
 
 public import Mathlib.LinearAlgebra.RootSystem.Chain
 
+import TauCeti.LinearAlgebra.RootSystem.PairingInvariance
+
 /-!
 # Invariance under homomorphisms of root pairings
 
 A homomorphism `f : P.Hom P₂` of root pairings consists of a linear map of weight spaces,
 its transpose on coweight spaces, and a bijection `f.indexEquiv` of the indexing sets, subject to
-`f.weightMap (P.root i) = P₂.root (f.indexEquiv i)`. The index bijection preserves Cartan pairings
-and commutes with root reflections. When the weight map is injective, it also preserves and
-reflects root membership, additive relations between roots, linear independence, and the
-root-string coefficients `RootPairing.chainTopCoeff` and `RootPairing.chainBotCoeff`.
+`f.weightMap (P.root i) = P₂.root (f.indexEquiv i)`. The index bijection preserves Cartan pairings,
+commutes with root reflections, and (for finite crystallographic pairings in characteristic zero)
+preserves the root-string coefficients `RootPairing.chainTopCoeff` and `RootPairing.chainBotCoeff`.
+When the weight map is injective, it also preserves and reflects root membership, additive relations
+between roots, and linear independence.
 
 The weight map need not be surjective: these results also apply when the target has extra toral
 directions outside the span of its roots. An equivalence of root pairings supplies the injectivity
@@ -34,7 +37,7 @@ weight-space vectors.
 * `RootPairing.Hom.isValuedIn`: the target root pairing takes values in any coefficient ring in
   which the source root pairing takes values.
 * `RootPairing.Hom.pairingIn_indexEquiv`: the index bijection preserves pairings valued in a
-  coefficient subring.
+  coefficient ring.
 * `RootPairing.Hom.indexEquiv_reflectionPerm`: it commutes with `RootPairing.reflectionPerm`, and
   therefore with the negation of an index, which is `RootPairing.reflectionPerm i i` by definition
   and is rewritten to that form by the `simp` lemma `RootPairing.indexNeg_neg`.
@@ -42,9 +45,14 @@ weight-space vectors.
   `RootPairing.Hom.root_indexEquiv_eq_sub_iff`: it preserves and reflects the relations
   `α = β + γ` and `α = β - γ` between roots.
 * `RootPairing.Hom.linearIndependent_root_indexEquiv_iff`: it preserves and reflects linear
-  independence of a pair of roots.
+  independence of a pair of roots; consequently `RootPairing.Hom.isReduced` and
+  `RootPairing.Equiv.isReduced` transport reducedness to the target pairing.
 * `RootPairing.Hom.chainTopCoeff_indexEquiv` and `RootPairing.Hom.chainBotCoeff_indexEquiv`: it
   preserves the two root-string coefficients.
+* `RootPairing.Hom.coroot'_weightMap` and `RootPairing.Hom.weightMap_reflection`: the weight map
+  preserves coroot values and intertwines the reflection at a root with the reflection at its
+  image. These generalise Mathlib's `RootPairing.Equiv.coroot'_weightEquiv` and
+  `RootPairing.Equiv.weightEquiv_reflection` from equivalences to morphisms.
 
 These invariance facts show that an automorphism of a root system permutes the matrices of Geck's
 construction, as developed in `TauCeti.LinearAlgebra.RootSystem.GeckConstruction.Symmetry`.
@@ -78,15 +86,14 @@ theorem isValuedIn (f : P.Hom P₂) (S : Type*) [CommRing S] [Algebra S R]
     exact P.exists_value i j
 
 /-- The index bijection of a homomorphism of root pairings preserves the pairing valued in a
-coefficient subring. -/
+coefficient ring. The map `S → R` need not be injective: `RootPairing.pairingIn` is chosen from
+the pairing in `R` alone, which `f` preserves. -/
 @[simp]
 theorem pairingIn_indexEquiv (f : P.Hom P₂) (S : Type*) [CommRing S] [Algebra S R]
-    [FaithfulSMul S R] [P.IsValuedIn S] (i j : ι) :
+    [P.IsValuedIn S] (i j : ι) :
     letI := f.isValuedIn S
     P₂.pairingIn S (f.indexEquiv i) (f.indexEquiv j) = P.pairingIn S i j := by
-  let := f.isValuedIn S
-  refine FaithfulSMul.algebraMap_injective S R ?_
-  rw [algebraMap_pairingIn, algebraMap_pairingIn, f.pairing]
+  simp only [pairingIn, f.pairing]
 
 /-- The index bijection of a homomorphism of root pairings commutes with root reflections. -/
 @[simp]
@@ -96,6 +103,26 @@ theorem indexEquiv_reflectionPerm (f : P.Hom P₂) (i j : ι) :
   refine P₂.root.injective ?_
   rw [← Hom.root_weightMap_apply]
   simp [root_reflectionPerm, reflection_apply_root, Hom.root_weightMap_apply]
+
+/-- The weight map of a homomorphism of root pairings preserves coroot values: pulling the coroot
+functional at `f.indexEquiv i` back along `f.weightMap` gives the coroot functional at `i`. This
+generalises Mathlib's `RootPairing.Equiv.coroot'_weightEquiv` from equivalences to morphisms. -/
+@[grind =]
+theorem coroot'_weightMap (f : P.Hom P₂) (i : ι) (x : M) :
+    P₂.coroot' (f.indexEquiv i) (f.weightMap x) = P.coroot' i x := by
+  simpa [coroot', Hom.coroot_coweightMap_apply] using
+    congrArg (fun g : Module.Dual R M ↦ g x)
+      (f.weight_coweight_transpose_apply P P₂ (P₂.coroot (f.indexEquiv i)))
+
+/-- The weight map of a homomorphism of root pairings intertwines the reflection at a root with
+the reflection at its image. This generalises Mathlib's `RootPairing.Equiv.weightEquiv_reflection`
+from equivalences to morphisms, with the same proof. -/
+theorem weightMap_reflection (f : P.Hom P₂) (i : ι) (x : M) :
+    f.weightMap (P.reflection i x) = P₂.reflection (f.indexEquiv i) (f.weightMap x) := by
+  rw [reflection_apply, reflection_apply, map_sub, map_smul, Hom.root_weightMap_apply,
+    coroot'_weightMap]
+
+section Injective
 
 variable (f : P.Hom P₂) (hf : Injective f.weightMap)
 include hf
@@ -133,43 +160,48 @@ theorem linearIndependent_root_indexEquiv_iff (i j : ι) :
   ext k
   fin_cases k <;> simp [Hom.root_weightMap_apply]
 
+/-- A homomorphism with injective weight map transports reducedness to the target. -/
+theorem isReduced [P.IsReduced] : P₂.IsReduced := by
+  rw [isReduced_iff']; intro i₂ j₂ hij hdep
+  obtain ⟨i, rfl⟩ := f.indexEquiv.surjective i₂
+  obtain ⟨j, rfl⟩ := f.indexEquiv.surjective j₂
+  rcases IsReduced.eq_or_eq_neg i j (mt (f.linearIndependent_root_indexEquiv_iff hf i j).mpr hdep)
+    with hroot | hroot
+  · exact absurd (congrArg f.indexEquiv (P.root.injective hroot)) hij
+  · rw [← Hom.root_weightMap_apply P P₂ i f, hroot, map_neg, Hom.root_weightMap_apply P P₂ j f]
+
+end Injective
+
 section Chain
 
-variable [Finite ι] [CharZero R] [IsDomain R] [P.IsCrystallographic]
+variable (f : P.Hom P₂) [Finite ι] [CharZero R] [IsDomain R] [P.IsCrystallographic]
 
-/-- The index bijection of a homomorphism with injective weight map preserves the number of times
-one may add `P.root i` to `P.root j` and stay among the roots. -/
+/-- The index bijection of a homomorphism of finite crystallographic root pairings preserves the
+number of times one may add `P.root i` to `P.root j` and stay among the roots. -/
 @[simp]
 theorem chainTopCoeff_indexEquiv (i j : ι) :
     letI := Finite.of_equiv ι f.indexEquiv
     letI := f.isValuedIn ℤ
     P₂.chainTopCoeff (f.indexEquiv i) (f.indexEquiv j) = P.chainTopCoeff i j := by
-  let := Finite.of_equiv ι f.indexEquiv
   let := f.isValuedIn ℤ
-  by_cases h : LinearIndependent R ![P.root i, P.root j]
-  · have h' := (f.linearIndependent_root_indexEquiv_iff hf i j).mpr h
-    refine eq_of_forall_le_iff fun n => ?_
-    rw [← P.root_add_nsmul_mem_range_iff_le_chainTopCoeff h,
-      ← P₂.root_add_nsmul_mem_range_iff_le_chainTopCoeff h',
-      ← f.weightMap_mem_range_root_iff hf]
-    simp only [map_add, map_nsmul, Hom.root_weightMap_apply]
-  · rw [chainTopCoeff_of_not_linearIndependent h, chainTopCoeff_of_not_linearIndependent
-      ((f.linearIndependent_root_indexEquiv_iff hf i j).not.mpr h)]
+  exact chainTopCoeff_eq_of_pairingIn f.indexEquiv (f.pairingIn_indexEquiv ℤ) i j
 
-/-- The index bijection of a homomorphism with injective weight map preserves the number of times
-one may subtract `P.root i` from `P.root j` and stay among the roots. -/
+/-- The index bijection of a homomorphism of finite crystallographic root pairings preserves the
+number of times one may subtract `P.root i` from `P.root j` and stay among the roots. -/
 @[simp]
 theorem chainBotCoeff_indexEquiv (i j : ι) :
     letI := Finite.of_equiv ι f.indexEquiv
     letI := f.isValuedIn ℤ
     P₂.chainBotCoeff (f.indexEquiv i) (f.indexEquiv j) = P.chainBotCoeff i j := by
-  let := Finite.of_equiv ι f.indexEquiv
   let := f.isValuedIn ℤ
-  rw [← P₂.chainTopCoeff_reflectionPerm_left, ← P.chainTopCoeff_reflectionPerm_left,
-    ← f.indexEquiv_reflectionPerm, f.chainTopCoeff_indexEquiv hf]
+  exact chainBotCoeff_eq_of_pairingIn f.indexEquiv (f.pairingIn_indexEquiv ℤ) i j
 
 end Chain
 
 end Hom
+
+/-- An equivalence of root pairings transports reducedness from the source to the target. -/
+theorem Equiv.isReduced (e : P.Equiv P₂) [P.IsReduced] : P₂.IsReduced :=
+  e.toHom.isReduced e.bijective_weightMap.injective
 
 end RootPairing

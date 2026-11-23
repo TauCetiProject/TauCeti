@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.LieAlgebra.Root.Commutator.Basic
+public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.LieAlgebra.Root.Commutator.DoublyLaced
 public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.B.RankTwo.Positive
 import TauCeti.Algebra.Group.Subgroup.OrderedProduct
 
@@ -78,15 +78,11 @@ private theorem b2_positive_commutator_mem (A : CommAlgCat ℤ) (P : Subgroup
         (Multiplicative.ofAdd v)⁆ ∈ P := by
   by_cases h01 : i = 0 ∧ j = 1
   · rcases h01 with ⟨rfl, rfl⟩
-    have hc := commutatorElement_chevalleyRootSubgroup_of_root_eq_two_nsmul_add
+    have hc := commutatorElement_chevalleyRootSubgroup_of_ne_G2_of_root_eq_add_of_root_eq_add
       (t := B 2) (ht := ht) (α := b2Index 1) (β := b2Index 0) ρ M hM hnil
-      (γ := b2Index 2) (δ := b2Index 3)
+      (γ := b2Index 2) (δ := b2Index 3) (by simp)
       (by simpa only [one_smul] using b2_root_eq_nsmul_add (ht := ht) 1 0 2 1 (by decide))
-      (b2_root_eq_nsmul_add 1 0 3 2 (by decide))
-      (by simpa only [one_smul] using
-        b2_nsmul_add_nsmul_not_mem_range (ht := ht) 1 0 3 1 (by decide))
-      (by simpa only [one_smul] using
-        b2_nsmul_add_nsmul_not_mem_range (ht := ht) 1 0 1 2 (by decide)) A u v
+      (by simpa only [one_smul] using b2_root_eq_nsmul_add (ht := ht) 1 2 3 1 (by decide)) A u v
     exact hc.symm ▸ P.mul_mem (hP 2 (by decide) ⟨_, rfl⟩) (hP 3 (by decide) ⟨_, rfl⟩)
   by_cases h12 : i = 1 ∧ j = 2
   · rcases h12 with ⟨rfl, rfl⟩
@@ -175,22 +171,15 @@ theorem mem_biSup_posRoots_b2_iff_exists_list_prod_map (A : CommAlgCat ℤ)
     ⨆ γ ∈ S, (chevalleyRootSubgroup ρ M hM hnil γ A).range) hpos).trans hjoin
   rw [hjoin']
   let X := fun i : Fin 4 =>
-    (chevalleyRootSubgroup ρ M hM hnil (b2Index (Fin.castAdd 4 i)) A).range
-  have hc := mem_biSup_iff_exists_list_prod_map (X := X) (ht := id)
+    chevalleyRootSubgroup ρ M hM hnil (b2Index (Fin.castAdd 4 i)) A
+  have hc := mem_biSup_range_iff_exists_list_prod_map (X := X) (ht := id)
     (S := Finset.univ)
     (fun i _ j _ hij => by
       simpa only [Finset.mem_univ, iSup_true, Finset.mem_filter,
         true_and, id_eq, Set.mem_ofPred_eq] using
           commutator_range_chevalleyRootSubgroup_b2_le ρ M hM hnil A i j hij)
     hl (fun i => by simp [hlall i]) (g := g)
-  simp only [Finset.mem_univ, iSup_true] at hc
-  rw [hc]
-  constructor
-  · rintro ⟨f, hf, hprod⟩
-    choose u hu using hf
-    exact ⟨fun i => (u i).toAdd, by simpa only [ofAdd_toAdd, hu] using hprod⟩
-  · rintro ⟨u, hu⟩
-    exact ⟨_, fun i => ⟨Multiplicative.ofAdd (u i), rfl⟩, hu⟩
+  simpa only [Finset.mem_univ, iSup_true] using hc
 
 end
 

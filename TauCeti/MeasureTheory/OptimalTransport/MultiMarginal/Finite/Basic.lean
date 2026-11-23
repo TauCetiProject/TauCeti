@@ -17,8 +17,8 @@ probability mass function on the dependent product whose coordinate pushforwards
 This file packages that finite model, its independent product coupling, its real-valued cost, and
 the bridge to the measure-theoretic `TauCeti.MultiCoupling` API.
 
-These definitions supply the finite coupling infrastructure used by the multi-marginal duality
-development in Layer 2, item 6 of the optimal-transport roadmap.
+These definitions supply the finite coupling infrastructure used by the finite multi-marginal
+duality in `TauCeti.MeasureTheory.OptimalTransport.MultiMarginal.Finite.Duality`.
 -/
 
 public section
@@ -43,36 +43,36 @@ namespace FiniteMultiCoupling
 
 /-- Two finite multi-marginal couplings are equal when their point masses agree. -/
 @[ext]
-theorem ext {π σ : FiniteMultiCoupling μ} (h : ∀ x, π.1 x = σ.1 x) : π = σ := by
+theorem ext {π σ : FiniteMultiCoupling μ} (h : ∀ x, π.val x = σ.val x) : π = σ := by
   apply Subtype.ext
   exact PMF.ext h
 
 /-- The marginal condition, in its canonical pushforward form. -/
 @[simp]
-theorem map_eval (π : FiniteMultiCoupling μ) (i : ι) : π.1.map (Function.eval i) = μ i :=
-  π.2 i
+theorem map_eval (π : FiniteMultiCoupling μ) (i : ι) : π.val.map (Function.eval i) = μ i :=
+  π.property i
 
 /-- The measure of a finite multi-marginal coupling is a measure-theoretic multi-coupling of the
 measures associated to its marginals. -/
 theorem isMultiCoupling_toMeasure [∀ i, MeasurableSpace (X i)] (π : FiniteMultiCoupling μ) :
-    Measure.IsMultiCoupling π.1.toMeasure (fun i ↦ (μ i).toMeasure) := by
+    Measure.IsMultiCoupling π.val.toMeasure (fun i ↦ (μ i).toMeasure) := by
   constructor
   intro i
-  rw [PMF.toMeasure_map (Function.eval i) π.1 (measurable_pi_apply i), π.map_eval i]
+  rw [PMF.toMeasure_map (Function.eval i) π.val (measurable_pi_apply i), π.map_eval i]
 
 /-- A finite multi-marginal coupling, regarded as the bundled measure-theoretic coupling of the
 probability measures associated to its marginals. -/
 def toMultiCoupling [∀ i, MeasurableSpace (X i)]
     (π : FiniteMultiCoupling μ) :
     MultiCoupling (fun i ↦ (⟨(μ i).toMeasure, inferInstance⟩ : ProbabilityMeasure (X i))) :=
-  ⟨⟨π.1.toMeasure, inferInstance⟩, π.isMultiCoupling_toMeasure⟩
+  ⟨⟨π.val.toMeasure, inferInstance⟩, π.isMultiCoupling_toMeasure⟩
 
 /-- The measure underlying the bundled coupling associated to a finite coupling is the measure
 of its probability mass function. -/
 @[simp]
 theorem coe_toMultiCoupling [∀ i, MeasurableSpace (X i)]
     (π : FiniteMultiCoupling μ) :
-    (π.toMultiCoupling : ProbabilityMeasure (∀ i, X i)).toMeasure = π.1.toMeasure := (rfl)
+    (π.toMultiCoupling : ProbabilityMeasure (∀ i, X i)).toMeasure = π.val.toMeasure := (rfl)
 
 section Independent
 
@@ -84,16 +84,16 @@ def independent (μ : ∀ i, PMF (X i)) : FiniteMultiCoupling μ := by
   let _ : ∀ i, MeasurableSpace (X i) := fun _ ↦ ⊤
   let ν : ∀ i, ProbabilityMeasure (X i) := fun i ↦ ⟨(μ i).toMeasure, inferInstance⟩
   let π : MultiCoupling ν := MultiCoupling.pi ν
-  refine ⟨π.1.toMeasure.toPMF, fun i ↦ ?_⟩
+  refine ⟨π.val.toMeasure.toPMF, fun i ↦ ?_⟩
   rw [← PMF.toMeasure_inj]
-  rw [← PMF.toMeasure_map (Function.eval i) π.1.toMeasure.toPMF (measurable_pi_apply i)]
+  rw [← PMF.toMeasure_map (Function.eval i) π.val.toMeasure.toPMF (measurable_pi_apply i)]
   rw [Measure.toPMF_toMeasure]
-  exact π.2.marginal_eq i
+  exact π.property.marginal_eq i
 
 /-- The point mass of the independent coupling is the product of its marginal point masses. -/
 @[simp]
 theorem independent_apply (μ : ∀ i, PMF (X i)) (x : ∀ i, X i) :
-    (independent μ).1 x = ∏ i, μ i (x i) := by
+    (independent μ).val x = ∏ i, μ i (x i) := by
   simp only [independent, Measure.toPMF_apply]
   let _ : ∀ i, MeasurableSpace (X i) := fun _ ↦ ⊤
   have hpi :
@@ -123,11 +123,11 @@ variable [Fintype (∀ i, X i)]
 
 /-- The real cost of a finite multi-marginal coupling. -/
 def cost (c : (∀ i, X i) → ℝ) (π : FiniteMultiCoupling μ) : ℝ :=
-  ∑ x, c x * (π.1 x).toReal
+  ∑ x, c x * (π.val x).toReal
 
 /-- The defining finite-sum formula for the cost of a multi-marginal coupling. -/
 theorem cost_def (c : (∀ i, X i) → ℝ) (π : FiniteMultiCoupling μ) :
-    π.cost c = ∑ x, c x * (π.1 x).toReal := (rfl)
+    π.cost c = ∑ x, c x * (π.val x).toReal := (rfl)
 
 /-- Adding a constant to the cost adds that constant to every plan's cost. -/
 @[simp]
@@ -141,7 +141,7 @@ theorem cost_add_const (c : (∀ i, X i) → ℝ) (π : FiniteMultiCoupling μ) 
 coupling. -/
 theorem cost_eq_integral [∀ i, MeasurableSpace (X i)]
     [MeasurableSingletonClass (∀ i, X i)] (π : FiniteMultiCoupling μ)
-    (c : (∀ i, X i) → ℝ) : π.cost c = ∫ x, c x ∂π.1.toMeasure := by
+    (c : (∀ i, X i) → ℝ) : π.cost c = ∫ x, c x ∂π.val.toMeasure := by
   rw [PMF.integral_eq_sum, cost_def]
   simp only [smul_eq_mul, mul_comm]
 

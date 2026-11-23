@@ -161,8 +161,8 @@ theorem coe_weilDifferentialRepresentation_apply (ω : ↥(weilDifferentialSpace
 theorem repartitionDualComponent_weilDifferentialRepresentation
     (ω : ↥(weilDifferentialSpace k F')) (P : Place k F') (x : F') :
     repartitionDualComponent (weilDifferentialRepresentation k F F' σ ω :
-      Module.Dual k ↥(repartitionSpace k F')) (σ • P) (σ x) = repartitionDualComponent ω.1 P x :=
-  repartitionDualComponent_repartitionRepresentation_dual σ ω.1 P x
+      Module.Dual k ↥(repartitionSpace k F')) (σ • P) (σ x) = repartitionDualComponent ω.val P x :=
+  repartitionDualComponent_repartitionRepresentation_dual σ ω.val P x
 
 /-- **The action on Weil differentials is `σ`-semilinear over `F'`**, for the multiplication
 `TauCeti.weilDifferentialSpaceMul` that makes `Ω_F` an `F'`-vector space. -/

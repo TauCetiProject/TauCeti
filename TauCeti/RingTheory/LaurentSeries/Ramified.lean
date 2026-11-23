@@ -5,11 +5,13 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.CharP.Frobenius
 public import Mathlib.Data.PNat.Prime
 public import Mathlib.RingTheory.LaurentSeries
 public import Mathlib.RingTheory.PowerSeries.Expand
 public import TauCeti.Data.Rat.NumDenDvd
 public import TauCeti.RingTheory.HahnSeries.EmbDomain
+public import TauCeti.RingTheory.HahnSeries.Map
 public import TauCeti.RingTheory.LaurentSeries.Basic
 public import TauCeti.RingTheory.LaurentSeries.Convergence
 
@@ -51,8 +53,13 @@ definitionally equal to it, so the algebra maps here are assembled from the ring
 * `LaurentSeries.expand_coe`: `expand` extends `PowerSeries.expand`.
 * `LaurentSeries.valuation_expand`: over a field, expansion `X ↦ X ^ d` raises the valuation to
   the `d`-th power.
+* `LaurentSeries.continuous_expand`: expansion `X ↦ X ^ d` is continuous for the valuation
+  topology.
 * `FiniteField.LaurentSeries.expand_card`: over a finite field with `q` elements, the expansion
   `X ↦ X ^ q` of a Laurent series is its `q`-th power.
+* `LaurentSeries.mapRingHom_frobenius_expand`: over a commutative semiring of exponential
+  characteristic `d`, applying `frobenius R d` to the coefficients of `expand R d f` gives
+  `f ^ (d : ℕ)`.
 * `LaurentSeries.sum_single_mul_expand_contract`: reconstruction from congruence components.
 * `LaurentSeries.contract_eq_of_sum_eq`: uniqueness of the congruence components.
 * `LaurentSeries.contract_expand_mul`: `contract d (expand d g * h) r = g * contract d h r`.
@@ -224,6 +231,22 @@ theorem valuation_expand {K : Type*} [Field K] (d : ℕ+) (f : K⸨X⸩) :
   rw [TauCeti.LaurentSeries.valuation_eq_exp_neg_order hf,
     TauCeti.LaurentSeries.valuation_eq_exp_neg_order hf', h, ← WithZero.exp_nsmul, smul_neg]
 
+/-- Expansion `X ↦ X ^ d` is continuous for the valuation topology. -/
+theorem continuous_expand {K : Type*} [Field K] (d : ℕ+) : Continuous (expand K d) := by
+  refine continuous_of_continuousAt_zero (expand K d) ?_
+  rw [ContinuousAt, map_zero, TauCeti.tendsto_laurentSeries_iff_orderTop_sub]
+  intro a
+  filter_upwards [(TauCeti.tendsto_laurentSeries_iff_orderTop_sub id 0).mp Filter.tendsto_id
+    (max a 0)] with f hf
+  rw [id, sub_zero] at hf
+  rw [sub_zero, orderTop_expand]
+  calc (a : WithTop ℤ) ≤ ((max a 0 : ℤ) : WithTop ℤ) := WithTop.coe_le_coe.mpr (le_max_left a 0)
+    _ ≤ (d : ℕ) • ((max a 0 : ℤ) : WithTop ℤ) := by
+      rw [← WithTop.coe_nsmul, WithTop.coe_le_coe, nsmul_eq_mul]
+      have : (1 : ℤ) ≤ d := by exact_mod_cast d.pos
+      nlinarith [le_max_right a 0]
+    _ ≤ (d : ℕ) • f.orderTop := nsmul_le_nsmul_right hf d
+
 /-- Over a finite field with `q` elements, the expansion `X ↦ X ^ q` of a Laurent series is its
 `q`-th power. The modulus is given as a positive natural number `d` with `d = q`. -/
 theorem _root_.FiniteField.LaurentSeries.expand_card {K : Type*} [Field K] [Fintype K] (d : ℕ+)
@@ -231,6 +254,34 @@ theorem _root_.FiniteField.LaurentSeries.expand_card {K : Type*} [Field K] [Fint
   rw [← single_order_mul_powerSeriesPart f]
   simp [-single_order_mul_powerSeriesPart, expand_coe, FiniteField.PowerSeries.expand_card,
     mul_pow, single_pow, hd]
+
+/-- Over a commutative semiring `R` of exponential characteristic `d`, applying `frobenius R d` to
+the coefficients of `expand R d f` produces `f ^ (d : ℕ)`. -/
+theorem mapRingHom_frobenius_expand (d : ℕ+) [ExpChar R d] (f : R⸨X⸩) :
+    mapRingHom (frobenius R d) (expand R d f) = f ^ (d : ℕ) := by
+  rcases (expChar_iff R d).mp ‹ExpChar R d› with ⟨_, hd1⟩ | ⟨hp, hchar⟩
+  · obtain rfl : d = 1 := PNat.eq hd1
+    ext k
+    simp [frobenius_def]
+  · have : CharP R d := hchar
+    let : Neg R := ⟨fun x ↦ ((d - 1 : ℕ) : R) * x⟩
+    let : CommRing R :=
+      { ‹CommSemiring R› with
+        zsmul := zsmulRec
+        neg_add_cancel x := by
+          calc ((d - 1 : ℕ) : R) * x + x
+              = (((d - 1 : ℕ) + 1 : ℕ) : R) * x := by
+                rw [Nat.cast_add, Nat.cast_one, add_mul, one_mul]
+            _ = (d : R) * x := by rw [Nat.sub_add_cancel hp.one_le]
+            _ = 0 := by rw [CharP.cast_eq_zero, zero_mul] }
+    conv_lhs => rw [← single_order_mul_powerSeriesPart f]
+    conv_rhs => rw [← single_order_mul_powerSeriesPart f]
+    have hsingle : mapRingHom (frobenius R d) (single ((d : ℤ) * f.order) (1 : R)) =
+        single ((d : ℤ) * f.order) 1 := by
+      ext k
+      by_cases hk : k = (d : ℤ) * f.order <;> simp [hk]
+    rw [map_mul, map_mul, expand_single, hsingle, expand_coe, mapRingHom_apply, map_ofPowerSeries,
+      PowerSeries.map_frobenius_expand, map_pow, mul_pow, single_pow, one_pow, nsmul_eq_mul]
 
 /-! ### Contraction by exponent congruence classes -/
 

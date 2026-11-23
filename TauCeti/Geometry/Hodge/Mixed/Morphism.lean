@@ -46,9 +46,7 @@ theory feeds Deligne's bigrading and the strictness theorem.
 
 ## References
 
-Deligne, *Théorie de Hodge II*, §2.3; Peters–Steenbrink, *Mixed Hodge Structures*, Ch. 3. The
-morphism convention — a single rational map with the complex action derived — is the one
-specified for Layer L2 of the Hodge structures roadmap.
+Deligne, *Théorie de Hodge II*, §2.3; Peters–Steenbrink, *Mixed Hodge Structures*, Ch. 3.
 -/
 
 public section
@@ -470,7 +468,7 @@ noncomputable def gradedMap (f : Hom source target) (k : ℤ) :
 @[simp]
 theorem gradedMap_mk (f : Hom source target) (k : ℤ) (x : source.WQ k) :
     f.gradedMap k (Submodule.Quotient.mk x) =
-      Submodule.Quotient.mk ⟨f.toRatLinearMap x, f.map_mem_WQ k x x.2⟩ :=
+      Submodule.Quotient.mk ⟨f.toRatLinearMap x, f.map_mem_WQ k x x.property⟩ :=
   weightGradedRatMap_mk source.WQ target.WQ f.toRatLinearMap f.map_mem_WQ k x
 
 /-- The restriction of the complex action to a step of the complexified weight filtration. -/
@@ -493,7 +491,7 @@ theorem coe_restrictWC_apply (f : Hom source target) (k : ℤ)
 noncomputable def complexGradedMap (f : Hom source target) (k : ℤ) :
     weightGradedComplex (fun j ↦ rationalToComplexSubmodule hℚ hℂ (source.WQ j)) k →ₗ[ℂ]
       weightGradedComplex (fun j ↦ rationalToComplexSubmodule h'ℚ h'ℂ (target.WQ j)) k :=
-  weightGradedComplexMap _ _ f.toLinearMap (fun j x hx ↦ (f.restrictWC j ⟨x, hx⟩).2) k
+  weightGradedComplexMap _ _ f.toLinearMap (fun j x hx ↦ (f.restrictWC j ⟨x, hx⟩).property) k
 
 /-- The complex graded map sends the class of a vector to the class of its image. -/
 @[simp]
@@ -501,7 +499,7 @@ theorem complexGradedMap_mk (f : Hom source target) (k : ℤ)
     (x : rationalToComplexSubmodule hℚ hℂ (source.WQ k)) :
     f.complexGradedMap k (Submodule.Quotient.mk x) =
       Submodule.Quotient.mk (f.restrictWC k x) :=
-  weightGradedComplexMap_mk _ _ f.toLinearMap (fun j x hx ↦ (f.restrictWC j ⟨x, hx⟩).2) k x
+  weightGradedComplexMap_mk _ _ f.toLinearMap (fun j x hx ↦ (f.restrictWC j ⟨x, hx⟩).property) k x
 
 /-- **The comparison `TauCeti.Hodge.gradedComplexEquiv` is natural in the morphism**: the square
 formed by the two induced maps and that comparison commutes. -/
@@ -564,8 +562,8 @@ theorem complexGradedMap_comp (g : Hom target third) (f : Hom source target) (k 
         (fun j ↦ rationalToComplexSubmodule hℚ hℂ (source.WQ j))
         (fun j ↦ rationalToComplexSubmodule h'ℚ h'ℂ (target.WQ j))
         (fun j ↦ rationalToComplexSubmodule h''ℚ h''ℂ (third.WQ j))
-        f.toLinearMap (fun j x hx ↦ (f.restrictWC j ⟨x, hx⟩).2)
-        g.toLinearMap (fun j x hx ↦ (g.restrictWC j ⟨x, hx⟩).2) k
+        f.toLinearMap (fun j x hx ↦ (f.restrictWC j ⟨x, hx⟩).property)
+        g.toLinearMap (fun j x hx ↦ (g.restrictWC j ⟨x, hx⟩).property) k
 
 /-- Passage to the weight-graded pieces sends identities to identities. -/
 @[simp]

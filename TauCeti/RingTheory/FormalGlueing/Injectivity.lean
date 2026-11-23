@@ -26,7 +26,7 @@ the complementary principal opens, its kernel is ideal-power torsion. The torsio
 `TauCeti.primaryComponentEquivTensorProduct` identifies every element of that kernel with
 `1 ⊗ m` for an ideal-power torsion element `m` of the reconstruction. Injectivity on these
 elements then kills the kernel. Surjectivity, and hence reconstruction of arbitrary gluing
-objects, is a separate assertion.
+objects, is `LinearMap.isBaseChange_snd_ker_coprod_of_formalGlueing`.
 
 For the actual compatible-pairs module `ker (f.coprod (-g))`, the comparison to the
 prescribed module is injective whenever the comparison for `f` and the localizations of
@@ -92,7 +92,7 @@ theorem injective_liftBaseChange_iff_primaryComponent_and_localized (f : M →�
       obtain ⟨a, ha⟩ := (IsLocalizedModule.eq_zero_iff (.powers (algebraMap R S g))
         (LocalizedModule.mkLinearMap (.powers (algebraMap R S g)) (S ⊗[R] M))).mp
           (hxloc g hg)
-      obtain ⟨n, hn⟩ := a.2
+      obtain ⟨n, hn⟩ := a.property
       exact ⟨n, by simpa only [Submonoid.smul_def, ← hn] using ha⟩
     obtain ⟨m, hm⟩ := e.surjective ⟨x, hxtors⟩
     have hmx : (1 : S) ⊗ₜ[R] (m : M) = x := by

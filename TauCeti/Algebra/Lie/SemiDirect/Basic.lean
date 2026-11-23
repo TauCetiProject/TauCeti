@@ -181,7 +181,7 @@ noncomputable def semiDirectSumEquiv (h : IsCompl S.toSubmodule H.toSubmodule) :
 theorem semiDirectSumEquiv_apply (h : IsCompl S.toSubmodule H.toSubmodule)
     (z : ↥S ⋊⁅(ad S).comp H.incl⁆ ↥H) :
     semiDirectSumEquiv S H h z = (z.left : L) + (z.right : L) :=
-  (LieEquiv.ofBijective_toFun _ (semiDirectSumHom_bijective h) z).trans
+  (LieEquiv.ofBijective_apply _ (semiDirectSumHom_bijective h) z).trans
     (semiDirectSumHom_apply S H z)
 
 theorem semiDirectSumEquiv_inl (h : IsCompl S.toSubmodule H.toSubmodule) (s : S) :
@@ -276,7 +276,8 @@ theorem isCompl_idealOfLeNormalizer_comap_incl (hT' : T' ≤ T.normalizer)
     ext x
     exact Iff.rfl
   rw [hI, hH]
-  refine TauCeti.Submodule.isCompl_comap_subtype (U := T'.toSubmodule) hdisj ?_
+  refine (Submodule.isCompl_comap_subtype_iff (U := T'.toSubmodule)).2
+    ⟨hdisj.mono inf_le_right inf_le_right, ?_⟩
   rw [inf_eq_right.mpr hTT', inf_eq_right.mpr hHT']
   exact hsup.ge
 

@@ -39,10 +39,13 @@ obtained here are the covariant ones. Reversing the product would transpose ever
 Only the underlying data and its functoriality are built here: no object of
 `TauCeti.QuiverRep k Q` (`Paths Q ⥤ ModuleCat k`, in
 `TauCeti.RepresentationTheory.Quiver.Representation.Basic`) and no functor into it is assembled,
-and `TauCeti.dimVector` is not used. Two things are missing for that. First, `QuiverRep` is stated
-over a `Field k` while everything below needs only a `CommSemiring k`, so assembling the functor
-here would either restrict the results or duplicate them. Second, the assembly is the roadmap
-target `quiverRepEquivalence` itself, of which this file is the object-and-morphism half.
+and `TauCeti.dimVector` is not used. Two things keep that out of this file. First, `QuiverRep` is
+stated over a `Ring k` while everything below needs only a `CommSemiring k`, so assembling the
+functor here would either restrict the results or duplicate them. Second, that assembly is the
+equivalence `TauCeti.quiverRepEquivalence` itself, built in
+`TauCeti.RepresentationTheory.Quiver.Representation.OfModule` and
+`TauCeti.RepresentationTheory.Quiver.Representation.AsModule`, of which this file is the
+object-and-morphism half.
 
 ## Main definitions
 
@@ -70,13 +73,9 @@ target `quiverRepEquivalence` itself, of which this file is the object-and-morph
 
 ## References
 
-Layer 1 of `TauCetiRoadmap/RepresentationTheory/QuiverRepresentations/README.md`, whose
-`quiverRepEquivalence` "sends a module `M` to the representation `v ↦ eᵥ M`, with an arrow acting
-by left multiplication, and inverts through the idempotent decomposition `M = ⨁ᵥ eᵥ M` (available
-because `∑ᵥ eᵥ = 1`, hence the finiteness of the vertex set is load-bearing here)".
-
-The equivalence itself is classical; see Assem--Simson--Skowroński, *Elements of the Representation
-Theory of Associative Algebras I*, Ch. III, or Schiffler, *Quiver Representations*, Ch. 5.
+The equivalence between representations of `Q` and left `kQ`-modules is classical; see
+Assem--Simson--Skowroński, *Elements of the Representation Theory of Associative Algebras I*,
+Ch. III, or Schiffler, *Quiver Representations*, Ch. 5.
 -/
 
 public section
@@ -164,7 +163,7 @@ theorem pathMap_nil (a : Q) :
     pathMap k M (_root_.Quiver.Path.nil : _root_.Quiver.Path a a) = LinearMap.id := by
   ext x
   rw [coe_pathMap_apply, ← vertexIdempotent_eq_ofPath,
-    vertexIdempotent_smul_eq_self_of_mem_vertexComponent x.2]
+    vertexIdempotent_smul_eq_self_of_mem_vertexComponent x.property]
   simp
 
 /-- **Concatenation of paths is composition of the maps they act by.** Together with
@@ -295,7 +294,7 @@ theorem isInternal_vertexComponent :
   exact isInternal_smul_top (completeOrthogonalIdempotents_vertexIdempotent k Q)
 
 /-- **The component of `x` at `v` is `eᵥ • x`**: the inverse of the decomposition, read off one
-vertex at a time. This is the fact the roadmap's inversion of `quiverRepEquivalence` runs on. -/
+vertex at a time. -/
 @[simp]
 theorem coe_ofBijective_coeLinearMap_symm_apply_vertexComponent (x : M) (v : Q) :
     (((LinearEquiv.ofBijective (DirectSum.coeLinearMap fun w : Q => vertexComponent k M w)

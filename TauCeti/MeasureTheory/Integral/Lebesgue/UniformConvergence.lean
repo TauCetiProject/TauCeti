@@ -56,7 +56,7 @@ theorem _root_.TendstoUniformlyOn.tendsto_setLIntegral_enorm_clm_comp_sub
   refine tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds hlim
     (fun _ => zero_le) fun i => ?_
   have hmeas : AEMeasurable (fun x => ‖B' i x - B x‖ₑ) (μ.restrict s) :=
-    ((hB' i).sub hBm).enorm
+    ((hB' i).sub hBm).eNorm
   calc ∫⁻ x in s, ‖(A' i x).comp (B' i x) - (A x).comp (B x)‖ₑ ∂μ
       ≤ ∫⁻ x in s, ((e i + C) * ‖B' i x - B x‖ₑ + e i * ‖B x‖ₑ) ∂μ := by
         refine setLIntegral_mono' hs fun x hx =>
@@ -64,11 +64,11 @@ theorem _root_.TendstoUniformlyOn.tendsto_setLIntegral_enorm_clm_comp_sub
         have hex : ‖A' i x - A x‖ₑ ≤ e i :=
           le_iSup₂ (f := fun x (_ : x ∈ s) => ‖A' i x - A x‖ₑ) x hx
         have hCx : ‖A x‖ₑ ≤ C := by
-          simpa only [enorm_eq_nnnorm, ENNReal.coe_le_coe] using hAC x hx
+          simpa only [eNorm_eq_nnNorm, ENNReal.coe_le_coe] using hAC x hx
         calc _ ≤ e i * ‖B' i x - B x‖ₑ + e i * ‖B x‖ₑ + C * ‖B' i x - B x‖ₑ := by gcongr
           _ = _ := by ring
     _ = (e i + C) * ∫⁻ x in s, ‖B' i x - B x‖ₑ ∂μ + e i * ∫⁻ x in s, ‖B x‖ₑ ∂μ := by
         rw [lintegral_add_left' (hmeas.const_mul _), lintegral_const_mul'' _ hmeas,
-          lintegral_const_mul'' _ hBm.enorm]
+          lintegral_const_mul'' _ hBm.eNorm]
 
 end TauCeti

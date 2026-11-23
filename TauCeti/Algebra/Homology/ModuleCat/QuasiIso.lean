@@ -17,7 +17,11 @@ every degree-`n` cycle of `L` is the image of a cycle of `K` up to a boundary, a
 cycle of `K` whose image is a boundary is itself a boundary
 (`HomologicalComplex.moduleCat_quasiIsoAt_iff`, and `CochainComplex.moduleCat_quasiIsoAt_iff` for
 cochain complexes indexed by `ℤ`). These are surjectivity and injectivity of the
-induced map on homology, written on representatives.
+induced map on homology, written on representatives; the first condition alone is surjectivity
+(`HomologicalComplex.moduleCat_epi_homologyMap_iff`). Read through these conditions, homology
+commutes with directed unions: a chain map which restricts to quasi-isomorphisms on the stages of a
+directed exhaustion of its source and target by subcomplexes is a quasi-isomorphism
+(`HomologicalComplex.moduleCat_quasiIso_of_forall_exists`).
 
 For the cochain complexes `TauCeti.gradedCochainComplex` assembled from graded modules, the two
 conditions in all degrees combine into one statement about homogeneous elements
@@ -28,9 +32,14 @@ quasi-isomorphism can be propagated along a filtration one generator degree at a
 
 ## Main results
 
+* `HomologicalComplex.moduleCat_epi_homologyMap_iff`: surjectivity on homology in one degree, on
+  elements.
 * `HomologicalComplex.moduleCat_quasiIsoAt_iff`: quasi-isomorphisms in one degree, on elements.
 * `CochainComplex.moduleCat_quasiIsoAt_iff`: the same for cochain complexes indexed by `ℤ`, with
   neighbouring degrees `n - 1` and `n + 1`.
+* `HomologicalComplex.moduleCat_quasiIso_of_forall_exists`: a chain map that restricts to
+  quasi-isomorphisms on a directed exhaustion of its source and target by subcomplexes is a
+  quasi-isomorphism.
 * `TauCeti.quasiIso_gradedCochainComplexHom_iff`: quasi-isomorphisms of graded cochain complexes
   are the maps whose relative cycles are relative boundaries.
 -/
@@ -43,6 +52,45 @@ namespace HomologicalComplex
 
 variable {R : Type*} [Ring R] {ι : Type*} {c : ComplexShape ι}
   {K L : HomologicalComplex (ModuleCat R) c}
+
+/-- **Surjectivity on homology for complexes of modules, on elements.** A chain map `φ` of
+complexes of modules induces an epimorphism on degree-`n` homology exactly when every degree-`n`
+cycle `y` of `L` is `φ x + d b` for a cycle `x` of `K`. Here `p = c.prev n` and `m = c.next n`. -/
+theorem moduleCat_epi_homologyMap_iff (φ : K ⟶ L) {n p m : ι} (hp : c.prev n = p)
+    (hm : c.next n = m) :
+    Epi (homologyMap φ n) ↔
+      ∀ y : L.X n, L.d n m y = 0 →
+        ∃ x : K.X n, K.d n m x = 0 ∧ ∃ b : L.X p, L.d p n b = y - φ.f n x := by
+  have hmap (x : K.X n) (hx : K.d n m x = 0) :
+      homologyMap φ n (K.homologyπ n (K.moduleCatCyclesMk x m hm hx)) =
+        L.homologyπ n (L.moduleCatCyclesMk (φ.f n x) m hm
+          (by rw [Hom.comm_apply, hx, map_zero])) :=
+    homologyMap_homologyπ_moduleCatCyclesMk φ x m hm hx
+  rw [ModuleCat.epi_iff_surjective]
+  constructor
+  · intro hsurj y hy
+    obtain ⟨z, hz⟩ := hsurj (L.homologyπ n (L.moduleCatCyclesMk y m hm hy))
+    obtain ⟨x, hx, rfl⟩ := K.exists_homologyπ_moduleCatCyclesMk_eq m hm z
+    have hyx : L.d n m (y - φ.f n x) = 0 := by
+      rw [map_sub, hy, Hom.comm_apply, hx, map_zero, sub_zero]
+    refine ⟨x, hx, ?_⟩
+    -- The cycle `y - φ x` has zero homology class, so it is a boundary.
+    have hsub : L.moduleCatCyclesMk (y - φ.f n x) m hm hyx =
+        L.moduleCatCyclesMk y m hm hy - L.moduleCatCyclesMk (φ.f n x) m hm
+          (by rw [Hom.comm_apply, hx, map_zero]) :=
+      L.moduleCat_iCycles_injective n (by simp only [map_sub, iCycles_moduleCatCyclesMk])
+    obtain ⟨b, hb⟩ := (L.moduleCat_homologyπ_eq_zero_iff hp
+      (L.moduleCatCyclesMk (y - φ.f n x) m hm hyx)).1
+      (by rw [hsub, map_sub, ← hmap x hx, hz, sub_self])
+    refine ⟨b, ?_⟩
+    rw [← moduleCat_iCycles_toCycles_apply, hb, iCycles_moduleCatCyclesMk]
+  · intro hsurj z
+    obtain ⟨y, hy, rfl⟩ := L.exists_homologyπ_moduleCatCyclesMk_eq m hm z
+    obtain ⟨x, hx, b, hb⟩ := hsurj y hy
+    refine ⟨K.homologyπ n (K.moduleCatCyclesMk x m hm hx), ?_⟩
+    rw [hmap]
+    exact L.moduleCat_homologyπ_eq_of_iCycles_sub_eq_d (-b) (by
+      rw [iCycles_moduleCatCyclesMk, iCycles_moduleCatCyclesMk, map_neg, hb, neg_sub])
 
 /-- **Quasi-isomorphisms of complexes of modules, on elements.** A chain map `φ` of complexes of
 modules is a quasi-isomorphism in degree `n` exactly when every degree-`n` cycle `y` of `L` is
@@ -67,35 +115,59 @@ theorem moduleCat_quasiIsoAt_iff (φ : K ⟶ L) {n p m : ι} (hp : c.prev n = p)
         L.homologyπ n (L.moduleCatCyclesMk (φ.f n x) m hm
           (by rw [Hom.comm_apply, hx, map_zero])) :=
     homologyMap_homologyπ_moduleCatCyclesMk φ x m hm hx
-  rw [quasiIsoAt_iff_isIso_homologyMap, ConcreteCategory.isIso_iff_bijective]
-  constructor
-  · rintro ⟨hinj, hsurj⟩
-    refine ⟨fun y hy ↦ ?_, fun x hx b hb ↦ ?_⟩
-    · obtain ⟨z, hz⟩ := hsurj (L.homologyπ n (L.moduleCatCyclesMk y m hm hy))
-      obtain ⟨x, hx, rfl⟩ := K.exists_homologyπ_moduleCatCyclesMk_eq m hm z
-      have hyx : L.d n m (y - φ.f n x) = 0 := by
-        rw [map_sub, hy, Hom.comm_apply, hx, map_zero, sub_zero]
-      refine ⟨x, hx, (hzero _ hyx).1 ?_⟩
-      have hsub : L.moduleCatCyclesMk (y - φ.f n x) m hm hyx =
-          L.moduleCatCyclesMk y m hm hy - L.moduleCatCyclesMk (φ.f n x) m hm
-            (by rw [Hom.comm_apply, hx, map_zero]) :=
-        L.moduleCat_iCycles_injective n (by simp only [map_sub, iCycles_moduleCatCyclesMk])
-      rw [hsub, map_sub, ← hmap x hx, hz, sub_self]
-    · exact (hzero x hx).1 (hinj ((hmap x hx).trans
-        (((hzero _ _).2 ⟨b, hb⟩).trans (map_zero _).symm)))
-  · rintro ⟨hsurj, hinj⟩
-    refine ⟨(injective_iff_map_eq_zero (homologyMap φ n).hom).2 fun z hz ↦ ?_, fun z ↦ ?_⟩
-    · obtain ⟨x, hx, rfl⟩ := K.exists_homologyπ_moduleCatCyclesMk_eq m hm z
-      have hz' : homologyMap φ n (K.homologyπ n (K.moduleCatCyclesMk x m hm hx)) = 0 := hz
-      rw [hmap, hzero] at hz'
-      obtain ⟨b, hb⟩ := hz'
-      exact (hzero x hx).2 (hinj x hx b hb)
-    · obtain ⟨y, hy, rfl⟩ := L.exists_homologyπ_moduleCatCyclesMk_eq m hm z
-      obtain ⟨x, hx, b, hb⟩ := hsurj y hy
-      refine ⟨K.homologyπ n (K.moduleCatCyclesMk x m hm hx), ?_⟩
-      rw [hmap]
-      exact L.moduleCat_homologyπ_eq_of_iCycles_sub_eq_d (-b) (by
-        rw [iCycles_moduleCatCyclesMk, iCycles_moduleCatCyclesMk, map_neg, hb, neg_sub])
+  rw [quasiIsoAt_iff_isIso_homologyMap, ConcreteCategory.isIso_iff_bijective,
+    ← moduleCat_epi_homologyMap_iff φ hp hm, ModuleCat.epi_iff_surjective]
+  refine and_comm.trans (and_congr Iff.rfl ⟨fun hinj x hx b hb ↦ ?_, fun hinj ↦ ?_⟩)
+  · exact (hzero x hx).1 (hinj ((hmap x hx).trans
+      (((hzero _ _).2 ⟨b, hb⟩).trans (map_zero _).symm)))
+  · refine (injective_iff_map_eq_zero (homologyMap φ n).hom).2 fun z hz ↦ ?_
+    obtain ⟨x, hx, rfl⟩ := K.exists_homologyπ_moduleCatCyclesMk_eq m hm z
+    have hz' : homologyMap φ n (K.homologyπ n (K.moduleCatCyclesMk x m hm hx)) = 0 := hz
+    rw [hmap, hzero] at hz'
+    obtain ⟨b, hb⟩ := hz'
+    exact (hzero x hx).2 (hinj x hx b hb)
+
+/-- **Quasi-isomorphisms pass to exhaustive unions, on elements.** Let `φ : K ⟶ L` be a chain map
+of complexes of modules, and let `φ' i : K' i ⟶ L' i` be quasi-isomorphisms with degreewise
+injective chain maps `a i : K' i ⟶ K` and `b i : L' i ⟶ L` intertwining `φ' i` with `φ`. If every
+element of `K` and every element of `L` lie in the images of `a i` and `b i` for a common index
+`i`, as for the inclusions of a directed family of subcomplexes exhausting `K` and `L`, then `φ`
+is a quasi-isomorphism.
+
+This is the commutation of homology with such directed unions, stated on elements. -/
+theorem moduleCat_quasiIso_of_forall_exists {ι' : Type*} (φ : K ⟶ L)
+    {K' L' : ι' → HomologicalComplex (ModuleCat R) c} (φ' : ∀ i, K' i ⟶ L' i)
+    (hφ' : ∀ i, QuasiIso (φ' i)) (a : ∀ i, K' i ⟶ K) (b : ∀ i, L' i ⟶ L)
+    (hab : ∀ i, φ' i ≫ b i = a i ≫ φ) (ha : ∀ i n, Function.Injective ((a i).f n))
+    (hb : ∀ i n, Function.Injective ((b i).f n))
+    (hex : ∀ n p (x : K.X n) (y : L.X p),
+      ∃ i, (∃ x', (a i).f n x' = x) ∧ ∃ y', (b i).f p y' = y) :
+    QuasiIso φ := by
+  -- `φ' i` followed by `b i` is `a i` followed by `φ`, on elements.
+  have hab' (i : ι') (n : ι) (x' : (K' i).X n) : (b i).f n ((φ' i).f n x') = φ.f n ((a i).f n x') :=
+    by rw [← ModuleCat.comp_apply, ← comp_f, hab, comp_f, ModuleCat.comp_apply]
+  rw [quasiIso_iff]
+  intro n
+  refine (moduleCat_quasiIsoAt_iff φ rfl rfl).2 ⟨fun y hy ↦ ?_, fun x hx z hz ↦ ?_⟩
+  · -- A cycle `y` of `L` comes from a cycle `y'` of some `L' i`, which `φ' i` hits up to a
+    -- boundary.
+    obtain ⟨i, -, y', rfl⟩ := hex n n 0 y
+    have hy' : (L' i).d n (c.next n) y' = 0 :=
+      hb i _ (by rw [← Hom.comm_apply, hy, map_zero])
+    obtain ⟨x', hx', w', hw'⟩ :=
+      ((moduleCat_quasiIsoAt_iff (φ' i) rfl rfl).1 ((hφ' i).quasiIsoAt n)).1 y' hy'
+    refine ⟨(a i).f n x', by rw [Hom.comm_apply, hx', map_zero], (b i).f _ w', ?_⟩
+    rw [Hom.comm_apply, hw', map_sub, hab']
+  · -- A cycle `x` of `K` with `φ x = d z`: see `x` and `z` at a common stage `i`, where the cycle
+    -- `x'` over `x` has image `d z'`, so it bounds there.
+    obtain ⟨i, ⟨x', rfl⟩, z', rfl⟩ := hex n _ x z
+    have hx' : (K' i).d n (c.next n) x' = 0 :=
+      ha i _ (by rw [← Hom.comm_apply, hx, map_zero])
+    have hz' : (L' i).d (c.prev n) n z' = (φ' i).f n x' :=
+      hb i n (by rw [← Hom.comm_apply, hz, hab'])
+    obtain ⟨u', hu'⟩ :=
+      ((moduleCat_quasiIsoAt_iff (φ' i) rfl rfl).1 ((hφ' i).quasiIsoAt n)).2 x' hx' z' hz'
+    exact ⟨(a i).f _ u', by rw [Hom.comm_apply, hu']⟩
 
 end HomologicalComplex
 
@@ -129,12 +201,11 @@ variable {R : Type uR} {M N : Type uM} [Ring R] [AddCommGroup M] [Module R M]
 /-- The forward direction of `TauCeti.quasiIso_gradedCochainComplexHom_iff`: a quasi-isomorphism
 makes every relative cycle a relative boundary. -/
 private theorem exists_relative_boundary_of_quasiIso_gradedCochainComplexHom (f : M →ₗ[R] N)
-    (hf : LinearMap.IsHomogeneous f ℳ 𝒩 0) (hcomm : dN ∘ₗ f = f ∘ₗ dM)
+    (hf : LinearMap.IsHomogeneous f ℳ 𝒩 0) (hcomm : ∀ p (x : ℳ p), dN (f x) = f (dM x))
     (hq : QuasiIso (gradedCochainComplexHom (hdeg := hdeg) (hsq := hsq) (hdegN := hdegN)
       (hsqN := hsqN) f hf hcomm)) :
     ∀ n (x : M) (y : N), x ∈ ℳ (n + 1) → y ∈ 𝒩 n → dM x = 0 → f x = dN y →
       ∃ u ∈ ℳ n, ∃ v ∈ 𝒩 (n - 1), dM u = x ∧ f u + dN v = y := by
-  have hfd (x : M) : dN (f x) = f (dM x) := LinearMap.congr_fun hcomm x
   rw [_root_.quasiIso_iff] at hq
   intro n x y hx hy hdx hfx
   -- `x` is a cycle whose image is a boundary, hence a boundary `dM u₀`.
@@ -148,12 +219,13 @@ private theorem exists_relative_boundary_of_quasiIso_gradedCochainComplexHom (f 
         LinearEquiv.apply_symm_apply] using hfx.symm))
   set u₀ : M := (gradedCochainComplexXEquiv (n + 1 - 1) a : M)
   have hu₀ : u₀ ∈ ℳ n := by
-    simpa only [add_sub_cancel_right] using (gradedCochainComplexXEquiv (n + 1 - 1) a).2
+    simpa only [add_sub_cancel_right] using (gradedCochainComplexXEquiv (n + 1 - 1) a).property
   have hdu₀ : dM u₀ = x := by
     simpa only [LinearEquiv.apply_symm_apply] using
       (gradedCochainComplex_d_eq_iff (sub_add_cancel (n + 1) 1) _ _).1 ha
   -- `y - f u₀` is a cycle, hence `f c + dN v` for a cycle `c`.
   have hyu : y - f u₀ ∈ 𝒩 n := (𝒩 n).sub_mem hy (by simpa using hf.map_mem hu₀)
+  have hfd : dN (f u₀) = f (dM u₀) := hcomm n ⟨u₀, hu₀⟩
   have hcyc : dN (y - f u₀) = 0 := by rw [map_sub, hfd, hdu₀, hfx, sub_self]
   obtain ⟨c, hc, b, hb⟩ := ((CochainComplex.moduleCat_quasiIsoAt_iff _ n).1 (hq n)).1
     ((gradedCochainComplexXEquiv n).symm ⟨y - f u₀, hyu⟩)
@@ -176,7 +248,7 @@ private theorem exists_relative_boundary_of_quasiIso_gradedCochainComplexHom (f 
 /-- The reverse direction of `TauCeti.quasiIso_gradedCochainComplexHom_iff`: if every relative
 cycle is a relative boundary, the induced cochain map is a quasi-isomorphism. -/
 private theorem quasiIso_gradedCochainComplexHom_of_exists_relative_boundary (f : M →ₗ[R] N)
-    (hf : LinearMap.IsHomogeneous f ℳ 𝒩 0) (hcomm : dN ∘ₗ f = f ∘ₗ dM)
+    (hf : LinearMap.IsHomogeneous f ℳ 𝒩 0) (hcomm : ∀ p (x : ℳ p), dN (f x) = f (dM x))
     (H : ∀ n (x : M) (y : N), x ∈ ℳ (n + 1) → y ∈ 𝒩 n → dM x = 0 → f x = dN y →
       ∃ u ∈ ℳ n, ∃ v ∈ 𝒩 (n - 1), dM u = x ∧ f u + dN v = y) :
     QuasiIso (gradedCochainComplexHom (hdeg := hdeg) (hsq := hsq) (hdegN := hdegN)
@@ -217,7 +289,7 @@ exactly when every relative cycle is a relative boundary: whenever `x ∈ ℳ (n
 `y ∈ 𝒩 n` satisfy `dM x = 0` and `f x = dN y`, there are `u ∈ ℳ n` and `v ∈ 𝒩 (n - 1)` with
 `dM u = x` and `f u + dN v = y`. This is the acyclicity of the mapping cone of `f`. -/
 theorem quasiIso_gradedCochainComplexHom_iff (f : M →ₗ[R] N)
-    (hf : LinearMap.IsHomogeneous f ℳ 𝒩 0) (hcomm : dN ∘ₗ f = f ∘ₗ dM) :
+    (hf : LinearMap.IsHomogeneous f ℳ 𝒩 0) (hcomm : ∀ p (x : ℳ p), dN (f x) = f (dM x)) :
     QuasiIso (gradedCochainComplexHom (hdeg := hdeg) (hsq := hsq) (hdegN := hdegN)
         (hsqN := hsqN) f hf hcomm) ↔
       ∀ n (x : M) (y : N), x ∈ ℳ (n + 1) → y ∈ 𝒩 n → dM x = 0 → f x = dN y →

@@ -22,7 +22,7 @@ one prime from each pair gives many ideals `A`, each satisfying
 `A * σ A = ∏ p ∈ S, p.asIdeal`.
 
 This is the combinatorial core behind counting the ideals `𝔄` with `𝔄 · σ 𝔄` a fixed product of
-split primes — the engine of the prime-splitting layer of the multiquadratic roadmap.
+split primes.
 
 ## Main results
 

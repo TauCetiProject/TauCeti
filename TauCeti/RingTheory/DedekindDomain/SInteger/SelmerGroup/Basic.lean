@@ -80,14 +80,14 @@ Dirichlet's unit theorem.
 ## References
 
 Adapted from Michael Stoll's elliptic-curves formalisation
-(`github.com/MichaelStollBayreuth/EllipticCurves`, `EllipticCurves/Mathlib/SelmerGroup.lean` at the
-`EllipticCurves` roadmap's pin `66889eada51a`, Apache 2.0, by Michael Stoll), whose treatment this
-follows. The names differ: the substrate that source keeps in its own `FractionalIdeal` file is
-already here as `TauCeti.AlgebraicGeometry.WeilDivisor.nthRootClass` and its neighbours, and the
-`S`-integer dictionary is already here under `IsDedekindDomain.integer*`, so only the Selmer layer
-itself is adapted, and it is named after Mathlib's `selmerGroup` API rather than after the source.
-Following this repository's convention for adapted material, the upstream authorship is credited
-here rather than in the copyright header.
+(`github.com/MichaelStollBayreuth/EllipticCurves`, `EllipticCurves/Mathlib/SelmerGroup.lean` at
+commit `66889eada51a`, Apache 2.0, by Michael Stoll), whose treatment this follows. The names
+differ: the substrate that source keeps in its own `FractionalIdeal` file is already here as
+`TauCeti.AlgebraicGeometry.WeilDivisor.nthRootClass` and its neighbours, and the `S`-integer
+dictionary is already here under `IsDedekindDomain.integer*`, so only the Selmer layer itself is
+adapted, and it is named after Mathlib's `selmerGroup` API rather than after the source. Following
+this repository's convention for adapted material, the upstream authorship is credited here rather
+than in the copyright header.
 -/
 
 public section
@@ -207,7 +207,7 @@ noncomputable def fromUnitsNDivisible :
     unitsNDivisible (S.integer K) K n →* selmerGroup (R := R) (K := K) (S := S) (n := n) :=
   ((QuotientGroup.mk' (powMonoidHom n : Kˣ →* Kˣ).range).comp
     (unitsNDivisible (S.integer K) K n).subtype).codRestrict _
-      fun u ↦ (mk_mem_selmerGroup_iff_mem_unitsNDivisible K S n (u : Kˣ)).mpr u.2
+      fun u ↦ (mk_mem_selmerGroup_iff_mem_unitsNDivisible K S n (u : Kˣ)).mpr u.property
 
 /-- Underneath the codomain restriction, `fromUnitsNDivisible` is the quotient map. -/
 @[simp]
@@ -337,7 +337,7 @@ theorem exists_mul_pow_mem_unit
   refine ⟨c⁻¹, ?_⟩
   rw [powMonoidHom_apply] at hc
   rw [inv_pow, hc, mul_inv_rev, inv_inv, mul_inv_cancel_left]
-  exact u.2
+  exact u.property
 
 /-! ### Finiteness -/
 

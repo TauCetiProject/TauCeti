@@ -59,10 +59,9 @@ types, and `GridDiagram.IsDestabilization` reverses the relation.
 
 ## References
 
-This supplies the stabilization half of the standing convention in
-`TauCetiRoadmap/CombinatorialHeegaardFloer/README.md` that a link is initially a grid diagram
-modulo grid moves. The local three-marking construction and its eight types follow
-Ozsváth--Stipsicz--Szabó, *Grid Homology for Knots and Links*, Chapter 3.
+Stabilization is one of the grid moves modulo which a grid diagram presents a link. The local
+three-marking construction and its eight types follow Ozsváth--Stipsicz--Szabó, *Grid Homology for
+Knots and Links*, Chapter 3.
 -/
 
 public section
@@ -188,6 +187,25 @@ theorem splitPoint_apply_eq_iff (x : GridState n) (newColumn newRow : Fin (n + 1
   · exact h.trans (by simp)
   · rintro rfl
     simp
+
+/-- Column `c` of `x` with a point split across an inserted row and column differs from column `c`
+of `y` with a point inserted at their intersection, as soon as `x` and `y` differ in the old
+column embedded as `c` (if any), apart from the split column. -/
+theorem splitPoint_apply_ne_insertPoint_apply {x y : GridState n} {newColumn newRow : Fin (n + 1)}
+    {splitColumn : Fin n} {c : Fin (n + 1)}
+    (h : ∀ i ≠ splitColumn, newColumn.succAbove i = c → x i ≠ y i) :
+    x.splitPoint newColumn newRow splitColumn c ≠ y.insertPoint newColumn newRow c := by
+  induction c using Fin.succAboveCases newColumn with
+  | x =>
+    simpa only [splitPoint_apply_newColumn, insertPoint_apply_newColumn] using
+      newRow.succAbove_ne (x splitColumn)
+  | p i =>
+    by_cases hi : i = splitColumn
+    · subst i
+      simpa only [splitPoint_apply_splitColumn, insertPoint_apply_succAbove] using
+        (newRow.succAbove_ne (y splitColumn)).symm
+    · simp only [splitPoint_apply_succAbove, insertPoint_apply_succAbove, ite_eq_right hi]
+      exact fun h' ↦ h i hi rfl (Fin.succAbove_right_injective h')
 
 /-- Splitting the point of column `s` across a column inserted just before it is inserting the
 point `(s.succ, newRow)`: the old point of column `s` moves to the new column `s.castSucc`, and
@@ -361,20 +379,7 @@ def stabilizeO (newColumn newRow : Fin (n + 1)) (splitColumn : Fin n) :
     GridDiagram (n + 1) where
   O := G.O.splitPoint newColumn newRow splitColumn
   X := G.X.insertPoint newColumn newRow
-  disjoint := by
-    intro c
-    refine Fin.succAboveCases newColumn ?_ (fun i ↦ ?_) c
-    · simpa only [GridState.splitPoint_apply_newColumn,
-        GridState.insertPoint_apply_newColumn] using
-        newRow.succAbove_ne (G.O splitColumn)
-    · by_cases hi : i = splitColumn
-      · subst i
-        simpa only [GridState.splitPoint_apply_splitColumn,
-          GridState.insertPoint_apply_succAbove] using
-          (newRow.succAbove_ne (G.X splitColumn)).symm
-      · simp only [GridState.splitPoint_apply_succAbove,
-          GridState.insertPoint_apply_succAbove, ite_eq_right hi]
-        exact fun h ↦ G.disjoint i (Fin.succAbove_right_injective h)
+  disjoint _ := GridState.splitPoint_apply_ne_insertPoint_apply fun i _ _ ↦ G.disjoint i
 
 /-- Stabilize a grid diagram by splitting the `X`-marking in `splitColumn`.
 
@@ -385,20 +390,8 @@ def stabilizeX (newColumn newRow : Fin (n + 1)) (splitColumn : Fin n) :
     GridDiagram (n + 1) where
   O := G.O.insertPoint newColumn newRow
   X := G.X.splitPoint newColumn newRow splitColumn
-  disjoint := by
-    intro c
-    refine Fin.succAboveCases newColumn ?_ (fun i ↦ ?_) c
-    · simpa only [GridState.insertPoint_apply_newColumn,
-        GridState.splitPoint_apply_newColumn] using
-        (newRow.succAbove_ne (G.X splitColumn)).symm
-    · by_cases hi : i = splitColumn
-      · subst i
-        simpa only [GridState.insertPoint_apply_succAbove,
-          GridState.splitPoint_apply_splitColumn] using
-          newRow.succAbove_ne (G.O splitColumn)
-      · simp only [GridState.insertPoint_apply_succAbove,
-          GridState.splitPoint_apply_succAbove, ite_eq_right hi]
-        exact fun h ↦ G.disjoint i (Fin.succAbove_right_injective h)
+  disjoint _ := Ne.symm <| GridState.splitPoint_apply_ne_insertPoint_apply fun i _ _ ↦
+    (G.disjoint i).symm
 
 /-- The `O` state of an `O`-stabilization is obtained by splitting the chosen `O`-marking. -/
 @[simp]

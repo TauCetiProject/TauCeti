@@ -17,9 +17,8 @@ import TauCeti.MeasureTheory.Function.LocallyIntegrable
 # The Sobolev space `W^{1,p}_0(Ω)`
 
 This file builds `W^{1,p}_0(Ω)`, the closure of the test functions `C_c^∞(Ω)` inside the weak
-Sobolev space `W^{1,p}(Ω)` of `TauCeti/Analysis/Sobolev/W1p/Basic.lean`. This is the
-`C_c^∞(Ω)`-closure half of Lane A.2 of `TauCetiRoadmap/PDE/README.md`; Meyers--Serrin density is
-not proved here.
+Sobolev space `W^{1,p}(Ω)` of `TauCeti/Analysis/Sobolev/W1p/Basic.lean`. Meyers--Serrin density
+is not proved here.
 
 ## Test functions as Sobolev functions
 
@@ -52,14 +51,17 @@ subspace under a suitable geometric hypothesis but not on all of `W^{1,p}(Ω)`.
 * `TauCeti.w1p0Submodule_subset_of_isClosed`: a closed set containing every test-function jet
   contains `W^{1,p}_0(Ω)`, which is how a property is extended from test functions to the whole
   space.
+* `TauCeti.W1p.ofExponentLE_mem_w1p0Submodule` and `TauCeti.W1p0.ofExponentLEL`: on a set of
+  finite measure and for `p ≤ q`, lowering the exponent maps `W^{1,q}_0(Ω)` into `W^{1,p}_0(Ω)`,
+  as a continuous linear inclusion whose underlying `W^{1,p}(Ω)` function is
+  `TauCeti.W1p.ofExponentLE` of the original one (`TauCeti.W1p0.coe_ofExponentLEL`).
 * `TauCeti.W1p0.instNormedAddCommGroup` and `TauCeti.W1p0.instInnerProductSpace`: shortcut
   instances for the normed group structure of `W^{1,p}_0(Ω)` and the Hilbert space structure of
   `W^{1,2}_0(Ω)`. They are `local`: a file that needs them registers them.
 
 ## References
 
-The `C_c^∞(Ω)`-closure half of Lane A.2 of `TauCetiRoadmap/PDE/README.md`; L. C. Evans,
-*Partial Differential Equations*, Section 5.2.
+L. C. Evans, *Partial Differential Equations*, Section 5.2.
 -/
 
 public section
@@ -293,6 +295,64 @@ theorem W1p0.valueL_ne_zero (hOmega : (Omega : Set E).Nonempty) :
 /-- `W^{1,p}_0(Ω)` is complete: it is a closed subspace of the complete space `W^{1,p}(Ω)`. -/
 instance : CompleteSpace (W1p0 mu Omega p) :=
   (w1p0Submodule mu Omega p).isClosed.completeSpace_coe
+
+/-! ### Lowering the exponent on a set of finite measure
+
+On a set of finite measure, `W^{1,q}(Ω) ⊆ W^{1,p}(Ω)` for `p ≤ q` (`TauCeti.W1p.ofExponentLEL`), and
+this inclusion respects the homogeneous Dirichlet condition: a test function's jet in `W^{1,q}(Ω)`
+is sent to its jet in `W^{1,p}(Ω)`, and `W^{1,p}_0(Ω)` is closed, so the closure of the test
+functions in the stronger norm lands in their closure in the weaker one. -/
+
+section Exponent
+
+variable {q : ENNReal} [Fact (1 ≤ q)] [IsFiniteMeasure (mu.restrict (Omega : Set E))]
+
+/-- Lowering the exponent sends the jet of a test function in `W^{1,q}(Ω)` to its jet in
+`W^{1,p}(Ω)`. -/
+@[simp]
+theorem W1p.ofExponentLE_ofTestFunctionₗ (hpq : p ≤ q) (phi : 𝓓(Omega, ℝ)) :
+    W1p.ofExponentLE hpq (W1p.ofTestFunctionₗ mu Omega q phi) =
+      W1p.ofTestFunctionₗ mu Omega p phi := by
+  refine W1p.ext (Lp.ext ?_) (Lp.ext ?_)
+  · rw [W1p.coeFn_value_ofExponentLE]
+    exact (W1p.value_ofTestFunctionₗ_ae (mu := mu) (p := q) phi).trans
+      (W1p.value_ofTestFunctionₗ_ae phi).symm
+  · rw [W1p.coeFn_gradient_ofExponentLE, W1p.gradient_ofTestFunctionₗ,
+      W1p.gradient_ofTestFunctionₗ]
+    filter_upwards [gradientTestFunctionLp_apply_ae (mu := mu) q phi,
+      gradientTestFunctionLp_apply_ae (mu := mu) p phi] with x hq hp
+    rw [hq, hp]
+
+/-- On a set of finite measure, lowering the exponent maps `W^{1,q}_0(Ω)` into `W^{1,p}_0(Ω)`. -/
+theorem W1p.ofExponentLE_mem_w1p0Submodule (hpq : p ≤ q) {u : W1p mu Omega q}
+    (hu : u ∈ w1p0Submodule mu Omega q) :
+    W1p.ofExponentLE hpq u ∈ w1p0Submodule mu Omega p := by
+  have hclosed : IsClosed {v : W1p mu Omega q |
+      W1p.ofExponentLEL hpq v ∈ w1p0Submodule mu Omega p} :=
+    (w1p0Submodule mu Omega p).isClosed.preimage (W1p.ofExponentLEL hpq).continuous
+  have h := w1p0Submodule_subset_of_isClosed hclosed (fun phi => by
+    simpa only [Set.mem_ofPred_eq, W1p.ofExponentLEL_apply, W1p.ofExponentLE_ofTestFunctionₗ]
+      using W1p.ofTestFunctionₗ_mem_w1p0Submodule phi) hu
+  rwa [Set.mem_ofPred_eq, W1p.ofExponentLEL_apply] at h
+
+/-- **The inclusion `W^{1,q}_0(Ω) → W^{1,p}_0(Ω)`** for `p ≤ q` on a set of finite measure: the
+restriction of `TauCeti.W1p.ofExponentLEL` to the zero-boundary spaces. -/
+def W1p0.ofExponentLEL (hpq : p ≤ q) : W1p0 mu Omega q →L[ℝ] W1p0 mu Omega p :=
+  ContinuousLinearMap.codRestrict
+    ((W1p.ofExponentLEL hpq).comp (w1p0Submodule mu Omega q).toSubmodule.subtypeL)
+    (w1p0Submodule mu Omega p).toSubmodule
+    fun u => by
+      rw [ContinuousLinearMap.comp_apply, Submodule.subtypeL_apply, W1p.ofExponentLEL_apply]
+      exact W1p.ofExponentLE_mem_w1p0Submodule hpq u.property
+
+/-- The underlying `W^{1,p}(Ω)` function of the inclusion is the exponent-lowered function. -/
+@[simp]
+theorem W1p0.coe_ofExponentLEL (hpq : p ≤ q) (u : W1p0 mu Omega q) :
+    (W1p0.ofExponentLEL hpq u : W1p mu Omega p) = W1p.ofExponentLE hpq (u : W1p mu Omega q) := by
+  rw [W1p0.ofExponentLEL, ContinuousLinearMap.coe_codRestrict_apply, ContinuousLinearMap.comp_apply,
+    Submodule.subtypeL_apply, W1p.ofExponentLEL_apply]
+
+end Exponent
 
 /-! ### Shortcut instances for the Hilbert space `W^{1,2}_0(Ω)`
 

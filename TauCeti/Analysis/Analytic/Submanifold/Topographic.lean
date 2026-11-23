@@ -13,6 +13,7 @@ import Mathlib.LinearAlgebra.FiniteDimensional.Lemmas
 import TauCeti.Analysis.Calculus.FDeriv.NormComparison
 import TauCeti.Analysis.Analytic.Submanifold.Immersion
 import TauCeti.Analysis.Analytic.Submanifold.Transport
+import TauCeti.Topology.Maps.DomRestrict
 
 /-!
 # Topographic analytic submanifolds with Lipschitz height
@@ -30,9 +31,12 @@ function of `ψ` is analytic on it, so `ψ` is topographic. The horizontal shear
 `(t, u) ↦ (t, u + t • z)` preserves the inequality, with the worse constant `A / (1 - A * ‖z‖)`,
 as long as `A * ‖z‖ < 1`; so it keeps such submanifolds topographic.
 
+When `ψ` has full dimension `n`, its projection is open, so the projection to the base of each
+relatively open subset of `ψ` is open: `ψ` has property (P).
+
 These are the topographic graph and shear statements of Lemma 6 in Łojasiewicz's triangulation of
 semianalytic sets, used there to straighten families of graphs by small linear changes of
-coordinates.
+coordinates, together with the topographic clause of Lemma 7 on property (P).
 
 ## Main declarations
 
@@ -44,6 +48,8 @@ coordinates.
   analytic on the projection.
 * `TauCeti.IsAnalyticSubmanifold.exists_topographic`: such a submanifold is the graph of an
   `A`-Lipschitz function which is analytic on its projection, an analytic submanifold.
+* `TauCeti.IsAnalyticSubmanifold.isOpenMap_domRestrict_tail`: a full-dimensional such submanifold
+  has property (P): the projection of each of its relatively open subsets is open.
 * `TauCeti.horizontalShear z`: the linear automorphism `(t, u) ↦ (t, u + t • z)` of `𝕜ⁿ⁺¹`.
 * `TauCeti.mul_dist_tail_le_dist_tail_horizontalShear`: the shear estimate
   `‖Δu + Δt • z‖ ≥ (1 - A * ‖z‖) * ‖Δu‖`.
@@ -54,7 +60,7 @@ coordinates.
 ## References
 
 * S. Łojasiewicz, *Triangulation of semi-analytic sets*, Annali della Scuola Normale Superiore di
-  Pisa (3) 18 (1964), 449–474 (topographic sets and Lemma 6).
+  Pisa (3) 18 (1964), 449–474 (topographic sets, Lemma 6 and Lemma 7).
 -/
 
 public section
@@ -205,6 +211,30 @@ theorem IsAnalyticSubmanifold.exists_topographic (hψ : IsAnalyticSubmanifold d 
   obtain ⟨f, hfL, hf, hψf⟩ := exists_lipschitzOnWith_eq_graph h
   exact ⟨f, hfL, hψ.analyticOnSubmanifold_image_tail h hf, hψ.image_tail h, hf, hψf⟩
 
+/-- **Full-dimensional Lipschitz graphs project openly** (Łojasiewicz). If an `n`-dimensional
+analytic submanifold `ψ ⊆ 𝕜ⁿ⁺¹` satisfies `dist (v 0) (w 0) ≤ A * dist (Fin.tail v) (Fin.tail w)`
+for all its points, then the projection to the base `𝕜ⁿ` of each relatively open subset of `ψ` is
+open: `ψ` has property (P). -/
+theorem IsAnalyticSubmanifold.isOpenMap_domRestrict_tail (hψ : IsAnalyticSubmanifold n ψ)
+    (h : ∀ v ∈ ψ, ∀ w ∈ ψ, dist (v 0) (w 0) ≤ A * dist (Fin.tail v) (Fin.tail w)) :
+    IsOpenMap (ψ.domRestrict Fin.tail) := by
+  -- The projection is an `n`-dimensional analytic submanifold of `𝕜ⁿ`, hence open, and `ψ` is the
+  -- graph of a continuous function over it.
+  obtain ⟨f, hf, hfψ, hψf⟩ := exists_lipschitzOnWith_eq_graph h
+  have hT : IsOpen (Fin.tail '' ψ) := (hψ.image_tail h).isOpen
+  refine isOpenMap_domRestrict_iff.2 fun v hv t ht ↦ ?_
+  -- Points of the projection near `Fin.tail v` lift to points of `ψ` near `v`.
+  let Γ : (Fin n → 𝕜) → Fin (n + 1) → 𝕜 := fun u ↦ Fin.cons (f u) u
+  have hΓv : Γ (Fin.tail v) = v := by
+    simp only [Γ]
+    rw [hfψ v hv, Fin.cons_self_tail]
+  have hΓ : ContinuousAt Γ (Fin.tail v) :=
+    ((hf.continuousOn _ ⟨v, hv, rfl⟩).continuousAt (hT.mem_nhds ⟨v, hv, rfl⟩)).finCons
+      continuousAt_id
+  filter_upwards [hT.mem_nhds ⟨v, hv, rfl⟩, hΓ.preimage_mem_nhds (hΓv ▸ ht)] with u hu hut
+  have hΓu : Γ u ∈ ψ := (Set.ext_iff.1 hψf _).2 ⟨by simpa [Γ] using hu, by simp [Γ]⟩
+  exact ⟨Γ u, ⟨hut, hΓu⟩, by simp [Γ]⟩
+
 end Analytic
 
 /-! ### Horizontal shears -/
@@ -284,7 +314,7 @@ theorem dist_le_mul_dist_tail_of_mem_image_horizontalShear
     rw [sub_pos]
     exact_mod_cast hz
   rw [horizontalShear_apply_zero, horizontalShear_apply_zero, NNReal.coe_div,
-    NNReal.coe_sub hz.le, NNReal.coe_mul, coe_nnnorm, NNReal.coe_one, div_mul_eq_mul_div,
+    NNReal.coe_sub hz.le, NNReal.coe_mul, coe_nnNorm, NNReal.coe_one, div_mul_eq_mul_div,
     le_div_iff₀ hz']
   calc dist (v 0) (w 0) * (1 - A * ‖z‖)
       ≤ A * dist (Fin.tail v) (Fin.tail w) * (1 - A * ‖z‖) :=
@@ -292,6 +322,6 @@ theorem dist_le_mul_dist_tail_of_mem_image_horizontalShear
     _ = A * ((1 - A * ‖z‖) * dist (Fin.tail v) (Fin.tail w)) := by ring
     _ ≤ A * dist (Fin.tail (horizontalShear z v)) (Fin.tail (horizontalShear z w)) :=
         mul_le_mul_of_nonneg_left
-          (mul_dist_tail_le_dist_tail_horizontalShear z (h v hv w hw)) A.2
+          (mul_dist_tail_le_dist_tail_horizontalShear z (h v hv w hw)) A.property
 
 end TauCeti

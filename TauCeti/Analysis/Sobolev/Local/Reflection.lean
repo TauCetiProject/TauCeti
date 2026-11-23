@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Sobolev.Local.Basic
 public import TauCeti.Analysis.Complex.ImDilation
+public import TauCeti.Analysis.Complex.ReImTopology
 public import TauCeti.Analysis.Sobolev.Trace.Reflection.Higher
 import TauCeti.Analysis.Sobolev.Trace.Reflection.Basic
 import TauCeti.LinearAlgebra.Complex.Module
@@ -48,13 +49,30 @@ statement.
 
 * `TauCeti.planarReflection`, `TauCeti.planarReflectionFDeriv`: the reflection with weights and
   its candidate weak derivative.
+* `TauCeti.map_planarReflection`: linear maps commute with the reflection.
+* `TauCeti.HasWeakLineDerivOn.setIntegral_fderiv_smul_eq_neg` and its complex form
+  `TauCeti.HasWeakLineDerivOn.setIntegral_fderiv_smul_eq_neg_of_complex`: integration by parts on
+  the upper half-plane, up to the real axis, in a tangential direction or against a function
+  vanishing on the axis.
 * `TauCeti.HasWeakLineDerivOn.planarReflection_one`, `TauCeti.HasWeakLineDerivOn.planarReflection_I`
   and `TauCeti.HasWeakFDerivOn.planarReflection`: weak gluing across the real axis.
 * `TauCeti.MemWkpLoc.planarReflection_higherReflectionCoeff`: a map in `W^{k,p}_loc(Ω ∩ {0 ≤ im})`
   extends to a map in `W^{k,p}_loc(Ω)` when the node dilations map the lower part of `Ω` into `Ω`;
   the cases of discs centred on the real axis and of the whole plane are
   `TauCeti.MemWkpLoc.planarReflection_higherReflectionCoeff_ball` and
-  `TauCeti.MemWkpLoc.planarReflection_higherReflectionCoeff_univ`.
+  `TauCeti.MemWkpLoc.planarReflection_higherReflectionCoeff_univ`. Near each point of
+  `Ω ∩ {0 ≤ im}` such a map agrees on the closed upper half-plane with a map in the class of a disc
+  (`TauCeti.MemWkpLoc.exists_ball_extension`). Local `Lᵖ` membership extends in the same way,
+  `TauCeti.MemLpLoc.planarReflection` and `TauCeti.MemLpLoc.planarReflection_ball`.
+* `TauCeti.continuousOn_planarReflection`: with weights of sum one, the reflection of a map
+  continuous up to the real axis is continuous across it.
+* `TopologicalSpace.Opens.imDilation_higherReflectionNode_mem_reflectionCore`: the reflection core
+  of an open set `V` (`TopologicalSpace.Opens.reflectionCore`, from
+  `TauCeti.Analysis.Complex.ImDilation`), an open set between `V ∩ {0 ≤ im}` and `V`, is stable
+  under the node dilations below the real axis.
+* `TauCeti.MemWkpLoc.planarReflection_higherReflectionCoeff_reflectionCore`: without any symmetry
+  of `Ω`, the reflection is in `W^{k,p}_loc` of the reflection core of `Ω`, an open set between
+  `Ω ∩ {0 ≤ im}` and `Ω`.
 * `TauCeti.eLpNorm_planarReflection_le`: the `Lᵖ(Ω)` bound by the `Lᵖ(Ω ∩ {0 ≤ im})` norm, with the
   constant `TauCeti.higherReflectionBound k p` for the Vandermonde weights. The same bound for weak
   derivatives of every order is in `TauCeti.Analysis.Sobolev.Local.Reflection.Bound`.
@@ -72,7 +90,7 @@ public section
 noncomputable section
 
 open MeasureTheory Set TopologicalSpace Filter Complex
-open scoped ContDiff Topology Distributions ENNReal Polynomial
+open scoped ContDiff Topology Distributions ENNReal Polynomial ComplexConjugate
 
 namespace TauCeti
 
@@ -98,6 +116,16 @@ theorem planarReflection_of_nonneg (d : Fin k → ℝ) (g : ℂ → F) {z : ℂ}
 theorem planarReflection_of_neg (d : Fin k → ℝ) (g : ℂ → F) {z : ℂ} (hz : z.im < 0) :
     planarReflection d g z = ∑ j, d j • g (imDilation (higherReflectionNode j) z) :=
   ite_eq_right hz.not_ge
+
+/-- A linear map commutes with the reflection: applying `A` to the reflection of `g` gives the
+reflection of `A ∘ g`. In particular the coordinates of a reflection in a basis are the reflections
+of the coordinates. -/
+theorem map_planarReflection {G 𝓕 : Type*} [NormedAddCommGroup G] [NormedSpace ℝ G]
+    [FunLike 𝓕 F G] [LinearMapClass 𝓕 ℝ F G] (A : 𝓕) (d : Fin k → ℝ) (g : ℂ → F) (z : ℂ) :
+    A (planarReflection d g z) = planarReflection d (fun w => A (g w)) z := by
+  by_cases hz : 0 ≤ z.im
+  · simp [hz]
+  · simp [planarReflection_of_neg _ _ (not_le.1 hz)]
 
 /-- The two branches of the reflection as indicator functions. -/
 theorem planarReflection_eq_indicator (d : Fin k → ℝ) (g : ℂ → F) :
@@ -135,6 +163,20 @@ theorem planarReflection_higherReflectionCoeff_two_im :
     (by rw [Polynomial.degree_X]; norm_num)) z.im
   simpa using h
 
+/-- The node dilations map the lower part of `Ω` into its upper part, provided they map the open
+lower part of `Ω` into `Ω`: points of the real axis are fixed. -/
+private theorem mapsTo_imDilation_higherReflectionNode {Ω : Set ℂ}
+    (hΩ : ∀ z ∈ Ω, z.im < 0 → ∀ j : Fin k, imDilation (higherReflectionNode j) z ∈ Ω)
+    (j : Fin k) :
+    MapsTo (imDilation (higherReflectionNode j)) (Ω ∩ {z | z.im ≤ 0}) (Ω ∩ {z | 0 ≤ z.im}) := by
+  rintro z ⟨hzΩ, hz : z.im ≤ 0⟩
+  refine ⟨?_, ?_⟩
+  · rcases hz.lt_or_eq with hz | hz
+    · exact hΩ z hzΩ hz j
+    · rwa [imDilation_of_im_eq_zero _ hz]
+  · simpa [imDilation_apply_im] using
+      mul_nonneg_of_nonpos_of_nonpos (higherReflectionNode_neg j).le hz
+
 /-- The reflection of every nonnegative-side `Lᵖ`-on-compacts map is `Lᵖ` on compacts, provided the
 dilations `higherReflectionNode j` map the lower part of `Ω` into `Ω`. -/
 theorem MemLpLoc.planarReflection {p : ℝ≥0∞} {Ω : Set ℂ}
@@ -153,20 +195,38 @@ theorem MemLpLoc.planarReflection {p : ℝ≥0∞} {Ω : Set ℂ}
     refine memLp_finsetSum _ fun j _ => MemLp.const_smul ?_ (d j)
     set K' := K ∩ {z : ℂ | z.im ≤ 0}
     have hK' : IsCompact K' := hK.inter_right (isClosed_le continuous_im continuous_const)
-    have hsub : imDilation (higherReflectionNode j) '' K' ⊆ Ω ∩ {z : ℂ | 0 ≤ z.im} := by
-      rintro _ ⟨z, ⟨hzK, hz⟩, rfl⟩
-      refine ⟨?_, ?_⟩
-      · rcases (show z.im ≤ 0 from hz).lt_or_eq with hz | hz
-        · exact hΩ z (hKΩ hzK) hz j
-        · rw [imDilation_of_im_eq_zero _ hz]
-          exact hKΩ hzK
-      · simpa using mul_nonneg_of_nonpos_of_nonpos (higherReflectionNode_neg j).le hz
+    have hsub : imDilation (higherReflectionNode j) '' K' ⊆ Ω ∩ {z : ℂ | 0 ≤ z.im} :=
+      ((mapsTo_imDilation_higherReflectionNode hΩ j).mono_left
+        (inter_subset_inter_left _ hKΩ)).image_subset
     have h := memLpLoc_iff.1 hg _ hsub (hK'.image (imDilation _).continuous)
     rw [← memLp_comp_imDilation_iff (higherReflectionNode_ne_zero j),
       preimage_image_eq _
         (measurableEmbedding_imDilation (higherReflectionNode_ne_zero j)).injective] at h
     refine h.mono_measure (Measure.restrict_mono ?_ le_rfl)
     exact fun z hz => ⟨hz.2, (show z.im < 0 from hz.1).le⟩
+
+/-- **Continuity of the reflection.** If the node dilations map the lower part of `Ω` into `Ω` and
+the weights sum to one, the reflection of a map `g` continuous on `Ω ∩ {0 ≤ im}` is continuous on
+`Ω`: on the real axis every reflected copy takes the value of `g` itself. -/
+theorem continuousOn_planarReflection (hd : ∑ j, d j = 1) {Ω : Set ℂ}
+    (hΩ : ∀ z ∈ Ω, z.im < 0 → ∀ j : Fin k, imDilation (higherReflectionNode j) z ∈ Ω)
+    (hg : ContinuousOn g (Ω ∩ {z | 0 ≤ z.im})) :
+    ContinuousOn (planarReflection d g) Ω := by
+  have heq : planarReflection d g = fun z => if 0 ≤ z.im then g z else
+      ∑ j, d j • g (imDilation (higherReflectionNode j) z) := by
+    funext z
+    split_ifs with hz
+    · exact planarReflection_of_nonneg _ _ hz
+    · exact planarReflection_of_neg _ _ (not_le.1 hz)
+  rw [heq]
+  refine ContinuousOn.if (fun z hz => ?_) ?_ ?_
+  · rw [Complex.frontier_setOfPred_le_im] at hz
+    simp only [imDilation_of_im_eq_zero _ hz.2, ← Finset.sum_smul, hd, one_smul]
+  · rwa [(isClosed_le continuous_const Complex.continuous_im).closure_eq]
+  · simp_rw [not_le, Complex.closure_setOfPred_im_lt]
+    exact continuousOn_finsetSum _ fun j _ =>
+      (hg.comp (imDilation (higherReflectionNode j)).continuous.continuousOn
+        (mapsTo_imDilation_higherReflectionNode hΩ j)).const_smul _
 
 /-! ### Integration by parts up to the real axis -/
 
@@ -220,12 +280,23 @@ private theorem eventually_imCutoff_arg {z : ℂ} (hz : 0 < z.im) :
       ((tendsto_natCast_atTop_atTop.atTop_add tendsto_const_nhds).atTop_mul_const hz)
   exact h.eventually_gt_atTop 1
 
+/-- A continuous factor supported in the support of a compactly supported `χ` makes a function
+that is locally integrable up to the real axis integrable on the open upper half-plane. -/
+private theorem MemLpLoc.integrableOn_smul_setOf_im_pos {Ω : Opens ℂ} {h : ℂ → F}
+    (hh : MemLpLoc 1 ((Ω : Set ℂ) ∩ {z | 0 ≤ z.im}) h) {β : Type*} [Zero β] {χ : ℂ → β}
+    (hχc : HasCompactSupport χ) (hχΩ : tsupport χ ∩ {z : ℂ | 0 ≤ z.im} ⊆ Ω) {f : ℂ → ℝ}
+    (hf : Continuous f) (hfχ : tsupport f ⊆ tsupport χ) :
+    IntegrableOn (fun z ↦ f z • h z) {z : ℂ | 0 < z.im} :=
+  (hh.integrableOn_smul hf (hχc.mono' ((subset_tsupport f).trans hfχ))
+    (Complex.isClosed_setOfPred_le_im 0) fun _ hz ↦ ⟨hχΩ ⟨hfχ hz.1, hz.2⟩, hz.2⟩).mono_set
+    (ofPred_subset_ofPred.2 fun _ ↦ le_of_lt)
+
 /-- **Integration by parts up to the real axis.** Let `g'` be a weak derivative of `g` in the
 direction `v` on the upper part of `Ω`, with `g` and `g'` integrable on compact subsets of
 `Ω ∩ {0 ≤ im}`. Then the integration-by-parts identity on the upper half-plane holds against every
 smooth compactly supported `χ` whose support meets `{0 ≤ im}` inside `Ω`, provided `v` is tangent to
 the real axis or `χ` vanishes on it. -/
-private theorem setIntegral_fderiv_smul_eq_neg {Ω : Opens ℂ} {g g' : ℂ → F} {v : ℂ}
+theorem HasWeakLineDerivOn.setIntegral_fderiv_smul_eq_neg {Ω : Opens ℂ} {g g' : ℂ → F} {v : ℂ}
     (hgW : HasWeakLineDerivOn volume (Opens.interior ((Ω : Set ℂ) ∩ {z | 0 ≤ z.im})) g g' v)
     (hg : MemLpLoc 1 ((Ω : Set ℂ) ∩ {z | 0 ≤ z.im}) g)
     (hg' : MemLpLoc 1 ((Ω : Set ℂ) ∩ {z | 0 ≤ z.im}) g')
@@ -240,15 +311,6 @@ private theorem setIntegral_fderiv_smul_eq_neg {Ω : Opens ℂ} {g g' : ℂ → 
   have hK : IsCompact K := hχc.isCompact.inter_right (isClosed_le continuous_const continuous_im)
   have hKU : K ⊆ (Ω : Set ℂ) ∩ {z | 0 ≤ z.im} := fun z hz => ⟨hχΩ hz, hz.2⟩
   have hgK : IntegrableOn g K := memLp_one_iff_integrable.1 (memLpLoc_iff.1 hg K hKU hK)
-  have hHsub : H ⊆ {z : ℂ | 0 ≤ z.im} :=
-    fun z (hz : 0 < z.im) => show (0 : ℝ) ≤ z.im from le_of_lt hz
-  have hclosed : IsClosed {z : ℂ | 0 ≤ z.im} := isClosed_le continuous_const continuous_im
-  -- A continuous factor supported in `tsupport χ` makes `g` or `g'` integrable on `H`.
-  have hint {f : ℂ → ℝ} {h : ℂ → F} (hh : MemLpLoc 1 ((Ω : Set ℂ) ∩ {z | 0 ≤ z.im}) h)
-      (hf : Continuous f) (hfχ : tsupport f ⊆ tsupport χ) :
-      IntegrableOn (fun z => f z • h z) H :=
-    (hh.integrableOn_smul hf (hχc.mono' ((subset_tsupport f).trans hfχ)) hclosed
-      fun z hz => ⟨hχΩ ⟨hfχ hz.1, hz.2⟩, hz.2⟩).mono_set hHsub
   have hdχ : Continuous fun z => fderiv ℝ χ z v :=
     (hχ.continuous_fderiv (by simp)).clm_apply continuous_const
   have hdst : Continuous (deriv Real.smoothTransition) :=
@@ -257,15 +319,16 @@ private theorem setIntegral_fderiv_smul_eq_neg {Ω : Opens ℂ} {g g' : ℂ → 
   set D : ℕ → ℂ → ℝ := fun n z => χ z *
     (deriv Real.smoothTransition (((n : ℝ) + 1) * z.im - 1) * (((n : ℝ) + 1) * v.im)) with hD
   have I1 : IntegrableOn (fun z => fderiv ℝ χ z v • g z) H :=
-    hint hg hdχ (tsupport_fderiv_apply_subset ℝ v)
+    hg.integrableOn_smul_setOf_im_pos hχc hχΩ hdχ (tsupport_fderiv_apply_subset ℝ v)
   have I3 : IntegrableOn (fun z => χ z • g' z) H :=
-    hint hg' hχ.continuous subset_rfl
+    hg'.integrableOn_smul_setOf_im_pos hχc hχΩ hχ.continuous subset_rfl
   have I1' (n : ℕ) : IntegrableOn (fun z => (imCutoff n z * fderiv ℝ χ z v) • g z) H :=
-    hint hg ((contDiff_imCutoff n).continuous.mul hdχ)
+    hg.integrableOn_smul_setOf_im_pos hχc hχΩ ((contDiff_imCutoff n).continuous.mul hdχ)
       (tsupport_mul_subset_right.trans (tsupport_fderiv_apply_subset ℝ v))
   have I2 (n : ℕ) : IntegrableOn (fun z => D n z • g z) H :=
-    hint hg (hχ.continuous.mul ((hdst.comp ((continuous_const.mul continuous_im).sub
-      continuous_const)).mul continuous_const)) tsupport_mul_subset_left
+    hg.integrableOn_smul_setOf_im_pos hχc hχΩ (hχ.continuous.mul ((hdst.comp
+      ((continuous_const.mul continuous_im).sub continuous_const)).mul continuous_const))
+      tsupport_mul_subset_left
   -- The weak derivative identity, tested against `imCutoff n * χ`.
   have key (n : ℕ) : (∫ z in H, (imCutoff n z * fderiv ℝ χ z v) • g z) +
       ∫ z in H, D n z • g z = -∫ z in H, (imCutoff n z * χ z) • g' z := by
@@ -294,7 +357,7 @@ private theorem setIntegral_fderiv_smul_eq_neg {Ω : Opens ℂ} {g g' : ℂ → 
       have hz' : z.im ≤ 0 := not_lt.1 (show ¬ (0 : ℝ) < z.im from hz)
       refine ⟨imCutoff_eq_zero ?_, ?_⟩
       · nlinarith [(by positivity : (0 : ℝ) ≤ (n : ℝ) + 1)]
-      · simp [hD, Real.smoothTransition.deriv_of_neg (imCutoff_arg_neg (n := n) hz')]
+      · simp [hD, Real.smoothTransition.deriv_of_nonpos (imCutoff_arg_neg (n := n) hz').le]
     rw [← setIntegral_eq_integral_of_forall_compl_eq_zero (s := H)
         (f := fun z => (imCutoff n z * fderiv ℝ χ z v + D n z) • g z)
         fun z hz => by simp [hzero z hz],
@@ -344,8 +407,8 @@ private theorem setIntegral_fderiv_smul_eq_neg {Ω : Opens ℂ} {g g' : ℂ → 
       swap
       · simpa [hD, image_eq_zero_of_notMem_tsupport hzK] using hb0
       by_cases h2 : 2 < ((n : ℝ) + 1) * z.im
-      · simpa [hD, Real.smoothTransition.deriv_of_one_lt
-          (by linarith : 1 < ((n : ℝ) + 1) * z.im - 1)]
+      · simpa [hD, Real.smoothTransition.deriv_of_one_le
+          (by linarith : 1 ≤ ((n : ℝ) + 1) * z.im - 1)]
           using hb0
       push Not at h2
       rw [indicator_of_mem (show z ∈ K from ⟨hzK, le_of_lt hz⟩), norm_smul]
@@ -362,10 +425,59 @@ private theorem setIntegral_fderiv_smul_eq_neg {Ω : Opens ℂ} {g g' : ℂ → 
         _ = 2 * (B * M * |v.im|) * ‖g z‖ := by ring
     · have hz : 0 < z.im := hz
       exact tendsto_const_nhds.congr' <| (eventually_imCutoff_arg hz).mono fun n hn => by
-        simp [hD, Real.smoothTransition.deriv_of_one_lt hn]
+        simp [hD, Real.smoothTransition.deriv_of_one_le hn.le]
   have hlim := h1.add h2
   rw [add_zero] at hlim
   exact tendsto_nhds_unique (hlim.congr key) h3.neg
+
+/-- **Integration by parts up to the real axis, complex form.** The identity of
+`TauCeti.HasWeakLineDerivOn.setIntegral_fderiv_smul_eq_neg` for a complex-valued `χ` and values
+in a complex space: it follows by splitting `χ` into its real and imaginary parts, the imaginary
+part acting through `I • g`. -/
+theorem HasWeakLineDerivOn.setIntegral_fderiv_smul_eq_neg_of_complex {G : Type*}
+    [NormedAddCommGroup G] [NormedSpace ℂ G] {Ω : Opens ℂ} {g g' : ℂ → G} {v : ℂ}
+    (hgW : HasWeakLineDerivOn volume (Opens.interior ((Ω : Set ℂ) ∩ {z | 0 ≤ z.im})) g g' v)
+    (hg : MemLpLoc 1 ((Ω : Set ℂ) ∩ {z | 0 ≤ z.im}) g)
+    (hg' : MemLpLoc 1 ((Ω : Set ℂ) ∩ {z | 0 ≤ z.im}) g')
+    {χ : ℂ → ℂ} (hχ : ContDiff ℝ ∞ χ) (hχc : HasCompactSupport χ)
+    (hχΩ : tsupport χ ∩ {z : ℂ | 0 ≤ z.im} ⊆ Ω) (hv : v.im = 0 ∨ ∀ x : ℝ, χ x = 0) :
+    ∫ z in {z : ℂ | 0 < z.im}, fderiv ℝ χ z v • g z =
+      -∫ z in {z : ℂ | 0 < z.im}, χ z • g' z := by
+  have hIg := hg.clm_comp ((I • ContinuousLinearMap.id ℂ G).restrictScalars ℝ)
+  have hIg' := hg'.clm_comp ((I • ContinuousLinearMap.id ℂ G).restrictScalars ℝ)
+  simp only [ContinuousLinearMap.coe_restrictScalars', smul_apply,
+    ContinuousLinearMap.id_apply] at hIg hIg'
+  -- The real and imaginary parts of `χ`, through a real-linear `ℓ`.
+  have hℓ (ℓ : ℂ →L[ℝ] ℝ) : ContDiff ℝ ∞ fun z ↦ ℓ (χ z) := ℓ.contDiff.comp hχ
+  have hℓc (ℓ : ℂ →L[ℝ] ℝ) : HasCompactSupport fun z ↦ ℓ (χ z) := hχc.comp_left (map_zero ℓ)
+  have hℓs (ℓ : ℂ →L[ℝ] ℝ) : tsupport (fun z ↦ ℓ (χ z)) ⊆ tsupport χ :=
+    tsupport_comp_subset (map_zero ℓ) _
+  have hℓv (ℓ : ℂ →L[ℝ] ℝ) : v.im = 0 ∨ ∀ x : ℝ, ℓ (χ x) = 0 :=
+    hv.imp_right fun h x ↦ by simp [h x]
+  have hd (ℓ : ℂ →L[ℝ] ℝ) (z : ℂ) : fderiv ℝ (fun z ↦ ℓ (χ z)) z v = ℓ (fderiv ℝ χ z v) := by
+    rw [fderiv_fun_comp z ℓ.differentiableAt (hχ.differentiable (by simp) z), ℓ.fderiv,
+      ContinuousLinearMap.comp_apply]
+  have er := hgW.setIntegral_fderiv_smul_eq_neg hg hg' (hℓ reCLM) (hℓc reCLM)
+    (fun z hz ↦ hχΩ ⟨hℓs reCLM hz.1, hz.2⟩) (hℓv reCLM)
+  have ei := (hgW.const_smul I).setIntegral_fderiv_smul_eq_neg hIg hIg' (hℓ imCLM) (hℓc imCLM)
+    (fun z hz ↦ hχΩ ⟨hℓs imCLM hz.1, hz.2⟩) (hℓv imCLM)
+  simp only [hd] at er ei
+  simp only [reCLM_apply, imCLM_apply, Pi.smul_apply] at er ei
+  -- Each term is integrable on the upper half-plane.
+  have hdc : Continuous fun z ↦ fderiv ℝ χ z v :=
+    (hχ.continuous_fderiv (by simp)).clm_apply continuous_const
+  have hds (ℓ : ℂ →L[ℝ] ℝ) : tsupport (fun z ↦ ℓ (fderiv ℝ χ z v)) ⊆ tsupport χ :=
+    (tsupport_comp_subset (map_zero ℓ) _).trans (tsupport_fderiv_apply_subset ℝ v)
+  have i₁ : IntegrableOn (fun z ↦ (fderiv ℝ χ z v).re • g z) {z : ℂ | 0 < z.im} :=
+    hg.integrableOn_smul_setOf_im_pos hχc hχΩ (reCLM.continuous.comp hdc) (hds reCLM)
+  have i₂ : IntegrableOn (fun z ↦ (fderiv ℝ χ z v).im • (I • g z)) {z : ℂ | 0 < z.im} :=
+    hIg.integrableOn_smul_setOf_im_pos hχc hχΩ (imCLM.continuous.comp hdc) (hds imCLM)
+  have i₃ : IntegrableOn (fun z ↦ (χ z).re • g' z) {z : ℂ | 0 < z.im} :=
+    hg'.integrableOn_smul_setOf_im_pos hχc hχΩ (reCLM.continuous.comp hχ.continuous) (hℓs reCLM)
+  have i₄ : IntegrableOn (fun z ↦ (χ z).im • (I • g' z)) {z : ℂ | 0 < z.im} :=
+    hIg'.integrableOn_smul_setOf_im_pos hχc hχΩ (imCLM.continuous.comp hχ.continuous) (hℓs imCLM)
+  simp only [← Complex.re_smul_add_im_smul (fderiv ℝ χ _ v), ← Complex.re_smul_add_im_smul (χ _)]
+  rw [integral_add i₁ i₂, integral_add i₃ i₄, er, ei, neg_add]
 
 /-! ### Weak gluing across the real axis -/
 
@@ -374,16 +486,6 @@ private theorem preimage_imDilation_node {k : ℕ} (j : Fin k) :
     imDilation (higherReflectionNode j) ⁻¹' {z : ℂ | 0 < z.im} = {z : ℂ | z.im < 0} := by
   ext z
   simp [mul_pos_iff, higherReflectionNode_neg j, (higherReflectionNode_neg j).not_gt]
-
-/-- The node dilations map `{0 ≤ im} ∩ e⁻¹(Ω)` into `Ω` when they map the lower part of `Ω` into
-`Ω`. -/
-private theorem imDilation_mem_of_im_nonpos {Ω : Set ℂ}
-    (hΩ : ∀ z ∈ Ω, z.im < 0 → ∀ j : Fin k, imDilation (higherReflectionNode j) z ∈ Ω)
-    (j : Fin k) {z : ℂ} (hz : z ∈ Ω) (hz0 : z.im ≤ 0) :
-    imDilation (higherReflectionNode j) z ∈ Ω := by
-  rcases hz0.lt_or_eq with hz0 | hz0
-  · exact hΩ z hz hz0 j
-  · rwa [imDilation_of_im_eq_zero _ hz0]
 
 /-- Undoing a node dilation on a function supported in `Ω` gives a function whose support meets
 `{0 ≤ im}` inside `Ω`. -/
@@ -396,7 +498,7 @@ private theorem tsupport_comp_imDilation_inv_subset {Ω : Set ℂ}
   have hw' := tsupport_comp_subset_preimage f (imDilation (higherReflectionNode j)⁻¹).continuous hw
   have hz0 : (imDilation (higherReflectionNode j)⁻¹ w).im ≤ 0 := by
     simpa using mul_nonpos_of_nonpos_of_nonneg (inv_lt_zero.2 hn).le (show (0 : ℝ) ≤ w.im from hw0)
-  have h := imDilation_mem_of_im_nonpos hΩ j (hfΩ hw') hz0
+  have h := (mapsTo_imDilation_higherReflectionNode hΩ j ⟨hfΩ hw', hz0⟩).1
   rwa [imDilation_imDilation, mul_inv_cancel₀ hn.ne, imDilation_one_apply] at h
 
 /-- **Splitting a pairing with the reflection.** Against a compactly supported continuous `f`
@@ -410,7 +512,7 @@ private theorem integral_smul_planarReflection {Ω : Set ℂ}
       ∑ j, (d j * |higherReflectionNode j|⁻¹) •
         ∫ w in {z : ℂ | 0 < z.im}, f (imDilation (higherReflectionNode j)⁻¹ w) • h w := by
   have hL : MeasurableSet {z : ℂ | z.im < 0} := measurableSet_lt measurable_im measurable_const
-  have hclosed : IsClosed {z : ℂ | 0 ≤ z.im} := isClosed_le continuous_const continuous_im
+  have hclosed : IsClosed {z : ℂ | 0 ≤ z.im} := Complex.isClosed_setOfPred_le_im 0
   have hint : Integrable fun z => f z • planarReflection d h z := by
     have h1 := (hh.planarReflection hΩ d).integrableOn_smul hf hfc isClosed_univ
       (by simpa using hfΩ)
@@ -476,7 +578,7 @@ theorem HasWeakLineDerivOn.planarReflection_one {Ω : Opens ℂ}
   rw [integral_smul_planarReflection hΩ hg d hdφ (hφc.fderiv_apply (𝕜 := ℝ) 1)
       ((tsupport_fderiv_apply_subset ℝ 1).trans hφΩ),
     integral_smul_planarReflection hΩ hg' d hφ.continuous hφc hφΩ,
-    setIntegral_fderiv_smul_eq_neg hgW hg hg' hφ hφc
+    hgW.setIntegral_fderiv_smul_eq_neg hg hg' hφ hφc
       (fun z hz => hφΩ hz.1) (Or.inl (by simp))]
   rw [neg_add, ← Finset.sum_neg_distrib]
   congr 1
@@ -484,7 +586,7 @@ theorem HasWeakLineDerivOn.planarReflection_one {Ω : Opens ℂ}
   rw [← smul_neg]
   congr 1
   set c := (higherReflectionNode j)⁻¹
-  have hψ := setIntegral_fderiv_smul_eq_neg hgW hg hg' (hφ.comp (imDilation c).contDiff)
+  have hψ := hgW.setIntegral_fderiv_smul_eq_neg hg hg' (hφ.comp (imDilation c).contDiff)
     (hφc.comp_imDilation (inv_ne_zero (higherReflectionNode_ne_zero j)))
     (tsupport_comp_imDilation_inv_subset hΩ j hφΩ) (Or.inl (by simp)) (v := 1)
   simp only [Function.comp_def, fderiv_comp_imDilation_apply hφd, imDilation_apply_one] at hψ
@@ -512,9 +614,9 @@ theorem HasWeakLineDerivOn.planarReflection_I {Ω : Opens ℂ}
   have hφd : Differentiable ℝ φ := hφ.differentiable (by simp)
   have hdφ : Continuous fun z => fderiv ℝ φ z I :=
     (hφ.continuous_fderiv (by simp)).clm_apply continuous_const
-  have hclosed : IsClosed {z : ℂ | 0 ≤ z.im} := isClosed_le continuous_const continuous_im
+  have hclosed : IsClosed {z : ℂ | 0 ≤ z.im} := Complex.isClosed_setOfPred_le_im 0
   have hHsub : {z : ℂ | 0 < z.im} ⊆ {z : ℂ | 0 ≤ z.im} :=
-    fun z (hz : 0 < z.im) => show (0 : ℝ) ≤ z.im from le_of_lt hz
+    ofPred_subset_ofPred.2 fun _ => le_of_lt
   simp_rw [(hφd _).lineDeriv_eq_fderiv]
   rw [integral_smul_planarReflection hΩ hg d hdφ (hφc.fderiv_apply (𝕜 := ℝ) I)
       ((tsupport_fderiv_apply_subset ℝ I).trans hφΩ),
@@ -550,7 +652,7 @@ theorem HasWeakLineDerivOn.planarReflection_I {Ω : Opens ℂ}
       · exact hψΩ ⟨hw', hw0⟩
     have hχ0 (x : ℝ) : φ x - ψ x = 0 := by
       simp [hψdef, imDilation_of_im_eq_zero _ (Complex.ofReal_im x)]
-    have hIBP := setIntegral_fderiv_smul_eq_neg hgW hg hg' hχ hχc hχΩ (Or.inr hχ0)
+    have hIBP := hgW.setIntegral_fderiv_smul_eq_neg hg hg' hχ hχc hχΩ (Or.inr hχ0)
     have hdχ (w : ℂ) : fderiv ℝ (fun w => φ w - ψ w) w I = fderiv ℝ φ w I - fderiv ℝ ψ w I := by
       rw [fderiv_fun_sub (hφd w) (hψ.differentiable (by simp) w), sub_apply]
     have hdψc : Continuous fun z => fderiv ℝ ψ z I :=
@@ -601,8 +703,8 @@ reflection of the tangential derivative, and the normal component is the reflect
 derivative with the weights `d j * higherReflectionNode j`. Below the axis it is the chain-rule
 expression `TauCeti.planarReflectionFDeriv_of_neg`. -/
 def planarReflectionFDeriv (d : Fin k → ℝ) (Dg : ℂ → ℂ →L[ℝ] F) (z : ℂ) : ℂ →L[ℝ] F :=
-  ContinuousLinearMap.smulRightL ℝ ℂ F reCLM (planarReflection d (fun w => Dg w 1) z) +
-    ContinuousLinearMap.smulRightL ℝ ℂ F imCLM
+  ContinuousLinearMap.smulRightL ℝ ℝ ℝ ℂ F reCLM (planarReflection d (fun w => Dg w 1) z) +
+    ContinuousLinearMap.smulRightL ℝ ℝ ℝ ℂ F imCLM
       (planarReflection (fun j => d j * higherReflectionNode j) (fun w => Dg w I) z)
 
 @[simp]
@@ -691,8 +793,8 @@ theorem MemWkpLoc.planarReflection {p : ℝ≥0∞} (hp : 1 ≤ p) {Ω : Opens �
     have h2 := ih (d := fun j => d j * higherReflectionNode j)
       (fun i hi => by simpa [mul_assoc, pow_succ'] using hd (i + 1) (by omega))
       (hDgm.clm_comp (ContinuousLinearMap.apply ℝ F I))
-    have h := (h1.clm_comp (ContinuousLinearMap.smulRightL ℝ ℂ F reCLM)).add
-      (h2.clm_comp (ContinuousLinearMap.smulRightL ℝ ℂ F imCLM))
+    have h := (h1.clm_comp (ContinuousLinearMap.smulRightL ℝ ℝ ℝ ℂ F reCLM)).add
+      (h2.clm_comp (ContinuousLinearMap.smulRightL ℝ ℝ ℝ ℂ F imCLM))
     convert h using 1
     funext z
     simp [planarReflectionFDeriv]
@@ -711,15 +813,12 @@ theorem MemWkpLoc.planarReflection_higherReflectionCoeff {p : ℝ≥0∞} (hp : 
 theorem imDilation_higherReflectionNode_mem_ball (x : ℝ) (r : ℝ) {k : ℕ} (j : Fin k) {z : ℂ}
     (hz : z ∈ Metric.ball (x : ℂ) r) :
     imDilation (higherReflectionNode j) z ∈ Metric.ball (x : ℂ) r := by
-  have hn : |higherReflectionNode j| ≤ 1 := by
-    rw [higherReflectionNode_eq, abs_neg, abs_inv, abs_of_pos (by positivity)]
-    exact inv_le_one_of_one_le₀ (by simp)
   rw [Metric.mem_ball, dist_eq_norm] at hz ⊢
   have hx : imDilation (higherReflectionNode j) (x : ℂ) = x :=
     imDilation_of_im_eq_zero _ (Complex.ofReal_im x)
   calc ‖imDilation (higherReflectionNode j) z - x‖
       = ‖imDilation (higherReflectionNode j) (z - x)‖ := by rw [map_sub, hx]
-    _ ≤ ‖z - x‖ := norm_imDilation_le hn _
+    _ ≤ ‖z - x‖ := norm_imDilation_le (abs_higherReflectionNode_le_one j) _
     _ < r := hz
 
 /-- **Extension from a half-disc to the disc.** For a disc `D` centred on the real axis, a map in
@@ -731,12 +830,80 @@ theorem MemWkpLoc.planarReflection_higherReflectionCoeff_ball {p : ℝ≥0∞} (
   MemWkpLoc.planarReflection_higherReflectionCoeff (Ω := ⟨_, Metric.isOpen_ball⟩) hp
     (fun _ hz _ j => imDilation_higherReflectionNode_mem_ball x r j hz) hu
 
+/-- The reflection of a locally `Lᵖ` map on a half-disc centred on the real axis is locally `Lᵖ`
+on the disc, for any weights. -/
+theorem MemLpLoc.planarReflection_ball {p : ℝ≥0∞} (x r : ℝ) {u : ℂ → F}
+    (hu : MemLpLoc p (Metric.ball (x : ℂ) r ∩ {z | 0 ≤ z.im}) u) (d : Fin k → ℝ) :
+    MemLpLoc p (Metric.ball (x : ℂ) r) (TauCeti.planarReflection d u) :=
+  hu.planarReflection (fun _ hz _ j => imDilation_higherReflectionNode_mem_ball x r j hz) d
+
 /-- **Extension from the closed half-plane to the plane.** -/
 theorem MemWkpLoc.planarReflection_higherReflectionCoeff_univ {p : ℝ≥0∞} (hp : 1 ≤ p)
     {u : ℂ → F} (hu : MemWkpLoc p {z : ℂ | 0 ≤ z.im} k u) :
     MemWkpLoc p univ k (TauCeti.planarReflection (higherReflectionCoeff k) u) :=
   MemWkpLoc.planarReflection_higherReflectionCoeff (Ω := ⊤) hp (fun _ _ _ _ => trivial)
     (by simpa using hu)
+
+/-! ### Reflection cores -/
+
+/-- The reflection core is stable under the node dilations below the real axis. -/
+theorem _root_.TopologicalSpace.Opens.imDilation_higherReflectionNode_mem_reflectionCore
+    {V : Opens ℂ} {n : ℕ} (j : Fin n) {z : ℂ} (hz : z ∈ V.reflectionCore) (him : z.im ≤ 0) :
+    imDilation (higherReflectionNode j) z ∈ V.reflectionCore :=
+  Opens.imDilation_mem_reflectionCore (abs_le.1 (abs_higherReflectionNode_le_one j)) hz him
+
+/-! ### Reflection near a relatively open subset of the closed upper half-plane -/
+
+/-- **Reflection near a relatively open subset of the closed upper half-plane.** The order-`k`
+higher reflection of `u ∈ MemWkpLoc p (Ω ∩ {0 ≤ im}) k` is in `MemWkpLoc p V k` on the reflection
+core `V = Ω.reflectionCore`, an open set between `Ω ∩ {0 ≤ im}` and `Ω`. No symmetry of `Ω` is
+assumed. -/
+theorem MemWkpLoc.planarReflection_higherReflectionCoeff_reflectionCore {p : ℝ≥0∞}
+    (hp : 1 ≤ p) {Ω : Opens ℂ} {u : ℂ → F} (hu : MemWkpLoc p ((Ω : Set ℂ) ∩ {z | 0 ≤ z.im}) k u) :
+    MemWkpLoc p Ω.reflectionCore k (TauCeti.planarReflection (higherReflectionCoeff k) u) :=
+  MemWkpLoc.planarReflection_higherReflectionCoeff hp
+    (fun _ hz him j => Opens.imDilation_higherReflectionNode_mem_reflectionCore j hz him.le)
+    (by rwa [Opens.coe_reflectionCore_inter_setOf_im_nonneg])
+
+/-- At order one the reflection node is `-1`, so the node dilation is complex conjugation. -/
+theorem imDilation_higherReflectionNode_fin_one (j : Fin 1) (z : ℂ) :
+    imDilation (higherReflectionNode j) z = conj z := by
+  rw [Fin.fin_one_eq_zero j, imDilation_apply, higherReflectionNode_eq]
+  apply Complex.ext <;> simp
+
+/-- Every weak derivative of a half-disc Sobolev map is locally `Lᵖ` up to the real axis: it
+agrees with the one supplied by the definition off the axis, which is a null set. -/
+theorem MemWkpLoc.memLpLoc_of_hasWeakFDerivOn_inter_setOf_im_nonneg {p : ℝ≥0∞} {Ω : Opens ℂ}
+    {u : ℂ → F} (hu : MemWkpLoc p ((Ω : Set ℂ) ∩ {z | 0 ≤ z.im}) 1 u) {D : ℂ → ℂ →L[ℝ] F}
+    (hD : HasWeakFDerivOn volume (Opens.interior ((Ω : Set ℂ) ∩ {z | 0 ≤ z.im})) u D) :
+    MemLpLoc p ((Ω : Set ℂ) ∩ {z | 0 ≤ z.im}) D := by
+  obtain ⟨-, D', hD', hD'p⟩ := memWkpLoc_succ_iff.1 hu
+  exact (memWkpLoc_zero_iff.1 hD'p).congr_ae
+    (by rw [Measure.restrict_congr_set (inter_setOf_im_nonneg_ae_eq_interior Ω)]
+        exact hD'.ae_eq hD)
+
+/-- Near a point `w` of the closed upper half-plane in an open set `V`, a member of the half-disc
+class on `V ∩ {0 ≤ im}` agrees on the closed upper half-plane with a member of the class on a
+disc about `w`: the higher-order reflection when `w` is real, and the map itself otherwise. -/
+theorem MemWkpLoc.exists_ball_extension {p : ℝ≥0∞} (hp : 1 ≤ p) {V : Set ℂ} (hV : IsOpen V)
+    {u : ℂ → F} (hu : MemWkpLoc p (V ∩ {z | 0 ≤ z.im}) k u) {w : ℂ} (hw : w ∈ V)
+    (hw0 : 0 ≤ w.im) : ∃ r > 0, ∃ v : ℂ → F, MemWkpLoc p (Metric.ball w r) k v ∧
+      ∀ y ∈ Metric.ball w r, 0 ≤ y.im → v y = u y := by
+  obtain ⟨r, hr, hrV⟩ := Metric.isOpen_iff.1 hV w hw
+  rcases hw0.lt_or_eq with hw0 | hw0
+  · refine ⟨min r w.im, lt_min hr hw0, u, hu.mono fun y hy => ⟨hrV (Metric.ball_subset_ball
+      (min_le_left _ _) hy), ?_⟩, fun _ _ _ => rfl⟩
+    have := (Complex.abs_im_le_norm (y - w)).trans_lt ((mem_ball_iff_norm.1 hy).trans_le
+      (min_le_right _ _))
+    rw [Complex.sub_im, abs_lt] at this
+    rw [mem_ofPred_eq]
+    linarith [this.1]
+  · have hwx : ((w.re : ℝ) : ℂ) = w := Complex.ext (by simp) (by simp [hw0])
+    refine ⟨r, hr, TauCeti.planarReflection (higherReflectionCoeff k) u, ?_, fun y _ hy =>
+      planarReflection_of_nonneg _ u hy⟩
+    rw [← hwx]
+    exact MemWkpLoc.planarReflection_higherReflectionCoeff_ball hp w.re r
+      (hu.mono (inter_subset_inter_left _ (by rw [hwx]; exact hrV)))
 
 /-! ### The `Lᵖ` bound -/
 

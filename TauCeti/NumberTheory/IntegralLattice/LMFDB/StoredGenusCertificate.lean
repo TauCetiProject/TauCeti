@@ -125,11 +125,11 @@ structure StoredGenusCertificate (n : ℕ) where
   /-- Every stored representative defines a lattice in the genus of the stored lattice. -/
   sameGenus_reps : ∀ H ∈ reps,
     (ofGramMatrix (Pi.basisFun ℚ (Fin n)) gram gram_isSymm).SameGenus
-      (ofGramMatrix (Pi.basisFun ℚ (Fin n)) H.1 H.2)
+      (ofGramMatrix (Pi.basisFun ℚ (Fin n)) H.val H.property)
   /-- The lattices of the stored representatives are pairwise non-isometric. -/
   pairwise_isEmpty_isometry_reps : reps.Pairwise fun H H' ↦
-    IsEmpty (Isometry (ofGramMatrix (Pi.basisFun ℚ (Fin n)) H.1 H.2)
-      (ofGramMatrix (Pi.basisFun ℚ (Fin n)) H'.1 H'.2))
+    IsEmpty (Isometry (ofGramMatrix (Pi.basisFun ℚ (Fin n)) H.val H.property)
+      (ofGramMatrix (Pi.basisFun ℚ (Fin n)) H'.val H'.property))
 
 namespace StoredGenusCertificate
 
@@ -232,12 +232,12 @@ theorem thetaSeries_getElem_minimum (hn : 0 < n) (h : c.minimum < c.thetaSeries.
 
 /-- The lattice of each stored representative is positive definite. -/
 theorem isPosDef_of_mem_reps {H : {H : Matrix (Fin n) (Fin n) ℤ // H.IsSymm}} (hH : H ∈ c.reps) :
-    (ofGramMatrix (Pi.basisFun ℚ (Fin n)) H.1 H.2).IsPosDef :=
+    (ofGramMatrix (Pi.basisFun ℚ (Fin n)) H.val H.property).IsPosDef :=
   (c.sameGenus_reps H hH).isPosDef_iff.mp c.isPosDef
 
 /-- Each stored representative has the stored determinant. -/
 theorem det_of_mem_reps {H : {H : Matrix (Fin n) (Fin n) ℤ // H.IsSymm}} (hH : H ∈ c.reps) :
-    H.1.det = c.determinant := by
+    H.val.det = c.determinant := by
   classical
   rw [c.determinant_eq, (c.sameGenus_reps H hH).determinant_eq, determinant_ofGramMatrix]
 
@@ -245,7 +245,7 @@ theorem det_of_mem_reps {H : {H : Matrix (Fin n) (Fin n) ℤ // H.IsSymm}} (hH :
 -- This is reducible for the same reason as `lattice`: statements about the stored
 -- representatives name their lattices through `ofGramMatrix`.
 noncomputable abbrev repLattice (i : Fin c.reps.length) : IntegralLattice (Fin n → ℚ) :=
-  ofGramMatrix (Pi.basisFun ℚ (Fin n)) c.reps[i].1 c.reps[i].2
+  ofGramMatrix (Pi.basisFun ℚ (Fin n)) c.reps[i].val c.reps[i].property
 
 /-- The lattice of each stored representative lies in the genus of the stored lattice. -/
 theorem sameGenus_repLattice (i : Fin c.reps.length) :
@@ -258,8 +258,8 @@ theorem pairwise_isEmpty_isometry_repLattice :
   have h := List.pairwise_iff_getElem.mp c.pairwise_isEmpty_isometry_reps
   intro i j hij
   rcases lt_or_gt_of_ne (Fin.val_ne_of_ne hij) with hlt | hlt
-  · exact h i j i.2 j.2 hlt
-  · exact ⟨fun e ↦ (h j i j.2 i.2 hlt).false e.symm⟩
+  · exact h i j i.isLt j.isLt hlt
+  · exact ⟨fun e ↦ (h j i j.isLt i.isLt hlt).false e.symm⟩
 
 /-- **The class number bounds the number of stored representatives**, which are pairwise
 non-isometric lattices in the genus of the stored lattice. -/
@@ -273,7 +273,7 @@ stored lattice is isometric to the lattice of a stored representative. -/
 theorem length_reps_eq_classNumber_iff :
     c.reps.length = c.lattice.classNumber ↔ ∀ M : IntegralLattice (Fin n → ℚ),
       c.lattice.SameGenus M → ∃ H ∈ c.reps,
-        Nonempty (Isometry (ofGramMatrix (Pi.basisFun ℚ (Fin n)) H.1 H.2) M) := by
+        Nonempty (Isometry (ofGramMatrix (Pi.basisFun ℚ (Fin n)) H.val H.property) M) := by
   have h := card_eq_classNumber_iff_of_pairwise_isEmpty_isometry c.isPosDef.finite_genusClasses
     c.sameGenus_repLattice c.pairwise_isEmpty_isometry_repLattice
   rw [Nat.card_eq_fintype_card, Fintype.card_fin] at h
@@ -289,7 +289,8 @@ representative. -/
 theorem exists_mem_reps_nonempty_isometry_of_length_eq {W : Type*} [AddCommGroup W] [Module ℚ W]
     (h : c.reps.length = c.lattice.classNumber) {M : IntegralLattice W}
     (hM : c.lattice.SameGenus M) :
-    ∃ H ∈ c.reps, Nonempty (Isometry (ofGramMatrix (Pi.basisFun ℚ (Fin n)) H.1 H.2) M) := by
+    ∃ H ∈ c.reps, Nonempty (Isometry (ofGramMatrix (Pi.basisFun ℚ (Fin n)) H.val H.property) M)
+        := by
   obtain ⟨N, hN, ⟨e⟩⟩ := hM.exists_isometry
   obtain ⟨H, hH, ⟨f⟩⟩ := c.length_reps_eq_classNumber_iff.mp h N hN
   exact ⟨H, hH, ⟨f.trans e.symm⟩⟩

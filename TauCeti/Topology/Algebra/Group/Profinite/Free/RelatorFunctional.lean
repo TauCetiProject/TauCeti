@@ -105,9 +105,9 @@ theorem ContCohomology.IsHeisenbergCochain.apply_eq_heisenbergFunctional
       (Additive.toMul (Z1EquivOfSmulEqSelf htriv b)) (gradedMk p (freeProP p X) 1 n) := by
   have hpM : ∀ x : ZMod p, p • x = 0 := ZModModule.char_nsmul_eq_zero p
   have haN : ∀ n : pLowerCentralSeries p (freeProP p X) 1, (a : freeProP p X → ZMod p) n = 0 :=
-    fun n ↦ apply_eq_zero_of_mem_Z1_of_mem_pLowerCentralSeries_one htriv hpM a.2 n.2
+    fun n ↦ apply_eq_zero_of_mem_Z1_of_mem_pLowerCentralSeries_one htriv hpM a.property n.property
   have hbN : ∀ n : pLowerCentralSeries p (freeProP p X) 1, (b : freeProP p X → ZMod p) n = 0 :=
-    fun n ↦ apply_eq_zero_of_mem_Z1_of_mem_pLowerCentralSeries_one htriv hpM b.2 n.2
+    fun n ↦ apply_eq_zero_of_mem_Z1_of_mem_pLowerCentralSeries_one htriv hpM b.property n.property
   have key : (hh.gradedRestrict htriv haN hbN hpM).toZModLinearMap p =
       freeProP.heisenbergFunctional (Additive.toMul (Z1EquivOfSmulEqSelf htriv a))
         (Additive.toMul (Z1EquivOfSmulEqSelf htriv b)) := by
@@ -116,7 +116,7 @@ theorem ContCohomology.IsHeisenbergCochain.apply_eq_heisenbergFunctional
         hh.gradedRestrict_gradedBracket_gradedMkZero htriv haN hbN hpM htriv htriv,
         AddMonoidHom.mul_apply, Z1EquivOfSmulEqSelf_apply, toAdd_ofAdd]
     · simp only [AddMonoidHom.coe_toZModLinearMap,
-        hh.gradedRestrict_gradedPow_gradedMkZero htriv haN hbN hpM htriv htriv,
+        hh.gradedRestrict_gradedPow_gradedMkZero htriv haN hbN hpM htriv,
         AddMonoidHom.mul_apply, Z1EquivOfSmulEqSelf_apply, toAdd_ofAdd]
   rw [← key, AddMonoidHom.coe_toZModLinearMap, gradedRestrict_gradedMk]
 
@@ -166,7 +166,7 @@ theorem relatorEval_h2QuotientEquiv_transgression (r : R)
     relatorEval hRc hR e htrivF htriv r
         (h2QuotientEquiv e htrivF htriv (transgression (freeProP p X) (ZMod p) R hRc y)) =
       Multiplicative.toAdd
-        (Additive.toMul (H1EquivOfSmulEqSelf (fun (n : R) (m : ZMod p) ↦ htrivF n m) y.1) r) := by
+        (Additive.toMul (H1EquivOfSmulEqSelf (fun (n : R) (m : ZMod p) ↦ htrivF n m) y.val) r) := by
   rw [relatorEval_apply, h2DualEquiv_h2QuotientEquiv_transgression,
     H1ConjInvariantsEquivOfSmulEqSelf_apply_mk]
 
@@ -264,7 +264,7 @@ theorem relatorEval_explicitCup11 (r : R) (a b : H1 G (ZMod p)) :
         (explicitCup11 G (ZMod p) (ZMod p) (ZMod p) AddMonoidHom.mul continuous_mul
           (smul_mul_smul_of_smul_eq_self htriv) a b) =
       -degreeOneForm (gradedMk p (freeProP p X) 1
-          ⟨r, (pLowerCentralSeries_one_eq_proPFrattini Fact.out).symm.le (hR r.2)⟩)
+          ⟨r, (pLowerCentralSeries_one_eq_proPFrattini Fact.out).symm.le (hR r.property)⟩)
         (((e : freeProP p X ⧸ R →ₜ* G).comp
           (Subgroup.quotientMkContinuousMonoidHom R)).continuousZModDualMap (H1EquivOfSmulEqSelf
             htriv a))
@@ -286,8 +286,8 @@ theorem relatorEval_explicitCup11 (r : R) (a b : H1 G (ZMod p)) :
       (pull c : freeProP p X → ZMod p) g = (c : G → ZMod p) (e g) := by
     simp [pull, hφ]
   have hpullR (c : Z1 G (ZMod p)) (n : R) : (pull c : freeProP p X → ZMod p) n = 0 := by
-    rw [hpull, (QuotientGroup.eq_one_iff (n : freeProP p X)).2 n.2, map_one]
-    exact groupCohomology.map_one_of_isCocycle₁ (mem_Z1_iff.1 c.2).2
+    rw [hpull, (QuotientGroup.eq_one_iff (n : freeProP p X)).2 n.property, map_one]
+    exact groupCohomology.map_one_of_isCocycle₁ (mem_Z1_iff.1 c.property).2
   -- A Heisenberg cochain for the pulled-back cocycles: `H²(F, 𝔽_p) = 0`.
   obtain ⟨h, hh⟩ := exists_isHeisenbergCochain_of_subsingleton_H2
     (μ := (AddMonoidHom.mul : ZMod p →+ ZMod p →+ ZMod p)) continuous_mul
@@ -296,9 +296,9 @@ theorem relatorEval_explicitCup11 (r : R) (a b : H1 G (ZMod p)) :
   have hbR := hpullR d
   have hr : h r = heisenbergFunctional (Additive.toMul (Z1EquivOfSmulEqSelf htrivF (pull c)))
       (Additive.toMul (Z1EquivOfSmulEqSelf htrivF (pull d))) (gradedMk p (freeProP p X) 1
-        ⟨r, (pLowerCentralSeries_one_eq_proPFrattini Fact.out).symm.le (hR r.2)⟩) :=
+        ⟨r, (pLowerCentralSeries_one_eq_proPFrattini Fact.out).symm.le (hR r.property)⟩) :=
     hh.apply_eq_heisenbergFunctional htrivF
-      ⟨r, (pLowerCentralSeries_one_eq_proPFrattini Fact.out).symm.le (hR r.2)⟩
+      ⟨r, (pLowerCentralSeries_one_eq_proPFrattini Fact.out).symm.le (hR r.property)⟩
   rw [explicitCup11_eq_h2QuotientEquiv_transgression hRc e htrivF htriv hh haR hbR (hpull c)
       (hpull d), relatorEval_h2QuotientEquiv_transgression]
   simp only [H1EquivOfSmulEqSelf_mk, Z1EquivOfSmulEqSelf_apply, toAdd_ofAdd,
@@ -370,7 +370,7 @@ where `B_{⟦r⟧}` is the degree-one form of the class of `r` in `gr_1(F)`: the
 theorem relatorFunctional_cupFp (r : R) (a b : cohomFp p G 1) :
     relatorFunctional hRc hR e r (cupFp p G a b) =
       -degreeOneForm (gradedMk p (freeProP p X) 1
-          ⟨r, (pLowerCentralSeries_one_eq_proPFrattini Fact.out).symm.le (hR r.2)⟩)
+          ⟨r, (pLowerCentralSeries_one_eq_proPFrattini Fact.out).symm.le (hR r.property)⟩)
         (((e : freeProP p X ⧸ R →ₜ* G).comp
           (Subgroup.quotientMkContinuousMonoidHom R)).continuousZModDualMap
             (cohomFpLinearEquivContinuousZModDual p G a))

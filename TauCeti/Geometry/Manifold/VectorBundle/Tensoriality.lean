@@ -6,10 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Geometry.Manifold.VectorBundle.Tensoriality
-import Mathlib.Geometry.Manifold.Algebra.Structures
 import Mathlib.Geometry.Manifold.BumpFunction
 import Mathlib.Geometry.Manifold.VectorBundle.ContMDiffSection
-import Mathlib.Geometry.Manifold.VectorBundle.LocalFrame
+import TauCeti.Geometry.Manifold.VectorBundle.LocalFrame
 
 /-!
 # Tensoriality of globally smooth operations
@@ -17,7 +16,8 @@ import Mathlib.Geometry.Manifold.VectorBundle.LocalFrame
 This file complements Mathlib's pointwise tensoriality API with a criterion for operations whose
 additivity and smooth-function linearity laws are available for globally smooth sections.
 The criterion applies to finite-rank smooth real vector bundles over finite-dimensional Hausdorff
-manifolds. The target only needs addition and scalar multiplication; no algebraic laws on
+manifolds; on a trivial bundle the constant sections form a global frame, and no hypothesis on the
+base is needed. The target only needs addition and scalar multiplication; no algebraic laws on
 these operations are required beyond the stated laws for the section operation.
 
 ## Main results
@@ -26,6 +26,9 @@ these operations are required beyond the stated laws for the section operation.
   implies locality.
 * `TauCeti.Manifold.eq_of_contMDiff_tensorial`: an operation satisfying these laws has equal
   values on globally smooth sections which agree at the point of evaluation.
+* `TauCeti.Manifold.eq_zero_of_contMDiff_tensorial_of_const`: on the trivial bundle with
+  finite-dimensional fibre, an operation satisfying these laws and vanishing on constant sections
+  vanishes, over any base.
 -/
 
 public section
@@ -60,66 +63,96 @@ theorem map_sum_eq_of_contMDiff_additive
   induction q using Finset.induction_on with
   | empty => simp only [Finset.sum_empty]
   | @insert i q hi ih =>
+      rw [Finset.forall_mem_insert] at hu hv huv
+      -- Partial sums of globally smooth sections are globally smooth.
+      have hsum {w : ι → Π x : M, W x} (hw : ∀ j ∈ q, CMDiff n (T% (w j))) :
+          CMDiff n (T% (∑ j ∈ q, w j)) := by
+        simpa only [Finset.sum_apply] using ContMDiff.sum_section hw
       simp only [Finset.sum_insert hi]
-      have hmem (j) (hj : j ∈ q) : j ∈ insert i q := Finset.mem_insert_of_mem hj
-      have ih' := ih (fun j hj ↦ hu j (hmem j hj)) (fun j hj ↦ hv j (hmem j hj))
-        (fun j hj ↦ huv j (hmem j hj))
-      have hui := hu i (Finset.mem_insert_self i q)
-      have hvi := hv i (Finset.mem_insert_self i q)
-      have hsu : CMDiff n (T% (∑ j ∈ q, u j)) := by
-        simpa only [Finset.sum_apply] using
-          ContMDiff.sum_section (n := n) (t := fun j x ↦ u j x) fun j hj ↦ hu j (hmem j hj)
-      have hsv : CMDiff n (T% (∑ j ∈ q, v j)) := by
-        simpa only [Finset.sum_apply] using
-          ContMDiff.sum_section (n := n) (t := fun j x ↦ v j x) fun j hj ↦ hv j (hmem j hj)
-      rw [hadd hui hsu, hadd hvi hsv, huv i (Finset.mem_insert_self i q), ih']
+      rw [hadd hu.1 (hsum hu.2), hadd hv.1 (hsum hv.2), huv.1, ih hu.2 hv.2 huv.2]
+
+/-- An operation on smooth `F`-valued functions on `M` which is additive and linear over smooth
+functions vanishes on every smooth function as soon as it vanishes on the constant functions: the
+constant functions given by a basis of `F` form a global frame of the trivial bundle `M × F`.
+Unlike `TauCeti.Manifold.eq_of_contMDiff_tensorial`, this needs no Hausdorff or
+finite-dimensionality hypothesis on `M`. -/
+theorem eq_zero_of_contMDiff_tensorial_of_const
+    {𝕜 : Type*} [NontriviallyNormedField 𝕜] [CompleteSpace 𝕜] {n : ℕ∞ω}
+    {E : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+    {H : Type*} [TopologicalSpace H] {I : ModelWithCorners 𝕜 E H}
+    {M : Type*} [TopologicalSpace M] [ChartedSpace H M]
+    {F : Type*} [NormedAddCommGroup F] [NormedSpace 𝕜 F] [FiniteDimensional 𝕜 F]
+    {W : M → Type*} [∀ x, AddCommMonoid (W x)] [∀ x, Module 𝕜 (W x)]
+    (Φ : (M → F) → Π x, W x)
+    (hadd : ∀ u v : M → F, ContMDiff I 𝓘(𝕜, F) n u → ContMDiff I 𝓘(𝕜, F) n v →
+      Φ (u + v) = Φ u + Φ v)
+    (hsmul : ∀ (f : M → 𝕜) (u : M → F), ContMDiff I 𝓘(𝕜) n f → ContMDiff I 𝓘(𝕜, F) n u →
+      Φ (f • u) = f • Φ u)
+    (hconst : ∀ c : F, Φ (fun _ ↦ c) = 0) {u : M → F} (hu : ContMDiff I 𝓘(𝕜, F) n u) :
+    Φ u = 0 := by
+  classical
+  let b := Module.finBasis 𝕜 F
+  -- The coefficients of `u` in the basis `b` are smooth.
+  let c (i) : M → 𝕜 := fun x ↦ b.coord i (u x)
+  have hc (i) : ContMDiff I 𝓘(𝕜) n (c i) :=
+    (LinearMap.toContinuousLinearMap (b.coord i)).contDiff.comp_contMDiff hu
+  have hterm (i) : ContMDiff I 𝓘(𝕜, F) n (c i • fun _ ↦ b i) :=
+    (hc i).smul contMDiff_const
+  have hsum (s : Finset (Fin (Module.finrank 𝕜 F))) :
+      Φ (∑ i ∈ s, c i • fun _ ↦ b i) = 0 := by
+    induction s using Finset.induction_on with
+    | empty =>
+      rw [Finset.sum_empty]
+      exact hconst 0
+    | insert i s hi ih =>
+      rw [Finset.sum_insert hi, hadd _ _ (hterm i) (contMDiff_finsetSum' fun j _ ↦ hterm j),
+        hsmul _ _ (hc i) contMDiff_const, hconst, smul_zero, ih, add_zero]
+  have hu_eq : u = ∑ i, c i • fun _ ↦ b i := by
+    ext x
+    simp [c, Finset.sum_apply, b.sum_repr]
+  rw [hu_eq]
+  exact hsum _
 
 variable
-  {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+  {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
   {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
-  {M : Type*} [TopologicalSpace M] [ChartedSpace H M]
+  {M : Type*} [TopologicalSpace M] [ChartedSpace H M] [T2Space M] [IsManifold I ∞ M]
 
-/-- An operation on globally smooth sections which respects multiplication by globally smooth
-functions depends only on the germ of the section at the evaluation point. Neither additivity
-nor any laws for scalar multiplication on the target are required. This is the smooth bump-function
-version of `TensorialAt.local`, whose cutoff need only be differentiable at the evaluation point. -/
+/-- An operation on sections which respects multiplication by globally smooth functions at two
+sections takes equal values on them whenever they agree near the evaluation point. The sections
+need not be smooth, and neither additivity nor any laws for scalar multiplication on the target are
+required. This is the smooth bump-function version of `TensorialAt.local`, whose cutoff need only
+be differentiable at the evaluation point. -/
 theorem eq_of_contMDiff_smul_of_eventuallyEq
-    [FiniteDimensional ℝ E] [T2Space M] [IsManifold I ∞ M]
-    {G : Type*} [NormedAddCommGroup G] [NormedSpace ℝ G]
-    {W : M → Type*} [TopologicalSpace (TotalSpace G W)]
-    [∀ x, AddCommGroup (W x)] [∀ x, Module ℝ (W x)] [∀ x, TopologicalSpace (W x)]
-    [FiberBundle G W] {A : Type*} [SMul ℝ A]
-    (Φ : (Π x : M, W x) → A) (x : M)
-    (hsmul : ∀ {f : M → ℝ} {s : Π x : M, W x}, ContMDiff I 𝓘(ℝ) ∞ f →
-      CMDiff ∞ (T% s) → Φ (f • s) = f x • Φ s)
-    {s s' : Π x : M, W x} (hs : CMDiff ∞ (T% s)) (hs' : CMDiff ∞ (T% s'))
-    (hss' : Filter.Eventually (fun y ↦ s y = s' y) (nhds x)) : Φ s = Φ s' := by
-  classical
+    {W : M → Type*} [∀ x, AddCommGroup (W x)] [∀ x, Module ℝ (W x)]
+    {A : Type*} [SMul ℝ A] (Φ : (Π x : M, W x) → A) (x : M) {s s' : Π x : M, W x}
+    (hsmul : ∀ {f : M → ℝ}, ContMDiff I 𝓘(ℝ) ∞ f → Φ (f • s) = f x • Φ s)
+    (hsmul' : ∀ {f : M → ℝ}, ContMDiff I 𝓘(ℝ) ∞ f → Φ (f • s') = f x • Φ s')
+    (hss' : ∀ᶠ y in 𝓝 x, s y = s' y) : Φ s = Φ s' := by
   obtain ⟨ρ, -, hρ⟩ := (SmoothBumpFunction.nhds_basis_support (I := I) hss').mem_iff.mp hss'
   have hcut : (ρ : M → ℝ) • s = (ρ : M → ℝ) • s' := by
     funext y
     by_cases hy : ρ y = 0
     · simp [hy]
-    · exact congrArg (fun v : W y ↦ ρ y • v) (hρ hy)
-  -- The scalar law for the constant one function supplies the identity on the image of Φ.
-  have hone (u : Π x : M, W x) (hu : CMDiff ∞ (T% u)) : Φ u = (1 : ℝ) • Φ u := by
-    simpa only [Pi.smul_def', one_smul] using hsmul (f := fun _ ↦ 1) contMDiff_const hu
-  calc
-    Φ s = Φ ((ρ : M → ℝ) • s) := by rw [hsmul ρ.contMDiff hs, ρ.eq_one, ← hone s hs]
-    _ = Φ ((ρ : M → ℝ) • s') := congrArg Φ hcut
-    _ = Φ s' := by rw [hsmul ρ.contMDiff hs', ρ.eq_one, ← hone s' hs']
+    · exact congrArg (ρ y • ·) (hρ hy)
+  -- Multiplying by `ρ`, which is one at `x`, does not change the value of `Φ`: the scalar law for
+  -- the constant function one supplies the identity on that value.
+  have hρΦ {u : Π x : M, W x}
+      (hu : ∀ {f : M → ℝ}, ContMDiff I 𝓘(ℝ) ∞ f → Φ (f • u) = f x • Φ u) :
+      Φ ((ρ : M → ℝ) • u) = Φ u := by
+    rw [hu ρ.contMDiff, ρ.eq_one]
+    simpa only [Pi.smul_def', one_smul] using (hu (f := fun _ ↦ 1) contMDiff_const).symm
+  rw [← hρΦ hsmul, ← hρΦ hsmul', hcut]
 
 /-- On a finite-rank smooth real vector bundle over a finite-dimensional Hausdorff manifold,
 an operation which is additive and linear over globally smooth functions on globally
 smooth sections depends only on the value of such a section at the point of evaluation.
 The target need only carry addition and scalar multiplication, without any algebraic laws. -/
 theorem eq_of_contMDiff_tensorial
-    [FiniteDimensional ℝ E] [T2Space M] [IsManifold I ∞ M]
     {G : Type*} [NormedAddCommGroup G] [NormedSpace ℝ G] [FiniteDimensional ℝ G]
     {W : M → Type*} [TopologicalSpace (TotalSpace G W)]
     [∀ x, AddCommGroup (W x)] [∀ x, Module ℝ (W x)] [∀ x, TopologicalSpace (W x)]
-    [FiberBundle G W]
-    [VectorBundle ℝ G W] [ContMDiffVectorBundle ∞ G W I]
+    [FiberBundle G W] [VectorBundle ℝ G W] [ContMDiffVectorBundle ∞ G W I]
     {A : Type*} [Add A] [SMul ℝ A]
     (Φ : (Π x : M, W x) → A) (x : M)
     (hadd : ∀ {s s' : Π x : M, W x}, CMDiff ∞ (T% s) → CMDiff ∞ (T% s') →
@@ -128,56 +161,36 @@ theorem eq_of_contMDiff_tensorial
       CMDiff ∞ (T% s) → Φ (f • s) = f x • Φ s)
     {s s' : Π x : M, W x} (hs : CMDiff ∞ (T% s)) (hs' : CMDiff ∞ (T% s'))
     (hss' : s x = s' x) : Φ s = Φ s' := by
-  classical
-  have hlocal {u v : Π x : M, W x} :=
-    eq_of_contMDiff_smul_of_eventuallyEq Φ x hsmul (s := u) (s' := v)
   -- Cut off a local frame by a bump function which is one near `x`.  This gives globally smooth
   -- frame sections and coefficients while preserving the local frame expansion near `x`.
   let t := trivializationAt G W x
   have hxt : x ∈ t.baseSet := FiberBundle.mem_baseSet_trivializationAt G W x
-  have ht : t.baseSet ∈ nhds x := t.open_baseSet.mem_nhds hxt
-  obtain ⟨ρ, hρt, -⟩ :=
-    (SmoothBumpFunction.nhds_basis_support (I := I) ht).mem_iff.mp ht
+  have ht : t.baseSet ∈ 𝓝 x := t.open_baseSet.mem_nhds hxt
+  obtain ⟨ρ, hρt, -⟩ := (SmoothBumpFunction.nhds_basis_support (I := I) ht).mem_iff.mp ht
   let b := Basis.ofVectorSpace ℝ G
-  let frame := t.localFrame b
-  let coeff := t.localFrameCoeff I b
-  let frame' (i) := (ρ : M → ℝ) • frame i
-  let coeff' (u : Π x : M, W x) (i) (y : M) := ρ y * coeff i y (u y)
-  let expansion (u : Π x : M, W x) : Π y : M, W y :=
-    ∑ i, coeff' u i • frame' i
-  have hframe (i) : CMDiff ∞ (T% (frame' i)) := by
-    exact ρ.contMDiff.contMDiffOn.smul_section_of_tsupport t.open_baseSet hρt
+  let frame' (i) := (ρ : M → ℝ) • t.localFrame b i
+  let coeff' (u : Π x : M, W x) (i) (y : M) := ρ y * t.localFrameCoeff I b i y (u y)
+  have hframe (i) : CMDiff ∞ (T% (frame' i)) :=
+    ρ.contMDiff.contMDiffOn.smul_section_of_tsupport t.open_baseSet hρt
       (t.contMDiffOn_localFrame_baseSet ∞ b i)
   have hcoeff' (u : Π x : M, W x) (hu : CMDiff ∞ (T% u)) (i) :
-      ContMDiff I 𝓘(ℝ) ∞ (coeff' u i) := by
-    apply contMDiff_of_tsupport
-    intro y hy
-    have hyρ : y ∈ tsupport (ρ : M → ℝ) :=
-      (tsupport_mul_subset_left : tsupport (coeff' u i) ⊆ tsupport (ρ : M → ℝ)) hy
-    exact ρ.contMDiffAt.mul (contMDiffAt_localFrameCoeff b (hρt hyρ) (hu y) i)
+      ContMDiff I 𝓘(ℝ) ∞ (coeff' u i) :=
+    t.contMDiff_mul_localFrameCoeff b ρ.contMDiff.contMDiffOn hρt hu.contMDiffOn i
+  have hterm (u : Π x : M, W x) (hu : CMDiff ∞ (T% u)) (i) :
+      CMDiff ∞ (T% (coeff' u i • frame' i)) :=
+    (hcoeff' u hu i).smul_section (hframe i)
+  -- Near `x`, a smooth section agrees with its expansion in the cut-off frame, which is smooth.
   have hexpansion (u : Π x : M, W x) (hu : CMDiff ∞ (T% u)) :
-      CMDiff ∞ (T% (expansion u)) := by
-    simpa only [expansion, Finset.sum_apply] using
-      (ContMDiff.sum_section (s := Finset.univ) fun i _ ↦
-        (hcoeff' u hu i).smul_section (hframe i))
-  have hexpansion_eq (u : Π x : M, W x) :
-      Filter.Eventually (fun y ↦ expansion u y = u y) (nhds x) := by
-    filter_upwards [ρ.eventuallyEq_one,
-      t.eventually_eq_localFrame_sum_coeff_smul (I := I) b hxt] with y hρ hu
-    have hρ' : ρ y = 1 := by simpa using hρ
-    dsimp only [expansion]
-    simpa [coeff', frame', hρ', coeff, frame] using hu.symm
-  rw [hlocal hs (hexpansion s hs) ((hexpansion_eq s).mono fun y hy ↦ hy.symm),
-    hlocal hs' (hexpansion s' hs') ((hexpansion_eq s').mono fun y hy ↦ hy.symm)]
-  dsimp only [expansion]
-  refine (map_sum_eq_of_contMDiff_additive Φ hadd Finset.univ (fun i ↦ coeff' s i • frame' i)
-    (fun i ↦ coeff' s' i • frame' i)
-    (fun i _ ↦ (hcoeff' s hs i).smul_section (hframe i))
-    (fun i _ ↦ (hcoeff' s' hs' i).smul_section (hframe i)) ?_)
-  intro i _
+      Φ u = Φ (∑ i, coeff' u i • frame' i) := by
+    refine eq_of_contMDiff_smul_of_eventuallyEq Φ x (hsmul · hu) (hsmul · ?_) ?_
+    · simpa only [Finset.sum_apply] using ContMDiff.sum_section fun i _ ↦ hterm u hu i
+    · filter_upwards [ρ.eventuallyEq_one,
+        t.eventually_eq_localFrame_sum_coeff_smul (I := I) b hxt] with y hρ hu
+      simpa [coeff', frame', hρ] using hu
+  rw [hexpansion s hs, hexpansion s' hs']
+  refine map_sum_eq_of_contMDiff_additive Φ hadd Finset.univ _ _ (fun i _ ↦ hterm s hs i)
+    (fun i _ ↦ hterm s' hs' i) fun i _ ↦ ?_
   rw [hsmul (hcoeff' s hs i) (hframe i), hsmul (hcoeff' s' hs' i) (hframe i)]
-  congr 1
-  simp only [coeff', ρ.eq_one, one_mul]
-  exact t.localFrameCoeff_congr (I := I) b (i := i) hss'
+  simp only [coeff', ρ.eq_one, one_mul, t.localFrameCoeff_congr (I := I) b (i := i) hss']
 
 end TauCeti.Manifold

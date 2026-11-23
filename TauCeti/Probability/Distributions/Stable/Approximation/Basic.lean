@@ -11,6 +11,7 @@ public import Mathlib.Probability.Moments.IntegrableExpMul
 import TauCeti.MeasureTheory.Integral.Bochner.Set
 import TauCeti.Probability.Distributions.Affine
 import TauCeti.Probability.Distributions.CompoundPoisson.Transforms
+import TauCeti.Probability.Distributions.CompoundPoisson.Intensity
 
 /-!
 # Compensated compound-Poisson approximations to stable laws
@@ -49,8 +50,9 @@ namespace TauCeti.Probability
 
 /-- The compensated compound-Poisson approximation to a stable law at cutoff `ε`.
 
-The jump rate is the mass of the stable Lévy measure on `{x | ε < |x|}`, and the jump law is
-its normalization there. The final translation subtracts the integral of `sin` against the
+The jump rate is the mass of the stable Lévy measure on `{x | ε < |x|}`, truncated to `ℝ≥0` by
+`ENNReal.toNNReal` (so an infinite mass gives rate zero), and the jump law is its normalization
+there. The final translation subtracts the integral of `sin` against the
 cutoff Lévy measure. The useful parameter range is `0 < α < 2`, `|β| ≤ 1`, and `0 < ε`. -/
 def stableCompensatedPoissonMeasure (α β ε : ℝ) : Measure ℝ :=
   let ν := stableLevyMeasure α β
@@ -95,19 +97,13 @@ theorem map_neg_stableCompensatedPoissonMeasure (α β ε : ℝ) :
   ext x
   simp [sub_eq_add_neg, add_comm, ν, A]
 
-/-- Every compensated stable approximation is a probability measure. Outside the valid parameter
-range the cutoff Lévy mass is zero or infinite, the jump rate is zero, and the law is a point
-mass. -/
-theorem isProbabilityMeasure_stableCompensatedPoissonMeasure (α β ε : ℝ) :
+/-- Every compensated stable approximation is a probability measure. When the cutoff Lévy mass is
+zero or infinite, as happens outside the useful parameter range, the jump rate (its
+`ENNReal.toNNReal`) is zero and the law is a point mass. -/
+instance isProbabilityMeasure_stableCompensatedPoissonMeasure (α β ε : ℝ) :
     IsProbabilityMeasure (stableCompensatedPoissonMeasure α β ε) := by
   rw [stableCompensatedPoissonMeasure_def]
-  by_cases h : stableLevyMeasure α β {x : ℝ | ε < |x|} = 0 ∨
-      stableLevyMeasure α β {x : ℝ | ε < |x|} = ∞
-  · rcases h with h | h <;> simp only [h, ENNReal.toNNReal_zero, ENNReal.toNNReal_top,
-      compoundPoissonMeasure_zero] <;> infer_instance
-  · rw [not_or] at h
-    let _ := cond_isProbabilityMeasure_of_finite h.1 h.2
-    infer_instance
+  infer_instance
 
 /-- The characteristic function of a compensated stable approximation is the exponential of
 the truncated compensated Lévy integral. -/
@@ -251,7 +247,7 @@ theorem mgf_stableCompensatedPoissonMeasure {α β ε t : ℝ} (hε : 0 < ε)
       exp (∫ x in s, exp (t * x) ∂ν - ν.real s) := by
     simpa only [AddMonoidHom.coe_id, AddMonoidHom.id_apply] using
       mgf_compoundPoissonMeasure_cond (f := AddMonoidHom.id ℝ)
-        (by simpa only [AddMonoidHom.coe_id] using measurable_id) hm0 hm_top
+        (by simpa only [AddMonoidHom.coe_id] using measurable_id) hm_top
         (by simpa only [AddMonoidHom.id_apply] using hexp)
   -- Split the compensated integral into its exponential, constant and sine parts.
   have hsplit : ∫ x in s, exp (t * x) - 1 - t * sin x ∂ν =

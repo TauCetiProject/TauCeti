@@ -287,7 +287,7 @@ stored triples represent each isomorphism class of the passport exactly once. -/
 theorem exists_mem_triples_equivalent_cyclicFivePassportRecord {s : ConnectedTriple 5}
     (hs : PassportSpec.HasPassport s
       (ConnectedTriple.passportOf ⟨cyclicPowTriple 5 1, isConnected_cyclicPowTriple (by decide)⟩)) :
-    ∃ s' ∈ cyclicFivePassportRecord.triples, s.1.Equivalent s' := by
+    ∃ s' ∈ cyclicFivePassportRecord.triples, s.val.Equivalent s' := by
   have hmem : ConnectedIsoClass.mk s ∈ (PassportSpec.cyclicTotallyRamified 5).classSet := by
     rw [PassportSpec.mem_classSet, ConnectedIsoClass.hasPassport_mk,
       ← passportOf_cyclicPowTriple_five_one]
@@ -404,7 +404,7 @@ example :
     parseMapLabel 4 "4T1-4_4_2.2-ab" =
       some (⟨⟨0, by simp⟩, {4}, {4}, {2, 2}⟩, "ab") := by
   rw [parseMapLabel_eq_some_iff]
-  refine ⟨"4T1", "4_4_2.2", by decide +kernel, by decide, by decide, ?_⟩
+  refine ⟨"4T1", "4_4_2.2", by decide +kernel, by decide, by simp, ?_⟩
   exact parsePassportLabel_torusPassportRecord
 
 end PassportRecord
@@ -465,7 +465,7 @@ theorem isPrimitivizationOf_torusPassportRecord :
     ⟨torusTriple.blockQuotient _ e, torusTriple.isConnected_blockQuotient _ e⟩
   -- The quotient is the double cover branched over `0` and `1` computed in
   -- `blockQuotient_torusTriple`, once the stored block is identified with `{0, 2}`.
-  have hQ : Q.1.cycleData = ({2}, {2}, {1, 1}) := by
+  have hQ : Q.val.cycleData = ({2}, {2}, {1, 1}) := by
     have key : ∀ (B : Set (Fin 4)) (_ : B = {0, 2})
         (e : orbit torusTriple.monodromyGroup B ≃ Fin 2),
         torusTriple.blockQuotient B e = ofTwo (swap 0 1) (swap 0 1) := by
@@ -484,25 +484,13 @@ theorem isPrimitivizationOf_torusPassportRecord :
     refine (equivalent_iff_cycleData_eq_of_degree_le_four (by norm_num) ⟨_, hs0⟩ Q).mpr ?_
     rw [hQ, Subtype.coe_mk, toTriple_doubleCoverStoredTriple]
     decide
-  exact
-    { deg_eq := rfl
-      orbitSize_eq := by
-        rw [BelyiRecord.storedEmbeddingCount_def]
-        rfl
-      triples_ne_nil := List.cons_ne_nil _ _
-      hasPassport s hs := by
-        obtain rfl := List.mem_singleton.mp hs
-        exact ⟨hs0, hs0Q⟩
-      forall₂_isCycleNotation := .cons ⟨⟨by decide, by decide, by decide⟩,
-        ⟨by decide, by decide, by decide⟩, Perm.isCycleNotation_nil_iff.mpr rfl⟩ .nil
-      lambdas_eq := by
-        rw [ConnectedTriple.passportOf_lam0, ConnectedTriple.passportOf_lam1,
-          ConnectedTriple.passportOf_laminf, hQ]
-        rfl
-      g_eq s hs := by
-        obtain rfl := List.mem_singleton.mp hs
-        rw [toTriple_doubleCoverStoredTriple, ← computedGenus_eq]
-        decide }
+  refine BelyiRecord.isValidFor_of_triples_eq_singleton rfl rfl rfl rfl
+    ⟨⟨by decide, by decide, by decide⟩, ⟨by decide, by decide, by decide⟩,
+      Perm.isCycleNotation_nil_iff.mpr rfl⟩ hs0 hs0Q ?_ ?_
+  · rw [toTriple_doubleCoverStoredTriple]
+    decide
+  · rw [toTriple_doubleCoverStoredTriple, ← computedGenus_eq]
+    decide
 
 /-! ### The map label `2T1-2_2_1.1-a` -/
 
@@ -513,7 +501,7 @@ theorem parseMapLabel_doubleCoverBelyiRecord :
     parseMapLabel 2 doubleCoverBelyiRecord.label =
       some (⟨⟨0, by simp⟩, {2}, {2}, {1, 1}⟩, "a") := by
   rw [parseMapLabel_eq_some_iff_append]
-  refine ⟨"2T1-2_2_1.1", by decide +kernel, by decide, by decide, ?_⟩
+  refine ⟨"2T1-2_2_1.1", by decide +kernel, by decide, by simp, ?_⟩
   rw [parsePassportLabel_eq_some_iff]
   refine ⟨"2T1", "2_2_1.1", "2", "2", "1.1", by decide +kernel,
     by decide +kernel, ?_, ?_, ?_, ?_⟩
@@ -587,7 +575,7 @@ theorem geometryType_genusOneHyperbolicTriple :
 `torusTriple` and `genusOneHyperbolicTriple` both have genus one, but the first is Euclidean
 and the second hyperbolic. -/
 theorem not_exists_geometryType_eq_comp_genus :
-    ¬ ∃ f : ℕ → GeometryType, ∀ t : ConnectedTriple 4, t.1.geometryType = f t.1.genus := by
+    ¬ ∃ f : ℕ → GeometryType, ∀ t : ConnectedTriple 4, t.val.geometryType = f t.val.genus := by
   rintro ⟨f, hf⟩
   have hE := hf ⟨torusTriple, isConnected_torusTriple⟩
   have hH := hf ⟨genusOneHyperbolicTriple, isConnected_genusOneHyperbolicTriple⟩

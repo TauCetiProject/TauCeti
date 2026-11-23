@@ -32,8 +32,9 @@ already says that the Killing form of `A ⊗[R] L` is the base change of the Kil
 `LinearMap.BilinForm.nondegenerate_of_nondegenerate_baseChange` and
 `LinearMap.BilinForm.nondegenerate_baseChange_iff` say how a base change of integral domains
 reflects and preserves nondegeneracy of a bilinear form on a finite free module. What remains is to
-read `IsKilling` as nondegeneracy of the Killing form in both directions;
-`TauCeti.isKilling_of_killingForm_nondegenerate` is the direction Mathlib does not already provide.
+read `IsKilling` as nondegeneracy of the Killing form in both directions, with
+`TauCeti.isKilling_iff_killingForm_nondegenerate`, whose reverse direction Mathlib does not already
+provide.
 
 Nothing here needs the coefficients to be a field, and no characteristic hypothesis appears: the
 counterexamples to `HasTrivialRadical → IsKilling` in positive characteristic concern the passage
@@ -47,22 +48,13 @@ between semisimplicity and the Killing property, not the base change of the Kill
 * `TauCeti.isKilling_baseChange_iff`: along an injective base change of integral domains the
   descent is an equivalence.
 
-## Roadmap
+## Applications
 
-This is a prerequisite for Layer 9 of `TauCetiRoadmap/ReductiveGroups/README.md`, "**The
-Chevalley--Demazure construction.** For each root datum, an explicitly constructed split reductive
-group scheme over `ℤ` realizing it, via a Chevalley basis and the Kostant `ℤ`-form of the enveloping
-algebra", which is consumed by milestone L0 of `TauCetiRoadmap/CFSGStatement/README.md`. The
-declaration that will consume it is `TauCeti.IsChevalleySystem`, whose ambient Lie algebra carries
-`[LieAlgebra.IsKilling K L]`, applied to `TauCeti.DynkinType.lieAlgebra`. That Lie algebra is
-defined over `ℚ`, and
-`TauCeti/LinearAlgebra/RootSystem/SimplyConnectedRootDatum/LieAlgebra.lean` records that it "is not
-asserted to be semisimple: Mathlib derives that from Geck's construction over an algebraically
-closed field, and `ℚ` is not one", Mathlib's
-`RootPairing.GeckConstruction.instHasTrivialRadical` carrying an `[IsAlgClosed K]` hypothesis. This
-file supplies the general half of closing that gap; the remaining half is the identification of
-`AlgebraicClosure ℚ ⊗[ℚ] TauCeti.DynkinType.lieAlgebra` with Geck's Lie algebra over
-`AlgebraicClosure ℚ`.
+`TauCeti.IsChevalleySystem` asks its ambient Lie algebra for `[LieAlgebra.IsKilling K L]`, and is
+applied to the rational Lie algebra `TauCeti.DynkinType.lieAlgebra`. Mathlib's
+`RootPairing.GeckConstruction.instHasTrivialRadical` carries an `[IsAlgClosed K]` hypothesis, so
+`TauCeti.DynkinType.instIsKillingLieAlgebra` obtains the Killing property over
+`AlgebraicClosure ℚ` and descends it to `ℚ` with `TauCeti.isKilling_of_isKilling_baseChange`.
 
 ## References
 

@@ -7,7 +7,8 @@ module
 
 public import TauCeti.Analysis.Calculus.Deriv.Second
 import Mathlib.Analysis.Calculus.Deriv.Inv
-import Mathlib.Analysis.SpecialFunctions.ExpDeriv
+import TauCeti.Analysis.SpecialFunctions.Exp.Deriv
+import TauCeti.Analysis.SpecialFunctions.Log.Deriv
 
 /-!
 # The pricing equation in log-spot coordinates
@@ -77,15 +78,14 @@ variable {s y : ℝ}
 are arbitrary reals, so they may be the values of a local volatility and a time-dependent rate at
 `(s, t)`. -/
 theorem pde_comp_log {u : ℝ → ℝ → ℝ} {t : ℝ} (σ r : ℝ)
-    (hu : ∀ᶠ y in 𝓝 (log s), DifferentiableAt ℝ (fun y => u y t) y)
     (hu' : DifferentiableAt ℝ (deriv fun y => u y t) (log s)) (hs : s ≠ 0) :
     deriv (fun t' => u (log s) t') t +
         σ ^ 2 * s ^ 2 / 2 * deriv (deriv fun x => u (log x) t) s +
         r * (s * deriv (fun x => u (log x) t) s - u (log s) t) =
       deriv (fun t' => u (log s) t') t + σ ^ 2 / 2 * deriv (deriv fun y => u y t) (log s) +
         (r - σ ^ 2 / 2) * deriv (fun y => u y t) (log s) - r * u (log s) t := by
-  have h₁ := mul_deriv_comp_log hu.self_of_nhds hs
-  have h₂ := sq_mul_deriv_deriv_comp_log hu hu' hs
+  have h₁ := mul_deriv_comp_log (v := fun y => u y t) hs
+  have h₂ := sq_mul_deriv_deriv_comp_log (v := fun y => u y t) hu' hs
   linear_combination σ ^ 2 / 2 * h₂ + r * h₁
 
 /-- **The pricing equation in log-spot coordinates.** For a function `C(s, t)` of the spot and
@@ -94,16 +94,14 @@ equals the pricing operator `C_t + σ² s² / 2 C_ss + r (s C_s - C)` at the spo
 volatility `σ` and the rate `r` are arbitrary reals, so they may be the values of a local
 volatility and a time-dependent rate at `(e^y, t)`. -/
 theorem pde_comp_exp {C : ℝ → ℝ → ℝ} {t : ℝ} (σ r : ℝ)
-    (hC : ∀ᶠ x in 𝓝 (exp y), DifferentiableAt ℝ (fun x => C x t) x)
     (hC' : DifferentiableAt ℝ (deriv fun x => C x t) (exp y)) :
     deriv (fun t' => C (exp y) t') t + σ ^ 2 / 2 * deriv (deriv fun y => C (exp y) t) y +
         (r - σ ^ 2 / 2) * deriv (fun y => C (exp y) t) y - r * C (exp y) t =
       deriv (fun t' => C (exp y) t') t +
         σ ^ 2 * exp y ^ 2 / 2 * deriv (deriv fun x => C x t) (exp y) +
         r * (exp y * deriv (fun x => C x t) (exp y) - C (exp y) t) := by
-  have h₁ : HasDerivAt (fun y => C (exp y) t) (deriv (fun x => C x t) (exp y) * exp y) y :=
-    hC.self_of_nhds.hasDerivAt.comp y (hasDerivAt_exp y)
-  rw [deriv_deriv_comp_exp (f := fun x => C x t) hC hC', h₁.deriv]
+  rw [deriv_deriv_comp_exp (f := fun x => C x t) hC', deriv_comp_exp (f := fun x => C x t),
+    smul_eq_mul]
   ring
 
 /-- **The pricing equation in weighted log-spot coordinates.** For a function `C(s, t)` of the
@@ -164,7 +162,7 @@ theorem pde_comp_exp_div_one_add_exp {C : ℝ → ℝ → ℝ} {t : ℝ} (σ r :
     rw [hg'.deriv_eq]
     exact (((hasDerivAt_exp y).mul hwd.self_of_nhds.hasDerivAt).add
       ((hψd y).mul hwd'.hasDerivAt)).deriv
-  rw [← pde_comp_exp σ r hC hC', hg'', hg'.self_of_nhds, deriv_div_const]
+  rw [← pde_comp_exp σ r hC', hg'', hg'.self_of_nhds, deriv_div_const]
   have hwy : C (exp y) t = (1 + exp y) * w y := congrFun hgw y
   rw [hwy]
   have h1 : exp y + 1 ≠ 0 := by rw [add_comm]; exact hψ y

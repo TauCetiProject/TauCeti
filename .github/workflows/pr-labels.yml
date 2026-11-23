@@ -1,12 +1,12 @@
 name: PR status labels
 
-# Labels use the same pinned merge gate as Auto-merge. A ready label means the PR
-# passes its prerequisites; queue membership/reservations are reported separately.
-# Only trusted base and pinned policy code execute; PR contents are API data.
+# Labels use the TauCetiReview main merge gate, checked out through
+# .github/actions/checkout-merge-policy. A ready label means the PR passes its prerequisites;
+# queue membership/reservations are reported separately.
+# Only trusted base and merge policy code execute; PR contents are API data.
 
 # Per-event reconciliation lives in pr-status.yml, which batches bursts of events so that they do not
-# each take a GitHub-hosted runner. This workflow keeps the hourly sweep of every open PR and the
-# manual re-sync.
+# each take a runner. This workflow keeps the bounded rotating backstop and the manual re-sync.
 on:
   # Hourly backstop: clears a review-in-progress whose in-flight marker has expired with no other
   # event (a crashed review), and self-heals any drift.
@@ -19,6 +19,11 @@ on:
         description: "PR number to reconcile, or all for a complete backfill"
         required: true
         type: string
+      shared_evidence:
+        description: "Use shared evidence for a bounded reconciliation canary"
+        required: false
+        default: false
+        type: boolean
 
 # Lifecycle label writes use the scoped App token; the workflow token reconciles PR-CI routing.
 permissions:
@@ -33,26 +38,17 @@ jobs:
   resolve:
     if: >
       github.repository == 'TauCetiProject/TauCeti'
+      && github.ref == 'refs/heads/main'
       && github.event_name == 'workflow_dispatch' && inputs.pr != 'all'
-    runs-on: ubuntu-latest
+    runs-on:
+      group: TauCetiPRStatus
+      labels: [self-hosted, linux, x64, tauceti-fleet-pr-status]
+    timeout-minutes: 5
     outputs:
       pr: ${{ steps.r.outputs.pr }}
     steps:
-      - uses: actions/create-github-app-token@29824e69f54612133e76f7eaac726eef6c875baf # v2.2.1; v1 ignores permission-* inputs
-        id: app-token
-        with:
-          app-id: ${{ secrets.APP_ID }}
-          private-key: ${{ secrets.APP_PRIVATE_KEY }}
-          owner: TauCetiProject
-          repositories: TauCeti
-          permission-pull-requests: read
       - id: r
         env:
-          GH_TOKEN: ${{ steps.app-token.outputs.token }}
-          SELF_TESTED_MERGE_BACKEND: ${{ vars.MERGE_BACKEND }}
-          SELF_TESTED_TEAM_TOKEN: ${{ steps.app-token.outputs.token }}
-          SELF_TESTED_WRITE_TOKEN: ${{ github.token }}
-          REPO: ${{ github.repository }}
           INPUT_PR: ${{ github.event.inputs.pr }}
         run: |
           set -euo pipefail
@@ -65,9 +61,12 @@ jobs:
           fi
 
   label-resolved:
+    timeout-minutes: 10
     needs: resolve
     if: needs.resolve.outputs.pr != ''
-    runs-on: ubuntu-latest
+    runs-on:
+      group: TauCetiPRStatus
+      labels: [self-hosted, linux, x64, tauceti-fleet-pr-status]
     # The same group as `label`, so the two paths serialize against each other. See that job for why
     # cancel-in-progress stays false.
     concurrency:
@@ -89,38 +88,78 @@ jobs:
       # the version proposed by the PR.
       - uses: actions/checkout@v4
         with:
+          ref: main
           # The policy checkout below is a local action, so it must come from this trusted checkout.
           sparse-checkout: |
             scripts/pr_status
             .github/actions/checkout-merge-policy
           persist-credentials: false
       - name: Prepare pinned shared tools
-        uses: TauCetiProject/TauCetiTools/.github/actions/setup@4d2579da7cdb5679ab523d281f61c73ffb502f75
+        uses: TauCetiProject/TauCetiTools/.github/actions/setup@main
         with:
           tools-repository: TauCetiProject/TauCetiTools
-          tools-ref: 4d2579da7cdb5679ab523d281f61c73ffb502f75
           project-directory: .
-      - name: Checkout the pinned merge policy (read-only)
+      - name: Checkout the merge policy (read-only)
         uses: ./.github/actions/checkout-merge-policy
 
       - name: Reconcile status label
         env:
           GH_TOKEN: ${{ steps.app-token.outputs.token }}
+          TAUCETI_GITHUB_WRITE_ROLE: review-bot-installation-143500674
+          TAUCETI_PR_STATUS_SHARED_EVIDENCE: ${{ inputs.shared_evidence && 'true' || vars.PR_STATUS_SHARED_EVIDENCE }}
+          TAUCETI_GITHUB_STATE_TOKEN: ${{ secrets.TAUCETI_GITHUB_STATE_CLIENT_TOKEN }}
           SELF_TESTED_MERGE_BACKEND: ${{ vars.MERGE_BACKEND }}
-          SELF_TESTED_TEAM_TOKEN: ${{ steps.app-token.outputs.token }}
           SELF_TESTED_WRITE_TOKEN: ${{ github.token }}
           GH_REPO: ${{ github.repository }}
           PR: ${{ needs.resolve.outputs.pr }}
-        run: python3 scripts/pr_status/labels.py reconcile "$PR"
+        run: |
+          result=0
+          python3 scripts/pr_status/labels.py reconcile "$PR" || result=$?
+          if [ "$result" -eq 75 ]; then
+            echo "::notice::PR reconciliation deferred until quota reset"
+            echo "PR status reconciliation: **deferred**; retry after quota reset." >> "$GITHUB_STEP_SUMMARY"
+          else
+            exit "$result"
+          fi
 
-  # Reconcile every open PR on the backstop or an explicit migration/backfill.
+  # The scheduled backstop, or an explicit migration/backfill of every open PR (`pr: all`).
   # Per-PR jobs can overlap this pass; both read fresh state and converge.
-  sweep:
+  #
+  # The schedule does not reconcile every open PR. With about three thousand open PRs a full pass
+  # took about two hours: it outlived the App installation token (one hour, so every PR after the
+  # first hour failed with HTTP 401) or spent the installation's REST quota, which pr-status.yml
+  # shares. The event-driven batch already revisits every PR with activity, so the schedule takes
+  # the PRs it cannot reach: those with no lifecycle label or more than one, those showing
+  # review-in-progress (its expiry raises no event), and a rotating 1/24 slice of the rest, so every
+  # open PR is still rechecked over 24 runs. Selection is one paginated GraphQL listing, which does
+  # not draw on the REST quota. A manual `all` checkpoints the complete pass across bounded jobs.
+  wake-shared-backstop:
     if: >-
       github.repository == 'TauCetiProject/TauCeti'
-      && (github.event_name == 'schedule'
+      && github.ref == 'refs/heads/main'
+      && github.event_name == 'schedule'
+      && vars.PR_STATUS_SHARED_EVIDENCE == 'true'
+    runs-on:
+      group: TauCetiPRStatus
+      labels: [self-hosted, linux, x64, tauceti-fleet-pr-status]
+    timeout-minutes: 5
+    steps:
+      - name: Wake the retained shared reconciliation loop
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: gh workflow run pr-status.yml --ref main
+
+  sweep:
+    timeout-minutes: 40
+    if: >-
+      github.repository == 'TauCetiProject/TauCeti'
+      && github.ref == 'refs/heads/main'
+      && ((github.event_name == 'schedule' && vars.PR_STATUS_SHARED_EVIDENCE != 'true')
         || (github.event_name == 'workflow_dispatch' && inputs.pr == 'all'))
-    runs-on: ubuntu-latest
+    runs-on:
+      group: TauCetiPRStatus
+      labels: [self-hosted, linux, x64, tauceti-fleet-pr-status]
     concurrency:
       group: pr-labels-sweep
       cancel-in-progress: false
@@ -138,26 +177,123 @@ jobs:
           permission-members: read
       - uses: actions/checkout@v4
         with:
+          ref: main
           # The policy checkout below is a local action, so it must come from this trusted checkout.
           sparse-checkout: |
             scripts/pr_status
             .github/actions/checkout-merge-policy
           persist-credentials: false
       - name: Prepare pinned shared tools
-        uses: TauCetiProject/TauCetiTools/.github/actions/setup@4d2579da7cdb5679ab523d281f61c73ffb502f75
+        uses: TauCetiProject/TauCetiTools/.github/actions/setup@main
         with:
           tools-repository: TauCetiProject/TauCetiTools
-          tools-ref: 4d2579da7cdb5679ab523d281f61c73ffb502f75
           project-directory: .
-      - name: Checkout the pinned merge policy (read-only)
+      - name: Checkout the merge policy (read-only)
         uses: ./.github/actions/checkout-merge-policy
+
+      - name: Restore sweep progress
+        if: github.event_name == 'workflow_dispatch' && inputs.pr == 'all'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/sweep-in"
+          trusted_run=$(cat scripts/pr_status/trusted-sweep-run.jq)
+          ids=$(gh api "repos/$REPO/actions/artifacts?name=pr-labels-progress&per_page=10" \
+            --jq '.artifacts | sort_by(.created_at) | reverse | .[] | select(.expired == false) | .workflow_run.id')
+          for id in $ids; do
+            if trusted=$(gh api "repos/$REPO/actions/runs/$id" --jq "$trusted_run") && [ "$trusted" = true ]; then
+              if gh run download "$id" -R "$REPO" -n pr-labels-progress -D "$RUNNER_TEMP/sweep-in"; then
+                break
+              fi
+              rm -f "$RUNNER_TEMP/sweep-in/state.json"
+            fi
+          done
 
       - name: Reconcile open PRs
         env:
           GH_TOKEN: ${{ steps.app-token.outputs.token }}
+          TAUCETI_GITHUB_WRITE_ROLE: review-bot-installation-143500674
+          TAUCETI_PR_STATUS_SHARED_EVIDENCE: ${{ inputs.shared_evidence && 'true' || vars.PR_STATUS_SHARED_EVIDENCE }}
+          TAUCETI_GITHUB_STATE_TOKEN: ${{ secrets.TAUCETI_GITHUB_STATE_CLIENT_TOKEN }}
           SELF_TESTED_MERGE_BACKEND: ${{ vars.MERGE_BACKEND }}
-          SELF_TESTED_TEAM_TOKEN: ${{ steps.app-token.outputs.token }}
           SELF_TESTED_WRITE_TOKEN: ${{ github.token }}
           GH_REPO: ${{ github.repository }}
           REPO: ${{ github.repository }}
-        run: python3 scripts/pr_status/labels.py reconcile-all
+          FULL_PASS: ${{ github.event_name == 'workflow_dispatch' && '1' || '' }}
+          RUN_NUMBER: ${{ github.run_number }}
+          SLICES: "24"
+          # Stop starting PRs after 30 minutes; the remainder is picked up by later runs.
+          BUDGET_SECONDS: "1800"
+          # labels.py STATUS_LABELS; pr-status.yml's label filter uses the same list.
+          LIFECYCLE: '["awaiting-CI","awaiting-review","review-in-progress","ci-failed","awaiting-author","merge-check-failed","needs-human-review","awaiting-dependency","on-hold","ready-to-merge"]'
+        run: |
+          set -euo pipefail
+          if [[ "$FULL_PASS" == 1 ]]; then
+            mkdir -p "$RUNNER_TEMP/sweep-out"
+            since=$(date -u +%Y-%m-%dT%H:%M:%SZ)
+            result=0
+            python3 scripts/pr_status/batch.py --since "$since" --all-open \
+              --budget-seconds 1800 --state-in "$RUNNER_TEMP/sweep-in/state.json" \
+              --state-out "$RUNNER_TEMP/sweep-out/state.json" || result=$?
+            if [ "$result" -eq 75 ]; then
+              echo "::notice::Full sweep deferred; checkpoint retains unfinished work"
+              exit 0
+            fi
+            exit "$result"
+          fi
+          owner=${REPO%/*}
+          name=${REPO#*/}
+          export SLICE=$((RUN_NUMBER % SLICES))
+          # One line per open PR: "<number> <priority>", priority 0 for drift or an in-flight review,
+          # 1 for this run's slice. Other PRs are omitted.
+          gh api graphql --paginate -F owner="$owner" -F name="$name" \
+            -f query='query($owner:String!,$name:String!,$endCursor:String){repository(owner:$owner,name:$name){pullRequests(states:OPEN,first:100,after:$endCursor){pageInfo{hasNextPage endCursor} nodes{number labels(first:100){nodes{name}}}}}}' \
+            --jq '.data.repository.pullRequests.nodes[]
+                  | (env.LIFECYCLE | fromjson) as $lifecycle
+                  | [.labels.nodes[].name | select(IN($lifecycle[]))] as $mine
+                  | if ($mine | length) != 1 or ("review-in-progress" | IN($mine[])) then "\(.number) 0"
+                    elif .number % (env.SLICES | tonumber) == (env.SLICE | tonumber) then "\(.number) 1"
+                    else empty end' > "$RUNNER_TEMP/candidates"
+          prs=()
+          while read -r pr _; do prs+=("$pr"); done < <(sort -k2,2n -k1,1nr "$RUNNER_TEMP/candidates")
+          echo "slice $SLICE/$SLICES: ${#prs[@]} PRs to reconcile ($(grep -c ' 0$' "$RUNNER_TEMP/candidates" || true) drift or in-flight review)"
+          failures=()
+          done_count=0
+          for pr in "${prs[@]}"; do
+            if (( SECONDS >= BUDGET_SECONDS )); then
+              echo "::warning::time budget spent; $(( ${#prs[@]} - done_count )) PRs left for later runs"
+              break
+            fi
+            done_count=$((done_count + 1))
+            if out=$(python3 scripts/pr_status/labels.py reconcile "$pr" 2>&1); then
+              printf '%s\n' "$out"
+            else
+              result=$?
+              printf '%s\n' "$out"
+              if [ "$result" -eq 75 ]; then
+                echo "::notice::Sweep deferred after PR #$pr; later rotating sweeps retain coverage"
+                echo "PR status sweep: **deferred**; quota hold." >> "$GITHUB_STEP_SUMMARY"
+                break
+              fi
+              failures+=("$pr")
+              # A rate limit refuses every later PR as well; stop instead of spending more calls.
+              if grep -qiE 'rate ?limit|HTTP 401' <<< "$out"; then
+                echo "::error::stopping after PR #$pr: GitHub refused the token or its quota"
+                break
+              fi
+            fi
+          done
+          echo "Sweep: $((done_count - ${#failures[@]}))/${#prs[@]} reconciled; failures=${failures[*]:-none}"
+          [[ ${#failures[@]} -eq 0 ]]
+
+      - name: Save full sweep progress
+        if: always() && github.event_name == 'workflow_dispatch' && inputs.pr == 'all'
+        uses: actions/upload-artifact@v4
+        with:
+          name: pr-labels-progress
+          path: ${{ runner.temp }}/sweep-out/state.json
+          if-no-files-found: warn
+          retention-days: 7
+          overwrite: true

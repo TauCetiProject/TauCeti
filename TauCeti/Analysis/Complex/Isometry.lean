@@ -5,8 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.Complex.Exponential
 public import TauCeti.Analysis.InnerProductSpace.Isometry
+import Mathlib.Analysis.Complex.Conformal
 import Mathlib.Analysis.InnerProductSpace.TwoDim
+import Mathlib.Analysis.SpecialFunctions.Complex.Arg
 
 /-!
 # Distance-preserving maps of a disc about the origin
@@ -43,6 +46,11 @@ That argument is adapted from the proof of
 TauCeti#1502; here the unit radius is relaxed to an arbitrary `r > 0` and the hyperbolic
 hypothesis is replaced by the Euclidean one the argument actually used.
 
+The file also records the real-linear rotations of the plane. A real-linear map `C` of `ℂ` with
+`C i = i * C 1` is complex-linear (Mathlib's `real_linearMap_map_smul_complex`), so it is
+multiplication by `C 1`; if it also preserves `⟪i ·, ·⟫_ℝ` on the pair `(1, i)`, then `C 1` is a
+unit, hence `exp (i θ)` for some real `θ` (`TauCeti.exists_apply_eq_mul_exp`).
+
 ## Main results
 
 * `TauCeti.eq_mul_I_or_eq_neg_mul_I_of_real_inner_eq_zero` — two orthogonal unit vectors of the
@@ -52,13 +60,17 @@ hypothesis is replaced by the Euclidean one the argument actually used.
   rotated conjugation there, and
   `TauCeti.exists_norm_eq_one_eqOn_ball_const_mul_or_const_mul_conj_iff` — the converse packaged
   with it, the rotations and rotated conjugations being exactly the maps in question.
+* `TauCeti.exists_apply_eq_mul_exp` — the linear counterpart for rotations: a real-linear map `C`
+  of `ℂ` with `C i = i * C 1`, preserving `⟪i ·, ·⟫_ℝ` on the pair `(1, i)`, is multiplication by
+  `exp (i θ)`.
 
 The consumer is `TauCeti/Analysis/Complex/Conformal/Poincare/Isometry/Classification.lean`, which
 classifies the isometries of the Poincaré disc: an isometry of the hyperbolic metric fixing the
 origin is a Euclidean isometry of the disc fixing the origin, so the hyperbolic classification is
-this Euclidean one together with the Moebius factor that moves the base point. This supports the
-hyperbolic-metric layer L2 of the conformal-mapping roadmap
-(`TauCetiRoadmap/ConformalMapping/README.md`) without adding to it.
+this Euclidean one together with the Moebius factor that moves the base point. The rotation
+criterion `TauCeti.exists_apply_eq_mul_exp` is used by
+`TauCeti/Geometry/Symplectic/JHolomorphic/OrbitTorus/Trivialization.lean` to recognise a
+monodromy of a unitary frame along an orbit torus as a rotation.
 -/
 
 public section
@@ -208,5 +220,21 @@ theorem exists_norm_eq_one_eqOn_ball_const_mul_or_const_mul_conj_iff (hr : 0 < r
     · refine ⟨by simpa using hcase hzero, fun z hz w hw => ?_⟩
       rw [_root_.Complex.dist_eq, _root_.Complex.dist_eq, hcase hz, hcase hw, ← mul_sub,
         ← map_sub, norm_mul, hu, one_mul, _root_.Complex.norm_conj]
+
+/-! ### Real-linear rotations of the plane -/
+
+/-- A real-linear map `C` of `ℂ` with `C i = i * C 1`, preserving `⟪i ·, ·⟫_ℝ` on the pair
+`(1, i)`, is multiplication by a unit complex number `exp (i θ)`. -/
+theorem exists_apply_eq_mul_exp {C : ℂ →ₗ[ℝ] ℂ} (hCI : C I = I * C 1)
+    (hCω : inner ℝ (I * C 1) (C I) = inner ℝ I I) :
+    ∃ θ : ℝ, ∀ z, C z = z * _root_.Complex.exp (θ * I) := by
+  have hC (z : ℂ) : C z = z * C 1 := by
+    simpa using real_linearMap_map_smul_complex (ℓ := C) (by simpa using hCI) z 1
+  have hnorm : ‖C 1‖ = 1 := by
+    have h : ‖C 1‖ ^ 2 = (1 : ℝ) ^ 2 := by
+      simpa [hCI, real_inner_self_eq_norm_sq, norm_mul] using hCω
+    exact (pow_left_inj₀ (norm_nonneg _) zero_le_one two_ne_zero).1 h
+  obtain ⟨θ, hθ⟩ := (_root_.Complex.norm_eq_one_iff (C 1)).1 hnorm
+  exact ⟨θ, fun z => by rw [hC z, hθ]⟩
 
 end TauCeti

@@ -38,7 +38,6 @@ characterization of Mathlib's binomial measure.  The native law remains
 
 * N. L. Johnson, A. W. Kemp, S. Kotz, *Univariate Discrete Distributions*, 3rd ed., Wiley,
   2005, Chapter 3.
-* `TauCetiRoadmap/StandardDistributions/README.md`, Layer 1, "Bernoulli and binomial".
 -/
 
 public section
@@ -102,7 +101,7 @@ theorem charFun_map_cast_binomial (n : ℕ) (p : unitInterval) (t : ℝ) :
       intro k _
       have hexp : Complex.exp (((k : ℝ) * t) * Complex.I) =
           Complex.exp (Complex.I * t) ^ k := by
-        rw [← Complex.exp_nat_mul]
+        rw [← Complex.exp_natCast_mul]
         congr 1
         push_cast
         ring

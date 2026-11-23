@@ -9,6 +9,10 @@ public import Mathlib.Analysis.Calculus.IteratedDeriv.Lemmas
 public import Mathlib.MeasureTheory.Function.LpSeminorm.Basic
 public import Mathlib.MeasureTheory.Measure.Lebesgue.Complex
 public import TauCeti.Topology.UniformSpace.LocallyUniformConvergence
+import TauCeti.Analysis.Calculus.FDeriv.RestrictScalars
+import TauCeti.Analysis.Complex.IteratedDeriv
+import TauCeti.Topology.Closure
+import TauCeti.Topology.Compactness.Normed
 
 /-!
 # The hypotheses of compactness for holomorphic sequences
@@ -23,7 +27,10 @@ that a sequence violating the gradient bound has no convergent subsequence, and 
 satisfying all of the hypotheses do converge in the expected example. For holomorphic maps into
 `ℂ` the image bound already implies interior gradient bounds by the Cauchy estimates, so no
 example of this kind isolates the gradient bound: the sequence below violates the gradient and
-image bounds simultaneously.
+image bounds simultaneously. Each witness is also stated in the form of the planar compactness
+theorem for the weak Cauchy–Riemann equation, with real Fréchet derivatives `fderiv ℝ`, boundary
+conditions on sets of boundary points, and images in no fixed compact set; that these sequences
+solve the weak equation is in `TauCeti.Analysis.Complex.CauchyRiemann.Weak.Compactness.Checks`.
 
 * Closedness of the boundary condition. Boundary values in a closed set pass to pointwise
   limits (`TauCeti.mapsTo_of_tendsto_of_isClosed`). For `L = (0, 1) ⊆ ℝ ⊆ ℂ` the constant maps
@@ -45,14 +52,20 @@ point have norms tending to infinity has no subsequence converging pointwise the
 ## Main results
 
 * `TauCeti.HolomorphicCompactness.ofReal_inv_add_two_mem_image_Ioo`,
-  `TauCeti.HolomorphicCompactness.tendstoUniformly_ofReal_inv_add_two`: the closedness witness.
+  `TauCeti.HolomorphicCompactness.tendstoUniformly_ofReal_inv_add_two`,
+  `TauCeti.HolomorphicCompactness.not_mapsTo_zero_ofReal_image_Ioo`: the closedness witness.
 * `TauCeti.HolomorphicCompactness.eLpNorm_deriv_natCast_mul`,
   `TauCeti.HolomorphicCompactness.not_exists_eLpNorm_deriv_natCast_mul_le`,
   `TauCeti.HolomorphicCompactness.not_tendstoLocallyUniformlyOn_natCast_mul`: the maps
   `u m z = m z`, which violate the gradient and image bounds simultaneously.
-* `TauCeti.HolomorphicCompactness.tendstoLocallyUniformly_iteratedDeriv_div_natCast`: the maps
-  `z / m` converge to `0` with all derivatives.
-* `TauCeti.HolomorphicCompactness.not_tendstoLocallyUniformlyOn_natCast`: the image-bound
+* `TauCeti.HolomorphicCompactness.not_exists_norm_fderiv_natCast_mul_le`,
+  `TauCeti.HolomorphicCompactness.not_exists_isCompact_forall_mapsTo_natCast_mul`: the maps
+  `u m z = m z` violate the pointwise gradient bound and the image bound of the planar form.
+* `TauCeti.HolomorphicCompactness.tendstoLocallyUniformly_iteratedDeriv_div_natCast`,
+  `TauCeti.HolomorphicCompactness.tendstoLocallyUniformly_iteratedFDeriv_div_natCast`: the maps
+  `z / m` converge to `0` with all complex and all real derivatives.
+* `TauCeti.HolomorphicCompactness.not_tendstoLocallyUniformlyOn_natCast`,
+  `TauCeti.HolomorphicCompactness.not_exists_isCompact_forall_mapsTo_natCast`: the image-bound
   witness `u m = m`.
 
 ## References
@@ -92,6 +105,27 @@ theorem zero_notMem_ofReal_image_Ioo : (0 : ℂ) ∉ ofReal '' Ioo 0 1 := by
   rintro ⟨x, hx, h⟩
   exact hx.1.ne' (ofReal_eq_zero.1 h)
 
+/-- The constant maps `1 / (m + 2)` satisfy the boundary condition for `L = (0, 1) ⊆ ℝ ⊆ ℂ` on
+every set of boundary points. Like every constant map, they solve the homogeneous weak equation
+on every set, in particular on the half-disc, by `TauCeti.isWeakCauchyRiemannOn_const`. -/
+theorem mapsTo_ofReal_inv_add_two (m : ℕ) (S : Set ℂ) :
+    MapsTo (fun _ => (((m + 2 : ℝ)⁻¹ : ℝ) : ℂ)) S (ofReal '' Ioo 0 1) :=
+  fun _ _ => ofReal_inv_add_two_mem_image_Ioo m
+
+/-- The limit `0` of the constant maps `1 / (m + 2)` violates the boundary condition for
+`L = (0, 1)` on every nonempty set of boundary points, although it solves the weak equation: the
+closedness of `L` is needed. -/
+theorem not_mapsTo_zero_ofReal_image_Ioo {S : Set ℂ} (hS : S.Nonempty) :
+    ¬ MapsTo (fun _ => (0 : ℂ)) S (ofReal '' Ioo 0 1) := fun h =>
+  zero_notMem_ofReal_image_Ioo (h hS.some_mem)
+
+/-- For the closed `L = ℝ`, the boundary values of the limit of the constant maps `1 / (m + 2)`
+stay in `L`, by the closedness of `L`. -/
+theorem mapsTo_zero_range_ofReal (S : Set ℂ) : MapsTo (fun _ => (0 : ℂ)) S (range ofReal) :=
+  mapsTo_of_tendsto_of_isClosed (l := atTop) isometry_ofReal.isClosedEmbedding.isClosed_range
+    (fun m => (mapsTo_ofReal_inv_add_two m S).mono_right (image_subset_range _ _))
+    fun z _ => tendstoUniformly_ofReal_inv_add_two.tendsto_at z
+
 /-! ### The gradient bound -/
 
 /-- The derivative of `z ↦ m z` has norm `m` everywhere, so it violates any pointwise gradient
@@ -106,7 +140,7 @@ theorem eLpNorm_deriv_natCast_mul (m : ℕ) {p : ENNReal} (hp : p ≠ 0) :
   have hμ : volume.restrict (ball (0 : ℂ) (1 / 2)) ≠ 0 := by
     simpa [Measure.restrict_eq_zero] using (measure_ball_pos volume (0 : ℂ) one_half_pos).ne'
   rw [deriv_const_mul_id' (m : ℂ), eLpNorm_const _ hp hμ, Measure.restrict_apply_univ]
-  simp [enorm_eq_nnnorm]
+  simp [eNorm_eq_nnNorm]
 
 /-- The `L^p` norms on `D_{1/2}` of the derivatives of `z ↦ m z` admit no finite bound, so this
 sequence violates the gradient bound. -/
@@ -131,12 +165,51 @@ theorem not_tendstoLocallyUniformlyOn_natCast_mul {φ : ℕ → ℕ} (hφ : Stri
   simp only [norm_mul, Complex.norm_natCast]
   exact tendsto_natCast_atTop_atTop.atTop_mul_const (by norm_num)
 
+/-- The real derivatives of `z ↦ m z` admit no uniform bound on any nonempty set, such as
+`D_{1/2}`, so this sequence of weak solutions violates the gradient bound of the planar
+compactness theorem. -/
+theorem not_exists_norm_fderiv_natCast_mul_le {S : Set ℂ} (hS : S.Nonempty) :
+    ¬ ∃ C : ℝ, ∀ m : ℕ, ∀ z ∈ S, ‖fderiv ℝ (fun z : ℂ => m * z) z‖ ≤ C := by
+  rintro ⟨C, hC⟩
+  obtain ⟨m, hm⟩ := exists_nat_gt C
+  have := hC m hS.some hS.some_mem
+  rw [(differentiableAt_id.const_mul _).norm_fderiv_restrictScalars_eq_norm_deriv ℝ,
+    norm_deriv_natCast_mul] at this
+  exact hm.not_ge this
+
+/-- The maps `z ↦ m z` send `D_{1/2}` into `D_{m/2}`. -/
+theorem mapsTo_natCast_mul_ball {m : ℕ} (hm : 0 < m) :
+    MapsTo (fun z : ℂ => m * z) (ball 0 (1 / 2)) (ball 0 (m / 2)) := by
+  intro z hz
+  rw [mem_ball_zero_iff] at hz ⊢
+  rw [norm_mul, Complex.norm_natCast]
+  calc (m : ℝ) * ‖z‖ < m * (1 / 2) := by gcongr
+    _ = m / 2 := by ring
+
+/-- The images under the maps `z ↦ m z` of a set containing a nonzero point, such as `D_{1/2}` or
+a compact subset of `D_1`, lie in no fixed compact set, so this sequence also violates the image
+bound. -/
+theorem not_exists_isCompact_forall_mapsTo_natCast_mul {S : Set ℂ} {z : ℂ} (hz : z ∈ S)
+    (hz0 : z ≠ 0) :
+    ¬ ∃ K : Set ℂ, IsCompact K ∧ ∀ m : ℕ, MapsTo (fun z : ℂ => m * z) S K := by
+  refine not_exists_isCompact_forall_mapsTo_of_tendsto_norm_atTop (l := atTop)
+    (u := fun (m : ℕ) (z : ℂ) => m * z) hz ?_
+  simp only [norm_mul, Complex.norm_natCast]
+  exact tendsto_natCast_atTop_atTop.atTop_mul_const (norm_pos_iff.2 hz0)
+
 /-- The maps `z ↦ z / m` satisfy the gradient bound: their derivatives have norm at most `1`. -/
 theorem norm_deriv_div_natCast_le_one (m : ℕ) (z : ℂ) :
     ‖deriv (fun z : ℂ ↦ z / m) z‖ ≤ 1 := by
   rcases m.eq_zero_or_pos with rfl | hm
   · simp
   · simpa using inv_le_one_of_one_le₀ (Nat.one_le_cast.2 hm)
+
+/-- The real derivatives of `z ↦ z / m` have norm at most `1`, so this sequence satisfies the
+gradient bound of the planar compactness theorem. -/
+theorem norm_fderiv_div_natCast_le_one (m : ℕ) (z : ℂ) :
+    ‖fderiv ℝ (fun z : ℂ => z / m) z‖ ≤ 1 := by
+  rw [(differentiableAt_id.div_const _).norm_fderiv_restrictScalars_eq_norm_deriv ℝ]
+  exact norm_deriv_div_natCast_le_one m z
 
 /-- The maps `z ↦ z / m` satisfy the image bound: they send `D_1` into the closed unit disc. -/
 theorem mapsTo_div_natCast_ball (m : ℕ) :
@@ -156,6 +229,18 @@ theorem tendstoLocallyUniformly_iteratedDeriv_div_natCast (k : ℕ) :
   (tendstoLocallyUniformly_div_natCast (contDiff_id.continuous_iteratedDeriv' k)).congr
     fun _ _ ↦ (iteratedDeriv_div_const _ _).symm
 
+/-- The maps `z ↦ z / m` converge to the solution `0` in `C^∞` on compact sets: every real
+iterated derivative tends to `0` locally uniformly on `ℂ`. -/
+theorem tendstoLocallyUniformly_iteratedFDeriv_div_natCast (k : ℕ) :
+    TendstoLocallyUniformly (fun (m : ℕ) ↦ iteratedFDeriv ℝ k (fun z : ℂ ↦ z / m))
+      (fun _ ↦ 0) atTop := by
+  have h := tendstoLocallyUniformly_iteratedDeriv_div_natCast 0
+  simp only [iteratedDeriv_zero] at h
+  rw [← tendstoLocallyUniformlyOn_univ] at h ⊢
+  simpa [Pi.zero_def] using
+    h.iteratedFDeriv ℝ (.of_forall fun m => (differentiable_id.div_const _).differentiableOn)
+      isOpen_univ k
+
 /-! ### The image bound -/
 
 /-- No subsequence of the constant maps `m` converges locally uniformly on `D_1`: their images
@@ -164,5 +249,14 @@ theorem not_tendstoLocallyUniformlyOn_natCast {φ : ℕ → ℕ} (hφ : StrictMo
     ¬ TendstoLocallyUniformlyOn (fun m (_ : ℂ) ↦ (φ m : ℂ)) g atTop (ball 0 1) :=
   not_tendstoLocallyUniformlyOn_comp_of_tendsto_norm_atTop (F := fun m (_ : ℂ) ↦ (m : ℂ))
     (z := 0) (mem_ball_self one_pos) (by simpa using tendsto_natCast_atTop_atTop) hφ g
+
+/-- The images of a nonempty set under the constant maps `m` lie in no fixed compact set, so
+this sequence of weak solutions violates the image bound. These maps solve the homogeneous weak
+equation on every set by `TauCeti.isWeakCauchyRiemannOn_const`, and their derivatives vanish, so
+they satisfy the gradient bound with constant `0`. -/
+theorem not_exists_isCompact_forall_mapsTo_natCast {S : Set ℂ} (hS : S.Nonempty) :
+    ¬ ∃ K : Set ℂ, IsCompact K ∧ ∀ m : ℕ, MapsTo (fun _ => (m : ℂ)) S K :=
+  not_exists_isCompact_forall_mapsTo_of_tendsto_norm_atTop (u := fun (m : ℕ) (_ : ℂ) => (m : ℂ))
+    hS.some_mem (by simpa using tendsto_natCast_atTop_atTop)
 
 end TauCeti.HolomorphicCompactness

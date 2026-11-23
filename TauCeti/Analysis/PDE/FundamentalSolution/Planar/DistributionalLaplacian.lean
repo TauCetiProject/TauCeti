@@ -11,6 +11,7 @@ public import Mathlib.MeasureTheory.Measure.Lebesgue.Complex
 import Mathlib.Analysis.Calculus.LineDeriv.IntegrationByParts
 import Mathlib.Analysis.SpecialFunctions.Pow.Integral
 import Mathlib.MeasureTheory.Measure.Lebesgue.VolumeOfBalls
+import TauCeti.Analysis.Complex.OperatorNorm
 import TauCeti.Analysis.InnerProductSpace.Laplacian.Basic
 import TauCeti.Analysis.Sobolev.WeakDeriv.Laplacian
 import TauCeti.Analysis.SpecialFunctions.Integrability.Log
@@ -26,8 +27,8 @@ identity `-Δ G = δ₀`: for every `C²` function `f : ℂ → ℝ` with compac
 `∫ z, Δ f z * G z = -f 0`,
 
 and, with the pole moved to `a`, `∫ z, Δ f z * G (z - a) = -f a`. This is the two-dimensional
-counterpart of `TauCeti.integral_laplacian_mul_newtonianKernel` for `ℝⁿ`, `n ≥ 3`, and it is the
-identity that makes the planar Newtonian potential `G ⋆ f` solve Poisson's equation.
+counterpart of `TauCeti.integral_laplacian_mul_newtonianKernel` for `ℝⁿ`, `n = 1` or `n ≥ 3`, and
+it is the identity that makes the planar Newtonian potential `G ⋆ f` solve Poisson's equation.
 
 The argument has the same two steps as in higher dimensions.
 
@@ -43,13 +44,17 @@ The argument has the same two steps as in higher dimensions.
 
 ## Main declarations
 
-* `TauCeti.locallyIntegrable_planarNewtonianKernel`: `G` is locally integrable.
+* `TauCeti.locallyIntegrable_planarNewtonianKernel`: `G` is locally integrable, and
+  `TauCeti.locallyIntegrable_planarNewtonianKernel_comp` in the coordinates of a linear isometry.
 * `TauCeti.locallyIntegrable_fderiv_planarNewtonianKernel`: so is its derivative.
 * `TauCeti.integral_planarNewtonianKernel_mul_fderiv_eq_neg_fderiv_mul`: integration by parts
   against `G`, and `TauCeti.integral_planarNewtonianKernel_sub_mul_fderiv_eq_neg_fderiv_mul` with
   the pole at `a`.
 * `TauCeti.hasWeakFDerivOn_planarNewtonianKernel`: the classical derivative of `G` is its weak
   derivative.
+* `TauCeti.hasWeakFDerivOn_log_norm`: the weak gradient of `log ‖z‖` is `z / ‖z‖²`.
+* `TauCeti.integral_log_norm_mul_laplacian`: `Δ log ‖z‖ = ∂ₛ(s / ‖z‖²) + ∂ₜ(t / ‖z‖²)`
+  weakly.
 * `TauCeti.integral_laplacian_mul_planarNewtonianKernel`: `-Δ G = δ₀`.
 * `TauCeti.integral_laplacian_mul_planarNewtonianKernel_sub`: the same identity with the pole
   at `a`.
@@ -77,6 +82,15 @@ theorem locallyIntegrable_planarNewtonianKernel : LocallyIntegrable planarNewton
     funext planarNewtonianKernel_def
   rw [h]
   exact locallyIntegrable_log_norm.smul (-(2 * Real.pi)⁻¹)
+
+/-- The planar Newtonian kernel in the coordinates of a linear isometry `e : E ≃ ℂ` is locally
+integrable. -/
+theorem locallyIntegrable_planarNewtonianKernel_comp {E : Type*} [NormedAddCommGroup E]
+    [InnerProductSpace ℝ E] [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E]
+    (e : E ≃ₗᵢ[ℝ] ℂ) : LocallyIntegrable (planarNewtonianKernel ∘ e) := by
+  have h := locallyIntegrable_planarNewtonianKernel
+  rw [← e.measurePreserving.map_eq] at h
+  exact (locallyIntegrable_map_homeomorph e.toHomeomorph).1 h
 
 /-- The Fréchet derivative of the planar Newtonian kernel is locally integrable: its norm is
 `(2π ‖z‖)⁻¹`, an integrable singularity in two dimensions. -/
@@ -255,7 +269,7 @@ theorem hasWeakFDerivOn_planarNewtonianKernel (Ω : Opens ℂ) :
   hasWeakFDerivOn_of_forall_integral_fderiv_smul locallyIntegrable_planarNewtonianKernel
     locallyIntegrable_fderiv_planarNewtonianKernel (fun _ hg hc v ↦ by
       simpa only [smul_eq_mul, mul_comm] using
-        integral_planarNewtonianKernel_mul_fderiv_eq_neg_fderiv_mul hg hc v) Ω
+        integral_planarNewtonianKernel_mul_fderiv_eq_neg_fderiv_mul (hg.of_le (by simp)) hc v) Ω
 
 /-- Away from the pole, the gradient pairing `∇G · ∇f` is `-(2π)⁻¹ ‖z‖⁻² f' z z`. -/
 private lemma sum_fderiv_planarNewtonianKernel_mul_fderiv (b : OrthonormalBasis (Fin 2) ℝ ℂ)
@@ -315,5 +329,50 @@ theorem integrable_laplacian_mul_planarNewtonianKernel_sub {f : ℂ → ℝ} (hf
       (hc.laplacian.comp_homeomorph (Homeomorph.addRight a))
   simpa only [Function.comp_apply, Homeomorph.coe_addRight, sub_add_cancel, smul_eq_mul,
     mul_comm] using hg.comp_sub_right a
+
+section LogNorm
+
+open scoped Distributions Gradient
+
+/-- **The weak gradient of `log ‖z‖`.** On every open subset of the plane, `log ‖z‖` has weak
+derivative `‖z‖⁻² ⟪z, ·⟫`, that is, weak gradient `z / ‖z‖²`, matching its classical derivative
+away from the origin (`hasFDerivAt_log_norm_of_ne`); the derivative is `0` at the origin. -/
+theorem hasWeakFDerivOn_log_norm (Ω : Opens ℂ) :
+    HasWeakFDerivOn volume Ω (fun z : ℂ ↦ Real.log ‖z‖)
+      fun z ↦ (‖z‖ ^ 2)⁻¹ • innerSL ℝ z := by
+  have h := (hasWeakFDerivOn_planarNewtonianKernel Ω).const_smul (-(2 * Real.pi))
+  have hu : (-(2 * Real.pi)) • planarNewtonianKernel = fun z : ℂ ↦ Real.log ‖z‖ := by
+    funext z
+    simp only [Pi.smul_apply, planarNewtonianKernel_def, smul_eq_mul]
+    field_simp
+  rw [hu] at h
+  refine h.congr_ae_deriv ?_
+  filter_upwards [ae_restrict_of_ae (volume.ae_ne (0 : ℂ))] with z hz
+  ext v
+  simp only [Pi.smul_apply, smul_apply, fderiv_planarNewtonianKernel_apply,
+    innerSL_apply_apply, smul_eq_mul]
+  field_simp
+
+/-- **The weak divergence-form identity for `log ‖z‖`.** For every test function `φ` on an open
+set `Ω`, `∫ log ‖z‖ Δφ = -∫ (f ∂ₛφ + g ∂ₜφ)` with `f = s / ‖z‖²` and `g = t / ‖z‖²`; that is,
+`Δ log ‖z‖ = ∂ₛf + ∂ₜg` weakly, with `(f, g)` the weak gradient of `log ‖z‖`. -/
+theorem integral_log_norm_mul_laplacian (Ω : Opens ℂ) (φ : 𝓓(Ω, ℝ)) :
+    ∫ z, Real.log ‖z‖ * Δ (φ : ℂ → ℝ) z =
+      -∫ z, (z.re / ‖z‖ ^ 2 * fderiv ℝ (φ : ℂ → ℝ) z 1 +
+        z.im / ‖z‖ ^ 2 * fderiv ℝ (φ : ℂ → ℝ) z Complex.I) := by
+  have hD : HasWeakFDerivOn volume Ω (fun z : ℂ ↦ Real.log ‖z‖)
+      fun z ↦ innerSL ℝ ((‖z‖ ^ 2)⁻¹ • z) := by
+    simpa only [map_smul] using hasWeakFDerivOn_log_norm Ω
+  have h := hD.integral_laplacian_smul_eq_neg_integral_inner φ
+  simp only [smul_eq_mul] at h
+  simp_rw [mul_comm (Real.log _)]
+  rw [h]
+  congr 2
+  funext z
+  rw [inner_gradient_left, map_smul, ContinuousLinearMap.apply_eq_re_smul_one_add_im_smul_I]
+  simp only [smul_eq_mul]
+  ring
+
+end LogNorm
 
 end TauCeti

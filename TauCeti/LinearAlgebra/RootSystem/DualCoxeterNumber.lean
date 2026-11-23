@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.RootSystem.Finite.CanonicalBilinear
-public import TauCeti.LinearAlgebra.RootSystem.HighestRoot
+public import TauCeti.LinearAlgebra.RootSystem.HighestRoot.Basic
 public import TauCeti.LinearAlgebra.RootSystem.Weyl.Vector
 
 /-!

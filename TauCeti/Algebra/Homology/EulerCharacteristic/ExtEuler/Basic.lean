@@ -213,6 +213,13 @@ summand a genuine dimension, and a vanishing bound for `N`. -/
 noncomputable def truncatedExtEuler (X Y : C) (N : ℕ) : ℤ :=
   ∑ n ∈ Finset.range N, (-1) ^ n * (Module.finrank k (Ext.{w} X Y n) : ℤ)
 
+/-- The truncated Ext-Euler characteristic is the alternating sum of the `Ext` dimensions below
+`N`. -/
+theorem truncatedExtEuler_def (X Y : C) (N : ℕ) :
+    truncatedExtEuler.{w} k X Y N =
+      ∑ n ∈ Finset.range N, (-1) ^ n * (Module.finrank k (Ext.{w} X Y n) : ℤ) := by
+  rw [truncatedExtEuler]
+
 /-- The empty truncation of the alternating sum is zero. -/
 @[simp]
 theorem truncatedExtEuler_zero (X Y : C) : truncatedExtEuler.{w} k X Y 0 = 0 :=
@@ -341,14 +348,14 @@ theorem IsExtFinite.of_shortExact₂ (hS : S.ShortExact) {X : C} (h₁ : IsExtFi
     (h₃ : IsExtFinite.{w} k X S.X₃) : IsExtFinite.{w} k X S.X₂ :=
   ⟨fun n ↦ haveI := h₁.finiteDimensional n
     haveI := h₃.finiteDimensional n
-    finiteDimensional_of_exact (exact_postcompOfLinear k hS X n)⟩
+    (exact_postcompOfLinear k hS X n).moduleFinite⟩
 
 /-- **Extension closure in the first variable** for `Ext`-finiteness. -/
 theorem IsExtFinite.of_shortExact₂' (hS : S.ShortExact) {Y : C} (h₁ : IsExtFinite.{w} k S.X₁ Y)
     (h₃ : IsExtFinite.{w} k S.X₃ Y) : IsExtFinite.{w} k S.X₂ Y :=
   ⟨fun n ↦ haveI := h₁.finiteDimensional n
     haveI := h₃.finiteDimensional n
-    finiteDimensional_of_exact (exact_precompOfLinear k hS Y n)⟩
+    (exact_precompOfLinear k hS Y n).moduleFinite⟩
 
 /-- `Ext`-finiteness passes to the quotient term of a short exact sequence, along the first
 variable: the long exact sequence exhibits `Extⁿ⁺¹(S.X₃, Y)` between `Extⁿ(S.X₁, Y)` and
@@ -366,7 +373,7 @@ theorem IsExtFinite.of_shortExact₃' (hS : S.ShortExact) {Y : C} (h₁ : IsExtF
   | n + 1 =>
       have := h₁.finiteDimensional n
       have := h₂.finiteDimensional (n + 1)
-      exact finiteDimensional_of_exact (exact_precompOfLinear₃ k hS Y n (n + 1) (Nat.one_add n))
+      exact (exact_precompOfLinear₃ k hS Y n (n + 1) (Nat.one_add n)).moduleFinite
 
 /-- **Extension closure in the second variable** for eventual `Ext`-vanishing: the middle term of
 a short exact sequence inherits the larger of the two outer bounds. -/

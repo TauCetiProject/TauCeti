@@ -6,12 +6,15 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Topology.Algebra.FilterBasis
+public import Mathlib.Topology.Algebra.InfiniteSum.Defs
 public import Mathlib.Topology.Algebra.IsUniformGroup.Basic
 public import Mathlib.Topology.Algebra.Nonarchimedean.Basic
 public import Mathlib.Topology.Algebra.OpenSubgroup
 public import Mathlib.Topology.LocallyConstant.Basic
 public import Mathlib.Topology.UniformSpace.AbstractCompletion
 public import TauCeti.RingTheory.NovikovSeries.Basic
+public import TauCeti.Topology.Algebra.Nonarchimedean.EnergyFiltration
+import Mathlib.Topology.Algebra.InfiniteSum.Nonarchimedean
 
 /-!
 # The period-filtration topology on Novikov series
@@ -58,6 +61,17 @@ to a complete separated uniform space extends uniquely to the Novikov series. Th
 * The instances `T2Space` and `CompleteSpace`: the period topology is separated and complete.
 * The instances `NonarchimedeanAddGroup` and `ContinuousConstSMul`: the period topology has a
   basis of open subgroups, and coefficientwise scalar multiplication is continuous.
+* `TauCeti.NovikovSeries.isEnergyFiltration_periodFiltration`: the subgroups `U_C` are an energy
+  filtration, with the period as energy.
+* `TauCeti.NovikovSeries.coeff_tsum_eq_zero`: a sum of series vanishing at an exponent vanishes
+  there.
+* `TauCeti.NovikovSeries.coeff_eq_finsum_of_hasSum`: a coefficient of a convergent sum is the
+  finite sum of the coefficients of its terms.
+* `TauCeti.NovikovSeries.isClosed_setOf_support_subset`: series supported in any fixed set form a
+  closed set.
+* `TauCeti.NovikovSeries.summable_sigma_fin_iff` and `TauCeti.NovikovSeries.tsum_sigma_fin`:
+  over coefficients without additive torsion, listing the `i`-th series of a family `c i` times
+  has the summability and the sum of scaling it by `c i`.
 * `TauCeti.NovikovSeries.tendsto_ofFinsupp_trunc` and
   `TauCeti.NovikovSeries.denseRange_ofFinsupp`: the truncations of a series converge to it, so the
   finitely supported series are dense.
@@ -136,6 +150,42 @@ theorem single_mem_periodFiltration (h : H) (r : R) :
     single h r ∈ periodFiltration R N (N h) := fun _ hg =>
   coeff_single_of_ne (ne_of_apply_ne N hg.ne) r
 
+/-- A monomial lies in a period neighbourhood of `0` exactly when its coefficient vanishes or its
+exponent has weight at least the cutoff. -/
+theorem single_mem_periodFiltration_iff (g : H) (r : R) :
+    single g r ∈ periodFiltration R N C ↔ r = 0 ∨ C ≤ N g := by
+  refine ⟨fun h => ?_, fun h => ?_⟩
+  · by_contra hcon
+    rw [not_or, not_le] at hcon
+    exact hcon.1 (by simpa using mem_periodFiltration.1 h g hcon.2)
+  · rcases h with rfl | h
+    · simp
+    · exact antitone_periodFiltration h (single_mem_periodFiltration _ _)
+
+/-- Over coefficients without additive torsion, a nonzero natural multiple of a series lies in a
+period neighbourhood of `0` exactly when the series does. -/
+theorem nsmul_mem_periodFiltration_iff [IsAddTorsionFree R] {n : ℕ} (hn : n ≠ 0) :
+    n • a ∈ periodFiltration R N C ↔ a ∈ periodFiltration R N C := by
+  simp only [mem_periodFiltration, coeff_smul, nsmul_eq_zero_iff_right hn]
+
+/-- Over coefficients without additive torsion, listing the `i`-th series of a family `c i` times
+leaves finitely many terms outside a period neighbourhood of `0` exactly when scaling the `i`-th
+series by `c i` does. -/
+theorem finite_notMem_periodFiltration_sigma_iff [IsAddTorsionFree R] {ι : Type*} (c : ι → ℕ)
+    (f : ι → NovikovSeries R H N) :
+    {x : (i : ι) × Fin (c i) | f x.1 ∉ periodFiltration R N C}.Finite ↔
+      {i : ι | c i • f i ∉ periodFiltration R N C}.Finite := by
+  have hc (i : ι) : c i • f i ∉ periodFiltration R N C ↔
+      c i ≠ 0 ∧ f i ∉ periodFiltration R N C := by
+    by_cases h0 : c i = 0
+    · simp [h0]
+    · rw [nsmul_mem_periodFiltration_iff h0, and_iff_right h0]
+  refine ⟨fun hA => (hA.image Sigma.fst).subset fun i hi => ?_, fun hB => ?_⟩
+  · obtain ⟨hci, hf⟩ := (hc i).1 hi
+    exact ⟨⟨i, ⟨0, Nat.pos_of_ne_zero hci⟩⟩, hf, rfl⟩
+  · refine (hB.biUnion fun i _ => Set.finite_range (Sigma.mk i)).subset fun x hx => ?_
+    exact Set.mem_biUnion ((hc x.1).2 ⟨(Fin.pos x.2).ne', hx⟩) ⟨x.2, rfl⟩
+
 variable (R N) in
 theorem iInf_periodFiltration : ⨅ C, periodFiltration R N C = ⊥ :=
   eq_bot_iff.2 fun _ ha =>
@@ -196,17 +246,25 @@ theorem hasBasis_nhds_zero :
     exact ⟨C, trivial, subset_rfl⟩
   · exact fun C _ => ⟨_, mem_range_self C, subset_rfl⟩
 
+/-- The period filtration is an energy filtration of the Novikov series: the subgroups `U_C`
+decrease, exhaust the series and form a basis of neighbourhoods of `0`. -/
+theorem isEnergyFiltration_periodFiltration :
+    IsEnergyFiltration (periodFiltration R N : ℝ → AddSubgroup (NovikovSeries R H N)) where
+  antitone := antitone_periodFiltration
+  exists_mem := exists_mem_periodFiltration
+  hasBasis_nhds_zero := hasBasis_nhds_zero
+
 theorem periodFiltration_mem_nhds_zero (C : ℝ) :
     (periodFiltration R N C : Set (NovikovSeries R H N)) ∈ 𝓝 0 :=
-  hasBasis_nhds_zero.mem_of_mem trivial
+  isEnergyFiltration_periodFiltration.mem_nhds_zero C
 
 theorem isOpen_periodFiltration (C : ℝ) :
     IsOpen (periodFiltration R N C : Set (NovikovSeries R H N)) :=
-  AddSubgroup.isOpen_of_mem_nhds _ (periodFiltration_mem_nhds_zero C)
+  isEnergyFiltration_periodFiltration.isOpen C
 
 theorem isClosed_periodFiltration (C : ℝ) :
     IsClosed (periodFiltration R N C : Set (NovikovSeries R H N)) :=
-  AddSubgroup.isClosed_of_isOpen _ (isOpen_periodFiltration C)
+  isEnergyFiltration_periodFiltration.isClosed C
 
 /-- The sets `{b | b - a ∈ U_C}` form a basis of neighbourhoods of `a` in the period topology. -/
 theorem hasBasis_nhds (a : NovikovSeries R H N) :
@@ -236,10 +294,8 @@ instance : T2Space (NovikovSeries R H N) :=
 
 /-- The period topology is nonarchimedean: the open subgroups `U_C` form a basis of
 neighbourhoods of `0`. -/
-instance : NonarchimedeanAddGroup (NovikovSeries R H N) where
-  is_nonarchimedean U hU := by
-    obtain ⟨C, -, hC⟩ := hasBasis_nhds_zero.mem_iff.1 hU
-    exact ⟨⟨periodFiltration R N C, isOpen_periodFiltration C⟩, hC⟩
+instance : NonarchimedeanAddGroup (NovikovSeries R H N) :=
+  isEnergyFiltration_periodFiltration.nonarchimedeanAddGroup
 
 /-- Coefficientwise scalar multiplication is continuous in the period topology. -/
 instance {S : Type*} [DistribSMul S R] : ContinuousConstSMul S (NovikovSeries R H N) where
@@ -257,6 +313,48 @@ theorem isLocallyConstant_coeff (h : H) :
   (IsLocallyConstant.iff_eventually_eq _).2 fun a => by
     filter_upwards [tendsto_nhds_iff.1 (tendsto_id (x := 𝓝 a)) (N h + 1)] with b hb
     exact hb h (lt_add_one _)
+
+/-- The series supported in any fixed set of exponents form a closed set in the period
+topology. -/
+theorem isClosed_setOf_support_subset (s : Set H) :
+    IsClosed {a : NovikovSeries R H N | a.support ⊆ s} := by
+  have hset : {a : NovikovSeries R H N | a.support ⊆ s} =
+      ⋂ h ∈ {h | h ∉ s}, {a | a.coeff h = 0} := by
+    ext a
+    simp only [Set.mem_ofPred_eq, Set.mem_iInter]
+    exact ⟨fun ha h hh => not_not.1 fun hn => hh (ha (mem_support.2 hn)),
+      fun ha h hh => not_not.1 fun hn => mem_support.1 hh (ha h hn)⟩
+  rw [hset]
+  exact isClosed_biInter fun h _ => (isLocallyConstant_coeff h).isClosed_fiber 0
+
+/-- If every term of a family of Novikov series has coefficient `0` at the exponent `h`, so does
+its sum. -/
+theorem coeff_tsum_eq_zero {ι : Type*} {f : ι → NovikovSeries R H N} {h : H}
+    (hf : ∀ i, (f i).coeff h = 0) : (∑' i, f i).coeff h = 0 := by
+  -- The series with coefficient `0` at `h` form the kernel of the coefficient map at `h`, a closed
+  -- additive subgroup.
+  have hker : (((Pi.evalAddMonoidHom (fun _ => R) h).comp (coeffAddMonoidHom (N := N))).ker :
+      Set (NovikovSeries R H N)) = {a | a.coeff h = 0} := by
+    ext
+    simp
+  exact hker.subset (tsum_mem (hker ▸ (isLocallyConstant_coeff h).isClosed_fiber 0)
+    fun i => hker.superset (hf i))
+
+/-- **Coefficients of a convergent sum.** If a family of Novikov series has sum `a`, then the
+coefficient of `a` at the exponent `h` is the finsum of the coefficients of the terms at `h`. -/
+theorem coeff_eq_finsum_of_hasSum {ι : Type*} {f : ι → NovikovSeries R H N}
+    {a : NovikovSeries R H N} (hf : HasSum f a) (h : H) : a.coeff h = ∑ᶠ i, (f i).coeff h := by
+  classical
+  -- Only the finitely many terms outside `U_(N h + 1)` can have a nonzero coefficient at `h`.
+  have hfin : (Function.support fun i => (f i).coeff h).Finite := by
+    refine (hf.summable.tendsto_cofinite_zero.eventually
+      (periodFiltration_mem_nhds_zero (N h + 1))).subset fun i hi hU => hi ?_
+    exact mem_periodFiltration.1 hU h (lt_add_one _)
+  -- The coefficient at `h` is locally constant, so it is that of the partial sums eventually.
+  obtain ⟨s, hs⟩ := Filter.eventually_atTop.1 (hf.eventually
+    ((IsLocallyConstant.iff_eventually_eq _).1 (isLocallyConstant_coeff h) a))
+  rw [finsum_eq_sum_of_support_subset _ (s := s ∪ hfin.toFinset)
+    (by simp), ← coeff_sum, hs _ Finset.subset_union_left]
 
 /-- The Novikov series are complete for the period topology: the limit of a Cauchy filter has, at
 each exponent, the coefficient on which the filter eventually agrees. -/
@@ -280,6 +378,29 @@ instance : CompleteSpace (NovikovSeries R H N) := by
       exact hh.1⟩
   refine ⟨lim, (hasBasis_nhds lim).ge_iff.2 fun C _ => mem_of_superset (hSF C) fun a ha h hh => ?_⟩
   simp [lim, hcoeff C a ha h hh]
+
+/-- Over coefficients without additive torsion, the family in which the `i`-th series is listed
+`c i` times is summable exactly when the family of the `i`-th series scaled by `c i` is. -/
+theorem summable_sigma_fin_iff [IsAddTorsionFree R] {ι : Type*} (c : ι → ℕ)
+    (f : ι → NovikovSeries R H N) :
+    (Summable fun x : (i : ι) × Fin (c i) => f x.1) ↔ Summable fun i => c i • f i := by
+  rw [NonarchimedeanAddGroup.summable_iff_tendsto_cofinite_zero,
+    NonarchimedeanAddGroup.summable_iff_tendsto_cofinite_zero,
+    hasBasis_nhds_zero.tendsto_right_iff, hasBasis_nhds_zero.tendsto_right_iff]
+  refine forall₂_congr fun C _ => ?_
+  simp only [eventually_cofinite, SetLike.mem_coe]
+  exact finite_notMem_periodFiltration_sigma_iff c f
+
+/-- Over coefficients without additive torsion, the sum of the family in which the `i`-th series
+is listed `c i` times is the sum of the `i`-th series scaled by `c i`. -/
+theorem tsum_sigma_fin [IsAddTorsionFree R] {ι : Type*} (c : ι → ℕ)
+    (f : ι → NovikovSeries R H N) :
+    ∑' x : (i : ι) × Fin (c i), f x.1 = ∑' i, c i • f i := by
+  by_cases hs : Summable fun i => c i • f i
+  · refine (((summable_sigma_fin_iff c f).2 hs).hasSum.sigma fun i => ?_).unique hs.hasSum
+    simpa using hasSum_fintype fun _ : Fin (c i) => f i
+  · rw [tsum_eq_zero_of_not_summable hs,
+      tsum_eq_zero_of_not_summable (mt (summable_sigma_fin_iff c f).1 hs)]
 
 end Topology
 

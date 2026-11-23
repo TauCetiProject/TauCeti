@@ -8,6 +8,7 @@ module
 public import TauCeti.Algebra.Algebra.Subalgebra.Nilpotent
 public import TauCeti.RepresentationTheory.Quiver.AdmissibleIdeal.Kernel
 public import TauCeti.RepresentationTheory.Quiver.PathAlgebra.OfArrows
+public import TauCeti.RingTheory.Idempotents.Corner.RadicalLayer
 public import TauCeti.RingTheory.Morita.BasicAlgebra
 import TauCeti.RingTheory.Idempotents.LinearIndependent
 
@@ -35,6 +36,10 @@ corner of `J ⧸ J ^ 2`. This is Gabriel's theorem that such an algebra is a bou
 
 * `TauCeti.PathAlgebra.liftAlgHomOfArrows_surjective`: the generation criterion.
 * `TauCeti.PathAlgebra.isAdmissibleIdeal_ker_liftAlgHomOfArrows`: the admissibility criterion.
+* `CompleteOrthogonalIdempotents.exists_surjective_pathAlgebra_isAdmissibleIdeal_ker`:
+  bound-quiver presentation of a split basic finite-dimensional `k`-algebra over any field `k`,
+  recording the vertex-idempotent images, radical arrow images, and radical-layer corner arrow
+  counts.
 * `TauCeti.IsBasic.exists_surjective_pathAlgebra_isAdmissibleIdeal_ker`: **Gabriel's
   presentation theorem** for a finite-dimensional basic algebra over an algebraically closed
   field.
@@ -45,11 +50,15 @@ corner of `J ⧸ J ^ 2`. This is Gabriel's theorem that such an algebra is a bou
 
 ## Implementation notes
 
-The quiver built in the proof has the Wedderburn blocks of `A ⧸ J` as vertices, and as arrows
-`i ⟶ j` the indices of a basis of the `(j, i)`-corner of `J ⧸ J ^ 2`; this is how the ordinary
-quiver of `A` is defined. The theorem asserts only the existence of some finite quiver: neither
-that identification nor the description of the arrow counts by `Ext¹` between simple modules is
-stated here.
+The quiver built in
+`CompleteOrthogonalIdempotents.exists_surjective_pathAlgebra_isAdmissibleIdeal_ker` has the given
+idempotent index type `Q` as vertices, and as arrows `i ⟶ j` the indices of a basis of the
+`(j, i)`-corner of `J ⧸ J ^ 2` (lifted into an arbitrary arrow universe `t`); this is how the
+ordinary quiver of `A` is defined.
+`TauCeti.IsBasic.exists_surjective_pathAlgebra_isAdmissibleIdeal_ker` instantiates this at `t = 0`
+for the Wedderburn block idempotents and asserts only the existence of some finite quiver; the
+description of the arrow counts by `Ext¹` between simple modules is proved in
+`TauCeti.RepresentationTheory.Quiver.AdmissibleIdeal.ExtQuiver`.
 
 ## References
 
@@ -124,6 +133,49 @@ section Admissible
 
 variable {k : Type w} [Field k] [Algebra k A]
 
+omit [Fintype Q] he in
+include hl hr in
+/-- The classes of the vertex idempotents and of the arrows in `A ⧸ J ^ 2` are linearly
+independent together, when the vertex idempotents are orthogonal and nonzero, the arrows lie in the
+nilpotent ideal `J`, and for all vertices `i` and `j` the classes of the arrows `i ⟶ j` are linearly
+independent. -/
+private theorem linearIndependent_vertex_sum_arrow (he : OrthogonalIdempotents e)
+    (hJ : IsNilpotent J) (hne : ∀ i, e i ≠ 0) (harrows : ∀ {i j : Q} (a : i ⟶ j), f a ∈ J)
+    (hind : ∀ i j : Q, LinearIndependent k fun a : i ⟶ j => Ideal.Quotient.mk (J ^ 2) (f a)) :
+    LinearIndependent k (Sum.elim (fun i => Ideal.Quotient.mk (J ^ 2) (e i))
+      (fun a : Σ i j : Q, i ⟶ j => Ideal.Quotient.mk (J ^ 2) (f a.2.2))) := by
+  have hJ2 : J ^ 2 ≤ J := Ideal.pow_le_self two_ne_zero
+  let ψ := (Ideal.Quotient.factorₐ k hJ2).toLinearMap
+  -- A nonzero idempotent is not nilpotent, so it does not lie in `J`.
+  have hnotMem (i : Q) : e i ∉ J := fun hmem => by
+    obtain ⟨n, hn⟩ := hJ
+    exact hne i ((he.idem i).eq_zero_of_isNilpotent
+      ⟨n, by simpa [hn] using Ideal.pow_mem_pow hmem n⟩)
+  -- The vertex classes are independent in `A ⧸ J`, hence in `A ⧸ J ^ 2`, and their span meets the
+  -- span of the arrow classes, which lies in the kernel of `ψ`, trivially.
+  have hvert' : LinearIndependent k (Ideal.Quotient.mk J ∘ e) :=
+    (he.map (Ideal.Quotient.mk J)).linearIndependent fun i h =>
+      hnotMem i (Ideal.Quotient.eq_zero_iff_mem.mp h)
+  have hvert : LinearIndependent k (ψ ∘ fun i => Ideal.Quotient.mk (J ^ 2) (e i)) := by
+    have hcomp : (ψ ∘ fun i => Ideal.Quotient.mk (J ^ 2) (e i)) = Ideal.Quotient.mk J ∘ e := by
+      ext i
+      simp [ψ]
+    rw [hcomp]
+    exact hvert'
+  have harrowIndependent : LinearIndependent k fun a : (Σ i j : Q, i ⟶ j) =>
+      Ideal.Quotient.mk (J ^ 2) (f a.2.2) :=
+    (he.map (Ideal.Quotient.mk (J ^ 2))).linearIndependent_sigma
+      (fun i j a => Ideal.Quotient.mk (J ^ 2) (f a))
+      (fun i j a => by rw [Function.comp_apply, ← map_mul, hl a])
+      (fun i j a => by rw [Function.comp_apply, ← map_mul, hr a]) hind
+  have hψ : Submodule.span k (Set.range fun a : Σ i j : Q, i ⟶ j =>
+      Ideal.Quotient.mk (J ^ 2) (f a.2.2)) ≤ LinearMap.ker ψ := by
+    refine Submodule.span_le.mpr ?_
+    rintro _ ⟨a, rfl⟩
+    simpa [ψ, Ideal.Quotient.eq_zero_iff_mem] using harrows a.2.2
+  exact (LinearIndependent.of_comp ψ hvert).sum_type harrowIndependent
+    ((Submodule.range_ker_disjoint hvert).mono_right hψ)
+
 /-- **Admissibility criterion for a bound-quiver presentation.** Let `J` be a nilpotent two-sided
 ideal containing the arrow values, and let the vertex idempotents be nonzero. If for all vertices
 `i` and `j` the classes of the arrows `i ⟶ j` in `A ⧸ J ^ 2` are linearly independent, then the
@@ -132,49 +184,72 @@ theorem isAdmissibleIdeal_ker_liftAlgHomOfArrows (hJ : IsNilpotent J) (hne : ∀
     (harrows : ∀ {i j : Q} (a : i ⟶ j), f a ∈ J)
     (hind : ∀ i j : Q, LinearIndependent k fun a : i ⟶ j => Ideal.Quotient.mk (J ^ 2) (f a)) :
     IsAdmissibleIdeal (RingHom.ker (liftAlgHomOfArrows k e he f hl hr).toRingHom) := by
-  classical
-  have hJ2 : J ^ 2 ≤ J := Ideal.pow_le_self two_ne_zero
-  -- A nonzero idempotent is not nilpotent, so it does not lie in `J`.
-  have hnotMem (i : Q) : e i ∉ J := fun hmem => by
-    obtain ⟨n, hn⟩ := hJ
-    exact hne i ((he.idem i).eq_zero_of_isNilpotent
-      ⟨n, by simpa [hn] using Ideal.pow_mem_pow hmem n⟩)
   refine (liftAlgHomOfArrows k e he f hl hr).isAdmissibleIdeal_ker J hJ
     (fun i j a => by simpa [ofArrow_eq_ofPath] using harrows a) ?_
-  rw [← linearIndependent_equiv shortPathTwoEquiv]
-  have hfun : (fun p : ShortPath Q 2 => Ideal.Quotient.mk (J ^ 2)
-      (liftAlgHomOfArrows k e he f hl hr (ofPath p.1))) ∘ shortPathTwoEquiv =
-      Sum.elim (fun i => Ideal.Quotient.mk (J ^ 2) (e i))
-        (fun a : Σ i j : Q, i ⟶ j => Ideal.Quotient.mk (J ^ 2) (f a.2.2)) := by
-    ext (i | ⟨i, j, a⟩) <;> simp
-  rw [hfun]
-  -- The vertex classes, the arrow classes, and the disjointness of their spans.
-  have hvert (I : Ideal A) [I.IsTwoSided] (hI : I ≤ J) :
-      LinearIndependent k fun i => Ideal.Quotient.mk I (e i) :=
-    (he.toOrthogonalIdempotents.map (Ideal.Quotient.mk I)).linearIndependent fun i h =>
-      hnotMem i (hI (Ideal.Quotient.eq_zero_iff_mem.mp h))
-  have harrowIndependent : LinearIndependent k fun a : (Σ i j : Q, i ⟶ j) =>
-      Ideal.Quotient.mk (J ^ 2) (f a.2.2) :=
-    (he.toOrthogonalIdempotents.map (Ideal.Quotient.mk (J ^ 2))).linearIndependent_sigma
-      (fun i j a => Ideal.Quotient.mk (J ^ 2) (f a))
-      (fun i j a => by rw [Function.comp_apply, ← map_mul, hl a])
-      (fun i j a => by rw [Function.comp_apply, ← map_mul, hr a]) hind
-  refine (hvert _ hJ2).sum_type harrowIndependent ?_
-  rw [Submodule.disjoint_def]
-  intro y hy hy'
-  obtain ⟨c, rfl⟩ := (Submodule.mem_span_range_iff_exists_fun k).mp hy
-  let ψ := (Ideal.Quotient.factorₐ k hJ2).toLinearMap
-  have hψ : Submodule.span k (Set.range fun a : Σ i j : Q, i ⟶ j =>
-      Ideal.Quotient.mk (J ^ 2) (f a.2.2)) ≤ LinearMap.ker ψ := by
-    refine Submodule.span_le.mpr ?_
-    rintro _ ⟨a, rfl⟩
-    simpa [ψ, Ideal.Quotient.eq_zero_iff_mem] using harrows a.2.2
-  have hc := Fintype.linearIndependent_iff.mp (hvert J le_rfl) c (by simpa [ψ] using hψ hy')
-  simp [hc]
+  refine (linearIndependent_equiv' shortPathTwoEquiv ?_).mp
+    (linearIndependent_vertex_sum_arrow e f hl hr J he.toOrthogonalIdempotents hJ hne harrows hind)
+  ext (i | ⟨i, j, a⟩) <;> simp
 
 end Admissible
 
 end PathAlgebra
+
+universe t in
+/-- **Bound-quiver presentation of a split basic finite-dimensional algebra.** Given a
+finite-dimensional `k`-algebra `A` over an arbitrary field `k` and a complete family of nonzero
+orthogonal idempotents `e : Q → A` whose classes span `A ⧸ J` over `k`, there are a finite quiver
+structure on `Q` (with arrow types in any chosen universe `t`) and a surjective `k`-algebra map
+`F : kQ →ₐ[k] A` with admissible kernel sending each vertex idempotent to `e i` and every arrow
+into `J`, with `card (i ⟶ j) = dimₖ (eⱼ (J / J²) eᵢ)`. -/
+theorem _root_.CompleteOrthogonalIdempotents.exists_surjective_pathAlgebra_isAdmissibleIdeal_ker
+    {k : Type w} {A : Type u} {Q : Type v} [Field k] [Ring A] [Algebra k A]
+    [FiniteDimensional k A] [Fintype Q] {e : Q → A} (he : CompleteOrthogonalIdempotents e)
+    (hne : ∀ i, e i ≠ 0)
+    (hquot : Submodule.span k
+      (Set.range fun i => Ideal.Quotient.mk (Ring.jacobson A) (e i)) = ⊤) :
+    ∃ (_ : Quiver.{t} Q) (_ : ∀ i j : Q, Fintype (i ⟶ j)) (F : pathAlgebra k Q →ₐ[k] A),
+      Function.Surjective F ∧ IsAdmissibleIdeal (RingHom.ker F.toRingHom) ∧
+      (∀ i, F (vertexIdempotent k i) = e i) ∧
+      (∀ {i j : Q} (a : i ⟶ j), F (ofArrow a) ∈ Ring.jacobson A) ∧
+      (∀ i j, Fintype.card (i ⟶ j) =
+        Module.finrank k (radicalLayerCorner k (Ring.jacobson A) (e j) (e i))) := by
+  classical
+  have : IsArtinianRing A := IsArtinianRing.of_finite k A
+  have hJ : IsNilpotent (Ring.jacobson A) := IsSemiprimaryRing.isNilpotent
+  -- The arrows `i ⟶ j` index a basis of the `(j, i)`-corner of `J ⧸ J ^ 2`.
+  let W (i j : Q) : Submodule k (A ⧸ Ring.jacobson A ^ 2) :=
+    radicalLayerCorner k (Ring.jacobson A) (e j) (e i)
+  let : Quiver.{t} Q := ⟨fun i j => ULift.{t} (Fin (Module.finrank k (W i j)))⟩
+  have hlift (i j : Q) (a : i ⟶ j) : ∃ x ∈ Ring.jacobson A,
+      Ideal.Quotient.mk (Ring.jacobson A ^ 2) (e j * x * e i) =
+        Module.finBasis k (W i j) a.down :=
+    mem_radicalLayerCorner.mp (Module.finBasis k (W i j) a.down).property
+  choose x hxJ hx using hlift
+  let f : ∀ {i j : Q}, (i ⟶ j) → A := fun {i j} a => e j * x i j a * e i
+  have hl {i j : Q} (a : i ⟶ j) : e j * f a = f a := by
+    simp only [f, ← mul_assoc, (he.idem j).eq]
+  have hr {i j : Q} (a : i ⟶ j) : f a * e i = f a := by
+    simp only [f, mul_assoc, (he.idem i).eq]
+  have harrows {i j : Q} (a : i ⟶ j) : f a ∈ Ring.jacobson A :=
+    Ideal.mul_mem_right _ _ (Ideal.mul_mem_left _ _ (hxJ i j a))
+  have hbasis (i j : Q) : (fun a : i ⟶ j => Ideal.Quotient.mk (Ring.jacobson A ^ 2) (f a)) =
+      (W i j).subtype ∘ Module.finBasis k (W i j) ∘ Equiv.ulift := funext (hx i j)
+  refine ⟨inferInstance,
+    fun i j => inferInstanceAs (Fintype (ULift.{t} (Fin (Module.finrank k (W i j))))),
+    liftAlgHomOfArrows k e he f hl hr, ?_, ?_, fun i => by simp,
+    fun {i j} a => by simpa [ofArrow_eq_ofPath] using harrows a, fun i j => ?_⟩
+  · refine liftAlgHomOfArrows_surjective e he f hl hr _ hJ hquot fun i j y hy => ?_
+    have hspan : Submodule.span k
+        (Set.range fun a : i ⟶ j => Ideal.Quotient.mk (Ring.jacobson A ^ 2) (f a)) = W i j := by
+      rw [hbasis, Set.range_comp, Equiv.ulift.surjective.range_comp, ← Submodule.map_span]
+      simp
+    rw [hspan]
+    exact mem_radicalLayerCorner.mpr ⟨y, hy, rfl⟩
+  · refine isAdmissibleIdeal_ker_liftAlgHomOfArrows e he f hl hr _ hJ hne harrows fun i j => ?_
+    rw [hbasis]
+    exact ((Module.finBasis k (W i j)).linearIndependent.comp _ Equiv.ulift.injective).map' _
+      (Submodule.ker_subtype _)
+  · exact (Fintype.card_ulift _).trans (Fintype.card_fin _)
 
 /-- **Gabriel's presentation theorem for basic algebras.** A finite-dimensional basic algebra over
 an algebraically closed field is a quotient of the path algebra of a finite quiver by an
@@ -184,41 +259,10 @@ theorem IsBasic.exists_surjective_pathAlgebra_isAdmissibleIdeal_ker {k : Type w}
     ∃ (Q : Type) (_ : Quiver.{0} Q) (_ : Finite Q) (_ : ∀ i j : Q, Finite (i ⟶ j))
       (F : pathAlgebra k Q →ₐ[k] A),
       Function.Surjective F ∧ IsAdmissibleIdeal (RingHom.ker F.toRingHom) := by
-  classical
-  have : IsArtinianRing A := IsArtinianRing.of_finite k A
-  have hJ : IsNilpotent (Ring.jacobson A) := IsSemiprimaryRing.isNilpotent
   obtain ⟨n, e, he, hne, hquot⟩ := hA.exists_completeOrthogonalIdempotents (k := k)
-  -- The arrows `i ⟶ j` index a basis of the `(j, i)`-corner of `J ⧸ J ^ 2`.
-  let W (i j : Fin n) : Submodule k (A ⧸ Ring.jacobson A ^ 2) :=
-    ((Ring.jacobson A).restrictScalars k).map
-      ((Ideal.Quotient.mkₐ k (Ring.jacobson A ^ 2)).toLinearMap ∘ₗ
-        LinearMap.mulLeftRight k (e j, e i))
-  let : Quiver.{0} (Fin n) := ⟨fun i j => Fin (Module.finrank k (W i j))⟩
-  have hlift (i j : Fin n) (t : i ⟶ j) : ∃ x ∈ Ring.jacobson A,
-      Ideal.Quotient.mk (Ring.jacobson A ^ 2) (e j * x * e i) = Module.finBasis k (W i j) t := by
-    obtain ⟨x, hx, hxt⟩ := Submodule.mem_map.mp (Module.finBasis k (W i j) t).2
-    exact ⟨x, hx, by simpa using hxt⟩
-  choose x hxJ hx using hlift
-  let f : ∀ {i j : Fin n}, (i ⟶ j) → A := fun {i j} t => e j * x i j t * e i
-  have hl {i j : Fin n} (t : i ⟶ j) : e j * f t = f t := by
-    simp only [f, ← mul_assoc, (he.idem j).eq]
-  have hr {i j : Fin n} (t : i ⟶ j) : f t * e i = f t := by
-    simp only [f, mul_assoc, (he.idem i).eq]
-  have hbasis (i j : Fin n) : (fun t : i ⟶ j => Ideal.Quotient.mk (Ring.jacobson A ^ 2) (f t)) =
-      (W i j).subtype ∘ Module.finBasis k (W i j) := funext (hx i j)
-  refine ⟨Fin n, inferInstance, inferInstance,
-    fun i j => inferInstanceAs (Finite (Fin (Module.finrank k (W i j)))),
-    liftAlgHomOfArrows k e he f hl hr, ?_, ?_⟩
-  · refine liftAlgHomOfArrows_surjective e he f hl hr _ hJ hquot fun i j y hy => ?_
-    rw [hbasis, Set.range_comp, ← Submodule.map_span, Module.Basis.span_eq, Submodule.map_top,
-      Submodule.range_subtype]
-    exact Submodule.mem_map_of_mem
-      (f := (Ideal.Quotient.mkₐ k (Ring.jacobson A ^ 2)).toLinearMap ∘ₗ
-        LinearMap.mulLeftRight k (e j, e i)) hy
-  · refine isAdmissibleIdeal_ker_liftAlgHomOfArrows e he f hl hr _ hJ hne
-      (fun {i j} t => Ideal.mul_mem_right _ _ (Ideal.mul_mem_left _ _ (hxJ i j t))) fun i j => ?_
-    rw [hbasis]
-    exact (Module.finBasis k (W i j)).linearIndependent.map' _ (Submodule.ker_subtype _)
+  obtain ⟨hQ, harr, F, hsurj, hadm, -, -, -⟩ :=
+    he.exists_surjective_pathAlgebra_isAdmissibleIdeal_ker hne hquot
+  exact ⟨Fin n, hQ, inferInstance, fun i j => inferInstance, F, hsurj, hadm⟩
 
 open scoped ModuleCat.Algebra in
 /-- **Gabriel's presentation theorem.** Every finite-dimensional algebra `A` over an algebraically

@@ -25,6 +25,10 @@ geometric point, because the corresponding point action preserves the scalar ext
 Reduced finite-type point separation makes every coordinate zero. Right exactness of tensor
 product then identifies `coact m` with a tensor in `N ⊗ C`.
 
+For example, `TauCeti.HopfIdeal.IsNormal.weightSpaceOneSubcomodule` uses
+`TauCeti.Subcomodule.ofEndOfPointStable` to show that the invariants of a normal closed subgroup
+form a subcomodule of the ambient representation.
+
 ## Main declarations
 
 * `Submodule.coact_mem_range_of_forall_endOfPoint_tmul_mem_baseChange`: pointwise
@@ -39,10 +43,6 @@ product then identifies `coact m` with a tensor in `N ⊗ C`.
 
 * J. C. Jantzen, *Representations of Algebraic Groups*, I.2.
 * T. A. Springer, *Linear Algebraic Groups*, §2.2.
-
-This supplies the point-separation step in Layer 6 of the ReductiveGroups roadmap: for a normal
-closed subgroup, pointwise normality makes its fixed subspace stable under the ambient group, and
-the result here promotes that stable subspace to an ambient-group subcomodule.
 -/
 
 public section
@@ -109,7 +109,7 @@ theorem endOfPoint_tmul_mem_baseChange (N : Subcomodule R C M) (g : C →ₐ[R] 
     | tmul n c =>
         simp only [TensorProduct.map_tmul, Submodule.coe_subtype, LinearMap.id_coe, id_eq,
           LinearMap.lTensor_tmul, AlgHom.toLinearMap_apply, TensorProduct.comm_tmul]
-        exact Submodule.tmul_mem_baseChange_of_mem _ n.2
+        exact Submodule.tmul_mem_baseChange_of_mem _ n.property
   obtain ⟨t, ht⟩ := N.coact_mem hm
   rw [Comodule.endOfPoint_tmul, ← ht]
   exact hmap t
@@ -127,7 +127,7 @@ theorem endOfPoint_mapsTo_baseChange (N : Subcomodule R C M) (g : C →ₐ[R] A)
       exact (N.toSubmodule.baseChange A).add_mem hs ht
   | tmul a m =>
       rw [LinearMap.baseChange_tmul]
-      exact N.endOfPoint_tmul_mem_baseChange g a m.2
+      exact N.endOfPoint_tmul_mem_baseChange g a m.property
 
 /-- Contracting the action of an algebra-valued point against a linear functional on the value
 algebra preserves every subcomodule. -/

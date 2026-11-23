@@ -9,7 +9,7 @@ public import TauCeti.Geometry.Manifold.GroupAction.GermKernel
 public import Mathlib.Geometry.Manifold.Algebra.SMul
 public import TauCeti.Geometry.Manifold.LocalDiffeomorph.OpenSubset
 
-import TauCeti.Analysis.Calculus.InverseFunctionTheorem
+import TauCeti.Geometry.Manifold.ContMDiff.InverseFunctionTheorem
 import TauCeti.Geometry.Manifold.ContMDiff.Subtype
 import TauCeti.Geometry.Manifold.MFDeriv.Chart.Basic
 
@@ -50,7 +50,7 @@ variable {𝕜 G E : Type*} [NontriviallyNormedField 𝕜] [Monoid G]
 @[instance_reducible]
 def mulActionOpens (σ : ContRepresentation 𝕜 G E) (B : TopologicalSpace.Opens E)
     (hB : ∀ g : G, ∀ v ∈ B, σ g v ∈ B) : MulAction G B where
-  smul g v := ⟨σ g v, hB g v v.2⟩
+  smul g v := ⟨σ g v, hB g v v.property⟩
   one_smul v := Subtype.ext
     (congrArg (fun L : E →L[𝕜] E ↦ L v) (map_one σ))
   mul_smul g h v := Subtype.ext
@@ -75,7 +75,7 @@ theorem contMDiffConstSMul_mulActionOpens (σ : ContRepresentation 𝕜 G E)
   intro g
   apply (TauCeti.ContMDiff.subtypeVal_comp_iff B _).mp
   simpa only [Function.comp_def, val_mulActionOpens_smul] using
-    (σ g).contDiff.contMDiff.comp (contMDiff_subtype_val (I := 𝓘(𝕜, E)) (n := n))
+    (σ g).contDiff.contMDiff.comp (contMDiff_subtypeVal (I := 𝓘(𝕜, E)) (n := n))
 
 end ContRepresentation
 
@@ -100,9 +100,9 @@ theorem exists_equivariant_symm_restrict
   let B : TopologicalSpace.Opens E := ⟨e.target, e.open_target⟩
   let : MulAction G B := σ.mulActionOpens B hpres
   have hfequiv (g : G) (v : B) : e.symm (g • v : B) = g • e.symm v := by
-    apply e.injOn (e.map_target (g • v).2) (hequiv g _ (e.map_target v.2)).1
-    exact (e.right_inv (g • v).2).trans (by
-      rw [(hequiv g _ (e.map_target v.2)).2, e.right_inv v.2]
+    apply e.injOn (e.map_target (g • v).property) (hequiv g _ (e.map_target v.property)).1
+    exact (e.right_inv (g • v).property).trans (by
+      rw [(hequiv g _ (e.map_target v.property)).2, e.right_inv v.property]
       exact σ.val_mulActionOpens_smul B hpres g v)
   let p : PartialDiffeomorph I 𝓘(𝕜, E) M E n :=
     { toPartialEquiv := e.toPartialEquiv
@@ -112,7 +112,7 @@ theorem exists_equivariant_symm_restrict
       contMDiffOn_invFun := hei }
   refine ⟨⟨fun v ↦ e.symm v, hfequiv⟩, fun _ ↦ rfl, e.symm.isOpenEmbedding_restrict, ?_⟩
   exact fun v ↦ (TauCeti.isLocalDiffeomorph_subtype_val v).comp
-    (hg := p.symm.isLocalDiffeomorphAt _ _ _ v.2)
+    (hg := p.symm.isLocalDiffeomorphAt _ _ _ v.property)
 
 end OpenPartialHomeomorph
 
@@ -168,15 +168,9 @@ theorem exists_equivariant_contMDiff_chart
         (fun z hz => χ.mem_restrInvariant_source_iff.mp hz.2 g)
     exact hg.contDiffOn.sub contDiffOn_const
   -- The smooth inverse function theorem supplies smoothness on the entire target.
-  obtain ⟨Θ, hΘ, hxΘ, hΘV, hΘsymm⟩ :=
-    TauCeti.ContDiffOn.exists_openPartialHomeomorph hAsmooth hV hxV hn
-      (e := ContinuousLinearEquiv.refl 𝕜 E) hA.hasFDerivAt.fderiv.symm
+  obtain ⟨Θ, hΘ, hxΘ, -, he₀smooth, he₀symm⟩ :=
+    exists_contMDiffOn_trans_of_hasFDerivAt hχsmooth hχsymm hAsmooth hV hxV hn hA.hasFDerivAt
   let e₀ := χ.trans Θ
-  have he₀smooth : ContMDiffOn I 𝓘(𝕜, E) n e₀ e₀.source :=
-    ((hΘ ▸ hAsmooth.mono hΘV).contMDiffOn).comp
-      (hχsmooth.mono inter_subset_left) inter_subset_right
-  have he₀symm : ContMDiffOn 𝓘(𝕜, E) I n e₀.symm e₀.target :=
-    hχsymm.comp (hΘsymm.contMDiffOn.mono inter_subset_left) inter_subset_right
   -- Use the common Bochner restriction to retain equivariance without losing smoothness.
   let e := e₀.restrInvariant G
   have hΘeq : EqOn Θ (A ∘ χ.symm) Θ.source := fun z _ => congrFun hΘ z

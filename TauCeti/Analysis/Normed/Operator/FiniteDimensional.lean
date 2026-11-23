@@ -6,39 +6,23 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Normed.Module.FiniteDimension
-public import Mathlib.Analysis.Normed.Operator.Banach
-public import Mathlib.LinearAlgebra.Eigenspace.Minpoly
 public import Mathlib.Topology.Algebra.Module.FiniteDimension
 
 /-!
 # Bounded operators on a finite-dimensional space
 
-A bounded operator on a finite-dimensional normed space is just a linear map, so its spectrum is
-the finite set of eigenvalues. This holds over every field of scalars acting compatibly, for
-instance over `ℝ` for an operator on a complex space.
-
 Bounded operators out of a finite-dimensional space are determined by the images of a basis,
 with operator norm controlled by the norms of those images. Hence such operators into `E` are
 approximated in operator norm by operators factoring through any operator `g : F →L[𝕜] E` of
-dense range. On a finite-dimensional real domain, strict pointwise norm bounds are equivalent
-to strict operator-norm bounds.
-
-Bounded operators between finite-dimensional spaces form a finite-dimensional space over every
-finite extension of the scalars acting compatibly on the codomain, for instance over `ℂ` for
-real-linear operators into a complex space.
+dense range. On a finite-dimensional domain over a locally compact field, such as `ℝ`, `ℂ` or a
+`p`-adic field, strict pointwise norm bounds are equivalent to strict operator-norm bounds.
 
 ## Main results
 
-* `ContinuousLinearMap.finite_spectrum`: a bounded operator on a finite-dimensional normed space
-  has finite spectrum, also over subfields of the scalars such as `ℝ ⊆ ℂ`.
-* `ContinuousLinearMap.isUnit_smul_one_sub`: on a finite-dimensional space, `c • 1 - T` is
-  invertible when `T` has no eigenvector of eigenvalue `c`.
 * `ContinuousLinearMap.denseRange_comp`: on operators out of a finite-dimensional space,
   postcomposition with an operator of dense range has dense range.
 * `ContinuousLinearMap.opNorm_lt_iff`: a strict norm bound can be checked on
-  every nonzero vector of a finite-dimensional real domain.
-* `ContinuousLinearMap.finiteDimensional_of_isScalarTower`: `E →L[𝕜] F` is finite-dimensional
-  over a finite extension `𝕜'` of `𝕜` acting on a finite-dimensional codomain `F`.
+  every nonzero vector of a finite-dimensional domain over a locally compact field.
 * `IsCompact.isCompact_setOfPred_mapsTo`: out of a finite-dimensional space over a complete field,
   the operators sending a neighbourhood of `0` into a compact set form a compact set.
 -/
@@ -49,24 +33,6 @@ namespace ContinuousLinearMap
 
 variable {𝕜 V : Type*} [NontriviallyNormedField 𝕜] [CompleteSpace 𝕜]
   [NormedAddCommGroup V] [NormedSpace 𝕜 V] [FiniteDimensional 𝕜 V]
-
-/-- A bounded operator on a finite-dimensional normed space has finite spectrum over any field
-`S` of scalars acting compatibly, for instance over `ℝ` for an operator on a complex space. -/
-theorem finite_spectrum (S : Type*) [Field S] [Algebra S 𝕜] [Algebra S (V →L[𝕜] V)]
-    [IsScalarTower S 𝕜 (V →L[𝕜] V)] (T : V →L[𝕜] V) : (spectrum S T).Finite := by
-  have := FiniteDimensional.complete 𝕜 V
-  rw [← spectrum.preimage_algebraMap 𝕜, spectrum_eq]
-  exact (Module.End.finite_spectrum _).preimage (algebraMap S 𝕜).injective.injOn
-
-/-- On a finite-dimensional normed space, `c • 1 - T` is invertible as soon as `T` has no
-eigenvector of eigenvalue `c`. -/
-theorem isUnit_smul_one_sub {T : V →L[𝕜] V} {c : 𝕜} (h : ∀ v, T v = c • v → v = 0) :
-    IsUnit (c • 1 - T) := by
-  have := FiniteDimensional.complete 𝕜 V
-  refine isUnit_iff_isUnit_toLinearMap.2
-    ((LinearMap.isUnit_iff_ker_eq_bot _).2 (LinearMap.ker_eq_bot'.2 fun v hv ↦ h v ?_))
-  have hv' : c • v - T v = 0 := by simpa using hv
-  exact (sub_eq_zero.1 hv').symm
 
 /-- On continuous linear maps out of a finite-dimensional space, postcomposition with a
 continuous linear map of dense range has dense range: each `T : V →L[𝕜] E` is approximated in
@@ -91,46 +57,41 @@ theorem denseRange_comp {E F : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E
 
 section StrictNorm
 
-variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
-  [FiniteDimensional ℝ E] [SeminormedAddCommGroup F] [NormedSpace ℝ F]
+open Metric
 
-/-- On a finite-dimensional real domain, a strict pointwise operator bound gives a strict
-operator-norm bound. The positivity assumption includes the zero-dimensional domain. -/
-theorem opNorm_lt_iff (A : E →L[ℝ] F) {c : ℝ} (hc : 0 < c) :
+variable {𝕜 𝕜₂ E F : Type*} [NontriviallyNormedField 𝕜] [LocallyCompactSpace 𝕜]
+  [NontriviallyNormedField 𝕜₂] {σ₁₂ : 𝕜 →+* 𝕜₂} [RingHomIsometric σ₁₂]
+  [NormedAddCommGroup E] [NormedSpace 𝕜 E] [FiniteDimensional 𝕜 E]
+  [SeminormedAddCommGroup F] [NormedSpace 𝕜₂ F]
+
+/-- On a finite-dimensional domain over a locally compact field, the operator norm is less than
+`c > 0` exactly when `‖A x‖ < c * ‖x‖` for every nonzero vector `x`: the supremum defining the
+operator norm is attained. The positivity of `c` is needed for the zero-dimensional domain. -/
+theorem opNorm_lt_iff (A : E →SL[σ₁₂] F) {c : ℝ} (hc : 0 < c) :
     ‖A‖ < c ↔ ∀ x ≠ 0, ‖A x‖ < c * ‖x‖ := by
   refine ⟨fun h x hx ↦ (A.le_opNorm x).trans_lt ?_, fun h ↦ ?_⟩
   · exact mul_lt_mul_of_pos_right h (norm_pos_iff.mpr hx)
-  · cases subsingleton_or_nontrivial E
-    · simpa only [Subsingleton.elim A 0, norm_zero] using hc
-    · obtain ⟨x, hx, hmax⟩ := (isCompact_sphere (0 : E) 1).exists_isMaxOn
-        (NormedSpace.sphere_nonempty.mpr zero_le_one) A.continuous.norm.continuousOn
-      have hxnorm : ‖x‖ = 1 := mem_sphere_zero_iff_norm.mp hx
-      have hxne : x ≠ 0 := by
-        intro hx0
-        simp [hx0] at hxnorm
-      calc
-        ‖A‖ ≤ ‖A x‖ := A.opNorm_le_of_unit_norm (norm_nonneg _) fun y hy ↦
-          hmax (mem_sphere_zero_iff_norm.mpr hy)
-        _ < c := by simpa only [hxnorm, mul_one] using h x hxne
+  cases subsingleton_or_nontrivial E
+  · simpa only [Subsingleton.elim A 0, norm_zero] using hc
+  have := FiniteDimensional.proper 𝕜 E
+  obtain ⟨k, hk⟩ := NormedField.exists_one_lt_norm 𝕜
+  -- The ratio `‖A x‖ / ‖x‖` attains its maximum on the compact shell `S`, which contains a
+  -- rescaling of every nonzero vector; by `opNorm_le_of_shell` this maximum bounds `‖A‖`.
+  let S := closedBall (0 : E) 1 ∩ {x | 1 / ‖k‖ ≤ ‖x‖}
+  have hmem {x : E} (h₁ : 1 / ‖k‖ ≤ ‖x‖) (h₂ : ‖x‖ < 1) : x ∈ S :=
+    ⟨mem_closedBall_zero_iff.2 h₂.le, h₁⟩
+  have hpos {x : E} (hx : x ∈ S) : 0 < ‖x‖ := (one_div_pos.2 (one_pos.trans hk)).trans_le hx.2
+  have hS : IsCompact S :=
+    (isCompact_closedBall 0 1).inter_right (isClosed_le continuous_const continuous_norm)
+  obtain ⟨y, hy⟩ := exists_ne (0 : E)
+  obtain ⟨d, -, hd₁, hd₂, -⟩ := rescale_to_shell hk one_pos hy
+  obtain ⟨x, hx, hmax⟩ := hS.exists_isMaxOn ⟨d • y, hmem hd₂ hd₁⟩
+    (A.continuous.norm.continuousOn.div continuous_norm.continuousOn fun x hx ↦ (hpos hx).ne')
+  calc ‖A‖ ≤ ‖A x‖ / ‖x‖ := A.opNorm_le_of_shell one_pos (by positivity) hk fun z hz₁ hz₂ ↦
+        (div_le_iff₀ (hpos (hmem hz₁ hz₂))).1 (hmax (hmem hz₁ hz₂))
+    _ < c := (div_lt_iff₀ (hpos hx)).2 (h x (norm_pos_iff.1 (hpos hx)))
 
 end StrictNorm
-
-section ScalarExtension
-
-variable {𝕜 𝕜' E F : Type*} [NontriviallyNormedField 𝕜] [NontriviallyNormedField 𝕜']
-  [NormedAlgebra 𝕜 𝕜'] [FiniteDimensional 𝕜 𝕜']
-  [NormedAddCommGroup E] [NormedSpace 𝕜 E] [FiniteDimensional 𝕜 E]
-  [NormedAddCommGroup F] [NormedSpace 𝕜' F] [NormedSpace 𝕜 F] [IsScalarTower 𝕜 𝕜' F]
-  [FiniteDimensional 𝕜' F]
-
-/-- Bounded `𝕜`-linear operators between finite-dimensional spaces form a finite-dimensional
-space over a finite extension `𝕜'` of `𝕜` acting compatibly on the codomain, for instance over
-`ℂ` for real-linear operators into a finite-dimensional complex space. -/
-theorem finiteDimensional_of_isScalarTower : FiniteDimensional 𝕜' (E →L[𝕜] F) := by
-  have : FiniteDimensional 𝕜 F := Module.Finite.trans 𝕜' F
-  exact Module.Finite.of_restrictScalars_finite 𝕜 𝕜' (E →L[𝕜] F)
-
-end ScalarExtension
 
 end ContinuousLinearMap
 

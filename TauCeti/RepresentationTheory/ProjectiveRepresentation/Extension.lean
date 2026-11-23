@@ -86,11 +86,8 @@ This lets finite lifting extensions use roots of unity as their kernel coefficie
 
 ## References
 
-This is the linearization step of Layer 7 of the
-[induction and restriction roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/RepresentationTheory/InductionRestriction/README.md),
-"projective representations, factor sets, and the Schur multiplier": it is the mechanism behind the
-representation group, through which every projective representation of `G` lifts to an ordinary
-linear representation of a central extension.
+The linearization is the mechanism behind the representation group, through which every projective
+representation of `G` lifts to an ordinary linear representation of a central extension.
 
 * G. Karpilovsky, *Projective Representations of Finite Groups*, Marcel Dekker (1985), Ch. 3.
 * I. M. Isaacs, *Character Theory of Finite Groups*, AMS Chelsea (1976), Ch. 11.
@@ -344,14 +341,14 @@ def isProjectiveRepEquivExtensionHom (α : FactorSet G kˣ)
     {ρ : G → V ≃ₗ[k] V // IsProjectiveRep ρ (Function.curry ⇑α)} ≃
       {π : α.Extension →* (V ≃ₗ[k] V) //
         ∀ a : kˣ, π (FactorSet.inl α a) = LinearEquiv.smulOfUnit a} where
-  toFun ρ := ⟨ρ.2.linearization htriv, fun a ↦ ρ.2.linearization_inl htriv a⟩
-  invFun π := ⟨fun g ↦ π.1 (α.canonicalSection g),
-    isProjectiveRep_comp_canonicalSection htriv π.1 π.2⟩
+  toFun ρ := ⟨ρ.property.linearization htriv, fun a ↦ ρ.property.linearization_inl htriv a⟩
+  invFun π := ⟨fun g ↦ π.val (α.canonicalSection g),
+    isProjectiveRep_comp_canonicalSection htriv π.val π.property⟩
   left_inv ρ := Subtype.ext (funext fun g ↦ by simp)
   right_inv π := Subtype.ext (MonoidHom.ext fun x ↦ LinearEquiv.ext fun v ↦ by
-    have h : π.1 (FactorSet.inl α x.left * α.canonicalSection x.right) v = π.1 x v := by
+    have h : π.val (FactorSet.inl α x.left * α.canonicalSection x.right) v = π.val x v := by
       rw [FactorSet.inl_mul_canonicalSection]
-    rw [map_mul, π.2 x.left] at h
+    rw [map_mul, π.property x.left] at h
     simpa only [IsProjectiveRep.linearization_apply, mul_apply_eq_comp,
       LinearEquiv.smulOfUnit_apply] using h)
 
@@ -361,7 +358,7 @@ theorem isProjectiveRepEquivExtensionHom_apply (α : FactorSet G kˣ)
     (htriv : ∀ (g : G) (a : kˣ), g • a = a)
     (ρ : {ρ : G → V ≃ₗ[k] V // IsProjectiveRep ρ (Function.curry ⇑α)}) :
     (isProjectiveRepEquivExtensionHom k V α htriv ρ : α.Extension →* (V ≃ₗ[k] V))
-      = ρ.2.linearization htriv :=
+      = ρ.property.linearization htriv :=
   (rfl)
 
 /-- The inverse bijection restricts a linear representation along the canonical section. -/
@@ -371,7 +368,7 @@ theorem isProjectiveRepEquivExtensionHom_symm_apply (α : FactorSet G kˣ)
     (π : {π : α.Extension →* (V ≃ₗ[k] V) //
       ∀ a : kˣ, π (FactorSet.inl α a) = LinearEquiv.smulOfUnit a}) :
     ((isProjectiveRepEquivExtensionHom k V α htriv).symm π : G → V ≃ₗ[k] V)
-      = fun g ↦ π.1 (α.canonicalSection g) :=
+      = fun g ↦ π.val (α.canonicalSection g) :=
   (rfl)
 
 end Linearization

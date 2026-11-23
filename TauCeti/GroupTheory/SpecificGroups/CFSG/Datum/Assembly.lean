@@ -40,7 +40,7 @@ squares to `Frob_q`, by `TauCeti.SuzukiReeIndex.datumSteinberg_mul_self`. What i
 *some* positive power is a scaling by a positive power of the characteristic, which is
 `TauCeti.ValidLieTypeIndex.exists_pow_datumSteinberg_eq_smulId`. That is the defining property of a
 Steinberg endomorphism in Steinberg's sense, and on the group layer it is the reason the fixed
-groups of milestone L3 are finite at all; the two exponents and the two scalars are genuinely
+groups of the Steinberg maps are finite at all; the two exponents and the two scalars are genuinely
 different, which is why the uniform statement is an existential rather than one formula.
 
 Note that the scaling factors do not follow one rule either. The graph-twisted power is the
@@ -70,29 +70,28 @@ points, or a finite group.
   thirteen ordinary constructors it degenerates to the Frobenius exactly on the nine untwisted
   families.
 
-## Roadmap
+## Relation to the group layer
 
-This assembles the root-datum layer of milestones L1, "ordinary and graph Steinberg maps", and L2,
-"Suzuki--Ree Steinberg maps", of `TauCetiRoadmap/CFSGStatement/README.md` into a single map on every
-valid index. It is the root-datum shadow of the map named in L2's completion condition, "`steinberg`
-unfolds on every branch", and does not meet that condition: the condition is about the group-layer
-`TauCeti.ValidLieTypeIndex.steinberg`, an endomorphism of the points of a pinned
-Chevalley--Demazure group, together with its action on root subgroups, and both remain open. That
-group layer waits on the carriers of milestone L0.
+This assembles the root-datum layers of the ordinary and graph Steinberg maps and of the
+Suzuki--Ree Steinberg maps into a single map on every valid index. It is the root-datum shadow of
+the group-layer `TauCeti.ValidLieTypeIndex.steinberg`, an endomorphism of the ambient group of each
+valid index, which is assembled from the family carriers in
+`TauCeti.GroupTheory.SpecificGroups.CFSG.Assembly.LieType` together with its action on root
+subgroups.
 
 What this file contributes to it is not the group-level composite. On the ordinary branch that
 composite already exists in another form: `TauCeti.DynkinType.geckTwistedFrobenius` realizes
 `γ ∘ Frob_q` on the points of the pinned Geck carrier, for a diagram symmetry and a field order
-handed to it, and satisfies L1's simple-root-subgroup equation there. What is contributed is the
-branch split and the exponents. The split `TauCeti.LieTypeIndex.UsesHalfFrobenius` is decided here
-once and for every valid index, against the two subtypes that carry the two constructions, so a
-consumer of a total Steinberg map has one place to reason about which shape an index takes; and the
-order relations below fix the exponent and the scalar on each side, the twist order and `q ^ e` on
-the ordinary branch and `2` and `q` on the half-Frobenius one. Those are the root-datum readings of
-the "order relations" half of L1's completion evidence and of L2's
-`steinberg(m) ^ 2 = Frob_(p ^ (2 * m + 1))`. The half-Frobenius branch has no group-level
-counterpart at all yet, since the special isogeny of pinned group schemes it would compose is an
-upstream Layer 9 target.
+handed to it, and satisfies the simple-root-subgroup equation of an ordinary Steinberg map there.
+What is contributed is the branch split and the exponents. The split
+`TauCeti.LieTypeIndex.UsesHalfFrobenius` is decided here once and for every valid index, against
+the two subtypes that carry the two constructions, so a consumer of a total Steinberg map has one
+place to reason about which shape an index takes; and the order relations below fix the exponent
+and the scalar on each side, the twist order and `q ^ e` on the ordinary branch and `2` and `q` on
+the half-Frobenius one. Those are the root-datum readings of the order relations of the
+graph-twisted Steinberg maps and of the half-Frobenius relation
+`steinberg(m) ^ 2 = Frob_(p ^ (2 * m + 1))`. On the half-Frobenius branch the group-level maps are
+the explicit Suzuki, Ree and Tits endomorphisms of the family modules.
 
 The conventions follow R. Steinberg, *Endomorphisms of linear algebraic groups*, Memoirs AMS 80
 (1968), §11, and R. W. Carter, *Finite Groups of Lie Type: Conjugacy Classes and Complex
@@ -117,7 +116,7 @@ are the domains of those constructions, so no map is invented on either branch. 
 def datumSteinberg :
     RootPairingIsogeny (d.dynkinType.simplyConnectedRootDatum d.dynkinType_valid)
       (d.dynkinType.simplyConnectedRootDatum d.dynkinType_valid) :=
-  if h : d.1.UsesHalfFrobenius then SuzukiReeIndex.datumSteinberg ⟨d, h⟩
+  if h : d.val.UsesHalfFrobenius then SuzukiReeIndex.datumSteinberg ⟨d, h⟩
   else GraphTwistedIndex.datumSteinberg ⟨d, h⟩
 
 /-- **The defining equation of the root-datum Steinberg map**, exhibiting it as the `dite` on
@@ -128,19 +127,19 @@ branches at once; when the predicate is already decided one way,
 instead. -/
 theorem datumSteinberg_def :
     d.datumSteinberg =
-      if h : d.1.UsesHalfFrobenius then SuzukiReeIndex.datumSteinberg ⟨d, h⟩
+      if h : d.val.UsesHalfFrobenius then SuzukiReeIndex.datumSteinberg ⟨d, h⟩
       else GraphTwistedIndex.datumSteinberg ⟨d, h⟩ := by
   rw [datumSteinberg]
 
 /-- **The half-Frobenius branch of the Steinberg map.** On the Suzuki, Ree `G₂`, Ree `F₄` and Tits
 indices it is the odd power `τ ^ (2 * m + 1)` of the selected special isogeny. -/
-theorem datumSteinberg_of_usesHalfFrobenius (h : d.1.UsesHalfFrobenius) :
+theorem datumSteinberg_of_usesHalfFrobenius (h : d.val.UsesHalfFrobenius) :
     d.datumSteinberg = SuzukiReeIndex.datumSteinberg ⟨d, h⟩ := by
   rw [datumSteinberg_def, dite_eq_left h]
 
 /-- **The ordinary branch of the Steinberg map.** On the nine untwisted families and on `²Aₙ(q)`,
 `²Dₙ(q)`, `²E₆(q)` and `³D₄(q)` it is the graph automorphism after the `q`-power Frobenius. -/
-theorem datumSteinberg_of_not_usesHalfFrobenius (h : ¬ d.1.UsesHalfFrobenius) :
+theorem datumSteinberg_of_not_usesHalfFrobenius (h : ¬ d.val.UsesHalfFrobenius) :
     d.datumSteinberg = GraphTwistedIndex.datumSteinberg ⟨d, h⟩ := by
   rw [datumSteinberg_def, dite_eq_right h]
 
@@ -149,7 +148,7 @@ untwisted families**, where the diagram permutation is trivial. This is
 `TauCeti.GraphTwistedIndex.datumSteinberg_eq_datumFrobenius_iff` transported through the
 dispatcher. -/
 theorem datumSteinberg_eq_datumFrobenius_iff_of_not_usesHalfFrobenius
-    (h : ¬ d.1.UsesHalfFrobenius) :
+    (h : ¬ d.val.UsesHalfFrobenius) :
     d.datumSteinberg = d.datumFrobenius ↔ GraphTwistedIndex.diagramPerm ⟨d, h⟩ = 1 := by
   rw [datumSteinberg_of_not_usesHalfFrobenius d h]
   exact GraphTwistedIndex.datumSteinberg_eq_datumFrobenius_iff ⟨d, h⟩
@@ -157,7 +156,7 @@ theorem datumSteinberg_eq_datumFrobenius_iff_of_not_usesHalfFrobenius
 /-- With no half-Frobenius or diagram twist, the Steinberg character map is multiplication
 by the field order. -/
 theorem datumSteinberg_weightMap_of_diagramPerm_eq_one
-    (h : ¬ d.1.UsesHalfFrobenius) (hσ : GraphTwistedIndex.diagramPerm ⟨d, h⟩ = 1) :
+    (h : ¬ d.val.UsesHalfFrobenius) (hσ : GraphTwistedIndex.diagramPerm ⟨d, h⟩ = 1) :
     d.datumSteinberg.weightMap = d.fieldOrder • LinearMap.id := by
   rw [(d.datumSteinberg_eq_datumFrobenius_iff_of_not_usesHalfFrobenius h).mpr hσ,
     datumFrobenius_weightMap]
@@ -165,10 +164,10 @@ theorem datumSteinberg_weightMap_of_diagramPerm_eq_one
 /-- **The twist-order power of an ordinary Steinberg map is a Frobenius**: `(γ ∘ Frob_q) ^ e` is
 `Frob_(q ^ e)`, the Frobenius of the degree-`e` extension of the field the index names. -/
 theorem datumSteinberg_pow_twistOrder_eq_smulId_of_not_usesHalfFrobenius
-    (h : ¬ d.1.UsesHalfFrobenius) :
+    (h : ¬ d.val.UsesHalfFrobenius) :
     d.datumSteinberg ^ GraphTwistedIndex.twistOrder ⟨d, h⟩ =
       RootPairingIsogeny.smulId _
-        (d.1.fieldOrderPNat ^ GraphTwistedIndex.twistOrder ⟨d, h⟩) := by
+        (d.val.fieldOrderPNat ^ GraphTwistedIndex.twistOrder ⟨d, h⟩) := by
   rw [datumSteinberg_of_not_usesHalfFrobenius d h]
   exact GraphTwistedIndex.datumSteinberg_pow_twistOrder_eq_smulId ⟨d, h⟩
 
@@ -176,7 +175,7 @@ theorem datumSteinberg_pow_twistOrder_eq_smulId_of_not_usesHalfFrobenius
 `(τ ^ (2 * m + 1)) ^ 2` is `Frob_(p ^ (2 * m + 1))`, the Frobenius of the field the index itself
 names. -/
 theorem datumSteinberg_pow_two_eq_datumFrobenius_of_usesHalfFrobenius
-    (h : d.1.UsesHalfFrobenius) :
+    (h : d.val.UsesHalfFrobenius) :
     d.datumSteinberg ^ 2 = d.datumFrobenius := by
   rw [datumSteinberg_of_usesHalfFrobenius d h, pow_two, datumFrobenius_def]
   exact SuzukiReeIndex.datumSteinberg_mul_self ⟨d, h⟩
@@ -194,21 +193,21 @@ theorem exists_pow_datumSteinberg_eq_smulId :
       d.datumSteinberg ^ n =
         RootPairingIsogeny.smulId
           (d.dynkinType.simplyConnectedRootDatum d.dynkinType_valid) c := by
-  by_cases h : d.1.UsesHalfFrobenius
+  by_cases h : d.val.UsesHalfFrobenius
   · -- The square is the Frobenius of the field the index names, a `fieldExponent`-th power of `p`.
-    refine ⟨2, d.1.fieldOrderPNat, d.fieldExponent, two_pos, d.fieldExponent_pos, ?_, ?_⟩
+    refine ⟨2, d.val.fieldOrderPNat, d.fieldExponent, two_pos, d.fieldExponent_pos, ?_, ?_⟩
     · rw [LieTypeIndex.coe_fieldOrderPNat]
       exact d.fieldOrder_eq_characteristic_pow
     · rw [d.datumSteinberg_pow_two_eq_datumFrobenius_of_usesHalfFrobenius h, datumFrobenius_def]
   · -- The twist-order power is the Frobenius of the degree-`e` extension, so the exponent of `p`
     -- is multiplied by `e`.
     refine ⟨GraphTwistedIndex.twistOrder ⟨d, h⟩,
-      d.1.fieldOrderPNat ^ GraphTwistedIndex.twistOrder ⟨d, h⟩,
+      d.val.fieldOrderPNat ^ GraphTwistedIndex.twistOrder ⟨d, h⟩,
       d.fieldExponent * GraphTwistedIndex.twistOrder ⟨d, h⟩,
       GraphTwistedIndex.twistOrder_pos ⟨d, h⟩,
       Nat.mul_pos d.fieldExponent_pos (GraphTwistedIndex.twistOrder_pos ⟨d, h⟩), ?_,
       d.datumSteinberg_pow_twistOrder_eq_smulId_of_not_usesHalfFrobenius h⟩
-    rw [PNat.pow_coe, LieTypeIndex.coe_fieldOrderPNat, d.1.fieldOrder_eq_characteristic_pow,
+    rw [PNat.pow_coe, LieTypeIndex.coe_fieldOrderPNat, d.val.fieldOrder_eq_characteristic_pow,
       pow_mul]
 
 end

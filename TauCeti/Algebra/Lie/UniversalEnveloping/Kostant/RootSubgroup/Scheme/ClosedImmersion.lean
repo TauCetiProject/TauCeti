@@ -50,6 +50,8 @@ criterion supplies the same closed subgroup.
 * `TauCeti.UniversalEnvelopingAlgebra.kostantRootGeneratorIntMatrix`: the represented generator
   in an integral lattice basis, shared with the matrix construction of
   `TauCeti.Algebra.Lie.Symplectic.StandardCarrier.AlternatingForm`.
+* `TauCeti.UniversalEnvelopingAlgebra.kostantRootGeneratorIntMatrix_apply`: the entries of the
+  integral matrix are the coordinates of the images of the basis vectors.
 * `TauCeti.UniversalEnvelopingAlgebra.kostantRootGeneratorIntMatrix_eq_of_action`: the basis
   action determines the integral root matrix.
 * `TauCeti.UniversalEnvelopingAlgebra.kostantRootGeneratorIntMatrix_mul_self`: square-zero
@@ -176,17 +178,24 @@ variable {V : Type v} [AddCommGroup V] [Module ℚ V] (e : ι → L) (h : κ →
 @[expose] noncomputable def kostantRootGeneratorIntMatrix : Matrix η η ℤ :=
   b.toMatrix fun s ↦
     ⟨ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e i)) (b s),
-      hM _ (rootVector_mem_kostantForm e h i) _ (b s).2⟩
+      hM _ (rootVector_mem_kostantForm e h i) _ (b s).property⟩
+
+/-- The `(r, s)` entry of the integral root matrix is the `r`-th coordinate of the image of the
+`s`-th basis vector under the lattice endomorphism. -/
+theorem kostantRootGeneratorIntMatrix_apply (r s : η) :
+    kostantRootGeneratorIntMatrix e h ρ M hM i b r s =
+      b.repr (kostantRootOperator e h ρ M hM i (b s)) r := by
+  rw [kostantRootGeneratorIntMatrix, Module.Basis.toMatrix_apply]
+  congr 2
+  apply Subtype.ext
+  rw [coe_kostantRootOperator_apply]
 
 /-- The represented integral root matrix is the matrix of its lattice endomorphism. -/
 theorem kostantRootGeneratorIntMatrix_eq_toMatrix [Fintype η] [DecidableEq η] :
     kostantRootGeneratorIntMatrix e h ρ M hM i b =
       LinearMap.toMatrix b b (kostantRootOperator e h ρ M hM i) := by
   ext r s
-  rw [kostantRootGeneratorIntMatrix, Module.Basis.toMatrix_apply, LinearMap.toMatrix_apply]
-  congr 2
-  apply Subtype.ext
-  rw [coe_kostantRootOperator_apply]
+  rw [kostantRootGeneratorIntMatrix_apply, LinearMap.toMatrix_apply]
 
 section MatrixRelations
 
@@ -270,7 +279,7 @@ theorem kostantRootGeneratorIntMatrix_eq_of_action [Fintype η] (X : Matrix η �
       ∑ r, X r s • (b r : V)) :
     kostantRootGeneratorIntMatrix e h ρ M hM i b = X := by
   have hcol (s : η) : (⟨ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e i)) (b s),
-      hM _ (rootVector_mem_kostantForm e h i) _ (b s).2⟩ : M) = ∑ r, X r s • b r := by
+      hM _ (rootVector_mem_kostantForm e h i) _ (b s).property⟩ : M) = ∑ r, X r s • b r := by
     apply Subtype.ext
     simpa only [AddSubmonoidClass.coe_finsetSum, AddSubgroupClass.coe_zsmul] using haction s
   ext r s
@@ -283,7 +292,7 @@ theorem rep_rootGenerator_basis_eq_sum [Fintype η] (s : η) :
       ∑ r, kostantRootGeneratorIntMatrix e h ρ M hM i b r s • (b r : V) := by
   have hexp := congrArg Subtype.val ((b.sum_toMatrix_smul_self
     (fun s ↦ (⟨ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e i)) (b s),
-      hM _ (rootVector_mem_kostantForm e h i) _ (b s).2⟩ : M)) s).symm)
+      hM _ (rootVector_mem_kostantForm e h i) _ (b s).property⟩ : M)) s).symm)
   simpa only [kostantRootGeneratorIntMatrix, AddSubmonoidClass.coe_finsetSum,
     AddSubgroupClass.coe_zsmul] using hexp
 
@@ -294,7 +303,7 @@ theorem kostantRootGeneratorIntMatrix_apply_of_eq [DecidableEq η] {a a' : η} {
     (r : η) :
     kostantRootGeneratorIntMatrix e h ρ M hM i b r a = if r = a' then c else 0 := by
   have hvec : (⟨ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e i)) (b a),
-      hM _ (rootVector_mem_kostantForm e h i) _ (b a).2⟩ : M) = c • b a' :=
+      hM _ (rootVector_mem_kostantForm e h i) _ (b a).property⟩ : M) = c • b a' :=
     Subtype.ext hstep
   rw [kostantRootGeneratorIntMatrix, Module.Basis.toMatrix_apply, hvec,
     map_zsmul, Module.Basis.repr_self, Finsupp.smul_apply, Finsupp.single_apply]
@@ -559,7 +568,7 @@ consumer never has to unfold the bundled definition; the inclusion arrow agrees 
 `kostantRootSubgroup` up to `CategoryTheory.Subobject.underlyingIso`. -/
 @[simp]
 theorem coe_kostantRootSubgroupClosedSubgroup :
-    (kostantRootSubgroupClosedSubgroup e h ρ M hM i hnil b).1 =
+    (kostantRootSubgroupClosedSubgroup e h ρ M hM i hnil b).val =
       letI := mono_kostantRootSubgroup e h ρ M hM i hnil b
       Subobject.mk (kostantRootSubgroup e h ρ M hM i hnil b) :=
   ClosedSubgroupScheme.coe_mk _

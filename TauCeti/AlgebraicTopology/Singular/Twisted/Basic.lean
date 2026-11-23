@@ -15,6 +15,7 @@ public import TauCeti.AlgebraicTopology.FundamentalGroupoid.SimplyConnected
 public import TauCeti.AlgebraicTopology.LocalCoefficient
 public import TauCeti.AlgebraicTopology.TopologicalSimplex
 public import TauCeti.CategoryTheory.Limits.Shapes.Products
+import TauCeti.Topology.Category.TopCat.Subspace
 
 /-!
 # Singular chains with local coefficients
@@ -58,6 +59,10 @@ twisted by the system pulled back along `f`.
 * `TauCeti.LocalCoefficientSystem.twistedChainComplexMap`: the chain map induced by a continuous
   map, and `twistedHomologyMap` the resulting map on twisted homology, together with their
   identity and composition laws and their naturality in the coefficient system.
+* `TauCeti.LocalCoefficientSystem.subsetTwistedChainComplexMap`,
+  `TauCeti.LocalCoefficientSystem.restrictTwistedChainComplexMap`: the maps of twisted chains of
+  subspaces, with the restricted systems, induced by an inclusion `A ⊆ B` and by the restriction
+  of a map `f` with `f '' A ⊆ B`.
 * `CategoryTheory.SimplicialObject.Homotopy.toTwistedChainComplexHomotopy`: a simplicial homotopy
   between maps of twisted chains induced by continuous maps gives a chain homotopy.
 
@@ -117,15 +122,13 @@ def pathTransport (σ : (TopCat.toSSet.obj X).obj n) (z w : toTop.{v}.obj n.unop
 /-- Transport inside a simplex is the path class inside the image of the simplex, from the image
 of one point to the image of the other. -/
 lemma pathTransport_eq_pathClass (σ : (TopCat.toSSet.obj X).obj n) (z w : toTop.{v}.obj n.unop) :
-    pathTransport σ z w = (TopCat.simplexMap σ).pathClass z w :=
-  (rfl)
+    pathTransport σ z w = (TopCat.simplexMap σ).pathClass z w := (rfl)
 
 /-- Transport inside a simplex is represented by the image of any path joining its endpoints. -/
 lemma pathTransport_eq_mk (σ : (TopCat.toSSet.obj X).obj n)
     {z w : toTop.{v}.obj n.unop} (q : Path z w) :
     pathTransport σ z w = Path.Homotopic.Quotient.mk
-      (q.map (TopCat.simplexMap σ).continuous) :=
-  (TopCat.simplexMap σ).pathClass_eq_mk q
+      (q.map (TopCat.simplexMap σ).continuous) := (TopCat.simplexMap σ).pathClass_eq_mk q
 
 /-- Transport inside a simplex is the image of the unique path class of the topological simplex
 under the map of fundamental groupoids induced by the simplex. -/
@@ -141,8 +144,7 @@ lemma pathTransport_def (σ : (TopCat.toSSet.obj X).obj n) (z w : toTop.{v}.obj 
 /-- Transport inside a simplex from a point to itself is the identity. -/
 @[simp]
 lemma pathTransport_self (σ : (TopCat.toSSet.obj X).obj n) (z : toTop.{v}.obj n.unop) :
-    pathTransport σ z z = 𝟙 _ :=
-  (TopCat.simplexMap σ).pathClass_self z
+    pathTransport σ z z = 𝟙 _ := (TopCat.simplexMap σ).pathClass_self z
 
 /-- Transports inside a simplex compose: running from `z` to `w` and then from `w` to `y` is
 running from `z` to `y`. -/
@@ -231,8 +233,7 @@ lemma vertexTransport_eq_mk (α : m ⟶ n) (σ : (TopCat.toSSet.obj X).obj m)
 /-- Vertex transport is the path class inside the simplex between the two vertices. -/
 lemma vertexTransport_eq_pathClass (α : m ⟶ n) (σ : (TopCat.toSSet.obj X).obj m) :
     vertexTransport α σ = (TopCat.simplexMap σ).pathClass (toTopInitialVertex m.unop)
-      (toTop.map α.unop (toTopInitialVertex n.unop)) :=
-  (rfl)
+      (toTop.map α.unop (toTopInitialVertex n.unop)) := (rfl)
 
 /-- Reindexing along an identity does not move the initial vertex, so the transport it induces is
 the `eqToHom` between the two (equal) initial vertices. -/
@@ -319,14 +320,12 @@ def ιTwistedChains (σ : (TopCat.toSSet.obj X).obj n) :
 /-- Twisted chains in a simplicial degree are the coproduct of the coefficient fibres at the
 initial vertices of its singular simplices. -/
 def isColimitCofanTwistedChains (n : SimplexCategoryᵒᵖ) :
-    IsColimit (Cofan.mk ((twistedChains L).obj n) (ιTwistedChains L)) :=
-  coproductIsCoproduct _
+    IsColimit (Cofan.mk ((twistedChains L).obj n) (ιTwistedChains L)) := coproductIsCoproduct _
 
 /-- Two maps out of a module of twisted chains agree as soon as they agree on every summand. -/
 @[ext]
 lemma twistedChains_hom_ext {A : ModuleCat.{max v w} R} {f g : (twistedChains L).obj n ⟶ A}
-    (h : ∀ σ, ιTwistedChains L σ ≫ f = ιTwistedChains L σ ≫ g) : f = g :=
-  Sigma.hom_ext _ _ h
+    (h : ∀ σ, ιTwistedChains L σ ≫ f = ιTwistedChains L σ ≫ g) : f = g := Sigma.hom_ext _ _ h
 
 /-- Two maps into twisted chains through the summands of equal simplices agree when the maps into
 the coefficient modules agree up to the identification of these modules. -/
@@ -350,8 +349,7 @@ lemma eqToHom_comp_ιTwistedChains_eq {M : ModuleCat.{max v w} R}
 singular simplex. -/
 def twistedChainsDesc {A : ModuleCat.{max v w} R}
     (φ : ∀ σ : (TopCat.toSSet.obj X).obj n, L.obj (initialVertex σ) ⟶ A) :
-    (twistedChains L).obj n ⟶ A :=
-  Sigma.desc φ
+    (twistedChains L).obj n ⟶ A := Sigma.desc φ
 
 /-- The map out of twisted chains given by a family of maps restricts to each member of the
 family on the summand of the corresponding simplex. -/
@@ -359,8 +357,7 @@ family on the summand of the corresponding simplex. -/
 lemma ιTwistedChains_twistedChainsDesc {A : ModuleCat.{max v w} R}
     (φ : ∀ σ : (TopCat.toSSet.obj X).obj n, L.obj (initialVertex σ) ⟶ A)
     (σ : (TopCat.toSSet.obj X).obj n) :
-    ιTwistedChains L σ ≫ twistedChainsDesc L φ = φ σ :=
-  Sigma.ι_comp_desc _ _
+    ιTwistedChains L σ ≫ twistedChainsDesc L φ = φ σ := Sigma.ι_comp_desc _ _
 
 /-- A structure map of twisted chains sends the summand of a simplex `σ` into the summand of the
 reindexed simplex, after transporting the coefficients along the initial vertices. -/
@@ -425,6 +422,14 @@ lemma ιTwistedChainComplex_isoAlternatingFaceMapComplex_hom_f (k : ℕ)
     ιTwistedChainComplex L k σ ≫
         (twistedChainComplexIsoAlternatingFaceMapComplex L).hom.f k =
       ιTwistedChains L σ :=
+  Category.comp_id _
+
+/-- The inverse alternating-face comparison preserves each simplex inclusion. -/
+@[reassoc (attr := simp)]
+lemma ιTwistedChains_isoAlternatingFaceMapComplex_inv_f (k : ℕ)
+    (σ : (TopCat.toSSet.obj X) _⦋k⦌) :
+    ιTwistedChains L σ ≫ (twistedChainComplexIsoAlternatingFaceMapComplex L).inv.f k =
+      ιTwistedChainComplex L k σ :=
   Category.comp_id _
 
 /-- The cofan exhibiting the degree-`k` term of the twisted chain complex as a family indexed by the
@@ -1147,6 +1152,7 @@ contravariant `Hom(-, M)`. -/
 instance isSplitMono_twistedChainsMap_app [Mono f] (k : SimplexCategoryᵒᵖ) :
     IsSplitMono ((twistedChainsMap f L).app k) :=
   TauCeti.isSplitMono_sigmaMap' (fun σ ↦ L.obj (initialVertex σ)) ((TopCat.toSSet.map f).app k)
+    ((mono_iff_injective _).1 inferInstance)
 
 /-- A monomorphism of spaces induces a degreewise split monomorphism of twisted chain
 complexes. -/
@@ -1307,6 +1313,78 @@ lemma twistedChainComplexMap_naturality_square :
   simp [← twistedChainComplexCoefficientMap_comp_assoc]
 
 end MapSquare
+
+section Subspace
+
+variable {Y : TopCat.{v}} (L : LocalCoefficientSystem.{u, v, max v w} R X) {A B : Set X}
+
+/-- The map of twisted chains induced by an inclusion `A ⊆ B` of subsets of `X`, with `L`
+restricted to `A` and to `B`. -/
+-- The source of the coefficient comparison is the pullback along
+-- `(subtypeVal B).comp (inclusion h)`, which is `subtypeVal A` by definition
+-- (`ContinuousMap.subtypeVal_comp_inclusion` is proved by `rfl`).
+def subsetTwistedChainComplexMap (h : A ⊆ B) :
+    ((pullback (X := TopCat.of ↥A) (ContinuousMap.subtypeVal A)).obj L).twistedChainComplex ⟶
+      ((pullback (X := TopCat.of ↥B) (ContinuousMap.subtypeVal B)).obj L).twistedChainComplex :=
+  twistedChainComplexCoefficientMap
+      ((pullbackCompIso (TopCat.ofHom (ContinuousMap.inclusion h)).hom
+        (TopCat.ofHom (ContinuousMap.subtypeVal B)).hom).hom.app L) ≫
+    twistedChainComplexMap (TopCat.ofHom (ContinuousMap.inclusion h))
+      ((pullback (X := TopCat.of ↥B) (ContinuousMap.subtypeVal B)).obj L)
+
+/-- The map induced by `A ⊆ B` is the change of coefficients identifying the two restrictions of
+`L` to `A`, followed by the map induced by the inclusion of `A` into `B`. -/
+lemma subsetTwistedChainComplexMap_def (h : A ⊆ B) :
+    subsetTwistedChainComplexMap L h = twistedChainComplexCoefficientMap
+        ((pullbackCompIso (TopCat.ofHom (ContinuousMap.inclusion h)).hom
+          (TopCat.ofHom (ContinuousMap.subtypeVal B)).hom).hom.app L) ≫
+      twistedChainComplexMap (TopCat.ofHom (ContinuousMap.inclusion h))
+        ((pullback (X := TopCat.of ↥B) (ContinuousMap.subtypeVal B)).obj L) := (rfl)
+
+/-- The map induced by `A ⊆ B` followed by the map induced by `B ⊆ X` is the map induced by
+`A ⊆ X`. -/
+@[reassoc (attr := simp)]
+lemma subsetTwistedChainComplexMap_twistedChainComplexMap (h : A ⊆ B) :
+    subsetTwistedChainComplexMap L h ≫
+        twistedChainComplexMap (TopCat.ofHom (ContinuousMap.subtypeVal B)) L =
+      twistedChainComplexMap (TopCat.ofHom (ContinuousMap.subtypeVal A)) L := by
+  rw [subsetTwistedChainComplexMap, Category.assoc]
+  -- The composite of the two inclusions is the inclusion of `A` by definition, as above.
+  exact (twistedChainComplexMap_comp (TopCat.ofHom (ContinuousMap.inclusion h))
+    (TopCat.ofHom (ContinuousMap.subtypeVal B)) L).symm
+
+variable (f : X ⟶ Y) (M : LocalCoefficientSystem.{u, v, max v w} R Y) {B : Set Y}
+  (hf : Set.MapsTo f A B)
+
+/-- The map of twisted chains of subspaces induced by the restriction `A ⟶ B` of a continuous map
+`f : X ⟶ Y` carrying `A` into `B`, with coefficients in `f⁎M` restricted to `A` and in `M`
+restricted to `B`. -/
+def restrictTwistedChainComplexMap :
+    ((pullback (X := TopCat.of ↥A) (ContinuousMap.subtypeVal A)).obj
+        ((pullback f.hom).obj M)).twistedChainComplex ⟶
+      ((pullback (X := TopCat.of ↥B) (ContinuousMap.subtypeVal B)).obj M).twistedChainComplex :=
+  twistedChainComplexCoefficientMap
+      (((pullbackCompIso (TopCat.ofHom (ContinuousMap.subtypeVal A)).hom f.hom).app M).symm ≪≫
+        eqToIso (congrArg (fun k : TopCat.of A ⟶ Y ↦ (pullback k.hom).obj M)
+          (TopCat.ofHom_subtypeVal_comp f hf)) ≪≫
+        (pullbackCompIso (TopCat.ofHom ⟨hf.restrict, f.hom.continuous.restrict hf⟩).hom
+          (TopCat.ofHom (ContinuousMap.subtypeVal B)).hom).app M).hom ≫
+    twistedChainComplexMap (TopCat.ofHom ⟨hf.restrict, f.hom.continuous.restrict hf⟩)
+      ((pullback (X := TopCat.of ↥B) (ContinuousMap.subtypeVal B)).obj M)
+
+/-- The restriction of `f` followed by the inclusion of `B` is the inclusion of `A` followed by
+`f`. -/
+@[reassoc (attr := simp)]
+lemma restrictTwistedChainComplexMap_twistedChainComplexMap :
+    restrictTwistedChainComplexMap f M hf ≫
+        twistedChainComplexMap (TopCat.ofHom (ContinuousMap.subtypeVal B)) M =
+      twistedChainComplexMap (TopCat.ofHom (ContinuousMap.subtypeVal A))
+          ((pullback f.hom).obj M) ≫ twistedChainComplexMap f M := by
+  rw [restrictTwistedChainComplexMap, Category.assoc]
+  exact (twistedChainComplexMap_naturality_square _ _ _ _ M
+    (TopCat.ofHom_subtypeVal_comp f hf)).symm
+
+end Subspace
 
 section ConstantMap
 

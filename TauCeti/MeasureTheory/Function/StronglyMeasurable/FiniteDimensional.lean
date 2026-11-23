@@ -49,7 +49,7 @@ theorem aestronglyMeasurable_clm_apply_iff {T : α → E →L[𝕜] F} :
       b.sum_repr]
   rw [hT]
   exact Finset.aestronglyMeasurable_fun_sum _ fun i _ ↦
-    (ContinuousLinearMap.smulRightL 𝕜 E F
+    (ContinuousLinearMap.smulRightL 𝕜 𝕜 𝕜 E F
       (b.coord i).toContinuousLinearMap).continuous.comp_aestronglyMeasurable (h (b i))
 
 end TauCeti

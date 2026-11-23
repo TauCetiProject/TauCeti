@@ -52,7 +52,8 @@ compatibility of the normalizations of `K` and `L` with one another.
 public section
 
 open IsDedekindDomain NumberField NumberField.InfinitePlace Module
-open scoped NumberField AdicCompletionExtension NumberField.LiesOver
+open scoped NumberField AdicCompletionExtension
+attribute [local instance] AbsoluteValue.Completion.algebraOfLiesOver
 
 namespace TauCeti.GlobalNumberFields
 
@@ -78,7 +79,7 @@ attribute [local instance] Fintype.ofFinite in
 @[simp↓]
 theorem finprod_normalizedAbsValue_inl_algebraMap (x : K) :
     ∏ᶠ w : {w : HeightOneSpectrum (𝓞 L) // w.asIdeal.LiesOver v.asIdeal},
-        normalizedAbsValue (Sum.inl w.1) (algebraMap K L x) =
+        normalizedAbsValue (Sum.inl w.val) (algebraMap K L x) =
       normalizedAbsValue (Sum.inl v) x ^ finrank K L := by
   simp_rw [finprod_eq_prod_of_fintype, normalizedAbsValue_inl_eq_norm_coe,
     ← HeightOneSpectrum.adicCompletionExtension_coe K L v,
@@ -97,11 +98,11 @@ private theorem normalizedAbsValue_inr_algebraMap_eq_completionMap (w : Infinite
     [w.LiesOver v] (x : K) :
     normalizedAbsValue (Sum.inr w) (algebraMap K L x) =
       completionNormalizedAbsValue w
-        (LiesOver.completionMap v w (algebraMap K v.Completion x)) := by
+        (AbsoluteValue.Completion.map v.val w.val (algebraMap K v.Completion x)) := by
   rw [normalizedAbsValue_inr, ← completionNormalizedAbsValue_algebraMap,
     ← IsScalarTower.algebraMap_apply K L w.Completion,
-    IsScalarTower.algebraMap_apply K v.Completion w.Completion]
-  rfl
+    IsScalarTower.algebraMap_apply K v.Completion w.Completion,
+    AbsoluteValue.Completion.algebraMap_apply_of_liesOver]
 
 /-- **Normalized absolute values at an infinite place under extension.** If the infinite place `w`
 of `L` lies over the infinite place `v` of `K`, then `‖x‖_w = ‖x‖_v ^ [L_w : K_v]` for `x ∈ K`.
@@ -119,10 +120,10 @@ open scoped Classical in
 @[simp↓]
 theorem finprod_normalizedAbsValue_inr_algebraMap (x : K) :
     ∏ᶠ w : {w : InfinitePlace L // w.LiesOver v},
-        normalizedAbsValue (Sum.inr w.1) (algebraMap K L x) =
+        normalizedAbsValue (Sum.inr w.val) (algebraMap K L x) =
       normalizedAbsValue (Sum.inr v) x ^ finrank K L := by
   rw [finprod_eq_prod_of_fintype,
-    Finset.prod_congr rfl fun w _ ↦ normalizedAbsValue_inr_algebraMap_eq_completionMap v w.1 x,
+    Finset.prod_congr rfl fun w _ ↦ normalizedAbsValue_inr_algebraMap_eq_completionMap v w.val x,
     prod_completionNormalizedAbsValue_completionMap, completionNormalizedAbsValue_algebraMap,
     normalizedAbsValue_inr]
 

@@ -27,11 +27,9 @@ there with the inverse of the target sheet composed with the source projection.
 
 ## References
 
-This is the fullness step in the alternative monodromy-functor classification requested by
-Stage 2, item 8 of `TauCetiRoadmap/UniversalCovers/README.md`. The mathematical argument is the
-standard local-sheet proof of fullness for the monodromy functor; see A. Hatcher, *Algebraic
-Topology*, Section 1.3. It uses Junyan Xu's path-lifting and monodromy API in
-`Mathlib/Topology/Homotopy/Lifting.lean`.
+The mathematical argument is the standard local-sheet proof of fullness for the monodromy
+functor; see A. Hatcher, *Algebraic Topology*, Section 1.3. It uses Junyan Xu's path-lifting
+and monodromy API in `Mathlib/Topology/Homotopy/Lifting.lean`.
 -/
 
 public section
@@ -56,9 +54,9 @@ private theorem _root_.IsCoveringMap.monodromy_eq_of_path_in_sheet (hp : _root_.
     (he : (e : E) ∈ φ.target) (hz : (z : E) ∈ φ.target) :
     hp.monodromy (Path.Homotopic.Quotient.mk γ) e = z := by
   have he_base : p e = a := by
-    simpa only [Set.mem_preimage, Set.mem_singleton_iff] using e.2
+    simpa only [Set.mem_preimage, Set.mem_singleton_iff] using e.property
   have hz_base : p z = b := by
-    simpa only [Set.mem_preimage, Set.mem_singleton_iff] using z.2
+    simpa only [Set.mem_preimage, Set.mem_singleton_iff] using z.property
   have key : ∀ w : E, w ∈ φ.target → w = φ (p w) := fun w hw ↦ by
     rw [← congrFun hφ w]
     exact (φ.right_inv hw).symm
@@ -81,13 +79,13 @@ private theorem _root_.IsCoveringMap.monodromy_eq_of_path_in_sheet (hp : _root_.
 functors. -/
 private noncomputable def _root_.IsCoveringMap.mapOfNatTrans (hp : _root_.IsCoveringMap p)
     (hq : _root_.IsCoveringMap q) (α : hp.monodromyFunctor ⟶ hq.monodromyFunctor) : E → F :=
-  fun e ↦ ((α.app (FundamentalGroupoid.mk (p e))) ⟨e, rfl⟩).1
+  fun e ↦ ((α.app (FundamentalGroupoid.mk (p e))) ⟨e, rfl⟩).val
 
 /-- The pointwise map defined by a monodromy transformation lies over the base. -/
 private theorem _root_.IsCoveringMap.proj_mapOfNatTrans (hp : _root_.IsCoveringMap p)
     (hq : _root_.IsCoveringMap q) (α : hp.monodromyFunctor ⟶ hq.monodromyFunctor) (e : E) :
     q (IsCoveringMap.mapOfNatTrans hp hq α e) = p e :=
-  ((α.app (FundamentalGroupoid.mk (p e))) ⟨e, rfl⟩).2
+  ((α.app (FundamentalGroupoid.mk (p e))) ⟨e, rfl⟩).property
 
 /-- The defining pointwise equation for the map forced by a monodromy transformation. -/
 private theorem _root_.IsCoveringMap.mapOfNatTrans_apply (hp : _root_.IsCoveringMap p)

@@ -75,6 +75,9 @@ theory, the `Ω`-valued points of a finite product of fields are the points of i
 * `Algebra.Etale.algHomEquivMulActionHom Ω`: for a separable closure `Ω` of `K` and an étale
   `K`-algebra `B`, the identification of `A →ₐ[K] B` with the `Gal(Ω/K)`-equivariant maps
   `(B →ₐ[K] Ω) → (A →ₐ[K] Ω)`.
+* `Algebra.Etale.algEquivEquivEquivariant Ω`: for a separable closure `Ω` of `K` and étale
+  `K`-algebras `A` and `B`, the identification of `A ≃ₐ[K] B` with the `Gal(Ω/K)`-equivariant
+  bijections `(A →ₐ[K] Ω) ≃ (B →ₐ[K] Ω)`.
 * `TauCeti.galoisFiberAction K Ω`: the functor sending a finite étale `K`-algebra to the finite
   `Gal(Ω/K)`-set of its `Ω`-valued points.
 * `TauCeti.galoisFiber K Ω`: the functor sending a finite étale `K`-algebra to the finite
@@ -219,13 +222,13 @@ noncomputable def algHomTensorProductEquivPi [IsSepClosed Ω] [Algebra.Etale K A
   { toFun g φ := ⟨(Algebra.TensorProduct.productMap φ (AlgHom.id K Ω)).toRingHom.comp g.toRingHom,
       RingHom.ext fun a ↦ by simp⟩
     invFun f :=
-      { toRingHom := e.symm.toRingHom.comp (RingHom.pi fun φ ↦ (f φ).1)
+      { toRingHom := e.symm.toRingHom.comp (RingHom.pi fun φ ↦ (f φ).val)
         commutes' a := e.symm_apply_eq.2 <| funext fun φ ↦ by
           rw [he]
-          simpa using RingHom.congr_fun (f φ).2 a }
+          simpa using RingHom.congr_fun (f φ).property a }
     left_inv g := AlgHom.ext fun c ↦ e.symm_apply_eq.2 <| funext fun φ ↦ (he _ φ).symm
     right_inv f := funext fun φ ↦ Subtype.ext <| RingHom.ext fun c ↦
-      (he _ φ).symm.trans (congrFun (e.apply_symm_apply fun φ ↦ (f φ).1 c) φ) }
+      (he _ φ).symm.trans (congrFun (e.apply_symm_apply fun φ ↦ (f φ).val c) φ) }
 
 variable {C}
 
@@ -265,6 +268,8 @@ theorem algHomTensorProductEquivPi_lTensor [IsSepClosed Ω] [Algebra.Etale K A]
 
 end CommRing
 
+section Semiring
+
 variable {K Ω A : Type*} [Field K] [Field Ω] [Algebra K Ω] [Semiring A] [Algebra K A]
 
 variable (Ω) in
@@ -302,6 +307,56 @@ theorem apply_algHomEquivMulActionHom_symm_apply [IsSepClosed Ω] [IsGalois K Ω
     (u : (B →ₐ[K] Ω) →[Gal(Ω/K)] (A →ₐ[K] Ω)) (ψ : B →ₐ[K] Ω) (a : A) :
     ψ ((algHomEquivMulActionHom Ω).symm u a) = u ψ a :=
   DFunLike.congr_fun (DFunLike.congr_fun ((algHomEquivMulActionHom Ω).apply_symm_apply u) ψ) a
+
+end Semiring
+
+section AlgEquiv
+
+variable {K Ω A B : Type*} [Field K] [Field Ω] [Algebra K Ω] [IsSepClosed Ω] [IsGalois K Ω]
+  [CommRing A] [Algebra K A] [Algebra.Etale K A] [CommRing B] [Algebra K B] [Algebra.Etale K B]
+
+variable (Ω) in
+/-- **Isomorphisms of étale algebras are equivariant bijections of points.** For a separable
+closure `Ω` of `K` and étale `K`-algebras `A` and `B`, transporting points along an isomorphism,
+`φ ↦ φ ∘ f⁻¹`, identifies the `K`-algebra isomorphisms `A ≃ₐ[K] B` with the
+`Gal(Ω/K)`-equivariant bijections `(A →ₐ[K] Ω) ≃ (B →ₐ[K] Ω)`
+(`algEquivEquivEquivariant_apply_coe_apply`). -/
+noncomputable def algEquivEquivEquivariant :
+    (A ≃ₐ[K] B) ≃ {e : (A →ₐ[K] Ω) ≃ (B →ₐ[K] Ω) //
+      ∀ (σ : Gal(Ω/K)) (φ : A →ₐ[K] Ω), e (σ • φ) = σ • e φ} where
+  toFun f := ⟨f.arrowCongr AlgEquiv.refl, fun _ _ ↦ AlgHom.ext fun _ ↦ rfl⟩
+  invFun e :=
+    -- The two algebra maps induced by the equivariant maps `e.symm` and `e` are mutually inverse,
+    -- because their points compose to the identity.
+    let u : (B →ₐ[K] Ω) →[Gal(Ω/K)] (A →ₐ[K] Ω) :=
+      ⟨e.val.symm, fun σ ψ ↦ e.val.injective (by simp [e.property])⟩
+    let v : (A →ₐ[K] Ω) →[Gal(Ω/K)] (B →ₐ[K] Ω) := ⟨e.val, e.property⟩
+    AlgEquiv.ofAlgHom ((algHomEquivMulActionHom Ω).symm u) ((algHomEquivMulActionHom Ω).symm v)
+      (AlgHom.ext fun b ↦ pi_id_injective K Ω B <| funext fun ψ ↦ by
+        simp only [AlgHom.comp_apply, AlgHom.id_apply, AlgHom.pi_apply,
+          apply_algHomEquivMulActionHom_symm_apply]
+        exact DFunLike.congr_fun (e.val.apply_symm_apply ψ) b)
+      (AlgHom.ext fun a ↦ pi_id_injective K Ω A <| funext fun φ ↦ by
+        simp only [AlgHom.comp_apply, AlgHom.id_apply, AlgHom.pi_apply,
+          apply_algHomEquivMulActionHom_symm_apply]
+        exact DFunLike.congr_fun (e.val.symm_apply_apply φ) a)
+  left_inv f := AlgEquiv.ext fun a ↦ pi_id_injective K Ω B <| funext fun ψ ↦ by
+    simp only [AlgEquiv.ofAlgHom_apply, AlgHom.pi_apply, apply_algHomEquivMulActionHom_symm_apply]
+    -- The inverse transport of `ψ` is `ψ ∘ f`.
+    rfl
+  right_inv e := Subtype.ext <| Equiv.ext fun φ ↦ AlgHom.ext fun a ↦ by
+    -- Transport along the inverse of the induced isomorphism is precomposition with the algebra
+    -- map induced by `e`.
+    exact apply_algHomEquivMulActionHom_symm_apply (⟨e.val, e.property⟩ :
+      (A →ₐ[K] Ω) →[Gal(Ω/K)] (B →ₐ[K] Ω)) φ a
+
+/-- The equivariant bijection of points induced by `f : A ≃ₐ[K] B` sends `φ` to `φ ∘ f⁻¹`. -/
+@[simp]
+theorem algEquivEquivEquivariant_apply_coe_apply (f : A ≃ₐ[K] B) (φ : A →ₐ[K] Ω) :
+    (algEquivEquivEquivariant Ω f).val φ = φ.comp f.symm.toAlgHom :=
+  (rfl)
+
+end AlgEquiv
 
 end Algebra.Etale
 

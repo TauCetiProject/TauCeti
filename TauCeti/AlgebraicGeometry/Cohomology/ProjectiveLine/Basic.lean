@@ -11,7 +11,7 @@ public import TauCeti.AlgebraicGeometry.Cohomology.Module.Base
 public import TauCeti.AlgebraicGeometry.Cohomology.ProjectiveSpace.Vanishing
 public import TauCeti.AlgebraicGeometry.Cohomology.SectionsQuotient.Linear
 public import TauCeti.AlgebraicGeometry.Cohomology.Trivial
-public import TauCeti.AlgebraicGeometry.Modules.FinitePresentation
+public import TauCeti.AlgebraicGeometry.Modules.FinitePresentation.Basic
 public import TauCeti.AlgebraicGeometry.Modules.Localization
 public import TauCeti.AlgebraicGeometry.ProjectiveSpectrum.Basic
 public import TauCeti.AlgebraicGeometry.ProjectiveSpectrum.ProjectiveLine
@@ -111,16 +111,6 @@ private noncomputable abbrev ψ₀ : R[X] →+* B :=
 private noncomputable abbrev ψ₁ : R[X] →+* B :=
   (ρ₁ R).comp (awayEquivPolynomial R 1).symm.toRingEquiv.toRingHom
 
-/-- On the overlap, the coordinate `X₁ / X₀` of the first chart and the coordinate `X₀ / X₁` of
-the second chart are inverse to each other. -/
-private theorem ψ₀_X_mul_ψ₁_X : ψ₀ R X * ψ₁ R X = 1 := by
-  simp only [RingHom.comp_apply, RingEquiv.toRingHom_eq_coe, RingEquiv.coe_toRingHom,
-    AlgEquiv.coe_toRingEquiv, awayEquivPolynomial_symm_X, awayMap_mk]
-  ext
-  simp only [val_mul, Away.val_mk, val_one, Localization.mk_mul]
-  rw [← Localization.mk_one, Localization.mk_eq_mk_iff, Localization.r_iff_exists]
-  exact ⟨1, by simp; ring⟩
-
 /-- Restriction to the overlap respects the constants. -/
 private theorem ψ₀_C (r : R) : ψ₀ R (C r) = algebraMap R B r := by
   rw [← Polynomial.algebraMap_eq]
@@ -174,7 +164,9 @@ private theorem exists_eq_ψ₀_mul_pow (b : B) : ∃ (p : R[X]) (n : ℕ), b = 
   refine ⟨awayEquivPolynomial R 0 a, n, ?_⟩
   have h' : b * ψ₀ R X ^ n = ψ₀ R (awayEquivPolynomial R 0 a) := by
     simpa [RingHom.algebraMap_toAlgebra] using h
-  calc b = b * (ψ₀ R X * ψ₁ R X) ^ n := by rw [ψ₀_X_mul_ψ₁_X, one_pow, mul_one]
+  have hprod : ψ₀ R X * ψ₁ R X = 1 := coordinateFractions_mul R
+  calc
+    b = b * (ψ₀ R X * ψ₁ R X) ^ n := by rw [hprod, one_pow, mul_one]
     _ = ψ₀ R (awayEquivPolynomial R 0 a) * ψ₁ R X ^ n := by rw [← h', mul_pow]; ring
 
 /-- **Every function on the overlap is a difference of functions on the two charts.** -/
@@ -198,7 +190,8 @@ private theorem exists_ρ₀_sub_ρ₁_eq (b : B) :
       conv_lhs => rw [← X_mul_divX_add p]
       rw [map_add, map_mul, ψ₀_C]
     rw [map_sub, ← hψ, sub_sub_eq_add_sub, add_sub_right_comm, h, hp, map_mul, map_pow, ψ₁_C]
-    linear_combination (-(ψ₀ R p.divX * ψ₁ R X ^ n)) * ψ₀_X_mul_ψ₁_X R
+    have hprod : ψ₀ R X * ψ₁ R X = 1 := coordinateFractions_mul R
+    linear_combination (-(ψ₀ R p.divX * ψ₁ R X ^ n)) * hprod
 
 /-- **A pair of chart functions agreeing on the overlap is a constant.** -/
 private theorem exists_eq_algebraMap_of_ρ₀_eq_ρ₁ {a₀ : Away 𝒜 (coord R 0)}
@@ -209,14 +202,15 @@ private theorem exists_eq_algebraMap_of_ρ₀_eq_ρ₁ {a₀ : Away 𝒜 (coord 
   have hpq : ψ₀ R p = ψ₁ R q := by simpa [p, q] using h
   -- reflecting `q` at its degree `N` turns `q(X₀/X₁)` into `(X₀/X₁)^N · q'(X₁/X₀)`
   set N := q.natDegree
-  let : Invertible (ψ₁ R X) := ⟨ψ₀ R X, ψ₀_X_mul_ψ₁_X R, (mul_comm _ _).trans (ψ₀_X_mul_ψ₁_X R)⟩
+  let : Invertible (ψ₁ R X) :=
+    ⟨ψ₀ R X, coordinateFractions_mul R, (mul_comm _ _).trans (coordinateFractions_mul R)⟩
   have href : ψ₀ R (q.reflect N) * ψ₁ R X ^ N = ψ₁ R q := by
     rw [ψ₀_eq_aeval R (q.reflect N), ψ₁_eq_aeval R q, aeval_def, aeval_def]
     exact eval₂_reflect_mul_pow _ _ N q le_rfl
   have hrefl : q.reflect N = p * X ^ N := by
     apply ψ₀_injective R
     rw [map_mul, map_pow, hpq, ← href, mul_assoc, ← mul_pow, mul_comm (ψ₁ R X),
-      ψ₀_X_mul_ψ₁_X, one_pow, mul_one]
+      show ψ₀ R X * ψ₁ R X = 1 from coordinateFractions_mul R, one_pow, mul_one]
   -- comparing degrees, `p` is a constant `c`, and then so is `q`
   obtain ⟨c, hp⟩ : ∃ c, p = C c := by
     refine ⟨p.coeff 0, eq_C_of_natDegree_le_zero ?_⟩
@@ -393,30 +387,10 @@ theorem cohomologyZeroTrivialLinearEquiv_symm_apply (r : R) :
 
 /-! ### Finiteness of first cohomology -/
 
-/-- The affine coordinate of the chart `D₊(Xᵢ)`: `X₁ / X₀` on `D₊(X₀)` and `X₀ / X₁` on `D₊(X₁)`. -/
-private noncomputable abbrev chartCoord (i : Fin 2) :
-    Γ(projectiveLine R, Proj.basicOpen 𝒜 (coord R i)) :=
-  Proj.awayToSection 𝒜 (coord R i) ((awayEquivPolynomial R i).symm X)
-
 /-- The restriction of the affine coordinate of the chart `D₊(Xᵢ)` to the overlap. -/
 private noncomputable abbrev overlapCoord (i : Fin 2) : Γ(projectiveLine R, W₀₁) :=
-  (projectiveLine R).presheaf.map (homOfLE (overlap_le_basicOpen_coord R i)).op (chartCoord R i)
-
-/-- The affine coordinate of the chart `D₊(Xᵢ)` is invertible exactly on the overlap. -/
-private theorem basicOpen_chartCoord (i : Fin 2) :
-    (projectiveLine R).basicOpen (chartCoord R i) = W₀₁ := by
-  rw [chartCoord, awayEquivPolynomial_symm_X, Proj.basicOpen_awayToSection_mk]
-  fin_cases i
-  · rfl
-  · exact (Proj.basicOpen_mul _ _ _).trans
-      ((inf_comm _ _).trans (Proj.basicOpen_mul _ _ _).symm)
-
-/-- On the overlap, the two affine coordinates `X₁ / X₀` and `X₀ / X₁` are inverse. -/
-private theorem overlapCoord_zero_mul_overlapCoord_one :
-    overlapCoord R 0 * overlapCoord R 1 = 1 := by
-  rw [overlapCoord, overlapCoord, chartCoord, chartCoord, map_awayToSection_ρ₀,
-    map_awayToSection_ρ₁, ← map_mul]
-  exact (congrArg _ (ψ₀_X_mul_ψ₁_X R)).trans (map_one _)
+  (projectiveLine R).presheaf.map (homOfLE (overlap_le_basicOpen_coord R i)).op
+    (affineCoordinate R i)
 
 /-- The functions on an open are an algebra over the global functions, by restriction. -/
 private noncomputable abbrev sectionsAlgebra (U : (projectiveLine R).Opens) :
@@ -438,20 +412,21 @@ attribute [local instance] isScalarTower_restrict
 with coefficients restricted from the global functions. -/
 private theorem awayToSection_symm_mem_adjoin (i : Fin 2) (p : R[X]) :
     Proj.awayToSection 𝒜 (coord R i) ((awayEquivPolynomial R i).symm p) ∈
-      Algebra.adjoin Γ(projectiveLine R, ⊤) {chartCoord R i} := by
+      Algebra.adjoin Γ(projectiveLine R, ⊤) {affineCoordinate R i} := by
   induction p using Polynomial.induction_on' with
   | add p q hp hq => rw [map_add, map_add]; exact Subalgebra.add_mem _ hp hq
   | monomial n c =>
     rw [← C_mul_X_pow_eq_monomial, ← Polynomial.algebraMap_eq]
     simp only [map_mul, map_pow, AlgEquiv.commutes]
     rw [awayToSection_algebraMap_eq_map]
+    rw [← affineCoordinate_def R i]
     exact Subalgebra.mul_mem _ (Subalgebra.algebraMap_mem _ _)
       (Subalgebra.pow_mem _ (Algebra.self_mem_adjoin_singleton _ _) n)
 
 /-- **The functions on a standard chart are generated by its affine coordinate** over the global
 functions. -/
-private theorem adjoin_chartCoord_eq_top (i : Fin 2) :
-    Algebra.adjoin Γ(projectiveLine R, ⊤) {chartCoord R i} = ⊤ := by
+private theorem adjoin_affineCoordinate_eq_top (i : Fin 2) :
+    Algebra.adjoin Γ(projectiveLine R, ⊤) {affineCoordinate R i} = ⊤ := by
   have hσ : Function.Surjective (Proj.awayToSection 𝒜 (coord R i)) :=
     (Proj.basicOpenIsoAway 𝒜 _ (coord_mem R i) one_pos).commRingCatIsoToRingEquiv.surjective
   rw [eq_top_iff]
@@ -482,10 +457,10 @@ private theorem map_mem_adjoin_overlapCoord (i : Fin 2)
     (projectiveLine R).presheaf.map (homOfLE (overlap_le_basicOpen_coord R i)).op a ∈
       Algebra.adjoin Γ(projectiveLine R, ⊤) {overlapCoord R i} := by
   let ρ := sectionsRestrictionAlgHom R (overlap_le_basicOpen_coord R i)
-  have ha : a ∈ Algebra.adjoin Γ(projectiveLine R, ⊤) {chartCoord R i} :=
-    adjoin_chartCoord_eq_top R i ▸ Algebra.mem_top
+  have ha : a ∈ Algebra.adjoin Γ(projectiveLine R, ⊤) {affineCoordinate R i} :=
+    adjoin_affineCoordinate_eq_top R i ▸ Algebra.mem_top
   have hmap : ρ a ∈ (Algebra.adjoin Γ(projectiveLine R, ⊤)
-      {chartCoord R i}).map ρ := ⟨a, ha, rfl⟩
+      {affineCoordinate R i}).map ρ := ⟨a, ha, rfl⟩
   rw [AlgHom.map_adjoin, Set.image_singleton] at hmap
   exact hmap
 
@@ -516,18 +491,19 @@ private theorem span_image_map_eq_top (M : (projectiveLine R).Modules) [M.IsQuas
   -- the overlap is the basic open of `X₀ / X₁` in `D₊(X₁)`, so restriction to it is a
   -- localization
   suffices h : ∀ (V : (projectiveLine R).Opens)
-      (_ : (projectiveLine R).basicOpen (chartCoord R 1) = V)
+      (_ : (projectiveLine R).basicOpen (affineCoordinate R 1) = V)
       (hV : V ≤ Proj.basicOpen 𝒜 (coord R 1)),
       Submodule.span Γ(projectiveLine R, V) (M.presheaf.map (homOfLE hV).op '' S₁) = ⊤ from
-    h _ (basicOpen_chartCoord R 1) _
+    h _ (basicOpen_affineCoordinate R 1) _
   rintro _ rfl _
   have hU := Proj.isAffineOpen_basicOpen 𝒜 _ (coord_mem R 1) one_pos
-  have := hU.isLocalization_basicOpen (chartCoord R 1)
-  have := M.isLocalizedModule_basicOpenRestrict hU (chartCoord R 1)
+  have := hU.isLocalization_basicOpen (affineCoordinate R 1)
+  have := M.isLocalizedModule_basicOpenRestrict hU (affineCoordinate R 1)
   have h := span_eq_top_of_isLocalizedModule Γ(projectiveLine R, (projectiveLine R).basicOpen
-    (chartCoord R 1)) (.powers (chartCoord R 1)) (M.basicOpenRestrict (chartCoord R 1)) hS₁
-  rwa [show ⇑(M.basicOpenRestrict (chartCoord R 1)) = _ from
-    funext (M.basicOpenRestrict_apply (chartCoord R 1))] at h
+    (affineCoordinate R 1)) (.powers (affineCoordinate R 1))
+    (M.basicOpenRestrict (affineCoordinate R 1)) hS₁
+  rwa [show ⇑(M.basicOpenRestrict (affineCoordinate R 1)) = _ from
+    funext (M.basicOpenRestrict_apply (affineCoordinate R 1))] at h
 
 /-- The Čech description of `H¹(ℙ¹_R, M)`, the overlap sections modulo the restrictions from the
 two charts, is a finitely generated module over the global functions, for `M` quasi-coherent of
@@ -554,17 +530,18 @@ private theorem finite_sectionsQuotient (M : (projectiveLine R).Modules) [M.IsQu
   obtain ⟨S₁, hS₁⟩ := Module.Finite.fg_top (R := Γ(projectiveLine R, Proj.basicOpen 𝒜 (coord R 1)))
     (M := Γ(M, Proj.basicOpen 𝒜 (coord R 1)))
   refine TauCeti.Algebra.finite_quotient_sup_of_mul_eq_one
-    (overlapCoord_zero_mul_overlapCoord_one R) (adjoin_overlapCoord_eq_top R)
+    ((affineCoordinate_res_mul R _ (overlap_le_basicOpen_coord R 0)
+      (overlap_le_basicOpen_coord R 1))) (adjoin_overlapCoord_eq_top R)
     (S₁.finite_toSet.image _) (span_image_map_eq_top R M hS₁) ?_ ?_ ?_ ?_
   · rintro _ ⟨y, rfl⟩
-    exact ⟨chartCoord R 0 • y, by
+    exact ⟨affineCoordinate R 0 • y, by
       rw [sectionsRestrictionLinear_apply, sectionsRestrictionLinear_apply, M.map_smul]⟩
   · intro n _
-    obtain ⟨k, y, hy⟩ := M.exists_pow_smul_eq_map (hU 0) (chartCoord R 0)
-      (basicOpen_chartCoord R 0) h₀ n
+    obtain ⟨k, y, hy⟩ := M.exists_pow_smul_eq_map (hU 0) (affineCoordinate R 0)
+      (basicOpen_affineCoordinate R 0) h₀ n
     exact ⟨k, y, by rw [sectionsRestrictionLinear_apply]; exact hy.symm⟩
   · rintro _ ⟨y, rfl⟩
-    exact ⟨chartCoord R 1 • y, by
+    exact ⟨affineCoordinate R 1 • y, by
       rw [sectionsRestrictionLinear_apply, sectionsRestrictionLinear_apply, M.map_smul]⟩
   · rintro _ ⟨y, _, rfl⟩
     exact ⟨y, sectionsRestrictionLinear_apply _ _ _⟩
@@ -601,18 +578,19 @@ affine coordinate of the chart. -/
 private theorem exists_pow_smul_eq_zero (M : (projectiveLine R).Modules) [M.IsQuasicoherent]
     (i : Fin 2) {y : Γ(M, Proj.basicOpen 𝒜 (coord R i))}
     (hy : M.presheaf.map (homOfLE (overlap_le_basicOpen_coord R i)).op y = 0) :
-    ∃ k : ℕ, chartCoord R i ^ k • y = 0 := by
+    ∃ k : ℕ, affineCoordinate R i ^ k • y = 0 := by
   -- the overlap is the basic open of the affine coordinate, where restriction is a localization
   suffices h : ∀ (V : (projectiveLine R).Opens)
-      (_ : (projectiveLine R).basicOpen (chartCoord R i) = V)
+      (_ : (projectiveLine R).basicOpen (affineCoordinate R i) = V)
       (hV : V ≤ Proj.basicOpen 𝒜 (coord R i)),
-      M.presheaf.map (homOfLE hV).op y = 0 → ∃ k : ℕ, chartCoord R i ^ k • y = 0 from
-    h _ (basicOpen_chartCoord R i) _ hy
+      M.presheaf.map (homOfLE hV).op y = 0 → ∃ k : ℕ, affineCoordinate R i ^ k • y = 0 from
+    h _ (basicOpen_affineCoordinate R i) _ hy
   rintro _ rfl _ hy
   have := M.isLocalizedModule_basicOpenRestrict
-    (Proj.isAffineOpen_basicOpen 𝒜 _ (coord_mem R i) one_pos) (chartCoord R i)
-  obtain ⟨⟨_, k, rfl⟩, hk⟩ := (IsLocalizedModule.eq_zero_iff (.powers (chartCoord R i))
-    (M.basicOpenRestrict (chartCoord R i))).mp (by rwa [Scheme.Modules.basicOpenRestrict_apply])
+    (Proj.isAffineOpen_basicOpen 𝒜 _ (coord_mem R i) one_pos) (affineCoordinate R i)
+  obtain ⟨⟨_, k, rfl⟩, hk⟩ := (IsLocalizedModule.eq_zero_iff (.powers (affineCoordinate R i))
+    (M.basicOpenRestrict (affineCoordinate R i))).mp
+      (by rwa [Scheme.Modules.basicOpenRestrict_apply])
   exact ⟨k, hk⟩
 
 /-- The sections over the chart `D₊(Xᵢ)` that vanish on the overlap form a finitely generated
@@ -633,7 +611,7 @@ private theorem fg_ker_sectionsRestrictionLinear [IsNoetherianRing R]
       zero_mem' := by simp
       smul_mem' := fun a y hy ↦ by simp_all }
   have hK := TauCeti.Algebra.fg_restrictScalars_of_forall_pow_smul_eq_zero
-    (adjoin_chartCoord_eq_top R i) (IsNoetherian.noetherian K) fun y hy ↦
+    (adjoin_affineCoordinate_eq_top R i) (IsNoetherian.noetherian K) fun y hy ↦
       exists_pow_smul_eq_zero R M i hy
   convert hK using 1
   ext y
@@ -684,7 +662,9 @@ private theorem fg_range_inf_range [IsNoetherianRing R] (M : (projectiveLine R).
       (M := Γ(M, Proj.basicOpen 𝒜 (coord R i)))
     exact ⟨S, S.finite_toSet, hS⟩
   choose S hSfin hS using hgen
-  exact (TauCeti.Algebra.fg_inf_of_mul_eq_one (overlapCoord_zero_mul_overlapCoord_one R)
+  exact (TauCeti.Algebra.fg_inf_of_mul_eq_one
+    ((affineCoordinate_res_mul R _ (overlap_le_basicOpen_coord R 0)
+      (overlap_le_basicOpen_coord R 1)))
     (((hSfin 0).image _).union ((hSfin 1).image _))).of_le
     (inf_le_inf ((range_le_span_adjoin R M 0 (hS 0)).trans
       (Submodule.restrictScalars_mono _ (Submodule.span_mono Set.subset_union_left)))

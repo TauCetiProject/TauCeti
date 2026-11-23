@@ -5,11 +5,13 @@ Authors: Chris Birkbeck
 -/
 module
 
+import TauCeti.SetTheory.Cardinal.Finite
 public import Mathlib.RingTheory.RootsOfUnity.EnoughRootsOfUnity
 public import Mathlib.LinearAlgebra.Eigenspace.Pi
 public import Mathlib.LinearAlgebra.Eigenspace.Semisimple
 import TauCeti.GroupTheory.FiniteAbelian.CharacterOrthogonality
 import TauCeti.RepresentationTheory.GroupAlgebra.CharIdempotent
+import TauCeti.LinearAlgebra.Eigenspace.Semisimple
 
 /-!
 # Joint eigenvectors of commuting semisimple families
@@ -22,9 +24,10 @@ For an algebra representation it is moreover additive and `R`-linear, assembling
 needs no division — a nonzero vector cancels over a commutative ring without zero divisors
 acting torsion-freely, and on a group multiplicativity exhibits the inverse of `χ g` as
 `χ g⁻¹`. This yields the simultaneous-diagonalization toolkit for a commuting family of
-semisimple endomorphisms: the joint eigenspaces are supremum-independent, they span (over an
-algebraically closed field, in finite dimension), and every invariant submodule is the
-supremum of its intersections with them.
+semisimple endomorphisms: the joint eigenspaces are supremum-independent, they span in finite
+dimension when every member is diagonalizable (as a semisimple endomorphism is over an
+algebraically closed field), and every invariant submodule is the supremum of its intersections
+with them.
 
 When `G` is a *finite commutative group* there is a second, unconditional route to the same
 spanning statements. Averaging against the characters of `G` produces Fourier projectors onto
@@ -46,11 +49,13 @@ components of `M_k(Γ₁(N))`.
 * `AlgHom.eigenvalueHomOfJointEigenvector`: the eigenvalue function of a nonzero joint
   eigenvector of an algebra representation, as an algebra homomorphism `A →ₐ[R] K`.
 * `iSupIndep_iInf_eigenspace`,
+  `iSup_iInf_eigenspace_eq_top_of_iSup_eigenspace_eq_top`,
   `iSup_iInf_eigenspace_eq_top_of_isSemisimple`,
   `iSup_inf_iInf_eigenspace_of_invariant`: joint eigenspaces of a commuting family are
-  independent (with no further hypotheses), exhaust the space when semisimple, and
-  decompose every invariant submodule — with the character-indexed forms (`…_unitHom…`)
-  for group representations.
+  independent (with no further hypotheses), exhaust the space when each member is diagonalizable
+  (over any field) or semisimple (over an algebraically closed field), and decompose every
+  invariant submodule — with the character-indexed forms (`…_unitHom…`) for group
+  representations.
 * `iInf_eigenspace_eq_of_iSup_eq_top`, `iInf_eigenspace_eq_bot_of_iSup_eq_top`: if spanning
   summands carry pairwise distinct joint scalars of any family of endomorphisms, every summand is
   a joint eigenspace, and every other joint eigenspace is zero.
@@ -241,8 +246,8 @@ lemma iSupIndep_iInf_eigenspace {ι : Type*} (f : ι → Module.End K V) :
 /-- **Summands of a spanning family with distinct joint scalars are joint eigenspaces.** If the
 `W j` span `V`, every `W j` consists of joint eigenvectors of the family `f` with eigenvalues
 `g j`, and `g` is injective, then the joint eigenspace of `f` for `g k` is exactly `W k`. This is
-the joint form of `Module.End.eigenspace_eq_of_iSup_eq_top`: the scalars of a single operator
-need not separate the summands, only those of the whole family. -/
+the joint form of the eigenspace case (`n = 1`) of `Module.End.genEigenspace_eq_of_iSup_eq_top`:
+the scalars of a single operator need not separate the summands, only those of the whole family. -/
 theorem iInf_eigenspace_eq_of_iSup_eq_top {ι κ : Type*} (f : ι → Module.End K V)
     {W : κ → Submodule K V} {g : κ → ι → K} (hW : ∀ j, W j ≤ ⨅ i, (f i).eigenspace (g j i))
     (htop : ⨆ j, W j = ⊤) (hg : Function.Injective g) (k : κ) :
@@ -292,24 +297,37 @@ end DomainScalars
 
 /-! ### Simultaneous diagonalization
 
-The spanning statements for semisimple families, over an algebraically closed field.
+The spanning statements for diagonalizable families over any field, and for semisimple families
+over an algebraically closed field.
 -/
 
 section FieldScalars
 
-variable [Field K] [IsAlgClosed K] [Module K V]
+variable [Field K] [Module K V]
+
+/-- **Simultaneous diagonalization.** In finite dimension, the joint eigenspaces of a
+pairwise-commuting family of diagonalizable endomorphisms exhaust the space. -/
+lemma iSup_iInf_eigenspace_eq_top_of_iSup_eigenspace_eq_top [FiniteDimensional K V] {ι : Type*}
+    (f : ι → Module.End K V) (hcomm : Pairwise fun i j ↦ Commute (f i) (f j))
+    (hdiag : ∀ i, ⨆ μ : K, (f i).eigenspace μ = ⊤) :
+    (⨆ χ : ι → K, ⨅ i, (f i).eigenspace (χ i)) = ⊤ := by
+  have heq (i : ι) (μ : K) : (f i).maxGenEigenspace μ = (f i).eigenspace μ :=
+    (isSemisimple_of_iSup_eigenspace_eq_top (hdiag i)).isFinitelySemisimple
+      |>.maxGenEigenspace_eq_eigenspace μ
+  simpa only [heq] using
+    Module.End.iSup_iInf_maxGenEigenspace_eq_top_of_iSup_maxGenEigenspace_eq_top_of_commute f
+      hcomm fun i ↦ by simpa only [heq] using hdiag i
+
+variable [IsAlgClosed K]
 
 /-- Over an algebraically closed field and in finite dimension, the joint eigenspaces of a
 pairwise-commuting family of semisimple endomorphisms exhaust the space. -/
 lemma iSup_iInf_eigenspace_eq_top_of_isSemisimple [FiniteDimensional K V] {ι : Type*}
     (f : ι → Module.End K V)
     (hcomm : Pairwise fun i j ↦ Commute (f i) (f j)) (hss : ∀ i, (f i).IsSemisimple) :
-    (⨆ χ : ι → K, ⨅ i, (f i).eigenspace (χ i)) = ⊤ := by
-  have heq (i : ι) (μ : K) : (f i).maxGenEigenspace μ = (f i).eigenspace μ :=
-    (hss i).isFinitelySemisimple.maxGenEigenspace_eq_eigenspace μ
-  simpa only [heq] using
-    Module.End.iSup_iInf_maxGenEigenspace_eq_top_of_iSup_maxGenEigenspace_eq_top_of_commute f
-      hcomm fun i ↦ by simpa only [heq] using (hss i).iSup_eigenspace_eq_top
+    (⨆ χ : ι → K, ⨅ i, (f i).eigenspace (χ i)) = ⊤ :=
+  iSup_iInf_eigenspace_eq_top_of_iSup_eigenspace_eq_top f hcomm fun i ↦
+    (hss i).iSup_eigenspace_eq_top
 
 /-- A finite-dimensional submodule invariant under a pairwise-commuting family of
 endomorphisms whose **restrictions** to it are semisimple is the supremum of its
@@ -373,15 +391,15 @@ variable {ρ : G →* Module.End K V}
 /-- The Fourier projector for `χ₀`, applied to a vector: the character idempotent
 `TauCeti.charIdempotent χ₀` acting through `ρ`. -/
 private def fourierComponent (χ₀ : G →* Kˣ) (v : V) : V :=
-  MonoidAlgebra.lift K (Module.End K V) G ρ (charIdempotent χ₀) v
+  Representation.asAlgebraHom ρ (charIdempotent χ₀) v
 
 variable (ρ) in
 private lemma fourierComponent_mem (χ₀ : G →* Kˣ) (v : V) (g : G) :
     fourierComponent (ρ := ρ) χ₀ v ∈ (ρ g).eigenspace (χ₀ g) := by
-  rw [Module.End.mem_eigenspace_iff, fourierComponent]
-  simpa only [map_mul, MonoidAlgebra.lift_single, one_smul, map_smul, mul_apply_eq_comp,
-    LinearMap.smul_apply] using
-    congr(MonoidAlgebra.lift K (Module.End K V) G ρ $(single_mul_charIdempotent χ₀ g) v)
+  rw [fourierComponent]
+  exact Module.End.mem_eigenspace_iff.2 <|
+    (Representation.mem_charEigenspace_iff ρ χ₀).1
+      (Representation.asAlgebraHom_charIdempotent_apply_mem ρ χ₀ v) g
 
 end FourierProjector
 
@@ -407,17 +425,14 @@ theorem iSup_inf_iInf_eigenspace_unitHom_of_invariant_of_commGroup
     (hcard : IsUnit (Nat.card G : K))
     (p : Submodule K V) (hp : ∀ g, ∀ x ∈ p, ρ g x ∈ p) :
     (⨆ χ₀ : G →* Kˣ, p ⊓ ⨅ g, (ρ g).eigenspace (χ₀ g)) = p := by
-  have : Finite G := Nat.finite_of_card_ne_zero fun h0 => by
-    simp only [h0, Nat.cast_zero, isUnit_zero_iff] at hcard
-    exact zero_ne_one hcard
+  have : Finite G := TauCeti.finite_of_natCast_card_ne_zero hcard.ne_zero
   refine le_antisymm (iSup_le fun _ ↦ inf_le_left) fun v hv ↦ ?_
   rw [← sum_fourierComponent (ρ := ρ) hcard v]
   refine Submodule.sum_mem _ fun χ₀ _ ↦ Submodule.mem_iSup_of_mem χ₀ ?_
   refine Submodule.mem_inf.mpr ⟨?_, Submodule.mem_iInf _ |>.mpr fun g ↦
     fourierComponent_mem ρ χ₀ v g⟩
-  rw [fourierComponent, charIdempotent_eq_sum]
-  simp only [map_smul, map_sum, MonoidAlgebra.lift_of, LinearMap.smul_apply,
-    LinearMap.sum_apply]
+  rw [fourierComponent, Representation.asAlgebraHom_charIdempotent]
+  simp only [LinearMap.smul_apply, LinearMap.coe_sum, Finset.sum_apply]
   exact Submodule.smul_mem _ _ (Submodule.sum_mem _ fun d _ ↦
     Submodule.smul_mem _ _ (hp d v hv))
 

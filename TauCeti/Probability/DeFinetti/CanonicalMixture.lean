@@ -71,9 +71,6 @@ weaker theorem, not a differently-named one.
 
 ## References
 
-* Roadmap: `TauCetiRoadmap/Exchangeability/README.md`, **Layer 6** (the mixture-of-product-measures
-  form with `π` the unique law of `ν`) and **Layer 8** (the affine correspondence). This file adds
-  no new mathematics to either; it connects the objects those bullets produce.
 * Olav Kallenberg, *Probabilistic Symmetries and Invariance Principles*, Springer, 2005,
   Chapter 1, Theorem 1.1.
 -/
@@ -153,7 +150,7 @@ theorem deFinettiEquiv_symm_eq_deFinettiMeasure {μ : Measure Ω} [IsProbability
     (hρ : ((ρ : ProbabilityMeasure (ℕ → α)) : Measure (ℕ → α)) = pathLaw μ X) :
     deFinettiEquiv.symm ρ = deFinettiMeasure μ X := by
   have hX : Exchangeable μ X :=
-    (exchangeable_iff_exchangeableLaw_pathLaw fun n => (hX_meas n).aemeasurable).2 (hρ ▸ ρ.2)
+    (exchangeable_iff_exchangeableLaw_pathLaw fun n => (hX_meas n).aemeasurable).2 (hρ ▸ ρ.property)
   exact deFinettiEquiv_symm_eq
     (by rw [hρ, Measure.deFinettiBarycenter_def]
         exact pathLaw_eq_bind_infinitePi_deFinettiMeasure_of_exchangeable hX hX_meas)

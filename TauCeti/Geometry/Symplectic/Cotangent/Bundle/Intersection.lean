@@ -75,13 +75,9 @@ theorem range_section_mextDerivₗ_inter_range_zeroSection (f : SmoothForm I M �
           (SmoothForm.degreeOneEquiv (mextDerivₗ I 0 f) x)) ∩
         range (zeroSection (E →L[ℝ] ℝ) (fun x : M ↦ TangentSpace I x →L[ℝ] ℝ)) =
       zeroSection (E →L[ℝ] ℝ) (fun x : M ↦ TangentSpace I x →L[ℝ] ℝ) ''
-        criticalPoints I (fun y ↦ f.1 y 0) := by
-  rw [range_mk_inter_range_zeroSection, criticalPoints_eq_setOf_mfderiv_eq_zero]
-  congr! 3 with x
-  -- The covector of `df` at `x` is zero exactly when the form `df` vanishes at `x`.
-  rw [← ContinuousLinearMap.coe_injective.eq_iff' ContinuousLinearMap.toLinearMap_zero,
-    SmoothForm.degreeOneEquiv_coe_eq_zero_iff, mextDerivₗ_apply,
-    ← mextDeriv_ofFunction_apply_eq_zero_iff, ← RoughForm.eq_ofFunction]
+        criticalPoints I (fun y ↦ f.val y 0) := by
+  rw [range_mk_inter_range_zeroSection]
+  simp_rw [SmoothForm.degreeOneEquiv_mextDerivₗ, ← mem_criticalPoints, ofPred_mem_eq]
 
 /-- **The graph of `df` meets the zero section once for each critical point of `f`.** The
 extended number of intersection points of the graph of the differential of a smooth function `f`
@@ -90,7 +86,7 @@ theorem encard_range_section_mextDerivₗ_inter_range_zeroSection (f : SmoothFor
     (range (fun x ↦ TotalSpace.mk' (E →L[ℝ] ℝ) x
           (SmoothForm.degreeOneEquiv (mextDerivₗ I 0 f) x)) ∩
         range (zeroSection (E →L[ℝ] ℝ) (fun x : M ↦ TangentSpace I x →L[ℝ] ℝ))).encard =
-      totalCriticalCount I (fun y ↦ f.1 y 0) := by
+      totalCriticalCount I (fun y ↦ f.val y 0) := by
   rw [range_section_mextDerivₗ_inter_range_zeroSection, totalCriticalCount_def]
   exact (zeroSection_injective _ _).encard_image _
 

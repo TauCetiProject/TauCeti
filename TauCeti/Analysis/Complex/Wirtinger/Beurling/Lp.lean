@@ -10,6 +10,7 @@ public import TauCeti.Analysis.Complex.Pompeiu.Weak
 public import TauCeti.Analysis.Complex.Wirtinger.Beurling.Cauchy
 public import TauCeti.Analysis.Complex.Wirtinger.Lp
 public import TauCeti.Analysis.Sobolev.Local.Basic
+import Mathlib.Analysis.InnerProductSpace.PiL2
 import TauCeti.Analysis.Normed.Lp.SmoothApprox
 import TauCeti.Analysis.Sobolev.WeakDeriv.Limit
 import TauCeti.Analysis.Sobolev.WeakDeriv.Local
@@ -35,7 +36,9 @@ limits (`TauCeti.hasWeakFDerivOn_of_tendsto_lintegral_enorm_sub`). The discs exh
 
 Consequences:
 
-* `∂ (T f) = B f` almost everywhere for compactly supported `C¹` data
+* `∂ (T f) = B f` almost everywhere whenever `T f` is `C¹`
+  (`TauCeti.wirtingerDeriv_cauchyTransform_ae_eq_beurlingLp_of_memLp`), in particular for
+  compactly supported `C¹` data
   (`HasCompactSupport.wirtingerDeriv_cauchyTransform_ae_eq_beurlingLp_of_contDiff_one`),
   extending the smooth case of `TauCeti.Analysis.Complex.Wirtinger.Beurling.Cauchy`;
 * the global bound `‖w ↦ wirtingerPartsCLM (B f w) (f w)‖_{Lᵖ(ℂ)} ≤ (‖B‖ + 1) ‖f‖_{Lᵖ}` for all
@@ -45,7 +48,9 @@ Consequences:
 * the bound `T : Lᵖ(D_r) → W^{1,p}(D_R)` with explicit constant `2 (r + R) + ‖B‖ + 1`
   (`TauCeti.eLpNorm_cauchyTransform_add_eLpNorm_wirtingerPartsCLM_beurlingLp_le`), and membership
   of `T f` in the local Sobolev class `W^{1,p}_loc` on every subset of the plane
-  (`TauCeti.memWkpLoc_one_cauchyTransform_of_memLp`);
+  (`TauCeti.memWkpLoc_one_cauchyTransform_of_memLp`), also for data with values in a
+  finite-dimensional complex normed space, read in a Euclidean model
+  (`TauCeti.memWkpLoc_one_cauchyTransform_of_memLp_of_finiteDimensional`);
 * continuity in parameters of the derivative term: for a family of data depending continuously
   on a parameter in `Lᵖ`, the fields `w ↦ wirtingerPartsCLM (B f w) (f w)` depend continuously on
   it in `Lᵖ(ℂ)` (`TauCeti.continuous_toLp_wirtingerPartsCLM_beurlingLp`). The function term is
@@ -132,7 +137,7 @@ private theorem hasWeakFDerivOn_cauchyTransform_ball (hp : 1 < p) (hp_top : p �
       hp.le).locallyIntegrableOn _) hweak ?_ ?_
   · -- `T g → T f` in `L¹` on the disc.
     refine (MeasureTheory.tendsto_eLpNorm_one_of_tendsto_eLpNorm hp.le ?_).congr fun n ↦
-      eLpNorm_one_eq_lintegral_enorm
+      eLpNorm_one_eq_lintegral_eNorm
         ((locallyIntegrable_cauchyTransform ((hg n).continuous.integrable_of_hasCompactSupport
           (hgc n))).aestronglyMeasurable.sub
             (locallyIntegrable_cauchyTransform hfint).aestronglyMeasurable).restrict
@@ -142,7 +147,7 @@ private theorem hasWeakFDerivOn_cauchyTransform_ball (hp : 1 < p) (hp_top : p �
       fun n ↦ eLpNorm_mono_measure _ (Measure.restrict_mono_set _ ball_subset_closedBall)
   · -- `D (T g) → D (T f)` in `L¹` on the disc.
     refine (MeasureTheory.tendsto_eLpNorm_one_of_tendsto_eLpNorm hp.le ?_).congr fun n ↦
-      eLpNorm_one_eq_lintegral_enorm ((MemLp.wirtingerPartsCLM (Lp.memLp _)
+      eLpNorm_one_eq_lintegral_eNorm ((MemLp.wirtingerPartsCLM (Lp.memLp _)
         (hgm n)).aestronglyMeasurable.sub hD.aestronglyMeasurable).restrict
     exact tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds
       (tendsto_eLpNorm_wirtingerPartsCLM_sub hp.le
@@ -168,6 +173,23 @@ theorem hasWeakFDerivOn_cauchyTransform_of_memLp (hp : 1 < p) (hp_top : p ≠ (�
   push_cast
   linarith
 
+/-- **`∂ T = B` when `T f` is `C¹`.** For `1 < p < ∞` and `f ∈ Lᵖ(ℂ)` supported in a closed disc
+whose Cauchy transform `T f` is `C¹`, the Wirtinger derivative `∂ (T f)` agrees almost everywhere
+with the Beurling operator on `Lᵖ(ℂ)` applied to `f`: the classical derivative of `T f` is then
+its weak derivative (`TauCeti.hasWeakFDerivOn_cauchyTransform_of_memLp`). -/
+theorem wirtingerDeriv_cauchyTransform_ae_eq_beurlingLp_of_memLp (hp : 1 < p)
+    (hp_top : p ≠ (∞ : ℝ≥0∞)) {f : ℂ → F} (hf : MemLp f p volume) {c : ℂ} {r : ℝ}
+    (hs : support f ⊆ closedBall c r) (hT : ContDiff ℝ 1 (cauchyTransform f)) :
+    (fun w ↦ wirtingerDeriv (cauchyTransform f) w 1) =ᵐ[volume]
+      beurlingLp p hp hp_top (hf.toLp f) := by
+  have hcl := (hasWeakFDerivOn_cauchyTransform_of_memLp hp hp_top hf hs ⊤).ae_eq_fderiv
+    ((hT.continuous_fderiv one_ne_zero).locallyIntegrable.locallyIntegrableOn _)
+    fun x _ ↦ hT.differentiable one_ne_zero x
+  rw [Opens.coe_top, Measure.restrict_univ] at hcl
+  filter_upwards [hcl] with w hw
+  rw [fderiv_eq_wirtingerPartsCLM] at hw
+  exact (wirtingerPartsCLM_inj.1 hw).1.symm
+
 /-- **`∂ T = B` on compactly supported `C¹` data.** For `1 < p < ∞` and compactly supported `C¹`
 data `f`, the Wirtinger derivative `∂ (T f)` agrees almost everywhere with the Beurling operator
 on `Lᵖ(ℂ)` applied to `f`. -/
@@ -176,17 +198,9 @@ theorem _root_.HasCompactSupport.wirtingerDeriv_cauchyTransform_ae_eq_beurlingLp
     (hp_top : p ≠ (∞ : ℝ≥0∞)) :
     (fun w ↦ wirtingerDeriv (cauchyTransform f) w 1) =ᵐ[volume]
       beurlingLp p hp hp_top ((hf.continuous.memLp_of_hasCompactSupport hc).toLp f) := by
-  have hfm : MemLp f p volume := hf.continuous.memLp_of_hasCompactSupport hc
   obtain ⟨r, hr⟩ := hc.isCompact.isBounded.subset_closedBall (0 : ℂ)
-  have hT := hc.contDiff_cauchyTransform hf
-  have hcl := (hasWeakFDerivOn_cauchyTransform_of_memLp hp hp_top hfm
-    ((subset_tsupport f).trans hr) ⊤).ae_eq_fderiv
-      ((hT.continuous_fderiv one_ne_zero).locallyIntegrable.locallyIntegrableOn _)
-      fun x _ ↦ hT.differentiable one_ne_zero x
-  rw [Opens.coe_top, Measure.restrict_univ] at hcl
-  filter_upwards [hcl] with w hw
-  rw [fderiv_eq_wirtingerPartsCLM, hc.conjWirtingerDeriv_cauchyTransform hf] at hw
-  exact (wirtingerPartsCLM_inj.1 hw).1.symm
+  exact wirtingerDeriv_cauchyTransform_ae_eq_beurlingLp_of_memLp hp hp_top _
+    ((subset_tsupport f).trans hr) (hc.contDiff_cauchyTransform hf)
 
 /-- **The global derivative bound for the Cauchy transform of `Lᵖ` data.** The field
 `w ↦ wirtingerPartsCLM (B f w) (f w)`, that is `v ↦ v • B f + conj v • f`, has `Lᵖ(ℂ)` norm at most
@@ -201,12 +215,12 @@ theorem eLpNorm_wirtingerPartsCLM_beurlingLp_le (hp : 1 < p) (hp_top : p ≠ (�
   set B := beurlingLp (F := F) p hp hp_top
   set a := ⇑(B (hf.toLp f))
   have hB : eLpNorm a p volume ≤ ‖B‖₊ * eLpNorm f p volume :=
-    calc eLpNorm a p volume = ‖B (hf.toLp f)‖ₑ := (Lp.enorm_def _).symm
+    calc eLpNorm a p volume = ‖B (hf.toLp f)‖ₑ := (Lp.eNorm_def _).symm
       _ ≤ ‖B‖₊ * ‖hf.toLp f‖ₑ := by
-          simp only [enorm_eq_nnnorm]
+          simp only [eNorm_eq_nnNorm]
           exact_mod_cast B.le_opNNNorm _
       _ = ‖B‖₊ * eLpNorm f p volume := by
-          rw [Lp.enorm_def, eLpNorm_congr_ae hf.coeFn_toLp]
+          rw [Lp.eNorm_def, eLpNorm_congr_ae hf.coeFn_toLp]
   calc eLpNorm (fun w ↦ wirtingerPartsCLM (a w) (f w)) p volume
       ≤ eLpNorm a p volume + eLpNorm f p volume :=
         eLpNorm_wirtingerPartsCLM_le hp.le (Lp.aestronglyMeasurable _) hf.aestronglyMeasurable
@@ -279,5 +293,34 @@ theorem continuous_toLp_wirtingerPartsCLM_beurlingLp (hp : 1 < p) (hp_top : p �
       (fun y ↦ ((hf y).sub (hf x)).aestronglyMeasurable) hB h)
 
 end Weak
+
+/-! ### Finite-dimensional data -/
+
+section FiniteDimensional
+
+variable {F : Type*} [NormedAddCommGroup F] [NormedSpace ℂ F] [FiniteDimensional ℂ F]
+  {p : ℝ≥0∞}
+
+/-- **The Cauchy transform of finite-dimensional `Lᵖ` data is locally `W^{1,p}`.** For
+`1 < p < ∞` and `f ∈ Lᵖ(ℂ)` supported in a closed disc, with values in a finite-dimensional complex
+normed space, `T f` belongs to the local Sobolev class `W^{1,p}_loc` on every subset of the plane.
+Unlike `TauCeti.memWkpLoc_one_cauchyTransform_of_memLp`, the values need not lie in an inner
+product space. -/
+theorem memWkpLoc_one_cauchyTransform_of_memLp_of_finiteDimensional (hp : 1 < p)
+    (hp_top : p ≠ (∞ : ℝ≥0∞)) {f : ℂ → F} (hf : MemLp f p volume) {c : ℂ} {r : ℝ}
+    (hs : support f ⊆ closedBall c r) (U : Set ℂ) : MemWkpLoc p U 1 (cauchyTransform f) := by
+  have : Fact (1 ≤ p) := ⟨hp.le⟩
+  have := FiniteDimensional.completeSpace ℂ F
+  let e : F ≃L[ℂ] EuclideanSpace ℂ (Fin (Module.finrank ℂ F)) :=
+    ContinuousLinearEquiv.ofFinrankEq finrank_euclideanSpace_fin.symm
+  have hT : cauchyTransform f = fun w ↦ e.symm (cauchyTransform (fun z ↦ e (f z)) w) := by
+    ext1 w
+    simp only [cauchyTransform_apply, map_smul, ← e.symm.integral_comp_comm,
+      ContinuousLinearEquiv.symm_apply_apply]
+  rw [hT]
+  exact (memWkpLoc_one_cauchyTransform_of_memLp hp hp_top (e.toContinuousLinearMap.comp_memLp' hf)
+    (fun z hz ↦ hs fun h ↦ hz (by simp [h])) U).clm_comp ((e.symm : _ →L[ℂ] F).restrictScalars ℝ)
+
+end FiniteDimensional
 
 end TauCeti

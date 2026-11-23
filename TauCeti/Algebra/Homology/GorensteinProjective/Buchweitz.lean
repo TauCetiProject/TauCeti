@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Homology.DerivedCategory.Singularity.Syzygy
 public import TauCeti.Algebra.Homology.GorensteinProjective.IwanagaGorenstein
 public import TauCeti.Algebra.Homology.TotallyAcyclic.Abelian.Singularity
 
@@ -18,19 +17,20 @@ category `D_sg(A) = Dᵇ(mod-A) / Kᵇ(proj-A)` is fully faithful
 (`CategoryTheory.GorensteinProjective.fullyFaithfulToSingularityCategory`). It is also
 essentially surjective, hence an equivalence of categories:
 
-1. Every object of `D_sg(A)` is a `d`-th syzygy `M` placed in some degree
-   (`TauCeti.SingularityCategory.exists_iso_Q_obj_singleFunctor_obj_isSyzygy`).
-2. `M` is Gorenstein-projective (`FGModuleCat.isGorensteinProjective_of_isSyzygy`): among all
-   modules it is still a `d`-th syzygy, so `Ext^{>0}(M, A) = 0`, and
-   `TauCeti.isGorensteinProjective_iff_ext_eq_zero` applies.
-3. A Gorenstein-projective module placed in any degree lies in the essential image of Chen's
-   functor (`CategoryTheory.GorensteinProjective.mem_essImage_toSingularityCategory`).
+1. Chen's functor is essentially surjective as soon as every `d`-th syzygy is Gorenstein-projective
+   (`CategoryTheory.GorensteinProjective.essSurj_toSingularityCategory_of_isSyzygy`).
+2. Every `d`-th syzygy `M` in `FGModuleCat A` is Gorenstein-projective
+   (`FGModuleCat.isGorensteinProjective_of_isSyzygy`): among all modules it is still a `d`-th
+   syzygy, so `Ext^{>0}(M, A) = 0`, and `TauCeti.isGorensteinProjective_iff_ext_eq_zero` applies.
 
 ## Main results
 
 * `TauCeti.IsIwanagaGorenstein.essSurj_toSingularityCategory`: **Buchweitz's theorem**, density:
   Chen's functor is essentially surjective, and hence an equivalence of categories
   (`TauCeti.IsIwanagaGorenstein.isEquivalence_toSingularityCategory`).
+  Chen's functor is a triangle functor for any abelian category
+  (`CategoryTheory.GorensteinProjective.toSingularityCategory_isTriangulated`), so this is an
+  equivalence of triangulated categories.
 
 ## References
 
@@ -56,16 +56,10 @@ variable [HasDerivedCategory.{w} (FGModuleCat.{u} A)]
 singularity category `D_sg(A)` is a finitely generated Gorenstein-projective module placed in
 degree zero. -/
 instance IsIwanagaGorenstein.essSurj_toSingularityCategory :
-    (GorensteinProjective.toSingularityCategory (FGModuleCat.{u} A)).EssSurj where
-  mem_essImage Y := by
-    obtain ⟨d, _⟩ := IsIwanagaGorenstein.exists_hasInjectiveDimensionLE (A := A)
-    have := Localization.essSurj (SingularityCategory.Q (FGModuleCat.{u} A))
-      (DerivedCategory.Bounded.perfect (FGModuleCat.{u} A)).trW
-    obtain ⟨M, n, hM, ⟨e⟩⟩ := SingularityCategory.exists_iso_Q_obj_singleFunctor_obj_isSyzygy
-      ((SingularityCategory.Q (FGModuleCat.{u} A)).objPreimage Y) d
-    exact (GorensteinProjective.mem_essImage_toSingularityCategory
-      (FGModuleCat.isGorensteinProjective_of_isSyzygy hM) n).ofIso
-        (e.symm ≪≫ (SingularityCategory.Q (FGModuleCat.{u} A)).objObjPreimageIso Y)
+    (GorensteinProjective.toSingularityCategory (FGModuleCat.{u} A)).EssSurj := by
+  obtain ⟨d, _⟩ := IsIwanagaGorenstein.exists_hasInjectiveDimensionLE (A := A)
+  exact GorensteinProjective.essSurj_toSingularityCategory_of_isSyzygy d
+    fun _ hM ↦ FGModuleCat.isGorensteinProjective_of_isSyzygy hM
 
 /-- **Buchweitz's theorem**: over an Iwanaga–Gorenstein ring, Chen's functor from the stable
 category of finitely generated Gorenstein-projective modules to the singularity category is an

@@ -133,12 +133,13 @@ private lemma isLocalizedModule_cohomologyOnResLinear_zero {U W : X.Opens}
     exact M.isLocalizedModule_basicOpenRestrict_of_qcqs hU hU' (σ g)
   -- The target map is semilinear along `σ`, since `Γ(X, U)` acts on sections over
   -- `X.basicOpen (σ g)` through restriction.
-  refine IsLocalizedModule.of_bijective_semilinearMap _ _ (M.basicOpenRestrict (σ g))
+  refine Iff.mpr (IsLocalizedModule.iff_of_bijective_semilinearMap _ _ (M.basicOpenRestrict (σ g))
     (cohomologyOnZeroSemilinearMap M U)
     { toFun := cohomologyOnZeroEquiv M _
       map_add' := map_add _
       map_smul' := fun r x ↦ ?_ }
-    (cohomologyOnZeroSemilinearMap_bijective M U) (cohomologyOnZeroEquiv M _).bijective fun x ↦ ?_
+    (cohomologyOnZeroSemilinearMap_bijective M U) (cohomologyOnZeroEquiv M _).bijective
+    fun x ↦ ?_) inferInstance
   · rw [cohomologyOnZeroEquiv_smul, basicOpen_smul_def, ← ConcreteCategory.comp_apply,
       ← Functor.map_comp]
     rfl
@@ -186,12 +187,13 @@ private lemma localizesAt_of_isCompact {U : X.Opens} (hU : IsCompact (U : Set X)
 /-- **Cohomology of quasi-coherent sheaves commutes with localization.** Let `M` be a
 quasi-coherent sheaf on a scheme `X`, `g` a global function and `U` a quasi-compact and
 quasi-separated open subset. Then the restriction map `Hⁿ(U, M) ⟶ Hⁿ(U ⊓ D(g), M)` is the
-localization at the powers of `g`, for every `n`. -/
-theorem isLocalizedModule_cohomologyOnResLinear_inf_basicOpen {U : X.Opens}
-    (hU : IsCompact (U : Set X)) (hU' : IsQuasiSeparated (U : Set X)) (n : ℕ) :
-    IsLocalizedModule (.powers g)
-      (cohomologyOnResLinear M n (inf_le_left : U ⊓ X.basicOpen g ≤ U)) :=
-  localizesAt_of_isCompact M g hU hU' _ _ rfl n
+localization at the powers of `g`, for every `n`. The open `W` is arbitrary up to the equality
+`W = U ⊓ D(g)`. -/
+theorem isLocalizedModule_cohomologyOnResLinear_inf_basicOpen {U W : X.Opens}
+    (hU : IsCompact (U : Set X)) (hU' : IsQuasiSeparated (U : Set X)) (h : W ≤ U)
+    (hW : W = U ⊓ X.basicOpen g) (n : ℕ) :
+    IsLocalizedModule (.powers g) (cohomologyOnResLinear M n h) :=
+  localizesAt_of_isCompact M g hU hU' W h hW n
 
 /-- **Cohomology of quasi-coherent sheaves commutes with localization.** On a quasi-compact and
 quasi-separated scheme `X`, for a quasi-coherent sheaf `M` and a global function `g`, the

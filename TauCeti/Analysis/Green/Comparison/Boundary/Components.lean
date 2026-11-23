@@ -33,10 +33,10 @@ local notation "E" => EuclideanSpace ℝ (Fin 1)
 
 variable {N : Type*} [TopologicalSpace N] [ChartedSpace E N] [IsManifold 𝓘(ℝ, E) 1 N]
 
-/-- A finite family of actual positively oriented arcs computes the canonical
-circulation integral. All component curve integrabilities are conclusions. -/
+/-- A finite family of actual positively oriented arcs covering a one-dimensional manifold
+outside a finite seam set computes the canonical circulation integral; the manifold is then
+automatically compact. All component curve integrabilities are conclusions. -/
 theorem integralTopForm_mpullback_eq_sum_curveIntegral {ι : Type*} [Fintype ι]
-    [CompactSpace N]
     (o : Manifold.Orientation 𝓘(ℝ, E) N (Fin 1))
     (p r : ι → N) (q : ∀ i, Path (p i) (r i))
     (f : N → ℂ) (hf : ContMDiff 𝓘(ℝ, E) 𝓘(ℝ, ℂ) 1 f)
@@ -62,6 +62,18 @@ theorem integralTopForm_mpullback_eq_sum_curveIntegral {ι : Type*} [Fintype ι]
         (mpullback 𝓘(ℝ, E) 𝓘(ℝ, ℂ) f (manifoldOneForm P Q)) =
           ∑ i, curveIntegral (oneForm P Q) ((q i).map hf.continuous) := by
   classical
+  -- The arcs and the finite seam set cover `N`, so `N` is compact.
+  have : CompactSpace N := by
+    refine ⟨?_⟩
+    have hcover : (univ : Set N) = Z ∪ ⋃ i, range (q i) := by
+      refine (eq_univ_of_forall fun x ↦ ?_).symm
+      by_cases hx : x ∈ Z
+      · exact Or.inl hx
+      · rw [← mem_compl_iff, ← hqimage] at hx
+        obtain ⟨i, y, -, rfl⟩ := mem_iUnion.mp hx
+        exact Or.inr (mem_iUnion.mpr ⟨i, by rw [← (q i).extend_range]; exact mem_range_self y⟩)
+    rw [hcover]
+    exact hZ.isCompact.union (isCompact_iUnion fun i ↦ isCompact_range (q i).continuous)
   obtain ⟨l, rfl⟩ := o.exists_lift
   simp only [Manifold.Orientation.orientationAt_mk] at hqo
   let φ := mpullback 𝓘(ℝ, E) 𝓘(ℝ, ℂ) f (manifoldOneForm P Q)
@@ -89,7 +101,8 @@ theorem integralTopForm_mpullback_eq_sum_curveIntegral {ι : Type*} [Fintype ι]
     simpa only [hri] using hqdisj
   have hinj (i : ι) : InjOn (R i) D := injOn_comp_euclideanSpace_proj_preimage (hqinj i) _
   have hr := integralTopForm_eq_oriented_parametrizations l
-    (EuclideanSpace.basisFun (Fin 1) ℝ).toBasis φ hi hD hZ himage hdisj hinj e hqd hqo
+    (EuclideanSpace.basisFun (Fin 1) ℝ).toBasis φ hi hD hZ.countable.isNullSet himage hdisj hinj
+    e hqd hqo
   rw [OrthonormalBasis.addHaar_eq_volume] at hr
   have hic (i : ι) : IntervalIntegrable (circulationFun P Q (γ i).extend) volume 0 1 := by
     have hparam := (hr.1 i).congr_fun (heval i) hD
@@ -117,7 +130,7 @@ variable {M : Type*} [TopologicalSpace M]
   [IsManifold (𝓡∂ (1 + 1)) ∞ M] [T2Space M] [CompactSpace M]
 
 local instance boundaryComponentsIsManifold : IsManifold 𝓘(ℝ, E) ∞ ((𝓡∂ (1 + 1)).boundary M) :=
-  isManifold_boundary M (by simp)
+  isManifold_boundary M
 
 local instance boundaryComponentsCompactSpace : CompactSpace ((𝓡∂ (1 + 1)).boundary M) :=
   isCompact_iff_compactSpace.mp
@@ -147,7 +160,7 @@ theorem integralTopForm_curl_area_eq_boundary_sum_curveIntegral {ι : Type*} [Fi
         (EuclideanSpace.basisFun (Fin 1) ℝ).toBasis.orientation =
           (boundaryOrientation o).orientationAt ((q i).extend (z 0))) :
     let g := fun x : (𝓡∂ (1 + 1)).boundary M ↦ f x
-    let hg : Continuous g := hf.continuous.comp continuous_subtype_val
+    let hg : Continuous g := hf.continuous.comp continuous_subtypeVal
     IntegrableTopForm (fun x ↦ curl P Q (f x) •
       mpullback (𝓡∂ (1 + 1)) 𝓘(ℝ, ℂ) f manifoldAreaForm x) ∧
       (∀ i, CurveIntegrable (oneForm P Q) ((q i).map hg)) ∧
@@ -157,8 +170,7 @@ theorem integralTopForm_curl_area_eq_boundary_sum_curveIntegral {ι : Type*} [Fi
   obtain ⟨l, rfl⟩ := o.exists_lift
   let φ := mpullback (𝓡∂ (1 + 1)) 𝓘(ℝ, ℂ) f (manifoldOneForm P Q)
   let g := fun x : (𝓡∂ (1 + 1)).boundary M ↦ f x
-  have hinc := (isSmoothEmbedding_subtypeVal_boundary (n := 1) M
-    (by simp : (∞ : WithTop ℕ∞) ≠ 0)).contMDiff
+  have hinc := (isSmoothEmbedding_subtypeVal_boundary (n := 1) (k := ∞) M).contMDiff
   have hg : ContMDiff 𝓘(ℝ, E) 𝓘(ℝ, ℂ) 1 g :=
     (hf.of_le (by norm_num)).comp (hinc.of_le (by simp))
   have he : boundaryRestriction φ = mpullback 𝓘(ℝ, E) 𝓘(ℝ, ℂ) g
@@ -217,7 +229,7 @@ theorem integral_image_curl_eq_boundary_sum_curveIntegral {ι : Type*} [Fintype 
         (EuclideanSpace.basisFun (Fin 1) ℝ).toBasis.orientation =
           (boundaryOrientation o).orientationAt ((q i).extend (z 0))) :
     let g := fun x : (𝓡∂ (1 + 1)).boundary M ↦ f x
-    let hg : Continuous g := hf.continuous.comp continuous_subtype_val
+    let hg : Continuous g := hf.continuous.comp continuous_subtypeVal
     IntegrableOn (curl P Q) (range f) ∧
       (∀ i, CurveIntegrable (oneForm P Q) ((q i).map hg)) ∧
       (∫ z in range f, curl P Q z) =

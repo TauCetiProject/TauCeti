@@ -42,7 +42,6 @@ The pairing `b_L` is `B(x, y) mod ℤ`; the even-lattice refinement
 
 * V. V. Nikulin, *Integral symmetric bilinear forms and some of their applications*, §1.1.
 * W. Ebeling, *Lattices and Codes*, Chapter 1.
-* `TauCetiRoadmap/IntegralLattices/README.md`, Layers 2 and 3.
 -/
 
 public section
@@ -88,7 +87,7 @@ private theorem carrierInDual_le_ker_dualCarrierFormModOne (L : IntegralLattice 
   rw [LinearMap.zero_apply, dualCarrierFormModOne_apply]
   apply (AddCircle.coe_eq_zero_iff_mem_one _).mpr
   have hyx : L.form y x ∈ (1 : Submodule ℤ ℚ) :=
-    y.2 x ((L.mem_carrierInDual_iff x).mp hx)
+    y.property x ((L.mem_carrierInDual_iff x).mp hx)
   rw [L.isSymm.eq]
   exact hyx
 

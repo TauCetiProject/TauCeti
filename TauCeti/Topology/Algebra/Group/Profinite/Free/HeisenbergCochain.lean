@@ -95,19 +95,19 @@ theorem apply_eq_sum_repr_degreeOneBasis (n : pLowerCentralSeries p (freeProP p 
           (p.choose 2 • μ ((a : freeProP p X → M) (of i)) ((b : freeProP p X → A) (of i))) +
         ∑ ij : {ij : X × X // ij.1 < ij.2},
           (degreeOneBasis p X).repr (gradedMk p (freeProP p X) 1 n) (Sum.inr ij) •
-            (μ ((a : freeProP p X → M) (of ij.1.1)) ((b : freeProP p X → A) (of ij.1.2)) -
-              μ ((a : freeProP p X → M) (of ij.1.2)) ((b : freeProP p X → A) (of ij.1.1))) := by
+            (μ ((a : freeProP p X → M) (of ij.val.1)) ((b : freeProP p X → A) (of ij.val.2)) -
+              μ ((a : freeProP p X → M) (of ij.val.2)) ((b : freeProP p X → A) (of ij.val.1))) := by
   have haN : ∀ n : pLowerCentralSeries p (freeProP p X) 1, (a : freeProP p X → M) n = 0 :=
     fun n ↦ apply_eq_zero_of_mem_Z1_of_mem_pLowerCentralSeries_one htrivM
-      (ZModModule.char_nsmul_eq_zero p) a.2 n.2
+      (ZModModule.char_nsmul_eq_zero p) a.property n.property
   have hbN : ∀ n : pLowerCentralSeries p (freeProP p X) 1, (b : freeProP p X → A) n = 0 :=
     fun n ↦ apply_eq_zero_of_mem_Z1_of_mem_pLowerCentralSeries_one htrivA
-      (ZModModule.char_nsmul_eq_zero p) b.2 n.2
+      (ZModModule.char_nsmul_eq_zero p) b.property n.property
   rw [← hh.gradedRestrict_gradedMk htrivP haN hbN (ZModModule.char_nsmul_eq_zero p) n]
   conv_lhs => rw [← (degreeOneBasis p X).sum_repr (gradedMk p (freeProP p X) 1 n)]
   simp only [Fintype.sum_sum_type, map_add, map_sum, ZMod.map_smul, degreeOneBasis_apply,
     hh.gradedRestrict_degreeOneFamily_inl htrivP haN hbN
-      (ZModModule.char_nsmul_eq_zero p) htrivM htrivA,
+      (ZModModule.char_nsmul_eq_zero p) htrivA,
     hh.gradedRestrict_degreeOneFamily_inr htrivP haN hbN
       (ZModModule.char_nsmul_eq_zero p) htrivM htrivA]
 
@@ -143,17 +143,17 @@ private theorem apply_eq_of_forall_degreeOneBasis
         ((a : freeProP p X → ZMod p) (of i) * (b : freeProP p X → ZMod p) (of i)) =
       f (degreeOneBasis p X (Sum.inl i)))
     (hinr : ∀ ij : {ij : X × X // ij.1 < ij.2},
-      (a : freeProP p X → ZMod p) (of ij.1.1) * (b : freeProP p X → ZMod p) (of ij.1.2) -
-        (a : freeProP p X → ZMod p) (of ij.1.2) * (b : freeProP p X → ZMod p) (of ij.1.1) =
+      (a : freeProP p X → ZMod p) (of ij.val.1) * (b : freeProP p X → ZMod p) (of ij.val.2) -
+        (a : freeProP p X → ZMod p) (of ij.val.2) * (b : freeProP p X → ZMod p) (of ij.val.1) =
       f (degreeOneBasis p X (Sum.inr ij)))
     (n : pLowerCentralSeries p (freeProP p X) 1) :
     h n = f (gradedMk p (freeProP p X) 1 n) := by
   have haN : ∀ n : pLowerCentralSeries p (freeProP p X) 1, (a : freeProP p X → ZMod p) n = 0 :=
     fun n ↦ apply_eq_zero_of_mem_Z1_of_mem_pLowerCentralSeries_one htriv
-      (ZModModule.char_nsmul_eq_zero p) a.2 n.2
+      (ZModModule.char_nsmul_eq_zero p) a.property n.property
   have hbN : ∀ n : pLowerCentralSeries p (freeProP p X) 1, (b : freeProP p X → ZMod p) n = 0 :=
     fun n ↦ apply_eq_zero_of_mem_Z1_of_mem_pLowerCentralSeries_one htriv
-      (ZModModule.char_nsmul_eq_zero p) b.2 n.2
+      (ZModModule.char_nsmul_eq_zero p) b.property n.property
   have key : (hh.gradedRestrict htriv haN hbN
       (ZModModule.char_nsmul_eq_zero p)).toZModLinearMap p = f := by
     refine (degreeOneBasis p X).ext fun k ↦ ?_
@@ -161,7 +161,7 @@ private theorem apply_eq_of_forall_degreeOneBasis
     rcases k with i | ij
     · rw [← hinl i, degreeOneBasis_apply,
         hh.gradedRestrict_degreeOneFamily_inl htriv haN hbN
-          (ZModModule.char_nsmul_eq_zero p) htriv htriv, AddMonoidHom.mul_apply]
+          (ZModModule.char_nsmul_eq_zero p) htriv, AddMonoidHom.mul_apply]
     · rw [← hinr ij, degreeOneBasis_apply,
         hh.gradedRestrict_degreeOneFamily_inr htriv haN hbN
           (ZModModule.char_nsmul_eq_zero p) htriv htriv, AddMonoidHom.mul_apply,

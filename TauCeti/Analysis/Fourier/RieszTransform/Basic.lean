@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.Fourier.HessianMultiplier
 public import TauCeti.Analysis.Fourier.MihlinHormander
 import TauCeti.Analysis.Calculus.IteratedFDeriv.Homogeneous
+import TauCeti.MeasureTheory.Function.Lp.Norm
 
 /-!
 # The Riesz transforms
@@ -25,7 +26,7 @@ dimension one, `R₁` is the Hilbert transform, with symbol `-i sign ξ`. The sy
 The symbol is bounded by `‖v‖` and homogeneous of degree `0`; for `v ≠ 0` it is discontinuous at
 the origin. Hence:
 
-* `R_v` is bounded on `L²` with `‖R_v‖ ≤ ‖v‖`, and skew-adjoint: `R_v† = -R_v`.
+* `R_v` is bounded on `L²` with `‖R_v‖ = ‖v‖`, and skew-adjoint: `R_v† = -R_v`.
 * `R_v R_w = -T_{m_{v,w}}`, where `T_{m_{v,w}} = ∂_v ∂_w Δ⁻¹` is the Hessian multiplier with
   symbol `⟪ξ, v⟫ ⟪ξ, w⟫ / ‖ξ‖²` (`TauCeti.hessianSymbolLp`). On Schwartz functions this is the
   classical identity `∂_v ∂_w u = -R_v R_w Δu`, through which `Lᵖ` bounds for the Riesz transforms
@@ -42,7 +43,7 @@ identified in `TauCeti.Analysis.Fourier.RieszTransform.Kernel`.
 
 * `TauCeti.rieszSymbol`, `TauCeti.rieszSymbolLp`: the symbol and its class in `L^∞`.
 * `TauCeti.rieszTransform`: the Riesz transform `R_v` on `L²(E, F)`.
-* `TauCeti.norm_rieszTransform_le`, `TauCeti.adjoint_rieszTransform`: `‖R_v‖ ≤ ‖v‖` and
+* `TauCeti.norm_rieszTransform`, `TauCeti.adjoint_rieszTransform`: `‖R_v‖ = ‖v‖` and
   `R_v† = -R_v`.
 * `TauCeti.rieszTransform_compL_rieszTransform`: `R_v R_w = -T_{m_{v,w}}`.
 * `TauCeti.sum_rieszTransform_compL_rieszTransform`,
@@ -115,6 +116,13 @@ theorem norm_rieszSymbol_le (v ξ : E) : ‖rieszSymbol v ξ‖ ≤ ‖v‖ := b
   · simp
   · rw [div_le_iff₀ (norm_pos_iff.2 hξ), mul_comm]
     exact abs_real_inner_le_norm _ _
+
+/-- In the direction `ξ = v` the symbol attains its bound `‖v‖`. -/
+@[simp]
+theorem norm_rieszSymbol_self (v : E) : ‖rieszSymbol v v‖ = ‖v‖ := by
+  rcases eq_or_ne v 0 with rfl | hv
+  · simp
+  simp [rieszSymbol, sq, hv]
 
 /-- The symbol is purely imaginary. -/
 @[simp]
@@ -203,11 +211,20 @@ theorem rieszSymbolLp_smul_rieszSymbolLp (v w : E) :
 
 /-- The `L^∞` norm of the Riesz symbol is at most `‖v‖`. -/
 theorem norm_rieszSymbolLp_le (v : E) : ‖rieszSymbolLp v‖ ≤ ‖v‖ := by
-  rw [Lp.norm_def, eLpNorm_exponent_top (Lp.aestronglyMeasurable _)]
-  refine ENNReal.toReal_le_of_le_ofReal (by positivity) (eLpNormEssSup_le_of_ae_bound ?_)
+  refine Lp.norm_le_of_ae_bound_top (norm_nonneg v) ?_
   filter_upwards [coeFn_rieszSymbolLp v] with ξ hξ
   rw [hξ]
   exact norm_rieszSymbol_le v ξ
+
+/-- The `L^∞` norm of the Riesz symbol is exactly `‖v‖`. -/
+@[simp]
+theorem norm_rieszSymbolLp (v : E) : ‖rieszSymbolLp v‖ = ‖v‖ := by
+  refine (norm_rieszSymbolLp_le v).antisymm ?_
+  rcases eq_or_ne v 0 with rfl | hv
+  · simp
+  -- The symbol is continuous at `ξ = v`, where its modulus is `‖v‖`.
+  simpa using Lp.norm_le_norm_top_of_ae_eq_of_continuousAt (coeFn_rieszSymbolLp v)
+    ((contDiffOn_rieszSymbol v).continuousOn.continuousAt (isOpen_compl_singleton.mem_nhds hv))
 
 /-! ### The Riesz transform on `L²` -/
 
@@ -257,6 +274,13 @@ theorem rieszTransform_eq_sum {ι : Type*} [Fintype ι] (b : OrthonormalBasis ι
 /-- **Plancherel bound** for the Riesz transform: `‖R_v‖ ≤ ‖v‖`. -/
 theorem norm_rieszTransform_le (v : E) : ‖rieszTransform (E := E) F v‖ ≤ ‖v‖ :=
   (Lp.norm_fourierMultiplierCLM_le _).trans (norm_rieszSymbolLp_le v)
+
+/-- The Riesz transform in the direction `v` has operator norm exactly `‖v‖` on `L²(E, F)` for
+nonzero `F`. In particular the classical Riesz transforms `Rⱼ = R_{eⱼ}` along an orthonormal basis
+have norm `1`. -/
+@[simp]
+theorem norm_rieszTransform [Nontrivial F] (v : E) : ‖rieszTransform (E := E) F v‖ = ‖v‖ := by
+  rw [rieszTransform_def, Lp.norm_fourierMultiplierCLM, norm_rieszSymbolLp]
 
 /-- The Riesz transform is skew-adjoint: `R_v† = -R_v`. -/
 theorem adjoint_rieszTransform (v : E) :
@@ -349,7 +373,7 @@ theorem exists_eLpNorm_rieszTransform_le [Nontrivial E] {p : ℝ≥0∞} (hp : 1
   refine Finset.sum_le_sum fun i _ ↦ ?_
   rw [eLpNorm_const_smul]
   have hv : ‖(⟪b i, v⟫ : ℂ)‖ₑ ≤ ‖v‖₊ := by
-    rw [enorm_eq_nnnorm, ENNReal.coe_le_coe, ← NNReal.coe_le_coe, coe_nnnorm, coe_nnnorm,
+    rw [eNorm_eq_nnNorm, ENNReal.coe_le_coe, ← NNReal.coe_le_coe, coe_nnNorm, coe_nnNorm,
       Complex.norm_real, Real.norm_eq_abs]
     exact (abs_real_inner_le_norm _ _).trans (by simp [b.orthonormal.1 i])
   calc ‖(⟪b i, v⟫ : ℂ)‖ₑ * eLpNorm (rieszTransform F (b i) f) p volume

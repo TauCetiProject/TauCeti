@@ -44,26 +44,22 @@ namespace TauCeti.NumberField.IntegralPrimitiveElement
 
 variable {K : Type*} [Field K] [NumberField K]
 
--- The power basis, its generator, and the discriminant comparison below follow the
--- human-authored specification in `TauCetiRoadmap/NumberFieldArithmetic/Suggested.lean`,
--- Layer 3.2.
-
 /-- The power basis `1, θ, …, θ ^ (n - 1)` of `K` over `ℚ` attached to an integral primitive
 element `θ`, where `n = [K : ℚ]`. -/
 noncomputable def powerBasis (θ : IntegralPrimitiveElement K) : PowerBasis ℚ K :=
-  PowerBasis.ofAdjoinEqTop (IsIntegral.of_finite ℚ (θ.1 : K)) θ.2
+  PowerBasis.ofAdjoinEqTop (IsIntegral.of_finite ℚ (θ.val : K)) θ.property
 
 /-- The generator of the power basis of `θ` is `θ`. -/
 @[simp]
-theorem powerBasis_gen (θ : IntegralPrimitiveElement K) : θ.powerBasis.gen = (θ.1 : K) := by
+theorem powerBasis_gen (θ : IntegralPrimitiveElement K) : θ.powerBasis.gen = (θ.val : K) := by
   rw [powerBasis, PowerBasis.ofAdjoinEqTop_gen]
 
 /-- **The discriminant of the power basis of an integral primitive element** is the polynomial
 discriminant of its minimal polynomial over `ℤ`, cast to `ℚ`. -/
 theorem discr_powerBasis_eq_minpoly_discr (θ : IntegralPrimitiveElement K) :
-    Algebra.discr ℚ θ.powerBasis.basis = algebraMap ℤ ℚ (minpoly ℤ θ.1).discr := by
+    Algebra.discr ℚ θ.powerBasis.basis = algebraMap ℤ ℚ (minpoly ℤ θ.val).discr := by
   rw [Algebra.discr_powerBasis_eq_minpoly_discr, powerBasis_gen,
     _root_.NumberField.RingOfIntegers.minpoly_rat_coe,
-    (minpoly.monic θ.1.isIntegral).discr_map]
+    (minpoly.monic θ.val.isIntegral).discr_map]
 
 end TauCeti.NumberField.IntegralPrimitiveElement

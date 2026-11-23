@@ -10,6 +10,7 @@ public import Mathlib.Algebra.Polynomial.Basic
 public import Mathlib.Basic.Sign.Defs
 public import Mathlib.Logic.Equiv.Fin.Basic
 public import Mathlib.MeasureTheory.SetAlgebra
+public import TauCeti.Algebra.MvPolynomial.Eval
 public import TauCeti.Data.List.PermanencesMinusVariations
 public import TauCeti.Data.Set.Lattice
 public import TauCeti.MeasureTheory.SetAlgebra
@@ -34,8 +35,9 @@ Every closure property proved here follows directly from the definition:
   variations of their values (`TauCeti.isSemialgebraic_setOf_permanencesMinusVariations_eval`);
 * the vanishing of a prescribed set of coefficients of a polynomial family
   `P : Polynomial (MvPolynomial σ R)` (`TauCeti.isSemialgebraic_setOf_forall_coeff_eq_zero`);
-* inverse images under polynomial maps (`TauCeti.IsSemialgebraic.preimage_eval`), and hence
-  under changes of coordinates, in particular coordinate permutations;
+* inverse images under polynomial maps (`TauCeti.IsSemialgebraic.preimage_eval`), under
+  coordinatewise rational maps over an ordered field (`TauCeti.IsSemialgebraic.preimage_eval_div`),
+  and under changes of coordinates, in particular coordinate permutations;
 * products, in the form `σ ⊕ τ → R` and in the form `Fin (m + n) → R`;
 * the sections `{x : Fin n → R | Fin.cons t x ∈ s}` and `{y : Fin 1 → R | Fin.cons (y 0) x ∈ s}`
   of a subset of `Fin (n + 1) → R`, which are the horizontal and vertical slices of a cylinder
@@ -303,15 +305,71 @@ theorem IsSemialgebraic.preimage_eval {s : Set (τ → R)} (hs : IsSemialgebraic
     (f : τ → MvPolynomial σ R) :
     IsSemialgebraic ((fun x i => eval x (f i)) ⁻¹' s) := by
   have hbind (x : σ → R) (p : MvPolynomial τ R) :
-      eval (fun i => eval x (f i)) p = eval x (bind₁ f p) := by
+      eval (fun i => eval x (f i)) p = eval x (aeval f p) := by
     simp only [← coe_aeval_eq_eval]
-    exact (aeval_bind₁ x f p).symm
+    exact (comp_aeval_apply f (aeval x) p).symm
   refine setOf_isSemialgebraic_subset (ℬ := {t | IsSemialgebraic ((fun x i => eval x (f i)) ⁻¹' t)})
     ⟨by simp, fun t ht => ?_, fun t u ht hu => ?_⟩ (fun p => ?_) (fun p => ?_) hs
   · simpa using ht.compl
   · simpa using ht.union hu
-  · simpa [hbind] using isSemialgebraic_eval_eq_zero (bind₁ f p)
-  · simpa [hbind] using isSemialgebraic_eval_pos (bind₁ f p)
+  · simpa [hbind] using isSemialgebraic_eval_eq_zero (aeval f p)
+  · simpa [hbind] using isSemialgebraic_eval_pos (aeval f p)
+
+/-- Over an ordered field, the inverse image of a semialgebraic set under a coordinatewise rational
+map `x ↦ (eval x (N i) / eval x (D i))` (with Lean's total division `a / 0 = 0`) is semialgebraic,
+without assuming denominator nonvanishing or finiteness of the index types. -/
+theorem IsSemialgebraic.preimage_eval_div {K : Type*} [Field K] [LinearOrder K]
+    [IsStrictOrderedRing K] {s : Set (τ → K)} (hs : IsSemialgebraic s)
+    (N D : τ → MvPolynomial σ K) :
+    IsSemialgebraic ((fun x i ↦ eval x (N i) / eval x (D i)) ⁻¹' s) := by
+  classical
+  have hbasic (p : MvPolynomial τ K) (q : K → Prop)
+      (hq : ∀ {b c : K}, 0 < b → (q (b * c) ↔ q c))
+      (hsa : ∀ A : MvPolynomial σ K, IsSemialgebraic {x | q (eval x A)}) :
+      IsSemialgebraic ((fun x i ↦ eval x (N i) / eval x (D i)) ⁻¹' {y | q (eval y p)}) := by
+    let cell (Z : Finset τ) : Set (σ → K) :=
+      (⋂ i ∈ Z, {x | eval x (D i) = 0}) ∩ ⋂ i ∈ p.vars \ Z, {x | eval x (D i) ≠ 0}
+    have hcell (Z : Finset τ) : IsSemialgebraic (cell Z) :=
+      (IsSemialgebraic.biInter Z.finite_toSet fun i _ ↦ isSemialgebraic_eval_eq_zero (D i)).inter
+        (IsSemialgebraic.biInter (p.vars \ Z).finite_toSet fun i _ ↦
+          isSemialgebraic_eval_ne_zero (D i))
+    have hpiece (Z : Finset τ) :
+        IsSemialgebraic (cell Z ∩ {x | q (eval (fun i ↦ eval x (N i) / eval x (D i)) p)}) := by
+      let N' : τ → MvPolynomial σ K := fun i ↦ if i ∈ Z then 0 else N i
+      let D' : τ → MvPolynomial σ K := fun i ↦ if i ∈ Z then 1 else D i
+      have hD' : ∀ x ∈ cell Z, ∀ i ∈ p.vars, eval x (D' i) ≠ 0 := fun x hx i hi ↦ by
+        by_cases hiZ : i ∈ Z
+        · simp [D', hiZ]
+        · simpa [D', hiZ] using mem_iInter₂.1 hx.2 i (Finset.mem_sdiff.2 ⟨hi, hiZ⟩)
+      obtain ⟨A, B, hAB⟩ := MvPolynomial.exists_pos_eval_eq_mul_eval_div (N := N') p hD'
+      convert (hcell Z).inter (hsa A) using 1
+      ext x
+      refine and_congr_right fun hx ↦ ?_
+      have heq : eval (fun i ↦ eval x (N i) / eval x (D i)) p =
+          eval (fun i ↦ eval x (N' i) / eval x (D' i)) p :=
+        eval₂Hom_congr' rfl (fun i _ _ ↦ by
+          by_cases hiZ : i ∈ Z
+          · simp [N', D', hiZ, show eval x (D i) = 0 from mem_iInter₂.1 hx.1 i hiZ]
+          · simp [N', D', hiZ]) rfl
+      obtain ⟨hBpos, hEq⟩ := hAB x hx
+      rw [mem_ofPred_eq, mem_ofPred_eq, heq, hEq, hq hBpos]
+    have hunion : (fun x i ↦ eval x (N i) / eval x (D i)) ⁻¹' {y | q (eval y p)} =
+        ⋃ Z ∈ p.vars.powerset, cell Z ∩ {x | q (eval (fun i ↦ eval x (N i) / eval x (D i)) p)} := by
+      ext x
+      simp only [mem_preimage, mem_ofPred_eq, mem_iUnion, mem_inter_iff]
+      refine ⟨fun hp ↦ ⟨p.vars.filter fun i ↦ eval x (D i) = 0,
+        Finset.mem_powerset.2 (Finset.filter_subset _ _),
+        ⟨mem_iInter₂.2 fun i hi ↦ (Finset.mem_filter.1 hi).2,
+          mem_iInter₂.2 fun i hi h0 ↦ (Finset.mem_sdiff.1 hi).2
+            (Finset.mem_filter.2 ⟨(Finset.mem_sdiff.1 hi).1, h0⟩)⟩, hp⟩,
+        fun ⟨_, _, _, hp⟩ ↦ hp⟩
+    rw [hunion]
+    exact IsSemialgebraic.biUnion p.vars.powerset.finite_toSet fun Z _ ↦ hpiece Z
+  refine setOf_isSemialgebraic_subset
+    (ℬ := {t | IsSemialgebraic ((fun x i ↦ eval x (N i) / eval x (D i)) ⁻¹' t)})
+    ⟨by simp, fun t ht ↦ by simpa using ht.compl, fun t u ht hu ↦ by simpa using ht.union hu⟩
+    (fun p ↦ hbasic p (· = 0) (fun hb ↦ mul_eq_zero_iff_left hb.ne') isSemialgebraic_eval_eq_zero)
+    (fun p ↦ hbasic p (0 < ·) (fun hb ↦ mul_pos_iff_of_pos_left hb) isSemialgebraic_eval_pos) hs
 
 /-- The inverse image of a semialgebraic set under a change of coordinates `x ↦ x ∘ f` is
 semialgebraic. -/

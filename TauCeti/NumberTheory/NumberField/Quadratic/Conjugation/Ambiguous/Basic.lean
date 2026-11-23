@@ -28,7 +28,7 @@ classes of ramified primes, which in turn satisfy the relation `∏ 𝔭 = (θ)`
 `TauCeti.Multiquadratic.span_singleton_eq_prod_primeFactors` — is
 `NumberField.classGroupMk0_mem_closure_of_map_eq_self` in
 `Quadratic/Conjugation/Ambiguous/Ideal.lean`; the two together give the genus-theoretic bound
-`2-rank ≤ t - 1` of the Multiquadratic roadmap.
+`2-rank ≤ t - 1`.
 
 The proof is Hilbert's Theorem 90 for the quadratic extension `K/ℚ`, in the elementary form
 available for a degree-two extension. If `[σJ] = [J]` then `(x) σJ = (y) J` for nonzero
@@ -196,7 +196,7 @@ theorem exists_map_ringOfIntegersQuadraticConj_eq_self_of_sq_eq_one [IsTotallyCo
   rw [ClassGroup.mulEquiv_mk0] at hfix
   obtain ⟨x, y, hx, hy, hxy⟩ := ClassGroup.mk0_eq_mk0_iff.mp hfix
   set σ := ringOfIntegersQuadraticConj hmin hgen
-  have hJ0 : (J : Ideal (𝓞 K)) ≠ 0 := mem_nonZeroDivisors_iff_ne_zero.mp J.2
+  have hJ0 : (J : Ideal (𝓞 K)) ≠ 0 := mem_nonZeroDivisors_iff_ne_zero.mp J.property
   have hspanx : Ideal.span ({x} : Set (𝓞 K)) ≠ 0 := by
     rw [ne_eq, Ideal.zero_eq_bot, Ideal.span_singleton_eq_bot]; exact hx
   have hnorm : x * σ x = y * σ y :=
@@ -205,7 +205,7 @@ theorem exists_map_ringOfIntegersQuadraticConj_eq_self_of_sq_eq_one [IsTotallyCo
         simpa using mul_ne_zero (RingOfIntegers.coe_ne_zero_iff.mpr hx)
           (RingOfIntegers.coe_ne_zero_iff.mpr hy)) (by simp)) hxy
   -- Hilbert 90 produces the twisting element.
-  obtain ⟨ε, hε0, hε⟩ := exists_ne_zero_mul_eq_mul_ringOfIntegersQuadraticConj hmin hgen hx hnorm
+  obtain ⟨ε, hε0, hε⟩ := exists_ne_zero_mul_eq_mul_ringOfIntegersQuadraticConj hmin hgen hnorm
   have hspanε : Ideal.span ({ε} : Set (𝓞 K)) ≠ 0 := by
     rw [ne_eq, Ideal.zero_eq_bot, Ideal.span_singleton_eq_bot]; exact hε0
   have hI0 : Ideal.span {ε} * (J : Ideal (𝓞 K)) ≠ 0 := mul_ne_zero hspanε hJ0

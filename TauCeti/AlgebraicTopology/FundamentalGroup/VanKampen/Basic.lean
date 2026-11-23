@@ -134,9 +134,9 @@ private noncomputable def connect (hST : S ⊆ T) (hS : IsPathConnected S) (hT :
     (s₀ : S) (z : FundamentalGroupoid T) :
     FundamentalGroupoid.mk (ContinuousMap.inclusion hST s₀) ⟶ z := by
   classical
-  exact if hz : z.as.1 ∈ S then
+  exact if hz : z.as.val ∈ S then
     (FundamentalGroupoid.map (ContinuousMap.inclusion hST)).map
-      (baseHom hS s₀ (FundamentalGroupoid.mk ⟨z.as.1, hz⟩))
+      (baseHom hS s₀ (FundamentalGroupoid.mk ⟨z.as.val, hz⟩))
   else baseHom hT _ z
 
 private theorem connect_map_obj (hST : S ⊆ T) (hS : IsPathConnected S) (hT : IsPathConnected T)
@@ -144,7 +144,7 @@ private theorem connect_map_obj (hST : S ⊆ T) (hS : IsPathConnected S) (hT : I
     connect hST hS hT s₀ ((FundamentalGroupoid.map (ContinuousMap.inclusion hST)).obj w) =
       (FundamentalGroupoid.map (ContinuousMap.inclusion hST)).map (baseHom hS s₀ w) := by
   classical
-  exact dite_eq_left w.as.2
+  exact dite_eq_left w.as.property
 
 @[simp]
 private theorem connect_base (hST : S ⊆ T) (hS : IsPathConnected S) (hT : IsPathConnected T)
@@ -413,10 +413,10 @@ theorem isPushout_fundamentalGroup_union {A B C : Set X} (hC : C = A ∪ B)
   have hAB' : IsPathConnected (A' ∩ B') :=
     hAB.preimage_coe (inter_subset_left.trans subset_union_left)
   have hCover : interior A' ∪ interior B' = univ := by
-    rw [(hAo.preimage continuous_subtype_val).interior_eq,
-      (hBo.preimage continuous_subtype_val).interior_eq]
+    rw [(hAo.preimage continuous_subtypeVal).interior_eq,
+      (hBo.preimage continuous_subtypeVal).interior_eq]
     ext z
-    exact iff_of_true z.2 (mem_univ z)
+    exact iff_of_true z.property (mem_univ z)
   let iA : GrpCat.of (_root_.FundamentalGroup A' ⟨x', hxA⟩) ≅
       GrpCat.of (_root_.FundamentalGroup A ⟨x, hxA⟩) := (FundamentalGroup.homeomorphMulEquivOfEq eA
     (rfl : eA ⟨x', hxA⟩ = ⟨x, hxA⟩)).toGrpIso
@@ -429,10 +429,10 @@ theorem isPushout_fundamentalGroup_union {A B C : Set X} (hC : C = A ∪ B)
     (rfl : eAB ⟨x', hxA, hxB⟩ = ⟨x, hxA, hxB⟩)).toGrpIso
   refine (isPushout_fundamentalGroup hCover hA' hB' hAB' hxA hxB).of_iso
     iAB iA iB (Iso.refl _) ?_ ?_ ?_ ?_
-  · exact FundamentalGroup.subspace_inclusion_square
-      (inter_subset_left.trans subset_union_left) subset_union_left inter_subset_left x ⟨hxA, hxB⟩
-  · exact FundamentalGroup.subspace_inclusion_square
-      (inter_subset_left.trans subset_union_left) subset_union_right inter_subset_right x ⟨hxA, hxB⟩
+  · exact FundamentalGroup.subspace_inclusion_square subset_union_left inter_subset_left x
+      ⟨hxA, hxB⟩
+  · exact FundamentalGroup.subspace_inclusion_square subset_union_right inter_subset_right x
+      ⟨hxA, hxB⟩
   · exact FundamentalGroup.subspace_subtypeVal_square subset_union_left x hxA
   · exact FundamentalGroup.subspace_subtypeVal_square subset_union_right x hxB
 

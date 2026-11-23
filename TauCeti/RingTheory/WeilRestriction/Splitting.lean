@@ -12,7 +12,7 @@ public import TauCeti.RingTheory.Etale.Galois
 # Splitting of a Weil restriction over a separably closed field
 
 Let `K` be a field, `B` a finite étale `K`-algebra (for instance a finite separable field
-extension `K'/K`), `C` a `B`-algebra of finite presentation and `Ω` a separably closed field
+extension `K'/K`), `C` an arbitrary `B`-algebra and `Ω` a separably closed field
 containing `K`. The points of the Weil restriction `Res_{B/K} C` with values in `Ω` are the
 `B`-algebra maps `C → B ⊗[K] Ω` (`WeilRestriction.homEquiv`). Over `Ω` the algebra `B` splits:
 `B ⊗[K] Ω` is the product of copies of `Ω` indexed by the `K`-algebra maps `τ : B → Ω`, through
@@ -60,11 +60,11 @@ open scoped TensorProduct
 namespace TauCeti.Algebra.WeilRestriction
 
 variable (K B C Ω : Type*) [Field K] [CommRing B] [Algebra K B] [Module.Finite K B]
-  [Algebra.Etale K B] [CommRing C] [Algebra B C] [Algebra.FinitePresentation B C] [Field Ω]
+  [Algebra.Etale K B] [CommRing C] [Algebra B C] [Field Ω]
   [Algebra K Ω] [IsSepClosed Ω]
 
 /-- **Splitting of a Weil restriction.** For a finite étale algebra `B` over a field `K`, a
-finitely presented `B`-algebra `C` and a separably closed field `Ω` over `K`, the `Ω`-points of the
+`B`-algebra `C` and a separably closed field `Ω` over `K`, the `Ω`-points of the
 Weil restriction `Res_{B/K} C` correspond to the families, indexed by the `K`-algebra maps
 `τ : B → Ω`, of `Ω`-points of `C` over `τ`, that is, of ring maps `C → Ω` extending `τ`. The
 `τ`-component of a point `x` is `homEquiv x` followed by `b ⊗ ω ↦ τ b * ω`
@@ -97,8 +97,8 @@ theorem productMap_homEquiv_splittingEquiv_symm_apply
 /-- **Naturality of the splitting in `C`.** The components of the image of a point under the
 map of Weil restrictions induced by `φ : C →ₐ[B] D` are the components of the point composed
 with `φ`. -/
-theorem splittingEquiv_comp_map {D : Type*} [CommRing D] [Algebra B D]
-    [Algebra.FinitePresentation B D] (φ : C →ₐ[B] D) (x : WeilRestriction K B D →ₐ[K] Ω)
+theorem splittingEquiv_comp_map {D : Type*} [CommRing D] [Algebra B D] (φ : C →ₐ[B] D)
+    (x : WeilRestriction K B D →ₐ[K] Ω)
     (τ : B →ₐ[K] Ω) :
     (splittingEquiv K B C Ω (x.comp (map K B φ)) τ : C →+* Ω) =
       (splittingEquiv K B D Ω x τ : D →+* Ω).comp φ := by

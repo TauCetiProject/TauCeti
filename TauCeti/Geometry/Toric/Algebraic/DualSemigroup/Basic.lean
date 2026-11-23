@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Geometry.Convex.Cone.Dual
-public import TauCeti.Geometry.Convex.Cone.LatticePoints
+public import TauCeti.Geometry.Convex.Cone.Saturation
 public import TauCeti.Geometry.Toric.Algebraic.Lattice.Basic
 
 /-!
@@ -26,6 +26,8 @@ Maps of lattices carrying one cone into another induce contravariant maps of dua
 ## Main declarations
 
 * `TauCeti.Toric.dualSemigroup`: integral characters nonnegative on a cone.
+* `TauCeti.Toric.nsmulSaturated_dualSemigroup`: the dual semigroup of any cone is saturated under
+  positive natural multiples.
 * `TauCeti.Toric.dualSemigroupMap`: the contravariant map induced by a compatible map of
   lattices and cones.
 
@@ -50,7 +52,6 @@ variable {N N' N'' V V' V'' : Type*}
 
 /-- The dual semigroup of a cone consists of the integral characters whose real-linear
 extensions are nonnegative on the cone. -/
--- Interface source: `TauCetiRoadmap/AnalyticToricGeometry/Suggested.lean`.
 noncomputable def dualSemigroup (hi : IsIntegralLattice i) (σ : PointedCone ℝ V) :
     AddSubmonoid (N →+ ℤ) :=
   (PointedCone.dual (Module.Dual.eval ℝ V) σ).latticePoints hi.realCharacter
@@ -84,6 +85,13 @@ theorem dualSemigroup_anti (hi : IsIntegralLattice i) {σ τ : PointedCone ℝ V
 theorem dualSemigroup_antitone (hi : IsIntegralLattice i) :
     Antitone (dualSemigroup hi) := fun _ _ h ↦ dualSemigroup_anti hi h
 
+/-- The dual semigroup of any cone is saturated under positive natural multiples: if a positive
+multiple of an integral character is nonnegative on `σ`, so is the character itself. -/
+@[simp]
+theorem nsmulSaturated_dualSemigroup (hi : IsIntegralLattice i) (σ : PointedCone ℝ V) :
+    (dualSemigroup hi σ).NSMulSaturated :=
+  PointedCone.nsmulSaturated_latticePoints _ _
+
 /-- The dual semigroup of the zero cone is the full character group. -/
 @[simp]
 theorem dualSemigroup_bot (hi : IsIntegralLattice i) :
@@ -109,8 +117,8 @@ is a point. -/
 instance subsingleton_dualSemigroup_top (hi : IsIntegralLattice i) :
     Subsingleton (dualSemigroup hi (⊤ : PointedCone ℝ V)) :=
   ⟨fun a b ↦ Subtype.ext <| by
-    have ha : (a : N →+ ℤ) = 0 := by simpa using a.2
-    have hb : (b : N →+ ℤ) = 0 := by simpa using b.2
+    have ha : (a : N →+ ℤ) = 0 := by simpa using a.property
+    have hb : (b : N →+ ℤ) = 0 := by simpa using b.property
     rw [ha, hb]⟩
 
 /-- The dual semigroup of a join is the intersection of the two dual semigroups. -/

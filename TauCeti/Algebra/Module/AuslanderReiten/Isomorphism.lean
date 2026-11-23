@@ -9,23 +9,22 @@ public import TauCeti.Algebra.Module.AuslanderReiten.Translate
 public import TauCeti.Algebra.Module.AuslanderReiten.Full
 public import TauCeti.Algebra.Module.AuslanderReiten.Faithful
 public import TauCeti.Algebra.Category.ModuleCat.Projective.Stable
-import TauCeti.LinearAlgebra.Dual.Equivalence
 
 /-!
 # Transposes and translates detect indecomposable isomorphism classes
 
 For non-projective finite-length indecomposable modules, an isomorphism between transposes
 of finite projective presentations implies an isomorphism of the original modules. When
-the transposes are reflexive over the scalar ring, the same holds for their scalar duals,
-the Auslander--Reiten translates. For minimal presentations this becomes an iff: the
-translate detects isomorphism classes on the non-projective indecomposables.
+the transposes have finite length over a commutative base ring `R`, the same holds for their
+Matlis duals, the Auslander--Reiten translates. For minimal presentations this becomes an iff: the
+translate detects isomorphism classes on the non-projective indecomposables. Over an Artin algebra
+every finite presentation has a transpose of finite length over `R`.
 
 Minimality is needed only for the forward implication. Arbitrary finite projective
-presentations suffice for reflection. The scalar base need not be a field; reflexivity is
-automatic for finite-dimensional transposes over a field.
+presentations suffice for reflection.
 
 The proofs use the full and faithful stable transpose, the projective stable quotient's
-detection of non-projective indecomposable isomorphism classes, and scalar double duality.
+detection of non-projective indecomposable isomorphism classes, and Matlis biduality.
 
 ## References
 
@@ -39,7 +38,7 @@ namespace TauCeti.FiniteProjectivePresentation
 
 open CategoryTheory
 
-universe u v
+universe u v w
 
 variable {A : Type u} [Ring A] [Small.{v} A] {M N : ModuleCat.{v} A}
 
@@ -77,45 +76,42 @@ theorem nonempty_linearEquiv_of_auslanderReitenTranspose (P : FiniteProjectivePr
     ((indecomposable_iff_isIndecomposableModule N).mpr hiN) hp).mp ⟨⟨f, g, hfg, hgf⟩⟩
   exact ⟨j.toLinearEquiv⟩
 
-variable {k : Type*} [CommSemiring k] [Algebra k A]
+variable {R : Type*} [CommRing R] [Algebra R A] {E : Type w} [AddCommGroup E] [Module R E]
+  [Module.Injective R E] [Small.{w} R]
+  (hE : ∀ 𝔪 : Ideal R, 𝔪.IsMaximal → Module.length R (R ⧸ 𝔪 →ₗ[R] E) = 1)
+include hE
 
 /-- Isomorphic Auslander--Reiten translates detect isomorphism of non-projective,
-finite-length indecomposable modules when both transposes are scalar-reflexive.
+finite-length indecomposable modules when both transposes have finite length over `R`.
 No minimality of either finite projective presentation is needed. -/
 theorem nonempty_linearEquiv_of_auslanderReitenTranslate (P : FiniteProjectivePresentation M)
-    (Q : FiniteProjectivePresentation N)
-    [Module.IsReflexive k (AuslanderReitenTranspose P.p)]
-    [Module.IsReflexive k (AuslanderReitenTranspose Q.p)]
+    (Q : FiniteProjectivePresentation N) (hTrP : IsFiniteLength R (AuslanderReitenTranspose P.p))
+    (hTrQ : IsFiniteLength R (AuslanderReitenTranspose Q.p))
     (hM : IsFiniteLength A M) (hN : IsFiniteLength A N)
     (hiM : IsIndecomposableModule A M) (hiN : IsIndecomposableModule A N)
     (hpM : ¬ Module.Projective A M)
-    (e : AuslanderReitenTranslate k P.p ≃ₗ[A] AuslanderReitenTranslate k Q.p) :
-    Nonempty (M ≃ₗ[A] N) := by
-  let d := (LinearEquiv.refl k (AuslanderReitenTranslate k P.p)).ofEquivariantDual
-    (LinearEquiv.refl k (AuslanderReitenTranslate k Q.p))
-    (fun a φ x ↦ AuslanderReitenTranslate.smul_apply a φ x)
-    (fun a φ x ↦ AuslanderReitenTranslate.smul_apply a φ x) e
-  exact P.nonempty_linearEquiv_of_auslanderReitenTranspose Q hM hN hiM hiN hpM d.symm
+    (e : AuslanderReitenTranslate R E P.p ≃ₗ[A] AuslanderReitenTranslate R E Q.p) :
+    Nonempty (M ≃ₗ[A] N) :=
+  P.nonempty_linearEquiv_of_auslanderReitenTranspose Q hM hN hiM hiN hpM
+    ((MatlisDual.evalEquivOp hE hTrP).trans
+      ((MatlisDual.congr e.symm).trans (MatlisDual.evalEquivOp hE hTrQ).symm))
 
 /-- On non-projective finite-length indecomposables, the Auslander--Reiten translate
 computed from finite minimal projective presentations detects exactly the module
-isomorphism classes, when the transposes are scalar-reflexive. Only the source needs an
+isomorphism classes, when the transposes have finite length over `R`. Only the source needs an
 explicit non-projectivity hypothesis. -/
 theorem nonempty_linearEquiv_auslanderReitenTranslate_iff (P : FiniteProjectivePresentation M)
     (Q : FiniteProjectivePresentation N)
-    [Module.IsReflexive k (AuslanderReitenTranspose P.p)]
-    [Module.IsReflexive k (AuslanderReitenTranspose Q.p)]
+    (hTrP : IsFiniteLength R (AuslanderReitenTranspose P.p))
+    (hTrQ : IsFiniteLength R (AuslanderReitenTranspose Q.p))
     (hP : IsMinimalProjectivePresentation P.p P.π)
     (hQ : IsMinimalProjectivePresentation Q.p Q.π)
     (hM : IsFiniteLength A M) (hN : IsFiniteLength A N)
     (hiM : IsIndecomposableModule A M) (hiN : IsIndecomposableModule A N)
     (hpM : ¬ Module.Projective A M) :
-    Nonempty (AuslanderReitenTranslate k P.p ≃ₗ[A] AuslanderReitenTranslate k Q.p) ↔
-      Nonempty (M ≃ₗ[A] N) := by
-  constructor
-  · rintro ⟨e⟩
-    exact P.nonempty_linearEquiv_of_auslanderReitenTranslate Q hM hN hiM hiN hpM e
-  · rintro ⟨e⟩
-    exact (hP.comp_linearEquiv e).nonempty_linearEquiv_auslanderReitenTranslate hQ
+    Nonempty (AuslanderReitenTranslate R E P.p ≃ₗ[A] AuslanderReitenTranslate R E Q.p) ↔
+      Nonempty (M ≃ₗ[A] N) :=
+  ⟨fun ⟨e⟩ ↦ P.nonempty_linearEquiv_of_auslanderReitenTranslate hE Q hTrP hTrQ hM hN hiM hiN hpM e,
+    fun ⟨e⟩ ↦ (hP.comp_linearEquiv e).nonempty_linearEquiv_auslanderReitenTranslate hQ⟩
 
 end TauCeti.FiniteProjectivePresentation

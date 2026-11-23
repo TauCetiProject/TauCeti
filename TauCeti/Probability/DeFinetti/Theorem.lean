@@ -140,10 +140,7 @@ theorem conditionallyIID_of_contractable [StandardBorelSpace α] {μ : Measure �
     (hX_meas : ∀ n, AEMeasurable (X n) μ) :
     ConditionallyIID μ X := by
   rcases isEmpty_or_nonempty Ω with hΩ | ⟨⟨ω⟩⟩
-  · -- On an empty sample space the measure is zero and every identity is between zero measures.
-    refine ConditionallyIID.of_directing (ν := fun ω => isEmptyElim ω)
-      (.intro hX_meas Subsingleton.measurable fun m k _ => ?_)
-    simp [Measure.eq_zero_of_isEmpty μ]
+  · exact .of_isEmpty
   · have : Nonempty α := ⟨X 0 ω⟩
     exact (conditionallyIID_of_contractable_measurable (hX.congr fun n => (hX_meas n).ae_eq_mk)
       fun n => (hX_meas n).measurable_mk).congr_process fun n => ((hX_meas n).ae_eq_mk).symm

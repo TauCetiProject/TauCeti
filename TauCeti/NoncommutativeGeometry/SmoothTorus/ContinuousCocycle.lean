@@ -84,24 +84,24 @@ theorem continuous_derivation₂ :
 /-- Joint continuity of the first odd cocycle. -/
 @[fun_prop]
 theorem continuous_oddCocycle₁ :
-    Continuous ((oddCocycle₁ θ).1 :
-      MultilinearMap ℂ (fun _ : Fin 2 ↦ SmoothNoncommutativeTorus θ) ℂ) := by
+    Continuous ((oddCocycle₁ θ).val :
+      MultilinearMap (RingHom.id ℂ) (fun _ : Fin 2 ↦ SmoothNoncommutativeTorus θ) ℂ) := by
   simpa only [coe_oddCocycle₁] using
     continuous_traceDerivationCochain continuous_trace continuous_derivation₁
 
 /-- Joint continuity of the second odd cocycle. -/
 @[fun_prop]
 theorem continuous_oddCocycle₂ :
-    Continuous ((oddCocycle₂ θ).1 :
-      MultilinearMap ℂ (fun _ : Fin 2 ↦ SmoothNoncommutativeTorus θ) ℂ) := by
+    Continuous ((oddCocycle₂ θ).val :
+      MultilinearMap (RingHom.id ℂ) (fun _ : Fin 2 ↦ SmoothNoncommutativeTorus θ) ℂ) := by
   simpa only [coe_oddCocycle₂] using
     continuous_traceDerivationCochain continuous_trace continuous_derivation₂
 
 /-- Joint continuity of the oriented fundamental cocycle, with its `(2πi)⁻¹` factor. -/
 @[fun_prop]
 theorem continuous_fundamentalCocycle :
-    Continuous ((fundamentalCocycle θ).1 :
-      MultilinearMap ℂ (fun _ : Fin 3 ↦ SmoothNoncommutativeTorus θ) ℂ) := by
+    Continuous ((fundamentalCocycle θ).val :
+      MultilinearMap (RingHom.id ℂ) (fun _ : Fin 3 ↦ SmoothNoncommutativeTorus θ) ℂ) := by
   apply (continuous_congr fun a ↦ fundamentalCocycle_apply a).2
   simpa only [traceDerivationPairCochain_apply] using
     (continuous_traceDerivationPairCochain continuous_trace
@@ -126,25 +126,25 @@ def continuousFundamentalCocycle :
 /-- Forgetting continuity recovers the first odd cochain. -/
 @[simp]
 theorem toMultilinearMap_continuousOddCocycle₁ :
-    (continuousOddCocycle₁ θ).1.1.toMultilinearMap = (oddCocycle₁ θ).1.1 := by
+    (continuousOddCocycle₁ θ).val.val.toMultilinearMap = (oddCocycle₁ θ).val.val := by
   rw [continuousOddCocycle₁, cyclicCocycles.toMultilinearMap_toContinuous]
 
 /-- Forgetting continuity recovers the second odd cochain. -/
 @[simp]
 theorem toMultilinearMap_continuousOddCocycle₂ :
-    (continuousOddCocycle₂ θ).1.1.toMultilinearMap = (oddCocycle₂ θ).1.1 := by
+    (continuousOddCocycle₂ θ).val.val.toMultilinearMap = (oddCocycle₂ θ).val.val := by
   rw [continuousOddCocycle₂, cyclicCocycles.toMultilinearMap_toContinuous]
 
 /-- Forgetting continuity recovers the fundamental cochain, including its normalization. -/
 @[simp]
 theorem toMultilinearMap_continuousFundamentalCocycle :
-    (continuousFundamentalCocycle θ).1.1.toMultilinearMap = (fundamentalCocycle θ).1.1 := by
+    (continuousFundamentalCocycle θ).val.val.toMultilinearMap = (fundamentalCocycle θ).val.val := by
   rw [continuousFundamentalCocycle, cyclicCocycles.toMultilinearMap_toContinuous]
 
 /-- Evaluation of the first continuous odd cocycle. -/
 @[simp]
 theorem continuousOddCocycle₁_apply (a : Fin 2 → SmoothNoncommutativeTorus θ) :
-    (continuousOddCocycle₁ θ).1.1 a =
+    (continuousOddCocycle₁ θ).val.val a =
       trace θ (a 0 * (derivation₁ θ : Module.End ℂ _) (a 1)) := by
   rw [continuousOddCocycle₁, cyclicCocycles.toContinuous_apply,
     coe_oddCocycle₁, traceDerivationCochain_apply]
@@ -152,7 +152,7 @@ theorem continuousOddCocycle₁_apply (a : Fin 2 → SmoothNoncommutativeTorus �
 /-- Evaluation of the second continuous odd cocycle. -/
 @[simp]
 theorem continuousOddCocycle₂_apply (a : Fin 2 → SmoothNoncommutativeTorus θ) :
-    (continuousOddCocycle₂ θ).1.1 a =
+    (continuousOddCocycle₂ θ).val.val a =
       trace θ (a 0 * (derivation₂ θ : Module.End ℂ _) (a 1)) := by
   rw [continuousOddCocycle₂, cyclicCocycles.toContinuous_apply,
     coe_oddCocycle₂, traceDerivationCochain_apply]
@@ -160,7 +160,7 @@ theorem continuousOddCocycle₂_apply (a : Fin 2 → SmoothNoncommutativeTorus �
 /-- Evaluation of the continuous fundamental cocycle agrees with the algebraic one. -/
 @[simp]
 theorem continuousFundamentalCocycle_apply (a : Fin 3 → SmoothNoncommutativeTorus θ) :
-    (continuousFundamentalCocycle θ).1.1 a = (fundamentalCocycle θ).1.1 a := by
+    (continuousFundamentalCocycle θ).val.val a = (fundamentalCocycle θ).val.val a := by
   rw [continuousFundamentalCocycle, cyclicCocycles.toContinuous_apply]
 
 end TauCeti.SmoothNoncommutativeTorus
