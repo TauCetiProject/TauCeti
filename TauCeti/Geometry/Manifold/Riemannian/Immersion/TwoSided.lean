@@ -7,12 +7,13 @@ module
 
 public import TauCeti.Geometry.Manifold.Riemannian.Immersion.NormalBundle
 public import TauCeti.Topology.VectorBundle.SphereBundle.Orientation
-import Mathlib.Analysis.SpecialFunctions.Sqrt
 import Mathlib.Geometry.Manifold.Algebra.LieGroup
 import Mathlib.Geometry.Manifold.VectorBundle.ContMDiffSection
+import TauCeti.Analysis.Normed.Module.Orientation
 import TauCeti.Geometry.Manifold.Riemannian.Basic
+import TauCeti.Geometry.Manifold.VectorBundle.GramSchmidt
 import TauCeti.Geometry.Manifold.VectorBundle.Pullback
-import TauCeti.Topology.VectorBundle.Riemannian.Basic
+import TauCeti.LinearAlgebra.Orientation.Basis
 
 /-!
 # Two-sided hypersurfaces and the unit normal double cover
@@ -45,7 +46,8 @@ bundles have base and fibres in one universe, so these last statements take `M` 
 
 ## Main definitions
 
-* `TauCeti.IsTwoSidedHypersurface`: `f` has a `C^k` unit normal field.
+* `TauCeti.IsTwoSidedHypersurface`: `f` has a `C^k` unit normal field
+  (`TauCeti.isTwoSidedHypersurface_iff`).
 
 ## Main results
 
@@ -108,6 +110,19 @@ def IsTwoSidedHypersurface (k : ℕ∞ω) (f : M → N) : Prop :=
     ContMDiff I J.tangent k (fun x ↦ (⟨f x, ν x⟩ : TangentBundle J N)) ∧
       ∀ x, ‖ν x‖ = 1 ∧ ν x ∈ orthogonalNormalSpace I J f x
 
+/-- A map is two-sided in regularity `k` exactly when it has a `C^k` unit normal field. -/
+theorem isTwoSidedHypersurface_iff {k : ℕ∞ω} {f : M → N} :
+    IsTwoSidedHypersurface I J k f ↔ ∃ ν : ∀ x, TangentSpace J (f x),
+      ContMDiff I J.tangent k (fun x ↦ (⟨f x, ν x⟩ : TangentBundle J N)) ∧
+        ∀ x, ‖ν x‖ = 1 ∧ ν x ∈ orthogonalNormalSpace I J f x :=
+  Iff.rfl
+
+/-- Two-sidedness in regularity `k` implies two-sidedness in any lower regularity. -/
+theorem IsTwoSidedHypersurface.of_le {k l : ℕ∞ω} {f : M → N}
+    (h : IsTwoSidedHypersurface I J k f) (hlk : l ≤ k) : IsTwoSidedHypersurface I J l f :=
+  let ⟨ν, hν, hν'⟩ := h
+  ⟨ν, hν.of_le hlk, hν'⟩
+
 end Definition
 
 variable [FiniteDimensional ℝ V] {n m : ℕ∞ω} [IsManifold I 1 M] [IsManifold J 1 N]
@@ -141,22 +156,25 @@ theorem exists_contMDiffOn_unit_orthogonalNormalSpace {f : K} (hf : ContMDiff I 
   have hsmem {x : M} (hx : x ∈ U) : s x ∈ orthogonalNormalSpace I J f x := by
     have h := Submodule.subset_span (R := ℝ) (Set.mem_range_self (f := fun i ↦ X i x) 0)
     rwa [hX.span_eq hx] at h
-  have hsq : ContMDiffOn I 𝓘(ℝ) m (fun x ↦ ⟪s x, s x⟫_ℝ) U :=
-    ContMDiffOn.inner_bundle (IB := J) (F := V) (E := fun y : N ↦ TangentSpace J y) (b := f)
-      hsN hsN
-  have hnorm : ContMDiffOn I 𝓘(ℝ) m (fun x ↦ ‖s x‖⁻¹) U := fun x hx ↦ by
-    have hne : ⟪s x, s x⟫_ℝ ≠ 0 := by
-      rw [real_inner_self_eq_norm_sq, pow_ne_zero_iff two_ne_zero, norm_ne_zero_iff]
-      exact hs0 hx
-    have h : ContMDiffWithinAt I 𝓘(ℝ) m (fun y ↦ √⟪s y, s y⟫_ℝ) U x :=
-      (Real.contDiffAt_sqrt hne).comp_contMDiffWithinAt (f := fun y ↦ ⟪s y, s y⟫_ℝ) (hsq x hx)
-    simpa only [real_inner_self_eq_norm_sq, Real.sqrt_sq (norm_nonneg _)] using
-      h.inv₀ (by simpa [real_inner_self_eq_norm_sq] using hs0 hx)
-  classical
-  refine ⟨U, hU, hx₀, fun x ↦ if x ∈ U then ‖s x‖⁻¹ • s x else 0, ?_, fun x ↦ ?_, fun x hx ↦ ?_⟩
-  · refine (ContMDiffOn.smul_section hnorm hs).congr fun x hx ↦ ?_
-    simp only [hx, ↓reduceIte]
+  -- The normalization of `s` is its fibrewise normalized Gram–Schmidt process.
+  have hgs : ContMDiffOn I (J.prod 𝓘(ℝ, V)) m (fun x ↦ TotalSpace.mk' V (f x)
+      (InnerProductSpace.gramSchmidtNormed ℝ (fun _ : Fin 1 ↦ s x) 0)) U :=
+    ContMDiffOn.gramSchmidtNormed_bundle (0 : Fin 1) (fun _ _ ↦ hsN)
+      fun x hx ↦
+        ((linearIndependent_unique_iff (v := fun _ : Fin 1 ↦ s x)).2 (hs0 hx)).linearIndepOn _
+  have hgs_eq (x : M) : InnerProductSpace.gramSchmidtNormed ℝ (fun _ : Fin 1 ↦ s x) 0 =
+      ‖s x‖⁻¹ • s x := by
+    rw [InnerProductSpace.gramSchmidtNormed, show (0 : Fin 1) = ⊥ from rfl,
+      InnerProductSpace.gramSchmidt_bot]
     rfl
+  classical
+  refine ⟨U, hU, hx₀, fun x ↦ if x ∈ U then ‖s x‖⁻¹ • s x else 0, fun x hx ↦ ?_, fun x ↦ ?_,
+    fun x hx ↦ ?_⟩
+  · refine (Pullback.contMDiffWithinAt_iff (E := TangentSpace J) f
+      ((hf.of_le (le_self_add.trans hm)) x)).2 ⟨contMDiffWithinAt_id, ?_⟩
+    refine (hgs x hx).congr (fun y hy ↦ ?_) ?_
+    · simp only [Pullback.lift_mk, hy, ↓reduceIte, hgs_eq]
+    · simp only [Pullback.lift_mk, hx, ↓reduceIte, hgs_eq]
   · dsimp only
     split_ifs with hx
     · exact Submodule.smul_mem _ _ (hsmem hx)
@@ -164,12 +182,12 @@ theorem exists_contMDiffOn_unit_orthogonalNormalSpace {f : K} (hf : ContMDiff I 
   · simp only [hx, ↓reduceIte, norm_smul, norm_inv, norm_norm]
     exact inv_mul_cancel₀ (norm_ne_zero_iff.2 (hs0 hx))
 
-/-- A continuous unit normal field of an immersion of codimension one orients its normal bundle
-`ν_f`: the orientation given at `x` by the basis `(ν x)` of the line `ν_f x`. -/
+/-- A continuous nowhere-zero normal field of an immersion of codimension one orients its normal
+bundle `ν_f`: the orientation given at `x` by the basis `(ν x)` of the line `ν_f x`. -/
 theorem nonempty_vectorBundleOrientation_of_continuous {f : K} (hf : ContMDiff I J n f)
     (hinj : ∀ x, Function.Injective (mfderiv I J f x)) (hm : m + 1 ≤ n)
     (hr : finrank ℝ V = finrank ℝ E + 1) {ν : ∀ x, TangentSpace J (f x)}
-    (hν : Continuous fun x ↦ (⟨f x, ν x⟩ : TangentBundle J N)) (hν₁ : ∀ x, ‖ν x‖ = 1)
+    (hν : Continuous fun x ↦ (⟨f x, ν x⟩ : TangentBundle J N)) (hν₀ : ∀ x, ν x ≠ 0)
     (hνf : ∀ x, ν x ∈ orthogonalNormalSpace I J f x) :
     letI := orthogonalNormalFiberBundle hf hinj hm hr
     letI := orthogonalNormalVectorBundle hf hinj hm hr
@@ -181,8 +199,8 @@ theorem nonempty_vectorBundleOrientation_of_continuous {f : K} (hf : ContMDiff I
       TotalSpace (Fin 1 → ℝ) fun x ↦ orthogonalNormalSpace I J f x) :=
     ((contMDiff_orthogonalNormalSpace_mk_iff_tangentBundle hf hinj hm hr zero_le (b := id)
       (w := ν) hνf).2 ⟨contMDiff_id, contMDiff_zero_iff.2 hν⟩).continuous
-  have hne (x : M) : (⟨ν x, hνf x⟩ : orthogonalNormalSpace I J f x) ≠ 0 := fun h ↦ by
-    simpa [(Submodule.mk_eq_zero _ _).1 h] using hν₁ x
+  have hne (x : M) : (⟨ν x, hνf x⟩ : orthogonalNormalSpace I J f x) ≠ 0 := fun h ↦
+    hν₀ x ((Submodule.mk_eq_zero _ _).1 h)
   exact ⟨VectorBundleOrientation.ofContinuous _
     (VectorBundleOrientationCover.continuous_mk_basis_orientation continuous_id
       (fun x ↦ FiniteDimensional.basisSingleton (Fin 1)
@@ -311,35 +329,23 @@ theorem isTwoSidedHypersurface_iff_nonempty_vectorBundleOrientation {f : K}
       Nonempty (VectorBundleOrientation (Fin 1 → ℝ) (fun x ↦ orthogonalNormalSpace I J f x)
         (Fin 1)) :=
   ⟨fun ⟨_, hν, hν'⟩ ↦ nonempty_vectorBundleOrientation_of_continuous hf hinj hm hr hν.continuous
-    (fun x ↦ (hν' x).1) fun x ↦ (hν' x).2,
+    (fun x ↦ norm_ne_zero_iff.1 ((hν' x).1.trans_ne one_ne_zero)) fun x ↦ (hν' x).2,
     fun ⟨o⟩ ↦ isTwoSidedHypersurface_of_vectorBundleOrientation hf hinj hm hr o⟩
 
 /-- **A continuous unit normal field can be made smooth.** An immersion of codimension one with a
 continuous unit normal field is two-sided, with a `C^m` unit normal field. -/
-theorem isTwoSidedHypersurface_iff_exists_continuous {f : K} (hf : ContMDiff I J n f)
+theorem isTwoSidedHypersurface_iff_exists_continuous {f : M → N} (hf : ContMDiff I J n f)
     (hinj : ∀ x, Function.Injective (mfderiv I J f x)) (hm : m + 1 ≤ n)
     (hr : finrank ℝ V = finrank ℝ E + 1) :
     IsTwoSidedHypersurface I J m f ↔ ∃ ν : ∀ x, TangentSpace J (f x),
       Continuous (fun x ↦ (⟨f x, ν x⟩ : TangentBundle J N)) ∧
         ∀ x, ‖ν x‖ = 1 ∧ ν x ∈ orthogonalNormalSpace I J f x := by
   refine ⟨fun ⟨ν, hν, hν'⟩ ↦ ⟨ν, hν.continuous, hν'⟩, fun ⟨ν, hν, hν'⟩ ↦ ?_⟩
-  obtain ⟨o⟩ := nonempty_vectorBundleOrientation_of_continuous hf hinj hm hr hν
-    (fun x ↦ (hν' x).1) fun x ↦ (hν' x).2
-  exact isTwoSidedHypersurface_of_vectorBundleOrientation hf hinj hm hr o
-
-/-- The fibre norm of the normal bundle `ν_f` of an immersion, the norm of the ambient metric, is
-continuous on its total space. -/
-theorem continuous_norm_orthogonalNormalSpace {r : ℕ} {f : K} (hf : ContMDiff I J n f)
-    (hinj : ∀ x, Function.Injective (mfderiv I J f x)) (hm : m + 1 ≤ n)
-    (hr : finrank ℝ V = finrank ℝ E + r) :
-    Continuous fun v : TotalSpace (Fin r → ℝ) (fun x ↦ orthogonalNormalSpace I J f x) ↦
-      ‖v.snd‖ := by
-  let := orthogonalNormalFiberBundle hf hinj hm hr
-  let := orthogonalNormalVectorBundle hf hinj hm hr
-  have : IsContinuousRiemannianBundle V (fun y : N ↦ TangentSpace J y) :=
-    IsContMDiffRiemannianBundle.toIsContinuousRiemannianBundle (IB := J) (n := m)
-  exact (continuous_norm_bundle V (fun y : N ↦ TangentSpace J y)).comp
-    (contMDiff_orthogonalNormalSpace_inclusion_tangentBundle hf hinj hm hr).continuous
+  -- The normal bundle is built for a bundled continuous map.
+  let g : C(M, N) := ⟨f, hf.continuous⟩
+  obtain ⟨o⟩ := nonempty_vectorBundleOrientation_of_continuous (f := g) hf hinj hm hr hν
+    (fun x ↦ norm_ne_zero_iff.1 ((hν' x).1.trans_ne one_ne_zero)) fun x ↦ (hν' x).2
+  exact isTwoSidedHypersurface_of_vectorBundleOrientation (f := g) hf hinj hm hr o
 
 end General
 
@@ -366,10 +372,12 @@ theorem isCoveringMap_sphereBundleProj_orthogonalNormalSpace {f : K} (hf : ContM
     (hr : finrank ℝ V = finrank ℝ E + 1) :
     letI := orthogonalNormalFiberBundle hf hinj hm hr
     letI := orthogonalNormalVectorBundle hf hinj hm hr
-    IsCoveringMap (sphereBundleProj (Fin 1 → ℝ) fun x ↦ orthogonalNormalSpace I J f x) :=
+    IsCoveringMap (sphereBundleProj (Fin 1 → ℝ) fun x ↦ orthogonalNormalSpace I J f x) := by
   let := orthogonalNormalFiberBundle hf hinj hm hr
   let := orthogonalNormalVectorBundle hf hinj hm hr
-  isCoveringMap_sphereBundleProj _ _ (continuous_norm_orthogonalNormalSpace hf hinj hm hr)
+  have : IsContinuousRiemannianBundle V (fun y : N ↦ TangentSpace J y) :=
+    IsContMDiffRiemannianBundle.toIsContinuousRiemannianBundle (IB := J) (n := m)
+  exact isCoveringMap_sphereBundleProj _ _ (continuous_norm_orthogonalNormalSpace _ f)
     (Module.finrank_fin_fun ℝ)
 
 /-- An immersion of codimension one is two-sided exactly when its unit normal double cover
@@ -385,8 +393,10 @@ theorem isTwoSidedHypersurface_iff_exists_section_sphereBundle {f : K}
   let := orthogonalNormalFiberBundle hf hinj hm hr
   let := orthogonalNormalVectorBundle hf hinj hm hr
   rw [isTwoSidedHypersurface_iff_nonempty_vectorBundleOrientation hf hinj hm hr]
+  have : IsContinuousRiemannianBundle V (fun y : N ↦ TangentSpace J y) :=
+    IsContMDiffRiemannianBundle.toIsContinuousRiemannianBundle (IB := J) (n := m)
   exact nonempty_vectorBundleOrientation_iff_exists_section_sphereBundle
-    (continuous_norm_orthogonalNormalSpace hf hinj hm hr) (Module.finrank_fin_fun ℝ)
+    (continuous_norm_orthogonalNormalSpace _ f) (Module.finrank_fin_fun ℝ)
 
 /-- An immersion of codimension one from a connected manifold is one-sided exactly when its unit
 normal double cover `S(ν_f)` is connected. -/
@@ -399,10 +409,12 @@ theorem not_isTwoSidedHypersurface_iff_connectedSpace_sphereBundle [ConnectedSpa
       ConnectedSpace (sphereBundle (Fin 1 → ℝ) (fun x ↦ orthogonalNormalSpace I J f x)) := by
   let := orthogonalNormalFiberBundle hf hinj hm hr
   let := orthogonalNormalVectorBundle hf hinj hm hr
-  rw [isTwoSidedHypersurface_iff_nonempty_vectorBundleOrientation hf hinj hm hr,
-    nonempty_vectorBundleOrientation_iff_not_connectedSpace_sphereBundle
-      (continuous_norm_orthogonalNormalSpace hf hinj hm hr) (Module.finrank_fin_fun ℝ),
+  have : IsContinuousRiemannianBundle V (fun y : N ↦ TangentSpace J y) :=
+    IsContMDiffRiemannianBundle.toIsContinuousRiemannianBundle (IB := J) (n := m)
+  rw [isTwoSidedHypersurface_iff_nonempty_vectorBundleOrientation hf hinj hm hr, ← not_iff_not,
     not_not]
+  exact nonempty_vectorBundleOrientation_iff_not_connectedSpace_sphereBundle
+    (continuous_norm_orthogonalNormalSpace _ f) (Module.finrank_fin_fun ℝ)
 
 end SphereBundle
 

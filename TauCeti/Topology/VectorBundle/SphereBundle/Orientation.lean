@@ -6,8 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Topology.VectorBundle.Orientation.LocalSystem
-public import TauCeti.Analysis.Normed.Module.FiniteDimension
 public import TauCeti.Topology.VectorBundle.SphereBundle.LocallyTrivial
+import TauCeti.LinearAlgebra.Orientation.Basis
 
 /-!
 # The orientation local system of a line bundle and its unit sphere bundle
@@ -15,8 +15,8 @@ public import TauCeti.Topology.VectorBundle.SphereBundle.LocallyTrivial
 Let `E → B` be a real vector bundle of rank one. A unit vector `v` orients its fibre, and `-v`
 gives the opposite orientation, so the unit sphere bundle `S(E)` maps to the orientation double
 cover as a map of double covers over `B`, intertwining the negation `v ↦ -v` with the deck
-involution (`TauCeti.sphereBundleOrientation`). It is a bijection: in a line, two vectors of
-the same norm giving the same orientation are equal (`TauCeti.eq_of_orientation_basisSingleton_eq`).
+involution (`TauCeti.sphereBundleOrientation`). It is a bijection, since the two unit vectors of a
+line give opposite orientations (`TauCeti.orientation_basisSingleton_neg`).
 When the fibre norm is continuous on the total space, `S(E) → B` is a double cover
 (`TauCeti.isCoveringMap_sphereBundleProj`), so this bijection of covering spaces over `B` is a
 homeomorphism (`TauCeti.sphereBundleOrientationHomeomorph`): the unit sphere bundle of a line
@@ -33,7 +33,8 @@ involution `v ↦ -v` of `S(E)` (`TauCeti.signLocalSystemIsoSphereBundle`).
 
 * `TauCeti.sphereBundleOrientation`: the orientation map `S(E) → ` orientation double cover of a
   line bundle.
-* `TauCeti.sphereBundleOrientationHomeomorph`: the orientation map is a homeomorphism.
+* `TauCeti.sphereBundleOrientationHomeomorph`: the orientation map is a homeomorphism, carrying
+  `v ↦ -v` to the deck involution (`TauCeti.sphereBundleOrientationHomeomorph_symm_deck`).
 * `TauCeti.nonempty_vectorBundleOrientation_iff_exists_section_sphereBundle`,
   `TauCeti.nonempty_vectorBundleOrientation_iff_not_connectedSpace_sphereBundle`: orientability
   of a line bundle read on its unit sphere bundle.
@@ -57,34 +58,6 @@ open Bundle CategoryTheory
 universe u
 
 namespace TauCeti
-
-section Line
-
-variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V]
-
-/-- In a line, the basis `(-v)` gives the orientation opposite to that of the basis `(v)`. -/
-theorem orientation_basisSingleton_neg (hV : Module.finrank ℝ V = 1) {v : V} (hv : v ≠ 0) :
-    (FiniteDimensional.basisSingleton (Fin 1) hV (-v) (neg_ne_zero.2 hv)).orientation =
-      -(FiniteDimensional.basisSingleton (Fin 1) hV v hv).orientation := by
-  -- The basis `(-v)` is the basis `(v)` with its vector multiplied by the unit `-1`.
-  convert Module.Basis.orientation_neg_single
-    (FiniteDimensional.basisSingleton (Fin 1) hV v hv) 0 using 2
-  refine Module.Basis.eq_of_apply_eq fun i ↦ ?_
-  rw [Module.Basis.unitsSMul_apply, Fin.fin_one_eq_zero i, Function.update_self]
-  simp [FiniteDimensional.basisSingleton_apply]
-
-/-- Two vectors of the same norm in a line that give the same orientation are equal. -/
-theorem eq_of_orientation_basisSingleton_eq (hV : Module.finrank ℝ V = 1) {v w : V}
-    (hn : ‖w‖ = ‖v‖) (hv : v ≠ 0) (hw : w ≠ 0)
-    (h : (FiniteDimensional.basisSingleton (Fin 1) hV w hw).orientation =
-      (FiniteDimensional.basisSingleton (Fin 1) hV v hv).orientation) :
-    w = v := by
-  refine (eq_or_eq_neg_of_norm_eq_of_finrank_eq_one hV hn).resolve_right fun hwv ↦ ?_
-  subst hwv
-  rw [orientation_basisSingleton_neg hV hv] at h
-  exact Module.Ray.ne_neg_self _ h.symm
-
-end Line
 
 variable {B : Type u} [TopologicalSpace B] {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
   {E : B → Type u} [∀ b, NormedAddCommGroup (E b)] [∀ b, NormedSpace ℝ (E b)]
@@ -171,22 +144,38 @@ vector to the orientation of its fibre in which it is positive
 covering spaces over the base, hence a local homeomorphism. -/
 def sphereBundleOrientationHomeomorph :
     sphereBundle F E ≃ₜ VectorBundleOrientationCover F E (Fin 1) :=
-  (Equiv.ofBijective _ ⟨sphereBundleOrientation_injective hF,
-      sphereBundleOrientation_surjective hF⟩).toHomeomorphOfContinuousOpen
-    (sphereBundleOrientation hF).continuous
-    (IsLocalHomeomorph.of_comp (g := VectorBundleOrientationCover.proj)
-      (by
-        rw [proj_comp_sphereBundleOrientation]
-        exact (isCoveringMap_sphereBundleProj F E hnorm hF).isLocalHomeomorph)
-      (VectorBundleOrientationCover.isCoveringMap_proj
-        ((Fintype.card_fin 1).trans hF.symm)).isLocalHomeomorph
-      (sphereBundleOrientation hF).continuous).isOpenMap
+  (IsLocalHomeomorph.of_comp (g := VectorBundleOrientationCover.proj)
+    (by
+      rw [proj_comp_sphereBundleOrientation]
+      exact (isCoveringMap_sphereBundleProj F E hnorm hF).isLocalHomeomorph)
+    (VectorBundleOrientationCover.isCoveringMap_proj
+      ((Fintype.card_fin 1).trans hF.symm)).isLocalHomeomorph
+    (sphereBundleOrientation hF).continuous).toHomeomorphOfBijective
+    ⟨sphereBundleOrientation_injective hF, sphereBundleOrientation_surjective hF⟩
 
 /-- The homeomorphism `S(E) ≃ₜ` orientation double cover is the orientation map. -/
 @[simp]
 theorem coe_sphereBundleOrientationHomeomorph :
     ⇑(sphereBundleOrientationHomeomorph hnorm hF) = sphereBundleOrientation hF :=
   (rfl)
+
+/-- The unit vector giving an orientation lies over the base point of the orientation. -/
+@[simp]
+theorem proj_sphereBundleOrientationHomeomorph_symm
+    (p : VectorBundleOrientationCover F E (Fin 1)) :
+    ((sphereBundleOrientationHomeomorph hnorm hF).symm p : TotalSpace F E).proj = p.proj := by
+  conv_rhs => rw [← (sphereBundleOrientationHomeomorph hnorm hF).apply_symm_apply p]
+  rw [coe_sphereBundleOrientationHomeomorph, proj_sphereBundleOrientation]
+
+/-- The unit vector giving the opposite orientation is the opposite unit vector. -/
+@[simp]
+theorem sphereBundleOrientationHomeomorph_symm_deck
+    (p : VectorBundleOrientationCover F E (Fin 1)) :
+    (sphereBundleOrientationHomeomorph hnorm hF).symm (VectorBundleOrientationCover.deck p) =
+      sphereBundleNeg F E ((sphereBundleOrientationHomeomorph hnorm hF).symm p) := by
+  rw [Homeomorph.symm_apply_eq, coe_sphereBundleOrientationHomeomorph,
+    sphereBundleOrientation_sphereBundleNeg, ← coe_sphereBundleOrientationHomeomorph hnorm hF,
+    Homeomorph.apply_symm_apply]
 
 include hnorm hF in
 /-- A line bundle whose fibre norm is continuous on the total space is orientable exactly when
@@ -195,13 +184,13 @@ theorem nonempty_vectorBundleOrientation_iff_exists_section_sphereBundle :
     Nonempty (VectorBundleOrientation F E (Fin 1)) ↔
       ∃ s : B → sphereBundle F E, Continuous s ∧ ∀ b, sphereBundleProj F E (s b) = b := by
   rw [VectorBundleOrientation.nonempty_iff_exists_section ((Fintype.card_fin 1).trans hF.symm)]
-  refine ⟨fun ⟨s, hs, hproj⟩ ↦ ⟨(sphereBundleOrientationHomeomorph hnorm hF).symm ∘ s,
-    (sphereBundleOrientationHomeomorph hnorm hF).symm.continuous.comp hs, fun b ↦ ?_⟩,
+  exact ⟨fun ⟨s, hs, hproj⟩ ↦ ⟨(sphereBundleOrientationHomeomorph hnorm hF).symm ∘ s,
+    (sphereBundleOrientationHomeomorph hnorm hF).symm.continuous.comp hs, fun b ↦ by
+      rw [Function.comp_apply, sphereBundleProj_apply, proj_sphereBundleOrientationHomeomorph_symm,
+        hproj]⟩,
     fun ⟨s, hs, hproj⟩ ↦ ⟨sphereBundleOrientation hF ∘ s,
       (sphereBundleOrientation hF).continuous.comp hs, fun b ↦ by
         rw [Function.comp_apply, proj_sphereBundleOrientation, ← sphereBundleProj_apply, hproj]⟩⟩
-  rw [Function.comp_apply, sphereBundleProj_apply, ← proj_sphereBundleOrientation hF,
-    ← coe_sphereBundleOrientationHomeomorph hnorm hF, Homeomorph.apply_symm_apply, hproj]
 
 include hnorm hF in
 /-- Over a connected base, a line bundle whose fibre norm is continuous on the total space is

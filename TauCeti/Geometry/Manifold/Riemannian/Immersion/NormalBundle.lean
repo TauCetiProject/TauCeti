@@ -13,6 +13,7 @@ import TauCeti.Geometry.Manifold.IsManifold.Basic
 import TauCeti.Geometry.Manifold.Riemannian.Immersion.Projection
 import TauCeti.Geometry.Manifold.VectorBundle.Pullback
 import TauCeti.Topology.Algebra.Module.BilinearForm
+import TauCeti.Topology.VectorBundle.Riemannian.Basic
 
 /-!
 # The orthogonal normal bundle of an immersion
@@ -55,7 +56,9 @@ is `C^k` (within a set) exactly when it is `C^k` into `f *ᵖ TN`
 (`TauCeti.contMDiffWithinAt_orthogonalNormalSpace_mk_iff`), or when its base point is `C^k` and it
 is `C^k` into `TN` (`TauCeti.contMDiffWithinAt_orthogonalNormalSpace_mk_iff_tangentBundle`). The
 orthogonal projection of `f *ᵖ TN` onto `ν_f` is `C^m`
-(`TauCeti.contMDiff_orthogonalProjectionOnto_orthogonalNormalSpace`). No compactness, injectivity
+(`TauCeti.contMDiff_orthogonalProjectionOnto_orthogonalNormalSpace`). For a continuous metric, the
+fibre norm of `ν_f` is continuous on its total space
+(`TauCeti.continuous_norm_orthogonalNormalSpace`). No compactness, injectivity
 of `f`, boundarylessness or choice of normal frame is assumed. The identity map has zero normal
 spaces and a constant map has the whole ambient tangent space as normal space
 (`TauCeti.orthogonalNormalSpace_id`, `TauCeti.orthogonalNormalSpace_const`).
@@ -609,5 +612,20 @@ theorem contMDiff_orthogonalProjectionOnto_orthogonalNormalSpace {r : ℕ} {f : 
       ((orthogonalNormalSpace I J f q.proj).starProjection_apply (q.snd : TangentSpace J _)).symm
   exact contMDiffAt_orthogonalNormalSpace_mk hf hinj hm hr le_rfl hw
     fun q ↦ ((orthogonalNormalSpace I J f q.proj).orthogonalProjectionOnto q.snd).property
+
+omit [FiniteDimensional ℝ V] [IsManifold I 1 M] in
+/-- The fibre norm of the normal spaces of a map `f`, the norm of the ambient metric, is
+continuous on their total space with the subspace topology of `f *ᵖ TN`, for any model fibre. -/
+theorem continuous_norm_orthogonalNormalSpace
+    [IsContinuousRiemannianBundle V (fun y : N ↦ TangentSpace J y)] (P : Type*) (f : M → N) :
+    Continuous fun v : TotalSpace P (fun x ↦ orthogonalNormalSpace I J f x) ↦ ‖v.snd‖ := by
+  have h : Continuous fun v : TotalSpace P (fun x ↦ orthogonalNormalSpace I J f x) ↦
+      (⟨v.proj, (v.snd : TangentSpace J (f v.proj))⟩ :
+        TotalSpace V ((f : M → N) *ᵖ (TangentSpace J))) :=
+    Topology.IsEmbedding.continuous (X := TotalSpace P fun x ↦ orthogonalNormalSpace I J f x)
+      (isEmbedding_totalSpace_subbundle V (E := (f : M → N) *ᵖ (TangentSpace J)) P
+        (orthogonalNormalSpace I J f))
+  exact (continuous_norm_bundle V (fun y : N ↦ TangentSpace J y)).comp
+    ((Pullback.continuous_lift (F := V) (E := TangentSpace J) f).comp h)
 
 end TauCeti
