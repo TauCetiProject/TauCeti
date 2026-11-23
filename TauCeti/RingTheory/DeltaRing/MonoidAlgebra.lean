@@ -261,13 +261,13 @@ nonzerodivisor: its Frobenius sends `∑ aₘ m` to `∑ φ(aₘ) m ^ p`, and
 `δ (single m a) = single (m ^ p) (δ a)` (`delta_single_monoidAlgebra`). -/
 @[instance_reducible]
 noncomputable def monoidAlgebra (hA : IsRegular (p : A)) : DeltaRing p A[M] :=
-  ofFrobeniusLift (isRegular_natCast hA) _
+  ofFrobeniusLift (MonoidAlgebra.isRegular_natCast_iff.mpr hA) _
     (isFrobeniusLift_monoidAlgebra p A M)
 
 /-- The `δ`-structure `monoidAlgebra M hA` satisfies `δ (single m a) = single (m ^ p) (δ a)`. -/
 theorem delta_single_monoidAlgebra (hA : IsRegular (p : A)) (m : M) (a : A) :
     @delta p _ _ (monoidAlgebra M hA) (single m a) = single (m ^ p) (delta p a) := by
-  apply (isRegular_natCast (M := M) hA).left
+  apply (MonoidAlgebra.isRegular_natCast_iff (M := M) |>.mpr hA).left
   dsimp only
   rw [natCast_mul_delta_ofFrobeniusLift]
   exact mapDomainRingHom_comp_mapRingHom_frobenius_single_sub_pow m a
