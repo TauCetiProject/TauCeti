@@ -111,6 +111,25 @@ theorem piLeft_symm_single (i : ι) (a : A i) (b : B) :
   exact (Pi.apply_single (fun j (x : A j) ↦ x ⊗ₜ[R] b) (fun _ ↦ TensorProduct.zero_tmul _ _)
     i a j).symm
 
+/-- The `i`-th coordinate of `piLeft R A B x` is the image of `x` under the coordinate projection
+`∀ i, A i → A i` tensored with the identity of `B`. -/
+@[simp]
+theorem piLeft_apply (x : (∀ i, A i) ⊗[R] B) (i : ι) :
+    piLeft R A B x i =
+      Algebra.TensorProduct.map (Pi.evalAlgHom R A i) (AlgHom.id R B) x := by
+  induction x with
+  | tmul a b => simp
+  | add x y hx hy => simp [hx, hy]
+
+/-- The inverse of `piLeft` sends `Pi.single i x` to the image of `x` under the inclusion
+`A i → ∀ i, A i` tensored with the identity of `B`. -/
+theorem piLeft_symm_single_eq_map (i : ι) (x : A i ⊗[R] B) :
+    (piLeft R A B).symm (Pi.single i x) =
+      TensorProduct.map (LinearMap.single R A i) LinearMap.id x := by
+  induction x with
+  | tmul a b => simp
+  | add x y hx hy => simp [Pi.single_add, hx, hy]
+
 end piLeft
 
 end TauCeti.Algebra.TensorProduct
