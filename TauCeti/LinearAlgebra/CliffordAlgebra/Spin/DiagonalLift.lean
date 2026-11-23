@@ -147,28 +147,14 @@ theorem diagSpinLift_specialOrthogonalGroupProd {M₁ M₂ : Type*} [AddCommGrou
   obtain ⟨x₂, rfl⟩ := hsurj₂ A₂
   rw [← spinToSpecialOrthogonal_spinGroupProd Q₁ Q₂ (x₁, x₂), diagSpinLift_spinToSpecialOrthogonal,
     diagSpinLift_spinToSpecialOrthogonal, diagSpinLift_spinToSpecialOrthogonal]
-  -- The block permutation carries each of the four summand inclusions to the corresponding one.
-  have h₁ : (IsometryEquiv.prodProdProdComm Q₁ Q₁ Q₂ Q₂).toIsometry.comp
-      ((Isometry.inl (Q₁.prod Q₁) (Q₂.prod Q₂)).comp (Isometry.inl Q₁ Q₁)) =
-      (Isometry.inl (Q₁.prod Q₂) (Q₁.prod Q₂)).comp (Isometry.inl Q₁ Q₂) :=
-    Isometry.ext fun _ ↦ by simp
-  have h₂ : (IsometryEquiv.prodProdProdComm Q₁ Q₁ Q₂ Q₂).toIsometry.comp
-      ((Isometry.inl (Q₁.prod Q₁) (Q₂.prod Q₂)).comp (Isometry.inr Q₁ Q₁)) =
-      (Isometry.inr (Q₁.prod Q₂) (Q₁.prod Q₂)).comp (Isometry.inl Q₁ Q₂) :=
-    Isometry.ext fun _ ↦ by simp
-  have h₃ : (IsometryEquiv.prodProdProdComm Q₁ Q₁ Q₂ Q₂).toIsometry.comp
-      ((Isometry.inr (Q₁.prod Q₁) (Q₂.prod Q₂)).comp (Isometry.inl Q₂ Q₂)) =
-      (Isometry.inl (Q₁.prod Q₂) (Q₁.prod Q₂)).comp (Isometry.inr Q₁ Q₂) :=
-    Isometry.ext fun _ ↦ by simp
-  have h₄ : (IsometryEquiv.prodProdProdComm Q₁ Q₁ Q₂ Q₂).toIsometry.comp
-      ((Isometry.inr (Q₁.prod Q₁) (Q₂.prod Q₂)).comp (Isometry.inr Q₂ Q₂)) =
-      (Isometry.inr (Q₁.prod Q₂) (Q₁.prod Q₂)).comp (Isometry.inr Q₁ Q₂) :=
-    Isometry.ext fun _ ↦ by simp
   have hc := commute_spinGroupMap_inl_spinGroupMap_inr (Q₁.prod Q₂) (Q₁.prod Q₂)
     ((Isometry.inr Q₁ Q₂).spinGroupMap x₂) ((Isometry.inl Q₁ Q₂).spinGroupMap x₁)
   simp only [Isometry.spinGroupMap_spinGroupMap] at hc
   simp only [IsometryEquiv.spinGroupEquiv_apply, spinGroupProd_apply, map_mul,
-    Isometry.spinGroupMap_spinGroupMap, h₁, h₂, h₃, h₄]
+    Isometry.spinGroupMap_spinGroupMap, IsometryEquiv.prodProdProdComm_comp_inl_comp_inl,
+    IsometryEquiv.prodProdProdComm_comp_inl_comp_inr,
+    IsometryEquiv.prodProdProdComm_comp_inr_comp_inl,
+    IsometryEquiv.prodProdProdComm_comp_inr_comp_inr]
   exact hc.mul_mul_mul_comm _ _
 
 /-- **The one-block inclusion `A ↦ A ⊕ 1` has no Spin lift.** If `Q` has an orthogonal pair `u, w`
