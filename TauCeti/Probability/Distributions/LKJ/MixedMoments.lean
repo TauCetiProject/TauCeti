@@ -52,8 +52,8 @@ covariances between distinct strict-lower-triangle entries.
   `TauCeti.Probability.integral_prod_pow_coe_apply_perm_lkjMeasure`,
   `TauCeti.Probability.integral_prod_pow_coe_apply_lkjMeasure_eq_zero_of_odd`, and
   `TauCeti.Probability.integral_prod_pow_coe_apply_lkjMeasure_of_diag`: diagonal-exponent
-  invariance, permutation invariance, odd-degree vanishing, and diagonal-supported unit
-  evaluations of mixed moments;
+  invariance, permutation invariance, odd-degree vanishing, and unit evaluation of mixed moments
+  when all off-diagonal exponents vanish;
 * `TauCeti.Probability.integral_pow_coe_apply_lkjMeasure_of_ne` and
   `TauCeti.Probability.integral_pow_coe_apply_lkjMeasure`: single-entry moments of all natural
   orders (with unexponentiated first moments re-exported from
@@ -390,7 +390,8 @@ theorem integral_pow_coe_apply_lkjMeasure {p : ℕ} {η : ℝ} (hη : 0 < η)
     simp [integral_pow_coe_apply_self_lkjMeasure hη]
   · simp [hij, integral_pow_coe_apply_lkjMeasure_of_ne hη hij]
 
-/-- At positive shape, any mixed entry moment supported on the diagonal equals one. -/
+/-- At positive shape, any mixed entry moment equals one when all off-diagonal exponents
+vanish. -/
 theorem integral_prod_pow_coe_apply_lkjMeasure_of_diag {p : ℕ} {η : ℝ} (hη : 0 < η)
     {n : Fin p × Fin p → ℕ} (hdiag : ∀ ab, n ab ≠ 0 → ab.1 = ab.2) :
     ∫ R : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ),
@@ -415,6 +416,13 @@ private theorem integral_triangle_lkjMeasure_three {η : ℝ} (hη : 0 < η) :
     Pi.single ((2 : Fin 3), (1 : Fin 3)) 1 +
       Pi.single ((2 : Fin 3), (0 : Fin 3)) 1 +
       Pi.single ((1 : Fin 3), (0 : Fin 3)) 1
+  let S : Finset (Fin 3 × Fin 3) := {((2 : Fin 3), (1 : Fin 3)), (2, 0), (1, 0)}
+  have hn_zero {ij : Fin 3 × Fin 3} (hij : ij ∉ S) : n ij = 0 := by
+    simp only [S, Finset.mem_insert, Finset.mem_singleton, not_or] at hij
+    simp [n, hij.1, hij.2.1, hij.2.2]
+  have hn_one {ij : Fin 3 × Fin 3} (hij : ij ∈ S) : n ij = 1 := by
+    simp only [S, Finset.mem_insert, Finset.mem_singleton] at hij
+    rcases hij with rfl | rfl | rfl <;> decide
   have hprod (R : selfAdjoint.submodule ℝ (Matrix (Fin 3) (Fin 3) ℝ)) :
       (R : Matrix (Fin 3) (Fin 3) ℝ) 2 1 * (R : Matrix (Fin 3) (Fin 3) ℝ) 2 0 *
           (R : Matrix (Fin 3) (Fin 3) ℝ) 1 0 =
@@ -437,27 +445,14 @@ private theorem integral_triangle_lkjMeasure_three {η : ℝ} (hη : 0 < η) :
       Fin.le_zero_iff.mp (c (2, 0) ⟨0, by decide⟩).property
     have hc10 : (c (1, 0) ⟨0, by decide⟩ : Fin 3) = 0 :=
       Fin.le_zero_iff.mp (c (1, 0) ⟨0, by decide⟩).property
-    rw [mulTransposeExpansionPower_eq_sum, Fintype.sum_prod_type, Fin.sum_univ_three,
-      Fin.sum_univ_three, Fin.sum_univ_three, Fin.sum_univ_three]
-    have h0 (ij : Fin 3 × Fin 3) (hn : n ij = 0) :
-        (∑ r : Fin (n ij), ((if (ij.1, (c ij r : Fin 3)) = q then 1 else 0) +
-          if (ij.2, (c ij r : Fin 3)) = q then 1 else 0)) = 0 := by
-      simp [hn]
-    have h1 (ij : Fin 3 × Fin 3) (hn : n ij = 1) :
-        (∑ r : Fin (n ij), ((if (ij.1, (c ij r : Fin 3)) = q then 1 else 0) +
-          if (ij.2, (c ij r : Fin 3)) = q then 1 else 0)) =
-          ((if (ij.1, (c ij ⟨0, by omega⟩ : Fin 3)) = q then 1 else 0) +
-            if (ij.2, (c ij ⟨0, by omega⟩ : Fin 3)) = q then 1 else 0) := by
-      rw [Finset.sum_eq_single ⟨0, by omega⟩]
-      · intro r _ hr
-        exfalso
-        exact hr (Fin.ext (by omega))
-      · simp
-    rw [h0 (0, 0) (by decide), h0 (0, 1) (by decide), h0 (0, 2) (by decide),
-      h1 (1, 0) (by decide), h0 (1, 1) (by decide), h0 (1, 2) (by decide),
-      h1 (2, 0) (by decide), h1 (2, 1) (by decide), h0 (2, 2) (by decide),
-      hc20, hc10]
-    simp only [zero_add, add_zero]
+    have h1 {ij : Fin 3 × Fin 3} (hij : ij ∈ S) (f : Fin (n ij) → ℕ) :
+        (∑ r, f r) = f ⟨0, by have := hn_one hij; omega⟩ := by
+      rw [← Equiv.sum_comp (finCongr (hn_one hij)).symm, Fin.sum_univ_one]
+      rfl
+    rw [mulTransposeExpansionPower_eq_sum,
+      ← Finset.sum_subset (Finset.subset_univ S) fun ij _ hij ↦ by simp [hn_zero hij],
+      Finset.sum_insert (by decide), Finset.sum_insert (by decide), Finset.sum_singleton,
+      h1 (by decide), h1 (by decide), h1 (by decide), hc20, hc10]
     abel
   rw [Finset.sum_eq_single c₀]
   · have hres (ij : strictLowerTriangle 3) :
@@ -481,15 +476,10 @@ private theorem integral_triangle_lkjMeasure_three {η : ℝ} (hη : 0 < η) :
     have h10pos := lkjPartialCorrelationShape_pos hη z10
     have h20pos := lkjPartialCorrelationShape_pos hη z20
     have h21pos := lkjPartialCorrelationShape_pos hη z21
-    have hbeta (a : ℝ) (ha : 0 < a) :
-        beta (((2 : ℕ) + 1) / 2) a / beta (1 / 2) a = 1 / (2 * a + 1) := by
-      have hb : beta (1 / 2) a ≠ 0 := (beta_pos (by norm_num) ha).ne'
-      rw [show (((2 : ℕ) : ℝ) + 1) / 2 = (1 / 2 : ℝ) + 1 by norm_num,
-        beta_add_one_left (by norm_num) (by positivity), mul_div_cancel_right₀ _ hb]
-      field_simp
-      ring
     simp only [show Even 2 by decide, show Even 0 by decide, ↓reduceIte, Nat.cast_zero, zero_add]
-    rw [hbeta _ h10pos, hbeta _ h20pos, div_self (beta_pos (by norm_num) h21pos).ne',
+    rw [show (((2 : ℕ) : ℝ) + 1) / 2 = (1 / 2 : ℝ) + 1 by norm_num,
+      beta_add_one_left_div (by norm_num) h10pos, beta_add_one_left_div (by norm_num) h20pos,
+      div_self (beta_pos (by norm_num) h21pos).ne',
       lkjPartialCorrelationShape_eq, lkjPartialCorrelationShape_eq]
     norm_num [z10, z20]
     field_simp
@@ -499,16 +489,14 @@ private theorem integral_triangle_lkjMeasure_three {η : ℝ} (hη : 0 < η) :
       by_contra hne
       apply hc
       ext ij r
-      have hn1 : ij = (2, 1) ∨ ij = (2, 0) ∨ ij = (1, 0) := by
+      have hij : ij ∈ S := by
         by_contra hnot
-        have hzero : n ij = 0 := by
-          simp only [n, Pi.add_apply, Pi.single_apply]
-          aesop
+        have hzero := hn_zero hnot
         exact absurd r.isLt (by omega)
-      rcases hn1 with rfl | rfl | rfl
-      · have hn21 : n (2, 1) = 1 := by decide
-        have hr0 : r = ⟨0, by decide⟩ := Fin.ext (by have := r.isLt; omega)
-        subst hr0
+      simp only [S, Finset.mem_insert, Finset.mem_singleton] at hij
+      rcases hij with rfl | rfl | rfl
+      · have hr0 : r = ⟨0, by decide⟩ := Fin.fin_one_eq_zero r
+        rw [hr0]
         have hle : ((c (2, 1) ⟨0, by decide⟩ : Fin 3) : ℕ) ≤ 1 :=
           (c (2, 1) ⟨0, by decide⟩).property
         have hne' : ((c (2, 1) ⟨0, by decide⟩ : Fin 3) : ℕ) ≠ 1 := fun h ↦ hne (Fin.ext h)
