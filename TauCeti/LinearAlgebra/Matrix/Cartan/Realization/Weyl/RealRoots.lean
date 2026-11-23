@@ -24,13 +24,13 @@ presentation `α = w(αᵢ)`, yielding the canonical **real coroot** `α^∨ = w
 
 * `R.realCoroot` agrees with `R.ambientAction _ w (R.coroot i)` for every `w, i` with `w(αᵢ) = α`
   (`TauCeti.CartanRealization.realCoroot_eq_of_apply_root`), is `W`-equivariant (`(w α)^∨ = w(α^∨)`,
-  `TauCeti.CartanRealization.realCoroot_apply`), and satisfies `(-α)^∨ = -α^∨`
-  (`TauCeti.CartanRealization.realCoroot_neg`);
+  `TauCeti.CartanRealization.realCoroot_weylGroup_apply_eq_ambientAction`), and satisfies
+  `(-α)^∨ = -α^∨` (`TauCeti.CartanRealization.realCoroot_neg`);
 * `R.realReflection` agrees with `w sᵢ w⁻¹` for every `w, i` with `w(αᵢ) = α`
   (`TauCeti.CartanRealization.realReflection_eq_of_apply_root`), conjugates equivariantly
-  (`s_{w α} = w s_α w⁻¹`, `TauCeti.CartanRealization.realReflection_apply_eq_conj`), satisfies
-  `s_{-α} = s_α` (`TauCeti.CartanRealization.realReflection_neg`), and acts as the reflection
-  `φ ↦ φ - φ(α^∨) α` (`TauCeti.CartanRealization.realReflection_apply`).
+  (`s_{w α} = w s_α w⁻¹`, `TauCeti.CartanRealization.realReflection_weylGroup_apply_eq_conj`),
+  satisfies `s_{-α} = s_α` (`TauCeti.CartanRealization.realReflection_neg`), and acts as the
+  reflection `φ ↦ φ - φ(α^∨) α` (`TauCeti.CartanRealization.realReflection_apply`).
 
 ## Main definitions
 
@@ -44,11 +44,12 @@ presentation `α = w(αᵢ)`, yielding the canonical **real coroot** `α^∨ = w
 
 * `TauCeti.CartanRealization.mem_posRootCone_or_neg_mem_posRootCone_of_mem_realRoots`: every real
   root is either positive (`∈ Q₊`) or negative (`∈ -Q₊`).
-* `TauCeti.CartanRealization.realCoroot_apply_root`,
-  `TauCeti.CartanRealization.realCoroot_apply`, `TauCeti.CartanRealization.realCoroot_neg`:
+* `TauCeti.CartanRealization.realCoroot_eq_ambientAction_coroot`,
+  `TauCeti.CartanRealization.realCoroot_weylGroup_apply_eq_ambientAction`,
+  `TauCeti.CartanRealization.realCoroot_neg`:
   presentation-independence, Weyl equivariance, and sign behavior of real coroots.
-* `TauCeti.CartanRealization.realReflection_apply_root`,
-  `TauCeti.CartanRealization.realReflection_apply_eq_conj`,
+* `TauCeti.CartanRealization.realReflection_eq_conj_weylSimple`,
+  `TauCeti.CartanRealization.realReflection_weylGroup_apply_eq_conj`,
   `TauCeti.CartanRealization.realReflection_neg`,
   `TauCeti.CartanRealization.isReflection_realReflection`: presentation-independence, Weyl
   conjugation equivariance, sign invariance, and Coxeter reflection property of real reflections.
@@ -73,6 +74,17 @@ section RealRootsBasic
 variable {I K H : Type*} [Field K] [AddCommGroup H] [Module K H]
   {A : Matrix I I K} (R : CartanRealization A H) (hA : ∀ i, A i i = 2)
 
+private theorem coe_mul_apply (w u : R.weylGroup hA) (φ : Dual K H) :
+    ((w * u : R.weylGroup hA) : Dual K H ≃ₗ[K] Dual K H) φ =
+      (w : Dual K H ≃ₗ[K] Dual K H) ((u : Dual K H ≃ₗ[K] Dual K H) φ) := by
+  rw [Subgroup.coe_mul, mul_apply_eq_comp]
+
+/-- Multiplying `w` on the right by `sᵢ` negates `w(αᵢ)`. -/
+theorem mul_weylSimple_apply_root (w : R.weylGroup hA) (i : I) :
+    ((w * R.weylSimple hA i : R.weylGroup hA) : Dual K H ≃ₗ[K] Dual K H) (R.root i) =
+      -((w : Dual K H ≃ₗ[K] Dual K H) (R.root i)) := by
+  simp [mul_apply_eq_comp]
+
 /-- Conjugating `sᵢ` by `w` reflects along `w(αᵢ)` and `w(hᵢ)`. -/
 theorem conj_weylSimple_apply (w : R.weylGroup hA) (i : I) (φ : Dual K H) :
     ((w * R.weylSimple hA i * w⁻¹ : R.weylGroup hA) : Dual K H ≃ₗ[K] Dual K H) φ =
@@ -82,10 +94,8 @@ theorem conj_weylSimple_apply (w : R.weylGroup hA) (i : I) (φ : Dual K H) :
     simpleReflection_apply, map_sub, map_smul]
   have hval : ((w : Dual K H ≃ₗ[K] Dual K H)⁻¹ φ) (R.coroot i) =
       φ (R.ambientAction hA w (R.coroot i)) := by
-    change ((w⁻¹ : R.weylGroup hA) : Dual K H ≃ₗ[K] Dual K H) φ (R.coroot i) = _
-    rw [R.weylGroup_apply_apply hA w⁻¹ φ (R.coroot i), inv_inv]
-  rw [hval]
-  change ((w * w⁻¹ : R.weylGroup hA) : Dual K H ≃ₗ[K] Dual K H) φ - _ = _
+    rw [← Subgroup.coe_inv, R.weylGroup_apply_apply hA w⁻¹ φ (R.coroot i), inv_inv]
+  rw [hval, ← mul_apply_eq_comp, mul_inv_cancel]
   simp
 
 /-- The **real roots** `Φ^re = W · {αᵢ}` of the realization. -/
@@ -121,8 +131,7 @@ theorem neg_mem_realRoots_iff {α : Dual K H} :
     -α ∈ R.realRoots hA ↔ α ∈ R.realRoots hA := by
   have hmaps {β : Dual K H} (hβ : β ∈ R.realRoots hA) : -β ∈ R.realRoots hA := by
     obtain ⟨w, i, rfl⟩ := hβ
-    refine ⟨w * R.weylSimple hA i, i, ?_⟩
-    simp [mul_apply_eq_comp]
+    exact ⟨w * R.weylSimple hA i, i, R.mul_weylSimple_apply_root hA w i⟩
   exact ⟨fun h ↦ by simpa using hmaps h, hmaps⟩
 
 /-- Every real root is nonzero. -/
@@ -177,10 +186,7 @@ private theorem conj_weylSimple_eq_of_apply_root_eq (hdiag : ∀ i, A i i = 2)
   have huj : (u : Dual K H ≃ₗ[K] Dual K H) (R.root j) = R.root i := by
     simp [u, mul_apply_eq_comp, ← hw]
   have huinv_i : (u⁻¹ : Dual K H ≃ₗ[K] Dual K H) (R.root i) = R.root j := by
-    rw [← huj]
-    change ((u⁻¹ * u : R.weylGroup (diag_map_intCast hdiag)) :
-      Dual K H ≃ₗ[K] Dual K H) (R.root j) = R.root j
-    simp
+    rw [← huj, ← mul_apply_eq_comp, inv_mul_cancel, one_apply_eq_self]
   have hnd_uj : ¬ cs.IsRightDescent u j :=
     (R.not_isRightDescent_weylCoxeterSystem_iff hdiag hoff hzero u j).mpr
       (huj ▸ R.root_mem_posRootCone i)
@@ -251,7 +257,7 @@ private theorem exists_realCoroot (hdiag : ∀ i, A i i = 2)
 `α ∈ R.realRoots (diag_map_intCast hdiag)` of a generalized Cartan matrix over a
 characteristic-zero field. It equals `w(hᵢ)` for every presentation `α = w(αᵢ)` (see
 `TauCeti.CartanRealization.realCoroot_eq_of_apply_root` and
-`TauCeti.CartanRealization.realCoroot_apply_root`). -/
+`TauCeti.CartanRealization.realCoroot_eq_ambientAction_coroot`). -/
 noncomputable def realCoroot (hdiag : ∀ i, A i i = 2)
     (hoff : ∀ i j, i ≠ j → A i j ≤ 0) (hzero : ∀ i j, A i j = 0 ↔ A j i = 0)
     {α : Dual K H} (hα : α ∈ R.realRoots (diag_map_intCast hdiag)) : H :=
@@ -269,7 +275,7 @@ theorem realCoroot_eq_of_apply_root (hdiag : ∀ i, A i i = 2)
 
 /-- `(w αᵢ)^∨ = w(hᵢ)`, independently of the presentation of the real root. -/
 @[simp]
-theorem realCoroot_apply_root (hdiag : ∀ i, A i i = 2)
+theorem realCoroot_eq_ambientAction_coroot (hdiag : ∀ i, A i i = 2)
     (hoff : ∀ i j, i ≠ j → A i j ≤ 0) (hzero : ∀ i j, A i j = 0 ↔ A j i = 0)
     (w : R.weylGroup (diag_map_intCast hdiag)) (i : I)
     (hα : (w : Dual K H ≃ₗ[K] Dual K H) (R.root i) ∈ R.realRoots (diag_map_intCast hdiag) :=
@@ -285,7 +291,7 @@ theorem apply_realCoroot_self (hdiag : ∀ i, A i i = 2)
     {α : Dual K H} (hα : α ∈ R.realRoots (diag_map_intCast hdiag)) :
     α (R.realCoroot hdiag hoff hzero hα) = 2 := by
   obtain ⟨w, i, rfl⟩ := hα
-  rw [R.realCoroot_apply_root hdiag hoff hzero w i,
+  rw [R.realCoroot_eq_ambientAction_coroot hdiag hoff hzero w i,
     R.apply_ambientAction (diag_map_intCast hdiag), R.root_coroot_two (diag_map_intCast hdiag)]
 
 @[simp]
@@ -297,7 +303,7 @@ theorem realCoroot_root (hdiag : ∀ i, A i i = 2)
       (w := 1) (i := i) (by simp), map_one, one_apply_eq_self]
 
 /-- **Equivariance of real coroots**: `(w α)^∨ = w(α^∨)`. -/
-theorem realCoroot_apply (hdiag : ∀ i, A i i = 2)
+theorem realCoroot_weylGroup_apply_eq_ambientAction (hdiag : ∀ i, A i i = 2)
     (hoff : ∀ i j, i ≠ j → A i j ≤ 0) (hzero : ∀ i j, A i j = 0 ↔ A j i = 0)
     (w : R.weylGroup (diag_map_intCast hdiag)) {α : Dual K H}
     (hα : α ∈ R.realRoots (diag_map_intCast hdiag)) :
@@ -305,11 +311,9 @@ theorem realCoroot_apply (hdiag : ∀ i, A i i = 2)
         ((R.apply_mem_realRoots_iff (diag_map_intCast hdiag) w).mpr hα) =
       R.ambientAction (diag_map_intCast hdiag) w (R.realCoroot hdiag hoff hzero hα) := by
   obtain ⟨u, i, rfl⟩ := hα
-  have hwu : ((w * u : R.weylGroup (diag_map_intCast hdiag)) : Dual K H ≃ₗ[K] Dual K H)
-      (R.root i) = (w : Dual K H ≃ₗ[K] Dual K H) ((u : Dual K H ≃ₗ[K] Dual K H) (R.root i)) :=
-    rfl
-  rw [R.realCoroot_eq_of_apply_root hdiag hoff hzero _ hwu, map_mul, mul_apply_eq_comp,
-    R.realCoroot_apply_root hdiag hoff hzero u i]
+  rw [R.realCoroot_eq_of_apply_root hdiag hoff hzero _
+      (R.coe_mul_apply (diag_map_intCast hdiag) w u (R.root i)),
+    map_mul, mul_apply_eq_comp, R.realCoroot_eq_ambientAction_coroot hdiag hoff hzero u i]
 
 /-- Negating a real root negates its real coroot: `(-α)^∨ = -α^∨`. -/
 @[simp]
@@ -322,13 +326,10 @@ theorem realCoroot_neg (hdiag : ∀ i, A i i = 2)
   have hmem : α ∈ R.realRoots (diag_map_intCast hdiag) :=
     (R.neg_mem_realRoots_iff (diag_map_intCast hdiag)).mp hα
   obtain ⟨w, i, rfl⟩ := hmem
-  rw [R.realCoroot_apply_root hdiag hoff hzero w i]
-  have hneg : ((w * R.weylSimple (diag_map_intCast hdiag) i :
-      R.weylGroup (diag_map_intCast hdiag)) : Dual K H ≃ₗ[K] Dual K H) (R.root i) =
-      -((w : Dual K H ≃ₗ[K] Dual K H) (R.root i)) := by
-    simp [mul_apply_eq_comp]
-  rw [R.realCoroot_eq_of_apply_root hdiag hoff hzero hα hneg, map_mul, mul_apply_eq_comp,
-    ambientAction_weylSimple, simpleCoreflection_coroot_self, map_neg]
+  rw [R.realCoroot_eq_ambientAction_coroot hdiag hoff hzero w i,
+    R.realCoroot_eq_of_apply_root hdiag hoff hzero hα
+      (R.mul_weylSimple_apply_root (diag_map_intCast hdiag) w i),
+    map_mul, mul_apply_eq_comp, ambientAction_weylSimple, simpleCoreflection_coroot_self, map_neg]
 
 /-- Existence of a presentation-independent real reflection for `α`. -/
 private theorem exists_realReflection (hdiag : ∀ i, A i i = 2)
@@ -346,7 +347,7 @@ private theorem exists_realReflection (hdiag : ∀ i, A i i = 2)
 `α ∈ R.realRoots (diag_map_intCast hdiag)`** (not defined for imaginary roots) of a generalized
 Cartan matrix over a characteristic-zero field. It equals `w sᵢ w⁻¹` for every presentation
 `α = w(αᵢ)` (see `TauCeti.CartanRealization.realReflection_eq_of_apply_root` and
-`TauCeti.CartanRealization.realReflection_apply_root`). -/
+`TauCeti.CartanRealization.realReflection_eq_conj_weylSimple`). -/
 noncomputable def realReflection (hdiag : ∀ i, A i i = 2)
     (hoff : ∀ i j, i ≠ j → A i j ≤ 0) (hzero : ∀ i j, A i j = 0 ↔ A j i = 0)
     {α : Dual K H} (hα : α ∈ R.realRoots (diag_map_intCast hdiag)) :
@@ -366,7 +367,7 @@ theorem realReflection_eq_of_apply_root (hdiag : ∀ i, A i i = 2)
 /-- The reflection attached to `w(αᵢ)` equals `w sᵢ w⁻¹`, independently of the presentation of the
 real root. -/
 @[simp]
-theorem realReflection_apply_root (hdiag : ∀ i, A i i = 2)
+theorem realReflection_eq_conj_weylSimple (hdiag : ∀ i, A i i = 2)
     (hoff : ∀ i j, i ≠ j → A i j ≤ 0) (hzero : ∀ i j, A i j = 0 ↔ A j i = 0)
     (w : R.weylGroup (diag_map_intCast hdiag)) (i : I)
     (hα : (w : Dual K H ≃ₗ[K] Dual K H) (R.root i) ∈ R.realRoots (diag_map_intCast hdiag) :=
@@ -383,8 +384,8 @@ theorem realReflection_apply (hdiag : ∀ i, A i i = 2)
         Dual K H ≃ₗ[K] Dual K H) φ =
       φ - φ (R.realCoroot hdiag hoff hzero hα) • α := by
   obtain ⟨w, i, rfl⟩ := hα
-  rw [R.realReflection_apply_root hdiag hoff hzero w i,
-    R.realCoroot_apply_root hdiag hoff hzero w i,
+  rw [R.realReflection_eq_conj_weylSimple hdiag hoff hzero w i,
+    R.realCoroot_eq_ambientAction_coroot hdiag hoff hzero w i,
     R.conj_weylSimple_apply (diag_map_intCast hdiag)]
 
 @[simp]
@@ -402,7 +403,7 @@ theorem realReflection_mul_self (hdiag : ∀ i, A i i = 2)
     {α : Dual K H} (hα : α ∈ R.realRoots (diag_map_intCast hdiag)) :
     R.realReflection hdiag hoff hzero hα * R.realReflection hdiag hoff hzero hα = 1 := by
   obtain ⟨w, i, rfl⟩ := hα
-  rw [R.realReflection_apply_root hdiag hoff hzero w i]
+  rw [R.realReflection_eq_conj_weylSimple hdiag hoff hzero w i]
   simp only [mul_assoc, inv_mul_cancel_left]
   rw [← mul_assoc _ _ w⁻¹, R.weylSimple_mul_self, one_mul, mul_inv_cancel]
 
@@ -422,7 +423,7 @@ theorem realReflection_root (hdiag : ∀ i, A i i = 2)
       (w := 1) (i := i) (by simp), one_mul, inv_one, mul_one]
 
 /-- **Weyl equivariance of real reflections**: `s_{w α} = w * s_α * w⁻¹`. -/
-theorem realReflection_apply_eq_conj (hdiag : ∀ i, A i i = 2)
+theorem realReflection_weylGroup_apply_eq_conj (hdiag : ∀ i, A i i = 2)
     (hoff : ∀ i j, i ≠ j → A i j ≤ 0) (hzero : ∀ i j, A i j = 0 ↔ A j i = 0)
     (w : R.weylGroup (diag_map_intCast hdiag)) {α : Dual K H}
     (hα : α ∈ R.realRoots (diag_map_intCast hdiag)) :
@@ -430,11 +431,9 @@ theorem realReflection_apply_eq_conj (hdiag : ∀ i, A i i = 2)
         ((R.apply_mem_realRoots_iff (diag_map_intCast hdiag) w).mpr hα) =
       w * R.realReflection hdiag hoff hzero hα * w⁻¹ := by
   obtain ⟨u, i, rfl⟩ := hα
-  have hwu : ((w * u : R.weylGroup (diag_map_intCast hdiag)) : Dual K H ≃ₗ[K] Dual K H)
-      (R.root i) = (w : Dual K H ≃ₗ[K] Dual K H) ((u : Dual K H ≃ₗ[K] Dual K H) (R.root i)) :=
-    rfl
-  rw [R.realReflection_eq_of_apply_root hdiag hoff hzero _ hwu,
-    R.realReflection_apply_root hdiag hoff hzero u i]
+  rw [R.realReflection_eq_of_apply_root hdiag hoff hzero _
+      (R.coe_mul_apply (diag_map_intCast hdiag) w u (R.root i)),
+    R.realReflection_eq_conj_weylSimple hdiag hoff hzero u i]
   simp [mul_assoc]
 
 /-- Negating a real root preserves its real reflection: `s_{-α} = s_α`. -/
@@ -448,12 +447,9 @@ theorem realReflection_neg (hdiag : ∀ i, A i i = 2)
   have hmem : α ∈ R.realRoots (diag_map_intCast hdiag) :=
     (R.neg_mem_realRoots_iff (diag_map_intCast hdiag)).mp hα
   obtain ⟨w, i, rfl⟩ := hmem
-  rw [R.realReflection_apply_root hdiag hoff hzero w i]
-  have hneg : ((w * R.weylSimple (diag_map_intCast hdiag) i :
-      R.weylGroup (diag_map_intCast hdiag)) : Dual K H ≃ₗ[K] Dual K H) (R.root i) =
-      -((w : Dual K H ≃ₗ[K] Dual K H) (R.root i)) := by
-    simp [mul_apply_eq_comp]
-  rw [R.realReflection_eq_of_apply_root hdiag hoff hzero hα hneg]
+  rw [R.realReflection_eq_conj_weylSimple hdiag hoff hzero w i,
+    R.realReflection_eq_of_apply_root hdiag hoff hzero hα
+      (R.mul_weylSimple_apply_root (diag_map_intCast hdiag) w i)]
   simp [mul_assoc]
 
 /-- Every real reflection is a Coxeter reflection in `R.weylCoxeterSystem`. -/
@@ -463,7 +459,7 @@ theorem isReflection_realReflection [DecidableEq I] (hdiag : ∀ i, A i i = 2)
     (R.weylCoxeterSystem hdiag hoff hzero).IsReflection
       (R.realReflection hdiag hoff hzero hα) := by
   obtain ⟨w, i, rfl⟩ := hα
-  exact ⟨w, i, by rw [R.weylCoxeterSystem_simple, R.realReflection_apply_root]⟩
+  exact ⟨w, i, by rw [R.weylCoxeterSystem_simple, R.realReflection_eq_conj_weylSimple]⟩
 
 end RealRootsCoxeter
 
