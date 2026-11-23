@@ -16,7 +16,8 @@ import Mathlib.Analysis.Calculus.ContDiff.Operations
 /-!
 # Examples of monotone twist maps of an open strip
 
-Checks for `TauCeti.IsMonotoneTwistMap` (MathematicalBilliards §4.1).
+Checks for `TauCeti.IsMonotoneTwistMap` (Katok–Hasselblatt, *Introduction to the Modern Theory of
+Dynamical Systems*, Section 9.2).
 
 * The standard map `(x, y) ↦ (x + y + ε sin 2πx, y + ε sin 2πx)` of the plane, the open strip
   `ℝ × ℝ`, is a monotone twist map with period `1` for every `ε`, with `∂F₁/∂y = 1`
@@ -24,10 +25,10 @@ Checks for `TauCeti.IsMonotoneTwistMap` (MathematicalBilliards §4.1).
 * On the strip `ℝ × (0, ∞)`, the map `(x, y) ↦ (x + log y, y)` preserves both ends, which here
   are `0` and `∞`, and has `∂F₁/∂y = 1/y > 0` (`TauCeti.isMonotoneTwistMap_logShear`). Conjugating
   it by the decreasing involution `y ↦ 1/y` of `(0, ∞)` gives `(x, y) ↦ (x - log y, y)`, whose
-  first coordinate decreases in `y`, with derivative `-1/y < 0`
-  (`TauCeti.logShear_conj_inv`, `TauCeti.strictAntiOn_conj_logShear_fst`): conjugation by a
-  decreasing homeomorphism of `J` exchanges positive and negative twists. The reflection
-  `y ↦ a + b - y` used for a bounded interval is not available on `(0, ∞)`.
+  first coordinate decreases in `y`, with derivative `-1/y`
+  (`TauCeti.logShear_conj_inv`, `TauCeti.strictAntiOn_conj_logShear_fst`,
+  `TauCeti.hasDerivAt_conj_logShear_fst`). This illustrates, for this map, that conjugation by a
+  decreasing map of the heights reverses the sign of the twist.
 -/
 
 public section
@@ -56,29 +57,24 @@ theorem standardMap_symm_apply (ε : ℝ) (p : ℝ × ℝ) :
     (standardMap ε).symm p = (p.1 - p.2, p.2 - ε * sin (2 * π * (p.1 - p.2))) :=
   (rfl)
 
-/-- If the first coordinate of a differentiable map `F` of the plane has derivative `L` at `p`,
-then `L` is the first coordinate of the derivative of `F`. -/
-private theorem fderiv_apply_fst {F : ℝ × ℝ → ℝ × ℝ} {p : ℝ × ℝ}
-    (hF : DifferentiableAt ℝ F p) {L : ℝ × ℝ →L[ℝ] ℝ} (hL : HasFDerivAt (fun q => (F q).1) L p)
-    (v : ℝ × ℝ) : (fderiv ℝ F p v).1 = L v := by
-  rw [← hF.hasFDerivAt.fst.unique hL]
-  rfl
-
 /-- The standard map is a monotone twist map of the plane with period `1`, for every `ε`. -/
 theorem isMonotoneTwistMap_standardMap (ε : ℝ) :
     IsMonotoneTwistMap 1 univ (standardMap ε).toOpenPartialHomeomorph := by
   have hs : ContDiff ℝ 1 (standardMap ε) := by
-    change ContDiff ℝ 1 fun p : ℝ × ℝ =>
-      (p.1 + p.2 + ε * sin (2 * π * p.1), p.2 + ε * sin (2 * π * p.1))
+    rw [show ⇑(standardMap ε) = _ from funext (standardMap_apply ε)]
     fun_prop
   have hsymm : ContDiff ℝ 1 (standardMap ε).symm := by
-    change ContDiff ℝ 1 fun p : ℝ × ℝ => (p.1 - p.2, p.2 - ε * sin (2 * π * (p.1 - p.2)))
+    rw [show ⇑(standardMap ε).symm = _ from funext (standardMap_symm_apply ε)]
     fun_prop
   have hbound (x : ℝ) : |ε * sin (2 * π * x)| ≤ |ε| := by
     rw [abs_mul]
     exact mul_le_of_le_one_right (abs_nonneg ε) (abs_sin_le_one _)
   refine
-    { source_eq := univ_prod_univ.symm
+    { period_pos := one_pos
+      nonempty := univ_nonempty
+      isOpen := isOpen_univ
+      ordConnected := ordConnected_univ
+      source_eq := univ_prod_univ.symm
       target_eq := univ_prod_univ.symm
       apply_add_period := fun x y _ => ?_
       strictMonoOn_fst := fun x y₁ _ y₂ _ h => ?_
@@ -108,12 +104,14 @@ theorem isMonotoneTwistMap_standardMap (ε : ℝ) :
         ring
       exact hasFDerivAt_snd.add (h1.comp_hasFDerivAt p hasFDerivAt_fst)
     have hF : DifferentiableAt ℝ (standardMap ε) p := hs.differentiable one_ne_zero p
-    have h := fderiv_apply_fst hF (L := _) (by
+    have hL' : HasFDerivAt (fun q => (standardMap ε q).1) (ContinuousLinearMap.snd ℝ ℝ ℝ +
+        (1 + ε * (cos (2 * π * p.1) * (2 * π))) • ContinuousLinearMap.fst ℝ ℝ ℝ) p := by
       convert hL using 2 with q
       simp only [standardMap_apply]
-      ring) (0, 1)
-    change 0 < (fderiv ℝ (standardMap ε) p (0, 1)).1
-    rw [h]
+      ring
+    have h := congr($(hF.hasFDerivAt.fst.unique hL') (0, 1))
+    simp only [ContinuousLinearMap.comp_apply, ContinuousLinearMap.coe_fst'] at h
+    rw [Homeomorph.toOpenPartialHomeomorph_apply, h]
     simp
 
 /-- The map `(x, y) ↦ (x + log y, y)` as a homeomorphism of the strip `ℝ × (0, ∞)`, with inverse
@@ -143,13 +141,18 @@ theorem logShear_symm_apply (p : ℝ × ℝ) : logShear.symm p = (p.1 - log p.2,
   (rfl)
 
 /-- The map `(x, y) ↦ (x + log y, y)` is a monotone twist map of the strip `ℝ × (0, ∞)`, for every
-period: it preserves both ends `0` and `∞`, and `∂F₁/∂y = 1/y > 0`. -/
-theorem isMonotoneTwistMap_logShear (ℓ : ℝ) : IsMonotoneTwistMap ℓ (Ioi 0) logShear := by
+positive period: it preserves both ends `0` and `∞`, and `∂F₁/∂y = 1/y > 0`. -/
+theorem isMonotoneTwistMap_logShear {ℓ : ℝ} (hℓ : 0 < ℓ) :
+    IsMonotoneTwistMap ℓ (Ioi 0) logShear := by
   have hU : IsOpen (univ ×ˢ Ioi (0 : ℝ)) := (isOpen_univ (X := ℝ)).prod isOpen_Ioi
   have hlog : ContDiffOn ℝ 1 (fun p : ℝ × ℝ => log p.2) (univ ×ˢ Ioi 0) :=
     ContDiffOn.log (contDiffOn_snd (𝕜 := ℝ)) fun p hp => ne_of_gt hp.2
   refine
-    { source_eq := rfl
+    { period_pos := hℓ
+      nonempty := nonempty_Ioi
+      isOpen := isOpen_Ioi
+      ordConnected := ordConnected_Ioi
+      source_eq := rfl
       target_eq := rfl
       apply_add_period := fun x y _ => ?_
       strictMonoOn_fst := fun x y₁ hy₁ y₂ _ h => ?_
@@ -158,8 +161,10 @@ theorem isMonotoneTwistMap_logShear (ℓ : ℝ) : IsMonotoneTwistMap ℓ (Ioi 0)
       contDiffOn := (contDiffOn_fst.add hlog).prodMk contDiffOn_snd
       contDiffOn_symm := (contDiffOn_fst.sub hlog).prodMk contDiffOn_snd
       fderiv_fst_pos := fun p hp => ?_ }
-  · simp only [logShear_apply, Prod.mk_add_mk, add_zero]
-    ring_nf
+  · ext
+    · simp only [logShear_apply, Prod.fst_add]
+      ring
+    · simp [logShear_apply]
   · simpa [logShear_apply] using log_lt_log hy₁ h
   · have hp2 : p.2 ≠ 0 := ne_of_gt hp.2
     have hL : HasFDerivAt (fun q : ℝ × ℝ => (logShear q).1)
@@ -168,11 +173,13 @@ theorem isMonotoneTwistMap_logShear (ℓ : ℝ) : IsMonotoneTwistMap ℓ (Ioi 0)
     have hF : DifferentiableAt ℝ logShear p :=
       ((contDiffOn_fst.add hlog).prodMk contDiffOn_snd).differentiableOn one_ne_zero
         |>.differentiableAt (hU.mem_nhds hp)
-    rw [fderiv_apply_fst hF hL]
+    have h := congr($(hF.hasFDerivAt.fst.unique hL) (0, 1))
+    simp only [ContinuousLinearMap.comp_apply, ContinuousLinearMap.coe_fst'] at h
+    rw [h]
     simpa using hp.2
 
-/-- The height inversion `(x, y) ↦ (x, 1/y)`, conjugation by the decreasing involution `y ↦ 1/y`
-of `(0, ∞)`. -/
+/-- The height inversion `(x, y) ↦ (x, y⁻¹)`, an involution of the strip `ℝ × (0, ∞)` decreasing
+in `y`, used to conjugate `logShear`. -/
 def invHeight (p : ℝ × ℝ) : ℝ × ℝ :=
   (p.1, p.2⁻¹)
 
@@ -181,13 +188,17 @@ theorem logShear_conj_inv (p : ℝ × ℝ) : invHeight (logShear (invHeight p)) 
   simp [invHeight, logShear_apply, logShear_symm_apply, log_inv, sub_eq_add_neg]
 
 /-- The conjugate `(x, y) ↦ (x - log y, y)` twists negatively on `ℝ × (0, ∞)`: its first
-coordinate is strictly decreasing on every vertical, with derivative `-1/y < 0`. -/
+coordinate is strictly decreasing on every vertical. -/
 theorem strictAntiOn_conj_logShear_fst (x : ℝ) :
-    StrictAntiOn (fun y => (invHeight (logShear (invHeight (x, y)))).1) (Ioi 0) ∧
-      ∀ y > 0, HasDerivAt (fun y => (invHeight (logShear (invHeight (x, y)))).1) (-y⁻¹) y ∧
-        -y⁻¹ < 0 := by
+    StrictAntiOn (fun y => (invHeight (logShear (invHeight (x, y)))).1) (Ioi 0) := by
   simp only [logShear_conj_inv, logShear_symm_apply]
-  refine ⟨fun y₁ hy₁ y₂ _ h => by simpa using log_lt_log hy₁ h, fun y hy => ⟨?_, by simpa⟩⟩
+  exact fun y₁ hy₁ y₂ _ h => by simpa using log_lt_log hy₁ h
+
+/-- The first coordinate of the conjugate `(x, y) ↦ (x - log y, y)` has derivative `-1/y` in `y`
+at every `y > 0`. -/
+theorem hasDerivAt_conj_logShear_fst (x : ℝ) {y : ℝ} (hy : 0 < y) :
+    HasDerivAt (fun y => (invHeight (logShear (invHeight (x, y)))).1) (-y⁻¹) y := by
+  simp only [logShear_conj_inv, logShear_symm_apply]
   simpa using (hasDerivAt_log (ne_of_gt hy)).const_sub x
 
 end TauCeti

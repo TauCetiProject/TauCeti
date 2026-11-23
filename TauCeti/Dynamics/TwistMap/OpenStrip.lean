@@ -7,20 +7,22 @@ module
 
 public import Mathlib.Analysis.Calculus.ContDiff.Defs
 public import Mathlib.Analysis.Calculus.FDeriv.Prod
+public import Mathlib.Order.Interval.Set.OrdConnected
 public import Mathlib.Topology.OpenPartialHomeomorph.Defs
 
 /-!
 # Twist maps of an open strip
 
-Fix a period `ℓ` and an open interval `J` of heights, with endpoints `-∞ ≤ a < b ≤ ∞`. A *twist
-lift on the open strip* `ℝ × J` is a homeomorphism `F = (F₁, F₂)` of the strip that commutes with
-the deck translation `(x, y) ↦ (x + ℓ, y)`, twists positively (`y ↦ F₁(x, y)` is strictly
-increasing for every `x`), and preserves the two ends of the strip uniformly in `x`:
-`F₂(x, y) → a` as `y → a` and `F₂(x, y) → b` as `y → b`. These replace the boundary lines of a
-twist lift of a closed strip. A *monotone twist map* is moreover a `C¹` diffeomorphism of the
-strip with `∂F₁/∂y > 0` everywhere (Katok–Hasselblatt, *Introduction to the Modern Theory of
-Dynamical Systems*, Section 9.2; Herman, *Sur les courbes invariantes par les difféomorphismes de
-l'anneau*, Chapitre I, 1.2, for the derivative form: a diffeomorphism turning the vertical).
+Fix a period `ℓ > 0` and a nonempty open interval `J` of heights, with endpoints
+`-∞ ≤ a < b ≤ ∞`. A *twist lift on the open strip* `ℝ × J` is a homeomorphism `F = (F₁, F₂)` of
+the strip that commutes with the deck translation `(x, y) ↦ (x + ℓ, y)`, twists positively
+(`y ↦ F₁(x, y)` is strictly increasing for every `x`), and preserves the two ends of the strip
+uniformly in `x`: `F₂(x, y) → a` as `y → a` and `F₂(x, y) → b` as `y → b`. These replace the
+boundary lines of a twist lift of a closed strip. A *monotone twist map* is moreover a `C¹`
+diffeomorphism of the strip with `∂F₁/∂y > 0` everywhere (Katok–Hasselblatt, *Introduction to the
+Modern Theory of Dynamical Systems*, Section 9.2; Herman, *Sur les courbes invariantes par les
+difféomorphismes de l'anneau*, Chapitre I, 1.2, for the derivative form: a diffeomorphism turning
+the vertical).
 
 ## Main definitions
 
@@ -52,13 +54,22 @@ open Set
 
 namespace TauCeti
 
-/-- A *positive twist lift* with period `ℓ` on the open strip `ℝ × J`: a homeomorphism `F` of the
-strip (an open partial homeomorphism of the plane with source and target `univ ×ˢ J`) commuting
-with the deck translation `(x, y) ↦ (x + ℓ, y)`, with `y ↦ F₁(x, y)` strictly increasing for every
-`x`, which preserves both ends of the strip uniformly in `x`: `F₂(x, y)` tends to the lower end of
-`J` as `y` does, and to the upper end as `y` does (Katok–Hasselblatt, Section 9.2). -/
+/-- A *positive twist lift* with period `ℓ > 0` on the open strip `ℝ × J`, for `J` a nonempty open
+interval: a homeomorphism `F` of the strip (an open partial homeomorphism of the plane with source
+and target `univ ×ˢ J`) commuting with the deck translation `(x, y) ↦ (x + ℓ, y)`, with
+`y ↦ F₁(x, y)` strictly increasing for every `x`, which preserves both ends of the strip uniformly
+in `x`: `F₂(x, y)` tends to the lower end of `J` as `y` does, and to the upper end as `y` does
+(Katok–Hasselblatt, Section 9.2). -/
 structure IsOpenStripTwistLift (ℓ : ℝ) (J : Set ℝ) (F : OpenPartialHomeomorph (ℝ × ℝ) (ℝ × ℝ)) :
     Prop where
+  /-- The period is positive. -/
+  period_pos : 0 < ℓ
+  /-- The interval of heights is nonempty. -/
+  nonempty : J.Nonempty
+  /-- The interval of heights is open. -/
+  isOpen : IsOpen J
+  /-- The set of heights is an interval. -/
+  ordConnected : J.OrdConnected
   /-- `F` is defined on the whole strip `ℝ × J`. -/
   source_eq : F.source = univ ×ˢ J
   /-- `F` maps the strip `ℝ × J` onto itself. -/
