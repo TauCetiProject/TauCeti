@@ -65,8 +65,8 @@ theorem IsPoissonRandomMeasure.isFilteredPoissonProcess_natural_count
     nnvolume.isLocallyFiniteMeasure_smul ENNReal.coe_ne_top
   have hmono := h.ae_monotone_nat_count
   refine HasIndepIncrements.isFilteredPoissonProcess_natural
-    (h.hasIndepIncrements_nat_count.natCast hmono) hmeas (ae_of_all _ fun ω => by simp)
-    fun s t hst => ?_
+    (h.hasIndepIncrements_nat_count.natCast fun _ _ hst ↦ hmono.mono fun _ hω ↦ hω hst) hmeas
+    (ae_of_all _ fun ω => by simp) fun s t hst => ?_
   have hcast := (hasLaw_map (P := poissonMeasure (α * (t - s)))
     (measurable_of_countable (Nat.cast : ℕ → ℝ)).aemeasurable).fun_comp
     (h.hasLaw_nat_count_sub_smul_nnvolume hst)
