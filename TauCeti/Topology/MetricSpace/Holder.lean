@@ -138,6 +138,9 @@ positive exponent, is equicontinuous on that set
   composition of Hölder functions.
 * `eHolderNorm_eq_iSup`, `eHolderNorm_eq_iSup_dist`: the Hölder seminorm is the supremum of the
   difference quotients.
+* `TauCeti.eHolderNorm_of_subsingleton`, `TauCeti.eHolderNorm_eq_edist_div_of_forall_eq_or_eq`:
+  the Hölder seminorm on a space with at most one point is `0`, and on a space with at most two
+  points it is the single difference quotient.
 * `nnHolderNorm_smul`: scalar homogeneity of Mathlib's `nnHolderNorm`, without assuming that the
   map is Hölder.
 * `TauCeti.eHolderNorm_one_le_coe_iff`: `eHolderNorm 1 f ≤ K` if and only if `f` is
@@ -790,6 +793,34 @@ when `f` is `K`-Lipschitz, so it is the least Lipschitz constant of `f`. -/
 theorem eHolderNorm_one_le_coe_iff {X Y : Type*} [MetricSpace X] [PseudoEMetricSpace Y]
     {f : X → Y} {K : ℝ≥0} : eHolderNorm 1 f ≤ K ↔ LipschitzWith K f := by
   simp [eHolderNorm_le_iff, LipschitzWith]
+
+/-- On a subsingleton space every pair of points is equal, so every map is Hölder with constant `0`
+and its Hölder seminorm is `0`. This extends Mathlib's `eHolderNorm_of_isEmpty` to singletons. -/
+@[simp]
+theorem eHolderNorm_of_subsingleton {X Y : Type*} [PseudoEMetricSpace X] [PseudoEMetricSpace Y]
+    [Subsingleton X] (r : ℝ≥0) (f : X → Y) : eHolderNorm r f = 0 :=
+  nonpos_iff_eq_zero.1 <|
+    (show HolderWith 0 r f from fun x y ↦ by simp [Subsingleton.elim x y]).eHolderNorm_le
+
+/-- On a metric space with at most the two points `x` and `y`, the Hölder seminorm of `f` is the
+single difference quotient `edist (f x) (f y) / edist x y ^ r`; for `x = y` both sides are `0`.
+For `r = 1` and `X = {0, 1}` this is the Lipschitz seminorm `edist (f 0) (f 1) / edist 0 1`. -/
+theorem eHolderNorm_eq_edist_div_of_forall_eq_or_eq {X Y : Type*} [MetricSpace X]
+    [PseudoEMetricSpace Y] {r : ℝ≥0} {x y : X} (h : ∀ z, z = x ∨ z = y) (f : X → Y) :
+    eHolderNorm r f = edist (f x) (f y) / edist x y ^ (r : ℝ) := by
+  rcases eq_or_ne x y with rfl | hxy
+  · have : Subsingleton X := ⟨fun a b ↦ ((h a).elim id id).trans ((h b).elim id id).symm⟩
+    simp
+  refine le_antisymm (eHolderNorm_le_iff.2 fun a b ↦ ?_) ?_
+  · have hle : edist (f x) (f y) ≤ edist (f x) (f y) / edist x y ^ (r : ℝ) * edist x y ^ (r : ℝ) :=
+      (le_mul_edist_rpow_iff hxy).2 le_rfl
+    rcases h a with rfl | rfl <;> rcases h b with rfl | rfl
+    · simp
+    · exact hle
+    · rwa [edist_comm (f a), edist_comm a b]
+    · simp
+  · rw [eHolderNorm_eq_iSup]
+    exact le_iSup₂_of_le x y (le_iSup_of_le hxy le_rfl)
 
 /-- The Hölder seminorm is lower semicontinuous for the topology of pointwise convergence: its
 sublevel sets are closed. Composing with the continuous coercion, it is also lower semicontinuous
