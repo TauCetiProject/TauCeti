@@ -133,19 +133,21 @@ theorem markoffVieta_left_injective (hx : x ∈ positiveMarkoffTriples) :
 /-- Two positive Markoff triples are adjacent in the Markoff graph exactly when one is obtained
 from the other by a Vieta move; distinctness is automatic. -/
 theorem markoffGraph_adj_iff_exists {x y : positiveMarkoffTriples} :
-    markoffGraph.Adj x y ↔ ∃ i, markoffVieta i x.1 = y.1 := by
+    markoffGraph.Adj x y ↔ ∃ i, markoffVieta i x.val = y.val := by
   refine markoffGraph_adj.trans ⟨fun h => h.2, fun ⟨i, hi⟩ => ⟨fun hxy => ?_, i, hi⟩⟩
-  exact markoffVieta_ne_self x.2 i (by rw [hi, hxy])
+  exact markoffVieta_ne_self x.property i (by rw [hi, hxy])
 
 /-- Each Vieta move `R_i x` of a positive Markoff triple `x` is a neighbour of `x`. -/
 theorem markoffGraph_adj_markoffVieta (x : positiveMarkoffTriples) (i : Fin 3) :
-    markoffGraph.Adj x ⟨markoffVieta i x.1, markoffVieta_mem_positiveMarkoffTriples x.2 i⟩ :=
+    markoffGraph.Adj x ⟨markoffVieta i x.val, markoffVieta_mem_positiveMarkoffTriples x.property i⟩
+        :=
   markoffGraph_adj_iff_exists.mpr ⟨i, rfl⟩
 
 /-- The neighbours of a positive Markoff triple `x` are its three Vieta moves `R₀ x, R₁ x, R₂ x`. -/
 theorem markoffGraph_neighborSet (x : positiveMarkoffTriples) :
     markoffGraph.neighborSet x =
-      Set.range fun i => ⟨markoffVieta i x.1, markoffVieta_mem_positiveMarkoffTriples x.2 i⟩ := by
+      Set.range fun i => ⟨markoffVieta i x.val, markoffVieta_mem_positiveMarkoffTriples x.property
+          i⟩ := by
   ext y
   simp only [SimpleGraph.mem_neighborSet, markoffGraph_adj_iff_exists, Set.mem_range,
     Subtype.ext_iff]
@@ -161,7 +163,7 @@ theorem markoffGraph_degree (x : positiveMarkoffTriples) : markoffGraph.degree x
     markoffGraph_neighborSet, Nat.card_range_of_injective, Nat.card_eq_fintype_card,
     Fintype.card_fin]
   intro i j hij
-  exact markoffVieta_left_injective x.2 (congrArg Subtype.val hij)
+  exact markoffVieta_left_injective x.property (congrArg Subtype.val hij)
 
 /-- The Markoff graph is `3`-regular. -/
 theorem markoffGraph_isRegularOfDegree : markoffGraph.IsRegularOfDegree 3 :=
@@ -171,51 +173,51 @@ theorem markoffGraph_isRegularOfDegree : markoffGraph.IsRegularOfDegree 3 :=
 
 /-- Adjacent positive Markoff triples have different largest coordinates. -/
 theorem sup'_ne_of_markoffGraph_adj {x y : positiveMarkoffTriples} (h : markoffGraph.Adj x y) :
-    univ.sup' univ_nonempty y.1 ≠ univ.sup' univ_nonempty x.1 := by
+    univ.sup' univ_nonempty y.val ≠ univ.sup' univ_nonempty x.val := by
   obtain ⟨i, hi⟩ := markoffGraph_adj_iff_exists.mp h
-  exact hi ▸ sup'_markoffVieta_ne x.2 i
+  exact hi ▸ sup'_markoffVieta_ne x.property i
 
 /-- A positive Markoff triple has at most one neighbour with smaller largest coordinate. -/
 theorem eq_of_markoffGraph_adj_of_sup'_lt {x y z : positiveMarkoffTriples}
     (hy : markoffGraph.Adj x y) (hz : markoffGraph.Adj x z)
-    (hy' : univ.sup' univ_nonempty y.1 < univ.sup' univ_nonempty x.1)
-    (hz' : univ.sup' univ_nonempty z.1 < univ.sup' univ_nonempty x.1) : y = z := by
+    (hy' : univ.sup' univ_nonempty y.val < univ.sup' univ_nonempty x.val)
+    (hz' : univ.sup' univ_nonempty z.val < univ.sup' univ_nonempty x.val) : y = z := by
   obtain ⟨i, hi⟩ := markoffGraph_adj_iff_exists.mp hy
   obtain ⟨j, hj⟩ := markoffGraph_adj_iff_exists.mp hz
   rw [← hi] at hy'
   rw [← hj] at hz'
-  obtain ⟨hne, hmi⟩ := (sup'_markoffVieta_lt_iff x.2).mp hy'
-  obtain ⟨-, hmj⟩ := (sup'_markoffVieta_lt_iff x.2).mp hz'
+  obtain ⟨hne, hmi⟩ := (sup'_markoffVieta_lt_iff x.property).mp hy'
+  obtain ⟨-, hmj⟩ := (sup'_markoffVieta_lt_iff x.property).mp hz'
   -- Both moves sit in the position of a largest coordinate, which is unique.
   have hij : i = j := by
     by_contra hij
-    exact (lt_of_mem_positiveMarkoffTriples_of_forall_le x.2 hmj hne hij).not_ge (hmi j)
+    exact (lt_of_mem_positiveMarkoffTriples_of_forall_le x.property hmj hne hij).not_ge (hmi j)
   ext1
   rw [← hi, ← hj, hij]
 
 /-- `(1, 1, 1)` is the only positive Markoff triple with no neighbour of smaller largest
 coordinate. -/
 theorem exists_markoffGraph_adj_sup'_lt_iff (x : positiveMarkoffTriples) :
-    (∃ y, markoffGraph.Adj x y ∧ univ.sup' univ_nonempty y.1 < univ.sup' univ_nonempty x.1) ↔
-      x.1 ≠ 1 := by
+    (∃ y, markoffGraph.Adj x y ∧ univ.sup' univ_nonempty y.val < univ.sup' univ_nonempty x.val) ↔
+      x.val ≠ 1 := by
   refine ⟨fun ⟨y, hy, hlt⟩ => ?_, fun hne => ?_⟩
   · obtain ⟨i, hi⟩ := markoffGraph_adj_iff_exists.mp hy
     rw [← hi] at hlt
-    exact ((sup'_markoffVieta_lt_iff x.2).mp hlt).1
-  · obtain ⟨i, hi⟩ := Finite.exists_max x.1
-    exact ⟨_, markoffGraph_adj_markoffVieta x i, sup'_markoffVieta_lt x.2 hi hne⟩
+    exact ((sup'_markoffVieta_lt_iff x.property).mp hlt).1
+  · obtain ⟨i, hi⟩ := Finite.exists_max x.val
+    exact ⟨_, markoffGraph_adj_markoffVieta x i, sup'_markoffVieta_lt x.property hi hne⟩
 
 /-- Every positive Markoff triple other than `(1, 1, 1)` has exactly one neighbour in the Markoff
 graph with smaller largest coordinate. -/
-theorem existsUnique_markoffGraph_adj_sup'_lt {x : positiveMarkoffTriples} (hx : x.1 ≠ 1) :
-    ∃! y, markoffGraph.Adj x y ∧ univ.sup' univ_nonempty y.1 < univ.sup' univ_nonempty x.1 := by
+theorem existsUnique_markoffGraph_adj_sup'_lt {x : positiveMarkoffTriples} (hx : x.val ≠ 1) :
+    ∃! y, markoffGraph.Adj x y ∧ univ.sup' univ_nonempty y.val < univ.sup' univ_nonempty x.val := by
   obtain ⟨y, hy⟩ := (exists_markoffGraph_adj_sup'_lt_iff x).mpr hx
   exact ⟨y, hy, fun z hz => eq_of_markoffGraph_adj_of_sup'_lt hz.1 hy.1 hz.2 hy.2⟩
 
 /-- The Markoff graph is acyclic. -/
 theorem markoffGraph_isAcyclic : markoffGraph.IsAcyclic :=
   SimpleGraph.isAcyclic_of_forall_adj_le_eq (fun x : positiveMarkoffTriples =>
-    univ.sup' univ_nonempty x.1) fun _ _ _ hu hw hu' hw' =>
+    univ.sup' univ_nonempty x.val) fun _ _ _ hu hw hu' hw' =>
     eq_of_markoffGraph_adj_of_sup'_lt hu hw (hu'.lt_of_ne (sup'_ne_of_markoffGraph_adj hu))
       (hw'.lt_of_ne (sup'_ne_of_markoffGraph_adj hw))
 

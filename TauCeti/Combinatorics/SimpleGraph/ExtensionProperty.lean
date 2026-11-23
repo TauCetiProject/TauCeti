@@ -25,8 +25,9 @@ set, has the extension property.
 
 ## Main results
 
-* `SimpleGraph.HasExtensionProperty.exists_adj_iff`: over any tuple of vertices, a graph with the
-  extension property realises any adjacency pattern compatible with the repetitions in the tuple.
+* `SimpleGraph.HasExtensionProperty.exists_adj_iff`: over any finite family of vertices, a graph
+  with the extension property realises any adjacency pattern compatible with the repetitions in
+  the family.
 * `TauCeti.hasExtensionProperty_radoGraph`: the Rado graph has the extension property.
 
 ## References
@@ -58,28 +59,28 @@ theorem hasExtensionProperty_def : G.HasExtensionProperty ↔ ∀ s t : Finset V
 
 namespace HasExtensionProperty
 
-/-- Over any tuple of vertices, a graph with the extension property has a vertex outside the
-tuple whose adjacencies to the entries follow any prescribed pattern compatible with the
-repetitions in the tuple. -/
-theorem exists_adj_iff (hG : G.HasExtensionProperty) {n : ℕ} (a : Fin n → V)
-    (p : Fin n → Prop) (hp : ∀ i j, a i = a j → (p i ↔ p j)) :
+/-- Over any finite family of vertices, a graph with the extension property has a vertex outside
+the family whose adjacencies to the members follow any prescribed pattern compatible with the
+repetitions in the family. -/
+theorem exists_adj_iff (hG : G.HasExtensionProperty) {ι : Type*} [Finite ι] (a : ι → V)
+    (p : ι → Prop) (hp : ∀ i j, a i = a j → (p i ↔ p j)) :
     ∃ x, (∀ i, x ≠ a i) ∧ ∀ i, G.Adj x (a i) ↔ p i := by
   classical
+  have := Fintype.ofFinite ι
   obtain ⟨x, hxt, hs, ht⟩ := hasExtensionProperty_def.mp hG ((Finset.univ.filter p).image a)
     ((Finset.univ.filter fun i => ¬ p i).image a) (by
-      simp only [Finset.disjoint_left, Finset.mem_image, Finset.mem_filter, Finset.mem_univ,
-        true_and]
+      simp only [Finset.disjoint_left, Finset.mem_image, Finset.mem_filter_univ]
       rintro _ ⟨i, hi, rfl⟩ ⟨j, hj, hji⟩
       exact hj ((hp j i hji).mpr hi))
-  have hadj (i : Fin n) : G.Adj x (a i) ↔ p i := by
+  have hadj (i : ι) : G.Adj x (a i) ↔ p i := by
     by_cases hi : p i
-    · exact iff_of_true (hs _ (Finset.mem_image_of_mem _ (by simpa using hi))) hi
-    · exact iff_of_false (ht _ (Finset.mem_image_of_mem _ (by simpa using hi))) hi
+    · exact iff_of_true (hs _ (Finset.mem_image_of_mem _ ((Finset.mem_filter_univ _).mpr hi))) hi
+    · exact iff_of_false (ht _ (Finset.mem_image_of_mem _ ((Finset.mem_filter_univ _).mpr hi))) hi
   refine ⟨x, fun i => ?_, hadj⟩
   by_cases hi : p i
   · exact ((hadj i).mpr hi).ne
   · rintro rfl
-    exact hxt (Finset.mem_image_of_mem _ (by simpa using hi))
+    exact hxt (Finset.mem_image_of_mem _ ((Finset.mem_filter_univ _).mpr hi))
 
 end HasExtensionProperty
 

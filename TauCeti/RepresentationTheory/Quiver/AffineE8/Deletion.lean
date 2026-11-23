@@ -53,7 +53,7 @@ def deletedGraph : SimpleGraph DeletedVertex :=
 
 /-- Adjacency in the deleted graph is inherited from the affine `E₈` quiver. -/
 @[simp] theorem deletedGraph_adj (u v : DeletedVertex) :
-    deletedGraph.Adj u v ↔ (Quiver.underlyingGraph AffineE8).Adj u.1 v.1 :=
+    deletedGraph.Adj u v ↔ (Quiver.underlyingGraph AffineE8).Adj u.val v.val :=
   SimpleGraph.induce_adj
 
 /-- The eight arrows are exactly the edges of the three arms. -/

@@ -11,6 +11,7 @@ public import TauCeti.Probability.Distributions.Gumbel.PDF
 public import Mathlib.MeasureTheory.Measure.Support
 import TauCeti.MeasureTheory.Measure.WithDensity
 import TauCeti.Probability.Distributions.GeneralizedPareto.Basic
+import TauCeti.MeasureTheory.Integral.Bochner.WithDensity
 
 /-!
 # Generalized extreme-value densities
@@ -339,7 +340,7 @@ theorem integrable_generalizedExtremeValueMeasure_iff (m s ξ : ℝ) {g : ℝ �
       Integrable fun y ↦ generalizedExtremeValuePDFReal m s ξ y • g y := by
   rw [generalizedExtremeValueMeasure_eq_withDensity,
     funext (generalizedExtremeValuePDF_eq_ofReal m s ξ)]
-  exact integrable_withDensity_ofReal_iff
+  exact MeasureTheory.integrable_withDensity_ofReal_iff
     (measurable_generalizedExtremeValuePDFReal m s ξ).aemeasurable
     (ae_of_all _ (generalizedExtremeValuePDFReal_nonneg m s ξ))
 
@@ -350,7 +351,7 @@ theorem integral_generalizedExtremeValueMeasure_eq (m s ξ : ℝ) (g : ℝ → E
       ∫ y, generalizedExtremeValuePDFReal m s ξ y • g y := by
   rw [generalizedExtremeValueMeasure_eq_withDensity,
     funext (generalizedExtremeValuePDF_eq_ofReal m s ξ)]
-  exact integral_withDensity_ofReal
+  exact MeasureTheory.integral_withDensity_ofReal
     (measurable_generalizedExtremeValuePDFReal m s ξ).aemeasurable
     (ae_of_all _ (generalizedExtremeValuePDFReal_nonneg m s ξ)) g
 

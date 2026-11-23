@@ -107,7 +107,7 @@ private theorem IsComplete.mem_coreDarts_of_src_eq [(S.subgroup S.base).FiniteIn
     cases q with
     | nil => exact absurd (SerreGraph.Path.isReduced_toPath S.graph _) h
     | cons q f =>
-      have hf : e = S.graph.rev f.1 := by
+      have hf : e = S.graph.rev f.val := by
         by_contra hne
         exact h ((SerreGraph.Path.isReduced_cons_cons S.graph q f _).mpr ⟨hq, hne⟩)
       rw [← S.graph.rev_mem_coreDarts_iff, hf, S.graph.rev_rev]
@@ -160,8 +160,8 @@ private theorem IsFolded.mem_coreDarts_of_src_mem [(S.subgroup S.base).FiniteInd
   obtain ⟨f⟩ := nonempty_iso_cosetGraph_of_isCore hfold.core S.core_isCore
   obtain ⟨e', hs, hl⟩ :=
     (f.isComplete_iff.mpr (Subgroup.cosetGraph_isComplete _)).exists_dart ⟨_, he⟩ (S.label e)
-  obtain rfl : e'.1 = e := S.isFolded_def.mp hfold e'.1 e (congrArg Subtype.val hs) hl
-  exact e'.2
+  obtain rfl : e'.val = e := S.isFolded_def.mp hfold e'.val e (congrArg Subtype.val hs) hl
+  exact e'.property
 
 /-- In a folded graph accepting a subgroup of finite index, every vertex reachable from the base
 vertex is a core vertex. -/

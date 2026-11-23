@@ -31,7 +31,7 @@ public section
 
 namespace TauCeti
 
-open Module CliffordAlgebra
+open Module _root_.CliffordAlgebra
 
 variable {K V : Type*} [Field K] [AddCommGroup V] [Module K V] {Q : QuadraticForm K V}
 

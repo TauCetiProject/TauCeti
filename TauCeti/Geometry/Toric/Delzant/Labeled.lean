@@ -33,7 +33,8 @@ Labels `m j` enter through the *labeled normals* `m j • u j`.
 
 * **The polytope.** Rescaling each constraint by a positive label, `(m j • u j, m j * c j)`, cuts
   out the same polyhedron (`TauCeti.Toric.facetPolyhedron_nsmul`) with the same active constraints
-  at every point (`TauCeti.Toric.activeSet_facetPairing_nsmul`).
+  at every point (`TauCeti.Toric.activeSet_nsmul`), both in
+  `TauCeti.Geometry.Toric.Delzant.Basic`.
 * **Isotropy.** At a point `x`, the labeled normals of the active facets span the sublattice
   `TauCeti.Toric.labeledActiveLattice`. For a vertex `x` of a labeled polytope, the quotient
   `N ⧸ labeledActiveLattice` is the orbifold structure group over `x` of the toric orbifold that
@@ -49,13 +50,11 @@ Labels `m j` enter through the *labeled normals* `m j • u j`.
   where the active normals form a basis `b` of `N`, the labeled lattice is spanned by the rescaled
   basis vectors (`TauCeti.Toric.labeledActiveLattice_eq_span_range_nsmul`), and
   `Module.Basis.quotientSpanNSMulEquiv` identifies the quotient with `Π j, ZMod (m j)`.
-* **Smoothness.** The labeled normals at a vertex form a lattice basis exactly when the labels of
-  the active facets are one and the active normals form a lattice basis
-  (`TauCeti.Toric.isSmoothVertex_nsmul_iff`). Hence the labeled presentation is Delzant exactly
-  when all labels are one and the unlabeled presentation is Delzant
-  (`TauCeti.Toric.isDelzant_nsmul_iff`). For a labeled rational simple polytope this is
-  Lerman–Tolman's criterion: it is smooth exactly when all labels are one and every vertex cone is
-  unimodular (`TauCeti.Toric.IsRationalSimple.isDelzant_nsmul_iff`).
+* **Smoothness.** By `TauCeti.Toric.isDelzant_nsmul_iff` in
+  `TauCeti.Geometry.Toric.Delzant.Basic`, the labeled presentation is Delzant exactly when all
+  labels are one and the unlabeled presentation is Delzant. For a labeled rational simple polytope
+  this is Lerman–Tolman's criterion: it is smooth exactly when all labels are one and every vertex
+  cone is unimodular (`TauCeti.Toric.IsRationalSimple.isDelzant_nsmul_iff`).
 
 The interval `[0, a]` with labels `m 0` and `m 1` on its two endpoints is the labeled polytope of a
 weighted projective line in Lerman–Tolman's correspondence. Its structure groups at the endpoints
@@ -72,15 +71,11 @@ have orders `m 0` and `m 1`
 
 ## Main results
 
-* `TauCeti.Toric.facetPolyhedron_nsmul`, `TauCeti.Toric.activeSet_facetPairing_nsmul`: positive
-  labels do not change the polytope or its active constraints.
 * `TauCeti.Toric.card_quotient_labeledActiveLattice`: the order of the structure group.
 * `TauCeti.Toric.IsRationalSimple.linearIndepOn_activeSet`: at a vertex of a rational simple
   polytope in an integral lattice, the active normals are linearly independent.
 * `TauCeti.Toric.IsRationalSimple.finite_quotient_labeledActiveLattice`: the structure groups at
   the vertices of a labeled polytope are finite.
-* `TauCeti.Toric.isSmoothVertex_nsmul_iff`, `TauCeti.Toric.isDelzant_nsmul_iff`: a labeled vertex
-  or presentation is smooth exactly when the labels are one and the unlabeled one is smooth.
 * `TauCeti.Toric.isDelzant_iff_isRationalSimple`: Delzant means rational simple with unimodular
   vertex cones.
 * `TauCeti.Toric.IsRationalSimple.isDelzant_nsmul_iff`: Lerman–Tolman's smoothness criterion for
@@ -105,70 +100,6 @@ namespace TauCeti.Toric
 
 variable {ι N V : Type*} [AddCommGroup N] [NormedAddCommGroup V] [NormedSpace ℝ V]
   {i : N →+ V} {u : ι → N} {c : ι → ℝ}
-
-/-! ### Labeled normals -/
-
-section Labels
-
-variable {m : ι → ℕ}
-
-/-- Rescaling every constraint by a positive label does not change the constraints active at a
-point. -/
-theorem activeSet_facetPairing_nsmul (hm : ∀ j, m j ≠ 0) (x : StrongDual ℝ V) :
-    activeSet (facetPairing i fun j ↦ m j • u j) (fun j ↦ m j * c j) x =
-      activeSet (facetPairing i u) c x := by
-  ext j
-  simp only [mem_activeSet, facetPairing_apply, map_nsmul, nsmul_eq_mul]
-  exact mul_right_inj' (Nat.cast_ne_zero.2 (hm j))
-
-/-- Rescaling every constraint by a positive label does not change the polyhedron. -/
-theorem facetPolyhedron_nsmul (hm : ∀ j, m j ≠ 0) :
-    facetPolyhedron i (fun j ↦ m j • u j) (fun j ↦ m j * c j) = facetPolyhedron i u c := by
-  ext x
-  simp only [mem_facetPolyhedron, map_nsmul, nsmul_eq_mul]
-  exact forall_congr' fun j ↦ mul_le_mul_iff_right₀ (Nat.cast_pos.2 (Nat.pos_of_ne_zero (hm j)))
-
-/-- At a vertex where the labeled normals form a lattice basis, every active label is one: the
-labeled normal `m j • u j` is a basis vector, and `u j` itself lies in the lattice. -/
-private theorem eq_one_of_isSmoothVertex_nsmul {x : StrongDual ℝ V}
-    (hx : IsSmoothVertex i (fun j ↦ m j • u j) (fun j ↦ m j * c j) x) {j : ι}
-    (hj : j ∈ activeSet (facetPairing i fun j ↦ m j • u j) (fun j ↦ m j * c j) x) : m j = 1 := by
-  obtain ⟨b, hb⟩ := isSmoothVertex_def.1 hx
-  have h := congr($(b.repr_self ⟨j, hj⟩) ⟨j, hj⟩)
-  rw [hb, map_nsmul, Finsupp.smul_apply, Finsupp.single_eq_same, nsmul_eq_mul] at h
-  exact_mod_cast Int.eq_one_of_mul_eq_one_right (Int.natCast_nonneg _) h
-
-/-- **Smooth labeled vertices.** For positive labels, the labeled normals of the facets active at
-`x` form a lattice basis exactly when those labels are one and the unlabeled normals form a lattice
-basis. -/
-theorem isSmoothVertex_nsmul_iff (hm : ∀ j, m j ≠ 0) {x : StrongDual ℝ V} :
-    IsSmoothVertex i (fun j ↦ m j • u j) (fun j ↦ m j * c j) x ↔
-      (∀ j ∈ activeSet (facetPairing i u) c x, m j = 1) ∧ IsSmoothVertex i u c x := by
-  have hone : (∀ j ∈ activeSet (facetPairing i u) c x, m j = 1) →
-      EqOn (fun j ↦ m j • u j) u (activeSet (facetPairing i u) c x) :=
-    fun h j hj ↦ by simp [h j hj]
-  refine ⟨fun hx ↦ ?_, fun ⟨h1, hx⟩ ↦ ?_⟩
-  · have h1 : ∀ j ∈ activeSet (facetPairing i u) c x, m j = 1 := fun j hj ↦
-      eq_one_of_isSmoothVertex_nsmul hx (by rwa [activeSet_facetPairing_nsmul hm])
-    rw [isSmoothVertex_iff_linearIndepOn, activeSet_facetPairing_nsmul hm,
-      linearIndepOn_congr (hone h1), (hone h1).image_eq] at hx
-    exact ⟨h1, isSmoothVertex_iff_linearIndepOn.2 hx⟩
-  · rw [isSmoothVertex_iff_linearIndepOn, activeSet_facetPairing_nsmul hm,
-      linearIndepOn_congr (hone h1), (hone h1).image_eq]
-    exact isSmoothVertex_iff_linearIndepOn.1 hx
-
-/-- **Smooth labeled presentations.** The labeled presentation `(m j • u j, m j * c j)` is Delzant
-exactly when all labels are one and `(u, c)` is Delzant. -/
-theorem isDelzant_nsmul_iff [FiniteDimensional ℝ V] :
-    IsDelzant i (fun j ↦ m j • u j) (fun j ↦ m j * c j) ↔ (∀ j, m j = 1) ∧ IsDelzant i u c := by
-  refine ⟨fun hΔ ↦ ?_, fun ⟨h1, hΔ⟩ ↦ by simpa [h1] using hΔ⟩
-  -- Every facet contains a vertex, at which its label is one.
-  have h1 : ∀ j, m j = 1 := fun j ↦ by
-    obtain ⟨x, hx, hj⟩ := hΔ.exists_mem_extremePoints_mem_activeSet j
-    exact eq_one_of_isSmoothVertex_nsmul (hΔ.isSmoothVertex x hx) hj
-  exact ⟨h1, by simpa [h1] using hΔ⟩
-
-end Labels
 
 /-! ### The isotropy lattice of a labeled vertex -/
 
@@ -282,11 +213,12 @@ include hΔ
 /-- **Labeled polytopes, Lerman–Tolman's smoothness criterion.** A rational simple polytope with
 labels `m j` is Delzant, as a labeled presentation `(m j • u j, m j * c j)`, exactly when every
 label is one and every vertex cone is unimodular. -/
-theorem isDelzant_nsmul_iff [Finite ι] [FiniteDimensional ℝ V] {m : ι → ℕ} :
+theorem isDelzant_nsmul_iff [Finite ι] [FiniteDimensional ℝ V] {m : ι → ℕ}
+    (hm : ∀ j, m j ≠ 0) :
     IsDelzant i (fun j ↦ m j • u j) (fun j ↦ m j * c j) ↔ (∀ j, m j = 1) ∧
       ∀ x ∈ (facetPolyhedron i u c).extremePoints ℝ,
         Submodule.span ℤ (u '' activeSet (facetPairing i u) c x) = ⊤ := by
-  rw [TauCeti.Toric.isDelzant_nsmul_iff, isDelzant_iff_isRationalSimple, and_iff_right hΔ]
+  rw [TauCeti.Toric.isDelzant_nsmul_iff hm, isDelzant_iff_isRationalSimple, and_iff_right hΔ]
 
 variable [Finite ι] [FiniteDimensional ℝ V]
 

@@ -85,7 +85,8 @@ theorem _root_.Subgroup.indClassFun_apply_coe (H : Subgroup G) [Finite G]
     rw [Function.indTerm_apply]
     by_cases h : y⁻¹ * (x : G) * y ∈ H
     · rw [dite_eq_left h]
-      have hx1 : (x : G) = 1 := hH.eq_one (g := y⁻¹) (by simpa using hy) x.2 (by simpa using h)
+      have hx1 : (x : G) = 1 := hH.eq_one (g := y⁻¹) (by simpa using hy) x.property
+          (by simpa using h)
       have hone : (⟨y⁻¹ * (x : G) * y, h⟩ : H) = 1 := by
         ext
         simp [hx1]
@@ -95,7 +96,7 @@ theorem _root_.Subgroup.indClassFun_apply_coe (H : Subgroup G) [Finite G]
   have hin : ∀ y : H, Function.indTerm f (x : G) (y : G) = f x := by
     intro y
     have hmem : (y : G)⁻¹ * (x : G) * (y : G) ∈ H :=
-      H.mul_mem (H.mul_mem (H.inv_mem y.2) x.2) y.2
+      H.mul_mem (H.mul_mem (H.inv_mem y.property) x.property) y.property
     have hcoe : (⟨(y : G)⁻¹ * (x : G) * (y : G), hmem⟩ : H) = y⁻¹ * x * y⁻¹⁻¹ := by
       ext
       simp
@@ -116,18 +117,18 @@ theorem _root_.Subgroup.indClassFun_apply_coe (H : Subgroup G) [Finite G]
 vanishes at the identity.**  This is the bundled form of `Subgroup.indClassFun_apply_coe`. -/
 theorem _root_.Subgroup.comap_subtype_indClassFunction_eq_self (H : Subgroup G) [Finite G]
     (hH : IsTISubgroup H)
-    (hk : IsUnit (Nat.card H : k)) (f : ClassFunction k H) (hf1 : f.1 1 = 0) :
+    (hk : IsUnit (Nat.card H : k)) (f : ClassFunction k H) (hf1 : f.val 1 = 0) :
     ClassFunction.comap H.subtype (Subgroup.indClassFunction H f) = f := by
   refine Subtype.ext (funext fun x => ?_)
   simp only [ClassFunction.comap_apply, Subgroup.indClassFunction_apply, Subgroup.coe_subtype]
-  exact H.indClassFun_apply_coe hH hk f.2 hf1 x
+  exact H.indClassFun_apply_coe hH hk f.property hf1 x
 
 open scoped Classical in
 /-- **Induction from a trivial-intersection subgroup preserves the character pairing**, provided
 the second argument vanishes at the identity.  This is the isometry the exceptional-character
 argument for Frobenius's theorem rests on; taking `f₁ = f₂` gives the preservation of the norm. -/
 theorem characterPairing_ind_ind [Fintype G] (hG : IsUnit (Nat.card G : k))
-    (hH : IsTISubgroup H) (f₁ f₂ : ClassFunction k H) (hf₂ : f₂.1 1 = 0) :
+    (hH : IsTISubgroup H) (f₁ f₂ : ClassFunction k H) (hf₂ : f₂.val 1 = 0) :
     ClassFunction.characterPairing (Subgroup.indClassFunction H f₁) (Subgroup.indClassFunction H
       f₂) =
       ClassFunction.characterPairing f₁ f₂ := by
@@ -143,7 +144,7 @@ the two halves of `TauCeti.IsFrobeniusComplement` that the argument uses; for a 
 complement `hH`, pass `hH.isTISubgroup` and `hH.ne_top`. -/
 theorem characterPairing_ind_ind_of_isTISet [Fintype G] (hG : IsUnit (Nat.card G : k))
     (hH : IsTISubgroup H) (hne_top : H ≠ ⊤) (hS : IsTISet S H) (f₁ f₂ : ClassFunction k H)
-    (hf₂ : ∀ y : H, (y : G) ∉ S → f₂.1 y = 0) :
+    (hf₂ : ∀ y : H, (y : G) ∉ S → f₂.val y = 0) :
     ClassFunction.characterPairing (Subgroup.indClassFunction H f₁) (Subgroup.indClassFunction H
       f₂) =
       ClassFunction.characterPairing f₁ f₂ :=
@@ -160,7 +161,7 @@ Preserving the pairing at equal arguments is preservation of the norm, which is 
 refers to. -/
 theorem isometry_ind_of_isTISet [Fintype G] (hG : IsUnit (Nat.card G : k))
     (hH : IsTISubgroup H) (hne_top : H ≠ ⊤) (hS : IsTISet S H) (f : ClassFunction k H)
-    (hf : ∀ y : H, (y : G) ∉ S → f.1 y = 0) :
+    (hf : ∀ y : H, (y : G) ∉ S → f.val y = 0) :
     ClassFunction.characterPairing (Subgroup.indClassFunction H f) (Subgroup.indClassFunction H f) =
       ClassFunction.characterPairing f f :=
   characterPairing_ind_ind_of_isTISet hG hH hne_top hS f f hf

@@ -90,7 +90,7 @@ private theorem map_vanishingIdeal_commutator_le_derivedDefiningIdeal
   rw [← AlgHom.comp_apply, HopfAlgebra.productMap_comp_commutatorAlgHom]
   rw [commutator_liftQuotientPoint_apply_mkQuotient]
   exact (HopfIdeal.mem_vanishingIdeal ⁅S, S⁆ x).mp hmem
-    ⟨⁅g.val, h.val⁆, Subgroup.commutator_mem_commutator g.2 h.2⟩
+    ⟨⁅g.val, h.val⁆, Subgroup.commutator_mem_commutator g.property h.property⟩
 
 /-- Taking the derived closed subgroup commutes with taking the reduced closure of a
 rational-point subgroup. The equality is stated as equality of defining ideals in the
