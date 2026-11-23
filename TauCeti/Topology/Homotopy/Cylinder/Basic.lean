@@ -105,4 +105,10 @@ theorem cylinderZero_comp_cylinderSetIncl {X : Type*} [TopologicalSpace X] (s : 
     (cylinderZero X).comp (cylinderSetIncl s) = (cylinderSetIncl s).comp (cylinderZero s) :=
   ContinuousMap.ext fun q ↦ by simp
 
+@[simp]
+theorem cylinderSetIncl_comp_cylinderSlice {X : Type*} [TopologicalSpace X] (s : Set X) (t : I) :
+    (cylinderSetIncl s).comp (cylinderSlice s t) =
+      (cylinderSlice X t).comp ((ContinuousMap.id X).restrict s) :=
+  ContinuousMap.ext fun _ ↦ rfl
+
 end TauCeti

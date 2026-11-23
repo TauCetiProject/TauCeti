@@ -24,8 +24,6 @@ Grothendieck group `SplitK0 (FiniteRankBundleCore 𝕜 ·)` live in
 
 ## Main results
 
-* `TauCeti.FiniteRankBundleCore.pullback_cylinderSlice_pullback_fst`: pulling back
-  `A.pullback ContinuousMap.fst` along any time-`t` cylinder slice recovers `A`.
 * `TauCeti.FiniteRankBundleCore.exists_iso_cylinder` and
   `TauCeti.FiniteRankBundleCore.nonempty_iso_pullback_cylinderSlice`: cylinder transport as a
   categorical isomorphism `(A.pullback (cylinderSlice X 0)).pullback ContinuousMap.fst ≅ A` equal to
@@ -60,12 +58,6 @@ namespace TauCeti.FiniteRankBundleCore
 section Cylinder
 
 universe u v
-
-/-- Pulling back `A.pullback ContinuousMap.fst` along any time-`t` cylinder slice recovers `A`. -/
-theorem pullback_cylinderSlice_pullback_fst {𝕜 : Type v} [NontriviallyNormedField 𝕜]
-    {X : Type u} [TopologicalSpace X] (A : FiniteRankBundleCore 𝕜 X) (t : I) :
-    (A.pullback ContinuousMap.fst).pullback (cylinderSlice X t) = A := by
-  rw [pullback_comp, fst_comp_cylinderSlice, pullback_id]
 
 variable {𝕜 : Type v} [NontriviallyNormedField 𝕜] [NormedAlgebra ℝ 𝕜] [CompleteSpace 𝕜]
   {X : Type u} [TopologicalSpace X] [R1Space X] [ParacompactSpace X]

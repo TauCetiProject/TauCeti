@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Topology.VectorBundle.Hom
 public import TauCeti.Topology.VectorBundle.Pullback.Basic
+import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Basic
 import TauCeti.Topology.VectorBundle.Coordinates
 
 /-!
@@ -17,7 +18,10 @@ vector bundles as sections of Mathlib's Hom bundle (`TauCeti.continuousAt_hom_bu
 `TauCeti.continuous_hom_bundle_pullback_iff`), compares continuity in ambient and pulled-back Hom
 bundles (`TauCeti.continuousAt_hom_bundle_comp_iff`, `TauCeti.continuous_hom_bundle_comp_iff`,
 `TauCeti.continuous_hom_bundle_pullback_comp_iff`,
-`TauCeti.continuous_hom_bundle_pullback_left_comp_iff`), and proves continuity under base-preserving
+`TauCeti.continuous_hom_bundle_pullback_left_comp_iff`,
+`TauCeti.continuous_hom_bundle_pullback_pullback_iff`), establishes continuity of the canonical
+fibre identification for pointwise equal base maps
+(`TauCeti.continuous_hom_bundle_pullback_refl_of_eq`), and proves continuity under base-preserving
 reindexing (`TauCeti.continuous_hom_bundle_pullback_comp_of_eq`).
 -/
 
@@ -166,6 +170,57 @@ theorem continuous_hom_bundle_pullback_left_comp_iff
   refine forall_congr' fun m₀ ↦ (continuousAt_hom_bundle_over_pullback_left_iff f b ϕ).trans ?_
   exact (continuousAt_hom_bundle_pullback_iff (f.comp b) b ϕ).symm
 
+/-- A Hom family into `(b₀ *ᵖ (f *ᵖ V)) →L (b₁ *ᵖ (g *ᵖ W))` is continuous at `m₀` exactly
+when it is continuous at `m₀` as a section of `((f.comp b₀) *ᵖ V) →L ((g.comp b₁) *ᵖ W)`. -/
+theorem continuousAt_hom_bundle_pullback_pullback_iff
+    (f : C(X, B)) (g : C(X, C)) (b₀ b₁ : C(M, X))
+    (ϕ : ∀ m, V (f (b₀ m)) →L[𝕜] W (g (b₁ m))) {m₀ : M} :
+    ContinuousAt (fun m ↦ TotalSpace.mk' (F →L[𝕜] G)
+        (E := fun y ↦ ((b₀ : M → X) *ᵖ ((f : X → B) *ᵖ V)) y →L[𝕜]
+          ((b₁ : M → X) *ᵖ ((g : X → C) *ᵖ W)) y) m (ϕ m)) m₀ ↔
+      ContinuousAt (fun m ↦ TotalSpace.mk' (F →L[𝕜] G)
+        (E := fun y ↦ ((f.comp b₀ : M → B) *ᵖ V) y →L[𝕜] ((g.comp b₁ : M → C) *ᵖ W) y)
+        m (ϕ m)) m₀ := by
+  refine (continuousAt_hom_bundle_pullback_iff
+    (V := (f : X → B) *ᵖ V) (W := (g : X → C) *ᵖ W) b₀ b₁ ϕ).trans ?_
+  refine (continuousAt_inCoordinates_pullback_iff f g
+    b₀.continuous.continuousAt b₁.continuous.continuousAt ϕ).trans ?_
+  exact (continuousAt_hom_bundle_pullback_iff (f.comp b₀) (g.comp b₁) ϕ).symm
+
+/-- A Hom family into `(b₀ *ᵖ (f *ᵖ V)) →L (b₁ *ᵖ (g *ᵖ W))` is continuous exactly when it is
+continuous as a section of `((f.comp b₀) *ᵖ V) →L ((g.comp b₁) *ᵖ W)`. -/
+theorem continuous_hom_bundle_pullback_pullback_iff
+    (f : C(X, B)) (g : C(X, C)) (b₀ b₁ : C(M, X))
+    (ϕ : ∀ m, V (f (b₀ m)) →L[𝕜] W (g (b₁ m))) :
+    Continuous (fun m ↦ TotalSpace.mk' (F →L[𝕜] G)
+        (E := fun y ↦ ((b₀ : M → X) *ᵖ ((f : X → B) *ᵖ V)) y →L[𝕜]
+          ((b₁ : M → X) *ᵖ ((g : X → C) *ᵖ W)) y) m (ϕ m)) ↔
+      Continuous (fun m ↦ TotalSpace.mk' (F →L[𝕜] G)
+        (E := fun y ↦ ((f.comp b₀ : M → B) *ᵖ V) y →L[𝕜] ((g.comp b₁ : M → C) *ᵖ W) y)
+        m (ϕ m)) := by
+  simp only [continuous_iff_continuousAt]
+  exact forall_congr' fun m₀ ↦ continuousAt_hom_bundle_pullback_pullback_iff f g b₀ b₁ ϕ
+
+/-- Pointwise equal continuous base maps `f₀` and `f₁` induce a continuous Hom-bundle section of
+the canonical fibre identifications between `f₀ *ᵖ V` and `f₁ *ᵖ V`. -/
+theorem continuous_hom_bundle_pullback_refl_of_eq
+    {K' L' : Type*} [FunLike K' M B] [ContinuousMapClass K' M B]
+    [FunLike L' M B] [ContinuousMapClass L' M B]
+    [∀ b, IsTopologicalAddGroup (V b)] [∀ b, ContinuousSMul 𝕜 (V b)]
+    (f₀ : K') (f₁ : L') (h : ∀ m, f₀ m = f₁ m) :
+    Continuous fun m ↦ TotalSpace.mk' (F →L[𝕜] F)
+      (E := fun y ↦ ((f₀ : M → B) *ᵖ V) y →L[𝕜] ((f₁ : M → B) *ᵖ V) y) m
+      ((h m ▸ ContinuousLinearEquiv.refl 𝕜 (V (f₀ m)) : V (f₀ m) ≃L[𝕜] V (f₁ m)) :
+        V (f₀ m) →L[𝕜] V (f₁ m)) := by
+  rw [continuous_hom_bundle_pullback_iff]
+  intro m₀
+  refine (continuousAt_const (y := ContinuousLinearMap.id 𝕜 F)).congr ?_
+  have hmem₀ : f₀ m₀ ∈ (trivializationAt F V (f₀ m₀)).baseSet :=
+    mem_baseSet_trivializationAt F V _
+  filter_upwards [(map_continuous f₀).continuousAt.preimage_mem_nhds
+      ((trivializationAt F V (f₀ m₀)).open_baseSet.mem_nhds hmem₀)] with m hm
+  exact (inCoordinates_transport_refl (h m₀) (h m) hm).symm
+
 /-- Reindexing a continuous Hom-bundle section between pullbacks along `p` by a continuous map `r`
 satisfying `p (r x) = p x` yields a continuous Hom-bundle section. -/
 theorem continuous_hom_bundle_pullback_comp_of_eq
@@ -186,13 +241,8 @@ theorem continuous_hom_bundle_pullback_comp_of_eq
     (hβ.continuousAt (x := r x₀))).comp hr.continuousAt
   refine hc.congr (Filter.Eventually.of_forall fun x ↦ ?_)
   let βrx : V (p (r x)) →L[𝕜] W' (p (r x)) := β (r x)
-  have htr {a b : B} (h : a = b) (T : V a →L[𝕜] W' a) :
-      (let f {c d : B} (hc : a = c) (hd : a = d) : V c →L[𝕜] W' d := hc ▸ hd ▸ T
-       f h h) = (show V b →L[𝕜] W' b from h ▸ T) := by
-    cases h
-    rfl
   exact (inCoordinates_transport_eq (hp x₀) (hp x) (hp x₀) (hp x) βrx).trans
-    (congrArg _ (htr (hp x) βrx))
+    (congrArg _ (eqRec_eqRec (hp x) (hp x) βrx))
 
 end HomBundle
 

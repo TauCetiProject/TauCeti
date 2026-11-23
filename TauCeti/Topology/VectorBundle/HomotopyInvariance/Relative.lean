@@ -7,7 +7,9 @@ module
 
 public import Mathlib.Analysis.Complex.Tietze
 public import TauCeti.Topology.VectorBundle.HomotopyInvariance.Basic
+import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Basic
 import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Invertible
+import TauCeti.Topology.Algebra.Module.Equiv.Basic
 import TauCeti.Topology.FiberBundle.Pullback
 import TauCeti.Topology.Homotopy.Cylinder.Neighborhood
 import TauCeti.Topology.VectorBundle.Extension
@@ -50,16 +52,6 @@ namespace TauCeti
 section RelativeCylinder
 
 universe u v w
-
-private theorem transport_beta_eq {𝕜 X : Type*} [Semiring 𝕜] [TopologicalSpace X]
-    {E : X × I → Type*} [∀ q, AddCommMonoid (E q)] [∀ q, Module 𝕜 (E q)]
-    [∀ q, TopologicalSpace (E q)] {q q' : X × I} (hq : q' = q)
-    (h0 : cylinderZero X q' = cylinderZero X q)
-    (β : ∀ p : X × I, ((cylinderZero X : X × I → X × I) *ᵖ E) p →L[𝕜]
-      ((cylinderZero X : X × I → X × I) *ᵖ E) p) :
-    (show E (cylinderZero X q) →L[𝕜] E (cylinderZero X q) from h0 ▸ β q') = β q := by
-  cases hq
-  rfl
 
 section General
 
@@ -183,22 +175,17 @@ private theorem exists_compressed_transition_equiv [CompleteSpace F]
   let h0 (q : X × I) : cylinderZero X (r q) = cylinderZero X q := Prod.ext (hr₁ q) rfl
   choose γ hγ using fun q : X × I ↦
     ContinuousLinearMap.IsInvertible.transport (V := E) (W := E) (h0 q) (h0 q) (hrW q)
-  have htr {a b : X × I} (h : a = b) (T : E a →L[𝕜] E a) :
-      (let f {c d : X × I} (hc : a = c) (hd : a = d) : E c →L[𝕜] E d := hc ▸ hd ▸ T
-       f h h) = (show E b →L[𝕜] E b from h ▸ T) := by
-    cases h
-    rfl
   have hγ' (q : X × I) : (γ q : E (cylinderZero X q) →L[𝕜] E (cylinderZero X q)) =
       (show E (cylinderZero X q) →L[𝕜] E (cylinderZero X q) from h0 q ▸ β (r q)) :=
-    (hγ q).trans (htr (h0 q) (β (r q)))
+    (hγ q).trans (ContinuousLinearMap.eqRec_eqRec (h0 q) (h0 q) (β (r q)))
   refine ⟨γ, (continuous_hom_bundle_pullback_comp_of_eq (cylinderZero X) hβ r.continuous
       h0).congr fun q ↦ congrArg (TotalSpace.mk' (F →L[𝕜] F) q) (hγ' q).symm,
     fun x ↦ ?_, fun x t ↦ ?_⟩
   · exact ContinuousLinearEquiv.coe_injective ((hγ' (x, 0)).trans
-      ((transport_beta_eq (hr0 x) (h0 (x, 0)) β).trans
+      ((ContinuousLinearMap.eqRec_section (hr0 x) (h0 (x, 0)) β).trans
         ((hβα (x, 0) (Or.inr ⟨mem_univ x, mem_singleton 0⟩)).trans (hα0 x))))
   · exact ContinuousLinearEquiv.coe_injective ((hγ' (x.val, t)).trans
-      ((transport_beta_eq (hrs x.val x.property t) (h0 (x.val, t)) β).trans
+      ((ContinuousLinearMap.eqRec_section (hrs x.val x.property t) (h0 (x.val, t)) β).trans
         ((hβα (x.val, t) (Or.inl ⟨x.property, mem_univ t⟩)).trans
           (by simp only [α, x.property, ↓reduceDIte]; rfl))))
 
@@ -303,53 +290,6 @@ variable {𝕜 : Type v} [NontriviallyNormedField 𝕜] [NormedAlgebra ℝ 𝕜]
   [FiberBundle F E] [VectorBundle 𝕜 F E]
   [∀ y, IsTopologicalAddGroup (E y)] [∀ y, ContinuousSMul 𝕜 (E y)]
 
-omit [NormedAlgebra ℝ 𝕜] [R1Space X] [ParacompactSpace X] [CompleteSpace F]
-  [TietzeExtension.{u, w} (F →L[𝕜] F)] in
-/-- Along a homotopy stationary on `s`, transporting each fibre over `(x, t) : s × I` by the
-base-point equality `G (x, 0) = G (x, t)` defines a continuous section of the cylinder Hom
-bundle. -/
-private theorem continuous_hom_bundle_stationary_pullback (G : C(X × I, Y)) {s : Set X}
-    (hs : ∀ (x : s) (t : I), G (x.val, 0) = G (x.val, t)) :
-    Continuous fun q : s × I ↦ TotalSpace.mk' (F →L[𝕜] F)
-      (E := fun z : X × I ↦
-        ((cylinderZero X : X × I → X × I) *ᵖ ((G : X × I → Y) *ᵖ E)) z →L[𝕜]
-          ((G : X × I → Y) *ᵖ E) z)
-      (cylinderSetIncl s q)
-      ((hs q.1 q.2 ▸ ContinuousLinearEquiv.refl 𝕜 (E (G (q.1.val, 0))) :
-        E (G (q.1.val, 0)) ≃L[𝕜] E (G (q.1.val, q.2))) :
-        E (G (q.1.val, 0)) →L[𝕜] E (G (q.1.val, q.2))) := by
-  refine continuous_iff_continuousAt.2 fun q₀ ↦ ?_
-  refine (continuousAt_hom_bundle_over_pullback_left_iff (cylinderZero X) (cylinderSetIncl s)
-    (V := (G : X × I → Y) *ᵖ E) (W' := (G : X × I → Y) *ᵖ E)
-    fun q ↦ (((hs q.1 q.2 ▸ ContinuousLinearEquiv.refl 𝕜 (E (G (q.1.val, 0))) :
-        E (G (q.1.val, 0)) ≃L[𝕜] E (G (q.1.val, q.2))) :
-        E (G (q.1.val, 0)) →L[𝕜] E (G (q.1.val, q.2))) :
-        ((cylinderZero X : X × I → X × I) *ᵖ ((G : X × I → Y) *ᵖ E)) (cylinderSetIncl s q) →L[𝕜]
-          ((G : X × I → Y) *ᵖ E) (cylinderSetIncl s q))).2 ?_
-  refine (continuousAt_inCoordinates_pullback_iff G G
-      ((cylinderZero X).continuous.comp (cylinderSetIncl s).continuous).continuousAt
-      (cylinderSetIncl s).continuous.continuousAt
-      fun q ↦ (((hs q.1 q.2 ▸ ContinuousLinearEquiv.refl 𝕜 (E (G (q.1.val, 0))) :
-          E (G (q.1.val, 0)) ≃L[𝕜] E (G (q.1.val, q.2))) :
-          E (G (q.1.val, 0)) →L[𝕜] E (G (q.1.val, q.2))) :
-          E (G (cylinderZero X (cylinderSetIncl s q))) →L[𝕜]
-            E (G (cylinderSetIncl s q)))).2 ?_
-  refine (continuousAt_const (y := ContinuousLinearMap.id 𝕜 F)).congr ?_
-  have hmem₀ : G (q₀.1.val, 0) ∈ (trivializationAt F E (G (q₀.1.val, 0))).baseSet :=
-    mem_baseSet_trivializationAt F E _
-  filter_upwards [ContinuousAt.preimage_mem_nhds
-      (G.comp ((cylinderZero X).comp (cylinderSetIncl s))).continuous.continuousAt
-      ((trivializationAt F E (G (q₀.1.val, 0))).open_baseSet.mem_nhds hmem₀)] with q hq
-  exact (ContinuousLinearMap.inCoordinates_transport_refl (hs q₀.1 q₀.2) (hs q.1 q.2) hq).symm
-
-private theorem totalSpace_mk_eq_of_eq {𝕜 Y F : Type*} [Semiring 𝕜]
-    {E : Y → Type*} [∀ y, AddCommMonoid (E y)] [∀ y, Module 𝕜 (E y)] [∀ y, TopologicalSpace (E y)]
-    {y₀ y₁ : Y} (h : y₀ = y₁) (v : E y₀) :
-    (⟨y₁, (h ▸ ContinuousLinearEquiv.refl 𝕜 (E y₀) : E y₀ ≃L[𝕜] E y₁) v⟩ : TotalSpace F E) =
-      ⟨y₀, v⟩ := by
-  cases h
-  rfl
-
 /-- Endpoint form of the relative cylinder theorem along `G : C(X × I, Y)` stationary on `s`. -/
 private theorem exists_continuousLinearEquiv_pullback_rel_of_eq (G : C(X × I, Y)) {s : Set X}
     (hs : IsClosed s) {g₀ g₁ : X → Y} (h₀ : ∀ x, G (x, 0) = g₀ x) (h₁ : ∀ x, G (x, 1) = g₁ x)
@@ -363,12 +303,25 @@ private theorem exists_continuousLinearEquiv_pullback_rel_of_eq (G : C(X × I, Y
   obtain rfl : g₀ = fun x ↦ G (x, 0) := (funext h₀).symm
   obtain rfl : g₁ = fun x ↦ G (x, 1) := (funext h₁).symm
   have hGs' (x : s) (t : I) : G (x.val, 0) = G (x.val, t) := (hGs x.val x.property t).symm
+  let Φ₀ : ∀ q : s × I, E (G (q.1.val, 0)) →L[𝕜] E (G (q.1.val, q.2)) := fun q ↦
+    (hGs' q.1 q.2 ▸ ContinuousLinearEquiv.refl 𝕜 (E (G (q.1.val, 0))) :
+      E (G (q.1.val, 0)) ≃L[𝕜] E (G (q.1.val, q.2)))
+  have hΦ₀ : Continuous fun q : s × I ↦ TotalSpace.mk' (F →L[𝕜] F)
+      (E := fun z : X × I ↦
+        ((cylinderZero X : X × I → X × I) *ᵖ ((G : X × I → Y) *ᵖ E)) z →L[𝕜]
+          ((G : X × I → Y) *ᵖ E) z) (cylinderSetIncl s q) (Φ₀ q) :=
+    (continuous_hom_bundle_pullback_left_comp_iff (cylinderZero X) (cylinderSetIncl s)
+      (V := (G : X × I → Y) *ᵖ E) (W' := (G : X × I → Y) *ᵖ E) Φ₀).2 <|
+      (continuous_hom_bundle_pullback_pullback_iff G G
+        ((cylinderZero X).comp (cylinderSetIncl s)) (cylinderSetIncl s) Φ₀).2 <|
+        continuous_hom_bundle_pullback_refl_of_eq
+          (G.comp ((cylinderZero X).comp (cylinderSetIncl s))) (G.comp (cylinderSetIncl s))
+          fun q ↦ hGs' q.1 q.2
   obtain ⟨Φ, -, hΦ₁, hΦ₂, -, hΦs⟩ := exists_continuousLinearEquiv_cylinder_of_isClosed
     (𝕜 := 𝕜) (F := F) (E := (G : X × I → Y) *ᵖ E) hs
     (fun q ↦ (hGs' q.1 q.2 ▸ ContinuousLinearEquiv.refl 𝕜 (E (G (q.1.val, 0))) :
       E (G (q.1.val, 0)) ≃L[𝕜] E (G (q.1.val, q.2))))
-    (continuous_hom_bundle_stationary_pullback G hGs')
-    (fun x ↦ rfl)
+    hΦ₀ (fun x ↦ rfl)
   have hs₁ : Continuous fun x : X ↦ (x, (1 : I)) := continuous_id.prodMk continuous_const
   have hps : Continuous ((cylinderZero X : X × I → X × I) ∘ fun x : X ↦ (x, (1 : I))) :=
     (cylinderZero X).continuous.comp hs₁
@@ -381,8 +334,8 @@ private theorem exists_continuousLinearEquiv_pullback_rel_of_eq (G : C(X × I, Y
       hs₁ hps (ϕ := fun q v ↦ (Φ q).symm v) hΦ₂,
     fun x hx v ↦ ?_⟩
   dsimp only
-  rw [hΦs ⟨x, hx⟩ 1]
-  exact totalSpace_mk_eq_of_eq (hGs' ⟨x, hx⟩ 1) v
+  rw [hΦs ⟨x, hx⟩ 1, ContinuousLinearEquiv.eqRec_refl_apply]
+  exact TotalSpace.mk_cast (hGs' ⟨x, hx⟩ 1) v
 
 /-- **Relative homotopy invariance of vector bundles.** Over a paracompact R₁ space `X`, let
 `s ⊆ X` be closed and let `f₀ f₁ : C(X, Y)` be homotopic relative to `s`. If `F` is a Banach space
