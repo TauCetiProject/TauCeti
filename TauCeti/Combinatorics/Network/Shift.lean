@@ -155,6 +155,38 @@ theorem shiftEquiv_symm_apply_val (lo hi h : Assignment Q K) (a b : V → K)
     ((shiftEquiv lo hi h a b).symm f).val = f.val + h :=
   (rfl)
 
+/-- Shifting interval excess by the zero assignment is the identity equivalence. -/
+theorem shiftEquiv_zero (lo hi : Assignment Q K) (a b : V → K) :
+    (shiftEquiv lo hi 0 a b).trans
+        (show ExcessIntervalFlow (lo - 0) (hi - 0) (a - excessAt 0) (b - excessAt 0) ≃
+            ExcessIntervalFlow lo hi a b from
+          Equiv.subtypeEquivRight fun _ ↦ by
+            have hexcess : excessAt (0 : Assignment Q K) = 0 := funext excessAt_zero
+            simp only [hexcess, sub_zero]) =
+      Equiv.refl (ExcessIntervalFlow lo hi a b) := by
+  apply Equiv.ext
+  intro f
+  apply Subtype.ext
+  exact shiftEquiv_apply_val lo hi 0 a b f |>.trans (sub_zero f.val)
+
+/-- Successive interval-excess shifts compose by adding their reference assignments. -/
+theorem shiftEquiv_add (lo hi h k : Assignment Q K) (a b : V → K) :
+    ((shiftEquiv lo hi h a b).trans
+        (shiftEquiv (lo - h) (hi - h) k (a - excessAt h) (b - excessAt h))).trans
+      (show ExcessIntervalFlow ((lo - h) - k) ((hi - h) - k)
+              ((a - excessAt h) - excessAt k) ((b - excessAt h) - excessAt k) ≃
+            ExcessIntervalFlow (lo - (h + k)) (hi - (h + k))
+              (a - excessAt (h + k)) (b - excessAt (h + k)) from
+        Equiv.subtypeEquivRight fun _ ↦ by
+          have hexcess : excessAt (h + k) = excessAt h + excessAt k :=
+            funext (excessAt_add h k)
+          simp only [hexcess, sub_sub]) =
+      shiftEquiv lo hi (h + k) a b := by
+  apply Equiv.ext
+  intro f
+  apply Subtype.ext
+  simp only [Equiv.trans_apply, Equiv.subtypeEquivRight_apply, shiftEquiv_apply_val, sub_sub]
+
 /-- Interval-excess shifts also preserve any additive subgroup containing the reference. -/
 theorem shiftEquiv_apply_mem_iff (lo hi h : Assignment Q K) (a b : V → K)
     {M : Type*} [SetLike M K] [AddSubgroupClass M K] (H : M)
@@ -203,6 +235,36 @@ theorem shiftEquiv_symm_apply_val (lo hi h : Assignment Q K) (b : V → K)
     (f : ExcessFlow (lo - h) (hi - h) (b - excessAt h)) :
     ((shiftEquiv lo hi h b).symm f).val = f.val + h :=
   (rfl)
+
+/-- Shifting prescribed excess by the zero assignment is the identity equivalence. -/
+theorem shiftEquiv_zero (lo hi : Assignment Q K) (b : V → K) :
+    (shiftEquiv lo hi 0 b).trans
+        (show ExcessFlow (lo - 0) (hi - 0) (b - excessAt 0) ≃ ExcessFlow lo hi b from
+          Equiv.subtypeEquivRight fun _ ↦ by
+            have hexcess : excessAt (0 : Assignment Q K) = 0 := funext excessAt_zero
+            simp only [hexcess, sub_zero]) =
+      Equiv.refl (ExcessFlow lo hi b) := by
+  apply Equiv.ext
+  intro f
+  apply Subtype.ext
+  exact shiftEquiv_apply_val lo hi 0 b f |>.trans (sub_zero f.val)
+
+/-- Successive prescribed-excess shifts compose by adding their reference assignments. -/
+theorem shiftEquiv_add (lo hi h k : Assignment Q K) (b : V → K) :
+    ((shiftEquiv lo hi h b).trans
+        (shiftEquiv (lo - h) (hi - h) k (b - excessAt h))).trans
+      (show ExcessFlow ((lo - h) - k) ((hi - h) - k)
+              ((b - excessAt h) - excessAt k) ≃
+            ExcessFlow (lo - (h + k)) (hi - (h + k)) (b - excessAt (h + k)) from
+        Equiv.subtypeEquivRight fun _ ↦ by
+          have hexcess : excessAt (h + k) = excessAt h + excessAt k :=
+            funext (excessAt_add h k)
+          simp only [hexcess, sub_sub]) =
+      shiftEquiv lo hi (h + k) b := by
+  apply Equiv.ext
+  intro f
+  apply Subtype.ext
+  simp only [Equiv.trans_apply, Equiv.subtypeEquivRight_apply, shiftEquiv_apply_val, sub_sub]
 
 /-- A shift by a subgroup-valued reference preserves subgroup membership arrowwise. -/
 theorem shiftEquiv_apply_mem_iff (lo hi h : Assignment Q K) (b : V → K)
