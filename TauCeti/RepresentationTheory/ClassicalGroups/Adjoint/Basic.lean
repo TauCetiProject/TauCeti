@@ -102,9 +102,8 @@ theorem coe_adjointRep_apply (g : SpecialLinearGroup (Fin n) K)
       (g : Matrix (Fin n) (Fin n) K) * X.val * (g⁻¹ : SpecialLinearGroup (Fin n) K) := by
   rw [adjointRep]
   calc
-    _ = matrixAdjointRep K n g X.val :=
-      ((Subrepresentation.toRepresentation_apply_coe (ρ' := tracelessSubrep K n)
-        (g := g) (v := X)).mp rfl).symm
+    -- Restricting the representation acts on the underlying matrix by the ambient action.
+    _ = matrixAdjointRep K n g X.val := rfl
     _ = _ := matrixAdjointRep_apply K n g X
 
 /-- Simultaneous conjugation preserves the restricted trace pairing. -/

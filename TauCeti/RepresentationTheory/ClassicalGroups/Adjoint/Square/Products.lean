@@ -102,6 +102,8 @@ theorem symmetricProductMap_comm (T : V ⊗[K] V) :
       (symmetricProductMap K n).toLinearMap := by
     apply TensorProduct.ext'
     intro X Y
+    simp only [LinearMap.comp_apply, LinearEquiv.coe_coe, TensorProduct.comm_tmul,
+      Representation.IntertwiningMap.toLinearMap_apply, symmetricProductMap_tmul]
     exact symmetricProduct_comm Y X
   exact LinearMap.congr_fun h T
 
