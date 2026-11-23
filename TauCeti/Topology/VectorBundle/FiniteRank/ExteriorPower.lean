@@ -260,17 +260,17 @@ transitions of the core. -/
   rw [det_def, coordChange_exteriorPower_obj]
   exact ContinuousLinearMap.exteriorPowerCoords_self _
 
-/-- The determinant core of a bundle has transition scalar equal to the determinant of the
-bundle transition in the preferred charts. -/
-theorem coordChange_det_ofBundle (n : ℕ) (E : B → Type*)
+/-- The determinant core of a bundle in standard `Fin n → 𝕜` coordinates has transition scalar
+equal to the determinant of the bundle transition in the preferred charts. -/
+theorem coordChange_det_ofLinearEquiv_refl (n : ℕ) (E : B → Type*)
     [∀ x, AddCommMonoid (E x)] [∀ x, Module 𝕜 (E x)]
     [∀ x, TopologicalSpace (E x)] [TopologicalSpace (Bundle.TotalSpace (Fin n → 𝕜) E)]
     [FiberBundle (Fin n → 𝕜) E] [VectorBundle 𝕜 (Fin n → 𝕜) E] (i i' x : B) :
-    (ofBundle 𝕜 n E).det.core.coordChange i i' x =
+    (ofLinearEquiv (ContinuousLinearEquiv.refl 𝕜 (Fin n → 𝕜)) E).det.core.coordChange i i' x =
       ((trivializationAt (Fin n → 𝕜) E i).coordChangeL 𝕜
         (trivializationAt (Fin n → 𝕜) E i') x : (Fin n → 𝕜) →L[𝕜] (Fin n → 𝕜)).det •
         ContinuousLinearMap.id 𝕜 _ := by
-  rw [coordChange_det, core_ofBundle, pointIndexedCore_coordChange]
+  rw [coordChange_det, coordChange_ofLinearEquiv_refl]
 
 /-! ### Pullback -/
 

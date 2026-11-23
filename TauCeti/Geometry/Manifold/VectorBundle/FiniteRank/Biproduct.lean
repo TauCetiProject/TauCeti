@@ -323,7 +323,7 @@ theorem contMDiff_totalSpaceMap_whitneyFst (A D : FiniteRankBundleCore 𝕜 B) :
   let L : (Fin (whitneySum A D).rank → 𝕜) →L[𝕜] (Fin A.rank → 𝕜) :=
     (ContinuousLinearMap.fst 𝕜 (Fin A.rank → 𝕜) (Fin D.rank → 𝕜)).comp
       (splitCoords (𝕜 := 𝕜) A.rank D.rank).toContinuousLinearMap
-  refine contMDiff_totalSpaceMap_of_coordChange (whitneyFst A D) L fun x b v ↦ ?_
+  refine contMDiff_totalSpaceMap_of_coordChange (whitneyFst A D) L fun x b _ v ↦ ?_
   calc A.core.coordChange x b x ((whitneyFst A D).fiberMap x v)
       = A.core.coordChange x b x (splitCoords (𝕜 := 𝕜) A.rank D.rank v).1 :=
         congrArg (A.core.coordChange x b x) (DFunLike.congr_fun (fiberMap_whitneyFst A D x) v)
@@ -338,7 +338,7 @@ theorem contMDiff_totalSpaceMap_whitneySnd (A D : FiniteRankBundleCore 𝕜 B) :
   let L : (Fin (whitneySum A D).rank → 𝕜) →L[𝕜] (Fin D.rank → 𝕜) :=
     (ContinuousLinearMap.snd 𝕜 (Fin A.rank → 𝕜) (Fin D.rank → 𝕜)).comp
       (splitCoords (𝕜 := 𝕜) A.rank D.rank).toContinuousLinearMap
-  refine contMDiff_totalSpaceMap_of_coordChange (whitneySnd A D) L fun x b v ↦ ?_
+  refine contMDiff_totalSpaceMap_of_coordChange (whitneySnd A D) L fun x b _ v ↦ ?_
   calc D.core.coordChange x b x ((whitneySnd A D).fiberMap x v)
       = D.core.coordChange x b x (splitCoords (𝕜 := 𝕜) A.rank D.rank v).2 :=
         congrArg (D.core.coordChange x b x) (DFunLike.congr_fun (fiberMap_whitneySnd A D x) v)
@@ -354,7 +354,7 @@ theorem contMDiff_totalSpaceMap_whitneyInl (A D : FiniteRankBundleCore 𝕜 B) :
     (splitCoords (𝕜 := 𝕜) A.rank D.rank).symm.toContinuousLinearMap
   let L : (Fin A.rank → 𝕜) →L[𝕜] (Fin (whitneySum A D).rank → 𝕜) :=
     S'.comp (ContinuousLinearMap.inl 𝕜 (Fin A.rank → 𝕜) (Fin D.rank → 𝕜))
-  refine contMDiff_totalSpaceMap_of_coordChange (whitneyInl A D) L fun x b u ↦ ?_
+  refine contMDiff_totalSpaceMap_of_coordChange (whitneyInl A D) L fun x b _ u ↦ ?_
   calc (whitneySum A D).core.coordChange x b x ((whitneyInl A D).fiberMap x u)
       = (whitneySum A D).core.coordChange x b x
           ((splitCoords (𝕜 := 𝕜) A.rank D.rank).symm (u, 0)) :=
@@ -374,7 +374,7 @@ theorem contMDiff_totalSpaceMap_whitneyInr (A D : FiniteRankBundleCore 𝕜 B) :
     (splitCoords (𝕜 := 𝕜) A.rank D.rank).symm.toContinuousLinearMap
   let L : (Fin D.rank → 𝕜) →L[𝕜] (Fin (whitneySum A D).rank → 𝕜) :=
     S'.comp (ContinuousLinearMap.inr 𝕜 (Fin A.rank → 𝕜) (Fin D.rank → 𝕜))
-  refine contMDiff_totalSpaceMap_of_coordChange (whitneyInr A D) L fun x b w ↦ ?_
+  refine contMDiff_totalSpaceMap_of_coordChange (whitneyInr A D) L fun x b _ w ↦ ?_
   calc (whitneySum A D).core.coordChange x b x ((whitneyInr A D).fiberMap x w)
       = (whitneySum A D).core.coordChange x b x
           ((splitCoords (𝕜 := 𝕜) A.rank D.rank).symm (0, w)) :=
@@ -676,7 +676,7 @@ theorem contMDiff_whitneySumTotalSpaceHomeomorph (A D : FiniteRankBundleCore �
       (IB.prod 𝓘(𝕜, (Fin A.rank → 𝕜) × (Fin D.rank → 𝕜))) n
       (whitneySumTotalSpaceHomeomorph A D) :=
   (whitneySum A D).contMDiff_of_localTriv_snd (whitneySumTotalSpaceHomeomorph A D)
-    (fun p ↦ by simp) (splitCoords (𝕜 := 𝕜) A.rank D.rank).toContinuousLinearMap fun b p ↦ by
+    (fun p ↦ by simp) (splitCoords (𝕜 := 𝕜) A.rank D.rank).toContinuousLinearMap fun b p _ ↦ by
       rw [prod_trivializationAt_eq, whitneySumTotalSpaceHomeomorph_apply]
       exact localTriv_prod_whitneySumFiberEquiv A D b p
 
@@ -687,7 +687,7 @@ theorem contMDiff_whitneySumTotalSpaceHomeomorph_symm (A D : FiniteRankBundleCor
       (IB.prod 𝓘(𝕜, Fin (whitneySum A D).rank → 𝕜)) n
       (whitneySumTotalSpaceHomeomorph A D).symm :=
   (whitneySum A D).contMDiff_of_trivializationAt_snd (whitneySumTotalSpaceHomeomorph A D).symm
-    (fun p ↦ by simp) (splitCoords (𝕜 := 𝕜) A.rank D.rank).symm.toContinuousLinearMap fun b p ↦ by
+    (fun p ↦ by simp) (splitCoords (𝕜 := 𝕜) A.rank D.rank).symm.toContinuousLinearMap fun b p _ ↦ by
       rw [prod_trivializationAt_eq, whitneySumTotalSpaceHomeomorph_symm_apply]
       exact localTriv_whitneySumFiberEquiv_symm A D b p
 

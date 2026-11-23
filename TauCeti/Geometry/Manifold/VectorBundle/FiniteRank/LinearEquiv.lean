@@ -66,7 +66,7 @@ smoothness hypotheses on `B` or `V`. -/
 theorem contMDiff_ofLinearEquivTotalSpaceHomeomorph :
     ContMDiff (I.prod 𝓘(𝕜, Fin (ofLinearEquiv e V).rank → 𝕜)) (I.prod 𝓘(𝕜, F)) n
       (ofLinearEquivTotalSpaceHomeomorph e V) :=
-  contMDiff_of_localTriv_snd_of_mem_baseSet (ofLinearEquiv e V)
+  contMDiff_of_localTriv_snd (ofLinearEquiv e V)
     (ofLinearEquivTotalSpaceHomeomorph e V)
     (fun p ↦ by rw [ofLinearEquivTotalSpaceHomeomorph_apply]) e.symm.toContinuousLinearMap
     fun b p hp ↦ congrArg Prod.snd
@@ -78,7 +78,7 @@ smoothness hypotheses on `B` or `V`. -/
 theorem contMDiff_ofLinearEquivTotalSpaceHomeomorph_symm :
     ContMDiff (I.prod 𝓘(𝕜, F)) (I.prod 𝓘(𝕜, Fin (ofLinearEquiv e V).rank → 𝕜)) n
       (ofLinearEquivTotalSpaceHomeomorph e V).symm :=
-  contMDiff_of_trivializationAt_snd_of_mem_baseSet (ofLinearEquiv e V)
+  contMDiff_of_trivializationAt_snd (ofLinearEquiv e V)
     (ofLinearEquivTotalSpaceHomeomorph e V).symm
     (fun p ↦ by rw [ofLinearEquivTotalSpaceHomeomorph_symm_apply]) e.toContinuousLinearMap
     fun b q hq ↦ localTriv_ofLinearEquivTotalSpaceHomeomorph_symm e V b q hq

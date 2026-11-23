@@ -44,9 +44,9 @@ The construction is natural:
 
 For a bundle with model fibre `Fin n → 𝕜`, the determinant line agrees with the determinant line
 `TauCeti.FiniteRankBundleCore.det` of its point-indexed coordinate core
-`TauCeti.FiniteRankBundleCore.ofBundle 𝕜 n E`: the total space of the reconstructed core is
-homeomorphic to that of `det E`, linearly on each fibre
-(`TauCeti.DetBundle.ofBundleDetHomeomorph`).
+`TauCeti.FiniteRankBundleCore.ofLinearEquiv (.refl 𝕜 (Fin n → 𝕜)) E`: the total space of the
+reconstructed core is homeomorphic to that of `det E`, linearly on each fibre
+(`TauCeti.DetBundle.ofLinearEquivDetHomeomorph`).
 
 ## Main definitions
 
@@ -58,7 +58,7 @@ homeomorphic to that of `det E`, linearly on each fibre
 * `TauCeti.DetBundle.congrHomeomorph`: the isomorphism of determinant lines induced by an
   isomorphism of vector bundles.
 * `TauCeti.DetBundle.pullbackHomeomorph`: the pullback of `det E` is `det (f *ᵖ E)`.
-* `TauCeti.DetBundle.ofBundleDetHomeomorph`: comparison with `FiniteRankBundleCore.det`.
+* `TauCeti.DetBundle.ofLinearEquivDetHomeomorph`: comparison with `FiniteRankBundleCore.det`.
 
 ## References
 
@@ -643,37 +643,46 @@ private def detCoord (A : FiniteRankBundleCore 𝕜 B) : (Fin A.det.rank → �
 
 omit [CompleteSpace 𝕜] in
 variable (E) in
-/-- The fibre of the reconstructed determinant core of `FiniteRankBundleCore.ofBundle 𝕜 n E` over
-`x` is identified with the fibre of `det E` through the preferred chart coordinate at `x`. -/
-def ofBundleDetFiberEquiv (x : B) :
-    (FiniteRankBundleCore.ofBundle 𝕜 n E).det.core.Fiber x ≃L[𝕜] DetBundle 𝕜 (Fin n → 𝕜) E x :=
-  (detCoord (FiniteRankBundleCore.ofBundle 𝕜 n E)).trans
+/-- The fibre of the reconstructed determinant core of
+`FiniteRankBundleCore.ofLinearEquiv (.refl 𝕜 (Fin n → 𝕜)) E` over `x` is identified with the fibre
+of `det E` through the preferred chart coordinate at `x`. -/
+def ofLinearEquivDetFiberEquiv (x : B) :
+    (FiniteRankBundleCore.ofLinearEquiv
+      (ContinuousLinearEquiv.refl 𝕜 (Fin n → 𝕜)) E).det.core.Fiber x ≃L[𝕜]
+      DetBundle 𝕜 (Fin n → 𝕜) E x :=
+  (detCoord (FiniteRankBundleCore.ofLinearEquiv (ContinuousLinearEquiv.refl 𝕜 (Fin n → 𝕜)) E)).trans
     (chartCoord (trivializationAt (Fin n → 𝕜) E x)
       (mem_baseSet_trivializationAt (Fin n → 𝕜) E x)).symm.toContinuousLinearEquivOfIsModuleTopology
 
 omit [CompleteSpace 𝕜] in
-private theorem ofBundleDetFiberEquiv_apply (x : B)
-    (v : (FiniteRankBundleCore.ofBundle 𝕜 n E).det.core.Fiber x) :
-    ofBundleDetFiberEquiv (𝕜 := 𝕜) (n := n) E x v = (chartCoord (trivializationAt (Fin n → 𝕜) E x)
-      (mem_baseSet_trivializationAt (Fin n → 𝕜) E x)).symm
-        (detCoord (FiniteRankBundleCore.ofBundle 𝕜 n E) v) := by
+private theorem ofLinearEquivDetFiberEquiv_apply (x : B)
+    (v : (FiniteRankBundleCore.ofLinearEquiv
+      (ContinuousLinearEquiv.refl 𝕜 (Fin n → 𝕜)) E).det.core.Fiber x) :
+    ofLinearEquivDetFiberEquiv (𝕜 := 𝕜) (n := n) E x v =
+      (chartCoord (trivializationAt (Fin n → 𝕜) E x)
+        (mem_baseSet_trivializationAt (Fin n → 𝕜) E x)).symm
+        (detCoord (FiniteRankBundleCore.ofLinearEquiv
+          (ContinuousLinearEquiv.refl 𝕜 (Fin n → 𝕜)) E) v) := by
   -- The core fibre is an opaque alias for its model space; `trans_apply` cannot synthesize its
   -- module instance before this conversion unfolds the continuous-linear composition.
   change (chartCoord (trivializationAt (Fin n → 𝕜) E x)
     (mem_baseSet_trivializationAt (Fin n → 𝕜) E x)).symm.toContinuousLinearEquivOfIsModuleTopology
-      (detCoord (FiniteRankBundleCore.ofBundle 𝕜 n E) v) = _
+      (detCoord (FiniteRankBundleCore.ofLinearEquiv
+        (ContinuousLinearEquiv.refl 𝕜 (Fin n → 𝕜)) E) v) = _
   rw [LinearEquiv.coe_toContinuousLinearEquivOfIsModuleTopology]
 
 variable (E) in
 /-- **Comparison with the determinant of finite-rank cores.** For a bundle `E` with model fibre
 `Fin n → 𝕜`, the reconstruction of the determinant line `FiniteRankBundleCore.det` of its
-point-indexed core `FiniteRankBundleCore.ofBundle 𝕜 n E` is homeomorphic to the determinant line
-bundle of `E`, by `TauCeti.DetBundle.ofBundleDetFiberEquiv` on each fibre. -/
-def ofBundleDetHomeomorph :
-    (FiniteRankBundleCore.ofBundle 𝕜 n E).det.core.TotalSpace ≃ₜ
+point-indexed core `FiniteRankBundleCore.ofLinearEquiv (.refl 𝕜 (Fin n → 𝕜)) E` is homeomorphic
+to the determinant line bundle of `E`, by `TauCeti.DetBundle.ofLinearEquivDetFiberEquiv` on each
+fibre. -/
+def ofLinearEquivDetHomeomorph :
+    (FiniteRankBundleCore.ofLinearEquiv
+      (ContinuousLinearEquiv.refl 𝕜 (Fin n → 𝕜)) E).det.core.TotalSpace ≃ₜ
       TotalSpace 𝕜 (DetBundle 𝕜 (Fin n → 𝕜) E) :=
-  bundleHomeomorph (ofBundleDetFiberEquiv E) <| by
-    set A := FiniteRankBundleCore.ofBundle 𝕜 n E
+  bundleHomeomorph (ofLinearEquivDetFiberEquiv E) <| by
+    set A := FiniteRankBundleCore.ofLinearEquiv (ContinuousLinearEquiv.refl 𝕜 (Fin n → 𝕜)) E
     refine FiberBundle.continuous_of_forall_trivialization _ (fun _ ↦ rfl) fun p ↦ ?_
     refine ⟨A.det.core.localTriv p.proj,
       trivializationAt 𝕜 (DetBundle 𝕜 (Fin n → 𝕜) E) p.proj, fun _ ↦ detCoord A,
@@ -690,14 +699,15 @@ def ofBundleDetHomeomorph :
       simp
     -- Reconstructed-core fibres are aliases of the model; expose them for the coordinate formula.
     erw [trivialization_apply_mk _ hx', VectorBundleCore.localTriv_apply, A.det.indexAt_eq,
-      FiniteRankBundleCore.coordChange_det_ofBundle, hsmul, ofBundleDetFiberEquiv_apply,
-      chartCoord_chartCoord_symm]
+      FiniteRankBundleCore.coordChange_det_ofLinearEquiv_refl, hsmul,
+      ofLinearEquivDetFiberEquiv_apply, chartCoord_chartCoord_symm]
 
 @[simp]
-theorem ofBundleDetHomeomorph_apply
-    (p : (FiniteRankBundleCore.ofBundle 𝕜 n E).det.core.TotalSpace) :
-    ofBundleDetHomeomorph (𝕜 := 𝕜) (n := n) E p =
-      ⟨p.proj, ofBundleDetFiberEquiv (𝕜 := 𝕜) (n := n) E p.proj p.snd⟩ :=
+theorem ofLinearEquivDetHomeomorph_apply
+    (p : (FiniteRankBundleCore.ofLinearEquiv
+      (ContinuousLinearEquiv.refl 𝕜 (Fin n → 𝕜)) E).det.core.TotalSpace) :
+    ofLinearEquivDetHomeomorph (𝕜 := 𝕜) (n := n) E p =
+      ⟨p.proj, ofLinearEquivDetFiberEquiv (𝕜 := 𝕜) (n := n) E p.proj p.snd⟩ :=
   bundleHomeomorph_apply _ _ p
 
 end FiniteRank

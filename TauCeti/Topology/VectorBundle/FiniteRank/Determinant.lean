@@ -22,9 +22,9 @@ For a finite-rank core `A : FiniteRankBundleCore 𝕜 B` of rank `r`, its determ
   to `A.det` for rank-`r` cores, scaling coordinates by the determinant.
 * `coordChange_ofLinearEquiv_det` shows that the determinant transitions of `ofLinearEquiv e V`
   are independent of `e`.
-* Over a complete field, `dualDetIso` identifies `(A.dual).det ≅ (A.det).dual`, and
-  `dualDetTopFormTotalSpaceHomeomorph` identifies `A.dual.det` with the bundle of top-degree
-  continuous alternating forms on `A.core.Fiber`.
+* Over a complete field, `dualDetIso` identifies `(A.dual).det ≅ (A.det).dual` naturally
+  (`dualDetIso_hom_naturality`), and `dualDetTopFormTotalSpaceHomeomorph` identifies `A.dual.det`
+  with the bundle of top-degree continuous alternating forms on `A.core.Fiber`.
 
 ## References
 
@@ -166,7 +166,7 @@ theorem detMap_def (r : ℕ) {A D : FiniteRankBundleCore 𝕜 B}
 @[simp] theorem detMap_id (r : ℕ) (A : FiniteRankBundleCore 𝕜 B) (hA : A.rank = r) :
     detMap r (𝟙 A) hA hA = 𝟙 A.det := by simp [detMap]
 
-@[simp] theorem detMap_comp (r : ℕ) {A D C : FiniteRankBundleCore 𝕜 B}
+@[simp ←] theorem detMap_comp (r : ℕ) {A D C : FiniteRankBundleCore 𝕜 B}
     (f : A ⟶ D) (g : D ⟶ C) (hA : A.rank = r) (hD : D.rank = r) (hC : C.rank = r) :
     detMap r (f ≫ g) hA hC = detMap r f hA hD ≫ detMap r g hD hC := by simp [detMap]
 
@@ -189,6 +189,21 @@ theorem normalizedFiberMap_apply {r : ℕ} {A D : FiniteRankBundleCore 𝕜 B}
   simp only [normalizedFiberMap, ContinuousLinearMap.comp_apply, ContinuousLinearEquiv.coe_coe]
   rfl
 
+/-- If `f.fiberMap x` is heterogeneously equal to `T : (Fin r → 𝕜) →L[𝕜] (Fin r → 𝕜)`, then
+`normalizedFiberMap f hA hD x` equals `T`. -/
+theorem normalizedFiberMap_eq_of_heq {r : ℕ} {A D : FiniteRankBundleCore 𝕜 B}
+    (f : A ⟶ D) (hA : A.rank = r) (hD : D.rank = r) (x : B)
+    (T : (Fin r → 𝕜) →L[𝕜] (Fin r → 𝕜)) (hf : HEq (f.fiberMap x) T) :
+    normalizedFiberMap f hA hD x = T := by
+  rcases A with ⟨nA, cA, hcA⟩
+  rcases D with ⟨nD, cD, hcD⟩
+  dsimp only at hA hD hf
+  subst hA hD
+  cases eq_of_heq hf
+  ext v i
+  rw [normalizedFiberMap_apply]
+  simp only [Fin.cast_eq_self]
+
 /-- On scalar coordinates, `detMap r f hA hD` multiplies by the determinant of
 `normalizedFiberMap f hA hD x`. -/
 theorem detScalarEquiv_fiberMap_detMap (r : ℕ) {A D : FiniteRankBundleCore 𝕜 B}
@@ -201,10 +216,7 @@ theorem detScalarEquiv_fiberMap_detMap (r : ℕ) {A D : FiniteRankBundleCore �
   subst hA hD
   rw [detMap, fiberMap_comp, fiberMap_comp, ContinuousLinearMap.comp_apply,
     ContinuousLinearMap.comp_apply, detScalarEquiv_fiberMap_detExteriorPowerIso_inv,
-    fiberMap_exteriorPower_map]
-  have hnorm : normalizedFiberMap f rfl rfl x = f.fiberMap x := by
-    ext v i; simp [normalizedFiberMap_apply]
-  rw [hnorm]
+    fiberMap_exteriorPower_map, normalizedFiberMap_eq_of_heq f rfl rfl x _ HEq.rfl]
   exact (topExteriorScalarEquiv_exteriorPowerCoords_self (f.fiberMap x) _).trans
     (congrArg _ (topExteriorScalarEquiv_fiberMap_detExteriorPowerIso_hom _ _ _ _))
 
@@ -248,6 +260,20 @@ noncomputable def detIso (r : ℕ) {A D : FiniteRankBundleCore 𝕜 B}
     (detIso r e hA hD).inv = detMap r e.inv hD hA := by
   simp [detIso, detMap, Category.assoc]
 
+@[simp] theorem detIso_refl (r : ℕ) (A : FiniteRankBundleCore 𝕜 B) (hA : A.rank = r) :
+    detIso r (Iso.refl A) hA hA = Iso.refl A.det :=
+  Iso.ext <| detMap_id r A hA
+
+@[simp] theorem detIso_symm (r : ℕ) {A D : FiniteRankBundleCore 𝕜 B}
+    (e : A ≅ D) (hA : A.rank = r) (hD : D.rank = r) :
+    (detIso r e hA hD).symm = detIso r e.symm hD hA :=
+  Iso.ext <| detIso_inv r e hA hD
+
+@[simp] theorem detIso_trans (r : ℕ) {A D C : FiniteRankBundleCore 𝕜 B}
+    (e₁ : A ≅ D) (e₂ : D ≅ C) (hA : A.rank = r) (hD : D.rank = r) (hC : C.rank = r) :
+    (detIso r e₁ hA hD).trans (detIso r e₂ hD hC) = detIso r (e₁.trans e₂) hA hC :=
+  Iso.ext <| (detMap_comp r e₁.hom e₂.hom hA hD hC).symm
+
 section OfLinearEquiv
 
 variable {r : ℕ} {F : Type*} [NormedAddCommGroup F] [NormedSpace 𝕜 F]
@@ -276,9 +302,8 @@ theorem detScalarEquiv_fiberMap_ofLinearEquivChangeIso_hom (x : B)
         detScalarEquiv (ofLinearEquiv e₁ V) u := by
   rw [detIso_hom, detScalarEquiv_fiberMap_detMap]
   congr 2
-  ext v i
-  rw [normalizedFiberMap_apply, fiberMap_ofLinearEquivChangeIso_hom]
-  rfl
+  exact normalizedFiberMap_eq_of_heq _ _ _ _ _
+    (heq_of_eq (fiberMap_ofLinearEquivChangeIso_hom e₁ e₂ V x))
 
 /-- On determinant line cores, the inverse map of `ofLinearEquivChangeIso e₁ e₂ V` multiplies scalar
 coordinates by the determinant of `e₂.symm.trans e₁`. -/
@@ -291,9 +316,8 @@ theorem detScalarEquiv_fiberMap_ofLinearEquivChangeIso_inv (x : B)
         detScalarEquiv (ofLinearEquiv e₂ V) u := by
   rw [detIso_inv, detScalarEquiv_fiberMap_detMap]
   congr 2
-  ext v i
-  rw [normalizedFiberMap_apply, fiberMap_ofLinearEquivChangeIso_inv]
-  rfl
+  exact normalizedFiberMap_eq_of_heq _ _ _ _ _
+    (heq_of_eq (fiberMap_ofLinearEquivChangeIso_inv e₁ e₂ V x))
 
 end OfLinearEquiv
 
@@ -377,6 +401,68 @@ theorem detScalarEquiv_fiberMap_dualDetIso_inv (A : FiniteRankBundleCore 𝕜 B)
         (Fin A.dual.det.rank → 𝕜) ≃L[𝕜] (Fin A.det.dual.rank → 𝕜))
       (fun i j x _ _ ↦ coordChange_comp_dualDet A i j x) x) u)).trans
     ((detScalarEquiv A.dual).apply_symm_apply _)
+
+private theorem detScalarEquiv_piTranspose {A D : FiniteRankBundleCore 𝕜 B}
+    (T : (Fin A.det.rank → 𝕜) →L[𝕜] (Fin D.det.rank → 𝕜)) (w : Fin D.det.rank → 𝕜) :
+    detScalarEquiv A (T.piTranspose w) =
+      detScalarEquiv D (T ((detScalarEquiv A).symm 1)) * detScalarEquiv D w := by
+  have hsum := ContinuousLinearMap.sum_mul_piTranspose T ((detScalarEquiv A).symm 1) w
+  have hA : ∑ i : Fin A.det.rank, (detScalarEquiv A).symm 1 i * T.piTranspose w i =
+      detScalarEquiv A (T.piTranspose w) := by
+    let i₀ : Fin A.det.rank := ⟨0, A.rank_det ▸ Nat.zero_lt_one⟩
+    rw [Fintype.sum_eq_single i₀ fun i hi ↦ (hi (Fin.eq_of_val_eq (by
+      have hlt : (i : ℕ) < 1 := Nat.lt_of_lt_of_eq i.isLt A.rank_det
+      have hi0 : (i₀ : ℕ) = 0 := rfl
+      omega))).elim]
+    simp [i₀]
+  have hD : ∑ j : Fin D.det.rank, T ((detScalarEquiv A).symm 1) j * w j =
+      detScalarEquiv D (T ((detScalarEquiv A).symm 1)) * detScalarEquiv D w := by
+    let j₀ : Fin D.det.rank := ⟨0, D.rank_det ▸ Nat.zero_lt_one⟩
+    rw [Fintype.sum_eq_single j₀ fun j hj ↦ (hj (Fin.eq_of_val_eq (by
+      have hlt : (j : ℕ) < 1 := Nat.lt_of_lt_of_eq j.isLt D.rank_det
+      have hj0 : (j₀ : ℕ) = 0 := rfl
+      omega))).elim]
+    rfl
+  exact hA.symm.trans (hsum.trans hD)
+
+/-- `dualDetIso` is natural with respect to `detMap` and `dualMap`: the determinant of a
+dual morphism agrees with the dual of the determinant morphism. -/
+@[reassoc]
+theorem dualDetIso_hom_naturality {r : ℕ} {A D : FiniteRankBundleCore 𝕜 B}
+    (f : A ⟶ D) (hA : A.rank = r) (hD : D.rank = r) :
+    detMap r (dualMap f) ((rank_dual D).trans hD) ((rank_dual A).trans hA) ≫ (dualDetIso A).hom =
+      (dualDetIso D).hom ≫ dualMap (detMap r f hA hD) := by
+  refine hom_ext fun x ↦ ContinuousLinearMap.ext fun u ↦ (detScalarEquiv A).injective ?_
+  have hpi : detScalarEquiv A ((dualMap (detMap r f hA hD)).fiberMap x
+        ((dualDetIso D).hom.fiberMap x u)) =
+      detScalarEquiv D ((detMap r f hA hD).fiberMap x ((detScalarEquiv A).symm 1)) *
+        detScalarEquiv D.dual u := by
+    rw [fiberMap_dualMap]
+    exact (detScalarEquiv_piTranspose ((detMap r f hA hD).fiberMap x)
+      ((dualDetIso D).hom.fiberMap x u)).trans
+      (congrArg (_ * ·) (detScalarEquiv_fiberMap_dualDetIso_hom D x u))
+  rw [fiberMap_comp, ContinuousLinearMap.comp_apply, detScalarEquiv_fiberMap_dualDetIso_hom,
+    detScalarEquiv_fiberMap_detMap, fiberMap_comp, ContinuousLinearMap.comp_apply]
+  refine (congrArg (· * detScalarEquiv D.dual u) ?_).trans hpi.symm
+  rw [detScalarEquiv_fiberMap_detMap, ContinuousLinearEquiv.apply_symm_apply, mul_one]
+  rcases A with ⟨nA, cA, hcA⟩
+  rcases D with ⟨nD, cD, hcD⟩
+  dsimp only at hA hD
+  subst hA hD
+  rw [normalizedFiberMap_eq_of_heq f rfl rfl x _ HEq.rfl]
+  exact (congrArg ContinuousLinearMap.det
+    (normalizedFiberMap_eq_of_heq (dualMap f) _ _ x (f.fiberMap x).piTranspose
+      (heq_of_eq (fiberMap_dualMap f x)))).trans
+    (ContinuousLinearMap.det_piTranspose (f.fiberMap x))
+
+/-- Naturality of the inverse `(dualDetIso _).inv` with respect to `dualMap` and `detMap`. -/
+@[reassoc]
+theorem dualDetIso_inv_naturality {r : ℕ} {A D : FiniteRankBundleCore 𝕜 B}
+    (f : A ⟶ D) (hA : A.rank = r) (hD : D.rank = r) :
+    dualMap (detMap r f hA hD) ≫ (dualDetIso A).inv =
+      (dualDetIso D).inv ≫
+        detMap r (dualMap f) ((rank_dual D).trans hD) ((rank_dual A).trans hA) := by
+  rw [Iso.comp_inv_eq, Category.assoc, dualDetIso_hom_naturality, Iso.inv_hom_id_assoc]
 
 /-- Each fibre of `A.dual.det` is identified with the space of top-degree scalar-valued continuous
 alternating forms on `A.core.Fiber x` via `(Pi.basisFun 𝕜 (Fin A.rank)).continuousDet`. -/

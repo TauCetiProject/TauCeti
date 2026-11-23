@@ -149,7 +149,7 @@ theorem contMDiff_dualDetTopFormFiberEquiv (A : FiniteRankBundleCore 𝕜 B) :
         TotalSpace.mk' ((Fin A.rank → 𝕜) [⋀^Fin A.rank]→L[𝕜] 𝕜)
           (E := fun x ↦ A.core.Fiber x [⋀^Fin A.rank]→L[𝕜] 𝕜) p.proj
           (dualDetTopFormFiberEquiv A p.proj p.snd)) :=
-  contMDiff_of_localTriv_snd_of_mem_baseSet A.dual.det _ (fun _ ↦ rfl)
+  contMDiff_of_localTriv_snd A.dual.det _ (fun _ ↦ rfl)
     ((detScalarEquiv A.dual).trans
       (Pi.basisFun 𝕜 (Fin A.rank)).topFormEquiv.symm).toContinuousLinearMap
     fun b ⟨x, u⟩ hx ↦

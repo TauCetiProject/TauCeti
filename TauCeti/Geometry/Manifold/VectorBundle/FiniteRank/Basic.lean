@@ -24,8 +24,7 @@ This file provides general `C^n` criteria for morphisms and bundle maps whose lo
 intertwined by a fixed continuous linear map:
 
 * `FiniteRankBundleCore.contMDiff_of_localTriv_snd`,
-  `FiniteRankBundleCore.contMDiff_of_trivializationAt_snd`,
-  `FiniteRankBundleCore.contMDiff_totalSpaceMap_of_mem_baseSet`, and
+  `FiniteRankBundleCore.contMDiff_of_trivializationAt_snd`, and
   `FiniteRankBundleCore.contMDiff_totalSpaceMap_of_coordChange` establish `C^n` regularity on total
   spaces without `C^n` assumptions on the cores;
 * `FiniteRankBundleCore.contMDiffOn_inChartCoordinates_of_coordChange_comp` and
@@ -71,10 +70,9 @@ theorem contMDiffAt_localTriv_snd (E : FiniteRankBundleCore 𝕜 B) (p₀ : E.co
 identity of `B` whose fibre coordinate in each preferred trivialization over its chart domain is a
 fixed continuous linear map `L` of the chart coordinate in `E` is `C^n`, without any smoothness
 hypothesis on the base or transition functions. -/
-theorem contMDiff_of_localTriv_snd_of_mem_baseSet {F : Type*} [NormedAddCommGroup F]
-    [NormedSpace 𝕜 F] {V : B → Type*} [TopologicalSpace (TotalSpace F V)]
-    [∀ x, TopologicalSpace (V x)] [FiberBundle F V]
-    (E : FiniteRankBundleCore 𝕜 B) (f : E.core.TotalSpace → TotalSpace F V)
+theorem contMDiff_of_localTriv_snd {F : Type*} [NormedAddCommGroup F] [NormedSpace 𝕜 F]
+    {V : B → Type*} [TopologicalSpace (TotalSpace F V)] [∀ x, TopologicalSpace (V x)]
+    [FiberBundle F V] (E : FiniteRankBundleCore 𝕜 B) (f : E.core.TotalSpace → TotalSpace F V)
     (hf_proj : ∀ p, (f p).proj = p.proj) (L : (Fin E.rank → 𝕜) →L[𝕜] F)
     (hL : ∀ (b : B) (p : E.core.TotalSpace), p.proj ∈ E.core.baseSet b →
       (trivializationAt F V b (f p)).2 = L ((E.core.localTriv b p).2)) :
@@ -88,27 +86,13 @@ theorem contMDiff_of_localTriv_snd_of_mem_baseSet {F : Type*} [NormedAddCommGrou
   filter_upwards [hU] with q hq
   exact hL p₀.proj q ((E.core.mem_localTriv_source p₀.proj q).1 hq)
 
-/-- A map from `E.core.TotalSpace` into the total space of a fibre bundle `V` covering the
-identity of `B` whose fibre coordinate in every preferred trivialization is a fixed continuous
-linear map `L` of the chart coordinate in `E` is `C^n`, without any smoothness hypothesis on the
-base or transition functions. -/
-theorem contMDiff_of_localTriv_snd {F : Type*} [NormedAddCommGroup F] [NormedSpace 𝕜 F]
-    {V : B → Type*} [TopologicalSpace (TotalSpace F V)] [∀ x, TopologicalSpace (V x)]
-    [FiberBundle F V] (E : FiniteRankBundleCore 𝕜 B) (f : E.core.TotalSpace → TotalSpace F V)
-    (hf_proj : ∀ p, (f p).proj = p.proj) (L : (Fin E.rank → 𝕜) →L[𝕜] F)
-    (hL : ∀ (b : B) (p : E.core.TotalSpace),
-      (trivializationAt F V b (f p)).2 = L ((E.core.localTriv b p).2)) :
-    ContMDiff (I.prod 𝓘(𝕜, Fin E.rank → 𝕜)) (I.prod 𝓘(𝕜, F)) n f :=
-  contMDiff_of_localTriv_snd_of_mem_baseSet E f hf_proj L fun b p _ ↦ hL b p
-
 /-- A map from the total space of a fibre bundle `V` into `E.core.TotalSpace` covering the
 identity of `B` whose chart coordinate in `E` at each base point over its trivialization domain is
 a fixed continuous linear map `L` of the fibre coordinate in the preferred trivialization of `V` is
 `C^n`, without any smoothness hypothesis on the base or transition functions. -/
-theorem contMDiff_of_trivializationAt_snd_of_mem_baseSet {F : Type*} [NormedAddCommGroup F]
-    [NormedSpace 𝕜 F] {V : B → Type*} [TopologicalSpace (TotalSpace F V)]
-    [∀ x, TopologicalSpace (V x)] [FiberBundle F V]
-    (E : FiniteRankBundleCore 𝕜 B) (f : TotalSpace F V → E.core.TotalSpace)
+theorem contMDiff_of_trivializationAt_snd {F : Type*} [NormedAddCommGroup F] [NormedSpace 𝕜 F]
+    {V : B → Type*} [TopologicalSpace (TotalSpace F V)] [∀ x, TopologicalSpace (V x)]
+    [FiberBundle F V] (E : FiniteRankBundleCore 𝕜 B) (f : TotalSpace F V → E.core.TotalSpace)
     (hf_proj : ∀ p, (f p).proj = p.proj) (L : F →L[𝕜] (Fin E.rank → 𝕜))
     (hL : ∀ (b : B) (p : TotalSpace F V), p.proj ∈ (trivializationAt F V b).baseSet →
       (E.core.localTriv b (f p)).2 = L ((trivializationAt F V b p).2)) :
@@ -123,43 +107,20 @@ theorem contMDiff_of_trivializationAt_snd_of_mem_baseSet {F : Type*} [NormedAddC
   filter_upwards [hU] with q hq
   exact hL p₀.proj q ((trivializationAt F V p₀.proj).mem_source.1 hq)
 
-/-- A map from the total space of a fibre bundle `V` into `E.core.TotalSpace` covering the
-identity of `B` whose chart coordinate in `E` at every base point is a fixed continuous linear
-map `L` of the fibre coordinate in the preferred trivialization of `V` is `C^n`, without any
-smoothness hypothesis on the base or transition functions. -/
-theorem contMDiff_of_trivializationAt_snd {F : Type*} [NormedAddCommGroup F] [NormedSpace 𝕜 F]
-    {V : B → Type*} [TopologicalSpace (TotalSpace F V)] [∀ x, TopologicalSpace (V x)]
-    [FiberBundle F V] (E : FiniteRankBundleCore 𝕜 B) (f : TotalSpace F V → E.core.TotalSpace)
-    (hf_proj : ∀ p, (f p).proj = p.proj) (L : F →L[𝕜] (Fin E.rank → 𝕜))
-    (hL : ∀ (b : B) (p : TotalSpace F V),
-      (E.core.localTriv b (f p)).2 = L ((trivializationAt F V b p).2)) :
-    ContMDiff (I.prod 𝓘(𝕜, F)) (I.prod 𝓘(𝕜, Fin E.rank → 𝕜)) n f :=
-  contMDiff_of_trivializationAt_snd_of_mem_baseSet E f hf_proj L fun b p _ ↦ hL b p
-
 /-- A morphism `a : E ⟶ E'` of point-indexed finite-rank cores whose fibre maps intertwine the
 point-to-chart transitions on `E`'s chart domains with a fixed continuous linear map `L` glues to a
 `C^n` map of total spaces, without any smoothness assumption on the base or on the cores. -/
-theorem contMDiff_totalSpaceMap_of_mem_baseSet {E E' : FiniteRankBundleCore 𝕜 B} (a : E ⟶ E')
+theorem contMDiff_totalSpaceMap_of_coordChange {E E' : FiniteRankBundleCore 𝕜 B} (a : E ⟶ E')
     (L : (Fin E.rank → 𝕜) →L[𝕜] (Fin E'.rank → 𝕜))
     (hL : ∀ x b, x ∈ E.core.baseSet b → ∀ v,
       E'.core.coordChange x b x (a.fiberMap x v) = L (E.core.coordChange x b x v)) :
     ContMDiff (I.prod 𝓘(𝕜, Fin E.rank → 𝕜)) (I.prod 𝓘(𝕜, Fin E'.rank → 𝕜)) n
       a.totalSpaceMap :=
-  contMDiff_of_localTriv_snd_of_mem_baseSet E a.totalSpaceMap a.totalSpaceMap_proj L
+  contMDiff_of_localTriv_snd E a.totalSpaceMap a.totalSpaceMap_proj L
     fun b ⟨x, v⟩ hx ↦ by
       rw [E'.trivializationAt_core]
       simp only [CoordinateHom.totalSpaceMap_mk, localTriv_apply, E.indexAt_eq, E'.indexAt_eq]
       exact hL x b hx v
-
-/-- A morphism `a : E ⟶ E'` of point-indexed finite-rank cores whose fibre maps intertwine the
-point-to-chart transitions with a fixed continuous linear map `L` glues to a `C^n` map of total
-spaces, without any smoothness assumption on the base or on the cores. -/
-theorem contMDiff_totalSpaceMap_of_coordChange {E E' : FiniteRankBundleCore 𝕜 B} (a : E ⟶ E')
-    (L : (Fin E.rank → 𝕜) →L[𝕜] (Fin E'.rank → 𝕜))
-    (hL : ∀ x b v, E'.core.coordChange x b x (a.fiberMap x v) = L (E.core.coordChange x b x v)) :
-    ContMDiff (I.prod 𝓘(𝕜, Fin E.rank → 𝕜)) (I.prod 𝓘(𝕜, Fin E'.rank → 𝕜)) n
-      a.totalSpaceMap :=
-  contMDiff_totalSpaceMap_of_mem_baseSet a L fun x b _ v ↦ hL x b v
 
 /-- If `E.core.baseSet i ⊆ E'.core.baseSet i`, `E'` is a `C^n` core, and `a : E ⟶ E'` intertwines
 the transitions from `i` to each point `x` with a fixed continuous linear map `L`, then the
@@ -219,7 +180,7 @@ theorem contMDiff_totalSpaceMap_of_fiberMap_eq
       T.comp (A.core.coordChange i j x) = (D.core.coordChange i j x).comp T) :
     ContMDiff (I.prod 𝓘(𝕜, Fin A.rank → 𝕜)) (I.prod 𝓘(𝕜, Fin D.rank → 𝕜)) n
       a.totalSpaceMap :=
-  contMDiff_totalSpaceMap_of_mem_baseSet a T fun x b hb v ↦ by
+  contMDiff_totalSpaceMap_of_coordChange a T fun x b hb v ↦ by
     rw [ha x]
     exact (DFunLike.congr_fun (hT x b x (A.mem_baseSet_self x) hb) v).symm
 
