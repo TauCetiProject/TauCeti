@@ -20,15 +20,14 @@ import TauCeti.LinearAlgebra.Matrix.PartialIsometry
 /-!
 # Rectangular partial isometries and stabilized Murray–von Neumann paths on `CStarMatrix`
 
-Rectangular partial isometries (`v * vᴴ * v = v`), projection unitary equivalence (`UnitaryEquiv`),
-projection homotopy (`HomotopyEquiv`), and extensions of Murray–von Neumann equivalence
+Rectangular partial isometries (`v * vᴴ * v = v`) and extensions of Murray–von Neumann equivalence
 (`TauCeti.Analysis.CStarAlgebra.Projection.Equivalence`) over a (possibly non-unital) C⋆-algebra
 `A`: proper-star characterizations, compatibility with `blockSum`, `add_of_mul_eq_zero`, `amplify`,
-`IsStarProjection.murrayVonNeumannEquiv_reindexₐ`, rectangular unitization descent, the self-adjoint
-unitary `stabilizedConjUnitary` sending `blockSum p 0` to `blockSum 0 q`, the exponential unitary
-path `stabilizedConjUnitaryPath` and conjugation formula
-`expUnitary_conj_blockSum_eq_stabilizedProjRot` over a star-ordered unital C⋆-algebra `A`, and
-the unit-free projection path `stabilizedProjPath`.
+`IsStarProjection.murrayVonNeumannEquiv_reindexₐ`, comparison with `TauCeti.UnitaryEquiv` and
+`TauCeti.HomotopyEquiv`, rectangular unitization descent, the self-adjoint unitary
+`stabilizedConjUnitary` sending `blockSum p 0` to `blockSum 0 q`, the exponential unitary path
+`stabilizedConjUnitaryPath` and conjugation formula `expUnitary_conj_blockSum_eq_stabilizedProjRot`
+over a star-ordered unital C⋆-algebra `A`, and the unit-free projection path `stabilizedProjPath`.
 
 ## Main definitions and statements
 
@@ -38,8 +37,8 @@ the unit-free projection path `stabilizedProjPath`.
   `murrayVonNeumannEquiv_iff_exists_isPartialIsometry`,
   `isPartialIsometry_iff_isStarProjection_conjTranspose_mul_self`,
   `murrayVonNeumannEquiv_iff_exists_mul_eq_of_isIdempotentElem_left`/`_right`.
-* `CStarMatrix.UnitaryEquiv`, `UnitaryEquiv.murrayVonNeumannEquiv`, `CStarMatrix.HomotopyEquiv`,
-  `IsStarProjection.homotopyEquiv_conj_of_joined_one`, `HomotopyEquiv.of_joined_one_unitary_conj`.
+* `TauCeti.UnitaryEquiv.murrayVonNeumannEquiv`,
+  `IsStarProjection.murrayVonNeumannEquiv_conj_unitary`.
 * `MurrayVonNeumannEquiv.blockSum`, `add_of_mul_eq_zero`, `amplify`,
   `IsStarProjection.murrayVonNeumannEquiv_of_conj_unitization`,
   `murrayVonNeumannEquiv_of_unitary_conj_unitization`, `murrayVonNeumannEquiv_reindexₐ`,
@@ -309,7 +308,7 @@ theorem IsPartialIsometry.norm_eq_one (hv : v.IsPartialIsometry) (hv0 : v ≠ 0)
       (mt conjTranspose_mul_self_eq_zero.mp hv0)
 end
 /-- `ofMatrix.symm p` is a star projection iff `p` is a star projection. -/
-@[simp] theorem isStarProjection_ofMatrix_symm_iff [NonUnitalNonAssocSemiring A] [Star A]
+@[simp] theorem isStarProjection_ofMatrix_symm_iff [AddCommMonoid A] [Mul A] [Star A]
     {p : CStarMatrix m m A} : IsStarProjection (ofMatrix.symm p) ↔ IsStarProjection p := by
   rw [isStarProjection_iff, isStarProjection_iff, IsIdempotentElem, IsIdempotentElem,
     IsSelfAdjoint, IsSelfAdjoint, ← ofMatrix_symm_mul, Matrix.star_eq_conjTranspose,
@@ -330,6 +329,10 @@ theorem murrayVonNeumannEquiv_iff_matrix [NonUnitalSemiring A] [StarRing A]
       (isStarProjection_ofMatrix_symm_iff.mp hp) (isStarProjection_ofMatrix_symm_iff.mp hq)).mpr
         ⟨ofMatrix v, ofMatrix.symm.injective (by simp [hvp]),
           ofMatrix.symm.injective (by simp [hvq])⟩⟩
+theorem murrayVonNeumannEquiv_comm [NonUnitalSemiring A] [StarRing A] {p : CStarMatrix m m A}
+    {q : CStarMatrix n n A} : p.MurrayVonNeumannEquiv q ↔ q.MurrayVonNeumannEquiv p := by
+  rw [murrayVonNeumannEquiv_iff_matrix, murrayVonNeumannEquiv_iff_matrix,
+    Matrix.isMurrayVonNeumannEquivalent_comm]
 section
 variable [NonUnitalSemiring A] [StarRing A] {p : CStarMatrix m m A} {q : CStarMatrix n n A}
 /-- A rectangular partial isometry implements Murray–von Neumann equivalence between its initial
@@ -359,20 +362,17 @@ variable [NonUnitalRing A] [StarRing A] [PartialOrder A] [StarOrderedRing A] [Is
 theorem murrayVonNeumannEquiv_iff_exists_mul_eq_of_isIdempotentElem_left (hp : IsIdempotentElem p) :
     p.MurrayVonNeumannEquiv q ↔ ∃ v : CStarMatrix n m A, v.conjTranspose * v = p ∧
       v * v.conjTranspose = q :=
-  ⟨MurrayVonNeumannEquiv.exists_matrix, fun ⟨v, hvp, hvq⟩ => by
-    have hv : v.IsPartialIsometry := .of_isIdempotentElem_conjTranspose_mul_self (by rwa [hvp])
-    exact (murrayVonNeumannEquiv_iff
-      (by rw [← hvp]; exact hv.isStarProjection_conjTranspose_mul_self)
-      (by rw [← hvq]; exact hv.isStarProjection_mul_conjTranspose_self)).mpr ⟨v, hvp, hvq⟩⟩
+  ⟨MurrayVonNeumannEquiv.exists_matrix, fun ⟨v, hvp, hvq⟩ =>
+    murrayVonNeumannEquiv_iff_exists_isPartialIsometry.mpr
+      ⟨v, .of_isIdempotentElem_conjTranspose_mul_self (by rwa [hvp]), hvp, hvq⟩⟩
 /-- Over a proper-star ordered ring, `p ∼ q` (idempotent `q`) iff `∃ v, vᴴ * v = p ∧ v * vᴴ = q`. -/
 theorem murrayVonNeumannEquiv_iff_exists_mul_eq_of_isIdempotentElem_right
     (hq : IsIdempotentElem q) : p.MurrayVonNeumannEquiv q ↔
-      ∃ v : CStarMatrix n m A, v.conjTranspose * v = p ∧ v * v.conjTranspose = q :=
-  ⟨MurrayVonNeumannEquiv.exists_matrix, fun ⟨v, hvp, hvq⟩ => by
-    have hv : v.IsPartialIsometry := .of_isIdempotentElem_mul_conjTranspose_self (by rwa [hvq])
-    exact (murrayVonNeumannEquiv_iff
-      (by rw [← hvp]; exact hv.isStarProjection_conjTranspose_mul_self)
-      (by rw [← hvq]; exact hv.isStarProjection_mul_conjTranspose_self)).mpr ⟨v, hvp, hvq⟩⟩
+      ∃ v : CStarMatrix n m A, v.conjTranspose * v = p ∧ v * v.conjTranspose = q := by
+  rw [murrayVonNeumannEquiv_comm,
+    murrayVonNeumannEquiv_iff_exists_mul_eq_of_isIdempotentElem_left hq]
+  exact ⟨fun ⟨v, hvq, hvp⟩ => ⟨v.conjTranspose, by simpa using hvp, by simpa using hvq⟩,
+    fun ⟨v, hvp, hvq⟩ => ⟨v.conjTranspose, by simpa using hvq, by simpa using hvp⟩⟩
 end
 namespace MurrayVonNeumannEquiv
 /-- `MurrayVonNeumannEquiv` is compatible with `blockSum`. -/
@@ -390,10 +390,6 @@ protected theorem amplify (k : Type*) [Fintype k] [DecidableEq k] [NonUnitalSemi
   rcases h.exists_isPartialIsometry with ⟨v, hv, rfl, rfl⟩
   simpa [amplify_conjTranspose, amplify_mul] using (hv.amplify k).murrayVonNeumannEquiv
 end MurrayVonNeumannEquiv
-theorem murrayVonNeumannEquiv_comm [NonUnitalSemiring A] [StarRing A] {p : CStarMatrix m m A}
-    {q : CStarMatrix n n A} : p.MurrayVonNeumannEquiv q ↔ q.MurrayVonNeumannEquiv p := by
-  rw [murrayVonNeumannEquiv_iff_matrix, murrayVonNeumannEquiv_iff_matrix,
-    Matrix.isMurrayVonNeumannEquivalent_comm]
 section
 variable [NonUnitalSemiring A] [StarRing A]
 private theorem mvn_reindexₐ_congr (R) [Semiring R] [Module R A] (e₁ : k ≃ l) (e₂ : m ≃ n)
@@ -558,76 +554,22 @@ theorem _root_.IsStarProjection.murrayVonNeumannEquiv_of_unitary_conj_unitizatio
     (by rwa [← star_eq_conjTranspose])
 end
 
-section UnitaryEquiv
-variable [Fintype n] [DecidableEq n] [Semiring A] [StarRing A] {p q r : CStarMatrix n n A}
-/-- Two square matrices are unitarily equivalent projections when both are star projections and
-some unitary `u : unitary (CStarMatrix n n A)` satisfies `u * p * star u = q`. -/
-def UnitaryEquiv (p q : CStarMatrix n n A) : Prop :=
-  IsStarProjection p ∧ IsStarProjection q ∧ ∃ u : unitary (CStarMatrix n n A),
-    (u : CStarMatrix n n A) * p * star (u : CStarMatrix n n A) = q
-namespace UnitaryEquiv
-/-- The left matrix of a unitary equivalence is a star projection. -/
-theorem isStarProjection_left (h : UnitaryEquiv p q) : IsStarProjection p := h.1
-/-- The right matrix of a unitary equivalence is a star projection. -/
-theorem isStarProjection_right (h : UnitaryEquiv p q) : IsStarProjection q := h.2.1
-/-- Extract a unitary conjugating `p` to `q`. -/
-theorem exists_unitary (h : UnitaryEquiv p q) : ∃ u : unitary (CStarMatrix n n A),
-    (u : CStarMatrix n n A) * p * star (u : CStarMatrix n n A) = q := h.2.2
-/-- Every star projection is unitarily equivalent to itself. -/
-protected theorem refl (hp : IsStarProjection p) : UnitaryEquiv p p := ⟨hp, hp, 1, by simp⟩
-/-- Unitary equivalence of star projections is symmetric. -/
-protected theorem symm (h : UnitaryEquiv p q) : UnitaryEquiv q p := by
-  obtain ⟨hp, hq, u, hu⟩ := h; refine ⟨hq, hp, star u, ?_⟩
-  let U : CStarMatrix n n A := u; have hU : star U * U = 1 := Unitary.coe_star_mul_self u
-  simp only [← hu, Unitary.coe_star, star_star]
-  calc star U * (U * p * star U) * U
-      = (star U * U) * p * (star U * U) := by simp only [mul_assoc]
-    _ = p := by rw [hU, _root_.one_mul, _root_.mul_one]
-/-- Unitary equivalence of star projections is transitive. -/
-protected theorem trans (h₁ : UnitaryEquiv p q) (h₂ : UnitaryEquiv q r) : UnitaryEquiv p r := by
-  obtain ⟨hp, _, u, hu⟩ := h₁; obtain ⟨_, hr, v, hv⟩ := h₂; refine ⟨hp, hr, v * u, ?_⟩
-  let U : CStarMatrix n n A := u; let V : CStarMatrix n n A := v
-  simp only [Submonoid.coe_mul, star_mul]
-  calc V * U * p * (star U * star V)
-      = V * (U * p * star U) * star V := by simp only [mul_assoc]
-    _ = r := by rw [hu, hv]
-/-- Unitarily equivalent star projections are Murray–von Neumann equivalent. -/
-theorem murrayVonNeumannEquiv (h : UnitaryEquiv p q) : p.MurrayVonNeumannEquiv q := by
-  obtain ⟨hp, _, u, hu⟩ := h
+section
+variable [Fintype n] [DecidableEq n] [Semiring A] [StarRing A] {p q : CStarMatrix n n A}
+/-- Unitarily equivalent square matrix projections are Murray–von Neumann equivalent. -/
+theorem _root_.TauCeti.UnitaryEquiv.murrayVonNeumannEquiv (h : TauCeti.UnitaryEquiv p q) :
+    p.MurrayVonNeumannEquiv q := by
+  obtain ⟨u, hu⟩ := h.exists_unitary
   rw [← hu, star_eq_conjTranspose]
-  exact hp.murrayVonNeumannEquiv_conj_of_conjTranspose_mul_self_eq_one
+  exact h.isStarProjection_left.murrayVonNeumannEquiv_conj_of_conjTranspose_mul_self_eq_one
     (by rw [← star_eq_conjTranspose, Unitary.coe_star_mul_self u])
-end UnitaryEquiv
-/-- The witness criterion for unitary equivalence of given star projections. -/
-theorem unitaryEquiv_iff (hp : IsStarProjection p) (hq : IsStarProjection q) :
-    UnitaryEquiv p q ↔ ∃ u : unitary (CStarMatrix n n A),
-      (u : CStarMatrix n n A) * p * star (u : CStarMatrix n n A) = q :=
-  ⟨UnitaryEquiv.exists_unitary, fun h => ⟨hp, hq, h⟩⟩
-@[simp] theorem unitaryEquiv_self_iff : UnitaryEquiv p p ↔ IsStarProjection p :=
-  ⟨UnitaryEquiv.isStarProjection_left, UnitaryEquiv.refl⟩
-theorem unitaryEquiv_comm : UnitaryEquiv p q ↔ UnitaryEquiv q p :=
-  ⟨UnitaryEquiv.symm, UnitaryEquiv.symm⟩
-/-- Conjugating a star projection `p` by a unitary `u` produces a star projection. -/
-theorem _root_.IsStarProjection.conj_unitary (hp : IsStarProjection p)
-    (u : unitary (CStarMatrix n n A)) :
-    IsStarProjection ((u : CStarMatrix n n A) * p * star (u : CStarMatrix n n A)) :=
-  let U : CStarMatrix n n A := u; have hU : star U * U = 1 := Unitary.coe_star_mul_self u
-  ⟨by rw [IsIdempotentElem]
-      calc (U * p * star U) * (U * p * star U)
-          = U * (p * ((star U * U) * p)) * star U := by simp only [mul_assoc]
-        _ = U * p * star U := by rw [hU, _root_.one_mul, hp.isIdempotentElem.eq],
-   by rw [isSelfAdjoint_iff, star_mul, star_mul, star_star, hp.isSelfAdjoint.star_eq, mul_assoc]⟩
-/-- A star projection `p` is unitarily equivalent to `u * p * star u` for any unitary `u`. -/
-theorem _root_.IsStarProjection.unitaryEquiv_conj (hp : IsStarProjection p)
-    (u : unitary (CStarMatrix n n A)) :
-    UnitaryEquiv p ((u : CStarMatrix n n A) * p * star (u : CStarMatrix n n A)) :=
-  ⟨hp, hp.conj_unitary u, u, rfl⟩
-/-- A projection `p` is Murray–von Neumann equivalent to `u * p * star u` for any unitary `u`. -/
+/-- A square matrix projection `p` is Murray–von Neumann equivalent to `u * p * star u` for any
+unitary `u`. -/
 theorem _root_.IsStarProjection.murrayVonNeumannEquiv_conj_unitary (hp : IsStarProjection p)
     (u : unitary (CStarMatrix n n A)) :
     p.MurrayVonNeumannEquiv ((u : CStarMatrix n n A) * p * star (u : CStarMatrix n n A)) :=
   (hp.unitaryEquiv_conj u).murrayVonNeumannEquiv
-end UnitaryEquiv
+end
 
 namespace IsPartialIsometry
 variable [Fintype m] [Fintype n] [DecidableEq m] [DecidableEq n] [Ring A] [StarRing A]
@@ -676,9 +618,13 @@ end IsPartialIsometry
 
 section
 variable (v : CStarMatrix n m A) (p : CStarMatrix m m A) (q : CStarMatrix n n A)
-/-- Unit-free `(2⁻¹ : ℝ) • fromBlocks p (-v.conjTranspose) (-v) q`. When `v` witnesses
-Murray–von Neumann equivalence between `p` and `q` over a unital ring with real scalar action,
-this equals `(2⁻¹ : ℝ) • (1 - w)` for the associated `stabilizedConjUnitary` `w`. -/
+/-- Unit-free `(2⁻¹ : ℝ) • fromBlocks p (-v.conjTranspose) (-v) q`, formed using only
+`[Neg A] [Star A] [SMul ℝ A]`. When `v` is a partial isometry with initial projection
+`p = v.conjTranspose * v` and final projection `q = v * v.conjTranspose` over a unital star ring
+with real scalar action, this equals `(2⁻¹ : ℝ) • (1 - w)` for
+`w = hv.stabilizedConjUnitary hp hq`; over a non-unital star ring with compatible real module
+hypotheses (`Module ℝ A`, `IsScalarTower ℝ A A`, `SMulCommClass ℝ A A`, `StarModule ℝ A`), it is
+a star projection (`isStarProjection_stabilizedNegProj`). -/
 def stabilizedNegProj [Neg A] [Star A] [SMul ℝ A] : CStarMatrix (m ⊕ n) (m ⊕ n) A :=
   (2⁻¹ : ℝ) • fromBlocks p (-v.conjTranspose) (-v) q
 theorem stabilizedNegProj_def [Neg A] [Star A] [SMul ℝ A] :
@@ -730,7 +676,10 @@ theorem stabilizedNegProj_eq_half_one_sub [DecidableEq m] [DecidableEq n] [Ring 
     (hq : v * v.conjTranspose = q) : stabilizedNegProj v p q =
       (2⁻¹ : ℝ) • (1 - (hv.stabilizedConjUnitary hp hq : CStarMatrix (m ⊕ n) (m ⊕ n) A)) := by
   rw [stabilizedNegProj_def, coe_stabilizedConjUnitary, ← fromBlocks_one, fromBlocks_sub]; simp
-/-- `stabilizedNegProj v p q` is a star projection when `v` witnesses `p ∼ q`. -/
+/-- `stabilizedNegProj v p q` is a star projection when `v` is a partial isometry with initial
+projection `p = v.conjTranspose * v` and final projection `q = v * v.conjTranspose`, assuming
+compatible real star-algebra scalar hypotheses (`Module ℝ A`, `IsScalarTower ℝ A A`,
+`SMulCommClass ℝ A A`, `StarModule ℝ A`) rather than the bare `[SMul ℝ A]` of the definition. -/
 theorem isStarProjection_stabilizedNegProj [NonUnitalRing A] [StarRing A] [Module ℝ A]
     [IsScalarTower ℝ A A] [SMulCommClass ℝ A A] [StarModule ℝ A] (hv : v.IsPartialIsometry)
     (hp : v.conjTranspose * v = p) (hq : v * v.conjTranspose = q) :
@@ -746,6 +695,14 @@ theorem isStarProjection_stabilizedNegProj [NonUnitalRing A] [StarRing A] [Modul
     hv.mul_eq_self_of_mul_conjTranspose_self_eq hq,
     hv.conjTranspose_mul_eq_of_mul_conjTranspose_self_eq hq,
     ← two_smul ℝ, fromBlocks_smul, smul_neg, smul_smul]; norm_num
+private theorem stabilizedNegProj_mul_fromRows_zero [NonUnitalRing A] [StarRing A] [Module ℝ A]
+    [IsScalarTower ℝ A A] (hv : v.IsPartialIsometry) (hp : v.conjTranspose * v = p) :
+    stabilizedNegProj v p q * fromRows p (0 : CStarMatrix n m A) =
+      (2⁻¹ : ℝ) • fromRows p (-v) := by
+  have hp_idem : p * p = p := (hp ▸ hv.isStarProjection_conjTranspose_mul_self).isIdempotentElem.eq
+  rw [stabilizedNegProj_def, CStarMatrix.smul_mul, fromBlocks_mul_fromRows, CStarMatrix.mul_zero,
+    _root_.add_zero, CStarMatrix.neg_mul, CStarMatrix.mul_zero, _root_.add_zero, hp_idem,
+    hv.mul_eq_self_of_conjTranspose_mul_self_eq hp]
 section
 variable [NonUnitalSemiring A] [StarRing A] [Module ℂ A] [IsScalarTower ℂ A A]
   [SMulCommClass ℂ A A] [StarModule ℂ A] (hv : v.IsPartialIsometry) (hp : v.conjTranspose * v = p)
@@ -773,7 +730,7 @@ private theorem isPartialIsometry_stabilizedProjRotRows (t : ℝ) :
     simp only [conjTranspose_smul, hp_proj.isSelfAdjoint.conjTranspose_eq, star_mul, star_neg,
       Complex.star_def, Complex.conj_ofReal, Complex.conj_I, neg_neg, CStarMatrix.smul_mul_smul,
       hp_proj.isIdempotentElem.eq, hp, ← add_smul]
-    change (c * c + s * Complex.I * (-Complex.I * s)) • p = p; rw [htrig, one_smul]
+    simpa only [c, s, one_smul] using congrArg (fun z : ℂ => z • p) htrig
   rw [isPartialIsometry_iff, mul_assoc_rectangular, hinit, stabilizedProjRotRows, fromRows_mul,
     CStarMatrix.smul_mul, CStarMatrix.smul_mul, hp_proj.isIdempotentElem.eq,
     hv.mul_eq_self_of_conjTranspose_mul_self_eq hp]
@@ -806,23 +763,32 @@ private theorem expUnitary_smul_stabilizedNegProj_mul_fromRows (t : ℝ) :
     rw [hα]; linear_combination -((1 : ℂ) / 2) * hcs + (s ^ 2 / 2) * Complex.I_sq
   have hnα : -α = z * (-Complex.I * s) := by
     rw [hα]; linear_combination -((1 : ℂ) / 2) * hcs + (s ^ 2 / 2) * Complex.I_sq
-  have hcast : (2⁻¹ : ℝ) • fromBlocks p (-v.conjTranspose) (-v) q =
-      ((2⁻¹ : ℝ) : ℂ) • fromBlocks p (-v.conjTranspose) (-v) q :=
-    ext fun _ _ => (Complex.coe_smul _ _).symm
   have hcoe : ((selfAdjoint.expUnitary ((t * Real.pi) • ⟨stabilizedNegProj v p q,
       (hv.isStarProjection_stabilizedNegProj hp hq).isSelfAdjoint⟩) : unitary _) :
       CStarMatrix (m ⊕ n) (m ⊕ n) A) =
       1 + (Complex.exp (↑(t * Real.pi) * Complex.I) - 1) • stabilizedNegProj v p q :=
     (hv.isStarProjection_stabilizedNegProj hp hq).coe_expUnitary_smul (t * Real.pi)
+  have hcast : (2⁻¹ : ℝ) • fromRows p (-v) = ((2⁻¹ : ℝ) : ℂ) • fromRows p (-v) :=
+    ext fun _ _ => (Complex.coe_smul _ _).symm
   have hα_mul : (Complex.exp (↑(t * Real.pi) * Complex.I) - 1) * ((2⁻¹ : ℝ) : ℂ) = α := by
     rw [Complex.ofReal_inv, Complex.ofReal_ofNat]
-  have hp_idem : p * p = p := (hp ▸ hv.isStarProjection_conjTranspose_mul_self).isIdempotentElem.eq
-  rw [hcoe, stabilizedNegProj_def, hcast, smul_smul, hα_mul, CStarMatrix.add_mul,
-    CStarMatrix.one_mul, CStarMatrix.smul_mul, fromBlocks_mul_fromRows, CStarMatrix.mul_zero,
-    _root_.add_zero, CStarMatrix.neg_mul, CStarMatrix.mul_zero, _root_.add_zero, hp_idem,
-    hv.mul_eq_self_of_conjTranspose_mul_self_eq hp, fromRows_smul, fromRows_add, smul_neg,
-    ← neg_smul, stabilizedProjRotRows, fromRows_smul, smul_smul, smul_smul, ← h1α, ← hnα]
-  congr 1 <;> [rw [add_smul, one_smul]; rw [zero_add]]
+  calc
+    ((selfAdjoint.expUnitary ((t * Real.pi) • ⟨stabilizedNegProj v p q,
+        (hv.isStarProjection_stabilizedNegProj hp hq).isSelfAdjoint⟩) : unitary _) :
+        CStarMatrix (m ⊕ n) (m ⊕ n) A) * fromRows p (0 : CStarMatrix n m A)
+        = (1 + (Complex.exp (↑(t * Real.pi) * Complex.I) - 1) • stabilizedNegProj v p q) *
+            fromRows p 0 := by rw [hcoe]
+      _ = fromRows p 0 + (Complex.exp (↑(t * Real.pi) * Complex.I) - 1) •
+            ((2⁻¹ : ℝ) • fromRows p (-v)) := by
+          rw [CStarMatrix.add_mul, CStarMatrix.one_mul, CStarMatrix.smul_mul,
+            hv.stabilizedNegProj_mul_fromRows_zero hp]
+      _ = fromRows ((1 + α) • p) ((-α) • v) := by
+          rw [hcast, smul_smul, hα_mul, fromRows_smul, smul_neg, ← neg_smul,
+            fromRows_add, _root_.zero_add]
+          congr 1
+          rw [add_smul, one_smul]
+      _ = z • stabilizedProjRotRows v p t := by
+          rw [h1α, hnα, stabilizedProjRotRows, fromRows_smul, smul_smul, smul_smul]
 /-- Over a star-ordered unital C⋆-algebra, `selfAdjoint.expUnitary` with generator
 `(t * π) • stabilizedNegProj v p q` conjugates `blockSum p 0` to `stabilizedProjRot v p q t`. -/
 theorem expUnitary_conj_blockSum_eq_stabilizedProjRot (t : ℝ) :
@@ -841,25 +807,17 @@ theorem expUnitary_conj_blockSum_eq_stabilizedProjRot (t : ℝ) :
     ← mul_assoc_rectangular, mul_assoc_rectangular (_ * fromRows p 0), ← conjTranspose_mul,
     hv.expUnitary_smul_stabilizedNegProj_mul_fromRows hp hq t, conjTranspose_smul,
     CStarMatrix.smul_mul_smul, hzz, one_smul, hv.stabilizedProjRotRows_mul_conjTranspose hp hq t]
-/-- Over a star-ordered unital C⋆-algebra, `expUnitary (π • stabilizedNegProj v p q)` equals
-`stabilizedConjUnitary`. -/
-theorem expUnitary_pi_smul_stabilizedNegProj :
-    selfAdjoint.expUnitary (Real.pi • ⟨stabilizedNegProj v p q,
-      (hv.isStarProjection_stabilizedNegProj hp hq).isSelfAdjoint⟩) =
-      hv.stabilizedConjUnitary hp hq := by
-  have hcoe : ((selfAdjoint.expUnitary (Real.pi • ⟨stabilizedNegProj v p q,
-      (hv.isStarProjection_stabilizedNegProj hp hq).isSelfAdjoint⟩) : unitary _) :
-      CStarMatrix (m ⊕ n) (m ⊕ n) A) = 1 - (2 : ℝ) • stabilizedNegProj v p q :=
-    (hv.isStarProjection_stabilizedNegProj hp hq).coe_expUnitary_pi_smul
-  apply Subtype.ext; rw [hcoe, hv.stabilizedNegProj_eq_half_one_sub hp hq, smul_smul]; norm_num
 /-- Continuous path `t ↦ expUnitary ((t * π) • stabilizedNegProj v p q)` from `1` to
 `stabilizedConjUnitary` over a star-ordered unital C⋆-algebra, built from Mathlib's
 `selfAdjoint.expUnitaryPathToOne`. -/
 def stabilizedConjUnitaryPath :
     Path (1 : unitary (CStarMatrix (m ⊕ n) (m ⊕ n) A)) (hv.stabilizedConjUnitary hp hq) :=
   (selfAdjoint.expUnitaryPathToOne (Real.pi • ⟨stabilizedNegProj v p q,
-    (hv.isStarProjection_stabilizedNegProj hp hq).isSelfAdjoint⟩)).cast
-    rfl (hv.expUnitary_pi_smul_stabilizedNegProj hp hq).symm
+    (hv.isStarProjection_stabilizedNegProj hp hq).isSelfAdjoint⟩)).cast rfl (by
+    refine (Unitary.expUnitary_pi_smul_half_one_sub (hv.stabilizedConjUnitary hp hq)
+      (hv.isSelfAdjoint_stabilizedConjUnitary hp hq)).symm.trans ?_
+    exact congrArg selfAdjoint.expUnitary
+      (congrArg (Real.pi • ·) (Subtype.ext (hv.stabilizedNegProj_eq_half_one_sub hp hq).symm)))
 /-- Pointwise exponential evaluation of `stabilizedConjUnitaryPath`. -/
 @[simp low] theorem stabilizedConjUnitaryPath_apply (t : unitInterval) :
     hv.stabilizedConjUnitaryPath hp hq t =
@@ -894,64 +852,6 @@ def stabilizedProjPath : Path (⟨blockSum p 0, isStarProjection_blockSum_iff.mp
 end
 end IsPartialIsometry
 
-section HomotopyEquiv
-variable [Fintype n]
-section
-variable [Mul A] [AddCommMonoid A] [Star A] [TopologicalSpace (CStarMatrix n n A)]
-  {p q r : CStarMatrix n n A}
-/-- Two square matrices are homotopy equivalent projections when both are star projections and
-there is a continuous path of star projections joining them. -/
-def HomotopyEquiv (p q : CStarMatrix n n A) : Prop := ∃ (hp : IsStarProjection p)
-  (hq : IsStarProjection q), Joined (⟨p, hp⟩ : {P : CStarMatrix n n A // IsStarProjection P})
-    ⟨q, hq⟩
-/-- The left matrix of a homotopy equivalence is a star projection. -/
-theorem HomotopyEquiv.isStarProjection_left (h : HomotopyEquiv p q) : IsStarProjection p := h.1
-/-- The right matrix of a homotopy equivalence is a star projection. -/
-theorem HomotopyEquiv.isStarProjection_right (h : HomotopyEquiv p q) : IsStarProjection q := h.2.1
-/-- Extract a continuous path of star projections from `p` to `q`. -/
-theorem HomotopyEquiv.joined (h : HomotopyEquiv p q) :
-    Joined (⟨p, h.isStarProjection_left⟩ : {P : CStarMatrix n n A // IsStarProjection P})
-      ⟨q, h.isStarProjection_right⟩ := h.2.2
-/-- Every star projection is homotopy equivalent to itself. -/
-protected theorem HomotopyEquiv.refl (hp : IsStarProjection p) : HomotopyEquiv p p :=
-  ⟨hp, hp, .refl _⟩
-/-- Homotopy equivalence of star projections is symmetric. -/
-protected theorem HomotopyEquiv.symm (h : HomotopyEquiv p q) : HomotopyEquiv q p :=
-  ⟨h.2.1, h.1, h.2.2.symm⟩
-/-- Homotopy equivalence of star projections is transitive. -/
-protected theorem HomotopyEquiv.trans (h₁ : HomotopyEquiv p q) (h₂ : HomotopyEquiv q r) :
-    HomotopyEquiv p r := ⟨h₁.1, h₂.2.1, h₁.2.2.trans h₂.2.2⟩
-/-- The witness criterion for homotopy equivalence of given star projections. -/
-theorem homotopyEquiv_iff (hp : IsStarProjection p) (hq : IsStarProjection q) : HomotopyEquiv p q ↔
-    Joined (⟨p, hp⟩ : {P : CStarMatrix n n A // IsStarProjection P}) ⟨q, hq⟩ :=
-  ⟨HomotopyEquiv.joined, fun h => ⟨hp, hq, h⟩⟩
-@[simp] theorem homotopyEquiv_self_iff : HomotopyEquiv p p ↔ IsStarProjection p :=
-  ⟨HomotopyEquiv.isStarProjection_left, HomotopyEquiv.refl⟩
-theorem homotopyEquiv_comm : HomotopyEquiv p q ↔ HomotopyEquiv q p :=
-  ⟨HomotopyEquiv.symm, HomotopyEquiv.symm⟩
-end
-/-- Conjugating a star projection `p` by a unitary in the identity component yields a homotopy
-equivalent projection. -/
-theorem _root_.IsStarProjection.homotopyEquiv_conj_of_joined_one [DecidableEq n] [CStarAlgebra A]
-    {p : CStarMatrix n n A} (hp : IsStarProjection p) {u : unitary (CStarMatrix n n A)}
-    (hu : Joined (1 : unitary (CStarMatrix n n A)) u) :
-    HomotopyEquiv p ((u : CStarMatrix n n A) * p * star (u : CStarMatrix n n A)) := by
-  refine ⟨hp, hp.conj_unitary u, ?_⟩; obtain ⟨γ⟩ := hu
-  refine ⟨⟨⟨fun t => ⟨(γ t : CStarMatrix n n A) * p * star (γ t : CStarMatrix n n A),
-    hp.conj_unitary (γ t)⟩, Continuous.subtype_mk ?_ _⟩,
-    Subtype.ext (by simp), Subtype.ext (by simp)⟩⟩
-  rw [continuous_iff]; intro i j; simp only [mul_apply, star_apply]
-  have hγ : ∀ k l, Continuous fun t : unitInterval => (γ t : CStarMatrix n n A) k l :=
-    fun k l => continuous_iff.mp (continuous_subtypeVal.comp γ.continuous) k l
-  fun_prop
-/-- Projections conjugated by a unitary joined to `1` are homotopy equivalent. -/
-theorem HomotopyEquiv.of_joined_one_unitary_conj [DecidableEq n] [CStarAlgebra A]
-    {p q : CStarMatrix n n A} (hp : IsStarProjection p) {u : unitary (CStarMatrix n n A)}
-    (hu : Joined (1 : unitary (CStarMatrix n n A)) u)
-    (hu_conj : (u : CStarMatrix n n A) * p * star (u : CStarMatrix n n A) = q) :
-    HomotopyEquiv p q := hu_conj ▸ hp.homotopyEquiv_conj_of_joined_one hu
-end HomotopyEquiv
-
 section
 variable [Fintype m] [Fintype n] {p : CStarMatrix m m A} {q : CStarMatrix n n A}
 /-- Equivalent projections are conjugate by a self-adjoint unitary after stabilization. -/
@@ -967,10 +867,11 @@ theorem MurrayVonNeumannEquiv.exists_isSelfAdjoint_unitary_conj_blockSum_eq
 /-- Equivalent projections become unitarily equivalent after stabilization. -/
 theorem MurrayVonNeumannEquiv.unitaryEquiv_blockSum [DecidableEq m] [DecidableEq n] [Ring A]
     [StarRing A] (h : p.MurrayVonNeumannEquiv q) :
-    UnitaryEquiv (blockSum p (0 : CStarMatrix n n A)) (blockSum (0 : CStarMatrix m m A) q) :=
+    TauCeti.UnitaryEquiv (blockSum p (0 : CStarMatrix n n A))
+      (blockSum (0 : CStarMatrix m m A) q) :=
   let ⟨w, _, hw⟩ := h.exists_isSelfAdjoint_unitary_conj_blockSum_eq
-  ⟨isStarProjection_blockSum_iff.mpr ⟨h.isStarProjection_left, .zero _⟩,
-    isStarProjection_blockSum_iff.mpr ⟨.zero _, h.isStarProjection_right⟩, w, hw⟩
+  (TauCeti.unitaryEquiv_iff (isStarProjection_blockSum_iff.mpr ⟨h.isStarProjection_left, .zero _⟩)
+    (isStarProjection_blockSum_iff.mpr ⟨.zero _, h.isStarProjection_right⟩)).mpr ⟨w, hw⟩
 /-- Over a unital C⋆-algebra, if `p` and `q` are Murray–von Neumann equivalent, a unitary joined
 to `1` conjugates `blockSum p 0` to `blockSum 0 q`. -/
 theorem MurrayVonNeumannEquiv.exists_joined_one_unitary_conj_blockSum_eq
@@ -992,8 +893,9 @@ theorem MurrayVonNeumannEquiv.joined_blockSum [NonUnitalCStarAlgebra A]
 /-- Equivalent projections over any C⋆-algebra are homotopy equivalent after stabilization. -/
 theorem MurrayVonNeumannEquiv.homotopyEquiv_blockSum [NonUnitalCStarAlgebra A]
     (h : p.MurrayVonNeumannEquiv q) :
-    HomotopyEquiv (blockSum p (0 : CStarMatrix n n A)) (blockSum (0 : CStarMatrix m m A) q) :=
-  ⟨isStarProjection_blockSum_iff.mpr ⟨h.isStarProjection_left, .zero _⟩,
-    isStarProjection_blockSum_iff.mpr ⟨.zero _, h.isStarProjection_right⟩, h.joined_blockSum⟩
+    TauCeti.HomotopyEquiv (blockSum p (0 : CStarMatrix n n A))
+      (blockSum (0 : CStarMatrix m m A) q) :=
+  (TauCeti.homotopyEquiv_iff (isStarProjection_blockSum_iff.mpr ⟨h.isStarProjection_left, .zero _⟩)
+    (isStarProjection_blockSum_iff.mpr ⟨.zero _, h.isStarProjection_right⟩)).mpr h.joined_blockSum
 end
 end CStarMatrix

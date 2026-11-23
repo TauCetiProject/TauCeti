@@ -47,9 +47,11 @@ variable {l m n o R A : Type*} [NonUnitalCStarAlgebra A]
 /-- `toCLM` reverses rectangular matrix multiplication into operator composition. -/
 theorem toCLM_mul [Fintype l] [Fintype m] (M : CStarMatrix l m A) (N : CStarMatrix m n A) :
     toCLM (M * N) = (toCLM N).comp (toCLM M) := by
-  ext v j; simp only [ContinuousLinearMap.comp_apply, toCLM_apply_eq_sum,
-    WithCStarModule.equiv_symm_pi_apply, mul_apply, Finset.mul_sum, Finset.sum_mul, mul_assoc]
-  exact Finset.sum_comm
+  refine ContinuousLinearMap.ext fun v => ?_
+  simp only [ContinuousLinearMap.comp_apply, toCLM_apply]
+  exact congrArg (WithCStarModule.equiv A (n → A)).symm
+    (Matrix.vecMul_vecMul (WithCStarModule.equiv A (l → A) v) (ofMatrix.symm M)
+      (ofMatrix.symm N)).symm
 variable [PartialOrder A] [StarOrderedRing A]
 /-- Rectangular submultiplicativity of the `CStarMatrix` operator norm. -/
 theorem norm_mul_le [Fintype l] [Fintype m] [Fintype n]

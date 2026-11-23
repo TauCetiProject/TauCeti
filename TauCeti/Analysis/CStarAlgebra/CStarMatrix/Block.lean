@@ -26,7 +26,8 @@ Rectangular block operations on `CStarMatrix m n A`: four-block matrices (`fromB
   `toRows₂`, `fromCols`, `toCols₁`, `toCols₂`, `blockSum`, `amplify`,
   `blockSumNonUnitalStarAlgHom`, `inlNonUnitalStarAlgHom`, `inrNonUnitalStarAlgHom`,
   `amplifyNonUnitalStarAlgHom`, `amplifyStarAlgHom`, `norm_toBlocks₁₁_le`, `norm_fromBlocks_le`,
-  `norm_blockSum`, `norm_amplify`,
+  `norm_blockSum`, `norm_inlNonUnitalStarAlgHom`, `isometry_inlNonUnitalStarAlgHom`,
+  `norm_inrNonUnitalStarAlgHom`, `isometry_inrNonUnitalStarAlgHom`, `norm_amplify`,
   `Continuous.cstarMatrix_fromBlocks`–`Continuous.cstarMatrix_amplify`.
 
 ## References
@@ -195,7 +196,10 @@ end
     fromBlocks M₁₁ M₁₂ M₂₁ M₂₂ = 0 ↔ M₁₁ = 0 ∧ M₁₂ = 0 ∧ M₂₁ = 0 ∧ M₂₂ = 0 := by
   rw [← fromBlocks_zero, fromBlocks_inj]
 @[simp] theorem fromBlocks_one [DecidableEq l] [DecidableEq m] [Zero A] [One A] :
-    fromBlocks (1 : CStarMatrix l l A) 0 0 (1 : CStarMatrix m m A) = 1 := by simp [ext_iff_blocks]
+    fromBlocks (1 : CStarMatrix l l A) 0 0 (1 : CStarMatrix m m A) = 1 :=
+  ofMatrix.symm.injective <| by
+    simp only [ofMatrix_symm_fromBlocks, ofMatrix_symm_one, ofMatrix_symm_zero,
+      Matrix.fromBlocks_one]
 section
 variable (M₁₁ N₁₁ : CStarMatrix m l A) (M₁₂ N₁₂ : CStarMatrix m n A)
   (M₂₁ N₂₁ : CStarMatrix o l A) (M₂₂ N₂₂ : CStarMatrix o n A)
@@ -309,6 +313,14 @@ def toCols₂ : CStarMatrix m n A := ofMatrix (ofMatrix.symm M).toCols₂
     simp only [ofMatrix_symm_fromCols, ofMatrix_symm_toCols₁, ofMatrix_symm_toCols₂,
       Matrix.fromCols_toCols]
 end
+@[simp] theorem toRows₁_conjTranspose [Star A] (M : CStarMatrix m (l ⊕ n) A) :
+    M.conjTranspose.toRows₁ = M.toCols₁.conjTranspose := (rfl)
+@[simp] theorem toRows₂_conjTranspose [Star A] (M : CStarMatrix m (l ⊕ n) A) :
+    M.conjTranspose.toRows₂ = M.toCols₂.conjTranspose := (rfl)
+@[simp] theorem toCols₁_conjTranspose [Star A] (M : CStarMatrix (m ⊕ o) l A) :
+    M.conjTranspose.toCols₁ = M.toRows₁.conjTranspose := (rfl)
+@[simp] theorem toCols₂_conjTranspose [Star A] (M : CStarMatrix (m ⊕ o) l A) :
+    M.conjTranspose.toCols₂ = M.toRows₂.conjTranspose := (rfl)
 /-- The conjugate transpose of a row stack is a column stack of conjugate transposes. -/
 @[simp] theorem conjTranspose_fromRows [Star A] (M₁ : CStarMatrix m l A)
     (M₂ : CStarMatrix o l A) :
@@ -333,12 +345,16 @@ end
     r • fromCols M₁ M₂ = fromCols (r • M₁) (r • M₂) := by ext _ (_ | _) <;> rfl
 @[simp] theorem fromRows_fromCols_eq_fromBlocks (M₁₁ : CStarMatrix m l A) (M₁₂ : CStarMatrix m n A)
     (M₂₁ : CStarMatrix o l A) (M₂₂ : CStarMatrix o n A) :
-    fromRows (fromCols M₁₁ M₁₂) (fromCols M₂₁ M₂₂) = fromBlocks M₁₁ M₁₂ M₂₁ M₂₂ := by
-  ext (_ | _) (_ | _) <;> rfl
+    fromRows (fromCols M₁₁ M₁₂) (fromCols M₂₁ M₂₂) = fromBlocks M₁₁ M₁₂ M₂₁ M₂₂ :=
+  ofMatrix.symm.injective <| by
+    simp only [ofMatrix_symm_fromRows, ofMatrix_symm_fromCols, ofMatrix_symm_fromBlocks,
+      Matrix.fromRows_fromCols_eq_fromBlocks]
 @[simp] theorem fromCols_fromRows_eq_fromBlocks (M₁₁ : CStarMatrix m l A) (M₁₂ : CStarMatrix m n A)
     (M₂₁ : CStarMatrix o l A) (M₂₂ : CStarMatrix o n A) :
-    fromCols (fromRows M₁₁ M₂₁) (fromRows M₁₂ M₂₂) = fromBlocks M₁₁ M₁₂ M₂₁ M₂₂ := by
-  ext (_ | _) (_ | _) <;> rfl
+    fromCols (fromRows M₁₁ M₂₁) (fromRows M₁₂ M₂₂) = fromBlocks M₁₁ M₁₂ M₂₁ M₂₂ :=
+  ofMatrix.symm.injective <| by
+    simp only [ofMatrix_symm_fromCols, ofMatrix_symm_fromRows, ofMatrix_symm_fromBlocks,
+      Matrix.fromCols_fromRows_eq_fromBlocks]
 /-- Left-multiplication of a column-partitioned `CStarMatrix` acts on each column block. -/
 @[simp] theorem mul_fromCols [Fintype l] [AddCommMonoid A] [Mul A] (M : CStarMatrix m l A)
     (N₁ : CStarMatrix l k A) (N₂ : CStarMatrix l n A) :
@@ -721,6 +737,24 @@ variable [Fintype l] [Fintype o]
     rw [← norm_conjTranspose_mul_self, blockSum_conjTranspose, blockSum_mul, hsq,
       norm_conjTranspose_mul_self, norm_conjTranspose_mul_self]
     exact (max_pow_of_nonneg (norm_nonneg M) (norm_nonneg N) 2).symm
+/-- The upper-left corner inclusion `inlNonUnitalStarAlgHom` preserves operator norms. -/
+theorem norm_inlNonUnitalStarAlgHom {R : Type*} [Semiring R] [Module R A] (M : CStarMatrix m m A) :
+    ‖inlNonUnitalStarAlgHom R n M‖ = ‖M‖ :=
+  NonUnitalStarAlgHom.norm_map (inlNonUnitalStarAlgHom ℂ n (m := m) (A := A))
+    inlNonUnitalStarAlgHom_injective M
+/-- The upper-left corner inclusion `inlNonUnitalStarAlgHom` is an isometry. -/
+theorem isometry_inlNonUnitalStarAlgHom {R : Type*} [Semiring R] [Module R A] :
+    Isometry (inlNonUnitalStarAlgHom R n (m := m) (A := A)) :=
+  AddMonoidHomClass.isometry_of_norm _ norm_inlNonUnitalStarAlgHom
+/-- The lower-right corner inclusion `inrNonUnitalStarAlgHom` preserves operator norms. -/
+theorem norm_inrNonUnitalStarAlgHom {R : Type*} [Semiring R] [Module R A] (N : CStarMatrix n n A) :
+    ‖inrNonUnitalStarAlgHom R m N‖ = ‖N‖ :=
+  NonUnitalStarAlgHom.norm_map (inrNonUnitalStarAlgHom ℂ m (n := n) (A := A))
+    inrNonUnitalStarAlgHom_injective N
+/-- The lower-right corner inclusion `inrNonUnitalStarAlgHom` is an isometry. -/
+theorem isometry_inrNonUnitalStarAlgHom {R : Type*} [Semiring R] [Module R A] :
+    Isometry (inrNonUnitalStarAlgHom R m (n := n) (A := A)) :=
+  AddMonoidHomClass.isometry_of_norm _ norm_inrNonUnitalStarAlgHom
 section
 variable (M : CStarMatrix (m ⊕ o) (l ⊕ n) A)
 /-- Extracting the upper-left block does not increase the operator norm. -/

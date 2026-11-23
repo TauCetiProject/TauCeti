@@ -36,8 +36,9 @@ part of the theory.
 * `TauCeti.IsPartialIsometry.of_star_mul_self_eq_one`, `TauCeti.IsPartialIsometry.of_mem_unitary`,
   `IsStarProjection.isPartialIsometry`,
   `IsStarProjection.star_mul_self_mul_of_star_mul_self_mul_eq`,
-  `TauCeti.IsPartialIsometry.mul_of_star_mul_self_mul_eq_of_isStarProjection` (with isometry and
-  `unitary` corollaries): isometries, unitaries, projections, and `u * p` are partial isometries.
+  `TauCeti.IsPartialIsometry.mul_of_star_mul_self_mul_eq_of_isStarProjection` (with isometry,
+  `unitary`, and `IsStarProjection.conj_unitary` corollaries): isometries, unitaries, projections,
+  and `u * p` are partial isometries, and unitary conjugation preserves projections.
 
 ## References
 
@@ -221,4 +222,9 @@ theorem Unitary.isPartialIsometry_mul_of_isStarProjection (u : unitary R)
     (hp : IsStarProjection p) : TauCeti.IsPartialIsometry ((u : R) * p) :=
   TauCeti.IsPartialIsometry.mul_of_star_mul_self_eq_one_of_isStarProjection
     (Unitary.coe_star_mul_self u) hp
+/-- Conjugating a star projection `p` by a unitary `u` produces a star projection. -/
+theorem IsStarProjection.conj_unitary (hp : IsStarProjection p) (u : unitary R) :
+    IsStarProjection ((u : R) * p * star (u : R)) := by
+  rw [← hp.mul_star_self_mul (u : R)]
+  exact (Unitary.isPartialIsometry_mul_of_isStarProjection u hp).isStarProjection_mul_star_self
 end

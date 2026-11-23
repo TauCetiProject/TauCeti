@@ -7,9 +7,16 @@ module
 
 public import TauCeti.Analysis.CStarAlgebra.CStarMatrix.Basic
 public import TauCeti.Algebra.Star.PartialIsometry
+public import Mathlib.Topology.Algebra.Star.Unitary
+public import Mathlib.Topology.Connected.PathConnected
 
 /-!
-# Rectangular Murray–von Neumann equivalence
+# Projection equivalences: unitary, homotopy, and rectangular Murray–von Neumann
+
+This file defines projection unitary equivalence (`TauCeti.UnitaryEquiv`) on any star monoid,
+projection homotopy equivalence (`TauCeti.HomotopyEquiv`) on any topological star magma (together
+with conjugacy by a unitary in the identity component), and rectangular Murray–von Neumann
+equivalence (`CStarMatrix.MurrayVonNeumannEquiv`) across rectangular matrices.
 
 Matrix projections are Murray–von Neumann equivalent when they are the initial and final
 projections of a rectangular matrix. The index types may differ, so this relation identifies
@@ -31,6 +38,157 @@ operations used to define `CStarMatrix` multiplication and conjugate transpose.
 public section
 
 open scoped Matrix
+
+namespace TauCeti
+
+section UnitaryEquiv
+
+variable {S : Type*} [Monoid S] [StarMul S] {p q r : S}
+
+/-- Two elements are unitarily equivalent projections when both are star projections and some
+unitary `u : unitary S` satisfies `(u : S) * p * star (u : S) = q`. -/
+def UnitaryEquiv (p q : S) : Prop :=
+  IsStarProjection p ∧ IsStarProjection q ∧ ∃ u : unitary S, (u : S) * p * star (u : S) = q
+
+namespace UnitaryEquiv
+
+/-- The left element of a unitary equivalence is a star projection. -/
+theorem isStarProjection_left (h : UnitaryEquiv p q) : IsStarProjection p := h.1
+
+/-- The right element of a unitary equivalence is a star projection. -/
+theorem isStarProjection_right (h : UnitaryEquiv p q) : IsStarProjection q := h.2.1
+
+/-- Extract a unitary conjugating `p` to `q`. -/
+theorem exists_unitary (h : UnitaryEquiv p q) :
+    ∃ u : unitary S, (u : S) * p * star (u : S) = q := h.2.2
+
+/-- Every star projection is unitarily equivalent to itself. -/
+protected theorem refl (hp : IsStarProjection p) : UnitaryEquiv p p := ⟨hp, hp, 1, by simp⟩
+
+/-- Unitary equivalence of star projections is symmetric. -/
+protected theorem symm (h : UnitaryEquiv p q) : UnitaryEquiv q p := by
+  obtain ⟨hp, hq, u, hu⟩ := h
+  refine ⟨hq, hp, star u, ?_⟩
+  have hU : star (u : S) * (u : S) = 1 := Unitary.coe_star_mul_self u
+  calc
+    ((star u : unitary S) : S) * q * star ((star u : unitary S) : S)
+        = (star (u : S) * (u : S)) * p * (star (u : S) * (u : S)) := by
+          simp only [← hu, Unitary.coe_star, star_star, mul_assoc]
+    _ = p := by rw [hU, one_mul, mul_one]
+
+/-- Unitary equivalence of star projections is transitive. -/
+protected theorem trans (h₁ : UnitaryEquiv p q) (h₂ : UnitaryEquiv q r) : UnitaryEquiv p r := by
+  obtain ⟨hp, _, u, hu⟩ := h₁
+  obtain ⟨_, hr, v, hv⟩ := h₂
+  refine ⟨hp, hr, v * u, ?_⟩
+  calc
+    ((v * u : unitary S) : S) * p * star ((v * u : unitary S) : S)
+        = (v : S) * ((u : S) * p * star (u : S)) * star (v : S) := by
+          simp only [Submonoid.coe_mul, star_mul, mul_assoc]
+    _ = r := by rw [hu, hv]
+
+end UnitaryEquiv
+
+/-- The witness criterion for unitary equivalence of given star projections. -/
+theorem unitaryEquiv_iff (hp : IsStarProjection p) (hq : IsStarProjection q) :
+    UnitaryEquiv p q ↔ ∃ u : unitary S, (u : S) * p * star (u : S) = q :=
+  ⟨UnitaryEquiv.exists_unitary, fun h => ⟨hp, hq, h⟩⟩
+
+@[simp]
+theorem unitaryEquiv_self_iff : UnitaryEquiv p p ↔ IsStarProjection p :=
+  ⟨UnitaryEquiv.isStarProjection_left, UnitaryEquiv.refl⟩
+
+theorem unitaryEquiv_comm : UnitaryEquiv p q ↔ UnitaryEquiv q p :=
+  ⟨UnitaryEquiv.symm, UnitaryEquiv.symm⟩
+
+/-- A star projection `p` is unitarily equivalent to `(u : S) * p * star (u : S)` for any unitary
+`u`. -/
+theorem _root_.IsStarProjection.unitaryEquiv_conj (hp : IsStarProjection p) (u : unitary S) :
+    UnitaryEquiv p ((u : S) * p * star (u : S)) :=
+  ⟨hp, hp.conj_unitary u, u, rfl⟩
+
+end UnitaryEquiv
+
+section HomotopyEquiv
+
+section
+
+variable {S : Type*} [Mul S] [Star S] [TopologicalSpace S] {p q r : S}
+
+/-- Two elements are homotopy equivalent projections when both are star projections and they are
+`Joined` in the subtype `{P : S // IsStarProjection P}`. -/
+def HomotopyEquiv (p q : S) : Prop :=
+  ∃ (hp : IsStarProjection p) (hq : IsStarProjection q),
+    Joined (⟨p, hp⟩ : {P : S // IsStarProjection P}) ⟨q, hq⟩
+
+namespace HomotopyEquiv
+
+/-- The left element of a homotopy equivalence is a star projection. -/
+theorem isStarProjection_left (h : HomotopyEquiv p q) : IsStarProjection p := h.1
+
+/-- The right element of a homotopy equivalence is a star projection. -/
+theorem isStarProjection_right (h : HomotopyEquiv p q) : IsStarProjection q := h.2.1
+
+/-- The projections `p` and `q` are `Joined` in the projection subtype
+`{P : S // IsStarProjection P}` (use `Joined.somePath` if an explicit path value is needed). -/
+theorem joined (h : HomotopyEquiv p q) :
+    Joined (⟨p, h.isStarProjection_left⟩ : {P : S // IsStarProjection P})
+      ⟨q, h.isStarProjection_right⟩ := h.2.2
+
+/-- Every star projection is homotopy equivalent to itself. -/
+protected theorem refl (hp : IsStarProjection p) : HomotopyEquiv p p := ⟨hp, hp, .refl _⟩
+
+/-- Homotopy equivalence of star projections is symmetric. -/
+protected theorem symm (h : HomotopyEquiv p q) : HomotopyEquiv q p := ⟨h.2.1, h.1, h.2.2.symm⟩
+
+/-- Homotopy equivalence of star projections is transitive. -/
+protected theorem trans (h₁ : HomotopyEquiv p q) (h₂ : HomotopyEquiv q r) :
+    HomotopyEquiv p r := ⟨h₁.1, h₂.2.1, h₁.2.2.trans h₂.2.2⟩
+
+end HomotopyEquiv
+
+/-- The witness criterion for homotopy equivalence of given star projections. -/
+theorem homotopyEquiv_iff (hp : IsStarProjection p) (hq : IsStarProjection q) :
+    HomotopyEquiv p q ↔ Joined (⟨p, hp⟩ : {P : S // IsStarProjection P}) ⟨q, hq⟩ :=
+  ⟨HomotopyEquiv.joined, fun h => ⟨hp, hq, h⟩⟩
+
+@[simp]
+theorem homotopyEquiv_self_iff : HomotopyEquiv p p ↔ IsStarProjection p :=
+  ⟨HomotopyEquiv.isStarProjection_left, HomotopyEquiv.refl⟩
+
+theorem homotopyEquiv_comm : HomotopyEquiv p q ↔ HomotopyEquiv q p :=
+  ⟨HomotopyEquiv.symm, HomotopyEquiv.symm⟩
+
+end
+
+section
+
+variable {S : Type*} [Monoid S] [StarMul S] [TopologicalSpace S] [ContinuousMul S]
+  [ContinuousStar S] {p q : S}
+
+/-- Conjugating a star projection `p` by a unitary in the identity component yields a homotopy
+equivalent projection. -/
+theorem _root_.IsStarProjection.homotopyEquiv_conj_of_joined_one (hp : IsStarProjection p)
+    {u : unitary S} (hu : Joined (1 : unitary S) u) :
+    HomotopyEquiv p ((u : S) * p * star (u : S)) := by
+  refine ⟨hp, hp.conj_unitary u, ?_⟩
+  let φ : unitary S → {P : S // IsStarProjection P} :=
+    fun v => ⟨(v : S) * p * star (v : S), hp.conj_unitary v⟩
+  have hφ : Continuous φ :=
+    ((continuous_subtypeVal.mul continuous_const).mul continuous_subtypeVal.star).subtype_mk _
+  simpa [φ] using hu.map hφ
+
+/-- Projections conjugated by a unitary joined to `1` are homotopy equivalent. -/
+theorem _root_.IsStarProjection.homotopyEquiv_of_joined_one_unitary_conj (hp : IsStarProjection p)
+    {u : unitary S} (hu : Joined (1 : unitary S) u)
+    (hu_conj : (u : S) * p * star (u : S) = q) : HomotopyEquiv p q :=
+  hu_conj ▸ hp.homotopyEquiv_conj_of_joined_one hu
+
+end
+
+end HomotopyEquiv
+
+end TauCeti
 
 namespace CStarMatrix
 
