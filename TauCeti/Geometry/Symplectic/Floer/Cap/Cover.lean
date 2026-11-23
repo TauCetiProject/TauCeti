@@ -50,11 +50,11 @@ fibre is a torsor under `Γ` (`TauCeti.Floer.instAddTorsorCapCoverFiber`): the d
 points of a fibre is the period class of the loop relating them (`TauCeti.Floer.CapCover.vsub_mk`).
 The cap classes of a contractible loop are also a `Γ`-torsor
 (`TauCeti.Floer.SphericalCapClass.instAddTorsor`), where `Γ` acts by gluing spheres at the centre
-of a cap. The two actions agree on spheres: a class `a ∈ π₂(X, x)`, read as a loop of based loops
-at the constant loop, has period class the class of `a` in `Γ`
+of a cap. A class `a ∈ π₂(X, x)`, read as a loop of based loops at the constant loop, has period
+class the class of `a` in `Γ`
 (`SphericalPeriodGroup.ofContractibleLoopsHomotopyGroup_contractibleLoopHomotopyGroupHom`).
 The identification of the fibre over a loop based at `x` with its cap classes is not constructed
-here.
+here; this equality is the input for showing that such an identification is `Γ`-equivariant.
 
 ## Main definitions
 
@@ -181,9 +181,9 @@ theorem ofContractibleLoopsHomotopyGroup_surjective [PathConnectedSpace X] (x : 
 period group.** A class `a ∈ π₂(X, x)` is a loop at the constant loop of based loops at `x`
 (`TauCeti.contractibleLoopHomotopyGroupHom`), hence of contractible free loops; its period class is
 the class of the sphere `a`, since the torus it sweeps out has the Hurewicz class of `a`
-(`TauCeti.freeLoopTorusClassHom_freeLoopHomotopyGroupHom`). Gluing a sphere at the centre of a cap
-is transport around such a loop, so this compares the two actions of `Γ`: on cap classes and on the
-fibres of the cap cover. -/
+(`TauCeti.freeLoopTorusClassHom_freeLoopHomotopyGroupHom`). This is the input for showing that an
+identification of the fibres of the cap cover with cap classes, not constructed here, is
+`Γ`-equivariant. -/
 @[simp]
 theorem ofContractibleLoopsHomotopyGroup_contractibleLoopHomotopyGroupHom (x : X)
     (a : HomotopyGroup (Fin 2) X x) :
