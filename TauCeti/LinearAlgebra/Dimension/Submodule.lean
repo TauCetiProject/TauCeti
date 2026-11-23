@@ -165,12 +165,13 @@ theorem exists_le_rank_eq {M : Submodule 𝕜 E} {k : ℕ} (hk : (k : Cardinal) 
     span_le.mpr (Set.range_subset_iff.mpr fun i ↦ (v i).property), ?_⟩
   rw [← Module.finrank_eq_rank, finrank_span_eq_card hv', Fintype.card_fin]
 
-/-- A vector `v` lies in a subspace of rank exactly `k`, for each `1 ≤ k ≤ rank E`: for `v ≠ 0`,
-the span of `v` and `k - 1` linearly independent vectors of a complement of `𝕜 ∙ v`. The rank of
-`E` may be an infinite cardinal. -/
+/-- Every vector `v` of `E` lies in a subspace of rank exactly `k`, for each `1 ≤ k ≤ rank E`;
+the rank of `E` may be an infinite cardinal. -/
 theorem exists_mem_rank_eq (v : E) {k : ℕ} (hk : k ≠ 0)
     (hkE : (k : Cardinal) ≤ Module.rank 𝕜 E) :
     ∃ N : Submodule 𝕜 E, v ∈ N ∧ Module.rank 𝕜 N = k := by
+  -- For `v ≠ 0`, take the span of `v` and `k - 1` linearly independent vectors of a complement
+  -- of `𝕜 ∙ v`.
   rcases eq_or_ne v 0 with rfl | hv
   · obtain ⟨N, -, hN⟩ := exists_le_rank_eq (M := ⊤) (by rwa [rank_top 𝕜 E])
     exact ⟨N, N.zero_mem, hN⟩
