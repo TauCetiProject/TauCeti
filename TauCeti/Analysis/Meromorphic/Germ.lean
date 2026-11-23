@@ -161,8 +161,9 @@ theorem coe_smul (c : 𝕜) (φ : meromorphicGerms 𝕜 a) :
 
 @[simp]
 theorem mk_smul (c : 𝕜) {f : 𝕜 → 𝕜} (hf : MeromorphicAt f a) :
-    mk (c • f) (hf.const_smul c) = c • mk f hf :=
-  Subtype.ext ((Germ.coe_smul c f).trans (coe_smul c (mk f hf)).symm)
+    mk (c • f) (hf.const_smul c) = c • mk f hf := by
+  apply Subtype.ext
+  simp only [coe_mk, coe_smul, Germ.coe_smul]
 
 /-- The inverse of a meromorphic germ is its pointwise inverse. -/
 instance : Inv (meromorphicGerms 𝕜 a) where
@@ -178,8 +179,9 @@ theorem coe_inv (φ : meromorphicGerms 𝕜 a) :
 
 @[simp]
 theorem mk_inv {f : 𝕜 → 𝕜} (hf : MeromorphicAt f a) :
-    mk f⁻¹ hf.inv = (mk f hf)⁻¹ :=
-  Subtype.ext (Germ.coe_inv f)
+    mk f⁻¹ hf.inv = (mk f hf)⁻¹ := by
+  apply Subtype.ext
+  simp only [coe_mk, coe_inv, Germ.coe_inv]
 
 /-- The germs of functions meromorphic at `a`, on punctured neighbourhoods of `a`, form a
 field. -/
@@ -187,7 +189,8 @@ instance instField : Field (meromorphicGerms 𝕜 a) where
   mul_inv_cancel φ hφ := by
     obtain ⟨f, hf, rfl⟩ := exists_mk φ
     -- A nonzero germ has a representative vanishing nowhere on a punctured neighbourhood.
-    have hne : ∀ᶠ z in 𝓝[≠] a, f z ≠ 0 := hf.germ_ne_zero_iff.mp fun h ↦ hφ (Subtype.ext h)
+    have hne : ∀ᶠ z in 𝓝[≠] a, f z ≠ 0 := hf.germ_ne_zero_iff.mp fun h ↦ hφ <| Subtype.ext <| by
+      simpa only [coe_mk, ZeroMemClass.coe_zero] using h
     rw [← mk_inv, ← mk_mul, ← mk_one, mk_eq_mk_iff]
     filter_upwards [hne] with z hz
     exact mul_inv_cancel₀ hz
