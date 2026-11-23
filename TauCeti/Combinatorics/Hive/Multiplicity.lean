@@ -117,6 +117,104 @@ theorem schur_mul_eq_finsum_hiveCount {n : ℕ} {R : Type*} [CommSemiring R]
   rw [hiveCount_productBoundary_of_isPolynomial hl hm]
   simp only [hpol, ↓reduceIte, hsh, Nat.cast_smul_eq_nsmul]
 
+private theorem finite_support_hiveCount_smul_diagramSchurPoly {n : ℕ} {R : Type*}
+    [CommSemiring R] (lam μ : DominantWeight n) :
+    (Function.support fun γ : DominantWeight n =>
+      (hiveCount (productBoundary lam μ γ) : R) • diagramSchurPoly n R γ.shape).Finite := by
+  refine (finite_support_hiveCount_productBoundary lam μ).subset fun γ hγ => ?_
+  rw [Function.mem_support] at hγ
+  refine Nat.pos_of_ne_zero fun h0 => hγ ?_
+  simp [h0]
+
+/-- Coefficient-ring transport for the hive-indexed Schur sum along any semiring homomorphism
+`f : R →+* S`. -/
+theorem map_finsum_hiveCount_smul_diagramSchurPoly {n : ℕ} {R S : Type*}
+    [CommSemiring R] [CommSemiring S] (f : R →+* S) (lam μ : DominantWeight n) :
+    MvPolynomial.map f
+        (∑ᶠ γ : DominantWeight n,
+          (hiveCount (productBoundary lam μ γ) : R) • diagramSchurPoly n R γ.shape) =
+      ∑ᶠ γ : DominantWeight n,
+        (hiveCount (productBoundary lam μ γ) : S) • diagramSchurPoly n S γ.shape := by
+  rw [map_finsum (MvPolynomial.map f)
+    (finite_support_hiveCount_smul_diagramSchurPoly lam μ)]
+  refine finsum_congr fun γ => ?_
+  rw [smul_eq_C_mul, map_mul, MvPolynomial.map_C, map_natCast, map_diagramSchurPoly,
+    ← smul_eq_C_mul]
+
+/-- Evaluation transport for the hive-indexed Schur sum along any semiring homomorphism
+`f : R →+* S` and point `x : Fin n → S`. -/
+theorem eval₂_finsum_hiveCount_smul_diagramSchurPoly {n : ℕ} {R S : Type*}
+    [CommSemiring R] [CommSemiring S] (f : R →+* S) (x : Fin n → S) (lam μ : DominantWeight n) :
+    eval₂ f x
+        (∑ᶠ γ : DominantWeight n,
+          (hiveCount (productBoundary lam μ γ) : R) • diagramSchurPoly n R γ.shape) =
+      ∑ᶠ γ : DominantWeight n,
+        (hiveCount (productBoundary lam μ γ) : S) • eval x (diagramSchurPoly n S γ.shape) := by
+  rw [← MvPolynomial.eval_map, map_finsum_hiveCount_smul_diagramSchurPoly,
+    map_finsum (eval x) (finite_support_hiveCount_smul_diagramSchurPoly lam μ)]
+  refine finsum_congr fun γ => ?_
+  rw [smul_eq_C_mul, map_mul, eval_C, smul_eq_mul]
+
+/-- Setting the last variable to `0` transports the `(n + 1)`-variable hive-indexed Schur
+expansion for polynomial weights of at most `n` rows to the `n`-variable expansion, where the
+surviving hive coefficients match across ranks by
+`TauCeti.Hive.hiveCount_productBoundary_eq_of_shape_eq`. -/
+theorem aeval_snoc_zero_finsum_hiveCount_smul_diagramSchurPoly {n : ℕ} {R : Type*}
+    [CommSemiring R] {lam μ : DominantWeight (n + 1)}
+    (hl : lam.IsPolynomial) (hm : μ.IsPolynomial)
+    (hln : lam.shape.colLen 0 ≤ n) (hmn : μ.shape.colLen 0 ≤ n) :
+    aeval (Fin.snoc (X : Fin n → MvPolynomial (Fin n) R) 0)
+        (∑ᶠ γ : DominantWeight (n + 1),
+          (hiveCount (productBoundary lam μ γ) : R) • diagramSchurPoly (n + 1) R γ.shape) =
+      ∑ᶠ γ : DominantWeight n,
+        (hiveCount (productBoundary (weightOfShape n lam.shape) (weightOfShape n μ.shape) γ) :
+          R) • diagramSchurPoly n R γ.shape := by
+  rw [← schur_mul_eq_finsum_hiveCount lam μ hl hm, map_mul,
+    aeval_snoc_zero_diagramSchurPoly, aeval_snoc_zero_diagramSchurPoly,
+    ← shape_weightOfShape hln, ← shape_weightOfShape hmn,
+    schur_mul_eq_finsum_hiveCount _ _ (isPolynomial_weightOfShape _ _)
+      (isPolynomial_weightOfShape _ _),
+    shape_weightOfShape hln, shape_weightOfShape hmn]
+
+/-- Setting the last variable to `0` annihilates the `(n + 1)`-variable hive-indexed Schur
+expansion when either polynomial input weight has `n + 1` rows. -/
+theorem aeval_snoc_zero_finsum_hiveCount_smul_diagramSchurPoly_eq_zero {n : ℕ} {R : Type*}
+    [CommSemiring R] {lam μ : DominantWeight (n + 1)}
+    (hl : lam.IsPolynomial) (hm : μ.IsPolynomial)
+    (hlt : n < lam.shape.colLen 0 ∨ n < μ.shape.colLen 0) :
+    aeval (Fin.snoc (X : Fin n → MvPolynomial (Fin n) R) 0)
+        (∑ᶠ γ : DominantWeight (n + 1),
+          (hiveCount (productBoundary lam μ γ) : R) • diagramSchurPoly (n + 1) R γ.shape) = 0 := by
+  rw [← schur_mul_eq_finsum_hiveCount lam μ hl hm, map_mul,
+    aeval_snoc_zero_diagramSchurPoly, aeval_snoc_zero_diagramSchurPoly]
+  rcases hlt with h | h
+  · rw [diagramSchurPoly_eq_zero_of_lt_colLen h, zero_mul]
+  · rw [diagramSchurPoly_eq_zero_of_lt_colLen h, mul_zero]
+
+/-- Lifting rank-`n` polynomial weights to rank `n + 1` via `TauCeti.weightOfShape (n + 1)` and
+setting the last variable to `0` recovers the rank-`n` hive-indexed Schur expansion. -/
+theorem aeval_snoc_zero_finsum_hiveCount_smul_diagramSchurPoly_weightOfShape {n : ℕ}
+    {R : Type*} [CommSemiring R] (lam μ : DominantWeight n)
+    (hl : lam.IsPolynomial) (hm : μ.IsPolynomial) :
+    aeval (Fin.snoc (X : Fin n → MvPolynomial (Fin n) R) 0)
+        (∑ᶠ γ : DominantWeight (n + 1),
+          (hiveCount (productBoundary (weightOfShape (n + 1) lam.shape)
+            (weightOfShape (n + 1) μ.shape) γ) : R) •
+            diagramSchurPoly (n + 1) R γ.shape) =
+      ∑ᶠ γ : DominantWeight n,
+        (hiveCount (productBoundary lam μ γ) : R) • diagramSchurPoly n R γ.shape := by
+  have hln : (weightOfShape (n + 1) lam.shape).shape.colLen 0 ≤ n := by
+    rw [shape_weightOfShape ((DominantWeight.colLen_zero_shape_le lam).trans (Nat.le_succ n))]
+    exact DominantWeight.colLen_zero_shape_le lam
+  have hmn : (weightOfShape (n + 1) μ.shape).shape.colLen 0 ≤ n := by
+    rw [shape_weightOfShape ((DominantWeight.colLen_zero_shape_le μ).trans (Nat.le_succ n))]
+    exact DominantWeight.colLen_zero_shape_le μ
+  rw [aeval_snoc_zero_finsum_hiveCount_smul_diagramSchurPoly
+      (isPolynomial_weightOfShape _ _) (isPolynomial_weightOfShape _ _) hln hmn,
+    shape_weightOfShape ((DominantWeight.colLen_zero_shape_le lam).trans (Nat.le_succ n)),
+    shape_weightOfShape ((DominantWeight.colLen_zero_shape_le μ).trans (Nat.le_succ n)),
+    weightOfShape_shape hl, weightOfShape_shape hm]
+
 /-! ### Hom-space multiplicities and invariants on rational Weyl modules -/
 
 open scoped Classical in

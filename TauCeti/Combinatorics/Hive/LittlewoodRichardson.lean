@@ -449,6 +449,17 @@ theorem hiveCount_productBoundary_eq_natCard_lrTableau_shape {lam μ γ : Domina
   exact hiveCount_productBoundary_eq_natCard_lrTableau (DominantWeight.colLen_zero_shape_le lam)
     (DominantWeight.colLen_zero_shape_le γ) (DominantWeight.colLen_zero_shape_le μ)
 
+/-- **Rank independence of Littlewood–Richardson hive counts**: for polynomial dominant weights
+of possibly different ranks `m` and `n` with the same Young diagrams, the hive counts coincide. -/
+theorem hiveCount_productBoundary_eq_of_shape_eq {m n : ℕ}
+    {lam₁ μ₁ γ₁ : DominantWeight m} {lam₂ μ₂ γ₂ : DominantWeight n}
+    (hl₁ : lam₁.IsPolynomial) (hm₁ : μ₁.IsPolynomial) (hg₁ : γ₁.IsPolynomial)
+    (hl₂ : lam₂.IsPolynomial) (hm₂ : μ₂.IsPolynomial) (hg₂ : γ₂.IsPolynomial)
+    (hlam : lam₁.shape = lam₂.shape) (hμ : μ₁.shape = μ₂.shape) (hγ : γ₁.shape = γ₂.shape) :
+    hiveCount (productBoundary lam₁ μ₁ γ₁) = hiveCount (productBoundary lam₂ μ₂ γ₂) := by
+  rw [hiveCount_productBoundary_eq_natCard_lrTableau_shape hl₁ hm₁ hg₁,
+    hiveCount_productBoundary_eq_natCard_lrTableau_shape hl₂ hm₂ hg₂, hlam, hμ, hγ]
+
 /-- **Hive counts of signed weights are Littlewood–Richardson coefficients**: if determinant
 shifts by `a` of `λ`, by `b` of `μ` and by `a + b` of `γ` make all three dominant weights of
 `GL n` polynomial, the number of integer hives with boundary `(λ, μ, γ*)` is the

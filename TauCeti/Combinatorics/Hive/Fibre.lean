@@ -697,6 +697,24 @@ theorem finite_support_hiveCount_productBoundary {n : ℕ} (lam μ : DominantWei
     exact fun j => ⟨(last_le_of_productBoundary hb).trans (γ.property (Fin.le_last j)),
       (γ.property (Fin.zero_le j)).trans (first_le_of_productBoundary hb)⟩
 
+/-- A rank-`3` hive with fixed boundary `B` is uniquely determined by its value at the single
+interior vertex `(1, 1, 1)`. -/
+theorem fixedIntegerHive_three_ext {B : Fin 3 → Fin 3 → ℤ}
+    (k₁ k₂ : FixedIntegerHive B)
+    (hmid : k₁.val ⟨1, 1, 1, rfl⟩ = k₂.val ⟨1, 1, 1, rfl⟩) : k₁ = k₂ := by
+  refine Subtype.ext <| ext fun p => ?_
+  have := p.sum_eq
+  by_cases hz : p.z = 0
+  · rw [show p = Vertex.edgePoint 3 0 ⟨p.y, by omega⟩ by ext <;> simp [hz]; omega,
+      k₁.val.apply_edgePoint_zero, k₂.val.apply_edgePoint_zero, k₁.property, k₂.property]
+  · by_cases hx : p.x = 0
+    · rw [show p = Vertex.edgePoint 3 1 ⟨p.z, by omega⟩ by ext <;> simp [hx]; omega,
+        k₁.val.apply_edgePoint_one, k₂.val.apply_edgePoint_one, k₁.property, k₂.property]
+    · by_cases hy : p.y = 0
+      · rw [show p = Vertex.edgePoint 3 2 ⟨p.x, by omega⟩ by ext <;> simp [hy]; omega,
+          k₁.val.apply_edgePoint_two, k₂.val.apply_edgePoint_two, k₁.property, k₂.property]
+      · rw [show p = ⟨1, 1, 1, rfl⟩ by ext <;> simp <;> omega, hmid]
+
 end IntegerFibre
 
 /-! ### Rank-`2` multiplicity-freeness and concrete checks -/
@@ -802,24 +820,6 @@ private theorem isRhombusConcave_of_chartThree (c : ℕ → ℕ → ℤ)
   · simp only [hv]
     rcases (by omega : (i = 0 ∧ j = 0) ∨ (i = 0 ∧ j = 1) ∨ (i = 1 ∧ j = 1)) with
       ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ <;> simp only [hH]
-
-/-- A rank-`3` hive with fixed boundary `B` is uniquely determined by its value at the single
-interior vertex `(1, 1, 1)`. -/
-private theorem fixedIntegerHive_three_ext {B : Fin 3 → Fin 3 → ℤ}
-    (k₁ k₂ : FixedIntegerHive B)
-    (hmid : k₁.val ⟨1, 1, 1, rfl⟩ = k₂.val ⟨1, 1, 1, rfl⟩) : k₁ = k₂ := by
-  refine Subtype.ext <| ext fun p => ?_
-  have := p.sum_eq
-  by_cases hz : p.z = 0
-  · rw [show p = Vertex.edgePoint 3 0 ⟨p.y, by omega⟩ by ext <;> simp [hz]; omega,
-      k₁.val.apply_edgePoint_zero, k₂.val.apply_edgePoint_zero, k₁.property, k₂.property]
-  · by_cases hx : p.x = 0
-    · rw [show p = Vertex.edgePoint 3 1 ⟨p.z, by omega⟩ by ext <;> simp [hx]; omega,
-        k₁.val.apply_edgePoint_one, k₂.val.apply_edgePoint_one, k₁.property, k₂.property]
-    · by_cases hy : p.y = 0
-      · rw [show p = Vertex.edgePoint 3 2 ⟨p.x, by omega⟩ by ext <;> simp [hy]; omega,
-          k₁.val.apply_edgePoint_two, k₂.val.apply_edgePoint_two, k₁.property, k₂.property]
-      · rw [show p = ⟨1, 1, 1, rfl⟩ by ext <;> simp <;> omega, hmid]
 
 /-- Rhombus bounds on the interior value `k.val (1, 1, 1)` of any rank-`3` product-boundary hive. -/
 private theorem apply_center_bounds_three {lam μ γ : DominantWeight 3}
