@@ -26,7 +26,7 @@ This is the cohomological counterpart of the homological module of modular symbo
 paths between cusps, which is the form in which the period symbol of a cusp form, the boundary
 map to group cohomology, and the overconvergent symbols of `p`-adic interpolation are written.
 
-The divisor `{b} - {a}` with `+1` at `b` and `-1` at `a` is the oriented path from `a` to `b`
+The divisor `{b} - {a}`, which is zero when `a = b`, is the oriented path from `a` to `b`
 (`TauCeti.ModularSymbols.divisor`). The unimodular divisors `{g 0} - {g ∞}`, `g ∈ SL(2, ℤ)`
 (`TauCeti.ModularSymbols.unimodularDivisor`), span `Δ₀` by Manin's lemma
 (`TauCeti.ModularSymbols.span_degreeZeroRep_eq_top`), so an additive map on `Δ₀` is determined by
@@ -47,7 +47,7 @@ the module of modular symbols of the full modular group with trivial coefficient
   values on the unimodular divisors of representatives of `Γ \ SL(2, ℤ)`.
 * `TauCeti.ModularSymbol.symb_le_symb_comp_inclusion`: for `Γ' ≤ Γ`, every `Γ`-symbol is a
   `Γ'`-symbol.
-* `TauCeti.ModularSymbol.symb_trivial_eq_bot`: `Symb_{SL(2, ℤ)}(V) = 0` for the trivial action.
+* `TauCeti.ModularSymbol.symb_trivial_eq_bot`: `Symb_{SL(2, ℤ)}(V) = 0` for a trivial action.
 
 ## References
 
@@ -70,7 +70,7 @@ open ModularSymbols
 
 section Symbol
 
-variable {R V : Type*} [CommRing R] [AddCommGroup V] [Module R V]
+variable {R V : Type*} [Semiring R] [AddCommMonoid V] [Module R V]
 
 variable {Γ : Subgroup SL(2, ℤ)} (ρ : Representation R Γ V)
 
@@ -128,24 +128,23 @@ theorem symb_le_symb_comp_inclusion {Γ' : Subgroup SL(2, ℤ)} (h : Γ' ≤ Γ)
     symb ρ ≤ symb (ρ.comp (Subgroup.inclusion h)) :=
   fun _ hφ γ D ↦ hφ (Subgroup.inclusion h γ) D
 
-variable (R V) in
 /-- The modular symbols of the full modular group `SL(2, ℤ)` with values in a trivial
-representation vanish: the value `v` on `{0} - {∞}` satisfies `2 v = 0` by the two-term Manin
-relation and `3 v = 0` by the three-term one, and it determines the symbol. -/
-theorem symb_trivial_eq_bot :
-    symb (Representation.trivial R (⊤ : Subgroup SL(2, ℤ)) V) = ⊥ := by
+representation vanish. -/
+theorem symb_trivial_eq_bot (ρ : Representation R (⊤ : Subgroup SL(2, ℤ)) V) [ρ.IsTrivial] :
+    symb ρ = ⊥ := by
   refine eq_bot_iff.2 fun φ hφ ↦ (Submodule.mem_bot R).2 ?_
-  -- Every unimodular divisor has the same value as `{0} - {∞}`.
+  -- Every unimodular divisor has the same value `v` as `{0} - {∞}`.
   have hconst (g : SL(2, ℤ)) : φ (unimodularDivisor ℤ g) = φ (unimodularDivisor ℤ 1) := by
-    simpa using apply_unimodularDivisor_mul hφ ⟨g, Subgroup.mem_top g⟩ 1
+    simpa [ρ.isTrivial_apply] using apply_unimodularDivisor_mul hφ ⟨g, Subgroup.mem_top g⟩ 1
   have hv : φ (unimodularDivisor ℤ 1) = 0 := by
     -- `2 v = 0` from the two-term relation.
-    have h2 := hconst S
-    rw [← one_mul S, unimodularDivisor_mul_S, map_neg, neg_eq_iff_add_eq_zero] at h2
+    have h2 := congrArg φ (neg_add_cancel (unimodularDivisor ℤ 1))
+    rw [map_add, map_zero, ← unimodularDivisor_mul_S, hconst (1 * S)] at h2
     -- `3 v = 0` from the three-term relation.
     have h3 := congrArg φ (unimodularDivisor_add_mul_T_mul_S_add_mul_T_mul_S_sq (R := ℤ) 1)
     rwa [map_add, map_add, map_zero, hconst (1 * (T * S)), hconst (1 * (T * S) ^ 2), h2,
       zero_add] at h3
+  -- The values on the unimodular divisors determine the symbol.
   exact addMonoidHom_ext_unimodular fun g ↦ by rw [hconst, hv, AddMonoidHom.zero_apply]
 
 end Symbol

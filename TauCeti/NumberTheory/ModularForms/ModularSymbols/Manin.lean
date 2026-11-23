@@ -17,13 +17,13 @@ Manin relations, here proved among the degree-zero divisors themselves. The unim
 span the degree-zero divisors by Manin's lemma, so an additive map on them is determined by its
 values on the unimodular divisors.
 
-A Manin symbol is the modular symbol on the oriented edge from `g · ∞` to `g · 0`,
-for `g ∈ SL₂(ℤ)`. These edges generate the modular-symbol module. Reversing an edge
-by `S` gives the two-term relation, and the three edges of the triangle permuted by
-`U = TS` give the three-term relation. These and invariance under `-1` hold with every
-homogeneous coefficient polynomial, and follow from the same relations among unimodular
-divisors. They are the relations used in a finite Manin-symbol
-presentation and in the comparison with period polynomials.
+A Manin symbol is the modular symbol on the oriented edge from `g · 0` to `g · ∞`, for
+`g ∈ SL₂(ℤ)`: the reverse of the path of the unimodular divisor. These edges generate the
+modular-symbol module. Reversing an edge by `S` gives the two-term relation, and the three edges
+of the triangle permuted by `U = TS` give the three-term relation. These and invariance under
+`-1` hold with every homogeneous coefficient polynomial, and follow from the same relations among
+unimodular divisors. They are the relations used in a finite Manin-symbol presentation and in the
+comparison with period polynomials.
 
 ## References
 
@@ -92,14 +92,19 @@ theorem unimodularDivisor_add_mul_T_mul_S_add_mul_T_mul_S_sq (g : SL(2, ℤ)) :
 
 /-- An additive map on the integral degree-zero divisors is determined by its values on the
 unimodular divisors `{g 0} - {g ∞}`, which span by Manin's lemma. -/
-theorem addMonoidHom_ext_unimodular {V : Type*} [AddCommGroup V] {φ ψ : degreeZero ℤ →+ V}
+theorem addMonoidHom_ext_unimodular {V : Type*} [AddCommMonoid V] {φ ψ : degreeZero ℤ →+ V}
     (h : ∀ g : SL(2, ℤ), φ (unimodularDivisor ℤ g) = ψ (unimodularDivisor ℤ g)) : φ = ψ := by
-  refine AddMonoidHom.toIntLinearMap_injective
-    (LinearMap.ext_on_range span_degreeZeroRep_eq_top fun g ↦ ?_)
-  -- The translate `g ({∞} - {0})` is the reversed unimodular divisor of `g`.
-  have hg : degreeZeroRep ℤ g (divisor ℤ ((0 : ℚ) : OnePoint ℚ) ∞) = -unimodularDivisor ℤ g := by
-    rw [degreeZeroRep_apply, degreeZeroGLRep_divisor, unimodularDivisor_def, neg_divisor]
-  simp only [AddMonoidHom.coe_toIntLinearMap, hg, map_neg, h g]
+  -- `φ` and `ψ` agree on an additive subgroup, which contains the spanning family of Manin's lemma.
+  have hle : Submodule.span ℤ (Set.range fun g : SL(2, ℤ) ↦
+      degreeZeroRep ℤ g (divisor ℤ ((0 : ℚ) : OnePoint ℚ) ∞)) ≤
+        (φ.eqLocus ψ).toIntSubmodule := by
+    refine Submodule.span_le.2 (Set.range_subset_iff.2 fun g ↦ ?_)
+    -- The translate `g ({∞} - {0})` is the reversed unimodular divisor of `g`.
+    rw [SetLike.mem_coe, degreeZeroRep_apply, degreeZeroGLRep_divisor, ← neg_divisor,
+      ← unimodularDivisor_def (R := ℤ)]
+    exact neg_mem (h g)
+  ext D
+  exact hle (span_degreeZeroRep_eq_top (R := ℤ) ▸ Submodule.mem_top)
 
 end UnimodularDivisor
 
@@ -107,7 +112,7 @@ end UnimodularDivisor
 
 variable {R : Type*} [CommRing R] (Γ : Subgroup SL(2, ℤ)) {w : ℕ}
 
-/-- The Manin symbol represented by the oriented unimodular edge `g · ∞ → g · 0`,
+/-- The Manin symbol represented by the oriented unimodular edge `g · 0 → g · ∞`,
 linear in the homogeneous coefficient polynomial. -/
 def maninSymbol (g : SL(2, ℤ)) :
     homogeneousSubmodule (Fin 2) R w →ₗ[R] ModularSymbols R Γ w :=

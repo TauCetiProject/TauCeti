@@ -168,7 +168,8 @@ theorem single_sub_single_mem_degreeZero (α β : OnePoint ℚ) :
 
 variable (R) in
 /-- The oriented divisor `{b} - {a}` of the path from the cusp `a` to the cusp `b`: the
-degree-zero divisor with coefficient `1` at `b` and `-1` at `a`. -/
+degree-zero divisor `single b 1 - single a 1`, with coefficient `1` at `b` and `-1` at `a` when
+`a ≠ b`, and zero when `a = b`. -/
 noncomputable def divisor (a b : OnePoint ℚ) : degreeZero R :=
   ⟨single b 1 - single a 1, single_sub_single_mem_degreeZero b a⟩
 
