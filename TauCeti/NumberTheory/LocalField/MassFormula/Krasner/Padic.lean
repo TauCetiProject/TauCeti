@@ -36,8 +36,7 @@ and Roblot's closed-form `ℕ` expression for `#{E ∈ σ_{ℚ_[p]}(n) | E.wildE
 * `TauCeti.sum_oreCoefficientDepth_padic_of_mod_eq_zero`,
   `TauCeti.sum_oreCoefficientDepth_padic_of_mod_pos`: closed-form identities for the sum of Ore
   coefficient depths over `ℚ_[p]`.
-* `TauCeti.ncard_mem_totallyRamifiedOfDegree_wildExponent_eq_padic`,
-  `TauCeti.ncard_mem_totallyRamifiedOfDegree_wildExponent_eq_eq_krasnerCountPadic`: closed-form `ℕ`
+* `TauCeti.ncard_mem_totallyRamifiedOfDegree_wildExponent_eq_eq_krasnerCountPadic`: closed-form `ℕ`
   count of totally ramified degree-`n` extensions of `ℚ_[p]` of wild exponent `j` (Pauli–Roblot,
   Theorem 6.1).
 * `TauCeti.ncard_totallyRamifiedOfDegree_padic`: total count `#σ_{ℚ_[p]}(n)` as a finite sum of
@@ -72,6 +71,19 @@ def krasnerCountPadic (p n j : ℕ) : ℕ :=
     else n * (p - 1) *
       p ^ (∑ i ∈ Finset.Icc 1 (j / n), n / p ^ i + (j % n) / p ^ (j / n + 1))
   else 0
+
+/-- Unfolding `TauCeti.krasnerCountPadic`. -/
+theorem krasnerCountPadic_def (p n j : ℕ) :
+    krasnerCountPadic p n j =
+      if 0 < n ∧
+          (if j % n = 0 then padicValNat p n * n
+            else min (padicValNat p (j % n) * n) (padicValNat p n * n)) ≤ j ∧
+          j ≤ padicValNat p n * n then
+        if j % n = 0 then n * p ^ (∑ i ∈ Finset.Icc 1 (j / n), n / p ^ i)
+        else n * (p - 1) *
+          p ^ (∑ i ∈ Finset.Icc 1 (j / n), n / p ^ i + (j % n) / p ^ (j / n + 1))
+      else 0 := by
+  rw [krasnerCountPadic]
 
 noncomputable section
 
@@ -225,46 +237,34 @@ theorem sum_oreCoefficientDepth_padic_of_mod_pos (p : ℕ) [Fact p.Prime] {n j :
     Finset.sum_const, Nat.card_Ico, smul_eq_mul, mul_one]
   omega
 
-/-- **Krasner's count over `ℚ_[p]`, closed form** (Pauli–Roblot, Theorem 6.1): for an
-Ore-admissible wild exponent `j = a * n + b` (`a = j / n`, `b = j % n`), the number of totally
-ramified degree-`n` extensions of `ℚ_[p]` inside `SeparableClosure ℚ_[p]` of wild exponent `j` is
-`n * p ^ (∑_{1 ≤ i ≤ a} n / p ^ i)` when `b = 0`, and
-`n * (p - 1) * p ^ (∑_{1 ≤ i ≤ a} n / p ^ i + b / p ^ (a + 1))` when `0 < b`. -/
-theorem ncard_mem_totallyRamifiedOfDegree_wildExponent_eq_padic (p : ℕ) [Fact p.Prime]
-    {n j : ℕ} (hadm : IsOreAdmissible ℚ_[p] n j) :
-    {E ∈ totallyRamifiedOfDegree ℚ_[p] n | E.wildExponent = j}.ncard =
-      if j % n = 0 then n * p ^ (∑ i ∈ Finset.Icc 1 (j / n), n / p ^ i)
-      else n * (p - 1) *
-        p ^ (∑ i ∈ Finset.Icc 1 (j / n), n / p ^ i + (j % n) / p ^ (j / n + 1)) := by
-  have hn := hadm.pos
-  have hp_pos : 0 < p := (Fact.out : p.Prime).pos
-  have hnat := ncard_mem_totallyRamifiedOfDegree_wildExponent_eq_mul_pow hadm
-  rw [_root_.Padic.natCard_residueField p] at hnat
-  set S := ∑ h ∈ Finset.Ico 1 n, oreCoefficientDepth ℚ_[p] n j h
-  rcases Nat.eq_zero_or_pos (j % n) with hmod | hmod
-  · rw [ite_eq_left hmod] at hnat ⊢
-    set E := ∑ i ∈ Finset.Icc 1 (j / n), n / p ^ i
-    have hSE : S + E = n + j - 1 := sum_oreCoefficientDepth_padic_of_mod_eq_zero p hadm hmod
-    have hrhs : n * p ^ (n + j) * p = (n * p ^ E) * p ^ (2 + S) := by
-      rw [mul_assoc, ← pow_succ, (by omega : (n + j) + 1 = E + (2 + S)), pow_add, ← mul_assoc]
-    exact Nat.eq_of_mul_eq_mul_right (pow_pos hp_pos (2 + S)) (hnat.trans hrhs)
-  · rw [ite_eq_right hmod.ne'] at hnat ⊢
-    set E := ∑ i ∈ Finset.Icc 1 (j / n), n / p ^ i + (j % n) / p ^ (j / n + 1)
-    have hSE : S + E = n + j - 2 := sum_oreCoefficientDepth_padic_of_mod_pos p hadm hmod
-    have := Nat.mod_lt j hn
-    have hrhs : n * p ^ (n + j) * (p - 1) = (n * (p - 1) * p ^ E) * p ^ (2 + S) := by
-      rw [(by omega : n + j = E + (2 + S)), pow_add]; ring
-    exact Nat.eq_of_mul_eq_mul_right (pow_pos hp_pos (2 + S)) (hnat.trans hrhs)
-
-/-- Over `ℚ_[p]`, `{E ∈ σ_{ℚ_[p]}(n) | E.wildExponent = j}.ncard` equals `krasnerCountPadic p n j`
-for all `n` and `j`. -/
+/-- **Krasner's count over `ℚ_[p]`, closed form** (Pauli–Roblot, Theorem 6.1): over `ℚ_[p]`,
+`{E ∈ σ_{ℚ_[p]}(n) | E.wildExponent = j}.ncard` equals `krasnerCountPadic p n j` for all `n` and
+`j`. -/
 theorem ncard_mem_totallyRamifiedOfDegree_wildExponent_eq_eq_krasnerCountPadic (p : ℕ)
     [Fact p.Prime] (n j : ℕ) :
     {E ∈ totallyRamifiedOfDegree ℚ_[p] n | E.wildExponent = j}.ncard =
       krasnerCountPadic p n j := by
   by_cases hadm : IsOreAdmissible ℚ_[p] n j
-  · rw [ncard_mem_totallyRamifiedOfDegree_wildExponent_eq_padic p hadm, krasnerCountPadic,
-      ite_eq_left ((isOreAdmissible_padic_iff p).mp hadm)]
+  · rw [krasnerCountPadic, ite_eq_left ((isOreAdmissible_padic_iff p).mp hadm)]
+    have hn := hadm.pos
+    have hp_pos : 0 < p := (Fact.out : p.Prime).pos
+    have hnat := ncard_mem_totallyRamifiedOfDegree_wildExponent_eq_mul_pow hadm
+    rw [_root_.Padic.natCard_residueField p] at hnat
+    set S := ∑ h ∈ Finset.Ico 1 n, oreCoefficientDepth ℚ_[p] n j h
+    rcases Nat.eq_zero_or_pos (j % n) with hmod | hmod
+    · rw [ite_eq_left hmod] at hnat ⊢
+      set E := ∑ i ∈ Finset.Icc 1 (j / n), n / p ^ i
+      have hSE : S + E = n + j - 1 := sum_oreCoefficientDepth_padic_of_mod_eq_zero p hadm hmod
+      have hrhs : n * p ^ (n + j) * p = (n * p ^ E) * p ^ (2 + S) := by
+        rw [mul_assoc, ← pow_succ, (by omega : (n + j) + 1 = E + (2 + S)), pow_add, ← mul_assoc]
+      exact Nat.eq_of_mul_eq_mul_right (pow_pos hp_pos (2 + S)) (hnat.trans hrhs)
+    · rw [ite_eq_right hmod.ne'] at hnat ⊢
+      set E := ∑ i ∈ Finset.Icc 1 (j / n), n / p ^ i + (j % n) / p ^ (j / n + 1)
+      have hSE : S + E = n + j - 2 := sum_oreCoefficientDepth_padic_of_mod_pos p hadm hmod
+      have := Nat.mod_lt j hn
+      have hrhs : n * p ^ (n + j) * (p - 1) = (n * (p - 1) * p ^ E) * p ^ (2 + S) := by
+        rw [(by omega : n + j = E + (2 + S)), pow_add]; ring
+      exact Nat.eq_of_mul_eq_mul_right (pow_pos hp_pos (2 + S)) (hnat.trans hrhs)
   · rw [setOf_mem_totallyRamifiedOfDegree_wildExponent_eq_eq_empty_iff.mpr hadm,
       Set.ncard_empty, krasnerCountPadic,
       ite_eq_right fun h ↦ hadm ((isOreAdmissible_padic_iff p).mpr h)]

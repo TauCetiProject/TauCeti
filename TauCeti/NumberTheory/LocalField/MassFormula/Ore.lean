@@ -257,13 +257,14 @@ private theorem nsmul_add_eq_iff {n j h : ℕ} (hn : 0 < n) (hhn : h < n)
     lift addVal 𝒪[K] (h : 𝒪[K]) to ℕ using hwt with w hw'
     rw [nsmul_eq_mul] at heq
     norm_cast at hm1 heq
-    obtain rfl : h = j % n := by
-      have h1 : (n * (m + w) + h) % n = h := by rw [Nat.mul_add_mod, Nat.mod_eq_of_lt hhn]
-      have h2 : ((j / n + 1) * n + j % n) % n = j % n := by
-        rw [Nat.add_comm, Nat.add_mul_mod_self_right, Nat.mod_eq_of_lt hb]
-      rw [← h1, heq, h2]
-    rw [Nat.mul_comm (j / n + 1) n] at heq
-    have hsum : m + w = j / n + 1 := Nat.eq_of_mul_eq_mul_left hn (Nat.add_right_cancel heq)
+    obtain ⟨hdiv1, hmod1⟩ :=
+      (Nat.div_mod_unique (a := (j / n + 1) * n + j % n) (d := m + w) hn).mpr
+        ⟨by rw [Nat.add_comm, heq], hhn⟩
+    obtain ⟨hdiv2, hmod2⟩ :=
+      (Nat.div_mod_unique (a := (j / n + 1) * n + j % n) (d := j / n + 1) hn).mpr
+        ⟨by rw [Nat.add_comm, Nat.mul_comm], hb⟩
+    obtain rfl : h = j % n := hmod1.symm.trans hmod2
+    have : m + w = j / n + 1 := hdiv1.symm.trans hdiv2
     refine ⟨rfl, by exact_mod_cast (by omega : w ≤ j / n), ?_⟩
     rw [natCast_oreCoefficientDepth, ← hw', ite_eq_right (lt_irrefl _), ← ENat.natCast_sub,
       max_eq_right (by exact_mod_cast (by omega : 1 ≤ j / n + 1 + 0 - w))]
@@ -312,12 +313,14 @@ private theorem addVal_Eisenstein_top_eq_iff {n j : ℕ} (hn : 0 < n) {f : 𝒪[
     rw [nsmul_eq_mul]
     norm_cast
     refine ⟨fun heq ↦ ?_, fun ⟨h0, heq⟩ ↦ by rw [heq, h0, add_zero, Nat.mul_comm]⟩
-    have h1 : (n * (v + 1)) % n = 0 := Nat.mul_mod_right n (v + 1)
-    have h2 : ((j / n + 1) * n + j % n) % n = j % n := by
-      rw [Nat.add_comm, Nat.add_mul_mod_self_right, Nat.mod_eq_of_lt hb_lt]
-    have hj0 : j % n = 0 := by rw [← h2, ← heq, h1]
-    rw [hj0, add_zero, Nat.mul_comm (j / n + 1) n] at heq
-    have := Nat.eq_of_mul_eq_mul_left hn heq
+    obtain ⟨hdiv1, hmod1⟩ :=
+      (Nat.div_mod_unique (a := (j / n + 1) * n + j % n) (d := v + 1) hn).mpr
+        ⟨by rw [zero_add, heq], hn⟩
+    obtain ⟨hdiv2, hmod2⟩ :=
+      (Nat.div_mod_unique (a := (j / n + 1) * n + j % n) (d := j / n + 1) hn).mpr
+        ⟨by rw [Nat.add_comm, Nat.mul_comm], hb_lt⟩
+    have hj0 : j % n = 0 := hmod2.symm.trans hmod1
+    have : j / n + 1 = v + 1 := hdiv2.symm.trans hdiv1
     exact ⟨hj0, by omega⟩
 
 /-- Top-index inequality condition for the Eisenstein derivative valuation term at `i = n - 1`. -/

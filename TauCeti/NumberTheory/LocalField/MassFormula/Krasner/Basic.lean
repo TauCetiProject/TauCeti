@@ -240,29 +240,24 @@ private theorem ncard_wildExponent_eq_mul_one_div_pow {n j : ℕ} (hadm : IsOreA
   let : MeasurableSpace (Fin n → K) := borel _
   have : BorelSpace (Fin n → K) := ⟨rfl⟩
   obtain ⟨μ, _, hμ⟩ := exists_addHaarMeasure_integerBox_eq_one K (Fin n)
-  set q : ℝ≥0∞ := (Nat.card 𝓀[K] : ℝ≥0∞)
-  have hq : q ^ (n + j) * (1 / q ^ (n + j)) = 1 := by
-    rw [one_div, ENNReal.mul_inv_cancel
-      (pow_ne_zero _ (Nat.cast_ne_zero.mpr Nat.card_pos.ne'))
-      (ENNReal.pow_ne_top (ENNReal.natCast_ne_top _))]
-  have hncard := congrArg (· * (1 / q ^ (n + j)))
-    (ncard_mem_totallyRamifiedOfDegree_wildExponent_eq_eq_mul_measure (j := j) μ hμ)
-  rw [measure_eisensteinBox hadm μ hμ] at hncard
-  set c : ℝ≥0∞ := 1 - 1 / q
-  set rhs : ℝ≥0∞ :=
-    (n : ℝ≥0∞) * (1 / q ^ (1 + ∑ h ∈ Finset.Ico 1 n, oreCoefficientDepth K n j h)) *
-      (if j % n = 0 then 1 else c)
-  have hmul :
-      (n : ℝ≥0∞) * q ^ (n + j) *
-          (1 / q ^ (1 + ∑ h ∈ Finset.Ico 1 n, oreCoefficientDepth K n j h) * c *
-            (if j % n = 0 then 1 else c)) =
-        (rhs * q ^ (n + j)) * c := by
-    dsimp [rhs]; ring
-  rw [hmul, ENNReal.mul_div_cancel_right
-    (one_sub_one_div_natCard_residueField_ne_zero (K := K))
-    (ENNReal.sub_ne_top ENNReal.one_ne_top),
-    mul_assoc, hq, mul_one] at hncard
-  exact hncard
+  have h := encard_wildExponent_eq_mul_eq_mul_measure_eisensteinBox (j := j) μ hμ
+  rw [← (finite_mem_totallyRamifiedOfDegree_wildExponent_eq (K := K) n j).cast_ncard_eq,
+    ENat.toENNReal_coe, measure_eisensteinBox hadm μ hμ, ← mul_assoc] at h
+  have hrhs :
+      (n : ℝ≥0∞) *
+          (1 / (Nat.card 𝓀[K] : ℝ≥0∞) ^
+            (1 + ∑ h ∈ Finset.Ico 1 n, oreCoefficientDepth K n j h) *
+            (1 - 1 / (Nat.card 𝓀[K] : ℝ≥0∞)) *
+            (if j % n = 0 then 1 else 1 - 1 / (Nat.card 𝓀[K] : ℝ≥0∞))) =
+        ((n : ℝ≥0∞) *
+          (1 / (Nat.card 𝓀[K] : ℝ≥0∞) ^
+            (1 + ∑ h ∈ Finset.Ico 1 n, oreCoefficientDepth K n j h)) *
+          (if j % n = 0 then 1 else 1 - 1 / (Nat.card 𝓀[K] : ℝ≥0∞))) *
+          (1 - 1 / (Nat.card 𝓀[K] : ℝ≥0∞)) := by
+    ring
+  rw [hrhs] at h
+  exact (ENNReal.mul_left_inj (one_sub_one_div_natCard_residueField_ne_zero (K := K))
+    (ENNReal.sub_ne_top ENNReal.one_ne_top)).mp h
 
 private theorem natCast_ncard_wildExponent_eq_div_pow_real {n j : ℕ}
     (hadm : IsOreAdmissible K n j) :
