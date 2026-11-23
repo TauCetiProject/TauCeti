@@ -182,19 +182,9 @@ theorem one_div_lt_abs_sub_convergent (hξ : Irrational ξ) (n : ℕ) :
 convergent has sign `(-1) ^ n`. -/
 theorem neg_one_pow_mul_sub_convergent_pos (ξ : ℝ) {n : ℕ} (hn : ¬(of ξ).TerminatedAt n) :
     0 < (-1) ^ n * (ξ - ξ.convergent n) := by
-  obtain ⟨gp, hs⟩ : ∃ gp, (of ξ).s.get? n = some gp := Option.ne_none_iff_exists'.1 hn
-  obtain ⟨ifp', hstream', -⟩ := IntFractPair.exists_succ_get?_stream_of_gcf_of_get?_eq_some hs
-  obtain ⟨ifp, hstream, hfr, -⟩ := IntFractPair.succ_nth_stream_eq_some_iff.1 hstream'
-  have hB : 0 < ((of ξ).contsAux (n + 1)).b :=
-    (fib_le_of_contsAux_b (v := ξ) (n := n + 1)
-      (Or.inr (mt (terminated_stable (n.sub_le 1)) hn))).trans_lt'
-      (mod_cast Nat.fib_pos.2 n.succ_pos)
-  have hpB : 0 ≤ ((of ξ).contsAux n).b := zero_le_of_contsAux_b
-  have hfr' : 0 < ifp.fr⁻¹ :=
-    inv_pos.2 ((IntFractPair.nth_stream_fr_nonneg hstream).lt_of_ne' hfr)
+  obtain ⟨D, hD, -, herr⟩ := exists_sub_convs_eq_neg_one_pow_div hn
   have hsq : (-1 : ℝ) ^ n * (-1) ^ n = 1 := by rw [← mul_pow]; norm_num
-  -- `ξ - Aₙ / Bₙ = (-1) ^ n / (B (fr⁻¹ B + pB))`, with a positive denominator.
-  rw [← Real.convs_eq_convergent, sub_convs_eq hstream, ite_eq_right hfr, ← mul_div_assoc, hsq]
+  rw [← Real.convs_eq_convergent, herr, ← mul_div_assoc, hsq]
   positivity
 
 /-- The determinant identity `pₙ qₙ₊₁ - qₙ pₙ₊₁ = (-1) ^ (n + 1)` for the reduced convergents
