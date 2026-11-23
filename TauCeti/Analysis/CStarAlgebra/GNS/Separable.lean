@@ -42,7 +42,7 @@ when `A` is unital (`TauCeti.exists_injective_starAlgHom_lp`).
 For a zero algebra (`Subsingleton A`), because `lp (fun _ : ℕ => ℂ) 2` is nontrivial
 (`lp.instNontrivial`), no representation on it is nondegenerate
 (`NonUnitalStarAlgHom.not_isNondegenerate_of_subsingleton_domain`), and no unital representation
-on any nontrivial algebra exists (`StarAlgHom.instIsEmptyOfSubsingletonOfNontrivial`), so the
+into any nontrivial algebra exists (`StarAlgHom.instIsEmptyOfSubsingletonOfNontrivial`), so the
 nontriviality assumption is sharp.
 
 ## Main declarations
