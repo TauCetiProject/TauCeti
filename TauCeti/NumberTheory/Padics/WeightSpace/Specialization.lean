@@ -8,6 +8,7 @@ module
 public import TauCeti.NumberTheory.Padics.WeightSpace.CompletedGroupAlgebra
 public import TauCeti.NumberTheory.Padics.WeightSpace.GeneratorChange
 import TauCeti.Analysis.Normed.Ring.Basic
+import TauCeti.RingTheory.PowerSeries.Binomial
 import TauCeti.Topology.Algebra.MonoidAlgebra.PowerSeries
 
 /-!
@@ -52,37 +53,42 @@ private noncomputable def liftPS : completedGroupAlgebra ℤ_[p] ℤ_[p]ˣ →�
     (MonoidAlgebra.powerSeriesAlgEquiv ℤ_[p] ℤ_[p] _).symm.toAlgHom).comp
     (padicUnitsCoordinate p).symm.toAlgHom
 
+private theorem liftPS_apply (x : completedGroupAlgebra ℤ_[p] ℤ_[p]ˣ) :
+    liftPS ε η x = MonoidAlgebra.liftNCAlgHom ε ((Units.coeHom B).comp η)
+      (fun _ _ ↦ Commute.all _ _)
+      ((MonoidAlgebra.powerSeriesAlgEquiv ℤ_[p] ℤ_[p] _).symm ((padicUnitsCoordinate p).symm x)) :=
+  rfl
+
 private theorem liftPS_C_single (δ : (ZMod (p ^ padicUnitsDepth p))ˣ) (a : ℤ_[p]) :
     liftPS ε η (padicUnitsCoordinate p (PowerSeries.C (MonoidAlgebra.single δ a))) =
       algebraMap ℤ_[p] B a * η δ := by
-  rw [liftPS, AlgHom.comp_apply, AlgHom.comp_apply, AlgEquiv.coe_toAlgHom, AlgEquiv.coe_toAlgHom,
-    (padicUnitsCoordinate p).symm_apply_apply, MonoidAlgebra.powerSeriesAlgEquiv_symm_C_single]
+  rw [liftPS_apply, AlgEquiv.symm_apply_apply, MonoidAlgebra.powerSeriesAlgEquiv_symm_C_single]
   simp [PowerSeries.C_eq_algebraMap]
 
 private theorem liftPS_map_singleOne (φ : PowerSeries ℤ_[p]) :
     liftPS ε η (padicUnitsCoordinate p (PowerSeries.map MonoidAlgebra.singleOneRingHom φ)) =
       ε φ := by
-  rw [liftPS, AlgHom.comp_apply, AlgHom.comp_apply, AlgEquiv.coe_toAlgHom, AlgEquiv.coe_toAlgHom,
-    (padicUnitsCoordinate p).symm_apply_apply,
-    MonoidAlgebra.powerSeriesAlgEquiv_symm_map_singleOneRingHom]
-  simp
+  simp [liftPS]
 
 private theorem liftPS_of (x : ℤ_[p]ˣ) :
     liftPS ε η (completedGroupAlgebra.of ℤ_[p] ℤ_[p]ˣ x) =
       η (padicIntUnitsEquivZModUnitsProd p x).1 *
         ε (PowerSeries.binomialSeries ℤ_[p] (padicIntUnitsEquivZModUnitsProd p x).2.toAdd) := by
+  have hsingle : (MonoidAlgebra.singleOneAlgHom (R := ℤ_[p]) (A := ℤ_[p])
+      (M := (ZMod (p ^ padicUnitsDepth p))ˣ) :
+      ℤ_[p] →+* MonoidAlgebra ℤ_[p] (ZMod (p ^ padicUnitsDepth p))ˣ) =
+      MonoidAlgebra.singleOneRingHom := rfl
   rw [← (padicUnitsCoordinate p).apply_symm_apply (completedGroupAlgebra.of ℤ_[p] ℤ_[p]ˣ x),
-    padicUnitsCoordinate_symm_of, MonoidAlgebra.binomialSeries_eq_map_singleOneRingHom,
-    map_mul, map_mul, liftPS_C_single, liftPS_map_singleOne, map_one, one_mul]
+    padicUnitsCoordinate_symm_of, ← PowerSeries.map_algHom_binomialSeries
+      (MonoidAlgebra.singleOneAlgHom (R := ℤ_[p]) (A := ℤ_[p]) (M := _)),
+    hsingle, map_mul, map_mul, liftPS_C_single, liftPS_map_singleOne, map_one, one_mul]
 
 variable {ε}
 
+open scoped PadicUnitsModuleTopology in
 private theorem continuous_liftPS [TopologicalSpace B] [IsTopologicalRing B] (hε : Continuous ε) :
-    Continuous (liftPS ε η) := by
-  let : TopologicalSpace (MonoidAlgebra ℤ_[p] (ZMod (p ^ padicUnitsDepth p))ˣ) :=
-    moduleTopology ℤ_[p] _
-  have : IsModuleTopology ℤ_[p] (MonoidAlgebra ℤ_[p] (ZMod (p ^ padicUnitsDepth p))ˣ) := ⟨rfl⟩
-  exact (continuous_liftNCAlgHom_powerSeriesAlgEquiv_symm hε
+    Continuous (liftPS ε η) :=
+  (continuous_liftNCAlgHom_powerSeriesAlgEquiv_symm hε
     ((Units.coeHom B).comp η) (fun _ _ ↦ Commute.all _ _)).comp
     (continuous_padicUnitsCoordinate_symm p)
 end LiftHelper
@@ -138,6 +144,41 @@ theorem coe_finiteChar_ofContinuousRingHom_apply (δ : (ZMod (p ^ padicUnitsDept
   rw [coord_def, coe_ofContinuousRingHom_apply, map_sub, map_one]
 end OfContinuousRingHom
 
+private noncomputable def mkSpecializeEquiv {R H : Type*} [Ring R] [TopologicalSpace R]
+    [FunLike H (completedGroupAlgebra ℤ_[p] ℤ_[p]ˣ) R] [RingHomClass H _ R]
+    (spec : WeightSpace p R → H) (hcont : ∀ κ, Continuous (spec κ))
+    (hof : ∀ κ x, spec κ (completedGroupAlgebra.of ℤ_[p] ℤ_[p]ˣ x) = κ x)
+    (heq : ∀ {φ : H}, Continuous φ → ∀ κ,
+      (∀ x, φ (completedGroupAlgebra.of ℤ_[p] ℤ_[p]ˣ x) = κ x) → φ = spec κ) :
+    WeightSpace p R ≃ {φ : H // Continuous φ} where
+  toFun κ := ⟨spec κ, hcont κ⟩
+  invFun φ := ofContinuousRingHom (RingHomClass.toRingHom φ.val) φ.property
+  left_inv κ := by ext x; exact hof κ x
+  right_inv φ := Subtype.ext <| (heq φ.property _ fun _ ↦ rfl).symm
+
+private theorem existsUnique_of_specializeEquiv {R H : Type*} [CommRing R] [TopologicalSpace R]
+    [FunLike H (completedGroupAlgebra ℤ_[p] ℤ_[p]ˣ) R] [RingHomClass H _ R]
+    (e : WeightSpace p R ≃ {φ : H // Continuous φ})
+    (h_apply : ∀ (κ : WeightSpace p R) (x : ℤ_[p]ˣ),
+      (e κ).val (completedGroupAlgebra.of ℤ_[p] ℤ_[p]ˣ x) = κ x)
+    (h_symm : ∀ (φ : {φ : H // Continuous φ}) (x : ℤ_[p]ˣ),
+      ((e.symm φ) x : R) = φ.val (completedGroupAlgebra.of ℤ_[p] ℤ_[p]ˣ x))
+    {η : (ZMod (p ^ padicUnitsDepth p))ˣ →* Rˣ} {t : R}
+    (huniq : ∃! κ : WeightSpace p R, κ.finiteChar = η ∧ κ.coord = t) :
+    ∃! φ : H, Continuous φ ∧
+      (∀ δ, φ (completedGroupAlgebra.of ℤ_[p] ℤ_[p]ˣ (padicUnitsSection p δ)) = η δ) ∧
+      φ (completedGroupAlgebra.of ℤ_[p] ℤ_[p]ˣ (padicUnitsGenerator p) - 1) = t := by
+  obtain ⟨κ₀, ⟨hη₀, ht₀⟩, hκ_uniq⟩ := huniq
+  refine ⟨(e κ₀).val, ⟨(e κ₀).property,
+    fun δ ↦ by rw [h_apply, ← finiteChar_apply, hη₀],
+    by rw [map_sub, map_one, h_apply, ← coord_def, ht₀]⟩,
+    fun φ ⟨hφ, hη, ht'⟩ ↦ ?_⟩
+  have hκ : e.symm ⟨φ, hφ⟩ = κ₀ := hκ_uniq _
+    ⟨by ext δ; simp only [finiteChar_apply, h_symm]; exact hη δ,
+     by rw [coord_def, h_symm, ← map_one φ, ← map_sub φ, ht']⟩
+  exact congrArg Subtype.val (e.symm_apply_eq.mp hκ)
+
+open scoped PadicUnitsModuleTopology in
 /-- No continuous ring homomorphism out of `ℤ_p[[ℤ_pˣ]]` into a semiring with a topology sends
 `[γ] - 1` to an element whose powers do not tend to `0`. -/
 theorem not_exists_continuous_ringHom_of_not_tendsto_pow {R : Type*} [Semiring R]
@@ -145,9 +186,6 @@ theorem not_exists_continuous_ringHom_of_not_tendsto_pow {R : Type*} [Semiring R
     ¬∃ φ : completedGroupAlgebra ℤ_[p] ℤ_[p]ˣ →+* R,
       Continuous φ ∧ φ (completedGroupAlgebra.of ℤ_[p] ℤ_[p]ˣ (padicUnitsGenerator p) - 1) = z := by
   rintro ⟨φ, hφ, rfl⟩
-  let : TopologicalSpace (MonoidAlgebra ℤ_[p] (ZMod (p ^ padicUnitsDepth p))ˣ) :=
-    moduleTopology ℤ_[p] _
-  have : IsModuleTopology ℤ_[p] (MonoidAlgebra ℤ_[p] (ZMod (p ^ padicUnitsDepth p))ˣ) := ⟨rfl⟩
   have hX : Tendsto (fun n : ℕ ↦
       (completedGroupAlgebra.of ℤ_[p] ℤ_[p]ˣ (padicUnitsGenerator p) - 1) ^ n) atTop (𝓝 0) := by
     have h0 : Tendsto (fun n : ℕ ↦
@@ -232,11 +270,9 @@ theorem eq_adicSpecialize_of_continuous {φ : completedGroupAlgebra ℤ_[p] ℤ_
 /-- **The adic universal property of `ℤ_p[[ℤ_pˣ]]`.** Weights in `S` correspond bijectively to
 continuous `ℤ_p`-algebra homomorphisms `ℤ_p[[ℤ_pˣ]] →ₐ[ℤ_p] S`. -/
 noncomputable def adicSpecializeEquiv :
-    WeightSpace p S ≃ {φ : completedGroupAlgebra ℤ_[p] ℤ_[p]ˣ →ₐ[ℤ_[p]] S // Continuous φ} where
-  toFun κ := ⟨κ.adicSpecialize, κ.continuous_adicSpecialize⟩
-  invFun φ := ofContinuousRingHom (φ.val : completedGroupAlgebra ℤ_[p] ℤ_[p]ˣ →+* S) φ.property
-  left_inv κ := κ.ofContinuousRingHom_adicSpecialize
-  right_inv φ := Subtype.ext <| (eq_adicSpecialize_of_continuous φ.property _ fun _ ↦ rfl).symm
+    WeightSpace p S ≃ {φ : completedGroupAlgebra ℤ_[p] ℤ_[p]ˣ →ₐ[ℤ_[p]] S // Continuous φ} :=
+  mkSpecializeEquiv adicSpecialize continuous_adicSpecialize adicSpecialize_of
+    eq_adicSpecialize_of_continuous
 
 @[simp] theorem adicSpecializeEquiv_apply (κ : WeightSpace p S) :
     (adicSpecializeEquiv κ : completedGroupAlgebra ℤ_[p] ℤ_[p]ˣ →ₐ[ℤ_[p]] S) =
@@ -252,13 +288,9 @@ theorem existsUnique_continuous_algHom_of_hasEval (η : (ZMod (p ^ padicUnitsDep
     {z : S} (hz : PowerSeries.HasEval z) :
     ∃! φ : completedGroupAlgebra ℤ_[p] ℤ_[p]ˣ →ₐ[ℤ_[p]] S, Continuous φ ∧
       (∀ δ, φ (completedGroupAlgebra.of ℤ_[p] ℤ_[p]ˣ (padicUnitsSection p δ)) = η δ) ∧
-      φ (completedGroupAlgebra.of ℤ_[p] ℤ_[p]ˣ (padicUnitsGenerator p) - 1) = z := by
-  refine ⟨(ofHasEval η hz).adicSpecialize, ⟨(ofHasEval η hz).continuous_adicSpecialize,
-    fun δ ↦ by rw [adicSpecialize_of, ← finiteChar_apply, finiteChar_ofHasEval],
-    by rw [adicSpecialize_coord, coord_ofHasEval]⟩, fun φ ⟨hφ, hη, hz'⟩ ↦ ?_⟩
-  have hκ : ofContinuousRingHom φ.toRingHom hφ = ofHasEval η hz :=
-    ext_finiteChar_coord (by ext δ; simpa using hη δ) (by simpa using hz')
-  exact eq_adicSpecialize_of_continuous hφ (ofHasEval η hz) fun x ↦ by simp [← hκ]
+      φ (completedGroupAlgebra.of ℤ_[p] ℤ_[p]ˣ (padicUnitsGenerator p) - 1) = z :=
+  existsUnique_of_specializeEquiv adicSpecializeEquiv (fun κ x ↦ κ.adicSpecialize_of x)
+    (fun _ _ ↦ rfl) (existsUnique_character_of_hasEval η hz)
 
 @[simp] theorem adicSpecialize_universal :
     (universal p).adicSpecialize = AlgHom.id ℤ_[p] (completedGroupAlgebra ℤ_[p] ℤ_[p]ˣ) :=
@@ -332,11 +364,9 @@ theorem eq_normedSpecialize_of_continuous {φ : completedGroupAlgebra ℤ_[p] �
 /-- **The normed universal property of `ℤ_p[[ℤ_pˣ]]`.** Weights in `R` correspond bijectively to
 continuous `ℤ_p`-algebra homomorphisms `ℤ_p[[ℤ_pˣ]] →ₐ[ℤ_p] R`. -/
 noncomputable def normedSpecializeEquiv :
-    WeightSpace p R ≃ {φ : completedGroupAlgebra ℤ_[p] ℤ_[p]ˣ →ₐ[ℤ_[p]] R // Continuous φ} where
-  toFun κ := ⟨κ.normedSpecialize, κ.continuous_normedSpecialize⟩
-  invFun φ := ofContinuousRingHom (φ.val : completedGroupAlgebra ℤ_[p] ℤ_[p]ˣ →+* R) φ.property
-  left_inv κ := κ.ofContinuousRingHom_normedSpecialize
-  right_inv φ := Subtype.ext <| (eq_normedSpecialize_of_continuous φ.property _ fun _ ↦ rfl).symm
+    WeightSpace p R ≃ {φ : completedGroupAlgebra ℤ_[p] ℤ_[p]ˣ →ₐ[ℤ_[p]] R // Continuous φ} :=
+  mkSpecializeEquiv normedSpecialize continuous_normedSpecialize normedSpecialize_of
+    eq_normedSpecialize_of_continuous
 
 @[simp] theorem normedSpecializeEquiv_apply (κ : WeightSpace p R) :
     (normedSpecializeEquiv κ : completedGroupAlgebra ℤ_[p] ℤ_[p]ˣ →ₐ[ℤ_[p]] R) =
@@ -352,13 +382,9 @@ theorem existsUnique_continuous_algHom_of_tendsto_pow
     (η : (ZMod (p ^ padicUnitsDepth p))ˣ →* Rˣ) {t : R} (ht : Tendsto (t ^ ·) atTop (𝓝 0)) :
     ∃! φ : completedGroupAlgebra ℤ_[p] ℤ_[p]ˣ →ₐ[ℤ_[p]] R, Continuous φ ∧
       (∀ δ, φ (completedGroupAlgebra.of ℤ_[p] ℤ_[p]ˣ (padicUnitsSection p δ)) = η δ) ∧
-      φ (completedGroupAlgebra.of ℤ_[p] ℤ_[p]ˣ (padicUnitsGenerator p) - 1) = t := by
-  refine ⟨(ofCoord η t ht).normedSpecialize, ⟨(ofCoord η t ht).continuous_normedSpecialize,
-    fun δ ↦ by rw [normedSpecialize_of, ← finiteChar_apply, finiteChar_ofCoord],
-    by rw [normedSpecialize_coord, coord_ofCoord]⟩, fun φ ⟨hφ, hη, ht'⟩ ↦ ?_⟩
-  have hκ : ofContinuousRingHom φ.toRingHom hφ = ofCoord η t ht :=
-    ext_finiteChar_coord (by ext δ; simpa using hη δ) (by simpa using ht')
-  exact eq_normedSpecialize_of_continuous hφ (ofCoord η t ht) fun x ↦ by simp [← hκ]
+      φ (completedGroupAlgebra.of ℤ_[p] ℤ_[p]ˣ (padicUnitsGenerator p) - 1) = t :=
+  existsUnique_of_specializeEquiv normedSpecializeEquiv (fun κ x ↦ κ.normedSpecialize_of x)
+    (fun _ _ ↦ rfl) (existsUnique_character_of_tendsto_pow η ht)
 
 /-- When `‖t‖ < 1`, `η` and `t` determine a unique continuous `ℤ_p`-algebra homomorphism out of
 `ℤ_p[[ℤ_pˣ]]`. -/
@@ -374,6 +400,35 @@ theorem normedSpecialize_padicUnitsCoordinateAt_X (κ : WeightSpace p R) (u : �
   rw [padicUnitsCoordinateAt_X, map_sub, map_one, normedSpecialize_of,
     κ.coordAt_eq_principalChar_sub_one, principalChar_apply]
 
+open scoped PadicUnitsModuleTopology in
+/-- Specialising along the generator-change coordinate `padicUnitsCoordinateAt p u` factors
+through `padicPowerSeriesEval` at `κ.coordAt u` and `κ.finiteChar`. -/
+theorem normedSpecialize_comp_padicUnitsCoordinateAt (κ : WeightSpace p R) (u : ℤ_[p]ˣ) :
+    κ.normedSpecialize.comp (padicUnitsCoordinateAt p u).toAlgHom =
+      (MonoidAlgebra.liftNCAlgHom (padicPowerSeriesEval p (κ.tendsto_coordAt_pow u))
+        ((Units.coeHom R).comp κ.finiteChar) fun _ _ ↦ Commute.all _ _).comp
+        (MonoidAlgebra.powerSeriesAlgEquiv ℤ_[p] ℤ_[p]
+          (ZMod (p ^ padicUnitsDepth p))ˣ).symm.toAlgHom := by
+  let Δ := (ZMod (p ^ padicUnitsDepth p))ˣ
+  let L₁ := κ.normedSpecialize.comp (padicUnitsCoordinateAt p u).toAlgHom
+  let L₂ := (MonoidAlgebra.liftNCAlgHom (padicPowerSeriesEval p (κ.tendsto_coordAt_pow u))
+    ((Units.coeHom R).comp κ.finiteChar) fun _ _ ↦ Commute.all _ _).comp
+    (MonoidAlgebra.powerSeriesAlgEquiv ℤ_[p] ℤ_[p] Δ).symm.toAlgHom
+  have hpoly : L₁.toRingHom.comp Polynomial.coeToPowerSeries.ringHom =
+      L₂.toRingHom.comp Polynomial.coeToPowerSeries.ringHom := by
+    refine Polynomial.ringHom_ext' ?_ ?_
+    · refine MonoidAlgebra.ringHom_ext (fun a ↦ ?_) (fun δ ↦ ?_)
+      · simp [L₁, L₂, Δ, AlgHom.commutes]
+      · simp [L₁, L₂, Δ, ← finiteChar_apply]
+    · simp [L₁, L₂, Δ, coordAt_eq_principalChar_sub_one, principalChar_apply]
+  exact AlgHom.coe_fn_injective <|
+    (PowerSeries.WithPiTopology.denseRange_toPowerSeries (MonoidAlgebra ℤ_[p] Δ)).equalizer
+      (κ.continuous_normedSpecialize.comp (continuous_padicUnitsCoordinateAt p u))
+      (continuous_liftNCAlgHom_powerSeriesAlgEquiv_symm
+        (continuous_padicPowerSeriesEval p (κ.tendsto_coordAt_pow u))
+        ((Units.coeHom R).comp κ.finiteChar) (fun _ _ ↦ Commute.all _ _))
+      (funext fun P ↦ RingHom.congr_fun hpoly P)
+
 /-- **Generator-change series expansion.** Specialising `padicUnitsCoordinateAt p u F` at `κ`
 evaluates the finite-part coefficients against powers of `κ.coordAt u`. -/
 theorem hasSum_normedSpecialize_padicUnitsCoordinateAt (κ : WeightSpace p R) (u : ℤ_[p]ˣ)
@@ -381,39 +436,8 @@ theorem hasSum_normedSpecialize_padicUnitsCoordinateAt (κ : WeightSpace p R) (u
     HasSum (fun n : ℕ ↦ MonoidAlgebra.lift ℤ_[p] R (ZMod (p ^ padicUnitsDepth p))ˣ
         ((Units.coeHom R).comp κ.finiteChar) (F.coeff n) * κ.coordAt u ^ n)
       (κ.normedSpecialize (padicUnitsCoordinateAt p u F)) := by
-  let Δ := (ZMod (p ^ padicUnitsDepth p))ˣ
-  let : TopologicalSpace (MonoidAlgebra ℤ_[p] Δ) := moduleTopology ℤ_[p] _
-  have : IsModuleTopology ℤ_[p] (MonoidAlgebra ℤ_[p] Δ) := ⟨rfl⟩
-  let s := (MonoidAlgebra.powerSeriesAlgEquiv ℤ_[p] ℤ_[p] Δ).symm
-  let L₁ := κ.normedSpecialize.comp (padicUnitsCoordinateAt p u).toAlgHom
-  let L₂ := (MonoidAlgebra.liftNCAlgHom (padicPowerSeriesEval p (κ.tendsto_coordAt_pow u))
-    ((Units.coeHom R).comp κ.finiteChar) fun _ _ ↦ Commute.all _ _).comp s.toAlgHom
-  have hL_eq : ⇑L₁ = ⇑L₂ :=
-    (PowerSeries.WithPiTopology.denseRange_toPowerSeries (MonoidAlgebra ℤ_[p] Δ)).equalizer
-      (κ.continuous_normedSpecialize.comp (continuous_padicUnitsCoordinateAt p u))
-      (continuous_liftNCAlgHom_powerSeriesAlgEquiv_symm
-        (continuous_padicPowerSeriesEval p (κ.tendsto_coordAt_pow u))
-        ((Units.coeHom R).comp κ.finiteChar) (fun _ _ ↦ Commute.all _ _))
-      (funext fun P ↦ by
-        simp only [Function.comp_apply]
-        induction P using Polynomial.induction_on' with
-        | add _ _ hf hg => simp [Polynomial.coe_add, map_add, hf, hg]
-        | monomial n r =>
-          rw [Polynomial.coe_monomial, PowerSeries.monomial_eq_C_mul_X_pow, map_mul, map_mul,
-            map_pow, map_pow]
-          refine congrArg₂ (· * ·) ?_ (by simp [L₁, L₂, s, Δ, coordAt_eq_principalChar_sub_one,
-            principalChar_apply, MonoidAlgebra.powerSeriesAlgEquiv_symm_X])
-          induction r using MonoidAlgebra.induction_linear with
-          | zero => simp
-          | add _ _ hx hy => simp [map_add, hx, hy]
-          | single δ a =>
-            dsimp only [L₁, L₂, s, Δ]
-            rw [AlgHom.comp_apply, AlgEquiv.coe_toAlgHom, padicUnitsCoordinateAt_C_single,
-              map_mul, AlgHom.commutes, normedSpecialize_of, ← finiteChar_apply, AlgHom.comp_apply,
-              AlgEquiv.coe_toAlgHom, MonoidAlgebra.powerSeriesAlgEquiv_symm_C_single]
-            simp [PowerSeries.C_eq_algebraMap])
   rw [← AlgEquiv.coe_toAlgHom (padicUnitsCoordinateAt p u), ← AlgHom.comp_apply,
-    congrFun hL_eq F]
+    normedSpecialize_comp_padicUnitsCoordinateAt, AlgHom.comp_apply, AlgEquiv.coe_toAlgHom]
   exact hasSum_liftNCAlgHom_powerSeriesAlgEquiv_symm
     (hasSum_padicPowerSeriesEval p (κ.tendsto_coordAt_pow u))
     ((Units.coeHom R).comp κ.finiteChar) (fun _ _ ↦ Commute.all _ _) (fun _ ↦ Commute.all _ _) F
@@ -504,11 +528,9 @@ theorem eq_specializeRingHom_of_continuous {φ : completedGroupAlgebra ℤ_[p] �
 /-- **The normed `ℚ_p`-algebra universal property of `ℤ_p[[ℤ_pˣ]]`.** Weights in `K` correspond
 bijectively to continuous ring homomorphisms `ℤ_p[[ℤ_pˣ]] →+* K`. -/
 noncomputable def specializeRingHomEquiv :
-    WeightSpace p K ≃ {φ : completedGroupAlgebra ℤ_[p] ℤ_[p]ˣ →+* K // Continuous φ} where
-  toFun κ := ⟨κ.specializeRingHom, κ.continuous_specializeRingHom⟩
-  invFun φ := ofContinuousRingHom φ.val φ.property
-  left_inv κ := κ.ofContinuousRingHom_specializeRingHom
-  right_inv φ := Subtype.ext <| (eq_specializeRingHom_of_continuous φ.property _ fun _ ↦ rfl).symm
+    WeightSpace p K ≃ {φ : completedGroupAlgebra ℤ_[p] ℤ_[p]ˣ →+* K // Continuous φ} :=
+  mkSpecializeEquiv specializeRingHom continuous_specializeRingHom specializeRingHom_of
+    eq_specializeRingHom_of_continuous
 
 @[simp] theorem specializeRingHomEquiv_apply (κ : WeightSpace p K) :
     (specializeRingHomEquiv κ : completedGroupAlgebra ℤ_[p] ℤ_[p]ˣ →+* K) =
@@ -523,16 +545,9 @@ theorem existsUnique_continuous_ringHom_of_tendsto_pow
     (η : (ZMod (p ^ padicUnitsDepth p))ˣ →* Kˣ) {t : K} (ht : Tendsto (t ^ ·) atTop (𝓝 0)) :
     ∃! φ : completedGroupAlgebra ℤ_[p] ℤ_[p]ˣ →+* K, Continuous φ ∧
       (∀ δ, φ (completedGroupAlgebra.of ℤ_[p] ℤ_[p]ˣ (padicUnitsSection p δ)) = η δ) ∧
-      φ (completedGroupAlgebra.of ℤ_[p] ℤ_[p]ˣ (padicUnitsGenerator p) - 1) = t := by
-  refine ⟨(ofCoordOfNormedAlgebra η t ht).specializeRingHom,
-    ⟨(ofCoordOfNormedAlgebra η t ht).continuous_specializeRingHom,
-      fun δ ↦ by rw [specializeRingHom_of, ← finiteChar_apply, finiteChar_ofCoordOfNormedAlgebra],
-      by rw [specializeRingHom_coord, coord_ofCoordOfNormedAlgebra]⟩,
-    fun φ ⟨hφ, hη, ht'⟩ ↦ ?_⟩
-  have hκ : ofContinuousRingHom φ hφ = ofCoordOfNormedAlgebra η t ht :=
-    ext_finiteChar_coord (by ext δ; simpa [coe_finiteChar_ofContinuousRingHom_apply] using hη δ)
-      (by simpa using ht')
-  exact eq_specializeRingHom_of_continuous hφ _ fun x ↦ by simp [← hκ]
+      φ (completedGroupAlgebra.of ℤ_[p] ℤ_[p]ˣ (padicUnitsGenerator p) - 1) = t :=
+  existsUnique_of_specializeEquiv specializeRingHomEquiv (fun κ x ↦ κ.specializeRingHom_of x)
+    (fun φ x ↦ by simp) (existsUnique_character_of_tendsto_pow_of_normedAlgebra η ht)
 
 /-- When `‖t‖ < 1`, `η` and `t` determine a unique continuous ring homomorphism out of
 `ℤ_p[[ℤ_pˣ]]` into a complete ultrametric normed `ℚ_p`-algebra `K`. -/

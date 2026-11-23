@@ -6,9 +6,11 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.NumberTheory.Padics.ProperSpace
+public import Mathlib.RingTheory.PowerSeries.Binomial
 public import TauCeti.Algebra.MonoidAlgebra.PowerSeries
 public import TauCeti.Topology.Algebra.Group.Profinite.CompletedGroupAlgebra.Filtration
 public import TauCeti.Topology.Algebra.Group.Profinite.CompletedGroupAlgebra.Prod
+import TauCeti.RingTheory.PowerSeries.Binomial
 
 /-!
 # The power-series coordinate of `ℤ_p[[C × Γ]]`
@@ -166,9 +168,12 @@ element `(1, γ ^ u)` in `ℤ_p[[C × Γ]]`. -/
 theorem prodPowerSeriesCoordinate_binomialSeries (u : ℤ_[p]) :
     prodPowerSeriesCoordinate C hΓ hγ (PowerSeries.binomialSeries (MonoidAlgebra ℤ_[p] C) u) =
       of ℤ_[p] (C × Γ) (1, hΓ.padicPow γ u) := by
-  rw [MonoidAlgebra.binomialSeries_eq_map_singleOneRingHom,
-    prodPowerSeriesCoordinate_map_singleOneRingHom, powerSeriesCoordinate_binomialSeries,
-    map_of, MonoidHom.inr_apply]
+  have hsingle : (MonoidAlgebra.singleOneAlgHom (R := ℤ_[p]) (A := ℤ_[p]) (M := C) :
+      ℤ_[p] →+* MonoidAlgebra ℤ_[p] C) = MonoidAlgebra.singleOneRingHom := rfl
+  rw [← PowerSeries.map_algHom_binomialSeries
+      (MonoidAlgebra.singleOneAlgHom (R := ℤ_[p]) (A := ℤ_[p]) (M := C)),
+    hsingle, prodPowerSeriesCoordinate_map_singleOneRingHom,
+    powerSeriesCoordinate_binomialSeries, map_of, MonoidHom.inr_apply]
 
 /-- The inverse coordinate sends the group element `(c, 1)` to the group element `c` of the
 group ring. -/

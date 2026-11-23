@@ -205,6 +205,20 @@ end Topology
 
 end Coordinate
 
+namespace PadicUnitsModuleTopology
+
+/-- Scoped `ℤ_p`-module topology on `ℤ_p[(ℤ/qℤ)ˣ]`. -/
+noncomputable scoped instance instTopologicalSpaceMonoidAlgebraZModUnits (p : ℕ) [Fact p.Prime] :
+    TopologicalSpace (MonoidAlgebra ℤ_[p] (ZMod (p ^ padicUnitsDepth p))ˣ) :=
+  moduleTopology ℤ_[p] _
+
+/-- Under the scoped topology `TauCeti.PadicUnitsModuleTopology`, `ℤ_p[(ℤ/qℤ)ˣ]` carries the
+`ℤ_p`-module topology. -/
+scoped instance instIsModuleTopologyMonoidAlgebraZModUnits (p : ℕ) [Fact p.Prime] :
+    IsModuleTopology ℤ_[p] (MonoidAlgebra ℤ_[p] (ZMod (p ^ padicUnitsDepth p))ˣ) := ⟨rfl⟩
+
+end PadicUnitsModuleTopology
+
 section OddPrime
 
 variable {p : ℕ} [Fact p.Prime] (hp : p ≠ 2)
@@ -277,12 +291,12 @@ theorem padicUnitsCompletedGroupAlgebraSplitting_padicUnitsCoordinate_C_charIdem
   simp [padicUnitsCompletedGroupAlgebraSplitting, Pi.single_apply, eq_comm,
     MonoidHom.charEval_charIdempotent _ _ (isUnit_card_zmodUnits_padicUnitsDepth hp)]
 
+section
+open scoped PadicUnitsModuleTopology
+
 /-- The odd-prime splitting `padicUnitsCompletedGroupAlgebraSplitting` is continuous. -/
 theorem continuous_padicUnitsCompletedGroupAlgebraSplitting :
     Continuous (padicUnitsCompletedGroupAlgebraSplitting hp) := by
-  let Δ := (ZMod (p ^ padicUnitsDepth p))ˣ
-  let : TopologicalSpace (MonoidAlgebra ℤ_[p] Δ) := moduleTopology ℤ_[p] _
-  have : IsModuleTopology ℤ_[p] (MonoidAlgebra ℤ_[p] Δ) := ⟨rfl⟩
   refine continuous_pi fun ψ ↦
     ((continuous_iff_continuousAt.mpr fun φ ↦
       (PowerSeries.WithPiTopology.tendsto_iff_coeff_tendsto ℤ_[p] _ _ _).mpr fun n ↦ by
@@ -297,8 +311,6 @@ theorem continuous_padicUnitsCompletedGroupAlgebraSplitting :
 theorem continuous_padicUnitsCompletedGroupAlgebraSplitting_symm :
     Continuous (padicUnitsCompletedGroupAlgebraSplitting hp).symm := by
   let Δ := (ZMod (p ^ padicUnitsDepth p))ˣ
-  let : TopologicalSpace (MonoidAlgebra ℤ_[p] Δ) := moduleTopology ℤ_[p] _
-  have : IsModuleTopology ℤ_[p] (MonoidAlgebra ℤ_[p] Δ) := ⟨rfl⟩
   have : ContinuousAdd (MonoidAlgebra ℤ_[p] Δ) := IsModuleTopology.toContinuousAdd ℤ_[p] _
   have : ContinuousSMul ℤ_[p] (MonoidAlgebra ℤ_[p] Δ) := IsModuleTopology.toContinuousSMul ℤ_[p] _
   have := hasEnoughRootsOfUnity_zmodUnits_padicUnitsDepth p
@@ -306,12 +318,14 @@ theorem continuous_padicUnitsCompletedGroupAlgebraSplitting_symm :
   refine ((continuous_padicUnitsCoordinate p).comp
     (continuous_iff_continuousAt (f := (padicUnitsPowerSeriesSplitting hp).symm).mpr fun F ↦
       (PowerSeries.WithPiTopology.tendsto_iff_coeff_tendsto _ _ _ _).mpr fun n ↦ ?_)).congr
-        fun _ ↦ rfl
+        fun F ↦ by simp [padicUnitsCompletedGroupAlgebraSplitting, AlgEquiv.symm_trans_apply]
   refine ((continuous_finsetSum (s := Finset.univ)
     (f := fun (χ : Δ →* ℤ_[p]ˣ) (G : (Δ →* ℤ_[p]ˣ) → ℤ_[p]⟦X⟧) ↦ (G χ).coeff n • charIdempotent χ)
     fun χ _ ↦ ((PowerSeries.WithPiTopology.continuous_coeff ℤ_[p] n).comp
       (continuous_apply χ)).smul continuous_const).congr fun G ↦ ?_).continuousAt
   rw [padicUnitsPowerSeriesSplitting, coeff_powerSeriesCharEvalEquiv_symm, charEvalEquiv_symm_apply]
+
+end
 
 end OddPrime
 

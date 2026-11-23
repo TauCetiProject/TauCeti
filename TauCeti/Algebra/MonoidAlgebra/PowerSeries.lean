@@ -7,7 +7,6 @@ module
 
 public import Mathlib.Algebra.MonoidAlgebra.Basic
 public import Mathlib.RingTheory.PowerSeries.Basic
-public import Mathlib.RingTheory.PowerSeries.Binomial
 
 /-!
 # Power series over a monoid algebra
@@ -44,8 +43,6 @@ product `C × ℤ_p` becomes a power-series ring over `ℤ_p[C]`.
   arbitrary `ψ ∈ A[M]⟦X⟧`.
 * `MonoidAlgebra.liftNC_eq_sum`: finite-sum expansion of `MonoidAlgebra.liftNC` over a finite
   indexing type.
-* `MonoidAlgebra.binomialSeries_eq_map_singleOneRingHom`: `PowerSeries.binomialSeries` over `A[M]`
-  is the scalar binomial series mapped along `singleOneRingHom`.
 -/
 
 public section
@@ -60,16 +57,6 @@ theorem liftNC_eq_sum {A B M : Type*} [Semiring A] [NonUnitalNonAssocSemiring B]
     (f : A →+ B) (g : M → B) (x : MonoidAlgebra A M) :
     liftNC f g x = ∑ m : M, f (x.coeff m) * g m :=
   Finsupp.sum_fintype x.coeff (fun m a ↦ f a * g m) fun _ ↦ by simp
-
-/-- The binomial series `(1 + X) ^ r` over `A[M]` is the scalar binomial series over `A` mapped
-coefficientwise along `singleOneRingHom`. -/
-theorem binomialSeries_eq_map_singleOneRingHom {R A M : Type*} [CommRing R] [BinomialRing R]
-    [Semiring A] [Algebra R A] [Monoid M] (r : R) :
-    PowerSeries.binomialSeries (MonoidAlgebra A M) r =
-      PowerSeries.map (singleOneRingHom : A →+* MonoidAlgebra A M)
-        (PowerSeries.binomialSeries A r) := by
-  ext n
-  simp [PowerSeries.binomialSeries_coeff, MonoidAlgebra.one_def]
 
 variable (R : Type*) [CommSemiring R] (A : Type*) [Semiring A] [Algebra R A]
   (M : Type*) [Monoid M]
