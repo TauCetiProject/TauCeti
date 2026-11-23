@@ -160,4 +160,11 @@ abbrev IdealVertexCycle : Type :=
   Quotient (Setoid.comap Subtype.val (Equiv.Perm.SameCycle.setoid σ.next) :
     Setoid {i : Fin n // (P.vertex i).isRight})
 
+/-- A compact polygon has no ideal vertices, so its side pairings have no ideal vertex cycles. -/
+instance {P : CompactConvexPolygon n} (σ : P.toConvexPolygon.SidePairing) :
+    IsEmpty σ.IdealVertexCycle :=
+  have : IsEmpty {i : Fin n // (P.toConvexPolygon.vertex i).isRight} :=
+    ⟨fun i ↦ by simpa [P.vertex_toConvexPolygon] using i.property⟩
+  inferInstance
+
 end TauCeti.UpperHalfPlane.ConvexPolygon.SidePairing

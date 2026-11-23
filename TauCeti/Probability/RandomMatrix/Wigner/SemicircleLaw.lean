@@ -8,9 +8,10 @@ module
 public import TauCeti.Probability.RandomMatrix.Wigner.Resolvent
 import TauCeti.Probability.RandomMatrix.Wigner.CornerAverage
 import TauCeti.Probability.RandomMatrix.Centering
-import TauCeti.Probability.RandomMatrix.Diagonal
+import TauCeti.Probability.RandomMatrix.Wigner.Diagonal
 import TauCeti.Analysis.Matrix.SpectralMeasure.ResolventStability
 import TauCeti.MeasureTheory.Function.Lp.Norm
+import TauCeti.MeasureTheory.Function.L2Space
 import Mathlib.Data.Nat.Choose.Cast
 import Mathlib.MeasureTheory.Function.SimpleFuncDenseLp
 
@@ -240,12 +241,9 @@ theorem wigner_semicircle_ae (η : ℕ → Ω → ℝ)
       (𝓝 (⟨semicircleReal 0 1, inferInstance⟩ : ProbabilityMeasure ℝ)) := by
   have : IsProbabilityMeasure P := hind.isProbabilityMeasure
   let c := ∫ ω, ξ e₀ ω ∂P
-  have hint : Integrable (fun ω ↦ ‖ξ e₀ ω - c‖ ^ 2) P := by
-    by_contra h
-    exact zero_ne_one ((integral_undef h).symm.trans hv)
   have hξc : MemLp (fun ω ↦ ξ e₀ ω - c) 2 P :=
-    (memLp_two_iff_integrable_sq_norm
-      ((hid e₀).aemeasurable_fst.sub_const c).aestronglyMeasurable).2 hint
+    ((hid e₀).aemeasurable_fst.sub_const c).aestronglyMeasurable
+      |>.memLp_two_of_integral_norm_sq_ne_zero (hv.trans_ne one_ne_zero)
   have hξ : MemLp (ξ e₀) 2 P :=
     (hξc.add (memLp_const c)).ae_eq (.of_forall fun ω ↦ sub_add_cancel (ξ e₀ ω) c)
   have hcentred : ∫ ω, (ξ e₀ ω - c) ∂P = 0 := by

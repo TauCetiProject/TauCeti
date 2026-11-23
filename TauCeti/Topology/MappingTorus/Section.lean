@@ -8,7 +8,7 @@ module
 public import TauCeti.Topology.MappingTorus.Covering
 public import TauCeti.Topology.MappingTorus.LocalProduct
 public import TauCeti.Topology.MappingTorus.Refl
-public import TauCeti.Topology.PathSpace.Seamed
+public import TauCeti.Topology.PathSpace.Seamed.Basic
 import TauCeti.Algebra.AddCircle
 import TauCeti.Topology.Instances.AddCircle.UnitInterval
 import TauCeti.Topology.MappingSpace.FreeLoop
