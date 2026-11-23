@@ -41,12 +41,15 @@ with `k ≤ ℓ` and `k ≤ m` and every finite target exponent `1 < s ≤ p`, t
 
 1. *Weak differentiated system* (`TauCeti.IsWeakCRSolution.differentiated`). When `2 < p ≤ ∞`,
    `1/p + 1/q ≤ 1`, `J, S ∈ W^{1,p}_loc(Ω)`, `ξ ∈ W^{1,q}_loc(Ω)` and `η` has weak derivative `Dη`
-   on `Ω`, combining Green's formula (via the weak Leibniz rule `TauCeti.HasWeakFDerivOn.bilin`)
-   with the mixed-derivative commutator
-   (`TauCeti.integral_inner_fderiv_add_integral_inner_eq_of_hasWeakFDerivOn`) shows that the pair
-   `Ξ = (∂_s ξ, ∂_t ξ)` valued in `WithLp 2 (V × V)` solves the differentiated system
-   `∂_s Ξ + (J ⊕ J) ∂_t Ξ + S₂ Ξ = (∂_s η - (∂_s S) ξ, ∂_t η - (∂_t S) ξ)` weakly in `L^q_loc(Ω)`,
-   where `S₂ = [[S, ∂_s J], [0, S + ∂_t J]]` is conjugated to `WithLp 2 (V × V)`.
+   on `Ω`, combining Green's formula (via the weak Leibniz pairing
+   `TauCeti.HasWeakFDerivOn.integral_inner_fderiv_bilin_eq_neg`) with the mixed-derivative
+   commutator (`TauCeti.integral_inner_fderiv_add_integral_inner_eq_of_hasWeakFDerivOn`) shows that
+   the pair `Ξ = (∂_s ξ, ∂_t ξ)` valued in `WithLp 2 (V × V)` satisfies `TauCeti.IsWeakCRSolution q`
+   for the differentiated system
+   `∂_s Ξ + (J ⊕ J) ∂_t Ξ + S₂ Ξ = (∂_s η - (∂_s S) ξ, ∂_t η - (∂_t S) ξ)`,
+   where the `L^q_loc(Ω)` exponent `q` applies to `Ξ` while the differentiated right-hand side is
+   merely locally integrable (`LocallyIntegrableOn`), and `S₂ = [[S, ∂_s J], [0, S + ∂_t J]]` is
+   lifted to `WithLp 2 (V × V)` via `TauCeti.differentiatedCRCoefficientWithLp`.
 2. *Induction on `k`* (`TauCeti.IsWeakCRSolution.memWkpLoc_of_memWkpLoc`). When `p = ∞`, the
    coefficient exponent is first lowered to a finite `p' > max 2 s` with `1/p' + 1/q < 1`
    (`ENNReal.exists_gt_ne_top_and_inv_add_inv_lt_one`). The base `k = 0` is
@@ -81,6 +84,41 @@ namespace TauCeti
 
 /-! ### The weak differentiated Cauchy–Riemann system -/
 
+section WithLpCoeff
+
+variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V]
+
+/-- The zeroth-order coefficient `S₂ = [[S, ∂_s J], [0, S + ∂_t J]]` of the differentiated
+Cauchy–Riemann system, lifted to `WithLp r (V × V)`. -/
+def differentiatedCRCoefficientWithLp (r : ℝ≥0∞) [Fact (1 ≤ r)]
+    (S : V →L[ℝ] V) (DJ : ℂ →L[ℝ] V →L[ℝ] V) :
+    WithLp r (V × V) →L[ℝ] WithLp r (V × V) :=
+  ((WithLp.prodContinuousLinearEquiv r ℝ V V).arrowCongr
+    (WithLp.prodContinuousLinearEquiv r ℝ V V)).symm
+    (differentiatedCRCoefficient S DJ)
+
+/-- Pointwise evaluation of `TauCeti.differentiatedCRCoefficientWithLp`. -/
+@[simp]
+theorem differentiatedCRCoefficientWithLp_apply (r : ℝ≥0∞) [Fact (1 ≤ r)]
+    (S : V →L[ℝ] V) (DJ : ℂ →L[ℝ] V →L[ℝ] V) (x : WithLp r (V × V)) :
+    differentiatedCRCoefficientWithLp r S DJ x =
+      WithLp.toLp r (S x.fst + DJ 1 x.snd, S x.snd + DJ I x.snd) := by
+  simp [differentiatedCRCoefficientWithLp]
+
+/-- **Sobolev regularity of `TauCeti.differentiatedCRCoefficientWithLp`.** If `S ∈ W^{k,p}_loc(Ω)`
+and `J ∈ W^{k+1,p}_loc(Ω)` with weak derivative `DJ`, then the `WithLp r (V × V)`-valued
+coefficient `z ↦ differentiatedCRCoefficientWithLp r (S z) (DJ z)` lies in `W^{k,p}_loc(Ω)`. -/
+theorem MemWkpLoc.differentiatedCRCoefficientWithLp [CompleteSpace V] (r : ℝ≥0∞) [Fact (1 ≤ r)]
+    {p : ℝ≥0∞} {Ω : Opens ℂ} {k : ℕ} {J S : ℂ → V →L[ℝ] V} {DJ : ℂ → ℂ →L[ℝ] V →L[ℝ] V}
+    (hS : MemWkpLoc p Ω k S) (hJ : MemWkpLoc p Ω (k + 1) J)
+    (hDJ : HasWeakFDerivOn volume Ω J DJ) :
+    MemWkpLoc p Ω k (fun z => TauCeti.differentiatedCRCoefficientWithLp r (S z) (DJ z)) :=
+  (hS.differentiatedCRCoefficient hJ hDJ).clm_comp
+    ((WithLp.prodContinuousLinearEquiv r ℝ V V).arrowCongr
+      (WithLp.prodContinuousLinearEquiv r ℝ V V)).symm.toContinuousLinearMap
+
+end WithLpCoeff
+
 section InnerProduct
 
 variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] [FiniteDimensional ℝ V]
@@ -91,15 +129,10 @@ private theorem isSobolevCRCoefficients_prodL2 (hJ : MemWkpLoc p Ω 1 J)
     (hDJ : HasWeakFDerivOn volume Ω J DJ) (hSp : MemLpLoc p Ω S) :
     IsSobolevCRCoefficients p Ω (fun z => (J z).withLpProdMap 2 (J z))
       (fun z => (ContinuousLinearMap.withLpProdMapL 2 ℝ V V V V).comp ((DJ z).prod (DJ z)))
-      (fun z => ((WithLp.prodContinuousLinearEquiv 2 ℝ V V).arrowCongr
-        (WithLp.prodContinuousLinearEquiv 2 ℝ V V)).symm
-        (differentiatedCRCoefficient (S z) (DJ z))) := by
+      (fun z => differentiatedCRCoefficientWithLp 2 (S z) (DJ z)) := by
   have : CompleteSpace V := FiniteDimensional.completeSpace ℝ V
   exact IsSobolevCRCoefficients.of_memWkpLoc (hJ.withLpProdMap 2 hJ) (hDJ.withLpProdMap 2 hDJ)
-    (((memWkpLoc_zero_iff.2 hSp).differentiatedCRCoefficient hJ hDJ).memLpLoc.clm_comp
-      (G := WithLp 2 (V × V) →L[ℝ] WithLp 2 (V × V))
-      ((WithLp.prodContinuousLinearEquiv 2 ℝ V V).arrowCongr
-        (WithLp.prodContinuousLinearEquiv 2 ℝ V V)).symm.toContinuousLinearMap)
+    ((memWkpLoc_zero_iff.2 hSp).differentiatedCRCoefficientWithLp 2 hJ hDJ).memLpLoc
 
 /-- Testing the weak equation `∂_s ξ + J ∂_t ξ + S ξ = η` against `∂_{u} ψ` via Green's formula
 and integrating the `S ξ` and `η` terms by parts, for all `2 < p ≤ ∞` and `1 ≤ q ≤ ∞`. -/
@@ -153,12 +186,47 @@ private theorem integral_fderiv_test_eq {Dξ Dη : ℂ → ℂ →L[ℝ] V}
   rw [hlhs_split, hSξ, hη_ibp] at hpair
   linarith
 
+omit [FiniteDimensional ℝ V] in
+private theorem integral_inner_postcomp_prodL2_add {f₁ f₂ g₁ g₂ : ℂ → V}
+    (hf₁ : LocallyIntegrableOn f₁ Ω) (hf₂ : LocallyIntegrableOn f₂ Ω)
+    (hg₁ : LocallyIntegrableOn g₁ Ω) (hg₂ : LocallyIntegrableOn g₂ Ω)
+    (Φ : 𝓓(Ω, WithLp 2 (V × V))) :
+    ∫ z, ⟪(Φ : ℂ → WithLp 2 (V × V)) z, WithLp.toLp 2 (f₁ z + f₂ z, g₁ z + g₂ z)⟫_ℝ =
+      ((∫ z, ⟪(TestFunction.postcompCLM (WithLp.fstL 2 ℝ V V) Φ : ℂ → V) z, f₁ z⟫_ℝ) +
+          ∫ z, ⟪(TestFunction.postcompCLM (WithLp.fstL 2 ℝ V V) Φ : ℂ → V) z, f₂ z⟫_ℝ) +
+        ((∫ z, ⟪(TestFunction.postcompCLM (WithLp.sndL 2 ℝ V V) Φ : ℂ → V) z, g₁ z⟫_ℝ) +
+          ∫ z, ⟪(TestFunction.postcompCLM (WithLp.sndL 2 ℝ V V) Φ : ℂ → V) z, g₂ z⟫_ℝ) := by
+  have hf₁' := (TestFunction.postcompCLM (WithLp.fstL 2 ℝ V V) Φ).integrable_inner hf₁
+  have hf₂' := (TestFunction.postcompCLM (WithLp.fstL 2 ℝ V V) Φ).integrable_inner hf₂
+  have hg₁' := (TestFunction.postcompCLM (WithLp.sndL 2 ℝ V V) Φ).integrable_inner hg₁
+  have hg₂' := (TestFunction.postcompCLM (WithLp.sndL 2 ℝ V V) Φ).integrable_inner hg₂
+  rw [TestFunction.integral_inner_postcomp_prodL2 (f := fun z => f₁ z + f₂ z)
+    (g := fun z => g₁ z + g₂ z) (hf₁.add hf₂) (hg₁.add hg₂) Φ]
+  simp only [inner_add_right]
+  rw [integral_add hf₁' hf₂', integral_add hg₁' hg₂']
+
+omit [FiniteDimensional ℝ V] in
+private theorem integral_inner_postcomp_prodL2_sub {f₁ f₂ g₁ g₂ : ℂ → V}
+    (hf₁ : LocallyIntegrableOn f₁ Ω) (hf₂ : LocallyIntegrableOn f₂ Ω)
+    (hg₁ : LocallyIntegrableOn g₁ Ω) (hg₂ : LocallyIntegrableOn g₂ Ω)
+    (Φ : 𝓓(Ω, WithLp 2 (V × V))) :
+    ∫ z, ⟪(Φ : ℂ → WithLp 2 (V × V)) z, WithLp.toLp 2 (f₁ z - f₂ z, g₁ z - g₂ z)⟫_ℝ =
+      ((∫ z, ⟪(TestFunction.postcompCLM (WithLp.fstL 2 ℝ V V) Φ : ℂ → V) z, f₁ z⟫_ℝ) -
+          ∫ z, ⟪(TestFunction.postcompCLM (WithLp.fstL 2 ℝ V V) Φ : ℂ → V) z, f₂ z⟫_ℝ) +
+        ((∫ z, ⟪(TestFunction.postcompCLM (WithLp.sndL 2 ℝ V V) Φ : ℂ → V) z, g₁ z⟫_ℝ) -
+          ∫ z, ⟪(TestFunction.postcompCLM (WithLp.sndL 2 ℝ V V) Φ : ℂ → V) z, g₂ z⟫_ℝ) := by
+  simpa only [← sub_eq_add_neg, inner_neg_right, integral_neg] using
+    integral_inner_postcomp_prodL2_add (f₂ := fun z => -f₂ z) (g₂ := fun z => -g₂ z)
+      hf₁ hf₂.neg hg₁ hg₂.neg Φ
+
 /-- **The weak differentiated Cauchy–Riemann system.** Let `2 < p ≤ ∞` and `1/p + 1/q ≤ 1`. If
 `J, S ∈ W^{1,p}_loc(Ω)` have weak derivatives `DJ, DS`, `ξ ∈ W^{1,q}_loc(Ω)` has weak derivative
-`Dξ`, `η` has weak derivative `Dη` on `Ω`, and `ξ` solves `∂_s ξ + J ∂_t ξ + S ξ = η` weakly in
-`L^q_loc(Ω)`, then the pair `Ξ = (∂_s ξ, ∂_t ξ)` in `WithLp 2 (V × V)` solves the differentiated
-system `∂_s Ξ + (J ⊕ J) ∂_t Ξ + S₂ Ξ = (∂_s η - (∂_s S) ξ, ∂_t η - (∂_t S) ξ)` weakly in
-`L^q_loc(Ω)` (McDuff–Salamon, Proposition B.4.9, Step 2). -/
+`Dξ`, `η` has weak derivative `Dη` on `Ω`, and `ξ` satisfies `TauCeti.IsWeakCRSolution q` for
+`∂_s ξ + J ∂_t ξ + S ξ = η`, then the pair `Ξ = (∂_s ξ, ∂_t ξ)` in `WithLp 2 (V × V)` satisfies
+`TauCeti.IsWeakCRSolution q` for the differentiated system
+`∂_s Ξ + (J ⊕ J) ∂_t Ξ + S₂ Ξ = (∂_s η - (∂_s S) ξ, ∂_t η - (∂_t S) ξ)`, where the
+`L^q_loc(Ω)` exponent `q` applies to `Ξ` while the differentiated right-hand side is locally
+integrable on `Ω` (McDuff–Salamon, Proposition B.4.9, Step 2). -/
 theorem IsWeakCRSolution.differentiated {Dξ Dη : ℂ → ℂ →L[ℝ] V}
     (hp : 2 < p) (hpq : p⁻¹ + q⁻¹ ≤ 1)
     (hJ : MemWkpLoc p Ω 1 J) (hDJ : HasWeakFDerivOn volume Ω J DJ)
@@ -168,9 +236,7 @@ theorem IsWeakCRSolution.differentiated {Dξ Dη : ℂ → ℂ →L[ℝ] V}
     (hsol : IsWeakCRSolution q Ω J DJ S ξ η) :
     IsWeakCRSolution q Ω (fun z => (J z).withLpProdMap 2 (J z))
       (fun z => (ContinuousLinearMap.withLpProdMapL 2 ℝ V V V V).comp ((DJ z).prod (DJ z)))
-      (fun z => ((WithLp.prodContinuousLinearEquiv 2 ℝ V V).arrowCongr
-        (WithLp.prodContinuousLinearEquiv 2 ℝ V V)).symm
-        (differentiatedCRCoefficient (S z) (DJ z)))
+      (fun z => differentiatedCRCoefficientWithLp 2 (S z) (DJ z))
       (fun z => WithLp.toLp 2 (Dξ z 1, Dξ z I))
       (fun z => WithLp.toLp 2 (Dη z 1 - DS z 1 (ξ z), Dη z I - DS z I (ξ z))) := by
   have : CompleteSpace V := FiniteDimensional.completeSpace ℝ V
@@ -209,17 +275,14 @@ theorem IsWeakCRSolution.differentiated {Dξ Dη : ℂ → ℂ →L[ℝ] V}
   rw [hc₂.integral_inner_crFormalAdjoint_eq_terms hpq hΞq Φ]
   simp only [ContinuousLinearMap.comp_apply, ContinuousLinearMap.prod_apply,
     ContinuousLinearMap.withLpProdMapL_apply, ContinuousLinearMap.withLpProdMap_apply,
-    WithLp.toLp_fst, WithLp.toLp_snd, ContinuousLinearEquiv.arrowCongr_symm,
-    ContinuousLinearEquiv.arrowCongr_apply, ContinuousLinearEquiv.symm_symm,
-    WithLp.prodContinuousLinearEquiv_apply, WithLp.prodContinuousLinearEquiv_symm_apply,
-    differentiatedCRCoefficient_apply]
+    WithLp.toLp_fst, WithLp.toLp_snd, differentiatedCRCoefficientWithLp_apply]
   rw [TestFunction.integral_inner_fderiv_postcomp_prodL2 (hDξ_loc 1) (hDξ_loc I) 1 Φ,
     TestFunction.integral_inner_fderiv_postcomp_prodL2
       (hADξ_loc hJ.memLpLoc 1) (hADξ_loc hJ.memLpLoc I) I Φ,
     TestFunction.integral_inner_postcomp_prodL2 (hADξ_loc (hDJu I) 1) (hADξ_loc (hDJu I) I) Φ,
-    TestFunction.integral_inner_postcomp_prodL2_add (hADξ_loc hS.memLpLoc 1) (hADξ_loc (hDJu 1) I)
+    integral_inner_postcomp_prodL2_add (hADξ_loc hS.memLpLoc 1) (hADξ_loc (hDJu 1) I)
       (hADξ_loc hS.memLpLoc I) (hADξ_loc (hDJu I) I) Φ,
-    TestFunction.integral_inner_postcomp_prodL2_sub (hDη_loc 1) (hDSξ_loc 1)
+    integral_inner_postcomp_prodL2_sub (hDη_loc 1) (hDSξ_loc 1)
       (hDη_loc I) (hDSξ_loc I) Φ]
   linarith
 
@@ -276,10 +339,7 @@ theorem IsWeakCRSolution.memWkpLoc_of_memWkpLoc {k ℓ m : ℕ} (hp : 2 < p)
       hJsq.mono fun z hz => by
         rw [← ContinuousLinearMap.withLpProdMap_comp, hz, ContinuousLinearMap.withLpProdMap_neg,
           ContinuousLinearMap.withLpProdMap_id]
-    have hS₂ := ((hS.of_le (by omega)).differentiatedCRCoefficient (hJ.of_le hkℓ) hDJ).clm_comp
-      (G := WithLp 2 (V × V) →L[ℝ] WithLp 2 (V × V))
-      ((WithLp.prodContinuousLinearEquiv 2 ℝ V V).arrowCongr
-        (WithLp.prodContinuousLinearEquiv 2 ℝ V V)).symm.toContinuousLinearMap
+    have hS₂ := (hS.of_le (by omega)).differentiatedCRCoefficientWithLp 2 (hJ.of_le hkℓ) hDJ
     lift p to ℝ≥0 using hp_top
     lift s to ℝ≥0 using hs_top
     have hΗ := (WithLp.prodContinuousLinearEquiv 2 ℝ V V).symm.comp_memWkpLoc_iff.2

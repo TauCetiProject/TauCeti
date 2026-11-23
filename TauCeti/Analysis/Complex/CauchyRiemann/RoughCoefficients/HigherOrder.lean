@@ -26,10 +26,10 @@ derivative `Dη`, then `∂_t ξ = Dξ · I` solves the differentiated `t`-equat
 
 `∂_s (∂_t ξ) + J ∂_t (∂_t ξ) + (S + ∂_t J) ∂_t ξ = ∂_t η - (∂_t S) ξ`
 
-weakly (`TauCeti.IsWeakCRSolution.apply_I_of_hasWeakFDerivOn`). Unlike the first row of
-McDuff–Salamon's differentiated system, this equation does not involve `∂_s ∂_t J`. For full
-higher-order interior `W^{k+1,q}_loc` regularity, see
-`TauCeti.IsWeakCRSolution.memWkpLoc_of_le` in
+weakly (`TauCeti.IsWeakCRSolution.apply_I_of_hasWeakFDerivOn`). This file proves only the
+second differentiated row in isolation; for the full weak differentiated system on
+`WithLp 2 (V × V)` see `TauCeti.IsWeakCRSolution.differentiated`, and for full higher-order
+interior `W^{k+1,q}_loc` regularity see `TauCeti.IsWeakCRSolution.memWkpLoc_of_le`, both in
 `TauCeti.Analysis.Complex.CauchyRiemann.RoughCoefficients.Regularity`.
 
 ## Main results

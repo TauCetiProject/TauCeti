@@ -48,8 +48,7 @@ completeness of the coefficient space.
   integrable on `Ω`.
 * `TestFunction.integrable_mul_inner`: `x ↦ α x * ⟪v, w x⟫` is integrable for `α ∈ 𝓓^{n}(Ω, ℝ)`
   and `w` locally integrable on `Ω`.
-* `TestFunction.integral_inner_postcomp_prodL2`, `TestFunction.integral_inner_postcomp_prodL2_add`,
-  `TestFunction.integral_inner_postcomp_prodL2_sub`,
+* `TestFunction.integral_inner_postcomp_prodL2`,
   `TestFunction.integral_inner_fderiv_postcomp_prodL2`: splitting integrals of `WithLp 2`
   product test functions (and their directional derivatives) against pairs of locally integrable
   fields into the two factor pairings.
@@ -123,52 +122,6 @@ theorem integral_inner_postcomp_prodL2 {n : ℕ∞} {f : E → V₁} {g : E → 
   rw [← integral_add hf' hg']
   exact integral_congr_ae (.of_forall fun x => by
     dsimp only; rw [WithLp.prod_inner_apply]; simp)
-
-/-- Pairing a `WithLp 2 (V₁ × V₂)`-valued test function with a sum `(f₁ + f₂, g₁ + g₂)` of
-locally integrable fields splits into the four component pairings against the projected test
-functions. -/
-theorem integral_inner_postcomp_prodL2_add {n : ℕ∞} {f₁ f₂ : E → V₁} {g₁ g₂ : E → V₂}
-    (hf₁ : LocallyIntegrableOn f₁ Ω μ) (hf₂ : LocallyIntegrableOn f₂ Ω μ)
-    (hg₁ : LocallyIntegrableOn g₁ Ω μ) (hg₂ : LocallyIntegrableOn g₂ Ω μ)
-    (Φ : 𝓓^{n}(Ω, WithLp 2 (V₁ × V₂))) :
-    ∫ x, ⟪(Φ : E → WithLp 2 (V₁ × V₂)) x, WithLp.toLp 2 (f₁ x + f₂ x, g₁ x + g₂ x)⟫_ℝ ∂μ =
-      ((∫ x, ⟪(postcompCLM (WithLp.fstL 2 ℝ V₁ V₂) Φ : E → V₁) x, f₁ x⟫_ℝ ∂μ) +
-          ∫ x, ⟪(postcompCLM (WithLp.fstL 2 ℝ V₁ V₂) Φ : E → V₁) x, f₂ x⟫_ℝ ∂μ) +
-        ((∫ x, ⟪(postcompCLM (WithLp.sndL 2 ℝ V₁ V₂) Φ : E → V₂) x, g₁ x⟫_ℝ ∂μ) +
-          ∫ x, ⟪(postcompCLM (WithLp.sndL 2 ℝ V₁ V₂) Φ : E → V₂) x, g₂ x⟫_ℝ ∂μ) := by
-  have hf₁' :
-      Integrable (fun x => ⟪(postcompCLM (WithLp.fstL 2 ℝ V₁ V₂) Φ : E → V₁) x, f₁ x⟫_ℝ) μ :=
-    (postcompCLM (WithLp.fstL 2 ℝ V₁ V₂) Φ).integrable_bilin (innerSL ℝ) hf₁
-  have hf₂' :
-      Integrable (fun x => ⟪(postcompCLM (WithLp.fstL 2 ℝ V₁ V₂) Φ : E → V₁) x, f₂ x⟫_ℝ) μ :=
-    (postcompCLM (WithLp.fstL 2 ℝ V₁ V₂) Φ).integrable_bilin (innerSL ℝ) hf₂
-  have hg₁' :
-      Integrable (fun x => ⟪(postcompCLM (WithLp.sndL 2 ℝ V₁ V₂) Φ : E → V₂) x, g₁ x⟫_ℝ) μ :=
-    (postcompCLM (WithLp.sndL 2 ℝ V₁ V₂) Φ).integrable_bilin (innerSL ℝ) hg₁
-  have hg₂' :
-      Integrable (fun x => ⟪(postcompCLM (WithLp.sndL 2 ℝ V₁ V₂) Φ : E → V₂) x, g₂ x⟫_ℝ) μ :=
-    (postcompCLM (WithLp.sndL 2 ℝ V₁ V₂) Φ).integrable_bilin (innerSL ℝ) hg₂
-  rw [integral_inner_postcomp_prodL2 (f := fun x => f₁ x + f₂ x) (g := fun x => g₁ x + g₂ x)
-    (hf₁.add hf₂) (hg₁.add hg₂) Φ]
-  simp only [inner_add_right]
-  rw [integral_add hf₁' hf₂', integral_add hg₁' hg₂']
-
-/-- Pairing a `WithLp 2 (V₁ × V₂)`-valued test function with a difference
-`(f₁ - f₂, g₁ - g₂)` of locally integrable fields splits into the four component pairings against
-the projected test functions. -/
-theorem integral_inner_postcomp_prodL2_sub {n : ℕ∞} {f₁ f₂ : E → V₁}
-    {g₁ g₂ : E → V₂} (hf₁ : LocallyIntegrableOn f₁ Ω μ) (hf₂ : LocallyIntegrableOn f₂ Ω μ)
-    (hg₁ : LocallyIntegrableOn g₁ Ω μ) (hg₂ : LocallyIntegrableOn g₂ Ω μ)
-    (Φ : 𝓓^{n}(Ω, WithLp 2 (V₁ × V₂))) :
-    ∫ x,
-        ⟪(Φ : E → WithLp 2 (V₁ × V₂)) x, WithLp.toLp 2 (f₁ x - f₂ x, g₁ x - g₂ x)⟫_ℝ ∂μ =
-      ((∫ x, ⟪(postcompCLM (WithLp.fstL 2 ℝ V₁ V₂) Φ : E → V₁) x, f₁ x⟫_ℝ ∂μ) -
-          ∫ x, ⟪(postcompCLM (WithLp.fstL 2 ℝ V₁ V₂) Φ : E → V₁) x, f₂ x⟫_ℝ ∂μ) +
-        ((∫ x, ⟪(postcompCLM (WithLp.sndL 2 ℝ V₁ V₂) Φ : E → V₂) x, g₁ x⟫_ℝ ∂μ) -
-          ∫ x, ⟪(postcompCLM (WithLp.sndL 2 ℝ V₁ V₂) Φ : E → V₂) x, g₂ x⟫_ℝ ∂μ) := by
-  simpa only [← sub_eq_add_neg, inner_neg_right, integral_neg] using
-    integral_inner_postcomp_prodL2_add (f₂ := fun x => -f₂ x) (g₂ := fun x => -g₂ x)
-      hf₁ hf₂.neg hg₁ hg₂.neg Φ
 
 /-- Pairing the directional derivative of a `WithLp 2 (V₁ × V₂)`-valued test function with a
 pair `(f, g)` of locally integrable fields splits into the sum of the component pairings against
