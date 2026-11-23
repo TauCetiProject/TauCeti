@@ -445,13 +445,22 @@ noncomputable def classSubcategoryOrderIso :
 
 /-- `TauCeti.TriangulatedK0.classSubcategoryOrderIso` sends a strictly full dense triangulated
 subcategory `A` to the range of `TriangulatedK0.map A.ι`. -/
-@[simp]
 theorem classSubcategoryOrderIso_apply
     (A : {A : ObjectProperty C // A.IsTriangulated ∧ A.IsClosedUnderIsomorphisms ∧
-      A.retractClosure = ⊤}) :
-    have _ := A.property.1
+      A.retractClosure = ⊤}) [A.val.IsTriangulated] :
     classSubcategoryOrderIso A = (map A.val.ι).range :=
   (rfl)
+
+/-- An element of `TriangulatedK0 C` lies in the subgroup attached to `A` under
+`TauCeti.TriangulatedK0.classSubcategoryOrderIso` if and only if it is the class of an object in
+`A`. -/
+@[simp]
+theorem mem_classSubcategoryOrderIso_iff
+    (A : {A : ObjectProperty C // A.IsTriangulated ∧ A.IsClosedUnderIsomorphisms ∧
+      A.retractClosure = ⊤}) {x : TriangulatedK0 C} :
+    x ∈ classSubcategoryOrderIso A ↔ ∃ X : C, A.val X ∧ of X = x := by
+  have _ := A.property.1
+  exact mem_range_map_ι_iff A.val
 
 /-- The inverse of `TauCeti.TriangulatedK0.classSubcategoryOrderIso` sends a subgroup `H` to
 `TauCeti.TriangulatedK0.classSubcategory H`. -/
