@@ -33,7 +33,7 @@ exactly the coercions of the monoid-with-zero homomorphisms `ℕ →*₀ R`.
 * `ArithmeticFunction.IsCompletelyMultiplicative.ppow`: pointwise powers of a completely
   multiplicative function are completely multiplicative.
 * Instances: `ζ`, `id`, `pow k`, `n ↦ n ^ ν` for complex `ν`, the Liouville function and
-  `n ↦ k ^ f n` for completely additive `f`
+  `powOfAdditive k f` for completely additive `f`, with value `k ^ f n` at positive `n`
   (`ArithmeticFunction.IsCompletelyAdditive.isCompletelyMultiplicative_powOfAdditive`);
   `ArithmeticFunction.not_isCompletelyMultiplicative_moebius`: `μ` is not completely
   multiplicative.
@@ -279,8 +279,8 @@ theorem isCompletelyMultiplicative_cpow (ν : ℂ) :
 theorem isCompletelyMultiplicative_liouville : liouville.IsCompletelyMultiplicative :=
   ⟨liouville_apply_one, liouville_apply_mul⟩
 
-/-- Powers along a completely additive function are completely multiplicative, as for
-`n ↦ k ^ Ω n`. -/
+/-- Powers along a completely additive function are completely multiplicative: `powOfAdditive k f`,
+with value `k ^ f n` at positive `n` and `0` at zero, as for `k ^ Ω`. -/
 theorem IsCompletelyAdditive.isCompletelyMultiplicative_powOfAdditive [MonoidWithZero R]
     {f : ArithmeticFunction ℕ} (hf : f.IsCompletelyAdditive) (k : R) :
     (powOfAdditive k f).IsCompletelyMultiplicative :=
