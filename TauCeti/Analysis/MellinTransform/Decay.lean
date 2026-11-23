@@ -7,7 +7,6 @@ module
 
 public import Mathlib.Analysis.MellinInversion
 
-import Mathlib.Analysis.SpecialFunctions.ImproperIntegrals
 import TauCeti.Analysis.Calculus.ContDiff.Bounds
 import TauCeti.Analysis.Calculus.IteratedFDeriv.Prod
 import TauCeti.Analysis.Fourier.Decay
