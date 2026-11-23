@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Dynamics.Billiard.Circle
 public import TauCeti.Dynamics.Billiard.Smooth
 public import TauCeti.Dynamics.Circle.RotationNumber.Displacement
 
@@ -38,9 +37,8 @@ Since `s < g(s) < s + L`, the rotation number lies strictly between `0` and `1`
 number `1 - ρ` (`TauCeti.StrictConvexBilliardTable.IsInvariantGraph.rotationNumber_neg`): its lift
 composed with `g` is the deck translation `s ↦ s + L`. Since `t(s, v)` is decreasing in `v`, a
 higher invariant graph has a smaller rotation number
-(`TauCeti.StrictConvexBilliardTable.IsInvariantGraph.rotationNumber_anti`). On the circular table of
-radius `R` the constant graphs `v = cos α` are invariant with rotation number `α / π`
-(`TauCeti.StrictConvexBilliardTable.rotationNumber_circle`).
+(`TauCeti.StrictConvexBilliardTable.IsInvariantGraph.rotationNumber_anti`). The rotation numbers
+of the circular table are computed in `TauCeti.Dynamics.Billiard.Circle`.
 
 In the angle coordinate `δ` with `v = cos δ`, the graph `{v = ψ}` is the graph
 `{δ = arccos ψ}`, the time reversal is `δ ↦ π - δ`, and rotation numbers increase with `δ`.
@@ -282,40 +280,6 @@ theorem IsInvariantGraph.rotationNumber_anti (hχ : ContDiff ℝ 2 χ) {ψ₁ ψ
   rw [circleLift_apply, circleLift_apply]
   exact div_le_div_of_nonneg_right ((χ.strictAntiOn_nextParam _).antitoneOn (h₁.mem_Ioo _)
     (h₂.mem_Ioo _) (hle _)) χ.period_pos.le
-
-/-! ### The circular table -/
-
-section Circle
-
-attribute [local instance] Complex.finrank_real_complex_fact
-
-variable {R : ℝ} (hR : 0 < R)
-
-/-- On the circular table every constant graph `v = c`, `c ∈ (-1, 1)`, is invariant. -/
-theorem isInvariantGraph_circle {c : ℝ} (hc : c ∈ Ioo (-1) 1) :
-    (circle hR).IsInvariantGraph fun _ ↦ c where
-  continuous := continuous_const
-  periodic _ := rfl
-  mem_Ioo _ := hc
-  nextTangential_eq s := nextTangential_circle hc s
-
-/-- **The rotation numbers of the circular table.** The constant graph `v = cos α`, `α ∈ (0, π)`,
-of the circular table has rotation number `α / π`. -/
-@[simp]
-theorem rotationNumber_circle {c : ℝ} (hc : c ∈ Ioo (-1) 1) :
-    (isInvariantGraph_circle hR hc).rotationNumber contDiff_circle =
-      Real.arccos c / Real.pi := by
-  have : (isInvariantGraph_circle hR hc).circleLift contDiff_circle =
-      (CircleDeg1Lift.translate (Multiplicative.ofAdd (Real.arccos c / Real.pi)) :
-        CircleDeg1Lift) :=
-    CircleDeg1Lift.ext fun x ↦ by
-      rw [IsInvariantGraph.circleLift_apply, graphLift_def, nextParam_circle hc,
-        CircleDeg1Lift.translate_apply, period_circle]
-      field_simp
-      ring
-  rw [IsInvariantGraph.rotationNumber_def, this, CircleDeg1Lift.translationNumber_translate]
-
-end Circle
 
 end StrictConvexBilliardTable
 
