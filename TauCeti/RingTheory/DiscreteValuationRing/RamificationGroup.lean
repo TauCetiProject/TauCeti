@@ -717,8 +717,7 @@ inside `G_0` is a Sylow `p`-subgroup of `G_0`: it is a `p`-group (`isPGroup_rami
 index prime to `p` (`not_dvd_index_ramificationGroup_one`). -/
 noncomputable def ramificationGroupOneSylow : Sylow p (ramificationGroup G S 0) :=
   letI : Finite (ramificationGroup G S 1) :=
-    Finite.of_injective _
-      (Subgroup.inclusion_injective (ramificationGroup_antitone G S zero_le_one))
+    finite_ramificationGroup_of_le G S zero_le_one
   ((isPGroup_ramificationGroup G S p zero_lt_one).comap_subtype).toSylow
     (not_dvd_index_ramificationGroup_one G R S p)
 
@@ -762,8 +761,7 @@ theorem natCard_ramificationGroup_one (p : ℕ) [CharP (ResidueField S) p]
       (ramificationGroup_antitone G S (by omega : (0 : ℤ) ≤ 1))).toEquiv.symm
   · have := CharP.charP_to_charZero (ResidueField S)
     have : Finite (ramificationGroup G S 1) :=
-      Finite.of_injective _
-        (Subgroup.inclusion_injective (ramificationGroup_antitone G S zero_le_one))
+      finite_ramificationGroup_of_le G S zero_le_one
     simp [ramificationGroup_one_eq_bot_of_charZero G S]
 
 variable (G S) in
@@ -778,8 +776,7 @@ theorem ramificationGroup_one_eq_bot_iff_not_dvd_card_ramificationGroup_zero (p 
     simp only [hprime, not_true_eq_false, false_or, Nat.card_pos.ne', or_false]
   · have := CharP.charP_to_charZero (ResidueField S)
     have : Finite (ramificationGroup G S 1) :=
-      Finite.of_injective _
-        (Subgroup.inclusion_injective (ramificationGroup_antitone G S zero_le_one))
+      finite_ramificationGroup_of_le G S zero_le_one
     rw [ramificationGroup_one_eq_bot_of_charZero G S, zero_dvd_iff]
     exact iff_of_true rfl Nat.card_pos.ne'
 
@@ -791,8 +788,8 @@ variable {G : Type*} [Group G] {S : Type*} [CommRing S] [IsDomain S] [IsDiscrete
   [MulSemiringAction G S] [CharZero (ResidueField S)] [Finite (ramificationGroup G S 0)]
 
 /-- In residue characteristic zero with finite inertia `G_0`, every element in the kernel of
-`tameCharacter` lies in `G_1`, proved by averaging over `G_0` (without any base ring `R`,
-separability, or faithfulness hypothesis). -/
+`tameCharacter` lies in `G_1` (without any base ring `R`, separability, or faithfulness
+hypothesis). -/
 theorem mem_ramificationGroup_one_of_mem_ker_tameCharacter_of_charZero
     {ϖ : S} (hϖ : Irreducible ϖ)
     {σ : ramificationGroup G S 0} (hσker : σ ∈ (tameCharacter G hϖ).ker) :
@@ -858,8 +855,7 @@ theorem tameCharacter_injective_of_charZero [FaithfulSMul G S] {ϖ : S} (hϖ : I
   intro σ hσker
   have hσ₁ := mem_ramificationGroup_one_of_mem_ker_tameCharacter_of_charZero hϖ hσker
   have : Finite (ramificationGroup G S 1) :=
-    Finite.of_injective _
-      (Subgroup.inclusion_injective (ramificationGroup_antitone G S zero_le_one))
+    finite_ramificationGroup_of_le G S zero_le_one
   rw [ramificationGroup_one_eq_bot_of_charZero G S, Subgroup.mem_bot] at hσ₁
   exact Subtype.ext hσ₁
 

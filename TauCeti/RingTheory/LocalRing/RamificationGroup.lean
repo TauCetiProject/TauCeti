@@ -222,6 +222,11 @@ theorem ramificationGroup_antitone : Antitone (ramificationGroup G S) := by
   rw [mem_ramificationGroup_iff] at hσ ⊢
   exact fun x ↦ Ideal.pow_le_pow_right (by omega) (hσ x)
 
+/-- If `G_i` is finite and `i ≤ j`, then `G_j` is finite. -/
+theorem finite_ramificationGroup_of_le {i j : ℤ} (h : i ≤ j)
+    [Finite (ramificationGroup G S i)] : Finite (ramificationGroup G S j) :=
+  Finite.of_injective _ (Subgroup.inclusion_injective (ramificationGroup_antitone G S h))
+
 end Defs
 
 section Adjoin
@@ -1168,7 +1173,7 @@ theorem ramificationGroup_eq_bot_of_not_dvd_card_ramificationGroup_zero (p : ℕ
   have : Finite (ramificationGroup G S 0) :=
     Nat.finite_of_card_ne_zero fun h ↦ hp (h ▸ dvd_zero p)
   have : Finite (ramificationGroup G S i) :=
-    Finite.of_injective _ (Subgroup.inclusion_injective (ramificationGroup_antitone G S hi.le))
+    finite_ramificationGroup_of_le G S hi.le
   rcases CharP.char_is_prime_or_zero (ResidueField S) p with hprime | rfl
   · have : Fact p.Prime := ⟨hprime⟩
     rcases (isPGroup_ramificationGroup G S p hi).card_eq_or_dvd with h1 | hdvd

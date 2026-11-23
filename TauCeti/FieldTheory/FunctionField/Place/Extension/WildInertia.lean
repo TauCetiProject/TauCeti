@@ -40,10 +40,14 @@ characteristic `p`. This includes the wild inertia group `G₁`. -/
 theorem isPGroup_ramificationGroup_succ (P : Place k F') (p i : ℕ)
     [CharP P.ResidueField p] [Finite (ramificationGroup F P 0)] :
     IsPGroup p (ramificationGroup F P (i + 1)) := by
-  have : Finite (ramificationGroup F P (i + 1)) :=
-    Finite.of_injective _
-      (Subgroup.inclusion_injective (ramificationGroup_antitone F P (Nat.zero_le (i + 1))))
-  rw [ramificationGroup_def] at this ⊢
+  have : Finite
+      (IsLocalRing.ramificationGroup (P.integers.decompositionSubgroup F) P.integers 0) := by
+    simpa [ramificationGroup_def] using ‹Finite (ramificationGroup F P 0)›
+  have : Finite
+      (IsLocalRing.ramificationGroup (P.integers.decompositionSubgroup F) P.integers
+        ((i + 1 : ℕ) : ℤ)) :=
+    IsLocalRing.finite_ramificationGroup_of_le _ _ (Int.natCast_nonneg (i + 1))
+  rw [ramificationGroup_def]
   exact IsLocalRing.isPGroup_ramificationGroup _ P.integers p (by push_cast; omega)
 
 omit [Algebra k F] [IsScalarTower k F F'] in

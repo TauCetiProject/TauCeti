@@ -18,11 +18,13 @@ a uniformizer `t` at `P`.  An automorphism `σ` in the inertia group `G_0(P)` mo
 `σ ↦ u_σ(P)` is a homomorphism, and it does not depend on `t`.  Its kernel consists of the
 automorphisms with `σ t ≡ t` modulo `𝔪_P²`, so it contains the first ramification group `G_1(P)`.
 
-When the residue extension `F'_P / F_{P ∩ F}` is separable, the kernel is exactly `G_1(P)`: `P`
-acts through a local algebra over `𝒪_{P ∩ F}` fixed by the decomposition group, so the general
-discrete-valuation-ring theorems apply directly.  Then `G_0(P) / G_1(P)` embeds in the
-multiplicative group of the residue field, so when the inertia group is finite it is **cyclic of
-order prime to the residue characteristic** `p`.
+When the residue extension `F'_P / F_{P ∩ F}` is separable, the kernel is exactly `G_1(P)`: `𝒪_P`
+is a local `𝒪_{P ∩ F}`-algebra on which the decomposition group acts by `𝒪_{P ∩ F}`-algebra
+automorphisms, so membership of `σ ∈ G_0(P)` in `G_1(P)` is decided at the uniformizer `t` alone
+(`TauCeti.IsDiscreteValuationRing.mem_ramificationGroup_natCast_iff_smul_sub_mem`), and
+`ker tameCharacter = G_1(P)`.  Then `G_0(P) / G_1(P)` embeds in the multiplicative group of the
+residue field, so when the inertia group is finite it is **cyclic of order prime to the residue
+characteristic** `p`.
 Since `G_1(P)` is a `p`-group (`TauCeti.Place.isPGroup_ramificationGroup_succ`), the place has no
 wild inertia exactly when `p` does not divide `|G_0(P)|`, which in a finite Galois extension is the
 ramification index.
@@ -233,6 +235,12 @@ theorem tameCharacterGraded_injective
   (IsDiscreteValuationRing.tameCharacterGraded_injective _ (P.restrict k F).integers
     (irreducible_of_ord_eq_one P ht)).comp (ramificationGroupQuotientEquiv F P).injective
 
+omit [Algebra k F] [IsScalarTower k F F'] [Algebra.IsIntegral F F'] in
+private theorem finite_isLocalRing_ramificationGroup_zero
+    [Finite (ramificationGroup F P 0)] :
+    Finite (IsLocalRing.ramificationGroup (P.integers.decompositionSubgroup F) P.integers 0) := by
+  simpa [ramificationGroup_def] using ‹Finite (ramificationGroup F P 0)›
+
 /-- **The tame quotient `G_0(P) / G_1(P)` is cyclic** when the inertia group is finite and the
 residue extension is separable (Stichtenoth, Proposition 3.8.5): it embeds in the multiplicative
 group of the residue field, whose finite subgroups are cyclic. -/
@@ -241,9 +249,7 @@ theorem isCyclic_quotient_ramificationGroup_one
     [Finite (ramificationGroup F P 0)] :
     IsCyclic (ramificationGroup F P 0 ⧸
       (ramificationGroup F P 1).subgroupOf (ramificationGroup F P 0)) := by
-  have : Finite
-      (IsLocalRing.ramificationGroup (P.integers.decompositionSubgroup F) P.integers 0) :=
-    Finite.of_equiv (ramificationGroup F P 0) (ramificationGroupEquiv F P 0 0 Nat.cast_zero).toEquiv
+  have := finite_isLocalRing_ramificationGroup_zero F P
   have := IsDiscreteValuationRing.isCyclic_ramificationGroupGraded_zero
     (P.integers.decompositionSubgroup F) (P.restrict k F).integers P.integers
   exact isCyclic_of_injective (ramificationGroupQuotientEquiv F P).toMonoidHom
@@ -257,9 +263,7 @@ theorem not_dvd_index_ramificationGroup_one (p : ℕ) [CharP P.ResidueField p]
     [Algebra.IsSeparable (P.restrict k F).ResidueField P.ResidueField]
     [Finite (ramificationGroup F P 0)] :
     ¬ p ∣ ((ramificationGroup F P 1).subgroupOf (ramificationGroup F P 0)).index := by
-  have : Finite
-      (IsLocalRing.ramificationGroup (P.integers.decompositionSubgroup F) P.integers 0) :=
-    Finite.of_equiv (ramificationGroup F P 0) (ramificationGroupEquiv F P 0 0 Nat.cast_zero).toEquiv
+  have := finite_isLocalRing_ramificationGroup_zero F P
   rw [Subgroup.index_eq_card,
     Nat.card_congr (ramificationGroupQuotientEquiv F P).toEquiv,
     ← Subgroup.index_eq_card]
@@ -274,9 +278,7 @@ theorem ramificationGroup_one_eq_bot_iff_not_dvd_card_ramificationGroup_zero (p 
     [Algebra.IsSeparable (P.restrict k F).ResidueField P.ResidueField]
     [Finite (ramificationGroup F P 0)] :
     ramificationGroup F P 1 = ⊥ ↔ ¬ p ∣ Nat.card (ramificationGroup F P 0) := by
-  have : Finite
-      (IsLocalRing.ramificationGroup (P.integers.decompositionSubgroup F) P.integers 0) := by
-    simpa [ramificationGroup_def] using ‹Finite (ramificationGroup F P 0)›
+  have := finite_isLocalRing_ramificationGroup_zero F P
   rw [ramificationGroup_def, ramificationGroup_def, Nat.cast_zero, Nat.cast_one]
   exact IsDiscreteValuationRing.ramificationGroup_one_eq_bot_iff_not_dvd_card_ramificationGroup_zero
     _ (P.restrict k F).integers P.integers p

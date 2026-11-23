@@ -45,10 +45,10 @@ automorphisms.
 
 * `IsLocalRing.algEquivLocalizationAtMaximalIdeal R S`: the `R`-algebra isomorphism from a local
   ring `S` to its localization at its maximal ideal.
-* `IsLocalRing.localizationAtPrimeUnderIntRingHom S`: the canonical local homomorphism
+* `TauCeti.IsLocalRing.localizationAtPrimeUnderIntRingHom S`: the canonical local homomorphism
   `Localization.AtPrime ((maximalIdeal S).under ℤ) →+* S`, with its `Algebra`, `IsLocalHom`, and
   `SMulCommClass` instances.
-* `IsLocalRing.instPerfectFieldResidueFieldLocalizationAtPrimeInt`: the residue field of
+* `TauCeti.instPerfectFieldResidueFieldLocalizationAtPrimeInt`: the residue field of
   `Localization.AtPrime p` for any prime `p : Ideal ℤ` is perfect, so any algebraic (in particular
   finite) residue field of `S` is separable over it via Mathlib's
   `Algebra.IsAlgebraic.isSeparable_of_perfectField`.
@@ -132,11 +132,15 @@ theorem isLocalHom_algebraMap_of_liesOver {R S : Type*} [CommSemiring R] [CommSe
 
 end Localization.AtPrime
 
+namespace TauCeti
+
+open _root_.IsLocalRing Ideal
+
 namespace IsLocalRing
 
 section PrimeBase
 
-variable (S : Type*) [CommRing S] [IsLocalRing S]
+variable (S : Type*) [CommRing S] [_root_.IsLocalRing S]
 
 /-- The canonical ring homomorphism `Localization.AtPrime ((maximalIdeal S).under ℤ) →+* S`
 lifting `algebraMap ℤ S`: every integer outside `(maximalIdeal S).under ℤ` maps to a unit of `S`.
@@ -170,6 +174,10 @@ instance instSMulCommClassLocalizationAtPrimeUnderInt {G : Type*} [Monoid G]
     exact IsLocalization.ringHom_ext ((maximalIdeal S).under ℤ).primeCompl (Subsingleton.elim _ _)
   rw [Algebra.smul_def, smul_mul', hfix, ← Algebra.smul_def]⟩
 
+end PrimeBase
+
+end IsLocalRing
+
 /-- For any prime ideal `p` of `ℤ`, the residue field of `Localization.AtPrime p` is perfect:
 it is isomorphic to `ℚ` when `p = ⊥` and to `ZMod q` when `p = (q)` is nonzero. -/
 instance instPerfectFieldResidueFieldLocalizationAtPrimeInt (p : Ideal ℤ) [p.IsPrime] :
@@ -183,14 +191,6 @@ instance instPerfectFieldResidueFieldLocalizationAtPrimeInt (p : Ideal ℤ) [p.I
   · have : Finite (ℤ ⧸ p) := Ring.HasFiniteQuotients.finiteQuotient hp
     have : Finite p.ResidueField := inferInstance
     infer_instance
-
-end PrimeBase
-
-end IsLocalRing
-
-namespace TauCeti
-
-open _root_.IsLocalRing Ideal
 
 variable {A R : Type*} [CommSemiring A] [CommSemiring R] [IsLocalRing R]
 
