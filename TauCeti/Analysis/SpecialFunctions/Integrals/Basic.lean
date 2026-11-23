@@ -46,6 +46,8 @@ Interval integrals of elementary functions in closed form or as series, continui
   `C ≥ 0`.
 * `TauCeti.integral_cexp_intCast_mul_mul_I`: `∫ θ in -π..π, exp (k θ i)` is `2π` for
   integer `k = 0` and `0` otherwise, the orthogonality of the Fourier characters on `[-π, π]`.
+* `TauCeti.norm_intervalIntegral_cexp_mul_I_le`: `‖∫ t in a..b, exp (t * u * I)‖ ≤ |b - a|` for
+  every real `u`, `a`, and `b`.
 * `TauCeti.norm_inv_mul_intervalIntegral_cexp_mul_I_le_one`,
   `TauCeti.norm_inv_mul_intervalIntegral_cexp_mul_I_le`, and
   `TauCeti.tendsto_inv_mul_intervalIntegral_cexp_mul_I`: the time average
@@ -281,6 +283,14 @@ theorem integral_cexp_intCast_mul_mul_I (k : ℤ) :
     simp_rw [mul_right_comm _ _ Complex.I]
     rw [integral_exp_mul_complex hc, ite_eq_right hk, hper, sub_self, zero_div]
 
+/-- The interval integral of a complex exponential character `t ↦ exp (t * u * I)` has modulus
+at most the interval length `|b - a|`. -/
+theorem norm_intervalIntegral_cexp_mul_I_le (u a b : ℝ) :
+    ‖∫ t in a..b, Complex.exp (t * u * Complex.I)‖ ≤ |b - a| := by
+  simpa only [one_mul] using
+    intervalIntegral.norm_integral_le_of_norm_le_const (a := a) (b := b) (C := 1) fun t _ => by
+      rw [← Complex.ofReal_mul, Complex.norm_exp_ofReal_mul_I]
+
 /-- The time average `T⁻¹ * ∫ t in 0..T, exp (t * u * I)` of a complex exponential character has
 modulus at most `1`, for every real frequency `u` and every `T : ℝ`. -/
 theorem norm_inv_mul_intervalIntegral_cexp_mul_I_le_one (u T : ℝ) :
@@ -288,13 +298,11 @@ theorem norm_inv_mul_intervalIntegral_cexp_mul_I_le_one (u T : ℝ) :
   by_cases hT : T = 0
   · simp [hT]
   have hint : ‖∫ t in (0 : ℝ)..T, Complex.exp (t * u * Complex.I)‖ ≤ |T| := by
-    simpa only [sub_zero, one_mul] using
-      intervalIntegral.norm_integral_le_of_norm_le_const (a := 0) (b := T) (C := 1) fun t _ => by
-        rw [← Complex.ofReal_mul, Complex.norm_exp_ofReal_mul_I]
+    simpa only [sub_zero] using norm_intervalIntegral_cexp_mul_I_le u 0 T
   rw [norm_mul, norm_inv, Complex.norm_real, Real.norm_eq_abs]
   calc
     |T|⁻¹ * ‖∫ t in (0 : ℝ)..T, Complex.exp (t * u * Complex.I)‖
-        ≤ |T|⁻¹ * |T| := mul_le_mul_of_nonneg_left hint (inv_nonneg.mpr (abs_nonneg T))
+        ≤ |T|⁻¹ * |T| := by gcongr
     _ = 1 := inv_mul_cancel₀ (abs_ne_zero.mpr hT)
 
 /-- Quantitative `O(|u|⁻¹ |T|⁻¹)` decay of the time average `T⁻¹ * ∫ t in 0..T, exp (t * u * I)`
@@ -319,9 +327,7 @@ theorem norm_inv_mul_intervalIntegral_cexp_mul_I_le {u : ℝ} (hu : u ≠ 0) (T 
   rw [hint, norm_mul, norm_div, norm_inv, Complex.norm_real, Real.norm_eq_abs, hunorm]
   calc
     |T|⁻¹ * (‖Complex.exp ((u : ℂ) * Complex.I * T) - 1‖ / |u|)
-        ≤ |T|⁻¹ * (2 / |u|) :=
-      mul_le_mul_of_nonneg_left
-        (div_le_div_of_nonneg_right hnum (abs_nonneg _)) (inv_nonneg.mpr (abs_nonneg T))
+        ≤ |T|⁻¹ * (2 / |u|) := by gcongr
     _ = 2 / (|u| * |T|) := by
       rw [div_eq_mul_inv, div_eq_mul_inv, mul_inv]
       ring

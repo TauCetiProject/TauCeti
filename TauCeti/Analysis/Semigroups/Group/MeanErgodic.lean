@@ -175,7 +175,7 @@ theorem norm_average_orbit_le (U : StronglyContinuousGroup X)
   rw [norm_smul, Real.norm_eq_abs, abs_inv]
   calc
     |T|⁻¹ * ‖∫ t in (0 : ℝ)..T, U t v‖
-        ≤ |T|⁻¹ * (‖v‖ * |T|) := mul_le_mul_of_nonneg_left hint (inv_nonneg.mpr (abs_nonneg T))
+        ≤ |T|⁻¹ * (‖v‖ * |T|) := by gcongr
     _ = ‖v‖ := by
       rw [mul_left_comm, inv_mul_cancel₀ (abs_ne_zero.mpr hT), mul_one]
 
@@ -196,8 +196,7 @@ theorem norm_average_orbit_apply_sub_le (U : StronglyContinuousGroup X)
       _ = 2 * |s| * ‖v‖ := by ring
   calc
     |T|⁻¹ * ‖(∫ t in T..(T + s), U t v) - ∫ t in (0 : ℝ)..s, U t v‖
-        ≤ |T|⁻¹ * (2 * |s| * ‖v‖) :=
-      mul_le_mul_of_nonneg_left hsub (inv_nonneg.mpr (abs_nonneg T))
+        ≤ |T|⁻¹ * (2 * |s| * ‖v‖) := by gcongr
     _ = 2 * |s| * ‖v‖ / |T| := by rw [div_eq_inv_mul]
 
 /-- The time averages of every coboundary `U s v - v` converge to `0`. -/
@@ -290,12 +289,10 @@ private theorem tendsto_average_orbit_birkhoff (U : StronglyContinuousGroup H)
       rw [norm_smul, Real.norm_eq_abs, abs_inv, abs_of_pos hTpos]
       calc
         T⁻¹ * ‖∫ t in (⌊T⌋₊ : ℝ)..T, U t v‖
-            ≤ T⁻¹ * (‖v‖ * |T - (⌊T⌋₊ : ℝ)|) :=
-          mul_le_mul_of_nonneg_left (U.norm_intervalIntegral_orbit_le hnorm _ _ v)
-            (inv_nonneg.mpr hTpos.le)
-        _ ≤ T⁻¹ * (‖v‖ * 1) :=
-          mul_le_mul_of_nonneg_left (mul_le_mul_of_nonneg_left hle (norm_nonneg v))
-            (inv_nonneg.mpr hTpos.le)
+            ≤ T⁻¹ * (‖v‖ * |T - (⌊T⌋₊ : ℝ)|) := by
+              gcongr
+              exact U.norm_intervalIntegral_orbit_le hnorm _ _ v
+        _ ≤ T⁻¹ * (‖v‖ * 1) := by gcongr
         _ = ‖v‖ / T := by rw [mul_one, div_eq_inv_mul]
     · simpa only [div_eq_mul_inv, mul_zero] using tendsto_inv_atTop_zero.const_mul ‖v‖
   have hadd := hBirkhoff.add htail
@@ -616,11 +613,8 @@ private theorem norm_intervalIntegral_twisted_sq_eq (U : StronglyContinuousGroup
         dsimp only [e]
         rw [Function.uncurry_apply_pair, norm_mul, Complex.norm_conj, ← Complex.ofReal_sub,
           ← Complex.ofReal_mul, Complex.norm_exp_ofReal_mul_I, one_mul]
-        simpa only [one_mul, sub_zero] using
-          intervalIntegral.norm_integral_le_of_norm_le_const (a := 0) (b := T) (C := 1)
-            fun t _ => by
-              dsimp only [e]
-              rw [← Complex.ofReal_sub, ← Complex.ofReal_mul, Complex.norm_exp_ofReal_mul_I])
+        simpa only [Complex.ofReal_sub, sub_zero] using
+          TauCeti.norm_intervalIntegral_cexp_mul_I_le (p.2 - ω) 0 T)
   have hcomplex :
       ((‖∫ t in (0 : ℝ)..T, f t‖ ^ 2 : ℝ) : ℂ) = ((∫ ξ, ‖K ξ‖ ^ 2 ∂σ : ℝ) : ℂ) := by
     calc
