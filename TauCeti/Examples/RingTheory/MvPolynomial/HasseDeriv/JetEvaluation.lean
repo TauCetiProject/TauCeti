@@ -24,40 +24,25 @@ open MvPolynomial Finsupp
 namespace TauCeti.JetEvaluationExamples
 
 /-- Rows are the value at `0` and the first jet at `1`; columns are `1`, `X`, `X²`, in that order.
--/
+The jet matrix `[[1, 0, 0], [0, 1, 2]]` has rank `2`: its minor on the columns of `1` and `X` is
+`1`. -/
 example :
     let s : Finset (Fin 1 →₀ ℕ) := {0, single 0 1, single 0 2}
     let col (j : Fin 3) : (s : Set (Fin 1 →₀ ℕ)) :=
       ⟨single 0 j, by fin_cases j <;> simp [s]⟩
-    (LinearMap.toMatrix (basisRestrictSupport ℤ (s : Set (Fin 1 →₀ ℕ)))
+    let M := (LinearMap.toMatrix (basisRestrictSupport ℤ (s : Set (Fin 1 →₀ ℕ)))
       (Pi.basisFun ℤ (Fin 2))
       (jetEval (s : Set (Fin 1 →₀ ℕ)) ![fun _ ↦ 0, fun _ ↦ 1]
-        ![0, single 0 1])).submatrix id col = !![1, 0, 0; 0, 1, 2] := by
-  intro s col
-  rw [toMatrix_jetEval]
-  ext i j
-  fin_cases i <;> fin_cases j <;> simp [col, eval_monomial, constantCoeff_monomial]
-
-/-- The jet matrix `[[1, 0, 0], [0, 1, 2]]` of the value at `0` and the first jet at `1` has
-rank `2`: its minor on the columns of `1` and `X` is `1`. -/
-example :
-    let s : Finset (Fin 1 →₀ ℕ) := {0, single 0 1, single 0 2}
-    let col (j : Fin 3) : (s : Set (Fin 1 →₀ ℕ)) :=
-      ⟨single 0 j, by fin_cases j <;> simp [s]⟩
-    ((LinearMap.toMatrix (basisRestrictSupport ℤ (s : Set (Fin 1 →₀ ℕ)))
-      (Pi.basisFun ℤ (Fin 2))
-      (jetEval (s : Set (Fin 1 →₀ ℕ)) ![fun _ ↦ 0, fun _ ↦ 1]
-        ![0, single 0 1])).submatrix id col).rank = 2 := by
-  intro s col
-  have hM : (LinearMap.toMatrix (basisRestrictSupport ℤ (s : Set (Fin 1 →₀ ℕ)))
-      (Pi.basisFun ℤ (Fin 2))
-      (jetEval (s : Set (Fin 1 →₀ ℕ)) ![fun _ ↦ 0, fun _ ↦ 1]
-        ![0, single 0 1])).submatrix id col = !![1, 0, 0; 0, 1, 2] := by
+        ![0, single 0 1])).submatrix id col
+    M = !![1, 0, 0; 0, 1, 2] ∧ M.rank = 2 := by
+  intro s col M
+  have hM : M = !![1, 0, 0; 0, 1, 2] := by
+    simp only [M]
     rw [toMatrix_jetEval]
     ext i j
     fin_cases i <;> fin_cases j <;> simp [col, eval_monomial, constantCoeff_monomial]
+  refine ⟨hM, le_antisymm (Matrix.rank_le_height _) ?_⟩
   rw [hM]
-  refine le_antisymm (Matrix.rank_le_height _) ?_
   calc 2 = (Matrix.submatrix !![(1 : ℤ), 0, 0; 0, 1, 2] id ![0, 1]).rank := by
         rw [Matrix.rank_of_det_ne_zero (by simp [Matrix.det_fin_two]), Fintype.card_fin]
     _ ≤ _ := Matrix.rank_submatrix_le _ _ _

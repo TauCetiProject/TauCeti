@@ -172,16 +172,17 @@ example :
     by simp [hg]⟩
 
 /-- The confluent Vandermonde matrix for the nodes `0, 1` with multiplicities `2, 1` over `ℂ`.
-Packaging the evaluated Hasse derivative bounds row by row over the support `{0, 1, 2}` gives
-the row bounds `(1, 1, 1)` from the node bounds `(0, 1)` and `(1, 2, 1)` from the common node
-bound `1`. The factorial bound then gives `1 ≤ 6` and `1 ≤ 12`, while the Euclidean row norms
-`1, 1, Real.sqrt 3` give the sharper Hadamard bound `1 ≤ Real.sqrt 3`. -/
+The row bounds of `Matrix.norm_confluentVandermonde_le` give the bound `1` on every row from the
+node bounds `(0, 1)`, and the bound `k + 1` on the row of the jet `⟨i, k⟩` from the common node
+bound `1`, that is `(1, 2, 1)`. The factorial bound then gives `1 ≤ 6` and `1 ≤ 12`, while the
+Euclidean row norms `1, 1, Real.sqrt 3` give the sharper Hadamard bound `1 ≤ Real.sqrt 3`. -/
 example :
     confluentVandermonde ![(0 : ℂ), 1] ![2, 1] = !![1, 0, 0; 0, 1, 0; 1, 1, 1] ∧
       ‖(confluentVandermonde ![(0 : ℂ), 1] ![2, 1]).det‖ = 1 ∧
-      (∀ ρ j, ‖confluentVandermonde ![(0 : ℂ), 1] ![2, 1] ρ j‖ ≤ ![1, 1, 1] ρ) ∧
+      (∀ ρ j, ‖confluentVandermonde ![(0 : ℂ), 1] ![2, 1] ρ j‖ ≤ 1) ∧
       ‖(confluentVandermonde ![(0 : ℂ), 1] ![2, 1]).det‖ ≤ 6 ∧
-      (∀ ρ j, ‖confluentVandermonde ![(0 : ℂ), 1] ![2, 1] ρ j‖ ≤ ![1, 2, 1] ρ) ∧
+      (∀ i k j, ‖confluentVandermonde ![(0 : ℂ), 1] ![2, 1] (finSigmaFinEquiv ⟨i, k⟩) j‖ ≤
+        (k : ℕ) + 1) ∧
       ‖(confluentVandermonde ![(0 : ℂ), 1] ![2, 1]).det‖ ≤ 12 ∧
       (∏ ρ, ‖WithLp.toLp 2 (confluentVandermonde ![(0 : ℂ), 1] ![2, 1] ρ)‖) = Real.sqrt 3 ∧
       ‖(confluentVandermonde ![(0 : ℂ), 1] ![2, 1]).det‖ ≤ Real.sqrt 3 := by
@@ -189,38 +190,39 @@ example :
     ext ρ j
     obtain ⟨⟨i, k⟩, rfl⟩ := finSigmaFinEquiv.surjective ρ
     rw [confluentVandermonde_finSigmaFinEquiv]
+    -- The statement itself reads the row index `finSigmaFinEquiv ⟨i, k⟩ : Fin (∑ i, ![2, 1] i)`
+    -- as an index of `!![…] : Matrix (Fin 3) (Fin 3) ℂ`, so `simp` cannot select the entry;
+    -- `rfl` computes the index and the entry.
     fin_cases i <;> fin_cases k <;> fin_cases j <;> simp <;> rfl
-  -- The row of the jet `⟨i, k⟩` is bounded by the maximum over the support `{0, 1, 2}` of
-  -- `choose j k * N i ^ (j - k)`, for any bounds `N i` on the nodes.
-  have hrow (N : Fin 2 → ℝ) (hN : ∀ i, ‖![(0 : ℂ), 1] i‖ ≤ N i)
-      (B : Fin (∑ i, ![2, 1] i) → ℝ)
-      (hB : ∀ (i : Fin 2) (k : Fin (![2, 1] i)), ∀ j : ℕ, j < 3 →
-        ((j.choose k : ℕ) : ℝ) * N i ^ (j - k) ≤ B (finSigmaFinEquiv ⟨i, k⟩)) :
-      ∀ ρ j, ‖confluentVandermonde ![(0 : ℂ), 1] ![2, 1] ρ j‖ ≤ B ρ := by
-    intro ρ j
-    obtain ⟨⟨i, k⟩, rfl⟩ := finSigmaFinEquiv.surjective ρ
-    rw [confluentVandermonde_apply, Equiv.symm_apply_apply]
-    exact (Polynomial.norm_eval_hasseDeriv_X_pow_le_sup' (hN i) k
-      (Finset.mem_range.2 j.isLt)).trans <|
-        Finset.sup'_le _ _ fun j hj ↦ hB i k j (Finset.mem_range.1 hj)
-  have hB₁ := hrow ![0, 1] (by simp [Fin.forall_fin_two]) ![1, 1, 1] <| by
+  have hM : ∑ i, ![2, 1] i = 3 := by simp
+  have hB₁ := norm_confluentVandermonde_le (a := ![(0 : ℂ), 1]) (m := ![2, 1]) (N := ![0, 1])
+    (B := fun _ ↦ 1) (by simp [Fin.forall_fin_two]) <| by
     intro i k j hj
-    fin_cases i <;> fin_cases k <;> interval_cases j <;> (change _ ≤ (1 : ℝ); norm_num)
-  have hB₂ := hrow (fun _ ↦ 1) (by simp [Fin.forall_fin_two]) ![1, 2, 1] <| by
+    rw [hM] at hj
+    fin_cases i <;> fin_cases k <;> interval_cases j <;> simp
+  have hB₂ := norm_confluentVandermonde_le (a := ![(0 : ℂ), 1]) (m := ![2, 1]) (N := fun _ ↦ 1)
+    (B := fun ρ ↦ ((finSigmaFinEquiv.symm ρ).2 : ℕ) + 1) (by simp [Fin.forall_fin_two]) <| by
     intro i k j hj
-    fin_cases i <;> fin_cases k <;> interval_cases j <;>
-      first | (change _ ≤ (1 : ℝ); norm_num) | (change _ ≤ (2 : ℝ); norm_num)
+    rw [Equiv.symm_apply_apply]
+    rw [hM] at hj
+    fin_cases i <;> fin_cases k <;> interval_cases j <;> norm_num
+  -- Reindex products over the rows by the jets `⟨i, k⟩`, with `k : Fin 2` and `k : Fin 1`.
+  have h₀ : 2 = ![2, 1] 0 := by simp
+  have h₁ : 1 = ![2, 1] 1 := by simp
   have hnorm :
       (∏ ρ, ‖WithLp.toLp 2 (confluentVandermonde ![(0 : ℂ), 1] ![2, 1] ρ)‖) = Real.sqrt 3 := by
-    rw [hA]
-    change ∏ ρ : Fin 3, ‖WithLp.toLp 2 ((!![1, 0, 0; 0, 1, 0; 1, 1, 1] :
-      Matrix (Fin 3) (Fin 3) ℂ) ρ)‖ = Real.sqrt 3
-    norm_num [Fin.prod_univ_three, EuclideanSpace.norm_eq, Fin.sum_univ_three]
-  refine ⟨hA, by simp [det_confluentVandermonde, Fin.prod_univ_two], hB₁, ?_, hB₂, ?_, hnorm,
+    rw [Fintype.prod_equiv finSigmaFinEquiv.symm _
+      (fun x ↦ ‖WithLp.toLp 2 (confluentVandermonde ![(0 : ℂ), 1] ![2, 1] (finSigmaFinEquiv x))‖)
+      (by simp), Fintype.prod_sigma, Fin.prod_univ_two, ← (finCongr h₀).prod_comp,
+      ← (finCongr h₁).prod_comp]
+    simp only [Fin.prod_univ_two, Finset.univ_unique, Finset.prod_singleton, finCongr_apply]
+    simp [EuclideanSpace.norm_eq, ← (finCongr hM.symm).sum_comp, Fin.sum_univ_three]
+  refine ⟨hA, by simp [det_confluentVandermonde, Fin.prod_univ_two], hB₁, ?_,
+    fun i k j ↦ (hB₂ _ j).trans_eq (by rw [Equiv.symm_apply_apply]), ?_, hnorm,
     (norm_det_le_prod_norm_toLp _).trans_eq hnorm⟩
   · refine (norm_det_le_factorial_prod _ hB₁).trans_eq ?_
-    change _ * ∏ i : Fin 3, ![(1 : ℝ), 1, 1] i = 6
-    norm_num [Fin.prod_univ_three]
+    simp [hM, Nat.factorial]
   · refine (norm_det_le_factorial_prod _ hB₂).trans_eq ?_
-    change _ * ∏ i : Fin 3, ![(1 : ℝ), 2, 1] i = 12
-    norm_num [Fin.prod_univ_three]
+    rw [Fintype.prod_equiv finSigmaFinEquiv.symm _ (fun x ↦ ((x.2 : ℕ) : ℝ) + 1) fun _ ↦ rfl,
+      Fintype.prod_sigma, Fin.prod_univ_two, ← (finCongr h₀).prod_comp, ← (finCongr h₁).prod_comp]
+    norm_num [hM, Nat.factorial, Fin.prod_univ_two]

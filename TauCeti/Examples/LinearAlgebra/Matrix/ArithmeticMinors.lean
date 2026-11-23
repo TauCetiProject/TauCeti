@@ -179,7 +179,7 @@ theorem upper_shear_preserves_minors (c : Fin 2 → Fin 3) :
 
 /-- The lower unitriangular change `[[1, 0], [1, 1]]` sends `[[2, 4], [3, 9]]` to
 `[[2, 4], [5, 13]]` and preserves the determinant `6`. -/
-theorem lower_shear_row_divisible :
+theorem lower_shear_preserves_det :
     !![(1 : ℤ), 0; 1, 1] * !![(2 : ℤ), 4; 3, 9] = !![(2 : ℤ), 4; 5, 13] ∧
       (!![(1 : ℤ), 0; 1, 1] * !![(2 : ℤ), 4; 3, 9]).det = (!![(2 : ℤ), 4; 3, 9]).det ∧
       (!![(2 : ℤ), 4; 5, 13]).det = 6 := by
