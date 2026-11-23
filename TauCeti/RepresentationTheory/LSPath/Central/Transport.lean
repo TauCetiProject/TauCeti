@@ -82,7 +82,7 @@ private def transport {lam lam' : M} (hJ : P.wallIndices b lam = P.wallIndices b
       P.reflectionBond b (x • lam') (y • lam') = P.reflectionBond b (x • lam) (y • lam))
     (π : LSPath P b lam) : LSPath P b lam' where
   length := π.length
-  dir j := ⟨(π.dir j).1, hJ ▸ (π.dir j).2⟩
+  dir j := ⟨(π.dir j).val, hJ ▸ (π.dir j).property⟩
   time := π.time
   time_zero := π.time_zero
   time_last := π.time_last
@@ -96,7 +96,7 @@ private def transport {lam lam' : M} (hJ : P.wallIndices b lam = P.wallIndices b
         (h : (weylCoxeterSystem P b).MinimalCosetRepCovBy (P.wallIndices b lam) y x) :
         (weylCoxeterSystem P b).MinimalCosetRepCovBy (P.wallIndices b lam') y x :=
       hJ ▸ h
-    refine ⟨(C.map ⟨fun x ↦ ⟨x.1, hJ ▸ x.2⟩, fun h ↦ hcov _ _ h⟩ :
+    refine ⟨(C.map ⟨fun x ↦ ⟨x.val, hJ ▸ x.property⟩, fun h ↦ hcov _ _ h⟩ :
       (weylCoxeterSystem P b).MinimalCosetRepChain (P.wallIndices b lam')),
       by rw [RelSeries.head_map, hhead]; rfl, by rw [RelSeries.last_map, hlast]; rfl, ?_⟩
     rw [isAChain_iff_den_dvd_bondGcd, dvd_bondGcd_iff] at hC ⊢
@@ -128,7 +128,8 @@ theorem length_centralTransport : (centralTransport χ hχ π).length = π.lengt
 /-- The central transport keeps the directions of an LS path. -/
 @[simp]
 theorem dir_centralTransport (j : Fin ((centralTransport χ hχ π).length + 1)) :
-    ((centralTransport χ hχ π).dir j).1 = (π.dir (j.cast (by rw [length_centralTransport]))).1 :=
+    ((centralTransport χ hχ π).dir j).val = (π.dir (j.cast (by rw [length_centralTransport]))).val
+        :=
   (rfl)
 
 /-- The central transport keeps the breaks of an LS path. -/
@@ -151,8 +152,8 @@ theorem length_centralTransport_symm (π : LSPath P b (lam + χ)) :
 @[simp]
 theorem dir_centralTransport_symm (π : LSPath P b (lam + χ))
     (j : Fin (((centralTransport χ hχ).symm π).length + 1)) :
-    (((centralTransport χ hχ).symm π).dir j).1 =
-      (π.dir (j.cast (by rw [length_centralTransport_symm]))).1 :=
+    (((centralTransport χ hχ).symm π).dir j).val =
+      (π.dir (j.cast (by rw [length_centralTransport_symm]))).val :=
   (rfl)
 
 @[simp]

@@ -111,12 +111,12 @@ theorem δ_comp_cor_neg_one {S : ShortComplex (Rep R G)} (hS : S.ShortExact)
       y hy (Representation.relNormInvariants S.X₁.ρ H x) ?_).symm
     rw [Representation.coe_relNormInvariants, Representation.relNorm_apply, map_sum]
     calc
-      _ = ∑ q : G ⧸ H, S.X₂.ρ q.out (S.f.hom x.1) :=
-        Finset.sum_congr rfl fun q _ ↦ Rep.hom_comm_apply S.f q.out x.1
+      _ = ∑ q : G ⧸ H, S.X₂.ρ q.out (S.f.hom x.val) :=
+        Finset.sum_congr rfl fun q _ ↦ Rep.hom_comm_apply S.f q.out x.val
       _ = S.X₂.ρ.norm y := by
         -- Restriction keeps the coefficient map and replaces the action by `ρ.comp H.subtype`.
         -- The norm of the restricted middle representation in `hx` is therefore `N_H`.
-        have hx' : S.f.hom x.1 = Representation.norm (S.X₂.ρ.comp H.subtype) y := hx
+        have hx' : S.f.hom x.val = Representation.norm (S.X₂.ρ.comp H.subtype) y := hx
         rw [hx', ← Representation.relNorm_apply, Representation.relNorm_norm_apply]
 
 /-- Corestriction along a homomorphism of finite groups commutes with the connecting map

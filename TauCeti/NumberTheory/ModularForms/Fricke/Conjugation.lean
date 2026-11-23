@@ -188,13 +188,13 @@ Over a field `K` with `(N : K) ≠ 0` this is `W · σ · W⁻¹`, and equally `
 `mapGL_mul_frickeGL`, which carry the invertibility hypothesis. At `N = 0` the formula still
 defines a matrix, but a degenerate one; see the `Level` section of the module docstring. -/
 public def frickeConjSL (σ : ↥(Gamma0 N)) : SL(2, ℤ) :=
-  ⟨!![(σ : Matrix (Fin 2) (Fin 2) ℤ) 1 1, -((σ : Matrix (Fin 2) (Fin 2) ℤ) 1 0 / (N : ℤ));
-      -(N : ℤ) * (σ : Matrix (Fin 2) (Fin 2) ℤ) 0 1, (σ : Matrix (Fin 2) (Fin 2) ℤ) 0 0], by
+  .mk !![(σ : Matrix (Fin 2) (Fin 2) ℤ) 1 1, -((σ : Matrix (Fin 2) (Fin 2) ℤ) 1 0 / (N : ℤ));
+      -(N : ℤ) * (σ : Matrix (Fin 2) (Fin 2) ℤ) 0 1, (σ : Matrix (Fin 2) (Fin 2) ℤ) 0 0] (by
     have hc := (natCast_mul_lowerLeft_ediv σ).symm
     set M := (σ : Matrix (Fin 2) (Fin 2) ℤ)
     have hdet : M 0 0 * M 1 1 - M 0 1 * M 1 0 = 1 := fin_two_mul_sub_mul_eq_one (σ : SL(2, ℤ))
     rw [det_fin_two_of]
-    linear_combination hdet + M 0 1 * hc⟩
+    linear_combination hdet + M 0 1 * hc)
 
 /-- The underlying matrix of `frickeConjSL σ`, with the exact quotient `c / N` of the lower-left
 entry `c` written out. -/
@@ -217,7 +217,7 @@ public theorem frickeConjSL_mem_Gamma0 (σ : ↥(Gamma0 N)) :
 remain `≡ 1 (mod N)`. Note that this needs `σ ∈ Γ₁(N)`, not merely `σ ∈ Γ₀(N)`. As for `Γ₀(N)` it
 maps the subgroup into itself at every level; normalization is `frickeConjGamma1MulEquiv`. -/
 public theorem frickeConjSL_mem_Gamma1 (σ : SL(2, ℤ)) (hσ : σ ∈ Gamma1 N) :
-    frickeConjSL ⟨σ, Gamma1_in_Gamma0 N hσ⟩ ∈ Gamma1 N := by
+    frickeConjSL ⟨σ, Gamma1_le_Gamma0 N hσ⟩ ∈ Gamma1 N := by
   obtain ⟨ha, hd, -⟩ := (Gamma1_mem N σ).mp hσ
   rw [Gamma1_mem, coe_frickeConjSL]
   exact ⟨by simpa using hd, by simpa using ha, by simp⟩
@@ -289,17 +289,17 @@ public theorem coe_frickeConjGamma0 (σ : ↥(Gamma0 N)) :
 `Γ₁(N) →* Γ₁(N)`; the `Γ₁` counterpart of `frickeConjGamma0`, bundling
 `frickeConjSL_mem_Gamma1`, and like it defined at every level. -/
 public def frickeConjGamma1 : ↥(Gamma1 N) →* ↥(Gamma1 N) where
-  toFun σ := ⟨frickeConjSL ⟨σ, Gamma1_in_Gamma0 N σ.property⟩,
+  toFun σ := ⟨frickeConjSL ⟨σ, Gamma1_le_Gamma0 N σ.property⟩,
     frickeConjSL_mem_Gamma1 (σ : SL(2, ℤ)) σ.property⟩
   map_one' := Subtype.ext frickeConjSL_one
-  map_mul' σ τ := Subtype.ext (frickeConjSL_mul ⟨σ, Gamma1_in_Gamma0 N σ.property⟩
-    ⟨τ, Gamma1_in_Gamma0 N τ.property⟩)
+  map_mul' σ τ := Subtype.ext (frickeConjSL_mul ⟨σ, Gamma1_le_Gamma0 N σ.property⟩
+    ⟨τ, Gamma1_le_Gamma0 N τ.property⟩)
 
 /-- The `SL(2, ℤ)` matrix underlying `frickeConjGamma1 σ` is `frickeConjSL σ`: the
 characterizing lemma for the bundled map, as `coe_frickeConjGamma0` is at level `Γ₀(N)`. -/
 @[simp]
 public theorem coe_frickeConjGamma1 (σ : ↥(Gamma1 N)) :
-    (frickeConjGamma1 σ : SL(2, ℤ)) = frickeConjSL ⟨σ, Gamma1_in_Gamma0 N σ.property⟩ :=
+    (frickeConjGamma1 σ : SL(2, ℤ)) = frickeConjSL ⟨σ, Gamma1_le_Gamma0 N σ.property⟩ :=
   (rfl)
 
 section NeZero
@@ -392,7 +392,7 @@ public theorem frickeConjGamma0MulEquiv_symm :
 -- maps. The one remaining definitional step is `coe_frickeConjGamma1` itself, which is `(rfl)`.
 public theorem frickeConjGamma1_frickeConjGamma1 (σ : ↥(Gamma1 N)) :
     frickeConjGamma1 (frickeConjGamma1 σ) = σ :=
-  Subtype.ext (frickeConjSL_frickeConjSL ⟨σ, Gamma1_in_Gamma0 N σ.property⟩)
+  Subtype.ext (frickeConjSL_frickeConjSL ⟨σ, Gamma1_le_Gamma0 N σ.property⟩)
 
 /-- `frickeConjGamma1` is involutive, in the form `Function.Involutive` consumes. -/
 public theorem frickeConjGamma1_involutive :

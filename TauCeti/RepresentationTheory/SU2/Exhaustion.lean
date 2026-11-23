@@ -122,7 +122,7 @@ private theorem continuous_mulVec (w : Fin 2 → ℂ) :
   refine continuous_pi fun i ↦ ?_
   simp only [Matrix.mulVec, dotProduct]
   refine continuous_finsetSum _ fun j _ ↦ Continuous.mul ?_ continuous_const
-  exact (continuous_apply j).comp ((continuous_apply i).comp continuous_subtype_val)
+  exact (continuous_apply j).comp ((continuous_apply i).comp continuous_subtypeVal)
 
 private theorem continuous_weightEquiv_symPower_tprod (v : Fin d → (Fin 2 → ℂ)) :
     Continuous fun g : SU2 ↦ weightEquiv d (symPower d g (⨂ₛ[ℂ] j, v j)) := by

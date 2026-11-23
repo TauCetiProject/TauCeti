@@ -13,10 +13,11 @@ import TauCeti.AlgebraicTopology.FundamentalGroup.Basic
 /-!
 # Naturality of the Hurewicz map in degree one
 
-The Hurewicz map `π₁(X, x) → H₁(X; ℤ)` of `TauCeti.AlgebraicTopology.Homotopy.Hurewicz.One.Basic`
+The Hurewicz map `π₁(X, x) → H₁(X; R)` of `TauCeti.AlgebraicTopology.Homotopy.Hurewicz.One.Basic`
 is natural in continuous maps, with respect to the map induced on the first homology group of the
 singular chain complex, and it does not depend on the base point: changing the base point along a
-path, which conjugates loops by the path, does not change their homology classes.
+path, which conjugates loops by the path, does not change their homology classes. The spaces live
+in an arbitrary universe `u` and the coefficients in any ring `R : Type u`.
 
 ## Main results
 
@@ -42,28 +43,30 @@ noncomputable section
 
 open CategoryTheory Convexity Simplicial unitInterval TauCeti.TopCat
 
+universe u
+
 namespace TauCeti.HurewiczOne
 
-variable {X Y : TopCat.{0}} (f : X ⟶ Y)
+variable {R : Type u} [Ring R] {X Y : TopCat.{u}} (f : X ⟶ Y)
 
-lemma map_mem_cycles₁ {c : ((singularChains ℤ).obj X).X 1} (hc : c ∈ cycles₁ X) :
-    ((singularChains ℤ).map f).f 1 c ∈ cycles₁ Y := by
-  have hc' : ((singularChains ℤ).obj X).d 1 0 c = 0 := mem_cycles₁_iff.1 hc
+lemma map_mem_cycles₁ {c : ((singularChains R).obj X).X 1} (hc : c ∈ cycles₁ R X) :
+    ((singularChains R).map f).f 1 c ∈ cycles₁ R Y := by
+  have hc' : ((singularChains R).obj X).d 1 0 c = 0 := mem_cycles₁_iff.1 hc
   exact mem_cycles₁ (by rw [HomologicalComplex.Hom.comm_apply, hc', map_zero])
 
 /-- The map induced on the first homology group of the singular chain complex sends the class of
 a `1`-cycle to the class of its image. -/
-lemma homologyMap_H₁AddEquivHomology_mk (c : cycles₁ X) :
-    (HomologicalComplex.homologyMap ((singularChains ℤ).map f) 1).hom
-        (H₁AddEquivHomology X (H₁.mk c)) =
-      H₁AddEquivHomology Y
-        (H₁.mk ⟨((singularChains ℤ).map f).f 1 c, map_mem_cycles₁ f c.2⟩) := by
-  let z := ((singularChains ℤ).obj X).moduleCatCyclesMk (c : ((singularChains ℤ).obj X).X 1) 0
-    (by simp) c.2
-  have hz : (((singularChains ℤ).obj X).iCycles 1).hom z = c :=
-    ((singularChains ℤ).obj X).iCycles_moduleCatCyclesMk 1 _ 0 (by simp) c.2
-  have h₁ := congr($(HomologicalComplex.homologyπ_naturality ((singularChains ℤ).map f) 1).hom z)
-  have h₂ := congr($(HomologicalComplex.cyclesMap_i ((singularChains ℤ).map f) 1).hom z)
+lemma homologyMap_H₁AddEquivHomology_mk (c : cycles₁ R X) :
+    (HomologicalComplex.homologyMap ((singularChains R).map f) 1).hom
+        (H₁AddEquivHomology R X (H₁.mk c)) =
+      H₁AddEquivHomology R Y
+        (H₁.mk ⟨((singularChains R).map f).f 1 c, map_mem_cycles₁ f c.property⟩) := by
+  let z := ((singularChains R).obj X).moduleCatCyclesMk (c : ((singularChains R).obj X).X 1) 0
+    (by simp) c.property
+  have hz : (((singularChains R).obj X).iCycles 1).hom z = c :=
+    ((singularChains R).obj X).iCycles_moduleCatCyclesMk 1 _ 0 (by simp) c.property
+  have h₁ := congr($(HomologicalComplex.homologyπ_naturality ((singularChains R).map f) 1).hom z)
+  have h₂ := congr($(HomologicalComplex.cyclesMap_i ((singularChains R).map f) 1).hom z)
   simp only [ModuleCat.hom_comp, LinearMap.comp_apply] at h₁ h₂
   rw [H₁AddEquivHomology_mk c z hz, h₁]
   refine (H₁AddEquivHomology_mk _ _ ?_).symm
@@ -72,13 +75,13 @@ lemma homologyMap_H₁AddEquivHomology_mk (c : cycles₁ X) :
 -- Not a simp lemma: `TauCeti.singularChainComplexFunctor_obj_map` rewrites the chain map inside
 -- the left-hand side first, so the `simpNF` linter rejects it.
 lemma homologyMap_H₁AddEquivHomology_loopClass {x : X} (γ : Path x x) :
-    (HomologicalComplex.homologyMap ((singularChains ℤ).map f) 1).hom
-        (H₁AddEquivHomology X (loopClass γ)) =
-      H₁AddEquivHomology Y (loopClass (γ.map (f.hom).continuous)) := by
+    (HomologicalComplex.homologyMap ((singularChains R).map f) 1).hom
+        (H₁AddEquivHomology R X (loopClass R γ)) =
+      H₁AddEquivHomology R Y (loopClass R (γ.map (f.hom).continuous)) := by
   rw [loopClass_def, homologyMap_H₁AddEquivHomology_mk, loopClass_def]
   congr 2
   refine Subtype.ext ((singularChains_map_f_pathChain f _).trans
-    (congrArg (pathChain ℤ) (ContinuousMap.ext fun t ↦ ?_)))
+    (congrArg (pathChain R) (ContinuousMap.ext fun t ↦ ?_)))
   simp
 
 /-- **Naturality of the Hurewicz map**: for a continuous map `f`, the map induced on the first
@@ -86,9 +89,9 @@ homology group of the singular chain complex corresponds to the map induced on f
 groups. -/
 theorem homologyMap_H₁AddEquivHomology_hurewiczAb {x : X}
     (a : Additive (Group.Abelianization (FundamentalGroup X x))) :
-    (HomologicalComplex.homologyMap ((singularChains ℤ).map f) 1).hom
-        (H₁AddEquivHomology X (hurewiczAb x a)) =
-      H₁AddEquivHomology Y (hurewiczAb (f x) (Additive.ofMul (Group.Abelianization.map
+    (HomologicalComplex.homologyMap ((singularChains R).map f) 1).hom
+        (H₁AddEquivHomology R X (hurewiczAb R x a)) =
+      H₁AddEquivHomology R Y (hurewiczAb R (f x) (Additive.ofMul (Group.Abelianization.map
         (FundamentalGroup.map f.hom x) a.toMul))) := by
   induction a using Additive.rec with | ofMul a =>
   induction a using Quot.ind with | mk p =>
@@ -100,10 +103,10 @@ theorem homologyMap_H₁AddEquivHomology_hurewiczAb {x : X}
 
 /-- **Naturality of the Hurewicz isomorphism** of path-connected spaces. -/
 theorem homologyMap_hurewiczHomologyAddEquiv [PathConnectedSpace X] [PathConnectedSpace Y]
-    {x : X} (a : Additive (Group.Abelianization (FundamentalGroup X x))) :
-    (HomologicalComplex.homologyMap ((singularChains ℤ).map f) 1).hom
-        (hurewiczHomologyAddEquiv x a) =
-      hurewiczHomologyAddEquiv (f x) (Additive.ofMul (Group.Abelianization.map
+    {x : X} (e : R ≃+* ℤ) (a : Additive (Group.Abelianization (FundamentalGroup X x))) :
+    (HomologicalComplex.homologyMap ((singularChains R).map f) 1).hom
+        (hurewiczHomologyAddEquiv x e a) =
+      hurewiczHomologyAddEquiv (f x) e (Additive.ofMul (Group.Abelianization.map
         (FundamentalGroup.map f.hom x) a.toMul)) := by
   rw [hurewiczHomologyAddEquiv_apply, hurewiczHomologyAddEquiv_apply,
     homologyMap_H₁AddEquivHomology_hurewiczAb]
@@ -111,11 +114,11 @@ theorem homologyMap_hurewiczHomologyAddEquiv [PathConnectedSpace X] [PathConnect
 /-- **Naturality of the Hurewicz isomorphism** of path-connected spaces, for a continuous map
 carrying the base point `x` to a prescribed base point `y` of the target. -/
 theorem homologyMap_hurewiczHomologyAddEquiv_mapOfEq [PathConnectedSpace X]
-    [PathConnectedSpace Y] {x : X} {y : Y} (h : f x = y)
+    [PathConnectedSpace Y] {x : X} {y : Y} (h : f x = y) (e : R ≃+* ℤ)
     (a : Additive (Group.Abelianization (FundamentalGroup X x))) :
-    (HomologicalComplex.homologyMap ((singularChains ℤ).map f) 1).hom
-        (hurewiczHomologyAddEquiv x a) =
-      hurewiczHomologyAddEquiv y (Additive.ofMul (Group.Abelianization.map
+    (HomologicalComplex.homologyMap ((singularChains R).map f) 1).hom
+        (hurewiczHomologyAddEquiv x e a) =
+      hurewiczHomologyAddEquiv y e (Additive.ofMul (Group.Abelianization.map
         (FundamentalGroup.mapOfEq f.hom h) a.toMul)) := by
   subst h
   rw [FundamentalGroup.mapOfEq_rfl, homologyMap_hurewiczHomologyAddEquiv]
@@ -126,7 +129,8 @@ point along a path. -/
 -- rewrites the left-hand side first, so the `simpNF` linter rejects it.
 theorem hurewicz₁_fundamentalGroupMulEquivOfPath {x x' : X} (p : Path x x')
     (a : FundamentalGroup X x) :
-    hurewicz₁ X x' (FundamentalGroup.fundamentalGroupMulEquivOfPath p a) = hurewicz₁ X x a := by
+    hurewicz₁ R X x' (FundamentalGroup.fundamentalGroupMulEquivOfPath p a) =
+      hurewicz₁ R X x a := by
   obtain ⟨a⟩ := a
   induction a using Path.Homotopic.Quotient.ind with | mk γ =>
   rw [FundamentalGroup.fundamentalGroupMulEquivOfPath_apply]
@@ -136,9 +140,9 @@ theorem hurewicz₁_fundamentalGroupMulEquivOfPath {x x' : X} (p : Path x x')
     hurewicz₁_mk]
   congr 1
   refine (loopClass_eq_iff _ _).2 ?_
-  have h₁ := pathChain_add_sub_trans_mem_boundaries₁ p.symm (γ.trans p)
-  have h₂ := pathChain_add_sub_trans_mem_boundaries₁ γ p
-  have h₃ := pathChain_add_symm_mem_boundaries₁ p.symm
+  have h₁ := pathChain_add_sub_trans_mem_boundaries₁ R p.symm (γ.trans p)
+  have h₂ := pathChain_add_sub_trans_mem_boundaries₁ R γ p
+  have h₃ := pathChain_add_symm_mem_boundaries₁ R p.symm
   rw [Path.symm_symm] at h₃
   have := add_mem (sub_mem (neg_mem h₁) h₂) h₃
   convert this using 1
@@ -147,12 +151,12 @@ theorem hurewicz₁_fundamentalGroupMulEquivOfPath {x x' : X} (p : Path x x')
 /-- Changing the base point along a path does not change the singular homology class supplied
 by the degree-one Hurewicz isomorphism. -/
 theorem hurewiczHomologyAddEquiv_fundamentalGroupMulEquivOfPath [PathConnectedSpace X]
-    {x x' : X} (p : Path x x') (a : FundamentalGroup X x) :
-    hurewiczHomologyAddEquiv x' (Additive.ofMul (Group.Abelianization.of
+    {x x' : X} (p : Path x x') (e : R ≃+* ℤ) (a : FundamentalGroup X x) :
+    hurewiczHomologyAddEquiv x' e (Additive.ofMul (Group.Abelianization.of
       (FundamentalGroup.fundamentalGroupMulEquivOfPath p a))) =
-      hurewiczHomologyAddEquiv x (Additive.ofMul (Group.Abelianization.of a)) := by
+      hurewiczHomologyAddEquiv x e (Additive.ofMul (Group.Abelianization.of a)) := by
   simp only [hurewiczHomologyAddEquiv_apply, hurewiczAb_ofMul_of]
-  exact congrArg (fun z ↦ H₁AddEquivHomology X (Multiplicative.toAdd z))
+  exact congrArg (fun z ↦ H₁AddEquivHomology R X (Multiplicative.toAdd z))
     (hurewicz₁_fundamentalGroupMulEquivOfPath p a)
 
 end TauCeti.HurewiczOne
@@ -163,10 +167,10 @@ open TauCeti.HurewiczOne
 
 /-- The map induced on first singular homology by a continuous map sends the class of a loop to
 the class of its image. -/
-theorem singularHomologyMap_loopClass {Y Z : Type} [TopologicalSpace Y] [TopologicalSpace Z]
-    (g : C(Y, Z)) {y : Y} (γ : Path y y) :
-    singularHomologyMap ℤ 1 g (H₁AddEquivHomology (TopCat.of Y) (loopClass γ)) =
-      H₁AddEquivHomology (TopCat.of Z) (loopClass (γ.map g.continuous)) :=
+theorem singularHomologyMap_loopClass {R : Type u} [Ring R] {Y Z : Type u} [TopologicalSpace Y]
+    [TopologicalSpace Z] (g : C(Y, Z)) {y : Y} (γ : Path y y) :
+    singularHomologyMap R 1 g (H₁AddEquivHomology R (TopCat.of Y) (loopClass R γ)) =
+      H₁AddEquivHomology R (TopCat.of Z) (loopClass R (γ.map g.continuous)) :=
   homologyMap_H₁AddEquivHomology_loopClass (TopCat.ofHom g) γ
 
 end ContinuousMap

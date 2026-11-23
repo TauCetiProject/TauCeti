@@ -47,7 +47,7 @@ theorem span_range_toCotangent_eq_top {f : ι → I}
     (hf : Ideal.span (Set.range fun i ↦ (f i : R)) = I) :
     Submodule.span (R ⧸ I) (Set.range fun i ↦ I.toCotangent (f i)) = ⊤ := by
   have hspan : Submodule.span R (Set.range f) = ⊤ :=
-    (Submodule.span_range_subtype_eq_top_iff I fun i ↦ (f i).2).mpr hf
+    (Submodule.span_range_subtype_eq_top_iff I fun i ↦ (f i).property).mpr hf
   refine Submodule.span_eq_top_of_span_eq_top (S := R ⧸ I) R _ ?_
   rw [Set.range_comp' I.toCotangent f, ← Submodule.map_span, hspan, Submodule.map_top,
     I.toCotangent_range]

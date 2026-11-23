@@ -50,23 +50,23 @@ example :
 
 -- The join among noncrossing partitions of one with `0` and `2` in a part and one with `1` and `3`
 -- in a part is the partition with one part.
-example (P Q : NoncrossingPartition (univ : Finset (Fin 4))) (hP : 2 ∈ P.1.part 0)
-    (hQ : 3 ∈ Q.1.part 1) : P ⊔ Q = ⊤ := by
+example (P Q : NoncrossingPartition (univ : Finset (Fin 4))) (hP : 2 ∈ P.val.part 0)
+    (hQ : 3 ∈ Q.val.part 1) : P ⊔ Q = ⊤ := by
   suffices h : ∀ R : NoncrossingPartition (univ : Finset (Fin 4)), P ≤ R → Q ≤ R → ⊤ ≤ R from
     top_le_iff.1 (h _ le_sup_left le_sup_right)
   intro R hPR hQR
-  have h02 : 2 ∈ R.1.part 0 := part_mono (Subtype.coe_le_coe.2 hPR) 0 hP
-  have h13 : 3 ∈ R.1.part 1 := part_mono (Subtype.coe_le_coe.2 hQR) 1 hQ
-  have h01 := isNoncrossing_iff_part.1 R.2 0 (mem_univ _) 1 (mem_univ _) 2 h02 3 h13
+  have h02 : 2 ∈ R.val.part 0 := part_mono (Subtype.coe_le_coe.2 hPR) 0 hP
+  have h13 : 3 ∈ R.val.part 1 := part_mono (Subtype.coe_le_coe.2 hQR) 1 hQ
+  have h01 := isNoncrossing_iff_part.1 R.property 0 (mem_univ _) 1 (mem_univ _) 2 h02 3 h13
     (by decide) (by decide) (by decide)
   refine Subtype.coe_le_coe.1 <| le_def.2 fun B hB =>
-    ⟨R.1.part 0, R.1.part_mem.2 (mem_univ _), ?_⟩
+    ⟨R.val.part 0, R.val.part_mem.2 (mem_univ _), ?_⟩
   rw [NoncrossingPartition.coe_top] at hB
   rw [Finset.mem_singleton.1 (parts_top_subset _ hB)]
   intro x _
   fin_cases x
-  · exact R.1.mem_part_self.2 (mem_univ _)
-  · exact h01 ▸ R.1.mem_part_self.2 (mem_univ _)
+  · exact R.val.mem_part_self.2 (mem_univ _)
+  · exact h01 ▸ R.val.mem_part_self.2 (mem_univ _)
   · exact h02
   · exact h01 ▸ h13
 
@@ -78,7 +78,7 @@ example : Fintype.card (NoncrossingPartition (univ : Finset (Fin 3))) = 5 := by
   rw [NoncrossingPartition.card_fin_eq_catalan, catalan_three]
 
 -- `NC(4)` has `6` partitions with two parts, the Narayana number `N(4, 2)`.
-example : #{P : NoncrossingPartition (univ : Finset (Fin 4)) | #P.1.parts = 2} = 6 := by
+example : #{P : NoncrossingPartition (univ : Finset (Fin 4)) | #P.val.parts = 2} = 6 := by
   have h := NoncrossingPartition.card_fin_mul_card_parts_eq 4 1
   norm_num [Nat.choose] at h
   omega

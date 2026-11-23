@@ -813,7 +813,7 @@ theorem isRestricted_mk_tsum_coeff_of_tendsto_gaussNorm_zero (hc : 0 < c)
     rw [PowerSeries.coeff_mk]
     exact hcoeff n
   rw [heq]
-  exact (∑' k, A k).2
+  exact (∑' k, A k).property
 
 end Summation
 
@@ -1007,11 +1007,11 @@ noncomputable def gaussValuation (hc : 0 < c) :
     exact (PowerSeries.gaussNorm_C
       (v := (NormMulClass.isAbsoluteValue_norm (α := R)).toAbsoluteValue)
       (hc := hc.le) (r := (1 : R))).trans norm_one
-  map_mul' f g := NNReal.eq <| gaussNorm_mul_of_isRestricted hc f.2 g.2
+  map_mul' f g := NNReal.eq <| gaussNorm_mul_of_isRestricted hc f.property g.property
   map_add_le_max' f g :=
     PowerSeries.gaussNorm_add_le_max norm c _ _ hc.le norm_nonneg
       IsUltrametricDist.isNonarchimedean_norm
-      (hasGaussNorm_of_isRestricted f.2) (hasGaussNorm_of_isRestricted g.2)
+      (hasGaussNorm_of_isRestricted f.property) (hasGaussNorm_of_isRestricted g.property)
 
 /-- The Gauss valuation is the Gauss norm, read in `ℝ`. -/
 @[simp]
@@ -1057,7 +1057,7 @@ theorem gaussValuation_eq_zero_iff (hc : 0 < c)
     {f : PowerSeries.IsRestricted.subring (R := R) c} :
     gaussValuation hc f = 0 ↔ f = 0 := by
   rw [← NNReal.coe_eq_zero, coe_gaussValuation, PowerSeries.gaussNorm_eq_zero_iff norm c _
-    norm_zero norm_nonneg (fun _ ↦ norm_eq_zero.mp) hc (hasGaussNorm_of_isRestricted f.2),
+    norm_zero norm_nonneg (fun _ ↦ norm_eq_zero.mp) hc (hasGaussNorm_of_isRestricted f.property),
     ZeroMemClass.coe_eq_zero]
 
 end
@@ -1074,12 +1074,12 @@ variable {f g : PowerSeries.IsRestricted.subring (R := R) c}
 private noncomputable def distinguishedDegree (hc : 0 < c)
     (f : PowerSeries.IsRestricted.subring (R := R) c) : ℕ :=
   open Classical in
-  if hf : f = 0 then 0 else (exists_isDistinguished hc f.2 (by simpa using hf)).choose
+  if hf : f = 0 then 0 else (exists_isDistinguished hc f.property (by simpa using hf)).choose
 
 private theorem isDistinguished_distinguishedDegree (hc : 0 < c) (hf : f ≠ 0) :
     IsDistinguished c (distinguishedDegree hc f) (f : PowerSeries R) := by
   simp only [distinguishedDegree, hf, ↓reduceDIte]
-  exact (exists_isDistinguished hc f.2 (by simpa using hf)).choose_spec
+  exact (exists_isDistinguished hc f.property (by simpa using hf)).choose_spec
 
 private theorem distinguishedDegree_eq (hc : 0 < c) {s : ℕ}
     (hs : IsDistinguished c s (f : PowerSeries R)) : distinguishedDegree hc f = s :=
@@ -1090,12 +1090,12 @@ private theorem distinguishedDegree_eq (hc : 0 < c) {s : ℕ}
 private noncomputable def lowestDominantDegree (hc : 0 < c)
     (f : PowerSeries.IsRestricted.subring (R := R) c) : ℕ :=
   open Classical in
-  if hf : f = 0 then 0 else (exists_isLowestDominant hc f.2 (by simpa using hf)).choose
+  if hf : f = 0 then 0 else (exists_isLowestDominant hc f.property (by simpa using hf)).choose
 
 private theorem isLowestDominant_lowestDominantDegree (hc : 0 < c) (hf : f ≠ 0) :
     IsLowestDominant c (lowestDominantDegree hc f) (f : PowerSeries R) := by
   simp only [lowestDominantDegree, hf, ↓reduceDIte]
-  exact (exists_isLowestDominant hc f.2 (by simpa using hf)).choose_spec
+  exact (exists_isLowestDominant hc f.property (by simpa using hf)).choose_spec
 
 private theorem lowestDominantDegree_eq (hc : 0 < c) {s : ℕ}
     (hs : IsLowestDominant c s (f : PowerSeries R)) : lowestDominantDegree hc f = s :=
@@ -1239,7 +1239,7 @@ private noncomputable def lexValuation (hc : 0 < c)
     · rw [add_zero]
     rcases eq_or_ne f 0 with rfl | hf
     · rw [lexValue_zero] at hgf
-      refine absurd (le_zero_iff.mp hgf) ?_
+      refine absurd (nonpos_iff_eq_zero.mp hgf) ?_
       rw [lexValue_of_ne_zero hc d hg]
       exact WithZero.coe_ne_zero
     have hgf' := (lexValue_le_lexValue_iff hc d hg hf).mp hgf
@@ -1291,7 +1291,8 @@ private theorem norm_coeff_add_mul_pow_lt_of_isLowestDominant (hc : 0 < c)
   refine (norm_coeff_add_mul_pow_le_max _ _ hc.le m).trans_lt
     (max_lt (hs.norm_coeff_mul_pow_lt m hm) ?_)
   rcases hle.lt_or_eq with hlt | heq
-  · exact (PowerSeries.le_gaussNorm norm c _ (hasGaussNorm_of_isRestricted g.2) m).trans_lt hlt
+  · exact (PowerSeries.le_gaussNorm norm c _ (hasGaussNorm_of_isRestricted g.property) m).trans_lt
+      hlt
   · rw [← coe_gaussValuation hc, ← heq, coe_gaussValuation]
     exact ht.norm_coeff_mul_pow_lt m (hm.trans_le (hdeg heq))
 
@@ -1422,7 +1423,7 @@ theorem gaussValuationAbove_lt_of_lt (hc : 0 < c)
     (h : gaussValuation hc f < gaussValuation hc g) :
     gaussValuationAbove hc f < gaussValuationAbove hc g := by
   have hg : gaussValuation hc g ≠ 0 := (pos_of_gt h).ne'
-  obtain ⟨t, ht⟩ := exists_isDistinguished hc g.2
+  obtain ⟨t, ht⟩ := exists_isDistinguished hc g.property
     (by simpa using (gaussValuation_eq_zero_iff hc).not.mp hg)
   rw [gaussValuationAbove_eq_coe hc ht (u := Units.mk0 _ hg) rfl, gaussValuationAbove_eq_lexValue]
   exact lexValue_lt_coe hc _ h _
@@ -1433,7 +1434,7 @@ theorem gaussValuationBelow_lt_of_lt (hc : 0 < c)
     (h : gaussValuation hc f < gaussValuation hc g) :
     gaussValuationBelow hc f < gaussValuationBelow hc g := by
   have hg : gaussValuation hc g ≠ 0 := (pos_of_gt h).ne'
-  obtain ⟨t, ht⟩ := exists_isLowestDominant hc g.2
+  obtain ⟨t, ht⟩ := exists_isLowestDominant hc g.property
     (by simpa using (gaussValuation_eq_zero_iff hc).not.mp hg)
   rw [gaussValuationBelow_eq_coe hc ht (u := Units.mk0 _ hg) rfl, gaussValuationBelow_eq_lexValue]
   exact lexValue_lt_coe hc _ h _
@@ -1452,13 +1453,14 @@ theorem gaussValuationAbove_monomial_coeff_le (hc : 0 < c) (n : ℕ) :
       Subtype.ext (by simp [ha])
     rw [h0, map_zero]
     exact zero_le
-  obtain ⟨s, hs⟩ := exists_isDistinguished hc f.2 fun h ↦ ha (by simp [h])
+  obtain ⟨s, hs⟩ := exists_isDistinguished hc f.property fun h ↦ ha (by simp [h])
   have hm := isDistinguished_monomial hc ha n
   rw [gaussValuationAbove_le_iff hc hm hs, ← NNReal.coe_lt_coe, ← NNReal.coe_inj,
     coe_gaussValuation, coe_gaussValuation, ← hm.norm_coeff_mul_pow_eq,
     PowerSeries.coeff_monomial_same]
   -- the weighted coefficient `‖aₙ‖ cⁿ` attains the Gauss norm only up to the distinguished degree
-  exact (PowerSeries.le_gaussNorm norm c _ (hasGaussNorm_of_isRestricted f.2) n).lt_or_eq.imp_right
+  exact (PowerSeries.le_gaussNorm norm c _ (hasGaussNorm_of_isRestricted f.property)
+      n).lt_or_eq.imp_right
     fun heq ↦ ⟨heq, not_lt.mp fun hsn ↦ (hs.norm_coeff_mul_pow_lt n hsn).ne heq⟩
 
 /-- **Every monomial of `f` is at most `f` just below `c`.** The monomial `aₙ Xⁿ` of `f` has Gauss
@@ -1475,13 +1477,14 @@ theorem gaussValuationBelow_monomial_coeff_le (hc : 0 < c) (n : ℕ) :
       Subtype.ext (by simp [ha])
     rw [h0, map_zero]
     exact zero_le
-  obtain ⟨s, hs⟩ := exists_isLowestDominant hc f.2 fun h ↦ ha (by simp [h])
+  obtain ⟨s, hs⟩ := exists_isLowestDominant hc f.property fun h ↦ ha (by simp [h])
   have hm := isLowestDominant_monomial hc ha n
   rw [gaussValuationBelow_le_iff hc hm hs, ← NNReal.coe_lt_coe, ← NNReal.coe_inj,
     coe_gaussValuation, coe_gaussValuation, ← hm.norm_coeff_mul_pow_eq,
     PowerSeries.coeff_monomial_same]
   -- the weighted coefficient `‖aₙ‖ cⁿ` attains the Gauss norm only from the lowest dominant degree
-  exact (PowerSeries.le_gaussNorm norm c _ (hasGaussNorm_of_isRestricted f.2) n).lt_or_eq.imp_right
+  exact (PowerSeries.le_gaussNorm norm c _ (hasGaussNorm_of_isRestricted f.property)
+      n).lt_or_eq.imp_right
     fun heq ↦ ⟨heq, not_lt.mp fun hns ↦ (hs.norm_coeff_mul_pow_lt n hns).ne heq⟩
 
 end LexValuation

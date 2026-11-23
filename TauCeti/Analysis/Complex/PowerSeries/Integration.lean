@@ -50,9 +50,9 @@ theorem HasFPowerSeriesOnBall.hasSum_torusIntegral_smul
   let K := (i : Fin n) → sphere (c i) |R i|
   let g : C(K, Fin n → ℂ) := ⟨fun z i ↦ z i, by fun_prop⟩
   have hg (z : K) : ‖g z - c‖ ≤ s := by
-    apply (pi_norm_le_iff_of_nonneg s.2).2
+    apply (pi_norm_le_iff_of_nonneg s.property).2
     intro i
-    exact (mem_sphere_iff_norm.1 (z i).2).le.trans (hR i)
+    exact (mem_sphere_iff_norm.1 (z i).property).le.trans (hR i)
   let W : C(K, ℂ) := ⟨fun z ↦ w (fun i ↦ z i), hw⟩
   have hW : Continuous (fun v : C(K, F) ↦ W • v) := by
     apply ContinuousMap.continuous_of_continuous_uncurry

@@ -8,8 +8,7 @@ module
 public import Mathlib.RingTheory.SimpleModule.WedderburnArtin
 public import TauCeti.Algebra.Cellular.Simple
 public import TauCeti.RingTheory.Semisimple.Wedderburn.Presentation
-import Mathlib.LinearAlgebra.Dimension.Constructions
-import Mathlib.LinearAlgebra.FiniteDimensional.Lemmas
+import Mathlib.LinearAlgebra.Matrix.NonsingularInverse
 import Mathlib.LinearAlgebra.Matrix.Unique
 import Mathlib.Order.Preorder.Finite
 import TauCeti.Algebra.Cellular.Matrix
@@ -18,32 +17,40 @@ import TauCeti.RingTheory.Semisimple.Wedderburn.Split
 /-!
 # Semisimplicity and Wedderburn decomposition of cellular algebras
 
-This file formalizes Graham and Lehrer's semisimplicity criterion for cellular algebras over a
-field and their canonical split Artin–Wedderburn decomposition into matrix algebras indexed by the
-cells.
+This file formalizes the ring-general split Wedderburn decomposition of cellular algebras whose
+Gram determinants are units, Graham and Lehrer's semisimplicity criterion over a field, and a
+sharpness counterexample over `ℤ`.
 
 Over an arbitrary commutative ring `R`, the cell representations `c.cellRep μ` assemble into an
 `R`-algebra homomorphism
 
 `c.cellRepPiAlgHom : A →ₐ[R] ∀ μ : Λ, Matrix (M μ) (M μ) R`.
 
-Because `c.cellForm μ` is symmetric, its nondegeneracy (`LinearMap.BilinForm.Nondegenerate`) is
-equivalent to triviality of `c.cellRadical μ` over any commutative ring, and further equivalent to
-`(c.gramMatrix μ).det ≠ 0` when `R` is an integral domain. Whenever every cell radical vanishes,
-`c.cellRepPiAlgHom` is injective (`TauCeti.CellularBasis.cellRepPiAlgHom_injective`), without any
-finiteness hypothesis on `Λ`. Conversely, when `A` is semisimple and `R` is nontrivial, every
-nonempty cell has nonzero bilinear form
+Whenever every cell radical vanishes (in particular, whenever every `(c.gramMatrix μ).det` is a
+non-zero-divisor in `R`), `c.cellRepPiAlgHom` is injective
+(`TauCeti.CellularBasis.cellRepPiAlgHom_injective`,
+`TauCeti.CellularBasis.cellRepPiAlgHom_injective_of_forall_det_gramMatrix_mem_nonZeroDivisors`),
+without any finiteness hypothesis on `Λ`. Moreover, when `Λ` is finite and every
+`(c.gramMatrix μ).det` is a unit in `R`, triangular induction along `<` upgrades
+`c.cellRepPiAlgHom` to an explicit `R`-algebra isomorphism
+(`TauCeti.CellularBasis.cellRepPiAlgEquiv`)
+
+`A ≃ₐ[R] ∀ μ : Λ, Matrix (M μ) (M μ) R`,
+
+implying `IsSemisimpleRing A` over any commutative semisimple base ring `R`
+(`TauCeti.CellularBasis.isSemisimpleRing_of_forall_isUnit_det_gramMatrix`). Conversely, when `A` is
+semisimple and `R` is nontrivial, every nonempty cell has nonzero bilinear form
 (`TauCeti.CellularBasis.cellForm_ne_zero_of_isSemisimpleRing`).
 
-Over a field `K`, when `B` is semisimple every cell radical vanishes, so the nonempty cell modules
-`d.CellModule μ` themselves are simple, pairwise non-isomorphic, and (when `<` on `Λ` is
-well-founded) classify all simple `B`-modules up to isomorphism. With a finite preorder `Λ` of
-cells, dimension counting upgrades injectivity of `d.cellRepPiAlgHom` to an explicit `K`-algebra
-isomorphism (`TauCeti.CellularBasis.wedderburnAlgEquiv`)
-
-`B ≃ₐ[K] ∀ μ : Λ, Matrix (M μ) (M μ) K`,
-
-yielding **Graham–Lehrer Theorem 3.8**: the following are equivalent:
+Over a field `K`, when `B` is semisimple every cell radical vanishes, so a cell module
+`d.CellModule μ` is simple if and only if `M μ` is nonempty
+(`TauCeti.CellularBasis.isSimpleModule_cellModule_iff_nonempty_of_isSemisimpleRing`), and (when
+`<` on `Λ` is well-founded) the nonempty cell modules classify all simple `B`-modules up to
+isomorphism
+(`TauCeti.CellularBasis.existsUnique_nonempty_and_nonempty_linearEquiv_of_isSemisimpleRing`).
+With a finite preorder `Λ` of cells, `d.cellRepPiAlgEquiv` specializes to the split
+Artin–Wedderburn isomorphism `B ≃ₐ[K] ∀ μ : Λ, Matrix (M μ) (M μ) K`, yielding **Graham–Lehrer
+Theorem 3.8**: the following are equivalent:
 1. `B` is a semisimple ring (`IsSemisimpleRing B`);
 2. every cell radical is trivial (`∀ μ, d.cellRadical μ = ⊥`);
 3. every cell bilinear form is nondegenerate (`∀ μ, (d.cellForm μ).Nondegenerate`);
@@ -52,24 +59,29 @@ yielding **Graham–Lehrer Theorem 3.8**: the following are equivalent:
 
 Moreover, any semisimple cellular `K`-algebra with well-founded cell order is automatically split
 over `K` (`TauCeti.CellularBasis.nonempty_splitWedderburnAlgebraPresentation`), with no
-algebraic-closure assumption on `K`.
-
-The field hypothesis in Theorem 3.8 is sharp: `Matrix Unit Unit ℤ` (isomorphic to `ℤ`) has one cell
-with nondegenerate bilinear form and Gram determinant `1`, yet is not a semisimple ring
+algebraic-closure assumption on `K`. Finally, `CellularBasis.matrix ℤ Unit` witnesses that the
+field hypothesis in Theorem 3.8 is sharp
 (`TauCeti.CellularBasis.exists_cellularBasis_int_nondegenerate_and_not_isSemisimpleRing`).
 
 ## Main definitions
 
 * `TauCeti.CellularBasis.cellRepPiAlgHom`: the product of all cell representations
   `A →ₐ[R] ∀ μ : Λ, Matrix (M μ) (M μ) R`.
-* `TauCeti.CellularBasis.wedderburnAlgEquiv`: the `K`-algebra isomorphism
-  `B ≃ₐ[K] ∀ μ : Λ, Matrix (M μ) (M μ) K` when `∀ μ, d.cellRadical μ = ⊥` and `[Finite Λ]`.
+* `TauCeti.CellularBasis.cellRepPiAlgEquiv`: the ring-general split Wedderburn `R`-algebra
+  isomorphism `A ≃ₐ[R] ∀ μ : Λ, Matrix (M μ) (M μ) R` when `∀ μ, IsUnit (c.gramMatrix μ).det` and
+  `[Finite Λ]`.
 
 ## Main results
 
-* `TauCeti.CellularBasis.cellRepPiAlgHom_injective`: `c.cellRepPiAlgHom` is injective whenever
-  `∀ μ, c.cellRadical μ = ⊥`.
+* `TauCeti.CellularBasis.cellRepPiAlgHom_injective`,
+  `TauCeti.CellularBasis.cellRepPiAlgHom_injective_of_forall_det_gramMatrix_mem_nonZeroDivisors`,
+  `TauCeti.CellularBasis.cellRepPiAlgHom_surjective_of_forall_isUnit_det_gramMatrix`: injectivity
+  when all cell radicals vanish (or all Gram determinants are non-zero-divisors) and surjectivity
+  when `Λ` is finite and all Gram determinants are units.
+* `TauCeti.CellularBasis.isSemisimpleRing_of_forall_isUnit_det_gramMatrix`: unit Gram determinants
+  over a commutative semisimple ring imply `IsSemisimpleRing A`.
 * `TauCeti.CellularBasis.isSimpleModule_cellModule_of_isSemisimpleRing`,
+  `TauCeti.CellularBasis.isSimpleModule_cellModule_iff_nonempty_of_isSemisimpleRing`,
   `TauCeti.CellularBasis.nonempty_cellModule_linearEquiv_iff_of_isSemisimpleRing`,
   `TauCeti.CellularBasis.existsUnique_nonempty_and_nonempty_linearEquiv_of_isSemisimpleRing`:
   simplicity and classification of simple modules directly by nonempty cell modules `d.CellModule μ`
@@ -195,6 +207,123 @@ theorem cellRepPiAlgHom_injective (h : ∀ μ, c.cellRadical μ = ⊥) :
   rw [(c.cellBasis μ).repr_sum_self, map_zero, Finsupp.coe_zero, Pi.zero_apply] at hcoord
   exact hi₀ hcoord
 
+/-- Over any commutative ring, if every Gram determinant is a non-zero-divisor,
+`c.cellRepPiAlgHom` is injective (with no finiteness hypothesis on `Λ`). -/
+theorem cellRepPiAlgHom_injective_of_forall_det_gramMatrix_mem_nonZeroDivisors
+    (h : ∀ μ, (c.gramMatrix μ).det ∈ nonZeroDivisors R) : Function.Injective c.cellRepPiAlgHom :=
+  c.cellRepPiAlgHom_injective fun μ ↦
+    c.cellRadical_eq_bot_of_det_gramMatrix_mem_nonZeroDivisors (h μ)
+
+/-- When `(c.gramMatrix μ).det` is a unit, any matrix `N : Matrix (M μ) (M μ) R` is realized at
+cell `μ` by an element `x : A` that annihilates all cells `τ ≠ μ` with `¬ τ < μ`. -/
+private theorem exists_cellRep_eq_of_isUnit_det_gramMatrix {μ : Λ}
+    (hμ : IsUnit (c.gramMatrix μ).det) (N : Matrix (M μ) (M μ) R) :
+    ∃ x : A, c.cellRep μ x = N ∧ ∀ ⦃τ : Λ⦄, τ ≠ μ → ¬ τ < μ → c.cellRep τ x = 0 := by
+  refine ⟨∑ w : M μ, ∑ t : M μ, (N * (c.gramMatrix μ)⁻¹) w t • c.basis ⟨μ, w, t⟩, ?_,
+    fun τ hne hnlt ↦ ?_⟩
+  · ext u s
+    have hmul : (N * (c.gramMatrix μ)⁻¹ * c.gramMatrix μ) u s = N u s := by
+      rw [Matrix.mul_assoc, Matrix.nonsing_inv_mul _ hμ, Matrix.mul_one]
+    rw [← hmul, Matrix.mul_apply]
+    simp [Matrix.sum_apply, Matrix.smul_apply, mul_ite, mul_zero]
+  · simp [c.cellRep_basis_of_ne_of_not_lt hne hnlt]
+
+/-- Over any commutative ring, when `Λ` is finite and every Gram determinant is a unit,
+`c.cellRepPiAlgHom` is surjective. -/
+theorem cellRepPiAlgHom_surjective_of_forall_isUnit_det_gramMatrix [Finite Λ]
+    (h : ∀ μ, IsUnit (c.gramMatrix μ).det) : Function.Surjective c.cellRepPiAlgHom := by
+  classical
+  cases nonempty_fintype Λ
+  have : WellFoundedLT Λ := Finite.to_wellFoundedLT
+  have hsingle (μ : Λ) : ∀ N : Matrix (M μ) (M μ) R,
+      Pi.single μ N ∈ c.cellRepPiAlgHom.range := by
+    induction μ using WellFoundedLT.induction with
+    | ind μ ih =>
+      intro N
+      obtain ⟨x, hx_diag, hx_other⟩ := c.exists_cellRep_eq_of_isUnit_det_gramMatrix (h μ) N
+      have hdiff : c.cellRepPiAlgHom x - Pi.single μ N =
+          ∑ ν ∈ Finset.univ.filter (· < μ), Pi.single ν (c.cellRep ν x) := by
+        funext τ
+        rw [Pi.sub_apply, cellRepPiAlgHom_apply, Finset.sum_apply]
+        by_cases hτμ : τ = μ
+        · subst hτμ
+          rw [hx_diag, Pi.single_eq_same, sub_self]
+          exact (Finset.sum_eq_zero fun ν hν ↦
+            Pi.single_eq_of_ne (ne_of_gt (Finset.mem_filter.mp hν).2) _).symm
+        · rw [Pi.single_eq_of_ne hτμ, sub_zero]
+          by_cases hlt : τ < μ
+          · rw [Finset.sum_eq_single τ
+              (fun ν _ hν ↦ Pi.single_eq_of_ne (Ne.symm hν) _)
+              (fun h ↦ (h (Finset.mem_filter.mpr ⟨Finset.mem_univ _, hlt⟩)).elim),
+              Pi.single_eq_same]
+          · rw [hx_other hτμ hlt]
+            exact (Finset.sum_eq_zero fun ν hν ↦
+              Pi.single_eq_of_ne
+                (fun hEq : τ = ν ↦ hlt (hEq ▸ (Finset.mem_filter.mp hν).2)) _).symm
+      have hlow_mem : c.cellRepPiAlgHom x - Pi.single μ N ∈ c.cellRepPiAlgHom.range :=
+        hdiff ▸ sum_mem fun ν hν ↦ ih ν (Finset.mem_filter.mp hν).2 _
+      simpa using sub_mem (AlgHom.mem_range_self c.cellRepPiAlgHom x) hlow_mem
+  intro F
+  have hF : F = ∑ μ : Λ, Pi.single μ (F μ) := by
+    funext μ
+    rw [Finset.sum_apply,
+      Fintype.sum_eq_single μ (fun ν hν ↦ Pi.single_eq_of_ne (Ne.symm hν) _), Pi.single_eq_same]
+  exact hF ▸ sum_mem fun μ _ ↦ hsingle μ (F μ)
+
+/-- Over any commutative ring, when `Λ` is finite and every Gram determinant is a unit,
+`c.cellRepPiAlgHom` is bijective. -/
+theorem cellRepPiAlgHom_bijective_of_forall_isUnit_det_gramMatrix [Finite Λ]
+    (h : ∀ μ, IsUnit (c.gramMatrix μ).det) : Function.Bijective c.cellRepPiAlgHom :=
+  ⟨c.cellRepPiAlgHom_injective_of_forall_det_gramMatrix_mem_nonZeroDivisors fun μ ↦
+      (h μ).mem_nonZeroDivisors,
+    c.cellRepPiAlgHom_surjective_of_forall_isUnit_det_gramMatrix h⟩
+
+/-- **Ring-general split Wedderburn decomposition of a cellular algebra**: over any commutative
+ring `R`, when `Λ` is finite and every Gram determinant is a unit in `R`, `c.cellRepPiAlgHom`
+upgrades to an `R`-algebra isomorphism `A ≃ₐ[R] ∀ μ : Λ, Matrix (M μ) (M μ) R`. -/
+noncomputable def cellRepPiAlgEquiv [Finite Λ] (h : ∀ μ, IsUnit (c.gramMatrix μ).det) :
+    A ≃ₐ[R] ∀ μ : Λ, Matrix (M μ) (M μ) R :=
+  AlgEquiv.ofBijective c.cellRepPiAlgHom
+    (c.cellRepPiAlgHom_bijective_of_forall_isUnit_det_gramMatrix h)
+
+/-- Evaluating `c.cellRepPiAlgEquiv h a` at `μ` yields `c.cellRep μ a`. -/
+@[simp]
+theorem cellRepPiAlgEquiv_apply [Finite Λ] (h : ∀ μ, IsUnit (c.gramMatrix μ).det) (a : A)
+    (μ : Λ) : c.cellRepPiAlgEquiv h a μ = c.cellRep μ a :=
+  (rfl)
+
+/-- Coercing `cellRepPiAlgEquiv` to an algebra homomorphism recovers `c.cellRepPiAlgHom`. -/
+@[simp, norm_cast]
+theorem toAlgHom_cellRepPiAlgEquiv [Finite Λ] (h : ∀ μ, IsUnit (c.gramMatrix μ).det) :
+    (c.cellRepPiAlgEquiv h : A →ₐ[R] ∀ μ : Λ, Matrix (M μ) (M μ) R) = c.cellRepPiAlgHom :=
+  (rfl)
+
+/-- `c.cellRepPiAlgHom` is a right inverse to `(c.cellRepPiAlgEquiv h).symm`. -/
+@[simp]
+theorem cellRepPiAlgHom_cellRepPiAlgEquiv_symm [Finite Λ] (h : ∀ μ, IsUnit (c.gramMatrix μ).det)
+    (m : ∀ μ : Λ, Matrix (M μ) (M μ) R) :
+    c.cellRepPiAlgHom ((c.cellRepPiAlgEquiv h).symm m) = m :=
+  (c.cellRepPiAlgEquiv h).apply_symm_apply m
+
+/-- The cell representation at `μ` of `(c.cellRepPiAlgEquiv h).symm m` is `m μ`. -/
+@[simp]
+theorem cellRep_cellRepPiAlgEquiv_symm [Finite Λ] (h : ∀ μ, IsUnit (c.gramMatrix μ).det)
+    (m : ∀ μ : Λ, Matrix (M μ) (M μ) R) (μ : Λ) :
+    c.cellRep μ ((c.cellRepPiAlgEquiv h).symm m) = m μ :=
+  congrFun (c.cellRepPiAlgHom_cellRepPiAlgEquiv_symm h m) μ
+
+/-- `(c.cellRepPiAlgEquiv h).symm` is a left inverse to `c.cellRepPiAlgHom`. -/
+@[simp]
+theorem cellRepPiAlgEquiv_symm_cellRepPiAlgHom [Finite Λ] (h : ∀ μ, IsUnit (c.gramMatrix μ).det)
+    (a : A) : (c.cellRepPiAlgEquiv h).symm (c.cellRepPiAlgHom a) = a :=
+  (c.cellRepPiAlgEquiv h).symm_apply_apply a
+
+/-- Over a commutative semisimple base ring `R`, if `Λ` is finite and every Gram determinant is a
+unit, then `A` is a semisimple ring. -/
+theorem isSemisimpleRing_of_forall_isUnit_det_gramMatrix [IsSemisimpleRing R] [Finite Λ]
+    (h : ∀ μ, IsUnit (c.gramMatrix μ).det) : IsSemisimpleRing A :=
+  (c.cellRepPiAlgEquiv h).toRingEquiv.symm.isSemisimpleRing
+
 /-- When `c.gramMatrix μ = 0`, the `R`-span of cellular basis vectors in cells `ν < μ` or `ν = μ`
 is a left ideal `I` of `A` containing every `c.basis ⟨μ, s, t⟩` whose products land inside
 `c.lowerSpan μ`. -/
@@ -305,6 +434,15 @@ theorem isSimpleModule_cellModule_of_isSemisimpleRing [IsSemisimpleRing B] (μ :
     [Nonempty (M μ)] : IsSimpleModule B (d.CellModule μ) :=
   d.isSimpleModule_cellModule_of_cellRadical_eq_bot (d.cellRadical_eq_bot_of_isSemisimpleRing μ)
 
+/-- Over a field `K`, if `B` is semisimple, a cell module `d.CellModule μ` is simple if and only if
+its index set `M μ` is nonempty. -/
+theorem isSimpleModule_cellModule_iff_nonempty_of_isSemisimpleRing [IsSemisimpleRing B] (μ : Λ) :
+    IsSimpleModule B (d.CellModule μ) ↔ Nonempty (M μ) := by
+  refine ⟨fun _ ↦ ?_, fun _ ↦ d.isSimpleModule_cellModule_of_isSemisimpleRing μ⟩
+  obtain ⟨x, y, hxy⟩ := IsSimpleModule.nontrivial B (d.CellModule μ)
+  by_contra h
+  exact hxy ((d.cellModuleEquiv μ).injective (funext fun s ↦ (h ⟨s⟩).elim))
+
 /-- Over a field `K`, if `B` is semisimple and `M μ` is nonempty, `d.CellModule μ` is `B`-linearly
 equivalent to `d.CellModule ν` if and only if `μ = ν`. -/
 theorem nonempty_cellModule_linearEquiv_iff_of_isSemisimpleRing [IsSemisimpleRing B] {μ ν : Λ}
@@ -320,67 +458,13 @@ section Finite
 
 variable [Finite Λ]
 
-/-- Over a field `K` with a finite preorder `Λ` of cells, if every cell radical vanishes,
-`d.cellRepPiAlgHom` is bijective. -/
-theorem cellRepPiAlgHom_bijective_of_forall_cellRadical_eq_bot (h : ∀ μ, d.cellRadical μ = ⊥) :
-    Function.Bijective d.cellRepPiAlgHom := by
-  have hinj : Function.Injective d.cellRepPiAlgHom := d.cellRepPiAlgHom_injective h
-  cases nonempty_fintype Λ
-  have : FiniteDimensional K B := Module.Finite.of_basis d.basis
-  have hdim : Module.finrank K B = Module.finrank K (∀ μ : Λ, Matrix (M μ) (M μ) K) := by
-    rw [Module.finrank_eq_card_basis d.basis, Fintype.card_sigma, Module.finrank_pi_fintype K]
-    refine Finset.sum_congr rfl fun μ _ ↦ ?_
-    rw [Fintype.card_prod, Module.finrank_matrix, Module.finrank_self, mul_one]
-  exact ⟨hinj,
-    (LinearMap.injective_iff_surjective_of_finrank_eq_finrank (f := d.cellRepPiAlgHom.toLinearMap)
-      hdim).mp hinj⟩
-
-/-- The canonical split Artin–Wedderburn `K`-algebra isomorphism
-`B ≃ₐ[K] ∀ μ : Λ, Matrix (M μ) (M μ) K` induced by the cell representations when every cell radical
-vanishes. -/
-noncomputable def wedderburnAlgEquiv (h : ∀ μ, d.cellRadical μ = ⊥) :
-    B ≃ₐ[K] ∀ μ : Λ, Matrix (M μ) (M μ) K :=
-  AlgEquiv.ofBijective d.cellRepPiAlgHom
-    (d.cellRepPiAlgHom_bijective_of_forall_cellRadical_eq_bot h)
-
-/-- `wedderburnAlgEquiv` evaluates at each cell `μ` to `d.cellRep μ`. -/
-@[simp]
-theorem wedderburnAlgEquiv_apply (h : ∀ μ, d.cellRadical μ = ⊥) (b : B) (μ : Λ) :
-    d.wedderburnAlgEquiv h b μ = d.cellRep μ b :=
-  (rfl)
-
-/-- Coercing `wedderburnAlgEquiv` to an algebra homomorphism recovers `d.cellRepPiAlgHom`. -/
-@[simp, norm_cast]
-theorem toAlgHom_wedderburnAlgEquiv (h : ∀ μ, d.cellRadical μ = ⊥) :
-    (d.wedderburnAlgEquiv h : B →ₐ[K] ∀ μ : Λ, Matrix (M μ) (M μ) K) = d.cellRepPiAlgHom :=
-  (rfl)
-
-/-- `d.cellRepPiAlgHom` is a right inverse to `(d.wedderburnAlgEquiv h).symm`. -/
-@[simp]
-theorem cellRepPiAlgHom_wedderburnAlgEquiv_symm (h : ∀ μ, d.cellRadical μ = ⊥)
-    (m : ∀ μ : Λ, Matrix (M μ) (M μ) K) :
-    d.cellRepPiAlgHom ((d.wedderburnAlgEquiv h).symm m) = m :=
-  (d.wedderburnAlgEquiv h).apply_symm_apply m
-
-/-- The cell representation at `μ` of `(d.wedderburnAlgEquiv h).symm m` is `m μ`. -/
-@[simp]
-theorem cellRep_wedderburnAlgEquiv_symm (h : ∀ μ, d.cellRadical μ = ⊥)
-    (m : ∀ μ : Λ, Matrix (M μ) (M μ) K) (μ : Λ) :
-    d.cellRep μ ((d.wedderburnAlgEquiv h).symm m) = m μ :=
-  congrFun (d.cellRepPiAlgHom_wedderburnAlgEquiv_symm h m) μ
-
-/-- `(d.wedderburnAlgEquiv h).symm` is a left inverse to `d.cellRepPiAlgHom`. -/
-@[simp]
-theorem wedderburnAlgEquiv_symm_cellRepPiAlgHom (h : ∀ μ, d.cellRadical μ = ⊥) (b : B) :
-    (d.wedderburnAlgEquiv h).symm (d.cellRepPiAlgHom b) = b :=
-  (d.wedderburnAlgEquiv h).symm_apply_apply b
-
 /-- **Graham–Lehrer Theorem 3.8 (radical form).** Over a field `K` with finitely many cells, `B` is
 a semisimple ring if and only if every cell radical `d.cellRadical μ` is trivial. -/
 theorem isSemisimpleRing_iff_forall_cellRadical_eq_bot :
     IsSemisimpleRing B ↔ ∀ μ, d.cellRadical μ = ⊥ :=
   ⟨fun _ ↦ d.cellRadical_eq_bot_of_isSemisimpleRing,
-    fun h ↦ (d.wedderburnAlgEquiv h).symm.toRingEquiv.isSemisimpleRing⟩
+    fun h ↦ d.isSemisimpleRing_of_forall_isUnit_det_gramMatrix fun μ ↦
+      isUnit_iff_ne_zero.mpr ((d.cellRadical_eq_bot_iff_det_gramMatrix_ne_zero μ).mp (h μ))⟩
 
 /-- **Graham–Lehrer Theorem 3.8 (bilinear-form criterion).** Over a field `K` with finitely many
 cells, `B` is semisimple if and only if every cell bilinear form `d.cellForm μ` is nondegenerate. -/
@@ -401,8 +485,8 @@ is semisimple. -/
 theorem cellRepPiAlgHom_bijective_iff_isSemisimpleRing :
     Function.Bijective d.cellRepPiAlgHom ↔ IsSemisimpleRing B :=
   ⟨fun hbij ↦ (AlgEquiv.ofBijective d.cellRepPiAlgHom hbij).symm.toRingEquiv.isSemisimpleRing,
-    fun _ ↦ d.cellRepPiAlgHom_bijective_of_forall_cellRadical_eq_bot
-      d.cellRadical_eq_bot_of_isSemisimpleRing⟩
+    fun _ ↦ d.cellRepPiAlgHom_bijective_of_forall_isUnit_det_gramMatrix fun μ ↦
+      isUnit_iff_ne_zero.mpr (d.det_gramMatrix_ne_zero_of_isSemisimpleRing μ)⟩
 
 end Finite
 

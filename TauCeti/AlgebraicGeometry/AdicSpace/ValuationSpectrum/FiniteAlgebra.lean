@@ -80,7 +80,7 @@ theorem linearIndependent_of_valuation (v : Spv K) {ι : Type*} (w : ι → Spv 
   obtain ⟨i₀, hi₀t, hmax⟩ := Finset.exists_max_image t (fun j ↦ v.valuation (g j)) ⟨i, hit⟩
   have hg₀ : g i₀ ≠ 0 := fun h ↦ hgi <| by
     have := hmax i hit
-    rwa [h, map_zero, le_zero_iff, map_eq_zero] at this
+    rwa [h, map_zero, nonpos_iff_eq_zero, map_eq_zero] at this
   have hc : (w i₀).valuation (algebraMap K L (g i₀)) ≠ 0 := ((isUnit_iff_ne_zero.mpr hg₀).map
     (algebraMap K L) |>.map (w i₀).valuation).ne_zero
   have hrest : (w i₀).valuation (∑ j ∈ t.erase i₀, g j • e j) <
@@ -178,8 +178,8 @@ private theorem exists_valuation_le_one_lt (v : Spv K) {w₁ w₂ : Spv L}
   by_cases hb : b ∈ w₁.supp
   · have hb₂ : b ∈ w₂.supp := hsupp ▸ hb
     rw [supp_eq_valuation_supp, Valuation.mem_supp_iff] at hb hb₂
-    rw [hb, hb₂, le_zero_iff, le_zero_iff, ← Valuation.mem_supp_iff, ← Valuation.mem_supp_iff,
-      ← supp_eq_valuation_supp, ← supp_eq_valuation_supp, hsupp]
+    rw [hb, hb₂, nonpos_iff_eq_zero, nonpos_iff_eq_zero, ← Valuation.mem_supp_iff,
+      ← Valuation.mem_supp_iff, ← supp_eq_valuation_supp, ← supp_eq_valuation_supp, hsupp]
   · obtain ⟨y, hy⟩ := exists_valuation_mul_eq_one hq hb
     have key : ∀ w : Spv L, w.supp = w₁.supp →
         (w.valuation a ≤ w.valuation b ↔ w.valuation (a * y) ≤ 1) := fun w hw ↦ by
@@ -225,17 +225,18 @@ private theorem card_le_finrank_of_subset (v : Spv K) (s : Finset (Spv L))
   have hfib : ∀ w ∈ s, comap (algebraMap K L) w = v := fun w hw ↦ hs hw
   choose! u hu₀ hu₁ hu₂ using fun w₁ w₂ (h : w₁ ∈ s ∧ w₂ ∈ s ∧ w₁ ≠ w₂) ↦
     exists_separating v (hfib w₁ h.1) (hfib w₂ h.2.1) h.2.2
-  have hpair : ∀ w : s, ∀ w' ∈ s.erase w, w.1 ∈ s ∧ w' ∈ s ∧ w.1 ≠ w' := fun w w' hw' ↦
-    ⟨w.2, Finset.mem_of_mem_erase hw', (Finset.ne_of_mem_erase hw').symm⟩
+  have hpair : ∀ w : s, ∀ w' ∈ s.erase w, w.val ∈ s ∧ w' ∈ s ∧ w.val ≠ w' := fun w w' hw' ↦
+    ⟨w.property, Finset.mem_of_mem_erase hw', (Finset.ne_of_mem_erase hw').symm⟩
   rw [← Fintype.card_coe s]
-  refine (linearIndependent_of_valuation v (fun w : s ↦ w.1) (fun w ↦ hfib w w.2)
+  refine (linearIndependent_of_valuation v (fun w : s ↦ w.val) (fun w ↦ hfib w w.property)
     (fun w ↦ ∏ w' ∈ s.erase w, u w w') (fun w ↦ ?_) fun w w' hne ↦ ?_).fintype_card_le_finrank
   · rw [map_prod]
     exact Finset.prod_eq_one fun w'' hw'' ↦ hu₁ w w'' (hpair w w'' hw'')
-  · have hmem : w'.1 ∈ s.erase w := Finset.mem_erase.mpr ⟨fun h ↦ hne (Subtype.ext h.symm), w'.2⟩
+  · have hmem : w'.val ∈ s.erase w := Finset.mem_erase.mpr ⟨fun h ↦ hne (Subtype.ext h.symm),
+      w'.property⟩
     rw [map_prod, ← Finset.mul_prod_erase _ _ hmem]
     exact mul_lt_one_of_lt_of_le (hu₂ w w' (hpair w w' hmem)) <| Finset.prod_le_one
-      fun w'' hw'' ↦ hu₀ w w'' (hpair w w'' (Finset.mem_of_mem_erase hw'')) w' (hfib w' w'.2)
+      fun w'' hw'' ↦ hu₀ w w'' (hpair w w'' (Finset.mem_of_mem_erase hw'')) w' (hfib w' w'.property)
 
 /-- **Finiteness of fibres.** For a finite algebra `L` over a field `K`, only finitely many points
 of `Spv L` lie over a given point of `Spv K`. -/
