@@ -97,10 +97,10 @@ theorem integralTopForm_fubiniStudyForm :
       exact (congrArg (fun f ↦ Orientation.map (Fin 2) f Complex.basisOneI.orientation)
         hrefl).trans (by rw [Orientation.map_refl, Equiv.refl_apply, Complex.orientation]))
   rw [← hl, h.2, Measure.restrict_univ, Complex.addHaar_basisOneI]
-  -- On the basis `(1, i)` the form is the Fubini–Study density; the derivative applied to the
-  -- basis is `ContinuousLinearEquiv.refl`, which acts definitionally as the identity.
-  exact (integral_congr_ae (ae_of_all _ fun z ↦ fubiniStudyForm_coe_basisOneI z)).trans
-    integral_fubiniStudyDensity
+  -- On the basis `(1, i)` the form is the Fubini–Study density.
+  refine (integral_congr_ae (ae_of_all _ fun z ↦ ?_)).trans integral_fubiniStudyDensity
+  exact (congrArg _ (funext fun i ↦ ContinuousLinearEquiv.refl_apply ℝ ℂ _)).trans
+    (fubiniStudyForm_coe_basisOneI z)
 
 /-- **The Fubini–Study form has total area one.** The measure `|ω_FS|` of the Fubini–Study form
 gives the Riemann sphere measure `1`: in the affine chart it is Lebesgue measure with density
@@ -115,8 +115,8 @@ theorem measure_fubiniStudyForm_univ {m : MeasurableSpace (OnePoint ℂ)}
       Complex.basisOneI = fubiniStudyDensity z := by
     refine (mpullback_apply _ _ z _).trans ?_
     rw [(hasMFDerivAt_coe z).mfderiv]
-    -- `ContinuousLinearMap.id` acts definitionally as the identity on the basis vectors.
-    exact fubiniStudyForm_coe_basisOneI z
+    exact (congrArg _ (funext fun i ↦ ContinuousLinearMap.id_apply (R₁ := ℝ) _)).trans
+      (fubiniStudyForm_coe_basisOneI z)
   have hint : Integrable fubiniStudyDensity :=
     Integrable.of_integral_ne_zero (by rw [integral_fubiniStudyDensity]; exact one_ne_zero)
   have hf : MeasurableEmbedding ((↑) : ℂ → OnePoint ℂ) := isOpenEmbedding_coe.measurableEmbedding
