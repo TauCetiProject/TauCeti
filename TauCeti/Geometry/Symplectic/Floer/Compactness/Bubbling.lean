@@ -11,7 +11,6 @@ public import TauCeti.Geometry.Symplectic.Floer.Rescaling.Manifold
 public import TauCeti.MeasureTheory.Integral.EnergyConcentration
 import TauCeti.Geometry.Manifold.ExtChartAt.ClosedBall
 import TauCeti.Topology.Compactness.Compact
-import TauCeti.Topology.MetricSpace.SeparatedBalls
 import TauCeti.Topology.UniformSpace.LocallyUniformConvergence
 import TauCeti.Topology.UniformSpace.UniformConvergence.Comp
 
@@ -101,9 +100,9 @@ in `TauCeti.Geometry.Symplectic.Floer.Compactness.Manifold`.
   `exists_pos_forall_tendsto_setIntegral_floerEnergyDensity_ball_subseq_off_finset_of_mapsTo`).
   Along a further subsequence every bubbling point `z` carries a mass `m z ≥ δ`: for small
   `ε > 0` the energies of the discs `B_ε(z)` converge to `m z` plus the energy of `v` on the
-  punctured disc. The energy of `v` over `Ω \ Z` is finite and `∫_{Ω \ Z} ρ(v) + ∑ m z ≤ A`. This
-  is `TauCeti.exists_strictMono_tendsto_setIntegral_ball_and_setIntegral_add_sum_le` applied to the
-  energy densities, which are nonnegative because the structures are tamed.
+  punctured disc. The energy of `v` over `Ω \ Z` is finite and `∫_{Ω \ Z} ρ(v) + ∑ m z ≤ A`. This is
+  `TauCeti.exists_strictMono_tendsto_setIntegral_ball_and_setIntegral_add_sum_le_of_concentration`
+  applied to the energy densities, which are nonnegative because the structures are tamed.
 
 The bubbles at the points of `Z` and breaking along cylindrical ends are not treated here.
 
@@ -856,22 +855,14 @@ theorem exists_pos_forall_tendsto_setIntegral_floerEnergyDensity_ball_subseq_off
     (sdiff_subset.trans (hΩD.trans hDU))
     (fun n ↦ ((hu (φ n)).mono sdiff_subset).mdifferentiableOn (by simp))
     (fun n ↦ (huK (φ n)).mono_left sdiff_subset) hv hvK hconv hdconv
-  -- The energy of `v` over `Ω \ Z` is finite, and the bubbling points carry masses.
-  obtain ⟨ψ, m, hψ, hint_v, hm, hmE⟩ :=
-    exists_strictMono_tendsto_setIntegral_ball_and_setIntegral_add_sum_le hΩ hZΩ hnn
-      (fun n ↦ hint (φ n)) (fun n ↦ hA (φ n)) hdens
-  have hconcψ (z : ℝ × ℝ) (hz : z ∈ Z) (ε : ℝ) (hε : 0 < ε) : ∀ᶠ n in atTop,
-      δ ≤ ∫ y in ball z ε ∩ Ω, ω.floerEnergyDensity Ks Kt (u (φ (ψ n))) y :=
-    hψ.tendsto_atTop.eventually (hconc z hz ε hε)
-  refine ⟨φ ∘ ψ, Z, v, m, hφ.comp hψ, hZΩ, hconcψ, hv, hvK,
+  -- The energy of `v` over `Ω \ Z` is finite, and the bubbling points carry masses at least `δ`.
+  obtain ⟨ψ, m, hψ, hint_v, hconcψ, hδm, hm, hmE⟩ :=
+    exists_strictMono_tendsto_setIntegral_ball_and_setIntegral_add_sum_le_of_concentration hΩ hZΩ
+      hnn (fun n ↦ hint (φ n)) (fun n ↦ hA (φ n)) hdens hconc
+  exact ⟨φ ∘ ψ, Z, v, m, hφ.comp hψ, hZΩ, hconcψ, hv, hvK,
     hconv.comp_tendsto hψ.tendsto_atTop, fun y hy ↦ (hpt y hy).comp hψ.tendsto_atTop,
     fun α hα ↦ (hdconv α hα).comp_tendsto hψ.tendsto_atTop, hveq,
-    hdens.comp_tendsto hψ.tendsto_atTop, hint_v, fun z hz ↦ ?_, hm, hmE⟩
-  -- A punctured disc about `z` avoids the other bubbling points, so `v` has finite energy there.
-  obtain ⟨r, hr, -, hrS⟩ :=
-    exists_pos_ball_subset_and_ball_sdiff_singleton_subset_sdiff hΩ Z.finite_toSet (hZΩ hz)
-  exact le_of_tendsto_setIntegral_ball hΩ (hZΩ hz) hr (hint_v.mono_set hrS) (hm z hz)
-    (hconcψ z hz)
+    hdens.comp_tendsto hψ.tendsto_atTop, hint_v, hδm, hm, hmE⟩
 
 end IsNondegenerate
 
