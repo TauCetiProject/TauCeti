@@ -10,7 +10,6 @@ public import TauCeti.Combinatorics.SimpleGraph.Connectivity.VertexConnectivity
 
 import Mathlib.Combinatorics.SimpleGraph.Acyclic
 import Mathlib.Order.Preorder.Finite
-import TauCeti.Combinatorics.SimpleGraph.Connectivity.Connected
 import TauCeti.Combinatorics.SimpleGraph.Connectivity.Fan
 import TauCeti.Combinatorics.SimpleGraph.Paths
 

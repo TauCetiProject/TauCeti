@@ -7,8 +7,6 @@ module
 
 public import TauCeti.Combinatorics.SimpleGraph.Connectivity.Ear.Basic
 
-import TauCeti.Combinatorics.SimpleGraph.Connectivity.Connected
-
 /-!
 # Ear decompositions of `2`-edge-connected simple graphs
 
