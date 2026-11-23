@@ -11,10 +11,8 @@ public import Mathlib.MeasureTheory.Integral.Bochner.Basic
 public import Mathlib.MeasureTheory.Measure.Lebesgue.EqHaar
 public import TauCeti.Analysis.Holder.Normed
 
-import Mathlib.Analysis.Normed.Module.Completion
 import Mathlib.MeasureTheory.Integral.Bochner.Set
 import TauCeti.Analysis.InnerProductSpace.HalfSpace
-import TauCeti.MeasureTheory.Function.Lp.BallAverage
 import TauCeti.MeasureTheory.Measure.Haar.NormedSpace
 import TauCeti.Topology.MetricSpace.Holder
 

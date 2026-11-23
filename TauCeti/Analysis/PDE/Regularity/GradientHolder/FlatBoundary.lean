@@ -5,12 +5,15 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.MeasureTheory.Integral.Average
 public import Mathlib.Topology.MetricSpace.Holder
-public import TauCeti.Analysis.InnerProductSpace.Harmonic.BoundaryDecay
+public import TauCeti.Analysis.Normed.Lp.GraphDomain
 public import TauCeti.Analysis.Sobolev.W1p.Basic
 import TauCeti.Analysis.Holder.Lp
+import TauCeti.Analysis.InnerProductSpace.Harmonic.BoundaryDecay
 import TauCeti.Analysis.PDE.EnergyForm.Restriction
 import TauCeti.Analysis.PDE.Regularity.HarmonicReplacement
+import TauCeti.Analysis.PDE.WeakLaplacian
 import TauCeti.Analysis.SpecificLimits.DecayIteration
 import TauCeti.Analysis.Sobolev.W1p.Extension
 import TauCeti.Analysis.Sobolev.W1p.LevelSet
@@ -347,14 +350,16 @@ theorem exists_setIntegral_ball_inter_normalHalfSpace_norm_gradient_sub_sq_le {�
     refine h.trans_eq ?_
     simp only [ψ, M, D, n]
     ring
-  have hf : MemLp (W1p.gradient u : WithLp 2 (ℝ × E) → WithLp 2 (ℝ × E)) 2
-      (volume.restrict (ball x₀ R ∩ (normalHalfSpace (E := E) a : Set _))) :=
+  have hf : ∀ s ≤ R, MemLp (W1p.gradient u : WithLp 2 (ℝ × E) → WithLp 2 (ℝ × E)) 2
+      (volume.restrict (ball x₀ s ∩ (normalHalfSpace (E := E) a : Set _))) := fun s hs =>
     (Lp.memLp (W1p.gradient u)).mono_measure
-      (Measure.restrict_mono (inter_subset_left.trans hball) le_rfl)
+      (Measure.restrict_mono (inter_subset_left.trans ((ball_subset_ball hs).trans hball)) le_rfl)
   have hHm : ∀ s, MeasurableSet (ball x₀ s ∩ (normalHalfSpace (E := E) a : Set _)) := fun _ =>
     measurableSet_ball.inter (normalHalfSpace a).isOpen.measurableSet
   have h := hit (φ := ψ) (R := R) (B := M * (K : ℝ) ^ 2) (ε := 0) (by positivity) hε₀.le
-    (monotoneOn_setIntegral_ball_inter_normalHalfSpace_norm_sub_sq hf)
+    (fun _ _ s hs hss => setIntegral_norm_sub_toLp_fst_setAverage_sq_le_of_subset
+      (inter_subset_inter_left _ (ball_subset_ball hss))
+      ((measure_mono inter_subset_left).trans_lt measure_ball_lt_top).ne (hf s hs.2) _)
     (fun s _ => setIntegral_nonneg (hHm s) fun _ _ => sq_nonneg _) hstep t R ht htR le_rfl
   have hX : 0 ≤ (t / R) ^ ((n : ℝ) + 2 * α) * ψ R :=
     mul_nonneg (Real.rpow_nonneg (div_nonneg ht.le (ht.le.trans htR)) _)
@@ -364,11 +369,7 @@ theorem exists_setIntegral_ball_inter_normalHalfSpace_norm_gradient_sub_sq_le {�
   have hM : (t / R) ^ ((n : ℝ) + 2 * α) * ψ R + M * (K : ℝ) ^ 2 * t ^ ((n : ℝ) + 2 * α) ≤
       max 1 M * ((t / R) ^ ((n : ℝ) + 2 * α) * ψ R + (K : ℝ) ^ 2 * t ^ ((n : ℝ) + 2 * α)) := by
     nlinarith [le_max_left 1 M, le_max_right 1 M]
-  calc ψ t ≤ C₀ * ((t / R) ^ ((n : ℝ) + 2 * α) * ψ R + M * (K : ℝ) ^ 2 * t ^ ((n : ℝ) + 2 * α)) :=
-        h
-    _ ≤ C₀ * (max 1 M * ((t / R) ^ ((n : ℝ) + 2 * α) * ψ R +
-          (K : ℝ) ^ 2 * t ^ ((n : ℝ) + 2 * α))) := mul_le_mul_of_nonneg_left hM hC₀.le
-    _ = _ := by ring
+  exact h.trans ((mul_le_mul_of_nonneg_left hM hC₀.le).trans_eq (by ring))
 
 end PDE
 

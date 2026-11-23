@@ -48,9 +48,6 @@ bounded domain are the Dirichlet problem with boundary values in `H¹(Ω)`,
 * `TauCeti.PDE.UniformlyEllipticOn.mul_norm_gradient_sub_le_add`: the energy estimate
   `λ ‖∇(u - w)‖ ≤ ‖G‖ + L` when `a(u, v) = ⟪G, ∇v⟫ + ℓ v` with `|ℓ v| ≤ L ‖∇v‖`, as for an
   equation `-∂ᵢ(aⁱʲ ∂ⱼu) = f - div G` with a scalar datum `f`.
-* `TauCeti.PDE.W1p.weaklyHarmonicOn_value_of_forall_inner_gradient_eq_zero`: a function of
-  `H¹(Ω)` whose gradient is `L²`-orthogonal to the gradients of test functions is weakly
-  harmonic, in any finite-dimensional real inner product space.
 * `UniformlyEllipticOn.lintegral_enorm_gradient_sq_le_of_forall_energyFormH1_eq_divergence`:
   the energy estimate `∫_Ω ‖∇u‖² ≤ ∫_Ω (‖F‖/λ)²` for the `H¹₀(Ω)` solution of
   `-∂ᵢ(aⁱʲ ∂ⱼu) = ∂ᵢFⁱ`.
@@ -83,25 +80,6 @@ open scoped Distributions Gradient InnerProductSpace
 namespace TauCeti
 
 namespace PDE
-
-/-- **Sobolev functions orthogonal to the gradients of test functions are weakly harmonic.** If
-`w ∈ H¹(Ω)`, for an open `Ω` in a finite-dimensional real inner product space, satisfies
-`⟪∇w, ∇φ⟫_{L²(Ω)} = 0` for every test function `φ` on `Ω`, then the value of `w` is weakly
-harmonic on `Ω`: `∫ Δφ • w = -∫ ⟪∇φ, ∇w⟫ = 0`. -/
-theorem W1p.weaklyHarmonicOn_value_of_forall_inner_gradient_eq_zero {F : Type*}
-    [NormedAddCommGroup F] [InnerProductSpace ℝ F] [FiniteDimensional ℝ F] [MeasurableSpace F]
-    [BorelSpace F] {mu : Measure F} [mu.IsAddHaarMeasure] {Omega : Opens F}
-    {w : W1p mu Omega 2} (hw : ∀ φ : 𝓓(Omega, ℝ),
-      ⟪W1p.gradient w, W1p.gradient (W1p.ofTestFunctionₗ mu Omega 2 φ)⟫_ℝ = 0) :
-    WeaklyHarmonicOn mu Omega (W1p.value w) := by
-  refine weaklyHarmonicOn_iff.2 ⟨(W1p.hasWeakFDerivOn w).locallyIntegrableOn, fun φ => ?_⟩
-  rw [(W1p.hasWeakFDerivOn w).integral_laplacian_smul_eq_neg_integral_inner φ, neg_eq_zero]
-  simp_rw [real_inner_comm (W1p.gradient w _)]
-  rw [← φ.setIntegral_inner_gradient_eq_integral_inner_gradient _ φ.tsupport_subset, ← hw φ,
-    L2.inner_def]
-  refine integral_congr_ae ?_
-  filter_upwards [gradientTestFunctionLp_apply_ae (mu := mu) (Omega := Omega) 2 φ] with x hx
-  rw [W1p.gradient_ofTestFunctionₗ, hx]
 
 variable {ι : Type*} [Fintype ι] {mu : Measure (EuclideanSpace ℝ ι)}
   [mu.IsAddHaarMeasure] {Omega : Opens (EuclideanSpace ℝ ι)}

@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.PDE.DirichletProblem
 public import Mathlib.Analysis.InnerProductSpace.Laplacian
+public import TauCeti.Analysis.InnerProductSpace.Harmonic.Weyl
 import TauCeti.Analysis.InnerProductSpace.Laplacian.Basic
 import TauCeti.Analysis.Sobolev.WeakDeriv.Laplacian
 
@@ -17,6 +18,8 @@ Let `Ω ⊆ ℝⁿ` be open and let `u ∈ H¹(Ω)`. Against a test function `φ
 `-Δ` is Green's identity `∫_Ω ∇φ · ∇u = -∫ Δφ u`, with no boundary condition on `u`. Since the
 test functions are dense in `H¹₀(Ω)`, a distributional solution `u ∈ H¹(Ω)` of `-Δu = f`, with
 `f ∈ L²(Ω)`, is therefore a weak solution: `∫_Ω ∇v · ∇u = ∫_Ω f v` for every `v ∈ H¹₀(Ω)`.
+In the same way, in any finite-dimensional real inner product space, a function of `H¹(Ω)` whose
+gradient is `L²`-orthogonal to the gradients of test functions is weakly harmonic.
 
 ## Main declarations
 
@@ -31,6 +34,9 @@ test functions are dense in `H¹₀(Ω)`, a distributional solution `u ∈ H¹(�
 * `TauCeti.PDE.isWeakSolutionDirichlet_one_zero_zero_iff_forall_neg_setIntegral_laplacian_mul_eq`:
   `u ∈ H¹₀(Ω)` is a weak solution of `-Δu = f` exactly when `-Δu = f` in the sense of
   distributions on `Ω`.
+* `TauCeti.PDE.W1p.weaklyHarmonicOn_value_of_forall_inner_gradient_eq_zero`: a function of
+  `H¹(Ω)` whose gradient is `L²`-orthogonal to the gradients of test functions is weakly
+  harmonic, in any finite-dimensional real inner product space.
 
 ## References
 
@@ -123,6 +129,29 @@ theorem isWeakSolutionDirichlet_one_zero_zero_iff_forall_neg_setIntegral_laplaci
   (isWeakSolutionDirichlet_iff f u).trans
     (forall_energyFormH1_one_zero_zero_eq_setIntegral_iff_forall_neg_setIntegral_laplacian_mul_eq
       f u)
+
+section InnerProductSpace
+
+/-- **Sobolev functions orthogonal to the gradients of test functions are weakly harmonic.** If
+`w ∈ H¹(Ω)`, for an open `Ω` in a finite-dimensional real inner product space, satisfies
+`⟪∇w, ∇φ⟫_{L²(Ω)} = 0` for every test function `φ` on `Ω`, then the value of `w` is weakly
+harmonic on `Ω`: `∫ Δφ • w = -∫ ⟪∇φ, ∇w⟫ = 0`. -/
+theorem W1p.weaklyHarmonicOn_value_of_forall_inner_gradient_eq_zero {F : Type*}
+    [NormedAddCommGroup F] [InnerProductSpace ℝ F] [FiniteDimensional ℝ F] [MeasurableSpace F]
+    [BorelSpace F] {mu : Measure F} [mu.IsAddHaarMeasure] {Omega : Opens F}
+    {w : W1p mu Omega 2} (hw : ∀ φ : 𝓓(Omega, ℝ),
+      ⟪W1p.gradient w, W1p.gradient (W1p.ofTestFunctionₗ mu Omega 2 φ)⟫_ℝ = 0) :
+    WeaklyHarmonicOn mu Omega (W1p.value w) := by
+  refine weaklyHarmonicOn_iff.2 ⟨(W1p.hasWeakFDerivOn w).locallyIntegrableOn, fun φ => ?_⟩
+  rw [(W1p.hasWeakFDerivOn w).integral_laplacian_smul_eq_neg_integral_inner φ, neg_eq_zero]
+  simp_rw [real_inner_comm (W1p.gradient w _)]
+  rw [← φ.setIntegral_inner_gradient_eq_integral_inner_gradient _ φ.tsupport_subset, ← hw φ,
+    L2.inner_def]
+  refine integral_congr_ae ?_
+  filter_upwards [gradientTestFunctionLp_apply_ae (mu := mu) (Omega := Omega) 2 φ] with x hx
+  rw [W1p.gradient_ofTestFunctionₗ, hx]
+
+end InnerProductSpace
 
 end PDE
 

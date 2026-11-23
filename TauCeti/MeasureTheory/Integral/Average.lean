@@ -44,7 +44,7 @@ comparison function `H`, up to the distance `∫_t ‖f - H‖²`; this is the c
 Campanato's method.
 For a function with values in the Euclidean product `ℝ × E`, the same splitting in the first
 coordinate shows that among the constants `(c, 0)` the best one is the first coordinate of the
-average.
+average; on nested sets, the square distance from `f` to this best constant is monotone.
 
 Averages are unchanged when the measure is multiplied by a positive finite scalar. They are also
 unchanged by a change of variables that rescales the measure by a constant factor,
@@ -130,6 +130,8 @@ applied to an integrable function that is almost everywhere at least `a`.
   multiple of `ν` is from `f` on `t`.
 * `TauCeti.setIntegral_norm_sub_toLp_fst_setAverage_sq_le`: for a function with values in the
   Euclidean product `ℝ × E`, the best constant of the form `(c, 0)`.
+* `TauCeti.setIntegral_norm_sub_toLp_fst_setAverage_sq_le_of_subset`: the best constant of the
+  form `(c, 0)` on `s ⊆ t` is no farther from `f` on `s` than any `(c, 0)` is from `f` on `t`.
 * `TauCeti.sq_setAverage_norm_le_setAverage_norm_sq`: Jensen's inequality
   `(⨍_s ‖g‖)² ≤ ⨍_s ‖g‖²`, bounding the mean oscillation by the square mean oscillation.
 * `TauCeti.measureReal_mul_sq_norm_setAverage_le`: the real form `μ s ‖f_s‖² ≤ ∫_s ‖f‖²`, for
@@ -1045,6 +1047,19 @@ theorem setIntegral_norm_sub_toLp_fst_setAverage_sq_le (hs : μ s ≠ ⊤)
   simpa only [Real.norm_eq_abs, sq_abs] using
     setIntegral_norm_sub_setAverage_sq_le_setIntegral_norm_sub_sq hs
       (hfst.integrable one_le_two) (hnsq c)
+
+/-- **The best normal constant on nested sets.** Let `s ⊆ t` with `μ t < ∞` and let `f`, with
+values in `ℝ × E`, be square integrable on `t`. The square mean distance on `s` from `f` to its
+best normal constant `((f_s).fst, 0)` is at most the square mean distance on `t` from `f` to any
+`(c, 0)`. In particular the square distance to the best normal constant is monotone in the set. -/
+theorem setIntegral_norm_sub_toLp_fst_setAverage_sq_le_of_subset {t : Set X} (hst : s ⊆ t)
+    (ht : μ t ≠ ⊤) {f : X → WithLp 2 (ℝ × E)} (hf : MemLp f 2 (μ.restrict t)) (c : ℝ) :
+    ∫ x in s, ‖f x - WithLp.toLp 2 ((⨍ y in s, f y ∂μ).fst, 0)‖ ^ 2 ∂μ ≤
+      ∫ x in t, ‖f x - WithLp.toLp 2 (c, 0)‖ ^ 2 ∂μ :=
+  (setIntegral_norm_sub_toLp_fst_setAverage_sq_le (ne_top_of_le_ne_top ht (measure_mono hst))
+    (hf.mono_measure (Measure.restrict_mono hst le_rfl)) c).trans
+    (setIntegral_mono_set (hf.integrableOn_norm_sub_sq_of_subset subset_rfl ht _)
+      (ae_of_all _ fun _ => by positivity) hst.eventuallySubset)
 
 end NormalConstant
 
