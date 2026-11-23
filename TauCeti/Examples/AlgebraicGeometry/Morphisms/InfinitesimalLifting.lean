@@ -23,7 +23,7 @@ For a commutative ring `k` (nontrivial where the statement needs it, e.g. a fiel
   asking for a nilpotent ideal would reject it.
 * **Affine spaces are formally smooth.** For a scheme `S`, `𝔸(σ; S) ⟶ S` is formally smooth: it is
   the base change of `Spec ℤ[x_i, i ∈ σ] ⟶ Spec ℤ`, and a lift across a square-zero thickening
-  amounts to lifting the coordinates. For `σ` empty it is formally étale: the lift is unique.
+  amounts to lifting the coordinates. For `σ` empty it is an isomorphism, hence formally étale.
 * **A closed point of the line is not formally smooth.** The origin `Spec k ⟶ 𝔸¹_k` is not formally
   smooth: the test map `Spec k[ε] ⟶ 𝔸¹_k` with coordinate `ε` would need to factor through the
   origin, forcing `ε = 0`; formally, the ideal `(x)` of the origin is not idempotent.
@@ -139,21 +139,11 @@ theorem formallySmooth_affineSpace (σ : Type u) (S : Scheme.{u}) :
     infer_instance
   exact FormallySmooth.pullback_fst (terminal.from S) _
 
-/-- **Affine space of dimension `0` is formally étale**: for `σ` empty, `𝔸(σ; S) ⟶ S` is the base
-change of the isomorphism `Spec ℤ[x_i, i ∈ σ] ⟶ Spec ℤ`, and lifts across square-zero thickenings
-are unique. -/
+/-- **Affine space of dimension `0` is formally étale**: for `σ` empty, `𝔸(σ; S) ⟶ S` is an
+isomorphism, so lifts across square-zero thickenings exist and are unique. -/
 theorem formallyEtale_affineSpace_of_isEmpty (σ : Type u) [IsEmpty σ] (S : Scheme.{u}) :
-    FormallyEtale (𝔸(σ; S) ↘ S) := by
-  have := isIso_of_isTerminal specULiftZIsTerminal.{u} terminalIsTerminal (terminal.from _)
-  have : FormallyEtale (Spec.map (CommRingCat.ofHom
-      (MvPolynomial.C : ULift.{u} ℤ →+* MvPolynomial σ (ULift.{u} ℤ)))) := by
-    rw [formallyEtale_SpecMap_iff, CommRingCat.hom_ofHom, ← MvPolynomial.algebraMap_eq,
-      RingHom.formallyEtale_algebraMap]
-    exact Algebra.FormallyEtale.of_equiv (MvPolynomial.isEmptyAlgEquiv _ σ).symm
-  have : FormallyEtale (terminal.from (Spec (.of (MvPolynomial σ (ULift.{u} ℤ))))) := by
-    rw [← terminal.comp_from (Spec.map (CommRingCat.ofHom MvPolynomial.C))]
-    infer_instance
-  exact FormallyEtale.pullback_fst (terminal.from S) _
+    FormallyEtale (𝔸(σ; S) ↘ S) :=
+  inferInstance
 
 /-! ### The origin of the affine line -/
 
