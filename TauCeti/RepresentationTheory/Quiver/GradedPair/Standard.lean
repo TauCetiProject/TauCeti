@@ -119,26 +119,6 @@ theorem standardBasis_mem_grade (x : StandardIndex m) :
   rw [standardBasis_apply, ← degree_standardSpace_standardIndexEquiv]
   exact (standardSpace m).single_mem_grade _ 1
 
-/-- The degree-`a` dimension of the standard space is the number of occurrences of `m` containing
-`a`. -/
-@[simp]
-theorem finrank_grade_standardSpace (a : ℤ) :
-    finrank ℂ ((standardSpace m).grade a) = degreeDimension m a := by
-  rw [GradedCoordSpace.finrank_grade, ← card_filter_mem_occurrenceInterval,
-    ← Fintype.card_subtype, ← Fintype.card_subtype]
-  -- A coordinate of degree `a` is a valid label `(i, a)`, which is determined by `i`.
-  let f : {x : StandardIndex m // (x.2 : ℤ) = a} ≃
-      {i : Fin m.card // a ∈ occurrenceInterval m i} :=
-    { toFun x := ⟨x.val.1, (congrArg (· ∈ occurrenceInterval m x.val.1) x.property).mp
-        x.val.mem_occurrenceInterval⟩
-      invFun i := ⟨StandardIndex.mk i.val a i.property, rfl⟩
-      left_inv := by
-        rintro ⟨⟨i, b, hb⟩, rfl⟩
-        rfl
-      right_inv _ := rfl }
-  refine Fintype.card_congr (((standardIndexEquiv m).symm.subtypeEquiv fun k ↦ ?_).trans f)
-  rw [← degree_standardSpace_standardIndexEquiv, Equiv.apply_symm_apply]
-
 /-! ### Standard vectors -/
 
 open Classical in
@@ -164,8 +144,8 @@ theorem standardVector_of_notMem {i : Fin m.card} {a : ℤ} (h : a ∉ occurrenc
 
 /-- Each basis vector of the standard space is a standard vector. -/
 theorem standardBasis_eq_standardVector (x : StandardIndex m) :
-    standardBasis m x = standardVector m x.1 x.2 :=
-  (standardVector_of_mem x.mem_occurrenceInterval).symm
+    standardBasis m x = standardVector m x.1 x.2 := by
+  rw [standardVector_of_mem x.mem_occurrenceInterval, StandardIndex.mk_fst_snd]
 
 /-- A standard vector vanishes exactly when its degree lies outside its interval. -/
 @[simp]
@@ -181,7 +161,7 @@ theorem standardVector_mem_grade (i : Fin m.card) (a : ℤ) :
     standardVector m i a ∈ (standardSpace m).grade a := by
   by_cases h : a ∈ occurrenceInterval m i
   · rw [standardVector_of_mem h]
-    exact standardBasis_mem_grade m (StandardIndex.mk i a h)
+    simpa only [StandardIndex.coe_snd_mk] using standardBasis_mem_grade m (StandardIndex.mk i a h)
   · rw [standardVector_of_notMem h]
     exact zero_mem _
 
@@ -195,8 +175,8 @@ theorem standardVector_inj {i j : Fin m.card} {a b : ℤ} (ha : a ∈ occurrence
     rw [standardVector_of_notMem hb, standardVector_eq_zero_iff] at h
     exact h ha
   rw [standardVector_of_mem ha, standardVector_of_mem hb] at h
-  have hx := (standardBasis m).injective h
-  exact ⟨congrArg Sigma.fst hx, congrArg (fun x : StandardIndex m ↦ (x.2 : ℤ)) hx⟩
+  simpa only [Sigma.subtype_ext_iff, StandardIndex.fst_mk, StandardIndex.coe_snd_mk] using
+    (standardBasis m).injective h
 
 /-- The standard vectors of the valid labels are linearly independent. -/
 theorem linearIndependent_standardVector :
@@ -250,7 +230,9 @@ private theorem linearIndependent_standardVector_mem (m : Multisegment) (a : ℤ
       fun i : {i : Fin m.card // a ∈ occurrenceInterval m i} ↦ standardVector m i a := by
   have hinj : Function.Injective fun i : {i : Fin m.card // a ∈ occurrenceInterval m i} ↦
       StandardIndex.mk i.val a i.property :=
-    fun i j h ↦ Subtype.ext (by simpa using congrArg Sigma.fst h)
+    fun i j h ↦ Subtype.ext (by
+      simpa only [Sigma.subtype_ext_iff, StandardIndex.fst_mk, StandardIndex.coe_snd_mk,
+        and_true] using h)
   convert linearIndependent_standardVector.comp _ hinj with i
   simp
 
@@ -269,6 +251,15 @@ theorem coe_standardGradeBasis_apply (a : ℤ)
     (i : {i : Fin m.card // a ∈ occurrenceInterval m i}) :
     (standardGradeBasis m a i : (standardSpace m).Carrier) = standardVector m i a := by
   simp [standardGradeBasis]
+
+variable (m) in
+/-- The degree-`a` dimension of the standard space is the number of occurrences of `m` containing
+`a`. -/
+@[simp]
+theorem finrank_grade_standardSpace (a : ℤ) :
+    finrank ℂ ((standardSpace m).grade a) = degreeDimension m a := by
+  rw [finrank_eq_card_basis (standardGradeBasis m a), Fintype.card_subtype,
+    card_filter_mem_occurrenceInterval]
 
 /-! ### The standard pairs -/
 
@@ -293,7 +284,8 @@ private theorem isHomogeneous_standardOperator (m : Multisegment) (d : StepDirec
   rintro _ ⟨i, rfl⟩
   dsimp only
   by_cases h : a ∈ occurrenceInterval m i
-  · rw [standardVector_of_mem h, standardOperator_standardBasis]
+  · rw [standardVector_of_mem h, standardOperator_standardBasis,
+      StandardIndex.coe_snd_mk, StandardIndex.fst_mk]
     exact standardVector_mem_grade i _
   · rw [standardVector_of_notMem h, map_zero]
     exact zero_mem _
