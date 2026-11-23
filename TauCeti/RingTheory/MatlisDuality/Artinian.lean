@@ -13,8 +13,8 @@ public import TauCeti.RingTheory.Artinian.Module
 # Artinian modules and their Matlis duals
 
 Let `E` be an injective module containing the residue field of a commutative local ring `R`.
-The annihilator embedding (`TauCeti.matlisAnnihilatorOrderEmbedding`, in
-`TauCeti/Algebra/Module/Injective/Cogenerator/LocalRing.lean`) implies that if `Hom_R(M, E)` is
+The annihilator embedding (`TauCeti.annihilatorOrderEmbedding`, in
+`TauCeti/Algebra/Module/Injective/Cogenerator/Basic.lean`) implies that if `Hom_R(M, E)` is
 Noetherian over any semiring of scalars acting on `E` and commuting with `R`, then `M` is
 Artinian. In particular, for the injective hull of the residue field of a Noetherian local ring, a
 Matlis dual finite over the completion detects Artinianness of the original module, with no

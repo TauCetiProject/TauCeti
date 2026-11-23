@@ -8,7 +8,6 @@ module
 public import TauCeti.Algebra.Module.Injective.Envelope.AdicCompletion
 public import TauCeti.RingTheory.Artinian.LocalRing
 public import TauCeti.RingTheory.MatlisDuality.Complete
-import TauCeti.RingTheory.AdicCompletion.Noetherian
 
 /-!
 # Matlis duality over the completion of a Noetherian local ring
@@ -24,17 +23,17 @@ the residue field of the complete Noetherian local ring `R̂`. Applying complete
 over `R̂` then establishes the exact duality and evaluation biduality between Artinian `R`-modules
 and finitely generated `R̂`-modules (Stacks Project Remark 47.7.9, Tag 0EGL), with no finiteness
 hypothesis on `κ`:
-* Both contravariant functors `Hom_R(-, E)` and `Hom_{R̂}(-, E)` are exact.
 * An `R̂`-module `N` is finitely generated over `R̂` if and only if `Hom_{R̂}(N, E)` is Artinian
-  over `R`, and evaluation gives `N ≃ₗ[R̂] ((N →ₗ[R̂] E) →ₗ[R] E)`
+  over `R` (`TauCeti.IsInjectiveEnvelope.finite_adicCompletion_iff_isArtinian_adicCompletionDual`),
+  and evaluation gives `N ≃ₗ[R̂] ((N →ₗ[R̂] E) →ₗ[R] E)`
   (`TauCeti.IsInjectiveEnvelope.evalEquivAdicCompletionOfFinite`).
 * Conversely, for an Artinian `R`-module `M`, `Hom_R(M, E)` is finitely generated over `R̂` and
   evaluation gives `M ≃ₗ[R] ((M →ₗ[R] E) →ₗ[R̂] E)`
   (`TauCeti.IsInjectiveEnvelope.adicCompletionEvalEquivOfArtinian`).
-* For a finitely generated `R`-module `N`, `Hom_{R̂}(N̂, E) ≃ₗ[R̂] Hom_R(N, E)`
-  (`TauCeti.IsInjectiveEnvelope.adicCompletionLinearMapEquiv`, from
-  `TauCeti/Algebra/Module/Injective/Envelope/AdicCompletion.lean`), identifying the double Matlis
-  dual of `N` with its `𝔪`-adic completion: `N̂ ≃ₗ[R̂] ((N →ₗ[R] E) →ₗ[R] E)`
+* For a finitely generated `R`-module `N`, `AdicCompletion.torsionLiftEquiv` identifies
+  `Hom_{R̂}(N̂, E)` with `Hom_R(N, E)` (`TauCeti/RingTheory/AdicCompletion/Torsion.lean`),
+  identifying the double Matlis dual of `N` with its `𝔪`-adic completion:
+  `N̂ ≃ₗ[R̂] ((N →ₗ[R] E) →ₗ[R] E)`
   (`TauCeti.IsInjectiveEnvelope.adicCompletionEquivDoubleDualOfFinite`).
 
 ## References
@@ -60,57 +59,14 @@ variable {R : Type u} [CommRing R] [IsLocalRing R] [IsNoetherianRing R]
 
 include hι
 
-section Exactness
-
-/-- The Matlis dual `Hom_R(-, E)` valued in `R̂`-modules is exact on every exact pair of
-`R`-modules. -/
-theorem exact_lcomp_adicCompletion {P Q M : Type*} [AddCommGroup P] [Module R P]
-    [AddCommGroup Q] [Module R Q] [AddCommGroup M] [Module R M]
-    {f : P →ₗ[R] Q} {g : Q →ₗ[R] M} (hfg : Function.Exact f g) :
-    letI := AdicCompletion.torsionModule hι.mem_primaryComponent
-    Function.Exact (g.lcomp (_root_.AdicCompletion (maximalIdeal R) R) E)
-      (f.lcomp (_root_.AdicCompletion (maximalIdeal R) R) E) := by
-  let := AdicCompletion.torsionModule hι.mem_primaryComponent
-  have := AdicCompletion.torsionModule_isScalarTower hι.mem_primaryComponent
-  have := hι.moduleInjective
-  exact hfg.lcomp_of_moduleInjective (_root_.AdicCompletion (maximalIdeal R) R) E
-
-/-- The completion-linear Matlis dual `Hom_{R̂}(-, E)` is exact on every exact pair of
-`R̂`-modules. -/
-theorem exact_adicCompletion_lcomp {P Q M : Type*} [AddCommGroup P]
-    [Module (_root_.AdicCompletion (maximalIdeal R) R) P]
-    [AddCommGroup Q] [Module (_root_.AdicCompletion (maximalIdeal R) R) Q]
-    [AddCommGroup M] [Module (_root_.AdicCompletion (maximalIdeal R) R) M]
-    {f : P →ₗ[_root_.AdicCompletion (maximalIdeal R) R] Q}
-    {g : Q →ₗ[_root_.AdicCompletion (maximalIdeal R) R] M}
-    (hfg : Function.Exact f g) :
-    letI := AdicCompletion.torsionModule hι.mem_primaryComponent
-    Function.Exact (g.lcomp (_root_.AdicCompletion (maximalIdeal R) R) E)
-      (f.lcomp (_root_.AdicCompletion (maximalIdeal R) R) E) := by
-  let := AdicCompletion.torsionModule hι.mem_primaryComponent
-  have := hι.adicCompletion.moduleInjective
-  exact hfg.lcomp_of_moduleInjective (_root_.AdicCompletion (maximalIdeal R) R) E
-
-end Exactness
-
 section FiniteOverCompletion
 
 variable (N : Type w) [AddCommGroup N] [Module (_root_.AdicCompletion (maximalIdeal R) R) N]
 
 /-- For a finitely generated `R̂`-module `N`, the completion-linear Matlis dual `Hom_{R̂}(N, E)` is
-Artinian over `R̂`. -/
-theorem isArtinian_adicCompletion_linearMap_of_finite
-    [Module.Finite (_root_.AdicCompletion (maximalIdeal R) R) N] :
-    letI := AdicCompletion.torsionModule hι.mem_primaryComponent
-    IsArtinian (_root_.AdicCompletion (maximalIdeal R) R)
-      (N →ₗ[_root_.AdicCompletion (maximalIdeal R) R] E) := by
-  let := AdicCompletion.torsionModule hι.mem_primaryComponent
-  exact hι.adicCompletion.isArtinian_linearMap_of_finite N
-
-/-- For a finitely generated `R̂`-module `N`, the completion-linear Matlis dual `Hom_{R̂}(N, E)` is
 Artinian over `R`. -/
 @[stacks 0EGL]
-theorem isArtinian_linearMap_adicCompletion_of_finite
+theorem isArtinian_adicCompletionDual_of_finite
     [Module.Finite (_root_.AdicCompletion (maximalIdeal R) R) N] :
     letI := AdicCompletion.torsionModule hι.mem_primaryComponent
     haveI := AdicCompletion.torsionModule_isScalarTower hι.mem_primaryComponent
@@ -126,7 +82,7 @@ theorem isArtinian_linearMap_adicCompletion_of_finite
 
 /-- An `R̂`-module `N` is finitely generated over `R̂` if and only if its completion-linear Matlis
 dual `Hom_{R̂}(N, E)` is Artinian over `R`. -/
-theorem finite_adicCompletion_iff_isArtinian_linearMap :
+theorem finite_adicCompletion_iff_isArtinian_adicCompletionDual :
     letI := AdicCompletion.torsionModule hι.mem_primaryComponent
     haveI := AdicCompletion.torsionModule_isScalarTower hι.mem_primaryComponent
     Module.Finite (_root_.AdicCompletion (maximalIdeal R) R) N ↔
@@ -134,7 +90,7 @@ theorem finite_adicCompletion_iff_isArtinian_linearMap :
   let A := _root_.AdicCompletion (maximalIdeal R) R
   let := AdicCompletion.torsionModule hι.mem_primaryComponent
   have := AdicCompletion.torsionModule_isScalarTower hι.mem_primaryComponent
-  refine ⟨fun _ ↦ hι.isArtinian_linearMap_adicCompletion_of_finite N, fun hArt ↦ ?_⟩
+  refine ⟨fun _ ↦ hι.isArtinian_adicCompletionDual_of_finite N, fun hArt ↦ ?_⟩
   have : IsArtinian A (N →ₗ[A] E) := isArtinian_of_tower R hArt
   exact hι.adicCompletion.finite_iff_isArtinian_linearMap N |>.mpr ‹_›
 
@@ -149,7 +105,7 @@ def evalEquivAdicCompletionOfFinite
       ((N →ₗ[_root_.AdicCompletion (maximalIdeal R) R] E) →ₗ[R] E) := by
   let := AdicCompletion.torsionModule hι.mem_primaryComponent
   have := AdicCompletion.torsionModule_isScalarTower hι.mem_primaryComponent
-  have := hι.isArtinian_linearMap_adicCompletion_of_finite N
+  have := hι.isArtinian_adicCompletionDual_of_finite N
   exact hι.adicCompletion.evalEquivOfFinite N ≪≫ₗ
     AdicCompletion.restrictScalarsEquivOfMemPrimaryComponent
       (maximalIdeal R).fg_of_isNoetherianRing
@@ -163,7 +119,7 @@ theorem evalEquivAdicCompletionOfFinite_apply_apply
     hι.evalEquivAdicCompletionOfFinite N x f = f x := by
   let := AdicCompletion.torsionModule hι.mem_primaryComponent
   have := AdicCompletion.torsionModule_isScalarTower hι.mem_primaryComponent
-  have := hι.isArtinian_linearMap_adicCompletion_of_finite N
+  have := hι.isArtinian_adicCompletionDual_of_finite N
   simp [evalEquivAdicCompletionOfFinite]
 
 @[simp]
@@ -188,12 +144,12 @@ section ArtinianOverBase
 
 variable (M : Type w) [AddCommGroup M] [Module R M] [IsArtinian R M]
 
-/-- Over a Noetherian local ring `R`, evaluation identifies an Artinian `R`-module `M` with the
-completion-linear Matlis dual of its finite `R̂`-module dual `Hom_R(M, E)`. -/
-@[stacks 0EGL]
-def adicCompletionEvalEquivOfArtinian :
+private def adicCompletionEvalEquivOfArtinianAux :
     letI := AdicCompletion.torsionModule hι.mem_primaryComponent
-    M ≃ₗ[R] ((M →ₗ[R] E) →ₗ[_root_.AdicCompletion (maximalIdeal R) R] E) := by
+    letI := AdicCompletion.torsionModule
+      (mem_primaryComponent_maximalIdeal_of_isArtinian (R := R) (M := M))
+    M ≃ₗ[_root_.AdicCompletion (maximalIdeal R) R]
+      ((M →ₗ[R] E) →ₗ[_root_.AdicCompletion (maximalIdeal R) R] E) := by
   let A := _root_.AdicCompletion (maximalIdeal R) R
   let := AdicCompletion.torsionModule hι.mem_primaryComponent
   have : IsScalarTower R A E := AdicCompletion.torsionModule_isScalarTower hι.mem_primaryComponent
@@ -207,12 +163,10 @@ def adicCompletionEvalEquivOfArtinian :
     AdicCompletion.restrictScalarsEquivOfMemPrimaryComponent
       (maximalIdeal R).fg_of_isNoetherianRing
       (mem_primaryComponent_maximalIdeal_of_isArtinian (R := R) (M := M))
-  exact (hι.adicCompletion.evalEquivOfIsArtinian M ≪≫ₗ
-    LinearEquiv.congrLeft E A eHom).restrictScalars R
+  exact hι.adicCompletion.evalEquivOfIsArtinian M ≪≫ₗ LinearEquiv.congrLeft E A eHom
 
-@[simp]
-theorem adicCompletionEvalEquivOfArtinian_apply_apply (m : M) (f : M →ₗ[R] E) :
-    hι.adicCompletionEvalEquivOfArtinian M m f = f m := by
+private theorem adicCompletionEvalEquivOfArtinianAux_apply_apply (m : M) (f : M →ₗ[R] E) :
+    hι.adicCompletionEvalEquivOfArtinianAux M m f = f m := by
   let A := _root_.AdicCompletion (maximalIdeal R) R
   let := AdicCompletion.torsionModule hι.mem_primaryComponent
   have : IsScalarTower R A E := AdicCompletion.torsionModule_isScalarTower hι.mem_primaryComponent
@@ -222,7 +176,28 @@ theorem adicCompletionEvalEquivOfArtinian_apply_apply (m : M) (f : M →ₗ[R] E
     (mem_primaryComponent_maximalIdeal_of_isArtinian (R := R) (M := M))
   have : IsArtinian A M :=
     (AdicCompletion.isArtinian_torsionModule_iff _).mpr ‹_›
-  simp [adicCompletionEvalEquivOfArtinian]
+  simp [adicCompletionEvalEquivOfArtinianAux]
+
+/-- Over a Noetherian local ring `R`, evaluation identifies an Artinian `R`-module `M` with the
+completion-linear Matlis dual of its finite `R̂`-module dual `Hom_R(M, E)`. -/
+@[stacks 0EGL]
+def adicCompletionEvalEquivOfArtinian :
+    letI := AdicCompletion.torsionModule hι.mem_primaryComponent
+    M ≃ₗ[R] ((M →ₗ[R] E) →ₗ[_root_.AdicCompletion (maximalIdeal R) R] E) :=
+  let := AdicCompletion.torsionModule hι.mem_primaryComponent
+  have : IsScalarTower R (_root_.AdicCompletion (maximalIdeal R) R) E :=
+    AdicCompletion.torsionModule_isScalarTower hι.mem_primaryComponent
+  let := AdicCompletion.torsionModule
+    (mem_primaryComponent_maximalIdeal_of_isArtinian (R := R) (M := M))
+  have : IsScalarTower R (_root_.AdicCompletion (maximalIdeal R) R) M :=
+    AdicCompletion.torsionModule_isScalarTower
+      (mem_primaryComponent_maximalIdeal_of_isArtinian (R := R) (M := M))
+  (hι.adicCompletionEvalEquivOfArtinianAux M).restrictScalars R
+
+@[simp]
+theorem adicCompletionEvalEquivOfArtinian_apply_apply (m : M) (f : M →ₗ[R] E) :
+    hι.adicCompletionEvalEquivOfArtinian M m f = f m :=
+  hι.adicCompletionEvalEquivOfArtinianAux_apply_apply M m f
 
 @[simp]
 theorem adicCompletionEvalEquivOfArtinian_symm_apply_apply
@@ -255,10 +230,8 @@ def adicCompletionEquivDoubleDualOfFinite :
   let := AdicCompletion.torsionModule hι.mem_primaryComponent
   have : IsScalarTower R A E := AdicCompletion.torsionModule_isScalarTower hι.mem_primaryComponent
   have := hι.isArtinian_linearMap_of_finite N
-  let eA : (_root_.AdicCompletion (maximalIdeal R) N →ₗ[A] E) ≃ₗ[A] (N →ₗ[R] E) :=
-    hι.adicCompletionLinearMapEquiv N
   exact hι.adicCompletion.evalEquivOfFinite (_root_.AdicCompletion (maximalIdeal R) N) ≪≫ₗ
-    LinearEquiv.congrLeft E A eA ≪≫ₗ
+    LinearEquiv.congrLeft E A (AdicCompletion.torsionLiftEquiv hι.mem_primaryComponent).symm ≪≫ₗ
     AdicCompletion.restrictScalarsEquivOfMemPrimaryComponent
       (maximalIdeal R).fg_of_isNoetherianRing
       (mem_primaryComponent_maximalIdeal_of_isArtinian (R := R) (M := N →ₗ[R] E))
@@ -274,11 +247,7 @@ theorem adicCompletionEquivDoubleDualOfFinite_apply_apply
   let := AdicCompletion.torsionModule hι.mem_primaryComponent
   have := AdicCompletion.torsionModule_isScalarTower hι.mem_primaryComponent
   have := hι.isArtinian_linearMap_of_finite N
-  have hsymm : (hι.adicCompletionLinearMapEquiv N).symm f =
-      AdicCompletion.torsionLiftEquiv hι.mem_primaryComponent f := by
-    refine (LinearEquiv.symm_apply_eq _).mpr (LinearMap.ext fun x ↦ ?_)
-    rw [adicCompletionLinearMapEquiv_apply, AdicCompletion.torsionLiftEquiv_apply_of]
-  simp [adicCompletionEquivDoubleDualOfFinite, hsymm]
+  simp [adicCompletionEquivDoubleDualOfFinite]
 
 end DoubleDualCompletion
 

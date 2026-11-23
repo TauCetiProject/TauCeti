@@ -23,11 +23,10 @@ injective envelope.
 * `TauCeti.injective_applyₗ_of_injective` and `TauCeti.exists_apply_ne_zero_of_injective`: the
   evaluation map `M → Hom_R(Hom_R(M, E), E)` is injective and `E` separates points for every
   module `M`, so `E` is a cogenerator.
-* `TauCeti.ker_lcomp_subtype_le_iff_of_injective`, `TauCeti.matlisAnnihilatorOrderEmbedding`,
-  `TauCeti.isArtinian_of_isNoetherian_linearMap`, and
-  `TauCeti.isNoetherian_of_isArtinian_linearMap`: annihilation embeds the submodule lattice into
-  the opposite submodule lattice of the `E`-dual over any commuting scalar semiring, transferring
-  chain conditions contravariantly.
+* `TauCeti.isArtinian_of_isNoetherian_linearMap` and
+  `TauCeti.isNoetherian_of_isArtinian_linearMap`: applying `TauCeti.annihilatorOrderEmbedding`,
+  chain conditions transfer contravariantly between a module and its `E`-dual over any commuting
+  scalar semiring.
 * `TauCeti.annihilator_torsionBySet_of_injective`: the annihilator of `E[J]` is `J` for every
   ideal `J`.
 
@@ -73,34 +72,6 @@ theorem exists_apply_ne_zero_of_injective [Module.Injective R E] (hι : Function
     {M : Type w} [AddCommGroup M] [Module R M] {m : M} (hm : m ≠ 0) :
     ∃ f : M →ₗ[R] E, f m ≠ 0 :=
   exists_apply_ne_zero_of_forall_isMaximal (nontrivial_quotient_linearMap_of_injective hι) hm
-
-/-- Restriction kernels in the Matlis dual reverse and reflect inclusion of submodules.
-It suffices that the injective target contain the residue field; essentiality is not needed. -/
-theorem ker_lcomp_subtype_le_iff_of_injective
-    (S : Type*) [Semiring S] [Module S E] [SMulCommClass R S E] [Module.Injective R E]
-    (hι : Function.Injective ι) {M : Type w} [AddCommGroup M] [Module R M]
-    (N P : Submodule R M) :
-    LinearMap.ker (N.subtype.lcomp S E) ≤ LinearMap.ker (P.subtype.lcomp S E) ↔ P ≤ N :=
-  ker_lcomp_subtype_le_iff_of_forall_isMaximal
-    (nontrivial_quotient_linearMap_of_injective hι) S N P
-
-/-- Annihilation embeds the submodule lattice into the opposite lattice of submodules of the
-Matlis dual. The dual scalars act on the target `E` and need only commute with `R`. -/
-def matlisAnnihilatorOrderEmbedding
-    (S : Type*) [Semiring S] [Module S E] [SMulCommClass R S E] [Module.Injective R E]
-    (hι : Function.Injective ι) {M : Type w} [AddCommGroup M] [Module R M] :
-    Submodule R M ↪o (Submodule S (M →ₗ[R] E))ᵒᵈ :=
-  annihilatorOrderEmbedding (nontrivial_quotient_linearMap_of_injective hι) S
-
-/-- The annihilator embedding assigns to `N` the maps vanishing on `N`. -/
-@[simp]
-theorem matlisAnnihilatorOrderEmbedding_apply
-    (S : Type*) [Semiring S] [Module S E] [SMulCommClass R S E] [Module.Injective R E]
-    (hι : Function.Injective ι) {M : Type w} [AddCommGroup M] [Module R M]
-    (N : Submodule R M) :
-    matlisAnnihilatorOrderEmbedding S hι N =
-      OrderDual.toDual (LinearMap.ker (N.subtype.lcomp S E)) :=
-  annihilatorOrderEmbedding_apply _ S N
 
 /-- A module is Artinian if its dual into an injective module containing the residue field
 is Noetherian, even for a commuting scalar action on the dual. -/

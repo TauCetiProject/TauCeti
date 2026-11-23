@@ -33,8 +33,6 @@ so no nonzero functional vanishes on that image, and evaluation on `M` is surjec
   `M` is Artinian exactly when `D(M)` is finitely generated (the dual characterization
   `finite_iff_isArtinian_linearMap` holds without completeness in
   `TauCeti/RingTheory/MatlisDuality/Finite.lean`).
-* `TauCeti.IsInjectiveEnvelope.bijective_applyₗ_prod_of_finite_of_isArtinian`: biduality for a
-  product of a finitely generated module and an Artinian module.
 
 ## References
 
@@ -46,7 +44,7 @@ public section
 
 noncomputable section
 
-universe u v w z
+universe u v w
 
 namespace TauCeti.IsInjectiveEnvelope
 
@@ -110,14 +108,5 @@ theorem isArtinian_iff_finite_linearMap : IsArtinian R M ↔ Module.Finite R (M 
   have := hι.moduleInjective
   exact ⟨fun _ ↦ hι.finite_linearMap_of_isArtinian M,
     fun _ ↦ isArtinian_of_isNoetherian_linearMap R hι.injective⟩
-
-/-- Over a complete Noetherian local ring, evaluation into the double Matlis dual is bijective on
-any product `M × P` of a finitely generated module `M` and an Artinian module `P` (such as
-`R × E`, which is neither finite nor Artinian when `dim R ≥ 1`). -/
-theorem bijective_applyₗ_prod_of_finite_of_isArtinian [Module.Finite R M]
-    (P : Type z) [AddCommGroup P] [Module R P] [IsArtinian R P] :
-    Function.Bijective (applyₗ : (M × P) →ₗ[R] ((M × P) →ₗ[R] E) →ₗ[R] E) :=
-  bijective_applyₗ_prod_iff.mpr
-    ⟨hι.bijective_applyₗ_of_finite M, hι.bijective_applyₗ_of_isArtinian P⟩
 
 end TauCeti.IsInjectiveEnvelope
