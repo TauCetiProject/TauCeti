@@ -36,9 +36,12 @@ shift of any fixed nontrivial one.
 
 * `TauCeti.zmodPairing_apply`: `zmodPairing n a b = ZMod.toCircle (a b)`.
 * `TauCeti.zmodPairing_comm`: the pairing is symmetric.
-* `TauCeti.zmodPairing_eq_one_iff`: the pairing is nondegenerate: `e(a / n) = 1` only for `a = 0`.
+* `TauCeti.zmodPairing_eq_one_iff`: `e(a b / n) = 1` exactly when `a b = 0`; taking `b = 1`,
+  the pairing is nondegenerate.
 * `AddChar.IsPrimitive.bijective_mulShift`: the shifts of a primitive character of a finite ring
   are all the characters, each exactly once.
+* `AddChar.IsPrimitive.existsUnique_mulShift_eq`: every character is the shift of a given
+  primitive character by exactly one element.
 * `AddChar.IsPrimitive.existsUnique_units_mulShift_eq`: every primitive character is the shift of
   a given primitive character by a unique unit.
 -/
@@ -70,13 +73,14 @@ theorem zmodPairing_comm (a b : Multiplicative (ZMod n)) :
     zmodPairing n a b = zmodPairing n b a := by
   rw [zmodPairing_apply, zmodPairing_apply, mul_comm]
 
-/-- **The standard pairing on `ℤ/n` is nondegenerate**: pairing with the generator `1` is
-trivial only at the identity. -/
+/-- The standard pairing on `ℤ/n` is trivial exactly on the pairs with zero product:
+`e(a b / n) = 1` if and only if `a b = 0` in `ZMod n`. Taking `b = 1` shows that **the pairing is
+nondegenerate**: pairing with the generator `1` is trivial only at the identity. -/
 @[simp]
-theorem zmodPairing_eq_one_iff (a : Multiplicative (ZMod n)) :
-    zmodPairing n a (ofAdd 1) = 1 ↔ a = 1 := by
-  rw [zmodPairing_apply, toAdd_ofAdd, mul_one, ← map_zero_eq_one (ZMod.toCircle (N := n)),
-    (ZMod.injective_toCircle (N := n)).eq_iff, toAdd_eq_zero]
+theorem zmodPairing_eq_one_iff (a b : Multiplicative (ZMod n)) :
+    zmodPairing n a b = 1 ↔ a.toAdd * b.toAdd = 0 := by
+  rw [zmodPairing_apply]
+  exact ZMod.injective_toCircle.eq_iff' (map_zero_eq_one _)
 
 end TauCeti
 
@@ -117,6 +121,12 @@ that character. -/
 theorem IsPrimitive.mulShift_mulShiftAddEquiv_symm (hψ : ψ.IsPrimitive) (φ : AddChar R R') :
     ψ.mulShift (hψ.mulShiftAddEquiv.symm φ) = φ := by
   rw [← hψ.mulShiftAddEquiv_apply, AddEquiv.apply_symm_apply]
+
+/-- Every additive character of a finite ring is the shift of a given primitive character by
+exactly one element. -/
+theorem IsPrimitive.existsUnique_mulShift_eq (hψ : ψ.IsPrimitive) (φ : AddChar R R') :
+    ∃! a : R, ψ.mulShift a = φ :=
+  hψ.bijective_mulShift.existsUnique φ
 
 /-- Every primitive additive character of a finite ring is the shift of a given primitive
 character by a unique unit. -/

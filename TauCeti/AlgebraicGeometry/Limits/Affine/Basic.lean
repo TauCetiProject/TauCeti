@@ -7,6 +7,7 @@ module
 
 public import Mathlib.AlgebraicGeometry.AffineTransitionLimit
 public import Mathlib.Algebra.Category.Ring.Colimits
+import TauCeti.Order.Interval.Set.Directed
 
 /-!
 # Limits of affine schemes and colimits of global sections
@@ -67,9 +68,7 @@ private theorem tailOver_initial {I : Type u} [Preorder I] [IsDirected I (· ≤
     (i₀ : I) : (tailOver i₀).Initial := by
   have : Nonempty I := ⟨i₀⟩
   have : Nonempty {i : I // i₀ ≤ i} := ⟨⟨i₀, le_rfl⟩⟩
-  have : IsDirected {i : I // i₀ ≤ i} (· ≤ ·) := ⟨fun i j ↦ by
-    obtain ⟨k, hik, hjk⟩ := exists_ge_ge i.val j.val
-    exact ⟨⟨k, i.property.trans hik⟩, hik, hjk⟩⟩
+  have : IsDirected {i : I // i₀ ≤ i} (· ≤ ·) := inferInstanceAs (IsDirectedOrder (Set.Ici i₀))
   exact Functor.initial_of_exists_of_isCofiltered (tailOver i₀)
     (fun i ↦ ⟨op ⟨i.left.unop, leOfHom i.hom.unop⟩,
       ⟨Over.homMk (𝟙 _) (Subsingleton.elim _ _)⟩⟩)
@@ -135,9 +134,7 @@ theorem exists_affineOpen_directedRingSystem
   let J := {i : I // i₀ ≤ i}
   let o : J := ⟨i₀, le_rfl⟩
   let : Nonempty J := ⟨o⟩
-  let : IsDirected J (· ≤ ·) := ⟨fun i j ↦ by
-    obtain ⟨k, hik, hjk⟩ := exists_ge_ge i.val j.val
-    exact ⟨⟨k, i.property.trans hik⟩, hik, hjk⟩⟩
+  let : IsDirected J (· ≤ ·) := inferInstanceAs (IsDirectedOrder (Set.Ici i₀))
   let K : Jᵒᵖ ⥤ Over (op i₀) := tailOver i₀
   let : K.Initial := tailOver_initial i₀
   let E := K ⋙ opensDiagram D (op i₀) W

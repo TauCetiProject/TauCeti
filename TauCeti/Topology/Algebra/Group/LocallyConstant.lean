@@ -14,8 +14,9 @@ import TauCeti.Topology.ContinuousMap.LocallyConstant
 /-!
 # Locally constant functions on topological groups
 
-An additive homomorphism from a group with separately continuous addition whose kernel is open
-is locally constant, even when its codomain is only an `AddZeroClass`. Open kernels are preserved
+A homomorphism from a group with separately continuous multiplication whose kernel is open is
+locally constant, even when its codomain is only a `MulOneClass`
+(`MonoidHom.isLocallyConstant_of_isOpen_ker`, with its additive form). Open kernels are preserved
 by taking integer multiples of additive homomorphisms into an additive commutative group.
 
 A locally constant function `f : G → A` on a topological group is constant near each point, but
@@ -45,19 +46,26 @@ chosen point; no associativity, identity or inverse is needed.
 
 public section
 
+namespace MonoidHom
+
+variable {G A : Type*} [Group G] [TopologicalSpace G] [SeparatelyContinuousMul G]
+
+/-- A homomorphism with open kernel is locally constant. -/
+@[to_additive /-- An additive homomorphism with open kernel is locally constant. -/]
+theorem isLocallyConstant_of_isOpen_ker [MulOneClass A] (χ : G →* A)
+    (hχ : IsOpen (χ.ker : Set G)) : IsLocallyConstant (χ : G → A) := by
+  refine (IsLocallyConstant.iff_eventually_eq _).2 fun x ↦ ?_
+  -- Near `x`, the quotient `x⁻¹ * y` lies in the open kernel.
+  have hopen : IsOpen ((fun y : G ↦ x⁻¹ * y) ⁻¹' (χ.ker : Set G)) :=
+    hχ.preimage (continuous_id.const_mul x⁻¹)
+  filter_upwards [hopen.mem_nhds (by simp)] with y hy
+  exact χ.eq_iff.mpr hy
+
+end MonoidHom
+
 namespace AddMonoidHom
 
 variable {G A : Type*} [AddGroup G] [TopologicalSpace G] [SeparatelyContinuousAdd G]
-
-/-- An additive homomorphism with open kernel is locally constant. -/
-theorem isLocallyConstant_of_isOpen_ker [AddZeroClass A] (χ : G →+ A)
-    (hχ : IsOpen (χ.ker : Set G)) : IsLocallyConstant (χ : G → A) := by
-  refine (IsLocallyConstant.iff_eventually_eq _).2 fun x ↦ ?_
-  -- Near `x`, the difference `-x + y` lies in the open kernel.
-  have hopen : IsOpen ((fun y : G ↦ -x + y) ⁻¹' (χ.ker : Set G)) :=
-    hχ.preimage (continuous_id.const_add (-x))
-  filter_upwards [hopen.mem_nhds (by simp)] with y hy
-  exact χ.eq_iff.mpr hy
 
 /-- The kernel of an integer multiple of an additive homomorphism with open kernel is open. -/
 theorem isOpen_ker_zsmul [AddCommGroup A] (χ : G →+ A)

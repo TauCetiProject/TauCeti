@@ -238,6 +238,17 @@ def SmoothForm.lineMapFamily (α₀ α₁ : SmoothForm I M F k) {c : ℝ → ℝ
     funSMulₗ ⟨fun p ↦ c p.1, by exact hc.contMDiff.comp contMDiff_fst⟩
       (mpullback Prod.snd contMDiff_snd (α₁ - α₀))
 
+/-- The slices of the pullback of a form `τ` on `M` along the projection `N × M → M` are `τ`:
+`ι_t^* pr₂^* τ = τ`, since `Prod.snd ∘ Prod.mk t` is the identity of `M`. -/
+@[simp]
+theorem SmoothForm.mpullback_prodMk_mpullback_snd [IsManifold J 1 N] (τ : SmoothForm I M F k)
+    (t : N) :
+    mpullback (Prod.mk t) (contMDiff_const.prodMk contMDiff_id)
+      (mpullback Prod.snd contMDiff_snd τ : SmoothForm (J.prod I) (N × M) F k) = τ :=
+  (mpullback_mpullback (Prod.mk t) Prod.snd (I' := J.prod I)
+    (contMDiff_const.prodMk contMDiff_id) contMDiff_snd τ).trans
+      (LinearMap.congr_fun mpullback_id τ)
+
 /-- The slices of `TauCeti.SmoothForm.lineMapFamily α₀ α₁ hc` are the forms
 `α₀ + c(t) (α₁ - α₀)`. -/
 @[simp]
@@ -245,19 +256,14 @@ theorem SmoothForm.mpullback_prodMk_lineMapFamily (α₀ α₁ : SmoothForm I M 
     (hc : ContDiff ℝ ∞ c) (t : ℝ) :
     mpullback (Prod.mk t) (contMDiff_const.prodMk contMDiff_id) (lineMapFamily α₀ α₁ hc) =
       α₀ + c t • (α₁ - α₀) := by
-  -- `Prod.snd ∘ Prod.mk t` is the identity of `M`.
-  have hcomp (τ : SmoothForm I M F k) : mpullback (Prod.mk t)
-      (contMDiff_const.prodMk contMDiff_id) (mpullback Prod.snd contMDiff_snd τ) = τ :=
-    (mpullback_mpullback (Prod.mk t) Prod.snd (I' := 𝓘(ℝ, ℝ).prod I)
-      (contMDiff_const.prodMk contMDiff_id) contMDiff_snd τ).trans
-        (LinearMap.congr_fun mpullback_id τ)
-  rw [lineMapFamily, map_add, hcomp]
+  rw [lineMapFamily, map_add, mpullback_prodMk_mpullback_snd]
   congr 1
   apply Subtype.ext
   -- `erw`: the coercion of `funSMulₗ` carries the `IsManifold _ 1` instance derived from the
   -- product, which differs syntactically from the one in the goal.
   erw [coe_mpullback, coe_funSMulₗ, mpullback_fun_smul,
-    ← coe_mpullback (Prod.mk t) (contMDiff_const.prodMk contMDiff_id), hcomp]
+    ← coe_mpullback (Prod.mk t) (contMDiff_const.prodMk contMDiff_id),
+    mpullback_prodMk_mpullback_snd]
   -- The bundled function evaluates at `(t, x)` to `c t` by definition, and the scalar multiple of
   -- a smooth form is computed pointwise.
   rfl

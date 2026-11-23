@@ -599,25 +599,15 @@ variable {E E' F V : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
 `k`-current `T` has mass at most `L ^ k` times the mass of `T`. -/
 theorem mass_comp_pullbackCLM_le (T : 𝓕) {L : ℝ≥0} (hL : ∀ x ∈ Ω, ‖fderiv ℝ Φ x‖ ≤ L) :
     mass (T ∘ pullbackCLM Φ hΦ hΦp) ≤ (L : ℝ≥0∞) ^ k * mass T := by
-  refine mass_le_iff.2 fun ω hω ↦ ?_
-  have hb : ‖(pullbackCLM Φ hΦ hΦp ω : E →ᵇ E [⋀^Fin k]→L[ℝ] F)‖ ≤ L ^ k := by
-    refine (BoundedContinuousFunction.norm_le (by positivity)).2 fun x ↦ ?_
-    rw [coe_toBoundedContinuousFunction]
-    by_cases hx : x ∈ Ω
-    · refine (norm_pullbackCLM_apply_le ω x).trans ?_
-      calc ‖ω (Φ x)‖ * ‖fderiv ℝ Φ x‖ ^ k ≤ 1 * (L : ℝ) ^ k := by
-            gcongr
-            exacts [hω _, hL x hx]
-        _ = L ^ k := one_mul _
-    · simp [hx]
-  calc ‖T (pullbackCLM Φ hΦ hΦp ω)‖ₑ
-      ≤ mass T * ‖(pullbackCLM Φ hΦ hΦp ω : E →ᵇ E [⋀^Fin k]→L[ℝ] F)‖ₑ :=
-        enorm_apply_le_mass_mul T _
-    _ ≤ mass T * (L : ℝ≥0∞) ^ k := by
-        gcongr
-        rw [← ofReal_norm, ← ENNReal.ofReal_coe_nnreal, ← ENNReal.ofReal_pow L.coe_nonneg]
-        exact ENNReal.ofReal_le_ofReal hb
-    _ = (L : ℝ≥0∞) ^ k * mass T := mul_comm _ _
+  refine (mass_comp_le_of_norm_apply_le T (c := L ^ k) (by positivity) fun ω hω x ↦ ?_).trans_eq
+    (by simp [ENNReal.ofReal_pow, ENNReal.ofReal_coe_nnreal])
+  by_cases hx : x ∈ Ω
+  · refine (norm_pullbackCLM_apply_le ω x).trans ?_
+    calc ‖ω (Φ x)‖ * ‖fderiv ℝ Φ x‖ ^ k ≤ 1 * (L : ℝ) ^ k := by
+          gcongr
+          exacts [hω _, hL x hx]
+      _ = L ^ k := one_mul _
+  · simp [hx]
 
 omit [NormedSpace ℝ V] in
 /-- **Pushforward preserves locally finite mass.** If a map `T` on test `k`-forms on `Ω` has
