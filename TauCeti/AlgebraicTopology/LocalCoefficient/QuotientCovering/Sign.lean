@@ -45,7 +45,9 @@ form in which an equivariant chain map on the cover computes homology twisted by
   associated to the sign representation to the sign local system of the action of `-1`, with its
   value `IsQuotientCoveringMap.associatedLocalSystemSignHom_app_coinvariantsTensorMk` on a tensor
   class.
-* `IsQuotientCoveringMap.associatedLocalSystemSignIso`: this morphism as an isomorphism.
+* `IsQuotientCoveringMap.associatedLocalSystemSignIso`: this morphism as an isomorphism, whose
+  inverse sends a function `g` to the class of `g e ⊗ e` for any sheet `e`
+  (`IsQuotientCoveringMap.associatedLocalSystemSignIso_inv_app_apply`).
 
 ## References
 
@@ -60,6 +62,15 @@ noncomputable section
 
 open CategoryTheory MonoidalCategory TauCeti
 
+namespace TauCeti
+
+/-- The action of `-1` is an involution. -/
+theorem involutive_of_forall_eq_neg_one_smul {α : Type*} [MulAction ℤˣ α] {σ : α → α}
+    (hσ : ∀ a, σ a = (-1 : ℤˣ) • a) : Function.Involutive σ := fun a ↦ by
+  rw [hσ, hσ, smul_smul, neg_one_mul, neg_neg, one_smul]
+
+end TauCeti
+
 namespace IsQuotientCoveringMap
 
 variable {E B : TopCat.{0}} {p : E ⟶ B} [MulAction ℤˣ E] (hG : IsQuotientCoveringMap p ℤˣ)
@@ -69,11 +80,6 @@ include hG hσ in
 /-- The action of `-1` is a map over the base of the quotient covering. -/
 theorem comp_eq_of_forall_eq_neg_one_smul : ⇑p ∘ ⇑σ = ⇑p :=
   funext fun e ↦ (congrArg p (hσ e)).trans (hG.map_smul (-1))
-
-include hσ in
-/-- The action of `-1` is an involution. -/
-theorem involutive_of_forall_eq_neg_one_smul : Function.Involutive σ := fun e ↦ by
-  rw [hσ, hσ, smul_smul, neg_one_mul, neg_neg, one_smul]
 
 include hG hσ in
 /-- The action of `-1` has no fixed point. -/
@@ -114,12 +120,9 @@ private theorem permutationLocalSystemToSignApp_fiberRepresentation_neg_one
   have hσσ := involutive_of_forall_eq_neg_one_smul hσ
   refine (hG.isCoveringMap.signLocalSystemObjEquiv σ hσp x).injective
     (Subtype.ext (funext fun e ↦ ?_))
-  rw [map_neg, Submodule.coe_neg, Pi.neg_apply, fiberRepresentation_neg_one_apply hG k hσ,
-    IsCoveringMap.signLocalSystemObjEquiv_permutationLocalSystemToSignApp_apply,
-    IsCoveringMap.signLocalSystemObjEquiv_permutationLocalSystemToSignApp_apply,
+  simp [fiberRepresentation_neg_one_apply hG k hσ,
     Function.mapDomain_fiberMap_apply_of_involutive hσσ hσp,
-    Function.mapDomain_fiberMap_apply_of_involutive hσσ hσp,
-    Function.fiberMap_fiberMap_of_involutive hσσ hσp, neg_sub]
+    Function.fiberMap_fiberMap_of_involutive hσσ hσp]
 
 /-- Over `x`, the morphism of representations `a ⊗ f ↦ a • T f` from the sign representation
 tensored with the permutation representation on the fibre to the trivial representation on the
@@ -218,12 +221,12 @@ private theorem associatedLocalSystemSignHom_app_associatedLocalSystemFiberIso_i
         (fun _ _ ↦ eq_or_eq_of_apply_eq hG hσ) e).symm c := by
   refine (signFiberEquiv (apply_ne_self_of_forall_eq_neg_one_smul hG hσ)
     (fun _ _ ↦ eq_or_eq_of_apply_eq hG hσ) e).injective ?_
-  rw [LinearEquiv.apply_symm_apply, signFiberEquiv_apply, associatedLocalSystemFiberIso_inv_apply,
-    associatedLocalSystemSignHom_app_coinvariantsTensorMk, map_smul, Submodule.coe_smul,
-    Pi.smul_apply, IsCoveringMap.signLocalSystemObjEquiv_permutationLocalSystemToSignApp_apply,
-    Finsupp.single_eq_same, Finsupp.single_eq_of_ne, sub_zero, smul_eq_mul, mul_one]
-  exact fun h ↦ apply_ne_self_of_forall_eq_neg_one_smul hG hσ e
-    ((Function.fiberMap_apply_coe σ _ x.as e).symm.trans (congrArg Subtype.val h))
+  have he : Function.fiberMap σ (comp_eq_of_forall_eq_neg_one_smul hG hσ) x.as e ≠ e :=
+    fun h ↦ apply_ne_self_of_forall_eq_neg_one_smul hG hσ e
+      ((Function.fiberMap_apply_coe σ _ x.as e).symm.trans (congrArg Subtype.val h))
+  rw [associatedLocalSystemFiberIso_inv_apply,
+    associatedLocalSystemSignHom_app_coinvariantsTensorMk]
+  simp [Finsupp.single_eq_of_ne he]
 
 /-- Over each point, `associatedLocalSystemSignHom` is bijective. -/
 theorem bijective_associatedLocalSystemSignHom_app (x : FundamentalGroupoid B) :
@@ -271,5 +274,23 @@ def associatedLocalSystemSignIso :
 theorem associatedLocalSystemSignIso_hom :
     (hG.associatedLocalSystemSignIso k hσ).hom = hG.associatedLocalSystemSignHom k hσ :=
   (rfl)
+
+/-- The inverse of `associatedLocalSystemSignIso` sends a function `g` changing sign under `σ` to
+the class of `g e ⊗ e`, for any sheet `e` over `x`. -/
+theorem associatedLocalSystemSignIso_inv_app_apply {x : FundamentalGroupoid B}
+    (e : p ⁻¹' {x.as})
+    (g : (hG.isCoveringMap.signLocalSystem k σ (comp_eq_of_forall_eq_neg_one_smul hG hσ)).obj x) :
+    ((hG.associatedLocalSystemSignIso k hσ).inv.app x).hom g =
+      Rep.coinvariantsTensorMk (Rep.of (Representation.ofDistribMulAction k ℤˣ k))
+        (Rep.of (hG.fiberRepresentation k x.as))
+        ((hG.isCoveringMap.signLocalSystemObjEquiv σ (comp_eq_of_forall_eq_neg_one_smul hG hσ) x g :
+          p ⁻¹' {x.as} → k) e) (Finsupp.single e 1) := by
+  refine (hG.bijective_associatedLocalSystemSignHom_app k hσ x).injective ?_
+  refine (hG.isCoveringMap.signLocalSystemObjEquiv σ
+    (comp_eq_of_forall_eq_neg_one_smul hG hσ) x).injective ?_
+  rw [← associatedLocalSystemFiberIso_inv_apply,
+    associatedLocalSystemSignHom_app_associatedLocalSystemFiberIso_inv,
+    ← associatedLocalSystemSignIso_hom, Iso.inv_hom_id_app_apply]
+  exact (LinearEquiv.eq_symm_apply _).2 (signFiberEquiv_apply _ _ e _)
 
 end IsQuotientCoveringMap

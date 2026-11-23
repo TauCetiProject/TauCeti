@@ -96,6 +96,8 @@ def associatedLocalSystemSignIso :
 
 /-- The isomorphism `associatedLocalSystemSignIso` sends the class of `a ⊗ f`, for a formal sum `f`
 of orientations of the fibre over `x`, to `a` times the function `o ↦ f o - f (-o)`. -/
+-- Match before simplification unfolds `Rep.coinvariantsTensorMk` on the left-hand side.
+@[simp↓]
 theorem signLocalSystemObjEquiv_associatedLocalSystemSignIso_hom_app_apply
     (x : FundamentalGroupoid (TopCat.of B)) (a : k)
     (f : TopCat.ofHom (projection : C(VectorBundleOrientationCover F E ι, B)) ⁻¹' {x.as} →₀ k)
@@ -125,6 +127,32 @@ theorem signLocalSystemObjEquiv_associatedLocalSystemSignIso_hom_app_apply
       -- The fibres of `proj` and of the projection as a morphism of spaces are the same sets.
       exact congrArg (a * ·)
         (hG.isCoveringMap.signLocalSystemObjEquiv_permutationLocalSystemToSignApp_apply k _ _ x f o)
+
+/-- The inverse of `associatedLocalSystemSignIso` sends a function `g` on the orientations of the
+fibre over `x` changing sign under reversal to the class of `g o ⊗ o`, for any orientation `o` of
+the fibre. -/
+theorem associatedLocalSystemSignIso_inv_app_apply {x : FundamentalGroupoid (TopCat.of B)}
+    (o : (proj ⁻¹' {x.as} : Set (VectorBundleOrientationCover F E ι)))
+    (g : (signLocalSystem F E k hι).obj x) :
+    ((associatedLocalSystemSignIso F E hι k).inv.app x).hom g =
+      Rep.coinvariantsTensorMk (Rep.of (Representation.ofDistribMulAction k ℤˣ k))
+        (Rep.of ((isQuotientCoveringMap_ofHom_projection F E hι).fiberRepresentation k x.as))
+        ((signLocalSystemObjEquiv hι x g :
+          (proj ⁻¹' {x.as} : Set (VectorBundleOrientationCover F E ι)) → k) o)
+        (Finsupp.single o 1) := by
+  have hG := isQuotientCoveringMap_ofHom_projection F E hι
+  let σ : C(VectorBundleOrientationCover F E ι, VectorBundleOrientationCover F E ι) :=
+    deck (F := F) (E := E) (ι := ι)
+  have hσ (p : VectorBundleOrientationCover F E ι) : σ p = (-1 : ℤˣ) • p :=
+    (neg_one_smul_eq_deck p).symm
+  -- By definition, the inverse of `associatedLocalSystemSignIso` is the identification of the
+  -- orientation local system with the sign local system of `deck`, followed by the inverse of the
+  -- isomorphism of `IsQuotientCoveringMap`.
+  calc _ = ((hG.associatedLocalSystemSignIso k hσ).inv.app x).hom
+          ((eqToIso (signLocalSystem_def (R := k) hι)).hom.app x g) := rfl
+    _ = _ := by
+      rw [IsQuotientCoveringMap.associatedLocalSystemSignIso_inv_app_apply hG k hσ o,
+        signLocalSystemObjEquiv_eqToIso_signLocalSystem_def_hom_app]
 
 end VectorBundleOrientationCover
 
