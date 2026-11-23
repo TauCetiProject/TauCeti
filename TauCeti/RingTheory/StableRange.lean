@@ -24,7 +24,8 @@ for `n ≥ s`, and `GLₙ(R) / Eₙ(R) ≃* K₁(R)` for `n ≥ s + 1`.
 
 This file develops the ring-theoretic properties of `HasStableRangeLE`:
 * Only subsingleton rings have stable range at most `0`, while every possibly noncommutative local
-  ring (in particular every division ring and field) has stable range at most `1`.
+  ring (in particular every division ring and field) has stable range at most `1`. The ring `ℤ`
+  does not have stable range at most `1`, witnessed by the unimodular row `(2, 5)`.
 * **Vaserstein's first theorem:** `HasStableRangeLE R s` allows shortening the final coordinate of
   a unimodular row `(a, d)` on `ι ⊕ Unit` into any chosen finite subset of `ι` of cardinality at
   least `s`. Consequently `HasStableRangeLE R s` is monotone in `s` and equivalent to shortening
@@ -42,6 +43,7 @@ This file develops the ring-theoretic properties of `HasStableRangeLE`:
 
 * `TauCeti.hasStableRangeLE_zero_iff`: `HasStableRangeLE R 0 ↔ Subsingleton R`.
 * `TauCeti.hasStableRangeLE_one_of_isLocalRing`: a local ring has stable range at most `1`.
+* `TauCeti.not_hasStableRangeLE_one_int`: `ℤ` does not have stable range at most `1`.
 * `TauCeti.HasStableRangeLE.exists_isUnimodular_add_mul_of_subset`: shortening into any finite
   subset of cardinality at least `s`.
 * `TauCeti.hasStableRangeLE_iff_forall_le`: equivalence with shortening all rows of length at least
@@ -137,6 +139,14 @@ theorem hasStableRangeLE_one_of_isLocalRing (R : Type*) [Ring R] [IsLocalRing R]
     refine ⟨fun _ ↦ 1, IsUnit.isUnimodular_pi (i := 0) ?_⟩
     have hu : IsUnit (a 1 + a 0) := isUnit_add_of_isUnit_of_not_isUnit ha1 ha0
     simpa [add_comm] using hu
+
+/-- **`ℤ` does not have stable range at most `1`**: the row `(2, 5)` is unimodular, since
+`2 * 3 + 5 * (-1) = 1`, but no `2 + 5 * c` is a unit of `ℤ`, since `2 + 5 * c` is never `±1`. -/
+theorem not_hasStableRangeLE_one_int : ¬ HasStableRangeLE ℤ 1 := fun h ↦ by
+  obtain ⟨c, d, hcd⟩ := hasStableRangeLE_iff_exists_sum_eq_one.mp h ![2, 5] ![3, -1]
+    (by simp [Fin.sum_univ_two])
+  have h25 : (2 + 5 * c 0) * d 0 = 1 := by simpa using hcd
+  rcases Int.eq_one_or_neg_one_of_mul_eq_one h25 with h1 | h1 <;> omega
 
 /-! ## Subset shortening and longer rows (Vaserstein's first theorem) -/
 
