@@ -253,21 +253,22 @@ private theorem stratumParam_apply_of_mem {x : M} {hx : #(zeroCoords n x) = k}
 
 private theorem coe_stratumAmbientChart (x : M) :
     ⇑(stratumAmbientChart n x) = chartAt (EuclideanQuadrant n) x :=
-  (rfl)
+  OpenPartialHomeomorph.coe_restrOpen _ _
 
 private theorem coe_stratumAmbientChart_symm (x : M) :
     ⇑(stratumAmbientChart n x).symm = (chartAt (EuclideanQuadrant n) x).symm :=
-  (rfl)
+  OpenPartialHomeomorph.coe_restrOpen_symm _ _
 
 private theorem stratumAmbientChart_source (x : M) :
-    (stratumAmbientChart n x).source = stratumDomain n x :=
-  inter_eq_right.2 inter_subset_left
+    (stratumAmbientChart n x).source = stratumDomain n x := by
+  rw [stratumAmbientChart, OpenPartialHomeomorph.restrOpen_source,
+    inter_eq_right.2 inter_subset_left]
 
 private theorem mem_stratumAmbientChart_target {x : M} {h : EuclideanQuadrant n} :
     h ∈ (stratumAmbientChart n x).target ↔
       h ∈ (chartAt (EuclideanQuadrant n) x).target ∧
-        (chartAt (EuclideanQuadrant n) x).symm h ∈ stratumDomain n x :=
-  Iff.rfl
+        (chartAt (EuclideanQuadrant n) x).symm h ∈ stratumDomain n x := by
+  simp [stratumAmbientChart, PartialEquiv.restr_target]
 
 /-- A point of the restricted chart target in the image of the parametrization has positive
 inserted coordinates. -/
@@ -334,71 +335,50 @@ private theorem stratumParam_stratumProj {x : M} {hx : #(zeroCoords n x) = k} {y
 private theorem card_zeroCoords_eq (p : (𝓡c n).depthStratum M k) : #(zeroCoords n p.1) = k :=
   (card_zeroCoords p.1).trans p.2
 
-/- The two slice conditions of `OpenPartialHomeomorph.subtypeCoord` for the chart at `p`, stated
-with the binders of that construction so that its lemmas can be applied to them below. -/
-
-private theorem stratumChart_mapsTo (p : (𝓡c n).depthStratum M k) :
-    ∀ {w}, stratumParam k p.1 (card_zeroCoords_eq p) w ∈ (stratumAmbientChart n p.1).target →
-      (stratumAmbientChart n p.1).symm (stratumParam k p.1 (card_zeroCoords_eq p) w) ∈
-        (𝓡c n).depthStratum M k :=
-  fun hw ↦ symm_stratumParam_mem hw
-
-private theorem stratumChart_slice (p : (𝓡c n).depthStratum M k) :
-    ∀ {y}, y ∈ (stratumAmbientChart n p.1).source → y ∈ (𝓡c n).depthStratum M k →
-      stratumParam k p.1 (card_zeroCoords_eq p)
-          (stratumProj p.1 (card_zeroCoords_eq p) (stratumAmbientChart n p.1 y)) =
-        stratumAmbientChart n p.1 y :=
-  fun hy hyk ↦ stratumParam_stratumProj hy hyk
-
 /-- The chart of the depth-`k` stratum at `p`: the ambient chart at `p`, restricted to the stratum
 near `p`, with the coordinates vanishing at `p` deleted. -/
 private def stratumChart (p : (𝓡c n).depthStratum M k) :
     OpenPartialHomeomorph ((𝓡c n).depthStratum M k) (EuclideanSpace ℝ (Fin (n - k))) :=
   (stratumAmbientChart n p.1).subtypeCoord _ ⟨p⟩ (stratumParam k p.1 (card_zeroCoords_eq p))
-    (stratumProj p.1 (card_zeroCoords_eq p)) (stratumChart_mapsTo p) (stratumChart_slice p)
-    (fun _ hw ↦ stratumProj_stratumParam hw)
+    (stratumProj p.1 (card_zeroCoords_eq p)) (fun hw ↦ symm_stratumParam_mem hw)
+    (fun hy hyk ↦ stratumParam_stratumProj hy hyk) (fun _ hw ↦ stratumProj_stratumParam hw)
     ((𝓡c n).continuous_symm.comp ((splitEquiv _ _).symm.continuous.comp
       (Continuous.prodMk_left 0)))
     (Continuous.continuousOn (continuous_fst.comp ((splitEquiv _ _).continuous.comp
       (𝓡c n).continuous)))
 
-/- The lemmas of `OpenPartialHomeomorph.subtypeCoord` are applied with the slice conditions given
-in fully explicit form: passed with `_`, or without `@`, their implicit binders are instantiated
-and elaboration has to unfold the chart to match them. -/
-
 private theorem stratumChart_apply (p q : (𝓡c n).depthStratum M k) :
     stratumChart p q =
       stratumProj p.1 (card_zeroCoords_eq p) (chartAt (EuclideanQuadrant n) p.1 q.1) := by
-  unfold stratumChart
-  exact OpenPartialHomeomorph.subtypeCoord_apply (stratumAmbientChart n p.1) _ ⟨p⟩
-    (stratumParam k p.1 (card_zeroCoords_eq p)) (stratumProj p.1 (card_zeroCoords_eq p))
-    (@stratumChart_mapsTo n k M _ _ _ p) (@stratumChart_slice n k M _ _ _ p) _ _ _ q
+  rw [stratumChart, OpenPartialHomeomorph.subtypeCoord_apply, coe_stratumAmbientChart]
 
 private theorem stratumChart_source (p : (𝓡c n).depthStratum M k) :
     (stratumChart p).source = Subtype.val ⁻¹' stratumDomain n p.1 := by
-  rw [← stratumAmbientChart_source]
-  unfold stratumChart
-  exact OpenPartialHomeomorph.subtypeCoord_source (stratumAmbientChart n p.1) _ ⟨p⟩
-    (stratumParam k p.1 (card_zeroCoords_eq p)) (stratumProj p.1 (card_zeroCoords_eq p))
-    (@stratumChart_mapsTo n k M _ _ _ p) (@stratumChart_slice n k M _ _ _ p) _ _ _
+  rw [stratumChart, OpenPartialHomeomorph.subtypeCoord_source, stratumAmbientChart_source]
 
 private theorem stratumChart_target (p : (𝓡c n).depthStratum M k) :
     (stratumChart p).target =
       stratumParam k p.1 (card_zeroCoords_eq p) ⁻¹' (stratumAmbientChart n p.1).target := by
-  unfold stratumChart
-  exact OpenPartialHomeomorph.subtypeCoord_target (stratumAmbientChart n p.1) _ ⟨p⟩
-    (stratumParam k p.1 (card_zeroCoords_eq p)) (stratumProj p.1 (card_zeroCoords_eq p))
-    (@stratumChart_mapsTo n k M _ _ _ p) (@stratumChart_slice n k M _ _ _ p) _ _ _
+  rw [stratumChart, OpenPartialHomeomorph.subtypeCoord_target]
 
 private theorem coe_stratumChart_symm_apply (p : (𝓡c n).depthStratum M k)
     {w : EuclideanSpace ℝ (Fin (n - k))} (hw : w ∈ (stratumChart p).target) :
     ((stratumChart p).symm w : M) =
       (chartAt (EuclideanQuadrant n) p.1).symm (stratumParam k p.1 (card_zeroCoords_eq p) w) := by
   rw [stratumChart_target] at hw
-  unfold stratumChart
-  exact OpenPartialHomeomorph.coe_subtypeCoord_symm_apply (stratumAmbientChart n p.1) _ ⟨p⟩
-    (stratumParam k p.1 (card_zeroCoords_eq p)) (stratumProj p.1 (card_zeroCoords_eq p))
-    (@stratumChart_mapsTo n k M _ _ _ p) (@stratumChart_slice n k M _ _ _ p) _ _ _ hw
+  rw [stratumChart, OpenPartialHomeomorph.coe_subtypeCoord_symm_apply _ _ _ _ _ _ _ _ _ _ hw,
+    coe_stratumAmbientChart_symm]
+
+/-- A point of the target of the stratum chart at `p` is sent into the target of the ambient
+chart at `p`, where the quadrant inclusion reads it as a coordinate insertion. -/
+private theorem stratumParam_mem_target_of_mem {p : (𝓡c n).depthStratum M k}
+    {w : EuclideanSpace ℝ (Fin (n - k))} (hw : w ∈ (stratumChart p).target) :
+    stratumParam k p.1 (card_zeroCoords_eq p) w ∈ (chartAt (EuclideanQuadrant n) p.1).target ∧
+      (𝓡c n) (stratumParam k p.1 (card_zeroCoords_eq p) w) =
+        (splitEquiv (zeroCoords n p.1) (card_zeroCoords_eq p)).symm (w, 0) := by
+  rw [stratumChart_target, mem_preimage] at hw
+  exact ⟨(mem_stratumAmbientChart_target.1 hw).1,
+    stratumParam_eq_of_nonneg fun j ↦ (pos_of_mem_target hw j).le⟩
 
 /-- The transition maps between stratum charts are `C^r`: through the coordinate splittings at the
 two base points they are the ambient transition maps, restricted to a coordinate face. -/
@@ -421,14 +401,13 @@ private theorem contDiffOn_stratumChart_symm_trans {r : WithTop ℕ∞} [IsManif
       ((𝓡c n) ∘ ((chartAt (EuclideanQuadrant n) p.1).symm ≫ₕ chartAt (EuclideanQuadrant n) q.1) ∘
         (𝓡c n).symm) ∘ B)
     (A.contDiff.comp_contDiffOn (hg.1.comp B.contDiff.contDiffOn fun w hw ↦ ?_)) fun w hw ↦ ?_
-  · obtain ⟨hw₁, hw₂⟩ := hw
-    simp only [OpenPartialHomeomorph.symm_symm] at hw₁ hw₂
-    rw [stratumChart_source] at hw₂
-    have hw₃ : ((stratumChart p).symm w : M) ∈ stratumDomain n q.1 := hw₂
-    rw [coe_stratumChart_symm_apply p hw₁] at hw₃
-    rw [stratumChart_target] at hw₁
-    exact ⟨⟨hw₁.1, hw₃.1⟩, _, stratumParam_eq_of_nonneg fun j ↦ (pos_of_mem_target hw₁ j).le⟩
-  · have hw₁ : w ∈ (stratumChart p).target := hw.1
+  · rw [OpenPartialHomeomorph.trans_source, OpenPartialHomeomorph.symm_source] at hw
+    obtain ⟨hw₁, hw₂⟩ := hw
+    rw [mem_preimage, stratumChart_source, mem_preimage, coe_stratumChart_symm_apply p hw₁] at hw₂
+    obtain ⟨hw₃, hw₄⟩ := stratumParam_mem_target_of_mem hw₁
+    exact ⟨⟨hw₃, hw₂.1⟩, _, hw₄⟩
+  · rw [OpenPartialHomeomorph.trans_source, OpenPartialHomeomorph.symm_source] at hw
+    have hw₁ : w ∈ (stratumChart p).target := hw.1
     rw [OpenPartialHomeomorph.coe_trans, comp_apply, stratumChart_apply,
       coe_stratumChart_symm_apply p hw₁]
     simp [A, B, stratumProj, stratumParam]
@@ -485,13 +464,11 @@ theorem isImmersion_subtypeVal_depthStratum {r : WithTop ℕ∞} [IsManifold (�
   intro w hw
   rw [OpenPartialHomeomorph.extend_target, depthStratumChartedSpace_chartAt] at hw
   have hw₁ : w ∈ (stratumChart p).target := by simpa using hw.1
-  have hw₂ := hw₁
-  rw [stratumChart_target] at hw₂
+  obtain ⟨hw₂, hw₃⟩ := stratumParam_mem_target_of_mem hw₁
   simp only [comp_apply, OpenPartialHomeomorph.extend_coe, OpenPartialHomeomorph.extend_coe_symm,
     modelWithCornersSelf_coe_symm, id_eq, depthStratumChartedSpace_chartAt,
     coe_stratumChart_symm_apply p hw₁]
-  rw [(chartAt (EuclideanQuadrant n) p.1).right_inv hw₂.1,
-    stratumParam_eq_of_nonneg fun j ↦ (pos_of_mem_target hw₂ j).le]
+  rw [(chartAt (EuclideanQuadrant n) p.1).right_inv hw₂, hw₃]
 
 /-- The inclusion of the depth-`k` stratum of a `C^r` manifold modelled on the quadrant `[0, ∞)ⁿ`
 is a `C^r` smooth embedding. -/
