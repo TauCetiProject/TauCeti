@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.LinearAlgebra.Matrix.Charpoly.Coeff
 public import Mathlib.LinearAlgebra.Matrix.Determinant.Basic
 public import Mathlib.LinearAlgebra.Matrix.Trace
 
@@ -24,6 +25,9 @@ does prove the identity below — in about twice the lines, and only over a `[No
 *name* and the `Polynomial`-free form: an equation between two ring elements over any `CommRing`,
 which is the shape a caller with matrix data in hand wants to rewrite with.
 
+Conversely, the characteristic polynomial of a `2 × 2` matrix is determined by its trace and
+determinant, which its coefficients recover over any commutative ring.
+
 Read as a binary quadratic form in `(r, s)`, the right-hand side has leading coefficient `M.det`,
 middle coefficient `-M.trace` and constant coefficient `1`, so its discriminant is
 `M.trace ^ 2 - 4 * M.det` — which is Mathlib's `Matrix.discr` by `Matrix.discr_fin_two`.
@@ -37,6 +41,8 @@ middle coefficient `-M.trace` and constant coefficient `1`, so its discriminant 
 * `Matrix.det_one_sub_fin_two`, `Matrix.det_one_add_fin_two`: the values
   `det (1 ∓ M) = 1 ∓ trace M + det M` of the pencil at `r = s = ∓1`, which govern the eigenvalues
   `± 1` of `M`.
+* `Matrix.charpoly_eq_charpoly_iff_fin_two`: two `2 × 2` matrices have the same characteristic
+  polynomial exactly when they have the same trace and determinant, over any commutative ring.
 
 ## Provenance
 
@@ -112,5 +118,16 @@ theorem det_one_add_fin_two {R : Type*} [CommRing R] (M : Matrix (Fin 2) (Fin 2)
   simp only [one_smul, neg_smul, sub_neg_eq_add, add_comm M] at h
   rw [h]
   ring
+
+/-- Two `2 × 2` matrices have the same characteristic polynomial exactly when they have the same
+trace and the same determinant. -/
+theorem charpoly_eq_charpoly_iff_fin_two {R : Type*} [CommRing R]
+    (M N : Matrix (Fin 2) (Fin 2) R) :
+    M.charpoly = N.charpoly ↔ M.trace = N.trace ∧ M.det = N.det := by
+  refine ⟨fun h ↦ ⟨?_, ?_⟩, fun ⟨htr, hdet⟩ ↦ ?_⟩
+  · rw [trace_eq_neg_charpoly_coeff, trace_eq_neg_charpoly_coeff, h]
+  · rw [det_eq_sign_charpoly_coeff, det_eq_sign_charpoly_coeff, h]
+  · nontriviality R
+    rw [charpoly_fin_two, charpoly_fin_two, htr, hdet]
 
 end Matrix

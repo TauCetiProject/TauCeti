@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+import TauCeti.LinearAlgebra.Matrix.Charpoly.FinTwo
 import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.TraceFinTwo
 import Mathlib.Data.ZMod.Basic
 import Mathlib.Tactic.NormNum
