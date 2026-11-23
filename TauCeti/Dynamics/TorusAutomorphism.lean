@@ -21,9 +21,10 @@ torus induced by the integer matrix `1 - A`, which has `|det (1 - A)|` points
 isomorphic to `ℤⁿ / (1 - A) ℤⁿ`, of order `|det (1 - A)|`
 (`AddCircle.nat_card_fixedPoints_generalLinearGroup_smul`), and when `det (1 - A) = 0` an integer
 vector `k ≠ 0` with `(1 - A) k = 0` gives a circle of fixed points, so the fixed points are
-infinite (`Matrix.infinite_ker_smulVecHom`). Hence `x ↦ A • x` has finitely many fixed points exactly when
-`det (1 - A) ≠ 0` (`AddCircle.finite_fixedPoints_generalLinearGroup_smul_iff`), and in all cases
-their number, in the convention `Nat.card` of an infinite set being `0`, is `|det (1 - A)|`.
+infinite (`Matrix.infinite_ker_smulVecHom`). Hence `x ↦ A • x` has finitely many fixed points
+exactly when `det (1 - A) ≠ 0` (`AddCircle.finite_fixedPoints_generalLinearGroup_smul_iff`), and in
+all cases their number, in the convention `Nat.card` of an infinite set being `0`, is
+`|det (1 - A)|`.
 
 The derivative of `x ↦ A • x` is the matrix `A` at every point
 (`AddCircle.mfderiv_generalLinearGroup_smul_apply`), so at every fixed point the fixed-point
@@ -127,11 +128,10 @@ points exactly when `det (1 - A) ≠ 0`. -/
 theorem finite_fixedPoints_generalLinearGroup_smul_iff (A : GL ι ℤ) :
     (fixedPoints fun x : ι → AddCircle p ↦ A • x).Finite ↔ (1 - (A : Matrix ι ι ℤ)).det ≠ 0 := by
   rw [fixedPoints_generalLinearGroup_smul_eq_ker, ← Set.finite_coe_iff, SetLike.coe_sort_coe]
-  refine ⟨fun h hA ↦ ?_, fun hA ↦ Nat.finite_of_card_ne_zero ?_⟩
-  · have := infinite_ker_smulVecHom p hA
-    exact not_finite _
-  · rw [natCard_ker_smulVecHom p _ (Fact.out : 0 < p).ne']
-    exact Int.natAbs_ne_zero.2 hA
+  refine ⟨fun h hA ↦ not_finite_iff_infinite.2 (infinite_ker_smulVecHom p hA) h,
+    fun hA ↦ Nat.finite_of_card_ne_zero ?_⟩
+  rw [natCard_ker_smulVecHom p _ (Fact.out : 0 < p).ne']
+  exact Int.natAbs_ne_zero.2 hA
 
 /-- **The number of fixed points of a toral automorphism.** The map `x ↦ A • x` of the torus
 `ι → AddCircle p` has `|det (1 - A)|` fixed points. When `det (1 - A) = 0` there are infinitely

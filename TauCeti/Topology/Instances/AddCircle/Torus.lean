@@ -166,7 +166,7 @@ theorem infinite_ker_smulVecHom {A : Matrix ι ι ℤ} (hA : A.det = 0) :
     · have : NeZero p := ⟨hp⟩
       infer_instance
   -- The `i`-th coordinate of the circle `t ↦ [t m]` covers the infinite group `AddCircle p`.
-  refine Infinite.of_surjective (fun x ↦ x.1 i) fun y ↦ ?_
+  refine Infinite.of_surjective (fun x ↦ x.val i) fun y ↦ ?_
   obtain ⟨s, rfl⟩ := QuotientAddGroup.mk_surjective y
   exact ⟨⟨_, hmem (s / m i)⟩, by simp [div_mul_cancel₀ s (Int.cast_ne_zero.2 hi)]⟩
 
