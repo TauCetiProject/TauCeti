@@ -8,6 +8,7 @@ module
 public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.End.Manifold
 public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.Energy.Asymptotic
 import TauCeti.Geometry.Symplectic.Floer.PairOfPants.Energy.Integrable
+import TauCeti.Geometry.Symplectic.Floer.Tameness
 import TauCeti.Geometry.Symplectic.Hamiltonian.PeriodicOrbit
 
 /-!
@@ -173,7 +174,7 @@ private theorem exists_energy_of_endConvergence {P : Puncture → Set (ℝ → M
       IntegrableOn Dens(ω, K, u) Sℝ ∧ EnergyEq(I, ω, K, H, u, y) := by
   have he₀ : ∀ z ∈ Sℝ, 0 ≤ Dens(ω, K, u) z := fun z hz ↦
     floerEnergyDensity_nonneg hω
-      (hω.tames_of_tame_mvfderiv (hde _ (huB z hz)) hc (hJc z hz)) (hfloer z hz)
+      (hω.tames_of_mul_norm_sq_le (hde _ (huB z hz)) hc (hJc z hz)) (hfloer z hz)
   have hE := hω.lintegral_floerEnergyDensity_of_eq_smul_endAngularForm_ne_top_of_isCompact
     hK hKH hH hHc hB hu huB he₀ hA hR
   choose y hy using hex hE
@@ -268,7 +269,7 @@ private theorem setIntegral_floerEnergyDensity_nonneg :
     0 ≤ ∫ z in Sℝ, Dens(ω, PoP(H), u) z :=
   setIntegral_nonneg isOpen_thricePuncturedSphereReal.measurableSet fun z hz ↦
     floerEnergyDensity_nonneg hω
-      (hω.tames_of_tame_mvfderiv (hde _ (huB z hz)) hc (hJc z hz)) (hfloer z hz)
+      (hω.tames_of_mul_norm_sq_le (hde _ (huB z hz)) hc (hJc z hz)) (hfloer z hz)
 
 section PeriodicC1
 variable (hHs : ∀ q, ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) 1 (uncurry (H q)))
