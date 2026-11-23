@@ -17,6 +17,7 @@ import Mathlib.RepresentationTheory.Continuous.Basic
 import TauCeti.Analysis.Bochner.CharFun.Bochner
 import TauCeti.Analysis.InnerProductSpace.Projection.RestrictScalars
 import TauCeti.Analysis.SpecialFunctions.Integrals.Basic
+import TauCeti.MeasureTheory.Integral.IntervalIntegral.InnerProduct
 import TauCeti.RepresentationTheory.Continuous.Invariants
 import TauCeti.RepresentationTheory.Continuous.Unitary.PositiveDefinite
 
@@ -66,7 +67,7 @@ In namespace `TauCeti.Semigroups.StronglyContinuousGroup`:
   measure of a vector under a unitary C₀-group.
 * `norm_twistedAverage_sq_eq_integral`: spectral representation of the squared norm of a twisted
   average.
-* `norm_starProjection_eigenspace_sq_eq_measure_singleton`: the squared norm of the eigenspace
+* `norm_starProjection_eigenspace_sq_eq_measureReal_singleton`: the squared norm of the eigenspace
   projection equals the spectral atomic mass `σ.real {ω}`.
 * `exists_tendsto_twistedAverage`: bundled continuous-time mean ergodic projection and spectral
   atomic-mass theorem at frequency `2 * π * a`.
@@ -492,10 +493,6 @@ theorem IsUnitary.existsUnique_spectralMeasure {U : StronglyContinuousGroup H} (
     ⟨continuous_const.inner (U.continuous_orbit v), hU.isPositiveDefiniteSub_inner v⟩
   simpa only [charFun_apply_real] using h
 
-private theorem continuous_intervalIntegral_cexp_mul_sub_mul_I (ω T : ℝ) :
-    Continuous fun ξ : ℝ => ∫ t in (0 : ℝ)..T, Complex.exp (t * (ξ - ω) * Complex.I) :=
-  intervalIntegral.continuous_parametric_intervalIntegral_of_continuous' (by fun_prop) 0 T
-
 /-- Spectral integral representation of the inner product between two twisted orbit vectors. -/
 private theorem inner_twisted_orbit_eq_integral (U : StronglyContinuousGroup H) (hU : U.IsUnitary)
     (v : H) {σ : Measure ℝ} (hσ : ∀ t : ℝ, ⟪v, U t v⟫_ℂ = charFun σ t) (ω s t : ℝ) :
@@ -571,24 +568,6 @@ theorem tendsto_twistedAverage_starProjection_eigenspace (U : StronglyContinuous
 
 end TwistedMeanErgodic
 
-/-- Squared norm of an interval integral as a double interval integral of inner products. -/
-private theorem norm_intervalIntegral_sq_eq {f : ℝ → H} {a b : ℝ}
-    (hf : IntervalIntegrable f volume a b) :
-    ((‖∫ t in a..b, f t‖ ^ 2 : ℝ) : ℂ) = ∫ s in a..b, ∫ t in a..b, ⟪f s, f t⟫_ℂ := by
-  calc
-    ((‖∫ t in a..b, f t‖ ^ 2 : ℝ) : ℂ)
-        = ⟪∫ s in a..b, f s, ∫ t in a..b, f t⟫_ℂ := by
-      simpa only [Complex.ofReal_pow, RCLike.ofReal_eq_complex_ofReal] using
-        (inner_self_eq_norm_sq_to_K (𝕜 := ℂ) (∫ t in a..b, f t)).symm
-    _ = ∫ s in a..b, ⟪f s, ∫ t in a..b, f t⟫_ℂ := by
-      have hcomm := (innerSL ℂ (∫ t in a..b, f t)).intervalIntegral_comp_comm hf
-      simp only [innerSL_apply_apply] at hcomm
-      rw [← inner_conj_symm, ← hcomm, ← intervalIntegral.intervalIntegral_conj]
-      simp_rw [inner_conj_symm]
-    _ = ∫ s in a..b, ∫ t in a..b, ⟪f s, f t⟫_ℂ :=
-      intervalIntegral.integral_congr fun s _ =>
-        ((innerSL ℂ (f s)).intervalIntegral_comp_comm hf).symm
-
 /-- Unnormalized spectral representation for the squared norm of a twisted orbit integral. -/
 private theorem norm_intervalIntegral_twisted_sq_eq (U : StronglyContinuousGroup H)
     (hU : U.IsUnitary) (v : H) {σ : Measure ℝ} [IsFiniteMeasure σ]
@@ -601,7 +580,9 @@ private theorem norm_intervalIntegral_twisted_sq_eq (U : StronglyContinuousGroup
   have hf_int : IntervalIntegrable f volume 0 T :=
     ((by fun_prop : Continuous fun t : ℝ => Complex.exp (-(ω * t * Complex.I))).smul
       (U.continuous_orbit v)).intervalIntegrable 0 T
-  have hK_cont : Continuous K := continuous_intervalIntegral_cexp_mul_sub_mul_I ω T
+  have hK_cont : Continuous K := by
+    simpa only [K, e, Function.comp_def, Complex.ofReal_sub] using
+      (TauCeti.continuous_intervalIntegral_cexp_mul_I 0 T).comp (continuous_sub_right ω)
   have : IsFiniteMeasure (volume.restrict (Set.uIoc (0 : ℝ) T)) :=
     Real.isFiniteMeasure_restrict_Ioc (min 0 T) (max 0 T)
   have hint2 : Integrable (Function.uncurry fun s ξ => conj (e s ξ) * K ξ)
@@ -619,8 +600,8 @@ private theorem norm_intervalIntegral_twisted_sq_eq (U : StronglyContinuousGroup
       ((‖∫ t in (0 : ℝ)..T, f t‖ ^ 2 : ℝ) : ℂ) = ((∫ ξ, ‖K ξ‖ ^ 2 ∂σ : ℝ) : ℂ) := by
     calc
       ((‖∫ t in (0 : ℝ)..T, f t‖ ^ 2 : ℝ) : ℂ)
-          = ∫ s in (0 : ℝ)..T, ∫ t in (0 : ℝ)..T, ⟪f s, f t⟫_ℂ :=
-        norm_intervalIntegral_sq_eq hf_int
+          = ∫ s in (0 : ℝ)..T, ∫ t in (0 : ℝ)..T, ⟪f s, f t⟫_ℂ := by
+        convert TauCeti.norm_intervalIntegral_sq_eq (𝕜 := ℂ) hf_int
       _ = ∫ s in (0 : ℝ)..T, ∫ ξ, conj (e s ξ) * K ξ ∂σ :=
         intervalIntegral.integral_congr fun s _ =>
           intervalIntegral_inner_twisted_orbit_eq U hU v hσ ω T s
@@ -651,7 +632,7 @@ theorem norm_twistedAverage_sq_eq_integral (U : StronglyContinuousGroup H) (hU :
 /-- **Spectral atomic-mass identity**: for any finite Borel measure `σ` on `ℝ` with characteristic
 function `t ↦ ⟪v, U t v⟫_ℂ`, the squared norm of the orthogonal projection of `v` onto the common
 eigenspace at angular frequency `ω` equals the spectral mass `σ.real {ω}`. -/
-theorem norm_starProjection_eigenspace_sq_eq_measure_singleton
+theorem norm_starProjection_eigenspace_sq_eq_measureReal_singleton
     (U : StronglyContinuousGroup H) (hU : U.IsUnitary) (v : H)
     {σ : Measure ℝ} [IsFiniteMeasure σ]
     (hσ : ∀ t : ℝ, ⟪v, U t v⟫_ℂ = charFun σ t) (ω : ℝ) :
@@ -666,8 +647,11 @@ theorem norm_starProjection_eigenspace_sq_eq_measure_singleton
     refine tendsto_integral_filter_of_dominated_convergence (fun _ => (1 : ℝ)) ?_ ?_
       (integrable_const 1) (Eventually.of_forall fun ξ => ?_)
     · refine Eventually.of_forall fun T => ?_
-      exact ((continuous_const.mul
-        (continuous_intervalIntegral_cexp_mul_sub_mul_I ω T)).norm.pow 2).aestronglyMeasurable
+      have hK_cont : Continuous fun ξ : ℝ =>
+          ∫ t in (0 : ℝ)..T, Complex.exp (t * (ξ - ω) * Complex.I) := by
+        simpa only [Function.comp_def, Complex.ofReal_sub] using
+          (TauCeti.continuous_intervalIntegral_cexp_mul_I 0 T).comp (continuous_sub_right ω)
+      exact ((continuous_const.mul hK_cont).norm.pow 2).aestronglyMeasurable
     · refine Eventually.of_forall fun T => Eventually.of_forall fun ξ => ?_
       rw [Real.norm_of_nonneg (sq_nonneg _)]
       exact pow_le_one₀ (norm_nonneg _) (by
@@ -720,7 +704,7 @@ theorem exists_tendsto_twistedAverage (U : StronglyContinuousGroup H) (hU : U.Is
   · simpa only [ω, Complex.ofReal_mul, Complex.ofReal_ofNat] using
       U.tendsto_twistedAverage_starProjection_eigenspace hU ω v
   · intro σ _ hσ
-    exact U.norm_starProjection_eigenspace_sq_eq_measure_singleton hU v hσ ω
+    exact U.norm_starProjection_eigenspace_sq_eq_measureReal_singleton hU v hσ ω
 
 end ComplexInnerProduct
 

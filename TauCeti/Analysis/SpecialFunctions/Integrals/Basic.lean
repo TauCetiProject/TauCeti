@@ -11,6 +11,7 @@ public import Mathlib.RingTheory.Polynomial.Pochhammer
 import Mathlib.Analysis.SpecialFunctions.Pow.Deriv
 import Mathlib.Analysis.SpecialFunctions.Trigonometric.Chebyshev.Orthogonality
 import Mathlib.MeasureTheory.Integral.DivergenceTheorem
+import Mathlib.MeasureTheory.Integral.DominatedConvergence
 import Mathlib.MeasureTheory.Integral.IntervalIntegral.Periodic
 
 /-!
@@ -46,6 +47,8 @@ Interval integrals of elementary functions in closed form or as series, continui
   `C ≥ 0`.
 * `TauCeti.integral_cexp_intCast_mul_mul_I`: `∫ θ in -π..π, exp (k θ i)` is `2π` for
   integer `k = 0` and `0` otherwise, the orthogonality of the Fourier characters on `[-π, π]`.
+* `TauCeti.continuous_intervalIntegral_cexp_mul_I`: continuity of
+  `u ↦ ∫ t in a..b, exp (t * u * I)` in `u : ℝ`.
 * `TauCeti.norm_intervalIntegral_cexp_mul_I_le`: `‖∫ t in a..b, exp (t * u * I)‖ ≤ |b - a|` for
   every real `u`, `a`, and `b`.
 * `TauCeti.norm_inv_mul_intervalIntegral_cexp_mul_I_le_one`,
@@ -282,6 +285,12 @@ theorem integral_cexp_intCast_mul_mul_I (k : ℤ) :
       Complex.exp_eq_exp_iff_exists_int.mpr ⟨k, by push_cast; ring⟩
     simp_rw [mul_right_comm _ _ Complex.I]
     rw [integral_exp_mul_complex hc, ite_eq_right hk, hper, sub_self, zero_div]
+
+/-- The interval integral `u ↦ ∫ t in a..b, exp (t * u * I)` depends continuously on the real
+frequency `u`. -/
+theorem continuous_intervalIntegral_cexp_mul_I (a b : ℝ) :
+    Continuous fun u : ℝ => ∫ t in a..b, Complex.exp (t * u * Complex.I) :=
+  intervalIntegral.continuous_parametric_intervalIntegral_of_continuous' (by fun_prop) a b
 
 /-- The interval integral of a complex exponential character `t ↦ exp (t * u * I)` has modulus
 at most the interval length `|b - a|`. -/
