@@ -89,10 +89,10 @@ variable (p) in
 continuous character `ℚ_pˣ → ℤ_pˣ`. It sends `p` to `1` and is the identity on `ℤ_pˣ`
 (`TauCeti.padicUnitPart_apply_of_eq`). -/
 def padicUnitPart : ℚ_[p]ˣ →ₜ* ℤ_[p]ˣ where
-  toFun x := PadicInt.mkUnits (Padic.norm_mul_zpow_neg_valuation x.ne_zero)
+  toFun x := PadicInt.mkUnits ((PadicInt.norm_coe _).trans (Padic.norm_unitPart x.ne_zero))
   map_one' := Units.ext <| PadicInt.ext <| by simp
   map_mul' x y := Units.ext <| PadicInt.ext <| by
-    simp only [Units.val_mul, PadicInt.coe_mul, PadicInt.mkUnits_eq,
+    simp only [Units.val_mul, PadicInt.coe_mul, PadicInt.mkUnits_eq, Padic.coe_unitPart,
       Padic.valuation_mul x.ne_zero y.ne_zero, neg_add,
       zpow_add₀ (Nat.cast_ne_zero.2 (Fact.out : p.Prime).ne_zero : (p : ℚ_[p]) ≠ 0)]
     ring
@@ -101,19 +101,27 @@ def padicUnitPart : ℚ_[p]ˣ →ₜ* ℤ_[p]ˣ where
       PadicInt.isOpenEmbedding_coe.isEmbedding.continuous_iff.2 ?_
     exact (Units.continuous_val.mul
       ((continuous_of_discreteTopology (f := fun n : ℤ ↦ (p : ℚ_[p]) ^ (-n))).comp
-        Padic.continuous_valuation_units)).congr fun x ↦ (PadicInt.mkUnits_eq _).symm
+        Padic.continuous_valuation_units)).congr fun x ↦
+      ((PadicInt.mkUnits_eq _).trans (Padic.coe_unitPart _)).symm
 
 /-- The unit part of `x` is `x p ^ (-v(x))`. -/
 @[simp]
 theorem coe_padicUnitPart_apply (x : ℚ_[p]ˣ) :
     ((padicUnitPart p x : ℤ_[p]) : ℚ_[p]) = x * (p : ℚ_[p]) ^ (-(x : ℚ_[p]).valuation) :=
-  PadicInt.mkUnits_eq (Padic.norm_mul_zpow_neg_valuation x.ne_zero)
+  (PadicInt.mkUnits_eq ((PadicInt.norm_coe _).trans (Padic.norm_unitPart x.ne_zero))).trans
+    (Padic.coe_unitPart _)
+
+/-- On nonzero `p`-adic numbers, the unit part `TauCeti.padicUnitPart` is the total unit part
+`Padic.unitPart`. -/
+theorem coe_padicUnitPart_eq_unitPart (x : ℚ_[p]ˣ) :
+    ((padicUnitPart p x : ℤ_[p]ˣ) : ℤ_[p]) = Padic.unitPart (x : ℚ_[p]) :=
+  PadicInt.ext ((coe_padicUnitPart_apply x).trans (Padic.coe_unitPart _).symm)
 
 /-- **Every nonzero `p`-adic number is `p ^ v(x)` times its unit part.** -/
 theorem coe_eq_zpow_valuation_mul_padicUnitPart (x : ℚ_[p]ˣ) :
     (x : ℚ_[p]) = (p : ℚ_[p]) ^ (x : ℚ_[p]).valuation * (padicUnitPart p x : ℤ_[p]) := by
-  have hp : (p : ℚ_[p]) ≠ 0 := Nat.cast_ne_zero.2 (Fact.out : p.Prime).ne_zero
-  simp [mul_left_comm, zpow_ne_zero, hp]
+  rw [coe_padicUnitPart_apply, ← Padic.coe_unitPart]
+  exact Padic.eq_zpow_valuation_mul_unitPart _
 
 /-- **The unit part of `p ^ k u` is `u`.** In particular `x|x|` sends `p` to `1` and is the
 identity on `ℤ_pˣ`. -/

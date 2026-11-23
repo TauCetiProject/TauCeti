@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.Real.Sqrt
 public import Mathlib.MeasureTheory.Integral.Bochner.Basic
 public import Mathlib.MeasureTheory.Function.LpSeminorm.Basic
+public import Mathlib.MeasureTheory.Integral.IntegrableOn
 import Mathlib.Analysis.SpecialFunctions.Pow.Real
 import Mathlib.MeasureTheory.Function.L2Space
 import Mathlib.MeasureTheory.Integral.Bochner.Set
@@ -27,6 +28,15 @@ without roots or sign conditions, as it is used in energy estimates.
 Also provides the square-root form
 `TauCeti.abs_integral_mul_le_sqrt_integral_sq_mul_sqrt_integral_sq` and the finite-measure set
 integral bound `TauCeti.abs_setIntegral_le_sqrt_integral_sq_mul_sqrt_measureReal`.
+
+Against the constant function `1` it gives the set-integral form
+`(∫ x in S, f x ∂μ)² ≤ μ(S) ∫ x in S, f x² ∂μ` on a set of finite measure
+(`TauCeti.sq_setIntegral_le_measureReal_mul_setIntegral_sq`), which needs only `f²`
+to be integrable on `S`. For a measure of total mass at most `1`, such as a probability measure or
+its restriction to an event, this becomes the first-moment bound `|∫ g dμ| ≤ √(∫ g² dμ)` for `g`
+with `g²` integrable (`MeasureTheory.Integrable.abs_integral_le_sqrt_integral_sq`). Its
+consequence for absolute moments is `∫ ‖f‖ᵏ dμ ≤ √(∫ ‖f‖²ᵏ dμ)` for `f` with `‖f‖²ᵏ` integrable
+(`MeasureTheory.Integrable.integral_norm_pow_le_sqrt_integral_norm_pow_two_mul`).
 -/
 
 public section
@@ -78,4 +88,43 @@ theorem abs_setIntegral_le_sqrt_integral_sq_mul_sqrt_measureReal {α : Type*} [M
     (setIntegral_le_integral hf.integrable_sq (.of_forall fun _ ↦ sq_nonneg _)))
     (Real.sqrt_nonneg _))
 
+/-- Cauchy--Schwarz for a real-valued set integral over a set of finite measure, in squared form.
+Only `f²` needs to be integrable on `S`. -/
+theorem sq_setIntegral_le_measureReal_mul_setIntegral_sq {Ω : Type*} [MeasurableSpace Ω]
+    {μ : Measure Ω} (f : Ω → ℝ) (S : Set Ω) (hS_top : μ S ≠ ⊤)
+    (hf_sq : IntegrableOn (fun x => f x ^ 2) S μ) :
+    (∫ x in S, f x ∂μ) ^ 2 ≤ μ.real S * ∫ x in S, f x ^ 2 ∂μ := by
+  by_cases hf : AEStronglyMeasurable f (μ.restrict S)
+  · have : IsFiniteMeasure (μ.restrict S) := isFiniteMeasure_restrict.2 hS_top
+    have h := sq_integral_mul_le_integral_sq_mul_integral_sq
+      ((memLp_two_iff_integrable_sq hf).2 hf_sq) (memLp_const (1 : ℝ))
+    simpa [mul_comm] using h
+  · rw [integral_non_aestronglyMeasurable hf]
+    simpa using mul_nonneg measureReal_nonneg (integral_nonneg fun x => sq_nonneg (f x))
+
 end TauCeti
+
+namespace MeasureTheory.Integrable
+
+/-- For a measure of total mass at most `1`, the absolute value of the mean of a real function with
+integrable square is at most the square root of its second moment. -/
+theorem abs_integral_le_sqrt_integral_sq {Ω : Type*} [MeasurableSpace Ω] {μ : Measure Ω}
+    {g : Ω → ℝ} (hg : Integrable (fun x => g x ^ 2) μ) (hμ : μ Set.univ ≤ 1) :
+    |∫ x, g x ∂μ| ≤ √(∫ x, g x ^ 2 ∂μ) := by
+  apply Real.abs_le_sqrt
+  have h := TauCeti.sq_setIntegral_le_measureReal_mul_setIntegral_sq g Set.univ
+    (hμ.trans_lt ENNReal.one_lt_top).ne hg.integrableOn
+  rw [Measure.restrict_univ] at h
+  exact h.trans (mul_le_of_le_one_left (integral_nonneg fun x => sq_nonneg _)
+    (ENNReal.toReal_le_of_le_ofReal zero_le_one (by rwa [ENNReal.ofReal_one])))
+
+/-- For a measure of total mass at most `1`, the `k`-th absolute moment of a function is at most
+the square root of its `2k`-th absolute moment, provided `‖f‖ ^ (2 * k)` is integrable. -/
+theorem integral_norm_pow_le_sqrt_integral_norm_pow_two_mul {Ω E : Type*} [MeasurableSpace Ω]
+    [Norm E] {μ : Measure Ω} {f : Ω → E} {k : ℕ}
+    (hf : Integrable (fun x => ‖f x‖ ^ (2 * k)) μ) (hμ : μ Set.univ ≤ 1) :
+    ∫ x, ‖f x‖ ^ k ∂μ ≤ √(∫ x, ‖f x‖ ^ (2 * k) ∂μ) := by
+  simp only [pow_mul'] at hf ⊢
+  exact le_of_abs_le (hf.abs_integral_le_sqrt_integral_sq hμ)
+
+end MeasureTheory.Integrable

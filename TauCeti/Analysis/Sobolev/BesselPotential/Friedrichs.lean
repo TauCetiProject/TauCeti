@@ -15,7 +15,6 @@ import TauCeti.Analysis.Distribution.TemperedDistribution.SmulLeft
 import TauCeti.Analysis.Fourier.L2Multiplier
 import TauCeti.Analysis.Sobolev.BesselPotential.Multiplication
 import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Peetre
-import TauCeti.MeasureTheory.Function.Lp.Norm
 
 /-!
 # Friedrichs' commutator estimate on the Bessel-potential spaces `H^s(ℝⁿ)`
@@ -402,7 +401,7 @@ theorem exists_besselPotential_fourierMultiplierCLM_eq_and_norm_le_and_tendsto (
   · rw [besselPotential_fourierMultiplierCLM (hg ε), hv,
       Lp.fourierMultiplierCLM_toTemperedDistribution_eq (hg := hg ε) (hg' := hm ε)]
   · exact (Lp.fourierMultiplierCLM F _).le_of_opNorm_le
-      (Lp.norm_fourierMultiplierCLM_toLp_le (hm ε) (by positivity) (.of_forall (hb ε))) v
+      (Lp.norm_fourierMultiplierCLM_toLp_le (hm ε) (.of_forall (hb ε))) v
   · -- Along every sequence `εₙ → 0`, dominated convergence on the Fourier side applies, since
     -- `θ(εₙ ζ) → θ 0 = 1` for every `ζ` and `‖θ(εₙ ζ)‖ ≤ sup ‖θ‖`.
     have h1 : MemLp (fun _ : E ↦ (1 : ℂ)) ∞ volume := memLp_top_const 1
@@ -413,7 +412,7 @@ theorem exists_besselPotential_fourierMultiplierCLM_eq_and_norm_le_and_tendsto (
     refine tendsto_iff_seq_tendsto.2 fun e he ↦ ?_
     refine Lp.tendsto_fourierMultiplierCLM_apply (l := atTop) (m := fun n ↦ (hm (e n)).toLp _)
       (C := SchwartzMap.seminorm ℝ 0 0 θ)
-      (.of_forall fun n ↦ Lp.norm_top_le_of_ae_bound (by positivity) ?_) ?_ v
+      (.of_forall fun n ↦ Lp.norm_le_of_ae_bound_top (by positivity) ?_) ?_ v
     · filter_upwards [(hm (e n)).coeFn_toLp] with ζ hζ
       rw [hζ]
       exact hb (e n) ζ
