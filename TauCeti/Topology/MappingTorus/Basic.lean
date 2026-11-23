@@ -147,6 +147,12 @@ theorem isOpenMap_mk (φ : F ≃ₜ F) :
   funext p
   rfl
 
+/-- The mapping torus of a homeomorphism of a path-connected space is path-connected, as the image
+of the path-connected cylinder `F × ℝ`. -/
+instance pathConnectedSpace [PathConnectedSpace F] (φ : F ≃ₜ F) :
+    PathConnectedSpace (MappingTorus φ) :=
+  (mk_surjective φ).pathConnectedSpace (continuous_mk φ)
+
 /-- **The universal property of the mapping torus.** A function on the cylinder `F × ℝ` which is
 invariant under the integer action, `f ((φ ^ n) x, t + n) = f (x, t)`, descends to the mapping
 torus. -/
@@ -183,7 +189,7 @@ def monodromyHomotopy (φ : F ≃ₜ F) :
     ((incl φ).comp ⟨φ, φ.continuous⟩).Homotopy (incl φ) where
   toFun p := mk φ (φ p.2) p.1
   continuous_toFun := (continuous_mk φ).comp
-    ((φ.continuous.comp continuous_snd).prodMk (continuous_subtype_val.comp continuous_fst))
+    ((φ.continuous.comp continuous_snd).prodMk (continuous_subtypeVal.comp continuous_fst))
   map_zero_left x := rfl
   map_one_left x := by
     simpa using mk_vadd φ 1 x 0

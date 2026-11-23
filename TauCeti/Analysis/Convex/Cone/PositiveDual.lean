@@ -75,13 +75,13 @@ theorem tendsto_iff_forall_monotone_dual [FiniteDimensional ℝ E] {α : Type*} 
   -- Evaluation at the monotone functionals is injective, so it embeds `E` into a product of
   -- copies of `ℝ`, where convergence is coordinatewise.
   let ev : E →ₗ[ℝ] ({φ : StrongDual ℝ E // Monotone φ} → ℝ) :=
-    LinearMap.pi fun φ ↦ (φ.1 : E →ₗ[ℝ] ℝ)
-  have ev_apply (x : E) (φ : {φ : StrongDual ℝ E // Monotone φ}) : ev x φ = φ.1 x := by
+    LinearMap.pi fun φ ↦ (φ.val : E →ₗ[ℝ] ℝ)
+  have ev_apply (x : E) (φ : {φ : StrongDual ℝ E // Monotone φ}) : ev x φ = φ.val x := by
     rw [LinearMap.pi_apply, ContinuousLinearMap.coe_coe]
   have hev : IsClosedEmbedding ev := LinearMap.isClosedEmbedding_of_injective <|
     LinearMap.ker_eq_bot.2 fun x y hxy ↦ eq_iff_forall_monotone_dual_eq.2 fun φ hφ ↦ by
       simpa only [ev_apply] using congr_fun hxy ⟨φ, hφ⟩
   refine hev.tendsto_nhds_iff.2 <| tendsto_pi_nhds.2 fun φ ↦ ?_
-  simpa only [Function.comp_apply, ev_apply] using h φ.1 φ.2
+  simpa only [Function.comp_apply, ev_apply] using h φ.val φ.property
 
 end TauCeti

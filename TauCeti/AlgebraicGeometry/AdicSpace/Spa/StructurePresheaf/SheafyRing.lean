@@ -61,6 +61,8 @@ does not require completeness.
   on the completion, up to isomorphism of topological rings.
 * `TauCeti.Huber.isStablySheafyRing_iff_of_ringEquiv`: stable sheafiness is invariant under
   isomorphisms of topological rings.
+* `TauCeti.Huber.isStablySheafyRing_congr_topology`: stable sheafiness depends only on the topology
+  induced by the uniform additive group structure.
 
 ## References
 
@@ -248,6 +250,24 @@ theorem isStablySheafyRing_iff_of_ringEquiv (e : A ≃+* B) (he : Continuous e)
     (Completion.continuous_mapRingEquiv e he he') (Completion.continuous_mapRingEquiv_symm e he he')
 
 end StableRingEquiv
+
+/-- **Stable sheafiness depends only on the topology**: two uniform additive group structures on the
+same commutative ring with equal induced topologies are stably sheafy together. -/
+theorem isStablySheafyRing_congr_topology {R : Type u} [CommRing R]
+    {u₁ u₂ : UniformSpace R} [hg₁ : @IsUniformAddGroup R u₁ _]
+    [ht₁ : @IsTopologicalRing R u₁.toTopologicalSpace _]
+    [hh₁ : @IsHuberRing R _ u₁.toTopologicalSpace ht₁]
+    [hg₂ : @IsUniformAddGroup R u₂ _]
+    [ht₂ : @IsTopologicalRing R u₂.toTopologicalSpace _]
+    [hh₂ : @IsHuberRing R _ u₂.toTopologicalSpace ht₂]
+    (ht : u₁.toTopologicalSpace = u₂.toTopologicalSpace) :
+    @IsStablySheafyRing.{u, v} R _ u₁ hg₁ ht₁ hh₁ ↔
+      @IsStablySheafyRing.{u, v} R _ u₂ hg₂ ht₂ hh₂ :=
+  @isStablySheafyRing_iff_of_ringEquiv.{u, v, u} R _ u₁ hg₁ ht₁ hh₁ R _ u₂ hg₂ ht₂ hh₂
+    (RingEquiv.refl R)
+    (@continuous_def R R u₁.toTopologicalSpace u₂.toTopologicalSpace _ |>.mpr fun _ hs ↦ ht ▸ hs)
+    (@continuous_def R R u₂.toTopologicalSpace u₁.toTopologicalSpace _ |>.mpr fun _ hs ↦
+      ht.symm ▸ hs)
 
 end TauCeti.Huber
 

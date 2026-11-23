@@ -184,11 +184,11 @@ theorem closure_normalTubeOfRadius (hf : ContMDiff I 𝓘(ℝ, V) 1 f)
     rw [closure_ball _ (hpos x).ne']
     exact mem_closedBall_zero_iff.mpr hnorm
   have hc : Continuous fun u : normalSubspace I f x => (x, (u : V)) :=
-    continuous_const.prodMk continuous_subtype_val
+    continuous_const.prodMk continuous_subtypeVal
   have hsub : (fun u : normalSubspace I f x => (x, (u : V))) '' Metric.ball 0 (r x) ⊆
       normalTubeOfRadius I f r := by
     rintro _ ⟨u, hu, rfl⟩
-    exact mem_normalTubeOfRadius.mpr ⟨u.2, mem_ball_zero_iff.mp hu⟩
+    exact mem_normalTubeOfRadius.mpr ⟨u.property, mem_ball_zero_iff.mp hu⟩
   exact closure_mono hsub (mem_closure_image (hc.continuousAt (x := w)) hw)
 
 end Regularity

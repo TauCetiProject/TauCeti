@@ -159,7 +159,8 @@ omit [Finite (stabilizer Γ z)] in
 disc, the domain of a reparametrization. -/
 private theorem mem_ball_discCoordinate (τ : stabilizerBall Γ z ε) :
     discCoordinate z (τ : ℍ) ∈ Metric.ball 0 (Real.tanh (ε / 2)) := by
-  have hball : (τ : ℍ) ∈ Metric.ball z ε := Metric.mem_ball.mpr ((mem_stabilizerBall Γ z ε).1 τ.2)
+  have hball : (τ : ℍ) ∈ Metric.ball z ε := Metric.mem_ball.mpr ((mem_stabilizerBall Γ z ε).1
+      τ.property)
   rw [mem_ball_zero_iff]
   exact (mem_ball_iff_norm_discCoordinate_lt (z := z) (τ := (τ : ℍ)) (ε := ε)).mp hball
 
@@ -207,7 +208,7 @@ when it is the centre: the coordinate is centred at the centre. -/
 theorem LinearizingCoordinate.coordinate_eq_zero_iff
     (ψ : Γ.LinearizingCoordinate z ε) (τ : stabilizerBall Γ z ε) :
     coordinate ψ τ = 0 ↔ (τ : ℍ) = z := by
-  have hε : 0 < ε := lt_of_le_of_lt dist_nonneg ((mem_stabilizerBall Γ z ε).1 τ.2)
+  have hε : 0 < ε := lt_of_le_of_lt dist_nonneg ((mem_stabilizerBall Γ z ε).1 τ.property)
   constructor
   · intro h
     have h' : ψ.toEquiv (discCoordinate z (τ : ℍ)) = ψ.toEquiv 0 := by

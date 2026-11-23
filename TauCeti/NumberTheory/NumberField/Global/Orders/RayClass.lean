@@ -109,7 +109,7 @@ theorem coe_integralIdealsAwayConductorToInvertible_eq_spanSingleton
   set γ : O.toRingOfIntegers := ⟨β, hβ⟩
   have : Finite (𝓞 K ⧸ O.conductor) :=
     Ideal.finiteQuotientOfFreeOfNeBot _ O.conductor_ne_bot
-  have hJ' := (O.mem_integralIdealsPrimeTo_conductorModulus_iff).mp J.2
+  have hJ' := (O.mem_integralIdealsPrimeTo_conductorModulus_iff).mp J.property
   have hγ : Ideal.span {γ} ∈ O.integralIdealsAwayConductor := by
     refine (O.mem_integralIdealsAwayConductor_iff).mpr ⟨fun h => hJ'.1 ?_,
       Ideal.span_singleton_sup_comap_eq_top
@@ -135,7 +135,7 @@ theorem picClass_eq_one_iff (J : integralIdealsPrimeTo O.conductorModulus) :
     -- The contraction `J ∩ O` is a principal ideal `γ O`, and `J` is its extension `γ 𝓞 K`.
     obtain ⟨⟨γ, hγ⟩⟩ := h.map_ringHom O.toRingOfIntegersEquiv.symm
     rw [Ideal.map_symm, Ideal.comap_map_of_bijective _ O.toRingOfIntegersEquiv.bijective] at hγ
-    refine ⟨γ, γ.2, ?_⟩
+    refine ⟨γ, γ.property, ?_⟩
     rw [← MulEquiv.apply_symm_apply O.integralIdealsAwayConductorEquiv J,
       coe_integralIdealsAwayConductorEquiv_apply, hγ, Ideal.submodule_span_eq, Ideal.map_span,
       Set.image_singleton, AlgHom.coe_toRingHom, Subalgebra.coe_val]

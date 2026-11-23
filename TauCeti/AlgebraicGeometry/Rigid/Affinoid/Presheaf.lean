@@ -96,6 +96,42 @@ theorem isAffinoidSubdomainMap (U : AffinoidSubdomain K A) :
 theorem isAffinoidAlgebra (U : AffinoidSubdomain K A) : IsAffinoidAlgebra K U.sections :=
   U.isAffinoidSubdomainMap.isAffinoidAlgebra
 
+/-- The algebra of sections on an affinoid subdomain is affinoid, registered as a `Fact`
+instance. -/
+instance instFactIsAffinoidAlgebraSections (U : AffinoidSubdomain K A) :
+    Fact (IsAffinoidAlgebra K U.sections) :=
+  ⟨U.isAffinoidAlgebra⟩
+
+/-- Push an affinoid subdomain of `Sp U.sections` forward along `U.toSections` to an affinoid
+subdomain of `Sp A` contained in `U`. -/
+noncomputable def mapSubdomain (hA : IsAffinoidAlgebra K A) (U : AffinoidSubdomain K A)
+    (W : AffinoidSubdomain K U.sections) : AffinoidSubdomain K A :=
+  ofMap (U.isAffinoidSubdomainMap.comp hA W.isAffinoidSubdomainMap)
+
+@[simp]
+theorem coe_mapSubdomain (hA : IsAffinoidAlgebra K A) (U : AffinoidSubdomain K A)
+    (W : AffinoidSubdomain K U.sections) :
+    (U.mapSubdomain hA W : Set (MaximalSpectrum A)) =
+      U.isAffinoidAlgebra.maximalSpectrumComap U.toSections ''
+        (W : Set (MaximalSpectrum U.sections)) :=
+  coe_ofMap _
+
+theorem mapSubdomain_le (hA : IsAffinoidAlgebra K A) (U : AffinoidSubdomain K A)
+    (W : AffinoidSubdomain K U.sections) : U.mapSubdomain hA W ≤ U := by
+  rw [← SetLike.coe_subset_coe, coe_mapSubdomain]
+  exact (Set.image_subset_range _ _).trans
+    U.isAffinoidSubdomainMap.range_maximalSpectrumComap_subset
+
+/-- Pushing forward a cover of `Sp U.sections` gives a family covering `U`. -/
+theorem sUnion_image_mapSubdomain (hA : IsAffinoidAlgebra K A) (U : AffinoidSubdomain K A)
+    {Q : Set (AffinoidSubdomain K U.sections)}
+    (hQ : ⋃₀ ((fun W : AffinoidSubdomain K U.sections ↦
+      (W : Set (MaximalSpectrum U.sections))) '' Q) = Set.univ) :
+    ⋃₀ ((fun Z : AffinoidSubdomain K A ↦ (Z : Set (MaximalSpectrum A))) ''
+      (U.mapSubdomain hA '' Q)) = (U : Set (MaximalSpectrum A)) := by
+  rw [← U.isAffinoidSubdomainMap.range_maximalSpectrumComap hA, ← Set.image_univ, ← hQ]
+  simp [Set.image_image, Set.sUnion_image, Set.image_iUnion]
+
 /-- Restriction of functions along an inclusion of affinoid subdomains. -/
 noncomputable def restrict {U V : AffinoidSubdomain K A} (h : U ≤ V) :
     V.sections →ₐ[K] U.sections :=
