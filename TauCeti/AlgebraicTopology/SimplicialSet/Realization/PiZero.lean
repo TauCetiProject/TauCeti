@@ -23,6 +23,11 @@ continuous map from `|X|` to the discrete space `π₀ X` adjoint to `X ⟶ π�
 writing `|X|` as the colimit of the realizations of the simplices of `X`, each of which is path
 connected.
 
+In particular every point of `|X|` is joined by a path to the point of a vertex
+(`SSet.exists_joined_toTopPoint`). So `|X|` is empty exactly when `X` has no vertices
+(`SSet.isEmpty_toTop`, `SSet.nonempty_toTop`), and has at most one point when `X` has at most
+one simplex in each dimension (`SSet.subsingleton_toTop`).
+
 Consequently a weak equivalence of simplicial sets, a map whose realization is a weak homotopy
 equivalence, induces a bijection on connected components
 (`SSet.bijective_mapπ₀_of_weakEquivalence`). This is what makes a functor of simplicially
@@ -57,6 +62,12 @@ namespace SSet
 `(sSetTopAdj.unit.app X).app _ x` of `|X|`. -/
 noncomputable def toTopPoint {X : SSet.{u}} (x : X _⦋0⦌) : |X| :=
   TopCat.toSSetObj₀Equiv ((sSetTopAdj.unit.app X).app _ x)
+
+/-- The point of a vertex is the point of that `0`-simplex at the unique barycentric coordinate
+on `Δ⁰`. -/
+lemma toTopPoint_eq_toTopObjMk {X : SSet.{u}} (x : X _⦋0⦌)
+    (w : Convexity.StdSimplex ℝ (Fin 1)) : toTopPoint x = toTopObjMk x w := by
+  rw [Subsingleton.elim w default, toTopPoint, toTopObjMk_def, TopCat.toSSetObj₀Equiv_apply]
 
 /-- The realization of a map sends the point of a vertex to the point of its image. -/
 @[simp]
@@ -163,6 +174,45 @@ noncomputable def π₀EquivZerothHomotopy : π₀ X ≃ ZerothHomotopy |X| :=
 lemma π₀EquivZerothHomotopy_mk (x : X _⦋0⦌) :
     X.π₀EquivZerothHomotopy (π₀.mk x) = .mk (toTopPoint x) :=
   (rfl)
+
+section
+
+variable {X}
+
+/-- Every point of the geometric realization `|X|` is joined by a path to the point of a vertex
+of `X`. -/
+lemma exists_joined_toTopPoint (p : |X|) : ∃ x : X _⦋0⦌, Joined (toTopPoint x) p := by
+  obtain ⟨c, hc⟩ := X.π₀EquivZerothHomotopy.surjective (.mk p)
+  induction c using π₀.rec with | mk x => ?_
+  rw [π₀EquivZerothHomotopy_mk] at hc
+  exact ⟨x, Quotient.exact hc⟩
+
+/-- The geometric realization of a simplicial set without vertices is empty. -/
+instance isEmpty_toTop [IsEmpty (X _⦋0⦌)] : IsEmpty |X| :=
+  ⟨fun p ↦ IsEmpty.false (exists_joined_toTopPoint p).choose⟩
+
+/-- The geometric realization of a simplicial set with a vertex is nonempty. -/
+instance nonempty_toTop [Nonempty (X _⦋0⦌)] : Nonempty |X| :=
+  ⟨toTopPoint (Classical.arbitrary _)⟩
+
+/-- The geometric realization of a simplicial set with at most one simplex in each dimension has at
+most one point: the point of every simplex is the point of a degeneration of a vertex. -/
+lemma subsingleton_toTop (h : ∀ n : ℕ, Subsingleton (X _⦋n⦌)) : Subsingleton |X| := by
+  refine ⟨fun p q ↦ ?_⟩
+  obtain ⟨v, -⟩ := exists_joined_toTopPoint p
+  -- The identity of `|X|` is the constant map at the point of `v`.
+  have hid : 𝟙 |X| = TopCat.ofHom (ContinuousMap.const _ (toTopPoint v)) := by
+    refine toTop_hom_ext fun n x w ↦ ?_
+    rw [Subsingleton.elim x (X.map (SimplexCategory.const ⦋n⦌ ⦋0⦌ 0).op v), toTopObjMk_map,
+      ← toTopPoint_eq_toTopObjMk]
+    simp only [TopCat.hom_id, ContinuousMap.id_apply, TopCat.hom_ofHom, ContinuousMap.const_apply]
+  have hp := ConcreteCategory.congr_hom hid p
+  have hq := ConcreteCategory.congr_hom hid q
+  simp only [TopCat.hom_id, ContinuousMap.id_apply, TopCat.hom_ofHom, ContinuousMap.const_apply]
+    at hp hq
+  rw [hp, hq]
+
+end
 
 open modelCategoryQuillen in
 /-- A weak equivalence of simplicial sets induces a bijection on connected components. -/
