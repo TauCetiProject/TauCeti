@@ -5,13 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.GroupTheory.OrderOfElement
 public import Mathlib.LinearAlgebra.Matrix.NonsingularInverse
 public import Mathlib.LinearAlgebra.Trace
 public import Mathlib.RingTheory.LocalRing.RingHom.Basic
 public import Mathlib.RingTheory.Trace.Defs
 import TauCeti.Algebra.Ring.GeomSum
-import TauCeti.LinearAlgebra.Matrix.Polynomial
 import TauCeti.LinearAlgebra.Trace.RestrictScalars
 
 /-!
@@ -31,14 +29,8 @@ so `T` is invertible because `ε` is local. In particular the trace of `M` lies 
 In other words, a representation over `R` of a cyclic group whose order is invertible in `A` is
 isomorphic to the base change along `algebraMap A R` of its image under `ε`.
 
-Over an integral domain, intertwining `A * P = P * B` by any square matrix `P` of nonzero
-determinant also preserves the multiplicative order (`Matrix.orderOf_eq_of_mul_eq_mul`), via the
-adjugate identities without passing to the fraction field.
-
 ## Main results
 
-* `Matrix.orderOf_eq_of_mul_eq_mul`: matrices intertwined by a matrix of nonzero determinant over an
-  integral domain have the same multiplicative order.
 * `Matrix.exists_isUnit_mul_eq_mul_map_of_pow_eq_one`: `M` is conjugate to its constant part.
 * `Matrix.trace_eq_algebraMap_of_pow_eq_one`: the trace of `M` is the constant `ε (trace M)`.
 * `LinearMap.trace_eq_algebraMap_of_pow_eq_one`: the same for an endomorphism of a free module.
@@ -51,30 +43,6 @@ public section
 open Finset
 
 namespace Matrix
-
-/-- **Intertwining by a matrix of nonzero determinant preserves multiplicative order.** If `P`
-has nonzero determinant over an integral domain and `A * P = P * B`, then
-`orderOf A = orderOf B`. -/
-theorem orderOf_eq_of_mul_eq_mul {n R : Type*} [Fintype n] [DecidableEq n]
-    [CommRing R] [IsDomain R] {A B P : Matrix n n R} (hP : P.det ≠ 0) (h : A * P = P * B) :
-    orderOf A = orderOf B := by
-  refine orderOf_eq_orderOf_iff.mpr fun m ↦ ?_
-  have hm := pow_mul_eq_mul_pow h m
-  constructor
-  · intro hA
-    ext i j
-    have hcol := Matrix.mulVec_injective_of_det_ne_zero hP <| by
-      simpa only [Matrix.col_mul_eq_mulVec_col] using
-        congrArg (·.col j) (by rw [← hm, hA, Matrix.one_mul, Matrix.mul_one] : P * B ^ m = P * 1)
-    exact congrFun hcol i
-  · intro hB
-    have hmT : Pᵀ * (A ^ m)ᵀ = Pᵀ * (1 : Matrix n n R)ᵀ := by
-      rw [← Matrix.transpose_mul, hm, hB, Matrix.mul_one, Matrix.transpose_one, Matrix.mul_one]
-    have hPT : (Pᵀ).det ≠ 0 := by rwa [Matrix.det_transpose]
-    ext i j
-    have hcol := Matrix.mulVec_injective_of_det_ne_zero hPT <| by
-      simpa only [Matrix.col_mul_eq_mulVec_col] using congrArg (·.col i) hmT
-    simpa only [Matrix.col_apply, Matrix.transpose_apply] using congrFun hcol j
 
 variable {A R n : Type*} [CommRing A] [CommRing R] [Algebra A R] [Fintype n] [DecidableEq n]
 

@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.LinearAlgebra.RootSystem.CoxeterNumber
+public import TauCeti.LinearAlgebra.RootSystem.Coxeter.Number
 import Mathlib.Data.Nat.Prime.Basic
 
 /-!

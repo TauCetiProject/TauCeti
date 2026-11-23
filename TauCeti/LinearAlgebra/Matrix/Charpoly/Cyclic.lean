@@ -19,8 +19,9 @@ every coefficient below `n` to vanish.
 
 ## Main results
 
-* `Matrix.charpoly_eq_of_isMonicOfDegree_of_cyclic`: a monic annihilating polynomial of degree `n`
-  with a cyclic basis vector `e₀` equals the characteristic polynomial.
+* `Matrix.charpoly_eq_of_isMonicOfDegree_of_aeval_eq_zero_of_pow_mulVec_single`: a monic
+  annihilating polynomial of degree `n` with standard-basis orbit of `e₀` equals the
+  characteristic polynomial.
 -/
 
 public section
@@ -33,9 +34,9 @@ namespace Matrix
 annihilates `M`, and the first `n` powers of `M` carry `e₀` to the standard basis vectors `eₘ`,
 then `M.charpoly = p`: the difference `M.charpoly - p` has degree `< n` and annihilates `M`, so its
 evaluation at `e₀` forces every coefficient below `n` to vanish. -/
-theorem charpoly_eq_of_isMonicOfDegree_of_cyclic {n : ℕ} {R : Type*} [CommRing R] (hn : 0 < n)
-    {M : Matrix (Fin n) (Fin n) R} {p : R[X]} (hp : p.IsMonicOfDegree n)
-    (hann : aeval M p = 0)
+theorem charpoly_eq_of_isMonicOfDegree_of_aeval_eq_zero_of_pow_mulVec_single {n : ℕ} {R : Type*}
+    [CommRing R] (hn : 0 < n) {M : Matrix (Fin n) (Fin n) R} {p : R[X]}
+    (hp : p.IsMonicOfDegree n) (hann : aeval M p = 0)
     (hcyc : ∀ m (hm : m < n), M ^ m *ᵥ Pi.single ⟨0, hn⟩ 1 = Pi.single ⟨m, hm⟩ 1) :
     M.charpoly = p := by
   rcases subsingleton_or_nontrivial R with _ | _

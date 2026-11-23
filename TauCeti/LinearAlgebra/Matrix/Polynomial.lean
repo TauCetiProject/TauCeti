@@ -36,8 +36,7 @@ In particular, linear coefficients of matrix-valued curves commute with constant
 
 Evaluating a polynomial in a matrix commutes with applying a ring homomorphism to the coefficients
 and to the entries (`Matrix.aeval_map`), and a rectangular matrix intertwining two square matrices
-intertwines every natural power (`Matrix.pow_mul_eq_mul_pow`) and every polynomial in them
-(`Matrix.aeval_mul_eq_mul_aeval`). Natural matrix identities
+intertwines every polynomial in them (`Matrix.aeval_mul_eq_mul_aeval`). Natural matrix identities
 valid at unit parameters extend to all parameters by polynomial specialization
 (`Matrix.identity_of_units`).
 -/
@@ -82,16 +81,6 @@ theorem aeval_map {R S : Type*} [CommSemiring R] [CommSemiring S] (A : Matrix n 
     (ψ := φ.mapMatrix) (RingHom.ext fun r ↦ ?_) f A).symm
   ext i j
   by_cases h : i = j <;> simp [algebraMap_matrix_apply, h]
-
-/-- **Powers preserve intertwiners.** If a rectangular matrix `V` intertwines the square matrices
-`A` and `B`, that is `A * V = V * B`, then it intertwines every natural power of them. -/
-theorem pow_mul_eq_mul_pow {m : Type*} [Fintype m] [DecidableEq m] [Semiring R]
-    {A : Matrix n n R} {B : Matrix m m R} {V : Matrix n m R} (h : A * V = V * B) (k : ℕ) :
-    A ^ k * V = V * B ^ k := by
-  induction k with
-  | zero => simp
-  | succ k ih =>
-    rw [pow_succ, pow_succ, Matrix.mul_assoc, h, ← Matrix.mul_assoc, ih, Matrix.mul_assoc]
 
 /-- **Polynomials preserve intertwiners.** If a rectangular matrix `V` intertwines the square
 matrices `A` and `B`, that is `A * V = V * B`, then it intertwines every polynomial in them. -/

@@ -68,6 +68,60 @@ theorem formPerm_sort_univ (n : ℕ) :
     (Finset.univ : Finset (Fin n)).sort.formPerm = finRotate n := by
   rw [sort_univ, List.formPerm_finRange]
 
+/-- Multiplying the `(k + 1)`-cycle `Fin.cycleRange k` on the right by the adjacent transposition
+`(k, k + 1)` extends it to the `(k + 2)`-cycle `Fin.cycleRange (k + 1)`. -/
+theorem cycleRange_mul_swap {N k : ℕ} (hk : k + 1 < N) :
+    cycleRange (⟨k, by omega⟩ : Fin N) * Equiv.swap ⟨k, by omega⟩ ⟨k + 1, hk⟩ =
+      cycleRange ⟨k + 1, hk⟩ := by
+  have : NeZero N := ⟨by omega⟩
+  ext j
+  rw [Equiv.Perm.mul_apply]
+  rcases lt_trichotomy j.val k with hlt | heq | hgt
+  · have hj1 : j ≠ ⟨k, by omega⟩ := Fin.ne_of_val_ne hlt.ne
+    have hj2 : j ≠ ⟨k + 1, hk⟩ := Fin.ne_of_val_ne (by dsimp; omega)
+    rw [Equiv.swap_apply_of_ne_of_ne hj1 hj2, cycleRange_of_lt (Fin.lt_def.mpr hlt),
+      cycleRange_of_lt (Fin.lt_def.mpr (by dsimp; omega))]
+  · have hj : j = ⟨k, by omega⟩ := Fin.ext heq
+    rw [hj, Equiv.swap_apply_left, cycleRange_of_gt (Fin.lt_def.mpr (by dsimp; omega)),
+      cycleRange_of_lt (Fin.lt_def.mpr (by dsimp; omega)), Fin.val_add,
+      Fin.val_one', Nat.mod_eq_of_lt (by omega : 1 < N), Fin.val_mk, Fin.val_mk,
+      Nat.mod_eq_of_lt hk]
+  · rcases eq_or_lt_of_le (Nat.succ_le_of_lt hgt) with heq1 | hgt1
+    · have hj : j = ⟨k + 1, hk⟩ := Fin.ext heq1.symm
+      rw [hj, Equiv.swap_apply_right, cycleRange_self, cycleRange_self]
+    · have hj1 : j ≠ ⟨k, by omega⟩ := Fin.ne_of_val_ne (by dsimp; omega)
+      have hj2 : j ≠ ⟨k + 1, hk⟩ := Fin.ne_of_val_ne hgt1.ne'
+      rw [Equiv.swap_apply_of_ne_of_ne hj1 hj2, cycleRange_of_gt (Fin.lt_def.mpr hgt),
+        cycleRange_of_gt (Fin.lt_def.mpr hgt1)]
+
+/-- The product of the first `k` adjacent transpositions `(0, 1), (1, 2), …, (k - 1, k)` in
+`Equiv.Perm (Fin N)` is the `(k + 1)`-cycle `Fin.cycleRange k`. -/
+theorem prod_finRange_swap_eq_cycleRange {N : ℕ} (k : ℕ) (hk : k < N) :
+    ((List.finRange k).map fun i : Fin k =>
+        Equiv.swap (⟨i.val, by omega⟩ : Fin N) ⟨i.val + 1, by omega⟩).prod =
+      cycleRange ⟨k, hk⟩ := by
+  induction k with
+  | zero => simp
+  | succ k ih =>
+    rw [List.finRange_succ_last, List.map_append, List.prod_append, List.map_map,
+      List.map_singleton, List.prod_singleton]
+    have hpre : ((List.finRange k).map
+        ((fun i : Fin (k + 1) =>
+            Equiv.swap (⟨i.val, by omega⟩ : Fin N) ⟨i.val + 1, by omega⟩) ∘
+          Fin.castSucc)).prod =
+        cycleRange ⟨k, by omega⟩ :=
+      ih (by omega)
+    rw [hpre]
+    simp only [Fin.val_last, cycleRange_mul_swap hk]
+
+/-- The product of all `m` adjacent transpositions `(i, i + 1)` on `Fin (m + 1)` is the cyclic
+rotation `finRotate (m + 1)`. -/
+theorem prod_finRange_swap_castSucc_succ (m : ℕ) :
+    ((List.finRange m).map fun i : Fin m => Equiv.swap i.castSucc i.succ).prod =
+      finRotate (m + 1) := by
+  rw [← cycleRange_last m]
+  exact prod_finRange_swap_eq_cycleRange m (Nat.lt_succ_self m)
+
 end Fin
 
 namespace TauCeti

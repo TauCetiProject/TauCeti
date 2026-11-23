@@ -37,8 +37,10 @@ This applies to words in the generators of a Coxeter group, whose Coxeter graph 
 
 * `List.eq_of_isOneDegenerateOrder`: a function of the orderings of a duplicate-free
   one-degenerate order that is invariant under commutations and rotations is constant.
-* `List.IsOneDegenerateOrder.append_singleton` builds a one-degenerate order letter by letter, and
-  `List.IsOneDegenerateOrder.map_equiv` transports one along an equivalence.
+* `List.IsOneDegenerateOrder.append_singleton` builds a one-degenerate order letter by letter,
+  `List.IsOneDegenerateOrder.map_equiv` transports one along an equivalence, and
+  `List.isOneDegenerateOrder_finRange` certifies `List.finRange n` when each vertex is adjacent
+  to at most one earlier vertex.
 
 ## References
 
@@ -184,6 +186,19 @@ theorem IsOneDegenerateOrder.map_equiv {adj' : β → β → Prop} {S : List β}
   have hS' : S = S₁.map e ++ e z :: S₂.map e := by
     simpa [map_map] using congrArg (map e) hS
   exact e.injective (h _ _ _ hS' (e x) (mem_map_of_mem hx) (e y) (mem_map_of_mem hy) hxz hyz)
+
+/-- `finRange n` is a one-degenerate order for any adjacency relation on `Fin n` under which each
+vertex is adjacent to at most one earlier vertex. -/
+theorem isOneDegenerateOrder_finRange {n : ℕ} {adj : Fin n → Fin n → Prop}
+    (h : ∀ x y z : Fin n, x.val < z.val → y.val < z.val → adj z x → adj z y → x = y) :
+    IsOneDegenerateOrder adj (finRange n) := by
+  have hpw : (finRange n).Pairwise (fun a b => a.val < b.val) :=
+    pairwise_iff_getElem.2 fun _ _ _ _ hij => by simpa using hij
+  rw [isOneDegenerateOrder_iff]
+  intro S₁ z S₂ hS x hx y hy hzx hzy
+  rw [hS, pairwise_append] at hpw
+  exact h x y z (hpw.2.2 x hx z (mem_cons_self ..))
+    (hpw.2.2 y hy z (mem_cons_self ..)) hzx hzy
 
 /-- **Orderings of a forest are connected.** If `S` is a duplicate-free one-degenerate order for a
 symmetric relation `adj`, then a function of the orderings of `S` that is invariant under

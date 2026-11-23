@@ -7,7 +7,8 @@ module
 
 public import TauCeti.LinearAlgebra.Matrix.Charpoly.Cyclotomic
 public import TauCeti.LinearAlgebra.RootSystem.Coxeter.Element.Charpoly
-public import TauCeti.LinearAlgebra.RootSystem.CoxeterNumber
+public import TauCeti.LinearAlgebra.RootSystem.Coxeter.Number
+public import TauCeti.LinearAlgebra.RootSystem.FiniteType.Classification
 import TauCeti.LinearAlgebra.Matrix.Cartan.Coxeter.Classical
 import TauCeti.LinearAlgebra.Matrix.Cartan.Coxeter.Exceptional
 
@@ -44,10 +45,14 @@ classification has matched to a type. TauCeti's `G₂` Cartan matrix is the tran
 * `TauCeti.Coxeter.orderOf_wordProd_of_hasCartanType_A` (and `B`, `C`, `D`, `E6`, `E7`, `E8`, `F4`,
   `G2`): every Coxeter element of a base of that type has order `h`.
 * `TauCeti.Coxeter.charpoly_of_hasCartanType_A_of_actsBy` (and `B`, `C`, `D`, `E6`, `E7`, `E8`,
-  `F4`, `G2`): the matrix of every such Coxeter element on the simple roots has the characteristic
-  polynomial in the table.
-* `TauCeti.Coxeter.orderOf_wordProd_of_hasCartanType`: every Coxeter element of a base of valid
-  Cartan type `t` has order `t.coxeterNumber`.
+  `F4`, `G2`), and `TauCeti.Coxeter.charpoly_of_hasCartanType_of_actsBy`: the matrix of every such
+  Coxeter element on the simple roots has the characteristic polynomial of `coxeterElement
+  t.cartanMatrix`.
+* `TauCeti.Coxeter.orderOf_wordProd_of_hasCartanType`,
+  `orderOf_wordProd_eq_coxeterNumber_classifiedDynkinType`, `two_le_orderOf_wordProd`, and
+  `orderOf_wordProd_eq_orderOf_wordProd`: every Coxeter element of a finite irreducible reduced
+  crystallographic root system has order `t.coxeterNumber` (at least `2`), independent of base and
+  ordering.
 
 ## References
 
@@ -250,7 +255,7 @@ theorem orderOf_wordProd_of_hasCartanType_A [Finite ι] {n : ℕ} (h : HasCartan
     (hnd : l.Nodup) (hall : ∀ i, i ∈ l) : orderOf (wordProd P b l) = n + 1 :=
   (orderOf_wordProd_of_isOneDegenerateOrder_of_hasCartanType (t := .A n)
     (DynkinType.cartanMatrix_A n) (isOneDegenerateOrder_A n) (List.Perm.refl _) h hnd
-    hall).trans (orderOf_coxA n)
+    hall).trans (orderOf_coxeterElement_A n)
 
 /-- **Every Coxeter element of a base of type `Bₙ` (`1 ≤ n`) has order `2 n`.** -/
 theorem orderOf_wordProd_of_hasCartanType_B [Finite ι] {n : ℕ} (hn : 1 ≤ n)
@@ -258,7 +263,7 @@ theorem orderOf_wordProd_of_hasCartanType_B [Finite ι] {n : ℕ} (hn : 1 ≤ n)
     orderOf (wordProd P b l) = 2 * n :=
   (orderOf_wordProd_of_isOneDegenerateOrder_of_hasCartanType (t := .B n)
     (DynkinType.cartanMatrix_B n) (isOneDegenerateOrder_B n) (List.Perm.refl _) h hnd
-    hall).trans (orderOf_coxB hn)
+    hall).trans (orderOf_coxeterElement_B hn)
 
 /-- **Every Coxeter element of a base of type `Cₙ` (`1 ≤ n`) has order `2 n`.** -/
 theorem orderOf_wordProd_of_hasCartanType_C [Finite ι] {n : ℕ} (hn : 1 ≤ n)
@@ -266,7 +271,7 @@ theorem orderOf_wordProd_of_hasCartanType_C [Finite ι] {n : ℕ} (hn : 1 ≤ n)
     orderOf (wordProd P b l) = 2 * n :=
   (orderOf_wordProd_of_isOneDegenerateOrder_of_hasCartanType (t := .C n)
     (DynkinType.cartanMatrix_C n) (isOneDegenerateOrder_C n) (List.Perm.refl _) h hnd
-    hall).trans (orderOf_coxC hn)
+    hall).trans (orderOf_coxeterElement_C hn)
 
 /-- **Every Coxeter element of a base of type `Dₙ` (`2 ≤ n`) has order `2 (n - 1)`.** -/
 theorem orderOf_wordProd_of_hasCartanType_D [Finite ι] {n : ℕ} (hn : 2 ≤ n)
@@ -274,7 +279,7 @@ theorem orderOf_wordProd_of_hasCartanType_D [Finite ι] {n : ℕ} (hn : 2 ≤ n)
     orderOf (wordProd P b l) = 2 * (n - 1) :=
   (orderOf_wordProd_of_isOneDegenerateOrder_of_hasCartanType (t := .D n)
     (DynkinType.cartanMatrix_D n) (isOneDegenerateOrder_D n) (List.Perm.refl _) h hnd
-    hall).trans (orderOf_coxD hn)
+    hall).trans (orderOf_coxeterElement_D hn)
 
 /-- **Every Coxeter element of a base of type `Aₙ`** has characteristic polynomial
 `∑_{k=0}^n X^k` on the simple roots. -/
@@ -284,7 +289,7 @@ theorem charpoly_of_hasCartanType_A_of_actsBy [DecidableEq ι] {n : ℕ}
     W.charpoly = ∑ k ∈ Finset.range (n + 1), Polynomial.X ^ k :=
   (charpoly_of_isOneDegenerateOrder_of_hasCartanType_of_actsBy (t := .A n)
     (DynkinType.cartanMatrix_A n) (isOneDegenerateOrder_A n) (List.Perm.refl _) h hnd
-    hall hW).trans (charpoly_coxA n)
+    hall hW).trans (charpoly_coxeterElement_A n)
 
 /-- **Every Coxeter element of a base of type `Bₙ` (`1 ≤ n`)** has characteristic polynomial
 `X^n + 1` on the simple roots. -/
@@ -294,7 +299,7 @@ theorem charpoly_of_hasCartanType_B_of_actsBy [DecidableEq ι] {n : ℕ} (hn : 1
     W.charpoly = Polynomial.X ^ n + 1 :=
   (charpoly_of_isOneDegenerateOrder_of_hasCartanType_of_actsBy (t := .B n)
     (DynkinType.cartanMatrix_B n) (isOneDegenerateOrder_B n) (List.Perm.refl _) h hnd
-    hall hW).trans (charpoly_coxB hn)
+    hall hW).trans (charpoly_coxeterElement_B hn)
 
 /-- **Every Coxeter element of a base of type `Cₙ` (`1 ≤ n`)** has characteristic polynomial
 `X^n + 1` on the simple roots. -/
@@ -304,7 +309,7 @@ theorem charpoly_of_hasCartanType_C_of_actsBy [DecidableEq ι] {n : ℕ} (hn : 1
     W.charpoly = Polynomial.X ^ n + 1 :=
   (charpoly_of_isOneDegenerateOrder_of_hasCartanType_of_actsBy (t := .C n)
     (DynkinType.cartanMatrix_C n) (isOneDegenerateOrder_C n) (List.Perm.refl _) h hnd
-    hall hW).trans (charpoly_coxC hn)
+    hall hW).trans (charpoly_coxeterElement_C hn)
 
 /-- **Every Coxeter element of a base of type `Dₙ` (`2 ≤ n`)** has characteristic polynomial
 `(X^{n-1} + 1)(X + 1)` on the simple roots. -/
@@ -314,9 +319,53 @@ theorem charpoly_of_hasCartanType_D_of_actsBy [DecidableEq ι] {n : ℕ} (hn : 2
     W.charpoly = (Polynomial.X ^ (n - 1) + 1) * (Polynomial.X + 1) :=
   (charpoly_of_isOneDegenerateOrder_of_hasCartanType_of_actsBy (t := .D n)
     (DynkinType.cartanMatrix_D n) (isOneDegenerateOrder_D n) (List.Perm.refl _) h hnd
-    hall hW).trans (charpoly_coxD hn)
+    hall hW).trans (charpoly_coxeterElement_D hn)
 
-/-! ### Uniform order across all valid Dynkin types -/
+/-! ### Uniform characteristic polynomial and order across all Dynkin types -/
+
+/-- **Every Coxeter element of a base of Cartan type `t`** has the same characteristic polynomial
+on the simple roots as `Matrix.coxeterElement t.cartanMatrix`. -/
+theorem charpoly_of_hasCartanType_of_actsBy [DecidableEq ι] {t : DynkinType}
+    (h : HasCartanType P b t) (hnd : l.Nodup) (hall : ∀ i, i ∈ l)
+    {W : Matrix b.support b.support ℤ} (hW : b.ActsBy (wordProd P b l) W) :
+    W.charpoly = (coxeterElement t.cartanMatrix).charpoly := by
+  cases t with
+  | A n =>
+    rw [DynkinType.cartanMatrix_A]
+    exact charpoly_of_isOneDegenerateOrder_of_hasCartanType_of_actsBy (t := .A n)
+      (DynkinType.cartanMatrix_A n) (isOneDegenerateOrder_A n) (List.Perm.refl _) h hnd hall hW
+  | B n =>
+    rw [DynkinType.cartanMatrix_B]
+    exact charpoly_of_isOneDegenerateOrder_of_hasCartanType_of_actsBy (t := .B n)
+      (DynkinType.cartanMatrix_B n) (isOneDegenerateOrder_B n) (List.Perm.refl _) h hnd hall hW
+  | C n =>
+    rw [DynkinType.cartanMatrix_C]
+    exact charpoly_of_isOneDegenerateOrder_of_hasCartanType_of_actsBy (t := .C n)
+      (DynkinType.cartanMatrix_C n) (isOneDegenerateOrder_C n) (List.Perm.refl _) h hnd hall hW
+  | D n =>
+    rw [DynkinType.cartanMatrix_D]
+    exact charpoly_of_isOneDegenerateOrder_of_hasCartanType_of_actsBy (t := .D n)
+      (DynkinType.cartanMatrix_D n) (isOneDegenerateOrder_D n) (List.Perm.refl _) h hnd hall hW
+  | E6 =>
+    rw [DynkinType.cartanMatrix_E6]
+    exact charpoly_of_isOneDegenerateOrder_of_hasCartanType_of_actsBy (t := .E6)
+      DynkinType.cartanMatrix_E6 isOneDegenerateOrder_E6 perm_finRange_E6 h hnd hall hW
+  | E7 =>
+    rw [DynkinType.cartanMatrix_E7]
+    exact charpoly_of_isOneDegenerateOrder_of_hasCartanType_of_actsBy (t := .E7)
+      DynkinType.cartanMatrix_E7 isOneDegenerateOrder_E7 perm_finRange_E7 h hnd hall hW
+  | E8 =>
+    rw [DynkinType.cartanMatrix_E8]
+    exact charpoly_of_isOneDegenerateOrder_of_hasCartanType_of_actsBy (t := .E8)
+      DynkinType.cartanMatrix_E8 isOneDegenerateOrder_E8 perm_finRange_E8 h hnd hall hW
+  | F4 =>
+    rw [DynkinType.cartanMatrix_F4]
+    exact charpoly_of_isOneDegenerateOrder_of_hasCartanType_of_actsBy (t := .F4)
+      DynkinType.cartanMatrix_F4 isOneDegenerateOrder_F4 perm_finRange_F4 h hnd hall hW
+  | G2 =>
+    rw [DynkinType.cartanMatrix_G2]
+    exact charpoly_of_isOneDegenerateOrder_of_hasCartanType_of_actsBy (t := .G2)
+      DynkinType.cartanMatrix_G2 isOneDegenerateOrder_G2 perm_finRange_G2 h hnd hall hW
 
 /-- **Every Coxeter element of a base of valid Cartan type `t` has order `t.coxeterNumber`.** -/
 theorem orderOf_wordProd_of_hasCartanType [Finite ι] {t : DynkinType} (ht : t.Valid)
@@ -341,6 +390,36 @@ theorem orderOf_wordProd_of_hasCartanType [Finite ι] {t : DynkinType} (ht : t.V
   | E8 => rw [DynkinType.coxeterNumber_E8]; exact orderOf_wordProd_of_hasCartanType_E8 h hnd hall
   | F4 => rw [DynkinType.coxeterNumber_F4]; exact orderOf_wordProd_of_hasCartanType_F4 h hnd hall
   | G2 => rw [DynkinType.coxeterNumber_G2]; exact orderOf_wordProd_of_hasCartanType_G2 h hnd hall
+
+section Irreducible
+
+variable [Finite ι] [P.IsRootSystem] [P.IsReduced] [P.IsIrreducible]
+
+/-- **Every Coxeter element of a base `b` of a finite irreducible reduced crystallographic root
+system has order `(classifiedDynkinType b).coxeterNumber`.** -/
+theorem orderOf_wordProd_eq_coxeterNumber_classifiedDynkinType (hnd : l.Nodup)
+    (hall : ∀ i, i ∈ l) :
+    orderOf (wordProd P b l) = (classifiedDynkinType b).coxeterNumber :=
+  orderOf_wordProd_of_hasCartanType (valid_classifiedDynkinType b)
+    (hasCartanType_classifiedDynkinType b) hnd hall
+
+/-- **Every Coxeter element of a finite irreducible reduced crystallographic root system has order
+at least `2`.** -/
+theorem two_le_orderOf_wordProd (hnd : l.Nodup) (hall : ∀ i, i ∈ l) :
+    2 ≤ orderOf (wordProd P b l) := by
+  rw [orderOf_wordProd_eq_coxeterNumber_classifiedDynkinType hnd hall]
+  exact (classifiedDynkinType b).two_le_coxeterNumber (valid_classifiedDynkinType b)
+
+/-- **Any two Coxeter elements of a finite irreducible reduced crystallographic root system, across
+any two bases and any two orderings of their simple reflections, have the same order.** -/
+theorem orderOf_wordProd_eq_orderOf_wordProd {b' : P.Base} {l' : List b'.support} (hnd : l.Nodup)
+    (hall : ∀ i, i ∈ l) (hnd' : l'.Nodup) (hall' : ∀ i, i ∈ l') :
+    orderOf (wordProd P b l) = orderOf (wordProd P b' l') := by
+  rw [orderOf_wordProd_eq_coxeterNumber_classifiedDynkinType hnd hall,
+    orderOf_wordProd_eq_coxeterNumber_classifiedDynkinType hnd' hall',
+    b.classifiedDynkinType_eq_classifiedDynkinType b']
+
+end Irreducible
 
 end TauCeti.Coxeter
 

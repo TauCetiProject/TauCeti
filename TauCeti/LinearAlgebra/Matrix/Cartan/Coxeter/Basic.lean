@@ -17,10 +17,12 @@ element is `c = s₁ s₂ ⋯ sᵣ`.
 Both definitions expose their bodies, because the order and the annihilating polynomial of a Coxeter
 element of an exceptional type are computed by the kernel on explicit integer matrices.
 
-## Main definitions
+## Main definitions & results
 
 * `Matrix.reflMatrix`: the matrix of a simple reflection on the simple roots.
 * `Matrix.coxeterElement`: the product of the simple reflections in the numbering order.
+* `Matrix.mul_reflMatrix_apply`: entrywise formula for right-multiplying by a simple reflection.
+* `Matrix.mul_coxeterElement`: intertwining `coxeterElement A` with a product of matrices `S i`.
 -/
 
 public section
@@ -44,9 +46,31 @@ theorem reflMatrix_submatrix {κ : Type*} [DecidableEq κ] {n : ℕ} (A : Matrix
   ext k j
   simp [reflMatrix, e.injective.eq_iff]
 
+/-- Right-multiplying `P` by `reflMatrix A i` subtracts `A j i` times column `i` from column
+`j`. -/
+theorem mul_reflMatrix_apply {κ : Type*} {n : ℕ} (P : Matrix κ (Fin n) ℤ)
+    (A : Matrix (Fin n) (Fin n) ℤ) (i : Fin n) (r : κ) (j : Fin n) :
+    (P * reflMatrix A i) r j = P r j - P r i * A j i := by
+  rw [Matrix.mul_apply]
+  simp only [reflMatrix_apply, mul_sub, mul_ite, mul_one, mul_zero, Finset.sum_sub_distrib,
+    Finset.sum_ite_eq', Finset.mem_univ, ↓reduceIte]
+
 /-- The Coxeter element `s₁ s₂ ⋯ sₙ` of a Cartan matrix, in the simple-root basis. -/
 @[expose] def coxeterElement {n : ℕ} (A : Matrix (Fin n) (Fin n) ℤ) : Matrix (Fin n) (Fin n) ℤ :=
   ((List.finRange n).map (reflMatrix A)).prod
+
+/-- `P` intertwines `coxeterElement A` with `(List.finRange n).map S |>.prod` when it intertwines
+each simple reflection `reflMatrix A i` with `S i`. -/
+theorem mul_coxeterElement {κ : Type*} [Fintype κ] [DecidableEq κ] {n : ℕ}
+    (P : Matrix κ (Fin n) ℤ) (A : Matrix (Fin n) (Fin n) ℤ) (S : Fin n → Matrix κ κ ℤ)
+    (hS : ∀ i, P * reflMatrix A i = S i * P) :
+    P * coxeterElement A = ((List.finRange n).map S).prod * P := by
+  refine List.rel_prod (R := fun X Y => P * X = Y * P) (by simp)
+    (fun X₁ Y₁ h₁ X₂ Y₂ h₂ => ?_)
+    (List.forall₂_map_left_iff.mpr (List.forall₂_map_right_iff.mpr
+      (List.forall₂_same.mpr fun i _ => hS i)))
+  dsimp only at h₁ h₂ ⊢
+  rw [← Matrix.mul_assoc, h₁, Matrix.mul_assoc, h₂, ← Matrix.mul_assoc]
 
 end Matrix
 
