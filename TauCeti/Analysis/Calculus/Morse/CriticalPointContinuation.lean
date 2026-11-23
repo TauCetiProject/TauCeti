@@ -187,14 +187,13 @@ private theorem eventually_morseIndex_graph {G : P × E → E →L[ℝ] ℝ} {ψ
     funext y
     rw [hGF]
   have hGAlong := hG.eventually_contDiffAt_graph hψ
-  have hsymm : ∀ᶠ q in 𝓝 p,
-      ((fderiv ℝ G (q, ψ q)).comp (ContinuousLinearMap.inr ℝ P E)).toBilinForm.IsSymm := by
-    filter_upwards [hF.eventually_contDiffAt_graph hψ, hGAlong] with q hFq hGq
-    have hslice : ContDiffAt ℝ 2 (fun y ↦ F (q, y)) (ψ q) :=
-      hFq.comp (ψ q) (contDiffAt_const.prodMk contDiffAt_id) |>.of_le (by norm_num)
+  have hsymm :
+      ((fderiv ℝ G (p, ψ p)).comp (ContinuousLinearMap.inr ℝ P E)).toBilinForm.IsSymm := by
+    have hslice : ContDiffAt ℝ 2 (fun y ↦ F (p, y)) (ψ p) :=
+      hF.comp (ψ p) (contDiffAt_const.prodMk contDiffAt_id)
     refine ⟨fun u v ↦ ?_⟩
     simp only [ContinuousLinearMap.toBilinForm_apply,
-      hGhess q (hGq.differentiableAt (by norm_num))]
+      hGhess p (hG.differentiableAt (by norm_num))]
     exact hslice.isSymmSndFDerivAt (by norm_num) u v
   have hnd :
       ((fderiv ℝ G (p, ψ p)).comp (ContinuousLinearMap.inr ℝ P E)).toBilinForm.Nondegenerate := by

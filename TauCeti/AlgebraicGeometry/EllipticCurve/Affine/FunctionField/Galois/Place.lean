@@ -97,9 +97,9 @@ place by the semilinear function-field action. -/
 @[simp]
 theorem placeGaloisAction_pointEquivDegreeOnePlace (σ : K ≃ₐ[F] K)
     (P : (W⁄K).toAffine.Point) :
-    W.placeGaloisAction σ ((W⁄K).toAffine.pointEquivDegreeOnePlace P).1 =
+    W.placeGaloisAction σ ((W⁄K).toAffine.pointEquivDegreeOnePlace P).val =
       ((W⁄K).toAffine.pointEquivDegreeOnePlace
-        (Multiplicative.toAdd (W.pointGaloisAction σ) P)).1 := by
+        (Multiplicative.toAdd (W.pointGaloisAction σ) P)).val := by
   rcases P with _ | ⟨x, y, h⟩
   · rw [← Affine.Point.zero_def]
     simp only [map_zero]

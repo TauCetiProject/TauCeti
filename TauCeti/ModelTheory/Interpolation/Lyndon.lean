@@ -634,7 +634,7 @@ theorem Theoryω.lyndon_interpolation {T : L.Theoryω} (hT : T.Countable) (ψ : 
   refine ⟨θ, hfun.trans (Set.inter_subset_inter_left _ ?_), hpos, hneg,
     (Theoryω.entails_iff_conjunction_entails hT).2 hTθ, hθψ⟩
   rw [Theoryω.conjunction_def, functionsIn_iInfAlong]
-  exact Set.iUnion_subset fun φ => Set.subset_biUnion_of_mem φ.2
+  exact Set.iUnion_subset fun φ => Set.subset_biUnion_of_mem φ.property
 
 end Lyndon
 

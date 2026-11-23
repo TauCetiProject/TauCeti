@@ -305,7 +305,7 @@ theorem tendsto_eLpNorm_diskFunction_sub :
       (𝓝[<] 1) (𝓝 0) := by
   have hlim : Tendsto (fun r => ‖((x.radial r - x : HardySpace) :
       Lp ℂ 2 (AddCircle.haarAddCircle (T := 1)))‖ₑ) (𝓝[<] (1 : ℝ)) (𝓝 0) := by
-    have h := ((continuous_eNorm.comp continuous_subtype_val).tendsto 0).comp
+    have h := ((continuous_eNorm.comp continuous_subtypeVal).tendsto 0).comp
       (tendsto_sub_nhds_zero_iff.mpr x.tendsto_radial)
     simpa [Function.comp_def] using h
   refine hlim.congr' ?_

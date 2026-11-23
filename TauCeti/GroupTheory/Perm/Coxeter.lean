@@ -49,6 +49,8 @@ Iwahori–Hecke algebra is defined.
   descents are the reversed adjacent pairs of `σ` and of `σ⁻¹`.
 * `TauCeti.permCoxeterSystem_length_eq_card_inversion`: the Coxeter length is the number of
   inversions.
+* `TauCeti.lengthPowHom_neg_one_permCoxeterSystem`: the length-parity character `w ↦ (-1) ^ ℓ(w)`
+  is `Equiv.Perm.sign`.
 * `Equiv.Perm.permCoxeterSystem_length_decomposeFin'Symm`: inserting `i` at the first position
   adds `i` to the Coxeter length.
 * `TauCeti.isCycle_wordProd_permCoxeterSystem`, `TauCeti.cycleType_wordProd_permCoxeterSystem`
@@ -334,6 +336,15 @@ theorem permCoxeterSystem_length_eq_card_inversion (σ : Equiv.Perm (Fin n)) :
       (by simpa using hdesc)
     rw [mul_transposition_mul_self] at hcard
     rw [hcard, ← ih _ hlen]
+
+/-- **The length-parity character of `TauCeti.permCoxeterSystem n` is `Equiv.Perm.sign`.** -/
+theorem lengthPowHom_neg_one_permCoxeterSystem (n : ℕ)
+    (h : (-1 : ℤˣ) ^ 2 = 1 := by decide) :
+    (permCoxeterSystem n).lengthPowHom (-1 : ℤˣ) h = Equiv.Perm.sign :=
+  (permCoxeterSystem n).ext_simple fun i ↦ by
+    rw [CoxeterSystem.lengthPowHom_apply, (permCoxeterSystem n).length_simple, pow_one,
+      permCoxeterSystem_simple, transposition_eq_swap,
+      Equiv.Perm.sign_swap (strand_ne_strandSucc i)]
 
 /-! ### Coxeter elements -/
 

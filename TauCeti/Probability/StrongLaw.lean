@@ -137,7 +137,7 @@ theorem measurableSet_tendsto_average_integral {f : α → E} (hf : Measurable f
     (fun _n => (Finset.measurable_sum _ fun i _ =>
       hf.comp ((measurable_pi_apply i).comp measurable_snd)).const_smul _)
     ((hf.stronglyMeasurable.integral_kernel
-      (κ := ⟨((↑) : ProbabilityMeasure α → Measure α), measurable_subtype_coe⟩)).measurable.comp
+      (κ := ⟨((↑) : ProbabilityMeasure α → Measure α), measurable_subtypeVal⟩)).measurable.comp
         measurable_fst)
 
 /-- The tagged i.i.d. product law `δ_Q ⊗ Q^{⊗ℕ}` gives full measure to the event that the path

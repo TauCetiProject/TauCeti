@@ -8,7 +8,7 @@ module
 public import Mathlib.Analysis.Normed.Operator.Banach
 public import TauCeti.Analysis.Calculus.AdaptedChart
 public import TauCeti.Analysis.Calculus.FDeriv.PullbackEnd
-public import TauCeti.Analysis.Calculus.NormalExtension
+public import TauCeti.Analysis.Calculus.NormalExtension.Basic
 public import TauCeti.LinearAlgebra.Complex.LinearPart
 public import TauCeti.LinearAlgebra.Complex.Module
 
@@ -28,15 +28,17 @@ The coordinates are the inverse of the map
 `Φ (a, w) = u a + Θ_a w`,  `Θ_a w = ½ (W w - J(u a) W (i w))`
 
 (`TauCeti.holomorphicNormalExtension`), where `W : N →L[ℝ] V` is a real-linear frame of normal
-directions which is complex-linear at the base point, `J(u a₀) W = W i`, and spans a complement
-of the tangent line of `u` there. The frame `Θ_a` (`TauCeti.holomorphicNormalFrame`) is the
-complex-linear part of `W` for the structures `i` on `N` and `J(u a)` on `V`: wherever
-`J(u a)² = -1` it satisfies `J(u a) Θ_a = Θ_a i`, and it equals `W` at `a₀`; the same
-projection, applied to automorphisms of `V` rather than to normal frames, is
-`TauCeti.standardFrame`. So `Φ` is affine in the normal variable, and its
-derivative along the zero section, `(α, ω) ↦ du_a α + Θ_a ω`, intertwines `i` with `J(u a)`
-as soon as `u` is `J`-holomorphic at `a`. Only `u` and `J ∘ u` enter `Φ`, not the derivative of
-`u`, so for `u` and `J` of class `C^ℓ` the coordinates are of class `C^ℓ`.
+directions which is complex-linear at the base point, `J(u a₀) W = W i`, and spans a complement of
+the tangent line of `u` there. When `V` is finite-dimensional and `u` is immersed at `a₀`, such a
+frame exists with `N = ℂⁿ`: in a complex frame of `J(u a₀)` it is the orthogonal complement of the
+complex tangent line (`TauCeti.exists_euclideanSpace_bijective_coprod`). The frame `Θ_a`
+(`TauCeti.holomorphicNormalFrame`) is the complex-linear part of `W` for the structures `i` on `N`
+and `J(u a)` on `V`: wherever `J(u a)² = -1` it satisfies `J(u a) Θ_a = Θ_a i`, and it equals `W` at
+`a₀`; the same projection, applied to automorphisms of `V` rather than to normal frames, is
+`TauCeti.standardFrame`. So `Φ` is affine in the normal variable, and its derivative along the zero
+section, `(α, ω) ↦ du_a α + Θ_a ω`, intertwines `i` with `J(u a)` as soon as `u` is `J`-holomorphic
+at `a`. Only `u` and `J ∘ u` enter `Φ`, not the derivative of `u`, so for `u` and `J` of class `C^ℓ`
+the coordinates are of class `C^ℓ`.
 
 * **Existence.** By the inverse function theorem `Φ` restricts to a `C^ℓ` partial homeomorphism
   around `(a₀, 0)` with `C^ℓ` inverse (`TauCeti.exists_holomorphicAdaptedChart`). Flattening and

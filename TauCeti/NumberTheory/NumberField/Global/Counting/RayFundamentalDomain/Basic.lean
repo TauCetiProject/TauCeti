@@ -185,10 +185,10 @@ unit is positive at every real place prescribed by `𝔪`. -/
 theorem unitSMul_mem_posRegion {𝔪 : Modulus K} {x : mixedSpace K} (hx : x ∈ posRegion 𝔪)
     {u : (𝓞 K)ˣ} (hu : u ∈ unitsCongruenceSubgroup 𝔪) : u • x ∈ posRegion 𝔪 := by
   refine fun w hw ↦ ?_
-  have hcoord : (u • x).1 w = InfinitePlace.embedding_of_isReal w.2 (u : K) * x.1 w := by
+  have hcoord : (u • x).1 w = InfinitePlace.embedding_of_isReal w.property (u : K) * x.1 w := by
     rw [unitSMul_smul]
     simp
-  have hupos : 0 < InfinitePlace.embedding_of_isReal w.2 (u : K) := by
+  have hupos : 0 < InfinitePlace.embedding_of_isReal w.property (u : K) := by
     simpa using (mem_unitsCongruenceSubgroup.mp hu).pos hw
   rw [hcoord]
   exact mul_pos hupos (hx w hw)

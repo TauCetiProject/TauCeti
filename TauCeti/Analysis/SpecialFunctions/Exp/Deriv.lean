@@ -26,11 +26,17 @@ at `exp y`, so the chain rule `(f ∘ exp)'(y) = e^y f'(e^y)` holds with no hypo
 
 ## Main results
 
+* `TauCeti.hasDerivAt_mul_exp_neg_mul`: `t ↦ c exp (-k t)` has derivative `-k c exp (-k t)`, so
+  it solves `x' = -k x`.
 * `TauCeti.differentiableAt_comp_exp_iff`: `f ∘ exp` is differentiable at `y` exactly when `f` is
   differentiable at `exp y`.
 * `TauCeti.deriv_comp_exp`: `(f ∘ exp)'(y) = e^y • f'(e^y)`, unconditionally.
 * `TauCeti.norm_iteratedFDeriv_real_cexp`: every real iterated derivative of `Complex.exp` at `z`
   has norm `‖exp z‖`.
+* `TauCeti.norm_iteratedFDeriv_real_exp`: every iterated derivative of `Real.exp` at `y` has norm
+  `exp y`.
+* `TauCeti.iteratedDeriv_cexp_const_mul_ofReal`: the `n`-th real derivative of
+  `s ↦ Complex.exp (z * s)` is `s ↦ z ^ n * Complex.exp (z * s)`.
 * `ContinuousLinearMap.norm_iteratedFDeriv_cexp_comp_le`: for a real-linear map `ℓ` to `ℂ`, the
   `n`-th derivative of `x ↦ exp (ℓ x)` has norm at most `‖exp (ℓ x)‖ ‖ℓ‖ ^ n`.
 * `ContDiff.isBigO_iteratedFDeriv_succ_exp`: along any filter, the derivative of order `n + 1` of
@@ -39,6 +45,9 @@ at `exp y`, so the chain rule `(f ∘ exp)'(y) = e^y f'(e^y)` holds with no hypo
 * `ContDiff.isBigO_iteratedFDeriv_exp_sub_one`: along a filter on which `ρ` is bounded, the
   derivative of order `n` of `exp ℓ - 1` is `O(ρ)` when the derivatives of `ℓ` of order at most `n`
   are `O(ρ)`.
+* `ContDiffAt.norm_iteratedFDeriv_exp_comp_le`: the pointwise bound
+  `‖Dⁿ (exp f) (x)‖ ≤ n! exp (f x) max ε εⁿ` when the derivatives of `f` of orders `1` to `n` at
+  `x` have norm at most `ε`.
 -/
 
 public section
@@ -65,6 +74,14 @@ end Real
 
 namespace TauCeti
 
+/-- The curve `t ↦ c exp (-k t)` has derivative `-k c exp (-k t)`: it solves `x' = -k x`. -/
+theorem hasDerivAt_mul_exp_neg_mul (k c t : ℝ) :
+    HasDerivAt (fun s ↦ c * Real.exp (-(k * s))) (-(k * (c * Real.exp (-(k * t))))) t := by
+  have h : HasDerivAt (fun s : ℝ ↦ -(k * s)) (-k) t := by
+    simpa using ((hasDerivAt_id t).const_mul k).fun_neg
+  convert h.exp.const_mul c using 1
+  ring
+
 /-- Every real iterated derivative of the complex exponential at `z` has norm `‖exp z‖`. -/
 theorem norm_iteratedFDeriv_real_cexp (n : ℕ) (z : ℂ) :
     ‖iteratedFDeriv ℝ n Complex.exp z‖ = ‖Complex.exp z‖ := by
@@ -72,6 +89,31 @@ theorem norm_iteratedFDeriv_real_cexp (n : ℕ) (z : ℂ) :
       (𝕜 := ℝ),
     Function.comp_apply, ContinuousMultilinearMap.norm_restrictScalars,
     norm_iteratedFDeriv_eq_norm_iteratedDeriv, iteratedDeriv_eq_iterate, Complex.iter_deriv_exp]
+
+/-- Every iterated derivative of the real exponential at `y` has norm `exp y`. -/
+theorem norm_iteratedFDeriv_real_exp (n : ℕ) (y : ℝ) :
+    ‖iteratedFDeriv ℝ n Real.exp y‖ = Real.exp y := by
+  rw [norm_iteratedFDeriv_eq_norm_iteratedDeriv, iteratedDeriv_eq_iterate, Real.iter_deriv_exp,
+    Real.norm_eq_abs, abs_of_pos (Real.exp_pos _)]
+
+/-- The `n`-th real derivative of `s ↦ Complex.exp (z * s)` is
+`s ↦ z ^ n * Complex.exp (z * s)`. -/
+@[simp]
+theorem iteratedDeriv_cexp_const_mul_ofReal (n : ℕ) (z : ℂ) :
+    iteratedDeriv n (fun s : ℝ => Complex.exp (z * s)) =
+      fun s : ℝ => z ^ n * Complex.exp (z * s) := by
+  induction n with
+  | zero =>
+    ext s
+    simp
+  | succ n ih =>
+    ext s
+    rw [iteratedDeriv_succ, ih]
+    have hlin : HasDerivAt (fun t : ℝ => z * (t : ℂ)) z s := by
+      simpa using ((hasDerivAt_id s).ofReal_comp).const_mul z
+    refine ((hlin.cexp.const_mul (z ^ n)).congr_deriv ?_).deriv
+    rw [pow_succ]
+    ring
 
 section ExpComp
 
@@ -182,3 +224,40 @@ theorem ContDiff.isBigO_iteratedFDeriv_exp_sub_one {D : Type*} [NormedAddCommGro
       ((hℓ.isBigO_iteratedFDeriv_succ_exp (fun i _ hi ↦ hdec i hi) (hbdd n (by omega))))
     rw [fun_iteratedFDeriv_sub_apply (hexp.contDiffAt.of_le (by simp)) contDiffAt_const,
       iteratedFDeriv_const_of_ne n.succ_ne_zero, Pi.zero_apply, sub_zero]
+
+open scoped Nat in
+/-- **Pointwise bound on the derivatives of `exp f`.** Let `f` be `Cⁿ` at `x`, with derivatives
+of orders `1` to `n` at `x` of norm at most `ε`. Then the derivative of order `n` of
+`y ↦ exp (f y)` at `x` has norm at most `n! exp (f x) max ε εⁿ`; for `n ≥ 1` and `ε ≤ 1` this is
+`n! exp (f x) ε`. It is a form of the Faà di Bruno bound `norm_iteratedFDeriv_comp_le`
+in which the derivatives of `f` of all positive orders have one bound `ε`. -/
+theorem ContDiffAt.norm_iteratedFDeriv_exp_comp_le {E : Type*} [NormedAddCommGroup E]
+    [NormedSpace ℝ E] {f : E → ℝ} {n : ℕ} {x : E} (hf : ContDiffAt ℝ n f x) {ε : ℝ} (hε : 0 ≤ ε)
+    (hD : ∀ i, 1 ≤ i → i ≤ n → ‖iteratedFDeriv ℝ i f x‖ ≤ ε) :
+    ‖iteratedFDeriv ℝ n (fun y ↦ Real.exp (f y)) x‖ ≤ n ! * Real.exp (f x) * max ε (ε ^ n) := by
+  set t : ℝ := ε ^ ((n : ℝ)⁻¹)
+  set D : ℝ := max t ε
+  have ht₀ : 0 ≤ t := Real.rpow_nonneg hε _
+  -- Every power `Dⁱ` with `1 ≤ i ≤ n` is at least `ε`, and `Dⁿ ≤ max ε εⁿ`.
+  have hεD (i : ℕ) (hi : 1 ≤ i) (hin : i ≤ n) : ε ≤ D ^ i := by
+    rcases le_total 1 ε with h1 | h1
+    · exact (le_max_right t ε).trans (le_self_pow₀ (h1.trans (le_max_right t ε)) (by omega))
+    · have htn : t ^ n = ε := Real.rpow_inv_natCast_pow hε (by omega)
+      have ht₁ : t ≤ 1 := Real.rpow_le_one hε h1 (by positivity)
+      calc ε = t ^ n := htn.symm
+        _ ≤ t ^ i := pow_le_pow_of_le_one ht₀ ht₁ hin
+        _ ≤ D ^ i := pow_le_pow_left₀ ht₀ (le_max_left t ε) i
+  have hDn : D ^ n ≤ max ε (ε ^ n) := by
+    rcases le_total t ε with h | h
+    · rw [show D = ε from max_eq_right h]
+      exact le_max_right _ _
+    · rw [show D = t from max_eq_left h]
+      rcases Nat.eq_zero_or_pos n with rfl | hn
+      · simp
+      · rw [Real.rpow_inv_natCast_pow hε hn.ne']
+        exact le_max_left _ _
+  have h := TauCeti.norm_iteratedFDeriv_comp_le_of_contDiffAt (g := Real.exp)
+    (C := Real.exp (f x)) (D := D) Real.contDiff_exp.contDiffAt hf
+    (fun j _ ↦ (TauCeti.norm_iteratedFDeriv_real_exp j _).le)
+    (fun i hi hin ↦ (hD i hi hin).trans (hεD i hi hin))
+  exact h.trans (mul_le_mul_of_nonneg_left hDn (by positivity))

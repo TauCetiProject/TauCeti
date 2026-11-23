@@ -8,6 +8,10 @@ module
 public import Mathlib.Algebra.Pointwise.Stabilizer
 public import Mathlib.Topology.Algebra.Nonarchimedean.TotallyDisconnected
 public import Mathlib.Topology.Separation.Regular
+public import TauCeti.Topology.Algebra.Group.OpenSubgroup.Basic
+import Mathlib.Topology.Algebra.ClopenNhdofOne
+import Mathlib.Topology.Separation.Connected
+import TauCeti.Topology.Algebra.Nonarchimedean.OpenSubgroupBasis
 
 /-!
 # Compact open subgroups and van Dantzig's theorem
@@ -38,8 +42,16 @@ compact open subgroup.
   Hausdorff, totally disconnected, locally compact groups, and in particular profinite groups.
 * `NonarchimedeanGroup.nhds_one_hasBasis_isCompact_openSubgroup`: in a weakly locally compact
   nonarchimedean group the compact open subgroups form a basis of neighbourhoods of the identity.
+* `NonarchimedeanGroup.nhds_hasBasis_isCompact_openSubgroup`,
+  `NonarchimedeanGroup.isCoinitial_isCompact_openSubgroup`: left cosets of compact open subgroups
+  form a basis at every point, and the compact open subgroups are coinitial among open subgroups.
+* `Subgroup.isOpen_iff_exists_isCompact_openSubgroup_le`: in such a group a subgroup is open
+  exactly when it contains a compact open subgroup.
 * `OpenSubgroup.directedOn_isCompact`: the compact open subgroups are directed under reverse
   inclusion.
+* `OpenSubgroup.nhds_one_hasBasis_isCompact_and_le`,
+  `OpenSubgroup.exists_isCompact_le_normal_of_mem_nhds_one`: the compact open subgroups inside a
+  compact open subgroup `U₀` form a basis at the identity, and can be chosen normal in `U₀`.
 * `TauCeti.IsTopologicalGroup.locallyCompact_totallyDisconnected_tfae`: van Dantzig's theorem,
   the equivalence of the three descriptions of a locally profinite group.
 
@@ -111,6 +123,99 @@ theorem NonarchimedeanGroup.nhds_one_hasBasis_isCompact_openSubgroup [Nonarchime
   obtain ⟨H, hH⟩ := NonarchimedeanGroup.is_nonarchimedean _ (inter_mem hU hK1)
   exact ⟨H, hK.of_isClosed_subset H.isClosed (hH.trans inter_subset_right),
     hH.trans inter_subset_left⟩
+
+namespace NonarchimedeanGroup
+
+variable [NonarchimedeanGroup G] [WeaklyLocallyCompactSpace G]
+
+/-- In a weakly locally compact nonarchimedean group, left cosets of compact open subgroups form a
+neighbourhood basis at every point `g : G`. -/
+@[to_additive /-- In a weakly locally compact nonarchimedean additive group, left cosets of compact
+open additive subgroups form a neighbourhood basis at every point `g : G`. -/]
+theorem nhds_hasBasis_isCompact_openSubgroup (g : G) :
+    (𝓝 g).HasBasis (fun H : OpenSubgroup G ↦ IsCompact (H : Set G)) fun H ↦ g • (H : Set G) := by
+  have h := (nhds_one_hasBasis_isCompact_openSubgroup (G := G)).map (Homeomorph.mulLeft g)
+  rw [(Homeomorph.mulLeft g).map_nhds_eq 1] at h
+  simpa [← Set.image_smul, smul_eq_mul] using h
+
+/-- In a weakly locally compact nonarchimedean group, the compact open subgroups are coinitial in
+`OpenSubgroup G` (cofinal under reverse inclusion `≥`). -/
+@[to_additive /-- In a weakly locally compact nonarchimedean additive group, the compact open
+additive subgroups are coinitial in `OpenAddSubgroup G` (cofinal under reverse inclusion `≥`). -/]
+theorem isCoinitial_isCompact_openSubgroup :
+    IsCoinitial {V : OpenSubgroup G | IsCompact (V : Set G)} := fun W ↦
+  (nhds_one_hasBasis_isCompact_openSubgroup (G := G)).mem_iff.1 W.mem_nhds_one
+
+end NonarchimedeanGroup
+
+/-- In a weakly locally compact nonarchimedean group, a subgroup is open exactly when it contains
+a compact open subgroup. -/
+@[to_additive /-- In a weakly locally compact nonarchimedean additive group, an additive subgroup
+is open exactly when it contains a compact open additive subgroup. -/]
+theorem Subgroup.isOpen_iff_exists_isCompact_openSubgroup_le [NonarchimedeanGroup G]
+    [WeaklyLocallyCompactSpace G] (H : Subgroup G) :
+    IsOpen (H : Set G) ↔ ∃ U : OpenSubgroup G, IsCompact (U : Set G) ∧ (U : Subgroup G) ≤ H :=
+  ⟨fun hH ↦ NonarchimedeanGroup.nhds_one_hasBasis_isCompact_openSubgroup.mem_iff.1
+    (hH.mem_nhds H.one_mem), fun ⟨_, _, hUH⟩ ↦ H.isOpen_of_openSubgroup hUH⟩
+
+namespace OpenSubgroup
+
+/-- In a nonarchimedean group (in particular, in any locally profinite group), the compact open
+subgroups contained in a given compact open subgroup `U₀` form a basis of `𝓝 (1 : G)`. -/
+@[to_additive /-- In a nonarchimedean additive group (in particular, in any locally profinite
+additive group), the compact open additive subgroups contained in a given compact open additive
+subgroup `U₀` form a basis of `𝓝 (0 : G)`. -/]
+theorem nhds_one_hasBasis_isCompact_and_le [NonarchimedeanGroup G] {U₀ : OpenSubgroup G}
+    (hU₀ : IsCompact (U₀ : Set G)) :
+    (𝓝 (1 : G)).HasBasis (fun V : OpenSubgroup G ↦ IsCompact (V : Set G) ∧ V ≤ U₀)
+      fun V ↦ (V : Set G) :=
+  (NonarchimedeanGroup.nhds_one_hasBasis_openSubgroup G).to_hasBasis'
+    (fun W _ ↦ isCoinitial_isCompact_and_le hU₀ W) fun V _ ↦ V.mem_nhds_one
+
+/-- **Profinite normal refinement inside a compact open subgroup.** Because a compact open subgroup
+`U₀` of a totally disconnected topological group is profinite, every identity neighbourhood of `G`
+contains a compact open subgroup `V ≤ U₀` whose trace `V.toSubgroup.subgroupOf U₀.toSubgroup` is
+normal in `U₀`. -/
+@[to_additive /-- **Profinite normal refinement inside a compact open additive subgroup.** Because
+a compact open additive subgroup `U₀` of a totally disconnected topological additive group is
+profinite, every neighbourhood of `0` in `G` contains a compact open additive subgroup `V ≤ U₀`
+whose trace `V.toAddSubgroup.addSubgroupOf U₀.toAddSubgroup` is normal in `U₀`. -/]
+theorem exists_isCompact_le_normal_of_mem_nhds_one [IsTopologicalGroup G]
+    [TotallyDisconnectedSpace G] {U₀ : OpenSubgroup G} (hU₀ : IsCompact (U₀ : Set G)) {s : Set G}
+    (hs : s ∈ 𝓝 (1 : G)) :
+    ∃ V : OpenSubgroup G,
+      IsCompact (V : Set G) ∧ V ≤ U₀ ∧ (V.toSubgroup.subgroupOf U₀.toSubgroup).Normal ∧
+        (V : Set G) ⊆ s := by
+  -- Work in the underlying subgroup `U₀' = U₀.toSubgroup`, which is compact and open in `G` and
+  -- therefore profinite in the subspace topology.
+  let U₀' : Subgroup G := U₀.toSubgroup
+  have hU₀'_compact : IsCompact (U₀' : Set G) := by simpa [U₀'] using hU₀
+  have hU₀'_open : IsOpen (U₀' : Set G) := by simpa [U₀'] using U₀.isOpen
+  have : CompactSpace U₀' := isCompact_iff_compactSpace.mp hU₀'_compact
+  have hs_sub : (((↑) : U₀' → G) ⁻¹' s) ∈ 𝓝 (1 : U₀') :=
+    continuous_subtypeVal.continuousAt hs
+  obtain ⟨W, hWs, hW_open, h1W⟩ := mem_nhds_iff.mp hs_sub
+  obtain ⟨N, hNW⟩ := ProfiniteGrp.exist_openNormalSubgroup_sub_open_nhds_of_one
+    (G := U₀') hW_open h1W
+  -- Push `N` forward along the open subtype inclusion `U₀' →* G`.
+  let H_sub : Subgroup G := N.toSubgroup.map U₀'.subtype
+  have hH_open : IsOpen (H_sub : Set G) := by
+    rw [Subgroup.coe_map, Subgroup.coe_subtype]
+    exact hU₀'_open.isOpenMap_subtypeVal _ N.toOpenSubgroup.isOpen
+  let V : OpenSubgroup G := ⟨H_sub, hH_open⟩
+  have hVU₀ : V ≤ U₀ := by
+    rintro _ ⟨x, -, rfl⟩
+    exact x.property
+  have hsub : V.toSubgroup.subgroupOf U₀' = N.toSubgroup := by
+    ext x
+    simp [V, H_sub, Subgroup.mem_subgroupOf]
+  refine ⟨V, hU₀.of_isClosed_subset V.isClosed hVU₀, hVU₀, ?_, ?_⟩
+  · rw [hsub]
+    exact N.isNormal'
+  · rintro _ ⟨x, hxN, rfl⟩
+    exact hWs (hNW hxN)
+
+end OpenSubgroup
 
 namespace TauCeti
 

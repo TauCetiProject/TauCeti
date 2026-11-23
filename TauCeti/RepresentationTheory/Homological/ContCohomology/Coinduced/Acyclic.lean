@@ -281,7 +281,7 @@ instance subsingleton_continuousCohomology_discreteCoind_bot (n : ℕ) :
   refine Subtype.ext ?_
   rw [homogeneousCochains.d_apply, d_coindLevel_const, hΦ']
   exact (eq_coindLevel_const_evalLevel R G A (n + 2) _
-    ((homogeneousCochains 𝒞).iCycles (n + 1) z).2).symm
+    ((homogeneousCochains 𝒞).iCycles (n + 1) z).property).symm
 
 end General
 

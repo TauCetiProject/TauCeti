@@ -53,7 +53,7 @@ def kerProdOfRightInverse : G ≃ₜ* N × H where
     (hN _).mpr <| (map_mul_inv f x _).trans <| mul_inv_eq_one.mpr (hs (f x)).symm⟩, f x)
   invFun p := p.1 * s p.2
   left_inv x := by simp
-  right_inv p := by ext <;> simp [(hN p.1).mp p.1.2, hs p.2]
+  right_inv p := by ext <;> simp [(hN p.1).mp p.1.property, hs p.2]
   map_mul' x y := by ext <;> simp [mul_mul_mul_comm, mul_comm]
   continuous_toFun := by fun_prop
   continuous_invFun := by fun_prop

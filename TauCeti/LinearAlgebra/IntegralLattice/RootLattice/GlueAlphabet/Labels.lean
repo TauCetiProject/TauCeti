@@ -93,6 +93,21 @@ def glueLabelEquiv : (t : DynkinType) → (ht : t.IsSimplyLaced) →
     (Fin.cast_val_eq_self (i.modNat (m := 2) (n := 2))).symm
 
 open IntegralLattice in
+/-- In even positive rank, the Conway--Sloane labels `0, 1, 2, 3` map under
+`zmodTwoProdAddEquivCheckerboardDiscriminantGroup` to `0`, spinor, vector, and cospinor. -/
+theorem zmodTwoProdAddEquivCheckerboardDiscriminantGroup_glueLabelEquiv_D_of_even (n : ℕ)
+    [NeZero n] (ht : (D n).IsSimplyLaced) (hn : Even n) (i : Fin 4) :
+    zmodTwoProdAddEquivCheckerboardDiscriminantGroup n hn
+        (FiniteQuadraticModule.Isometry.ofEq (glueAlphabet_D_of_even n ht hn)
+          ((D n).glueLabelEquiv ht i)) =
+      ![0, checkerboardSpinorClass n, checkerboardVectorClass n,
+        checkerboardCospinorClass n] i := by
+  have hi := congrArg (zmodTwoProdAddEquivCheckerboardDiscriminantGroup n hn)
+    (glueLabelEquiv_D_of_even n ht hn i)
+  obtain ⟨k, hk⟩ := i
+  interval_cases k <;> exact hi.trans (by simp)
+
+open IntegralLattice in
 /-- For even `Dₙ`, label `1` represents the checkerboard spinor class in simple-root
 coordinates. -/
 theorem glueAlphabetIsometry_glueLabelEquiv_one_D_of_even (n : ℕ) (hv : (D n).Valid)
@@ -101,12 +116,9 @@ theorem glueAlphabetIsometry_glueLabelEquiv_one_D_of_even (n : ℕ) (hv : (D n).
       (rootLatticeIsometryCheckerboard n (valid_D.mp hv) ht).discriminantGroupEquiv.symm
         (checkerboardSpinorClass n) := by
   have : NeZero n := ⟨by have := valid_D.mp hv; omega⟩
-  rw [glueAlphabetIsometry_D_apply_of_even n hv ht hn]
-  have hdigit : FiniteQuadraticModule.Isometry.ofEq (glueAlphabet_D_of_even n ht hn)
-      ((D n).glueLabelEquiv ht (1 : Fin 4)) = (0, 1) :=
-    glueLabelEquiv_D_of_even n ht hn 1
-  rw [hdigit, zmodTwoProdAddEquivCheckerboardDiscriminantGroup_apply_zero_one,
-    Isometry.discriminantGroupEquiv_symm]
+  rw [glueAlphabetIsometry_D_apply_of_even n hv ht hn,
+    zmodTwoProdAddEquivCheckerboardDiscriminantGroup_glueLabelEquiv_D_of_even n ht hn 1,
+    Matrix.cons_val_one, Matrix.cons_val_zero, Isometry.discriminantGroupEquiv_symm]
 
 /-- In odd rank, type-`D` labels enumerate the cyclic group of order four. -/
 @[simp] theorem glueLabelEquiv_D_of_odd (n : ℕ) (ht : (D n).IsSimplyLaced) (hn : Odd n)

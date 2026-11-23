@@ -305,7 +305,7 @@ private theorem finsum_smul_quotient_trans (hVU : V ≤ U) (W : Subgroup G) (hUW
   let UW := U.subgroupOf W
   let VW := V.subgroupOf W
   have hVWUW : VW ≤ UW := fun v hv ↦ hVU hv
-  let mVW : H0 VW M := ⟨m, fun v ↦ hm v (Subgroup.mem_subgroupOf.mp v.2)⟩
+  let mVW : H0 VW M := ⟨m, fun v ↦ hm v (Subgroup.mem_subgroupOf.mp v.property)⟩
   let _ : (VW.subgroupOf UW).FiniteIndex :=
     ⟨(Subgroup.relIndex_subgroupOf hUW).trans_ne Subgroup.FiniteIndex.index_ne_zero⟩
   have : VW.FiniteIndex := Subgroup.finiteIndex_of_finiteIndex_subgroupOf VW UW
@@ -319,7 +319,7 @@ private theorem finsum_smul_quotient_trans (hVU : V ≤ U) (W : Subgroup G) (hUW
     · rintro ⟨y, hy, rfl⟩
       exact hy
     · intro hx
-      exact ⟨⟨⟨x, hUW x.2⟩, x.2⟩, hx, Subtype.ext rfl⟩)
+      exact ⟨⟨⟨x, hUW x.property⟩, x.property⟩, hx, Subtype.ext rfl⟩)
   have hsum :
       ∑ r : UW ⧸ VW.subgroupOf UW, ((r.out : UW) : G) • m =
         ∑ r : U ⧸ V.subgroupOf U, (r.out : G) • m := by
@@ -330,7 +330,7 @@ private theorem finsum_smul_quotient_trans (hVU : V ≤ U) (W : Subgroup G) (hUW
       (Subgroup.subgroupOfEquivOfLe hUW r.out)
     rw [← QuotientGroup.out_eq' r, QuotientGroup.congrOfMapEq_mk, hv,
       QuotientGroup.out_eq' r, Subgroup.coe_mul, mul_smul,
-      hm _ (Subgroup.mem_subgroupOf.mp v.2), Subgroup.subgroupOfEquivOfLe_apply_coe]
+      hm _ (Subgroup.mem_subgroupOf.mp v.property), Subgroup.subgroupOfEquivOfLe_apply_coe]
   rw [finsum_eq_sum_of_fintype, finsum_eq_sum_of_fintype,
     finsum_eq_sum_of_fintype]
   calc
@@ -360,7 +360,7 @@ theorem explicitCor0Le_trans (W : Subgroup G) (hUW : U ≤ W)
   simp only [coe_explicitCor0Le, AddMonoidHom.comp_apply, Subgroup.smul_def]
   simpa only [finsum_eq_sum_of_fintype] using
     finsum_smul_quotient_trans G M U V hVU W hUW (m : M) fun v hv ↦
-      (FixedPoints.mem_addSubgroup V M m).1 m.2 ⟨v, hv⟩
+      (FixedPoints.mem_addSubgroup V M m).1 m.property ⟨v, hv⟩
 
 section TransitivityTopological
 

@@ -7,40 +7,57 @@ module
 
 public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.AlmostComplex.LeftCapping
 public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.AlmostComplex.Manifold.Capping
+public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.AlmostComplex.Manifold.Exchange
+public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.LeftCapping
 
 /-!
-# The input-exchange family capped at `0` in a manifold
+# Almost complex structures along the input-exchange family capped at `0` in a manifold
 
-The left unit homotopy of the pair-of-pants product counts the members of the input-exchange
-family capped at `0`, whose Hamiltonian perturbations are
-`TauCeti.Floer.cappedExchangePerturbation H L c`, `0 ≤ c ≤ 1`, on the capped domain `ℂ ∖ {1}`.
-`TauCeti.Floer.cappedExchangeAlmostComplex` constructs the matching domain-dependent almost complex
-structures on a fixed symplectic vector space. This file constructs them on the tangent bundle of a
-manifold `M` with a nondegenerate two-form `σ`, such as a closed symplectic manifold.
+The left unit property of the pair-of-pants product is proved with the family of Floer data that
+caps the input at `0` of the pair of pants `S = ℂ ∖ {0, 1}` by a negative PSS plane and moves the
+output end from `0` to `1`. Its perturbations `TauCeti.Floer.cappedExchangePerturbation H L c` are
+defined for any target, and `TauCeti.Floer.cappedExchangeAlmostComplex` constructs its almost
+complex structures on a fixed symplectic vector space. This file constructs them on the tangent
+bundle of a manifold `M` with a nondegenerate two-form `σ`, such as a closed symplectic manifold.
 
-Fix a `σ`-compatible smooth almost complex structure `J₀` and smooth `σ`-tame end families
-`J q t`. For a neck length `L` and `c ∈ ℝ`, the smooth almost complex structure
-`TauCeti.SmoothTwoForm.Compatible.cappedExchangeAlmostComplex h₀ J hJ L c w` is, on the disc
-`‖w - c‖ ≤ 2 exp (2π)`, the capping structure at `0`
-(`TauCeti.SmoothTwoForm.Compatible.cappingAlmostComplex`) of the pair of pants whose output family
-is replaced by `J₀`, and off that disc the negative plane structure of `J_∞` translated by `c`.
+Fix a `σ`-compatible smooth almost complex structure `J₀` and smooth `σ`-tame structures `J q t`
+for the ends `q` and times `t`. For a neck length `L`, `c ∈ ℝ` and `w ∈ ℂ`, the smooth almost
+complex structure `TauCeti.SmoothTwoForm.Compatible.cappedExchangeAlmostComplex h₀ J hJ L c w` is
+the negative plane structure `TauCeti.SmoothTwoForm.Compatible.negativePlaneAlmostComplex` of `J 0`
+in the plumbing coordinate on the half-neck `Re z > L/2` of the end at `0`, and the member `c` of
+the input-exchange family `TauCeti.SmoothTwoForm.Compatible.exchangeAlmostComplex` elsewhere. On the
+tangent space at every point `x` it is the linear structure of `J₀ x` and the end structures
+`J q t x`
+(`TauCeti.SmoothTwoForm.Compatible.almostComplexStructureAt_cappedExchangeAlmostComplex`), so its
+properties follow fiberwise from the linear construction:
 
-* On every tangent fiber of the four-punctured sphere `ℂ ∖ {0, 1, ψ(1)}`, where `ψ` is the plumbing
-  map at `0`, it is the linear structure `TauCeti.Floer.cappedExchangeAlmostComplex`
-  (`TauCeti.SmoothTwoForm.Compatible.almostComplexStructureAt_cappedExchangeAlmostComplex`), and
-  for `L ≥ 1` and `0 ≤ c ≤ 1` it is `J₀` at the three missing points.
-* It is tame, and compatible when the end structures are.
-* At `c = 0` it is the capping structure at `0` of the pair of pants with end families `J`, and at
-  `c = 1`, if `J_∞` has period one, it is the capping structure at `1` of the pair of pants with
-  exchanged end families (`TauCeti.Floer.exchangeEndData`) composed with `w ↦ 1 - w`.
-* For `L ≥ 1` and `0 ≤ c ≤ 1` it is `J_1(t)` far out on the remaining input end, and for every
-  `c` it is
-  `J_∞(t)` far out on the output end recentred at `c`, for period-one end families.
-* For `L > 2` and `0 ≤ c ≤ 1` it is `J₀` on the disc of radius `exp (-2π(L - 1)) / 2` about the
-  capped puncture `0`.
-* For period-one end families which are jointly `C^n` on `ℝ × M`, it is jointly `C^n` along `C^n`
-  families of neck lengths `L > 4`, parameters `-1 < c < 2`, points of the capped domain `ℂ ∖ {1}`
-  and points of `M` (`TauCeti.SmoothTwoForm.Compatible.contMDiff_cappedExchangeAlmostComplex`).
+* it is tame, and compatible when the end structures are;
+* for `L > 2`, at `c = 0` it is the capping structure at `0`,
+  `TauCeti.SmoothTwoForm.Compatible.cappingAlmostComplex J hJ zero L`
+  (`TauCeti.SmoothTwoForm.Compatible.cappedExchangeAlmostComplex_zero`), and at `c = 1`, if `J ∞`
+  has period one, its value at `w` is the capping structure at `1` of the exchanged end structures
+  `TauCeti.Floer.exchangeEndData J` at `1 - w`
+  (`TauCeti.SmoothTwoForm.Compatible.cappedExchangeAlmostComplex_one`);
+* for `L > 2` and `-1 ≤ c ≤ 2`, on the disc `‖w‖ ≤ 1` it is the capping structure at `0`
+  (`TauCeti.SmoothTwoForm.Compatible.cappedExchangeAlmostComplex_of_norm_le`), so it is `J₀` on
+  the image `‖w‖ ≤ exp (-2π(L - 1)) / 2` of the pole disc of the plane, and it is `J₀` at the three
+  punctures of the plumbed sphere `ℂ ∖ {0, 1, ψ_0(1)}`
+  (`TauCeti.SmoothTwoForm.Compatible.cappedExchangeAlmostComplex_of_not`);
+* for `0 ≤ c ≤ 1`, `L ≥ 2` and period-one end structures, it is `J 1 t` far out on the input end
+  at `1` in the end lift `φ_1`, and `J ∞ t` far out on the output end in the end lift `c + φ_∞`,
+  the end coordinates in which the perturbations of the family are `H_q(t) dt`;
+* for `L > 4` and period-one end structures which are jointly `C^n` on `ℝ × M`, it is jointly
+  `C^n` along `C^n` families of parameters `-1 < c < 2`, points of the capped domain `ℂ ∖ {1}` and
+  points of `M` (`TauCeti.SmoothTwoForm.Compatible.contMDiff_cappedExchangeAlmostComplex`).
+
+Finally, for `L > 4` the member `c = 1` of the family of Floer data is the pullback along
+`w ↦ 1 - w` of the data of the capping family at `1` with exchanged Hamiltonians and end
+structures: if `u` solves the Floer equation for the latter at `1 - w`, then `u (1 - ·)` solves it
+at `w` for the member `c = 1`
+(`TauCeti.SmoothTwoForm.Compatible.isComplexLinearMap_perturbedMFDeriv_cappedExchange_one`).
+This is the naturality of the Floer equation under the exchange,
+`TauCeti.SmoothTwoForm.isComplexLinearMap_perturbedMFDeriv_comp_one_sub`, applied to
+`TauCeti.Floer.cappedExchangePerturbation_one`.
 
 ## References
 
@@ -67,258 +84,285 @@ variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimen
   {σ : SmoothTwoForm I M} {J₀ : SmoothAlmostComplexStructure I M}
   (h₀ : σ.Compatible J₀)
   (J : Puncture → ℝ → SmoothAlmostComplexStructure I M) (hJ : ∀ q t, σ.Tames (J q t))
-  {L c : ℝ}
 
-/-- The almost complex structure on `M` of the member `c` of the input-exchange family capped at
-`0`, with neck length `L`, at the point `w ∈ ℂ`. On the disc `‖w - c‖ ≤ 2 exp (2π)` it is the
-capping structure at `0` of the pair of pants with the input families of `J` and output family
-`J₀`, and off that disc it is the negative plane structure of `J_∞` translated by `c`. -/
+open Classical in
+/-- **The input-exchange family capped at `0` on a manifold.** For a neck length `L` and `c ∈ ℝ`,
+relative to a `σ`-compatible base structure `J₀`, this is the negative plane structure of the
+input structures `J 0` in the plumbing coordinate `(w - c_0) / ψ'` on the half-neck `Re z > L/2`
+of the end at `0`, and the member `c` of the input-exchange family elsewhere. -/
 def cappedExchangeAlmostComplex (L c : ℝ) (w : ℂ) : SmoothAlmostComplexStructure I M :=
-  if ‖w - c‖ ≤ 2 * Real.exp (2 * π) then
-    h₀.cappingAlmostComplex (update J inf fun _ => J₀) (tames_update_inf_base h₀.tames hJ) zero L w
-  else h₀.negativePlaneAlmostComplex (J inf) (hJ inf) (w - c)
+  if L / 2 < (zero.endCoord w).re then
+    h₀.negativePlaneAlmostComplex (J zero) (hJ zero)
+      ((w - zero.endCenter) / zero.plumbingFactor L)
+  else h₀.exchangeAlmostComplex J hJ c w
 
-/-- On the disc `‖w - c‖ ≤ 2 exp (2π)` the member `c` is the capping structure at `0` of the input
-part. -/
-theorem cappedExchangeAlmostComplex_of_norm_le {w : ℂ} (hw : ‖w - c‖ ≤ 2 * Real.exp (2 * π)) :
+variable {L c : ℝ} {w : ℂ}
+
+/-- On the half-neck `Re z > L/2` of the end at `0`, every member of the family is the negative
+plane structure of `J 0` in the plumbing coordinate. -/
+theorem cappedExchangeAlmostComplex_of_lt_re_endCoord (hw : L / 2 < (zero.endCoord w).re) :
     h₀.cappedExchangeAlmostComplex J hJ L c w =
-      h₀.cappingAlmostComplex (update J inf fun _ => J₀) (tames_update_inf_base h₀.tames hJ) zero L
-        w := by
-  simp only [cappedExchangeAlmostComplex, hw, ↓reduceIte]
+      h₀.negativePlaneAlmostComplex (J zero) (hJ zero)
+        ((w - zero.endCenter) / zero.plumbingFactor L) :=
+  ite_eq_left hw
 
-/-- Off the disc `‖w - c‖ ≤ 2 exp (2π)` the member `c` is the negative plane structure of the
-output family, translated by `c`. -/
-theorem cappedExchangeAlmostComplex_of_lt_norm {w : ℂ} (hw : 2 * Real.exp (2 * π) < ‖w - c‖) :
-    h₀.cappedExchangeAlmostComplex J hJ L c w =
-      h₀.negativePlaneAlmostComplex (J inf) (hJ inf) (w - c) := by
-  simp only [cappedExchangeAlmostComplex, hw.not_ge, ↓reduceIte]
+/-- Off the half-neck `Re z > L/2` of the end at `0`, the member `c` of the family is the member
+`c` of the input-exchange family. -/
+theorem cappedExchangeAlmostComplex_of_re_endCoord_le (hw : (zero.endCoord w).re ≤ L / 2) :
+    h₀.cappedExchangeAlmostComplex J hJ L c w = h₀.exchangeAlmostComplex J hJ c w :=
+  ite_eq_right hw.not_gt
 
-/-- Every member of the family is tamed by the two-form. -/
+/-- **The fiberwise description.** On the tangent space at `x`, the member `c` of the family at
+`w` is the linear structure `TauCeti.Floer.cappedExchangeAlmostComplex` of `J₀ x` and the end
+structures `J q t x`. -/
+theorem almostComplexStructureAt_cappedExchangeAlmostComplex (L c : ℝ) (w : ℂ) (x : M) :
+    (h₀.cappedExchangeAlmostComplex J hJ L c w).almostComplexStructureAt x =
+      Floer.cappedExchangeAlmostComplex (h₀.compatibleAt x)
+        (fun q t (_ : Unit) => (J q t).almostComplexStructureAt x)
+        (fun q t _ => h₀.isNondegenerate.tames_iff.mp (hJ q t) x) L c w () := by
+  rcases lt_or_ge (L / 2) (zero.endCoord w).re with hw | hw
+  · rw [cappedExchangeAlmostComplex_of_lt_re_endCoord h₀ J hJ hw,
+      Floer.cappedExchangeAlmostComplex_of_lt_re_endCoord _ hw,
+      almostComplexStructureAt_negativePlaneAlmostComplex]
+  · rw [cappedExchangeAlmostComplex_of_re_endCoord_le h₀ J hJ hw,
+      Floer.cappedExchangeAlmostComplex_of_re_endCoord_le _ hw,
+      almostComplexStructureAt_exchangeAlmostComplex]
+
+/-- Every member of the family is tamed by `σ`. -/
 theorem tames_cappedExchangeAlmostComplex (L c : ℝ) (w : ℂ) :
     σ.Tames (h₀.cappedExchangeAlmostComplex J hJ L c w) := by
   unfold cappedExchangeAlmostComplex
   split_ifs
-  exacts [tames_cappingAlmostComplex h₀ _ _ w, tames_negativePlaneAlmostComplex h₀ _ _ _]
+  exacts [tames_negativePlaneAlmostComplex h₀ _ _ _, tames_exchangeAlmostComplex h₀ J hJ c w]
 
-/-- Every member of the family is compatible with the two-form when the end structures are. -/
+/-- Every member of the family is `σ`-compatible when the end structures are. -/
 theorem compatible_cappedExchangeAlmostComplex (hJc : ∀ q t, σ.Compatible (J q t)) (L c : ℝ)
     (w : ℂ) : σ.Compatible (h₀.cappedExchangeAlmostComplex J hJ L c w) := by
   unfold cappedExchangeAlmostComplex
   split_ifs
-  · exact compatible_cappingAlmostComplex h₀ _ _
-      ((forall_update_iff J fun _ f => ∀ t, σ.Compatible (f t)).2 ⟨fun _ => h₀, fun q _ => hJc q⟩)
-      w
-  · exact compatible_negativePlaneAlmostComplex h₀ _ _ (hJc inf) _
+  exacts [compatible_negativePlaneAlmostComplex h₀ _ _ (hJc zero) _,
+    compatible_exchangeAlmostComplex h₀ J hJ hJc c w]
 
-/-- On every tangent fiber of the four-punctured sphere `ℂ ∖ {0, 1, ψ(1)}`, the member `c` of the
-family is the linear input-exchange family capped at `0` of the fiberwise end families. -/
-theorem almostComplexStructureAt_cappedExchangeAlmostComplex {w : ℂ}
-    (hw : (w ≠ 0 ∧ w ≠ 1) ∧ w ≠ zero.plumbingMap L 1) (x : M) :
-    (h₀.cappedExchangeAlmostComplex J hJ L c w).almostComplexStructureAt x =
-      Floer.cappedExchangeAlmostComplex (V := TangentSpace I x) (M := Unit) (h₀.compatibleAt x)
-        (fun q t _ => (J q t).almostComplexStructureAt x)
-        (fun q t _ => h₀.isNondegenerate.tames_iff.mp (hJ q t) x) L c w () := by
-  rcases le_or_gt ‖w - c‖ (2 * Real.exp (2 * π)) with hn | hn
-  · rw [cappedExchangeAlmostComplex_of_norm_le h₀ J hJ hn,
-      Floer.cappedExchangeAlmostComplex_of_norm_le _ hn,
-      almostComplexStructureAt_cappingAlmostComplex h₀ _ _ hw]
-    have hzi : zero ≠ inf := by decide
-    simp only [update_of_ne hzi,
-      SmoothAlmostComplexStructure.almostComplexStructureAt_update_inf_base J x]
-  · rw [cappedExchangeAlmostComplex_of_lt_norm h₀ J hJ hn,
-      Floer.cappedExchangeAlmostComplex_of_lt_norm _ hn,
-      almostComplexStructureAt_negativePlaneAlmostComplex]
+/-- **The capped disc.** For `L > 2` and `-1 ≤ c ≤ 2`, every member of the family is `J₀` on the
+disc of radius `exp (-2π(L - 1)) / 2` about the capped puncture `0`, the image under the plumbing
+map of the pole disc of the plane. -/
+theorem cappedExchangeAlmostComplex_eq_of_norm_le (hL : 2 < L) (hc : c ∈ Icc (-1) 2)
+    (hw : ‖w‖ ≤ Real.exp (-(2 * π * (L - 1))) / 2) :
+    h₀.cappedExchangeAlmostComplex J hJ L c w = J₀ :=
+  SmoothAlmostComplexStructure.ext_almostComplexStructureAt fun x => by
+    rw [almostComplexStructureAt_cappedExchangeAlmostComplex]
+    exact Floer.cappedExchangeAlmostComplex_eq_of_norm_le _ hL hc hw ()
 
-/-- The three points `0`, `1` and `ψ(1)` missing from the four-punctured sphere lie in the closed
-unit disc, since `ψ(1)` lies within distance `exp (-2π(L - 1)) / 2` of `0`. -/
-private theorem norm_le_one_of_not {w : ℂ} (hL : 1 ≤ L)
-    (hw : ¬((w ≠ 0 ∧ w ≠ 1) ∧ w ≠ zero.plumbingMap L 1)) : ‖w‖ ≤ 1 := by
-  have hψ : ‖zero.plumbingMap L 1‖ ≤ 1 := by
-    have h := norm_plumbingMap_one_sub_endCenter_lt zero L
-    rw [endCenter_zero, sub_zero] at h
-    have : Real.exp (-(2 * π * (L - 1))) ≤ 1 :=
-      Real.exp_le_one_iff.2 (by nlinarith [Real.pi_pos])
-    linarith
-  simp only [not_and_or, not_not] at hw
-  rcases hw with (rfl | rfl) | rfl
-  · simp
-  · simp
-  · exact hψ
+/-- **The uncapped input.** For `L ≥ 2` and `-1 ≤ c ≤ 2`, every member of the family is `J₀` at
+the puncture `1`. -/
+theorem cappedExchangeAlmostComplex_endCenter_one (hL : 2 ≤ L) (hc : c ∈ Icc (-1) 2) :
+    h₀.cappedExchangeAlmostComplex J hJ L c one.endCenter = J₀ :=
+  SmoothAlmostComplexStructure.ext_almostComplexStructureAt fun x => by
+    rw [almostComplexStructureAt_cappedExchangeAlmostComplex]
+    exact Floer.cappedExchangeAlmostComplex_endCenter_one _ hL hc ()
 
-/-- **The missing points.** For `L ≥ 1` and `0 ≤ c ≤ 1`, at the points `0`, `1` and `ψ(1)` missing
-from the four-punctured sphere, every member of the family is `J₀`. -/
-theorem cappedExchangeAlmostComplex_of_not (hL : 1 ≤ L) (hc₀ : 0 ≤ c) (hc₁ : c ≤ 1) {w : ℂ}
+/-- **The punctures of the capped sphere.** For `L > 2` and `-1 ≤ c ≤ 2`, every member of the
+family is `J₀` at the three points `0`, `1` and `ψ_0(1)` missing from the plumbed four-punctured
+sphere `ℂ ∖ {0, 1, ψ_0(1)}`, where the capping structure at `0` is `J₀` too: `0` and `ψ_0(1)` lie in
+the image of the pole disc of the plane. -/
+theorem cappedExchangeAlmostComplex_of_not (hL : 2 < L) (hc : c ∈ Icc (-1) 2)
     (hw : ¬((w ≠ 0 ∧ w ≠ 1) ∧ w ≠ zero.plumbingMap L 1)) :
     h₀.cappedExchangeAlmostComplex J hJ L c w = J₀ := by
-  have hn : ‖w - c‖ ≤ 2 * Real.exp (2 * π) := by
-    have h := norm_sub_le w (c : ℂ)
-    rw [Complex.norm_real, Real.norm_of_nonneg hc₀] at h
-    linarith [norm_le_one_of_not hL hw, three_lt_two_mul_exp_two_pi]
-  rw [cappedExchangeAlmostComplex_of_norm_le h₀ J hJ hn, cappingAlmostComplex_of_not h₀ _ _ hw]
+  simp only [not_and_or, not_not] at hw
+  rcases hw with (rfl | rfl) | rfl
+  · exact cappedExchangeAlmostComplex_eq_of_norm_le h₀ J hJ hL hc (by rw [norm_zero]; positivity)
+  · simpa using cappedExchangeAlmostComplex_endCenter_one h₀ J hJ hL.le hc
+  · exact cappedExchangeAlmostComplex_eq_of_norm_le h₀ J hJ hL hc
+      (by simpa [endCenter_zero] using (norm_plumbingMap_one_sub_endCenter_lt zero L).le)
 
-/-- **The start of the family is the capping structure at `0`.** For `L ≥ 2`, the member `c = 0`
-of the family is the capping structure at `0` of the pair of pants with end families `J`. -/
-@[simp]
-theorem cappedExchangeAlmostComplex_zero (hL : 2 ≤ L) :
+/-- **Near the capped puncture the family is the capping structure at `0`.** For `L > 2` and
+`-1 ≤ c ≤ 2`, on the disc `‖w‖ ≤ 1` the member `c` of the family is the capping structure at `0`
+of the pair of pants with end structures `J`. -/
+theorem cappedExchangeAlmostComplex_of_norm_le (hL : 2 < L) (hc : c ∈ Icc (-1) 2)
+    (hw : ‖w‖ ≤ 1) :
+    h₀.cappedExchangeAlmostComplex J hJ L c w = h₀.cappingAlmostComplex J hJ zero L w := by
+  by_cases hw' : (w ≠ 0 ∧ w ≠ 1) ∧ w ≠ zero.plumbingMap L 1
+  · refine SmoothAlmostComplexStructure.ext_almostComplexStructureAt fun x => ?_
+    rw [almostComplexStructureAt_cappedExchangeAlmostComplex,
+      almostComplexStructureAt_cappingAlmostComplex h₀ J hJ hw',
+      Floer.cappedExchangeAlmostComplex_of_norm_le _ hc hw]
+  · rw [cappingAlmostComplex_of_not h₀ J hJ hw',
+      cappedExchangeAlmostComplex_of_not h₀ J hJ hL hc hw']
+
+/-- **The start of the family is the capping structure at `0`.** For `L > 2`, at `c = 0` the family
+is the structure obtained by plumbing the negative plane with end structures `J 0` into the end at
+`0` of the pair of pants with end structures `J`. -/
+theorem cappedExchangeAlmostComplex_zero (hL : 2 < L) :
     h₀.cappedExchangeAlmostComplex J hJ L 0 = h₀.cappingAlmostComplex J hJ zero L := by
   funext w
   by_cases hw : (w ≠ 0 ∧ w ≠ 1) ∧ w ≠ zero.plumbingMap L 1
   · refine SmoothAlmostComplexStructure.ext_almostComplexStructureAt fun x => ?_
-    rw [almostComplexStructureAt_cappedExchangeAlmostComplex h₀ J hJ hw,
-      Floer.cappedExchangeAlmostComplex_zero _ hL,
-      almostComplexStructureAt_cappingAlmostComplex h₀ J hJ hw]
-  · rw [cappedExchangeAlmostComplex_of_not h₀ J hJ (by linarith) le_rfl zero_le_one hw,
-      cappingAlmostComplex_of_not h₀ J hJ hw]
+    rw [almostComplexStructureAt_cappedExchangeAlmostComplex,
+      almostComplexStructureAt_cappingAlmostComplex h₀ J hJ hw,
+      Floer.cappedExchangeAlmostComplex_zero]
+  · rw [cappingAlmostComplex_of_not h₀ J hJ hw,
+      cappedExchangeAlmostComplex_of_not h₀ J hJ hL ⟨by norm_num, by norm_num⟩ hw]
 
-omit [FiniteDimensional ℝ E] in
-/-- On a tangent fiber, the exchanged end families are the exchanged linear end families. -/
-private theorem almostComplexStructureAt_exchangeEndData (x : M) :
-    (fun q t (_ : Unit) => (Floer.exchangeEndData J q t).almostComplexStructureAt x) =
-      Floer.exchangeEndData (fun q t (_ : Unit) => (J q t).almostComplexStructureAt x) := by
-  funext q
-  cases q <;> simp only [Floer.exchangeEndData_zero, Floer.exchangeEndData_one,
-    Floer.exchangeEndData_inf]
-
-/-- **The end of the family is the exchanged capping structure at `1`.** If the output family
-`J_∞` has period one in `t` and `L ≥ 2`, the member `c = 1` of the family at `w` is the capping
-structure at `1` of the pair of pants with exchanged end families (`TauCeti.Floer.exchangeEndData`)
-at `1 - w`. -/
-theorem cappedExchangeAlmostComplex_one (hJp : Periodic (J inf) 1)
-    (hJ' : ∀ q t, σ.Tames (Floer.exchangeEndData J q t)) (hL : 2 ≤ L) (w : ℂ) :
+/-- **The end of the family is the exchanged capping structure at `1`.** For `L > 2`, if the
+output structures `J ∞` have period one in `t`, the member `c = 1` of the family at `w` is, at
+`1 - w`, the structure obtained by plumbing the negative plane with end structures `J 0` into the
+end at `1` of the pair of pants with exchanged end structures (`TauCeti.Floer.exchangeEndData`:
+`J 1` at `0`, `J 0` at `1` and `t ↦ J ∞ (t + 1/2)` at `∞`). -/
+theorem cappedExchangeAlmostComplex_one (hL : 2 < L) (hJp : Periodic (J inf) 1)
+    (hJ' : ∀ q t, σ.Tames (Floer.exchangeEndData J q t)) (w : ℂ) :
     h₀.cappedExchangeAlmostComplex J hJ L 1 w =
       h₀.cappingAlmostComplex (Floer.exchangeEndData J) hJ' one L (1 - w) := by
-  have hiff : ((1 - w ≠ 0 ∧ 1 - w ≠ 1) ∧ 1 - w ≠ one.plumbingMap L 1) ↔
-      ((w ≠ 0 ∧ w ≠ 1) ∧ w ≠ zero.plumbingMap L 1) := by
-    simp only [← one_sub_plumbingMap_zero, ne_eq, sub_eq_zero, sub_eq_self, sub_right_inj]
-    exact ⟨fun ⟨⟨h₁, h₀⟩, hψ⟩ => ⟨⟨h₀, fun h => h₁ h.symm⟩, hψ⟩,
-      fun ⟨⟨h₀, h₁⟩, hψ⟩ => ⟨⟨fun h => h₁ h.symm, h₀⟩, hψ⟩⟩
-  by_cases hw : (w ≠ 0 ∧ w ≠ 1) ∧ w ≠ zero.plumbingMap L 1
+  by_cases hw : (1 - w ≠ 0 ∧ 1 - w ≠ 1) ∧ 1 - w ≠ one.plumbingMap L 1
   · refine SmoothAlmostComplexStructure.ext_almostComplexStructureAt fun x => ?_
-    rw [almostComplexStructureAt_cappedExchangeAlmostComplex h₀ J hJ hw,
+    rw [almostComplexStructureAt_cappedExchangeAlmostComplex,
       Floer.cappedExchangeAlmostComplex_one _ (fun t => by simp only [hJp t])
-        (fun q t _ => by
-          rw [← congrFun (congrFun (almostComplexStructureAt_exchangeEndData J x) q) t]
-          exact h₀.isNondegenerate.tames_iff.mp (hJ' q t) x) hL,
-      almostComplexStructureAt_cappingAlmostComplex h₀ _ hJ' (hiff.2 hw)]
-    simp only [almostComplexStructureAt_exchangeEndData, Floer.exchangeEndData_one]
-  · rw [cappedExchangeAlmostComplex_of_not h₀ J hJ (by linarith) zero_le_one le_rfl hw,
-      cappingAlmostComplex_of_not h₀ _ hJ' (mt hiff.1 hw)]
+        (h₀.tames_exchangeEndData_almostComplexStructureAt J hJ' x),
+      almostComplexStructureAt_cappingAlmostComplex h₀ _ hJ' hw]
+    -- The fiberwise exchanged end structures are the exchanged fiberwise end structures.
+    have hex : (fun r t (_ : Unit) => (Floer.exchangeEndData J r t).almostComplexStructureAt x) =
+        Floer.exchangeEndData (fun q t (_ : Unit) => (J q t).almostComplexStructureAt x) := by
+      funext r t u
+      cases r <;> simp
+    simp only [hex, Floer.exchangeEndData_one]
+  · -- The punctures `0`, `1` and `ψ_1(1)` of the exchanged capped sphere are `1 - w` for the
+    -- punctures `1`, `0` and `ψ_0(1)` of the capped sphere.
+    have hw' : ¬((w ≠ 0 ∧ w ≠ 1) ∧ w ≠ zero.plumbingMap L 1) := by
+      have hψ : 1 - one.plumbingMap L 1 = zero.plumbingMap L 1 := by
+        simp only [plumbingMap_apply, plumbingFactor_one, endCenter_one, endCenter_zero]
+        ring
+      rintro ⟨⟨h₀, h₁⟩, h₂⟩
+      refine hw ⟨⟨fun h => h₁ (by linear_combination -h), fun h => h₀ (by linear_combination -h)⟩,
+        fun h => h₂ ?_⟩
+      rw [← hψ, ← h, sub_sub_cancel]
+    rw [cappingAlmostComplex_of_not h₀ _ hJ' hw,
+      cappedExchangeAlmostComplex_of_not h₀ J hJ hL ⟨by norm_num, by norm_num⟩ hw']
 
-/-- **The family is `J_1(t)` far out on the remaining input end.** For `0 ≤ c ≤ 1` and `L ≥ 1`, if
-`J_1` has period one in `t`, then on the part `s ≥ 2` of the input end at `1` the member `c` of the
-family at the point with end coordinates `z = s + i t` is `J_1 t`. -/
-theorem cappedExchangeAlmostComplex_cylindricalEndLift (hJp : Periodic (J one) 1) (hL : 1 ≤ L)
+/-- **The family is `J 1 t` far out on the remaining input end.** For `L ≥ 0` and `0 ≤ c ≤ 1`, if
+`J 1` has period one in `t`, then on the part `s ≥ 2` of the input end at `1` the member `c` of the
+family at the point with end coordinates `z = s + i t` is `J 1 t`. -/
+theorem cappedExchangeAlmostComplex_cylindricalEndLift (hJp : Periodic (J one) 1) (hL : 0 ≤ L)
     (hc₀ : 0 ≤ c) (hc₁ : c ≤ 1) {z : ℂ} (hz : 2 ≤ z.re) :
-    h₀.cappedExchangeAlmostComplex J hJ L c (one.cylindricalEndLift z) = J one z.im := by
-  -- The point lies at distance at least `1/2` from `0`, so it is not `ψ(1)`.
-  have hS := one.cylindricalEndLift_ne_zero_and_ne_one (z := z)
-    (by rw [endSign_eq_one (by decide), one_mul]; linarith)
-  have hw : ((one.cylindricalEndLift z ≠ 0 ∧ one.cylindricalEndLift z ≠ 1) ∧
-      one.cylindricalEndLift z ≠ zero.plumbingMap L 1) := by
-    refine mem_plumbedSphere_of_le_norm_sub_endCenter (Or.inr hS) ?_
-    have h := norm_cylindricalEndLift_sub_endCenter one z
-    rw [norm_endScale (by decide), endCenter_one] at h
-    have h₁ : Real.exp (-(2 * π * z.re)) ≤ 1 :=
-      Real.exp_le_one_iff.2 (by nlinarith [Real.pi_pos])
-    have h₂ : Real.exp (-(2 * π * (L - 1))) ≤ 1 :=
-      Real.exp_le_one_iff.2 (by nlinarith [Real.pi_pos])
-    have h₃ := norm_sub_norm_le (1 : ℂ) (one.cylindricalEndLift z)
-    rw [norm_one, norm_sub_rev] at h₃
-    rw [endCenter_zero, sub_zero]
-    linarith
-  refine SmoothAlmostComplexStructure.ext_almostComplexStructureAt fun x => ?_
-  rw [almostComplexStructureAt_cappedExchangeAlmostComplex h₀ J hJ hw,
-    Floer.cappedExchangeAlmostComplex_cylindricalEndLift _ (fun t => by simp only [hJp t])
-      (by linarith) hc₀ hc₁ hz]
+    h₀.cappedExchangeAlmostComplex J hJ L c (one.cylindricalEndLift z) = J one z.im :=
+  SmoothAlmostComplexStructure.ext_almostComplexStructureAt fun x => by
+    rw [almostComplexStructureAt_cappedExchangeAlmostComplex]
+    exact Floer.cappedExchangeAlmostComplex_cylindricalEndLift _ (fun t => by simp only [hJp t])
+      hL hc₀ hc₁ hz ()
 
-/-- **The family is `J_∞(t)` far out on the output end.** If `J_∞` has period one in `t`, then on
-the part `s ≤ -2` of the output end recentred at `c`, the member `c` of the family at the point
-`c + φ_∞(z)` with end coordinates `z = s + i t` is `J_∞ t`. -/
+/-- **The family is `J ∞ t` far out on the output end.** For `L ≥ 2` and `0 ≤ c ≤ 1`, if `J ∞` has
+period one in `t`, then on the part `s ≤ -2` of the output end recentred at `c`, the member `c` of
+the family at the point `c + φ_∞(z)` with end coordinates `z = s + i t` is `J ∞ t`. -/
 theorem cappedExchangeAlmostComplex_add_cylindricalEndLift_inf (hJp : Periodic (J inf) 1)
-    (L c : ℝ) {z : ℂ} (hz : z.re ≤ -2) :
-    h₀.cappedExchangeAlmostComplex J hJ L c (c + inf.cylindricalEndLift z) = J inf z.im := by
-  have hφ : 2 * Real.exp (2 * π) < ‖inf.cylindricalEndLift z‖ := by
-    have h := norm_cylindricalEndLift_sub_endCenter inf z
-    rw [endCenter_inf, sub_zero, endScale_inf, Complex.norm_ofNat] at h
-    rw [h]
-    exact mul_lt_mul_of_pos_left (Real.exp_lt_exp.2 (by nlinarith [Real.pi_pos])) two_pos
-  rw [cappedExchangeAlmostComplex_of_lt_norm h₀ J hJ (by rwa [add_sub_cancel_left]),
-    add_sub_cancel_left, negativePlaneAlmostComplex_cylindricalEndLift h₀ _ _ hJp hz]
+    (hL : 2 ≤ L) (hc₀ : 0 ≤ c) (hc₁ : c ≤ 1) {z : ℂ} (hz : z.re ≤ -2) :
+    h₀.cappedExchangeAlmostComplex J hJ L c (c + inf.cylindricalEndLift z) = J inf z.im :=
+  SmoothAlmostComplexStructure.ext_almostComplexStructureAt fun x => by
+    rw [almostComplexStructureAt_cappedExchangeAlmostComplex]
+    exact Floer.cappedExchangeAlmostComplex_add_cylindricalEndLift_inf _
+      (fun t => by simp only [hJp t]) hL hc₀ hc₁ hz ()
 
-/-- **The capped disc.** For `L > 2` and `0 ≤ c ≤ 1`, every member of the family is `J₀` on the
-disc of radius `exp (-2π(L - 1)) / 2` about the capped puncture `0`, the image under the plumbing
-map of the pole disc of the plane. -/
-theorem cappedExchangeAlmostComplex_eq_of_norm_le (hL : 2 < L) (hc₀ : 0 ≤ c) (hc₁ : c ≤ 1)
-    {w : ℂ} (hw : ‖w‖ ≤ Real.exp (-(2 * π * (L - 1))) / 2) :
-    h₀.cappedExchangeAlmostComplex J hJ L c w = J₀ := by
-  have hρ : Real.exp (-(2 * π * (L - 1))) ≤ 1 :=
-    Real.exp_le_one_iff.2 (by nlinarith [Real.pi_pos])
-  have hn : ‖w - c‖ ≤ 2 * Real.exp (2 * π) := by
-    have h := norm_sub_le w (c : ℂ)
-    rw [Complex.norm_real, Real.norm_of_nonneg hc₀] at h
-    linarith [three_lt_two_mul_exp_two_pi]
-  rw [cappedExchangeAlmostComplex_of_norm_le h₀ J hJ hn]
-  exact cappingAlmostComplex_eq_of_norm_sub_endCenter_le h₀ _ _ (by decide) hL
-    (by rwa [endCenter_zero, sub_zero])
+/-! ### Smoothness -/
 
-/-- **The family is smooth.** For end families which have period one in `t` and are `C^n` on
-`ℝ × M`, the input-exchange family capped at `0` is `C^n` jointly in the neck length, the
-parameter, the domain point and the target point, along any `C^n` family of these whose neck
-lengths exceed `4`, whose parameters lie in `(-1, 2)` and whose domain points lie in the capped
-domain `ℂ ∖ {1}`. The family may depend on further manifold parameters. -/
-theorem contMDiff_cappedExchangeAlmostComplex
-    {F G N : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] [TopologicalSpace G]
-    {I' : ModelWithCorners ℝ F G} [TopologicalSpace N] [ChartedSpace G N]
-    {n : ℕ∞ω} [ENat.LEInfty n] (hJp : ∀ q, Periodic (J q) 1)
+/-- **The family is smooth.** For end structures which have period one in `t` and are `C^n` on
+`ℝ × M`, and a neck length `L > 4`, the input-exchange family capped at `0` is `C^n` as a section of
+the tangent endomorphism bundle along `b`, read along `C^n` families of parameters `c`, domain
+points `f` and target points `b`, provided `-1 < c < 2` and every domain point lies in the capped
+domain `ℂ ∖ {1}`. The family may depend on further manifold parameters. On the disc `‖w‖ < 1` it is
+the capping structure at `0`, and off the disc `‖w‖ ≤ 1/2` it is the input-exchange family. -/
+theorem contMDiff_cappedExchangeAlmostComplex {F G N : Type*} [NormedAddCommGroup F]
+    [NormedSpace ℝ F] [TopologicalSpace G] {I' : ModelWithCorners ℝ F G} [TopologicalSpace N]
+    [ChartedSpace G N] {n : ℕ∞ω} [ENat.LEInfty n] (hJp : ∀ q, Periodic (J q) 1)
     (hJs : ∀ q, ContMDiff (𝓘(ℝ).prod I) (I.prod 𝓘(ℝ, E →L[ℝ] E)) n
       (fun p : ℝ × M => TotalSpace.mk' (E →L[ℝ] E)
         (E := fun x : M => TangentSpace I x →L[ℝ] TangentSpace I x)
         p.2 ((J q p.1).toEndomorphism p.2)))
-    {ℓ γ : N → ℝ} {f : N → ℂ} {b : N → M} (hℓ : ContMDiff I' 𝓘(ℝ) n ℓ)
-    (hγ : ContMDiff I' 𝓘(ℝ) n γ) (hf : ContMDiff I' 𝓘(ℝ, ℂ) n f) (hb : ContMDiff I' I n b)
-    (hL : ∀ p, 4 < ℓ p) (hγI : ∀ p, γ p ∈ Ioo (-1) 2) (hf₁ : ∀ p, f p ≠ 1) :
+    (hL : 4 < L) {c : N → ℝ} {f : N → ℂ} {b : N → M} (hc : ContMDiff I' 𝓘(ℝ) n c)
+    (hf : ContMDiff I' 𝓘(ℝ, ℂ) n f) (hb : ContMDiff I' I n b) (hcy : ∀ y, c y ∈ Ioo (-1) 2)
+    (hf₁ : ∀ y, f y ≠ 1) :
     ContMDiff I' (I.prod 𝓘(ℝ, E →L[ℝ] E)) n
-      (fun p => TotalSpace.mk' (E →L[ℝ] E)
-        (E := fun x : M => TangentSpace I x →L[ℝ] TangentSpace I x) (b p)
-        ((h₀.cappedExchangeAlmostComplex J hJ (ℓ p) (γ p) (f p)).toEndomorphism (b p))) := by
-  -- The capping structure of the input part is smooth along the whole family.
-  have hcap := contMDiff_cappingAlmostComplex h₀ (update J inf fun _ => J₀)
-    (tames_update_inf_base h₀.tames hJ)
-    ((forall_update_iff J fun _ f => Periodic f 1).2 ⟨fun _ => rfl, fun q _ => hJp q⟩)
-    ((forall_update_iff J fun _ f => ContMDiff (𝓘(ℝ).prod I) (I.prod 𝓘(ℝ, E →L[ℝ] E)) n
-      (fun p : ℝ × M => TotalSpace.mk' (E →L[ℝ] E)
+      (fun y => TotalSpace.mk' (E →L[ℝ] E)
         (E := fun x : M => TangentSpace I x →L[ℝ] TangentSpace I x)
-        p.2 ((f p.1).toEndomorphism p.2))).2
-      ⟨(J₀.toEndomorphism.contMDiff.of_le ENat.LEInfty.out).comp contMDiff_snd,
-        fun q _ => hJs q⟩)
-    (q := zero) (by decide) hℓ hf hb hL
-    (fun p => by
-      rcases eq_or_ne (f p) 0 with h | h
-      · exact Or.inl (h.trans endCenter_zero.symm)
-      · exact Or.inr ⟨h, hf₁ p⟩)
-  -- So is the translated plane structure.
-  have hsub : ContMDiff I' 𝓘(ℝ, ℂ) n fun p => f p - (γ p : ℂ) :=
-    hf.sub (Complex.ofRealCLM.contDiff.contMDiff.comp hγ)
-  have hpl := contMDiff_negativePlaneAlmostComplex h₀ (J inf) (hJ inf) (hJp inf) (hJs inf) hsub hb
-  have hdist : Continuous fun p => ‖f p - (γ p : ℂ)‖ := hsub.continuous.norm
-  intro p
-  rcases lt_or_ge ‖f p - (γ p : ℂ)‖ (2 * Real.exp (2 * π)) with hlt | hge
-  · -- Near the disc `‖w - c‖ < 2 exp (2π)` the family is the capping structure of the input part.
-    refine (hcap p).congr_of_eventuallyEq ?_
-    filter_upwards [hdist.continuousAt.eventually (gt_mem_nhds hlt)] with p' hp'
-    rw [cappedExchangeAlmostComplex_of_norm_le h₀ J hJ hp'.le]
-  · -- Away from the disc `‖w - c‖ ≤ 3` the family is the translated plane structure.
-    refine (hpl p).congr_of_eventuallyEq ?_
-    have h3 : 3 < ‖f p - (γ p : ℂ)‖ := three_lt_two_mul_exp_two_pi.trans_le hge
-    filter_upwards [hdist.continuousAt.eventually (lt_mem_nhds h3)] with p' hp'
-    rcases le_or_gt ‖f p' - (γ p' : ℂ)‖ (2 * Real.exp (2 * π)) with hle | hgt
-    · -- In the annulus `3 < ‖w - c‖ ≤ 2 exp (2π)` both structures are the base structure.
-      obtain ⟨hw₀, hw₁⟩ := half_le_norm_of_le_norm_sub (r := 2) (w := f p')
-        (abs_le.2 ⟨by linarith [(hγI p').1], (hγI p').2.le⟩)
-        (abs_le.2 ⟨by linarith [(hγI p').1], by linarith [(hγI p').2]⟩) (by linarith)
-      rw [cappedExchangeAlmostComplex_of_norm_le h₀ J hJ hle,
-        cappingAlmostComplex_update_inf_base_eq h₀ J hJ (by linarith [hL p']) hw₀ hw₁,
-        negativePlaneAlmostComplex_eq_of_norm_le h₀ _ _ hle]
-    · rw [cappedExchangeAlmostComplex_of_lt_norm h₀ J hJ hgt]
+        (b y) ((h₀.cappedExchangeAlmostComplex J hJ L (c y) (f y)).toEndomorphism (b y))) := by
+  intro y₀
+  rcases lt_or_ge ‖f y₀‖ 1 with hlt | hge
+  · -- On the disc `‖w‖ < 1` the family is the capping structure at `0`. Restrict the family to
+    -- the open set of parameters whose domain point lies there.
+    let U : TopologicalSpace.Opens N :=
+      ⟨{y | ‖f y‖ < 1}, isOpen_lt hf.continuous.norm continuous_const⟩
+    have hU := contMDiff_cappingAlmostComplex h₀ J hJ hJp hJs (q := zero) (by decide)
+      (ℓ := fun _ : U => L) contMDiff_const (hf.comp contMDiff_subtypeVal)
+      (hb.comp contMDiff_subtypeVal) (fun _ => hL) fun y => by
+        rcases eq_or_ne (f y) 0 with h | h
+        · exact Or.inl (by rw [comp_apply, h, endCenter_zero])
+        · exact Or.inr ⟨h, hf₁ y⟩
+    refine contMDiffAt_subtype_iff (U := U) (x := ⟨y₀, hlt⟩) |>.mp ?_
+    refine (hU _).congr_of_eventuallyEq (Filter.Eventually.of_forall fun y => ?_)
+    have hy : ‖f y‖ < 1 := y.property
+    simp only [comp_apply, cappedExchangeAlmostComplex_of_norm_le h₀ J hJ
+      (by linarith : (2 : ℝ) < L) (Ioo_subset_Icc_self (hcy y)) hy.le]
+  · -- Off the disc `‖w‖ ≤ 1/2` the family is the input-exchange family.
+    have hw₀ : f y₀ ≠ 0 := by
+      intro h
+      rw [h, norm_zero] at hge
+      norm_num at hge
+    refine (contMDiffAt_exchangeAlmostComplex h₀ J hJ hJp hJs (hc y₀) (hf y₀) (hb y₀) (hcy y₀)
+      ⟨hw₀, hf₁ y₀⟩).congr_of_eventuallyEq ?_
+    filter_upwards [hf.continuous.norm.continuousAt.eventually
+      (lt_mem_nhds (by linarith : 1 / 2 < ‖f y₀‖))] with y hy
+    rw [cappedExchangeAlmostComplex_of_re_endCoord_le h₀ J hJ
+      (re_endCoord_zero_le_half (by linarith) hy.le)]
+
+/-! ### Solutions at the end of the family -/
+
+/-- **Solutions at the end of the family.** Let `σ'(z) = (1, 0) - z` be the exchange `w ↦ 1 - w`
+in the real coordinates `ℝ × ℝ ≃ ℂ`, let the Hamiltonians `H_q` on `M` have period one and be
+`C¹`, let the output structures `J ∞` have period one, and let `L > 4`. If `u` is differentiable at
+a point `σ'(z)` of the capped domain `ℂ ∖ {0}` and solves the Floer equation there for the data of
+the capping family at `1` with exchanged Hamiltonians and end structures, then `u ∘ σ'` solves the
+Floer equation at `z` for the member `c = 1` of the family capped at `0`: the perturbation
+`TauCeti.Floer.cappedExchangePerturbation H L 1` with the almost complex structure
+`cappedExchangeAlmostComplex h₀ J hJ L 1`. -/
+theorem isComplexLinearMap_perturbedMFDeriv_cappedExchange_one {H : Puncture → ℝ → M → ℝ}
+    (hH : ∀ q, Periodic (H q) 1)
+    (hHs : ∀ q, ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) 1 (uncurry (H q))) (hL : 4 < L)
+    (hJp : Periodic (J inf) 1) (hJ' : ∀ q t, σ.Tames (Floer.exchangeEndData J q t))
+    {u : ℝ × ℝ → M} {z : ℝ × ℝ}
+    (hz : Complex.equivRealProdCLM.symm ((1, 0) - z) = one.endCenter ∨
+      Complex.equivRealProdCLM.symm ((1, 0) - z) ≠ 0 ∧
+        Complex.equivRealProdCLM.symm ((1, 0) - z) ≠ 1)
+    (hu : MDifferentiableAt 𝓘(ℝ, ℝ × ℝ) I u ((1, 0) - z))
+    (h : IsComplexLinearMap (AlmostComplexStructure.product ℝ)
+      ((h₀.cappingAlmostComplex (Floer.exchangeEndData J) hJ' one L
+        (Complex.equivRealProdCLM.symm ((1, 0) - z))).almostComplexStructureAt (u ((1, 0) - z)))
+      (σ.perturbedMFDeriv
+        (fun z x ↦ Floer.plumbedPerturbation (Pi.single inf (H zero)) (Floer.exchangeEndData H)
+          one L (Complex.equivRealProdCLM.symm z) x 1)
+        (fun z x ↦ Floer.plumbedPerturbation (Pi.single inf (H zero)) (Floer.exchangeEndData H)
+          one L (Complex.equivRealProdCLM.symm z) x Complex.I)
+        u ((1, 0) - z)).toLinearMap) :
+    IsComplexLinearMap (AlmostComplexStructure.product ℝ)
+      ((h₀.cappedExchangeAlmostComplex J hJ L 1
+        (Complex.equivRealProdCLM.symm z)).almostComplexStructureAt (u ((1, 0) - z)))
+      (σ.perturbedMFDeriv
+        (fun z x ↦ Floer.cappedExchangePerturbation H L 1 (Complex.equivRealProdCLM.symm z) x 1)
+        (fun z x ↦ Floer.cappedExchangePerturbation H L 1 (Complex.equivRealProdCLM.symm z) x
+          Complex.I)
+        (u ∘ fun z ↦ (1, 0) - z) z).toLinearMap := by
+  set e := Complex.equivRealProdCLM.symm
+  have hσ : 1 - e z = e ((1, 0) - z) := by
+    apply Complex.ext <;> simp [e]
+  -- The structure at `z` is the exchanged capping structure at `σ'(z)`.
+  rw [cappedExchangeAlmostComplex_one h₀ J hJ (by linarith) hJp hJ', hσ]
+  -- The perturbation is the pullback along `σ'` of the exchanged capping perturbation, which is
+  -- differentiable in the target point at `σ'(z)`.
+  have hK (v : ℂ) : MDifferentiableAt I 𝓘(ℝ)
+      (fun x ↦ Floer.plumbedPerturbation (Pi.single inf (H zero)) (Floer.exchangeEndData H) one L
+        (e ((1, 0) - z)) x v) (u ((1, 0) - z)) := by
+    have hd := Floer.contMDiffAt_plumbedPerturbation_single_inf (q := one) (by decide)
+      (Floer.periodic_exchangeEndData hH) (Floer.contMDiff_uncurry_exchangeEndData hHs) hL hz
+      (u ((1, 0) - z))
+    rw [Floer.exchangeEndData_one] at hd
+    exact ((hd.comp _ (contMDiffAt_const.prodMk contMDiffAt_id)).clm_apply
+      contMDiffAt_const).mdifferentiableAt one_ne_zero
+  exact σ.isComplexLinearMap_perturbedMFDeriv_comp_one_sub
+    (Floer.cappedExchangePerturbation_one (hH inf) (by linarith)) hu hK h
 
 end TauCeti.SmoothTwoForm.Compatible

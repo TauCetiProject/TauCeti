@@ -243,7 +243,7 @@ theorem billiardMap_circle_coe (s : ℝ) (v : Ioo (-1 : ℝ) 1) :
     (circle hR).billiardMap ((s : AddCircle (circle hR).period), v) =
       (((s + 2 * R * Real.arccos v : ℝ) : AddCircle (circle hR).period), v) := by
   rw [billiardMap_coe, Prod.mk.injEq]
-  exact ⟨by rw [nextParam_circle v.2], Subtype.ext (nextTangential_circle v.2 s)⟩
+  exact ⟨by rw [nextParam_circle v.property], Subtype.ext (nextTangential_circle v.property s)⟩
 
 /-- The `n`-th iterate of the circle billiard rotates by `n` times the arc `2 R arccos v`. -/
 theorem iterate_billiardMap_circle_coe (n : ℕ) (s : ℝ) (v : Ioo (-1 : ℝ) 1) :
