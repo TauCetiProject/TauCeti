@@ -51,7 +51,7 @@ is, and an open embedding when `ψ` is and the coordinate algebra is of finite t
 * `AlgHom.isEmbedding_mapValue`, `AlgHom.isClosedEmbedding_mapValue` and
   `AlgHom.isOpenEmbedding_mapValue`: change of coefficients along an embedding, closed embedding
   or open embedding of coefficient rings.
-* `TauCeti.AlgHom.ofConv_baseChangePointsMulEquiv`,
+* `WithConv.ofConv_baseChangePointsMulEquiv`,
   `TauCeti.AlgHom.continuous_baseChangePointsMulEquiv`, and
   `TauCeti.AlgHom.continuous_baseChangePointsMulEquiv_symm`: agreement of
   `AlgHom.baseChangePointsMulEquiv` with `baseChangeHomeomorph.symm` and continuity in both
@@ -173,7 +173,7 @@ variable {k K A R : Type*} [CommSemiring k] [CommSemiring K] [Algebra k K]
 
 /-- Under `WithConv.ofConv`, `AlgHom.baseChangePointsMulEquiv` agrees with
 `(PointTopology.baseChangeHomeomorph k K A R).symm`; both are built from `AlgHom.liftEquiv`. -/
-theorem ofConv_baseChangePointsMulEquiv [IsTopologicalSemiring R]
+theorem _root_.WithConv.ofConv_baseChangePointsMulEquiv [IsTopologicalSemiring R]
     (f : WithConv (A →ₐ[k] R)) :
     (baseChangePointsMulEquiv (k := k) (K := K) (A := A) (R := R) f).ofConv =
       (baseChangeHomeomorph k K A R).symm f.ofConv := by
@@ -187,13 +187,15 @@ theorem continuous_baseChangePointsMulEquiv [IsTopologicalSemiring R] :
     Continuous (baseChangePointsMulEquiv (k := k) (K := K) (A := A) (R := R)) :=
   isHomeomorph_ofConv.isEmbedding.isInducing.continuous_iff.2 <|
     ((baseChangeHomeomorph k K A R).symm.continuous.comp isHomeomorph_ofConv.continuous).congr
-      fun f ↦ (ofConv_baseChangePointsMulEquiv f).symm
+      fun f ↦ f.ofConv_baseChangePointsMulEquiv.symm
 
 /-- Restriction of base-changed bialgebra points is continuous for the point topology. -/
 @[continuity, fun_prop]
 theorem continuous_baseChangePointsMulEquiv_symm :
     Continuous (baseChangePointsMulEquiv (k := k) (K := K) (A := A) (R := R)).symm :=
-  continuous_withConv_iff.2 fun a ↦ continuous_eval_ofConv (1 ⊗ₜ[k] a)
+  continuous_withConv_iff.2 fun a ↦
+    (continuous_eval_ofConv (1 ⊗ₜ[k] a)).congr fun f ↦
+      (baseChangePointsMulEquiv_symm_apply f a).symm
 
 end TauCeti.AlgHom
 

@@ -19,7 +19,7 @@ For a commutative topological `R`-algebra `A`, evaluation at `SymmetricAlgebra.�
 ## References
 
 * B. Conrad, *Weil and Grothendieck approaches to adelic points*, Enseign. Math. (2) 58 (2012),
-  Prop. 2.1, p. 2, and §3, pp. 3–4.
+  Prop. 2.1 and §3.
 -/
 
 public section
@@ -44,8 +44,7 @@ noncomputable def gaPointsContinuousMulEquiv :
     induction s using SymmetricAlgebra.induction with
     | algebraMap r => simpa only [MulEquiv.invFun_eq_symm, AlgHom.commutes] using continuous_const
     | ι r => exact (continuous_const.fun_mul continuous_toAdd).congr fun x ↦
-        (Eq.symm <| by rw [MulEquiv.invFun_eq_symm, ι_self_eq_smul_ι_one, map_smul,
-          gaPointsMulEquiv_symm_apply_ι, Algebra.smul_def])
+        (Eq.symm <| by rw [MulEquiv.invFun_eq_symm, ofConv_ι, MulEquiv.apply_symm_apply])
     | add p q hp hq => simpa only [MulEquiv.invFun_eq_symm, map_add] using hp.fun_add hq
     | mul p q hp hq => simpa only [MulEquiv.invFun_eq_symm, map_mul] using hp.fun_mul hq
 
