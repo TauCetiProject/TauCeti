@@ -297,21 +297,11 @@ theorem cfcₙ_nnreal_mem_of_isClosed [PartialOrder A] [StarOrderedRing A]
       (I.mem_toNonUnitalStarSubalgebra.mpr ha)
 
 /-- The order of a C⋆-algebra restricted to a closed two-sided ideal `I` is the C⋆-algebra order
-of `I`. Mathlib's `Subtype.starOrderedRing` does not apply to `I` directly (a `TwoSidedIdeal` has
-no `SMulMemClass`), so this transfers it from `I.toNonUnitalStarSubalgebra` along
-`I.toNonUnitalStarSubalgebraEquiv`. -/
+of `I`. Mathlib's `Subtype.starOrderedRing` does not apply to `I` as a `TwoSidedIdeal` (which has
+no `SMulMemClass`), so it is applied to the star subalgebra `I.toNonUnitalStarSubalgebra`, which
+has the same carrier. -/
 instance instStarOrderedRingOfIsClosed [PartialOrder A] [StarOrderedRing A] : StarOrderedRing I :=
-  .of_nonneg_iff' add_le_add_right fun x ↦ by
-    refine ⟨fun hx ↦ ?_, ?_⟩
-    · have hx' : 0 ≤ I.toNonUnitalStarSubalgebraEquiv x := by
-        rw [← Subtype.coe_le_coe]
-        exact hx
-      obtain ⟨s, hs⟩ := CStarAlgebra.nonneg_iff_eq_star_mul_self.mp hx'
-      refine ⟨I.toNonUnitalStarSubalgebraEquiv.symm s,
-        EquivLike.injective I.toNonUnitalStarSubalgebraEquiv ?_⟩
-      rwa [map_mul, map_star, StarAlgEquiv.apply_symm_apply]
-    · rintro ⟨s, rfl⟩
-      exact star_mul_self_nonneg (s : A)
+  Subtype.starOrderedRing (𝕜 := ℂ) I.toNonUnitalStarSubalgebra
 
 end CStarAlgebra
 

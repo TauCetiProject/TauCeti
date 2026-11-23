@@ -74,10 +74,8 @@ omit [PartialOrder A] [StarOrderedRing A] in
 /-- From `‖z‖² ≤ c ‖y‖²` to `‖z‖ ≤ √c ‖y‖`. -/
 private theorem norm_le_sqrt_mul_of_sq_le {z : ℂ} {y : A} {c : ℝ} (h : ‖z‖ ^ 2 ≤ c * ‖y‖ ^ 2) :
     ‖z‖ ≤ Real.sqrt c * ‖y‖ := by
-  calc ‖z‖ = Real.sqrt (‖z‖ ^ 2) := (Real.sqrt_sq (norm_nonneg z)).symm
-    _ ≤ Real.sqrt (c * ‖y‖ ^ 2) := Real.sqrt_le_sqrt h
-    _ = Real.sqrt c * ‖y‖ := by
-      rw [Real.sqrt_mul' _ (sq_nonneg _), Real.sqrt_sq (norm_nonneg y)]
+  simpa only [Real.sqrt_mul' _ (sq_nonneg _), Real.sqrt_sq (norm_nonneg y)] using
+    Real.le_sqrt_of_sq_le h
 
 /-- **The approximate unit estimate.** For a positive functional `γ` and a positive contraction
 `e`, `‖γ y - γ (y e)‖² ≤ ‖γ‖ (‖γ‖ - Re γ e) ‖y‖²`: the Cauchy–Schwarz inequality for the extension
