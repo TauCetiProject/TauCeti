@@ -38,19 +38,19 @@ variable (d : TypeTwistedE6LieIndex)
 
 /-- Frobenius raises each fundamental-weight torus coordinate to the recorded field order. -/
 @[simp]
-theorem frobenius_weightTorus (s : Fin d.1.rank → d.1.Closureˣ) :
-    d.frobenius (d.weightTorus s) = d.weightTorus (s ^ d.1.fieldOrder) := by
+theorem frobenius_weightTorus (s : Fin d.val.rank → d.val.Closureˣ) :
+    d.frobenius (d.weightTorus s) = d.weightTorus (s ^ d.val.fieldOrder) := by
   rw [frobenius_def, weightTorus_apply,
     isCharacterMap_iff.mp (E6DoubledMinuscule.isCharacterMap_frobenius
-      d.1.characteristic d.1.fieldExponent d.1.Closure),
+      d.val.characteristic d.val.fieldExponent d.val.Closure),
     torusPointMap_nsmul, torusPointMap_one, MonoidHom.pow_apply, MonoidHom.id_apply,
-    weightTorus_apply, d.1.fieldOrder_eq_characteristic_pow]
+    weightTorus_apply, d.val.fieldOrder_eq_characteristic_pow]
   -- Reindexing by `finCongr` commutes definitionally with pointwise powers.
   rfl
 
 /-- The graph automorphism relabels torus coordinates by the inverse diagram permutation. -/
 @[simp]
-theorem graphAut_weightTorus (s : Fin d.1.rank → d.1.Closureˣ) :
+theorem graphAut_weightTorus (s : Fin d.val.rank → d.val.Closureˣ) :
     d.graphAut (d.weightTorus s) =
       d.weightTorus (fun i => s (d.toGraphTwistedIndex.diagramPerm.symm i)) := by
   obtain ⟨q, rfl⟩ := d.exists_eq_of
@@ -65,7 +65,7 @@ theorem graphAut_weightTorus (s : Fin d.1.rank → d.1.Closureˣ) :
 
 /-- Frobenius pulls characters back by multiplication by the recorded field order. -/
 theorem isCharacterMap_frobenius :
-    IsCharacterMap d.weightTorus d.frobenius ((d.1.fieldOrder : ℕ) • 1) := by
+    IsCharacterMap d.weightTorus d.frobenius ((d.val.fieldOrder : ℕ) • 1) := by
   refine isCharacterMap_iff.mpr fun s => ?_
   rw [frobenius_weightTorus, torusPointMap_nsmul, torusPointMap_one,
     MonoidHom.pow_apply, MonoidHom.id_apply]
@@ -81,18 +81,18 @@ theorem isCharacterMap_graphAut :
 
 /-- The represented Steinberg map pulls characters back by the uniform native datum map. -/
 theorem isCharacterMap_steinberg :
-    IsCharacterMap d.weightTorus d.steinberg d.1.datumSteinberg.weightMap := by
+    IsCharacterMap d.weightTorus d.steinberg d.val.datumSteinberg.weightMap := by
   have h := d.isCharacterMap_graphAut.comp d.isCharacterMap_frobenius
   rw [smul_mul_assoc, one_mul] at h
-  rw [steinberg_def, d.1.datumSteinberg_of_not_usesHalfFrobenius d.toGraphTwistedIndex.2,
+  rw [steinberg_def, d.val.datumSteinberg_of_not_usesHalfFrobenius d.toGraphTwistedIndex.property,
     GraphTwistedIndex.datumSteinberg_weightMap, LinearMap.comp_smul, LinearMap.comp_id]
   exact h
 
 /-- The Steinberg action on torus coordinates: inverse diagram permutation and field power. -/
 @[simp]
-theorem steinberg_weightTorus (s : Fin d.1.rank → d.1.Closureˣ) :
+theorem steinberg_weightTorus (s : Fin d.val.rank → d.val.Closureˣ) :
     d.steinberg (d.weightTorus s) =
-      d.weightTorus (fun i => s (d.toGraphTwistedIndex.diagramPerm.symm i) ^ d.1.fieldOrder) := by
+      d.weightTorus (fun i => s (d.toGraphTwistedIndex.diagramPerm.symm i) ^ d.val.fieldOrder) := by
   rw [steinberg_def, MonoidHom.comp_apply, MulEquiv.coe_toMonoidHom,
     frobenius_weightTorus, graphAut_weightTorus]
   -- Applying a pointwise power at a permuted coordinate is definitionally the displayed power.

@@ -1,0 +1,220 @@
+/-
+Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: The Tau Ceti contributors
+-/
+module
+
+public import TauCeti.Geometry.MeasureTheory.Rectifiable.Basic
+public import Mathlib.Analysis.InnerProductSpace.Basic
+import TauCeti.Geometry.MeasureTheory.Rectifiable.Subspace
+import Mathlib.Analysis.InnerProductSpace.PiL2
+import TauCeti.Analysis.InnerProductSpace.Projection.Basic
+
+/-!
+# The geometric cone criterion for countable rectifiability
+
+If the difference vectors of a subset `s` of a real inner product space `V` form an angle bounded
+away from zero with the orthogonal complement of a fixed `d`-dimensional subspace `P` — concretely,
+`infDist (y - x) P ≤ θ ‖y - x‖` for some `θ < 1` and all `x, y ∈ s` — then orthogonal projection
+onto `P` has a Lipschitz inverse on its image, so `s` is countably `d`-rectifiable
+(`TauCeti.CountablyRectifiable.of_forall_infDist_sub_le`).
+
+When `V` is second-countable, the subspace `P`, the cone constant `θ < 1`, and a neighbourhood
+radius `r > 0` may vary from point to point
+(`TauCeti.CountablyRectifiable.of_forall_exists_submodule_infDist_sub_le`).
+Stratifying by the dimension `d ≤ k` of `P`, a lower bound `1 / (m + 1)` on `r`, and an upper bound
+`1 - 1 / (l + 2)` on `θ`, we choose an orthonormal basis in `Fin d → V` for each point's subspace.
+Because `u ↦ ∑ i, rankOne ℝ (u i) (u i)` is continuous from the second-countable space `Fin d → V`
+into `V →L[ℝ] V`, countably many reference subspaces approximate all projections in the stratum
+within `(1 - θ_l) / 2` in operator norm; subdividing further into balls of radius `1 / (2 (m + 1))`
+ensures that every pair of points in a piece lies within the local radius of each, reducing each
+piece to the single-cone lemma. Ambient finite dimensionality is not required.
+
+In a finite-dimensional inner product space `V`, taking `P = (ℝ ∙ ν)ᗮ` for a nonzero normal `ν`
+yields the codimension-one cone criterion
+(`TauCeti.CountablyRectifiable.of_forall_exists_abs_inner_sub_le`).
+
+## Main statements
+
+* `TauCeti.CountablyRectifiable.of_forall_infDist_sub_le`: a set whose secants satisfy
+  `infDist (y - x) P ≤ θ ‖y - x‖` (`θ < 1`) for a fixed finite-dimensional subspace `P` is
+  countably `(dim P)`-rectifiable.
+* `TauCeti.CountablyRectifiable.of_forall_exists_submodule_infDist_sub_le`: the local pointwise cone
+  criterion in any second-countable real inner product space.
+* `TauCeti.CountablyRectifiable.of_forall_exists_abs_inner_sub_le`: the codimension-one normal cone
+  criterion in a finite-dimensional real inner product space.
+
+## References
+
+* H. Federer, *Geometric Measure Theory*, 3.3.5 and 3.3.13.
+* L. Simon, *Lectures on Geometric Measure Theory*, §11, Lemma 11.1.
+* P. Mattila, *Geometry of Sets and Measures in Euclidean Spaces*, Lemma 15.13 and Theorem 15.21.
+-/
+
+public section
+
+open Metric Module Set TopologicalSpace
+open scoped NNReal RealInnerProductSpace
+
+namespace TauCeti
+
+namespace CountablyRectifiable
+
+variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V]
+  [MeasurableSpace V] [BorelSpace V]
+
+/-- **Single-cone rectifiability.** If `P` is a finite-dimensional subspace of a real inner product
+space `V`, `θ < 1`, and `infDist (y - x) P ≤ θ ‖y - x‖` for all `x, y ∈ s`, then `s` is countably
+`(dim P)`-rectifiable. -/
+theorem of_forall_infDist_sub_le {s : Set V} (P : Submodule ℝ V) [FiniteDimensional ℝ P]
+    {θ : ℝ} (hθ : θ < 1)
+    (hs : ∀ x ∈ s, ∀ y ∈ s, infDist (y - x) (P : Set V) ≤ θ * ‖y - x‖) :
+    CountablyRectifiable (finrank ℝ P) s := by
+  set θ' : ℝ := max θ 0
+  have hθ'1 : 0 < 1 - θ' := sub_pos.2 (max_lt hθ zero_lt_one)
+  let c : ℝ≥0 := Real.toNNReal (1 - θ')
+  have hanti : AntilipschitzWith c⁻¹ (s.domRestrict P.orthogonalProjectionOnto) := by
+    refine AntilipschitzWith.of_le_mul_dist fun x y ↦ ?_
+    rw [NNReal.coe_inv, Real.coe_toNNReal _ hθ'1.le, ← div_eq_inv_mul, le_div_iff₀' hθ'1]
+    have hdist : ‖(y : V) - x - P.starProjection ((y : V) - x)‖ ≤ θ' * ‖(y : V) - x‖ := by
+      rw [← dist_eq_norm, P.dist_starProjection_eq_infDist]
+      exact (hs x x.property y y.property).trans (mul_le_mul_of_nonneg_right (le_max_left _ _)
+          (norm_nonneg _))
+    have htri : ‖(y : V) - x‖ ≤
+        ‖P.starProjection ((y : V) - x)‖ + ‖(y : V) - x - P.starProjection ((y : V) - x)‖ := by
+      simpa only [add_sub_cancel] using norm_add_le (P.starProjection ((y : V) - x))
+        ((y : V) - x - P.starProjection ((y : V) - x))
+    have hproj : ‖P.starProjection ((y : V) - x)‖ =
+        dist (P.orthogonalProjectionOnto y) (P.orthogonalProjectionOnto x) := by
+      simp [← map_sub, dist_eq_norm]
+    rw [Subtype.dist_eq, dist_eq_norm (x : V), norm_sub_rev (x : V), domRestrict_apply,
+      domRestrict_apply, dist_comm (P.orthogonalProjectionOnto x)]
+    linarith
+  exact (of_finiteDimensional (P.orthogonalProjectionOnto '' s)).of_antilipschitzWith hanti
+
+/-- On a stratum where every point `x ∈ T` has a `d`-dimensional subspace `P x`, radius at least
+`r₀ > 0`, and cone constant at most `θ₀ < 1`, the set `T` is countably `d`-rectifiable. -/
+private theorem of_stratum [SecondCountableTopology V] {d : ℕ} {T : Set V}
+    {P : T → Submodule ℝ V} [∀ x, FiniteDimensional ℝ (P x)] (hdim : ∀ x, finrank ℝ (P x) = d)
+    {r₀ θ₀ : ℝ} (hr₀ : 0 < r₀) (hθ₀ : θ₀ < 1)
+    (hcone : ∀ x : T, ∀ y ∈ T, dist y x.val < r₀ →
+      infDist (y - x.val) (P x : Set V) ≤ θ₀ * dist y x.val) :
+    CountablyRectifiable d T := by
+  classical
+  let b (x : T) : OrthonormalBasis (Fin d) ℝ (P x) :=
+    (stdOrthonormalBasis ℝ (P x)).reindex (finCongr (hdim x))
+  let u (x : T) : Fin d → V := fun i ↦ b x i
+  let Φ : (Fin d → V) → (V →L[ℝ] V) := fun v ↦ ∑ i : Fin d, InnerProductSpace.rankOne ℝ (v i) (v i)
+  have hΦu (x : T) : (P x).starProjection = Φ (u x) := by
+    simp only [Φ, u, (b x).starProjection_eq_sum_rankOne]
+  have hΦ : Continuous Φ := continuous_finsetSum _ fun i _ ↦
+    ((InnerProductSpace.rankOne ℝ).continuous.comp (continuous_apply i)).clm_apply
+      (continuous_apply i)
+  set ε : ℝ := (1 - θ₀) / 2
+  obtain ⟨U, hU_sub, hU_cnt, hU_cov⟩ := countable_cover_nhdsWithin (s := range u)
+    (f := fun v ↦ Φ ⁻¹' ball (Φ v) ε) fun v _ ↦ nhdsWithin_le_nhds
+      (hΦ.continuousAt.preimage_mem_nhds (ball_mem_nhds _ (half_pos (sub_pos.2 hθ₀))))
+  have := hU_cnt.to_subtype
+  choose x₀ hx₀ using fun v : U ↦ hU_sub v.property
+  let S (v : U) : Set V := {y : V | ∃ hy : y ∈ T, u ⟨y, hy⟩ ∈ Φ ⁻¹' ball (Φ v.val) ε}
+  have hT_eq : T = ⋃ v : U, S v := by
+    ext y
+    simp only [S, mem_iUnion, mem_ofPred_eq]
+    refine ⟨fun hy ↦ ?_, fun ⟨_, hy, _⟩ ↦ hy⟩
+    obtain ⟨w, hwU, hwu⟩ := mem_iUnion₂.1 (hU_cov (mem_range_self ⟨y, hy⟩))
+    exact ⟨⟨w, hwU⟩, hy, hwu⟩
+  rw [hT_eq]
+  refine CountablyRectifiable.iUnion fun v : U ↦ ?_
+  obtain ⟨C, _, hC_cnt, hC_cov⟩ := countable_cover_nhdsWithin (s := S v)
+    (f := fun z ↦ ball z (r₀ / 2)) fun z _ ↦ nhdsWithin_le_nhds (ball_mem_nhds z (half_pos hr₀))
+  have := hC_cnt.to_subtype
+  have hSv_eq : S v = ⋃ z : C, S v ∩ ball z.val (r₀ / 2) := by
+    ext y; simp only [mem_iUnion, mem_inter_iff]
+    exact ⟨fun hy ↦ let ⟨z, hzC, hyz⟩ := mem_iUnion₂.1 (hC_cov hy); ⟨⟨z, hzC⟩, hy, hyz⟩,
+      fun ⟨_, hy, _⟩ ↦ hy⟩
+  rw [hSv_eq, ← hdim (x₀ v)]
+  refine CountablyRectifiable.iUnion fun z : C ↦
+    of_forall_infDist_sub_le (P (x₀ v)) (θ := θ₀ + ε) (by simp [ε]; linarith) fun p hp q hq ↦ ?_
+  obtain ⟨hpT, hpu⟩ := hp.1
+  have hpq : dist q p < r₀ := (dist_triangle_right q p z.val).trans_lt
+    ((add_lt_add hq.2 hp.2).trans_eq (add_halves r₀))
+  have hdiff : ‖(P (x₀ v)).starProjection - (P ⟨p, hpT⟩).starProjection‖ ≤ ε := by
+    rw [hΦu, hΦu, hx₀ v, ← dist_eq_norm, dist_comm]
+    exact (mem_ball.1 hpu).le
+  calc infDist (q - p) (P (x₀ v) : Set V)
+      ≤ infDist (q - p) (P ⟨p, hpT⟩ : Set V) +
+          ‖(P (x₀ v)).starProjection - (P ⟨p, hpT⟩).starProjection‖ * ‖q - p‖ :=
+        (P (x₀ v)).infDist_le_add_norm_starProjection_sub_mul (P ⟨p, hpT⟩) (q - p)
+    _ ≤ θ₀ * ‖q - p‖ + ε * ‖q - p‖ :=
+        add_le_add (by simpa only [dist_eq_norm] using hcone ⟨p, hpT⟩ q hq.1.1 hpq)
+          (mul_le_mul_of_nonneg_right hdiff (norm_nonneg _))
+    _ = (θ₀ + ε) * ‖q - p‖ := (add_mul θ₀ ε _).symm
+
+/-- **The geometric cone criterion for countable rectifiability.** Let `V` be a second-countable
+real inner product space and `s ⊆ V`. If for every `x ∈ s` there exist a subspace `P` of dimension
+at most `k`, a constant `θ < 1`, and a radius `r > 0` such that `infDist (y - x) P ≤ θ * dist y x`
+for all `y ∈ s ∩ ball x r`, then `s` is countably `k`-rectifiable. -/
+theorem of_forall_exists_submodule_infDist_sub_le [SecondCountableTopology V] {k : ℕ} {s : Set V}
+    (h : ∀ x ∈ s, ∃ P : Submodule ℝ V, FiniteDimensional ℝ P ∧ finrank ℝ P ≤ k ∧
+      ∃ θ < (1 : ℝ), ∃ r > (0 : ℝ),
+        ∀ y ∈ s, dist y x < r → infDist (y - x) (P : Set V) ≤ θ * dist y x) :
+    CountablyRectifiable k s := by
+  classical
+  choose P hPfin hPdim θ hθ r hr hcone using fun x : s ↦ h x.val x.property
+  let r₀ (m : ℕ) : ℝ := 1 / ((m : ℝ) + 1)
+  let θ₀ (l : ℕ) : ℝ := 1 - 1 / ((l : ℝ) + 2)
+  let T (d : Fin (k + 1)) (m l : ℕ) : Set V :=
+    {x : V | ∃ hx : x ∈ s, finrank ℝ (P ⟨x, hx⟩) = d.val ∧ r₀ m ≤ r ⟨x, hx⟩ ∧ θ ⟨x, hx⟩ ≤ θ₀ l}
+  have hs_eq : s = ⋃ (d : Fin (k + 1)) (m : ℕ) (l : ℕ), T d m l := by
+    ext x
+    simp only [T, mem_iUnion, mem_ofPred_eq]
+    refine ⟨fun hx ↦ ?_, fun ⟨_, _, _, hx, _⟩ ↦ hx⟩
+    obtain ⟨m, hm⟩ := exists_nat_one_div_lt (hr ⟨x, hx⟩)
+    obtain ⟨l, hl⟩ := exists_nat_one_div_lt (sub_pos.2 (hθ ⟨x, hx⟩))
+    refine ⟨⟨finrank ℝ (P ⟨x, hx⟩), Nat.lt_succ_of_le (hPdim ⟨x, hx⟩)⟩, m, l, hx, rfl, hm.le, ?_⟩
+    have hl' : 1 / ((l : ℝ) + 2) < 1 - θ ⟨x, hx⟩ :=
+      lt_of_le_of_lt (one_div_le_one_div_of_le (by positivity) (by linarith)) hl
+    simp only [θ₀]
+    linarith
+  rw [hs_eq]
+  refine CountablyRectifiable.iUnion fun d ↦ CountablyRectifiable.iUnion fun m ↦
+    CountablyRectifiable.iUnion fun l ↦ ?_
+  have hr₀ : 0 < r₀ m := Nat.one_div_pos_of_nat
+  have hθ₀ : θ₀ l < 1 := sub_lt_self 1 (by positivity)
+  let P' (x : T d m l) : Submodule ℝ V := P ⟨x.val, x.property.choose⟩
+  have hP'fin (x : T d m l) : FiniteDimensional ℝ (P' x) := hPfin ⟨x.val, x.property.choose⟩
+  have hP'dim (x : T d m l) : finrank ℝ (P' x) = d.val := x.property.choose_spec.1
+  refine (of_stratum (P := P') hP'dim hr₀ hθ₀ fun x y hy hyx ↦ ?_).mono_dim
+    (Nat.lt_succ_iff.1 d.isLt)
+  obtain ⟨hrx, hθx⟩ := x.property.choose_spec.2
+  exact (hcone ⟨x.val, x.property.choose⟩ y hy.choose (hyx.trans_le hrx)).trans
+    (mul_le_mul_of_nonneg_right hθx dist_nonneg)
+
+/-- **The codimension-one cone criterion.** In a finite-dimensional real inner product space `V`, if
+at every `x ∈ s` there exist a nonzero vector `ν`, a constant `θ < 1`, and a radius `r > 0` such
+that `|⟪y - x, ν⟫| ≤ θ * ‖y - x‖ * ‖ν‖` for all `y ∈ s ∩ ball x r`, then `s` is countably
+`(dim V - 1)`-rectifiable. -/
+theorem of_forall_exists_abs_inner_sub_le [FiniteDimensional ℝ V] {s : Set V}
+    (h : ∀ x ∈ s, ∃ ν : V, ν ≠ 0 ∧ ∃ θ < (1 : ℝ), ∃ r > (0 : ℝ),
+      ∀ y ∈ s, dist y x < r → |⟪y - x, ν⟫| ≤ θ * ‖y - x‖ * ‖ν‖) :
+    CountablyRectifiable (finrank ℝ V - 1) s := by
+  refine of_forall_exists_submodule_infDist_sub_le fun x hx ↦ ?_
+  obtain ⟨ν, hν, θ, hθ, r, hr, hcone⟩ := h x hx
+  let P : Submodule ℝ V := (ℝ ∙ ν)ᗮ
+  have hdim : finrank ℝ P = finrank ℝ V - 1 :=
+    Submodule.finrank_orthogonal_span_singleton_eq_finrank_sub_one hν
+  refine ⟨P, inferInstance, hdim.le, θ, hθ, r, hr, fun y hy hyr ↦ ?_⟩
+  have hν_pos : 0 < ‖ν‖ := norm_pos_iff.2 hν
+  have hdist : infDist (y - x) (P : Set V) = |⟪y - x, ν⟫| / ‖ν‖ := by
+    rw [← (ℝ ∙ ν).norm_starProjection_eq_infDist (y - x),
+      Submodule.starProjection_singleton ℝ (y - x), norm_smul, norm_div, RCLike.norm_ofReal,
+      abs_of_pos (pow_pos hν_pos 2), Real.norm_eq_abs, real_inner_comm]
+    have hne : ‖ν‖ ≠ 0 := hν_pos.ne'
+    field_simp
+  rw [hdist, dist_eq_norm]
+  exact (div_le_iff₀ hν_pos).2 (hcone y hy hyr)
+
+end CountablyRectifiable
+
+end TauCeti

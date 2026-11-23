@@ -115,7 +115,7 @@ theorem aeval_snoc_zero_stableSymmetricProj (d : ℕ) (f : stableSymmetricSubmod
     aeval (Fin.snoc (X : Fin d → MvPolynomial (Fin d) R) 0)
         (stableSymmetricProj R n (d + 1) f : MvPolynomial (Fin (d + 1)) R) =
       stableSymmetricProj R n d f :=
-  f.2 d
+  f.property d
 
 /-- Two symmetric functions are equal when all their projections to finite alphabets are. -/
 theorem stableSymmetricSubmodule_ext {f g : stableSymmetricSubmodule R n}
@@ -178,7 +178,7 @@ theorem stableSymmetricProj_surjective (d : ℕ) :
   rw [← LinearMap.range_eq_top, eq_top_iff, ← (schurPolyBasis (Fin d) R n).span_eq,
     Submodule.span_le]
   rintro _ ⟨μ, rfl⟩
-  exact ⟨stableSchur R μ.1, Subtype.ext (by simp)⟩
+  exact ⟨stableSchur R μ.val, Subtype.ext (by simp)⟩
 
 variable (R) in
 /-- **The symmetric functions of degree `n` are the symmetric polynomials of degree `n` in any
