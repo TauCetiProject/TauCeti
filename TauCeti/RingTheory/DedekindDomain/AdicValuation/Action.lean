@@ -30,6 +30,10 @@ places of `L`, and the stabilizer of a finite place is its decomposition group.
 
 * `IsDedekindDomain.HeightOneSpectrum.smul_valuationSubringAtPrime`:
   `σ • valuationSubringAtPrime L w = valuationSubringAtPrime L (σ • w)`.
+* `IsDedekindDomain.HeightOneSpectrum.valuationSubringAtPrime_injective`: a place is determined
+  by its localization.
+* `IsDedekindDomain.HeightOneSpectrum.stabilizer_valuationSubringAtPrime`: for any group acting
+  compatibly, the stabilizer of a place is the stabilizer of its valuation subring.
 * `IsDedekindDomain.HeightOneSpectrum.stabilizer_eq_decompositionSubgroup`: the stabilizer of a
   place is the decomposition subgroup of its valuation subring.
 
@@ -49,6 +53,14 @@ section DedekindDomain
 variable {L R : Type*} [Field L] [CommRing R] [IsDedekindDomain R] [Algebra R L]
   [IsFractionRing R L]
 
+variable (L) in
+/-- A place of `R` is determined by its localization, as a valuation subring of `L`. -/
+theorem valuationSubringAtPrime_injective :
+    Function.Injective (valuationSubringAtPrime (R := R) L) := fun v w h ↦ by
+  rw [valuationSubringAtPrime_eq_valuationSubring,
+    valuationSubringAtPrime_eq_valuationSubring] at h
+  exact valuationSubring_valuation_injective L h
+
 section Group
 
 variable {G : Type*} [Group G] [MulSemiringAction G L] [MulSemiringAction G R]
@@ -66,11 +78,20 @@ private theorem smul_valuationSubringAtPrime_le (σ : G) (w : HeightOneSpectrum 
 /-- The localization of a Dedekind domain `R` at `σ • w`, as a valuation subring of its fraction
 field `L`, is the image under `σ` of the localization at `w`, for a group acting compatibly on `R`
 and `L` by ring automorphisms. -/
+@[simp]
 theorem smul_valuationSubringAtPrime (σ : G) (w : HeightOneSpectrum R) :
     σ • valuationSubringAtPrime L w = valuationSubringAtPrime L (σ • w) := by
   refine le_antisymm (smul_valuationSubringAtPrime_le σ w) ?_
   rw [ValuationSubring.subset_pointwise_smul_iff]
   simpa using smul_valuationSubringAtPrime_le σ⁻¹ (σ • w)
+
+/-- The stabilizer of a place `w` is the stabilizer of its valuation subring
+`valuationSubringAtPrime L w`. -/
+theorem stabilizer_valuationSubringAtPrime (w : HeightOneSpectrum R) :
+    MulAction.stabilizer G (valuationSubringAtPrime L w) = MulAction.stabilizer G w := by
+  ext σ
+  rw [MulAction.mem_stabilizer_iff, MulAction.mem_stabilizer_iff, smul_valuationSubringAtPrime,
+    (valuationSubringAtPrime_injective L).eq_iff]
 
 end Group
 
@@ -83,12 +104,8 @@ of the valuation subring `valuationSubringAtPrime L w`. For `R = 𝓞 L` this is
 a finite place of the number field `L`. -/
 theorem stabilizer_eq_decompositionSubgroup (w : HeightOneSpectrum R) :
     MulAction.stabilizer (L ≃ₐ[K] L) w =
-      (valuationSubringAtPrime L w).decompositionSubgroup K := by
-  ext σ
-  rw [MulAction.mem_stabilizer_iff, ValuationSubring.decompositionSubgroup,
-    MulAction.mem_stabilizer_iff, smul_valuationSubringAtPrime,
-    valuationSubringAtPrime_eq_valuationSubring, valuationSubringAtPrime_eq_valuationSubring,
-    (valuationSubring_valuation_injective L).eq_iff]
+      (valuationSubringAtPrime L w).decompositionSubgroup K :=
+  (stabilizer_valuationSubringAtPrime w).symm
 
 end DedekindDomain
 

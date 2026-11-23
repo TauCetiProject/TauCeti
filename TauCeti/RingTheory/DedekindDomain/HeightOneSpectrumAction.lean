@@ -31,7 +31,8 @@ Mathlib's pointwise action on ideals and on valuation subrings, and records its 
 * `IsDedekindDomain.HeightOneSpectrum.asIdeal_smul`, `asIdeal_smul_eq_comap`: its effect on ideals.
 * `IsDedekindDomain.HeightOneSpectrum.stabilizer_eq_stabilizer_asIdeal`: stabilizers.
 * `IsDedekindDomain.HeightOneSpectrum.under_smul`: contraction is invariant.
-* `IsDedekindDomain.HeightOneSpectrum.mem_orbit_iff_under_eq`: orbits are the fibres of
+* `IsDedekindDomain.HeightOneSpectrum.mem_orbit_iff_under_asIdeal_eq`,
+  `IsDedekindDomain.HeightOneSpectrum.mem_orbit_iff_under_eq`: orbits are the fibres of
   contraction.
 
 ## References
@@ -76,23 +77,38 @@ theorem stabilizer_eq_stabilizer_asIdeal (w : HeightOneSpectrum R) :
   ext σ
   simp [HeightOneSpectrum.ext_iff]
 
-/-- A group acting on `R` over `A` does not change the contraction of a place to `A`. -/
-theorem under_smul {A : Type*} [CommSemiring A] [Algebra A R] [SMulCommClass G A R] (σ : G)
-    (w : HeightOneSpectrum R) :
-    (σ • w).asIdeal.under A = w.asIdeal.under A :=
-  Ideal.under_smul A w.asIdeal σ
-
 variable {A : Type*} [CommRing A] [Algebra A R]
 
 /-- For a finite group `G` acting on `R` with invariants `A`, two places of `R` lie in one orbit
-exactly when they have the same contraction to `A`. -/
-theorem mem_orbit_iff_under_eq [Finite G] [SMulCommClass G A R] [Algebra.IsInvariant A R G]
-    {w w' : HeightOneSpectrum R} :
+exactly when their ideals have the same contraction to `A`. -/
+theorem mem_orbit_iff_under_asIdeal_eq [Finite G] [SMulCommClass G A R]
+    [Algebra.IsInvariant A R G] {w w' : HeightOneSpectrum R} :
     w' ∈ MulAction.orbit G w ↔ w'.asIdeal.under A = w.asIdeal.under A := by
   refine ⟨?_, fun h ↦ ?_⟩
   · rintro ⟨σ, rfl⟩
-    exact under_smul σ w
+    simp
   · obtain ⟨σ, hσ⟩ := Algebra.IsInvariant.exists_smul_of_under_eq A R G w.asIdeal w'.asIdeal h.symm
     exact ⟨σ, HeightOneSpectrum.ext hσ.symm⟩
+
+section IsDomain
+
+variable [IsDomain A] [IsDomain R] [Algebra.IsIntegral A R]
+
+/-- A group acting on `R` over `A` does not change the contraction `HeightOneSpectrum.under` of a
+place to `A`. -/
+@[simp]
+theorem under_smul [SMulCommClass G A R] (σ : G) (w : HeightOneSpectrum R) :
+    (σ • w).under A = w.under A :=
+  HeightOneSpectrum.ext (Ideal.under_smul A w.asIdeal σ)
+
+/-- For a finite group `G` acting on a domain `R` with invariants `A`, two places of `R` lie in one
+orbit exactly when they have the same contraction `HeightOneSpectrum.under` to `A`. -/
+theorem mem_orbit_iff_under_eq [Finite G] [SMulCommClass G A R] [Algebra.IsInvariant A R G]
+    {w w' : HeightOneSpectrum R} :
+    w' ∈ MulAction.orbit G w ↔ w'.under A = w.under A := by
+  rw [mem_orbit_iff_under_asIdeal_eq (A := A), HeightOneSpectrum.ext_iff, under_asIdeal,
+    under_asIdeal]
+
+end IsDomain
 
 end IsDedekindDomain.HeightOneSpectrum
