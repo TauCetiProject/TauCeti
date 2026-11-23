@@ -8,6 +8,8 @@ module
 public import Mathlib.MeasureTheory.Function.LpSpace.Basic
 public import TauCeti.MeasureTheory.Function.LpSeminorm.Comp
 public import TauCeti.MeasureTheory.Measure.QuasiMeasurePreserving
+import Mathlib.MeasureTheory.Function.LpSeminorm.LpNorm
+import Mathlib.MeasureTheory.Function.StronglyMeasurable.Lemmas
 
 /-!
 # Precomposition on `Lᵖ` by a map with dominated pushforward
@@ -45,6 +47,9 @@ precompositions are mutually inverse, giving a continuous linear equivalence
 * `MeasureTheory.Lp.compOfMapLeSmul_comp`: precomposition is contravariant in `f`.
 * `MeasureTheory.Lp.compEquivOfMapLeSmul`: the continuous linear equivalence attached to a pair of
   mutually inverse maps with dominated pushforwards.
+* `MeasureTheory.memLp_top_comp_comp`: an essentially bounded field of continuous linear maps
+  followed by an essentially bounded field read along a quasi-measure-preserving map is again
+  essentially bounded.
 -/
 
 public section
@@ -69,6 +74,23 @@ theorem AEEqFun.compQuasiMeasurePreserving_mem_Lp {g : β →ₘ[ν] E} (hg : g 
   rw [eLpNorm_congr_ae (AEEqFun.coeFn_compQuasiMeasurePreserving g hf)]
   exact (eLpNorm_comp_le_of_map_le_smul hf.aemeasurable hmap p).trans_lt
     (ENNReal.mul_lt_top (ENNReal.rpow_lt_top_of_nonneg ENNReal.toReal_nonneg hC) hg)
+
+/-- Composing an essentially bounded field `N` of continuous linear maps, followed by an
+essentially bounded field `M` read along a quasi-measure-preserving map `φ`, gives an essentially
+bounded field. -/
+theorem memLp_top_comp_comp {𝕜 F G : Type*} [NontriviallyNormedField 𝕜] [NormedSpace 𝕜 E]
+    [NormedAddCommGroup F] [NormedSpace 𝕜 F] [NormedAddCommGroup G] [NormedSpace 𝕜 G]
+    {φ : α → β} (hφ : QuasiMeasurePreserving φ μ ν) {M : β → F →L[𝕜] G} {N : α → E →L[𝕜] F}
+    (hM : MemLp M ∞ ν) (hN : MemLp N ∞ μ) :
+    MemLp (fun x ↦ (M (φ x)).comp (N x)) ∞ μ := by
+  refine memLp_top_of_bound
+    ((ContinuousLinearMap.compL 𝕜 E F G).aestronglyMeasurable_comp₂
+      (hM.aestronglyMeasurable.comp_quasiMeasurePreserving hφ) hN.aestronglyMeasurable)
+    (lpNorm M ∞ ν * lpNorm N ∞ μ) ?_
+  filter_upwards [hφ.ae (ae_le_lpNorm_exponent_top hM), ae_le_lpNorm_exponent_top hN]
+    with x h₁ h₂
+  exact (ContinuousLinearMap.opNorm_comp_le _ _).trans
+    (mul_le_mul h₁ h₂ (norm_nonneg _) ((norm_nonneg _).trans h₁))
 
 namespace Lp
 

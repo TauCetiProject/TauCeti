@@ -11,6 +11,7 @@ public import TauCeti.Analysis.Sobolev.JetOperator
 public import TauCeti.Analysis.Sobolev.Conformal
 import TauCeti.Algebra.Ring.Periodic
 import Mathlib.MeasureTheory.Function.Jacobian
+import TauCeti.MeasureTheory.Function.Lp.Precomposition
 
 /-!
 # Transfer between the cylinder and the pair of pants along an end chart
