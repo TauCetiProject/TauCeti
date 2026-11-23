@@ -67,6 +67,8 @@ cylinder replaces the cap. Both are covers attached to the kernel of an onto hom
   exactly when both transgressions vanish on the torus it sweeps out.
 * `TauCeti.Floer.isCoveringMap_referenceCylinderCoverProj`,
   `TauCeti.Floer.isRegular_referenceCylinderCoverProj`: the cover is a regular covering space.
+* `TauCeti.Floer.mem_range_mapOfEq_referenceCylinderCoverProj_iff`: a loop of seamed paths lifts
+  to a loop of the cover exactly when both transgressions vanish on the torus it sweeps out.
 * `TauCeti.Floer.seamedPeriodClass_vadd_mk`: the period class of a loop acts on the
   cover as the loop acts on the universal cover.
 * `TauCeti.Floer.ReferenceCylinderCover.vsub_mk`: the difference of two points of a fibre is the
@@ -237,6 +239,23 @@ of seamed paths is. -/
 theorem isCoveringMap_referenceCylinderCoverProj :
     IsCoveringMap (referenceCylinderCoverProj γ₀ Iω Ic) :=
   isCoveringMap_subgroupQuotientProj _ _
+
+/-- **A loop of seamed paths lifts to a loop of the reference-cylinder cover**, at its base point,
+exactly when both transgressions vanish on the torus it sweeps out: the subgroup of `π₁(C, γ₀)`
+recovered by the reference-cylinder cover is `TauCeti.Floer.referenceCylinderCoverSubgroup`. -/
+theorem mem_range_mapOfEq_referenceCylinderCoverProj_iff
+    (g : FundamentalGroup (pathComponent γ₀) (pathComponentSelf γ₀)) :
+    g ∈ (FundamentalGroup.mapOfEq
+        ⟨referenceCylinderCoverProj γ₀ Iω Ic, continuous_subgroupQuotientProj _ _⟩
+        (subgroupQuotientProj_basepoint _ _)).range ↔
+      Iω (SeamedPath.torusClassHom φ γ₀ (Additive.ofMul (HomotopyGroup.map
+          (⟨Subtype.val, continuous_subtypeVal⟩ : C(pathComponent γ₀, SeamedPath φ)) rfl
+            (HomotopyGroup.pi1MulEquivFundamentalGroup.symm g)))) = 0 ∧
+        Ic (SeamedPath.torusClassHom φ γ₀ (Additive.ofMul (HomotopyGroup.map
+          (⟨Subtype.val, continuous_subtypeVal⟩ : C(pathComponent γ₀, SeamedPath φ)) rfl
+            (HomotopyGroup.pi1MulEquivFundamentalGroup.symm g)))) = 0 := by
+  rw [range_mapOfEq_subgroupQuotientProj, mem_referenceCylinderCoverSubgroup_iff,
+    seamedPeriodHom_eq_zero_iff, toMul_ofMul]
 
 /-- The reference-cylinder cover is a regular covering of the path component of `γ₀`. -/
 theorem isRegular_referenceCylinderCoverProj :
