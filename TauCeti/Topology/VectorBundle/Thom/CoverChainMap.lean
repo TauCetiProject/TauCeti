@@ -329,6 +329,21 @@ def thomPairSignCochainMap :
         (ModuleCat.of R R) k M :=
   (ChainComplex.linearYonedaFunctor k M).map (thomPairSignChainMap F E hι R).op
 
+/-- The cochain map `TauCeti.VectorBundleOrientationCover.thomPairSignCochainMap` is `Hom(-, M)`
+applied to the chain map `TauCeti.VectorBundleOrientationCover.thomPairSignChainMap`. -/
+theorem thomPairSignCochainMap_def :
+    thomPairSignCochainMap F E hι R k M =
+      (ChainComplex.linearYonedaFunctor k M).map (thomPairSignChainMap F E hι R).op := (rfl)
+
+/-- In degree `n`, the lift of an orientation-twisted cochain `φ` is `φ` precomposed with the
+degree-`n` component of `TauCeti.VectorBundleOrientationCover.thomPairSignChainMap`. -/
+-- Not `@[simp]`: simp rewrites the coercion of the projection `E' → B` in the type of the
+-- left-hand side, so the statement is not in simp normal form.
+theorem thomPairSignCochainMap_f_apply (n : ℕ)
+    (φ : ((thomPair F E).twistedCochainComplex (thomPairSignLocalSystem F E R hι) k M).X n) :
+    (thomPairSignCochainMap F E hι R k M).f n φ = (thomPairSignChainMap F E hι R).f n ≫ φ :=
+  (rfl)
+
 /-- **Lifted cochains are anti-invariant under the deck involution**: `δ^*` negates every cochain of
 `(E', E'₀)` lifted from an orientation-twisted cochain of `(E, E₀)`. -/
 theorem thomPairSignCochainMap_comp_singularCochainComplexMap_deckThomPairMap :
@@ -353,6 +368,13 @@ def thomPairSignCohomologyMap (n : ℕ) :
       (thomPair F ((projection : C(VectorBundleOrientationCover F E ι, B)) *ᵖ E)).singularCohomology
         (ModuleCat.of R R) k M n :=
   HomologicalComplex.homologyMap (thomPairSignCochainMap F E hι R k M) n
+
+/-- The map `TauCeti.VectorBundleOrientationCover.thomPairSignCohomologyMap` is the map on
+cohomology induced by the cochain map
+`TauCeti.VectorBundleOrientationCover.thomPairSignCochainMap`. -/
+theorem thomPairSignCohomologyMap_def (n : ℕ) :
+    thomPairSignCohomologyMap F E hι R k M n =
+      HomologicalComplex.homologyMap (thomPairSignCochainMap F E hι R k M) n := (rfl)
 
 /-- The lift of a class of `(E, E₀)` with coefficients in `π^*o(E)` is negated by the lifted deck
 involution. -/
