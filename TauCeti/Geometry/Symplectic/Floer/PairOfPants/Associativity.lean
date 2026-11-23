@@ -5,8 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Complex.ThricePuncturedSphere.Associativity
-public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.Plumbing.MovingEnds
+public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.Plumbing.AssociativityPath
 import TauCeti.Analysis.SpecialFunctions.SmoothTransition
 import TauCeti.Geometry.Manifold.ContMDiff.Prod
 
@@ -21,27 +20,29 @@ Hamiltonian `Hout`. Each composition is a plumbed four-punctured sphere,
 `G'`. This file joins the two data by one family `K_τ`, `τ ∈ ℝ`, of Floer data on spheres with
 three moving input ends, `TauCeti.Floer.associativityPerturbation H Hout G G' L τ`:
 
-`K_τ = Σ_τ + β(-τ) N + β(τ - 4) N'`,
+`K_τ = Σ_τ + β(-τ) N + β(τ - 1) N'`,
 
 where `β = smoothTransition`, `Σ_τ` is the datum `TauCeti.Floer.puncturedSpherePerturbation` of
-the input ends along the path of configurations `TauCeti.ThricePuncturedSphere.associativityCenters`
-and `TauCeti.ThricePuncturedSphere.associativityScales` of plumbing radius `e^{-2πL} / 4`, and
-`N`, `N'` are the neck data of the two compositions
+the input ends along the associativity path `TauCeti.Floer.associativityCenter`,
+`TauCeti.Floer.associativityScale` of plumbing factor `e^{-2πL} / 4`, the path along which the
+almost complex structures and the compactness results over spheres with moving input ends are
+stated, and `N`, `N'` are the neck data of the two compositions
 (`TauCeti.Floer.plumbedPerturbation_update_smul`). Along the family:
 
 * for `τ ≤ -1` it is the plumbed datum of `(x₁ x₂) x₃`
-  (`TauCeti.Floer.associativityPerturbation_of_le_neg_one`), and for `τ ≥ 5` that of
-  `x₁ (x₂ x₃)` (`TauCeti.Floer.associativityPerturbation_of_five_le`); on `[-1, 0]` and `[4, 5]`
-  it is the plumbed datum with the neck Hamiltonian scaled by `β(-τ)`, respectively `β(τ - 4)`
+  (`TauCeti.Floer.associativityPerturbation_of_le_neg_one`), and for `τ ≥ 2` that of
+  `x₁ (x₂ x₃)` (`TauCeti.Floer.associativityPerturbation_of_two_le`); on `[-1, 0]` and `[1, 2]`
+  it is the plumbed datum with the neck Hamiltonian scaled by `β(-τ)`, respectively `β(τ - 1)`
   (`TauCeti.Floer.associativityPerturbation_of_nonpos`,
-  `TauCeti.Floer.associativityPerturbation_of_four_le`), and on `[0, 4]` it is the datum of the
+  `TauCeti.Floer.associativityPerturbation_of_one_le`), and on `[0, 1]` it is the datum of the
   moving input ends alone (`TauCeti.Floer.associativityPerturbation_of_mem_Icc`);
 * for `L > 2` it is `H_i(t) dt` far out on every input end `i` and `Hout(t) dt` far out on the
   output end, in the end coordinates of the configuration at `τ`, for every `τ`
   (`TauCeti.Floer.associativityPerturbation_cylindricalEndLift_of_pos`,
   `TauCeti.Floer.associativityPerturbation_cylindricalEndLift_inf_of_le`);
-* for `L > 4` it is `C^n` jointly in `τ`, the domain point and the target point, away from the
-  three moving input punctures (`TauCeti.Floer.contMDiffAt_associativityPerturbation`);
+* for `L > 4` it is `C^n` jointly in the neck length `L`, `τ`, the domain point and the target
+  point, away from the three moving input punctures
+  (`TauCeti.Floer.contMDiffAt_associativityPerturbation`);
 * for `L > 4` its integrated curvature along any map is bounded uniformly in `τ` and `L`, by
   `∑ i, B i + Bout + 2 (BG + BG')` for bounds `B i`, `Bout`, `BG`, `BG'` of the Hamiltonians
   (`TauCeti.SmoothTwoForm.lintegral_enorm_hamiltonianCurvature_associativityPerturbation_le`,
@@ -74,34 +75,34 @@ variable {M : Type*} {H : Fin 3 → ℝ → M → ℝ} {Hout G G' : ℝ → M �
 
 /-- **The associativity family of Floer data.** For input Hamiltonians `H i`, output Hamiltonian
 `Hout`, intermediate Hamiltonians `G` of `(x₁ x₂) x₃` and `G'` of `x₁ (x₂ x₃)`, and neck length
-`L`, the datum `Σ_τ + β(-τ) N + β(τ - 4) N'`: the datum `Σ_τ` of the input ends along the
-associativity path of plumbing radius `e^{-2πL} / 4`, plus the neck data `N` of `(x₁ x₂) x₃` and
-`N'` of `x₁ (x₂ x₃)` scaled by `β(-τ)` and `β(τ - 4)`, where `β = smoothTransition`. -/
+`L`, the datum `Σ_τ + β(-τ) N + β(τ - 1) N'`: the datum `Σ_τ` of the input ends along the
+associativity path of plumbing factor `e^{-2πL} / 4`, plus the neck data `N` of `(x₁ x₂) x₃` and
+`N'` of `x₁ (x₂ x₃)` scaled by `β(-τ)` and `β(τ - 1)`, where `β = smoothTransition`. -/
 def associativityPerturbation (H : Fin 3 → ℝ → M → ℝ) (Hout G G' : ℝ → M → ℝ) (L τ : ℝ) (w : ℂ)
     (x : M) : ℂ →L[ℝ] ℝ :=
-  puncturedSpherePerturbation (associativityCenters (Real.exp (-(2 * π * L)) / 4) τ)
-      (associativityScales (Real.exp (-(2 * π * L)) / 4) τ) H Hout w x +
+  puncturedSpherePerturbation (associativityCenter (Real.exp (-(2 * π * L)) / 4) τ)
+      (associativityScale (Real.exp (-(2 * π * L)) / 4) τ) H Hout w x +
     smoothTransition (-τ) • plumbedPerturbation (Pi.single inf G) (Pi.single zero G) zero L w x +
-    smoothTransition (τ - 4) • plumbedPerturbation (Pi.single inf G') (Pi.single one G') one L w x
+    smoothTransition (τ - 1) • plumbedPerturbation (Pi.single inf G') (Pi.single one G') one L w x
 
 theorem associativityPerturbation_def (H : Fin 3 → ℝ → M → ℝ) (Hout G G' : ℝ → M → ℝ)
     (L τ : ℝ) (w : ℂ) (x : M) :
     associativityPerturbation H Hout G G' L τ w x =
-      puncturedSpherePerturbation (associativityCenters (Real.exp (-(2 * π * L)) / 4) τ)
-          (associativityScales (Real.exp (-(2 * π * L)) / 4) τ) H Hout w x +
+      puncturedSpherePerturbation (associativityCenter (Real.exp (-(2 * π * L)) / 4) τ)
+          (associativityScale (Real.exp (-(2 * π * L)) / 4) τ) H Hout w x +
         smoothTransition (-τ) •
           plumbedPerturbation (Pi.single inf G) (Pi.single zero G) zero L w x +
-        smoothTransition (τ - 4) •
+        smoothTransition (τ - 1) •
           plumbedPerturbation (Pi.single inf G') (Pi.single one G') one L w x :=
   (rfl)
 
 /-! ### The pieces of the family -/
 
-/-- **On `[0, 4]` the family is the datum of the moving input ends.** -/
-theorem associativityPerturbation_of_mem_Icc (hτ : τ ∈ Icc 0 4) :
+/-- **On `[0, 1]` the family is the datum of the moving input ends.** -/
+theorem associativityPerturbation_of_mem_Icc (hτ : τ ∈ Icc 0 1) :
     associativityPerturbation H Hout G G' L τ =
-      puncturedSpherePerturbation (associativityCenters (Real.exp (-(2 * π * L)) / 4) τ)
-        (associativityScales (Real.exp (-(2 * π * L)) / 4) τ) H Hout := by
+      puncturedSpherePerturbation (associativityCenter (Real.exp (-(2 * π * L)) / 4) τ)
+        (associativityScale (Real.exp (-(2 * π * L)) / 4) τ) H Hout := by
   funext w x
   rw [associativityPerturbation_def, smoothTransition.zero_of_nonpos (by linarith [hτ.1]),
     smoothTransition.zero_of_nonpos (by linarith [hτ.2]), zero_smul, zero_smul, add_zero,
@@ -117,12 +118,10 @@ theorem associativityPerturbation_of_nonpos (hL : 0 ≤ L) (hτ : τ ≤ 0)
       plumbedPerturbation (update Ha inf (smoothTransition (-τ) • G))
         (update Hb zero (smoothTransition (-τ) • G)) zero L := by
   funext w x
-  rw [associativityPerturbation_def, smoothTransition.zero_of_nonpos (by linarith : τ - 4 ≤ 0),
+  rw [associativityPerturbation_def, smoothTransition.zero_of_nonpos (by linarith : τ - 1 ≤ 0),
     zero_smul, add_zero, plumbedPerturbation_update_smul,
-    plumbedPerturbation_update_zero_eq_puncturedSpherePerturbation (r := one) (by decide)
-      (by decide) (by decide) hL, associativityCenters_eq_plumbingMap_zero L hτ,
-    associativityScales_eq_plumbingFactor_zero L hτ, Pi.add_apply, Pi.add_apply, Pi.smul_apply,
-    Pi.smul_apply]
+    ← puncturedSpherePerturbation_associativity_of_nonpos hτ hL, Pi.add_apply, Pi.add_apply,
+    Pi.smul_apply, Pi.smul_apply]
 
 /-- **For `τ ≤ -1` the family is the plumbed datum of `(x₁ x₂) x₃`.** Inserting a pair of pants
 with Hamiltonians `Ha` into the input `0` of one with Hamiltonians `Hb`, along a neck carrying
@@ -136,36 +135,30 @@ theorem associativityPerturbation_of_le_neg_one (hL : 0 ≤ L) (hτ : τ ≤ -1)
     smoothTransition.one_of_one_le (by linarith), one_smul, update_eq_self, ← hab,
     update_eq_self]
 
-/-- **For `τ ≥ 4` the family is the plumbed datum of `x₁ (x₂ x₃)` with a scaled neck.** Inserting
+/-- **For `τ ≥ 1` the family is the plumbed datum of `x₁ (x₂ x₃)` with a scaled neck.** Inserting
 a pair of pants with Hamiltonians `Ha` into the input `1` of one with Hamiltonians `Hb`, the
 family with inputs `Hb 0, Ha 0, Ha 1` and output `Hb ∞` is the plumbed datum whose neck
-Hamiltonian is `β(τ - 4) G'`. -/
-theorem associativityPerturbation_of_four_le (hL : 0 ≤ L) (hτ : 4 ≤ τ)
+Hamiltonian is `β(τ - 1) G'`. -/
+theorem associativityPerturbation_of_one_le (hL : 0 ≤ L) (hτ : 1 ≤ τ)
     (Ha Hb : Puncture → ℝ → M → ℝ) (G G' : ℝ → M → ℝ) :
     associativityPerturbation ![Hb zero, Ha zero, Ha one] (Hb inf) G G' L τ =
-      plumbedPerturbation (update Ha inf (smoothTransition (τ - 4) • G'))
-        (update Hb one (smoothTransition (τ - 4) • G')) one L := by
+      plumbedPerturbation (update Ha inf (smoothTransition (τ - 1) • G'))
+        (update Hb one (smoothTransition (τ - 1) • G')) one L := by
   funext w x
   rw [associativityPerturbation_def, smoothTransition.zero_of_nonpos (by linarith : -τ ≤ 0),
     zero_smul, add_zero, plumbedPerturbation_update_smul,
-    plumbedPerturbation_update_zero_eq_puncturedSpherePerturbation (r := zero) (by decide)
-      (by decide) (by decide) hL, associativityCenters_eq_plumbingMap_one L hτ,
-    associativityScales_eq_plumbingFactor_one L hτ]
-  -- The two configurations list the same three input ends in different orders.
-  simp only [Pi.add_apply, Pi.smul_apply, puncturedSpherePerturbation_def, Fin.sum_univ_three,
-    Matrix.cons_val_zero, Matrix.cons_val_one, Matrix.cons_val_two, Matrix.head_cons,
-    Matrix.tail_cons]
-  abel
+    ← puncturedSpherePerturbation_associativity_of_one_le hτ hL, Pi.add_apply, Pi.add_apply,
+    Pi.smul_apply, Pi.smul_apply]
 
-/-- **For `τ ≥ 5` the family is the plumbed datum of `x₁ (x₂ x₃)`.** Inserting a pair of pants
+/-- **For `τ ≥ 2` the family is the plumbed datum of `x₁ (x₂ x₃)`.** Inserting a pair of pants
 with Hamiltonians `Ha` into the input `1` of one with Hamiltonians `Hb`, along a neck carrying
 `Hb 1 = Ha ∞`, the family with inputs `Hb 0, Ha 0, Ha 1`, output `Hb ∞` and intermediate
 Hamiltonian `Ha ∞` is the plumbed datum. -/
-theorem associativityPerturbation_of_five_le (hL : 0 ≤ L) (hτ : 5 ≤ τ)
+theorem associativityPerturbation_of_two_le (hL : 0 ≤ L) (hτ : 2 ≤ τ)
     {Ha Hb : Puncture → ℝ → M → ℝ} (hab : Hb one = Ha inf) (G : ℝ → M → ℝ) :
     associativityPerturbation ![Hb zero, Ha zero, Ha one] (Hb inf) G (Ha inf) L τ =
       plumbedPerturbation Ha Hb one L := by
-  rw [associativityPerturbation_of_four_le hL (by linarith),
+  rw [associativityPerturbation_of_one_le hL (by linarith),
     smoothTransition.one_of_one_le (by linarith), one_smul, update_eq_self, ← hab,
     update_eq_self]
 
@@ -207,6 +200,15 @@ private theorem vecCons_rightReceiving_rightInserted (H : Fin 3 → ℝ → M �
   funext i
   fin_cases i <;> rfl
 
+/-- The inputs of `x₁ (x₂ x₃)`, listed from the input `x₂` as in the plumbed sphere, are the
+inputs relabelled by `finRotate 3`. -/
+private theorem vecCons_rightInserted_rightReceiving (H : Fin 3 → ℝ → M → ℝ)
+    (Hout G' : ℝ → M → ℝ) :
+    ![rightInserted H G' zero, rightInserted H G' one, rightReceiving H Hout G' zero] =
+      H ∘ finRotate 3 := by
+  funext i
+  fin_cases i <;> simp [rightInserted, rightReceiving]
+
 /-- For `τ ≤ 0` the family is the plumbed datum of `(x₁ x₂) x₃` with a scaled neck, with the
 pairs of pants read off from the input Hamiltonians. -/
 private theorem associativityPerturbation_eq_left (hL : 0 ≤ L) (hτ : τ ≤ 0) :
@@ -218,31 +220,22 @@ private theorem associativityPerturbation_eq_left (hL : 0 ≤ L) (hτ : τ ≤ 0
   rw [vecCons_leftInserted_leftReceiving] at key
   exact key
 
-/-- For `τ ≥ 4` the family is the plumbed datum of `x₁ (x₂ x₃)` with a scaled neck, with the
+/-- For `τ ≥ 1` the family is the plumbed datum of `x₁ (x₂ x₃)` with a scaled neck, with the
 pairs of pants read off from the input Hamiltonians. -/
-private theorem associativityPerturbation_eq_right (hL : 0 ≤ L) (hτ : 4 ≤ τ) :
+private theorem associativityPerturbation_eq_right (hL : 0 ≤ L) (hτ : 1 ≤ τ) :
     associativityPerturbation H Hout G G' L τ =
-      plumbedPerturbation (update (rightInserted H G') inf (smoothTransition (τ - 4) • G'))
-        (update (rightReceiving H Hout G') one (smoothTransition (τ - 4) • G')) one L := by
-  have key := associativityPerturbation_of_four_le hL hτ (rightInserted H G')
+      plumbedPerturbation (update (rightInserted H G') inf (smoothTransition (τ - 1) • G'))
+        (update (rightReceiving H Hout G') one (smoothTransition (τ - 1) • G')) one L := by
+  have key := associativityPerturbation_of_one_le hL hτ (rightInserted H G')
     (rightReceiving H Hout G') G G'
   rw [vecCons_rightReceiving_rightInserted] at key
   exact key
 
-/-- For `L ≥ 0` the plumbing radius `e^{-2πL} / 4` lies in `(0, 1 / 3]`. -/
-private theorem associativityRadius_mem (hL : 0 ≤ L) :
-    0 < Real.exp (-(2 * π * L)) / 4 ∧ Real.exp (-(2 * π * L)) / 4 ≤ 1 / 3 := by
+/-- For `L ≥ 0` the plumbing factor `e^{-2πL} / 4` lies in `(0, 1 / 3]`. -/
+private theorem associativityFactor_mem (hL : 0 ≤ L) :
+    0 < Real.exp (-(2 * π * L)) / 4 ∧ 3 * (Real.exp (-(2 * π * L)) / 4) ≤ 1 := by
   have : Real.exp (-(2 * π * L)) ≤ 1 := Real.exp_le_one_iff.2 (by nlinarith [pi_pos])
   exact ⟨by positivity, by linarith⟩
-
-/-- For `L ≥ 0` the end discs along the path lie in the disc `‖w‖ ≤ 2 exp (2π)`, on which the
-output datum vanishes. -/
-private theorem norm_associativityCenters_add_le_two_mul_exp (hL : 0 ≤ L) (τ : ℝ) (i : Fin 3) :
-    ‖associativityCenters (Real.exp (-(2 * π * L)) / 4) τ i‖ +
-        ‖associativityScales (Real.exp (-(2 * π * L)) / 4) τ i‖ / 2 ≤ 2 * Real.exp (2 * π) := by
-  obtain ⟨hρ₀, hρ⟩ := associativityRadius_mem hL
-  linarith [norm_associativityCenters_add_le hρ₀.le (by linarith) τ i,
-    Real.add_one_le_exp (2 * π), Real.two_le_pi]
 
 /-! ### The ends of the family -/
 
@@ -253,47 +246,41 @@ input end `i` of the configuration at `τ`, the pullback of the family along the
 theorem associativityPerturbation_cylindricalEndLift_of_pos (hL : 2 < L) (τ : ℝ) {i : Fin 3}
     (hH : Periodic (H i) 1) {z : ℂ} (hz : 0 < z.re) (x : M) (v : ℂ) :
     associativityPerturbation H Hout G G' L τ
-        (associativityCenters (Real.exp (-(2 * π * L)) / 4) τ i +
-          associativityScales (Real.exp (-(2 * π * L)) / 4) τ i * zero.cylindricalEndLift z) x
-        (associativityScales (Real.exp (-(2 * π * L)) / 4) τ i *
+        (associativityCenter (Real.exp (-(2 * π * L)) / 4) τ i +
+          associativityScale (Real.exp (-(2 * π * L)) / 4) τ i * zero.cylindricalEndLift z) x
+        (associativityScale (Real.exp (-(2 * π * L)) / 4) τ i *
           (deriv zero.cylindricalEndLift z * v)) =
       v.im * (smoothTransition (z.re - 1) * H i z.im x) := by
   rcases lt_or_ge τ 0 with hτ | hτ₀
   · -- Before the path, this is the input end `i` of the plumbed sphere of `(x₁ x₂) x₃`.
     rw [associativityPerturbation_eq_left (by linarith) hτ.le,
-      associativityCenters_eq_plumbingMap_zero L hτ.le,
-      associativityScales_eq_plumbingFactor_zero L hτ.le]
+      associativityCenter_eq_plumbingMap_of_nonpos hτ.le,
+      associativityScale_eq_plumbingFactor_of_nonpos hτ.le]
     have hvec := vecCons_leftInserted_leftReceiving H Hout G
     have h := plumbedPerturbation_update_smul_cylindricalEndLift_of_pos (q := zero) (r := one)
       (Ha := leftInserted H G) (Hb := leftReceiving H Hout G) (G := G) (by decide) (by decide)
       (by decide) hL (smoothTransition (-τ)) i (by rwa [hvec]) hz x v
     rwa [hvec] at h
-  rcases le_or_gt τ 4 with hτ₄ | hτ
+  rcases le_or_gt τ 1 with hτ₁ | hτ
   · -- Along the path, this is the input end `i` of the sphere with moving input ends.
-    obtain ⟨hρ₀, hρ⟩ := associativityRadius_mem (show 0 ≤ L by linarith)
-    rw [associativityPerturbation_of_mem_Icc ⟨hτ₀, hτ₄⟩]
+    obtain ⟨hf₀, hf₃⟩ := associativityFactor_mem (show 0 ≤ L by linarith)
+    rw [associativityPerturbation_of_mem_Icc ⟨hτ₀, hτ₁⟩]
     exact puncturedSpherePerturbation_cylindricalEndLift_of_pos
-      (pairwise_norm_associativityScales_add_le hρ₀.le hρ τ)
-      (norm_associativityCenters_add_le_two_mul_exp (by linarith) τ) hH
-      (associativityScales_ne_zero hρ₀ τ i) hz x v
-  · -- After the path, the input end `i` is the input end `i - 1` (mod `3`) of the plumbed
-    -- sphere of `x₁ (x₂ x₃)`.
-    rw [associativityPerturbation_eq_right (by linarith) hτ.le,
-      associativityCenters_eq_plumbingMap_one L hτ.le,
-      associativityScales_eq_plumbingFactor_one L hτ.le]
-    fin_cases i
-    · simpa [rightInserted, rightReceiving] using
-        plumbedPerturbation_update_smul_cylindricalEndLift_of_pos (q := one) (r := zero)
-          (Ha := rightInserted H G') (Hb := rightReceiving H Hout G') (by decide) (by decide)
-          (by decide) hL (smoothTransition (τ - 4)) 2 hH hz x v
-    · simpa [rightInserted, rightReceiving] using
-        plumbedPerturbation_update_smul_cylindricalEndLift_of_pos (q := one) (r := zero)
-          (Ha := rightInserted H G') (Hb := rightReceiving H Hout G') (by decide) (by decide)
-          (by decide) hL (smoothTransition (τ - 4)) 0 hH hz x v
-    · simpa [rightInserted, rightReceiving] using
-        plumbedPerturbation_update_smul_cylindricalEndLift_of_pos (q := one) (r := zero)
-          (Ha := rightInserted H G') (Hb := rightReceiving H Hout G') (by decide) (by decide)
-          (by decide) hL (smoothTransition (τ - 4)) 1 hH hz x v
+      (pairwise_add_le_norm_associativityCenter_sub hf₀.le hf₃ τ)
+      (norm_associativityCenter_add_le hf₀.le (by linarith) τ) hH
+      (associativityScale_ne_zero hf₀ τ i) hz x v
+  · -- After the path, the input end `finRotate 3 j` is the input end `j` of the plumbed sphere
+    -- of `x₁ (x₂ x₃)`.
+    obtain ⟨j, rfl⟩ := (finRotate 3).surjective i
+    have hc := congrFun (associativityCenter_comp_finRotate_of_one_le (L := L) hτ.le) j
+    have ha := congrFun (associativityScale_comp_finRotate_of_one_le (L := L) hτ.le) j
+    have hvec := congrFun (vecCons_rightInserted_rightReceiving H Hout G') j
+    rw [comp_apply] at hc ha hvec
+    rw [associativityPerturbation_eq_right (by linarith) hτ.le, hc, ha]
+    have h := plumbedPerturbation_update_smul_cylindricalEndLift_of_pos (q := one) (r := zero)
+      (Ha := rightInserted H G') (Hb := rightReceiving H Hout G') (G := G') (by decide)
+      (by decide) (by decide) hL (smoothTransition (τ - 1)) j (by rwa [hvec]) hz x v
+    rwa [hvec] at h
 
 /-- **The family on the output end.** For `L > 2` and every `τ`, on the part `s ≤ -1` of the
 output end, the pullback of the family along the end lift `φ_∞` is the continuation datum
@@ -308,13 +295,14 @@ theorem associativityPerturbation_cylindricalEndLift_inf_of_le (hL : 2 < L) (τ 
   · rw [associativityPerturbation_eq_left (by linarith) hτ.le]
     exact plumbedPerturbation_update_smul_cylindricalEndLift_inf_of_le
       (Hb := leftReceiving H Hout G) (by decide) hL hHout (smoothTransition (-τ)) hz x v
-  rcases le_or_gt τ 4 with hτ₄ | hτ
-  · rw [associativityPerturbation_of_mem_Icc ⟨hτ₀, hτ₄⟩]
+  rcases le_or_gt τ 1 with hτ₁ | hτ
+  · obtain ⟨hf₀, hf₃⟩ := associativityFactor_mem (show 0 ≤ L by linarith)
+    rw [associativityPerturbation_of_mem_Icc ⟨hτ₀, hτ₁⟩]
     exact puncturedSpherePerturbation_cylindricalEndLift_inf_of_le
-      (norm_associativityCenters_add_le_two_mul_exp (by linarith) τ) hHout hz x v
+      (norm_associativityCenter_add_le hf₀.le (by linarith) τ) hHout hz x v
   · rw [associativityPerturbation_eq_right (by linarith) hτ.le]
     exact plumbedPerturbation_update_smul_cylindricalEndLift_inf_of_le
-      (Hb := rightReceiving H Hout G') (by decide) hL hHout (smoothTransition (τ - 4)) hz x v
+      (Hb := rightReceiving H Hout G') (by decide) hL hHout (smoothTransition (τ - 1)) hz x v
 
 /-! ### Smoothness -/
 
@@ -323,20 +311,22 @@ section Manifold
 variable {E E' : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace E']
   {I : ModelWithCorners ℝ E E'} [TopologicalSpace M] [ChartedSpace E' M]
 
-/-- A neck datum scaled by a smooth function `φ` of the parameter is smooth at every domain point
-other than the punctures of its plumbed sphere, and wherever `φ` vanishes near the parameter. -/
+/-- A neck datum scaled by a smooth function `φ` of the parameter is smooth jointly in the neck
+length, the parameter, the domain point and the target point, at every domain point other than
+the punctures of its plumbed sphere, and wherever `φ` vanishes near the parameter. -/
 private theorem contMDiffAt_smul_neck {n : ℕ∞} {q : Puncture} (hq : q ≠ inf) (hG : Periodic G 1)
     (hGs : ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) n (uncurry G)) (hL : 4 < L) {φ : ℝ → ℝ}
     (hφ : ContDiff ℝ n φ) {w : ℂ}
     (h : φ =ᶠ[𝓝 τ] 0 ∨ (w ≠ 0 ∧ w ≠ 1) ∧ w ≠ q.plumbingMap L 1) (x : M) :
-    ContMDiffAt (𝓘(ℝ, ℝ).prod (𝓘(ℝ, ℂ).prod I)) 𝓘(ℝ, ℂ →L[ℝ] ℝ) n
-      (fun p : ℝ × (ℂ × M) =>
-        φ p.1 • plumbedPerturbation (Pi.single inf G) (Pi.single q G) q L p.2.1 p.2.2)
-      (τ, (w, x)) := by
+    ContMDiffAt (𝓘(ℝ, ℝ × ℝ).prod (𝓘(ℝ, ℂ).prod I)) 𝓘(ℝ, ℂ →L[ℝ] ℝ) n
+      (fun p : (ℝ × ℝ) × (ℂ × M) =>
+        φ p.1.2 • plumbedPerturbation (Pi.single inf G) (Pi.single q G) q p.1.1 p.2.1 p.2.2)
+      ((L, τ), (w, x)) := by
   rcases h with h | hw
   · refine (contMDiffAt_const (c := (0 : ℂ →L[ℝ] ℝ))).congr_of_eventuallyEq ?_
-    filter_upwards [continuousAt_fst.eventually h] with p hp
-    rw [hp, Pi.zero_apply, zero_smul]
+    filter_upwards [(continuous_snd.comp continuous_fst).continuousAt.eventually h] with p hp
+    rw [comp_apply, Pi.zero_apply] at hp
+    rw [hp, zero_smul]
   · have hsm₀ : ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) n (uncurry (0 : ℝ → M → ℝ)) :=
       contMDiff_const
     have hN := contMDiffAt_plumbedPerturbation_family (Ha := Pi.single inf G)
@@ -348,47 +338,45 @@ private theorem contMDiffAt_smul_neck {n : ℕ∞} {q : Puncture} (hq : q ≠ in
       ((forall_update_iff _ fun _ f => ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) n (uncurry f)).2
         ⟨hGs, fun _ _ => hsm₀⟩)
       (by simp) hL hw x
-    have hN' : ContMDiffAt (𝓘(ℝ, ℝ).prod (𝓘(ℝ, ℂ).prod I)) 𝓘(ℝ, ℂ →L[ℝ] ℝ) n
-        (fun p : ℝ × (ℂ × M) =>
-          plumbedPerturbation (Pi.single inf G) (Pi.single q G) q L p.2.1 p.2.2) (τ, (w, x)) :=
-      hN.comp (τ, (w, x)) (contMDiffAt_const.prodMk contMDiffAt_snd)
+    have hN' : ContMDiffAt (𝓘(ℝ, ℝ × ℝ).prod (𝓘(ℝ, ℂ).prod I)) 𝓘(ℝ, ℂ →L[ℝ] ℝ) n
+        (fun p : (ℝ × ℝ) × (ℂ × M) =>
+          plumbedPerturbation (Pi.single inf G) (Pi.single q G) q p.1.1 p.2.1 p.2.2)
+        ((L, τ), (w, x)) :=
+      hN.comp ((L, τ), (w, x))
+        ((contDiff_fst.contMDiff.contMDiffAt.comp _ contMDiffAt_fst).prodMk contMDiffAt_snd)
     -- Scalar multiplication is a smooth map on `ℝ × (ℂ →L[ℝ] ℝ)`.
-    exact contDiff_smul.contMDiff.contMDiffAt.comp (τ, (w, x))
-      ((hφ.contMDiff.contMDiffAt.comp _ contMDiffAt_fst).prodMk_space hN')
+    exact contDiff_smul.contMDiff.contMDiffAt.comp ((L, τ), (w, x))
+      (((hφ.comp contDiff_snd).contMDiff.contMDiffAt.comp _ contMDiffAt_fst).prodMk_space hN')
 
 /-- **The family is smooth.** For period-one Hamiltonians `H i`, `Hout`, `G` and `G'` of class
-`C^n` on `ℝ × M` and a neck length `L > 4`, the associativity family is `C^n` jointly in the
-parameter `τ`, the domain point `w` and the target point, at every `w` other than the three input
-punctures of the configuration at `τ`. -/
+`C^n` on `ℝ × M`, the associativity family is `C^n` jointly in the neck length `L`, the parameter
+`τ`, the domain point `w` and the target point, at every `L > 4` and every `w` other than the
+three input punctures of the configuration at `τ`. -/
 theorem contMDiffAt_associativityPerturbation {n : ℕ∞} (hH : ∀ i, Periodic (H i) 1)
     (hHs : ∀ i, ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) n (uncurry (H i)))
     (hHout : Periodic Hout 1) (hHouts : ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) n (uncurry Hout))
     (hG : Periodic G 1) (hGs : ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) n (uncurry G))
     (hG' : Periodic G' 1) (hG's : ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) n (uncurry G'))
     (hL : 4 < L) {w : ℂ}
-    (hw : ∀ i, w ≠ associativityCenters (Real.exp (-(2 * π * L)) / 4) τ i) (x : M) :
-    ContMDiffAt (𝓘(ℝ, ℝ).prod (𝓘(ℝ, ℂ).prod I)) 𝓘(ℝ, ℂ →L[ℝ] ℝ) n
-      (fun p : ℝ × (ℂ × M) => associativityPerturbation H Hout G G' L p.1 p.2.1 p.2.2)
-      (τ, (w, x)) := by
-  have hρ₀ : 0 < Real.exp (-(2 * π * L)) / 4 := by positivity
-  -- The moving input ends follow the smooth path of configurations.
-  have hpath : ContDiff ℝ n fun t : ℝ =>
-      (associativityCenters (Real.exp (-(2 * π * L)) / 4) t,
-        associativityScales (Real.exp (-(2 * π * L)) / 4) t) :=
-    (contDiff_associativityCenters.comp (contDiff_const.prodMk contDiff_id)).prodMk
-      (contDiff_associativityScales.comp (contDiff_const.prodMk contDiff_id))
-  have hS := (contMDiffAt_puncturedSpherePerturbation hH hHs hHout hHouts
-    (associativityScales_ne_zero hρ₀ τ) hw x).comp (τ, (w, x))
-    ((hpath.contMDiff.contMDiffAt.comp _ contMDiffAt_fst).prodMk contMDiffAt_snd)
+    (hw : ∀ i, w ≠ associativityCenter (Real.exp (-(2 * π * L)) / 4) τ i) (x : M) :
+    ContMDiffAt (𝓘(ℝ, ℝ × ℝ).prod (𝓘(ℝ, ℂ).prod I)) 𝓘(ℝ, ℂ →L[ℝ] ℝ) n
+      (fun p : (ℝ × ℝ) × (ℂ × M) => associativityPerturbation H Hout G G' p.1.1 p.1.2 p.2.1 p.2.2)
+      ((L, τ), (w, x)) := by
+  -- The moving input ends follow the associativity path of plumbing factor `e^{-2πL} / 4`.
+  have hfac : ContDiff ℝ n fun q : ℝ × ℝ => (Real.exp (-(2 * π * q.1)) / 4, q.2) := by
+    fun_prop
+  have hS := (contMDiffAt_puncturedSpherePerturbation_associativity hH hHs hHout hHouts
+    (by positivity) hw x).comp ((L, τ), (w, x))
+    ((hfac.contMDiff.contMDiffAt.comp _ contMDiffAt_fst).prodMk contMDiffAt_snd)
   -- The neck of `(x₁ x₂) x₃` is switched off for `τ ≥ 0`; before, the punctures are `0, ψ₀(1), 1`.
-  have hN : ContMDiffAt (𝓘(ℝ, ℝ).prod (𝓘(ℝ, ℂ).prod I)) 𝓘(ℝ, ℂ →L[ℝ] ℝ) n
-      (fun p : ℝ × (ℂ × M) => smoothTransition (-p.1) •
-        plumbedPerturbation (Pi.single inf G) (Pi.single zero G) zero L p.2.1 p.2.2)
-      (τ, (w, x)) := by
+  have hN : ContMDiffAt (𝓘(ℝ, ℝ × ℝ).prod (𝓘(ℝ, ℂ).prod I)) 𝓘(ℝ, ℂ →L[ℝ] ℝ) n
+      (fun p : (ℝ × ℝ) × (ℂ × M) => smoothTransition (-p.1.2) •
+        plumbedPerturbation (Pi.single inf G) (Pi.single zero G) zero p.1.1 p.2.1 p.2.2)
+      ((L, τ), (w, x)) := by
     refine contMDiffAt_smul_neck (φ := fun t => smoothTransition (-t)) (by decide) hG hGs hL
       (smoothTransition.contDiff.comp contDiff_neg) ?_ x
     rcases le_or_gt τ 0 with hτ | hτ
-    · have hc := associativityCenters_eq_plumbingMap_zero L hτ
+    · have hc := associativityCenter_eq_plumbingMap_of_nonpos (L := L) hτ
       refine Or.inr ⟨⟨?_, ?_⟩, ?_⟩
       · simpa [hc] using hw 0
       · simpa [hc] using hw 2
@@ -396,19 +384,22 @@ theorem contMDiffAt_associativityPerturbation {n : ℕ∞} (hH : ∀ i, Periodic
     · left
       filter_upwards [lt_mem_nhds hτ] with t ht
       exact smoothTransition.zero_of_nonpos (by linarith)
-  -- The neck of `x₁ (x₂ x₃)` is switched off for `τ ≤ 4`; after, the punctures are `0, 1, ψ₁(1)`.
-  have hN' : ContMDiffAt (𝓘(ℝ, ℝ).prod (𝓘(ℝ, ℂ).prod I)) 𝓘(ℝ, ℂ →L[ℝ] ℝ) n
-      (fun p : ℝ × (ℂ × M) => smoothTransition (p.1 - 4) •
-        plumbedPerturbation (Pi.single inf G') (Pi.single one G') one L p.2.1 p.2.2)
-      (τ, (w, x)) := by
-    refine contMDiffAt_smul_neck (φ := fun t => smoothTransition (t - 4)) (by decide) hG' hG's hL
+  -- The neck of `x₁ (x₂ x₃)` is switched off for `τ ≤ 1`; after, the punctures are `1, ψ₁(1), 0`.
+  have hN' : ContMDiffAt (𝓘(ℝ, ℝ × ℝ).prod (𝓘(ℝ, ℂ).prod I)) 𝓘(ℝ, ℂ →L[ℝ] ℝ) n
+      (fun p : (ℝ × ℝ) × (ℂ × M) => smoothTransition (p.1.2 - 1) •
+        plumbedPerturbation (Pi.single inf G') (Pi.single one G') one p.1.1 p.2.1 p.2.2)
+      ((L, τ), (w, x)) := by
+    refine contMDiffAt_smul_neck (φ := fun t => smoothTransition (t - 1)) (by decide) hG' hG's hL
       (smoothTransition.contDiff.comp (contDiff_id.sub contDiff_const)) ?_ x
-    rcases le_or_gt 4 τ with hτ | hτ
-    · have hc := associativityCenters_eq_plumbingMap_one L hτ
+    rcases le_or_gt 1 τ with hτ | hτ
+    · have hc (j : Fin 3) :
+          w ≠ (![one.endCenter, one.plumbingMap L 1, zero.endCenter] : Fin 3 → ℂ) j := by
+        rw [← congrFun (associativityCenter_comp_finRotate_of_one_le hτ) j]
+        exact hw _
       refine Or.inr ⟨⟨?_, ?_⟩, ?_⟩
-      · simpa [hc] using hw 0
-      · simpa [hc] using hw 1
-      · simpa [hc] using hw 2
+      · simpa using hc 2
+      · simpa using hc 0
+      · simpa using hc 1
     · left
       filter_upwards [gt_mem_nhds hτ] with t ht
       exact smoothTransition.zero_of_nonpos (by linarith)
@@ -435,9 +426,9 @@ private theorem add_ofReal_abs_smoothTransition_mul_le (a : ENNReal) {b : ℝ} {
     (hb : 0 ≤ b) (s : ℝ) (hc : ENNReal.ofReal b ≤ c) :
     a + (ENNReal.ofReal (|smoothTransition s| * b) +
       ENNReal.ofReal (|smoothTransition s| * b)) ≤ a + 2 * c := by
-  have hβ := ENNReal.ofReal_le_ofReal (mul_le_of_le_one_left hb (smoothTransition.abs_le_one s))
+  have hβ := (smoothTransition.ofReal_abs_mul_le s hb).trans hc
   rw [two_mul]
-  exact add_le_add le_rfl (add_le_add (hβ.trans hc) (hβ.trans hc))
+  exact add_le_add le_rfl (add_le_add hβ hβ)
 
 /-- Before the path, the family is the plumbed datum of `(x₁ x₂) x₃` with a scaled neck, whose
 curvature bound is that of the plumbed datum. -/
@@ -474,12 +465,12 @@ private theorem lintegral_enorm_hamiltonianCurvature_associativityPerturbation_l
 
 /-- After the path, the family is the plumbed datum of `x₁ (x₂ x₃)` with a scaled neck, whose
 curvature bound is that of the plumbed datum. -/
-private theorem lintegral_enorm_hamiltonianCurvature_associativityPerturbation_le_of_four_lt
+private theorem lintegral_enorm_hamiltonianCurvature_associativityPerturbation_le_of_one_lt
     (ω : SmoothTwoForm I M) (hH : ∀ i, Periodic (H i) 1)
     (hHs : ∀ i, ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) 1 (uncurry (H i)))
     (hHout : Periodic Hout 1) (hHouts : ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) 1 (uncurry Hout))
     (hG' : Periodic G' 1) (hG's : ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) 1 (uncurry G'))
-    (hL : 4 < L) {τ : ℝ} (hτ : 4 < τ) {B : Fin 3 → ℝ} {Bout BG BG' : ℝ}
+    (hL : 4 < L) {τ : ℝ} (hτ : 1 < τ) {B : Fin 3 → ℝ} {Bout BG BG' : ℝ}
     (hB : ∀ i t x, |H i t x| ≤ B i) (hBout : ∀ t x, |Hout t x| ≤ Bout)
     (hBG' : ∀ t x, |G' t x| ≤ BG') (u : ℝ × ℝ → M) :
     ∫⁻ z, ‖ω.hamiltonianCurvature
@@ -495,7 +486,7 @@ private theorem lintegral_enorm_hamiltonianCurvature_associativityPerturbation_l
     (fun p hp => by cases p; exacts [hH 0, absurd rfl hp, hHout]) hG'
     (fun p hp => by cases p; exacts [hHs 1, hHs 2, absurd rfl hp])
     (fun p hp => by cases p; exacts [hHs 0, absurd rfl hp, hHouts]) hG's hL
-    (smoothTransition (τ - 4))
+    (smoothTransition (τ - 1))
     (Ba := fun p => match p with | zero => B 1 | one => B 2 | inf => 0)
     (Bb := fun p => match p with | zero => B 0 | one => 0 | inf => Bout)
     (fun p hp => by cases p; exacts [hB 1, hB 2, absurd rfl hp])
@@ -503,7 +494,7 @@ private theorem lintegral_enorm_hamiltonianCurvature_associativityPerturbation_l
   simp only [Puncture.sum_univ, Fin.sum_univ_three, update_apply, reduceCtorEq, ite_false,
     ite_true]
   exact (le_of_eq (by ring)).trans (add_ofReal_abs_smoothTransition_mul_le _
-    ((abs_nonneg _).trans (hBG' 0 (u 0))) (τ - 4) le_add_self)
+    ((abs_nonneg _).trans (hBG' 0 (u 0))) (τ - 1) le_add_self)
 
 /-- **The integrated curvature of the associativity family is bounded uniformly.** For period-one
 `C¹` Hamiltonians `H i`, `Hout`, `G` and `G'` on a manifold `M` with a two-form `ω`, bounded by
@@ -528,20 +519,13 @@ theorem lintegral_enorm_hamiltonianCurvature_associativityPerturbation_le
   rcases lt_or_ge τ 0 with hτ | hτ₀
   · exact lintegral_enorm_hamiltonianCurvature_associativityPerturbation_le_of_neg ω hH hHs hHout
       hHouts hG hGs hL hτ hB hBout hBG u
-  rcases le_or_gt τ 4 with hτ₄ | hτ
+  rcases le_or_gt τ 1 with hτ₁ | hτ
   · -- Along the path, the family is the datum of the moving input ends.
-    obtain ⟨hρ₀, hρ⟩ := associativityRadius_mem (show 0 ≤ L by linarith)
-    have he : Real.exp (-(2 * π)) ≤ 1 := Real.exp_le_one_iff.2 (by linarith [pi_pos])
-    rw [associativityPerturbation_of_mem_Icc ⟨hτ₀, hτ₄⟩]
-    refine (ω.lintegral_enorm_hamiltonianCurvature_puncturedSpherePerturbation_le hH hHs hHout
-      hHouts (associativityScales_ne_zero hρ₀ τ) (fun i j hij => ?_) (fun i => ?_) hB hBout
-      u).trans le_self_add
-    · refine le_trans ?_ (pairwise_norm_associativityScales_add_le hρ₀.le hρ τ hij)
-      nlinarith [norm_nonneg (associativityScales (Real.exp (-(2 * π * L)) / 4) τ i),
-        norm_nonneg (associativityScales (Real.exp (-(2 * π * L)) / 4) τ j)]
-    · have h := norm_associativityCenters_add_le_two_mul_exp (show 0 ≤ L by linarith) τ i
-      nlinarith [norm_nonneg (associativityScales (Real.exp (-(2 * π * L)) / 4) τ i)]
-  · exact lintegral_enorm_hamiltonianCurvature_associativityPerturbation_le_of_four_lt ω hH hHs
+    obtain ⟨hf₀, hf₃⟩ := associativityFactor_mem (show 0 ≤ L by linarith)
+    rw [associativityPerturbation_of_mem_Icc ⟨hτ₀, hτ₁⟩]
+    exact (ω.lintegral_enorm_hamiltonianCurvature_puncturedSpherePerturbation_associativity_le hH
+      hHs hHout hHouts hf₀ hf₃ τ hB hBout u).trans le_self_add
+  · exact lintegral_enorm_hamiltonianCurvature_associativityPerturbation_le_of_one_lt ω hH hHs
       hHout hHouts hG' hG's hL hτ hB hBout hBG' u
 
 end TauCeti.SmoothTwoForm
