@@ -188,7 +188,7 @@ private theorem integrable_cutoff_mul (hu : LocallyIntegrableOn u Ω μ) {ζ : E
     (hζ : ContDiff ℝ ∞ ζ ∧ HasCompactSupport ζ ∧ tsupport ζ ⊆ Ω) :
     Integrable (fun y => ζ y * u y) μ := by
   simpa only [smul_eq_mul, mul_comm (u _)] using
-    hu.integrable_smul_right_of_hasCompactSupport hζ.1.continuous hζ.2.1 hζ.2.2
+    hu.integrable_smul_right_of_hasCompactSupport hζ.1.continuous.continuousOn hζ.2.1 hζ.2.2
 
 omit [FiniteDimensional ℝ E] [μ.IsAddHaarMeasure] in
 /-- The gradient term `u Dζ` of a function locally integrable on `Ω` and a smooth `ζ` compactly
@@ -196,7 +196,7 @@ supported in `Ω` is integrable. -/
 private theorem integrable_smul_fderiv_cutoff (hu : LocallyIntegrableOn u Ω μ) {ζ : E → ℝ}
     (hζ : ContDiff ℝ ∞ ζ ∧ HasCompactSupport ζ ∧ tsupport ζ ⊆ Ω) :
     Integrable (fun y => u y • fderiv ℝ ζ y) μ :=
-  hu.integrable_smul_right_of_hasCompactSupport (hζ.1.continuous_fderiv (by simp))
+  hu.integrable_smul_right_of_hasCompactSupport (hζ.1.continuous_fderiv (by simp)).continuousOn
     (hζ.2.1.mono' (support_fderiv_subset ℝ)) ((tsupport_fderiv_subset ℝ).trans hζ.2.2)
 
 variable (μ u) in
@@ -238,7 +238,7 @@ private theorem sum_integral_mul_comp_sub_le [μ.IsAddRightInvariant]
   -- Continuous functions supported in `tsupport (ζ k)` are integrable against `u`.
   have hsupp (k : ℕ) {c : E → ℝ} (hc : Continuous c) (hcs : support c ⊆ tsupport (ζ k)) :
       Integrable (fun y => u y • c y) μ :=
-    hu.integrable_smul_right_of_hasCompactSupport hc ((hζ k).2.1.mono' hcs)
+    hu.integrable_smul_right_of_hasCompactSupport hc.continuousOn ((hζ k).2.1.mono' hcs)
       ((closure_minimal hcs (isClosed_tsupport _)).trans (hζ k).2.2)
   have hDζs (k : ℕ) {v : E → E} : support (fun y => fderiv ℝ (ζ k) y (v y)) ⊆ tsupport (ζ k) :=
     fun y hy => support_fderiv_subset ℝ fun h0 => hy (by simp [h0])
