@@ -232,9 +232,18 @@ theorem cyclicQuotientMap_id (k : Type*) {A : Type*} [Ring k] [NonUnitalNonAssoc
     [Module k A] :
     cyclicQuotientMap k (NonUnitalAlgHom.id k A) = LinearMap.id := by ext x; rfl
 
+@[simp]
+theorem cyclicQuotientMap_algHom_id (k : Type*) {A : Type*} [CommRing k] [Ring A] [Algebra k A] :
+    cyclicQuotientMap k (AlgHom.id k A) = LinearMap.id := by ext x; rfl
+
 theorem cyclicQuotientMap_comp (k : Type*) {A B C : Type*} [Ring k] [NonUnitalNonAssocRing A]
     [NonUnitalNonAssocRing B] [NonUnitalNonAssocRing C] [Module k A] [Module k B] [Module k C]
     (g : B →ₙₐ[k] C) (f : A →ₙₐ[k] B) :
+    cyclicQuotientMap k (g.comp f) =
+      (cyclicQuotientMap k g).comp (cyclicQuotientMap k f) := by ext x; rfl
+
+theorem cyclicQuotientMap_algHom_comp (k : Type*) {A B C : Type*} [CommRing k] [Ring A] [Ring B]
+    [Ring C] [Algebra k A] [Algebra k B] [Algebra k C] (g : B →ₐ[k] C) (f : A →ₐ[k] B) :
     cyclicQuotientMap k (g.comp f) =
       (cyclicQuotientMap k g).comp (cyclicQuotientMap k f) := by ext x; rfl
 
@@ -258,8 +267,17 @@ theorem cyclicQuotientRingHomMap_mk (φ : F) (x : R) :
 theorem cyclicQuotientRingHomMap_id {R : Type*} [NonUnitalNonAssocRing R] :
     cyclicQuotientRingHomMap (NonUnitalRingHom.id R) = LinearMap.id := by ext x; rfl
 
+@[simp]
+theorem cyclicQuotientRingHomMap_ringHom_id {R : Type*} [NonAssocRing R] :
+    cyclicQuotientRingHomMap (RingHom.id R) = LinearMap.id := by ext x; rfl
+
 theorem cyclicQuotientRingHomMap_comp {R S T : Type*} [NonUnitalNonAssocRing R]
     [NonUnitalNonAssocRing S] [NonUnitalNonAssocRing T] (ψ : S →ₙ+* T) (φ : R →ₙ+* S) :
+    cyclicQuotientRingHomMap (ψ.comp φ) =
+      (cyclicQuotientRingHomMap ψ).comp (cyclicQuotientRingHomMap φ) := by ext x; rfl
+
+theorem cyclicQuotientRingHomMap_ringHom_comp {R S T : Type*} [NonAssocRing R] [NonAssocRing S]
+    [NonAssocRing T] (ψ : S →+* T) (φ : R →+* S) :
     cyclicQuotientRingHomMap (ψ.comp φ) =
       (cyclicQuotientRingHomMap ψ).comp (cyclicQuotientRingHomMap φ) := by ext x; rfl
 
