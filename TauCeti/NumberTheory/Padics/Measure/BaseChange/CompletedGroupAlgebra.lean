@@ -197,6 +197,16 @@ theorem completedGroupAlgebraEquivOfBijective_symm_toCompletedGroupAlgebra
   apply (completedGroupAlgebraEquivOfBijective O hb).injective
   simp
 
+/-- `toCompletedGroupAlgebra` is a right inverse to
+`(completedGroupAlgebraEquivOfBijective O hb).symm`. -/
+@[simp]
+theorem toCompletedGroupAlgebra_completedGroupAlgebraEquivOfBijective_symm
+    (hb : Function.Bijective
+      (toCompletedGroupAlgebra : D(Γ, R) →ₐ[R] completedGroupAlgebra R Γ))
+    (y : completedGroupAlgebra O Γ) :
+    toCompletedGroupAlgebra ((completedGroupAlgebraEquivOfBijective O hb).symm y) = y :=
+  (completedGroupAlgebraEquivOfBijective O hb).apply_symm_apply y
+
 @[simp]
 theorem completedGroupAlgebraEquivOfBijective_symm_of
     (hb : Function.Bijective
