@@ -15,18 +15,20 @@ import TauCeti.NumberTheory.LSeries.BoundaryConvergence.LaplaceBridge
 # Block-constant Dirichlet series and uniform step transforms
 
 For an integer base `b > 1` and a sequence `c : ℕ → ℂ`, the `b`-adic block-constant sequence
-`a n = c (Nat.log b n)` (`n ≥ 1`, `a 0 = 0`) satisfies `Nat.log b ⌊exp t⌋₊ = ⌊t / log b⌋₊`
-(`Real.natLog_natFloor_exp`), so on `0 ≤ t` the exponential step function `t ↦ a ⌊exp t⌋₊`
-agrees with the uniform step function `t ↦ c ⌊t / log b⌋₊`:
+`n ↦ c (Nat.log b n)` satisfies `Nat.log b ⌊exp t⌋₊ = ⌊t / log b⌋₊` (`Real.natLog_natFloor_exp`),
+so the exponential step function `t ↦ c (Nat.log b ⌊exp t⌋₊)` agrees everywhere with the uniform
+step function `t ↦ c ⌊t / log b⌋₊`:
 
-* when `c` is bounded and `0 < re z`, `LSeries a (z + 1) + stepCorrection a z` equals
+* when `c` is bounded and `0 < re z`, `LSeries (fun n ↦ c (Nat.log b n)) (z + 1) +
+  stepCorrection (fun n ↦ c (Nat.log b n)) z` equals
   `(∫ u in 0..log b, exp (-z * u)) * ∑' k, c k * exp (-log b * z) ^ k`
   (`LSeries_natLog_add_stepCorrection`);
 * at cutoffs `b ^ K - 1`, the ordered harmonic partial sum plus the step correction at `z = 0`
   equals `log b * ∑ k ∈ range K, c k` (`sum_Icc_natLog_div_add_stepCorrectionTerm`);
 * a disc-algebra power series `(c, P)` transfers directly to a continuous boundary extension of
-  `LSeries a` on `1 ≤ re s` (`exists_continuousOn_LSeries_natLog`), while unbounded partial sums
-  `∑ k ∈ range K, c k` yield unbounded real harmonic sums (`unbounded_sum_Icc_natLog_div`).
+  `LSeries (fun n ↦ c (Nat.log b n))` on `1 ≤ re s` (`exists_continuousOn_LSeries_natLog`), while
+  unbounded partial sums `∑ k ∈ range K, c k` yield unbounded real harmonic sums
+  (`unbounded_sum_Icc_natLog_div`).
 
 ## Main results
 
@@ -45,33 +47,22 @@ open scoped Topology Interval
 
 namespace TauCeti.LSeries
 
-private theorem norm_ite_natLog_le (b : ℕ) {c : ℕ → ℂ} {M : ℝ} (hbound : ∀ n, ‖c n‖ ≤ M) :
-    ∀ n, 1 ≤ n → ‖if n = 0 then (0 : ℂ) else c (Nat.log b n)‖ ≤ M := fun n hn ↦ by
-  simpa [Nat.one_le_iff_ne_zero.mp hn] using hbound (Nat.log b n)
-
-private theorem ite_floor_exp_natLog_eq {α : Type*} [Zero α] (b : ℕ) (c : ℕ → α) {t : ℝ}
-    (ht : 0 ≤ t) :
-    (if ⌊Real.exp t⌋₊ = 0 then (0 : α) else c (Nat.log b ⌊Real.exp t⌋₊)) =
-      c ⌊t / Real.log b⌋₊ := by
-  rw [ite_eq_right (Nat.floor_pos.mpr (Real.one_le_exp ht)).ne', Real.natLog_natFloor_exp]
-
 private theorem LSeries_natLog_add_stepCorrection_eq_integral (b : ℕ) {c : ℕ → ℂ} {M : ℝ}
     (hbound : ∀ n, ‖c n‖ ≤ M) {z : ℂ} (hz : 0 < z.re) :
-    LSeries (fun n ↦ if n = 0 then 0 else c (Nat.log b n)) (z + 1) +
-        stepCorrection (fun n ↦ if n = 0 then 0 else c (Nat.log b n)) z =
+    LSeries (fun n ↦ c (Nat.log b n)) (z + 1) +
+        stepCorrection (fun n ↦ c (Nat.log b n)) z =
       ∫ t in Ici (0 : ℝ), c ⌊t / Real.log b⌋₊ * cexp (-z * t) := by
-  rw [← integral_floor_exp_mul_cexp_neg_mul (norm_ite_natLog_le b hbound) hz]
-  refine setIntegral_congr_fun measurableSet_Ici fun t ht ↦ ?_
-  rw [ite_floor_exp_natLog_eq b c ht]
+  rw [← integral_floor_exp_mul_cexp_neg_mul (fun n _ ↦ hbound (Nat.log b n)) hz]
+  simp_rw [Real.natLog_natFloor_exp]
 
 /-- **Laplace–Dirichlet bridge for `b`-adic block coefficients.** For an integer base `b > 1`,
 a bounded sequence `c : ℕ → ℂ`, and `0 < re z`, the shifted Dirichlet series of
-`n ↦ if n = 0 then 0 else c (Nat.log b n)` plus its step correction equals
+`n ↦ c (Nat.log b n)` plus its step correction equals
 `(∫ u in 0..log b, exp (-z * u)) * ∑' k, c k * exp (-log b * z) ^ k`. -/
 theorem LSeries_natLog_add_stepCorrection {b : ℕ} (hb : 1 < b) {c : ℕ → ℂ} {M : ℝ}
     (hbound : ∀ n, ‖c n‖ ≤ M) {z : ℂ} (hz : 0 < z.re) :
-    LSeries (fun n ↦ if n = 0 then 0 else c (Nat.log b n)) (z + 1) +
-        stepCorrection (fun n ↦ if n = 0 then 0 else c (Nat.log b n)) z =
+    LSeries (fun n ↦ c (Nat.log b n)) (z + 1) +
+        stepCorrection (fun n ↦ c (Nat.log b n)) z =
       (∫ u in (0 : ℝ)..Real.log b, cexp (-z * u)) *
         ∑' k, c k * cexp (-(Real.log b : ℂ) * z) ^ k := by
   have hlogb : 0 < Real.log b := Real.log_pos (by exact_mod_cast hb)
@@ -85,46 +76,34 @@ base `b > 1`, any sequence `c : ℕ → ℂ`, and every `K : ℕ`, the ordered h
 theorem sum_Icc_natLog_div_add_stepCorrectionTerm {b : ℕ} (hb : 1 < b) (c : ℕ → ℂ) (K : ℕ) :
     (∑ n ∈ Finset.Icc 1 (b ^ K - 1), c (Nat.log b n) / (n : ℂ)) +
         ∑ n ∈ Finset.range (b ^ K),
-          stepCorrectionTerm (fun n ↦ if n = 0 then 0 else c (Nat.log b n)) n 0 =
+          stepCorrectionTerm (fun n ↦ c (Nat.log b n)) n 0 =
       (Real.log b : ℂ) * ∑ k ∈ Finset.range K, c k := by
-  set a : ℕ → ℂ := fun n ↦ if n = 0 then 0 else c (Nat.log b n)
   have hlogb : 0 < Real.log b := Real.log_pos (by exact_mod_cast hb)
   have hpow_pos : 1 ≤ b ^ K := Nat.one_le_pow K b (by omega)
   have hlog_eq : Real.log (((b ^ K - 1 : ℕ) : ℝ) + 1) = (K : ℝ) * Real.log b := by
     have hcast : (((b ^ K - 1 : ℕ) : ℝ) + 1) = (b : ℝ) ^ K := by
       exact_mod_cast Nat.sub_add_cancel hpow_pos
     rw [hcast, Real.log_pow]
-  -- Evaluate the integral of `t ↦ a ⌊exp t⌋₊` over `[0, K * log b]` in two ways.
-  have hL := intervalIntegral_floor_exp_log_succ a (b ^ K - 1)
-  rw [hlog_eq, Nat.sub_add_cancel hpow_pos] at hL
-  have hR := intervalIntegral_floor_div c hlogb K
-  have hint_eq : ∫ t in (0 : ℝ)..((K : ℝ) * Real.log b), a ⌊Real.exp t⌋₊ =
-      ∫ t in (0 : ℝ)..((K : ℝ) * Real.log b), c ⌊t / Real.log b⌋₊ := by
-    refine intervalIntegral.integral_congr fun t ht ↦ ?_
-    rw [uIcc_of_le (by positivity)] at ht
-    exact ite_floor_exp_natLog_eq b c ht.1
-  have hsum_eq : ∑ n ∈ Finset.Icc 1 (b ^ K - 1), a n / (n : ℂ) =
-      ∑ n ∈ Finset.Icc 1 (b ^ K - 1), c (Nat.log b n) / (n : ℂ) := by
-    refine Finset.sum_congr rfl fun n hn ↦ ?_
-    simp [a, Nat.one_le_iff_ne_zero.mp (Finset.mem_Icc.mp hn).1]
-  rw [← hsum_eq, ← hL, hint_eq, hR]
+  -- Evaluate the integral of `t ↦ c (Nat.log b ⌊exp t⌋₊) = c ⌊t / log b⌋₊` over `[0, K * log b]`.
+  have hL := intervalIntegral_floor_exp_log_succ (fun n ↦ c (Nat.log b n)) (b ^ K - 1)
+  simp_rw [hlog_eq, Nat.sub_add_cancel hpow_pos, Real.natLog_natFloor_exp] at hL
+  exact hL.symm.trans (intervalIntegral_floor_div c hlogb K)
 
 /-- **Transfer of a disc-algebra power series to a `b`-adic block Dirichlet series.** Given an
 integer base `b > 1` and a bounded sequence `c : ℕ → ℂ` whose power series `∑' n, c n * w ^ n`
 has a continuous extension `P` to the closed unit disc `‖w‖ ≤ 1`, the block Dirichlet series with
-coefficients `a n = c (Nat.log b n)` (`n ≥ 1`, `a 0 = 0`) admits a function `F : ℂ → ℂ`
-continuous on `{s | 1 ≤ s.re}` and holomorphic on `{s | 1 < s.re}` satisfying
-`LSeriesHasSum a s (F s)` for `1 < s.re`. -/
+coefficients `a n = c (Nat.log b n)` admits a function `F : ℂ → ℂ` continuous on
+`{s | 1 ≤ s.re}` and holomorphic on `{s | 1 < s.re}` satisfying `LSeriesHasSum a s (F s)` for
+`1 < s.re`. -/
 theorem exists_continuousOn_LSeries_natLog {b : ℕ} (hb : 1 < b) {c : ℕ → ℂ} {M : ℝ} {P : ℂ → ℂ}
     (hc_bound : ∀ n, ‖c n‖ ≤ M) (hP_cont : ContinuousOn P (closedBall 0 1))
     (hP_sum : ∀ w : ℂ, ‖w‖ < 1 → HasSum (fun n ↦ c n * w ^ n) (P w)) :
     ∃ F : ℂ → ℂ,
       ContinuousOn F {s : ℂ | 1 ≤ s.re} ∧
       DifferentiableOn ℂ F {s : ℂ | 1 < s.re} ∧
-      (∀ s : ℂ, 1 < s.re →
-        LSeriesHasSum (fun n ↦ if n = 0 then (0 : ℂ) else c (Nat.log b n)) s (F s)) := by
-  set a : ℕ → ℂ := fun n ↦ if n = 0 then 0 else c (Nat.log b n)
-  have ha_bound : ∀ n, 1 ≤ n → ‖a n‖ ≤ M := norm_ite_natLog_le b hc_bound
+      (∀ s : ℂ, 1 < s.re → LSeriesHasSum (fun n ↦ c (Nat.log b n)) s (F s)) := by
+  set a : ℕ → ℂ := fun n ↦ c (Nat.log b n)
+  have ha_bound : ∀ n, 1 ≤ n → ‖a n‖ ≤ M := fun n _ ↦ hc_bound (Nat.log b n)
   have hlogb : 0 < Real.log b := Real.log_pos (by exact_mod_cast hb)
   obtain ⟨G, hG_cont, hG_diff, hG_eq⟩ :=
     exists_continuousOn_integral_floor_div_mul_cexp_neg_mul hc_bound hlogb hP_cont hP_sum
@@ -153,8 +132,7 @@ theorem exists_continuousOn_LSeries_natLog {b : ℕ} (hb : 1 < b) {c : ℕ → �
   · intro s hs
     have hzs := hz s hs
     have hsumm : LSeriesSummable a s :=
-      LSeriesSummable_of_bounded_of_one_lt_re
-        (fun n hn ↦ ha_bound n (Nat.one_le_iff_ne_zero.mpr hn)) hs
+      LSeriesSummable_of_bounded_of_one_lt_re (fun n _ ↦ hc_bound (Nat.log b n)) hs
     have hFeq : LSeries a s = F s := by
       have hlap := LSeries_natLog_add_stepCorrection_eq_integral b hc_bound hzs
       rw [sub_add_cancel, ← hG_eq (s - 1) hzs] at hlap
@@ -168,10 +146,9 @@ are also unbounded above. -/
 theorem unbounded_sum_Icc_natLog_div {b : ℕ} (hb : 1 < b) {c : ℕ → ℝ} {M : ℝ}
     (hc_bound : ∀ n, |c n| ≤ M) (hc_unb : ∀ B : ℝ, ∃ K : ℕ, B ≤ ∑ k ∈ Finset.range K, c k) :
     ∀ B : ℝ, ∃ N : ℕ, B ≤ ∑ n ∈ Finset.Icc 1 N, c (Nat.log b n) / (n : ℝ) := by
-  set aC : ℕ → ℂ := fun n ↦ if n = 0 then 0 else (c (Nat.log b n) : ℂ)
-  have hcC_bound : ∀ n, ‖(c n : ℂ)‖ ≤ M := fun n ↦ by
-    simpa [Complex.norm_real, Real.norm_eq_abs] using hc_bound n
-  have haC_bound : ∀ n, 1 ≤ n → ‖aC n‖ ≤ M := norm_ite_natLog_le b hcC_bound
+  set aC : ℕ → ℂ := fun n ↦ (c (Nat.log b n) : ℂ)
+  have haC_bound : ∀ n, 1 ≤ n → ‖aC n‖ ≤ M := fun n _ ↦ by
+    simpa [aC, Complex.norm_real, Real.norm_eq_abs] using hc_bound (Nat.log b n)
   have hlogb : 0 < Real.log b := Real.log_pos (by exact_mod_cast hb)
   have hcorr_lim : Tendsto (fun m : ℕ ↦ (∑ n ∈ Finset.range m, stepCorrectionTerm aC n 0).re)
       atTop (𝓝 (stepCorrection aC 0).re) :=

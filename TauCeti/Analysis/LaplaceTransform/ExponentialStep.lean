@@ -7,8 +7,8 @@ module
 
 public import Mathlib.Analysis.SpecialFunctions.Pow.Complex
 public import Mathlib.MeasureTheory.Integral.IntervalIntegral.Basic
-import TauCeti.Analysis.LaplaceTransform.Truncated
 import TauCeti.Analysis.SpecialFunctions.Log.NatCastAdd
+import TauCeti.MeasureTheory.Integral.Exp.Complex
 
 /-!
 # Laplace integrals of exponential step functions

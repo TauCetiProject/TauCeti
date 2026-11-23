@@ -59,77 +59,89 @@ private theorem fejerStart_strictMono : StrictMono fejerStart :=
     simp only [fejerStart]
     omega
 
+/-- Block index `k` of `n` in Fejér's superposed series: the unique `k` with
+`fejerStart k ≤ n < fejerStart (k + 1)`. -/
+private def fejerBlock (n : ℕ) : ℕ :=
+  Nat.findGreatest (fun k ↦ fejerStart k ≤ n) n
+
+private theorem fejerBlock_eq_of_mem_Ico {k n : ℕ}
+    (h1 : fejerStart k ≤ n) (h2 : n < fejerStart (k + 1)) :
+    fejerBlock n = k := by
+  rw [fejerBlock, Nat.findGreatest_eq_iff]
+  refine ⟨(fejerStart_strictMono.id_le k).trans h1, fun _ ↦ h1, fun j hkj _ hj ↦ ?_⟩
+  have : fejerStart (k + 1) ≤ fejerStart j :=
+    fejerStart_strictMono.monotone (Nat.succ_le_of_lt hkj)
+  omega
+
+private theorem tendsto_fejerBlock_atTop : Tendsto fejerBlock atTop atTop :=
+  tendsto_atTop.mpr fun K ↦ eventually_atTop.mpr
+    ⟨fejerStart K, fun _ hn ↦ Nat.le_findGreatest ((fejerStart_strictMono.id_le K).trans hn) hn⟩
+
 /-- The `n`-th Taylor coefficient of Fejér's superposed series: on the unique block
 `[fejerStart k, fejerStart (k + 1))` containing `n`, it equals
 `(2⁻¹) ^ k * fejerPolyCoeff (fejerDeg k) (n - fejerStart k)`. -/
 private noncomputable def fejerSeriesCoeff (n : ℕ) : ℝ :=
-  let k := Nat.findGreatest (fun k ↦ fejerStart k ≤ n) n
-  (2 : ℝ)⁻¹ ^ k * fejerPolyCoeff (fejerDeg k) (n - fejerStart k)
+  (2 : ℝ)⁻¹ ^ fejerBlock n *
+    fejerPolyCoeff (fejerDeg (fejerBlock n)) (n - fejerStart (fejerBlock n))
 
 private theorem fejerSeriesCoeff_eq_of_mem_Ico {k n : ℕ}
     (h1 : fejerStart k ≤ n) (h2 : n < fejerStart (k + 1)) :
     fejerSeriesCoeff n = (2 : ℝ)⁻¹ ^ k * fejerPolyCoeff (fejerDeg k) (n - fejerStart k) := by
-  have hfind : Nat.findGreatest (fun j ↦ fejerStart j ≤ n) n = k := by
-    rw [Nat.findGreatest_eq_iff]
-    refine ⟨(fejerStart_strictMono.id_le k).trans h1, fun _ ↦ h1, fun j hkj _ hj ↦ ?_⟩
-    have : fejerStart (k + 1) ≤ fejerStart j :=
-      fejerStart_strictMono.monotone (Nat.succ_le_of_lt hkj)
-    omega
-  simp only [fejerSeriesCoeff, hfind]
+  simp only [fejerSeriesCoeff, fejerBlock_eq_of_mem_Ico h1 h2]
 
 private theorem abs_fejerSeriesCoeff_le_one (n : ℕ) : |fejerSeriesCoeff n| ≤ 1 := by
-  obtain ⟨k, -, h1, h2⟩ :=
-    fejerStart_strictMono.tendsto_atTop.exists_le_lt_succ (a := 0) (Nat.zero_le n)
-  rw [fejerSeriesCoeff_eq_of_mem_Ico h1 h2, abs_mul, abs_of_nonneg (by positivity)]
-  have hpow : (2 : ℝ)⁻¹ ^ k ≤ 1 := pow_le_one₀ (by positivity) (by norm_num)
+  rw [fejerSeriesCoeff, abs_mul, abs_of_nonneg (by positivity)]
+  have hpow : (2 : ℝ)⁻¹ ^ fejerBlock n ≤ 1 := pow_le_one₀ (by positivity) (by norm_num)
   exact (mul_le_mul hpow (abs_fejerPolyCoeff_le_one _ _) (abs_nonneg _) zero_le_one).trans_eq
     (one_mul 1)
 
 private theorem tendsto_fejerSeriesCoeff_zero :
     Tendsto fejerSeriesCoeff atTop (𝓝 0) := by
-  rw [Metric.tendsto_atTop]
-  intro ε hε
-  obtain ⟨K, hK⟩ := exists_pow_lt_of_lt_one hε (by norm_num : (2 : ℝ)⁻¹ < 1)
-  refine ⟨fejerStart K, fun n hn ↦ ?_⟩
-  obtain ⟨k, -, h1, h2⟩ :=
-    fejerStart_strictMono.tendsto_atTop.exists_le_lt_succ (a := 0) (Nat.zero_le n)
-  have hKk : K ≤ k := by
-    by_contra hlt
-    have hle : fejerStart (k + 1) ≤ fejerStart K :=
-      fejerStart_strictMono.monotone (Nat.succ_le_of_lt (not_le.mp hlt))
-    omega
-  rw [Real.dist_eq, sub_zero, fejerSeriesCoeff_eq_of_mem_Ico h1 h2, abs_mul,
-    abs_of_nonneg (by positivity)]
-  calc (2 : ℝ)⁻¹ ^ k * |fejerPolyCoeff (fejerDeg k) (n - fejerStart k)|
-      ≤ (2 : ℝ)⁻¹ ^ k * 1 := by gcongr; exact abs_fejerPolyCoeff_le_one _ _
-    _ = (2 : ℝ)⁻¹ ^ k := mul_one _
-    _ ≤ (2 : ℝ)⁻¹ ^ K := pow_le_pow_of_le_one (by positivity) (by norm_num) hKk
-    _ < ε := hK
+  refine squeeze_zero_norm (fun n ↦ ?_)
+    ((tendsto_pow_atTop_nhds_zero_of_lt_one (by positivity) (by norm_num : (2 : ℝ)⁻¹ < 1)).comp
+      tendsto_fejerBlock_atTop)
+  rw [Real.norm_eq_abs, fejerSeriesCoeff, abs_mul, abs_of_nonneg (by positivity)]
+  exact (mul_le_mul_of_nonneg_left (abs_fejerPolyCoeff_le_one _ _) (by positivity)).trans_eq
+    (mul_one _)
 
-private theorem sum_Ico_fejerSeriesCoeff_mul_pow (k : ℕ) (w : ℂ) :
-    ∑ n ∈ Ico (fejerStart k) (fejerStart (k + 1)), (fejerSeriesCoeff n : ℂ) * w ^ n =
-      ((2 : ℝ)⁻¹ ^ k : ℂ) * w ^ fejerStart k * fejerPoly (fejerDeg k) w := by
-  have hlen : fejerStart (k + 1) - fejerStart k = 2 * fejerDeg k + 1 := by
-    simp [fejerStart]
-  rw [sum_Ico_eq_sum_range, hlen, fejerPoly_eq_sum_range, mul_sum]
+private theorem sum_Ico_fejerStart_add_mul {α : Type*} [CommSemiring α] [Algebra ℝ α]
+    (k L : ℕ) (hL : L ≤ 2 * fejerDeg k + 1) (g : ℕ → α) :
+    ∑ n ∈ Ico (fejerStart k) (fejerStart k + L), algebraMap ℝ α (fejerSeriesCoeff n) * g n =
+      algebraMap ℝ α ((2 : ℝ)⁻¹ ^ k) *
+        ∑ r ∈ range L, algebraMap ℝ α (fejerPolyCoeff (fejerDeg k) r) * g (fejerStart k + r) := by
+  rw [sum_Ico_eq_sum_range, Nat.add_sub_cancel_left, mul_sum]
   refine sum_congr rfl fun r hr ↦ ?_
-  have hr' : r < 2 * fejerDeg k + 1 := mem_range.mp hr
+  have hr' : r < L := mem_range.mp hr
   have h1 : fejerStart k ≤ fejerStart k + r := Nat.le_add_right _ _
   have h2 : fejerStart k + r < fejerStart (k + 1) := by
     simp only [fejerStart]
     omega
-  rw [fejerSeriesCoeff_eq_of_mem_Ico h1 h2, Nat.add_sub_cancel_left, ofReal_mul, ofReal_pow,
-    ofReal_inv, ofReal_ofNat, pow_add]
+  rw [fejerSeriesCoeff_eq_of_mem_Ico h1 h2, Nat.add_sub_cancel_left, map_mul, mul_assoc]
+
+private theorem sum_Ico_fejerSeriesCoeff_mul_pow (k : ℕ) (w : ℂ) :
+    ∑ n ∈ Ico (fejerStart k) (fejerStart (k + 1)), (fejerSeriesCoeff n : ℂ) * w ^ n =
+      ((2 : ℝ)⁻¹ ^ k : ℂ) * w ^ fejerStart k * fejerPoly (fejerDeg k) w := by
+  have h := sum_Ico_fejerStart_add_mul (α := ℂ) k (2 * fejerDeg k + 1) le_rfl (fun n ↦ w ^ n)
+  simp only [Complex.coe_algebraMap, ofReal_pow] at h
+  rw [fejerStart, h, fejerPoly_eq_sum_range, mul_assoc]
+  congr 1
+  rw [mul_sum]
+  refine sum_congr rfl fun r _ ↦ ?_
+  rw [pow_add]
   ring
 
 private theorem sum_range_fejerStart_mul_pow (K : ℕ) (w : ℂ) :
     ∑ n ∈ range (fejerStart K), (fejerSeriesCoeff n : ℂ) * w ^ n =
       ∑ k ∈ range K, ((2 : ℝ)⁻¹ ^ k : ℂ) * w ^ fejerStart k * fejerPoly (fejerDeg k) w := by
-  induction K with
-  | zero => simp [fejerStart]
-  | succ K ih =>
-    rw [← sum_range_add_sum_Ico _ (fejerStart_strictMono (Nat.lt_succ_self K)).le, ih,
-      sum_Ico_fejerSeriesCoeff_mul_pow, sum_range_succ]
+  set F : ℕ → ℂ := fun k ↦ ∑ n ∈ range (fejerStart k), (fejerSeriesCoeff n : ℂ) * w ^ n
+  have hblock (k : ℕ) :
+      ((2 : ℝ)⁻¹ ^ k : ℂ) * w ^ fejerStart k * fejerPoly (fejerDeg k) w = F (k + 1) - F k := by
+    have hsum := sum_range_add_sum_Ico (fun n ↦ (fejerSeriesCoeff n : ℂ) * w ^ n)
+      (fejerStart_strictMono (Nat.lt_succ_self k)).le
+    rw [sum_Ico_fejerSeriesCoeff_mul_pow] at hsum
+    exact eq_sub_of_add_eq' hsum
+  simp_rw [hblock, sum_range_sub]
+  simp [F, fejerStart]
 
 private theorem sum_range_fejerStart_add_fejerDeg (K : ℕ) :
     ((K + 1 : ℝ) * Real.log 2) ≤ ∑ n ∈ range (fejerStart K + fejerDeg K), fejerSeriesCoeff n := by
@@ -146,13 +158,8 @@ private theorem sum_range_fejerStart_add_fejerDeg (K : ℕ) :
     (sum_range_add_sum_Ico _ (Nat.le_add_right _ _)).symm
   have hhalf : ∑ n ∈ Ico (fejerStart K) (fejerStart K + fejerDeg K), fejerSeriesCoeff n =
       (2 : ℝ)⁻¹ ^ K * (harmonic (fejerDeg K) : ℝ) := by
-    rw [sum_Ico_eq_sum_range, Nat.add_sub_cancel_left, ← sum_range_fejerPolyCoeff, mul_sum]
-    refine sum_congr rfl fun r hr ↦ ?_
-    have hr' : r < fejerDeg K := mem_range.mp hr
-    have h2 : fejerStart K + r < fejerStart (K + 1) := by
-      simp only [fejerStart]
-      omega
-    rw [fejerSeriesCoeff_eq_of_mem_Ico (Nat.le_add_right _ _) h2, Nat.add_sub_cancel_left]
+    simpa [sum_range_fejerPolyCoeff] using
+      sum_Ico_fejerStart_add_mul (α := ℝ) K (fejerDeg K) (by omega) (fun _ ↦ (1 : ℝ))
   rw [hsplit, hprev, zero_add, hhalf]
   have hlog : ((K + 1 : ℝ) * (2 : ℝ) ^ K) * Real.log 2 ≤ Real.log ((fejerDeg K + 1 : ℕ) : ℝ) := by
     have hdeg_pos : (0 : ℝ) < (fejerDeg K : ℝ) := by

@@ -116,20 +116,29 @@ theorem fejerPolyCoeff_of_lt {m n : ℕ} (h : n < m) :
   rw [fejerPolyCoeff_eq_sub_sum,
     sum_Icc_ite_inv_eq m (m - n) (mem_Icc.mpr ⟨by omega, by omega⟩)
       (fun j hj ↦ by have := mem_Icc.mp hj; omega),
-    sum_eq_zero fun j hj ↦ by have := mem_Icc.mp hj; simp [show m + j ≠ n by omega],
+    sum_eq_zero fun j hj ↦ by
+      have hmem := mem_Icc.mp hj
+      have hne : m + j ≠ n := by omega
+      simp [hne],
     sub_zero]
 
 @[simp]
 theorem fejerPolyCoeff_self (m : ℕ) : fejerPolyCoeff m m = 0 := by
   rw [fejerPolyCoeff_eq_sub_sum,
-    sum_eq_zero fun j hj ↦ by have := mem_Icc.mp hj; simp [show m - j ≠ m by omega],
+    sum_eq_zero fun j hj ↦ by
+      have hmem := mem_Icc.mp hj
+      have hne : m - j ≠ m := by omega
+      simp [hne],
     sum_eq_zero fun j hj ↦ by simp [Nat.ne_of_gt (mem_Icc.mp hj).1],
     sub_zero]
 
 theorem fejerPolyCoeff_of_gt_of_le {m n : ℕ} (h₁ : m < n) (h₂ : n ≤ 2 * m) :
     fejerPolyCoeff m n = -((n - m : ℕ) : ℝ)⁻¹ := by
   rw [fejerPolyCoeff_eq_sub_sum,
-    sum_eq_zero fun j hj ↦ by have := mem_Icc.mp hj; simp [show m - j ≠ n by omega],
+    sum_eq_zero fun j hj ↦ by
+      have hmem := mem_Icc.mp hj
+      have hne : m - j ≠ n := by omega
+      simp [hne],
     sum_Icc_ite_inv_eq m (n - m) (mem_Icc.mpr ⟨by omega, by omega⟩)
       (fun j hj ↦ by have := mem_Icc.mp hj; omega),
     zero_sub]
