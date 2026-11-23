@@ -113,6 +113,13 @@ to the canonical fraction fields used by Mathlib's different API.
   separable.
 * `TauCeti.Place.linearIndependent_algebraMap_residueField_of_isPurelyInseparable`: for purely
   inseparable `k' / k`, a residue field separable over `k` stays linearly disjoint from `k'`.
+* `TauCeti.Place.linearIndependent_algebraMap_constants_of_isPurelyInseparable`: the same linear
+  disjointness, read the other way: constants independent over `k` stay independent over `F_P`.
+* `TauCeti.Place.residueFieldMulMap`: the multiplication map `F_P ⊗[k] k' → F'_{P'}`, surjective
+  exactly when the constants span `F'_{P'}` over `F_P`
+  (`TauCeti.Place.residueFieldMulMap_surjective_iff`) and injective for purely inseparable `k' / k`
+  at a place with residue field separable over `k`
+  (`TauCeti.Place.residueFieldMulMap_injective_of_isPurelyInseparable`).
 * `TauCeti.Place.degree_restrict_le_degree_of_isPurelyInseparable`: for purely inseparable
   `k' / k`, a place with residue field separable over `k` has degree at most that of any place
   above it.
@@ -143,7 +150,7 @@ public section
 open IsDedekindDomain
 
 open scoped WithZero
-open scoped nonZeroDivisors
+open scoped nonZeroDivisors TensorProduct
 
 attribute [local instance] FractionRing.liftAlgebra FractionRing.isScalarTower_liftAlgebra
 
@@ -760,6 +767,90 @@ theorem linearIndependent_algebraMap_residueField_of_isPurelyInseparable
   exact LinearIndependent.map_of_isPurelyInseparable_of_isSeparable k'
     (fun i ↦ (Algebra.IsSeparable.isSeparable k (b i)).map φ φ.injective)
     (hb.map' φ.toLinearMap (LinearMap.ker_eq_bot.mpr φ.injective))
+
+/-- **Purely inseparable constants stay linearly disjoint from a separable residue field**: if
+`k' / k` is purely inseparable and the residue field `F_P` of the place `P` below `P'` is separable
+over `k`, then constants linearly independent over `k` have residues linearly independent over
+`F_P`. This is the other side of
+`TauCeti.Place.linearIndependent_algebraMap_residueField_of_isPurelyInseparable`: the image of
+`F_P` in `F'_{P'}` and the constants are linearly disjoint over `k`. -/
+theorem linearIndependent_algebraMap_constants_of_isPurelyInseparable
+    [IsPurelyInseparable k k'] [Algebra.IsSeparable k (P'.restrict k F).ResidueField] {ι : Type*}
+    {b : ι → k'} (hb : LinearIndependent k b) :
+    LinearIndependent (P'.restrict k F).ResidueField (algebraMap k' P'.ResidueField ∘ b) := by
+  let _ := integersAlgebraBase k P'
+  have := isScalarTower_integersAlgebraBase k P'
+  have := isScalarTower_integers_restrict k F P'
+  let φ := IsScalarTower.toAlgHom k (P'.restrict k F).ResidueField P'.ResidueField
+  -- The image `A` of `F_P` is separable over `k`, hence linearly disjoint from `k'`.
+  let e : (P'.restrict k F).ResidueField ≃ₐ[k] φ.fieldRange := AlgEquiv.ofInjectiveField φ
+  have : Algebra.IsSeparable k φ.fieldRange := Algebra.IsSeparable.of_algHom k _ e.symm.toAlgHom
+  have hA := IntermediateField.LinearDisjoint.linearIndependent_right'
+    (φ.fieldRange.linearDisjoint_of_isPurelyInseparable_of_isSeparable k') hb
+  -- Transport the scalars from `A` back to `F_P` along `e`.
+  refine hA.map_of_injective_injective e (AddMonoidHom.id _) (fun r h ↦ by simpa using h)
+    (fun _ h ↦ h) fun r m ↦ ?_
+  simp only [AddMonoidHom.id_apply, Algebra.smul_def]
+  rfl
+
+/-- The **multiplication map of the residue fields**: the `F_P`-algebra map
+`F_P ⊗[k] k' → F'_{P'}`, `a ⊗ c ↦ a · c`, from the fibre of `k' / k` over the residue field `F_P`
+of the place below `P'`. It is surjective exactly when the residues of the constants span
+`F'_{P'}` over `F_P` (`TauCeti.Place.residueFieldMulMap_surjective_iff`), and then `F'_{P'}` is
+the quotient of the fibre by its kernel. -/
+noncomputable def residueFieldMulMap :
+    (P'.restrict k F).ResidueField ⊗[k] k' →ₐ[(P'.restrict k F).ResidueField] P'.ResidueField :=
+  letI := integersAlgebraBase k P'
+  haveI := isScalarTower_integersAlgebraBase k P'
+  haveI := isScalarTower_integers_restrict k F P'
+  AlgHom.liftEquiv k (P'.restrict k F).ResidueField k' P'.ResidueField
+    (IsScalarTower.toAlgHom k k' P'.ResidueField)
+
+/-- The multiplication map sends `a ⊗ c` to the product of `a` and the residue of `c`. -/
+@[simp]
+theorem residueFieldMulMap_tmul (a : (P'.restrict k F).ResidueField) (c : k') :
+    residueFieldMulMap k F P' (a ⊗ₜ c) =
+      algebraMap (P'.restrict k F).ResidueField P'.ResidueField a *
+        algebraMap k' P'.ResidueField c := by
+  let _ := integersAlgebraBase k P'
+  have := isScalarTower_integersAlgebraBase k P'
+  have := isScalarTower_integers_restrict k F P'
+  exact Algebra.smul_def a _
+
+/-- The multiplication map `F_P ⊗[k] k' → F'_{P'}` is surjective exactly when the residues of the
+constants span `F'_{P'}` over `F_P`. -/
+theorem residueFieldMulMap_surjective_iff :
+    Function.Surjective (residueFieldMulMap k F P') ↔
+      Submodule.span (P'.restrict k F).ResidueField (Set.range (algebraMap k' P'.ResidueField)) =
+        ⊤ := by
+  change Function.Surjective (residueFieldMulMap k F P').toLinearMap ↔ _
+  rw [← LinearMap.range_eq_top]
+  refine ⟨fun h ↦ eq_top_iff.2 (h.symm.le.trans ?_), fun h ↦ eq_top_iff.2 (h.symm.le.trans ?_)⟩
+  · rintro _ ⟨x, rfl⟩
+    induction x using TensorProduct.inductionOn with
+    | tmul a c =>
+      rw [AlgHom.toLinearMap_apply, residueFieldMulMap_tmul, ← Algebra.smul_def]
+      exact Submodule.smul_mem _ _ (Submodule.subset_span (Set.mem_range_self c))
+    | add x y hx hy => simpa using add_mem hx hy
+  · refine Submodule.span_le.2 ?_
+    rintro _ ⟨c, rfl⟩
+    exact ⟨1 ⊗ₜ c, by simp⟩
+
+/-- **The fibre of purely inseparable constants embeds in the residue field**: if `k' / k` is
+purely inseparable and the residue field `F_P` of the place below `P'` is separable over `k`, the
+multiplication map `F_P ⊗[k] k' → F'_{P'}` is injective. A `k`-basis of `k'` gives an `F_P`-basis
+of the fibre whose image stays linearly independent
+(`TauCeti.Place.linearIndependent_algebraMap_constants_of_isPurelyInseparable`). -/
+theorem residueFieldMulMap_injective_of_isPurelyInseparable [IsPurelyInseparable k k']
+    [Algebra.IsSeparable k (P'.restrict k F).ResidueField] :
+    Function.Injective (residueFieldMulMap k F P') := by
+  let b := Module.Free.chooseBasis k k'
+  let B := Algebra.TensorProduct.basis (P'.restrict k F).ResidueField b
+  have := B.injective_constr_of_linearIndependent (R₂ := (P'.restrict k F).ResidueField)
+    (v := fun i ↦ (residueFieldMulMap k F P').toLinearMap (B i)) <| by
+      simpa [B, Function.comp_def] using
+        linearIndependent_algebraMap_constants_of_isPurelyInseparable k F P' b.linearIndependent
+  rwa [B.constr_self] at this
 
 /-- **Purely inseparable constants keep separable residue degrees**: if `k' / k` is purely
 inseparable and the residue field `F_P` of the place `P` below `P'` is separable over `k`, then
