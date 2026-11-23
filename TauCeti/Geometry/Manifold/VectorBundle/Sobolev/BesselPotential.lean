@@ -307,22 +307,6 @@ localizations of `T` and `s` in the `i`-th chart is `T (χᵢ² s)`. -/
 theorem reconstruction_localization (T : BundleTest I F V →L_c[ℝ] ℝ) :
     A.reconstruction (fun k ↦ A.localization k.1 k.2 T) = T := by
   ext s
-  have hj (i : ι) : ∑ j, TestFunction.postcompCLM
-      (ContinuousLinearMap.toSpanSingleton ℝ (Module.finBasis ℝ F j))
-      (TestFunction.postcompCLM (LinearMap.toContinuousLinearMap ((Module.finBasis ℝ F).coord j))
-        (TestFunction.ofSupportedIn
-          (Ω := ⟨(A.chartData i).chart.target, (A.chartData i).chart.open_target⟩)
-          (A.chartSupport_subset_target i)
-          (A.localizationCLM i _ (A.tsupport_cutoff_mul_subset i) s))) =
-      TestFunction.ofSupportedIn
-        (Ω := ⟨(A.chartData i).chart.target, (A.chartData i).chart.open_target⟩)
-        (A.chartSupport_subset_target i)
-        (A.localizationCLM i _ (A.tsupport_cutoff_mul_subset i) s) := by
-    ext y
-    simp only [_root_.sum_apply, TestFunction.postcompCLM_apply,
-      Function.comp_apply, ContinuousLinearMap.toSpanSingleton_apply,
-      LinearMap.coe_toContinuousLinearMap', Module.Basis.coord_apply]
-    exact (Module.finBasis ℝ F).sum_repr _
   have hi : ∑ i, (A.chartData i).trivialization.chartTestCLM (A.chartData i).chart
       (A.chartData i).contMDiffOn_chart (A.chartData i).source_subset
       (TestFunction.ofSupportedIn (A.chartSupport_subset_target i)
@@ -332,7 +316,8 @@ theorem reconstruction_localization (T : BundleTest I F V →L_c[ℝ] ℝ) :
       simpa only [sq, ContMDiffMap.coe_mul, Pi.mul_apply] using A.sum_sq_cutoff x
     simp only [BundleTest.sum_apply, chartTestCLM_localizationCLM, ← Finset.sum_smul, h, one_smul]
   rw [reconstruction_apply, Fintype.sum_prod_type]
-  simp only [localization_apply_testLocalization, ofReal_re, ← map_sum, hj, hi]
+  simp only [localization_apply_testLocalization, ofReal_re, ← map_sum,
+    TestFunction.sum_postcompCLM_toSpanSingleton_coord, hi]
 
 /-- **Functionals on bundle tests are determined by their localizations.** -/
 theorem ext_localization {T T' : BundleTest I F V →L_c[ℝ] ℝ}
@@ -416,6 +401,7 @@ def memSobolevSubmodule : Submodule ℝ (BundleTest I F V →L_c[ℝ] ℝ) where
     rw [map_smul]
     exact TemperedDistribution.MemSobolev.smul_of_tower a (hT i j)
 
+@[simp]
 theorem mem_memSobolevSubmodule {T : BundleTest I F V →L_c[ℝ] ℝ} :
     T ∈ A.memSobolevSubmodule s ↔ A.MemSobolev s T :=
   Iff.rfl
@@ -438,6 +424,8 @@ def sobolevSpace :
     simp only [PiLp.zero_apply, BesselPotentialSpace.toDistr_zero]
     rw [← Pi.zero_def, map_zero, map_zero]
   smul_mem' a u hu k := by
+    -- The real action on `H^s(E, ℂ)` here is the restriction of the complex one
+    -- (`NormedSpace.complexToReal`), so `BesselPotentialSpace.toDistr_smul` applies at `(a : ℂ)`.
     simp only [PiLp.smul_apply, ← Complex.coe_smul, BesselPotentialSpace.toDistr_smul]
     simp only [Complex.coe_smul]
     rw [← Pi.smul_def, map_smul, map_smul, hu k]
@@ -446,6 +434,18 @@ theorem mem_sobolevSpace {u : PiLp 2 fun _ : ι × Fin (Module.finrank ℝ F) �
     u ∈ A.sobolevSpace s ↔
       ∀ k, A.localization k.1 k.2 (A.reconstruction fun l ↦ (u l).toDistr) = (u k).toDistr :=
   Iff.rfl
+
+/-- The Sobolev space is the image of the localization map: `u` lies in it exactly when its
+components are the localizations of some functional on bundle tests. -/
+theorem mem_sobolevSpace_iff_exists_localization
+    {u : PiLp 2 fun _ : ι × Fin (Module.finrank ℝ F) ↦ H^{s}(E, ℂ)} :
+    u ∈ A.sobolevSpace s ↔
+      ∃ T : BundleTest I F V →L_c[ℝ] ℝ, ∀ k, A.localization k.1 k.2 T = (u k).toDistr := by
+  refine ⟨fun hu ↦ ⟨_, hu⟩, ?_⟩
+  rintro ⟨T, hT⟩ k
+  have h : (fun l : ι × Fin (Module.finrank ℝ F) ↦ (u l).toDistr) =
+      fun l ↦ A.localization l.1 l.2 T := funext fun l ↦ (hT l).symm
+  rw [h, reconstruction_localization, hT k]
 
 /-- The `H^s` spaces of `A` are closed in the Hilbert sum `⨁ᵢⱼ H^s(E, ℂ)`. -/
 theorem isClosed_sobolevSpace :
@@ -495,6 +495,7 @@ def toDistribution : A.sobolevSpace s →ₗ[ℝ] (BundleTest I F V →L_c[ℝ] 
     simp only [Submodule.coe_add, PiLp.add_apply, BesselPotentialSpace.toDistr_add]
     rw [← Pi.add_def, map_add]
   map_smul' a u := by
+    -- As in `sobolevSpace`, `BesselPotentialSpace.toDistr_smul` applies at `(a : ℂ)`.
     simp only [Submodule.coe_smul, PiLp.smul_apply, ← Complex.coe_smul,
       BesselPotentialSpace.toDistr_smul, RingHom.id_apply]
     simp only [Complex.coe_smul]
