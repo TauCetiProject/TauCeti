@@ -11,6 +11,7 @@ public import TauCeti.Topology.Homotopy.HomotopyGroup.BasepointChange
 public import TauCeti.Topology.Homotopy.HomotopyGroup.LoopSpace
 import TauCeti.AlgebraicTopology.FundamentalGroup.Basic
 import TauCeti.AlgebraicTopology.FundamentalGroup.BasepointChange
+import TauCeti.Topology.Homotopy.Path
 import TauCeti.Topology.PathSpace.Prepend
 
 /-!
@@ -480,15 +481,13 @@ variable {γ₀ γ₁ : Ω X x} (F : HomotopyWith (γ₀ : C(I, X)) γ₁ fun g 
 
 /-- The homotopy of loops at `x` given by a free homotopy of loops whose base point stays at
 `x`: the path `s ↦ F (s, ·)` in `Ω X x`. -/
-def loopPath (h : ∀ s, F (s, 0) = x) : Path γ₀ γ₁ where
-  toFun s := (F.loopAt s).cast (h s).symm (h s).symm
-  continuous_toFun := Path.continuous_uncurry_iff.1 F.continuous
-  source' := Path.ext (funext fun t => F.apply_zero t)
-  target' := Path.ext (funext fun t => F.apply_one t)
+def loopPath (h : ∀ s, F (s, 0) = x) : Path γ₀ γ₁ :=
+  Path.ofContinuousFamily (fun s t => F (s, t)) F.continuous h
+    (fun s => (F.prop s).symm.trans (h s)) F.apply_zero F.apply_one
 
 @[simp]
 theorem loopPath_apply (h : ∀ s, F (s, 0) = x) (s t : I) : F.loopPath h s t = F (s, t) :=
-  (rfl)
+  Path.ofContinuousFamily_apply _ _ _ _ _ _ s t
 
 /-- If the base point of every loop of `F` is `x`, the base-point path of `F` is constant. -/
 theorem basepointPath_eq_refl (h : ∀ s, F (s, 0) = x) : F.basepointPath = Path.refl x :=

@@ -264,11 +264,11 @@ theorem transportAlong_of_forall_eq {γ₀ γ₁ : Ω X x}
 theorem transportAlong_refl {γ : Ω X x} (D : RawCap γ) :
     transportAlong (HomotopyWith.refl (P := fun g : C(I, X) => g 0 = g 1) (γ : C(I, X))
       (γ.source.trans γ.target.symm)) D = D := by
-  have h : ∀ s, HomotopyWith.refl (P := fun g : C(I, X) => g 0 = g 1) (γ : C(I, X))
-      (γ.source.trans γ.target.symm) (s, 0) = x := fun _ => γ.source
-  have hP : (HomotopyWith.refl (P := fun g : C(I, X) => g 0 = g 1) (γ : C(I, X))
-      (γ.source.trans γ.target.symm)).loopPath h = Path.refl γ :=
-    Path.ext (funext fun _ => Path.ext (funext fun t => by simp))
+  set F := HomotopyWith.refl (P := fun g : C(I, X) => g 0 = g 1) (γ : C(I, X))
+    (γ.source.trans γ.target.symm)
+  have h : ∀ s, F (s, 0) = x := fun _ => γ.source
+  have hP : F.loopPath h = Path.refl γ :=
+    Path.ext (funext fun _ => Path.ext (funext fun t => by simp [F]))
   have hid : FundamentalGroupoid.fromPath (Path.Homotopic.Quotient.mk (Path.refl γ)) =
       𝟙 (⟨γ⟩ : FundamentalGroupoid (Ω X x)) :=
     (FundamentalGroupoid.id_eq_path_refl _).symm
@@ -336,9 +336,7 @@ theorem transport_bijective (p : Path x y) :
   refine ⟨fun q q' h => ?_, fun q' => ?_⟩
   · induction q using induction_on with | h D =>
     induction q' using induction_on with | h D' =>
-    rw [transport_mk, transport_mk, mk_eq_mk_iff, RawCap.transport_vsub_transport,
-      hurewiczIntHom_homotopyGroupTransport, ofMul_toMul] at h
-    exact mk_eq_mk_iff.2 h
+    simpa [mk_eq_mk_iff] using h
   · induction q' using induction_on with | h D' =>
     obtain ⟨D, rfl⟩ := (RawCap.transport_bijective p).2 D'
     exact ⟨mk ω c D, transport_mk p D⟩
