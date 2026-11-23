@@ -7,7 +7,6 @@ module
 
 public import Mathlib.LinearAlgebra.ExteriorAlgebra.Basis
 public import TauCeti.LinearAlgebra.ExteriorAlgebra.GradeInvolution
-import Mathlib.Order.Fin.Tuple
 import TauCeti.Order.Hom.PowersetCard
 
 /-!

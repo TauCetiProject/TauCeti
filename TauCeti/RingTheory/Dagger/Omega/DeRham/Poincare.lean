@@ -20,7 +20,7 @@ Using the coordinate formula `washnitzerBasis_exteriorPower_repr_exteriorDeriv` 
 characterization `exteriorDeriv_one_eq_zero_iff`, we deduce degree-one exactness and unique
 potentials with prescribed constant coefficient, and establish positive-degree exactness by
 induction over `σ` via `washnitzerAlgebra.primitive`. Positive-characteristic counterexamples
-live in `TauCeti.RingTheory.Dagger.Omega.Basic` and `TauCeti.RingTheory.Dagger.Omega.DeRham.CharP`.
+live in `TauCeti.RingTheory.Dagger.Omega.DeRham.CharP`.
 
 ## References
 

@@ -9,7 +9,6 @@ public import Mathlib.RingTheory.Derivation.Basic
 public import TauCeti.LinearAlgebra.ExteriorPower.MapSemilinear
 public import TauCeti.LinearAlgebra.ExteriorPower.Noetherian
 import TauCeti.LinearAlgebra.ExteriorAlgebra.Derivation
-import TauCeti.LinearAlgebra.ExteriorAlgebra.GradeInvolution
 
 /-!
 # Exterior derivative associated to a generating derivation with a twisted lift
