@@ -77,9 +77,15 @@ instance epi_augmentation : Epi r.augmentation :=
   (GradedModuleCat.epi_iff_surjective _).2 r.surjective_π
 
 /-- The chain complex of graded modules formed by the terms and differentials of a concrete
-graded resolution. -/
+graded resolution. It is reducible so that the augmentation `r.augmentation : r.termObj 0 ⟶ M`
+and its `Epi` instance apply directly to the degree-zero term of the complex. -/
 noncomputable abbrev complex : ChainComplex (GradedModuleCat.{v} 𝒜) ℕ :=
   ChainComplex.of r.termObj r.differential r.differential_comp_differential
+
+/-- The terms of the chain complex of a concrete graded resolution are its terms. -/
+@[simp]
+theorem complex_X (n : ℕ) : r.complex.X n = r.termObj n :=
+  rfl
 
 /-- The differentials of the chain complex of a concrete graded resolution are its
 differentials. -/
