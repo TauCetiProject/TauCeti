@@ -63,10 +63,13 @@ arbitrary locally compact Hausdorff group `G`:
   `MeasureTheory.Lp.ae_integrable_smul_comp_inv_mul`: on any locally compact Hausdorff group with a
   regular Haar measure `μ` and `1 ≤ p ≤ ∞`, `y ↦ h y • f (y⁻¹ * x)` is `μ`-integrable for
   `μ`-almost every `x : G`.
-* `MeasureTheory.Lp.convolutionL_ae_eq`, `MeasureTheory.Integrable.convolutionL_toLp_ae_eq`, and
+* `MeasureTheory.Lp.convolutionL_ae_eq`, `MeasureTheory.Lp.convolutionL_ae_eq_modularCharacter`,
+  `TauCeti.integral_smul_inv_mul_eq_integral_modularCharacter_smul`,
+  `MeasureTheory.Integrable.convolutionL_toLp_ae_eq`, and
   `MeasureTheory.Integrable.convolutionL_toL1_ae_eq`:
-  `convolutionL μ p hp h f =ᵐ[μ] fun x => ∫ y, h y • f (y⁻¹ * x) ∂μ` for a regular Haar measure `μ`
-  on any locally compact Hausdorff group (`1 ≤ p < ∞`).
+  `convolutionL μ p hp h f =ᵐ[μ] fun x => ∫ y, h y • f (y⁻¹ * x) ∂μ` and its right-variable
+  modular counterpart `x ↦ ∫ z, (Measure.modularCharacter z : ℝ) • (h (x * z⁻¹) • f z) ∂μ` for a
+  regular Haar measure `μ` on any locally compact Hausdorff group (`1 ≤ p < ∞`).
 * `MeasureTheory.Integrable.continuous_integral_smul_comp_inv_mul`,
   `MeasureTheory.Integrable.memLp_integral_smul_comp_inv_mul`,
   `MeasureTheory.Integrable.integral_smul_comp_inv_mul`, and
@@ -123,8 +126,33 @@ public section
 
 noncomputable section
 
-open Filter Function Set
+open Filter Function MeasureTheory Set
 open scoped ENNReal
+
+namespace TauCeti
+
+section ModularPointwise
+
+variable {G E : Type*} [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
+  [LocallyCompactSpace G] [MeasurableSpace G] [BorelSpace G] {μ : Measure G}
+  [μ.IsHaarMeasure] [μ.Regular] [NormedAddCommGroup E] [NormedSpace ℝ E]
+
+/-- **Right-variable form of a pointwise group convolution integral.** For a regular left Haar
+measure `μ` on a locally compact group `G`, substituting `y = x * z⁻¹` using left invariance and
+the modular inversion formula transforms `∫ y, g y • u (y⁻¹ * x) ∂μ` into
+`∫ z, c(z) • (g (x * z⁻¹) • u z) ∂μ`, where `c` is the modular character. -/
+theorem integral_smul_inv_mul_eq_integral_modularCharacter_smul
+    {α : Type*} [SMul α E] (g : G → α) (u : G → E) (x : G) :
+    ∫ y, g y • u (y⁻¹ * x) ∂μ =
+      ∫ z, (Measure.modularCharacter z : ℝ) • (g (x * z⁻¹) • u z) ∂μ := by
+  rw [← integral_mul_left_eq_self (fun y => g y • u (y⁻¹ * x)) x]
+  simpa only [mul_inv_rev, inv_mul_cancel_right, inv_inv] using
+    integral_inv_eq_integral_modularCharacter_smul_of_regular (μ := μ)
+      fun z => g (x * z⁻¹) • u z
+
+end ModularPointwise
+
+end TauCeti
 
 namespace MeasureTheory
 
@@ -361,6 +389,17 @@ theorem convolutionL_ae_eq {hp : p ≠ ∞} (h : Lp 𝕜 1 μ) (f : Lp E p μ) :
         (convolutionL ν p hp h₀ f₀),
       ae_restrict_mem hH_meas.compl] with x hx₁ hxH
     rw [hx₁, Pi.zero_apply, H.integral_smul_inv_mul_eq_zero_of_notMem hh_off hf_off hxH]
+
+/-- **Right-hand modular pointwise representation of `Lp.convolutionL`.** On a locally compact
+Hausdorff group `G` with a regular Haar measure `μ` (without σ-compactness or second countability),
+for `1 ≤ p < ∞`, `h ∈ L¹(G, μ; 𝕜)`, and `f ∈ Lᵖ(G, μ; E)`, `convolutionL μ p hp h f` agrees
+`μ`-almost everywhere with
+`x ↦ ∫ z, (Measure.modularCharacter z : ℝ) • (h (x * z⁻¹) • f z) ∂μ`. -/
+theorem convolutionL_ae_eq_modularCharacter {hp : p ≠ ∞} (h : Lp 𝕜 1 μ) (f : Lp E p μ) :
+    convolutionL μ p hp h f =ᵐ[μ]
+      fun x => ∫ z, (Measure.modularCharacter z : ℝ) • (h (x * z⁻¹) • f z) ∂μ :=
+  (convolutionL_ae_eq h f).trans <| .of_forall fun x =>
+    TauCeti.integral_smul_inv_mul_eq_integral_modularCharacter_smul (μ := μ) h f x
 
 end PointwiseConvolutionL
 

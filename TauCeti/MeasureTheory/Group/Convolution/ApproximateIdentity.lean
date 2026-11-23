@@ -94,6 +94,13 @@ theorem norm_convolutionL_sub_le_of_integral_eq_one {hp : p ≠ ∞} {k : Lp �
     (integrable_smul_leftTranslation hp (L1.integrable_coeFn k) u).aestronglyMeasurable
     (ae_of_all _ hu)
 
+omit [NormedSpace ℝ E] [CompleteSpace E] [SMulCommClass ℝ 𝕜 E] in
+private theorem tendsto_leftTranslation_nhds_one (𝕜 : Type*) [RCLike 𝕜] [NormedSpace 𝕜 E]
+    {hp : p ≠ ∞} (u : Lp E p μ) :
+    Tendsto (fun y : G => leftTranslation μ p 𝕜 y u) (𝓝 1) (𝓝 u) := by
+  have h := (continuous_leftTranslation_apply (𝕜 := 𝕜) hp u).tendsto 1
+  rwa [map_one, LinearIsometryEquiv.coe_one, id_eq] at h
+
 /-- **Left approximate identity**, quantitatively. Over an `RCLike` scalar field, for
 `u ∈ Lᵖ(G, μ; E)` (`1 ≤ p < ∞`), `C : ℝ`, and `ε > 0`, there is a neighbourhood `U` of `1` such
 that `‖k ⋆ u - u‖_p ≤ ε` for every `k ∈ L¹(G, μ; 𝕜)` with `‖k‖₁ ≤ C` and `∫ k = 1` vanishing
@@ -102,16 +109,12 @@ theorem exists_mem_nhds_one_forall_norm_convolutionL_sub_le_left (hp : p ≠ ∞
     (C : ℝ) {ε : ℝ} (hε : 0 < ε) :
     ∃ U ∈ 𝓝 (1 : G), ∀ k : Lp 𝕜 1 μ, ‖k‖ ≤ C → ∫ y, k y ∂μ = 1 →
       (∀ᵐ y ∂μ, y ∉ U → k y = 0) → ‖convolutionL μ p hp k u - u‖ ≤ ε := by
-  obtain ⟨δ, hδpos, hδC⟩ := exists_pos_mul_lt hε C
-  have hcont : Tendsto (fun y : G => leftTranslation μ p 𝕜 y u) (𝓝 1) (𝓝 u) := by
-    have h := (continuous_leftTranslation_apply (𝕜 := 𝕜) hp u).tendsto 1
-    rwa [map_one, LinearIsometryEquiv.coe_one, id_eq] at h
-  refine ⟨_, Metric.tendsto_nhds.1 hcont δ hδpos, fun k hkC hk₁ hkU => ?_⟩
-  refine (norm_convolutionL_sub_le_of_integral_eq_one hk₁ hkU fun y hy =>
-    le_of_lt (by rw [← dist_eq_norm_sub]; exact hy)).trans ?_
-  calc δ * ‖k‖ ≤ δ * C := mul_le_mul_of_nonneg_left hkC hδpos.le
-    _ = C * δ := mul_comm _ _
-    _ ≤ ε := hδC.le
+  obtain ⟨U, hU, hbound⟩ := exists_mem_nhds_forall_norm_integral_smul_sub_lt (μ := μ) (𝕜 := 𝕜)
+    (tendsto_leftTranslation_nhds_one 𝕜 (hp := hp) u) C hε
+  refine ⟨U, hU, fun k hkC hk₁ hkU => ?_⟩
+  rw [convolutionL_apply]
+  exact (hbound k hkC hk₁ hkU
+    (integrable_smul_leftTranslation hp (L1.integrable_coeFn k) u).aestronglyMeasurable).le
 
 /-- **Left approximate identity** over an `RCLike` scalar field. Convolution on the left with a
 norm-bounded net of `L¹` kernels of integral one concentrating at the identity converges strongly
@@ -121,14 +124,11 @@ theorem tendsto_convolutionL_left_of_norm_le {hp : p ≠ ∞} {ι : Type*} {l : 
     (hkC : ∀ᶠ i in l, ‖k i‖ ≤ C)
     (hkl : ∀ U ∈ 𝓝 (1 : G), ∀ᶠ i in l, ∀ᵐ y ∂μ, y ∉ U → k i y = 0) (u : Lp E p μ) :
     Tendsto (fun i => convolutionL μ p hp (k i) u) l (𝓝 u) := by
-  have hcont : Tendsto (fun y : G => leftTranslation μ p 𝕜 y u) (𝓝 1) (𝓝 u) := by
-    have h := (continuous_leftTranslation_apply (𝕜 := 𝕜) hp u).tendsto 1
-    rwa [map_one, LinearIsometryEquiv.coe_one, id_eq] at h
   simp_rw [convolutionL_apply]
   exact tendsto_integral_smul_of_tendsto hk1 hkC hkl
     (.of_forall fun i =>
       (integrable_smul_leftTranslation hp (L1.integrable_coeFn (k i)) u).aestronglyMeasurable)
-    hcont
+    (tendsto_leftTranslation_nhds_one 𝕜 (hp := hp) u)
 
 end RCLike
 
@@ -170,14 +170,13 @@ theorem exists_mem_nhds_one_forall_norm_convolutionL_sub_le {𝕜 : Type*} [RCLi
     (h : Lp 𝕜 1 μ) (C : ℝ) {ε : ℝ} (hε : 0 < ε) :
     ∃ U ∈ 𝓝 (1 : G), ∀ k : Lp 𝕜 1 μ, ‖k‖ ≤ C → ∫ z, k z ∂μ = 1 →
       (∀ᵐ z ∂μ, z ∉ U → k z = 0) → ‖convolutionL μ 1 ENNReal.one_ne_top h k - h‖ ≤ ε := by
-  obtain ⟨δ, hδpos, hδC⟩ := exists_pos_mul_lt hε C
-  refine ⟨_, Metric.tendsto_nhds.1
-    (tendsto_rightTranslation_inv (𝕜 := 𝕜) ENNReal.one_ne_top h) δ hδpos, fun k hkC hk₁ hkU => ?_⟩
-  refine (norm_convolutionL_sub_le_of_rightTranslation_of_integral_eq_one hk₁ hkU fun z hz =>
-    le_of_lt (by rw [← dist_eq_norm_sub]; exact hz)).trans ?_
-  calc δ * ‖k‖ ≤ δ * C := mul_le_mul_of_nonneg_left hkC hδpos.le
-    _ = C * δ := mul_comm _ _
-    _ ≤ ε := hδC.le
+  obtain ⟨U, hU, hbound⟩ := exists_mem_nhds_forall_norm_integral_smul_sub_lt (μ := μ) (𝕜 := 𝕜)
+    (tendsto_rightTranslation_inv (𝕜 := 𝕜) ENNReal.one_ne_top h) C hε
+  refine ⟨U, hU, fun k hkC hk₁ hkU => ?_⟩
+  rw [convolutionL_eq_integral_smul_rightTranslation_inv]
+  exact (hbound k hkC hk₁ hkU
+    (integrable_smul_rightTranslation_inv ENNReal.one_ne_top
+      (L1.integrable_coeFn k) h).aestronglyMeasurable).le
 
 /-- **Right approximate identity** over an `RCLike` scalar field. Convolution on the right with a
 norm-bounded net of `L¹` kernels of integral one concentrating at the identity converges strongly
@@ -187,16 +186,12 @@ theorem tendsto_convolutionL_right_of_norm_le {𝕜 : Type*} [RCLike 𝕜] {ι :
     (hkC : ∀ᶠ i in l, ‖k i‖ ≤ C)
     (hkl : ∀ U ∈ 𝓝 (1 : G), ∀ᶠ i in l, ∀ᵐ y ∂μ, y ∉ U → k i y = 0) (h : Lp 𝕜 1 μ) :
     Tendsto (fun i => convolutionL μ 1 ENNReal.one_ne_top h (k i)) l (𝓝 h) := by
-  -- Apply the isometry `J`, which turns `h ⋆ k i` into `J (k i) ⋆ J h`.
-  rw [(modularInversion (E := 𝕜) μ 1 𝕜).toHomeomorph.isInducing.tendsto_nhds_iff]
-  simp only [comp_def, LinearIsometryEquiv.coe_toHomeomorph, modularInversion_convolutionL]
-  refine tendsto_convolutionL_left_of_norm_le
-    (hk1.mono fun i hi => by rw [integral_modularInversion (𝕜 := 𝕜), hi])
-    (hkC.mono fun i hi => by rwa [LinearIsometryEquiv.norm_map]) (fun U hU => ?_) _
-  filter_upwards [hkl _ (inv_mem_nhds_one G hU)] with i hi
-  filter_upwards [coeFn_modularInversion (𝕜 := 𝕜) (k i),
-    (quasiMeasurePreserving_inv_of_regular μ).ae hi] with x hx hx' hxU
-  rw [hx, hx' (by simpa using hxU), smul_zero]
+  simp_rw [convolutionL_eq_integral_smul_rightTranslation_inv]
+  exact tendsto_integral_smul_of_tendsto hk1 hkC hkl
+    (.of_forall fun i =>
+      (integrable_smul_rightTranslation_inv ENNReal.one_ne_top
+        (L1.integrable_coeFn (k i)) h).aestronglyMeasurable)
+    (tendsto_rightTranslation_inv ENNReal.one_ne_top h)
 
 /-- **Right approximate identity over an `RCLike` field.** Convolution on the right with nonnegative
 real kernels of integral one which concentrate at the identity converges strongly to the identity on

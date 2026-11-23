@@ -397,11 +397,9 @@ with regular left Haar measure `μ`, `(f * g).ofConv` agrees `μ`-almost everywh
 `x ↦ ∫ z, (Measure.modularCharacter z : ℝ) • (f.ofConv (x * z⁻¹) * g.ofConv z) ∂μ`. -/
 theorem ofConv_mul_ae_eq_modularCharacter (f g : L1GroupAlgebra 𝕜 μ) :
     (f * g).ofConv =ᵐ[μ]
-      fun x ↦ ∫ z, (modularCharacter z : ℝ) • (f.ofConv (x * z⁻¹) * g.ofConv z) ∂μ :=
-  (ofConv_mul_ae_eq f g).trans <| .of_forall fun x ↦ by
-    simpa only [smul_eq_mul] using
-      TauCeti.integral_smul_inv_mul_eq_integral_modularCharacter_smul
-        (μ := μ) f.ofConv g.ofConv x
+      fun x ↦ ∫ z, (modularCharacter z : ℝ) • (f.ofConv (x * z⁻¹) * g.ofConv z) ∂μ := by
+  simpa only [ofConv_mul, smul_eq_mul] using
+    Lp.convolutionL_ae_eq_modularCharacter (hp := ENNReal.one_ne_top) f.ofConv g.ofConv
 
 end PointwiseConvolution
 
