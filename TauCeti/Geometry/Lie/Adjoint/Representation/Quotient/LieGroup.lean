@@ -63,9 +63,9 @@ theorem quotientGroupLieAlgebraEquiv_quotientAdjointRepresentation_apply {N : Su
   have := Subgroup.lieGroup_quotientOfIsClosed (I := I) hN
   obtain ⟨g, rfl⟩ := QuotientGroup.mk_surjective q
   obtain ⟨ξ, rfl⟩ := Submodule.Quotient.mk_surjective _ x
-  rw [quotientAdjointRepresentation_mk_apply_mk, Subgroup.quotientGroupLieAlgebraEquiv_apply_mk,
-    Subgroup.quotientGroupLieAlgebraEquiv_apply_mk, adjointRepresentation_apply,
-    adjointRepresentation_apply]
+  rw [Subgroup.quotientAdjointRepresentation_mk_apply_mk,
+    Subgroup.quotientGroupLieAlgebraEquiv_apply_mk, Subgroup.quotientGroupLieAlgebraEquiv_apply_mk,
+    adjointRepresentation_apply, adjointRepresentation_apply]
   exact (QuotientGroup.mk' N).groupLieAlgebraMap_adjointContinuousLinearMap g ξ
 
 end TauCeti.Lie

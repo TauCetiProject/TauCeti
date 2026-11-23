@@ -54,7 +54,7 @@ theorem adjointRepresentation_apply_mem_groupLieSubalgebra {K : Subgroup G} {g :
     (hξ : ξ ∈ K.groupLieSubalgebra (I := I)) :
     adjointRepresentation ℝ I G g ξ ∈ K.groupLieSubalgebra (I := I) := by
   have := I.t2Space_of_lieGroup (G := G) ∞
-  rw [mem_groupLieSubalgebra_iff] at hξ ⊢
+  rw [Subgroup.mem_groupLieSubalgebra_iff] at hξ ⊢
   rw [tangentToLeftInvariantDerivation_adjointRepresentation_apply]
   exact Ad_mem_lieSubalgebraOfSubgroup hg hξ
 
@@ -72,7 +72,7 @@ theorem adjointRepresentation_apply_sub_mem_groupLieSubalgebra {N : Subgroup G}
     [N.Normal] (hN : IsClosed (N : Set G)) {n : G} (hn : n ∈ N) (ξ : GroupLieAlgebra I G) :
     adjointRepresentation ℝ I G n ξ - ξ ∈ N.groupLieSubalgebra (I := I) := by
   have := I.t2Space_of_lieGroup (G := G) ∞
-  rw [mem_groupLieSubalgebra_iff, map_sub,
+  rw [Subgroup.mem_groupLieSubalgebra_iff, map_sub,
     tangentToLeftInvariantDerivation_adjointRepresentation_apply]
   exact Ad_sub_mem_lieSubalgebraOfSubgroup hN hn _
 

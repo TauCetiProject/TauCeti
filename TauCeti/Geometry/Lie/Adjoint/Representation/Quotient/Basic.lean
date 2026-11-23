@@ -30,9 +30,9 @@ quotient representation of `G` on `𝔤 ⧸ 𝔫`. Its definition uses no Lie gr
 
 * `TauCeti.Lie.isTrivial_quotient_adjointRepresentation_comp_subtype`: `N` acts trivially on
   `𝔤 ⧸ 𝔫`.
-* `TauCeti.Lie.quotientAdjointRepresentation_comp_mk'`: the pullback of
+* `Subgroup.quotientAdjointRepresentation_comp_mk'`: the pullback of
   `Subgroup.quotientAdjointRepresentation N` to `G` is the quotient of the adjoint representation.
-* `TauCeti.Lie.quotientAdjointRepresentation_mk_apply_mk`: `[g] · [ξ] = [Ad_g ξ]`.
+* `Subgroup.quotientAdjointRepresentation_mk_apply_mk`: `[g] · [ξ] = [Ad_g ξ]`.
 
 ## References
 
@@ -92,7 +92,7 @@ theorem _root_.Subgroup.quotientAdjointRepresentation_def (N : Subgroup G) [N.No
 /-- **The pullback of the adjoint representation of `G ⧸ N` to `G`** is the representation of `G`
 on `𝔤 ⧸ 𝔫` induced by the adjoint representation. -/
 @[simp]
-theorem quotientAdjointRepresentation_comp_mk' {N : Subgroup G} [N.Normal]
+theorem _root_.Subgroup.quotientAdjointRepresentation_comp_mk' {N : Subgroup G} [N.Normal]
     (hN : IsClosed (N : Set G)) :
     (N.quotientAdjointRepresentation (I := I) hN).comp (QuotientGroup.mk' N) =
       (adjointRepresentation ℝ I G).quotient _
@@ -102,11 +102,11 @@ theorem quotientAdjointRepresentation_comp_mk' {N : Subgroup G} [N.Normal]
 
 /-- The class of `g` acts on the class of `ξ` by `[g] · [ξ] = [Ad_g ξ]`. -/
 @[simp]
-theorem quotientAdjointRepresentation_mk_apply_mk {N : Subgroup G} [N.Normal]
+theorem _root_.Subgroup.quotientAdjointRepresentation_mk_apply_mk {N : Subgroup G} [N.Normal]
     (hN : IsClosed (N : Set G)) (g : G) (ξ : GroupLieAlgebra I G) :
     N.quotientAdjointRepresentation (I := I) hN g (Submodule.Quotient.mk ξ) =
       Submodule.Quotient.mk (adjointRepresentation ℝ I G g ξ) := by
-  have h := DFunLike.congr_fun (quotientAdjointRepresentation_comp_mk' (I := I) hN) g
+  have h := DFunLike.congr_fun (Subgroup.quotientAdjointRepresentation_comp_mk' (I := I) hN) g
   rw [MonoidHom.comp_apply, QuotientGroup.mk'_apply] at h
   rw [h, Representation.quotient_apply, Submodule.mapQ_apply]
 

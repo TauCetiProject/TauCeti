@@ -299,7 +299,7 @@ theorem groupLieAlgebraMap_quotientGroupMk'_eq_zero_iff [N.Normal] (hN : IsClose
     rw [leftInvariantDerivationLieEquivGroupLieAlgebra_lieMap, LieEquiv.apply_symm_apply,
       coe_quotientMkSmoothHom, MonoidHom.groupLieAlgebraMap_apply, QuotientGroup.coe_mk']
   rw [← h, map_eq_zero_iff e' e'.injective, lieMap_quotientMkSmoothHom_eq_zero_iff,
-    Lie.mem_groupLieSubalgebra_iff, leftInvariantDerivationLieEquivGroupLieAlgebra_symm_apply]
+    mem_groupLieSubalgebra_iff, leftInvariantDerivationLieEquivGroupLieAlgebra_symm_apply]
 
 /-- **The differential of the projection onto `G ⧸ N` is surjective**, for a closed normal subgroup
 `N`. -/
