@@ -9,6 +9,7 @@ public import TauCeti.NumberTheory.LFunctions.Zeros.Completion.Dirichlet.Hadamar
 import TauCeti.NumberTheory.DirichletCharacter.Basic
 import TauCeti.NumberTheory.DirichletCharacter.LFunction.LogDeriv.Basic
 import TauCeti.NumberTheory.DirichletCharacter.Quadratic
+import TauCeti.Analysis.SpecialFunctions.Log.SumLogDivSq
 import Mathlib.Tactic.NormNum
 
 /-!
@@ -114,8 +115,8 @@ A statement restricted to real characters would say nothing here.
 
 Only the residues `n ≡ 1 mod 5` contribute positively to
 `-Re (L'/L)(2, χ) = ∑ₙ Λ(n) Re χ(n) / n²`, and the first of those with `Λ(n) ≠ 0` is `n = 11`;
-the tail `∑_{n ≥ 11} log n / n²` telescopes against `(1 + log x) / x` and is at most
-`(1 + log 10) / 10 < 0.34`. -/
+the tail `∑_{n ≥ 11} log n / n²` is at most `(1 + log 10) / 10 < 0.34`
+(`Real.tsum_log_div_sq_of_lt_le`). -/
 example :
     (∃ χ : DirichletCharacter ℂ 5, orderOf χ = 4) ∧
       ∀ χ : DirichletCharacter ℂ 5, orderOf χ = 4 →
@@ -123,42 +124,6 @@ example :
           logDeriv χ.gammaFactor 2 = logDeriv Gammaℝ 3 ∧
           (1.807 : ℝ) ≤ (logDeriv χ.LFunction 2).re + Real.log 5 / 2 + gammaLogDerivBound := by
   have : Fact (1 < 5) := ⟨by norm_num⟩
-  -- The telescoping step `log x / x² ≤ h(x - 1) - h(x)` for `h(x) = (1 + log x) / x`.
-  have hstep (x : ℝ) (hx : 11 ≤ x) :
-      Real.log x / x ^ 2 + (1 + Real.log x) / x ≤ (1 + Real.log (x - 1)) / (x - 1) := by
-    have hx1 : 0 < x - 1 := by linarith
-    have hx0 : 0 < x := by linarith
-    have hlog : Real.log x - 1 / (x - 1) ≤ Real.log (x - 1) := by
-      have h := Real.log_le_sub_one_of_pos (div_pos hx0 hx1)
-      rw [Real.log_div hx0.ne' hx1.ne',
-        show x / (x - 1) - 1 = 1 / (x - 1) by field_simp; ring] at h
-      linarith
-    have hL : 2 ≤ Real.log x := by
-      rw [Real.le_log_iff_exp_le hx0, show (2 : ℝ) = 1 + 1 by norm_num, Real.exp_add]
-      nlinarith [Real.exp_one_lt_d9, Real.exp_pos 1]
-    calc Real.log x / x ^ 2 + (1 + Real.log x) / x
-        ≤ (1 + (Real.log x - 1 / (x - 1))) / (x - 1) := by
-          rw [div_add_div _ _ (by positivity) hx0.ne', div_le_div_iff₀ (by positivity) hx1]
-          field_simp
-          nlinarith
-      _ ≤ (1 + Real.log (x - 1)) / (x - 1) := by gcongr
-  -- Hence the partial sums of `∑_{n ≥ 11} log n / n²` stay below `(1 + log 10) / 10`.
-  have htail (m : ℕ) :
-      ∑ n ∈ Finset.range (m + 11), (if 11 ≤ n then Real.log n / (n : ℝ) ^ 2 else 0) +
-        (1 + Real.log (m + 10)) / (m + 10) ≤ (1 + Real.log 10) / 10 := by
-    induction m with
-    | zero =>
-      rw [Finset.sum_eq_zero fun n hn ↦ by
-        simp [show ¬11 ≤ n by simpa using Finset.mem_range.mp hn]]
-      norm_num
-    | succ m ih =>
-      rw [show m + 1 + 11 = m + 11 + 1 by ring, Finset.sum_range_succ]
-      simp only [show 11 ≤ m + 11 by omega, ↓reduceIte]
-      have h := hstep (m + 11 : ℕ) (by push_cast; linarith [m.cast_nonneg (α := ℝ)])
-      push_cast at h ⊢
-      rw [show (m : ℝ) + 11 - 1 = m + 10 by ring] at h
-      rw [show (m : ℝ) + 1 + 10 = m + 11 by ring]
-      linarith
   refine ⟨?_, fun χ hχ ↦ ?_⟩
   · have : Fact (Nat.Prime 5) := ⟨Nat.prime_five⟩
     exact MulChar.exists_mulChar_orderOf (ZMod 5) (by rw [ZMod.card]) isPrimitiveRoot_I
@@ -204,7 +169,7 @@ example :
     have hs : 1 < (2 : ℂ).re := by norm_num
     have hsum := LSeriesSummable_twist_vonMangoldt χ hs
     rw [logDeriv_LFunction_eq_neg_LSeries χ hs, neg_re, neg_neg, LSeries, re_tsum hsum]
-    set g : ℕ → ℝ := fun n ↦ if 11 ≤ n then Real.log n / (n : ℝ) ^ 2 else 0
+    set g : ℕ → ℝ := fun n ↦ if 10 < n then Real.log n / (n : ℝ) ^ 2 else 0
     have hfg (n : ℕ) : (term (↗χ * ↗Λ) 2 n).re ≤ g n := by
       rcases eq_or_ne n 0 with rfl | hn
       · simp [g]
@@ -235,19 +200,13 @@ example :
           simp [hΛ0]
         · exact mul_nonpos_of_nonpos_of_nonneg (hre h1) hΛ
     refine (Complex.reCLM.summable hsum).tsum_le_of_sum_range_le fun N ↦ ?_
-    have hg0 (n : ℕ) : 0 ≤ g n := by simp only [g]; split_ifs <;> positivity
     calc ∑ n ∈ Finset.range N, (term (↗χ * ↗Λ) 2 n).re ≤ ∑ n ∈ Finset.range N, g n :=
           Finset.sum_le_sum fun n _ ↦ hfg n
-      _ ≤ ∑ n ∈ Finset.range (N + 11), g n :=
-          Finset.sum_le_sum_of_subset_of_nonneg (Finset.range_subset_range.mpr (by omega))
-            fun n _ _ ↦ hg0 n
+      _ ≤ ∑' n, g n := (Real.summable_log_div_sq_of_lt 10).sum_le_tsum _ fun n _ ↦ by
+          have : 0 ≤ Real.log n := Real.log_natCast_nonneg n
+          simp only [g]; split_ifs <;> positivity
       _ ≤ (1 + Real.log 10) / 10 := by
-          have h := htail N
-          have : 0 ≤ (1 + Real.log (N + 10)) / (N + 10) := by
-            have : 0 ≤ Real.log (N + 10) :=
-              Real.log_nonneg (by linarith [N.cast_nonneg (α := ℝ)])
-            positivity
-          linarith
+          simpa using Real.tsum_log_div_sq_of_lt_le (N := 10) (by norm_num)
   refine ⟨fun hinv ↦ ?_, hprim, ho, ?_, ?_⟩
   · have horder : orderOf χ ≤ 2 :=
       (isSelfInv_iff_isOfFinOrder_and_orderOf_le_two.mp (isSelfInv_iff.mpr hinv)).2
