@@ -169,7 +169,7 @@ theorem complexEmbedding_alternatingGroupFourOmega :
     Cyclotomic.complexEmbedding alternatingGroupFourOmega =
       Complex.exp (2 * Real.pi * Complex.I / 3) := by
   rw [alternatingGroupFourOmega, map_pow, Cyclotomic.complexEmbedding_zeta,
-    Cyclotomic.complexRoot_def, ← Complex.exp_nat_mul]
+    Cyclotomic.complexRoot_def, ← Complex.exp_natCast_mul]
   congr 1
   push_cast
   ring

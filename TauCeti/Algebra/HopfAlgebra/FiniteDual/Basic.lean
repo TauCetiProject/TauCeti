@@ -30,6 +30,8 @@ scheme-level duality remains a separate step.
 ## Main declarations
 
 * `TauCeti.ConvolutionDual`: the convolution algebra on the linear dual.
+* `TauCeti.ConvolutionDual.evalAlgEquiv`: evaluation identifies a finite projective algebra with
+  the convolution algebra of its dual coalgebra.
 * `TauCeti.ConvolutionDual.instBialgebra`: the bialgebra obtained by transposing multiplication and
   unit.
 * `TauCeti.ConvolutionDual.instHopfAlgebra`: the Hopf structure obtained by transposing the
@@ -313,6 +315,66 @@ private theorem evalTensorConv_comul (phi : ConvolutionDual k H) :
   exact dualDistribEquiv_comul k H phi
 
 end Coalgebra
+
+section AlgebraEvaluation
+
+variable (k : Type u) (H : Type v) [CommSemiring k] [Semiring H] [Algebra k H]
+  [Module.Finite k H] [Module.Projective k H]
+
+/-- Evaluation into the double convolution dual as a linear equivalence. -/
+private noncomputable def evalLinearEquiv :
+    H ≃ₗ[k] ConvolutionDual k (ConvolutionDual k H) :=
+  (Module.evalEquiv k H).trans
+    ((WithConv.linearEquiv k (Module.Dual k H)).dualMap.trans
+      (WithConv.linearEquiv k (Module.Dual k (ConvolutionDual k H))).symm)
+
+private theorem evalLinearEquiv_apply_apply (x : H) (phi : ConvolutionDual k H) :
+    (evalLinearEquiv k H x).ofConv phi = phi.ofConv x :=
+  (rfl)
+
+/-- **A finite projective algebra is canonically isomorphic to the convolution algebra of its
+dual coalgebra.**
+
+The dual `ConvolutionDual k H` of a finite projective algebra `H` is a coalgebra, and the
+equivalence sends `x` to evaluation at `x`. Only the algebra structure of `H` is used. -/
+noncomputable def evalAlgEquiv : H ≃ₐ[k] ConvolutionDual k (ConvolutionDual k H) :=
+  AlgEquiv.ofLinearEquiv (evalLinearEquiv k H)
+    (by
+      apply WithConv.ofConv_injective
+      ext phi
+      simp [evalLinearEquiv_apply_apply, counit_apply])
+    (fun x y ↦ by
+      apply WithConv.ofConv_injective
+      ext phi
+      rw [evalLinearEquiv_apply_apply]
+      symm
+      calc
+        ((evalLinearEquiv k H x) * (evalLinearEquiv k H y)).ofConv phi =
+            dualDistribEquiv k H (Coalgebra.comul phi) (x ⊗ₜ[k] y) := by
+          rw [LinearMap.convMul_apply]
+          generalize Coalgebra.comul (R := k) phi = z
+          induction z using TensorProduct.inductionOn with
+          | add z₁ z₂ hz₁ hz₂ =>
+              simpa only [map_add, LinearMap.add_apply] using
+                congrArg₂ (fun a b => a + b) hz₁ hz₂
+          | tmul a b => simp [evalLinearEquiv_apply_apply]
+        _ = phi.ofConv (x * y) := dualDistribEquiv_comul_apply k H phi x y)
+
+/-- The double-dual algebra equivalence evaluates a functional at the original element. -/
+@[simp, grind =]
+theorem evalAlgEquiv_apply_apply (x : H) (phi : ConvolutionDual k H) :
+    (evalAlgEquiv k H x).ofConv phi = phi.ofConv x :=
+  (rfl)
+
+/-- The inverse double-dual algebra equivalence is characterized by evaluation. -/
+@[simp, grind =]
+theorem evalAlgEquiv_symm_apply_apply
+    (Phi : ConvolutionDual k (ConvolutionDual k H)) (phi : ConvolutionDual k H) :
+    phi.ofConv ((evalAlgEquiv k H).symm Phi) = Phi.ofConv phi := by
+  rw [← evalAlgEquiv_apply_apply]
+  simp
+
+end AlgebraEvaluation
 
 section Convolution
 

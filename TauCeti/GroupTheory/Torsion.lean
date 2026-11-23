@@ -57,11 +57,17 @@ Unlike a bound on the exponent, the condition is elementwise: for prime `p`,
   `p`-primary component is all of `M`.
 * `TauCeti.primaryComponent_eq_bot_of_injective_nsmul`: injective multiplication by `p`
   makes the `p`-primary component trivial.
+* `AddEquiv.primaryComponent_eq_bot_iff`: an additive equivalence preserves the triviality of
+  the `p`-primary component.
 * `TauCeti.AddCommGroup.pow_nsmul_eq_zero_of_mem_primaryComponent`: a `p`-primary element killed
   by `p ^ N * m`, with `m` prime to `p`, is killed by `p ^ N`.
 * `IsAddPGroup.isAddTorsion`: a `p`-primary torsion group is torsion when `p ≠ 0`.
 * `TauCeti.exists_mem_primaryComponent_apply_eq`: for prime `p`, a `p`-primary image of an element
   of finite order is already the image of a `p`-primary element.
+* `AddCommGroup.primaryComponent_prod`: the `p`-primary component of a product is the product of
+  the `p`-primary components.
+* `IsAddPGroup.primaryComponent_eq_bot`: a `p`-primary torsion group has trivial `q`-primary
+  component for every prime `q ≠ p`.
 -/
 
 public section
@@ -111,7 +117,7 @@ def torsionMulEquiv (hT : IsAddTorsion T) (e : A ≃* Multiplicative (M × T)) :
   invFun t := ⟨e.symm (ofAdd (0, t.toAdd)), (mem_torsion_iff_of_mulEquiv hT e).2 (by simp)⟩
   left_inv x :=
     Subtype.ext (e.symm_apply_eq.2 (Multiplicative.ext
-      (Prod.ext ((mem_torsion_iff_of_mulEquiv hT e).1 x.2).symm rfl)))
+      (Prod.ext ((mem_torsion_iff_of_mulEquiv hT e).1 x.property).symm rfl)))
   right_inv t := by simp
   map_mul' x y := by simp
 
@@ -174,7 +180,7 @@ theorem isCyclic_torsion_of_mulEquiv [IsAddCyclic T] (e : A ≃* Multiplicative 
       map_one' := by simp
       map_mul' := fun x y ↦ by simp } fun x y hxy ↦ ?_
   have hfst (z : torsion A) : (e z).toAdd.1 = 0 := by
-    have h := e.toMonoidHom.isOfFinOrder ((CommGroup.mem_torsion _).1 z.2)
+    have h := e.toMonoidHom.isOfFinOrder ((CommGroup.mem_torsion _).1 z.property)
     rw [MulEquiv.coe_toMonoidHom, ← ofAdd_toAdd (e z), isOfFinOrder_ofAdd_iff] at h
     exact (isOfFinAddOrder_iff_eq_zero _).1 (by simpa using h.fst)
   refine Subtype.ext (e.injective (Multiplicative.ext (Prod.ext ?_ ?_)))
@@ -231,6 +237,13 @@ theorem primaryComponent_eq_bot_of_injective_nsmul
     exact hp.iterate m
   exact hpPow (by simpa using hm)
 
+/-- An additive equivalence preserves the triviality of the `p`-primary component: the
+`p`-primary component of `M` is trivial exactly when that of `N` is. -/
+theorem _root_.AddEquiv.primaryComponent_eq_bot_iff {N : Type*} [AddCommGroup N] (e : M ≃+ N) :
+    AddCommGroup.primaryComponent M p = ⊥ ↔ AddCommGroup.primaryComponent N p = ⊥ := by
+  simp only [AddSubgroup.eq_bot_iff_forall, AddCommGroup.mem_primaryComponent, e.surjective.forall,
+    ← map_nsmul, map_eq_zero_iff e e.injective]
+
 /-- A `p`-primary element killed by `p ^ N * m`, with `m` prime to `p`, is killed by `p ^ N`.
 Here `p` need not be prime. -/
 theorem AddCommGroup.pow_nsmul_eq_zero_of_mem_primaryComponent {N m : ℕ} (hm : p.Coprime m)
@@ -267,6 +280,33 @@ theorem exists_mem_primaryComponent_apply_eq {M N : Type*} [AddCommMonoid M] [Ad
   · rw [smul_comm (p ^ b) a, smul_smul (p ^ b) c, ← hord, addOrderOf_nsmul_eq_zero, smul_zero]
   · simpa only [map_nsmul] using ha
 
+/-- **Primary components of a product.** An element of `M × N` is killed by a power of `p` exactly
+when both of its coordinates are, so the `p`-primary component of `M × N` is the product of the
+`p`-primary components of `M` and `N`. -/
+theorem _root_.AddCommGroup.primaryComponent_prod (M N : Type*) [AddCommGroup M]
+    [AddCommGroup N] (p : ℕ) :
+    AddCommGroup.primaryComponent (M × N) p =
+      (AddCommGroup.primaryComponent M p).prod (AddCommGroup.primaryComponent N p) := by
+  ext x
+  simp only [AddSubgroup.mem_prod, AddCommGroup.mem_primaryComponent, Prod.ext_iff,
+    Prod.smul_fst, Prod.smul_snd, Prod.fst_zero, Prod.snd_zero]
+  refine ⟨fun ⟨k, h₁, h₂⟩ ↦ ⟨⟨k, h₁⟩, ⟨k, h₂⟩⟩, fun ⟨⟨k, hk⟩, ⟨l, hl⟩⟩ ↦ ⟨k + l, ?_, ?_⟩⟩
+  · rw [pow_add, mul_comm, ← smul_smul, hk, smul_zero]
+  · rw [pow_add, ← smul_smul, hl, smul_zero]
+
+/-- **A `p`-group has no `q`-primary elements** for a prime `q ≠ p`: an element killed by powers of
+both primes has order dividing two coprime numbers. -/
+theorem _root_.IsAddPGroup.primaryComponent_eq_bot {M : Type*} [AddCommGroup M]
+    (h : IsAddPGroup p M) {q : ℕ} (hp : p.Prime) (hq : q.Prime) (hpq : p ≠ q) :
+    AddCommGroup.primaryComponent M q = ⊥ := by
+  rw [AddSubgroup.eq_bot_iff_forall]
+  intro x hx
+  obtain ⟨k, hk⟩ := h x
+  obtain ⟨l, hl⟩ := AddCommGroup.mem_primaryComponent.mp hx
+  rw [← AddMonoid.addOrderOf_eq_one_iff]
+  exact Nat.eq_one_of_dvd_coprimes (Nat.coprime_pow_primes k l hp hq hpq)
+    (addOrderOf_dvd_of_nsmul_eq_zero hk) (addOrderOf_dvd_of_nsmul_eq_zero hl)
+
 end TauCeti
 
 /-!
@@ -274,6 +314,8 @@ end TauCeti
 
 * `IsMulTorsion.exists_prime_orderOf_mem`: a nontrivial subgroup of a torsion group contains an
   element of prime order.
+* `MonoidHom.injective_domRestrict_of_isMulTorsion`: a homomorphism with torsion-free kernel is
+  injective on every torsion subgroup, in particular on every finite subgroup.
 -/
 
 section PrimeOrder
@@ -289,5 +331,20 @@ theorem IsMulTorsion.exists_prime_orderOf_mem (hG : IsMulTorsion G) {H : Subgrou
   obtain ⟨p, hp, hpg⟩ := Nat.exists_prime_and_dvd (orderOf_eq_one_iff.not.mpr hg)
   refine ⟨g ^ (orderOf g / p), H.pow_mem hgH _, ?_⟩
   rwa [orderOf_pow_orderOf_div (hG g).orderOf_pos.ne' hpg]
+
+/-- **Injectivity on torsion subgroups.** A group homomorphism whose kernel is torsion-free is
+injective on every torsion subgroup: two elements with the same image differ by an element of the
+kernel, which has finite order when the subgroup is torsion. -/
+@[to_additive /-- An additive group homomorphism whose kernel is torsion-free is injective on
+every torsion subgroup. -/]
+theorem MonoidHom.injective_domRestrict_of_isMulTorsion {H : Type*} [Group H] (f : G →* H)
+    [IsMulTorsionFree f.ker] {K : Subgroup G} (hK : IsMulTorsion K) :
+    Function.Injective (f.domRestrict K) := by
+  refine (injective_iff_map_eq_one _).mpr fun x hx ↦ ?_
+  have hker : (x : G) ∈ f.ker := f.mem_ker.mpr (by simpa using hx)
+  have hfin : IsOfFinOrder (⟨x, hker⟩ : f.ker) :=
+    Submonoid.isOfFinOrder_coe.1 (Submonoid.isOfFinOrder_coe.2 (hK x) : IsOfFinOrder (x : G))
+  have h1 : (x : G) = 1 := congrArg Subtype.val hfin.eq_one'
+  exact Subtype.ext h1
 
 end PrimeOrder

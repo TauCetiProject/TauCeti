@@ -23,7 +23,7 @@ the measures of that decomposition:
   density `∏_w y_w⁻¹` (`archHaar_eq_withDensity`), and it is invariant under the dilations
   `y ↦ c y`, `c > 0` (`map_archHaar_smul`), as well as independent positive dilations
   (`map_archHaar_mul_left`), coordinatewise inversion (`map_archHaar_inv`) and the action of the
-  units (`map_archHaar_unitScale`).
+  units (`map_archHaar_unitScale`, `measurePreserving_unitScale`).
 * `surfaceHaar K` is the measure `d*x` on `S` induced by the product-over-places normalization of
   `dy / y`: the mass of `A ⊆ S` is the `dy / y`-mass of the parameters with surface part in `A`
   and norm in `[1, e]` (`surfaceHaar_apply`). It is σ-finite, and a bounded set of parameters
@@ -139,6 +139,12 @@ theorem map_archHaar_unitScale (u : (𝓞 K)ˣ) : (archHaar K).map (unitScale u)
   rw [hscale]
   exact map_archHaar_mul_left fun w ↦ pow_pos (pos_iff.mpr (by simp)) 2
 
+/-- Scaling by a unit preserves the multiplicative Haar measure `archHaar K`. -/
+theorem measurePreserving_unitScale (u : (𝓞 K)ˣ) :
+    MeasurePreserving (unitScale u) (archHaar K) (archHaar K) where
+  measurable := (continuous_unitScale u).measurable
+  map_eq := map_archHaar_unitScale u
+
 /-! ### The Haar measure of the norm-one hypersurface -/
 
 variable (K) in
@@ -159,7 +165,7 @@ theorem surfaceHaar_apply {A : Set (normOneSurface K)} (hA : MeasurableSet A) :
       archHaar K (surfacePart ⁻¹' (Subtype.val '' A) ∩ archNorm ⁻¹' Icc 1 (Real.exp 1)) := by
   have hA' : MeasurableSet (Subtype.val '' A) :=
     (measurableSet_normOneSurface K).subtype_image hA
-  rw [surfaceHaar, (MeasurableEmbedding.subtype_coe (measurableSet_normOneSurface K)).comap_apply,
+  rw [surfaceHaar, (MeasurableEmbedding.subtypeVal (measurableSet_normOneSurface K)).comap_apply,
     map_apply measurable_surfacePart hA',
     Measure.restrict_apply (measurable_surfacePart hA')]
 
@@ -169,7 +175,7 @@ private def surfaceBox (k : ℕ) : Set (normOneSurface K) :=
   Subtype.val ⁻¹' univ.pi fun _ ↦ Icc ((k + 1 : ℝ)⁻¹) (k + 1)
 
 private theorem measurableSet_surfaceBox (k : ℕ) : MeasurableSet (surfaceBox (K := K) k) :=
-  measurable_subtype_coe (MeasurableSet.univ_pi fun _ ↦ measurableSet_Icc)
+  measurable_subtypeVal (MeasurableSet.univ_pi fun _ ↦ measurableSet_Icc)
 
 private theorem surfaceHaar_surfaceBox_lt_top (k : ℕ) : surfaceHaar K (surfaceBox k) < ∞ := by
   have hk : (0 : ℝ) < k + 1 := by positivity
@@ -204,7 +210,7 @@ private theorem surfaceHaar_surfaceBox_lt_top (k : ℕ) : surfaceHaar K (surface
 
 private theorem iUnion_surfaceBox : ⋃ k, surfaceBox (K := K) k = univ := by
   refine eq_univ_of_forall fun x ↦ ?_
-  have hx := (mem_normOneSurface.mp x.2).1
+  have hx := (mem_normOneSurface.mp x.property).1
   obtain ⟨k, hk⟩ := exists_nat_ge (∑ w, ((x : realSpace K) w + ((x : realSpace K) w)⁻¹))
   have hle (w : InfinitePlace K) :
       (x : realSpace K) w + ((x : realSpace K) w)⁻¹ ≤ k + 1 :=
@@ -363,7 +369,7 @@ theorem archHaar_surfacePart_preimage_inter {A : Set (normOneSurface K)}
 /-- Radial scaling is measurable in the surface point and the radial parameter. -/
 theorem measurable_surfaceScale_prod :
     Measurable fun p : normOneSurface K × ℝ ↦ surfaceScale (p.1 : realSpace K) p.2 :=
-  continuous_surfaceScale.measurable.comp (measurable_subtype_coe.prodMap measurable_id)
+  continuous_surfaceScale.measurable.comp (measurable_subtypeVal.prodMap measurable_id)
 
 /-- **The decomposition `dy / y = d*x × dt / t`** (Neukirch VII §5): the multiplicative Haar measure
 of the archimedean parameters is the image of the product of `surfaceHaar K` and `dt / t` under

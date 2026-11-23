@@ -23,10 +23,11 @@ When `R` is a discrete valuation ring and `K` is a fraction ring, the generic fi
 subscheme of the total space. The special fibre over any local ring is a closed subscheme.
 
 For a domain, the generic fibre is canonically isomorphic to Mathlib's scheme-theoretic fibre at
-the generic point. Iterated scalar extension is also canonically isomorphic to direct scalar
-extension, compatibly with both pullback projections. Along an `R`-algebra map `φ : K → L`, the
-scalar extension to `L` is the base change along `Spec φ` of the scalar extension to `K`, through
-the comparison map `TauCeti.genericFiberMap` (`TauCeti.isPullback_genericFiberMap`).
+the generic point, so its image in the total space is the preimage of the generic point
+(`TauCeti.range_genericFiberι`). Iterated scalar extension is also canonically isomorphic to
+direct scalar extension, compatibly with both pullback projections. Along an `R`-algebra map
+`φ : K → L`, the scalar extension to `L` is the base change along `Spec φ` of the scalar extension
+to `K`, through the comparison map `TauCeti.genericFiberMap` (`TauCeti.isPullback_genericFiberMap`).
 -/
 
 public section
@@ -300,6 +301,19 @@ lemma genericFiberIsoFiberGenericPoint_inv_hom :
       ((Spec R).fromSpecResidueField (genericPoint (Spec R))))
 
 end GenericPoint
+
+/-- The image of `genericFiberι` over a domain `R` with fraction ring `K` is the preimage of the
+generic point of `Spec R`. -/
+theorem range_genericFiberι (R K : Type u) [CommRing R] [IsDomain R] [CommRing K] [Algebra R K]
+    [IsFractionRing R K] {X : Scheme.{u}} (toBase : X ⟶ Spec (.of R)) :
+    Set.range (genericFiberι R K toBase) = toBase ⁻¹' {genericPoint (Spec (.of R))} := by
+  have h1 := ((genericFiberIsoFiberGenericPoint (K := K) toBase).inv.surjective.range_comp
+    (genericFiberι R K toBase)).symm
+  have h2 : genericFiberι R K toBase ∘ (genericFiberIsoFiberGenericPoint (K := K) toBase).inv =
+      toBase.fiberι (genericPoint (Spec (.of R))) := funext fun x ↦ by
+    rw [Function.comp_apply, ← Scheme.Hom.comp_apply,
+      genericFiberIsoFiberGenericPoint_inv_genericFiberι]
+  rw [h1, h2, Scheme.Hom.range_fiberι]
 
 section Tower
 

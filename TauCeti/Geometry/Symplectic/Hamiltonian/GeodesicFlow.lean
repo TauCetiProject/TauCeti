@@ -9,6 +9,7 @@ public import TauCeti.Geometry.Symplectic.Hamiltonian.EulerLagrange
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.LeviCivita.Christoffel.Basic
 import TauCeti.Analysis.Calculus.Bilinear
 import TauCeti.Analysis.Calculus.FDeriv.ContinuousLinearMap
+import Mathlib.Analysis.Calculus.Deriv.Add
 import Mathlib.Analysis.Calculus.Deriv.Mul
 import Mathlib.Analysis.Calculus.FDeriv.Mul
 
@@ -31,6 +32,11 @@ kind `Γ₁(v, v)`. So, by nondegeneracy of `g`, **the Euler–Lagrange equation
 equation**
 
 `a = -Γ(v, v)` (`TauCeti.eulerLagrange_kineticLagrangian_iff`).
+
+In the same way a vector `X = (v, a)` at `(q, v)` solving the Lagrangian equation
+`ω(dFL X, dFL W) = dE_L(W)` for every `W` has `a = -Γ(v, v)`
+(`TauCeti.snd_eq_neg_christoffelSecondKind_of_symplecticForm`): this is the coordinate form of the
+Lagrangian vector field of `L`, which is therefore the geodesic spray.
 
 With the inverse `w(q, p) = g_q⁻¹ p` of the Legendre map, the Hamiltonian of `L` is the kinetic
 energy of covectors `H(q, p) = p(g_q⁻¹ p) / 2`
@@ -145,6 +151,42 @@ theorem eulerLagrange_kineticLagrangian_iff [FiniteDimensional ℝ E]
     simp only [fderiv_kineticLagrangian_fst hg, add_apply, ha, map_neg, neg_apply,
       apply_christoffelSecondKind hnd, christoffelFirstKind_apply]
     ring
+
+/-- **The Lagrangian vector field of the kinetic Lagrangian, pointwise.** Let `g` be `C²` at `q`,
+symmetric near `q` and nondegenerate at `q`, and let `X` be a vector at `x = (q, v)` with base
+component `X.1 = v` solving the Lagrangian equation `ω(dFL X, dFL W) = dE_L(W)` for every `W`, for
+the kinetic Lagrangian `L(q, v) = g_q(v, v) / 2`. Then its velocity component is given by the
+geodesic equation: `X.2 = -Γ(v, v)`. -/
+theorem snd_eq_neg_christoffelSecondKind_of_symplecticForm [FiniteDimensional ℝ E] {x X : E × E}
+    (hsymm : ∀ᶠ y in 𝓝 x.1, (g y).toBilinForm.IsSymm) (hnd : (g x.1).toBilinForm.Nondegenerate)
+    (hg : ContDiffAt ℝ 2 g x.1) (hX₁ : X.1 = x.2)
+    (hX : ∀ W, strongDualCotangentSymplecticForm
+      (fderiv ℝ (linearLegendreMap (kineticLagrangian g)) x X)
+      (fderiv ℝ (linearLegendreMap (kineticLagrangian g)) x W) =
+        fderiv ℝ (fun y ↦ (linearLegendreMap (kineticLagrangian g) y).2 y.2 -
+          kineticLagrangian g y) x W) :
+    X.2 = -christoffelSecondKind g x.1 x.2 x.2 := by
+  -- Along the straight line through `x` in the direction `X`, the Euler–Lagrange equation holds at
+  -- time `0`, and for the kinetic Lagrangian it is the geodesic equation.
+  set q : ℝ → E := fun s ↦ x.1 + s • X.1
+  set u : ℝ → E := fun s ↦ x.2 + s • X.2
+  have hx : (q 0, u 0) = x := by simp [q, u]
+  have hu : HasDerivAt u X.2 0 :=
+    (HasDerivAt.const_add x.2 ((hasDerivAt_id' (x := (0 : ℝ))).smul_const X.2)).congr_deriv
+      (one_smul ℝ X.2)
+  have hline : HasDerivAt (fun s ↦ (q s, u s)) X 0 :=
+    ((HasDerivAt.const_add x.1 ((hasDerivAt_id' (x := (0 : ℝ))).smul_const X.1)).congr_deriv
+      (one_smul ℝ X.1)).prodMk hu
+  have hk : ContDiffAt ℝ 2 (kineticLagrangian g) x := by
+    rw [show kineticLagrangian g = fun y : E × E ↦ g y.1 y.2 y.2 / 2 from
+      funext (kineticLagrangian_apply g)]
+    exact (((hg.comp x contDiffAt_fst).clm_apply contDiffAt_snd).clm_apply
+      contDiffAt_snd).div_const 2
+  have hEL := eulerLagrange_of_hasDerivAt_of_symplecticForm (by rw [hx]; exact hk) hline
+    (by simp [u, hX₁]) (by rw [hx]; exact hX)
+  have h := (eulerLagrange_kineticLagrangian_iff (by simpa [q] using hsymm) (by simpa [q] using hnd)
+    (by simpa [q] using hg.differentiableAt (by simp)) hEL.1 hu).1 hEL.2
+  simpa [q, u] using h
 
 /-! ### The kinetic Hamiltonian -/
 

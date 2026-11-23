@@ -104,12 +104,12 @@ theorem coordChange_fiberMap (a : CoordinateHom Z W) (i : ι) (j : κ) {x : B}
 /-- Recovery of a chart operator from the descended fibre map. -/
 theorem operator_eq (a : CoordinateHom Z W) (i : ι) (j : κ)
     (x : ↥(Z.baseSet i ∩ W.baseSet j)) :
-    a.operator i j x = Z.inChartCoordinates W i j x.1 (a.fiberMap x.1) := by
+    a.operator i j x = Z.inChartCoordinates W i j x.val (a.fiberMap x.val) := by
   ext v
-  rw [inChartCoordinates_apply, a.coordChange_fiberMap i j x.2.1 x.2.2,
-    Z.coordChange_comp i (Z.indexAt x.1) i x.1
-      ⟨⟨x.2.1, Z.mem_baseSet_at x.1⟩, x.2.1⟩,
-    Z.coordChange_self i x.1 x.2.1]
+  rw [inChartCoordinates_apply, a.coordChange_fiberMap i j x.property.1 x.property.2,
+    Z.coordChange_comp i (Z.indexAt x.val) i x.val
+      ⟨⟨x.property.1, Z.mem_baseSet_at x.val⟩, x.property.1⟩,
+    Z.coordChange_self i x.val x.property.1]
 
 /-- Preferred-coordinate descent is faithful; there is no off-chart data to forget. -/
 theorem fiberMap_injective : Function.Injective (fiberMap (Z := Z) (W := W)) := by
@@ -119,7 +119,7 @@ theorem fiberMap_injective : Function.Injective (fiberMap (Z := Z) (W := W)) := 
 
 /-- The fibrewise linear map of total spaces determined by compatible chart operators. -/
 def totalSpaceMap (a : CoordinateHom Z W) (p : Z.TotalSpace) : W.TotalSpace :=
-  ⟨p.proj, a.fiberMap p.proj p.2⟩
+  ⟨p.proj, a.fiberMap p.proj p.snd⟩
 
 @[simp] theorem totalSpaceMap_proj (a : CoordinateHom Z W) (p : Z.TotalSpace) :
     (a.totalSpaceMap p).proj = p.proj := (rfl)
@@ -128,7 +128,7 @@ def totalSpaceMap (a : CoordinateHom Z W) (p : Z.TotalSpace) : W.TotalSpace :=
     a.totalSpaceMap ⟨x, v⟩ = ⟨x, a.fiberMap x v⟩ := (rfl)
 
 theorem totalSpaceMap_def (a : CoordinateHom Z W) :
-    a.totalSpaceMap = fun p ↦ TotalSpace.mk' G p.proj (a.fiberMap p.proj p.2) := (rfl)
+    a.totalSpaceMap = fun p ↦ TotalSpace.mk' G p.proj (a.fiberMap p.proj p.snd) := (rfl)
 
 /-- In local trivializations the descended map is precisely the given chart operator. -/
 theorem localTriv_fiberMap (a : CoordinateHom Z W) (i : ι) (j : κ) (p : Z.TotalSpace)
@@ -136,7 +136,7 @@ theorem localTriv_fiberMap (a : CoordinateHom Z W) (i : ι) (j : κ) (p : Z.Tota
     ((W.localTriv j) (a.totalSpaceMap p)).2 =
       a.operator i j ⟨p.proj, hi, hj⟩ ((Z.localTriv i) p).2 := by
   simp only [localTriv_apply, totalSpaceMap]
-  exact a.coordChange_fiberMap i j hi hj p.2
+  exact a.coordChange_fiberMap i j hi hj p.snd
 
 /-- Two coordinate morphisms inducing the same map of total spaces are equal. -/
 theorem totalSpaceMap_injective : Function.Injective (totalSpaceMap (Z := Z) (W := W)) := by
@@ -156,11 +156,11 @@ theorem continuous_totalSpaceMap (a : CoordinateHom Z W) : Continuous a.totalSpa
   have hp : p ∈ s := ⟨Z.mem_baseSet_at _, W.mem_baseSet_at _⟩
   have hs : IsOpen s :=
     ((Z.isOpen_baseSet i).inter (W.isOpen_baseSet j)).preimage Z.continuous_proj
-  have hbase : Continuous (fun q : s ↦ (⟨q.1.proj, q.2⟩ : ↥(Z.baseSet i ∩ W.baseSet j))) :=
-    (Z.continuous_proj.comp continuous_subtype_val).subtype_mk _
-  have hcoord : Continuous (fun q : s ↦ ((Z.localTriv i) q.1).2) :=
-    ((Z.localTriv i).continuousOn.comp_continuous continuous_subtype_val
-      (fun q ↦ q.2.1)).snd
+  have hbase : Continuous (fun q : s ↦ (⟨q.val.proj, q.property⟩ : ↥(Z.baseSet i ∩ W.baseSet j))) :=
+    (Z.continuous_proj.comp continuous_subtypeVal).subtype_mk _
+  have hcoord : Continuous (fun q : s ↦ ((Z.localTriv i) q.val).2) :=
+    ((Z.localTriv i).continuousOn.comp_continuous continuous_subtypeVal
+      (fun q ↦ q.property.1)).snd
   have hlocal := ((a.operator i j).continuous.comp hbase).clm_apply hcoord
   rw [FiberBundle.continuousAt_totalSpace]
   refine ⟨Z.continuous_proj.continuousAt, ?_⟩
@@ -168,14 +168,14 @@ theorem continuous_totalSpaceMap (a : CoordinateHom Z W) : Continuous a.totalSpa
   apply (continuousWithinAt_iff_continuousAt_domRestrict _ hp).2
   apply hlocal.continuousAt.congr
   exact Filter.Eventually.of_forall fun q ↦
-    (a.localTriv_fiberMap i j q.1 q.2.1 q.2.2).symm
+    (a.localTriv_fiberMap i j q.val q.property.1 q.property.2).symm
 
 /-- A fibre family realizing all the chart operators is necessarily the descended family.
 No regularity hypothesis is needed for uniqueness. -/
 theorem fiberMap_unique (a : CoordinateHom Z W) (f : B → F →L[𝕜] G)
     (hf : ∀ i j (x : ↥(Z.baseSet i ∩ W.baseSet j)) (v : F),
-      W.coordChange (W.indexAt x.1) j x.1 (f x.1 v) =
-        a.operator i j x (Z.coordChange (Z.indexAt x.1) i x.1 v)) :
+      W.coordChange (W.indexAt x.val) j x.val (f x.val v) =
+        a.operator i j x (Z.coordChange (Z.indexAt x.val) i x.val v)) :
     f = a.fiberMap := by
   funext x
   ext v
@@ -236,7 +236,7 @@ variable (f : B → F →L[𝕜] G)
     (E := fun y ↦ Z.Fiber y →L[𝕜] W.Fiber y) x (f x))
 
 theorem operator_ofContinuous (i : ι) (j : κ) (x : ↥(Z.baseSet i ∩ W.baseSet j)) :
-    (ofContinuous f hf).operator i j x = Z.inChartCoordinates W i j x.1 (f x.1) := (rfl)
+    (ofContinuous f hf).operator i j x = Z.inChartCoordinates W i j x.val (f x.val) := (rfl)
 
 /-- Descent recovers the continuous section a coordinate morphism was extracted from. -/
 @[simp] theorem fiberMap_ofContinuous : (ofContinuous f hf).fiberMap = f :=
@@ -255,16 +255,16 @@ preferred-chart descent. -/
 def fiberMapEquiv : CoordinateHom Z W ≃ {f : B → F →L[𝕜] G // Continuous fun x ↦
     TotalSpace.mk' (F →L[𝕜] G) (E := fun y ↦ Z.Fiber y →L[𝕜] W.Fiber y) x (f x)} where
   toFun a := ⟨a.fiberMap, a.continuous_fiberMap⟩
-  invFun f := ofContinuous f.1 f.2
+  invFun f := ofContinuous f.val f.property
   left_inv := ofContinuous_fiberMap
-  right_inv f := Subtype.ext (fiberMap_ofContinuous f.1 f.2)
+  right_inv f := Subtype.ext (fiberMap_ofContinuous f.val f.property)
 
 @[simp] theorem coe_fiberMapEquiv_apply (a : CoordinateHom Z W) :
     (fiberMapEquiv Z W a : B → F →L[𝕜] G) = a.fiberMap := (rfl)
 
 @[simp] theorem fiberMapEquiv_symm_apply (f : {f : B → F →L[𝕜] G // Continuous fun x ↦
     TotalSpace.mk' (F →L[𝕜] G) (E := fun y ↦ Z.Fiber y →L[𝕜] W.Fiber y) x (f x)}) :
-    (fiberMapEquiv Z W).symm f = ofContinuous f.1 f.2 := (rfl)
+    (fiberMapEquiv Z W).symm f = ofContinuous f.val f.property := (rfl)
 
 variable {V : VectorBundleCore 𝕜 B H ν}
 
@@ -331,7 +331,7 @@ instance : AddCommGroup (CoordinateHom Z W) :=
         rw [ha i i' j j' x hi hi' hj hj'] }
   let e : CoordinateHom Z W ≃ S :=
     { toFun a := ⟨a.operator, a.compatible⟩
-      invFun a := ⟨a.1, a.2⟩
+      invFun a := ⟨a.val, a.property⟩
       left_inv _ := rfl
       right_inv _ := rfl }
   e.addCommGroup
