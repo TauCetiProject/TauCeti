@@ -13,9 +13,10 @@ public import Mathlib.Algebra.Polynomial.Sequence
 public import Mathlib.Data.Finsupp.Weight
 public import Mathlib.RingTheory.MvPolynomial.Basic
 public import Mathlib.Algebra.MvPolynomial.PDeriv
+public import Mathlib.Algebra.MvPolynomial.Variables
 public import TauCeti.RingTheory.MvPolynomial.Finrank
 public import TauCeti.LinearAlgebra.Basis.Pi
-import TauCeti.Algebra.MvPolynomial.Monad
+import TauCeti.Algebra.MvPolynomial.Degrees
 import TauCeti.Algebra.MvPolynomial.PDeriv
 import TauCeti.Algebra.MvPolynomial.Rename
 
@@ -56,8 +57,10 @@ the monomials may be replaced by products `∏ᵢ Sₖᵢ(Xᵢ)` of the members 
   finite coefficient coordinates by zero.
 * `MvPolynomial.boundedCoefficientEquiv_inclusion_comp_homogeneous`: including homogeneous
   polynomials in a bounded-degree space extends their coordinates by zero.
-* `MvPolynomial.aeval_mem_restrictTotalDegree`: substituting linear forms for the variables does
-  not raise the total degree.
+* `MvPolynomial.aeval_mem_restrictTotalDegree`: substituting polynomials of total degree at most
+  one, such as affine linear forms, for the variables occurring in a polynomial of total degree at
+  most `m` gives a polynomial of total degree at most `m`, also when the substituted polynomials
+  have coefficients in an `R`-algebra.
 * `MvPolynomial.killCompl_mem_restrictTotalDegree`: discarding variables outside an injective
   renaming does not raise the total degree.
 * `MvPolynomial.hyperplaneSliceMap`, `MvPolynomial.hyperplaneSliceMap_surjective`: the bounded
@@ -277,12 +280,14 @@ theorem boundedCoefficientEquiv_inclusion_comp_homogeneous [Finite σ] {d e : �
 end Coordinates
 
 /-- Substituting polynomials of total degree at most one, for instance linear forms, for the
-variables does not raise the total degree. -/
-theorem aeval_mem_restrictTotalDegree {τ : Type*} {f : σ → MvPolynomial τ R}
-    (hf : ∀ i, (f i).totalDegree ≤ 1) {m : ℕ} {p : MvPolynomial σ R}
-    (hp : p ∈ restrictTotalDegree σ R m) : aeval f p ∈ restrictTotalDegree τ R m := by
+variables of `p` does not raise the total degree, also when the substituted polynomials have
+coefficients in an `R`-algebra `S`. Only the variables that occur in `p` need to be bounded. -/
+theorem aeval_mem_restrictTotalDegree {τ S : Type*} [CommSemiring S] [Algebra R S]
+    (p : MvPolynomial σ R) {f : σ → MvPolynomial τ S} {m : ℕ}
+    (hf : ∀ i ∈ p.vars, (f i).totalDegree ≤ 1) (hp : p ∈ restrictTotalDegree σ R m) :
+    aeval f p ∈ restrictTotalDegree τ S m := by
   rw [mem_restrictTotalDegree] at hp ⊢
-  exact (totalDegree_bind₁_le hf p).trans ((mul_one _).trans_le hp)
+  exact (totalDegree_aeval_le p hf).trans ((mul_one _).trans_le hp)
 
 /-- Discarding variables outside the range of an injective renaming does not raise the total
 degree. -/
@@ -291,11 +296,11 @@ theorem killCompl_mem_restrictTotalDegree {τ : Type*} {g : τ → σ} (hg : Fun
     killCompl hg f ∈ restrictTotalDegree τ R m := by
   classical
   rw [killCompl_eq_aeval]
-  refine aeval_mem_restrictTotalDegree (fun j ↦ ?_) hf
+  refine aeval_mem_restrictTotalDegree f (fun j _ ↦ ?_) hf
   by_cases hj : j ∈ Set.range g
   · obtain ⟨i, rfl⟩ := hj
-    rw [hg.extend_apply, X]
-    exact (totalDegree_monomial_le _ _).trans_eq (by simp)
+    rw [hg.extend_apply]
+    exact TauCeti.totalDegree_X_le i
   · rw [Function.extend_apply' _ _ _ hj, Pi.zero_apply, totalDegree_zero]
     exact Nat.zero_le _
 

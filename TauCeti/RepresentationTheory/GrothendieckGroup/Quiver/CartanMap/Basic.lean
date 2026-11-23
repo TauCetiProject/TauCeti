@@ -9,7 +9,7 @@ public import TauCeti.Algebra.Category.GradedModuleCat.CartanMap.ProjectiveDimen
 public import TauCeti.Algebra.Category.ModuleCat.CartanMap.ProjectiveDimension
 public import TauCeti.RepresentationTheory.GrothendieckGroup.Quiver.ForgetGrading
 import TauCeti.Algebra.Category.GradedModuleCat.CartanMap.Idempotent.Specialization
-import TauCeti.RepresentationTheory.Quiver.Representation.Projective.Dimension
+import TauCeti.RepresentationTheory.Quiver.PathAlgebra.StandardResolution
 
 /-!
 # The Cartan maps of a path algebra and forgetting grading on projective `K₀`
@@ -68,8 +68,8 @@ theorem finiteModules_le_admitsFiniteResolution :
       (ExactStructure.abelian (ModuleCat.{max u v} (pathAlgebra k Q))).admitsFiniteResolution
         (finiteProjectiveModules (pathAlgebra k Q)) :=
   have : IsNoetherianRing (pathAlgebra k Q) := IsNoetherianRing.of_finite k (pathAlgebra k Q)
-  finiteModules_le_admitsFiniteResolution_of_finite_projectiveDimension fun M hM ↦
-    ⟨1, hasProjectiveDimensionLT_two_pathAlgebra_of_moduleFinite k Q M hM⟩
+  finiteModules_le_admitsFiniteResolution_of_finite_projectiveDimension fun M _ ↦
+    ⟨1, hasProjectiveDimensionLT_two_pathAlgebra M⟩
 
 /-- **Every finite graded module over a finite-dimensional path algebra has a finite resolution
 by finite graded projectives**, for the path-length grading. This is the hypothesis of
@@ -80,8 +80,8 @@ theorem gradedFiniteModules_le_admitsFiniteResolution :
         (gradedFiniteProjectiveModules (integerGrade k Q)) :=
   let _ := integerGradedAlgebra k Q
   have : IsNoetherianRing (pathAlgebra k Q) := IsNoetherianRing.of_finite k (pathAlgebra k Q)
-  gradedFiniteModules_le_admitsFiniteResolution_of_finite_projectiveDimension fun _ hM ↦
-    ⟨1, hasProjectiveDimensionLT_two_pathAlgebra_of_moduleFinite k Q _ hM⟩
+  gradedFiniteModules_le_admitsFiniteResolution_of_finite_projectiveDimension fun M _ ↦
+    ⟨1, hasProjectiveDimensionLT_two_pathAlgebra (GradedModuleCat.toModuleCat.obj M)⟩
 
 /-- **The Cartan map of a finite-dimensional path algebra is bijective**: `K₀(proj kQ)` and
 `G₀(mod kQ)` are identified by the inclusion of projectives. -/

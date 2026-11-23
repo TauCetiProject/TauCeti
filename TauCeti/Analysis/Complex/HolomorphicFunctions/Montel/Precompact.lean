@@ -18,9 +18,10 @@ This space carries the compact-open topology, whose convergence is locally unifo
 The compactness equivalence supplies the input for the subsequence selection theorem in
 `HolomorphicFunctions/Montel/Basic.lean`.
 
-The converse, `TauCeti.isLocallyBoundedOn_of_isCompact_closure_range`, is proved in
-`TauCeti/Analysis/Normed/Group/LocallyBounded.lean`: it is purely topological and holds on any
-topological domain, with values in any seminormed group.
+The converse is proved in `TauCeti/Analysis/Normed/Group/LocallyBounded.lean` as
+`TauCeti.isLocallyBoundedOn_of_totallyBounded_range`: it needs no holomorphicity, holds on any
+topological domain, with values in any seminormed group, and assumes only that the continuous
+restrictions are totally bounded for the uniformity of compact convergence.
 
 The theorems take an ambient family `F` and continuous restrictions `f`, related by
 `⇑(f i) = Ω.domRestrict (F i)`. Given `hF : ∀ i, ContinuousOn (F i) Ω`, one can take
@@ -87,7 +88,8 @@ bounded on `Ω` and being relatively compact in `C(↥Ω, E)` are the same condi
 theorem isCompact_closure_range_iff_isLocallyBoundedOn [ProperSpace E] (hΩ : IsOpen Ω)
     (hF : ∀ i, DifferentiableOn ℂ (F i) Ω) (hf : ∀ i, ⇑(f i) = Ω.domRestrict (F i)) :
     IsCompact (closure (Set.range f)) ↔ IsLocallyBoundedOn F Ω :=
-  ⟨isLocallyBoundedOn_of_isCompact_closure_range hf,
+  ⟨fun h => isLocallyBoundedOn_of_totallyBounded_range hf
+      (h.totallyBounded.subset subset_closure),
     fun hb => isCompact_closure_range_of_isLocallyBoundedOn hΩ hF hb hf⟩
 
 end TauCeti

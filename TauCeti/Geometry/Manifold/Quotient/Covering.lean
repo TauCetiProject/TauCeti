@@ -71,12 +71,9 @@ variable {F : Type*} [NormedAddCommGroup F] [NormedSpace 𝕜 F] {H'' : Type*}
 theorem exists_contMDiff_comp_eq (hq : IsQuotientCoveringMap q G)
     (hp : IsLocalDiffeomorph I I' n q) (hm : m ≤ n) {f : M → P} (hf : ContMDiff I J m f)
     (hinv : ∀ (g : G) (x : M), f (g • x) = f x) :
-    ∃ f' : N → P, ContMDiff I' J m f' ∧ f' ∘ q = f := by
-  have hsurj := hq.surjective
-  have hcomp : (f ∘ Function.surjInv hsurj) ∘ q = f := funext fun x ↦ by
-    obtain ⟨g, hg⟩ := hq.apply_eq_iff_mem_orbit.1 (Function.surjInv_eq hsurj (q x))
-    simp only [Function.comp_apply, ← hg, hinv]
-  refine ⟨f ∘ Function.surjInv hsurj, (hp.contMDiff_comp_iff hsurj hm).1 ?_, hcomp⟩
-  rwa [hcomp]
+    ∃ f' : N → P, ContMDiff I' J m f' ∧ f' ∘ q = f :=
+  (hp.existsUnique_contMDiff_comp_eq hq.surjective hm hf fun x y hxy ↦ by
+    obtain ⟨g, rfl⟩ := hq.apply_eq_iff_mem_orbit.1 hxy
+    exact hinv g y).exists
 
 end IsQuotientCoveringMap

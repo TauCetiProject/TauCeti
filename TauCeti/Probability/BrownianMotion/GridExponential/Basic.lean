@@ -55,6 +55,15 @@ theorem gridExponential_def (τ : ℕ → ℝ≥0) (θ : ℕ → Ω → ℝ) (W 
       exp (∑ j ∈ range n, (θ j ω * (W (τ (j + 1)) ω - W (τ j) ω) -
         θ j ω ^ 2 * ((τ (j + 1) : ℝ) - τ j) / 2)) := (rfl)
 
+/-- The log likelihood is the weighted increment sum minus half its quadratic energy. -/
+@[simp]
+theorem log_gridExponential (τ : ℕ → ℝ≥0) (θ : ℕ → Ω → ℝ) (W : ℝ≥0 → Ω → ℝ)
+    (n : ℕ) (ω : Ω) :
+    log (gridExponential τ θ W n ω) =
+      ∑ j ∈ range n, (θ j ω * (W (τ (j + 1)) ω - W (τ j) ω) -
+        θ j ω ^ 2 * ((τ (j + 1) : ℝ) - τ j) / 2) := by
+  rw [gridExponential_def, log_exp]
+
 @[simp]
 theorem gridExponential_zero (τ : ℕ → ℝ≥0) (θ : ℕ → Ω → ℝ)
     (W : ℝ≥0 → Ω → ℝ) : gridExponential τ θ W 0 = 1 := by
@@ -269,6 +278,22 @@ theorem memLp_two_gridExponential (hW : IsFilteredPreBrownianReal ℱ W P)
   have hm := (hW.adapted.measurable_gridExponential hτ hθ).mono (ℱ.le _) le_rfl
   exact (memLp_two_iff_integrable_sq hm.aestronglyMeasurable).mpr
     (gridExponential_square_bound hW hτ hθ hK).1
+
+/-- The `L²` norm of a grid likelihood is controlled by its height bound and elapsed time. -/
+theorem eLpNorm_two_gridExponential_le (hW : IsFilteredPreBrownianReal ℱ W P)
+    (hτ : MonotoneOn τ (Set.Iic n)) (hθ : ∀ j < n, Measurable[ℱ (τ j)] (θ j))
+    (hK : ∀ j < n, ∀ᵐ ω ∂P, |θ j ω| ≤ K) {T : ℝ}
+    (hT : (τ n : ℝ) - τ 0 ≤ T) :
+    eLpNorm (gridExponential τ θ W n) 2 P ≤
+      ENNReal.ofReal (exp (K ^ 2 * T)) ^ (1 / 2 : ℝ) := by
+  rw [(hW.memLp_two_gridExponential hτ hθ hK).eLpNorm_eq_integral_rpow_norm
+    two_ne_zero ENNReal.ofNat_ne_top]
+  simp only [ENNReal.toReal_ofNat, Real.norm_eq_abs, Real.rpow_two, sq_abs]
+  rw [ENNReal.ofReal_rpow_of_nonneg (exp_pos _).le (by positivity : (0 : ℝ) ≤ 1 / 2)]
+  simp only [one_div]
+  gcongr
+  exact (hW.integral_sq_gridExponential_le hτ hθ hK).trans
+    (exp_le_exp.mpr (mul_le_mul_of_nonneg_left hT (sq_nonneg K)))
 
 end IsFilteredPreBrownianReal
 

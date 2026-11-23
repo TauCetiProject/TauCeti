@@ -56,28 +56,24 @@ theorem IsSeqCompact.exists_strictMono_tendsto_atTop
     ∃ φ : ℕ → ℕ, StrictMono φ ∧ ∃ z : ℕ → X, (∀ n, z n ∈ C) ∧ ∃ z₀ ∈ C,
       Tendsto z atTop (𝓝 z₀) ∧ Tendsto (fun n ↦ g (φ n) (z n)) atTop atTop := by
   choose M hM using hg
-  choose c hleft hright using exists_ge_ge (α := α)
-  let u : ℕ → α := Nat.rec (M 0) (fun n a ↦ c a (M (n + 1)))
-  have hmono : Monotone u := monotone_nat_of_le_succ fun n ↦ hleft _ _
-  have hMu (n : ℕ) : M n ≤ u n := by
-    cases n with
-    | zero => exact le_rfl
-    | succ n => exact hright _ _
-  have hu : Tendsto u atTop atTop := by
-    refine tendsto_atTop.2 fun a ↦ ?_
+  have : Nonempty α := ⟨M 0⟩
+  -- The bounds `M k` are cofinal, so `atTop` is countably generated and some sequence tends to it.
+  have hbasis : (atTop : Filter α).HasBasis (fun _ : ℕ ↦ True) (Ici ∘ M) := by
+    refine atTop_basis.to_hasBasis (fun a _ ↦ ?_) fun k _ ↦ ⟨M k, trivial, subset_rfl⟩
     obtain ⟨k, y, hy, hk⟩ := hunb a
-    exact eventually_atTop.2 ⟨k, fun n hkn ↦
-      hk.le.trans ((hM k (mem_image_of_mem _ hy)).trans ((hMu k).trans (hmono hkn)))⟩
-  -- A finite initial family has a common bound, so values above each threshold
-  -- occur at arbitrarily large indices.
-  have hfreq : ∀ j : ℕ, ∃ᶠ k in atTop, ∃ y ∈ C, u j ≤ g k y := by
-    intro j
-    refine frequently_atTop'.2 fun N ↦ ?_
-    obtain ⟨k, y, hy, hk⟩ := hunb (u (max j N))
-    refine ⟨k, ?_, y, hy, ((hmono (le_max_left _ _)).trans_lt hk).le⟩
-    by_contra hkN
-    exact ((hM k (mem_image_of_mem _ hy)).trans
-      ((hMu k).trans (hmono ((not_lt.mp hkN).trans (le_max_right _ _))))).not_gt hk
+    exact ⟨k, trivial, Ici_subset_Ici.2 (hk.le.trans (hM k (mem_image_of_mem _ hy)))⟩
+  have := hbasis.isCountablyGenerated
+  obtain ⟨u, hu⟩ := exists_seq_tendsto (atTop : Filter α)
+  -- The first `N` functions and the threshold `u j` have a common bound `u n`, so values above
+  -- each threshold occur at arbitrarily large indices.
+  have hfreq (j : ℕ) : ∃ᶠ k in atTop, ∃ y ∈ C, u j ≤ g k y := by
+    refine frequently_atTop.2 fun N ↦ ?_
+    obtain ⟨n, hjn, hMn⟩ := ((hu.eventually_ge_atTop (u j)).and
+      ((Set.finite_lt_nat N).eventually_all.2 fun k _ ↦ hu.eventually_ge_atTop (M k))).exists
+    obtain ⟨k, y, hy, hk⟩ := hunb (u n)
+    refine ⟨k, ?_, y, hy, (hjn.trans_lt hk).le⟩
+    by_contra! hkN
+    exact ((hM k (mem_image_of_mem _ hy)).trans (hMn k hkN)).not_gt hk
   obtain ⟨ψ, hψ, hψC⟩ := extraction_forall_of_frequently hfreq
   choose y hyC hy using hψC
   obtain ⟨z₀, hz₀, χ, hχ, hlim⟩ := hC hyC
