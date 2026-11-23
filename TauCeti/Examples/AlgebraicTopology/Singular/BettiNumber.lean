@@ -15,9 +15,9 @@ a few small spaces over a division ring.
 
 A point has Betti numbers `1, 0, 0, …`. The circle and the punctured plane `ℝ² ∖ {0}`, which
 deformation retracts onto it, both have first Betti number `1`, while the closed disc, which is
-contractible, has first Betti number `0`. These are instances of `TauCeti.bettiNumber_zero_eq_one`,
-`TauCeti.bettiNumber_eq_zero_of_contractibleSpace`, `TauCeti.bettiNumber_sphere` and
-`TauCeti.bettiNumber_compl_singleton`.
+contractible, has first Betti number `0`. These are instances of
+`TauCeti.finrank_singularHomology₀_eq_one`, `TauCeti.bettiNumber_eq_zero_of_contractibleSpace`,
+`TauCeti.bettiNumber_sphere` and `TauCeti.bettiNumber_compl_singleton`.
 
 ## References
 
@@ -35,7 +35,8 @@ namespace TauCeti.Examples
 variable (k : Type) [DivisionRing k]
 
 /-- A point has zeroth Betti number `1`. -/
-example : bettiNumber k PUnit 0 = 1 := bettiNumber_zero_eq_one k
+example : bettiNumber k PUnit 0 = 1 :=
+  (bettiNumber_def k PUnit 0).trans (finrank_singularHomology₀_eq_one (TopCat.of PUnit))
 
 /-- A point has no homology in positive degrees. -/
 example {j : ℕ} (hj : j ≠ 0) : bettiNumber k PUnit j = 0 :=
@@ -51,8 +52,7 @@ example : bettiNumber k ({0}ᶜ : Set (EuclideanSpace ℝ (Fin 2))) 1 = 1 := by
 
 /-- The closed disc has first Betti number `0`. -/
 example : bettiNumber k (closedBall (0 : EuclideanSpace ℝ (Fin 2)) 1) 1 = 0 :=
-  have := (convex_closedBall (0 : EuclideanSpace ℝ (Fin 2)) 1).contractibleSpace
-    (nonempty_closedBall.2 zero_le_one)
+  have := contractibleSpace_closedBall (x := (0 : EuclideanSpace ℝ (Fin 2))) zero_le_one
   bettiNumber_eq_zero_of_contractibleSpace k one_ne_zero
 
 end TauCeti.Examples
