@@ -12,8 +12,8 @@ public import Mathlib.RingTheory.QuotSMulTop
 public import TauCeti.RingTheory.Iwasawa.LambdaInvariant
 public import TauCeti.RingTheory.Iwasawa.MuInvariant
 
-import Mathlib.NumberTheory.Padics.RingHoms
 import Mathlib.RingTheory.Ideal.Norm.AbsNorm
+import TauCeti.NumberTheory.Padics.RingHoms
 import TauCeti.RingTheory.DiscreteValuationRing.Basic
 import TauCeti.RingTheory.Iwasawa.Cyclotomic.Growth
 import TauCeti.RingTheory.Iwasawa.EulerQuotient
@@ -355,10 +355,7 @@ theorem exists_eventually_natCard_quotSMulTop_growthTransition_eq_padicInt (p : 
     ∃ ν : ℤ, ∀ᶠ k in atTop,
       (Nat.card (QuotSMulTop (growthTransition p ℤ_[p] n₀ k : ℤ_[p]⟦X⟧) M) : ℚ) =
         (p : ℚ) ^ (((muInvariant ℤ_[p] M * p ^ k + lambdaInvariant ℤ_[p] M * k : ℕ) : ℤ) + ν) := by
-  have : Finite (ResidueField ℤ_[p]) := .of_equiv _ PadicInt.residueField.symm.toEquiv
-  have hq : Nat.card (ResidueField ℤ_[p]) = p :=
-    (Nat.card_congr PadicInt.residueField.toEquiv).trans (Nat.card_zmod p)
-  simpa [hq] using exists_eventually_natCard_quotSMulTop_growthTransition_eq (M := M) one_pos
+  simpa [PadicInt.card_residueField p] using exists_eventually_natCard_quotSMulTop_growthTransition_eq (M := M) one_pos
     (by rw [pow_one, PadicInt.maximalIdeal_eq_span_p]) n₀ hfin
 
 end TauCeti.Iwasawa
