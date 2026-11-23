@@ -37,6 +37,8 @@ Working on `𝓢'` lets the heat semigroup act on spaces of distributions, such 
 
 ## Main declarations
 
+* `TemperedDistribution.hasTemperateGrowth_heatSymbol`: the heat symbol `exp(-4π² t ‖ξ‖²)` has
+  temperate growth.
 * `TemperedDistribution.heatSemigroup`: the heat semigroup `e^{tΔ}` on `𝓢'(E, F)`.
 * `TemperedDistribution.heatSemigroup_zero`,
   `TemperedDistribution.heatSemigroup_heatSemigroup_apply`:
@@ -72,6 +74,13 @@ open TauCeti
 
 variable [NormedAddCommGroup F] [NormedSpace ℂ F]
 
+omit [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] in
+/-- The heat symbol `exp(-4π² t ‖ξ‖²)`, `t ≥ 0`, has temperate growth. -/
+theorem hasTemperateGrowth_heatSymbol (t : ℝ≥0) :
+    (fun ξ : E ↦ ((rexp (-(4 * π ^ 2 * t * ‖ξ‖ ^ 2)) : ℝ) : ℂ)).HasTemperateGrowth :=
+  Complex.hasTemperateGrowth_ofReal.comp
+    (Function.hasTemperateGrowth_exp_neg_mul_norm_sq (by positivity))
+
 variable (E F) in
 /-- **The heat semigroup** `e^{tΔ}` on tempered distributions: the Fourier multiplier with symbol
 `exp(-4π² t ‖ξ‖²)`, `t ≥ 0`. For `t > 0`, on the tempered distribution of an `Lᵖ` function,
@@ -99,11 +108,8 @@ theorem heatSemigroup_zero : heatSemigroup E F 0 = ContinuousLinearMap.id ℂ _ 
 theorem heatSemigroup_heatSemigroup_apply (s t : ℝ≥0) (u : 𝓢'(E, F)) :
     heatSemigroup E F t (heatSemigroup E F s u) = heatSemigroup E F (s + t) u := by
   rw [heatSemigroup, heatSemigroup, heatSemigroup,
-    fourierMultiplierCLM_fourierMultiplierCLM_apply
-      (by exact Complex.hasTemperateGrowth_ofReal.comp
-            (Function.hasTemperateGrowth_exp_neg_mul_norm_sq (by positivity)))
-      (by exact Complex.hasTemperateGrowth_ofReal.comp
-            (Function.hasTemperateGrowth_exp_neg_mul_norm_sq (by positivity)))]
+    fourierMultiplierCLM_fourierMultiplierCLM_apply (hasTemperateGrowth_heatSymbol s)
+      (hasTemperateGrowth_heatSymbol t)]
   congr 2
   funext ξ
   rw [Pi.mul_apply, ← Complex.ofReal_mul, ← Real.exp_add, NNReal.coe_add]

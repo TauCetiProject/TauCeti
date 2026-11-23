@@ -32,9 +32,9 @@ Noetherian local rings such a homomorphism both preserves and reflects regularit
 
 * `TauCeti.AlgebraicGeometry.isRegularLocalRing_stalk_of_isRegularRing`
 * `TauCeti.AlgebraicGeometry.isRegularRing_iff_isRegularLocalRing_stalk`
+* `TauCeti.AlgebraicGeometry.isRegularLocalRing_stalk_Spec_iff`
 * `TauCeti.AlgebraicGeometry.isRegularLocalRing_stalk_Spec`
 * `TauCeti.AlgebraicGeometry.isRegularRing_iff_isRegularLocalRing_stalk_Spec`
-* `TauCeti.AlgebraicGeometry.isRegularLocalRing_stalk_Spec_iff`
 * `TauCeti.AlgebraicGeometry.isRegularLocalRing_stalk_iff_of_isOpenImmersion`
 * `AlgebraicGeometry.Scheme.Hom.isRegularLocalRing_stalk_iff_of_flat_of_formallyUnramified`
 -/
@@ -76,24 +76,6 @@ theorem isRegularRing_iff_isRegularLocalRing_stalk {X : Scheme.{u}} {U : X.Opens
   exact .of_ringEquiv (IsLocalization.algEquiv p.primeCompl
     (X.presheaf.stalk (hU.fromSpec y)) (Localization.AtPrime p)).toRingEquiv
 
-/-- The local rings of the spectrum of a regular ring are regular. -/
-instance isRegularLocalRing_stalk_Spec (R : CommRingCat.{u}) [IsRegularRing R] (x : Spec R) :
-    IsRegularLocalRing ((Spec R).presheaf.stalk x) :=
-  have : IsRegularRing Γ(Spec R, ⊤) :=
-    .of_ringEquiv (Scheme.ΓSpecIso R).commRingCatIsoToRingEquiv.symm
-  isRegularLocalRing_stalk_of_isRegularRing (isAffineOpen_top _) (Set.mem_univ x)
-
-/-- A Noetherian ring is regular exactly when the local rings of its spectrum are regular. -/
-theorem isRegularRing_iff_isRegularLocalRing_stalk_Spec (R : CommRingCat.{u})
-    [IsNoetherianRing R] :
-    IsRegularRing R ↔ ∀ x : Spec R, IsRegularLocalRing ((Spec R).presheaf.stalk x) := by
-  refine ⟨fun _ _ ↦ inferInstance, fun h ↦ ?_⟩
-  let e := (Scheme.ΓSpecIso R).commRingCatIsoToRingEquiv
-  have : IsNoetherianRing Γ(Spec R, ⊤) := isNoetherianRing_of_ringEquiv R e.symm
-  have := (isRegularRing_iff_isRegularLocalRing_stalk (isAffineOpen_top (Spec R))).mpr
-    fun x _ ↦ h x
-  exact .of_ringEquiv e
-
 /-- The local ring of `Spec R` at `x` is the localization of `R` at the prime `x`
 (Mathlib `AlgebraicGeometry.Spec.stalkIso`), so one is regular exactly when the other is. -/
 theorem isRegularLocalRing_stalk_Spec_iff (R : CommRingCat.{u}) (x : PrimeSpectrum R) :
@@ -101,6 +83,18 @@ theorem isRegularLocalRing_stalk_Spec_iff (R : CommRingCat.{u}) (x : PrimeSpectr
       IsRegularLocalRing (Localization.AtPrime x.asIdeal) :=
   let e := (Spec.stalkIso R x).commRingCatIsoToRingEquiv
   ⟨fun _ ↦ .of_ringEquiv e, fun _ ↦ .of_ringEquiv e.symm⟩
+
+/-- The local rings of the spectrum of a regular ring are regular. -/
+instance isRegularLocalRing_stalk_Spec (R : CommRingCat.{u}) [IsRegularRing R] (x : Spec R) :
+    IsRegularLocalRing ((Spec R).presheaf.stalk x) :=
+  (isRegularLocalRing_stalk_Spec_iff R x).mpr inferInstance
+
+/-- A Noetherian ring is regular exactly when the local rings of its spectrum are regular. -/
+theorem isRegularRing_iff_isRegularLocalRing_stalk_Spec (R : CommRingCat.{u})
+    [IsNoetherianRing R] :
+    IsRegularRing R ↔ ∀ x : Spec R, IsRegularLocalRing ((Spec R).presheaf.stalk x) :=
+  ⟨fun _ _ ↦ inferInstance, fun h ↦ isRegularRing_iff.mpr fun p _ ↦
+    (isRegularLocalRing_stalk_Spec_iff R ⟨p, ‹_›⟩).mp (h _)⟩
 
 /-- An open immersion `f : X ⟶ Y` identifies the local ring of `X` at `x` with the local ring of
 `Y` at `f x`, so one is regular exactly when the other is. -/
@@ -125,13 +119,12 @@ is regular exactly when the local ring of `X` at `x` is. -/
 theorem isRegularLocalRing_stalk_iff_of_flat_of_formallyUnramified :
     IsRegularLocalRing (Y.presheaf.stalk (f x)) ↔ IsRegularLocalRing (X.presheaf.stalk x) := by
   let := (f.stalkMap x).hom.toAlgebra
-  have := isLocalHom_stalkMap_toAlgebra f x
   have : Module.Flat (Y.presheaf.stalk (f x)) (X.presheaf.stalk x) := Flat.stalkMap f x
   have h := map_maximalIdeal_stalkMap_of_formallyUnramified f x
-  refine ⟨fun hy ↦ ?_, fun hx ↦ ?_⟩
-  · have := (isNoetherianRing_stalk_iff_of_flat_of_locallyOfFiniteType f x).mp inferInstance
-    exact (TauCeti.isRegularLocalRing_iff_of_flat_of_map_maximalIdeal_eq h).mpr hy
-  · have := (isNoetherianRing_stalk_iff_of_flat_of_locallyOfFiniteType f x).mpr inferInstance
-    exact (TauCeti.isRegularLocalRing_iff_of_flat_of_map_maximalIdeal_eq h).mp hx
+  refine ⟨fun _ ↦ ?_,
+    fun _ ↦ (TauCeti.isRegularLocalRing_iff_of_flat_of_map_maximalIdeal_eq h).mp ‹_›⟩
+  -- Ascent needs the local ring of `X` at `x` to be Noetherian, which it inherits from `Y`.
+  have := (isNoetherianRing_stalk_iff_of_flat_of_locallyOfFiniteType f x).mp inferInstance
+  exact TauCeti.IsRegularLocalRing.of_flat_of_map_maximalIdeal_eq h
 
 end AlgebraicGeometry.Scheme.Hom

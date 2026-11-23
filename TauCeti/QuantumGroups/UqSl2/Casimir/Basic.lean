@@ -233,7 +233,7 @@ theorem map_casimirBlock_le {W : Type*} [AddCommGroup W] [Module ℂ W] [Module 
 theorem casimirBlock_casimirBlock_eq_top (c : ℂ) :
     casimirBlock q (casimirBlock q V c) c = ⊤ := by
   refine Submodule.eq_top_iff'.mpr fun v => ?_
-  obtain ⟨n, hn⟩ := mem_casimirBlock_iff.mp v.2
+  obtain ⟨n, hn⟩ := mem_casimirBlock_iff.mp v.property
   exact mem_casimirBlock_iff.mpr ⟨n, Subtype.ext hn⟩
 
 /-- Casimir blocks for distinct scalars are independent. -/

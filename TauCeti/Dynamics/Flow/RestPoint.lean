@@ -9,6 +9,8 @@ public import TauCeti.Dynamics.Flow.Variational
 public import TauCeti.Analysis.Calculus.BumpFunction.FiniteDimension
 -- Private: compactly supported `C¹` maps are Lipschitz; used only inside the proof.
 import Mathlib.Analysis.Calculus.ContDiff.RCLike
+-- Private: the variational derivative is constant when its time derivative vanishes.
+import Mathlib.Analysis.Calculus.MeanValue
 
 /-!
 # Time-dependent flows near a rest point
@@ -33,6 +35,10 @@ These are exactly the hypotheses of Moser's identity
 Moser's deformation argument, for instance in the proof of Darboux's theorem, where the Moser field
 vanishes at the centre of the chart. In the relative Darboux theorem the Moser field vanishes along
 a whole submanifold, which the flow therefore fixes pointwise.
+
+If both the field and its spatial derivative vanish at `x₀` for `t ∈ [0, 1]`,
+`TauCeti.exists_localFlow_hasFDerivAt_id` gives a family `ψ` with `ψ₀ = id` and identity derivative
+of `ψ₁` at `x₀`, whose nearby orbits stay in `U` and solve the field equation on `[0, 1]`.
 
 ## References
 
@@ -97,17 +103,9 @@ theorem exists_eventually_forall_hasDerivAt_fderiv_of_contDiffOn {X : ℝ → E 
     exists_contDiff_hasCompactSupport_eq hT hU hTI hx₀ hX
   -- The cut-off field has a global time-dependent flow, with `C^r` time maps.
   obtain ⟨C, hC⟩ := ContDiff.lipschitzWith_of_hasCompactSupport hYc (hY.of_le hr') one_ne_zero
-  have hS : LipschitzWith (max 0 C) (timeDependentSuspension Y) := by
-    convert (LipschitzWith.const (1 : ℝ)).prodMk hC using 1
-    funext ⟨t, x⟩
-    simp
-  have hsm (s t : ℝ) : ContDiff ℝ r (timeDependentFlow Y hS s t) := by
-    refine contDiff_iff_forall_nat_le.2 fun m hm ↦ ?_
-    have hι : ContDiff ℝ m fun x : E ↦ ((s, t), x) := contDiff_const.prodMk contDiff_id
-    cases m with
-    | zero => exact contDiff_zero.2 ((continuous_timeDependentFlow Y hS).comp hι.continuous)
-    | succ m =>
-      exact (contDiff_timeDependentFlow hS m (hY.of_le (by exact_mod_cast hm))).comp hι
+  have hS : LipschitzWith C (timeDependentSuspension Y) := lipschitzWith_timeDependentSuspension hC
+  have hsm (s t : ℝ) : ContDiff ℝ r (timeDependentFlow Y hS s t) :=
+    contDiff_timeDependentFlow_apply hS hY s t
   -- Rest points of the field are rest points of the cut-off field, hence fixed by its flow.
   have hfix (y : E) (hy : ∀ t ∈ T, X t y = 0) (t : ℝ) : timeDependentFlow Y hS 0 t y = y :=
     (eq_timeDependentFlow Y hS (y := fun _ ↦ y)
@@ -134,5 +132,48 @@ theorem exists_eventually_forall_hasDerivAt_fderiv_of_contDiffOn {X : ℝ → E 
     exact hasDerivAt_timeDependentFlow Y hS 0 t x
   · rw [← hEq.fderiv_eq]
     exact hasDerivAt_fderiv_timeDependentFlow hS (hY.of_le hr') 0 t x
+
+/-- A jointly `C¹` time-dependent field on `T × U`, with `T ⊇ [0, 1]` and `U ∋ z₀` open,
+which vanishes at `z₀` and has zero spatial derivative there on `[0, 1]`,
+admits a local flow whose time-one map has identity derivative at `z₀`. Nearby orbits stay in `U`
+and solve the given field equation up to time one. -/
+theorem exists_localFlow_hasFDerivAt_id {Y : ℝ → E → E} {T : Set ℝ} {U : Set E} {z₀ : E}
+    (hT : IsOpen T) (hU : IsOpen U) (hTI : Icc 0 1 ⊆ T) (hz₀ : z₀ ∈ U)
+    (hY : ContDiffOn ℝ 1 (fun p : ℝ × E ↦ Y p.1 p.2) (T ×ˢ U))
+    (hYzero : ∀ τ ∈ Icc (0 : ℝ) 1, Y τ z₀ = 0)
+    (hYderiv : ∀ τ ∈ Icc (0 : ℝ) 1, fderiv ℝ (Y τ) z₀ = 0) :
+    ∃ ψ : ℝ → E → E, ψ 0 = id ∧
+      HasFDerivAt (ψ 1) (ContinuousLinearMap.id ℝ E) z₀ ∧
+      ∀ᶠ z in 𝓝 z₀, ∀ τ ∈ Icc (0 : ℝ) 1,
+        ψ τ z ∈ U ∧ HasDerivAt (fun r ↦ ψ r z) (Y τ (ψ τ z)) τ := by
+  -- Make the center stationary for all times without changing the field on `[0, 1]`.
+  let Z : ℝ → E → E := fun τ z ↦ Y τ z - Y τ z₀
+  have hZ : ContDiffOn ℝ 1 (fun p : ℝ × E ↦ Z p.1 p.2) (T ×ˢ U) :=
+    hY.sub (hY.comp (contDiff_fst.prodMk contDiff_const).contDiffOn
+      (fun _ hp ↦ ⟨hp.1, hz₀⟩))
+  have hZzero (τ : ℝ) (_ : τ ∈ T) : Z τ z₀ = 0 := sub_self _
+  have hZderiv (τ : ℝ) (hτ : τ ∈ Icc (0 : ℝ) 1) : fderiv ℝ (Z τ) z₀ = 0 := by
+    simpa only [Z, fderiv_sub_const] using hYderiv τ hτ
+  obtain ⟨ψ, ψ', hψ, -, -, -, hψ₀, hψfix, hev⟩ :=
+    exists_eventually_forall_hasDerivAt_fderiv_of_contDiffOn (r := 1) le_rfl
+      hT hU hTI hz₀ hZ hZzero
+  have hψx (τ : ℝ) : ψ τ z₀ = z₀ := hψfix _ hZzero τ
+  have hDψ (τ : ℝ) (hτ : τ ∈ Icc (0 : ℝ) 1) :
+      HasDerivAt (fun r ↦ fderiv ℝ (ψ r) z₀) 0 τ := by
+    simpa only [hψx, hZderiv τ hτ, ContinuousLinearMap.zero_comp] using
+      (hev.self_of_nhds τ hτ).2.2
+  have hDψ₁ : fderiv ℝ (ψ 1) z₀ = ContinuousLinearMap.id ℝ E := by
+    have hcst := constant_of_has_deriv_right_zero
+      (fun τ hτ ↦ (hDψ τ hτ).continuousAt.continuousWithinAt)
+      (fun τ hτ ↦ (hDψ τ (Ico_subset_Icc_self hτ)).hasDerivWithinAt)
+      1 (right_mem_Icc.2 zero_le_one)
+    simpa only [hψ₀, fderiv_id] using hcst
+  have hψderiv : HasFDerivAt (ψ 1) (ContinuousLinearMap.id ℝ E) z₀ := by
+    rw [← hDψ₁]
+    exact (hψ.differentiable one_ne_zero _).hasFDerivAt
+  refine ⟨ψ, hψ₀, hψderiv, ?_⟩
+  filter_upwards [hev] with z hz τ hτ
+  refine ⟨(hz τ hτ).1, ?_⟩
+  simpa only [Z, hYzero τ hτ, sub_zero] using (hz τ hτ).2.1
 
 end TauCeti

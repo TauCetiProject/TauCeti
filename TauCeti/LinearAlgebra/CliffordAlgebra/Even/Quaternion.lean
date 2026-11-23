@@ -325,7 +325,7 @@ noncomputable def pureHamiltonEquivWeightedSumSquaresOne :
   left_inv v := by ext i; fin_cases i <;> simp
   right_inv q := by
     apply Subtype.ext
-    have hre : (q : ℍ[R]).re = 0 := q.2
+    have hre : (q : ℍ[R]).re = 0 := q.property
     ext <;> simp [hre]
   map_add' _ _ := by apply Subtype.ext; ext <;> simp <;> abel
   map_smul' _ _ := by apply Subtype.ext; ext <;> simp
