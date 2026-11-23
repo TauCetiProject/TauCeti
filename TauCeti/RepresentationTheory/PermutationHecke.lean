@@ -10,6 +10,7 @@ public import Mathlib.Algebra.BigOperators.Finprod
 public import Mathlib.GroupTheory.GroupAction.Quotient
 public import Mathlib.LinearAlgebra.Finsupp.LinearCombination
 public import Mathlib.Topology.Algebra.OpenSubgroup
+import TauCeti.Algebra.GroupAction.DiagonalOrbits
 
 /-!
 # Hecke algebras of permutation modules
@@ -44,8 +45,10 @@ No measure is used, so the construction works over every coefficient ring.
 
 ## References
 
-* Y. Tian and L. Xiao, *Tate cycles on some quaternionic Shimura varieties mod p*, Duke Math. J.
-  168 (2019), §2.10, (2.10.1)–(2.10.3), pp. 187–188.
+* D. Treumann and A. Venkatesh, *Functoriality, Smith theory, and the Brauer homomorphism*,
+  Ann. of Math. 183 (2016), §2.10, (2.10.1)–(2.10.3), pp. 187–188 (arXiv:1407.2346v1 §2.10).
+  The source displays the action as `Σ_t h(s, t) t`, which with the product (2.10.1) is a right
+  action; this file uses the left action `Σ_t h(t, s) t`.
 -/
 
 public section
@@ -104,6 +107,7 @@ theorem mem_iff {h : S × S → A} :
   Iff.rfl
 
 /-- Elements of `Fun_G(S × S, A)` are invariant under the diagonal action. -/
+@[simp]
 theorem apply_smul (h : permutationHeckeModule G S A) (g : G) (x y : S) :
     (h : S × S → A) (g • x, g • y) = (h : S × S → A) (x, y) :=
   h.property.1 g (x, y)
@@ -114,39 +118,43 @@ section Finiteness
 
 variable [FiniteStabilizerOrbits G S]
 
-/-- The points `y` with `(x, y)` in a given orbit form a finite set. -/
-private theorem finite_setOf_mk_left_eq (x : S) (q : Quotient (orbitRel G (S × S))) :
-    {y | Quotient.mk (orbitRel G (S × S)) (x, y) = q}.Finite := by
-  rcases Set.eq_empty_or_nonempty {y | Quotient.mk (orbitRel G (S × S)) (x, y) = q} with
-    h | ⟨y₀, hy₀⟩
-  · simp [h]
-  refine (FiniteStabilizerOrbits.finite_orbit (G := G) x y₀).subset fun y hy ↦ ?_
-  obtain ⟨g, hg⟩ := Quotient.exact (hy.trans hy₀.symm)
-  simp only [Prod.smul_mk, Prod.mk.injEq] at hg
-  exact ⟨⟨g, hg.1⟩, hg.2⟩
-
-/-- The points `t` with `(t, s)` in a given orbit form a finite set. -/
+/-- The points `t` with `(t, s)` in a given orbit form a finite set: they lie in one orbit of
+the stabilizer of `s`. -/
 private theorem finite_setOf_mk_right_eq (s : S) (q : Quotient (orbitRel G (S × S))) :
     {t | Quotient.mk (orbitRel G (S × S)) (t, s) = q}.Finite := by
   rcases Set.eq_empty_or_nonempty {t | Quotient.mk (orbitRel G (S × S)) (t, s) = q} with
     h | ⟨t₀, ht₀⟩
   · simp [h]
   refine (FiniteStabilizerOrbits.finite_orbit (G := G) s t₀).subset fun t ht ↦ ?_
-  obtain ⟨g, hg⟩ := Quotient.exact (ht.trans ht₀.symm)
-  simp only [Prod.smul_mk, Prod.mk.injEq] at hg
-  exact ⟨⟨g, hg.2⟩, hg.1⟩
+  have hst : MulAction.orbitRelQuotientStabilizerMap (G := G) s (Quotient.mk'' t) =
+      MulAction.orbitRelQuotientStabilizerMap s (Quotient.mk'' t₀) := by
+    simpa using ht.trans ht₀.symm
+  exact Quotient.exact' (MulAction.orbitRelQuotientStabilizerMap_injective s hst)
+
+/-- The points `y` with `(x, y)` in a given orbit form a finite set, by swapping coordinates. -/
+private theorem finite_setOf_mk_left_eq (x : S) (q : Quotient (orbitRel G (S × S))) :
+    {y | Quotient.mk (orbitRel G (S × S)) (x, y) = q}.Finite :=
+  (finite_setOf_mk_right_eq x (Quotient.map' (s₁ := orbitRel G (S × S))
+    (s₂ := orbitRel G (S × S)) Prod.swap (by rintro _ b ⟨g, rfl⟩; exact ⟨g, rfl⟩) q)).subset
+    fun _ hy ↦ by subst hy; exact rfl
+
+omit [FiniteStabilizerOrbits G S] in
+/-- The entries of `h` along a map `f : S → S × S` that meets each orbit in finitely many points
+have finite support. -/
+private theorem finite_support_comp (h : permutationHeckeModule G S A) (f : S → S × S)
+    (hf : ∀ q, {y | Quotient.mk (orbitRel G (S × S)) (f y) = q}.Finite) :
+    (Function.support fun y ↦ (h : S × S → A) (f y)).Finite :=
+  (h.property.2.biUnion fun q _ ↦ hf q).subset fun y hy ↦ Set.mem_biUnion ⟨f y, hy, rfl⟩ rfl
 
 /-- Each row of an element of `Fun_G(S × S, A)` has finitely many nonzero entries. -/
 theorem finite_support_row (h : permutationHeckeModule G S A) (x : S) :
-    (Function.support fun y ↦ (h : S × S → A) (x, y)).Finite := by
-  refine (h.property.2.biUnion fun q _ ↦ finite_setOf_mk_left_eq x q).subset fun y hy ↦ ?_
-  exact Set.mem_biUnion ⟨(x, y), hy, rfl⟩ rfl
+    (Function.support fun y ↦ (h : S × S → A) (x, y)).Finite :=
+  finite_support_comp h _ (finite_setOf_mk_left_eq x)
 
 /-- Each column of an element of `Fun_G(S × S, A)` has finitely many nonzero entries. -/
 theorem finite_support_column (h : permutationHeckeModule G S A) (s : S) :
-    (Function.support fun t ↦ (h : S × S → A) (t, s)).Finite := by
-  refine (h.property.2.biUnion fun q _ ↦ finite_setOf_mk_right_eq s q).subset fun t ht ↦ ?_
-  exact Set.mem_biUnion ⟨(t, s), ht, rfl⟩ rfl
+    (Function.support fun t ↦ (h : S × S → A) (t, s)).Finite :=
+  finite_support_comp h _ (finite_setOf_mk_right_eq s)
 
 /-- The column of `h` at `s`, the finitely supported function `t ↦ h(t, s)`. -/
 def column (h : permutationHeckeModule G S A) (s : S) : S →₀ A :=
@@ -209,38 +217,28 @@ theorem toEnd_comp_lmapDomain (h : permutationHeckeModule G S A) (g : G) :
 
 /-! ### The matrix product -/
 
-/-- The matrix product `(h₁ * h₂)(x, z) = Σ_y h₁(x, y) h₂(y, z)` of two elements of
-`Fun_G(S × S, A)`, as a function on `S × S`. -/
-def mulFun (h₁ h₂ : permutationHeckeModule G S A) (p : S × S) : A :=
-  ∑ᶠ y, (h₁ : S × S → A) (p.1, y) * (h₂ : S × S → A) (y, p.2)
-
-/-- The matrix product of two elements of `Fun_G(S × S, A)` lies in `Fun_G(S × S, A)`. -/
-theorem mulFun_mem (h₁ h₂ : permutationHeckeModule G S A) :
-    mulFun h₁ h₂ ∈ permutationHeckeModule G S A := by
-  refine ⟨fun g p ↦ ?_, ?_⟩
-  · change ∑ᶠ y, (h₁ : S × S → A) (g • p.1, y) * (h₂ : S × S → A) (y, g • p.2) =
-      ∑ᶠ y, (h₁ : S × S → A) (p.1, y) * (h₂ : S × S → A) (y, p.2)
-    rw [← finsum_comp_equiv (MulAction.toPerm g)]
-    exact finsum_congr fun y ↦ by rw [MulAction.toPerm_apply, apply_smul, apply_smul]
-  -- The orbit of `(x, z)` is that of `(x₁, g • z)`, where `(x₁, y₁)` represents the orbit of a
-  -- pair `(x, y)` in the support of `h₁`, and `g • z` lies in the finite row of `h₂` at `y₁`.
-  let rep (q : Quotient (orbitRel G (S × S))) : S × S := q.out
-  refine (h₁.property.2.biUnion fun q _ ↦ ((finite_support_row h₂ (rep q).2).image
-    fun w ↦ Quotient.mk (orbitRel G (S × S)) ((rep q).1, w))).subset ?_
-  rintro _ ⟨⟨x, z⟩, hxz, rfl⟩
-  obtain ⟨y, hy⟩ : ∃ y, (h₁ : S × S → A) (x, y) * (h₂ : S × S → A) (y, z) ≠ 0 := by
-    by_contra! hall
-    exact hxz (finsum_eq_zero_of_forall_eq_zero hall)
-  obtain ⟨g, hg⟩ := Quotient.mk_out (s := orbitRel G (S × S)) (x, y)
-  refine Set.mem_biUnion ⟨(x, y), left_ne_zero_of_mul hy, rfl⟩ ⟨g • z, ?_, ?_⟩
-  · simp only [Function.mem_support, rep, ← hg, Prod.smul_snd, apply_smul]
-    exact right_ne_zero_of_mul hy
-  · refine Quotient.sound ⟨g, ?_⟩
-    simp only [rep, ← hg, Prod.smul_mk]
-
 /-- The matrix product `(h₁ * h₂)(x, z) = Σ_y h₁(x, y) h₂(y, z)` on `Fun_G(S × S, A)`. -/
 instance instMulPermutationHeckeModule : Mul (permutationHeckeModule G S A) where
-  mul h₁ h₂ := ⟨mulFun h₁ h₂, mulFun_mem h₁ h₂⟩
+  mul h₁ h₂ := ⟨fun p ↦ ∑ᶠ y, (h₁ : S × S → A) (p.1, y) * (h₂ : S × S → A) (y, p.2), by
+      refine ⟨fun g p ↦ ?_, ?_⟩
+      · simp only [Prod.smul_fst, Prod.smul_snd]
+        rw [← finsum_comp_equiv (MulAction.toPerm g)]
+        exact finsum_congr fun y ↦ by rw [MulAction.toPerm_apply, apply_smul, apply_smul]
+      -- The orbit of `(x, z)` is that of `(x₁, g • z)`, where `(x₁, y₁)` represents the orbit of a
+      -- pair `(x, y)` in the support of `h₁`, and `g • z` lies in the finite row of `h₂` at `y₁`.
+      let rep (q : Quotient (orbitRel G (S × S))) : S × S := q.out
+      refine (h₁.property.2.biUnion fun q _ ↦ ((finite_support_row h₂ (rep q).2).image
+        fun w ↦ Quotient.mk (orbitRel G (S × S)) ((rep q).1, w))).subset ?_
+      rintro _ ⟨⟨x, z⟩, hxz, rfl⟩
+      obtain ⟨y, hy⟩ : ∃ y, (h₁ : S × S → A) (x, y) * (h₂ : S × S → A) (y, z) ≠ 0 := by
+        by_contra! hall
+        exact hxz (finsum_eq_zero_of_forall_eq_zero hall)
+      obtain ⟨g, hg⟩ := Quotient.mk_out (s := orbitRel G (S × S)) (x, y)
+      refine Set.mem_biUnion ⟨(x, y), left_ne_zero_of_mul hy, rfl⟩ ⟨g • z, ?_, ?_⟩
+      · simp only [Function.mem_support, rep, ← hg, Prod.smul_snd, apply_smul]
+        exact right_ne_zero_of_mul hy
+      · refine Quotient.sound ⟨g, ?_⟩
+        simp only [rep, ← hg, Prod.smul_mk]⟩
 
 /-- The matrix product, entrywise. Only finitely many terms are nonzero. -/
 theorem mul_apply (h₁ h₂ : permutationHeckeModule G S A) (x z : S) :
@@ -307,8 +305,8 @@ theorem one_apply (x y : S) :
 theorem toEnd_one : toEnd G S A 1 = 1 := by
   refine Finsupp.lhom_ext fun s c ↦ ?_
   ext t
-  rw [toEnd_single, one_apply, one_apply_eq_self, ← smul_eq_mul, ← Finsupp.smul_apply,
-    Finsupp.smul_single, smul_eq_mul, mul_one]
+  classical
+  simp [one_apply, Finsupp.single_apply]
 
 instance instNatCastPermutationHeckeModule : NatCast (permutationHeckeModule G S A) where
   natCast n := n • 1
@@ -319,24 +317,35 @@ instance instIntCastPermutationHeckeModule : IntCast (permutationHeckeModule G S
 instance instPowPermutationHeckeModule : Pow (permutationHeckeModule G S A) ℕ where
   pow h n := npowRec n h
 
+omit [FiniteStabilizerOrbits G S] in
+private theorem natCast_def (n : ℕ) : (n : permutationHeckeModule G S A) = n • 1 :=
+  (rfl)
+
+omit [FiniteStabilizerOrbits G S] in
+private theorem intCast_def (n : ℤ) : (n : permutationHeckeModule G S A) = n • 1 :=
+  (rfl)
+
+private theorem pow_zero_def (h : permutationHeckeModule G S A) : h ^ 0 = 1 :=
+  (rfl)
+
+private theorem pow_succ_def (h : permutationHeckeModule G S A) (n : ℕ) :
+    h ^ (n + 1) = h ^ n * h :=
+  (rfl)
+
 /-- The action of a power is the power of the action. -/
 theorem toEnd_pow (h : permutationHeckeModule G S A) (n : ℕ) :
     toEnd G S A (h ^ n) = toEnd G S A h ^ n := by
   induction n with
-  | zero => exact toEnd_one
-  | succ n ih =>
-    change toEnd G S A (h ^ n * h) = _
-    rw [toEnd_mul, ih, pow_succ]
+  | zero => rw [pow_zero_def, toEnd_one, pow_zero]
+  | succ n ih => rw [pow_succ_def, toEnd_mul, ih, pow_succ]
 
 /-- The action of a natural number is multiplication by it. -/
 theorem toEnd_natCast (n : ℕ) : toEnd G S A (n : permutationHeckeModule G S A) = n := by
-  change toEnd G S A (n • 1) = _
-  rw [map_nsmul, toEnd_one, nsmul_one]
+  rw [natCast_def, map_nsmul, toEnd_one, nsmul_one]
 
 /-- The action of an integer is multiplication by it. -/
 theorem toEnd_intCast (n : ℤ) : toEnd G S A (n : permutationHeckeModule G S A) = n := by
-  change toEnd G S A (n • 1) = _
-  rw [map_zsmul, toEnd_one]
+  rw [intCast_def, map_zsmul, toEnd_one]
   exact zsmul_one (R := Module.End A (S →₀ A)) n
 
 instance instRingPermutationHeckeModule : Ring (permutationHeckeModule G S A) :=
@@ -354,11 +363,25 @@ variable (G S A) in
 def toEndAlgHom : permutationHeckeModule G S A →ₐ[A] Module.End A (S →₀ A) :=
   AlgHom.ofLinearMap (toEnd G S A) toEnd_one toEnd_mul
 
+/-- `toEndAlgHom` is `toEnd`. -/
+@[simp]
+theorem toEndAlgHom_apply (h : permutationHeckeModule G S A) :
+    toEndAlgHom G S A h = toEnd G S A h :=
+  (rfl)
+
 variable (G S A) in
 /-- `End_G(A[S])`: the endomorphisms of the permutation module `S →₀ A` commuting with the
 permutation action of `G`. -/
 abbrev equivariantEnd : Subalgebra A (Module.End A (S →₀ A)) :=
   Subalgebra.centralizer A (Set.range fun g : G ↦ Finsupp.lmapDomain A A (g • · : S → S))
+
+omit [FiniteStabilizerOrbits G S] [Finite (orbitRel.Quotient G S)] in
+/-- An endomorphism of `S →₀ A` is in `End_G(A[S])` exactly when it commutes with every
+`g : G`. -/
+theorem mem_equivariantEnd_iff {φ : Module.End A (S →₀ A)} :
+    φ ∈ equivariantEnd G S A ↔ ∀ g : G, φ ∘ₗ Finsupp.lmapDomain A A (g • · : S → S) =
+      Finsupp.lmapDomain A A (g • · : S → S) ∘ₗ φ := by
+  simp [Subalgebra.mem_centralizer_iff, Module.End.mul_eq_comp, eq_comm]
 
 omit [FiniteStabilizerOrbits G S] in
 /-- The matrix `(t, s) ↦ φ(s)(t)` of an equivariant endomorphism `φ` lies in
@@ -368,7 +391,7 @@ theorem matrix_mem (φ : equivariantEnd G S A) :
       permutationHeckeModule G S A := by
   have hφ (g : G) (f : S →₀ A) : (φ : Module.End A (S →₀ A)) (f.mapDomain (g • ·)) =
       ((φ : Module.End A (S →₀ A)) f).mapDomain (g • ·) :=
-    (LinearMap.congr_fun (φ.property _ ⟨g, rfl⟩) f).symm
+    LinearMap.congr_fun (mem_equivariantEnd_iff.mp φ.property g) f
   refine ⟨fun g p ↦ ?_, ?_⟩
   · simp only [Prod.smul_fst, Prod.smul_snd]
     rw [← Finsupp.mapDomain_single (f := (g • · : S → S)), hφ,
@@ -391,21 +414,27 @@ variable (G S A) in
 permutation module identifies the permutation Hecke algebra with the equivariant endomorphisms. -/
 def toEndAlgEquiv : permutationHeckeModule G S A ≃ₐ[A] equivariantEnd G S A :=
   AlgEquiv.ofBijective
-    ((toEndAlgHom G S A).codRestrict _ fun h ↦ by
-      rintro _ ⟨g, rfl⟩
-      exact (toEnd_comp_lmapDomain h g).symm)
+    ((toEndAlgHom G S A).codRestrict _ fun h ↦
+      mem_equivariantEnd_iff.mpr (toEnd_comp_lmapDomain h))
     ⟨fun h₁ h₂ he ↦ toEnd_injective G S A (congrArg Subtype.val he), fun φ ↦ ⟨⟨_, matrix_mem φ⟩,
       Subtype.ext <| Finsupp.lhom_ext fun s c ↦ by
         ext t
-        change toEnd G S A ⟨_, matrix_mem φ⟩ (Finsupp.single s c) t = _
-        rw [toEnd_single, ← smul_eq_mul, ← Finsupp.smul_apply, ← map_smul,
-          Finsupp.smul_single, smul_eq_mul, mul_one]⟩⟩
+        rw [AlgHom.coe_codRestrict, toEndAlgHom_apply, toEnd_single, ← smul_eq_mul,
+          ← Finsupp.smul_apply, ← map_smul, Finsupp.smul_single_one]⟩⟩
 
 /-- The isomorphism `Fun_G(S × S, A) ≃ End_G(A[S])` is the action on `S →₀ A`. -/
 @[simp]
 theorem coe_toEndAlgEquiv_apply (h : permutationHeckeModule G S A) :
     (toEndAlgEquiv G S A h : Module.End A (S →₀ A)) = toEnd G S A h :=
   (rfl)
+
+/-- The inverse of `toEndAlgEquiv` sends `φ` to its matrix `(t, s) ↦ φ(s)(t)`. -/
+@[simp]
+theorem toEndAlgEquiv_symm_apply (φ : equivariantEnd G S A) (t s : S) :
+    ((toEndAlgEquiv G S A).symm φ : S × S → A) (t, s) =
+      (φ : Module.End A (S →₀ A)) (Finsupp.single s 1) t := by
+  obtain ⟨h, rfl⟩ := (toEndAlgEquiv G S A).surjective φ
+  simp
 
 end FiniteOrbits
 
