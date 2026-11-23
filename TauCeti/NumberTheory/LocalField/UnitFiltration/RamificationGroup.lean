@@ -185,8 +185,7 @@ theorem coe_uniformizerRatio (hϖ : Irreducible ϖ) (σ : ramificationGroup G �
   have hcoe : ((uniformizerRatio i hϖ σ : Lˣ) : L) =
       (((IsDiscreteValuationRing.uniformizerRatio i hϖ σ : 𝒪[L]ˣ) : 𝒪[L]) : L) := by
     rw [uniformizerRatio_eq_symm, coe_unitFiltrationEquivPrincipalUnitGroup_symm_apply,
-      Units.coe_map]
-    rfl
+      Units.coe_map, MonoidHom.coe_ofClass, Subring.coe_subtype]
   rw [hcoe, eq_div_iff hϖne, mul_comm, ← coe_smul_integer, ← MulMemClass.coe_mul,
     IsDiscreteValuationRing.mul_coe_uniformizerRatio]
 
@@ -410,13 +409,10 @@ theorem ramificationGroupGradedToUnitFiltrationGraded_mk (hϖ : Irreducible ϖ)
     (σ : ramificationGroup G 𝒪[L] (i : ℤ)) :
     ramificationGroupGradedToUnitFiltrationGraded i hϖ (QuotientGroup.mk σ) =
       QuotientGroup.mk (uniformizerRatio i hϖ σ) := by
-  rw [ramificationGroupGradedToUnitFiltrationGraded, MonoidHom.comp_apply,
+  simp only [ramificationGroupGradedToUnitFiltrationGraded, MonoidHom.comp_apply,
     MulEquiv.coe_toMonoidHom,
     IsDiscreteValuationRing.ramificationGroupGradedToPrincipalUnitGroupGraded_mk,
-    ← IsDiscreteValuationRing.ramificationGroupToPrincipalUnitGroupGraded_apply,
-    ← MulEquiv.coe_toMonoidHom, ← MonoidHom.comp_apply,
-    ← ramificationGroupToUnitFiltrationGraded,
-    ramificationGroupToUnitFiltrationGraded_apply]
+    unitFiltrationGradedEquivPrincipalUnitGroupPowGraded_symm_mk, uniformizerRatio_eq_symm]
 
 /-- **The quotient embeddings are injective.** -/
 theorem ramificationGroupGradedToUnitFiltrationGraded_injective (hϖ : Irreducible ϖ) :

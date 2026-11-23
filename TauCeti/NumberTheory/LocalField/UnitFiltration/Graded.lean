@@ -26,10 +26,6 @@ has `#𝓀[K]` elements.
 
 ## Main results
 
-* `TauCeti.unitFiltrationEquivPrincipalUnitGroup` and
-  `TauCeti.unitFiltrationGradedEquivPrincipalUnitGroupPowGraded`: identification of `U(K,i)` with
-  `(maximalIdeal 𝒪[K] ^ i).principalUnitGroup` and of `U(K,i) / U(K,i+1)` with
-  `(maximalIdeal 𝒪[K]).PrincipalUnitGroupPowGraded i`.
 * `TauCeti.unitFiltrationGradedSuccEquivMaximalIdealGraded`: subtracting one identifies a
   positive unit-filtration quotient with the corresponding quotient of powers of the maximal
   ideal.
@@ -103,82 +99,6 @@ theorem coe_coe_unitFiltrationDifference (n : ℕ) (x : unitFiltration K (n + 1)
   change (((unitFiltrationToIntegerUnits (n + 1) x : 𝒪[K]) : K)) - 1 =
     ((x : Kˣ) : K) - 1
   rw [coe_unitFiltrationToIntegerUnits]
-
-/-- A unit of `𝒪[K]` maps into `U(K,i)` if and only if it belongs to the `i`-th principal unit
-group of `maximalIdeal 𝒪[K]`. -/
-theorem mem_unitFiltration_iff_mem_principalUnitGroup (i : ℕ) (u : 𝒪[K]ˣ) :
-    Units.map (Subring.subtype 𝒪[K] : 𝒪[K] →* K) u ∈ unitFiltration K i ↔
-      u ∈ (IsLocalRing.maximalIdeal 𝒪[K] ^ i).principalUnitGroup := by
-  rw [Ideal.mem_principalUnitGroup]
-  cases i with
-  | zero =>
-    simp
-  | succ n =>
-    rw [← RingHom.toMonoidHom_eq_coe]
-    exact mem_unitFiltration_succ_congr n u
-
-/-- The `i`-th step `U(K,i)` of the unit filtration is multiplicatively isomorphic to the
-principal unit group `(maximalIdeal 𝒪[K] ^ i).principalUnitGroup` inside `𝒪[K]ˣ`. -/
-noncomputable def unitFiltrationEquivPrincipalUnitGroup (i : ℕ) :
-    unitFiltration K i ≃* (IsLocalRing.maximalIdeal 𝒪[K] ^ i).principalUnitGroup where
-  toFun x := ⟨unitFiltrationToIntegerUnits i x,
-    (mem_unitFiltration_iff_mem_principalUnitGroup i _).mp <| by
-      rw [unitsMap_subtype_unitFiltrationToIntegerUnits]
-      exact x.property⟩
-  invFun u := ⟨Units.map (Subring.subtype 𝒪[K] : 𝒪[K] →* K) (u : 𝒪[K]ˣ),
-    (mem_unitFiltration_iff_mem_principalUnitGroup i (u : 𝒪[K]ˣ)).mpr u.property⟩
-  left_inv x := Subtype.ext <| by
-    simp only [unitsMap_subtype_unitFiltrationToIntegerUnits]
-  right_inv u := by
-    apply Subtype.ext
-    apply Units.ext
-    apply Subtype.coe_injective
-    exact coe_unitFiltrationToIntegerUnits i _
-  map_mul' x y := Subtype.ext (map_mul (unitFiltrationToIntegerUnits i) x y)
-
-/-- Coerced to `𝒪[K]ˣ`, `unitFiltrationEquivPrincipalUnitGroup` agrees with
-`unitFiltrationToIntegerUnits`. -/
-@[simp]
-theorem coe_unitFiltrationEquivPrincipalUnitGroup_apply (i : ℕ) (x : unitFiltration K i) :
-    (unitFiltrationEquivPrincipalUnitGroup i x : 𝒪[K]ˣ) = unitFiltrationToIntegerUnits i x :=
-  (rfl)
-
-/-- Coerced to `Kˣ`, the inverse of `unitFiltrationEquivPrincipalUnitGroup` is the inclusion of
-`𝒪[K]ˣ` into `Kˣ`. -/
-@[simp]
-theorem coe_unitFiltrationEquivPrincipalUnitGroup_symm_apply (i : ℕ)
-    (u : (IsLocalRing.maximalIdeal 𝒪[K] ^ i).principalUnitGroup) :
-    ((unitFiltrationEquivPrincipalUnitGroup i).symm u : Kˣ) =
-      Units.map (Subring.subtype 𝒪[K] : 𝒪[K] →* K) (u : 𝒪[K]ˣ) :=
-  (rfl)
-
-/-- The `i`-th graded piece `U(K,i) / U(K,i+1)` of the unit filtration is multiplicatively
-isomorphic to `(maximalIdeal 𝒪[K]).PrincipalUnitGroupPowGraded i`. -/
-noncomputable def unitFiltrationGradedEquivPrincipalUnitGroupPowGraded (i : ℕ) :
-    UnitFiltrationGraded K i ≃* (IsLocalRing.maximalIdeal 𝒪[K]).PrincipalUnitGroupPowGraded i :=
-  QuotientGroup.congr _ _ (unitFiltrationEquivPrincipalUnitGroup i) (by
-    ext u
-    rw [← MulEquiv.toMonoidHom_eq_coe, Subgroup.mem_map_equiv, Subgroup.mem_subgroupOf,
-      Subgroup.mem_subgroupOf, coe_unitFiltrationEquivPrincipalUnitGroup_symm_apply]
-    exact mem_unitFiltration_iff_mem_principalUnitGroup (i + 1) (u : 𝒪[K]ˣ))
-
-/-- Evaluating `unitFiltrationGradedEquivPrincipalUnitGroupPowGraded` on a quotient class. -/
-@[simp]
-theorem unitFiltrationGradedEquivPrincipalUnitGroupPowGraded_mk (i : ℕ)
-    (x : unitFiltration K i) :
-    unitFiltrationGradedEquivPrincipalUnitGroupPowGraded i (QuotientGroup.mk x) =
-      QuotientGroup.mk (unitFiltrationEquivPrincipalUnitGroup i x) :=
-  QuotientGroup.congr_mk _ _ _ _ x
-
-/-- Evaluating the inverse of `unitFiltrationGradedEquivPrincipalUnitGroupPowGraded` on a
-quotient class. -/
-@[simp]
-theorem unitFiltrationGradedEquivPrincipalUnitGroupPowGraded_symm_mk (i : ℕ)
-    (u : (IsLocalRing.maximalIdeal 𝒪[K] ^ i).principalUnitGroup) :
-    (unitFiltrationGradedEquivPrincipalUnitGroupPowGraded i).symm (QuotientGroup.mk u) =
-      QuotientGroup.mk ((unitFiltrationEquivPrincipalUnitGroup i).symm u) := by
-  rw [MulEquiv.symm_apply_eq, unitFiltrationGradedEquivPrincipalUnitGroupPowGraded_mk,
-    MulEquiv.apply_symm_apply]
 
 /-- Subtracting one, modulo the next power of the maximal ideal, is a homomorphism from a
 positive unit-filtration step to the multiplicative copy of the corresponding ideal quotient. -/

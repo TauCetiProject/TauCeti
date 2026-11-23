@@ -84,13 +84,6 @@ section Character
 
 variable (F) (P : Place k F') {t : F'}
 
-private theorem mem_integers_of_ord_eq_one (ht : P.ord t = 1) : t ∈ P.integers :=
-  P.mem_integers_iff_ord_nonneg.mpr (ht ▸ zero_le_one)
-
-private theorem irreducible_of_ord_eq_one (ht : P.ord t = 1) :
-    Irreducible (⟨t, mem_integers_of_ord_eq_one P ht⟩ : P.integers) :=
-  P.irreducible_of_isUniformizer (P.isUniformizer_iff_ord_eq_one.mpr ht)
-
 private def ramificationGroupZeroEquiv :
     ramificationGroup F P 0 ≃*
       IsLocalRing.ramificationGroup (P.integers.decompositionSubgroup F) P.integers 0 :=
@@ -151,12 +144,9 @@ character exactly when it fixes the uniformizer `t` modulo `𝔪_P²`. -/
 theorem tameCharacter_eq_one_iff (ht : P.ord t = 1) (g : ramificationGroup F P 0) :
     tameCharacter F P ht g = 1 ↔
       ((g : P.integers.decompositionSubgroup F) : F' ≃ₐ[F] F') t - t ∈ P.filtration 2 := by
-  rw [← MonoidHom.mem_ker, tameCharacter, MonoidHom.mem_ker, MonoidHom.comp_apply,
-    MulEquiv.coe_toMonoidHom, ← MonoidHom.mem_ker,
-    IsDiscreteValuationRing.mem_ker_tameCharacter_iff (irreducible_of_ord_eq_one P ht),
-    P.mem_maximalIdeal_pow_iff_coe_mem_filtration, AddSubgroupClass.coe_sub,
-    ValuationSubring.coe_decompositionSubgroup_smul, coe_ramificationGroupZeroEquiv,
-    Subtype.coe_mk, Nat.cast_ofNat]
+  rw [← MonoidHom.mem_ker, tameCharacter, ← MonoidHom.comap_ker, Subgroup.mem_comap,
+    IsDiscreteValuationRing.mem_ker_tameCharacter_iff _]
+  simp [P.mem_maximalIdeal_pow_iff_coe_mem_filtration, coe_ramificationGroupZeroEquiv]
 
 omit [Algebra k F] [IsScalarTower k F F'] in
 /-- **The tame character does not depend on the uniformizer.** -/

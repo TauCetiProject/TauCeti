@@ -231,6 +231,11 @@ theorem ramificationGroup_antitone : Antitone (ramificationGroup G S) := by
   rw [mem_ramificationGroup_iff] at hσ ⊢
   exact fun x ↦ Ideal.pow_le_pow_right (by omega) (hσ x)
 
+/-- Finiteness of a ramification group passes downward along the filtration. -/
+theorem finite_ramificationGroup_of_le {i j : ℤ} (hij : i ≤ j)
+    [Finite (ramificationGroup G S i)] : Finite (ramificationGroup G S j) :=
+  Finite.of_injective _ (Subgroup.inclusion_injective (ramificationGroup_antitone G S hij))
+
 end Defs
 
 section Adjoin
@@ -1200,8 +1205,7 @@ theorem ramificationGroup_eq_bot_of_charZero (G : Type*) [Group G] (S : Type*) [
     | zero => simp
     | succ k ih =>
       have : Finite (ramificationGroup G S (i + k)) :=
-        Finite.of_injective _ (Subgroup.inclusion_injective
-          (ramificationGroup_antitone G S (by omega : i ≤ i + k)))
+        finite_ramificationGroup_of_le G S (by omega : i ≤ i + k)
       have hsub := subsingleton_ramificationGroupGraded_of_charZero G S (i := i + k) (by omega)
       rw [RamificationGroupGraded, QuotientGroup.subsingleton_iff,
         Subgroup.subgroupOf_eq_top] at hsub
@@ -1287,8 +1291,7 @@ theorem ramificationGroup_one_eq_bot_iff_not_dvd_card_of_not_dvd_index
     simp only [hp, not_true_eq_false, false_or, Nat.card_pos.ne', or_false]
   · have : CharZero (ResidueField S) := CharP.charP_to_charZero (ResidueField S)
     have : Finite (ramificationGroup G S 1) :=
-      Finite.of_injective _ (Subgroup.inclusion_injective
-        (ramificationGroup_antitone G S zero_le_one))
+      finite_ramificationGroup_of_le G S zero_le_one
     rw [ramificationGroup_eq_bot_of_charZero G S one_pos, zero_dvd_iff]
     exact iff_of_true rfl Nat.card_pos.ne'
 

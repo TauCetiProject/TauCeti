@@ -443,8 +443,9 @@ private theorem ramificationGroupGradedToResidueField_apply (n : ℕ) {ϖ : B}
         (Additive.ofMul
           (ramificationGroupGradedToPrincipalUnitGroupGraded (n + 1) hϖ
             (ramificationGroupGradedCastSuccEquiv n q))) := by
-  rw [ramificationGroupGradedToResidueField]
-  rfl
+  simp only [ramificationGroupGradedToResidueField, AddMonoidHom.comp_apply,
+    AddEquiv.coe_toAddMonoidHom, MonoidHom.toAdditive_apply_apply, MonoidHom.comp_apply,
+    MulEquiv.coe_toMonoidHom, toMul_ofMul]
 
 /-- On the class of `τ ∈ G_{n+1}`, `ramificationGroupGradedToResidueField` evaluates the
 principal-unit coordinate at `uniformizerRatio (n + 1) hϖ τ`. -/
@@ -713,8 +714,8 @@ theorem tameCharacter_injective_of_charZero (A : Type*) [CommRing A] [IsLocalRin
     [Algebra.IsSeparable (ResidueField A) (ResidueField B)] [CharZero (ResidueField B)]
     [FaithfulSMul G B] [Finite (ramificationGroup G B 0)] {ϖ : B} (hϖ : Irreducible ϖ) :
     Function.Injective (tameCharacter (G := G) hϖ) := by
-  have : Finite (ramificationGroup G B 1) := Finite.of_injective _ <|
-    Subgroup.inclusion_injective (ramificationGroup_antitone G B zero_le_one)
+  have : Finite (ramificationGroup G B 1) :=
+    finite_ramificationGroup_of_le G B zero_le_one
   exact (tameCharacter_injective_iff A hϖ).mpr
     (ramificationGroup_eq_bot_of_charZero G B (i := 1) one_pos)
 
@@ -743,8 +744,8 @@ theorem isCyclic_ramificationGroup_zero_of_charZero (A G B : Type*) [CommRing A]
     [Algebra.IsSeparable (ResidueField A) (ResidueField B)] [CharZero (ResidueField B)]
     [FaithfulSMul G B] [Finite (ramificationGroup G B 0)] :
     IsCyclic (ramificationGroup G B 0) := by
-  have : Finite (ramificationGroup G B 1) := Finite.of_injective _ <|
-    Subgroup.inclusion_injective (ramificationGroup_antitone G B zero_le_one)
+  have : Finite (ramificationGroup G B 1) :=
+    finite_ramificationGroup_of_le G B zero_le_one
   exact isCyclic_ramificationGroup_zero_of_ramificationGroup_one_eq_bot A G B
     (ramificationGroup_eq_bot_of_charZero G B one_pos)
 

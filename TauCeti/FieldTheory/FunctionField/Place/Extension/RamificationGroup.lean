@@ -194,9 +194,33 @@ theorem exists_forall_ramificationGroup_eq_bot [Finite (ramificationGroup F P 0)
 
 end Defs
 
+section Uniformizer
+
+variable {k : Type u} {F' : Type v'} [Field k] [Field F'] [Algebra k F']
+
+/-- A function of order `1` at `P` is integral at `P`. -/
+theorem mem_integers_of_ord_eq_one (P : Place k F') {t : F'} (ht : P.ord t = 1) :
+    t ∈ P.integers :=
+  P.mem_integers_iff_ord_nonneg.mpr (ht ▸ zero_le_one)
+
+/-- A function of order `1` at `P` is irreducible in the valuation ring `P.integers`. -/
+theorem irreducible_of_ord_eq_one (P : Place k F') {t : F'} (ht : P.ord t = 1) :
+    Irreducible (⟨t, mem_integers_of_ord_eq_one P ht⟩ : P.integers) :=
+  P.irreducible_of_isUniformizer (P.isUniformizer_iff_ord_eq_one.mpr ht)
+
+end Uniformizer
+
 section Residue
 
 variable (F) (P : Place k F') {t : F'}
+
+private noncomputable def ramificationResidueCoord (ht : P.ord t = 1) (i : ℕ) :
+    P.ResidueField ≃ₗ[P.integers]
+      (IsLocalRing.maximalIdeal P.integers ^ (i + 2) : Ideal P.integers) ⧸
+        (IsLocalRing.maximalIdeal P.integers • ⊤ : Submodule P.integers
+          (IsLocalRing.maximalIdeal P.integers ^ (i + 2) : Ideal P.integers)) :=
+  residueFieldEquivMaximalIdealGradedOfUniformizer
+    ⟨t, mem_integers_of_ord_eq_one P ht⟩ (irreducible_of_ord_eq_one P ht) (i + 2)
 
 /-- **The ramification residue** (Stichtenoth, Proposition 3.8.5): for a uniformizer `t` at `P`,
 the map sending an automorphism `σ` of `G_{i+1}(P)` to the function `z ↦ ((σ z - z)/t^{i+2})(P)`
@@ -206,10 +230,7 @@ therefore written multiplicatively here.  The map depends on the choice of `t`; 
 noncomputable def ramificationResidueHom (ht : P.ord t = 1) (i : ℕ) :
     ramificationGroup F P (i + 1) →* Multiplicative (P.integers → P.ResidueField) :=
   ((AddEquiv.piCongrRight fun _ ↦
-    (residueFieldEquivMaximalIdealGradedOfUniformizer
-      ⟨t, P.mem_integers_iff_ord_nonneg.mpr (ht ▸ zero_le_one)⟩
-      (P.irreducible_of_isUniformizer (P.isUniformizer_iff_ord_eq_one.mpr ht))
-      (i + 2)).symm.toAddEquiv).toMultiplicative.toMonoidHom.comp
+    (ramificationResidueCoord P ht i).symm.toAddEquiv).toMultiplicative.toMonoidHom.comp
     (IsLocalRing.displacementHom (P.integers.decompositionSubgroup F) P.integers i)).comp
     (MulEquiv.subgroupCongr (ramificationGroup_def F P (i + 1))).toMonoidHom
 
@@ -222,20 +243,16 @@ theorem toAdd_ramificationResidueHom_apply (ht : P.ord t = 1) (i : ℕ)
     Multiplicative.toAdd (ramificationResidueHom F P ht i g) x =
       IsLocalRing.residue P.integers y := by
   have ht0 : t ≠ 0 := fun h0 ↦ by simp [h0, ord_zero] at ht
-  rw [ramificationResidueHom, MonoidHom.comp_apply, MonoidHom.comp_apply,
-    MulEquiv.coe_toMonoidHom, MulEquiv.coe_toMonoidHom, AddEquiv.toMultiplicative_apply_apply,
-    toAdd_ofAdd, AddEquiv.piCongrRight_apply, LinearEquiv.coe_toAddEquiv]
-  apply (residueFieldEquivMaximalIdealGradedOfUniformizer
-    ⟨t, P.mem_integers_iff_ord_nonneg.mpr (ht ▸ zero_le_one)⟩
-    (P.irreducible_of_isUniformizer (P.isUniformizer_iff_ord_eq_one.mpr ht)) (i + 2)).injective
-  rw [LinearEquiv.coe_addEquiv_apply, LinearEquiv.apply_symm_apply,
-    residueFieldEquivMaximalIdealGradedOfUniformizer_mk,
+  apply (ramificationResidueCoord P ht i).injective
+  simp only [ramificationResidueHom, MonoidHom.comp_apply, MulEquiv.coe_toMonoidHom,
+    AddEquiv.toMultiplicative_apply_apply, toAdd_ofAdd, AddEquiv.piCongrRight_apply,
+    LinearEquiv.coe_toAddEquiv, LinearEquiv.coe_addEquiv_apply, LinearEquiv.apply_symm_apply,
+    ramificationResidueCoord, residueFieldEquivMaximalIdealGradedOfUniformizer_mk,
     IsLocalRing.toAdd_displacementHom_apply]
   refine congrArg Submodule.Quotient.mk (Subtype.ext ?_)
   apply Subtype.ext
-  rw [AddSubgroupClass.coe_sub, ValuationSubring.coe_decompositionSubgroup_smul,
-    MulEquiv.subgroupCongr_apply, Subtype.coe_mk, MulMemClass.coe_mul, SubmonoidClass.coe_pow,
-    Subtype.coe_mk, hy, mul_comm, ← mul_assoc, mul_inv_cancel₀ (pow_ne_zero _ ht0), one_mul]
+  simp [ValuationSubring.coe_decompositionSubgroup_smul, hy]
+  field_simp
 
 /-- **The kernel of the ramification residue is the next ramification group** (Stichtenoth,
 Proposition 3.8.5): so `G_{i+1}(P) / G_{i+2}(P)` embeds into the additive group of functions from
@@ -247,10 +264,7 @@ theorem ker_ramificationResidueHom (ht : P.ord t = 1) (i : ℕ) :
   rw [ramificationResidueHom, ← MonoidHom.comap_ker,
     MonoidHom.ker_comp_of_injective _ _
       (AddEquiv.piCongrRight fun _ ↦
-        (residueFieldEquivMaximalIdealGradedOfUniformizer
-          ⟨t, P.mem_integers_iff_ord_nonneg.mpr (ht ▸ zero_le_one)⟩
-          (P.irreducible_of_isUniformizer (P.isUniformizer_iff_ord_eq_one.mpr ht))
-          (i + 2)).symm.toAddEquiv).toMultiplicative.injective,
+        (ramificationResidueCoord P ht i).symm.toAddEquiv).toMultiplicative.injective,
     IsLocalRing.ker_displacementHom]
   ext g
   simp only [Subgroup.mem_comap, Subgroup.mem_subgroupOf, MulEquiv.coe_toMonoidHom,
