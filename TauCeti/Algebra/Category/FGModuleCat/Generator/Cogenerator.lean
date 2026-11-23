@@ -83,8 +83,6 @@ generator-cogenerator. (This last part is a remark and is not formalized here.)
 
 * M. Auslander, I. Reiten, S. O. Smalø, *Representation Theory of Artin Algebras*, Cambridge
   University Press (1995), Sections II.3 and VI.5.
-* B. J. Müller, *The classification of algebras by dominant dimension*, Canad. J. Math. 20 (1968),
-  398–409, Theorem 2.
 -/
 
 public section
