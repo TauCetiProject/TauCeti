@@ -42,10 +42,13 @@ allowed.
 
 * `HasFPowerSeriesOnBall.norm_apply_le_of_forall_norm_eq_one`,
   `HasFPowerSeriesOnBall.norm_apply_le_of_forall_mem_eball`, and
-  `HasFPowerSeriesOnBall.norm_apply_le`: Cauchy's inequality `‖p n (fun _ ↦ v)‖ ≤ M` for every
-  homogeneous term on a complex circle `‖ζ‖ = 1`, on `‖y‖ₑ ≤ r`, and on the closed ball `‖v‖ ≤ R`.
+  `HasFPowerSeriesOnBall.norm_apply_le`: Cauchy's inequality `‖p n (fun _ ↦ y)‖ ≤ M` for
+  homogeneous terms: when `‖f (x + ζ • y)‖ ≤ M` on the unit circle `‖ζ‖ = 1` with `‖y‖ₑ < r`,
+  when `‖f‖ ≤ M` on `Metric.eball x r` with `‖y‖ₑ ≤ r`, and when `‖f‖ ≤ M` on `Metric.ball x R`
+  with `‖y‖ ≤ R`.
 * `HasFPowerSeriesOnBall.norm_apply_mul_pow_le`: the homogeneous scaling form
-  `‖p n (fun _ ↦ v)‖ * R ^ n ≤ M * ‖v‖ ^ n` on `Metric.ball x R`.
+  `‖p n (fun _ ↦ v)‖ * R ^ n ≤ M * ‖v‖ ^ n` for every `v : E`, when `‖f‖ ≤ M` on
+  `Metric.ball x R`.
 * `HasFPowerSeriesOnBall.norm_add_sub_partialSum_le` and
   `HasFPowerSeriesOnBall.norm_sub_partialSum_le`: the Taylor remainder bound
   `(1 + T) * M * (‖z‖ / R) ^ T` about an arbitrary centre `x` and about `0`.
@@ -117,9 +120,12 @@ theorem norm_apply_le_of_forall_mem_eball {f : E → V} {p : FormalMultilinearSe
     {M : ℝ} (hM : ∀ w ∈ Metric.eball x r, ‖f w‖ ≤ M) (n : ℕ) {y : E}
     (hy : ‖y‖ₑ ≤ r) : ‖p n (fun _ ↦ y)‖ ≤ M := by
   have hball {z : E} (hz : ‖z‖ₑ < r) : ‖p n (fun _ ↦ z)‖ ≤ M :=
-    hf.norm_apply_le_of_forall_norm_eq_one n hz fun ζ hζ ↦
-      hM _ (by simpa [Metric.mem_eball, edist_dist, dist_eq_norm, norm_smul, hζ, ofReal_norm]
-        using hz)
+    hf.norm_apply_le_of_forall_norm_eq_one n hz fun ζ hζ ↦ by
+      have hζe : ‖ζ‖ₑ = 1 := by rw [← ofReal_norm, hζ, ENNReal.ofReal_one]
+      have hsmul : ‖ζ • z‖ₑ = ‖z‖ₑ := by rw [eNorm_smul, hζe, one_mul]
+      refine hM _ ?_
+      rw [Metric.mem_eball, eDist_eq_eNorm_sub, add_sub_cancel_left, hsmul]
+      exact hz
   rcases hy.lt_or_eq with hy_lt | hy_eq
   · exact hball hy_lt
   · have hy0 : 0 < ‖y‖ := by

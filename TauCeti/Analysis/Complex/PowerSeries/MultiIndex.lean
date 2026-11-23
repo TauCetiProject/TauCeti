@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.RingTheory.RootsOfUnity.PrimitiveRoots
 public import TauCeti.Analysis.Analytic.MultiIndex.Coeff
 public import TauCeti.Analysis.Complex.PowerSeries.TaylorRemainder
 import Mathlib.RingTheory.RootsOfUnity.Complex
@@ -22,8 +23,9 @@ This file proves **Cauchy's inequality for multi-index coefficients** and the re
   index grid `j : ι → Fin (∑ i, α i + 1)` (of cardinality `(∑ i, α i + 1) ^ Fintype.card ι`,
   counting repeated points `z j i = ρ i * ω ^ (j i)` with multiplicity when some `ρ i = 0`) for a
   primitive `(∑ i, α i + 1)`-th root of unity `ω` extracts the radius-weighted coefficient
-  `(∏ i, (ρ i : ℂ) ^ α i) • p.mvCoeff α` (with norm `‖p.mvCoeff α‖ * ∏ i, ρ i ^ α i`, including
-  when some `ρ i = 0`) and yields `‖p.mvCoeff α‖ * ∏ i, ρ i ^ α i ≤ M`
+  `(∏ i, (ρ i : ℂ) ^ α i) • p.mvCoeff α`
+  (`FormalMultilinearSeries.sum_smul_apply_grid_eq_mvCoeff`) and yields
+  `‖p.mvCoeff α‖ * ∏ i, ρ i ^ α i ≤ M`
   (`FormalMultilinearSeries.norm_mvCoeff_mul_prod_pow_le_of_forall_norm_coord_eq`). Unlike the
   contour identification on `Fin n → ℂ` in `TauCeti.Analysis.Complex.PowerSeries.Identification`,
   this discrete Fourier average applies to any finite index type `ι`, includes `ρ i = 0`, and needs
@@ -64,11 +66,12 @@ variable {ι : Type*} [Fintype ι] {V : Type*} [NormedAddCommGroup V] [NormedSpa
 
 namespace FormalMultilinearSeries
 
-/-- Unnormalized discrete Fourier sum of `p k` over the index grid `ι → Fin m` (`m = k + 1`,
-`k = ∑ i, α i`), evaluating at `z j i = ρ i * ω ^ (j i : ℕ)` (counting repeated grid points
-with multiplicity when some `ρ i = 0`), equal to `m ^ Fintype.card ι` (the cardinality of
-`ι → Fin m`) times the radius-weighted coefficient `(∏ i, ρ i ^ α i) • p.mvCoeff α`. -/
-private theorem sum_smul_apply_grid_eq_mvCoeff [DecidableEq ι]
+/-- Unnormalized discrete Fourier sum of `p (∑ i, α i)` over the index grid
+`ι → Fin (∑ i, α i + 1)`, evaluating at `z j i = ρ i * ω ^ (j i : ℕ)` (counting repeated grid
+points with multiplicity when some `ρ i = 0`), equal to `(∑ i, α i + 1) ^ Fintype.card ι`
+(the cardinality of `ι → Fin (∑ i, α i + 1)`) times the radius-weighted coefficient
+`(∏ i, ρ i ^ α i) • p.mvCoeff α`. -/
+theorem sum_smul_apply_grid_eq_mvCoeff [DecidableEq ι]
     (p : FormalMultilinearSeries ℂ (ι → ℂ) V) (α : ι → ℕ) (ρ : ι → ℂ) {ω : ℂ}
     (hprim : IsPrimitiveRoot ω (∑ i, α i + 1)) :
     (∑ j : ι → Fin (∑ i, α i + 1),
@@ -171,28 +174,29 @@ theorem norm_mvCoeff_mul_prod_pow_le_of_forall_norm_coord_le_eball {f : (ι → 
       t ^ (∑ i, α i) * (‖p.mvCoeff α‖ * ∏ i, ρ i ^ α i) ≤ M := by
     have hprod : ∏ i, (t * ρ i) ^ α i = t ^ (∑ i, α i) * ∏ i, ρ i ^ α i := by
       simp only [mul_pow, Finset.prod_mul_distrib, Finset.prod_pow_eq_pow_sum]
-    rw [← mul_assoc, mul_comm (t ^ (∑ i, α i)), mul_assoc, ← hprod]
+    have hnorm_prod : ‖p.mvCoeff α‖ * ∏ i, (t * ρ i) ^ α i =
+        t ^ (∑ i, α i) * (‖p.mvCoeff α‖ * ∏ i, ρ i ^ α i) := by
+      rw [hprod]
+      ring
+    rw [← hnorm_prod]
     refine p.norm_mvCoeff_mul_prod_pow_le_of_forall_norm_coord_eq α
       (fun i ↦ mul_nonneg ht0.le (hρ0 i)) fun z hz ↦ ?_
     have hzr : ‖z‖ₑ < r := by
       rcases eq_or_ne r ⊤ with rfl | hr_top
       · exact eNorm_lt_top
       · lift r to ℝ≥0 using hr_top
-        have hz_le : ‖z‖₊ ≤ t.toNNReal * r := by
-          rw [pi_nnNorm_le_iff]
-          intro i
-          have hi : ‖z i‖ ≤ t * r := by
-            rw [hz i]
-            exact mul_le_mul_of_nonneg_left (ENNReal.ofReal_le_coe.1 (hρ i)) ht0.le
-          exact_mod_cast (by simpa [Real.coe_toNNReal _ ht0.le] using hi : (‖z i‖₊ : ℝ) ≤ _)
-        rw [eNorm_eq_nnNorm, ENNReal.coe_lt_coe]
-        exact hz_le.trans_lt (mul_lt_of_lt_one_left (ENNReal.coe_pos.1 hf.r_pos)
-          (Real.toNNReal_lt_one.2 ht1))
+        have hr_pos : 0 < (r : ℝ) := ENNReal.coe_pos.1 hf.r_pos
+        have hz_le : ‖z‖ ≤ t * r := (pi_norm_le_iff_of_nonneg (by positivity)).2 fun i ↦
+          (hz i).le.trans (mul_le_mul_of_nonneg_left (ENNReal.ofReal_le_coe.1 (hρ i)) ht0.le)
+        have hz_lt : ‖z‖ < r := hz_le.trans_lt (mul_lt_of_lt_one_left hr_pos ht1)
+        rwa [← ofReal_norm, ENNReal.ofReal_lt_coe_iff (norm_nonneg z)]
     refine hf.norm_apply_le_of_forall_norm_eq_one (∑ i, α i) hzr fun ζ hζ ↦ ?_
-    refine hM (ζ • z) ?_ fun i ↦ ?_
-    · simpa [← ofReal_norm, norm_smul, hζ] using hzr
-    · rw [Pi.smul_apply, smul_eq_mul, norm_mul, hζ, one_mul, hz i]
-      exact mul_le_of_le_one_left (hρ0 i) ht1.le
+    have hζe : ‖ζ‖ₑ = 1 := by rw [← ofReal_norm, hζ, ENNReal.ofReal_one]
+    have hsmul : ‖ζ • z‖ₑ = ‖z‖ₑ := by rw [eNorm_smul, hζe, one_mul]
+    refine hM (ζ • z) (by rw [hsmul]; exact hzr) fun i ↦ ?_
+    have hcoord : ‖(ζ • z) i‖ = t * ρ i := by simp [hζ, hz i]
+    rw [hcoord]
+    exact mul_le_of_le_one_left (hρ0 i) ht1.le
   have htend : Tendsto (fun t : ℝ ↦ t ^ (∑ i, α i) * (‖p.mvCoeff α‖ * ∏ i, ρ i ^ α i))
       (𝓝[<] (1 : ℝ)) (𝓝 (‖p.mvCoeff α‖ * ∏ i, ρ i ^ α i)) :=
     (((continuous_id.pow (∑ i, α i)).mul continuous_const).tendsto' 1 _ (by simp)).mono_left
@@ -224,7 +228,7 @@ theorem norm_mvCoeff_mul_prod_pow_le_of_forall_mem_eball {f : (ι → ℂ) → V
     (α : ι → ℕ) {ρ : ι → ℝ} (hρ0 : ∀ i, 0 ≤ ρ i) (hρ : ∀ i, ENNReal.ofReal (ρ i) ≤ r) :
     ‖p.mvCoeff α‖ * ∏ i, ρ i ^ α i ≤ M :=
   hf.norm_mvCoeff_mul_prod_pow_le_of_forall_norm_coord_le_eball α hρ0 hρ fun z hz _ ↦
-    hM (x + z) (by simpa [Metric.mem_eball, edist_dist, dist_eq_norm, ← ofReal_norm] using hz)
+    hM (x + z) (by rw [Metric.mem_eball, eDist_eq_eNorm_sub, add_sub_cancel_left]; exact hz)
 
 /-- **Cauchy's inequality on a polydisc (unequal polyradii)**: if `f` has the power series `p` on
 `Metric.ball x R` in `ι → ℂ` and `‖f‖ ≤ M` there, then `‖p.mvCoeff α‖ * ∏ i, ρ i ^ α i ≤ M` for

@@ -46,9 +46,11 @@ coordinate by coordinate, as in transcendence proofs by auxiliary functions in s
 * `FormalMultilinearSeries.prod_factorial_smul_mvCoeff`: factorial permutation-counting formula
   relating `(∏ i, (α i)!) • p.mvCoeff α` to the sum over `Equiv.Perm (Fin k)`.
 * `FormalMultilinearSeries.partialSum_eq_sum_mvCoeff`,
+  `FormalMultilinearSeries.norm_apply_le_sum_mvCoeff_mul_prod_pow`,
+  `FormalMultilinearSeries.norm_partialSum_le_sum_mvCoeff_mul_prod_pow`,
   `FormalMultilinearSeries.norm_apply_le_sum_mvCoeff`, and
   `FormalMultilinearSeries.norm_partialSum_le_sum_mvCoeff`: multi-index expansion of partial
-  sums and norm bounds on homogeneous terms and partial sums on `‖z‖ ≤ r`.
+  sums and pointwise / closed-polydisc norm bounds on homogeneous terms and partial sums.
 * `FormalMultilinearSeries.sum_norm_mvCoeff_le` and
   `FormalMultilinearSeries.exists_mvCoeff_eq_and_norm_le`: the coefficients of total degree `k`
   have norms summing to at most `(card ι) ^ k * ‖p k‖`, and conversely any coefficient family `c`
@@ -323,15 +325,34 @@ theorem partialSum_eq_sum_mvCoeff [DecidableEq ι]
       ∑ k ∈ range T, ∑ α ∈ univ.piAntidiag k, (∏ i, z i ^ α i) • p.mvCoeff α := by
   simp_rw [FormalMultilinearSeries.partialSum, p.apply_eq_sum_mvCoeff]
 
+/-- Pointwise multi-index norm bound on a homogeneous term:
+`‖p k (fun _ ↦ z)‖ ≤ ∑ α ∈ univ.piAntidiag k, ‖p.mvCoeff α‖ * ∏ i, ‖z i‖ ^ α i`. -/
+theorem norm_apply_le_sum_mvCoeff_mul_prod_pow [DecidableEq ι]
+    (p : FormalMultilinearSeries 𝕜 (ι → 𝕜) F) (k : ℕ) (z : ι → 𝕜) :
+    ‖p k (fun _ ↦ z)‖ ≤ ∑ α ∈ univ.piAntidiag k, ‖p.mvCoeff α‖ * ∏ i, ‖z i‖ ^ α i := by
+  rw [p.apply_eq_sum_mvCoeff]
+  refine (norm_sum_le _ _).trans_eq (sum_congr rfl fun α _ ↦ ?_)
+  rw [norm_smul, norm_prod, mul_comm]
+  simp_rw [norm_pow]
+
+/-- Pointwise multi-index norm bound on the partial sum of degree `< T`:
+`‖p.partialSum T z‖ ≤ ∑ k ∈ range T, ∑ α ∈ univ.piAntidiag k, ‖p.mvCoeff α‖ * ∏ i, ‖z i‖ ^ α i`. -/
+theorem norm_partialSum_le_sum_mvCoeff_mul_prod_pow [DecidableEq ι]
+    (p : FormalMultilinearSeries 𝕜 (ι → 𝕜) F) (T : ℕ) (z : ι → 𝕜) :
+    ‖p.partialSum T z‖ ≤
+      ∑ k ∈ range T, ∑ α ∈ univ.piAntidiag k, ‖p.mvCoeff α‖ * ∏ i, ‖z i‖ ^ α i := by
+  rw [FormalMultilinearSeries.partialSum]
+  exact (norm_sum_le _ _).trans (sum_le_sum fun k _ ↦ p.norm_apply_le_sum_mvCoeff_mul_prod_pow k z)
+
 /-- On the closed polydisc `‖z‖ ≤ r`, the homogeneous term `p k (fun _ ↦ z)` has norm at most
 `∑ α ∈ univ.piAntidiag k, ‖p.mvCoeff α‖ * r ^ k`. -/
 theorem norm_apply_le_sum_mvCoeff [DecidableEq ι]
     (p : FormalMultilinearSeries 𝕜 (ι → 𝕜) F) (k : ℕ) {z : ι → 𝕜} {r : ℝ} (hz : ‖z‖ ≤ r) :
     ‖p k (fun _ ↦ z)‖ ≤ ∑ α ∈ univ.piAntidiag k, ‖p.mvCoeff α‖ * r ^ k := by
-  rw [p.apply_eq_sum_mvCoeff]
-  refine (norm_sum_le _ _).trans (sum_le_sum fun α hα ↦ ?_)
-  rw [← (mem_piAntidiag.1 hα).1]
-  exact TauCeti.norm_prod_pow_smul_le hz α (p.mvCoeff α)
+  refine (p.norm_apply_le_sum_mvCoeff_mul_prod_pow k z).trans (sum_le_sum fun α hα ↦ ?_)
+  rw [← (mem_piAntidiag.1 hα).1, ← prod_pow_eq_pow_sum]
+  gcongr with i
+  exact (norm_le_pi_norm z i).trans hz
 
 /-- On a closed polydisc `‖z‖ ≤ r`, the partial sum of degree `< T` is bounded in norm by
 `∑ k ∈ range T, ∑ α ∈ univ.piAntidiag k, ‖p.mvCoeff α‖ * r ^ k`. -/
@@ -339,8 +360,11 @@ theorem norm_partialSum_le_sum_mvCoeff [DecidableEq ι] (p : FormalMultilinearSe
     (T : ℕ) {r : ℝ} {z : ι → 𝕜} (hz : ‖z‖ ≤ r) :
     ‖p.partialSum T z‖ ≤
       ∑ k ∈ range T, ∑ α ∈ univ.piAntidiag k, ‖p.mvCoeff α‖ * r ^ k := by
-  rw [FormalMultilinearSeries.partialSum]
-  exact (norm_sum_le _ _).trans (sum_le_sum fun k _ ↦ p.norm_apply_le_sum_mvCoeff k hz)
+  refine (p.norm_partialSum_le_sum_mvCoeff_mul_prod_pow T z).trans (sum_le_sum fun k _ ↦ ?_)
+  refine sum_le_sum fun α hα ↦ ?_
+  rw [← (mem_piAntidiag.1 hα).1, ← prod_pow_eq_pow_sum]
+  gcongr with i
+  exact (norm_le_pi_norm z i).trans hz
 
 end FormalMultilinearSeries
 
