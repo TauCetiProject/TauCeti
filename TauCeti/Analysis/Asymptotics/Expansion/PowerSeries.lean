@@ -7,11 +7,10 @@ module
 
 public import Mathlib.RingTheory.PowerSeries.Inverse
 public import Mathlib.RingTheory.PowerSeries.Substitution
-public import Mathlib.RingTheory.PowerSeries.Trunc
 public import TauCeti.Analysis.Asymptotics.Expansion.Basic
 
-import Mathlib.Analysis.Asymptotics.Lemmas
 import TauCeti.RingTheory.PowerSeries.Substitution
+import TauCeti.RingTheory.PowerSeries.Trunc
 
 /-!
 # Algebra of asymptotic power series
@@ -31,9 +30,10 @@ Poincaré expansions at infinity are the specialization `w z = z⁻¹`.
 * `Asymptotics.HasAsymptoticExpansion.isBigO_sub_constantCoeff` and
   `Asymptotics.HasAsymptoticExpansion.tendsto_constantCoeff`: first-order leading-term bound and
   limit to `constantCoeff P`.
-* `Asymptotics.hasAsymptoticExpansion_pow_eval` and
-  `Asymptotics.hasAsymptoticExpansion_pow_trunc`: asymptotic expansion of polynomial evaluations
-  and `PowerSeries.trunc N Q`.
+* `Asymptotics.hasAsymptoticExpansion_pow_eval`,
+  `Asymptotics.hasAsymptoticExpansion_pow_trunc`, and
+  `Asymptotics.HasAsymptoticExpansion.isBigO_sub_trunc_eval`: asymptotic expansion of polynomial
+  evaluations and `PowerSeries.trunc N Q`, and remainder estimate after truncation.
 * `Asymptotics.hasAsymptoticExpansion_pow_add`, `Asymptotics.hasAsymptoticExpansion_pow_mul`,
   `Asymptotics.hasAsymptoticExpansion_pow_pow`, `Asymptotics.hasAsymptoticExpansion_pow_inv`:
   closure of asymptotic power series under ring operations and reciprocals (when
@@ -91,12 +91,6 @@ section Truncation
 
 variable {α 𝕜 : Type*} [NormedField 𝕜] {l : Filter α} {w : α → 𝕜}
 
-private lemma trunc_eval_eq_sum (P : 𝕜⟦X⟧) (N : ℕ) (z : 𝕜) :
-    (PowerSeries.trunc N P).eval z = ∑ i ∈ range N, z ^ i * coeff i P := by
-  change (PowerSeries.trunc N P).eval₂ (RingHom.id 𝕜) z = _
-  rw [PowerSeries.eval₂_trunc_eq_sum_range]
-  exact sum_congr rfl fun i _ => mul_comm _ _
-
 /-- A polynomial `p : 𝕜[X]` evaluated at `w → 0` has the asymptotic power series `(p : 𝕜⟦X⟧)`
 in `w`. -/
 theorem hasAsymptoticExpansion_pow_eval (hw : Tendsto w l (𝓝 0)) (p : 𝕜[X]) :
@@ -137,6 +131,16 @@ theorem hasAsymptoticExpansion_pow_trunc (hw : Tendsto w l (𝓝 0)) (Q : 𝕜�
       (fun n => coeff n (PowerSeries.trunc N Q : 𝕜⟦X⟧))
       (fun x => (PowerSeries.trunc N Q).eval (w x)) :=
   hasAsymptoticExpansion_pow_eval hw (PowerSeries.trunc N Q)
+
+/-- The remainder of an asymptotic power series `P` of `f` after degree `< N` is
+`f x - (PowerSeries.trunc N P).eval (w x) = O(w x ^ N)`. -/
+theorem HasAsymptoticExpansion.isBigO_sub_trunc_eval {P : 𝕜⟦X⟧} {f : α → 𝕜}
+    (hf : HasAsymptoticExpansion l (fun n x => w x ^ n) (fun n => coeff n P) f) (N : ℕ) :
+    (fun x => f x - (PowerSeries.trunc N P).eval (w x)) =O[l] fun x => w x ^ N := by
+  refine (hf.isBigO N).congr' (Eventually.of_forall fun x => ?_) EventuallyEq.rfl
+  simp only [PowerSeries.eval_trunc, smul_eq_mul]
+  congr 1
+  exact sum_congr rfl fun n _ => mul_comm _ _
 
 /-- The `N`-th truncation `(PowerSeries.trunc N P).eval (w x)` is `O(1)` when `w → 0`. -/
 theorem isBigO_trunc_eval_one (hw : Tendsto w l (𝓝 0)) (P : 𝕜⟦X⟧) (N : ℕ) :
@@ -180,28 +184,27 @@ theorem isBigO_mul_trunc_eval_sub (hw : Tendsto w l (𝓝 0)) (P Q : 𝕜⟦X⟧
     simp_rw [hzero]
     exact isBigO_zero _ _
 
-/-- Remainder estimate for evaluating a truncated power series with zero constant term at two
-`O(w)` functions differing by `O(w ^ M)`. -/
-theorem isBigO_trunc_eval_sub_sub_linear {s q : α → 𝕜} {P : 𝕜⟦X⟧} {M : ℕ}
-    (hw0 : Tendsto w l (𝓝 0)) (hP0 : constantCoeff P = 0) (hM : 1 ≤ M)
+/-- Remainder estimate for evaluating a truncated power series at two `O(w)` functions differing
+by `O(w ^ M)`. -/
+theorem isBigO_trunc_eval_sub_sub_linear {s q : α → 𝕜} {M : ℕ}
+    (hw0 : Tendsto w l (𝓝 0)) (P : 𝕜⟦X⟧) (hM : 1 ≤ M)
     (hsO : s =O[l] w) (hqO : q =O[l] w) (hrM : (fun x => s x - q x) =O[l] fun x => w x ^ M) :
     (fun x => ((PowerSeries.trunc (M + 1) P).eval (s x) -
         (PowerSeries.trunc (M + 1) P).eval (q x)) - (s x - q x) * coeff 1 P) =O[l]
       fun x => w x ^ (M + 1) := by
-  simp_rw [trunc_eval_eq_sum]
+  simp_rw [PowerSeries.eval_trunc]
   have hrew : ∀ x : α,
-      (∑ k ∈ range (M + 1), s x ^ k * coeff k P -
-        ∑ k ∈ range (M + 1), q x ^ k * coeff k P) - (s x - q x) * coeff 1 P =
+      (∑ k ∈ range (M + 1), coeff k P * s x ^ k -
+        ∑ k ∈ range (M + 1), coeff k P * q x ^ k) - (s x - q x) * coeff 1 P =
       ∑ k ∈ Ico 2 (M + 1), (s x ^ k - q x ^ k) * coeff k P := fun x => by
     rw [← sum_sub_distrib]
     have h2le : 2 ≤ M + 1 := by omega
     have hsplit := sum_range_add_sum_Ico
-      (f := fun k => s x ^ k * coeff k P - q x ^ k * coeff k P) h2le
+      (f := fun k => coeff k P * s x ^ k - coeff k P * q x ^ k) h2le
     rw [← hsplit]
-    have h01 : ∑ k ∈ range 2, (s x ^ k * coeff k P - q x ^ k * coeff k P) =
+    have h01 : ∑ k ∈ range 2, (coeff k P * s x ^ k - coeff k P * q x ^ k) =
         (s x - q x) * coeff 1 P := by
-      simp only [sum_range_succ, range_zero, sum_empty, zero_add, pow_zero, pow_one,
-        coeff_zero_eq_constantCoeff_apply, hP0, mul_zero, sub_self]
+      simp only [sum_range_succ, range_zero, sum_empty, zero_add, pow_zero, pow_one]
       ring
     rw [h01, add_sub_cancel_left]
     refine sum_congr rfl fun k _ => by ring
@@ -299,13 +302,17 @@ theorem hasAsymptoticExpansion_pow_mul (hw : Tendsto w l (𝓝 0)) {P Q : 𝕜�
   have hP0 := isBigO_trunc_eval_one hw P N
   have h1 : (fun x => (f x - (PowerSeries.trunc N P).eval (w x)) * g x) =O[l]
       fun x => w x ^ N := by
-    simpa only [trunc_eval_eq_sum, smul_eq_mul, mul_one] using (hf.isBigO N).mul hg0
+    simpa only [mul_one] using (hf.isBigO_sub_trunc_eval N).mul hg0
   have h2 : (fun x => (PowerSeries.trunc N P).eval (w x) *
       (g x - (PowerSeries.trunc N Q).eval (w x))) =O[l] fun x => w x ^ N := by
-    simpa only [trunc_eval_eq_sum, smul_eq_mul, one_mul] using hP0.mul (hg.isBigO N)
+    simpa only [one_mul] using hP0.mul (hg.isBigO_sub_trunc_eval N)
   have h3 := isBigO_mul_trunc_eval_sub hw P Q N
   refine ((h1.add h2).add h3).congr' (Eventually.of_forall fun x => ?_) EventuallyEq.rfl
-  simp only [Pi.mul_apply, smul_eq_mul, trunc_eval_eq_sum]
+  simp only [Pi.mul_apply, smul_eq_mul, PowerSeries.eval_trunc]
+  have hswap : ∑ i ∈ range N, w x ^ i * coeff i (P * Q) =
+      ∑ i ∈ range N, coeff i (P * Q) * w x ^ i :=
+    sum_congr rfl fun i _ => mul_comm _ _
+  rw [hswap]
   ring
 
 /-- Natural powers of an asymptotic power series in a small variable `w` (DLMF §2.1(iii)). -/
@@ -338,10 +345,10 @@ theorem hasAsymptoticExpansion_pow_inv (hw : Tendsto w l (𝓝 0)) {P : 𝕜⟦X
     have hQ0 := isBigO_trunc_eval_one hw P⁻¹ M
     have h1 : (fun x => (f x - (PowerSeries.trunc M P).eval (w x)) *
         (PowerSeries.trunc M P⁻¹).eval (w x)) =O[l] fun x => w x ^ M := by
-      simpa only [trunc_eval_eq_sum, smul_eq_mul, mul_one] using (hf.isBigO M).mul hQ0
+      simpa only [mul_one] using (hf.isBigO_sub_trunc_eval M).mul hQ0
     have h2 := isBigO_mul_trunc_eval_sub hw P P⁻¹ M
     have hPQ1 : ∀ x : α, (PowerSeries.trunc M (P * P⁻¹)).eval (w x) = 1 := fun x => by
-      rw [PowerSeries.mul_inv_cancel P hP, trunc_eval_eq_sum, Finset.sum_eq_single 0]
+      rw [PowerSeries.mul_inv_cancel P hP, PowerSeries.eval_trunc, Finset.sum_eq_single 0]
       · simp
       · intro k _ hk; simp [coeff_one, hk]
       · intro h0; exact absurd (mem_range.mpr (Nat.succ_pos N)) h0
@@ -355,8 +362,10 @@ theorem hasAsymptoticExpansion_pow_inv (hw : Tendsto w l (𝓝 0)) {P : 𝕜⟦X
         fun x => w x ^ M := by
       simpa only [Pi.inv_apply, one_mul] using hfinv_O.mul hprod
     refine hmul.congr' (hfne.mono fun x hx => ?_) EventuallyEq.rfl
-    simp only [Pi.inv_apply, smul_eq_mul, trunc_eval_eq_sum, mul_sub, mul_one, ← mul_assoc,
+    simp only [Pi.inv_apply, smul_eq_mul, PowerSeries.eval_trunc, mul_sub, mul_one, ← mul_assoc,
       inv_mul_cancel₀ hx, one_mul]
+    congr 1
+    exact sum_congr rfl fun n _ => mul_comm _ _
 
 /-- Quotients of asymptotic power series when the denominator has nonzero constant term
 (DLMF §2.1(iii)). -/
@@ -520,21 +529,24 @@ theorem hasAsymptoticExpansion_pow_substInv {σ H : β → 𝕜} {y : α → β}
             (Eventually.of_forall fun x => mul_comm _ _) EventuallyEq.rfl
         refine (ih.sub hterm).congr' (Eventually.of_forall fun x => ?_) EventuallyEq.rfl
         dsimp only [r, q]
-        rw [trunc_eval_eq_sum]
+        rw [PowerSeries.eval_trunc]
         simp only [smul_eq_mul, sum_range_succ]
+        have hswap : ∑ i ∈ range M, coeff i Q * w x ^ i =
+            ∑ i ∈ range M, w x ^ i * coeff i Q :=
+          sum_congr rfl fun i _ => mul_comm _ _
+        rw [hswap]
         ring
       have hqO : q =O[l] w := by
-        simp_rw [q, trunc_eval_eq_sum]
+        simp_rw [q, PowerSeries.eval_trunc]
         refine IsBigO.fun_sum fun n _ => ?_
         cases n with
         | zero =>
-          simp only [pow_zero, coeff_zero_eq_constantCoeff_apply, hQ0, mul_zero]
+          simp only [pow_zero, coeff_zero_eq_constantCoeff_apply, hQ0, zero_mul]
           exact isBigO_zero _ _
         | succ n =>
           have h1 := ((isAsymptoticScale_pow hw0).isBigO_of_le
             (Nat.succ_le_succ (Nat.zero_le n))).const_mul_left (coeff (n + 1) Q)
-          simpa only [pow_one] using
-            h1.congr' (Eventually.of_forall fun x => mul_comm _ _) EventuallyEq.rfl
+          simpa only [pow_one] using h1
       have hA : (fun x => w x - ∑ k ∈ range (M + 1), s x ^ k * coeff k P) =O[l]
           fun x => w x ^ (M + 1) := by
         have h := ((hH.isBigO (M + 1)).comp_tendsto hy).trans (hsO.pow (M + 1))
@@ -543,8 +555,11 @@ theorem hasAsymptoticExpansion_pow_substInv {σ H : β → 𝕜} {y : α → β}
       have hB : (fun x => (∑ k ∈ range (M + 1), s x ^ k * coeff k P -
           ∑ k ∈ range (M + 1), q x ^ k * coeff k P) - (s x - q x) * coeff 1 P) =O[l]
           fun x => w x ^ (M + 1) := by
-        simpa only [trunc_eval_eq_sum] using
-          isBigO_trunc_eval_sub_sub_linear hw0 hP0 (Nat.succ_pos N) hsO hqO hrM
+        refine (isBigO_trunc_eval_sub_sub_linear hw0 P (Nat.succ_pos N) hsO hqO hrM).congr'
+          (Eventually.of_forall fun x => ?_) EventuallyEq.rfl
+        simp only [PowerSeries.eval_trunc]
+        congr 1
+        congr 1 <;> exact sum_congr rfl fun k _ => mul_comm _ _
       have hC : (fun x => (∑ k ∈ range (M + 1), q x ^ k * coeff k P) - w x) =O[l]
           fun x => w x ^ (M + 1) :=
         isBigO_sum_trunc_substInv hw0 hQ0 hPQ (Nat.succ_pos N)
@@ -558,7 +573,10 @@ theorem hasAsymptoticExpansion_pow_substInv {σ H : β → 𝕜} {y : α → β}
           EventuallyEq.rfl
         dsimp only
         rw [mul_comm (r x), ← mul_assoc, inv_mul_cancel₀ hP1, one_mul]
-      simpa only [r, q, trunc_eval_eq_sum, smul_eq_mul] using hrM1
+      refine hrM1.congr' (Eventually.of_forall fun x => ?_) EventuallyEq.rfl
+      simp only [r, q, PowerSeries.eval_trunc, smul_eq_mul]
+      congr 1
+      exact sum_congr rfl fun n _ => mul_comm _ _
 
 end Algebra
 

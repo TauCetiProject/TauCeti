@@ -128,6 +128,7 @@ theorem formalCpow_natCast {ℓ : ℂ} (n : ℕ) {P : ℂ⟦X⟧} (hP : constant
     rw [Nat.cast_succ, formalCpow_add _ _ hP, ih, formalCpow_one hP, pow_succ]
 
 /-- Negating the exponent in `formalCpow` gives the reciprocal power series. -/
+@[simp]
 theorem formalCpow_neg {ℓ : ℂ} (r : ℂ) {P : ℂ⟦X⟧} (hP : constantCoeff P = Complex.exp ℓ) :
     formalCpow ℓ (-r) P = (formalCpow ℓ r P)⁻¹ := by
   refine (PowerSeries.eq_inv_iff_mul_eq_one ?_).mpr ?_

@@ -10,6 +10,7 @@ public import TauCeti.Analysis.Asymptotics.Expansion.PowerSeries
 public import TauCeti.RingTheory.PowerSeries.ComplexPower
 
 import Mathlib.Analysis.Analytic.Binomial
+import TauCeti.Analysis.Asymptotics.Expansion.Poincare
 import TauCeti.Analysis.SpecialFunctions.Complex.Log.Basic
 
 /-!
@@ -68,7 +69,7 @@ theorem hasAsymptoticExpansion_pow_log {α : Type*} {l : Filter α} {w : α → 
     (hf : HasAsymptoticExpansion l (fun n x => w x ^ n) (fun n => coeff n P) f) :
     HasAsymptoticExpansion l (fun n x => w x ^ n)
       (fun n => coeff n (C (Complex.log (constantCoeff P)) +
-        (PowerSeries.log ℂ).subst (C (Complex.exp (-Complex.log (constantCoeff P))) * P - 1)))
+        PowerSeries.logOf (C (Complex.exp (-Complex.log (constantCoeff P))) * P)))
       fun x => Complex.log (f x) := by
   set p₀ : ℂ := constantCoeff P
   set ℓ : ℂ := Complex.log p₀
@@ -92,7 +93,7 @@ theorem hasAsymptoticExpansion_pow_log {α : Type*} {l : Filter α} {w : α → 
   have hcomp := hasAsymptoticExpansion_pow_subst hw hu0 hU0 hlog_at0 hu_exp
   have hadd := hasAsymptoticExpansion_pow_add (hasAsymptoticExpansion_pow_const (l := l) (w := w) ℓ)
     hcomp
-  refine hadd.congr' ?_
+  refine (hadd.congr_coeff fun n => by rw [PowerSeries.logOf_eq]).congr' ?_
   filter_upwards [Complex.eventually_log_mul_one_add hP hu0] with x hx
   have hfx : f x = p₀ * (1 + (Complex.exp (-ℓ) * f x - 1)) := by
     rw [Complex.exp_neg, hexpℓ]

@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.SpecialFunctions.Pow.Complex
 public import TauCeti.Analysis.Asymptotics.Expansion.Basic
 
 import Mathlib.Analysis.SpecialFunctions.Pow.Asymptotics
