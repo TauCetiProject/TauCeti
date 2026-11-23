@@ -53,7 +53,7 @@ theorem squareTrace_apply (a b : T) :
   simp [squareTrace, mul_comm]
 
 /-- The tensor-square action preserves the square trace pairing. -/
-@[simp] theorem squareTrace_tprod (g : Matrix.SpecialLinearGroup (Fin 3) K) (a b : T) :
+@[simp↓] theorem squareTrace_tprod (g : Matrix.SpecialLinearGroup (Fin 3) K) (a b : T) :
     squareTrace (σ g a) (σ g b) = squareTrace a b := by
   induction a using TensorProduct.inductionOn with
   | add a₁ a₂ h₁ h₂ => simp only [map_add, LinearMap.add_apply, h₁, h₂]

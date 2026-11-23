@@ -133,7 +133,7 @@ theorem conj_eq_units_smul (g : SpecialLinearGroup ι R) (X : Matrix ι ι R) :
   rw [ConjAct.toConjAct_toGL_smul, ConjAct.specialLinearGroup_smul_def, ConjAct.ofConjAct_toConjAct]
 
 /-- Simultaneous conjugation preserves the trace of a product of arbitrary matrices. -/
-@[simp] theorem trace_mul_conj (g : SpecialLinearGroup ι R) (X Y : Matrix ι ι R) :
+@[simp↓] theorem trace_mul_conj (g : SpecialLinearGroup ι R) (X Y : Matrix ι ι R) :
     (((g : Matrix ι ι R) * X * (g⁻¹ : SpecialLinearGroup ι R)) *
       ((g : Matrix ι ι R) * Y * (g⁻¹ : SpecialLinearGroup ι R))).trace = (X * Y).trace := by
   rw [conj_eq_units_smul, conj_eq_units_smul,
