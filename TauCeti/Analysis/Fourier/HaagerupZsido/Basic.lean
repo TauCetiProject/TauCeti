@@ -9,6 +9,7 @@ public import Mathlib.Analysis.SpecialFunctions.ImproperIntegrals
 public import Mathlib.MeasureTheory.Integral.Prod
 public import TauCeti.Analysis.SpecialFunctions.Artanh
 public import TauCeti.MeasureTheory.Integral.Exp.Decay
+import TauCeti.MeasureTheory.Integral.Bochner.Basic
 
 /-!
 # The Haagerup–Zsidó kernel
@@ -141,20 +142,15 @@ so the Bochner integral is `0`. -/
 @[simp]
 theorem weightLaplaceTransform_zero : weightLaplaceTransform 0 = 0 := by
   have hnint : ¬ IntegrableOn (fun y ↦ weight y * Real.exp (-(|(0 : ℝ)| * y))) (Ioi 0) := by
-    intro h
-    simp only [abs_zero, zero_mul, neg_zero, Real.exp_zero, mul_one] at h
-    have hc : IntegrableOn (fun _ : ℝ ↦ weight 1) (Ioi 1) :=
-      (h.mono_set (Ioi_subset_Ioi zero_le_one)).mono' aestronglyMeasurable_const
-        (ae_restrict_of_forall_mem measurableSet_Ioi fun y hy ↦ by
-          have h1 : weight 1 ≤ weight y := by
-            rw [weight_def, weight_def]
-            exact (Real.tanh_strictMono (by nlinarith [mem_Ioi.mp hy, Real.pi_pos])).le
-          rwa [Real.norm_eq_abs, abs_of_nonneg (weight_nonneg zero_le_one)])
-    have hpos : 0 < weight 1 := by
-      rw [weight_def, ← Real.tanh_zero]
+    refine MeasureTheory.not_integrableOn_Ioi_of_eventually_le_norm
+      (ε := weight 1) ?_ 0 ?_
+    · rw [weight_def, ← Real.tanh_zero]
       exact Real.tanh_strictMono (by positivity)
-    have := (integrableOn_const_iff (by finiteness)).mp hc
-    simp [hpos.ne', Real.volume_Ioi] at this
+    · filter_upwards [Filter.eventually_ge_atTop (1 : ℝ)] with y hy
+      rw [abs_zero, zero_mul, neg_zero, Real.exp_zero, mul_one, Real.norm_eq_abs,
+        abs_of_nonneg (weight_nonneg (zero_le_one.trans hy))]
+      rw [weight_def, weight_def]
+      exact Real.tanh_strictMono.monotone (by nlinarith [Real.pi_pos])
   rw [weightLaplaceTransform_def, integral_undef hnint]
 
 /-- Since the weight is less than `1`, `L(t) ≤ ∫_{y > 0} e^{-|t| y} dy = 1 / |t|`. At `t = 0` both
