@@ -433,9 +433,10 @@ def cwComplexOfIsColimitSubcomplexHomeomorph (k : ℕ) :
     (TopCat.isClosedEmbedding_ι_of_isColimit_of_succ hF hc k).isEmbedding.toHomeomorph.symm
 
 /-- The homeomorphism of the subcomplex given by the stage `F k` with `F k` inverts `c.ι.app k`. -/
+@[simp]
 theorem ι_app_cwComplexOfIsColimitSubcomplexHomeomorph (k : ℕ)
     (x : cwComplexOfIsColimitSubcomplex hF hι hc k) :
-    c.ι.app k (cwComplexOfIsColimitSubcomplexHomeomorph hF hι hc k x) = (x : c.pt) := by
+    dsimp% c.ι.app k (cwComplexOfIsColimitSubcomplexHomeomorph hF hι hc k x) = (x : c.pt) := by
   have hemb := (TopCat.isClosedEmbedding_ι_of_isColimit_of_succ hF hc k).isEmbedding
   rw [cwComplexOfIsColimitSubcomplexHomeomorph, Homeomorph.trans_apply,
     ← hemb.toHomeomorph_apply_coe, Homeomorph.apply_symm_apply, Homeomorph.setCongr,
