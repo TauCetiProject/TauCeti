@@ -170,6 +170,8 @@ with the corresponding integral of `q`-th powers.
 * `Real.le_sqrt_mul_rpow_sub_one_of_sq_le`: `x ≤ √B * d ^ (β - 1)` when
   `d ^ 2 * x ^ 2 ≤ B * d ^ (2 * β)` with `d > 0`, the step turning a mean-value bound on `d ^ 2 *
   x ^ 2` into a pointwise power bound on `x`.
+* `Real.le_rpow_inv_mul_of_rpow_le`: `x ≤ r ^ r⁻¹ n` when `x ^ r ≤ (r - 1) y ^ r + z ^ r` with
+  `1 ≤ r` and `0 ≤ y, z ≤ n`, the step turning an `Lʳ` trace inequality into a linear bound.
 * `Finsupp.prod_pow_rpow`: `(μ.prod (c · ^ ·)) ^ a = μ.prod fun i k ↦ (c i ^ a) ^ k` for `c`
   nonnegative on `μ.support`.
 -/
@@ -562,6 +564,23 @@ theorem le_sqrt_mul_rpow_sub_one_of_sq_le {x d B β : ℝ} (hd : 0 < d)
   have h' := le_sqrt_mul_of_sq_le_mul (rpow_nonneg hd.le β) hsq
   rw [rpow_sub_one hd.ne', ← mul_div_assoc, le_div_iff₀ hd]
   linarith
+
+/-- If `x ^ r ≤ (r - 1) y ^ r + z ^ r` for `1 ≤ r` and nonnegative `y`, `z`, both at most `n`,
+then `x ≤ r ^ r⁻¹ n`. This turns the `Lʳ` trace inequality into a bound with constant
+`r ^ r⁻¹` by the Sobolev norm. -/
+theorem le_rpow_inv_mul_of_rpow_le {r x y z n : ℝ} (hr : 1 ≤ r) (hy : 0 ≤ y) (hz : 0 ≤ z)
+    (hyn : y ≤ n) (hzn : z ≤ n) (h : x ^ r ≤ (r - 1) * y ^ r + z ^ r) :
+    x ≤ r ^ r⁻¹ * n := by
+  have hr0 : 0 < r := zero_lt_one.trans_le hr
+  have hn : 0 ≤ n := hy.trans hyn
+  -- A negative `x` is below the nonnegative right side.
+  rcases lt_or_ge x 0 with hx | hx
+  · exact hx.le.trans (by positivity)
+  have h1 : y ^ r ≤ n ^ r := rpow_le_rpow hy hyn hr0.le
+  have h2 : z ^ r ≤ n ^ r := rpow_le_rpow hz hzn hr0.le
+  rw [← rpow_le_rpow_iff hx (by positivity) hr0, mul_rpow (by positivity) hn,
+    ← rpow_mul hr0.le, inv_mul_cancel₀ hr0.ne', rpow_one]
+  nlinarith [sub_nonneg.2 hr]
 
 end Real
 
