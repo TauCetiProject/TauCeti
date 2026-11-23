@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.AlgebraicGeometry.Birational.Composition
+public import TauCeti.AlgebraicGeometry.Birational.RationalMap.Basic
 public import TauCeti.AlgebraicGeometry.Morphisms.Dominant
 
 /-!
@@ -44,9 +45,6 @@ dominant morphism in `TauCeti.AlgebraicGeometry.Morphisms.Dominant`:
 * `AlgebraicGeometry.Scheme.RationalMap.functionFieldMap_id` and
   `AlgebraicGeometry.Scheme.RationalMap.functionFieldMap_comp`: functoriality, for dominant `f`
   and `g`.
-* `AlgebraicGeometry.Scheme.RationalMap.fromFunctionField_compHom` and
-  `AlgebraicGeometry.Scheme.RationalMap.fromFunctionField_comp_over`: postcomposing with a
-  morphism, and the morphism `Spec K(X) ⟶ Y` of an `S`-rational map is over `S`.
 
 ## References
 
@@ -66,12 +64,6 @@ variable {X Y Z : Scheme.{u}}
 section Irreducible
 
 variable [IrreducibleSpace X] [IrreducibleSpace Y]
-
-/-- The domain of a partial map from an irreducible scheme contains the generic point, since it
-is a dense open. -/
-theorem PartialMap.genericPoint_mem_domain {W : Scheme.{u}} (f : X.PartialMap W) :
-    genericPoint X ∈ f.domain :=
-  (genericPoint_specializes _).mem_open f.domain.is_open' f.dense_domain.nonempty.some_mem
 
 /-- A partial map of irreducible schemes whose underlying morphism is dominant sends the closed
 point of `Spec K(X)` to the generic point of `Y`. -/
@@ -194,28 +186,5 @@ theorem RationalMap.eq_of_functionFieldMap_eq [IsIntegral X] [IrreducibleSpace Y
     [f.IsDominant] [g.IsDominant] (h : f.functionFieldMap = g.functionFieldMap) : f = g :=
   eq_of_fromFunctionField_eq f g <| by
     rw [← SpecMap_functionFieldMap_fromSpecStalk, h, SpecMap_functionFieldMap_fromSpecStalk]
-
-/-- The morphism `Spec K(X) ⟶ Z` of a rational map followed by a morphism `g` is that of the
-rational map followed by `g`. -/
-theorem RationalMap.fromFunctionField_compHom [IrreducibleSpace X] (f : X ⤏ Y) (g : Y ⟶ Z) :
-    (f.compHom g).fromFunctionField = f.fromFunctionField ≫ g := by
-  obtain ⟨f, rfl⟩ := f.exists_rep
-  rw [← compHom_toRationalMap, fromFunctionField_toRationalMap, fromFunctionField_toRationalMap]
-  exact PartialMap.fromSpecStalkOfMem_compHom f g _ _
-
-/-- For an `S`-rational map `f : X ⤏ Y` from an irreducible scheme, the morphism
-`Spec K(X) ⟶ Y` of `f` is a morphism over `S`. -/
-theorem RationalMap.fromFunctionField_comp_over [IrreducibleSpace X] {S : Scheme.{u}}
-    (f : X ⤏ Y) (sX : X ⟶ S) (sY : Y ⟶ S) [f.IsOver sX sY] :
-    f.fromFunctionField ≫ sY = X.fromSpecStalk (genericPoint X) ≫ sX := by
-  rw [← fromFunctionField_compHom, RationalMap.isOver_iff.mp ‹_›,
-    fromFunctionField_toRationalMap, PartialMap.fromFunctionField,
-    PartialMap.fromSpecStalkOfMem_toPartialMap]
-
-/-- The rational map of an `S`-morphism is an `S`-rational map. -/
-instance Hom.isOver_toRationalMap {S : Scheme.{u}} [X.Over S] [Y.Over S] (g : X ⟶ Y)
-    [g.IsOver S] : g.toRationalMap.IsOver (X ↘ S) (Y ↘ S) :=
-  haveI := Hom.isOver_toPartialMap (comp_over g S)
-  inferInstance
 
 end AlgebraicGeometry.Scheme

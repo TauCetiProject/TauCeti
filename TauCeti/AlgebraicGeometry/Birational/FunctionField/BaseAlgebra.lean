@@ -41,15 +41,20 @@ variable (k : Type u) [CommRing k] [X.Over (Spec (.of k))] [Y.Over (Spec (.of k)
 `Spec k` is compatible with the `k`-algebra structures of the function fields. -/
 theorem RationalMap.functionFieldMap_algebraMap (f : X ⤏ Y) [f.IsDominant]
     [f.IsOver (X ↘ Spec (.of k)) (Y ↘ Spec (.of k))] (c : k) :
-    f.functionFieldMap (algebraMap k Y.functionField c) = algebraMap k X.functionField c := by
-  have h : Spec.map (CommRingCat.ofHom (algebraMap k Y.functionField) ≫ f.functionFieldMap) =
-      Spec.map (CommRingCat.ofHom (algebraMap k X.functionField)) := by
-    have hf := f.fromFunctionField_comp_over (X ↘ Spec (.of k)) (Y ↘ Spec (.of k))
-    rw [← SpecMap_functionFieldMap_fromSpecStalk, Category.assoc,
-      Scheme.fromSpecStalk_genericPoint_comp_over,
-      Scheme.fromSpecStalk_genericPoint_comp_over] at hf
-    rw [Spec.map_comp, hf]
-  exact congr($(Spec.map_injective h) c)
+    f.functionFieldMap (algebraMap k Y.functionField c) = algebraMap k X.functionField c :=
+  (specMap_comp_fromSpecStalk_genericPoint_comp_over_iff k f.functionFieldMap).mp
+    (by rw [SpecMap_functionFieldMap_fromSpecStalk]
+        exact f.fromFunctionField_comp_over (X ↘ Spec (.of k)) (Y ↘ Spec (.of k))) c
+
+/-- `RationalMap.functionFieldMap_algebraMap` in simp-normal form, where a scalar `c : k` is the
+germ of its pullback along the structure morphism. -/
+@[simp]
+theorem RationalMap.functionFieldMap_germToFunctionField_appTop (f : X ⤏ Y) [f.IsDominant]
+    [f.IsOver (X ↘ Spec (.of k)) (Y ↘ Spec (.of k))] (c : k) :
+    f.functionFieldMap
+        (Y.germToFunctionField ⊤ ((Y ↘ Spec (.of k)).appTop ((ΓSpecIso (.of k)).inv c))) =
+      X.germToFunctionField ⊤ ((X ↘ Spec (.of k)).appTop ((ΓSpecIso (.of k)).inv c)) := by
+  simpa using f.functionFieldMap_algebraMap k c
 
 /-- The pullback of rational functions `f^* : k(Y) → k(X)` along a dominant `k`-rational map
 `f : X ⤏ Y` of integral schemes over `Spec k`, as a `k`-algebra homomorphism. -/
