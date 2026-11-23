@@ -9,7 +9,7 @@ public import TauCeti.AlgebraicTopology.Cellular.RealProjective.Homology
 public import TauCeti.AlgebraicTopology.Singular.Contractible
 public import TauCeti.Geometry.Manifold.Morse.Bott.Family
 public import TauCeti.Geometry.Manifold.Morse.Projectivization
-public import TauCeti.Geometry.Manifold.Projectivization.LinearEmbedding
+public import TauCeti.Geometry.Manifold.Projectivization.Map
 public import TauCeti.Topology.Order.Sublevel
 import Mathlib.Analysis.Calculus.Deriv.Inv
 import Mathlib.Analysis.Calculus.Deriv.Pow
@@ -236,7 +236,7 @@ to `[v : 0]`. -/
 noncomputable def projectiveHyperplaneEmbedding :
     SmoothEmbedding 𝓘(ℝ, Fin N → ℝ) 𝓘(ℝ, Fin (N + 1) → ℝ) ∞ (ℙ ℝ (Fin (N + 1) → ℝ))
       (ℙ ℝ (Fin (N + 2) → ℝ)) :=
-  .ofIsSmoothEmbedding _ (isSmoothEmbedding_map _ injective_hyperplaneCoord (by simp))
+  .ofIsSmoothEmbedding _ (isSmoothEmbedding_map (𝕜' := ℝ) _ injective_hyperplaneCoord (by simp))
 
 /-- The hyperplane embedding in homogeneous coordinates: `[v] ↦ [v : 0]`. -/
 @[simp]
@@ -419,7 +419,7 @@ variable (N) in
 noncomputable def projectiveMinimumEmbedding :
     SmoothEmbedding 𝓘(ℝ, Fin 0 → ℝ) 𝓘(ℝ, Fin (N + 1) → ℝ) ∞ (ℙ ℝ (Fin 1 → ℝ))
       (ℙ ℝ (Fin (N + 2) → ℝ)) :=
-  .ofIsSmoothEmbedding _ (isSmoothEmbedding_map _ injective_minimumCoord (by simp))
+  .ofIsSmoothEmbedding _ (isSmoothEmbedding_map (𝕜' := ℝ) _ injective_minimumCoord (by simp))
 
 /-- The point embedding sends the point of `ℝℙ⁰` to the minimum `[e_{N+1}]`. -/
 @[simp]
