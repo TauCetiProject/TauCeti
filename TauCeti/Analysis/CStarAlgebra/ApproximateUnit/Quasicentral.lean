@@ -512,8 +512,9 @@ theorem map_coe_comap_coe_quasicentralApproximateUnit (I : TwoSidedIdeal A) :
       I.quasicentralApproximateUnit :=
   map_comap_of_mem <| by
     rw [Subtype.range_coe]
-    exact mem_quasicentralApproximateUnit_iff.mpr
-      ⟨∅, ∅, 1, zero_lt_one, fun _ h => (mem_quasicentralSet_iff.mp h).1⟩
+    refine mem_quasicentralApproximateUnit_iff.mpr ⟨∅, ∅, 1, zero_lt_one, fun _ h => ?_⟩
+    obtain ⟨heI, _⟩ := mem_quasicentralSet_iff.mp h
+    exact heI
 
 /-- Universal property of `I.quasicentralApproximateUnit`: a filter `l` is finer than
 `I.quasicentralApproximateUnit` precisely when it satisfies all eventual bounds and convergence
@@ -530,18 +531,22 @@ theorem le_quasicentralApproximateUnit_iff {I : TwoSidedIdeal A} {l : Filter A} 
     have hmem_basis {G : Finset I} {F : Finset A} {ε : ℝ} (hε : 0 < ε) :
         ∀ᶠ e in l, e ∈ I.quasicentralSet G F ε :=
       h (G, F, ε) hε
-    refine ⟨(hmem_basis (G := ∅) (F := ∅) zero_lt_one).mono fun _ he =>
-        let h := mem_quasicentralSet_iff.mp he; ⟨h.1, h.2.1, h.2.2.1⟩,
-      fun x hx => tendsto_nhds_iff_norm_lt.mpr fun ε hε =>
-        (hmem_basis (G := {⟨x, hx⟩}) (F := ∅) hε).mono fun _ he =>
-          ((mem_quasicentralSet_iff.mp he).2.2.2.1 ⟨x, hx⟩ (Finset.mem_singleton_self _)).1,
-      fun x hx => tendsto_nhds_iff_norm_lt.mpr fun ε hε =>
-        (hmem_basis (G := {⟨x, hx⟩}) (F := ∅) hε).mono fun _ he =>
-          ((mem_quasicentralSet_iff.mp he).2.2.2.1 ⟨x, hx⟩ (Finset.mem_singleton_self _)).2,
-      fun a => tendsto_nhds_iff_norm_lt.mpr fun ε hε =>
+    have hmul_singleton {x : A} (hx : x ∈ I) {ε : ℝ} (hε : 0 < ε) :
+        ∀ᶠ e in l, ‖e * x - x‖ < ε ∧ ‖x * e - x‖ < ε :=
+      (hmem_basis (G := {⟨x, hx⟩}) (F := ∅) hε).mono fun _ he => by
+        obtain ⟨_, _, _, heG, _⟩ := mem_quasicentralSet_iff.mp he
+        exact heG ⟨x, hx⟩ (Finset.mem_singleton_self _)
+    refine ⟨(hmem_basis (G := ∅) (F := ∅) zero_lt_one).mono fun _ he => by
+        obtain ⟨heI, he₀, he₁, _, _⟩ := mem_quasicentralSet_iff.mp he
+        exact ⟨heI, he₀, he₁⟩,
+      fun x hx => tendsto_nhds_iff_norm_lt.mpr fun _ hε =>
+        (hmul_singleton hx hε).mono fun _ h => h.1,
+      fun x hx => tendsto_nhds_iff_norm_lt.mpr fun _ hε =>
+        (hmul_singleton hx hε).mono fun _ h => h.2,
+      fun a => tendsto_nhds_iff_norm_lt.mpr fun _ hε =>
         (hmem_basis (G := ∅) (F := {a}) hε).mono fun _ he => by
-          simpa only [sub_zero] using
-            (mem_quasicentralSet_iff.mp he).2.2.2.2 a (Finset.mem_singleton_self a)⟩
+          obtain ⟨_, _, _, _, heF⟩ := mem_quasicentralSet_iff.mp he
+          simpa only [sub_zero] using heF a (Finset.mem_singleton_self a)⟩
   · rintro ⟨hmem, hmr, hml, hc⟩ ⟨G, F, ε⟩ (hε : 0 < ε)
     have hG := eventually_forall_mem_mul_sub_lt (I := I) (φ := id) G hε
       (fun x _ => hmr x x.property) (fun x _ => hml x x.property)
@@ -654,13 +659,20 @@ private theorem exists_next_quasicentral_step (I : TwoSidedIdeal A) [IsClosed (I
     by rwa [AddSubgroupClass.coe_norm] at hv₁, hvG,
     fun i hi a ha => hvF i (Finset.mem_range.mpr hi) a ha⟩
 
+private structure QuasicentralElement (I : TwoSidedIdeal A) (G : Finset I) (ε : ℝ) (e : A) :
+    Prop where
+  mem : e ∈ I
+  nonneg : 0 ≤ e
+  norm_le_one : ‖e‖ ≤ 1
+  mul_left_lt : ∀ x ∈ G, ‖e * (x : A) - x‖ < ε
+  mul_right_lt : ∀ x ∈ G, ‖(x : A) * e - x‖ < ε
+
 /-- Iterated choice of `n` positive contractions `u_0, …, u_{n-1} ∈ I` with pairwise controlled
 commutator inner products. -/
 private theorem exists_tuple_quasicentral (I : TwoSidedIdeal A) [IsClosed (I : Set A)]
     (G : Finset I) (F : Finset A) {ε δ : ℝ} (hε : 0 < ε) (hδ : 0 < δ) (n : ℕ) :
     ∃ u : ℕ → A,
-      (∀ k < n, u k ∈ I ∧ 0 ≤ u k ∧ ‖u k‖ ≤ 1 ∧
-        (∀ x ∈ G, ‖u k * (x : A) - x‖ < ε ∧ ‖(x : A) * u k - x‖ < ε)) ∧
+      (∀ k < n, QuasicentralElement I G ε (u k)) ∧
       (∀ i j, i < j → j < n → ∀ a ∈ F,
         ‖star (u i * a - a * u i) * (u j * a - a * u j)‖ ≤ δ * (‖a‖ + 1)) := by
   induction n with
@@ -669,11 +681,13 @@ private theorem exists_tuple_quasicentral (I : TwoSidedIdeal A) [IsClosed (I : S
     classical
     obtain ⟨u, hu, hoff⟩ := ih
     obtain ⟨v, hvI, hv₀, hv₁, hvG, hvF⟩ :=
-      exists_next_quasicentral_step I (fun i hi => (hu i hi).1) G F hε hδ
+      exists_next_quasicentral_step I (fun i hi => (hu i hi).mem) G F hε hδ
+    have hv : QuasicentralElement I G ε v :=
+      ⟨hvI, hv₀, hv₁, fun x hx => (hvG x hx).1, fun x hx => (hvG x hx).2⟩
     refine ⟨Function.update u n v, fun k hk => ?_, fun i j hij hjn a ha => ?_⟩
     · rcases Nat.lt_succ_iff_lt_or_eq.mp hk with hkn | rfl
       · simpa only [Function.update_of_ne hkn.ne] using hu k hkn
-      · simpa only [Function.update_self] using ⟨hvI, hv₀, hv₁, hvG⟩
+      · simpa only [Function.update_self] using hv
     · rcases Nat.lt_succ_iff_lt_or_eq.mp hjn with hjn' | rfl
       · rw [Function.update_of_ne (hij.trans hjn').ne, Function.update_of_ne hjn'.ne]
         exact hoff i j hij hjn' a ha
@@ -684,8 +698,7 @@ private theorem exists_tuple_quasicentral (I : TwoSidedIdeal A) [IsClosed (I : S
 a positive contraction in `I` and preserves strict `ε`-approximation on `G`. -/
 private theorem cesaro_mem_and_mul_lt (I : TwoSidedIdeal A) [IsClosed (I : Set A)]
     {G : Finset I} {ε : ℝ} {n : ℕ} (hn_pos : 0 < n) {u : ℕ → A}
-    (hu : ∀ k < n, u k ∈ I ∧ 0 ≤ u k ∧ ‖u k‖ ≤ 1 ∧
-      (∀ x ∈ G, ‖u k * (x : A) - x‖ < ε ∧ ‖(x : A) * u k - x‖ < ε)) :
+    (hu : ∀ k < n, QuasicentralElement I G ε (u k)) :
     let e : A := (n : ℝ)⁻¹ • ∑ k ∈ Finset.range n, u k
     e ∈ I ∧ 0 ≤ e ∧ ‖e‖ ≤ 1 ∧
       ∀ x ∈ G, ‖e * (x : A) - x‖ < ε ∧ ‖(x : A) * e - x‖ < ε := by
@@ -705,15 +718,15 @@ private theorem cesaro_mem_and_mul_lt (I : TwoSidedIdeal A) [IsClosed (I : Set A
     rw [hec]
     exact I.smul_mem_of_isClosed _ <| I.mem_toSubmodule.mp <|
       Submodule.sum_mem I.toSubmodule fun k hk =>
-        I.mem_toSubmodule.mpr (hu k (Finset.mem_range.mp hk)).1
+        I.mem_toSubmodule.mpr (hu k (Finset.mem_range.mp hk)).mem
   have he₀ : 0 ≤ e := smul_nonneg (by positivity)
-    (Finset.sum_nonneg fun k hk => (hu k (Finset.mem_range.mp hk)).2.1)
+    (Finset.sum_nonneg fun k hk => (hu k (Finset.mem_range.mp hk)).nonneg)
   have he₁ : ‖e‖ ≤ 1 := by
     rw [← mem_closedBall_zero_iff]
     dsimp only [e]
     rw [← hcm u]
     exact (convex_closedBall (0 : A) 1).centerMass_mem (fun _ _ => zero_le_one) hw_pos fun k hk =>
-      mem_closedBall_zero_iff.mpr (hu k (Finset.mem_range.mp hk)).2.2.1
+      mem_closedBall_zero_iff.mpr (hu k (Finset.mem_range.mp hk)).norm_le_one
   have havg (f : ℕ → A) (y : A) (hf : ∀ k < n, ‖f k - y‖ < ε) :
       ‖((n : ℝ)⁻¹ • ∑ k ∈ Finset.range n, f k) - y‖ < ε := by
     rw [← mem_ball_iff_norm, ← hcm f]
@@ -721,9 +734,9 @@ private theorem cesaro_mem_and_mul_lt (I : TwoSidedIdeal A) [IsClosed (I : Set A
       mem_ball_iff_norm.mpr (hf k (Finset.mem_range.mp hk))
   refine ⟨heI, he₀, he₁, fun x hx => ⟨?_, ?_⟩⟩
   · simpa only [e, smul_mul_assoc, Finset.sum_mul] using
-      havg (fun k => u k * (x : A)) x (fun k hk => ((hu k hk).2.2.2 x hx).1)
+      havg (fun k => u k * (x : A)) x (fun k hk => (hu k hk).mul_left_lt x hx)
   · simpa only [e, mul_smul_comm, Finset.mul_sum] using
-      havg (fun k => (x : A) * u k) x (fun k hk => ((hu k hk).2.2.2 x hx).2)
+      havg (fun k => (x : A) * u k) x (fun k hk => (hu k hk).mul_right_lt x hx)
 
 omit [PartialOrder A] [StarOrderedRing A] in
 private theorem norm_average_sq_le {ι : Type*} {s : Finset ι}
@@ -789,7 +802,7 @@ theorem quasicentralSet_nonempty (I : TwoSidedIdeal A) [IsClosed (I : Set A)]
   have haM : ‖a‖ ≤ M :=
     (Finset.single_le_sum (fun b _ => norm_nonneg b) ha).trans (le_add_of_nonneg_right zero_le_one)
   have havg_sq : ‖e * a - a * e‖ ^ 2 ≤ 4 * ‖a‖ ^ 2 / (n : ℝ) + ε ^ 2 / 4 :=
-    norm_commutator_average_sq_le (by positivity) (fun k hk => (hu k hk).2.2.1)
+    norm_commutator_average_sq_le (by positivity) (fun k hk => (hu k hk).norm_le_one)
       fun i j hij hjn => (hoff i j hij hjn a ha).trans <| by
         calc δ * (‖a‖ + 1) ≤ δ * (M + 1) := by gcongr
           _ = ε ^ 2 / 4 := by dsimp [δ]; field_simp
