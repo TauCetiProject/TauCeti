@@ -98,10 +98,10 @@ theorem dualCarrier_orthogonalSum (L : IntegralLattice V) (M : IntegralLattice W
 def orthogonalSumDualCarrierEquiv (L : IntegralLattice V) (M : IntegralLattice W) :
     (L.orthogonalSum M).dualCarrier ≃ₗ[ℤ] L.dualCarrier × M.dualCarrier where
   toFun x :=
-    (⟨x.1.1, (L.mem_dualCarrier_orthogonalSum M x.1).mp x.2 |>.1⟩,
-      ⟨x.1.2, (L.mem_dualCarrier_orthogonalSum M x.1).mp x.2 |>.2⟩)
+    (⟨x.val.1, (L.mem_dualCarrier_orthogonalSum M x.val).mp x.property |>.1⟩,
+      ⟨x.val.2, (L.mem_dualCarrier_orthogonalSum M x.val).mp x.property |>.2⟩)
   invFun x :=
-    ⟨(x.1, x.2), (L.mem_dualCarrier_orthogonalSum M (x.1, x.2)).mpr ⟨x.1.2, x.2.2⟩⟩
+    ⟨(x.1, x.2), (L.mem_dualCarrier_orthogonalSum M (x.1, x.2)).mpr ⟨x.1.property, x.2.property⟩⟩
   map_add' _ _ := rfl
   map_smul' _ _ := rfl
   left_inv _ := rfl
@@ -112,8 +112,8 @@ def orthogonalSumDualCarrierEquiv (L : IntegralLattice V) (M : IntegralLattice W
 theorem orthogonalSumDualCarrierEquiv_apply (L : IntegralLattice V) (M : IntegralLattice W)
     (x : (L.orthogonalSum M).dualCarrier) :
     L.orthogonalSumDualCarrierEquiv M x =
-      (⟨x.1.1, (L.mem_dualCarrier_orthogonalSum M x.1).mp x.2 |>.1⟩,
-        ⟨x.1.2, (L.mem_dualCarrier_orthogonalSum M x.1).mp x.2 |>.2⟩) :=
+      (⟨x.val.1, (L.mem_dualCarrier_orthogonalSum M x.val).mp x.property |>.1⟩,
+        ⟨x.val.2, (L.mem_dualCarrier_orthogonalSum M x.val).mp x.property |>.2⟩) :=
   by
     apply Prod.ext <;> apply Subtype.ext <;> rfl
 
@@ -121,7 +121,7 @@ theorem orthogonalSumDualCarrierEquiv_apply (L : IntegralLattice V) (M : Integra
 @[simp]
 theorem coe_orthogonalSumDualCarrierEquiv_symm_apply
     (L : IntegralLattice V) (M : IntegralLattice W) (x : L.dualCarrier × M.dualCarrier) :
-    ((L.orthogonalSumDualCarrierEquiv M).symm x : V × W) = (x.1.1, x.2.1) :=
+    ((L.orthogonalSumDualCarrierEquiv M).symm x : V × W) = (x.1.val, x.2.val) :=
   by
     apply Prod.ext <;> rfl
 
@@ -388,8 +388,8 @@ theorem dualCarrier_neg (L : IntegralLattice V) : (-L).dualCarrier = L.dualCarri
 carrier by the identity on ambient vectors. -/
 def negDualCarrierEquiv (L : IntegralLattice V) :
     (-L).dualCarrier ≃ₗ[ℤ] L.dualCarrier where
-  toFun x := ⟨x, by simpa using x.2⟩
-  invFun x := ⟨x, by simp only [dualCarrier_neg]; exact x.2⟩
+  toFun x := ⟨x, by simpa using x.property⟩
+  invFun x := ⟨x, by simp only [dualCarrier_neg]; exact x.property⟩
   map_add' _ _ := rfl
   map_smul' _ _ := rfl
   left_inv _ := rfl

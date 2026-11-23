@@ -78,7 +78,7 @@ theorem measureReal_arrival_le_le_exp_mul_mgf_pow (hT : ∀ n, Measurable (T n))
   have hint : Integrable (fun ω ↦ exp (-s * (∑ i ∈ Finset.range n, X i) ω)) P := by
     refine Integrable.of_bound (by fun_prop) 1 (ae_of_all _ fun ω ↦ ?_)
     rw [Real.norm_of_nonneg (exp_pos _).le, exp_le_one_iff, hsum]
-    exact mul_nonpos_of_nonpos_of_nonneg (neg_nonpos.2 hs) (arrival T n ω).2
+    exact mul_nonpos_of_nonpos_of_nonneg (neg_nonpos.2 hs) (arrival T n ω).property
   have hset : {ω | arrival T n ω ≤ t} = {ω | (∑ i ∈ Finset.range n, X i) ω ≤ t} := by
     ext ω
     simp [hsum]
@@ -149,7 +149,7 @@ theorem exists_lintegral_renewalCount_pow_le (hT : ∀ n, Measurable (T n)) (hin
     rw [this, Ne, prob_compl_eq_zero_iff (measurableSet_eq_fun (hT 0) measurable_const)]
     exact hzero.ne
   have hρ : ρ < 1 := mgf_lt_one_of_nonneg_of_neg (hT 0).coe_nnreal_real.aemeasurable
-    (ae_of_all _ fun ω ↦ (T 0 ω).2) hpos (by norm_num)
+    (ae_of_all _ fun ω ↦ (T 0 ω).property) hpos (by norm_num)
   -- Choose `L` with `exp 1 * ρ ^ L ≤ 1`. After `M = L * ⌈t⌉₊ + 1` arrivals, the Chernoff factor
   -- `exp t` is absorbed and the tail decays like `ρ ^ (j + 1)`.
   obtain ⟨L, hL⟩ := exists_pow_lt_of_lt_one (exp_pos (-1)) hρ
@@ -182,8 +182,8 @@ theorem exists_lintegral_renewalCount_pow_le (hT : ∀ n, Measurable (T n)) (hin
     rw [← mul_assoc]
     exact mul_le_mul hMj hchernoff measureReal_nonneg (by positivity)
   have hM : (M : ℝ) ≤ (L + 1) * ((t : ℝ) + 1) := by
-    have hk : (k : ℝ) < t + 1 := Nat.ceil_lt_add_one t.2
-    have ht : (0 : ℝ) ≤ t := t.2
+    have hk : (k : ℝ) < t + 1 := Nat.ceil_lt_add_one t.property
+    have ht : (0 : ℝ) ≤ t := t.property
     push_cast [M]
     nlinarith [(Nat.cast_nonneg L : (0 : ℝ) ≤ L)]
   calc ∫⁻ ω, renewalCount T t ω ^ p ∂P

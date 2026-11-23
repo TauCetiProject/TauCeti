@@ -44,19 +44,19 @@ def coeff (a : ℂ) (n : ℤ) : orderGE a n →ₗ[ℂ] ℂ :=
 
 /-- Coefficient extraction is the residue after the indicated coordinate shift. -/
 theorem coeff_apply (n : ℤ) (φ : orderGE a n) :
-    coeff a n φ = residue a (coordinate a ^ (-n - 1) * φ.1) := (rfl)
+    coeff a n φ = residue a (coordinate a ^ (-n - 1) * φ.val) := (rfl)
 
 /-- The coefficient vanishes exactly when the order increases by at least one. -/
 @[simp]
 theorem coeff_eq_zero_iff (n : ℤ) (φ : orderGE a n) :
-    coeff a n φ = 0 ↔ φ.1 ∈ orderGE a (n + 1) := by
-  have hbound : coordinate a ^ (-n - 1) * φ.1 ∈ orderGE a (-1) := by
-    have h := (coordinate_zpow_mul_mem_orderGE_iff φ.1 (-n - 1) n).mpr φ.2
+    coeff a n φ = 0 ↔ φ.val ∈ orderGE a (n + 1) := by
+  have hbound : coordinate a ^ (-n - 1) * φ.val ∈ orderGE a (-1) := by
+    have h := (coordinate_zpow_mul_mem_orderGE_iff φ.val (-n - 1) n).mpr φ.property
     have hexp : -n - 1 + n = -1 := by omega
     rwa [hexp] at h
   rw [coeff_apply, residue_eq_zero_iff_of_mem_orderGE_neg_one _ hbound,
     mem_orderGE, order_mul, order_coordinate_zpow, mem_orderGE, WithTop.coe_zero]
-  cases h : order φ.1 with
+  cases h : order φ.val with
   | top => simp
   | coe j =>
     have hint : 0 ≤ -n - 1 + j ↔ n + 1 ≤ j := by omega

@@ -49,8 +49,8 @@ theorem finite_boundedPaths [∀ b : V, Finite (Σ c : V, c ⟶ b)] (n : ℕ) (a
   | succ n ih =>
     refine Finite.of_surjective (α := _root_.Quiver.Path.BoundedPaths a b 0 ⊕
         Σ e : (Σ c : V, c ⟶ b), _root_.Quiver.Path.BoundedPaths a e.1 n)
-      (Sum.elim (fun p ↦ ⟨p.1, p.2.trans n.succ.zero_le⟩)
-        fun x ↦ ⟨x.2.1.cons x.1.2, Nat.succ_le_succ x.2.2⟩) ?_
+      (Sum.elim (fun p ↦ ⟨p.val, p.property.trans n.succ.zero_le⟩)
+        fun x ↦ ⟨x.2.val.cons x.1.2, Nat.succ_le_succ x.2.property⟩) ?_
     rintro ⟨_ | ⟨p, e⟩, hp⟩
     · exact ⟨.inl ⟨.nil, le_rfl⟩, rfl⟩
     · exact ⟨.inr ⟨⟨_, e⟩, p, Nat.le_of_succ_le_succ hp⟩, rfl⟩
@@ -60,7 +60,7 @@ theorem finite_setOf_length_le [Finite V] [∀ a b : V, Finite (a ⟶ b)] (n : �
     {x : Σ a b : V, _root_.Quiver.Path a b | x.2.2.length ≤ n}.Finite := by
   have (a b : V) := finite_boundedPaths n a b
   refine (Set.finite_range fun p : Σ a b : V, _root_.Quiver.Path.BoundedPaths a b n ↦
-    (⟨p.1, p.2.1, p.2.2.1⟩ : Σ a b : V, _root_.Quiver.Path a b)).subset ?_
+    (⟨p.1, p.2.1, p.2.2.val⟩ : Σ a b : V, _root_.Quiver.Path a b)).subset ?_
   rintro ⟨a, b, p⟩ hp
   exact ⟨⟨a, b, p, hp⟩, rfl⟩
 

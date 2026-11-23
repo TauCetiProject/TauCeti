@@ -57,8 +57,8 @@ variable [SeminormedAddGroup F] [SMul 𝕜ᵐᵒᵖ F] [NormSMulClass 𝕜ᵐᵒ
 /-- Right multiplication by a unit scalar preserves every sphere centred at zero. -/
 instance instSMulMulOpposite : SMul (sphere (0 : 𝕜) 1)ᵐᵒᵖ (sphere (0 : F) r) where
   smul c x := ⟨(x : F) <• ((unop c : sphere (0 : 𝕜) 1) : 𝕜), by
-    rw [mem_sphere_zero_iff_norm, norm_smul, norm_op, mem_sphere_zero_iff_norm.1 (unop c).2,
-      mem_sphere_zero_iff_norm.1 x.2, one_mul]⟩
+    rw [mem_sphere_zero_iff_norm, norm_smul, norm_op, mem_sphere_zero_iff_norm.1 (unop c).property,
+      mem_sphere_zero_iff_norm.1 x.property, one_mul]⟩
 
 /-- The right action of a unit scalar on a sphere is right scalar multiplication in the ambient
 space. -/

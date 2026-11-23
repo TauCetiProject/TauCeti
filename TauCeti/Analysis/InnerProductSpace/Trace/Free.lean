@@ -46,6 +46,10 @@ pairing `tr (T* U) = tr (T U)` is real.
   endomorphism, and the trace pairing `tr (T U)` of two of them, are real.
 * `ContinuousLinearMap.traceCLM_symmPart_comp`: over `ℝ`, only the symmetric part of `A` enters
   the trace pairing `tr (A M)` with a self-adjoint `M`.
+* `ContinuousLinearMap.traceCLM_comp_adjoint_comp_comp_of_comp_eq_id`: if `M N = 1`, then
+  `tr ((N A N†) (M† D M)) = tr (A D)`.
+* `ContinuousLinearMap.traceCLM_comp_eq_sum_inner`: if `H f = (T f)† g`, then
+  `tr (A H) = ⟪∑ᵢ T eᵢ (A† eᵢ), g⟫` for any orthonormal basis `(eᵢ)`.
 * `InnerProductSpace.trace_rankOne_mul`, `InnerProductSpace.trace_mul_rankOne`: the trace pairing
   of `T` with a rank-one endomorphism, `tr (x y* T) = tr (T x y*) = ⟪y, T x⟫`.
 * `TauCeti.trace_traceFreePart`, `TauCeti.traceFreePart_of_trace_eq_zero`,
@@ -126,6 +130,34 @@ theorem traceCLM_symmPart_comp {V : Type*} [NormedAddCommGroup V] [InnerProductS
     rw [traceCLM_apply, trace_adjoint, RCLike.conj_to_real, ← traceCLM_apply, traceCLM_comp_comm]
   rw [smul_comp, add_comp, map_smul, map_add, h, smul_eq_mul]
   ring
+
+open TauCeti in
+/-- Conjugating the trace pairing by a one-sided inverse pair and its adjoint: if `M ∘ N = 1`,
+then `tr ((N A N†) ∘ (M† D M)) = tr (A D)`. -/
+theorem traceCLM_comp_adjoint_comp_comp_of_comp_eq_id [CompleteSpace E] {W : Type*}
+    [NormedAddCommGroup W] [InnerProductSpace 𝕜 W] [FiniteDimensional 𝕜 W] [CompleteSpace W]
+    {M : W →L[𝕜] E} {N : E →L[𝕜] W} (h : M ∘L N = ContinuousLinearMap.id 𝕜 E)
+    (A D : E →L[𝕜] E) :
+    traceCLM 𝕜 W ((N ∘L A ∘L N.adjoint) ∘L (M.adjoint ∘L D ∘L M)) =
+      traceCLM 𝕜 E (A ∘L D) := by
+  have hNM (y : E) : N.adjoint (M.adjoint y) = y := by
+    simpa using congrArg (fun T => T y)
+      (show N.adjoint ∘L M.adjoint = ContinuousLinearMap.id 𝕜 E by
+        rw [← adjoint_comp, h, adjoint_id])
+  rw [← traceCLM_comp_comp_of_comp_eq_id h (A ∘L D)]
+  congr 1
+  ext z
+  simp [hNM]
+
+open TauCeti in
+/-- The trace of `A ∘ H` for an endomorphism of the form `H f = (T f)† g`: in any orthonormal
+basis `(eᵢ)`, `tr (A ∘ H) = ⟪∑ᵢ T eᵢ (A† eᵢ), g⟫`. -/
+theorem traceCLM_comp_eq_sum_inner [CompleteSpace E] (A : E →L[𝕜] E) {H : E →L[𝕜] E}
+    {ι : Type*} [Fintype ι] (e : OrthonormalBasis ι 𝕜 E) (T : E →L[𝕜] E →L[𝕜] E) (g : E)
+    (hH : ∀ f, H f = (T f).adjoint g) :
+    traceCLM 𝕜 E (A ∘L H) = ⟪∑ i, T (e i) (A.adjoint (e i)), g⟫_𝕜 := by
+  rw [traceCLM_apply, LinearMap.trace_eq_sum_inner _ e, sum_inner]
+  simp only [coe_coe, comp_apply, hH, ← adjoint_inner_left A, adjoint_inner_right]
 
 end ContinuousLinearMap
 
@@ -270,7 +302,7 @@ theorem not_finite_traceFreeSelfAdjoint (hE : ¬Module.Finite ℂ E) :
     exact hE inferInstance
   obtain ⟨e, he⟩ := exists_ne (0 : E)
   refine hE (Module.Finite.of_injective
-    (ContinuousLinearMap.smulRightL ℂ E E (innerSL ℂ e)).toLinearMap ?_)
+    (ContinuousLinearMap.smulRightL ℂ ℂ ℂ E E (innerSL ℂ e)).toLinearMap ?_)
   rw [injective_iff_map_eq_zero]
   intro x hx
   have := DFunLike.congr_fun hx e

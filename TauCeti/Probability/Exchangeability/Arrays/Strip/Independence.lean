@@ -109,7 +109,7 @@ theorem SeparatelyExchangeable.condIndepFun_rowStrip_colStrip_of_enum
   have hHD : H = (fun y q ↦ y ⟨(e q.1, f q.2), ⟨q.1, rfl⟩, ⟨q.2, rfl⟩⟩) ∘
       (S ×ˢ T).domRestrict (π := fun _ ↦ α) := rfl
   have hDH : (S ×ˢ T).domRestrict (π := fun _ ↦ α) =
-      (fun h q ↦ h (Function.invFun e q.1.1, Function.invFun f q.1.2)) ∘ H := by
+      (fun h q ↦ h (Function.invFun e q.val.1, Function.invFun f q.val.2)) ∘ H := by
     funext x q
     rcases q with ⟨⟨a, b⟩, ⟨i, hi⟩, ⟨j, hj⟩⟩
     simp only at hi hj

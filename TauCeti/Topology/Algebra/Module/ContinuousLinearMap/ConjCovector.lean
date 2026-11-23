@@ -77,7 +77,7 @@ theorem conjCovector_injective : Function.Injective (conjCovector E) := fun φ �
 private theorem conjAntilinear_aux (η : antilinearCovectors E) (v : E) :
     (Complex.conjCLE : ℂ →L[ℝ] ℂ).comp (η : E →L[ℝ] ℂ) (Complex.I • v) =
       Complex.I • (Complex.conjCLE : ℂ →L[ℝ] ℂ).comp (η : E →L[ℝ] ℂ) v := by
-  simp [mem_antilinearCovectors_iff.1 η.2 v]
+  simp [mem_antilinearCovectors_iff.1 η.property v]
 
 /-- The conjugate `v ↦ conj (η v)` of a complex antilinear covector, a complex linear covector. -/
 private def conjAntilinear (η : antilinearCovectors E) : E →L[ℂ] ℂ :=

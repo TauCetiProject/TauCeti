@@ -13,13 +13,28 @@ public import Mathlib.SetTheory.Cardinal.NatCard
 /-!
 # The number of points of a one-point compactification
 
+Adjoining the point at infinity to a countable type preserves countability.
+
 The one-point compactification of a finite space has one more point than the space itself. The
 count is Mathlib's `Finite.card_option` read through the definition `OnePoint X = Option X`, in the
 same style as the other restatements of `Option` lemmas for `OnePoint` in
 `Mathlib/Topology/Compactification/OnePoint/Basic.lean`.
+
+## Main results
+
+* `OnePoint.instCountable`: adjoining a point preserves countability.
+* `TauCeti.natCard_onePoint`: adjoining a point increases the finite cardinality by one.
 -/
 
 public section
+
+namespace OnePoint
+
+/-- A countable type remains countable after adjoining the point at infinity. -/
+instance instCountable {X : Type*} [Countable X] : Countable (OnePoint X) :=
+  inferInstanceAs (Countable (Option X))
+
+end OnePoint
 
 namespace TauCeti
 

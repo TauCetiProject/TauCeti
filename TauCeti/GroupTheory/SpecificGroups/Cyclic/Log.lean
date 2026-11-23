@@ -44,7 +44,7 @@ theorem pow_cyclicLog (x : G) : g ^ cyclicLog g hg x = x :=
 
 /-- `cyclicLog g hg x` is reduced modulo the order of `g`. -/
 theorem cyclicLog_lt (x : G) : cyclicLog g hg x < orderOf g :=
-  ((finEquivZPowers (isOfFinOrder_of_finite g)).symm ⟨x, hg x⟩).2
+  ((finEquivZPowers (isOfFinOrder_of_finite g)).symm ⟨x, hg x⟩).isLt
 
 /-- The exponent of `g ^ i` is `i` reduced modulo the order of `g`. -/
 @[simp]

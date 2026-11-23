@@ -91,7 +91,8 @@ theorem residue_eq_coeff_laurentSeriesExpansion_mul_derivative (hs : P.ord s = 1
     refine P.linearMap_ext_zpow hP hs (m := 0) (fun z hz ↦ ?_) (fun j _ ↦ ?_)
     · -- Both sides vanish on functions integral at `P`.
       obtain ⟨x, rfl⟩ : ∃ x : P.integers, (x : F) = z := ⟨⟨z, P.mem_filtration_zero_iff.mp hz⟩, rfl⟩
-      rw [P.residue_eq_zero_of_mem_integers hP hs x.2, hR_apply, laurentSeriesExpansion_coe, hLs,
+      rw [P.residue_eq_zero_of_mem_integers hP hs x.property, hR_apply, laurentSeriesExpansion_coe,
+          hLs,
         ← PowerSeries.coe_derivative, ← PowerSeries.coe_mul, PowerSeries.coeff_coe]
       simp
     · rw [hR_apply, residue_zpow_uniformizer, map_zpow₀, hLs,
