@@ -87,8 +87,9 @@ stated in degree `finrank ℝ F`, so `isThomClass_thomClass` transports it along
   `TauCeti.orientedFiberGenerator_of_mapOrientation_eq_neg`: a linear trivialization reading the
   fibre orientation as `ω` carries its generator to the point class of `1`
   (`TauCeti.complZeroPairPointHom`), and one reading it as `-ω` to the negative; reversing the
-  orientation negates the generator (`TauCeti.orientedFiberGenerator_neg`), which spans the fibre
-  homology (`TauCeti.span_orientedFiberGenerator`, `TauCeti.orientedFiberGenerator_hom_ext`).
+  orientation negates the generator (`TauCeti.orientedFiberGenerator_neg`), as does reversing `ω`
+  (`TauCeti.orientedFiberGenerator_neg_left`), and the generator spans the fibre homology
+  (`TauCeti.span_orientedFiberGenerator`, `TauCeti.orientedFiberGenerator_hom_ext`).
 * `TauCeti.VectorBundleOrientation.existsUnique_singularCohomology_thomPair_fiber`: there is a
   unique class of `Hʳ(E, E₀)` restricting on every fibre to the class read off from `g` along
   trivializations carrying the orientation of the fibre to `ω`, and to its negative along those
@@ -309,6 +310,7 @@ variable (hι : Fintype.card ι = finrank ℝ F)
 include hι
 
 /-- Reversing the orientation negates its generator. -/
+@[simp]
 theorem orientedFiberGenerator_neg {b : B} (o : Orientation ℝ (E b) ι) :
     orientedFiberGenerator K ω (-o) = -orientedFiberGenerator K ω o := by
   rcases ((trivializationAt F E b).mapOrientation ι (mem_baseSet_trivializationAt F E b) o
@@ -350,17 +352,29 @@ theorem orientedFiberGenerator_of_mapOrientation_eq_neg (e : Trivialization F (�
       (by rw [Trivialization.mapOrientation_neg, h]; exact neg_neg ω),
     orientedFiberGenerator_neg ω hι, neg_neg]
 
+/-- Reversing the orientation of the model fibre negates the generator of every orientation. -/
+@[simp]
+theorem orientedFiberGenerator_neg_left {b : B} (o : Orientation ℝ (E b) ι) :
+    orientedFiberGenerator K (-ω) o = -orientedFiberGenerator K ω o := by
+  have he := mem_baseSet_trivializationAt F E b
+  rcases ((trivializationAt F E b).mapOrientation ι he o).eq_or_eq_neg ω
+      (Nat.card_eq_fintype_card.trans hι) with h | h
+  · rw [orientedFiberGenerator_of_mapOrientation_eq ω hι _ he h,
+      orientedFiberGenerator_of_mapOrientation_eq_neg (-ω) hι _ he (h.trans (neg_neg ω).symm)]
+  · rw [orientedFiberGenerator_of_mapOrientation_eq_neg ω hι _ he h,
+      orientedFiberGenerator_of_mapOrientation_eq (-ω) hι _ he h, neg_neg]
+
 omit hι
 
 omit [Fintype ι] in
 /-- The generator of an orientation spans `Hᵣ(E_b, E_b ∖ {0}; K)`. -/
 theorem span_orientedFiberGenerator {b : B} (o : Orientation ℝ (E b) ι) :
     Submodule.span K {orientedFiberGenerator K ω o} = ⊤ := by
-  refine (ModuleCat.span_singleton_apply_eq_top_iff _).2 ?_
+  rw [orientedFiberGenerator, ModuleCat.span_singleton_apply_eq_top_iff]
   split_ifs
-  · exact (ModuleCat.span_singleton_apply_eq_top_iff _).2 Ideal.span_singleton_one
+  · exact span_complZeroPairPointHom_one F K
   · rw [← Set.neg_singleton, Submodule.span_neg]
-    exact (ModuleCat.span_singleton_apply_eq_top_iff _).2 Ideal.span_singleton_one
+    exact span_complZeroPairPointHom_one F K
 
 omit [Fintype ι] in
 /-- Morphisms out of `Hᵣ(E_b, E_b ∖ {0}; K)` are determined by their value on the generator of
