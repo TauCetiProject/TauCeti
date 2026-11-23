@@ -164,7 +164,7 @@ theorem den_convergent_goldenRatio_mul_abs (n : ℕ) :
   calc (φ ^ (n + 1) - ψ ^ (n + 1)) / √5 * (-ψ) ^ (n + 1)
       = ((φ * -ψ) ^ (n + 1) - (ψ * -ψ) ^ (n + 1)) / √5 := by
         simp only [mul_pow]; ring
-    _ = (1 - (-ψ ^ 2) ^ (n + 1)) / √5 := by simp [h1, h2]
+    _ = (1 - (-ψ ^ 2) ^ (n + 1)) / √5 := by rw [h1, h2, one_pow]
 
 /-- Along the convergents `p / q` of the golden ratio, `q * |q * φ - p|` tends to `1 / √5`: the
 constant `√5` in Hurwitz's theorem is attained in the limit by the convergents of `φ`. -/

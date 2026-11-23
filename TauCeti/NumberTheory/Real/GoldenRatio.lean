@@ -109,13 +109,9 @@ theorem one_le_abs_mul_goldenRatio_sub_mul_abs_mul_goldenConj_sub {p q : ℤ} (h
     · simpa using h
     · exact sub_ne_zero.mpr ((hx.intCast_mul hq).ne_int p)
   have hprod : ((q : ℝ) * φ - p) * (q * ψ - p) = ((p ^ 2 - p * q - q ^ 2 : ℤ) : ℝ) := by
-    have h := congrArg goldenEval (QuadraticAlgebra.algebraMap_norm_eq_mul_star ⟨-p, q⟩)
-    simp only [map_mul, goldenEval_apply, QuadraticAlgebra.re_star, QuadraticAlgebra.im_star,
-      QuadraticAlgebra.norm_def, eq_intCast, QuadraticAlgebra.re_intCast,
-      QuadraticAlgebra.im_intCast] at h
-    rw [← Real.one_sub_goldenConj]
-    push_cast at h ⊢
-    linear_combination -h
+    push_cast
+    linear_combination (q : ℝ) ^ 2 * Real.goldenRatio_mul_goldenConj -
+      (p * q : ℝ) * Real.goldenRatio_add_goldenConj
   have h0 : p ^ 2 - p * q - q ^ 2 ≠ 0 := fun h0 ↦
     mul_ne_zero (hne Real.goldenRatio_irrational) (hne Real.goldenConj_irrational)
       (by rw [hprod, h0, Int.cast_zero])
