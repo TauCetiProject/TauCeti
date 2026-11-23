@@ -151,13 +151,16 @@ lemma singularChainsRep_d (n : ℕ) :
 
 /-- In any pair of degrees, the differential of the equivariant singular chain complex is the
 singular boundary. -/
+@[simp]
 theorem singularChainsRep_d_hom_apply (i j : ℕ) (c : ((singularChains k).obj E).X i) :
     ((singularChainsRep k E G).d i j).hom c = ((singularChains k).obj E).d i j c := by
   by_cases h : (ComplexShape.down ℕ).Rel i j
   · obtain rfl : i = j + 1 := h.symm
     rw [singularChainsRep_d]
     exact singularChainsRepDifferential_hom_apply k E G j c
-  · rw [HomologicalComplex.shape _ _ _ h, HomologicalComplex.shape _ _ _ h]
+  · rw [HomologicalComplex.shape _ _ _ h, HomologicalComplex.shape _ _ _ h, Rep.zero_hom]
+    -- both sides are the zero map; the underlying map of the zero intertwining map is the zero
+    -- linear map by definition
     rfl
 
 /-- **Forgetting the action of `G`, the equivariant singular chain complex is the singular chain

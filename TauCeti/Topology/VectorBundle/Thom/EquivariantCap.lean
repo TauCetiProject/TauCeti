@@ -28,9 +28,10 @@ homology of a Thom pair with local coefficients from a covering. For the pull-ba
 its orientation double cover `B'`, with `G = ℤˣ` acting by the deck involution and `χ` the sign
 character, the bundle `E'` is oriented, and a cocycle representing its Thom class which the deck
 involution negates is semi-invariant. When `G` acts freely on the base, the twisted chains of the
-base are projective representations (`TauCeti.projective_tensorLeft_singularChainsRep_X`), so this
-quasi-isomorphism computes the relative twisted homology of the quotient pair
-(`TopPair.twistedHomologyIsoHomologyCoinvariantsTensorObj`).
+base are projective representations (`TauCeti.projective_tensorLeft_singularChainsRep_X`). If
+moreover the Thom pair maps to a pair `(Q, Q₀)` by quotient covering maps `E ⟶ Q` and `E₀ ⟶ Q₀`,
+as for the pull-back to the orientation double cover, this quasi-isomorphism computes the homology
+of `(Q, Q₀)` with twisted coefficients (`TopPair.twistedHomologyIsoHomologyCoinvariantsTensorObj`).
 
 ## Main results
 
@@ -65,23 +66,15 @@ variable {B : Type u} [TopologicalSpace B] {F : Type u} [NormedAddCommGroup F] [
 /-- **The equivariant cap product with a Thom cocycle is a quasi-isomorphism.** Let `G` act on the
 Thom pair `(E, E₀)` of a real vector bundle of rank `r` and on its base, compatibly with the
 inclusion and the projection, and let `φ` be a relative cocycle of degree `r` which, pulled back to
-`E`, satisfies `φ(g • c) = χ(g) φ(c)`. If the class of `φ` is a Thom class, then the equivariant cap
-product `C(E, E₀; k) ⟶ (k_χ ⊗ C(B; k))[r]` with `φ` is a quasi-isomorphism of complexes of
-representations of `G`. -/
+`E`, satisfies `φ(g • c) = χ(g) φ(c)` (`TopPair.IsSemiInvariantCocycle`). If the class of `φ` is a
+Thom class, then the equivariant cap product `C(E, E₀; k) ⟶ (k_χ ⊗ C(B; k))[r]` with `φ` is a
+quasi-isomorphism of complexes of representations of `G`. -/
 theorem quasiIso_singularChainsRepCap_thomPair
     (hP : ∀ (g : G) x, (thomPair F E).map (g • x) = g • (thomPair F E).map x)
     (hp₀ : ∀ (g : G) x, thomPairProj F E (g • x) = g • thomPairProj F E x) (χ : G →* kˣ)
     {φ : ((thomPair F E).singularCochainComplex (ModuleCat.of k k) k (ModuleCat.of k k)).cycles
       (finrank ℝ F)}
-    (hφ : ∀ g : G, ((singularChains k).map (TopCat.ofHom
-        ⟨(g • · : (thomPair F E).fst → (thomPair F E).fst), continuous_const_smul g⟩)).f
-          (finrank ℝ F) ≫
-        ((thomPair F E).singularChainComplexπ (ModuleCat.of k k)).f (finrank ℝ F) ≫
-          ((thomPair F E).singularCochainComplex (ModuleCat.of k k) k (ModuleCat.of k k)).iCycles
-            (finrank ℝ F) φ =
-      (χ g : k) • (((thomPair F E).singularChainComplexπ (ModuleCat.of k k)).f (finrank ℝ F) ≫
-          ((thomPair F E).singularCochainComplex (ModuleCat.of k k) k (ModuleCat.of k k)).iCycles
-            (finrank ℝ F) φ))
+    (hφ : TopPair.IsSemiInvariantCocycle χ φ)
     (hu : IsThomClass F E
       (((thomPair F E).singularCochainComplex (ModuleCat.of k k) k (ModuleCat.of k k)).homologyπ
         (finrank ℝ F) φ)) :

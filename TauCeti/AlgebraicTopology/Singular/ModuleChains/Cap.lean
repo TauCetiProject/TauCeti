@@ -7,9 +7,7 @@ module
 
 public import TauCeti.AlgebraicTopology.Cohomology.Cap.Pushforward
 public import TauCeti.AlgebraicTopology.Singular.ModuleChains.Relative
-public import TauCeti.RepresentationTheory.LinearCharacter.Basic
-public import TauCeti.RepresentationTheory.Rep.Ihom
-import TauCeti.Algebra.Homology.Embedding.MapExtend
+public import TauCeti.AlgebraicTopology.Singular.ModuleChains.Twist
 
 /-!
 # The equivariant cap product with a semi-invariant cocycle
@@ -21,9 +19,9 @@ with coefficients in a commutative ring `k` are complexes of representations of 
 degree `n` and pushing forward along `p₀` is a chain map from the relative chains of `(X, A)` to the
 chains of `Y` placed `n` degrees higher (`TopPair.pushforwardCapChainMap`), but it is not
 equivariant unless `φ` is invariant. This file makes it equivariant when `φ` is semi-invariant: if
-`φ`, pulled back to `X`, satisfies `φ(g • c) = χ(g) φ(c)` for a character `χ : G →* kˣ`, then
-`p₀_*(g • x ⌢ φ) = χ(g) g • p₀_*(x ⌢ φ)` by naturality of the cap product, so the cap product is a
-chain map of complexes of representations
+`φ`, pulled back to `X`, satisfies `φ(g • c) = χ(g) φ(c)` for a character `χ : G →* kˣ`
+(`TopPair.IsSemiInvariantCocycle`), then `p₀_*(g • x ⌢ φ) = χ(g) g • p₀_*(x ⌢ φ)` by naturality
+of the cap product, so the cap product is a chain map of complexes of representations
 
 `C(X, A; k) ⟶ (k_χ ⊗ C(Y; k))[n]`
 
@@ -41,21 +39,24 @@ instance when the relative homology of `(X, A)` vanishes below `n` and `x ↦ p�
 isomorphism in every degree (`TopPair.quasiIso_pushforwardCapChainMap`), as for the Thom pair of a
 vector bundle and a cocycle representing a Thom class. If `G` acts freely on `Y`, the twisted
 chains of `Y` are projective representations
-(`TauCeti.projective_tensorLeft_singularChainsRep_X`), so such a quasi-isomorphism computes the
-twisted homology of the quotient of `(X, A)`
+(`TauCeti.projective_tensorLeft_singularChainsRep_X`). If moreover `(X, A)` maps to a pair
+`(B, B₀)` by quotient covering maps `X ⟶ B` and `A ⟶ B₀`, such a quasi-isomorphism computes the
+homology of `(B, B₀)` with twisted coefficients
 (`TopPair.twistedHomologyIsoHomologyCoinvariantsTensorObj`).
 
-For the orientation double cover of a vector bundle, with `G = ℤˣ` acting by the deck involution and
-`χ` the sign character, a Thom cocycle of the pulled-back bundle which the deck involution negates
-is semi-invariant, and the equivariant cap product with it is the chain-level map that computes the
-homology of the Thom pair of the bundle with coefficients in its orientation system.
+The intended use is the orientation double cover of a vector bundle `E → B` of rank `r`, with
+`G = ℤˣ` acting by the deck involution and `χ` the sign character. A Thom cocycle of the pulled-back
+bundle which the deck involution negates is semi-invariant, and the equivariant cap product with it
+is the chain map which, after descent, identifies `H_{q+r}(E, E₀; k)` with `H_q(B; o(E) ⊗ k)`, the
+homology of the base with coefficients in the orientation system. That identification is not
+proved in this file.
 
 ## Main definitions
 
+* `TopPair.IsSemiInvariantCocycle`: a relative cocycle which, pulled back to the ambient space,
+  satisfies `φ(g • c) = χ(g) φ(c)`.
 * `TopPair.singularChainsRepCap`: the equivariant cap product with a semi-invariant relative
   cocycle, followed by the push-forward along an equivariant map.
-* `TauCeti.singularChainsRepTwistExtendForget₂Iso`: forgetting the action, the twisted chains of
-  `Y` placed `n` degrees higher are the singular chains of `Y` placed `n` degrees higher.
 
 ## Main results
 
@@ -63,8 +64,6 @@ homology of the Thom pair of the bundle with coefficients in its orientation sys
   the action, the equivariant cap product is `TopPair.pushforwardCapChainMap`.
 * `TopPair.quasiIso_singularChainsRepCap_iff`: it is a quasi-isomorphism if and only if
   `TopPair.pushforwardCapChainMap` is one.
-* `TauCeti.projective_tensorLeft_singularChainsRep_X`: the twisted singular chains of a free
-  `G`-space are projective representations.
 
 ## References
 
@@ -82,57 +81,38 @@ open CategoryTheory Limits MonoidalCategory HomologicalComplex TauCeti
 
 universe u
 
-namespace TauCeti
-
-variable {k : Type u} [CommRing k] {Y : TopCat.{u}} {G : Type u} [Group G] [MulAction G Y]
-  [ContinuousConstSMul G Y] (χ : G →* kˣ)
-
-variable (k Y) in
-/-- Forgetting the action of `G`, the singular chains of `Y` twisted by the character `χ` are the
-singular chains of `Y`: in each degree, `k ⊗ C_q(Y) ≅ C_q(Y)` by the left unitor. -/
-private def twistForget₂Iso :
-    ((forget₂ (Rep.{u} k G) (ModuleCat.{u} k)).mapHomologicalComplex _).obj
-        (((tensorLeft (Rep.of (Representation.ofLinearCharacter χ))).mapHomologicalComplex _).obj
-          (TauCeti.singularChainsRep k Y G)) ≅
-      (TopCat.toSSet.obj Y).chainComplex (ModuleCat.of k k) :=
-  HomologicalComplex.Hom.isoOfComponents (fun q ↦ (TensorProduct.lid k
-    (((TopCat.toSSet.obj Y).chainComplex (ModuleCat.of k k)).X q)).toModuleIso) fun i j _ ↦ by
-      refine ModuleCat.hom_ext (TensorProduct.ext' fun (a : k)
-        (x : ((singularChains k).obj Y).X i) ↦ ?_)
-      -- evaluate on `a ⊗ x`: the differential of the twist is `𝟙 ⊗ ∂`
-      change ((singularChains k).obj Y).d i j (a • x) =
-        a • ((TauCeti.singularChainsRep k Y G).d i j).hom x
-      rw [singularChainsRep_d_hom_apply k Y G i j x, map_smul]
-      -- the two sides differ only in the module structure on the twisted carrier
-      rfl
-
-variable (k Y) in
-/-- **Forgetting the action, the twisted shifted chains are the shifted singular chains.**
-Forgetting the action of `G`, the singular chains of `Y` twisted by the character `χ` and placed
-`n` degrees higher are the singular chains of `Y` placed `n` degrees higher. -/
-def singularChainsRepTwistExtendForget₂Iso (n : ℕ) :
-    ((forget₂ (Rep.{u} k G) (ModuleCat.{u} k)).mapHomologicalComplex _).obj
-        ((((tensorLeft (Rep.of (Representation.ofLinearCharacter χ))).mapHomologicalComplex _).obj
-          (TauCeti.singularChainsRep k Y G)).extend (ComplexShape.embeddingDownNatAdd n)) ≅
-      ((TopCat.toSSet.obj Y).chainComplex (ModuleCat.of k k)).extend
-        (ComplexShape.embeddingDownNatAdd n) :=
-  HomologicalComplex.mapExtendIso _ _ _ ≪≫
-    ((ComplexShape.embeddingDownNatAdd n).extendFunctor _).mapIso (twistForget₂Iso k Y χ)
-
-/-- **The twisted singular chains of a free `G`-space are projective**: twisting by the
-one-dimensional representation of `χ` keeps the free representations of the singular chains
-projective. -/
-instance projective_tensorLeft_singularChainsRep_X [IsCancelSMul G Y] (q : ℕ) :
-    Projective ((((tensorLeft (Rep.of (Representation.ofLinearCharacter χ))).mapHomologicalComplex
-      _).obj (TauCeti.singularChainsRep k Y G)).X q) :=
-  Rep.projective_tensorObj _ _
-
-end TauCeti
-
 namespace TopPair
 
 variable (P : TopPair.{u}) {k : Type u} [CommRing k] {Y : TopCat.{u}} (p₀ : P.fst ⟶ Y) (n : ℕ)
   (φ : (P.singularCochainComplex (ModuleCat.of k k) k (ModuleCat.of k k)).cycles n)
+
+variable {P n} in
+/-- A relative cocycle `φ` of degree `n` of a pair `(X, A)` is **semi-invariant** for an action of
+`G` on `X` and a character `χ : G →* kˣ` if, pulled back to `X`, it satisfies `φ(g • c) = χ(g) φ(c)`
+for every `g : G` and every singular `n`-chain `c` of `X`. -/
+def IsSemiInvariantCocycle {G : Type u} [Group G] [MulAction G P.fst] [ContinuousConstSMul G P.fst]
+    (χ : G →* kˣ)
+    (φ : (P.singularCochainComplex (ModuleCat.of k k) k (ModuleCat.of k k)).cycles n) : Prop :=
+  ∀ g : G, ((singularChains k).map
+      (TopCat.ofHom ⟨(g • · : P.fst → P.fst), continuous_const_smul g⟩)).f n ≫
+      (P.singularChainComplexπ (ModuleCat.of k k)).f n ≫
+        (P.singularCochainComplex (ModuleCat.of k k) k (ModuleCat.of k k)).iCycles n φ =
+    (χ g : k) • ((P.singularChainComplexπ (ModuleCat.of k k)).f n ≫
+        (P.singularCochainComplex (ModuleCat.of k k) k (ModuleCat.of k k)).iCycles n φ)
+
+variable {P n} in
+/-- Unfolding `TopPair.IsSemiInvariantCocycle`: the pull-back of `φ` to the ambient space
+satisfies `φ(g • c) = χ(g) φ(c)`. -/
+theorem isSemiInvariantCocycle_iff {G : Type u} [Group G] [MulAction G P.fst]
+    [ContinuousConstSMul G P.fst] (χ : G →* kˣ)
+    (φ : (P.singularCochainComplex (ModuleCat.of k k) k (ModuleCat.of k k)).cycles n) :
+    IsSemiInvariantCocycle χ φ ↔ ∀ g : G, ((singularChains k).map
+      (TopCat.ofHom ⟨(g • · : P.fst → P.fst), continuous_const_smul g⟩)).f n ≫
+      (P.singularChainComplexπ (ModuleCat.of k k)).f n ≫
+        (P.singularCochainComplex (ModuleCat.of k k) k (ModuleCat.of k k)).iCycles n φ =
+    (χ g : k) • ((P.singularChainComplexπ (ModuleCat.of k k)).f n ≫
+        (P.singularCochainComplex (ModuleCat.of k k) k (ModuleCat.of k k)).iCycles n φ) :=
+  Iff.rfl
 
 /-- The relative cocycle `φ` pulled back to a cocycle of the ambient space along the quotient onto
 the relative chains. -/
@@ -155,7 +135,8 @@ private theorem iCycles_pulledCocycle :
 /-- Capping a singular `(q + n)`-chain of the ambient space with the pulled-back cocycle and pushing
 forward along `p₀`. -/
 private def capComponent (q : ℕ) :
-    ((singularChains k).obj P.fst).X (q + n) ⟶ ((singularChains k).obj Y).X q :=
+    ((TopCat.toSSet.obj P.fst).chainComplex (ModuleCat.of k k)).X (q + n) ⟶
+      ((TopCat.toSSet.obj Y).chainComplex (ModuleCat.of k k)).X q :=
   ChainComplex.capChain k (P.fst.alexanderWhitneyDiagonal (λ_ (ModuleCat.of k k)).inv)
     ((TopCat.toSSet.obj P.fst).chainComplexPairing (λ_ (ModuleCat.of k k)).hom ≫
       SSet.chainComplexMap (TopCat.toSSet.map p₀) (ModuleCat.of k k)) n q (q + n) (by omega)
@@ -184,17 +165,14 @@ private theorem singularChainComplexπ_f_pushforwardCapChainMap_f (q : ℕ) :
     (𝟙 _) (𝟙 _) (singularChainComplexπ_alexanderWhitneyDiagonal P _) (by simp) n q (q + n)
     (by omega) ((P.singularCochainComplex (ModuleCat.of k k) k (ModuleCat.of k k)).iCycles n φ)
   rw [HomologicalComplex.id_f, Category.comp_id] at h₁
-  rw [capComponent, iCycles_pulledCocycle]
-  -- the ambient chains of `P` appear in two forms which agree only after unfolding, so the steps
-  -- are assembled in term mode rather than by rewriting
-  exact (congrArg (fun f ↦ (P.singularChainComplexπ (ModuleCat.of k k)).f (q + n) ≫ f.f (q + n))
-    (pushforwardCapChainMap_def P p₀ (ModuleCat.of k k) n _ _)).trans <|
-    (congrArg ((P.singularChainComplexπ (ModuleCat.of k k)).f (q + n) ≫ ·)
-    (ChainComplex.capChainMap_f _ _ (ChainComplex.d_comp_linearYonedaObj_iCycles n (n + 1) φ) q
-      (q + n) (by omega))).trans
-    ((Preadditive.comp_zsmul _ _ _).trans ((congrArg (((-1 : ℤ) ^ (n * q)) • ·)
-      ((Category.assoc _ _ _).symm.trans (congrArg (· ≫ _) h₁.symm))).trans
-        (Preadditive.zsmul_comp _ _ _).symm))
+  rw [capComponent, pushforwardCapChainMap_def P p₀ (ModuleCat.of k k) n _
+      (ChainComplex.d_comp_linearYonedaObj_iCycles n (n + 1) φ),
+    ChainComplex.capChainMap_f _ _ (ChainComplex.d_comp_linearYonedaObj_iCycles n (n + 1) φ) q
+      (q + n) (by omega), Preadditive.comp_zsmul, Preadditive.zsmul_comp, ← Category.assoc]
+  congr 2
+  -- `h₁` is stated for cochains on the chains with coefficients `𝟙_ (ModuleCat k)` of the cap
+  -- product, which is `ModuleCat.of k k` only after unfolding, so it closes the goal by `exact`
+  exact h₁.symm.trans (congrArg _ (iCycles_pulledCocycle P n φ).symm)
 
 variable {P p₀ n φ} in
 /-- **The cap product with a semi-invariant cocycle is semi-invariant.** If the cochain `φ`,
@@ -203,18 +181,13 @@ capping with `φ` and pushing forward along `p₀` satisfies `cap(g • c) = χ(
 private theorem capComponent_smul {G : Type u} [Group G] [MulAction G P.fst]
     [ContinuousConstSMul G P.fst] [MulAction G Y] [ContinuousConstSMul G Y]
     (hp₀ : ∀ (g : G) x, p₀ (g • x) = g • p₀ x) (χ : G →* kˣ)
-    (hφ : ∀ g : G, ((singularChains k).map
-        (TopCat.ofHom ⟨(g • · : P.fst → P.fst), continuous_const_smul g⟩)).f n ≫
-        (P.singularChainComplexπ (ModuleCat.of k k)).f n ≫
-          (P.singularCochainComplex (ModuleCat.of k k) k (ModuleCat.of k k)).iCycles n φ =
-      (χ g : k) • ((P.singularChainComplexπ (ModuleCat.of k k)).f n ≫
-          (P.singularCochainComplex (ModuleCat.of k k) k (ModuleCat.of k k)).iCycles n φ))
+    (hφ : IsSemiInvariantCocycle χ φ)
     (g : G) (q : ℕ) :
-    ((singularChains k).map
-        (TopCat.ofHom ⟨(g • · : P.fst → P.fst), continuous_const_smul g⟩)).f (q + n) ≫
-        capComponent P p₀ n φ q =
-      (χ g : k) • (capComponent P p₀ n φ q ≫ ((singularChains k).map
-        (TopCat.ofHom ⟨(g • · : Y → Y), continuous_const_smul g⟩)).f q) := by
+    (SSet.chainComplexMap (TopCat.toSSet.map
+        (TopCat.ofHom ⟨(g • · : P.fst → P.fst), continuous_const_smul g⟩)) (ModuleCat.of k k)).f
+          (q + n) ≫ capComponent P p₀ n φ q =
+      (χ g : k) • (capComponent P p₀ n φ q ≫ (SSet.chainComplexMap (TopCat.toSSet.map
+        (TopCat.ofHom ⟨(g • · : Y → Y), continuous_const_smul g⟩)) (ModuleCat.of k k)).f q) := by
   have hp : TopCat.ofHom ⟨(g • · : P.fst → P.fst), continuous_const_smul g⟩ ≫ p₀ =
       p₀ ≫ TopCat.ofHom ⟨(g • · : Y → Y), continuous_const_smul g⟩ :=
     ConcreteCategory.hom_ext _ _ fun x ↦ hp₀ g x
@@ -254,9 +227,9 @@ private theorem capComponent_smul {G : Type u} [Group G] [MulAction G P.fst]
     ((((TopCat.toSSet.obj P.fst).chainComplex (𝟙_ (ModuleCat.{u} k))).linearYonedaObj k
       (𝟙_ (ModuleCat.{u} k))).iCycles n (pulledCocycle P n φ))
   rw [hψ] at this
-  -- `χ g` acts on the pulled-back cocycle through the module of cochains, which agrees with the
-  -- module structure of the domain of the cap product only after unfolding, so the linearity step
-  -- is closed by a term
+  -- `χ g` acts on the pulled-back cocycle through the module of cochains on the chains with
+  -- coefficients `𝟙_ (ModuleCat k)`, which is the `k`-module structure of the domain of the cap
+  -- product only after unfolding, so `map_smul` is applied by `exact`
   refine this.symm.trans ?_
   rw [← Linear.smul_comp]
   exact congrArg (· ≫ _) (map_smul _ _ _)
@@ -269,9 +242,11 @@ private def signedCapComponent (q : ℕ) :
 
 /-- The sign-corrected cap products commute with the boundaries: they are the components of the
 chain map `TauCeti.ChainComplex.capChainMap` of the cocycle `φ` pulled back to the ambient space. -/
-private theorem signedCapComponent_comp_d (q : ℕ) :
-    signedCapComponent P p₀ n φ (q + 1) ≫ ((singularChains k).obj Y).d (q + 1) q =
-      ((singularChains k).obj P.fst).d (q + 1 + n) (q + n) ≫ signedCapComponent P p₀ n φ q := by
+private theorem zsmul_capComponent_comp_d (q : ℕ) :
+    (((-1 : ℤ) ^ (n * (q + 1))) • capComponent P p₀ n φ (q + 1)) ≫
+        ((TopCat.toSSet.obj Y).chainComplex (ModuleCat.of k k)).d (q + 1) q =
+      ((TopCat.toSSet.obj P.fst).chainComplex (ModuleCat.of k k)).d (q + 1 + n) (q + n) ≫
+        (((-1 : ℤ) ^ (n * q)) • capComponent P p₀ n φ q) := by
   have hψ := ChainComplex.d_comp_linearYonedaObj_iCycles n (n + 1) (pulledCocycle P n φ)
   have h := (ChainComplex.capChainMap k
     (P.fst.alexanderWhitneyDiagonal (λ_ (ModuleCat.of k k)).inv)
@@ -284,13 +259,19 @@ private theorem signedCapComponent_comp_d (q : ℕ) :
       (ComplexShape.embeddingDownNatAdd_f n q)] at h
   simp only [Preadditive.zsmul_comp, Preadditive.comp_zsmul, Category.assoc,
     Iso.inv_hom_id_assoc] at h
-  -- the singular chains appear in two forms which agree only after unfolding, so the signs are
-  -- moved by a term rather than by rewriting
-  exact (cancel_mono (((TopCat.toSSet.obj Y).chainComplex (ModuleCat.of k k)).extendXIso
-    (ComplexShape.embeddingDownNatAdd n) (ComplexShape.embeddingDownNatAdd_f n q)).inv).1
-    ((Category.assoc _ _ _).trans ((Preadditive.zsmul_comp _ _ _).trans (h.trans
-      (((congrArg (_ ≫ ·) (Preadditive.zsmul_comp _ _ _)).trans
-        (Preadditive.comp_zsmul _ _ _)).symm.trans (Category.assoc _ _ _).symm))))
+  rw [← cancel_mono (((TopCat.toSSet.obj Y).chainComplex (ModuleCat.of k k)).extendXIso
+    (ComplexShape.embeddingDownNatAdd n) (ComplexShape.embeddingDownNatAdd_f n q)).inv]
+  simpa only [capComponent, Preadditive.zsmul_comp, Preadditive.comp_zsmul, Category.assoc]
+    using h
+
+/-- `zsmul_capComponent_comp_d`, read on the singular chains `singularChains k`, the form in which
+the representations of the singular chains are stated. -/
+private theorem signedCapComponent_comp_d (q : ℕ) :
+    signedCapComponent P p₀ n φ (q + 1) ≫ ((singularChains k).obj Y).d (q + 1) q =
+      ((singularChains k).obj P.fst).d (q + 1 + n) (q + n) ≫ signedCapComponent P p₀ n φ q :=
+  -- `(singularChains k).obj X` is `(TopCat.toSSet.obj X).chainComplex (ModuleCat.of k k)` after
+  -- unfolding `singularChainComplexFunctor`
+  zsmul_capComponent_comp_d P p₀ n φ q
 
 variable {P p₀ n φ} in
 /-- The sign-corrected cap products with a semi-invariant cocycle are semi-invariant:
@@ -298,46 +279,58 @@ variable {P p₀ n φ} in
 private theorem signedCapComponent_apply_smul {G : Type u} [Group G] [MulAction G P.fst]
     [ContinuousConstSMul G P.fst] [MulAction G Y] [ContinuousConstSMul G Y]
     (hp₀ : ∀ (g : G) x, p₀ (g • x) = g • p₀ x) (χ : G →* kˣ)
-    (hφ : ∀ g : G, ((singularChains k).map
-        (TopCat.ofHom ⟨(g • · : P.fst → P.fst), continuous_const_smul g⟩)).f n ≫
-        (P.singularChainComplexπ (ModuleCat.of k k)).f n ≫
-          (P.singularCochainComplex (ModuleCat.of k k) k (ModuleCat.of k k)).iCycles n φ =
-      (χ g : k) • ((P.singularChainComplexπ (ModuleCat.of k k)).f n ≫
-          (P.singularCochainComplex (ModuleCat.of k k) k (ModuleCat.of k k)).iCycles n φ))
+    (hφ : IsSemiInvariantCocycle χ φ)
     (g : G) (q : ℕ) (c : ((singularChains k).obj P.fst).X (q + n)) :
     (signedCapComponent P p₀ n φ q).hom (singularChainsRepresentation k P.fst G (q + n) g c) =
       (χ g : k) •
         singularChainsRepresentation k Y G q g ((signedCapComponent P p₀ n φ q).hom c) := by
-  have := ConcreteCategory.congr_hom (capComponent_smul hp₀ χ hφ g q) c
-  simp only [ModuleCat.hom_comp, LinearMap.comp_apply, ModuleCat.hom_smul,
-    LinearMap.smul_apply] at this
-  rw [signedCapComponent, ModuleCat.hom_zsmul, LinearMap.smul_apply, LinearMap.smul_apply,
-    singularChainsRepresentation_apply, singularChainsRepresentation_apply, this, map_zsmul,
-    smul_comm]
+  rw [singularChainsRepresentation_apply, singularChainsRepresentation_apply]
+  -- `singularChainsRepresentation` acts by `((singularChains k).map _).f`, which is the
+  -- push-forward `(SSet.chainComplexMap (TopCat.toSSet.map _) (ModuleCat.of k k)).f` of
+  -- `capComponent_smul` only after unfolding `singularChains`, so the goal is restated in that form
+  revert c
+  change ∀ c : ((TopCat.toSSet.obj P.fst).chainComplex (ModuleCat.of k k)).X (q + n),
+    ((-1 : ℤ) ^ (n * q) • capComponent P p₀ n φ q).hom
+      (((SSet.chainComplexMap (TopCat.toSSet.map
+        (TopCat.ofHom ⟨(g • · : P.fst → P.fst), continuous_const_smul g⟩)) (ModuleCat.of k k)).f
+          (q + n)).hom c) =
+    (χ g : k) • ((SSet.chainComplexMap (TopCat.toSSet.map
+        (TopCat.ofHom ⟨(g • · : Y → Y), continuous_const_smul g⟩)) (ModuleCat.of k k)).f q).hom
+      (((-1 : ℤ) ^ (n * q) • capComponent P p₀ n φ q).hom c)
+  intro c
+  rw [ModuleCat.hom_zsmul, LinearMap.smul_apply, LinearMap.smul_apply, ← LinearMap.comp_apply,
+    ← ModuleCat.hom_comp, capComponent_smul hp₀ χ hφ g q, ModuleCat.hom_smul, LinearMap.smul_apply,
+    ModuleCat.hom_comp, LinearMap.comp_apply, map_zsmul, smul_comm]
 
 /-- The cap product with a relative cocycle vanishes on the chains of the subspace. -/
 private theorem map_f_comp_signedCapComponent (q : ℕ) :
     ((singularChains k).map P.map).f (q + n) ≫ signedCapComponent P p₀ n φ q = 0 := by
   refine (cancel_mono (((TopCat.toSSet.obj Y).chainComplex (ModuleCat.of k k)).extendXIso
     (ComplexShape.embeddingDownNatAdd n) (ComplexShape.embeddingDownNatAdd_f n q)).inv).1 ?_
-  -- the chains of the subspace vanish in the relative chains; the two forms of the ambient chains
-  -- agree only after unfolding, so the steps are assembled in term mode
+  -- the chains of the subspace vanish in the relative chains. The push-forward
+  -- `(singularChains k).map P.map` is `SSet.chainComplexMap (TopPair.toSSetPair.obj P).hom _` of
+  -- `chainComplex_condition_f` only after unfolding `singularChainComplexFunctor` and
+  -- `TopPair.toSSetPair`, which `rw` does not see through, so the steps are assembled in term mode
   exact (Category.assoc _ _ _).trans ((congrArg (((singularChains k).map P.map).f (q + n) ≫ ·)
     (singularChainComplexπ_f_pushforwardCapChainMap_f P p₀ n φ q).symm).trans
       ((Category.assoc _ _ _).symm.trans ((congrArg (· ≫ _)
         ((TopPair.toSSetPair.obj P).chainComplex_condition_f (ModuleCat.of k k) (q + n))).trans
           (Limits.zero_comp.trans Limits.zero_comp.symm))))
 
+variable {n} in
+/-- Below `n`, a chain complex placed `n` degrees higher is zero. -/
+private theorem isZero_extend_embeddingDownNatAdd_X {C : Type*} [Category* C] [HasZeroMorphisms C]
+    [HasZeroObject C] (K : ChainComplex C ℕ) {m : ℕ} (hm : m < n) :
+    IsZero ((K.extend (ComplexShape.embeddingDownNatAdd n)).X m) :=
+  K.isZero_extend_X _ m fun q ↦ by
+    simp only [ComplexShape.embeddingDownNatAdd_f]
+    omega
+
 section Rep
 
 variable {G : Type u} [Group G] [MulAction G P.fst] [ContinuousConstSMul G P.fst] [MulAction G Y]
   [ContinuousConstSMul G Y] {p₀} (hp₀ : ∀ (g : G) x, p₀ (g • x) = g • p₀ x) (χ : G →* kˣ) {n φ}
-  (hφ : ∀ g : G, ((singularChains k).map
-        (TopCat.ofHom ⟨(g • · : P.fst → P.fst), continuous_const_smul g⟩)).f n ≫
-        (P.singularChainComplexπ (ModuleCat.of k k)).f n ≫
-          (P.singularCochainComplex (ModuleCat.of k k) k (ModuleCat.of k k)).iCycles n φ =
-      (χ g : k) • ((P.singularChainComplexπ (ModuleCat.of k k)).f n ≫
-          (P.singularCochainComplex (ModuleCat.of k k) k (ModuleCat.of k k)).iCycles n φ))
+  (hφ : IsSemiInvariantCocycle χ φ)
 
 include hp₀ hφ in
 /-- The sign-corrected cap product in degree `q + n`, as an equivariant map from the singular
@@ -424,8 +417,7 @@ private theorem singularChainsRepι_comp_capAmbient :
   ext m : 1
   rw [HomologicalComplex.comp_f, HomologicalComplex.zero_f]
   rcases lt_or_ge m n with hm | hm
-  · -- below `n` the shifted complex is zero
-    exact (HomologicalComplex.isZero_extend_X _ _ m fun q ↦ by simp; omega).eq_of_tgt _ _
+  · exact (isZero_extend_embeddingDownNatAdd_X _ hm).eq_of_tgt _ _
   · obtain ⟨q, rfl⟩ : ∃ q, m = q + n := ⟨m - n, by omega⟩
     rw [capAmbient_f, ← Category.assoc]
     convert Limits.zero_comp
@@ -433,6 +425,7 @@ private theorem singularChainsRepι_comp_capAmbient :
     -- evaluate on `c`: the cap product vanishes on the image of the chains of the subspace
     change (capRep P hp₀ χ hφ q).hom (((P.singularChainsRepι k G hP).f (q + n)).hom c) = 0
     rw [singularChainsRepι_f_hom_apply P k hP (q + n) c]
+    -- the underlying linear map of `capRep` is `c ↦ 1 ⊗ signedCapComponent c`, by its definition
     change (1 : k) ⊗ₜ[k] (signedCapComponent P p₀ n φ q).hom
         (((singularChains k).map P.map).f (q + n) c) = 0
     rw [← TensorProduct.tmul_zero (R := k) (((singularChains k).obj Y).X q) (1 : k)]
@@ -479,39 +472,35 @@ theorem map_singularChainsRepCap_comp_singularChainsRepTwistExtendForget₂Iso_h
     singularChainsRepπ_singularChainsRepCap, ← Category.assoc,
     map_singularChainsRepπ_singularChainsRepForget₂Iso_hom]
   ext m : 1
-  -- the forgetful identification of the ambient chains has identity components; the two forms of
-  -- the ambient chains agree only after unfolding, so this step is assembled in term mode
+  -- the forgetful identification of the ambient chains has identity components. Its target
+  -- `(singularChains k).obj P.fst` is `(TopCat.toSSet.obj P.fst).chainComplex (ModuleCat.of k k)`,
+  -- the source of `P.singularChainComplexπ`, only after unfolding `singularChainComplexFunctor`,
+  -- which `rw` and `simp` do not see through, so this step is assembled in term mode
   refine Eq.trans ?_ ((HomologicalComplex.comp_f _ _ m).trans (congrArg (· ≫ _)
     ((HomologicalComplex.comp_f _ _ m).trans ((congrArg (· ≫ _)
       (TauCeti.singularChainsRepForget₂Iso_hom_f k P.fst G m)).trans
         (Category.id_comp _))))).symm
   rw [HomologicalComplex.comp_f]
   rcases lt_or_ge m n with hm | hm
-  · -- below `n` the shifted complex is zero
-    exact (HomologicalComplex.isZero_extend_X _ _ m fun q ↦ by simp; omega).eq_of_tgt _ _
+  · exact (isZero_extend_embeddingDownNatAdd_X _ hm).eq_of_tgt _ _
   · obtain ⟨q, rfl⟩ : ∃ q, m = q + n := ⟨m - n, by omega⟩
     refine Eq.trans ?_ (singularChainComplexπ_f_pushforwardCapChainMap_f P p₀ n φ q).symm
-    rw [Functor.mapHomologicalComplex_map_f, capAmbient_f, singularChainsRepTwistExtendForget₂Iso,
-      Iso.trans_hom, HomologicalComplex.comp_f,
-      HomologicalComplex.mapExtendIso_hom_f _ _ _ (ComplexShape.embeddingDownNatAdd_f n q)]
+    rw [Functor.mapHomologicalComplex_map_f, capAmbient_f,
+      singularChainsRepTwistExtendForget₂Iso_hom_f]
     simp only [Functor.map_comp, Category.assoc, ← Functor.map_comp_assoc, Iso.inv_hom_id,
       CategoryTheory.Functor.map_id, Category.id_comp]
-    have hτ : (((ComplexShape.embeddingDownNatAdd n).extendFunctor _).mapIso
-        (TauCeti.twistForget₂Iso k Y χ)).hom.f (q + n) =
-        (HomologicalComplex.extendXIso _ _ (ComplexShape.embeddingDownNatAdd_f n q)).hom ≫
-          (TauCeti.twistForget₂Iso k Y χ).hom.f q ≫
-            (HomologicalComplex.extendXIso _ _ (ComplexShape.embeddingDownNatAdd_f n q)).inv :=
-      HomologicalComplex.extendMap_f _ _ _
-    rw [hτ, Iso.inv_hom_id_assoc]
     -- forgetting the twist sends `1 ⊗ c` to `c`
     have hc : (forget₂ (Rep.{u} k G) (ModuleCat.{u} k)).map (capRep P hp₀ χ hφ q) ≫
-        (TauCeti.twistForget₂Iso k Y χ).hom.f q = signedCapComponent P p₀ n φ q := by
+        (singularChainsRepTwistForget₂Iso k Y χ).hom.f q = signedCapComponent P p₀ n φ q := by
       refine ModuleCat.hom_ext (LinearMap.ext fun c ↦ ?_)
+      rw [singularChainsRepTwistForget₂Iso_hom_f]
       change TensorProduct.lid k _ ((1 : k) ⊗ₜ[k] (signedCapComponent P p₀ n φ q).hom c) = _
       rw [TensorProduct.lid_tmul, one_smul]
       -- the two sides differ only in the carrier of the forgotten representation
       rfl
-    exact (Category.assoc _ _ _).symm.trans (congrArg (· ≫ _) hc)
+    rw [← Category.assoc, hc]
+    -- `signedCapComponent` is `(-1)^(n q) • capComponent` by definition
+    rfl
 
 include hp₀ hφ in
 /-- **When the equivariant cap product is a quasi-isomorphism.** The equivariant cap product
