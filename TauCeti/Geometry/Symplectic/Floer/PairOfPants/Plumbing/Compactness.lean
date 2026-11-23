@@ -114,16 +114,6 @@ open Floer TauCeti.MeasureTheory
 variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] [FiniteDimensional ℝ V]
   {Ha Hb : Puncture → ℝ → V → ℝ} {q : Puncture}
 
-omit [FiniteDimensional ℝ V] in
-/-- The pair-of-pants perturbation, read in real coordinates, is `C^n` on `S × V`. -/
-private theorem contDiffOn_pairOfPantsPerturbation_real {H : Puncture → ℝ → V → ℝ}
-    (hH : ∀ r, Periodic (H r) 1) {n : ℕ∞} (hHs : ∀ r, ContDiff ℝ n (uncurry (H r))) (v : ℂ) :
-    ContDiffOn ℝ n
-      (uncurry fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x v)
-      (thricePuncturedSphereReal ×ˢ univ) := by
-  rintro ⟨z, x⟩ ⟨hz, -⟩
-  exact (contDiffAt_uncurry_pairOfPantsPerturbation hH hHs hz x v).contDiffWithinAt
-
 /-- **The receiving piece.** Let `4 < L` and `2R + 2 ≤ L`. A Floer solution `u` of the plumbed
 perturbation on `Σ_L`, for structures `Jₖ` equal to `J` on an open `Ω ⊆ S_R`, is on `Ω` a Floer
 solution of the receiving pair of pants for `J`, and its energy over `Ω` is at most its energy over
@@ -180,9 +170,9 @@ private theorem receiving_piece (ω : SymplecticForm V) (hq : q ≠ inf)
     (((ω.continuousOn_floerEnergyDensity
       (isOpen_thricePuncturedSphereReal.inter (isOpen_plumbedSphere q L))
       ((hu.mono inter_subset_right).of_le (by norm_num))
-      ((contDiffOn_pairOfPantsPerturbation_real hHb (fun r ↦ (hHbs r).of_le (by norm_num))
+      ((contDiffOn_uncurry_pairOfPantsPerturbation hHb (fun r ↦ (hHbs r).of_le (by norm_num))
         1).mono (prod_mono inter_subset_left le_rfl))
-      ((contDiffOn_pairOfPantsPerturbation_real hHb (fun r ↦ (hHbs r).of_le (by norm_num))
+      ((contDiffOn_uncurry_pairOfPantsPerturbation hHb (fun r ↦ (hHbs r).of_le (by norm_num))
         I).mono (prod_mono inter_subset_left le_rfl))).mono
         fun z hz ↦ ⟨hTS hz, hTP hz⟩).integrableOn_compact
       (isCompact_preimage_truncation R)).mono_set hΩT
@@ -249,9 +239,9 @@ private theorem inserted_piece (ω : SymplecticForm V) (hq : q ≠ inf)
       (fun z x ↦ pairOfPantsPerturbation Ha (Complex.equivRealProdCLM.symm z) x 1)
       (fun z x ↦ pairOfPantsPerturbation Ha (Complex.equivRealProdCLM.symm z) x I) (u ∘ ψ)) Ω :=
     (((ω.continuousOn_floerEnergyDensity hU (hua.of_le (by norm_num))
-      ((contDiffOn_pairOfPantsPerturbation_real hHa (fun r ↦ (hHas r).of_le (by norm_num))
+      ((contDiffOn_uncurry_pairOfPantsPerturbation hHa (fun r ↦ (hHas r).of_le (by norm_num))
         1).mono (prod_mono inter_subset_left le_rfl))
-      ((contDiffOn_pairOfPantsPerturbation_real hHa (fun r ↦ (hHas r).of_le (by norm_num))
+      ((contDiffOn_uncurry_pairOfPantsPerturbation hHa (fun r ↦ (hHas r).of_le (by norm_num))
         I).mono (prod_mono inter_subset_left le_rfl))).mono
         fun w hw ↦ ⟨hTS hw, hψP hw⟩).integrableOn_compact
       (isCompact_preimage_truncation R)).mono_set hΩT
@@ -333,12 +323,12 @@ theorem exists_pos_forall_tendstoLocallyUniformlyOn_subseq_off_finset_plumbedPer
     isOpen_thricePuncturedSphereReal.prod isOpen_univ
   have hTK := prod_mono hTS (subset_univ K)
   obtain ⟨δ, hδ, hconv⟩ := ω.exists_pos_forall_tendstoLocallyUniformlyOn_subseq_off_finset hS
-    (contDiffOn_pairOfPantsPerturbation_real hHb (fun r ↦ (hHbs r).of_le (by norm_num)) 1)
-    (contDiffOn_pairOfPantsPerturbation_real hHb (fun r ↦ (hHbs r).of_le (by norm_num)) I) hJ
+    (contDiffOn_uncurry_pairOfPantsPerturbation hHb (fun r ↦ (hHbs r).of_le (by norm_num)) 1)
+    (contDiffOn_uncurry_pairOfPantsPerturbation hHb (fun r ↦ (hHbs r).of_le (by norm_num)) I) hJ
     (isCompact_preimage_truncation R) hK hTK hJt
   obtain ⟨δ', hδ', hconv'⟩ := ω.exists_pos_forall_tendstoLocallyUniformlyOn_subseq_off_finset hS
-    (contDiffOn_pairOfPantsPerturbation_real hHa (fun r ↦ (hHas r).of_le (by norm_num)) 1)
-    (contDiffOn_pairOfPantsPerturbation_real hHa (fun r ↦ (hHas r).of_le (by norm_num)) I) hJ'
+    (contDiffOn_uncurry_pairOfPantsPerturbation hHa (fun r ↦ (hHas r).of_le (by norm_num)) 1)
+    (contDiffOn_uncurry_pairOfPantsPerturbation hHa (fun r ↦ (hHas r).of_le (by norm_num)) I) hJ'
     (isCompact_preimage_truncation R) hK hTK hJ't
   refine ⟨min δ δ', lt_min hδ hδ', fun Ω Ω' L u Jk E hΩ hΩT hΩ' hΩ'T hL4 hLR hu hfl hJΩ hJΩ' hE
     huK huK' ↦ ?_⟩
@@ -439,16 +429,16 @@ theorem exists_tendstoLocallyUniformlyOn_subseq_off_discrete_plumbedPerturbation
   -- Compactness on the receiving pair of pants, then on the inserted one along the subsequence.
   obtain ⟨φ, Z, v, hφ, hZS, hZC, -, -, hvc, hvK, hlim⟩ :=
     ω.exists_tendstoLocallyUniformlyOn_subseq_off_discrete hS
-      (contDiffOn_pairOfPantsPerturbation_real hHb (fun r ↦ hHbs r) 1)
-      (contDiffOn_pairOfPantsPerturbation_real hHb (fun r ↦ hHbs r) I) hJ
+      (contDiffOn_uncurry_pairOfPantsPerturbation hHb (fun r ↦ hHbs r) 1)
+      (contDiffOn_uncurry_pairOfPantsPerturbation hHb (fun r ↦ hHbs r) I) hJ
       isOpen_thricePuncturedSphereReal hK (prod_mono subset_rfl (subset_univ K)) hJt hU hUS hUC
       hub hflb (fun k ↦ (huK k).mono_left fun z hz ↦
         mem_plumbedSphere_of_mem_truncation hq (hL4 k)
           (truncation_mono (by linarith [hL4 k]) (hUT k hz))) hintb (fun k ↦ hEb k)
   obtain ⟨φ', Z', v', hφ', hZS', hZC', -, -, hvc', hvK', hlim'⟩ :=
     ω.exists_tendstoLocallyUniformlyOn_subseq_off_discrete hS
-      (contDiffOn_pairOfPantsPerturbation_real hHa (fun r ↦ hHas r) 1)
-      (contDiffOn_pairOfPantsPerturbation_real hHa (fun r ↦ hHas r) I) hJ'
+      (contDiffOn_uncurry_pairOfPantsPerturbation hHa (fun r ↦ hHas r) 1)
+      (contDiffOn_uncurry_pairOfPantsPerturbation hHa (fun r ↦ hHas r) I) hJ'
       isOpen_thricePuncturedSphereReal hK (prod_mono subset_rfl (subset_univ K)) hJ't
       (fun n ↦ hU (φ n)) (fun n ↦ hUS (φ n))
       (fun C hC hCS ↦ hφ.tendsto_atTop.eventually (hUC C hC hCS)) (fun n ↦ hua (φ n))
