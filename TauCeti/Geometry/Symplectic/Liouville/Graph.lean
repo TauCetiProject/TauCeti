@@ -124,9 +124,10 @@ variable [I.Boundaryless]
 interior point of the Liouville domain `W` and `f s > 1`, then the Liouville graph of `f` at `s`,
 the point `ι s` flowed for the positive time `log f(s)`, is not in `W`. -/
 theorem liouvilleGraph_notMem (h : IsLiouvilleDomain ω α W)
-    (hZ : RoughForm.interior Z ω.val = α.val) (hc : IsCompleteVectorField Z) {s : S}
-    (hιW : ι s ∉ interior W) (hfs : 1 < f s) : liouvilleGraph Z ι f s ∉ W :=
-  h.flowOf_notMem hZ hιW (Real.log_pos hfs) (hc.mem_flowDomain _ _)
+    (hZ : RoughForm.interior Z ω.val = α.val) {s : S}
+    (hp : (Real.log (f s), ι s) ∈ flowDomain Z) (hιW : ι s ∉ interior W) (hfs : 1 < f s) :
+    liouvilleGraph Z ι f s ∉ W :=
+  h.flowOf_notMem hZ hιW (Real.log_pos hfs) hp
 
 /-- **A graph over the boundary of a Liouville domain is injective** when the boundary map `ι` is,
 since the Liouville flow-out `(t, s) ↦ φₜ(ι s)` of the boundary is injective. -/
@@ -195,15 +196,16 @@ theorem liouvilleGraphHomotopy_apply (hι : Continuous ι) (hf : Continuous f) (
       liouvilleGraph Z ι (fun s ↦ (1 - (p.1 : ℝ)) * f s + p.1) p.2 :=
   (rfl)
 
+omit hc in
 /-- **The differential of the Liouville graph.** At a point `s` where `ι` and `f` are
 differentiable and `f s ≠ 0`, it sends `w` to `dφₜ(d(log f)(w) Z + dι(w))`, where
-`t = log f(s)`. -/
-theorem mfderiv_liouvilleGraph_apply {s : S} (hι : MDifferentiableAt J I ι s)
-    (hf : MDifferentiableAt J 𝓘(ℝ) f s) (hf₀ : f s ≠ 0) (w : TangentSpace J s) :
+`t = log f(s)`, provided `ι s` stays in the flow domain up to time `t`. -/
+theorem mfderiv_liouvilleGraph_apply {s : S} (hp : (Real.log (f s), ι s) ∈ flowDomain Z)
+    (hι : MDifferentiableAt J I ι s) (hf : MDifferentiableAt J 𝓘(ℝ) f s) (hf₀ : f s ≠ 0)
+    (w : TangentSpace J s) :
     mfderiv J I (liouvilleGraph Z ι f) s w =
       mfderiv I I (flowOf Z (Real.log (f s))) (ι s)
         (mvfderiv J (fun s ↦ Real.log (f s)) s w • Z (ι s) + mfderiv J I ι s w) := by
-  have hp := hc.mem_flowDomain (Real.log (f s)) (ι s)
   have hτ : MDifferentiableAt J 𝓘(ℝ) (fun s ↦ Real.log (f s)) s :=
     (Real.differentiableAt_log hf₀).comp_mdifferentiableAt hf
   rw [liouvilleGraph_def, mfderiv_flowOf_comp_prodMk_apply hZ hτ hι hp w,
@@ -216,7 +218,7 @@ theorem injective_mfderiv_liouvilleGraph {s : S} (hι : MDifferentiableAt J I ι
     (hf : MDifferentiableAt J 𝓘(ℝ) f s) (hf₀ : f s ≠ 0) (hιs : Injective (mfderiv J I ι s))
     (hZι : IsTransverseAlong J Z ι) : Injective (mfderiv J I (liouvilleGraph Z ι f) s) := by
   refine (injective_iff_map_eq_zero _).2 fun w hw ↦ ?_
-  rw [mfderiv_liouvilleGraph_apply hZ hc hι hf hf₀] at hw
+  rw [mfderiv_liouvilleGraph_apply hZ (hc.mem_flowDomain _ _) hι hf hf₀] at hw
   exact (hZι.eq_zero_of_smul_add_eq_zero hιs <| injective_mfderiv_flowOf hZ hc
     (Real.log (f s)) (ι s) (hw.trans (map_zero _).symm)).2
 
@@ -234,7 +236,7 @@ theorem isTransverseAlong_liouvilleGraph (hι : MDifferentiable J I ι)
   -- `Z` at the graph point is the image of `Z (ι s)` under `dφₜ`.
   have hZt : Z (liouvilleGraph Z ι f s) = mfderiv I I (flowOf Z t) (ι s) (Z (ι s)) :=
     (mfderiv_flowOf_apply_self hZ (hc.mem_flowDomain t (ι s))).symm
-  rw [mfderiv_liouvilleGraph_apply hZ hc (hι s) (hf s) (hf₀ s), hZt] at hw
+  rw [mfderiv_liouvilleGraph_apply hZ (hc.mem_flowDomain t (ι s)) (hι s) (hf s) (hf₀ s), hZt] at hw
   have h : (a - 1) • Z (ι s) + mfderiv J I ι s w = 0 := by
     refine injective_mfderiv_flowOf hZ hc t (ι s) ?_
     rw [map_zero, sub_smul, one_smul, sub_add_eq_add_sub, map_sub, hw, sub_self]
@@ -247,14 +249,14 @@ end Flow
 
 /-- **The graph restricts the primitive to `f` times its restriction.** If `Z` is the Liouville
 field of `α`, `ι_Z dα = α`, then the Liouville graph `s ↦ φ_{log f(s)}(ι s)` pulls `α` back to
-`f ι^* α` at every point `s` where `ι` and `f` are differentiable and `f s > 0`: the flow rescales
-the primitive by `e^{log f} = f`, and the primitive vanishes on its Liouville field. -/
+`f ι^* α` at every point `s` where `ι` and `f` are differentiable, `f s > 0` and `ι s` stays in the
+flow domain up to time `log f(s)`: the flow rescales the primitive by `e^{log f} = f`, and the
+primitive vanishes on its Liouville field. -/
 theorem mpullback_liouvilleGraph_apply [IsManifold I 2 M] (hZ : ContMDiff I I.tangent 1 (T% Z))
-    (hc : IsCompleteVectorField Z) {α : SmoothForm I M ℝ 1}
-    (hZα : (mextDeriv α.val).interior Z = α.val) {s : S} (hι : MDifferentiableAt J I ι s)
+    {α : SmoothForm I M ℝ 1} (hZα : (mextDeriv α.val).interior Z = α.val) {s : S}
+    (hp : (Real.log (f s), ι s) ∈ flowDomain Z) (hι : MDifferentiableAt J I ι s)
     (hf : MDifferentiableAt J 𝓘(ℝ) f s) (hfs : 0 < f s) :
     mpullback J I (liouvilleGraph Z ι f) α.val s = f s • mpullback J I ι α.val s := by
-  have hp := hc.mem_flowDomain (Real.log (f s)) (ι s)
   -- The flow rescales the primitive: `(φₜ^* α)_x = eᵗ α_x`.
   have hscale := mpullback_flowOf_apply_eq_exp_smul_of_interior_eq hZ
     α.mdifferentiable rfl hZα hp
@@ -267,7 +269,7 @@ theorem mpullback_liouvilleGraph_apply [IsManifold I 2 M] (hZ : ContMDiff I I.ta
   -- Differentiate the graph, then use that `α` is linear and vanishes on `Z`.
   simp only [mpullback_apply, ContinuousAlternatingMap.smul_apply, smul_eq_mul,
     Matrix.cons_val_fin_one, ← Matrix.vec_single_eq_const,
-    mfderiv_liouvilleGraph_apply hZ hc hι hf hfs.ne']
+    mfderiv_liouvilleGraph_apply hZ hp hι hf hfs.ne']
   rw [liouvilleGraph_apply, hs, Real.exp_log hfs, ContinuousAlternatingMap.vecCons_add,
     ContinuousAlternatingMap.vecCons_smul, RoughForm.apply_eq_zero_of_interior_eq hZα, smul_zero,
     zero_add]
