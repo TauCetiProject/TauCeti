@@ -41,6 +41,8 @@ which lets chart transitions of a manifold with corners compare the corners of t
   positive tangent cones onto positive tangent cones.
 * `HasDerivWithinAt.mem_posTangentConeAt`: the right derivative of a curve which frequently lies
   in a set, just after the base time, is a positive tangent vector of that set.
+* `TauCeti.fderiv_apply_eq_self_of_mem_tangentConeAt`: a map fixing a set has derivative the
+  identity on the tangent cone of that set.
 -/
 
 public section
@@ -164,3 +166,11 @@ theorem HasDerivWithinAt.mem_posTangentConeAt {E : Type*} [NormedAddCommGroup E]
       fun τ ⟨h, hτ⟩ ↦ ⟨le_of_lt hτ, h⟩
   refine posTangentConeAt_mono ((image_mono inter_subset_right).trans (image_preimage_subset x s))
     (by simpa using (hx.mono inter_subset_left).hasFDerivWithinAt.mapsTo_posTangentConeAt h1)
+
+/-- A map that is differentiable at `x ∈ s` and fixes every point of `s` has derivative the
+identity on the tangent cone of `s` at `x`. -/
+theorem TauCeti.fderiv_apply_eq_self_of_mem_tangentConeAt {E : Type*} [NormedAddCommGroup E]
+    [NormedSpace 𝕜 E] {s : Set E} {r : E → E} {x v : E} (hr : DifferentiableAt 𝕜 r x)
+    (hrs : EqOn r id s) (hx : x ∈ s) (hv : v ∈ tangentConeAt 𝕜 s x) : fderiv 𝕜 r x v = v :=
+  hr.hasFDerivAt.hasFDerivWithinAt.unique_on
+    ((hasFDerivWithinAt_id x s).congr (fun _ hy ↦ hrs hy) (hrs hx)) hv
