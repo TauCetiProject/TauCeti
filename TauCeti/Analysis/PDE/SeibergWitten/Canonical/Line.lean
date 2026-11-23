@@ -60,10 +60,9 @@ multiplication of a complex covector on `β₀` sees only its `∂`-components,
 `∑ₖ y_k c(e_k) β₀ = (y₀ - i y₁) c(e₂) u₀ - (y₂ - i y₃) c(e₀) u₀`,
 
 and the Clifford map sends `u₀` to `u₀`, `-i β₀` and `β₀` along `e₀ ∧ e₁`, `e₀ ∧ e₂` and
-`e₀ ∧ e₃`. This file also verifies its `2i`-eigenvalue, orthogonal expansion in `W⁺`, the action
-of `cliffordRestriction` on `antiInvariantSelfDual₁` and `antiInvariantSelfDual₂`, the diagonal
-and cross-term polarization identities for `quadraticTwoFormPolar` on `(u₀, β₀)`, and the
-orthogonal frame `(c(e₂) u₀, c(e₀) u₀)` of `W⁻`.
+`e₀ ∧ e₃`. This file also verifies its `2i`-eigenvalue, orthogonal expansion in `W⁺`, the frame
+coordinates, diagonal, and cross-term polarization identities for `quadraticTwoFormPolar` on
+`(u₀, β₀)`, and the orthogonal frame `(c(e₂) u₀, c(e₀) u₀)` of `W⁻`.
 
 ## Main results
 
@@ -84,6 +83,7 @@ orthogonal frame `(c(e₂) u₀, c(e₀) u₀)` of `W⁻`.
   it vanishes exactly when both `∂bar`-components vanish, that is when the covector is complex
   linear.
 * `TauCeti.SeibergWitten.pairedSpinor`, `TauCeti.SeibergWitten.norm_pairedSpinor`,
+  `TauCeti.SeibergWitten.norm_pairedSpinor_eq_one`,
   `TauCeti.SeibergWitten.inner_pairedSpinor_eq_zero_of_cliffordProjection_apply_eq_self`,
   `TauCeti.SeibergWitten.bivectorExterior_kahlerForm_pairedSpinor`, and
   `TauCeti.SeibergWitten.eq_inner_smul_add_inner_pairedSpinor_smul`: the paired spinor completes
@@ -91,17 +91,17 @@ orthogonal frame `(c(e₂) u₀, c(e₀) u₀)` of `W⁻`.
 * `TauCeti.SeibergWitten.sum_smul_ι_apply_pairedSpinor_of_cliffordProjection_apply_eq_self`: the
   Dirac symbol on the paired spinor in terms of the two `∂`-components.
 * `cliffordRestriction_ιMulti_zero_one_apply_of_cliffordProjection_apply_eq_self`,
-  `cliffordRestriction_ιMulti_zero_two_apply`,
-  `cliffordRestriction_ιMulti_zero_three_apply_of_cliffordProjection_apply_eq_self`,
-  `cliffordRestriction_antiInvariantSelfDual₁_apply`, and
-  `cliffordRestriction_antiInvariantSelfDual₂_apply` (all in `TauCeti.SeibergWitten`): the
-  Clifford map along `e₀ ∧ e₁`, `e₀ ∧ e₂`, `e₀ ∧ e₃`, `ρ₁`, and `ρ₂` on `(u₀, β₀)`.
-* `TauCeti.SeibergWitten.smul_quadraticTwoFormPolar_smul_smul_of_cliffordProjection_apply_eq_self`
-  and `TauCeti.SeibergWitten.smul_quadraticTwoFormPolar_smul_pairedSpinor`: diagonal and
-  cross-term polarization identities along `(u₀, β₀)`.
-* `TauCeti.SeibergWitten.inner_halfSpinCliffordMul_two_zero` and
-  `TauCeti.SeibergWitten.eq_inner_halfSpinCliffordMul`: orthogonality and expansion along the `W⁻`
-  frame `(c(e₂) u₀, c(e₀) u₀)`.
+  `cliffordRestriction_ιMulti_zero_two_apply`, and
+  `cliffordRestriction_ιMulti_zero_three_apply_of_cliffordProjection_apply_eq_self` (all in
+  `TauCeti.SeibergWitten`): the Clifford map along `e₀ ∧ e₁`, `e₀ ∧ e₂`, and `e₀ ∧ e₃` on `u₀`.
+* `TauCeti.SeibergWitten.inner_quadraticTwoFormPolar_ιMulti_zero_one`, `_zero_two`, `_zero_three`,
+  `TauCeti.SeibergWitten.smul_quadraticTwoFormPolar_smul_smul_of_cliffordProjection_apply_eq_self`,
+  and `TauCeti.SeibergWitten.smul_quadraticTwoFormPolar_smul_pairedSpinor`: frame coordinates,
+  diagonal, and cross-term polarization identities along `(u₀, β₀)`.
+* `TauCeti.SeibergWitten.norm_halfSpinCliffordMul_ofEq_eq_one`,
+  `TauCeti.SeibergWitten.inner_halfSpinCliffordMul_two_zero`, and
+  `TauCeti.SeibergWitten.eq_inner_halfSpinCliffordMul`: unit norms, orthogonality, and expansion
+  along the `W⁻` frame `(c(e₂) u₀, c(e₀) u₀)`.
 
 ## References
 
@@ -343,6 +343,12 @@ theorem norm_pairedSpinor (u₀ : positiveHalfSpinors o ρ) : ‖pairedSpinor e 
   rw [← Submodule.norm_coe, coe_pairedSpinor, norm_map_ι_apply hQ hρ, norm_map_ι_apply hQ hρ,
     e.orthonormal.1 2, e.orthonormal.1 0, one_mul, one_mul, Submodule.norm_coe]
 
+include hQ hρ in
+/-- The paired spinor of a unit positive half-spinor has unit norm. -/
+theorem norm_pairedSpinor_eq_one {u₀ : positiveHalfSpinors o ρ} (hu₀₁ : ‖u₀‖ = 1) :
+    ‖pairedSpinor e u₀‖ = 1 :=
+  (norm_pairedSpinor hQ hρ u₀).trans hu₀₁
+
 variable {u₀ : positiveHalfSpinors o ρ} (hu₀ : cliffordProjection o ρ J.kahlerForm u₀ = u₀)
 
 include hQ hkl he h₀ h₂ hρ hu₀ in
@@ -537,18 +543,6 @@ variable (hkl : 2 + 2 = finrank ℝ V) (he : e.toBasis.orientation = o)
   (h₀ : J (e 0) = e 1) (h₂₃ : J (e 2) = e 3)
 include hkl he h₀ h₂₃
 
-/-- Clifford action of `e₁` on a canonical spinor `u₀`: `c(e₁) u₀ = i c(e₀) u₀`. -/
-theorem ι_apply_one_of_cliffordProjection_apply_eq_self {u₀ : positiveHalfSpinors o ρ}
-    (hu₀ : cliffordProjection o ρ J.kahlerForm u₀ = u₀) :
-    ρ (ι Q (e 1)) u₀ = I • ρ (ι Q (e 0)) u₀ :=
-  h₀ ▸ ι_apply_apply_of_cliffordProjection_apply_eq_self hQ hkl he h₀ h₂₃ hu₀ (e 0)
-
-/-- Clifford action of `e₃` on a canonical spinor `u₀`: `c(e₃) u₀ = i c(e₂) u₀`. -/
-theorem ι_apply_three_of_cliffordProjection_apply_eq_self {u₀ : positiveHalfSpinors o ρ}
-    (hu₀ : cliffordProjection o ρ J.kahlerForm u₀ = u₀) :
-    ρ (ι Q (e 3)) u₀ = I • ρ (ι Q (e 2)) u₀ :=
-  h₂₃ ▸ ι_apply_apply_of_cliffordProjection_apply_eq_self hQ hkl he h₀ h₂₃ hu₀ (e 2)
-
 /-- The Kähler bivector acts on the paired spinor `β₀ = c(e₂) c(e₀) u₀` with eigenvalue `2i`. -/
 theorem bivectorExterior_kahlerForm_pairedSpinor {u₀ : positiveHalfSpinors o ρ}
     (hu₀ : cliffordProjection o ρ J.kahlerForm u₀ = u₀) :
@@ -584,54 +578,6 @@ theorem cliffordProjection_neg_pairedSpinor {u₀ : positiveHalfSpinors o ρ}
   rw [cliffordProjection_neg_apply,
     cliffordProjection_pairedSpinor hQ hkl he h₀ h₂₃ hu₀, sub_zero]
 
-/-- Action of `cliffordRestriction` at `ρ₁` on a canonical spinor `u₀`:
-`C(i ρ₁) u₀ = -i √2 β₀`. -/
-theorem cliffordRestriction_antiInvariantSelfDual₁_apply {u₀ : positiveHalfSpinors o ρ}
-    (hu₀ : cliffordProjection o ρ J.kahlerForm u₀ = u₀) :
-    cliffordRestriction o ρ (AlmostComplexStructure.antiInvariantSelfDual₁ o e hkl he) u₀ =
-      (-(I * (√2 : ℂ))) • pairedSpinor e u₀ := Subtype.ext <| by
-  have h02 : ρ (ι Q (e 0)) (ρ (ι Q (e 2)) u₀) = -(pairedSpinor e u₀ : W) := by
-    rw [coe_pairedSpinor, e.map_ι_apply_map_ι_apply_comm hQ ρ (by decide : (0 : Fin 4) ≠ 2)]
-  have h13 : ρ (ι Q (e 1)) (ρ (ι Q (e 3)) u₀) = (pairedSpinor e u₀ : W) := by
-    rw [ι_apply_three_of_cliffordProjection_apply_eq_self hQ hkl he h₀ h₂₃ hu₀, map_smul,
-      e.map_ι_apply_map_ι_apply_comm hQ ρ (by decide : (1 : Fin 4) ≠ 2),
-      ι_apply_one_of_cliffordProjection_apply_eq_self hQ hkl he h₀ h₂₃ hu₀, map_smul,
-      coe_pairedSpinor]
-    simp only [smul_neg, smul_smul, I_mul_I, neg_one_smul, neg_neg]
-  rw [AlmostComplexStructure.coe_antiInvariantSelfDual₁, map_smul, map_sub, smul_apply, sub_apply,
-    Submodule.coe_smul_of_tower, Submodule.coe_sub,
-    coe_cliffordRestriction_ιMulti_apply_of_inner_eq_zero o ρ hQ
-      (e.orthonormal.2 (by decide : (0 : Fin 4) ≠ 2)),
-    coe_cliffordRestriction_ιMulti_apply_of_inner_eq_zero o ρ hQ
-      (e.orthonormal.2 (by decide : (1 : Fin 4) ≠ 3))]
-  simp only [map_mul, mul_apply_eq_comp, h02, h13, Submodule.coe_smul, ← Complex.coe_smul]
-  push_cast; module
-
-/-- Action of `cliffordRestriction` at `ρ₂` on a canonical spinor `u₀`:
-`C(i ρ₂) u₀ = √2 β₀`. -/
-theorem cliffordRestriction_antiInvariantSelfDual₂_apply {u₀ : positiveHalfSpinors o ρ}
-    (hu₀ : cliffordProjection o ρ J.kahlerForm u₀ = u₀) :
-    cliffordRestriction o ρ (AlmostComplexStructure.antiInvariantSelfDual₂ o e hkl he) u₀ =
-      (√2 : ℂ) • pairedSpinor e u₀ := Subtype.ext <| by
-  have h03 : ρ (ι Q (e 0)) (ρ (ι Q (e 3)) u₀) = (-I) • (pairedSpinor e u₀ : W) := by
-    rw [ι_apply_three_of_cliffordProjection_apply_eq_self hQ hkl he h₀ h₂₃ hu₀, map_smul,
-      e.map_ι_apply_map_ι_apply_comm hQ ρ (by decide : (0 : Fin 4) ≠ 2), coe_pairedSpinor]
-    module
-  have h12 : ρ (ι Q (e 1)) (ρ (ι Q (e 2)) u₀) = (-I) • (pairedSpinor e u₀ : W) := by
-    rw [e.map_ι_apply_map_ι_apply_comm hQ ρ (by decide : (1 : Fin 4) ≠ 2),
-      ι_apply_one_of_cliffordProjection_apply_eq_self hQ hkl he h₀ h₂₃ hu₀, map_smul,
-      coe_pairedSpinor]
-    module
-  rw [AlmostComplexStructure.coe_antiInvariantSelfDual₂, map_smul, map_add, smul_apply, add_apply,
-    Submodule.coe_smul_of_tower, Submodule.coe_add,
-    coe_cliffordRestriction_ιMulti_apply_of_inner_eq_zero o ρ hQ
-      (e.orthonormal.2 (by decide : (0 : Fin 4) ≠ 3)),
-    coe_cliffordRestriction_ιMulti_apply_of_inner_eq_zero o ρ hQ
-      (e.orthonormal.2 (by decide : (1 : Fin 4) ≠ 2))]
-  simp only [map_mul, mul_apply_eq_comp, h03, h12, Submodule.coe_smul, ← Complex.coe_smul,
-    smul_smul, mul_neg, I_mul_I, neg_neg, one_smul]
-  push_cast; module
-
 /-- Orthogonal decomposition of any `ζ ∈ W⁺` along the orthonormal frame `(u₀, β₀)`. -/
 theorem eq_inner_smul_add_inner_pairedSpinor_smul
     (h₂ : finrank ℂ (positiveHalfSpinors o ρ) = 2)
@@ -641,11 +587,59 @@ theorem eq_inner_smul_add_inner_pairedSpinor_smul
     ζ = ⟪u₀, ζ⟫_ℂ • u₀ + ⟪pairedSpinor e u₀, ζ⟫_ℂ • pairedSpinor e u₀ := by
   have hω := AlmostComplexStructure.hodgeStar_kahlerForm h₀ h₂₃ hkl he
   have hnegω : o.hodgeStar hkl (-J.kahlerForm) = -J.kahlerForm := by rw [map_neg, hω]
-  have hβ₀₁ : ‖pairedSpinor e u₀‖ = 1 := (norm_pairedSpinor hQ hρ u₀).trans hu₀₁
+  have hβ₀₁ : ‖pairedSpinor e u₀‖ = 1 := norm_pairedSpinor_eq_one hQ hρ hu₀₁
   have hα := cliffordProjection_apply_eq_inner_smul o hQ hkl hω hρ h₂ hu₀ hu₀₁ ζ
   have hβ := cliffordProjection_apply_eq_inner_smul o hQ hkl hnegω hρ h₂
     (cliffordProjection_neg_pairedSpinor hQ hkl he h₀ h₂₃ hu₀) hβ₀₁ ζ
   rw [cliffordProjection_neg_apply] at hβ; rw [← hα, ← hβ]; abel
+
+/-- **The quadratic term along `e₀ ∧ e₁`**: for a unit canonical spinor `u₀` with paired spinor
+`β₀`, `⟪q'(α u₀, f u₀ + g β₀), e₀ ∧ e₁⟫ = Re(conj α f) / 2`. -/
+theorem inner_quadraticTwoFormPolar_ιMulti_zero_one
+    (hρ : ∀ v, LinearMap.adjoint (ρ (ι Q v)) = -ρ (ι Q v)) {u₀ : positiveHalfSpinors o ρ}
+    (hu₀ : cliffordProjection o ρ J.kahlerForm u₀ = u₀) (hu₀₁ : ‖u₀‖ = 1) (α f g : ℂ) :
+    ⟪(quadraticTwoFormPolar o ρ hkl (α • u₀) (f • u₀ + g • pairedSpinor e u₀) : ⋀[ℝ]^2 V),
+        ιMulti ℝ 2 ![e 0, e 1]⟫ = (conj α * f).re / 2 := by
+  have h0 := inner_pairedSpinor_eq_zero_of_cliffordProjection_apply_eq_self hQ hkl he h₀ h₂₃ hρ hu₀
+  rw [inner_quadraticTwoFormPolar_eq_re_inner o hQ hkl hρ, map_smul,
+    cliffordRestriction_ιMulti_zero_one_apply_of_cliffordProjection_apply_eq_self
+      hQ hkl he h₀ h₂₃ hu₀,
+    inner_add_left,
+    inner_smul_left, inner_smul_left, inner_smul_right, inner_smul_right,
+    inner_self_eq_norm_sq_to_K, hu₀₁, ← inner_conj_symm, h0]
+  simp [mul_comm]
+
+/-- **The quadratic term along `e₀ ∧ e₂`**: for a unit canonical spinor `u₀` with paired spinor
+`β₀`, `⟪q'(α u₀, f u₀ + g β₀), e₀ ∧ e₂⟫ = Im(α conj g) / 2`. -/
+theorem inner_quadraticTwoFormPolar_ιMulti_zero_two
+    (hρ : ∀ v, LinearMap.adjoint (ρ (ι Q v)) = -ρ (ι Q v)) {u₀ : positiveHalfSpinors o ρ}
+    (hu₀ : cliffordProjection o ρ J.kahlerForm u₀ = u₀) (hu₀₁ : ‖u₀‖ = 1) (α f g : ℂ) :
+    ⟪(quadraticTwoFormPolar o ρ hkl (α • u₀) (f • u₀ + g • pairedSpinor e u₀) : ⋀[ℝ]^2 V),
+        ιMulti ℝ 2 ![e 0, e 2]⟫ = (α * conj g).im / 2 := by
+  have h0 := inner_pairedSpinor_eq_zero_of_cliffordProjection_apply_eq_self hQ hkl he h₀ h₂₃ hρ hu₀
+  have h1 : ‖pairedSpinor e u₀‖ = 1 := norm_pairedSpinor_eq_one hQ hρ hu₀₁
+  rw [inner_quadraticTwoFormPolar_eq_re_inner o hQ hkl hρ, map_smul,
+    cliffordRestriction_ιMulti_zero_two_apply hQ, inner_add_left,
+    inner_smul_left, inner_smul_left, inner_smul_right, inner_smul_right, inner_smul_right,
+    inner_smul_right, inner_self_eq_norm_sq_to_K, h1, h0]
+  simp [mul_comm]
+
+/-- **The quadratic term along `e₀ ∧ e₃`**: for a unit canonical spinor `u₀` with paired spinor
+`β₀`, `⟪q'(α u₀, f u₀ + g β₀), e₀ ∧ e₃⟫ = Re(α conj g) / 2`. -/
+theorem inner_quadraticTwoFormPolar_ιMulti_zero_three
+    (hρ : ∀ v, LinearMap.adjoint (ρ (ι Q v)) = -ρ (ι Q v)) {u₀ : positiveHalfSpinors o ρ}
+    (hu₀ : cliffordProjection o ρ J.kahlerForm u₀ = u₀) (hu₀₁ : ‖u₀‖ = 1) (α f g : ℂ) :
+    ⟪(quadraticTwoFormPolar o ρ hkl (α • u₀) (f • u₀ + g • pairedSpinor e u₀) : ⋀[ℝ]^2 V),
+        ιMulti ℝ 2 ![e 0, e 3]⟫ = (α * conj g).re / 2 := by
+  have h0 := inner_pairedSpinor_eq_zero_of_cliffordProjection_apply_eq_self hQ hkl he h₀ h₂₃ hρ hu₀
+  have h1 : ‖pairedSpinor e u₀‖ = 1 := norm_pairedSpinor_eq_one hQ hρ hu₀₁
+  rw [inner_quadraticTwoFormPolar_eq_re_inner o hQ hkl hρ, map_smul,
+    cliffordRestriction_ιMulti_zero_three_apply_of_cliffordProjection_apply_eq_self
+      hQ hkl he h₀ h₂₃ hu₀,
+    inner_add_left,
+    inner_smul_left, inner_smul_left, inner_smul_right, inner_smul_right,
+    inner_self_eq_norm_sq_to_K, h1, h0]
+  simp [mul_comm]
 
 /-- **Cross-term polarization identity**: `(√2 / 4) q'(α u₀, β β₀)` lies in the anti-`J`-invariant
 plane `span(ρ₁, ρ₂)` with coefficients `(-Im(conj α * β) / 4, Re(conj α * β) / 4)`. -/
@@ -656,43 +650,49 @@ theorem smul_quadraticTwoFormPolar_smul_pairedSpinor
       (-((conj α * β).im / 4)) • AlmostComplexStructure.antiInvariantSelfDual₁ o e hkl he +
         ((conj α * β).re / 4) • AlmostComplexStructure.antiInvariantSelfDual₂ o e hkl he := by
   have hω_sd := AlmostComplexStructure.hodgeStar_kahlerForm h₀ h₂₃ hkl he
-  have hβ₀_in : ⟪pairedSpinor e u₀, pairedSpinor e u₀⟫_ℂ = 1 := by
-    rw [inner_self_eq_norm_sq_to_K (𝕜 := ℂ), (norm_pairedSpinor hQ hρ u₀).trans hu₀₁]
-    norm_num
-  have hpair (η : Module.End.eigenspace (o.hodgeStar hkl : Module.End ℝ (⋀[ℝ]^2 V)) 1) :
-      ⟪η, quadraticTwoFormPolar o ρ hkl (α • u₀) (β • pairedSpinor e u₀)⟫ =
-        (⟪cliffordRestriction o ρ η (α • u₀), β • pairedSpinor e u₀⟫_ℂ).re / 2 := by
-    rw [real_inner_comm, Submodule.coe_inner, quadraticTwoFormPolar_apply, Submodule.coe_smul,
-      real_inner_smul_left, ← Submodule.coe_inner,
-      inner_cliffordRestrictionAdjoint_left o ρ hkl _ η,
-      trace_quadraticEndPolar_mul_of_mem_traceFreeSelfAdjoint
-        (cliffordRestriction_mem_traceFreeSelfAdjoint o hQ hρ η)]; simp; ring
-  have hω : ⟪J.kahlerSelfDual o hkl hω_sd,
-      quadraticTwoFormPolar o ρ hkl (α • u₀) (β • pairedSpinor e u₀)⟫ = 0 := by
-    rw [real_inner_comm, Submodule.coe_inner, AlmostComplexStructure.coe_kahlerSelfDual,
-      real_inner_smul_right,
-      inner_quadraticTwoFormPolar_of_cliffordProjection o hQ hkl hω_sd hρ
-        (by rw [map_smul, hu₀])
-        (by rw [map_smul, cliffordProjection_pairedSpinor hQ hkl he h₀ h₂₃ hu₀, smul_zero]),
-      mul_zero]
-  have hρ₁ : ⟪AlmostComplexStructure.antiInvariantSelfDual₁ o e hkl he,
-      quadraticTwoFormPolar o ρ hkl (α • u₀) (β • pairedSpinor e u₀)⟫ =
-      -(√2 / 2) * (conj α * β).im := by
-    rw [hpair, map_smul, cliffordRestriction_antiInvariantSelfDual₁_apply hQ hkl he h₀ h₂₃ hu₀,
-      smul_smul, inner_smul_left, inner_smul_right, hβ₀_in]; simp; ring
-  have hρ₂ : ⟪AlmostComplexStructure.antiInvariantSelfDual₂ o e hkl he,
-      quadraticTwoFormPolar o ρ hkl (α • u₀) (β • pairedSpinor e u₀)⟫ =
-      (√2 / 2) * (conj α * β).re := by
-    rw [hpair, map_smul, cliffordRestriction_antiInvariantSelfDual₂_apply hQ hkl he h₀ h₂₃ hu₀,
-      smul_smul, inner_smul_left, inner_smul_right, hβ₀_in]; simp; ring
+  set q := quadraticTwoFormPolar o ρ hkl (α • u₀) (β • pairedSpinor e u₀)
+  have hq : β • pairedSpinor e u₀ = (0 : ℂ) • u₀ + β • pairedSpinor e u₀ := by simp
+  have hq_sd : o.hodgeStar hkl (q : ⋀[ℝ]^2 V) = q :=
+    o.hodgeStar_coe_of_mem_eigenspace_one hkl q
+  have hω : ⟪J.kahlerSelfDual o hkl hω_sd, q⟫ = 0 := by
+    rw [Submodule.coe_inner,
+      AlmostComplexStructure.kahlerSelfDual_eq_selfDualWedge he h₀ h₂₃ hω_sd,
+      o.inner_selfDualWedge_left_of_hodgeStar_eq_self hkl hq_sd, real_inner_comm]
+    dsimp only [q]
+    rw [hq, inner_quadraticTwoFormPolar_ιMulti_zero_one hQ hkl he h₀ h₂₃ hρ hu₀ hu₀₁]
+    simp
+  have hρ₁ : ⟪AlmostComplexStructure.antiInvariantSelfDual₁ o e hkl he, q⟫ =
+      √2 * ((α * conj β).im / 2) := by
+    rw [Submodule.coe_inner, AlmostComplexStructure.antiInvariantSelfDual₁_eq_selfDualWedge,
+      o.inner_selfDualWedge_left_of_hodgeStar_eq_self hkl hq_sd, real_inner_comm]
+    dsimp only [q]
+    rw [hq, inner_quadraticTwoFormPolar_ιMulti_zero_two hQ hkl he h₀ h₂₃ hρ hu₀ hu₀₁]
+  have hρ₂ : ⟪AlmostComplexStructure.antiInvariantSelfDual₂ o e hkl he, q⟫ =
+      √2 * ((α * conj β).re / 2) := by
+    rw [Submodule.coe_inner, AlmostComplexStructure.antiInvariantSelfDual₂_eq_selfDualWedge,
+      o.inner_selfDualWedge_left_of_hodgeStar_eq_self hkl hq_sd, real_inner_comm]
+    dsimp only [q]
+    rw [hq, inner_quadraticTwoFormPolar_ιMulti_zero_three hQ hkl he h₀ h₂₃ hρ hu₀ hu₀₁]
+  have him : (α * conj β).im = -(conj α * β).im := by simp [mul_comm]
+  have hre : (α * conj β).re = (conj α * β).re := by simp [mul_comm]
   conv_lhs =>
     rw [AlmostComplexStructure.eq_inner_kahlerSelfDual_add_antiInvariantSelfDual
-      (e := e) (he := he) (h₀ := h₀) (h₂ := h₂₃) hω_sd
-      (quadraticTwoFormPolar o ρ hkl (α • u₀) (β • pairedSpinor e u₀))]
-  rw [hω, hρ₁, hρ₂, zero_smul, zero_add, smul_add, smul_smul, smul_smul]
+      (e := e) (he := he) (h₀ := h₀) (h₂ := h₂₃) hω_sd q]
+  rw [hω, hρ₁, hρ₂, him, hre, zero_smul, zero_add, smul_add, smul_smul, smul_smul]
   congr 2
   · linear_combination -((conj α * β).im / 8) * Real.mul_self_sqrt zero_le_two
   · linear_combination ((conj α * β).re / 8) * Real.mul_self_sqrt zero_le_two
+
+omit hkl he h₀ h₂₃ in
+/-- Clifford multiplication by a unit vector `v` maps a unit positive half-spinor `u₀` to a unit
+negative half-spinor. -/
+theorem norm_halfSpinCliffordMul_ofEq_eq_one
+    (hρ : ∀ w, LinearMap.adjoint (ρ (ι Q w)) = -ρ (ι Q w)) {v : V} (hv : ‖v‖ = 1)
+    {u₀ : positiveHalfSpinors o ρ} (hu₀₁ : ‖u₀‖ = 1) :
+    ‖halfSpinCliffordMul o ρ 1 v
+        (LinearEquiv.ofEq _ _ (positiveHalfSpinors_eq_eigenspace o ρ) u₀)‖ = 1 := by
+  rw [norm_halfSpinCliffordMul_apply o hQ hρ 1 v, hv, one_mul,
+    ← Submodule.norm_coe, LinearEquiv.coe_ofEq_apply, Submodule.norm_coe, hu₀₁]
 
 /-- The negative half-spinors `c(e₂) u₀` and `c(e₀) u₀` are orthogonal in `W⁻`. -/
 theorem inner_halfSpinCliffordMul_two_zero (hρ : ∀ v, LinearMap.adjoint (ρ (ι Q v)) = -ρ (ι Q v))
@@ -738,13 +738,12 @@ theorem eq_inner_halfSpinCliffordMul (h₂ : finrank ℂ (positiveHalfSpinors o 
       rw [eq_inner_smul_add_inner_pairedSpinor_smul hQ hkl he h₀ h₂₃ h₂ hρ hu₀ hu₀₁ φ]
     simp only [map_add, map_smul, h0β]
     exact add_comm _ _
-  have hn (i : Fin 4) : ‖halfSpinCliffordMul o ρ 1 (e i) (ePos u₀)‖ = 1 := by
-    rw [norm_halfSpinCliffordMul_apply o hQ hρ 1 (e i), e.orthonormal.1 i, one_mul,
-      ← Submodule.norm_coe, LinearEquiv.coe_ofEq_apply, Submodule.norm_coe, hu₀₁]
   have hw₂₀ := inner_halfSpinCliffordMul_two_zero hQ hkl he h₀ h₂₃ hρ hu₀
   conv_rhs => rw [hexp]
-  rw [inner_smul_add_smul_of_inner_eq_zero_left (hn 2) hw₂₀,
-    inner_smul_add_smul_of_inner_eq_zero_right (hn 0) hw₂₀, ← hexp]
+  rw [inner_smul_add_smul_of_inner_eq_zero_left
+      (norm_halfSpinCliffordMul_ofEq_eq_one hQ hρ (e.orthonormal.1 2) hu₀₁) hw₂₀,
+    inner_smul_add_smul_of_inner_eq_zero_right
+      (norm_halfSpinCliffordMul_ofEq_eq_one hQ hρ (e.orthonormal.1 0) hu₀₁) hw₂₀, ← hexp]
 
 end SpinorFrame
 

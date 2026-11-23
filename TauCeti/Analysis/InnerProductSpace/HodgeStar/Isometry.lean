@@ -300,6 +300,16 @@ theorem selfDualWedge_self (hkl : 2 + 2 = finrank ℝ V) (ξ : V) :
     (ιMulti ℝ 2).map_eq_zero_of_eq ![ξ, ξ] (i := 0) (j := 1) rfl zero_ne_one
   simp [selfDualWedge, h]
 
+/-- For a self-dual two-vector `τ` with `⋆τ = τ`,
+`⟪o.selfDualWedge hkl u w, τ⟫ = √2 * ⟪u ∧ w, τ⟫`. -/
+theorem inner_selfDualWedge_left_of_hodgeStar_eq_self (hkl : 2 + 2 = finrank ℝ V)
+    {τ : ⋀[ℝ]^2 V} (hτ : o.hodgeStar hkl τ = τ) (u w : V) :
+    ⟪(o.selfDualWedge hkl u w : ⋀[ℝ]^2 V), τ⟫ = √2 * ⟪ιMulti ℝ 2 ![u, w], τ⟫ := by
+  have hs : ⟪(o.hodgeStar hkl (ιMulti ℝ 2 ![u, w]) : ⋀[ℝ]^2 V), τ⟫ = ⟪ιMulti ℝ 2 ![u, w], τ⟫ := by
+    simpa [hτ] using o.isSymmetric_hodgeStar_of_even even_two hkl (ιMulti ℝ 2 ![u, w]) τ
+  rw [coe_selfDualWedge_apply, real_inner_smul_left, inner_add_left, hs]
+  ring
+
 /-- **Polarized ellipticity of `a ↦ (⟪ξ, a⟫, √2 (ξ ∧ a)⁺)` in dimension four**:
 `⟪ξ, a⟫ * ⟪ξ, b⟫ + ⟪o.selfDualWedge hkl ξ a, o.selfDualWedge hkl ξ b⟫ = ‖ξ‖ ^ 2 * ⟪a, b⟫`. -/
 theorem inner_mul_add_inner_selfDualWedge (hkl : 2 + 2 = finrank ℝ V) (ξ a b : V) :

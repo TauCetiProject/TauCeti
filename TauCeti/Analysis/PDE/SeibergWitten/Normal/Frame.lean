@@ -199,7 +199,7 @@ private theorem normalDomainEquiv_left_inv
         -(⟪pairedSpinor e u₀, q.snd⟫_ℂ).im / 2]) = p := by
   have horth :=
     inner_pairedSpinor_eq_zero_of_cliffordProjection_apply_eq_self hQ hkl he h₀ h₂₃ hρ hu₀
-  have hβ₀₁ : ‖pairedSpinor e u₀‖ = 1 := (norm_pairedSpinor hQ hρ u₀).trans hu₀₁
+  have hβ₀₁ : ‖pairedSpinor e u₀‖ = 1 := norm_pairedSpinor_eq_one hQ hρ hu₀₁
   have huu := inner_smul_add_smul_of_inner_eq_zero_left hu₀₁ horth
     ((2 : ℂ) * (p.fst 2 + p.fst 3 * I)) (-((2 : ℂ) * (p.snd 2 + p.snd 3 * I)))
   have hvv := inner_smul_add_smul_of_inner_eq_zero_right hβ₀₁ horth
@@ -276,7 +276,7 @@ theorem alternatingFormInner_normalFrameForm_add_norm_sq_normalFrameSpinor_div_f
         ‖normalFrameSpinor o ρ e u₀ y η‖ ^ 2 / 4 = ‖y‖ ^ 2 + ‖η‖ ^ 2 := by
   have horth :=
     inner_pairedSpinor_eq_zero_of_cliffordProjection_apply_eq_self hQ hkl he h₀ h₂₃ hρ hu₀
-  have hβ₀₁ : ‖pairedSpinor e u₀‖ = 1 := (norm_pairedSpinor hQ hρ u₀).trans hu₀₁
+  have hβ₀₁ : ‖pairedSpinor e u₀‖ = 1 := norm_pairedSpinor_eq_one hQ hρ hu₀₁
   have hform : alternatingFormInner V 1 (normalFrameForm e y η) (normalFrameForm e y η) =
       η 0 ^ 2 + η 1 ^ 2 + y 0 ^ 2 + y 1 ^ 2 := by
     set u : V := (-η 0) • e 0 + η 1 • e 1 + y 0 • e 2 + y 1 • e 3
@@ -295,6 +295,106 @@ theorem alternatingFormInner_normalFrameForm_add_norm_sq_normalFrameSpinor_div_f
     ← normSq_eq_norm_sq, ← normSq_eq_norm_sq, EuclideanSpace.real_norm_sq_eq y,
     EuclideanSpace.real_norm_sq_eq η, Fin.sum_univ_four, Fin.sum_univ_four]
   simp [normSq_apply]; ring
+
+omit h₂ in
+private theorem normalTargetEquiv_left_inv
+    (p : EuclideanSpace ℝ (Fin 4) × EuclideanSpace ℝ (Fin 4)) :
+    let ePos := LinearEquiv.ofEq _ _ (positiveHalfSpinors_eq_eigenspace o ρ)
+    let q :=
+      (p.fst 0,
+       p.fst 1 • J.kahlerSelfDual o hkl
+           (AlmostComplexStructure.hodgeStar_kahlerForm h₀ h₂₃ hkl he) +
+         p.snd 0 • AlmostComplexStructure.antiInvariantSelfDual₁ o e hkl he +
+         p.snd 1 • AlmostComplexStructure.antiInvariantSelfDual₂ o e hkl he,
+       ((2 : ℂ) * ((p.fst 2 : ℂ) + (p.fst 3 : ℂ) * I)) •
+           halfSpinCliffordMul o ρ 1 (e 2) (ePos u₀) -
+         ((2 : ℂ) * ((p.snd 2 : ℂ) + (p.snd 3 : ℂ) * I)) •
+           halfSpinCliffordMul o ρ 1 (e 0) (ePos u₀))
+    (!₂[q.fst,
+        ⟪J.kahlerSelfDual o hkl (AlmostComplexStructure.hodgeStar_kahlerForm h₀ h₂₃ hkl he),
+          q.snd.fst⟫,
+        (⟪halfSpinCliffordMul o ρ 1 (e 2) (ePos u₀), q.snd.snd⟫_ℂ).re / 2,
+        (⟪halfSpinCliffordMul o ρ 1 (e 2) (ePos u₀), q.snd.snd⟫_ℂ).im / 2],
+     !₂[⟪AlmostComplexStructure.antiInvariantSelfDual₁ o e hkl he, q.snd.fst⟫,
+        ⟪AlmostComplexStructure.antiInvariantSelfDual₂ o e hkl he, q.snd.fst⟫,
+        -(⟪halfSpinCliffordMul o ρ 1 (e 0) (ePos u₀), q.snd.snd⟫_ℂ).re / 2,
+        -(⟪halfSpinCliffordMul o ρ 1 (e 0) (ePos u₀), q.snd.snd⟫_ℂ).im / 2]) = p := by
+  dsimp only
+  let b := J.selfDualOrthonormalBasis o e hkl he h₀ h₂₃
+  let τ := p.fst.ofLp 1 • J.kahlerSelfDual o hkl
+      (AlmostComplexStructure.hodgeStar_kahlerForm h₀ h₂₃ hkl he) +
+    p.snd.ofLp 0 • AlmostComplexStructure.antiInvariantSelfDual₁ o e hkl he +
+    p.snd.ofLp 1 • AlmostComplexStructure.antiInvariantSelfDual₂ o e hkl he
+  have hb (i : Fin 3) : ⟪b i, τ⟫ = ![p.fst.ofLp 1, p.snd.ofLp 0, p.snd.ofLp 1] i := by
+    simpa [b, τ, Fin.sum_univ_three] using
+      b.orthonormal.inner_right_fintype ![p.fst.ofLp 1, p.snd.ofLp 0, p.snd.ofLp 1] i
+  have hsd0 : ⟪J.kahlerSelfDual o hkl
+        (AlmostComplexStructure.hodgeStar_kahlerForm h₀ h₂₃ hkl he), τ⟫ =
+      p.fst.ofLp 1 := by
+    simpa [b] using hb 0
+  have hsd1 : ⟪AlmostComplexStructure.antiInvariantSelfDual₁ o e hkl he, τ⟫ =
+      p.snd.ofLp 0 := by
+    simpa [b] using hb 1
+  have hsd2 : ⟪AlmostComplexStructure.antiInvariantSelfDual₂ o e hkl he, τ⟫ =
+      p.snd.ofLp 1 := by
+    simpa [b] using hb 2
+  have hn (i : Fin 4) : ‖halfSpinCliffordMul o ρ 1 (e i)
+      (LinearEquiv.ofEq _ _ (positiveHalfSpinors_eq_eigenspace o ρ) u₀)‖ = 1 :=
+    norm_halfSpinCliffordMul_ofEq_eq_one hQ hρ (e.orthonormal.1 i) hu₀₁
+  have hw₂₀ := inner_halfSpinCliffordMul_two_zero hQ hkl he h₀ h₂₃ hρ hu₀
+  have hsp2 := inner_smul_add_smul_of_inner_eq_zero_left (hn 2) hw₂₀
+    ((2 : ℂ) * (p.fst.ofLp 2 + p.fst.ofLp 3 * I))
+    (-((2 : ℂ) * (p.snd.ofLp 2 + p.snd.ofLp 3 * I)))
+  have hsp0 := inner_smul_add_smul_of_inner_eq_zero_right (hn 0) hw₂₀
+    ((2 : ℂ) * (p.fst.ofLp 2 + p.fst.ofLp 3 * I))
+    (-((2 : ℂ) * (p.snd.ofLp 2 + p.snd.ofLp 3 * I)))
+  rw [neg_smul, ← sub_eq_add_neg] at hsp2 hsp0
+  refine Prod.ext ?_ ?_
+  · ext i; fin_cases i
+    · rfl
+    · exact hsd0
+    · exact (congrArg (fun z : ℂ ↦ z.re / 2) hsp2).trans (by simp)
+    · exact (congrArg (fun z : ℂ ↦ z.im / 2) hsp2).trans (by simp)
+  · ext i; fin_cases i
+    · exact hsd1
+    · exact hsd2
+    · exact (congrArg (fun z : ℂ ↦ -z.re / 2) hsp0).trans (by simp)
+    · exact (congrArg (fun z : ℂ ↦ -z.im / 2) hsp0).trans (by simp)
+
+private theorem normalTargetEquiv_right_inv
+    (q : ℝ × Module.End.eigenspace (o.hodgeStar hkl : Module.End ℝ (⋀[ℝ]^2 V)) 1 ×
+      Module.End.eigenspace (ρ (chirality Q o)) (-1)) :
+    let ePos := LinearEquiv.ofEq _ _ (positiveHalfSpinors_eq_eigenspace o ρ)
+    let p :=
+      (!₂[q.fst,
+          ⟪J.kahlerSelfDual o hkl (AlmostComplexStructure.hodgeStar_kahlerForm h₀ h₂₃ hkl he),
+            q.snd.fst⟫,
+          (⟪halfSpinCliffordMul o ρ 1 (e 2) (ePos u₀), q.snd.snd⟫_ℂ).re / 2,
+          (⟪halfSpinCliffordMul o ρ 1 (e 2) (ePos u₀), q.snd.snd⟫_ℂ).im / 2],
+       !₂[⟪AlmostComplexStructure.antiInvariantSelfDual₁ o e hkl he, q.snd.fst⟫,
+          ⟪AlmostComplexStructure.antiInvariantSelfDual₂ o e hkl he, q.snd.fst⟫,
+          -(⟪halfSpinCliffordMul o ρ 1 (e 0) (ePos u₀), q.snd.snd⟫_ℂ).re / 2,
+          -(⟪halfSpinCliffordMul o ρ 1 (e 0) (ePos u₀), q.snd.snd⟫_ℂ).im / 2])
+    (p.fst 0,
+     p.fst 1 • J.kahlerSelfDual o hkl
+         (AlmostComplexStructure.hodgeStar_kahlerForm h₀ h₂₃ hkl he) +
+       p.snd 0 • AlmostComplexStructure.antiInvariantSelfDual₁ o e hkl he +
+       p.snd 1 • AlmostComplexStructure.antiInvariantSelfDual₂ o e hkl he,
+     ((2 : ℂ) * ((p.fst 2 : ℂ) + (p.fst 3 : ℂ) * I)) •
+         halfSpinCliffordMul o ρ 1 (e 2) (ePos u₀) -
+       ((2 : ℂ) * ((p.snd 2 : ℂ) + (p.snd 3 : ℂ) * I)) •
+         halfSpinCliffordMul o ρ 1 (e 0) (ePos u₀)) = q :=
+  Prod.ext (by simp) <| Prod.ext
+    (by
+      simpa using (AlmostComplexStructure.eq_inner_kahlerSelfDual_add_antiInvariantSelfDual
+        (e := e) (he := he) (h₀ := h₀) (h₂ := h₂₃)
+        (AlmostComplexStructure.hodgeStar_kahlerForm h₀ h₂₃ hkl he) q.snd.fst).symm)
+    (by
+      conv_rhs =>
+        rw [eq_inner_halfSpinCliffordMul hQ hkl he h₀ h₂₃ h₂ hρ hu₀ hu₀₁ q.snd.snd]
+      simp only [Matrix.cons_val_two, Matrix.cons_val_three, Matrix.head_cons,
+        Matrix.tail_cons, sub_eq_add_neg, ← neg_smul]
+      congr 1 <;> congr 1 <;> (apply Complex.ext <;> simp <;> ring))
 
 /-- **The eight-component target frame intertwiner** `(L, A) ≃ (f, τ, ν) ∈ ℝ × Λ⁺ V × W⁻`. -/
 def normalTargetEquiv :
@@ -331,61 +431,8 @@ def normalTargetEquiv :
             ⟪AlmostComplexStructure.antiInvariantSelfDual₂ o e hkl he, q.snd.fst⟫,
             -(⟪halfSpinCliffordMul o ρ 1 (e 0) (ePos u₀), q.snd.snd⟫_ℂ).re / 2,
             -(⟪halfSpinCliffordMul o ρ 1 (e 0) (ePos u₀), q.snd.snd⟫_ℂ).im / 2])
-      left_inv p := by
-        dsimp only
-        let b := J.selfDualOrthonormalBasis o e hkl he h₀ h₂₃
-        let τ := p.fst.ofLp 1 • J.kahlerSelfDual o hkl
-            (AlmostComplexStructure.hodgeStar_kahlerForm h₀ h₂₃ hkl he) +
-          p.snd.ofLp 0 • AlmostComplexStructure.antiInvariantSelfDual₁ o e hkl he +
-          p.snd.ofLp 1 • AlmostComplexStructure.antiInvariantSelfDual₂ o e hkl he
-        have hb (i : Fin 3) : ⟪b i, τ⟫ = ![p.fst.ofLp 1, p.snd.ofLp 0, p.snd.ofLp 1] i := by
-          simpa [b, τ, Fin.sum_univ_three] using
-            b.orthonormal.inner_right_fintype ![p.fst.ofLp 1, p.snd.ofLp 0, p.snd.ofLp 1] i
-        have hsd0 : ⟪J.kahlerSelfDual o hkl
-              (AlmostComplexStructure.hodgeStar_kahlerForm h₀ h₂₃ hkl he), τ⟫ =
-            p.fst.ofLp 1 := by
-          simpa [b] using hb 0
-        have hsd1 : ⟪AlmostComplexStructure.antiInvariantSelfDual₁ o e hkl he, τ⟫ =
-            p.snd.ofLp 0 := by
-          simpa [b] using hb 1
-        have hsd2 : ⟪AlmostComplexStructure.antiInvariantSelfDual₂ o e hkl he, τ⟫ =
-            p.snd.ofLp 1 := by
-          simpa [b] using hb 2
-        let ePos := LinearEquiv.ofEq _ _ (positiveHalfSpinors_eq_eigenspace o ρ)
-        have hn (i : Fin 4) : ‖halfSpinCliffordMul o ρ 1 (e i) (ePos u₀)‖ = 1 := by
-          rw [norm_halfSpinCliffordMul_apply o hQ hρ 1 (e i), e.orthonormal.1 i, one_mul,
-            ← Submodule.norm_coe, LinearEquiv.coe_ofEq_apply, Submodule.norm_coe, hu₀₁]
-        have hw₂₀ := inner_halfSpinCliffordMul_two_zero hQ hkl he h₀ h₂₃ hρ hu₀
-        have hsp2 := inner_smul_add_smul_of_inner_eq_zero_left (hn 2) hw₂₀
-          ((2 : ℂ) * (p.fst.ofLp 2 + p.fst.ofLp 3 * I))
-          (-((2 : ℂ) * (p.snd.ofLp 2 + p.snd.ofLp 3 * I)))
-        have hsp0 := inner_smul_add_smul_of_inner_eq_zero_right (hn 0) hw₂₀
-          ((2 : ℂ) * (p.fst.ofLp 2 + p.fst.ofLp 3 * I))
-          (-((2 : ℂ) * (p.snd.ofLp 2 + p.snd.ofLp 3 * I)))
-        rw [neg_smul, ← sub_eq_add_neg] at hsp2 hsp0
-        dsimp only [ePos] at hsp2 hsp0
-        refine Prod.ext ?_ ?_
-        · ext i; fin_cases i
-          · rfl
-          · exact hsd0
-          · exact (congrArg (fun z : ℂ ↦ z.re / 2) hsp2).trans (by simp)
-          · exact (congrArg (fun z : ℂ ↦ z.im / 2) hsp2).trans (by simp)
-        · ext i; fin_cases i
-          · exact hsd1
-          · exact hsd2
-          · exact (congrArg (fun z : ℂ ↦ -z.re / 2) hsp0).trans (by simp)
-          · exact (congrArg (fun z : ℂ ↦ -z.im / 2) hsp0).trans (by simp)
-      right_inv q := Prod.ext (by simp) <| Prod.ext
-        (by
-          simpa using (AlmostComplexStructure.eq_inner_kahlerSelfDual_add_antiInvariantSelfDual
-            (e := e) (he := he) (h₀ := h₀) (h₂ := h₂₃)
-            (AlmostComplexStructure.hodgeStar_kahlerForm h₀ h₂₃ hkl he) q.snd.fst).symm)
-        (by
-          conv_rhs =>
-            rw [eq_inner_halfSpinCliffordMul hQ hkl he h₀ h₂₃ h₂ hρ hu₀ hu₀₁ q.snd.snd]
-          simp only [Matrix.cons_val_two, Matrix.cons_val_three, Matrix.head_cons,
-            Matrix.tail_cons, sub_eq_add_neg, ← neg_smul]
-          congr 1 <;> congr 1 <;> (apply Complex.ext <;> simp <;> ring)) }
+      left_inv := normalTargetEquiv_left_inv o ρ hQ hkl he h₀ h₂₃ hρ hu₀ hu₀₁
+      right_inv := normalTargetEquiv_right_inv o ρ hQ hkl he h₀ h₂₃ h₂ hρ hu₀ hu₀₁ }
 
 /-- Pointwise formula for `normalTargetEquiv`. -/
 @[simp]
@@ -437,9 +484,8 @@ theorem sq_add_norm_sq_add_norm_sq_div_four_normalTargetEquiv
       b.orthonormal.inner_sum ![L 1, A 0, A 1] ![L 1, A 0, A 1] Finset.univ, Fin.sum_univ_three]
     simp [sq]
   let ePos := LinearEquiv.ofEq _ _ (positiveHalfSpinors_eq_eigenspace o ρ)
-  have hn (i : Fin 4) : ‖halfSpinCliffordMul o ρ 1 (e i) (ePos u₀)‖ = 1 := by
-    rw [norm_halfSpinCliffordMul_apply o hQ hρ 1 (e i), e.orthonormal.1 i, one_mul,
-      ← Submodule.norm_coe, LinearEquiv.coe_ofEq_apply, Submodule.norm_coe, hu₀₁]
+  have hn (i : Fin 4) : ‖halfSpinCliffordMul o ρ 1 (e i) (ePos u₀)‖ = 1 :=
+    norm_halfSpinCliffordMul_ofEq_eq_one hQ hρ (e.orthonormal.1 i) hu₀₁
   have hq2 : q.snd.snd =
       ((2 : ℂ) * (L 2 + L 3 * I)) • halfSpinCliffordMul o ρ 1 (e 2) (ePos u₀) +
         ((-2 : ℂ) * (A 2 + A 3 * I)) • halfSpinCliffordMul o ρ 1 (e 0) (ePos u₀) := by

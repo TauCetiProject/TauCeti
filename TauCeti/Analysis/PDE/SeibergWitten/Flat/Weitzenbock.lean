@@ -33,7 +33,7 @@ operator
 for any orthonormal basis `(eₖ)` (`flatDirac_eq_sum`); this is the Dirac operator of the twisted
 spinors on a flat chart in which the background connection is trivial. For `ψ = α u₀` with `u₀`
 constant it is the operator of the flat limiting equations of
-`TauCeti.Analysis.PDE.SeibergWitten.FlatLimit` (`flatDirac_smul_const`). Since the `c(eₖ)`
+`TauCeti.Analysis.PDE.SeibergWitten.Flat.Limit` (`flatDirac_smul_const`). Since the `c(eₖ)`
 satisfy the Clifford relations and the commutator of covariant derivatives is the curvature,
 `∇_v ∇_w ψ - ∇_w ∇_v ψ = i db(v, w) ψ` (`covariantDeriv_sub_swap`), the square of `D` is
 
