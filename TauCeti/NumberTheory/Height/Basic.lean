@@ -186,36 +186,25 @@ lemma logHeight₁_div_le_of_mul_sub_mul_eq {θ₀ θ₂ x y t : K} (hθ : θ₀
   linarith [logHeight₁_div_le (θ₀ - t * θ₂) (1 - t), logHeight₁_sub_le θ₀ (t * θ₂),
     logHeight₁_mul_le t θ₂]
 
-omit [Finite ι] in
-/-- The multiplicative height is unchanged by changing the signs of some coordinates. -/
-lemma mulHeight_eq_of_forall_eq_or_eq_neg {x y : ι → K} (h : ∀ i, y i = x i ∨ y i = -x i) :
-    mulHeight y = mulHeight x := by
-  have hv (v : AbsoluteValue K ℝ) : ⨆ i, v (y i) = ⨆ i, v (x i) :=
-    iSup_congr fun i ↦ by rcases h i with h | h <;> simp [h]
-  have hy : y = 0 ↔ x = 0 := by
-    simp only [funext_iff, Pi.zero_apply]
-    exact forall_congr' fun i ↦ by rcases h i with h | h <;> simp [h]
-  rcases eq_or_ne x 0 with hx | hx
-  · rw [hy.2 hx, hx]
-  · rw [mulHeight_eq hx, mulHeight_eq (hy.not.2 hx)]
-    simp only [hv]
-
-omit [Finite ι] in
-/-- The logarithmic height is unchanged by changing the signs of some coordinates. -/
-lemma logHeight_eq_of_forall_eq_or_eq_neg {x y : ι → K} (h : ∀ i, y i = x i ∨ y i = -x i) :
-    logHeight y = logHeight x := by
-  rw [logHeight_eq_log_mulHeight, logHeight_eq_log_mulHeight,
-    mulHeight_eq_of_forall_eq_or_eq_neg h]
-
 open AdmissibleAbsValues in
 /-- **Local-to-global height bound.** Suppose that at every archimedean absolute value `v` the
 local factor `⨆ i, v (z i)` is at most `C * (⨆ j, v (x j)) ^ p`, and at every nonarchimedean one
 it is at most `(⨆ j, v (x j)) ^ p`. Then `mulHeight z ≤ C ^ totalWeight K * mulHeight x ^ p`. -/
-lemma mulHeight_le_of_forall_iSup_le {ι' : Type*} [Finite ι'] {x : ι → K} (hx : x ≠ 0)
-    (z : ι' → K) {C : ℝ} (hC : 1 ≤ C) {p : ℕ}
+lemma mulHeight_le_of_forall_iSup_le {ι' : Type*} [Finite ι'] (x : ι → K) (z : ι' → K) {C : ℝ}
+    (hC : 1 ≤ C) {p : ℕ}
     (harch : ∀ v ∈ archAbsVal (K := K), ⨆ i, v (z i) ≤ C * (⨆ j, v (x j)) ^ p)
     (hnon : ∀ v ∈ nonarchAbsVal (K := K), ⨆ i, v (z i) ≤ (⨆ j, v (x j)) ^ p) :
     mulHeight z ≤ C ^ totalWeight K * mulHeight x ^ p := by
+  wlog hx : x ≠ 0 generalizing ι x
+  · -- Replace `x = 0` by `Sum.elim 1 0`, which has the same height `1` and larger local factors.
+    obtain rfl := not_ne_iff.mp hx
+    have hle (v : AbsoluteValue K ℝ) :
+        (⨆ j, v ((0 : ι → K) j)) ^ p ≤ (⨆ s, v (Sum.elim (1 : Unit → K) (0 : ι → K) s)) ^ p := by
+      rw [show (⨆ j, v ((0 : ι → K) j)) = 0 by simp]
+      exact pow_le_pow_left₀ le_rfl (Real.iSup_nonneg fun _ ↦ v.nonneg _) p
+    simpa [mulHeight_sumElim_zero_eq] using this (Sum.elim (1 : Unit → K) (0 : ι → K))
+      (fun v hv ↦ (harch v hv).trans (mul_le_mul_of_nonneg_left (hle v) (zero_le_one.trans hC)))
+      (fun v hv ↦ (hnon v hv).trans (hle v)) (Function.ne_iff.mpr ⟨.inl (), by simp⟩)
   rcases eq_or_ne z 0 with rfl | hz
   · rw [mulHeight_zero]
     exact one_le_mul_of_one_le_of_one_le (one_le_pow₀ hC) (one_le_pow₀ (one_le_mulHeight x))
@@ -247,9 +236,7 @@ lemma ne_zero_of_forall_iSup_eq {ι' : Type*} {x : ι → K} {y : ι' → K} (hx
       rintro _ ⟨j, rfl⟩
       by_cases hj : x j = 0 <;> simp [AbsoluteValue.trivial_apply, hj]⟩ i
       (by simp [AbsoluteValue.trivial_apply hi])
-  rw [h AbsoluteValue.trivial] at h1
-  have h0 : (⨆ i, (AbsoluteValue.trivial : AbsoluteValue K ℝ) ((0 : ι' → K) i)) = 0 := by simp
-  exact absurd (h0 ▸ h1) zero_lt_one.not_ge
+  norm_num [h AbsoluteValue.trivial] at h1
 
 omit [Finite ι] in
 /-- Two tuples with the same local factor `⨆ i, v (x i)` at every absolute value have the same
@@ -264,6 +251,20 @@ lemma mulHeight_eq_of_forall_iSup_eq {ι' : Type*} {x : ι → K} {y : ι' → K
     rw [mulHeight_zero, mulHeight_zero]
   · simp only [mulHeight_eq hx, mulHeight_eq (ne_zero_of_forall_iSup_eq hx h), h]
 
+omit [Finite ι] in
+/-- The multiplicative height is unchanged by changing the signs of some coordinates. -/
+lemma mulHeight_eq_of_forall_eq_or_eq_neg {x y : ι → K} (h : ∀ i, y i = x i ∨ y i = -x i) :
+    mulHeight y = mulHeight x :=
+  -- A sign change keeps every coordinate's value at every absolute value.
+  mulHeight_eq_of_forall_iSup_eq fun v ↦ iSup_congr fun i ↦ by rcases h i with h | h <;> simp [h]
+
+omit [Finite ι] in
+/-- The logarithmic height is unchanged by changing the signs of some coordinates. -/
+lemma logHeight_eq_of_forall_eq_or_eq_neg {x y : ι → K} (h : ∀ i, y i = x i ∨ y i = -x i) :
+    logHeight y = logHeight x := by
+  rw [logHeight_eq_log_mulHeight, logHeight_eq_log_mulHeight,
+    mulHeight_eq_of_forall_eq_or_eq_neg h]
+
 open AdmissibleAbsValues in
 /-- A tuple whose local factor `⨆ i, v (x i)` is at most `C` at every archimedean absolute value
 and at most `1` at every nonarchimedean one has height at most `C ^ totalWeight K`. -/
@@ -271,8 +272,7 @@ lemma mulHeight_le_pow_totalWeight {x : ι → K} {C : ℝ} (hC : 1 ≤ C)
     (harch : ∀ v ∈ archAbsVal (K := K), ⨆ i, v (x i) ≤ C)
     (hnon : ∀ v ∈ nonarchAbsVal (K := K), ⨆ i, v (x i) ≤ 1) :
     mulHeight x ≤ C ^ totalWeight K := by
-  simpa using mulHeight_le_of_forall_iSup_le (x := fun _ : Unit ↦ (1 : K))
-    (Function.ne_iff.mpr ⟨(), one_ne_zero⟩) x hC (p := 0)
+  simpa using mulHeight_le_of_forall_iSup_le (0 : Unit → K) x hC (p := 0)
     (by simpa using harch) (by simpa using hnon)
 
 omit [Finite ι] in
@@ -284,13 +284,14 @@ lemma mulHeight_natCast_le {n : ι → ℕ} {N : ℕ} (hN : 1 ≤ N) (hn : ∀ i
   have : Finite (Set.range n) :=
     ((Set.finite_Iic N).subset (by rintro _ ⟨i, rfl⟩; exact hn i)).to_subtype
   have hsurj : Function.Surjective (Set.rangeFactorization n) := Set.rangeFactorization_surjective
-  refine (mulHeight_eq_of_forall_iSup_eq (y := fun s : Set.range n ↦ ((s.1 : ℕ) : K))
-    fun v ↦ Function.Surjective.iSup_comp hsurj fun s : Set.range n ↦ v ((s.1 : ℕ) : K)).trans_le ?_
-  have hs (s : Set.range n) : (s.1 : ℕ) ≤ N := by
-    obtain ⟨i, hi⟩ := s.2
+  refine (mulHeight_eq_of_forall_iSup_eq (y := fun s : Set.range n ↦ ((s.val : ℕ) : K))
+    fun v ↦ Function.Surjective.iSup_comp hsurj fun s : Set.range n ↦ v
+        ((s.val : ℕ) : K)).trans_le ?_
+  have hs (s : Set.range n) : (s.val : ℕ) ≤ N := by
+    obtain ⟨i, hi⟩ := s.property
     exact hi ▸ hn i
   refine mulHeight_le_pow_totalWeight (mod_cast hN) (fun v _ ↦ ?_) fun v hv ↦ ?_
-  · exact Real.iSup_le (fun s ↦ (v.apply_nat_le_self s.1).trans (mod_cast hs s))
+  · exact Real.iSup_le (fun s ↦ (v.apply_nat_le_self s.val).trans (mod_cast hs s))
       (Nat.cast_nonneg N)
   · exact Real.iSup_le (fun s ↦ (isNonarchimedean v hv).apply_natCast_le_one (by simp) (by simp))
       zero_le_one

@@ -71,22 +71,24 @@ private theorem exists_isOpenQuotientMap_of_exists_finset_eq_sum_smul {N : Submo
       ∀ y ∈ N, ∃ a : M → A, y = ∑ x ∈ F, a x • x ∧ ∀ x ∈ F, ‖a x‖ * ‖x‖ ≤ ‖y‖) :
     ∃ (F : Finset M) (Φ : (F → A) →ₗ[A] N), IsOpenQuotientMap Φ := by
   obtain ⟨F, hFN, hF⟩ := hN
-  let Φ : (F → A) →ₗ[A] N := Fintype.linearCombination A fun x : F ↦ ⟨x.1, (hFN x.1 x.2).1⟩
+  let Φ : (F → A) →ₗ[A] N := Fintype.linearCombination A fun x : F ↦ ⟨x.val,
+      (hFN x.val x.property).1⟩
   let K : ℝ := ∑ x ∈ F, ‖x‖⁻¹
   have hK : 0 ≤ K := Finset.sum_nonneg fun x _ ↦ inv_nonneg.mpr (norm_nonneg x)
   have hlift (y : N) : ∃ b : F → A, Φ b = y ∧ ‖b‖ ≤ K * ‖y‖ := by
-    obtain ⟨a, hy, ha⟩ := hF y.1 y.2
-    refine ⟨fun x ↦ a x.1, Subtype.ext ?_, ?_⟩
+    obtain ⟨a, hy, ha⟩ := hF y.val y.property
+    refine ⟨fun x ↦ a x.val, Subtype.ext ?_, ?_⟩
     · simp only [Φ, Fintype.linearCombination_apply, Submodule.coe_sum, SetLike.val_smul,
         Finset.univ_eq_attach]
       rw [Finset.sum_attach F fun x ↦ a x • x, ← hy]
     · refine (pi_norm_le_iff_of_nonneg (mul_nonneg hK (norm_nonneg y))).mpr fun x ↦ ?_
-      have hxpos : 0 < ‖x.1‖ := norm_pos_iff.mpr (hFN x.1 x.2).2
-      have hax : ‖a x.1‖ ≤ ‖x.1‖⁻¹ * ‖y‖ := by
+      have hxpos : 0 < ‖x.val‖ := norm_pos_iff.mpr (hFN x.val x.property).2
+      have hax : ‖a x.val‖ ≤ ‖x.val‖⁻¹ * ‖y‖ := by
         rw [← div_eq_inv_mul, le_div_iff₀ hxpos]
-        exact ha x.1 x.2
+        exact ha x.val x.property
       exact hax.trans (mul_le_mul_of_nonneg_right
-        (Finset.single_le_sum (fun z _ ↦ inv_nonneg.mpr (norm_nonneg z)) x.2) (norm_nonneg y))
+        (Finset.single_le_sum (fun z _ ↦ inv_nonneg.mpr (norm_nonneg z)) x.property)
+            (norm_nonneg y))
   have hsurj : Function.Surjective Φ := fun y ↦ ⟨(hlift y).choose, (hlift y).choose_spec.1⟩
   refine ⟨F, Φ, hsurj, IsModuleTopology.continuous_of_linearMap Φ,
     TauCeti.isOpenMap_of_exists_norm_le Φ.toAddMonoidHom hlift⟩
@@ -253,17 +255,17 @@ theorem exists_finset_subset_preimage_and_eq_sum_smul
       ∀ v : M₀, J v ∈ N → ∃ p : M₀ → P, v = ∑ g ∈ G, p g • g := by
   classical
   obtain ⟨F, hF1, hFgen⟩ := hN
-  choose g₀ hg₀ using fun x : F ↦ (hJ x.1).mpr (hF1 x.1 x.2).2
+  choose g₀ hg₀ using fun x : F ↦ (hJ x.val).mpr (hF1 x.val x.property).2
   have hg₀_inj : Function.Injective g₀ := fun x y h ↦
     Subtype.ext (by rw [← hg₀ x, ← hg₀ y, h])
   refine ⟨Finset.univ.image g₀, ?_, fun v hv ↦ ?_⟩
   · simp only [Finset.mem_image, Finset.mem_univ, true_and, forall_exists_index]
     rintro _ x rfl
     rw [hg₀ x]
-    exact (hF1 x.1 x.2).1
+    exact (hF1 x.val x.property).1
   · obtain ⟨a, ha_sum, ha_norm⟩ := hFgen (J v) hv
     choose p₀ hp₀ using fun x : F ↦
-      hA (a x.1) ((ha_norm x.1 x.2).trans ((hJ (J v)).mp ⟨v, rfl⟩))
+      hA (a x.val) ((ha_norm x.val x.property).trans ((hJ (J v)).mp ⟨v, rfl⟩))
     refine ⟨Function.extend g₀ p₀ 0, hJ_inj ?_⟩
     rw [map_sum, ha_sum, ← Finset.sum_attach F,
       Finset.sum_image fun x _ y _ hxy ↦ hg₀_inj hxy]

@@ -52,6 +52,7 @@ In the namespace `ContinuousLinearMap`:
 
 * `nondegenerate_toBilinForm_innerSL_comp_iff`: the form `⟪T ·, ·⟫` of an operator `T` is
   nondegenerate exactly when `T` is injective.
+* `ker_innerSL_comp`: the kernel of the form `⟪T ·, ·⟫` is the kernel of `T`.
 
 In the namespace `TauCeti`, for families of symmetric operators:
 
@@ -187,6 +188,17 @@ theorem ContinuousLinearMap.nondegenerate_toBilinForm_innerSL_comp_iff {E : Type
   refine forall_congr' fun u ↦ imp_congr_left ?_
   rw [comp_apply, ← norm_eq_zero, innerSL_apply_norm, norm_eq_zero]
 
+/-- The kernel of the continuous bilinear form `⟪T ·, ·⟫` of an operator `T` is the kernel of
+`T`. -/
+theorem ContinuousLinearMap.ker_innerSL_comp {E : Type*} [NormedAddCommGroup E]
+    [InnerProductSpace ℝ E] (T : E →L[ℝ] E) :
+    (((innerSL ℝ).comp T : E →L[ℝ] E →L[ℝ] ℝ) : E →ₗ[ℝ] E →L[ℝ] ℝ).ker = T.ker := by
+  ext v
+  simp only [LinearMap.mem_ker, ContinuousLinearMap.coe_coe]
+  refine ⟨fun h ↦ ?_, fun h ↦ by simp [h]⟩
+  have h' : ⟪T v, T v⟫_ℝ = 0 := by simpa using congr($h (T v))
+  exact inner_self_eq_zero.1 h'
+
 /-! ### Families of symmetric operators near an injective limit -/
 
 namespace TauCeti
@@ -210,9 +222,9 @@ theorem eventually_ker_eq_bot_and_sigNeg_eq_of_tendsto {ι : Type*} {A : ι → 
   -- The negative index is locally constant on the space of symmetric operators at `L`.
   let S := {B : E →L[ℝ] E // (B : E →ₗ[ℝ] E).IsSymmetric}
   have hV : Continuous fun B : S ↦ (innerSL ℝ).comp (B : E →L[ℝ] E) :=
-    continuous_const.clm_comp continuous_subtype_val
+    continuous_const.clm_comp continuous_subtypeVal
   have hconst := eventually_sigNeg_toBilinForm_eq_of_continuousAt (x := (⟨L, hLsym⟩ : S))
-    (.of_forall fun B ↦ B.2.isSymm_toBilinForm_innerSL_comp) hV.continuousAt hLnd
+    hLsym.isSymm_toBilinForm_innerSL_comp hV.continuousAt hLnd
   have hlimS : Tendsto (fun s ↦ (⟨A s, hsym s⟩ : S)) l (𝓝 ⟨L, hLsym⟩) :=
     tendsto_subtype_rng.2 hlim
   filter_upwards [hlimS hconst, hlimS (hV.continuousAt.eventually_toBilinForm_nondegenerate hLnd)]

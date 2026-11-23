@@ -52,16 +52,16 @@ theorem exists_continuousMap_prod_iUnion {X Y : Type*} [TopologicalSpace X] [Top
       ∀ j p (x : ↥(⋃ j, T j)) (hx : (x : α) ∈ T j), ψ (p, x) = φ j (p, ⟨x, hx⟩) := by
   let S (j : ι) : Set (X × ↥(⋃ j, T j)) := {q | (q.2 : α) ∈ T j}
   let φ' (j : ι) : C(S j, Y) :=
-    ⟨fun q ↦ φ j (q.1.1, ⟨q.1.2, q.2⟩), (φ j).continuous.comp
-      ((continuous_fst.comp continuous_subtype_val).prodMk
-        ((continuous_subtype_val.comp (continuous_snd.comp continuous_subtype_val)).subtype_mk _))⟩
+    ⟨fun q ↦ φ j (q.val.1, ⟨q.val.2, q.property⟩), (φ j).continuous.comp
+      ((continuous_fst.comp continuous_subtypeVal).prodMk
+        ((continuous_subtypeVal.comp (continuous_snd.comp continuous_subtypeVal)).subtype_mk _))⟩
   have hφ' (j k : ι) (q : X × ↥(⋃ j, T j)) (hj : q ∈ S j) (hk : q ∈ S k) :
       φ' j ⟨q, hj⟩ = φ' k ⟨q, hk⟩ := by
     obtain rfl : j = k := by_contra fun hjk ↦ (hT hjk).ne_of_mem hj hk rfl
     rfl
   have hS (q : X × ↥(⋃ j, T j)) : ∃ j, S j ∈ 𝓝 q := by
-    obtain ⟨j, hj⟩ := mem_iUnion.1 q.2.2
-    exact ⟨j, ((hTo j).preimage (continuous_subtype_val.comp continuous_snd)).mem_nhds hj⟩
+    obtain ⟨j, hj⟩ := mem_iUnion.1 q.2.property
+    exact ⟨j, ((hTo j).preimage (continuous_subtypeVal.comp continuous_snd)).mem_nhds hj⟩
   exact ⟨ContinuousMap.liftCover S φ' hφ' hS, fun j p x hx ↦
     ContinuousMap.liftCover_coe (S := S) (φ := φ') (hφ := hφ') (hS := hS) (i := j) ⟨(p, x), hx⟩⟩
 

@@ -103,18 +103,18 @@ private lemma chartSectionsHom_naturality {U U' : X.AffineZariskiSite} (i : U �
 The isomorphism identifies the inverse image of the affine open `U` with the chart
 `Spec Γ(A.X, U)`, then uses the ordinary identification of the global functions on a spectrum. -/
 def relativeSpecCoverFunctionAlgebraSectionsRingEquiv (U : X.AffineZariskiSite) :
-    Γ(A.relativeSpecToBase.pushforwardStructureAlgebra.X, U.1) ≃+* Γ(A.X, U.1) :=
-  (A.relativeSpecToBase.pushforwardStructureAlgebraSectionsRingEquiv U.1).trans
+    Γ(A.relativeSpecToBase.pushforwardStructureAlgebra.X, U.val) ≃+* Γ(A.X, U.val) :=
+  (A.relativeSpecToBase.pushforwardStructureAlgebraSectionsRingEquiv U.val).trans
     (@asIso _ _ _ _ (chartSectionsHom A U) (isIso_chartSectionsHom A U)).commRingCatIsoToRingEquiv
 
 /-- Over an affine open `U`, the section comparison pulls a function back along the chart
 `Spec Γ(A.X, U)` and evaluates it through `Scheme.ΓSpecIso`. -/
 lemma relativeSpecCoverFunctionAlgebraSectionsRingEquiv_apply (U : X.AffineZariskiSite)
-    (x : Γ(A.relativeSpecToBase.pushforwardStructureAlgebra.X, U.1)) :
+    (x : Γ(A.relativeSpecToBase.pushforwardStructureAlgebra.X, U.val)) :
     A.relativeSpecCoverFunctionAlgebraSectionsRingEquiv U x =
-      (Scheme.ΓSpecIso (CommRingCat.of Γ(A.X, U.1))).hom
+      (Scheme.ΓSpecIso (CommRingCat.of Γ(A.X, U.val))).hom
         ((A.relativeSpecCover.f U).appLE _ ⊤ (A.top_le_preimage_relativeSpecToBase U)
-          (A.relativeSpecToBase.pushforwardStructureAlgebraSectionsRingEquiv U.1 x)) :=
+          (A.relativeSpecToBase.pushforwardStructureAlgebraSectionsRingEquiv U.val x)) :=
   (rfl)
 
 /-- The section comparisons over affine opens, as an isomorphism of presheaves of rings on the
@@ -164,11 +164,11 @@ private lemma toSectionsPresheaf_comp_pushforwardSectionsPresheafIso_hom :
       (A.relativeSpecCover.f V ≫ A.relativeSpecToBase).appLE V.toOpens ⊤
         (A.top_le_preimage_relativeSpecToBase V) :=
     (Scheme.Hom.comp_appLE _ _ _ _ _).symm
-  have h2 := Scheme.Hom.appLE_ΓSpecIso_hom_naturality V.2.fromSpec _
-    (A.relativeSpecCover_f_relativeSpecToBase V) V.2.fromSpec_preimage_self.ge
+  have h2 := Scheme.Hom.appLE_ΓSpecIso_hom_naturality V.property.fromSpec _
+    (A.relativeSpecCover_f_relativeSpecToBase V) V.property.fromSpec_preimage_self.ge
     (A.top_le_preimage_relativeSpecToBase V)
   have h3 := (congrArg (· ≫ (Scheme.ΓSpecIso Γ(X, V.toOpens)).hom)
-    (V.2.fromSpec_appLE_self V.2.fromSpec_preimage_self.ge)).trans (Iso.inv_hom_id _)
+    (V.property.fromSpec_appLE_self V.property.fromSpec_preimage_self.ge)).trans (Iso.inv_hom_id _)
   exact (Category.assoc _ _ _).symm.trans ((congrArg (· ≫ _) h1).trans
     (h2.trans ((congrArg (· ≫ _) h3).trans (Category.id_comp _))))
 
@@ -184,8 +184,8 @@ def relativeSpecPushforwardIso : A.relativeSpecToBase.pushforwardStructureAlgebr
 `relativeSpecCoverFunctionAlgebraSectionsRingEquiv`. -/
 -- Not a simp lemma: `CommMon.sectionsAlgHom_apply` already rewrites its left-hand side.
 lemma sectionsAlgHom_relativeSpecPushforwardIso_hom_apply (U : X.AffineZariskiSite)
-    (x : Γ(A.relativeSpecToBase.pushforwardStructureAlgebra.X, U.1)) :
-    CommMon.sectionsAlgHom A.relativeSpecPushforwardIso.hom U.1 x =
+    (x : Γ(A.relativeSpecToBase.pushforwardStructureAlgebra.X, U.val)) :
+    CommMon.sectionsAlgHom A.relativeSpecPushforwardIso.hom U.val x =
       A.relativeSpecCoverFunctionAlgebraSectionsRingEquiv U x := by
   have h := pushforwardSectionsPresheafIso_hom_app A U
   rw [Scheme.Hom.pushforwardStructureAlgebraPresheafIso_hom_app] at h
@@ -206,8 +206,8 @@ lemma relativeSpecPushforwardIso_hom_naturality (f : A ⟶ B) :
   suffices h : ∀ V : X.AffineZariskiSite, ∀ x,
       CommMon.sectionsAlgHom (Scheme.Hom.pushforwardStructureAlgebraMap
         (CommMon.relativeSpecMap f) (CommMon.relativeSpecMap_relativeSpecToBase f) ≫
-          B.relativeSpecPushforwardIso.hom) V.1 x =
-      CommMon.sectionsAlgHom (A.relativeSpecPushforwardIso.hom ≫ f) V.1 x from
+          B.relativeSpecPushforwardIso.hom) V.val x =
+      CommMon.sectionsAlgHom (A.relativeSpecPushforwardIso.hom ≫ f) V.val x from
     AlgHom.ext (h ⟨U, hU⟩)
   intro V x
   let g := CommMon.relativeSpecMap f

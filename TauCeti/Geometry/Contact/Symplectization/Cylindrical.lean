@@ -37,9 +37,13 @@ The symplectization form `Ω((s, v), (t, w)) = s a(w) - t a(v) + B(v, w)`
 for a contact covector (`Module.Dual.symplectizationSymplecticForm`). Every cylindrical `J` is
 compatible with it (`Module.Dual.IsCylindricalComplexStructure.compatible`):
 `Ω(x, J x) = s² + a(v)² + B(u, J u)`, which is positive for `x ≠ 0`. This is the positivity
-behind the energy of holomorphic curves in cylindrical ends. Cylindrical complex structures exist
-(`Module.Dual.IsContact.exists_isCylindricalComplexStructure`): extend a complex structure on the
-symplectic vector space `(ker a, B)` compatible with `B`, as provided by
+behind the energy of holomorphic curves in cylindrical ends; its two parts are nonnegative
+separately: the `ds ∧ a` part `s a(w) - t a(v)`, for `J x = (t, w)`, is `s² + a(v)²`
+(`Module.Dual.IsCylindricalComplexStructure.mul_apply_snd_sub_fst_mul`), and the `B` part
+`B(v, w) = B(u, J u)` is nonnegative
+(`Module.Dual.IsCylindricalComplexStructure.apply_apply_snd_nonneg`). Cylindrical complex
+structures exist (`Module.Dual.IsContact.exists_isCylindricalComplexStructure`): extend a complex
+structure on the symplectic vector space `(ker a, B)` compatible with `B`, as provided by
 `TauCeti.SymplecticForm.exists_compatible`, by the formula above.
 
 ## Main declarations
@@ -51,6 +55,9 @@ symplectic vector space `(ker a, B)` compatible with `B`, as provided by
   a symplectic form.
 * `Module.Dual.IsCylindricalComplexStructure.compatible`: a cylindrical complex structure is
   compatible with the symplectization form.
+* `Module.Dual.IsCylindricalComplexStructure.mul_apply_snd_sub_fst_mul`,
+  `Module.Dual.IsCylindricalComplexStructure.apply_apply_snd_nonneg`: the `ds ∧ a` and `B` parts
+  of the symplectization form on `(x, J x)` are nonnegative.
 * `Module.Dual.IsContact.exists_isCylindricalComplexStructure`: existence.
 
 ## References
@@ -115,8 +122,47 @@ theorem apply_eq (hJ : a.IsCylindricalComplexStructure B J) (ha : a.IsContact B)
     hJ.apply_zero_reebVector, hJ.apply_zero_eq (ha.apply_sub_smul_reebVector v)]
   ext <;> simp
 
+/-- The first coordinate of `J (s, v)` is `-a v`. -/
+theorem fst_apply (hJ : a.IsCylindricalComplexStructure B J) (ha : a.IsContact B) (s : ℝ)
+    (v : V) : (J (s, v)).1 = -a v := by
+  simp [hJ.apply_eq ha s v]
+
+/-- The second coordinate of `J (s, v)` takes the value `s` under `a`. -/
+theorem apply_snd_apply (hJ : a.IsCylindricalComplexStructure B J) (ha : a.IsContact B) (s : ℝ)
+    (v : V) : a (J (s, v)).2 = s := by
+  simp [hJ.apply_eq ha s v, ha.apply_reebVector,
+    hJ.apply_snd_apply_zero _ (ha.apply_sub_smul_reebVector v)]
+
+/-- **The `ds ∧ a` part of the symplectization form on `(x, J x)`.** For `x = (s, v)` and
+`J x = (t, w)`, `s a(w) - t a(v) = s² + a(v)²`. -/
+theorem mul_apply_snd_sub_fst_mul (hJ : a.IsCylindricalComplexStructure B J)
+    (ha : a.IsContact B) (s : ℝ) (v : V) :
+    s * a (J (s, v)).2 - (J (s, v)).1 * a v = s ^ 2 + a v ^ 2 := by
+  rw [hJ.apply_snd_apply ha, hJ.fst_apply ha]
+  ring
+
 variable (hB : B.IsAlt) (ha : a.IsContact B)
 include hB ha
+
+/-- **The `B` part of the symplectization form on `(x, J x)`.** For `x = (s, v)`, the value
+`B(v, (J x)₂)` is `B(u, J u)`, where `u = v - a(v) R` is the component of `v` in `ker a`. -/
+theorem apply_apply_snd_eq (hJ : a.IsCylindricalComplexStructure B J) (s : ℝ) (v : V) :
+    B v (J (s, v)).2 =
+      B (v - a v • a.reebVector B) (J (0, v - a v • a.reebVector B)).2 := by
+  have key := ha.apply_sub_smul_reebVector_apply hB v (J (0, v - a v • a.reebVector B)).2
+  rw [hJ.apply_snd_apply_zero _ (ha.apply_sub_smul_reebVector v), zero_smul, sub_zero] at key
+  simp only [hJ.apply_eq ha s v, map_add, map_smul, ha.apply_reebVector_right hB, smul_zero,
+    zero_add]
+  exact key.symm
+
+/-- **The `B` part of the symplectization form on `(x, J x)` is nonnegative:**
+`0 ≤ B(v, (J (s, v))₂)`. -/
+theorem apply_apply_snd_nonneg (hJ : a.IsCylindricalComplexStructure B J) (s : ℝ) (v : V) :
+    0 ≤ B v (J (s, v)).2 := by
+  rw [hJ.apply_apply_snd_eq hB ha]
+  rcases eq_or_ne (v - a v • a.reebVector B) 0 with h | h
+  · rw [h, map_zero, LinearMap.zero_apply]
+  · exact (hJ.pos _ (ha.apply_sub_smul_reebVector v) h).le
 
 /-- The symplectization form evaluated on `x = (s, v)` and `J x` is `s² + a(v)² + B(u, J u)`,
 where `u = v - a(v) R` is the component of `v` in `ker a`. -/
@@ -125,15 +171,8 @@ theorem symplectizationForm_apply_eq (hJ : a.IsCylindricalComplexStructure B J) 
     a.symplectizationForm B (s, v) (J (s, v)) =
       s ^ 2 + a v ^ 2 + B (v - a v • a.reebVector B)
         (J (0, v - a v • a.reebVector B)).2 := by
-  have hu := ha.apply_sub_smul_reebVector v
-  have hj := hJ.apply_snd_apply_zero _ hu
-  have hBv : B v (J (0, v - a v • a.reebVector B)).2 =
-      B (v - a v • a.reebVector B) (J (0, v - a v • a.reebVector B)).2 := by
-    rw [← ha.apply_sub_smul_reebVector_apply hB v, hj, zero_smul, sub_zero]
-  rw [hJ.apply_eq ha s v, symplectizationForm_apply]
-  simp only [map_add, map_smul, ha.apply_reebVector, hj, ha.apply_reebVector_right hB, hBv,
-    smul_eq_mul]
-  ring
+  rw [symplectizationForm_apply, ← hJ.apply_apply_snd_eq hB ha s v,
+    ← hJ.mul_apply_snd_sub_fst_mul ha s v]
 
 /-- The symplectization form is positive on the pairs `(x, J x)` with `x ≠ 0`. -/
 private theorem symplectizationForm_apply_pos (hJ : a.IsCylindricalComplexStructure B J)
@@ -216,10 +255,10 @@ theorem IsContact.exists_isCylindricalComplexStructure (hB : B.IsAlt) (ha : a.Is
     fun v ↦ by simp [ξ, hR1]
   have hπ : ∀ v, (π v : V) = v - a v • R := fun _ ↦ rfl
   have hπξ : ∀ v : ξ, π v = v := fun v ↦ Subtype.ext <| by
-    rw [hπ, LinearMap.mem_ker.1 v.2, zero_smul, sub_zero]
-  have hjξ : ∀ v : ξ, a (j v : V) = 0 := fun v ↦ (j v).2
+    rw [hπ, LinearMap.mem_ker.1 v.property, zero_smul, sub_zero]
+  have hjξ : ∀ v : ξ, a (j v : V) = 0 := fun v ↦ (j v).property
   have hπR : ∀ (s : ℝ) (v : ξ), π (s • R + (v : V)) = v := fun s v ↦ Subtype.ext <| by
-    rw [hπ, map_add, map_smul, hR1, LinearMap.mem_ker.1 v.2, smul_eq_mul, mul_one, add_zero]
+    rw [hπ, map_add, map_smul, hR1, LinearMap.mem_ker.1 v.property, smul_eq_mul, mul_one, add_zero]
     abel
   -- The cylindrical extension `(s, v) ↦ (-a v, s R + j (π v))` of `j`.
   let L : ℝ × V →ₗ[ℝ] ℝ × V :=

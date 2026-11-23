@@ -12,11 +12,15 @@ public import Mathlib.Data.PNat.Basic
 public import Mathlib.Data.Set.Card
 public import Mathlib.Dynamics.Flow
 public import Mathlib.GroupTheory.GroupAction.Quotient
+public import Mathlib.Topology.Instances.AddCircle.Defs
 public import Mathlib.Topology.MetricSpace.Pseudo.Lemmas
 public import Mathlib.Topology.Separation.Basic
+public import TauCeti.Algebra.AddCircle
 public import TauCeti.Dynamics.Flow.Basic
 public import TauCeti.Topology.Instances.AddCircle.Cover
 import Mathlib.GroupTheory.Archimedean
+import Mathlib.GroupTheory.ArchimedeanDensely
+import Mathlib.GroupTheory.SpecificGroups.Cyclic
 import Mathlib.Topology.Algebra.Order.Archimedean
 
 /-!
@@ -82,6 +86,9 @@ iterates.
   `ZMod γ.multiplicity`.
 * `Flow.ClosedOrbit.iterate γ k`: the `k`-fold iterate of `γ`.
 * `Flow.ClosedOrbit.primitive γ`: the primitive closed orbit underlying `γ`.
+* `Flow.PeriodicTrajectory.circleMap γ`: the parametrized loop `AddCircle γ.period → α`.
+* `Flow.ClosedOrbit.reparam γ`: the injection `ZMod γ.multiplicity →+ AddCircle γ.period` onto
+  `γ.reparamSubgroup`.
 
 ## Main results
 
@@ -102,6 +109,9 @@ iterates.
   primitive closed orbit by its multiplicity.
 * `Flow.ClosedOrbit.equivPrimitiveProdPNat`: closed orbits correspond to primitive closed orbits
   with a positive number of iterations.
+* `Flow.ClosedOrbit.reparamSubgroup_eq_torsionBy`, `Flow.ClosedOrbit.reparamSubgroup_eq_bot_iff`:
+  the reparametrization subgroup is the `multiplicity`-torsion of `AddCircle γ.period`, and it is
+  trivial exactly for primitive closed orbits.
 
 ## References
 
@@ -245,6 +255,16 @@ theorem apply_minimalPeriod (x : α) : ϕ (ϕ.minimalPeriod x) x = x := by
   rw [h0]
   exact ϕ.mem_periods.1 (zero_mem _)
 
+/-- If the periods of `x` are the integer multiples of `t ≥ 0`, then `t` is the minimal period of
+`x`. No separation assumption on the space is needed. -/
+theorem minimalPeriod_eq_of_periods_eq_zmultiples (h : ϕ.periods x = AddSubgroup.zmultiples t)
+    (ht : 0 ≤ t) : ϕ.minimalPeriod x = t := by
+  rcases ht.eq_or_lt with rfl | ht
+  · have hT := ϕ.apply_minimalPeriod x
+    rwa [← mem_periods, h, AddSubgroup.zmultiples_zero_eq_bot, AddSubgroup.mem_bot] at hT
+  rw [minimalPeriod, h]
+  exact (AddSubgroup.isLeast_of_closure_iff_eq_abs.2 ⟨(abs_of_pos ht).symm, ht⟩).csInf_eq
+
 /-- The minimal period is positive exactly at periodic points which are not rest points. -/
 theorem minimalPeriod_pos_iff [T1Space α] :
     0 < ϕ.minimalPeriod x ↔ (∃ t, ϕ t x ≠ x) ∧ ∃ t ≠ 0, ϕ t x = x := by
@@ -286,6 +306,9 @@ structure PeriodicTrajectory where
 namespace PeriodicTrajectory
 
 variable {ϕ}
+
+instance instFactPosPeriod (γ : PeriodicTrajectory ϕ) : Fact (0 < γ.period) :=
+  ⟨γ.period_pos⟩
 
 /-- The flow rotates periodic trajectories: `s +ᵥ γ` has base point `ϕ s γ.point` and the same
 period. -/
@@ -376,6 +399,21 @@ theorem circleMap_vadd (s : ℝ) (γ : PeriodicTrajectory ϕ) (θ : AddCircle γ
 theorem range_circleMap (γ : PeriodicTrajectory ϕ) : range γ.circleMap = orbit ϕ γ.point := by
   ext y
   simp only [mem_range, (QuotientAddGroup.mk_surjective).exists, circleMap_coe, mem_orbit_iff]
+
+/-- The period of `γ.iterate k` is an integer multiple of `γ.period`. -/
+theorem period_iterate_mem_zmultiples (γ : PeriodicTrajectory ϕ) (k : ℕ+) :
+    (γ.iterate k).period ∈ AddSubgroup.zmultiples γ.period :=
+  AddSubgroup.mem_zmultiples_iff.2 ⟨(k : ℕ), by rw [period_iterate, natCast_zsmul, nsmul_eq_mul]⟩
+
+/-- The circle parametrization of `γ.iterate k` factors through `γ.circleMap` along the `k`-sheeted
+covering map `AddCircle.coverMap`. -/
+@[simp]
+theorem circleMap_iterate (γ : PeriodicTrajectory ϕ) (k : ℕ+)
+    (θ : AddCircle (γ.iterate k).period) :
+    (γ.iterate k).circleMap θ =
+      γ.circleMap (AddCircle.coverMap (γ.period_iterate_mem_zmultiples k) θ) := by
+  induction θ using QuotientAddGroup.induction_on with
+  | H t => simp
 
 /-- The **asymptotic markers** of a periodic trajectory `γ` over a point `p`: the parameters
 `θ : AddCircle γ.period` at which `γ.circleMap` passes through `p`. On a `T₁` space, for each
@@ -492,6 +530,9 @@ theorem support_mk (γ : PeriodicTrajectory ϕ) : (mk γ).support = orbit ϕ γ.
 
 theorem period_pos (γ : ClosedOrbit ϕ) : 0 < γ.period :=
   γ.ind fun γ ↦ γ.period_pos
+
+instance instFactPosPeriod (γ : ClosedOrbit ϕ) : Fact (0 < γ.period) :=
+  ⟨γ.period_pos⟩
 
 theorem minimalPeriod_pos [T1Space α] (γ : ClosedOrbit ϕ) : 0 < γ.minimalPeriod :=
   γ.ind fun γ ↦ γ.minimalPeriod_pos
@@ -681,7 +722,7 @@ theorem primitive_iterate_multiplicity (γ : ClosedOrbit ϕ) :
 iterations, by taking the iterate. -/
 def equivPrimitiveProdPNat : ClosedOrbit ϕ ≃ {γ : ClosedOrbit ϕ // γ.IsPrimitive} × ℕ+ where
   toFun γ := (⟨γ.primitive, γ.isPrimitive_primitive⟩, γ.multiplicity)
-  invFun p := p.1.1.iterate p.2
+  invFun p := p.1.val.iterate p.2
   left_inv γ := γ.primitive_iterate_multiplicity
   right_inv := fun ⟨⟨γ, hγ⟩, k⟩ ↦ by
     refine Prod.ext (Subtype.ext ?_) ?_
@@ -695,7 +736,7 @@ theorem equivPrimitiveProdPNat_apply (γ : ClosedOrbit ϕ) :
 
 @[simp]
 theorem equivPrimitiveProdPNat_symm_apply (p : {γ : ClosedOrbit ϕ // γ.IsPrimitive} × ℕ+) :
-    equivPrimitiveProdPNat.symm p = p.1.1.iterate p.2 :=
+    equivPrimitiveProdPNat.symm p = p.1.val.iterate p.2 :=
   (rfl)
 
 /-- The period of a closed orbit is an integer multiple of its minimal period. -/
@@ -770,6 +811,143 @@ theorem period_div_two_mem_reparamSubgroup_iff (γ : ClosedOrbit ϕ) :
       Even (γ.multiplicity : ℕ) :=
   @AddCircle.period_div_two_mem_zmultiples_iff _ _ ⟨γ.period_pos⟩ _
     γ.multiplicity_mul_minimalPeriod.symm
+
+/-- The minimal period of `γ` equals `γ.period / γ.multiplicity` in `ℝ`. -/
+theorem minimalPeriod_eq_period_div_multiplicity (γ : ClosedOrbit ϕ) :
+    γ.minimalPeriod = γ.period / γ.multiplicity := by
+  have hm : (γ.multiplicity : ℝ) ≠ 0 := Nat.cast_ne_zero.2 γ.multiplicity.ne_zero
+  exact (eq_div_iff hm).2 (by rw [mul_comm]; exact γ.multiplicity_mul_minimalPeriod)
+
+omit [T1Space α] in
+/-- Membership in `γ.reparamSubgroup` means being an integer multiple of `[γ.minimalPeriod]`. -/
+theorem mem_reparamSubgroup_iff {γ : ClosedOrbit ϕ} {θ : AddCircle γ.period} :
+    θ ∈ γ.reparamSubgroup ↔ ∃ i : ℤ, i • (γ.minimalPeriod : AddCircle γ.period) = θ :=
+  AddSubgroup.mem_zmultiples_iff
+
+omit [T1Space α] in
+/-- The class of `γ.minimalPeriod` generates and therefore belongs to `γ.reparamSubgroup`. -/
+@[simp]
+theorem coe_minimalPeriod_mem_reparamSubgroup (γ : ClosedOrbit ϕ) :
+    (γ.minimalPeriod : AddCircle γ.period) ∈ γ.reparamSubgroup :=
+  AddSubgroup.mem_zmultiples _
+
+/-- An element of `AddCircle γ.period` lies in `γ.reparamSubgroup` if and only if it is killed by
+`AddCircle.coverMap` onto `AddCircle γ.minimalPeriod`. -/
+theorem mem_reparamSubgroup_iff_coverMap_eq_zero {γ : ClosedOrbit ϕ} {θ : AddCircle γ.period} :
+    θ ∈ γ.reparamSubgroup ↔ AddCircle.coverMap γ.period_mem_zmultiples_minimalPeriod θ = 0 := by
+  rw [reparamSubgroup_eq_ker_coverMap, AddMonoidHom.mem_ker]
+
+/-- The reparametrization subgroup of `γ` is the `γ.multiplicity`-torsion subgroup of
+`AddCircle γ.period`. -/
+theorem reparamSubgroup_eq_torsionBy (γ : ClosedOrbit ϕ) :
+    γ.reparamSubgroup = AddSubgroup.torsionBy (AddCircle γ.period) (γ.multiplicity : ℤ) := by
+  have hm : ((γ.multiplicity : ℕ) : ℝ) ≠ 0 := Nat.cast_ne_zero.2 γ.multiplicity.ne_zero
+  rw [reparamSubgroup, γ.minimalPeriod_eq_period_div_multiplicity,
+    AddCircle.torsionBy_eq_zmultiples γ.period hm]
+
+/-- An element of `AddCircle γ.period` lies in `γ.reparamSubgroup` if and only if its
+`γ.multiplicity`-fold sum vanishes. -/
+theorem mem_reparamSubgroup_iff_nsmul_eq_zero {γ : ClosedOrbit ϕ} {θ : AddCircle γ.period} :
+    θ ∈ γ.reparamSubgroup ↔ (γ.multiplicity : ℕ) • θ = 0 := by
+  rw [reparamSubgroup_eq_torsionBy, AddSubgroup.torsionBy.nsmul_iff]
+
+/-- The reparametrization subgroup of `γ` is trivial if and only if `γ` is primitive. -/
+theorem reparamSubgroup_eq_bot_iff {γ : ClosedOrbit ϕ} :
+    γ.reparamSubgroup = ⊥ ↔ γ.IsPrimitive := by
+  rw [AddSubgroup.eq_bot_iff_card, γ.natCard_reparamSubgroup, PNat.coe_eq_one_iff,
+    ← isPrimitive_iff_multiplicity_eq_one]
+
+/-- The reparametrization subgroup of the underlying primitive closed orbit is trivial. -/
+@[simp]
+theorem reparamSubgroup_primitive (γ : ClosedOrbit ϕ) : γ.primitive.reparamSubgroup = ⊥ :=
+  reparamSubgroup_eq_bot_iff.2 γ.isPrimitive_primitive
+
+/-- The inverse of `zmodEquivReparamSubgroup` sends `i • [γ.minimalPeriod]` to
+`(i : ZMod γ.multiplicity)`. -/
+@[simp]
+theorem zmodEquivReparamSubgroup_symm_apply_zsmul (γ : ClosedOrbit ϕ) (i : ℤ)
+    (hmem : i • (γ.minimalPeriod : AddCircle γ.period) ∈ γ.reparamSubgroup) :
+    γ.zmodEquivReparamSubgroup.symm ⟨i • (γ.minimalPeriod : AddCircle γ.period), hmem⟩ = i :=
+  γ.zmodEquivReparamSubgroup.symm_apply_eq.2
+    (Subtype.ext (γ.coe_zmodEquivReparamSubgroup_intCast i)).symm
+
+/-- The inverse of `zmodEquivReparamSubgroup` sends `n • [γ.minimalPeriod]` to
+`(n : ZMod γ.multiplicity)`. -/
+@[simp]
+theorem zmodEquivReparamSubgroup_symm_apply_nsmul (γ : ClosedOrbit ϕ) (n : ℕ)
+    (hmem : n • (γ.minimalPeriod : AddCircle γ.period) ∈ γ.reparamSubgroup) :
+    γ.zmodEquivReparamSubgroup.symm ⟨n • (γ.minimalPeriod : AddCircle γ.period), hmem⟩ = n :=
+  γ.zmodEquivReparamSubgroup.symm_apply_eq.2
+    (Subtype.ext (γ.coe_zmodEquivReparamSubgroup_natCast n)).symm
+
+/-- The inverse of `zmodEquivReparamSubgroup` sends the generator `[γ.minimalPeriod]` to `1`. -/
+@[simp]
+theorem zmodEquivReparamSubgroup_symm_apply_coe_minimalPeriod (γ : ClosedOrbit ϕ)
+    (hmem : (γ.minimalPeriod : AddCircle γ.period) ∈ γ.reparamSubgroup) :
+    γ.zmodEquivReparamSubgroup.symm ⟨(γ.minimalPeriod : AddCircle γ.period), hmem⟩ = 1 :=
+  γ.zmodEquivReparamSubgroup.symm_apply_eq.2 (Subtype.ext γ.coe_zmodEquivReparamSubgroup_one).symm
+
+/-- The canonical injection `ZMod γ.multiplicity →+ AddCircle γ.period` onto
+`γ.reparamSubgroup`. -/
+def reparam (γ : ClosedOrbit ϕ) : ZMod γ.multiplicity →+ AddCircle γ.period :=
+  (AddSubgroup.subtype γ.reparamSubgroup).comp γ.zmodEquivReparamSubgroup.toAddMonoidHom
+
+/-- Unfolds `Flow.ClosedOrbit.reparam` as the subtype inclusion composed with
+`zmodEquivReparamSubgroup`. -/
+theorem reparam_def (γ : ClosedOrbit ϕ) :
+    γ.reparam =
+      (AddSubgroup.subtype γ.reparamSubgroup).comp γ.zmodEquivReparamSubgroup.toAddMonoidHom :=
+  (rfl)
+
+/-- Coercing `γ.zmodEquivReparamSubgroup j` to `AddCircle γ.period` yields `γ.reparam j`. -/
+theorem coe_zmodEquivReparamSubgroup_apply (γ : ClosedOrbit ϕ) (j : ZMod γ.multiplicity) :
+    (γ.zmodEquivReparamSubgroup j : AddCircle γ.period) = γ.reparam j :=
+  (rfl)
+
+/-- Every `γ.reparam j` belongs to `γ.reparamSubgroup`. -/
+@[simp]
+theorem reparam_mem_reparamSubgroup (γ : ClosedOrbit ϕ) (j : ZMod γ.multiplicity) :
+    γ.reparam j ∈ γ.reparamSubgroup :=
+  (γ.zmodEquivReparamSubgroup j).property
+
+/-- `zmodEquivReparamSubgroup.symm` recovers `j` from `γ.reparam j`. -/
+@[simp]
+theorem zmodEquivReparamSubgroup_symm_apply_reparam (γ : ClosedOrbit ϕ)
+    (j : ZMod γ.multiplicity) (hmem : γ.reparam j ∈ γ.reparamSubgroup) :
+    γ.zmodEquivReparamSubgroup.symm ⟨γ.reparam j, hmem⟩ = j :=
+  γ.zmodEquivReparamSubgroup.symm_apply_apply j
+
+theorem reparam_injective (γ : ClosedOrbit ϕ) : Function.Injective γ.reparam :=
+  Subtype.coe_injective.comp γ.zmodEquivReparamSubgroup.injective
+
+/-- `γ.reparam` is injective as an equality equivalence. -/
+@[simp]
+theorem reparam_inj (γ : ClosedOrbit ϕ) {j k : ZMod γ.multiplicity} :
+    γ.reparam j = γ.reparam k ↔ j = k :=
+  γ.reparam_injective.eq_iff
+
+/-- `γ.reparam j = 0` if and only if `j = 0`. -/
+@[simp]
+theorem reparam_eq_zero (γ : ClosedOrbit ϕ) {j : ZMod γ.multiplicity} :
+    γ.reparam j = 0 ↔ j = 0 := by
+  rw [← γ.reparam.map_zero, γ.reparam_inj]
+
+theorem reparam_intCast (γ : ClosedOrbit ϕ) (i : ℤ) :
+    γ.reparam i = ((i * γ.minimalPeriod : ℝ) : AddCircle γ.period) := by
+  rw [← coe_zmodEquivReparamSubgroup_apply, coe_zmodEquivReparamSubgroup_intCast,
+    ← AddCircle.coe_zsmul, zsmul_eq_mul]
+
+theorem reparam_natCast (γ : ClosedOrbit ϕ) (n : ℕ) :
+    γ.reparam n = ((n * γ.minimalPeriod : ℝ) : AddCircle γ.period) := by
+  rw [← Int.cast_natCast, γ.reparam_intCast, Int.cast_natCast]
+
+theorem reparam_one (γ : ClosedOrbit ϕ) :
+    γ.reparam 1 = (γ.minimalPeriod : AddCircle γ.period) := by
+  rw [← Int.cast_one, γ.reparam_intCast, Int.cast_one, one_mul]
+
+@[simp]
+theorem range_reparam (γ : ClosedOrbit ϕ) : Set.range γ.reparam = γ.reparamSubgroup := by
+  simp [reparam]
 
 end T1Space
 
@@ -912,7 +1090,7 @@ def equivMarkersOver (γ : PeriodicTrajectory ϕ) {p : α} {θ₀ : AddCircle γ
   toFun k := ⟨θ₀ + (γ.zmodEquivReparamSubgroup k : AddCircle γ.period),
     (γ.mem_markersOver_iff_sub_mem_reparamSubgroup hθ₀).2 <| by simp⟩
   invFun θ := γ.zmodEquivReparamSubgroup.symm
-    ⟨θ.1 - θ₀, (γ.mem_markersOver_iff_sub_mem_reparamSubgroup hθ₀).1 θ.2⟩
+    ⟨θ.val - θ₀, (γ.mem_markersOver_iff_sub_mem_reparamSubgroup hθ₀).1 θ.property⟩
   left_inv k := by
     apply γ.zmodEquivReparamSubgroup.injective
     rw [AddEquiv.apply_symm_apply]
@@ -921,7 +1099,7 @@ def equivMarkersOver (γ : PeriodicTrajectory ϕ) {p : α} {θ₀ : AddCircle γ
   right_inv θ := Subtype.ext <| by
     dsimp only
     rw [AddEquiv.apply_symm_apply]
-    exact add_sub_cancel θ₀ θ.1
+    exact add_sub_cancel θ₀ θ.val
 
 @[simp]
 theorem coe_equivMarkersOver_apply (γ : PeriodicTrajectory ϕ) {p : α}

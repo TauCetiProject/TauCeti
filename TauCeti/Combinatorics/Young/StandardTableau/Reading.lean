@@ -132,10 +132,11 @@ so on.  Its Young symmetrizer is the one used by `Nat.Partition.youngSymmetrizer
 noncomputable def rowSuperstandard (μ : YoungDiagram) : StandardYoungTableau μ where
   toTableau :=
     Equiv.ofBijective
-      (fun c => ⟨YoungDiagram.readingIndex μ c.1, YoungDiagram.readingIndex_lt_card c.2⟩)
+      (fun c => ⟨YoungDiagram.readingIndex μ c.val, YoungDiagram.readingIndex_lt_card c.property⟩)
       ((Fintype.bijective_iff_injective_and_card _).mpr
         ⟨fun c d hcd =>
-          Subtype.ext (YoungDiagram.eq_of_readingIndex_eq c.2 d.2 (congrArg Fin.val hcd)),
+          Subtype.ext (YoungDiagram.eq_of_readingIndex_eq c.property d.property
+              (congrArg Fin.val hcd)),
           by simp⟩)
   row_strict' := fun {i j₁ j₂} h _ =>
     Fin.lt_def.mpr (YoungDiagram.readingIndex_lt_readingIndex_of_snd_lt
@@ -147,7 +148,7 @@ noncomputable def rowSuperstandard (μ : YoungDiagram) : StandardYoungTableau μ
 /-- The row-superstandard tableau labels a cell by its reading index. -/
 @[simp]
 theorem rowSuperstandard_apply_val (μ : YoungDiagram) (c : ↥μ.cells) :
-    (rowSuperstandard μ c).val = YoungDiagram.readingIndex μ c.1 := by
+    (rowSuperstandard μ c).val = YoungDiagram.readingIndex μ c.val := by
   -- `rowSuperstandard` is not `@[expose]`d, so its body is reached through its equation lemma
   -- rather than by definitional unfolding.
   rw [rowSuperstandard]
@@ -163,7 +164,7 @@ noncomputable def colSuperstandard (μ : YoungDiagram) : StandardYoungTableau μ
 the transposed diagram. -/
 @[simp]
 theorem colSuperstandard_apply_val (μ : YoungDiagram) (c : ↥μ.cells) :
-    (colSuperstandard μ c).val = YoungDiagram.readingIndex μ.transpose c.1.swap := by
+    (colSuperstandard μ c).val = YoungDiagram.readingIndex μ.transpose c.val.swap := by
   rw [colSuperstandard, transposeEquiv_symm_apply_val, rowSuperstandard_apply_val]
 
 /-- Transposing the column-superstandard tableau of `μ` gives the row-superstandard tableau of the

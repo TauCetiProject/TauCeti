@@ -83,8 +83,8 @@ private theorem taylor_gradedCoderiv_of_tprod (h : 𝒜.StrictUnit e)
     (hj : x j = e) (h𝒟j : 𝒟 j = -1) :
     𝒜.taylor (gradedCoderiv (𝒜.grading.shift 1) F q
         (of R A ⟨n + 1, n.succ_pos⟩ (PiTensorProduct.tprod R x))) =
-      (if j.1 = 0 ∧ 0 < n then negOnePowCast R q • F (subword R x 1 n) else 0) +
-        (if j.1 = n ∧ 0 < n then 𝒜.grading.koszulTwist 1 (F (subword R x 0 n)) else 0) := by
+      (if j.val = 0 ∧ 0 < n then negOnePowCast R q • F (subword R x 1 n) else 0) +
+        (if j.val = n ∧ 0 < n then 𝒜.grading.koszulTwist 1 (F (subword R x 0 n)) else 0) := by
   rw [gradedCoderiv_of_tprod_of_homogeneous _ F q _ x 𝒟 hx]
   simp only [map_sum, map_smul]
   have hjn := j.isLt
@@ -92,9 +92,9 @@ private theorem taylor_gradedCoderiv_of_tprod (h : 𝒜.StrictUnit e)
   have hterm : ∀ p ∈ Finset.range (n + 1), ∀ d ∈ Finset.range (n + 1 + 1),
       (((q * ∑ i ∈ Finset.range p, if h : i < n + 1 then 𝒟 ⟨i, h⟩ else 0).negOnePow : ℤ) : R) •
           𝒜.taylor (splice R x 0 (n + 1) p d (F (subword R x p d))) =
-        (if p = 1 ∧ d = n ∧ (j.1 = 0 ∧ 0 < n) then negOnePowCast R q • F (subword R x 1 n)
+        (if p = 1 ∧ d = n ∧ (j.val = 0 ∧ 0 < n) then negOnePowCast R q • F (subword R x 1 n)
           else 0) +
-        (if p = 0 ∧ d = n ∧ (j.1 = n ∧ 0 < n) then
+        (if p = 0 ∧ d = n ∧ (j.val = n ∧ 0 < n) then
           𝒜.grading.koszulTwist 1 (F (subword R x 0 n)) else 0) := by
     intro p hp d hd
     rw [Finset.mem_range] at hp hd
@@ -102,7 +102,7 @@ private theorem taylor_gradedCoderiv_of_tprod (h : 𝒜.StrictUnit e)
     swap
     · simp (disch := omega) only [splice_eq_zero_of_not_fits R _ _ hfit, map_zero, smul_zero,
         ite_eq_right, add_zero]
-    by_cases hblock : p ≤ j.1 ∧ j.1 < p + d
+    by_cases hblock : p ≤ j.val ∧ j.val < p + d
     · -- The collapsed block contains the unit, so `F` kills it.
       simp (disch := omega) only [LinearMap.mem_ker.mp (hFe (subword_mem_degenerateWords x
         ⟨j, hblock.1, hblock.2, hj⟩)), splice_zero, map_zero, smul_zero, ite_eq_right, add_zero]
@@ -153,9 +153,9 @@ private theorem hochschildDifferential_of_tprod_eq_zero (h : 𝒜.StrictUnit e)
     h.apply_barDifferential_of_tprod_of_ker hFe x j hj]
   rcases Nat.eq_zero_or_pos n with rfl | hn
   · simp
-  by_cases hj0 : j.1 = 0
+  by_cases hj0 : j.val = 0
   · simp (disch := omega) [hj0]
-  by_cases hjn' : j.1 = n
+  by_cases hjn' : j.val = n
   · have hF' : LinearMap.IsHomogeneous F (ReducedTensorWords.grading (𝒜.grading.shift 1)).piece
         (𝒜.grading.shift 1).piece q := by
       rwa [ReducedTensorWords.grading_piece]
@@ -210,7 +210,7 @@ def normalizedD (h : 𝒜.StrictUnit e) (p q : ℤ) (hpq : p + 1 = q) :
     normalizedCochains 𝒜 e p →ₗ[R] normalizedCochains 𝒜 e q :=
   (d 𝒜 p q hpq).restrict fun F hF ↦ by
     rw [mem_normalizedCochains, coe_d]
-    exact h.degenerateWords_le_ker_hochschildDifferential ((mem_cochains 𝒜).mp F.2)
+    exact h.degenerateWords_le_ker_hochschildDifferential ((mem_cochains 𝒜).mp F.property)
       (mem_normalizedCochains.mp hF)
 
 @[simp]
@@ -270,7 +270,7 @@ def normalizedBracket {E : ℤ} (he : e ∈ 𝒜.grading.piece E) {p q n : ℤ} 
       rw [mem_normalizedCochains, coe_bracket]
       exact degenerateWords_le_ker_gerstenhaberBracket _ p q
         (E := E - 1) (by rwa [InternalGrading.shift_piece, sub_add_cancel])
-        (mem_normalizedCochains.mp F.2) (mem_normalizedCochains.mp G.2)⟩)
+        (mem_normalizedCochains.mp F.property) (mem_normalizedCochains.mp G.property)⟩)
     (fun _ _ _ ↦ Subtype.ext (by simp))
     (fun _ _ _ ↦ Subtype.ext (by simp))
     (fun _ _ _ ↦ Subtype.ext (by simp))

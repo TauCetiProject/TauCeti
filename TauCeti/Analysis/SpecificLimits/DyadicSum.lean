@@ -5,9 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.SpecialFunctions.Pow.Real
+public import Mathlib.Analysis.SpecialFunctions.Pow.NNReal
 import Mathlib.Analysis.SpecificLimits.Basic
 import TauCeti.Analysis.SpecialFunctions.Pow.Real
+import TauCeti.Topology.Algebra.InfiniteSum.Real
 
 /-!
 # Sums over dyadic scales
@@ -45,6 +46,18 @@ exponents `s + δ` and `N (1 - δ)`, so the series sums to at most
 `E D^δ C^(1 - δ) d^δ r^(-(s + δ))` when `0 < s + δ < N (1 - δ)`. This is how increments of a
 kernel at distance `d`, cut into dyadic pieces, are bounded by `d^δ`.
 
+For `ε > 0`, the two-sided series `∑_{m ∈ ℤ} 2^{-ε |m|}` in `ℝ≥0∞` is finite, being the
+bilateral geometric series of ratio `2^{-ε}`. For `σ ≥ 1` the shifted sums
+`∑_{j ∈ ℤ} 2^{-ε |x - σ j|}` are at most `2^ε ∑_{m ∈ ℤ} 2^{-ε |m|}`, uniformly in `x`, since the
+points `σ j` are `1`-separated. These sum per-scale bounds over the dyadic time shells
+`|s - t| ≈ 2^j` in the endpoint Strichartz estimate.
+
+Finally, for a base `b > 1`, a function `R` antitone on `(0, ∞)` is bounded by step functions
+built from its values at the left endpoints of the scales `b ^ n s`: on `(0, s]` by the values
+`R (b⁻¹ ^ (n + 1) s)` on `(b⁻¹ ^ (n + 1) s, b⁻¹ ^ n s]`, and on `[s, ∞)` by the values `R (b ^ n s)`
+on `[b ^ n s, b ^ (n + 1) s)`. Taking `Lᵖ` norms of these step functions bounds that of `R` by
+dyadic series.
+
 ## Main declarations
 
 * `TauCeti.sum_min_zpow_mul_rpow_neg_le`: the uniform bound over any finite set of scales.
@@ -57,6 +70,13 @@ kernel at distance `d`, cut into dyadic pieces, are bounded by `d^δ`.
 * `TauCeti.exists_norm_le_of_hasSum_of_le_of_le`: a series whose terms are bounded by
   `D (2^j)^(s + 1) d` and by `C (2^j)^s (1 + 2^j r)^(-N)` sums to at most
   `E D^δ C^(1 - δ) d^δ r^(-(s + δ))`.
+* `TauCeti.tsum_two_rpow_neg_mul_abs_ne_top`, `TauCeti.tsum_two_rpow_neg_mul_abs_sub_le`: the
+  two-sided series `∑_{m ∈ ℤ} 2^{-ε |m|}` is finite and bounds its shifts by `σ`-separated points.
+* `TauCeti.sum_range_sub_le_tsum`: a sum over the truncation `-N ≤ k < N` of `ℤ` is at most the
+  sum over all of `ℤ`.
+* `AntitoneOn.le_tsum_indicator_Ioc`, `AntitoneOn.le_tsum_indicator_Ico`: a function antitone on
+  `(0, ∞)` is bounded on `(0, s]` and on `[s, ∞)` by its values at the left endpoints of the
+  intervals between consecutive scales `b ^ n s`.
 
 ## References
 
@@ -331,4 +351,92 @@ theorem exists_norm_le_of_hasSum_of_le_of_le {s δ : ℝ} {N : ℕ} (hsδ : 0 < 
     _ ≤ c * (E * r ^ (-(s + δ))) := mul_le_mul_of_nonneg_left hle (by positivity)
     _ = E * D ^ δ * C ^ (1 - δ) * d ^ δ * r ^ (-(s + δ)) := by ring
 
+open scoped ENNReal
+
+/-- `∑_{m ∈ ℤ} 2^{-ε |m|}` is finite for `ε > 0`: it is the bilateral geometric series of ratio
+`2^{-ε} < 1`. -/
+theorem tsum_two_rpow_neg_mul_abs_ne_top {ε : ℝ} (hε : 0 < ε) :
+    ∑' m : ℤ, (2 : ℝ≥0∞) ^ (-(ε * |(m : ℝ)|)) ≠ ∞ := by
+  have hr : (2 : ℝ) ^ (-ε) < 1 := Real.rpow_lt_one_of_one_lt_of_neg one_lt_two (by linarith)
+  have hterm (m : ℤ) :
+      (2 : ℝ≥0∞) ^ (-(ε * |(m : ℝ)|)) = ENNReal.ofReal (((2 : ℝ) ^ (-ε)) ^ m.natAbs) := by
+    rw [← Real.rpow_natCast, ← Real.rpow_mul zero_le_two, Nat.cast_natAbs, Int.cast_abs,
+      ← ENNReal.ofReal_rpow_of_pos two_pos, ENNReal.ofReal_ofNat, neg_mul]
+  rw [tsum_congr hterm, ← ENNReal.ofReal_tsum_of_nonneg (fun _ ↦ by positivity)
+    (summable_pow_natAbs (by positivity) hr)]
+  exact ENNReal.ofReal_ne_top
+
+/-- For `σ ≥ 1` and `ε > 0`, `∑_{j ∈ ℤ} 2^{-ε |x - σ j|}` is bounded uniformly in `x`: the points
+`σ j` are `1`-separated, so the sum is at most `2^ε ∑_{m ∈ ℤ} 2^{-ε |m|}`. -/
+theorem tsum_two_rpow_neg_mul_abs_sub_le {σ ε : ℝ} (hσ : 1 ≤ σ) (hε : 0 < ε) (x : ℝ) :
+    ∑' j : ℤ, (2 : ℝ≥0∞) ^ (-(ε * |x - σ * j|)) ≤
+      2 ^ ε * ∑' m : ℤ, (2 : ℝ≥0∞) ^ (-(ε * |(m : ℝ)|)) := by
+  have hσ0 : 0 < σ := one_pos.trans_le hσ
+  have hfl := Int.floor_le (x / σ)
+  have hlt := Int.lt_floor_add_one (x / σ)
+  set n : ℤ := ⌊x / σ⌋
+  have hj (j : ℤ) : (2 : ℝ≥0∞) ^ (-(ε * |x - σ * j|)) ≤
+      2 ^ ε * (2 : ℝ≥0∞) ^ (-(ε * |((j - n : ℤ) : ℝ)|)) := by
+    rw [← ENNReal.rpow_add _ _ two_ne_zero ENNReal.ofNat_ne_top]
+    refine ENNReal.rpow_le_rpow_of_exponent_le (by norm_num) ?_
+    -- `|x - σ j| ≥ |x / σ - j| ≥ |j - n| - 1`.
+    have h1 : |x / σ - j| ≤ |x - σ * j| := by
+      rw [show x - σ * j = σ * (x / σ - j) by field_simp, abs_mul, abs_of_pos hσ0]
+      exact le_mul_of_one_le_left (abs_nonneg _) hσ
+    have h2 : |((j - n : ℤ) : ℝ)| - 1 ≤ |x / σ - j| := by
+      have h := abs_sub_le (j : ℝ) (x / σ) (n : ℝ)
+      rw [abs_sub_comm (j : ℝ) (x / σ), abs_of_nonneg (by linarith : 0 ≤ x / σ - n)] at h
+      push_cast
+      linarith
+    nlinarith
+  calc _ ≤ ∑' j : ℤ, 2 ^ ε * (2 : ℝ≥0∞) ^ (-(ε * |((j - n : ℤ) : ℝ)|)) := tsum_le_tsum hj
+    _ = 2 ^ ε * ∑' j : ℤ, (2 : ℝ≥0∞) ^ (-(ε * |((j - n : ℤ) : ℝ)|)) := ENNReal.tsum_mul_left
+    _ = _ := by
+        congr 1
+        exact (Equiv.subRight n).tsum_eq fun m : ℤ ↦ (2 : ℝ≥0∞) ^ (-(ε * |(m : ℝ)|))
+
+/-- A sum over the truncation `-N ≤ k < N` is at most the sum over all of `ℤ`. -/
+theorem sum_range_sub_le_tsum (f : ℤ → ℝ≥0∞) (N : ℕ) :
+    ∑ i ∈ Finset.range (2 * N), f ((i : ℤ) - N) ≤ ∑' k, f k := by
+  rw [← Finset.sum_image (g := fun i : ℕ ↦ (i : ℤ) - N) (f := f)
+    fun i _ i' _ h ↦ by simpa using h]
+  exact sum_le_tsum _
+
 end TauCeti
+
+namespace AntitoneOn
+
+open Set
+open scoped ENNReal
+
+/-- For a base `b > 1`, a function antitone on `(0, ∞)` is bounded on `(0, s]` by the step function
+taking, on each interval `(b⁻¹ ^ (n + 1) s, b⁻¹ ^ n s]`, its value at the left endpoint. -/
+theorem le_tsum_indicator_Ioc {R : ℝ → ℝ≥0∞} (hR : AntitoneOn R (Ioi 0)) {b : ℝ} (hb : 1 < b)
+    {s u : ℝ} (hu : 0 < u) (hus : u ≤ s) :
+    R u ≤ ∑' n : ℕ, (Ioc (b⁻¹ ^ (n + 1) * s) (b⁻¹ ^ n * s)).indicator
+      (fun _ ↦ R (b⁻¹ ^ (n + 1) * s)) u := by
+  have hs : 0 < s := hu.trans_le hus
+  obtain ⟨n, hn₁, hn₂⟩ := exists_nat_pow_near ((one_le_div hu).2 hus) hb
+  have hmem : u ∈ Ioc (b⁻¹ ^ (n + 1) * s) (b⁻¹ ^ n * s) := by
+    rw [inv_pow, inv_pow, ← div_eq_inv_mul, ← div_eq_inv_mul]
+    rw [div_lt_iff₀ hu, mul_comm] at hn₂
+    rw [le_div_iff₀ hu, mul_comm] at hn₁
+    exact ⟨(div_lt_iff₀ (by positivity)).2 hn₂, (le_div_iff₀ (by positivity)).2 hn₁⟩
+  refine le_trans ?_ (le_tsum _ n)
+  rw [indicator_of_mem hmem]
+  exact hR (show 0 < b⁻¹ ^ (n + 1) * s by positivity) hu hmem.1.le
+
+/-- For a base `b > 1`, a function antitone on `(0, ∞)` is bounded on `[s, ∞)`, `s > 0`, by the
+step function taking, on each interval `[b ^ n s, b ^ (n + 1) s)`, its value at the left
+endpoint. -/
+theorem le_tsum_indicator_Ico {R : ℝ → ℝ≥0∞} (hR : AntitoneOn R (Ioi 0)) {b : ℝ} (hb : 1 < b)
+    {s u : ℝ} (hs : 0 < s) (hsu : s ≤ u) :
+    R u ≤ ∑' n : ℕ, (Ico (b ^ n * s) (b ^ (n + 1) * s)).indicator (fun _ ↦ R (b ^ n * s)) u := by
+  obtain ⟨n, hn₁, hn₂⟩ := exists_nat_pow_near ((one_le_div hs).2 hsu) hb
+  have hmem : u ∈ Ico (b ^ n * s) (b ^ (n + 1) * s) :=
+    ⟨(le_div_iff₀ hs).1 hn₁, (div_lt_iff₀ hs).1 hn₂⟩
+  refine le_trans ?_ (le_tsum _ n)
+  rw [indicator_of_mem hmem]
+  exact hR (show 0 < b ^ n * s by positivity) (hs.trans_le hsu) hmem.1
+
+end AntitoneOn

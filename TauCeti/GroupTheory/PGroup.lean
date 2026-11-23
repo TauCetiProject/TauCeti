@@ -204,7 +204,7 @@ theorem _root_.IsPGroup.exists_mem_center_orderOf_eq_prime [Fact p.Prime] [Finit
   have := hG.center_nontrivial
   obtain ⟨z, hz⟩ := exists_prime_orderOf_dvd_card' (G := Subgroup.center G) p
     ((hG.to_subgroup _).card_eq_or_dvd.resolve_left Finite.one_lt_card.ne')
-  exact ⟨z, z.2, (Subgroup.orderOf_coe z).trans hz⟩
+  exact ⟨z, z.property, (Subgroup.orderOf_coe z).trans hz⟩
 
 /-- A nontrivial finite `p`-subgroup `P` of `G` lies in the centralizer of one of its nontrivial
 elements, namely of any nontrivial element of the centre of `P`. -/
@@ -212,9 +212,9 @@ theorem _root_.IsPGroup.exists_ne_one_le_centralizer [Fact p.Prime] {P : Subgrou
     (hP : IsPGroup p P) (hne : P ≠ ⊥) : ∃ g ∈ P, g ≠ 1 ∧ P ≤ Subgroup.centralizer {g} := by
   have : Nontrivial P := (Subgroup.nontrivial_iff_ne_bot P).2 hne
   obtain ⟨z, hz1⟩ := Subgroup.ne_bot_iff_exists_ne_one.1 hP.bot_lt_center.ne'
-  refine ⟨z.1, z.1.2, fun h ↦ hz1 (Subtype.ext (Subtype.ext h)), fun y hy ↦ ?_⟩
+  refine ⟨z.val, z.val.property, fun h ↦ hz1 (Subtype.ext (Subtype.ext h)), fun y hy ↦ ?_⟩
   rw [Subgroup.mem_centralizer_singleton_iff]
-  exact congrArg Subtype.val (Subgroup.mem_center_iff.1 z.2 ⟨y, hy⟩)
+  exact congrArg Subtype.val (Subgroup.mem_center_iff.1 z.property ⟨y, hy⟩)
 
 /-- The normal subgroups of `G` with `p`-group quotient are closed under binary intersection. -/
 theorem _root_.IsPGroup.quotient_inf {M N : Subgroup G} [M.Normal] [N.Normal]

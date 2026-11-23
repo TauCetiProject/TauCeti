@@ -19,10 +19,8 @@ point `e` of the unit sphere.
 ## Main results
 
 * `Filter.Tendsto.normalize`: normalization preserves limits with a nonzero limit.
-* `TauCeti.norm_div_norm_smul_eq_of_inv_norm_smul_eq_normalize`: rescaling a vector with the
-  direction of `w` by the ratio of the norms recovers `w`.
-* `TauCeti.norm_div_norm_smul_le`, `Continuous.div_norm_smul`: rescaling `y` to length
-  `τ ≤ ‖y‖` by `(τ / ‖y‖) • y` is bounded by `τ` and continuous, also where `y` vanishes.
+* `NormedSpace.isClosed_setOf_eq_zero_or_normalize_mem`: the cone `{0} ∪ {x ≠ 0 | x / ‖x‖ ∈ S}`
+  over a closed set `S` of directions is closed.
 * `TauCeti.continuousAt_sphereDirection`: the direction map is continuous away from the origin.
 
 ## Main definitions
@@ -49,6 +47,18 @@ theorem _root_.Filter.Tendsto.normalize {α : Type*} {l : Filter α} {f : α →
   simp only [NormedSpace.normalize]
   exact (hf.norm.inv₀ (norm_ne_zero_iff.mpr hx)).smul hf
 
+/-- The cone over a closed set `S` of directions, the set of vectors that are zero or whose
+normalization lies in `S`, is closed. -/
+theorem _root_.NormedSpace.isClosed_setOf_eq_zero_or_normalize_mem {S : Set E} (hS : IsClosed S) :
+    IsClosed {x : E | x = 0 ∨ normalize x ∈ S} := by
+  have : {x : E | x = 0 ∨ normalize x ∈ S}ᶜ = {x | x ≠ 0} ∩ normalize ⁻¹' Sᶜ := by
+    ext x
+    simp [not_or]
+  rw [← isOpen_compl_iff, this]
+  exact ContinuousOn.isOpen_inter_preimage
+    (fun x hx ↦ ContinuousAt.continuousWithinAt (tendsto_id.normalize hx)) isOpen_ne
+    hS.isOpen_compl
+
 /-- Radial projection sends a continuous nowhere-zero map into a real normed space continuously
 to its unit sphere. -/
 noncomputable def normalizeToSphere {Y : Type*} [TopologicalSpace Y] (f : Y → E)
@@ -64,37 +74,6 @@ theorem coe_normalizeToSphere_apply {Y : Type*} [TopologicalSpace Y] (f : Y → 
     ((normalizeToSphere f hf h0 y : sphere (0 : E) 1) : E) = normalize (f y) :=
   (rfl)
 
-/-- **Rescaling to a prescribed vector.** If `x` has the direction of `w` and the length of `a`,
-that is `‖a‖⁻¹ • x = normalize w`, then stretching `x` by `‖w‖ / ‖a‖` gives `w`. -/
-theorem norm_div_norm_smul_eq_of_inv_norm_smul_eq_normalize {a w x : E}
-    (hx : ‖a‖⁻¹ • x = normalize w) : (‖w‖ / ‖a‖) • x = w := by
-  rcases eq_or_ne a 0 with rfl | ha
-  · rw [norm_zero, inv_zero, zero_smul, eq_comm, normalize_eq_zero_iff] at hx
-    simp [hx]
-  · rw [← smul_inv_smul₀ (norm_ne_zero_iff.2 ha) x, hx, smul_smul,
-      div_mul_cancel₀ _ (norm_ne_zero_iff.2 ha), norm_smul_normalize]
-
-/-- The norm of `(τ / ‖y‖) • y` is at most `τ`, for `0 ≤ τ`. -/
-theorem norm_div_norm_smul_le (y : E) {τ : ℝ} (hτ : 0 ≤ τ) : ‖(τ / ‖y‖) • y‖ ≤ τ := by
-  rcases eq_or_ne y 0 with rfl | hy
-  · simpa using hτ
-  · rw [norm_smul, Real.norm_of_nonneg (div_nonneg hτ (norm_nonneg _)),
-      div_mul_cancel₀ _ (norm_ne_zero_iff.2 hy)]
-
-/-- The map `p ↦ (τ p / ‖y p‖) • y p` is continuous when `0 ≤ τ p ≤ ‖y p‖`, including where `y`
-vanishes, since there its norm is at most `‖y p‖`. -/
-theorem _root_.Continuous.div_norm_smul {X : Type*} [TopologicalSpace X] {τ : X → ℝ} {y : X → E}
-    (hτ : Continuous τ) (hy : Continuous y) (h0 : ∀ p, 0 ≤ τ p) (hle : ∀ p, τ p ≤ ‖y p‖) :
-    Continuous fun p ↦ (τ p / ‖y p‖) • y p := by
-  refine continuous_iff_continuousAt.2 fun p ↦ ?_
-  rcases eq_or_ne (y p) 0 with hp | hp
-  · have hlim : Tendsto (fun q ↦ (τ q / ‖y q‖) • y q) (𝓝 p) (𝓝 0) :=
-      squeeze_zero_norm (fun q ↦ (norm_div_norm_smul_le (y q) (h0 q)).trans (hle q))
-        (by simpa [hp] using hy.norm.tendsto p)
-    simpa [ContinuousAt, hp] using hlim
-  · exact (hτ.continuousAt.div (continuous_norm.comp hy).continuousAt
-      (norm_ne_zero_iff.2 hp)).smul hy.continuousAt
-
 section Direction
 
 open Classical in
@@ -103,7 +82,7 @@ assigned point `e` of the sphere at the origin. -/
 def sphereDirection (e : sphere (0 : E) 1) (x : E) : sphere (0 : E) 1 :=
   ⟨if x = 0 then e else normalize x, by
     split_ifs with hx
-    exacts [e.2, mem_sphere_zero_iff_norm.2 (norm_normalize hx)]⟩
+    exacts [e.property, mem_sphere_zero_iff_norm.2 (norm_normalize hx)]⟩
 
 variable (e : sphere (0 : E) 1) {x : E}
 

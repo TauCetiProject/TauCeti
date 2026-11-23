@@ -182,7 +182,7 @@ theorem norm_iteratedFDeriv_snd_mul_comp_fst_le {g : E → A} {k : ℕ} (hg : Co
   have hgf : ContDiff 𝕜 k (g ∘ Prod.fst : E × A → A) := hg.comp contDiff_fst
   have hle (i : ℕ) :
       ‖iteratedFDeriv 𝕜 i (g ∘ Prod.fst : E × A → A) z‖ ≤ ‖iteratedFDeriv 𝕜 i g z.1‖ :=
-    norm_iteratedFDeriv_comp_fst_le z
+    z.norm_iteratedFDeriv_comp_fst.le
   refine (norm_iteratedFDeriv_mul_le hsnd hgf z le_rfl).trans ?_
   rcases k with _ | m
   · simp
@@ -340,7 +340,7 @@ theorem ContDiffAt.continuousAt_iteratedFDerivWithin_partial {Q : Type*} [Topolo
     (hFW.continuousOn_iteratedFDeriv_partial hWo le_rfl).continuousAt (hWo.mem_nhds h₀W)
   let Θ : Q × s → E × P := fun q ↦ (q.2, ξ q.1)
   have hΘ_cont : ContinuousAt Θ (q₀, z₀) :=
-    (continuous_subtype_val.comp continuous_snd).continuousAt.prodMk
+    (continuous_subtypeVal.comp continuous_snd).continuousAt.prodMk
       (hξ.comp continuous_fst.continuousAt)
   obtain ⟨Uq, Uz, hUqo, hq₀Uq, hUzo, hz₀Uz, hUqUz⟩ := mem_nhds_prod_iff'.1
     (hagree.and (hΘ_cont.preimage_mem_nhds (hWo.mem_nhds h₀W)))
@@ -356,8 +356,8 @@ theorem ContDiffAt.continuousAt_iteratedFDerivWithin_partial {Q : Type*} [Topolo
     exact (hUqUz (Set.mk_mem_prod hq hbUz)).1
   symm
   rw [← iteratedFDerivWithin_inter_open hUz'o hzUz',
-    iteratedFDerivWithin_congr heq ⟨z.2, hzUz'⟩,
+    iteratedFDerivWithin_congr heq ⟨z.property, hzUz'⟩,
     iteratedFDerivWithin_inter_open hUz'o hzUz']
-  exact iteratedFDerivWithin_eq_iteratedFDeriv hs hslice z.2
+  exact iteratedFDerivWithin_eq_iteratedFDeriv hs hslice z.property
 
 end PartialDerivatives

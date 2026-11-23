@@ -77,18 +77,18 @@ over `Spec R`. -/
 private theorem exists_affineOpen_standardSyntomic (X : Scheme.{u}) [X.Over (Spec (.of R))]
     (hnodal : AtWorstNodalOfRelativeDimensionOne (X ↘ Spec (.of R))) {x : X}
     (hx : letI := hnodal.syntomic; x ∉ (X ↘ Spec (.of R)).smoothLocus) :
-    ∃ (V : X.affineOpens) (hxV : x ∈ V.1),
-      letI : Algebra R Γ(X, V) := ((X.baseRingToStructurePresheaf R).app (op V.1)).hom.toAlgebra
+    ∃ (V : X.affineOpens) (hxV : x ∈ V.val),
+      letI : Algebra R Γ(X, V) := ((X.baseRingToStructurePresheaf R).app (op V.val)).hom.toAlgebra
       ∃ (_ : TauCeti.Algebra.IsStandardSyntomicOfRelativeDimension 1 R Γ(X, V))
         (_ : Algebra.EssFiniteType R Γ(X, V)),
         Algebra.FormallyUnramified R (Γ(X, V) ⧸ fittingIdeal Γ(X, V) Ω[Γ(X, V)⁄R] 1) ∧
-        fittingIdeal Γ(X, V) Ω[Γ(X, V)⁄R] 1 ≤ (V.2.primeIdealOf ⟨x, hxV⟩).asIdeal ∧
-        V.2.fromSpec ≫ (X ↘ Spec (.of R)) = Spec.algebraMap R Γ(X, V) := by
+        fittingIdeal Γ(X, V) Ω[Γ(X, V)⁄R] 1 ≤ (V.property.primeIdealOf ⟨x, hxV⟩).asIdeal ∧
+        V.property.fromSpec ≫ (X ↘ Spec (.of R)) = Spec.algebraMap R Γ(X, V) := by
   have : SyntomicOfRelativeDimension 1 (X ↘ Spec (.of R)) := hnodal.syntomic
   obtain ⟨V, hxV, _, hV⟩ :=
     SyntomicOfRelativeDimension.exists_isStandardSyntomicOfRelativeDimension_appLE_top 1
       (X ↘ Spec (.of R)) x
-  let : Algebra R Γ(X, V) := ((X.baseRingToStructurePresheaf R).app (op V.1)).hom.toAlgebra
+  let : Algebra R Γ(X, V) := ((X.baseRingToStructurePresheaf R).app (op V.val)).hom.toAlgebra
   have hS : TauCeti.Algebra.IsStandardSyntomicOfRelativeDimension 1 R Γ(X, V) := by
     refine (TauCeti.isStandardSyntomicOfRelativeDimension_iff 1 _).mp ?_
     rw [Scheme.baseRingToStructurePresheaf_app_eq_appLE, CommRingCat.hom_comp]
@@ -113,11 +113,12 @@ point `y` of `Spec T` lies over the prime of `x ∈ V`, then `g` sends `y` to `x
 coordinates into `y`, then `ψ` sends `y` to the closed subscheme `u = v = 0`. -/
 private theorem exists_etale_spec_chart (X : Scheme.{u}) [X.Over (Spec (.of R))]
     (V : X.affineOpens) [Algebra R Γ(X, V)]
-    (hV : V.2.fromSpec ≫ (X ↘ Spec (.of R)) = Spec.algebraMap R Γ(X, V)) {x : X}
-    (hxV : x ∈ V.1) {R' T : Type u} [CommRing R'] [CommRing T] [Algebra R R']
+    (hV : V.property.fromSpec ≫ (X ↘ Spec (.of R)) = Spec.algebraMap R Γ(X, V)) {x : X}
+    (hxV : x ∈ V.val) {R' T : Type u} [CommRing R'] [CommRing T] [Algebra R R']
     [Algebra Γ(X, V) T] [Algebra.Etale Γ(X, V) T] [Algebra R' T] [Algebra R T]
     [IsScalarTower R Γ(X, V) T] [IsScalarTower R R' T] (y : Spec (.of T))
-    (hxy : (V.2.primeIdealOf ⟨x, hxV⟩).asIdeal = y.asIdeal.comap (algebraMap Γ(X, V) T)) {h : R'}
+    (hxy : (V.property.primeIdealOf ⟨x, hxV⟩).asIdeal = y.asIdeal.comap (algebraMap Γ(X, V) T))
+        {h : R'}
     (φ : NodeAlgebra R' h →ₐ[R'] T) (hφ : φ.toRingHom.Etale)
     (hφ₀ : φ (NodeAlgebra.coord h 0) ∈ y.asIdeal) (hφ₁ : φ (NodeAlgebra.coord h 1) ∈ y.asIdeal) :
     ∃ (g : Spec (.of T) ⟶ X) (ψ : Spec (.of T) ⟶ Spec (.of (NodeAlgebra R' h))),
@@ -130,15 +131,16 @@ private theorem exists_etale_spec_chart (X : Scheme.{u}) [X.Over (Spec (.of R))]
     (HasRingHomProperty.Spec_iff (P := @Etale)).2 (RingHom.etale_algebraMap.2 inferInstance)
   have : Etale (Spec.map (CommRingCat.ofHom φ.toRingHom)) :=
     (HasRingHomProperty.Spec_iff (P := @Etale)).2 hφ
-  have := V.2.isOpenImmersion_fromSpec
+  have := V.property.isOpenImmersion_fromSpec
   -- `ψ = Spec φ` lies over `Spec R'`, because `φ` is an `R'`-algebra map.
   have hψ : Spec.map (CommRingCat.ofHom φ.toRingHom) ≫ Spec.algebraMap R' (NodeAlgebra R' h) =
       Spec.algebraMap R' T := by
     rw [← Spec.map_comp, ← CommRingCat.ofHom_comp, AlgHom.toRingHom_eq_coe, φ.comp_algebraMap]
-  refine ⟨Spec.algebraMap Γ(X, V) T ≫ V.2.fromSpec, Spec.map (CommRingCat.ofHom φ.toRingHom),
+  refine ⟨Spec.algebraMap Γ(X, V) T ≫ V.property.fromSpec, Spec.map (CommRingCat.ofHom φ.toRingHom),
     inferInstance, inferInstance, ?_, ?_, ?_, hφ₀, hφ₁⟩
   · rw [Scheme.Hom.comp_apply]
-    refine (congrArg V.2.fromSpec (PrimeSpectrum.ext ?_)).trans (V.2.fromSpec_primeIdealOf ⟨x, hxV⟩)
+    refine (congrArg V.property.fromSpec (PrimeSpectrum.ext ?_)).trans
+        (V.property.fromSpec_primeIdealOf ⟨x, hxV⟩)
     rw [Spec.map_apply, CommRingCat.hom_ofHom, hxy]
     exact PrimeSpectrum.comap_asIdeal _ _
   · rw [Category.assoc, hV, reassoc_of% hψ, ← Spec.map_comp, ← Spec.map_comp,
@@ -166,7 +168,7 @@ theorem _root_.AlgebraicGeometry.Scheme.exists_etale_nodeAlgebra_of_notMem_smoot
           Spec.algebraMap R R' ∧
         NodeAlgebra.coord h 0 ∈ (ψ y).asIdeal ∧ NodeAlgebra.coord h 1 ∈ (ψ y).asIdeal := by
   obtain ⟨V, hxV, hV⟩ := exists_affineOpen_standardSyntomic X hnodal hx
-  let : Algebra R Γ(X, V) := ((X.baseRingToStructurePresheaf R).app (op V.1)).hom.toAlgebra
+  let : Algebra R Γ(X, V) := ((X.baseRingToStructurePresheaf R).app (op V.val)).hom.toAlgebra
   obtain ⟨_, _, _, hfit, hV⟩ := hV
   obtain ⟨R', _, _, _, T, _, _, _, _, _, _, _, Q, _, h, φ, hxQ, hφ₀, hφ₁, hφ⟩ :=
     TauCeti.Algebra.IsStandardSyntomicOfRelativeDimension.exists_etale_nodeAlgebra_hom _ hfit
@@ -239,16 +241,16 @@ theorem exists_etale_nodeAlgebra_of_notMem_smoothLocus_of_isDiscreteValuationRin
         Spec.algebraMap R' (NodeAlgebra R' b) (ψ y) = IsLocalRing.closedPoint R' ∧
         NodeAlgebra.coord b 0 ∈ (ψ y).asIdeal ∧ NodeAlgebra.coord b 1 ∈ (ψ y).asIdeal := by
   obtain ⟨V, hxV, hV⟩ := exists_affineOpen_standardSyntomic X hnodal hx
-  let : Algebra R Γ(X, V) := ((X.baseRingToStructurePresheaf R).app (op V.1)).hom.toAlgebra
+  let : Algebra R Γ(X, V) := ((X.baseRingToStructurePresheaf R).app (op V.val)).hom.toAlgebra
   obtain ⟨_, _, _, hfit, hV⟩ := hV
   -- The prime of `x` in `Γ(X, V)` lies over the closed point of `Spec R`.
-  have hxR : (V.2.primeIdealOf ⟨x, hxV⟩).asIdeal.comap (algebraMap R Γ(X, V)) =
+  have hxR : (V.property.primeIdealOf ⟨x, hxV⟩).asIdeal.comap (algebraMap R Γ(X, V)) =
       IsLocalRing.maximalIdeal R := by
-    have hpt : Spec.algebraMap R Γ(X, V) (V.2.primeIdealOf ⟨x, hxV⟩) =
+    have hpt : Spec.algebraMap R Γ(X, V) (V.property.primeIdealOf ⟨x, hxV⟩) =
         IsLocalRing.closedPoint R := by
-      refine (congrArg (fun g ↦ g (V.2.primeIdealOf ⟨x, hxV⟩)) hV).symm.trans ?_
+      refine (congrArg (fun g ↦ g (V.property.primeIdealOf ⟨x, hxV⟩)) hV).symm.trans ?_
       exact (Scheme.Hom.comp_apply _ _ _).trans
-        ((congrArg _ (V.2.fromSpec_primeIdealOf ⟨x, hxV⟩)).trans hxs)
+        ((congrArg _ (V.property.fromSpec_primeIdealOf ⟨x, hxV⟩)).trans hxs)
     -- The prime ideal of `PrimeSpectrum.comap` is `Ideal.comap` (`PrimeSpectrum.comap_asIdeal`),
     -- and that of `IsLocalRing.closedPoint R` is the maximal ideal, both by definition.
     exact congrArg PrimeSpectrum.asIdeal hpt

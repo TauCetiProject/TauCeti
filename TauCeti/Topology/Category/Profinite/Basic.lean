@@ -10,6 +10,9 @@ public import Mathlib.Topology.Category.Profinite.Basic
 /-!
 # Finite profinite sets
 
+A finite set, regarded as a compact Hausdorff space through `FintypeCat.toProfinite` and
+`profiniteToCompHaus`, is discrete.
+
 A profinite set `S` with a `Fintype` structure is isomorphic to its image
 `FintypeCat.toProfinite.obj (FintypeCat.of S)` under the inclusion of finite sets: both have
 carrier `S`, the topology on `S` is discrete because `S` is finite and Hausdorff, and the
@@ -22,6 +25,11 @@ public section
 universe u
 
 open CategoryTheory
+
+/-- A finite set, regarded as a compact Hausdorff space, is discrete. -/
+instance FintypeCat.discreteTopology_profiniteToCompHaus_obj (T : FintypeCat.{u}) :
+    DiscreteTopology (profiniteToCompHaus.obj (FintypeCat.toProfinite.obj T)) :=
+  inferInstanceAs (DiscreteTopology (FintypeCat.toProfinite.obj T))
 
 namespace Profinite
 

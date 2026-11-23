@@ -230,7 +230,7 @@ noncomputable def additiveUnipotentMulEquiv (A : CommAlgCat.{w} R) :
     fun _ _ h ↦ rootSubgroupPoints_injective (by decide) (congrArg Subtype.val h),
     fun g ↦ by
       obtain ⟨f, hf⟩ :=
-        (mem_dynamicUnipotent_iff_exists_rootSubgroupPoint (R := R) (A := A) g).mp g.2
+        (mem_dynamicUnipotent_iff_exists_rootSubgroupPoint (R := R) (A := A) g).mp g.property
       exact ⟨f, Subtype.ext hf⟩⟩
 
 @[simp]

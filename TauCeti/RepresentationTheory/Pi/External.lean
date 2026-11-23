@@ -111,7 +111,8 @@ noncomputable def externalPiRestrict₂ (h : s ⊆ t) :
     IntertwiningMap (externalPi fun i : t ↦ ρ i)
       ((externalPi fun i : s ↦ ρ i).comp (Finset.restrict₂MonoidHom G h)) :=
   LinearMap.intertwiningMap_of_isIntertwiningMap _ _
-    (LinearMap.pi fun i : s ↦ LinearMap.proj (⟨i, h i.2⟩ : t)) fun _ _ ↦ funext fun _ ↦ by simp
+    (LinearMap.pi fun i : s ↦ LinearMap.proj (⟨i, h i.property⟩ : t)) fun _ _ ↦ funext fun _ ↦ by
+        simp
 
 /-- `externalPiRestrict₂ ρ h` restricts a family to the smaller finite set. -/
 @[simp]
@@ -173,8 +174,8 @@ noncomputable def externalPiUnion (h : Disjoint s t) :
         ((externalPi fun i : t ↦ ρ i).comp (MonoidHom.snd _ _))) :=
   .mk (LinearEquiv.piFinsetUnion k V h).symm fun g ↦ LinearMap.ext fun x ↦ by
     ext i
-    · simp [Equiv.piFinsetUnion_left G h i.2]
-    · simp [Equiv.piFinsetUnion_right G h i.2]
+    · simp [Equiv.piFinsetUnion_left G h i.property]
+    · simp [Equiv.piFinsetUnion_right G h i.property]
 
 /-- The splitting over a disjoint union takes the restrictions to the two pieces. -/
 @[simp]
