@@ -887,12 +887,8 @@ theorem detLineOrientationTransport_map_rayOfNeZero_of_isComplexPositiveDetLine
           (1 - (↑(dysonSeriesLeft (fun t : ℝ ↦ M b t) T) : E →ₗ[ℝ] E))) :
           (detLineLoopOperatorEquiv T (M b)).symm _ ≠ 0) := by
   -- The cokernel of `A` is finite-dimensional over `ℂ`.
-  have : FiniteDimensional ℝ (CircleSobolev 0 E ⧸ range (A.restrictScalars ℝ)) :=
-    hA ▸ (isFredholm_loopOperator T (M a)).finite_coker
-  have : FiniteDimensional ℝ (CircleSobolev 0 E ⧸ range A) :=
-    Module.Finite.equiv (A.cokerRestrictScalarsEquiv ℝ)
-  have : FiniteDimensional ℂ (CircleSobolev 0 E ⧸ range A) :=
-    Module.Finite.of_restrictScalars_finite ℝ ℂ _
+  have := (isFredholm_loopOperator T (M a)).finiteDimensional_quotient_range_of_restrictScalars_eq
+    hA.symm
   -- Two complex positive elements span the same ray.
   obtain ⟨c, hc, rfl⟩ :=
     (isComplexPositiveDetLine_detLineCongrOfEq_detLineLoopOperatorEquiv_symm hMa

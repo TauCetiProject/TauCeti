@@ -317,7 +317,8 @@ theorem isComplexPositiveDetLine_detLineCongrOfEq_detLinePeriodicTorusOperatorEq
       f.IsComplexPositiveDetLine
         (LinearMap.detLineCongrOfEq hg' (LinearMap.detLineCongrKerCoker eK eC y)) := by
     subst hg hg'
-    simpa using (by simpa using hy : A.IsComplexPositiveDetLine y).detLineCongrKerCoker hK hC
+    rw [LinearMap.detLineCongrOfEq_rfl, LinearEquiv.refl_apply] at hy ⊢
+    exact hy.detLineCongrKerCoker hK hC
   rw [detLinePeriodicTorusOperatorEquiv_eq_trans, LinearEquiv.symm_trans_apply,
     LinearMap.detLineCongrKerCoker_symm]
   refine key _ hA _ hf.symm _ _ (fun x y h ↦ ?_) (fun y y' h ↦ ?_) _

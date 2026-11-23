@@ -593,16 +593,6 @@ theorem _root_.LinearMap.IsComplexPositiveDetLine.detLineCongrOfEq_ne_zero {f : 
   rw [← LinearMap.coe_restrictScalars ℝ f, hf, ContinuousLinearMap.coe_coe]
   exact hA
 
-/-- The complex cokernel of a complex-linear map `f` whose underlying real map is a Fredholm
-operator `A` is finite-dimensional. -/
-theorem _root_.ContinuousLinearMap.IsFredholm.finiteDimensional_quotient_range_of_restrictScalars_eq
-    {A : E →L[ℝ] F} (hA : A.IsFredholm) {f : E →ₗ[ℂ] F} (hf : f.restrictScalars ℝ = A) :
-    FiniteDimensional ℂ (F ⧸ LinearMap.range f) := by
-  have : FiniteDimensional ℝ (F ⧸ LinearMap.range (f.restrictScalars ℝ)) := hf ▸ hA.finite_coker
-  have : FiniteDimensional ℝ (F ⧸ LinearMap.range f) :=
-    Module.Finite.equiv (f.cokerRestrictScalarsEquiv ℝ)
-  exact Module.Finite.of_restrictScalars_finite ℝ ℂ _
-
 /-- A complex positive element `z` of the determinant line of a complex-linear map `f` whose
 underlying real map is a Fredholm operator `A` is nonzero, and so is its image in the determinant
 line of `A`. -/
