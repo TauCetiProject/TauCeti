@@ -30,7 +30,7 @@ namespace WithTop
 theorem nsmul_top_of_ne_zero {α : Type*} [AddMonoid α] {n : ℕ} (hn : n ≠ 0) :
     n • (⊤ : WithTop α) = ⊤ := by
   obtain ⟨k, rfl⟩ := Nat.exists_eq_succ_of_ne_zero hn
-  rfl
+  rw [succ_nsmul, WithTop.add_top]
 
 /-- For a nonzero natural number `n`, `n • ·` on `WithTop α` agrees with
 `WithTop.map (n • ·)`. -/

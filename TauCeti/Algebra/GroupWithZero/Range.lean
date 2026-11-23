@@ -22,6 +22,8 @@ Together with `MonoidWithZeroHom.valueGroup.mk_eq_div`, `simp` evaluates the emb
   in `ValueGroup₀ f`, to `((x : Bˣ) : B)`.
 * `MonoidWithZeroHom.mem_valueGroup_iff`: for a homomorphism between groups with zero,
   membership in `f.valueGroup` is equivalent to being attained by `f`.
+* `MonoidWithZeroHom.valueGroup_eq_range_unitsMap`: for a homomorphism between groups with zero,
+  `f.valueGroup` is the range of `Units.map f.toMonoidHom`.
 -/
 
 public section
@@ -38,6 +40,16 @@ theorem mem_valueGroup_iff {f : A →*₀ B} {γ : Bˣ} :
     γ ∈ f.valueGroup ↔ ∃ a : A, f a = γ := by
   have h := Set.ext_iff.mp (valueGroup_eq_range f) (γ : B)
   simpa [Units.val_inj, Units.ne_zero] using h
+
+/-- For a homomorphism `f : A →*₀ B` between groups with zero, `f.valueGroup` is the range of
+`Units.map f.toMonoidHom`. -/
+theorem valueGroup_eq_range_unitsMap (f : A →*₀ B) :
+    f.valueGroup = (Units.map f.toMonoidHom).range := by
+  ext γ
+  rw [mem_valueGroup_iff, MonoidHom.mem_range]
+  refine ⟨fun ⟨a, ha⟩ ↦ ?_, fun ⟨a, ha⟩ ↦ ⟨a, congrArg Units.val ha⟩⟩
+  have ha0 : a ≠ 0 := fun h0 ↦ Units.ne_zero γ (by simpa [h0] using ha.symm)
+  exact ⟨Units.mk0 a ha0, Units.ext (by simpa using ha)⟩
 
 end GroupWithZero
 

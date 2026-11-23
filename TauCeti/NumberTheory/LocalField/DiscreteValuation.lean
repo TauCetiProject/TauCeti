@@ -117,14 +117,6 @@ private theorem intValuationUnitsEquiv_unitsMap (x : Kˣ) :
 
 end SingleField
 
-private theorem valueGroup_eq_range_unitsMap {A B : Type*} [GroupWithZero A] [GroupWithZero B]
-    (f : A →*₀ B) : f.valueGroup = (Units.map f.toMonoidHom).range := by
-  ext γ
-  rw [MonoidWithZeroHom.mem_valueGroup_iff, MonoidHom.mem_range]
-  refine ⟨fun ⟨a, ha⟩ ↦ ?_, fun ⟨a, ha⟩ ↦ ⟨a, congrArg Units.val ha⟩⟩
-  have ha0 : a ≠ 0 := fun h0 ↦ Units.ne_zero γ (by simpa [h0] using ha.symm)
-  exact ⟨Units.mk0 a ha0, Units.ext (by simpa using ha)⟩
-
 section Extension
 
 variable {K L : Type*} [Field K] [Field L] [ValuativeRel L] [TopologicalSpace L]
@@ -149,7 +141,7 @@ theorem ramificationIdx_valuation_eq_ramificationIndex :
   have hmap : (((valuation L).intValuation.comap (algebraMap K L)).valueGroup).map
         (intValuationUnitsEquiv : ℤᵐ⁰ˣ →* Multiplicative ℤ) =
         ((normalizedValuation L).comp (Units.map (algebraMap K L : K →* L))).range := by
-    rw [valueGroup_eq_range_unitsMap, hcomap, Units.map_comp, MonoidHom.map_range,
+    rw [MonoidWithZeroHom.valueGroup_eq_range_unitsMap, hcomap, Units.map_comp, MonoidHom.map_range,
       ← MonoidHom.comp_assoc, he_comp]
   rw [(valuation L).isEquiv_intValuation.symm.ramificationIdx_eq, Valuation.ramificationIdx_def,
     htop, Subgroup.relIndex_top_right, ← Subgroup.index_map_equiv _ intValuationUnitsEquiv,
