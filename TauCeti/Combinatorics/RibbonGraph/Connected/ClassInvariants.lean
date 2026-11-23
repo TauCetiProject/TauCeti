@@ -29,9 +29,8 @@ private def clift {α : Sort*} (n : ℕ)
     Quotient (connectedIsoSetoid.{u} n) → α :=
   Quotient.lift f fun _ _ h => (connectedIsoSetoid_mk_eq_mk_iff.1 (Quotient.sound h)).elim hf
 
-variable {n : ℕ}
+variable {n : ℕ} (c : Quotient (connectedIsoSetoid.{u} n))
   (Γ : {Γ : {Γ : BipartiteRibbonGraph.{u} // Fintype.card Γ.E = n} // Γ.val.IsConnected})
-  (c : Quotient (connectedIsoSetoid.{u} n))
 
 /-- The degree-partition triple `(λ₀, λ₁, λ∞)` of a class of connected ribbon graphs. -/
 def connectedCycleData (n : ℕ) :

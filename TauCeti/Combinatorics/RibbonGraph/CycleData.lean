@@ -5,9 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Combinatorics.PermutationTriple.CycleData
 public import TauCeti.Combinatorics.RibbonGraph.Classification
-public import TauCeti.GroupTheory.Perm.Partition
 
 /-!
 # Cycle data of a bipartite ribbon graph
@@ -55,14 +53,12 @@ theorem fullCycleType_facePerm :
 
 /-- The ordered triple of black-vertex, white-vertex, and face degree partitions of `Γ`. -/
 def cycleData : Multiset ℕ × Multiset ℕ × Multiset ℕ :=
-  ((Finset.univ : Finset Γ.B).val.map Γ.blackDegree,
-    (Finset.univ : Finset Γ.W).val.map Γ.whiteDegree,
-    (Finset.univ : Finset Γ.Face).val.map Γ.faceDegree)
+  (Finset.univ.val.map Γ.blackDegree, Finset.univ.val.map Γ.whiteDegree,
+    Finset.univ.val.map Γ.faceDegree)
 
 /-- The defining formula for the cycle data of a bipartite ribbon graph. -/
-theorem cycleData_def : Γ.cycleData = ((Finset.univ : Finset Γ.B).val.map Γ.blackDegree,
-    (Finset.univ : Finset Γ.W).val.map Γ.whiteDegree,
-    (Finset.univ : Finset Γ.Face).val.map Γ.faceDegree) := (rfl)
+theorem cycleData_def : Γ.cycleData = (Finset.univ.val.map Γ.blackDegree,
+    Finset.univ.val.map Γ.whiteDegree, Finset.univ.val.map Γ.faceDegree) := (rfl)
 
 /-- The degree partitions of `Γ` are the full cycle types of `rotB`, `rotW`, and `facePerm`. -/
 theorem cycleData_eq_fullCycleType :

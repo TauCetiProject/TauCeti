@@ -55,9 +55,8 @@ theorem cycleCounts_eq_card_cycleData :
   obtain ⟨t, rfl⟩ := mk_surjective c; simpa using t.cycleCounts_eq_card_cycleData
 
 /-- Each of the three full cycle partitions of `c` sums to the degree `n`. -/
-theorem sum_cycleData :
-    (c.cycleData.1.sum, c.cycleData.2.1.sum, c.cycleData.2.2.sum) = (n, n, n) := by
-  obtain ⟨t, rfl⟩ := mk_surjective c; simpa using t.sum_cycleData
+theorem sum_cycleData : (c.cycleData.1.sum, c.cycleData.2.1.sum, c.cycleData.2.2.sum) =
+    (n, n, n) := by obtain ⟨t, rfl⟩ := mk_surjective c; simpa using t.sum_cycleData
 
 /-- The combinatorial Euler characteristic `c₀ + c₁ + c∞ - n` of an isomorphism class of triples. -/
 noncomputable def eulerChar : IsoClass n → ℤ :=
@@ -146,9 +145,8 @@ theorem cycleCounts_eq_card_cycleData :
   c.forget.cycleCounts_eq_card_cycleData
 
 /-- Each of the three full cycle partitions of a connected isomorphism class sums to `n`. -/
-theorem sum_cycleData :
-    (c.cycleData.1.sum, c.cycleData.2.1.sum, c.cycleData.2.2.sum) = (n, n, n) :=
-  c.forget.sum_cycleData
+theorem sum_cycleData : (c.cycleData.1.sum, c.cycleData.2.1.sum, c.cycleData.2.2.sum) =
+    (n, n, n) := c.forget.sum_cycleData
 
 /-- The combinatorial Euler characteristic `c₀ + c₁ + c∞ - n` of a connected isomorphism class. -/
 noncomputable def eulerChar : ℤ := c.forget.eulerChar
@@ -199,9 +197,8 @@ theorem two_sub_two_mul_genus : 2 - 2 * (c.genus : ℤ) = c.eulerChar := by
 noncomputable def natCardAutomorphismGroup : ℕ := c.forget.natCardAutomorphismGroup
 
 /-- Evaluating `natCardAutomorphismGroup` on `mk t` gives `Nat.card t.val.automorphismGroup`. -/
-@[simp] theorem natCardAutomorphismGroup_mk :
-    (mk t).natCardAutomorphismGroup = Nat.card t.val.automorphismGroup := by
-  simp [natCardAutomorphismGroup]
+@[simp] theorem natCardAutomorphismGroup_mk : (mk t).natCardAutomorphismGroup =
+    Nat.card t.val.automorphismGroup := by simp [natCardAutomorphismGroup]
 
 /-- Forgetting connectedness preserves `natCardAutomorphismGroup`. -/
 @[simp] theorem natCardAutomorphismGroup_forget :

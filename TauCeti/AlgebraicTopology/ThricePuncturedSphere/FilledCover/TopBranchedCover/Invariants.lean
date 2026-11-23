@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicTopology.ThricePuncturedSphere.FilledCover.TopBranchedCover.Basic
+public import TauCeti.AlgebraicTopology.ThricePuncturedSphere.FilledCover.TopBranchedCover.Classification
 public import TauCeti.AlgebraicTopology.ThricePuncturedSphere.TopBranchedCover.Deck
 public import TauCeti.Combinatorics.PermutationTriple.ClassInvariants
 

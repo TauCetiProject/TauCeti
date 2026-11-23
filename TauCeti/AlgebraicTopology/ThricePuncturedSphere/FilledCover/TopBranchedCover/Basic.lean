@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicTopology.ThricePuncturedSphere.Classification
 public import TauCeti.AlgebraicTopology.ThricePuncturedSphere.FilledCover.ChartedSpace
 public import TauCeti.AlgebraicTopology.ThricePuncturedSphere.FilledCover.Ramification
 public import TauCeti.AlgebraicTopology.ThricePuncturedSphere.FilledCover.Transport
@@ -38,8 +37,8 @@ degree `n` to isomorphism classes of connected degree-`n` covers of `ℂ ∖ {0,
 (`TauCeti.TopBranchedCover.IsoClass.restrict_surjective`). Since a branched cover is determined by
 its unbranched part (`TauCeti.TopBranchedCover.IsoClass.restrict_injective`), every topological
 branched cover is isomorphic to the filled cover of its unbranched part
-(`TauCeti.TopBranchedCover.isoFilledCover`), giving `equivConnectedCoverClass` and
-`equivConnectedIsoClass`. Over `0`, `1` and `∞`, ramification partitions match `σ0`, `σ1`, `σinf`.
+(`TauCeti.TopBranchedCover.isoFilledCover`), giving `equivConnectedCoverClass`. Over `0`, `1` and
+`∞`, ramification partitions match `σ0`, `σ1`, `σinf`.
 
 ## Main results
 
@@ -61,8 +60,8 @@ branched cover is isomorphic to the filled cover of its unbranched part
   `ℂ ∖ {0, 1}` is the restriction of a topological branched cover of degree `n`.
 * `TauCeti.TopBranchedCover.isoFilledCover`: every topological branched cover is isomorphic to
   the filled cover of its unbranched part.
-* `TauCeti.TopBranchedCover.IsoClass.restrict_bijective`, `equivConnectedCoverClass`,
-  `equivConnectedIsoClass`: classification and ramification matching `σ0`, `σ1`, `σinf`.
+* `TauCeti.TopBranchedCover.IsoClass.restrict_bijective`, `equivConnectedCoverClass`:
+  classification by connected covers and ramification matching `σ0`, `σ1`, `σinf`.
 
 ## References
 
@@ -322,32 +321,6 @@ def equivConnectedCoverClass (n : ℕ) :
 @[simp] theorem equivConnectedCoverClass_symm_apply {n : ℕ}
     (c : ConnectedCoverClass (X := TopCat.of ThricePuncturedSphere) basePt n) :
     (equivConnectedCoverClass n).symm c = c.toTopBranchedCover := (rfl)
-
-/-- **Topological branched covers are classified by connected permutation triples.** -/
-def equivConnectedIsoClass (n : ℕ) : IsoClass.{0} n ≃ ConnectedIsoClass n :=
-  (equivConnectedCoverClass n).trans ConnectedCoverClass.isoClassEquiv
-
-/-- `equivConnectedIsoClass` classifies the unbranched cover `c.restrict` of `ℂ ∖ {0, 1}`. -/
-theorem equivConnectedIsoClass_apply {n : ℕ} (c : IsoClass.{0} n) :
-    equivConnectedIsoClass n c = c.restrict.isoClass := by
-  rw [equivConnectedIsoClass, Equiv.trans_apply, equivConnectedCoverClass_apply,
-    ConnectedCoverClass.isoClassEquiv_apply]
-
-/-- On `.mk X`, `equivConnectedIsoClass` returns the connected class of its monodromy triple. -/
-theorem equivConnectedIsoClass_mk {n : ℕ} (X : TopBranchedCover.{0} n)
-    (ν : X.restrict ⁻¹' {basePt} ≃ Fin n) :
-    equivConnectedIsoClass n (.mk X) =
-      .mk ⟨X.isCoveringMap_restrict.monodromyTriple ν,
-        X.isCoveringMap_restrict.isConnected_monodromyTriple ν⟩ := by
-  obtain ⟨ν'⟩ := X.connectedCover.nonempty_equiv_fin
-  rw [equivConnectedIsoClass_apply, restrict_mk, ConnectedCoverClass.isoClass_mk _ ν']
-  exact ConnectedIsoClass.forget_injective <| by simpa using
-    (X.connectedCover.cover.isCoveringMap_proj.isoClass_monodromyTriple_eq_of_homeomorph
-      ν' X.isCoveringMap_restrict ν X.connectedCoverHomeomorph
-      (funext X.restrict_connectedCoverHomeomorph)).symm
-
-/-- Up to isomorphism there is a unique topological branched cover of degree one. -/
-instance : Unique (IsoClass.{0} 1) := (equivConnectedIsoClass 1).unique
 
 end TopBranchedCover.IsoClass
 

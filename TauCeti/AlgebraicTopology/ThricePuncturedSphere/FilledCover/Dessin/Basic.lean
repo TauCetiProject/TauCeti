@@ -17,8 +17,6 @@ matches cycle data, automorphism-group order, and regularity.
 
 public noncomputable section
 
-open Equiv Equiv.Perm Function
-
 namespace TauCeti.AnalyticBelyiPair
 
 open ThricePuncturedSphere RiemannSurface BipartiteRibbonGraph

@@ -16,8 +16,6 @@ Identifies `deck X.π` with the automorphism group of the monodromy triple's rib
 
 public noncomputable section
 
-open Equiv Equiv.Perm
-
 namespace TauCeti.TopBranchedCover
 
 open ThricePuncturedSphere

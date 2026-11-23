@@ -21,8 +21,6 @@ Matches `BipartiteRibbonGraph.IsRegular` with `PermutationTriple.IsRegular`.
 
 public section
 
-open Equiv
-
 namespace TauCeti
 
 namespace BipartiteRibbonGraph
@@ -31,7 +29,7 @@ namespace BipartiteRibbonGraph
 @[simp] theorem isRegular_toPermutationTriple {n : ℕ} (Γ : BipartiteRibbonGraph.{u})
     (ν : Γ.E ≃ Fin n) : (Γ.toPermutationTriple ν).IsRegular ↔ Γ.IsRegular := by
   let φ : Γ.E →ₑ[Γ.autEquivAutomorphismGroup ν] Fin n :=
-    ⟨ν, fun f e ↦ by simp [Aut.smul_def, Subgroup.smul_def, Perm.smul_def]⟩
+    ⟨ν, fun f e ↦ by simp [Aut.smul_def, Subgroup.smul_def, Equiv.Perm.smul_def]⟩
   exact (PermutationTriple.isRegular_iff.trans <| and_congr (Γ.isConnected_toPermutationTriple ν)
     (MulAction.isPretransitive_congr (f := φ) (Γ.autEquivAutomorphismGroup ν).surjective
       ν.bijective).symm).trans isRegular_iff.symm
