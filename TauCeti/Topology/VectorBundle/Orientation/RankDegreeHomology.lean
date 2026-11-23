@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicTopology.Singular.LocalHomology.Orientation.Linear
-public import TauCeti.Topology.VectorBundle.Thom.OrientationLocalSystem
+public import TauCeti.Topology.VectorBundle.Thom.Orientation.LocalSystem
 
 /-!
 # The homology of the Thom pair in the rank degree, with orientation coefficients

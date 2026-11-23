@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Topology.VectorBundle.Thom.Descent
+public import TauCeti.Topology.VectorBundle.MayerVietoris.Descent
 public import TauCeti.Topology.VectorBundle.Orientation.LocalSystem
 public import TauCeti.AlgebraicTopology.Singular.Twisted.Zero
 import TauCeti.Topology.Connected.PathConnected
@@ -159,15 +159,6 @@ private theorem ofHom_signLocalSystemFiberEquiv_neg_trans {b : B} (o : Orientati
   ext φ
   exact signLocalSystemFiberEquiv_neg hι o φ
 
-omit [FiniteDimensional ℝ F] [∀ b, TopologicalSpace (E b)] [FiberBundle F E] [VectorBundle ℝ F E]
-  [Fintype ι] in
-/-- A trivialization reading `o` as `-ωF` reads `-o` as `ωF`. -/
-private theorem mapOrientation_symm_eq_neg_of_eq_neg (e : Trivialization F (π F E))
-    [e.IsLinear ℝ] {b : B} (hb : b ∈ e.baseSet) {o : Orientation ℝ (E b) ι}
-    (h : e.mapOrientation ι hb o = -ωF) :
-    (e.mapOrientation ι hb).symm ωF = -o := by
-  rw [← neg_neg ωF, ← h, Trivialization.mapOrientation_symm_neg, Equiv.symm_apply_apply]
-
 /-- **The identification does not depend on the trivialization.** Two linear trivializations
 whose base sets contain `b` give the same identification of the fibre of `o(E)` over `b` with
 `Hᵣ(E_b, E_b ∖ {0}; K)`. -/
@@ -184,7 +175,7 @@ private theorem fiberIsoAt_eq (e e' : Trivialization F (π F E)) [e.IsLinear ℝ
   · rw [(Equiv.symm_apply_eq _).2 h.symm,
       e.singularHomologyMap_complZeroPairIso_inv_eq_of_mapOrientation_eq e' hb hb' hι _
         (h.trans ho.symm)]
-  · rw [mapOrientation_symm_eq_neg_of_eq_neg ωF e' hb' h,
+  · rw [e'.mapOrientation_symm_eq_neg_of_eq_neg hb' h,
       e.singularHomologyMap_complZeroPairIso_inv_eq_neg_of_mapOrientation_eq_neg e' hb hb' hι _
         (by rw [h, ho]),
       ofHom_signLocalSystemFiberEquiv_neg_trans, Preadditive.neg_comp, Preadditive.comp_neg,
@@ -313,7 +304,7 @@ private theorem fiberClass_of_eq_neg (e : Trivialization F (π F E)) [e.IsLinear
     (ho : e.mapOrientation ι hp p.orientation = -ωF) :
     fiberClass K hι ωF p = -trivializationClass K e hp := by
   rw [fiberClass, leg, signLocalSystemFiberIsoSingularHomology_hom K hι ωF e hp,
-    mapOrientation_symm_eq_neg_of_eq_neg ωF e hp ho,
+    e.mapOrientation_symm_eq_neg_of_eq_neg hp ho,
     ofHom_signLocalSystemFiberEquiv_neg_trans, Preadditive.neg_comp, trivializationClass,
     TopPair.singularHomologyMap_comp]
   simp
