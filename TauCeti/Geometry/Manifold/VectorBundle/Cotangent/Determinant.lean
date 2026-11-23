@@ -264,9 +264,16 @@ theorem coordChange_canonicalCore (b : Basis (Fin (finrank 𝕜 E)) 𝕜 E) {x�
   rw [ContinuousLinearEquiv.arrowCongr_apply, ContinuousLinearEquiv.coe_coe,
     canonicalModelCoords_apply, Trivialization.coordChangeL_apply _ _ ⟨hb₀, by simpa [F] using hx₁⟩,
     CanonicalBundle.trivializationAt_apply_snd_basis_eq_det_mul hx₀ hx₁ _ b,
-    Trivialization.apply_mk_symm _ hb₀, canonicalModelCoords_symm_apply]
+    Trivialization.apply_mk_symm _ hb₀, canonicalModelCoords_symm_apply,
+    ContinuousAlternatingMap.coe_smul, Pi.smul_apply, b.continuousDet_apply, b.det_self,
+    smul_eq_mul, mul_one]
   obtain rfl : i = 0 := Subsingleton.elim i 0
-  simp [b.det_self]; rfl
+  refine (smul_eq_mul _ (u 0)).symm.trans ((Pi.smul_apply _ u 0).symm.trans ?_)
+  exact congrArg (fun f : Fin 1 → 𝕜 ↦ f 0)
+    ((congrArg (_ • ·)
+      (ContinuousLinearMap.id_apply (M₁ := Fin (canonicalCore I b M).rank → 𝕜) u).symm).trans
+      (_root_.smul_apply (ContinuousLinearMap.id 𝕜 (Fin (canonicalCore I b M).rank → 𝕜))
+        (LinearMap.det (tangentCoordChange I x₁ x₀ x : E →ₗ[𝕜] E)) u).symm)
 
 private theorem baseSet_cotangentCore_det_eq_canonicalCore
     (b : Basis (Fin (finrank 𝕜 E)) 𝕜 E) (x₀ : M) :
@@ -351,7 +358,9 @@ p.proj` by the unique coordinate of `p.snd`. -/
   refine (congrArg (VectorBundle.continuousLinearEquivAt 𝕜 F (CanonicalBundle I M) p.proj).symm
     (canonicalModelCoords_symm_apply b p.snd)).trans ?_
   rw [map_smul, CanonicalBundle.continuousLinearEquivAt_symm_continuousDet]
-  rfl
+  exact congrArg (· • CanonicalBundle.coordForm I p.proj b p.proj)
+    (congrArg p.snd (Subsingleton.elim (0 : Fin 1)
+      ⟨0, (rank_canonicalCore (I := I) (M := M) b) ▸ Nat.zero_lt_one⟩))
 
 /-- At `p.proj`, the inverse of `canonicalCoreTotalSpaceDiffeomorph` evaluates `p.snd` on the
 chart basis vectors `(trivializationAt E (TangentSpace I) p.proj).symmL 𝕜 p.proj (b i)`. -/
@@ -502,15 +511,15 @@ noncomputable def cotangentDetCanonicalHomeomorph
     (p : (cotangentCore I b M).det.core.TotalSpace) :
     cotangentDetCanonicalDiffeomorph I b M k p =
       ⟨p.proj, cotangentDetCanonicalFiberEquiv I b M p.proj p.snd⟩ := by
+  rcases p with ⟨x, u⟩
   rw [cotangentDetCanonicalDiffeomorph, Diffeomorph.coe_trans, Function.comp_apply,
-    coe_cotangentDetCanonicalCoreDiffeomorph, CoordinateHom.totalSpaceMap_def,
+    coe_cotangentDetCanonicalCoreDiffeomorph, CoordinateHom.totalSpaceMap_mk,
     canonicalCoreTotalSpaceDiffeomorph_apply]
-  dsimp only
   refine (congrArg
-    (fun c ↦ TotalSpace.mk' _ p.proj (c • CanonicalBundle.coordForm I p.proj b p.proj))
-    (fiberMap_cotangentDetCanonicalCoreIso_hom_apply b p.proj p.snd _)).trans ?_
-  exact congrArg (TotalSpace.mk' _ p.proj)
-    (cotangentDetCanonicalFiberEquiv_apply b p.proj p.snd).symm
+    (fun c ↦ TotalSpace.mk' _ x (c • CanonicalBundle.coordForm I x b x))
+    (fiberMap_cotangentDetCanonicalCoreIso_hom_apply b x u _)).trans ?_
+  exact congrArg (TotalSpace.mk' _ x)
+    (cotangentDetCanonicalFiberEquiv_apply b x u).symm
 
 /-- On total spaces, the inverse of `cotangentDetCanonicalDiffeomorph` acts fibrewise by
 `(cotangentDetCanonicalFiberEquiv I b M p.proj).symm`. -/

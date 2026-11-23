@@ -81,7 +81,10 @@ noncomputable def ofLinearEquivChangeIso :
     ofLinearEquivChangeIso e₁ e₁ V = Iso.refl (ofLinearEquiv e₁ V) :=
   Iso.ext <| hom_ext fun x ↦ by
     rw [fiberMap_ofLinearEquivChangeIso_hom, Iso.refl_hom, fiberMap_id]
-    ext v : 1; simp; rfl
+    ext v : 1
+    exact (ContinuousLinearEquiv.trans_apply e₁.symm e₁ v).trans
+      ((e₁.apply_symm_apply v).trans
+        (ContinuousLinearMap.id_apply (M₁ := Fin (ofLinearEquiv e₁ V).rank → 𝕜) v).symm)
 
 /-- Inverting a coordinate-change isomorphism reverses the two coordinate equivalences. -/
 @[simp] theorem ofLinearEquivChangeIso_symm :
@@ -126,20 +129,15 @@ theorem ofLinearEquivTotalSpaceHomeomorph_changeIso_hom
         ((ofLinearEquivChangeIso e₁ e₂ V).hom.totalSpaceMap p) =
       ofLinearEquivTotalSpaceHomeomorph e₁ V p := by
   rcases p with ⟨x, u⟩
-  have h1 : ofLinearEquivFiberEquiv e₁ V x u =
-      (trivializationAt F V x).symm x (e₁.symm (u : Fin r₁ → 𝕜)) :=
-    ofLinearEquivFiberEquiv_apply e₁ V x u
-  have h2 : ofLinearEquivFiberEquiv e₂ V x ((e₁.symm.trans e₂) (u : Fin r₁ → 𝕜)) =
-      (trivializationAt F V x).symm x (e₂.symm ((e₁.symm.trans e₂) (u : Fin r₁ → 𝕜))) :=
-    ofLinearEquivFiberEquiv_apply e₂ V x _
   rw [CoordinateHom.totalSpaceMap_mk, fiberMap_ofLinearEquivChangeIso_hom,
     ofLinearEquivTotalSpaceHomeomorph_apply, ofLinearEquivTotalSpaceHomeomorph_apply]
   refine congrArg (TotalSpace.mk' F x) ?_
-  dsimp only
-  change ofLinearEquivFiberEquiv e₂ V x ((e₁.symm.trans e₂) (u : Fin r₁ → 𝕜)) =
-    ofLinearEquivFiberEquiv e₁ V x u
-  rw [h2, h1]
-  exact congrArg ((trivializationAt F V x).symm x) (e₂.symm_apply_apply (e₁.symm u))
+  -- `u : (ofLinearEquiv e₁ V).core.Fiber x` is definitionally `Fin r₁ → 𝕜` via `@[expose]`.
+  exact (ofLinearEquivFiberEquiv_apply e₂ V x _).trans
+    ((congrArg (fun y ↦ (trivializationAt F V x).symm x (e₂.symm y))
+      (ContinuousLinearEquiv.trans_apply e₁.symm e₂ u)).trans
+      ((congrArg ((trivializationAt F V x).symm x) (e₂.symm_apply_apply (e₁.symm u))).trans
+        (ofLinearEquivFiberEquiv_apply e₁ V x u).symm))
 
 end Change
 
@@ -224,10 +222,9 @@ theorem coordChange_ofLinearEquiv_dualCoords {i j x : B}
   -- Pass `Fin r` explicitly so `Fintype` resolves to `Fin.fintype r` rather than
   -- `Fin.fintype (ofLinearEquiv e V).rank` (defeq via `@[expose]` on `ofLinearEquiv`).
   refine (ContinuousLinearMap.eq_piTranspose_iff (ι := Fin r) (κ := Fin r) _ _).2 fun v w ↦ ?_
-  dsimp only [ContinuousLinearEquiv.arrowCongr_apply, ContinuousLinearEquiv.coe_coe]
+  simp only [ContinuousLinearEquiv.arrowCongr_apply, ContinuousLinearEquiv.coe_coe]
   rw [sum_mul_dualCoords_apply, trivializationAt_dual_coordChangeL V hi hj,
-    ContinuousLinearMap.comp_apply, dualCoords_symm_apply]
-  rfl
+    ContinuousLinearMap.comp_apply, dualCoords_symm_apply, ContinuousLinearEquiv.coe_coe]
 
 /-- The chart domain of `(ofLinearEquiv e V).dual` at `i` is `(trivializationAt F V i).baseSet`. -/
 theorem baseSet_ofLinearEquiv_dual (i : B) :

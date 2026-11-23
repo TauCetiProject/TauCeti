@@ -135,8 +135,7 @@ theorem trivializationAt_apply_snd_basis (x : M) (ω : CanonicalBundle I M x)
     (trivializationAt (E [⋀^Fin (finrank 𝕜 E)]→L[𝕜] 𝕜) (CanonicalBundle I M) x ⟨x, ω⟩).2 v =
       ω fun i ↦ (trivializationAt E (TangentSpace I) x).symmL 𝕜 x (v i) := by
   rw [FiberBundle.trivializationAt_continuousAlternatingMap_apply_snd,
-    ContinuousAlternatingMap.compContinuousLinearMap_apply]
-  rfl
+    ContinuousAlternatingMap.compContinuousLinearMap_apply, Function.comp_def]
 
 /-! ### The coordinate form of a chart -/
 

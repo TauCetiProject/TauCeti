@@ -310,8 +310,8 @@ theorem trivializationAt_dual_coordChangeL {𝕜 B F : Type*} [NontriviallyNorme
     ContinuousLinearMap.comp_apply]
   rw [Trivialization.continuousLinearMapAt_apply_of_mem _ _ hi,
     Trivialization.symmL_apply (R := 𝕜) _ hj,
-    ← Trivialization.coordChangeL_apply (R := 𝕜) _ _ ⟨hj, hi⟩]
-  rfl
+    ← Trivialization.coordChangeL_apply (R := 𝕜) _ _ ⟨hj, hi⟩,
+    ContinuousLinearEquiv.coe_coe]
 
 /-- For a finite-dimensional model source, a fibrewise continuous linear map is continuous
 on total spaces exactly when it is continuous as a section of the Hom bundle. The target

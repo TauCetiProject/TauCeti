@@ -343,7 +343,15 @@ theorem coordChange_det_dual (A : FiniteRankBundleCore 𝕜 B) (i j x : B) :
     A.det.dual.core.coordChange i j x =
       (A.core.coordChange j i x).det • ContinuousLinearMap.id 𝕜 (Fin A.det.dual.rank → 𝕜) := by
   rw [coordChange_dual, coordChange_det, ContinuousLinearMap.piTranspose_smul,
-    ContinuousLinearMap.piTranspose_id]; rfl
+    ContinuousLinearMap.piTranspose_id]
+  exact ContinuousLinearMap.ext fun v ↦
+    (_root_.smul_apply (ContinuousLinearMap.id 𝕜 (Fin A.det.rank → 𝕜))
+      (A.core.coordChange j i x).det v).trans
+      ((congrArg ((A.core.coordChange j i x).det • ·)
+        ((ContinuousLinearMap.id_apply v).trans
+          (ContinuousLinearMap.id_apply (M₁ := Fin A.det.dual.rank → 𝕜) v).symm)).trans
+        (_root_.smul_apply (ContinuousLinearMap.id 𝕜 (Fin A.det.dual.rank → 𝕜))
+          (A.core.coordChange j i x).det v).symm)
 
 /-- Identifying `Fin A.dual.det.rank → 𝕜` with `Fin A.det.dual.rank → 𝕜` via scalar coordinates
 intertwines the transitions of `A.dual.det` and `A.det.dual`. -/
@@ -402,28 +410,21 @@ theorem detScalarEquiv_fiberMap_dualDetIso_inv (A : FiniteRankBundleCore 𝕜 B)
       (fun i j x _ _ ↦ coordChange_comp_dualDet A i j x) x) u)).trans
     ((detScalarEquiv A.dual).apply_symm_apply _)
 
+omit [CompleteSpace 𝕜] in
+private theorem sum_det_rank_eq (A : FiniteRankBundleCore 𝕜 B) (f g : Fin A.det.rank → 𝕜) :
+    ∑ i, f i * g i = detScalarEquiv A f * detScalarEquiv A g := by
+  let i₀ : Fin A.det.rank := ⟨0, A.rank_det ▸ Nat.zero_lt_one⟩
+  rw [Fintype.sum_eq_single i₀ fun i hi ↦
+    (hi (Fin.eq_of_val_eq (Nat.lt_one_iff.mp (A.rank_det ▸ i.isLt)))).elim]
+  simp only [detScalarEquiv_apply, i₀]
+
 private theorem detScalarEquiv_piTranspose {A D : FiniteRankBundleCore 𝕜 B}
     (T : (Fin A.det.rank → 𝕜) →L[𝕜] (Fin D.det.rank → 𝕜)) (w : Fin D.det.rank → 𝕜) :
     detScalarEquiv A (T.piTranspose w) =
       detScalarEquiv D (T ((detScalarEquiv A).symm 1)) * detScalarEquiv D w := by
   have hsum := ContinuousLinearMap.sum_mul_piTranspose T ((detScalarEquiv A).symm 1) w
-  have hA : ∑ i : Fin A.det.rank, (detScalarEquiv A).symm 1 i * T.piTranspose w i =
-      detScalarEquiv A (T.piTranspose w) := by
-    let i₀ : Fin A.det.rank := ⟨0, A.rank_det ▸ Nat.zero_lt_one⟩
-    rw [Fintype.sum_eq_single i₀ fun i hi ↦ (hi (Fin.eq_of_val_eq (by
-      have hlt : (i : ℕ) < 1 := Nat.lt_of_lt_of_eq i.isLt A.rank_det
-      have hi0 : (i₀ : ℕ) = 0 := rfl
-      omega))).elim]
-    simp [i₀]
-  have hD : ∑ j : Fin D.det.rank, T ((detScalarEquiv A).symm 1) j * w j =
-      detScalarEquiv D (T ((detScalarEquiv A).symm 1)) * detScalarEquiv D w := by
-    let j₀ : Fin D.det.rank := ⟨0, D.rank_det ▸ Nat.zero_lt_one⟩
-    rw [Fintype.sum_eq_single j₀ fun j hj ↦ (hj (Fin.eq_of_val_eq (by
-      have hlt : (j : ℕ) < 1 := Nat.lt_of_lt_of_eq j.isLt D.rank_det
-      have hj0 : (j₀ : ℕ) = 0 := rfl
-      omega))).elim]
-    rfl
-  exact hA.symm.trans (hsum.trans hD)
+  rw [sum_det_rank_eq A, sum_det_rank_eq D, ContinuousLinearEquiv.apply_symm_apply, one_mul] at hsum
+  exact hsum
 
 /-- `dualDetIso` is natural with respect to `detMap` and `dualMap`: the determinant of a
 dual morphism agrees with the dual of the determinant morphism. -/
