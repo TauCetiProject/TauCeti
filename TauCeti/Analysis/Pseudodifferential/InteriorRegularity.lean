@@ -33,7 +33,7 @@ of `Op(a)`:
 * `TauCeti.Symbol.memSobolev_smulLeftCLM_of_memSobolev_quantizeSobolev`: if `u ∈ H^r` and
   `Op(p) u ∈ H^s`, then `ψ u ∈ H^{s + m}`. A distribution gains back near the support of `ψ` the
   `m` derivatives that `Op(a)` takes away.
-* `TauCeti.Symbol.exists_norm_le_of_toDistr_eq_quantizeSobolev`: the **interior estimate**
+* `TauCeti.Symbol.exists_norm_sobolev_le_of_toDistr_eq_smulLeftCLM`: the **interior estimate**
   `‖ψ u‖_{H^{s + m}} ≤ C (‖Op(p) u‖_{H^s} + ‖u‖_{H^r})` for `u ∈ H^r` with `Op(p) u ∈ H^s`, for
   all real `r` and `s`, with a constant `C` independent of `u`.
 
@@ -244,7 +244,7 @@ for every `u ∈ H^r` with `Op(p) u ∈ H^s`. Here `f` and `v` are elements of `
 with the tempered distributions `Op(p) u` and `ψ u`; the latter exists by
 `TauCeti.Symbol.memSobolev_smulLeftCLM_of_memSobolev_quantizeSobolev`. The order `r` is
 arbitrary: `u` need not lie in `H^{s + m}`. -/
-theorem exists_norm_le_of_toDistr_eq_quantizeSobolev
+theorem exists_norm_sobolev_le_of_toDistr_eq_smulLeftCLM
     (hab : IsAsymptoticSum (m := fun k : ℕ ↦ -m + m - k)
       (inclusion (by simp) (const (.id ℂ V))) (b.sharpTerm a))
     (hψ : HasCompactSupport ψ) (hp : p.HasCompactSpatialSupport)
