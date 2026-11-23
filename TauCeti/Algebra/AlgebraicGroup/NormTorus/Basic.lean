@@ -50,8 +50,8 @@ along the diagonal, whose quotient is the abstract group `μ_n(k' ⊗[k] R) / μ
 * `TauCeti.NormTorus.norm_unitsMap_lTensor`: the norm is natural in the coefficient algebra `R`.
 * `TauCeti.NormTorus.norm_self`: for the trivial extension `k' = k` the norm is the identity, so
   the norm kernel is trivial (`TauCeti.NormTorus.normOne_self`).
-* `TauCeti.NormTorus.pointsMulEquiv_mapDomain_normBialgHom`: on points, `normBialgHom` induces
-  `norm`.
+* `TauCeti.NormTorus.pointsMulEquiv_mapDomain_normBialgHom` and
+  `TauCeti.NormTorus.ofConv_normBialgHom_T`: on points, `normBialgHom` induces `norm`.
 
 ## References
 
@@ -249,6 +249,16 @@ theorem pointsMulEquiv_mapDomain_normBialgHom
       norm k k' R (Algebra.WeilRestriction.multiplicativeGroupPoints k k' R f) := by
   rw [BialgHom.mapDomain_apply]
   exact pointsMulEquiv_comp_normHom f
+
+/-- Evaluating `normBialgHom k k'` on `T 1` under a point `f` gives the norm of the unit of
+`k' ⊗[k] R` attached to `f`. -/
+theorem ofConv_normBialgHom_T
+    (f : WithConv (Algebra.WeilRestriction k k' k'[T;T⁻¹] →ₐ[k] R)) :
+    f.ofConv (normBialgHom k k' (LaurentPolynomial.T 1)) =
+      (norm k k' R (Algebra.WeilRestriction.multiplicativeGroupPoints k k' R f) : R) := by
+  have h := congrArg Units.val (pointsMulEquiv_mapDomain_normBialgHom f)
+  simpa only [MultiplicativeGroup.pointsMulEquiv_apply, BialgHom.mapDomain_apply,
+    laurentEvalEquiv_symm_apply, AlgHom.comp_apply, BialgHom.coe_toAlgHom] using h
 
 end NormHom
 

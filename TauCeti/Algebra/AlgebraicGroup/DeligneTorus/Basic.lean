@@ -11,7 +11,6 @@ public import TauCeti.Topology.Algebra.PointTopology.WeilRestriction
 import Mathlib.Analysis.Complex.Basic
 import Mathlib.Topology.Algebra.Module.FiniteDimension
 import TauCeti.Algebra.HopfAlgebra.Antipode
-import TauCeti.Analysis.Complex.Circle
 
 /-!
 # The Deligne torus
@@ -264,21 +263,22 @@ theorem norm_real_eq_one_iff (f : WithConv (S →ₐ[ℝ] ℝ)) :
   rw [norm_apply, ← NormTorus.mem_normOne, coe_realPointsMulEquiv]
   exact NormTorus.mem_normOne_complex_iff
 
-/-- **The real norm-one locus of the Deligne torus is compact** in the point topology, being the
-homeomorphic preimage of the compact unit circle `U(1)` under `S(ℝ) ≃ ℂˣ`. -/
+/-- **The real norm-one locus of the Deligne torus is compact** in the point topology. -/
 theorem isCompact_ker_norm_real : IsCompact {f : WithConv (S →ₐ[ℝ] ℝ) | norm ℝ f = 1} := by
-  let e := isHomeomorph_realPointsMulEquiv.homeomorph
-  have hrange : {f : WithConv (S →ₐ[ℝ] ℝ) | norm ℝ f = 1} =
-      Set.range (fun z : Circle ↦ e.symm z.toUnits) := by
-    ext f
-    simp only [Set.mem_ofPred_eq, norm_real_eq_one_iff, Set.mem_range]
-    exact ⟨fun hf ↦ ⟨⟨(realPointsMulEquiv f : ℂ), mem_sphere_zero_iff_norm.2 hf⟩,
-        e.symm_apply_eq.2 (Units.ext rfl)⟩,
-      fun ⟨z, hz⟩ ↦ hz ▸ by
-        rw [← isHomeomorph_realPointsMulEquiv.homeomorph_apply, e.apply_symm_apply,
-          Circle.toUnits_apply, Units.val_mk0, Circle.norm_coe]⟩
-  rw [hrange]
-  exact isCompact_range (e.continuous_symm.comp Circle.continuous_toUnits)
+  have hEmb : Topology.IsEmbedding
+      (fun f : WithConv (S →ₐ[ℝ] ℝ) ↦ (realPointsMulEquiv f : ℂ)) :=
+    Units.isEmbedding_val₀.comp isHomeomorph_realPointsMulEquiv.isEmbedding
+  rw [hEmb.isCompact_iff]
+  have himg : (fun f : WithConv (S →ₐ[ℝ] ℝ) ↦ (realPointsMulEquiv f : ℂ)) ''
+      {f : WithConv (S →ₐ[ℝ] ℝ) | norm ℝ f = 1} = Metric.sphere 0 1 := by
+    ext z
+    simp only [Set.mem_image, Set.mem_ofPred_eq, norm_real_eq_one_iff, mem_sphere_zero_iff_norm]
+    exact ⟨by rintro ⟨f, hf, rfl⟩; exact hf, fun hz ↦
+      ⟨realPointsMulEquiv.symm
+          (Units.mk0 z (ne_zero_of_mem_unit_sphere ⟨z, mem_sphere_zero_iff_norm.2 hz⟩)),
+        by simp [hz], by simp⟩⟩
+  rw [himg]
+  exact isCompact_sphere 0 1
 
 /-! ### Coordinate bialgebra homomorphisms -/
 

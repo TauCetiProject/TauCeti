@@ -65,8 +65,7 @@ shrinking part.
   defining property, `TauCeti.CommHopfAlgCat.homOfPointsMap_mapPointsFunctor` the converse
   recovery law, `TauCeti.CommHopfAlgCat.homOfPointsMap_id` and
   `TauCeti.CommHopfAlgCat.homOfPointsMap_comp` its functoriality, and
-  `TauCeti.CommHopfAlgCat.mapDomain_homOfPointsMap` /
-  `TauCeti.CommHopfAlgCat.mapDomain_homOfPointsMap_of_natural` its action on arbitrary-universe
+  `TauCeti.CommHopfAlgCat.mapDomain_homOfPointsMap` its action on arbitrary-universe
   points. This is the form in which fullness is used downstream, where a group-scheme morphism is
   built from its natural action on points.
 * `TauCeti.CommHopfAlgCat.essImage_pointsFunctor`: the essential image consists exactly of
@@ -648,20 +647,6 @@ theorem mapDomain_homOfPointsMap {H K : _root_.CommHopfAlgCat.{u} R}
     (BialgHom.mapValue_mapDomain (homOfPointsMap α).hom g.ofConv).symm (toConv (AlgHom.id R H))
   rw [MonoidHom.comp_apply, MonoidHom.comp_apply, hg, mapDomain_homOfPointsMap_id] at hnat
   exact hnat.symm
-
-/-- Precomposing an `S`-point `g` with `homOfPointsMap α` acts by a pointwise family `ψS`
-whenever `α` agrees at `id_H` with a point `pH` whose `mapValue` along `g` is `ψS g`. -/
-theorem mapDomain_homOfPointsMap_of_natural {H K : _root_.CommHopfAlgCat.{u} R}
-    (α : HopfAlgebra.pointsFunctor (R := R) (H := H) ⟶
-      HopfAlgebra.pointsFunctor (R := R) (H := K))
-    {S : Type*} [CommSemiring S] [Algebra R S]
-    (pH : WithConv (K →ₐ[R] H))
-    (ψS : WithConv (H →ₐ[R] S) → WithConv (K →ₐ[R] S))
-    (hid : α.app (CommAlgCat.of R H) (toConv (AlgHom.id R H)) = pH)
-    (hnat : ∀ g : WithConv (H →ₐ[R] S), AlgHom.mapValue (H := K) g.ofConv pH = ψS g)
-    (g : WithConv (H →ₐ[R] S)) :
-    BialgHom.mapDomain (homOfPointsMap α).hom g = ψS g := by
-  rw [mapDomain_homOfPointsMap, hid, hnat]
 
 /-- Precomposition by `unopUnop` turns representability on a double opposite into
 corepresentability. This is the type-valued variance correction underlying the essential-image

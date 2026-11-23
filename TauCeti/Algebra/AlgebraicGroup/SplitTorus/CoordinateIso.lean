@@ -142,20 +142,6 @@ theorem rankTwoTensorBialgEquiv_single (R : Type v) [CommSemiring R]
   simp only [AddMonoidAlgebra.toMultiplicativeBialgEquiv_symm_single, toAdd_ofAdd,
     LaurentPolynomial.single_eq_C_mul_T, map_one, one_mul]
 
-/-- The rank-two tensor presentation sends the first standard generator to `T 1 ⊗ₜ 1`. -/
-theorem rankTwoTensorBialgEquiv_single_zero (R : Type v) [CommSemiring R] :
-    rankTwoTensorBialgEquiv.{u} R
-        (MonoidAlgebra.single (Multiplicative.ofAdd (Finsupp.single ⟨0⟩ (1 : ℤ))) (1 : R)) =
-      LaurentPolynomial.T 1 ⊗ₜ[R] (1 : R[T;T⁻¹]) := by
-  simp [LaurentPolynomial.T_zero]
-
-/-- The rank-two tensor presentation sends the second standard generator to `1 ⊗ₜ T 1`. -/
-theorem rankTwoTensorBialgEquiv_single_one (R : Type v) [CommSemiring R] :
-    rankTwoTensorBialgEquiv.{u} R
-        (MonoidAlgebra.single (Multiplicative.ofAdd (Finsupp.single ⟨1⟩ (1 : ℤ))) (1 : R)) =
-      (1 : R[T;T⁻¹]) ⊗ₜ[R] LaurentPolynomial.T 1 := by
-  simp [LaurentPolynomial.T_zero]
-
 /-- Evaluating a tensor-product point transported along `rankTwoTensorBialgEquiv` at any character
 monomial `single m 1`. -/
 theorem mapDomain_rankTwoTensorBialgEquiv_single {R A : Type*} [CommSemiring R]

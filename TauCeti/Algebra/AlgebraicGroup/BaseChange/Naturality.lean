@@ -35,8 +35,9 @@ same base-change argument.
 * `BialgHom.mapDomain_pointsBaseChange`: the same for base change of base-valued points.
 * `BialgHom.mapDomain_comp_pointsBaseChange_comp`: base change of base-valued points
   preserves a commuting square of monoid homomorphisms into points.
-* `AlgHom.ofConv_scalarAut_smul`: evaluating a `K`-point of `K ⊗[k] A` on a scalar-automorphism
-  translate `σ • z` agrees with `σ` applied to the `σ.symm`-conjugated point at `z`.
+* `AlgHom.apply_scalarAut_smul`: evaluating a `K`-algebra map `K ⊗[k] A →ₐ[K] K` on a
+  scalar-automorphism translate `σ • z` agrees with `σ` applied to the `σ.symm`-conjugated map
+  at `z`.
 
 ## See also
 
@@ -177,32 +178,22 @@ end MapDomain
 section ScalarAut
 
 variable {k K A : Type*} [CommSemiring k] [CommSemiring K] [Algebra k K]
-variable [Semiring A] [_root_.Bialgebra k A]
+variable [Semiring A] [Algebra k A]
 
-private lemma ofConv_baseChange_mapValue_symm_tmul
-    (σ : K ≃ₐ[k] K) (g : WithConv (K ⊗[k] A →ₐ[K] K)) (c : K) (a : A) :
-    (baseChangePointsMulEquiv (k := k) (K := K) (A := A) (R := K)
-        (AlgHom.mapValue (H := A) σ.symm.toAlgHom
-          ((baseChangePointsMulEquiv (k := k) (K := K) (A := A) (R := K)).symm g))).ofConv
-        (c ⊗ₜ[k] a) =
-      c * σ.symm (g.ofConv (1 ⊗ₜ[k] a)) := by
-  simp [AlgHom.mapValue_apply, smul_eq_mul]
-
-/-- Evaluating a `K`-point of a base-changed bialgebra `K ⊗[k] A` on the scalar-automorphism
-translate `σ • z` equals `σ` applied to the evaluation at `z` of the `σ.symm`-conjugated point. -/
-lemma _root_.AlgHom.ofConv_scalarAut_smul (σ : K ≃ₐ[k] K)
-    (g : WithConv (K ⊗[k] A →ₐ[K] K)) (z : K ⊗[k] A) :
-    g.ofConv (σ • z) =
-      σ ((baseChangePointsMulEquiv (k := k) (K := K) (A := A) (R := K)
-        (AlgHom.mapValue (H := A) σ.symm.toAlgHom
-          ((baseChangePointsMulEquiv (k := k) (K := K) (A := A) (R := K)).symm g))).ofConv z) := by
-  induction z using TensorProduct.inductionOn with
+/-- Evaluating a `K`-algebra homomorphism `g : K ⊗[k] A →ₐ[K] K` on the scalar-automorphism
+translate `σ • z` equals `σ` applied to the evaluation at `z` of the `σ.symm`-conjugated map. -/
+lemma _root_.AlgHom.apply_scalarAut_smul (g : K ⊗[k] A →ₐ[K] K) (σ : K ≃ₐ[k] K)
+    (z : K ⊗[k] A) :
+    g (σ • z) =
+      σ (AlgHom.liftEquiv k K A K
+        (σ.symm.toAlgHom.comp ((AlgHom.liftEquiv k K A K).symm g)) z) := by
+  induction z with
   | add x y hx hy => simp only [smul_add, map_add, hx, hy]
   | tmul c a =>
-    have htmul : σ c ⊗ₜ[k] a = σ c • ((1 : K) ⊗ₜ[k] a) := by
-      simp [TensorProduct.smul_tmul']
-    rw [ofConv_baseChange_mapValue_symm_tmul, TauCeti.ScalarAut.smul_tmul, htmul, map_smul,
-      smul_eq_mul, map_mul, AlgEquiv.apply_symm_apply]
+    rw [TauCeti.ScalarAut.smul_tmul]
+    conv_lhs => rw [← (AlgHom.liftEquiv k K A K).apply_symm_apply g]
+    simp only [AlgHom.liftEquiv_tmul, AlgHom.coe_comp, AlgEquiv.coe_toAlgHom,
+      Function.comp_apply, smul_eq_mul, map_mul, AlgEquiv.apply_symm_apply]
 
 end ScalarAut
 

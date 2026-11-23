@@ -8,7 +8,6 @@ module
 public import TauCeti.Algebra.AlgebraicGroup.DeligneTorus.Splitting
 public import TauCeti.Algebra.Bialgebra.GroupLike.ScalarAut
 public import TauCeti.Algebra.Bialgebra.MonoidAlgebra.GroupLike
-import Mathlib.Algebra.Ring.Fin
 import TauCeti.Data.Finsupp.Fin
 
 /-!
@@ -37,12 +36,11 @@ structure (`[Algebra ℝ R] [Algebra ℂ R] [IsScalarTower ℝ ℂ R]`).
   (`TauCeti.DeligneTorus.characterGroup_muConj`), and over every such algebra `R` the character
   `(1, 1)` equals `norm R` (`TauCeti.DeligneTorus.characterGroup_one_one`).
 * The additive group of group-like elements of `baseChangeComplex` is isomorphic to `ℤ × ℤ`
-  (`TauCeti.DeligneTorus.additiveGroupLikeComplexAddEquiv`), with the group-like element
+  (`TauCeti.DeligneTorus.characterLatticeEquiv`), with the group-like element
   corresponding to `(p, q)` evaluating on a base-changed `R`-point `g` to the value of
   `characterGroup R (.ofAdd (p, q))` at the corresponding point of `S(R)`, coerced from `Rˣ` to
-  `R` (`TauCeti.DeligneTorus.ofConv_additiveGroupLikeComplexAddEquiv_symm`), and complex
-  conjugation swapping the two coordinates
-  (`TauCeti.DeligneTorus.additiveGroupLikeComplexAddEquiv_smul_conjAe`).
+  `R` (`TauCeti.DeligneTorus.ofConv_characterLatticeEquiv_symm`), and complex conjugation swapping
+  the two coordinates (`TauCeti.DeligneTorus.characterLatticeEquiv_smul_conjAe`).
 
 ## Main definitions
 
@@ -50,7 +48,7 @@ structure (`[Algebra ℝ R] [Algebra ℂ R] [IsScalarTower ℝ ℂ R]`).
   above.
 * `TauCeti.DeligneTorus.muBialgHom`, `TauCeti.DeligneTorus.muConjBialgHom`: the coordinate
   bialgebra homomorphisms `baseChangeComplex →ₐc[ℂ] ℂ[T;T⁻¹]` representing `μ` and `muConj`.
-* `TauCeti.DeligneTorus.additiveGroupLikeComplexAddEquiv`: the character-lattice isomorphism
+* `TauCeti.DeligneTorus.characterLatticeEquiv`: the character-lattice isomorphism
   `Additive (GroupLike ℂ baseChangeComplex) ≃+ ℤ × ℤ`.
 
 ## Main results
@@ -67,8 +65,8 @@ structure (`[Algebra ℝ R] [Algebra ℂ R] [IsScalarTower ℝ ℂ R]`).
   `TauCeti.DeligneTorus.not_exists_bialgHom_inducing_mu_on_realPoints`: `μ` does not lift to `ℝ`
   on real points.
 * `TauCeti.DeligneTorus.characterGroup_muConj`, `TauCeti.DeligneTorus.characterGroup_one_one`,
-  `TauCeti.DeligneTorus.ofConv_additiveGroupLikeComplexAddEquiv_symm`,
-  `TauCeti.DeligneTorus.additiveGroupLikeComplexAddEquiv_smul_conjAe`.
+  `TauCeti.DeligneTorus.ofConv_characterLatticeEquiv_symm`,
+  `TauCeti.DeligneTorus.characterLatticeEquiv_smul_conjAe`.
 
 ## References
 
@@ -160,6 +158,20 @@ noncomputable def muConjBialgHom : baseChangeComplex →ₐc[ℂ] ℂ[T;T⁻¹] 
   (Bialgebra.TensorProduct.projectRight (R := ℂ) (H₁ := ℂ[T;T⁻¹]) (H₂ := ℂ[T;T⁻¹])).comp
     baseChangeComplexBialgEquiv.toBialgHom
 
+omit [Algebra ℝ R] [IsScalarTower ℝ ℂ R] in
+private lemma mapDomain_projectLeft (g : WithConv (ℂ[T;T⁻¹] →ₐ[ℂ] R)) :
+    BialgHom.mapDomain
+        (Bialgebra.TensorProduct.projectLeft (R := ℂ) (H₁ := ℂ[T;T⁻¹]) (H₂ := ℂ[T;T⁻¹])) g =
+      AffineGroup.Product.pointsMulEquiv.symm (g, 1) := by
+  rw [BialgHom.mapDomain_apply, AffineGroup.Product.mapDomain_projectLeft]
+
+omit [Algebra ℝ R] [IsScalarTower ℝ ℂ R] in
+private lemma mapDomain_projectRight (g : WithConv (ℂ[T;T⁻¹] →ₐ[ℂ] R)) :
+    BialgHom.mapDomain
+        (Bialgebra.TensorProduct.projectRight (R := ℂ) (H₁ := ℂ[T;T⁻¹]) (H₂ := ℂ[T;T⁻¹])) g =
+      AffineGroup.Product.pointsMulEquiv.symm ((1 : WithConv (ℂ[T;T⁻¹] →ₐ[ℂ] R)), g) := by
+  rw [BialgHom.mapDomain_apply, AffineGroup.Product.mapDomain_projectRight]
+
 /-- **Compatibility of `muBialgHom` with `mu` on points** over every commutative `ℂ`-algebra `R`
 with compatible `ℝ`-algebra structure. -/
 @[simp↓]
@@ -167,11 +179,7 @@ theorem baseChangeComplexPointsMulEquiv_mapDomain_muBialgHom
     (g : WithConv (ℂ[T;T⁻¹] →ₐ[ℂ] R)) :
     baseChangeComplexPointsMulEquiv R (BialgHom.mapDomain muBialgHom g) =
       mu R (MultiplicativeGroup.pointsMulEquiv g) := by
-  have hproj : BialgHom.mapDomain
-      (Bialgebra.TensorProduct.projectLeft (R := ℂ) (H₁ := ℂ[T;T⁻¹]) (H₂ := ℂ[T;T⁻¹])) g =
-      AffineGroup.Product.pointsMulEquiv.symm (g, 1) := by
-    rw [BialgHom.mapDomain_apply, AffineGroup.Product.mapDomain_projectLeft]
-  rw [muBialgHom, BialgHom.mapDomain_comp, MonoidHom.comp_apply, hproj,
+  rw [muBialgHom, BialgHom.mapDomain_comp, MonoidHom.comp_apply, mapDomain_projectLeft,
     mapDomain_baseChangeComplexBialgEquiv]
   apply (complexSplitting R).injective
   rw [MulEquiv.apply_symm_apply, MulEquiv.apply_symm_apply, complexSplitting_mu, map_one]
@@ -183,17 +191,13 @@ theorem baseChangeComplexPointsMulEquiv_mapDomain_muConjBialgHom
     (g : WithConv (ℂ[T;T⁻¹] →ₐ[ℂ] R)) :
     baseChangeComplexPointsMulEquiv R (BialgHom.mapDomain muConjBialgHom g) =
       muConj R (MultiplicativeGroup.pointsMulEquiv g) := by
-  have hproj : BialgHom.mapDomain
-      (Bialgebra.TensorProduct.projectRight (R := ℂ) (H₁ := ℂ[T;T⁻¹]) (H₂ := ℂ[T;T⁻¹])) g =
-      AffineGroup.Product.pointsMulEquiv.symm ((1 : WithConv (ℂ[T;T⁻¹] →ₐ[ℂ] R)), g) := by
-    rw [BialgHom.mapDomain_apply, AffineGroup.Product.mapDomain_projectRight]
-  rw [muConjBialgHom, BialgHom.mapDomain_comp, MonoidHom.comp_apply, hproj,
+  rw [muConjBialgHom, BialgHom.mapDomain_comp, MonoidHom.comp_apply, mapDomain_projectRight,
     mapDomain_baseChangeComplexBialgEquiv]
   apply (complexSplitting R).injective
   rw [MulEquiv.apply_symm_apply, MulEquiv.apply_symm_apply, complexSplitting_muConj, map_one]
 
-/-- **Non-example: the Hodge cocharacter `μ` is not defined over `ℝ`**: there is no real
-homomorphism `ℝˣ →* S(ℝ)` whose complexification agrees with `μ` on real scalars. -/
+/-- **Non-example: `μ` does not lift to real points**: no homomorphism `ℝˣ →* S(ℝ)` agrees with
+`μ` on real units after mapping its values from `S(ℝ)` into `S(ℂ)`. -/
 theorem not_exists_realPoints_lift_mu :
     ¬ ∃ c : ℝˣ →* WithConv (S →ₐ[ℝ] ℝ),
       ∀ r : ℝˣ, AlgHom.mapValue (Algebra.ofId ℝ ℂ) (c r) =
@@ -206,7 +210,7 @@ theorem not_exists_realPoints_lift_mu :
   ext
   simp
 
-/-- Coordinate-Hopf-algebra form of `not_exists_realPoints_lift_mu`: no bialgebra homomorphism
+/-- **Non-example: `μ` is not defined over `ℝ`**: no coordinate bialgebra homomorphism
 `S →ₐc[ℝ] ℝ[T;T⁻¹]` induces `μ` on real-scalar points. -/
 theorem not_exists_bialgHom_inducing_mu_on_realPoints :
     ¬ ∃ φ : S →ₐc[ℝ] ℝ[T;T⁻¹],
@@ -240,7 +244,7 @@ theorem characterGroup_one_one : characterGroup R (.ofAdd (1, 1)) = norm R := by
 /-- **Conjugation formula on complex points**: conjugating `characterGroup ℂ (.ofAdd pq)` by
 complex conjugation on both `S(ℂ)` and `ℂˣ` produces `characterGroup ℂ (.ofAdd pq.swap)`. For
 equivariance of the algebraic character lattice itself, see
-`TauCeti.DeligneTorus.additiveGroupLikeComplexAddEquiv_smul_conjAe`. -/
+`TauCeti.DeligneTorus.characterLatticeEquiv_smul_conjAe`. -/
 theorem characterGroup_conj_monoidHom (pq : ℤ × ℤ) :
     (Units.map (starRingEnd ℂ : ℂ →* ℂ)).comp
         ((characterGroup ℂ (.ofAdd pq)).comp (AlgHom.mapValue Complex.conjAe.toAlgHom)) =
@@ -263,7 +267,7 @@ theorem characterGroup_norm_real (f : WithConv (S →ₐ[ℝ] ℝ)) :
 
 /-- **Algebraic character lattice of `S_ℂ`**: the additive group of group-like elements of
 `baseChangeComplex` is isomorphic to `ℤ × ℤ`. -/
-noncomputable def additiveGroupLikeComplexAddEquiv :
+noncomputable def characterLatticeEquiv :
     Additive (_root_.GroupLike ℂ baseChangeComplex) ≃+ ℤ × ℤ :=
   (MulEquiv.toAdditive
     (baseChangeSplitTorusBialgEquiv.mapGroupLike.symm.trans
@@ -272,62 +276,35 @@ noncomputable def additiveGroupLikeComplexAddEquiv :
     ((AddEquiv.additiveMultiplicative (ULift.{0} (Fin 2) →₀ ℤ)).trans
       (Finsupp.uliftFinTwoAddEquiv ℤ))
 
-private lemma val_toMul_additiveGroupLikeComplexAddEquiv_symm (pq : ℤ × ℤ) :
-    ((additiveGroupLikeComplexAddEquiv.symm pq).toMul : baseChangeComplex) =
-      baseChangeSplitTorusIso.hom.hom.hom
+private lemma val_toMul_characterLatticeEquiv_symm (pq : ℤ × ℤ) :
+    ((characterLatticeEquiv.symm pq).toMul : baseChangeComplex) =
+      baseChangeSplitTorusBialgEquiv.toBialgHom
         (_root_.MonoidAlgebra.single
           (Multiplicative.ofAdd ((Finsupp.uliftFinTwoAddEquiv ℤ).symm pq)) 1) := by
-  rw [baseChangeSplitTorusIso_hom_hom_hom]
-  simp only [additiveGroupLikeComplexAddEquiv, AddEquiv.symm_trans_apply,
+  simp only [characterLatticeEquiv, AddEquiv.symm_trans_apply,
     MulEquiv.toAdditive_apply_symm_apply, toMul_ofMul, MulEquiv.symm_trans_apply,
     MulEquiv.symm_symm, BialgEquiv.val_mapGroupLike,
     TauCeti.MonoidAlgebra.val_groupLikeEquiv_symm, BialgEquiv.toBialgHom_eq_coe,
     BialgEquiv.coe_toBialgHom]
   rfl
 
-omit [Algebra ℝ R] [IsScalarTower ℝ ℂ R] in
-private lemma ofConv_additiveGroupLikeComplexAddEquiv_symm_eq_freeAbelianCharEquiv (pq : ℤ × ℤ)
-    (g : WithConv (baseChangeComplex →ₐ[ℂ] R)) :
-    g.ofConv ((additiveGroupLikeComplexAddEquiv.symm pq).toMul : baseChangeComplex) =
-      ((freeAbelianCharEquiv.symm
-          (SplitTorus.pointsMulEquiv (BialgHom.mapDomain baseChangeSplitTorusIso.hom.hom.hom g))
-          (Multiplicative.ofAdd ((Finsupp.uliftFinTwoAddEquiv ℤ).symm pq)) : Rˣ) : R) := by
-  rw [val_toMul_additiveGroupLikeComplexAddEquiv_symm,
-    ← BialgHom.mapDomain_apply_apply (A := R) baseChangeSplitTorusIso.hom.hom.hom g,
-    SplitTorus.pointsMulEquiv_eq_freeAbelianCharEquiv, MulEquiv.symm_apply_apply,
-    DiagonalizableGroup.pointsMulEquiv_apply, DiagonalizableGroup.charOfPoint_apply_coe]
-  -- `SplitTorus.characterGroup (ULift (Fin 2))` is definitionally
-  -- `Multiplicative (ULift (Fin 2) →₀ ℤ)`.
-  rfl
-
 /-- **Evaluation of the algebraic character lattice on base-changed points**: evaluating a
 base-changed `R`-point `g` of `S_ℂ` at the group-like element corresponding to `pq : ℤ × ℤ` under
-`additiveGroupLikeComplexAddEquiv.symm` equals the value of `characterGroup R (.ofAdd pq)` at the
+`characterLatticeEquiv.symm` equals the value of `characterGroup R (.ofAdd pq)` at the
 corresponding point `baseChangeComplexPointsMulEquiv R g : S(R)`, coerced from `Rˣ` to `R`. -/
 @[simp]
-theorem ofConv_additiveGroupLikeComplexAddEquiv_symm (pq : ℤ × ℤ)
+theorem ofConv_characterLatticeEquiv_symm (pq : ℤ × ℤ)
     (g : WithConv (baseChangeComplex →ₐ[ℂ] R)) :
-    g.ofConv ((additiveGroupLikeComplexAddEquiv.symm pq).toMul : baseChangeComplex) =
+    g.ofConv ((characterLatticeEquiv.symm pq).toMul : baseChangeComplex) =
       (characterGroup R (.ofAdd pq) (baseChangeComplexPointsMulEquiv R g) : R) := by
-  -- Transport `g` along `baseChangeSplitTorusIso` to a point of the rank-two split torus,
-  -- then evaluate `freeAbelianCharEquiv.symm` as the product over `Fin 2` of the two coordinates.
-  rw [ofConv_additiveGroupLikeComplexAddEquiv_symm_eq_freeAbelianCharEquiv,
-    freeAbelianCharEquiv_symm_apply_ofAdd,
-    Finsupp.prod_fintype _ _ (fun _ ↦ zpow_zero _),
-    Fintype.prod_equiv Equiv.ulift
-      (fun i : ULift.{0} (Fin 2) ↦
-        SplitTorus.pointsMulEquiv (BialgHom.mapDomain baseChangeSplitTorusIso.hom.hom.hom g) i ^
-          (Finsupp.uliftFinTwoAddEquiv ℤ).symm pq i)
-      (fun i : Fin 2 ↦
-        SplitTorus.pointsMulEquiv (BialgHom.mapDomain baseChangeSplitTorusIso.hom.hom.hom g) ⟨i⟩ ^
-          (Finsupp.uliftFinTwoAddEquiv ℤ).symm pq ⟨i⟩)
-      (fun _ ↦ rfl),
-    Fin.prod_univ_two,
-    pointsMulEquiv_mapDomain_baseChangeSplitTorusIso_zero,
-    pointsMulEquiv_mapDomain_baseChangeSplitTorusIso_one,
-    Finsupp.uliftFinTwoAddEquiv_symm_apply_zero,
-    Finsupp.uliftFinTwoAddEquiv_symm_apply_one,
-    characterGroup_apply]
+  rw [val_toMul_characterLatticeEquiv_symm,
+    ← BialgHom.mapDomain_apply_apply (A := R) baseChangeSplitTorusBialgEquiv.toBialgHom g,
+    baseChangeSplitTorusBialgEquiv_toBialgHom, BialgHom.mapDomain_comp, MonoidHom.comp_apply,
+    mapDomain_baseChangeComplexBialgEquiv_symm,
+    SplitTorus.mapDomain_rankTwoTensorBialgEquiv_single]
+  simp only [MulEquiv.apply_symm_apply, toAdd_ofAdd,
+    Finsupp.uliftFinTwoAddEquiv_symm_apply_zero, Finsupp.uliftFinTwoAddEquiv_symm_apply_one]
+  rw [← Prod.mk.eta (p := pq), characterGroup_apply]
 
 private lemma ofConv_smul_conjAe (g : WithConv (baseChangeComplex →ₐ[ℂ] ℂ))
     (z : ℂ ⊗[ℝ] S) :
@@ -337,35 +314,34 @@ private lemma ofConv_smul_conjAe (g : WithConv (baseChangeComplex →ₐ[ℂ] �
           (baseChangeComplexPointsMulEquiv ℂ g))).ofConv z) := by
   have hsymm : Complex.conjAe.symm.toAlgHom = Complex.conjAe.toAlgHom :=
     AlgHom.ext fun _ ↦ rfl
-  simpa [hsymm] using AlgHom.ofConv_scalarAut_smul (k := ℝ) (K := ℂ) (A := S) Complex.conjAe g z
+  simpa [baseChangeComplexPointsMulEquiv, AlgHom.baseChangePointsMulEquiv, AlgHom.mapValue_apply,
+    hsymm] using g.ofConv.apply_scalarAut_smul Complex.conjAe z
 
 /-- **Galois equivariance of the algebraic character lattice**: the action of complex conjugation
 `Complex.conjAe` on `Additive (GroupLike ℂ baseChangeComplex)` corresponds under
-`additiveGroupLikeComplexAddEquiv` to swapping the two coordinates `(p, q) ↦ (q, p)`. -/
+`characterLatticeEquiv` to swapping the two coordinates `(p, q) ↦ (q, p)`. -/
 @[simp]
-theorem additiveGroupLikeComplexAddEquiv_smul_conjAe
+theorem characterLatticeEquiv_smul_conjAe
     (x : Additive (_root_.GroupLike ℂ baseChangeComplex)) :
-    additiveGroupLikeComplexAddEquiv (Complex.conjAe • x) =
-      (additiveGroupLikeComplexAddEquiv x).swap := by
+    characterLatticeEquiv (Complex.conjAe • x) = (characterLatticeEquiv x).swap := by
   apply Multiplicative.ofAdd.injective
   apply characterGroup_injective
   refine MonoidHom.ext fun f ↦ Units.ext ?_
   let g : WithConv (baseChangeComplex →ₐ[ℂ] ℂ) := (baseChangeComplexPointsMulEquiv ℂ).symm f
   have hf : baseChangeComplexPointsMulEquiv ℂ g = f :=
     (baseChangeComplexPointsMulEquiv ℂ).apply_symm_apply f
-  have hconj : characterGroup ℂ (.ofAdd (additiveGroupLikeComplexAddEquiv x).swap) f =
-      star (characterGroup ℂ (.ofAdd (additiveGroupLikeComplexAddEquiv x))
+  have hconj : characterGroup ℂ (.ofAdd (characterLatticeEquiv x).swap) f =
+      star (characterGroup ℂ (.ofAdd (characterLatticeEquiv x))
         (AlgHom.mapValue Complex.conjAe.toAlgHom f)) := by
-    have h := characterGroup_conj (additiveGroupLikeComplexAddEquiv x).1
-      (additiveGroupLikeComplexAddEquiv x).2 f
-    rw [← Prod.mk.eta (p := additiveGroupLikeComplexAddEquiv x)] at h
+    have h := characterGroup_conj (characterLatticeEquiv x).1
+      (characterLatticeEquiv x).2 f
+    rw [← Prod.mk.eta (p := characterLatticeEquiv x)] at h
     simpa [Prod.swap] using (congrArg star h).symm
-  rw [← hf, ← ofConv_additiveGroupLikeComplexAddEquiv_symm, AddEquiv.symm_apply_apply,
+  rw [← hf, ← ofConv_characterLatticeEquiv_symm, AddEquiv.symm_apply_apply,
     Additive.toMul_smul, TauCeti.ScalarAut.val_smul, ofConv_smul_conjAe, hf]
   rw [hconj, Units.coe_star]
   congr 1
-  have h1 := ofConv_additiveGroupLikeComplexAddEquiv_symm (R := ℂ)
-    (additiveGroupLikeComplexAddEquiv x)
+  have h1 := ofConv_characterLatticeEquiv_symm (R := ℂ) (characterLatticeEquiv x)
     ((baseChangeComplexPointsMulEquiv ℂ).symm (AlgHom.mapValue Complex.conjAe.toAlgHom f))
   rw [AddEquiv.symm_apply_apply, MulEquiv.apply_symm_apply] at h1
   exact h1

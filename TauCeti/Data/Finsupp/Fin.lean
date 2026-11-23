@@ -164,23 +164,28 @@ theorem finTwoAddEquiv_symm_apply_one [AddZeroClass M] (p : M × M) :
 
 /-- Additive equivalence between finitely supported functions `ULift (Fin 2) →₀ M` and pairs
 `M × M`, sending `f` to `(f ⟨0⟩, f ⟨1⟩)`. -/
-noncomputable def uliftFinTwoAddEquiv (M : Type*) [AddCommMonoid M] :
+noncomputable def uliftFinTwoAddEquiv (M : Type*) [AddZeroClass M] :
     (ULift (Fin 2) →₀ M) ≃+ M × M :=
-  (Finsupp.domCongr Equiv.ulift).trans (finTwoAddEquiv M)
+  Finsupp.addEquivFunOnFinite.trans
+    { toFun f := (f ⟨0⟩, f ⟨1⟩)
+      invFun p i := if i = ⟨0⟩ then p.1 else p.2
+      left_inv _ := funext fun ⟨⟨i, hi⟩⟩ ↦ match i, hi with | 0, _ => rfl | 1, _ => rfl
+      right_inv _ := rfl
+      map_add' _ _ := rfl }
 
 @[simp]
-theorem uliftFinTwoAddEquiv_apply [AddCommMonoid M] (f : ULift (Fin 2) →₀ M) :
+theorem uliftFinTwoAddEquiv_apply [AddZeroClass M] (f : ULift (Fin 2) →₀ M) :
     uliftFinTwoAddEquiv M f = (f ⟨0⟩, f ⟨1⟩) :=
   (rfl)
 
 @[simp]
-theorem uliftFinTwoAddEquiv_symm_apply_zero [AddCommMonoid M] (p : M × M) :
-    (uliftFinTwoAddEquiv M).symm p ⟨0⟩ = p.1 := by
-  simp [uliftFinTwoAddEquiv]
+theorem uliftFinTwoAddEquiv_symm_apply_zero [AddZeroClass M] (p : M × M) :
+    (uliftFinTwoAddEquiv M).symm p ⟨0⟩ = p.1 :=
+  (rfl)
 
 @[simp]
-theorem uliftFinTwoAddEquiv_symm_apply_one [AddCommMonoid M] (p : M × M) :
-    (uliftFinTwoAddEquiv M).symm p ⟨1⟩ = p.2 := by
-  simp [uliftFinTwoAddEquiv]
+theorem uliftFinTwoAddEquiv_symm_apply_one [AddZeroClass M] (p : M × M) :
+    (uliftFinTwoAddEquiv M).symm p ⟨1⟩ = p.2 :=
+  (rfl)
 
 end Finsupp

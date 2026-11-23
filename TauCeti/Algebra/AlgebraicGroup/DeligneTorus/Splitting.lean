@@ -9,10 +9,10 @@ public import TauCeti.Algebra.AlgebraicGroup.DeligneTorus.Basic
 public import TauCeti.Algebra.AlgebraicGroup.Product
 public import TauCeti.Algebra.AlgebraicGroup.Torus.Basic
 public import TauCeti.RingTheory.TensorProduct.Complex
+public import TauCeti.Algebra.AlgebraicGroup.SplitTorus.CoordinateIso
 import Mathlib.RingTheory.RootsOfUnity.Complex
 import TauCeti.Algebra.AlgebraicGroup.BaseChange.Naturality
 import TauCeti.Algebra.AlgebraicGroup.CommHopfAlgCat.Yoneda
-import TauCeti.Algebra.AlgebraicGroup.SplitTorus.CoordinateIso
 import TauCeti.Algebra.AlgebraicGroup.Torus.Splitting
 
 /-!
@@ -448,10 +448,19 @@ private noncomputable def baseChangeProductPointsNatIso :
 noncomputable def baseChangeComplexBialgEquiv :
     baseChangeComplex ≃ₐc[ℂ] ℂ[T;T⁻¹] ⊗[ℂ] ℂ[T;T⁻¹] :=
   _root_.CommHopfAlgCat.ofIso
-    ((CommHopfAlgCat.pointsFunctor (R := ℂ)).preimageIso
-      (X := Opposite.op (_root_.CommHopfAlgCat.of ℂ (ℂ[T;T⁻¹] ⊗[ℂ] ℂ[T;T⁻¹])))
-      (Y := Opposite.op (_root_.CommHopfAlgCat.of ℂ baseChangeComplex))
-      baseChangeProductPointsNatIso.symm).unop
+    { hom := CommHopfAlgCat.homOfPointsMap
+        (H := _root_.CommHopfAlgCat.of ℂ (ℂ[T;T⁻¹] ⊗[ℂ] ℂ[T;T⁻¹]))
+        (K := _root_.CommHopfAlgCat.of ℂ baseChangeComplex)
+        baseChangeProductPointsNatIso.inv
+      inv := CommHopfAlgCat.homOfPointsMap
+        (H := _root_.CommHopfAlgCat.of ℂ baseChangeComplex)
+        (K := _root_.CommHopfAlgCat.of ℂ (ℂ[T;T⁻¹] ⊗[ℂ] ℂ[T;T⁻¹]))
+        baseChangeProductPointsNatIso.hom
+      hom_inv_id := by
+        rw [← CommHopfAlgCat.homOfPointsMap_comp, Iso.hom_inv_id, CommHopfAlgCat.homOfPointsMap_id]
+      inv_hom_id := by
+        rw [← CommHopfAlgCat.homOfPointsMap_comp, Iso.inv_hom_id,
+          CommHopfAlgCat.homOfPointsMap_id] }
 
 private lemma baseChangeComplexBialgEquiv_toBialgHom :
     baseChangeComplexBialgEquiv.toBialgHom =
@@ -460,19 +469,6 @@ private lemma baseChangeComplexBialgEquiv_toBialgHom :
         (K := _root_.CommHopfAlgCat.of ℂ baseChangeComplex)
         baseChangeProductPointsNatIso.inv).hom := by
   rw [baseChangeComplexBialgEquiv, BialgEquiv.toBialgHom_eq_coe, CommHopfAlgCat.coe_ofIso]
-  change ((CommHopfAlgCat.pointsFunctor (R := ℂ)).preimage
-    (X := Opposite.op (_root_.CommHopfAlgCat.of ℂ (ℂ[T;T⁻¹] ⊗[ℂ] ℂ[T;T⁻¹])))
-    (Y := Opposite.op (_root_.CommHopfAlgCat.of ℂ baseChangeComplex))
-    baseChangeProductPointsNatIso.inv).unop.hom = _
-  exact congrArg CommHopfAlgCat.Hom.hom
-    ((CommHopfAlgCat.homOfPointsMap_mapPointsFunctor _).symm.trans
-      (congrArg CommHopfAlgCat.homOfPointsMap
-        (Functor.map_preimage
-          (CommHopfAlgCat.pointsFunctor (R := ℂ) :
-            (_root_.CommHopfAlgCat ℂ)ᵒᵖ ⥤ CommAlgCat ℂ ⥤ GrpCat)
-          (X := Opposite.op (_root_.CommHopfAlgCat.of ℂ (ℂ[T;T⁻¹] ⊗[ℂ] ℂ[T;T⁻¹])))
-          (Y := Opposite.op (_root_.CommHopfAlgCat.of ℂ baseChangeComplex))
-          baseChangeProductPointsNatIso.inv)))
 
 private lemma mapValue_baseChangeProductPointsMulEquiv_symm_id {R : Type*} [CommRing R]
     [Algebra ℂ R] (g : WithConv ((ℂ[T;T⁻¹] ⊗[ℂ] ℂ[T;T⁻¹]) →ₐ[ℂ] R)) :
@@ -497,16 +493,20 @@ theorem mapDomain_baseChangeComplexBialgEquiv {R : Type*} [CommRing R] [Algebra 
         ((complexSplitting R).symm
           (MultiplicativeGroup.pointsMulEquiv p.1, MultiplicativeGroup.pointsMulEquiv p.2)) := by
   let H := ℂ[T;T⁻¹] ⊗[ℂ] ℂ[T;T⁻¹]
-  have hdom := CommHopfAlgCat.mapDomain_homOfPointsMap_of_natural
-    (H := _root_.CommHopfAlgCat.of ℂ H)
-    (K := _root_.CommHopfAlgCat.of ℂ baseChangeComplex)
-    baseChangeProductPointsNatIso.inv
-    ((baseChangeProductPointsMulEquiv H).symm (toConv (AlgHom.id ℂ H)))
-    (baseChangeProductPointsMulEquiv R).symm
-    (by simp only [baseChangeProductPointsNatIso, NatIso.ofComponents_inv_app]; rfl)
-    mapValue_baseChangeProductPointsMulEquiv_symm_id
-    (AffineGroup.Product.pointsMulEquiv.symm p)
-  rw [baseChangeComplexBialgEquiv_toBialgHom, hdom]
+  have hid :
+      baseChangeProductPointsNatIso.inv.app (CommAlgCat.of ℂ H) (toConv (AlgHom.id ℂ H)) =
+        (baseChangeProductPointsMulEquiv H).symm (toConv (AlgHom.id ℂ H)) := by
+    rw [baseChangeProductPointsNatIso, NatIso.ofComponents_inv_app _ _]
+    dsimp only [MulEquiv.toGrpIso]
+    rw [ConcreteCategory.hom_ofHom, MulEquiv.coe_toMonoidHom]
+    -- Reconcile the `CommAlgCat.of ℂ H` algebra instance with `H`'s inferred instance.
+    rfl
+  rw [baseChangeComplexBialgEquiv_toBialgHom,
+    CommHopfAlgCat.mapDomain_homOfPointsMap (R := ℂ)
+      (H := _root_.CommHopfAlgCat.of ℂ H)
+      (K := _root_.CommHopfAlgCat.of ℂ baseChangeComplex)
+      baseChangeProductPointsNatIso.inv,
+    hid, mapValue_baseChangeProductPointsMulEquiv_symm_id]
   exact baseChangeProductPointsMulEquiv_symm_eq _ _ p
 
 /-- **Compatibility of `baseChangeComplexBialgEquiv.symm` with `complexSplitting` on points** over
@@ -520,19 +520,19 @@ theorem mapDomain_baseChangeComplexBialgEquiv_symm {R : Type*} [CommRing R] [Alg
             (complexSplitting R (baseChangeComplexPointsMulEquiv R g)).1,
           (MultiplicativeGroup.pointsMulEquiv (R := ℂ) (A := R)).symm
             (complexSplitting R (baseChangeComplexPointsMulEquiv R g)).2) := by
-  have hg : BialgHom.mapDomain baseChangeComplexBialgEquiv.toBialgHom
-      (AffineGroup.Product.pointsMulEquiv.symm
-        ((MultiplicativeGroup.pointsMulEquiv (R := ℂ) (A := R)).symm
-            (complexSplitting R (baseChangeComplexPointsMulEquiv R g)).1,
-          (MultiplicativeGroup.pointsMulEquiv (R := ℂ) (A := R)).symm
-            (complexSplitting R (baseChangeComplexPointsMulEquiv R g)).2)) = g := by
-    rw [mapDomain_baseChangeComplexBialgEquiv]
+  have hg :
+      BialgEquiv.mapDomainMulEquiv (A := R) baseChangeComplexBialgEquiv
+        (AffineGroup.Product.pointsMulEquiv.symm
+          ((MultiplicativeGroup.pointsMulEquiv (R := ℂ) (A := R)).symm
+              (complexSplitting R (baseChangeComplexPointsMulEquiv R g)).1,
+            (MultiplicativeGroup.pointsMulEquiv (R := ℂ) (A := R)).symm
+              (complexSplitting R (baseChangeComplexPointsMulEquiv R g)).2)) = g := by
+    rw [BialgEquiv.mapDomainMulEquiv_apply, ← BialgEquiv.toBialgHom_eq_coe,
+      mapDomain_baseChangeComplexBialgEquiv]
     simp
-  -- Rewrite only the LHS `g` via `hg`; `rw [← hg]` would also rewrite `g` inside the RHS.
-  nth_rw 1 [← hg]
-  rw [← MonoidHom.comp_apply, ← BialgHom.mapDomain_comp,
-    BialgEquiv.toBialgHom_eq_coe, BialgEquiv.toBialgHom_eq_coe, BialgEquiv.comp_symm,
-    BialgHom.mapDomain_id, MonoidHom.id_apply]
+  rw [BialgEquiv.toBialgHom_eq_coe, ← BialgEquiv.mapDomainMulEquiv_symm_apply,
+    MulEquiv.symm_apply_eq]
+  exact hg.symm
 
 end SchemeSplitting
 
@@ -545,6 +545,15 @@ section TorusAndNotSplit
 noncomputable def baseChangeSplitTorusBialgEquiv :
     MonoidAlgebra ℂ (Multiplicative (ULift.{0} (Fin 2) →₀ ℤ)) ≃ₐc[ℂ] baseChangeComplex :=
   (SplitTorus.rankTwoTensorBialgEquiv.{0} ℂ).trans baseChangeComplexBialgEquiv.symm
+
+/-- The forward bialgebra morphism of `baseChangeSplitTorusBialgEquiv` factors through
+`SplitTorus.rankTwoTensorBialgEquiv` and `baseChangeComplexBialgEquiv.symm`. -/
+theorem baseChangeSplitTorusBialgEquiv_toBialgHom :
+    baseChangeSplitTorusBialgEquiv.toBialgHom =
+      baseChangeComplexBialgEquiv.symm.toBialgHom.comp
+        (SplitTorus.rankTwoTensorBialgEquiv.{0} ℂ).toBialgHom := by
+  rw [baseChangeSplitTorusBialgEquiv, BialgEquiv.toBialgHom_eq_coe, BialgEquiv.trans_toBialgHom]
+  simp only [BialgEquiv.toBialgHom_eq_coe]
 
 /-- **Isomorphism between the base change of `S` to `ℂ` and the rank-two split torus.** -/
 noncomputable def baseChangeSplitTorusIso :
@@ -566,29 +575,10 @@ theorem pointsMulEquiv_mapDomain_baseChangeSplitTorusIso {R : Type*} [CommRing R
     (SplitTorus.pointsMulEquiv (BialgHom.mapDomain baseChangeSplitTorusIso.hom.hom.hom g) ⟨0⟩,
       SplitTorus.pointsMulEquiv (BialgHom.mapDomain baseChangeSplitTorusIso.hom.hom.hom g) ⟨1⟩) =
       complexSplitting R (baseChangeComplexPointsMulEquiv R g) := by
-  rw [baseChangeSplitTorusIso_hom_hom_hom, baseChangeSplitTorusBialgEquiv,
-    BialgEquiv.toBialgHom_eq_coe, BialgEquiv.trans_toBialgHom, BialgHom.mapDomain_comp,
-    MonoidHom.comp_apply]
-  simp only [← BialgEquiv.toBialgHom_eq_coe]
-  rw [mapDomain_baseChangeComplexBialgEquiv_symm,
+  rw [baseChangeSplitTorusIso_hom_hom_hom, baseChangeSplitTorusBialgEquiv_toBialgHom,
+    BialgHom.mapDomain_comp, MonoidHom.comp_apply, mapDomain_baseChangeComplexBialgEquiv_symm,
     SplitTorus.pointsMulEquiv_mapDomain_rankTwoTensorBialgEquiv]
   simp
-
-@[simp↓]
-theorem pointsMulEquiv_mapDomain_baseChangeSplitTorusIso_zero {R : Type*} [CommRing R]
-    [Algebra ℝ R] [Algebra ℂ R] [IsScalarTower ℝ ℂ R]
-    (g : WithConv (baseChangeComplex →ₐ[ℂ] R)) :
-    SplitTorus.pointsMulEquiv (BialgHom.mapDomain baseChangeSplitTorusIso.hom.hom.hom g) ⟨0⟩ =
-      (complexSplitting R (baseChangeComplexPointsMulEquiv R g)).1 :=
-  congrArg Prod.fst (pointsMulEquiv_mapDomain_baseChangeSplitTorusIso g)
-
-@[simp↓]
-theorem pointsMulEquiv_mapDomain_baseChangeSplitTorusIso_one {R : Type*} [CommRing R]
-    [Algebra ℝ R] [Algebra ℂ R] [IsScalarTower ℝ ℂ R]
-    (g : WithConv (baseChangeComplex →ₐ[ℂ] R)) :
-    SplitTorus.pointsMulEquiv (BialgHom.mapDomain baseChangeSplitTorusIso.hom.hom.hom g) ⟨1⟩ =
-      (complexSplitting R (baseChangeComplexPointsMulEquiv R g)).2 :=
-  congrArg Prod.snd (pointsMulEquiv_mapDomain_baseChangeSplitTorusIso g)
 
 /-- After base change from `ℝ` to `ℂ`, the Deligne torus is a split torus. -/
 theorem splitTorusCommHopfAlgProperty_baseChange_complex :
@@ -611,10 +601,11 @@ theorem infinite_isOfFinOrder_realPoints :
   have hprim (k : ℕ) : IsPrimitiveRoot (u k) (k + 1) :=
     (Complex.isPrimitiveRoot_exp (k + 1) (Nat.succ_ne_zero k)).isUnit_unit
       (Nat.succ_ne_zero k)
+  let f : ℂˣ →* WithConv (S →ₐ[ℝ] ℝ) := realPointsMulEquiv.symm.toMonoidHom
   refine Infinite.of_injective
-    (fun k : ℕ ↦ ⟨realPointsMulEquiv.symm (u k), by
-      obtain ⟨n, hn, hpow⟩ := ((hprim k).isOfFinOrder (Nat.succ_ne_zero k)).exists_pow_eq_one
-      exact isOfFinOrder_iff_pow_eq_one.2 ⟨n, hn, by rw [← map_pow, hpow, map_one]⟩⟩)
+    (fun k : ℕ ↦ ⟨f (u k),
+      (Function.Injective.isOfFinOrder_iff (f := f) realPointsMulEquiv.symm.injective).2
+        ((hprim k).isOfFinOrder (Nat.succ_ne_zero k))⟩)
     fun k l hkl ↦ ?_
   have hu : u k = u l :=
     realPointsMulEquiv.symm.injective (congrArg Subtype.val hkl)
