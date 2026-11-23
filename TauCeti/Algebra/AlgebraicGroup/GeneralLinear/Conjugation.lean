@@ -33,6 +33,8 @@ automorphism carries it there, and on points that is conjugation by the change-o
 
 ## Main results
 
+* `TauCeti.GeneralLinear.conjCoordinateIso_hom_toAlgHom`: the coordinate automorphism is the
+  point-conjugation algebra map at the point of `P`.
 * `TauCeti.GeneralLinear.pointsMulEquiv_mapPointsFunctor_conjCoordinateIso` and
   `TauCeti.GeneralLinear.pointsMulEquiv_toConv_comp_conjCoordinateIso`: on algebra-valued points
   the coordinate automorphism is conjugation by the base-changed matrix.
@@ -63,6 +65,14 @@ noncomputable def conjCoordinateIso (P : Matrix.GeneralLinearGroup (Fin n) R) :
     coordinateHopfAlgebra R n ≅ coordinateHopfAlgebra R n :=
   (coordinateHopfAlgebra R n).innerConjugationIso
     ((pointsMulEquiv (R := R) (A := R) n).symm P)
+
+/-- The coordinate algebra map of conjugation by `P` is the point-conjugation algebra map at the
+`R`-valued point of `P`. -/
+@[simp]
+theorem conjCoordinateIso_hom_toAlgHom (P : Matrix.GeneralLinearGroup (Fin n) R) :
+    (conjCoordinateIso P).hom.hom.toAlgHom =
+      HopfAlgebra.pointConjugationAlgHom ((pointsMulEquiv (R := R) (A := R) n).symm P) := by
+  rw [conjCoordinateIso, _root_.CommHopfAlgCat.innerConjugationIso_hom_toAlgHom]
 
 /-- The `R`-valued point underlying a constant matrix, extended to an `R`-algebra `A`, is the
 image of that matrix over `A`. -/
