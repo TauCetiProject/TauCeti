@@ -7,6 +7,7 @@ module
 
 public import TauCeti.ModelTheory.Counting.Scattered.SentenceSplits
 public import TauCeti.ModelTheory.Counting.Scattered.Vaught
+import TauCeti.Basic.Countable.Basic
 import TauCeti.ModelTheory.Counting.Scattered.AnalyticSplits
 import TauCeti.ModelTheory.RelationalConfiguration.Saturation
 import TauCeti.ModelTheory.RelationalConfiguration.Sentence.Spectrum
@@ -779,10 +780,7 @@ theorem BFScattered.exists_minimallyUncountableOn_inter_modelsOf
     fun X Y hEq => by_contra fun hXY =>
       hsep hXY (Quotient.exact (s := (bfEquivSetoid L ℕ β_sup).comap (Subtype.val : K → _)) hEq)
   have := hK.countable_quotient hβ_lt
-  have hunc_cantor : ¬ Countable (ℕ → Bool) := by
-    rw [← mk_le_aleph0_iff]
-    simpa using aleph0_lt_continuum
-  exact hunc_cantor hinj.countable
+  exact not_injective_uncountable_countable _ hinj
 
 /-- **The Harnik–Makkai reduction for isomorphism-invariant Borel scattered classes.** Any
 isomorphism-invariant Borel set `K` of configurations on `ℕ` that is back-and-forth scattered and
