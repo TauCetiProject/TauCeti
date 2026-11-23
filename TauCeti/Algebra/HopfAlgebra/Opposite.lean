@@ -54,7 +54,7 @@ section HopfAlgebra
 variable {R H : Type*} [CommSemiring R] [Semiring H] [HopfAlgebra R H]
 
 /-- Left antipode axiom for `Coop H` when the antipode of `H` is bijective. -/
-theorem coop_mul_antipode_rTensor_comul
+private theorem coop_mul_antipode_rTensor_comul
     (hS : Function.Bijective (HopfAlgebra.antipode R : H →ₗ[R] H)) :
     let S : Coop H →ₗ[R] Coop H :=
       (linearEquiv R H).symm.toLinearMap ∘ₗ
@@ -77,7 +77,7 @@ theorem coop_mul_antipode_rTensor_comul
     hL'.trans (TauCeti.HopfAlgebra.mul_inverseAntipode_rTensor_comm_comul_apply hS x)
 
 /-- Right antipode axiom for `Coop H` when the antipode of `H` is bijective. -/
-theorem coop_mul_antipode_lTensor_comul
+private theorem coop_mul_antipode_lTensor_comul
     (hS : Function.Bijective (HopfAlgebra.antipode R : H →ₗ[R] H)) :
     let S : Coop H →ₗ[R] Coop H :=
       (linearEquiv R H).symm.toLinearMap ∘ₗ
@@ -106,8 +106,8 @@ noncomputable def hopfAlgebra
     HopfAlgebra R (Coop H) where
   antipode := (linearEquiv R H).symm.toLinearMap ∘ₗ
     TauCeti.HopfAlgebra.inverseAntipode hS ∘ₗ (linearEquiv R H).toLinearMap
-  mul_antipode_rTensor_comul := coop_mul_antipode_rTensor_comul hS
-  mul_antipode_lTensor_comul := coop_mul_antipode_lTensor_comul hS
+  mul_antipode_rTensor_comul := by exact coop_mul_antipode_rTensor_comul hS
+  mul_antipode_lTensor_comul := by exact coop_mul_antipode_lTensor_comul hS
 
 /-- Action of the antipode on `TauCeti.Coop H` under `Coop.hopfAlgebra`. -/
 @[simp]
@@ -128,7 +128,7 @@ open TauCeti
 variable {R H : Type*} [CommSemiring R] [Semiring H] [HopfAlgebra R H]
 
 /-- Left antipode axiom for `(Coop H)ᵐᵒᵖ`. -/
-theorem opCoop_mul_antipode_rTensor_comul :
+private theorem opCoop_mul_antipode_rTensor_comul :
     let e : Coop H ≃ₗ[R] H := Coop.linearEquiv R H
     let S : (Coop H)ᵐᵒᵖ →ₗ[R] (Coop H)ᵐᵒᵖ :=
       (opLinearEquiv R).toLinearMap ∘ₗ e.symm.toLinearMap ∘ₗ
@@ -165,7 +165,7 @@ theorem opCoop_mul_antipode_rTensor_comul :
   simp [Algebra.algebraMap_eq_smul_one, e]
 
 /-- Right antipode axiom for `(Coop H)ᵐᵒᵖ`. -/
-theorem opCoop_mul_antipode_lTensor_comul :
+private theorem opCoop_mul_antipode_lTensor_comul :
     let e : Coop H ≃ₗ[R] H := Coop.linearEquiv R H
     let S : (Coop H)ᵐᵒᵖ →ₗ[R] (Coop H)ᵐᵒᵖ :=
       (opLinearEquiv R).toLinearMap ∘ₗ e.symm.toLinearMap ∘ₗ
@@ -206,8 +206,8 @@ noncomputable instance instHopfAlgebraCoop : HopfAlgebra R (Coop H)ᵐᵒᵖ whe
     (opLinearEquiv R).toLinearMap ∘ₗ (Coop.linearEquiv R H).symm.toLinearMap ∘ₗ
       HopfAlgebra.antipode R ∘ₗ (Coop.linearEquiv R H).toLinearMap ∘ₗ
       (opLinearEquiv R).symm.toLinearMap
-  mul_antipode_rTensor_comul := opCoop_mul_antipode_rTensor_comul
-  mul_antipode_lTensor_comul := opCoop_mul_antipode_lTensor_comul
+  mul_antipode_rTensor_comul := by exact opCoop_mul_antipode_rTensor_comul
+  mul_antipode_lTensor_comul := by exact opCoop_mul_antipode_lTensor_comul
 
 @[simp]
 theorem antipode_op_coop (a : H) :
@@ -215,7 +215,7 @@ theorem antipode_op_coop (a : H) :
   rfl
 
 /-- Left antipode axiom for `Hᵐᵒᵖ` when the antipode of `H` is bijective. -/
-theorem mulOpposite_mul_antipode_rTensor_comul
+private theorem mulOpposite_mul_antipode_rTensor_comul
     (hS : Function.Bijective (HopfAlgebra.antipode R : H →ₗ[R] H)) :
     let S : Hᵐᵒᵖ →ₗ[R] Hᵐᵒᵖ :=
       (opLinearEquiv R).toLinearMap ∘ₗ TauCeti.HopfAlgebra.inverseAntipode hS ∘ₗ
@@ -249,7 +249,7 @@ theorem mulOpposite_mul_antipode_rTensor_comul
   simp [Algebra.algebraMap_eq_smul_one]
 
 /-- Right antipode axiom for `Hᵐᵒᵖ` when the antipode of `H` is bijective. -/
-theorem mulOpposite_mul_antipode_lTensor_comul
+private theorem mulOpposite_mul_antipode_lTensor_comul
     (hS : Function.Bijective (HopfAlgebra.antipode R : H →ₗ[R] H)) :
     let S : Hᵐᵒᵖ →ₗ[R] Hᵐᵒᵖ :=
       (opLinearEquiv R).toLinearMap ∘ₗ TauCeti.HopfAlgebra.inverseAntipode hS ∘ₗ
@@ -289,8 +289,8 @@ noncomputable def hopfAlgebra
     HopfAlgebra R Hᵐᵒᵖ where
   antipode := (opLinearEquiv R).toLinearMap ∘ₗ TauCeti.HopfAlgebra.inverseAntipode hS ∘ₗ
     (opLinearEquiv R).symm.toLinearMap
-  mul_antipode_rTensor_comul := mulOpposite_mul_antipode_rTensor_comul hS
-  mul_antipode_lTensor_comul := mulOpposite_mul_antipode_lTensor_comul hS
+  mul_antipode_rTensor_comul := by exact mulOpposite_mul_antipode_rTensor_comul hS
+  mul_antipode_lTensor_comul := by exact mulOpposite_mul_antipode_lTensor_comul hS
 
 /-- Action of the antipode on `Hᵐᵒᵖ` under `MulOpposite.hopfAlgebra`. -/
 @[simp]
