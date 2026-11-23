@@ -237,6 +237,7 @@ theorem trace_cliffordRestriction_mul (hkl : 2 + 2 = finrank ℝ V) (x y : ⋀[�
 
 /-- Only the self-dual part of a two-form acts on `W⁺`, so `α` and `⋆α` act alike:
 `C(i ⋆α) = C(iα)`. -/
+@[simp]
 theorem cliffordRestriction_hodgeStar (hkl : 2 + 2 = finrank ℝ V) (x : ⋀[ℝ]^2 V) :
     cliffordRestriction o ρ (o.hodgeStar hkl x) = cliffordRestriction o ρ x := by
   -- `c₂(⋆α) = Γ c₂(α) = c₂(α) Γ`, and `Γ` fixes `W⁺`.
