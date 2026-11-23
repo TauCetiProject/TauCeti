@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Logic.Equiv.PartialEquiv
 public import Mathlib.Topology.ContinuousOn
 
 /-!
@@ -17,9 +18,12 @@ are the traces `t ∩ s` of open sets of `X`, so this is a pointwise test that d
 subtype topology. When `f` is the projection of a cylinder to its base, it describes the sets whose
 projection is open on every relatively open subset.
 
-If `s.domRestrict f` is inducing, then the inverse `Function.invFunOn f s` of `f` on `s` is
-continuous on `f '' s` (`Topology.IsInducing.continuousOn_invFunOn`). When `s.domRestrict f` is an
-embedding, `f` thus maps `s` homeomorphically onto `f '' s`.
+If `s.domRestrict f` is inducing, then `Function.invFunOn f s`, a right inverse of `f` on `f '' s`
+that selects a preimage in `s`, is continuous on `f '' s`
+(`Topology.IsInducing.continuousOn_invFunOn`). If moreover `f` is injective on `s`, then the inverse
+of the partial equivalence `Set.InjOn.toPartialEquiv f s` is continuous on its target `f '' s`
+(`Topology.IsInducing.continuousOn_toPartialEquiv_symm`), so `f` maps `s` homeomorphically onto
+`f '' s`.
 -/
 
 public section
@@ -44,10 +48,10 @@ theorem isOpenMap_domRestrict_iff {f : X → Y} {s : Set X} :
 
 end TauCeti
 
-/-- If the restriction of `f` to `s` is inducing, then the inverse `invFunOn f s` of `f` on `s` is
-continuous on `f '' s`. Injectivity of `f` on `s` is not needed: `f (invFunOn f s y) = y` for
-`y ∈ f '' s`, and a map into `s` is continuous as soon as its composite with `s.domRestrict f`
-is. -/
+/-- If the restriction of `f` to `s` is inducing, then `invFunOn f s`, a right inverse of `f` on
+`f '' s` that selects a preimage in `s`, is continuous on `f '' s`. Injectivity of `f` on `s` is not
+needed: `f (invFunOn f s y) = y` for `y ∈ f '' s`, and a map into `s` is continuous as soon as its
+composite with `s.domRestrict f` is. -/
 theorem Topology.IsInducing.continuousOn_invFunOn {X Y : Type*} [TopologicalSpace X]
     [TopologicalSpace Y] [Nonempty X] {f : X → Y} {s : Set X}
     (hf : IsInducing (s.domRestrict f)) : ContinuousOn (invFunOn f s) (f '' s) := by
@@ -55,3 +59,12 @@ theorem Topology.IsInducing.continuousOn_invFunOn {X Y : Type*} [TopologicalSpac
   have hg : Continuous g :=
     hf.continuous_iff.2 (continuous_subtypeVal.congr fun y ↦ (invFunOn_eq y.property).symm)
   exact continuousOn_iff_continuous_domRestrict.2 (continuous_subtypeVal.comp hg)
+
+/-- If the restriction of `f` to `s` is inducing and `f` is injective on `s`, then the inverse of
+the partial equivalence `hinj.toPartialEquiv f s` is continuous on its target `f '' s`. -/
+theorem Topology.IsInducing.continuousOn_toPartialEquiv_symm {X Y : Type*} [TopologicalSpace X]
+    [TopologicalSpace Y] [Nonempty X] {f : X → Y} {s : Set X} (hf : IsInducing (s.domRestrict f))
+    (hinj : InjOn f s) :
+    ContinuousOn (hinj.toPartialEquiv f s).symm (hinj.toPartialEquiv f s).target := by
+  rw [InjOn.toPartialEquiv, BijOn.toPartialEquiv_symm_apply, BijOn.toPartialEquiv_target]
+  exact hf.continuousOn_invFunOn

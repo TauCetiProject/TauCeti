@@ -89,8 +89,8 @@ private lemma continuousOn_symm_imageCellMap (n : ℕ) (i : cell C n) :
       (imageCellMap (injOn_iff_injective.2 hf.injective) n i).target := by
   have : Nonempty X := ⟨map n i 0⟩
   rw [imageCellMap, PartialEquiv.coe_trans_symm, PartialEquiv.trans_target]
-  exact (continuousOn_symm n i).comp (hf.isInducing.continuousOn_invFunOn.mono inter_subset_left)
-    fun y hy ↦ hy.2
+  exact (continuousOn_symm n i).comp
+    ((hf.isInducing.continuousOn_toPartialEquiv_symm _).mono inter_subset_left) fun y hy ↦ hy.2
 
 /-- **The weak topology of `D' ∪ f '' C`.** Let `f` restrict to an embedding on a closed set
 `S ⊇ C`, let `D ⊆ f ⁻¹' D'`, and suppose that `closure (f '' (C \ D)) ⊆ f '' S`. Then a set
@@ -123,20 +123,21 @@ private lemma isClosed_of_isClosed_inter_imageCellMap (hS : IsClosed S) (hCS : C
       rw [h, inter_comm]
       exact (hfS.mono ((base_subset_complex (C := C)).trans hCS)).preimage_isClosed_of_isClosed
         (isClosedBase C) hA.2
-  -- Hence `f ⁻¹' A ∩ C` is cut out of `S` by a closed `F ⊆ Y`, so `F ∩ f '' S = A ∩ f '' C`.
-  obtain ⟨F, hF, hFA⟩ := hf.isInducing.isClosed_iff.1 (hpreClosed.preimage continuous_subtypeVal)
-  have hFA' (x : X) (hx : x ∈ S) : f x ∈ F ↔ f x ∈ A ∧ x ∈ C := Set.ext_iff.1 hFA ⟨x, hx⟩
+  -- Hence its image `A ∩ f '' C` is cut out of `f '' S` by a closed `F ⊆ Y`.
+  obtain ⟨F, hF, hFA⟩ :=
+    hf.isInducing.image_eq_isClosed_inter_range (hpreClosed.preimage continuous_subtypeVal)
+  rw [image_domRestrict, range_domRestrict, inter_eq_left.2 (inter_subset_right.trans hCS),
+    image_preimage_inter] at hFA
   -- Off `D'`, `A` lies in `f '' (C \ D)`, whose closure lies in `f '' S`.
   have hAeq : A = (F ∩ closure (f '' (C \ D))) ∪ (A ∩ D') := by
     refine subset_antisymm (fun y hy ↦ ?_) (union_subset ?_ inter_subset_left)
     · by_cases hyD' : y ∈ D'
       · exact .inr ⟨hy, hyD'⟩
       obtain ⟨x, hx, rfl⟩ := (hAC hy).resolve_left hyD'
-      exact .inl ⟨(hFA' x (hCS hx)).2 ⟨hy, hx⟩,
+      exact .inl ⟨(hFA.subset ⟨hy, mem_image_of_mem f hx⟩).1,
         subset_closure ⟨x, ⟨hx, fun hxD ↦ hyD' (hDD' hxD)⟩, rfl⟩⟩
     · rintro y ⟨hyF, hy⟩
-      obtain ⟨x, hx, rfl⟩ := hcl hy
-      exact ((hFA' x hx).1 hyF).1
+      exact (hFA.superset ⟨hyF, hcl hy⟩).1
   rw [hAeq]
   exact (hF.inter isClosed_closure).union hA.2
 
@@ -215,9 +216,13 @@ the open cell, these are the coordinates of `x` in that cell. -/
 lemma map_relCWComplex_symm_apply (n : ℕ)
     (i : @cell Y _ C' D' (hf.relCWComplex hS hCS hD' hpre hcl hC') n) {x : X} (hx : x ∈ S) :
     (@map Y _ C' D' (hf.relCWComplex hS hCS hD' hpre hcl hC') n i).symm (f x) =
-      (map n (hf.relCWComplexCellEquiv hS hCS hD' hpre hcl hC' n i)).symm x :=
+      (map n (hf.relCWComplexCellEquiv hS hCS hD' hpre hcl hC' n i)).symm x := by
   have : Nonempty X := ⟨x⟩
-  congrArg (map n _).symm ((injOn_iff_injective.2 hf.injective).leftInvOn_invFunOn hx)
+  have hinj : InjOn f S := injOn_iff_injective.2 hf.injective
+  change (imageCellMap hinj n _).symm (f x) = _
+  simp only [imageCellMap, PartialEquiv.coe_trans_symm, comp_apply, InjOn.toPartialEquiv,
+    BijOn.toPartialEquiv_symm_apply, hinj.leftInvOn_invFunOn hx, relCWComplexCellEquiv,
+    Equiv.refl_apply]
 
 /-- The open cells of `D' ∪ f '' C` relative to `D'` are the images of the open cells of `C`. -/
 @[simp]
