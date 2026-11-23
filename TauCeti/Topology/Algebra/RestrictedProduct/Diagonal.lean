@@ -79,6 +79,14 @@ theorem rationalDiagonal_apply {Γ : Type w} [MulOneClass Γ] (φ : ∀ i, Γ �
     rationalDiagonal φ U h γ i = φ i γ := by
   simp only [rationalDiagonal, MonoidHom.coe_mk, OneHom.coe_mk, RestrictedProduct.mk_apply]
 
+/-- The diagonal is the identity exactly when every coordinate is the identity. -/
+@[to_additive (attr := simp) addRationalDiagonal_eq_zero_iff]
+theorem rationalDiagonal_eq_one_iff {Γ : Type w} [MulOneClass Γ] (φ : ∀ i, Γ →* G i)
+    (U : ∀ i, Subgroup (G i))
+    (h : ∀ γ : Γ, ∀ᶠ i in cofinite, φ i γ ∈ U i) (γ : Γ) :
+    rationalDiagonal φ U h γ = 1 ↔ ∀ i, φ i γ = 1 := by
+  simp only [RestrictedProduct.ext_iff, rationalDiagonal_apply, RestrictedProduct.one_apply]
+
 /-- The kernel of the diagonal is the intersection of the kernels of the coordinate maps. -/
 @[to_additive (attr := simp) ker_addRationalDiagonal]
 theorem ker_rationalDiagonal {Γ : Type w} [Group Γ] (φ : ∀ i, Γ →* G i)
@@ -86,8 +94,7 @@ theorem ker_rationalDiagonal {Γ : Type w} [Group Γ] (φ : ∀ i, Γ →* G i)
     (h : ∀ γ : Γ, ∀ᶠ i in cofinite, φ i γ ∈ U i) :
     (rationalDiagonal φ U h).ker = ⨅ i, (φ i).ker := by
   ext γ
-  simp only [MonoidHom.mem_ker, Subgroup.mem_iInf, RestrictedProduct.ext_iff,
-    rationalDiagonal_apply, RestrictedProduct.one_apply]
+  simp only [MonoidHom.mem_ker, Subgroup.mem_iInf, rationalDiagonal_eq_one_iff]
 
 /-- The diagonal is injective exactly when the coordinate maps jointly separate points. -/
 @[to_additive injective_addRationalDiagonal_iff]

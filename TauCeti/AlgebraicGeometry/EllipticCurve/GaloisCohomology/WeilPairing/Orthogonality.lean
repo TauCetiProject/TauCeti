@@ -101,7 +101,7 @@ theorem kerH1WeilPairing_eq_zero_of_mem_ker
   classical
   have := (φ.isSeparable_dual_and_self_iff.mpr hn.ne_zero).2
   have := (φ.isSeparable_dual_and_self_iff.mpr hn.ne_zero).1
-  rw [← range_kummerMap] at ha hb
+  rw [← localKummerCondition_def, ← range_kummerMap] at ha hb
   exact φ.kerH1WeilPairing_eq_zero_of_mem_range_kummerMap hn ha hb
 
 end Kummer

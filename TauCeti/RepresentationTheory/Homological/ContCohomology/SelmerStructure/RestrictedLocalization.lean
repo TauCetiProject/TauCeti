@@ -35,30 +35,14 @@ variable {G : Type*} [Monoid G] [TopologicalSpace G]
   (𝓕 : SelmerStructure G M H N) (U : ∀ i, AddSubgroup (H1 (H i) (N i)))
   (h : ∀ c : H1 G M, ∀ᶠ i in Filter.cofinite, 𝓕.localization i c ∈ U i)
 
-/-- The localization maps assembled into the restricted product for the caller's reference
-subgroups, given eventual membership for every global class. -/
-def restrictedLocalization : H1 G M →+ Πʳ i, [H1 (H i) (N i), (U i : Set _)] :=
-  addRationalDiagonal 𝓕.localization U h
-
-/-- A coordinate of restricted localization is the corresponding localization map. -/
-@[simp]
-theorem restrictedLocalization_apply (c : H1 G M) (i : ι) :
-    𝓕.restrictedLocalization U h c i = 𝓕.localization i c :=
-  addRationalDiagonal_apply _ _ _ _ _
-
-/-- Restricted localization vanishes exactly when every localization vanishes. -/
-@[simp]
-theorem restrictedLocalization_eq_zero_iff (c : H1 G M) :
-    𝓕.restrictedLocalization U h c = 0 ↔ ∀ i, 𝓕.localization i c = 0 := by
-  simp only [DFunLike.ext_iff, restrictedLocalization_apply, RestrictedProduct.zero_apply]
-
 /-- The Selmer group is the pullback of the subgroup satisfying every local condition in the
 restricted product with the caller's reference family. -/
-theorem selmerGroup_eq_comap_restrictedLocalization :
+theorem selmerGroup_eq_comap_addRationalDiagonal :
     𝓕.selmerGroup =
-      (integralAddSubgroupOf U 𝓕.localCondition).comap (𝓕.restrictedLocalization U h) := by
+      (integralAddSubgroupOf U 𝓕.localCondition).comap
+        (addRationalDiagonal 𝓕.localization U h) := by
   ext c
   simp only [mem_selmerGroup_iff, AddSubgroup.mem_comap, mem_integralAddSubgroupOf,
-    restrictedLocalization_apply]
+    addRationalDiagonal_apply]
 
 end TauCeti.ContCohomology.SelmerStructure

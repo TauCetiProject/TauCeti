@@ -180,7 +180,7 @@ theorem mem_selmerGroup_iff_forall_kerRes_mem_range_kummerMap
     [∀ i, DecidableEq (L i)] {c : H1 (AbsoluteGaloisGroup K) (ofIsogeny φ).KerCoeff} :
     c ∈ φ.selmerGroup τ ↔ ∀ i, φ.kerRes (τ i) c ∈ (φ.baseChange (L i)).kummerMap.range := by
   simp only [selmerGroup, SelmerStructure.mem_selmerGroup_iff, selmerStructure_localization,
-    selmerStructure_localCondition, localKummerCondition_eq_range_kummerMap]
+    selmerStructure_localCondition, ← range_kummerMap]
 
 /-! ### The kernel of `φ` on the Shafarevich–Tate group -/
 
@@ -218,7 +218,7 @@ variable [DecidableEq K]
 `φ`-Selmer group, since it already vanishes in `H¹(G_K, E₁(Kˢ))`. -/
 theorem kummerMap_mem_selmerGroup (P : W₂.toAffine.Point) : φ.kummerMap P ∈ φ.selmerGroup τ := by
   have h : φ.kummerMap P ∈ φ.kummerMap.range := ⟨P, rfl⟩
-  rw [range_kummerMap, AddMonoidHom.mem_ker] at h
+  rw [range_kummerMap, localKummerCondition_def, AddMonoidHom.mem_ker] at h
   rw [mem_selmerGroup_iff, h]
   exact zero_mem _
 
@@ -270,7 +270,7 @@ theorem exact_kummerSelmerMap_selmerShaMap [DecidableEq K] :
   have hker : φ.selmerShaMap τ c = 0 ↔
       explicitCoeff1 _ _ (ofIsogeny φ).kerCoeffIncl continuous_of_discreteTopology c = 0 := by
     simp only [← Subtype.val_inj, coe_selmerShaMap, ZeroMemClass.coe_zero]
-  rw [hker, ← AddMonoidHom.mem_ker, ← range_kummerMap φ]
+  rw [hker, ← AddMonoidHom.mem_ker, ← localKummerCondition_def, ← range_kummerMap φ]
   refine ⟨fun ⟨P, hP⟩ ↦ ⟨QuotientAddGroup.mk P, Subtype.ext ?_⟩, fun ⟨x, hx⟩ ↦ ?_⟩
   · rw [coe_kummerSelmerMap, kummerClassMap_mk, hP]
   · induction x using QuotientAddGroup.induction_on with

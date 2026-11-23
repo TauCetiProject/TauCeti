@@ -531,7 +531,8 @@ private theorem natCard_ker_kerCoeffIncl_mul_dual_eq_natCard_H1 [DecidableEq F]
   have := (φ.isSeparable_dual_and_self_iff.mpr hn.ne_zero).2
   have := (φ.isSeparable_dual_and_self_iff.mpr hn.ne_zero).1
   rcases hcase with ⟨rfl, hidx⟩ | _
-  · rw [← φ.range_kummerMap, ← φ.dual.range_kummerMap, natCard_range_kummerMap,
+  · rw [← φ.localKummerCondition_def, ← φ.range_kummerMap,
+      ← φ.dual.localKummerCondition_def, ← φ.dual.range_kummerMap, natCard_range_kummerMap,
       natCard_range_kummerMap]
     refine Nat.eq_of_mul_eq_mul_left φ.degree_pos ?_
     rw [pow_one] at heuler; exact hidx.trans heuler.symm
@@ -568,7 +569,9 @@ private theorem range_kummerMap_eq_ker_compl₂ [CharZero F] [DecidableEq F]
       (pair.compl₂ (explicitCoeff1 _ _ (ofIsogeny φ.dual).kerCoeffIncl
         continuous_of_discreteTopology).ker.subtype).ker) :
     φ.kummerMap.range = (pair.compl₂ φ.dual.kummerMap.range.subtype).ker := by
-  rw [φ.range_kummerMap, φ.dual.range_kummerMap]; exact hker
+  rw [φ.range_kummerMap, φ.dual.range_kummerMap,
+    φ.localKummerCondition_def, φ.dual.localKummerCondition_def]
+  exact hker
 
 end AbstractField
 
@@ -670,7 +673,8 @@ theorem ker_explicitCoeff1_kerCoeffIncl_eq_ker_compl₂_realTateKerWeilPairing_d
   φ.ker_kerCoeffIncl_eq_ker_tateKerWeilPairingOfH2MuHom
     (isUnit_natCast_of_ne_zero φ.degree_ne_zero) (realH2MuToZMod φ.degree)
     φ.realTateKerWeilPairing_bijective (by
-      rw [← φ.range_kummerMap, ← φ.dual.range_kummerMap,
+      rw [← φ.localKummerCondition_def, ← φ.range_kummerMap,
+        ← φ.dual.localKummerCondition_def, ← φ.dual.range_kummerMap,
         φ.natCard_range_kummerMap_mul_dual_eq_natCard_H1_real])
 
 /-- **The real Kummer image of `φ` is the exact annihilator of the real Kummer image of `φ̂`.** -/
@@ -800,7 +804,8 @@ theorem degree_pow_mult_mul_natCard_H1_kerCoeff_completion [DecidableEq w.Comple
 theorem natCard_range_kummerMap_mul_dual_eq_natCard_H1_completion [DecidableEq w.Completion] :
     Nat.card φ.kummerMap.range * Nat.card φ.dual.kummerMap.range =
       Nat.card (H1 (Gal w.Completion) (ofIsogeny φ).KerCoeff) := by
-  rw [φ.range_kummerMap, φ.dual.range_kummerMap]
+  rw [φ.range_kummerMap, φ.dual.range_kummerMap,
+    φ.localKummerCondition_def, φ.dual.localKummerCondition_def]
   exact φ.natCard_ker_kerCoeffIncl_mul_dual_eq_natCard_H1
     (isUnit_natCast_of_ne_zero φ.degree_ne_zero) (k := w.mult)
     φ.degree_pow_mult_mul_natCard_H1_kerCoeff_completion

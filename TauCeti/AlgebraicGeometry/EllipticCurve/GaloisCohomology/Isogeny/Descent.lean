@@ -459,18 +459,10 @@ theorem natCard_range_kummerMap_of_isSepClosed [IsSepClosed K] :
   obtain ⟨P, rfl⟩ := φ.toPointHom_surjective Q
   exact ⟨P, by rw [Hom.pointMapHom_apply, Hom.pointMap_ofIsogeny_eq_toPointHom]⟩
 
-/-- **The image of the Kummer map is the kernel of `H¹(G_K, E₁[φ]) → H¹(G_K, E₁)`.** -/
-theorem range_kummerMap :
-    φ.kummerMap.range =
-      (explicitCoeff1 (AbsoluteGaloisGroup K) (ofIsogeny φ).KerCoeff (ofIsogeny φ).kerCoeffIncl
-        continuous_of_discreteTopology).ker := by
-  rw [← Isogeny.kummerShortExact_inclDistribMulActionHom φ]
+/-- The image of the Kummer map is the local Kummer condition. -/
+theorem range_kummerMap : φ.kummerMap.range = φ.localKummerCondition := by
+  rw [localKummerCondition_def, ← Isogeny.kummerShortExact_inclDistribMulActionHom φ]
   exact φ.kummerShortExact.range_explicitDelta0_comp W₂.basePointEquivInvariants.surjective
-
-/-- For a separable isogeny, the local Kummer condition is the image of the Kummer map. -/
-theorem localKummerCondition_eq_range_kummerMap :
-    φ.localKummerCondition = φ.kummerMap.range :=
-  φ.localKummerCondition_def.trans φ.range_kummerMap.symm
 
 omit [DecidableEq K] in
 /-- **The image of `H¹(G_K, E₁[φ]) → H¹(G_K, E₁)` is the kernel of the map

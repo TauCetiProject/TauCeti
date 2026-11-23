@@ -101,7 +101,8 @@ theorem natCard_ker_explicitCoeff1_kerCoeffIncl_mul_dual_eq_natCard_H1 :
     (by rwa [degree_ofIsogeny])
   rw [dual_ofIsogeny, degree_ofIsogeny,
     natCard_quotient_span_natCast_eq_pow_finrank_mul_padicValNat K p _ φ.degree_ne_zero] at h
-  rw [← φ.range_kummerMap, ← φ.dual.range_kummerMap, natCard_range_kummerMap,
+  rw [← φ.localKummerCondition_def, ← φ.range_kummerMap,
+    ← φ.dual.localKummerCondition_def, ← φ.dual.range_kummerMap, natCard_range_kummerMap,
     natCard_range_kummerMap, h, φ.natCard_H1_kerCoeff p]
 
 /-- **The local condition of an isogeny is the exact annihilator of that of its dual**: over a
@@ -128,8 +129,8 @@ theorem ker_explicitCoeff1_kerCoeffIncl_eq_ker_compl₂_localTateKerWeilPairing_
     ).eq_ker_compl₂_subtype_iff_forall_eq_zero_and_natCard_mul_eq_zmod
     (φ.localTateKerWeilPairing_bijective hn) (nsmul_H1_eq_zero hkill) _ _).mpr ⟨?_, hcard⟩
   intro a ha b hb
-  rw [← φ.range_kummerMap] at ha
-  rw [← φ.dual.range_kummerMap] at hb
+  rw [← φ.localKummerCondition_def, ← φ.range_kummerMap] at ha
+  rw [← φ.dual.localKummerCondition_def, ← φ.dual.range_kummerMap] at hb
   exact φ.localTateKerWeilPairing_eq_zero_of_mem_range_kummerMap hn ha hb
 
 /-- **The Kummer image of an isogeny is the exact annihilator of that of its dual**: over a finite
@@ -145,7 +146,8 @@ theorem range_kummerMap_eq_ker_compl₂_localTateKerWeilPairing_dual_subtype [De
         φ.dual.kummerMap.range.subtype).ker := by
   have := FinitePadicExtension.charZero K p
   obtain ⟨_, _⟩ := φ.isSeparable_dual_and_self_iff.mpr (Nat.cast_ne_zero.mpr φ.degree_ne_zero)
-  rw [φ.range_kummerMap, φ.dual.range_kummerMap]
+  rw [φ.range_kummerMap, φ.dual.range_kummerMap,
+    φ.localKummerCondition_def, φ.dual.localKummerCondition_def]
   exact φ.ker_explicitCoeff1_kerCoeffIncl_eq_ker_compl₂_localTateKerWeilPairing_dual_subtype p
 
 end TauCeti.Isogeny

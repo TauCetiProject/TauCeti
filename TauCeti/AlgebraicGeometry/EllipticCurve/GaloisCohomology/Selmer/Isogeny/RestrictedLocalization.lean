@@ -51,7 +51,7 @@ abbrev restrictedKerLocalization :
       Πʳ v : GlobalNumberFields.Place K,
         [H1 (AbsoluteGaloisGroup v.Completion) (ofIsogeny (φ.baseChange v.Completion)).KerCoeff,
           ((φ.baseChange v.Completion).localKummerCondition : Set _)] :=
-  (φ.selmerStructure τ).restrictedLocalization
+  addRationalDiagonal (φ.selmerStructure τ).localization
     (fun v ↦ (φ.baseChange v.Completion).localKummerCondition)
     (by simpa only [selmerStructure_localization] using φ.eventually_kerRes_mem_localCondition τ)
 
@@ -65,7 +65,7 @@ theorem selmerGroup_eq_comap_restrictedKerLocalization :
   have hcond := funext (selmerStructure_localCondition φ τ)
   rw [selmerGroup_def, ← integralAddSubgroupOf_self]
   simpa only [hcond] using
-    (φ.selmerStructure τ).selmerGroup_eq_comap_restrictedLocalization _
+    (φ.selmerStructure τ).selmerGroup_eq_comap_addRationalDiagonal _
       (by simpa only [selmerStructure_localization] using φ.eventually_kerRes_mem_localCondition τ)
 
 end TauCeti.Isogeny

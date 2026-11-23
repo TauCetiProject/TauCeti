@@ -243,7 +243,7 @@ theorem ker_explicitCoeff1_kerCoeffIncl_le_unramifiedKerCohomology
   classical
   have := (φ.isSeparable_dual_and_self_iff.2
     (natCast_ne_zero_of_residueField_natCast_ne_zero hdeg)).2
-  rw [← range_kummerMap]
+  rw [← localKummerCondition_def, ← range_kummerMap]
   exact φ.range_kummerMap_le_unramifiedKerCohomology hdeg
 
 end GoodReduction
@@ -278,7 +278,8 @@ theorem ker_explicitCoeff1_kerCoeffIncl_eq_unramifiedKerCohomology
     (natCast_ne_zero_of_residueField_natCast_ne_zero hdeg)).2
   refine AddSubgroup.eq_of_le_of_card_ge
     (ψ.ker_explicitCoeff1_kerCoeffIncl_le_unramifiedKerCohomology hdeg) ?_
-  rw [ψ.natCard_unramifiedKerCohomology_eq_natCard_ker, ← range_kummerMap, natCard_range_kummerMap,
+  rw [ψ.natCard_unramifiedKerCohomology_eq_natCard_ker, ← localKummerCondition_def,
+    ← range_kummerMap, natCard_range_kummerMap,
     Hom.index_range_eq_card_ker_of_isElliptic_integralModel (ofIsogeny ψ)
       (by rwa [Hom.degree_ofIsogeny])]
 
@@ -290,7 +291,7 @@ theorem range_kummerMap_eq_unramifiedKerCohomology [DecidableEq (u.adicCompletio
     [Algebra.IsSeparable ψ.fieldPullback.fieldRange W₁.toAffine.FunctionField]
     (hψ : (ψ.degree : A) ∉ u.asIdeal) :
     ψ.kummerMap.range = ψ.unramifiedKerCohomology := by
-  rw [range_kummerMap]
+  rw [range_kummerMap, localKummerCondition_def]
   exact ψ.ker_explicitCoeff1_kerCoeffIncl_eq_unramifiedKerCohomology u hψ
 
 end AdicCompletion
