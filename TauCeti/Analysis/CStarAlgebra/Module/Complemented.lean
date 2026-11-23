@@ -62,8 +62,8 @@ We also verify three concrete regimes:
 * `TauCeti.CStarSubmodule.isOrthogonallyComplemented_iff_exists_adjoint_subtype`,
   `TauCeti.CStarSubmodule.isOrthogonallyComplemented_iff_exists_adjoint_subtypeL`,
   `TauCeti.CStarSubmodule.isOrthogonallyComplemented_iff_exists_selfAdjoint_idempotent`,
-  `TauCeti.CStarSubmodule.isOrthogonallyComplemented_iff_exists_starProjection`: characterizations
-  of orthogonal complementability.
+  `TauCeti.CStarSubmodule.isOrthogonallyComplemented_iff_exists_bounded_selfAdjoint_idempotent`:
+  characterizations of orthogonal complementability.
 * `TauCeti.CStarSubmodule.isOrthogonallyComplemented_rightFixedSubmodule`,
   `TauCeti.CStarSubmodule.isOrthogonallyComplemented_complex_iff`,
   `TauCeti.CStarSubmodule.not_isOrthogonallyComplemented_vanishingAt`,
@@ -212,7 +212,7 @@ end ComplementedAlgebraic
 section ComplementedNormed
 
 variable {A E : Type*} [NonUnitalRing A] [StarRing A] [Module ℂ A] [StarModule ℂ A]
-  [PartialOrder A] [Norm A] [SeminormedAddCommGroup E] [NormedSpace ℂ E] [SMul A E]
+  [PartialOrder A] [Norm A] [SeminormedAddCommGroup E] [Module ℂ E] [SMul A E]
   [CStarModule A E]
 
 private lemma IsOrthogonallyComplemented.isAdjointPair_subtype_projectionOnto
@@ -254,7 +254,7 @@ end ComplementedNormed
 section ComplementedAnalytic
 
 variable {A E : Type*} [NonUnitalCStarAlgebra A] [PartialOrder A] [StarOrderedRing A]
-  [NormedAddCommGroup E] [NormedSpace ℂ E] [SMul A E] [CStarModule A E]
+  [SeminormedAddCommGroup E] [NormedSpace ℂ E] [SMul A E] [CStarModule A E]
 
 private lemma IsOrthogonallyComplemented.norm_projection_apply_le
     {F : CStarSubmodule A E} (hF : F.IsOrthogonallyComplemented) (x : E) :
@@ -264,7 +264,7 @@ private lemma IsOrthogonallyComplemented.norm_projection_apply_le
         (x - F.toSubmodule.projection F.orthogonal.toSubmodule hF.isCompl_toSubmodule x) = 0 :=
     inner_right_of_mem_orthogonal (Submodule.projection_apply_mem hF.isCompl_toSubmodule x)
       (hF.sub_projection_mem_orthogonal x)
-  simpa only [add_sub_cancel] using CStarModule.norm_le_norm_add_left_of_inner_eq_zero horth
+  simpa only [add_sub_cancel] using CStarModule.norm_le_norm_add_right_of_inner_eq_zero horth
 
 /-- An orthogonally complemented C⋆-submodule and its orthogonal complement form topological
 complements (without assuming completeness of `E`). -/
@@ -462,6 +462,45 @@ theorem IsOrthogonallyComplemented.eq_starProjection_of_isAdjointPair_idempotent
     (SetLike.mem_coe.mp (hrange ▸ Set.mem_range_self x))
     (sub_mem_orthogonal_of_isAdjointPair_idempotent hQ hidem hrange x)).symm
 
+/-- Bounded characterization: `F` is orthogonally complemented if and only if its continuous subtype
+inclusion `F.subtypeL : F →L[ℂ] E` admits a bounded C⋆-module adjoint `P : E →L[ℂ] F`. Completeness
+of `E` and closedness of `F` are not assumed. -/
+theorem isOrthogonallyComplemented_iff_exists_adjoint_subtypeL {F : CStarSubmodule A E} :
+    F.IsOrthogonallyComplemented ↔
+      ∃ P : E →L[ℂ] F, LinearMap.IsAdjointPair (CStarModule.innerₛₗ (A := A) (E := F)).flip
+        (CStarModule.innerₛₗ (A := A) (E := E)).flip F.subtypeL P :=
+  ⟨fun hF ↦ ⟨hF.orthogonalProjectionOnto, hF.isAdjointPair_subtypeL_orthogonalProjectionOnto⟩,
+    fun ⟨P, hP⟩ ↦ isOrthogonallyComplemented_iff_exists_adjoint_subtype.mpr ⟨P, by
+      rw [← coe_subtypeL]
+      exact hP⟩⟩
+
+/-- Bounded characterization: `F` is orthogonally complemented if and only if `F` is the range of a
+bounded self-adjoint idempotent `Q : E →L[ℂ] E`. Completeness of `E` and closedness of `F` are not
+assumed. -/
+theorem isOrthogonallyComplemented_iff_exists_bounded_selfAdjoint_idempotent
+    {F : CStarSubmodule A E} :
+    F.IsOrthogonallyComplemented ↔
+      ∃ Q : E →L[ℂ] E,
+        LinearMap.IsAdjointPair (CStarModule.innerₛₗ (A := A) (E := E)).flip
+          (CStarModule.innerₛₗ (A := A) (E := E)).flip Q Q ∧
+        IsIdempotentElem Q ∧ Q.range = F.toSubmodule := by
+  constructor
+  · intro hF
+    exact ⟨hF.starProjection, hF.isAdjointPair_starProjection, hF.isIdempotentElem_starProjection,
+      hF.range_starProjection⟩
+  · rintro ⟨Q, hQ, hidem, hrange⟩
+    refine isOrthogonallyComplemented_iff_exists_selfAdjoint_idempotent.mpr
+      ⟨Q, hQ, fun x ↦ by simpa using DFunLike.congr_fun hidem.eq x, ?_⟩
+    rw [← coe_toSubmodule, ← hrange]
+    rfl
+
+end ComplementedAnalytic
+
+section ComplementedDirectSum
+
+variable {A E : Type*} [NonUnitalCStarAlgebra A] [PartialOrder A] [StarOrderedRing A]
+  [NormedAddCommGroup E] [NormedSpace ℂ E] [SMul A E] [CStarModule A E]
+
 /-- An orthogonally complemented C⋆-submodule `F` yields a unitary direct-sum decomposition
 `C⋆ᵐᵒᵈ(A, F × F.orthogonal) ≃ₗᵢ[ℂ] E` preserving inner products and the `A`-action. -/
 noncomputable def IsOrthogonallyComplemented.orthogonalAddEquiv {F : CStarSubmodule A E}
@@ -525,38 +564,7 @@ theorem IsOrthogonallyComplemented.isAdjointPair_orthogonalAddEquiv {F : CStarSu
     simpa only [LinearIsometryEquiv.apply_symm_apply] using
       hF.inner_orthogonalAddEquiv p (hF.orthogonalAddEquiv.symm x)
 
-/-- Bounded characterization: `F` is orthogonally complemented if and only if its continuous subtype
-inclusion `F.subtypeL : F →L[ℂ] E` admits a bounded C⋆-module adjoint `P : E →L[ℂ] F`. Completeness
-of `E` and closedness of `F` are not assumed. -/
-theorem isOrthogonallyComplemented_iff_exists_adjoint_subtypeL {F : CStarSubmodule A E} :
-    F.IsOrthogonallyComplemented ↔
-      ∃ P : E →L[ℂ] F, LinearMap.IsAdjointPair (CStarModule.innerₛₗ (A := A) (E := F)).flip
-        (CStarModule.innerₛₗ (A := A) (E := E)).flip F.subtypeL P :=
-  ⟨fun hF ↦ ⟨hF.orthogonalProjectionOnto, hF.isAdjointPair_subtypeL_orthogonalProjectionOnto⟩,
-    fun ⟨P, hP⟩ ↦ isOrthogonallyComplemented_iff_exists_adjoint_subtype.mpr ⟨P, by
-      rw [← coe_subtypeL]
-      exact hP⟩⟩
-
-/-- Bounded characterization: `F` is orthogonally complemented if and only if `F` is the range of a
-bounded self-adjoint idempotent `Q : E →L[ℂ] E`. Completeness of `E` and closedness of `F` are not
-assumed. -/
-theorem isOrthogonallyComplemented_iff_exists_starProjection {F : CStarSubmodule A E} :
-    F.IsOrthogonallyComplemented ↔
-      ∃ Q : E →L[ℂ] E,
-        LinearMap.IsAdjointPair (CStarModule.innerₛₗ (A := A) (E := E)).flip
-          (CStarModule.innerₛₗ (A := A) (E := E)).flip Q Q ∧
-        IsIdempotentElem Q ∧ Q.range = F.toSubmodule := by
-  constructor
-  · intro hF
-    exact ⟨hF.starProjection, hF.isAdjointPair_starProjection, hF.isIdempotentElem_starProjection,
-      hF.range_starProjection⟩
-  · rintro ⟨Q, hQ, hidem, hrange⟩
-    refine isOrthogonallyComplemented_iff_exists_selfAdjoint_idempotent.mpr
-      ⟨Q, hQ, fun x ↦ by simpa using DFunLike.congr_fun hidem.eq x, ?_⟩
-    rw [← coe_toSubmodule, ← hrange]
-    rfl
-
-end ComplementedAnalytic
+end ComplementedDirectSum
 
 /-! ### Projection right ideals in the right self-module -/
 

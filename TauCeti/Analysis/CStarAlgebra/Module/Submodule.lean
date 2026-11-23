@@ -432,10 +432,9 @@ end Normed
 
 /-! ### Inherited Hilbert C⋆-module structure -/
 
-section CStarModule
+section Inner
 
-variable {A E : Type*} [NonUnitalSemiring A] [StarRing A] [Module ℂ A] [PartialOrder A] [Norm A]
-  [SeminormedAddCommGroup E] [NormedSpace ℂ E] [SMul A E] [CStarModule A E]
+variable {A E : Type*} [AddCommGroup E] [Module ℂ E] [SMul A E] [Inner A E]
 
 instance instInner (F : CStarSubmodule A E) : Inner A F where
   inner x y := inner A (x : E) (y : E)
@@ -444,6 +443,31 @@ instance instInner (F : CStarSubmodule A E) : Inner A F where
 theorem inner_coe (F : CStarSubmodule A E) (x y : F) :
     inner A x y = inner A (x : E) (y : E) :=
   (rfl)
+
+theorem inner_subtype (F : CStarSubmodule A E) (x y : F) :
+    inner A (F.subtype x) (F.subtype y) = inner A x y :=
+  (rfl)
+
+end Inner
+
+section InnerNormed
+
+variable {A E : Type*} [SeminormedAddCommGroup E] [NormedSpace ℂ E] [SMul A E] [Inner A E]
+
+theorem inner_subtypeₗᵢ (F : CStarSubmodule A E) (x y : F) :
+    inner A (F.subtypeₗᵢ x) (F.subtypeₗᵢ y) = inner A x y :=
+  (rfl)
+
+theorem inner_subtypeL (F : CStarSubmodule A E) (x y : F) :
+    inner A (F.subtypeL x) (F.subtypeL y) = inner A x y :=
+  (rfl)
+
+end InnerNormed
+
+section CStarModule
+
+variable {A E : Type*} [NonUnitalSemiring A] [StarRing A] [Module ℂ A] [PartialOrder A] [Norm A]
+  [SeminormedAddCommGroup E] [Module ℂ E] [SMul A E] [CStarModule A E]
 
 /-- Every C⋆-submodule inherits the `CStarModule A` structure by restricting the ambient inner
 product, norm, and coefficient action. -/
@@ -458,24 +482,11 @@ instance instCStarModule (F : CStarSubmodule A E) : CStarModule A F where
   star_inner _ _ := CStarModule.star_inner _ _
   norm_eq_sqrt_norm_inner_self x := CStarModule.norm_eq_sqrt_norm_inner_self (A := A) (x : E)
 
-theorem inner_subtype (F : CStarSubmodule A E) (x y : F) :
-    inner A (F.subtype x) (F.subtype y) = inner A x y :=
-  (rfl)
-
-theorem inner_subtypeₗᵢ (F : CStarSubmodule A E) (x y : F) :
-    inner A (F.subtypeₗᵢ x) (F.subtypeₗᵢ y) = inner A x y :=
-  (rfl)
-
-theorem inner_subtypeL (F : CStarSubmodule A E) (x y : F) :
-    inner A (F.subtypeL x) (F.subtypeL y) = inner A x y :=
-  (rfl)
-
 end CStarModule
 
 section RightInner
 
-variable {A E : Type*} [NonUnitalSeminormedRing A] [StarRing A] [Module ℂ A] [PartialOrder A]
-  [SeminormedAddCommGroup E] [NormedSpace ℂ E] [SMul Aᵐᵒᵖ E] [CStarModule Aᵐᵒᵖ E]
+variable {A E : Type*} [AddCommGroup E] [Module ℂ E] [SMul Aᵐᵒᵖ E] [Inner Aᵐᵒᵖ E]
 
 theorem unop_inner_coe (F : CStarSubmodule Aᵐᵒᵖ E) (x y : F) :
     unop (inner Aᵐᵒᵖ x y) = unop (inner Aᵐᵒᵖ (x : E) (y : E)) :=
@@ -551,27 +562,35 @@ end TopologicalClosure
 section KerRange
 
 variable {A E F : Type*} [AddCommGroup E] [Module ℂ E] [SMul A E]
-  [AddCommGroup F] [Module ℂ F] [SMul A F]
+  [AddCommGroup F] [Module ℂ F]
+
+section Ker
+
+variable [SMulZeroClass A F]
 
 /-- The kernel of a complex-linear map commuting with the coefficient action, as a C⋆-submodule. -/
-def ker (T : E →ₗ[ℂ] F) (hT : ∀ (a : A) (x : E), T (a • x) = a • T x)
-    (hzero : ∀ a : A, a • (0 : F) = 0) : CStarSubmodule A E where
+def ker (T : E →ₗ[ℂ] F) (hT : ∀ (a : A) (x : E), T (a • x) = a • T x) :
+    CStarSubmodule A E where
   toSubmodule := LinearMap.ker T
   smul_mem_coeff' a x hx := by
     rw [Submodule.mem_carrier, SetLike.mem_coe, LinearMap.mem_ker] at hx ⊢
-    rw [hT, hx, hzero]
+    rw [hT, hx, smul_zero]
 
 @[simp]
-theorem toSubmodule_ker (T : E →ₗ[ℂ] F) (hT : ∀ (a : A) (x : E), T (a • x) = a • T x)
-    (hzero : ∀ a : A, a • (0 : F) = 0) :
-    (ker T hT hzero).toSubmodule = LinearMap.ker T :=
+theorem toSubmodule_ker (T : E →ₗ[ℂ] F) (hT : ∀ (a : A) (x : E), T (a • x) = a • T x) :
+    (ker T hT).toSubmodule = LinearMap.ker T :=
   (rfl)
 
 @[simp]
-theorem mem_ker {T : E →ₗ[ℂ] F} {hT : ∀ (a : A) (x : E), T (a • x) = a • T x}
-    {hzero : ∀ a : A, a • (0 : F) = 0} {x : E} :
-    x ∈ ker T hT hzero ↔ T x = 0 :=
+theorem mem_ker {T : E →ₗ[ℂ] F} {hT : ∀ (a : A) (x : E), T (a • x) = a • T x} {x : E} :
+    x ∈ ker T hT ↔ T x = 0 :=
   (Iff.rfl)
+
+end Ker
+
+section Range
+
+variable [SMul A F]
 
 /-- The range of a complex-linear map commuting with the coefficient action, as a C⋆-submodule. -/
 def range (T : E →ₗ[ℂ] F) (hT : ∀ (a : A) (x : E), T (a • x) = a • T x) :
@@ -590,6 +609,8 @@ theorem toSubmodule_range (T : E →ₗ[ℂ] F) (hT : ∀ (a : A) (x : E), T (a 
 theorem mem_range {T : E →ₗ[ℂ] F} {hT : ∀ (a : A) (x : E), T (a • x) = a • T x} {y : F} :
     y ∈ range T hT ↔ ∃ x, T x = y :=
   (Iff.rfl)
+
+end Range
 
 end KerRange
 
@@ -682,7 +703,6 @@ def rightFixedSubmodule {A : Type*} [NonUnitalRing A] [Module ℂ A] [SMulCommCl
   ker (LinearMap.mulLeft ℂ p - LinearMap.id)
     (fun b x ↦ by
       simp [LinearMap.mulLeft_apply, smul_eq_mul_unop, mul_assoc, sub_mul])
-    (fun b ↦ by simp)
 
 @[simp]
 theorem mem_rightFixedSubmodule {A : Type*} [NonUnitalRing A] [Module ℂ A] [SMulCommClass ℂ A A]

@@ -40,8 +40,8 @@ via adjoints and self-adjoint idempotents, and concrete examples/counterexamples
 ## Main declarations
 
 * `CStarModule.inner_add_self_of_inner_eq_zero`,
-  `CStarModule.norm_le_norm_add_left_of_inner_eq_zero`,
   `CStarModule.norm_le_norm_add_right_of_inner_eq_zero`,
+  `CStarModule.norm_le_norm_add_left_of_inner_eq_zero`,
   `CStarModule.norm_add_sq_le_of_inner_eq_zero`: Pythagorean identities and norm bounds for
   orthogonal vectors.
 * `TauCeti.CStarSubmodule.orthogonal`: the orthogonal complement of a C⋆-submodule, with its
@@ -98,19 +98,30 @@ end Algebraic
 
 section Norm
 
-variable {A E : Type*} [NonUnitalCStarAlgebra A] [PartialOrder A]
+section SeminormedCoeff
+
+variable {A E : Type*} [NonUnitalSeminormedRing A] [StarRing A] [Module ℂ A] [PartialOrder A]
   [AddCommGroup E] [Module ℂ E] [SMul A E] [Norm E] [CStarModule A E]
 
 /-- Sub-Pythagorean norm inequality for orthogonal vectors: if `⟪x, y⟫_A = 0`, then
 `‖x + y‖ ^ 2 ≤ ‖x‖ ^ 2 + ‖y‖ ^ 2`. -/
 theorem norm_add_sq_le_of_inner_eq_zero {x y : E} (h : inner A x y = 0) :
     ‖x + y‖ ^ 2 ≤ ‖x‖ ^ 2 + ‖y‖ ^ 2 := by
-  rw [norm_sq_eq A, norm_sq_eq A, norm_sq_eq A, inner_add_self_of_inner_eq_zero h]
+  rw [CStarModule.norm_eq_sqrt_norm_inner_self (A := A) (x := x + y),
+    CStarModule.norm_eq_sqrt_norm_inner_self (A := A) (x := x),
+    CStarModule.norm_eq_sqrt_norm_inner_self (A := A) (x := y),
+    Real.sq_sqrt (norm_nonneg _), Real.sq_sqrt (norm_nonneg _), Real.sq_sqrt (norm_nonneg _),
+    inner_add_self_of_inner_eq_zero h]
   exact norm_add_le _ _
+
+end SeminormedCoeff
+
+variable {A E : Type*} [NonUnitalCStarAlgebra A] [PartialOrder A]
+  [AddCommGroup E] [Module ℂ E] [SMul A E] [Norm E] [CStarModule A E]
 
 /-- Orthogonal summands are bounded in norm by their sum: if `⟪x, y⟫_A = 0`, then
 `‖x‖ ≤ ‖x + y‖`. -/
-theorem norm_le_norm_add_left_of_inner_eq_zero [StarOrderedRing A] {x y : E}
+theorem norm_le_norm_add_right_of_inner_eq_zero [StarOrderedRing A] {x y : E}
     (h : inner A x y = 0) : ‖x‖ ≤ ‖x + y‖ := by
   rw [← sq_le_sq₀ (CStarModule.norm_nonneg A) (CStarModule.norm_nonneg A), norm_sq_eq A,
     norm_sq_eq A, inner_add_self_of_inner_eq_zero h]
@@ -119,10 +130,10 @@ theorem norm_le_norm_add_left_of_inner_eq_zero [StarOrderedRing A] {x y : E}
 
 /-- Orthogonal summands are bounded in norm by their sum: if `⟪x, y⟫_A = 0`, then
 `‖y‖ ≤ ‖x + y‖`. -/
-theorem norm_le_norm_add_right_of_inner_eq_zero [StarOrderedRing A] {x y : E}
+theorem norm_le_norm_add_left_of_inner_eq_zero [StarOrderedRing A] {x y : E}
     (h : inner A x y = 0) : ‖y‖ ≤ ‖x + y‖ := by
   rw [add_comm]
-  exact norm_le_norm_add_left_of_inner_eq_zero (A := A) (by rw [← star_inner, h, star_zero])
+  exact norm_le_norm_add_right_of_inner_eq_zero (A := A) (by rw [← star_inner, h, star_zero])
 
 end Norm
 
@@ -327,7 +338,7 @@ end OrthogonalRight
 section OrthogonalAnalytic
 
 variable {A E : Type*} [NonUnitalCStarAlgebra A] [PartialOrder A] [StarOrderedRing A]
-  [NormedAddCommGroup E] [NormedSpace ℂ E] [SMul A E] [CStarModule A E]
+  [SeminormedAddCommGroup E] [NormedSpace ℂ E] [SMul A E] [CStarModule A E]
 
 /-- The orthogonal complement of any C⋆-submodule is norm-closed. -/
 theorem isClosed_orthogonal (F : CStarSubmodule A E) : IsClosed (F.orthogonal : Set E) :=
@@ -349,7 +360,14 @@ theorem orthogonal_topologicalClosure (F : CStarSubmodule A E) :
   le_antisymm (orthogonal_le (le_topologicalClosure F))
     (le_orthogonal_iff.mp (topologicalClosure_le_orthogonal_orthogonal F))
 
+end OrthogonalAnalytic
+
 /-! ### Orthogonal direct-sum isometry and closedness of `F ⊔ G` -/
+
+section OrthogonalDirectSum
+
+variable {A E : Type*} [NonUnitalCStarAlgebra A] [PartialOrder A] [StarOrderedRing A]
+  [NormedAddCommGroup E] [NormedSpace ℂ E] [SMul A E] [CStarModule A E]
 
 /-- The canonical addition map `C⋆ᵐᵒᵈ(A, F × G) →ₗᵢ[ℂ] E` sending `(x, y)` to `x + y` for
 orthogonal C⋆-submodules `G ≤ F.orthogonal`. It preserves both the `A`-valued inner product and
@@ -465,6 +483,6 @@ theorem isClosed_sup_orthogonal_of_isClosed [CompleteSpace E] {F : CStarSubmodul
     IsClosed ((F ⊔ F.orthogonal : CStarSubmodule A E) : Set E) :=
   isClosed_sup_of_le_orthogonal_of_isClosed le_rfl hF (isClosed_orthogonal F)
 
-end OrthogonalAnalytic
+end OrthogonalDirectSum
 
 end TauCeti.CStarSubmodule
