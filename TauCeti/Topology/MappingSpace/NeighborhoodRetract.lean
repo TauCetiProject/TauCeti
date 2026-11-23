@@ -9,6 +9,7 @@ public import Mathlib.Topology.ContinuousMap.Algebra
 public import TauCeti.AlgebraicTopology.SemilocallySimplyConnected.Subspace
 public import TauCeti.Topology.Algebra.Module.LocallyContractible
 public import TauCeti.Topology.CompactOpen
+import TauCeti.Topology.Connected.LocallyPathConnected
 
 /-!
 # Mapping spaces into neighbourhood retracts of vector spaces

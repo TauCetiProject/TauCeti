@@ -19,7 +19,7 @@ gives local path connectedness of the subspace.
 ## Main declarations
 
 * `TauCeti.homotopic_pathComponent_of_map_subtypeVal_homotopic`: path homotopies reflect along
-  the inclusion of a path component.
+  the inclusion of a subspace containing the path component of their source.
 * Instances making `↥(pathComponent x₀)` path connected and locally path connected.
 * `TauCeti.pathComponentSelf`: a point viewed in its own path component.
 * `Joined.eq_of_totallyDisconnectedSpace` and
@@ -44,20 +44,18 @@ namespace TauCeti
 
 variable {X : Type*} [TopologicalSpace X] (x₀ : X)
 
-/-- Two paths in a path component which are homotopic in the ambient space are already
-homotopic in the path component. -/
-theorem homotopic_pathComponent_of_map_subtypeVal_homotopic
-    {a b : pathComponent x₀} {γ δ : Path a b}
+/-- Two paths in a subspace `S` containing the path component of their source which are
+homotopic in the ambient space are already homotopic in `S`. -/
+theorem homotopic_pathComponent_of_map_subtypeVal_homotopic {S : Set X} {a b : S}
+    (hS : pathComponent (a : X) ⊆ S) {γ δ : Path a b}
     (h : (γ.map continuous_subtypeVal).Homotopic
       (δ.map continuous_subtypeVal)) :
     γ.Homotopic δ := by
   obtain ⟨H⟩ := h
-  have hγmem : ∀ t, (γ.map continuous_subtypeVal) t ∈ pathComponent x₀ := fun t =>
-    (γ t).property
-  have hmem : ∀ p : I × I, H p ∈ pathComponent x₀ := fun p =>
-    Joined.mem_pathComponent
+  have hmem : ∀ p : I × I, H p ∈ S := fun p =>
+    hS <| Joined.mem_pathComponent
       ((H.evalAt p.2).mem_pathComponent p.1)
-      (H.map_zero_left p.2 ▸ hγmem p.2)
+      (H.map_zero_left p.2 ▸ (γ.map continuous_subtypeVal).mem_pathComponent p.2)
   exact Path.homotopic_of_continuous_square (fun p => ⟨H p, hmem p⟩)
     (H.continuous.subtype_mk hmem) (fun t => Subtype.ext (H.map_zero_left t))
     (fun t => Subtype.ext (H.map_one_left t)) (fun t => Subtype.ext (H.source t))

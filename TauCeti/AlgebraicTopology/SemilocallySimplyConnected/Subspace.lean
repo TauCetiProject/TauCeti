@@ -8,30 +8,29 @@ module
 public import TauCeti.AlgebraicTopology.FundamentalGroup.Incompressible
 public import TauCeti.AlgebraicTopology.SemilocallySimplyConnected.On
 public import TauCeti.Topology.PathComponent
+import TauCeti.Topology.Constructions.Basic
 
 /-!
-# The hypotheses of covering-space theory on subspaces
+# Semilocal simple connectivity on subspaces
 
 The connected covering spaces of a path-connected space are classified by subgroups of its
 fundamental group as soon as the space is locally path-connected and semilocally simply connected.
-This file shows that these two hypotheses are local, that they pass to retracts, and that
-semilocal simple connectivity passes to unions of path components.
+This file shows that the second hypothesis is local, that it passes to retracts, and that it
+passes to unions of path components. The corresponding facts for local path-connectedness are in
+`TauCeti.Topology.Connected.LocallyPathConnected`.
 
-* **Locality.** If every point of `X` has a neighbourhood which, as a subspace, is locally
-  path-connected, then so is `X` (`LocallyPathConnectedSpace.of_forall_exists_mem_nhds`). If a
-  neighbourhood `U` of a point is, as a subspace, semilocally simply connected at that point, then
-  so is `X` (`SemilocallySimplyConnectedAt.of_mem_nhds`): a loop in `X` near the point lies in `U`,
-  and a null-homotopy in `U` is one in `X`. The converse of the second statement fails, since the
+* **Locality.** If a neighbourhood `U` of a point is, as a subspace, semilocally simply connected
+  at that point, then so is `X` (`SemilocallySimplyConnectedAt.of_mem_nhds`): a loop in `X` near
+  the point lies in `U`, and a null-homotopy in `U` is one in `X`. The converse fails, since the
   null-homotopies in `X` may leave `U`.
 * **Retracts.** If `s : X → Y` and `r : Y → X` are continuous with `r ∘ s = id`, then `X` inherits
-  local path-connectedness from `Y`, because `r` is a quotient map
-  (`Function.LeftInverse.locallyPathConnectedSpace`), and semilocal simple connectivity, because
-  `s` is injective on fundamental groups
+  semilocal simple connectivity from `Y`, because `s` is injective on fundamental groups
   (`Function.LeftInverse.semilocallySimplyConnectedSpace`).
 * **Unions of path components.** A subspace containing the path component of each of its points
   is semilocally simply connected when the ambient space is
   (`TauCeti.SemilocallySimplyConnectedSpace.subtype_of_pathComponent_subset`): a null-homotopy of
-  a loop in it never leaves it. This generalizes the instance for a single path component.
+  a loop in it never leaves it (`TauCeti.homotopic_pathComponent_of_map_subtypeVal_homotopic`).
+  This generalizes the instance for a single path component.
 
 Together these reduce the two hypotheses for a mapping space into a manifold to the case of a
 mapping space into an open subset of a vector space; see
@@ -39,10 +38,10 @@ mapping space into an open subset of a vector space; see
 
 ## Main results
 
-* `LocallyPathConnectedSpace.of_forall_exists_mem_nhds`,
-  `TauCeti.SemilocallySimplyConnectedSpace.of_forall_exists_mem_nhds`: both hypotheses are local.
-* `Function.LeftInverse.locallyPathConnectedSpace`,
-  `Function.LeftInverse.semilocallySimplyConnectedSpace`: both hypotheses pass to retracts.
+* `TauCeti.SemilocallySimplyConnectedSpace.of_forall_exists_mem_nhds`: semilocal simple
+  connectivity is local.
+* `Function.LeftInverse.semilocallySimplyConnectedSpace`: semilocal simple connectivity passes to
+  retracts.
 * `TauCeti.SemilocallySimplyConnectedSpace.subtype_of_pathComponent_subset`: semilocal simple
   connectivity passes to unions of path components.
 
@@ -60,27 +59,6 @@ variable {X Y : Type*} [TopologicalSpace X] [TopologicalSpace Y]
 
 /-! ### Locality -/
 
-/-- A neighbourhood of a point of a subspace `U` which is itself a neighbourhood of that point
-is a neighbourhood in the ambient space. -/
-private theorem image_val_mem_nhds {U : Set X} {x : X} (hU : U ∈ 𝓝 x) {V : Set U}
-    (hV : V ∈ 𝓝 (⟨x, mem_of_mem_nhds hU⟩ : U)) : (↑) '' V ∈ 𝓝 x := by
-  rw [← nhdsWithin_eq_nhds.2 hU]
-  exact mem_nhds_subtype_iff_nhdsWithin.1 hV
-
-/-- **Local path-connectedness is local.** A space in which every point has a neighbourhood that
-is locally path-connected as a subspace is locally path-connected. -/
-theorem LocallyPathConnectedSpace.of_forall_exists_mem_nhds
-    (h : ∀ x : X, ∃ U ∈ 𝓝 x, LocallyPathConnectedSpace U) : LocallyPathConnectedSpace X where
-  path_connected_basis x := by
-    obtain ⟨U, hU, _⟩ := h x
-    rw [Filter.hasBasis_self]
-    intro t ht
-    obtain ⟨s, ⟨hs, hsc⟩, hst : s ⊆ _⟩ := (path_connected_basis
-      (⟨x, mem_of_mem_nhds hU⟩ : U)).mem_iff.1
-      (continuous_subtypeVal.continuousAt.preimage_mem_nhds ht)
-    exact ⟨(↑) '' s, image_val_mem_nhds hU hs, hsc.image continuous_subtypeVal,
-      image_subset_iff.2 hst⟩
-
 /-- **Semilocal simple connectivity at a point is local.** If a neighbourhood `U` of a point `x`
 is, as a subspace, semilocally simply connected at `x`, then so is the ambient space: loops near
 `x` lie in `U`, and a null-homotopy in `U` is a null-homotopy in the ambient space. -/
@@ -89,7 +67,8 @@ theorem SemilocallySimplyConnectedAt.of_mem_nhds {U : Set X} {x : X} (hU : U ∈
     SemilocallySimplyConnectedAt x := by
   have hx : x ∈ U := mem_of_mem_nhds hU
   obtain ⟨V, hV, hloops⟩ := semilocallySimplyConnectedAt_def.1 h
-  refine semilocallySimplyConnectedAt_def.2 ⟨(↑) '' V, image_val_mem_nhds hU hV, fun γ hγ ↦ ?_⟩
+  refine semilocallySimplyConnectedAt_def.2
+    ⟨(↑) '' V, image_val_mem_nhds_of_mem_nhds hU hV, fun γ hγ ↦ ?_⟩
   have hmem (t : I) : γ t ∈ U := by
     obtain ⟨y, -, hy⟩ := hγ ⟨t, rfl⟩
     exact hy ▸ y.property
@@ -112,13 +91,6 @@ theorem TauCeti.SemilocallySimplyConnectedSpace.of_forall_exists_mem_nhds
 
 /-! ### Retracts -/
 
-/-- **A retract of a locally path-connected space is locally path-connected.** The retraction
-`r` has the continuous section `s`, so it is a quotient map. -/
-theorem Function.LeftInverse.locallyPathConnectedSpace [LocallyPathConnectedSpace Y] {s : X → Y}
-    {r : Y → X} (h : LeftInverse r s) (hr : Continuous r) (hs : Continuous s) :
-    LocallyPathConnectedSpace X :=
-  (IsQuotientMap.of_inverse hs hr h).locallyPathConnectedSpace
-
 /-- **A retract of a semilocally simply connected space is semilocally simply connected.** The
 section `s` is injective on fundamental groups, since `r` is a left inverse of it. -/
 theorem Function.LeftInverse.semilocallySimplyConnectedSpace [SemilocallySimplyConnectedSpace Y]
@@ -140,12 +112,8 @@ theorem TauCeti.SemilocallySimplyConnectedSpace.subtype_of_pathComponent_subset
       (SemilocallySimplyConnectedSpace.semilocallySimplyConnectedAt (a : X))
     refine semilocallySimplyConnectedAt_def.2
       ⟨(↑) ⁻¹' U, continuous_subtypeVal.continuousAt.preimage_mem_nhds hU, fun γ hγ ↦ ?_⟩
-    obtain ⟨H⟩ := hloops (γ.map continuous_subtypeVal) (by
+    apply homotopic_pathComponent_of_map_subtypeVal_homotopic (hS a a.property)
+    rw [Path.map_refl]
+    exact hloops _ (by
       rintro _ ⟨t, rfl⟩
       exact hγ ⟨t, rfl⟩)
-    -- At each time `t`, the homotopy runs in the path component of `γ t`, which lies in `S`.
-    have hmem : ∀ p : I × I, H p ∈ S := fun ⟨s, t⟩ ↦
-      hS _ (γ t).property ((H.evalAt t).mem_pathComponent s)
-    exact Path.homotopic_of_continuous_square (fun p ↦ ⟨H p, hmem p⟩)
-      (H.continuous.subtype_mk hmem) (fun t ↦ Subtype.ext (by simp)) (fun t ↦ Subtype.ext (by simp))
-      (fun t ↦ Subtype.ext (by simp)) (fun t ↦ Subtype.ext (by simp))

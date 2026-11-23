@@ -75,7 +75,8 @@ noncomputable def _root_.FundamentalGroup.pathComponentMulEquiv (a : pathCompone
           ((congrArg CategoryTheory.End.asHom hg).trans
             (FundamentalGroupoid.id_eq_path_refl (FundamentalGroupoid.mk (a : X))))
       refine CategoryTheory.End.ext ((FundamentalGroupoid.fromPath_eq_iff_homotopic _ _).mpr ?_)
-      apply homotopic_pathComponent_of_map_subtypeVal_homotopic x₀
+      apply homotopic_pathComponent_of_map_subtypeVal_homotopic
+        (pathComponent_congr a.property).subset
       rw [Path.map_refl]
       exact hnull
     · intro ⟨g⟩

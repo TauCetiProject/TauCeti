@@ -14,7 +14,7 @@ import Mathlib.Topology.SeparatedMap
 
 This file adds to Mathlib's quotient-topology API for `Quotient.mk s`, where `s : Setoid X`, to
 the topology of the fibre product `Function.Pullback f g`, a subspace of the product, and to the
-subtype-topology convergence API for continuous maps on subtypes.
+subtype-topology API for neighbourhoods and for convergence of continuous maps on subtypes.
 
 ## Main results
 
@@ -33,6 +33,8 @@ subtype-topology convergence API for continuous maps on subtypes.
   and symmetry of the fibre product.
 * `ContinuousAt.tendsto_comap_val`, `Continuous.tendsto_comap_val`: a continuous function on a
   subtype tends to `f x` along `Filter.comap Subtype.val (𝓝 x.val)`.
+* `TauCeti.image_val_mem_nhds_of_mem_nhds`: a neighbourhood in a subspace which is itself a
+  neighbourhood is a neighbourhood in the ambient space.
 * `Topology.IsQuotientMap.of_comp_eq_comp`: quotient maps are stable under pullback along a
   continuous injection when the pulled-back inclusion is a closed map, as for the restriction of a
   quotient map to the preimage of a closed set.
@@ -254,6 +256,13 @@ every point `x`. -/
 theorem Continuous.tendsto_comap_val (hf : Continuous f) (x : Subtype p) :
     Filter.Tendsto f (Filter.comap Subtype.val (𝓝 x.val)) (𝓝 (f x)) :=
   hf.continuousAt.tendsto_comap_val
+
+/-- A neighbourhood of a point of a subspace `U` which is itself a neighbourhood of that point
+is, as a subset of the ambient space, a neighbourhood there too. -/
+theorem TauCeti.image_val_mem_nhds_of_mem_nhds {U : Set X} {x : X} (hU : U ∈ 𝓝 x) {V : Set U}
+    (hV : V ∈ 𝓝 (⟨x, mem_of_mem_nhds hU⟩ : U)) : (↑) '' V ∈ 𝓝 x := by
+  rw [← nhdsWithin_eq_nhds.2 hU]
+  exact mem_nhds_subtype_iff_nhdsWithin.1 hV
 
 end Subtype
 
