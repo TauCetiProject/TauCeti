@@ -5,25 +5,27 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Geometry.Manifold.Algebra.LieGroup
-public import TauCeti.Geometry.Manifold.GroupAction.ActionGroupoid
-public import TauCeti.Geometry.Manifold.Groupoid.Fibers
+public import Mathlib.Geometry.Manifold.Algebra.Monoid
+public import TauCeti.Geometry.Manifold.GroupAction.ActionGroupoid.Basic
+public import TauCeti.Geometry.Manifold.Submersion.Basic
 import TauCeti.Geometry.Manifold.Submersion.LocalDiffeomorph
 
 /-!
-# Smooth action groupoids
+# The product atlas on an action groupoid
 
-For a smooth action of a Lie group `G` on a manifold `X`, the native action category
-`CategoryTheory.ActionCategory G X` is a Lie groupoid. Objects have the existing charts of `X`.
-Total arrows have the product charts of `G × X`, with coordinates `(label, source)`.
+For an action of a monoid `G` on a manifold `X`, total arrows of the native action category
+`CategoryTheory.ActionCategory G X` carry the product charts of `G × X` in coordinates
+`(label, source)`. Open the scope `TauCeti.ActionGroupoid` to use this atlas.
 
-Open the scope `TauCeti.ActionGroupoid` to use the product arrow atlas and Lie groupoid instance.
-The construction allows positive-dimensional acting groups and retains labels acting trivially.
+`arrowDiffeomorph` identifies total arrows with the product. The source and units are `C^n`
+without assumptions on the action, the target is `C^n` when the action is, and composition of
+`C^n` families is `C^n` when multiplication of labels is. For a group, inversion is `C^n` when
+inversion of labels and the action are. The source is a submersion whenever both factors are
+`C^n` manifolds.
 
-`TauCeti.ActionGroupoid.arrowDiffeomorph` gives the product coordinates. The arrow `(g, x)` has
-source `x`, target `g • x` and inverse `(g⁻¹, g • x)`. Units have label `1`.
-Following `(g, x)` by `(h, g • x)` gives `(h * g, x)`.
-`TauCeti.ActionGroupoid.sourceFiberDiffeomorph` identifies each regular source fibre with `G`.
+The product arrow atlas and transport of the source submersion follow the pair-groupoid
+construction `TauCeti.PairGroupoid.arrowDiffeomorph` and `TauCeti.PairGroupoid.isLieGroupoid` in
+`TauCeti/Geometry/Manifold/Groupoid/Examples.lean`.
 
 ## References
 
@@ -72,34 +74,38 @@ theorem arrowDiffeomorph_symm_apply (p : G × X) :
     (arrowDiffeomorph J I n G X).symm p = (totalEquiv G X).symm p := by
   simp [arrowDiffeomorph]
 
-/-- The arrow constructed from a label-source pair has the prescribed label. -/
-@[simp]
-theorem arrowDiffeomorph_symm_label (p : G × X) :
-    ((arrowDiffeomorph J I n G X).symm p).hom.hom = p.1 :=
-  (congrArg (fun a ↦ a.hom.hom) (arrowDiffeomorph_symm_apply J I n G X p)).trans
-    (totalEquiv_symm_apply_hom_hom p)
+/-- The arrow constructed from product coordinates has the prescribed label. -/
+@[simp↓]
+theorem arrowDiffeomorph_symm_apply_hom_hom (p : G × X) :
+    ((arrowDiffeomorph J I n G X).symm p).hom.hom = p.1 := by
+  rw [arrowDiffeomorph_symm_apply]
+  exact totalEquiv_symm_apply_hom_hom p
 
+/-- The source of the arrow constructed from product coordinates is the prescribed point. -/
 @[simp]
-theorem arrowDiffeomorph_toHomeomorph :
-    (arrowDiffeomorph J I n G X).toHomeomorph = arrowHomeomorph G X := by
-  simp [arrowDiffeomorph]
+theorem arrowDiffeomorph_symm_apply_left (p : G × X) :
+    ((arrowDiffeomorph J I n G X).symm p).left = objEquiv G X p.2 := by
+  rw [arrowDiffeomorph_symm_apply]
+  exact totalEquiv_symm_apply_left p
+
+/-- The target of the arrow constructed from product coordinates is the label acting on the
+source point. -/
+@[simp]
+theorem arrowDiffeomorph_symm_apply_right (p : G × X) :
+    ((arrowDiffeomorph J I n G X).symm p).right = objEquiv G X (p.1 • p.2) := by
+  rw [arrowDiffeomorph_symm_apply]
+  exact totalEquiv_symm_apply_right p
 
 /-- The second arrow's label multiplies on the left of the first arrow's label. -/
 theorem arrowDiffeomorph_comp (a b : Quiver.Total (ActionCategory G X)) (h : a.right = b.left) :
     arrowDiffeomorph J I n G X (a.comp b h) = (b.hom.hom * a.hom.hom, a.left.back) := by
-  simp [arrowDiffeomorph_apply, Quiver.Total.comp_def]
+  rw [arrowDiffeomorph_apply]
+  rw [Quiver.Total.comp_def]
+  simp
 
 variable {G X}
   {E' H' : Type*} [NormedAddCommGroup E'] [NormedSpace 𝕜 E'] [TopologicalSpace H']
   {I' : ModelWithCorners 𝕜 E' H'} {N : Type*} [TopologicalSpace N] [ChartedSpace H' N]
-
-/-- A map into product-charted arrows is `C^n` exactly when its label and source point are. -/
-theorem contMDiff_productArrows_iff {f : N → Quiver.Total (ActionCategory G X)} :
-    ContMDiff I' (J.prod I) n f ↔
-      ContMDiff I' J n (fun z ↦ (f z).hom.hom) ∧
-        ContMDiff I' I n (fun z ↦ (f z).left.back) := by
-  rw [← (arrowDiffeomorph J I n G X).contMDiff_diffeomorph_comp_iff le_rfl]
-  simp only [Function.comp_def, arrowDiffeomorph_apply, contMDiff_prod_iff]
 
 variable (G X)
 
@@ -111,13 +117,26 @@ theorem contMDiff_productSource :
     ((contMDiff_snd.comp (arrowDiffeomorph J I n G X).contMDiff).congr fun _ ↦ by
       simp [arrowDiffeomorph_apply])
 
+/-- The unit at an object has label `1` and source the underlying point. -/
+theorem arrowDiffeomorph_unit (x : ActionCategory G X) :
+    arrowDiffeomorph J I n G X ⟨x, x, 𝟙 x⟩ = (1, x.back) := by
+  simp only [arrowDiffeomorph_apply, ActionCategory.id_hom]
+
+/-- The target of an arrow is its label acting on its source point. -/
+theorem arrowDiffeomorph_target (a : Quiver.Total (ActionCategory G X)) :
+    a.right.back = (arrowDiffeomorph J I n G X a).1 •
+      (arrowDiffeomorph J I n G X a).2 := by
+  rw [arrowDiffeomorph_apply]
+  exact a.hom.map_val.symm
+
 /-- Units are smooth for the product arrow atlas. -/
 theorem contMDiff_productUnit :
     ContMDiff I (J.prod I) n fun x : ActionCategory G X ↦
       (⟨x, x, 𝟙 x⟩ : Quiver.Total (ActionCategory G X)) := by
   rw [← (arrowDiffeomorph J I n G X).contMDiff_diffeomorph_comp_iff le_rfl]
   exact ((contMDiff_const (c := (1 : G))).prodMk
-    (objectDiffeomorph I n G X).contMDiff).congr fun _ ↦ by simp [arrowDiffeomorph_apply]
+    (objectDiffeomorph I n G X).contMDiff).congr fun _ ↦ by
+      simp only [Function.comp_apply, arrowDiffeomorph_unit, objectDiffeomorph_apply]
 
 /-- A jointly `C^n` action makes target smooth for the product arrow atlas. -/
 theorem contMDiff_productTarget [ContMDiffSMul J I n G X] :
@@ -126,12 +145,24 @@ theorem contMDiff_productTarget [ContMDiffSMul J I n G X] :
   apply (contMDiff_objects_iff I n).2
   exact ((contMDiff_fst.comp (arrowDiffeomorph J I n G X).contMDiff).smul
     (contMDiff_snd.comp (arrowDiffeomorph J I n G X).contMDiff)).congr
-      fun a ↦ by
-        have htarget : a.right.back = (arrowDiffeomorph J I n G X a).1 •
-            (arrowDiffeomorph J I n G X a).2 := by
-          rw [arrowDiffeomorph_apply]
-          exact a.hom.map_val.symm
-        exact htarget
+      fun a ↦ arrowDiffeomorph_target J I n G X a
+
+variable {G X}
+
+/-- Composable `C^n` families of arrows have a `C^n` composite when multiplication of labels is
+`C^n`. The action itself need not be smooth. -/
+theorem contMDiff_productComp [ContMDiffMul J n G]
+    {a b : N → Quiver.Total (ActionCategory G X)}
+    (ha : ContMDiff I' (J.prod I) n a) (hb : ContMDiff I' (J.prod I) n b)
+    (h : ∀ z, (a z).right = (b z).left) :
+    ContMDiff I' (J.prod I) n fun z ↦ (a z).comp (b z) (h z) := by
+  rw [← (arrowDiffeomorph J I n G X).contMDiff_diffeomorph_comp_iff le_rfl]
+  have hda := (arrowDiffeomorph J I n G X).contMDiff.comp ha
+  have hdb := (arrowDiffeomorph J I n G X).contMDiff.comp hb
+  exact (hdb.fst.mul hda.fst |>.prodMk hda.snd).congr fun z ↦ by
+    dsimp only [Function.comp_apply]
+    rw [arrowDiffeomorph_comp]
+    simp only [arrowDiffeomorph_apply, Pi.mul_apply]
 
 end Smooth
 
@@ -182,8 +213,6 @@ variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
 theorem isSubmersion_productSource :
     Manifold.IsSubmersion (J.prod I) I n
       (Quiver.Total.left : Quiver.Total (ActionCategory G X) → ActionCategory G X) := by
-  -- The same product-chart normal form as `Manifold.isSubmersionOfComplement_fst`,
-  -- with the continuous linear swap selecting the second factor.
   have hsnd : Manifold.IsSubmersion (J.prod I) I n (@Prod.snd G X) := by
     refine Manifold.IsSubmersionOfComplement.isSubmersion (F := F) ?_
     refine Manifold.isSubmersionOfComplement_iff.mpr fun p ↦ ?_
@@ -205,98 +234,5 @@ theorem isSubmersion_productSource :
     ((arrowDiffeomorph J I n G X).isLocalDiffeomorph.isSubmersion_comp hsnd)
 
 end Submersion
-
-section LieGroupoid
-
-variable {E H F K : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
-  [FiniteDimensional ℝ E] [TopologicalSpace H]
-  [NormedAddCommGroup F] [NormedSpace ℝ F] [FiniteDimensional ℝ F] [TopologicalSpace K]
-  (J : ModelWithCorners ℝ F K) (I : ModelWithCorners ℝ E H) [J.Boundaryless] [I.Boundaryless]
-  (G X : Type*) [Group G] [MulAction G X]
-  [TopologicalSpace G] [ChartedSpace K G] [TopologicalSpace X] [ChartedSpace H X]
-  [LieGroup J ∞ G] [IsManifold I ∞ X] [ContMDiffSMul J I ∞ G X]
-  [T2Space X] [SecondCountableTopology G] [SecondCountableTopology X]
-
-/-- A second-countable real Lie group acting smoothly on a Hausdorff second-countable manifold
-has a Lie action groupoid, with objects modelled on `I` and arrows modelled on `J.prod I`. -/
-scoped instance isLieGroupoid : IsLieGroupoid I (J.prod I) (ActionCategory G X) where
-  isSubmersion_source := isSubmersion_productSource J I ∞ G X
-  contMDiff_unit := contMDiff_productUnit J I ∞ G X
-  contMDiff_inverse := contMDiff_productInverse J I ∞ G X (contMDiff_inv J ∞)
-  contMDiff_comp := by
-    have ha := (arrowDiffeomorph J I ∞ G X).contMDiff
-    exact contMDiff_composablePairs_comp_of_eq (isSubmersion_productSource J I ∞ G X)
-      (contMDiff_productInverse J I ∞ G X (contMDiff_inv J ∞))
-      ((arrowDiffeomorph J I ∞ G X).symm.contMDiff.comp
-        (((ha.comp contMDiff_snd).fst.mul (ha.comp contMDiff_fst).fst).prodMk
-          (ha.comp contMDiff_fst).snd))
-      fun p ↦ (arrowDiffeomorph J I ∞ G X).injective (by
-        simp only [Diffeomorph.coe_toEquiv, Function.comp_apply]
-        rw [arrowDiffeomorph_comp, Diffeomorph.apply_symm_apply]
-        simp only [arrowDiffeomorph_apply, Pi.mul_apply])
-  t2Space_sourceFiber _ := by
-    have := topologicalGroup_of_lieGroup J ∞ (G := G)
-    have := J.t1Space G
-    exact inferInstance
-
-end LieGroupoid
-
-section SourceFiber
-
-variable {E H F K : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
-  [FiniteDimensional ℝ E] [TopologicalSpace H]
-  [NormedAddCommGroup F] [NormedSpace ℝ F] [FiniteDimensional ℝ F] [TopologicalSpace K]
-  (J : ModelWithCorners ℝ F K) (I : ModelWithCorners ℝ E H) [J.Boundaryless] [I.Boundaryless]
-  (G X : Type*) [Group G] [MulAction G X]
-  [TopologicalSpace G] [ChartedSpace K G] [TopologicalSpace X] [ChartedSpace H X]
-  [IsManifold J ∞ G] [IsManifold I ∞ X]
-  [IsLieGroupoid I (J.prod I) (ActionCategory G X)]
-
-/-- The source fibre over an object is canonically diffeomorphic to the acting Lie group.
-The source of the diffeomorphism carries the Lie groupoid's regular-fibre atlas. -/
-def sourceFiberDiffeomorph (x : ActionCategory G X) :
-    letI := IsLieGroupoid.sourceFiberChartedSpace I (J.prod I) x
-    {a : Quiver.Total (ActionCategory G X) // a.left = x} ≃ₘ^∞⟮
-      𝓘(ℝ, Fin (Module.finrank ℝ (F × E) - Module.finrank ℝ E) → ℝ), J⟯ G :=
-  letI := IsLieGroupoid.sourceFiberChartedSpace I (J.prod I) x
-  { toFun := fun a ↦ a.val.hom.hom
-    invFun := fun g ↦ ⟨(arrowDiffeomorph J I ∞ G X).symm (g, x.back), by
-      apply back_injective
-      simp [arrowDiffeomorph_symm_apply, objEquiv]⟩
-    left_inv := fun a ↦ Subtype.ext <| (arrowHomeomorph G X).injective <| by
-      simp only [arrowDiffeomorph_symm_apply, arrowHomeomorph_apply, totalEquiv_symm_apply_hom_hom,
-        totalEquiv_symm_apply_left]
-      exact Prod.ext rfl (congrArg ActionCategory.back a.property).symm
-    right_inv := fun g ↦ by
-      simpa only [arrowDiffeomorph_apply] using congrArg Prod.fst
-        ((arrowDiffeomorph J I ∞ G X).apply_symm_apply (g, x.back))
-    contMDiff_toFun := by
-      exact ((arrowDiffeomorph J I ∞ G X).contMDiff.comp
-        (IsLieGroupoid.isSmoothEmbedding_coe_sourceFiber I (J.prod I) x).contMDiff).fst.congr
-          fun _ ↦ by simp [arrowDiffeomorph_apply]
-    contMDiff_invFun := by
-      exact ((IsLieGroupoid.isSmoothEmbedding_coe_sourceFiber I (J.prod I) x).contMDiff_iff_comp
-        (f := fun g ↦ ⟨(arrowDiffeomorph J I ∞ G X).symm (g, x.back), by
-          apply back_injective
-          simp [arrowDiffeomorph_symm_apply, objEquiv]⟩)).2
-        ((arrowDiffeomorph J I ∞ G X).symm.contMDiff.comp
-          (contMDiff_id.prodMk contMDiff_const)) }
-
-/-- The canonical source-fibre diffeomorphism reads an arrow's label. -/
-theorem sourceFiberDiffeomorph_apply (x : ActionCategory G X)
-    (a : {a : Quiver.Total (ActionCategory G X) // a.left = x}) :
-    letI := IsLieGroupoid.sourceFiberChartedSpace I (J.prod I) x
-    sourceFiberDiffeomorph J I G X x a = a.val.hom.hom := by
-  rfl
-
-/-- The inverse source-fibre diffeomorphism constructs the arrow with the given label and source. -/
-@[simp]
-theorem sourceFiberDiffeomorph_symm_apply (x : ActionCategory G X) (g : G) :
-    letI := IsLieGroupoid.sourceFiberChartedSpace I (J.prod I) x
-    ((sourceFiberDiffeomorph J I G X x).symm g).val =
-      (arrowDiffeomorph J I ∞ G X).symm (g, x.back) := by
-  rfl
-
-end SourceFiber
 
 end TauCeti.ActionGroupoid
