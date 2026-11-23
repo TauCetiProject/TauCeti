@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Group.Action.Defs
 public import Mathlib.Algebra.GroupWithZero.Action.Defs
 public import Mathlib.Data.Finset.NoncommProd
 
@@ -18,6 +17,8 @@ family that commutes pairwise on `s`, in a possibly noncommutative monoid.
 
 ## Main results
 
+* `Finset.sum_smul_congr_of_ne_zero`: weighted sums need agreement only at nonzero weights;
+  zero-weight terms may differ because a zero scalar acts by zero.
 * `Finset.smul_noncommProd`: `b ^ s.card • s.noncommProd f _ = s.noncommProd (b • f ·) _`.
 -/
 
