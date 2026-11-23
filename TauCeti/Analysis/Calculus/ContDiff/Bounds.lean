@@ -13,7 +13,7 @@ import Mathlib.Analysis.Calculus.ContDiff.RCLike
 import TauCeti.Analysis.Calculus.IteratedFDeriv.Basic
 import TauCeti.Analysis.Calculus.IteratedFDeriv.Bilinear
 import TauCeti.Analysis.Calculus.IteratedFDeriv.Prod
-import TauCeti.Analysis.SpecialFunctions.Pow.Bounds
+import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Bounds
 
 /-!
 # Uniform derivative bounds on compact sets
@@ -45,6 +45,8 @@ how symbol estimates are proved near the zero frequency, where no decay is neede
   most `n` of a `C^n` map are bounded by one constant.
 * `ContDiffOn.exists_nonneg_bound_iteratedFDeriv_of_isOpen`: the same for the derivatives of a
   map that is `C^n` on an open set, with a nonnegative constant.
+* `IsCompact.exists_norm_fderiv_le`: the derivative of a map that is `C^1` at every point of a
+  compact set is bounded on that set.
 * `ContDiffOn.exists_nonneg_bound_iteratedFDeriv_uncurry_of_isOpen`: for a family `f p` that is
   `C^n` jointly in `(p, x)`, the derivatives of order at most `n` of the partial maps `f p` are
   bounded on a compact set by one constant, uniformly for `p` in a compact set.
@@ -104,6 +106,7 @@ how symbol estimates are proved near the zero frequency, where no decay is neede
 public section
 
 open Set
+open scoped NNReal
 
 variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
   {E F G H : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E]
@@ -123,6 +126,15 @@ theorem ContDiffOn.exists_bound_iteratedFDerivWithin {u : E → F} {s K : Set E}
   refine ⟨A, fun i hi z hz ↦ ((Finset.single_le_sum (f := fun i ↦ ‖iteratedFDerivWithin 𝕜 i u s z‖)
     (fun _ _ ↦ norm_nonneg _) (Finset.mem_range_succ_iff.mpr hi)).trans (le_abs_self _)).trans ?_⟩
   simpa only [Real.norm_eq_abs] using hA z hz
+
+/-- The derivative of a map that is `C^n`, with `1 ≤ n`, at every point of a compact set `K` is
+bounded on `K` by a single constant. -/
+theorem IsCompact.exists_norm_fderiv_le {f : E → F} {K : Set E} {n : WithTop ℕ∞}
+    (hK : IsCompact K) (hn : 1 ≤ n) (hf : ∀ x ∈ K, ContDiffAt 𝕜 n f x) :
+    ∃ M : ℝ≥0, ∀ x ∈ K, ‖fderiv 𝕜 f x‖ ≤ M := by
+  obtain ⟨M, hM⟩ := hK.exists_bound_of_continuousOn fun x hx ↦
+    ((hf x hx).fderiv_right (m := 0) (by simpa using hn)).continuousAt.continuousWithinAt
+  exact ⟨M.toNNReal, fun x hx ↦ (hM x hx).trans (Real.le_coe_toNNReal M)⟩
 
 /-- On a compact subset `K` of an open set `s`, the derivatives of order at most `n` of a map that
 is `C^n` on `s` are bounded by a single nonnegative constant. -/
@@ -275,8 +287,9 @@ theorem ContDiff.exists_norm_iteratedFDeriv_le_one_add_norm_sq_rpow_of_norm_le {
       ‖iteratedFDeriv ℝ k f (x, ξ)‖ ≤ C * (1 + ‖ξ‖ ^ 2) ^ (r / 2) := by
   obtain ⟨C, hC⟩ := (hK.prod (isCompact_closedBall (0 : F) R)).exists_bound_of_continuousOn
     (hf.continuous_iteratedFDeriv le_rfl).continuousOn
-  obtain ⟨C', hC'0, hC'⟩ := TauCeti.exists_le_mul_one_add_norm_sq_rpow_of_norm_le (E := F) C R r
-  exact ⟨C', hC'0, fun x hx ξ hξ ↦ (hC (x, ξ) ⟨hx, by simpa using hξ⟩).trans (hC' ξ hξ)⟩
+  obtain ⟨C', hC'0, hC'⟩ := Real.exists_le_mul_one_add_sq_rpow_of_abs_le C R r
+  exact ⟨C', hC'0, fun x hx ξ hξ ↦ (hC (x, ξ) ⟨hx, by simpa using hξ⟩).trans
+    (hC' ‖ξ‖ ((abs_norm ξ).trans_le hξ))⟩
 
 /-- On a ball, a continuous function is bounded by every power of the Japanese bracket:
 `‖f ξ‖ ≤ C (1 + ‖ξ‖ ^ 2) ^ (r / 2)` for `‖ξ‖ ≤ R`. -/
@@ -284,8 +297,9 @@ theorem Continuous.exists_norm_le_one_add_norm_sq_rpow_of_norm_le {E F : Type*}
     [NormedAddCommGroup E] [ProperSpace E] [NormedAddCommGroup F] {f : E → F} (hf : Continuous f)
     (R r : ℝ) : ∃ C, 0 ≤ C ∧ ∀ ξ, ‖ξ‖ ≤ R → ‖f ξ‖ ≤ C * (1 + ‖ξ‖ ^ 2) ^ (r / 2) := by
   obtain ⟨M, hM⟩ := (isCompact_closedBall (0 : E) R).exists_bound_of_continuousOn hf.continuousOn
-  obtain ⟨C, hC0, hC⟩ := TauCeti.exists_le_mul_one_add_norm_sq_rpow_of_norm_le (E := E) M R r
-  exact ⟨C, hC0, fun ξ hξ ↦ (hM ξ (mem_closedBall_zero_iff.2 hξ)).trans (hC ξ hξ)⟩
+  obtain ⟨C, hC0, hC⟩ := Real.exists_le_mul_one_add_sq_rpow_of_abs_le M R r
+  exact ⟨C, hC0, fun ξ hξ ↦ (hM ξ (mem_closedBall_zero_iff.2 hξ)).trans
+    (hC ‖ξ‖ ((abs_norm ξ).trans_le hξ))⟩
 
 /-- A `C^n` map which agrees outside a ball with a map whose order-`n` derivative is bounded
 there has a bounded order-`n` derivative: on the closed ball the derivative is continuous, and
