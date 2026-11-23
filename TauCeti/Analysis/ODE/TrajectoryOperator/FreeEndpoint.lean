@@ -407,6 +407,13 @@ theorem index_coprod_endTailL [CompleteSpace F]
   let : FiniteDimensional ℝ (_ ⧸ (trajectoryOperator (p := p) AL).range) := hD.finite_coker
   rw [ContinuousLinearMap.index_coprod, Module.finrank_pi_fintype, Nat.cast_sum]
 
+omit [Fact (1 ≤ p)] [∀ i, FiniteDimensional ℝ (K i)] in
+/-- Multiplying by `exp t` and then by `exp (-t)` cancels: this converts between the weighted
+difference `ξ` of a pair `(ξ, v)` and its path `u = exp (-w) • ξ + ∑ i, χ i • v i`. -/
+private theorem exp_neg_smul_exp_smul (t : ℝ) (y : F) :
+    Real.exp (-t) • Real.exp t • y = y := by
+  rw [smul_smul, ← Real.exp_add, neg_add_cancel, Real.exp_zero, one_smul]
+
 /-- **Solutions with weighted asymptotics come from the kernel.** Let `AL` be the class of
 `A - w' • id`. If `u` solves `u' + A u = 0` and its weighted difference
 `exp w • (u - ∑ i, χ i • v i)` from the free endpoint variables `v` lies in `Lᵖ`, then that
@@ -426,17 +433,17 @@ theorem exists_coprod_endTailL_eq_zero_of_hasDerivAt [CompleteSpace F] {w' : ℝ
           fun s ↦ Real.exp (w s) • (u s - ∑ i, χ i s • (v i : F)) := by
   set ψ : ℝ → F := fun s ↦ Real.exp (w s) • (u s - ∑ i, χ i s • (v i : F))
   set g : ℝ → F := fun s ↦ -∑ i, endTail w (χ i) A (v i) s
-  -- `ψ` solves the weighted equation `ψ' = g - (A - w') ψ`.
+  have hS (s : ℝ) : HasDerivAt (fun s ↦ ∑ i, χ i s • (v i : F))
+      (∑ i, deriv (χ i) s • (v i : F)) s :=
+    HasDerivAt.fun_sum fun i _ ↦ ((hχ i) s).hasDerivAt.smul_const (v i : F)
+  -- `ψ` solves the weighted equation `ψ' = g - (A - w') ψ`: it is the change of unknown of the
+  -- solution `u = exp (-w) • ψ + ∑ i, χ i • v i`.
   have hψ (s : ℝ) : HasDerivAt ψ (g s - (A s - w' s • ContinuousLinearMap.id ℝ F) (ψ s)) s := by
-    have hsum : HasDerivAt (fun y ↦ ∑ i, χ i y • (v i : F)) (∑ i, deriv (χ i) s • (v i : F)) s :=
-      HasDerivAt.fun_sum fun i _ ↦ ((hχ i) s).hasDerivAt.smul_const (v i : F)
-    convert (hw s).exp.smul ((hu s).sub hsum) using 1
-    have hc (i : ι) (x : F) : χ i s • w' s • x = w' s • χ i s • x := smul_comm _ _ x
-    simp only [g, ψ, endTail_apply, Pi.sub_apply, sub_apply, smul_apply,
-      ContinuousLinearMap.id_apply, map_sub, map_sum, map_smul,
-      smul_sub, smul_add, Finset.smul_sum, Finset.sum_add_distrib, Finset.sum_sub_distrib,
-      mul_smul, smul_neg, hc]
-    abel
+    refine ((forall_hasDerivAt_iff_forall_hasDerivAt_exp_neg_smul_add (A := A) hw hS).mpr
+      (fun s ↦ ?_) s).congr_deriv ?_
+    · simpa only [ψ, exp_neg_smul_exp_smul, sub_add_cancel] using hu s
+    · simp [g, endTail_apply, Finset.smul_sum, Finset.sum_add_distrib]
+      module
   have hg : MemLp g p := (memLp_finsetSum _ fun i _ ↦ hmem i _ (v i).property).neg
   obtain ⟨ξ, hξ, hξψ⟩ := exists_trajectoryOperator_ae_eq_of_hasDerivAt hAL hψ hv hg
   refine ⟨ξ, ?_, hξψ⟩
@@ -452,13 +459,6 @@ section Kernel
 variable [CompleteSpace F] {w' : ℝ → ℝ}
   {AL : Lp (F →L[ℝ] F) ∞ (volume.restrict ((⊤ : Opens ℝ) : Set ℝ))}
   {hmem : ∀ i, ∀ v ∈ K i, MemLp (endTail w (χ i) A v) 2}
-
-omit [Fact (1 ≤ p)] [∀ i, FiniteDimensional ℝ (K i)] [CompleteSpace F] in
-/-- Multiplying by `exp t` and then by `exp (-t)` cancels: this converts between the weighted
-difference `ξ` of a pair `(ξ, v)` and its path `u = exp (-w) • ξ + ∑ i, χ i • v i`. -/
-private theorem exp_neg_smul_exp_smul (t : ℝ) (y : F) :
-    Real.exp (-t) • Real.exp t • y = y := by
-  rw [smul_smul, ← Real.exp_add, neg_add_cancel, Real.exp_zero, one_smul]
 
 omit [∀ i, FiniteDimensional ℝ (K i)] in
 variable (w χ) in
