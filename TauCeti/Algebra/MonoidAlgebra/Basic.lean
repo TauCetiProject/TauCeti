@@ -393,17 +393,10 @@ theorem addSubgroupClosure_range_of {M : Type*} [MulOneClass M] :
 theorem coeff_curryAlgEquiv_symm {R A M N : Type*} [CommSemiring R] [Semiring A] [Algebra R A]
     [Monoid M] [Monoid N] (x : A[N][M]) (m : M) (n : N) :
     ((curryAlgEquiv R).symm x).coeff (m, n) = (x.coeff m).coeff n := by
-  classical
-  induction x using induction_linear with
-  | zero => simp
-  | add x y hx hy => simp [hx, hy]
-  | single m' a =>
-    induction a using induction_linear with
-    | zero => simp
-    | add a b ha hb => simp [single_add, ha, hb]
-    | single n' r =>
-      rw [curryAlgEquiv_symm_single, coeff_single, coeff_single, Finsupp.single_apply]
-      rcases eq_or_ne m' m with rfl | hm <;> rcases eq_or_ne n' n with rfl | hn <;> simp [*]
+  -- `(curryAlgEquiv R).symm` acts on the underlying carrier as `curryAddEquiv.symm`.
+  change (curryAddEquiv.symm x).coeff (m, n) = (x.coeff m).coeff n
+  rw [curryAddEquiv]
+  simp [Finsupp.curryAddEquiv_symm_apply, Finsupp.uncurry_apply_pair]
 
 end MonoidAlgebra
 
