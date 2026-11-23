@@ -46,7 +46,7 @@ of `Nov(k, ℝ, id)`, the action-field map is the unique extension of its restri
 
 ## Main definitions
 
-* `TauCeti.NovikovSeries.actionFieldMap ρ E`: the action-field map
+* `TauCeti.NovikovSeries.actionFieldMap E ρ`: the action-field map
   `Nov(R, G × ℝ, E_R) →+* Nov(k, ℝ, id)`.
 
 ## Main results

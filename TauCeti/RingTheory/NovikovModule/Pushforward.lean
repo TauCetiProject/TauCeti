@@ -7,7 +7,6 @@ module
 
 public import TauCeti.RingTheory.NovikovModule.MapOfMatrix
 public import TauCeti.RingTheory.NovikovModule.MapRange
-public import TauCeti.RingTheory.NovikovSeries.ActionField
 
 /-!
 # Pushforward of completed combinations along maps of generators
@@ -41,17 +40,9 @@ it is semilinear over `TauCeti.NovikovSeries.mapRingHom ρ φ` for the Novikov m
 Novikov series to the map of the matrix obtained by applying `TauCeti.NovikovSeries.mapRingHom`
 to the entries of `M` (`TauCeti.NovikovModule.map_novikovMapOfMatrix`). Thus identities between
 matrices of Novikov series, such as `D * D = 0` for a differential or a chain homotopy equation,
-transport to identities between the pushed-forward completed complexes.
-
-The main example is the *action-field specialization*. For torsors under the action-weighted
-exponent group `G × ℝ`, with period `E_R (g, r) = E g + r`, chosen lifts `r i` identify each orbit
-with a copy of `ℝ` through `p ↦ E_R (p -ᵥ r i)`, and the pushforward along these maps
-(`TauCeti.NovikovModule.actionFieldMap`) is a completed combination over the field-valued Novikov
-series `Nov(k, ℝ, id)`, with one generator for each energy in each orbit. Its coordinates are the
-images of the coordinates under the action-field map of Novikov series
-(`TauCeti.NovikovModule.coordinates_actionFieldMap`), and matrices go to their entrywise
-images (`TauCeti.NovikovModule.actionFieldMap_novikovMapOfMatrix`). This specializes a finite
-Floer complex over the action-weighted Novikov ring to a finite complex over the Novikov field.
+transport to identities between the pushed-forward completed complexes. The main example is the
+action-field specialization `TauCeti.NovikovModule.actionFieldMap`, in
+`TauCeti.RingTheory.NovikovModule.ActionField`.
 
 ## Main definitions
 
@@ -59,8 +50,6 @@ Floer complex over the action-weighted Novikov ring to a finite complex over the
   potentials, as a `ρ`-semilinear map.
 * `TauCeti.NovikovModule.novikovMap`: the same map on finite unions of torsors, as a semilinear
   map over the pushforward of Novikov rings.
-* `TauCeti.NovikovModule.actionFieldMap`: the action-field specialization of completed
-  combinations on torsors under the action-weighted exponent group.
 
 ## Main results
 
@@ -103,7 +92,14 @@ completed combination has only finitely many nonzero coefficients in each fibre.
 theorem finite_support_inter_preimage_singleton (a : NovikovModule R F) (s' : S') :
     (support a.val ∩ π ⁻¹' {s'}).Finite :=
   (finite_ge a (F' s')).subset fun s hs => ⟨hs.1, by
-    rw [← hπ s, show π s = s' from hs.2]⟩
+    rw [← hπ s, mem_singleton_iff.1 (mem_preimage.1 hs.2)]⟩
+
+/-- For `f` with `f 0 = 0`, a generator of a fibre whose coefficient has nonzero image under `f`
+has nonzero coefficient. -/
+private theorem preimage_singleton_inter_support_subset {f : R → R'} (hf : f 0 = 0)
+    (a : NovikovModule R F) (s' : S') :
+    π ⁻¹' {s'} ∩ support (fun s => f (a.val s)) ⊆ support a.val ∩ π ⁻¹' {s'} :=
+  fun _ hs => ⟨fun h => hs.2 (by simp only [h, hf]), hs.1⟩
 
 include hπ in
 /-- Summing the coefficients of a completed combination along the fibres of a potential-preserving
@@ -113,7 +109,7 @@ private theorem finsum_mem_preimage_singleton_mem (ρ : R →+* R') (a : Novikov
   ((finite_gt a C).image π).subset fun s' hs' => by
     obtain ⟨s, hs, hρ⟩ := exists_ne_zero_of_finsum_mem_ne_zero hs'.1
     refine ⟨s, ⟨fun h => hρ (by rw [h, map_zero]), ?_⟩, hs⟩
-    rw [← hπ s, show π s = s' from hs]
+    rw [← hπ s, mem_singleton_iff.1 (mem_preimage.1 hs)]
     exact hs'.2
 
 /-- A sum along a fibre is the sum over any finite set of generators in the fibre containing those
@@ -122,7 +118,8 @@ private theorem finsum_mem_preimage_singleton_eq_sum (ρ : R →+* R') (a : Novi
     {s' : S'} (t : Finset S) (ht : support a.val ∩ π ⁻¹' {s'} ⊆ t)
     (htπ : ∀ s ∈ t, π s = s') :
     ∑ᶠ s ∈ π ⁻¹' {s'}, ρ (a.val s) = ∑ s ∈ t, ρ (a.val s) :=
-  finsum_mem_eq_sum_of_subset _ (fun s hs => ht ⟨fun h => hs.2 (by simp [h]), hs.1⟩) htπ
+  finsum_mem_eq_sum_of_subset _
+    ((preimage_singleton_inter_support_subset (map_zero ρ) a s').trans ht) htπ
 
 /-- The **pushforward** of completed combinations along a coefficient map `ρ` and a map `π` of
 generators preserving potentials: the coefficient at `s'` is the sum of the images under `ρ` of
@@ -133,10 +130,10 @@ def map (ρ : R →+* R') (π : S → S') (hπ : ∀ s, F' (π s) = F s) :
   map_add' a b := Subtype.ext <| funext fun s' => by
     simp only [Submodule.coe_add, Pi.add_apply, map_add]
     exact finsum_mem_add_distrib'
-      ((finite_support_inter_preimage_singleton hπ a s').subset fun s hs =>
-        ⟨fun h => hs.2 (by simp [h]), hs.1⟩)
-      ((finite_support_inter_preimage_singleton hπ b s').subset fun s hs =>
-        ⟨fun h => hs.2 (by simp [h]), hs.1⟩)
+      ((finite_support_inter_preimage_singleton hπ a s').subset
+        (preimage_singleton_inter_support_subset (map_zero ρ) a s'))
+      ((finite_support_inter_preimage_singleton hπ b s').subset
+        (preimage_singleton_inter_support_subset (map_zero ρ) b s'))
   map_smul' c a := Subtype.ext <| funext fun s' => by
     classical
     have hfin := finite_support_inter_preimage_singleton hπ a s'
@@ -145,7 +142,8 @@ def map (ρ : R →+* R') (π : S → S') (hπ : ∀ s, F' (π s) = F s) :
     rw [finsum_mem_preimage_singleton_eq_sum (π := π) ρ a hfin.toFinset
       (fun s hs => (Finite.mem_toFinset _).2 hs) ht, Finset.mul_sum]
     exact finsum_mem_eq_sum_of_subset _
-      (fun s hs => (Finite.mem_toFinset _).2 ⟨fun h => hs.2 (by simp [h]), hs.1⟩) ht
+      (fun s hs => (Finite.mem_toFinset _).2 <| preimage_singleton_inter_support_subset
+        (f := fun x => ρ c * ρ x) (by rw [map_zero, mul_zero]) a s' hs) ht
 
 variable (ρ : R →+* R')
 
@@ -235,7 +233,8 @@ combination vanishing above `C`. -/
 theorem map_mem_potentialFiltration {C : ℝ} {a : NovikovModule R F}
     (ha : a ∈ potentialFiltration R F C) : map ρ π hπ a ∈ potentialFiltration R' F' C :=
   mem_potentialFiltration.2 fun s' hs' => finsum_mem_eq_zero_of_forall_eq_zero fun s hs => by
-    rw [mem_potentialFiltration.1 ha s (by rwa [← hπ s, show π s = s' from hs]), map_zero]
+    rw [mem_potentialFiltration.1 ha s
+      (by rwa [← hπ s, mem_singleton_iff.1 (mem_preimage.1 hs)]), map_zero]
 
 /-- The pushforward is continuous for the potential-cutoff topologies. -/
 theorem continuous_map : Continuous (map ρ π hπ) :=
@@ -292,7 +291,7 @@ theorem coordinates_map (r : ∀ i, P i) (a : NovikovModule R F) (i : ι) :
     · rintro ⟨h, hh, hp⟩
       obtain ⟨rfl, hp⟩ := Sigma.mk.inj_iff.1 hp
       obtain rfl := eq_of_heq hp
-      rw [hπφ, show φ h = h' from hh]
+      rw [hπφ, mem_singleton_iff.1 (mem_preimage.1 hh)]
   rw [hfib, finsum_mem_image fun h _ k _ hk =>
     vadd_right_cancel _ (eq_of_heq (Sigma.mk.inj_iff.1 hk).2)]
   simp only [coordinates_coeff, AddMonoidHom.coe_ofClass]
@@ -371,123 +370,6 @@ theorem map_novikovMapOfMatrix (r₁ : ∀ i, P₁ i) (r₀ : ∀ k, P₀ k)
   simp only [map_mul, Matrix.map_apply, coordinates_map hF₁ hF₁' ρ hφ hπφ₁ hπ₁]
 
 end Matrix
-
-section ActionField
-
-variable {k G ι ι₀ : Type*} [AddCommGroup G] {E : G →+ ℝ} {P : ι → Type*} {P₀ : ι₀ → Type*}
-  [∀ i, AddTorsor (G × ℝ) (P i)] [∀ k, AddTorsor (G × ℝ) (P₀ k)] {F : (Σ i, P i) → ℝ}
-  {F₀ : (Σ k, P₀ k) → ℝ}
-  (hF : ∀ i h (p : P i), F ⟨i, h +ᵥ p⟩ = F ⟨i, p⟩ - E.coprod (AddMonoidHom.id ℝ) h)
-  (hF₀ : ∀ k h (p : P₀ k), F₀ ⟨k, h +ᵥ p⟩ = F₀ ⟨k, p⟩ - E.coprod (AddMonoidHom.id ℝ) h)
-
-variable (F) in
-/-- The potential of the action-field generators `Σ _ : ι, ℝ` for the lifts `r`: the energy `t` in
-the orbit `i` has the potential `F (r i) - t`. -/
-def actionFieldPotential (r : ∀ i, P i) (s : Σ _ : ι, ℝ) : ℝ :=
-  F ⟨s.1, r s.1⟩ - s.2
-
-@[simp]
-theorem actionFieldPotential_apply (r : ∀ i, P i) (s : Σ _ : ι, ℝ) :
-    actionFieldPotential F r s = F ⟨s.1, r s.1⟩ - s.2 :=
-  (rfl)
-
-variable (F) in
-/-- On the action-field generators, translating the energy by `t` lowers the potential by `t`:
-each orbit is a torsor under `ℝ` with the identity period. -/
-theorem actionFieldPotential_vadd (r : ∀ i, P i) (i : ι) (t x : ℝ) :
-    actionFieldPotential F r ⟨i, t +ᵥ x⟩ =
-      actionFieldPotential F r ⟨i, x⟩ - AddMonoidHom.id ℝ t := by
-  simp only [actionFieldPotential_apply, vadd_eq_add, AddMonoidHom.id_apply]
-  ring
-
-/-- The energy `E_R (p -ᵥ r i)` of a generator relative to the lift of its orbit. -/
-private theorem vadd_vsub_energy (r : ∀ i, P i) (i : ι) (h : G × ℝ) (p : P i) :
-    E.coprod (AddMonoidHom.id ℝ) ((h +ᵥ p) -ᵥ r i) =
-      E.coprod (AddMonoidHom.id ℝ) h +ᵥ E.coprod (AddMonoidHom.id ℝ) (p -ᵥ r i) := by
-  rw [vadd_vsub_assoc, map_add, vadd_eq_add]
-
-include hF in
-/-- The energy map `p ↦ E_R (p -ᵥ r i)` of each orbit preserves potentials. -/
-theorem actionFieldPotential_energy (r : ∀ i, P i) (s : Σ i, P i) :
-    actionFieldPotential F r
-        (Sigma.map id (fun i p => E.coprod (AddMonoidHom.id ℝ) (p -ᵥ r i)) s) = F s := by
-  obtain ⟨i, p⟩ := s
-  rw [Sigma.map_mk, actionFieldPotential_apply, potential_eq_sub_vsub hF r i p, id_eq]
-
-section Semiring
-
-variable [Semiring R] [Semiring k] (ρ : R →+* k)
-
-/-- The **action-field specialization** of completed combinations on torsors under the
-action-weighted exponent group `G × ℝ`: the pushforward along the coefficient map `ρ` and the
-energy maps `p ↦ E_R (p -ᵥ r i)` from each orbit to `ℝ`, relative to lifts `r`. Its values are
-completed combinations of the generators `Σ _ : ι, ℝ` with the potential
-`TauCeti.NovikovModule.actionFieldPotential F r`. -/
-def actionFieldMap (r : ∀ i, P i) :
-    NovikovModule R F →ₛₗ[ρ] NovikovModule k (actionFieldPotential F r) :=
-  map ρ (Sigma.map id fun i p => E.coprod (AddMonoidHom.id ℝ) (p -ᵥ r i))
-    (actionFieldPotential_energy hF r)
-
-/-- The action-field specialization is the pushforward along the energy maps of the orbits. -/
-theorem actionFieldMap_apply (r : ∀ i, P i) (a : NovikovModule R F) :
-    actionFieldMap hF ρ r a =
-      map ρ (Sigma.map id fun i p => E.coprod (AddMonoidHom.id ℝ) (p -ᵥ r i))
-        (actionFieldPotential_energy hF r) a :=
-  (rfl)
-
-variable [Finite ι]
-
-/-- **The action-field specialization in coordinates.** In the lift coordinates of `r` and of the
-energy `0` in each orbit, the action-field specialization of completed combinations is the
-action-field map `TauCeti.NovikovSeries.actionFieldMap E ρ` of Novikov series in each orbit. -/
-theorem coordinates_actionFieldMap (r : ∀ i, P i) (a : NovikovModule R F) (i : ι) :
-    coordinates (actionFieldPotential_vadd F r) (fun _ => 0) (actionFieldMap hF ρ r a) i =
-      NovikovSeries.actionFieldMap E ρ (coordinates hF r a i) := by
-  have h := coordinates_map hF (actionFieldPotential_vadd F r) ρ
-    (NovikovSeries.exists_period_rescale_coprod_id E) (vadd_vsub_energy r)
-    (actionFieldPotential_energy hF r) r a i
-  simp only [vsub_self, map_zero] at h
-  rw [actionFieldMap_apply, h, NovikovSeries.actionFieldMap_eq_mapRingHom]
-
-/-- The action-field specialization is semilinear for the Novikov module structures of
-`TauCeti.NovikovModule.module`, over the action-field map of Novikov rings. -/
-theorem actionFieldMap_smul (r : ∀ i, P i)
-    (β : NovikovSeries R (G × ℝ) (E.coprod (AddMonoidHom.id ℝ))) (a : NovikovModule R F) :
-    letI := module (R := R) hF
-    letI := module (R := k) (actionFieldPotential_vadd F r)
-    actionFieldMap hF ρ r (β • a) =
-      NovikovSeries.actionFieldMap E ρ β • actionFieldMap hF ρ r a := by
-  rw [actionFieldMap_apply, actionFieldMap_apply, NovikovSeries.actionFieldMap_eq_mapRingHom]
-  exact map_smul_novikov hF (actionFieldPotential_vadd F r) ρ
-    (NovikovSeries.exists_period_rescale_coprod_id E) (vadd_vsub_energy r) _ β a
-
-end Semiring
-
-section CommSemiring
-
-variable [CommSemiring R] [CommSemiring k] (ρ : R →+* k) [Finite ι] [Finite ι₀]
-
-/-- **Specializing the map of a matrix.** The action-field specialization carries the
-Novikov-linear map of a matrix `M` of action-weighted Novikov series to the map of the matrix of
-the action-field images `TauCeti.NovikovSeries.actionFieldMap E ρ` of its entries, relative to the
-energy `0` in each orbit. -/
-theorem actionFieldMap_novikovMapOfMatrix (r : ∀ i, P i) (r₀ : ∀ k, P₀ k)
-    (M : Matrix ι ι₀ (NovikovSeries R (G × ℝ) (E.coprod (AddMonoidHom.id ℝ))))
-    (a : NovikovModule R F) :
-    actionFieldMap hF₀ ρ r₀ (novikovMapOfMatrix hF hF₀ r r₀ M a) =
-      novikovMapOfMatrix (actionFieldPotential_vadd F r) (actionFieldPotential_vadd F₀ r₀)
-        (fun _ => 0) (fun _ => 0) (M.map (NovikovSeries.actionFieldMap E ρ))
-        (actionFieldMap hF ρ r a) := by
-  have := Fintype.ofFinite ι
-  refine (coordinates (actionFieldPotential_vadd F₀ r₀) fun _ => 0).injective
-    (funext fun k => ?_)
-  rw [coordinates_actionFieldMap, coordinates_novikovMapOfMatrix,
-    coordinates_novikovMapOfMatrix, map_sum]
-  simp only [map_mul, Matrix.map_apply, coordinates_actionFieldMap]
-
-end CommSemiring
-
-end ActionField
 
 end NovikovModule
 
