@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.LinearAlgebra.RootSystem.BaseChange.Restrict.Basic
+public import TauCeti.LinearAlgebra.RootSystem.BaseChange.Restrict.Hom
 public import TauCeti.LinearAlgebra.RootSystem.OrbitSum.Basic
 
 /-!

@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.LinearAlgebra.RootSystem.Base
+public import TauCeti.LinearAlgebra.RootSystem.Base
 import Mathlib.LinearAlgebra.Dual.Lemmas
 
 /-!
@@ -17,8 +17,7 @@ among the roots: a vanishing integral combination of roots has a vanishing combi
 so two integral combinations with the same value have the same combination of heights. When the
 roots span the weight space, it also extends height to the linear functional which sums the
 coordinates in the simple-root basis. Over a field, a form taking value one on the simple roots
-exists even when they do not span the weight space. Ahead of all this, it records the
-extensionality of bases (a base is determined by the indices of its simple roots), how bases,
+exists even when they do not span the weight space. Ahead of all this, it records how bases,
 heights and positivity are transported along equivalences of root pairings (in particular an
 automorphism permuting the simple roots preserves heights), and how reflection in a root changes
 height: reflection in a simple root subtracts the corresponding Cartan integer.
@@ -32,7 +31,6 @@ height: reflection in a simple root subtracts the corresponding Cartan integer.
 
 ## Main results
 
-* `RootPairing.Base.ext`: a base is determined by its support, the indices of its simple roots.
 * `RootPairing.Base.map_one` and `RootPairing.Base.map_mul`: transporting bases is an action of the
   automorphism group, `RootPairing.Base.map_eq_of_forall_mem_support` says an automorphism
   permuting the simple roots fixes the base, and `RootPairing.Base.mem_support_indexEquiv_iff` says
@@ -68,15 +66,6 @@ namespace RootPairing.Base
 
 variable {ι R M N : Type*} [CommRing R] [AddCommGroup M] [Module R M] [AddCommGroup N] [Module R N]
   {P : RootPairing ι R M N}
-
-/-- **A base is determined by its simple roots.** The other fields of a base are propositions about
-its support. -/
-@[ext]
-theorem ext {b b' : P.Base} (h : b.support = b'.support) : b = b' := by
-  cases b
-  cases b'
-  subst h
-  rfl
 
 section Map
 

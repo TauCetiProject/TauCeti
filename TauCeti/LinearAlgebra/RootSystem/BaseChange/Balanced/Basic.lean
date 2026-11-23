@@ -6,9 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.RootSystem.BaseChange
-public import Mathlib.LinearAlgebra.RootSystem.Hom
 public import TauCeti.LinearAlgebra.RootSystem.Basic
-import TauCeti.LinearAlgebra.RootSystem.HomInvariance
 
 /-!
 # Balanced root pairings and projection onto the root span
@@ -27,8 +25,7 @@ and on the coweight side to the dual statement for `P.flip`.
 When `P` is balanced, the direct-sum decomposition `M = P.rootSpan R ⊕ P.corootKer` yields a linear
 projection `P.rootSpanProj : M →ₗ[R] P.rootSpan R` along `P.corootKer`. Subtracting
 `P.rootSpanProj x` from `x` changes `x` only by an element of `P.corootKer`, so `P.rootSpanProj`
-preserves every coroot evaluation and commutes with root reflections and with equivalences of
-balanced root pairings.
+preserves every coroot evaluation and commutes with root reflections.
 
 ## Main definitions
 
@@ -42,8 +39,6 @@ balanced root pairings.
   is balanced if and only if `P.rootSpan R` complements `P.corootKer` and `P.corootSpan R`
   complements `P.flip.corootKer`.
 * `RootPairing.coroot'_coe_rootSpanProj`: `P.rootSpanProj` preserves all coroot evaluations.
-* `RootPairing.Equiv.coe_rootSpanProj_weightMap`: equivalences of balanced root pairings commute
-  with `rootSpanProj`.
 
 ## References
 
@@ -176,33 +171,5 @@ theorem rootSpanProj_eq_iff_of_sub_mem {x y : M} (h : y - x ∈ P.rootSpan R) :
   exact (sub_eq_zero.mp hsub.symm).symm
 
 end RootSpanProj
-
-section Equiv
-
-variable {ι ι₂ R M N M₂ N₂ : Type*} [CommRing R]
-  [AddCommGroup M] [Module R M] [AddCommGroup N] [Module R N]
-  [AddCommGroup M₂] [Module R M₂] [AddCommGroup N₂] [Module R N₂]
-  {P : RootPairing ι R M N} {Q : RootPairing ι₂ R M₂ N₂}
-
-/-- **Equivalences of balanced root pairings commute with `rootSpanProj`.** -/
-theorem Equiv.coe_rootSpanProj_weightMap [P.IsBalanced] [Q.IsBalanced] (e : P.Equiv Q) (x : M) :
-    (Q.rootSpanProj (e.weightMap x) : M₂) = e.weightMap (P.rootSpanProj x : M) := by
-  have hmem : e.weightMap (P.rootSpanProj x : M) ∈ Q.rootSpan R :=
-    e.toHom.weightMap_mem_rootSpan (P.rootSpanProj x).property
-  have hker : e.weightMap x - e.weightMap (P.rootSpanProj x : M) ∈ Q.corootKer := by
-    rw [← map_sub, e.weightMap_mem_corootKer_iff]
-    exact P.sub_coe_rootSpanProj_mem_corootKer x
-  have hzero : Q.rootSpanProj (e.weightMap x - e.weightMap (P.rootSpanProj x : M)) = 0 :=
-    Q.rootSpanProj_eq_zero_iff.mpr hker
-  rw [map_sub, Q.rootSpanProj_apply_of_mem hmem, sub_eq_zero] at hzero
-  exact congrArg Subtype.val hzero
-
-/-- Automorphisms of a balanced root pairing commute with `rootSpanProj`. -/
-@[simp]
-theorem coe_rootSpanProj_smul [P.IsBalanced] (g : P.Aut) (x : M) :
-    (P.rootSpanProj (g • x) : M) = g • (P.rootSpanProj x : M) :=
-  g.coe_rootSpanProj_weightMap x
-
-end Equiv
 
 end RootPairing

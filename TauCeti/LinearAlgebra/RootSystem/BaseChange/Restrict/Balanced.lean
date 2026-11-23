@@ -6,7 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.LinearAlgebra.RootSystem.BaseChange.Balanced.Basic
-public import TauCeti.LinearAlgebra.RootSystem.BaseChange.Restrict.Basic
+public import TauCeti.LinearAlgebra.RootSystem.BaseChange.Restrict.Hom
+import TauCeti.LinearAlgebra.RootSystem.BaseChange.Balanced.Hom
 
 /-!
 # Root-span projection compatibility with scalar restriction

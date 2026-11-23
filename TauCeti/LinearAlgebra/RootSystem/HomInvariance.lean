@@ -59,6 +59,8 @@ weight-space vectors.
   preserves coroot values and intertwines the reflection at a root with the reflection at its
   image. These generalise Mathlib's `RootPairing.Equiv.coroot'_weightEquiv` and
   `RootPairing.Equiv.weightEquiv_reflection` from equivalences to morphisms.
+* `RootPairing.smul_eq_self_of_mem_ker_indexHom`: an automorphism fixing every root index fixes
+  the root span pointwise.
 
 These invariance facts show that an automorphism of a root system permutes the matrices of Geck's
 construction, as developed in `TauCeti.LinearAlgebra.RootSystem.GeckConstruction.Symmetry`.
@@ -255,5 +257,17 @@ theorem Equiv.map_corootKer (e : P.Equiv P₂) :
     exact hy
 
 end Equiv
+
+/-- An automorphism in the kernel of `RootPairing.Equiv.indexHom` fixes every element of the root
+span `P.rootSpan R`. -/
+theorem smul_eq_self_of_mem_ker_indexHom (P : RootPairing ι R M N) {g : P.Aut}
+    (hg : g ∈ (Equiv.indexHom P).ker) {x : M} (hx : x ∈ P.rootSpan R) :
+    g • x = x :=
+  LinearMap.eqOn_span (f := g.weightMap) (g := LinearMap.id)
+    (by
+      rintro _ ⟨i, rfl⟩
+      rw [LinearMap.id_apply, Hom.root_weightMap_apply, ← Equiv.indexHom_apply,
+        MonoidHom.mem_ker.mp hg, _root_.Equiv.Perm.one_apply])
+    hx
 
 end RootPairing
