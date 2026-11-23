@@ -376,8 +376,7 @@ theorem exists_holderOnWith_iteratedFDeriv_two_of_sum_smul_fderiv_fderiv {α : �
   -- the Laplacian to `v = u ∘ e`, compare the `L²` norms of `D²v` and `D²u`, and transfer the
   -- Hölder bound for `D²v` back to `D²u`.
   obtain ⟨e, -, he, he', hΔ⟩ := exists_continuousLinearEquiv_laplacian_comp_eq (F := ℝ) hlam hA hA'
-  have hlamLam : lam ≤ Lam := by
-    simpa using (hA (EuclideanSpace.single 0 1)).trans (hA' _)
+  have hlamLam : lam ≤ Lam := le_of_mul_norm_sq_le_toQuadraticForm'_le hA hA'
   have hLam : 0 < Lam := hlam.trans_le hlamLam
   -- The transformed problem for `v = u ∘ e`, on the thickening of `e⁻¹ S` of radius `R / √Λ`.
   set v := u ∘ e

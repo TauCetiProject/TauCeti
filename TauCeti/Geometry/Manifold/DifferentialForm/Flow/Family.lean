@@ -33,8 +33,8 @@ identity
 
 at every time `t` at which the flow from `(s, x)` is defined
 (`TauCeti.hasDerivAt_mpullback_timeDependentFlowOf_mpullback_prodMk`). It extends
-`TauCeti.hasDerivAt_mpullback_timeDependentFlowOf`, where the form does not depend on time. The
-proof reads the family through the flow `Ψ` of the suspension: near `(s, x)`,
+`TauCeti.hasDerivAt_mpullback_timeDependentFlowOf_of_mem`, where the form does not depend on
+time. The proof reads the family through the flow `Ψ` of the suspension: near `(s, x)`,
 `Ψ_r (s, y) = (s + r, φ_{s,s+r} y)`, so `φ_{s,t}^* α_t = ι_s^* (Ψ_{t-s}^* α)` at `x`, whose
 velocity is `ι_s^* Ψ_{t-s}^* L_Z α` by the autonomous identity
 `TauCeti.hasDerivAt_mpullback_flowOf`. The slices of `L_Z α` split as
