@@ -180,6 +180,21 @@ theorem weylElement_mem_weylSubgroup (γ : Fin t.numRoots) (A : Type v) [CommRin
       (Subgroup.mul_mem _ (D.weylElement_simpleIndex_one_mem_weylSubgroup A i) (hk _))
       (Subgroup.inv_mem _ (D.weylElement_simpleIndex_one_mem_weylSubgroup A i))
 
+/-- Scalar extension on the Weyl subgroup sends Steinberg's Weyl element `n_γ(s)` to `n_γ(f s)`. -/
+-- Concrete Dynkin-type rules can normalize root indices inside `Subtype.mk` before matching.
+@[simp↓]
+theorem weylSubgroupMap_weylElement (A : Type*) [CommRing A] {B : Type*} [CommRing B]
+    (f : A →+* B) (γ : Fin t.numRoots) (s : Aˣ)
+    (hx : D.weylElement γ A s ∈ D.weylSubgroup A) :
+    D.weylSubgroupMap A f ⟨D.weylElement γ A s, hx⟩ =
+      ⟨D.weylElement γ B (Units.map f.toMonoidHom s),
+        D.weylElement_mem_weylSubgroup γ B _⟩ := by
+  apply Subtype.ext
+  rw [D.coe_weylSubgroupMap]
+  apply Subtype.ext
+  rw [GeneralLinear.IntegralPointsPresentation.coe_map]
+  exact D.map_weylElement f γ s
+
 /-- **Over a field, Steinberg's Weyl element `n_γ(s)` of any root `γ` projects to the reflection
 `s_γ` in the Weyl group.** -/
 -- Concrete Dynkin-type rules can normalize root indices inside `Subtype.mk` before matching.

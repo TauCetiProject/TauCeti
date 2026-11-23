@@ -87,16 +87,6 @@ private theorem exists_torusPoints_mul_list_prod (A : Type v) [CommRing A]
   obtain ⟨r', hr'⟩ := (Subgroup.mem_normalizer_iff.mp hnorm (D.torusPoints A r)).mp ⟨r, rfl⟩
   exact ⟨r', by rw [hr']; group⟩
 
-private theorem wordProd_map_simpleSupportEquiv (l : List (Fin t.rank)) :
-    TauCeti.wordProd (t.simplyConnectedRootDatum ht) (t.simplyConnectedBase ht)
-        (l.map (t.simpleSupportEquivSimplyConnectedBase ht)) =
-      t.geckWeylWordProd ht l := by
-  induction l with
-  | nil => rw [List.map_nil, wordProd_nil, geckWeylWordProd_nil]
-  | cons i l ih =>
-    rw [List.map_cons, wordProd_cons, ih, geckWeylWordProd_cons,
-      coe_simpleSupportEquivSimplyConnectedBase_apply]
-
 /-- Rank-one torus cancellation across a crossing suffix: given the suffix conjugation identity
 `suf_lift * n_γ(1) * suf_lift⁻¹ = n_{αᵢ}(s')`, cancelling `nᵢ(1)` against `n_{αᵢ}(s')` produces
 a left factor in the actual torus `T_D(A)`. -/
@@ -138,7 +128,7 @@ private theorem exists_eraseIdx_weylWord_mul_weylElement (A : Type v) [CommRing 
             ((l.eraseIdx p).map fun i => D.weylElement (t.simpleIndex ht i) A 1).prod := by
   let _ := t.isReduced_simplyConnectedRootDatum ht
   let e := t.simpleSupportEquivSimplyConnectedBase ht
-  rw [← wordProd_map_simpleSupportEquiv] at h
+  rw [← t.wordProd_map_simpleSupportEquiv ht] at h
   obtain ⟨p, hp, hdrop, hwp⟩ :=
     (t.simplyConnectedRootDatum ht).exists_wordProd_drop_apply_eq_and_wordProd_eraseIdx_eq_mul_ofIdx
       (t.simplyConnectedBase ht) hγ (l.map e) h
@@ -147,12 +137,12 @@ private theorem exists_eraseIdx_weylWord_mul_weylElement (A : Type v) [CommRing 
       (t.simplyConnectedRootDatum ht).weylGroupToPerm
           (t.geckWeylWordProd ht (l.drop (p + 1))) γ =
         t.simpleIndex ht l[p] := by
-    simpa [e, ← List.map_drop, wordProd_map_simpleSupportEquiv] using hdrop
+    simpa [e, ← List.map_drop] using hdrop
   have hwp' :
       t.geckWeylWordProd ht (l.eraseIdx p) =
         t.geckWeylWordProd ht l *
           RootPairing.weylGroup.ofIdx (t.simplyConnectedRootDatum ht) γ := by
-    simpa [e, List.eraseIdx_map, wordProd_map_simpleSupportEquiv] using hwp
+    simpa [e, List.eraseIdx_map] using hwp
   obtain ⟨s', hs'⟩ := D.exists_unit_weylWord_conj_weylElement A (l.drop (p + 1)) γ 1
   rw [hdrop'] at hs'
   obtain ⟨r₀, hmid⟩ :=

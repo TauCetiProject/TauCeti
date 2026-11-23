@@ -47,41 +47,47 @@ local notation "N" => D.weylSubgroup A
 local notation "H" => Subgroup.subgroupOf (MonoidHom.range (D.torusPoints A)) N
 local notation "Q" => N ⧸ H
 
+private def residueIdeal [Nontrivial A] : Ideal A :=
+  (Ideal.exists_maximal A).choose
+
+private instance residueIdeal_isMaximal [Nontrivial A] : (residueIdeal A).IsMaximal :=
+  (Ideal.exists_maximal A).choose_spec
+
+private def ResidueField [Nontrivial A] : Type _ :=
+  A ⧸ residueIdeal A
+
+private instance residueFieldField [Nontrivial A] : Field (ResidueField A) :=
+  Ideal.Quotient.field (residueIdeal A)
+
+private def residueQuotMk [Nontrivial A] : A →+* ResidueField A where
+  toFun := Ideal.Quotient.mk (residueIdeal A)
+  map_one' := rfl
+  map_mul' _ _ := rfl
+  map_zero' := rfl
+  map_add' _ _ := rfl
+
 private def residueHom [Nontrivial A] : N →* (t.simplyConnectedRootDatum ht).weylGroup :=
-  let M := (Ideal.exists_maximal A).choose
-  let _ : M.IsMaximal := (Ideal.exists_maximal A).choose_spec
-  let _ := Ideal.Quotient.field M
-  (D.weylProjection (A ⧸ M)).comp (D.weylSubgroupMap A (Ideal.Quotient.mk M))
+  (D.weylProjection (ResidueField A)).comp (D.weylSubgroupMap A (residueQuotMk A))
+
+private theorem residueHom_apply [Nontrivial A] (g : N) :
+    D.residueHom A g =
+      D.weylProjection (ResidueField A) (D.weylSubgroupMap A (residueQuotMk A) g) :=
+  rfl
 
 private theorem residueHom_torusPoints [Nontrivial A] (s : Fin t.rank → Aˣ)
     (hx : D.torusPoints A s ∈ N) :
     D.residueHom A ⟨D.torusPoints A s, hx⟩ = 1 := by
-  simp only [residueHom, MonoidHom.comp_apply, D.weylSubgroupMap_torusPoints,
-    D.weylProjection_torusPoints]
+  rw [D.residueHom_apply A, D.weylSubgroupMap_torusPoints, D.weylProjection_torusPoints]
 
 private theorem residueHom_simpleWeylLift [Nontrivial A] (i : Fin t.rank) :
     D.residueHom A (D.simpleWeylLift A i) =
       RootPairing.weylGroup.ofIdx (t.simplyConnectedRootDatum ht) (t.simpleIndex ht i) := by
-  simp only [residueHom, MonoidHom.comp_apply, D.weylSubgroupMap_simpleWeylLift,
-    D.weylProjection_simpleWeylLift]
+  rw [D.residueHom_apply A, D.weylSubgroupMap_simpleWeylLift, D.weylProjection_simpleWeylLift]
 
 private theorem residueHom_weylElement [Nontrivial A] (γ : Fin t.numRoots) (s : Aˣ) :
     D.residueHom A ⟨D.weylElement γ A s, D.weylElement_mem_weylSubgroup γ A s⟩ =
       RootPairing.weylGroup.ofIdx (t.simplyConnectedRootDatum ht) γ := by
-  let M := (Ideal.exists_maximal A).choose
-  let _ : M.IsMaximal := (Ideal.exists_maximal A).choose_spec
-  let _ := Ideal.Quotient.field M
-  have hmap :
-      D.weylSubgroupMap A (Ideal.Quotient.mk M)
-          ⟨D.weylElement γ A s, D.weylElement_mem_weylSubgroup γ A s⟩ =
-        ⟨D.weylElement γ (A ⧸ M) (Units.map (Ideal.Quotient.mk M).toMonoidHom s),
-          D.weylElement_mem_weylSubgroup γ (A ⧸ M) _⟩ := by
-    apply Subtype.ext
-    rw [D.coe_weylSubgroupMap]
-    apply Subtype.ext
-    rw [GeneralLinear.IntegralPointsPresentation.coe_map]
-    exact D.map_weylElement (Ideal.Quotient.mk M) γ s
-  rw [residueHom, MonoidHom.comp_apply, hmap, D.weylProjection_weylElement]
+  rw [D.residueHom_apply A, D.weylSubgroupMap_weylElement, D.weylProjection_weylElement]
 
 private theorem residueHom_surjective [Nontrivial A] :
     Function.Surjective (D.residueHom A) := by
@@ -116,14 +122,11 @@ private theorem ker_residueHom [Nontrivial A] : (D.residueHom A).ker = H := by
 torus `T_D(A)` is canonically isomorphic to the Weyl group of the pinned root datum. -/
 def weylSubgroupQuotientMulEquiv [Nontrivial A] :
     Q ≃* (t.simplyConnectedRootDatum ht).weylGroup :=
-  (QuotientGroup.quotientMulEquivOfEq (D.ker_residueHom A).symm).trans
-    (QuotientGroup.quotientKerEquivOfSurjective (D.residueHom A) (D.residueHom_surjective A))
+  QuotientGroup.liftEquiv H (D.residueHom_surjective A) (D.ker_residueHom A).symm
 
 private theorem weylSubgroupQuotientMulEquiv_mk_apply [Nontrivial A] (g : N) :
-    D.weylSubgroupQuotientMulEquiv A (QuotientGroup.mk g) = D.residueHom A g := by
-  rw [weylSubgroupQuotientMulEquiv, MulEquiv.trans_apply,
-    QuotientGroup.quotientMulEquivOfEq_mk, QuotientGroup.quotientKerEquivOfSurjective,
-    QuotientGroup.quotientKerEquivOfRightInverse_apply, QuotientGroup.kerLift_mk]
+    D.weylSubgroupQuotientMulEquiv A (QuotientGroup.mk g) = D.residueHom A g :=
+  QuotientGroup.liftEquiv_mk H (D.residueHom_surjective A) (D.ker_residueHom A).symm g
 
 /-- The Weyl quotient equivalence sends the class of a pinned simple Weyl lift to its simple
 reflection. -/

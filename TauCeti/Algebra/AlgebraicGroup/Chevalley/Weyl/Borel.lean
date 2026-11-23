@@ -8,8 +8,6 @@ module
 public import TauCeti.Algebra.AlgebraicGroup.Chevalley.Borel
 public import TauCeti.Algebra.AlgebraicGroup.Chevalley.Torus.Weyl
 import TauCeti.Algebra.AlgebraicGroup.Chevalley.BigCell.Positive
-import TauCeti.Algebra.AlgebraicGroup.Chevalley.BigCell.Triangular
-import TauCeti.Algebra.AlgebraicGroup.Chevalley.Positive.Blocks
 import TauCeti.Algebra.AlgebraicGroup.Chevalley.RankOne
 import TauCeti.Algebra.AlgebraicGroup.Chevalley.Weyl.Word
 
@@ -21,10 +19,10 @@ satisfy `nᵢ(1)² = αᵢ∨(-1) ∈ T_D(A)` and normalize the actual torus `T_
 element of `D.weylSubgroup A` decomposes as a positive word in the pinned simple Weyl
 representatives followed by an actual torus point.
 
-Over every nontrivial commutative ring `A`, combining this word decomposition with weight-space
-block unitriangularity of `D.positivePoints A` and the Weyl-word block `LDU` criterion shows that
-any Weyl word in `D.weylSubgroup A` lying in `D.borelSubgroup A` spells `1` in the Weyl group,
-hence lies in `T_D(A)` by `weylWord_mem_range_torusPoints_of_geckWeylWordProd_eq_one`. Together
+Over every nontrivial commutative ring `A`, combining this word decomposition with the Weyl-word
+separation criterion `geckWeylWordProd_eq_one_of_mem_borelSubgroup` shows that any Weyl word in
+`D.weylSubgroup A` lying in `D.borelSubgroup A` spells `1` in the Weyl group, hence lies in
+`T_D(A)` by `weylWord_mem_range_torusPoints_of_geckWeylWordProd_eq_one`. Together
 with `positivePoints_inf_negativePoints_sup_range_torusPoints_eq_bot`, this yields the exact
 intersections `D.positivePoints A ⊓ D.weylSubgroup A = ⊥` and
 `D.borelSubgroup A ⊓ D.weylSubgroup A = (D.torusPoints A).range` over every commutative ring `A`.
@@ -105,45 +103,6 @@ theorem mem_weylSubgroup_iff_exists_list_prod_mul_torusPoints {g : D.points A} :
   · rintro ⟨l, s, rfl⟩
     exact mul_mem (D.list_prod_map_weylElement_mem_weylSubgroup A l)
       (D.torusPoints_mem_weylSubgroup A s)
-
-/-- Over any nontrivial commutative ring, if a product of pinned simple Weyl representatives
-equals an actual torus point times a positive point, then the Weyl word evaluates to `1` in the
-Weyl group. -/
-theorem geckWeylWordProd_eq_one_of_list_prod_eq_torusPoints_mul_positive [Nontrivial A]
-    {l : List (Fin t.rank)} {s : Fin t.rank → Aˣ} {u : D.points A}
-    (hu : u ∈ D.positivePoints A)
-    (h : (l.map fun i => D.weylElement (t.simpleIndex ht i) A 1).prod =
-      D.torusPoints A s * u) :
-    t.geckWeylWordProd ht l = 1 := by
-  rw [← D.exists_blockLDU_weylWord_iff l A (weightBlockEquiv (t.weightDegree ht) D.weight)]
-  have hfun :
-      (fun j => weightBlockEquiv (t.weightDegree ht) D.weight ⟨D.weight j, Set.mem_range_self j⟩) =
-        orderedWeightBlock (t.weightDegree ht) D.weight := by
-    funext j
-    exact weightBlockEquiv_mk (t.weightDegree ht) D.weight j
-  let Nmat : Matrix (Fin D.dim) (Fin D.dim) A :=
-    ((D.torusPoints A s : Matrix.GeneralLinearGroup (Fin D.dim) A) :
-      Matrix (Fin D.dim) (Fin D.dim) A)
-  let Umat : Matrix (Fin D.dim) (Fin D.dim) A :=
-    ((u : Matrix.GeneralLinearGroup (Fin D.dim) A) :
-      Matrix (Fin D.dim) (Fin D.dim) A)
-  have hNdiag : Nmat =
-      Matrix.diagonal (fun j => (torusCharacter s (D.coordinateWeight j) : A)) := by
-    simp only [Nmat, D.coe_torusPoints, kostantTorusMatrix_apply, diagGL_coe]
-  refine ⟨1, Nmat, Umat, Matrix.blockUnitriangular_one, ?_, ?_, ?_, ?_, ?_⟩
-  · rw [hNdiag]
-    exact Matrix.blockTriangular_diagonal _
-  · rw [hNdiag]
-    exact Matrix.blockTriangular_diagonal _
-  · rw [hfun]
-    exact D.blockUnitriangular_of_mem_positivePoints A hu
-  · exact (Matrix.isUnit_iff_isUnit_det Nmat).mp
-      (D.torusPoints A s : Matrix.GeneralLinearGroup (Fin D.dim) A).isUnit
-  · rw [one_mul]
-    simpa only [Nmat, Umat, Subgroup.coe_mul, Units.val_mul] using
-      congrArg (fun x : D.points A =>
-        ((x : Matrix.GeneralLinearGroup (Fin D.dim) A) :
-          Matrix (Fin D.dim) (Fin D.dim) A)) h
 
 /-- Conjugating any point of the actual weight-lattice torus by an element of `D.weylSubgroup A`
 stays inside `D.borelSubgroup A`. -/
@@ -231,29 +190,6 @@ end CommRing
 section Field
 
 variable (K : Type v) [Field K]
-
-/-- On a product of a Weyl word and an actual torus point, `D.weylProjection K` evaluates to the
-Weyl-group element spelled by the word. -/
-theorem weylProjection_list_prod_mul_torusPoints (l : List (Fin t.rank))
-    (s : Fin t.rank → Kˣ) :
-    D.weylProjection K
-      ⟨(l.map fun i => D.weylElement (t.simpleIndex ht i) K 1).prod * D.torusPoints K s,
-        mul_mem (D.list_prod_map_weylElement_mem_weylSubgroup K l)
-          (D.torusPoints_mem_weylSubgroup K s)⟩ =
-      t.geckWeylWordProd ht l := by
-  -- Split the `D.weylSubgroup K` subtype into the word product and torus factor by comparing
-  -- their underlying elements in `D.points K`.
-  have hmul : (⟨(l.map fun i => D.weylElement (t.simpleIndex ht i) K 1).prod *
-      D.torusPoints K s,
-      mul_mem (D.list_prod_map_weylElement_mem_weylSubgroup K l)
-        (D.torusPoints_mem_weylSubgroup K s)⟩ : D.weylSubgroup K) =
-      (l.map (D.simpleWeylLift K)).prod *
-        ⟨D.torusPoints K s, D.torusPoints_mem_weylSubgroup K s⟩ := by
-    apply Subtype.ext
-    rw [Subgroup.coe_mul, D.coe_list_prod_simpleWeylLift]
-  rw [hmul, map_mul,
-    D.map_list_prod_simpleWeylLift K (D.weylProjection K) (D.weylProjection_simpleWeylLift K) l,
-    D.weylProjection_torusPoints K s, mul_one]
 
 /-- Any element of the Weyl subgroup that also belongs to the positive Borel subgroup has trivial
 Weyl projection. -/

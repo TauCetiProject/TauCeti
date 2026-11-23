@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.AlgebraicGroup.SplitTorus.Weight
-import TauCeti.LinearAlgebra.RootSystem.SimpleReflections
+public import TauCeti.LinearAlgebra.RootSystem.SimpleReflections
 public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.GeckLattice.Weyl.Basic
 import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.Reduced
 import TauCeti.RepresentationTheory.ToMultiplicative
@@ -83,6 +83,15 @@ theorem geckWeylWordProd_append (l l' : List (Fin t.rank)) :
     t.geckWeylWordProd ht (l ++ l') =
       t.geckWeylWordProd ht l * t.geckWeylWordProd ht l' := by
   simp [geckWeylWordProd]
+
+/-- Multiplying the simple reflections indexed by a Bourbaki-node word transported along
+`simpleSupportEquivSimplyConnectedBase` recovers `geckWeylWordProd`. -/
+@[simp]
+theorem wordProd_map_simpleSupportEquiv (l : List (Fin t.rank)) :
+    TauCeti.wordProd (t.simplyConnectedRootDatum ht) (t.simplyConnectedBase ht)
+        (l.map (t.simpleSupportEquivSimplyConnectedBase ht)) =
+      t.geckWeylWordProd ht l :=
+  (rfl)
 
 /-- Every Weyl-group element is spelled by a word in the Bourbaki nodes. -/
 theorem geckWeylWordProd_surjective : Function.Surjective (t.geckWeylWordProd ht) := by
