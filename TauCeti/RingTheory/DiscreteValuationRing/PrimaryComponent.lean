@@ -27,12 +27,10 @@ For a discrete valuation ring `(R, 𝔪)` with fraction ring `K`, `R` and `K` ha
 
 public section
 
-universe u
-
 namespace TauCeti.IsDiscreteValuationRing
 
-variable (R : Type u) [CommRing R] [IsDomain R] [_root_.IsDiscreteValuationRing R]
-  (K : Type u) [CommRing K] [Algebra R K] [IsFractionRing R K]
+variable (R : Type*) [CommRing R] [IsDomain R] [_root_.IsDiscreteValuationRing R]
+  (K : Type*) [CommRing K] [Algebra R K] [IsFractionRing R K]
 
 /-- Over a discrete valuation ring `(R, 𝔪)`, `R` itself has no nonzero `𝔪`-power torsion. -/
 lemma primaryComponent_maximalIdeal_self :

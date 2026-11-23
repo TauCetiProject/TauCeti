@@ -9,7 +9,7 @@ public import Mathlib.CategoryTheory.Abelian.Injective.Ext
 public import Mathlib.CategoryTheory.Linear.Yoneda
 public import Mathlib.CategoryTheory.Abelian.RightDerived
 public import TauCeti.Algebra.Homology.ModuleCat.Basic
-import TauCeti.LinearAlgebra.Isomorphisms
+import TauCeti.LinearAlgebra.Submodule.Quotient
 
 /-!
 # Computing Ext from injective resolutions

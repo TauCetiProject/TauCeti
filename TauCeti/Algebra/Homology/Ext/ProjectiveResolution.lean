@@ -12,7 +12,7 @@ public import Mathlib.CategoryTheory.Abelian.Projective.Ext
 public import TauCeti.Algebra.Homology.LinearYoneda
 public import TauCeti.Algebra.Homology.ModuleCat.Basic
 public import TauCeti.Algebra.Homology.Opposite
-import TauCeti.LinearAlgebra.Isomorphisms
+import TauCeti.LinearAlgebra.Submodule.Quotient
 
 /-!
 # Computing `Ext` from projective resolutions

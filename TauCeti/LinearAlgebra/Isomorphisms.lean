@@ -10,7 +10,7 @@ public import Mathlib.RingTheory.Ideal.Maps
 import Mathlib.RingTheory.Ideal.Colon
 
 /-!
-# Inverses up to a scalar and isomorphism from equal kernels
+# Inverses up to a scalar
 
 If an element `c` of a commutative ring kills the kernel of a linear map `f : M → N` and `b`
 kills its cokernel, then `f` has an inverse up to `b * c`: there is a linear map `g : N → M` with
@@ -20,16 +20,11 @@ from the first isomorphism theorem `LinearMap.quotKerEquivRange`.
 Such bounds compose: if `a` kills the kernel (or the cokernel) of `f : M → N` and `b` kills that of
 `g : N → P`, then `a * b` kills the kernel (or the cokernel) of `g ∘ f`
 (`LinearMap.mul_mem_annihilator_ker_comp`, `LinearMap.mul_mem_annihilator_range_comp`).
-
-Given two surjective linear maps `a : M →ₗ[k] N₁` and `b : M →ₗ[k] N₂` with the same kernel,
-`LinearMap.equivOfSurjectiveOfKerEq` identifies `N₁ ≃ₗ[k] N₂` sending `a x` to `b x`.
 -/
 
 public section
 
 namespace LinearMap
-
-section Annihilator
 
 variable {A M N P : Type*} [CommRing A] [AddCommGroup M] [Module A M] [AddCommGroup N] [Module A N]
   [AddCommGroup P] [Module A P]
@@ -76,32 +71,5 @@ theorem mul_mem_annihilator_range_comp (f : M →ₗ[A] N) (g : N →ₗ[A] P) {
   obtain ⟨n, hn⟩ := hb y trivial
   obtain ⟨m, hm⟩ := ha n trivial
   exact ⟨m, by rw [comp_apply, hm, map_smul, hn, mul_smul]⟩
-
-end Annihilator
-
-section SurjectiveKerEq
-
-variable {k M N₁ N₂ : Type*} [Ring k] [AddCommGroup M] [Module k M]
-  [AddCommGroup N₁] [Module k N₁] [AddCommGroup N₂] [Module k N₂]
-
-/-- Two surjective linear maps out of a common module with equal kernels identify their codomains,
-sending `a x` to `b x`. -/
-noncomputable def equivOfSurjectiveOfKerEq (a : M →ₗ[k] N₁) (b : M →ₗ[k] N₂)
-    (ha : Function.Surjective a) (hb : Function.Surjective b) (hab : ker a = ker b) :
-    N₁ ≃ₗ[k] N₂ :=
-  (a.quotKerEquivOfSurjective ha).symm ≪≫ₗ
-    Submodule.quotEquivOfEq _ _ hab ≪≫ₗ
-      b.quotKerEquivOfSurjective hb
-
-/-- `LinearMap.equivOfSurjectiveOfKerEq` sends `a x` to `b x`. -/
-@[simp]
-theorem equivOfSurjectiveOfKerEq_apply (a : M →ₗ[k] N₁) (b : M →ₗ[k] N₂)
-    (ha : Function.Surjective a) (hb : Function.Surjective b) (hab : ker a = ker b) (x : M) :
-    equivOfSurjectiveOfKerEq a b ha hb hab (a x) = b x := by
-  dsimp only [equivOfSurjectiveOfKerEq, LinearEquiv.trans_apply]
-  rw [quotKerEquivOfSurjective_symm_apply]
-  simp only [Submodule.quotEquivOfEq_mk, quotKerEquivOfSurjective_apply_mk]
-
-end SurjectiveKerEq
 
 end LinearMap

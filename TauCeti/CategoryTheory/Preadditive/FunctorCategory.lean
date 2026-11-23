@@ -17,7 +17,7 @@ functor category `C ⥤ D` between preadditive categories.
 
 ## Main results
 
-* `CategoryTheory.Functor.comp_obj_additive`: precomposing a diagram of additive functors
+* `CategoryTheory.Functor.additive_comp_obj`: precomposing a diagram of additive functors
   produces a diagram of additive functors.
 * `CategoryTheory.Limits.additive_colimit`: a colimit of additive functors into a preadditive
   category with colimits of that shape is additive.
@@ -37,7 +37,7 @@ variable {T : Type w} [Category.{w'} T]
 
 /-- Precomposing a diagram of additive functors with `F : T ⥤ A` produces a diagram of additive
 functors. -/
-lemma _root_.CategoryTheory.Functor.comp_obj_additive {A : Type*} [Category* A]
+lemma _root_.CategoryTheory.Functor.additive_comp_obj {A : Type*} [Category* A]
     (F : T ⥤ A) (G : A ⥤ C ⥤ D) [∀ a, (G.obj a).Additive] (t : T) :
     ((F ⋙ G).obj t).Additive :=
   inferInstanceAs ((G.obj (F.obj t)).Additive)

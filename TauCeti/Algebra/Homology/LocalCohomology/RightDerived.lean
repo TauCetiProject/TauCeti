@@ -108,7 +108,7 @@ naturally isomorphic to the `q`-th right derived functor of `J.primaryComponentF
 def isoRightDerivedPrimaryComponent (q : ℕ) :
     localCohomology J q ≅ J.primaryComponentFunctor.{u}.rightDerived q := by
   have : AB5OfSize.{0, 0} (ModuleCat.{u} R) := AB5OfSize_of_univLE.{0, 0, u, u} (ModuleCat.{u} R)
-  have := Functor.comp_obj_additive (ringModIdeals (idealPowersDiagram J)).op
+  have := Functor.additive_comp_obj (ringModIdeals (idealPowersDiagram J)).op
     (linearCoyoneda R (ModuleCat.{u} R))
   exact ofDiagramIsoRightDerivedColimitLinearCoyoneda (idealPowersDiagram J) q ≪≫
     NatIso.rightDerived (colimitLinearCoyonedaIsoPrimaryComponentFunctor J) q

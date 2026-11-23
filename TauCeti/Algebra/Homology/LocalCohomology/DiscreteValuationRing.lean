@@ -27,13 +27,15 @@ Since `R` and `K` have no nonzero `𝔪`-power torsion while `K ⧸ R` is entire
 
 ## Main definitions
 
-* `localCohomology.dvrDegreeOneIso R K` and `localCohomology.dvrDegreeOneLinearEquiv R K`: for a
-  discrete valuation ring `(R, 𝔪)` with fraction ring `K`, the isomorphism
+* `localCohomology.maximalIdealOneObjIsoQuotientFractionRing R K` and
+  `localCohomology.maximalIdealOneObjLinearEquivQuotientFractionRing R K`: for a discrete
+  valuation ring `(R, 𝔪)` with fraction ring `K`, the isomorphism
   `(localCohomology 𝔪 1).obj (.of R R) ≅ .of R (K ⧸ R)` and its `R`-linear equivalence.
 
 ## Main results
 
-* `localCohomology.isZero_dvr_zero` and `localCohomology.isZero_dvr_add_two`: for a discrete
+* `localCohomology.isZero_obj_maximalIdeal_zero_of_isDiscreteValuationRing` and
+  `localCohomology.isZero_obj_maximalIdeal_add_two_of_isDiscreteValuationRing`: for a discrete
   valuation ring `(R, 𝔪)`, `H⁰_𝔪(R) = 0` and `H^{n+2}_𝔪(R) = 0`.
 
 ## References
@@ -84,7 +86,7 @@ private instance injective_quotient_fractionRing_obj :
   exact Module.injective_object_of_injective_module R _
 
 /-- Over a discrete valuation ring `(R, 𝔪)`, `H⁰_𝔪(R) = 0`. -/
-theorem isZero_dvr_zero :
+theorem isZero_obj_maximalIdeal_zero_of_isDiscreteValuationRing :
     IsZero ((localCohomology (IsLocalRing.maximalIdeal R) 0).obj (.of R R)) := by
   have : Subsingleton ((IsLocalRing.maximalIdeal R).primaryComponent R) :=
     TauCeti.IsDiscreteValuationRing.primaryComponent_maximalIdeal_self R ▸ inferInstance
@@ -93,7 +95,7 @@ theorem isZero_dvr_zero :
 
 /-- Over a discrete valuation ring `(R, 𝔪)` with fraction field `K`, `H¹_𝔪(R) ≅ K ⧸ R`,
 computed from the two-term injective resolution `0 ⟶ R ⟶ K ⟶ K ⧸ R ⟶ 0`. -/
-def dvrDegreeOneIso :
+def maximalIdealOneObjIsoQuotientFractionRing :
     ((localCohomology (IsLocalRing.maximalIdeal R) 1).obj (.of R R)) ≅
       .of R (K ⧸ LinearMap.range (Algebra.linearMap R K)) := by
   let 𝔪 := IsLocalRing.maximalIdeal R
@@ -124,13 +126,13 @@ def dvrDegreeOneIso :
 
 /-- Over a discrete valuation ring `(R, 𝔪)` with fraction field `K`, `H¹_𝔪(R)` is `R`-linearly
 equivalent to `K ⧸ R`. -/
-def dvrDegreeOneLinearEquiv :
+def maximalIdealOneObjLinearEquivQuotientFractionRing :
     ((localCohomology (IsLocalRing.maximalIdeal R) 1).obj (.of R R)) ≃ₗ[R]
       K ⧸ LinearMap.range (Algebra.linearMap R K) :=
-  (dvrDegreeOneIso R K).toLinearEquiv
+  (maximalIdealOneObjIsoQuotientFractionRing R K).toLinearEquiv
 
 /-- Over a discrete valuation ring `(R, 𝔪)`, `H^{n+2}_𝔪(R) = 0` for every `n : ℕ`. -/
-theorem isZero_dvr_add_two (n : ℕ) :
+theorem isZero_obj_maximalIdeal_add_two_of_isDiscreteValuationRing (n : ℕ) :
     IsZero ((localCohomology (IsLocalRing.maximalIdeal R) (n + 2)).obj (.of R R)) := by
   let 𝔪 := IsLocalRing.maximalIdeal R
   let S := dvrShortComplex R (FractionRing R)

@@ -184,8 +184,8 @@ private lemma primaryComponentIsoSupportedSubmoduleTop_hom_comp_ι
       (coe_primaryComponentEquivSupportedSubmoduleTop_apply hI M m)
   dsimp only [primaryComponentIsoSupportedSubmoduleTop]
   rw [Iso.trans_hom, Category.assoc, he]
-  exact ((I.primaryComponentFunctorObjIso_inv_comp_ι_app_assoc M (tilde.toOpen M ⊤) ▸
-    Iso.hom_inv_id_assoc (I.primaryComponentFunctorObjIso M) _))
+  -- `erw` bridges the `ModuleCat.of R ↑M` / `tildeSheafFunctor` wrapper unfolding.
+  erw [← I.primaryComponentFunctorObjIso_inv_comp_ι_app_assoc M, Iso.hom_inv_id_assoc]
 
 /-- For a finitely generated ideal `I` of `R`, `M ↦ Γ_{V(I)}(Spec R, M~)` is naturally isomorphic
 to the `I`-power torsion functor `I.primaryComponentFunctor`. -/
@@ -203,9 +203,10 @@ def tildeCompSupportedSubmoduleSectionsTopIso {I : Ideal R} (hI : I.FG) :
       ← Category.assoc (primaryComponentIsoSupportedSubmoduleTop hI M).hom,
       primaryComponentIsoSupportedSubmoduleTop_hom_comp_ι hI M,
       primaryComponentIsoSupportedSubmoduleTop_hom_comp_ι hI N]
-    exact ((I.primaryComponentFunctorι.naturality_assoc f (tilde.toOpen N ⊤)).trans
-      (congrArg (I.primaryComponentFunctorι.app M ≫ ·) (tilde.toOpen_map_app f ⊤).symm)).trans
-        (Category.assoc _ _ _).symm).symm
+    -- `erw` identifies the underlying `tilde` sheaf codomain across `tildeSheafFunctor`.
+    erw [I.primaryComponentFunctorι.naturality_assoc, Functor.id_map, Category.assoc,
+      tilde.toOpen_map_app]
+    rfl).symm
 
 end DegreeZero
 

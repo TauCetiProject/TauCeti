@@ -19,14 +19,14 @@ cohomology of the structure sheaf at the closed point `V(𝔪)` of `Spec R`:
 
 ## Main definitions
 
-* `TauCeti.AlgebraicGeometry.supportedModuleHDvrDegreeOneLinearEquiv`: the `R`-linear equivalence
-  `H¹_{V(𝔪)}(Spec R, 𝒪_{Spec R}) ≃ₗ[R] K ⧸ R`.
+* `TauCeti.AlgebraicGeometry.supportedModuleHOneLinearEquivQuotientFractionRing`: the `R`-linear
+  equivalence `H¹_{V(𝔪)}(Spec R, 𝒪_{Spec R}) ≃ₗ[R] K ⧸ R`.
 
 ## Main results
 
-* `TauCeti.AlgebraicGeometry.subsingleton_supportedModuleH_dvr_zero` and
-  `TauCeti.AlgebraicGeometry.subsingleton_supportedModuleH_dvr_add_two`: vanishing of
-  `H⁰_{V(𝔪)}(Spec R, 𝒪_{Spec R})` and `H^{n+2}_{V(𝔪)}(Spec R, 𝒪_{Spec R})`.
+* `TauCeti.AlgebraicGeometry.subsingleton_supportedModuleH_zero_of_isDiscreteValuationRing` and
+  `TauCeti.AlgebraicGeometry.subsingleton_supportedModuleH_add_two_of_isDiscreteValuationRing`:
+  vanishing of `H⁰_{V(𝔪)}(Spec R, 𝒪_{Spec R})` and `H^{n+2}_{V(𝔪)}(Spec R, 𝒪_{Spec R})`.
 
 ## References
 
@@ -51,27 +51,30 @@ variable (R : CommRingCat.{u}) [IsDomain R] [IsDiscreteValuationRing R]
   (K : Type u) [CommRing K] [Algebra R K] [IsFractionRing R K]
 
 /-- Over a discrete valuation ring `(R, 𝔪)`, `H⁰_{V(𝔪)}(Spec R, 𝒪_{Spec R}) = 0`. -/
-theorem subsingleton_supportedModuleH_dvr_zero :
+theorem subsingleton_supportedModuleH_zero_of_isDiscreteValuationRing :
     Subsingleton ((modulesSpecToSheaf.obj (tilde (.of R R))).supportedModuleH
       (Spec.zeroLocusClosed (R := R) (IsLocalRing.maximalIdeal R : Set R)) ⊤ 0) := by
-  have := ModuleCat.subsingleton_of_isZero (localCohomology.isZero_dvr_zero R)
+  have := ModuleCat.subsingleton_of_isZero
+    (localCohomology.isZero_obj_maximalIdeal_zero_of_isDiscreteValuationRing R)
   exact (supportedModuleHTopTildeLinearEquivLocalCohomology (R := R)
     (IsLocalRing.maximalIdeal R) (.of R R) 0).subsingleton
 
 /-- Over a discrete valuation ring `(R, 𝔪)` with fraction field `K`,
 `H¹_{V(𝔪)}(Spec R, 𝒪_{Spec R}) ≃ₗ[R] K ⧸ R`. -/
-def supportedModuleHDvrDegreeOneLinearEquiv :
+def supportedModuleHOneLinearEquivQuotientFractionRing :
     (modulesSpecToSheaf.obj (tilde (.of R R))).supportedModuleH
         (Spec.zeroLocusClosed (R := R) (IsLocalRing.maximalIdeal R : Set R)) ⊤ 1 ≃ₗ[R]
       K ⧸ LinearMap.range (Algebra.linearMap R K) :=
   (supportedModuleHTopTildeLinearEquivLocalCohomology (R := R)
-    (IsLocalRing.maximalIdeal R) (.of R R) 1).trans (localCohomology.dvrDegreeOneLinearEquiv R K)
+    (IsLocalRing.maximalIdeal R) (.of R R) 1).trans
+    (localCohomology.maximalIdealOneObjLinearEquivQuotientFractionRing R K)
 
 /-- Over a discrete valuation ring `(R, 𝔪)`, `H^{n+2}_{V(𝔪)}(Spec R, 𝒪_{Spec R}) = 0`. -/
-theorem subsingleton_supportedModuleH_dvr_add_two (n : ℕ) :
+theorem subsingleton_supportedModuleH_add_two_of_isDiscreteValuationRing (n : ℕ) :
     Subsingleton ((modulesSpecToSheaf.obj (tilde (.of R R))).supportedModuleH
       (Spec.zeroLocusClosed (R := R) (IsLocalRing.maximalIdeal R : Set R)) ⊤ (n + 2)) :=
-  have := ModuleCat.subsingleton_of_isZero (localCohomology.isZero_dvr_add_two R n)
+  have := ModuleCat.subsingleton_of_isZero
+    (localCohomology.isZero_obj_maximalIdeal_add_two_of_isDiscreteValuationRing R n)
   (supportedModuleHTopTildeLinearEquivLocalCohomology (R := R)
     (IsLocalRing.maximalIdeal R) (.of R R) (n + 2)).subsingleton
 
