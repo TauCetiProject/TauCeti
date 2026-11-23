@@ -66,6 +66,11 @@ Fourier multiplier `(1 + ‖ζ‖²) ^ (s / 2)`, the Schwartz-space form of
   `TauCeti.Symbol.quantizeSchwartzValue_ofInner`: the quantizations of the example symbols.
 * `TauCeti.Symbol.quantizeUniformCLM_comp_besselMultiplier`: for a uniform symbol `a`,
   `Op(a) ∘ J^t` is the quantization of `a ⟨ξ / 2π⟩ ^ t`.
+* `TauCeti.Symbol.quantizeUniformCLM_comp_quantizeFrequencyCLM`,
+  `TauCeti.Symbol.quantizeFrequencyCLM_comp_quantizeUniformCLM`,
+  `TauCeti.Symbol.besselMultiplier_comp_quantizeUniformCLM`: the operator forms
+  `Op(a) ∘ b(D) = Op(a b)`, `b(D) ∘ Op(a) = Op(b # a)` and `J^t ∘ Op(a) = Op(⟨ξ / 2π⟩ ^ t # a)` as
+  continuous linear maps of Schwartz spaces.
 * `TauCeti.Symbol.quantizeUniformCLM_comp_besselPotential_two`: `Op(a) ∘ J²` is `J² ∘ Op(a)` plus
   `(2π)⁻²` times the quantization of the Laplacian commutator symbol.
 
@@ -332,7 +337,8 @@ theorem quantizeFrequencyCLM_comp_quantizeUniformCLM {U : Type*} [NormedAddCommG
       quantizeUniformCLM ((ofFrequency b hb hbound).sharp a ha)
         ((isUniform_ofFrequency hb hbound).sharp ha) := by
   ext u x
-  rw [quantizeUniformCLM_sharp, ContinuousLinearMap.comp_apply, ContinuousLinearMap.comp_apply,
+  rw [quantizeUniformCLM_sharp (isUniform_ofFrequency hb hbound) ha,
+    ContinuousLinearMap.comp_apply, ContinuousLinearMap.comp_apply,
     quantizeUniformCLM_apply (ofFrequency b hb hbound), quantizeSchwartzValue_ofFrequency]
 
 omit [CompleteSpace V] in
@@ -347,7 +353,8 @@ theorem besselMultiplier_comp_quantizeUniformCLM {a : Symbol n V W m}
       quantizeUniformCLM ((besselPotential t).sharp a ha)
         ((isUniform_besselPotential t).sharp ha) := by
   ext u x
-  rw [quantizeUniformCLM_sharp, ContinuousLinearMap.comp_apply, ContinuousLinearMap.comp_apply,
+  rw [quantizeUniformCLM_sharp (isUniform_besselPotential t) ha,
+    ContinuousLinearMap.comp_apply, ContinuousLinearMap.comp_apply,
     quantizeUniformCLM_apply (besselPotential t), quantizeSchwartzValue_besselPotential]
 
 /-- The commutator with `J²` in the form `Op(a) ∘ J² = J² ∘ Op(a) + (2π)⁻² Op(c)`, where
