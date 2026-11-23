@@ -8,6 +8,7 @@ module
 public import Mathlib.RingTheory.AdicCompletion.Basic
 public import Mathlib.RingTheory.Idempotents
 import Mathlib.Tactic.NoncommRing
+import TauCeti.RingTheory.AdicCompletion.Basic
 import TauCeti.RingTheory.Ideal.Extended
 
 /-!
@@ -129,15 +130,6 @@ private theorem iterate_newtonIdempotent_defect_mem {x₀ : S}
     rw [pow_add, Ideal.map_algebraMap_mul]
     exact Ideal.mul_mem_mul ih (Ideal.mul_mem_right _ _ ih)
 
-/-- If an `R`-linear map fixes every term of a sequence, it fixes its `I`-adic limit. -/
-private theorem map_eq_of_forall_sub_mem [IsHausdorff I S] (g : S →ₗ[R] S) {L : S} {x : ℕ → S}
-    (hx : ∀ n, g (x n) = x n) (hL : ∀ n, L - x n ∈ I ^ n • (⊤ : Submodule R S)) : g L = L := by
-  refine sub_eq_zero.mp <| IsHausdorff.haus' (I := I) (g L - L) fun n ↦ SModEq.sub_mem.mpr ?_
-  have hsplit : g L - L - 0 = g (L - x n) - (L - x n) := by
-    rw [map_sub, hx n, sub_zero, sub_sub_sub_cancel_right]
-  rw [hsplit]
-  exact sub_mem (Submodule.smul_top_le_comap_smul_top _ g (hL n)) (hL n)
-
 /-- An element of an `I`-adically complete, possibly noncommutative `R`-algebra that is
 idempotent modulo `I • S` is congruent modulo `I • S` to an idempotent `e`, which for given `c`
 and `d` with `c * x₀ = x₀` and `x₀ * d = x₀` satisfies `c * e = e` and `e * d = e`. For an
@@ -168,15 +160,15 @@ theorem exists_isIdempotentElem_sub_mem_of_mul_eq [IsAdicComplete I S] {x₀ c d
   refine ⟨L, ?_, ?_, ?_, ?_⟩
   · refine sub_eq_zero.mp <| IsHausdorff.haus' (I := I) (L * L - L) fun n ↦
       SModEq.sub_mem.mpr ?_
-    -- Writing `d = L - x n`, the defect of `L` is that of `x n` plus `x n * d + d * L - d`.
-    have hd := hLx n
+    -- Writing `δ = L - x n`, the defect of `L` is that of `x n` plus `x n * δ + δ * L - δ`.
+    have hLn := hLx n
     have hsplit : L * L - L - 0 =
         (x n * x n - x n) + x n * (L - x n) + (L - x n) * L - (L - x n) := by
       noncomm_ring
     rw [hsplit]
-    rw [← Ideal.mem_map_algebraMap_iff] at hd ⊢
-    refine sub_mem (add_mem (add_mem ?_ (Ideal.mul_mem_left _ _ hd))
-      (Ideal.mul_mem_right _ _ hd)) hd
+    rw [← Ideal.mem_map_algebraMap_iff] at hLn ⊢
+    refine sub_mem (add_mem (add_mem ?_ (Ideal.mul_mem_left _ _ hLn))
+      (Ideal.mul_mem_right _ _ hLn)) hLn
     exact Ideal.map_mono (Ideal.pow_le_pow_right (by omega))
       ((Ideal.mem_map_algebraMap_iff _).mpr (hdefect n))
   · have h1 : L - x 1 ∈ I • (⊤ : Submodule R S) := by
@@ -185,10 +177,12 @@ theorem exists_isIdempotentElem_sub_mem_of_mul_eq [IsAdicComplete I S] {x₀ c d
       simpa only [zero_add, pow_one, hx_zero] using hstep 0
     simpa only [sub_add_sub_cancel] using add_mem h1 h01
   -- The iterates satisfy `c * y = y` and `y * d = y`, and hence so does their limit.
-  · exact map_eq_of_forall_sub_mem I (LinearMap.mulLeft R c) (fun n ↦ Set.MapsTo.iterate
-      (s := {y | c * y = y}) (fun _ hy ↦ mul_newtonIdempotent hy) n hc) hLx
-  · exact map_eq_of_forall_sub_mem I (LinearMap.mulRight R d) (fun n ↦ Set.MapsTo.iterate
-      (s := {y | y * d = y}) (fun _ hy ↦ newtonIdempotent_mul hy) n hd) hLx
+  · exact IsHausdorff.map_eq_of_forall_sub_mem I (LinearMap.mulLeft R c)
+      (fun n ↦ Set.MapsTo.iterate (s := {y | c * y = y}) (fun _ hy ↦ mul_newtonIdempotent hy) n hc)
+      hLx
+  · exact IsHausdorff.map_eq_of_forall_sub_mem I (LinearMap.mulRight R d)
+      (fun n ↦ Set.MapsTo.iterate (s := {y | y * d = y}) (fun _ hy ↦ newtonIdempotent_mul hy) n hd)
+      hLx
 
 /-- An element of an `I`-adically complete, possibly noncommutative `R`-algebra that is
 idempotent modulo `I • S` is congruent modulo `I • S` to an idempotent. -/
