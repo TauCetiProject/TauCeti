@@ -23,7 +23,8 @@ only by precomposition: near `p`,
 under `φ ∘ ψ` passes through the neighbourhoods of the points `φ^[j] p`, where `ψ` does nothing.
 The same holds for a perturbation that moves `p`, such as a small translation, provided it is the
 identity near the later points `φ^[j] (ψ p)` of the orbit of `ψ p`
-(`Function.iterate_comp_eventuallyEq_iterate_comp`). In particular, if `ψ` is the translation by
+(`Function.iterate_comp_eventuallyEq_iterate_comp`); pointwise, it suffices that `ψ` fixes these
+points (`Function.iterate_comp_apply_eq_iterate_apply`). In particular, if `ψ` is the translation by
 `c` near `p`, then near `p` the `k`-th iterate of `φ ∘ ψ` is `w ↦ φ^[k] (w + c)`
 (`Function.iterate_comp_eventuallyEq_comp_add`).
 
@@ -42,6 +43,19 @@ open Filter Topology
 namespace Function
 
 variable {X : Type*} [TopologicalSpace X] {φ ψ : X → X} {p : X} {k : ℕ}
+
+omit [TopologicalSpace X] in
+/-- **Iterates of a map perturbed off an orbit, pointwise.** If `ψ` fixes the later points
+`φ^[j] (ψ p)`, `0 < j < k`, of the orbit of `ψ p`, then the `k`-th iterate of `φ ∘ ψ` at `p` is
+`φ^[k] (ψ p)`. -/
+theorem iterate_comp_apply_eq_iterate_apply (hk : 0 < k)
+    (hψ : ∀ j, 0 < j → j < k → ψ (φ^[j] (ψ p)) = φ^[j] (ψ p)) : (φ ∘ ψ)^[k] p = φ^[k] (ψ p) := by
+  obtain ⟨k, rfl⟩ : ∃ n, k = n + 1 := ⟨k - 1, by omega⟩
+  induction k with
+  | zero => simp
+  | succ k ih =>
+    rw [iterate_succ_apply', ih (by omega) fun j hj hjk ↦ hψ j hj (by omega), comp_apply,
+      hψ (k + 1) (by omega) (by omega), ← iterate_succ_apply' φ]
 
 /-- **Iterates of a map perturbed near the later points of an orbit.** If `ψ` is continuous at
 `p` and is the identity near `φ^[j] (ψ p)` for `0 < j < k`, and `φ` is continuous at the orbit
