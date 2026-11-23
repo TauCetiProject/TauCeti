@@ -61,9 +61,8 @@ theorem contMDiffWithinAt_starProjection_orthogonal_span_singleton {t : Set M} {
   have hformula (y : M) :
       (ℝ ∙ s y)ᗮ.starProjection (u y) =
         u y - (inner ℝ (s y) (u y) * (inner ℝ (s y) (s y))⁻¹) • s y := by
-    rw [Submodule.starProjection_orthogonal_val, Submodule.starProjection_singleton,
-      real_inner_self_eq_norm_sq, div_eq_mul_inv]
-    simp
+    simp only [Submodule.starProjection_orthogonal_val, Submodule.starProjection_singleton,
+      RCLike.ofReal_real_eq_id, id_eq, div_eq_mul_inv, real_inner_self_eq_norm_sq]
   exact hsub.congr_of_eventuallyEq (Filter.Eventually.of_forall hformula) (hformula x)
 
 /-- If `s` and `u` are `C^k` maps into an inner product space `E` at `x` with `s x ≠ 0`, then

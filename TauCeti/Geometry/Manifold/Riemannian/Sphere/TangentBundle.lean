@@ -250,8 +250,7 @@ theorem sphereTangentProdRealDiffeomorph_apply {k : ℕ∞ω}
 theorem sphereTangentProdRealDiffeomorph_symm_apply {k : ℕ∞ω} (q : sphere (0 : E) 1 × E) :
     (sphereTangentProdRealDiffeomorph (n := n) (k := k)).symm q =
       (⟨q.1, sphereTangentProj (n := n) q.1 q.2⟩, inner ℝ (q.1 : E) q.2) := by
-  rw [sphereTangentProdRealDiffeomorph, Diffeomorph.symm_trans', Diffeomorph.symm_trans',
-    Diffeomorph.symm_symm]
+  apply (sphereTangentProdRealDiffeomorph (n := n) (k := k)).injective
   simp
 
 end TauCeti

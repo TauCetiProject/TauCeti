@@ -196,8 +196,9 @@ radial component `⟪x, u⟫ • x` from `u`. -/
 theorem mfderiv_subtypeVal_sphereTangentProj (x : sphere (0 : E) 1) (u : E) :
     mfderiv (𝓡 n) 𝓘(ℝ, E) ((↑) : sphere (0 : E) 1 → E) x (sphereTangentProj (n := n) x u) =
       u - inner ℝ (x : E) u • (x : E) := by
-  rw [← coe_sphereTangentEquiv_apply, sphereTangentEquiv_sphereTangentProj,
-    Submodule.coe_orthogonalProjectionOnto_apply, Submodule.starProjection_orthogonal_val,
+  refine (coe_sphereTangentEquiv_apply x _).symm.trans ?_
+  simp only [sphereTangentEquiv_sphereTangentProj, Submodule.coe_orthogonalProjectionOnto_apply,
+    Submodule.starProjection_orthogonal_val,
     Submodule.starProjection_unit_singleton ℝ (norm_eq_of_mem_sphere x)]
 
 /-- On an ambient vector already orthogonal to the radius vector `x`, `TauCeti.sphereTangentProj`
@@ -215,9 +216,9 @@ exactly. -/
 theorem sphereTangentProj_mfderiv_subtypeVal (x : sphere (0 : E) 1)
     (v : TangentSpace (𝓡 n) x) :
     sphereTangentProj x (mfderiv (𝓡 n) 𝓘(ℝ, E) ((↑) : sphere (0 : E) 1 → E) x v) = v := by
-  rw [← coe_sphereTangentEquiv_apply,
-    sphereTangentProj_of_mem_orthogonal (sphereTangentEquiv x v).property,
-    Subtype.coe_eta, LinearIsometryEquiv.symm_apply_apply]
+  have hv : (sphereTangentEquiv x v : E) ∈ (ℝ ∙ (x : E))ᗮ := (sphereTangentEquiv x v).property
+  rw [← coe_sphereTangentEquiv_apply]
+  simp [sphereTangentProj_of_mem_orthogonal hv, -coe_sphereTangentEquiv_apply]
 
 /-- The radial vector `x` lies in the kernel of `TauCeti.sphereTangentProj x`. -/
 @[simp]
