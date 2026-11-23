@@ -16,6 +16,7 @@ import TauCeti.Analysis.Distribution.TestFunction.Inner
 import TauCeti.Analysis.Fredholm.Criteria
 import TauCeti.Analysis.PDE.Vortex.DerivativeDecay
 import TauCeti.Analysis.PDE.Vortex.RightInverse
+import TauCeti.Analysis.PDE.Vortex.WeakKernel
 import TauCeti.Analysis.Sobolev.W1p.Density
 import TauCeti.MeasureTheory.Function.Lp.CastMeasure
 import TauCeti.MeasureTheory.Function.Lp.Norm
@@ -223,17 +224,15 @@ theorem mem_ker_sobolevGaugeFixedOperator_iff (hx : Continuous x) (hax : a =ᵐ[
       ∀ η : ℂ → EuclideanSpace ℝ (Fin 4), ContDiff ℝ ∞ η → HasCompactSupport η →
         ∫ z, ⟪(WithLp.toLp 2 fun j ↦ W1p.value (y j) z : EuclideanSpace ℝ (Fin 4)),
           gaugeFixedAdjoint x η z⟫ = 0 := by
+  rw [LinearMap.mem_ker, ContinuousLinearMap.coe_coe,
+    sobolevGaugeFixedOperator_eq_iff_forall_integral_inner_gaugeFixedAdjoint_eq hx hax y 0]
   have h0 (η : ℂ → EuclideanSpace ℝ (Fin 4)) :
       ∫ z, ⟪(0 : Lp (EuclideanSpace ℝ (Fin 4)) 2 μ⊤) z, η z⟫ = 0 := by
-    rw [integral_congr_ae (((Lp.coeFn_zero _ 2 μ⊤).filter_mono
-      (ae_mono (Measure.restrict_coe_opens_top _).ge)).mono
-      fun z hz ↦ by rw [hz, Pi.zero_apply, inner_zero_left])]
-    exact integral_zero _ _
-  refine ⟨fun hy η hη hηc ↦ ?_, fun h ↦ ?_⟩
-  · have hy' : sobolevGaugeFixedOperator a y = 0 := by simpa using hy
-    rw [← integral_inner_sobolevGaugeFixedOperator hx hax y (hη.of_le (by simp)) hηc, hy', h0]
-  · exact LinearMap.mem_ker.2 (sobolevGaugeFixedOperator_eq_of_integral_inner_gaugeFixedAdjoint_eq
-      hx hax fun η hη hηc ↦ by rw [h η hη hηc, h0])
+    calc ∫ z, ⟪(0 : Lp (EuclideanSpace ℝ (Fin 4)) 2 μ⊤) z, η z⟫
+        = ∫ z, ⟪(0 : Lp (EuclideanSpace ℝ (Fin 4)) 2 μ⊤) z, η z⟫ ∂μ⊤ := by
+          rw [Measure.restrict_coe_opens_top]
+      _ = 0 := Lp.integral_inner_coeFn_zero_left η
+  simp_rw [h0]
 
 /-- **Weak `L²` solutions are values of strong `H¹` solutions.** Let `x` be a bounded continuous
 field with `L∞` class `a`, and let `y` be a square-integrable weak solution of `L_x y = f` with
@@ -356,22 +355,16 @@ theorem exists_continuousLinearMap_sobolevGaugeFixedOperator_comp_eq_id (hx : Co
   · have hQ_apply : sobolevFieldValues (ContinuousLinearMap.ofIsClosedGraph hclosed f) = Q₁ f := by
       simpa using hqL f
     have hu_weak : IsGaugeFixedWeakSolution volume x 0 (e (sobolevFieldValues u)) := by
-      refine isGaugeFixedWeakSolution_iff.2 fun η hη hηc ↦ ?_
+      rw [isGaugeFixedWeakSolution_zero_iff_mem_weakGaugeFixedKernel hx.continuous,
+        mem_weakGaugeFixedKernel_iff hx.continuous]
+      intro η hη hηc
       have hae : (e (sobolevFieldValues u) : ℂ → EuclideanSpace ℝ (Fin 4)) =ᵐ[volume]
           fun z ↦ WithLp.toLp 2 fun j ↦ W1p.value (u j) z := by
         filter_upwards [ae_mono (Measure.restrict_coe_opens_top volume).ge
           (sobolevFieldValues_ae_eq u)] with z hz
         simpa only [e, coeFn_castLpₗᵢ] using hz
-      have hEq : ∫ z, ⟪(e (sobolevFieldValues u)) z, gaugeFixedAdjoint x η z⟫ =
-          ∫ z, ⟪WithLp.toLp 2 (fun j ↦ W1p.value (u j) z), gaugeFixedAdjoint x η z⟫ :=
-        integral_congr_ae (hae.mono fun z hz ↦ congrArg (⟪·, gaugeFixedAdjoint x η z⟫) hz)
-      have h0 : sobolevGaugeFixedOperator a u = 0 := by simpa using LinearMap.mem_ker.1 hu
-      rw [Lp.integral_inner_coeFn_zero_left, hEq,
-        ← integral_inner_sobolevGaugeFixedOperator hx.continuous hax u (hη.of_le one_le_two) hηc,
-        h0]
-      have hz : ∀ᵐ z ∂volume, (0 : Lp (EuclideanSpace ℝ (Fin 4)) 2 μ⊤) z = 0 :=
-        ae_mono (Measure.restrict_coe_opens_top volume).ge (Lp.coeFn_zero _ 2 μ⊤)
-      rw [integral_congr_ae (hz.mono fun z h ↦ by rw [h, inner_zero_left]), integral_zero]
+      rw [integral_congr_ae (hae.mono fun z hz ↦ congrArg (⟪·, gaugeFixedAdjoint x η z⟫) hz)]
+      exact (mem_ker_sobolevGaugeFixedOperator_iff hx.continuous hax).1 hu η hη hηc
     rw [hQ_apply, ← e.inner_map_map (Q₁ f) (sobolevFieldValues u),
       show e (Q₁ f) = Q₀ (e f) from by simp [Q₁], L2.inner_def]
     exact (hQ₀ (e f)).integral_inner_eq_zero hu_weak
@@ -383,15 +376,9 @@ theorem sobolevGaugeFixedOperator_surjective (hx : ContDiff ℝ 1 x)
     (hlim : Tendsto (fun z ↦ 4 * (x z 2 ^ 2 + x z 3 ^ 2)) (cocompact ℂ) (𝓝 1))
     (hax : a =ᵐ[μ⊤] x) :
     Function.Surjective (sobolevGaugeFixedOperator a) := by
-  intro f
-  have hM (z : ℂ) : ‖x z‖ ≤ ‖a‖ :=
-    Lp.norm_le_norm_top_of_ae_eq_of_continuousAt hax hx.continuous.continuousAt
-  obtain ⟨y, hy, hweak⟩ := exists_mem_sobolevFields_one_integral_inner_gaugeFixedAdjoint_eq hx hM
-    hsol hlim ((Lp.memLp f).mono_measure (Measure.restrict_coe_opens_top _).ge)
-  obtain ⟨w, -, hw⟩ := exists_sobolevGaugeFixedOperator_eq_of_integral_inner_gaugeFixedAdjoint_eq
-    hx.continuous hax (memLp_of_mem_sobolevFields hy)
-      fun η hη hηc ↦ hweak η (hη.of_le (by simp)) hηc
-  exact ⟨w, hw⟩
+  obtain ⟨Q, hQ, -⟩ :=
+    exists_continuousLinearMap_sobolevGaugeFixedOperator_comp_eq_id hx hsol hlim hax
+  exact fun f ↦ ⟨Q f, DFunLike.congr_fun hQ f⟩
 
 /-! ### Fredholm property -/
 
