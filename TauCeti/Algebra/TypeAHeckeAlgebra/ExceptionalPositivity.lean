@@ -11,6 +11,7 @@ import TauCeti.Algebra.TypeAHeckeAlgebra.BalancedProjection.ExceptionalPositivit
 import TauCeti.Algebra.TypeAHeckeAlgebra.BalancedProjection.HeckeComparison.MarkovTrace
 import TauCeti.Algebra.TypeAHeckeAlgebra.BalancedProjection.HeckeComparison.Star
 import TauCeti.Algebra.TypeAHeckeAlgebra.RepeatedRoot
+import TauCeti.Analysis.Complex.Basic
 
 /-!
 # Exceptional-parameter positivity of the infinite type-A Hecke algebra
@@ -60,9 +61,6 @@ theorem gnsRepresentation_eq_smul_one
     (φ : StarPositiveFunctional (InfiniteTypeAHeckeAlgebra ℂ q)) (hq0 : (q : ℂ) + ↑q⁻¹ = 0)
     (x : InfiniteTypeAHeckeAlgebra ℂ q) :
     gnsRepresentation φ x = indexCharacter ℂ q x • 1 := by
-  have : IsProperStar (φ.HilbertGNS →L[ℂ] φ.HilbertGNS) := by
-    let _ : CStarAlgebra (φ.HilbertGNS →L[ℂ] φ.HilbertGNS) := inferInstance
-    exact inferInstance
   have hnorm (i : ℕ) : IsStarNormal (gnsRepresentation φ (T q i)) :=
     isStarNormal_of_mem_unitary (gnsRepresentation_T_mem_unitary φ i)
   exact map_eq_smul_one_indexCharacter_of_isStarNormal hq0 (gnsRepresentation φ) hnorm x
@@ -98,21 +96,6 @@ theorem apply_one_eq_one_and_forall_star_mul_self_nonneg_iff_of_sq_eq_neg_one
   apply_one_eq_one_and_forall_star_mul_self_nonneg_iff_of_add_inv_eq_zero <|
     mul_left_cancel₀ q.ne_zero (by linear_combination hsq + q.mul_inv)
 
-/-- If a nonzero self-adjoint complex scalar `s` satisfies `s ^ 2 ≤ 1`, then `(s ^ 2)⁻¹` lies
-outside the image of `[0, 1)` in `ℂ`. -/
-private theorem notMem_Ico_inv_sq_of_sq_le_one {s : ℂ} (hsa : IsSelfAdjoint s) (hs0 : s ≠ 0)
-    (hsq : s ^ 2 ≤ 1) : (s ^ 2)⁻¹ ∉ ((↑) : ℝ → ℂ) '' Set.Ico 0 1 := by
-  obtain ⟨r, hr⟩ := Complex.conj_eq_iff_real.mp hsa
-  have hr0 : r ≠ 0 := fun h ↦ hs0 (by simpa [h] using hr)
-  have hr_sq_le : r ^ 2 ≤ 1 := by
-    have hsq' : ((r ^ 2 : ℝ) : ℂ) ≤ ((1 : ℝ) : ℂ) := by
-      simpa only [Complex.ofReal_pow, Complex.ofReal_one, ← hr] using hsq
-    simpa only [Complex.ofReal_re] using (Complex.le_def.mp hsq').1
-  rintro ⟨t, ht, hteq⟩
-  have ht' : t = (r ^ 2)⁻¹ := Complex.ofReal_injective (by rw [hteq, hr]; norm_cast)
-  have h1 : (1 : ℝ) ≤ (r ^ 2)⁻¹ := (one_le_inv₀ (sq_pos_of_ne_zero hr0)).mpr hr_sq_le
-  linarith [ht.2]
-
 /-- **Classification of positive Markov traces on the unit circle for `(q + q⁻¹) ^ 2 ≤ 1`.**
 This covers both `q = ±i` (`(q + q⁻¹) ^ 2 = 0`) and `0 < (q + q⁻¹) ^ 2 ≤ 1` (including `l = 3`):
 the only positive Markov traces are `indexCharacter ℂ q` and `signCharacter ℂ q`. -/
@@ -137,7 +120,7 @@ theorem isMarkovTrace_and_forall_star_mul_self_nonneg_iff_of_add_inv_sq_le_one
       have hτ : τ * ((q : ℂ) + ↑q⁻¹) ^ 2 = 1 := inv_mul_cancel₀ (pow_ne_zero 2 hs0)
       have : Fact (IsSelfAdjoint τ) := ⟨(hs_sa.pow 2).inv₀⟩
       have hτ_notMem : τ ∉ ((↑) : ℝ → ℂ) '' Set.Ico 0 1 :=
-        notMem_Ico_inv_sq_of_sq_le_one hs_sa hs0 hsq
+        Complex.notMem_Ico_inv_sq_of_sq_le_one hs_sa hs0 hsq
       let η : ℂ := τ * ((q : ℂ) + ↑q⁻¹) * (z + ↑q⁻¹)
       have hz : z = (q : ℂ) * η - ↑q⁻¹ * (1 - η) :=
         BalancedProjectionAlgebra.heckeParam_eq hτ z
@@ -148,18 +131,19 @@ theorem isMarkovTrace_and_forall_star_mul_self_nonneg_iff_of_add_inv_sq_le_one
           0 ≤ (μ.comp E.toLinearMap) (star x * x) := fun x ↦ by
         simpa only [LinearMap.comp_apply, AlgEquiv.toLinearMap_apply, map_mul, E,
           BalancedProjectionAlgebra.UnitCircle.heckeEquiv_star] using hpos (E x)
+      have eq_char {χ : InfiniteTypeAHeckeAlgebra ℂ q →ₐ[ℂ] ℂ} {c : ℂ} {hc : IsIdempotentElem c}
+          (hχ : ∀ x, χ (E x) = BalancedProjectionAlgebra.character c hc x)
+          (hchar : μ.comp E.toLinearMap = (BalancedProjectionAlgebra.character c hc).toLinearMap) :
+          μ = χ.toLinearMap :=
+        LinearMap.ext fun y ↦ by
+          simpa [AlgEquiv.apply_symm_apply] using
+            (LinearMap.congr_fun hchar (E.symm y)).trans (hχ (E.symm y)).symm
       rcases (BalancedProjectionAlgebra.isMarkovTrace_and_forall_star_mul_self_nonneg_iff
           hτ_notMem).mp ⟨hmarkov_bp, hpos_bp⟩ with ⟨hη, hchar⟩ | ⟨hη, hchar⟩
-      · refine Or.inr ⟨by rw [hη] at hz; linear_combination hz,
-          (LinearMap.cancel_right (show Function.Surjective E.toLinearMap from E.surjective)).mp ?_⟩
-        refine hchar.trans (LinearMap.ext fun x ↦ ?_)
-        simp only [LinearMap.comp_apply, AlgHom.toLinearMap_apply, AlgEquiv.toLinearMap_apply, E,
-          BalancedProjectionAlgebra.signCharacter_heckeEquiv]
-      · refine Or.inl ⟨by rw [hη] at hz; linear_combination hz,
-          (LinearMap.cancel_right (show Function.Surjective E.toLinearMap from E.surjective)).mp ?_⟩
-        refine hchar.trans (LinearMap.ext fun x ↦ ?_)
-        simp only [LinearMap.comp_apply, AlgHom.toLinearMap_apply, AlgEquiv.toLinearMap_apply, E,
-          BalancedProjectionAlgebra.indexCharacter_heckeEquiv]
+      · exact Or.inr ⟨by rw [hη] at hz; linear_combination hz,
+          eq_char (BalancedProjectionAlgebra.signCharacter_heckeEquiv hτ) hchar⟩
+      · exact Or.inl ⟨by rw [hη] at hz; linear_combination hz,
+          eq_char (BalancedProjectionAlgebra.indexCharacter_heckeEquiv hτ) hchar⟩
   · rintro (⟨rfl, rfl⟩ | ⟨rfl, rfl⟩)
     · exact ⟨isMarkovTrace_indexCharacter, indexCharacter_star_mul_self_nonneg⟩
     · exact ⟨isMarkovTrace_signCharacter, signCharacter_star_mul_self_nonneg⟩

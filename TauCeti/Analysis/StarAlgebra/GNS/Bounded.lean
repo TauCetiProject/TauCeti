@@ -81,6 +81,13 @@ variable {A : Type*} [NonUnitalRing A] [Module ℂ A] [StarRing A] [StarModule �
 /-- The Hilbert-space completion of the algebraic GNS inner product space `φ.GNS`. -/
 abbrev HilbertGNS : Type _ := Completion φ.GNS
 
+/-- Bounded operators on `φ.HilbertGNS` form a proper star ring. Direct typeclass search hits
+pending-depth limits when unfolding `φ.HilbertGNS` through `Completion` and `SeparationQuotient`, so
+we seed the `CStarAlgebra` instance explicitly. -/
+instance : IsProperStar (φ.HilbertGNS →L[ℂ] φ.HilbertGNS) :=
+  let _ : CStarAlgebra (φ.HilbertGNS →L[ℂ] φ.HilbertGNS) := inferInstance
+  inferInstance
+
 /-- The canonical linear map sending an algebra element to its class in the completed GNS Hilbert
 space. -/
 def hilbertClassMap : A →ₗ[ℂ] φ.HilbertGNS :=

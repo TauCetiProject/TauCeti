@@ -55,11 +55,8 @@ section ZeroEndpoint
 theorem commute_gnsRepresentation_of_zero
     (φ : StarPositiveFunctional (BalancedProjectionAlgebra ℂ 0))
     (x y : BalancedProjectionAlgebra ℂ 0) :
-    Commute (gnsRepresentation φ x) (gnsRepresentation φ y) := by
-  have : IsProperStar (φ.HilbertGNS →L[ℂ] φ.HilbertGNS) := by
-    let _ : CStarAlgebra (φ.HilbertGNS →L[ℂ] φ.HilbertGNS) := inferInstance
-    exact inferInstance
-  exact commute_map_of_zero (gnsRepresentation φ) (isStarProjection_gnsRepresentation_e φ) x y
+    Commute (gnsRepresentation φ x) (gnsRepresentation φ y) :=
+  commute_map_of_zero (gnsRepresentation φ) (isStarProjection_gnsRepresentation_e φ) x y
 
 /-- At `τ = 0`, every algebraically positive linear functional is automatically tracial. -/
 theorem apply_mul_comm_of_zero (φ : StarPositiveFunctional (BalancedProjectionAlgebra ℂ 0))
