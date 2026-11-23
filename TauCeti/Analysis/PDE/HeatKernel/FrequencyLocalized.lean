@@ -441,63 +441,6 @@ theorem exists_norm_heatSemigroup_toLp_fourierMultiplierCLM_inhomogeneousLittlew
   rw [mem_ball_zero_iff, not_lt]
   exact h₁
 
-/-- **The heat flow of a Littlewood–Paley block.** There is a constant `C`, depending only on `φ`,
-`E` and `F`, such that for every `1 ≤ p ≤ ∞`, every `j`, every time `t ≥ 0` and every tempered
-distribution `u` whose block `Δ_{j+1} u`, with frequencies of size `2^j`, is an `Lᵖ` function `f`,
-the heat flow `e^{tΔ} Δ_{j+1} u` is an `Lᵖ` function `g` with
-
-`‖g‖_p ≤ C exp(-π² φ.rIn² 4^j t / 4) ‖f‖_p`. -/
-theorem exists_heatSemigroup_littlewoodPaleyBlock_succ_eq_and_norm_le
-    (φ : ContDiffBump (0 : E)) :
-    ∃ C, ∀ {p : ℝ≥0∞} [Fact (1 ≤ p)] (j : ℕ) (t : ℝ≥0) (u : 𝓢'(E, F))
-      (f : Lp F p (volume : Measure E)),
-      TemperedDistribution.littlewoodPaleyBlock F φ (j + 1) u = f →
-      ∃ g : Lp F p (volume : Measure E), TemperedDistribution.heatSemigroup E F t
-          (TemperedDistribution.littlewoodPaleyBlock F φ (j + 1) u) = g ∧
-          ‖g‖ ≤ C * rexp (-(π ^ 2 * φ.rIn ^ 2 / 4 * (4 ^ j * t))) * ‖f‖ := by
-  obtain ⟨χ, hχ, hχc, hχ0, -, hχ1⟩ := exists_contDiff_cutoff_annulus (E := E) φ.rIn_pos
-    (2 * φ.rOut)
-  obtain ⟨C, hC⟩ := exists_integral_norm_fourierInv_mul_exp_le hχ hχc (half_pos φ.rIn_pos) hχ0
-  refine ⟨C, fun {p} _ j t u f hf ↦ ?_⟩
-  have hν : (0 : ℝ) < 2 ^ j := by positivity
-  set σ : 𝓢(E, ℂ) := cutoffHeatSymbol hχ hχc hν.ne' t
-  set ψ : E → ℂ := fun ξ ↦ (φ.inhomogeneousLittlewoodPaley (j + 1) ξ : ℂ)
-  have hψ : ψ.HasTemperateGrowth := φ.hasTemperateGrowth_ofReal_inhomogeneousLittlewoodPaley _
-  -- On the support of `ψ_{j+1}` the cutoff `χ (2^{-j} ·)` is one, so `σ` is the heat symbol there.
-  have hσψ : ψ * ⇑σ = ψ * fun ξ ↦ ((rexp (-(4 * π ^ 2 * t * ‖ξ‖ ^ 2)) : ℝ) : ℂ) := by
-    funext ξ
-    simp only [Pi.mul_apply, σ, cutoffHeatSymbol_apply]
-    by_cases h : φ.inhomogeneousLittlewoodPaley (j + 1) ξ = 0
-    · simp only [ψ, h, Complex.ofReal_zero, zero_mul]
-    obtain ⟨h₁, h₂⟩ := φ.tsupport_inhomogeneousLittlewoodPaley_succ_subset j (subset_tsupport _ h)
-    have hn : ‖((2 : ℝ) ^ j)⁻¹ • ξ‖ = ((2 : ℝ) ^ j)⁻¹ * ‖ξ‖ := by
-      rw [norm_smul, norm_inv, norm_of_nonneg hν.le]
-    rw [hχ1 _ (by rw [hn]; exact (le_inv_mul_iff₀ hν).2 h₁)
-      (by rw [hn, inv_mul_le_iff₀ hν]; exact h₂.trans_eq (by ring)), one_mul]
-  -- So on the block `Δ_{j+1} u = ψ_{j+1}(D) u` the heat semigroup is the multiplier by `σ`.
-  have heq : TemperedDistribution.heatSemigroup E F t
-      (TemperedDistribution.littlewoodPaleyBlock F φ (j + 1) u) =
-      TemperedDistribution.fourierMultiplierCLM F ⇑σ
-        (TemperedDistribution.littlewoodPaleyBlock F φ (j + 1) u) := by
-    rw [TemperedDistribution.heatSemigroup_eq_fourierMultiplierCLM,
-      TemperedDistribution.littlewoodPaleyBlock_apply,
-      TemperedDistribution.fourierMultiplierCLM_fourierMultiplierCLM_apply hψ
-        (TemperedDistribution.hasTemperateGrowth_heatSymbol t),
-      TemperedDistribution.fourierMultiplierCLM_fourierMultiplierCLM_apply hψ
-        σ.hasTemperateGrowth, hσψ]
-  obtain ⟨g, hg, hgn⟩ := TemperedDistribution.exists_fourierMultiplierCLM_eq_and_norm_le σ f
-  refine ⟨g, by rw [heq, hf, hg], hgn.trans (mul_le_mul_of_nonneg_right ?_ (norm_nonneg _))⟩
-  have hσ : ⇑σ = fun ξ : E ↦ ((χ (((2 : ℝ) ^ j)⁻¹ • ξ) *
-      rexp (-(4 * π ^ 2 * t * ‖ξ‖ ^ 2)) : ℝ) : ℂ) :=
-    funext (cutoffHeatSymbol_apply hχ hχc hν.ne' t)
-  have h4 : ((2 : ℝ) ^ j) ^ 2 = 4 ^ j := by
-    rw [← pow_mul, mul_comm, pow_mul]
-    norm_num
-  have h22 : (2 : ℝ) ^ 2 = 4 := by norm_num
-  refine (hσ ▸ hC _ hν t t.property).trans_eq ?_
-  rw [h4, div_pow, h22]
-  ring_nf
-
 /-- **The heat flow of a homogeneous Littlewood–Paley block.** Let `Pⱼ`, `j ∈ ℤ`, be the
 homogeneous Littlewood–Paley blocks built from the bump function `φ`. There is a constant `C`,
 depending only on `φ`, `E` and `F`, such that for every `1 ≤ p ≤ ∞`, every `j ∈ ℤ`, every time
@@ -559,6 +502,28 @@ theorem exists_heatSemigroup_homogeneousLittlewoodPaleyBlock_eq_and_norm_le
     norm_num
   refine (hσ ▸ hC _ hν t t.property).trans_eq ?_
   rw [h4]
+  ring_nf
+
+/-- **The heat flow of a Littlewood–Paley block.** There is a constant `C`, depending only on `φ`,
+`E` and `F`, such that for every `1 ≤ p ≤ ∞`, every `j`, every time `t ≥ 0` and every tempered
+distribution `u` whose block `Δ_{j+1} u`, with frequencies of size `2^j`, is an `Lᵖ` function `f`,
+the heat flow `e^{tΔ} Δ_{j+1} u` is an `Lᵖ` function `g` with
+
+`‖g‖_p ≤ C exp(-π² φ.rIn² 4^j t / 4) ‖f‖_p`. -/
+theorem exists_heatSemigroup_littlewoodPaleyBlock_succ_eq_and_norm_le
+    (φ : ContDiffBump (0 : E)) :
+    ∃ C, ∀ {p : ℝ≥0∞} [Fact (1 ≤ p)] (j : ℕ) (t : ℝ≥0) (u : 𝓢'(E, F))
+      (f : Lp F p (volume : Measure E)),
+      TemperedDistribution.littlewoodPaleyBlock F φ (j + 1) u = f →
+      ∃ g : Lp F p (volume : Measure E), TemperedDistribution.heatSemigroup E F t
+          (TemperedDistribution.littlewoodPaleyBlock F φ (j + 1) u) = g ∧
+          ‖g‖ ≤ C * rexp (-(π ^ 2 * φ.rIn ^ 2 / 4 * (4 ^ j * t))) * ‖f‖ := by
+  obtain ⟨C, hC⟩ := exists_heatSemigroup_homogeneousLittlewoodPaleyBlock_eq_and_norm_le (F := F) φ
+  refine ⟨C, fun {p} _ j t u f hf ↦ ?_⟩
+  rw [← TemperedDistribution.homogeneousLittlewoodPaleyBlock_natCast φ j.succ_ne_zero] at hf ⊢
+  obtain ⟨g, hg, hgn⟩ := hC ((j + 1 : ℕ) : ℤ) t u f hf
+  refine ⟨g, hg, hgn.trans_eq ?_⟩
+  rw [zpow_natCast, pow_succ]
   ring_nf
 
 end HeatFlow
