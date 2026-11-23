@@ -58,7 +58,8 @@ is a cycle.
 * `RowFiniteTwistingCocycle.ofComapDomain`: the restriction of rows to an injectively labelled
   set of generators closed under taking rows, with
   `RowFiniteTwistingCocycle.rowFiniteTwistedDifferential_mapDomain_ofComapDomain` relating the two
-  differentials.
+  differentials, an instance of `rowFiniteTwistedDifferential_mapDomain_comapDomain` for the
+  raw restricted rows.
 * `rowFiniteTwistedDifferential_mem_supported`: the generators whose rows stay in a set of
   generators span a differential submodule.
 * `mapRange_eq_sum_iff_rowFiniteTwistedDifferential_eq_zero`: the Maurer–Cartan equation of a
@@ -598,6 +599,18 @@ theorem mapRange_eq_sum_iff_rowFiniteTwistedDifferential_eq_zero (m : P → P �
       Units.neg_smul]
   rw [hD, sub_eq_zero]
 
+/-- Let an injection `e : P → P'` pick out generators whose rows `m (e x)` only involve generators
+in the range of `e`. Then relabelling along `e` intertwines the differential of the rows read back
+on `P` with that of the original rows. -/
+theorem rowFiniteTwistedDifferential_mapDomain_comapDomain {P' : Type uP'} (m : P' → P' →₀ A)
+    (e : P → P') (he : Function.Injective e) (hsupp : ∀ x, ↑(m (e x)).support ⊆ Set.range e)
+    (f : P →₀ A) :
+    rowFiniteTwistedDifferential (𝒜 := 𝒜) (d := d) m (Finsupp.mapDomain e f) =
+      Finsupp.mapDomain e (rowFiniteTwistedDifferential (𝒜 := 𝒜) (d := d)
+        (fun x ↦ Finsupp.comapDomain e (m (e x)) he.injOn) f) :=
+  rowFiniteTwistedDifferential_mapDomain e _
+    (fun x ↦ (Finsupp.mapDomain_comapDomain _ he _ (hsupp x)).symm) f
+
 namespace RowFiniteTwistingCocycle
 
 variable {P' : Type uP'} {ind' : P' → ℤ}
@@ -617,8 +630,7 @@ noncomputable def ofComapDomain (m : P' → P' →₀ A) (e : P → P') (he : Fu
   twisting x := by
     refine (mapRange_eq_sum_iff_rowFiniteTwistedDifferential_eq_zero _ fun y ↦ hgr x y).2 ?_
     apply Finsupp.mapDomain_injective he
-    rw [← rowFiniteTwistedDifferential_mapDomain e _ (m' := m)
-        (fun x ↦ (Finsupp.mapDomain_comapDomain _ he _ (hsupp x)).symm),
+    rw [← rowFiniteTwistedDifferential_mapDomain_comapDomain m e he hsupp,
       Finsupp.mapDomain_comapDomain _ he _ (hsupp x), Finsupp.mapDomain_zero]
     exact htw x
 
@@ -653,7 +665,7 @@ theorem rowFiniteTwistedDifferential_mapDomain_ofComapDomain (f : P →₀ A) :
       Finsupp.mapDomain e
         (rowFiniteTwistedDifferential (𝒜 := 𝒜) (d := d) (ofComapDomain m e he hsupp hgr htw).m
           f) :=
-  rowFiniteTwistedDifferential_mapDomain e _ (fun x ↦ mapDomain_ofComapDomain_m x |>.symm) f
+  rowFiniteTwistedDifferential_mapDomain_comapDomain m e he hsupp f
 
 end OfComapDomain
 
