@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Homology.Curved.Module.Right.Graded.Free
-public import TauCeti.Algebra.Homology.Curved.Module.Right.Graded.Projective
+public import TauCeti.Algebra.Homology.Curved.Module.Right.Graded.Projective.Basic
 public import TauCeti.CategoryTheory.Triangulated.Orthogonal.Localization
 
 /-!
@@ -42,9 +42,6 @@ projective dimension, and the first step is still required.
 
 ## Main results
 
-* `TauCeti.CurvedDGRightModuleCat.exists_absolutelyAcyclic_trW_of_shortExact_of_isZero`: a short
-  exact sequence `K ⟶ Q ⟶ M` with contractible middle term gives a morphism `K[1] ⟶ M` with
-  absolutely acyclic cone.
 * `TauCeti.CurvedDGRightModuleCat.exists_gradedProjective_absolutelyAcyclic_trW`: a curved module
   whose underlying graded module has finite projective dimension receives a morphism with
   absolutely acyclic cone from a graded-projective module.
@@ -76,34 +73,6 @@ variable {R A : Type u} [CommRing R] [Ring A] [Algebra R A]
   {𝒜 : ℤ → Submodule R A} [GradedAlgebra 𝒜] {d : A →ₗ[R] A} {w : A}
   {h : IsCurvedDGAlgebra 𝒜 d w}
 
-/-! ### Short exact sequences with contractible middle term -/
-
-/-- For a short exact sequence `K ⟶ L ⟶ M` of curved modules, the map `cone(K ⟶ L) ⟶ M` induced
-by the second map has absolutely acyclic cone: its cone is the totalization of the sequence. -/
-theorem absolutelyAcyclic_trW_coneDesc
-    {S : ShortComplex
-      (ForgetEnrichment (CochainComplex (ModuleCat R) ℤ) (CurvedDGRightModuleCat.{u, u, u} h))}
-    (hS : S.ShortExact) :
-    (absolutelyAcyclic R h).trW ((dgClosedToHomotopy R).map (coneDesc S.f S.g S.zero)) := by
-  have hT := totalizations_le_absolutelyAcyclic R h _ (totalizations_totalization hS)
-  rw [totalization_eq] at hT
-  exact ObjectProperty.trW.mk _ (coneTriangle_distinguished _) hT
-
-/-- A short exact sequence `K ⟶ Q ⟶ M` of curved modules whose middle term `Q` is zero in the
-curved homotopy category gives a morphism `K[1] ⟶ M` with absolutely acyclic cone. -/
-theorem exists_absolutelyAcyclic_trW_of_shortExact_of_isZero
-    {S : ShortComplex
-      (ForgetEnrichment (CochainComplex (ModuleCat R) ℤ) (CurvedDGRightModuleCat.{u, u, u} h))}
-    (hS : S.ShortExact) (hQ : IsZero ((dgClosedToHomotopy R).obj S.X₂)) :
-    ∃ s : ((dgClosedToHomotopy R).obj S.X₁)⟦(1 : ℤ)⟧ ⟶ (dgClosedToHomotopy R).obj S.X₃,
-      (absolutelyAcyclic R h).trW s := by
-  -- In the cone triangle `K ⟶ Q ⟶ cone(K ⟶ Q) ⟶ K[1]`, the zero middle term makes the third
-  -- arrow an isomorphism.
-  have := (Triangle.isZero₂_iff_isIso₃ _ (coneTriangle_distinguished S.f)).1 hQ
-  exact ⟨inv (coneTriangle S.f).mor₃ ≫ (dgClosedToHomotopy R).map (coneDesc S.f S.g S.zero),
-    MorphismProperty.comp_mem _ _ _ (ObjectProperty.trW_of_isIso _ _)
-      (absolutelyAcyclic_trW_coneDesc hS)⟩
-
 /-! ### Graded-projective replacements in finite projective dimension -/
 
 /-- A curved module whose underlying graded module has projective dimension `< m + 1` receives a
@@ -119,14 +88,9 @@ private theorem exists_gradedProjective_absolutelyAcyclic_trW_of_succ :
       exact projective_iff_hasProjectiveDimensionLT_one.mpr hM,
     MorphismProperty.id_mem _ _⟩
   | m + 1, M, hM => by
-    obtain ⟨Q, g, hg, hQproj, hQ0⟩ := exists_epi_contractible_gradedProjective (R := R) M
-    let K := kernelObj g
-    have hS : (ShortComplex.mk (kernelι g) g (kernelι_comp g)).ShortExact :=
-      shortExact_kernelι g
-    -- Dimension shifting along the graded-projective cover `Q ⟶ M`.
-    have hKdim : HasProjectiveDimensionLT (toGradedModuleCat K) (m + 1) :=
-      ((hS.map_of_exact (forgetDifferential (h := h))).hasProjectiveDimensionLT_X₃_iff
-        m hQproj).mp hM
+    -- Dimension shifting along a contractible graded-projective cover `Q ⟶ M`.
+    obtain ⟨K, Q, f, g, hfg, hS, hQ0, hKdim⟩ :=
+      exists_shortExact_contractible_of_hasProjectiveDimensionLT (R := R) M hM
     obtain ⟨P, s, hP, hs⟩ := exists_gradedProjective_absolutelyAcyclic_trW_of_succ m K hKdim
     obtain ⟨t, ht⟩ := exists_absolutelyAcyclic_trW_of_shortExact_of_isZero hS hQ0
     exact ⟨P⟦(1 : ℤ)⟧, s⟦(1 : ℤ)⟧' ≫ t, (gradedProjective R h).le_shift 1 _ hP,
@@ -146,13 +110,6 @@ theorem exists_gradedProjective_absolutelyAcyclic_trW (n : ℕ)
     MorphismProperty.comp_mem _ _ _ hs (ObjectProperty.trW_of_isIso _ _)⟩
 
 /-! ### The graded-projective model of the contraderived category -/
-
-variable (R h) in
-/-- Graded-projective curved modules are left orthogonal to the contraacyclic ones. -/
-theorem gradedProjective_le_leftOrthogonal_contraacyclic :
-    gradedProjective R h ≤ (contraacyclic R h).leftOrthogonal :=
-  (ObjectProperty.le_leftOrthogonal_iff_le_rightOrthogonal _ _).2
-    (contraacyclic_le_rightOrthogonal_gradedProjective R h)
 
 namespace ContraderivedCategory
 
