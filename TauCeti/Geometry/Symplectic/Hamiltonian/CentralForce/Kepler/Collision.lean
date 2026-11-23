@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Geometry.Symplectic.Hamiltonian.CentralForce.Integrable
 public import TauCeti.Geometry.Manifold.Flow.Complete
-import TauCeti.Geometry.Symplectic.Hamiltonian.CentralForce.Collision
+public import TauCeti.Geometry.Symplectic.Hamiltonian.CentralForce.Collision
 import TauCeti.Geometry.Symplectic.Hamiltonian.Complete
 import TauCeti.Geometry.Symplectic.Manifold.Opens
 
@@ -46,6 +46,15 @@ space is not complete
 (`TauCeti.not_isCompleteVectorField_hamiltonianVectorField_kepler`), unlike its restriction to
 the bound phase space
 (`TauCeti.isCompleteVectorField_hamiltonianVectorField_keplerBoundPhaseSpace`).
+
+**Bound radial motions collide in the future.** A Kepler motion with zero angular momentum and
+negative energy `E` stays in the ball `‖q‖ ≤ κ / (-E)`, where the attraction `κ / ‖q‖²` is at
+least `E² / κ`. So its radial momentum decreases at a definite rate and eventually becomes
+negative, after which the motion cannot avoid collision
+(`TauCeti.snd_nonneg_of_forall_hasDerivAt_hamiltonianVectorField_effectivePotential`). Hence a
+Kepler motion with zero angular momentum that avoids collision at all later times has nonnegative
+energy (`TauCeti.centralForceHamiltonian_kepler_nonneg_of_forall_hasDerivAt`, and its reduced form
+`TauCeti.centralForceHamiltonian_effectivePotential_kepler_nonneg_of_forall_hasDerivAt`).
 
 ## References
 
@@ -270,11 +279,16 @@ theorem maximalIntegralCurveInterval_hamiltonianVectorField_kepler_eq_univ_iff (
   refine ⟨fun h ↦ ?_, maximalIntegralCurveInterval_hamiltonianVectorField_kepler_eq_univ hm hκ x⟩
   -- A global maximal curve is a global solution of Hamilton's equations avoiding the collision set,
   -- which the attractive Kepler force rules out for zero angular momentum.
-  have hU (r : ℝ) (hr : 0 < r) := hasDerivAt_kepler_potential κ hr.ne'
+  have hU (y : puncturedPhaseSpace V) :
+      HasDerivAt (fun r ↦ -κ / r) (κ / ‖(y : V × V).1‖ ^ 2) ‖(y : V × V).1‖ :=
+    hasDerivAt_kepler_potential κ (norm_ne_zero_iff.2 (mem_puncturedPhaseSpace.1 y.property))
+  have hU' (y : puncturedPhaseSpace V) : 0 < deriv (fun r ↦ -κ / r) ‖(y : V × V).1‖ := by
+    rw [(hU y).deriv]
+    exact div_pos hκ (pow_pos (norm_pos_iff.2 (mem_puncturedPhaseSpace.1 y.property)) 2)
   have h' := sq_sub_inner_sq_ne_zero_of_hasDerivAt hm
-    (fun r hr ↦ by rw [(hU r hr).deriv]; positivity)
     (fun t ↦ hasDerivAt_coe_maximalIntegralCurve_kepler x (h ▸ mem_univ t))
-    (fun t ↦ mem_puncturedPhaseSpace.1 (maximalIntegralCurve _ x t).property) 0
+    (fun t ↦ mem_puncturedPhaseSpace.1 (maximalIntegralCurve _ x t).property)
+    (fun t ↦ (hU _).differentiableAt) (fun t ↦ hU' _) 0
   rwa [maximalIntegralCurve_zero] at h'
 
 /-- **The collision domain of the planar Kepler problem.** In the plane, with angular momentum
@@ -305,5 +319,100 @@ theorem not_isCompleteVectorField_hamiltonianVectorField_kepler [Nontrivial V] (
   have h' := (maximalIntegralCurveInterval_hamiltonianVectorField_kepler_eq_univ_iff hm hκ
     ⟨(q, 0), mem_puncturedPhaseSpace.2 hq⟩).1 (h.maximalIntegralCurveInterval_eq_univ _)
   simp at h'
+
+/-! ### Bound radial motions collide in the future -/
+
+/-- **Radial Kepler motions of negative energy are bounded.** Let `m, κ > 0`, and let
+`ρ = (r, p_r)` be an integral curve, on the times between `a` and `t`, of the reduced Hamiltonian
+vector field of `H_0(r, p_r) = p_r² / (2m) - κ / r`, staying in the half-line `r > 0`. If its
+energy `E = H_0(ρ(a))` is negative, then `r(t) ≤ κ / (-E)`. -/
+private theorem fst_le_div_neg_of_hasDerivAt_kepler (hm : 0 < m) {ρ : ℝ → ℝ × ℝ} {a t : ℝ}
+    (hρ : ∀ s ∈ Icc a t, HasDerivAt ρ ((stdSymplecticForm (V := ℝ)).hamiltonianVectorField
+      (centralForceHamiltonian m (effectivePotential m 0 fun r ↦ -κ / r)) (ρ s)) s)
+    (hr : ∀ s ∈ Icc a t, 0 < (ρ s).1) (ht : a ≤ t)
+    (hE : centralForceHamiltonian m (effectivePotential m 0 fun r ↦ -κ / r) (ρ a) < 0) :
+    (ρ t).1 ≤ κ / -centralForceHamiltonian m (effectivePotential m 0 fun r ↦ -κ / r) (ρ a) := by
+  -- By conservation of energy, `-κ / r(t) ≤ p_r(t)² / (2m) - κ / r(t) = E`.
+  have hcons := centralForceHamiltonian_effectivePotential_eq_of_hasDerivAt hρ hr
+    (fun s hs ↦ (hasDerivAt_kepler_potential κ (hr s hs).ne').differentiableAt) t ⟨ht, le_rfl⟩
+  have hrt := hr t ⟨ht, le_rfl⟩
+  rw [← Prod.mk.eta (p := ρ t), centralForceHamiltonian_effectivePotential_apply hrt.le] at hcons
+  simp only [ne_eq, OfNat.ofNat_ne_zero, not_false_eq_true, zero_pow, zero_div,
+    add_zero] at hcons
+  have hp : 0 ≤ (ρ t).2 ^ 2 / (2 * m) := by positivity
+  have hmul : -κ / (ρ t).1 * (ρ t).1 ≤
+      centralForceHamiltonian m (effectivePotential m 0 fun r ↦ -κ / r) (ρ a) * (ρ t).1 :=
+    mul_le_mul_of_nonneg_right (by linarith) hrt.le
+  rw [div_mul_cancel₀ _ hrt.ne'] at hmul
+  rw [le_div_iff₀ (neg_pos.2 hE)]
+  linarith
+
+/-- **Bound radial Kepler motions collide, reduced form.** Let `m, κ > 0`, and let
+`ρ = (r, p_r)` be an integral curve, at all times `t ≥ a`, of the reduced Hamiltonian vector field
+of the Kepler motion with zero angular momentum, `H_0(r, p_r) = p_r² / (2m) - κ / r`, staying in
+the half-line `r > 0`. Then its energy is nonnegative. -/
+theorem centralForceHamiltonian_effectivePotential_kepler_nonneg_of_forall_hasDerivAt
+    (hm : 0 < m) (hκ : 0 < κ) {ρ : ℝ → ℝ × ℝ} {a : ℝ}
+    (hρ : ∀ t ∈ Ici a, HasDerivAt ρ ((stdSymplecticForm (V := ℝ)).hamiltonianVectorField
+      (centralForceHamiltonian m (effectivePotential m 0 fun r ↦ -κ / r)) (ρ t)) t)
+    (hr : ∀ t ∈ Ici a, 0 < (ρ t).1) :
+    0 ≤ centralForceHamiltonian m (effectivePotential m 0 fun r ↦ -κ / r) (ρ a) := by
+  by_contra! hE
+  have hU (t : ℝ) (ht : t ∈ Ici a) :=
+    hasDerivAt_kepler_potential κ (hr t ht).ne'
+  have hp' (t : ℝ) (ht : t ∈ Ici a) :=
+    hasDerivAt_snd_of_hasDerivAt_hamiltonianVectorField_effectivePotential (hρ t ht) (hr t ht)
+      (hU t ht).differentiableAt
+  -- On the ball `r ≤ R = κ / (-E)`, the radial momentum has derivative `-κ / r² ≤ -c` for
+  -- `c = κ / R² > 0`.
+  set c := κ / (κ / -centralForceHamiltonian m (effectivePotential m 0 fun r ↦ -κ / r) (ρ a)) ^ 2
+  have hc : 0 < c := by have := neg_pos.2 hE; positivity
+  have hle := (convex_Ici a).image_sub_le_mul_sub_of_deriv_le (f := fun s ↦ (ρ s).2) (C := -c)
+    (fun t ht ↦ (hp' t ht).continuousAt.continuousWithinAt)
+    (fun t ht ↦ (hp' t (interior_subset ht)).differentiableAt.differentiableWithinAt)
+    (fun t ht ↦ by
+      have ht' : t ∈ Ici a := interior_subset ht
+      rw [(hp' t ht').deriv, (hU t ht').deriv]
+      simp only [ne_eq, OfNat.ofNat_ne_zero, not_false_eq_true, zero_pow, zero_div, zero_sub,
+        neg_le_neg_iff, c]
+      exact div_le_div_of_nonneg_left hκ.le (pow_pos (hr t ht') 2)
+        (pow_le_pow_left₀ (hr t ht').le (fst_le_div_neg_of_hasDerivAt_kepler hm
+          (fun s hs ↦ hρ s hs.1) (fun s hs ↦ hr s hs.1) ht' hE) 2))
+  -- Hence the radial momentum is negative at time `T = a + (|p_r(a)| + 1) / c`, whereas a
+  -- motion avoiding collision at all times after `T` has nonnegative radial momentum at `T`.
+  set T := a + (|(ρ a).2| + 1) / c
+  have hT : T ∈ Ici a := le_add_of_nonneg_right (by positivity)
+  have hnonneg := snd_nonneg_of_forall_hasDerivAt_hamiltonianVectorField_effectivePotential hm
+    (a := T) (fun t ht ↦ hρ t (hT.trans ht)) (fun t ht ↦ hr t (hT.trans ht))
+    (fun t ht ↦ (hU t (hT.trans ht)).differentiableAt) fun t ht ↦ by
+      rw [(hU t (hT.trans ht)).deriv]
+      simp only [ne_eq, OfNat.ofNat_ne_zero, not_false_eq_true, zero_pow, zero_div]
+      exact div_nonneg hκ.le (sq_nonneg _)
+  have hTa := hle a self_mem_Ici T hT hT
+  have hcT : -c * (T - a) = -(|(ρ a).2| + 1) := by
+    simp only [T, add_sub_cancel_left]
+    field_simp
+  linarith [le_abs_self (ρ a).2]
+
+/-- **Bound radial Kepler motions collide.** Let `m, κ > 0`, and let `γ` be a solution of
+Hamilton's equations for the Kepler Hamiltonian `H(q, p) = ‖p‖² / (2m) - κ / ‖q‖` at all times
+`t ≥ a`, avoiding the collision set, with zero angular momentum `‖q‖² ‖p‖² - ⟪q, p⟫² = 0` at time
+`a`. Then its energy is nonnegative: a Kepler motion with zero angular momentum and negative energy
+cannot avoid the collision set at all later times. -/
+theorem centralForceHamiltonian_kepler_nonneg_of_forall_hasDerivAt (hm : 0 < m) (hκ : 0 < κ)
+    {γ : ℝ → V × V} {a : ℝ}
+    (hγ : ∀ t ∈ Ici a, HasDerivAt γ ((stdSymplecticForm (V := V)).hamiltonianVectorField
+      (centralForceHamiltonian m (fun r ↦ -κ / r)) (γ t)) t)
+    (hq : ∀ t ∈ Ici a, (γ t).1 ≠ 0)
+    (hℓ : ‖(γ a).1‖ ^ 2 * ‖(γ a).2‖ ^ 2 - ⟪(γ a).1, (γ a).2⟫_ℝ ^ 2 = 0) :
+    0 ≤ centralForceHamiltonian m (fun r ↦ -κ / r) (γ a) := by
+  -- The radial projection `(‖q‖, p_r)` of `γ` is a radial motion with `ℓ = 0`, of the same energy.
+  have h := centralForceHamiltonian_effectivePotential_kepler_nonneg_of_forall_hasDerivAt hm hκ
+    (ρ := fun s ↦ radialProjection (γ s)) (a := a)
+    (hasDerivAt_radialProjection_comp isPreconnected_Ici hγ hq
+      (fun t ht ↦ (hasDerivAt_kepler_potential κ (norm_ne_zero_iff.2 (hq t ht))).differentiableAt)
+      self_mem_Ici (by rw [hℓ]; ring))
+    fun t ht ↦ by simpa [radialProjection_fst] using hq t ht
+  rwa [centralForceHamiltonian_radialProjection (hq a self_mem_Ici) (by rw [hℓ]; ring)] at h
 
 end TauCeti

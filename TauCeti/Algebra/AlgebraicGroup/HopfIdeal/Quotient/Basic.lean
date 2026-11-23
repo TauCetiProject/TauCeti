@@ -67,6 +67,8 @@ The same quotient of a finite-type commutative Hopf algebra is again an object o
 * `CommHopfAlgCat.Hom.isReduced_quotient_comapOfSurjective_iff`: reducedness transfers across
   that identification.
 * `TauCeti.CommHopfAlgCat.quotientIsoOfIso`: the specialization to an ambient isomorphism.
+* `TauCeti.CommHopfAlgCat.comapOfSurjective_inv_hom`: pulling a Hopf ideal back along the inverse
+  of an isomorphism and then along the isomorphism recovers it.
 * `CommHopfAlgCat.Hom.quotientKerOfSurjectiveIso`: the quotient by the kernel of a surjective
   morphism is its target.
 * `CommHopfAlgCat.Hom.quotientIsoOfKerOfSurjectiveEq`: the quotient by a Hopf ideal equal to
@@ -340,6 +342,14 @@ lemma mkQuotient_comp_quotientIsoOfIso_inv (e : H ≅ K) (I : HopfIdeal R K) :
   rw [← cancel_mono (quotientIsoOfIso e I).hom]
   simp only [Category.assoc, Iso.inv_hom_id, Category.comp_id,
     mkQuotient_comp_quotientIsoOfIso_hom, Iso.inv_hom_id_assoc]
+
+/-- Pulling a Hopf ideal back along the inverse of an isomorphism of commutative Hopf algebras and
+then along the isomorphism recovers it. -/
+theorem comapOfSurjective_inv_hom (e : H ≅ K) (I : HopfIdeal R H) :
+    (I.comapOfSurjective e.inv.hom (ConcreteCategory.bijective_of_isIso e.inv).2).comapOfSurjective
+        e.hom.hom (ConcreteCategory.bijective_of_isIso e.hom).2 = I := by
+  simp only [HopfIdeal.comapOfSurjective_comapOfSurjective, ← _root_.CommHopfAlgCat.hom_comp,
+    e.hom_inv_id, hom_id_eq_bialgHom_id, HopfIdeal.comapOfSurjective_id]
 
 end TauCeti.CommHopfAlgCat
 
