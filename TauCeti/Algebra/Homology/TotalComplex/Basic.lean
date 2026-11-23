@@ -50,7 +50,12 @@ compares the homology sequences of these short exact sequences.
   single column is that column.
 * `HomologicalComplex₂.rowZeroShortComplex`: the degreewise split short exact sequence
   `row 0 ⟶ Tot K ⟶ Tot (rowsSucc K)[1]`, where `HomologicalComplex₂.rowsSucc K` is the bicomplex
-  of the rows `≥ 1` of `K`.
+  of the rows `≥ 1` of `K`; the projection `HomologicalComplex₂.dropRowZero` is natural
+  (`HomologicalComplex₂.dropRowZero_naturality`) along the morphisms
+  `HomologicalComplex₂.rowsSuccMap` of the bicomplexes of rows `≥ 1`.
+* `HomologicalComplex₂.total_map_flip_totalFlipIso_hom`: naturality of the signed isomorphism
+  between the total complexes of a bicomplex and of its flip, for any total complex shape with a
+  symmetry.
 * `HomologicalComplex₂.quasiIso_total_map_of_rows`: a map of bicomplexes which is a
   quasi-isomorphism on every row induces a quasi-isomorphism of total complexes.
 * `HomologicalComplex₂.quasiIso_totalAugmentation_of_rows`: exact augmented rows make the
@@ -221,6 +226,28 @@ lemma d_comp_f_zero_singleObjXSelf_hom
   rw [← Category.assoc, ← φ.comm, HomologicalComplex.single_obj_d, comp_zero, zero_comp]
 
 end Single
+
+section Flip
+
+variable {I₁ I₂ J : Type*} {c₁ : ComplexShape I₁} {c₂ : ComplexShape I₂}
+  {K L : HomologicalComplex₂ C c₁ c₂} (φ : K ⟶ L) (c : ComplexShape J)
+  [TotalComplexShape c₁ c₂ c] [TotalComplexShape c₂ c₁ c] [TotalComplexShapeSymmetry c₁ c₂ c]
+  [DecidableEq J] [K.HasTotal c] [L.HasTotal c]
+
+/-- The flip of a bicomplex with a total complex has a total complex, also when the flip is
+written as the image of the bicomplex under `HomologicalComplex₂.flipFunctor`. -/
+instance : ((flipFunctor C c₁ c₂).obj K).HasTotal c := inferInstanceAs (K.flip.HasTotal c)
+
+/-- The signed isomorphism `HomologicalComplex₂.totalFlipIso` between the total complexes of the
+flip and of a bicomplex is natural. -/
+@[reassoc]
+lemma total_map_flip_totalFlipIso_hom :
+    total.map ((flipFunctor C c₁ c₂).map φ) c ≫ (L.totalFlipIso c).hom =
+      (K.totalFlipIso c).hom ≫ total.map φ c := by
+  ext j i₂ i₁ h
+  simp [ιTotal_totalFlipIso_f_hom_assoc]
+
+end Flip
 
 end HomologicalComplex₂
 
@@ -488,9 +515,24 @@ end HasZeroObject
 variable {K} {L : HomologicalComplex₂ C (ComplexShape.down ℕ) (ComplexShape.down ℕ)} (φ : K ⟶ L)
 
 omit [HasFiniteCoproducts C] in
-/-- The map of the bicomplexes of rows `≥ 1` induced by `φ`. -/
-private abbrev rowsSuccMap : rowsSucc K ⟶ rowsSucc L where
+/-- The map of the bicomplexes of rows `≥ 1` induced by `φ`. It is an abbreviation so that its
+components are reducibly those of `φ`. -/
+abbrev rowsSuccMap : rowsSucc K ⟶ rowsSucc L where
   f p := { f q := (φ.f p).f (q + 1) }
+
+omit [HasFiniteCoproducts C] in
+/-- The components of the map of the bicomplexes of rows `≥ 1` are those of `φ`, one row up. -/
+@[simp]
+lemma rowsSuccMap_f_f (p q : ℕ) : ((rowsSuccMap φ).f p).f q = (φ.f p).f (q + 1) := (rfl)
+
+omit [HasFiniteCoproducts C] in
+@[simp]
+lemma rowsSuccMap_id : rowsSuccMap (𝟙 K) = 𝟙 _ := (rfl)
+
+omit [HasFiniteCoproducts C] in
+@[simp]
+lemma rowsSuccMap_comp {M : HomologicalComplex₂ C (ComplexShape.down ℕ) (ComplexShape.down ℕ)}
+    (ψ : L ⟶ M) : rowsSuccMap (φ ≫ ψ) = rowsSuccMap φ ≫ rowsSuccMap ψ := (rfl)
 
 @[reassoc]
 private lemma dropRowZeroX_naturality (n : ℕ) :
@@ -520,6 +562,15 @@ private noncomputable def rowZeroShortComplexMap :
         extendMap_f _ (embeddingDownNatAdd 1) (embeddingDownNatAdd_f 1 n), Category.assoc,
         Iso.inv_hom_id_assoc]
       rw [dropRowZeroX_naturality_assoc]
+
+variable [HasZeroObject C] in
+/-- The projection killing row `0` is natural. -/
+@[reassoc]
+lemma dropRowZero_naturality :
+    total.map φ (ComplexShape.down ℕ) ≫ dropRowZero L =
+      dropRowZero K ≫
+        extendMap (total.map (rowsSuccMap φ) (ComplexShape.down ℕ)) (embeddingDownNatAdd 1) :=
+  (rowZeroShortComplexMap φ).comm₂₃
 
 end Preadditive
 
