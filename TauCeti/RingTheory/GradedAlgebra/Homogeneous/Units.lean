@@ -38,7 +38,8 @@ grading graded-isomorphic to a shift has such a generator.
 ## Main results
 
 * `Units.val_inv_mem_graded`: the inverse of a homogeneous unit of degree `d` is homogeneous of
-  degree `-d`.
+  degree `-d`, and `Units.val_mul_mul_inv_mem_graded`: in a ring graded by an additive commutative
+  group, conjugation by a homogeneous unit preserves every graded piece.
 * `TauCeti.mem_homogeneousUnitDegrees_iff`: a degree lies in `homogeneousUnitDegrees 𝒜` if and
   only if it is the degree of a homogeneous unit.
 * `TauCeti.mul_mem_iff_of_isUnit_mem` and `TauCeti.eq_map_mulLeft_of_isUnit_mem`: a compatible
@@ -73,6 +74,20 @@ theorem Units.val_inv_mem_graded (u : Aˣ) {d : ι} (hu : (u : A) ∈ 𝒜 d) :
     (by rw [Units.mul_inv, add_neg_cancel]; exact SetLike.one_mem_graded 𝒜)
 
 end Inverse
+
+section Conjugation
+
+variable {ι A σ : Type*} [DecidableEq ι] [AddCommGroup ι] [Semiring A] [SetLike σ A]
+  [AddSubmonoidClass σ A] {𝒜 : ι → σ} [GradedRing 𝒜]
+
+/-- In a ring graded by an additive commutative group, conjugation by a homogeneous unit of any
+degree preserves every graded piece. -/
+theorem Units.val_mul_mul_inv_mem_graded (u : Aˣ) {i k : ι} (hu : (u : A) ∈ 𝒜 i) {y : A}
+    (hy : y ∈ 𝒜 k) : (u : A) * y * ↑u⁻¹ ∈ 𝒜 k := by
+  simpa [add_comm, add_assoc] using
+    SetLike.mul_mem_graded (SetLike.mul_mem_graded hu hy) (u.val_inv_mem_graded hu)
+
+end Conjugation
 
 namespace TauCeti
 
