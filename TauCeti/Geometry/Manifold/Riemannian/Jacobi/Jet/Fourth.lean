@@ -9,7 +9,7 @@ public import TauCeti.Geometry.Manifold.Riemannian.Jacobi.Jet
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.AlongCurve
 import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.Derivative.Smoothness
 import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.AlongCurve.Hom
-import TauCeti.Geometry.Manifold.VectorBundle.Hom
+import TauCeti.Geometry.Manifold.VectorBundle.Bilinear.Section
 
 /-!
 # Fourth covariant derivatives at a zero of a Jacobi field

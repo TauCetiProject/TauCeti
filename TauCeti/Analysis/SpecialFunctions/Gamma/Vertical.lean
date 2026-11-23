@@ -7,6 +7,8 @@ module
 
 public import Mathlib.Analysis.MellinInversion
 public import Mathlib.Analysis.SpecialFunctions.Gamma.Deriv
+import Mathlib.Analysis.SpecialFunctions.Gamma.BohrMollerup
+import TauCeti.Analysis.MellinTransform
 
 /-!
 # The complex Gamma function on vertical lines
@@ -40,8 +42,23 @@ its coefficients.
   `Re s + n > 0`.
 * `Complex.exists_norm_Gamma_le_mul_inv_one_add_sq_pow`: `‖Γ(σ + i t)‖ ≤ C (1 + t²)⁻ᵐ` for every
   `m` on every vertical line `Re s = σ` with `σ` not a nonpositive integer.
+* `Complex.norm_Gamma_le_of_re_mem_Ioo`: explicit bound
+  `‖Γ(s)‖ ≤ (2 m + 1)! / (-Re s (Re s + 1) (1 + (Im s)²)^{m + 1})` for `-1 < Re s < 0`.
+* `Complex.exists_norm_Gamma_le_div_pow_of_re_mem_Icc`: uniform polynomial decay
+  `‖Γ(s)‖ ≤ C / |Im s|ᵐ` across any closed strip `σ₀ ≤ Re s ≤ σ₁` for `|Im s| ≥ 1`.
+* `Complex.continuousAt_Gamma_of_re_ne_neg_nat`, `Complex.continuous_Gamma_add_mul_I`,
+  `Complex.continuous_Gamma_sub_mul_I`: continuity of `Γ` away from `-ℕ` and along pole-free
+  vertical lines `y ↦ w ± i y`.
 * `Complex.verticalIntegrable_Gamma`: `Γ` is integrable on every vertical line `Re s = σ` with
   `σ` not a nonpositive integer.
+* `Complex.verticalIntegrable_Gamma_smul_of_norm_le`: `w ↦ Γ(w) • g(w)` is integrable on
+  `Re w = σ` (`σ ≠ -n`) whenever `g` is measurable and almost everywhere polynomially bounded on
+  that line.
+* `Complex.VerticalIntegrable.mul_Gamma_comp`: multiplying a function integrable on `Re s = σ` by
+  `Γ(w(s))`, where `w` maps that line continuously into a vertical line avoiding the poles of `Γ`,
+  keeps it integrable.
+* `Complex.verticalIntegrable_Gamma_mul_Gamma_add`: `Γ(s) Γ(s + a)` is integrable on every
+  vertical line `Re s = σ` with neither `σ` nor `σ + Re a` a nonpositive integer.
 * `Complex.mellinInv_Gamma`: Mellin inversion of `Γ` on `Re s = σ > 0` gives `e⁻ˣ`.
 * `Complex.integral_cpow_neg_mul_Gamma`: the same formula as the unnormalised vertical integral
   `∫ y^{-(σ + i t)} Γ(σ + i t) dt = 2π e⁻ʸ`.
@@ -133,30 +150,161 @@ theorem exists_norm_Gamma_le_mul_inv_one_add_sq_pow {σ : ℝ} (hσ : ∀ n : �
       Real.Gamma (σ + n) / (√c * (1 + t ^ 2) ^ m) by field_simp, le_div_iff₀ (by positivity)]
   exact (mul_le_mul_of_nonneg_left hP (norm_nonneg _)).trans hbound
 
+/-- Explicit polynomial vertical decay of `Γ` in the strip `-1 < Re s < 0`: for every `m : ℕ`,
+`‖Γ(s)‖ ≤ (2 m + 1)! / (-Re s (Re s + 1) (1 + (Im s)²)^{m + 1})`. -/
+theorem norm_Gamma_le_of_re_mem_Ioo {s : ℂ} (hs : s.re ∈ Ioo (-1) 0) (m : ℕ) :
+    ‖Gamma s‖ ≤ ((2 * m + 1).factorial : ℝ) / (-s.re * (s.re + 1) * (1 + s.im ^ 2) ^ (m + 1)) := by
+  have hbound := norm_Gamma_mul_prod_norm_le (s := s) (n := 2 * m + 2)
+    (by push_cast; linarith [hs.1])
+  have hΓ_le : Real.Gamma (s.re + (2 * m + 2 : ℕ)) ≤ (2 * m + 1).factorial := by
+    have hconv := Real.convexOn_Gamma.le_max_of_mem_Icc (x := (1 : ℝ))
+      (y := ((2 * m + 1 : ℕ) : ℝ) + 1) (z := s.re + (2 * m + 2 : ℕ))
+      (Set.mem_Ioi.mpr one_pos) (Set.mem_Ioi.mpr (by positivity))
+      ⟨by push_cast; linarith [hs.1], by push_cast; linarith [hs.2]⟩
+    rw [Real.Gamma_one, Real.Gamma_nat_eq_factorial] at hconv
+    exact hconv.trans (max_le (Nat.one_le_cast.mpr (Nat.factorial_pos _)) le_rfl)
+  have hsq (k : ℕ) : ‖s + k‖ ^ 2 = (s.re + k) ^ 2 + s.im ^ 2 := by
+    rw [← normSq_eq_norm_sq, normSq_apply]; simp; ring
+  have h0 : (-s.re) ^ 2 * (1 + s.im ^ 2) ≤ ‖s + (0 : ℕ)‖ ^ 2 := by
+    have hre_sq : (-s.re) ^ 2 ≤ 1 := by nlinarith [hs.1, hs.2]
+    rw [hsq 0]; push_cast
+    nlinarith [mul_le_of_le_one_left (sq_nonneg s.im) hre_sq]
+  have h1 : (s.re + 1) ^ 2 * (1 + s.im ^ 2) ≤ ‖s + (1 : ℕ)‖ ^ 2 := by
+    have hre_sq : (s.re + 1) ^ 2 ≤ 1 := by nlinarith [hs.1, hs.2]
+    rw [hsq 1]; push_cast
+    nlinarith [mul_le_of_le_one_left (sq_nonneg s.im) hre_sq]
+  have htail : (1 + s.im ^ 2) ^ (2 * m) ≤
+      ∏ k ∈ Finset.range (2 * m), ‖s + ((k + 2 : ℕ) : ℂ)‖ ^ 2 := by
+    calc (1 + s.im ^ 2) ^ (2 * m)
+        = ∏ _k ∈ Finset.range (2 * m), (1 + s.im ^ 2) := by
+          rw [Finset.prod_const, Finset.card_range]
+      _ ≤ ∏ k ∈ Finset.range (2 * m), ‖s + ((k + 2 : ℕ) : ℂ)‖ ^ 2 :=
+          Finset.prod_le_prod₀ (fun _ _ ↦ by positivity) fun k _ ↦ by
+            rw [hsq (k + 2)]; push_cast; nlinarith [hs.1, (Nat.cast_nonneg k : (0 : ℝ) ≤ k)]
+  have hprod_sq : (-s.re * (s.re + 1) * (1 + s.im ^ 2) ^ (m + 1)) ^ 2 ≤
+      (∏ k ∈ Finset.range (2 * m + 2), ‖s + k‖) ^ 2 := by
+    rw [← Finset.prod_pow, Finset.prod_range_succ', Finset.prod_range_succ']
+    calc (-s.re * (s.re + 1) * (1 + s.im ^ 2) ^ (m + 1)) ^ 2
+        = (1 + s.im ^ 2) ^ (2 * m) * ((s.re + 1) ^ 2 * (1 + s.im ^ 2)) *
+            ((-s.re) ^ 2 * (1 + s.im ^ 2)) := by
+          rw [pow_succ _ m, mul_pow (-s.re * (s.re + 1)), mul_pow ((1 + s.im ^ 2) ^ m),
+            ← pow_mul, mul_comm m 2]; ring
+      _ ≤ _ := mul_le_mul (mul_le_mul htail h1 (by positivity) (by positivity)) h0
+          (by positivity) (by positivity)
+  have hpos : 0 < -s.re * (s.re + 1) * (1 + s.im ^ 2) ^ (m + 1) :=
+    mul_pos (mul_pos (by linarith [hs.2]) (by linarith [hs.1])) (by positivity)
+  have hprod : -s.re * (s.re + 1) * (1 + s.im ^ 2) ^ (m + 1) ≤
+      ∏ k ∈ Finset.range (2 * m + 2), ‖s + k‖ :=
+    le_of_pow_le_pow_left₀ two_ne_zero (Finset.prod_nonneg fun _ _ ↦ norm_nonneg _) hprod_sq
+  rw [le_div_iff₀ hpos]
+  exact (mul_le_mul_of_nonneg_left hprod (norm_nonneg _)).trans (hbound.trans hΓ_le)
+
+/-- Uniform polynomial decay of `Γ` on horizontal segments across a closed vertical strip: for
+every `σ₀, σ₁ : ℝ` and `m : ℕ`, there is `C ≥ 0` such that `‖Γ(s)‖ ≤ C / |Im s|ᵐ` whenever
+`Re s ∈ [σ₀, σ₁]` and `1 ≤ |Im s|`. -/
+theorem exists_norm_Gamma_le_div_pow_of_re_mem_Icc (σ₀ σ₁ : ℝ) (m : ℕ) :
+    ∃ C ≥ 0, ∀ s : ℂ, s.re ∈ Icc σ₀ σ₁ → 1 ≤ |s.im| → ‖Gamma s‖ ≤ C / |s.im| ^ m := by
+  set n : ℕ := ⌈-σ₀⌉₊ + m + 1
+  have hn0 : 0 < σ₀ + n := by
+    dsimp [n]; push_cast; linarith [Nat.le_ceil (-σ₀)]
+  have hcont : ContinuousOn Real.Gamma (Icc (σ₀ + n) (σ₁ + n)) :=
+    Real.differentiableOn_Gamma_Ioi.continuousOn.mono fun x hx ↦ hn0.trans_le hx.1
+  obtain ⟨C, hC⟩ := isCompact_Icc.exists_bound_of_continuousOn hcont
+  refine ⟨max C 0, le_max_right _ _, fun s hs him ↦ ?_⟩
+  have hpos : 0 < |s.im| ^ m := pow_pos (by linarith) m
+  rw [le_div_iff₀ hpos]
+  have hs_n : 0 < s.re + n := hn0.trans_le (by linarith [hs.1])
+  have hbound := norm_Gamma_mul_prod_norm_le (s := s) (n := n) hs_n
+  have hΓ_le : Real.Gamma (s.re + n) ≤ max C 0 := by
+    have hmem : s.re + n ∈ Icc (σ₀ + n) (σ₁ + n) := ⟨by linarith [hs.1], by linarith [hs.2]⟩
+    exact (le_abs_self _).trans ((Real.norm_eq_abs _ ▸ hC _ hmem).trans (le_max_left _ _))
+  have him_pow : |s.im| ^ m ≤ ∏ k ∈ Finset.range n, ‖s + k‖ := by
+    calc |s.im| ^ m ≤ |s.im| ^ n := pow_le_pow_right₀ him (by dsimp [n]; omega)
+      _ = ∏ _k ∈ Finset.range n, |s.im| := by rw [Finset.prod_const, Finset.card_range]
+      _ ≤ ∏ k ∈ Finset.range n, ‖s + k‖ :=
+          Finset.prod_le_prod₀ (fun _ _ ↦ abs_nonneg _) fun k _ ↦ by
+            simpa using abs_im_le_norm (s + k)
+  exact (mul_le_mul_of_nonneg_left him_pow (norm_nonneg _)).trans (hbound.trans hΓ_le)
+
+/-- `Complex.Gamma` is continuous at every `s` whose real part is not a nonpositive integer. -/
+theorem continuousAt_Gamma_of_re_ne_neg_nat {s : ℂ} (hs : ∀ n : ℕ, s.re ≠ -n) :
+    ContinuousAt Gamma s :=
+  continuousAt_Gamma s fun m hm ↦ hs m (by simpa using congrArg re hm)
+
+/-- Along any vertical line `y ↦ w + i y` avoiding the nonpositive-integer poles (`Re w ∉ -ℕ`),
+`y ↦ Γ(w + i y)` is continuous on `ℝ`. -/
+theorem continuous_Gamma_add_mul_I {w : ℂ} (hw : ∀ n : ℕ, w.re ≠ -n) :
+    Continuous fun y : ℝ ↦ Gamma (w + y * I) :=
+  continuous_iff_continuousAt.mpr fun y ↦
+    (continuousAt_Gamma_of_re_ne_neg_nat (by simpa using hw)).comp (by fun_prop)
+
+/-- Along any vertical line `y ↦ w - i y` avoiding the nonpositive-integer poles (`Re w ∉ -ℕ`),
+`y ↦ Γ(w - i y)` is continuous on `ℝ`. -/
+theorem continuous_Gamma_sub_mul_I {w : ℂ} (hw : ∀ n : ℕ, w.re ≠ -n) :
+    Continuous fun y : ℝ ↦ Gamma (w - y * I) :=
+  continuous_iff_continuousAt.mpr fun y ↦
+    (continuousAt_Gamma_of_re_ne_neg_nat (by simpa [sub_eq_add_neg] using hw)).comp (by fun_prop)
+
 /-- The Gamma function is integrable on every vertical line `Re s = σ` which avoids its poles,
 that is, for `σ` not a nonpositive integer. -/
 theorem verticalIntegrable_Gamma {σ : ℝ} (hσ : ∀ n : ℕ, σ ≠ -n) :
     VerticalIntegrable Gamma σ := by
   obtain ⟨C, hC⟩ := exists_norm_Gamma_le_mul_inv_one_add_sq_pow hσ 1
-  refine (integrable_inv_one_add_sq.const_mul C).mono' ?_
+  exact (integrable_inv_one_add_sq.const_mul C).mono'
+    (continuous_Gamma_add_mul_I (by simpa using hσ)).aestronglyMeasurable
     (Eventually.of_forall fun t ↦ by simpa using hC t)
-  refine Continuous.aestronglyMeasurable (continuous_iff_continuousAt.mpr fun t ↦ ?_)
-  refine (differentiableAt_Gamma _ fun m h ↦ hσ m ?_).continuousAt.comp (by fun_prop)
-  simpa using congrArg re h
+
+/-- Because `Γ(σ + i t)` decays faster than every power of `|t|`, multiplying any measurable
+function `g` that is almost everywhere polynomially bounded on `Re w = σ` (`σ` not a nonpositive
+integer) by `Γ` produces a vertically integrable function. -/
+theorem verticalIntegrable_Gamma_smul_of_norm_le {E : Type*} [NormedAddCommGroup E]
+    [NormedSpace ℂ E] {g : ℂ → E} {σ C : ℝ} {m : ℕ} (hσ : ∀ n : ℕ, σ ≠ -n)
+    (hmeas : AEStronglyMeasurable fun t : ℝ ↦ g (σ + t * I))
+    (hg : ∀ᵐ t : ℝ, ‖g (σ + t * I)‖ ≤ C * (1 + t ^ 2) ^ m) :
+    VerticalIntegrable (fun w ↦ Gamma w • g w) σ := by
+  obtain ⟨A, hA⟩ := exists_norm_Gamma_le_mul_inv_one_add_sq_pow hσ (m + 1)
+  have hA0 : 0 ≤ A := by simpa using (norm_nonneg (Gamma σ)).trans (by simpa using hA 0)
+  refine (integrable_inv_one_add_sq.const_mul (A * C)).mono'
+    ((continuous_Gamma_add_mul_I (by simpa using hσ)).aestronglyMeasurable.smul hmeas)
+    (hg.mono fun t hgt ↦ ?_)
+  calc ‖Gamma (σ + t * I) • g (σ + t * I)‖
+      = ‖Gamma (σ + t * I)‖ * ‖g (σ + t * I)‖ := norm_smul _ _
+    _ ≤ (A * ((1 + t ^ 2) ^ (m + 1))⁻¹) * (C * (1 + t ^ 2) ^ m) :=
+        mul_le_mul (hA t) hgt (norm_nonneg _) (mul_nonneg hA0 (by positivity))
+    _ = A * C * (1 + t ^ 2)⁻¹ := by rw [pow_succ]; field_simp
+
+/-- If `f` is integrable on the vertical line `Re s = σ` and `w` maps that line continuously into
+the vertical line `Re s = τ`, with `τ` not a nonpositive integer, then `s ↦ f s Γ(w s)` is
+integrable on `Re s = σ`, since `Γ` is continuous and bounded on `Re s = τ`. -/
+theorem VerticalIntegrable.mul_Gamma_comp {f w : ℂ → ℂ} {σ τ : ℝ} (hf : VerticalIntegrable f σ)
+    (hτ : ∀ n : ℕ, τ ≠ -n) (hw : Continuous w) (hwτ : ∀ y : ℝ, (w (σ + y * I)).re = τ) :
+    VerticalIntegrable (fun s ↦ f s * Gamma (w s)) σ := by
+  have hline (y : ℝ) : w (σ + y * I) = ↑τ + ↑(w (σ + y * I)).im * I := by
+    apply Complex.ext <;> simp [hwτ]
+  obtain ⟨C, hC⟩ := exists_norm_Gamma_le_mul_inv_one_add_sq_pow hτ 0
+  refine hf.mul_bdd (c := C) ?_
+    (Eventually.of_forall fun y ↦ by simpa [← hline] using hC (w (σ + y * I)).im)
+  refine Continuous.aestronglyMeasurable (continuous_iff_continuousAt.mpr fun y ↦ ?_)
+  exact (continuousAt_Gamma_of_re_ne_neg_nat (by simpa [hwτ] using hτ)).comp (by fun_prop)
+
+/-- On every vertical line `Re t = σ` with neither `σ` nor `σ + Re a` a nonpositive integer, the
+product `Γ(t) Γ(t + a)` is integrable. -/
+theorem verticalIntegrable_Gamma_mul_Gamma_add {a : ℂ} {σ : ℝ} (hσ : ∀ n : ℕ, σ ≠ -n)
+    (haσ : ∀ n : ℕ, σ + a.re ≠ -n) :
+    VerticalIntegrable (fun t ↦ Gamma t * Gamma (t + a)) σ :=
+  (verticalIntegrable_Gamma hσ).mul_Gamma_comp haσ (by fun_prop) fun y ↦ by simp
 
 /-- Mellin inversion for the Gamma function: on every vertical line `Re s = σ > 0`,
 `(1 / 2π) ∫ x^{-(σ + i t)} Γ(σ + i t) dt = e⁻ˣ` for `x > 0`. -/
 theorem mellinInv_Gamma {σ : ℝ} (hσ : 0 < σ) {x : ℝ} (hx : 0 < x) :
     mellinInv σ Gamma x = Real.exp (-x) := by
-  have hline : ∀ t : ℝ, Gamma (σ + t * I) = mellin (fun u : ℝ ↦ (Real.exp (-u) : ℂ)) (σ + t * I) :=
-    fun t ↦ by rw [← GammaIntegral_eq_mellin, Gamma_eq_integral (by simpa using hσ)]
+  have hM (t : ℝ) := TauCeti.hasMellin_exp_neg (z := σ + t * I) (by simpa using hσ)
+  have hline (t : ℝ) : Gamma (σ + t * I) = mellin (fun u : ℝ ↦ (Real.exp (-u) : ℂ)) (σ + t * I) :=
+    (hM t).2.symm
   have hint : VerticalIntegrable (mellin fun u : ℝ ↦ (Real.exp (-u) : ℂ)) σ := by
     refine (verticalIntegrable_Gamma fun n h ↦ ?_).congr (Eventually.of_forall hline)
     linarith [show (0 : ℝ) ≤ n from n.cast_nonneg]
-  have hconv : MellinConvergent (fun u : ℝ ↦ (Real.exp (-u) : ℂ)) σ := by
-    refine (GammaIntegral_convergent (s := σ) (by simpa using hσ)).congr_fun (fun u _ ↦ ?_)
-      measurableSet_Ioi
-    simp [smul_eq_mul, mul_comm]
+  have hconv : MellinConvergent (fun u : ℝ ↦ (Real.exp (-u) : ℂ)) σ := by simpa using (hM 0).1
   have h := mellinInv_mellin_eq σ _ hx hconv hint (by fun_prop)
   rw [← h, mellinInv, mellinInv]
   simp_rw [hline]

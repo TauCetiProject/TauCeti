@@ -5,20 +5,28 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicTopology.Cellular.EulerCharacteristic.Singular
-public import TauCeti.AlgebraicTopology.EilenbergMacLane.Covering
-public import TauCeti.AlgebraicTopology.FundamentalGroup.WedgeSum
-public import TauCeti.AlgebraicTopology.Homotopy.Hurewicz.Comparison
-public import TauCeti.AlgebraicTopology.SemilocallySimplyConnected.WedgeSum
-public import TauCeti.AlgebraicTopology.UniversalCover.Action
-public import TauCeti.Topology.CWComplex.Classical.Covering
-public import TauCeti.Topology.CWComplex.Classical.DeltaGenerated
-public import TauCeti.Topology.CWComplex.Classical.WedgeCircles
+public import Mathlib.AlgebraicTopology.SingularHomology.Basic
+public import Mathlib.Analysis.Complex.Circle
+public import Mathlib.CategoryTheory.Abelian.GrothendieckAxioms.Basic
+public import Mathlib.GroupTheory.FreeGroup.Basic
+public import Mathlib.Topology.CWComplex.Classical.Basic
+public import TauCeti.AlgebraicTopology.EilenbergMacLane.Basic
+public import TauCeti.AlgebraicTopology.SemilocallySimplyConnected.Basic
+public import TauCeti.Topology.WedgeSum
+import TauCeti.AlgebraicTopology.Cellular.Dimension
+import TauCeti.AlgebraicTopology.EilenbergMacLane.Covering
+import TauCeti.AlgebraicTopology.FundamentalGroup.WedgeSum
+import TauCeti.AlgebraicTopology.Homotopy.Hurewicz.Comparison
+import TauCeti.AlgebraicTopology.SemilocallySimplyConnected.WedgeSum
+import TauCeti.AlgebraicTopology.UniversalCover.Action
+import TauCeti.Topology.CWComplex.Classical.Covering
+import TauCeti.Topology.CWComplex.Classical.DeltaGenerated
+import TauCeti.Topology.CWComplex.Classical.WedgeSum.Circles
 
 /-!
 # One-dimensional CW complexes are aspherical
 
-A path-connected CW complex `X` with no cells of dimension at least `2`, that is a connected
+A connected CW complex `X` with no cells of dimension at least `2`, that is a connected
 graph, is aspherical (`TauCeti.isAspherical_of_forall_isEmpty_cell`). In particular a wedge of
 circles indexed by `S` is a `K(F, 1)` for the free group `F` on `S`
 (`TauCeti.WedgeSum.isEilenbergMacLaneSpaceOne_circle`), with no finiteness hypothesis on `S`.
@@ -27,20 +35,21 @@ The proof passes to the universal cover `Y` of `X`, which exists because `X` is 
 path-connected and semilocally simply connected. The CW structure of `X` lifts to `Y`, cell by
 cell (`TauCeti.cwComplexPreimage`), so `Y` is again a CW complex with no cells of dimension at
 least `2`. Its singular homology therefore vanishes in every degree at least `2`
-(`TauCeti.isZero_singularHomology_of_isEmpty_cell`), and since `Y` is simply
+(`TauCeti.isZero_singularHomology_univ_of_isEmpty_cell_gt`), and since `Y` is simply
 connected, the Hurewicz theorem shows that all of its homotopy groups vanish
-(`TauCeti.subsingleton_homotopyGroup_of_isZero_homology_singularChains`). A covering map is an
+(`TauCeti.subsingleton_homotopyGroup_of_isZero_homology_singularChains_ulift`). A covering map is an
 isomorphism on homotopy groups in dimensions at least `2`, so those of `X` vanish too. This is a
 homological form of the classical argument that the universal cover of a connected graph is a
 tree, hence contractible.
 
 Every CW complex is semilocally simply connected; here this is a hypothesis, which a wedge of
 circles satisfies (`TauCeti.WedgeSum.instSemilocallySimplyConnectedSpaceCircle`). The spaces lie in
-`Type`, as the Hurewicz theorem is available there.
+an arbitrary universe `u`, where the Hurewicz theorem is applied with the integer coefficients
+`ULift.{u} ℤ`.
 
 ## Main results
 
-* `TauCeti.isAspherical_of_forall_isEmpty_cell`: a path-connected, semilocally simply connected
+* `TauCeti.isAspherical_of_forall_isEmpty_cell`: a connected, semilocally simply connected
   CW complex with no cells of dimension at least `2` is aspherical.
 * `TauCeti.WedgeSum.isEilenbergMacLaneSpaceOne_circle`: a wedge of circles is a `K(F, 1)` for the
   free group on its circles.
@@ -63,38 +72,35 @@ universe u v w
 
 namespace TauCeti
 
-/-- **A connected graph is aspherical.** A path-connected, semilocally simply connected Hausdorff
+/-- **A connected graph is aspherical.** A connected, semilocally simply connected Hausdorff
 space with a CW structure having no cells of dimension at least `2` has trivial homotopy groups in
 every dimension at least `2`. Its universal cover is a simply connected CW complex with no cells of
 dimension at least `2`, so it has no homology in those degrees and, by the Hurewicz theorem, no
 homotopy. -/
-theorem isAspherical_of_forall_isEmpty_cell {X : Type} [TopologicalSpace X] [T2Space X]
-    [CWComplex (univ : Set X)] [PathConnectedSpace X] [SemilocallySimplyConnectedSpace X]
+theorem isAspherical_of_forall_isEmpty_cell {X : Type u} [TopologicalSpace X] [T2Space X]
+    [CWComplex (univ : Set X)] [PreconnectedSpace X] [SemilocallySimplyConnectedSpace X]
     (h : ∀ n, IsEmpty (cell (univ : Set X) (n + 2))) (x : X) : IsAspherical X x := by
+  -- a connected CW complex is locally path-connected, hence path-connected
+  have : ConnectedSpace X := ⟨⟨x⟩⟩
+  have : PathConnectedSpace X := PathConnectedSpace.of_locallyPathConnectedSpace
   have hp := UniversalCover.isCoveringMap x
-  let := cwComplexPreimage (univ : Set X) hp
   have := hp.t2Space
+  -- The lifted CW structure lives on `p ⁻¹' univ`, which is definitionally `univ`.
+  let : CWComplex (univ : Set (UniversalCover x)) := cwComplexPreimage (univ : Set X) hp
   -- The lifted CW structure on the universal cover has no cells of dimension at least `2`.
-  have hcell (n : ℕ) : IsEmpty (cell (UniversalCover.proj (x₀ := x) ⁻¹' (univ : Set X)) (n + 2)) :=
-    (cellPreimageEquiv (univ : Set X) hp (n + 2)).isEmpty
-  have : FiniteDimensional (UniversalCover.proj (x₀ := x) ⁻¹' (univ : Set X)) :=
-    ⟨Filter.eventually_atTop.2 ⟨2, fun n hn ↦ by
-      obtain ⟨m, rfl⟩ := Nat.exists_eq_add_of_le' hn
-      exact hcell m⟩⟩
+  have hcell (m : ℕ) (hm : 1 < m) : IsEmpty (cell (univ : Set (UniversalCover x)) m) := by
+    obtain ⟨k, rfl⟩ := Nat.exists_eq_add_of_le' hm
+    exact (cellPreimageEquiv (univ : Set X) hp (k + 1 + 1)).isEmpty
   have hH (n : ℕ) :
-      IsZero (((singularChains ℤ).obj (TopCat.of (UniversalCover x))).homology (n + 2)) := by
-    -- The homology of the lifted CW complex vanishes in degree `n + 2`, and it is the homology
-    -- of the universal cover.
-    have hC := isZero_singularHomology_of_isEmpty_cell
-      (UniversalCover.proj (x₀ := x) ⁻¹' (univ : Set X)) (ModuleCat.of ℤ ℤ) (n + 2)
-    exact hC.of_iso (((AlgebraicTopology.singularHomologyFunctor _ (n + 2)).obj _).mapIso
-      (TopCat.isoOfHomeo ((Homeomorph.setCongr preimage_univ).trans
-        (Homeomorph.Set.univ _)))).symm
+      IsZero (((singularChains (ULift.{u} ℤ)).obj (TopCat.of (UniversalCover x))).homology
+        (n + 2)) :=
+    isZero_singularHomology_univ_of_isEmpty_cell_gt (UniversalCover x)
+      (ModuleCat.of (ULift.{u} ℤ) (ULift.{u} ℤ)) hcell (by lia)
   have : Subsingleton (π_ 1 (UniversalCover x) (UniversalCover.basepointLift x)) :=
     HomotopyGroup.pi1EquivFundamentalGroup.subsingleton_congr.mpr inferInstance
   exact hp.isAspherical_of_subsingleton_homotopyGroup UniversalCover.proj_surjective
     (UniversalCover.proj_basepointLift x) fun n ↦
-      subsingleton_homotopyGroup_of_isZero_homology_singularChains _ hH (n + 2)
+      subsingleton_homotopyGroup_of_isZero_homology_singularChains_ulift _ hH (n + 2)
 
 namespace WedgeSum
 
@@ -102,7 +108,7 @@ namespace WedgeSum
 of circles. The fundamental group is identified with `F` by
 `TauCeti.WedgeSum.circleFundamentalGroupMulEquiv`, which sends the loop around the `i`-th circle to
 the generator `i`. -/
-theorem isEilenbergMacLaneSpaceOne_circle (S : Type) :
+theorem isEilenbergMacLaneSpaceOne_circle (S : Type u) :
     IsEilenbergMacLaneSpaceOne (FreeGroup S) (WedgeSum fun _ : S ↦ (1 : Circle))
       (base fun _ : S ↦ (1 : Circle)) :=
   .mk (isAspherical_of_forall_isEmpty_cell (fun _ ↦ isEmpty_cell_circleCWComplex (by lia)) _)
@@ -115,11 +121,8 @@ theorem isZero_singularHomology_circle (S : Type u) {A : Type w} [Category.{v} A
     [HasCoproducts.{u} A] [Abelian A] [AB4OfSize.{u} A] (R : A) {n : ℕ} (hn : 2 ≤ n) :
     IsZero (((AlgebraicTopology.singularHomologyFunctor.{u} A n).obj R).obj
       (TopCat.of (WedgeSum fun _ : S ↦ (1 : Circle)))) :=
-  have := isEmpty_cell_circleCWComplex (S := S) hn
-  (isZero_singularHomology_of_isEmpty_cell (univ : Set (WedgeSum fun _ : S ↦ (1 : Circle)))
-    R n).of_iso
-      (((AlgebraicTopology.singularHomologyFunctor _ n).obj _).mapIso
-        (TopCat.isoOfHomeo (Homeomorph.Set.univ _))).symm
+  isZero_singularHomology_univ_of_isEmpty_cell_gt (WedgeSum fun _ : S ↦ (1 : Circle)) R
+    (d := 1) (fun _ hm ↦ isEmpty_cell_circleCWComplex (S := S) hm) hn
 
 end WedgeSum
 

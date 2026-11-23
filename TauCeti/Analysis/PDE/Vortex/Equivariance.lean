@@ -5,12 +5,12 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.PDE.Vortex.Reduced.Functional
+public import TauCeti.Analysis.PDE.Vortex.Minimizer
 public import TauCeti.Analysis.PDE.Vortex.Reconstruction
 public import TauCeti.Analysis.PDE.Vortex.Symmetry
 public import TauCeti.Analysis.Sobolev.W1p.MeasurePreserving
 public import Mathlib.Analysis.Complex.Isometry
-import TauCeti.Analysis.Calculus.FDeriv.RestrictScalars
+import TauCeti.Analysis.Calculus.FDeriv.Comp
 import TauCeti.LinearAlgebra.Complex.Module
 import TauCeti.MeasureTheory.Measure.Haar.InnerProductSpace
 
@@ -47,10 +47,13 @@ and multiplying `f` by a unit constant `c` is the constant gauge transformation 
 `-log (1 + ‖P‖²) / 2` of `P ∘ g` is that of `P` composed with `g`, so the amplitude `u₀ + w` moves
 with the divisor exactly as `w` does in the variational statements above.
 
-Together with uniqueness of the minimizer, these laws make the solution `w_P` of the reduced
-problem, and the vortex reconstructed from it, equivariant under translations, rotations and
-constant changes of the frame of the line. They concern the reduced problem on `H¹(ℂ)` and the
-pointwise reconstruction; the regularity of the minimizer is not treated here.
+Since the minimizer is unique (`TauCeti.Vortex.eq_reducedMinimizer_iff`), these laws become
+equations for the minimizer `w_P = TauCeti.Vortex.reducedMinimizer P`: for `P` of degree at least
+one, `w_(P.comp (X + C a))` is `w_P (· + a)` (`TauCeti.Vortex.reducedMinimizer_comp_X_add_C`),
+`w_(P.comp (C u * X))` is `w_P (u ·)` (`TauCeti.Vortex.reducedMinimizer_comp_C_mul_X`), and
+`w_(C c * P) = w_P` for `‖c‖ = 1` (`TauCeti.Vortex.reducedMinimizer_C_mul`). These statements
+concern the reduced problem on `H¹(ℂ)` and the pointwise reconstruction; the regularity of the
+minimizer is not treated here.
 
 ## References
 
@@ -185,6 +188,50 @@ theorem forall_sobolevReducedFunctional_comp_C_mul_X_le_iff (u : Circle)
       ∀ v, sobolevReducedFunctional P w ≤ sobolevReducedFunctional P v :=
   forall_sobolevReducedFunctional_compAffineIsometryEquivL_le_iff _ (fun z ↦ by simp)
     (fun z ↦ by simp [derivative_comp]) w
+
+/-! ### Equivariance of the minimizer -/
+
+/-- **Isometry equivariance of the minimizer of Taubes's functional.** Under the hypotheses of
+`TauCeti.Vortex.sobolevReducedFunctional_compAffineIsometryEquivL`, for `P` of degree at least
+one, the minimizer for `Q` is the minimizer for `P` composed with `g`. The degree of `Q` is then
+positive too, since `‖Q'‖ = ‖P' ∘ g‖` does not vanish identically. -/
+theorem reducedMinimizer_compAffineIsometryEquivL (hm : 0 < P.natDegree)
+    (g : ℂ ≃ᵃⁱ[ℝ] ℂ) (hQ : ∀ z, ‖Q.eval z‖ = ‖P.eval (g z)‖)
+    (hQ' : ∀ z, ‖Q.derivative.eval z‖ = ‖P.derivative.eval (g z)‖) :
+    reducedMinimizer Q = W1p.compAffineIsometryEquivL g (by simp) (reducedMinimizer P) := by
+  have hmQ : 0 < Q.natDegree := Nat.pos_of_ne_zero fun h ↦
+    hm.ne' <| derivative_eq_zero.1 <| Polynomial.funext fun z ↦ by
+      simpa [derivative_of_natDegree_zero h] using (hQ' (g.symm z)).symm
+  exact ((eq_reducedMinimizer_iff hmQ).2
+    ((forall_sobolevReducedFunctional_compAffineIsometryEquivL_le_iff g hQ hQ' _).2
+      (forall_sobolevReducedFunctional_reducedMinimizer_le hm))).symm
+
+/-- **The translation law of the minimizer.** For `P` of degree at least one, the minimizer for
+`P.comp (X + C a)`, whose zeros are those of `P` translated by `-a`, is the minimizer for `P`
+composed with `z ↦ z + a`. -/
+theorem reducedMinimizer_comp_X_add_C (hm : 0 < P.natDegree) (a : ℂ) :
+    reducedMinimizer (P.comp (X + C a)) =
+      W1p.compAffineIsometryEquivL (AffineIsometryEquiv.vaddConst ℝ a) (by simp)
+        (reducedMinimizer P) :=
+  reducedMinimizer_compAffineIsometryEquivL hm _ (fun z ↦ by simp)
+    (fun z ↦ by simp [derivative_comp])
+
+/-- **The rotation law of the minimizer.** For `P` of degree at least one and `u` on the unit
+circle, the minimizer for `P.comp (C u * X)` is the minimizer for `P` composed with
+`z ↦ u z`. -/
+theorem reducedMinimizer_comp_C_mul_X (hm : 0 < P.natDegree) (u : Circle) :
+    reducedMinimizer (P.comp (C (u : ℂ) * X)) =
+      W1p.compAffineIsometryEquivL (rotation u).toAffineIsometryEquiv (by simp)
+        (reducedMinimizer P) :=
+  reducedMinimizer_compAffineIsometryEquivL hm _ (fun z ↦ by simp)
+    (fun z ↦ by simp [derivative_comp])
+
+/-- **The line-frame law of the minimizer.** Multiplying `P` by a unit constant does not change
+the minimizer of Taubes's functional. -/
+@[simp]
+theorem reducedMinimizer_C_mul {c : ℂ} (hc : ‖c‖ = 1) :
+    reducedMinimizer (C c * P) = reducedMinimizer P :=
+  reducedMinimizer_eq_of_forall_sobolevReducedFunctional_eq (sobolevReducedFunctional_C_mul hc)
 
 end Functional
 

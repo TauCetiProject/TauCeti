@@ -10,7 +10,11 @@ public import Mathlib.LinearAlgebra.Basis.Flag
 import Mathlib.Algebra.Order.Round
 import Mathlib.Analysis.LocallyConvex.Basic
 import Mathlib.LinearAlgebra.FiniteDimensional.Lemmas
+import Mathlib.LinearAlgebra.FreeModule.PID
+import TauCeti.Algebra.Module.ZLattice.Basic
 import TauCeti.LinearAlgebra.Basis.Triangular
+import TauCeti.LinearAlgebra.Quotient.Basic
+import TauCeti.LinearAlgebra.Submodule.Primitive
 
 /-!
 # Lattice bases adapted to a flag
@@ -28,6 +32,14 @@ The coordinate-level triangular basis is used by
 `TauCeti.Algebra.Module.ZLattice.GaugeBasis` to prove the canonical gauge estimate.
 The lattice is not assumed to be full: this follows from the given basis.
 
+For a real subspace `W` of `E`, the intersection `Δ ∩ W` of a finitely generated subgroup `Δ`
+with `W` is recorded as the lattice `ZLattice.comap ℝ Δ W.subtype` in `W`. Since `W` is a real
+subspace, the quotient `Δ ⧸ (Δ ∩ W)` is torsion-free, hence free, so every `ℤ`-basis of `Δ ∩ W`
+extends to a `ℤ`-basis of `Δ` (`ZLattice.exists_basis_sum_inl_eq`). When `Δ` is a discrete full
+lattice in a finite-dimensional `E` and `Δ ∩ W` spans `W`, this gives a basis of `Δ` whose first
+`dim W` vectors form a basis of `Δ ∩ W` (`ZLattice.exists_basis_sum_finrank`), and the first
+block of such a basis spans `W` over `ℝ` (`ZLattice.span_range_ofZLatticeBasis_inl`).
+
 ## Main results
 
 * `ZLattice.exists_basis_triangular`: a reduced basis of `L` that is triangular with respect to an
@@ -35,11 +47,22 @@ The lattice is not assumed to be full: this follows from the given basis.
 * `ZLattice.exists_basis_span_image_eq_flag`: a basis of `L` with the same real flag as an
   `ℝ`-basis of `E` consisting of lattice vectors.
 * `ZLattice.equivFun_ofZLatticeBasis_apply_eq_zero`: coordinates past an adapted flag vanish.
+* `ZLattice.exists_basis_sum_inl_eq`: for a finitely generated subgroup `Δ` and a real subspace
+  `W`, a `ℤ`-basis of `Δ ∩ W` extends to a `ℤ`-basis of `Δ`.
+* `ZLattice.exists_basis_sum_finrank`: if `Δ` is a discrete full lattice in a finite-dimensional
+  `E` and `Δ ∩ W` spans `W`, then `Δ` has a basis indexed by `Fin (dim W) ⊕ Fin s`, with
+  `dim W + s = dim E`, whose first block is a basis of `Δ ∩ W`.
+* `ZLattice.span_range_ofZLatticeBasis_inl`: if `Δ ∩ W` spans `W`, the first block of a basis of
+  `Δ` that extends a basis of `Δ ∩ W` spans `W` over `ℝ`.
 
 ## References
 
 * J. W. S. Cassels, *An Introduction to the Geometry of Numbers*, Springer, 1959, Chapter I,
   Theorem I and Corollary 1, and Chapter V, Lemma 8.
+* T. Horesh and Y. Karasik, *Equidistribution of primitive lattices in ℝⁿ*, Q. J. Math. 74
+  (2023), 1253–1294, Proposition B.4, p. 1290.
+* M. Henk, *Successive minima and lattice points*, Rend. Circ. Mat. Palermo (2) Suppl. 70 (2002),
+  377–384, p. 3 of arXiv:math/0204158.
 -/
 
 public section
@@ -62,7 +85,7 @@ theorem le_span_of_triangular (e : Basis (Fin n) ℝ E) {v : Fin n → E}
   -- Induction on the number `k` of leading coordinates that may be nonzero.
   suffices h : ∀ k ≤ n, ∀ x ∈ L, (∀ i : Fin n, k ≤ i → e.repr x i = 0) →
       x ∈ span ℤ (Set.range v) from
-    fun x hx ↦ h n le_rfl x hx fun i hi ↦ absurd i.2 (not_lt.2 hi)
+    fun x hx ↦ h n le_rfl x hx fun i hi ↦ absurd i.isLt (not_lt.2 hi)
   intro k
   induction k with
   | zero =>
@@ -107,7 +130,7 @@ private theorem exists_repr_generator (e : Basis (Fin n) ℝ E) (he : ∀ i, e i
     rcases ht1.eq_or_lt with h | h
     · exact Or.inl h
     · refine Or.inr ⟨fract e x, ⟨fract_mem_fundamentalDomain e x, ?_⟩, ?_⟩
-      · exact L.sub_mem hx (hspan (floor e x).2)
+      · exact L.sub_mem hx (hspan (floor e x).property)
       · dsimp only
         rw [repr_fract_apply, Int.fract_eq_self.2 ⟨ht0.le, h⟩]
   have h1 : (1 : ℝ) ∈ T :=
@@ -213,5 +236,70 @@ theorem equivFun_ofZLatticeBasis_apply_eq_zero [FiniteDimensional ℝ E] [IsZLat
   rw [hb, Basis.flag]
   simp only [Fin.castSucc_lt_castSucc_iff]
   exact hv
+
+section Saturated
+
+/-- The intersection `Δ ∩ W`, seen as a submodule of `Δ`, is linearly equivalent to the lattice
+`ZLattice.comap ℝ Δ W.subtype` in `W`. -/
+private def comapSubtypeEquiv (Δ : Submodule ℤ E) (W : Submodule ℝ E) :
+    (W.restrictScalars ℤ).comap Δ.subtype ≃ₗ[ℤ] ZLattice.comap ℝ Δ W.subtype where
+  toFun x := ⟨⟨x.val, x.property⟩, x.val.property⟩
+  invFun y := ⟨⟨y.val, y.property⟩, y.val.property⟩
+  map_add' _ _ := rfl
+  map_smul' _ _ := rfl
+  left_inv _ := rfl
+  right_inv _ := rfl
+
+/-- **Extending a basis of `Δ ∩ W` to a basis of `Δ`.** For a finitely generated subgroup `Δ` of a
+real normed space and a real subspace `W`, every `ℤ`-basis `c` of `Δ ∩ W` extends to a `ℤ`-basis
+`b` of `Δ` indexed by `ι ⊕ Fin s`, with `b (inl i) = c i`. -/
+theorem exists_basis_sum_inl_eq (Δ : Submodule ℤ E) [Module.Finite ℤ Δ] (W : Submodule ℝ E)
+    {ι : Type*} (c : Basis ι ℤ (ZLattice.comap ℝ Δ W.subtype)) :
+    ∃ (s : ℕ) (b : Basis (ι ⊕ Fin s) ℤ Δ),
+      Nat.card ι + s = finrank ℤ Δ ∧ ∀ i, (b (.inl i) : E) = c i := by
+  have : IsTorsionFree ℤ (Δ ⧸ (W.restrictScalars ℤ).comap Δ.subtype) :=
+    Submodule.isTorsionFree_quotient_iff.mpr fun n x hn hx ↦ by
+      have hx' : (n : ℝ) • (x : E) ∈ W := by simpa [Int.cast_smul_eq_zsmul] using hx
+      simpa using (W.smul_mem_iff (Int.cast_ne_zero.2 hn.ne_zero)).1 hx'
+  have : Module.Free ℤ (Δ ⧸ (W.restrictScalars ℤ).comap Δ.subtype) :=
+    Module.free_of_finite_type_torsion_free'
+  let b := (c.map (comapSubtypeEquiv Δ W).symm).sumQuot
+    (Module.finBasis ℤ (Δ ⧸ (W.restrictScalars ℤ).comap Δ.subtype))
+  refine ⟨_, b, ?_, fun i ↦ by simp [b, comapSubtypeEquiv]⟩
+  have := Module.Finite.finite_basis b
+  have : Finite ι := .of_injective (β := ι ⊕ Fin (finrank ℤ (Δ ⧸ (W.restrictScalars ℤ).comap
+    Δ.subtype))) Sum.inl Sum.inl_injective
+  rw [Module.finrank_eq_nat_card_basis b, Nat.card_sum, Nat.card_fin]
+
+/-- **A basis adapted to a rational subspace.** If the intersection of a full lattice `Δ` with a
+real subspace `W` spans `W`, then `Δ` has a `ℤ`-basis `b` indexed by `Fin (dim W) ⊕ Fin s`, with
+`dim W + s = dim E`, whose first block is a `ℤ`-basis `c` of `Δ ∩ W`. No orthogonality of the
+second block to `W` is asserted. -/
+theorem exists_basis_sum_finrank [FiniteDimensional ℝ E] (Δ : Submodule ℤ E) [DiscreteTopology Δ]
+    [IsZLattice ℝ Δ] {W : Submodule ℝ E}
+    (hW : span ℝ (ZLattice.comap ℝ Δ W.subtype : Set W) = ⊤) :
+    ∃ (s : ℕ) (b : Basis (Fin (finrank ℝ W) ⊕ Fin s) ℤ Δ)
+      (c : Basis (Fin (finrank ℝ W)) ℤ (ZLattice.comap ℝ Δ W.subtype)),
+      finrank ℝ W + s = finrank ℝ E ∧ ∀ i, (b (.inl i) : E) = c i := by
+  have : IsZLattice ℝ (ZLattice.comap ℝ Δ W.subtype) := ⟨hW⟩
+  let c := Module.finBasisOfFinrankEq ℤ _ (ZLattice.rank ℝ (ZLattice.comap ℝ Δ W.subtype))
+  obtain ⟨s, b, hs, hb⟩ := exists_basis_sum_inl_eq Δ W c
+  exact ⟨s, b, c, by rwa [Nat.card_fin, ZLattice.rank ℝ Δ] at hs, hb⟩
+
+/-- If the first block of a basis `b` of `Δ` is a basis `c` of `Δ ∩ W`, and `Δ ∩ W` spans `W`, then
+the first block of `b` spans `W` over `ℝ`. -/
+theorem span_range_ofZLatticeBasis_inl [FiniteDimensional ℝ E] {Δ : Submodule ℤ E}
+    [DiscreteTopology Δ] [IsZLattice ℝ Δ] {W : Submodule ℝ E} {ι κ : Type*}
+    (hL : span ℝ (ZLattice.comap ℝ Δ W.subtype : Set W) = ⊤) (b : Basis (ι ⊕ κ) ℤ Δ)
+    (c : Basis ι ℤ (ZLattice.comap ℝ Δ W.subtype)) (hbc : ∀ i, (b (.inl i) : E) = c i) :
+    span ℝ (Set.range (b.ofZLatticeBasis ℝ Δ ∘ Sum.inl)) = W := by
+  have : IsZLattice ℝ (ZLattice.comap ℝ Δ W.subtype) := ⟨hL⟩
+  have hcomp : b.ofZLatticeBasis ℝ Δ ∘ Sum.inl = W.subtype ∘ c.ofZLatticeBasis ℝ _ := by
+    ext i
+    simp [hbc]
+  rw [hcomp, Set.range_comp, ← Submodule.map_span, Basis.span_eq, Submodule.map_top,
+    range_subtype]
+
+end Saturated
 
 end ZLattice
