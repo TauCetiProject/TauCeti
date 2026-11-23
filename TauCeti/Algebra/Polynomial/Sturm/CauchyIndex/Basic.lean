@@ -210,7 +210,7 @@ theorem cauchyJump_C_mul_left (c : R) (p q : R[X]) (a : R) :
   · simp [hp]
   rw [cauchyJump_def, cauchyJump_def, rootMultiplicity_mul (mul_ne_zero (C_ne_zero.2 hc) hp),
     rootMultiplicity_C, zero_add, mul_assoc]
-  split_ifs <;> simp
+  split_ifs <;> simp [derivSignRight_eq_signRight]
 
 /-- Scaling the denominator by a constant `c` multiplies the Cauchy index on any set by
 the sign of `c`. -/
@@ -228,7 +228,7 @@ theorem cauchyJump_C_mul_right (c : R) (p q : R[X]) (a : R) :
   · simp [hq]
   rw [cauchyJump_def, cauchyJump_def, rootMultiplicity_mul (mul_ne_zero (C_ne_zero.2 hc) hq),
     rootMultiplicity_C, zero_add, mul_left_comm]
-  split_ifs <;> simp
+  split_ifs <;> simp [derivSignRight_eq_signRight]
 
 /-- Scaling the numerator by a constant `c` multiplies the Cauchy index on any set by
 the sign of `c`. -/

@@ -270,7 +270,6 @@ theorem derivSignRight_eq_sign_eval_divByMonic (p : R[X]) (a : R) :
 
 /-- Over a strictly ordered commutative ring, the derivative-based right-hand sign agrees with
 Mathlib's `Polynomial.signRight`. -/
-@[simp]
 theorem derivSignRight_eq_signRight (p : R[X]) (a : R) :
     p.derivSignRight a = signRight a p := by
   by_cases hp : p = 0
@@ -285,13 +284,13 @@ attribute [simp] signRight_mul
 /-- The left-hand sign vanishes exactly when the polynomial is zero. -/
 @[simp]
 theorem derivSignLeft_eq_zero_iff (p : R[X]) (a : R) : p.derivSignLeft a = 0 ↔ p = 0 := by
-  rw [derivSignLeft_def, mul_eq_zero]
+  rw [derivSignLeft_def, mul_eq_zero, derivSignRight_eq_signRight]
   simp
 
 /-- A nonzero polynomial does not vanish where it has its right-hand sign. -/
 theorem eval_ne_zero_of_sign_eq_derivSignRight {p : R[X]} (hp : p ≠ 0) {a x : R}
     (h : sign (p.eval x) = p.derivSignRight a) : p.eval x ≠ 0 := fun h0 => by
-  rw [h0, sign_zero, eq_comm] at h
+  rw [h0, sign_zero, eq_comm, derivSignRight_eq_signRight] at h
   exact hp (by simpa using h)
 
 /-- A nonzero polynomial does not vanish where it has its left-hand sign. -/
@@ -318,7 +317,7 @@ even. This includes the zero polynomial, whose one-sided signs are both zero. -/
 theorem derivSignLeft_eq_signRight_iff (p : R[X]) (a : R) :
     p.derivSignLeft a = signRight a p ↔ Even (p.rootMultiplicity a) := by
   rcases Nat.even_or_odd (p.rootMultiplicity a) with h | h
-  · simp [derivSignLeft_eq_derivSignRight_of_even p a h, h]
+  · simp [derivSignLeft_eq_derivSignRight_of_even p a h, derivSignRight_eq_signRight, h]
   by_cases hp : p = 0
   · simp [hp] at h
   rw [derivSignLeft_eq_neg_derivSignRight_of_odd p a h, iff_false_intro (Nat.not_even_iff_odd.2 h),
@@ -334,7 +333,7 @@ theorem derivSignLeft_eq_neg_signRight_iff {p : R[X]} (hp : p ≠ 0) (a : R) :
   · rw [derivSignLeft_eq_derivSignRight_of_even p a h, derivSignRight_eq_signRight,
       iff_false_intro (Nat.not_odd_iff_even.2 h), iff_false, SignType.self_eq_neg_iff]
     simpa using hp
-  · simp [derivSignLeft_eq_neg_derivSignRight_of_odd p a h, h]
+  · simp [derivSignLeft_eq_neg_derivSignRight_of_odd p a h, derivSignRight_eq_signRight, h]
 
 /-- Multiplication multiplies left-hand signs, including when a factor is zero. -/
 @[simp]

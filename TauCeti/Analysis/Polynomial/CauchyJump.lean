@@ -99,7 +99,7 @@ private theorem sign_cofactorDiv (p q : R[X]) (a : R) :
     sign (cofactorDiv p q a a) = (p * q).derivSignRight a := by
   rw [cofactorDiv, TauCeti.sign_div, ← derivSignRight_eq_sign_eval_divByMonic,
     ← derivSignRight_eq_sign_eval_divByMonic]
-  simp [signRight_mul, mul_comm]
+  simp [derivSignRight_eq_signRight, signRight_mul, mul_comm]
 
 /-- At a pole, the left-hand sign of `p * q` is `(-1) ^ (m - n)` times its right-hand sign. -/
 private theorem derivSignLeft_mul_eq (hpole : q.rootMultiplicity a < p.rootMultiplicity a)
@@ -233,7 +233,7 @@ theorem cauchyJump_eq_one_iff_tendsto :
     · rfl
     · exact absurd hl ((tendsto_div_nhdsLT_atTop hpole hs).not_tendsto disjoint_atBot_atTop.symm)
   · rcases hs : (p * q).derivSignRight a with _ | _ | _
-    · exact absurd (by simpa using hs) hpq
+    · exact absurd (by simpa [derivSignRight_eq_signRight] using hs) hpq
     · exact absurd hr ((tendsto_div_nhdsGT_atBot hpole hs).not_tendsto disjoint_atBot_atTop)
     · rfl
 
