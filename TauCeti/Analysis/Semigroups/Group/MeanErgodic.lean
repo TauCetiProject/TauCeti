@@ -127,7 +127,7 @@ instance fixedSpace.completeSpace [CompleteSpace X] (U : StronglyContinuousGroup
 
 /-- Time reversal preserves the common fixed space. -/
 @[simp]
-theorem fixedSpace_reflect (U : StronglyContinuousGroup X) :
+theorem reflect_fixedSpace (U : StronglyContinuousGroup X) :
     U.reflect.fixedSpace = U.fixedSpace := by
   ext x
   simp only [mem_fixedSpace_iff, reflect_apply]
@@ -429,7 +429,7 @@ theorem eigenspace_zero_restrictScalars (U : StronglyContinuousGroup X)
 
 /-- Time reversal negates the eigenfrequency of every common eigenspace. -/
 @[simp]
-theorem eigenspace_reflect (U : StronglyContinuousGroup X) (hU : U.toSemigroup.IsComplexLinear)
+theorem reflect_eigenspace (U : StronglyContinuousGroup X) (hU : U.toSemigroup.IsComplexLinear)
     (ω : ℝ) :
     U.reflect.eigenspace (U.reflect_isComplexLinear hU) ω = U.eigenspace hU (-ω) := by
   ext u
@@ -440,7 +440,7 @@ theorem eigenspace_reflect (U : StronglyContinuousGroup X) (hU : U.toSemigroup.I
 
 /-- Phase shifting by `b` shifts the eigenfrequencies by `b`. -/
 @[simp]
-theorem eigenspace_phaseShift (U : StronglyContinuousGroup X)
+theorem phaseShift_eigenspace (U : StronglyContinuousGroup X)
     (hU : U.toSemigroup.IsComplexLinear) (b ω : ℝ) :
     (U.phaseShift hU b).eigenspace (U.phaseShift_isComplexLinear hU b) ω =
       U.eigenspace hU (b + ω) := by
