@@ -67,13 +67,15 @@ The map is well-defined because every polynomial has finite second moment for th
 measure. -/
 noncomputable def polynomialEvalChebyshevLp (𝕜 : Type*) [RCLike 𝕜] :
     Polynomial ℝ →ₗ[ℝ] Lp 𝕜 2 Polynomial.Chebyshev.measureT :=
-  polynomialEvalLp 𝕜 ENNReal.ofNat_ne_top integrable_pow_measureT
+  polynomialEvalLp 𝕜 <|
+    memLp_pow_of_forall_integrable_pow (fun x _ _ => norm_pow x _) ENNReal.ofNat_ne_top
+      integrable_pow_measureT
 
 /-- The `L²` representative of a polynomial evaluation is the expected scalar-cast pointwise
 evaluation. -/
 lemma coeFn_polynomialEvalChebyshevLp (𝕜 : Type*) [RCLike 𝕜] (q : Polynomial ℝ) :
     ⇑(polynomialEvalChebyshevLp 𝕜 q) =ᵐ[Polynomial.Chebyshev.measureT]
       fun x => (algebraMap ℝ 𝕜) (q.eval x) :=
-  coeFn_polynomialEvalLp 𝕜 ENNReal.ofNat_ne_top integrable_pow_measureT q
+  coeFn_polynomialEvalLp 𝕜 _ q
 
 end TauCeti
