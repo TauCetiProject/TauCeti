@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.PDE.Parabolic.Holder.CauchyProblem
-import TauCeti.Analysis.Matrix.QuadraticBounds
 
 /-!
 # The initial-data and terminal-data isomorphisms of parabolic problems
@@ -111,10 +110,7 @@ private theorem exists_norm_le_mul_norm_prod (hα₀ : 0 < α) (hα₁ : α < 1)
     (Lam := ∑ _i : ι, ∑ _j : ι, (K : ℝ)) hlam K T₀
   refine ⟨2 * C, by positivity, fun T hT hTT₀ a b c ha hak hbk hck u ↦ ?_⟩
   -- The coefficient bound gives the upper ellipticity bound.
-  have hup : ∀ p (ξ : EuclideanSpace ℝ ι), (Matrix.of fun i j ↦ a i j p).toQuadraticForm' ξ ≤
-      (∑ _i : ι, ∑ _j : ι, (K : ℝ)) * ‖ξ‖ ^ 2 := fun p ↦
-    Matrix.toQuadraticForm'_le_of_forall_abs_le fun i j ↦
-      ((Real.norm_eq_abs _).symm.trans_le (HolderSpace.norm_apply_le (a i j) p)).trans (hak i j)
+  have hup := toQuadraticForm'_le_of_norm_coeff_le hak
   have h := hest T hT hTT₀ a b c ha hup hak hbk hck u
   have h₁ := norm_fst_le (euclideanParabolicOperatorL hα₁.le a b c u,
     u.spatialTrace ⟨0, left_mem_Icc.2 hT.le⟩)

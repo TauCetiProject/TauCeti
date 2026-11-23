@@ -6,94 +6,82 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.MonoidAlgebra.LocalRing
-public import TauCeti.Topology.Algebra.Group.Profinite.CompletedGroupAlgebra.Augmentation
+public import TauCeti.Topology.Algebra.Group.Profinite.CompletedGroupAlgebra.Basic
 public import TauCeti.Topology.Algebra.Group.Profinite.ProP.Basic
 
 /-!
-# Completed group algebras of pro-`p` groups are local
+# Local completed group algebras
 
-Let `R` be a local ring in which the prime `p` is not a unit, for instance `ℤ_[p]`, the ring of
-integers of a finite extension of `ℚ_p`, or a field of characteristic `p`, and let `Γ` be a
-topological group whose open normal quotients are finite, for instance a profinite group. This
-file proves that the completed group algebra `R[[Γ]]` is a local ring if and only if `Γ` is
-pro-`p`. No analyticity or finite generation of `Γ` is assumed.
+Let `R` be a commutative local ring in which the prime `p` is not a unit, for instance `ℤ_p`, the
+ring of integers of a finite extension of `ℚ_p`, or a field of characteristic `p`, and let `Γ` be
+a topological group whose quotients by open normal subgroups are finite, for instance a profinite
+group. The completed group algebra `R[[Γ]]` is a local ring if and only if `Γ` is pro-`p`. In that
+case an element of `R[[Γ]]` is a unit exactly when its augmentation is a unit of `R`, so the
+nonunits of `R[[Γ]]` are the preimage under the augmentation of the maximal ideal of `R`.
 
-An element of `R[[Γ]]` is a unit exactly when each of its projections to the finite group algebras
-`R[Γ ⧸ U]` is, because the transition maps carry inverses to inverses
-(`TauCeti.completedGroupAlgebra.isUnit_iff_forall_isUnit_proj`). The augmentation `R[[Γ]] → R`
-is the common augmentation of the projections
-(`TauCeti.completedGroupAlgebra.augmentation_proj`). When `Γ` is pro-`p`, each `Γ ⧸ U` is a
-finite `p`-group, so an element of `R[Γ ⧸ U]` with unit augmentation is a unit
-(`TauCeti.MonoidAlgebra.isLocalHom_augmentation_of_isPGroup`). Hence the augmentation of
-`R[[Γ]]` is a local homomorphism: an element of `R[[Γ]]` is a unit exactly when its augmentation
-is, and `R[[Γ]]` is local. Conversely, every `R[Γ ⧸ U]` is a quotient of
-`R[[Γ]]`, so it is local when `R[[Γ]]` is, which forces `Γ ⧸ U` to be a `p`-group
-(`TauCeti.MonoidAlgebra.isPGroup_of_isLocalRing`).
+No analyticity, finite generation or countability is assumed of `Γ`, and `Γ` need not be
+commutative. The criterion reduces to the finite levels: an element of `R[[Γ]]` is a unit when all
+of its projections to the group algebras `R[Γ ⧸ U]` are
+(`TauCeti.completedGroupAlgebra.isUnit_iff_forall_isUnit_proj`), and the group algebra of a finite
+group over `R` is local exactly when the group is a `p`-group
+(`TauCeti.MonoidAlgebra.isLocalRing_iff_isPGroup`).
 
 ## Main results
 
 * `TauCeti.completedGroupAlgebra.isLocalHom_augmentation_of_isProP`: for pro-`p` `Γ`, an element
   of `R[[Γ]]` whose augmentation is a unit is a unit.
-* `TauCeti.completedGroupAlgebra.isLocalRing_iff_isProP`: `R[[Γ]]` is local if and only if `Γ`
-  is pro-`p`.
+* `TauCeti.completedGroupAlgebra.isProP_of_isLocalRing`: if `R[[Γ]]` is local, `Γ` is pro-`p`.
+* `TauCeti.completedGroupAlgebra.isLocalRing_iff_isProP`: `R[[Γ]]` is local if and only if `Γ` is
+  pro-`p`.
 
 ## References
 
-* M. Lazard, *Groupes analytiques `p`-adiques*, Publ. Math. IHÉS 26 (1965), Chapitre II, (2.2.2).
+* M. Lazard, *Groupes analytiques `p`-adiques*, Publ. Math. IHÉS 26 (1965), Chapitre II,
+  (2.2.2).
 * K. Ardakov and K. A. Brown, *Ring-theoretic properties of Iwasawa algebras: a survey*,
-  Doc. Math. Extra Vol. (2006), §4.1, Theorem (2).
+  Documenta Math. Extra Volume Coates (2006), §4.1.
 -/
 
 public section
 
-namespace TauCeti
+namespace TauCeti.completedGroupAlgebra
 
-namespace completedGroupAlgebra
+variable {R : Type*} [CommRing R] {Γ : Type*} [Group Γ] [TopologicalSpace Γ]
+  [∀ U : OpenNormalSubgroup Γ, Finite (Γ ⧸ U.toSubgroup)] {p : ℕ} [Fact p.Prime]
 
-universe u v
-
-variable {R : Type u} [CommRing R] {Γ : Type v} [Group Γ] [TopologicalSpace Γ]
-
-section FiniteQuotients
-
-variable [∀ U : OpenNormalSubgroup Γ, Finite (Γ ⧸ U.toSubgroup)] {p : ℕ} [Fact p.Prime]
-
-/-- **The augmentation of a pro-`p` completed group algebra is local.** If `Γ` is pro-`p` with
-finite open normal quotients and `R` is a local ring in which `p` is not a unit, an element of
-`R[[Γ]]` whose augmentation is a unit is a unit. -/
+/-- **The augmentation of the completed group algebra of a pro-`p` group is local.** For a local
+ring `R` in which `p` is not a unit and a pro-`p` group `Γ` with finite quotients by its open
+normal subgroups, an element of `R[[Γ]]` whose augmentation is a unit is a unit. -/
 theorem isLocalHom_augmentation_of_isProP [IsLocalRing R] (hp : ¬IsUnit (p : R))
-    (hΓ : IsProP p Γ) : IsLocalHom (augmentation R Γ) :=
-  ⟨fun x hx ↦ isUnit_iff_forall_isUnit_proj.mpr fun U ↦
-    (MonoidAlgebra.isLocalHom_augmentation_of_isPGroup hp (isProP_iff.mp hΓ U)).map_nonunit _
-      (by rwa [augmentation_proj])⟩
+    (hΓ : IsProP p Γ) : IsLocalHom (augmentation R Γ) := by
+  refine ⟨fun x hx ↦ isUnit_iff_forall_isUnit_proj.mpr fun U ↦ ?_⟩
+  have := MonoidAlgebra.isLocalHom_augmentation_of_isPGroup hp (isProP_iff.mp hΓ U)
+  exact isUnit_of_map_unit (_root_.MonoidAlgebra.augmentation R _) _
+    (by rwa [augmentation_proj])
 
-/-- **The completed group algebra of a pro-`p` group is local.** If `Γ` is pro-`p` with finite
-open normal quotients and `R` is a local ring in which `p` is not a unit, then `R[[Γ]]` is a
-local ring. -/
-theorem isLocalRing_of_isProP [IsLocalRing R] (hp : ¬IsUnit (p : R)) (hΓ : IsProP p Γ) :
-    IsLocalRing (completedGroupAlgebra R Γ) :=
-  have := isLocalHom_augmentation_of_isProP hp hΓ
-  (augmentation R Γ).domain_isLocalRing
-
-/-- **A local completed group algebra forces a pro-`p` group.** If `Γ` has finite open normal
-quotients, `p` is not a unit in `R`, and `R[[Γ]]` is a local ring, then `Γ` is pro-`p`. -/
-theorem isProP_of_isLocalRing [IsLocalRing (completedGroupAlgebra R Γ)] (hp : ¬IsUnit (p : R)) :
+/-- **A group with local completed group algebra is pro-`p`.** If the completed group algebra
+`R[[Γ]]` of a group `Γ` with finite quotients by its open normal subgroups is local, and the prime
+`p` is not a unit in `R`, then `Γ` is pro-`p`. -/
+theorem isProP_of_isLocalRing (hp : ¬IsUnit (p : R)) [IsLocalRing (completedGroupAlgebra R Γ)] :
     IsProP p Γ := isProP_iff.mpr fun U ↦ by
-  have : Nontrivial R := (algebraMap R (completedGroupAlgebra R Γ)).domain_nontrivial
-  -- The level `R[Γ ⧸ U]` is a quotient of the local ring `R[[Γ]]`.
-  have : IsLocalRing (MonoidAlgebra R (Γ ⧸ U.toSubgroup)) :=
+  -- `R` is nontrivial, since `R[[Γ]]` is, so the levels `R[Γ ⧸ U]` are nontrivial.
+  have : Nontrivial R := by
+    by_contra h
+    rw [not_nontrivial_iff_subsingleton] at h
+    exact not_subsingleton (completedGroupAlgebra R Γ)
+      ⟨fun x y ↦ ext fun U ↦ Subsingleton.elim _ _⟩
+  have : IsLocalRing (_root_.MonoidAlgebra R (Γ ⧸ U.toSubgroup)) :=
     IsLocalRing.of_surjective' (proj R Γ U).toRingHom (proj_surjective R Γ U)
   exact MonoidAlgebra.isPGroup_of_isLocalRing hp isMulTorsion_of_finite
 
-/-- **The local-ring criterion for completed group algebras.** If `Γ` has finite open normal
-quotients, for instance if `Γ` is profinite, and `R` is a local ring in which the prime `p` is not
-a unit, then `R[[Γ]]` is a local ring if and only if `Γ` is pro-`p`. -/
+/-- **The completed group algebra is local exactly over a pro-`p` group.** For a local ring `R` in
+which the prime `p` is not a unit and a group `Γ` with finite quotients by its open normal
+subgroups, for instance a profinite group, the completed group algebra `R[[Γ]]` is a local ring if
+and only if `Γ` is pro-`p`. -/
 theorem isLocalRing_iff_isProP [IsLocalRing R] (hp : ¬IsUnit (p : R)) :
     IsLocalRing (completedGroupAlgebra R Γ) ↔ IsProP p Γ :=
-  ⟨fun _ ↦ isProP_of_isLocalRing hp, isLocalRing_of_isProP hp⟩
+  ⟨fun _ ↦ isProP_of_isLocalRing hp, fun hΓ ↦
+    have := isLocalHom_augmentation_of_isProP hp hΓ
+    (augmentation R Γ).domain_isLocalRing⟩
 
-end FiniteQuotients
-
-end completedGroupAlgebra
-
-end TauCeti
+end TauCeti.completedGroupAlgebra

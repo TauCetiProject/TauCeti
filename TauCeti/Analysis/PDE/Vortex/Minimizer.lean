@@ -234,22 +234,8 @@ theorem eq_of_forall_sobolevReducedFunctional_le {P : Polynomial ℂ} (hm : 0 < 
     rw [ha, ← EReal.coe_add, EReal.coe_le_coe_iff] at h
     exact norm_eq_zero.mp (pow_eq_zero_iff two_ne_zero |>.mp (by
       nlinarith [sq_nonneg ‖W1p.gradient (v - u)‖]))
-  -- So `v - u` is almost everywhere constant, and a square integrable constant on `ℂ` is `0`.
-  obtain ⟨c, hc⟩ := W1p.exists_value_ae_eq_const_of_gradient_eq_zero
-    (by simpa using isPreconnected_univ) hgrad
-  simp only [Opens.coe_top, Measure.restrict_univ] at hc
-  have hconst : MemLp (fun _ : ℂ ↦ c) 2 := (W1p.memLp_value (v - u)).ae_eq hc
-  have hc0 : c = 0 := by
-    rcases (memLp_const_iff two_ne_zero ENNReal.ofNat_ne_top).mp hconst with h | h
-    · exact h
-    · exact absurd h (by simp [measure_univ_of_isAddLeftInvariant])
-  have hsub := W1p.value_sub_ae v u
-  simp only [Opens.coe_top, Measure.restrict_univ] at hsub
-  refine (W1p.ext_value (Lp.ext ?_)).symm
-  simp only [Opens.coe_top, Measure.restrict_univ]
-  filter_upwards [hsub, hc] with z hs hz
-  rw [hz, hc0, Pi.sub_apply] at hs
-  linarith
+  -- So `v - u` vanishes, since the only square integrable constant on `ℂ` is `0`.
+  exact (sub_eq_zero.1 (W1p.eq_zero_of_gradient_eq_zero ENNReal.ofNat_ne_top hgrad)).symm
 
 /-- **Existence and uniqueness of the minimizer of Taubes's functional.** For a complex polynomial
 `P` of degree at least one, Taubes's functional has exactly one minimizer on `H¹(ℂ)`. -/

@@ -45,6 +45,8 @@ is at most `2 b`.
   `n (2 - r) < 2 r`, a finite exponent `t ≥ 2` with `1/2 - 1/t < 1/n` and `1/r + 1/t ≤ 1`.
 * `ENNReal.exists_inv_lt_inv_add_inv_two_and_inv_add_inv_le_iff`: for `0 < q < 2`, an exponent
   `s` with `q⁻¹ < s⁻¹ + 2⁻¹` and `p⁻¹ + s⁻¹ ≤ q⁻¹` exists exactly when `2 < p`.
+* `ENNReal.exists_le_lt_lt_add`: for `a ≤ 1`, `ν < 1`, `b ≠ 0` and `a < b + ν`, some `t` with
+  `a ≤ t ≤ 1` and `ν < t < b + ν`.
 * `ENNReal.le_mul_two_of_le_add_div_two`: the absorption step `a ≤ b + a / 2 → a ≤ 2 b` for
   finite `a`, as used in elliptic estimates.
 * `ENNReal.ofReal_pow_div_natCast_div_mul_ofReal_natCast_mul`: the cancellation
@@ -242,6 +244,18 @@ theorem exists_inv_lt_inv_add_inv_two_and_inv_add_inv_le_iff {p q : ℝ≥0∞} 
       calc q⁻¹ = q⁻¹ - p⁻¹ + p⁻¹ := (tsub_add_cancel_of_le hpq).symm
         _ < q⁻¹ - p⁻¹ + 2⁻¹ := ENNReal.add_lt_add_left (sub_ne_top hqtop) hp2
     · rw [inv_inv, add_tsub_cancel_of_le hpq]
+
+/-- **An exponent between two bounds.** If `a ≤ 1`, `ν < 1`, `b ≠ 0` and `a < b + ν`, some `t`
+with `a ≤ t ≤ 1` lies strictly between `ν` and `b + ν`. Read through `t = p'⁻¹`, this lowers an
+exponent `p` to an exponent `p'` with a finite Sobolev exponent, losing none of the margin
+`p⁻¹ < q⁻¹ + ν`. -/
+theorem exists_le_lt_lt_add {a b ν : ℝ≥0∞} (ha : a ≤ 1) (hν : ν < 1) (hb : b ≠ 0)
+    (hab : a < b + ν) : ∃ t, a ≤ t ∧ t ≤ 1 ∧ ν < t ∧ t < b + ν := by
+  rcases lt_or_ge ν a with h | h
+  · exact ⟨a, le_rfl, ha, h, hab⟩
+  obtain ⟨t, h₁, h₂⟩ := exists_between
+    (lt_min hν (add_comm ν b ▸ ENNReal.lt_add_right hν.ne_top hb))
+  exact ⟨t, h.trans h₁.le, (h₂.trans_le (min_le_left _ _)).le, h₁, h₂.trans_le (min_le_right _ _)⟩
 
 /-- Cancelling a finite nonzero denominator `m` against the factor `n` of a product:
 `ofReal (d ^ n / n) / m * ofReal (n * a) = ofReal (a * d ^ n / m)`. -/

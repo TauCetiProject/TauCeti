@@ -149,6 +149,14 @@ theorem AEStronglyMeasurableSection.const_smul (hs : AEStronglyMeasurableSection
     (c : 𝕜) : AEStronglyMeasurableSection 𝕜 F μ (fun x ↦ c • s x) :=
   fun e _ ↦ ((hs e).const_smul c).congr (.of_forall fun x ↦ by simp)
 
+/-- Multiplying a measurable section by an a.e.-strongly measurable scalar function gives a
+measurable section. -/
+theorem AEStronglyMeasurableSection.smul {f : B → 𝕜} (hf : AEStronglyMeasurable f μ)
+    (hs : AEStronglyMeasurableSection 𝕜 F μ s) :
+    AEStronglyMeasurableSection 𝕜 F μ (fun x ↦ f x • s x) :=
+  fun e _ ↦ ((hf.mono_measure Measure.restrict_le_self).smul (hs e)).congr
+    (.of_forall fun x ↦ by simp)
+
 theorem AEStronglyMeasurableSection.neg (hs : AEStronglyMeasurableSection 𝕜 F μ s) :
     AEStronglyMeasurableSection 𝕜 F μ (fun x ↦ -s x) :=
   fun e _ ↦ ((hs e).neg).congr (.of_forall fun x ↦ by simp)
@@ -157,6 +165,16 @@ theorem AEStronglyMeasurableSection.sub (hs : AEStronglyMeasurableSection 𝕜 F
     (ht : AEStronglyMeasurableSection 𝕜 F μ t) :
     AEStronglyMeasurableSection 𝕜 F μ (fun x ↦ s x - t x) :=
   fun e _ ↦ ((hs e).sub (ht e)).congr (.of_forall fun x ↦ by simp)
+
+/-- The section equal to `s` on a measurable set `A` and to `t` off it is a.e.-strongly measurable
+when `s` and `t` are. -/
+theorem AEStronglyMeasurableSection.piecewise {A : Set B} [DecidablePred (· ∈ A)]
+    (hA : MeasurableSet A) (hs : AEStronglyMeasurableSection 𝕜 F μ s)
+    (ht : AEStronglyMeasurableSection 𝕜 F μ t) :
+    AEStronglyMeasurableSection 𝕜 F μ (A.piecewise s t) :=
+  fun e _ ↦ (((hs e).restrict (s := A)).piecewise hA.nullMeasurableSet
+    ((ht e).restrict (s := Aᶜ))).congr (.of_forall fun x ↦ by
+      by_cases hx : x ∈ A <;> simp [hx])
 
 variable [OpensMeasurableSpace B]
 

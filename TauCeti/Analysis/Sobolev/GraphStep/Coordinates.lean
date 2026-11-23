@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Sobolev.GraphStep.ScalarProjection
 public import TauCeti.Analysis.Sobolev.W1p.Zero
+public import TauCeti.LinearAlgebra.Complex.Module
 public import TauCeti.MeasureTheory.Function.Lp.FiniteDimensional
 import TauCeti.MeasureTheory.Function.Lp.Basic
 import TauCeti.MeasureTheory.Function.Lp.Norm
@@ -35,6 +36,8 @@ Only the reconstruction needs `F` to be finite-dimensional.
   `TauCeti.WeakDerivStep.norm_prev_smulRightBaseW1pL_ofTestFunctionₗ_sq`: test-function
   representative and squared `L²` norm formulas for scalar-mode fields.
 * `TauCeti.WeakDerivStep.sum_smulRightW1pL_toW1pL`: a field is the sum of its coordinate fields.
+* `smulRightComplexL`, `prev_smulRightComplexL`, `weakFDeriv_smulRightComplexL_ae`:
+  rank-one reconstruction of complex scalar graphs in an arbitrary complex normed target.
 * `coordinatesL`: the native scalar projections, bundled into one continuous linear map.
 * `coordinatesEquiv`: their continuous linear equivalence with scalar `W1p` tuples.
 * `prev_coordinatesEquiv_symm_ae`, `weakFDeriv_coordinatesEquiv_symm_ae`: reconstruction
@@ -332,5 +335,78 @@ theorem weakFDeriv_coordinatesEquiv_symm_ae (b : Module.Basis ι ℝ F) (u : ι 
   simp only [hs, hc, sum_apply, smulRightGradientL_apply]
 
 end Coordinates
+
+end TauCeti.WeakDerivStep
+
+namespace TauCeti.WeakDerivStep
+
+open MeasureTheory TopologicalSpace
+open scoped ENNReal
+
+section ComplexLine
+
+variable {E F : Type*} [MeasurableSpace E] [NormedAddCommGroup E]
+  [InnerProductSpace ℝ E] [FiniteDimensional ℝ E] [BorelSpace E]
+  [NormedAddCommGroup F] [NormedSpace ℂ F] [CompleteSpace F]
+  {μ : Measure E} [μ.IsAddHaarMeasure] {p : ℝ≥0∞} [Fact (1 ≤ p)]
+
+/-- Reconstruct a complex scalar graph along one vector in the original fibre. -/
+def smulRightComplexL (Ω : Opens E) (v : F) : WeakDerivStep μ Ω p (ContinuousLinearMap.id ℝ (Lp ℂ
+  p (μ.restrict Ω))) →L[ℝ] WeakDerivStep μ Ω p (ContinuousLinearMap.id ℝ (Lp F p (μ.restrict Ω))) :=
+  (WeakDerivStep.smulRightW1pL v).comp
+    (WeakDerivStep.toW1pL _ Complex.reCLM) +
+  (WeakDerivStep.smulRightW1pL (Complex.I • v)).comp
+    (WeakDerivStep.toW1pL _ Complex.imCLM)
+
+/-- Rank-one reconstruction has the expected coefficient value. -/
+@[simp]
+theorem prev_smulRightComplexL (Ω : Opens E) (v : F) (u : WeakDerivStep μ Ω p
+  (ContinuousLinearMap.id ℝ (Lp ℂ p (μ.restrict Ω)))) :
+    WeakDerivStep.prev _ (smulRightComplexL Ω v u) =
+      (ContinuousLinearMap.toSpanSingleton ℂ v).compLpL p (μ.restrict (Ω : Set E))
+        (WeakDerivStep.prev _ u) := by
+  rw [smulRightComplexL]
+  simp only [add_apply, ContinuousLinearMap.comp_apply]
+  rw [← WeakDerivStep.prevL_apply, map_add]
+  simp only [WeakDerivStep.prevL_apply, WeakDerivStep.prev_smulRightW1pL,
+    WeakDerivStep.value_toW1pL, ContinuousLinearMap.id_apply]
+  apply Lp.ext
+  filter_upwards [Lp.coeFn_add
+    ((ContinuousLinearMap.toSpanSingleton ℝ v).compLpL p (μ.restrict (Ω : Set E))
+      (Complex.reCLM.compLpL p (μ.restrict (Ω : Set E)) (WeakDerivStep.prev _ u)))
+    ((ContinuousLinearMap.toSpanSingleton ℝ (Complex.I • v)).compLpL p
+      (μ.restrict (Ω : Set E))
+      (Complex.imCLM.compLpL p (μ.restrict (Ω : Set E)) (WeakDerivStep.prev _ u))),
+    (ContinuousLinearMap.toSpanSingleton ℝ v).coeFn_compLpL
+      (Complex.reCLM.compLpL p (μ.restrict (Ω : Set E)) (WeakDerivStep.prev _ u)),
+    (ContinuousLinearMap.toSpanSingleton ℝ (Complex.I • v)).coeFn_compLpL
+      (Complex.imCLM.compLpL p (μ.restrict (Ω : Set E)) (WeakDerivStep.prev _ u)),
+    Complex.reCLM.coeFn_compLpL (WeakDerivStep.prev _ u),
+    Complex.imCLM.coeFn_compLpL (WeakDerivStep.prev _ u),
+    (ContinuousLinearMap.toSpanSingleton ℂ v).coeFn_compLpL (WeakDerivStep.prev _ u)]
+      with x hadd hreal himag hr hi hc
+  rw [hadd]
+  simp only [Pi.add_apply]
+  rw [hreal, himag, hr, hi, hc]
+  simp only [ContinuousLinearMap.toSpanSingleton_apply, Complex.reCLM_apply,
+    Complex.imCLM_apply, Complex.re_smul_add_im_smul]
+
+/-- The line reconstruction also composes the weak derivative. -/
+theorem weakFDeriv_smulRightComplexL_ae (Ω : Opens E) (v : F) (u : WeakDerivStep μ Ω p
+  (ContinuousLinearMap.id ℝ (Lp ℂ p (μ.restrict Ω)))) :
+    WeakDerivStep.weakFDeriv _ (smulRightComplexL Ω v u) =ᵐ[μ.restrict (Ω : Set E)]
+      fun x ↦ ((ContinuousLinearMap.toSpanSingleton ℂ v).restrictScalars ℝ).comp
+        (WeakDerivStep.weakFDeriv _ u x) := by
+  have hu := (WeakDerivStep.hasWeakFDerivOn_base_prev _ u).clm_comp
+    ((ContinuousLinearMap.toSpanSingleton ℂ v).restrictScalars ℝ)
+  simp only [ContinuousLinearMap.id_apply] at hu
+  have hv := (ContinuousLinearMap.toSpanSingleton ℂ v).coeFn_compLpL
+    (WeakDerivStep.prev _ u)
+  rw [← prev_smulRightComplexL Ω v u] at hv
+  have hl := WeakDerivStep.hasWeakFDerivOn_base_prev _ (smulRightComplexL Ω v u)
+  simp only [ContinuousLinearMap.id_apply] at hl
+  exact hl.ae_eq (hu.congr_ae hv.symm)
+
+end ComplexLine
 
 end TauCeti.WeakDerivStep

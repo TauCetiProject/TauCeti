@@ -574,6 +574,11 @@ theorem ext : ∀ (k : ℕ) {u v : Wkp mu Omega p k}, value k u = value k v → 
   | 0, _, _, h => by simpa only [value_zero] using h
   | k + 1, _, _, h => ext_lowerOrder k (ext k (by simpa only [value_succ] using h))
 
+/-- The `Lᵖ` value map is injective on `W^{k,p}(Ω)`, by uniqueness of weak derivatives. -/
+theorem valueL_injective (k : ℕ) :
+    Function.Injective (valueL (mu := mu) (Omega := Omega) (p := p) k) :=
+  fun _ _ h ↦ ext k (by simpa only [valueL_apply] using h)
+
 open scoped Distributions in
 /-- **Sobolev functions are determined by their integrals against test functions**: if
 `∫ φ • u = ∫ φ • v` for every test function `φ` on `Ω`, then `u = v`. -/
