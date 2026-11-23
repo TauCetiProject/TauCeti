@@ -397,33 +397,36 @@ theorem card_ker_shafarevichTateMap (f : Hom W₁.toAffine W₂.toAffine)
     Nat.card (f.shafarevichTateMap τ).ker = Nat.card (f.shafarevichTateMap τ').ker :=
   Nat.card_congr (f.kerShafarevichTateMapEquiv τ τ').toEquiv
 
+private theorem map_subtype_range_eq_of_eq {A B : Type*} [AddCommGroup A] [AddCommGroup B]
+    {S₁ S₁' : AddSubgroup A} {S₂ S₂' : AddSubgroup B} (h₁ : S₁ = S₁') (h₂ : S₂ = S₂')
+    {f : S₁ →+ S₂} {f' : S₁' →+ S₂'}
+    (hf : (AddSubgroup.inclusion h₂.le).comp f = f'.comp (AddSubgroup.inclusion h₁.le)) :
+    f.range.map S₂.subtype = f'.range.map S₂'.subtype := by
+  subst h₁ h₂
+  have h : f = f' := by
+    ext x
+    exact congrArg Subtype.val (DFunLike.congr_fun hf x)
+  subst h
+  rfl
+
 /-- The image of `f.shafarevichTateMap τ` in `H¹(G_K, W₂(Kˢ))` is independent of the choice of
 embeddings `τ`. -/
 theorem map_subtype_range_shafarevichTateMap (f : Hom W₁.toAffine W₂.toAffine)
     (τ' : ∀ i, SeparableClosure K →ₐ[K] SeparableClosure (L i)) :
     (f.shafarevichTateMap τ).range.map (W₂.shafarevichTateGroup τ).subtype =
-      (f.shafarevichTateMap τ').range.map (W₂.shafarevichTateGroup τ').subtype := by
-  have hsub : (W₂.shafarevichTateGroup τ).subtype =
-      (W₂.shafarevichTateGroup τ').subtype.comp
-        (AddSubgroup.inclusion (W₂.shafarevichTateGroup_eq_shafarevichTateGroup τ τ').le) := rfl
-  have hrange :
-      (AddSubgroup.inclusion
-        (W₁.shafarevichTateGroup_eq_shafarevichTateGroup τ τ').le).range = ⊤ :=
-    AddMonoidHom.range_eq_top.2
-      (AddEquiv.addSubgroupCongr (W₁.shafarevichTateGroup_eq_shafarevichTateGroup τ τ')).surjective
-  rw [← AddMonoidHom.range_comp, ← AddMonoidHom.range_comp, hsub, AddMonoidHom.comp_assoc,
-    f.inclusion_comp_shafarevichTateMap τ τ', ← AddMonoidHom.comp_assoc,
-    AddMonoidHom.range_comp, hrange, AddSubgroup.map_top]
+      (f.shafarevichTateMap τ').range.map (W₂.shafarevichTateGroup τ').subtype :=
+  map_subtype_range_eq_of_eq (W₁.shafarevichTateGroup_eq_shafarevichTateGroup τ τ')
+    (W₂.shafarevichTateGroup_eq_shafarevichTateGroup τ τ')
+    (f.inclusion_comp_shafarevichTateMap τ τ')
 
 /-- The order of `(f.shafarevichTateMap τ).range` is independent of the choice of embeddings
 `τ`. -/
 theorem card_range_shafarevichTateMap (f : Hom W₁.toAffine W₂.toAffine)
     (τ' : ∀ i, SeparableClosure K →ₐ[K] SeparableClosure (L i)) :
     Nat.card (f.shafarevichTateMap τ).range = Nat.card (f.shafarevichTateMap τ').range := by
-  rw [Nat.card_congr (AddSubgroup.equivMapOfInjective _ (W₂.shafarevichTateGroup τ).subtype
-      Subtype.coe_injective).toEquiv,
-    Nat.card_congr (AddSubgroup.equivMapOfInjective _ (W₂.shafarevichTateGroup τ').subtype
-      Subtype.coe_injective).toEquiv, f.map_subtype_range_shafarevichTateMap τ τ']
+  rw [← AddSubgroup.card_subtype (W₂.shafarevichTateGroup τ),
+    ← AddSubgroup.card_subtype (W₂.shafarevichTateGroup τ'),
+    f.map_subtype_range_shafarevichTateMap τ τ']
 
 /-- Changing the family of embeddings of separable closures intertwines the degree-one isomorphism
 `shafarevichTateMapEquivOfDegreeEqOne` with the canonical identifications of Shafarevich–Tate
@@ -613,16 +616,9 @@ theorem map_subtype_range_shaMap (f : Hom W₁.toAffine W₂.toAffine)
     (τ : ∀ v : GlobalNumberFields.Place K,
       SeparableClosure K →ₐ[K] SeparableClosure v.Completion) :
     f.shaMap.range.map W₂.sha.subtype =
-      (f.shafarevichTateMap τ).range.map (W₂.shafarevichTateGroup τ).subtype := by
-  have hsub : W₂.sha.subtype =
-      (W₂.shafarevichTateGroup τ).subtype.comp
-        (AddSubgroup.inclusion (W₂.sha_eq_shafarevichTateGroup τ).le) := rfl
-  have hrange : (AddSubgroup.inclusion (W₁.sha_eq_shafarevichTateGroup τ).le).range = ⊤ :=
-    AddMonoidHom.range_eq_top.2
-      (AddEquiv.addSubgroupCongr (W₁.sha_eq_shafarevichTateGroup τ)).surjective
-  rw [← AddMonoidHom.range_comp, ← AddMonoidHom.range_comp, hsub, AddMonoidHom.comp_assoc,
-    f.inclusion_comp_shaMap τ, ← AddMonoidHom.comp_assoc, AddMonoidHom.range_comp, hrange,
-    AddSubgroup.map_top]
+      (f.shafarevichTateMap τ).range.map (W₂.shafarevichTateGroup τ).subtype :=
+  map_subtype_range_eq_of_eq (W₁.sha_eq_shafarevichTateGroup τ)
+    (W₂.sha_eq_shafarevichTateGroup τ) (f.inclusion_comp_shaMap τ)
 
 /-- The order of the image of `f.shaMap` equals the order of the image of `f.shafarevichTateMap τ`
 for any family `τ` of embeddings over the places of `K`. -/
@@ -630,10 +626,9 @@ theorem card_range_shaMap (f : Hom W₁.toAffine W₂.toAffine)
     (τ : ∀ v : GlobalNumberFields.Place K,
       SeparableClosure K →ₐ[K] SeparableClosure v.Completion) :
     Nat.card f.shaMap.range = Nat.card (f.shafarevichTateMap τ).range := by
-  rw [Nat.card_congr
-      (AddSubgroup.equivMapOfInjective _ W₂.sha.subtype Subtype.coe_injective).toEquiv,
-    Nat.card_congr (AddSubgroup.equivMapOfInjective _ (W₂.shafarevichTateGroup τ).subtype
-      Subtype.coe_injective).toEquiv, f.map_subtype_range_shaMap τ]
+  rw [← AddSubgroup.card_subtype W₂.sha,
+    ← AddSubgroup.card_subtype (W₂.shafarevichTateGroup τ),
+    f.map_subtype_range_shaMap τ]
 
 /-- **The kernel of `f.shaMap` is killed by the degree of `f`.** -/
 theorem ker_shaMap_le_torsionBy (f : Hom W₁.toAffine W₂.toAffine) :

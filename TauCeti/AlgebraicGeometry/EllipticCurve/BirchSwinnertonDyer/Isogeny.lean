@@ -8,8 +8,6 @@ module
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Point.Index.Isogeny.Ratio
 public import TauCeti.AlgebraicGeometry.EllipticCurve.BirchSwinnertonDyer.Quotient
 public import TauCeti.AlgebraicGeometry.EllipticCurve.BirchSwinnertonDyer.Statement
-public import TauCeti.AlgebraicGeometry.EllipticCurve.GaloisCohomology.Isogeny.Sha
-public import TauCeti.AlgebraicGeometry.EllipticCurve.GaloisCohomology.Selmer.Isogeny.Basic
 public import TauCeti.AlgebraicGeometry.EllipticCurve.GaloisCohomology.Selmer.Isogeny.Finite
 public import TauCeti.AlgebraicGeometry.EllipticCurve.MordellWeil.Regulator.Isogeny
 import Mathlib.LinearAlgebra.Dimension.Torsion.Basic
@@ -52,8 +50,8 @@ gives the master algebraic identity
 and its Selmer-and-`Sha`-image form, reducing the isogeny invariance of
 `WeierstrassCurve.bsdQuotient` and `WeierstrassCurve.BirchSwinnertonDyer` to the global Selmer
 ratio formula and `#φ(Sha(E₁)) = #φ̂(Sha(E₂))`. For degree-one isogenies, and in particular changes
-of Weierstrass variables, both invariants and the full Birch–Swinnerton-Dyer conjecture are
-unconditionally preserved.
+of Weierstrass variables, `WeierstrassCurve.bsdQuotient` is preserved whenever `Sha` is finite,
+while the full Birch–Swinnerton-Dyer conjecture is unconditionally preserved.
 
 ## Main results
 
@@ -75,12 +73,14 @@ unconditionally preserved.
   orders on `Sha`.
 * `TauCeti.Isogeny.birchSwinnertonDyer_iff_of_bsdQuotient_eq`: reduction of
   `E₁.BirchSwinnertonDyer ↔ E₂.BirchSwinnertonDyer` along an isogeny to equality of BSD quotients.
-* `TauCeti.Isogeny.bsdQuotient_eq_of_degree_eq_one` and
-  `TauCeti.Isogeny.birchSwinnertonDyer_iff_of_degree_eq_one`: unconditional invariance under
-  degree-one isogenies.
-* `WeierstrassCurve.VariableChange.bsdQuotient_smul` and
-  `WeierstrassCurve.VariableChange.birchSwinnertonDyer_smul_iff`: unconditional invariance under a
-  change of Weierstrass variables.
+* `TauCeti.Isogeny.bsdQuotient_eq_of_degree_eq_one`: invariance of the BSD quotient under
+  degree-one isogenies when `Sha` is finite.
+* `TauCeti.Isogeny.birchSwinnertonDyer_iff_of_degree_eq_one`: unconditional invariance of the BSD
+  conjecture under degree-one isogenies.
+* `WeierstrassCurve.VariableChange.bsdQuotient_smul`: invariance of the BSD quotient under a
+  change of Weierstrass variables when `Sha` is finite.
+* `WeierstrassCurve.VariableChange.birchSwinnertonDyer_smul_iff`: unconditional invariance of the
+  BSD conjecture under a change of Weierstrass variables.
 
 ## References
 
@@ -116,15 +116,14 @@ theorem bsdQuotient_mul_card_sha_mul_kummerRatioProduct_mul_kummerRatio_dual
   have hreg := Hom.regulator_div_card_torsion_sq_mul_index_dual_div_card_ker_eq
     (f := Hom.ofIsogeny φ) (Hom.ofIsogeny_ne_zero φ)
   rw [Hom.dual_ofIsogeny] at hreg
-  have hk₁ : (φ.kummerRatio : ℝ) =
-      ((Hom.ofIsogeny φ).pointMapHom.range.index : ℝ) /
-        Nat.card (Hom.ofIsogeny φ).pointMapHom.ker := by
-    rw [kummerRatio_def, Rat.cast_div, Rat.cast_natCast, Rat.cast_natCast]
-  have hk₂ : (φ.dual.kummerRatio : ℝ) =
-      ((Hom.ofIsogeny φ.dual).pointMapHom.range.index : ℝ) /
-        Nat.card (Hom.ofIsogeny φ.dual).pointMapHom.ker := by
-    rw [kummerRatio_def, Rat.cast_div, Rat.cast_natCast, Rat.cast_natCast]
-  rw [← hk₁, ← hk₂] at hreg
+  have hk {W₁ W₂ : WeierstrassCurve.Affine ℚ} [W₁.IsElliptic] [W₂.IsElliptic]
+      (ψ : Isogeny W₁ W₂) : (ψ.kummerRatio : ℝ) =
+        ((Hom.ofIsogeny ψ).pointMapHom.range.index : ℝ) /
+          Nat.card (Hom.ofIsogeny ψ).pointMapHom.ker := by
+    rw [ψ.kummerRatio_def]
+    push_cast
+    rfl
+  rw [← hk φ, ← hk φ.dual] at hreg
   rw [E₁.bsdQuotient_def, E₂.bsdQuotient_def]
   calc E₁.minimalRealPeriod * E₁.toAffine.regulator * Nat.card E₁.sha *
           E₁.tamagawaProduct (R := ℤ) /
@@ -246,7 +245,8 @@ theorem birchSwinnertonDyer_iff_of_bsdQuotient_eq (φ : Isogeny E₁.toAffine E�
       rw [h]
       exact h₂.leadingCoeff_eq_bsdQuotient (by rwa [← hL]) hU
 
-/-- **Degree-one isogenies unconditionally preserve the Birch–Swinnerton-Dyer quotient.** -/
+/-- **Degree-one isogenies preserve the Birch–Swinnerton-Dyer quotient** when the Shafarevich–Tate
+groups are finite. -/
 theorem bsdQuotient_eq_of_degree_eq_one [Finite E₁.sha] [Finite E₂.sha]
     (φ : Isogeny E₁.toAffine E₂.toAffine) (hφ : φ.degree = 1) :
     E₁.bsdQuotient = E₂.bsdQuotient := by
@@ -399,7 +399,8 @@ end TauCeti.Isogeny
 
 namespace WeierstrassCurve.VariableChange
 
-/-- **The Birch–Swinnerton-Dyer quotient is invariant under a change of Weierstrass variables.** -/
+/-- **The Birch–Swinnerton-Dyer quotient is invariant under a change of Weierstrass variables**
+when `Sha(E)` is finite. -/
 @[simp]
 theorem bsdQuotient_smul (C : VariableChange ℚ) (E : WeierstrassCurve ℚ) [E.IsElliptic]
     [Finite E.sha] :
