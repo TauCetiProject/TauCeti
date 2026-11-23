@@ -5,35 +5,64 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicGeometry.Sites.Etale.GeometricPoint
-public import TauCeti.FieldTheory.IsSepClosed
+public import Mathlib.AlgebraicGeometry.Sites.EtalePoint
+public import Mathlib.FieldTheory.IsSepClosed
+public import TauCeti.CategoryTheory.Sites.Point.Category
+import TauCeti.AlgebraicGeometry.Morphisms.FormallyUnramified
 
 /-!
-# Extensions, functoriality, and Galois actions of geometric points
+# The category of geometric points of a scheme
 
-This file extends `TauCeti.AlgebraicGeometry.Scheme.GeometricPoint` (defined in
-`TauCeti.AlgebraicGeometry.Sites.Etale.GeometricPoint`) with:
+A geometric point of a scheme `S` is a separably closed field `Ω` together with a morphism
+`Spec Ω ⟶ S`. A morphism from `(Ω₁, s₁)` to `(Ω₂, s₂)` is a morphism `φ : Spec Ω₁ ⟶ Spec Ω₂` with
+`φ ≫ s₂ = s₁` (Stacks, Tag 04FN). This file defines the category
+`TauCeti.AlgebraicGeometry.Scheme.GeometricPoint S` of geometric points, its ring-homomorphism
+interface (`homOfRingHom`, `Hom.ringHom`, `isoOfRingEquiv`, `Hom.isIso_iff_ringHom_surjective`),
+and the covariant functor `TauCeti.AlgebraicGeometry.Scheme.GeometricPoint.toPointFunctor` to
+Mathlib's category of points of the small étale site, sending `s` to
+`AlgebraicGeometry.Scheme.pointSmallEtale s.hom`.
 
-* **Constructors and ring-homomorphism characterization**: `of`, `ofOver`, `homOfRingHom`,
-  `Hom.ringHom`, `isoOfRingEquiv`, and `Hom.isIso_iff_surjective_ringHom` (a morphism of
-  geometric points is an isomorphism if and only if its underlying field homomorphism is
-  surjective).
-* **Pushforward along scheme morphisms**: the functor `GeometricPoint.map f` along `f : X ⟶ Y`,
-  with `mapId` and `mapComp`.
-* **Stalk isomorphisms and algebraic closures**: `stalkIso` packaged from
-  `GrothendieckTopology.Point.sheafFiberIso`, together with `ofAlgClosure` and
-  `ofSepToAlgClosure`, showing that `Spec kbar ⟶ Spec ksep` is an isomorphism in
-  `GeometricPoint S` if and only if the base field is perfect while always inducing an isomorphism
-  of étale stalks.
-* **Galois actions over an arbitrary affine base**: `homOfAlgHom`, `isoOfAlgEquiv`,
-  `autOfAlgEquiv`, `galStalkAut` (the left action of `Ω ≃ₐ[R] Ω` on stalks at `ofOver a Ω`), and
-  `galMulEquivAutOp` (`(Ω ≃ₐ[R] Ω) ≃* (Aut (ofOver a Ω))ᵐᵒᵖ` when `a` is a monomorphism).
+The direction is Mathlib's: a morphism of points `Φ₁ ⟶ Φ₂` is a natural transformation
+`Φ₂.fiber ⟶ Φ₁.fiber`. The fibre of `pointSmallEtale s` at an étale `U ⟶ S` is the set of lifts of
+`s` to `U`, and `φ` sends a lift `u` of `s₂` to the lift `φ ≫ u` of `s₁`. The stalk at `s` is the
+fibre functor of this point on sheaves, so stalks are contravariant in the geometric point: `φ`
+induces a map from stalks at `s₂` to stalks at `s₁`.
+
+Every morphism of geometric points induces an isomorphism of points
+(`TauCeti.AlgebraicGeometry.Scheme.GeometricPoint.isIso_toPointFunctor_map`), packaged as
+`stalkIso`, so stalks do not change under extension of the separably closed field; in particular
+algebraically closed points have the same stalks as separably closed ones. This rests on the fact
+that the residue field extensions of an étale morphism are finite separable, so their embeddings
+into an extension of a separably closed field `Ω₂` all land in `Ω₂`
+(`AlgebraicGeometry.Scheme.Hom.bijective_comp_of_formallyUnramified`).
+
+For a point `x` of `S`, `TauCeti.AlgebraicGeometry.Scheme.GeometricPoint.ofPoint x` is the
+geometric point `Spec κ(x)ˢᵉᵖ ⟶ S` through the separable closure of the residue field. These are
+exactly the geometric points of Mathlib's
+`AlgebraicGeometry.Scheme.isConservativeFamilyOfPoints_pointSmallEtale'`, so they form a
+conservative family of points of the small étale site. Automorphisms of a geometric point `s` act
+on stalks via `stalkAction` and `stalkActionApp`.
+
+## Main declarations
+
+* `TauCeti.AlgebraicGeometry.Scheme.GeometricPoint S`: the category of geometric points of `S`.
+* `TauCeti.AlgebraicGeometry.Scheme.GeometricPoint.homOfRingHom`, `Hom.ringHom`, `isoOfRingEquiv`,
+  `Hom.isIso_iff_ringHom_surjective`: ring-homomorphism characterization of morphisms and
+  isomorphisms of geometric points.
+* `TauCeti.AlgebraicGeometry.Scheme.GeometricPoint.toPointFunctor S`: the functor to points of
+  the small étale site of `S`.
+* `TauCeti.AlgebraicGeometry.Scheme.GeometricPoint.isIso_toPointFunctor_map`, `stalkIso`: every
+  morphism of geometric points induces an isomorphism of points, hence isomorphisms of stalks.
+* `TauCeti.AlgebraicGeometry.Scheme.GeometricPoint.ofPoint x`: the geometric point through the
+  separable closure of the residue field at `x`.
+* `TauCeti.AlgebraicGeometry.Scheme.GeometricPoint.stalkAction s`, `stalkActionApp s F`: the
+  right action of the automorphisms of `s` on the stalks at `s`, naturally in the sheaf.
 
 ## References
 
-* The Stacks Project, [Tag 03PO](https://stacks.math.columbia.edu/tag/03PO) and
-  [Tag 04FN](https://stacks.math.columbia.edu/tag/04FN).
-* A. Grothendieck, M. Artin, J.-L. Verdier, *SGA 4*, Exposé VIII, §§3–4.
+* The Stacks Project, [Tag 04FN](https://stacks.math.columbia.edu/tag/04FN) (geometric points) and
+  [Tag 03PO](https://stacks.math.columbia.edu/tag/03PO) (stalks of étale sheaves).
+* A. Grothendieck, M. Artin, J.-L. Verdier, *SGA 4*, Exposé VIII, §3.
 -/
 
 public section
@@ -42,11 +71,75 @@ universe w u u'
 
 open CategoryTheory Limits Opposite AlgebraicGeometry Scheme
 
-namespace TauCeti.AlgebraicGeometry.Scheme.GeometricPoint
+namespace TauCeti.AlgebraicGeometry.Scheme
+
+/-- A geometric point of a scheme `S`: a separably closed field `Ω` with a morphism
+`Spec Ω ⟶ S`. -/
+structure GeometricPoint (S : Scheme.{u}) where
+  /-- The separably closed field of the geometric point. -/
+  Ω : Type u
+  [field : Field Ω]
+  [isSepClosed : IsSepClosed Ω]
+  /-- The morphism `Spec Ω ⟶ S`. -/
+  hom : Spec (.of Ω) ⟶ S
+
+namespace GeometricPoint
+
+attribute [instance] field isSepClosed
 
 section Category
 
 variable {S : Scheme.{u}}
+
+/-- A morphism of geometric points `(Ω₁, s₁) ⟶ (Ω₂, s₂)`: a morphism `Spec Ω₁ ⟶ Spec Ω₂` over
+`S`. -/
+@[ext]
+structure Hom (s₁ s₂ : GeometricPoint S) where
+  /-- The underlying morphism of spectra. -/
+  hom : Spec (.of s₁.Ω) ⟶ Spec (.of s₂.Ω)
+  w : hom ≫ s₂.hom = s₁.hom := by cat_disch
+
+attribute [reassoc (attr := simp)] Hom.w
+
+noncomputable instance : Category (GeometricPoint S) where
+  Hom := Hom
+  id s := ⟨𝟙 _, by simp⟩
+  comp f g := ⟨f.hom ≫ g.hom, by simp⟩
+
+@[ext]
+lemma hom_ext {s₁ s₂ : GeometricPoint S} {f g : s₁ ⟶ s₂} (h : f.hom = g.hom) : f = g :=
+  Hom.ext h
+
+@[simp]
+lemma id_hom (s : GeometricPoint S) : Hom.hom (𝟙 s) = 𝟙 _ := rfl
+
+@[simp, reassoc]
+lemma comp_hom {s₁ s₂ s₃ : GeometricPoint S} (f : s₁ ⟶ s₂) (g : s₂ ⟶ s₃) :
+    (f ≫ g).hom = f.hom ≫ g.hom := rfl
+
+/-- The morphism of geometric points given by a morphism of spectra over `S`. -/
+@[expose, simps]
+def homMk {s₁ s₂ : GeometricPoint S} (φ : Spec (.of s₁.Ω) ⟶ Spec (.of s₂.Ω))
+    (w : φ ≫ s₂.hom = s₁.hom := by cat_disch) : s₁ ⟶ s₂ :=
+  ⟨φ, w⟩
+
+/-- The isomorphism of geometric points given by an isomorphism of spectra over `S`. -/
+noncomputable def isoMk {s₁ s₂ : GeometricPoint S} (e : Spec (.of s₁.Ω) ≅ Spec (.of s₂.Ω))
+    (w : e.hom ≫ s₂.hom = s₁.hom := by cat_disch) : s₁ ≅ s₂ where
+  hom := homMk e.hom w
+  inv := homMk e.inv (by rw [Iso.inv_comp_eq, w])
+  hom_inv_id := by ext1; simp
+  inv_hom_id := by ext1; simp
+
+@[simp]
+lemma isoMk_hom_hom {s₁ s₂ : GeometricPoint S} (e : Spec (.of s₁.Ω) ≅ Spec (.of s₂.Ω))
+    (w : e.hom ≫ s₂.hom = s₁.hom) : (isoMk e w).hom.hom = e.hom :=
+  (rfl)
+
+@[simp]
+lemma isoMk_inv_hom {s₁ s₂ : GeometricPoint S} (e : Spec (.of s₁.Ω) ≅ Spec (.of s₂.Ω))
+    (w : e.hom ≫ s₂.hom = s₁.hom) : (isoMk e w).inv.hom = e.inv :=
+  (rfl)
 
 /-- Bundle a morphism `s : Spec (.of Ω) ⟶ S` from a separably closed field `Ω` as an object of
 `GeometricPoint S`. -/
@@ -84,34 +177,42 @@ theorem Hom.SpecMap_ringHom {s₁ s₂ : GeometricPoint S} (f : s₁ ⟶ s₂) :
     Spec.map (CommRingCat.ofHom f.ringHom) = f.hom :=
   Scheme.Spec.map_preimage f.hom
 
+/-- Two ring homomorphisms with the same induced morphism on spectra are equal. -/
+theorem Hom.ringHom_eq_of_SpecMap_eq {R₁ R₂ : Type u} [CommRing R₁] [CommRing R₂]
+    {φ ψ : R₁ →+* R₂}
+    (h : Spec.map (CommRingCat.ofHom φ) = Spec.map (CommRingCat.ofHom ψ)) :
+    φ = ψ :=
+  congrArg CommRingCat.Hom.hom (Spec.map_injective h)
+
+/-- `Hom.ringHom` is injective on morphisms of geometric points. -/
+theorem Hom.ringHom_injective {s₁ s₂ : GeometricPoint S} :
+    Function.Injective (Hom.ringHom (s₁ := s₁) (s₂ := s₂)) := by
+  intro f g h
+  ext : 1
+  rw [← Hom.SpecMap_ringHom f, ← Hom.SpecMap_ringHom g, h]
+
 /-- Extracting the ring homomorphism from `homOfRingHom ι w` recovers `ι`. -/
 @[simp]
 theorem Hom.ringHom_homOfRingHom {s₁ s₂ : GeometricPoint S} (ι : s₂.Ω →+* s₁.Ω)
     (w : Spec.map (CommRingCat.ofHom ι) ≫ s₂.hom = s₁.hom) :
-    (homOfRingHom ι w).ringHom = ι := by
-  have h : CommRingCat.ofHom (homOfRingHom ι w).ringHom = CommRingCat.ofHom ι :=
-    Spec.map_injective (by rw [Hom.SpecMap_ringHom, homOfRingHom_hom])
-  exact congrArg CommRingCat.Hom.hom h
+    (homOfRingHom ι w).ringHom = ι :=
+  Hom.ringHom_eq_of_SpecMap_eq (by rw [Hom.SpecMap_ringHom, homOfRingHom_hom])
 
 /-- The ring homomorphism of the identity morphism is the identity ring homomorphism. -/
 @[simp]
 theorem Hom.ringHom_id (s : GeometricPoint S) :
-    Hom.ringHom (𝟙 s) = RingHom.id s.Ω := by
-  have h : CommRingCat.ofHom (Hom.ringHom (𝟙 s)) = CommRingCat.ofHom (RingHom.id s.Ω) :=
-    Spec.map_injective (by rw [Hom.SpecMap_ringHom, id_hom, CommRingCat.ofHom_id, Spec.map_id])
-  exact congrArg CommRingCat.Hom.hom h
+    Hom.ringHom (𝟙 s) = RingHom.id s.Ω :=
+  Hom.ringHom_eq_of_SpecMap_eq
+    (by rw [Hom.SpecMap_ringHom, id_hom, CommRingCat.ofHom_id, Spec.map_id])
 
 /-- The ring homomorphism of a composite `f ≫ g` of morphisms of geometric points is
 `f.ringHom.comp g.ringHom`. -/
 @[simp]
 theorem Hom.ringHom_comp {s₁ s₂ s₃ : GeometricPoint S} (f : s₁ ⟶ s₂) (g : s₂ ⟶ s₃) :
-    (f ≫ g).ringHom = f.ringHom.comp g.ringHom := by
-  have h : CommRingCat.ofHom (f ≫ g).ringHom =
-      CommRingCat.ofHom (f.ringHom.comp g.ringHom) :=
-    Spec.map_injective (by
-      rw [Hom.SpecMap_ringHom, comp_hom, CommRingCat.ofHom_comp, Spec.map_comp,
-        Hom.SpecMap_ringHom, Hom.SpecMap_ringHom])
-  exact congrArg CommRingCat.Hom.hom h
+    (f ≫ g).ringHom = f.ringHom.comp g.ringHom :=
+  Hom.ringHom_eq_of_SpecMap_eq (by
+    rw [Hom.SpecMap_ringHom, comp_hom, CommRingCat.ofHom_comp, Spec.map_comp,
+      Hom.SpecMap_ringHom, Hom.SpecMap_ringHom])
 
 /-- A morphism of geometric points lies over a single scheme-theoretic point of `S`. -/
 theorem Hom.hom_default_eq {s₁ s₂ : GeometricPoint S} (f : s₁ ⟶ s₂) :
@@ -122,34 +223,15 @@ theorem Hom.hom_default_eq {s₁ s₂ : GeometricPoint S} (f : s₁ ⟶ s₂) :
 `e : s₂.Ω ≃+* s₁.Ω` compatible with the morphisms into `S`. -/
 noncomputable def isoOfRingEquiv {s₁ s₂ : GeometricPoint S} (e : s₂.Ω ≃+* s₁.Ω)
     (w : Spec.map (CommRingCat.ofHom (e : s₂.Ω →+* s₁.Ω)) ≫ s₂.hom = s₁.hom) :
-    s₁ ≅ s₂ where
-  hom := homOfRingHom (e : s₂.Ω →+* s₁.Ω) w
-  inv := homOfRingHom (e.symm : s₁.Ω →+* s₂.Ω) <| by
-    rw [← w, ← Category.assoc, ← Spec.map_comp, ← CommRingCat.ofHom_comp]
-    have h : (e.symm : s₁.Ω →+* s₂.Ω).comp (e : s₂.Ω →+* s₁.Ω) = RingHom.id _ :=
-      RingHom.ext e.symm_apply_apply
-    rw [h, CommRingCat.ofHom_id, Spec.map_id, Category.id_comp]
-  hom_inv_id := by
-    ext : 1
-    rw [comp_hom, homOfRingHom_hom, homOfRingHom_hom, id_hom, ← Spec.map_comp,
-      ← CommRingCat.ofHom_comp]
-    have h : (e : s₂.Ω →+* s₁.Ω).comp (e.symm : s₁.Ω →+* s₂.Ω) = RingHom.id _ :=
-      RingHom.ext e.apply_symm_apply
-    rw [h, CommRingCat.ofHom_id, Spec.map_id]
-  inv_hom_id := by
-    ext : 1
-    rw [comp_hom, homOfRingHom_hom, homOfRingHom_hom, id_hom, ← Spec.map_comp,
-      ← CommRingCat.ofHom_comp]
-    have h : (e.symm : s₁.Ω →+* s₂.Ω).comp (e : s₂.Ω →+* s₁.Ω) = RingHom.id _ :=
-      RingHom.ext e.symm_apply_apply
-    rw [h, CommRingCat.ofHom_id, Spec.map_id]
+    s₁ ≅ s₂ :=
+  isoMk (Scheme.Spec.mapIso e.toCommRingCatIso.op) w
 
 /-- The forward scheme morphism of `isoOfRingEquiv e w` is `Spec.map (CommRingCat.ofHom e)`. -/
 @[simp]
 theorem isoOfRingEquiv_hom_hom {s₁ s₂ : GeometricPoint S} (e : s₂.Ω ≃+* s₁.Ω)
     (w : Spec.map (CommRingCat.ofHom (e : s₂.Ω →+* s₁.Ω)) ≫ s₂.hom = s₁.hom) :
     (isoOfRingEquiv e w).hom.hom = Spec.map (CommRingCat.ofHom (e : s₂.Ω →+* s₁.Ω)) :=
-  (rfl)
+  isoMk_hom_hom _ w
 
 /-- The inverse scheme morphism of `isoOfRingEquiv e w` is
 `Spec.map (CommRingCat.ofHom e.symm)`. -/
@@ -158,11 +240,11 @@ theorem isoOfRingEquiv_inv_hom {s₁ s₂ : GeometricPoint S} (e : s₂.Ω ≃+*
     (w : Spec.map (CommRingCat.ofHom (e : s₂.Ω →+* s₁.Ω)) ≫ s₂.hom = s₁.hom) :
     (isoOfRingEquiv e w).inv.hom =
       Spec.map (CommRingCat.ofHom (e.symm : s₁.Ω →+* s₂.Ω)) :=
-  (rfl)
+  isoMk_inv_hom _ w
 
 /-- A morphism of geometric points is an isomorphism if and only if its underlying field
 homomorphism is surjective (equivalently, bijective). -/
-theorem Hom.isIso_iff_surjective_ringHom {s₁ s₂ : GeometricPoint S} (f : s₁ ⟶ s₂) :
+theorem Hom.isIso_iff_ringHom_surjective {s₁ s₂ : GeometricPoint S} (f : s₁ ⟶ s₂) :
     IsIso f ↔ Function.Surjective f.ringHom := by
   constructor
   · intro _ x
@@ -184,9 +266,8 @@ theorem Hom.isIso_iff_surjective_ringHom {s₁ s₂ : GeometricPoint S} (f : s�
 `of (Spec.map (CommRingCat.ofHom (algebraMap R Ω)))`, witnessing the right identity law. -/
 noncomputable def ofOverIdIso (R : Type u) [CommRing R] (Ω : Type u) [Field Ω] [IsSepClosed Ω]
     [Algebra R Ω] :
-    ofOver (𝟙 (Spec (.of R))) Ω ≅ of (Spec.map (CommRingCat.ofHom (algebraMap R Ω))) where
-  hom := ⟨𝟙 _, by simp⟩
-  inv := ⟨𝟙 _, by simp⟩
+    ofOver (𝟙 (Spec (.of R))) Ω ≅ of (Spec.map (CommRingCat.ofHom (algebraMap R Ω))) :=
+  isoMk (Iso.refl _) (by simp)
 
 /-- The forward scheme morphism of `ofOverIdIso R Ω` is the identity. -/
 @[simp]
@@ -202,69 +283,42 @@ theorem ofOverIdIso_inv_hom (R : Type u) [CommRing R] (Ω : Type u) [Field Ω] [
     (ofOverIdIso R Ω).inv.hom = 𝟙 (Spec (.of Ω)) :=
   (rfl)
 
+variable (S) in
+/-- The functor sending a geometric point `(Ω, s)` of `S` to the scheme `Spec Ω`. -/
+@[expose, simps]
+noncomputable def forget : GeometricPoint S ⥤ Scheme.{u} where
+  obj s := Spec (.of s.Ω)
+  map f := f.hom
+
+/-- Two automorphisms in `(Aut s)ᵐᵒᵖ` are equal when their underlying morphisms of spectra are. -/
+@[ext]
+lemma autOp_ext {s : GeometricPoint S} {φ ψ : (Aut s)ᵐᵒᵖ}
+    (h : φ.unop.asIso.hom.hom = ψ.unop.asIso.hom.hom) : φ = ψ :=
+  MulOpposite.unop_injective (Aut.ext (Iso.ext (hom_ext h)))
+
 end Category
-
-section Map
-
--- Exposed so `((map f).obj s).Ω` and `((map f).obj s).hom` unfold in statements of `mapId`
--- and `mapComp`.
-/-- Pushforward of geometric points along a scheme morphism `f : X ⟶ Y`, sending `s` to
-`s.hom ≫ f`. -/
-@[expose, simps obj_hom map_hom]
-noncomputable def map {X Y : Scheme.{u}} (f : X ⟶ Y) : GeometricPoint X ⥤ GeometricPoint Y where
-  obj s := ⟨s.Ω, s.hom ≫ f⟩
-  map φ := ⟨φ.hom, by rw [← Category.assoc, φ.w]⟩
-
-/-- Pushforward along `𝟙 X` is naturally isomorphic to the identity functor. -/
-noncomputable def mapId (X : Scheme.{u}) : map (𝟙 X) ≅ 𝟭 (GeometricPoint X) :=
-  NatIso.ofComponents
-    (fun s ↦
-      { hom := ⟨𝟙 (Spec (.of s.Ω)), (Category.id_comp _).trans (Category.comp_id _).symm⟩
-        inv := ⟨𝟙 (Spec (.of s.Ω)), (Category.id_comp _).trans (Category.comp_id _)⟩ })
-    (fun _ ↦ by ext : 1; exact (Category.comp_id _).trans (Category.id_comp _).symm)
-
-/-- The component of `mapId X` at `s` has the identity as underlying scheme morphism. -/
-@[simp]
-theorem mapId_hom_app_hom {X : Scheme.{u}} (s : GeometricPoint X) :
-    ((mapId X).hom.app s).hom = 𝟙 (Spec (.of s.Ω)) :=
-  (rfl)
-
-/-- The inverse component of `mapId X` at `s` has the identity as underlying scheme morphism. -/
-@[simp]
-theorem mapId_inv_app_hom {X : Scheme.{u}} (s : GeometricPoint X) :
-    ((mapId X).inv.app s).hom = 𝟙 (Spec (.of s.Ω)) :=
-  (rfl)
-
-/-- Pushforward along a composite `f ≫ g` is naturally isomorphic to the composite of the
-pushforwards. -/
-noncomputable def mapComp {X Y Z : Scheme.{u}} (f : X ⟶ Y) (g : Y ⟶ Z) :
-    map (f ≫ g) ≅ map f ⋙ map g :=
-  NatIso.ofComponents
-    (fun s ↦
-      { hom := ⟨𝟙 (Spec (.of s.Ω)), (Category.id_comp _).trans (Category.assoc _ _ _)⟩
-        inv := ⟨𝟙 (Spec (.of s.Ω)), (Category.id_comp _).trans (Category.assoc _ _ _).symm⟩ })
-    (fun _ ↦ by ext : 1; exact (Category.comp_id _).trans (Category.id_comp _).symm)
-
-/-- The component of `mapComp f g` at `s` has the identity as underlying scheme morphism. -/
-@[simp]
-theorem mapComp_hom_app_hom {X Y Z : Scheme.{u}} (f : X ⟶ Y) (g : Y ⟶ Z)
-    (s : GeometricPoint X) :
-    ((mapComp f g).hom.app s).hom = 𝟙 (Spec (.of s.Ω)) :=
-  (rfl)
-
-/-- The inverse component of `mapComp f g` at `s` has the identity as underlying scheme
-morphism. -/
-@[simp]
-theorem mapComp_inv_app_hom {X Y Z : Scheme.{u}} (f : X ⟶ Y) (g : Y ⟶ Z)
-    (s : GeometricPoint X) :
-    ((mapComp f g).inv.app s).hom = 𝟙 (Spec (.of s.Ω)) :=
-  (rfl)
-
-end Map
 
 section ToPoint
 
 variable {S : Scheme.{u}}
+
+variable (S) in
+/-- The functor from geometric points of `S` to points of the small étale site of `S`, sending
+`s` to `AlgebraicGeometry.Scheme.pointSmallEtale s.hom`. A morphism `φ : s₁ ⟶ s₂` sends a lift
+`u` of `s₂` to an étale `S`-scheme to the lift `φ ≫ u` of `s₁`. -/
+@[expose, simps obj]
+noncomputable def toPointFunctor : GeometricPoint S ⥤ (Scheme.smallEtaleTopology S).Point where
+  obj s := Scheme.pointSmallEtale s.hom
+  map φ := ⟨Functor.whiskerLeft (Scheme.Etale.forget S)
+    (coyoneda.map (Over.homMk φ.hom φ.w : Over.mk _ ⟶ Over.mk _).op)⟩
+  map_id _ := by ext U u; exact Over.OverMorphism.ext (Category.id_comp _)
+  map_comp _ _ := by ext U u; exact Over.OverMorphism.ext (Category.assoc _ _ _)
+
+@[simp]
+lemma toPointFunctor_map_hom_app_left {s₁ s₂ : GeometricPoint S} (φ : s₁ ⟶ s₂)
+    (U : S.Etale) (u : Over.mk s₂.hom ⟶ (Scheme.Etale.forget S).obj U) :
+    (((toPointFunctor S).map φ).hom.app U u : Over.mk s₁.hom ⟶ _).left = φ.hom ≫ u.left :=
+  rfl
 
 /-- On lifts to an étale `S`-scheme `U`, `(toPointFunctor S).map φ` acts by precomposition with
 `φ`. -/
@@ -287,10 +341,27 @@ theorem toPresheafFiber_toPointFunctor_map_sheafFiber_app
         ((toPointFunctor S).map φ).sheafFiber.app F =
       (Scheme.pointSmallEtale s₁.hom).toPresheafFiber U
         ((Over.homMk φ.hom φ.w : Over.mk s₁.hom ⟶ Over.mk s₂.hom) ≫ u) F.obj := by
-  change (Scheme.pointSmallEtale s₂.hom).toPresheafFiber U u F.obj ≫
-      ((toPointFunctor S).map φ).presheafFiber.app F.obj = _
-  rw [GrothendieckTopology.Point.Hom.presheafFiber_app]
-  exact colimit.ι_desc _ _
+  rw [Functor.whiskerLeft_app, GrothendieckTopology.Point.Hom.presheafFiber_app]
+  exact ((toPointFunctor S).obj s₂).toPresheafFiber_presheafFiberDesc _ _ U u
+
+/-- **Stalks do not change under extension of the separably closed field.** Every morphism of
+geometric points induces an isomorphism of points of the small étale site. -/
+instance isIso_toPointFunctor_map {s₁ s₂ : GeometricPoint S} (φ : s₁ ⟶ s₂) :
+    IsIso ((toPointFunctor S).map φ) := by
+  rw [GrothendieckTopology.Point.isIso_iff_isIso_hom, NatTrans.isIso_iff_isIso_app]
+  intro U
+  rw [isIso_iff_bijective]
+  have : Etale U.hom := U.prop
+  -- Identify lifts in `Over S` with lifts of the underlying morphisms of schemes.
+  let e (s : GeometricPoint S) (t : Spec (.of s.Ω) ⟶ S) (ht : s.hom = t) :
+      (Over.mk s.hom ⟶ (Scheme.Etale.forget S).obj U) ≃
+        {u : Spec (.of s.Ω) ⟶ U.left // u ≫ U.hom = t} :=
+    { toFun u := ⟨u.left, (Over.w u).trans ht⟩
+      invFun u := Over.homMk u.val (u.property.trans ht.symm)
+      left_inv _ := by cat_disch
+      right_inv _ := rfl }
+  exact (e s₁ _ φ.w.symm).symm.bijective.comp
+    ((U.hom.bijective_comp_of_formallyUnramified φ.hom s₂.hom).comp (e s₂ _ rfl).bijective)
 
 section StalkIso
 
@@ -309,6 +380,28 @@ theorem stalkIso_hom {s₁ s₂ : GeometricPoint S} (φ : s₁ ⟶ s₂) :
     (stalkIso φ (A := A)).hom = ((toPointFunctor S).map φ).sheafFiber :=
   GrothendieckTopology.Point.sheafFiberIso_hom _ A
 
+/-- The inverse direction of `stalkIso φ` is `(inv ((toPointFunctor S).map φ)).sheafFiber`. -/
+@[simp]
+theorem stalkIso_inv {s₁ s₂ : GeometricPoint S} (φ : s₁ ⟶ s₂) :
+    (stalkIso φ (A := A)).inv = (inv ((toPointFunctor S).map φ)).sheafFiber :=
+  GrothendieckTopology.Point.sheafFiberIso_inv _ A
+
+/-- The stalk isomorphism induced by the identity morphism of geometric points is the identity. -/
+@[simp]
+theorem stalkIso_id (s : GeometricPoint S) :
+    stalkIso (𝟙 s) (A := A) = Iso.refl _ := by
+  ext1
+  simp
+  rfl
+
+/-- Stalk isomorphisms are contravariantly functorial in morphisms of geometric points. -/
+@[simp]
+theorem stalkIso_comp {s₁ s₂ s₃ : GeometricPoint S} (φ : s₁ ⟶ s₂) (ψ : s₂ ⟶ s₃) :
+    stalkIso (φ ≫ ψ) (A := A) = (stalkIso ψ).trans (stalkIso φ) := by
+  ext1
+  simp
+  rfl
+
 /-- On germs, `stalkIso φ` sends the germ at `(U, u)` to the germ at `(U, φ ≫ u)`. -/
 @[reassoc, elementwise]
 theorem toPresheafFiber_stalkIso_hom_app {s₁ s₂ : GeometricPoint S} (φ : s₁ ⟶ s₂)
@@ -322,275 +415,101 @@ theorem toPresheafFiber_stalkIso_hom_app {s₁ s₂ : GeometricPoint S} (φ : s�
 
 end StalkIso
 
-/-- The canonical morphism from the algebraically closed geometric point over `s` to `s`,
-exhibiting that algebraically closed points give the same stalks as separably closed ones. -/
-noncomputable def ofAlgClosure (s : GeometricPoint S) :
-    ofOver s.hom (AlgebraicClosure s.Ω) ⟶ s :=
-  homOfRingHom (algebraMap s.Ω (AlgebraicClosure s.Ω)) rfl
-
-/-- `ofAlgClosure s` is an isomorphism in `GeometricPoint S` if and only if `s.Ω` is already
-algebraically closed (whereas `(toPointFunctor S).map (ofAlgClosure s)` is always an isomorphism
-by `isIso_toPointFunctor_map`). -/
-theorem isIso_ofAlgClosure_iff (s : GeometricPoint S) :
-    IsIso (ofAlgClosure s) ↔ IsAlgClosed s.Ω := by
-  rw [Hom.isIso_iff_surjective_ringHom, ofAlgClosure, Hom.ringHom_homOfRingHom,
-    ← IsAlgClosed.iff_surjective_algebraMap s.Ω (AlgebraicClosure s.Ω)]
-
-/-- For a separably closed separable extension `Ω` of a field `K`, `ofAlgClosure (ofOver a Ω)` is
-an isomorphism in `GeometricPoint S` if and only if `K` is perfect. -/
-theorem isIso_ofAlgClosure_ofOver_iff_perfectField {K : Type u} [Field K] (a : Spec (.of K) ⟶ S)
-    (Ω : Type u) [Field Ω] [IsSepClosed Ω] [Algebra K Ω] [Algebra.IsSeparable K Ω] :
-    IsIso (ofAlgClosure (ofOver a Ω)) ↔ PerfectField K := by
-  rw [isIso_ofAlgClosure_iff]
-  exact IsSepClosed.isAlgClosed_iff_perfectField K Ω
-
-/-- The canonical morphism from `ofOver a (AlgebraicClosure K)` to `ofOver a (SeparableClosure K)`.
-It is an isomorphism in `GeometricPoint S` if and only if `K` is perfect
-(`isIso_ofSepToAlgClosure_iff_perfectField`), while its image under `toPointFunctor S` is always
-an isomorphism (`isIso_toPointFunctor_map`). -/
-noncomputable def ofSepToAlgClosure {K : Type u} [Field K] (a : Spec (.of K) ⟶ S) :
-    ofOver a (AlgebraicClosure K) ⟶ ofOver a (SeparableClosure K) :=
-  homOfRingHom (algebraMap (SeparableClosure K) (AlgebraicClosure K)) <| by
-    rw [← Category.assoc, ← Spec.map_comp, ← CommRingCat.ofHom_comp,
-      ← IsScalarTower.algebraMap_eq]
-
-/-- `ofSepToAlgClosure a` is an isomorphism in `GeometricPoint S` if and only if `K` is perfect. -/
-theorem isIso_ofSepToAlgClosure_iff_perfectField {K : Type u} [Field K]
-    (a : Spec (.of K) ⟶ S) :
-    IsIso (ofSepToAlgClosure a) ↔ PerfectField K := by
-  rw [Hom.isIso_iff_surjective_ringHom, ofSepToAlgClosure, Hom.ringHom_homOfRingHom]
-  have : Algebra.IsAlgebraic (SeparableClosure K) (AlgebraicClosure K) :=
-    Algebra.IsAlgebraic.tower_top (K := K) (L := SeparableClosure K) (A := AlgebraicClosure K)
-  rw [← IsAlgClosed.iff_surjective_algebraMap (SeparableClosure K) (AlgebraicClosure K),
-    IsSepClosed.isAlgClosed_iff_perfectField K (SeparableClosure K)]
-
 end ToPoint
 
-section Actions
+section ResidueField
 
 variable {S : Scheme.{u}}
 
-section AutAction
+/-- The geometric point `Spec κ(x)ˢᵉᵖ ⟶ S` over a point `x` of `S`, through the separable closure
+of the residue field at `x`. -/
+noncomputable abbrev ofPoint (x : S) : GeometricPoint S where
+  Ω := SeparableClosure (S.residueField x)
+  hom := Spec.map (CommRingCat.ofHom (algebraMap (S.residueField x) _)) ≫ S.fromSpecResidueField x
 
-variable {A : Type u'} [Category.{w} A] [HasColimitsOfSize.{u, u} A]
+lemma ofPoint_hom (x : S) : (ofPoint x).hom =
+    Spec.map (CommRingCat.ofHom (algebraMap (S.residueField x) (SeparableClosure _))) ≫
+      S.fromSpecResidueField x :=
+  rfl
 
-/-- Evaluation of `stalkAction` at an étale sheaf `F`: an action of `(Aut s)ᵐᵒᵖ` by
-automorphisms of the stalk `(pointSmallEtale s.hom).sheafFiber.obj F`. -/
+/-- The geometric point `ofPoint x` lies over `x`. -/
+lemma ofPoint_hom_apply (x : S) (y : Spec (.of (ofPoint x).Ω)) : (ofPoint x).hom y = x := by
+  rw [ofPoint_hom, Scheme.Hom.comp_apply, Scheme.fromSpecResidueField_apply]
+
+end ResidueField
+
+section Stalk
+
+variable {S : Scheme.{u}} (A : Type u') [Category.{w} A] [HasColimitsOfSize.{u, u} A]
+
+/-- **The automorphisms of a geometric point act on its stalks**, naturally in the sheaf: `φ`
+acts through the stalk map of the isomorphism of points `(toPointFunctor S).map φ`. Stalks are
+contravariant in the geometric point, so this is a right action, a homomorphism from the opposite
+group. -/
+noncomputable def stalkAction (s : GeometricPoint S) :
+    (Aut s)ᵐᵒᵖ →* Aut (((toPointFunctor S).obj s).sheafFiber (A := A)) where
+  toFun φ := .of (asIso ((toPointFunctor S).map φ.unop.asIso.hom).sheafFiber)
+  map_one' := by
+    ext1
+    ext1
+    simp
+  map_mul' φ ψ := by
+    ext1
+    ext1
+    simp
+
+@[simp]
+lemma stalkAction_apply (s : GeometricPoint S) (φ : (Aut s)ᵐᵒᵖ) :
+    (stalkAction A s φ).asIso.hom = ((toPointFunctor S).map φ.unop.asIso.hom).sheafFiber :=
+  (rfl)
+
+/-- On stalks of sheaves of sets, multiplying automorphisms composes their evaluations. -/
+theorem sheafFiber_aut_mul_app_apply {s : GeometricPoint S}
+    (e₁ e₂ : Aut ((Scheme.pointSmallEtale s.hom).sheafFiber (A := Type u)))
+    (F : Sheaf (Scheme.smallEtaleTopology S) (Type u))
+    (z : (Scheme.pointSmallEtale s.hom).sheafFiber.obj F) :
+    (e₁ * e₂).asIso.hom.app F z = e₁.asIso.hom.app F (e₂.asIso.hom.app F z) := by
+  rw [Aut.mul_asIso, Iso.trans_hom, NatTrans.comp_app, types_comp_apply]
+
+/-- On stalks of sheaves of sets, the identity automorphism acts as the identity. -/
+theorem sheafFiber_aut_one_app_apply {s : GeometricPoint S}
+    (F : Sheaf (Scheme.smallEtaleTopology S) (Type u))
+    (z : (Scheme.pointSmallEtale s.hom).sheafFiber.obj F) :
+    (1 : Aut ((Scheme.pointSmallEtale s.hom).sheafFiber (A := Type u))).asIso.hom.app F z = z := by
+  rw [Aut.one_asIso, Iso.refl_hom, NatTrans.id_app, types_id_apply]
+
+/-- Evaluation of `stalkAction` at an étale sheaf `F`: the right action of `Aut s` (equivalently
+the left action of `(Aut s)ᵐᵒᵖ`) by automorphisms of the stalk
+`(pointSmallEtale s.hom).sheafFiber.obj F`. -/
 noncomputable def stalkActionApp (s : GeometricPoint S)
     (F : Sheaf (Scheme.smallEtaleTopology S) A) :
-    (Aut s)ᵐᵒᵖ →* Aut ((Scheme.pointSmallEtale s.hom).sheafFiber.obj F) where
-  toFun e := Aut.of ((stalkAction A s e).asIso.app F)
-  map_one' := by ext : 2; rw [map_one]; rfl
-  map_mul' e₁ e₂ := by ext : 2; rw [map_mul]; rfl
+    (Aut s)ᵐᵒᵖ →* Aut ((Scheme.pointSmallEtale s.hom).sheafFiber.obj F) :=
+  (Functor.mapAut (X := ((toPointFunctor S).obj s).sheafFiber)
+    ((CategoryTheory.evaluation (Sheaf (Scheme.smallEtaleTopology S) A) A).obj F)).comp
+    (stalkAction A s)
 
-/-- The underlying morphism of `stalkActionApp s F (MulOpposite.op e)` is
+/-- The underlying morphism of `stalkActionApp A s F (MulOpposite.op e)` is
 `((toPointFunctor S).map e.asIso.hom).sheafFiber.app F`. -/
 @[simp]
 theorem stalkActionApp_asIso_hom (s : GeometricPoint S)
     (F : Sheaf (Scheme.smallEtaleTopology S) A) (e : Aut s) :
-    (stalkActionApp s F (MulOpposite.op e)).asIso.hom =
-      ((toPointFunctor S).map e.asIso.hom).sheafFiber.app F :=
-  congrArg (fun α ↦ α.app F) (stalkAction_apply A s (MulOpposite.op e))
+    (stalkActionApp A s F (MulOpposite.op e)).asIso.hom =
+      ((toPointFunctor S).map e.asIso.hom).sheafFiber.app F := by
+  dsimp only [stalkActionApp]
+  exact congrArg (fun α ↦ α.app F) (stalkAction_apply A s (MulOpposite.op e))
 
-/-- The action of `Aut s` on stalks is natural in the sheaf. -/
+/-- The right action of `Aut s` (equivalently the left action of `(Aut s)ᵐᵒᵖ`) on stalks is
+natural in the sheaf. -/
 @[reassoc]
 theorem stalkActionApp_naturality (s : GeometricPoint S)
     {F G : Sheaf (Scheme.smallEtaleTopology S) A} (f : F ⟶ G) (e : (Aut s)ᵐᵒᵖ) :
-    (stalkActionApp s F e).asIso.hom ≫ (Scheme.pointSmallEtale s.hom).sheafFiber.map f =
-      (Scheme.pointSmallEtale s.hom).sheafFiber.map f ≫ (stalkActionApp s G e).asIso.hom :=
-  ((stalkAction A s e).asIso.hom.naturality f).symm
+    (stalkActionApp A s F e).asIso.hom ≫ (Scheme.pointSmallEtale s.hom).sheafFiber.map f =
+      (Scheme.pointSmallEtale s.hom).sheafFiber.map f ≫ (stalkActionApp A s G e).asIso.hom := by
+  dsimp only [stalkActionApp]
+  exact ((stalkAction A s e).asIso.hom.naturality f).symm
 
-end AutAction
+end Stalk
 
-section Galois
+end GeometricPoint
 
-variable {R : Type u} [CommRing R] (a : Spec (.of R) ⟶ S)
-  (Ω : Type u) [Field Ω] [IsSepClosed Ω] [Algebra R Ω]
-
-/-- An `R`-algebra endomorphism `σ : Ω →ₐ[R] Ω` induces an endomorphism `Spec σ` of `ofOver a Ω`
-in `GeometricPoint S`. -/
-noncomputable def homOfAlgHom (σ : Ω →ₐ[R] Ω) : ofOver a Ω ⟶ ofOver a Ω :=
-  homOfRingHom σ.toRingHom <| by
-    rw [← Category.assoc, ← Spec.map_comp, ← CommRingCat.ofHom_comp]
-    have h : σ.toRingHom.comp (algebraMap R Ω) = algebraMap R Ω := RingHom.ext σ.commutes
-    rw [h]
-
-/-- The underlying scheme morphism of `homOfAlgHom a Ω σ` is `Spec.map (CommRingCat.ofHom σ)`. -/
-@[simp]
-theorem homOfAlgHom_hom (σ : Ω →ₐ[R] Ω) :
-    (homOfAlgHom a Ω σ).hom = Spec.map (CommRingCat.ofHom σ.toRingHom) :=
-  (rfl)
-
-/-- The identity `R`-algebra endomorphism induces the identity of `ofOver a Ω`. -/
-@[simp]
-theorem homOfAlgHom_id : homOfAlgHom a Ω (AlgHom.id R Ω) = 𝟙 (ofOver a Ω) := by
-  ext : 1
-  simp [homOfAlgHom_hom]
-
-/-- Composition of `R`-algebra endomorphisms maps covariantly to composition in
-`GeometricPoint S`: `Spec (σ ∘ τ) = Spec σ ≫ Spec τ`. -/
-@[simp]
-theorem homOfAlgHom_comp (σ τ : Ω →ₐ[R] Ω) :
-    homOfAlgHom a Ω (σ.comp τ) = homOfAlgHom a Ω σ ≫ homOfAlgHom a Ω τ := by
-  ext : 1
-  rw [comp_hom, homOfAlgHom_hom, homOfAlgHom_hom, homOfAlgHom_hom, ← Spec.map_comp,
-    ← CommRingCat.ofHom_comp]
-  rfl
-
-/-- An automorphism `σ : Ω ≃ₐ[R] Ω` induces an automorphism `Spec σ` of `ofOver a Ω` in
-`GeometricPoint S`. -/
-noncomputable def isoOfAlgEquiv (σ : Ω ≃ₐ[R] Ω) : ofOver a Ω ≅ ofOver a Ω :=
-  isoOfRingEquiv σ.toRingEquiv <| by
-    rw [← Category.assoc, ← Spec.map_comp, ← CommRingCat.ofHom_comp]
-    have h : (σ.toRingEquiv : Ω →+* Ω).comp (algebraMap R Ω) = algebraMap R Ω :=
-      RingHom.ext σ.commutes
-    rw [h]
-
-/-- The forward morphism of `isoOfAlgEquiv a Ω σ` is `homOfAlgHom a Ω σ`. -/
-@[simp]
-theorem isoOfAlgEquiv_hom (σ : Ω ≃ₐ[R] Ω) :
-    (isoOfAlgEquiv a Ω σ).hom = homOfAlgHom a Ω σ.toAlgHom := by
-  ext : 1
-  rw [isoOfAlgEquiv, isoOfRingEquiv_hom_hom, homOfAlgHom_hom]
-  rfl
-
-/-- The inverse morphism of `isoOfAlgEquiv a Ω σ` is `homOfAlgHom a Ω σ.symm`. -/
-@[simp]
-theorem isoOfAlgEquiv_inv (σ : Ω ≃ₐ[R] Ω) :
-    (isoOfAlgEquiv a Ω σ).inv = homOfAlgHom a Ω σ.symm.toAlgHom := by
-  ext : 1
-  rw [isoOfAlgEquiv, isoOfRingEquiv_inv_hom, homOfAlgHom_hom]
-  rfl
-
-/-- The group homomorphism `(Ω ≃ₐ[R] Ω) →* (Aut (ofOver a Ω))ᵐᵒᵖ` sending `σ` to `Spec σ`.
-Because `Spec (σ * τ) = Spec σ ≫ Spec τ` while multiplication in `Aut` composes right-to-left,
-this lands in the opposite group `(Aut (ofOver a Ω))ᵐᵒᵖ`. -/
-noncomputable def autOfAlgEquiv : (Ω ≃ₐ[R] Ω) →* (Aut (ofOver a Ω))ᵐᵒᵖ where
-  toFun σ := MulOpposite.op (Aut.of (isoOfAlgEquiv a Ω σ))
-  map_one' := MulOpposite.unop_injective (by
-    ext : 2
-    simp only [MulOpposite.unop_op, MulOpposite.unop_one, Aut.one_asIso, Iso.refl_hom]
-    exact (isoOfAlgEquiv_hom a Ω 1).trans (homOfAlgHom_id a Ω))
-  map_mul' σ τ := MulOpposite.unop_injective (by
-    ext : 2
-    simp only [MulOpposite.unop_mul, MulOpposite.unop_op, Aut.mul_asIso, Iso.trans_hom,
-      isoOfAlgEquiv_hom, ← homOfAlgHom_comp]
-    rfl)
-
-/-- Unwrapping `autOfAlgEquiv a Ω σ` gives `isoOfAlgEquiv a Ω σ`. -/
-@[simp]
-theorem unop_autOfAlgEquiv (σ : Ω ≃ₐ[R] Ω) :
-    (autOfAlgEquiv a Ω σ).unop.asIso = isoOfAlgEquiv a Ω σ :=
-  (rfl)
-
-/-- **The Galois action on stalks.** For a geometric point `ofOver a Ω` factoring through
-`a : Spec (.of R) ⟶ S`, every `σ : Ω ≃ₐ[R] Ω` acts naturally on the stalk functor by the stalk
-map of `Spec σ`. This is a group homomorphism into `Aut (pointSmallEtale _).sheafFiber`, so on
-concrete stalks it defines a left action of `Ω ≃ₐ[R] Ω`. -/
-noncomputable def galStalkAut {A : Type u'} [Category.{w} A] [HasColimitsOfSize.{u, u} A] :
-    (Ω ≃ₐ[R] Ω) →* Aut ((Scheme.pointSmallEtale (ofOver a Ω).hom).sheafFiber (A := A)) :=
-  (stalkAction A (ofOver a Ω)).comp (autOfAlgEquiv a Ω)
-
-/-- The natural transformation attached to `σ : Ω ≃ₐ[R] Ω` by `galStalkAut` is
-`((toPointFunctor S).map (homOfAlgHom a Ω σ)).sheafFiber`. -/
-@[simp]
-theorem galStalkAut_asIso_hom {A : Type u'} [Category.{w} A] [HasColimitsOfSize.{u, u} A]
-    (σ : Ω ≃ₐ[R] Ω) :
-    (galStalkAut a Ω (A := A) σ).asIso.hom =
-      ((toPointFunctor S).map (homOfAlgHom a Ω σ.toAlgHom)).sheafFiber :=
-  (stalkAction_apply A (ofOver a Ω) (autOfAlgEquiv a Ω σ)).trans (by
-    simp only [unop_autOfAlgEquiv, isoOfAlgEquiv_hom])
-
-/-- The inverse natural transformation attached to `σ : Ω ≃ₐ[R] Ω` by `galStalkAut` is
-`((toPointFunctor S).map (homOfAlgHom a Ω σ.symm)).sheafFiber`. -/
-@[simp]
-theorem galStalkAut_asIso_inv {A : Type u'} [Category.{w} A] [HasColimitsOfSize.{u, u} A]
-    (σ : Ω ≃ₐ[R] Ω) :
-    (galStalkAut a Ω (A := A) σ).asIso.inv =
-      ((toPointFunctor S).map (homOfAlgHom a Ω σ.symm.toAlgHom)).sheafFiber := by
-  change ((galStalkAut a Ω (A := A) σ)⁻¹).asIso.hom = _
-  rw [← map_inv, galStalkAut_asIso_hom]
-  rfl
-
-/-- On germs, `galStalkAut a Ω σ` sends the germ at `(U, u)` to the germ at `(U, Spec σ ≫ u)`. -/
-@[reassoc, elementwise]
-theorem toPresheafFiber_galStalkAut_hom_app
-    {A : Type u'} [Category.{w} A] [HasColimitsOfSize.{u, u} A]
-    (σ : Ω ≃ₐ[R] Ω) (F : Sheaf (Scheme.smallEtaleTopology S) A) (U : S.Etale)
-    (u : (Scheme.pointSmallEtale (ofOver a Ω).hom).fiber.obj U) :
-    (Scheme.pointSmallEtale (ofOver a Ω).hom).toPresheafFiber U u F.obj ≫
-        (galStalkAut a Ω σ).asIso.hom.app F =
-      (Scheme.pointSmallEtale (ofOver a Ω).hom).toPresheafFiber U
-        ((Over.homMk (homOfAlgHom a Ω σ.toAlgHom).hom (homOfAlgHom a Ω σ.toAlgHom).w :
-          Over.mk (ofOver a Ω).hom ⟶ Over.mk (ofOver a Ω).hom) ≫ u)
-        F.obj := by
-  rw [galStalkAut_asIso_hom]
-  exact toPresheafFiber_toPointFunctor_map_sheafFiber_app (homOfAlgHom a Ω σ.toAlgHom) F U u
-
-/-- On stalks of sheaves of sets, `galStalkAut` is a left action of `Ω ≃ₐ[R] Ω`:
-`(σ * τ) • z = σ • (τ • z)`. -/
-theorem galStalkAut_mul_app_apply (σ τ : Ω ≃ₐ[R] Ω)
-    (F : Sheaf (Scheme.smallEtaleTopology S) (Type u))
-    (z : (Scheme.pointSmallEtale (ofOver a Ω).hom).sheafFiber.obj F) :
-    (galStalkAut a Ω (σ * τ)).asIso.hom.app F z =
-      (galStalkAut a Ω σ).asIso.hom.app F ((galStalkAut a Ω τ).asIso.hom.app F z) := by
-  rw [map_mul]
-  rfl
-
-/-- The map `autOfAlgEquiv a Ω` from `Ω ≃ₐ[R] Ω` into `(Aut (ofOver a Ω))ᵐᵒᵖ` is always
-injective. -/
-theorem injective_autOfAlgEquiv : Function.Injective (autOfAlgEquiv a Ω) := by
-  intro σ τ h
-  have h' : (isoOfAlgEquiv a Ω σ).hom = (isoOfAlgEquiv a Ω τ).hom :=
-    congrArg (fun e : (Aut (ofOver a Ω))ᵐᵒᵖ ↦ e.unop.asIso.hom) h
-  have hring := congrArg Hom.ringHom h'
-  simp only [isoOfAlgEquiv_hom, homOfAlgHom, Hom.ringHom_homOfRingHom] at hring
-  exact AlgEquiv.ext fun x ↦ DFunLike.congr_fun hring x
-
-/-- When `a : Spec (.of R) ⟶ S` is a monomorphism, every automorphism of `ofOver a Ω` in
-`GeometricPoint S` comes from an `R`-algebra automorphism of `Ω`. -/
-theorem surjective_autOfAlgEquiv [Mono a] : Function.Surjective (autOfAlgEquiv a Ω) := by
-  intro e
-  let f : ofOver a Ω ⟶ ofOver a Ω := e.unop.asIso.hom
-  let g : ofOver a Ω ⟶ ofOver a Ω := e.unop.asIso.inv
-  have hcomm (h : ofOver a Ω ⟶ ofOver a Ω) :
-      h.ringHom.comp (algebraMap R Ω) = algebraMap R Ω := by
-    have hspec : Spec.map (CommRingCat.ofHom (h.ringHom.comp (algebraMap R Ω))) ≫ a =
-        Spec.map (CommRingCat.ofHom (algebraMap R Ω)) ≫ a := by
-      rw [CommRingCat.ofHom_comp, Spec.map_comp, Category.assoc, Hom.SpecMap_ringHom]
-      exact h.w
-    exact congrArg CommRingCat.Hom.hom (Spec.map_injective ((cancel_mono a).mp hspec))
-  let fAlg : Ω →ₐ[R] Ω := { f.ringHom with commutes' := DFunLike.congr_fun (hcomm f) }
-  let gAlg : Ω →ₐ[R] Ω := { g.ringHom with commutes' := DFunLike.congr_fun (hcomm g) }
-  let σ : Ω ≃ₐ[R] Ω := AlgEquiv.ofAlgHom fAlg gAlg
-    (AlgHom.ext fun x ↦ by
-      have := congrArg (fun k : Ω →+* Ω ↦ k x) (Hom.ringHom_comp f g)
-      simpa [f, g, fAlg, gAlg] using this.symm)
-    (AlgHom.ext fun x ↦ by
-      have := congrArg (fun k : Ω →+* Ω ↦ k x) (Hom.ringHom_comp g f)
-      simpa [f, g, fAlg, gAlg] using this.symm)
-  refine ⟨σ, MulOpposite.unop_injective ?_⟩
-  ext : 3
-  simp only [unop_autOfAlgEquiv, isoOfAlgEquiv_hom, homOfAlgHom_hom]
-  have hσ : σ.toAlgHom.toRingHom = f.ringHom := RingHom.ext fun _ ↦ rfl
-  rw [hσ, Hom.SpecMap_ringHom]
-
-/-- **Automorphisms of a geometric point over a monomorphism.** When `a : Spec (.of R) ⟶ S` is a
-monomorphism (for instance `𝟙 (Spec (.of R))` or `S.fromSpecResidueField x`), the automorphisms
-of `ofOver a Ω` in `GeometricPoint S` are precisely the `Spec σ` for `σ : Ω ≃ₐ[R] Ω`. -/
-noncomputable def galMulEquivAutOp [Mono a] :
-    (Ω ≃ₐ[R] Ω) ≃* (Aut (ofOver a Ω))ᵐᵒᵖ :=
-  MulEquiv.ofBijective (autOfAlgEquiv a Ω)
-    ⟨injective_autOfAlgEquiv a Ω, surjective_autOfAlgEquiv a Ω⟩
-
-/-- The forward direction of `galMulEquivAutOp` is `autOfAlgEquiv`. -/
-@[simp]
-theorem galMulEquivAutOp_apply [Mono a] (σ : Ω ≃ₐ[R] Ω) :
-    galMulEquivAutOp a Ω σ = autOfAlgEquiv a Ω σ :=
-  (rfl)
-
-end Galois
-
-end Actions
-
-end TauCeti.AlgebraicGeometry.Scheme.GeometricPoint
+end TauCeti.AlgebraicGeometry.Scheme

@@ -48,6 +48,9 @@ elements behind the finite unitary groups.
   only finitely many elements.
 * `TauCeti.FiniteField.isPurelyInseparable_fieldRange_frobeniusAlgHom`: `L` is purely
   inseparable over the field range of `FiniteField.frobeniusAlgHom K L`.
+* `TauCeti.FiniteField.frobeniusAlgEquivOfAlgebraic_pow_comp_eq_iff`: period of the arithmetic
+  Frobenius on embeddings of a field extension (when `E / K` is infinite, `Module.finrank K E = 0`
+  so only `m = 0` fixes the embedding).
 * `TauCeti.FiniteField.iterateFrobenius_involutive`: on a field of exponential characteristic `p`
   with `Nat.card K = p ^ (n * 2)`, the iterated Frobenius `x ↦ x ^ p ^ n` is an involution.
 * `TauCeti.FiniteField.frobeniusEquiv_involutive`: on a field of exponential characteristic `p`
@@ -56,8 +59,6 @@ elements behind the finite unitary groups.
 * `TauCeti.FiniteField.exists_iterateFrobenius_ne_of_card_eq_sq`: on a field of exponential
   characteristic `p` with `Nat.card K = (p ^ n) ^ 2`, the iterated Frobenius `x ↦ x ^ p ^ n` is not
   the identity.
-* `TauCeti.FiniteField.frobeniusAlgEquivOfAlgebraic_pow_comp_eq_iff`: exact period of the
-  arithmetic Frobenius on embeddings of any field extension.
 
 None of these three assumes `[Finite K]`: the `Nat.card` equation implies it, by
 `TauCeti.finite_of_natCard_eq_pow`.
@@ -191,21 +192,28 @@ section Algebraic
 
 /-- For any field extension `E / K` of a finite field `K` and any `K`-embedding `φ : E →ₐ[K] L`
 into an algebraic extension `L / K`, postcomposing `φ` with the `m`-th power of
-`FiniteField.frobeniusAlgEquivOfAlgebraic K L` equals `φ` if and only if `[E : K] ∣ m`. -/
+`FiniteField.frobeniusAlgEquivOfAlgebraic K L` equals `φ` if and only if
+`Module.finrank K E ∣ m`. When `E / K` is finite this gives exact period `[E : K]` (via
+`FiniteField.orderOf_frobeniusAlgHom`); when `E / K` is infinite, `Module.finrank K E = 0`, so the
+condition reduces to `m = 0`. -/
 theorem frobeniusAlgEquivOfAlgebraic_pow_comp_eq_iff (K L : Type*) [Field K] [Fintype K] [Field L]
     [Algebra K L] [Algebra.IsAlgebraic K L] {E : Type*} [Field E] [Algebra K E]
     (φ : E →ₐ[K] L) (m : ℕ) :
     ((_root_.FiniteField.frobeniusAlgEquivOfAlgebraic K L ^ m).toAlgHom.comp φ) = φ ↔
       Module.finrank K E ∣ m := by
+  have hpow (x : E) :
+      ((_root_.FiniteField.frobeniusAlgEquivOfAlgebraic K L ^ m).toAlgHom.comp φ) x =
+        φ (x ^ Nat.card K ^ m) := by
+    rw [AlgHom.comp_apply, AlgEquiv.coe_toAlgHom, AlgEquiv.coe_pow,
+      _root_.FiniteField.coe_frobeniusAlgEquivOfAlgebraic_iterate,
+      ← Nat.card_eq_fintype_card, map_pow]
   by_cases hfin : Module.Finite K E
   · have : Finite E := Module.finite_of_finite K
     rw [AlgHom.ext_iff]
     have hcomp (x : E) :
         ((_root_.FiniteField.frobeniusAlgEquivOfAlgebraic K L ^ m).toAlgHom.comp φ) x =
           φ (((_root_.FiniteField.frobeniusAlgHom K E) ^ m) x) := by
-      rw [AlgHom.comp_apply, AlgEquiv.coe_toAlgHom, AlgEquiv.coe_pow,
-        _root_.FiniteField.coe_frobeniusAlgEquivOfAlgebraic_iterate,
-        ← Nat.card_eq_fintype_card, frobeniusAlgHom_pow_apply, map_pow]
+      rw [hpow, frobeniusAlgHom_pow_apply]
     have hinj : Function.Injective φ := φ.toRingHom.injective
     simp_rw [hcomp, hinj.eq_iff]
     have heq : (∀ x : E, ((_root_.FiniteField.frobeniusAlgHom K E) ^ m) x = x) ↔
@@ -217,13 +225,7 @@ theorem frobeniusAlgEquivOfAlgebraic_pow_comp_eq_iff (K L : Type*) [Field K] [Fi
     by_contra hm
     have hmem (x : E) : x ∈ frobeniusFixedSubalgebra K E m := by
       rw [mem_frobeniusFixedSubalgebra]
-      have hx := DFunLike.congr_fun h x
-      rw [AlgHom.comp_apply, AlgEquiv.coe_toAlgHom, AlgEquiv.coe_pow,
-        _root_.FiniteField.coe_frobeniusAlgEquivOfAlgebraic_iterate,
-        ← Nat.card_eq_fintype_card] at hx
-      dsimp only at hx
-      rw [← map_pow] at hx
-      exact φ.toRingHom.injective hx
+      exact φ.toRingHom.injective ((hpow x).symm.trans (DFunLike.congr_fun h x))
     have hfinSub : Finite (frobeniusFixedSubalgebra K E m) := finite_frobeniusFixedSubalgebra hm
     have : Finite E :=
       Finite.of_injective (fun x : E ↦ (⟨x, hmem x⟩ : frobeniusFixedSubalgebra K E m))
