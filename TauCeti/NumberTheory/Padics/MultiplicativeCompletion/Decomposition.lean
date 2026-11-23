@@ -138,8 +138,7 @@ theorem nonempty_linearEquiv_tameFrameModule_prod [Algebra ℚ_[p] L] [Module.Fi
   obtain ⟨eT⟩ := tameFrameModule_torsion_linearEquiv h σ τ hgen a b ha hb hcard
   -- So `Y` and `M₀` are stably isomorphic.
   obtain ⟨P, Q, _, _, _, _, _, _, _, _, hst⟩ := exists_projective_prod_linearEquiv_of_torsion
-    hdρ hd hρ hrel (tameFrameRelationMap_injective_of_card_ne_zero (isOfFinOrder_of_finite σ)
-      (isOfFinOrder_of_finite τ) hcard₁)
+    hdρ hd hρ hrel (tameFrameRelationMap_injective_of_card_ne_zero (.all σ) (.all τ) hcard₁)
     (tameFrameRelations ℤ_[p] (L ≃ₐ[K] L) σ τ (a : ℤ_[p]) (b : ℤ_[p])).surjective_toQuotient
     (((Submodule.equivMapOfInjective ι hι _).trans
       (LinearEquiv.ofEq _ _ (map_pPowerTorsion_of_exact hιπ hι hI))).symm.trans eT.symm)
@@ -194,7 +193,7 @@ theorem exists_relationModule_surjective_of_tameFrame_of_exact
   have hcard₁ := hcard ▸ (localRootOfUnityOrder_pos p L h).ne'
   simp only [natCast_def] at hcard₁
   have hk : Function.Injective k := tameFrameRelationMap_injective_of_card_ne_zero
-    (isOfFinOrder_of_finite σ) (isOfFinOrder_of_finite τ) hcard₁
+    (.all σ) (.all τ) hcard₁
   -- So `Y ≃ M₀ ⊕ ℤ_p[G]^N` is the quotient of `ℤ_p[G]^(N + 2) = ℤ_p[G]² ⊕ ℤ_p[G]^N` by the image
   -- of `ℤ_p[G]` under `x ↦ (x·(σ - a, τ - b), 0)`.
   let eP : (Fin (N + 2) → Λ) ≃ₗ[Λ] (rel.G →₀ Λ) × (Fin N → Λ) :=

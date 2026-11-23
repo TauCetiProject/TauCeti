@@ -75,7 +75,7 @@ theorem dvd_of_prime_dvd_natCard_primaryComponent {n p : ℕ}
     (h : p ∣ Nat.card (AddCommGroup.primaryComponent A n)) : p ∣ n := by
   have := Fact.mk hp
   obtain ⟨x, hx⟩ := exists_prime_addOrderOf_dvd_card' p h
-  obtain ⟨k, hk⟩ := AddCommGroup.mem_primaryComponent.mp x.2
+  obtain ⟨k, hk⟩ := AddCommGroup.mem_primaryComponent.mp x.property
   refine hp.dvd_of_dvd_pow (n := k) ?_
   rw [← hx]
   exact addOrderOf_dvd_of_nsmul_eq_zero (Subtype.ext hk)

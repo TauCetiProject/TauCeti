@@ -190,7 +190,7 @@ the cokernel. -/
 theorem isEssentialMono_cokernelDesc_epi_comp_iff {A A' B D : C} (p : A' ⟶ A) [Epi p]
     (f : A ⟶ B) [HasCokernel f] {g : B ⟶ D} (w : (p ≫ f) ≫ g = 0) (w' : f ≫ g = 0) :
     IsEssentialMono (cokernel.desc (p ≫ f) g w) ↔ IsEssentialMono (cokernel.desc f g w') := by
-  have : cokernel.desc (p ≫ f) g w = (cokernelEpiComp p f).hom ≫ cokernel.desc f g w' := by
+  have : cokernel.desc (p ≫ f) g w = (cokernelEpiComp f p).hom ≫ cokernel.desc f g w' := by
     ext
     simp [cokernelEpiComp]
   rw [this, isEssentialMono_isIso_comp_iff]

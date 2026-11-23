@@ -141,7 +141,7 @@ theorem mem_hull_natCast_relations_iff_of_liftBaseChange_injective
     obtain ⟨g, hg, j₀, hj₀⟩ := Fintype.not_linearIndependent_iff.1 hli
     let k : ι → ℤ := fun j ↦ if h : c j ≠ 0 then g ⟨j, h⟩ else 0
     have hk : ∀ j, c j = 0 → k j = 0 := fun j h ↦ by simp [k, h]
-    have hkg : ∀ j : {j // c j ≠ 0}, k j = g j := fun j ↦ by simp [k, j.2]
+    have hkg : ∀ j : {j // c j ≠ 0}, k j = g j := fun j ↦ by simp [k, j.property]
     have hkv : ∑ j, k j • v j = 0 := by
       rw [← Fintype.sum_of_injective Subtype.val Subtype.val_injective
         (fun j : {j // c j ≠ 0} ↦ g j • v j) (fun j ↦ k j • v j)

@@ -68,7 +68,7 @@ private theorem uniformContinuous_withValExtension :
       obtain ⟨x, hx⟩ := P.valuation_surjective γ
       exact ⟨WithVal.toVal P.valuation x, hx⟩
   have hcont := hc.pow (ramificationIdx F P')
-  have hγ : MonoidWithZeroHom.ValueGroup₀.embedding γ.1 ≠ 0 :=
+  have hγ : MonoidWithZeroHom.ValueGroup₀.embedding γ.val ≠ 0 :=
     (map_ne_zero_iff _ MonoidWithZeroHom.ValueGroup₀.embedding_injective).mpr γ.ne_zero
   filter_upwards [hcont.continuousAt.preimage_mem_nhds <| by
     simpa [(ramificationIdx_pos F P').ne'] using Iio_mem_nhds_zero hγ] with x hx

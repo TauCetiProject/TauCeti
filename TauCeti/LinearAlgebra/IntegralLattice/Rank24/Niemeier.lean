@@ -211,7 +211,8 @@ theorem dualCarrier_lattice_le (r : RootfulNiemeierType) :
 theorem glueWordIsometry_symm_mk_mem_orthogonalComplement (r : RootfulNiemeierType)
     (y : r.lattice.dualCarrier) :
     (DynkinType.glueWordIsometry r.componentType r.isSimplyLaced_componentType
-        r.valid_componentType).symm (Submodule.Quotient.mk ⟨y, r.dualCarrier_lattice_le y.2⟩) ∈
+        r.valid_componentType).symm (Submodule.Quotient.mk ⟨y, r.dualCarrier_lattice_le y.property⟩)
+            ∈
       r.glueModule.toFiniteBilinearModule.orthogonalComplement r.glueSubgroup :=
   DynkinType.glueWordIsometry_symm_mk_mem_orthogonalComplement _ _ _ _ _ y
 
@@ -259,7 +260,7 @@ theorem mem_rootLattice_carrier_of_form_self_eq_two (r : RootfulNiemeierType)
     ⟨⟨x, hx⟩, by rwa [mem_vectorsOfNorm, norm_def], rfl⟩
   rw [image_vectorsOfNorm_two_lattice] at hx2
   obtain ⟨y, -, rfl⟩ := hx2
-  exact y.2
+  exact y.property
 
 /-! ### Isometry invariants and pairwise non-isometry -/
 

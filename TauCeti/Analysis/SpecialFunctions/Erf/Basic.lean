@@ -36,6 +36,7 @@ derivative is the fundamental theorem of calculus for a continuous integrand.
 * `TauCeti.Real.strictMono_erf` — it is strictly monotone.
 * `TauCeti.Real.tendsto_erf_atTop` and `TauCeti.Real.tendsto_erf_atBot` — its limits are `1` and
   `-1`, whence `TauCeti.Real.abs_erf_lt_one`.
+* `TauCeti.Real.erfc_eq_integral_Ioi` — `erfc` is the Gaussian tail integral.
 * `Real.range_erf` and `Real.erfOrderIso` — the range of `erf` is `(-1, 1)`, and
   `erf` is an order isomorphism onto it.
 * `Real.erfInv` — the inverse error function, `0` outside `(-1, 1)`, with the inverse identities
@@ -214,6 +215,20 @@ theorem erfc_pos (x : ℝ) : 0 < erfc x := by
 theorem erfc_lt_two (x : ℝ) : erfc x < 2 := by
   rw [erfc_def]; linarith [neg_one_lt_erf x]
 
+/-- The complementary error function as a Gaussian tail integral,
+`erfc x = (2 / √π) * ∫ t in Ioi x, exp (-t ^ 2)`. -/
+theorem erfc_eq_integral_Ioi (x : ℝ) :
+    erfc x = 2 / √π * ∫ t in Ioi x, rexp (-t ^ 2) := by
+  have hint (a : ℝ) : IntegrableOn (fun t : ℝ => rexp (-t ^ 2)) (Ioi a) := by
+    simpa using (integrable_exp_neg_mul_sq (b := 1) one_pos).integrableOn
+  have hsplit := intervalIntegral.integral_interval_add_Ioi (hint 0) (hint x)
+  have hgauss : ∫ t in Ioi (0 : ℝ), rexp (-t ^ 2) = √π / 2 := by
+    simpa using integral_gaussian_Ioi 1
+  rw [hgauss] at hsplit
+  have hπ : √π ≠ 0 := by positivity
+  rw [erfc_def, erf_def, ← sub_eq_of_eq_add' hsplit.symm]
+  field_simp
+
 end Real
 
 end TauCeti
@@ -255,7 +270,7 @@ variable {x y : ℝ}
 /-- On `(-1, 1)`, the inverse error function is the inverse of `Real.erfOrderIso`. -/
 @[simp]
 theorem erfOrderIso_symm_apply (y : Ioo (-1 : ℝ) 1) : erfOrderIso.symm y = erfInv y := by
-  rw [erfInv, dite_eq_left y.2]
+  rw [erfInv, dite_eq_left y.property]
 
 /-- Outside the open interval `(-1, 1)`, the inverse error function is `0`. -/
 theorem erfInv_of_notMem (hy : y ∉ Ioo (-1) 1) : erfInv y = 0 :=

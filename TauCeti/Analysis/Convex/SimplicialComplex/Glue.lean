@@ -129,13 +129,13 @@ theorem vertices_glue : (glue K h).vertices = ⋃ i, (K i).vertices := by
 locally finite family. -/
 theorem locallyFinite_convexHull_glue [TopologicalSpace E] (hfin : ∀ i, (K i).faces.Finite)
     (hlf : LocallyFinite fun i => (K i).space) :
-    LocallyFinite fun σ : (glue K h).faces => convexHull 𝕜 (σ.1 : Set E) := by
+    LocallyFinite fun σ : (glue K h).faces => convexHull 𝕜 (σ.val : Set E) := by
   intro x
   obtain ⟨U, hU, hfinU⟩ := hlf x
   refine ⟨U, hU, Finite.of_finite_image ((hfinU.biUnion fun i _ => hfin i).subset ?_)
     Subtype.val_injective.injOn⟩
   rintro _ ⟨σ, ⟨y, hyσ, hyU⟩, rfl⟩
-  obtain ⟨i, hi⟩ := (mem_glue_faces h).1 σ.2
+  obtain ⟨i, hi⟩ := (mem_glue_faces h).1 σ.property
   exact mem_biUnion (x := i) ⟨y, convexHull_subset_space hi hyσ, hyU⟩ hi
 
 /-- The faces of the pieces `L` and `T j` of a glued family meet compatibly, provided distinct
@@ -223,10 +223,10 @@ theorem locallyFinite_convexHull_of_finite_restrict {K L : SimplicialComplex �
     (((hUf.image Subtype.val).union (hVf.biUnion fun i _ => hfin i)).subset ?_)
     Subtype.val_injective.injOn⟩
   rintro _ ⟨σ, ⟨y, hyσ, hyU, hyV⟩, rfl⟩
-  rcases hK σ.1 σ.2 with hσ | ⟨i, hσi⟩
-  · exact .inl ⟨⟨σ.1, hσ⟩, ⟨y, hyσ, hyU⟩, rfl⟩
+  rcases hK σ.val σ.property with hσ | ⟨i, hσi⟩
+  · exact .inl ⟨⟨σ.val, hσ⟩, ⟨y, hyσ, hyU⟩, rfl⟩
   · exact .inr (Set.mem_biUnion (x := i) ⟨y, (hPv i).convexHull_subset_iff.2 hσi hyσ, hyV⟩
-      (mem_restrict_faces.2 ⟨σ.2, hσi⟩))
+      (mem_restrict_faces.2 ⟨σ.property, hσi⟩))
 
 /-- The restriction of `K` to a cell `P k` has finitely many faces, if `P k` is compact, the cells
 are locally finite, the restriction of `L` to `P k` has finitely many faces, the restriction of

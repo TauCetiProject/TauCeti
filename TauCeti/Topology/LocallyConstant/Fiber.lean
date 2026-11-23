@@ -33,8 +33,8 @@ namespace IsLocallyConstant
 constant function `f : X → α` is continuous. -/
 theorem continuous_iff {X α T : Type*} [TopologicalSpace X] [TopologicalSpace T]
     {f : X → α} (hf : IsLocallyConstant f) {g : X → T} :
-    Continuous g ↔ ∀ a : α, Continuous (fun x : {x : X // f x = a} => g x.1) := by
-  refine ⟨fun hg _ => hg.comp continuous_subtype_val, fun hg => ?_⟩
+    Continuous g ↔ ∀ a : α, Continuous (fun x : {x : X // f x = a} => g x.val) := by
+  refine ⟨fun hg _ => hg.comp continuous_subtypeVal, fun hg => ?_⟩
   exact continuous_of_cover_nhds (s := fun a => {x : X | f x = a})
     (fun x => ⟨f x, (hf.isOpen_fiber (f x)).mem_nhds rfl⟩)
     (fun a => continuousOn_iff_continuous_domRestrict.2 (hg a))
@@ -45,14 +45,14 @@ theorem continuous_iff₂ {X α β T : Type*} [TopologicalSpace X] [TopologicalS
     {f₁ : X → α} {f₂ : X → β} (hf₁ : IsLocallyConstant f₁) (hf₂ : IsLocallyConstant f₂)
     {g : X → T} :
     Continuous g ↔
-      ∀ (a : α) (b : β), Continuous (fun x : {x : X // f₁ x = a ∧ f₂ x = b} => g x.1) := by
+      ∀ (a : α) (b : β), Continuous (fun x : {x : X // f₁ x = a ∧ f₂ x = b} => g x.val) := by
   rw [(hf₁.prodMk hf₂).continuous_iff, Prod.forall]
   exact forall₂_congr fun a b =>
-    ⟨fun h => h.comp ((continuous_subtype_val (p := fun x => f₁ x = a ∧ f₂ x = b)).subtype_mk
-        fun x => Prod.ext x.2.1 x.2.2),
-     fun h => h.comp ((continuous_subtype_val
+    ⟨fun h => h.comp ((continuous_subtypeVal (p := fun x => f₁ x = a ∧ f₂ x = b)).subtype_mk
+        fun x => Prod.ext x.property.1 x.property.2),
+     fun h => h.comp ((continuous_subtypeVal
         (p := fun x => (fun y => (f₁ y, f₂ y)) x = (a, b))).subtype_mk
-        fun x => ⟨congrArg Prod.fst x.2, congrArg Prod.snd x.2⟩)⟩
+        fun x => ⟨congrArg Prod.fst x.property, congrArg Prod.snd x.property⟩)⟩
 
 end IsLocallyConstant
 

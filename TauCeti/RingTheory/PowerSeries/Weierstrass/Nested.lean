@@ -106,7 +106,8 @@ theorem IsDistinguished.norm_mem_Ioc_of_aeval_eq_zero
     have hd : IsDistinguished s d (P.map (algebraMap K L) : PowerSeries L) := by
       rw [Polynomial.polynomial_map_coe]
       exact hP.map (algebraMap K L) (norm_algebraMap' L)
-    exact hd.norm_le_of_eval_eq_zero (hr.trans_le hrs) (hm.map _) hroot
+    exact hd.norm_le_of_eval_eq_zero (MulHomClass.isPowMul normHom) (hr.trans_le hrs) (hm.map _)
+      hroot
   refine ⟨lt_of_not_ge (fun hsmall => ?_), hlarge⟩
   have hunit := hu.map (_root_.PowerSeries.IsRestricted.evalAtHom K hsmall)
   have hzero : _root_.PowerSeries.IsRestricted.evalAtHom K hsmall

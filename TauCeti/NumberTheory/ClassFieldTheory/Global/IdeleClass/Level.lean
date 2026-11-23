@@ -91,7 +91,7 @@ private def ideleToClassLevel : Additive (IdeleGroup (𝓞 E) E) →+ (globalFor
   AddMonoidHom.codRestrict ((ideleClassCoeffEquivGlobalFormation K).toAddMonoidHom.comp
       ((ideleClassMk K).toAddMonoidHom.comp (ideleCoeffOfIntermediateField K E)))
     _ fun a ↦ by
-      have := Formation.map_mem_level (ideleClassHom K) (ideleLevelEquiv hU a).2
+      have := Formation.map_mem_level (ideleClassHom K) (ideleLevelEquiv hU a).property
       rwa [ideleLevelEquiv_apply_coe, ideleClassHom_hom_apply] at this
 
 private theorem coe_ideleToClassLevel (a : Additive (IdeleGroup (𝓞 E) E)) :
@@ -250,7 +250,7 @@ def globalGroundEquiv :
     Additive (IdeleClassGroup (𝓞 K) K) ≃+ (globalFormation K).level ⊤ :=
   (MulEquiv.ofBijective _ (GlobalNumberFields.ideleClassExtension_bijective K
       ((⊥ : Ω) : IntermediateField K (SeparableClosure K))
-      fun x ↦ (mem_bot.1 x.2).imp fun _ hc ↦ Subtype.ext hc)).toAdditive.trans
+      fun x ↦ (mem_bot.1 x.property).imp fun _ hc ↦ Subtype.ext hc)).toAdditive.trans
     (ideleClassLevelEquiv (E := ((⊥ : Ω) : IntermediateField K (SeparableClosure K)))
       (TauCeti.fixedField_toSubgroup_top K))
 

@@ -380,7 +380,7 @@ theorem _root_.Subring.isBounded_preimage_subtype {R : Type*} [Ring R] [Topologi
   rw [nhds_induced] at hU
   obtain ⟨W, hW, hWU⟩ := Filter.mem_comap.mp hU
   obtain ⟨V, hV, hVW⟩ := hs W hW
-  refine ⟨Subtype.val ⁻¹' V, continuous_subtype_val.continuousAt.preimage_mem_nhds hV, ?_⟩
+  refine ⟨Subtype.val ⁻¹' V, continuous_subtypeVal.continuousAt.preimage_mem_nhds hV, ?_⟩
   rintro _ ⟨x, hx, y, hy, rfl⟩
   exact hWU (hVW (Set.mul_mem_mul hx hy))
 

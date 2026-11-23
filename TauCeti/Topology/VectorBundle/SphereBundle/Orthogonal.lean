@@ -127,21 +127,22 @@ private theorem mem_range_complementProjection_iff {x : X} {w : E} :
 `X × E`, is `TauCeti.orthogonalSphereBundle f`. -/
 private def sphereBundleHomeomorph [TopologicalSpace X] (F : Type*) :
     sphereBundle F (fun x ↦ (complementProjection f x).range) ≃ₜ orthogonalSphereBundle f where
-  toFun v := ⟨(v.1.proj, ⟨(v.1.2 : E), mem_sphere_zero_iff_norm.2 (mem_sphereBundle.1 v.2)⟩),
-    mem_orthogonalSphereBundle.2 (mem_range_complementProjection_iff.1 (Subtype.prop v.1.2))⟩
-  invFun q := ⟨⟨q.1.1, ⟨q.1.2, mem_range_complementProjection_iff.2 q.2⟩⟩,
-    mem_sphereBundle.2 (norm_eq_of_mem_sphere q.1.2)⟩
+  toFun v := ⟨(v.val.proj, ⟨(v.val.snd : E), mem_sphere_zero_iff_norm.2
+      (mem_sphereBundle.1 v.property)⟩),
+    mem_orthogonalSphereBundle.2 (mem_range_complementProjection_iff.1 (Subtype.prop v.val.snd))⟩
+  invFun q := ⟨⟨q.val.1, ⟨q.val.2, mem_range_complementProjection_iff.2 q.property⟩⟩,
+    mem_sphereBundle.2 (norm_eq_of_mem_sphere q.val.2)⟩
   left_inv _ := rfl
   right_inv _ := rfl
   continuous_toFun := by
     have h := (isEmbedding_totalSpace_range F (complementProjection f)).continuous.comp
-      (continuous_subtype_val (p := (· ∈ sphereBundle F _)))
+      (continuous_subtypeVal (p := (· ∈ sphereBundle F _)))
     exact (h.fst.prodMk (h.snd.subtype_mk _)).subtype_mk _
   continuous_invFun := by
     refine (IsInducing.subtypeVal.continuous_iff).2 <|
       (isEmbedding_totalSpace_range F (complementProjection f)).continuous_iff.2 ?_
-    exact (continuous_fst.comp continuous_subtype_val).prodMk
-      (continuous_subtype_val.comp (continuous_snd.comp continuous_subtype_val))
+    exact (continuous_fst.comp continuous_subtypeVal).prodMk
+      (continuous_subtypeVal.comp (continuous_snd.comp continuous_subtypeVal))
 
 variable [Fintype ι]
 
@@ -184,7 +185,7 @@ theorem exists_trivialization_orthogonalSphereBundleProj (hf : Continuous f)
   have := rangeVectorBundle (continuous_complementProjection hf ho) hidem
     (nonempty_continuousLinearEquiv_range ho hF)
   have hnorm : Continuous fun v : TotalSpace F (fun x ↦ (complementProjection f x).range) ↦
-      ‖v.2‖ :=
+      ‖v.snd‖ :=
     continuous_norm.comp
       (continuous_snd.comp (isEmbedding_totalSpace_range F (complementProjection f)).continuous)
   obtain ⟨e, he⟩ := exists_trivialization_sphereBundleProj F _ hnorm x

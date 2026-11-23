@@ -337,8 +337,8 @@ private theorem flowerPotential_path (ws : List (List (α × Bool)))
         (Subgroup.one_mem (Subgroup.closure {g : FreeGroup α |
           ∃ w ∈ ws, FreeGroup.mk w = g}))
   | @cons b c p e ih =>
-      have he := flowerPotential_edge ws e.1
-      rw [e.2.1, e.2.2] at he
+      have he := flowerPotential_edge ws e.val
+      rw [e.property.1, e.property.2] at he
       have h := (Subgroup.closure {g : FreeGroup α |
         ∃ w ∈ ws, FreeGroup.mk w = g}).mul_mem ih he
       simpa only [(flower ws).read_cons, mul_assoc, inv_mul_cancel_left] using h
