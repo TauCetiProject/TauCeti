@@ -95,7 +95,7 @@ right-module cochains of degree `p` out of the free rank-one module with the deg
 `M`.  The inverse sends `x` to right multiplication `a ↦ x * a`. -/
 def dgYonedaCochainEquiv (p : ℤ) :
     dgRightModuleCochains (R := R) (A := A) (ℳ := 𝒜) (ℳN := ℳ) p ≃ₗ[R] ℳ p where
-  toFun f := ⟨f.1 1, by
+  toFun f := ⟨f.val 1, by
     simpa using dgRightModuleCochains.map_mem f (SetLike.one_mem_graded 𝒜)⟩
   invFun x :=
     ⟨{ toFun := fun a ↦ op a • (x : M)
@@ -107,10 +107,10 @@ def dgYonedaCochainEquiv (p : ℤ) :
       intro q a ha
       exact SetLike.GradedSMul.smul_mem
         ((InternalGrading.op_mem_opposite_piece_iff _ _ _).mpr
-          (by rwa [InternalGrading.ofDecomposition_piece 𝒜])) x.2⟩
+          (by rwa [InternalGrading.ofDecomposition_piece 𝒜])) x.property⟩
   left_inv f := by
     refine Subtype.ext (LinearMap.ext fun a ↦ ?_)
-    simpa [op_smul_eq_mul] using (f.1.map_smul (op a) 1).symm
+    simpa [op_smul_eq_mul] using (f.val.map_smul (op a) 1).symm
   right_inv x := Subtype.ext (by simp)
   map_add' _ _ := (rfl)
   map_smul' _ _ := (rfl)
@@ -119,13 +119,13 @@ omit [DirectSum.Decomposition ℳ] in
 @[simp]
 theorem dgYonedaCochainEquiv_apply (p : ℤ)
     (f : dgRightModuleCochains (R := R) (A := A) (ℳ := 𝒜) (ℳN := ℳ) p) :
-    (dgYonedaCochainEquiv (ℳ := ℳ) p f : M) = f.1 1 :=
+    (dgYonedaCochainEquiv (ℳ := ℳ) p f : M) = f.val 1 :=
   (rfl)
 
 omit [DirectSum.Decomposition ℳ] in
 @[simp]
 theorem dgYonedaCochainEquiv_symm_apply (p : ℤ) (x : ℳ p) (a : A) :
-    ((dgYonedaCochainEquiv (𝒜 := 𝒜) (ℳ := ℳ) p).symm x).1 a = op a • (x : M) :=
+    ((dgYonedaCochainEquiv (𝒜 := 𝒜) (ℳ := ℳ) p).symm x).val a = op a • (x : M) :=
   (rfl)
 
 /-- **The differential graded Yoneda lemma** in degree zero: a morphism of differential graded
@@ -137,14 +137,15 @@ def dgYonedaHomEquiv (hM : IsDGRightModule h ℳ dM) :
       simpa using Graded.map_mem f (SetLike.one_mem_graded 𝒜)⟩
   invFun z :=
     { toLinearMap :=
-        ((dgYonedaCochainEquiv (𝒜 := 𝒜) (ℳ := ℳ) 0).symm ⟨(z : M), hM.mem_cyclesDeg.mp z.2⟩).1
+        ((dgYonedaCochainEquiv (𝒜 := 𝒜) (ℳ := ℳ) 0).symm ⟨(z : M),
+            hM.mem_cyclesDeg.mp z.property⟩).val
       map_mem' := fun {_ _} ha ↦ by
         simpa using dgRightModuleCochains.map_mem
           ((dgYonedaCochainEquiv (𝒜 := 𝒜) (ℳ := ℳ) 0).symm
-            ⟨(z : M), hM.mem_cyclesDeg.mp z.2⟩) ha
+            ⟨(z : M), hM.mem_cyclesDeg.mp z.property⟩) ha
       map_d' := fun a ↦ by
-        have key := hM.leibniz (hM.mem_cyclesDeg.mp z.2) a
-        rw [hM.mem_cycles.mp (z : hM.cycles).2, smul_zero, zero_add, Int.negOnePow_zero,
+        have key := hM.leibniz (hM.mem_cyclesDeg.mp z.property) a
+        rw [hM.mem_cycles.mp (z : hM.cycles).property, smul_zero, zero_add, Int.negOnePow_zero,
           one_smul] at key
         exact key }
   left_inv f := by
@@ -204,8 +205,8 @@ def dgYonedaIso (hM : IsDGRightModule h ℳ dM) :
       -- Both composites evaluate the cochain at `1`.  The Hom-complex differential is opaque, so
       -- the goal is first written in the form its public application lemma rewrites; the extra
       -- term it produces carries `d 1`, which vanishes.
-      change dM (f.1 1) =
-        ((dgRightModuleCochains.differential (hM := h.isDGRightModule) (hN := hM) i f).1 :
+      change dM (f.val 1) =
+        ((dgRightModuleCochains.differential (hM := h.isDGRightModule) (hN := hM) i f).val :
           A →ₗ[Aᵐᵒᵖ] M) 1
       rw [dgRightModuleCochains.differential_apply, h.map_one_eq_zero, map_zero, smul_zero,
         sub_zero]
@@ -252,7 +253,7 @@ by `a`. -/
 -- `DGRightModuleCat.of`, which `simp` reduces in the goal, so the lemma could never fire.
 theorem dgYonedaEmbeddingHomEquiv_apply {X Y : DGSingleObj h} {n : ℤ} (f : DGHom R n X Y)
     (x : A) :
-    (DGRightModuleCat.dgHomLinearEquivCochains _ _ n (dgYonedaEmbeddingHomEquiv h X Y n f)).1 x =
+    (DGRightModuleCat.dgHomLinearEquivCochains _ _ n (dgYonedaEmbeddingHomEquiv h X Y n f)).val x =
       (DGSingleObj.dgHomEquiv X Y n f : A) * x := by
   simp [dgYonedaEmbeddingHomEquiv]
 
@@ -280,7 +281,7 @@ noncomputable def dgYonedaEmbedding :
       simp only [LinearEquiv.coe_coe]
       rw [dgYonedaEmbeddingHomEquiv_apply, dgYonedaEmbeddingHomEquiv_apply,
         dgYonedaEmbeddingHomEquiv_apply, DGSingleObj.dgHomEquiv_dgDifferential,
-        h.leibniz (DGSingleObj.dgHomEquiv X Y n f).2 x, add_sub_cancel_right])
+        h.leibniz (DGSingleObj.dgHomEquiv X Y n f).property x, add_sub_cancel_right])
     (fun X ↦ by
       apply (DGRightModuleCat.dgHomLinearEquivCochains _ _ 0).injective
       rw [DGRightModuleCat.dgId_eq]

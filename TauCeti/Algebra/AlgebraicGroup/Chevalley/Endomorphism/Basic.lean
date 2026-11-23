@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.AlgebraicGroup.Chevalley.Borel
-public import TauCeti.Algebra.AlgebraicGroup.Chevalley.Frobenius
+public import TauCeti.Algebra.AlgebraicGroup.Chevalley.Frobenius.Basic
 public import TauCeti.Algebra.AlgebraicGroup.Chevalley.Torus.Weyl
 public import Mathlib.FieldTheory.Perfect
 import TauCeti.Algebra.AlgebraicGroup.Chevalley.HomExt

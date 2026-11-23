@@ -80,7 +80,7 @@ theorem pointCoeffMap_dual_pointCoeffMap (P : W₁.PointCoeff) :
 def kerCoeffToTorsionCoeff :
     (ofIsogeny φ).KerCoeff →+[AbsoluteGaloisGroup K] W₁.TorsionCoeff φ.degree where
   toFun P := ⟨P, by
-    have hP : (ofIsogeny φ).pointCoeffMap (P : W₁.PointCoeff) = 0 := P.2
+    have hP : (ofIsogeny φ).pointCoeffMap (P : W₁.PointCoeff) = 0 := P.property
     rw [AddSubgroup.torsionBy.nsmul_iff, ← pointCoeffMap_dual_pointCoeffMap, hP, map_zero]⟩
   map_smul' σ P := Subtype.ext <| by rw [coe_smul_torsionCoeff, coe_smul_kerCoeff]; rfl
   map_zero' := (rfl)
@@ -113,7 +113,7 @@ def torsionCoeffToDualKerCoeff :
     W₁.TorsionCoeff φ.degree →+[AbsoluteGaloisGroup K] (ofIsogeny φ.dual).KerCoeff where
   toFun P := ⟨(ofIsogeny φ).pointCoeffMap P, by
     rw [AddMonoidHom.mem_ker, AddMonoidHom.coe_ofClass, pointCoeffMap_dual_pointCoeffMap]
-    exact AddSubgroup.torsionBy.nsmul_iff.1 P.2⟩
+    exact AddSubgroup.torsionBy.nsmul_iff.1 P.property⟩
   map_smul' σ P := Subtype.ext <| by
     simp only [MonoidHom.id_apply, coe_smul_kerCoeff, coe_smul_torsionCoeff, map_smul]
   map_zero' := Subtype.ext <| by simp only [ZeroMemClass.coe_zero, map_zero]
@@ -185,7 +185,7 @@ def torsionShortExact :
   exact P := by
     refine ⟨fun h ↦ ⟨⟨P, congrArg Subtype.val h⟩, rfl⟩, ?_⟩
     rintro ⟨Q, rfl⟩
-    exact Subtype.ext Q.2
+    exact Subtype.ext Q.property
 
 /-- The inclusion of `torsionShortExact φ` is `TauCeti.Isogeny.kerCoeffToTorsionCoeff`. -/
 @[simp]
@@ -223,7 +223,7 @@ theorem explicitDelta0_torsionShortExact {Q : W₂.toAffine.Point}
   obtain ⟨P, hP⟩ := φ.pointCoeffMap_ofIsogeny_surjective (W₂.basePointCoeff Q)
   have hPm : P ∈ AddSubgroup.torsionBy W₁.PointCoeff φ.degree := by
     have hd' : (ofIsogeny φ.dual).pointCoeffMap ((d : (ofIsogeny φ.dual).KerCoeff) :
-        W₂.PointCoeff) = 0 := (d : (ofIsogeny φ.dual).KerCoeff).2
+        W₂.PointCoeff) = 0 := (d : (ofIsogeny φ.dual).KerCoeff).property
     rw [AddSubgroup.torsionBy.nsmul_iff, ← pointCoeffMap_dual_pointCoeffMap, hP, ← hd, hd']
   rw [φ.torsionShortExact.explicitDelta0_apply d (b := ⟨P, hPm⟩) (Subtype.ext (hP.trans hd.symm))
     (a := kummerCocycle hP) fun σ ↦ Subtype.ext (by
@@ -242,10 +242,10 @@ theorem explicitCoeff1_kerCoeffToTorsionCoeff_eq_zero_iff
   · rintro ⟨d, rfl⟩
     obtain ⟨Q, hQ⟩ := W₂.mem_H0_pointCoeff_iff.1 <| (FixedPoints.mem_addSubgroup _ _ _).2
       fun σ ↦ (coe_smul_kerCoeff σ _).symm.trans
-        (congrArg Subtype.val ((FixedPoints.mem_addSubgroup _ _ _).1 d.2 σ))
+        (congrArg Subtype.val ((FixedPoints.mem_addSubgroup _ _ _).1 d.property σ))
     refine ⟨Q, W₁.basePointCoeff_injective ?_, (φ.explicitDelta0_torsionShortExact hQ.symm).symm⟩
     rw [← pointCoeffMap_basePointCoeff, hQ, map_zero]
-    exact (d : (ofIsogeny φ.dual).KerCoeff).2
+    exact (d : (ofIsogeny φ.dual).KerCoeff).property
   · rintro ⟨Q, hQ, rfl⟩
     have hmem : W₂.basePointCoeff Q ∈
         ((ofIsogeny φ.dual).pointCoeffMap : W₂.PointCoeff →+ W₁.PointCoeff).ker := by

@@ -76,8 +76,8 @@ theorem tendsto_laurentSeries_iff_coeff {ι : Type*} {l : Filter ι}
     · rintro ⟨⟨b, hlb⟩, hcoeff⟩
       intro U hU
       obtain ⟨γ, hγ⟩ := Valued.mem_nhds.mp hU
-      let D := 1 - log (MonoidWithZeroHom.ValueGroup₀.embedding γ.1)
-      have hD : exp (-D) < MonoidWithZeroHom.ValueGroup₀.embedding γ.1 := by
+      let D := 1 - log (MonoidWithZeroHom.ValueGroup₀.embedding γ.val)
+      have hD : exp (-D) < MonoidWithZeroHom.ValueGroup₀.embedding γ.val := by
         rw [← lt_log_iff_exp_lt (by simp), neg_sub]
         omega
       rw [Filter.mem_map]
