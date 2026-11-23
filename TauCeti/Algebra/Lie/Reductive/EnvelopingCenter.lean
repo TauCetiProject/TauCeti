@@ -23,13 +23,13 @@ central/derived splitting `L ≃ z(L) × [L, L]` (`TauCeti.centerDerivedEquiv`).
 Transporting the product comparison `TauCeti.UniversalEnvelopingAlgebra.productEnveloping`
 through this splitting gives the algebra equivalence
 
-`U(L) ≃ Sym(z(L)) ⊗ U([L, L])`  (`TauCeti.UniversalEnvelopingAlgebra.reductiveEnveloping`),
+`U(L) ≃ Sym(z(L)) ⊗ U([L, L])`  (`UniversalEnvelopingAlgebra.reductiveEnveloping`),
 
 which sends a canonical generator `x` to `ι_z(pr_z x) ⊗ 1 + 1 ⊗ ι_der(pr_der x)`, and whose
 inverse multiplies the images of the two factor inclusions. Its restriction to the centers is the
 algebra equivalence
 
-`Z(U(L)) ≃ Sym(z(L)) ⊗ Z(U([L, L]))`  (`TauCeti.UniversalEnvelopingAlgebra.reductiveCenterEquiv`),
+`Z(U(L)) ≃ Sym(z(L)) ⊗ Z(U([L, L]))`  (`UniversalEnvelopingAlgebra.reductiveCenterEquiv`),
 
 which, followed by `id ⊗ (Z(U([L, L])) ↪ U([L, L]))`, is `reductiveEnveloping` on the underlying
 central element. Both are built from universal properties: no Harish-Chandra theorem is used.
@@ -38,18 +38,18 @@ central element. Both are built from universal properties: no Harish-Chandra the
 
 * `LieIdeal.prodEquivOfIsCompl`: addition `I × J ≃ₗ⁅R⁆ L` for complementary ideals.
 * `TauCeti.centerDerivedEquiv`: the splitting `L ≃ₗ⁅K⁆ z(L) × [L, L]` of a reductive `L`.
-* `TauCeti.UniversalEnvelopingAlgebra.reductiveEnveloping`: `U(L) ≃ₐ[K] Sym(z(L)) ⊗ U([L, L])`.
-* `TauCeti.UniversalEnvelopingAlgebra.reductiveCenterEquiv`:
+* `UniversalEnvelopingAlgebra.reductiveEnveloping`: `U(L) ≃ₐ[K] Sym(z(L)) ⊗ U([L, L])`.
+* `UniversalEnvelopingAlgebra.reductiveCenterEquiv`:
   `Z(U(L)) ≃ₐ[K] Sym(z(L)) ⊗ Z(U([L, L]))`.
 
 ## Main results
 
-* `TauCeti.UniversalEnvelopingAlgebra.reductiveEnveloping_ι`: the value on a generator.
-* `TauCeti.UniversalEnvelopingAlgebra.reductiveEnveloping_symm_tmul`: the inverse on a pure tensor.
-* `TauCeti.UniversalEnvelopingAlgebra.reductiveEnveloping_naturality`: naturality for Lie maps
+* `UniversalEnvelopingAlgebra.reductiveEnveloping_ι`: the value on a generator.
+* `UniversalEnvelopingAlgebra.reductiveEnveloping_symm_tmul`: the inverse on a pure tensor.
+* `UniversalEnvelopingAlgebra.reductiveEnveloping_naturality`: naturality for Lie maps
   sending the centre into the centre.
-* `TauCeti.UniversalEnvelopingAlgebra.reductiveCenterEquiv_inclusion`: the inclusion square.
-* `TauCeti.UniversalEnvelopingAlgebra.reductiveCenterEquiv_symm_tmul`: the pure-tensor formula.
+* `UniversalEnvelopingAlgebra.reductiveCenterEquiv_inclusion`: the inclusion square.
+* `UniversalEnvelopingAlgebra.reductiveCenterEquiv_symm_tmul`: the pure-tensor formula.
 
 ## References
 
@@ -214,7 +214,11 @@ theorem centerDerivedEquiv_map (f : L →ₗ⁅K⁆ L') (hf : ∀ z ∈ center K
 
 end Naturality
 
+end TauCeti
+
 namespace UniversalEnvelopingAlgebra
+
+open TauCeti TauCeti.UniversalEnvelopingAlgebra
 
 private theorem mapEquiv_map {R L M N : Type*} [CommRing R] [LieRing L] [LieAlgebra R L]
     [LieRing M] [LieAlgebra R M] [LieRing N] [LieAlgebra R N] (e : M ≃ₗ⁅R⁆ N)
@@ -361,5 +365,3 @@ theorem exists_reductiveCenterEquiv :
 end Center
 
 end UniversalEnvelopingAlgebra
-
-end TauCeti
