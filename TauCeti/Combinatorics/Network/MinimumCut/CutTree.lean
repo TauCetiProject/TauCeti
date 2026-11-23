@@ -101,6 +101,19 @@ theorem reachable_deleteEdges_iff (hT : IsFlowEquivalentTree f T w) (k : K) {s t
     obtain ⟨p, hp, -⟩ := hT.isTree.existsUnique_path s t
     exact ⟨p.toDeleteEdges _ fun e he ↦ not_lt.mpr (hk.trans (hT.le_weight hp he))⟩
 
+/-- Deleting the edges below a natural threshold is governed by the pair minimum value extended
+to `ℕ∞`, with value `⊤` on the diagonal. -/
+theorem reachable_deleteEdges_iff_le_iInf_pairMinimumValue
+    {f : Finset V → ℕ} {T : SimpleGraph V} {w : Sym2 V → ℕ}
+    (hT : IsFlowEquivalentTree f T w) (k : ℕ) {s t : V} :
+    (T.deleteEdges {e | w e < k}).Reachable s t ↔
+      (k : ℕ∞) ≤ ⨅ (_ : s ≠ t), ((pairMinimumValue f s t : ℕ) : ℕ∞) := by
+  rw [hT.reachable_deleteEdges_iff]
+  by_cases hst : s = t
+  · subst t
+    simp
+  · simp [hst]
+
 /-- Any set separating two vertices has value at least the weight of some tree edge. -/
 theorem exists_weight_le (hT : IsFlowEquivalentTree f T w) {S : Finset V} {s t : V}
     (hs : s ∈ S) (ht : t ∉ S) : ∃ e ∈ T.edgeSet, w e ≤ f S := by
@@ -124,6 +137,24 @@ theorem exists_edge_weight_le_pairMinimumValue [Nontrivial V]
   obtain ⟨p, hp, -⟩ := hT.isTree.existsUnique_path s t
   obtain ⟨e, he, hwe⟩ := hT.exists_weight_eq hst hp
   exact (hmin e (p.edges_subset_edgeSet he)).trans_eq hwe
+
+/-- The least extended pair minimum value is the weight of a minimum-weight tree edge. The
+extended value is `⊤` on the diagonal, so the infimum uniformly covers all vertex pairs. -/
+theorem exists_edge_iInf_pairMinimumValue_eq_weight
+    {f : Finset V → ℕ} {T : SimpleGraph V} {w : Sym2 V → ℕ} [Nontrivial V]
+    (hT : IsFlowEquivalentTree f T w) :
+    ∃ u v, T.Adj u v ∧ (∀ e ∈ T.edgeSet, w s(u, v) ≤ w e) ∧
+      (⨅ s, ⨅ t, ⨅ (_ : s ≠ t), ((pairMinimumValue f s t : ℕ) : ℕ∞)) =
+        (w s(u, v) : ℕ∞) := by
+  obtain ⟨u, v, huv, hmin, hpair⟩ := hT.exists_edge_weight_le_pairMinimumValue
+  refine ⟨u, v, huv, hmin, le_antisymm ?_ ?_⟩
+  · calc
+      (⨅ s, ⨅ t, ⨅ (_ : s ≠ t), ((pairMinimumValue f s t : ℕ) : ℕ∞)) ≤
+          ((pairMinimumValue f u v : ℕ) : ℕ∞) :=
+        iInf_le_of_le u (iInf_le_of_le v (iInf_le_of_le huv.ne le_rfl))
+      _ = (w s(u, v) : ℕ∞) := congrArg (↑· : ℕ → ℕ∞) (hT.weight_eq huv).symm
+  · refine le_iInf fun s ↦ le_iInf fun t ↦ le_iInf fun hst ↦ ?_
+    exact_mod_cast hpair s t hst
 
 end IsFlowEquivalentTree
 

@@ -129,6 +129,18 @@ theorem edgeReachability_eq_pairMinimumValue [Finite V(G)] [Fintype E(G)] {s t :
   rw [← isEdgeReachable_iff_le_edgeReachability,
     isEdgeReachable_iff_le_pairMinimumValue hst, Nat.cast_le]
 
+/-- Local edge reachability is the pair minimum value extended to `ℕ∞`, with value `⊤` on
+the diagonal. -/
+theorem edgeReachability_eq_iInf_pairMinimumValue (G : Graph α β)
+    [Finite V(G)] [Fintype E(G)] (s t : V(G)) :
+    G.edgeReachability s t =
+      ⨅ (_ : s ≠ t),
+        ((TerminalCut.pairMinimumValue (G.edgeCutCapacity fun _ ↦ (1 : ℕ)) s t : ℕ) : ℕ∞) := by
+  by_cases hst : s = t
+  · subst t
+    simp [G.edgeReachability_self s.property]
+  · simp [hst, G.edgeReachability_eq_pairMinimumValue hst]
+
 /-- Aggregating the unit capacities of parallel edges by their unordered pairs does not change
 the minimum cut value computing local edge reachability. The aggregated capacity of a pair is its
 edge multiplicity, rather than merely the adjacency indicator. -/
@@ -171,10 +183,19 @@ theorem edgeReachability_eq_pairMinimumValue_unitCutCapacity [Finite V] (G : Sim
     (Graph.ofSimpleGraph G).edgeReachability_eq_pairMinimumValue (s := e s) (t := e t) hst'
   have hmin := TerminalCut.pairMinimumValue_map G.unitCutCapacity e
     ((Graph.ofSimpleGraph G).edgeCutCapacity fun _ ↦ (1 : ℕ)) he s t
-  rw [G.ofSimpleGraphVertexEquiv_apply, G.ofSimpleGraphVertexEquiv_apply] at hmin
-  rw [Graph.edgeReachability_ofSimpleGraph] at hreach
-  rw [G.ofSimpleGraphVertexEquiv_apply, G.toOfSimpleGraphVertex_val,
-    G.ofSimpleGraphVertexEquiv_apply, G.toOfSimpleGraphVertex_val] at hreach
+  simp only [e, Graph.edgeReachability_ofSimpleGraph,
+    G.ofSimpleGraphVertexEquiv_apply_val] at hreach
   exact hreach.trans (congrArg (↑· : ℕ → ℕ∞) hmin)
+
+/-- Simple-graph edge reachability is the unit pair minimum value extended to `ℕ∞`, with
+value `⊤` on the diagonal. -/
+theorem edgeReachability_eq_iInf_pairMinimumValue_unitCutCapacity [Finite V]
+    (G : SimpleGraph V) (s t : V) :
+    G.edgeReachability s t =
+      ⨅ (_ : s ≠ t), ((TerminalCut.pairMinimumValue G.unitCutCapacity s t : ℕ) : ℕ∞) := by
+  by_cases hst : s = t
+  · subst t
+    simp
+  · simp [hst, G.edgeReachability_eq_pairMinimumValue_unitCutCapacity hst]
 
 end SimpleGraph

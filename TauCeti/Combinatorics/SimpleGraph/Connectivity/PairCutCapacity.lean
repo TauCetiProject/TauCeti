@@ -184,11 +184,12 @@ variable {V : Type*}
 
 /-- The unit capacity of a vertex cut in a finite simple graph: the number of graph edges
 crossing the cut. -/
-noncomputable def unitCutCapacity [Finite V] (G : SimpleGraph V) (S : Finset V) : ℕ :=
+noncomputable def unitCutCapacity (G : SimpleGraph V) [Finite G.edgeSet]
+    (S : Finset V) : ℕ :=
   (Set.toFinite (G.edgeSet ∩ {e | e.Crosses (S : Set V)})).toFinset.card
 
 /-- Unit cut capacity is the number of actual simple-graph edges crossing the cut. -/
-theorem unitCutCapacity_eq_ncard [Finite V] (G : SimpleGraph V) (S : Finset V) :
+theorem unitCutCapacity_eq_ncard (G : SimpleGraph V) [Finite G.edgeSet] (S : Finset V) :
     G.unitCutCapacity S =
       (G.edgeSet ∩ {e | e.Crosses (S : Set V)}).ncard := by
   rw [unitCutCapacity]
@@ -219,7 +220,7 @@ theorem unitCutCapacity_def [Fintype V] (G : SimpleGraph V) (S : Finset V) :
 
 /-- The empty cut has unit capacity zero. -/
 @[simp]
-theorem unitCutCapacity_empty [Finite V] (G : SimpleGraph V) :
+theorem unitCutCapacity_empty (G : SimpleGraph V) [Finite G.edgeSet] :
     G.unitCutCapacity ∅ = 0 := by
   rw [unitCutCapacity_eq_ncard, Set.ncard_eq_zero]
   apply Set.eq_empty_iff_forall_notMem.mpr
@@ -239,12 +240,34 @@ theorem unitCutCapacity_compl [Fintype V] [DecidableEq V] (G : SimpleGraph V) (S
     G.unitCutCapacity Sᶜ = G.unitCutCapacity S := by
   rw [unitCutCapacity_def, unitCutCapacity_def, TauCeti.pairCutCapacity_compl]
 
+/-- A cut has unit capacity zero exactly when no graph edge joins a vertex in the cut to a
+vertex outside it. -/
+theorem unitCutCapacity_eq_zero_iff (G : SimpleGraph V) [Finite G.edgeSet] (S : Finset V) :
+    G.unitCutCapacity S = 0 ↔
+      ∀ {x : V}, x ∈ S → ∀ {y : V}, y ∉ S → ¬G.Adj x y := by
+  rw [unitCutCapacity_eq_ncard, Set.ncard_eq_zero]
+  constructor
+  · intro h x hx y hy hxy
+    have : s(x, y) ∈ G.edgeSet ∩ {e | e.Crosses (S : Set V)} := by
+      exact ⟨G.mem_edgeSet.mpr hxy, by simp [hx, hy]⟩
+    rw [h] at this
+    exact this
+  · intro h
+    apply Set.eq_empty_iff_forall_notMem.mpr
+    rintro e ⟨heG, heS⟩
+    induction e using Sym2.inductionOn with
+    | _ x y =>
+      simp only [Set.mem_ofPred_eq] at heS
+      rw [Sym2.crosses_mk_iff] at heS
+      rcases heS with ⟨hx, hy⟩ | ⟨hy, hx⟩
+      · exact h hx hy (G.mem_edgeSet.mp heG)
+      · exact h hy hx (G.mem_edgeSet.mp heG).symm
+
 /-- Unit cut capacity is a symmetric submodular set function. -/
 theorem isSymmSubmodular_unitCutCapacity [Fintype V] [DecidableEq V]
     (G : SimpleGraph V) : TauCeti.IsSymmSubmodular G.unitCutCapacity := by
-  rw [show G.unitCutCapacity =
-    TauCeti.pairCutCapacity (G.edgeSet.indicator fun _ ↦ 1) from
-      funext G.unitCutCapacity_def]
+  have hcapacity := funext G.unitCutCapacity_def
+  rw [hcapacity]
   exact TauCeti.isSymmSubmodular_pairCutCapacity _ (by simp)
 
 end SimpleGraph

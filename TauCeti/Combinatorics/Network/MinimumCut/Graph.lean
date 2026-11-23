@@ -99,17 +99,14 @@ theorem exists_weight_eq_edgeReachability
   rw [G.edgeReachability_eq_pairMinimumValue hst, ← hwe]
 
 /-- Deleting the tree edges of weight below `k` leaves two actual vertices connected exactly when
-they are equal or their native local edge reachability is at least `k`. -/
+they are natively `k`-edge-reachable. -/
 theorem reachable_deleteEdges_iff_edgeReachability
     (hT : IsFlowEquivalentTree (G.edgeCutCapacity fun _ ↦ (1 : ℕ)) T w) (k : ℕ) {s t : V(G)} :
     (T.deleteEdges {e | w e < k}).Reachable s t ↔
-      s = t ∨ (k : ℕ∞) ≤ G.edgeReachability s t := by
-  rw [hT.reachable_deleteEdges_iff]
-  by_cases hst : s = t
-  · simp [hst]
-  · simp only [hst, false_or]
-    rw [G.edgeReachability_eq_pairMinimumValue hst]
-    exact_mod_cast Iff.rfl
+      G.IsEdgeReachable k s t := by
+  rw [hT.reachable_deleteEdges_iff_le_iInf_pairMinimumValue,
+    G.isEdgeReachable_iff_le_edgeReachability,
+    G.edgeReachability_eq_iInf_pairMinimumValue]
 
 end TauCeti.TerminalCut.IsFlowEquivalentTree
 
@@ -148,26 +145,12 @@ theorem exists_edge_edgeConnectivity_eq_weight [Nontrivial V(G)]
     (hT : IsFlowEquivalentTree (G.edgeCutCapacity fun _ ↦ (1 : ℕ)) T w) :
     ∃ u v, T.Adj u v ∧ (∀ e ∈ T.edgeSet, w s(u, v) ≤ w e) ∧
       G.edgeConnectivity = (w s(u, v) : ℕ∞) := by
-  obtain ⟨u, v, huv, hmin, hpair⟩ := hT.exists_edge_weight_le_pairMinimumValue
-  refine ⟨u, v, huv, hmin, le_antisymm ?_ ?_⟩
-  · calc
-      G.edgeConnectivity ≤ G.edgeReachability u v :=
-        G.edgeConnectivity_le_edgeReachability u.property v.property
-      _ = ((TauCeti.TerminalCut.pairMinimumValue
-          (G.edgeCutCapacity fun _ ↦ (1 : ℕ)) u v : ℕ) : ℕ∞) :=
-        G.edgeReachability_eq_pairMinimumValue huv.ne
-      _ = (w s(u, v) : ℕ∞) := by rw [hT.weight_eq huv]
-  · rw [G.edgeConnectivity_eq_iInf_edgeReachability]
-    refine le_iInf fun x ↦ le_iInf fun hx ↦ le_iInf fun y ↦ le_iInf fun hy ↦ ?_
-    let sx : V(G) := ⟨x, hx⟩
-    let sy : V(G) := ⟨y, hy⟩
-    by_cases hxy : sx = sy
-    · have hxy' : x = y := congrArg Subtype.val hxy
-      subst y
-      rw [G.edgeReachability_self hx]
-      exact le_top
-    · rw [G.edgeReachability_eq_pairMinimumValue hxy]
-      exact_mod_cast hpair sx sy hxy
+  obtain ⟨u, v, huv, hmin, hvalue⟩ := hT.exists_edge_iInf_pairMinimumValue_eq_weight
+  refine ⟨u, v, huv, hmin, ?_⟩
+  rw [G.edgeConnectivity_eq_iInf_edgeReachability, ← iInf_subtype'']
+  simp_rw [← iInf_subtype'']
+  simp_rw [G.edgeReachability_eq_iInf_pairMinimumValue]
+  exact hvalue
 
 end TauCeti.TerminalCut.IsFlowEquivalentTree
 

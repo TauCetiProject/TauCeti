@@ -88,13 +88,9 @@ theorem reachable_deleteEdges_iff_simpleGraph_edgeReachability
     (hT : IsFlowEquivalentTree G.unitCutCapacity T w) (k : ℕ) {s t : V} :
     (T.deleteEdges {e | w e < k}).Reachable s t ↔
       G.IsEdgeReachable (k : ℕ∞) s t := by
-  rw [hT.reachable_deleteEdges_iff,
-    SimpleGraph.isEdgeReachable_iff_le_edgeReachability]
-  by_cases hst : s = t
-  · simp [hst]
-  · simp only [hst, false_or]
-    rw [G.edgeReachability_eq_pairMinimumValue_unitCutCapacity hst]
-    exact_mod_cast Iff.rfl
+  rw [hT.reachable_deleteEdges_iff_le_iInf_pairMinimumValue,
+    SimpleGraph.isEdgeReachable_iff_le_edgeReachability,
+    G.edgeReachability_eq_iInf_pairMinimumValue_unitCutCapacity]
 
 /-- The global edge connectivity of a finite simple graph with at least two vertices is the
 minimum weight of an edge in any unit flow-equivalent tree. The witness includes the
@@ -103,21 +99,11 @@ theorem exists_edge_simpleGraph_edgeConnectivity_eq_weight [Nontrivial V]
     (hT : IsFlowEquivalentTree G.unitCutCapacity T w) :
     ∃ u v, T.Adj u v ∧ (∀ e ∈ T.edgeSet, w s(u, v) ≤ w e) ∧
       G.edgeConnectivity = (w s(u, v) : ℕ∞) := by
-  obtain ⟨u, v, huv, hmin, hpair⟩ := hT.exists_edge_weight_le_pairMinimumValue
-  refine ⟨u, v, huv, hmin, le_antisymm ?_ ?_⟩
-  · calc
-      G.edgeConnectivity ≤ G.edgeReachability u v := G.edgeConnectivity_le_edgeReachability u v
-      _ = ((TauCeti.TerminalCut.pairMinimumValue G.unitCutCapacity u v : ℕ) : ℕ∞) :=
-        G.edgeReachability_eq_pairMinimumValue_unitCutCapacity huv.ne
-      _ = (w s(u, v) : ℕ∞) := by rw [hT.weight_eq huv]
-  · rw [G.edgeConnectivity_eq_iInf_edgeReachability]
-    refine le_iInf fun x ↦ le_iInf fun y ↦ ?_
-    by_cases hxy : x = y
-    · subst y
-      rw [G.edgeReachability_self]
-      exact le_top
-    · rw [G.edgeReachability_eq_pairMinimumValue_unitCutCapacity hxy]
-      exact_mod_cast hpair x y hxy
+  obtain ⟨u, v, huv, hmin, hvalue⟩ := hT.exists_edge_iInf_pairMinimumValue_eq_weight
+  refine ⟨u, v, huv, hmin, ?_⟩
+  rw [G.edgeConnectivity_eq_iInf_edgeReachability]
+  simp_rw [G.edgeReachability_eq_iInf_pairMinimumValue_unitCutCapacity]
+  exact hvalue
 
 end TauCeti.TerminalCut.IsFlowEquivalentTree
 
