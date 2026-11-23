@@ -546,7 +546,7 @@ theorem support_decompose_bigradedChainMinusGrading_subset (R : Type*) [CommRing
     have hq : (DirectSum.decompose (G.bigradedChainMinusGrading R).piece c q :
         GridChainMinus R n) ∈ G.bigradedChainMinusPiece R q := by
       rw [← bigradedChainMinusGrading_piece]
-      exact (DirectSum.decompose (G.bigradedChainMinusGrading R).piece c q).2
+      exact (DirectSum.decompose (G.bigradedChainMinusGrading R).piece c q).property
     rw [mem_bigradedChainMinusPiece] at hq
     exact hq x f hf
   rw [MvPolynomial.mem_support_iff] at he ⊢

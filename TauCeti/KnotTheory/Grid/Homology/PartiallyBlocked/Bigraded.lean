@@ -84,7 +84,7 @@ theorem isHomogeneous_blockedChains (R : Type*) [CommRing R] (S : Finset (Fin n)
 /-- Over `𝔽₂`, the unblocked differential, viewed as an `𝔽₂`-linear map, has bidegree
 `(-1, 0)`. -/
 private theorem isHomogeneous_restrictScalars_unblockedDifferential :
-    LinearMap.IsHomogeneous ((G.1.unblockedDifferential F).restrictScalars F)
+    LinearMap.IsHomogeneous ((G.val.unblockedDifferential F).restrictScalars F)
       (G.bigradedChainMinusGrading F).piece (G.bigradedChainMinusGrading F).piece (-(1, 0)) :=
   LinearMap.isHomogeneous_def.2 fun _ _ hc =>
     (G.isHomogeneous_unblockedDifferential_bigradedChainMinusGrading F).map_mem hc
@@ -98,20 +98,20 @@ private theorem isHomogeneous_restrictScalars_blockedChains (S : Finset (Fin n))
 columns `S`: its bidegree-`g` piece consists of the classes of the chains of `GC⁻` of bidegree
 `g` whose boundaries are blocked. -/
 noncomputable def bigradedPartiallyBlockedHomologyGrading (S : Finset (Fin n)) :
-    InternalGrading F (G.1.partiallyBlockedHomology S) (ℤ × ℤ) :=
+    InternalGrading F (G.val.partiallyBlockedHomology S) (ℤ × ℤ) :=
   (G.bigradedChainMinusGrading F).quotientHomology
     G.isHomogeneous_restrictScalars_unblockedDifferential
-    G.1.restrictScalars_unblockedDifferential_comp_self_eq_zero
-    (G.1.blockedChains_le_comap_unblockedDifferential S)
+    G.val.restrictScalars_unblockedDifferential_comp_self_eq_zero
+    (G.val.blockedChains_le_comap_unblockedDifferential S)
     (G.isHomogeneous_restrictScalars_blockedChains S)
 
 /-- A class of partially blocked homology is homogeneous of bidegree `g` exactly when it is the
 class of a chain of bidegree `g` whose boundary is blocked. -/
 theorem mem_bigradedPartiallyBlockedHomologyGrading_piece_iff {S : Finset (Fin n)} {g : ℤ × ℤ}
-    {y : G.1.partiallyBlockedHomology S} :
+    {y : G.val.partiallyBlockedHomology S} :
     y ∈ (G.bigradedPartiallyBlockedHomologyGrading S).piece g ↔
       ∃ c ∈ G.bigradedChainMinusPiece F g,
-        ∃ hc : G.1.unblockedDifferential F c ∈ GridDiagram.blockedChains F S,
+        ∃ hc : G.val.unblockedDifferential F c ∈ GridDiagram.blockedChains F S,
           Submodule.Quotient.mk
             ⟨Submodule.Quotient.mk c, (Submodule.mk_mem_ker_mapQ_iff c).mpr hc⟩ = y := by
   rw [bigradedPartiallyBlockedHomologyGrading, InternalGrading.mem_quotientHomology_piece_iff,
@@ -127,7 +127,7 @@ partially blocked homology after blocking `t` has the rank of the bidegree-`g` p
 the bidegree-`(g + (1, 1))` piece before. The second copy is the image of a homotopy from `V_t` to
 `V_i` of bidegree `(-1, -1)`. -/
 theorem rank_bigradedPartiallyBlockedHomologyGrading_piece_insert {S : Finset (Fin n)}
-    {i t : Fin n} (hti : G.1.componentPerm.SameCycle t i) (hi : i ∈ S) (ht : t ∉ S) (g : ℤ × ℤ) :
+    {i t : Fin n} (hti : G.val.componentPerm.SameCycle t i) (hi : i ∈ S) (ht : t ∉ S) (g : ℤ × ℤ) :
     Module.rank F ((G.bigradedPartiallyBlockedHomologyGrading (insert t S)).piece g) =
       Module.rank F ((G.bigradedPartiallyBlockedHomologyGrading S).piece g) +
         Module.rank F ((G.bigradedPartiallyBlockedHomologyGrading S).piece (g + (1, 1))) := by
@@ -135,19 +135,19 @@ theorem rank_bigradedPartiallyBlockedHomologyGrading_piece_insert {S : Finset (F
   have e := (G.bigradedChainMinusGrading F).quotientHomologyProdPieceEquiv
     (h := H.restrictScalars F) (v := DistribSMul.toLinearMap F (GridChainMinus F n) (X t))
     (s := -(1, 1)) G.isHomogeneous_restrictScalars_unblockedDifferential
-    G.1.restrictScalars_unblockedDifferential_comp_self_eq_zero
-    (G.1.blockedChains_le_comap_unblockedDifferential S)
+    G.val.restrictScalars_unblockedDifferential_comp_self_eq_zero
+    (G.val.blockedChains_le_comap_unblockedDifferential S)
     (G.isHomogeneous_restrictScalars_blockedChains S)
-    (G.1.blockedChains_le_comap_unblockedDifferential (insert t S))
+    (G.val.blockedChains_le_comap_unblockedDifferential (insert t S))
     (G.isHomogeneous_restrictScalars_blockedChains (insert t S))
     (GridDiagram.blockedChains_mono (Finset.subset_insert t S))
     (fun m => GridDiagram.X_smul_mem_blockedChains (Finset.mem_insert_self t S) m)
     (fun _ hx => GridDiagram.exists_sub_X_smul_mem_blockedChains hx)
     (fun _ hm => GridDiagram.map_mem_blockedChains _ hm)
-    (fun m => (G.1.unblockedDifferential F).map_smul _ m)
+    (fun m => (G.val.unblockedDifferential F).map_smul _ m)
     (fun _ hm => GridDiagram.mem_blockedChains_of_X_smul_mem ht hm)
     (fun m => by
-      have hm : G.1.unblockedDifferential F (H m) + H (G.1.unblockedDifferential F m) =
+      have hm : G.val.unblockedDifferential F (H m) + H (G.val.unblockedDifferential F m) =
           (X t + X i : MvPolynomial (Fin n) F) • m := congr($hH m)
       simp only [LinearMap.restrictScalars_apply, DistribSMul.toLinearMap_apply,
         Submodule.restrictScalars_mem]
@@ -164,7 +164,7 @@ theorem rank_bigradedPartiallyBlockedHomologyGrading_piece_insert {S : Finset (F
 /-- The identification of the partially blocked homology of every column with fully blocked
 grid homology `GH~` has degree zero for the `(O-Maslov, Alexander)` bigradings. -/
 theorem isHomogeneous_partiallyBlockedHomologyUnivEquiv :
-    LinearMap.IsHomogeneous G.1.partiallyBlockedHomologyUnivEquiv.toLinearMap
+    LinearMap.IsHomogeneous G.val.partiallyBlockedHomologyUnivEquiv.toLinearMap
       (G.bigradedPartiallyBlockedHomologyGrading Finset.univ).piece
       G.bigradedFullyBlockedHomologyGrading.piece 0 :=
   InternalGrading.isHomogeneous_of_quotientHomologyClass _ _ _ _ _ fun _ c hcp hc => by
