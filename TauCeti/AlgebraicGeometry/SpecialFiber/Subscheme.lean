@@ -10,6 +10,7 @@ public import TauCeti.AlgebraicGeometry.Fibers
 public import TauCeti.AlgebraicGeometry.IdealSheaf.OfIdealTop
 public import TauCeti.AlgebraicGeometry.IdealSheaf.VanishingIdeal
 public import TauCeti.AlgebraicGeometry.SpecialFiber.Basic
+import TauCeti.AlgebraicGeometry.SpecialFiber.Components
 
 /-!
 # The special fibre as the zero scheme of the maximal ideal
@@ -250,18 +251,6 @@ section ReducedSpecialFiber
 
 variable (R : Type u) [CommRing R] [IsLocalRing R] {X : Scheme.{u}} (toBase : X ⟶ Spec (.of R))
 
-private lemma range_specialFiberι_eq :
-    Set.range (specialFiberι R toBase) = toBase ⁻¹' {closedPoint R} :=
-  calc Set.range (specialFiberι R toBase)
-      = Set.range (specialFiberι R toBase ∘ (specialFiberIsoFiberClosedPoint (.of R) toBase).inv) :=
-        ((specialFiberIsoFiberClosedPoint (.of R) toBase).inv.surjective.range_comp _).symm
-    _ = Set.range ((specialFiberIsoFiberClosedPoint (.of R) toBase).inv ≫ specialFiberι R toBase) :=
-        congrArg Set.range (funext fun x ↦ (Scheme.Hom.comp_apply _ _ x).symm)
-    _ = Set.range (toBase.fiberι (closedPoint R)) :=
-        congrArg (fun g : toBase.fiber (closedPoint R) ⟶ X ↦ Set.range g)
-          (specialFiberIsoFiberClosedPoint_inv_specialFiberι (.of R) toBase)
-    _ = toBase ⁻¹' {closedPoint R} := Scheme.Hom.range_fiberι toBase (closedPoint R)
-
 /-- The **reduced special fibre** `X_{s,red}` of a scheme `X` over a local ring `R`: the reduced
 induced closed subscheme on the preimage of the closed point of `Spec R`, realized as the closed
 subscheme cut out by `(specialFiberι R toBase).ker.radical`. -/
@@ -296,7 +285,7 @@ theorem range_reducedSpecialFiberι :
     Set.range (reducedSpecialFiberι R toBase) = toBase ⁻¹' {closedPoint R} := by
   have := isClosedImmersion_specialFiberι R toBase
   refine (Scheme.IdealSheafData.range_subschemeι (specialFiberι R toBase).ker.radical).trans ?_
-  rw [Scheme.IdealSheafData.support_radical, Scheme.Hom.support_ker, range_specialFiberι_eq,
+  rw [Scheme.IdealSheafData.support_radical, Scheme.Hom.support_ker, range_specialFiberι R toBase,
     IsClosed.closure_eq]
   exact (isClosed_singleton_closedPoint R).preimage toBase.continuous
 
@@ -317,7 +306,7 @@ theorem ker_reducedSpecialFiberι :
   rw [ker_reducedSpecialFiberι_eq_radical, ← Scheme.IdealSheafData.vanishingIdeal_support]
   congr 1; ext1
   refine (Scheme.Hom.support_ker (specialFiberι R toBase)).trans ?_
-  rw [range_specialFiberι_eq, IsClosed.closure_eq]
+  rw [range_specialFiberι R toBase, IsClosed.closure_eq]
   · rfl
   · exact (isClosed_singleton_closedPoint R).preimage toBase.continuous
 
@@ -410,7 +399,7 @@ theorem isIso_reducedSpecialFiberToSpecialFiber_iff :
   have : Surjective (reducedSpecialFiberToSpecialFiber R toBase) := ⟨fun y ↦ ?_⟩
   · exact isIso_of_isClosedImmersion_of_surjective (reducedSpecialFiberToSpecialFiber R toBase)
   · have hy : specialFiberι R toBase y ∈ Set.range (reducedSpecialFiberι R toBase) := by
-      rw [range_reducedSpecialFiberι, ← range_specialFiberι_eq]
+      rw [range_reducedSpecialFiberι, ← range_specialFiberι R toBase]
       exact ⟨y, rfl⟩
     obtain ⟨x, hx⟩ := hy
     have := isClosedImmersion_specialFiberι R toBase
@@ -471,20 +460,3 @@ end Subscheme
 end ReducedSpecialFiber
 
 end TauCeti
-
-namespace AlgebraicGeometry.Scheme.Hom
-
-universe u
-
-/-- The reduced closure of a point of the special fibre has ideal sheaf containing
-`(reducedSpecialFiberι R toBase).ker`. -/
-theorem ker_reducedSpecialFiberι_le_vanishingIdeal_closure_singleton
-    {R : Type u} [CommRing R] [IsLocalRing R] {X : Scheme.{u}} (toBase : X ⟶ Spec (.of R))
-    {x : X} (hx : toBase x = closedPoint R) :
-    (TauCeti.reducedSpecialFiberι R toBase).ker ≤
-      Scheme.IdealSheafData.vanishingIdeal ⟨closure {x}, isClosed_closure⟩ :=
-  TauCeti.ker_reducedSpecialFiberι_le_vanishingIdeal_iff.mpr <|
-    closure_minimal (Set.singleton_subset_iff.mpr hx)
-      ((isClosed_singleton_closedPoint R).preimage toBase.continuous)
-
-end AlgebraicGeometry.Scheme.Hom

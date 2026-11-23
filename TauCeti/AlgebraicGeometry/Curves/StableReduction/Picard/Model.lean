@@ -178,7 +178,8 @@ theorem degree_reducedSpecialFiberNumericalPicLinear
           (letI := subschemeOverResidueField
             (M.toBase.ker_specialFiberι_le_vanishingIdeal_closure_singleton (mbase j))
           intersectionNumber (ResidueField R) (subschemeToReducedSpecialFiber
-            (M.toBase.ker_reducedSpecialFiberι_le_vanishingIdeal_closure_singleton (mbase j)))
+            ((ker_reducedSpecialFiberι_eq_radical R M.toBase).trans_le
+              (M.toBase.radical_ker_specialFiberι_le_vanishingIdeal_closure_singleton (mbase j))))
             a.toMul) := by
   exact M.toBase.degree_reducedSpecialFiberNumericalPicLinear _ _ hC _ _ hconn a
 

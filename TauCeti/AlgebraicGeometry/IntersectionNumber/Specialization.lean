@@ -160,11 +160,7 @@ private def componentMultidegreeHom {Y : Scheme.{u}}
     have := toBase.relativeDimensionLE_subscheme_vanishingIdeal_closure_singleton hX
       (fun h ↦ one_ne_zero (i.val.property.symm.trans (coheight_eq_zero.mpr h))) hi
     have := h₀ i.val hi; have := h₁ i.val hi
-    have hdvd : (toBase.specialFiberWeight hi : ℤ) ∣
-        intersectionNumber (ResidueField R) (f i) a.toMul := by
-      rw [specialFiberWeight_def]
-      exact LineBundleClass.finrank_cohomology_zero_trivial_dvd_intersectionNumber (ResidueField R)
-        (f i) (toBase.isField_globalSections_subscheme_closure_singleton hi) a.toMul
+    have hdvd := toBase.specialFiberWeight_dvd_intersectionNumber hi (f i) a.toMul
     rw [toMul_add, LineBundleClass.intersectionNumber_mul_of_isIntegral,
       Int.add_ediv_of_dvd_left hdvd, Pi.add_apply]
 
@@ -233,18 +229,6 @@ private lemma mem_ker_componentMultidegreeLinear_iff {Y : Scheme.{u}} {f}
    fun h ↦ LinearMap.mem_ker.mpr <| funext fun i ↦ by
     rw [componentMultidegreeLinear_apply, h i, Int.zero_ediv, Pi.zero_apply]⟩
 
-/-- `componentMultidegreeLinear` vanishes if and only if every component intersection number
-vanishes. -/
-private lemma componentMultidegreeLinear_eq_zero_iff {Y : Scheme.{u}} {f} (a : LineBundleClass Y) :
-    toBase.componentMultidegreeLinear hX hη h₀ h₁ f (Additive.ofMul a) = 0 ↔
-      ∀ i,
-        letI := subschemeOverResidueField
-          (toBase.ker_specialFiberι_le_vanishingIdeal_closure_singleton
-              ((mem_toFinset _).mp i.property))
-        intersectionNumber (ResidueField R) (f i) a = 0 := by
-  simpa only [LinearMap.mem_ker, toMul_ofMul] using
-    toBase.mem_ker_componentMultidegreeLinear_iff hX hη h₀ h₁ (f := f) (Additive.ofMul a)
-
 /-- Linear functoriality of `componentMultidegreeLinear` along a morphism `g : Y ⟶ Z`. -/
 private lemma componentMultidegreeLinear_comp_pullbackLinearMap {Y Z : Scheme.{u}} {f} {g : Y ⟶ Z}
     {f'} (hfg : ∀ i, f i ≫ g = f' i) :
@@ -266,8 +250,9 @@ def reducedSpecialFiberMultidegree :
           (toBase.maximalIdeal_ne_bot_of_base_ne_closedPoint hη) hη).toFinset → ℤ) :=
   toBase.componentMultidegreeLinear hX hη h₀ h₁ fun i ↦
     subschemeToReducedSpecialFiber
-      (toBase.ker_reducedSpecialFiberι_le_vanishingIdeal_closure_singleton
-        ((mem_toFinset _).mp i.property))
+      ((ker_reducedSpecialFiberι_eq_radical R toBase).trans_le
+        (toBase.radical_ker_specialFiberι_le_vanishingIdeal_closure_singleton
+          ((mem_toFinset _).mp i.property)))
 
 /-- Componentwise formula for `reducedSpecialFiberMultidegree`. -/
 @[simp]
@@ -278,8 +263,9 @@ theorem reducedSpecialFiberMultidegree_apply
         (toBase.ker_specialFiberι_le_vanishingIdeal_closure_singleton
             ((mem_toFinset _).mp i.property))
       intersectionNumber (ResidueField R) (subschemeToReducedSpecialFiber
-        (toBase.ker_reducedSpecialFiberι_le_vanishingIdeal_closure_singleton
-          ((mem_toFinset _).mp i.property))) c.toMul /
+        ((ker_reducedSpecialFiberι_eq_radical R toBase).trans_le
+          (toBase.radical_ker_specialFiberι_le_vanishingIdeal_closure_singleton
+            ((mem_toFinset _).mp i.property)))) c.toMul /
         (toBase.specialFiberWeight ((mem_toFinset _).mp i.property) : ℤ) := by
   rw [reducedSpecialFiberMultidegree, componentMultidegreeLinear_apply]
 
@@ -293,8 +279,9 @@ theorem reducedSpecialFiberMultidegree_mul_specialFiberWeight
         (toBase.ker_specialFiberι_le_vanishingIdeal_closure_singleton
             ((mem_toFinset _).mp i.property))
       intersectionNumber (ResidueField R) (subschemeToReducedSpecialFiber
-        (toBase.ker_reducedSpecialFiberι_le_vanishingIdeal_closure_singleton
-          ((mem_toFinset _).mp i.property))) c.toMul := by
+        ((ker_reducedSpecialFiberι_eq_radical R toBase).trans_le
+          (toBase.radical_ker_specialFiberι_le_vanishingIdeal_closure_singleton
+            ((mem_toFinset _).mp i.property)))) c.toMul := by
   rw [reducedSpecialFiberMultidegree]
   exact toBase.componentMultidegreeLinear_mul_specialFiberWeight hX hη h₀ h₁ c i
 
@@ -309,26 +296,11 @@ theorem mem_ker_reducedSpecialFiberMultidegree_iff
           (toBase.ker_specialFiberι_le_vanishingIdeal_closure_singleton
               ((mem_toFinset _).mp i.property))
         intersectionNumber (ResidueField R) (subschemeToReducedSpecialFiber
-          (toBase.ker_reducedSpecialFiberι_le_vanishingIdeal_closure_singleton
-            ((mem_toFinset _).mp i.property))) c.toMul = 0 := by
+          ((ker_reducedSpecialFiberι_eq_radical R toBase).trans_le
+            (toBase.radical_ker_specialFiberι_le_vanishingIdeal_closure_singleton
+              ((mem_toFinset _).mp i.property)))) c.toMul = 0 := by
   rw [reducedSpecialFiberMultidegree]
   exact toBase.mem_ker_componentMultidegreeLinear_iff hX hη h₀ h₁ c
-
-/-- A line-bundle class on `X_{s,red}` has multidegree zero if and only if its intersection number
-with every component `C_i` vanishes. -/
-theorem reducedSpecialFiberMultidegree_eq_zero_iff
-    (c : LineBundleClass (reducedSpecialFiber R toBase)) :
-    toBase.reducedSpecialFiberMultidegree hX hη h₀ h₁ (Additive.ofMul c) = 0 ↔
-      ∀ i : (toBase.finite_setOf_base_eq_closedPoint
-          (toBase.maximalIdeal_ne_bot_of_base_ne_closedPoint hη) hη).toFinset,
-        letI := subschemeOverResidueField
-          (toBase.ker_specialFiberι_le_vanishingIdeal_closure_singleton
-              ((mem_toFinset _).mp i.property))
-        intersectionNumber (ResidueField R) (subschemeToReducedSpecialFiber
-          (toBase.ker_reducedSpecialFiberι_le_vanishingIdeal_closure_singleton
-            ((mem_toFinset _).mp i.property))) c = 0 := by
-  rw [reducedSpecialFiberMultidegree]
-  exact toBase.componentMultidegreeLinear_eq_zero_iff hX hη h₀ h₁ c
 
 /-- The **multidegree on the scheme-theoretic special fibre** `X_s`, sending `b` to its component
 degrees `deg_{κ_i}(b|_{C_i})`. -/
@@ -385,22 +357,6 @@ theorem mem_ker_specialFiberMultidegreeOnFiber_iff
             ((mem_toFinset _).mp i.property))) b.toMul = 0 := by
   rw [specialFiberMultidegreeOnFiber]
   exact toBase.mem_ker_componentMultidegreeLinear_iff hX hη h₀ h₁ b
-
-/-- A line-bundle class on `X_s` has multidegree zero if and only if its intersection number with
-every component `C_i` vanishes. -/
-theorem specialFiberMultidegreeOnFiber_eq_zero_iff
-    (b : LineBundleClass (specialFiber R toBase).left) :
-    toBase.specialFiberMultidegreeOnFiber hX hη h₀ h₁ (Additive.ofMul b) = 0 ↔
-      ∀ i : (toBase.finite_setOf_base_eq_closedPoint
-          (toBase.maximalIdeal_ne_bot_of_base_ne_closedPoint hη) hη).toFinset,
-        letI := subschemeOverResidueField
-          (toBase.ker_specialFiberι_le_vanishingIdeal_closure_singleton
-              ((mem_toFinset _).mp i.property))
-        intersectionNumber (ResidueField R) (subschemeToSpecialFiber
-          (toBase.ker_specialFiberι_le_vanishingIdeal_closure_singleton
-            ((mem_toFinset _).mp i.property))) b = 0 := by
-  rw [specialFiberMultidegreeOnFiber]
-  exact toBase.componentMultidegreeLinear_eq_zero_iff hX hη h₀ h₁ b
 
 /-- The **special-fibre multidegree** of a line-bundle class on `X`, sending `a` to the tuple
 `i ↦ (a · C_i)_k / w_i` of degrees of `a|_{C_i}` over the constant fields `κ_i`. -/
@@ -506,20 +462,6 @@ theorem mem_ker_specialFiberMultidegree_iff (a : Additive (LineBundleClass X)) :
           (vanishingIdeal ⟨closure {(i.val : X)}, isClosed_closure⟩).subschemeι a.toMul = 0 := by
   rw [specialFiberMultidegree]
   exact toBase.mem_ker_componentMultidegreeLinear_iff hX hη h₀ h₁ a
-
-/-- A line-bundle class on `X` has special-fibre multidegree zero if and only if its intersection
-number with every component `C_i` vanishes. -/
-theorem specialFiberMultidegree_eq_zero_iff (a : LineBundleClass X) :
-    toBase.specialFiberMultidegree hX hη h₀ h₁ (Additive.ofMul a) = 0 ↔
-      ∀ i : (toBase.finite_setOf_base_eq_closedPoint
-          (toBase.maximalIdeal_ne_bot_of_base_ne_closedPoint hη) hη).toFinset,
-        letI := subschemeOverResidueField
-          (toBase.ker_specialFiberι_le_vanishingIdeal_closure_singleton
-              ((mem_toFinset _).mp i.property))
-        intersectionNumber (ResidueField R)
-          (vanishingIdeal ⟨closure {(i.val : X)}, isClosed_closure⟩).subschemeι a = 0 := by
-  rw [specialFiberMultidegree]
-  exact toBase.componentMultidegreeLinear_eq_zero_iff hX hη h₀ h₁ a
 
 section RegularMatrix
 

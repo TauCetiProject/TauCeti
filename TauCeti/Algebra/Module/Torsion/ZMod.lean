@@ -6,6 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Module.Torsion.Basic
+public import TauCeti.Algebra.Module.Torsion.Basic
+public import TauCeti.Algebra.Module.Torsion.Snake
 
 /-!
 # `ZMod n`-linear restriction of additive homomorphisms to `n`-torsion
@@ -48,13 +50,7 @@ def torsionByZModLinearMap (f : A →+ B) (n : ℕ)
     [Module (ZMod n) (AddSubgroup.torsionBy A (n : ℤ))]
     [Module (ZMod n) (AddSubgroup.torsionBy B (n : ℤ))] :
     AddSubgroup.torsionBy A (n : ℤ) →ₗ[ZMod n] AddSubgroup.torsionBy B (n : ℤ) :=
-  AddMonoidHom.toZModLinearMap n
-    (M := AddSubgroup.torsionBy A (n : ℤ))
-    (M₁ := AddSubgroup.torsionBy B (n : ℤ))
-    ((f.domRestrict (AddSubgroup.torsionBy A (n : ℤ))).codRestrict
-      (AddSubgroup.torsionBy B (n : ℤ)) fun x ↦ by
-        rw [AddSubgroup.torsionBy.nsmul_iff, AddMonoidHom.domRestrict_apply, ← map_nsmul,
-          AddSubgroup.torsionBy.nsmul_iff.mp x.property, map_zero])
+  (TauCeti.torsionByMap (n : ℤ) f.toIntLinearMap).toAddMonoidHom.toZModLinearMap n
 
 /-- Evaluating `f.torsionByZModLinearMap n` and coercing to `B` agrees with `f`. -/
 @[simp]
@@ -63,8 +59,8 @@ theorem coe_torsionByZModLinearMap_apply (f : A →+ B) (n : ℕ)
     [Module (ZMod n) (AddSubgroup.torsionBy B (n : ℤ))]
     (x : AddSubgroup.torsionBy A (n : ℤ)) :
     (f.torsionByZModLinearMap n x : B) = f x := by
-  rw [torsionByZModLinearMap, AddMonoidHom.coe_toZModLinearMap,
-    AddMonoidHom.codRestrict_apply, AddSubgroup.coe_mk, AddMonoidHom.domRestrict_apply]
+  rw [torsionByZModLinearMap, AddMonoidHom.coe_toZModLinearMap, LinearMap.toAddMonoidHom_coe,
+    TauCeti.coe_torsionByMap_apply, AddMonoidHom.coe_toIntLinearMap]
 
 /-- The identity additive homomorphism restricts to the identity `ZMod n`-linear map on
 `n`-torsion. -/
@@ -168,17 +164,8 @@ def torsionByZModLinearEquiv (e : A ≃+ B) (n : ℕ)
     [Module (ZMod n) (AddSubgroup.torsionBy A (n : ℤ))]
     [Module (ZMod n) (AddSubgroup.torsionBy B (n : ℤ))] :
     AddSubgroup.torsionBy A (n : ℤ) ≃ₗ[ZMod n] AddSubgroup.torsionBy B (n : ℤ) :=
-  LinearEquiv.ofLinearMap
-    (e.toAddMonoidHom.torsionByZModLinearMap n)
-    (e.symm.toAddMonoidHom.torsionByZModLinearMap n)
-    (by
-      rw [← AddMonoidHom.torsionByZModLinearMap_comp]
-      ext x
-      simp)
-    (by
-      rw [← AddMonoidHom.torsionByZModLinearMap_comp]
-      ext x
-      simp)
+  { e.torsionByCongr (n : ℤ) with
+    map_smul' := ZMod.map_smul (e.torsionByCongr (n : ℤ)).toAddMonoidHom }
 
 /-- The underlying `ZMod n`-linear map of `e.torsionByZModLinearEquiv n` is
 `e.toAddMonoidHom.torsionByZModLinearMap n`. -/
@@ -188,7 +175,9 @@ theorem toLinearMap_torsionByZModLinearEquiv (e : A ≃+ B) (n : ℕ)
     [Module (ZMod n) (AddSubgroup.torsionBy B (n : ℤ))] :
     (e.torsionByZModLinearEquiv n).toLinearMap = e.toAddMonoidHom.torsionByZModLinearMap n := by
   ext x
-  simp [torsionByZModLinearEquiv]
+  rw [LinearEquiv.coe_toLinearMap, AddMonoidHom.coe_torsionByZModLinearMap_apply,
+    AddEquiv.coe_toAddMonoidHom]
+  exact AddEquiv.torsionByCongr_apply_coe e (n : ℤ) x
 
 /-- Applying `e.torsionByZModLinearEquiv n` agrees with `e.toAddMonoidHom.torsionByZModLinearMap n`.
 -/
@@ -197,8 +186,8 @@ theorem torsionByZModLinearEquiv_apply (e : A ≃+ B) (n : ℕ)
     [Module (ZMod n) (AddSubgroup.torsionBy A (n : ℤ))]
     [Module (ZMod n) (AddSubgroup.torsionBy B (n : ℤ))]
     (x : AddSubgroup.torsionBy A (n : ℤ)) :
-    e.torsionByZModLinearEquiv n x = e.toAddMonoidHom.torsionByZModLinearMap n x := by
-  simp [torsionByZModLinearEquiv]
+    e.torsionByZModLinearEquiv n x = e.toAddMonoidHom.torsionByZModLinearMap n x :=
+  LinearMap.congr_fun (e.toLinearMap_torsionByZModLinearEquiv n) x
 
 /-- Evaluating `e.torsionByZModLinearEquiv n` and coercing to `B` agrees with `e`. -/
 theorem coe_torsionByZModLinearEquiv_apply (e : A ≃+ B) (n : ℕ)
@@ -216,7 +205,8 @@ theorem torsionByZModLinearEquiv_symm (e : A ≃+ B) (n : ℕ)
     [Module (ZMod n) (AddSubgroup.torsionBy B (n : ℤ))] :
     (e.torsionByZModLinearEquiv n).symm = e.symm.torsionByZModLinearEquiv n := by
   ext x
-  simp [torsionByZModLinearEquiv]
+  rw [coe_torsionByZModLinearEquiv_apply]
+  exact AddEquiv.torsionByCongr_symm_apply_coe e (n : ℤ) x
 
 /-- The identity additive equivalence restricts to the identity `ZMod n`-linear equivalence on
 `n`-torsion. -/

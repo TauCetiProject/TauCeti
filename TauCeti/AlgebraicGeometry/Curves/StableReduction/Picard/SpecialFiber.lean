@@ -75,18 +75,7 @@ local notation "𝒯" => toBase.specialFiberNumericalType hX hη hC hπ hreg hco
 local notation "hbase" =>
   toBase.base_specialFiberNumericalType_component hX hη hC hπ hreg hconn
 
-/-! ### Weight divisibility and numerical total degrees -/
-
-/-- The weight `wⱼ = [κⱼ : k]` divides `(a · Cⱼ)` over `k` along any morphism `ι : Cⱼ ⟶ Y`. -/
-theorem specialFiberNumericalType_weight_dvd_intersectionNumber {Y : Scheme.{u}}
-    (j : (𝒯).Component)
-    (ι : (vanishingIdeal ⟨closure {(j.val : X)}, isClosed_closure⟩).subscheme ⟶ Y)
-    (a : LineBundleClass Y) :
-    letI := subschemeOverResidueField
-      (toBase.ker_specialFiberι_le_vanishingIdeal_closure_singleton (hbase j))
-    ((𝒯).weight j : ℤ) ∣ intersectionNumber (ResidueField R) ι a := by
-  rw [toBase.specialFiberNumericalType_weight hX hη hC hπ hreg hconn j]
-  exact toBase.specialFiberWeight_dvd_intersectionNumber (hbase j) ι a
+/-! ### Numerical total degrees -/
 
 /-- The total degree of `reducedSpecialFiberMultidegree a` in `𝒯` is `∑ⱼ mⱼ (a · Cⱼ)`. -/
 theorem totalDegree_reducedSpecialFiberMultidegree
@@ -98,7 +87,8 @@ theorem totalDegree_reducedSpecialFiberMultidegree
           (letI := subschemeOverResidueField
             (toBase.ker_specialFiberι_le_vanishingIdeal_closure_singleton (hbase j))
           intersectionNumber (ResidueField R) (subschemeToReducedSpecialFiber
-            (toBase.ker_reducedSpecialFiberι_le_vanishingIdeal_closure_singleton (hbase j)))
+            ((ker_reducedSpecialFiberι_eq_radical R toBase).trans_le
+              (toBase.radical_ker_specialFiberι_le_vanishingIdeal_closure_singleton (hbase j))))
             a.toMul) := by
   refine (NumericalType.totalDegree_apply _ _).trans (Finset.sum_congr rfl fun j _ ↦ ?_)
   rw [mul_left_comm, toBase.specialFiberNumericalType_weight hX hη hC hπ hreg hconn j]
@@ -234,7 +224,8 @@ theorem degree_reducedSpecialFiberNumericalPicLinear
           (letI := subschemeOverResidueField
             (toBase.ker_specialFiberι_le_vanishingIdeal_closure_singleton (hbase j))
           intersectionNumber (ResidueField R) (subschemeToReducedSpecialFiber
-            (toBase.ker_reducedSpecialFiberι_le_vanishingIdeal_closure_singleton (hbase j)))
+            ((ker_reducedSpecialFiberι_eq_radical R toBase).trans_le
+              (toBase.radical_ker_specialFiberι_le_vanishingIdeal_closure_singleton (hbase j))))
             a.toMul) := by
   rw [reducedSpecialFiberNumericalPicLinear_apply]
   exact (NumericalType.degree_mk (T := 𝒯) _).trans
@@ -335,45 +326,6 @@ identically because `reducedSpecialFiberMultidegree` takes values in the torsion
   exact (congrArg (Submodule.Quotient.mk (p := (𝒯).principalDivisors)) hd).trans
     (Submodule.Quotient.mk_zero _)
 
-/-- For every `ℓ > 0` (`hℓ : ℓ ≠ 0`), `specialFiberNumericalPicTorsionMap` vanishes identically
-because `specialFiberMultidegreeOnFiber` takes values in the torsion-free group
-`(𝒯).Component → ℤ`. -/
-@[simp] theorem specialFiberNumericalPicTorsionMap_eq_zero {ℓ : ℕ} (hℓ : ℓ ≠ 0) :
-    toBase.specialFiberNumericalPicTorsionMap hX hη hC hπ hreg hconn ℓ = 0 := by
-  refine LinearMap.ext fun a ↦ Subtype.ext ?_
-  rw [coe_specialFiberNumericalPicTorsionMap_apply, specialFiberNumericalPicLinear_apply,
-    LinearMap.zero_apply, AddSubgroup.coe_zero]
-  have ha : (ℓ : ℤ) • a.val = 0 := a.property
-  have hmul : (ℓ : ℤ) • toBase.specialFiberMultidegreeOnFiber hX hη
-      toBase.specialFiberCohomologyFiniteDimensional_zero
-      hC.specialFiberCohomologyFiniteDimensional_one a.val = 0 := by
-    rw [← map_zsmul, ha, map_zero]
-  have hd : toBase.specialFiberMultidegreeOnFiber hX hη
-      toBase.specialFiberCohomologyFiniteDimensional_zero
-      hC.specialFiberCohomologyFiniteDimensional_one a.val = (0 : (𝒯).Component → ℤ) :=
-    (smul_eq_zero.mp hmul).resolve_left (Int.natCast_ne_zero.mpr hℓ)
-  exact (congrArg (Submodule.Quotient.mk (p := (𝒯).principalDivisors)) hd).trans
-    (Submodule.Quotient.mk_zero _)
-
-/-- For every `ℓ > 0` (`hℓ : ℓ ≠ 0`), `numericalPicTorsionMap` vanishes identically because
-`specialFiberMultidegree` takes values in the torsion-free group `(𝒯).Component → ℤ`. -/
-@[simp] theorem numericalPicTorsionMap_eq_zero {ℓ : ℕ} (hℓ : ℓ ≠ 0) :
-    toBase.numericalPicTorsionMap hX hη hC hπ hreg hconn ℓ = 0 := by
-  refine LinearMap.ext fun a ↦ Subtype.ext ?_
-  rw [coe_numericalPicTorsionMap_apply, numericalPicLinear_apply,
-    LinearMap.zero_apply, AddSubgroup.coe_zero]
-  have ha : (ℓ : ℤ) • a.val = 0 := a.property
-  have hmul : (ℓ : ℤ) • toBase.specialFiberMultidegree hX hη
-      toBase.specialFiberCohomologyFiniteDimensional_zero
-      hC.specialFiberCohomologyFiniteDimensional_one a.val = 0 := by
-    rw [← map_zsmul, ha, map_zero]
-  have hd : toBase.specialFiberMultidegree hX hη
-      toBase.specialFiberCohomologyFiniteDimensional_zero
-      hC.specialFiberCohomologyFiniteDimensional_one a.val = (0 : (𝒯).Component → ℤ) :=
-    (smul_eq_zero.mp hmul).resolve_left (Int.natCast_ne_zero.mpr hℓ)
-  exact (congrArg (Submodule.Quotient.mk (p := (𝒯).principalDivisors)) hd).trans
-    (Submodule.Quotient.mk_zero _)
-
 /-- `specialFiberNumericalPicTorsionMap` factors through torsion pullback to `X_{s,red}`. -/
 @[simp] lemma reducedSpecialFiberNumericalPicTorsionMap_comp_pullbackTorsionLinearMap
     (ℓ : ℕ) : toBase.reducedSpecialFiberNumericalPicTorsionMap hX hη hC hπ hreg hconn ℓ ∘ₗ
@@ -401,6 +353,27 @@ because `specialFiberMultidegreeOnFiber` takes values in the torsion-free group
   rw [reducedSpecialFiberNumericalPicTorsionMap, numericalPicTorsionMap,
     LineBundleClass.torsionByZModLinearMap_comp_pullbackTorsionLinearMap,
     reducedSpecialFiberNumericalPicLinear_comp_pullbackLinearMap_reducedSpecialFiberι]
+
+/-- For every `ℓ > 0` (`hℓ : ℓ ≠ 0`), `specialFiberNumericalPicTorsionMap` vanishes identically
+because `specialFiberMultidegreeOnFiber` takes values in the torsion-free group
+`(𝒯).Component → ℤ`. -/
+@[simp] theorem specialFiberNumericalPicTorsionMap_eq_zero {ℓ : ℕ} (hℓ : ℓ ≠ 0) :
+    toBase.specialFiberNumericalPicTorsionMap hX hη hC hπ hreg hconn ℓ = 0 := by
+  rw [← toBase.reducedSpecialFiberNumericalPicTorsionMap_comp_pullbackTorsionLinearMap
+      hX hη hC hπ hreg hconn ℓ,
+    toBase.reducedSpecialFiberNumericalPicTorsionMap_eq_zero hX hη hC hπ hreg hconn hℓ,
+    LinearMap.zero_comp]
+
+/-- For every `ℓ > 0` (`hℓ : ℓ ≠ 0`), `numericalPicTorsionMap` vanishes identically because
+`specialFiberMultidegree` takes values in the torsion-free group `(𝒯).Component → ℤ`. -/
+@[simp] theorem numericalPicTorsionMap_eq_zero {ℓ : ℕ} (hℓ : ℓ ≠ 0) :
+    toBase.numericalPicTorsionMap hX hη hC hπ hreg hconn ℓ = 0 := by
+  have hcomp :=
+    reducedSpecialFiberNumericalPicTorsionMap_comp_pullbackTorsionLinearMap_reducedSpecialFiberι
+      (toBase := toBase) hX hη hC hπ hreg hconn ℓ
+  rw [← hcomp,
+    toBase.reducedSpecialFiberNumericalPicTorsionMap_eq_zero hX hη hC hπ hreg hconn hℓ,
+    LinearMap.zero_comp]
 
 /-- When `X_s` is reduced, `specialFiberNumericalPicTorsionMap` factors through
 `LineBundleClass.pullbackTorsionLinearEquiv` along `X_{s,red} ≅ X_s`. -/
@@ -547,22 +520,12 @@ include hC hπ hreg hconn in
 theorem finrank_ker_verticalLineBundleLinear :
     Module.finrank ℤ (LinearMap.ker (toBase.verticalLineBundleLinear hX hη)) = 1 := by
   let i₀ : (𝒯).Component := Classical.choice (𝒯).componentNonempty
-  let i₀' : (toBase.finite_setOf_base_eq_closedPoint
-      (toBase.maximalIdeal_ne_bot_of_base_ne_closedPoint hη) hη).toFinset := i₀
-  have hinj : Function.Injective ((LinearMap.proj i₀').domRestrict
-      (LinearMap.ker (toBase.verticalLineBundleLinear hX hη))) := by
-    intro x y hxy
-    refine Subtype.ext (sub_eq_zero.mp (funext fun j ↦ ?_))
-    have hcross := toBase.multiplicity_mul_eq_of_mem_ker_verticalLineBundleLinear
-      hX hη hC hπ hreg hconn (sub_mem x.property y.property) j i₀
-    have hi : (x.val - y.val) i₀' = 0 := sub_eq_zero.mpr hxy
-    change ((𝒯).multiplicity i₀ : ℤ) * (x.val - y.val) j =
-      ((𝒯).multiplicity j : ℤ) * (x.val - y.val) i₀' at hcross
-    rw [hi, mul_zero] at hcross
-    exact (mul_eq_zero.mp hcross).resolve_left
-      (Int.natCast_ne_zero.mpr ((𝒯).multiplicity i₀).ne_zero)
+  have : Module.Finite ℤ (LinearMap.ker (𝒯).intersection.vecMulLinear) :=
+    .of_fg ((𝒯).ker_vecMulLinear_intersection_eq_span ▸ Submodule.fg_span (Set.finite_singleton _))
   have hle : Module.finrank ℤ (LinearMap.ker (toBase.verticalLineBundleLinear hX hη)) ≤ 1 :=
-    (LinearMap.finrank_le_finrank_of_injective hinj).trans_eq (Module.finrank_self ℤ)
+    (Submodule.finrank_mono (t := LinearMap.ker (𝒯).intersection.vecMulLinear)
+      (toBase.ker_verticalLineBundleLinear_le_ker_intersection hX hη hC hπ hreg hconn)).trans_eq
+      (𝒯).finrank_ker_vecMulLinear_intersection
   refine le_antisymm hle
     (Module.finrank_pos_iff_exists_ne_zero.mpr
       ⟨⟨_, toBase.multiplicity_mem_ker_verticalLineBundleLinear hX hη hπ hreg⟩,

@@ -14,8 +14,8 @@ public import TauCeti.AlgebraicGeometry.Scheme.Regular.Scheme
 # Reducedness criteria for special fibres
 
 For any scheme `X` over a local ring `R`, the reduced special fibre `X_{s,red}`
-(`TauCeti.reducedSpecialFiber`) and its inclusion, residue-field, properness, and point-closure
-API live in `TauCeti.AlgebraicGeometry.SpecialFiber.Subscheme`.
+(`TauCeti.reducedSpecialFiber`) and its inclusion, residue-field, and properness API live in
+`TauCeti.AlgebraicGeometry.SpecialFiber.Subscheme`.
 
 For an integral Noetherian scheme with factorial local rings over a one-dimensional local
 base with principal maximal ideal, this file proves that the special fibre is reduced exactly when
