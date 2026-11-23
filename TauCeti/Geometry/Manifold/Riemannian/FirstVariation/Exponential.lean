@@ -68,6 +68,26 @@ variable
   [IsContMDiffRiemannianBundle I ∞ E (fun x : M ↦ TangentSpace I x)]
   {γ : ℝ → M} {V : ∀ t, TangentSpace I (γ t)}
 
+omit [I.Boundaryless] [T2Space M] in
+/-- Two exponential variations agreeing on `uIcc a b` for every parameter `s` have equal energy
+functions `s ↦ energy I (exponentialVariation I _ _ s) a b`. -/
+theorem energy_exponentialVariation_eq_of_eqOn {γ' : ℝ → M} {V' : ∀ t, TangentSpace I (γ' t)}
+    {a b : ℝ}
+    (hExp : ∀ s, EqOn (exponentialVariation I γ' V' s) (exponentialVariation I γ V s) (uIcc a b)) :
+    (fun s ↦ energy I (exponentialVariation I γ V s) a b) =
+      fun s ↦ energy I (exponentialVariation I γ' V' s) a b :=
+  funext fun s ↦ (energy_congr ((hExp s).mono uIoo_subset_uIcc_self)).symm
+
+omit [I.Boundaryless] [T2Space M] in
+/-- Two exponential variations agreeing on `uIcc a b` for every parameter `s` have equal extended
+Riemannian length functions `s ↦ Manifold.pathELength I (exponentialVariation I _ _ s) a b`. -/
+theorem pathELength_exponentialVariation_eq_of_eqOn {γ' : ℝ → M} {V' : ∀ t, TangentSpace I (γ' t)}
+    {a b : ℝ}
+    (hExp : ∀ s, EqOn (exponentialVariation I γ' V' s) (exponentialVariation I γ V s) (uIcc a b)) :
+    (fun s ↦ Manifold.pathELength I (exponentialVariation I γ V s) a b) =
+      fun s ↦ Manifold.pathELength I (exponentialVariation I γ' V' s) a b :=
+  funext fun s ↦ (Manifold.pathELength_congr ((hExp s).mono Icc_subset_uIcc)).symm
+
 /-- For a field `V` along `γ` whose tangent-bundle lift is `C¹` on `uIcc a b`, the curves
 `exp_(γ ·) (s • V ·)` have finite Riemannian length between `a` and `b` for all `s` near `0`. -/
 theorem eventually_pathELength_exponentialVariation_ne_top {a b : ℝ}
@@ -81,7 +101,7 @@ theorem eventually_pathELength_exponentialVariation_ne_top {a b : ℝ}
     (F := exponentialVariation I γ' V') fun t ht ↦
       contMDiffAt_exponentialVariation_zero γ' V' (hV' t ht)
   filter_upwards [hfin] with s hs
-  rwa [← Manifold.pathELength_congr ((hExp s).mono Icc_subset_uIcc)]
+  rwa [congrFun (pathELength_exponentialVariation_eq_of_eqOn hExp) s]
 
 /-- For a field `V` along `γ` whose tangent-bundle lift is `C²` on `uIcc a b`, the energy of the
 exponential variation `exp_(γ ·) (s • V ·)` between `a` and `b` is differentiable at every `s`
@@ -92,10 +112,7 @@ theorem eventually_differentiableAt_energy_exponentialVariation {a b : ℝ}
     ∀ᶠ s in 𝓝 (0 : ℝ),
       DifferentiableAt ℝ (fun q ↦ energy I (exponentialVariation I γ V q) a b) s := by
   obtain ⟨γ', V', hV', -, hExp⟩ := exists_contMDiffAt_exponentialVariation_eqOn γ V hV
-  have henergy : (fun s ↦ energy I (exponentialVariation I γ V s) a b) =
-      fun s ↦ energy I (exponentialVariation I γ' V' s) a b :=
-    funext fun s ↦ (energy_congr ((hExp s).mono uIoo_subset_uIcc_self)).symm
-  rw [henergy]
+  rw [energy_exponentialVariation_eq_of_eqOn hExp]
   exact eventually_differentiableAt_energy (I := I) (F := exponentialVariation I γ' V') (a := a)
     (b := b) (u := 0) fun t ht ↦ contMDiffAt_exponentialVariation_zero γ' V' (hV' t ht)
 
@@ -177,10 +194,7 @@ theorem hasDerivAt_energy_exponentialVariation {a b : ℝ}
         ∫ t in a..b, inner ℝ (V' t) (acceleration (leviCivitaConnection I M) γ' t)) 0 := by
     have h := hasDerivAt_energy fun t ht ↦ contMDiffAt_exponentialVariation_zero γ' V' (hV' t ht)
     rwa [variationField_exponentialVariation_eq, exponentialVariation_zero] at h
-  have henergy : (fun s ↦ energy I (exponentialVariation I γ V s) a b) =
-      fun s ↦ energy I (exponentialVariation I γ' V' s) a b :=
-    funext fun s ↦ (energy_congr ((hExp s).mono uIoo_subset_uIcc_self)).symm
-  rw [henergy]
+  rw [energy_exponentialVariation_eq_of_eqOn hExp]
   refine hderiv'.congr_deriv ?_
   rw [inner_curveVelocity_eq_inner_curveVelocityWithin_of_totalSpaceMk_eq hab right_mem_uIcc
       ((hV' b right_mem_uIcc).of_le one_le_two) hEq,
@@ -345,11 +359,7 @@ theorem hasDerivAt_toReal_pathELength_exponentialVariation {a b : ℝ} (hab : a 
       (fun t ht ↦ contMDiffAt_exponentialVariation_zero γ' V' (hV' t (by rwa [uIcc_of_le hab])))
       hC (fun t ht ↦ by rw [exponentialVariation_zero]; exact hspeed' t ht)
     rwa [variationField_exponentialVariation_eq, exponentialVariation_zero] at h
-  have hlen : (fun s ↦ (Manifold.pathELength I (exponentialVariation I γ V s) a b).toReal) =
-      fun s ↦ (Manifold.pathELength I (exponentialVariation I γ' V' s) a b).toReal :=
-    funext fun s ↦ congrArg ENNReal.toReal
-      (Manifold.pathELength_congr ((hExp s).mono (by rw [uIcc_of_le hab]))).symm
-  rw [hlen]
+  rw [congrArg (fun f s ↦ (f s).toReal) (pathELength_exponentialVariation_eq_of_eqOn hExp)]
   refine hderiv'.congr_deriv ?_
   have hb := inner_curveVelocity_eq_inner_curveVelocityWithin_of_totalSpaceMk_eq
     hlt.ne right_mem_uIcc ((hV' b right_mem_uIcc).of_le one_le_two) hEq

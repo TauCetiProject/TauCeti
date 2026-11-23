@@ -34,9 +34,11 @@ is locally the sum of the piece derivatives. Differentiating a second time at `s
 
 When `F` is the exponential variation `(s, t) ↦ exp_(γ t) (s • V t)` of a curve `γ` along a
 continuous piecewise `C³` tangent field `V` on `[a, b]` (`IsPiecewiseContMDiffOn` or a bundled
-`PiecewiseContMDiffSectionAlong`), every transverse curve is a geodesic, so all outer, corner, and
-bulk transverse-acceleration terms vanish, while `TauCeti.Manifold.sum_indexForm_adjacent_intervals`
-combines the piece index forms into the single unrestricted `TauCeti.Manifold.indexForm I γ V V`.
+`PiecewiseContMDiffSectionAlong`), each transverse curve is geodesic near `s = 0` and therefore has
+vanishing covariant acceleration at `s = 0` (including at the partition vertices), so all outer,
+corner, and bulk transverse-acceleration terms vanish, while
+`TauCeti.Manifold.sum_indexForm_adjacent_intervals` combines the piece index forms into the single
+unrestricted `TauCeti.Manifold.indexForm I γ V V`.
 Along a geodesic `γ` on `(a, b)` with cancelling outer first-variation pairings, any continuous
 piecewise `C³` field `V` with `I(V, V) < 0` therefore strictly decreases the energy of
 `exp_(γ ·) (s • V ·)` for small `s ≠ 0` — the broken-field shortening principle of Morse index
@@ -99,7 +101,7 @@ private theorem hasDerivAt_deriv_sum_of_eventuallyEq {ι : Type*} [Fintype ι]
     HasDerivAt (deriv f) (∑ i, d i) u := by
   have hdeq : deriv f =ᶠ[𝓝 u] fun s ↦ ∑ i, deriv (g i) s := by
     filter_upwards [heq.deriv, Filter.eventually_all.mpr hd₁] with s hs hds
-    rw [hs, (HasDerivAt.fun_sum fun i _ ↦ (hds i).hasDerivAt).deriv]
+    rw [hs, deriv_fun_sum (fun i _ ↦ hds i)]
   exact (HasDerivAt.fun_sum (u := Finset.univ) fun i _ ↦ hd₂ i).congr_of_eventuallyEq hdeq
 
 /-- **Second variation of energy for a continuous piecewise `C³` family.** At each interior vertex

@@ -232,9 +232,9 @@ theorem sectionCoord_alongCurve_snd_eventuallyEq
       (FiberBundle.mem_baseSet_trivializationAt E (TangentSpace I) _)
   rw [sectionCoord_apply, ← alongCurveWithin_univ,
     ← symmL_alongCurveInChartWithin cov (f q) (W q) hqb hfq.mdifferentiableWithinAt
-      hV.differentiableWithinAt,
-    e.continuousLinearMapAt_symmL (R := 𝕜) hqb, alongCurveInChartWithin_apply,
-    derivWithin_univ, derivWithin_univ, Function.comp_def,
+      hV.differentiableWithinAt]
+  simp only [(trivializationAt E (TangentSpace I) (f u v)).continuousLinearMapAt_symmL (R := 𝕜) hqb,
+    alongCurveInChartWithin_apply, derivWithin_univ, Function.comp_def,
     funext (sectionCoord_apply (f q) (W q) (f u v))]
 
 /-- **Chart formula for the first-parameter covariant derivative along a surface.** Near `v`, the

@@ -123,19 +123,14 @@ theorem hasDerivAt_deriv_norm_curveVelocity {t : ℝ}
   let P : ∀ s, TangentSpace I (σ s) := fun s ↦ curveVelocity I (F s) t
   let q : ℝ → ℝ := fun s ↦ ‖P s‖ ^ 2
   have hm := isMetricCompatible_leviCivitaConnection (I := I) (M := M)
-  have hPnear : ∀ᶠ s in 𝓝 (0 : ℝ),
-      ContMDiffAt 𝓘(ℝ, ℝ) I.tangent 1 (fun r ↦ TotalSpace.mk' E (σ r) (P r)) s :=
-    (contMDiffAt_iff_contMDiffAt_nhds (by simp)).mp
-      (((hf.contMDiffAt_curveVelocity_snd (m := 2) (by norm_num)).comp 0
-        (contDiff_prodMk_left t).contMDiff.contMDiffAt).of_le one_le_two)
+  have hP : ContMDiffAt 𝓘(ℝ, ℝ) I.tangent 2 (fun s ↦ TotalSpace.mk' E (σ s) (P s)) 0 :=
+    hf.contMDiffAt_curveVelocity_snd_slice (by norm_num)
+  have hreg := eventually_mdifferentiableAt_and_differentiableAt_sectionCoord (hP.of_le one_le_two)
   have hvel_cont : ContinuousAt (fun s ↦ ‖P s‖) 0 :=
     (hasDerivAt_norm_curveVelocity (hf.of_le (by norm_num)) hγ).continuousAt
   have hd₁ : (deriv fun s ↦ ‖P s‖) =ᶠ[𝓝 0] fun s ↦ deriv q s / (2 * ‖P s‖) := by
-    filter_upwards [hPnear, hvel_cont.eventually_ne (norm_ne_zero_iff.mpr hγ)] with s hs hns
-    have hq2 := hm.hasDerivAt_norm_sq_alongCurve
-      (((contMDiff_proj (TangentSpace I)).contMDiffAt.comp s hs).mdifferentiableAt one_ne_zero)
-      (differentiableAt_sectionCoord σ P (hs.mdifferentiableAt one_ne_zero)
-        (FiberBundle.mem_baseSet_trivializationAt E (TangentSpace I) (σ s)))
+    filter_upwards [hreg, hvel_cont.eventually_ne (norm_ne_zero_iff.mpr hγ)] with s ⟨hσs, hPs⟩ hns
+    have hq2 := hm.hasDerivAt_norm_sq_alongCurve hσs hPs
     simpa only [q, Real.sqrt_sq (norm_nonneg _), ← hq2.deriv] using
       (hq2.sqrt (pow_ne_zero 2 hns)).deriv
   -- Differentiate the quotient `deriv q s / (2 * ‖P s‖)` at `s = 0`.
@@ -503,11 +498,7 @@ theorem hasDerivAt_deriv_toReal_pathELength_exponentialVariation
     exact hcongr hnear.self_of_nhds
       (Bundle.TotalSpace.ext_iff.mp (hEq t (uIoo_subset_uIcc_self ht))).2
       (heq_of_eq (Filter.EventuallyEq.curveVelocity_eq hnear))
-  have hlen : (fun s ↦ (Manifold.pathELength I (exponentialVariation I γ V s) a b).toReal) =
-      fun s ↦ (Manifold.pathELength I (exponentialVariation I γ' V' s) a b).toReal :=
-    funext fun s ↦ congrArg ENNReal.toReal
-      (Manifold.pathELength_congr ((hExp s).mono (by rw [uIcc_of_le hab]))).symm
-  rw [hlen]
+  rw [congrArg (fun f s ↦ (f s).toReal) (pathELength_exponentialVariation_eq_of_eqOn hExp)]
   exact hd'.congr_deriv (congrArg (· / C) (indexForm_congr
     (fun t ht ↦ congrArg TotalSpace.proj (hEq t (uIoo_subset_uIcc_self ht))) hVperp hVperp))
 
@@ -531,7 +522,8 @@ theorem hasDerivAt_deriv_toReal_pathELength_exponentialVariation_of_norm_curveVe
 
 /-- **Second variation of length along a normal exponential variation.** For a geodesic `γ` on
 `(a, b)` of constant speed `C > 0` on `(a, b)` (`a ≤ b`) and a field `V` along `γ` with a `C³` lift
-on `[a, b]` which is orthogonal to `γ'` on `(a, b)`, the normal projection of `V` is `V` itself, so
+on `[a, b]` which is orthogonal to `γ'` on `(a, b)`, the normal component of `V` agrees with `V`
+on `(a, b)`, which suffices for equality of the index forms, so
 `d²/ds² L(exp_(γ ·) (s • V ·)) |₀ = I(V, V) / C`. -/
 theorem hasDerivAt_deriv_toReal_pathELength_exponentialVariation_of_orthogonal
     {a b : ℝ} (hγ : IsGeodesicCurveOn I γ (Ioo a b)) (hab : a ≤ b)

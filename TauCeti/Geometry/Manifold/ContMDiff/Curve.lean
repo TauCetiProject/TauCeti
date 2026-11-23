@@ -29,7 +29,7 @@ is locally a reparametrization of one of the two curves.
 
 In a boundaryless `C^k` manifold (`k : ℕ`), a `C^k` curve on a closed real interval `[a, b]`
 extends across both endpoints to a curve that is two-sided `C^k` at every point of `[a, b]`
-(`ContMDiffOn.exists_contMDiffAt_Icc`, `ContMDiffOn.exists_contMDiffAt_uIcc`).
+(`ContMDiffOn.exists_contMDiffAt_Icc`).
 
 These curves are the test curves of line integrals: a closed `1`-form whose integral along every
 smooth loop vanishes is exact, with primitive the integral along smooth curves from a base point.
@@ -41,8 +41,8 @@ smooth loop vanishes is exact, with primitive the integral along smooth curves f
   junction point is `C^n`.
 * `TauCeti.eventually_exists_contMDiff_curve`: nearby points are joined by short `C^n` curves.
 * `TauCeti.exists_contMDiff_curve`: a preconnected `C^n` manifold is `C^n`-path connected.
-* `ContMDiffOn.exists_contMDiffAt_Icc`, `ContMDiffOn.exists_contMDiffAt_uIcc`: two-sided `C^k`
-  extension of a closed-interval curve across its endpoints in a boundaryless manifold.
+* `ContMDiffOn.exists_contMDiffAt_Icc`: two-sided `C^k` extension of a closed-interval curve
+  across its endpoints in a boundaryless manifold.
 -/
 
 public section
@@ -260,11 +260,5 @@ theorem _root_.ContMDiffOn.exists_contMDiffAt_Icc [I.Boundaryless] {k : ℕ} [Is
           (eventuallyEq_of_mem (Icc_mem_nhds hat htb) hEq)
   · exact ⟨fun _ ↦ γ a, fun _ _ ↦ contMDiffAt_const, fun t ht ↦ by rw [le_antisymm ht.2 ht.1]⟩
   · exact ⟨γ, fun _ ht ↦ absurd (ht.1.trans ht.2) (not_le.2 hba), fun _ _ ↦ rfl⟩
-
-/-- Unordered-interval version of `ContMDiffOn.exists_contMDiffAt_Icc`. -/
-theorem _root_.ContMDiffOn.exists_contMDiffAt_uIcc [I.Boundaryless] {k : ℕ} [IsManifold I k M]
-    {γ : ℝ → M} {a b : ℝ} (hγ : ContMDiffOn 𝓘(ℝ, ℝ) I k γ (uIcc a b)) :
-    ∃ δ : ℝ → M, (∀ t ∈ uIcc a b, ContMDiffAt 𝓘(ℝ, ℝ) I k δ t) ∧ EqOn δ γ (uIcc a b) :=
-  hγ.exists_contMDiffAt_Icc
 
 end TauCeti

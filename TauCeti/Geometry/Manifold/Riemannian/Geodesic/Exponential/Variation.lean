@@ -220,7 +220,7 @@ theorem exists_contMDiffAt_exponentialVariation_eqOn {k : ℕ} {a b : ℝ}
       ∀ s, EqOn (exponentialVariation I γ' V' s) (exponentialVariation I γ V s) (uIcc a b) := by
   have : IsManifold I.tangent k (TangentBundle I M) :=
     IsManifold.of_le (n := ∞) (by simp)
-  obtain ⟨σ, hσ, hEq⟩ := hV.exists_contMDiffAt_uIcc
+  obtain ⟨σ, hσ, hEq⟩ := hV.exists_contMDiffAt_Icc
   refine ⟨fun t ↦ (σ t).proj, fun t ↦ (σ t).snd, hσ, fun t ht ↦ hEq ht, fun s t ht ↦ ?_⟩
   exact congrArg (fun z : TangentBundle I M ↦ riemannianExp I M z.proj (s • z.snd)) (hEq ht)
 

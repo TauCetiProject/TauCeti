@@ -40,8 +40,9 @@ Along a geodesic `γ`, the bulk acceleration integral vanishes and only the inde
 endpoint transverse-acceleration pairings remain. Those boundary terms vanish in three geometric
 situations: for fixed-endpoint variations (`TauCeti.Manifold.IsFixedEndpointVariation`), for
 periodic variations of a smoothly closed geodesic, and for exponential variations
-`(s, t) ↦ exp_(γ t) (s • V t)` of a `C³` field `V` on `uIcc a b` whose transverse curves are
-geodesics even when the endpoints move. Applying the second-derivative tests then shows that, when
+`(s, t) ↦ exp_(γ t) (s • V t)` of a `C³` field `V` on `uIcc a b`, whose transverse curves are
+geodesic near `s = 0` and therefore have vanishing transverse acceleration at `s = 0` even when the
+endpoints move. Applying the second-derivative tests then shows that, when
 `γ` is a geodesic on `uIoo a b`, `I(V, V) ≥ 0` at a local minimum of the energy (for any `C³`
 variation whose endpoint transverse-acceleration pairings satisfy `⟪A(b), γ'(b)⟫ ≤ ⟪A(a), γ'(a)⟫`,
 as well as its fixed-endpoint and periodic specializations; for
@@ -322,6 +323,22 @@ private theorem alongCurve_alongCurve_curveVelocity_snd_zero {t : ℝ}
   rw [alongCurve_congr cov (fun s ↦ F s t) _ hswap, sub_eq_iff_eq_add.mp hcomm]
   dsimp only [cov]; simp only [acceleration_def, variationField_def, add_comm]
 
+omit [FiniteDimensional ℝ E] [T2Space M]
+  [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
+  [IsContMDiffRiemannianBundle I ∞ E (fun x : M ↦ TangentSpace I x)] in
+/-- Near a parameter `u` where a tangent-bundle lift `s ↦ TotalSpace.mk' E (σ s) (P s)` is
+`C¹`, the base curve `σ` is eventually differentiable and the coordinate reading
+`sectionCoord ℝ σ P (σ s)` is eventually differentiable at `s`. -/
+theorem eventually_mdifferentiableAt_and_differentiableAt_sectionCoord
+    {σ : ℝ → M} {P : ∀ s, TangentSpace I (σ s)} {u : ℝ}
+    (hP : ContMDiffAt 𝓘(ℝ, ℝ) I.tangent 1 (fun s ↦ TotalSpace.mk' E (σ s) (P s)) u) :
+    ∀ᶠ s in 𝓝 u, MDifferentiableAt 𝓘(ℝ, ℝ) I σ s ∧
+      DifferentiableAt ℝ (sectionCoord ℝ (F := E) σ P (σ s)) s :=
+  ((contMDiffAt_iff_contMDiffAt_nhds (by simp)).mp hP).mono fun s hs ↦
+    ⟨((contMDiff_proj (TangentSpace I)).contMDiffAt.comp s hs).mdifferentiableAt one_ne_zero,
+      differentiableAt_sectionCoord σ P (hs.mdifferentiableAt one_ne_zero)
+        (FiberBundle.mem_baseSet_trivializationAt E (TangentSpace I) (σ s))⟩
+
 /-- **Pointwise second variation of the squared speed.** At a parameter `t` where `F` is `C³` at
 `(0, t)`, the transverse derivative `s ↦ d/ds ‖∂_t F (s, t)‖²` is differentiable at `s = 0`, with
 derivative `2 (I_t(V, V) + ⟪D_t (D_s ∂_s F) (0, t), γ'(t)⟫)`, where `V` is the variation field of
@@ -343,14 +360,9 @@ theorem hasDerivAt_deriv_norm_sq_curveVelocity {t : ℝ}
   let P : ∀ s, TangentSpace I (σ s) := fun s ↦ curveVelocity I (F s) t
   have hP : ContMDiffAt 𝓘(ℝ, ℝ) I.tangent 2 (fun s ↦ TotalSpace.mk' E (σ s) (P s)) 0 :=
     hf.contMDiffAt_curveVelocity_snd_slice (by norm_num)
-  have hPnear : ∀ᶠ s in 𝓝 (0 : ℝ),
-      ContMDiffAt 𝓘(ℝ, ℝ) I.tangent 1 (fun q ↦ TotalSpace.mk' E (σ q) (P q)) s :=
-    (contMDiffAt_iff_contMDiffAt_nhds (by simp)).mp (hP.of_le one_le_two)
+  have hreg := eventually_mdifferentiableAt_and_differentiableAt_sectionCoord (hP.of_le one_le_two)
   have hd₂ := hm.hasDerivAt_deriv_norm_sq_alongCurve
-    (hPnear.mono fun s hs ↦
-      ((contMDiff_proj (TangentSpace I)).contMDiffAt.comp s hs).mdifferentiableAt one_ne_zero)
-    (hPnear.mono fun s hs ↦ differentiableAt_sectionCoord σ P (hs.mdifferentiableAt one_ne_zero)
-      (FiberBundle.mem_baseSet_trivializationAt E (TangentSpace I) (σ s)))
+    (hreg.mono fun _ h ↦ h.1) (hreg.mono fun _ h ↦ h.2)
     (differentiableAt_sectionCoord_alongCurve_leviCivitaConnection hP)
   -- Use curvature skew-symmetry and torsion-free symmetry `D_s γ' = D_t V` to match `I_t(V, V)`.
   have hcurv : inner ℝ (cov.curvatureTensor (F 0 t) (variationField I F t)
@@ -496,9 +508,10 @@ variable [I.Boundaryless] {γ : ℝ → M} {V : ∀ t, TangentSpace I (γ t)}
 
 /-- **Second variation of energy along an exponential variation.** Let `V` be a tangent field along
 an arbitrary curve `γ` whose lift to the tangent bundle is `C³` on `uIcc a b`. Because each
-transverse curve `s ↦ exp_(γ t) (s • V t)` is a geodesic, all transverse-acceleration terms in
-`hasDerivAt_deriv_energy` vanish and `d²/ds² E(exp_(γ ·) (s • V ·)) |₀ = I(V, V)`, even without
-assuming that `γ` is a geodesic or that `V` vanishes at the endpoints. -/
+transverse curve `s ↦ exp_(γ t) (s • V t)` is geodesic near `s = 0`, its covariant acceleration at
+`s = 0` vanishes, so all transverse-acceleration terms in `hasDerivAt_deriv_energy` drop out and
+`d²/ds² E(exp_(γ ·) (s • V ·)) |₀ = I(V, V)`, even without assuming that `γ` is a geodesic or that
+`V` vanishes at the endpoints. -/
 theorem hasDerivAt_deriv_energy_exponentialVariation {a b : ℝ}
     (hV : ContMDiffOn 𝓘(ℝ, ℝ) I.tangent 3
       (fun t ↦ TotalSpace.mk' E (γ t) (V t)) (uIcc a b)) :
@@ -512,10 +525,7 @@ theorem hasDerivAt_deriv_energy_exponentialVariation {a b : ℝ}
     simp only [acceleration_exponentialVariation_zero, inner_zero_left,
       intervalIntegral.integral_zero, add_zero, sub_zero] at h
     rwa [variationField_exponentialVariation_eq, exponentialVariation_zero] at h
-  have henergy : (fun s ↦ energy I (exponentialVariation I γ V s) a b) =
-      fun s ↦ energy I (exponentialVariation I γ' V' s) a b :=
-    funext fun s ↦ (energy_congr ((hExp s).mono uIoo_subset_uIcc_self)).symm
-  rw [henergy]
+  rw [energy_exponentialVariation_eq_of_eqOn hExp]
   refine hd'.congr_deriv (indexForm_congr
     (fun t ht ↦ congrArg TotalSpace.proj (hEq t (uIoo_subset_uIcc_self ht)))
     (fun t ht ↦ (Bundle.TotalSpace.ext_iff.mp (hEq t (uIoo_subset_uIcc_self ht))).2)
@@ -586,8 +596,9 @@ theorem indexForm_nonneg_of_isLocalMin_energy_exponentialVariation {a b : ℝ}
 /-- **Negative index form strictly decreases energy.** Let `γ` be a geodesic on `uIoo a b` and `V`
 a field along `γ` with a `C³` lift on `uIcc a b` whose endpoint pairings satisfy
 `⟪V(b), γ'_{uIcc a b}(b)⟫ = ⟪V(a), γ'_{uIcc a b}(a)⟫` (for instance because `V` vanishes at `a`
-and `b`, is orthogonal to `γ'` at both endpoints, or closes periodically). If `I(V, V) < 0`, then
-for every small nonzero `s` the curve `exp_(γ ·) (s • V ·)` has strictly smaller energy than `γ`. -/
+and `b`, is orthogonal to `γ'_{uIcc a b}` at both endpoints, or `V` has matching endpoint values
+along a smoothly closed geodesic with matching endpoint velocities). If `I(V, V) < 0`, then for
+every small nonzero `s` the curve `exp_(γ ·) (s • V ·)` has strictly smaller energy than `γ`. -/
 theorem eventually_energy_exponentialVariation_lt_of_indexForm_neg {a b : ℝ}
     (hγ : IsGeodesicCurveOn I γ (uIoo a b))
     (hV : ContMDiffOn 𝓘(ℝ, ℝ) I.tangent 3

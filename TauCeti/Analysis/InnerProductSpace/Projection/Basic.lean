@@ -111,8 +111,8 @@ AIQ-Kitware DKPS formalization (Apache-2.0; Jon Crall and GPT-6).
   `infDist w U ≤ infDist w V + ‖P_U - P_V‖ * ‖w‖`.
 * `Submodule.norm_sub_add_sq_of_mem_of_mem_orthogonal`: Pythagoras for `‖v - (b + c)‖²` with
   `b ∈ R` and `c ∈ Rᗮ`, split along `R` and `Rᗮ`.
-* `Submodule.inner_sub_starProjection_singleton`, `Submodule.norm_sub_starProjection_singleton_sq`:
-  inner product and squared norm of components orthogonal to a vector `u`.
+* `Submodule.inner_sub_starProjection_singleton`:
+  inner product of components orthogonal to a vector `u`.
 * `Submodule.inner_starProjection_mul_inner_starProjection_of_finrank_eq_one`: the sign identity
   `⟪P x, y⟫ ⟪P y, z⟫ = ⟪P y, y⟫ ⟪P x, z⟫` for the projection `P` onto a real line.
 * `Submodule.inner_starProjection_sq_of_finrank_eq_one`: `⟪P x, y⟫² = ⟪P x, x⟫ ⟪P y, y⟫` for the
@@ -476,20 +476,11 @@ theorem inner_sub_starProjection_singleton (u v w : F) :
     ⟪v - (ℝ ∙ u).starProjection v, w - (ℝ ∙ u).starProjection w⟫_ℝ =
       ⟪v, w⟫_ℝ - ⟪v, u⟫_ℝ * ⟪w, u⟫_ℝ / ‖u‖ ^ 2 := by
   have hperp : ⟪v - (ℝ ∙ u).starProjection v, (ℝ ∙ u).starProjection w⟫_ℝ = 0 :=
-    inner_left_of_mem_orthogonal ((ℝ ∙ u).starProjection_apply_mem w)
-      ((ℝ ∙ u).sub_starProjection_mem_orthogonal v)
+    (ℝ ∙ u).starProjection_inner_eq_zero v _ ((ℝ ∙ u).starProjection_apply_mem w)
   rw [inner_sub_right, hperp, sub_zero, inner_sub_left, Submodule.starProjection_singleton]
   simp only [RCLike.ofReal_real_eq_id, id_eq, real_inner_smul_left, real_inner_comm u v,
     real_inner_comm u w]
   ring
-
-omit R [R.HasOrthogonalProjection] in
-/-- The squared norm of the component of `w` orthogonal to a vector `u`:
-`‖w - P_u w‖² = ‖w‖² - ⟪w, u⟫² / ‖u‖²`. Holds for `u = 0` as well by the division-by-zero
-convention `x / 0 = 0`. -/
-theorem norm_sub_starProjection_singleton_sq (u w : F) :
-    ‖w - (ℝ ∙ u).starProjection w‖ ^ 2 = ‖w‖ ^ 2 - ⟪w, u⟫_ℝ ^ 2 / ‖u‖ ^ 2 := by
-  simpa only [real_inner_self_eq_norm_sq, sq] using inner_sub_starProjection_singleton u w w
 
 /-- For the orthogonal projection `P` onto a line, `⟪P x, y⟫ ⟪P y, z⟫ = ⟪P y, y⟫ ⟪P x, z⟫`: if `n`
 spans the line, both sides are `⟪n, x⟫ ⟪n, y⟫² ⟪n, z⟫ / ‖n‖⁴`. In particular, lying strictly on the
