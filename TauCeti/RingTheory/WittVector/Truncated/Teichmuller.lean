@@ -32,6 +32,12 @@ def teichmuller : A →* TruncatedWittVector p n A :=
 theorem teichmuller_apply (a : A) :
     teichmuller p n a = WittVector.truncate n (WittVector.teichmuller p a) := (rfl)
 
+/-- Truncation preserves finite Teichmüller representatives. -/
+@[simp]
+theorem truncate_teichmuller {m : ℕ} (hm : n ≤ m) (a : A) :
+    truncate hm (teichmuller p m a) = teichmuller p n a := by
+  simp only [teichmuller_apply, truncate_wittVector_truncate]
+
 /-- The Teichmüller representative of zero is zero. -/
 @[simp]
 theorem teichmuller_zero : teichmuller p n (0 : A) = 0 := by
