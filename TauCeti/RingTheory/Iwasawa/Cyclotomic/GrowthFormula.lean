@@ -472,10 +472,8 @@ private theorem exists_natCard_quotient_span_resultant_growthTransition {p e n�
   have : Fact p.Prime := ⟨hp⟩
   have hspan : Ideal.span {(p : O)} = maximalIdeal O ^ e :=
     TauCeti.IsDiscreteValuationRing.span_singleton_eq_maximalIdeal_pow hpe
-  have hp𝔪 : (p : O) ∈ maximalIdeal O := by
-    rw [← pow_one (maximalIdeal O),
-      TauCeti.IsDiscreteValuationRing.mem_maximalIdeal_pow_iff_le_addVal, hpe]
-    exact_mod_cast he
+  have hp𝔪 : (p : O) ∈ maximalIdeal O :=
+    TauCeti.IsDiscreteValuationRing.mem_maximalIdeal_of_addVal_eq hpe he
   have hpjac : (p : O) ∈ (⊥ : Ideal O).jacobson := by
     rwa [IsLocalRing.jacobson_eq_maximalIdeal ⊥ bot_ne_top]
   set n₁ := max n₀ (lambdaInvariant O M * e + 1)
@@ -535,10 +533,8 @@ theorem exists_natCard_quotSMulTop_growthTransition {p e : ℕ} (hp : p.Prime) (
       Nat.card (QuotSMulTop (growthTransition p O n₀ k : O⟦X⟧) M) =
         Nat.card (ResidueField O) ^
           ((muInvariant O M * p ^ k + e * lambdaInvariant O M * k : ℤ) + ν).toNat := by
-  have hp𝔪 : (p : O) ∈ maximalIdeal O := by
-    rw [← pow_one (maximalIdeal O),
-      TauCeti.IsDiscreteValuationRing.mem_maximalIdeal_pow_iff_le_addVal, hpe]
-    exact_mod_cast he
+  have hp𝔪 : (p : O) ∈ maximalIdeal O :=
+    TauCeti.IsDiscreteValuationRing.mem_maximalIdeal_of_addVal_eq hpe he
   obtain ⟨t, N₀, hT⟩ := exists_natCard_torsionBy_growthTransition (O := O) (M := M) hfin
   obtain ⟨a₁, hR⟩ := exists_natCard_quotient_span_resultant_growthTransition (O := O) (M := M)
     hp he hpe hfin
@@ -635,8 +631,7 @@ theorem exists_natCard_quotSMulTop_growthTransition_of_isTorsion {p e : ℕ} (hp
       Nat.card (QuotSMulTop (growthTransition p O n₀ k : O⟦X⟧) M) =
         Nat.card (ResidueField O) ^
           ((muInvariant O M * p ^ k + e * lambdaInvariant O M * k : ℤ) + ν).toNat := by
-  have hp0 : (p : O) ≠ 0 :=
-    IsDiscreteValuationRing.addVal_eq_top_iff.not.mp (hpe ▸ ENat.natCast_ne_top e)
+  have hp0 : (p : O) ≠ 0 := TauCeti.IsDiscreteValuationRing.ne_zero_of_addVal_eq hpe
   obtain ⟨n₀, hfin⟩ := exists_finite_quotSMulTop_growthTransition (O := O) (M := M) hp hp0 hM
   obtain ⟨ν, N, hN⟩ :=
     exists_natCard_quotSMulTop_growthTransition (O := O) (M := M) hp he hpe hfin
@@ -677,13 +672,12 @@ section Examples
 
 -- 1. Equal characteristic breaks the cyclotomic cutoff (`(p : O) = 0`).
 example (p : ℕ) [Fact p.Prime] :
-    let O := PowerSeries (ZMod p)
-    let M := O⟦X⟧ ⧸ Ideal.span {(X : O⟦X⟧)}
-    ((1 + X) ^ p ^ 0 - 1 : O⟦X⟧) • deltaSubmodule p O M = ⊥ ∧
-      Infinite (QuotSMulTop (growthTransition p O 1 1 : O⟦X⟧) M) := by
-  intro O M
+    let M := ((ZMod p)⟦X⟧)⟦X⟧ ⧸ Ideal.span {(X : ((ZMod p)⟦X⟧)⟦X⟧)}
+    ((1 + X) ^ p ^ 0 - 1 : ((ZMod p)⟦X⟧)⟦X⟧) • deltaSubmodule p (ZMod p)⟦X⟧ M = ⊥ ∧
+      Infinite (QuotSMulTop (growthTransition p (ZMod p)⟦X⟧ 1 1 : ((ZMod p)⟦X⟧)⟦X⟧) M) := by
+  intro M
   have hp : p.Prime := Fact.out
-  have : CharP O p :=
+  have : CharP (ZMod p)⟦X⟧ p :=
     charP_of_injective_ringHom (Function.LeftInverse.injective (constantCoeff_C (R := ZMod p))) p
   refine ⟨?_, ?_⟩
   · rw [eq_bot_iff]
@@ -695,10 +689,11 @@ example (p : ℕ) [Fact p.Prime] :
       Submodule.Quotient.mk_eq_zero, smul_eq_mul]
     exact Ideal.mul_mem_right _ _ (Ideal.mem_span_singleton_self _)
   · -- In char `p`, `ν_{1, 1} = Φ_p(X + 1) = X ^ (p - 1)` kills `M`, so `M ⧸ ν_{1, 1} M ≃ M`.
-    have hν : (growthTransition p O 1 1 : O⟦X⟧) = X ^ (p - 1) := by
+    have hν : (growthTransition p (ZMod p)⟦X⟧ 1 1 : ((ZMod p)⟦X⟧)⟦X⟧) = X ^ (p - 1) := by
       rw [growthTransition_self, Polynomial.cyclotomic_prime_pow_comp_X_add_one_eq_X_pow,
         pow_one, Nat.totient_prime hp, Polynomial.coe_pow, Polynomial.coe_X]
-    have hsmul : (growthTransition p O 1 1 : O⟦X⟧) • (⊤ : Submodule O⟦X⟧ M) = ⊥ := by
+    have hsmul : (growthTransition p (ZMod p)⟦X⟧ 1 1 : ((ZMod p)⟦X⟧)⟦X⟧) •
+        (⊤ : Submodule ((ZMod p)⟦X⟧)⟦X⟧ M) = ⊥ := by
       rw [eq_bot_iff]
       intro x hx
       obtain ⟨y, -, rfl⟩ := (Submodule.mem_smul_pointwise_iff_exists x _ _).mp hx
@@ -706,10 +701,13 @@ example (p : ℕ) [Fact p.Prime] :
       rw [hν, Submodule.mem_bot, ← Ideal.Quotient.mk_eq_mk, ← Submodule.Quotient.mk_smul,
         Submodule.Quotient.mk_eq_zero, smul_eq_mul, Ideal.mem_span_singleton]
       exact (dvd_pow_self _ (Nat.sub_pos_of_lt hp.one_lt).ne').trans (dvd_mul_right _ _)
-    have hO : Infinite O := TauCeti.IsDiscreteValuationRing.infinite
-    have hM : Infinite M := by
-      let : Algebra O O⟦X⟧ := MvPowerSeries.instAlgebra
-      exact (Equiv.infinite_iff (PowerSeries.quotientSpanXAlgEquiv O).toEquiv).mpr hO
+    have hO : Infinite (ZMod p)⟦X⟧ := TauCeti.IsDiscreteValuationRing.infinite
+    have hM : Infinite M :=
+      (Equiv.infinite_iff
+        ((Ideal.quotEquivOfEq PowerSeries.ker_constantCoeff.symm).trans
+          (RingHom.quotientKerEquivOfSurjective
+            (f := (constantCoeff : ((ZMod p)⟦X⟧)⟦X⟧ →+* (ZMod p)⟦X⟧))
+            fun r ↦ ⟨C r, constantCoeff_C r⟩)).toEquiv).mpr hO
     exact (Equiv.infinite_iff (Submodule.quotEquivOfEqBot _ hsmul).toEquiv).mpr hM
 
 -- 2. Equal characteristic breaks linear `λ`-growth:

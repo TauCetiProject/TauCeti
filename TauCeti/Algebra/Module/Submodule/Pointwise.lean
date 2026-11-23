@@ -76,7 +76,7 @@ theorem smul_prod {α R M N : Type*} [Semiring R] [AddCommMonoid M] [Module R M]
     a • S.prod T = (a • S).prod (a • T) :=
   SetLike.coe_injective <| by
     rw [coe_pointwise_smul, prod_coe, prod_coe, coe_pointwise_smul, coe_pointwise_smul]
-    exact Set.prodMap_image_prod (a • ·) (a • ·) (S : Set M) (T : Set N)
+    exact Set.smul_set_prod a (S : Set M) (T : Set N)
 
 /-- Pointwise scalar multiplication distributes over the unrestricted dependent product
 `Submodule.pi Set.univ S`. -/

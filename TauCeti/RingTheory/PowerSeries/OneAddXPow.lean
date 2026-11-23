@@ -13,6 +13,7 @@ import Mathlib.Algebra.CharP.Algebra
 import Mathlib.Algebra.CharP.Lemmas
 import TauCeti.RingTheory.Polynomial.Distinguished
 import TauCeti.RingTheory.PowerSeries.AdicComplete
+import TauCeti.RingTheory.PowerSeries.CyclotomicSeries
 import TauCeti.RingTheory.PowerSeries.Ideal
 import TauCeti.RingTheory.RegularLocalRing.PowerSeries
 
@@ -80,10 +81,8 @@ theorem torsionBy_quotient_span_C_pow_one_add_X_pow_sub_one_eq_bot [IsDomain O]
     Submodule.torsionBy O⟦X⟧ (O⟦X⟧ ⧸ Ideal.span {C (ϖ ^ m)}) ((1 + X) ^ N - 1) = ⊥ := by
   refine torsionBy_quotient_span_C_pow_eq_bot_of_not_dvd hϖ (fun ⟨k, hk⟩ ↦ hϖ.not_isUnit ?_) m
   have hcoeff := congrArg (coeff N) hk
-  have hcoe : (((1 + Polynomial.X) ^ N - 1 : O[X]) : O⟦X⟧) = (1 + X) ^ N - 1 := by simp
-  have hlead := (TauCeti.Polynomial.monic_one_add_X_pow_sub_one (R := O) hN).leadingCoeff
-  rw [Polynomial.leadingCoeff, TauCeti.Polynomial.natDegree_one_add_X_pow_sub_one] at hlead
-  rw [← hcoe, Polynomial.coeff_coe, hlead, coeff_C_mul] at hcoeff
+  rw [map_sub, coeff_one_add_X_pow, Nat.choose_self, Nat.cast_one, coeff_one,
+    ite_eq_right fun h ↦ absurd h hN, sub_zero, coeff_C_mul] at hcoeff
   exact IsUnit.of_mul_eq_one _ hcoeff.symm
 
 /-- For an ideal `I` of `O` containing `p`, the series `ω_n = (1 + X) ^ pⁿ - 1` lies in the
