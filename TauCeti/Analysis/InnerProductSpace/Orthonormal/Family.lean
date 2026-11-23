@@ -23,12 +23,6 @@ becomes an equality on the span: `‖P x‖² = ∑ᵢ ‖⟪vᵢ, x⟫‖²`. T
 projection onto the span of a continuous family of orthonormal families depends continuously on
 the parameter (`Orthonormal.continuous_starProjection`).
 
-For an orthonormal basis `v`, the overlap operator of `v` and a family `X` reads `X` in the
-coordinates of `v`: synthesizing against `v` recovers the synthesis map of `X`
-(`Orthonormal.synthesisMap_comp_overlapOperator`), and so carries the orthogonal complement of the
-range of the overlap operator onto the orthogonal complement of the span of `X`
-(`Orthonormal.map_orthogonal_range_overlapOperator`).
-
 Combining an orthonormal family with the rows of a matrix `A` gives an orthonormal family exactly
 when `A * Aᴴ = 1` (`Orthonormal.orthonormal_sum_smul_iff`); for square matrices this
 identifies the changes of orthonormal frame with the unitary group
@@ -88,31 +82,6 @@ theorem synthesisMapIsometry_single (hv : Orthonormal 𝕜 v) (i : ι) (c : 𝕜
 theorem range_synthesisMapIsometry (hv : Orthonormal 𝕜 v) :
     LinearMap.range hv.synthesisMapIsometry.toLinearMap = Submodule.span 𝕜 (Set.range v) := by
   rw [synthesisMapIsometry_toLinearMap, TauCeti.range_synthesisMap]
-
-/-- Synthesizing against an orthonormal basis `v` the coordinates of a family `X` in `v`, its
-overlap operator with `v`, recovers the synthesis map of `X`. -/
-theorem synthesisMap_comp_overlapOperator (hv : Orthonormal 𝕜 v)
-    (hsp : ⊤ ≤ Submodule.span 𝕜 (Set.range v)) {κ : Type*} [Fintype κ] (X : κ → E) :
-    TauCeti.synthesisMap 𝕜 v ∘ₗ TauCeti.overlapOperator 𝕜 v X = TauCeti.synthesisMap 𝕜 X := by
-  have hid := (OrthonormalBasis.mk hv hsp).frameOperator_eq_id
-  rw [OrthonormalBasis.coe_mk, TauCeti.frameOperator_def] at hid
-  rw [TauCeti.overlapOperator_def, ← LinearMap.comp_assoc, hid, LinearMap.id_comp]
-
-/-- The synthesis map of an orthonormal basis `v` carries the orthogonal complement of the range
-of the overlap operator of `v` and a family `X` onto the orthogonal complement of the span of
-`X`. -/
-theorem map_orthogonal_range_overlapOperator (hv : Orthonormal 𝕜 v)
-    (hsp : ⊤ ≤ Submodule.span 𝕜 (Set.range v)) {κ : Type*} [Fintype κ] (X : κ → E) :
-    (LinearMap.range (TauCeti.overlapOperator 𝕜 v X))ᗮ.map (TauCeti.synthesisMap 𝕜 v) =
-      (Submodule.span 𝕜 (Set.range X))ᗮ := by
-  have hrange : LinearMap.range hv.synthesisMapIsometry.toLinearMap = ⊤ := by
-    rw [range_synthesisMapIsometry]
-    exact top_unique hsp
-  have hmap := Submodule.map_orthogonal (LinearMap.range (TauCeti.overlapOperator 𝕜 v X))
-    hv.synthesisMapIsometry
-  rw [hrange, inf_top_eq, hv.synthesisMapIsometry_toLinearMap] at hmap
-  simpa [← LinearMap.range_comp, hv.synthesisMap_comp_overlapOperator hsp,
-    TauCeti.range_synthesisMap] using hmap
 
 /-- The adjoint of the coordinate synthesis isometry reads inner products with the family. -/
 @[simp]

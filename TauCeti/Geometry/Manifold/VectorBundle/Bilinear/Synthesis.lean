@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Geometry.Manifold.VectorBundle.Hom
-public import Mathlib.Geometry.Manifold.VectorBundle.Riemannian
 public import TauCeti.Analysis.InnerProductSpace.Dual
 public import TauCeti.Analysis.InnerProductSpace.Frame.Basic
 import TauCeti.Geometry.Manifold.VectorBundle.Bilinear.Section
@@ -29,8 +28,6 @@ calculus of a single space applies.
 * `TauCeti.contMDiffOn_bilinearComp_synthesisMap`: the coordinate bilinear forms are `C^n`.
 * `TauCeti.contMDiffOn_continuousLinearMapOfBilin_bilinearComp_synthesisMap`: their Riesz
   operators are `C^n`.
-* `TauCeti.contMDiffOn_overlapOperator`: on a `C^n` Riemannian bundle, the overlap operators
-  `analysisMap ε ∘ synthesisMap X` of two families of `C^n` sections are `C^n`.
 -/
 
 public section
@@ -76,32 +73,5 @@ theorem contMDiffOn_continuousLinearMapOfBilin_bilinearComp_synthesisMap {d : �
         (synthesisMap ℝ (ε · y)).toContinuousLinearMap)) U :=
   contDiff_continuousLinearMapOfBilin.contMDiff.comp_contMDiffOn
     (contMDiffOn_bilinearComp_synthesisMap hQ hε)
-
-/-- The overlap operators of `C^n` sections `ε` and `X` of a `C^n` Riemannian bundle, reading `X`
-in the coordinates of `ε`, depend `C^n` on the base point. -/
-theorem contMDiffOn_overlapOperator [IsContMDiffRiemannianBundle IB n F V] {d k : ℕ}
-    {ε : Fin d → Π x, V x} {X : Fin k → Π x, V x} {U : Set B} (hε : ∀ i, CMDiff[U] n (T% (ε i)))
-    (hX : ∀ j, CMDiff[U] n (T% (X j))) :
-    ContMDiffOn IB 𝓘(ℝ, EuclideanSpace ℝ (Fin k) →L[ℝ] EuclideanSpace ℝ (Fin d)) n
-      (fun y ↦ (overlapOperator ℝ (ε · y) (X · y)).toContinuousLinearMap) U := by
-  -- The coordinates `⟪ε i y, X j y⟫` are `C^n`.
-  have hw (j : Fin k) : ContMDiffOn IB 𝓘(ℝ, EuclideanSpace ℝ (Fin d)) n
-      (fun y ↦ analysisMap ℝ (ε · y) (X j y)) U := by
-    have hcoord : ContMDiffOn IB 𝓘(ℝ, Fin d → ℝ) n (fun y i ↦ ⟪ε i y, X j y⟫_ℝ) U :=
-      contMDiffOn_pi_module_iff.2 fun i ↦ (hε i).inner_bundle (hX j)
-    refine (((EuclideanSpace.equiv (Fin d) ℝ).symm.contDiff (n := n)).contMDiff.comp_contMDiffOn
-      hcoord).congr fun y _ ↦ ?_
-    ext i
-    simp
-  -- The overlap operator is the sum of the rank-one maps `a ↦ a j • w j y`.
-  have hsum : (fun y ↦ (overlapOperator ℝ (ε · y) (X · y)).toContinuousLinearMap) = fun y ↦
-      ∑ j, (EuclideanSpace.proj j : EuclideanSpace ℝ (Fin k) →L[ℝ] ℝ).smulRight
-        (analysisMap ℝ (ε · y) (X j y)) := by
-    ext y a : 2
-    simp [overlapOperator_def, map_sum, map_smul]
-  rw [hsum]
-  exact contMDiffOn_finsetSum fun j _ ↦
-    ((StrongDual.smulRightL ℝ (EuclideanSpace ℝ (Fin k)) (EuclideanSpace ℝ (Fin d))
-      (EuclideanSpace.proj j)).contDiff (n := n)).contMDiff.comp_contMDiffOn (hw j)
 
 end TauCeti

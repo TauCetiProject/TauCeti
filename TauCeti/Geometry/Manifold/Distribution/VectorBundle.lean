@@ -61,8 +61,6 @@ distribution of rank `k` is a `C^n` vector bundle with model fibre `Fin k → �
 
 * `TauCeti.IsContMDiffDistribution.hasLocalContMDiffSubbundleFrames`: a `C^n` distribution of rank
   `k` has `C^n` local frames of size `k` near every point.
-* `TauCeti.isContMDiffDistribution_iff_hasLocalContMDiffSubbundleFrames`: conversely, a distribution
-  with `C^n` local frames of size `k` near every point is a `C^n` distribution of rank `k`.
 * `TauCeti.IsContMDiffDistribution.mem_trivializationAtlas_fiberBundle_iff`: the trivializations
   of this fibre bundle are those of the `C^n` local frames of `D`.
 * `TauCeti.IsContMDiffDistribution.vectorBundle`: a continuous distribution of rank `k` is a
@@ -162,15 +160,6 @@ theorem hasLocalContMDiffSubbundleFrames (hD : IsContMDiffDistribution I n k D) 
   hasLocalContMDiffSubbundleFrames_iff.mpr fun x ↦ by
     obtain ⟨U, hU, hx, X, hX⟩ := isContMDiffDistribution_iff.mp hD x
     exact ⟨U, hU, hx, X, hX.isSubbundleFrameOn, hX.contMDiffOn⟩
-
-omit [IsRCLikeNormedField 𝕜] in
-/-- A distribution is a `C^n` distribution of rank `k` exactly when, as a family of subspaces of the
-tangent bundle, it has `C^n` local frames of size `k` near every point. -/
-theorem _root_.TauCeti.isContMDiffDistribution_iff_hasLocalContMDiffSubbundleFrames :
-    IsContMDiffDistribution I n k D ↔ HasLocalContMDiffSubbundleFrames I n E (Fin k) D :=
-  ⟨hasLocalContMDiffSubbundleFrames, fun hD ↦ isContMDiffDistribution_iff.mpr fun x ↦ by
-    obtain ⟨U, hU, hx, X, hX, hXn⟩ := hasLocalContMDiffSubbundleFrames_iff.mp hD x
-    exact ⟨U, hU, hx, X, hXn, hX.linearIndependent, hX.span_eq⟩⟩
 
 /-- A continuous distribution of rank `k` is a fibre bundle with fibre `Fin k → 𝕜`, the topology of
 its total space being that of a subspace of the tangent bundle. Its trivializations are those of
