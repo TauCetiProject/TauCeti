@@ -273,15 +273,11 @@ noncomputable def piPointsContinuousMulEquiv :
   toMulEquiv := AlgHom.piValueMulEquiv
   continuous_toFun := continuous_pi fun i ↦
     (AlgHom.continuous_mapValue (ψ := Pi.evalAlgHom k R i) (continuous_apply i)).congr fun f ↦
-      WithConv.ofConv_injective <| AlgHom.ext fun h ↦ by
-        change (AlgHom.mapValue (Pi.evalAlgHom k R i) f).ofConv h =
-          (AlgHom.piValueMulEquiv f i).ofConv h
-        rw [AlgHom.mapValue_apply, WithConv.ofConv_toConv, AlgHom.comp_apply,
-          Pi.evalAlgHom_apply, AlgHom.piValueMulEquiv_apply]
+      (AlgHom.piValueMulEquiv_apply f i).symm
   continuous_invFun := continuous_withConv_iff.2 fun h ↦
     (continuous_pi fun i ↦ (continuous_eval_ofConv h).comp (continuous_apply i)).congr fun g ↦ by
       ext i
-      simp [AlgHom.piValueMulEquiv_symm_apply]
+      simp
 
 variable {R} in
 /-- Forgetting continuity from `piPointsContinuousMulEquiv` recovers `AlgHom.piValueMulEquiv`. -/
@@ -296,19 +292,14 @@ variable {R} in
 @[simp]
 theorem piPointsContinuousMulEquiv_apply (f : WithConv (H →ₐ[k] ∀ i, R i)) (i : ι) :
     piPointsContinuousMulEquiv R f i = AlgHom.mapValue (Pi.evalAlgHom k R i) f :=
-  WithConv.ofConv_injective <| AlgHom.ext fun h ↦ by
-    change (AlgHom.piValueMulEquiv f i).ofConv h = _
-    rw [AlgHom.piValueMulEquiv_apply, AlgHom.mapValue_apply, WithConv.ofConv_toConv,
-      AlgHom.comp_apply, Pi.evalAlgHom_apply]
+  AlgHom.piValueMulEquiv_apply f i
 
 variable {R} in
 /-- The inverse of `piPointsContinuousMulEquiv` assembles a family of points via `AlgHom.pi`. -/
 @[simp]
 theorem ofConv_piPointsContinuousMulEquiv_symm (g : ∀ i, WithConv (H →ₐ[k] R i)) :
     ((piPointsContinuousMulEquiv R).symm g).ofConv = AlgHom.pi fun i ↦ (g i).ofConv :=
-  AlgHom.ext fun h ↦ funext fun i ↦ by
-    change (AlgHom.piValueMulEquiv.symm g).ofConv h i = _
-    rw [AlgHom.piValueMulEquiv_symm_apply, AlgHom.pi_apply]
+  AlgHom.ofConv_piValueMulEquiv_symm g
 
 end Pi
 

@@ -279,15 +279,17 @@ noncomputable def piValueMulEquiv :
   right_inv _ := rfl
   map_mul' f g := funext fun i ↦ map_mul (mapValue (Pi.evalAlgHom R B i)) f g
 
+/-- The `i`-th coordinate of `AlgHom.piValueMulEquiv` projects along `Pi.evalAlgHom`. -/
 @[simp]
-lemma piValueMulEquiv_apply (f : WithConv (H →ₐ[R] ∀ i, B i)) (i : ι) (h : H) :
-    (piValueMulEquiv f i).ofConv h = f.ofConv h i := by
+lemma piValueMulEquiv_apply (f : WithConv (H →ₐ[R] ∀ i, B i)) (i : ι) :
+    piValueMulEquiv f i = mapValue (Pi.evalAlgHom R B i) f := by
   delta piValueMulEquiv
   rfl
 
+/-- The inverse of `AlgHom.piValueMulEquiv` assembles a family of points via `AlgHom.pi`. -/
 @[simp]
-lemma piValueMulEquiv_symm_apply (g : ∀ i, WithConv (H →ₐ[R] B i)) (h : H) (i : ι) :
-    (piValueMulEquiv.symm g).ofConv h i = (g i).ofConv h := by
+lemma ofConv_piValueMulEquiv_symm (g : ∀ i, WithConv (H →ₐ[R] B i)) :
+    (piValueMulEquiv.symm g).ofConv = AlgHom.pi fun i ↦ (g i).ofConv := by
   delta piValueMulEquiv
   rfl
 
