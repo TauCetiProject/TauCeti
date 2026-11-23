@@ -92,9 +92,10 @@ variable {E H M : Type} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimens
 include hfin hxd hd hmin hrep in
 /-- **The fixed points of the iterates sum to the orbit logarithm.** Let `φ` be a diffeomorphism
 each of whose positive iterates has finitely many fixed points, and let `x i` be points of least
-periods `d i > 0` such that every periodic point of `φ` lies on the orbit of exactly one `x i`. Then over
-any `ℚ`-algebra `K`, the terms `sgn det (1 - d(φ^[n])_y) / n · e^[γ_(y, n)]`, one for each `n > 0`
-and each fixed point `y` of `φ^[n]`, sum in `Nov(K, H₁(Y_φ; ℤ), N)` to the orbit logarithm
+periods `d i > 0` such that every periodic point of `φ` lies on the orbit of exactly one `x i`.
+Then over any `ℚ`-algebra `K`, the terms `sgn det (1 - d(φ^[n])_y) / n · e^[γ_(y, n)]`, one for
+each `n > 0` and each fixed point `y` of `φ^[n]`, sum in `Nov(K, H₁(Y_φ; ℤ), N)` to the orbit
+logarithm
 `∑ᵢ ∑_{k ≥ 1} sgn det (1 - d(φ^[d i * k])_(x i)) / k · e^(k [γ_(x i)])` of the periodic orbits,
 labelled by their return maps. -/
 theorem hasSum_single_sign_det_div_orbitLog :
