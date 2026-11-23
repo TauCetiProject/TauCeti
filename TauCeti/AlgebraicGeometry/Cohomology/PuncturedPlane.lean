@@ -73,34 +73,29 @@ private theorem pow_mul_ne_pow_mul [Nontrivial R] (k m n : ℕ) (p q : MvPolynom
       (X 0 ^ (k + m) * X 1 ^ (k + n) : MvPolynomial (Fin 2) R) := by ring
   have r : (X 0 * X 1) ^ k * (X 0 * X 1 ^ (n + 1) * p + X 0 ^ (m + 1) * X 1 * q) =
       X 0 ^ (k + 1) * X 1 ^ (k + n + 1) * p + X 0 ^ (k + m + 1) * X 1 ^ (k + 1) * q := by ring
-  have h1 : (X 0 ^ (k + m) * X 1 ^ (k + n) : MvPolynomial (Fin 2) R).coeff e = 1 := by
-    rw [hmon, coeff_monomial, ite_eq_left_iff]
-    exact fun h => absurd rfl h
-  have h2 : (X 0 ^ (k + 1) * X 1 ^ (k + n + 1) * p).coeff e = 0 := by
+  -- A multiple of `xᵃ yᵇ` has no `x^(k + m) y^(k + n)` term once `a` or `b` is too large.
+  have hzero (a b : ℕ) (s : MvPolynomial (Fin 2) R) (hab : k + m < a ∨ k + n < b) :
+      (X 0 ^ a * X 1 ^ b * s).coeff e = 0 := by
     rw [hmon, coeff_monomial_mul', ite_eq_right_iff]
     intro hle
-    exfalso
-    have := hle 1
-    simp [e] at this
-  have h3 : (X 0 ^ (k + m + 1) * X 1 ^ (k + 1) * q).coeff e = 0 := by
-    rw [hmon, coeff_monomial_mul', ite_eq_right_iff]
-    intro hle
-    exfalso
-    have := hle 0
-    simp [e] at this
-  rw [l, r, AddMonoidAlgebra.coeff_add, Finsupp.add_apply, h1, h2, h3] at h
-  simp at h
+    have h0 := hle 0
+    have h1 := hle 1
+    simp [e] at h0 h1
+    omega
+  rw [l, r, AddMonoidAlgebra.coeff_add, Finsupp.add_apply, hzero _ _ _ (.inr (by omega)),
+    hzero _ _ _ (.inl (by omega)), hmon] at h
+  simp [e] at h
 
-/-- If `1 / (xy)` in a localization `D` of `A` away from `xy` is the sum of the images of
+/-- If `1 / (xy)` in a localization `D` of `A` away from `xy` is the difference of the images of
 elements of localizations `B` away from `x` and `C` away from `y`, under maps compatible with the
 maps from `A`, then clearing denominators gives `(xy)ᵏ xᵐ yⁿ = (xy)ᵏ (x yⁿ⁺¹ p + xᵐ⁺¹ y q)` in `A`
 for some `k`, `m`, `n`, `p` and `q`. -/
-private theorem exists_eq_of_add_eq_invSelf {A B C D : Type*} [CommRing A] [CommRing B]
+private theorem exists_eq_of_sub_eq_invSelf {A B C D : Type*} [CommRing A] [CommRing B]
     [CommRing C] [CommRing D] [Algebra A B] [Algebra A C] [Algebra A D] {x y : A}
     [IsLocalization.Away x B] [IsLocalization.Away y C] [IsLocalization.Away (x * y) D]
     (f : B →+* D) (hf : ∀ r, f (algebraMap A B r) = algebraMap A D r)
     (g : C →+* D) (hg : ∀ r, g (algebraMap A C r) = algebraMap A D r)
-    (b : B) (c : C) (h : f b + g c = IsLocalization.Away.invSelf (x * y)) :
+    (b : B) (c : C) (h : f b - g c = IsLocalization.Away.invSelf (x * y)) :
     ∃ (k m n : ℕ) (p q : A), (x * y) ^ k * (x ^ m * y ^ n) =
       (x * y) ^ k * (x * y ^ (n + 1) * p + x ^ (m + 1) * y * q) := by
   obtain ⟨⟨p, _, m, rfl⟩, hb⟩ := IsLocalization.surj (Submonoid.powers x) b
@@ -110,14 +105,14 @@ private theorem exists_eq_of_add_eq_invSelf {A B C D : Type*} [CommRing A] [Comm
   simp only [map_mul, hf, hg] at hfb hgc
   have hinv := IsLocalization.Away.mul_invSelf (S := D) (x * y)
   have key : algebraMap A D (x ^ m * y ^ n) =
-      algebraMap A D (x * y ^ (n + 1) * p + x ^ (m + 1) * y * q) := by
+      algebraMap A D (x * y ^ (n + 1) * p + x ^ (m + 1) * y * -q) := by
     rw [← h] at hinv
-    simp only [map_add, map_mul, map_pow] at hinv hfb hgc ⊢
+    simp only [map_add, map_mul, map_pow, map_neg] at hinv hfb hgc ⊢
     linear_combination (-(algebraMap A D x ^ m * algebraMap A D y ^ n)) * hinv +
-      (algebraMap A D y ^ (n + 1) * algebraMap A D x) * hfb +
+      (algebraMap A D y ^ (n + 1) * algebraMap A D x) * hfb -
       (algebraMap A D x ^ (m + 1) * algebraMap A D y) * hgc
   obtain ⟨⟨_, k, rfl⟩, hk⟩ := (IsLocalization.eq_iff_exists (Submonoid.powers (x * y)) D).mp key
-  exact ⟨k, m, n, p, q, hk⟩
+  exact ⟨k, m, n, p, -q, hk⟩
 
 variable (R) in
 /-- The global function `X i` on `𝔸²_R = Spec R[x, y]`. -/
@@ -146,32 +141,35 @@ theorem nontrivial_cohomologyOn_one_puncturedPlane [Nontrivial R] :
   set y := coordinate R 1
   rw [← not_subsingleton_iff_nontrivial, ← basicOpen_sup_basicOpen]
   intro hsub
-  have hW : Y.basicOpen x ⊓ Y.basicOpen y = Y.basicOpen (x * y) := (Y.basicOpen_mul x y).symm
-  have hcomp {P Q T : Y.Opens} (i : Q ⟶ P) (j : T ⟶ Q) (k : T ⟶ P) (s : Γ(Y, P)) :
-      (Y.presheaf.map j.op).hom ((Y.presheaf.map i.op).hom s) = (Y.presheaf.map k.op).hom s := by
-    rw [← CommRingCat.comp_apply, ← Functor.map_comp, ← op_comp, Subsingleton.elim (j ≫ i) k]
-  have hxle : Y.basicOpen (x * y) ≤ Y.basicOpen x := hW ▸ inf_le_left
-  have hyle : Y.basicOpen (x * y) ≤ Y.basicOpen y := hW ▸ inf_le_right
-  -- Mayer-Vietoris for `D(x)` and `D(y)`: the overlap section `1 / (xy)` is a difference of
-  -- restrictions. The ascription restates it for the structure sheaf: the sections of the unit
-  -- sheaf of modules and the maps of `Opens.mayerVietorisSquare` are definitionally those of
-  -- `Y.presheaf` along `U ⊓ V ≤ U` and `U ⊓ V ≤ V`.
+  have hxle : Y.basicOpen (x * y) ≤ Y.basicOpen x := Y.basicOpen_mul x y ▸ inf_le_left
+  have hyle : Y.basicOpen (x * y) ≤ Y.basicOpen y := Y.basicOpen_mul x y ▸ inf_le_right
+  -- Mayer-Vietoris for `D(x)` and `D(y)`, with the overlap written as `D(xy)`: the section
+  -- `1 / (xy)` is a difference of restrictions. The ascription restates it for the structure
+  -- sheaf: the sections of the unit sheaf of modules and the maps of the square are
+  -- definitionally those of `Y.presheaf` along `D(xy) ≤ D(x)` and `D(xy) ≤ D(y)`.
   obtain ⟨a, b, hab⟩ : ∃ (a : Γ(Y, Y.basicOpen x)) (b : Γ(Y, Y.basicOpen y)),
-      (Y.presheaf.map (homOfLE inf_le_left).op).hom a -
-        (Y.presheaf.map (homOfLE inf_le_right).op).hom b =
-          (Y.presheaf.map (eqToHom hW).op).hom
-            (IsLocalization.Away.invSelf (S := Γ(Y, Y.basicOpen (x * y))) (x * y)) :=
+      (Y.presheaf.map (homOfLE hxle).op).hom a - (Y.presheaf.map (homOfLE hyle).op).hom b =
+        IsLocalization.Away.invSelf (x * y) :=
     (TauCeti.CategoryTheory.mayerVietorisSectionClass_eq_zero_iff
-      (Opens.mayerVietorisSquare (Y.basicOpen x) (Y.basicOpen y))
+      (Opens.mayerVietorisSquare'
+        { X₁ := Y.basicOpen (x * y)
+          X₂ := Y.basicOpen x
+          X₃ := Y.basicOpen y
+          X₄ := Y.basicOpen x ⊔ Y.basicOpen y
+          f₁₂ := homOfLE hxle
+          f₁₃ := homOfLE hyle
+          f₂₄ := homOfLE le_sup_left
+          f₃₄ := homOfLE le_sup_right
+          fac := Subsingleton.elim _ _ } rfl (Y.basicOpen_mul x y))
       ((SheafOfModules.toSheaf Y.ringCatSheaf).obj (SheafOfModules.unit Y.ringCatSheaf)) _).mp
       (@Subsingleton.elim _ hsub _ _)
-  have key := congrArg (Y.presheaf.map (eqToHom hW.symm).op).hom hab
-  rw [map_sub, hcomp _ _ (homOfLE hxle), hcomp _ _ (homOfLE hyle), hcomp _ _ (𝟙 _), op_id,
-    CategoryTheory.Functor.map_id, CommRingCat.id_apply, sub_eq_add_neg, ← map_neg] at key
-  obtain ⟨k, m, n, p, q, h⟩ := exists_eq_of_add_eq_invSelf (A := Γ(Y, ⊤))
-    (B := Γ(Y, Y.basicOpen x)) (C := Γ(Y, Y.basicOpen y)) (D := Γ(Y, Y.basicOpen (x * y)))
-    (Y.presheaf.map (homOfLE hxle).op).hom (fun r => hcomp _ _ _ r)
-    (Y.presheaf.map (homOfLE hyle).op).hom (fun r => hcomp _ _ _ r) _ _ key
+  -- Compatibility with the maps from `Γ(Y, ⊤)` is functoriality of restriction; the `|_`
+  -- restrictions of `TopCat.Presheaf.restrict_restrict` unfold to these presheaf maps.
+  obtain ⟨k, m, n, p, q, h⟩ := exists_eq_of_sub_eq_invSelf
+    (Y.presheaf.map (homOfLE hxle).op).hom
+    (TopCat.Presheaf.restrict_restrict hxle (Y.basicOpen_le x))
+    (Y.presheaf.map (homOfLE hyle).op).hom
+    (TopCat.Presheaf.restrict_restrict hyle (Y.basicOpen_le y)) _ _ hab
   have h' := congrArg (Scheme.ΓSpecIso (.of (MvPolynomial (Fin 2) R))).hom h
   simp only [map_mul, map_pow, map_add, x, y, coordinate, Iso.inv_hom_id_apply] at h'
   exact pow_mul_ne_pow_mul k m n _ _ h'
