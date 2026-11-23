@@ -89,7 +89,7 @@ theorem eventually_contDiffOn_comp_comp_symm
     (hT : Tendsto (fun t ↦ ‖((T t).symm : Eᵤ →L[ℝ] Eᵤ)‖) l (𝓝 0)) (hg : ContDiffAt ℝ n g 0)
     {k : ℕ} (hk : k ≤ n) (R : ℝ) :
     ∀ᶠ t in l, ContDiffOn ℝ k (fun v ↦ S t (g ((T t).symm v))) (ball 0 R) := by
-  filter_upwards [ContinuousLinearMap.eventually_mapsTo_of_tendsto_opNorm hT
+  filter_upwards [hT.eventually_clm_mapsTo_of_opNorm_tendsto_zero
     (isBounded_ball (x := 0) (r := R)) ((hg.of_le hk).eventually (by simp))] with t ht v hv
   exact ((S t).contDiff.contDiffAt.comp v
     ((ht hv).comp v (T t).symm.contDiff.contDiffAt)).contDiffWithinAt
@@ -117,7 +117,7 @@ theorem tendstoUniformlyOn_iteratedFDeriv_comp_comp_symm
     simpa using (hS.mul (hT.pow i)).mul_const C
   rw [Metric.tendstoUniformlyOn_iff]
   intro ε hε
-  filter_upwards [ContinuousLinearMap.eventually_mapsTo_of_tendsto_opNorm hT
+  filter_upwards [hT.eventually_clm_mapsTo_of_opNorm_tendsto_zero
     (isBounded_ball (x := 0) (r := R)) hnear, hbound.eventually (gt_mem_nhds hε)]
     with t ht htε v hv
   obtain ⟨hgv, hgvC⟩ := ht hv
@@ -145,7 +145,7 @@ theorem tendstoUniformlyOn_comp_comp_symm
   have hbound : Tendsto (fun t ↦ ‖S t‖ * C) l (𝓝 0) := by simpa using hS.mul_const C
   rw [Metric.tendstoUniformlyOn_iff]
   intro ε hε
-  filter_upwards [ContinuousLinearMap.eventually_mapsTo_of_tendsto_opNorm hT
+  filter_upwards [hT.eventually_clm_mapsTo_of_opNorm_tendsto_zero
     (isBounded_ball (x := 0) (r := R)) (hg.norm.eventually (gt_mem_nhds (lt_add_one _))),
     hbound.eventually (gt_mem_nhds hε)] with t ht htε v hv
   rw [Pi.zero_apply, dist_zero_left]
@@ -195,7 +195,7 @@ theorem exists_graph_tendstoUniformlyOn_iteratedFDeriv [CompleteSpace F]
   obtain ⟨g, hg, hg₀, hgraph⟩ := exists_contDiffAt_graph_of_isInvertible ha hb hb' hb'i hn hU
   rw [hb₀] at hg hg₀ hgraph
   refine ⟨g, hg, hg₀, ?_, fun i hi ↦ tendstoUniformlyOn_iteratedFDeriv_comp_comp_symm hS hT hg hi R⟩
-  filter_upwards [ContinuousLinearMap.eventually_mapsTo_of_tendsto_opNorm hT
+  filter_upwards [hT.eventually_clm_mapsTo_of_opNorm_tendsto_zero
     (isBounded_ball (x := 0) (r := R)) hgraph] with t ht v hv
   obtain ⟨z, hzU, haz, hbz⟩ := ht hv
   rw [ContinuousLinearEquiv.coe_coe] at haz hbz

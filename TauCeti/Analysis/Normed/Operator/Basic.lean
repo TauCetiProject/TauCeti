@@ -35,7 +35,7 @@ Consequently a strongly continuous family of such maps `T a` sends a continuous 
 the continuous function `a ↦ T a (f a)` (`AddMonoidHomClass.continuousOn_apply_of_bound`,
 `AddMonoidHomClass.continuous_apply_of_bound`). Continuous semilinear maps over an isometric scalar
 homomorphism whose operator norms tend to zero eventually map any bounded set into any
-neighbourhood of `0` (`ContinuousLinearMap.eventually_mapsTo_of_tendsto_opNorm`).
+neighbourhood of `0` (`Filter.Tendsto.eventually_clm_mapsTo_of_opNorm_tendsto_zero`).
 
 A left inverse `S` of `T` modulo an error term gives the estimate
 `‖x‖ ≤ ‖S‖ ‖T x‖ + ‖(S ∘ T - 1) x‖`
@@ -249,8 +249,9 @@ theorem tendsto_apply_of_eventually_norm_le {C : ℝ} {g : ι → E} {z : E} {w 
 /-- For a family of continuous semilinear maps `T i : E →SL[σ] F` over an isometric scalar
 homomorphism `σ`, if the operator norms `‖T i‖` tend to zero, then eventually `T i` maps the
 bounded set `s` into any prescribed neighbourhood of `0`. -/
-theorem eventually_mapsTo_of_tendsto_opNorm (hT : Tendsto (fun i ↦ ‖T i‖) l (𝓝 0)) {s : Set E}
-    (hs : Bornology.IsBounded s) {V : Set F} (hV : V ∈ 𝓝 0) : ∀ᶠ i in l, Set.MapsTo (T i) s V :=
+theorem _root_.Filter.Tendsto.eventually_clm_mapsTo_of_opNorm_tendsto_zero
+    (hT : Tendsto (fun i ↦ ‖T i‖) l (𝓝 0)) {s : Set E} (hs : Bornology.IsBounded s) {V : Set F}
+    (hV : V ∈ 𝓝 0) : ∀ᶠ i in l, Set.MapsTo (T i) s V :=
   (tendsto_zero_iff_norm_tendsto_zero.mpr hT).eventually
     (eventually_nhds_zero_mapsTo ((NormedSpace.isVonNBounded_iff 𝕜).2 hs) hV)
 
