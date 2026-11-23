@@ -96,7 +96,7 @@ theorem subsingleton_and_not_discrete_sectionsTopology_padicInt :
   refine ⟨⟨fun _ _ ↦ Subtype.ext (PrimeSpectrum.ext ((hmax _).trans (hmax _).symm))⟩, fun h ↦ ?_⟩
   let _ := (ofSpf ℤ_[p]).sectionsTopology ⊤ (isAffineOpen_top_ofSpf ℤ_[p])
   have : DiscreteTopology ℤ_[p] :=
-    (isHomeomorph_topSectionsIso ℤ_[p]).homeomorph.discreteTopology_iff.mp h
+    (isHomeomorph_topSectionsIso_sectionsTopology ℤ_[p]).homeomorph.discreteTopology_iff.mp h
   have hnil : Filter.Tendsto (fun n : ℕ ↦ (p : ℤ_[p]) ^ n) Filter.atTop (nhds 0) :=
     (Huber.PadicInt.isTopologicallyNilpotent_iff_dvd (c := (p : ℤ_[p]))).mpr dvd_rfl
   rw [nhds_discrete, Filter.tendsto_pure] at hnil; obtain ⟨n, hn⟩ := hnil.exists

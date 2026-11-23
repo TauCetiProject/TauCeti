@@ -334,6 +334,8 @@ for opens `V ≤ W` and `U ≤ f⁻¹ W`. -/
   rw [← comp_ofRestrict_appLE hVW l hleL, Hom.congr_appLE (hfac.trans (Category.assoc _ _ _).symm)
     hleL hleH, Hom.comp_appLE, comp_ofRestrict_appLE hUW h hleH]
   simp only [Hom.appLE_def, Category.assoc]
+  -- `comp_ofRestrict_appLE` produces `h.c.app (op ⊤)` with codomain at `(Opens.map h.base).obj ⊤`,
+  -- which is definitionally equal to `⊤` (`Opens.map_top`).
   rfl
 
 /-- Compatibility of `restrictTopSectionsIso` with a restriction `fUV ≫ Y|_V = X|_U ≫ f`. -/

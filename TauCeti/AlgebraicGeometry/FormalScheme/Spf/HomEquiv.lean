@@ -128,6 +128,7 @@ private theorem appLE_top (k : Spf B ⟶ Spf A) (W : Opens (Spf B))
   (PresheafedSpace.Hom.appLE_def k.toHom _ _ _).trans <|
     congrArg (_ ≫ (Spf B).presheaf.map ·) (Quiver.Hom.unop_inj (Subsingleton.elim _ _))
 
+@[reassoc]
 private theorem algebraMap_comp_basicOpenSectionsIso_inv_comp_appLE (k : Spf B ⟶ Spf A) (a : A)
     (W : Opens (Spf B))
     (hW : W ≤ (Opens.map k.base).obj (basicOpen a : Opens (Spf A))) :
@@ -225,6 +226,32 @@ private theorem exists_pow_map_quotient_eq_bot_of_map (φ : A →+* B) (hφ : Co
       map_zero]
   exact hcomp.trans hrhs
 
+private theorem algebraMap_comp_basicOpenSectionsIso_inv_comp_quotientProjection
+    (m k : Spf B ⟶ Spf A) (a : A) (W : Opens (Spf B))
+    (hWk : W ≤ (Opens.map k.base).obj (basicOpen a : Opens (Spf A)))
+    (htop : (k.c.app (op ⊤) : (Spf A).presheaf.obj (op ⊤) ⟶ (Spf B).presheaf.obj (op ⊤)) =
+      m.c.app (op ⊤)) (n : ℕ) :
+    ((basicOpenSectionsIso (IsAdicRing.ideal_spec A).2.1 (IsAdicRing.ideal_spec A).1 a).inv ≫
+        k.toHom.appLE (basicOpen a : Opens (Spf A)) W hWk ≫
+        (quotientProjection (IsAdicRing.ideal_spec B).2.1 n).hom.app (op W)).hom.comp
+        (algebraMap A (AdicRing.CompletedAway A a)) =
+      ((topSectionsIso A).inv ≫
+        m.toHom.appLE (⊤ : Opens (Spf A)) W (fun _ _ ↦ trivial) ≫
+        (quotientProjection (IsAdicRing.ideal_spec B).2.1 n).hom.app (op W)).hom := by
+  let hIB := (IsAdicRing.ideal_spec B).2.1
+  let πn : (Spf B).presheaf.obj (op W) ⟶
+      (quotientSheaf (is_ideal_adic_pow hIB n.succ_pos)).obj.obj (op W) :=
+    (quotientProjection hIB n).hom.app (op W)
+  have h1 : CommRingCat.ofHom (algebraMap A (AdicRing.CompletedAway A a)) ≫
+      (basicOpenSectionsIso (IsAdicRing.ideal_spec A).2.1 (IsAdicRing.ideal_spec A).1 a).inv ≫
+        k.toHom.appLE (basicOpen a : Opens (Spf A)) W hWk =
+      (topSectionsIso A).inv ≫ m.toHom.appLE (⊤ : Opens (Spf A)) W (fun _ _ ↦ trivial) := by
+    rw [algebraMap_comp_basicOpenSectionsIso_inv_comp_appLE, appLE_top, appLE_top, htop]; rfl
+  rw [← CommRingCat.hom_ofHom (algebraMap A (AdicRing.CompletedAway A a)), ← CommRingCat.hom_comp]
+  refine congrArg CommRingCat.Hom.hom ?_
+  have h2 := congrArg (· ≫ πn) h1
+  simp only [Category.assoc] at h2; exact h2
+
 private theorem c_app_basicOpen_eq_map_sectionsHom (g : Spf B ⟶ Spf A) (a : A) :
     g.c.app (op (basicOpen a)) ≫ (Spf B).presheaf.map (eqToHom
         (congrArg (fun f ↦ (Opens.map f).obj (basicOpen a)) (base_eq_map_sectionsHom g).symm)).op =
@@ -235,6 +262,9 @@ private theorem c_app_basicOpen_eq_map_sectionsHom (g : Spf B ⟶ Spf A) (a : A)
   have hWg : W ≤ (Opens.map g.base).obj U :=
     (congrArg (fun f ↦ (Opens.map f).obj U) (base_eq_map_sectionsHom g).symm).le
   have happ : g.toHom.appLE U W hWg = m.toHom.appLE U W le_rfl := by
+    -- Cancel `basicOpenSectionsIso` and reduce to each quotient thickening `B ⧸ J ^ (n + 1)`
+    -- via `structureSheaf.sections_ext`; both candidates agree on `A`, and a power of the ideal
+    -- of definition of `A` maps to `0`, so `algHom_ext_of_map_pow_eq_bot` applies.
     refine (cancel_epi (basicOpenSectionsIso (IsAdicRing.ideal_spec A).2.1
       (IsAdicRing.ideal_spec A).1 a).inv).mp ?_
     ext x
@@ -246,27 +276,10 @@ private theorem c_app_basicOpen_eq_map_sectionsHom (g : Spf B ⟶ Spf A) (a : A)
       (IsAdicRing.ideal_spec A).1 a).inv
     let γ₁ := (bIso ≫ g.toHom.appLE U W hWg ≫ πn).hom
     let γ₂ := (bIso ≫ m.toHom.appLE U W le_rfl ≫ πn).hom
-    let algTarget : CommRingCat.of A ⟶ Rn :=
-      (topSectionsIso A).inv ≫ m.toHom.appLE (⊤ : Opens (Spf A)) W (fun _ _ ↦ trivial) ≫ πn
-    have comp_alg (k : Spf B ⟶ Spf A) (hWk : W ≤ (Opens.map k.base).obj U)
-        (htop : (k.c.app (op ⊤) : (Spf A).presheaf.obj (op ⊤) ⟶ (Spf B).presheaf.obj (op ⊤)) =
-          m.c.app (op ⊤)) :
-        (bIso ≫ k.toHom.appLE U W hWk ≫ πn).hom.comp
-            (algebraMap A (AdicRing.CompletedAway A a)) =
-          algTarget.hom := by
-      refine congrArg CommRingCat.Hom.hom <| (CommRingCat.ofHom_comp _ _).trans ?_
-      refine (congrArg (CommRingCat.ofHom (algebraMap A _) ≫ ·)
-        (CommRingCat.ofHom_hom _)).trans ?_
-      refine (congrArg (CommRingCat.ofHom (algebraMap A _) ≫ ·)
-        (Category.assoc _ _ _).symm).trans ?_
-      refine (Category.assoc _ _ _).symm.trans ?_
-      refine (congrArg (· ≫ πn)
-        (algebraMap_comp_basicOpenSectionsIso_inv_comp_appLE k a W hWk)).trans ?_
-      refine (Category.assoc _ _ _).trans ?_
-      exact congrArg ((topSectionsIso A).inv ≫ · ≫ πn) <|
-        (appLE_top k W).trans <| (congrArg (· ≫ _) htop).trans (appLE_top m W).symm
-    have hA₁ := comp_alg g hWg (c_app_top_eq_map_sectionsHom g)
-    have hA₂ := comp_alg m le_rfl rfl
+    have hA₁ := algebraMap_comp_basicOpenSectionsIso_inv_comp_quotientProjection m g a W hWg
+      (c_app_top_eq_map_sectionsHom g) n
+    have hA₂ :=
+      algebraMap_comp_basicOpenSectionsIso_inv_comp_quotientProjection m m a W le_rfl rfl n
     let _ : Algebra A Rn := (γ₂.comp (algebraMap A (AdicRing.CompletedAway A a))).toAlgebra
     obtain ⟨k, hk⟩ := exists_pow_map_quotient_eq_bot_of_map φ hφ W n
     exact congr($(AdicRing.CompletedAway.algHom_ext_of_map_pow_eq_bot (hA₂ ▸ hk)
