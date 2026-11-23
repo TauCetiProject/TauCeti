@@ -42,7 +42,7 @@ def augmentationScalarMap :
     (augmentationSubrepresentation R G X).toSubmodule.subtype).codRestrict
       ((augmentationSubrepresentation S G X).toSubmodule.restrictScalars R)
       fun (v : (augmentationSubrepresentation R G X).toSubmodule) => by
-        simpa using congrArg (algebraMap R S) (mem_augmentationSubrepresentation_iff.mp v.2)
+        simpa using congrArg (algebraMap R S) (mem_augmentationSubrepresentation_iff.mp v.property)
 
 /-- The underlying free-module vector is obtained by extending every coefficient. -/
 @[simp]

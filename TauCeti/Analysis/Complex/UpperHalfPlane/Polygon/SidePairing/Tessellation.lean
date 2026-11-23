@@ -114,7 +114,7 @@ theorem iUnion_smul_carrier_eq_univ {Γ : Subgroup PSL(2, ℝ)} (hmap : ∀ i, �
     rw [smul_set_union, smul_set_iUnion]
     refine union_subset (subset_iUnion_of_subset γ subset_rfl) (iUnion_subset fun i ↦ ?_)
     rw [smul_smul]
-    exact subset_iUnion_of_subset ⟨_, Γ.mul_mem γ.2 (hmap i)⟩ subset_rfl
+    exact subset_iUnion_of_subset ⟨_, Γ.mul_mem γ.property (hmap i)⟩ subset_rfl
   -- the translated vertices in `ℍ` form a countable set `V`
   have : Countable Γ := countable_univ_iff.1
     (hlf.countable_univ fun _ ↦ (P.nonempty_interior_carrier.mono interior_subset).smul_set)
@@ -167,8 +167,8 @@ theorem closure_range_map_eq {Γ : Subgroup PSL(2, ℝ)} (hmap : ∀ i, σ.map i
   obtain ⟨p, hp⟩ := P.nonempty_interior_carrier
   obtain ⟨g, hg⟩ := mem_iUnion.1 (hcover ▸ mem_univ (γ • p))
   -- `γ • p` lies in the interior of `γ • P` and in `g • P`, so these translates coincide
-  have hγg : γ = g := P.eq_of_smul_interior_inter_smul_carrier_nonempty hdisj hγ (hle g.2)
+  have hγg : γ = g := P.eq_of_smul_interior_inter_smul_carrier_nonempty hdisj hγ (hle g.property)
     ⟨γ • p, smul_mem_smul_set hp, hg⟩
-  exact hγg ▸ g.2
+  exact hγg ▸ g.property
 
 end TauCeti.UpperHalfPlane.ConvexPolygon.SidePairing

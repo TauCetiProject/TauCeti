@@ -169,7 +169,8 @@ private theorem fg_of_isDistinguished_mem [IsNoetherianRing Wint] {I : Ideal Win
     intro z
     obtain ⟨f, rfl⟩ := Ideal.Quotient.mk_surjective z
     obtain ⟨q, r, hr, hf, hq, hr1⟩ :=
-      exists_mul_add_eq_and_norm_le_of_isDistinguished hg hu (toWashnitzerAlgebra _ K f)
+      washnitzerAlgebra.exists_mul_add_eq_and_norm_le_of_isDistinguished hg hu
+        (toWashnitzerAlgebra _ K f)
     have hf1 := norm_toWashnitzerAlgebra_le_one f
     rw [hg1, mul_one] at hq
     -- Lift the quotient and the remainder to the integral algebras.
@@ -183,7 +184,7 @@ private theorem fg_of_isDistinguished_mem [IsNoetherianRing Wint] {I : Ideal Win
     let q' : Wint' := ⟨q, mem_intWashnitzerAlgebra_iff_norm_le_one.2 (hq.trans hf1)⟩
     have hf' : f = q' * g + p.eval₂ intOptionC intY := toWashnitzerAlgebra_injective (by
       rw [map_add, map_mul, toWashnitzerAlgebra_eval₂, hp, toWashnitzerAlgebra_mk]
-      exact hf)
+      exact hf.symm)
     refine ⟨⟨p, Polynomial.mem_degreeLT.2 hpdeg⟩, ?_⟩
     have hgJ : Ideal.Quotient.mk J (q' * g) = 0 :=
       Ideal.Quotient.eq_zero_iff_mem.2 (Ideal.mul_mem_left _ _ (Ideal.mem_span_singleton_self g))

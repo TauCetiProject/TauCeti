@@ -47,16 +47,17 @@ theorem fixedField_frobenius_fiber_eq_empty_of_mem_frobeniusPrimeSet_one
   have hram : p ∉ ramifiedPrimes K L :=
     frobeniusPrimeSet_subset_compl_ramifiedPrimes (K := K) (L := L) 1 hp
   obtain ⟨Q, _⟩ := exists_isArithFrobAt_of_mem_frobeniusPrimeSet_mk hP
-  have hQE : Q.1.under (𝓞 ↥(fixedField (Subgroup.zpowers σ))) = P.asIdeal := Q.2.2.over.symm
-  have hQK : Q.1.under (𝓞 K) = p.asIdeal := by
-    rw [← Ideal.under_under (B := 𝓞 ↥(fixedField (Subgroup.zpowers σ))) Q.1,
+  have hQE : Q.val.under (𝓞 ↥(fixedField (Subgroup.zpowers σ))) = P.asIdeal
+      := Q.property.2.over.symm
+  have hQK : Q.val.under (𝓞 K) = p.asIdeal := by
+    rw [← Ideal.under_under (B := 𝓞 ↥(fixedField (Subgroup.zpowers σ))) Q.val,
       hQE, ← HeightOneSpectrum.under_asIdeal, hPp]
-  have : Q.1.LiesOver p.asIdeal := ⟨hQK.symm⟩
-  have hQdeg : Q.1.inertiaDeg (𝓞 K) = 1 :=
-    inertiaDeg_eq_one_of_mem_frobeniusPrimeSet_one hp Q.1
+  have : Q.val.LiesOver p.asIdeal := ⟨hQK.symm⟩
+  have hQdeg : Q.val.inertiaDeg (𝓞 K) = 1 :=
+    inertiaDeg_eq_one_of_mem_frobeniusPrimeSet_one hp Q.val
   have hPdeg : P.asIdeal.inertiaDeg (𝓞 K) = 1 := by
     have hdiv := Ideal.inertiaDeg_below_dvd (R := 𝓞 K)
-      (Q.1.under (𝓞 ↥(fixedField (Subgroup.zpowers σ)))) Q.1
+      (Q.val.under (𝓞 ↥(fixedField (Subgroup.zpowers σ)))) Q.val
     rw [hQE, hQdeg] at hdiv
     exact Nat.dvd_one.mp hdiv
   have hpσ : p ∈ frobeniusPrimeSet K L (ConjClasses.mk σ) :=

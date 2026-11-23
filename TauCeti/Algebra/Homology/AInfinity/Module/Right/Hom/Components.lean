@@ -66,9 +66,9 @@ theorem suspendedComponent_tmul (f : AInfinityRightModuleHom MM NN) (n : ℕ) (x
 theorem suspendedComponent_id_of_pos (MM : AInfinityRightModule AA M) {n : ℕ} (hn : 0 < n) :
     (AInfinityRightModuleHom.id MM).suspendedComponent n = 0 := by
   refine TensorProduct.ext' fun x w ↦ ?_
-  simp only [suspendedComponent_tmul, taylor_id, LinearMap.comp_apply, LinearMap.lTensor_tmul,
-    TensorWords.counit_eq_counit, TensorWords.counit_of_of_ne_zero R A hn.ne',
-    TensorProduct.tmul_zero, map_zero, LinearMap.zero_apply]
+  simp only [suspendedComponent_tmul, taylor_id, Comodule.cofreeCounit_tmul,
+    TensorWords.counit_eq_counit, TensorWords.counit_of_of_ne_zero R A hn.ne', zero_smul,
+    LinearMap.zero_apply]
 
 /-- Each suspended component has degree zero. -/
 theorem suspendedComponent_tmul_tprod_mem (f : AInfinityRightModuleHom MM NN) (n : ℕ)
@@ -165,8 +165,8 @@ theorem linearPart_id (MM : AInfinityRightModule AA M) :
     (AInfinityRightModuleHom.id MM).linearPart = LinearMap.id := by
   ext x
   simp only [linearPart_apply, taylor_def, barMap_id, LinearMap.comp_apply,
-    LinearMap.id_apply, LinearMap.lTensor_tmul, LinearEquiv.coe_coe, TensorProduct.rid_tmul,
-    TensorWords.counit_eq_counit, TensorWords.counit_one, one_smul]
+    LinearMap.id_apply, Comodule.cofreeCounit_tmul, TensorWords.counit_eq_counit,
+    TensorWords.counit_one, one_smul]
 
 /-- The linear part of a composite is the composite of the linear parts. -/
 @[simp]

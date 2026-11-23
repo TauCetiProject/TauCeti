@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Manifold.Riemannian.Isometry.Basic
+public import TauCeti.Geometry.Manifold.Riemannian.Isometry.Group
 import TauCeti.Geometry.Manifold.Riemannian.Distance
 
 /-!
@@ -14,7 +14,8 @@ import TauCeti.Geometry.Manifold.Riemannian.Distance
 A smooth Riemannian isometry preserves the length of each curve. Applying this fact to curves
 in both directions shows that it preserves the infimum of their lengths, even when that infimum
 is infinite because the points lie in different components. When the ambient extended distances
-are the Riemannian distances, the smooth isometry is also an isometry of extended metric spaces.
+are the Riemannian distances, the smooth isometry is also an isometry of extended metric spaces,
+and coercing `Isom I M` to `M ≃ᵢ M` preserves the group operations.
 
 The geometric fact is the invariance of Riemannian distance under isometries; see J. M. Lee,
 *Introduction to Riemannian Manifolds*, 2nd ed., Chapter 2.
@@ -89,6 +90,12 @@ theorem toIsometryEquiv_symm (Φ : RiemannianIsometry I J M N) :
   apply (Φ : M ≃ᵢ N).injective
   simp
 
+/-- Evaluating the inverse of `(Φ : M ≃ᵢ N)` agrees with `Φ.symm`. -/
+@[simp]
+theorem coe_toIsometryEquiv_symm (Φ : RiemannianIsometry I J M N) :
+    ⇑(Φ : M ≃ᵢ N).symm = ⇑Φ.symm := by
+  rw [← toIsometryEquiv_symm, IsometryClass.coe_coe]
+
 /-- The identity Riemannian isometry induces the identity metric equivalence. -/
 @[simp]
 theorem toIsometryEquiv_refl :
@@ -111,6 +118,47 @@ theorem toIsometryEquiv_trans (Φ : RiemannianIsometry I J M N)
       (Φ : M ≃ᵢ N).trans (Ψ : N ≃ᵢ P) := by
   ext x
   simp
+
+/-- The unit of `Isom I M` coerces to the unit of `M ≃ᵢ M`. -/
+@[simp]
+theorem toIsometryEquiv_one : ((1 : Isom I M) : M ≃ᵢ M) = 1 := by
+  ext x
+  simp
+
+/-- Coercing `Isom I M` to `M ≃ᵢ M` preserves multiplication. -/
+@[simp]
+theorem toIsometryEquiv_mul (Φ Ψ : Isom I M) :
+    ((Φ * Ψ : Isom I M) : M ≃ᵢ M) = (Φ : M ≃ᵢ M) * (Ψ : M ≃ᵢ M) := by
+  ext x
+  simp
+
+/-- Coercing `Isom I M` to `M ≃ᵢ M` preserves inversion. -/
+@[simp]
+theorem toIsometryEquiv_inv (Φ : Isom I M) :
+    ((Φ⁻¹ : Isom I M) : M ≃ᵢ M) = (Φ : M ≃ᵢ M)⁻¹ :=
+  eq_inv_of_mul_eq_one_left (by rw [← toIsometryEquiv_mul, inv_mul_cancel, toIsometryEquiv_one])
+
+/-- Coercing `Isom I M` to `M ≃ᵢ M` preserves division. -/
+@[simp]
+theorem toIsometryEquiv_div (Φ Ψ : Isom I M) :
+    ((Φ / Ψ : Isom I M) : M ≃ᵢ M) = (Φ : M ≃ᵢ M) / (Ψ : M ≃ᵢ M) := by
+  simp [div_eq_mul_inv]
+
+/-- Coercing `Isom I M` to `M ≃ᵢ M` preserves natural powers. -/
+@[simp]
+theorem toIsometryEquiv_pow (Φ : Isom I M) (n : ℕ) :
+    ((Φ ^ n : Isom I M) : M ≃ᵢ M) = (Φ : M ≃ᵢ M) ^ n := by
+  induction n with
+  | zero => simp
+  | succ n ih => simp [pow_succ, ih]
+
+/-- Coercing `Isom I M` to `M ≃ᵢ M` preserves integer powers. -/
+@[simp]
+theorem toIsometryEquiv_zpow (Φ : Isom I M) (n : ℤ) :
+    ((Φ ^ n : Isom I M) : M ≃ᵢ M) = (Φ : M ≃ᵢ M) ^ n := by
+  cases n with
+  | ofNat n => simp
+  | negSucc n => simp
 
 end Ambient
 
