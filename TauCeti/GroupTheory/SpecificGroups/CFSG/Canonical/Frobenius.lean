@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.GroupTheory.SpecificGroups.CFSG.Canonical.AmbientGroup
-public import TauCeti.Algebra.AlgebraicGroup.Chevalley.Frobenius
+public import TauCeti.Algebra.AlgebraicGroup.Chevalley.Frobenius.Basic
 
 /-!
 # Frobenius on the canonical Lie-type ambient group

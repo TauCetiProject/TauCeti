@@ -137,11 +137,11 @@ section Homotopy
 
 omit [FiniteDimensional ℝ E] [BorelSpace E] [IsFiniteMeasure ν] in
 /-- The interior products with the vectors `v` of the support of `ν` are bounded by `r`. -/
-private theorem ae_norm_curryLeftLI_flip_le (hν : ∀ᵐ v ∂ν, v ∈ closedBall (0 : E) r) :
+private theorem ae_norm_curryLeftFlipL_le (hν : ∀ᵐ v ∂ν, v ∈ closedBall (0 : E) r) :
     ∀ᵐ p ∂(ν.prod (volume.restrict (Icc (0 : ℝ) 1))),
-      ‖(curryLeftLI (𝕜 := ℝ) (E := E) (F := F) (n := k)).toContinuousLinearMap.flip p.1‖ ≤ r :=
+      ‖curryLeftFlipL (𝕜 := ℝ) (E := E) (F := F) (n := k) p.1‖ ≤ r :=
   (Measure.quasiMeasurePreserving_fst.ae hν).mono fun p hp ↦
-    (norm_curryLeftLI_toContinuousLinearMap_flip_apply_le p.1).trans (by simpa using hp)
+    (norm_curryLeftFlipL_apply_le p.1).trans (by simpa using hp)
 
 omit [FiniteDimensional ℝ E] [BorelSpace E] [IsFiniteMeasure ν] in
 /-- For `t ∈ [0, 1]` and `v` in the support of `ν`, the displacement `t v` lies in
@@ -156,9 +156,9 @@ private theorem ae_smul_mem_closedBall (hν : ∀ᵐ v ∂ν, v ∈ closedBall (
 
 omit [IsFiniteMeasure ν] in
 /-- The interior products with the first coordinate form a measurable family of operators. -/
-private theorem aestronglyMeasurable_curryLeftLI_flip :
+private theorem aestronglyMeasurable_curryLeftFlipL :
     AEStronglyMeasurable (fun p : E × ℝ ↦
-      (curryLeftLI (𝕜 := ℝ) (E := E) (F := F) (n := k)).toContinuousLinearMap.flip p.1)
+      curryLeftFlipL (𝕜 := ℝ) (E := E) (F := F) (n := k) p.1)
       (ν.prod (volume.restrict (Icc (0 : ℝ) 1))) :=
   (ContinuousLinearMap.continuous _).comp_aestronglyMeasurable measurable_fst.aestronglyMeasurable
 
@@ -172,7 +172,7 @@ def translationHomotopyCLM (ν : Measure E) [IsFiniteMeasure ν]
     (hν : ∀ᵐ v ∂ν, v ∈ closedBall (0 : E) r)
     (hUΩ : (U : Set E) + closedBall (0 : E) r ⊆ (Ω : Set E)) :
     𝓓(U, E [⋀^Fin (k + 1)]→L[ℝ] F) →L[ℝ] 𝓓(Ω, E [⋀^Fin k]→L[ℝ] F) :=
-  translationAverageCLM aestronglyMeasurable_curryLeftLI_flip (ae_norm_curryLeftLI_flip_le hν)
+  translationAverageCLM aestronglyMeasurable_curryLeftFlipL (ae_norm_curryLeftFlipL_le hν)
     (continuous_snd.smul continuous_fst).aestronglyMeasurable (ae_smul_mem_closedBall hν) hUΩ
 
 variable {hν : ∀ᵐ v ∂ν, v ∈ closedBall (0 : E) r}
@@ -223,7 +223,7 @@ private theorem integral_fderiv_apply_eq {G : Type*} [NormedAddCommGroup G] [Nor
 private theorem hasFDerivAt_translationHomotopyCLM (ω : 𝓓(U, E [⋀^Fin (k + 1)]→L[ℝ] F))
     (x : E) :
     HasFDerivAt (translationHomotopyCLM ν hν hUΩ ω)
-      (∫ p, ((curryLeftLI (𝕜 := ℝ) (E := E) (F := F) (n := k)).toContinuousLinearMap.flip
+      (∫ p, (curryLeftFlipL (𝕜 := ℝ) (E := E) (F := F) (n := k)
         p.1).comp (fderiv ℝ ω (x + p.2 • p.1)) ∂(ν.prod (volume.restrict (Icc (0 : ℝ) 1)))) x :=
   hasFDerivAt_translationAverageCLM hUΩ ω x
 
@@ -258,16 +258,16 @@ theorem translationHomotopyCLM_extDerivCLM_add_extDerivCLM_translationHomotopyCL
   obtain ⟨C, hC⟩ := (extDerivCLM ω).continuous.bounded_above_of_compact_support
     (extDerivCLM ω).hasCompactSupport
   have hint := integrable_comp_fderiv_comp_add
-    (aestronglyMeasurable_curryLeftLI_flip (ν := ν) (F := F) (k := k))
-    (ae_norm_curryLeftLI_flip_le hν) hs ω x
+    (aestronglyMeasurable_curryLeftFlipL (ν := ν) (F := F) (k := k))
+    (ae_norm_curryLeftFlipL_le hν) hs ω x
   -- Differentiate `K ω` under the integral, and move the alternatization inside.
   have hcomm := (alternatizeUncurryFinCLM ℝ E F).integral_comp_comm hint
   rw [alternatizeUncurryFinCLM_apply] at hcomm
   have hint' : Integrable (fun p : E × ℝ ↦ (extDerivCLM ω (x + p.2 • p.1)).curryLeft p.1)
       (ν.prod (volume.restrict (Icc (0 : ℝ) 1))) := by
     simpa using integrable_translationAverage_integrand
-      (aestronglyMeasurable_curryLeftLI_flip (ν := ν) (F := F) (k := k + 1))
-      (ae_norm_curryLeftLI_flip_le hν) hs (extDerivCLM ω).continuous hC x
+      (aestronglyMeasurable_curryLeftFlipL (ν := ν) (F := F) (k := k + 1))
+      (ae_norm_curryLeftFlipL_le hν) hs (extDerivCLM ω).continuous hC x
   rw [_root_.add_apply, extDerivCLM_apply, extDeriv,
     (hasFDerivAt_translationHomotopyCLM ω x).fderiv,
     ← hcomm, translationHomotopyCLM_apply, ← integral_add hint'
@@ -358,7 +358,7 @@ variable {E F V : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimen
 theorem mass_comp_translationMeanCLM_le {𝓕 : Type*} [FunLike 𝓕 𝓓(Ω, F) V]
     [LinearMapClass 𝓕 ℝ 𝓓(Ω, F) V] (T : 𝓕) :
     mass (T ∘ translationMeanCLM (F := F) ν hν hUΩ) ≤ ν univ * mass T := by
-  refine (mass_comp_le_of_norm_apply_le T fun φ hφ x ↦ ?_).trans_eq
+  refine (mass_comp_le_of_norm_apply_le T measureReal_nonneg fun φ hφ x ↦ ?_).trans_eq
     (by rw [ofReal_measureReal (measure_ne_top ν univ)])
   rw [coe_translationMeanCLM]
   simpa using norm_translationAverage_le (s := id)
@@ -371,8 +371,9 @@ theorem mass_comp_translationHomotopyCLM_le {𝓕 : Type*}
     (T : 𝓕) :
     mass (T ∘ translationHomotopyCLM (F := F) (k := k) ν hν hUΩ) ≤
       ENNReal.ofReal r * ν univ * mass T := by
-  refine (mass_comp_le_of_norm_apply_le T (c := r * ν.real univ) fun ω hω x ↦ ?_).trans_eq ?_
-  · rw [translationHomotopyCLM_apply]
+  have hK (ω : 𝓓(U, E [⋀^Fin (k + 1)]→L[ℝ] F)) (hω : ∀ y, ‖ω y‖ ≤ 1) (x : E) :
+      ‖translationHomotopyCLM (F := F) (k := k) ν hν hUΩ ω x‖ ≤ r * ν.real univ := by
+    rw [translationHomotopyCLM_apply]
     refine (norm_integral_le_of_norm_le_const (C := r)
       ((Measure.quasiMeasurePreserving_fst.ae hν).mono fun p hp ↦ ?_)).trans_eq ?_
     · exact (ContinuousLinearMap.le_opNorm _ _).trans <| by
@@ -381,6 +382,8 @@ theorem mass_comp_translationHomotopyCLM_le {𝓕 : Type*}
           |>.trans_eq (one_mul r)
     · rw [Measure.real, ← univ_prod_univ, Measure.prod_prod, Measure.restrict_apply_univ,
         Real.volume_Icc, sub_zero, ENNReal.ofReal_one, mul_one, Measure.real]
-  · rw [ENNReal.ofReal_mul' measureReal_nonneg, ofReal_measureReal (measure_ne_top ν univ)]
+  refine (mass_comp_le_of_norm_apply_le T ((norm_nonneg _).trans (hK 0 (by simp) 0)) hK).trans_eq
+    ?_
+  rw [ENNReal.ofReal_mul' measureReal_nonneg, ofReal_measureReal (measure_ne_top ν univ)]
 
 end Distribution

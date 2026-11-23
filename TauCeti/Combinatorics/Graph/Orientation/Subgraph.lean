@@ -56,10 +56,10 @@ section Restrict
 /-- The orientation of a subgraph that keeps the chosen tail and head of each of its edges. -/
 def restrict (o : Orientation G) (h : H ≤ G) : Orientation H where
   tail e := ⟨o.tail (Set.inclusion h.edgeSet_mono e),
-    ((h.isLink_iff e.2).2 (o.isLink (Set.inclusion h.edgeSet_mono e))).left_mem⟩
+    ((h.isLink_iff e.property).2 (o.isLink (Set.inclusion h.edgeSet_mono e))).left_mem⟩
   head e := ⟨o.head (Set.inclusion h.edgeSet_mono e),
-    ((h.isLink_iff e.2).2 (o.isLink (Set.inclusion h.edgeSet_mono e))).right_mem⟩
-  isLink e := (h.isLink_iff e.2).2 (o.isLink (Set.inclusion h.edgeSet_mono e))
+    ((h.isLink_iff e.property).2 (o.isLink (Set.inclusion h.edgeSet_mono e))).right_mem⟩
+  isLink e := (h.isLink_iff e.property).2 (o.isLink (Set.inclusion h.edgeSet_mono e))
 
 /-- A restricted orientation keeps the chosen tail of each edge. -/
 @[simp]
@@ -133,25 +133,26 @@ theorem nonempty_arrowWalk_of_restrict (o : G.Orientation) (h : H ≤ G) {a b : 
   let w := (o.restrict h).forgetWalk r
   have hw : (w.mapLe h).FollowsOrientation o :=
     (Walk.followsOrientation_mapLe_iff h w o).2 ((o.restrict h).followsOrientation_forgetWalk r)
-  exact ⟨(w.mapLe h).toOriented hw (h.vertexSet_mono a.2)⟩
+  exact ⟨(w.mapLe h).toOriented hw (h.vertexSet_mono a.property)⟩
 
 section Union
 
 variable (o₁ : Orientation G) (o₂ : Orientation H) (h : G.Compatible H)
 
-private theorem mem_right_of_notMem_left {e : h.union.edgeSet} (he : e.1 ∉ E(G)) : e.1 ∈ E(H) := by
-  simpa [he] using e.2
+private theorem mem_right_of_notMem_left {e : h.union.edgeSet} (he : e.val ∉ E(G)) : e.val ∈ E(H)
+    := by
+  simpa [he] using e.property
 
 open Classical in
 /-- The orientation of a compatible union that directs the edges of `G` by `o₁` and the remaining
 edges, which belong to `H`, by `o₂`. -/
 noncomputable def union : Orientation h.union where
-  tail e := if he : e.1 ∈ E(G) then Set.inclusion h.left_le_union.vertexSet_mono (o₁.tail ⟨e, he⟩)
+  tail e := if he : e.val ∈ E(G) then Set.inclusion h.left_le_union.vertexSet_mono (o₁.tail ⟨e, he⟩)
     else Set.inclusion h.right_le_union.vertexSet_mono (o₂.tail ⟨e, mem_right_of_notMem_left h he⟩)
-  head e := if he : e.1 ∈ E(G) then Set.inclusion h.left_le_union.vertexSet_mono (o₁.head ⟨e, he⟩)
+  head e := if he : e.val ∈ E(G) then Set.inclusion h.left_le_union.vertexSet_mono (o₁.head ⟨e, he⟩)
     else Set.inclusion h.right_le_union.vertexSet_mono (o₂.head ⟨e, mem_right_of_notMem_left h he⟩)
   isLink e := by
-    by_cases he : e.1 ∈ E(G)
+    by_cases he : e.val ∈ E(G)
     · simpa [he] using (o₁.isLink ⟨e, he⟩).mono h.left_le_union
     · simpa [he] using (o₂.isLink ⟨e, mem_right_of_notMem_left h he⟩).mono h.right_le_union
 
@@ -159,25 +160,25 @@ variable {o₁ o₂ h}
 
 /-- An edge of `G` takes its tail from `o₁`. -/
 @[simp]
-theorem coe_union_tail_of_mem {e : h.union.edgeSet} (he : e.1 ∈ E(G)) :
+theorem coe_union_tail_of_mem {e : h.union.edgeSet} (he : e.val ∈ E(G)) :
     ((o₁.union o₂ h).tail e : V) = o₁.tail ⟨e, he⟩ := by
   simp [union, he]
 
 /-- An edge of `G` takes its head from `o₁`. -/
 @[simp]
-theorem coe_union_head_of_mem {e : h.union.edgeSet} (he : e.1 ∈ E(G)) :
+theorem coe_union_head_of_mem {e : h.union.edgeSet} (he : e.val ∈ E(G)) :
     ((o₁.union o₂ h).head e : V) = o₁.head ⟨e, he⟩ := by
   simp [union, he]
 
 /-- An edge of `H` outside `G` takes its tail from `o₂`. -/
 @[simp]
-theorem coe_union_tail_of_notMem {e : h.union.edgeSet} (he : e.1 ∉ E(G)) (he' : e.1 ∈ E(H)) :
+theorem coe_union_tail_of_notMem {e : h.union.edgeSet} (he : e.val ∉ E(G)) (he' : e.val ∈ E(H)) :
     ((o₁.union o₂ h).tail e : V) = o₂.tail ⟨e, he'⟩ := by
   simp [union, he]
 
 /-- An edge of `H` outside `G` takes its head from `o₂`. -/
 @[simp]
-theorem coe_union_head_of_notMem {e : h.union.edgeSet} (he : e.1 ∉ E(G)) (he' : e.1 ∈ E(H)) :
+theorem coe_union_head_of_notMem {e : h.union.edgeSet} (he : e.val ∉ E(G)) (he' : e.val ∈ E(H)) :
     ((o₁.union o₂ h).head e : V) = o₂.head ⟨e, he'⟩ := by
   simp [union, he]
 
@@ -193,14 +194,14 @@ the two graphs share no edge. -/
 theorem restrict_union_right (hE : Disjoint E(G) E(H)) :
     (o₁.union o₂ h).restrict h.right_le_union = o₂ :=
   ext_of_head fun e ↦ Subtype.ext <| by
-    simp [hE.notMem_of_mem_right e.2]
+    simp [hE.notMem_of_mem_right e.property]
 
 /-- Every orientation of a compatible union is combined from its two restrictions. -/
 @[simp]
 theorem union_restrict (o : Orientation h.union) :
     (o.restrict h.left_le_union).union (o.restrict h.right_le_union) h = o := by
   refine ext_of_head fun e ↦ Subtype.ext ?_
-  by_cases he : e.1 ∈ E(G)
+  by_cases he : e.val ∈ E(G)
   · simp [he]
   · have heH := mem_right_of_notMem_left h he
     simp [he, heH]
@@ -209,7 +210,7 @@ theorem union_restrict (o : Orientation h.union) :
 @[simp]
 theorem reverse_union : (o₁.union o₂ h).reverse = o₁.reverse.union o₂.reverse h := by
   refine ext_of_head fun e ↦ Subtype.ext ?_
-  by_cases he : e.1 ∈ E(G)
+  by_cases he : e.val ∈ E(G)
   · simp [he]
   · have heH := mem_right_of_notMem_left h he
     simp [he, heH]
@@ -245,13 +246,13 @@ whose head is that vertex. -/
 theorem indegree_restrict [DecidableEq G.vertexSet] [DecidablePred (· ∈ E(H))]
     (o : Orientation G) (h : H ≤ G) (v : H.vertexSet) :
     (o.restrict h).indegree v =
-      #{e | e.1 ∈ E(H) ∧ o.head e = Set.inclusion h.vertexSet_mono v} := by
+      #{e | e.val ∈ E(H) ∧ o.head e = Set.inclusion h.vertexSet_mono v} := by
   classical
   rw [indegree_def]
   refine card_bij (fun e _ ↦ Set.inclusion h.edgeSet_mono e) (fun e he ↦ ?_)
     (fun _ _ _ _ he ↦ Set.inclusion_injective _ he) (fun e he ↦ ?_)
   · simp only [mem_filter, mem_univ, true_and] at he ⊢
-    exact ⟨e.2, Subtype.ext (by simpa using congrArg Subtype.val he)⟩
+    exact ⟨e.property, Subtype.ext (by simpa using congrArg Subtype.val he)⟩
   · simp only [mem_filter, mem_univ, true_and] at he
     exact ⟨⟨e, he.1⟩, by simpa [Subtype.ext_iff] using congrArg Subtype.val he.2, rfl⟩
 
@@ -265,7 +266,7 @@ theorem indegree_restrict_le (o : Orientation G) (h : H ≤ G) (v : H.vertexSet)
 /-- If every edge with its head at `v` belongs to the subgraph, restriction does not change the
 indegree of `v`. -/
 theorem indegree_restrict_of_forall (o : Orientation G) (h : H ≤ G) (v : H.vertexSet)
-    (hv : ∀ e, o.head e = Set.inclusion h.vertexSet_mono v → e.1 ∈ E(H)) :
+    (hv : ∀ e, o.head e = Set.inclusion h.vertexSet_mono v → e.val ∈ E(H)) :
     (o.restrict h).indegree v = o.indegree (Set.inclusion h.vertexSet_mono v) := by
   classical
   rw [indegree_restrict, indegree_def]
@@ -275,10 +276,10 @@ theorem indegree_restrict_of_forall (o : Orientation G) (h : H ≤ G) (v : H.ver
 with their head there. -/
 theorem indegree_restrict_add [DecidableEq G.vertexSet] [DecidablePred (· ∈ E(H))]
     (o : Orientation G) (h : H ≤ G) (v : H.vertexSet) :
-    (o.restrict h).indegree v + #{e | e.1 ∉ E(H) ∧ o.head e = Set.inclusion h.vertexSet_mono v} =
+    (o.restrict h).indegree v + #{e | e.val ∉ E(H) ∧ o.head e = Set.inclusion h.vertexSet_mono v} =
       o.indegree (Set.inclusion h.vertexSet_mono v) := by
   rw [indegree_restrict, indegree_def, ← card_filter_add_card_filter_not
-    (s := {e | o.head e = Set.inclusion h.vertexSet_mono v}) (·.1 ∈ E(H)), filter_filter,
+    (s := {e | o.head e = Set.inclusion h.vertexSet_mono v}) (·.val ∈ E(H)), filter_filter,
     filter_filter]
   congr 2 <;> ext e <;> simp [and_comm]
 
@@ -286,7 +287,7 @@ theorem indegree_restrict_add [DecidableEq G.vertexSet] [DecidablePred (· ∈ E
 their head there. -/
 theorem indegree_restrict_deleteEdges_add {F : Set E} [Fintype (G.deleteEdges F).edgeSet]
     [DecidableEq G.vertexSet] [DecidablePred (· ∈ F)] (o : Orientation G) (v : G.vertexSet) :
-    (o.restrict (deleteEdges_le (F := F))).indegree v + #{e | e.1 ∈ F ∧ o.head e = v} =
+    (o.restrict (deleteEdges_le (F := F))).indegree v + #{e | e.val ∈ F ∧ o.head e = v} =
       o.indegree v := by
   classical
   convert o.indegree_restrict_add (deleteEdges_le (F := F)) v using 3
@@ -303,7 +304,7 @@ theorem outdegree_restrict_le (o : Orientation G) (h : H ≤ G) (v : H.vertexSet
 with their tail there. -/
 theorem outdegree_restrict_add [DecidableEq G.vertexSet] [DecidablePred (· ∈ E(H))]
     (o : Orientation G) (h : H ≤ G) (v : H.vertexSet) :
-    (o.restrict h).outdegree v + #{e | e.1 ∉ E(H) ∧ o.tail e = Set.inclusion h.vertexSet_mono v} =
+    (o.restrict h).outdegree v + #{e | e.val ∉ E(H) ∧ o.tail e = Set.inclusion h.vertexSet_mono v} =
       o.outdegree (Set.inclusion h.vertexSet_mono v) := by
   rw [← indegree_reverse, ← indegree_reverse, reverse_restrict]
   simpa using o.reverse.indegree_restrict_add h v
@@ -312,7 +313,7 @@ theorem outdegree_restrict_add [DecidableEq G.vertexSet] [DecidablePred (· ∈ 
 their tail there. -/
 theorem outdegree_restrict_deleteEdges_add {F : Set E} [Fintype (G.deleteEdges F).edgeSet]
     [DecidableEq G.vertexSet] [DecidablePred (· ∈ F)] (o : Orientation G) (v : G.vertexSet) :
-    (o.restrict (deleteEdges_le (F := F))).outdegree v + #{e | e.1 ∈ F ∧ o.tail e = v} =
+    (o.restrict (deleteEdges_le (F := F))).outdegree v + #{e | e.val ∈ F ∧ o.tail e = v} =
       o.outdegree v := by
   classical
   convert o.outdegree_restrict_add (deleteEdges_le (F := F)) v using 3
@@ -323,50 +324,50 @@ variable {o₁ : Orientation G} {o₂ : Orientation H} {h : G.Compatible H} [Fin
 
 omit [Fintype H.edgeSet] in
 /-- At a vertex of `G` outside `H`, the combined orientation has the indegree given by `o₁`. -/
-theorem indegree_union_left (v : G.vertexSet) (hv : v.1 ∉ V(H)) :
+theorem indegree_union_left (v : G.vertexSet) (hv : v.val ∉ V(H)) :
     (o₁.union o₂ h).indegree (Set.inclusion h.left_le_union.vertexSet_mono v) = o₁.indegree v := by
   have hv' (e) (he : (o₁.union o₂ h).head e = Set.inclusion h.left_le_union.vertexSet_mono v) :
-      e.1 ∈ E(G) := by
+      e.val ∈ E(G) := by
     by_contra heG
     have hval := congrArg Subtype.val he
     simp only [coe_union_head_of_notMem heG (mem_right_of_notMem_left h heG)] at hval
-    exact hv (hval ▸ (o₂.head _).2)
+    exact hv (hval ▸ (o₂.head _).property)
   rw [← (o₁.union o₂ h).indegree_restrict_of_forall h.left_le_union v hv', restrict_union_left]
 
 omit [Fintype G.edgeSet] in
 /-- At a vertex of `H` outside `G`, the combined orientation has the indegree given by `o₂`. -/
-theorem indegree_union_right (v : H.vertexSet) (hv : v.1 ∉ V(G)) :
+theorem indegree_union_right (v : H.vertexSet) (hv : v.val ∉ V(G)) :
     (o₁.union o₂ h).indegree (Set.inclusion h.right_le_union.vertexSet_mono v) =
       o₂.indegree v := by
   classical
   have hv' (e) (he : (o₁.union o₂ h).head e = Set.inclusion h.right_le_union.vertexSet_mono v) :
-      e.1 ∈ E(H) := by
+      e.val ∈ E(H) := by
     by_contra heH
-    have heG : e.1 ∈ E(G) := by simpa [heH] using e.2
+    have heG : e.val ∈ E(G) := by simpa [heH] using e.property
     have hval := congrArg Subtype.val he
     simp only [coe_union_head_of_mem heG] at hval
-    exact hv (hval ▸ (o₁.head _).2)
+    exact hv (hval ▸ (o₁.head _).property)
   rw [← (o₁.union o₂ h).indegree_restrict_of_forall h.right_le_union v hv', indegree_def,
     indegree_def]
   refine congrArg card (filter_congr fun e _ ↦ ?_)
-  by_cases heG : e.1 ∈ E(G)
-  · have hlink := (h.isLink_congr heG e.2).2 (o₂.isLink e)
+  by_cases heG : e.val ∈ E(G)
+  · have hlink := (h.isLink_congr heG e.property).2 (o₂.isLink e)
     refine iff_of_false (fun he ↦ hv ?_) (fun he ↦ hv (he ▸ hlink.right_mem))
     have hval := congrArg Subtype.val he
     rw [coe_restrict_head, coe_union_head_of_mem heG] at hval
-    exact hval ▸ (o₁.head _).2
+    exact hval ▸ (o₁.head _).property
   · simp [Subtype.ext_iff, heG]
 
 omit [Fintype H.edgeSet] in
 /-- At a vertex of `G` outside `H`, the combined orientation has the outdegree given by `o₁`. -/
-theorem outdegree_union_left (v : G.vertexSet) (hv : v.1 ∉ V(H)) :
+theorem outdegree_union_left (v : G.vertexSet) (hv : v.val ∉ V(H)) :
     (o₁.union o₂ h).outdegree (Set.inclusion h.left_le_union.vertexSet_mono v) =
       o₁.outdegree v := by
   rw [← indegree_reverse, ← indegree_reverse, reverse_union, indegree_union_left v hv]
 
 omit [Fintype G.edgeSet] in
 /-- At a vertex of `H` outside `G`, the combined orientation has the outdegree given by `o₂`. -/
-theorem outdegree_union_right (v : H.vertexSet) (hv : v.1 ∉ V(G)) :
+theorem outdegree_union_right (v : H.vertexSet) (hv : v.val ∉ V(G)) :
     (o₁.union o₂ h).outdegree (Set.inclusion h.right_le_union.vertexSet_mono v) =
       o₂.outdegree v := by
   rw [← indegree_reverse, ← indegree_reverse, reverse_union, indegree_union_right v hv]

@@ -49,6 +49,8 @@ finite-dimensionality of morphism spaces are separate hypotheses when they are n
 * `CategoryTheory.Functor.hom_ext_of_simple`: a morphism out of the image of an object under an
   additive functor is determined by its composites with the images of morphisms from simple
   objects.
+* `TauCeti.exists_simple_isSplitMono_comp_of_ne_zero`: a nonzero morphism is a split
+  monomorphism after precomposition with some nonzero morphism from a simple object.
 * `TauCeti.natTrans_ext_of_simple`: a natural transformation out of an additive functor is
   determined by its components at the simple objects.
 -/
@@ -256,6 +258,20 @@ theorem _root_.CategoryTheory.Functor.hom_ext_of_simple {C : Type u} [Category.{
     Preadditive.sum_comp, Preadditive.sum_comp]
   refine Finset.sum_congr rfl fun i _ ↦ ?_
   rw [F.map_comp, Category.assoc, Category.assoc, h]
+
+/-- In a finite semisimple category, a nonzero morphism `f : X ⟶ Y` stays nonzero on some simple
+object mapping to `X`: there is a nonzero `a : S ⟶ X` with `S` simple and `a ≫ f` a split
+monomorphism. -/
+theorem exists_simple_isSplitMono_comp_of_ne_zero {C : Type u} [Category.{v} C] [Abelian C]
+    [IsFiniteSemisimpleCategory C] {X Y : C} {f : X ⟶ Y} (hf : f ≠ 0) :
+    ∃ (S : C) (_ : Simple S) (a : S ⟶ X), a ≠ 0 ∧ IsSplitMono (a ≫ f) := by
+  by_contra! h
+  -- Otherwise `f` vanishes on every morphism from a simple object, hence is zero.
+  refine hf <| (𝟭 C).hom_ext_of_simple fun S _ s ↦ ?_
+  rw [Functor.id_map, comp_zero]
+  by_contra hs
+  exact h S inferInstance s (by rintro rfl; exact hs (zero_comp))
+    (isSplitMono_of_nonzero_from_simple hs)
 
 /-- In a finite semisimple category, a natural transformation out of an additive functor is
 determined by its components at the simple objects. -/

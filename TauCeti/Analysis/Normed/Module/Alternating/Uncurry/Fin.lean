@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Normed.Module.Alternating.Uncurry.Fin
+public import TauCeti.Analysis.Normed.Module.Alternating.Curry
 import TauCeti.GroupTheory.Perm.Basic
 
 /-!
@@ -32,8 +33,6 @@ be combined with other permutation sums, such as those defining wedge products.
   and subtraction, complementing Mathlib's `alternatizeUncurryFin_add`.
 * `ContinuousAlternatingMap.alternatizeUncurryFin_curryLeft_comp_add_curryLeft`: the identity
   above.
-* `ContinuousAlternatingMap.norm_curryLeftLI_toContinuousLinearMap_flip_apply_le`: the interior
-  product with `y` has norm at most `‖y‖`.
 * `ContinuousAlternatingMap.alternatizeUncurryFin_compContinuousLinearMap`: alternatization
   commutes with pullback along a continuous linear map.
 * `ContinuousAlternatingMap.factorial_smul_alternatizeUncurryFin_apply`: the permutation-sum
@@ -67,8 +66,8 @@ with `y` of its alternatization, is evaluation of the family at `y`. This is the
 constant-coefficient case of Cartan's formula `d ι_y + ι_y d = L_y`. -/
 theorem alternatizeUncurryFin_curryLeft_comp_add_curryLeft
     (f : E →L[𝕜] E [⋀^Fin (n + 1)]→L[𝕜] F) (y : E) :
-    alternatizeUncurryFin ((curryLeftLI (𝕜 := 𝕜) (E := E) (F := F)).toContinuousLinearMap.flip y ∘L
-      f) + (alternatizeUncurryFin f).curryLeft y = f y := by
+    alternatizeUncurryFin (curryLeftFlipL y ∘L f) + (alternatizeUncurryFin f).curryLeft y =
+      f y := by
   ext v
   have hremove (i : Fin (n + 1)) :
       Fin.removeNth i.succ (Matrix.vecCons y v) = Matrix.vecCons y (Fin.removeNth i v) := by
@@ -78,15 +77,6 @@ theorem alternatizeUncurryFin_curryLeft_comp_add_curryLeft
   rw [add_apply, curryLeft_apply_apply, alternatizeUncurryFin_apply, alternatizeUncurryFin_apply,
     Fin.sum_univ_succ (n := n + 1)]
   simp [hremove, pow_succ]
-
-/-- The interior product `ι_y = f ↦ f.curryLeft y` with a vector `y` has operator norm at most
-`‖y‖`. -/
-theorem norm_curryLeftLI_toContinuousLinearMap_flip_apply_le (y : E) :
-    ‖(curryLeftLI (𝕜 := 𝕜) (E := E) (F := F) (n := n)).toContinuousLinearMap.flip y‖ ≤ ‖y‖ := by
-  refine ContinuousLinearMap.opNorm_le_bound _ (norm_nonneg y) fun f ↦ ?_
-  rw [ContinuousLinearMap.flip_apply, LinearIsometry.coe_toContinuousLinearMap, curryLeftLI_apply,
-    mul_comm]
-  exact (f.curryLeft.le_opNorm y).trans_eq (by rw [norm_curryLeft])
 
 /-- Alternatization commutes with pullback along a continuous linear map `L`: pulling back the
 alternatization of `f` is alternatizing `f` with its argument and its values pulled back. Applied

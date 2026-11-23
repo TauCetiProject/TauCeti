@@ -39,12 +39,12 @@ theorem Hom.eq_of_isFolded_of_reachable (hT : T.IsFolded)
     induction p with
     | nil => exact f.map_base.trans g.map_base.symm
     | cons _ e ih =>
-      have he : f.graphHom.mapE e.1 = g.graphHom.mapE e.1 := by
+      have he : f.graphHom.mapE e.val = g.graphHom.mapE e.val := by
         apply (T.isFolded_def.mp hT) _ _
-        · simpa only [f.graphHom.map_src, g.graphHom.map_src, e.2.1] using ih
-        · exact (f.map_label e.1).trans (g.map_label e.1).symm
+        · simpa only [f.graphHom.map_src, g.graphHom.map_src, e.property.1] using ih
+        · exact (f.map_label e.val).trans (g.map_label e.val).symm
       have ht := congrArg T.graph.tgt he
-      simpa only [f.graphHom.map_tgt, g.graphHom.map_tgt, e.2.2] using ht
+      simpa only [f.graphHom.map_tgt, g.graphHom.map_tgt, e.property.2] using ht
   apply Hom.ext
   apply SerreGraph.Hom.ext
   · funext a

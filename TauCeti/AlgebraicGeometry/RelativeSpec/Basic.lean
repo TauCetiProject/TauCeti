@@ -236,7 +236,7 @@ lemma sectionsPresheaf_hom_ext {F : X.Opensᵒᵖ ⥤ CommRingCat.{u}}
     rw [Subtype.range_coe]
     exact X.isBasis_affineOpens
   exact TopCat.Sheaf.hom_ext F ⟨A.sectionsPresheaf, A.isSheaf_sectionsPresheaf⟩ hB
-    fun U ↦ h U.1 U.2
+    fun U ↦ h U.val U.property
 
 /-- A morphism of commutative `𝒪ₓ`-algebras is determined by the algebra maps it induces on
 sections over affine opens. -/
@@ -327,7 +327,7 @@ theorem coequifibered_toSectionsPresheaf [A.X.IsQuasicoherent] :
   intro U f
   dsimp only [CommMon.sectionsPresheaf]
   erw [Functor.whiskerLeft_app, CommMon.toSectionsPresheaf_app]
-  exact A.isLocalization_basicOpen U.2 f
+  exact A.isLocalization_basicOpen U.property f
 
 end CategoryTheory.CommMon
 
@@ -366,14 +366,14 @@ map `Γ(X, U) ⟶ F(U)`. -/
 lemma relativeGluingData_cover_f_toBase
     (U : X.AffineZariskiSite) :
     (relativeGluingData H).cover.f U ≫ (relativeGluingData H).toBase =
-      Spec.map (α.app (op U)) ≫ U.2.fromSpec :=
+      Spec.map (α.app (op U)) ≫ U.property.fromSpec :=
   colimit.ι_desc _ _
 
 /-- The preimage of an affine open `U` under the structure morphism of the glued scheme is the
 image of the chart `Spec F(U)`. -/
 lemma relativeGluingData_toBase_preimage
     (U : X.AffineZariskiSite) :
-    (relativeGluingData H).toBase ⁻¹ᵁ U.1 = ((relativeGluingData H).cover.f U).opensRange := by
+    (relativeGluingData H).toBase ⁻¹ᵁ U.val = ((relativeGluingData H).cover.f U).opensRange := by
   have h := (relativeGluingData H).toBase_preimage_eq_opensRange_ι U
   simp only [Scheme.Opens.opensRange_ι] at h
   exact h
@@ -382,8 +382,8 @@ lemma relativeGluingData_toBase_preimage
 base change of the structure morphism along `U ⟶ X`. -/
 lemma isPullback_relativeGluingData_cover
     (U : X.AffineZariskiSite) :
-    IsPullback (Spec.map (α.app (op U)) ≫ U.2.isoSpec.inv)
-      ((relativeGluingData H).cover.f U) U.1.ι (relativeGluingData H).toBase :=
+    IsPullback (Spec.map (α.app (op U)) ≫ U.property.isoSpec.inv)
+      ((relativeGluingData H).cover.f U) U.val.ι (relativeGluingData H).toBase :=
   (relativeGluingData H).isPullback_natTrans_ι_toBase U
 
 /-- The structure morphism of the scheme glued from a coequifibered presheaf of rings is affine. -/
@@ -392,8 +392,8 @@ instance isAffineHom_relativeGluingData_toBase :
   refine isAffineHom_of_forall_exists_isAffineOpen _ fun x ↦ ?_
   obtain ⟨U, hxU⟩ := TopologicalSpace.Opens.mem_iSup.mp
     ((iSup_affineOpens_eq_top X).ge (Set.mem_univ x))
-  let V : X.AffineZariskiSite := ⟨U.1, U.2⟩
-  refine ⟨V.1, hxU, V.2, ?_⟩
+  let V : X.AffineZariskiSite := ⟨U.val, U.property⟩
+  refine ⟨V.val, hxU, V.property, ?_⟩
   have : IsAffine ((relativeGluingData H).cover.X V) := by
     rw [relativeGluingData_cover_X]
     infer_instance
@@ -450,7 +450,7 @@ instance isOpenImmersion_relativeSpecCover_f
   A.relativeSpecCover.map_prop U
 
 lemma relativeSpecCover_X (U : X.AffineZariskiSite) :
-    A.relativeSpecCover.X U = Spec (CommRingCat.of Γ(A.X, U.1)) :=
+    A.relativeSpecCover.X U = Spec (CommRingCat.of Γ(A.X, U.val)) :=
   (rfl)
 
 /-- Over an affine open `U`, the structure morphism of the relative spectrum is `Spec` of the
@@ -459,20 +459,20 @@ structure map `Γ(X, U) ⟶ Γ(A.X, U)`. -/
 lemma relativeSpecCover_f_relativeSpecToBase
     (U : X.AffineZariskiSite) :
     A.relativeSpecCover.f U ≫ A.relativeSpecToBase =
-      Spec.map (A.toSectionsPresheaf.app (op U.1)) ≫ U.2.fromSpec :=
+      Spec.map (A.toSectionsPresheaf.app (op U.val)) ≫ U.property.fromSpec :=
   relativeGluingData_cover_f_toBase A.coequifibered_toSectionsPresheaf U
 
 /-- The preimage of an affine open `U` under the structure morphism of the relative spectrum is the
 image of the chart `Spec Γ(A.X, U)`. -/
 lemma relativeSpecToBase_preimage (U : X.AffineZariskiSite) :
-    A.relativeSpecToBase ⁻¹ᵁ U.1 = (A.relativeSpecCover.f U).opensRange :=
+    A.relativeSpecToBase ⁻¹ᵁ U.val = (A.relativeSpecCover.f U).opensRange :=
   relativeGluingData_toBase_preimage A.coequifibered_toSectionsPresheaf U
 
 /-- Over an affine open `U` of `X`, the relative spectrum is `Spec Γ(A.X, U)`: the chart of the
 relative spectrum over `U` is the base change of the structure morphism along `U ⟶ X`. -/
 lemma isPullback_relativeSpecCover (U : X.AffineZariskiSite) :
-    IsPullback (Spec.map (A.toSectionsPresheaf.app (op U.1)) ≫ U.2.isoSpec.inv)
-      (A.relativeSpecCover.f U) U.1.ι A.relativeSpecToBase :=
+    IsPullback (Spec.map (A.toSectionsPresheaf.app (op U.val)) ≫ U.property.isoSpec.inv)
+      (A.relativeSpecCover.f U) U.val.ι A.relativeSpecToBase :=
   isPullback_relativeGluingData_cover A.coequifibered_toSectionsPresheaf U
 
 /-- The structure morphism of the relative spectrum is affine. -/

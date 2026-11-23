@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.Distribution.TemperateGrowth
 public import TauCeti.Analysis.Distribution.TestFunction.ExtDeriv
 import TauCeti.Analysis.Calculus.BumpFunction.Cutoff
 import TauCeti.Analysis.Calculus.ContDiff.Bounds
@@ -37,6 +38,8 @@ the paired wedge `ContinuousAlternatingMap.pairedWedge` of the one-form `α` wit
   derivatives of `a` are only controlled on a set containing the support of `Ψ`.
 * `TestFunction.exists_mul_eq_of_forall_ne_zero`: a test function divided by a smooth function
   that does not vanish near its support is a test function, with derivative bounds.
+* `TestFunction.hasTemperateGrowth_mul`: the product `χ f` of a complex test function with a
+  smooth function has temperate growth.
 * `TestFunction.exists_coe_eq_clm_apply_of_tsupport_inter_subset`: the pairing `x ↦ A x (φ x)`
   of a test function on `Ω'` with a smooth operator field is a test function on any open `Ω`
   containing `tsupport A ∩ Ω'`.
@@ -92,6 +95,25 @@ theorem tsupport_smulLeftCLM_subset (hf : ContDiff ℝ n f) (φ : 𝓓^{n}(Ω, F
   rw [coe_smulLeftCLM]
   exact Set.subset_inter (tsupport_smul_subset_left f φ) (tsupport_smul_subset_right f φ)
 
+/-- Multiplying by a smooth function does not enlarge the support of a test function: the support
+of `f φ` lies in that of `φ`. -/
+theorem tsupport_smulLeftCLM_subset_right (hf : ContDiff ℝ n f) (φ : 𝓓^{n}(Ω, F)) :
+    tsupport (smulLeftCLM hf φ : E → F) ⊆ tsupport φ :=
+  (tsupport_smulLeftCLM_subset hf φ).trans Set.inter_subset_right
+
+/-- Multiplication by a smooth function is additive in the multiplier. -/
+theorem smulLeftCLM_add (hf : ContDiff ℝ n f) (hg : ContDiff ℝ n g) :
+    (smulLeftCLM (hf.add hg) : 𝓓^{n}(Ω, F) →L[ℝ] 𝓓^{n}(Ω, F)) =
+      smulLeftCLM hf + smulLeftCLM hg := by
+  ext φ x
+  simp [add_smul]
+
+/-- Multiplication by a smooth function is homogeneous in the multiplier. -/
+theorem smulLeftCLM_smul (hf : ContDiff ℝ n f) (c : ℝ) :
+    (smulLeftCLM (hf.const_smul c) : 𝓓^{n}(Ω, F) →L[ℝ] 𝓓^{n}(Ω, F)) = c • smulLeftCLM hf := by
+  ext φ x
+  simp [smul_smul]
+
 /-- Multiplying by two smooth functions in turn is multiplying by their product. -/
 @[simp]
 theorem smulLeftCLM_smulLeftCLM (hf : ContDiff ℝ n f) (hg : ContDiff ℝ n g)
@@ -107,6 +129,14 @@ theorem smulLeftCLM_monoCLM (hf : ContDiff ℝ n f) (φ : 𝓓^{n}(Ω', F)) :
     smulLeftCLM hf (monoCLM ℝ φ : 𝓓^{n}(Ω, F)) = monoCLM ℝ (smulLeftCLM hf φ) := by
   ext x
   by_cases h : Ω' ≤ Ω <;> simp [monoCLM_apply, h]
+
+open scoped ContDiff in
+/-- The product of a complex test function with a smooth function has temperate growth: it is
+smooth with compact support. Such products are the multipliers that localize a differential
+operator near the support of the test function. -/
+theorem hasTemperateGrowth_mul (χ : 𝓓(Ω, ℂ)) {f : E → ℂ} (hf : ContDiff ℝ ∞ f) :
+    (fun x ↦ χ x * f x).HasTemperateGrowth :=
+  χ.hasCompactSupport.mul_right.hasTemperateGrowth (χ.contDiff.mul hf)
 
 end SmulLeft
 
@@ -200,7 +230,7 @@ noncomputable def oneFormWedgeCLM (hα : ContDiff ℝ n α) :
     𝓓^{n}(Ω, E [⋀^Fin k]→L[ℝ] F) →L[ℝ] 𝓓^{n}(Ω, E [⋀^Fin (k + 1)]→L[ℝ] F) :=
   bilinLeftCLM
     ((ContinuousLinearMap.compL ℝ (E →L[ℝ] ℝ) _ _ (alternatizeUncurryFinCLM ℝ E F)) ∘L
-      (ContinuousLinearMap.smulRightL ℝ E (E [⋀^Fin k]→L[ℝ] F)).flip) hα
+      (ContinuousLinearMap.smulRightL ℝ ℝ ℝ E (E [⋀^Fin k]→L[ℝ] F)).flip) hα
 
 @[simp]
 theorem oneFormWedgeCLM_apply (hα : ContDiff ℝ n α) (ω : 𝓓^{n}(Ω, E [⋀^Fin k]→L[ℝ] F)) (x : E) :

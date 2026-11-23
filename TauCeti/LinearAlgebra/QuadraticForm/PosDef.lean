@@ -9,9 +9,10 @@ public import Mathlib.Data.Fintype.Pi
 public import Mathlib.LinearAlgebra.BilinearForm.Properties
 public import Mathlib.LinearAlgebra.FreeModule.Finite.Basic
 import Mathlib.LinearAlgebra.FreeModule.PID
+import Mathlib.LinearAlgebra.Matrix.PosDef
 public import Mathlib.LinearAlgebra.QuadraticForm.Basic
-public import Mathlib.Data.Int.Interval
 import TauCeti.LinearAlgebra.BilinearForm.PosSemidef
+import TauCeti.LinearAlgebra.QuadraticForm.Even
 
 /-!
 # Positive definite quadratic maps
@@ -19,9 +20,10 @@ import TauCeti.LinearAlgebra.BilinearForm.PosSemidef
 Multiplication by a positive scalar preserves and reflects positive-definiteness when the scalar
 action preserves and reflects strict inequalities on values. In particular, symmetrizing a
 bilinear form preserves positive-definiteness of its quadratic map, since the diagonal values
-are doubled. A diagonal form is positive definite exactly when its weights are positive. The
-quadratic form of a symmetric bilinear form is positive definite exactly when the bilinear form is
-positive semidefinite and nondegenerate.
+are doubled. A diagonal form is positive definite exactly when its weights are positive, and a
+form is positive definite on the line spanned by any vector of positive value. The quadratic form
+of a symmetric bilinear form is positive definite exactly when the bilinear form is positive
+semidefinite and nondegenerate.
 
 A positive definite quadratic form on a finitely generated `ℤ`-module takes each of its values
 only finitely often: the sets `{x | q x ≤ n}` and `{x | q x = n}` are finite. This is the
@@ -44,6 +46,8 @@ the one that turns an orbit lying in a level set into a periodic orbit.
   the form is positive semidefinite and nondegenerate.
 * `QuadraticMap.posDef_weightedSumSquares_iff`: a diagonal form over a linearly ordered ring is
   positive definite exactly when all of its weights are positive.
+* `QuadraticMap.posDef_restrict_span_singleton`: a quadratic form is positive definite on the
+  line spanned by a vector of positive value.
 * `TauCeti.exists_posDef_quadraticForm`: every finitely generated free module over a strictly
   linearly ordered commutative ring admits a positive-definite quadratic form.
 * `QuadraticMap.PosDef.finite_setOf_apply_le`: a positive definite quadratic form on a
@@ -56,18 +60,11 @@ available by dot notation on a `QuadraticForm.PosDef` hypothesis.
 
 ## Implementation notes
 
-The finiteness argument stays inside `ℤ`; no rational or real coefficients, no compactness, and no
-diagonalization enter. Write `B` for the polar form, which is symmetric with `B x x = 2 * q x`,
-hence nonnegative, and let `b` be a basis. The coordinates of `x` in the dual-like map
-`T x = fun i ↦ B x (b i)` are bounded by Cauchy-Schwarz for a positive semidefinite symmetric form
-(`LinearMap.BilinForm.apply_sq_le_of_symm`), since `(B x (b i)) ^ 2 ≤ B x x * B (b i) (b i)` and
-the right-hand side is bounded once `q x` is. The map `T` is injective: a vector it kills is
-orthogonal to a basis, hence to itself, hence isotropic, hence zero. So the set in question is the
-preimage under an injective map of a box of integer vectors.
-
-Note that `T` is *not* claimed to be surjective, and need not be: the polar form of a positive
-definite integral quadratic form is generally not unimodular. Injectivity is all the argument
-uses.
+A positive definite form makes the module torsion free, hence free; let `b` be a basis. The Gram
+matrix of the polar form in `b` is a positive definite integer matrix, since the polar form is
+symmetric with diagonal `2 • q`, and its sublevel sets are finite by Mathlib's
+`Matrix.PosDef.finite_setOfPred_dotProduct_mulVec_le`. The set in question is the preimage of one
+of them under the injective coordinate map `b.equivFun`.
 -/
 
 public section
@@ -111,6 +108,19 @@ theorem posDef_weightedSumSquares_iff {R : Type*} [CommRing R] [LinearOrder R]
   rw [weightedSumSquares_apply]
   exact Finset.sum_pos' (fun j _ ↦ mul_nonneg (h j).le (mul_self_nonneg _))
     ⟨i, Finset.mem_univ i, mul_pos (h i) (mul_self_pos.mpr hi)⟩
+
+/-- A quadratic form over a linearly ordered ring is positive definite on the line spanned by a
+vector of positive value. -/
+theorem posDef_restrict_span_singleton {R M : Type*} [CommRing R] [LinearOrder R]
+    [IsStrictOrderedRing R] [AddCommGroup M] [Module R M] {Q : QuadraticForm R M} {y : M}
+    (hy : 0 < Q y) : (Q.restrict (R ∙ y)).PosDef := by
+  rintro ⟨w, hw⟩ hw0
+  obtain ⟨c, rfl⟩ := Submodule.mem_span_singleton.mp hw
+  have hc : c ≠ 0 := by
+    rintro rfl
+    exact hw0 (by simp)
+  rw [restrict_apply, QuadraticMap.map_smul, smul_eq_mul]
+  exact mul_pos (mul_self_pos.mpr hc) hy
 
 end QuadraticMap
 
@@ -173,19 +183,6 @@ theorem exists_posDef_quadraticForm (R W : Type*) [CommRing R] [LinearOrder R]
     (fun _ : Module.Free.ChooseBasisIndex R W ↦ (1 : R))).mpr fun _ ↦ zero_lt_one).comp
     b.equivFun.toLinearMap b.equivFun.injective⟩
 
-/-- Over `ℤ` a bound on the square is a bound on the absolute value: a nonzero integer is at most
-its own square in absolute value. -/
-private theorem abs_le_of_sq_le {y c : ℤ} (h : y ^ 2 ≤ c) : |y| ≤ c := by
-  rcases eq_or_ne y 0 with rfl | hy
-  · simpa using h
-  · have h1 : 1 ≤ |y| := by
-      rcases hy.lt_or_gt with h' | h'
-      · rw [abs_of_neg h']; omega
-      · rw [abs_of_pos h']; omega
-    calc |y| ≤ |y| * |y| := le_mul_of_one_le_left (abs_nonneg y) h1
-      _ = y ^ 2 := by rw [← sq, sq_abs]
-      _ ≤ c := h
-
 end TauCeti
 
 namespace QuadraticMap.PosDef
@@ -205,50 +202,20 @@ theorem finite_setOf_apply_le {q : QuadraticForm ℤ M} (hq : q.PosDef) (n : ℤ
     have h := q.map_smul r (x - y)
     rw [smul_sub, hxy, sub_self, QuadraticMap.map_zero, smul_eq_mul] at h
     exact (mul_pos (mul_self_pos.mpr hr.ne_zero) hz).ne h⟩
-  set b := Module.Free.chooseBasis ℤ M
-  set B : LinearMap.BilinForm ℤ M := q.polarBilin with hBdef
-  have hBself : ∀ x : M, B x x = 2 * q x := fun x ↦ by
-    rw [hBdef, QuadraticMap.polarBilin_apply_apply, QuadraticMap.polar_self, two_nsmul]
-    ring
-  have hBnonneg : ∀ x : M, 0 ≤ B x x := fun x ↦ by
-    rw [hBself]
-    exact mul_nonneg (by norm_num) (hq.nonneg x)
-  have hsymm : LinearMap.IsSymm B :=
-    LinearMap.BilinForm.isSymm_iff.mp <| LinearMap.BilinForm.isSymm_def.mpr fun x y ↦ by
-      rw [hBdef, QuadraticMap.polarBilin_apply_apply, QuadraticMap.polarBilin_apply_apply,
-        QuadraticMap.polar_comm]
-  -- Pairing against the basis is injective, because the polar form detects isotropy.
-  set T : M →ₗ[ℤ] (Module.Free.ChooseBasisIndex ℤ M → ℤ) :=
-    LinearMap.pi fun i ↦ B.flip (b i)
-  have hTapply : ∀ (x : M) (i : Module.Free.ChooseBasisIndex ℤ M), T x i = B x (b i) :=
-    fun x i ↦ by simp only [T, LinearMap.pi_apply, LinearMap.BilinForm.flip_apply]
-  have hTinj : Function.Injective T := by
-    refine (injective_iff_map_eq_zero T).mpr fun x hx ↦ ?_
-    have hzero : B x = 0 := b.ext fun i ↦ by
-      simpa [hTapply] using congrFun hx i
-    refine hq.anisotropic x ?_
-    have : B x x = 0 := by rw [hzero, LinearMap.zero_apply]
-    rw [hBself] at this
-    omega
-  -- Cauchy-Schwarz bounds each coordinate of `T x` in terms of `n` alone.
-  set C : Module.Free.ChooseBasisIndex ℤ M → ℤ := fun i ↦ 2 * n * (2 * q (b i))
-  refine Set.Finite.subset
-    (Set.Finite.preimage hTinj.injOn (Set.Finite.pi' fun i ↦ Set.finite_Icc (-(C i)) (C i)))
-    fun x hx ↦ ?_
-  simp only [Set.mem_ofPred_eq] at hx
-  simp only [Set.mem_preimage, Set.mem_ofPred_eq, Set.mem_Icc]
-  intro i
-  have hcs : (T x i) ^ 2 ≤ B x x * B (b i) (b i) := by
-    rw [hTapply]
-    exact B.apply_sq_le_of_symm hBnonneg hsymm x (b i)
-  have hle : B x x * B (b i) (b i) ≤ C i := by
-    have h2 : (0 : ℤ) ≤ 2 * q (b i) := by
-      have := hq.nonneg (b i); omega
-    calc B x x * B (b i) (b i) = 2 * q x * (2 * q (b i)) := by rw [hBself, hBself]
-      _ ≤ 2 * n * (2 * q (b i)) := by
-          exact mul_le_mul_of_nonneg_right (by omega) h2
-      _ = C i := rfl
-  exact abs_le.mp (TauCeti.abs_le_of_sq_le (hcs.trans hle))
+  let b := Module.Free.chooseBasis ℤ M
+  -- The Gram matrix of the polar form in `b` is a positive definite integer matrix, because the
+  -- diagonal of the polar form is `2 • q`.
+  have hA : (LinearMap.BilinForm.toMatrix b q.polarBilin).PosDef := by
+    refine (LinearMap.BilinForm.posDef_toQuadraticMap_iff_matrix b _ q.isSymm_polarBilin).mp ?_
+    rw [QuadraticMap.toQuadraticMap_polarBilin]
+    exact hq.smul zero_lt_two
+  -- In the coordinates `b.repr x`, the bound `q x ≤ n` reads `B x x ≤ 2 * n` for the Gram
+  -- matrix of the polar form `B`, whose sublevel sets are finite.
+  refine ((hA.finite_setOfPred_dotProduct_mulVec_le (2 * n)).preimage
+    b.equivFun.injective.injOn).subset fun x (hx : q x ≤ n) ↦ ?_
+  rw [Set.mem_preimage, Set.mem_ofPred_eq, b.equivFun_apply,
+    ← LinearMap.BilinForm.apply_eq_dotProduct_toMatrix_mulVec, q.polarBilin_self x]
+  omega
 
 /-- **A positive definite integral quadratic form takes each value finitely often.** For a
 positive definite quadratic form `q` on a finitely generated `ℤ`-module, only finitely many

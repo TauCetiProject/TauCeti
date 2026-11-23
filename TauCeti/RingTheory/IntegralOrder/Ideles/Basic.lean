@@ -72,12 +72,12 @@ its finite part, so `U(Λ)` is exactly the stabiliser of the lattices: `I(α) = 
   place and to `1` elsewhere has lattice `b Λ`, provided `b` is a unit of `Λ_v` at every other
   place.
 * `TauCeti.OrderIdeles.mul_mem_lattice`: `I(α)` is a right `Λ`-module.
-* `TauCeti.OrderIdeles.isLattice_lattice`: when `Λ` is an order and `A` is not a field, `I(α)` is
-  an `A`-lattice in `B`.
+* `TauCeti.OrderIdeles.isFullLattice_lattice`: when `Λ` is an order and `A` is not a field,
+  `I(α)` is an `A`-lattice in `B`.
 * `TauCeti.OrderIdeles.map_op_leftLattice`: the left lattice of `α`, carried to `Bᵐᵒᵖ`, is the
   right `Λᵒᵖ`-lattice `I(α)`.
-* `TauCeti.OrderIdeles.mul_mem_leftLattice`, `TauCeti.OrderIdeles.isLattice_leftLattice`: it is a
-  left `Λ`-module, and a full `A`-lattice when `Λ` is an order.
+* `TauCeti.OrderIdeles.mul_mem_leftLattice`, `TauCeti.OrderIdeles.isFullLattice_leftLattice`: it
+  is a left `Λ`-module, and a full `A`-lattice when `Λ` is an order.
 * `TauCeti.OrderIdeles.leftLattice_eq_leftLattice_iff`,
   `TauCeti.OrderIdeles.leftLattice_principal_mul`: unit and principal change for left lattices.
 * `TauCeti.OrderIdeles.Ideles.lattice_eq_lattice_iff`: for full ideles, `I(α) = I(β)` if and only if
@@ -264,9 +264,9 @@ theorem lattice_mulSingle_principal [DecidableEq (HeightOneSpectrum A)]
 
 /-- **`I(α)` is a full lattice.** When `Λ` is an `A`-order in `B` and `A` is not a field, `I(α)` is
 an `A`-lattice in `B`: finitely generated and spanning `B` over `F`. -/
-theorem isLattice_lattice (hA : ¬IsField A) (hΛ : IntegralOrder.IsOrder F Λ)
-    (α : FiniteIdeles F Λ) : (lattice F Λ α).IsLattice F := by
-  refine ⟨?_, span_lattice hΛ.span_eq_top α⟩
+theorem isFullLattice_lattice (hA : ¬IsField A) (hΛ : IntegralOrder.IsOrder F Λ)
+    (α : FiniteIdeles F Λ) : (lattice F Λ α).IsFullLattice F := by
+  refine { toIsLattice := IsLattice.of_fg F ?_, span_eq_top := span_lattice hΛ.span_eq_top α }
   -- Some nonzero `a ∈ A` makes every `a • α_v` integral, so that `a • I(α) ⊆ I(1) = Λ`.
   obtain ⟨a, ha, hav⟩ := exists_ne_zero_forall_smul_inv_mem_baseChange hΛ.span_eq_top α⁻¹
   have ha' : algebraMap A F a ≠ 0 := (map_ne_zero_iff _ (IsFractionRing.injective A F)).2 ha
@@ -276,7 +276,7 @@ theorem isLattice_lattice (hA : ¬IsField A) (hΛ : IntegralOrder.IsOrder F Λ)
       ← algebraMap_smul F a y] at hxy
     exact smul_right_injective B ha' hxy
   refine fg_of_fg_map_injective _ hinj
-    (FG.of_le (IntegralOrder.isOrder_iff_isLattice.1 hΛ).fg ?_)
+    (FG.of_le (IntegralOrder.isOrder_iff_isFullLattice.1 hΛ).fg ?_)
   rw [← lattice_one (F := F) hA]
   rintro _ ⟨x, hx, rfl⟩
   refine mem_lattice_iff.2 fun v ↦ ?_
@@ -327,11 +327,11 @@ theorem leftLattice_one (hA : ¬IsField A) : leftLattice F Λ 1 = Subalgebra.toS
 
 /-- **The left lattice is a full lattice.** When `Λ` is an `A`-order in `B` and `A` is not a field,
 the left lattice of every finite idele of `Λᵒᵖ` is an `A`-lattice in `B`. -/
-theorem isLattice_leftLattice [Algebra F B] [IsScalarTower A F B] (hA : ¬IsField A)
+theorem isFullLattice_leftLattice [Algebra F B] [IsScalarTower A F B] (hA : ¬IsField A)
     (hΛ : IntegralOrder.IsOrder F Λ) (α : FiniteIdeles F Λ.op) :
-    (leftLattice F Λ α).IsLattice F := by
-  have := isLattice_lattice hA (IntegralOrder.isOrder_op_iff.2 hΛ) α
-  convert Submodule.isLattice_map (lattice F Λ.op α)
+    (leftLattice F Λ α).IsFullLattice F := by
+  have := isFullLattice_lattice hA (IntegralOrder.isOrder_op_iff.2 hΛ) α
+  convert Submodule.isFullLattice_map (lattice F Λ.op α)
     (MulOpposite.opLinearEquiv F : B ≃ₗ[F] Bᵐᵒᵖ).symm.toLinearMap
     (MulOpposite.opLinearEquiv F).symm.surjective
   ext x

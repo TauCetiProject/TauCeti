@@ -80,6 +80,24 @@ universe u v v' w
 -- Match tensor products to the `ℤ`-algebra structure used by scalar extension.
 attribute [local instance high] Algebra.toModule
 
+/-! ## The Frobenius on the generating families -/
+
+section TorusGenerator
+
+variable {κ : Type} {V : Type} [AddCommGroup V] (M : AddSubgroup V)
+variable {n : ℕ} (b : Module.Basis (Fin n) ℤ M) (wt : Fin n → κ → ℤ) (p k : ℕ)
+variable {A : Type v} [CommRing A] [ExpChar A p] [Fintype κ]
+
+/-- **The Frobenius raises a torus point to its `p ^ k`-th power.** In a weight basis the torus
+point is the diagonal matrix of its weight characters, and the Frobenius raises each of them to
+the `p ^ k`-th power. -/
+theorem map_iterateFrobenius_kostantTorusMatrix (s : κ → Aˣ) :
+    Matrix.GeneralLinearGroup.map (iterateFrobenius A p k) (kostantTorusMatrix M b wt s) =
+      kostantTorusMatrix M b wt (s ^ p ^ k) := by
+  rw [map_kostantTorusMatrix, map_iterateFrobenius_units_eq_pow]
+
+end TorusGenerator
+
 variable {L : Type u} [LieRing L] [LieAlgebra ℚ L]
 variable {I : Type w} {κ : Type}
 variable {V : Type} [AddCommGroup V] [Module ℚ V]
@@ -92,8 +110,6 @@ variable (hnil : ∀ i, IsNilpotent (ρ (_root_.UniversalEnvelopingAlgebra.ι �
 variable {n : ℕ} (b : Module.Basis (Fin n) ℤ M)
 variable (wt : Fin n → κ → ℤ)
 variable (p k : ℕ)
-
-/-! ## The Frobenius on the generating families -/
 
 section Generators
 
@@ -114,17 +130,6 @@ theorem map_iterateFrobenius_kostantRootSubgroupMatrix (i : I) (t : Multiplicati
     rw [RingHom.toIntAlgHom_apply, iterateFrobenius_def]
   rw [map_kostantRootSubgroupMatrix e h ρ M hM i (hnil i) b (iterateFrobenius A p k),
     AdditiveGroup.mapValue_gaPointsMulEquiv_symm_apply, hparam]
-
-variable [Fintype κ]
-
-omit [Module ℚ V] in
-/-- **The Frobenius raises a torus point to its `p ^ k`-th power.** In a weight basis the torus
-point is the diagonal matrix of its weight characters, and the Frobenius raises each of them to
-the `p ^ k`-th power. -/
-theorem map_iterateFrobenius_kostantTorusMatrix (s : κ → Aˣ) :
-    Matrix.GeneralLinearGroup.map (iterateFrobenius A p k) (kostantTorusMatrix M b wt s) =
-      kostantTorusMatrix M b wt (s ^ p ^ k) := by
-  rw [map_kostantTorusMatrix, map_iterateFrobenius_units_eq_pow]
 
 end Generators
 

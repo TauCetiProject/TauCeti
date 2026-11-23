@@ -186,7 +186,7 @@ theorem peterssonInnerCosets_diamondOpCusp (k : ℤ) (d : (ZMod N)ˣ)
   obtain ⟨γ, hγ⟩ := Gamma0Map_toHomUnits_surjective (N := N) d
   have hnorm : (γ : SL(2, ℤ)) ∈ Subgroup.normalizer ((Gamma1 N).withCenter : Set SL(2, ℤ)) := by
     rw [Subgroup.withCenter_def]
-    exact Subgroup.normalizer_le_normalizer_sup_normal (Gamma0_le_normalizer_Gamma1 N γ.2)
+    exact Subgroup.normalizer_le_normalizer_sup_normal (Gamma0_le_normalizer_Gamma1 N γ.property)
   exact peterssonInnerCosets_slash hnorm
     (coe_diamondOpCusp k d γ hγ f) (coe_diamondOpCusp k d γ hγ g)
 
