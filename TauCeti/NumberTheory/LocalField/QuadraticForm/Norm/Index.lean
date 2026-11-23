@@ -6,15 +6,17 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.HilbertSymbol.NormSubgroup
+public import TauCeti.NumberTheory.LocalField.QuadraticForm.Norm.SquareClasses
 public import TauCeti.NumberTheory.LocalField.QuadraticForm.UnramifiedClass
 
 /-!
 # The norm index of an unramified quadratic class
 
 For the unramified quadratic square class of a nonarchimedean local field, the norm subgroup
-consists exactly of elements of even normalized valuation. A uniformizer changes valuation
-parity, so this subgroup has index two. This is the unramified case of the quadratic norm-index
-calculation used to make the local Hilbert symbol multiplicative.
+consists exactly of elements of even normalized valuation. Every integer-ring unit is therefore a
+norm, so `TauCeti.unitQuadraticNormSquareClasses` equals `TauCeti.unitSquareClasses K`, while a
+uniformizer changes valuation parity and gives index two in `Kˣ`. This is the unramified case of
+the quadratic norm-index calculation used to make the local Hilbert symbol multiplicative.
 
 ## References
 
@@ -37,6 +39,17 @@ theorem mem_quadraticNormSubgroup_iff_even_of_unramified_class {Δ : Kˣ}
   rw [← hilbertSymbol_eq_one_iff_mem_quadraticNormSubgroup Δ b,
     hilbertSymbol_eq_one_iff]
   exact hΔ b
+
+/-- For an unramified quadratic class, every unit square class is represented by a valuation-one
+norm. -/
+theorem unitQuadraticNormSquareClasses_eq_unitSquareClasses_of_unramified_class {Δ : Kˣ}
+    (hΔ : ∀ b : Kˣ, (∃ x y : K, (b : K) = x ^ 2 - Δ * y ^ 2) ↔
+      Even (normalizedValuation K b).toAdd) :
+    unitQuadraticNormSquareClasses (Δ : K) = unitSquareClasses K :=
+  unitQuadraticNormSquareClasses_eq_unitSquareClasses_of_forall_mem_quadraticNormSubgroup
+    fun b hb ↦ (mem_quadraticNormSubgroup_iff_even_of_unramified_class hΔ b).mpr <| by
+      rw [(normalizedValuation_eq_one_iff b).mpr hb, toAdd_one]
+      exact Even.zero
 
 /-- The norm subgroup of an unramified quadratic class has index two. -/
 theorem quadraticNormSubgroup_index_eq_two_of_unramified_class {Δ : Kˣ}

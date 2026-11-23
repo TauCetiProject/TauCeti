@@ -8,7 +8,6 @@ module
 public import TauCeti.Analysis.InnerProductSpace.Polar.Bounded
 public import TauCeti.Analysis.InnerProductSpace.Positive.FunctionalCalculus
 import TauCeti.Analysis.InnerProductSpace.Adjoint
-import TauCeti.Analysis.InnerProductSpace.RangeProjection
 
 /-!
 # Smooth dependence of the modulus and the polar factor

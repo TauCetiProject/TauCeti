@@ -47,7 +47,7 @@ theorem multiplicity_ne_zero_iff {g h d : G} [Finite (DecompQuotient Γ₁ Γ₂
     have hp' : _ = (d : G ⧸ Γ₃) := hp
     rw [QuotientGroup.eq] at hp'
     refine mem_doubleCoset.mpr ⟨(p.1.out : G) * g * p.2.out,
-      mem_doubleCoset.mpr ⟨p.1.out, p.1.out.2, p.2.out, p.2.out.2, rfl⟩, _, hp', ?_⟩
+      mem_doubleCoset.mpr ⟨p.1.out, p.1.out.property, p.2.out, p.2.out.property, rfl⟩, _, hp', ?_⟩
     simp [mul_assoc]
   · intro hd
     refine ⟨?_, inferInstance⟩
@@ -101,7 +101,8 @@ theorem mem_image_mulMap_iff [IsHeckeTriple Δ H₁ H₂] [IsHeckeTriple Δ H₂
     obtain ⟨h₁, hh₁, h₂, hh₂, hrep_eq⟩ := mem_doubleCoset.mp hrep
     rw [hrep_eq]
     refine mem_doubleCoset.mpr ⟨h₁ * p.1.out * g₁ * p.2.out,
-      mem_doubleCoset.mpr ⟨h₁ * p.1.out, H₁.mul_mem hh₁ p.1.out.2, p.2.out, p.2.out.2, rfl⟩,
+      mem_doubleCoset.mpr ⟨h₁ * p.1.out, H₁.mul_mem hh₁ p.1.out.property, p.2.out, p.2.out.property,
+          rfl⟩,
       h₂, hh₂, by simp [mul_assoc]⟩
   · intro hD
     obtain ⟨w, hw, k, hk, hd⟩ := mem_doubleCoset.mp hD

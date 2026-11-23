@@ -18,6 +18,7 @@ public import Mathlib.Data.Int.Interval
 public import Mathlib.Data.Set.Finite.Lattice
 public import Mathlib.Data.Set.Finite.Lemmas
 public import TauCeti.Algebra.Order.Hom.Basic
+public import TauCeti.Data.Set.Finite
 
 /-!
 # Novikov series
@@ -139,13 +140,8 @@ theorem finite_support_of_bddAbove_image {a : NovikovSeries R H N}
   exact (a.finite_le C).subset fun h hh => ⟨hh, hC ⟨h, hh, rfl⟩⟩
 
 /-- The periods of the support of a Novikov series are bounded below. -/
-theorem bddBelow_image_support (a : NovikovSeries R H N) : BddBelow (N '' a.support) := by
-  obtain ⟨m, hm⟩ := ((a.finite_lt 0).image N).bddBelow
-  refine ⟨min m 0, ?_⟩
-  rintro _ ⟨h, hh, rfl⟩
-  rcases lt_or_ge (N h) 0 with hN | hN
-  · exact (min_le_left _ _).trans (hm ⟨h, ⟨hh, hN⟩, rfl⟩)
-  · exact (min_le_right _ _).trans hN
+theorem bddBelow_image_support (a : NovikovSeries R H N) : BddBelow (N '' a.support) :=
+  (a.finite_lt 0).bddBelow_image_of_setOf_lt
 
 /-- A Novikov series with nonempty support attains a least period on its support. -/
 theorem exists_isLeast_image_support {a : NovikovSeries R H N} (ha : a.support.Nonempty) :
@@ -199,7 +195,7 @@ theorem support_eq_empty {a : NovikovSeries R H N} : a.support = ∅ ↔ a = 0 :
   rw [support, Function.support_eq_empty_iff, ← coeff_zero', coeff_injective.eq_iff]
 
 theorem support_nonempty_iff {a : NovikovSeries R H N} : a.support.Nonempty ↔ a ≠ 0 := by
-  rw [nonempty_iff_ne_empty, Ne, support_eq_empty]
+  rw [← ne_empty_iff_nonempty, Ne, support_eq_empty]
 
 instance : Inhabited (NovikovSeries R H N) :=
   ⟨0⟩
@@ -214,15 +210,9 @@ variable {R S H : Type*} [Zero R] [Zero S] [AddZeroClass H] {N : H →+ ℝ}
 pairs `(u, v)` of support exponents have `N (u + v) < C`. -/
 theorem finite_setOf_period_add_lt (a : NovikovSeries R H N) (b : NovikovSeries S H N)
     (C : ℝ) :
-    {p : H × H | N (p.1 + p.2) < C ∧ a.coeff p.1 ≠ 0 ∧ b.coeff p.2 ≠ 0}.Finite := by
-  obtain ⟨ma, hma⟩ := a.bddBelow_image_support
-  obtain ⟨mb, hmb⟩ := b.bddBelow_image_support
-  refine ((a.finite_lt (C - mb)).prod (b.finite_lt (C - ma))).subset ?_
-  rintro ⟨u, v⟩ ⟨huv, hu, hv⟩
-  have hu' : ma ≤ N u := hma ⟨u, hu, rfl⟩
-  have hv' : mb ≤ N v := hmb ⟨v, hv, rfl⟩
-  rw [map_add] at huv
-  exact ⟨⟨hu, by linarith⟩, ⟨hv, by linarith⟩⟩
+    {p : H × H | N (p.1 + p.2) < C ∧ a.coeff p.1 ≠ 0 ∧ b.coeff p.2 ≠ 0}.Finite :=
+  (Set.Finite.setOf_and_add_lt a.finite_lt b.finite_lt C).subset fun _ ⟨huv, hu, hv⟩ =>
+    ⟨⟨hu, hv⟩, by rwa [map_add] at huv⟩
 
 /-- For Novikov series `a` and `b` and an exponent `h`, only finitely many pairs `(u, v)` with
 `u + v = h` have both coefficients `a.coeff u` and `b.coeff v` nonzero. -/
@@ -516,6 +506,13 @@ theorem single_zero_coeff_zero [Subsingleton H] (a : NovikovSeries R H N) :
 
 end Zero
 
+/-- A coefficient of a finite sum of monomials is the sum of the monomial coefficients at that
+exponent. -/
+theorem coeff_sum_single [AddCommMonoid R] [DecidableEq H] {ι : Type*} (s : Finset ι) (e : ι → H)
+    (w : ι → R) (h : H) :
+    (∑ i ∈ s, single (e i) (w i) : NovikovSeries R H N).coeff h = ∑ i ∈ s with e i = h, w i := by
+  simp [coeff_single, Pi.single_apply, Finset.sum_filter, eq_comm]
+
 @[simp]
 theorem single_add [AddZeroClass R] (h : H) (r s : R) :
     (single h (r + s) : NovikovSeries R H N) = single h r + single h s := by
@@ -687,9 +684,9 @@ section Surjective
 
 variable {R H : Type*} [AddGroup H] {N : H →+ ℝ}
 
-/-- The Novikov series with coefficient `r` at every natural multiple of `h` and `0` elsewhere,
-for an exponent `h` of positive period. -/
-private def geometric [Zero R] (N : H →+ ℝ) {h : H} (hh : 0 < N h) (r : R) :
+/-- The geometric series `∑ₖ r e^(k h)`: the Novikov series with coefficient `r` at every natural
+multiple of `h` and `0` elsewhere, for an exponent `h` of positive period. -/
+def geometric [Zero R] (N : H →+ ℝ) {h : H} (hh : 0 < N h) (r : R) :
     NovikovSeries R H N where
   coeff := (range fun k : ℕ => k • h).indicator fun _ => r
   finite_lt C := by
@@ -700,14 +697,28 @@ private def geometric [Zero R] (N : H →+ ℝ) {h : H} (hh : 0 < N h) (r : R) :
     rw [map_nsmul, nsmul_eq_mul] at hgC
     exact (lt_div_iff₀ hh).2 hgC
 
+/-- The coefficients of the geometric series `∑ₖ r e^(k h)`: `r` at the natural multiples of `h`
+and `0` elsewhere. -/
+@[simp]
+theorem coeff_geometric [Zero R] {h : H} (hh : 0 < N h) (r : R) (g : H) :
+    (geometric N hh r).coeff g = (range fun k : ℕ => k • h).indicator (fun _ => r) g :=
+  (rfl)
+
+/-- With a nonzero coefficient, the support of the geometric series `∑ₖ r e^(k h)` consists of the
+natural multiples of `h`. -/
+theorem support_geometric [Zero R] {h : H} (hh : 0 < N h) {r : R} (hr : r ≠ 0) :
+    (geometric N hh r).support = range fun k : ℕ => k • h := by
+  ext g
+  simp [support, hr]
+
 private theorem infinite_support_geometric [Zero R] {h : H} (hh : 0 < N h) {r : R} (hr : r ≠ 0) :
     (geometric N hh r).support.Infinite := by
   have hinj : Injective fun k : ℕ => k • h := fun k l hkl => by
     have := congrArg N hkl
     simp only [map_nsmul, nsmul_eq_mul] at this
     exact_mod_cast mul_right_cancel₀ hh.ne' this
-  refine (infinite_range_of_injective hinj).mono fun g hg => ?_
-  simpa [support, geometric, hr] using hg
+  rw [support_geometric hh hr]
+  exact infinite_range_of_injective hinj
 
 /-- Over a nontrivial coefficient type, every Novikov series is finitely supported if and only if
 the period homomorphism vanishes. -/

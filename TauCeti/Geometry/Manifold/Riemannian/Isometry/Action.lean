@@ -146,7 +146,7 @@ theorem inner_tangentRepresentation_apply {K : Type*} [Group K] [MulAction K M] 
     inner ℝ (tangentRepresentation hd g u) (tangentRepresentation hd g w) =
       inner ℝ (mfderiv I I ((g : K) • ·) x u) (mfderiv I I ((g : K) • ·) x w) := by
   rw [tangentRepresentation_apply]
-  exact inner_tangentSpace_congr (I := I) g.2.symm rfl rfl
+  exact inner_tangentSpace_congr (I := I) g.property.symm rfl rfl
 
 end TauCeti
 

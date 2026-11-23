@@ -263,9 +263,7 @@ theorem exists_eLpNorm_laplacian_le_of_ae_eq_heatSemigroup :
     exact (hw.of_le (by norm_cast)).continuous_laplacian.aestronglyMeasurable
   -- Pointwise, `‖Δ u‖ ≤ dim E * ‖D² u‖`.
   have hpt : ∀ᵐ x ∂volume, ‖Δ u x‖ ≤ Module.finrank ℝ E * ‖iteratedFDeriv ℝ 2 u x‖ :=
-    ae_of_all _ fun x => by
-      have h := norm_laplacian_le u x
-      rwa [← norm_iteratedFDeriv_one, norm_iteratedFDeriv_fderiv] at h
+    ae_of_all _ fun x => norm_laplacian_le_norm_iteratedFDeriv_two u x
   grw [eLpNorm_le_mul_eLpNorm_of_ae_le_mul hΔ hpt p, hD, ← mul_assoc, ← ENNReal.ofReal_mul
     (by positivity), mul_assoc]
 

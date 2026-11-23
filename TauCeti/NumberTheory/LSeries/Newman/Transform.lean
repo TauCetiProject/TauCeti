@@ -6,8 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Complex.CauchyIntegral
-public import TauCeti.Analysis.Complex.LaplaceTransform
 public import TauCeti.Analysis.Complex.NormSq
+public import TauCeti.Analysis.LaplaceTransform.Truncated
 
 /-!
 # Truncated Laplace transforms and the estimates of Newman's contour argument
@@ -16,7 +16,7 @@ Let `f : ℝ → ℂ` be bounded by `M` on `[0, ∞)`. Newman's Tauberian theore
 Laplace transform `G z = ∫ t in Ici 0, f t * exp (-z t)` with its truncations
 `G_T z = ∫ t in 0..T, f t * exp (-z t)` against the kernel `exp (T z) (1 + z² / R²) / z` on
 the circle `‖z‖ = R`. Combining the general Laplace estimates of
-`TauCeti.Analysis.Complex.LaplaceTransform` (truncations are entire, the transform is holomorphic
+`TauCeti.Analysis.LaplaceTransform.Truncated` (truncations are entire, the transform is holomorphic
 on `0 < re z`, and the tail and left half-plane bounds) with the identity
 `‖1 + z² / R²‖ = 2 |re z| / R` on the circle `‖z‖ = R`, this file proves:
 

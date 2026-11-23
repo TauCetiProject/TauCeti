@@ -45,6 +45,9 @@ zero and is a chain map for the unary operations.
   equation, and `TauCeti.AInfinityHom.taylor_ofTaylor`: every solution of it arises.
 * `TauCeti.AInfinityHom.comp_assoc`, `TauCeti.AInfinityHom.comp_id`, and
   `TauCeti.AInfinityHom.id_comp`: the category laws.
+* `TauCeti.AInfinityHom.taylor_comp_apply_of_mem_filtration`: composing a morphism with linear
+  part the identity with one that is `letter` on the words of length at most `e` adds their Taylor
+  maps, minus `letter`, on the words of length at most `e + 1`.
 * `TauCeti.AInfinityHom.linearPart_m_one`: the linear part is a chain map.
 * `TauCeti.AInfinityHom.linearPart_mem`: the linear part preserves degrees.
 
@@ -301,6 +304,24 @@ theorem linearPart_comp (g : AInfinityHom BB CC) (f : AInfinityHom AA BB) :
   ext a
   rw [LinearMap.comp_apply, linearPart_apply, taylor_comp, LinearMap.comp_apply,
     barMap_ofLetter, linearPart_apply g]
+
+/-- **Composing with a morphism that is `letter` to order `e`.**  Let `f : AA ⟶ AA'` be an `A∞`
+morphism with linear part the identity and `g : AA' ⟶ AA''` one whose Taylor map is `letter` on the
+words of length at most `e`.  Then on the words of length at most `e + 1` the Taylor map of `g ∘ f`
+is `f.taylor + g.taylor - letter`: `f` moves such a word by a word of length at most `e`, on which
+`g` is `letter`. -/
+theorem taylor_comp_apply_of_mem_filtration {AA' AA'' : AInfinityAlgebra R A}
+    (g : AInfinityHom AA' AA'') (f : AInfinityHom AA AA') (hf : f.linearPart = LinearMap.id)
+    {e : ℕ}
+    (hg : ∀ w ∈ ReducedTensorWords.filtration R A e, g.taylor w = ReducedTensorWords.letter R A w)
+    {z : ReducedTensorWords R A} (hz : z ∈ ReducedTensorWords.filtration R A (e + 1)) :
+    (g.comp f).taylor z = f.taylor z + g.taylor z - ReducedTensorWords.letter R A z := by
+  have hsub : f.barMap z - z ∈ ReducedTensorWords.filtration R A e :=
+    f.isCoalgHom_barMap.sub_mem_filtration (LinearMap.ext fun a ↦ by
+      rw [LinearMap.comp_apply, barMap_ofLetter, hf, LinearMap.id_apply]) hz
+  rw [taylor_comp, LinearMap.comp_apply, ← sub_add_cancel (f.barMap z) z, map_add, hg _ hsub,
+    map_sub, taylor_def f, LinearMap.comp_apply]
+  abel
 
 /-- An `A∞` morphism whose linear part is the identity has Taylor map `letter` on the words of
 length at most one. -/

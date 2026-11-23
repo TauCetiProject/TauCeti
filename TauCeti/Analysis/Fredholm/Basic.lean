@@ -29,6 +29,18 @@ intended throughout.
 
 ## Main declarations
 
+* `ContinuousLinearMap.instNonemptyIsFredholmSelf`: the Fredholm endomorphism locus `{T : E →L[𝕜]
+  E // T.IsFredholm}` is nonempty, witnessed by the identity operator.
+* `ContinuousLinearMap.IsFredholm.finiteDimensional_iff`: a Fredholm operator has
+  finite-dimensional domain if and only if it has finite-dimensional codomain; consequently, the
+  Fredholm locus is empty in mixed dimension
+  (`ContinuousLinearMap.isEmpty_isFredholm_of_finiteDimensional_of_not_finiteDimensional`,
+  `ContinuousLinearMap.isEmpty_isFredholm_of_not_finiteDimensional_of_finiteDimensional`).
+* `FredholmDecomposition.completeSpace_X₁_iff` and
+  `ContinuousLinearMap.IsFredholm.completeSpace_iff`: between Hausdorff uniform topological vector
+  spaces over a complete nontrivially normed field, a space is complete if and only if the
+  essential factor of a Fredholm decomposition is complete, and a Fredholm operator has complete
+  domain if and only if it has complete codomain.
 * `ContinuousLinearMap.isFredholm_of_finiteDimensional`: every operator between finite-dimensional
   topological vector spaces over a complete scalar field, with Hausdorff target, is Fredholm.
 * `ContinuousLinearMap.IsFredholm.neg`, `ContinuousLinearMap.IsFredholm.smul`: Fredholmness is
@@ -39,6 +51,8 @@ intended throughout.
   `NontriviallyNormedField`, without completeness or separation assumptions.
 * `ContinuousLinearMap.IsFredholm.isInvertible_of_injective_of_index_eq_zero`: an injective
   Fredholm operator of index zero is invertible.
+* `ContinuousLinearMap.index_comp`: the index of a composition of Fredholm operators is the sum
+  of their indices.
 * `ContinuousLinearMap.isFredholm_iff_of_comp_eq`: operators conjugate under continuous linear
   equivalences are simultaneously Fredholm.
 * `ContinuousLinearMap.IsFredholm.restrictScalars`: a Fredholm operator over `𝕜'` stays Fredholm
@@ -61,6 +75,34 @@ variable {E F G : Type*}
 variable [AddCommGroup E] [TopologicalSpace E] [Module 𝕜 E]
 variable [AddCommGroup F] [TopologicalSpace F] [Module 𝕜 F]
 variable [AddCommGroup G] [TopologicalSpace G] [Module 𝕜 G]
+
+/-- The Fredholm endomorphism locus `{T : E →L[𝕜] E // T.IsFredholm}` is nonempty, witnessed by the
+identity operator. -/
+instance instNonemptyIsFredholmSelf : Nonempty {T : E →L[𝕜] E // T.IsFredholm} :=
+  ⟨⟨.id 𝕜 E, .id⟩⟩
+
+/-- A Fredholm operator has finite-dimensional domain if and only if it has finite-dimensional
+codomain. -/
+theorem IsFredholm.finiteDimensional_iff {T : E →L[𝕜] F} (hT : T.IsFredholm) :
+    FiniteDimensional 𝕜 E ↔ FiniteDimensional 𝕜 F := by
+  have := hT.finite_ker
+  have := hT.finite_coker
+  refine ⟨fun _ ↦ Module.Finite.of_submodule_quotient T.range, fun _ ↦ ?_⟩
+  have : FiniteDimensional 𝕜 (E ⧸ T.ker) := T.quotKerEquivRange.symm.finiteDimensional
+  exact Module.Finite.of_submodule_quotient T.ker
+
+/-- The Fredholm locus is empty when the domain is finite-dimensional and the codomain is
+infinite-dimensional. -/
+theorem isEmpty_isFredholm_of_finiteDimensional_of_not_finiteDimensional [FiniteDimensional 𝕜 E]
+    (hF : ¬ FiniteDimensional 𝕜 F) : IsEmpty {T : E →L[𝕜] F // T.IsFredholm} :=
+  ⟨fun T ↦ hF (T.property.finiteDimensional_iff.1 inferInstance)⟩
+
+/-- The Fredholm locus is empty when the domain is infinite-dimensional and the codomain is
+finite-dimensional. -/
+theorem isEmpty_isFredholm_of_not_finiteDimensional_of_finiteDimensional
+    (hE : ¬ FiniteDimensional 𝕜 E) [FiniteDimensional 𝕜 F] :
+    IsEmpty {T : E →L[𝕜] F // T.IsFredholm} :=
+  ⟨fun T ↦ hE (T.property.finiteDimensional_iff.2 inferInstance)⟩
 
 section FiniteDimensional
 
@@ -176,6 +218,13 @@ lemma IsFredholm.isInvertible_of_injective_of_index_eq_zero {T : E →L[𝕜] F}
   exact isInvertible_iff_isFredholm_and_bijective.2
     ⟨hT, T.bijective_of_injective_of_index_eq_zero hinj h0⟩
 
+/-- The index of a composition of Fredholm operators is the sum of their indices. This is
+Mathlib's `ContinuousLinearMap.IsFredholm.index_comp`, stated for `ContinuousLinearMap.index`
+rather than for the index of the underlying linear maps. -/
+lemma index_comp {S : F →L[𝕜] G} {T : E →L[𝕜] F} (hS : IsFredholm S) (hT : IsFredholm T) :
+    (S ∘L T).index = S.index + T.index := by
+  simpa only [index_def] using hS.index_comp hT
+
 section RestrictScalars
 
 variable (𝕜) {𝕜' : Type*} [NontriviallyNormedField 𝕜'] [Module 𝕜 𝕜'] [Module.Finite 𝕜 𝕜']
@@ -203,3 +252,37 @@ lemma IsFredholm.restrictScalars {T : E →L[𝕜'] F} (hT : IsFredholm T) :
 end RestrictScalars
 
 end ContinuousLinearMap
+
+section CompleteSpace
+
+variable {𝕜 E F : Type*} [NontriviallyNormedField 𝕜] [CompleteSpace 𝕜]
+variable [AddCommGroup E] [UniformSpace E] [IsUniformAddGroup E] [Module 𝕜 E]
+  [ContinuousSMul 𝕜 E] [T2Space E]
+variable [AddCommGroup F] [UniformSpace F] [IsUniformAddGroup F] [Module 𝕜 F]
+  [ContinuousSMul 𝕜 F] [T2Space F]
+
+/-- The essential (finite-codimension) factor of a Fredholm decomposition of a Hausdorff uniform
+topological vector space over a complete nontrivially normed field is complete if and only if the
+ambient space is complete. -/
+theorem FredholmDecomposition.completeSpace_X₁_iff (dec : FredholmDecomposition 𝕜 E) :
+    CompleteSpace dec.X₁ ↔ CompleteSpace E := by
+  have : IsUniformAddGroup dec.X₀ := dec.X₀.toAddSubgroup.isUniformAddGroup
+  have : IsUniformAddGroup dec.X₁ := dec.X₁.toAddSubgroup.isUniformAddGroup
+  let e := dec.X₁.prodEquivOfIsTopCompl dec.X₀ dec.isTopCompl
+  have := dec.finite_X₀
+  have hX₀ : CompleteSpace dec.X₀ := FiniteDimensional.completeSpace 𝕜 dec.X₀
+  rw [← e.isUniformEmbedding.completeSpace_congr e.surjective,
+    completeSpace_prod_of_nonempty, and_iff_left hX₀]
+
+/-- A Fredholm operator between Hausdorff uniform topological vector spaces over a complete
+nontrivially normed field has complete domain if and only if it has complete codomain. -/
+theorem ContinuousLinearMap.IsFredholm.completeSpace_iff {T : E →L[𝕜] F} (hT : T.IsFredholm) :
+    CompleteSpace E ↔ CompleteSpace F := by
+  obtain ⟨pkg⟩ := hT.nonempty_fredholmPackage
+  have : IsUniformAddGroup pkg.decDom.X₁ := pkg.decDom.X₁.toAddSubgroup.isUniformAddGroup
+  have : IsUniformAddGroup pkg.decCodom.X₁ := pkg.decCodom.X₁.toAddSubgroup.isUniformAddGroup
+  exact pkg.decDom.completeSpace_X₁_iff.symm.trans
+    ((pkg.equiv.isUniformEmbedding.completeSpace_congr pkg.equiv.surjective).trans
+      pkg.decCodom.completeSpace_X₁_iff)
+
+end CompleteSpace

@@ -50,8 +50,9 @@ def prod : TopCat.GlueData.MkCore.{u} where
   V i j := ⟨(D.V i.1 j.1 : Set (D.U i.1)) ×ˢ E.V i.2 j.2,
     (D.V i.1 j.1).isOpen.prod (E.V i.2 j.2).isOpen⟩
   t i j := TopCat.ofHom ⟨fun x ↦
-    ⟨((D.t i.1 j.1 ⟨x.1.1, x.2.1⟩).1, (E.t i.2 j.2 ⟨x.1.2, x.2.2⟩).1),
-      (D.t i.1 j.1 ⟨x.1.1, x.2.1⟩).2, (E.t i.2 j.2 ⟨x.1.2, x.2.2⟩).2⟩,
+    ⟨((D.t i.1 j.1 ⟨x.val.1, x.property.1⟩).val, (E.t i.2 j.2 ⟨x.val.2, x.property.2⟩).val),
+      (D.t i.1 j.1 ⟨x.val.1, x.property.1⟩).property, (E.t i.2 j.2 ⟨x.val.2,
+          x.property.2⟩).property⟩,
     by
       have hD := (D.t i.1 j.1).hom.continuous
       have hE := (E.t i.2 j.2).hom.continuous
@@ -60,13 +61,13 @@ def prod : TopCat.GlueData.MkCore.{u} where
   t_id i := by
     funext x
     apply Subtype.ext
-    exact Prod.ext (congrArg Subtype.val (congrFun (D.t_id i.1) ⟨x.1.1, x.2.1⟩))
-      (congrArg Subtype.val (congrFun (E.t_id i.2) ⟨x.1.2, x.2.2⟩))
-  t_inter {i j} k x hx := ⟨D.t_inter k.1 ⟨x.1.1, x.2.1⟩ hx.1,
-    E.t_inter k.2 ⟨x.1.2, x.2.2⟩ hx.2⟩
+    exact Prod.ext (congrArg Subtype.val (congrFun (D.t_id i.1) ⟨x.val.1, x.property.1⟩))
+      (congrArg Subtype.val (congrFun (E.t_id i.2) ⟨x.val.2, x.property.2⟩))
+  t_inter {i j} k x hx := ⟨D.t_inter k.1 ⟨x.val.1, x.property.1⟩ hx.1,
+    E.t_inter k.2 ⟨x.val.2, x.property.2⟩ hx.2⟩
   cocycle i j k x hx := Prod.ext
-    (D.cocycle i.1 j.1 k.1 ⟨x.1.1, x.2.1⟩ hx.1)
-    (E.cocycle i.2 j.2 k.2 ⟨x.1.2, x.2.2⟩ hx.2)
+    (D.cocycle i.1 j.1 k.1 ⟨x.val.1, x.property.1⟩ hx.1)
+    (E.cocycle i.2 j.2 k.2 ⟨x.val.2, x.property.2⟩ hx.2)
 
 /-- The pieces of the product data are the products of the original pieces. -/
 @[simp]
@@ -82,8 +83,9 @@ theorem mem_prod_V (i j : D.J × E.J) (x : D.U i.1 × E.U i.2) :
 /-- A product transition applies the original transitions to the two coordinates. -/
 @[simp]
 theorem prod_t_apply_coe (i j : D.J × E.J) (x : (D.prod E).V i j) :
-    ((D.prod E).t i j x).1 =
-      ((D.t i.1 j.1 ⟨x.1.1, x.2.1⟩).1, (E.t i.2 j.2 ⟨x.1.2, x.2.2⟩).1) := (rfl)
+    ((D.prod E).t i j x).val =
+      ((D.t i.1 j.1 ⟨x.val.1, x.property.1⟩).val, (E.t i.2 j.2 ⟨x.val.2, x.property.2⟩).val) :=
+          (rfl)
 
 /-- Two points in product pieces are identified precisely when their two coordinates are
 identified by the original gluing data. -/
@@ -97,10 +99,10 @@ theorem prod_rel_iff (i j : D.J × E.J) (x : D.U i.1 × E.U i.2)
   -- For prod, their underlying maps therefore reduce coordinatewise.
   constructor
   · rintro ⟨z, hz, ht⟩
-    exact ⟨⟨⟨z.1.1, z.2.1⟩, congrArg Prod.fst hz, congrArg Prod.fst ht⟩,
-      ⟨⟨z.1.2, z.2.2⟩, congrArg Prod.snd hz, congrArg Prod.snd ht⟩⟩
+    exact ⟨⟨⟨z.val.1, z.property.1⟩, congrArg Prod.fst hz, congrArg Prod.fst ht⟩,
+      ⟨⟨z.val.2, z.property.2⟩, congrArg Prod.snd hz, congrArg Prod.snd ht⟩⟩
   · rintro ⟨⟨z, hz, ht⟩, ⟨w, hw, hu⟩⟩
-    exact ⟨⟨(z.1, w.1), z.2, w.2⟩, Prod.ext hz hw, Prod.ext ht hu⟩
+    exact ⟨⟨(z.val, w.val), z.property, w.property⟩, Prod.ext hz hw, Prod.ext ht hu⟩
 
 private def prodPieceMap (i : D.J × E.J) :
     (TopCat.GlueData.mk' (D.prod E)).U i ⟶
@@ -118,8 +120,8 @@ private theorem prodPieceMap_condition (i j : D.J × E.J) :
   -- mk' uses subtype inclusions for f and the supplied componentwise map for t;
   -- prodPieceMap then reduces each coordinate to the original gluing condition.
   ext x
-  · exact ((TopCat.GlueData.mk' D).glue_condition_apply i.1 j.1 ⟨x.1.1, x.2.1⟩).symm
-  · exact ((TopCat.GlueData.mk' E).glue_condition_apply i.2 j.2 ⟨x.1.2, x.2.2⟩).symm
+  · exact ((TopCat.GlueData.mk' D).glue_condition_apply i.1 j.1 ⟨x.val.1, x.property.1⟩).symm
+  · exact ((TopCat.GlueData.mk' E).glue_condition_apply i.2 j.2 ⟨x.val.2, x.property.2⟩).symm
 
 /-- The canonical continuous map from the glued product data to the product of the glued
 spaces. It sends each point of a product piece to the pair of its canonical images. -/

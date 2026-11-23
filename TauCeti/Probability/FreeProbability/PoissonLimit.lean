@@ -65,30 +65,30 @@ theorem tendsto_natCast_mul_sum_mu_mul_prod {α : Type*} [LinearOrder α] {m : �
     {κ : ℕ → 𝕜} (hm : ∀ k, k ≠ 0 → Tendsto (fun N : ℕ => (N : 𝕜) * m N k) atTop (𝓝 (κ k)))
     {B : Finset α} (hB : B.Nonempty) :
     Tendsto (fun N : ℕ => (N : 𝕜) *
-        ∑ σ : NoncrossingPartition B, mu 𝕜 σ ⊤ * ∏ D ∈ σ.1.parts, m N #D) atTop (𝓝 (κ #B)) := by
+        ∑ σ : NoncrossingPartition B, mu 𝕜 σ ⊤ * ∏ D ∈ σ.val.parts, m N #D) atTop (𝓝 (κ #B)) := by
   have hD (σ : NoncrossingPartition B) :
-      Tendsto (fun N : ℕ => ∏ D ∈ σ.1.parts, (N : 𝕜) * m N #D) atTop
-        (𝓝 (∏ D ∈ σ.1.parts, κ #D)) :=
-    tendsto_finsetProd _ fun D hD => hm _ (σ.1.nonempty_of_mem_parts hD).card_pos.ne'
+      Tendsto (fun N : ℕ => ∏ D ∈ σ.val.parts, (N : 𝕜) * m N #D) atTop
+        (𝓝 (∏ D ∈ σ.val.parts, κ #D)) :=
+    tendsto_finsetProd _ fun D hD => hm _ (σ.val.nonempty_of_mem_parts hD).card_pos.ne'
   -- Each term tends to `κ #B` for `σ = 1̂` and to `0` otherwise.
   have hσ (σ : NoncrossingPartition B) :
-      Tendsto (fun N : ℕ => (N : 𝕜) * (mu 𝕜 σ ⊤ * ∏ D ∈ σ.1.parts, m N #D)) atTop
+      Tendsto (fun N : ℕ => (N : 𝕜) * (mu 𝕜 σ ⊤ * ∏ D ∈ σ.val.parts, m N #D)) atTop
         (𝓝 (if σ = ⊤ then κ #B else 0)) := by
-    have hp : #σ.1.parts ≠ 0 := (σ.1.parts_nonempty (bot_eq_empty ▸ hB.ne_empty)).card_pos.ne'
-    have h1 := ((tendsto_inv_atTop_nhds_zero_nat (𝕜 := 𝕜)).pow (#σ.1.parts - 1)).mul (hD σ)
+    have hp : #σ.val.parts ≠ 0 := (σ.val.parts_nonempty (bot_eq_empty ▸ hB.ne_empty)).card_pos.ne'
+    have h1 := ((tendsto_inv_atTop_nhds_zero_nat (𝕜 := 𝕜)).pow (#σ.val.parts - 1)).mul (hD σ)
     refine Tendsto.congr' (f₁ := fun N : ℕ => mu 𝕜 σ ⊤ *
-        (((N : 𝕜)⁻¹ ^ (#σ.1.parts - 1)) * ∏ D ∈ σ.1.parts, (N : 𝕜) * m N #D)) ?_ ?_
+        (((N : 𝕜)⁻¹ ^ (#σ.val.parts - 1)) * ∏ D ∈ σ.val.parts, (N : 𝕜) * m N #D)) ?_ ?_
     · filter_upwards [eventually_ne_atTop 0] with N hN
       have hN' : (N : 𝕜) ≠ 0 := Nat.cast_ne_zero.2 hN
-      have hinv : (N : 𝕜)⁻¹ ^ (#σ.1.parts - 1) * (N : 𝕜) ^ (#σ.1.parts - 1) = 1 := by
+      have hinv : (N : 𝕜)⁻¹ ^ (#σ.val.parts - 1) * (N : 𝕜) ^ (#σ.val.parts - 1) = 1 := by
         rw [← mul_pow, inv_mul_cancel₀ hN', one_pow]
       rw [prod_mul_distrib, prod_const, ← pow_sub_one_mul hp]
-      linear_combination (mu 𝕜 σ ⊤ * N * ∏ D ∈ σ.1.parts, m N #D) * hinv
+      linear_combination (mu 𝕜 σ ⊤ * N * ∏ D ∈ σ.val.parts, m N #D) * hinv
     split_ifs with htop
     · subst htop
       simpa [Finpartition.parts_top hB.ne_empty] using h1
     · -- A partition other than `1̂` has at least two parts.
-      have hp2 : #σ.1.parts - 1 ≠ 0 := Nat.sub_ne_zero_of_lt (lt_of_le_of_ne
+      have hp2 : #σ.val.parts - 1 ≠ 0 := Nat.sub_ne_zero_of_lt (lt_of_le_of_ne
         (Nat.pos_of_ne_zero hp) fun h1 => htop (Subtype.ext
           ((Finpartition.card_parts_eq_one_iff (bot_eq_empty ▸ hB.ne_empty)).1 h1.symm)))
       simpa [zero_pow hp2] using h1.const_mul (mu 𝕜 σ ⊤)
@@ -109,17 +109,17 @@ theorem tendsto_apply_sum_pow_of_tendsto_natCast_mul
     {m : ℕ → ℕ → 𝕜} (hb : ∀ N j k, k ≠ 0 → φ N (b N j ^ k) = m N k) {κ : ℕ → 𝕜}
     (hm : ∀ k, k ≠ 0 → Tendsto (fun N : ℕ => (N : 𝕜) * m N k) atTop (𝓝 (κ k))) (n : ℕ) :
     Tendsto (fun N => φ N ((∑ j, b N j) ^ n)) atTop
-      (𝓝 (∑ π : NoncrossingPartition (univ : Finset (Fin n)), ∏ B ∈ π.1.parts, κ #B)) := by
+      (𝓝 (∑ π : NoncrossingPartition (univ : Finset (Fin n)), ∏ B ∈ π.val.parts, κ #B)) := by
   -- The free cumulants of the row sum are `N` times the common free cumulants of the summands,
   -- which are given by Möbius inversion of their moments.
   refine (tendsto_finsetSum _ fun π _ => tendsto_finsetProd _ fun B hB =>
-    tendsto_natCast_mul_sum_mu_mul_prod hm (π.1.nonempty_of_mem_parts hB)).congr fun N => ?_
+    tendsto_natCast_mul_sum_mu_mul_prod hm (π.val.nonempty_of_mem_parts hB)).congr fun N => ?_
   have hκ (j : Fin N) (B : Finset (Fin n)) : freeCumulant (φ N) (fun _ => b N j) B =
-      ∑ σ : NoncrossingPartition B, mu 𝕜 σ ⊤ * ∏ D ∈ σ.1.parts, m N #D := by
+      ∑ σ : NoncrossingPartition B, mu 𝕜 σ ⊤ * ∏ D ∈ σ.val.parts, m N #D := by
     refine (freeCumulant_eq_sum_mu_mul_partitionMoment _ _ B).trans (sum_congr rfl fun σ _ => ?_)
     rw [partitionMoment_const]
     exact congrArg _ (prod_congr rfl fun D hD =>
-      hb N j _ (σ.1.nonempty_of_mem_parts hD).card_pos.ne')
+      hb N j _ (σ.val.nonempty_of_mem_parts hD).card_pos.ne')
   rw [(h N).apply_sum_pow_eq_sum_prod_sum_freeCumulant (hφ N)]
   simp_rw [hκ, sum_const, card_univ, Fintype.card_fin, nsmul_eq_mul]
 
@@ -133,7 +133,7 @@ theorem tendsto_apply_sum_pow_of_apply_pow_eq_div_mul_pow
     (h : ∀ N, IsFreelyIndependentElements (φ N) (b N)) (hφ : ∀ N, φ N 1 = 1) {r c : 𝕜}
     (hb : ∀ N j k, k ≠ 0 → φ N (b N j ^ k) = r / N * c ^ k) (n : ℕ) :
     Tendsto (fun N => φ N ((∑ j, b N j) ^ n)) atTop
-      (𝓝 (c ^ n * ∑ π : NoncrossingPartition (univ : Finset (Fin n)), r ^ #π.1.parts)) := by
+      (𝓝 (c ^ n * ∑ π : NoncrossingPartition (univ : Finset (Fin n)), r ^ #π.val.parts)) := by
   have hm (k : ℕ) (_ : k ≠ 0) :
       Tendsto (fun N : ℕ => (N : 𝕜) * (r / N * c ^ k)) atTop (𝓝 (r * c ^ k)) := by
     refine tendsto_const_nhds.congr' ?_
