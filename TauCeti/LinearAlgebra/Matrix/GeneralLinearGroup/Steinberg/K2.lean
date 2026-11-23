@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Exact.Basic
+public import TauCeti.Algebra.Exact.Basic
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Steinberg.Centrality
 
 /-!
@@ -85,7 +85,7 @@ end
 `St(R) →* GL_∞(R)` equals the image of `(toStableGL R).ker.subtype : K₂(R) →* St(R)`. -/
 theorem mulExact_subtype_toStableGL :
     Function.MulExact (SteinbergGroup.toStableGL R).ker.subtype (SteinbergGroup.toStableGL R) :=
-  MonoidHom.mulExact_iff.2 (Subgroup.range_subtype _).symm
+  MonoidHom.mulExact_ker_subtype _
 
 variable {R} {S T : Type*} [Ring S] [Ring T]
 
