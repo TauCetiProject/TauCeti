@@ -146,7 +146,6 @@ theorem blockSumGL_injective :
   · simpa using congr($h (Fin.natAdd m i) (Fin.natAdd m j))
 
 /-- The block sum `g ⊞ 1` is the stabilization `g ↦ g ⊕ 1` of `g`. -/
-@[simp]
 theorem blockSumGL_one_right (g : GL (Fin m) A) :
     blockSumGL A (g, (1 : GL (Fin n) A)) = stabilizeGL A (Nat.le_add_right m n) g :=
   (stabilizeGL_eq_reindexGL_fromBlocksGL m n g).symm
@@ -222,7 +221,6 @@ theorem permutationGL_mul_blockSumGL_mul_inv (u : GL (Fin m) A × GL (Fin n) A) 
 
 /-- The block sum `1 ⊞ h` is the stabilization `h ↦ h ⊕ 1` of `h` with its two blocks
 swapped, along `finAddFlip : Fin (n + m) ≃ Fin (m + n)`. -/
-@[simp]
 theorem blockSumGL_one_left (h : GL (Fin n) A) :
     blockSumGL A ((1 : GL (Fin m) A), h) =
       finAddFlip.reindexGL A (stabilizeGL A (Nat.le_add_right n m) h) := by
