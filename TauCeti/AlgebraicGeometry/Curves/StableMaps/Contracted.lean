@@ -202,9 +202,11 @@ theorem isContractedComponent_const_iff [Subsingleton S] (P : PointedPrestableFa
     (σ : S ⟶ V) (hσ : σ ≫ q = 𝟙 S) {E : Set P.total} :
     (const P σ hσ).IsContractedComponent E ↔ E ∈ irreducibleComponents P.total := by
   refine and_iff_left_of_imp fun _ ↦ ?_
-  rintro _ ⟨a, -, rfl⟩ _ ⟨b, -, rfl⟩
-  simp only [const_map]
-  exact congr(σ $(Subsingleton.elim _ _))
+  -- The map of `const P σ hσ` is `P.toBase ≫ σ`; its image factors through the one-point base.
+  have : ((P.toBase ≫ σ) '' E).Subsingleton := by
+    rw [Scheme.Hom.comp_base, TopCat.coe_comp, Set.image_comp]
+    exact Set.subsingleton_of_subsingleton.image _
+  exact this
 
 section FieldExtension
 

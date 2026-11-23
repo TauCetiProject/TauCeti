@@ -5,9 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.AlgebraicGeometry.Morphisms.UniversallyInjective
-public import TauCeti.AlgebraicGeometry.Curves.PointedPrestable.DualGraph
-public import TauCeti.AlgebraicGeometry.Curves.StableMaps.Basic
+public import TauCeti.AlgebraicGeometry.Curves.StableMaps.ContractedVertex
 
 /-!
 # Stable maps
@@ -28,8 +26,9 @@ genus of a vertex is the genus of its component, the valence counts the points o
 over nodes, and the markings sit on the components carrying the points over them. Its
 log-canonical degree `TauCeti.DualGraph.logCanonicalDegree` is the degree above. A vertex `v` is
 **contracted** by `F` when `ν ≫ F` is constant on `v`, that is, when `F` is constant on the
-component `ν(v)` of `C`. The map is a **stable fibre** when every contracted vertex has positive
-log-canonical degree (`TauCeti.AlgebraicGeometry.PrestableMap.IsStableFiber`).
+component `ν(v)` of `C` (`TauCeti.AlgebraicGeometry.PrestableMap.IsContractedVertex`). The map
+is a **stable fibre** when every contracted vertex has positive log-canonical degree
+(`TauCeti.AlgebraicGeometry.PrestableMap.IsStableFiber`).
 
 Over an arbitrary base, `F` is **stable** (`TauCeti.AlgebraicGeometry.PrestableMap.IsStableMap`)
 when its base change `F.pullback x` to every geometric point `x : Spec Ω ⟶ S`, with `Ω`
@@ -38,13 +37,12 @@ algebraically closed, is a stable fibre.
 A constant map contracts every component of a curve over a field, so it is stable exactly when
 the dual graphs of the geometric fibres of its pointed source are stable. Postcomposition with a
 morphism of targets can only contract more components, so it can only make stability harder, and
-it does not change stability when the morphism of targets is universally injective, for
-instance an immersion.
+it does not change stability when the morphism of targets has discrete fibres after every base
+change, for instance when it is locally quasi-finite (finite morphisms, immersions) or
+universally injective.
 
 ## Main definitions
 
-* `TauCeti.AlgebraicGeometry.PrestableMap.IsContractedVertex`: a vertex of the dual graph of the
-  source curve whose component is contracted by the map.
 * `TauCeti.AlgebraicGeometry.PrestableMap.IsStableFiber`: over a separably closed field, every
   contracted vertex has positive log-canonical degree.
 * `TauCeti.AlgebraicGeometry.PrestableMap.IsStableMap`: every geometric fibre is stable.
@@ -57,9 +55,14 @@ In the namespace `TauCeti.AlgebraicGeometry.PrestableMap`:
   dual graphs of the geometric fibres of its pointed source are stable.
 * `IsStableFiber.of_postcomp` and `IsStableMap.of_postcomp`: if the postcomposition of a map with
   a morphism of targets is stable, so is the map.
-* `isStableFiber_postcomp_iff_of_injective`, `isStableFiber_postcomp_iff` and
-  `isStableMap_postcomp_iff`: postcomposition with a morphism of targets that is injective on
-  points, respectively universally injective, does not change stability.
+* `isStableFiber_postcomp_iff_of_isDiscrete`: over a separably closed field, postcomposition with
+  a morphism of targets with discrete fibres does not change being a stable fibre;
+  `isStableFiber_postcomp_iff_of_injective`, `isStableFiber_postcomp_iff_of_locallyQuasiFinite`
+  and `isStableFiber_postcomp_iff` are the injective, locally quasi-finite and universally
+  injective cases.
+* `isStableMap_postcomp_iff_of_locallyQuasiFinite` and `isStableMap_postcomp_iff`:
+  postcomposition with a locally quasi-finite, respectively universally injective, morphism of
+  targets does not change stability.
 
 ## References
 
@@ -89,21 +92,6 @@ section Fiber
 
 variable {K : Type u} [Field K] [IsSepClosed K] {q : V ⟶ Spec (.of K)} (F : PrestableMap q n)
 
-/-- A vertex `v` of the dual graph of the source curve of a prestable map over a separably closed
-field is **contracted** by the map when the composite of the blowup `ν` of the curve along its
-singular subscheme with the map is constant on the component `v` of the blowup, that is, when the
-map is constant on the image `ν(v)` of `v`, an irreducible component of the curve. -/
-def IsContractedVertex (v : F.curve.dualGraph.Vertex) : Prop :=
-  (((F.curve.total.singularLocus K).blowupToBase ≫ F.map) ''
-    (F.curve.total.dualGraphVertexEquiv F.curve.markingPoint v : Set _)).Subsingleton
-
-/-- Restatement of the definition of a contracted vertex. -/
-theorem isContractedVertex_iff (v : F.curve.dualGraph.Vertex) :
-    F.IsContractedVertex v ↔
-      (((F.curve.total.singularLocus K).blowupToBase ≫ F.map) ''
-        (F.curve.total.dualGraphVertexEquiv F.curve.markingPoint v : Set _)).Subsingleton :=
-  Iff.rfl
-
 /-- A prestable map over a separably closed field is a **stable fibre** when every vertex of the
 dual graph of its source curve that it contracts has positive log-canonical degree. -/
 def IsStableFiber : Prop :=
@@ -114,53 +102,14 @@ theorem isStableFiber_iff :
     F.IsStableFiber ↔ ∀ v, F.IsContractedVertex v → 0 < F.curve.dualGraph.logCanonicalDegree v :=
   Iff.rfl
 
-/-- Over a separably closed field, a constant map contracts every vertex of the dual graph of its
-source curve. -/
-@[simp]
-theorem isContractedVertex_const (P : PointedPrestableFamily (Spec (.of K)) n)
-    (σ : Spec (.of K) ⟶ V) (hσ : σ ≫ q = 𝟙 _) (v : P.dualGraph.Vertex) :
-    (const P σ hσ).IsContractedVertex v := by
-  rintro _ ⟨a, -, rfl⟩ _ ⟨b, -, rfl⟩
-  simp only [const_map]
-  exact congr(σ $(Subsingleton.elim _ _))
-
 /-- Over a separably closed field, a constant map is a stable fibre exactly when the dual graph of
 its pointed source curve is stable. -/
+@[simp]
 theorem isStableFiber_const_iff (P : PointedPrestableFamily (Spec (.of K)) n)
     (σ : Spec (.of K) ⟶ V) (hσ : σ ≫ q = 𝟙 _) :
     (const P σ hσ).IsStableFiber ↔ P.dualGraph.IsStable := by
   rw [DualGraph.isStable_iff]
   exact forall_congr' fun v ↦ imp_iff_right (isContractedVertex_const P σ hσ v)
-
-variable {F} in
-/-- Postcomposition with a morphism of targets contracts every vertex the map contracts. -/
-theorem IsContractedVertex.postcomp {r : W ⟶ Spec (.of K)} (h : V ⟶ W) (hh : h ≫ r = q)
-    {v : F.curve.dualGraph.Vertex} (hv : F.IsContractedVertex v) :
-    (F.postcomp h hh).IsContractedVertex v := by
-  -- The map of `F.postcomp h hh` is `F.map ≫ h`, on the same source curve.
-  change (((F.curve.total.singularLocus K).blowupToBase ≫ F.map ≫ h) ''
-    (F.curve.total.dualGraphVertexEquiv F.curve.markingPoint v : Set _)).Subsingleton
-  rw [← Category.assoc, Scheme.Hom.comp_base, TopCat.coe_comp, Set.image_comp]
-  exact hv.image h
-
-/-- Postcomposition with a morphism of targets that is injective on points contracts the same
-vertices. -/
-theorem isContractedVertex_postcomp_iff_of_injective {r : W ⟶ Spec (.of K)} (h : V ⟶ W)
-    (hinj : Function.Injective h) (hh : h ≫ r = q) {v : F.curve.dualGraph.Vertex} :
-    (F.postcomp h hh).IsContractedVertex v ↔ F.IsContractedVertex v := by
-  -- The map of `F.postcomp h hh` is `F.map ≫ h`, on the same source curve.
-  change (((F.curve.total.singularLocus K).blowupToBase ≫ F.map ≫ h) ''
-    (F.curve.total.dualGraphVertexEquiv F.curve.markingPoint v : Set _)).Subsingleton ↔ _
-  rw [← Category.assoc, Scheme.Hom.comp_base, TopCat.coe_comp, Set.image_comp]
-  exact hinj.subsingleton_image_iff
-
-/-- Postcomposition with a universally injective morphism of targets, for instance an immersion,
-contracts the same vertices. -/
-@[simp]
-theorem isContractedVertex_postcomp_iff {r : W ⟶ Spec (.of K)} (h : V ⟶ W)
-    [UniversallyInjective h] (hh : h ≫ r = q) {v : F.curve.dualGraph.Vertex} :
-    (F.postcomp h hh).IsContractedVertex v ↔ F.IsContractedVertex v :=
-  F.isContractedVertex_postcomp_iff_of_injective h h.injective hh
 
 variable {F} in
 /-- If the postcomposition of a map over a separably closed field with a morphism of targets is
@@ -169,6 +118,13 @@ theorem IsStableFiber.of_postcomp {r : W ⟶ Spec (.of K)} (h : V ⟶ W) (hh : h
     (hF : (F.postcomp h hh).IsStableFiber) : F.IsStableFiber :=
   fun v hv ↦ hF v (hv.postcomp h hh)
 
+/-- Postcomposition with a morphism of targets whose fibres are discrete does not change being a
+stable fibre. -/
+theorem isStableFiber_postcomp_iff_of_isDiscrete {r : W ⟶ Spec (.of K)} (h : V ⟶ W)
+    (hdisc : ∀ w : W, _root_.IsDiscrete (h ⁻¹' {w})) (hh : h ≫ r = q) :
+    (F.postcomp h hh).IsStableFiber ↔ F.IsStableFiber :=
+  forall_congr' fun _ ↦ imp_congr_left (F.isContractedVertex_postcomp_iff_of_isDiscrete h hdisc hh)
+
 /-- Postcomposition with a morphism of targets that is injective on points does not change being
 a stable fibre. -/
 theorem isStableFiber_postcomp_iff_of_injective {r : W ⟶ Spec (.of K)} (h : V ⟶ W)
@@ -176,8 +132,16 @@ theorem isStableFiber_postcomp_iff_of_injective {r : W ⟶ Spec (.of K)} (h : V 
     (F.postcomp h hh).IsStableFiber ↔ F.IsStableFiber :=
   forall_congr' fun _ ↦ imp_congr_left (F.isContractedVertex_postcomp_iff_of_injective h hinj hh)
 
-/-- Postcomposition with a universally injective morphism of targets, for instance an immersion,
-does not change being a stable fibre. -/
+/-- Postcomposition with a locally quasi-finite morphism of targets, for instance a finite
+morphism or an immersion, does not change being a stable fibre. -/
+@[simp]
+theorem isStableFiber_postcomp_iff_of_locallyQuasiFinite {r : W ⟶ Spec (.of K)} (h : V ⟶ W)
+    [LocallyQuasiFinite h] (hh : h ≫ r = q) :
+    (F.postcomp h hh).IsStableFiber ↔ F.IsStableFiber :=
+  F.isStableFiber_postcomp_iff_of_isDiscrete h h.isDiscrete_preimage_singleton hh
+
+/-- Postcomposition with a universally injective morphism of targets does not change being a
+stable fibre. -/
 @[simp]
 theorem isStableFiber_postcomp_iff {r : W ⟶ Spec (.of K)} (h : V ⟶ W) [UniversallyInjective h]
     (hh : h ≫ r = q) : (F.postcomp h hh).IsStableFiber ↔ F.IsStableFiber :=
@@ -203,6 +167,7 @@ theorem isStableMap_iff (F : PrestableMap q n) :
 
 /-- A constant map is stable exactly when the dual graphs of the geometric fibres of its pointed
 source curve are stable. -/
+@[simp]
 theorem isStableMap_const_iff (P : PointedPrestableFamily S n) (σ : S ⟶ V) (hσ : σ ≫ q = 𝟙 S) :
     (const P σ hσ).IsStableMap ↔
       ∀ (Ω : Type u) [Field Ω] [IsAlgClosed Ω] (x : Spec (.of Ω) ⟶ S),
@@ -217,8 +182,22 @@ theorem IsStableMap.of_postcomp {F : PrestableMap q n} {r : W ⟶ S} (h : V ⟶ 
   rw [pullback_postcomp] at this
   exact this.of_postcomp _ _
 
-/-- Postcomposition with a universally injective morphism of targets, for instance an immersion,
-does not change stability. -/
+/-- Postcomposition with a locally quasi-finite morphism of targets, for instance a finite
+morphism or an immersion, does not change stability. -/
+@[simp]
+theorem isStableMap_postcomp_iff_of_locallyQuasiFinite (F : PrestableMap q n) {r : W ⟶ S}
+    (h : V ⟶ W) [LocallyQuasiFinite h] (hh : h ≫ r = q) :
+    (F.postcomp h hh).IsStableMap ↔ F.IsStableMap := by
+  refine ⟨IsStableMap.of_postcomp h hh, fun hF Ω _ _ x ↦ ?_⟩
+  have : LocallyQuasiFinite
+      (Limits.pullback.map q x r x h (𝟙 _) (𝟙 S) (by simp [hh]) (by simp)) :=
+    MorphismProperty.pullbackMap (P := @LocallyQuasiFinite) ‹_› inferInstance hh.symm
+      (Category.id_comp x).symm
+  rw [pullback_postcomp, isStableFiber_postcomp_iff_of_locallyQuasiFinite]
+  exact hF Ω x
+
+/-- Postcomposition with a universally injective morphism of targets does not change
+stability. -/
 @[simp]
 theorem isStableMap_postcomp_iff (F : PrestableMap q n) {r : W ⟶ S} (h : V ⟶ W)
     [UniversallyInjective h] (hh : h ≫ r = q) :

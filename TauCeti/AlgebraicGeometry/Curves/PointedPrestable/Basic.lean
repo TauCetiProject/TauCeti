@@ -37,6 +37,8 @@ prestable family.
 * `TauCeti.AlgebraicGeometry.PointedPrestableFamily.reindex`: reindexing the markings.
 * `TauCeti.AlgebraicGeometry.PointedPrestableFamily.ofSmooth`: a smooth proper relative curve with
   geometrically connected fibres and pairwise disjoint sections.
+* `TauCeti.AlgebraicGeometry.PointedPrestableFamily.markingPoint`: the point of a pointed
+  prestable curve over a field at a marking, as a point of the smooth locus.
 
 ## Main results
 
@@ -216,6 +218,18 @@ def ofSmooth {X : Scheme.{u}} (f : X ⟶ S) [IsProper f] [SmoothOfRelativeDimens
   range_marking_subset_smoothLocus _ := by
     have := SmoothOfRelativeDimension.smooth 1 f
     simp [Scheme.Hom.smoothLocus_eq_top]
+
+/-- The point of a pointed prestable curve over a field at its `i`th marking, as a point of the
+smooth locus. -/
+def markingPoint {K : Type u} [Field K] (P : PointedPrestableFamily (Spec (.of K)) n) (i : Fin n) :
+    (P.total ↘ Spec (.of K)).smoothLocus :=
+  ⟨P.marking i default, P.range_marking_subset_smoothLocus i ⟨default, rfl⟩⟩
+
+/-- The point at the `i`th marking is the value of the `i`th section at the point of `Spec K`. -/
+@[simp]
+theorem coe_markingPoint {K : Type u} [Field K] (P : PointedPrestableFamily (Spec (.of K)) n)
+    (i : Fin n) : (P.markingPoint i : P.total) = P.marking i default :=
+  (rfl)
 
 end PointedPrestableFamily
 

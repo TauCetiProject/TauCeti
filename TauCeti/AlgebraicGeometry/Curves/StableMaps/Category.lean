@@ -496,25 +496,21 @@ def pullbackPostcompIso (F : PrestableMap q n) {r : W ⟶ S} (h : V ⟶ W) (hh :
     (F.postcomp h hh).pullback x ≅
       (F.pullback x).postcomp
         (Limits.pullback.map q x r x h (𝟙 T) (𝟙 S) (by simp [hh]) (by simp)) (by simp) :=
-  isoMk (Iso.refl _) (by
-    dsimp only [postcomp, pullback, PointedPrestableFamily.pullback]
-    apply Limits.pullback.hom_ext <;> simp)
+  eqToIso (F.pullback_postcomp h hh x)
 
 /-- `pullbackPostcompIso` is the identity on source curves. -/
 @[simp]
 theorem pullbackPostcompIso_hom_curve (F : PrestableMap q n) {r : W ⟶ S} (h : V ⟶ W)
     (hh : h ≫ r = q) (x : T ⟶ S) :
-    (F.pullbackPostcompIso h hh x).hom.curve = 𝟙 _ := by
-  rw [pullbackPostcompIso]
-  exact isoMk_hom_curve _ _
+    (F.pullbackPostcompIso h hh x).hom.curve = 𝟙 _ :=
+  (eqToHom_map toCurve _).trans (eqToHom_refl _ _)
 
 /-- `pullbackPostcompIso` is the identity on source curves. -/
 @[simp]
 theorem pullbackPostcompIso_inv_curve (F : PrestableMap q n) {r : W ⟶ S} (h : V ⟶ W)
     (hh : h ≫ r = q) (x : T ⟶ S) :
-    (F.pullbackPostcompIso h hh x).inv.curve = 𝟙 _ := by
-  rw [pullbackPostcompIso]
-  exact isoMk_inv_curve _ _
+    (F.pullbackPostcompIso h hh x).inv.curve = 𝟙 _ :=
+  (eqToHom_map toCurve _).trans (eqToHom_refl _ _)
 
 end PrestableMap
 
