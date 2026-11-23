@@ -15,7 +15,7 @@ import TauCeti.LinearAlgebra.Trace.Basic
 # Symmetries of the projection-form Grassmannian
 
 This file collects symmetry, continuity and coordinate statements about the Grassmannian
-`G(E, k) = Euclidean.grassmannian E k` of a real inner product space, in its projection form.
+`G(E, k) = Euclidean.grassmannian ℝ E k` of a real inner product space, in its projection form.
 They are what a theory of varifolds, measures on `E × G(E, k)`, needs from `G(E, k)`: the
 orthogonal group moves varifolds by acting on both factors, the tangential trace `tr (P ∘ A)` is
 the integrand of the first variation, so its continuity makes the first variation a continuous
@@ -60,35 +60,34 @@ section Unitary
 variable [CompleteSpace E]
 
 /-- Conjugating a point `P` of `G(E, k)` by a unitary `u` gives the point `u P u*` of `G(E, k)`. -/
-theorem mul_mul_star_mem {P : E →L[ℝ] E} (hP : P ∈ grassmannian E k)
-    (u : unitary (E →L[ℝ] E)) : (u : E →L[ℝ] E) * P * star (u : E →L[ℝ] E) ∈ grassmannian E k := by
+theorem mul_mul_star_mem {P : E →L[ℝ] E} (hP : P ∈ grassmannian ℝ E k)
+    (u : unitary (E →L[ℝ] E)) :
+    (u : E →L[ℝ] E) * P * star (u : E →L[ℝ] E) ∈ grassmannian ℝ E k := by
   rw [← Unitary.conjStarAlgAut_apply (S := ℝ),
     ← Unitary.conjStarAlgEquiv_unitaryLinearIsometryEquiv]
-  refine mem_grassmannian.2 ⟨(isStarProjection hP).map _, ?_⟩
-  rw [LinearIsometryEquiv.range_conjStarAlgEquiv,
-    rank_map_eq (LinearEquiv.injective _), (mem_grassmannian.1 hP).2]
+  exact LinearIsometryEquiv.conjStarAlgEquiv_mem_grassmannian _ hP
 
 /-- A unitary `u` of `E →L[ℝ] E` moves a point `P` of `G(E, k)` to its conjugate `u P u*`. -/
-noncomputable instance instSMulUnitary : SMul (unitary (E →L[ℝ] E)) (grassmannian E k) where
+noncomputable instance instSMulUnitary : SMul (unitary (E →L[ℝ] E)) (grassmannian ℝ E k) where
   smul u P := ⟨(u : E →L[ℝ] E) * P * star (u : E →L[ℝ] E), mul_mul_star_mem P.property u⟩
 
 /-- The action of a unitary `u` on `G(E, k)` is conjugation, `u • P = u P u*`. -/
 @[simp]
-theorem coe_smul (u : unitary (E →L[ℝ] E)) (P : grassmannian E k) :
-    ((u • P : grassmannian E k) : E →L[ℝ] E) =
+theorem coe_smul (u : unitary (E →L[ℝ] E)) (P : grassmannian ℝ E k) :
+    ((u • P : grassmannian ℝ E k) : E →L[ℝ] E) =
       (u : E →L[ℝ] E) * P * star (u : E →L[ℝ] E) :=
   (rfl)
 
 /-- The orthogonal group of `E`, as the unitary group of `E →L[ℝ] E`, acts on `G(E, k)` by
 conjugation, `u • P = u P u*`. -/
 noncomputable instance instMulActionUnitary :
-    MulAction (unitary (E →L[ℝ] E)) (grassmannian E k) where
+    MulAction (unitary (E →L[ℝ] E)) (grassmannian ℝ E k) where
   one_smul P := Subtype.ext <| by simp
   mul_smul u v P := Subtype.ext <| by simp [star_mul, mul_assoc]
 
 /-- The plane of `u • P` is the image of the plane of `P` under `u`. -/
-theorem range_coe_smul (u : unitary (E →L[ℝ] E)) (P : grassmannian E k) :
-    ((u • P : grassmannian E k) : E →L[ℝ] E).range =
+theorem range_coe_smul (u : unitary (E →L[ℝ] E)) (P : grassmannian ℝ E k) :
+    ((u • P : grassmannian ℝ E k) : E →L[ℝ] E).range =
       (P : E →L[ℝ] E).range.map (u : E →L[ℝ] E).toLinearMap := by
   rw [coe_smul, ← Unitary.conjStarAlgAut_apply (S := ℝ),
     ← Unitary.conjStarAlgEquiv_unitaryLinearIsometryEquiv,
@@ -99,7 +98,7 @@ theorem range_coe_smul (u : unitary (E →L[ℝ] E)) (P : grassmannian E k) :
 /-- The orthogonal group of `E` acts continuously on `G(E, k)`: the conjugation
 `(u, P) ↦ u P u*` is jointly continuous. -/
 instance instContinuousSMulUnitary :
-    ContinuousSMul (unitary (E →L[ℝ] E)) (grassmannian E k) where
+    ContinuousSMul (unitary (E →L[ℝ] E)) (grassmannian ℝ E k) where
   continuous_smul := by
     refine continuous_induced_rng.2 ?_
     simp only [Function.comp_def, coe_smul]
@@ -111,7 +110,7 @@ end Unitary
 `G(E, k)`; it is the restriction of a linear functional of `P`. When `E` is
 infinite-dimensional, `LinearMap.trace` is the zero map. -/
 theorem continuous_trace_comp [CompleteSpace E] (A : E →L[ℝ] E) :
-    Continuous fun P : grassmannian E k ↦
+    Continuous fun P : grassmannian ℝ E k ↦
       LinearMap.trace ℝ E ((P : E →L[ℝ] E) ∘L A : E →L[ℝ] E) := by
   by_cases hE : FiniteDimensional ℝ E
   · exact ((TauCeti.traceCLM ℝ E).continuous.comp
@@ -127,7 +126,7 @@ variable {F : Type*} [NormedAddCommGroup F] [InnerProductSpace ℝ F]
 only when `S` is all of `F`. The rank of `F` may be infinite. -/
 theorem forall_range_le_iff_eq_top [CompleteSpace F] {S : Submodule ℝ F} (hk : k ≠ 0)
     (hkF : (k : Cardinal) ≤ Module.rank ℝ F) :
-    (∀ Q : grassmannian F k, (Q : F →L[ℝ] F).range ≤ S) ↔ S = ⊤ := by
+    (∀ Q : grassmannian ℝ F k, (Q : F →L[ℝ] F).range ≤ S) ↔ S = ⊤ := by
   refine ⟨fun h ↦ ?_, fun h _ ↦ h ▸ le_top⟩
   by_contra hS
   obtain ⟨v, -, hvS⟩ := IsConcreteLE.exists_of_lt (lt_top_iff_ne_top.2 hS)
@@ -149,7 +148,7 @@ variable [CompleteSpace E] {N : ℕ}
 `S ↦ O(S)`, read in coordinates. -/
 theorem toEuclidean_finiteGrassmannianHomeomorph_trans_symm
     (e : E ≃ₗᵢ[ℝ] EuclideanSpace ℝ (Fin N))
-    (O : EuclideanSpace ℝ (Fin N) ≃ₗᵢ[ℝ] EuclideanSpace ℝ (Fin N)) (P : grassmannian E k) :
+    (O : EuclideanSpace ℝ (Fin N) ≃ₗᵢ[ℝ] EuclideanSpace ℝ (Fin N)) (P : grassmannian ℝ E k) :
     ((finiteGrassmannianHomeomorph k (e.trans O)).symm P).toEuclidean =
       ((finiteGrassmannianHomeomorph k e).symm P).toEuclidean.map
         (O.toLinearEquiv : EuclideanSpace ℝ (Fin N) →ₗ[ℝ] EuclideanSpace ℝ (Fin N)) := by
@@ -189,7 +188,7 @@ variable {E F : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
 `G(F, k)` lies in `range U` exactly when `U` is surjective. The rank of `F` may be infinite. -/
 theorem forall_range_le_range_iff_surjective (U : E →ₗᵢ[ℝ] F) (hk : k ≠ 0)
     (hkF : (k : Cardinal) ≤ Module.rank ℝ F) :
-    (∀ Q : grassmannian F k, (Q : F →L[ℝ] F).range ≤ LinearMap.range U.toLinearMap) ↔
+    (∀ Q : grassmannian ℝ F k, (Q : F →L[ℝ] F).range ≤ LinearMap.range U.toLinearMap) ↔
       Function.Surjective U := by
   rw [grassmannian.forall_range_le_iff_eq_top hk hkF, LinearMap.range_eq_top,
     LinearIsometry.coe_toLinearMap]
