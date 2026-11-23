@@ -9,6 +9,7 @@ public import Mathlib.Analysis.Normed.Module.Basic
 public import Mathlib.Analysis.Normed.Operator.Basic
 public import Mathlib.Topology.MetricSpace.ProperSpace
 public import Mathlib.Topology.Algebra.Module.FiniteDimension
+public import TauCeti.Analysis.Normed.Ring.Ultra
 
 /-!
 # Compactoid subsets of normed spaces
@@ -18,9 +19,11 @@ seminormed group with an action of a seminormed ring `K`, is *compactoid*
 (`TauCeti.IsCompactoidSet K S`) if for every `ε > 0` there are finitely many vectors
 `v₁, …, vₙ` such that every `x ∈ S` lies within `ε` of a combination `∑ aᵢ • vᵢ` with all
 `‖aᵢ‖ ≤ 1`. Equivalently, `S ⊆ U + {∑ aᵢ • vᵢ | ‖aᵢ‖ ≤ 1}` for every zero neighbourhood `U` and
-suitable finitely many `vᵢ` (`TauCeti.isCompactoidSet_iff_forall_mem_nhds`). For a seminormed
-space over a nonarchimedean field, these combinations are exactly the `K°`-submodule spanned by
-the `vᵢ`, so the condition reads `S ⊆ U + span_{K°} F` for some finite `F`.
+suitable finitely many `vᵢ` (`TauCeti.isCompactoidSet_iff_forall_mem_nhds`). For a module over an
+ultrametric seminormed ring with `‖1‖ = 1`, such as a seminormed space over a nonarchimedean
+field, these combinations are exactly the `K°`-submodule spanned by the `vᵢ`, so the condition
+reads `S ⊆ U + span_{K°} F` for some finite `F`
+(`TauCeti.isCompactoidSet_iff_forall_mem_nhds_subset_add_span`).
 
 Compactoid sets replace relatively compact sets in nonarchimedean functional analysis: over a
 field such as `ℂ_p`, which is not locally compact, a bounded subset of a line need not be totally
@@ -42,6 +45,9 @@ agree (`TauCeti.isCompactoidSet_iff_totallyBounded_of_forall`,
 ## Main results
 
 * `TauCeti.isCompactoidSet_iff_forall_mem_nhds`: the formulation through zero neighbourhoods.
+* `TauCeti.isCompactoidSet_iff_forall_mem_nhds_subset_add_span`: over an ultrametric scalar ring
+  with `‖1‖ = 1`, the formulation `S ⊆ U + span_{K°} F` through finite spans over the closed unit
+  ball `K°`.
 * `TauCeti.isCompactoidSet_of_forall_exists_finset`: approximation by finite subfamilies of a
   fixed family suffices.
 * `TauCeti.IsCompactoidSet.exists_seq_forall_exists_finset`: conversely, a compactoid set is
@@ -51,7 +57,8 @@ agree (`TauCeti.isCompactoidSet_iff_totallyBounded_of_forall`,
 * `TauCeti.IsCompactoidSet.mono`, `TauCeti.IsCompactoidSet.add`, `TauCeti.isCompactoidSet_sum`,
   `TauCeti.IsCompactoidSet.image`, `TauCeti.isCompactoidSet_closure_iff`: stability under subsets,
   finite sums, continuous linear images and closure.
-* `TauCeti.IsCompactoidSet.union`: stability under finite unions, when `0 • x = 0`.
+* `TauCeti.IsCompactoidSet.union`, `TauCeti.isCompactoidSet_union_iff`: stability under finite
+  unions, when `0 • x = 0`.
 * `TauCeti.IsCompactoidSet.image_of_forall_exists`: stability under continuous additive maps `u`
   that transport coefficients: for each `a` with `‖a‖ ≤ 1` and each `v`, `u (a • v) = b • u v`
   for some `b` with `‖b‖ ≤ 1`.
@@ -250,6 +257,15 @@ theorem IsCompactoidSet.union {S T : Set E} (hS : IsCompactoidSet K S) (hT : IsC
     refine ⟨Fin.append 0 b, fun i ↦ Fin.addCases (by simp) (by simpa using hb) i, ?_⟩
     simpa [Fin.sum_univ_add, h0] using hx
 
+/-- A union of two sets is compactoid if and only if both are, as soon as `0 • v = 0`. The law
+`0 • v = 0` is discharged by `simp` by default, for instance for a module; since it is explicit,
+apply the equivalence as `(isCompactoidSet_union_iff).1`. -/
+@[simp]
+theorem isCompactoidSet_union_iff {S T : Set E} (h0 : ∀ v : E, (0 : K) • v = 0 := by simp) :
+    IsCompactoidSet K (S ∪ T) ↔ IsCompactoidSet K S ∧ IsCompactoidSet K T :=
+  ⟨fun h ↦ ⟨h.mono Set.subset_union_left, h.mono Set.subset_union_right⟩,
+    fun h ↦ h.1.union h.2 h0⟩
+
 /-- **A compactoid set is bounded** as soon as, for every vector `v`, the multiples `a • v` with
 `‖a‖ ≤ 1` form a bounded set, for instance for a bounded scalar action
 (`TauCeti.IsCompactoidSet.isBounded`). -/
@@ -295,6 +311,29 @@ theorem IsCompactoidSet.image_of_forall_exists [SMul K F] {S : Set E} (hS : IsCo
     Finset.sum_congr rfl fun i _ ↦ hub (a i) (ha i) (v i)] at hx
 
 end SMul
+
+/-- **The span formulation**: over an ultrametric scalar ring with `‖1‖ = 1`, whose closed unit
+ball is the subring `K°` (`Subring.unitClosedBall K`), a set is compactoid if and only if for
+every neighbourhood `U` of zero there is a finite set `s` with `S ⊆ U + span_{K°} s`. -/
+theorem isCompactoidSet_iff_forall_mem_nhds_subset_add_span [IsUltrametricDist K] [NormOneClass K]
+    [Module K E] {S : Set E} :
+    IsCompactoidSet K S ↔ ∀ U ∈ 𝓝 (0 : E), ∃ s : Finset E,
+      S ⊆ U + (Submodule.span (Subring.unitClosedBall K) (s : Set E) : Set E) := by
+  classical
+  refine ⟨fun hS U hU ↦ ?_, fun h ↦ isCompactoidSet_of_forall_exists_finset id fun ε hε ↦ ?_⟩
+  · obtain ⟨n, v, hv⟩ := isCompactoidSet_iff_forall_mem_nhds.1 hS U hU
+    refine ⟨Finset.univ.image v, fun x hx ↦ ?_⟩
+    obtain ⟨a, ha, hx⟩ := hv x hx
+    refine ⟨_, hx, _, ?_, sub_add_cancel x _⟩
+    rw [Finset.coe_image, Finset.coe_univ, Set.image_univ]
+    exact Submodule.mem_span_range_iff_exists_fun _ |>.2
+      ⟨fun i ↦ ⟨a i, Subring.mem_unitClosedBall.2 (ha i)⟩, rfl⟩
+  · obtain ⟨s, hs⟩ := h _ (ball_mem_nhds 0 hε)
+    refine ⟨s, fun x hx ↦ ?_⟩
+    obtain ⟨u, hu, t, ht, rfl⟩ := hs hx
+    obtain ⟨c, -, rfl⟩ := Submodule.mem_span_finset.1 ht
+    exact ⟨fun v ↦ c v, fun v ↦ Subring.mem_unitClosedBall.1 (c v).property,
+      by simpa [Subring.smul_def] using hu⟩
 
 /-- The image of a compactoid set under a continuous linear map is compactoid. -/
 theorem IsCompactoidSet.image [Module K E] [Module K F] {S : Set E} (hS : IsCompactoidSet K S)
