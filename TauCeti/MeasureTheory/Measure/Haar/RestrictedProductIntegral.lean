@@ -399,6 +399,31 @@ variable {H : ι → Type*} [∀ i, Group (H i)] [∀ i, TopologicalSpace (H i)]
   [∀ i, IsTopologicalGroup (H i)] [∀ i, LocallyCompactSpace (H i)]
   [∀ i, SecondCountableTopology (H i)] [∀ i, MeasurableSpace (H i)] [∀ i, BorelSpace (H i)]
 
+omit [Countable ι] [∀ i, IsTopologicalGroup (G i)] [∀ i, LocallyCompactSpace (G i)]
+  [∀ i, SecondCountableTopology (G i)] [∀ i, IsTopologicalGroup (H i)]
+  [∀ i, LocallyCompactSpace (H i)] [∀ i, SecondCountableTopology (H i)] in
+/-- If the isomorphisms `φ i : G i ≃ₜ* H i` carry `U i` onto `U' i` for all but finitely many `i`
+and `μ i (U i) = 1` for all but finitely many `i`, then the pushforwards `(μ i).map (φ i)` give
+`U' i` measure one for all but finitely many `i`. -/
+@[to_additive eventually_map_addEquiv_apply_eq_one
+/-- If the isomorphisms `φ i : G i ≃ₜ+ H i` carry `U i` onto `U' i` for all but finitely many `i`
+and `μ i (U i) = 1` for all but finitely many `i`, then the pushforwards `(μ i).map (φ i)` give
+`U' i` measure one for all but finitely many `i`. -/]
+theorem eventually_map_mulEquiv_apply_eq_one
+    (U : ∀ i, Subgroup (G i)) (U' : ∀ i, Subgroup (H i))
+    [Fact (∀ i, IsOpen (U' i : Set (H i)))]
+    (φ : ∀ i, G i ≃ₜ* H i) (hφ : ∀ᶠ i in cofinite, Set.BijOn (φ i) (U i) (U' i))
+    (μ : ∀ i, Measure (G i)) (hμU : ∀ᶠ i in cofinite, μ i (U i) = 1) :
+    ∀ᶠ i in cofinite, (μ i).map (φ i) (U' i) = 1 := by
+  filter_upwards [hφ, hμU] with i hbij hi
+  rw [map_apply (show Measurable (φ i) from (φ i).continuous.measurable)
+    (Fact.out (p := ∀ i, IsOpen (U' i : Set (H i))) i).measurableSet]
+  convert hi using 2
+  ext x
+  refine ⟨fun hx ↦ ?_, fun hx ↦ hbij.mapsTo hx⟩
+  obtain ⟨y, hy, hyx⟩ := hbij.surjOn hx
+  exact (φ i).injective hyx ▸ hy
+
 /-- **Functoriality of `restrictedHaar`.** Let `φ i : G i ≃ₜ* H i` be isomorphisms of
 topological groups carrying `U i` onto `U' i` for all but finitely many `i`. The induced
 isomorphism `restrictedProductCongrRight` of restricted products pushes `restrictedHaar U μ` to the
@@ -413,11 +438,12 @@ theorem map_restrictedProductCongrRight_restrictedHaar
     [Fact (∀ i, IsOpen (U i : Set (G i)))] [Fact (∀ i, IsOpen (U' i : Set (H i)))]
     (φ : ∀ i, G i ≃ₜ* H i) (hφ : ∀ᶠ i in cofinite, Set.BijOn (φ i) (U i) (U' i))
     (μ : ∀ i, Measure (G i)) [∀ i, (μ i).IsHaarMeasure]
-    (hμU : ∀ᶠ i in cofinite, μ i (U i) = 1)
-    (hμU' : ∀ᶠ i in cofinite, (μ i).map (φ i) (U' i) = 1) :
+    (hμU : ∀ᶠ i in cofinite, μ i (U i) = 1) :
     (restrictedHaar U μ hμU).map
         (restrictedProductCongrRight U U' (fun i ↦ (φ i).toMulEquiv) hφ) =
-      restrictedHaar U' (fun i ↦ (μ i).map (φ i)) hμU' := by
+      restrictedHaar U' (fun i ↦ (μ i).map (φ i))
+        (eventually_map_mulEquiv_apply_eq_one U U' φ hφ μ hμU) := by
+  have hμU' := eventually_map_mulEquiv_apply_eq_one U U' φ hφ μ hμU
   have hΦ := (continuous_restrictedProductCongrRight U U' (fun i ↦ (φ i).toMulEquiv) hφ
     fun i ↦ (φ i).continuous).measurable
   refine eq_restrictedHaar_of_box U' _ hμU' fun C hC hCU' ↦ ?_
