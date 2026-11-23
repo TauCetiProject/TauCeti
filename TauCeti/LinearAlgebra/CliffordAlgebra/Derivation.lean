@@ -13,11 +13,11 @@ import TauCeti.LinearAlgebra.CliffordAlgebra.Basic
 # Derivations of a Clifford algebra and the equivariance of the quantization map
 
 Consider a derivation `D` of a Clifford algebra that maps the generators into the generators,
-`D (ι Q m) = ι Q (A m)` for an endomorphism `A` of `M`. When `2` is invertible, such an `A` is
-necessarily skew-adjoint for the polar form of `Q`. Conversely, for a nondegenerate quadratic
-form on a finite-dimensional vector space over a field in which `2` is invertible, every
-skew-adjoint endomorphism arises this way, as the commutator with its quadratic lift
-(`CliffordAlgebra.soEquivQuadratic_lie_ι`).
+`D (ι Q m) = ι Q (A m)` for an endomorphism `A` of `M`. When the scalars act faithfully on the
+Clifford algebra, for instance when `2` is invertible, such an `A` is necessarily skew-adjoint for
+the polar form of `Q`. Conversely, for a nondegenerate quadratic form on a finite-dimensional
+vector space over a field in which `2` is invertible, every skew-adjoint endomorphism arises this
+way, as the commutator with its quadratic lift (`CliffordAlgebra.soEquivQuadratic_lie_ι`).
 
 This file proves that Mathlib's change of form `CliffordAlgebra.changeForm` intertwines these
 derivations. If `Q' - Q` is the quadratic form of a bilinear form `B` for which `A` is
@@ -26,19 +26,19 @@ extending `A`, then `changeForm (D x) = D' (changeForm x)`. The key step is the 
 derivation with a contraction, `D (d ⌋ x) = d ⌋ D x - (d ∘ A) ⌋ x`.
 
 The case of interest is Chevalley's identification `CliffordAlgebra.equivExterior Q` of the
-Clifford algebra with the exterior algebra, whose inverse is the *quantization map*
-`⋀ M → CliffordAlgebra Q`. On the exterior side the derivation extending `A` is
-`ExteriorAlgebra.derivationOfEnd R M A`, and the quantization map intertwines it with every
-derivation of the Clifford algebra extending `A`, in particular with the commutator
-`⁅c, -⁆` by any element `c` with `⁅c, ι Q m⁆ = ι Q (A m)`. No nondegeneracy or finiteness is
-needed. For the adjoint representation of a Lie algebra `𝔤` with an invariant form, this is the
-`𝔤`-equivariance of the quantization map `⋀ 𝔤 → Cliff(𝔤)` used in Kostant's description of the
-Clifford algebra of `𝔤`.
+Clifford algebra with the exterior algebra, defined when `2` is invertible in `R`, whose inverse is
+the *quantization map* `⋀ M → CliffordAlgebra Q`. On the exterior side the derivation extending
+`A` is `ExteriorAlgebra.derivationOfEnd R M A`. When `2` is invertible, the quantization map
+intertwines it with every derivation of the Clifford algebra extending `A`, in particular with the
+commutator `⁅c, -⁆` by any element `c` with `⁅c, ι Q m⁆ = ι Q (A m)`. No nondegeneracy or
+finiteness is needed. For the adjoint representation of a Lie algebra `𝔤` with an invariant form,
+this is the `𝔤`-equivariance of the quantization map `⋀ 𝔤 → Cliff(𝔤)` used in Kostant's
+description of the Clifford algebra of `𝔤`.
 
 ## Main results
 
-* `CliffordAlgebra.isSkewAdjoint_polarBilin_of_derivation`: a derivation extending `A` forces `A`
-  to be skew-adjoint for the polar form.
+* `CliffordAlgebra.isSkewAdjoint_polarBilin_of_derivation`: when `R` acts faithfully, a derivation
+  extending `A` forces `A` to be skew-adjoint for the polar form.
 * `CliffordAlgebra.derivation_contractLeft`: `D (d ⌋ x) = d ⌋ D x - (d ∘ A) ⌋ x`.
 * `CliffordAlgebra.changeForm_derivation`: the change of form intertwines derivations extending a
   skew-adjoint endomorphism.
@@ -66,14 +66,16 @@ attribute [local instance 100] LieRing.ofAssociativeRing
 
 variable {R M : Type*} [CommRing R] [AddCommGroup M] [Module R M] {Q : QuadraticForm R M}
 
-/-- **A derivation extending `A` forces `A` to be skew-adjoint.** If a derivation of
+/-- **A derivation extending `A` forces `A` to be skew-adjoint.** If `R` acts faithfully on
+`CliffordAlgebra Q` (for instance when `2` is invertible in `R`) and a derivation of
 `CliffordAlgebra Q` maps each generator `ι Q m` to `ι Q (A m)`, then
-`polar Q (A m) n = -polar Q m (A n)`: differentiate `ι Q m * ι Q n + ι Q n * ι Q m`, a scalar. -/
-theorem isSkewAdjoint_polarBilin_of_derivation [Invertible (2 : R)]
+`polar Q (A m) n = -polar Q m (A n)`. -/
+theorem isSkewAdjoint_polarBilin_of_derivation [FaithfulSMul R (CliffordAlgebra Q)]
     (D : derivationLieAlgebra R (CliffordAlgebra Q)) {A : Module.End R M}
     (hD : ∀ m, (D : Module.End R (CliffordAlgebra Q)) (ι Q m) = ι Q (A m)) :
     (QuadraticMap.polarBilin Q).IsSkewAdjoint A := by
   intro m n
+  -- Differentiate the scalar `ι Q m * ι Q n + ι Q n * ι Q m = polar Q m n`.
   have h := congrArg (D : Module.End R (CliffordAlgebra Q)) (ι_mul_ι_add_swap (Q := Q) m n)
   rw [map_add, derivationLieAlgebra.leibniz, derivationLieAlgebra.leibniz, hD, hD,
     derivationLieAlgebra.map_algebraMap] at h
@@ -82,7 +84,8 @@ theorem isSkewAdjoint_polarBilin_of_derivation [Invertible (2 : R)]
     rw [map_add, ← ι_mul_ι_add_swap, ← ι_mul_ι_add_swap, ← h]
     abel
   simp only [QuadraticMap.polarBilin_apply_apply, Pi.neg_apply, QuadraticMap.polar_neg_right]
-  exact eq_neg_of_add_eq_zero_left ((map_eq_zero_iff _ (algebraMap_injective Q)).1 h')
+  exact eq_neg_of_add_eq_zero_left ((map_eq_zero_iff _
+    ((faithfulSMul_iff_algebraMap_injective R (CliffordAlgebra Q)).1 inferInstance)).1 h')
 
 /-- **A derivation and a contraction**: if a derivation `D` of `CliffordAlgebra Q` maps each
 generator `ι Q m` to `ι Q (A m)`, then `D (d ⌋ x) = d ⌋ D x - (d ∘ A) ⌋ x`. -/
@@ -144,9 +147,12 @@ theorem equivExterior_derivation (D : derivationLieAlgebra R (CliffordAlgebra Q)
     equivExterior Q ((D : Module.End R (CliffordAlgebra Q)) x) =
       (ExteriorAlgebra.derivationOfEnd R M A : Module.End R (ExteriorAlgebra R M))
         (equivExterior Q x) := by
+  simp only [equivExterior, changeFormEquiv_apply]
   refine changeForm_derivation changeForm.associated_neg_proof (fun m n ↦ ?_) D hD _
     (ExteriorAlgebra.derivationOfEnd_ι A) x
   -- The polar form is twice the associated form, and `2` is invertible.
+  have : FaithfulSMul R (CliffordAlgebra Q) :=
+    (faithfulSMul_iff_algebraMap_injective R (CliffordAlgebra Q)).2 (algebraMap_injective Q)
   have h := isSkewAdjoint_polarBilin_of_derivation D hD m n
   simp only [← QuadraticMap.two_nsmul_associated R Q, LinearMap.smul_apply,
     ← ofNat_smul_eq_nsmul (R := R)] at h

@@ -5,8 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.LinearAlgebra.ExteriorPower.Basic
 public import TauCeti.Algebra.Lie.Derivation.Basic
-public import TauCeti.Algebra.Lie.ExteriorPower
 import TauCeti.Algebra.BigOperators.Ring.List
 import TauCeti.LinearAlgebra.ExteriorAlgebra.Derivation.Basic
 
@@ -19,13 +19,14 @@ decomposable wedge it differentiates one factor at a time,
 
 `f (m₁ ∧ ⋯ ∧ mₖ) = ∑ᵢ m₁ ∧ ⋯ ∧ f mᵢ ∧ ⋯ ∧ mₖ`,
 
-so on each exterior power `⋀ᵏ M` it is the infinitesimal action `exteriorPower.lieMap k f`. The
-assignment `f ↦` (its derivation) is a homomorphism of Lie algebras from `Module.End R M`, with the
-commutator bracket, to the derivation Lie algebra of `⋀ M`; this is the exterior counterpart of
-`SymmetricAlgebra.derivationOfEnd`.
+so it preserves each exterior power `⋀ᵏ M`, where it is the infinitesimal action
+`exteriorPower.lieMap k f`. The assignment `f ↦` (its derivation) is a homomorphism of Lie algebras
+from `Module.End R M`, with the commutator bracket, to the derivation Lie algebra of `⋀ M`; this is
+the exterior counterpart of `SymmetricAlgebra.derivationOfEnd`.
 
 Specialising `f` to the endomorphisms `⁅x, -⁆` of a Lie module gives the action of a Lie algebra
-on the exterior algebra of the module by derivations. For the adjoint representation of a Lie
+on the exterior algebra of the module by derivations, available as the scoped Lie module
+structure `ExteriorAlgebra.LieAction.instLieRingModule`. For the adjoint representation of a Lie
 algebra `𝔤` this is the action on `⋀ 𝔤` whose invariants `(⋀ 𝔤)^𝔤` enter Kostant's description of
 the Clifford algebra of `𝔤`.
 
@@ -36,8 +37,11 @@ the Clifford algebra of `𝔤`.
 * `ExteriorAlgebra.derivationOfEnd_ι`: the induced derivation sends `ι m` to `ι (f m)`.
 * `ExteriorAlgebra.eq_derivationOfEnd`: it is the only derivation doing so.
 * `ExteriorAlgebra.derivationOfEnd_ιMulti`: the derivation rule on a decomposable wedge.
-* `ExteriorAlgebra.derivationOfEnd_coe`: on `⋀ᵏ M` the induced derivation is
-  `exteriorPower.lieMap k f`.
+* `ExteriorAlgebra.derivationOfEnd_mem_exteriorPower`: the induced derivation preserves each
+  exterior power `⋀ᵏ M`.
+* `ExteriorAlgebra.LieAction.instLieRingModule`, `ExteriorAlgebra.LieAction.lie_def`: for a Lie
+  module `M` over `L`, the scoped action of `L` on `⋀ M` by the derivations
+  `derivationOfEnd R M (LieModule.toEnd R L M x)`.
 
 ## References
 
@@ -112,15 +116,39 @@ theorem derivationOfEnd_ιMulti (f : Module.End R M) {n : ℕ} (v : Fin n → M)
   rw [derivationOfEnd_ι, ← Function.comp_def (ι R) v, ← Function.comp_update]
   rfl
 
-/-- **On an exterior power, the derivation induced by `f` is the infinitesimal action**
-`exteriorPower.lieMap k f`. In particular it preserves each exterior power `⋀ᵏ M`. -/
-theorem derivationOfEnd_coe (f : Module.End R M) {k : ℕ} (x : ⋀[R]^k M) :
-    (derivationOfEnd R M f : Module.End R (ExteriorAlgebra R M)) x =
-      exteriorPower.lieMap k f x := by
-  have h : (derivationOfEnd R M f : Module.End R (ExteriorAlgebra R M)) ∘ₗ (⋀[R]^k M).subtype =
-      (⋀[R]^k M).subtype ∘ₗ (exteriorPower.lieMap k f : Module.End R (⋀[R]^k M)) :=
-    exteriorPower.linearMap_ext <| AlternatingMap.ext fun v ↦ by
-      simp [derivationOfEnd_ιMulti, exteriorPower.lieMap_apply_ιMulti]
-  exact LinearMap.congr_fun h x
+/-- **The derivation induced by `f` preserves degrees**: it maps each exterior power `⋀ᵏ M` into
+itself. -/
+theorem derivationOfEnd_mem_exteriorPower (f : Module.End R M) {k : ℕ} {x : ExteriorAlgebra R M}
+    (hx : x ∈ ⋀[R]^k M) :
+    (derivationOfEnd R M f : Module.End R (ExteriorAlgebra R M)) x ∈ ⋀[R]^k M :=
+  liftTwistedDerivation_mem_exteriorPower _ _ _ _ _ _ (r := 0)
+    (fun m ↦ by simp) (fun s ↦ by simp) (fun m ↦ by simp) hx
+
+namespace LieAction
+
+variable (R M) (L : Type*) [LieRing L] [LieAlgebra R L] [LieRingModule L M] [LieModule R L M]
+
+/-- **The exterior algebra of a Lie module.** `L` acts on `⋀ M` through the derivations
+`ExteriorAlgebra.derivationOfEnd R M (LieModule.toEnd R L M x)` extending its action on `M`.
+Scoped, like Kostant's spinor module `TauCeti.SpinPolarizationData.kostantSpinLieRingModule`: an
+exterior algebra can carry other `L`-module structures. -/
+noncomputable scoped instance instLieRingModule : LieRingModule L (ExteriorAlgebra R M) :=
+  LieRingModule.compLieHom _ ((derivationLieAlgebra R (ExteriorAlgebra R M)).incl.comp
+    ((derivationOfEnd R M).comp (LieModule.toEnd R L M)))
+
+/-- The exterior algebra of a Lie module is a Lie module over the base ring. -/
+noncomputable scoped instance instLieModule : LieModule R L (ExteriorAlgebra R M) :=
+  LieModule.compLieHom _ _
+
+variable {R L M}
+
+/-- **The defining equation of the exterior algebra of a Lie module**: `x` acts by the derivation
+extending its action on `M`. -/
+theorem lie_def (x : L) (y : ExteriorAlgebra R M) :
+    ⁅x, y⁆ =
+      (derivationOfEnd R M (LieModule.toEnd R L M x) : Module.End R (ExteriorAlgebra R M)) y :=
+  rfl
+
+end LieAction
 
 end ExteriorAlgebra
