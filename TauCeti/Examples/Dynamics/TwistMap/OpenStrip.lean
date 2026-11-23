@@ -12,6 +12,7 @@ public import Mathlib.Topology.Homeomorph.Defs
 import Mathlib.Analysis.SpecialFunctions.Log.Deriv
 import Mathlib.Analysis.SpecialFunctions.Trigonometric.Deriv
 import Mathlib.Analysis.Calculus.ContDiff.Operations
+import TauCeti.Analysis.Calculus.FDeriv.Prod
 
 /-!
 # Examples of monotone twist maps of an open strip
@@ -38,12 +39,6 @@ noncomputable section
 open Set Real
 
 namespace TauCeti
-
-/-- The first coordinate of `fderiv ℝ F p v` is the derivative of the first coordinate of `F`. -/
-private theorem fderiv_apply_fst {F : ℝ × ℝ → ℝ × ℝ} {p : ℝ × ℝ} {L : ℝ × ℝ →L[ℝ] ℝ}
-    (hF : DifferentiableAt ℝ F p) (hL : HasFDerivAt (fun q => (F q).1) L p) (v : ℝ × ℝ) :
-    (fderiv ℝ F p v).1 = L v := by
-  simp [← hL.fderiv, fderiv.fst hF]
 
 /-- The **standard map** `(x, y) ↦ (x + y + ε sin 2πx, y + ε sin 2πx)` of the plane, a
 homeomorphism with inverse `(x, y) ↦ (x - y, y - ε sin 2π(x - y))`. -/
@@ -174,8 +169,8 @@ theorem isMonotoneTwistMap_logShear {ℓ : ℝ} (hℓ : 0 < ℓ) :
       target_eq := rfl
       apply_add_period := fun x y _ => ?_
       strictMonoOn_fst := fun x y₁ hy₁ y₂ _ h => ?_
-      lower_end := fun c hc => ⟨c, hc, fun _ _ _ hy => hy⟩
-      upper_end := fun c hc => ⟨c, hc, fun _ _ _ hy => hy⟩
+      lower_end := fun c hc => ⟨c, hc, fun _ _ _ hy => by simpa [logShear_apply] using hy⟩
+      upper_end := fun c hc => ⟨c, hc, fun _ _ _ hy => by simpa [logShear_apply] using hy⟩
       contDiffOn := hC
       contDiffOn_symm := (contDiffOn_fst.sub hlog).prodMk contDiffOn_snd
       fderiv_fst_pos := fun p hp => ?_ }
