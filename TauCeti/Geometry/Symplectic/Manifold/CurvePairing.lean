@@ -15,6 +15,7 @@ public import TauCeti.Geometry.Symplectic.Manifold.JHolomorphic
 
 import TauCeti.Geometry.Manifold.DeRham.Map
 import TauCeti.Geometry.Manifold.DeRham.NormedSpace
+import TauCeti.Geometry.Manifold.DeRham.PoincarePairing.Basic
 import TauCeti.Geometry.Manifold.DifferentialForm.Integration.BoundarylessStokes
 import TauCeti.Geometry.Manifold.DifferentialForm.MapCoeff
 import TauCeti.Geometry.Manifold.MFDeriv.Constancy
@@ -201,11 +202,8 @@ theorem apply_eq_of_mpullback_mem_exactForms (hu : ContMDiff I' I ∞ u)
     (hθ : ∀ c (v : TangentSpace I (u c)), v ≠ 0 →
       0 < SmoothBundleForm.eval₂ θ (u c) v (J (u c) v))
     (hex : SmoothForm.mpullback u hu θ ∈ exactForms I' C 2) (c c' : C) : u c = u c' := by
-  obtain ⟨α, hα⟩ := (exactForms_succ I' (M := C) 1).le hex
-  have hint : integralTopForm o (SmoothForm.mpullback u hu θ).val = 0 := by
-    rw [← hα, mextDerivₗ_apply]
-    exact integralTopForm_mextDeriv_eq_zero o ((SmoothForm.isSmoothForm α).of_le (by simp))
-      (isClosed_tsupport _).isCompact
+  have hint : integralTopForm o (SmoothForm.mpullback u hu θ).val = 0 :=
+    integralTopForm_eq_zero_of_mem_exactForms o hex
   exact hu.mdifferentiable (by simp) |>.apply_eq_of_mfderiv_eq_zero
     (mfderiv_eq_zero_of_integralTopForm_mpullback_eq_zero hu ho hhol hθ hint) c c'
 

@@ -10,6 +10,7 @@ public import TauCeti.Analysis.Matrix.HermitianSignature.Crossing
 public import TauCeti.LinearAlgebra.Matrix.Signature
 import TauCeti.Analysis.Matrix.HermitianSignature.RegularCrossings
 import TauCeti.LinearAlgebra.QuadraticForm.Isometry
+import TauCeti.LinearAlgebra.QuadraticForm.Radical
 
 /-!
 # Crossing forms of matrices
@@ -29,11 +30,18 @@ endpoints (`Matrix.signature_sub_signature_eq_crossingForm_add_two_mul_finsum`).
 * `Matrix.crossingForm`: the quadratic form of `A'` on the kernel of `A`.
 * `Matrix.crossingFormIsometryEquiv`: for real symmetric `A`, the crossing form of the bilinear
   forms of `A` and `A'` is isometric to the crossing form of `A` and `A'`.
+* `Matrix.crossingFormZeroIsometryEquiv`: the crossing form of `0` and `A'` is isometric to the
+  quadratic form of `A'`.
 
 ## Main results
 
 * `Matrix.signature_sub_signature_eq_crossingForm_add_two_mul_finsum`: the change of the signature
   along a path of real symmetric matrices with regular crossings.
+* `Matrix.sigPos_sub_sigNeg_crossingForm_eq_zero`: where the symmetric matrix `A` is invertible,
+  the crossing form has signature zero.
+* `Matrix.sigPos_sub_sigNeg_crossingForm_zero` and `Matrix.nondegenerate_crossingForm_zero`: where
+  `A` vanishes, the crossing form is the form of `A'`, with the signature of `A'`, and it is
+  nondegenerate when `A'` is symmetric and invertible.
 
 ## References
 
@@ -121,5 +129,39 @@ theorem signature_sub_signature_eq_crossingForm_add_two_mul_finsum {a b : ℝ} (
   simp only [toQuadraticMap_toBilinForm_toContinuousLinearMap₂', hΓ a (left_mem_Icc.2 hab.le),
     hΓ b (right_mem_Icc.2 hab.le), hsum] at hsig
   rw [signature_def, signature_def, hsig]
+
+/-- At a parameter where the symmetric matrix `A` is invertible the crossing form lives on the zero
+space, so its signature vanishes. -/
+theorem sigPos_sub_sigNeg_crossingForm_eq_zero {A : Matrix n n ℝ} (hA : A.IsSymm)
+    (hdet : A.det ≠ 0) (A' : Matrix n n ℝ) :
+    (sigPos (crossingForm A A') : ℤ) - sigNeg (crossingForm A A') = 0 := by
+  have h : QuadraticMap.Equivalent _ _ := ⟨crossingFormIsometryEquiv hA A'⟩
+  rw [← h.sigPos_eq, ← h.sigNeg_eq]
+  exact ContinuousLinearMap.sigPos_sub_sigNeg_crossingForm_eq_zero
+    ((nondegenerate_toBilinForm_toContinuousLinearMap₂'_iff_det_ne_zero A).2 hdet) _
+
+/-- The crossing form of `0` and `A'` is the quadratic form of `A'` on the whole space. -/
+noncomputable def crossingFormZeroIsometryEquiv (A' : Matrix n n ℝ) :
+    (crossingForm (0 : Matrix n n ℝ) A').IsometryEquiv A'.toQuadraticForm' :=
+  ⟨(LinearEquiv.ofEq _ ⊤ (by simp)).trans (LinearEquiv.ofTop ⊤ rfl), fun v ↦ by simp [crossingForm]⟩
+
+/-- At a parameter where `A` vanishes the crossing form of `A'` is the quadratic form of `A'`, so
+its signature is the signature of `A'`. -/
+theorem sigPos_sub_sigNeg_crossingForm_zero (A' : Matrix n n ℝ) :
+    (sigPos (crossingForm (0 : Matrix n n ℝ) A') : ℤ) - sigNeg (crossingForm 0 A') =
+      signature A' := by
+  have h : QuadraticMap.Equivalent _ _ := ⟨crossingFormZeroIsometryEquiv A'⟩
+  rw [h.sigPos_eq, h.sigNeg_eq, signature_def]
+
+/-- At a parameter where `A` vanishes, the crossing is regular when `A'` is symmetric and
+invertible. -/
+theorem nondegenerate_crossingForm_zero {A' : Matrix n n ℝ} (hA' : A'.IsSymm) (hdet : A'.det ≠ 0) :
+    (crossingForm (0 : Matrix n n ℝ) A').Nondegenerate := by
+  let : Invertible (2 : ℝ) := invertibleOfNonzero two_ne_zero
+  rw [(crossingFormZeroIsometryEquiv A').nondegenerate_iff,
+    ← toQuadraticMap_toBilinForm_toContinuousLinearMap₂',
+    LinearMap.BilinForm.nondegenerate_toQuadraticMap_iff
+      (isSymm_toBilinForm_toContinuousLinearMap₂' hA')]
+  exact (nondegenerate_toBilinForm_toContinuousLinearMap₂'_iff_det_ne_zero A').2 hdet
 
 end Matrix

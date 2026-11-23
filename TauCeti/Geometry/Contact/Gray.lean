@@ -70,6 +70,9 @@ vector fields glue for a family of contact structures that has no global definin
 * `TauCeti.SmoothForm.eq_grayVectorField_iff`: the Gray vector field is characterized by the
   horizontal contact-Moser equation.
 * `TauCeti.SmoothForm.mlieDerivForm_grayVectorField_add`: Gray's equation.
+* `TauCeti.SmoothForm.mpullback_prodMk_mlieDerivForm_add_mlieDerivForm_grayVectorField`: Gray's
+  equation at a single time, as the identity of forms that Moser's principle for families of forms
+  consumes.
 * `TauCeti.SmoothForm.contMDiff_grayVectorField`: the Gray vector field is jointly smooth.
 * `TauCeti.SmoothForm.grayVectorField_eq_zero`: the Gray vector field vanishes at points where the
   contact hyperplane is stationary near the given time.
@@ -301,7 +304,9 @@ theorem grayVectorField_eq_of_kerDistribution_eq
     filter_upwards [hc, hker] with t ht hk x
     exact apply_eq_smul_of_kerDistribution_le (hk x).ge (ht.apply_reebVectorField x)
   have hfs (x : M) : ContMDiffAt (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ) ∞ f (t₀, x) :=
-    contMDiffAt_apply_reebVectorField_mpullback_prodMk α α' hc
+    contMDiffAt_apply_reebVectorField_mpullback_prodMk α α'
+      ((continuous_fst.continuousAt.eventually hc).mono fun q hq ↦
+        isContactForm_iff_forall_isContactFormAt.1 hq q.2)
   have hf₀ : ContMDiff I 𝓘(ℝ) 1 (fun x ↦ f (t₀, x)) := fun x ↦
     ((hfs x).comp x (contMDiffAt_const.prodMk contMDiffAt_id)).of_le (by simp)
   have hne (x : M) : f (t₀, x) ≠ 0 := by
@@ -340,7 +345,9 @@ theorem contMDiffAt_grayRate {p : ℝ × M}
     (hc : ∀ᶠ t in 𝓝 p.1,
       (mpullback (Prod.mk t) (contMDiff_const.prodMk contMDiff_id) α).IsContactForm) :
     ContMDiffAt (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ) ∞ α.grayRate p :=
-  contMDiffAt_apply_reebVectorField_mpullback_prodMk α α.timeDeriv hc
+  contMDiffAt_apply_reebVectorField_mpullback_prodMk α α.timeDeriv
+    ((continuous_fst.continuousAt.eventually hc).mono fun q hq ↦
+      isContactForm_iff_forall_isContactFormAt.1 hq q.2)
 
 variable (hc : ∀ t, (mpullback (Prod.mk t) (contMDiff_const.prodMk contMDiff_id) α).IsContactForm)
 include hc

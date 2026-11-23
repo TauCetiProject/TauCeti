@@ -23,6 +23,9 @@ map defined only on a ball into a globally defined map with the same germ at the
 Conversely, the rescaled bump `φ (R⁻¹ ·)` of a bump `φ` centred at `0` vanishes off the ball of
 radius `R φ.rOut`.
 
+A bump function centred at `0` can be dilated by any factor `c > 0`: scaling both radii by `c`
+gives the bump function `ξ ↦ φ (c⁻¹ • ξ)`.
+
 ## Main results
 
 * `TauCeti.exists_contDiffBump_tsupport_subset_ball`: a bump centred at `c` whose topological
@@ -33,6 +36,8 @@ radius `R φ.rOut`.
   with a `C¹` function of bounded derivative.
 * `ContDiffBump.apply_inv_smul_eq_zero_of_le_norm`, `ContDiffBump.ofReal_apply_inv_smul_eq_zero`:
   the rescaled bump `φ (R⁻¹ ·)`, `R > 0`, vanishes off the ball of radius `R φ.rOut`.
+* `ContDiffBump.dilate`: the dilation of a bump function centred at `0` by a factor `c > 0`, with
+  `ContDiffBump.dilate_apply`: its value at `ξ` is `φ (c⁻¹ • ξ)`.
 -/
 
 public section
@@ -95,8 +100,42 @@ end TauCeti
 
 namespace ContDiffBump
 
-variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [HasContDiffBump E]
-  (φ : ContDiffBump (0 : E))
+variable {E : Type*} [NormedAddCommGroup E]
+
+/-- The **dilation** of a bump function centred at `0` by a factor `c > 0`: the bump function with
+radii `c * φ.rIn` and `c * φ.rOut`, whose value at `ξ` is `φ (c⁻¹ • ξ)`
+(`ContDiffBump.dilate_apply`). -/
+def dilate (φ : ContDiffBump (0 : E)) {c : ℝ} (hc : 0 < c) : ContDiffBump (0 : E) where
+  rIn := c * φ.rIn
+  rOut := c * φ.rOut
+  rIn_pos := mul_pos hc φ.rIn_pos
+  rIn_lt_rOut := mul_lt_mul_of_pos_left φ.rIn_lt_rOut hc
+
+/-- The inner radius of `ContDiffBump.dilate`. -/
+@[simp]
+theorem dilate_rIn (φ : ContDiffBump (0 : E)) {c : ℝ} (hc : 0 < c) :
+    (φ.dilate hc).rIn = c * φ.rIn :=
+  (rfl)
+
+/-- The outer radius of `ContDiffBump.dilate`. -/
+@[simp]
+theorem dilate_rOut (φ : ContDiffBump (0 : E)) {c : ℝ} (hc : 0 < c) :
+    (φ.dilate hc).rOut = c * φ.rOut :=
+  (rfl)
+
+/-- The dilation of `φ` by `c` is `φ` evaluated at `c⁻¹ • ξ`. -/
+@[simp]
+theorem dilate_apply [NormedSpace ℝ E] [HasContDiffBump E] (φ : ContDiffBump (0 : E)) {c : ℝ}
+    (hc : 0 < c) (ξ : E) : φ.dilate hc ξ = φ (c⁻¹ • ξ) := by
+  have h₁ : (φ.dilate hc).rOut / (φ.dilate hc).rIn = φ.rOut / φ.rIn := by
+    rw [dilate_rOut, dilate_rIn, mul_div_mul_left _ _ hc.ne']
+  have h₂ : (φ.dilate hc).rIn⁻¹ = φ.rIn⁻¹ * c⁻¹ := by
+    rw [dilate_rIn, mul_inv, mul_comm]
+  simp only [ContDiffBump.apply, sub_zero, smul_smul, h₁, h₂]
+
+section Rescale
+
+variable [NormedSpace ℝ E] [HasContDiffBump E] (φ : ContDiffBump (0 : E))
 
 /-- The rescaled bump function `φ (R⁻¹ ·)`, `R > 0`, vanishes outside the open ball of radius
 `R φ.rOut`. -/
@@ -111,5 +150,7 @@ theorem ofReal_apply_inv_smul_eq_zero {R : ℝ} (hR : 0 < R) :
     ∀ ξ ∈ (Metric.closedBall (0 : E) (R * φ.rOut))ᶜ, (φ (R⁻¹ • ξ) : ℂ) = 0 := fun ξ hξ ↦ by
   rw [Set.mem_compl_iff, Metric.mem_closedBall, dist_zero_right, not_le] at hξ
   rw [φ.apply_inv_smul_eq_zero_of_le_norm hR hξ.le, Complex.ofReal_zero]
+
+end Rescale
 
 end ContDiffBump

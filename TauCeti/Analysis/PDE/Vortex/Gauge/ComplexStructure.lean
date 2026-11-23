@@ -66,7 +66,9 @@ Consequences:
   `J'` (`TauCeti.Vortex.sobolevGaugeFixedOperator_sobolevVariationAlmostComplexStructure`), which
   acts pointwise on `L²(ℂ; ℝ⁴)` as an almost complex structure
   (`TauCeti.Vortex.lpTargetAlmostComplexStructure`), so the realization is a complex-linear map
-  (`TauCeti.Vortex.isComplexLinearMap_sobolevGaugeFixedOperator`). In particular its kernel is
+  (`TauCeti.Vortex.isComplexLinearMap_sobolevGaugeFixedOperator`). Both almost complex structures
+  are continuous (`TauCeti.Vortex.continuous_sobolevVariationAlmostComplexStructure`,
+  `TauCeti.Vortex.continuous_lpTargetAlmostComplexStructure`). In particular its kernel is
   preserved by `J`
   (`TauCeti.Vortex.sobolevVariationAlmostComplexStructure_mem_ker_sobolevGaugeFixedOperator`), and
   `J` restricts to an almost complex structure on that kernel
@@ -421,6 +423,13 @@ theorem values_sobolevVariationAlmostComplexStructure_ae
   ext j
   fin_cases j <;> simp [h₁, h₃]
 
+/-- The almost complex structure `J` on `H¹(ℂ)⁴` is continuous. -/
+theorem continuous_sobolevVariationAlmostComplexStructure :
+    Continuous sobolevVariationAlmostComplexStructure := by
+  rw [show ⇑sobolevVariationAlmostComplexStructure = fun y ↦ ![-y 1, y 0, -y 3, y 2] from
+    funext sobolevVariationAlmostComplexStructure_apply]
+  fun_prop
+
 /-- **The Sobolev realization of `L_x` is complex linear.** For every `L∞` coefficient class `a`,
 the realization `H¹(ℂ)⁴ → L²(ℂ; ℝ⁴)` sends `J y` to `J' (L_a y)`. -/
 theorem sobolevGaugeFixedOperator_sobolevVariationAlmostComplexStructure
@@ -494,6 +503,12 @@ theorem lpTargetAlmostComplexStructure_apply (g : Lp (EuclideanSpace ℝ (Fin 4)
 theorem coeFn_lpTargetAlmostComplexStructure (g : Lp (EuclideanSpace ℝ (Fin 4)) 2 μ⊤) :
     lpTargetAlmostComplexStructure g =ᵐ[μ⊤] fun z ↦ targetComplexStructure (g z) :=
   AlmostComplexStructure.coeFn_compLp _ _ _ _ g
+
+/-- The almost complex structure `J'` on `L²(ℂ; ℝ⁴)` is continuous. -/
+theorem continuous_lpTargetAlmostComplexStructure :
+    Continuous lpTargetAlmostComplexStructure :=
+  (targetComplexStructure.toContinuousLinearEquiv.toContinuousLinearMap.compLpL 2
+    μ⊤).continuous.congr fun g ↦ (lpTargetAlmostComplexStructure_apply g).symm
 
 /-- **The Sobolev realization of `L_x` is complex linear**: it intertwines the almost complex
 structure `J` of `H¹(ℂ)⁴` with the almost complex structure `J'` of `L²(ℂ; ℝ⁴)`. -/

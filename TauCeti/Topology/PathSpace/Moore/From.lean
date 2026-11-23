@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Topology.Category.TopPair
 public import Mathlib.Topology.Homotopy.Contractible
 public import TauCeti.Topology.PathSpace.Moore.Between.Basic
 public import TauCeti.Topology.PathSpace.Moore.Truncate
@@ -39,6 +40,8 @@ the chains of the loop space are compared in Brown's theory of twisted tensor pr
 * `TauCeti.MooreLoopSpace.toMoorePathFrom`: a Moore loop at `b` as a Moore path from `b`, an
   embedding (`TauCeti.MooreLoopSpace.isEmbedding_toMoorePathFrom`) which turns the product of loops
   into the left action (`TauCeti.MooreLoopSpace.toMoorePathFrom_mul`).
+* `TauCeti.MoorePathFrom.loopPair X b`: the pair `(P_b X, Ω_b X)` of the based path space and the
+  Moore loops, included by `TauCeti.MooreLoopSpace.toMoorePathFrom`.
 
 ## Main results
 
@@ -276,6 +279,23 @@ theorem toMoorePathFrom_mul (ω ω' : MooreLoopSpace X b) :
     toMoorePathFrom (ω * ω') = ω • toMoorePathFrom ω' :=
   MoorePathFrom.ext (by simp [toMoorePath_mul])
 
+/-- Reading loops as paths is the orbit map `ω ↦ ω • refl X b` of the constant path. -/
+theorem toMoorePathFrom_eq_smul_refl (ω : MooreLoopSpace X b) :
+    toMoorePathFrom ω = ω • MoorePathFrom.refl X b :=
+  MoorePathFrom.ext (by simp)
+
 end MooreLoopSpace
+
+namespace MoorePathFrom
+
+variable (X : Type*) [TopologicalSpace X] (b : X)
+
+/-- The pair `(P_b X, Ω_b X)` of the Moore paths from `b` and the Moore loops at `b`, the loops
+included as the paths ending at `b` (`TauCeti.MooreLoopSpace.toMoorePathFrom`). -/
+abbrev loopPair : TopPair :=
+  TopPair.of (TopCat.ofHom (MooreLoopSpace.toMoorePathFrom (X := X) (b := b)))
+    MooreLoopSpace.isEmbedding_toMoorePathFrom
+
+end MoorePathFrom
 
 end TauCeti

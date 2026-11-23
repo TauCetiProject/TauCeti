@@ -10,7 +10,6 @@ public import TauCeti.AlgebraicGeometry.Modules.Quasicoherent.GradedAlgebra.Basi
 public import TauCeti.AlgebraicGeometry.RelativeSpec.Functor
 public import TauCeti.CategoryTheory.GradedObject.Total
 public import TauCeti.CategoryTheory.Monoidal.Mon
-public import TauCeti.CategoryTheory.ObjectProperty
 
 /-!
 # The direct-sum algebra of a graded quasicoherent algebra
@@ -98,8 +97,10 @@ private theorem toQuasicoherentAlgebra_map_hom {A B : GradedQuasicoherentAlgebra
     (toQuasicoherentAlgebra.map f).hom =
       eqToHom (toQuasicoherentAlgebra_obj_obj A) ≫
         (GradedObject.total ℕ X.Modules).mapCommMon.map f.hom ≫
-          eqToHom (toQuasicoherentAlgebra_obj_obj B).symm :=
-  ObjectProperty.lift_map_hom_of_eq toQuasicoherentAlgebra.eq_1 f
+          eqToHom (toQuasicoherentAlgebra_obj_obj B).symm := by
+  simpa only [Functor.comp_map, ObjectProperty.ι_map] using ObjectProperty.map_hom_of_comp_ι_eq
+    (F := (isGradedQuasicoherentAlgebra X).ι ⋙ (GradedObject.total ℕ X.Modules).mapCommMon)
+    (by rw [toQuasicoherentAlgebra]; exact ObjectProperty.lift_comp_ι ..) f
     (toQuasicoherentAlgebra_obj_obj A) (toQuasicoherentAlgebra_obj_obj B)
 
 private theorem toQuasicoherentAlgebra_map_hom_hom_hom
