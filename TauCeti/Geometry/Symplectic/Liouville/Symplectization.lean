@@ -88,7 +88,7 @@ include hc hZ
 smooth complete vector field `Z` be the Liouville field of the one-form `α`, `ι_Z dα = α`, with
 flow `ψ`. Then the map `(t, x) ↦ ψₜ(x)` from `ℝ × M` to `M` pulls `α` back to `eᵗ α`. -/
 theorem mpullback_globalFlow_uncurry_eq_symplectization
-    (hZα : (mextDeriv α.1).interior Z = α.1) :
+    (hZα : (mextDeriv α.val).interior Z = α.val) :
     SmoothForm.mpullback (fun p : ℝ × M ↦ globalFlow Z (hZ.of_le (by simp)) hc p.1 p.2)
       (contMDiff_globalFlow_uncurry hc le_top hZ) α = α.symplectization :=
   Subtype.ext <| funext fun p ↦ by
@@ -99,7 +99,7 @@ theorem mpullback_globalFlow_uncurry_eq_symplectization
 /-- **The Liouville flow map pulls `dα` back to `d(eᵗ α)`.** Let the smooth complete vector
 field `Z` be the Liouville field of the one-form `α`, `ι_Z dα = α`, with flow `ψ`. Then the map
 `(t, x) ↦ ψₜ(x)` from `ℝ × M` to `M` pulls `dα` back to `d(eᵗ α)`. -/
-theorem mpullback_globalFlow_uncurry_mextDerivₗ (hZα : (mextDeriv α.1).interior Z = α.1) :
+theorem mpullback_globalFlow_uncurry_mextDerivₗ (hZα : (mextDeriv α.val).interior Z = α.val) :
     SmoothForm.mpullback (fun p : ℝ × M ↦ globalFlow Z (hZ.of_le (by simp)) hc p.1 p.2)
       (contMDiff_globalFlow_uncurry hc le_top hZ) (mextDerivₗ I 1 α) =
       mextDerivₗ (𝓘(ℝ).prod I) 1 α.symplectization := by
@@ -110,7 +110,7 @@ Liouville field of the one-form `α`, `ι_Z dα = α`, with flow `ψ`, and let `
 Then the map `(t, s) ↦ ψₜ(ι s)` from `ℝ × S` to `M` pulls `α` back to the symplectization form
 `eᵗ ι^* α` of the restricted form. For the inclusion of the boundary of a Liouville domain, this
 identifies the flow-out of the boundary with the symplectization of the boundary. -/
-theorem mpullback_globalFlow_comp_eq_symplectization (hZα : (mextDeriv α.1).interior Z = α.1)
+theorem mpullback_globalFlow_comp_eq_symplectization (hZα : (mextDeriv α.val).interior Z = α.val)
     {ι : S → M} (hι : ContMDiff J I ∞ ι) :
     SmoothForm.mpullback (fun p : ℝ × S ↦ globalFlow Z (hZ.of_le (by simp)) hc p.1 (ι p.2))
       ((contMDiff_globalFlow_uncurry hc le_top hZ).comp
@@ -125,7 +125,7 @@ complete vector field `Z` be the Liouville field of the one-form `α`, `ι_Z dα
 `ψ`, and let `ι : S → M` be smooth. Then the map `(t, s) ↦ ψₜ(ι s)` from `ℝ × S` to `M` pulls
 `dα` back to `d(eᵗ ι^* α)`, which is symplectic exactly when `ι^* α` is a contact form
 (`TauCeti.SmoothForm.isSymplectic_mextDerivₗ_symplectization_iff`). -/
-theorem mpullback_globalFlow_comp_mextDerivₗ (hZα : (mextDeriv α.1).interior Z = α.1)
+theorem mpullback_globalFlow_comp_mextDerivₗ (hZα : (mextDeriv α.val).interior Z = α.val)
     {ι : S → M} (hι : ContMDiff J I ∞ ι) :
     SmoothForm.mpullback (fun p : ℝ × S ↦ globalFlow Z (hZ.of_le (by simp)) hc p.1 (ι p.2))
       ((contMDiff_globalFlow_uncurry hc le_top hZ).comp

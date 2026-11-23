@@ -125,7 +125,7 @@ noncomputable def homCohomologyMap (X Y : C) :
 @[simp]
 theorem homCohomologyMap_mk {X Y : C} (f : LinearMap.ker (ℬ.homDifferential X Y)) :
     ℱ.homCohomologyMap X Y (Submodule.Quotient.mk f) =
-      Submodule.Quotient.mk ⟨ℱ.map X Y f, ℱ.homDifferential_map_eq_zero f.2⟩ :=
+      Submodule.Quotient.mk ⟨ℱ.map X Y f, ℱ.homDifferential_map_eq_zero f.property⟩ :=
   LinearMap.homologyMap_mk _ _ _ _ f
 
 /-! ### Quasi-fully faithful functors -/

@@ -417,19 +417,19 @@ theorem oddPairing_map_evalAlgebraMapRingHom_eq (u : (A[X])ˣ) (s t : ℂ) (m : 
     oddPairing (M := M) (Units.map (evalAlgebraMapRingHom A s : A[X] →* A) u) m =
       oddPairing (Units.map (evalAlgebraMapRingHom A t : A[X] →* A) u) m := by
   ext φ
-  have hb := (mem_cyclicCocycles_iff ℂ A M).1 φ.2
+  have hb := (mem_cyclicCocycles_iff ℂ A M).1 φ.property
   simp only [LinearMap.coe_comp, Function.comp_apply, oddPairing_mk, Units.coe_map,
     Units.coe_map_inv, MonoidHom.coe_ofClass, evalAlgebraMapRingHom_apply]
-  rw [apply_units_eval_algebraMap_eq φ.1.2 hb u s t]
+  rw [apply_units_eval_algebraMap_eq φ.val.property hb u s t]
 
 /-- **Multiplicativity of the odd pairing**: `⟨[uv], [φ]⟩ = ⟨[u], [φ]⟩ + ⟨[v], [φ]⟩`. -/
 @[simp]
 theorem oddPairing_mul (u v : Aˣ) (m : ℕ) :
     oddPairing (M := M) (u * v) m = oddPairing u m + oddPairing v m := by
   ext φ
-  have hb := (mem_cyclicCocycles_iff ℂ A M).1 φ.2
+  have hb := (mem_cyclicCocycles_iff ℂ A M).1 φ.property
   simp only [LinearMap.coe_comp, Function.comp_apply, LinearMap.add_apply, oddPairing_mk,
-    apply_units_mul φ.1.2 hb u v, smul_add]
+    apply_units_mul φ.val.property hb u v, smul_add]
 
 /-- The odd pairing of the inverse is the negative of the odd pairing. -/
 @[simp]
@@ -471,8 +471,8 @@ theorem oddPairing_conj (g u : Aˣ) (m : ℕ) :
 theorem oddPairing_eq_zero_of_val_eq_one_add (e : Aˣ) {N : A} (he : (e : A) = 1 + N)
     (hN : N * N = 0) (m : ℕ) : oddPairing (M := M) e m = 0 := by
   ext φ
-  have hb := (mem_cyclicCocycles_iff ℂ A M).1 φ.2
-  have h := apply_units_mul_eq_of_val_eq_one_add φ.1.2 hb 1 e he hN
+  have hb := (mem_cyclicCocycles_iff ℂ A M).1 φ.property
+  have h := apply_units_mul_eq_of_val_eq_one_add φ.val.property hb 1 e he hN
   rw [one_mul] at h
   simp only [LinearMap.coe_comp, Function.comp_apply, oddPairing_mk, h, LinearMap.zero_apply]
   simp [← Pi.zero_def]

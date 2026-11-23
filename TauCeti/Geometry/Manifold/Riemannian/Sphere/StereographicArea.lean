@@ -169,7 +169,7 @@ private theorem mvfderiv_coe_mfderiv_stereoSphere (z : ℝ²) (v : TangentSpace 
 /-- On the derivatives of the parametrization, the area form is the density
 `4 / (1 + x² + y²)²`. -/
 private theorem sphereVolumeForm_mfderiv_stereoSphere (z : ℝ²) :
-    (EuclideanSpace.basisFun (Fin 3) ℝ).toBasis.orientation.sphereVolumeForm.1 (stereoSphere z)
+    (EuclideanSpace.basisFun (Fin 3) ℝ).toBasis.orientation.sphereVolumeForm.val (stereoSphere z)
       (fun i ↦ mfderiv 𝓘(ℝ, ℝ²) (𝓡 2) stereoSphere z
         ((EuclideanSpace.basisFun (Fin 2) ℝ).toBasis i)) =
         4 / (1 + z 0 ^ 2 + z 1 ^ 2) ^ 2 := by
@@ -186,21 +186,21 @@ private theorem sphereVolumeForm_mfderiv_stereoSphere (z : ℝ²) :
 /-- On the derivatives of inverse stereographic projection from the south pole, the area form is
 `4 / (1 + x² + y²)²` times the determinant `a₀ b₁ - a₁ b₀` of the two tangent vectors. -/
 theorem sphereVolumeForm_mfderiv_stereoSphere_apply (z a b : ℝ²) :
-    (EuclideanSpace.basisFun (Fin 3) ℝ).toBasis.orientation.sphereVolumeForm.1 (stereoSphere z)
+    (EuclideanSpace.basisFun (Fin 3) ℝ).toBasis.orientation.sphereVolumeForm.val (stereoSphere z)
       ![mfderiv 𝓘(ℝ, ℝ²) (𝓡 2) stereoSphere z a, mfderiv 𝓘(ℝ, ℝ²) (𝓡 2) stereoSphere z b] =
         4 / (1 + z 0 ^ 2 + z 1 ^ 2) ^ 2 * (a 0 * b 1 - a 1 * b 0) := by
   set e := (EuclideanSpace.basisFun (Fin 2) ℝ).toBasis
   set L : ℝ² →ₗ[ℝ] ℝ² := (mfderiv 𝓘(ℝ, ℝ²) (𝓡 2) stereoSphere z : ℝ² →L[ℝ] ℝ²).toLinearMap
   -- The pulled back form is an alternating form on `ℝ²`, so it is its value on the standard basis
   -- times the determinant.
-  set f := ((EuclideanSpace.basisFun (Fin 3) ℝ).toBasis.orientation.sphereVolumeForm.1
+  set f := ((EuclideanSpace.basisFun (Fin 3) ℝ).toBasis.orientation.sphereVolumeForm.val
     (stereoSphere z)).toAlternatingMap.compLinearMap L
   have h := congrArg (fun g ↦ g ![a, b]) (f.eq_smul_basis_det e)
   have hf : f e = 4 / (1 + z 0 ^ 2 + z 1 ^ 2) ^ 2 := sphereVolumeForm_mfderiv_stereoSphere z
-  have hfab : f ![a, b] = (EuclideanSpace.basisFun (Fin 3) ℝ).toBasis.orientation.sphereVolumeForm.1
+  have hfab : f ![a, b] = (EuclideanSpace.basisFun (Fin 3) ℝ).toBasis.orientation.sphereVolumeForm.val
       (stereoSphere z) ![mfderiv 𝓘(ℝ, ℝ²) (𝓡 2) stereoSphere z a,
         mfderiv 𝓘(ℝ, ℝ²) (𝓡 2) stereoSphere z b] := by
-    exact congrArg ((EuclideanSpace.basisFun (Fin 3) ℝ).toBasis.orientation.sphereVolumeForm.1
+    exact congrArg ((EuclideanSpace.basisFun (Fin 3) ℝ).toBasis.orientation.sphereVolumeForm.val
       (stereoSphere z)) (funext fun i ↦ by fin_cases i <;> rfl)
   rw [← hfab, h]
   simp only [smul_apply, hf, smul_eq_mul, Module.Basis.det_apply, Matrix.det_fin_two,

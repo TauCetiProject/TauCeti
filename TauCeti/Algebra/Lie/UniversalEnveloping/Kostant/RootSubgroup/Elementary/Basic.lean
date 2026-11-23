@@ -234,7 +234,7 @@ noncomputable def kostantElementaryMap {A B : CommAlgCat.{w} ℤ} (φ : A ⟶ B)
   MonoidHom.codRestrict
     (((GeneralLinear.mapScalarExtensionAutomorphisms (V := M) φ).hom).comp
       (kostantElementarySubgroup e h ρ M hM hnil A).subtype) _
-    fun g => map_kostantElementarySubgroup_le e h ρ M hM hnil φ ⟨g.1, g.2, rfl⟩
+    fun g => map_kostantElementarySubgroup_le e h ρ M hM hnil φ ⟨g.val, g.property, rfl⟩
 
 private theorem val_kostantElementaryMap_def {A B : CommAlgCat.{w} ℤ} (φ : A ⟶ B)
     (g : kostantElementarySubgroup e h ρ M hM hnil A) :

@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.RingTheory.NovikovModule.Tensor
+public import TauCeti.RingTheory.NovikovModule.Tensor.Basic
 public import TauCeti.Algebra.Homology.SquareZero.Graded
 
 /-!
@@ -379,18 +379,15 @@ variable {R H ι₁ ι₂ ι₀ κ₁ κ₂ κ₀ : Type*} [CommRing R] [AddComm
   (hG₀ : ∀ l h (p : T₀ l), G₀ ⟨l, h +ᵥ p⟩ = G₀ ⟨l, p⟩ - N h)
   (r₁ : ∀ i, P₁ i) (r₂ : ∀ j, P₂ j) (r₀ : ∀ k, P₀ k)
   (s₁ : ∀ s, T₁ s) (s₂ : ∀ t, T₂ t) (s₀ : ∀ l, T₀ l)
-  [Fintype ι₁] [Fintype ι₂] [Fintype ι₀] [Fintype κ₁] [Fintype κ₂] [Fintype κ₀]
-  (Q : ι₁ → ι₂ → ι₀ → NovikovSeries R H N) (M : κ₁ → κ₂ → κ₀ → NovikovSeries R H N)
-  (Φ₁ : Matrix κ₁ ι₁ (NovikovSeries R H N)) (Φ₂ : Matrix κ₂ ι₂ (NovikovSeries R H N))
-  (Ψ₀ : Matrix ι₀ κ₀ (NovikovSeries R H N)) (K : κ₁ → κ₂ → κ₀ → NovikovSeries R H N)
-  (E₁ : Matrix κ₁ κ₁ (NovikovSeries R H N)) (E₂ : Matrix κ₂ κ₂ (NovikovSeries R H N))
-  (E₀ : Matrix κ₀ κ₀ (NovikovSeries R H N))
+  [Fintype ι₁] [Fintype ι₂] [Fintype ι₀] [Fintype κ₁] [Fintype κ₂]
 
-omit [Fintype κ₀] in
 /-- In reference coordinates, the image of `Φ₁ a ⋆ Φ₂ b` under the map of `Ψ₀` is
 `∑ₛ ∑ₜ aₛ bₜ ∑ᵢ ∑ⱼ Φ₁ₛᵢ Φ₂ₜⱼ ∑ₖ Qᵢⱼₖ Ψ₀ₖₗ`. -/
 private theorem coordinates_novikovMapOfMatrix_novikovProductOfMatrix_novikovMapOfMatrix
-    [Finite κ₀] (a : NovikovModule R G₁) (b : NovikovModule R G₂) (l : κ₀) :
+    [Finite κ₀] (Q : ι₁ → ι₂ → ι₀ → NovikovSeries R H N)
+    (Φ₁ : Matrix κ₁ ι₁ (NovikovSeries R H N)) (Φ₂ : Matrix κ₂ ι₂ (NovikovSeries R H N))
+    (Ψ₀ : Matrix ι₀ κ₀ (NovikovSeries R H N))
+    (a : NovikovModule R G₁) (b : NovikovModule R G₂) (l : κ₀) :
     coordinates hG₀ s₀ (novikovMapOfMatrix hF₀ hG₀ r₀ s₀ Ψ₀
         (novikovProductOfMatrix hF₁ hF₂ hF₀ r₁ r₂ r₀ Q (novikovMapOfMatrix hG₁ hF₁ s₁ r₁ Φ₁ a)
           (novikovMapOfMatrix hG₂ hF₂ s₂ r₂ Φ₂ b))) l =
@@ -421,6 +418,13 @@ private theorem coordinates_novikovMapOfMatrix_novikovProductOfMatrix_novikovMap
         rw [Finset.sum_comm]
         exact Finset.sum_congr rfl fun s _ => Finset.sum_comm
     _ = _ := by simp only [Finset.mul_sum]
+
+variable [Fintype κ₀]
+  (Q : ι₁ → ι₂ → ι₀ → NovikovSeries R H N) (M : κ₁ → κ₂ → κ₀ → NovikovSeries R H N)
+  (Φ₁ : Matrix κ₁ ι₁ (NovikovSeries R H N)) (Φ₂ : Matrix κ₂ ι₂ (NovikovSeries R H N))
+  (Ψ₀ : Matrix ι₀ κ₀ (NovikovSeries R H N)) (K : κ₁ → κ₂ → κ₀ → NovikovSeries R H N)
+  (E₁ : Matrix κ₁ κ₁ (NovikovSeries R H N)) (E₂ : Matrix κ₂ κ₂ (NovikovSeries R H N))
+  (E₀ : Matrix κ₀ κ₀ (NovikovSeries R H N))
 
 /-- **Comparison through the inverse, for matrices of Novikov series.** Let `Q` be the matrix of a
 product `⋆` on generators `Pₗ` and `M` that of a product `⋆_M` on generators `Tₗ`, let `Φ₁`, `Φ₂`
