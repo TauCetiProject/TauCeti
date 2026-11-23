@@ -10,7 +10,7 @@ public import TauCeti.Topology.Algebra.CliffordAlgebra.Spin.Compact
 public import TauCeti.Topology.Algebra.CliffordAlgebra.Spin.Prod
 public import TauCeti.Topology.Algebra.CliffordAlgebra.Spin.Real.Neg
 public import Mathlib.Topology.Algebra.Group.Quotient
-import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.LowRank.One
+import TauCeti.RingTheory.RootsOfUnity.Basic
 import TauCeti.Topology.Algebra.CliffordAlgebra.Spin.Real.OneOne
 
 /-!
@@ -31,18 +31,20 @@ source is a product of two compact groups, so `K(p, q)` is a compact, hence clos
 
 `(Spin(p) × Spin(q)) / ⟨(-1, -1)⟩ ≃ₜ* K(p, q)`.
 
-Two low-rank cases are made explicit. In signature `(p, 1)` the factor `Spin(1) = {1, -1}`
-contributes nothing new and `K(p, 1)` is a copy of `Spin(p)`, as a topological group; for `p = 2`
-it is a copy of the circle `Spin(2)`. In signature `(1, 1)` the group `K(1, 1) = {1, -1}` has
-order two, and it is a maximal compact subgroup of `Spin(1, 1)`: every element of `Spin(1, 1)` is
-`±(cosh t + sinh t e₁e₂)`, and the powers of an element with `t ≠ 0` leave every compact set.
+Two low-rank cases are made explicit. In signature `(p, 1)` with `p > 0` the factor
+`Spin(1) = {1, -1}` contributes nothing new and `K(p, 1)` is a copy of `Spin(p)`, as a topological
+group; for `p = 2` it is a copy of the circle `Spin(2)`. In signature `(1, 1)` the group
+`K(1, 1) = {1, -1}` of order two (`CliffordAlgebra.card_range_realCliffordSpinBlockHom_one_one`)
+contains every compact subgroup of `Spin(1, 1)`, so it is the greatest, and in particular a
+maximal, compact subgroup: every element of `Spin(1, 1)` is `±(cosh t + sinh t e₁e₂)`, and in a
+compact subgroup `t = 0`.
 
 ## Main definitions
 
 * `CliffordAlgebra.realCliffordSpinBlockQuotientContinuousMulEquiv p q`: the isomorphism of
   topological groups `(Spin(p) × Spin(q)) / ⟨(-1, -1)⟩ ≃ₜ* K(p, q)`.
-* `CliffordAlgebra.realCliffordSpinContinuousMulEquivBlockRange p`: the isomorphism of topological
-  groups `Spin(p) ≃ₜ* K(p, 1)`.
+* `CliffordAlgebra.realCliffordSpinContinuousMulEquivBlockRange p`: for `p > 0`, the isomorphism of
+  topological groups `Spin(p) ≃ₜ* K(p, 1)`.
 
 ## Main results
 
@@ -50,7 +52,8 @@ order two, and it is a maximal compact subgroup of `Spin(1, 1)`: every element o
 * `CliffordAlgebra.isCompact_range_realCliffordSpinBlockHom` and
   `CliffordAlgebra.isClosed_range_realCliffordSpinBlockHom`: `K(p, q)` is compact and closed in
   `Spin(p, q)`.
-* `CliffordAlgebra.card_range_realCliffordSpinBlockHom_one_one`: `K(1, 1)` has two elements.
+* `CliffordAlgebra.isGreatest_isCompact_range_realCliffordSpinBlockHom_one_one`: `K(1, 1)` is the
+  greatest compact subgroup of `Spin(1, 1)`.
 * `CliffordAlgebra.maximal_isCompact_range_realCliffordSpinBlockHom_one_one`: `K(1, 1)` is a
   maximal compact subgroup of `Spin(1, 1)`.
 
@@ -127,17 +130,25 @@ theorem coe_realCliffordSpinBlockQuotientContinuousMulEquiv :
       realCliffordSpinBlockQuotientEquiv p q :=
   (rfl)
 
+/-- The inverse of `realCliffordSpinBlockQuotientContinuousMulEquiv p q` evaluates as the inverse of
+`realCliffordSpinBlockQuotientEquiv p q`. -/
+@[simp]
+theorem coe_realCliffordSpinBlockQuotientContinuousMulEquiv_symm :
+    ⇑(realCliffordSpinBlockQuotientContinuousMulEquiv p q).symm =
+      (realCliffordSpinBlockQuotientEquiv p q).symm :=
+  (rfl)
+
 omit [NeZero q]
 
-/-- The isomorphism `realCliffordSpinMulEquivBlockRange p` from `Spin(p)` onto `K(p, 1)` is
-continuous. -/
+/-- For `p > 0`, the isomorphism `realCliffordSpinMulEquivBlockRange p` from `Spin(p)` onto
+`K(p, 1)` is continuous. -/
 theorem continuous_realCliffordSpinMulEquivBlockRange :
     Continuous (realCliffordSpinMulEquivBlockRange p) :=
   ((continuous_realCliffordSpinBlockHom p 1).comp (continuous_id.prodMk continuous_const)
     |>.subtype_mk fun x ↦ ⟨(x, 1), rfl⟩).congr fun x ↦
     Subtype.ext (coe_realCliffordSpinMulEquivBlockRange_apply p x).symm
 
-/-- **`K(p, 1) ≅ Spin(p)` as topological groups.** In signature `(p, 1)` the map
+/-- **`K(p, 1) ≅ Spin(p)` as topological groups.** In signature `(p, 1)` with `p > 0` the map
 `x ↦ realCliffordSpinBlockHom p 1 (x, 1)` is a homeomorphism from `Spin(p)` onto the block subgroup
 `K(p, 1)`, with the subspace topology. -/
 noncomputable def realCliffordSpinContinuousMulEquivBlockRange :
@@ -154,67 +165,41 @@ theorem coe_realCliffordSpinContinuousMulEquivBlockRange :
     ⇑(realCliffordSpinContinuousMulEquivBlockRange p) = realCliffordSpinMulEquivBlockRange p :=
   (rfl)
 
+/-- The inverse of `realCliffordSpinContinuousMulEquivBlockRange p` evaluates as the inverse of
+`realCliffordSpinMulEquivBlockRange p`. -/
+@[simp]
+theorem coe_realCliffordSpinContinuousMulEquivBlockRange_symm :
+    ⇑(realCliffordSpinContinuousMulEquivBlockRange p).symm =
+      (realCliffordSpinMulEquivBlockRange p).symm :=
+  (rfl)
+
 /-! ### Signature `(1, 1)` -/
 
-/-- **`K(1, 1)` has two elements**: it is a copy of `Spin(1) = {1, -1}`. -/
-theorem card_range_realCliffordSpinBlockHom_one_one :
-    Nat.card (realCliffordSpinBlockHom 1 1).range = 2 := by
-  rw [← Nat.card_congr (realCliffordSpinMulEquivBlockRange 1).toEquiv,
-    ← Nat.card_congr (zmodTwoMulEquivSpinGroupOfFinrankEqOne (realCliffordForm 1 0)
-      (nondegenerate_realCliffordForm 1 0) (Module.finrank_fin_fun ℝ)).toEquiv,
-    Nat.card_eq_fintype_card, Fintype.card_multiplicative, ZMod.card]
-
-/-- An element of `Spin(1, 1)` lying in a compact subgroup has rapidity zero: if
-`x = ±(cosh t + sinh t e₁e₂)` lies in a compact subgroup, then `t = 0`, because the rapidity of `xⁿ`
-is `n t`. -/
-private theorem realCliffordSpinOneOneEquiv_symm_snd_eq_one_of_isCompact
-    {C : Subgroup (realCliffordSpinGroup 1 1)}
-    (hC : IsCompact (C : Set (realCliffordSpinGroup 1 1)))
-    {x : realCliffordSpinGroup 1 1} (hx : x ∈ C) :
-    (realCliffordSpinOneOneEquiv.symm x).2 = 1 := by
-  set r : realCliffordSpinGroup 1 1 → ℝ := fun y ↦ (realCliffordSpinOneOneEquiv.symm y).2.toAdd
-  have hr : Continuous r :=
-    (continuous_toAdd.comp (continuous_snd.comp
-      (map_continuous realCliffordSpinOneOneContinuousMulEquiv.symm))).congr fun y ↦ by
-      simp only [r, Function.comp_apply, coe_realCliffordSpinOneOneContinuousMulEquiv_symm]
-  have hpow (n : ℕ) (y : realCliffordSpinGroup 1 1) : r (y ^ n) = n * r y := by
-    simp [r, Prod.pow_snd, toAdd_pow, nsmul_eq_mul]
-  have hinv (y : realCliffordSpinGroup 1 1) : r y⁻¹ = -r y := by
-    simp [r, toAdd_inv]
-  obtain ⟨M, hM⟩ := (hC.image hr).bddAbove
-  have hle (y : realCliffordSpinGroup 1 1) (hy : y ∈ C) (n : ℕ) : n * r y ≤ M :=
-    hpow n y ▸ hM ⟨y ^ n, pow_mem hy n, rfl⟩
-  suffices r x = 0 from Multiplicative.toAdd.injective (this.trans toAdd_one.symm)
-  by_contra h
-  -- one of `x` and `x⁻¹` has positive rapidity, whose multiples are unbounded
-  obtain ⟨y, hy, hpos⟩ : ∃ y ∈ C, 0 < r y := by
-    rcases lt_or_gt_of_ne h with h | h
-    · exact ⟨x⁻¹, inv_mem hx, by rw [hinv]; linarith⟩
-    · exact ⟨x, hx, h⟩
-  obtain ⟨n, hn⟩ := exists_nat_gt (M / r y)
-  exact absurd (hle y hy n) (not_le.mpr ((div_lt_iff₀ hpos).mp hn))
-
-/-- **`K(1, 1)` is a maximal compact subgroup of `Spin(1, 1)`.** Every compact subgroup consists of
-elements `±(cosh t + sinh t e₁e₂)` with `t = 0`, that is, of `1` and `-1`, and both lie in
-`K(1, 1)`. -/
-theorem maximal_isCompact_range_realCliffordSpinBlockHom_one_one :
-    Maximal (fun C : Subgroup (realCliffordSpinGroup 1 1) ↦
-      IsCompact (C : Set (realCliffordSpinGroup 1 1))) (realCliffordSpinBlockHom 1 1).range := by
-  refine ⟨isCompact_range_realCliffordSpinBlockHom 1 1, fun C hC _ x hx ↦ ?_⟩
+/-- **`K(1, 1)` is the greatest compact subgroup of `Spin(1, 1)`.** Every compact subgroup
+consists of elements `±(cosh t + sinh t e₁e₂)` with `t = 0`
+(`realCliffordSpinOneOneEquiv_symm_snd_eq_one_of_isCompact`), that is, of `1` and `-1`, and both
+lie in `K(1, 1)`. -/
+theorem isGreatest_isCompact_range_realCliffordSpinBlockHom_one_one :
+    IsGreatest {C : Subgroup (realCliffordSpinGroup 1 1) |
+      IsCompact (C : Set (realCliffordSpinGroup 1 1))} (realCliffordSpinBlockHom 1 1).range := by
+  refine ⟨isCompact_range_realCliffordSpinBlockHom 1 1, fun C hC x hx ↦ ?_⟩
   obtain ⟨⟨ζ, t⟩, rfl⟩ := realCliffordSpinOneOneEquiv.surjective x
   have ht : t = 1 := by
     simpa using realCliffordSpinOneOneEquiv_symm_snd_eq_one_of_isCompact hC hx
   subst ht
-  have hζ : ((ζ : ℝˣ) : ℝ) = 1 ∨ ((ζ : ℝˣ) : ℝ) = -1 := by
-    refine mul_self_eq_one_iff.mp ?_
-    rw [← Units.val_mul, ← _root_.sq, (mem_rootsOfUnity 2 (ζ : ℝˣ)).mp ζ.property,
-      Units.val_one]
-  rcases hζ with hζ | hζ
-  · rw [show realCliffordSpinOneOneEquiv (ζ, 1) = 1 from
-      Subtype.ext (by simp [hζ, OneMemClass.coe_one])]
+  rcases rootsOfUnity.eq_one_or_eq_negOneRootsOfUnity ζ with rfl | rfl
+  · rw [Prod.mk_one_one, map_one]
     exact one_mem _
   · refine ⟨(spinGroup.negOne _ (nondegenerate_realCliffordForm 1 0).ne_zero, 1), ?_⟩
     rw [realCliffordSpinBlockHom_negOne_one]
-    exact Subtype.ext (by simp [hζ])
+    exact Subtype.ext (by simp [coe_negOneRootsOfUnity])
+
+/-- **`K(1, 1)` is a maximal compact subgroup of `Spin(1, 1)`**, being the greatest one
+(`isGreatest_isCompact_range_realCliffordSpinBlockHom_one_one`). -/
+theorem maximal_isCompact_range_realCliffordSpinBlockHom_one_one :
+    Maximal (fun C : Subgroup (realCliffordSpinGroup 1 1) ↦
+      IsCompact (C : Set (realCliffordSpinGroup 1 1))) (realCliffordSpinBlockHom 1 1).range :=
+  ⟨isGreatest_isCompact_range_realCliffordSpinBlockHom_one_one.1,
+    fun _ hC _ ↦ isGreatest_isCompact_range_realCliffordSpinBlockHom_one_one.2 hC⟩
 
 end CliffordAlgebra
