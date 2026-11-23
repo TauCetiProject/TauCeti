@@ -362,10 +362,10 @@ theorem putValue_pde (hK : 0 < K) {T t : ℝ} (ht : t < T) :
   · have hspot : (fun x => putValue x r σ K (T - t)) =ᶠ[𝓝 s]
         fun x => K * exp (-r * (T - t)) - x := by
       filter_upwards [Iio_mem_nhds hs] with x hx using h0 x hx.le _
-    rw [hspot.deriv.deriv_eq, hspot.deriv_eq]
-    simp
+    have hx : deriv (fun x => K * exp (-r * (T - t)) - x) = fun _ => -1 :=
+      funext fun x => ((hasDerivAt_id x).const_sub _).deriv
+    rw [hspot.deriv.deriv_eq, hspot.deriv_eq, hx, deriv_const]
     ring
-  · simp
-    ring
+  · ring
 
 end TauCeti.BlackScholes
