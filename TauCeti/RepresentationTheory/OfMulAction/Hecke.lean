@@ -11,6 +11,7 @@ public import Mathlib.LinearAlgebra.Finsupp.LinearCombination
 public import Mathlib.RepresentationTheory.Intertwining
 public import Mathlib.Topology.Algebra.OpenSubgroup
 import TauCeti.Algebra.GroupAction.DiagonalOrbits
+import TauCeti.RepresentationTheory.OfMulAction
 
 /-!
 # Hecke algebras of permutation modules
@@ -404,16 +405,6 @@ theorem toIntertwiningMap_one : toIntertwiningMap G S A 1 = 1 :=
   Representation.IntertwiningMap.ext <| LinearMap.ext fun f ↦ MonoidAlgebra.coeff_injective <| by
     simp [toEnd_one]
 
-omit [FiniteStabilizerOrbits G S] [Finite (orbitRel.Quotient G S)] in
-/-- The entries of the matrix of an intertwining map are invariant under the diagonal action. -/
-private theorem coeff_apply_single_smul
-    (φ : (Representation.ofMulAction A G S).IntertwiningMap (Representation.ofMulAction A G S))
-    (g : G) (s t : S) :
-    (φ (MonoidAlgebra.single (g • s) 1)).coeff (g • t) =
-      (φ (MonoidAlgebra.single s 1)).coeff t := by
-  rw [← Representation.ofMulAction_single, φ.isIntertwining, Representation.coeff_ofMulAction,
-    inv_smul_smul]
-
 omit [FiniteStabilizerOrbits G S] in
 /-- The matrix `(t, s) ↦ φ(s)(t)` of an intertwining map `φ` of `A[S]` lies in
 `Fun_G(S × S, A)`. -/
@@ -421,7 +412,7 @@ theorem matrix_mem
     (φ : (Representation.ofMulAction A G S).IntertwiningMap (Representation.ofMulAction A G S)) :
     (fun p : S × S ↦ (φ (MonoidAlgebra.single p.2 1)).coeff p.1) ∈
       permutationHeckeModule G S A := by
-  refine ⟨fun g p ↦ coeff_apply_single_smul φ g p.2 p.1, ?_⟩
+  refine ⟨fun g p ↦ φ.coeff_ofMulAction_single_smul g p.2 p.1, ?_⟩
   -- A pair `(t, s)` is in the orbit of `(g • t, s₀)`, where `s₀` represents the orbit of `s`.
   refine (Set.finite_iUnion fun q : orbitRel.Quotient G S ↦
     (φ (MonoidAlgebra.single q.out 1)).coeff.support.finite_toSet.image
@@ -430,7 +421,7 @@ theorem matrix_mem
   obtain ⟨g, hg⟩ := Quotient.mk_out (s := orbitRel G S) s
   refine Set.mem_iUnion.mpr ⟨Quotient.mk _ s, g • t, ?_, Quotient.sound ⟨g, by simp [hg]⟩⟩
   simp only at hg
-  rwa [Finset.mem_coe, Finsupp.mem_support_iff, ← hg, coeff_apply_single_smul]
+  rwa [Finset.mem_coe, Finsupp.mem_support_iff, ← hg, φ.coeff_ofMulAction_single_smul]
 
 /-- An intertwining map of `A[S]` is the action of its matrix. -/
 theorem toIntertwiningMap_matrix
