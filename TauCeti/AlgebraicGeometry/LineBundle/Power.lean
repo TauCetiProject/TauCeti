@@ -33,7 +33,9 @@ Ported from `roed-math/TauCeti-w2-fresh`, branch
 * `AlgebraicGeometry.Scheme.Modules.isInvertible_tensorPow`: every monoidal tensor power
   `TauCeti.tensorPow L n` of an invertible sheaf is invertible.
 * `TauCeti.AlgebraicGeometry.InvertibleSheaf.tensorPowObjIso`: the underlying sheaf of
-  `L.tensorPow n` is isomorphic to the monoidal tensor power `TauCeti.tensorPow L.obj n`.
+  `L.tensorPow n` is isomorphic to the monoidal tensor power `TauCeti.tensorPow L.obj n`, with
+  recursive equations (`tensorPowObjIso_zero`, `tensorPowObjIso_succ`) and naturality
+  (`tensorPowCongr_hom_hom_comp_tensorPowObjIso_hom`).
 * `TauCeti.AlgebraicGeometry.LineBundleClass.mk_tensorPow` and
   `TauCeti.AlgebraicGeometry.LineBundleClass.mk_tensorPow_obj`: the class of `L^{⊗n}` (and of the
   monoidal tensor power `TauCeti.tensorPow L.obj n`) is the `n`-th power of the class of `L` in
@@ -224,6 +226,55 @@ noncomputable def tensorPowObjIso (L : InvertibleSheaf X) :
       tensorProductObjIso (L.tensorPow n) L ≪≫
       whiskerRightIso (L.tensorPowObjIso n) L.obj ≪≫
       tensorPowSuccIso L.obj n
+
+/-- On the zeroth tensor power, `tensorPowObjIso` is the transport along `tensorPow_zero`
+followed by `trivialObjIsoUnit`. -/
+@[simp]
+lemma tensorPowObjIso_zero (L : InvertibleSheaf X) :
+    L.tensorPowObjIso 0 =
+      eqToIso (congrArg (·.obj) L.tensorPow_zero) ≪≫ trivialObjIsoUnit X :=
+  (rfl)
+
+/-- The recursive step of `tensorPowObjIso`: on `L^{⊗(n+1)} = L^{⊗n} ⊗ L`, it passes to the
+monoidal product of underlying sheaves, applies `tensorPowObjIso n` on the first factor, and appends
+`L` via `tensorPowSuccIso`. -/
+lemma tensorPowObjIso_succ (L : InvertibleSheaf X) (n : ℕ) :
+    L.tensorPowObjIso (n + 1) =
+      eqToIso (congrArg (·.obj) (L.tensorPow_succ n)) ≪≫
+        tensorProductObjIso (L.tensorPow n) L ≪≫
+        whiskerRightIso (L.tensorPowObjIso n) L.obj ≪≫
+        tensorPowSuccIso L.obj n :=
+  (rfl)
+
+/-- Read through `tensorPowObjIso`, the induced isomorphism `tensorPowCongr e n` corresponds to
+the monoidal map `TauCeti.tensorPowMap e.hom.hom n`. -/
+@[reassoc]
+lemma tensorPowCongr_hom_hom_comp_tensorPowObjIso_hom {L K : InvertibleSheaf X} (e : L ≅ K)
+    (n : ℕ) :
+    (tensorPowCongr e n).hom.hom ≫ (K.tensorPowObjIso n).hom =
+      (L.tensorPowObjIso n).hom ≫ TauCeti.tensorPowMap e.hom.hom n := by
+  induction n with
+  | zero =>
+    simp [TauCeti.tensorPowMap_zero]
+  | succ n ih =>
+    rw [tensorPowCongr_succ, tensorPowObjIso_succ, tensorPowObjIso_succ]
+    simp only [ObjectProperty.FullSubcategory.comp_hom, Iso.trans_hom, Category.assoc,
+      whiskerRightIso_hom, eqToIso.hom]
+    have hL : (eqToHom (L.tensorPow_succ n)).hom =
+        eqToHom (congrArg (·.obj) (L.tensorPow_succ n)) := by
+      cases L.tensorPow_succ n
+      rfl
+    have hK : (eqToHom (K.tensorPow_succ n).symm).hom =
+        eqToHom (congrArg (·.obj) (K.tensorPow_succ n).symm) := by
+      cases (K.tensorPow_succ n).symm
+      rfl
+    rw [hL, hK, eqToHom_trans_assoc, eqToHom_refl, Category.id_comp]
+    congr 1
+    rw [tensorProductCongrRight_hom_hom_comp_tensorProductObjIso_hom_assoc,
+      tensorProductCongrLeft_hom_hom_comp_tensorProductObjIso_hom_assoc,
+      ← whisker_exchange_assoc, ← comp_whiskerRight_assoc, ih, comp_whiskerRight_assoc,
+      whisker_exchange_assoc, ← tensorHom_def'_assoc,
+      TauCeti.tensorPowSuccIso_hom_naturality]
 
 end InvertibleSheaf
 

@@ -9,6 +9,7 @@ public import TauCeti.AlgebraicGeometry.Cohomology.ClosedImmersion.Linear
 public import TauCeti.AlgebraicGeometry.IntersectionNumber.Basic
 public import TauCeti.AlgebraicGeometry.LineBundle.BaseChange
 public import TauCeti.AlgebraicGeometry.LineBundle.ProjectiveLine
+import TauCeti.AlgebraicGeometry.Cohomology.ProjectiveSpace.Vanishing
 
 /-!
 # Exceptional curves of the first kind

@@ -12,6 +12,7 @@ public import TauCeti.AlgebraicGeometry.LineBundle.Power
 public import TauCeti.AlgebraicGeometry.Modules.Biprod
 import Mathlib.CategoryTheory.Monoidal.Preadditive
 import TauCeti.Algebra.Category.ModuleCat.Sheaf.Invertible.FinitePresentation
+import TauCeti.AlgebraicGeometry.LineBundle.Dual
 import TauCeti.AlgebraicGeometry.LineBundle.Monoidal
 import TauCeti.AlgebraicGeometry.LineBundle.TwistedSections
 import TauCeti.AlgebraicGeometry.Modules.FiniteType
@@ -35,7 +36,7 @@ The proof follows Hartshorne, Theorem II.5.17, and the Stacks Project, Tag 01Q3:
   equals the nonvanishing locus of `s` (`Scheme.Modules.nonvanishingLocus_tensorPowSection`).
   Using quasi-compactness, ampleness of `L` yields a single positive integer `d` and finitely many
   global sections of `L^{⊗ d}` whose nonvanishing loci are affine and cover `X`
-  (`LineBundleClass.IsAmple.exists_pos_finite_affine_cover`).
+  (`LineBundleClass.IsAmple.exists_pos_tensorPow_finite_affine_cover_nonvanishingLocus`).
 * When global sections `s₁, …, sₘ` of an invertible sheaf `M` have affine nonvanishing loci `Uᵢ`
   covering `X`, `Scheme.Modules.eventually_exists_generatingSections_tensor_tensorPow` gives finite
   global generation of `F ⊗ M^{⊗ n}` for all sufficiently large `n`.
@@ -44,9 +45,9 @@ The proof follows Hartshorne, Theorem II.5.17, and the Stacks Project, Tag 01Q3:
 
 ## Main results
 
-* `TauCeti.AlgebraicGeometry.LineBundleClass.IsAmple.exists_pos_finite_affine_cover`: an ample line
-  bundle has a positive power with finitely many global sections whose nonvanishing loci are affine
-  and cover `X`.
+* `TauCeti.AlgebraicGeometry.LineBundleClass.IsAmple.`
+  `exists_pos_tensorPow_finite_affine_cover_nonvanishingLocus`: an ample line bundle has a positive
+  power with finitely many global sections whose nonvanishing loci are affine and cover `X`.
 * `AlgebraicGeometry.Scheme.Modules.exists_generatingSections_tensorPow_of_isAmple` and
   `AlgebraicGeometry.Scheme.Modules.exists_generatingSections_tensor_of_isAmple`: Serre's
   twisting-generation theorem for ample line bundles.
@@ -74,11 +75,22 @@ namespace TauCeti.AlgebraicGeometry
 
 variable {X : Scheme.{u}}
 
+/-- For an invertible sheaf `L`, the nested monoidal tensor power `(L^{⊗ m})^{⊗ n}` is isomorphic
+to `L^{⊗ (m * n)}`. -/
+private theorem nonempty_tensorPow_tensorPow_obj_iso (L : InvertibleSheaf X) (m n : ℕ) :
+    Nonempty
+      (TauCeti.tensorPow (TauCeti.tensorPow L.obj m) n ≅ TauCeti.tensorPow L.obj (m * n)) := by
+  let M : InvertibleSheaf X := ⟨TauCeti.tensorPow L.obj m, inferInstance⟩
+  obtain ⟨e₁⟩ := InvertibleSheaf.nonempty_tensorPow_obj_iso
+    (L := M) (K := L.tensorPow m) ⟨(L.tensorPowObjIso m).symm⟩ n
+  obtain ⟨e₂⟩ := InvertibleSheaf.nonempty_tensorPow_tensorPow_iso L m n
+  exact ⟨(M.tensorPowObjIso n).symm ≪≫ e₁ ≪≫ e₂ ≪≫ L.tensorPowObjIso (m * n)⟩
+
 /-- **Common affine cover by sections of a single power of an ample line bundle.** If `L` is an
 ample line bundle on `X`, then there exist a positive integer `d` and finitely many global sections
 of `L^{⊗ d}` whose nonvanishing loci are affine and cover `X`. -/
-theorem LineBundleClass.IsAmple.exists_pos_finite_affine_cover {L : InvertibleSheaf X}
-    (hL : (LineBundleClass.mk L).IsAmple) :
+theorem LineBundleClass.IsAmple.exists_pos_tensorPow_finite_affine_cover_nonvanishingLocus
+    {L : InvertibleSheaf X} (hL : (LineBundleClass.mk L).IsAmple) :
     ∃ (d : ℕ) (_ : 0 < d) (m : ℕ) (s : Fin m → Γ(TauCeti.tensorPow L.obj d, ⊤)),
       (∀ i, IsAffineOpen ((TauCeti.tensorPow L.obj d).nonvanishingLocus (s i))) ∧
         (⨆ i, (TauCeti.tensorPow L.obj d).nonvanishingLocus (s i)) = ⊤ := by
@@ -107,13 +119,8 @@ theorem LineBundleClass.IsAmple.exists_pos_finite_affine_cover {L : InvertibleSh
     let k : ℕ := d / n x.val
     have hnk : n x.val * k = d := Nat.mul_div_cancel' hdvd
     have hk : 0 < k := Nat.pos_of_ne_zero fun h0 ↦ by simp [h0] at hnk; omega
-    have hclass :
-        LineBundleClass.mk
-            ⟨TauCeti.tensorPow (TauCeti.tensorPow L.obj (n x.val)) k, inferInstance⟩ =
-          LineBundleClass.mk ⟨TauCeti.tensorPow L.obj d, inferInstance⟩ := by
-      rw [mk_tensorPow_obj ⟨TauCeti.tensorPow L.obj (n x.val), inferInstance⟩ k,
-        mk_tensorPow_obj, mk_tensorPow_obj, ← pow_mul, hnk]
-    obtain ⟨e⟩ := LineBundleClass.mk_eq_mk_iff.mp hclass
+    obtain ⟨e0⟩ := nonempty_tensorPow_tensorPow_obj_iso L (n x.val) k
+    let e := e0 ≪≫ eqToIso (congrArg (TauCeti.tensorPow L.obj) hnk)
     refine ⟨e.hom.app ⊤ (Scheme.Modules.tensorPowSection (t x.val) k), ?_⟩
     rw [Scheme.Modules.nonvanishingLocus_hom_app,
       Scheme.Modules.nonvanishingLocus_tensorPowSection (t x.val) hk]
@@ -146,7 +153,8 @@ theorem exists_generatingSections_tensorPow_of_isAmple
     ∃ n₀ : ℕ, ∀ n ≥ n₀,
       ∃ σ : (F ⊗ tensorPow L.obj n).GeneratingSections, σ.IsFiniteType := by
   have := hL.compactSpace
-  obtain ⟨d, hd, m, s, haff, hcover⟩ := hL.exists_pos_finite_affine_cover
+  obtain ⟨d, hd, m, s, haff, hcover⟩ :=
+    hL.exists_pos_tensorPow_finite_affine_cover_nonvanishingLocus
   -- Apply the twisting-generation theorem to each remainder twist `F ⊗ L^{⊗ r}` (`r < d`).
   have hrem (r : Fin d) : ∃ N : ℕ, ∀ q ≥ N,
       ∃ σ : ((F ⊗ tensorPow L.obj r.val) ⊗ tensorPow (tensorPow L.obj d) q).GeneratingSections,
@@ -170,19 +178,12 @@ theorem exists_generatingSections_tensorPow_of_isAmple
     rw [Nat.le_div_iff_mul_le hd]
     simpa only [mul_comm] using hn
   obtain ⟨σ, hσ⟩ := hN r q ((Finset.le_sup (f := N) (Finset.mem_univ r)).trans hq)
-  -- Identify `(F ⊗ L^{⊗ r}) ⊗ (L^{⊗ d})^{⊗ q}` with `F ⊗ L^{⊗ n}` via Picard-group classes.
-  let Ar : InvertibleSheaf X := ⟨tensorPow L.obj r.val, isInvertible_tensorPow L.obj r.val⟩
-  let Mq : InvertibleSheaf X :=
-    ⟨tensorPow (tensorPow L.obj d) q, isInvertible_tensorPow (tensorPow L.obj d) q⟩
-  let A : InvertibleSheaf X := Ar ⊗ Mq
-  let B : InvertibleSheaf X := ⟨tensorPow L.obj n, isInvertible_tensorPow L.obj n⟩
-  have hAB : LineBundleClass.mk A = LineBundleClass.mk B := by
-    have hM : LineBundleClass.mk Mq = LineBundleClass.mk L ^ (d * q) := by
-      rw [LineBundleClass.mk_tensorPow_obj ⟨tensorPow L.obj d, inferInstance⟩ q,
-        LineBundleClass.mk_tensorPow_obj L d, ← pow_mul]
-    rw [LineBundleClass.mk_tensorObj Ar Mq, LineBundleClass.mk_tensorPow_obj, hM,
-      LineBundleClass.mk_tensorPow_obj, ← pow_add, add_comm, Nat.div_add_mod]
-  obtain ⟨eL⟩ := LineBundleClass.mk_eq_mk_iff.mp hAB
+  -- Identify `(F ⊗ L^{⊗ r}) ⊗ (L^{⊗ d})^{⊗ q}` with `F ⊗ L^{⊗ n}` via `tensorPowAddIso`.
+  obtain ⟨emul⟩ := nonempty_tensorPow_tensorPow_obj_iso L d q
+  let eL : tensorPow L.obj r.val ⊗ tensorPow (tensorPow L.obj d) q ≅ tensorPow L.obj n :=
+    whiskerLeftIso (tensorPow L.obj r.val) emul ≪≫
+      TauCeti.tensorPowAddIso L.obj r.val (d * q) ≪≫
+      eqToIso (congrArg (TauCeti.tensorPow L.obj) (Nat.div_add_mod n d))
   let e : (F ⊗ tensorPow L.obj r.val) ⊗ tensorPow (tensorPow L.obj d) q ≅
       F ⊗ tensorPow L.obj n :=
     α_ F (tensorPow L.obj r.val) (tensorPow (tensorPow L.obj d) q) ≪≫ whiskerLeftIso F eL
@@ -232,14 +233,11 @@ theorem exists_epi_biproduct_of_isAmple
   have hπ : Epi (C := X.Modules) π := σ.epi
   have : (tensorLeft K.obj).IsLeftAdjoint := ⟨ihom K.obj, ⟨ihom.adjunction K.obj⟩⟩
   have : Epi (K.obj ◁ π) := TauCeti.epi_whiskerLeft K.obj π
-  -- Identify `K ⊗ (F ⊗ K^∨) ≅ F`.
-  have hKK : LineBundleClass.mk (K ⊗ K.dual) = 1 := by
-    rw [LineBundleClass.mk_tensorObj, ← LineBundleClass.inv_mk, mul_inv_cancel]
-  obtain ⟨eUnit⟩ := LineBundleClass.mk_eq_one_iff.mp hKK
+  -- Identify `K ⊗ (F ⊗ K^∨) ≅ F` using the canonical evaluation isomorphism `K ⊗ K^∨ ≅ 𝒪_X`.
   let eF : K.obj ⊗ (F ⊗ K.dual.obj) ≅ F :=
     whiskerLeftIso K.obj (β_ F K.dual.obj) ≪≫
       (α_ K.obj K.dual.obj F).symm ≪≫
-      whiskerRightIso eUnit F ≪≫
+      whiskerRightIso K.evaluationDualIso F ≪≫
       λ_ F
   -- Identify `⨁_{Fin k} K ≅ K ⊗ free σ.I`.
   let eFree : (⨁ fun _ : Fin k ↦ K.obj) ≅

@@ -97,6 +97,7 @@ private theorem le_nonvanishingLocus_tensorPowSection {U : X.Opens} (e : Γ(L, U
 
 /-- For a positive integer `k`, the nonvanishing locus of the tensor power section `sᵏ` equals the
 nonvanishing locus of `s`. -/
+@[simp]
 theorem nonvanishingLocus_tensorPowSection {U : X.Opens} (s : Γ(L, U)) {k : ℕ} (hk : 0 < k) :
     (tensorPow L k).nonvanishingLocus (tensorPowSection s k) = L.nonvanishingLocus s := by
   ext x
@@ -111,8 +112,8 @@ theorem nonvanishingLocus_tensorPowSection {U : X.Opens} (s : Γ(L, U)) {k : ℕ
       rw [nonvanishingLocus_map, nonvanishingLocus_trivializationGenerator]
       exact le_inf le_rfl inf_le_right
     -- Locally on `W = U ⊓ V`, write `s = f • e`; then both loci equal `D(f)` on `W`.
-    obtain ⟨f, hf⟩ := surjective_smul_of_le_nonvanishingLocus he (L.presheaf.map iWU.op s)
-    change f • e = L.presheaf.map iWU.op s at hf
+    obtain ⟨f, (hf : f • e = L.presheaf.map iWU.op s)⟩ :=
+      surjective_smul_of_le_nonvanishingLocus he (L.presheaf.map iWU.op s)
     have hek : W ≤ (tensorPow L k).nonvanishingLocus (tensorPowSection e k) :=
       le_nonvanishingLocus_tensorPowSection e he k
     have hLHS : W ⊓ (tensorPow L k).nonvanishingLocus (tensorPowSection s k) = X.basicOpen f := by
