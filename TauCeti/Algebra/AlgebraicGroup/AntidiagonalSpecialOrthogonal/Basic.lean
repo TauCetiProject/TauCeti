@@ -324,17 +324,16 @@ variable {A : Type w} [CommRing A] [Algebra R A]
 /-- The matrix subgroup of `GL_l(A)` cut out by the defining Hopf ideal is `pointsSubgroup l A`. -/
 theorem hopfIdealPointsSubgroup_definingHopfIdeal :
     GeneralLinear.hopfIdealPointsSubgroup l (definingHopfIdeal R l) A = pointsSubgroup l A := by
+  rw [definingHopfIdeal, GeneralLinear.hopfIdealPointsSubgroup_sup,
+    ConstantForm.hopfIdealPointsSubgroup_definingHopfIdeal,
+    map_formMatrix R l _ (map_zero _) (map_one _), pointsSubgroup, inf_comm]
+  congr 1
   ext g
-  have hJ := ConstantForm.mem_definingPointsSubgroup_iff R l (formMatrix R l)
-    ((GeneralLinear.pointsMulEquiv (R := R) (A := A) l).symm g)
   have hdet := SpecialLinear.mem_definingPointsSubgroup_iff_det_eq_one R l
     ((GeneralLinear.pointsMulEquiv (R := R) (A := A) l).symm g)
-  rw [MulEquiv.apply_symm_apply, CommHopfAlgCat.mem_quotientPointsSubgroup_iff,
-    map_formMatrix R l _ (map_zero _) (map_one _)] at hJ
   rw [MulEquiv.apply_symm_apply, CommHopfAlgCat.mem_quotientPointsSubgroup_iff] at hdet
-  rw [definingHopfIdeal, GeneralLinear.hopfIdealPointsSubgroup_sup, Subgroup.mem_inf,
-    GeneralLinear.mem_hopfIdealPointsSubgroup_iff, GeneralLinear.mem_hopfIdealPointsSubgroup_iff,
-    hJ, hdet, mem_pointsSubgroup_iff, and_comm]
+  rw [GeneralLinear.mem_hopfIdealPointsSubgroup_iff, hdet, MonoidHom.mem_ker, Units.ext_iff,
+    Matrix.GeneralLinearGroup.val_det_apply, Units.val_one]
 
 /-- **The points of `SO_l^J`**: the group of algebra-valued points of its coordinate Hopf algebra
 is `pointsSubgroup l A`, the determinant-one matrices preserving `J_l`. -/
@@ -405,7 +404,7 @@ private theorem definingHopfIdeal_toIdeal_eq_span_union (S : Type*) [CommRing S]
 
 /-- The general-linear base-change isomorphism carries the base-changed defining Hopf ideal of
 `SO_l^J` onto the defining Hopf ideal over the new base. -/
-private theorem map_baseChangeHopfIdeal_definingHopfIdeal :
+theorem map_baseChangeHopfIdeal_definingHopfIdeal :
     (CommHopfAlgCat.baseChangeHopfIdeal (K := K) (definingHopfIdeal R l)).map
         (GeneralLinear.coordinateHopfAlgebraBaseChangeIso R K l).hom.hom =
       definingHopfIdeal K l := by
