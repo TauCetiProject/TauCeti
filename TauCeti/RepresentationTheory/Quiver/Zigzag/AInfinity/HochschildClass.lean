@@ -276,7 +276,7 @@ theorem zigzagStrictAInfinityAlgebra_hochschildDifferential_apply_of_tprod_of_me
   have hφx : φ (subword k x 0 (n + 1)) ∈ zigzagIntegerGrade k G 1 := by
     rw [subword_eq_of_tprod k x (by omega) (by omega)]
     have h := hφ.map_mem (mem_gradedPiece_of_tprod ((𝒵).grading.shift 1) (n := n + 1)
-      (by omega) (fun j ↦ x ⟨0 + j.1, by omega⟩) (fun _ ↦ 0) fun i ↦ hx' _)
+      (by omega) (fun j ↦ x ⟨0 + j.val, by omega⟩) (fun _ ↦ 0) fun i ↦ hx' _)
     simpa [InternalGrading.shift_piece] using h
   rw [AInfinityAlgebra.hochschildDifferential_eq_brace_sub, negOnePowCast_zero, one_smul,
     LinearMap.sub_apply, brace_def, brace_def, LinearMap.comp_apply, LinearMap.comp_apply,
@@ -665,34 +665,41 @@ theorem zigzagBacktrackPairing_obstruction (a : Matrix G.Dart G.Dart k)
     Units.val_one, Int.cast_one, one_mul, one_mul]
 
 omit [Fintype G.Dart] in
-/-- **Higher loop operations are Hochschild cocycles.** For `n ≥ 1`, the obstruction of the loop
-deformation with coefficients `c` on walks of length `n + 2`, that is its operation of arity
-`n + 2`, is a Hochschild cocycle of the strict zigzag algebra, since the two agree up to arity
-`n + 1`. -/
-theorem hochschildDifferential_obstruction_zigzagLoopAInfinityAlgebra {n : ℕ} (hn : 1 ≤ n)
+/-- **Loop obstructions are Hochschild cocycles.** The obstruction of the loop deformation with
+coefficients `c` on walks of length `n + 2` is a Hochschild cocycle of the strict zigzag algebra,
+since the two agree up to arity `n + 1`. For `n ≥ 1` this obstruction is the operation of arity
+`n + 2` of the loop deformation; for `n = 0` it vanishes. -/
+theorem hochschildDifferential_obstruction_zigzagLoopAInfinityAlgebra {n : ℕ}
     (c : (Fin (n + 2) → G.Dart) →₀ k) (hc : ∀ w ∈ c.support, ∀ i, (w i).fst = (w (i + 1)).snd) :
     (𝒵).hochschildDifferential 1
       ((zigzagLoopAInfinityAlgebra hns c hc).obstruction 𝒵 ⟨n + 2, by omega⟩) = 0 := by
   have hG :=
     zigzagLoopAInfinityAlgebra_grading_eq_zigzagStrictAInfinityAlgebra_grading (hns := hns) c hc
-  -- The loop deformation agrees with the strict zigzag algebra up to arity `n + 1`.
-  have hm : ∀ r, 0 < r → r ≤ n + 1 → (zigzagLoopAInfinityAlgebra hns c hc).m r = (𝒵).m r := by
-    intro r hr hrn
+  -- The loop deformation agrees with the strict zigzag algebra except in arity `n + 2`.
+  have hm : ∀ r, 0 < r → (r = 2 ∨ r ≠ n + 2) →
+      (zigzagLoopAInfinityAlgebra hns c hc).m r = (𝒵).m r := by
+    intro r hr hr'
     rcases eq_or_ne r 2 with rfl | h₂
     · exact zigzagLoopAInfinityAlgebra_m_two_eq_zigzagStrictAInfinityAlgebra_m_two c hc
     · rw [zigzagLoopAInfinityAlgebra_m_eq_zero _ _ h₂ (by omega),
         zigzagStrictAInfinityAlgebra_m_eq_zero h₂]
+  rcases n.eq_zero_or_pos with rfl | hn
+  · -- In arity two the obstruction vanishes: the two binary operations agree.
+    rw [AInfinityAlgebra.obstruction_eq_zero_of_m_eq hG (n := ⟨0 + 2, by omega⟩)
+      (hm 2 two_pos (Or.inl rfl)), AInfinityAlgebra.hochschildDifferential_zero]
   exact AInfinityAlgebra.hochschildDifferential_obstruction isMinimal_zigzagStrictAInfinityAlgebra
     (fun r hr ↦ zigzagStrictAInfinityAlgebra_m_eq_zero (by omega)) hG (n := n + 1) (by omega)
-    fun z hz ↦ AInfinityAlgebra.taylor_apply_eq_of_forall_m_eq hG hm hz
+    fun z hz ↦ AInfinityAlgebra.taylor_apply_eq_of_forall_m_eq hG
+      (fun r hr hrn ↦ hm r hr (by omega)) hz
 
 omit [Fintype G.Dart] in
-/-- **A higher loop operation which is not a coboundary gives a nonzero Hochschild class.** If the
-operation of arity `n + 2` of a loop deformation, a Hochschild cocycle of the strict zigzag algebra
-by `TauCeti.hochschildDifferential_obstruction_zigzagLoopAInfinityAlgebra`, is not the Hochschild
+/-- **A loop obstruction which is not a coboundary gives a nonzero Hochschild class.** If the
+obstruction of a loop deformation in arity `n + 2` (for `n ≥ 1`, its operation of arity `n + 2`), a
+Hochschild cocycle of the strict zigzag algebra by
+`TauCeti.hochschildDifferential_obstruction_zigzagLoopAInfinityAlgebra`, is not the Hochschild
 differential of any suspended cochain of degree zero, then `HH^{n + 2, -n}(Z, Z) ≠ 0`. -/
 theorem not_hochschildVanishesAt_zigzagStrictAInfinityAlgebra_of_not_exists_eq_obstruction {n : ℕ}
-    (hn : 1 ≤ n) (c : (Fin (n + 2) → G.Dart) →₀ k)
+    (c : (Fin (n + 2) → G.Dart) →₀ k)
     (hc : ∀ w ∈ c.support, ∀ i, (w i).fst = (w (i + 1)).snd)
     (h : ¬∃ φ : ReducedTensorWords k (nonisolatedZigzagQuotient k G) →ₗ[k]
         nonisolatedZigzagQuotient k G,
@@ -706,7 +713,7 @@ theorem not_hochschildVanishesAt_zigzagStrictAInfinityAlgebra_of_not_exists_eq_o
     (AInfinityAlgebra.isHomogeneous_obstruction
       (zigzagLoopAInfinityAlgebra_grading_eq_zigzagStrictAInfinityAlgebra_grading _ hc) _)
     (AInfinityAlgebra.obstruction_comp_lengthProj _ _ _)
-    (hochschildDifferential_obstruction_zigzagLoopAInfinityAlgebra hn c hc)
+    (hochschildDifferential_obstruction_zigzagLoopAInfinityAlgebra c hc)
   exact h ⟨φ, hφ, hφc⟩
 
 /-- **Quartic loop operations which are not Hochschild coboundaries.** Let `a` be a symmetric
@@ -782,13 +789,11 @@ end Vanishing
 
 section Weights
 
-variable [DecidableEq V]
-
 omit [Finite V] in
 /-- A matrix with a single nonzero entry, on a pair of darts with a common head, vanishes on the
 pairs of darts with distinct heads. -/
-private theorem single_apply_eq_zero_of_snd_ne {x y : G.Dart} (h : x.snd = y.snd) (r : k)
-    {d e : G.Dart} (hde : d.snd ≠ e.snd) : Matrix.single x y r d e = 0 :=
+private theorem single_apply_eq_zero_of_snd_ne [DecidableEq V] {x y : G.Dart} (h : x.snd = y.snd)
+    (r : k) {d e : G.Dart} (hde : d.snd ≠ e.snd) : Matrix.single x y r d e = 0 :=
   Matrix.single_apply_of_ne _ _ _ _ _ fun ⟨hx, hy⟩ ↦ hde (by rw [← hx, ← hy, h])
 
 variable [Fintype G.Dart]
@@ -806,13 +811,13 @@ private def balanceDefect : Matrix G.Dart G.Dart k →ₗ[k] G.Dart → k where
     simp only [Matrix.smul_apply, smul_eq_mul, ← Finset.mul_sum, RingHom.id_apply, Pi.smul_apply]
     ring
 
-omit [Finite V] [DecidableEq V] in
+omit [Finite V] in
 private theorem balanceDefect_apply (a : Matrix G.Dart G.Dart k) (e : G.Dart) :
     balanceDefect a e = ∑ d, a d e - a e.symm e.symm :=
   rfl
 
 omit [Finite V] in
-private theorem balanceDefect_single_of_ne {x y : G.Dart} (h : x ≠ y) (r : k) :
+private theorem balanceDefect_single_of_ne [DecidableEq V] {x y : G.Dart} (h : x ≠ y) (r : k) :
     balanceDefect (Matrix.single x y r) = Pi.single y r := by
   ext e
   rw [balanceDefect_apply,
@@ -820,7 +825,7 @@ private theorem balanceDefect_single_of_ne {x y : G.Dart} (h : x ≠ y) (r : k) 
   simp [Matrix.single_apply, ite_and, Pi.single_apply, eq_comm]
 
 omit [Finite V] in
-private theorem balanceDefect_single_self (x : G.Dart) (r : k) :
+private theorem balanceDefect_single_self [DecidableEq V] (x : G.Dart) (r : k) :
     balanceDefect (Matrix.single x x r) = Pi.single x r - Pi.single x.symm r := by
   ext e
   have h : x = e.symm ↔ e = x.symm := by
@@ -930,7 +935,7 @@ theorem not_hochschildVanishesAt_four_zigzagStrictAInfinityAlgebra [Nontrivial k
     {δ : Fin 4 → G.Dart} (hδ : Function.Injective δ) {v : V} (hv : ∀ i, (δ i).snd = v) :
     ¬(𝒵).HochschildVanishesAt ⟨4, by norm_num⟩ :=
   not_hochschildVanishesAt_zigzagStrictAInfinityAlgebra_of_not_exists_eq_obstruction
-    (n := 2) one_le_two _ _
+    (n := 2) _ _
     (not_exists_hochschildDifferential_eq_obstruction_zigzagLoopAInfinityAlgebra_single hδ hv)
 
 end Four
@@ -1098,7 +1103,7 @@ theorem not_hochschildVanishesAt_four_zigzagStrictAInfinityAlgebra_of_walk [Nont
     (hdf' : d' ≠ f (Fin.last n)) (hef' : e' ≠ f (Fin.last n)) :
     ¬(𝒵).HochschildVanishesAt ⟨4, by norm_num⟩ :=
   not_hochschildVanishesAt_zigzagStrictAInfinityAlgebra_of_not_exists_eq_obstruction
-    (n := 2) one_le_two _ _
+    (n := 2) _ _
     (not_exists_hochschildDifferential_eq_obstruction_zigzagLoopAInfinityAlgebra_single_of_walk
       hde hed hf₀ hdf hef hf hf' hfd hde' hd' he' hdf' hef')
 

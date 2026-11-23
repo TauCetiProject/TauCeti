@@ -76,10 +76,10 @@ Frobenius elements generate `Gal(L/K)`. -/
 theorem closure_isArithFrobAt_eq_top [IsGalois K L] (S : Finset (HeightOneSpectrum (𝓞 K)))
     [Group.IsSolvable ((L ≃ₐ[K] L) ⧸ Subgroup.normalClosure {σ : L ≃ₐ[K] L | ∃ v ∉ S,
       ∃ w : {w : HeightOneSpectrum (𝓞 L) // w.asIdeal.LiesOver v.asIdeal},
-        IsArithFrobAt (𝓞 K) σ w.1.asIdeal})] :
+        IsArithFrobAt (𝓞 K) σ w.val.asIdeal})] :
     Subgroup.closure {σ : L ≃ₐ[K] L | ∃ v ∉ S,
       ∃ w : {w : HeightOneSpectrum (𝓞 L) // w.asIdeal.LiesOver v.asIdeal},
-        IsArithFrobAt (𝓞 K) σ w.1.asIdeal} = ⊤ := by
+        IsArithFrobAt (𝓞 K) σ w.val.asIdeal} = ⊤ := by
   by_contra hgen
   obtain ⟨E, _, hE, hsurj⟩ :=
     exists_finrank_prime_ideleClassNormMap_surjective_of_closure_isArithFrobAt_ne_top S hgen
@@ -92,7 +92,7 @@ decomposition group, then `[L : K] = 1`, that is, `L = K`. -/
 theorem finrank_eq_one_of_stabilizer_eq_bot [IsGalois K L] [Group.IsSolvable (L ≃ₐ[K] L)]
     (S : Finset (HeightOneSpectrum (𝓞 K)))
     (hS : ∀ v ∉ S, ∃ w : {w : HeightOneSpectrum (𝓞 L) // w.asIdeal.LiesOver v.asIdeal},
-      MulAction.stabilizer (L ≃ₐ[K] L) w.1.asIdeal = ⊥) :
+      MulAction.stabilizer (L ≃ₐ[K] L) w.val.asIdeal = ⊥) :
     Module.finrank K L = 1 := by
   refine (Nat.eq_or_lt_of_le Module.finrank_pos).elim Eq.symm fun hL ↦ ?_
   obtain ⟨E, _, hE, hsurj⟩ :=
@@ -113,7 +113,7 @@ theorem closure_isArithFrobAt_eq_top_tower [IsGalois L M] [Group.IsSolvable (M �
     (S : Finset (HeightOneSpectrum (𝓞 K))) :
     Subgroup.closure {τ : M ≃ₐ[L] M | ∃ v ∉ S,
       ∃ Q : {Q : HeightOneSpectrum (𝓞 M) // Q.asIdeal.LiesOver v.asIdeal},
-        IsArithFrobAt (𝓞 L) τ Q.1.asIdeal} = ⊤ := by
+        IsArithFrobAt (𝓞 L) τ Q.val.asIdeal} = ⊤ := by
   -- The places of `L` above `S`.
   let SL : Finset (HeightOneSpectrum (𝓞 L)) :=
     (HeightOneSpectrum.primesAbove_finite (𝓞 K) (𝓞 L) S.finite_toSet).toFinset
@@ -121,9 +121,9 @@ theorem closure_isArithFrobAt_eq_top_tower [IsGalois L M] [Group.IsSolvable (M �
   -- A Frobenius element at a place `Q` above a place `w ∉ SL` of `L` is one at a place above
   -- the contraction of `w` to `K`, which lies outside `S`.
   rintro τ ⟨w, hw, Q, hτ⟩
-  have : Q.1.asIdeal.LiesOver w.asIdeal := Q.2
+  have : Q.val.asIdeal.LiesOver w.asIdeal := Q.property
   refine ⟨w.under (𝓞 K), fun h ↦ hw ?_,
-    ⟨Q.1, Ideal.LiesOver.trans Q.1.asIdeal w.asIdeal (w.under (𝓞 K)).asIdeal⟩, hτ⟩
+    ⟨Q.val, Ideal.LiesOver.trans Q.val.asIdeal w.asIdeal (w.under (𝓞 K)).asIdeal⟩, hτ⟩
   simpa [SL] using h
 
 end TauCeti.ClassFieldTheory

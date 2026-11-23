@@ -9,6 +9,7 @@ public import TauCeti.Geometry.Manifold.Riemannian.Submersion.Basic
 public import TauCeti.Geometry.Manifold.Riemannian.Adjoint
 public import TauCeti.Geometry.Manifold.VectorBundle.Hom
 import Mathlib.Geometry.Manifold.VectorBundle.ContMDiffSection
+import TauCeti.Geometry.Manifold.VectorBundle.Section.Extension
 
 /-!
 # Smooth horizontal and vertical projections
@@ -17,7 +18,9 @@ The orthogonal horizontal and vertical projections of a Riemannian submersion ar
 sections of the endomorphism bundle of its source tangent bundle. In particular, they send
 regular vector fields to regular vector fields, by `ContMDiff.clm_bundle_apply`. This allows
 covariant differentiation of the horizontal and vertical parts of a field, as needed in the
-fundamental equations of a submersion.
+fundamental equations of a submersion. Projecting a global section extension
+(`FiberBundle.exists_contMDiff_section_eq`) onto the vertical bundle likewise extends any vertical
+tangent vector to a global `C^n` vertical vector field (`exists_contMDiff_mem_ker`).
 
 The projections are the native `Submodule.starProjection` maps for the kernel of the
 differential and its orthogonal complement, with the given Riemannian metric. There is no
@@ -50,6 +53,10 @@ variable
   {N : Type*} [TopologicalSpace N] [ChartedSpace G N]
   [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
   [RiemannianBundle (fun y : N ↦ TangentSpace J y)]
+
+section Projections
+
+variable
   [IsManifold I 1 M] [IsManifold J 1 N]
   {n : ℕ∞ω} [IsManifold I (n + 1) M]
   [IsContMDiffRiemannianBundle I n E (fun x : M ↦ TangentSpace I x)]
@@ -77,14 +84,12 @@ theorem contMDiff_starProjection_orthogonal_ker (hn : n + 1 ≤ ∞) :
       have hX := (e.contMDiffOn_localFrame_baseSet (I := I) n
         (Module.finBasis ℝ E) j).contMDiffAt
         (e.open_baseSet.mem_nhds hx)
-      have hf := ((h.isSubmersion.contMDiff.of_le hn) x)
+      have hf := h.isSubmersion.contMDiff x
       have hdf : ContMDiffAt I (J.prod 𝓘(ℝ, F)) n
           (fun y ↦ TotalSpace.mk' F (f y)
-            (mfderiv I J f y (e.localFrame (Module.finBasis ℝ E) j y))) x := by
-        -- Express the tangent-map composition as the bundled differential applied to the frame.
-        simpa only [Function.comp_def, tangentMap] using
-          (hf.contMDiffAt_tangentMap le_rfl).comp x hX
-      have hlift := hf.mfderiv_adjoint_apply
+            (mfderiv I J f y (e.localFrame (Module.finBasis ℝ E) j y))) x :=
+        hf.mfderiv_apply_sectionAlong hX hn
+      have hlift := (hf.of_le hn).mfderiv_adjoint_apply
         (W := fun y ↦ mfderiv I J f y (e.localFrame (Module.finBasis ℝ E) j y)) hdf
       simpa only [Function.id_def, ← h.horizontalLift_apply, h.horizontalLift_mfderiv]
         using hlift.contMDiffWithinAt)
@@ -98,16 +103,39 @@ theorem contMDiff_starProjection_ker (hn : n + 1 ≤ ∞) :
       (fun x ↦ TotalSpace.mk' (E →L[ℝ] E)
         (E := fun x : M ↦ TangentSpace I x →L[ℝ] TangentSpace I x)
         x (mfderiv I J f x).ker.starProjection) := by
-  -- Supply the arbitrary-order tangent-bundle instance from IsManifold I (n + 1) M, as above.
-  let := TangentBundle.contMDiffVectorBundle (I := I) (M := M) (n := n)
-  have hid : ContMDiff I (I.prod 𝓘(ℝ, E →L[ℝ] E)) n
-      (fun x ↦ TotalSpace.mk' (E →L[ℝ] E)
-        (E := fun x : M ↦ TangentSpace I x →L[ℝ] TangentSpace I x)
-        x (ContinuousLinearMap.id ℝ (TangentSpace I x))) :=
-    (TauCeti.contMDiff_hom_bundle_iff _).mpr contMDiff_id
+  have hid := TauCeti.contMDiff_id_endomorphism
+    (I := I) (M := M) (F₁ := E) (V := TangentSpace I) (n := n)
   refine (hid.sub_section (h.contMDiff_starProjection_orthogonal_ker hn)).congr fun x ↦ ?_
   simp only [Pi.sub_apply, Submodule.starProjection_orthogonal]
   congr 1
   abel
+
+end Projections
+
+section Extension
+
+variable [T2Space M] [IsManifold I ∞ M] [IsManifold J 1 N]
+  {f : M → N} (h : IsRiemannianSubmersion I J f)
+
+include h
+
+/-- Extend a vertical tangent vector at `x` to a global `C^n` vertical vector field on `M`, for
+`C^n` metrics and `n + 1 ≤ ∞`. -/
+theorem exists_contMDiff_mem_ker (n : ℕ∞ω)
+    [IsContMDiffRiemannianBundle I n E (fun x : M ↦ TangentSpace I x)]
+    [IsContMDiffRiemannianBundle J n F (fun y : N ↦ TangentSpace J y)]
+    {x : M} {u : TangentSpace I x} (hu : u ∈ (mfderiv I J f x).ker) (hn : n + 1 ≤ ∞) :
+    ∃ U : Π y : M, TangentSpace I y, CMDiff n (T% U) ∧ U x = u ∧
+      ∀ y, U y ∈ (mfderiv I J f y).ker := by
+  let : IsManifold I (n + 1) M := .of_le hn
+  let : ENat.LEInfty n := ⟨le_self_add.trans hn⟩
+  let := TangentBundle.contMDiffVectorBundle (I := I) (M := M) (n := n)
+  obtain ⟨U₀, hU₀, rfl⟩ := FiberBundle.exists_contMDiff_section_eq I E n u
+  refine ⟨fun y ↦ (mfderiv I J f y).ker.starProjection (U₀ y),
+    (h.contMDiff_starProjection_ker hn).clm_bundle_apply hU₀,
+    Submodule.starProjection_eq_self_iff.mpr hu,
+    fun _ ↦ Submodule.starProjection_apply_mem _ _⟩
+
+end Extension
 
 end TauCeti.IsRiemannianSubmersion

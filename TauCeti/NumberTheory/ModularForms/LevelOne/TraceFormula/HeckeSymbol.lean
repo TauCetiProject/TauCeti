@@ -109,14 +109,14 @@ transpose of the substitution action `TauCeti.TraceFormulaMatrixModule.periodAct
 noncomputable def symbolAction (hw : Even w) :
     R[TraceFormulaMatrixModule n] →ₗ[R]
       homogeneousSubmodule (Fin 2) R w →ₗ[R] ModularSymbols R ⊤ w :=
-  linearLift (fun A ↦ symbol ⊤ ∞ ((0 : ℚ) : OnePoint ℚ) ∘ₗ binaryFormAdjugateRep R w A.1)
+  linearLift (fun A ↦ symbol ⊤ ∞ ((0 : ℚ) : OnePoint ℚ) ∘ₗ binaryFormAdjugateRep R w A.val)
     fun A ↦ by rw [TraceFormulaMatrix.val_neg, binaryFormAdjugateRep_neg_of_even hw]
 
 /-- A basis element `c • [M]` acts by `P ↦ c • {∞, 0} ⊗ (P ∣ adj M)`. -/
 @[simp]
 theorem symbolAction_single (hw : Even w) (A : TraceFormulaMatrix n) (c : R) :
     symbolAction hw (single (mk A) c) =
-      c • (symbol ⊤ ∞ ((0 : ℚ) : OnePoint ℚ) ∘ₗ binaryFormAdjugateRep R w A.1) := by
+      c • (symbol ⊤ ∞ ((0 : ℚ) : OnePoint ℚ) ∘ₗ binaryFormAdjugateRep R w A.val) := by
   rw [symbolAction, linearLift_single]
 
 /-- **The action on modular symbols is the transpose of the action on binary forms.** For a
@@ -146,15 +146,16 @@ this is the classical Hecke operator `Tₙ`, over all determinant-`n` double cos
 noncomputable def upperTriangularSymbol :
     homogeneousSubmodule (Fin 2) R w →ₗ[R] ModularSymbols R ⊤ w :=
   ∑ A : FixedDetMatrices.reps n,
-    symbol ⊤ ∞ (((A.1.1 0 1 : ℚ) / A.1.1 1 1 : ℚ) : OnePoint ℚ) ∘ₗ binaryFormAdjugateRep R w A.1.1
+    symbol ⊤ ∞ (((A.val.val 0 1 : ℚ) / A.val.val 1 1 : ℚ) : OnePoint ℚ) ∘ₗ binaryFormAdjugateRep R w
+        A.val.val
 
 /-- The value of `upperTriangularSymbol R n w` at `P` is
 `∑ {∞, b/d} ⊗ (P ∣ adj (a b; 0 d))`. -/
 theorem upperTriangularSymbol_apply (P : homogeneousSubmodule (Fin 2) R w) :
     upperTriangularSymbol R n w P =
       ∑ A : FixedDetMatrices.reps n,
-        symbol ⊤ ∞ (((A.1.1 0 1 : ℚ) / A.1.1 1 1 : ℚ) : OnePoint ℚ)
-          (binaryFormAdjugateRep R w A.1.1 P) := by
+        symbol ⊤ ∞ (((A.val.val 0 1 : ℚ) / A.val.val 1 1 : ℚ) : OnePoint ℚ)
+          (binaryFormAdjugateRep R w A.val.val P) := by
   simp [upperTriangularSymbol]
 
 /-! ### The auxiliary map `M ↦ {∞, M0} ⊗ (P ∣ adj M)` -/
@@ -163,7 +164,7 @@ theorem upperTriangularSymbol_apply (P : homogeneousSubmodule (Fin 2) R w) :
 when `d = 0`. -/
 private theorem toGL_smul_zero (hn : n ≠ 0) (A : TraceFormulaMatrix n) :
     toGL hn A • ((0 : ℚ) : OnePoint ℚ) =
-      if A.1 1 1 = 0 then ∞ else (((A.1 0 1 : ℚ) / A.1 1 1 : ℚ) : OnePoint ℚ) := by
+      if A.val 1 1 = 0 then ∞ else (((A.val 0 1 : ℚ) / A.val 1 1 : ℚ) : OnePoint ℚ) := by
   rw [OnePoint.smul_some_eq_ite]
   simp
 
@@ -172,19 +173,19 @@ sends `P` to `∑ {a∞, a0} ⊗ (P ∣ adj a)`, the sum over the upper-triangul
 of `Γ \ ℳₙ` acting on the cusps through `FixedDetMatrices.toGL`. -/
 theorem upperTriangularSymbol_eq_sum_toGL_smul (hn : n ≠ 0) :
     upperTriangularSymbol R n w = ∑ A : FixedDetMatrices.reps n,
-      symbol ⊤ (toGL hn A.1 • ∞) (toGL hn A.1 • ((0 : ℚ) : OnePoint ℚ)) ∘ₗ
-        binaryFormAdjugateRep R w A.1.1 := by
+      symbol ⊤ (toGL hn A.val • ∞) (toGL hn A.val • ((0 : ℚ) : OnePoint ℚ)) ∘ₗ
+        binaryFormAdjugateRep R w A.val.val := by
   rw [upperTriangularSymbol]
   refine Finset.sum_congr rfl fun A _ ↦ ?_
   -- `|b| < |d|` forces `d ≠ 0`, and `c = 0` means that `a` fixes `∞`
-  have hd : A.1.1 1 1 ≠ 0 := abs_pos.mp ((abs_nonneg _).trans_lt A.2.2.2.2)
-  rw [toGL_smul_zero, OnePoint.smul_infty_eq_self_iff.2 (by simp [A.2.1])]
+  have hd : A.val.val 1 1 ≠ 0 := abs_pos.mp ((abs_nonneg _).trans_lt A.property.2.2.2)
+  rw [toGL_smul_zero, OnePoint.smul_infty_eq_self_iff.2 (by simp [A.property.1])]
   simp only [hd, ↓reduceIte]
 
 /-- The symbol `{∞, M0} ⊗ (P ∣ adj M)` of a representative `M`, as a linear map in `P`. -/
 private noncomputable def cuspSymbol (hn : n ≠ 0) (A : TraceFormulaMatrix n) :
     homogeneousSubmodule (Fin 2) R w →ₗ[R] ModularSymbols R ⊤ w :=
-  symbol ⊤ ∞ (toGL hn A • ((0 : ℚ) : OnePoint ℚ)) ∘ₗ binaryFormAdjugateRep R w A.1
+  symbol ⊤ ∞ (toGL hn A • ((0 : ℚ) : OnePoint ℚ)) ∘ₗ binaryFormAdjugateRep R w A.val
 
 /-- The symbol `{∞, M0} ⊗ (P ∣ adj M)` depends only on the class of `M` modulo sign. -/
 private theorem cuspSymbol_neg (hn : n ≠ 0) (hw : Even w) (A : TraceFormulaMatrix n) :
@@ -198,7 +199,7 @@ private theorem cuspSymbol_neg (hn : n ≠ 0) (hw : Even w) (A : TraceFormulaMat
 private theorem cuspSymbol_smul (hn : n ≠ 0) (g : SL(2, ℤ)) (A : TraceFormulaMatrix n) :
     cuspSymbol (R := R) (w := w) hn (g • A) =
       symbol ⊤ (Matrix.SpecialLinearGroup.mapGL ℚ g⁻¹ • ∞) (toGL hn A • ((0 : ℚ) : OnePoint ℚ)) ∘ₗ
-        binaryFormAdjugateRep R w A.1 := by
+        binaryFormAdjugateRep R w A.val := by
   have hinf : (∞ : OnePoint ℚ) =
       Matrix.SpecialLinearGroup.mapGL ℚ g • Matrix.SpecialLinearGroup.mapGL ℚ g⁻¹ • ∞ := by
     rw [← mul_smul, ← map_mul, mul_inv_cancel, map_one, one_smul]
@@ -253,7 +254,7 @@ private theorem cuspSymbolAction_upperTriangularSum (hn : n ≠ 0) (hw : Even w)
   rw [upperTriangularSum_eq_sum_reps, map_sum, upperTriangularSymbol]
   refine Finset.sum_congr rfl fun A _ ↦ ?_
   -- `|b| < |d|` forces `d ≠ 0`
-  have hd : A.1.1 1 1 ≠ 0 := abs_pos.mp ((abs_nonneg _).trans_lt A.2.2.2.2)
+  have hd : A.val.val 1 1 ≠ 0 := abs_pos.mp ((abs_nonneg _).trans_lt A.property.2.2.2)
   rw [cuspSymbolAction_single, one_smul, cuspSymbol, toGL_smul_zero]
   simp only [hd, ↓reduceIte]
 
@@ -266,8 +267,8 @@ private theorem cuspSymbolAction_ofMulAction_op_S_upperTriangularSum (hn : n ≠
   rw [upperTriangularSum_eq_sum_reps, map_sum, map_sum]
   refine Finset.sum_eq_zero fun A _ ↦ ?_
   -- the lower-right entry of `a S` is minus the lower-left entry of `a`, which vanishes
-  have hd : (traceFormulaMatrixRight S⁻¹ A.1).1 1 1 = 0 := by
-    simp [A.2.1, coe_S, Matrix.mul_apply, Fin.sum_univ_two]
+  have hd : (traceFormulaMatrixRight S⁻¹ A.val).val 1 1 = 0 := by
+    simp [A.property.1, coe_S, Matrix.mul_apply, Fin.sum_univ_two]
   rw [ofMulAction_single, op_smul_mk, cuspSymbolAction_single, one_smul, cuspSymbol,
     toGL_smul_zero]
   simp only [hd, ↓reduceIte, symbol_self, LinearMap.zero_comp]
@@ -321,14 +322,14 @@ private theorem periodMap_symbol_heckeTCuspLevelOne {k : ℤ} (hk : k = w + 2) (
       periodMap ℂ ⊤ hk F (upperTriangularSymbol ℂ n w P) := by
   have hn : ((n : ℕ) : ℤ) ≠ 0 := Int.natCast_ne_zero.2 (NeZero.ne n)
   have hpos (A : FixedDetMatrices.reps (n : ℤ)) :
-      0 < ((toGL hn A.1 : GL (Fin 2) ℚ) : Matrix (Fin 2) (Fin 2) ℚ).det := by
+      0 < ((toGL hn A.val : GL (Fin 2) ℚ) : Matrix (Fin 2) (Fin 2) ℚ).det := by
     rw [FixedDetMatrices.det_toGL]
     exact_mod_cast Nat.pos_of_ne_zero (NeZero.ne n)
-  have hA (A : FixedDetMatrices.reps (n : ℤ)) := FixedDetMatrices.coe_toGL hn A.1
+  have hA (A : FixedDetMatrices.reps (n : ℤ)) := FixedDetMatrices.coe_toGL hn A.val
   -- the period of `Tₙ f` is the sum of the periods of the slashes `f ∣[k] a` along `{∞, 0}`; the
   -- summands are integrable there, being periods of `f` along the geodesics moved by `a`
-  have hsum := cuspIntegral_sum (g := 1) Finset.univ (one_pos.trans_eq Matrix.det_one.symm)
-    (F := fun A : FixedDetMatrices.reps (n : ℤ) ↦ periodIntegrand (⇑f ∣[k] toGL hn A.1) P)
+  have hsum := cuspIntegral_sum (g := 1) Finset.univ
+    (F := fun A : FixedDetMatrices.reps (n : ℤ) ↦ periodIntegrand (⇑f ∣[k] toGL hn A.val) P)
     fun A _ ↦ by
       rw [SlashAction.slash_one, ← periodIntegrand_adjugate_slash hk f P (hA A) (hpos A)]
       exact integrableOn_resToImagAxis_periodIntegrand_slash f hk _ (hpos A)

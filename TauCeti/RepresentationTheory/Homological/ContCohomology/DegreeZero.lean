@@ -56,6 +56,8 @@ functoriality precomposes with `φ`, and `φ 1 = 1`, which is the whole content.
 * `TauCeti.ContinuousCohomology.coeffMap_comp_zeroIso_hom`,
   `TauCeti.ContinuousCohomology.res_comp_zeroIso_hom`,
   `TauCeti.ContinuousCohomology.infl_comp_zeroIso_hom`: the same for the three named instances.
+* `TauCeti.ContinuousCohomology.degreeZeroClass_inj`: a degree-zero class determines its
+  invariant vector.
 * `TauCeti.ContinuousCohomology.degreeZeroClass_eq_π`: the degree-zero class of an invariant
   vector is the class of any `0`-cocycle with that value at `1`.
 * `TopRep.cochainClass_eq_degreeZeroClass`: the class of a homogeneous `0`-cocycle is the
@@ -112,7 +114,7 @@ element of `C(G, X)`; `zeroIso` sends the class of a `0`-cocycle to its value at
 compatible-pair square below, including its coefficient, restriction, and inflation
 specializations, follows from this formula together with `φ 1 = 1`. -/
 theorem coe_zeroIso_hom_π (X : TopRep R G) (σ : cocycles X 0) :
-    (((zeroIso X).hom (π X 0 σ)) : X.V) = ((homogeneousCochains X).iCycles 0 σ).1 1 := by
+    (((zeroIso X).hom (π X 0 σ)) : X.V) = ((homogeneousCochains X).iCycles 0 σ).val 1 := by
   have h := congr($(π_comp_zeroIso_hom X) σ)
   simp only [ConcreteCategory.comp_apply] at h
   rw [h, ← coe_cocycles₀Iso_hom]
@@ -204,8 +206,8 @@ theorem infl_comp_zeroIso_hom (N : Subgroup G) [N.Normal] (X : TopRep R G) :
   -- transport; it does not match through the outer coerced composite.
   change (TopRep.quotientToInvariantsι X N).hom
       ((eqToHom (congrArg (fun ψ => TopRep.res ψ (TopRep.quotientToInvariants X N))
-        (Subgroup.coe_quotientMkContinuousMonoidHom N))).hom v.1) =
-    (TopRep.quotientToInvariantsι X N).hom v.1
+        (Subgroup.coe_quotientMkContinuousMonoidHom N))).hom v.val) =
+    (TopRep.quotientToInvariantsι X N).hom v.val
   rw [TopRep.eqToHom_hom_apply (congrArg (fun ψ =>
     TopRep.res ψ (TopRep.quotientToInvariants X N))
       (Subgroup.coe_quotientMkContinuousMonoidHom N))]
@@ -241,11 +243,18 @@ theorem coe_zeroIso_hom_degreeZeroClass (u : X.V) (hu : ∀ g : G, X.ρ g u = u)
     (dsimp% only (((zeroIso X).hom (degreeZeroClass X u hu)) : X.V)) = u := by
   simp [degreeZeroClass]
 
+/-- **A degree-zero class determines its invariant vector.** -/
+@[simp]
+theorem degreeZeroClass_inj {u v : X.V} (hu : ∀ g : G, X.ρ g u = u) (hv : ∀ g : G, X.ρ g v = v) :
+    degreeZeroClass X u hu = degreeZeroClass X v hv ↔ u = v := by
+  rw [degreeZeroClass, degreeZeroClass,
+    (ConcreteCategory.bijective_of_isIso (zeroIso X).inv).1.eq_iff, Subtype.mk.injEq]
+
 /-- **The degree-zero class of an invariant vector is the class of any `0`-cocycle whose value at
 `1` is that vector.** A homogeneous `0`-cocycle is determined by its value at `1`, so this
 identifies `degreeZeroClass` with the class map `π X 0` on cocycles. -/
 theorem degreeZeroClass_eq_π (σ : cocycles X 0) (u : X.V) (hu : ∀ g : G, X.ρ g u = u)
-    (h : ((homogeneousCochains X).iCycles 0 σ).1 1 = u) :
+    (h : ((homogeneousCochains X).iCycles 0 σ).val 1 = u) :
     degreeZeroClass X u hu = π X 0 σ := by
   have hσ : (zeroIso X).hom (π X 0 σ) = ⟨u, (ContRepresentation.mem_invariants u).2 hu⟩ :=
     Subtype.ext ((coe_zeroIso_hom_π X σ).trans h)
@@ -262,7 +271,7 @@ noncomputable def degreeZeroCocycle (X : TopRep R G) (u : X.V) (hu : ∀ g : G, 
 
 /-- The constant `0`-cocycle of `u` is, as a homogeneous cochain, the constant map `g ↦ u`. -/
 theorem coe_iCycles_degreeZeroCocycle (u : X.V) (hu : ∀ g : G, X.ρ g u = u) :
-    ((homogeneousCochains X).iCycles 0 (degreeZeroCocycle X u hu)).1 = (TopRep.d X 0).hom u := by
+    ((homogeneousCochains X).iCycles 0 (degreeZeroCocycle X u hu)).val = (TopRep.d X 0).hom u := by
   rw [← coe_cocycles₀Iso_hom, degreeZeroCocycle, Iso.inv_hom_id_apply]
   rfl
 
@@ -275,7 +284,7 @@ theorem π_degreeZeroCocycle (u : X.V) (hu : ∀ g : G, X.ρ g u = u) :
 /-- Every degree-zero class is the class of an invariant vector. -/
 theorem exists_degreeZeroClass_eq (x : continuousCohomology 0 X) :
     ∃ (u : X.V) (hu : ∀ g : G, X.ρ g u = u), degreeZeroClass X u hu = x :=
-  ⟨((zeroIso X).hom x : X.V), (ContRepresentation.mem_invariants _).1 ((zeroIso X).hom x).2,
+  ⟨((zeroIso X).hom x : X.V), (ContRepresentation.mem_invariants _).1 ((zeroIso X).hom x).property,
     congr($((zeroIso X).hom_inv_id) x)⟩
 
 /-- **Compatible-pair functoriality on the class of an invariant vector.** -/
@@ -335,7 +344,7 @@ variable {R G : Type*} [Ring R] [TopologicalSpace R] [Group G] [TopologicalSpace
 /-- **The class of a homogeneous `0`-cocycle is the degree-zero class of its value at `1`.** -/
 theorem cochainClass_eq_degreeZeroClass (X : TopRep R G)
     (a : (homogeneousCochains X).X 0) (ha : ((homogeneousCochains X).d 0 (0 + 1)).hom a = 0)
-    (u : X.V) (hu : ∀ g : G, X.ρ g u = u) (h : a.1 1 = u) :
+    (u : X.V) (hu : ∀ g : G, X.ρ g u = u) (h : a.val 1 = u) :
     X.cochainClass 0 a ha = TauCeti.ContinuousCohomology.degreeZeroClass X u hu :=
   (cochainClass_def X 0 a ha).trans (TauCeti.ContinuousCohomology.degreeZeroClass_eq_π
     ((homogeneousCochains X).cyclesMkOfEq a (0 + 1) (CochainComplex.next ℕ 0) ha) u hu

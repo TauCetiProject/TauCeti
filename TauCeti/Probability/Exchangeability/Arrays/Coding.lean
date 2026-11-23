@@ -122,7 +122,7 @@ path law `P` from `π` and one uniform variable `ϑ i` per row, and let the `(i,
 leaves the law alone; permuting the columns pushes `P` forward by that time permutation, so it
 leaves the law alone exactly because `π` is invariant under that pushforward. -/
 theorem separatelyExchangeable_unitIntervalCoding
-    (π : Measure (ProbabilityMeasure (ℕ → α))) [IsProbabilityMeasure π]
+    (π : Measure (ProbabilityMeasure (ℕ → α)))
     (hπ : ∀ τ : Equiv.Perm ℕ,
       π.map (fun P => P.map (fun x : ℕ → α => fun k => x (τ k))) = π) :
     SeparatelyExchangeable
@@ -202,7 +202,6 @@ theorem separatelyExchangeable_iff_exists_coding {μ : Measure Ω} [IsProbabilit
               fun q p => unitIntervalCoding (ℕ → α) q.1 (q.2 p.1) p.2 := by
   refine ⟨fun h => h.exists_arrayLaw_eq_map_unitIntervalCoding hX, ?_⟩
   rintro ⟨π, hπ, hlaw⟩
-  have : IsProbabilityMeasure (π : Measure (ProbabilityMeasure (ℕ → α))) := π.2
   have hcoded := separatelyExchangeable_unitIntervalCoding
     (π : Measure (ProbabilityMeasure (ℕ → α))) hπ
   rw [separatelyExchangeable_iff_map_pairReindex

@@ -72,7 +72,7 @@ variable {M : Type*} [TopologicalSpace M] [ChartedSpace (EuclideanHalfSpace (0 +
   [IsManifold (𝓡∂ (0 + 1)) ∞ M]
 
 local instance : IsManifold 𝓘(ℝ, EuclideanSpace ℝ (Fin 0)) 1 ((𝓡∂ (0 + 1)).boundary M) :=
-  isManifold_boundary M one_ne_zero
+  isManifold_boundary M
 
 variable [T2Space M] [CompactSpace M]
 

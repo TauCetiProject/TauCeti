@@ -9,11 +9,13 @@ public import Mathlib.Analysis.Complex.BranchLogRoot
 public import Mathlib.Analysis.Calculus.FDeriv.Defs
 public import Mathlib.Analysis.Analytic.Order
 public import Mathlib.Analysis.SpecialFunctions.Complex.LogDeriv
-import Mathlib.Analysis.Normed.Module.Connected
-import Mathlib.Analysis.SpecialFunctions.Trigonometric.Deriv
 import Mathlib.Analysis.Complex.CauchyIntegral
 import Mathlib.Analysis.Complex.Convex
+import Mathlib.Analysis.Complex.CoveringMap
 import Mathlib.Analysis.Convex.Contractible
+import Mathlib.Analysis.Normed.Module.Ball.Pointwise
+import Mathlib.Analysis.Normed.Module.Connected
+import Mathlib.Analysis.SpecialFunctions.Trigonometric.Deriv
 
 /-!
 # Holomorphic branches of `log` and of `n`-th roots on a simply connected domain
@@ -84,8 +86,11 @@ vanishes identically near `z₀`, of order `⊤`, is its own `n`-th root.
   `n` divides its order of vanishing.
 * `TauCeti.deriv_eq_logDeriv_of_eqOn_exp_comp` — the derivative of a branch of the logarithm is the
   logarithmic derivative, and so does not depend on which branch was chosen.
-* `TauCeti.eqOn_of_eqOn_exp_comp` — on a connected open set, a holomorphic branch of the logarithm
-  is determined by its value at one point.
+* `ContinuousOn.eqOn_of_eqOn_exp_comp` — on a preconnected set, a continuous lift along
+  `Complex.exp` is determined by its value at one point.
+* `AnalyticOnNhd.exists_eqOn_exp_comp_closedBall` — a function analytic and zero-free near a closed
+  disc `closedBall c R` admits an analytic logarithm near `closedBall c R` with prescribed value at
+  the centre.
 * `TauCeti.exists_differentiableOn_eqOn_exp_comp_le_re` — a holomorphic logarithm on an open
   half-plane `a < re s` extends to an open neighbourhood of the closed half-plane `a ≤ re s` when
   the function is holomorphic and zero-free there.
@@ -224,7 +229,7 @@ theorem exists_differentiableOn_pow_eq {U : Set ℂ} (hUc : IsSimplyConnected U)
   have hne : (n : ℂ) ≠ 0 := Nat.cast_ne_zero.mpr hn
   have hmul : (n : ℂ) * (L z / n) = L z := by field_simp
   have hpow : Complex.exp (L z / n) ^ n = Complex.exp (L z) := by
-    rw [← Complex.exp_nat_mul, hmul]
+    rw [← Complex.exp_natCast_mul, hmul]
   simpa only [hpow, Function.comp_apply] using hLeq hz
 
 /-- The germ form of `TauCeti.exists_differentiableOn_pow_eq`: a holomorphic germ that does not
@@ -302,16 +307,15 @@ theorem deriv_eq_logDeriv_of_eqOn_exp_comp {U : Set ℂ} (hUo : IsOpen U) {f g :
     Complex.logDeriv_exp]
   simp
 
-/-- **A holomorphic branch of the logarithm is determined by one value.** On a preconnected open
-set, two holomorphic logarithms `f₁` and `f₂` of the same function `g` that agree at one point
-agree everywhere. -/
-theorem eqOn_of_eqOn_exp_comp {U : Set ℂ} (hUo : IsOpen U) (hUc : IsPreconnected U)
-    {f₁ f₂ g : ℂ → ℂ} (hf₁ : DifferentiableOn ℂ f₁ U) (hf₂ : DifferentiableOn ℂ f₂ U)
-    (h₁ : EqOn (Complex.exp ∘ f₁) g U) (h₂ : EqOn (Complex.exp ∘ f₂) g U) {z₀ : ℂ}
-    (hz₀ : z₀ ∈ U) (h : f₁ z₀ = f₂ z₀) : EqOn f₁ f₂ U :=
-  hUo.eqOn_of_deriv_eq hUc hf₁ hf₂ (fun _ hz ↦ by
-    rw [deriv_eq_logDeriv_of_eqOn_exp_comp hUo hf₁ h₁ hz,
-      deriv_eq_logDeriv_of_eqOn_exp_comp hUo hf₂ h₂ hz]) hz₀ h
+/-- **Uniqueness of continuous branches of the logarithm.** On a preconnected set `s`, two
+continuous maps `L₁, L₂ : X → ℂ` whose compositions with `Complex.exp` agree on `s` and that agree
+at one point `x₀ ∈ s` agree throughout `s`. -/
+theorem _root_.ContinuousOn.eqOn_of_eqOn_exp_comp {X : Type*} [TopologicalSpace X] {s : Set X}
+    {L₁ L₂ : X → ℂ} (hL₁ : ContinuousOn L₁ s) (hL₂ : ContinuousOn L₂ s) (hs : IsPreconnected s)
+    (heq : EqOn (Complex.exp ∘ L₁) (Complex.exp ∘ L₂) s) {x₀ : X} (hx₀ : x₀ ∈ s)
+    (hx₀_eq : L₁ x₀ = L₂ x₀) : EqOn L₁ L₂ s :=
+  Complex.isCoveringMap_exp.eqOn_of_comp_eqOn hs hL₁ hL₂ (fun _ hx ↦ Subtype.ext (heq hx))
+    hx₀ hx₀_eq
 
 /-- Reflecting `s` to the right of the line `re = a` does not change its distance to a point of
 that line. -/
@@ -377,11 +381,11 @@ private theorem exists_differentiableOn_eqOn_exp_comp_ball {a y r : ℝ} (hr : 0
       div_self (Complex.exp_ne_zero _), mul_one]
     exact hL₀ hs
   -- the right half of the disc is convex, and both logarithms agree at `p`
-  exact ⟨_, hLd, hLexp, eqOn_of_eqOn_exp_comp
-    (Metric.isOpen_ball.inter (isOpen_lt continuous_const Complex.continuous_re))
+  exact ⟨_, hLd, hLexp, (hLd.continuousOn.mono inter_subset_left).eqOn_of_eqOn_exp_comp
+    (hf.continuousOn.mono inter_subset_right)
     ((convex_ball _ _).inter (convex_halfSpace_re_gt a)).isPreconnected
-    (hLd.mono inter_subset_left) (hf.mono inter_subset_right) (hLexp.mono inter_subset_left)
-    (hfg.mono inter_subset_right) ⟨hpB, hpH⟩ (by simp)⟩
+    ((hLexp.mono inter_subset_left).trans (hfg.mono inter_subset_right).symm) ⟨hpB, hpH⟩
+    (by simp)⟩
 
 /-- **A logarithm on an open half-plane extends across its boundary line.** Let `g` be holomorphic
 on an open set `V` containing the closed half-plane `{s | a ≤ re s}` and zero-free on that closed
@@ -419,10 +423,10 @@ theorem exists_differentiableOn_eqOn_exp_comp_le_re {a : ℝ} {V : Set ℂ} {f g
   have hagree : ∀ y y', EqOn (L y) (L y') (B y ∩ B y') := by
     intro y y' s hs
     obtain ⟨q, hq, hqH⟩ := exists_mem_ball_inter_ball_lt_re hs
-    exact eqOn_of_eqOn_exp_comp (Metric.isOpen_ball.inter Metric.isOpen_ball)
+    exact ((hLd y).continuousOn.mono inter_subset_left).eqOn_of_eqOn_exp_comp
+      ((hLd y').continuousOn.mono inter_subset_right)
       ((convex_ball _ _).inter (convex_ball _ _)).isPreconnected
-      ((hLd y).mono inter_subset_left) ((hLd y').mono inter_subset_right)
-      ((hLexp y).mono inter_subset_left) ((hLexp y').mono inter_subset_right) hq
+      (((hLexp y).mono inter_subset_left).trans ((hLexp y').mono inter_subset_right).symm) hq
       (by rw [hLf y ⟨hq.1, hqH⟩, hLf y' ⟨hq.2, hqH⟩]) hs
   -- glue: `f` on the open half-plane, and the branch of some disc elsewhere
   let F : ℂ → ℂ := fun s ↦ if s ∈ H then f s else if h : ∃ y, s ∈ B y then L h.choose s else 0
@@ -454,3 +458,43 @@ theorem exists_differentiableOn_eqOn_exp_comp_le_re {a : ℝ} {V : Set ℂ} {f g
       simpa only [Function.comp_apply, hFB y hy] using hLexp y hy
 
 end TauCeti
+
+open Complex Metric Set
+
+/-- **Existence of an analytic logarithm on a closed disc.** If `g` is analytic and zero-free on a
+neighbourhood of `closedBall c R` and `Complex.exp w₀ = g c`, there exists `L` analytic on a
+neighbourhood of `closedBall c R` with `L c = w₀` and `Complex.exp ∘ L = g` on `closedBall c R`. -/
+theorem AnalyticOnNhd.exists_eqOn_exp_comp_closedBall {g : ℂ → ℂ} {c w₀ : ℂ} {R : ℝ}
+    (hg : AnalyticOnNhd ℂ g (closedBall c R)) (hn : ∀ z ∈ closedBall c R, g z ≠ 0)
+    (hw₀ : Complex.exp w₀ = g c) :
+    ∃ L : ℂ → ℂ, AnalyticOnNhd ℂ L (closedBall c R) ∧ L c = w₀ ∧
+      EqOn (Complex.exp ∘ L) g (closedBall c R) := by
+  rcases lt_or_ge R 0 with hRneg | hR
+  · exact ⟨fun _ ↦ w₀, analyticOnNhd_const, rfl, by simp [closedBall_eq_empty.mpr hRneg]⟩
+  have hopen : IsOpen {z : ℂ | AnalyticAt ℂ g z ∧ g z ≠ 0} :=
+    isOpen_iff_eventually.2 fun z hz ↦
+      hz.1.eventually_analyticAt.and (hz.1.continuousAt.eventually_ne hz.2)
+  obtain ⟨δ, hδ, hsub⟩ := (isCompact_closedBall c R).exists_thickening_subset_open hopen
+    fun z hz ↦ ⟨hg z hz, hn z hz⟩
+  rw [thickening_closedBall hδ hR, add_comm] at hsub
+  have hRδ : 0 < R + δ := by linarith
+  have hsc : IsSimplyConnected (ball c (R + δ)) := by
+    have : ContractibleSpace (ball c (R + δ)) := Metric.contractibleSpace_ball hRδ
+    exact SimplyConnectedSpace.ofContractible _
+  have hgd : DifferentiableOn ℂ g (ball c (R + δ)) := fun z hz ↦
+    (hsub hz).1.differentiableAt.differentiableWithinAt
+  have hg₀ : (0 : ℂ) ∉ g '' ball c (R + δ) := by
+    rintro ⟨z, hz, hz0⟩
+    exact (hsub hz).2 hz0
+  obtain ⟨L₀, hL₀d, hL₀exp⟩ :=
+    TauCeti.exists_differentiableOn_eqOn_exp_comp hsc isOpen_ball hgd hg₀
+  have hL₀a : AnalyticOnNhd ℂ L₀ (closedBall c R) :=
+    (hL₀d.analyticOnNhd isOpen_ball).mono (closedBall_subset_ball (by linarith))
+  refine ⟨fun z ↦ L₀ z - L₀ c + w₀, (hL₀a.sub analyticOnNhd_const).add analyticOnNhd_const,
+    by ring, fun z hz ↦ ?_⟩
+  have hzc : z ∈ ball c (R + δ) := closedBall_subset_ball (by linarith) hz
+  have hcc : c ∈ ball c (R + δ) := mem_ball_self hRδ
+  have hexpc : Complex.exp (L₀ c) = g c := hL₀exp hcc
+  have hexpz : Complex.exp (L₀ z) = g z := hL₀exp hzc
+  simp only [Function.comp_apply, Complex.exp_add, Complex.exp_sub, hexpz, hexpc, hw₀]
+  exact div_mul_cancel₀ (g z) (hn c (mem_closedBall_self hR))

@@ -42,7 +42,7 @@ not closure of semialgebraic sets under projection. -/
 theorem IsSemialgebraicStack.comp {C : Set (Fin n → ℝ)} {θ : Fin k → C → ℝ}
     (hθ : IsSemialgebraicStack C θ) (p : Fin n → MvPolynomial (Fin m) ℝ) :
     IsSemialgebraicStack ((fun x i ↦ eval x (p i)) ⁻¹' C)
-      (fun i x ↦ θ i ⟨(fun j ↦ eval x.1 (p j)), x.2⟩) := by
+      (fun i x ↦ θ i ⟨(fun j ↦ eval x.val (p j)), x.property⟩) := by
   let f : (Fin m → ℝ) → Fin n → ℝ := fun x i ↦ eval x (p i)
   have hf : Continuous f := continuous_pi fun i ↦ continuous_eval (p i)
   let q : Fin (n + 1) → MvPolynomial (Fin (m + 1)) ℝ :=
@@ -51,8 +51,9 @@ theorem IsSemialgebraicStack.comp {C : Set (Fin n → ℝ)} {θ : Fin k → C �
       (fun i ↦ eval y (q i)) = Fin.cons (y 0) (f (Fin.tail y)) := by
     ext i
     refine Fin.cases ?_ (fun j ↦ ?_) i <;> simp [q, f, eval_rename, Fin.tail_def, Function.comp_def]
-  refine ⟨fun i ↦ (hθ.continuous i).comp ((hf.comp continuous_subtype_val).subtype_mk fun x ↦ x.2),
-    fun x ↦ hθ.strictMono ⟨f x.1, x.2⟩, fun i ↦ ?_, fun j ↦ ?_⟩
+  refine ⟨fun i ↦ (hθ.continuous i).comp ((hf.comp continuous_subtypeVal).subtype_mk fun x ↦
+      x.property),
+    fun x ↦ hθ.strictMono ⟨f x.val, x.property⟩, fun i ↦ ?_, fun j ↦ ?_⟩
   · rw [image_cylinder_sectionSet_comp]
     convert (hθ.isSemialgebraic_sectionSet i).preimage_eval q using 1
     ext y
@@ -83,8 +84,8 @@ theorem IsSemialgebraicStack.reindex {C : Set (Fin n → ℝ)} {θ : Fin k → C
     (hθ : IsSemialgebraicStack C θ) (e : Equiv.Perm (Fin n))
     (ha : ∀ E ∈ stackCells C θ, ∃ d, IsAnalyticSubmanifold d E) :
     IsSemialgebraicStack ((fun x ↦ x ∘ e) ⁻¹' C)
-        (fun i x ↦ θ i ⟨x.1 ∘ e, x.2⟩) ∧
-      ∀ E ∈ stackCells ((fun x ↦ x ∘ e) ⁻¹' C) (fun i x ↦ θ i ⟨x.1 ∘ e, x.2⟩),
+        (fun i x ↦ θ i ⟨x.val ∘ e, x.property⟩) ∧
+      ∀ E ∈ stackCells ((fun x ↦ x ∘ e) ⁻¹' C) (fun i x ↦ θ i ⟨x.val ∘ e, x.property⟩),
         ∃ d, IsAnalyticSubmanifold d E := by
   refine ⟨?_, ?_⟩
   · have hf : (fun x i ↦ eval x (X (e i) : MvPolynomial (Fin n) ℝ)) =
@@ -92,7 +93,7 @@ theorem IsSemialgebraicStack.reindex {C : Set (Fin n → ℝ)} {θ : Fin k → C
       ext x i
       simp
     exact (congrArg (fun f : (Fin n → ℝ) → Fin n → ℝ ↦
-      IsSemialgebraicStack (f ⁻¹' C) (fun i x ↦ θ i ⟨f x.1, x.2⟩)) hf).mp
+      IsSemialgebraicStack (f ⁻¹' C) (fun i x ↦ θ i ⟨f x.val, x.property⟩)) hf).mp
         (hθ.comp (fun i ↦ X (e i)))
   · intro E hE
     rw [stackCells_comp] at hE

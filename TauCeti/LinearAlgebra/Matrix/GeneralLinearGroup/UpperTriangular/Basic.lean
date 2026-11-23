@@ -80,7 +80,7 @@ theorem mem_iff {g : GL m R} :
 /-- The matrix underlying an element of the upper-triangular group is upper triangular. -/
 theorem isUpperTriangular (g : upperTriangularGroup m R) :
     ((g : GL m R) : Matrix m m R).IsUpperTriangular :=
-  g.2
+  g.property
 
 /-- A determinant-one matrix lies in the preimage of the upper-triangular group exactly when it
 is upper triangular. -/

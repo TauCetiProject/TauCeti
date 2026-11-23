@@ -148,9 +148,9 @@ theorem image_zariskiClosure_subset_zariskiClosure_image (P : τ → MvPolynomia
   rintro _ ⟨x, hx, rfl⟩
   rw [mem_zariskiClosure_iff]
   intro q hq
-  rw [← aeval_bind₁]
+  rw [← comp_aeval_apply P (aeval x) q]
   refine mem_zariskiClosure_iff.1 hx _ fun y hy => ?_
-  rw [aeval_bind₁]
+  rw [comp_aeval_apply]
   exact hq _ ⟨y, hy, rfl⟩
 
 /-- Over finitely many source coordinates, a `K`-linear map sends the Zariski closure of a set
