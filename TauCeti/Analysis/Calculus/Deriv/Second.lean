@@ -10,6 +10,7 @@ public import Mathlib.Analysis.Calculus.IteratedDeriv.Lemmas
 public import Mathlib.Analysis.SpecialFunctions.Log.Basic
 public import Mathlib.Analysis.SpecialFunctions.Sqrt
 public import Mathlib.Analysis.Analytic.Basic
+public import TauCeti.Algebra.Field.CrossRatio
 import Mathlib.Analysis.Calculus.Deriv.Add
 import Mathlib.Analysis.Calculus.Deriv.Inv
 import Mathlib.Analysis.Calculus.FDeriv.Analytic
@@ -43,7 +44,10 @@ coefficients `x` and `x²` degenerate at `0`, into equations with constant coeff
 If `f′ = f ℓ` near a point `z` and `ℓ` has derivative `ℓ′` at `z`, then `f′` has derivative
 `f(z) (ℓ(z) ^ 2 + ℓ′)` at `z`. The fractional-linear map `w ↦ (k w + l) / (m w + n)` has first
 and second derivatives `(k n - l m) / (m w + n) ^ 2` and `-2 m (k n - l m) / (m w + n) ^ 3`
-where `m w + n ≠ 0`.
+where `m w + n ≠ 0`. In particular the finite cross-ratio
+`TauCeti.crossRatio w b c d = (w - c) (b - d) / ((w - d) (b - c))`, as a function of `w`, has
+first and second derivatives `(b - d) (c - d) / ((b - c) (w - d) ^ 2)` and
+`-2 (b - d) (c - d) / ((b - c) (w - d) ^ 3)` where `w ≠ d`; for `b = c` both sides are `0`.
 
 For `p` and `φ` differentiable near `z` and `F` differentiable near `φ z`, the product and chain
 rules give `(p · (F ∘ φ))′ = p′ · (F ∘ φ) + p · (F′ ∘ φ) · φ′` on a neighbourhood of `z`; if also
@@ -70,6 +74,8 @@ complete field they hold in particular when `p`, `φ` are analytic at `z` and `F
   logarithmic derivative `ℓ` of `f`.
 * `TauCeti.hasDerivAt_mul_add_div_mul_add`, `TauCeti.hasDerivAt_deriv_mul_add_div_mul_add`: the
   first and second derivatives of the fractional-linear map `w ↦ (k w + l) / (m w + n)`.
+* `TauCeti.hasDerivAt_crossRatio_first`, `TauCeti.hasDerivAt_deriv_crossRatio_first`: the first
+  and second derivatives of the cross-ratio in its first point.
 * `TauCeti.deriv_mul_comp_eventuallyEq`, `TauCeti.hasDerivAt_deriv_mul_comp`: the first
   derivative of `p · (F ∘ φ)` near a point and its second derivative at the point, with the
   analytic special cases `AnalyticAt.deriv_mul_comp_eventuallyEq`,
@@ -206,6 +212,52 @@ theorem hasDerivAt_deriv_mul_add_div_mul_add (hz : m * z + n ≠ 0) :
     ((((hasDerivAt_id z).const_mul m).add_const n).pow 2)
     (pow_ne_zero 2 hz)).congr_of_eventuallyEq hev.symm).congr_deriv ?_
   simp only [id, Pi.pow_apply, Nat.cast_ofNat]
+  field_simp
+  ring
+
+/-- The finite cross-ratio as a fractional-linear function of its first point. -/
+private theorem crossRatio_first_eq_mul_add_div_mul_add (b c d : 𝕜) :
+    (fun w ↦ crossRatio w b c d) =
+      fun w ↦ ((b - d) * w + -(c * (b - d))) / ((b - c) * w + -(d * (b - c))) := by
+  funext w
+  rw [crossRatio_def]
+  ring
+
+/-- The finite cross-ratio `crossRatio w b c d = (w - c) (b - d) / ((w - d) (b - c))`, as a
+function of its first point, has derivative `(b - d) (c - d) / ((b - c) (z - d) ^ 2)` at `z ≠ d`.
+For `b = c` both the function and the derivative are `0`. -/
+theorem hasDerivAt_crossRatio_first {b c d : 𝕜} (hz : z ≠ d) :
+    HasDerivAt (fun w ↦ crossRatio w b c d) ((b - d) * (c - d) / ((b - c) * (z - d) ^ 2)) z := by
+  rcases eq_or_ne b c with rfl | hbc
+  · simpa [crossRatio_self_second_third] using hasDerivAt_const z (0 : 𝕜)
+  -- Away from `b = c`, `m z + n = (b - c)(z - d)` is nonzero.
+  have hden : (b - c) * z + -(d * (b - c)) = (b - c) * (z - d) := by ring
+  have hne : (b - c) * z + -(d * (b - c)) ≠ 0 :=
+    hden ▸ mul_ne_zero (sub_ne_zero.mpr hbc) (sub_ne_zero.mpr hz)
+  rw [crossRatio_first_eq_mul_add_div_mul_add]
+  refine (hasDerivAt_mul_add_div_mul_add hne).congr_deriv ?_
+  rw [hden]
+  have := sub_ne_zero.mpr hbc
+  have := sub_ne_zero.mpr hz
+  field_simp
+  ring
+
+/-- The derivative of the finite cross-ratio `crossRatio w b c d` in its first point has
+derivative `-2 (b - d) (c - d) / ((b - c) (z - d) ^ 3)` at `z ≠ d`. For `b = c` both sides
+are `0`. -/
+theorem hasDerivAt_deriv_crossRatio_first {b c d : 𝕜} (hz : z ≠ d) :
+    HasDerivAt (deriv fun w ↦ crossRatio w b c d)
+      (-2 * (b - d) * (c - d) / ((b - c) * (z - d) ^ 3)) z := by
+  rcases eq_or_ne b c with rfl | hbc
+  · simpa [crossRatio_self_second_third] using hasDerivAt_const z (0 : 𝕜)
+  have hden : (b - c) * z + -(d * (b - c)) = (b - c) * (z - d) := by ring
+  have hne : (b - c) * z + -(d * (b - c)) ≠ 0 :=
+    hden ▸ mul_ne_zero (sub_ne_zero.mpr hbc) (sub_ne_zero.mpr hz)
+  rw [crossRatio_first_eq_mul_add_div_mul_add]
+  refine (hasDerivAt_deriv_mul_add_div_mul_add hne).congr_deriv ?_
+  rw [hden]
+  have := sub_ne_zero.mpr hbc
+  have := sub_ne_zero.mpr hz
   field_simp
   ring
 
