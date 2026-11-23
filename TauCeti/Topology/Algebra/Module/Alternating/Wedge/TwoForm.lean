@@ -107,8 +107,7 @@ theorem wedgePow_two_eq (ω : E [⋀^Fin 2]→L[ℝ] ℝ) :
   rw [wedgePow_succ]
   congr 1
   ext v
-  rw [wedgePow_one_apply]
-  rfl
+  simp only [wedgePow_one_apply, Fin.cast_refl, Function.comp_id]
 
 /-- **The Pfaffian formula**: the square of a two-form `ω` takes on `(a, b, c, d)` twice the
 value `ω(a, b) ω(c, d) - ω(a, c) ω(b, d) + ω(a, d) ω(b, c)`. -/

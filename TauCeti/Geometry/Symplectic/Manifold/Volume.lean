@@ -97,8 +97,8 @@ volume form of `σ`. -/
 @[simp]
 theorem volumeForm_one (σ : SmoothTwoForm I M) : σ.volumeForm 1 = σ := by
   ext x v
-  simp only [volumeForm_apply, Nat.factorial_one, Nat.cast_one, inv_one, one_smul]
-  exact ContinuousAlternatingMap.wedgePow_one_apply _ v
+  simp only [volumeForm_apply, Nat.factorial_one, Nat.cast_one, inv_one, one_smul,
+    ContinuousAlternatingMap.wedgePow_one_apply, Fin.cast_refl, Function.comp_id]
 
 /-- Rescaling the two-form by `c` rescales its symplectic volume form by `cⁿ`. -/
 @[simp]
