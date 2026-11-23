@@ -11,6 +11,7 @@ import TauCeti.Analysis.Complex.RiemannSurface.IdentityTheorem
 import TauCeti.Analysis.Complex.RiemannSurface.OpenMapping
 import TauCeti.Geometry.Manifold.ChartedSpace
 import TauCeti.Topology.OpenPartialHomeomorph.Continuity
+import TauCeti.Topology.Perfect
 
 /-!
 # Pulling meromorphic functions back along nonconstant holomorphic maps
@@ -252,11 +253,11 @@ def comapAlgEquiv (e : Diffeomorph 𝓘(ℂ) 𝓘(ℂ) X Y (⊤ : ℕ∞)) :
     MeromorphicFunction Y ≃ₐ[ℂ] MeromorphicFunction X :=
   -- a connected Riemann surface has two distinct points, which a biholomorphism separates
   AlgEquiv.ofAlgHom (comapₐ e (e.mdifferentiable (by simp))
-      ((ChartedSpace.nontrivial (H := ℂ) (X := X)).exists_pair_ne.imp fun _ ⟨x₂, h⟩ ↦
-        ⟨x₂, e.injective.ne h⟩))
+      ((haveI := ChartedSpace.perfectSpace (H := ℂ) (X := X)
+        PerfectSpace.nontrivial X).exists_pair_ne.imp fun _ ⟨x₂, h⟩ ↦ ⟨x₂, e.injective.ne h⟩))
     (comapₐ e.symm (e.symm.mdifferentiable (by simp))
-      ((ChartedSpace.nontrivial (H := ℂ) (X := Y)).exists_pair_ne.imp fun _ ⟨y₂, h⟩ ↦
-        ⟨y₂, e.symm.injective.ne h⟩))
+      ((haveI := ChartedSpace.perfectSpace (H := ℂ) (X := Y)
+        PerfectSpace.nontrivial Y).exists_pair_ne.imp fun _ ⟨y₂, h⟩ ↦ ⟨y₂, e.symm.injective.ne h⟩))
     (AlgHom.ext fun _ ↦ ext fun _ ↦ by simp) (AlgHom.ext fun _ ↦ ext fun _ ↦ by simp)
 
 variable (e : Diffeomorph 𝓘(ℂ) 𝓘(ℂ) X Y (⊤ : ℕ∞))
