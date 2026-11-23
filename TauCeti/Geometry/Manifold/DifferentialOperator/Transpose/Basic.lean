@@ -337,16 +337,18 @@ theorem isFormalTranspose_withDensity_iff [OpensMeasurableSpace M] (ρ : (C^∞�
   have hρρ (x : M) : (ρ : C^∞⟮I, M; ℝ⟯) x * (↑ρ⁻¹ : C^∞⟮I, M; ℝ⟯) x = 1 := by
     simpa only [ContMDiffMap.coe_mul, Pi.mul_apply, ContMDiffMap.coe_one, Pi.one_apply] using
       congrArg (fun φ : C^∞⟮I, M; ℝ⟯ ↦ φ x) ρ.mul_inv
-  have hρ' (x : M) : 0 ≤ (↑ρ⁻¹ : C^∞⟮I, M; ℝ⟯) x := by nlinarith [hρρ x, hρ x]
-  have hm (φ : C^∞⟮I, M; ℝ⟯) : Measurable fun x ↦ ENNReal.ofReal (φ x) :=
-    ENNReal.measurable_ofReal.comp φ.contMDiff.continuous.measurable
+  have hinv (x : M) : (↑ρ⁻¹ : C^∞⟮I, M; ℝ⟯) x = ((ρ : C^∞⟮I, M; ℝ⟯) x)⁻¹ :=
+    eq_inv_of_mul_eq_one_right (hρρ x)
+  have hpos (x : M) : 0 < (ρ : C^∞⟮I, M; ℝ⟯) x :=
+    (hρ x).lt_of_ne fun h ↦ by simpa [← h] using hρρ x
+  have hρ' (x : M) : 0 ≤ (↑ρ⁻¹ : C^∞⟮I, M; ℝ⟯) x := hinv x ▸ inv_nonneg.2 (hρ x)
   have hμ : ((μ.withDensity fun x ↦ ENNReal.ofReal ((ρ : C^∞⟮I, M; ℝ⟯) x)).withDensity
       fun x ↦ ENNReal.ofReal ((↑ρ⁻¹ : C^∞⟮I, M; ℝ⟯) x)) = μ := by
-    have h1 : ((fun x ↦ ENNReal.ofReal ((ρ : C^∞⟮I, M; ℝ⟯) x)) *
-        fun x ↦ ENNReal.ofReal ((↑ρ⁻¹ : C^∞⟮I, M; ℝ⟯) x)) = 1 := by
-      ext x
-      rw [Pi.mul_apply, ← ENNReal.ofReal_mul (hρ x), hρρ x, ENNReal.ofReal_one, Pi.one_apply]
-    rw [← withDensity_mul _ (hm _) (hm _), h1, withDensity_one]
+    simp only [hinv, ENNReal.ofReal_inv_of_pos (hpos _)]
+    exact withDensity_inv_same
+      (ENNReal.measurable_ofReal.comp (ρ : C^∞⟮I, M; ℝ⟯).contMDiff.continuous.measurable)
+      (ae_of_all _ fun x ↦ (ENNReal.ofReal_pos.2 (hpos x)).ne')
+      (ae_of_all _ fun _ ↦ ENNReal.ofReal_ne_top)
   refine ⟨fun h ↦ hμ ▸ h.withDensity hρ' fun g ↦ ?_, fun h ↦ h.withDensity hρ fun g ↦ ?_⟩ <;>
     rw [comp_apply, comp_apply, mulLeft_apply, mulLeft_apply, Units.inv_mul_cancel_left]
 
@@ -476,13 +478,16 @@ theorem formalTranspose_withDensity [FiniteDimensional ℝ E] [IsManifold I ∞ 
     D.formalTranspose (μ.withDensity fun x ↦ ENNReal.ofReal ((ρ : C^∞⟮I, M; ℝ⟯) x)) =
       mulLeft ℝ ↑ρ⁻¹ ∘ₗ D.formalTranspose μ ∘ₗ mulLeft ℝ ↑ρ := by
   -- Conjugation by multiplication by `ρ` carries transposes for `ρ μ` to transposes for `μ`.
-  -- `e.conj D'` and `e.symm.conj D'` unfold to the compositions with `mulLeft` in the statements.
-  set e := ρ.mulLeftLinearEquiv ℝ C^∞⟮I, M; ℝ⟯
+  set e := ρ.mulLeftLinearEquiv ℝ C^∞⟮I, M; ℝ⟯ with he
   have hiff (D' : C^∞⟮I, M; ℝ⟯ →ₗ[ℝ] C^∞⟮I, M; ℝ⟯) :
       D.IsFormalTranspose D' (μ.withDensity fun x ↦ ENNReal.ofReal ((ρ : C^∞⟮I, M; ℝ⟯) x)) ↔
-        D.IsFormalTranspose (e.conj D') μ :=
-    isFormalTranspose_withDensity_iff ρ hρ
-  change _ = e.symm.conj (D.formalTranspose μ)
+        D.IsFormalTranspose (e.conj D') μ := by
+    rw [isFormalTranspose_withDensity_iff ρ hρ, LinearEquiv.conj_apply, LinearMap.comp_assoc, he,
+      Units.symm_mulLeftLinearEquiv, Units.toLinearMap_mulLeftLinearEquiv,
+      Units.toLinearMap_mulLeftLinearEquiv]
+  rw [show mulLeft ℝ ↑ρ⁻¹ ∘ₗ D.formalTranspose μ ∘ₗ mulLeft ℝ ↑ρ = e.symm.conj (D.formalTranspose μ)
+    by rw [LinearEquiv.symm_conj_apply, LinearMap.comp_assoc, he, Units.symm_mulLeftLinearEquiv,
+      Units.toLinearMap_mulLeftLinearEquiv, Units.toLinearMap_mulLeftLinearEquiv]]
   by_cases h : ∃ T, D.IsFormalTranspose T μ
   · obtain ⟨T, hT⟩ := h
     have hR := (hiff (e.symm.conj (D.formalTranspose μ))).mpr <| by
