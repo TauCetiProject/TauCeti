@@ -166,18 +166,6 @@ on global sections automatically induces local ring homomorphisms on all stalks.
 theorem isLocalHom_stalkMap_of_c_app_top_algebraMap (x : X) : IsLocalHom (φ.stalkMap x).hom :=
   ⟨fun s hs ↦ isUnit_of_map_unit (stalkAlgHomOfCAppTopAlgebraMap φ hφ x) s hs⟩
 
-/-- Promote a `ℂ`-linear morphism of presheafed spaces to a morphism of holomorphic locally ringed
-spaces. -/
-def locallyRingedSpaceHomOfPresheafedSpaceHom :
-    locallyRingedSpace I X ⟶ locallyRingedSpace J Y where
-  toHom := φ
-  prop := isLocalHom_stalkMap_of_c_app_top_algebraMap φ hφ
-
-/-- Forgetting stalk locality on `locallyRingedSpaceHomOfPresheafedSpaceHom φ hφ` recovers `φ`. -/
-@[simp]
-theorem locallyRingedSpaceHomOfPresheafedSpaceHom_toHom :
-    (locallyRingedSpaceHomOfPresheafedSpaceHom φ hφ).toHom = φ := (rfl)
-
 /-- **Section pullback formula.** Any `ℂ`-linear morphism of holomorphic presheafed spaces acts on
 sections over every open `U : Opens Y` by pointwise precomposition with `φ.base`. -/
 theorem c_app_apply_of_c_app_top_algebraMap (U : Opens Y)
@@ -304,6 +292,34 @@ abbrev LocallyRingedSpaceCLinearHom
         ((holomorphicStructureSheaf I X).obj.obj (op ((Opens.map φ.base).obj U))) c}
 
 namespace LocallyRingedSpaceCLinearHom
+
+/-- Two `ℂ`-linear morphisms of holomorphic locally ringed spaces are equal if their underlying
+continuous maps are equal. -/
+@[ext]
+theorem ext {φ ψ : LocallyRingedSpaceCLinearHom I X J Y} (w : φ.val.base = ψ.val.base) :
+    φ = ψ :=
+  Subtype.ext <| locallyRingedSpace_hom_ext_of_c_app_top_algebraMap w (φ.property ⊤) (ψ.property ⊤)
+
+-- Exposed so `.val.toHom` and `.val.base` reduce definitionally across module boundaries.
+/-- Promote a presheafed-space morphism preserving `ℂ`-constants on global sections to a bundled
+`ℂ`-linear morphism of holomorphic locally ringed spaces. -/
+@[expose]
+def ofPresheafedSpaceHom
+    (φ : (locallyRingedSpace I X).toPresheafedSpace ⟶ (locallyRingedSpace J Y).toPresheafedSpace)
+    (hφ : ∀ c : ℂ, (φ.c.app (op ⊤)).hom (algebraMap ℂ _ c) =
+      algebraMap ℂ ((holomorphicStructureSheaf I X).obj.obj (op ((Opens.map φ.base).obj ⊤))) c) :
+    LocallyRingedSpaceCLinearHom I X J Y :=
+  ⟨⟨φ, isLocalHom_stalkMap_of_c_app_top_algebraMap φ hφ⟩,
+    ((c_app_algebraMap_tfae φ).out 2 1 rfl rfl).1 hφ⟩
+
+/-- Forgetting stalk locality on `(LocallyRingedSpaceCLinearHom.ofPresheafedSpaceHom φ hφ).val`
+recovers `φ`. -/
+@[simp]
+theorem val_toHom_ofPresheafedSpaceHom
+    (φ : (locallyRingedSpace I X).toPresheafedSpace ⟶ (locallyRingedSpace J Y).toPresheafedSpace)
+    (hφ : ∀ c : ℂ, (φ.c.app (op ⊤)).hom (algebraMap ℂ _ c) =
+      algebraMap ℂ ((holomorphicStructureSheaf I X).obj.obj (op ((Opens.map φ.base).obj ⊤))) c) :
+    (ofPresheafedSpaceHom φ hφ).val.toHom = φ := (rfl)
 
 -- Exposed so `.val.base` reduces definitionally in the dependent types of `stalkAlgHom` lemmas.
 /-- The identity `ℂ`-linear morphism on `locallyRingedSpace I X`. -/
@@ -633,6 +649,13 @@ theorem holomorphicMapLocalRingedEquivalence_apply (f : C^ω⟮I, X; J, Y⟯) :
     holomorphicMapLocalRingedEquivalence I X J Y f =
       LocallyRingedSpaceCLinearHom.ofContMDiff f f.contMDiff := (rfl)
 
+/-- In the forward direction, `holomorphicMapLocalRingedEquivalence` sends `⟨f, hf⟩` to
+`LocallyRingedSpaceCLinearHom.ofContMDiff f hf`. -/
+@[simp]
+theorem holomorphicMapLocalRingedEquivalence_mk (f : X → Y) (hf : ContMDiff I J ω f) :
+    holomorphicMapLocalRingedEquivalence I X J Y ⟨f, hf⟩ =
+      LocallyRingedSpaceCLinearHom.ofContMDiff f hf := (rfl)
+
 /-- In the forward direction, the underlying locally ringed-space morphism of
 `holomorphicMapLocalRingedEquivalence` is `locallyRingedSpaceMap f f.contMDiff`. -/
 @[simp]
@@ -664,6 +687,15 @@ theorem holomorphicMapLocalRingedEquivalence_symm_id [FiniteDimensional ℂ E] [
     [IsManifold I 1 X] :
     (holomorphicMapLocalRingedEquivalence I X I X).symm (LocallyRingedSpaceCLinearHom.id I X) =
       ContMDiffMap.id :=
+  ContMDiffMap.ext fun _ ↦ rfl
+
+/-- `holomorphicMapLocalRingedEquivalence.symm` sends
+`LocallyRingedSpaceCLinearHom.ofContMDiff f hf` to `⟨f, hf⟩`. -/
+@[simp]
+theorem holomorphicMapLocalRingedEquivalence_symm_ofContMDiff (f : X → Y)
+    (hf : ContMDiff I J ω f) :
+    (holomorphicMapLocalRingedEquivalence I X J Y).symm
+        (LocallyRingedSpaceCLinearHom.ofContMDiff f hf) = ⟨f, hf⟩ :=
   ContMDiffMap.ext fun _ ↦ rfl
 
 section SymmAndComp
@@ -724,6 +756,7 @@ theorem holomorphicMapLocalRingedEquivalence_symm_comp
 /-- Restricting a holomorphic map `f : C^ω⟮I, X; J, Y⟯` to an open subset `U : Opens X` corresponds
 under `holomorphicMapLocalRingedEquivalence` to precomposing in `LocallyRingedSpaceCLinearHom`
 with `LocallyRingedSpaceCLinearHom.ofContMDiff Subtype.val contMDiff_subtypeVal`. -/
+@[simp]
 theorem holomorphicMapLocalRingedEquivalence_restrict (f : C^ω⟮I, X; J, Y⟯) (U : Opens X) :
     holomorphicMapLocalRingedEquivalence I U J Y
         (f.comp (⟨Subtype.val, contMDiff_subtypeVal⟩ : C^ω⟮I, U; I, X⟯)) =
@@ -735,6 +768,7 @@ theorem holomorphicMapLocalRingedEquivalence_restrict (f : C^ω⟮I, X; J, Y⟯)
 subset `U : Opens X` corresponds under `(holomorphicMapLocalRingedEquivalence _ _ _ _).symm` to
 restricting `(holomorphicMapLocalRingedEquivalence I X J Y).symm φ` to `U`. No manifold,
 boundaryless, or finite-dimensionality hypotheses on `X` are required. -/
+@[simp]
 theorem holomorphicMapLocalRingedEquivalence_symm_restrict (U : Opens X) :
     (holomorphicMapLocalRingedEquivalence I U J Y).symm
         (φ.comp (LocallyRingedSpaceCLinearHom.ofContMDiff Subtype.val contMDiff_subtypeVal)) =

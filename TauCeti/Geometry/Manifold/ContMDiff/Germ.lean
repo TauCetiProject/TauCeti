@@ -165,9 +165,7 @@ abbrev AnalyticMapGerm (I : ModelWithCorners 𝕜 E H) (J : ModelWithCorners �
   {F : Germ (𝓝 x) Y //
     ∃ f : X → Y, (f : Germ (𝓝 x) Y) = F ∧ f x = y ∧ ∀ᶠ w in 𝓝 x, ContMDiffAt I J ω f w}
 
--- Exposed so `.val` reduces definitionally across module boundaries.
 /-- Construct an `AnalyticMapGerm` from a map `f : X → Y` analytic near `x` with `f x = y`. -/
-@[expose]
 def AnalyticMapGerm.mk {x : X} {y : Y} (f : X → Y)
     (hf : ∀ᶠ w in 𝓝 x, ContMDiffAt I J ω f w) (hfx : f x = y) : AnalyticMapGerm I J x y :=
   ⟨(f : Germ (𝓝 x) Y), ⟨f, rfl, hfx, hf⟩⟩
@@ -198,9 +196,7 @@ theorem AnalyticMapGerm.tendsto {x : X} {y : Y} (F : AnalyticMapGerm I J x y) :
   obtain ⟨f, hF, hfx, hf⟩ := F.property
   exact hF ▸ Germ.coe_tendsto.2 (hfx ▸ hf.self_of_nhds.continuousAt.tendsto)
 
--- Exposed so `AnalyticMapGerm.id` reduces to `AnalyticMapGerm.mk _root_.id ...` across modules.
 /-- The identity analytic map germ at `x`. -/
-@[expose]
 def AnalyticMapGerm.id (I : ModelWithCorners 𝕜 E H) (x : X) : AnalyticMapGerm I I x x :=
   AnalyticMapGerm.mk _root_.id (Eventually.of_forall fun _ ↦ contMDiffAt_id) rfl
 
@@ -213,9 +209,7 @@ variable {E'' : Type*} [NormedAddCommGroup E''] [NormedSpace 𝕜 E'']
   {H'' : Type*} [TopologicalSpace H''] {K : ModelWithCorners 𝕜 E'' H''}
   {Z : Type*} [TopologicalSpace Z] [ChartedSpace H'' Z]
 
--- Exposed so `.val` reduces definitionally across module boundaries.
 /-- Composition of analytic map germs `(X, x) → (Y, y)` and `(Y, y) → (Z, z)`. -/
-@[expose]
 def AnalyticMapGerm.comp {x : X} {y : Y} {z : Z}
     (G : AnalyticMapGerm J K y z) (F : AnalyticMapGerm I J x y) : AnalyticMapGerm I K x z :=
   ⟨G.val.compTendsto' F.val F.tendsto, by

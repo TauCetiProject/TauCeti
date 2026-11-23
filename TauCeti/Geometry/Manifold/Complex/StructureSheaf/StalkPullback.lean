@@ -314,7 +314,13 @@ theorem stalkPullbackGerm_mk {x : X} {y : Y} (f : X → Y)
     stalkPullbackGerm (AnalyticMapGerm.mk f hf hfx) = stalkPullbackAt hf hfx := by
   let F := AnalyticMapGerm.mk f hf hfx
   exact stalkPullbackAt_congr F.property.choose_spec.2.2 F.property.choose_spec.2.1 hf hfx
-    (Germ.coe_eq.1 F.property.choose_spec.1)
+    (Germ.coe_eq.1 (F.property.choose_spec.1.trans (AnalyticMapGerm.val_mk f hf hfx)))
+
+private theorem compTendsto'_congr {α β γ : Type*} {l : Filter α} {l' : Filter β}
+    (s : Germ l' γ) {g₁ g₂ : Germ l β} (hg : g₁ = g₂) (hg₁ : g₁.Tendsto l')
+    (hg₂ : g₂.Tendsto l') :
+    s.compTendsto' g₁ hg₁ = s.compTendsto' g₂ hg₂ := by
+  subst hg; rfl
 
 /-- The function germ of `stalkPullbackGerm F s` is composition of the function germ of `s` with
 `F.val` via `Germ.compTendsto'`. -/
@@ -324,15 +330,20 @@ theorem toFilterGerm_stalkPullbackGerm {x : X} {y : Y} (F : AnalyticMapGerm I J 
     toFilterGerm I X x (𝓝 x) le_rfl (stalkPullbackGerm F s) =
       (toFilterGerm J Y y (𝓝 y) le_rfl s).compTendsto' F.val F.tendsto := by
   obtain ⟨f, hf, hfx, rfl⟩ := F.exists_mk
-  rw [stalkPullbackGerm_mk, toFilterGerm_stalkPullbackAt]
-  exact (Germ.compTendsto'_coe _ _).symm
+  rw [stalkPullbackGerm_mk, toFilterGerm_stalkPullbackAt, ← Germ.compTendsto'_coe]
+  exact compTendsto'_congr _ (AnalyticMapGerm.val_mk f hf hfx).symm _ _
 
 /-- Pullback along `AnalyticMapGerm.id` is the identity `ℂ`-algebra homomorphism. -/
 @[simp]
 theorem stalkPullbackGerm_id (x : X) :
     stalkPullbackGerm (AnalyticMapGerm.id I x) =
       AlgHom.id ℂ ((holomorphicStructureSheaf I X).presheaf.stalk x) := by
-  simp [AnalyticMapGerm.id]
+  ext s
+  apply toFilterGerm_nhds_injective x
+  rw [toFilterGerm_stalkPullbackGerm, AlgHom.id_apply]
+  refine (compTendsto'_congr _ (AnalyticMapGerm.val_id I x) _ tendsto_id.germ_tendsto).trans ?_
+  rw [Germ.compTendsto'_coe _ tendsto_id]
+  exact (toFilterGerm I X x (𝓝 x) le_rfl s).inductionOn fun _ ↦ rfl
 
 -- Pre-order so pullback composition splits before `AnalyticMapGerm.comp_mk` merges `mk` germs.
 /-- Stalk pullback is contravariantly functorial under composition of analytic map germs. -/
