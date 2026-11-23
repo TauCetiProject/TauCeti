@@ -41,17 +41,23 @@ variable {K : Type*} [Field K] [NumberField K]
 def conductor (O : NumberFieldOrder K) : Ideal (𝓞 K) :=
   O.toRingOfIntegers.toSubring.conductor
 
+/-- The conductor of an order is the conductor of its copy inside `𝓞 K`. Under the module system
+the body of `conductor` is not exported, so this is how importers unfold it. -/
+theorem conductor_eq_conductor_toRingOfIntegers (O : NumberFieldOrder K) :
+    O.conductor = O.toRingOfIntegers.toSubring.conductor :=
+  (rfl)
+
 /-- An algebraic integer is in the conductor exactly when all of its multiples by algebraic
 integers lie in the order. -/
 @[simp]
 theorem mem_conductor_iff (O : NumberFieldOrder K) (x : 𝓞 K) :
     x ∈ O.conductor ↔ ∀ y : 𝓞 K, (x : K) * (y : K) ∈ O.toSubalgebra := by
-  simp [conductor]
+  simp [conductor_eq_conductor_toRingOfIntegers]
 
 /-- The conductor is contained in the order. -/
 theorem conductor_le_order (O : NumberFieldOrder K) {x : 𝓞 K}
-    (hx : x ∈ O.conductor) : (x : K) ∈ O.toSubalgebra := by
-  simpa using (O.mem_conductor_iff x).mp hx 1
+    (hx : x ∈ O.conductor) : (x : K) ∈ O.toSubalgebra :=
+  O.mem_toRingOfIntegers.mp (Subring.conductor_subset hx)
 
 /-- The conductor, as a set of algebraic integers, is contained in the order. -/
 theorem conductor_le_toRingOfIntegers (O : NumberFieldOrder K) :
@@ -83,33 +89,28 @@ theorem conductor_mono {O O' : NumberFieldOrder K}
     (h : O.toSubalgebra ≤ O'.toSubalgebra) : O.conductor ≤ O'.conductor :=
   Subring.conductor_mono (toRingOfIntegers_le_toRingOfIntegers_iff.mpr h)
 
+/-- The conductor of an order is the unit ideal exactly when its copy inside `𝓞 K` is all of
+`𝓞 K`. -/
+theorem conductor_eq_top_iff_toRingOfIntegers_eq_top (O : NumberFieldOrder K) :
+    O.conductor = ⊤ ↔ O.toRingOfIntegers = ⊤ := by
+  rw [conductor_eq_conductor_toRingOfIntegers, Subring.conductor_eq_top_iff,
+    Algebra.toSubring_eq_top]
+
 /-- The conductor of the maximal order is the unit ideal. -/
 @[simp]
-theorem conductor_maximal : (maximalNumberFieldOrder K).conductor = ⊤ := by
-  apply (maximalNumberFieldOrder K).conductor.eq_top_iff_one.mpr
-  rw [mem_conductor_iff]
-  intro y
-  rw [maximalNumberFieldOrder_toSubalgebra]
-  simpa only [map_one, one_mul] using
-    ((mem_integralClosure_iff (R := ℤ) (A := K)).mpr y.isIntegral_coe :
-      (y : K) ∈ integralClosure ℤ K)
+theorem conductor_maximal : (maximalNumberFieldOrder K).conductor = ⊤ :=
+  (conductor_eq_top_iff_toRingOfIntegers_eq_top _).mpr <|
+    eq_top_iff.mpr fun y _ ↦ by
+      rw [mem_toRingOfIntegers, maximalNumberFieldOrder_toSubalgebra]
+      exact y.isIntegral_coe
 
 /-- An order is maximal exactly when its conductor is the unit ideal. -/
 @[simp]
 theorem conductor_eq_top_iff (O : NumberFieldOrder K) :
     O.conductor = ⊤ ↔ O = maximalNumberFieldOrder K := by
-  constructor
-  · intro h
-    apply ext
-    rw [maximalNumberFieldOrder_toSubalgebra]
-    apply le_antisymm O.le_ringOfIntegers
-    intro x hx
-    have hmem : (⟨x, hx⟩ : 𝓞 K) ∈ O.conductor := by
-      rw [h]
-      trivial
-    exact O.conductor_le_order hmem
-  · rintro rfl
-    exact conductor_maximal
+  refine ⟨fun h ↦ toRingOfIntegers_injective ?_, by rintro rfl; exact conductor_maximal⟩
+  rw [(conductor_eq_top_iff_toRingOfIntegers_eq_top _).mp h,
+    (conductor_eq_top_iff_toRingOfIntegers_eq_top _).mp conductor_maximal]
 
 end NumberFieldOrder
 
