@@ -711,15 +711,13 @@ theorem cyclicDistanceCutBrokenGeodesic_cyclicDistanceCutRepeatFirstIterate {n k
     (h : ∀ j : Fin (n + k + 1), δ ⟨j - k, by omega⟩ ≤ δ' j) (q : cyclicDistanceCut (X := M) δ) :
     cyclicDistanceCutBrokenGeodesic hr hδ' (cyclicDistanceCutRepeatFirstIterate k h q) =
       cyclicDistanceCutBrokenGeodesic hr hδ q := by
-  have hq : (cyclicDistanceCutRepeatFirstIterate k h q : Fin (n + k + 1) → M) =
-      fun j : Fin (n + k + 1) ↦ q.val ⟨j - k, by omega⟩ :=
-    funext (coe_cyclicDistanceCutRepeatFirstIterate_apply k h q)
   rw [cyclicDistanceCutBrokenGeodesic_apply, cyclicDistanceCutBrokenGeodesic_apply,
     ← brokenGeodesicLoop_repeatFirstIterate hr n q.val _ k
       fun j ↦ (dist_repeatFirstIterate_le q.val j).trans_lt
         ((mem_cyclicDistanceCut.1 q.property _).trans_lt (hδ _))]
-  -- The two tuples agree by `hq`.
+  -- The two tuples agree pointwise.
   congr 1
+  exact funext (coe_cyclicDistanceCutRepeatFirstIterate_apply k h q)
 
 /-- The length of the closed broken geodesic through a tuple of a distance cut is at most the sum of
 the cut-offs. -/

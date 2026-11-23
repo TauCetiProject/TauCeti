@@ -171,9 +171,8 @@ theorem isClosed_contractibleCyclicDistanceCut (hδ : ∀ i, δ i < r) :
   refine ⟨fun hp ↦ ⟨contractibleCyclicDistanceCut_subset hr hδ hp, fun hpV ↦ ?_⟩,
     fun ⟨hp, hpV⟩ ↦ ?_⟩
   · obtain ⟨q, ⟨hq, hqc⟩, hqp⟩ := mem_iUnion₂.1 hpV
-    exact hqc ((mem_contractibleCyclicDistanceCut hr).2 ⟨hq, mem_contractibleLoops_of_joined
-      (cyclicDistanceCutBrokenGeodesic_mem_contractibleLoops hr hp)
-      (hjoined (contractibleCyclicDistanceCut_subset hr hδ hp) hq hqp).symm⟩)
+    exact hqc (mem_contractibleCyclicDistanceCut_of_joined hr hδ hδ hp
+      (hjoined (contractibleCyclicDistanceCut_subset hr hδ hp) hq hqp).symm)
   · by_contra hpc
     exact hpV (mem_iUnion₂.2 ⟨p, ⟨hp, hpc⟩, mem_pathComponentIn_self fun i ↦
       (mem_cyclicDistanceCut.1 hp i).trans_lt (hδ i)⟩)
