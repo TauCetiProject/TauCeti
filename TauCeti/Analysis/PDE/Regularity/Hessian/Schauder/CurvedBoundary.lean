@@ -6,11 +6,15 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.PDE.Regularity.Hessian.Schauder.FlatBoundary.HalfBall
+import TauCeti.Analysis.Calculus.FDeriv.ConstantDirection
 import TauCeti.Analysis.Calculus.IteratedFDeriv.Basic
 import TauCeti.Analysis.Calculus.SecondDerivative
 import TauCeti.Analysis.Holder.MeanValue
 import TauCeti.Analysis.InnerProductSpace.HalfSpace
+import TauCeti.Analysis.Matrix.ContinuousBilinearForm
+import TauCeti.Analysis.Matrix.Holder
 import TauCeti.Analysis.Normed.Operator.Holder
+import TauCeti.Analysis.SpecialFunctions.Pow.Bounds
 import TauCeti.Topology.MetricSpace.Holder
 
 /-!
@@ -28,9 +32,9 @@ on `∂D` and has `|u|`, `‖Du‖`, `‖D²u‖` bounded by `N` there satisfies
 
 `[D²u]_{α; closedBall x₀ ρ ∩ closure D} ≤ C ([L u]_{α; ball x₀ R ∩ D} + N)`,
 
-with `C` depending on the dimension, `α`, `G`, the ellipticity constants of `a` at `x₀` and the
-Hölder constant and bound of `a`, but not on `u`, `x₀` or `a` otherwise. This is the curved
-counterpart of the estimate on half-balls at a flat boundary
+with `C` depending on the dimension, `α`, `G`, the ellipticity constants of `a` at `x₀`, the
+Hölder constant and bound of `a`, `R` and `ρ`, but not on `u`, `x₀` or `a` otherwise. This is the
+curved counterpart of the estimate on half-balls at a flat boundary
 (`exists_holderOnWith_iteratedFDeriv_two_closedBall_inter_of_sum_smul_fderiv_fderiv_of_halfSpace`),
 and, together with the interior estimate, the local estimate from which the global Schauder
 estimate on a domain with `C^{2,α}` boundary is assembled by covering the boundary with such
@@ -178,7 +182,7 @@ private theorem holderOnWith_fderiv_fderiv_comp_shear (hν : ‖ν‖ ≤ 1) {w 
   have hcb (y : E) (hy : y ∈ s) : ‖fderiv ℝ w (y + γ y • ν) ν‖ ≤ N :=
     ((fderiv ℝ w _).le_of_opNorm_le (hN1 y hy) ν).trans (by
       simpa using mul_le_of_le_one_right N.coe_nonneg hν)
-  have h2 := hc.smul_of_eq_zero hH2 hcb hG2 fun _ hy hy' => absurd hy hy'
+  have h2 := hc.smul_of_norm_le hH2 hcb hG2
   exact (h1.add h2).congr fun y hy => (fderiv_fderiv_comp_shear (hw y hy) (hγ y hy)).symm
 
 /-- The bound `‖D²(w ∘ φ)‖ ≤ N (1 + G)² + N G` for the shear `φ z = z + γ z • ν`. -/
@@ -206,18 +210,6 @@ end Shear
 section Graph
 
 variable {γ : EuclideanSpace ℝ (Fin (n + 1)) → ℝ} {ν : EuclideanSpace ℝ (Fin (n + 1))}
-
-/-- A function invariant under translation along `ν` has zero derivative in the direction `ν`. -/
-private theorem fderiv_apply_eq_zero_of_add_smul (hγν : ∀ x (t : ℝ), γ (x + t • ν) = γ x)
-    {y : E} (hγ : DifferentiableAt ℝ γ y) : fderiv ℝ γ y ν = 0 := by
-  have hl : HasDerivAt (fun t : ℝ => y + t • ν) ν 0 := by
-    simpa using ((hasDerivAt_id (0 : ℝ)).smul_const ν).const_add y
-  have h1 := (show HasFDerivAt γ (fderiv ℝ γ y) (y + (0 : ℝ) • ν) by
-    simpa using hγ.hasFDerivAt).comp_hasDerivAt (0 : ℝ) hl
-  have h2 : HasDerivAt (fun t : ℝ => γ (y + t • ν)) 0 0 := by
-    simp only [hγν]
-    exact hasDerivAt_const _ _
-  exact h1.unique h2
 
 /-- The shear `x ↦ x - γ x ν` inverts the shear `y ↦ y + γ y ν` when `γ` is invariant along `ν`. -/
 private theorem shear_neg_shear (hγν : ∀ x (t : ℝ), γ (x + t • ν) = γ x) (y : E) :
@@ -269,31 +261,6 @@ private theorem sum_shearRows_smul_single (y : E) (i : Fin (n + 1)) :
     (EuclideanSpace.basisFun (Fin (n + 1)) ℝ).sum_repr
       (EuclideanSpace.single i (1 : ℝ) - fderiv ℝ γ y (EuclideanSpace.single i 1) • ν)
 
-private theorem sum_comm_four {ι : Type*} [Fintype ι] (f : ι → ι → ι → ι → ℝ) :
-    ∑ k, ∑ l, ∑ j, ∑ i, f k l j i = ∑ i, ∑ j, ∑ k, ∑ l, f k l j i :=
-  calc ∑ k, ∑ l, ∑ j, ∑ i, f k l j i = ∑ k, ∑ l, ∑ i, ∑ j, f k l j i :=
-        Finset.sum_congr rfl fun _ _ => Finset.sum_congr rfl fun _ _ => Finset.sum_comm
-    _ = ∑ k, ∑ i, ∑ l, ∑ j, f k l j i := Finset.sum_congr rfl fun _ _ => Finset.sum_comm
-    _ = ∑ i, ∑ k, ∑ l, ∑ j, f k l j i := Finset.sum_comm
-    _ = ∑ i, ∑ k, ∑ j, ∑ l, f k l j i :=
-        Finset.sum_congr rfl fun _ _ => Finset.sum_congr rfl fun _ _ => Finset.sum_comm
-    _ = ∑ i, ∑ j, ∑ k, ∑ l, f k l j i := Finset.sum_congr rfl fun _ _ => Finset.sum_comm
-
-/-- Summing a bilinear form against the entries of `Wᵀ A W` in the standard basis is summing it
-against the entries of `A` on the rows of `W`. -/
-private theorem sum_sum_transpose_mul_mul_mul_apply (B : E →L[ℝ] E →L[ℝ] ℝ)
-    (A W : Matrix (Fin (n + 1)) (Fin (n + 1)) ℝ) :
-    ∑ k, ∑ l, (Wᵀ * A * W) k l * B (EuclideanSpace.single k 1) (EuclideanSpace.single l 1) =
-      ∑ i, ∑ j, A i j * B (∑ k, W i k • EuclideanSpace.single k (1 : ℝ))
-        (∑ l, W j l • EuclideanSpace.single l (1 : ℝ)) := by
-  simp only [map_sum, map_smul, FunLike.coe_sum, Finset.sum_apply,
-    FunLike.coe_smul, Pi.smul_apply, smul_eq_mul, Matrix.mul_apply,
-    Matrix.transpose_apply, Finset.mul_sum, Finset.sum_mul]
-  rw [sum_comm_four]
-  refine Finset.sum_congr rfl fun i _ => Finset.sum_congr rfl fun j _ => ?_
-  rw [Finset.sum_comm]
-  exact Finset.sum_congr rfl fun _ _ => Finset.sum_congr rfl fun _ _ => by ring
-
 /-- **The non-divergence operator under the shear.** If `γ` is invariant along `ν` and
 `v = u ∘ φ` for the shear `φ y = y + γ y ν`, then the operator with the coefficients
 `Wᵀ A W`, `W = shearRows γ ν y`, applied to `v` at `y` is the operator with the coefficients `A`
@@ -315,12 +282,13 @@ private theorem sum_sum_smul_fderiv_fderiv_comp_shear (hγν : ∀ x (t : ℝ), 
   have hrow (i : Fin (n + 1)) : S (∑ k, shearRows γ ν y i k • EuclideanSpace.single k (1 : ℝ)) =
       EuclideanSpace.single i 1 := by
     rw [sum_shearRows_smul_single]
-    simp [S, fderiv_apply_eq_zero_of_add_smul hγν (hγ.differentiableAt two_ne_zero)]
+    simp [S, fderiv_apply_eq_zero_of_apply_add_smul_neg (f := γ) (x := y) ν fun t => by
+      rw [hγν, hγν]]
   simp only [fderiv_fderiv_comp_shear_apply hu hγ, hS, smul_eq_mul, mul_add,
     Finset.sum_add_distrib, Finset.sum_mul, mul_assoc]
   congr 1
-  have h := sum_sum_transpose_mul_mul_mul_apply
-    ((fderiv ℝ (fderiv ℝ u) (y + γ y • ν)).bilinearComp S S) A (shearRows γ ν y)
+  have h := Matrix.sum_sum_transpose_mul_mul_apply_mul A (shearRows γ ν y)
+    ((fderiv ℝ (fderiv ℝ u) (y + γ y • ν)).bilinearComp S S) fun k => EuclideanSpace.single k 1
   simp only [ContinuousLinearMap.bilinearComp_apply, hrow, Matrix.mul_assoc] at h
   exact h
 
@@ -370,7 +338,7 @@ private theorem norm_le_mul_norm_sub_inner_smul (hν : ‖ν‖ = 1) {y : E} {G 
 `Wᵀ A W`, `W = shearRows γ ν y`, has ellipticity bounds `λ / (1 + G)²` and `Λ (1 + G)²`. -/
 private theorem toQuadraticForm'_transpose_shearRows_mul_mul (hν : ‖ν‖ = 1) {y : E} {G : ℝ≥0}
     (hγν : fderiv ℝ γ y ν = 0) (hG : ‖fderiv ℝ γ y‖ ≤ G)
-    {A : Matrix (Fin (n + 1)) (Fin (n + 1)) ℝ} {lam Lam : ℝ} (hlam : 0 ≤ lam) (hLam : 0 ≤ Lam)
+    {A : Matrix (Fin (n + 1)) (Fin (n + 1)) ℝ} {lam Lam : ℝ} (hlam : 0 ≤ lam)
     (hA : ∀ ξ : E, lam * ‖ξ‖ ^ 2 ≤ A.toQuadraticForm' ξ)
     (hA' : ∀ ξ : E, A.toQuadraticForm' ξ ≤ Lam * ‖ξ‖ ^ 2) (ξ : E) :
     lam / (1 + G) ^ 2 * ‖ξ‖ ^ 2 ≤ ((shearRows γ ν y)ᵀ * A * shearRows γ ν y).toQuadraticForm' ξ ∧
@@ -380,6 +348,12 @@ private theorem toQuadraticForm'_transpose_shearRows_mul_mul (hν : ‖ν‖ = 1
       A.toQuadraticForm' ⇑(ξ - ⟪ν, ξ⟫_ℝ • (InnerProductSpace.toDual ℝ E).symm (fderiv ℝ γ y)) := by
     rw [Matrix.toQuadraticForm'_apply, Matrix.toQuadraticForm'_apply, ← Matrix.mulVec_mulVec,
       ← Matrix.mulVec_mulVec, Matrix.dotProduct_mulVec, Matrix.vecMul_transpose, shearRows_mulVec]
+  -- Comparing the bounds at a unit vector gives `λ ≤ Λ`, so `0 ≤ Λ`.
+  have hLam : 0 ≤ Lam := by
+    have h := (hA (EuclideanSpace.single 0 1)).trans (hA' (EuclideanSpace.single 0 1))
+    have hn : ‖(EuclideanSpace.single 0 (1 : ℝ) : E)‖ = 1 := by simp
+    rw [hn, one_pow, mul_one, mul_one] at h
+    linarith
   obtain ⟨h1, h2⟩ := norm_le_mul_norm_sub_inner_smul hν hγν hG ξ
   set η : E := ξ - ⟪ν, ξ⟫_ℝ • (InnerProductSpace.toDual ℝ E).symm (fderiv ℝ γ y)
   rw [hq]
@@ -397,50 +371,6 @@ end Graph
 /-! ### Hölder bounds for the sheared coefficients -/
 
 section Coefficients
-
-/-- The product of two real functions that are Hölder and bounded on `s`. -/
-private theorem holderOnWith_mul_of_abs_le {s : Set E} {f g : E → ℝ} {α Kf Kg Mf Mg : ℝ≥0}
-    (hf : HolderOnWith Kf α f s) (hg : HolderOnWith Kg α g s) (hMf : ∀ y ∈ s, |f y| ≤ Mf)
-    (hMg : ∀ y ∈ s, |g y| ≤ Mg) :
-    HolderOnWith (Mf * Kg + Mg * Kf) α (fun y => f y * g y) s ∧
-      ∀ y ∈ s, |f y * g y| ≤ ((Mf * Mg : ℝ≥0) : ℝ) :=
-  ⟨hf.smul_of_eq_zero hg hMf hMg fun _ hy hy' => absurd hy hy', fun y hy => by
-    rw [abs_mul, NNReal.coe_mul]
-    exact mul_le_mul (hMf y hy) (hMg y hy) (abs_nonneg _) Mf.coe_nonneg⟩
-
-/-- A finite sum of real functions that are Hölder and bounded on `s` with common constants. -/
-private theorem holderOnWith_sum_of_abs_le {ι : Type*} [Fintype ι] {s : Set E} {f : ι → E → ℝ}
-    {α K M : ℝ≥0} (hf : ∀ i, HolderOnWith K α (f i) s) (hM : ∀ i, ∀ y ∈ s, |f i y| ≤ M) :
-    HolderOnWith (Fintype.card ι * K) α (fun y => ∑ i, f i y) s ∧
-      ∀ y ∈ s, |∑ i, f i y| ≤ ((Fintype.card ι * M : ℝ≥0) : ℝ) := by
-  refine ⟨(HolderOnWith.sum (s := Finset.univ) fun i _ => hf i).mono_const (by simp),
-    fun y hy => (Finset.abs_sum_le_sum_abs _ _).trans ?_⟩
-  simpa using Finset.sum_le_sum fun i (_ : i ∈ Finset.univ) => hM i y hy
-
-/-- The entries of `Wᵀ A W` for matrix-valued functions `A` and `W` whose entries are Hölder and
-bounded on `s`. -/
-private theorem holderOnWith_transpose_mul_mul_apply {s : Set E}
-    {A W : E → Matrix (Fin (n + 1)) (Fin (n + 1)) ℝ} {α KA KW MA MW : ℝ≥0}
-    (hA : ∀ i j, HolderOnWith KA α (fun y => A y i j) s)
-    (hW : ∀ i j, HolderOnWith KW α (fun y => W y i j) s)
-    (hMA : ∀ y ∈ s, ∀ i j, |A y i j| ≤ MA) (hMW : ∀ y ∈ s, ∀ i j, |W y i j| ≤ MW)
-    (k l : Fin (n + 1)) :
-    HolderOnWith ((n + 1) * ((n + 1) * (MW * MA) * KW + MW * ((n + 1) * (MW * KA + MA * KW)))) α
-        (fun y => ((W y)ᵀ * A y * W y) k l) s ∧
-      ∀ y ∈ s, |((W y)ᵀ * A y * W y) k l| ≤
-        (((n + 1) * ((n + 1) * (MW * MA) * MW) : ℝ≥0) : ℝ) := by
-  have h1 (j : Fin (n + 1)) := holderOnWith_sum_of_abs_le (s := s)
-    (fun i => (holderOnWith_mul_of_abs_le (hW i k) (hA i j) (fun y hy => hMW y hy i k)
-      (fun y hy => hMA y hy i j)).1)
-    (fun i => (holderOnWith_mul_of_abs_le (hW i k) (hA i j) (fun y hy => hMW y hy i k)
-      (fun y hy => hMA y hy i j)).2)
-  have h2 (j : Fin (n + 1)) := holderOnWith_mul_of_abs_le (h1 j).1 (hW j l) (h1 j).2
-    (fun y hy => hMW y hy j l)
-  have h3 := holderOnWith_sum_of_abs_le (s := s) (fun j => (h2 j).1) (fun j => (h2 j).2)
-  simp only [Fintype.card_fin, Nat.cast_add, Nat.cast_one] at h3
-  refine ⟨h3.1.congr fun y _ => ?_, fun y hy => ?_⟩
-  · simp only [Matrix.mul_apply, Matrix.transpose_apply]
-  · simpa only [Matrix.mul_apply, Matrix.transpose_apply] using h3.2 y hy
 
 /-- The entries of `shearRows γ ν` are Hölder with the Hölder constant of `Dγ` and bounded by
 `1 + G`. -/
@@ -503,18 +433,6 @@ end Transport
 
 /-! ### The estimate near a graph -/
 
-/-- For `α > 0` and `λ > 0`, every `X` satisfies `X rᵅ ≤ λ` for all small `r ≥ 0`. -/
-private theorem exists_pos_forall_mul_rpow_le {α : ℝ} (hα : 0 < α) (X : ℝ) {lam : ℝ}
-    (hlam : 0 < lam) : ∃ r₀ : ℝ, 0 < r₀ ∧ ∀ r : ℝ, 0 ≤ r → r ≤ r₀ → X * r ^ α ≤ lam := by
-  refine ⟨(lam / (max X 0 + 1)) ^ α⁻¹, by positivity, fun r hr hrr₀ => ?_⟩
-  have hpow : r ^ α ≤ lam / (max X 0 + 1) :=
-    calc r ^ α ≤ ((lam / (max X 0 + 1)) ^ α⁻¹) ^ α := Real.rpow_le_rpow hr hrr₀ hα.le
-      _ = _ := by rw [← Real.rpow_mul (by positivity), inv_mul_cancel₀ hα.ne', Real.rpow_one]
-  calc X * r ^ α ≤ (max X 0 + 1) * (lam / (max X 0 + 1)) := by
-        gcongr
-        linarith [le_max_left X 0]
-    _ = lam := by field_simp
-
 /-- A product of `N` with `(1 + G)²` or with `1 + G` is at most `N (1 + G)² + N G`. -/
 private theorem le_mul_one_add_mul_one_add_add_mul (N G : ℝ≥0) :
     N ≤ N * (1 + G) * (1 + G) + N * G ∧ N * (1 + G) ≤ N * (1 + G) * (1 + G) + N * G := by
@@ -526,24 +444,8 @@ private theorem le_mul_one_add_mul_one_add_add_mul (N G : ℝ≥0) :
       _ ≤ _ := by gcongr; exact le_self_add
   exact ⟨h0.trans (h1.trans le_self_add), h1.trans le_self_add⟩
 
-/-- The upper ellipticity constant of a matrix with positive lower ellipticity constant in a
-nonzero dimension is nonnegative. -/
-private theorem nonneg_of_mul_norm_sq_le_toQuadraticForm'_le
-    {A : Matrix (Fin (n + 1)) (Fin (n + 1)) ℝ} {lam Lam : ℝ} (hlam : 0 < lam)
-    (hA : ∀ ξ : E, lam * ‖ξ‖ ^ 2 ≤ A.toQuadraticForm' ξ)
-    (hA' : ∀ ξ : E, A.toQuadraticForm' ξ ≤ Lam * ‖ξ‖ ^ 2) : 0 ≤ Lam := by
-  have h1 := (hA (EuclideanSpace.single 0 1)).trans (hA' (EuclideanSpace.single 0 1))
-  have hn : ‖(EuclideanSpace.single 0 (1 : ℝ) : E)‖ = 1 := by simp
-  rw [hn, one_pow, mul_one, mul_one] at h1
-  linarith
-
-/-- The norm of the curried second derivative is that of the second iterated derivative. -/
-private theorem norm_fderiv_fderiv_eq (f : E → ℝ) (x : E) :
-    ‖fderiv ℝ (fderiv ℝ f) x‖ = ‖iteratedFDeriv ℝ 2 f x‖ := by
-  rw [← continuousMultilinearCurryFin2_iteratedFDeriv_two, LinearIsometryEquiv.norm_map]
-
-/-- The facts about `γ` used by the estimate: `γ` and `Dγ` are `G`-Lipschitz, `Dγ` is Hölder with
-constant `3 G`, `Dγ` vanishes in the direction `ν`, and the same holds for `-γ`. -/
+/-- The facts about `γ` used by the estimate: `γ` and `-γ` are `G`-Lipschitz, and `Dγ` and `D(-γ)`
+are `α`-Hölder with constant `3 G`. -/
 private theorem graph_facts {α : ℝ≥0} (hα1 : α ≤ 1) {γ : E → ℝ} {G : ℝ≥0}
     (hγ : ContDiff ℝ 2 γ) (hG1 : ∀ x, ‖fderiv ℝ γ x‖ ≤ G)
     (hG2 : ∀ x, ‖fderiv ℝ (fderiv ℝ γ) x‖ ≤ G) :
@@ -561,8 +463,7 @@ private theorem graph_facts {α : ℝ≥0} (hα1 : α ≤ 1) {γ : E → ℝ} {G
     ((hL1.lipschitzOnWith (s := univ)).holderOnWith_of_norm_le (fun x _ => hG1 x) hα1)
   have hneg : (fderiv ℝ fun x => -γ x) = -fderiv ℝ γ := funext fun x => fderiv_neg
   refine ⟨hL, ?_, hH, ?_⟩
-  · exact LipschitzWith.of_dist_le_mul fun x y => by
-      simpa [Real.dist_eq, abs_sub_comm, neg_sub_neg] using hL.dist_le_mul x y
+  · exact hL.neg
   · rw [hneg]
     exact HolderWith.neg hH
 
@@ -606,14 +507,17 @@ private theorem holderOnWith_transpose_shearRows_mul_mul_apply {α : ℝ≥0} (h
   have hmaps (y : E) (hy : y ∈ closedBall y₀ r ∩ {y | 0 ≤ ⟪y, ν⟫_ℝ}) :
       y + γ y • ν ∈ ball x₀ R ∩ {x | γ x ≤ ⟪x, ν⟫_ℝ} :=
     (shear_mem_ball_inter hν hγν hLγ hy₀ hr (mem_closedBall.1 hy.1)).1 hy.2
-  exact holderOnWith_transpose_mul_mul_apply (A := fun y => a (y + γ y • ν))
+  have hW (i j : Fin (n + 1)) :=
+    holderOnWith_shearRows_apply (ν := ν) (s := closedBall y₀ r ∩ {y | 0 ≤ ⟪y, ν⟫_ℝ}) hν.le
+      (fun y _ => hG1 y) (hH.holderOnWith _) i j
+  have h := holderOnWith_transpose_mul_mul_apply (A := fun y => a (y + γ y • ν))
     (W := shearRows γ ν)
     (fun i j => holderOnWith_comp_shear hν.le hLγ (hL i j) fun y hy =>
       ⟨ball_subset_closedBall (hmaps y hy).1, (hmaps y hy).2⟩)
-    (fun i j => (holderOnWith_shearRows_apply hν.le (fun y _ => hG1 y) (hH.holderOnWith _) i j).1)
-    (fun y hy i j => hM _ (hmaps y hy) i j)
-    (fun y hy i j => (holderOnWith_shearRows_apply hν.le (fun y _ => hG1 y)
-      (hH.holderOnWith _) i j).2 y hy) k l
+    (fun i j => (hW i j).1) (fun y hy i j => hM _ (hmaps y hy) i j)
+    (fun y hy i j => (hW i j).2 y hy) k l
+  simp only [Fintype.card_fin, Nat.cast_add, Nat.cast_one] at h
+  exact h
 
 /-- **Bounds for `u ∘ φ`.** With `x₀ = φ y₀` for the shear `φ y = y + γ y ν` and
 `(1 + G) r < R`, if `u` is `C²` near the part of `ball x₀ R` above the graph of `γ`, with `‖Du‖`
@@ -647,7 +551,8 @@ private theorem shear_comp_bounds {α : ℝ≥0} (hα1 : α ≤ 1) {ν : E} (hν
   have hφ (y : E) := hasFDerivAt_shear (ν := ν) (hγ.differentiable two_ne_zero y)
   have hS (y : E) := norm_id_add_smulRight_le (γ := γ) hν.le (hG1 y)
   have hN2' (y : E) (hy : y ∈ s) : ‖fderiv ℝ (fderiv ℝ u) (y + γ y • ν)‖ ≤ N := by
-    rw [norm_fderiv_fderiv_eq]; exact hN2 _ (hmaps y hy)
+    rw [← continuousMultilinearCurryFin2_iteratedFDeriv_two, LinearIsometryEquiv.norm_map]
+    exact hN2 _ (hmaps y hy)
   have hcomp (A : E →L[ℝ] ℝ) (y : E) (hA : ‖A‖ ≤ N) :
       ‖A.comp (ContinuousLinearMap.id ℝ E + (fderiv ℝ γ y).smulRight ν)‖ ≤
         ((N * (1 + G) : ℝ≥0) : ℝ) :=
@@ -712,23 +617,26 @@ private theorem holderOnWith_sum_sum_smul_fderiv_fderiv_comp_shear {α : ℝ≥0
       |fderiv ℝ (fderiv ℝ γ) y (EuclideanSpace.single k 1) (EuclideanSpace.single l 1)| ≤ G :=
     ((fderiv ℝ (fderiv ℝ γ) y (EuclideanSpace.single k 1)).unit_le_opNorm _ (he l)).trans
       (((fderiv ℝ (fderiv ℝ γ) y).unit_le_opNorm _ (he k)).trans (hG2 y))
-  -- The first-order coefficient `c = ∑ₖₗ ãₖₗ ∂ₖ∂ₗγ`.
-  have hc := holderOnWith_sum_of_abs_le (s := t) (fun k => (holderOnWith_sum_of_abs_le (s := t)
-      (fun l => (holderOnWith_mul_of_abs_le (hã k l) (hD2 k l) (hMã k l) fun y _ => hD2b k l y).1)
-      (fun l => (holderOnWith_mul_of_abs_le (hã k l) (hD2 k l) (hMã k l)
-        fun y _ => hD2b k l y).2)).1)
-    (fun k => (holderOnWith_sum_of_abs_le (s := t)
-      (fun l => (holderOnWith_mul_of_abs_le (hã k l) (hD2 k l) (hMã k l) fun y _ => hD2b k l y).1)
-      (fun l => (holderOnWith_mul_of_abs_le (hã k l) (hD2 k l) (hMã k l)
-        fun y _ => hD2b k l y).2)).2)
-  simp only [Fintype.card_fin, Nat.cast_add, Nat.cast_one] at hc
+  -- The first-order coefficient `c = ∑ₖₗ ãₖₗ ∂ₖ∂ₗγ` is Hölder and bounded.
+  have hc := HolderOnWith.fintype_sum fun k => HolderOnWith.fintype_sum fun l =>
+    (hã k l).smul_of_norm_le (hD2 k l) (hMã k l) fun y _ => hD2b k l y
+  simp only [Fintype.card_fin, Nat.cast_add, Nat.cast_one, smul_eq_mul] at hc
+  have hcb (y : E) (hy : y ∈ t) :
+      ‖∑ k, ∑ l, ((shearRows γ ν y)ᵀ * a (y + γ y • ν) * shearRows γ ν y) k l *
+        fderiv ℝ (fderiv ℝ γ) y (EuclideanSpace.single k 1) (EuclideanSpace.single l 1)‖ ≤
+        (((n + 1) * ((n + 1) * (Mã * G)) : ℝ≥0) : ℝ) :=
+    calc _ ≤ ∑ _ : Fin (n + 1), ∑ _ : Fin (n + 1), (Mã * G : ℝ) :=
+          norm_sum_le_of_le Finset.univ fun k _ => norm_sum_le_of_le Finset.univ fun l _ => by
+            rw [norm_mul]
+            exact mul_le_mul (hMã k l y hy) (hD2b k l y) (norm_nonneg _) Mã.coe_nonneg
+      _ = _ := by simp
   have hDν : HolderOnWith H α (fun y => fderiv ℝ u (y + γ y • ν) ν) t :=
     hH.clm_apply_of_norm_le_one hν
   have hDνb (y : E) (hy : y ∈ t) : |fderiv ℝ u (y + γ y • ν) ν| ≤ N :=
     ((fderiv ℝ u _).le_of_opNorm_le (hN1 y hy) ν).trans (by
       simpa using mul_le_of_le_one_right N.coe_nonneg hν)
-  have hprod := holderOnWith_mul_of_abs_le hc.1 hDν hc.2 hDνb
-  refine ((holderOnWith_comp_shear hν hLγ hK hmaps).add hprod.1).congr fun y hy => ?_
+  have hprod := hc.smul_of_norm_le hDν hcb hDνb
+  refine ((holderOnWith_comp_shear hν hLγ hK hmaps).add hprod).congr fun y hy => ?_
   exact (sum_sum_smul_fderiv_fderiv_comp_shear hγν (hcd y hy) hγ.contDiffAt _).symm
 
 /-- **Back through the inverse shear.** If `v` is `C²` near the part of `ball y₀ r` above the
@@ -767,7 +675,9 @@ private theorem holderOnWith_iteratedFDeriv_two_comp_shear_neg {α : ℝ≥0} (h
     (hH'.holderOnWith s)
     ((hG3.neg.holderOnWith s).congr fun x _ => (hneg2 x).symm)
     (fun y hy => hN1 _ (htB (hs hy)))
-    (fun y hy => by rw [norm_fderiv_fderiv_eq]; exact hN2 _ (htB (hs hy)))
+    (fun y hy => by
+      rw [← continuousMultilinearCurryFin2_iteratedFDeriv_two, LinearIsometryEquiv.norm_map]
+      exact hN2 _ (htB (hs hy)))
     (holderOnWith_comp_shear hν hLγ' ((holderOnWith_fderiv_fderiv_iff_iteratedFDeriv_two v).2 hW)
       hs)
     (holderOnWith_comp_shear hν hLγ' hDv hs)
@@ -786,9 +696,10 @@ private theorem exists_radius_of_graph (C₀ : ℝ) {α : ℝ≥0} (hα : 0 < α
       2 * (C₀ * (Lam * (1 + G) ^ 2 / (lam / (1 + G) ^ 2)) ^ (1 + ((n : ℝ) + 1) / 4 + α / 2)) *
         ((n : ℝ) + 1) ^ 2 * ((1 + 2 ^ (α : ℝ)) * K * (R / (2 * (1 + G))) ^ (α : ℝ)) ≤
           lam / (1 + G) ^ 2 := by
-  obtain ⟨r₀, hr₀, hsmall₀⟩ := exists_pos_forall_mul_rpow_le (by exact_mod_cast hα : (0 : ℝ) < α)
-    (2 * (C₀ * (Lam * (1 + G) ^ 2 / (lam / (1 + G) ^ 2)) ^ (1 + ((n : ℝ) + 1) / 4 + α / 2)) *
-      ((n : ℝ) + 1) ^ 2 * (1 + 2 ^ (α : ℝ)) * K) (by positivity : 0 < lam / (1 + G) ^ 2)
+  obtain ⟨r₀, hr₀, -, hsmall₀⟩ := Real.exists_pos_le_one_mul_rpow_le
+    (max (2 * (C₀ * (Lam * (1 + G) ^ 2 / (lam / (1 + G) ^ 2)) ^ (1 + ((n : ℝ) + 1) / 4 + α / 2)) *
+      ((n : ℝ) + 1) ^ 2 * (1 + 2 ^ (α : ℝ)) * K) 0) (by exact_mod_cast hα : (0 : ℝ) < α)
+    (by positivity : 0 < lam / (1 + G) ^ 2)
   refine ⟨2 * (1 + G) * r₀, by positivity, fun {R ρ} hR0 hR hρR => ⟨?_, ?_, ?_⟩⟩
   · have h2 : (1 + (G : ℝ)) * (R / (2 * (1 + G))) = R / 2 := by field_simp
     linarith
@@ -800,7 +711,8 @@ private theorem exists_radius_of_graph (C₀ : ℝ) {α : ℝ≥0} (hα : 0 < α
     calc _ = 2 * (C₀ * (Lam * (1 + G) ^ 2 / (lam / (1 + G) ^ 2)) ^
             (1 + ((n : ℝ) + 1) / 4 + α / 2)) * ((n : ℝ) + 1) ^ 2 * (1 + 2 ^ (α : ℝ)) * K *
             (R / (2 * (1 + G))) ^ (α : ℝ) := by ring
-      _ ≤ _ := hsmall₀ _ (by positivity) hrr₀
+      _ ≤ _ := (mul_le_mul (le_max_left _ _) (Real.rpow_le_rpow (by positivity) hrr₀ α.coe_nonneg)
+          (by positivity) (le_max_right _ _)).trans hsmall₀
 
 /-- **The Schauder estimate near a curved boundary.** Let `0 < α < 1`, let `ν` be a unit vector
 and let `γ : ℝ^{n+1} → ℝ` be `C²`, invariant under translation along `ν`, with `‖Dγ‖ ≤ G`,
@@ -905,16 +817,16 @@ theorem exists_holderOnWith_iteratedFDeriv_two_closedBall_inter_of_sum_smul_fder
     (fun k l => (hcoef k l).1.mono hHo) (fun k l y hy => (hcoef k l).2 y (hHo hy))
     (hHu.mono hHo') hK
   -- The ellipticity of the sheared coefficients at `y₀`.
-  have hLam := nonneg_of_mul_norm_sq_le_toQuadraticForm'_le hlam hEll hEll'
   have hEllv (ξ : E) := toQuadraticForm'_transpose_shearRows_mul_mul (A := a (y₀ + γ y₀ • ν)) hν
-    (fderiv_apply_eq_zero_of_add_smul hγν (hγ.differentiable two_ne_zero y₀)) (hG1 y₀) hlam.le
-    hLam (by rwa [hy₀]) (by rwa [hy₀]) ξ
+    (fderiv_apply_eq_zero_of_apply_add_smul_neg (f := γ) (x := y₀) ν fun t => by simp only [hγν])
+    (hG1 y₀) hlam.le (by rwa [hy₀]) (by rwa [hy₀]) ξ
   -- Bounds for `v` by `N' = N (1 + G)² + N G`.
   obtain ⟨hNN', hNN''⟩ := le_mul_one_add_mul_one_add_add_mul N G
   have hD2v' (y : E) (hy : y ∈ ball y₀ r ∩ {y | 0 ≤ ⟪y, ν⟫_ℝ}) :
       ‖iteratedFDeriv ℝ 2 (u ∘ fun z => z + γ z • ν) y‖ ≤
         ((N * (1 + G) * (1 + G) + N * G : ℝ≥0) : ℝ) := by
-    rw [← norm_fderiv_fderiv_eq]; exact hD2v y hy
+    have h := hD2v y hy
+    rwa [← continuousMultilinearCurryFin2_iteratedFDeriv_two, LinearIsometryEquiv.norm_map] at h
   have hDv' (y : E) (hy : y ∈ ball y₀ r ∩ {y | 0 ≤ ⟪y, ν⟫_ℝ}) :
       ‖fderiv ℝ (u ∘ fun z => z + γ z • ν) y‖ ≤ ((N * (1 + G) * (1 + G) + N * G : ℝ≥0) : ℝ) :=
     (hDv y hy).trans (by exact_mod_cast hNN'')

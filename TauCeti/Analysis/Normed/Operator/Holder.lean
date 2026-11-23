@@ -24,7 +24,9 @@ If one argument vanishes off a set `s`, the other need only be Hölder and bound
 (`ContinuousLinearMap.holderWith_comp₂_of_eq_zero`, and `HolderWith.smul_of_eq_zero` for scalar
 multiplication): this is how a cutoff extends a function given on `s` to the whole space, and how
 freezing a coefficient on the support of a localized function is estimated. The relative form
-`HolderOnWith.smul_of_eq_zero` extends it from `s` to a larger set `t` instead.
+`HolderOnWith.smul_of_eq_zero` extends it from `s` to a larger set `t` instead. When both factors
+are Hölder and bounded on the same set, so is their product (`HolderOnWith.smul_of_norm_le`); a
+sum over a finite type with a common Hölder constant is Hölder (`HolderOnWith.fintype_sum`).
 
 A continuous linear map applied after a Hölder function is Hölder, the constant multiplied by
 the operator norm (`ContinuousLinearMap.holderWith_comp`). Evaluating a Hölder family of
@@ -263,6 +265,22 @@ theorem smul_of_eq_zero {α Kc Kf Mc Mf : ℝ≥0} {c : X → 𝕜} {f : X → G
   HolderWith.restrict_iff.1 <| HolderWith.smul_of_eq_zero (X := t) (c := fun x ↦ c x)
     (f := fun x ↦ f x) (s := {x : t | (x : X) ∈ s}) hc.holderWith (fun x hx y hy ↦ hf x hx y hy)
     (fun x ↦ hcnorm x x.property) (fun x hx ↦ hfnorm x hx) (fun x hx ↦ hc0 x x.property hx)
+
+/-- The product `c • f` of a scalar factor and a function that are both Hölder and bounded on the
+same set `s` is Hölder on `s`, with constant `Mc Kf + Mf Kc`. -/
+theorem smul_of_norm_le {α Kc Kf Mc Mf : ℝ≥0} {c : X → 𝕜} {f : X → G} {s : Set X}
+    (hc : HolderOnWith Kc α c s) (hf : HolderOnWith Kf α f s) (hcnorm : ∀ x ∈ s, ‖c x‖ ≤ Mc)
+    (hfnorm : ∀ x ∈ s, ‖f x‖ ≤ Mf) :
+    HolderOnWith (Mc * Kf + Mf * Kc) α (fun x ↦ c x • f x) s :=
+  ((ContinuousLinearMap.lsmul 𝕜 𝕜 : 𝕜 →L[𝕜] G →L[𝕜] G).holderOnWith_comp₂ hc hf hcnorm
+    hfnorm).mono_const (mul_le_of_le_one_left zero_le ContinuousLinearMap.opNNNorm_lsmul_le)
+
+/-- A sum over a finite type of functions that are Hölder on `s` with a common constant `K` is
+Hölder on `s` with constant `card ι * K`. Compare `HolderOnWith.sum`. -/
+theorem fintype_sum {X : Type*} [PseudoMetricSpace X] {ι : Type*} [Fintype ι] {α K : ℝ≥0}
+    {f : ι → X → G} {s : Set X} (hf : ∀ i, HolderOnWith K α (f i) s) :
+    HolderOnWith (Fintype.card ι * K) α (fun x ↦ ∑ i, f i x) s := by
+  simpa using HolderOnWith.sum (s := Finset.univ) fun i _ ↦ hf i
 
 /-- Evaluating a family of continuous linear maps, Hölder on `s`, at a vector of norm at most `1`
 keeps the Hölder constant. -/
