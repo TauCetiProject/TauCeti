@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicTopology.Cellular.LocalCoefficients
+public import TauCeti.AlgebraicTopology.Cellular.LocalCoefficients.Basic
 public import TauCeti.AlgebraicTopology.Singular.Twisted.DirectedUnion
 public import TauCeti.CategoryTheory.Limits.Constructions.EventuallyConstant
 public import TauCeti.Topology.CWComplex.Classical.CompactSupport

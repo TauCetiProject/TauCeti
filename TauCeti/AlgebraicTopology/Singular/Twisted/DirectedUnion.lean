@@ -10,7 +10,7 @@ public import Mathlib.Algebra.Homology.HomologicalComplexLimits
 public import Mathlib.Geometry.Convex.ConvexSpace.CompactSpaceStdSimplex
 public import TauCeti.Algebra.Category.ModuleCat.AB
 public import TauCeti.Algebra.Homology.ShortComplex.Colimit
-public import TauCeti.AlgebraicTopology.Singular.Twisted.CompactSupport
+public import TauCeti.AlgebraicTopology.Singular.Twisted.CompactSupport.Basic
 public import TauCeti.Topology.Category.TopCat.Subspace
 
 /-!
