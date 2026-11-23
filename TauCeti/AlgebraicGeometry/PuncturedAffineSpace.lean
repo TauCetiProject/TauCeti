@@ -209,7 +209,7 @@ noncomputable def homEquiv :
     ((algSpec (.of R)).obj (op A) ⟶ puncturedAffineSpace R ι) ≃
       {v : ι → A // Ideal.span (Set.range v) = ⊤} where
   toFun s := ⟨fun i ↦ coordinateAlgHom s (MvPolynomial.X i), span_range_coordinateAlgHom_X s⟩
-  invFun v := ofUnimodular v.1 v.2
+  invFun v := ofUnimodular v.val v.property
   left_inv s := ofUnimodular_coordinateAlgHom s
   right_inv v := Subtype.ext <| funext fun i ↦ by simp
 
@@ -222,7 +222,7 @@ theorem coe_homEquiv_apply
 
 @[simp]
 theorem homEquiv_symm_apply (v : {v : ι → A // Ideal.span (Set.range v) = ⊤}) :
-    (homEquiv R ι A).symm v = ofUnimodular v.1 v.2 :=
+    (homEquiv R ι A).symm v = ofUnimodular v.val v.property :=
   (rfl)
 
 /-- The coordinates of a point of punctured affine space are natural in the value algebra:

@@ -281,7 +281,7 @@ theorem cochainsMap_comp_homogeneousCochainsRestrictScalarsIntIso_hom :
     Iso.trans_hom] at h ⊢
   refine Eq.trans ?_ h.symm
   exact congrArg (fun w ↦ (invariantsRestrictScalarsIntIso (resolutionX Y (i + 1))).hom w)
-    (Subtype.ext ((resolutionXRestrictScalarsIntIso_hom_resolutionMap_apply f (i + 1) x.1).trans
+    (Subtype.ext ((resolutionXRestrictScalarsIntIso_hom_resolutionMap_apply f (i + 1) x.val).trans
       (restrictScalarsInt_map_hom_apply _ _).symm))
 
 end Naturality
@@ -533,11 +533,11 @@ private theorem cochainsMap_comp_homogeneousCochainsRestrictScalarsIntIso_hom_of
   -- A homogeneous cochain is a subtype of `resolutionX _ (i + 1)`, and `cochainsMap` acts on its
   -- underlying element as `resolutionMap`; this unfolds the complex-map wrappers to that action.
   change (resolutionXRestrictScalarsIntIso Y (i + 1)).hom.hom
-      ((resolutionMap phi (resRestrictScalarsIntMap (phi : H →* G) f) (i + 1)).hom x.1) =
+      ((resolutionMap phi (resRestrictScalarsIntMap (phi : H →* G) f) (i + 1)).hom x.val) =
     (resolutionMap phi f (i + 1)).hom
-      ((homogeneousCochainsRestrictScalarsIntIso X).hom.f i x).1
+      ((homogeneousCochainsRestrictScalarsIntIso X).hom.f i x).val
   exact (resolutionXRestrictScalarsIntIso_hom_resolutionMap_apply_of_hom
-    phi f (i + 1) x.1).trans (congrArg
+    phi f (i + 1) x.val).trans (congrArg
       (fun z : (resolutionX X (i + 1)).V ↦ (resolutionMap phi f (i + 1)).hom z)
       (coe_homogeneousCochainsRestrictScalarsIntIso_hom_f X i x).symm)
 

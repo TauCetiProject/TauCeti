@@ -35,7 +35,7 @@ Finite products of open partial homeomorphisms commute with inverses and composi
 
 This construction abstracts the concrete subtype charts in the following Tau Ceti formalizations:
 
-* `boundaryChart` in `TauCeti/Geometry/Manifold/Boundary/Charts.lean`.
+* `boundaryChart` in `TauCeti/Geometry/Manifold/Boundary/OfHomeomorph.lean`.
 * `TauCeti.levelSetChart` in `TauCeti/Analysis/Fredholm/LevelSet/Basic.lean`.
 -/
 
@@ -94,29 +94,29 @@ noncomputable def subtypeCoord (e : OpenPartialHomeomorph X Y) (s : Set X) (hs :
     (hslice : ∀ {x}, x ∈ e.source → x ∈ s → ι (π (e x)) = e x)
     (hπι : Set.LeftInvOn π ι (ι ⁻¹' e.target)) (hιc : Continuous ι)
     (hπc : ContinuousOn π (e.target ∩ Set.range ι)) : OpenPartialHomeomorph s Z where
-  toFun x := π (e x.1)
+  toFun x := π (e x.val)
   invFun z := if h : ι z ∈ e.target then ⟨e.symm (ι z), hι h⟩ else Classical.choice hs
   source := Subtype.val ⁻¹' e.source
   target := ι ⁻¹' e.target
   map_source' x hx := by
-    rw [mem_preimage, hslice hx x.2]
+    rw [mem_preimage, hslice hx x.property]
     exact e.map_source hx
   map_target' z hz := by
     simp only [mem_preimage] at hz ⊢
     rw [dite_eq_left hz]
     exact e.map_target hz
   left_inv' x hx := Subtype.ext <| by
-    simp [hslice hx x.2, e.map_source hx, e.left_inv hx]
+    simp [hslice hx x.property, e.map_source hx, e.left_inv hx]
   right_inv' z hz := by
     simp only [mem_preimage] at hz
     rw [dite_eq_left hz, e.right_inv hz]
     exact hπι hz
-  open_source := e.open_source.preimage continuous_subtype_val
+  open_source := e.open_source.preimage continuous_subtypeVal
   open_target := e.open_target.preimage hιc
   continuousOn_toFun :=
     hπc.comp
-      (e.continuousOn.comp continuous_subtype_val.continuousOn (mapsTo_preimage _ _))
-      (fun x hx => ⟨e.map_source hx, ⟨π (e x.1), hslice hx x.2⟩⟩)
+      (e.continuousOn.comp continuous_subtypeVal.continuousOn (mapsTo_preimage _ _))
+      (fun x hx => ⟨e.map_source hx, ⟨π (e x.val), hslice hx x.property⟩⟩)
   continuousOn_invFun := by
     rw [Topology.IsInducing.subtypeVal.continuousOn_iff]
     refine ContinuousOn.congr
@@ -146,15 +146,15 @@ theorem subtypeCoord_target :
 retraction. -/
 @[simp]
 theorem subtypeCoord_apply (x : s) :
-    e.subtypeCoord s hs ι π hι hslice hπι hιc hπc x = π (e x.1) := (rfl)
+    e.subtypeCoord s hs ι π hι hslice hπι hιc hπc x = π (e x.val) := (rfl)
 
 /-- On its source, `subtypeCoord` recovers the ambient coordinate after applying the slice
 parametrization. -/
 theorem subtypeCoord_parametrization_apply {x : s}
     (hx : x ∈ (e.subtypeCoord s hs ι π hι hslice hπι hιc hπc).source) :
-    ι (e.subtypeCoord s hs ι π hι hslice hπι hιc hπc x) = e x.1 := by
+    ι (e.subtypeCoord s hs ι π hι hslice hπι hιc hπc x) = e x.val := by
   rw [subtypeCoord_apply]
-  exact hslice (by simpa only [subtypeCoord_source, Set.mem_preimage] using hx) x.2
+  exact hslice (by simpa only [subtypeCoord_source, Set.mem_preimage] using hx) x.property
 
 /-- On its target, the inverse of `subtypeCoord` is the ambient inverse evaluated on the
 parametrized slice. -/

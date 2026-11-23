@@ -5,8 +5,12 @@ Authors: Codex
 -/
 module
 
+public import Mathlib.AlgebraicGeometry.Morphisms.UniversallyOpen
 public import Mathlib.AlgebraicGeometry.Pullbacks
+public import Mathlib.CategoryTheory.Comma.Over.Pullback
 public import TauCeti.CategoryTheory.Monoidal.Cartesian.Action
+import TauCeti.AlgebraicGeometry.Pullback.Carrier
+import TauCeti.CategoryTheory.Comma.Over
 
 /-!
 # Geometric orbit images of scheme actions
@@ -14,7 +18,12 @@ public import TauCeti.CategoryTheory.Monoidal.Cartesian.Action
 For a group object `G` acting on `X` in schemes over `S`, a section `x` gives an
 orbit morphism `G ⟶ X`. Its geometric orbit is the image of the underlying scheme
 map, including nonclosed points. Define its closure and boundary in the same
-underlying topological space. Translation by any section of `G` preserves all
+underlying topological space. Under any base change `f : S' ⟶ S`, the orbit of the
+pulled-back section is the preimage of the original orbit (`orbit_pullback`), and
+when `f` is universally open the same holds for the orbit closure and boundary
+(`orbitClosure_pullback`, `orbitBoundary_pullback`).
+
+Translation by any section of `G` preserves all
 three sets, and moving the base section by the action gives the same orbit.
 The translation homeomorphisms assemble into an action of the sections of `G`
 on the underlying space of `X`, under which the orbit is invariant.
@@ -33,7 +42,8 @@ The morphism identities come from `TauCeti.orbitMap` and
 
 public noncomputable section
 
-open CategoryTheory MonoidalCategory CartesianMonoidalCategory MonObj AlgebraicGeometry
+open CategoryTheory Limits MonoidalCategory CartesianMonoidalCategory MonObj AlgebraicGeometry
+open scoped CategoryTheory.Obj
 
 namespace TauCeti.SchemeAction
 
@@ -72,6 +82,11 @@ theorem smul_left_apply_mem_orbit (x : 𝟙_ (Over S) ⟶ X) (g : 𝟙_ (Over S)
     (a : (𝟙_ (Over S)).left) :
     (g • x).left a ∈ orbit G x :=
   (mem_orbit G x _).mpr ⟨g.left a, by rw [← Scheme.Hom.comp_apply, left_comp_orbitMap_left]⟩
+
+/-- Every point underlying a section lies in its own geometric orbit. -/
+theorem left_apply_mem_orbit (x : 𝟙_ (Over S) ⟶ X) (a : (𝟙_ (Over S)).left) :
+    x.left a ∈ orbit G x := by
+  simpa using smul_left_apply_mem_orbit G x 1 a
 
 /-- The closure of the full geometric orbit image. -/
 def orbitClosure (x : 𝟙_ (Over S) ⟶ X) : Set X.left := closure (orbit G x)
@@ -116,6 +131,43 @@ theorem image_orbit (x : 𝟙_ (Over S) ⟶ X) (f : X ⟶ Y) [IsModHom G f] :
   simpa only [orbit, Over.comp_left, Scheme.Hom.comp_base, TopCat.coe_comp,
     Set.range_comp] using congrArg (fun k : G.left ⟶ Y.left ↦ Set.range k) h
 
+/-- Base change along any morphism of base schemes takes the geometric orbit of a section to the
+preimage of the original orbit under the first projection. -/
+@[simp]
+theorem orbit_pullback {S' : Scheme.{u}} (f : S' ⟶ S) (x : 𝟙_ (Over S) ⟶ X) :
+    letI := (Over.pullback f).modObjObj G X
+    orbit ((Over.pullback f).obj G)
+      (Functor.LaxMonoidal.ε (Over.pullback f) ≫ (Over.pullback f).map x) =
+      pullback.fst X.hom f ⁻¹' orbit G x := by
+  let := (Over.pullback f).modObjObj G X
+  rw [orbit_def, orbit_def, ← (Over.pullback f).map_orbitMap G X x]
+  exact Scheme.Pullback.range_fst_of_isPullback
+    (Over.isPullback_pullback_map_left f (orbitMap G x))
+
+/-- Base change along a universally open morphism commutes with taking orbit closures. -/
+@[simp]
+theorem orbitClosure_pullback {S' : Scheme.{u}} (f : S' ⟶ S) [UniversallyOpen f]
+    (x : 𝟙_ (Over S) ⟶ X) :
+    letI := (Over.pullback f).modObjObj G X
+    orbitClosure ((Over.pullback f).obj G)
+      (Functor.LaxMonoidal.ε (Over.pullback f) ≫ (Over.pullback f).map x) =
+      pullback.fst X.hom f ⁻¹' orbitClosure G x := by
+  let := (Over.pullback f).modObjObj G X
+  rw [orbitClosure_def, orbitClosure_def, orbit_pullback,
+    ← (pullback.fst X.hom f).isOpenMap.preimage_closure_eq_closure_preimage
+      (pullback.fst X.hom f).continuous]
+
+/-- Base change along a universally open morphism commutes with taking orbit boundaries. -/
+@[simp]
+theorem orbitBoundary_pullback {S' : Scheme.{u}} (f : S' ⟶ S) [UniversallyOpen f]
+    (x : 𝟙_ (Over S) ⟶ X) :
+    letI := (Over.pullback f).modObjObj G X
+    orbitBoundary ((Over.pullback f).obj G)
+      (Functor.LaxMonoidal.ε (Over.pullback f) ≫ (Over.pullback f).map x) =
+      pullback.fst X.hom f ⁻¹' orbitBoundary G x := by
+  let := (Over.pullback f).modObjObj G X
+  rw [orbitBoundary_def, orbitBoundary_def, Set.preimage_sdiff,
+    orbitClosure_pullback, orbit_pullback]
 
 end Monoid
 
@@ -164,8 +216,8 @@ theorem image_translation_orbitBoundary
 theorem orbit_smul (g : 𝟙_ (Over S) ⟶ G) (x : 𝟙_ (Over S) ⟶ X) :
     orbit G (g • x) = orbit G x := by
   have h := congrArg (fun f : G ⟶ X ↦ f.left) (orbitMap_smul g x)
-  have hs : Function.Surjective (rightTranslation g).hom.left :=
-    (Scheme.homeoOfIso ((Over.forget S).mapIso (rightTranslation g))).surjective
+  have hs : Function.Surjective (GrpObj.mulRight g).hom.left :=
+    (Scheme.homeoOfIso ((Over.forget S).mapIso (GrpObj.mulRight g))).surjective
   simpa only [orbit, Over.comp_left, Scheme.Hom.comp_base, TopCat.coe_comp,
     Set.range_comp, hs.range_eq, Set.image_univ] using
       congrArg (fun f : G.left ⟶ X.left ↦ Set.range f) h

@@ -290,7 +290,7 @@ private theorem exists_eq_smul_add_smul_add_smul (h2 : (2 : K) ≠ 0) {c s : K}
   -- The three diagram matrices commute with every `g ⊗ g`, so the coefficient of `Δ` vanishes.
   have hN (g : Matrix.orthogonalGroup (Fin n) K) := fun D ↦
     BrauerDiagram.commute_orthogonalActionMatrix_kroneckerPower (R := K) (ι := Fin n) (k := 2) D
-      ((mem_orthogonalGroup_iff' (Fin n) K).mp g.2)
+      ((mem_orthogonalGroup_iff' (Fin n) K).mp g.property)
   rw [hy, eq_zero_of_eq_add_smul_diagProj hcs hc hs hn hM
     (fun g ↦ (((hN g _).smul_left q).add_left ((hN g _).smul_left r)).add_left
       ((hN g _).smul_left p)) hy, zero_smul, add_zero]
