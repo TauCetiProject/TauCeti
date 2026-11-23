@@ -12,6 +12,8 @@ public import TauCeti.Algebra.Homology.UniversalCoefficient.Cochain.Basic
 public import TauCeti.KnotTheory.Khovanov.Homology
 public import TauCeti.KnotTheory.Khovanov.Mirror
 import Mathlib.LinearAlgebra.Dual.Lemmas
+import TauCeti.Algebra.Category.ModuleCat.Biproducts
+import TauCeti.Algebra.Homology.ShortComplex.Splitting
 import TauCeti.Algebra.Module.Injective.DivisionRing
 
 /-!
@@ -260,7 +262,8 @@ lemma khovanovHomologyMirrorKroneckerSection_eq_homologyπ (i j : ℤ)
   refine (LinearEquiv.symm_apply_eq (D.khovanovHomologyMirrorIso hD hD' R i j).toLinearEquiv).2
     ((linearHomComplexSingleKroneckerSection_apply i g _ ?_).trans
       (moduleCat_homologyMap_homologyπ _ i z).symm)
-  rw [moduleCat_iCycles_cyclesMap_apply]
+  rw [HomComplex.Cochain.toSingleLinearEquiv_apply, AddEquiv.toFun_eq_coe,
+    moduleCat_iCycles_cyclesMap_apply]
   exact hz
 
 @[simp]
@@ -271,33 +274,6 @@ theorem khovanovHomologyMirrorKronecker_khovanovHomologyMirrorKroneckerSection (
   simp only [khovanovHomologyMirrorKronecker, khovanovHomologyMirrorKroneckerSection,
     LinearMap.comp_apply, LinearEquiv.coe_coe, LinearEquiv.apply_symm_apply,
     linearHomComplexSingleKronecker_linearHomComplexSingleKroneckerSection]
-
-/-- **The universal coefficient decomposition for mirror Khovanov cohomology** over a hereditary
-commutative ring:
-`Khⁱʲ(D.mirror; R) ≃ₗ[R] Ext¹(Kh^{1-i,-j}(D; R), R) × (Kh^{-i,-j}(D; R) ⟶ R)`. -/
-def khovanovHomologyMirrorUniversalCoefficientEquiv (i j : ℤ) :
-    D.mirror.khovanovHomology hD' R i j ≃ₗ[R]
-      Ext.{u} (D.khovanovHomology hD R (1 - i) (-j)) (ModuleCat.of R R) 1 ×
-        (D.khovanovHomology hD R (-i) (-j) ⟶ ModuleCat.of R R) :=
-  (D.khovanovHomologyMirrorIso hD hD' R i j).toLinearEquiv.trans
-    (linearHomComplexSingleUniversalCoefficientEquiv.{u} R _ _ i)
-
-@[simp]
-lemma khovanovHomologyMirrorUniversalCoefficientEquiv_symm_apply (i j : ℤ)
-    (e : Ext.{u} (D.khovanovHomology hD R (1 - i) (-j)) (ModuleCat.of R R) 1)
-    (g : D.khovanovHomology hD R (-i) (-j) ⟶ ModuleCat.of R R) :
-    (D.khovanovHomologyMirrorUniversalCoefficientEquiv hD hD' R i j).symm (e, g) =
-      D.khovanovHomologyMirrorExtToHomology hD hD' R i j e +
-        D.khovanovHomologyMirrorKroneckerSection hD hD' R i j g := by
-  simp [khovanovHomologyMirrorUniversalCoefficientEquiv, khovanovHomologyMirrorExtToHomology,
-    khovanovHomologyMirrorKroneckerSection]
-
-@[simp]
-lemma khovanovHomologyMirrorUniversalCoefficientEquiv_apply_snd (i j : ℤ)
-    (x : D.mirror.khovanovHomology hD' R i j) :
-    (D.khovanovHomologyMirrorUniversalCoefficientEquiv hD hD' R i j x).2 =
-      D.khovanovHomologyMirrorKronecker hD hD' R i j x := by
-  simp [khovanovHomologyMirrorUniversalCoefficientEquiv, khovanovHomologyMirrorKronecker]
 
 /-- **The mirror universal coefficient short complex** in `ModuleCat R`:
 `Ext¹(Kh^{1-i,-j}(D; R), R) ⟶ Khⁱʲ(D.mirror; R) ⟶ (Kh^{-i,-j}(D; R) ⟶ R)`. -/
@@ -368,6 +344,64 @@ lemma khovanovHomologyMirrorUniversalCoefficientSplitting_s (i j : ℤ) :
 theorem khovanovHomologyMirrorUniversalCoefficientShortComplex_shortExact (i j : ℤ) :
     (D.khovanovHomologyMirrorUniversalCoefficientShortComplex hD hD' R i j).ShortExact :=
   (D.khovanovHomologyMirrorUniversalCoefficientSplitting hD hD' R i j).shortExact
+
+/-- **The universal coefficient decomposition for mirror Khovanov cohomology** over a hereditary
+commutative ring:
+`Khⁱʲ(D.mirror; R) ≃ₗ[R] Ext¹(Kh^{1-i,-j}(D; R), R) × (Kh^{-i,-j}(D; R) ⟶ R)`. -/
+def khovanovHomologyMirrorUniversalCoefficientEquiv (i j : ℤ) :
+    D.mirror.khovanovHomology hD' R i j ≃ₗ[R]
+      Ext.{u} (D.khovanovHomology hD R (1 - i) (-j)) (ModuleCat.of R R) 1 ×
+        (D.khovanovHomology hD R (-i) (-j) ⟶ ModuleCat.of R R) :=
+  ((D.khovanovHomologyMirrorUniversalCoefficientSplitting hD hD' R i j).isoBinaryBiproduct ≪≫
+    ModuleCat.biprodIsoProd _ _).toLinearEquiv
+
+@[simp]
+lemma khovanovHomologyMirrorUniversalCoefficientEquiv_symm_apply (i j : ℤ)
+    (e : Ext.{u} (D.khovanovHomology hD R (1 - i) (-j)) (ModuleCat.of R R) 1)
+    (g : D.khovanovHomology hD R (-i) (-j) ⟶ ModuleCat.of R R) :
+    (D.khovanovHomologyMirrorUniversalCoefficientEquiv hD hD' R i j).symm (e, g) =
+      D.khovanovHomologyMirrorExtToHomology hD hD' R i j e +
+        D.khovanovHomologyMirrorKroneckerSection hD hD' R i j g := by
+  let S := D.khovanovHomologyMirrorUniversalCoefficientShortComplex hD hD' R i j
+  let s := D.khovanovHomologyMirrorUniversalCoefficientSplitting hD hD' R i j
+  let e' : S.X₁ := e
+  let g' : S.X₃ := g
+  have hinl : ModuleCat.ofHom (LinearMap.inl R S.X₁ S.X₃) ≫
+      (ModuleCat.biprodIsoProd S.X₁ S.X₃).inv ≫ s.isoBinaryBiproduct.inv = S.f := by
+    rw [← ModuleCat.inl_comp_biprodIsoProd_hom, Category.assoc, Iso.hom_inv_id_assoc]
+    exact Limits.biprod.inl_desc _ _
+  have hinr : ModuleCat.ofHom (LinearMap.inr R S.X₁ S.X₃) ≫
+      (ModuleCat.biprodIsoProd S.X₁ S.X₃).inv ≫ s.isoBinaryBiproduct.inv = s.s := by
+    rw [← ModuleCat.inr_comp_biprodIsoProd_hom, Category.assoc, Iso.hom_inv_id_assoc]
+    exact Limits.biprod.inr_desc _ _
+  have hprod : (e', g') = LinearMap.inl R S.X₁ S.X₃ e' + LinearMap.inr R S.X₁ S.X₃ g' :=
+    Prod.ext (add_zero e').symm (zero_add g').symm
+  have heq : (s.isoBinaryBiproduct ≪≫ ModuleCat.biprodIsoProd S.X₁ S.X₃).toLinearEquiv.symm
+      (e', g') = S.f.hom e' + s.s.hom g' := by
+    rw [hprod, map_add, Iso.toLinearEquiv_symm, Iso.toLinearEquiv_apply, Iso.toLinearEquiv_apply,
+      Iso.symm_hom, Iso.trans_inv]
+    have h1 := ConcreteCategory.congr_hom hinl e'
+    have h2 := ConcreteCategory.congr_hom hinr g'
+    simp only [ConcreteCategory.comp_apply, ModuleCat.hom_ofHom] at h1 h2 ⊢
+    rw [h1, h2]
+  exact heq
+
+@[simp]
+lemma khovanovHomologyMirrorUniversalCoefficientEquiv_apply_snd (i j : ℤ)
+    (x : D.mirror.khovanovHomology hD' R i j) :
+    (D.khovanovHomologyMirrorUniversalCoefficientEquiv hD hD' R i j x).2 =
+      D.khovanovHomologyMirrorKronecker hD hD' R i j x := by
+  let S := D.khovanovHomologyMirrorUniversalCoefficientShortComplex hD hD' R i j
+  let s := D.khovanovHomologyMirrorUniversalCoefficientSplitting hD hD' R i j
+  let x' : S.X₂ := x
+  have h := congrArg Prod.snd
+    (ModuleCat.biprodIsoProd_hom_apply S.X₁ S.X₃ (s.isoBinaryBiproduct.hom x'))
+  have h' : ((s.isoBinaryBiproduct ≪≫ ModuleCat.biprodIsoProd S.X₁ S.X₃).toLinearEquiv x').2 =
+      S.g.hom x' := by
+    rw [Iso.toLinearEquiv_apply, Iso.trans_hom, ModuleCat.comp_apply, h]
+    dsimp only
+    rw [← ConcreteCategory.comp_apply, ShortComplex.Splitting.isoBinaryBiproduct_hom_snd]
+  exact h'
 
 /-- Over a hereditary commutative ring, if `Kh^{1-i,-j}(D; R)` is projective,
 `khovanovHomologyMirrorKronecker` gives an equivalence with the dual. -/
