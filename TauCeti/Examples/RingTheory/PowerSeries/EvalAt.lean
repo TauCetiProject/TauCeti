@@ -6,13 +6,13 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Normed.Ring.WithAbs
+public import TauCeti.NumberTheory.Padics.FermatLittle
 public import TauCeti.RingTheory.MvPowerSeries.TateAlgebra.AnalyticSubst
 public import TauCeti.RingTheory.PowerSeries.EvalAt
 public import TauCeti.RingTheory.PowerSeries.HasseDeriv.Basic
 public import TauCeti.RingTheory.PowerSeries.TateAlgebra
 public import Mathlib.Analysis.Normed.Field.WithAbs
 public import Mathlib.FieldTheory.Finite.Basic
-public import Mathlib.NumberTheory.Padics.RingHoms
 public import Mathlib.RingTheory.MvPowerSeries.Substitution
 
 /-!
@@ -124,14 +124,8 @@ little theorem, `x ^ p - x` reduces to zero in `𝔽_p`. -/
 theorem norm_evalAt_X_pow_sub_X_le {x : ℚ_[p]} (hx : ‖x‖ ≤ 1) :
     ‖(polynomialToRestricted 1 (Polynomial.X ^ p - Polynomial.X : ℚ_[p][X]) :
       ℚ_[p]⟦X⟧).evalAt x‖ ≤ (p : ℝ)⁻¹ := by
-  obtain ⟨y, rfl⟩ : ∃ y : ℤ_[p], (y : ℚ_[p]) = x := ⟨Padic.lift x hx, PadicInt.coe_lift hx⟩
-  -- `y ^ p - y` lies in the kernel of the reduction `ℤ_p → 𝔽_p`, the maximal ideal of `ℤ_p`
-  have hy : y ^ p - y ∈ IsLocalRing.maximalIdeal ℤ_[p] := by
-    rw [← PadicInt.ker_toZMod, RingHom.mem_ker, map_sub, map_pow, ZMod.pow_card, sub_self]
-  have h := (PadicInt.norm_le_pow_iff_norm_lt_pow_add_one (y ^ p - y) (-1)).mpr
-    (by rw [neg_add_cancel, zpow_zero]; exact PadicInt.mem_nonunits.mp hy)
-  rw [zpow_neg_one, PadicInt.norm_def, PadicInt.coe_sub, PadicInt.coe_pow] at h
-  rwa [coe_polynomialToRestricted, evalAt_coe, map_sub, map_pow, Polynomial.aeval_X]
+  rw [coe_polynomialToRestricted, evalAt_coe, map_sub, map_pow, Polynomial.aeval_X]
+  exact Padic.norm_pow_sub_self_le hx
 
 /-- **The Gauss norm is not attained at a point of the closed unit disc of `ℚ_p`.** The value of
 `X ^ p - X` at every point of `ℤ_p` has norm smaller than its Gauss norm one at the unit radius. -/
