@@ -69,16 +69,15 @@ Negative `t` reduces to positive `t` by `Γ(conj s) = conj (Γ s)`.
 * `TauCeti.exists_norm_Gamma_le`: the same with one natural exponent `K` in place of `x - 1/2`.
 * `TauCeti.exists_norm_Gamma_le_of_pos`: the sharp bound at all heights on a strip
   `0 < u ≤ x ≤ v`.
-
-The statements of `TauCeti.exists_norm_Gamma_le` and `TauCeti.exists_norm_Gamma_le_of_pos` follow
-the lean-DLMF project (<https://github.com/bjbraams/lean-DLMF>), file
-`DLMF/Gamma/VerticalStrips.lean`, which proves them through the product formula for `|Γ|`; the
-proofs here are new, from Stirling's formula and compactness.
 * `TauCeti.exists_norm_inv_Gamma_vertical_strip_le`,
   `TauCeti.exists_norm_deriv_inv_Gamma_vertical_strip_le`,
   `TauCeti.exists_norm_inv_Gamma_and_deriv_ball_add_I_le`: uniform upper bounds for `‖(Γ s)⁻¹‖`
   and `‖deriv (Γ ·)⁻¹ s‖` across the strip `Re s ∈ [a, b]` and on shifted vertical lines over unit
   balls.
+
+The statements of `TauCeti.exists_norm_Gamma_le` and `TauCeti.exists_norm_Gamma_le_of_pos` follow
+the lean-DLMF project (<https://github.com/bjbraams/lean-DLMF>), file
+`DLMF/Gamma/VerticalStrips.lean`.
 -/
 
 public section
