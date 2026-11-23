@@ -20,16 +20,21 @@ multiplication this says equivalently that `χ` contains an open subgroup in its
 locally constant, that `χ` is continuous for the discrete topology on `Aˣ`, and, when `A` is a
 commutative semiring, that the rank-one representation `A(χ)` (`Representation.ofLinearCharacter
 χ`) is smooth. For instance an unramified character `x ↦ t ^ v(x)` of the multiplicative group of
-a nonarchimedean local field is smooth. Smooth characters with values in a commutative monoid form
-a subgroup of the character group, and they pull back along continuous homomorphisms. Twisting a
-representation by a smooth character (`Representation.charTwist`) preserves and reflects
-smoothness.
+a nonarchimedean local field is smooth. Smooth characters pull back along continuous
+homomorphisms. For a group with separately continuous multiplication, smooth characters with values
+in a commutative monoid form a subgroup of the character group, they push forward along maps of
+coefficients, and twisting a representation by a smooth character (`Representation.charTwist`)
+preserves and reflects smoothness.
 
 ## Main definitions
 
 * `TauCeti.IsSmoothCharacter χ`: the kernel of `χ : G →* Aˣ` is open.
 
 ## Main results
+
+The results below other than `TauCeti.IsSmoothCharacter.comp`, `TauCeti.IsSmoothCharacter.inv`,
+`TauCeti.isSmoothCharacter_one` and `TauCeti.isSmoothCharacter_of_discreteTopology` assume
+`SeparatelyContinuousMul G`.
 
 * `TauCeti.isSmoothCharacter_iff_isSmooth`: `χ` is smooth exactly when `A(χ)` is.
 * `TauCeti.isSmoothCharacter_iff_continuous_of_discreteTopology` and
@@ -82,6 +87,7 @@ theorem isSmoothCharacter_one : IsSmoothCharacter (1 : G →* Aˣ) := by
   simp [isSmoothCharacter_iff, MonoidHom.ker_one]
 
 /-- Every character of a discrete group is smooth. -/
+@[simp]
 theorem isSmoothCharacter_of_discreteTopology [DiscreteTopology G] (χ : G →* Aˣ) :
     IsSmoothCharacter χ :=
   isSmoothCharacter_iff.2 (isOpen_discrete _)
@@ -106,7 +112,7 @@ theorem isSmoothCharacter_iff_continuous_of_discreteTopology [TopologicalSpace A
 theorem isSmoothCharacter_iff_continuous {χ : G →* Aˣ} :
     IsSmoothCharacter χ ↔ @Continuous G Aˣ _ ⊥ χ := by
   let _ : TopologicalSpace Aˣ := ⊥
-  have : DiscreteTopology Aˣ := ⟨rfl⟩
+  have : DiscreteTopology Aˣ := discreteTopology_bot _
   exact isSmoothCharacter_iff_continuous_of_discreteTopology
 
 /-- A character is smooth exactly when its kernel contains an open subgroup. -/
@@ -119,7 +125,7 @@ theorem isSmoothCharacter_iff_exists_openSubgroup {χ : G →* Aˣ} :
 theorem isSmoothCharacter_iff_isLocallyConstant {χ : G →* Aˣ} :
     IsSmoothCharacter χ ↔ IsLocallyConstant (χ : G → Aˣ) :=
   ⟨fun h ↦ χ.isLocallyConstant_of_isOpen_ker (isSmoothCharacter_iff.1 h), fun h ↦
-    isSmoothCharacter_iff.2 (by rw [MonoidHom.coe_ker]; exact h {1})⟩
+    isSmoothCharacter_iff.2 (by rw [MonoidHom.coe_ker]; exact h.isOpen_fiber 1)⟩
 
 /-- The pushforward of a smooth character along a homomorphism of coefficient monoids is smooth. -/
 theorem IsSmoothCharacter.unitsMap {B : Type*} [Monoid B] {χ : G →* Aˣ}
