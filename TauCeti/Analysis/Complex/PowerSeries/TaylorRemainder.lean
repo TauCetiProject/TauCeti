@@ -73,11 +73,12 @@ variable {E V : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E]
 
 /-- **Cauchy's inequality on a complex circle** for a homogeneous term: if `f` has the power
 series `p` on `Metric.eball x r`, `‖y‖ₑ < r`, and `‖f (x + ζ • y)‖ ≤ M` for every `ζ : ℂ` with
-`‖ζ‖ = 1`, then `‖p n (fun _ ↦ y)‖ ≤ M`. -/
+`‖ζ‖ = 1` and `‖ζ • y‖ₑ < r`, then `‖p n (fun _ ↦ y)‖ ≤ M`. -/
 theorem norm_apply_le_of_forall_norm_eq_one {f : E → V} {p : FormalMultilinearSeries ℂ E V}
     {x : E} {r : ℝ≥0∞} (hf : HasFPowerSeriesOnBall f p x r)
     {M : ℝ} (n : ℕ) {y : E} (hy : ‖y‖ₑ < r)
-    (hM : ∀ ζ : ℂ, ‖ζ‖ = 1 → ‖f (x + ζ • y)‖ ≤ M) : ‖p n (fun _ ↦ y)‖ ≤ M := by
+    (hM : ∀ ζ : ℂ, ‖ζ‖ = 1 → ‖ζ • y‖ₑ < r → ‖f (x + ζ • y)‖ ≤ M) :
+    ‖p n (fun _ ↦ y)‖ ≤ M := by
   obtain ⟨ℓ, hℓ1, hℓv⟩ := exists_dual_vector'' ℂ (p n (fun _ ↦ y))
   let u : ℂ →L[ℂ] E := ContinuousLinearMap.toSpanSingleton ℂ y
   have hu : ‖u‖ₑ = ‖y‖ₑ := by simp [u, eNorm_eq_nnNorm]
@@ -109,8 +110,10 @@ theorem norm_apply_le_of_forall_norm_eq_one {f : E → V} {p : FormalMultilinear
   refine (circleIntegral.norm_two_pi_i_inv_smul_integral_le_of_norm_le_const
     (by positivity) (C := M) fun ζ hζ ↦ ?_).trans (by simp)
   have hζ1 : ‖ζ‖ = 1 := mem_sphere_zero_iff_norm.1 (by simpa using hζ)
+  have hζy : ‖ζ • y‖ₑ < r := by
+    rwa [eNorm_smul, ← ofReal_norm, hζ1, ENNReal.ofReal_one, one_mul]
   simpa [g, hζ1] using
-    (ℓ.le_opNorm _).trans ((mul_le_of_le_one_left (norm_nonneg _) hℓ1).trans (hM ζ hζ1))
+    (ℓ.le_opNorm _).trans ((mul_le_of_le_one_left (norm_nonneg _) hℓ1).trans (hM ζ hζ1 hζy))
 
 /-- **Cauchy's inequality for homogeneous terms** on an `eball`: if `f` has the power series `p`
 on `Metric.eball x r` and `‖f‖ ≤ M` there, then `‖p n (fun _ ↦ y)‖ ≤ M` for every `y : E` with
@@ -120,12 +123,9 @@ theorem norm_apply_le_of_forall_mem_eball {f : E → V} {p : FormalMultilinearSe
     {M : ℝ} (hM : ∀ w ∈ Metric.eball x r, ‖f w‖ ≤ M) (n : ℕ) {y : E}
     (hy : ‖y‖ₑ ≤ r) : ‖p n (fun _ ↦ y)‖ ≤ M := by
   have hball {z : E} (hz : ‖z‖ₑ < r) : ‖p n (fun _ ↦ z)‖ ≤ M :=
-    hf.norm_apply_le_of_forall_norm_eq_one n hz fun ζ hζ ↦ by
-      have hζe : ‖ζ‖ₑ = 1 := by rw [← ofReal_norm, hζ, ENNReal.ofReal_one]
-      have hsmul : ‖ζ • z‖ₑ = ‖z‖ₑ := by rw [eNorm_smul, hζe, one_mul]
+    hf.norm_apply_le_of_forall_norm_eq_one n hz fun ζ _ hζz ↦ by
       refine hM _ ?_
-      rw [Metric.mem_eball, eDist_eq_eNorm_sub, add_sub_cancel_left, hsmul]
-      exact hz
+      rwa [Metric.mem_eball, eDist_eq_eNorm_sub, add_sub_cancel_left]
   rcases hy.lt_or_eq with hy_lt | hy_eq
   · exact hball hy_lt
   · have hy0 : 0 < ‖y‖ := by

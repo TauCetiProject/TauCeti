@@ -349,22 +349,18 @@ theorem norm_partialSum_le_sum_mvCoeff_mul_prod_pow [DecidableEq ι]
 theorem norm_apply_le_sum_mvCoeff [DecidableEq ι]
     (p : FormalMultilinearSeries 𝕜 (ι → 𝕜) F) (k : ℕ) {z : ι → 𝕜} {r : ℝ} (hz : ‖z‖ ≤ r) :
     ‖p k (fun _ ↦ z)‖ ≤ ∑ α ∈ univ.piAntidiag k, ‖p.mvCoeff α‖ * r ^ k := by
-  refine (p.norm_apply_le_sum_mvCoeff_mul_prod_pow k z).trans (sum_le_sum fun α hα ↦ ?_)
-  rw [← (mem_piAntidiag.1 hα).1, ← prod_pow_eq_pow_sum]
-  gcongr with i
-  exact (norm_le_pi_norm z i).trans hz
+  rw [p.apply_eq_sum_mvCoeff]
+  refine (norm_sum_le _ _).trans (sum_le_sum fun α hα ↦ ?_)
+  rw [← (mem_piAntidiag.1 hα).1]
+  exact TauCeti.norm_prod_pow_smul_le hz α (p.mvCoeff α)
 
 /-- On a closed polydisc `‖z‖ ≤ r`, the partial sum of degree `< T` is bounded in norm by
 `∑ k ∈ range T, ∑ α ∈ univ.piAntidiag k, ‖p.mvCoeff α‖ * r ^ k`. -/
 theorem norm_partialSum_le_sum_mvCoeff [DecidableEq ι] (p : FormalMultilinearSeries 𝕜 (ι → 𝕜) F)
     (T : ℕ) {r : ℝ} {z : ι → 𝕜} (hz : ‖z‖ ≤ r) :
     ‖p.partialSum T z‖ ≤
-      ∑ k ∈ range T, ∑ α ∈ univ.piAntidiag k, ‖p.mvCoeff α‖ * r ^ k := by
-  refine (p.norm_partialSum_le_sum_mvCoeff_mul_prod_pow T z).trans (sum_le_sum fun k _ ↦ ?_)
-  refine sum_le_sum fun α hα ↦ ?_
-  rw [← (mem_piAntidiag.1 hα).1, ← prod_pow_eq_pow_sum]
-  gcongr with i
-  exact (norm_le_pi_norm z i).trans hz
+      ∑ k ∈ range T, ∑ α ∈ univ.piAntidiag k, ‖p.mvCoeff α‖ * r ^ k :=
+  (norm_sum_le _ _).trans (sum_le_sum fun k _ ↦ p.norm_apply_le_sum_mvCoeff k hz)
 
 end FormalMultilinearSeries
 

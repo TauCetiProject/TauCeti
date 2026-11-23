@@ -190,10 +190,8 @@ theorem norm_mvCoeff_mul_prod_pow_le_of_forall_norm_coord_le_eball {f : (ι → 
           (hz i).le.trans (mul_le_mul_of_nonneg_left (ENNReal.ofReal_le_coe.1 (hρ i)) ht0.le)
         have hz_lt : ‖z‖ < r := hz_le.trans_lt (mul_lt_of_lt_one_left hr_pos ht1)
         rwa [← ofReal_norm, ENNReal.ofReal_lt_coe_iff (norm_nonneg z)]
-    refine hf.norm_apply_le_of_forall_norm_eq_one (∑ i, α i) hzr fun ζ hζ ↦ ?_
-    have hζe : ‖ζ‖ₑ = 1 := by rw [← ofReal_norm, hζ, ENNReal.ofReal_one]
-    have hsmul : ‖ζ • z‖ₑ = ‖z‖ₑ := by rw [eNorm_smul, hζe, one_mul]
-    refine hM (ζ • z) (by rw [hsmul]; exact hzr) fun i ↦ ?_
+    refine hf.norm_apply_le_of_forall_norm_eq_one (∑ i, α i) hzr fun ζ hζ hζz ↦ ?_
+    refine hM (ζ • z) hζz fun i ↦ ?_
     have hcoord : ‖(ζ • z) i‖ = t * ρ i := by simp [hζ, hz i]
     rw [hcoord]
     exact mul_le_of_le_one_left (hρ0 i) ht1.le
