@@ -962,11 +962,8 @@ theorem Quiver.exists_mpullback_notMem_compactlySupportedInvariantForms_of_not_c
     have hc : ContinuousAlternatingMap.constOfIsEmpty ℝ E (Fin 0) v ≠ 0 :=
       fun h ↦ hv <| by simpa using congrArg (· 0) h
     have hconst : (RoughForm.ofFunction I ((fun _ ↦ v) ∘ f) : C → E [⋀^Fin 0]→L[ℝ] V) =
-        fun _ ↦ ContinuousAlternatingMap.constOfIsEmpty ℝ E (Fin 0) v := by
-      funext x
-      exact ContinuousAlternatingMap.ext fun u ↦
-        (RoughForm.ofFunction_apply (I := I) _ x u).trans
-          (ContinuousAlternatingMap.constOfIsEmpty_apply ℝ E (Fin 0) v u).symm
+        fun _ ↦ ContinuousAlternatingMap.constOfIsEmpty ℝ E (Fin 0) v :=
+      funext fun x ↦ RoughForm.ofFunction_apply_eq_constOfIsEmpty (I := I) ((fun _ ↦ v) ∘ f) x
     rw [SmoothForm.coarseTSupport_def, SmoothForm.coe_mpullback, hφ_coe, mpullback_ofFunction,
       RoughForm.coarseTSupport_def, hconst, _root_.tsupport, Function.support_const hc,
       closure_univ, Set.image_univ_of_surjective Quotient.mk_surjective, closure_univ]
