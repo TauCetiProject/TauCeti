@@ -111,7 +111,7 @@ theorem eq_transposeUniformCLM {B : 𝓢(CoordinateSpace n, ℂ) →L[ℂ] 𝓢(
     (hB : ∀ u φ : 𝓢(CoordinateSpace n, ℂ),
       ∫ x, φ x * quantizeUniformCLM a ha u x = ∫ x, B φ x * u x) :
     B = transposeUniformCLM a ha :=
-  ContinuousLinearMap.ext fun φ ↦ eq_of_forall_integral_mul_eq (μ := volume) fun u ↦ by
+  ContinuousLinearMap.ext fun φ ↦ SchwartzMap.eq_of_forall_integral_mul_eq (μ := volume) fun u ↦ by
     rw [← hB, integral_mul_quantizeUniformCLM]
 
 end Transpose
@@ -171,7 +171,7 @@ theorem transposeUniformCLM_lineDerivOp {a : Symbol n ℂ ℂ m} (ha : a.IsUnifo
     transposeUniformCLM a ha (∂_{EuclideanSpace.single j (1 : ℝ)} φ) =
       ∂_{EuclideanSpace.single j (1 : ℝ)} (transposeUniformCLM a ha φ) -
         transposeUniformCLM (spatialDeriv j a) (ha.spatialDeriv j) φ := by
-  refine eq_of_forall_integral_mul_eq (μ := volume) fun u ↦ ?_
+  refine SchwartzMap.eq_of_forall_integral_mul_eq (μ := volume) fun u ↦ ?_
   set e := EuclideanSpace.single j (1 : ℝ)
   -- Integrate by parts on both sides and use the commutator formula on Schwartz space.
   calc ∫ x, transposeUniformCLM a ha (∂_{e} φ) x * u x
@@ -197,7 +197,7 @@ theorem transposeUniformCLM_comp_ofInner {a : Symbol n ℂ ℂ m} (ha : a.IsUnif
     (v : CoordinateSpace n) (φ : 𝓢(CoordinateSpace n, ℂ)) :
     transposeUniformCLM (a.comp (ofInner v)) (ha.comp (isUniform_ofInner v)) φ =
       I • ∂_{v} (transposeUniformCLM a ha φ) := by
-  refine eq_of_forall_integral_mul_eq (μ := volume) fun u ↦ ?_
+  refine SchwartzMap.eq_of_forall_integral_mul_eq (μ := volume) fun u ↦ ?_
   have h := congrArg (fun w : 𝓢(CoordinateSpace n, ℂ) ↦ ∫ x, φ x * w x)
     (quantizeUniformCLM_lineDerivOp a ha v u)
   simp only [smul_apply, smul_eq_mul, mul_left_comm (φ _), integral_const_mul,
@@ -221,7 +221,7 @@ theorem transposeUniformCLM_smulLeftCLM {a : Symbol n ℂ ℂ m} (ha : a.IsUnifo
     (ofRealCLM.comp (EuclideanSpace.proj j)).hasTemperateGrowth
   have hg' : (fun y : CoordinateSpace n ↦ y j).HasTemperateGrowth :=
     (EuclideanSpace.proj j).hasTemperateGrowth
-  refine eq_of_forall_integral_mul_eq (μ := volume) fun u ↦ ?_
+  refine SchwartzMap.eq_of_forall_integral_mul_eq (μ := volume) fun u ↦ ?_
   -- The commutator formula on Schwartz space, at each point `y`.
   have hcomm (y : CoordinateSpace n) : (y j : ℂ) * quantizeUniformCLM a ha u y =
       quantizeUniformCLM a ha (SchwartzMap.smulLeftCLM ℂ (fun y : CoordinateSpace n ↦ y j) u) y +

@@ -411,7 +411,7 @@ theorem toVertexStart_eq_self {d : G.EarDecomposition H} (h : d.IsVertexStart) :
     (((d.heq_start_replaceInitial d.normalizedStart).trans
       (d.start.toVertexDecomposition.heq_start_copy _)).trans hstart₀).symm
     ((Fin.heq_fun_iff hlen.symm).mpr fun i ↦ ?_)).symm
-  have hi : (⟨i, hlen.symm ▸ i.2⟩ : Fin d.toVertexStart.length) =
+  have hi : (⟨i, hlen.symm ▸ i.isLt⟩ : Fin d.toVertexStart.length) =
       Fin.cast d.length_toVertexStart.symm
         (Fin.natAdd (if d.start.IsCycle then 1 else 0) i) := Fin.ext (by simp [hnc])
   rw [hi, d.earAt_toVertexStart_natAdd i]

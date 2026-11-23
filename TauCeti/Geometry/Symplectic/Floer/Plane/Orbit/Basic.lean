@@ -8,6 +8,7 @@ module
 public import TauCeti.Geometry.Symplectic.Floer.HalfCylinder.Basic
 public import TauCeti.Geometry.Symplectic.Floer.Plane.Action
 import TauCeti.Algebra.Ring.Periodic
+import TauCeti.Geometry.Symplectic.Floer.Manifold.Translation
 import TauCeti.Geometry.Symplectic.JHolomorphic.RealChart
 import TauCeti.MeasureTheory.Function.Jacobian.Plane
 
@@ -96,14 +97,6 @@ variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] [FiniteDimension
   {c M : ℝ} {K : Set V} {p : PSSPlane} {𝔎 : ℂ → V → ℂ →L[ℝ] ℝ} {T₀ : ℝ}
 
 /-! ### The end in real coordinates -/
-
-/-- The half-cylinder `ε s > a` lies in the part `‖w‖ > exp (2πa)` of the plane. -/
-private theorem exp_lt_norm_realChart_cylindricalEndLift {a : ℝ} {z : ℝ × ℝ}
-    (hz : a < p.endSign * z.1) :
-    Real.exp (2 * π * a) <
-      ‖Complex.equivRealProdCLM.symm (realChart p.cylindricalEndLift z)‖ := by
-  rw [norm_symm_realChart_cylindricalEndLift, Real.exp_lt_exp]
-  nlinarith [Real.pi_pos]
 
 /-- Every part `‖w‖ > r` of the plane contains a part `‖w‖ > exp (2πa)` with `a ≥ T₀`. -/
 private theorem exists_le_exp_lt_norm_subset (T₀ r : ℝ) :
@@ -308,14 +301,14 @@ private theorem exists_halfCylinder_comp_realChart_cylindricalEndLift
   obtain ⟨a, ha, hsub⟩ := exists_le_exp_lt_norm_subset T₀ r
   have hmem {z : ℝ × ℝ} (hz : a < p.endSign * z.1) :
       r < ‖Complex.equivRealProdCLM.symm (realChart p.cylindricalEndLift z)‖ :=
-    hsub (exp_lt_norm_realChart_cylindricalEndLift hz)
+    hsub (p.exp_lt_norm_symm_realChart_cylindricalEndLift_iff.2 hz)
   have hud := (hu.mono hsub).differentiableOn hn
   have hdiff {z : ℝ × ℝ} (hz : a < p.endSign * z.1) :
       DifferentiableAt ℝ u (realChart p.cylindricalEndLift z) :=
     hud.differentiableAt <| (isOpen_lt continuous_const (by fun_prop)).mem_nhds
-      (exp_lt_norm_realChart_cylindricalEndLift hz)
+      (p.exp_lt_norm_symm_realChart_cylindricalEndLift_iff.2 hz)
   refine ⟨a, (hu.mono hsub).comp (contDiff_realChart p.contDiff_cylindricalEndLift).contDiffOn
-      fun z hz ↦ exp_lt_norm_realChart_cylindricalEndLift hz,
+      fun z hz ↦ p.exp_lt_norm_symm_realChart_cylindricalEndLift_iff.2 hz,
     fun z hz ↦ huK _ (hmem hz), fun z hz ↦ hJc _ (hmem hz), fun z hz ↦ hJM _ (hmem hz),
     fun z hz ↦ isComplexLinearMap_perturbedFDeriv_comp_realChart_cylindricalEndLift hKH hH hHd
       (ha.trans hz.le) (hdiff hz) (hfloer _ (hmem hz)),
@@ -323,8 +316,70 @@ private theorem exists_halfCylinder_comp_realChart_cylindricalEndLift
   exact ((setLIntegral_floerEnergyDensity_comp_realChart_cylindricalEndLift_le hKH hH hHd hP
     (fun s hs ↦ ha.trans (hPa s hs).le)
     (U := {z | Real.exp (2 * π * a) < ‖Complex.equivRealProdCLM.symm z‖})
-    (fun ζ hζ ↦ exp_lt_norm_realChart_cylindricalEndLift (hPa _ hζ.1))
+    (fun ζ hζ ↦ p.exp_lt_norm_symm_realChart_cylindricalEndLift_iff.2 (hPa _ hζ.1))
     fun ζ hζ ↦ hdiff (hPa _ hζ.1)).trans_lt ((lintegral_mono_set hsub).trans_lt hE.lt_top)).ne
+
+/-- **The energy on part of the end of the positive plane.** For `a ≥ 2`, if `u` is differentiable
+on the part `‖w‖ > exp (2πa)` of the positive plane, then the energy of `u ∘ φ` for the cylindrical
+datum `H(t) dt` over a measurable subset `s` of a half-strip `s > a`, `t₀ ≤ t < t₀ + 1` of angular
+width one is at most the energy of `u` on that part of the plane. -/
+theorem setLIntegral_floerEnergyDensity_comp_realChart_positive_le_of_subset
+    (ω : SymplecticForm V) (hH : Periodic H 1) (hHs : ContDiff ℝ 1 (uncurry H)) {a t₀ : ℝ}
+    (ha : 2 ≤ a)
+    (hu : DifferentiableOn ℝ u
+      {z | Real.exp (2 * π * a) < ‖Complex.equivRealProdCLM.symm z‖})
+    {s : Set (ℝ × ℝ)} (hs : MeasurableSet s) (hst : s ⊆ Ioi a ×ˢ Ico t₀ (t₀ + 1)) :
+    ∫⁻ z in s, ENNReal.ofReal (ω.floerEnergyDensity (fun _ _ ↦ 0)
+        (fun w ↦ H w.2) (u ∘ realChart positive.cylindricalEndLift) z) ≤
+      ∫⁻ z in {z | Real.exp (2 * π * a) < ‖Complex.equivRealProdCLM.symm z‖},
+        ENNReal.ofReal (ω.floerEnergyDensity
+          (fun z x ↦ positive.perturbation H (Complex.equivRealProdCLM.symm z) x 1)
+          (fun z x ↦ positive.perturbation H (Complex.equivRealProdCLM.symm z) x Complex.I)
+          u z) := by
+  have hHd : ∀ t, Differentiable ℝ (H t) := fun t ↦
+    (hHs.differentiable one_ne_zero).comp (differentiable_const t |>.prodMk differentiable_id)
+  have hnorm {z : ℝ × ℝ} (hz : z ∈ s) :
+      Real.exp (2 * π * a) <
+        ‖Complex.equivRealProdCLM.symm (realChart positive.cylindricalEndLift z)‖ :=
+    exp_lt_norm_realChart_positive (hst hz).1
+  rw [setLIntegral_floerEnergyDensity_comp_realChart_cylindricalEndLift_eq (T₀ := 2)
+    (fun _ x hw ↦ perturbation_eq_smul_endAngularForm hw x) hH hHd hs
+    (fun ζ hζ ↦ by simpa using ha.trans (hst hζ).1.le) (fun ζ hζ ↦ (hst hζ).2)
+    fun ζ hζ ↦ hu.differentiableAt <|
+      (isOpen_lt continuous_const (by fun_prop)).mem_nhds (hnorm hζ)]
+  refine lintegral_mono_set ?_
+  rintro _ ⟨ζ, hζ, rfl⟩
+  exact hnorm hζ
+
+/-- **The energy of a translated end of the positive plane.** For `a ≥ 2`, if `u` is
+differentiable on the part `‖w‖ > exp (2πa)` of the positive plane, and the translate `s + (R, 0)`
+of a measurable set `s` lies in a half-strip `s > a`, `t₀ ≤ t < t₀ + 1` of angular width one, then
+the energy of the translated end `z ↦ u(φ(z + (R, 0)))` for the cylindrical datum `H(t) dt` over
+`s` is at most the energy of `u` on that part of the plane. -/
+theorem setLIntegral_floerEnergyDensity_comp_realChart_positive_add_le
+    (ω : SymplecticForm V) (hH : Periodic H 1) (hHs : ContDiff ℝ 1 (uncurry H)) {a t₀ : ℝ}
+    (ha : 2 ≤ a)
+    (hu : DifferentiableOn ℝ u
+      {z | Real.exp (2 * π * a) < ‖Complex.equivRealProdCLM.symm z‖})
+    (R : ℝ) {s : Set (ℝ × ℝ)} (hs : MeasurableSet s)
+    (hst : ∀ z ∈ s, z + (R, 0) ∈ Ioi a ×ˢ Ico t₀ (t₀ + 1)) :
+    ∫⁻ z in s, ENNReal.ofReal (ω.floerEnergyDensity (fun _ _ ↦ 0) (fun w ↦ H w.2)
+        (fun z ↦ u (realChart positive.cylindricalEndLift (z + (R, 0)))) z) ≤
+      ∫⁻ z in {z | Real.exp (2 * π * a) < ‖Complex.equivRealProdCLM.symm z‖},
+        ENNReal.ofReal (ω.floerEnergyDensity
+          (fun z x ↦ positive.perturbation H (Complex.equivRealProdCLM.symm z) x 1)
+          (fun z x ↦ positive.perturbation H (Complex.equivRealProdCLM.symm z) x Complex.I)
+          u z) := by
+  -- The energy of the translated end over `s` is that of `u ∘ φ` over `s + (R, 0)`.
+  have h := ω.constSmooth.lintegral_floerEnergyDensity_comp_add_right (fun _ _ ↦ 0)
+    (fun w ↦ H w.2) (u ∘ realChart positive.cylindricalEndLift) (R, 0)
+    ((· + ((R, 0) : ℝ × ℝ)) '' s)
+  rw [preimage_image_eq _ (add_left_injective _)] at h
+  simp only [floerEnergyDensity_constSmooth, Prod.snd_add, add_zero, comp_apply] at h
+  rw [h]
+  exact ω.setLIntegral_floerEnergyDensity_comp_realChart_positive_le_of_subset hH hHs ha hu
+    ((measurableEmbedding_addRight _).measurableSet_image' hs)
+    (by rintro _ ⟨z, hz, rfl⟩; exact hst z hz)
 
 /-- **The half-cylinder at the end of the positive plane.** If `u` is `Cⁿ`, `n ≠ 0`, on a part
 `‖w‖ > r` of the positive plane, with image in `K`, solving the Floer equation there for structures

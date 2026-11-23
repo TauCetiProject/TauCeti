@@ -77,7 +77,7 @@ theorem flat_span_range_of_isSMulRegular {p : ℕ} (r : Perfection R p)
   apply Ideal.flat_span_range_of_directed_dvd
   · have hdvd {i j : ℕ} (hij : i ≤ j) :
         Perfection.coeffMonoidHom R p j r ∣ Perfection.coeffMonoidHom R p i r :=
-      TauCeti.dvd_of_compatible_roots (fun n ↦ r.2 n) hij
+      TauCeti.dvd_of_compatible_roots (fun n ↦ r.property n) hij
     exact fun i j ↦ ⟨max i j, hdvd (le_max_left i j), hdvd (le_max_right i j)⟩
   · intro n
     rcases Nat.eq_zero_or_pos p with rfl | hp

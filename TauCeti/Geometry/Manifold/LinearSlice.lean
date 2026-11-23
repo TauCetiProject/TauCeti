@@ -125,7 +125,7 @@ theorem contMDiff_subtypeVal_linearSliceChartedSpace
   refine hd.congr_of_eventuallyEq ?_
   filter_upwards [(linearSliceChart e he x).open_source.mem_nhds hxs] with y hy
   rw [linearSliceChart_source] at hy
-  rw [linearSliceChart_apply, (he x).mk_fst_zero_eq hy y.2, (e x).left_inv hy]
+  rw [linearSliceChart_apply, (he x).mk_fst_zero_eq hy y.property, (e x).left_inv hy]
 
 omit hsmooth hinv in
 /-- For smooth linear-slice charts, the inclusion is an immersion with the transverse model as
@@ -256,7 +256,7 @@ private theorem exists_linearSubspaceCharts_of_finrankSubspaceCharts [CompleteSp
   obtain ⟨N, hN⟩ := L.exists_isCompl
   refine ⟨N, Submodule.IsCompl.isTopCompl_of_isClosed_of_finiteDimensional hN
     L.isClosed_of_finiteDimensional, fun y ↦ ?_⟩
-  obtain ⟨q, V, hy, hq, hqs, hmem, hdim⟩ := hcharts y y.2
+  obtain ⟨q, V, hy, hq, hqs, hmem, hdim⟩ := hcharts y y.property
   obtain ⟨Φ, hΦ⟩ := V.exists_continuousLinearEquiv_mem_iff L hdim
   refine ⟨q.transHomeomorph Φ.toHomeomorph, by simpa using hy, fun z hz ↦ ?_, fun z hz ↦ ?_,
     fun z hz ↦ ?_⟩

@@ -41,6 +41,8 @@ transported to the mixed space along the injective embedding.
   lattice have nonzero norm.
 * `NumberField.mixedEmbedding.mixedEmbedding_mul_mem_idealLattice_iff`: multiplication by the
   image of `a ∈ Kˣ` carries the lattice of `I` onto the lattice of `(a) I`.
+* `NumberField.mixedEmbedding.norm_coe_idealLattice_eq_zero_iff`: a point of `idealLattice K I`
+  has mixed norm zero iff it is zero.
 * `Ideal.mixedBasisElem_mem`, `Ideal.linearIndependent_mixedBasisElem`,
   `Ideal.span_int_mixedBasisElem`: `Ideal.mixedBasisElem` lies in `IsLocalization.coeSubmodule K I`,
   is `ℤ`-linearly independent, and spans `IsLocalization.coeSubmodule K I` over `ℤ`.
@@ -125,6 +127,14 @@ theorem mixedEmbedding_mul_mem_idealLattice_iff (a : Kˣ) (I : (FractionalIdeal 
       ((map_mul _ _ _).symm.trans h)⟩
   · rintro ⟨z, hz, rfl⟩
     exact ⟨_, ⟨z, hz, rfl⟩, map_mul _ _ _⟩
+
+/-- A point of `idealLattice K I` has mixed norm zero if and only if it is zero. -/
+@[simp]
+theorem norm_coe_idealLattice_eq_zero_iff {I : (FractionalIdeal (𝓞 K)⁰ K)ˣ}
+    {x : idealLattice K I} :
+    mixedEmbedding.norm (x : mixedSpace K) = 0 ↔ x = 0 := by
+  obtain ⟨a, _, ha⟩ := (mem_idealLattice K I).mp x.property
+  rw [← ha, norm_eq_zero_iff' ⟨a, rfl⟩, ha, Submodule.coe_eq_zero]
 
 end NumberField.mixedEmbedding
 

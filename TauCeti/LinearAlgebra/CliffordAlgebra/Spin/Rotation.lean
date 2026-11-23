@@ -8,7 +8,7 @@ module
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.Kernel
 public import Mathlib.Analysis.Complex.Circle
 public import Mathlib.Analysis.SpecialFunctions.Trigonometric.Basic
-import TauCeti.Analysis.Complex.Circle
+import TauCeti.Analysis.Complex.Circle.Basic
 import TauCeti.LinearAlgebra.CliffordAlgebra.Bivector.Basic
 import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.Basic
 import TauCeti.LinearAlgebra.CliffordAlgebra.VolumeElement.Basic

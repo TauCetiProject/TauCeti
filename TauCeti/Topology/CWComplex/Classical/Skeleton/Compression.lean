@@ -83,7 +83,7 @@ theorem exists_homotopicRel_cellFrontier {K : Set E} (hK : IsCompact K) (hk : fi
     ∃ g : C(K, C), f.HomotopicRel g {x | (f x : X) ∈ openCell k j}ᶜ ∧
       ∀ x, (f x : X) ∈ openCell k j → (g x : X) ∈ cellFrontier k j := by
   let f' : C(K, (skeletonLT C ((k + 1 : ℕ) : ℕ∞) : Set X)) :=
-    ⟨fun x ↦ ⟨f x, hf x⟩, (continuous_subtype_val.comp f.continuous).subtype_mk hf⟩
+    ⟨fun x ↦ ⟨f x, hf x⟩, (continuous_subtypeVal.comp f.continuous).subtype_mk hf⟩
   let φ := openCellChart k j
   have hφs : φ.source = Subtype.val ⁻¹' openCell k j := openCellChart_source k j
   have hφt : φ.target = ball 0 1 := openCellChart_target k j
@@ -108,7 +108,7 @@ theorem exists_homotopicRel_cellFrontier {K : Set E} (hK : IsCompact K) (hk : fi
     (fun t y hy ↦ mem_closedBall_zero_iff.1 (hΨs t y (mem_closedBall_zero_iff.2 hy))) g₁
     (S := {x | (f x : X) ∈ openCell k j}ᶜ) fun x hx ↦ (H₁.fst_eq_snd hx) ▸ hx
   let incl : C((skeletonLT C ((k + 1 : ℕ) : ℕ∞) : Set X), C) :=
-    ⟨fun y ↦ ⟨y, (skeletonLT C _).subset_complex y.2⟩, by fun_prop⟩
+    ⟨fun y ↦ ⟨y, (skeletonLT C _).subset_complex y.property⟩, by fun_prop⟩
   have h := (ContinuousMap.HomotopicRel.trans ⟨H₁⟩ hg₂).comp_continuousMap incl
   -- Composing `f'` with the inclusion of the skeleton into the complex recovers `f`.
   have hvf : incl.comp f' = f := ContinuousMap.ext fun _ ↦ rfl
@@ -136,7 +136,7 @@ theorem exists_homotopicRel_skeletonLT {K : Set E} (hK : IsCompact K) (hk : finr
   -- The compact image of `f` meets only finitely many open `k`-cells.
   have hA : {j : cell C k | (range (fun x ↦ (f x : X)) ∩ openCell k j).Nonempty}.Finite :=
     (finite_setOf_nonempty_inter_openCell_of_isCompact (C := C)
-      (isCompact_range (continuous_subtype_val.comp f.continuous))).preimage (f := Sigma.mk k)
+      (isCompact_range (continuous_subtypeVal.comp f.continuous))).preimage (f := Sigma.mk k)
       sigma_mk_injective.injOn
   -- Push `f` off these cells one at a time, never entering an open `k`-cell that `f` misses.
   have key (T : Finset (cell C k)) : ∃ g : C(K, C),
@@ -190,8 +190,8 @@ theorem exists_homotopicRel_skeletonLT_finrank {K : Set E} (hK : IsCompact K) {n
   have : CompactSpace K := isCompact_iff_compactSpace.1 hK
   -- The compact image of `f` lies in a finite skeleton; compress it one dimension at a time.
   obtain ⟨m, hm⟩ := exists_subset_skeletonLT_of_isCompact (C := C)
-    (isCompact_range (continuous_subtype_val.comp f.continuous))
-    (range_subset_iff.2 fun x ↦ (f x).2)
+    (isCompact_range (continuous_subtypeVal.comp f.continuous))
+    (range_subset_iff.2 fun x ↦ (f x).property)
   induction m generalizing f with
   | zero =>
     exact ⟨f, .refl f, fun x ↦ skeletonLT_mono (by exact_mod_cast Nat.zero_le _) (hm ⟨x, rfl⟩)⟩
@@ -235,9 +235,9 @@ theorem exists_path_homotopic_skeletonLT {n : ℕ} {A : Set X} (hn : 0 < n)
   have hend : ({0, 1} : Set I) ⊆ {t | ((γ t : C) : X) ∈ skeletonLT C (n + 1)} := by
     rintro t (rfl | rfl)
     · rw [mem_ofPred_eq, γ.source, ← SetLike.mem_coe, hA]
-      exact a.2
+      exact a.property
     · rw [mem_ofPred_eq, γ.target, ← SetLike.mem_coe, hA]
-      exact b.2
+      exact b.property
   have h₀ : g 0 = inclusion hAC a := (hγg.fst_eq_snd (hend (by simp))).symm.trans γ.source
   have h₁ : g 1 = inclusion hAC b := (hγg.fst_eq_snd (hend (by simp))).symm.trans γ.target
   let γ' : Path a b :=

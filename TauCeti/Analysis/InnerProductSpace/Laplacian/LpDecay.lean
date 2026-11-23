@@ -38,7 +38,9 @@ The same mean-value inequality, with the Cauchy–Schwarz bound
 `C²` function with `Δ f ≥ -K` everywhere from above by its `L²` norm:
 `f x ≤ (∫ f²)^(1/2) / √(μ (ball 0 r)) + K r² / (2 (n + 2))` for every `x` and `r > 0`
 (`TauCeti.le_sqrt_integral_sq_div_add_of_neg_le_laplacian`). The bound depends on `f` only
-through `∫ f²` and `K`, so it is uniform over families with bounded `L²` norms.
+through `∫ f²` and `K`, so it is uniform over families with bounded `L²` norms. In particular,
+`C²` functions with a common bound `|Δ f| ≤ K` that tend to zero in `L²` tend to zero uniformly
+(`TauCeti.tendstoUniformly_zero_of_tendsto_integral_sq_of_abs_laplacian_le`).
 
 ## Main results
 
@@ -48,6 +50,8 @@ through `∫ f²` and `K`, so it is uniform over families with bounded `L²` nor
   `f → 0` at infinity.
 * `TauCeti.le_sqrt_integral_sq_div_add_of_neg_le_laplacian`: `Δ f ≥ -K` everywhere bounds `f`
   above by its `L²` norm.
+* `TauCeti.tendstoUniformly_zero_of_tendsto_integral_sq_of_abs_laplacian_le`: functions with a
+  common bound `|Δ f| ≤ K` that tend to zero in `L²` tend to zero uniformly.
 
 ## References
 
@@ -166,5 +170,43 @@ theorem le_sqrt_integral_sq_div_add_of_neg_le_laplacian (hf : ContDiff ℝ 2 f)
       _ = √(∫ y, f y ^ 2 ∂μ) * (√V * √V) := by ring
       _ = √(∫ y, f y ^ 2 ∂μ) * V := by rw [hsV]
   linarith
+
+/-- **Uniform convergence from `L²` convergence and a bound on the Laplacian.** If the functions
+`f i` are eventually `C²`, square integrable and satisfy `|Δ (f i)| ≤ K` everywhere, with one
+constant `K`, and `∫ (f i)² → 0`, then `f i → 0` uniformly. -/
+theorem tendstoUniformly_zero_of_tendsto_integral_sq_of_abs_laplacian_le {ι : Type*}
+    {l : Filter ι} {f : ι → E → ℝ} (hf : ∀ᶠ i in l, ContDiff ℝ 2 (f i))
+    (hf2 : ∀ᶠ i in l, MemLp (f i) 2 μ) (hΔ : ∀ᶠ i in l, ∀ x, |Δ (f i) x| ≤ K)
+    (hl : Tendsto (fun i ↦ ∫ x, f i x ^ 2 ∂μ) l (𝓝 0)) :
+    TendstoUniformly f 0 l := by
+  rw [Metric.tendstoUniformly_iff]
+  intro ε hε
+  -- A radius `r` with `K₀ r² ≤ ε / 2`, where `K₀ = max K 0`.
+  set K₀ := max K 0
+  set r := Real.sqrt (ε / 2 / (K₀ + 1))
+  have hK₀ : 0 ≤ K₀ := le_max_right _ _
+  have hr : 0 < r := Real.sqrt_pos.2 (by positivity)
+  have hKr : K₀ * r ^ 2 ≤ ε / 2 := by
+    rw [Real.sq_sqrt (by positivity), mul_div_assoc', div_le_iff₀ (by positivity)]
+    nlinarith
+  have hcorr : K₀ * r ^ 2 / (2 * (Module.finrank ℝ E + 2)) ≤ ε / 4 := by
+    rw [div_le_iff₀ (by positivity)]
+    nlinarith [(Nat.cast_nonneg (Module.finrank ℝ E) : (0 : ℝ) ≤ _), mul_nonneg hK₀ (sq_nonneg r)]
+  -- Eventually `(∫ (f i)²)^(1/2) / √V < ε / 2`, where `V` is the volume of the ball.
+  have hsmall : ∀ᶠ i in l, √(∫ x, f i x ^ 2 ∂μ) / √(μ.real (ball (0 : E) r)) < ε / 2 := by
+    have h := (Real.continuous_sqrt.tendsto 0).comp hl
+    rw [Real.sqrt_zero] at h
+    exact (h.div_const _).eventually (gt_mem_nhds (by simpa using half_pos hε))
+  filter_upwards [hf, hf2, hΔ, hsmall] with i hfi hfi2 hΔi hsi x
+  rw [Pi.zero_apply, dist_zero_left, Real.norm_eq_abs, abs_lt]
+  have hup := le_sqrt_integral_sq_div_add_of_neg_le_laplacian (μ := μ) (K := K₀) hfi hfi2
+    (fun y ↦ (neg_le_neg (le_max_left K 0)).trans (neg_le_of_abs_le (hΔi y))) hr x
+  -- The same bound for `-f i`, whose Laplacian is `-Δ (f i)`.
+  have hlow := le_sqrt_integral_sq_div_add_of_neg_le_laplacian (μ := μ) (K := K₀) (f := -f i)
+    hfi.neg hfi2.neg (fun y ↦ by
+      rw [laplacian_neg, Pi.neg_apply, neg_le_neg_iff]
+      exact (le_abs_self _).trans ((hΔi y).trans (le_max_left K 0))) hr x
+  simp only [Pi.neg_apply, neg_sq] at hlow
+  constructor <;> linarith
 
 end TauCeti

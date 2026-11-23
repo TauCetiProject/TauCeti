@@ -160,7 +160,7 @@ theorem gaussianGramReal_eq_map_ginibreReal (m n : ℕ) :
     gaussianGramReal m n =
       (ginibreReal m n).map fun X ↦ X * Xᵀ := by
   rw [gaussianGramReal_def, wishartGramMeasure_eq_map_pi,
-    Measure.map_map measurable_subtype_coe measurable_wishartGram]
+    Measure.map_map measurable_subtypeVal measurable_wishartGram]
   rw [← map_columns_ginibreReal m n]
   rw [Measure.map_map (by fun_prop) (by fun_prop)]
   congr 1
@@ -189,7 +189,7 @@ instance (m n : ℕ) : IsProbabilityMeasure (ginibreComplex m n) := by
   exact (Measure.isProbabilityMeasure_map_iff hreshape.aemeasurable).2 inferInstance
 
 instance (m n : ℕ) : IsProbabilityMeasure (gaussianGramReal m n) :=
-  (Measure.isProbabilityMeasure_map_iff measurable_subtype_coe.aemeasurable).2 inferInstance
+  (Measure.isProbabilityMeasure_map_iff measurable_subtypeVal.aemeasurable).2 inferInstance
 
 instance (m n : ℕ) : IsProbabilityMeasure (gaussianGramComplex m n) :=
   (Measure.isProbabilityMeasure_map_iff
@@ -224,7 +224,7 @@ theorem gaussianGramReal_zero_left (n : ℕ) : gaussianGramReal 0 n = Measure.di
 /-- With zero samples, the real Gaussian Gram law is the point mass at zero. -/
 @[simp]
 theorem gaussianGramReal_zero_right (m : ℕ) : gaussianGramReal m 0 = Measure.dirac 0 := by
-  simp [gaussianGramReal_def, Measure.map_dirac' measurable_subtype_coe]
+  simp [gaussianGramReal_def, Measure.map_dirac' measurable_subtypeVal]
 
 /-- With zero samples, the complex Gaussian Gram law is the point mass at zero. -/
 @[simp]
@@ -352,7 +352,7 @@ theorem map_im_apply_ginibreComplex (m n : ℕ) (i : Fin m) (j : Fin n) :
 `m * n`. -/
 theorem integral_trace_gaussianGramReal (m n : ℕ) :
     ∫ A, A.trace ∂(gaussianGramReal m n) = m * n := by
-  rw [gaussianGramReal, integral_map measurable_subtype_coe.aemeasurable
+  rw [gaussianGramReal, integral_map measurable_subtypeVal.aemeasurable
     (Continuous.aestronglyMeasurable (by fun_prop))]
   simpa [mul_comm] using
     (integral_trace_mul_wishartGramMeasure Matrix.PosSemidef.one
@@ -399,7 +399,7 @@ theorem integral_trace_re_gaussianGramComplex (m n : ℕ) :
 /-- The real Gaussian Gram law is supported on positive semidefinite matrices. -/
 theorem ae_posSemidef_gaussianGramReal (m n : ℕ) :
     ∀ᵐ A ∂(gaussianGramReal m n), A.PosSemidef := by
-  rw [gaussianGramReal, ae_map_iff measurable_subtype_coe.aemeasurable
+  rw [gaussianGramReal, ae_map_iff measurable_subtypeVal.aemeasurable
       _root_.isClosed_setOfPred_posSemidef.measurableSet]
   exact ae_posSemidef_wishartGramMeasure n 1
 

@@ -61,7 +61,7 @@ cyclic submodules form a directed family. -/
 theorem directed_span_singleton_of_exists_dvd {I : Ideal R}
     (hdir : ∀ x ∈ I, ∀ y ∈ I, ∃ z ∈ I, z ∣ x ∧ z ∣ y) : Directed (· ≤ ·) fun y : I ↦ R ∙ y := by
   intro y y'
-  obtain ⟨w, hw, ⟨a, ha⟩, ⟨b, hb⟩⟩ := hdir y y.2 y' y'.2
+  obtain ⟨w, hw, ⟨a, ha⟩, ⟨b, hb⟩⟩ := hdir y y.property y' y'.property
   refine ⟨⟨w, hw⟩, ?_, ?_⟩ <;> dsimp only <;> rw [Submodule.span_singleton_le_iff_mem,
     Submodule.mem_span_singleton]
   · exact ⟨a, Subtype.ext (by simp [ha, mul_comm])⟩
