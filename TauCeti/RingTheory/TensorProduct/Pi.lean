@@ -28,8 +28,8 @@ base change of `s` (`AlgHom.sectionBaseChange_comp_evalAlgHom`).
 
 ## Main declarations
 
-* `TauCeti.Algebra.TensorProduct.prodLeft`: the algebra equivalence above.
-* `TauCeti.Algebra.TensorProduct.piScalarRight_symm_single`: the inverse of Mathlib's
+* `Algebra.TensorProduct.prodLeft`: the algebra equivalence above.
+* `Algebra.TensorProduct.piScalarRight_symm_single`: the inverse of Mathlib's
   `Algebra.TensorProduct.piScalarRight` on `Pi.single i x`.
 * `AlgHom.sectionBaseChange_comp_evalAlgHom`: the base change of an `A`-algebra map
   `s : B k →ₐ[A] A`, composed with the projection onto `B k`, through Mathlib's
@@ -40,7 +40,7 @@ public section
 
 open scoped TensorProduct
 
-namespace TauCeti.Algebra.TensorProduct
+namespace Algebra.TensorProduct
 
 variable (R S A₁ A₂ B : Type*) [CommSemiring R] [CommSemiring S] [Algebra R S] [Semiring A₁]
   [Semiring A₂] [Semiring B] [Algebra R A₁] [Algebra S A₁] [IsScalarTower R S A₁] [Algebra R A₂]
@@ -50,7 +50,7 @@ variable (R S A₁ A₂ B : Type*) [CommSemiring R] [CommSemiring S] [Algebra R 
 `(A₁ × A₂) ⊗[R] B ≃ₐ[S] (A₁ ⊗[R] B) × (A₂ ⊗[R] B)`, linear over an `R`-algebra `S` whose algebra
 structures on `A₁` and `A₂` restrict to their given `R`-algebra structures. -/
 def prodLeft : (A₁ × A₂) ⊗[R] B ≃ₐ[S] (A₁ ⊗[R] B) × (A₂ ⊗[R] B) :=
-  Algebra.TensorProduct.algEquivOfLinearEquivTensorProduct
+  algEquivOfLinearEquivTensorProduct
     (_root_.TensorProduct.prodLeft R S A₁ A₂ B) (fun ⟨_, _⟩ ⟨_, _⟩ _ _ ↦ by simp)
     -- `(1, 1)` is `1` and `1 ⊗ₜ 1` is `1` (`Prod.mk_one_one`, `Algebra.TensorProduct.one_def`),
     -- both by `rfl`.
@@ -70,26 +70,23 @@ theorem prodLeft_toLinearEquiv :
 theorem prodLeft_tmul (a : A₁ × A₂) (b : B) :
     prodLeft R S A₁ A₂ B (a ⊗ₜ b) = (a.1 ⊗ₜ b, a.2 ⊗ₜ b) := by
   obtain ⟨a₁, a₂⟩ := a
-  rw [prodLeft, Algebra.TensorProduct.algEquivOfLinearEquivTensorProduct_apply,
-    _root_.TensorProduct.prodLeft_tmul]
+  rw [prodLeft, algEquivOfLinearEquivTensorProduct_apply, _root_.TensorProduct.prodLeft_tmul]
 
-/-- The first component of `prodLeft z` is the base change along `B` of the projection
-`A₁ × A₂ → A₁`, applied to `z`. -/
+/-- The first component of `prodLeft z` is the tensor product of the first projection
+`A₁ × A₂ → A₁` with the identity on `B`, applied to `z`. -/
 @[simp]
 theorem prodLeft_apply_fst (z : (A₁ × A₂) ⊗[R] B) :
-    (prodLeft R S A₁ A₂ B z).1 =
-      Algebra.TensorProduct.map (AlgHom.fst S A₁ A₂) (AlgHom.id R B) z := by
-  induction z using TensorProduct.inductionOn with
+    (prodLeft R S A₁ A₂ B z).1 = map (AlgHom.fst S A₁ A₂) (AlgHom.id R B) z := by
+  induction z using _root_.TensorProduct.inductionOn with
   | tmul a b => simp
   | add x y hx hy => simp [hx, hy]
 
-/-- The second component of `prodLeft z` is the base change along `B` of the projection
-`A₁ × A₂ → A₂`, applied to `z`. -/
+/-- The second component of `prodLeft z` is the tensor product of the second projection
+`A₁ × A₂ → A₂` with the identity on `B`, applied to `z`. -/
 @[simp]
 theorem prodLeft_apply_snd (z : (A₁ × A₂) ⊗[R] B) :
-    (prodLeft R S A₁ A₂ B z).2 =
-      Algebra.TensorProduct.map (AlgHom.snd S A₁ A₂) (AlgHom.id R B) z := by
-  induction z using TensorProduct.inductionOn with
+    (prodLeft R S A₁ A₂ B z).2 = map (AlgHom.snd S A₁ A₂) (AlgHom.id R B) z := by
+  induction z using _root_.TensorProduct.inductionOn with
   | tmul a b => simp
   | add x y hx hy => simp [hx, hy]
 
@@ -105,13 +102,12 @@ of Mathlib's `TensorProduct.piScalarRight_symm_single`. -/
 theorem piScalarRight_symm_single (R S A : Type*) {ι : Type*} [CommSemiring R] [CommSemiring S]
     [Algebra R S] [Semiring A] [Algebra R A] [Algebra S A] [IsScalarTower R S A] [Fintype ι]
     [DecidableEq ι] (x : A) (i : ι) :
-    (Algebra.TensorProduct.piScalarRight R S A ι).symm (Pi.single i x) =
-      x ⊗ₜ Pi.single i 1 := by
+    (piScalarRight R S A ι).symm (Pi.single i x) = x ⊗ₜ Pi.single i 1 := by
   rw [AlgEquiv.symm_apply_eq]
   ext k
   simp [Pi.single_apply]
 
-end TauCeti.Algebra.TensorProduct
+end Algebra.TensorProduct
 
 namespace AlgHom
 

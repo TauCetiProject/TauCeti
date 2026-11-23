@@ -122,7 +122,7 @@ theorem realCliffordTwoTwoVectorEquivMatrix_det (v : Fin 4 → ℝ) :
 private def prodTensorMatrixEquiv :
     (ℝ × ℝ) ⊗[ℝ] Matrix (Fin 2) (Fin 2) ℝ ≃ₐ[ℝ]
       Matrix (Fin 2) (Fin 2) ℝ × Matrix (Fin 2) (Fin 2) ℝ :=
-  (TauCeti.Algebra.TensorProduct.prodLeft ℝ ℝ ℝ ℝ (Matrix (Fin 2) (Fin 2) ℝ)).trans <|
+  (Algebra.TensorProduct.prodLeft ℝ ℝ ℝ ℝ (Matrix (Fin 2) (Fin 2) ℝ)).trans <|
     AlgEquiv.prodCongr
       (Algebra.TensorProduct.lid ℝ (Matrix (Fin 2) (Fin 2) ℝ))
       (Algebra.TensorProduct.lid ℝ (Matrix (Fin 2) (Fin 2) ℝ))
