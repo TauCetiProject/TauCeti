@@ -88,6 +88,31 @@ variable {n : ℕ}
 
 local notation "E" => EuclideanSpace ℝ (Fin (n + 1))
 
+/-- A Hessian vanishing in the open half-space off a closed ball is square integrable on the open
+half-space, when the function is `C²` on an open set containing the closed half-space. -/
+private theorem memLp_iteratedFDeriv_two_of_support_inter_subset_closedBall {ν x₀ : E} {c₀ R : ℝ}
+    {U : Set E} {u : E → ℝ} (hU : IsOpen U) (hHU : {x | c₀ ≤ ⟪x, ν⟫_ℝ} ⊆ U)
+    (hu : ContDiffOn ℝ 2 u U)
+    (hsupp : Function.support (iteratedFDeriv ℝ 2 u) ∩ {x | c₀ < ⟪x, ν⟫_ℝ} ⊆ closedBall x₀ R) :
+    MemLp (iteratedFDeriv ℝ 2 u) 2 (volume.restrict {x | c₀ < ⟪x, ν⟫_ℝ}) := by
+  set K : Set E := closedBall x₀ R ∩ {x | c₀ ≤ ⟪x, ν⟫_ℝ}
+  have hK : IsCompact K := (isCompact_closedBall x₀ R).inter_right
+    (isClosed_le continuous_const (continuous_id.inner continuous_const))
+  have hcont : ContinuousOn (iteratedFDeriv ℝ 2 u) K :=
+    (ContinuousOn.continuousOn_iteratedFDeriv hu hU le_rfl).mono (inter_subset_right.trans hHU)
+  have hKm : MeasurableSet K := hK.isClosed.measurableSet
+  have hind : MemLp (K.indicator (iteratedFDeriv ℝ 2 u)) 2 volume :=
+    (memLp_indicator_iff_restrict hKm.nullMeasurableSet).2
+      (hcont.memLp_restrict_of_subset_isCompact hK hKm subset_rfl 2)
+  refine (hind.restrict _).ae_eq ?_
+  refine (ae_restrict_iff' (measurableSet_lt measurable_const
+    (continuous_id.inner continuous_const).measurable)).2 (ae_of_all _ fun x hx => ?_)
+  by_cases hxK : x ∈ K
+  · exact indicator_of_mem hxK _
+  · rw [indicator_of_notMem hxK]
+    by_contra h
+    exact hxK ⟨hsupp ⟨Ne.symm h, hx⟩, (mem_ofPred_eq ▸ hx).le⟩
+
 /-- **Schauder estimate up to a flat boundary for a Hessian supported in a ball.** For
 `0 < α < 1` there is `C > 0`, depending only on the dimension and `α`, with the following
 property. Let `H = {x | c₀ < ⟪x, ν⟫}`, `ν ≠ 0`, let `x₀` lie in the closed half-space
@@ -98,8 +123,8 @@ coefficient entry is `α`-Hölder with constant `L` on `closedBall x₀ R ∩ cl
 `2 κ (n+1)² (L Rᵅ + 2ᵅ L rᵅ) ≤ λ`,
 
 then every `u` that is `C²` on an open set containing `closure H`, vanishes on the hyperplane
-`∂H`, has `D²u` `α`-Hölder on `closure H` and in `L²(H)`, and whose Hessian vanishes at the
-points of `H` outside `closedBall x₀ R`, satisfies
+`∂H`, has `D²u` `α`-Hölder on `closure H`, and whose Hessian vanishes at the points of `H`
+outside `closedBall x₀ R`, satisfies
 
 `[D²u]_{α; closure H} ≤ 2 κ ([L u]_{α; H} / λ + Q ‖D²u‖_{L²(H)})`, where
 `Q = (n+1)² 2ᵅ L / λ |B_{r/2}|^(-1/2) + r^(-(n+1)/2-α)`.
@@ -121,7 +146,6 @@ theorem exists_holderOnWith_iteratedFDeriv_two_of_support_subset_closedBall_of_h
       ∀ {U : Set E} {u : E → ℝ}, IsOpen U → {x | c₀ ≤ ⟪x, ν⟫_ℝ} ⊆ U → ContDiffOn ℝ 2 u U →
       (∀ x, ⟪x, ν⟫_ℝ = c₀ → u x = 0) →
       (∃ J, HolderOnWith J α (iteratedFDeriv ℝ 2 u) {x | c₀ ≤ ⟪x, ν⟫_ℝ}) →
-      MemLp (iteratedFDeriv ℝ 2 u) 2 (volume.restrict {x | c₀ < ⟪x, ν⟫_ℝ}) →
       Function.support (iteratedFDeriv ℝ 2 u) ∩ {x | c₀ < ⟪x, ν⟫_ℝ} ⊆ closedBall x₀ R →
       HolderOnWith K α (fun x => ∑ i, ∑ j, a x i j • fderiv ℝ (fderiv ℝ u) x
         (EuclideanSpace.single i 1) (EuclideanSpace.single j 1)) {x | c₀ < ⟪x, ν⟫_ℝ} →
@@ -136,7 +160,7 @@ theorem exists_holderOnWith_iteratedFDeriv_two_of_support_subset_closedBall_of_h
     exists_holderOnWith_iteratedFDeriv_two_of_sum_smul_fderiv_fderiv_of_abs_sub_le_of_halfSpace
       hα hα1 (n := n)
   refine ⟨C₀, hC₀, fun {a x₀ ν c₀ lam Lam} hν hx₀ hlam hEll hEll' {L K R r} hR hr hsmall hL
-    {U u} hU hHU hu hu0 hJ hH2 hsupp hf => ?_⟩
+    {U u} hU hHU hu hu0 hJ hsupp hf => ?_⟩
   set Hc : Set E := {x | c₀ ≤ ⟪x, ν⟫_ℝ}
   set Ho : Set E := {x | c₀ < ⟪x, ν⟫_ℝ}
   have hoc : Ho ⊆ Hc := fun _ hx => mem_ofPred.2 (mem_ofPred.1 hx).le
@@ -174,8 +198,8 @@ theorem exists_holderOnWith_iteratedFDeriv_two_of_support_subset_closedBall_of_h
         ((ε : ℝ) + (L * 2 ^ (α : ℝ) : ℝ≥0) * r ^ (α : ℝ)) ≤ lam := by
     simpa only [hε, NNReal.coe_mul, NNReal.coe_rpow, NNReal.coe_ofNat] using hsmall
   exact hS (A := a x₀) (a := a') hlam hEll hEll' hν hr hsmall'
-    (fun x hx i j => by simpa only [hε] using ha'_close x hx i j) ha'_holder hU hHU hu hu0 hJ hH2
-    hf'
+    (fun x hx i j => by simpa only [hε] using ha'_close x hx i j) ha'_holder hU hHU hu hu0 hJ
+    (memLp_iteratedFDeriv_two_of_support_inter_subset_closedBall hU hHU hu hsupp) hf'
 
 /-- The cutoff product `w = ζ u` of a cutoff `ζ` supported in the ball `B_R` and a function `u`
 which is `C²` on an open set `U ⊇ B_R ∩ closure H`, vanishes on `B_R ∩ ∂H`, and has bounds `N` on
@@ -206,7 +230,6 @@ private theorem cutoff_mul_data_of_halfSpace {ζ u : E → ℝ} {x₀ ν : E} {c
       ContDiffOn ℝ 2 (ζ * u) (U ∪ (tsupport ζ)ᶜ)) ∧
     (∀ x, ⟪x, ν⟫_ℝ = c₀ → (ζ * u) x = 0) ∧
     (∃ J, HolderOnWith J α (iteratedFDeriv ℝ 2 (ζ * u)) {x | c₀ ≤ ⟪x, ν⟫_ℝ}) ∧
-    MemLp (iteratedFDeriv ℝ 2 (ζ * u)) 2 (volume.restrict {x | c₀ < ⟪x, ν⟫_ℝ}) ∧
     (eLpNorm (iteratedFDeriv ℝ 2 (ζ * u)) 2 (volume.restrict {x | c₀ < ⟪x, ν⟫_ℝ})).toReal ≤
       (volume (closedBall (0 : E) R)).toReal ^ (2⁻¹ : ℝ) * (((n : ℝ) + 1) ^ 2 * (4 * Z)) * N ∧
     Function.support (iteratedFDeriv ℝ 2 (ζ * u)) ⊆ closedBall x₀ R ∧
@@ -251,13 +274,13 @@ private theorem cutoff_mul_data_of_halfSpace {ζ u : E → ℝ} {x₀ ν : E} {c
   have hsupp : Function.support (iteratedFDeriv ℝ 2 (ζ * u)) ⊆ closedBall x₀ R :=
     (support_iteratedFDeriv_subset 2).trans
       (tsupport_mul_subset_left.trans (hζs.trans ball_subset_closedBall))
-  obtain ⟨hmem, hL2⟩ :=
+  obtain ⟨-, hL2⟩ :=
     Measure.memLp_and_toReal_eLpNorm_iteratedFDeriv_two_le_of_support_subset_closedBall (p := 2)
       volume (EuclideanSpace.basisFun _ ℝ)
       (isOpen_lt continuous_const (continuous_id.inner continuous_const)).measurableSet
       ((ContinuousOn.continuousOn_iteratedFDeriv hw hWo (by norm_num)).mono (hoc.trans hHW)) hsupp
       (B := 4 * Z * N) (by positivity) fun x hx i j => by simpa using (hWH i j).2 x (hoc hx)
-  refine ⟨⟨hWo, hHW, hw⟩, hw0, ⟨_, hJ⟩, hmem,
+  refine ⟨⟨hWo, hHW, hw⟩, hw0, ⟨_, hJ⟩,
     hL2.trans_eq (by simp only [Fintype.card_fin, ENNReal.toReal_ofNat]; push_cast; ring), hsupp,
     ?_⟩
   -- The operator applied to `w`, on the open half-space.
@@ -337,7 +360,7 @@ theorem
   obtain ⟨hζ2, hζ1, hζs, ⟨hZ0, hZ1, hZ2⟩, hB⟩ := hζ x₀
   have hoB : ball x₀ R ∩ {x | c₀ < ⟪x, ν⟫_ℝ} ⊆ closedBall x₀ R ∩ {x | c₀ ≤ ⟪x, ν⟫_ℝ} :=
     inter_subset_inter ball_subset_closedBall fun _ hx => mem_ofPred.2 (mem_ofPred.1 hx).le
-  obtain ⟨⟨hWo, hHW, hw⟩, hw0, hJ, hmem, hL2, hsupp, hLw⟩ := cutoff_mul_data_of_halfSpace
+  obtain ⟨⟨hWo, hHW, hw⟩, hw0, hJ, hL2, hsupp, hLw⟩ := cutoff_mul_data_of_halfSpace
     hα1.le (hζ2.of_le (by norm_cast)) hζs hZ0 hZ1 hZ2 hB hU hBU hu hu0 hN0 hN1 hN2 hV
     (fun i j => (hL i j).mono hoB) hM hK (δ := δ) (B₂ := B₂) rfl rfl
   -- The estimate up to the boundary for a Hessian supported in a ball, at the radius `R`.
@@ -346,7 +369,7 @@ theorem
     convert hsmall using 2
     ring
   have key := hCS hν hx₀ hlam hEll hEll' (L := L) (K := Z * K + N * B₂) (r := R) hR.le hR
-    hsmall' hL hWo hHW hw hw0 hJ hmem (fun x hx => hsupp hx.1) hLw
+    hsmall' hL hWo hHW hw hw0 hJ (fun x hx => hsupp hx.1) hLw
   -- `ζ x₀` is one near `closedBall x₀ ρ`, so `D²(ζ x₀ u) = D²u` there.
   exact TauCeti.holderOnWith_iteratedFDeriv_inter_of_mul_of_subset_interior
     (key.mono_const (cutoff_constant_le hlam (by positivity) (by positivity)
