@@ -125,14 +125,14 @@ variable [Fintype ι] (ℬ : ℤ → Submodule R N)
 /-- An extension is homogeneous exactly when each component has the required output degree. -/
 theorem isHomogeneous_multilinearFromPieces_iff
     (f : ∀ d : ι → ℤ, MultilinearMap (RingHom.id R) (fun i ↦ (G i).piece (d i)) N) (q : ℤ) :
-    TauCeti.MultilinearMap.IsHomogeneous (multilinearFromPieces G f)
+    MultilinearMap.IsHomogeneous (multilinearFromPieces G f)
         (fun i ↦ (G i).piece) ℬ q ↔
       ∀ d x, f d x ∈ ℬ ((∑ i, d i) + q) := by
   constructor
   · intro hf d x
     simpa using hf.map_mem d (fun i ↦ (x i : M i)) (fun i ↦ (x i).property)
   · intro hf
-    rw [TauCeti.MultilinearMap.isHomogeneous_def]
+    rw [MultilinearMap.isHomogeneous_def]
     intro d x hx
     have h := hf d (fun i ↦ ⟨x i, hx i⟩)
     rwa [← multilinearFromPieces_apply G f d (fun i ↦ ⟨x i, hx i⟩)] at h
@@ -155,19 +155,19 @@ families of multilinear maps on the homogeneous pieces with output degree `∑ i
 The target needs only a family of submodules, and no compatibility condition between distinct
 degree tuples is needed. -/
 noncomputable def homogeneousMultilinearEquiv (q : ℤ) :
-    (TauCeti.MultilinearMap.homogeneousSubmodule (R := R) (S := R)
+    (MultilinearMap.homogeneousSubmodule (R := R) (S := R)
       (fun i ↦ (G i).piece) ℬ q) ≃ₗ[R]
     (∀ d : ι → ℤ, MultilinearMap (RingHom.id R) (fun i ↦ (G i).piece (d i))
       (ℬ ((∑ i, d i) + q))) where
   toFun f d :=
     (f.val.compLinearMap fun i ↦ ((G i).piece (d i)).subtype).codRestrict
       (ℬ ((∑ i, d i) + q))
-      (fun x ↦ (TauCeti.MultilinearMap.mem_homogeneousSubmodule.mp f.property).map_mem d
+      (fun x ↦ (MultilinearMap.mem_homogeneousSubmodule.mp f.property).map_mem d
         (fun i ↦ (x i : M i)) (fun i ↦ (x i).property))
   invFun f :=
     ⟨multilinearFromPieces G (fun d ↦
       (ℬ ((∑ i, d i) + q)).subtype.compMultilinearMap (f d)),
-      TauCeti.MultilinearMap.mem_homogeneousSubmodule.mpr
+      MultilinearMap.mem_homogeneousSubmodule.mpr
         ((isHomogeneous_multilinearFromPieces_iff G ℬ _ q).2 (fun d x ↦ (f d x).property))⟩
   left_inv f := by
     apply Subtype.ext
@@ -190,7 +190,7 @@ noncomputable def homogeneousMultilinearEquiv (q : ℤ) :
 /-- The forward equivalence evaluates the original map on the underlying homogeneous inputs. -/
 @[simp]
 theorem coe_homogeneousMultilinearEquiv_apply (q : ℤ)
-    (f : TauCeti.MultilinearMap.homogeneousSubmodule (R := R) (S := R)
+    (f : MultilinearMap.homogeneousSubmodule (R := R) (S := R)
       (fun i ↦ (G i).piece) ℬ q)
     (d : ι → ℤ) (x : ∀ i, (G i).piece (d i)) :
     (homogeneousMultilinearEquiv G ℬ q f d x : N) = f.val (fun i ↦ (x i : M i)) :=
