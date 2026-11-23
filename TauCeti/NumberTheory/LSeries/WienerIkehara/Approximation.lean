@@ -16,6 +16,7 @@ import TauCeti.Algebra.Order.BigOperators.Sum.ByParts
 import TauCeti.Algebra.Order.Field.Basic
 import TauCeti.Analysis.Distribution.SchwartzSpace.Cutoff
 import TauCeti.Analysis.Asymptotics.Sum.Window
+import TauCeti.NumberTheory.LSeries.Positivity
 
 /-!
 # Approximating the test function in the smoothed Wiener--Ikehara asymptotic
@@ -453,6 +454,29 @@ section Smooth
 
 variable {Ψ : ℝ → ℂ} {a : ℕ → ℂ} {A : ℂ} {G : ℂ → ℂ}
 
+/-- If a Dirichlet series with nonnegative coefficients has a boundary remainder `G` continuous
+from the right at `1` along the real axis, then the residue `A` is real. -/
+private theorem residue_im_eq_zero (ha : 0 ≤ a)
+    (hG : ContinuousWithinAt (fun σ : ℝ ↦ G σ) (Ici 1) 1)
+    (hG' : ∀ σ : ℝ, 1 < σ → G σ = LSeries a σ - A / (σ - 1)) :
+    A.im = 0 := by
+  have hG1 : Tendsto (fun σ : ℝ ↦ (((σ : ℂ) - 1) * G σ).im) (𝓝[>] 1) (𝓝 0) := by
+    have ht : Tendsto (fun σ : ℝ ↦ ((σ : ℂ) - 1) * G σ) (𝓝[>] 1)
+        (𝓝 (((1 : ℂ) - 1) * G 1)) :=
+      ((Complex.continuous_ofReal.continuousAt.sub
+        (continuousAt_const (y := (1 : ℂ)))).tendsto.mono_left nhdsWithin_le_nhds).mul
+        (hG.mono_left (nhdsWithin_mono _ Ioi_subset_Ici_self))
+    simpa [Function.comp_def] using (Complex.continuous_im.tendsto _).comp ht
+  have hc : Tendsto (fun _ : ℝ ↦ -A.im) (𝓝[>] 1) (𝓝 0) := by
+    refine hG1.congr' ?_
+    filter_upwards [self_mem_nhdsWithin] with σ (hσ : 1 < σ)
+    have hne : (σ : ℂ) - 1 ≠ 0 := sub_ne_zero.mpr (by exact_mod_cast hσ.ne')
+    have hL : (_root_.LSeries a σ).im = 0 := by
+      rw [LSeries_eq_ofReal_tsum_norm_of_nonneg ha σ, Complex.ofReal_im]
+    rw [hG' σ hσ, mul_sub, mul_div_cancel₀ _ hne]
+    simp [Complex.sub_im, Complex.mul_im, hL]
+  exact neg_eq_zero.mp (tendsto_const_nhds_iff.mp hc)
+
 /-- **The smoothed Wiener--Ikehara asymptotic for a cutoff on `(0, ∞)`.** Let `a` be
 nonnegative, with Dirichlet series summable on `Re s > 1` and a boundary remainder
 `G = LSeries a - A / (s - 1)` continuous on `Re s ≥ 1`. For every smooth `Ψ` whose support is a
@@ -464,40 +488,11 @@ theorem tendsto_inv_mul_tsum_mul_div_atTop (ha : 0 ≤ a)
     (hΨ : ContDiff ℝ ∞ Ψ) (hΨc : HasCompactSupport Ψ) (hΨpos : tsupport Ψ ⊆ Ioi 0) :
     Tendsto (fun x : ℝ ↦ (x : ℂ)⁻¹ * ∑' n : ℕ, a n * Ψ (n / x)) atTop
       (𝓝 (A * ∫ y in Ioi 0, Ψ y)) := by
-  obtain ⟨C₀, hC₀⟩ :=
-    exists_sum_Icc_le_mul_of_isBigO (isBigO_sum_Icc_norm_id_of_boundary ha hG hG' hsum)
-  set C := max C₀ 0
-  have hC0 : 0 ≤ C := le_max_right _ _
-  have hbound : ∀ N : ℕ, ∑ i ∈ Finset.range N, ‖a i‖ ≤ (C + ‖a 0‖) * N := fun N ↦ by
-    rcases N with _ | m
-    · simp
-    rw [Nat.range_succ_eq_Icc_zero, ← Finset.add_sum_Ioc_eq_sum_Icc m.zero_le,
-      ← Finset.Icc_add_one_left_eq_Ioc, zero_add]
-    have hm : ∑ n ∈ Finset.Icc 1 m, ‖a n‖ ≤ C * m :=
-      (hC₀ m).trans (mul_le_mul_of_nonneg_right (le_max_left _ _) m.cast_nonneg)
-    push_cast
-    nlinarith [hC0, norm_nonneg (a 0)]
-  have hG1 : Tendsto (fun σ : ℝ ↦ (((σ : ℂ) - 1) * G σ).im) (𝓝[>] 1) (𝓝 0) := by
-    have hGc : ContinuousOn (fun σ : ℝ ↦ G σ) (Ici 1) :=
-      hG.comp Complex.continuous_ofReal.continuousOn fun r hr ↦ by simpa using hr
-    have ht : Tendsto (fun σ : ℝ ↦ ((σ : ℂ) - 1) * G σ) (𝓝[>] 1) (𝓝 (((1 : ℂ) - 1) * G 1)) :=
-      ((Complex.continuous_ofReal.continuousAt.sub
-        (continuousAt_const (y := (1 : ℂ)))).tendsto.mono_left nhdsWithin_le_nhds).mul
-        ((hGc 1 le_rfl).mono_left (nhdsWithin_mono _ Ioi_subset_Ici_self))
-    simpa [Function.comp_def] using (Complex.continuous_im.tendsto _).comp ht
-  have hAim : A.im = 0 := by
-    have hc : Tendsto (fun _ : ℝ ↦ -A.im) (𝓝[>] 1) (𝓝 0) := by
-      refine hG1.congr' ?_
-      filter_upwards [self_mem_nhdsWithin] with σ (hσ : 1 < σ)
-      have hne : (σ : ℂ) - 1 ≠ 0 := sub_ne_zero.mpr (by exact_mod_cast hσ.ne')
-      have hL : (_root_.LSeries a σ).im = 0 := by
-        rw [_root_.LSeries, Complex.im_tsum (hsum σ hσ)]
-        have h0 : ∀ n, (_root_.LSeries.term a (σ : ℂ) n).im = 0 :=
-          fun n ↦ (Complex.nonneg_iff.1 (_root_.LSeries.term_nonneg (ha n) σ)).2.symm
-        simp [h0]
-      rw [hG' σ (by simpa using hσ), mul_sub, mul_div_cancel₀ _ hne]
-      simp [Complex.sub_im, Complex.mul_im, hL]
-    exact neg_eq_zero.mp (tendsto_const_nhds_iff.mp hc)
+  obtain ⟨C, hbound⟩ :=
+    exists_sum_range_le_mul_of_isBigO (isBigO_sum_Icc_norm_id_of_boundary ha hG hG' hsum)
+  have hAim : A.im = 0 := residue_im_eq_zero ha
+    ((hG.comp Complex.continuous_ofReal.continuousOn fun r hr ↦ by simpa using hr) 1 le_rfl)
+    (fun σ hσ ↦ hG' σ (by simpa using hσ))
   have hA : (A.re : ℂ) = A := by
     conv_rhs => rw [← Complex.re_add_im A, hAim]
     simp

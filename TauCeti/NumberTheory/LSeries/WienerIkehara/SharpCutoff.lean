@@ -71,32 +71,18 @@ theorem wienerIkehara (ha : 0 ≤ a)
       {s : ℂ | 1 < s.re} := fun s hs ↦ by
     dsimp only
     rw [hGF s hs, (hF s hs).LSeries_eq]
-  -- The Chebyshev bound `∑_{1 ≤ n ≤ N} a n ≤ C N`.
-  obtain ⟨C₀, hC₀⟩ := exists_sum_Icc_le_mul_of_isBigO
-    (isBigO_sum_Icc_norm_id_of_boundary (a := fun n ↦ (a n : ℂ)) (A := κ)
-      (fun n ↦ by simpa using ha n) hG (fun _ hz ↦ hG' hz)
-      (fun σ hσ ↦ (hF σ (by simpa using hσ)).LSeriesSummable))
-  set C := max C₀ 0
-  have hC0 : 0 ≤ C := le_max_right _ _
-  have hC : ∀ N : ℕ, ∑ n ∈ Finset.Icc 1 N, a n ≤ C * N := fun N ↦ by
-    refine le_trans (le_of_eq (Finset.sum_congr rfl fun n _ ↦ ?_)) ((hC₀ N).trans
-      (mul_le_mul_of_nonneg_right (le_max_left _ _) N.cast_nonneg))
-    simp [abs_of_nonneg (ha n)]
-  have hsplit (n : ℕ) : ∑ i ∈ Finset.Icc 0 n, a i = a 0 + ∑ i ∈ Finset.Icc 1 n, a i := by
-    rw [← Finset.add_sum_Ioc_eq_sum_Icc n.zero_le, ← Finset.Icc_add_one_left_eq_Ioc, zero_add]
-  have hbound : ∀ N : ℕ, ∑ i ∈ Finset.range N, a i ≤ (C + a 0) * N := fun N ↦ by
-    rcases N with _ | m
-    · simp
-    rw [Nat.range_succ_eq_Icc_zero, hsplit]
-    have hm := hC m
-    have ha0 : 0 ≤ a 0 := ha 0
-    push_cast
-    nlinarith
+  -- The Chebyshev bound `∑_{n < N} a n ≤ C N`.
+  obtain ⟨C, hbound⟩ := exists_sum_range_le_mul_of_isBigO <| by
+    simpa only [Complex.norm_real, Real.norm_of_nonneg (ha _)] using
+      isBigO_sum_Icc_norm_id_of_boundary (a := fun n ↦ (a n : ℂ)) (A := κ)
+        (fun n ↦ by simpa using ha n) hG (fun _ hz ↦ hG' hz)
+        (fun σ hσ ↦ (hF σ (by simpa using hσ)).LSeriesSummable)
   have hmain := WienerIkehara.tendsto_sum_div (A := κ) hbound hG hG' ha
   have ha0 : Tendsto (fun x : ℝ ↦ a 0 / x) atTop (𝓝 0) :=
     tendsto_const_nhds.div_atTop tendsto_id
   refine (by simpa using hmain.sub ha0 : Tendsto _ atTop (𝓝 κ)).congr fun x ↦ ?_
-  rw [hsplit, add_div, add_sub_cancel_left, div_eq_inv_mul]
+  rw [← Finset.add_sum_Ioc_eq_sum_Icc (Nat.zero_le _), ← Finset.Icc_add_one_left_eq_Ioc,
+    zero_add, add_div, add_sub_cancel_left, div_eq_inv_mul]
 
 /-- **The Wiener--Ikehara theorem with zero residue.** If the Dirichlet series `F` of `a n ≥ 0`
 extends continuously from `Re s > 1` to `Re s ≥ 1`, then `x⁻¹ ∑_{1 ≤ n ≤ x} a n → 0`. -/
