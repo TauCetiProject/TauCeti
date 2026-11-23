@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Category.Grp.Basic
 public import Mathlib.CategoryTheory.Sites.ConstantSheaf
 public import Mathlib.CategoryTheory.Sites.Pullback
 public import TauCeti.CategoryTheory.Limits.Final
@@ -160,3 +161,23 @@ lemma whiskerLeft_toSheafify_comp_sheafPullbackConstantSheafIso_inv [u.Final] (X
 end
 
 end CategoryTheory.Functor
+
+namespace CategoryTheory.Limits.IsTerminal
+universe v u
+variable {C : Type u} [Category.{v} C] (J : GrothendieckTopology C)
+  [HasSheafify J AddCommGrpCat.{v}]
+/-- The constant-sheaf adjunction is compatible with a map of terminal objects. -/
+lemma constantSheafAdj_homEquiv_terminal_restrict {S T : C} (hS : IsTerminal S) (hT : IsTerminal T)
+    (i : S ⟶ T) (A : AddCommGrpCat.{v}) (F : Sheaf J AddCommGrpCat.{v})
+    (f : (constantSheaf J AddCommGrpCat.{v}).obj A ⟶ F) :
+    (constantSheafAdj J AddCommGrpCat.{v} hT).homEquiv A F f ≫ F.obj.map i.op =
+      (constantSheafAdj J AddCommGrpCat.{v} hS).homEquiv A F f := by
+  let a := (sheafificationAdjunction J AddCommGrpCat.{v}).homEquiv
+    ((Functor.const Cᵒᵖ).obj A) F f
+  change a.app (Opposite.op T) ≫ F.obj.map i.op = a.app (Opposite.op S)
+  have h := a.naturality i.op
+  change 𝟙 A ≫ a.app (Opposite.op S) = a.app (Opposite.op T) ≫ F.obj.map i.op at h
+  rw [Category.id_comp] at h
+  exact h.symm
+
+end CategoryTheory.Limits.IsTerminal
