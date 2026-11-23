@@ -5,7 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Module.AuslanderReiten.Defect
+public import TauCeti.Algebra.Module.AuslanderReiten.Defect.Basic
+public import TauCeti.Algebra.Module.AuslanderReiten.TensorCokernel
 public import TauCeti.Algebra.Module.AuslanderReiten.Morphism
 public import TauCeti.RingTheory.MatlisDuality.Basic
 
@@ -17,7 +18,7 @@ For a map `f : P₁ →ₗ[A] P₀` between finite projective modules and a `k`-
 `Hom_A(N, D Tr(f))`, where `Tr(f)` is the transpose of `f`. The equivalence evaluates on elementary
 maps `x ↦ φ(x) • n` and is contravariantly natural in the coefficient module `N`. For `E = k`,
 `D Tr(f)` is the Auslander–Reiten translate. With `E` injective this is the lemma in Krause's proof
-of Auslander's defect formula (`TauCeti/Algebra/Module/AuslanderReiten/DefectFormula.lean`).
+of Auslander's defect formula (`TauCeti/Algebra/Module/AuslanderReiten/Defect/Formula.lean`).
 
 The equivalence is also natural in the presentation: for a commutative square
 `t₀ ∘ f = f' ∘ t₁`, precomposition with the induced map of Hom cokernels

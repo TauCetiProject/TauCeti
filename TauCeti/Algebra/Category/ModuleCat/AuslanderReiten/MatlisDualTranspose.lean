@@ -22,9 +22,9 @@ A lift `(t₀, t₁)` of a map `t : X → X'` to the presentations induces `D Tr
 ## Main definitions
 
 * `ModuleCat.matlisDualTranspose R E P`: the module `τX = D Tr X`.
-* `ModuleCat.matlisDualTransposeHomEquiv`: morphisms into `τX` are the `A`-linear maps into
-  `Hom_R(Tr X, E)`.
-* `ModuleCat.matlisDualTransposeMap`: the map `D Tr(t) : τX → τX'` induced by a lift of `t`.
+* `ModuleCat.matlisDualTransposeEquiv`: the carrier of `τX` is `Hom_R(Tr X, E)`.
+* `ModuleCat.matlisDualTransposeMap`: the map `D Tr(t) : τX → τX'` induced by a lift of `t`,
+  functorial in the lift (`_id`, `_comp`).
 * `ModuleCat.matlisDualOpTransposeIso`: the bundled Matlis dual of `Tr X` is `τX`, compatibly with
   maps (`ModuleCat.matlisDualOp_map_comp_matlisDualOpTransposeIso_hom`).
 
@@ -34,8 +34,8 @@ An object of `ModuleCat A` remembers only its `A`-action. Its `R`-action, and th
 structure of `ModuleCat A`, come from the scoped instances of `ModuleCat.Algebra`. On the carrier
 `Hom_R(Tr X, E)` of `τX` this action agrees with the native `R`-action only propositionally. The
 bundled translate `ModuleCat.matlisDualTranspose` is therefore a plain definition, so that
-instance search sees only the categorical action on it, and `ModuleCat.matlisDualTransposeHomEquiv`
-compares the two actions on morphisms into it.
+instance search sees only the categorical action on it, and `ModuleCat.matlisDualTransposeEquiv`
+identifies its carrier with `Hom_R(Tr X, E)` as `A`-modules only.
 -/
 
 public section
@@ -56,33 +56,20 @@ presentation `P` by finitely generated projectives, as an object of `ModuleCat A
 @[expose] def matlisDualTranspose : ModuleCat.{max u v w} A :=
   ModuleCat.of A (MatlisDual R E (AuslanderReitenTranspose P.p))
 
-/-- Morphisms into `D Tr X` are the `A`-linear maps into `Hom_R(Tr X, E)`. On the left, `R` acts
-through the `R`-linear structure of `ModuleCat A`, and on the right through its action on `E`. -/
-noncomputable def matlisDualTransposeHomEquiv (M : ModuleCat.{max u v w} A) :
-    (M ⟶ matlisDualTranspose R E P) ≃ₗ[R]
-      (M →ₗ[A] MatlisDual R E (AuslanderReitenTranspose P.p)) where
-  toFun f := f.hom
-  invFun g := ofHom g
-  map_add' _ _ := rfl
-  -- Both actions of `c` are the action of `algebraMap R A c`.
-  map_smul' c f := LinearMap.ext fun x ↦ (IsScalarTower.algebraMap_smul A c (f.hom x)).symm.trans
-    (IsScalarTower.algebraMap_smul (M := MatlisDual R E (AuslanderReitenTranspose P.p)) A c
-      (f.hom x))
-  left_inv _ := rfl
-  right_inv _ := rfl
+/-- The carrier of `τX = D Tr X` is `Hom_R(Tr X, E)`, as `A`-modules. Through it, morphisms into
+`τX` are the `A`-linear maps into `Hom_R(Tr X, E)` (`ModuleCat.homLinearEquivOfLinearEquiv`). -/
+def matlisDualTransposeEquiv :
+    MatlisDual R E (AuslanderReitenTranspose P.p) ≃ₗ[A] matlisDualTranspose R E P :=
+  LinearEquiv.refl _ _
 
-/-- `ModuleCat.matlisDualTransposeHomEquiv` keeps the underlying function. -/
 @[simp]
-theorem matlisDualTransposeHomEquiv_apply {M : ModuleCat.{max u v w} A}
-    (f : M ⟶ matlisDualTranspose R E P) (x : M) :
-    matlisDualTransposeHomEquiv R E P M f x = f x :=
+theorem matlisDualTransposeEquiv_apply (φ : MatlisDual R E (AuslanderReitenTranspose P.p)) :
+    matlisDualTransposeEquiv R E P φ = φ :=
   (rfl)
 
-/-- The inverse of `ModuleCat.matlisDualTransposeHomEquiv` keeps the underlying function. -/
 @[simp]
-theorem matlisDualTransposeHomEquiv_symm_apply {M : ModuleCat.{max u v w} A}
-    (g : M →ₗ[A] MatlisDual R E (AuslanderReitenTranspose P.p)) (x : M) :
-    (matlisDualTransposeHomEquiv R E P M).symm g x = g x :=
+theorem matlisDualTransposeEquiv_symm_apply (φ : matlisDualTranspose R E P) :
+    (matlisDualTransposeEquiv R E P).symm φ = φ :=
   (rfl)
 
 variable {X' : ModuleCat.{max u v w} A} (P' : FiniteProjectivePresentation X')
@@ -102,6 +89,35 @@ theorem matlisDualTransposeMap_apply (ht₁ : t₀ ∘ₗ P.p = P'.p ∘ₗ t₁
       MatlisDual.equivLinearMap R E _ φ (AuslanderReitenTranspose.map t₀ t₁ ht₁ x) := by
   rw [matlisDualTransposeMap]
   exact LinearMap.auslanderReitenTranslateMap_apply t₀ t₁ ht₁ φ x
+
+/-- `D Tr(t)` is the Matlis dual of the map of transposes, on the carriers of `τX` and `τX'`. -/
+theorem matlisDualTransposeMap_eq (ht₁ : t₀ ∘ₗ P.p = P'.p ∘ₗ t₁) :
+    matlisDualTransposeMap R E P P' ht₁ =
+      ofHom ((matlisDualTransposeEquiv R E P').toLinearMap ∘ₗ
+        MatlisDual.mapOp (AuslanderReitenTranspose.map t₀ t₁ ht₁) ∘ₗ
+          (matlisDualTransposeEquiv R E P).symm.toLinearMap) := by
+  ext φ : 2
+  refine (MatlisDual.equivLinearMap R E _).injective (LinearMap.ext fun x ↦ ?_)
+  rw [matlisDualTransposeMap_apply]
+  exact (MatlisDual.mapOp_apply _ _ x).symm
+
+/-- The identity lift induces the identity of `D Tr X`. -/
+@[simp]
+theorem matlisDualTransposeMap_id (ht₁ : LinearMap.id ∘ₗ P.p = P.p ∘ₗ LinearMap.id) :
+    matlisDualTransposeMap R E P P ht₁ = 𝟙 _ := by
+  rw [matlisDualTransposeMap, LinearMap.auslanderReitenTranslateMap_id]
+  rfl
+
+/-- The maps `D Tr(t)` compose along composed lifts. -/
+theorem matlisDualTransposeMap_comp {X'' : ModuleCat.{max u v w} A}
+    (P'' : FiniteProjectivePresentation X'') {t₀' : P'.P₀ →ₗ[A] P''.P₀}
+    {t₁' : P'.P₁ →ₗ[A] P''.P₁} (ht₁ : t₀ ∘ₗ P.p = P'.p ∘ₗ t₁)
+    (ht₁' : t₀' ∘ₗ P'.p = P''.p ∘ₗ t₁') (ht₁'' : (t₀' ∘ₗ t₀) ∘ₗ P.p = P''.p ∘ₗ (t₁' ∘ₗ t₁)) :
+    matlisDualTransposeMap R E P P'' ht₁'' =
+      matlisDualTransposeMap R E P P' ht₁ ≫ matlisDualTransposeMap R E P' P'' ht₁' := by
+  rw [matlisDualTransposeMap, matlisDualTransposeMap, matlisDualTransposeMap,
+    ← LinearMap.auslanderReitenTranslateMap_comp_map t₀ t₁ ht₁ t₀' t₁' ht₁']
+  rfl
 
 /-- The bundled dual of `Tr X`, with the action of `R` through `Aᵐᵒᵖ`, is `τX = D Tr X`. -/
 noncomputable def matlisDualOpTransposeIso :

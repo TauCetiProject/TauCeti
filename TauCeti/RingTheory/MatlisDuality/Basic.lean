@@ -43,7 +43,8 @@ Right `A`-modules are modules over `Aᵐᵒᵖ`.
 
 * `TauCeti.subsingleton_matlisDual_iff`: `D_R N` is zero exactly when `N` is, for every `N`.
 * `TauCeti.MatlisDual.bijective_map` and `TauCeti.MatlisDual.bijective_mapOp`: for modules of
-  finite length over `R`, dualizing is a bijection on morphisms.
+  finite length over `R`, dualizing is a bijection on morphisms; for right modules only the target
+  needs finite length.
 * `TauCeti.MatlisDual.exists_retract_of_retract`: a retract of `D_R N` dualizes to a retract of
   `N`, for `N` of finite length over `R`.
 
@@ -437,21 +438,29 @@ theorem MatlisDual.bijective_map [Module A N] [IsScalarTower R A N]
     simp
 
 /-- **Matlis duality is fully faithful on right modules.** Dualizing is a bijection from morphisms
-of right `A`-modules of finite length over `R` to morphisms of their dual left modules. -/
+of right `A`-modules into a module of finite length over `R` to morphisms of their dual left
+modules. A preimage of `F : D N' → D N` is evaluation `N → D (D N)` followed by `D F` and the
+inverse of biduality on `N'`; only the target `N'` needs finite length. -/
 theorem MatlisDual.bijective_mapOp [Module Aᵐᵒᵖ N] [IsScalarTower R Aᵐᵒᵖ N]
     {N' : Type*} [AddCommGroup N'] [Module R N'] [Module Aᵐᵒᵖ N'] [IsScalarTower R Aᵐᵒᵖ N']
     (hE : ∀ 𝔪 : Ideal R, 𝔪.IsMaximal → Module.length R (R ⧸ 𝔪 →ₗ[R] E) = 1)
-    (hN : IsFiniteLength R N) (hN' : IsFiniteLength R N') :
+    (hN' : IsFiniteLength R N') :
     Function.Bijective (mapOp (R := R) (A := A) (E := E) : (N →ₗ[Aᵐᵒᵖ] N') → _) := by
+  -- Evaluation `N → D (D N)` is a map of right modules for every `N`.
+  let ev : N →ₗ[Aᵐᵒᵖ] MatlisDual R E (MatlisDual R E N) :=
+    { evalₗ R E N with
+      map_smul' := fun a x => by
+        ext φ
+        simp }
   refine ⟨fun g h hgh => ?_, fun F => ⟨(evalEquivOp hE hN').symm.toLinearMap ∘ₗ
-    map F ∘ₗ (evalEquivOp hE hN).toLinearMap, ?_⟩⟩
+    map F ∘ₗ ev, ?_⟩⟩
   · ext x
     refine (bijective_evalₗ hE hN').1 (MatlisDual.ext fun φ => ?_)
     simpa using congr(equivLinearMap R E N ($hgh φ) x)
   · ext φ x
     rw [mapOp_apply, ← evalEquivOp_apply (A := A) hE hN', LinearMap.comp_apply,
       LinearEquiv.coe_coe, LinearEquiv.apply_symm_apply]
-    simp
+    simp [ev]
 
 /-- **A retract of a Matlis dual dualizes to a retract**: if a left `A`-module `I` is a retract of
 `D_R N`, for a right `A`-module `N` of finite length over `R`, then `D_R I` is a retract of `N`,

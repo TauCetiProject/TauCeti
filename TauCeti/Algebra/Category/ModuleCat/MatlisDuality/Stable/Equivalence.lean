@@ -28,8 +28,9 @@ dual (`TauCeti.stableMatlisDualOp`) restricts to an equivalence between the oppo
 presented right modules modulo projectives and finitely generated left modules modulo injectives.
 
 Faithfulness: if `D f` factors through an injective, it extends across the monomorphism `D π`
-for a surjection `π : P ⟶ N` from a finitely generated projective; the extension is the dual of a
-map `N' ⟶ P`, since `D` is full on maps into a module of finite length, and `f` factors through it
+(`ModuleCat.mono_matlisDualOp_map_of_surjective`) for a surjection `π : P ⟶ N` from a finitely
+generated projective; the extension is the dual of a map `N' ⟶ P`, since `D` is full on maps into
+a module of finite length (`ModuleCat.bijective_matlisDualOpMap`), and `f` factors through it
 since `D` is faithful. Fullness and essential surjectivity come from biduality.
 
 ## Main definitions
@@ -42,8 +43,6 @@ since `D` is faithful. Fullness and essential surjectivity come from biduality.
 
 ## Main results
 
-* `ModuleCat.bijective_matlisDualOpMap_of_isFiniteLength`: dualizing is bijective on maps into a
-  right module of finite length.
 * `TauCeti.projectiveStableFunctor_map_eq_zero_of_matlisDualOp`: a map into a finitely generated
   right module whose dual factors through an injective factors through a projective.
 * `TauCeti.bijective_stableMatlisDualOp_map`: the stable Matlis dual is bijective on stable maps
@@ -78,36 +77,6 @@ variable {R E} [IsArtinianRing R] [Module.Finite R A]
   (hE : ∀ 𝔪 : Ideal R, 𝔪.IsMaximal → Module.length R (R ⧸ 𝔪 →ₗ[R] E) = 1)
 include hE
 
-omit [IsArtinianRing R] [Module.Finite R A] in
-/-- **The Matlis dual is bijective on maps into a module of finite length.** For right modules `N'`
-and `N` with `N` of finite length over `R`, dualizing is a bijection from maps `N' ⟶ N` to maps
-`D N ⟶ D N'`. A preimage of `ψ` is evaluation on `N'`, followed by `D ψ` and the inverse of
-biduality on `N`. -/
-theorem _root_.ModuleCat.bijective_matlisDualOpMap_of_isFiniteLength
-    {N N' : ModuleCat.{max u v} Aᵐᵒᵖ} (hN : IsFiniteLength R N) :
-    Function.Bijective (ModuleCat.matlisDualOpMap R E :
-      (N' ⟶ N) → (ModuleCat.matlisDualOpObj R E N ⟶ ModuleCat.matlisDualOpObj R E N')) := by
-  have hE' : ∀ 𝔪 : Ideal R, 𝔪.IsMaximal → Nontrivial (R ⧸ 𝔪 →ₗ[R] E) :=
-    fun 𝔪 h𝔪 ↦ Module.length_pos_iff.mp (by rw [hE 𝔪 h𝔪]; exact zero_lt_one)
-  refine ⟨fun g h hgh ↦ ?_, fun ψ ↦ ?_⟩
-  · ext x
-    refine MatlisDual.injective_evalₗ hE' (MatlisDual.ext fun φ ↦ ?_)
-    simpa using congrArg (fun k ↦ MatlisDual.equivLinearMap R E _ (ModuleCat.matlisDualOpObjEquiv
-      R E N' (k ((ModuleCat.matlisDualOpObjEquiv R E N).symm φ))) x) hgh
-  -- Evaluation `N' → D (D N')` is a map of right modules for every `N'`.
-  let ev : N' →ₗ[Aᵐᵒᵖ] MatlisDual R E (MatlisDual R E N') :=
-    { MatlisDual.evalₗ R E N' with map_smul' := fun a x ↦ by ext φ; simp }
-  let ψ' : MatlisDual R E N →ₗ[A] MatlisDual R E N' :=
-    (ModuleCat.matlisDualOpObjEquiv R E N').toLinearMap ∘ₗ ψ.hom ∘ₗ
-      (ModuleCat.matlisDualOpObjEquiv R E N).symm.toLinearMap
-  refine ⟨ModuleCat.ofHom ((MatlisDual.evalEquivOp hE hN).symm.toLinearMap ∘ₗ
-    MatlisDual.map ψ' ∘ₗ ev), ?_⟩
-  ext φ : 2
-  apply (ModuleCat.matlisDualOpObjEquiv R E N').injective
-  ext x
-  rw [ModuleCat.matlisDualOpObjEquiv_map_apply, ← MatlisDual.evalEquivOp_apply (A := A) hE hN]
-  simp [ψ', ev]
-
 /-- **A map whose dual factors through an injective factors through a projective.** For a map
 `f : N' ⟶ N` of right modules over an Artin algebra with `N` finitely generated, if `D f` factors
 through an injective left module, then `f` factors through a projective right module. -/
@@ -120,19 +89,7 @@ theorem projectiveStableFunctor_map_eq_zero_of_matlisDualOp {N N' : ModuleCat.{m
   have := Module.finitePresentation_of_finite Aᵐᵒᵖ N
   let P : FiniteProjectivePresentation N := .ofFinitePresentation
   let π : P.P₀ ⟶ N := ModuleCat.ofHom P.π
-  have hπ : Mono ((ModuleCat.matlisDualOp R E).map π.op) := by
-    rw [ModuleCat.mono_iff_injective]
-    intro φ ψ h
-    rw [ModuleCat.matlisDualOp_map, Quiver.Hom.unop_op] at h
-    apply (ModuleCat.matlisDualOpObjEquiv R E N).injective
-    refine (MatlisDual.equivLinearMap R E N).injective
-      (LinearMap.lcomp_injective_of_surjective (S := R) (N := E) (P.π.restrictScalars R)
-        P.surjective (LinearMap.ext fun y ↦ ?_))
-    rw [LinearMap.lcomp_apply, LinearMap.lcomp_apply]
-    exact (ModuleCat.matlisDualOpObjEquiv_map_apply R E π φ y).symm.trans
-      ((congrArg (fun χ ↦ MatlisDual.equivLinearMap R E _
-        (ModuleCat.matlisDualOpObjEquiv R E _ χ) y) h).trans
-          (ModuleCat.matlisDualOpObjEquiv_map_apply R E π ψ y))
+  have hπ := ModuleCat.mono_matlisDualOp_map_of_surjective R E π P.surjective
   have hinj := isInjective_matlisDualOpObj_of_projective R E (ModuleCat.of Aᵐᵒᵖ P.P₀)
   rw [ExactStructure.injectiveStableFunctor_map_eq_zero_iff,
     ExactStructure.factorsThrough_injective_iff_exists_extension _ _
@@ -140,8 +97,8 @@ theorem projectiveStableFunctor_map_eq_zero_of_matlisDualOp {N N' : ModuleCat.{m
   obtain ⟨g, hg⟩ := hf
   have hP := isFiniteLength_of_finite_trans R Aᵐᵒᵖ P.P₀
   have hN := isFiniteLength_of_finite_trans R Aᵐᵒᵖ N
-  obtain ⟨h, rfl⟩ := (ModuleCat.bijective_matlisDualOpMap_of_isFiniteLength hE hP).2 g
-  have hf : h ≫ π = f := (ModuleCat.bijective_matlisDualOpMap_of_isFiniteLength hE hN).1
+  obtain ⟨h, rfl⟩ := (ModuleCat.bijective_matlisDualOpMap hE hP).2 g
+  have hf : h ≫ π = f := (ModuleCat.bijective_matlisDualOpMap hE hN).1
     (((ModuleCat.matlisDualOp R E).map_comp π.op h.op).trans hg)
   rw [ExactStructure.projectiveStableFunctor_map_eq_zero_iff, ← hf]
   exact ObjectProperty.factorsThrough_comp _
@@ -167,7 +124,7 @@ theorem bijective_stableMatlisDualOp_map (N N' : ModuleCat.{max u v} Aᵐᵒᵖ)
     rw [op_sub, Functor.map_sub, Functor.map_sub, h', sub_self]
   · obtain ⟨ψ, hψ⟩ := Functor.map_surjective (ExactStructure.abelian _).injectiveStableFunctor
       ((stableMatlisDualOpObjIso R E N).inv ≫ φ ≫ (stableMatlisDualOpObjIso R E N').hom)
-    obtain ⟨f, rfl⟩ := (ModuleCat.bijective_matlisDualOpMap_of_isFiniteLength hE
+    obtain ⟨f, rfl⟩ := (ModuleCat.bijective_matlisDualOpMap hE
       (isFiniteLength_of_finite_trans R Aᵐᵒᵖ N)).2 ψ
     refine ⟨(ExactStructure.abelian (ModuleCat.{max u v} Aᵐᵒᵖ)).projectiveStableFunctor.map f, ?_⟩
     simp only [stableMatlisDualOp_map_projectiveStableFunctor_map, ModuleCat.matlisDualOp_map,

@@ -9,7 +9,8 @@ public import Mathlib.Algebra.Category.ModuleCat.Abelian
 public import Mathlib.Algebra.Category.ModuleCat.EnoughInjectives
 public import Mathlib.Algebra.Homology.ShortComplex.ModuleCat
 public import TauCeti.Algebra.Category.ModuleCat.AuslanderReiten.Defect
-public import TauCeti.Algebra.Module.AuslanderReiten.DefectFormula
+public import TauCeti.Algebra.Category.ModuleCat.AuslanderReiten.MatlisDualTranspose
+public import TauCeti.Algebra.Module.AuslanderReiten.Defect.Formula
 public import TauCeti.Algebra.Module.Projective.FinitePresentation
 public import TauCeti.CategoryTheory.Exact.Abelian
 public import TauCeti.CategoryTheory.Exact.YonedaExt.Injective
@@ -100,13 +101,13 @@ noncomputable def dualExt1EquivCostableHom :
     Function.Exact.dualContravariantDefectEquivCovariantDefect P.exact P.surjective
       e.shortExact.moduleCat_injective_f e.shortExact.moduleCat_surjective_g
       ((ShortComplex.ShortExact.moduleCat_exact_iff_function_exact _).mp e.shortExact.exact) ≪≫ₗ
-    covariantDefectEquivCostableHom R E P e he
+    covariantDefectEquivCostableHom R (matlisDualTransposeEquiv R E P) e he
 
 /-- The defect formula applied to `χ ∘ (δ^*(X) ≅ Ext¹(X, N))`, read in `(A/ℐ)(N, τX)`. -/
 theorem dualExt1EquivCostableHom_apply
     (χ : (ExactStructure.abelian _).Ext1 X N →ₗ[R] E) :
     dualExt1EquivCostableHom R E P e he χ =
-      covariantDefectEquivCostableHom R E P e he
+      covariantDefectEquivCostableHom R (matlisDualTransposeEquiv R E P) e he
         (Function.Exact.dualContravariantDefectEquivCovariantDefect P.exact P.surjective
           e.shortExact.moduleCat_injective_f e.shortExact.moduleCat_surjective_g
           ((ShortComplex.ShortExact.moduleCat_exact_iff_function_exact _).mp e.shortExact.exact)
@@ -152,9 +153,6 @@ theorem dualExt1EquivCostableHom_naturality (h₁ : e.f ≫ a₂ = a ≫ e'.f)
   | _ u =>
     rw [covariantDefectMap_mk, covariantDefectEquivCostableHom_mk,
       covariantDefectEquivCostableHom_mk, ← Functor.map_comp]
-    congr 1
-    ext
-    simp
     rfl
 
 /-! ### The Auslander–Reiten formula -/

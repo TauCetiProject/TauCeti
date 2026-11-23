@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Algebra.Module.SnakeLemma
 public import TauCeti.Algebra.Module.AuslanderReiten.HomCokernel
-public import TauCeti.Algebra.Module.AuslanderReiten.Defect
+public import TauCeti.Algebra.Module.AuslanderReiten.Defect.Basic
 public import TauCeti.Algebra.Module.AuslanderReiten.Morphism
 public import TauCeti.Algebra.Module.LinearMap.Defs
 public import TauCeti.Algebra.Module.Injective.Hom
@@ -53,7 +53,7 @@ dual of the first to the second: the snake map is natural because lifts for `X'`
 `(t₀, t₁)` are lifts for `X`, and `D H(N) ≅ Hom_A(N, D Tr X)` is natural in the presentation.
 
 The defects and the maps between them are defined in
-`TauCeti/Algebra/Module/AuslanderReiten/Defect.lean`.
+`TauCeti/Algebra/Module/AuslanderReiten/Defect/Basic.lean`.
 
 ## Main definitions
 
@@ -71,8 +71,8 @@ The defects and the maps between them are defined in
 
 * H. Krause, *A short proof for Auslander's defect formula*, Linear Algebra Appl. **365** (2003),
   267–270.
-* M. Auslander, *Functors determined by objects*, in: Representation Theory of Algebras
-  (Philadelphia, 1976), Marcel Dekker (1978), 1–244, Theorem III.4.1.
+* M. Auslander, *Functors and morphisms determined by objects*, in: Representation Theory of
+  Algebras (Philadelphia, 1976), Marcel Dekker (1978), 1–244, Theorem III.4.1.
 -/
 
 public section

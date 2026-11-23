@@ -5,7 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Module.AuslanderReiten.TensorCokernel
+public import Mathlib.Algebra.Module.LinearMap.End
+public import Mathlib.LinearAlgebra.BilinearMap
+public import Mathlib.LinearAlgebra.Quotient.Basic
 
 /-!
 # The defects of a map of modules
@@ -19,7 +21,7 @@ Let `A` be an algebra over a commutative ring `k`. For `A`-linear maps `φ : M�
 
 as `k`-modules. They are functorial in commutative squares and in the test modules `X` and `Y`.
 For an exact sequence `0 → M₁ → M₂ → M₃ → 0` they are related by Auslander's defect formula
-(`TauCeti/Algebra/Module/AuslanderReiten/DefectFormula.lean`).
+(`TauCeti/Algebra/Module/AuslanderReiten/Defect/Formula.lean`).
 
 ## Main definitions
 
@@ -27,19 +29,17 @@ For an exact sequence `0 → M₁ → M₂ → M₃ → 0` they are related by A
 * `LinearMap.contravariantDefectMap` and `LinearMap.covariantDefectMap`: the maps of defects
   induced by a commutative square, functorial in it (`_id`, `_comp`).
 * `LinearMap.contravariantDefectComap`: the map of contravariant defects induced by a map of test
-  modules. Postcomposition on covariant defects is `LinearMap.homCokernelMap`.
+  modules.
 
 ## References
 
-* M. Auslander, *Functors determined by objects*, in: Representation Theory of Algebras
-  (Philadelphia, 1976), Marcel Dekker (1978), 1–244.
+* M. Auslander, *Functors and morphisms determined by objects*, in: Representation Theory of
+  Algebras (Philadelphia, 1976), Marcel Dekker (1978), 1–244.
 -/
 
 public section
 
 namespace LinearMap
-
-open TauCeti
 
 section Defects
 

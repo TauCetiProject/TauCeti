@@ -38,9 +38,6 @@ These are the categorical sides of the covariant and contravariant defects of `e
 
 * `TauCeti.ExactStructure.Extension.exists_mk_pushout_eq_of_isProjective`: every class in
   `Ext¹_E(Z, W)` is a cobase change of `[e]`.
-* `TauCeti.ExactStructure.mem_projectiveStableIdeal_iff_of_isDeflation`: a morphism into `Z`
-  factors through a relative projective exactly when it lifts along a projective deflation onto
-  `Z`.
 
 ## References
 
@@ -82,17 +79,6 @@ theorem ProjectivePresentation.extension_shortComplex (P : E.ProjectivePresentat
 theorem ProjectivePresentation.isProjective_extension_obj (P : E.ProjectivePresentation X) :
     E.isProjective P.extension.obj :=
   P.isProjective
-
-/-- **Projectively stable morphisms through a projective deflation.** For a deflation
-`p : P ⟶ Z` with `P` relatively projective, a morphism `f : Y ⟶ Z` factors through a relative
-projective exactly when it lifts along `p`. -/
-theorem mem_projectiveStableIdeal_iff_of_isDeflation {P : C} {p : P ⟶ Z} (hp : E.IsDeflation p)
-    (hP : E.isProjective P) (f : Y ⟶ Z) :
-    f ∈ E.projectiveStableIdeal.hom Y Z ↔ ∃ t : Y ⟶ P, t ≫ p = f := by
-  rw [mem_projectiveStableIdeal_iff]
-  refine ⟨fun hf ↦ ?_, fun ⟨t, ht⟩ ↦ ht ▸ ObjectProperty.factorsThrough_comp _ hP t p⟩
-  obtain ⟨Q, hQ, a, b, rfl⟩ := (ObjectProperty.factorsThrough_iff _ _).mp hf
-  exact ⟨a ≫ hQ.factorThru hp b, by simp⟩
 
 namespace Extension
 

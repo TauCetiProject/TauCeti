@@ -7,8 +7,8 @@ module
 
 public import Mathlib.Algebra.Category.ModuleCat.Abelian
 public import Mathlib.Algebra.Homology.ShortComplex.ModuleCat
-public import TauCeti.Algebra.Module.AuslanderReiten.Defect
-public import TauCeti.Algebra.Category.ModuleCat.AuslanderReiten.MatlisDualTranspose
+public import TauCeti.Algebra.Module.AuslanderReiten.Defect.Basic
+public import TauCeti.Algebra.Module.AuslanderReiten.TensorCokernel
 public import TauCeti.CategoryTheory.Exact.Abelian
 public import TauCeti.CategoryTheory.Exact.YonedaExt.Injective
 public import TauCeti.CategoryTheory.Exact.YonedaExt.Projective
@@ -17,29 +17,32 @@ public import TauCeti.CategoryTheory.Exact.YonedaExt.Projective
 # The defects of a short exact sequence of modules
 
 Let `R` be a commutative ring and `A` an `R`-algebra. The defects of a map of `A`-modules
-(`TauCeti/Algebra/Module/AuslanderReiten/Defect.lean`) are cokernels of `R`-linear maps between
-`Hom` spaces of `ModuleCat A`. For a short exact sequence whose middle term is injective or
+(`TauCeti/Algebra/Module/AuslanderReiten/Defect/Basic.lean`) are cokernels of `R`-linear maps
+between `Hom` spaces of `ModuleCat A`. For a short exact sequence whose middle term is injective or
 projective they are identified with `Ext¹` and with stable `Hom` spaces:
 
 * for `N ⟶ I ⟶ N'` with `I` injective, the contravariant defect at `Y` is `Ext¹(Y, N)` and the
-  covariant defect at `τX = D Tr X` is `Hom(N, τX)` modulo the injectively trivial maps;
+  covariant defect at `W` is `Hom(N, W)` modulo the injectively trivial maps;
 * for `K ⟶ P ⟶ M` with `P` projective, the contravariant defect at `Y` is `Hom(Y, M)` modulo the
-  maps through projectives and the covariant defect at `τX` is `Ext¹(M, τX)`.
+  maps through projectives and the covariant defect at `W` is `Ext¹(M, W)`.
 
 These are the categorical sides of Auslander's defect formula, used for the two
-Auslander–Reiten formulas.
+Auslander–Reiten formulas, with `W` the translate `D Tr X`.
 
 ## Implementation notes
 
-The covariant defects are taken at the translate `τX` only. For a general `A`-module `W` with a
-compatible native `R`-action, the `Hom` spaces `N ⟶ ModuleCat.of A W` carry two `R`-module
-structures, from `W` and from the `R`-linear structure of `ModuleCat A`, which agree only
-propositionally (see `TauCeti/Algebra/Category/ModuleCat/AuslanderReiten/MatlisDualTranspose.lean`).
+The covariant defect at an `A`-module `W` uses its native `R`-action. The `Hom` spaces of
+`ModuleCat A` carry the `R`-action of its `R`-linear structure, and on `N ⟶ ModuleCat.of A W` the
+two agree only propositionally. The covariant comparisons therefore take a bundled module `B`
+with an `A`-linear equivalence `W ≃ₗ[A] B`, compared on morphisms by
+`ModuleCat.homLinearEquivOfLinearEquiv`; for `D Tr X` this is `ModuleCat.matlisDualTransposeEquiv`.
 
 ## Main definitions
 
 * `ModuleCat.contravariantDefectEquivHomQuotient` and `ModuleCat.covariantDefectEquivHomQuotient`:
-  the defects as cokernels of `R`-linear maps between `Hom` spaces of `ModuleCat A`.
+  the defects as cokernels of `R`-linear maps between `Hom` spaces of `ModuleCat A`, through
+  `ModuleCat.homLinearEquiv_comp_rightComp` and
+  `ModuleCat.homLinearEquivOfLinearEquiv_symm_comp_lcomp`.
 * `ModuleCat.contravariantDefectEquivExt1` and `ModuleCat.covariantDefectEquivCostableHom`: the
   defects of a short exact sequence with injective middle term.
 * `ModuleCat.contravariantDefectEquivStableHom` and `ModuleCat.covariantDefectEquivExt1`: the
@@ -51,7 +54,7 @@ propositionally (see `TauCeti/Algebra/Category/ModuleCat/AuslanderReiten/MatlisD
   `ModuleCat.contravariantDefectEquivStableHom_comap`: naturality of the contravariant
   identification in the sequence and in the test module.
 * `ModuleCat.covariantDefectEquivExt1_map` and `ModuleCat.covariantDefectEquivExt1_homCokernelMap`:
-  naturality of the covariant identification in the sequence and in the presented module.
+  naturality of the covariant identification in the sequence and in the test module.
 
 ## References
 
@@ -66,11 +69,19 @@ namespace ModuleCat
 open CategoryTheory TauCeti TauCeti.ExactStructure LinearMap
 open scoped ModuleCat.Algebra
 
-universe u v w t
+universe u v t
 
 variable (R : Type u) {A : Type v} [CommRing R] [Ring A] [Algebra R A]
 
 /-! ### Defects as cokernels of `Hom` maps -/
+
+/-- The bundled `Hom` equivalence `(Y ⟶ N) ≃ (Y →ₗ[A] N)` carries postcomposition with `g` to
+postcomposition with the underlying linear map of `g`. -/
+theorem homLinearEquiv_comp_rightComp {M N Y : ModuleCat.{t} A} (g : M ⟶ N) :
+    (homLinearEquiv (S := R) : (Y ⟶ N) ≃ₗ[R] (Y →ₗ[A] N)).toLinearMap ∘ₗ
+        Linear.rightComp R Y g =
+      g.hom.compRight R ∘ₗ (homLinearEquiv (S := R) : (Y ⟶ M) ≃ₗ[R] (Y →ₗ[A] M)).toLinearMap :=
+  LinearMap.ext fun _ ↦ rfl
 
 /-- The contravariant defect of a map `g : M ⟶ N` of `A`-modules at `Y`, as the cokernel of the
 `R`-linear map `Hom(Y, M) → Hom(Y, N)` between `Hom` spaces of `ModuleCat A`. -/
@@ -78,11 +89,7 @@ noncomputable def contravariantDefectEquivHomQuotient {M N : ModuleCat.{t} A} (g
     (Y : ModuleCat.{t} A) :
     contravariantDefect R g.hom Y ≃ₗ[R] ((Y ⟶ N) ⧸ LinearMap.range (Linear.rightComp R Y g)) :=
   (Submodule.Quotient.equiv _ _ (homLinearEquiv (S := R)) (by
-    rw [← LinearMap.range_comp,
-      show (homLinearEquiv (S := R) : (Y ⟶ N) ≃ₗ[R] (Y →ₗ[A] N)).toLinearMap ∘ₗ
-          Linear.rightComp R Y g =
-        g.hom.compRight R ∘ₗ (homLinearEquiv (S := R) : (Y ⟶ M) ≃ₗ[R] (Y →ₗ[A] M)).toLinearMap
-        from LinearMap.ext fun _ ↦ rfl,
+    rw [← LinearMap.range_comp, homLinearEquiv_comp_rightComp,
       LinearMap.range_comp_of_range_eq_top _ (LinearEquiv.range _)])).symm
 
 /-- The class of `g' : Y → N` in the contravariant defect is the class of the morphism `g'`. -/
@@ -174,125 +181,145 @@ theorem contravariantDefectEquivStableHom_comap {Y Y' : ModuleCat.{t} A} (s : Y 
 
 end Projective
 
-/-! ### Covariant defects at the translate `D Tr X` -/
+/-! ### Covariant defects
 
-section Translate
+The covariant defect at a module `W` uses the native `R`-action of `W`, while `Hom` spaces of
+`ModuleCat A` carry the `R`-action of its `R`-linear structure. For a bundled module `B` with an
+`A`-linear equivalence `W ≃ B`, `ModuleCat.homLinearEquivOfLinearEquiv` compares the two, and the
+covariant defect at `W` is described through morphisms into `B`. For `τX = D Tr X` this is the
+identity on carriers (`ModuleCat.matlisDualTransposeEquiv`). -/
 
-variable (E : Type w) [AddCommGroup E] [Module R E] {X : ModuleCat.{max u v w} A}
-  (P : FiniteProjectivePresentation X)
+section Covariant
 
-/-- The covariant defect of a map `f : N ⟶ N'` at `τX = D Tr X`, as the cokernel of the
-`R`-linear map `Hom(N', τX) → Hom(N, τX)` between `Hom` spaces of `ModuleCat A`. -/
-noncomputable def covariantDefectEquivHomQuotient {N N' : ModuleCat.{max u v w} A} (f : N ⟶ N') :
-    covariantDefect R f.hom (MatlisDual R E (AuslanderReitenTranspose P.p)) ≃ₗ[R]
-      ((N ⟶ matlisDualTranspose R E P) ⧸
-        LinearMap.range (Linear.leftComp R (matlisDualTranspose R E P) f)) :=
-  Submodule.Quotient.equiv _ _ (matlisDualTransposeHomEquiv R E P N).symm (by
-    rw [← LinearMap.range_comp,
-      show (matlisDualTransposeHomEquiv R E P N).symm.toLinearMap ∘ₗ
-          f.hom.lcomp R (MatlisDual R E (AuslanderReitenTranspose P.p)) =
-        Linear.leftComp R (matlisDualTranspose R E P) f ∘ₗ
-          (matlisDualTransposeHomEquiv R E P N').symm.toLinearMap
-        from LinearMap.ext fun _ ↦ by ext; simp; rfl,
+variable {W : Type t} [AddCommGroup W] [Module A W] [Module R W] [IsScalarTower R A W]
+  {B : ModuleCat.{t} A} (eW : W ≃ₗ[A] B)
+
+/-- Morphisms into a bundled module `B` are the `A`-linear maps into `W`, for `W ≃ₗ[A] B`. On the
+left, `R` acts through the `R`-linear structure of `ModuleCat A`, and on the right through its
+action on `W`. -/
+noncomputable def homLinearEquivOfLinearEquiv (N : ModuleCat.{t} A) :
+    (N ⟶ B) ≃ₗ[R] (N →ₗ[A] W) where
+  toFun f := eW.symm.toLinearMap ∘ₗ f.hom
+  invFun g := ofHom (eW.toLinearMap ∘ₗ g)
+  map_add' f g := LinearMap.ext fun x ↦ eW.symm.map_add (f x) (g x)
+  -- Both actions of `c` are the action of `algebraMap R A c`.
+  map_smul' c f := LinearMap.ext fun x ↦
+    (eW.symm.map_smul (algebraMap R A c) (f.hom x)).trans
+      (IsScalarTower.algebraMap_smul (M := W) A c (eW.symm (f.hom x)))
+  left_inv f := by ext; simp
+  right_inv g := by ext; simp
+
+@[simp]
+theorem homLinearEquivOfLinearEquiv_apply {N : ModuleCat.{t} A} (f : N ⟶ B) (x : N) :
+    homLinearEquivOfLinearEquiv R eW N f x = eW.symm (f x) :=
+  (rfl)
+
+@[simp]
+theorem homLinearEquivOfLinearEquiv_symm_apply {N : ModuleCat.{t} A} (g : N →ₗ[A] W) :
+    (homLinearEquivOfLinearEquiv R eW N).symm g = ofHom (eW.toLinearMap ∘ₗ g) :=
+  (rfl)
+
+/-- Transporting `Hom` along `W ≃ B` carries precomposition with the underlying linear map of
+`f : N ⟶ N'` to precomposition with `f`. -/
+theorem homLinearEquivOfLinearEquiv_symm_comp_lcomp {N N' : ModuleCat.{t} A} (f : N ⟶ N') :
+    (homLinearEquivOfLinearEquiv R eW N).symm.toLinearMap ∘ₗ f.hom.lcomp R W =
+      Linear.leftComp R B f ∘ₗ (homLinearEquivOfLinearEquiv R eW N').symm.toLinearMap :=
+  LinearMap.ext fun _ ↦ by ext; simp
+
+/-- The covariant defect of a map `f : N ⟶ N'` of `A`-modules at `W`, as the cokernel of the
+`R`-linear map `Hom(N', B) → Hom(N, B)` between `Hom` spaces of `ModuleCat A`. -/
+noncomputable def covariantDefectEquivHomQuotient {N N' : ModuleCat.{t} A} (f : N ⟶ N') :
+    covariantDefect R f.hom W ≃ₗ[R] ((N ⟶ B) ⧸ LinearMap.range (Linear.leftComp R B f)) :=
+  Submodule.Quotient.equiv _ _ (homLinearEquivOfLinearEquiv R eW N).symm (by
+    rw [← LinearMap.range_comp, homLinearEquivOfLinearEquiv_symm_comp_lcomp,
       LinearMap.range_comp_of_range_eq_top _ (LinearEquiv.range _)])
 
-/-- The class of `u : N → D Tr X` in the covariant defect is the class of the morphism `u`. -/
+/-- The class of `u : N → W` in the covariant defect is the class of the morphism `eW ∘ u`. -/
 @[simp]
-theorem covariantDefectEquivHomQuotient_mk {N N' : ModuleCat.{max u v w} A} (f : N ⟶ N')
-    (u : N →ₗ[A] MatlisDual R E (AuslanderReitenTranspose P.p)) :
-    covariantDefectEquivHomQuotient R E P f (Submodule.Quotient.mk u) =
-      Submodule.Quotient.mk ((matlisDualTransposeHomEquiv R E P N).symm u) :=
+theorem covariantDefectEquivHomQuotient_mk {N N' : ModuleCat.{t} A} (f : N ⟶ N')
+    (u : N →ₗ[A] W) :
+    covariantDefectEquivHomQuotient R eW f (Submodule.Quotient.mk u) =
+      Submodule.Quotient.mk (ofHom (eW.toLinearMap ∘ₗ u)) :=
   (rfl)
 
 section Injective
 
-variable {N N' : ModuleCat.{max u v w} A} (e : (ExactStructure.abelian _).Extension N' N)
+variable {N N' : ModuleCat.{t} A} (e : (ExactStructure.abelian _).Extension N' N)
   (he : (ExactStructure.abelian _).isInjective e.obj)
 
-/-- **The covariant defect at `τX` is costable `Hom`.** For a short exact sequence `N ⟶ I ⟶ N'`
-with `I` injective, the cokernel of `Hom_A(I, τX) → Hom_A(N, τX)` is `(A/ℐ)(N, τX)`. -/
+/-- **The covariant defect is costable `Hom`.** For a short exact sequence `N ⟶ I ⟶ N'` with `I`
+injective, the cokernel of `Hom_A(I, W) → Hom_A(N, W)` is `(A/ℐ)(N, B)`. -/
 noncomputable def covariantDefectEquivCostableHom :
-    covariantDefect R e.f.hom (MatlisDual R E (AuslanderReitenTranspose P.p)) ≃ₗ[R]
+    covariantDefect R e.f.hom W ≃ₗ[R]
       ((ExactStructure.abelian _).injectivelyTrivialIdeal.quotientFunctor.obj N ⟶
-        (ExactStructure.abelian _).injectivelyTrivialIdeal.quotientFunctor.obj
-          (matlisDualTranspose R E P)) :=
-  covariantDefectEquivHomQuotient R E P e.f ≪≫ₗ e.homQuotientEquivCostableHom he R _
+        (ExactStructure.abelian _).injectivelyTrivialIdeal.quotientFunctor.obj B) :=
+  covariantDefectEquivHomQuotient R eW e.f ≪≫ₗ e.homQuotientEquivCostableHom he R _
 
-/-- The class of `u : N → D Tr X` in the covariant defect is the class of `u` modulo `ℐ`. -/
+/-- The class of `u : N → W` in the covariant defect is the class of `eW ∘ u` modulo `ℐ`. -/
 @[simp]
-theorem covariantDefectEquivCostableHom_mk
-    (u : N →ₗ[A] MatlisDual R E (AuslanderReitenTranspose P.p)) :
-    covariantDefectEquivCostableHom R E P e he (Submodule.Quotient.mk u) =
+theorem covariantDefectEquivCostableHom_mk (u : N →ₗ[A] W) :
+    covariantDefectEquivCostableHom R eW e he (Submodule.Quotient.mk u) =
       (ExactStructure.abelian _).injectivelyTrivialIdeal.quotientFunctor.map
-        ((matlisDualTransposeHomEquiv R E P N).symm u) := by
+        (ofHom (eW.toLinearMap ∘ₗ u)) := by
   simp [covariantDefectEquivCostableHom]
 
 end Injective
 
 section Projective
 
-variable {M K : ModuleCat.{max u v w} A} (e : (ExactStructure.abelian _).Extension M K)
+variable {M K : ModuleCat.{t} A} (e : (ExactStructure.abelian _).Extension M K)
   (he : (ExactStructure.abelian _).isProjective e.obj)
 
-/-- **The covariant defect at `τX` is `Ext¹`.** For a short exact sequence `K ⟶ P ⟶ M` with `P`
-projective, the cokernel of `Hom_A(P, τX) → Hom_A(K, τX)` is `Ext¹(M, τX)`, through
-`v ↦ v_* [K ⟶ P ⟶ M]`. -/
+/-- **The covariant defect is `Ext¹`.** For a short exact sequence `K ⟶ P ⟶ M` with `P` projective,
+the cokernel of `Hom_A(P, W) → Hom_A(K, W)` is `Ext¹(M, B)`, through `v ↦ v_* [K ⟶ P ⟶ M]`. -/
 noncomputable def covariantDefectEquivExt1 :
-    covariantDefect R e.f.hom (MatlisDual R E (AuslanderReitenTranspose P.p)) ≃ₗ[R]
-      (ExactStructure.abelian _).Ext1 M (matlisDualTranspose R E P) :=
-  covariantDefectEquivHomQuotient R E P e.f ≪≫ₗ e.homQuotientEquivExt1OfIsProjective he R _
+    covariantDefect R e.f.hom W ≃ₗ[R] (ExactStructure.abelian _).Ext1 M B :=
+  covariantDefectEquivHomQuotient R eW e.f ≪≫ₗ e.homQuotientEquivExt1OfIsProjective he R _
 
-/-- The class of `v : K → τX` in the covariant defect is the cobase change `v_* [K ⟶ P ⟶ M]`. -/
+/-- The class of `v : K → W` in the covariant defect is the cobase change of `[K ⟶ P ⟶ M]` along
+`eW ∘ v`. -/
 @[simp]
-theorem covariantDefectEquivExt1_mk (v : K →ₗ[A] MatlisDual R E (AuslanderReitenTranspose P.p)) :
-    covariantDefectEquivExt1 R E P e he (Submodule.Quotient.mk v) =
-      (Ext1.mk e).pushout ((matlisDualTransposeHomEquiv R E P K).symm v) := by
+theorem covariantDefectEquivExt1_mk (v : K →ₗ[A] W) :
+    covariantDefectEquivExt1 R eW e he (Submodule.Quotient.mk v) =
+      (Ext1.mk e).pushout (ofHom (eW.toLinearMap ∘ₗ v)) := by
   simp [covariantDefectEquivExt1]
 
-/-- **Naturality of the covariant defect at `τX` in the sequence.** For a morphism `(a₁, a₂, f)`
+/-- **Naturality of the covariant defect as `Ext¹` in the sequence.** For a morphism `(a₁, a₂, f)`
 from `K ⟶ P ⟶ M` to `K' ⟶ P' ⟶ M'`, precomposition with `a₁` on defects is base change along
 `f`. -/
-theorem covariantDefectEquivExt1_map {M' K' : ModuleCat.{max u v w} A}
+theorem covariantDefectEquivExt1_map {M' K' : ModuleCat.{t} A}
     (e' : (ExactStructure.abelian _).Extension M' K')
     (he' : (ExactStructure.abelian _).isProjective e'.obj) {a₁ : K ⟶ K'} {a₂ : e.obj ⟶ e'.obj}
     {f : M ⟶ M'} (h₁ : e.f ≫ a₂ = a₁ ≫ e'.f) (h₂ : e.g ≫ f = a₂ ≫ e'.g)
-    (y : covariantDefect R e'.f.hom (MatlisDual R E (AuslanderReitenTranspose P.p))) :
-    covariantDefectEquivExt1 R E P e he
+    (y : covariantDefect R e'.f.hom W) :
+    covariantDefectEquivExt1 R eW e he
         (covariantDefectMap R (φ := e.f.hom) (φ' := e'.f.hom) (a₁ := a₁.hom) (a₂ := a₂.hom)
-          (congrArg Hom.hom h₁) _ y) =
-      (covariantDefectEquivExt1 R E P e' he' y).pullback f := by
+          (congrArg Hom.hom h₁) W y) =
+      (covariantDefectEquivExt1 R eW e' he' y).pullback f := by
   induction y using Submodule.Quotient.induction_on with
   | _ v =>
     rw [covariantDefectMap_mk, covariantDefectEquivExt1_mk, covariantDefectEquivExt1_mk,
       Ext1.pushout_pullback, ← Ext1.pushout_mk_eq_pullback_mk a₂ h₁ h₂.symm, Ext1.pushout_pushout]
     congr 1
-    ext
-    simp
-    rfl
 
-/-- **Naturality of the covariant defect at `τX` in the presented module.** For a lift `(t₀, t₁)`
-of a map `X → X'` to the presentations, postcomposition with `D Tr(t)` on defects is cobase
-change along `D Tr(t) : τX → τX'`. -/
-theorem covariantDefectEquivExt1_homCokernelMap {X' : ModuleCat.{max u v w} A}
-    (P' : FiniteProjectivePresentation X') {t₀ : P.P₀ →ₗ[A] P'.P₀} {t₁ : P.P₁ →ₗ[A] P'.P₁}
-    (ht₁ : t₀ ∘ₗ P.p = P'.p ∘ₗ t₁)
-    (y : covariantDefect R e.f.hom (MatlisDual R E (AuslanderReitenTranspose P.p))) :
-    covariantDefectEquivExt1 R E P' e he
-        (homCokernelMap R e.f.hom (MatlisDual.mapOp (AuslanderReitenTranspose.map t₀ t₁ ht₁)) y) =
-      (covariantDefectEquivExt1 R E P e he y).pushout (matlisDualTransposeMap R E P P' ht₁) := by
+/-- **Naturality of the covariant defect as `Ext¹` in the test module.** For `g : W → W'` and
+`W' ≃ B'`, postcomposition with `g` on defects is cobase change along the induced `B ⟶ B'`. -/
+theorem covariantDefectEquivExt1_homCokernelMap {W' : Type t} [AddCommGroup W'] [Module A W']
+    [Module R W'] [IsScalarTower R A W'] {B' : ModuleCat.{t} A} (eW' : W' ≃ₗ[A] B')
+    (g : W →ₗ[A] W') (y : covariantDefect R e.f.hom W) :
+    covariantDefectEquivExt1 R eW' e he (homCokernelMap R e.f.hom g y) =
+      (covariantDefectEquivExt1 R eW e he y).pushout
+        (ofHom (eW'.toLinearMap ∘ₗ g ∘ₗ eW.symm.toLinearMap)) := by
   induction y using Submodule.Quotient.induction_on with
   | _ v =>
     rw [homCokernelMap_mk, covariantDefectEquivExt1_mk, covariantDefectEquivExt1_mk,
       Ext1.pushout_pushout]
     congr 1
-    ext x
-    refine (MatlisDual.equivLinearMap R E _).injective (LinearMap.ext fun y ↦ ?_)
-    simp only [LinearMap.comp_apply, matlisDualTransposeHomEquiv_symm_apply, hom_comp,
-      MatlisDual.mapOp_apply]
-    exact (matlisDualTransposeMap_apply R E P P' ht₁ (v x) y).symm
+    ext
+    simp
 
 end Projective
 
-end Translate
+end Covariant
 
 end ModuleCat
