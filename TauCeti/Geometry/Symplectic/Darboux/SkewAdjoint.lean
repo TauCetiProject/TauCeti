@@ -9,8 +9,8 @@ public import Mathlib.Algebra.Lie.SkewAdjoint
 public import Mathlib.LinearAlgebra.Eigenspace.Semisimple
 public import TauCeti.Geometry.Symplectic.Darboux.Basis
 
-import Mathlib.LinearAlgebra.Eigenspace.Pi
 import TauCeti.LinearAlgebra.BilinearForm.SymplecticBasis
+import TauCeti.LinearAlgebra.Eigenspace.JointEigenvector.Basic
 import TauCeti.LinearAlgebra.SesquilinearForm.AdjointPair
 
 /-!
@@ -72,12 +72,8 @@ theorem exists_isDarbouxBasis_forall_apply_eq_smul_of_skewAdjoint [FiniteDimensi
       f i v = χ i • v :=
     Module.End.mem_eigenspace_iff.1 ((Submodule.mem_iInf _).1 hv i)
   -- The family is simultaneously diagonalizable: its joint eigenspaces span `V`.
-  have heq (i : ι) (μ : ℝ) : (f i).maxGenEigenspace μ = (f i).eigenspace μ :=
-    (hss i).isFinitelySemisimple.maxGenEigenspace_eq_eigenspace μ
-  have hspan : ⨆ χ : ι → ℝ, ⨅ i, (f i).eigenspace (χ i) = ⊤ := by
-    simpa only [heq] using
-      Module.End.iSup_iInf_maxGenEigenspace_eq_top_of_iSup_maxGenEigenspace_eq_top_of_commute f
-        hcomm hsplit
+  have hspan := iSup_iInf_eigenspace_eq_top_of_iSup_eigenspace_eq_top f hcomm fun i ↦
+    (hss i).iSup_maxGenEigenspace_eq_top_iff.1 (hsplit i)
   -- `ω` pairs the joint eigenspaces for `χ` and `ψ` trivially unless `ψ = -χ`.
   have horth {χ ψ : ι → ℝ} {v w : V} (hv : v ∈ ⨅ i, (f i).eigenspace (χ i))
       (hw : w ∈ ⨅ i, (f i).eigenspace (ψ i)) (hvw : ω v w ≠ 0) : ψ = -χ :=
