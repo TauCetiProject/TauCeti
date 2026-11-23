@@ -64,7 +64,7 @@ theorem intersectionNumber_pullback (L M : InvertibleSheaf X) :
 
 include H in
 /-- Numerical equivalence after extension of the ground field implies numerical equivalence
-before extension: test the equality upstairs against each pullback class. -/
+before extension. -/
 theorem NumericallyEquivalent.of_pullback {a b : LineBundleClass X}
     (h : NumericallyEquivalent K Y (LineBundleClass.pullback g a) (LineBundleClass.pullback g b)) :
     NumericallyEquivalent k X a b := by
