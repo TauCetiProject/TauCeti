@@ -54,7 +54,8 @@ with `a > 1/4`, is at most `C * (n + 1)^d * t^(2 * k n)`; the bound need not hol
 The scale `0 < t < r`, the constants `B`, `C`, `d` and the orders `k n` may depend on `r`. The
 orders satisfy `k n ≥ B * log (n + 1)` eventually and `2 * B * log (r/t) > d+1`. At `v = 1` the
 limits are `2` and `-2`. -/
-theorem ae_tendsto_extreme_eigenvalues₀_wignerMatrix_of_integral_re_trace_pow_two_mul_le
+theorem
+    ae_tendsto_eigenvalues₀_zero_and_card_sub_one_wignerMatrix_of_integral_re_trace_pow_two_mul_le
     (hind : iIndepFun ξ P) (hid : ∀ ij, IdentDistrib (ξ ij) X P Q)
     (hξ : MemLp X 4 Q) (hmean : ∫ ω, X ω ∂Q = 0) {v : ℝ≥0} (hvar : ∫ ω, ‖X ω‖ ^ 2 ∂Q = v)
     (hd : ∀ i, IdentDistrib (η i) Y P S) (hη : MemLp Y 2 S)
