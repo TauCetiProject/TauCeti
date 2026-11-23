@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Manifold.Boundary.Orientation
 public import TauCeti.Geometry.Manifold.Boundary.TangentSpace
 public import TauCeti.Geometry.Manifold.Riemannian.Gradient.Unit
 public import TauCeti.Geometry.Manifold.Riemannian.Immersion.NormalBundle
@@ -26,9 +25,10 @@ exactly one of them points outward. This is the **outward unit normal**
 (`TauCeti.orthogonalNormalSpace_subtypeVal_boundary_eq_span`).
 
 It is the unit gradient of `-x⁰`, for the normal coordinate `x⁰` of the preferred half-space chart
-at `q`. The same formula holds with the normal coordinate of every preferred chart whose source
-contains `q` (`TauCeti.outwardUnitNormal_eq_normalize_mgradient`): the gradient of such an `x⁰` is
-orthogonal to the boundary, since `x⁰` vanishes along it, and has positive normal coordinate.
+at `q`: that gradient is orthogonal to the boundary, since `x⁰` vanishes along it, and has
+positive normal coordinate. The same formula holds with the normal coordinate of every chart of the
+`C¹` maximal atlas whose source contains `q` (`TauCeti.outwardUnitNormal_eq_normalize_mgradient`),
+since at `q` the differentials of two such normal coordinates are positive multiples of each other.
 Because the unit gradient of a function with nonvanishing differential is as regular as the metric
 (`TauCeti.Manifold.contMDiffAt_normalize_mgradient`), this local formula makes `q ↦ (q, ν(q))` a
 `C^k` map `∂M → TM` for a `C^k` metric on a `C^(k + 1)` manifold
@@ -52,7 +52,8 @@ directions, boundary defining functions and the second fundamental form are read
   `TauCeti.inner_outwardUnitNormal_mfderiv_subtypeVal`: its three defining laws.
 * `TauCeti.eq_outwardUnitNormal_iff`: the three laws characterize it.
 * `TauCeti.orthogonalNormalSpace_subtypeVal_boundary_eq_span`: it spans the normal space.
-* `TauCeti.outwardUnitNormal_eq_normalize_mgradient`: its formula in any preferred chart.
+* `TauCeti.outwardUnitNormal_eq_normalize_mgradient`: its formula in any chart of the `C¹` maximal
+  atlas.
 * `TauCeti.contMDiff_outwardUnitNormal`: it is a `C^k` map `∂M → TM` for a `C^k` metric.
 * `TauCeti.exists_halfSpaceOutwardUnitNormal`: a smooth field along the boundary satisfying the
   three laws exists.
@@ -233,15 +234,24 @@ theorem eq_outwardUnitNormal_iff {q : (𝓡∂ (n + 1)).boundary M}
   ⟨fun hv ↦ hv ▸ isOutwardUnitNormal_outwardUnitNormal q,
     fun hv ↦ eq_of_isOutwardUnitNormal hv (isOutwardUnitNormal_outwardUnitNormal q)⟩
 
-/-- **The outward unit normal in a chart**: for every preferred chart whose source contains the
-boundary point `q`, the outward unit normal at `q` is the unit gradient of minus the normal
-coordinate `x⁰` of that chart. -/
-theorem outwardUnitNormal_eq_normalize_mgradient {α : M} {q : (𝓡∂ (n + 1)).boundary M}
-    (hq : (q : M) ∈ (chartAt (EuclideanHalfSpace (n + 1)) α).source) :
+/-- **The outward unit normal in a chart**: for every chart of the `C¹` maximal atlas whose source
+contains the boundary point `q`, the outward unit normal at `q` is the unit gradient of minus the
+normal coordinate `x⁰` of that chart. -/
+theorem outwardUnitNormal_eq_normalize_mgradient
+    {e : OpenPartialHomeomorph M (EuclideanHalfSpace (n + 1))}
+    (he : e ∈ IsManifold.maximalAtlas (𝓡∂ (n + 1)) 1 M) {q : (𝓡∂ (n + 1)).boundary M}
+    (hq : (q : M) ∈ e.source) :
     outwardUnitNormal q = NormedSpace.normalize (Manifold.mgradient (𝓡∂ (n + 1))
-      (fun y ↦ -(chartAt (EuclideanHalfSpace (n + 1)) α y).val 0) q) :=
-  (eq_outwardUnitNormal_iff.mpr
-    (isOutwardUnitNormal_normalize_mgradient_neg_chartAt_normal hq)).symm
+      (fun y ↦ -(e y).val 0) q) := by
+  -- The differential of the normal coordinate of `e` is a positive multiple of that of the
+  -- preferred chart at `q`, and so are the gradients of minus these coordinates.
+  obtain ⟨a, ha, h⟩ := exists_pos_mvfderiv_normal_eq_smul he
+    (IsManifold.chart_mem_maximalAtlas (q : M)) q.property hq (mem_chart_source _ _)
+  have hneg (g : M → ℝ) : Manifold.mgradient (𝓡∂ (n + 1)) (fun y ↦ -g y) q =
+      -Manifold.mgradient (𝓡∂ (n + 1)) g q :=
+    Manifold.mgradient_neg
+  rw [hneg, Manifold.mgradient_def, h, map_smul, ← smul_neg, ← Manifold.mgradient_def, ← hneg,
+    NormedSpace.normalize_smul_of_pos ha, outwardUnitNormal]
 
 /-! ### Regularity -/
 
@@ -269,7 +279,8 @@ theorem contMDiff_outwardUnitNormal {k : ℕ∞ω} [IsManifold (𝓡∂ (n + 1))
   filter_upwards [continuous_subtypeVal.continuousAt.preimage_mem_nhds
     ((chartAt (EuclideanHalfSpace (n + 1)) (q₀ : M)).open_source.mem_nhds
       (mem_chart_source _ _))] with q hq
-  simp only [Function.comp_apply, outwardUnitNormal_eq_normalize_mgradient hq, ψ]
+  simp only [Function.comp_apply,
+    outwardUnitNormal_eq_normalize_mgradient (IsManifold.chart_mem_maximalAtlas _) hq, ψ]
 
 /-- **Existence of the outward unit normal**: along the boundary of a smooth Riemannian manifold
 modelled on the half-space there is a smooth field of unit vectors that point outward and are

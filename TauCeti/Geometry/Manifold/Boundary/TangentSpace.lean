@@ -271,16 +271,15 @@ theorem frontier_setOf_isOutwardPointing_neg (q : (𝓡∂ (n + 1)).boundary M) 
   ext v
   exact mem_boundaryTangentSpace_iff_proj.symm
 
-/-- A function differentiable at a boundary point `q`, with a local minimum and nonzero
-differential there, has differential vanishing exactly on the tangent space of the boundary. -/
+/-- A function with a local minimum and nonzero differential at a boundary point `q` has
+differential vanishing exactly on the tangent space of the boundary. -/
 theorem mvfderiv_eq_zero_iff_mem_boundaryTangentSpace_of_isLocalMin {f : M → ℝ}
     {q : (𝓡∂ (n + 1)).boundary M} (hmin : IsLocalMin f q)
-    (hf : MDifferentiableAt (𝓡∂ (n + 1)) 𝓘(ℝ) f q)
     (hne : mvfderiv (𝓡∂ (n + 1)) f q ≠ 0) (v : TangentSpace (𝓡∂ (n + 1)) (q : M)) :
     mvfderiv (𝓡∂ (n + 1)) f q v = 0 ↔ v ∈ boundaryTangentSpace q := by
   rw [mem_boundaryTangentSpace_iff_not_isOutwardPointing_and_not_isOutwardPointing_neg,
-    isOutwardPointing_iff_mvfderiv_neg_of_isLocalMin q.property hmin hf hne,
-    isOutwardPointing_neg_iff_mvfderiv_pos_of_isLocalMin q.property hmin hf hne, not_lt, not_lt]
+    isOutwardPointing_iff_mvfderiv_neg_of_isLocalMin q.property hmin hne,
+    isOutwardPointing_neg_iff_mvfderiv_pos_of_isLocalMin q.property hmin hne, not_lt, not_lt]
   exact ⟨fun h ↦ ⟨h.ge, h.le⟩, fun h ↦ le_antisymm h.2 h.1⟩
 
 /-- The velocity at `t` of a curve `c` with `c t ∈ ∂M` is tangent to the boundary. (Without

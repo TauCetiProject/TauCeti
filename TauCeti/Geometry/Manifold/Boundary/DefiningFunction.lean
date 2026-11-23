@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Geometry.Manifold.PartitionOfUnity
 public import TauCeti.Geometry.Manifold.Boundary.TangentSpace
-public import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
+import TauCeti.Geometry.Manifold.MFDeriv.IsInvertible
 
 /-!
 # Boundary defining functions
@@ -17,17 +17,19 @@ on an open set `U ⊆ M` (`TauCeti.IsBoundaryDefiningFunctionOn`) is a function 
 smooth on `U`, positive at the interior points of `U`, zero at the boundary points of `U`, with
 nonzero differential at the boundary points of `U`. The normal coordinate `x⁰` of a chart of the
 maximal atlas is one on the chart source (`TauCeti.isBoundaryDefiningFunctionOn_normal`), so
-boundary defining functions exist locally. On a Hausdorff σ-compact smooth manifold a smooth
-partition of unity glues local ones into a global boundary defining function
-(`TauCeti.exists_isBoundaryDefiningFunctionOn_univ`): at a boundary point `q` the glued
-differential is `∑ φ_i(q) dρ_i`, a convex combination of forms that are positive on the inward
-vectors.
+boundary defining functions exist locally. A smooth partition of unity `φ` subordinate to the
+domains of boundary defining functions `ρ i` glues them into the global boundary defining function
+`∑ᶠ i, φ i • ρ i` (`TauCeti.isBoundaryDefiningFunctionOn_finsum_smul`): at a boundary point `q`
+the glued differential is `∑ φ_i(q) dρ_i`, a convex combination of forms that are positive on the
+inward vectors. A Hausdorff σ-compact smooth manifold has such partitions of unity, hence a global
+boundary defining function (`TauCeti.exists_isBoundaryDefiningFunctionOn_univ`).
 
 A boundary defining function has a local minimum at each boundary point of its domain, so by
 Fermat's theorem at a boundary point (`TauCeti.isOutwardPointing_iff_mvfderiv_neg_of_isLocalMin`,
 in `Boundary/Orientation.lean`) the sign of its differential at a boundary point `q` detects the
-three kinds of tangent vectors: `dρ_q v` is negative exactly on the outward vectors, zero exactly
-on the tangent space `T_q∂M` of the boundary and positive exactly on the inward vectors. Since
+three kinds of tangent vectors: `dρ_q v` is strictly negative exactly on the outward vectors, zero
+exactly on the tangent space `T_q∂M` of the boundary and strictly positive exactly on the inward
+vectors. Since
 local diffeomorphisms preserve interior and boundary points, boundary defining functions pull back
 along them (`TauCeti.IsBoundaryDefiningFunctionOn.comp_isLocalDiffeomorph`).
 
@@ -41,7 +43,7 @@ along them (`TauCeti.IsBoundaryDefiningFunctionOn.comp_isLocalDiffeomorph`).
   `TauCeti.IsBoundaryDefiningFunctionOn.ker_mvfderiv`: the sign test.
 * `TauCeti.isBoundaryDefiningFunctionOn_normal`: local existence, from the normal coordinate of a
   chart.
-* `TauCeti.exists_isBoundaryDefiningFunctionOn_univ_of_iUnion_eq` and
+* `TauCeti.isBoundaryDefiningFunctionOn_finsum_smul` and
   `TauCeti.exists_isBoundaryDefiningFunctionOn_univ`: gluing and global existence.
 * `TauCeti.IsBoundaryDefiningFunctionOn.mono`, `TauCeti.IsBoundaryDefiningFunctionOn.congr`,
   `TauCeti.IsBoundaryDefiningFunctionOn.comp_isLocalDiffeomorph` and
@@ -124,21 +126,21 @@ theorem mdifferentiableAt (hρ : IsBoundaryDefiningFunctionOn n ρ U) {x : M} (h
   ((hρ.contMDiffOn x hx).contMDiffAt (hρ.isOpen.mem_nhds hx)).mdifferentiableAt
     (by simp)
 
-/-- **Sign test.** At a boundary point of its domain, a boundary defining function decreases
-exactly along the outward vectors. -/
+/-- **Sign test.** At a boundary point `q` of its domain, a boundary defining function `ρ` has
+`dρ_q v` strictly negative exactly for the outward vectors `v`. -/
 theorem isOutwardPointing_iff_mvfderiv_neg (hρ : IsBoundaryDefiningFunctionOn n ρ U) {q : M}
     (hqU : q ∈ U) (hq : q ∈ (𝓡∂ (n + 1)).boundary M) (v : TangentSpace (𝓡∂ (n + 1)) q) :
     IsOutwardPointing q v ↔ mvfderiv (𝓡∂ (n + 1)) ρ q v < 0 :=
   isOutwardPointing_iff_mvfderiv_neg_of_isLocalMin hq (hρ.isLocalMin hqU hq)
-    (hρ.mdifferentiableAt hqU) (hρ.mvfderiv_ne_zero q hqU hq) v
+    (hρ.mvfderiv_ne_zero q hqU hq) v
 
-/-- **Sign test.** At a boundary point of its domain, a boundary defining function increases
-exactly along the inward vectors. -/
+/-- **Sign test.** At a boundary point `q` of its domain, a boundary defining function `ρ` has
+`dρ_q v` strictly positive exactly for the inward vectors `v`, those with `-v` outward. -/
 theorem isOutwardPointing_neg_iff_mvfderiv_pos (hρ : IsBoundaryDefiningFunctionOn n ρ U) {q : M}
     (hqU : q ∈ U) (hq : q ∈ (𝓡∂ (n + 1)).boundary M) (v : TangentSpace (𝓡∂ (n + 1)) q) :
     IsOutwardPointing q (-v) ↔ 0 < mvfderiv (𝓡∂ (n + 1)) ρ q v :=
   isOutwardPointing_neg_iff_mvfderiv_pos_of_isLocalMin hq (hρ.isLocalMin hqU hq)
-    (hρ.mdifferentiableAt hqU) (hρ.mvfderiv_ne_zero q hqU hq) v
+    (hρ.mvfderiv_ne_zero q hqU hq) v
 
 /-- At a boundary point of its domain, the differential of a boundary defining function vanishes
 exactly on the tangent space of the boundary. -/
@@ -146,7 +148,7 @@ theorem mvfderiv_eq_zero_iff (hρ : IsBoundaryDefiningFunctionOn n ρ U)
     {q : (𝓡∂ (n + 1)).boundary M} (hqU : (q : M) ∈ U) (v : TangentSpace (𝓡∂ (n + 1)) (q : M)) :
     mvfderiv (𝓡∂ (n + 1)) ρ q v = 0 ↔ v ∈ boundaryTangentSpace q :=
   mvfderiv_eq_zero_iff_mem_boundaryTangentSpace_of_isLocalMin (hρ.isLocalMin hqU q.property)
-    (hρ.mdifferentiableAt hqU) (hρ.mvfderiv_ne_zero q hqU q.property) v
+    (hρ.mvfderiv_ne_zero q hqU q.property) v
 
 /-- At a boundary point of its domain, the kernel of the differential of a boundary defining
 function is the tangent space of the boundary. -/
@@ -190,8 +192,10 @@ theorem comp_isLocalDiffeomorph {M' : Type*} [TopologicalSpace M']
   pos x hx hint := hρ.pos (f x) hx (by rwa [← mem_preimage, hf.preimage_interior (by simp)])
   eq_zero x hx hb :=
     hρ.eq_zero (f x) hx (by rwa [← mem_preimage, hf.preimage_boundary (by simp)])
-  mvfderiv_ne_zero x hx hb := (hf x).mvfderiv_comp_ne_zero (by simp) (hρ.mdifferentiableAt hx)
-    (hρ.mvfderiv_ne_zero (f x) hx (by rwa [← mem_preimage, hf.preimage_boundary (by simp)]))
+  mvfderiv_ne_zero x hx hb :=
+    mt (mvfderiv_comp_eq_zero_iff_of_isInvertible (hρ.mdifferentiableAt hx)
+      ((hf x).isInvertible_mfderiv (by simp))).mp
+      (hρ.mvfderiv_ne_zero (f x) hx (by rwa [← mem_preimage, hf.preimage_boundary (by simp)]))
 
 /-- A boundary defining function pulls back along a smooth diffeomorphism `Φ` of manifolds with
 boundary to a boundary defining function on the preimage of its domain. -/
@@ -234,8 +238,9 @@ theorem isBoundaryDefiningFunctionOn_one {U : Set M} (hU : IsOpen U)
 
 /-- The differential at a boundary point `q` of the sum `∑ᶠ i, φ i • ρ i`, for a smooth partition
 of unity `φ` subordinate to the domains of boundary defining functions `ρ i`, is positive on the
-inward vectors: it is `∑ i, φ i q • dρ_i`, since every `ρ i` with `q` in the support of `φ i`
-vanishes at `q`. -/
+inward vectors: it is the finite sum `∑ i, φ i q • dρ_i` over the indices `i` with `q` in the
+topological support (the closure of the support) of `φ i`, since every such `ρ i` vanishes at
+`q`. -/
 private theorem mvfderiv_finsum_smul_pos {ι : Type*}
     {U : ι → Set M} {ρ : ι → M → ℝ} (hρ : ∀ i, IsBoundaryDefiningFunctionOn n (ρ i) (U i))
     {φ : SmoothPartitionOfUnity ι (𝓡∂ (n + 1)) M univ} (hφ : φ.IsSubordinate U) {q : M}
@@ -244,7 +249,7 @@ private theorem mvfderiv_finsum_smul_pos {ι : Type*}
     0 < mvfderiv (𝓡∂ (n + 1)) (fun x ↦ ∑ᶠ i, φ i x • ρ i x) q v := by
   have hU {i : ι} (hi : i ∈ φ.fintsupport q) : q ∈ U i :=
     hφ i ((φ.mem_fintsupport_iff q i).mp hi)
-  -- Near `q` the sum runs over the finite set of `i` with `q` in the support of `φ i`.
+  -- Near `q` the sum runs over the finite set of `i` with `q` in the topological support of `φ i`.
   have heq : (fun x ↦ ∑ᶠ i, φ i x • ρ i x) =ᶠ[𝓝 q]
       fun x ↦ ∑ i ∈ φ.fintsupport q, φ i x • ρ i x := by
     filter_upwards [φ.eventually_fintsupport_subset q] with y hy
@@ -269,17 +274,14 @@ private theorem mvfderiv_finsum_smul_pos {ι : Type*}
     ((((hρ i).isOutwardPointing_neg_iff_mvfderiv_pos (hU hi) hq v).mp hv).le))
     ⟨j, hjF, mul_pos hj (((hρ j).isOutwardPointing_neg_iff_mvfderiv_pos (hU hjF) hq v).mp hv)⟩
 
-/-- **Gluing.** If boundary defining functions on open sets cover a Hausdorff σ-compact smooth
-manifold, then gluing them with a smooth partition of unity gives a global boundary defining
-function. -/
-theorem exists_isBoundaryDefiningFunctionOn_univ_of_iUnion_eq [IsManifold (𝓡∂ (n + 1)) ∞ M]
-    [T2Space M] [SigmaCompactSpace M] {ι : Type*} {U : ι → Set M} {ρ : ι → M → ℝ}
-    (hρ : ∀ i, IsBoundaryDefiningFunctionOn n (ρ i) (U i)) (hU : ⋃ i, U i = univ) :
-    ∃ ρ' : M → ℝ, IsBoundaryDefiningFunctionOn n ρ' univ := by
-  obtain ⟨φ, hφ⟩ := SmoothPartitionOfUnity.exists_isSubordinate (I := 𝓡∂ (n + 1)) isClosed_univ U
-    (fun i ↦ (hρ i).isOpen) hU.ge
+/-- **Gluing.** For a smooth partition of unity `φ` on `M` subordinate to the domains of boundary
+defining functions `ρ i`, the sum `∑ᶠ i, φ i • ρ i` is a global boundary defining function. -/
+theorem isBoundaryDefiningFunctionOn_finsum_smul {ι : Type*} {U : ι → Set M} {ρ : ι → M → ℝ}
+    (hρ : ∀ i, IsBoundaryDefiningFunctionOn n (ρ i) (U i))
+    {φ : SmoothPartitionOfUnity ι (𝓡∂ (n + 1)) M univ} (hφ : φ.IsSubordinate U) :
+    IsBoundaryDefiningFunctionOn n (fun x ↦ ∑ᶠ i, φ i x • ρ i x) univ := by
   have hmem {i : ι} {x : M} (hx : φ i x ≠ 0) : x ∈ U i := hφ i (subset_tsupport _ hx)
-  refine ⟨fun x ↦ ∑ᶠ i, φ i x • ρ i x, isOpen_univ,
+  refine ⟨isOpen_univ,
     (hφ.contMDiff_finsum_smul (fun i ↦ (hρ i).isOpen) fun i ↦ (hρ i).contMDiffOn).contMDiffOn,
     fun x _ hx ↦ ?_, fun x _ hx ↦ ?_, fun q _ hq h0 ↦ ?_⟩
   · exact φ.finsum_smul_mem_convex (g := ρ) (mem_univ x) (fun i hi ↦ (hρ i).pos x (hmem hi) hx)
@@ -296,23 +298,26 @@ instance a Hausdorff second-countable one, has a global boundary defining functi
 theorem exists_isBoundaryDefiningFunctionOn_univ [IsManifold (𝓡∂ (n + 1)) ∞ M] [T2Space M]
     [SigmaCompactSpace M] : ∃ ρ : M → ℝ, IsBoundaryDefiningFunctionOn n ρ univ := by
   classical
+  -- Glue the normal coordinates of the preferred charts at boundary points and the constant `1`
+  -- on the interior.
   let U : M → Set M := fun x ↦ if x ∈ (𝓡∂ (n + 1)).boundary M then
     (chartAt (EuclideanHalfSpace (n + 1)) x).source else (𝓡∂ (n + 1)).interior M
   let ρ : M → M → ℝ := fun x ↦ if x ∈ (𝓡∂ (n + 1)).boundary M then
     (fun y ↦ (chartAt (EuclideanHalfSpace (n + 1)) x y).val 0) else fun _ ↦ 1
-  -- Glue the normal coordinates of the preferred charts at boundary points and the constant `1`
-  -- on the interior.
-  refine exists_isBoundaryDefiningFunctionOn_univ_of_iUnion_eq (U := U) (ρ := ρ) (fun x ↦ ?_)
-    (eq_univ_of_forall fun x ↦ mem_iUnion.mpr ⟨x, ?_⟩)
-  · by_cases hx : x ∈ (𝓡∂ (n + 1)).boundary M
+  have hρ (x : M) : IsBoundaryDefiningFunctionOn n (ρ x) (U x) := by
+    by_cases hx : x ∈ (𝓡∂ (n + 1)).boundary M
     · simpa only [U, ρ, hx, ↓reduceIte] using
         isBoundaryDefiningFunctionOn_normal (IsManifold.chart_mem_maximalAtlas x)
     · simpa only [U, ρ, hx, ↓reduceIte] using isBoundaryDefiningFunctionOn_one
         ((𝓡∂ (n + 1)).isOpen_interior (M := M) (n := ∞) (by simp)) subset_rfl
-  · by_cases hx : x ∈ (𝓡∂ (n + 1)).boundary M
+  have hU : univ ⊆ ⋃ x, U x := fun x _ ↦ mem_iUnion.mpr ⟨x, by
+    by_cases hx : x ∈ (𝓡∂ (n + 1)).boundary M
     · simpa only [U, hx, ↓reduceIte] using mem_chart_source _ x
     · simp only [U, hx, ↓reduceIte]
       rw [← ModelWithCorners.compl_boundary]
-      exact hx
+      exact hx⟩
+  obtain ⟨φ, hφ⟩ := SmoothPartitionOfUnity.exists_isSubordinate (I := 𝓡∂ (n + 1)) isClosed_univ U
+    (fun x ↦ (hρ x).isOpen) hU
+  exact ⟨_, isBoundaryDefiningFunctionOn_finsum_smul hρ hφ⟩
 
 end TauCeti

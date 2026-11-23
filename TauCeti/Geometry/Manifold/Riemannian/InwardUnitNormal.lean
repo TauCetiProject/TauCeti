@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.Boundary.DefiningFunction
-public import TauCeti.Geometry.Manifold.Riemannian.Isometry.Basic
 public import TauCeti.Geometry.Manifold.Riemannian.OutwardUnitNormal
 
 /-!
@@ -21,12 +20,14 @@ Riemannian metric. The **inward unit normal** at a boundary point `q` is
 is inward exactly when `⟪v, ν_in⟫ > 0`, tangent exactly when it is zero and outward exactly when it
 is negative. In particular `ν_in(q)` is the unique inward unit vector orthogonal to `T_q∂M`.
 
-A function `f` with a local minimum and nonzero differential at a boundary point `q`, such as a
-boundary defining function `ρ`, has gradient `grad f(q) = |df_q| ν_in(q)`, so `df_q(ν_in) = |df_q|`
-(`TauCeti.IsBoundaryDefiningFunctionOn.mgradient_eq_norm_smul_inwardUnitNormal`). Applied to the
-normal coordinate `x⁰` of any chart of the maximal atlas, this is the chart formula
-`ν_in = grad x⁰ / |grad x⁰|` (`TauCeti.inwardUnitNormal_eq_normalize_mgradient`), which makes
-`q ↦ (q, ν_in(q))` as regular as the metric (`TauCeti.contMDiff_inwardUnitNormal`). An isometry
+A function `f` with a local minimum at a boundary point `q`, such as a boundary defining function
+`ρ`, has gradient `grad f(q) = |df_q| ν_in(q)`, so `df_q(ν_in) = |df_q|`
+(`TauCeti.mgradient_eq_norm_smul_inwardUnitNormal_of_isLocalMin`,
+`TauCeti.IsBoundaryDefiningFunctionOn.mgradient_eq_norm_smul_inwardUnitNormal`). In any chart of the
+`C¹` maximal atlas, `ν_in = grad x⁰ / |grad x⁰|` for the normal coordinate `x⁰`
+(`TauCeti.inwardUnitNormal_eq_normalize_mgradient`). For a `C^k` metric on a `C^(k + 1)` manifold,
+`q ↦ (q, ν_in(q))` is a `C^k` map, like the outward unit normal
+(`TauCeti.contMDiff_inwardUnitNormal`). An isometry
 of Riemannian manifolds with boundary carries inward unit normals to inward unit normals
 (`TauCeti.RiemannianIsometry.mfderiv_inwardUnitNormal`).
 
@@ -43,9 +44,10 @@ of Riemannian manifolds with boundary carries inward unit normals to inward unit
 * `TauCeti.IsBoundaryDefiningFunctionOn.mgradient_eq_norm_smul_inwardUnitNormal` and
   `TauCeti.IsBoundaryDefiningFunctionOn.mvfderiv_inwardUnitNormal`: the gradient formula for
   boundary defining functions.
-* `TauCeti.inwardUnitNormal_eq_normalize_mgradient`: the chart formula in any chart of the maximal
-  atlas.
-* `TauCeti.contMDiff_inwardUnitNormal`: it is a `C^k` map `∂M → TM` for a `C^k` metric.
+* `TauCeti.inwardUnitNormal_eq_normalize_mgradient`: the chart formula in any chart of the `C¹`
+  maximal atlas.
+* `TauCeti.contMDiff_inwardUnitNormal`: it is a `C^k` map `∂M → TM` for a `C^k` metric on a
+  `C^(k + 1)` manifold.
 * `TauCeti.RiemannianIsometry.mfderiv_inwardUnitNormal`: naturality under isometries.
 
 ## References
@@ -82,6 +84,7 @@ theorem inwardUnitNormal_def (q : (𝓡∂ (n + 1)).boundary M) :
   (rfl)
 
 /-- The outward unit normal is minus the inward unit normal. -/
+@[simp]
 theorem neg_inwardUnitNormal (q : (𝓡∂ (n + 1)).boundary M) :
     -inwardUnitNormal q = outwardUnitNormal q := by
   rw [inwardUnitNormal_def, neg_neg]
@@ -189,22 +192,25 @@ theorem eq_inwardUnitNormal_iff {q : (𝓡∂ (n + 1)).boundary M}
 
 /-! ### The gradient of a function with a local minimum at a boundary point -/
 
-/-- **Gradient formula.** A function differentiable at a boundary point `q`, with a local minimum
-and nonzero differential there, has gradient `grad f(q) = |df_q| ν_in(q)`. -/
+/-- **Gradient formula.** A function with a local minimum at a boundary point `q` has gradient
+`grad f(q) = |df_q| ν_in(q)`. -/
 theorem mgradient_eq_norm_smul_inwardUnitNormal_of_isLocalMin {f : M → ℝ}
-    {q : (𝓡∂ (n + 1)).boundary M} (hmin : IsLocalMin f q)
-    (hf : MDifferentiableAt (𝓡∂ (n + 1)) 𝓘(ℝ) f q) (hne : mvfderiv (𝓡∂ (n + 1)) f q ≠ 0) :
+    {q : (𝓡∂ (n + 1)).boundary M} (hmin : IsLocalMin f q) :
     Manifold.mgradient (𝓡∂ (n + 1)) f q =
       ‖mvfderiv (𝓡∂ (n + 1)) f q‖ • inwardUnitNormal q := by
+  by_cases hne : mvfderiv (𝓡∂ (n + 1)) f q = 0
+  · -- The norm of `df_q` is that of the gradient, which vanishes with `df_q`.
+    rw [← Manifold.norm_mgradient_eq_norm_mvfderiv, Manifold.mgradient_eq_zero_iff.mpr hne,
+      norm_zero, zero_smul]
   -- The gradient is orthogonal to the boundary, since `df_q` vanishes on `T_q∂M`.
   have horth (w : TangentSpace (𝓡∂ (n + 1)) (q : M)) (hw : w ∈ boundaryTangentSpace q) :
       ⟪Manifold.mgradient (𝓡∂ (n + 1)) f q, w⟫_ℝ = 0 := by
     rw [Manifold.inner_mgradient]
-    exact (mvfderiv_eq_zero_iff_mem_boundaryTangentSpace_of_isLocalMin hmin hf hne w).mpr hw
+    exact (mvfderiv_eq_zero_iff_mem_boundaryTangentSpace_of_isLocalMin hmin hne w).mpr hw
   have ht := sub_inner_smul_inwardUnitNormal_mem_boundaryTangentSpace q
     (Manifold.mgradient (𝓡∂ (n + 1)) f q)
   have hc : 0 < mvfderiv (𝓡∂ (n + 1)) f q (inwardUnitNormal q) :=
-    (isOutwardPointing_neg_iff_mvfderiv_pos_of_isLocalMin q.property hmin hf hne _).mp
+    (isOutwardPointing_neg_iff_mvfderiv_pos_of_isLocalMin q.property hmin hne _).mp
       (isOutwardPointing_neg_inwardUnitNormal q)
   rw [Manifold.inner_mgradient] at ht
   have hg : Manifold.mgradient (𝓡∂ (n + 1)) f q =
@@ -219,13 +225,12 @@ theorem mgradient_eq_norm_smul_inwardUnitNormal_of_isLocalMin {f : M → ℝ}
   rw [hnorm]
   exact hg
 
-/-- A function differentiable at a boundary point `q`, with a local minimum and nonzero
-differential there, has derivative `|df_q|` along the inward unit normal. -/
+/-- A function with a local minimum at a boundary point `q` has derivative `|df_q|` along the
+inward unit normal. -/
 theorem mvfderiv_inwardUnitNormal_of_isLocalMin {f : M → ℝ}
-    {q : (𝓡∂ (n + 1)).boundary M} (hmin : IsLocalMin f q)
-    (hf : MDifferentiableAt (𝓡∂ (n + 1)) 𝓘(ℝ) f q) (hne : mvfderiv (𝓡∂ (n + 1)) f q ≠ 0) :
+    {q : (𝓡∂ (n + 1)).boundary M} (hmin : IsLocalMin f q) :
     mvfderiv (𝓡∂ (n + 1)) f q (inwardUnitNormal q) = ‖mvfderiv (𝓡∂ (n + 1)) f q‖ := by
-  rw [← Manifold.inner_mgradient, mgradient_eq_norm_smul_inwardUnitNormal_of_isLocalMin hmin hf hne,
+  rw [← Manifold.inner_mgradient, mgradient_eq_norm_smul_inwardUnitNormal_of_isLocalMin hmin,
     inner_smul_left, real_inner_self_eq_norm_sq, norm_inwardUnitNormal]
   simp
 
@@ -236,7 +241,6 @@ theorem IsBoundaryDefiningFunctionOn.mgradient_eq_norm_smul_inwardUnitNormal {ρ
     (hqU : (q : M) ∈ U) :
     Manifold.mgradient (𝓡∂ (n + 1)) ρ q = ‖mvfderiv (𝓡∂ (n + 1)) ρ q‖ • inwardUnitNormal q :=
   mgradient_eq_norm_smul_inwardUnitNormal_of_isLocalMin (hρ.isLocalMin hqU q.property)
-    (hρ.mdifferentiableAt hqU) (hρ.mvfderiv_ne_zero q hqU q.property)
 
 /-- At a boundary point `q` of its domain, a boundary defining function `ρ` has derivative
 `dρ_q(ν_in) = |dρ_q|` along the inward unit normal. -/
@@ -245,9 +249,8 @@ theorem IsBoundaryDefiningFunctionOn.mvfderiv_inwardUnitNormal {ρ : M → ℝ} 
     (hqU : (q : M) ∈ U) :
     mvfderiv (𝓡∂ (n + 1)) ρ q (inwardUnitNormal q) = ‖mvfderiv (𝓡∂ (n + 1)) ρ q‖ :=
   mvfderiv_inwardUnitNormal_of_isLocalMin (hρ.isLocalMin hqU q.property)
-    (hρ.mdifferentiableAt hqU) (hρ.mvfderiv_ne_zero q hqU q.property)
 
-/-- **Chart formula.** For every chart of the maximal atlas whose source contains the boundary
+/-- **Chart formula.** For every chart of the `C¹` maximal atlas whose source contains the boundary
 point `q`, the inward unit normal at `q` is the unit gradient of the normal coordinate `x⁰` of that
 chart. -/
 theorem inwardUnitNormal_eq_normalize_mgradient
@@ -256,16 +259,11 @@ theorem inwardUnitNormal_eq_normalize_mgradient
     (hq : (q : M) ∈ e.source) :
     inwardUnitNormal q =
       NormedSpace.normalize (Manifold.mgradient (𝓡∂ (n + 1)) (fun y ↦ (e y).val 0) q) := by
-  have hne := mvfderiv_normal_ne_zero he hq
-  rw [mgradient_eq_norm_smul_inwardUnitNormal_of_isLocalMin
-      (Eventually.of_forall fun y ↦ normal_le_of_mem_boundary q.property hq y)
-      (mdifferentiableAt_normal he hq) hne]
-  have hr : 0 < ‖mvfderiv (𝓡∂ (n + 1)) (fun y ↦ (e y).val 0) q‖ := by
-    rw [← Manifold.norm_mgradient_eq_norm_mvfderiv, norm_pos_iff, Ne,
-      Manifold.mgradient_eq_zero_iff]
-    exact hne
-  rw [NormedSpace.normalize_smul_of_pos hr,
-    NormedSpace.normalize_eq_self_of_norm_eq_one (norm_inwardUnitNormal q)]
+  have hneg : Manifold.mgradient (𝓡∂ (n + 1)) (fun y ↦ -(e y).val 0) q =
+      -Manifold.mgradient (𝓡∂ (n + 1)) (fun y ↦ (e y).val 0) q :=
+    Manifold.mgradient_neg
+  rw [inwardUnitNormal_def, outwardUnitNormal_eq_normalize_mgradient he hq, hneg,
+    NormedSpace.normalize_neg, neg_neg]
 
 /-! ### Regularity -/
 
@@ -278,24 +276,15 @@ theorem contMDiff_inwardUnitNormal {k : ℕ∞ω} [IsManifold (𝓡∂ (n + 1)) 
       (fun q : (𝓡∂ (n + 1)).boundary M ↦
         (⟨q, inwardUnitNormal q⟩ : TangentBundle (𝓡∂ (n + 1)) M)) := by
   intro q₀
-  -- Near `q₀`, the normal is the unit gradient of the normal coordinate of the chart at `q₀`.
-  let e := chartAt (EuclideanHalfSpace (n + 1)) (q₀ : M)
-  have he : e ∈ IsManifold.maximalAtlas (𝓡∂ (n + 1)) 1 M := IsManifold.chart_mem_maximalAtlas _
-  have hψ : ContMDiffAt (𝓡∂ (n + 1)) 𝓘(ℝ) (k + 1) (fun y ↦ (e y).val 0) q₀ :=
-    ((EuclideanSpace.proj (0 : Fin (n + 1)) :
-      EuclideanSpace ℝ (Fin (n + 1)) →L[ℝ] ℝ).contMDiff.contMDiffAt.comp _
-        contMDiffAt_extChartAt).congr_of_eventuallyEq (Filter.Eventually.of_forall fun y ↦ by
-          simp [e])
-  have hne : Manifold.mgradient (𝓡∂ (n + 1)) (fun y ↦ (e y).val 0) q₀ ≠ 0 := by
-    rw [Ne, Manifold.mgradient_eq_zero_iff]
-    exact mvfderiv_normal_ne_zero he (mem_chart_source _ _)
-  have hloc := (Manifold.contMDiffAt_normalize_mgradient hψ hne).comp q₀
-    ((isSmoothEmbedding_subtypeVal_boundary (n := n) (k := k + 1) M).contMDiff.contMDiffAt.of_le
-      le_self_add)
-  refine hloc.congr_of_eventuallyEq ?_
+  -- `ν_in = -ν_out`, and the trivializations of the tangent bundle are linear on the fibres.
+  have h := contMDiff_outwardUnitNormal (M := M) (k := k) q₀
+  rw [ModelWithCorners.tangent, contMDiffAt_totalSpace_iff] at h ⊢
+  refine ⟨h.1, h.2.neg.congr_of_eventuallyEq ?_⟩
+  let e := trivializationAt (EuclideanSpace ℝ (Fin (n + 1))) (TangentSpace (𝓡∂ (n + 1)))
+    (q₀ : M)
   filter_upwards [continuous_subtypeVal.continuousAt.preimage_mem_nhds
-    (e.open_source.mem_nhds (mem_chart_source _ _))] with q hq
-  simp only [Function.comp_apply, inwardUnitNormal_eq_normalize_mgradient he hq]
+    (e.open_baseSet.mem_nhds (mem_baseSet_trivializationAt _ _ (q₀ : M)))] with q hq
+  exact (e.linear ℝ hq).map_neg _
 
 /-! ### Naturality -/
 
