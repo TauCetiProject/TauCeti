@@ -10,7 +10,7 @@ import Mathlib.Order.Filter.AtTopBot.Archimedean
 import Mathlib.Tactic.LinearCombination
 
 /-!
-# Rescaling by a square root
+# Elementary square-root identities and inequalities
 
 For `0 ≤ a`, multiplying by `(√a)⁻¹` and squaring divides the square by `a`:
 `((√a)⁻¹ * x) ^ 2 = x ^ 2 / a`. This is the change of variables `x ↦ (√a)⁻¹ * x` that turns the
