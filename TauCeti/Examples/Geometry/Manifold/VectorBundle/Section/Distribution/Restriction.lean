@@ -22,7 +22,6 @@ open Bundle Set TopologicalSpace Topology ContMDiffSection
 open scoped Manifold ContDiff TauCeti.ManifoldWeakWhitney CompactConvergenceCLM
 
 namespace TauCeti.Examples.BundleDistributionRestriction
-attribute [local instance] TauCeti.BundleTest.openPullbackSmooth
 
 /-- A genuine proper open interval in the real line. -/
 def properRealOpen : Opens ℝ := ⟨Set.Ioo (-2) 2, isOpen_Ioo⟩
@@ -31,18 +30,12 @@ abbrev properRealIncl : C(properRealOpen, ℝ) := ⟨Subtype.val, continuous_sub
 
 /-- A proper-open test extends to a nonzero value at zero and vanishes at an exterior point. -/
 theorem exists_nonzero_proper_open_extension :
-    letI : ContMDiffVectorBundle ∞ ℝ (properRealIncl *ᵖ (Bundle.Trivial ℝ ℝ)) 𝓘(ℝ, ℝ) :=
-      ContMDiffVectorBundle.pullback ℝ (Bundle.Trivial ℝ ℝ) 𝓘(ℝ, ℝ)
-        (⟨Subtype.val, contMDiff_subtypeVal⟩ : C^∞⟮𝓘(ℝ, ℝ), properRealOpen; 𝓘(ℝ, ℝ), ℝ⟯)
     ∃ s : TauCeti.BundleTest 𝓘(ℝ, ℝ) ℝ (properRealIncl *ᵖ (Bundle.Trivial ℝ ℝ)),
       TauCeti.BundleTest.extendByZeroCLM (I := 𝓘(ℝ, ℝ)) (F := ℝ) (V := Bundle.Trivial ℝ ℝ)
         (U := properRealOpen) s 0 = 1 ∧
       TauCeti.BundleTest.extendByZeroCLM (I := 𝓘(ℝ, ℝ)) (F := ℝ) (V := Bundle.Trivial ℝ ℝ)
         (U := properRealOpen) s 3 = 0
         := by
-  let : ContMDiffVectorBundle ∞ ℝ (properRealIncl *ᵖ (Bundle.Trivial ℝ ℝ)) 𝓘(ℝ, ℝ) :=
-    ContMDiffVectorBundle.pullback ℝ (Bundle.Trivial ℝ ℝ) 𝓘(ℝ, ℝ)
-      (⟨Subtype.val, contMDiff_subtypeVal⟩ : C^∞⟮𝓘(ℝ, ℝ), properRealOpen; 𝓘(ℝ, ℝ), ℝ⟯)
   let x : properRealOpen := ⟨0, by constructor <;> norm_num⟩
   obtain ⟨s, hs⟩ := TauCeti.BundleTest.exists_apply_eq (I := 𝓘(ℝ, ℝ)) (F := ℝ)
     (V := properRealIncl *ᵖ (Bundle.Trivial ℝ ℝ)) x (1 : ℝ)
@@ -64,25 +57,18 @@ theorem zero_rank_test (s : TauCeti.BundleTest 𝓘(ℝ, ℝ) (Fin 0 → ℝ) (B
 theorem empty_open_extension :
     let U : Opens ℝ := ⊥
     let c : C(U, ℝ) := ⟨Subtype.val, continuous_subtypeVal⟩
-    letI : ContMDiffVectorBundle ∞ ℝ (c *ᵖ (Bundle.Trivial ℝ ℝ)) 𝓘(ℝ, ℝ) :=
-      ContMDiffVectorBundle.pullback ℝ (Bundle.Trivial ℝ ℝ) 𝓘(ℝ, ℝ)
-        (⟨Subtype.val, contMDiff_subtypeVal⟩ : C^∞⟮𝓘(ℝ, ℝ), U; 𝓘(ℝ, ℝ), ℝ⟯)
     ∀ s : TauCeti.BundleTest 𝓘(ℝ, ℝ) ℝ (c *ᵖ (Bundle.Trivial ℝ ℝ)),
       TauCeti.BundleTest.extendByZeroCLM (I := 𝓘(ℝ, ℝ)) (F := ℝ) (V := Bundle.Trivial ℝ ℝ) (U :=
         U) s = 0 := by
   intro U c s
-  let : ContMDiffVectorBundle ∞ ℝ (c *ᵖ (Bundle.Trivial ℝ ℝ)) 𝓘(ℝ, ℝ) :=
-    ContMDiffVectorBundle.pullback ℝ (Bundle.Trivial ℝ ℝ) 𝓘(ℝ, ℝ)
-      (⟨Subtype.val, contMDiff_subtypeVal⟩ : C^∞⟮𝓘(ℝ, ℝ), U; 𝓘(ℝ, ℝ), ℝ⟯)
   apply TauCeti.BundleTest.ext
   intro x
   exact TauCeti.BundleTest.extendByZeroCLM_apply_of_notMem s (by simp [U])
 
 
 /-- The actual intrinsic dual-density coefficient family on the proper interval. -/
-abbrev localCoefficients := fun x : properRealOpen ↦
-  ((properRealIncl *ᵖ (Bundle.Trivial ℝ ℝ)) x →L[ℝ]
-    TauCeti.DensityBundle 𝓘(ℝ, ℝ) properRealOpen x)
+abbrev localCoefficients := TauCeti.DensityBundle.localCoefficients (I := 𝓘(ℝ, ℝ))
+  (V := Bundle.Trivial ℝ ℝ) (U := properRealOpen)
 
 /-- Extension transports an actual intrinsic density to an ambient coefficient with value one. -/
 theorem exists_nonzero_actual_density_extension :
@@ -112,12 +98,6 @@ theorem exists_nonzero_boundary_test_extension :
       infer_instance
     let U : Opens (EuclideanHalfSpace 1) := ⊤
     let c : C(U, EuclideanHalfSpace 1) := ⟨Subtype.val, continuous_subtypeVal⟩
-    letI : ContMDiffVectorBundle ∞ ℝ (c *ᵖ (Bundle.Trivial (EuclideanHalfSpace 1) ℝ))
-      (modelWithCornersEuclideanHalfSpace 1) :=
-      ContMDiffVectorBundle.pullback ℝ (Bundle.Trivial (EuclideanHalfSpace 1) ℝ)
-        (modelWithCornersEuclideanHalfSpace 1)
-        (⟨Subtype.val, contMDiff_subtypeVal⟩ : C^∞⟮modelWithCornersEuclideanHalfSpace 1, U;
-          modelWithCornersEuclideanHalfSpace 1, EuclideanHalfSpace 1⟯)
     ∃ s : TauCeti.BundleTest (modelWithCornersEuclideanHalfSpace 1) ℝ (c *ᵖ (Bundle.Trivial
       (EuclideanHalfSpace 1) ℝ)),
       TauCeti.BundleTest.extendByZeroCLM (I := modelWithCornersEuclideanHalfSpace 1) (F := ℝ)
@@ -126,12 +106,6 @@ theorem exists_nonzero_boundary_test_extension :
     dsimp [EuclideanHalfSpace]
     infer_instance
   intro U c
-  let : ContMDiffVectorBundle ∞ ℝ (c *ᵖ (Bundle.Trivial (EuclideanHalfSpace 1) ℝ))
-    (modelWithCornersEuclideanHalfSpace 1) :=
-    ContMDiffVectorBundle.pullback ℝ (Bundle.Trivial (EuclideanHalfSpace 1) ℝ)
-      (modelWithCornersEuclideanHalfSpace 1)
-      (⟨Subtype.val, contMDiff_subtypeVal⟩ : C^∞⟮modelWithCornersEuclideanHalfSpace 1, U;
-        modelWithCornersEuclideanHalfSpace 1, EuclideanHalfSpace 1⟯)
   let x : U := ⟨0, Set.mem_univ _⟩
   obtain ⟨s, hs⟩ := TauCeti.BundleTest.exists_apply_eq (I := modelWithCornersEuclideanHalfSpace 1)
     (F := ℝ)
@@ -159,14 +133,14 @@ abbrev inclusion {M : Type*} [TopologicalSpace M] (U : Opens M) : C(U, M) :=
 /-- The smaller interval viewed as an open subset of the larger interval. -/
 abbrev nestedOpen : Opens outer := Opens.comap (inclusion outer) inner
 /-- Actual intrinsic coefficients on the double-pullback bundle. -/
-abbrev doubleCoefficients := fun x : nestedOpen ↦
-  (((inclusion nestedOpen) *ᵖ ((inclusion outer) *ᵖ (Bundle.Trivial ℝ ℝ))) x →L[ℝ]
-    TauCeti.DensityBundle 𝓘(ℝ, ℝ) nestedOpen x)
-private abbrev ambientCoefficients := fun x : ℝ ↦ ℝ →L[ℝ] TauCeti.DensityBundle 𝓘(ℝ, ℝ) ℝ x
+abbrev doubleCoefficients := TauCeti.DensityBundle.localCoefficients (I := 𝓘(ℝ, ℝ))
+  (V := inclusion outer *ᵖ (Bundle.Trivial ℝ ℝ)) (U := nestedOpen)
 
-private def coordinateFunctional : ambientCoefficients 0 →L[ℝ] ℝ :=
+private def coordinateFunctional : (TauCeti.DensityBundle.ambientCoefficients (I := 𝓘(ℝ, ℝ))
+    (V := Bundle.Trivial ℝ ℝ)) 0 →L[ℝ] ℝ :=
   (ContinuousLinearMap.apply ℝ ℝ (1 : ℝ)).comp
-    ((trivializationAt (ℝ →L[ℝ] ℝ) ambientCoefficients 0).continuousLinearMapAt ℝ 0)
+    ((trivializationAt (ℝ →L[ℝ] ℝ) (TauCeti.DensityBundle.ambientCoefficients (I := 𝓘(ℝ, ℝ))
+    (V := Bundle.Trivial ℝ ℝ)) 0).continuousLinearMapAt ℝ 0)
 
 /-- An actual native bundle point distribution, tested in a continuous local coefficient frame. -/
 def actualPointMass : TauCeti.BundleDistribution 𝓘(ℝ, ℝ) ℝ ℝ (Bundle.Trivial ℝ ℝ) :=
@@ -186,7 +160,8 @@ theorem exists_proper_nested_density_pairing_one :
           (V := Bundle.Trivial ℝ ℝ) (U := outer) actualPointMass) s = 1 := by
   let xD : outer := ⟨0, by constructor <;> norm_num⟩
   let xN : nestedOpen := ⟨xD, by constructor <;> norm_num⟩
-  let e := trivializationAt (ℝ →L[ℝ] ℝ) ambientCoefficients 0
+  let e := trivializationAt (ℝ →L[ℝ] ℝ) (TauCeti.DensityBundle.ambientCoefficients (I := 𝓘(ℝ, ℝ))
+    (V := Bundle.Trivial ℝ ℝ)) 0
   let vM := e.symmL ℝ 0 (ContinuousLinearMap.id ℝ ℝ)
   let ψ := (TauCeti.DensityBundle.openHomEquiv (I := 𝓘(ℝ, ℝ)) (M := outer)
       (V := inclusion outer *ᵖ (Bundle.Trivial ℝ ℝ)) xN).trans

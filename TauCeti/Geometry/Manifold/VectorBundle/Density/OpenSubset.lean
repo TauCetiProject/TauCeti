@@ -28,18 +28,22 @@ variable {E : Type u} [NormedAddCommGroup E] [NormedSpace ℝ E]
   {I : ModelWithCorners ℝ E H} {M : Type*} [TopologicalSpace M] [ChartedSpace H M]
   [IsManifold I ∞ M] {U : Opens M}
 
--- Only the existing main smooth-pullback proof at the canonical open inclusion is local.
-local instance openPullbackSmooth {G : Type*} [NormedAddCommGroup G] [NormedSpace ℝ G]
-    {Z : M → Type*} [∀ x, AddCommGroup (Z x)] [∀ x, Module ℝ (Z x)]
-    [∀ x, TopologicalSpace (Z x)] [TopologicalSpace (TotalSpace G Z)]
-    [FiberBundle G Z] [VectorBundle ℝ G Z] [ContMDiffVectorBundle ∞ G Z I] (U : Opens M) :
-    ContMDiffVectorBundle ∞ G ((⟨Subtype.val, continuous_subtypeVal⟩ : C(U, M)) *ᵖ Z) I :=
-  ContMDiffVectorBundle.pullback G Z I ⟨_, contMDiff_subtypeVal⟩
-
 /-- Canonical identification of intrinsic and ambient densities over an open subset. -/
 def openEquiv (x : U) :
     TauCeti.DensityBundle I U x ≃L[ℝ] TauCeti.DensityBundle I M (x : M) :=
   ContinuousLinearEquiv.refl ℝ _
+
+omit [FiniteDimensional ℝ E] [IsManifold I ∞ M] in
+/-- The open density comparison keeps the underlying density functional. -/
+@[simp]
+theorem openEquiv_apply (x : U) (μ : TauCeti.DensityBundle I U x) :
+    openEquiv x μ = μ := by rfl
+
+omit [FiniteDimensional ℝ E] [IsManifold I ∞ M] in
+/-- The inverse open density comparison keeps the underlying density functional. -/
+@[simp]
+theorem openEquiv_symm_apply (x : U) (μ : TauCeti.DensityBundle I M (x : M)) :
+    (openEquiv x).symm μ = μ := by rfl
 
 /-- The open density comparison preserves preferred tangent-frame evaluations locally. -/
 theorem eventually_open_frame_eq (x : U) :
@@ -83,9 +87,9 @@ theorem contMDiff_openInclusion :
   simpa only [Function.id_def, TauCeti.Density.trivializationAt_eq,
     Trivialization.density_apply] using hq q.snd
 
-private abbrev openInclusion : C(U, M) := ⟨Subtype.val, continuous_subtypeVal⟩
 
-private abbrev pulledDensity := (openInclusion (U := U)) *ᵖ (TauCeti.DensityBundle I M)
+private abbrev pulledDensity :=
+  (⟨Subtype.val, continuous_subtypeVal⟩ : C(U, M)) *ᵖ (TauCeti.DensityBundle I M)
 
 /-- Smoothness of intrinsic-to-pullback density transport. -/
 theorem contMDiff_openToPullback :
@@ -95,8 +99,8 @@ theorem contMDiff_openToPullback :
         TotalSpace.mk' ℝ (E := (c *ᵖ (TauCeti.DensityBundle I M))) p.proj
           (openEquiv p.proj p.snd)) := by
   intro c
-  apply (Bundle.Pullback.contMDiff_iff (openInclusion (U := U))
-    (show ContMDiff I I ∞ (openInclusion (U := U)) from contMDiff_subtypeVal)).2
+  apply (Bundle.Pullback.contMDiff_iff c
+    (show ContMDiff I I ∞ c from contMDiff_subtypeVal)).2
   exact ⟨contMDiff_proj _, contMDiff_openInclusion⟩
 
 /-- Smoothness of pullback-to-intrinsic density transport. -/
@@ -121,7 +125,7 @@ theorem contMDiff_openFromPullback :
   change (((openEquiv q.proj).symm q.snd)
       (fun i ↦ (trivializationAt E (TangentSpace I : U → Type _) p.proj).symm
         q.proj (Module.finBasis ℝ E i))) =
-    ((Pullback.lift (openInclusion (U := U))) q).snd
+    ((Pullback.lift ((⟨Subtype.val, continuous_subtypeVal⟩ : C(U, M)))) q).snd
       (fun i ↦ (trivializationAt E (TangentSpace I : M → Type _) (p.proj : M)).symm
       (q.proj : M) (Module.finBasis ℝ E i))
   exact (hq ((openEquiv q.proj).symm q.snd)).symm.trans (by rfl)
@@ -140,14 +144,44 @@ def openDiffeomorph :
       contMDiff_toFun := contMDiff_openToPullback
       contMDiff_invFun := contMDiff_openFromPullback }
 
+/-- The density diffeomorphism preserves the open base point. -/
+@[simp]
+theorem openDiffeomorph_proj (p : TotalSpace ℝ (TauCeti.DensityBundle I U)) :
+    dsimp% only [ContinuousMap.coe_mk] (
+    (openDiffeomorph (I := I) p).proj = p.proj) := by rfl
+
+/-- The density diffeomorphism acts by the fibre comparison. -/
+@[simp]
+theorem openDiffeomorph_snd (p : TotalSpace ℝ (TauCeti.DensityBundle I U)) :
+    dsimp% only [ContinuousMap.coe_mk] (
+    (openDiffeomorph (I := I) p).snd = openEquiv p.proj p.snd) := by rfl
+
+/-- The inverse density diffeomorphism preserves the open base point. -/
+@[simp]
+theorem openDiffeomorph_symm_proj
+    (p : TotalSpace ℝ ((⟨Subtype.val, continuous_subtypeVal⟩ : C(U, M)) *ᵖ
+      (TauCeti.DensityBundle I M))) :
+    dsimp% only [ContinuousMap.coe_mk] (
+    ((openDiffeomorph (I := I)).symm p).proj = p.proj) := by rfl
+
+/-- The inverse density diffeomorphism acts by the inverse fibre comparison. -/
+@[simp]
+theorem openDiffeomorph_symm_snd
+    (p : TotalSpace ℝ ((⟨Subtype.val, continuous_subtypeVal⟩ : C(U, M)) *ᵖ
+      (TauCeti.DensityBundle I M))) :
+    dsimp% only [ContinuousMap.coe_mk] (
+    ((openDiffeomorph (I := I)).symm p).snd = (openEquiv p.proj).symm p.snd) := by rfl
+
 variable {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
   {V : M → Type*} [∀ x, AddCommGroup (V x)] [∀ x, Module ℝ (V x)]
   [∀ x, TopologicalSpace (V x)] [TopologicalSpace (TotalSpace F V)]
   [FiberBundle F V] [VectorBundle ℝ F V] [ContMDiffVectorBundle ∞ F V I]
 
-private abbrev localCoefficients := fun x : U ↦
-  (((openInclusion (U := U)) *ᵖ V) x →L[ℝ] TauCeti.DensityBundle I U x)
-private abbrev ambientCoefficients := fun x : M ↦ V x →L[ℝ] TauCeti.DensityBundle I M x
+/-- Intrinsic dual-density coefficients of a bundle restricted to an open subset. -/
+abbrev localCoefficients := fun x : U ↦
+  ((((⟨Subtype.val, continuous_subtypeVal⟩ : C(U, M))) *ᵖ V) x →L[ℝ] TauCeti.DensityBundle I U x)
+/-- Ambient dual-density coefficients of a bundle. -/
+abbrev ambientCoefficients := fun x : M ↦ V x →L[ℝ] TauCeti.DensityBundle I M x
 
 /-- Canonical open-subset comparison of real bundle-dual densities. -/
 def openHomEquiv (x : U) :
@@ -181,13 +215,13 @@ theorem eventually_openHom_frame_eq (x : U) :
   rw [hom_trivializationAt_apply, hom_trivializationAt_apply]
   apply ContinuousLinearMap.ext
   intro v
-  have hyVU : y ∈ (trivializationAt F ((openInclusion (U := U)) *ᵖ V) x).baseSet := hyV
-  have hsymm : (trivializationAt F ((openInclusion (U := U)) *ᵖ V) x).symmL ℝ y v =
+  have hyVU : y ∈ (trivializationAt F (c *ᵖ V) x).baseSet := hyV
+  have hsymm : (trivializationAt F (c *ᵖ V) x).symmL ℝ y v =
       (trivializationAt F V (x : M)).symmL ℝ (y : M) v := by
-    rw [Trivialization.symmL_apply (trivializationAt F ((openInclusion (U := U)) *ᵖ V) x) hyVU,
+    rw [Trivialization.symmL_apply (trivializationAt F (c *ᵖ V) x) hyVU,
       Trivialization.symmL_apply (trivializationAt F V (x : M)) hyV]
     exact Trivialization.symm_pullback (trivializationAt F V (x : M))
-      (openInclusion (U := U)) hyV v
+      c hyV v
   simp only [ContinuousLinearMap.inCoordinates, ContinuousLinearMap.comp_apply,
     Trivialization.continuousLinearMapAt_apply, Trivialization.linearMapAt_apply,
     ite_eq_left hyDU]
@@ -195,7 +229,7 @@ theorem eventually_openHom_frame_eq (x : U) :
   change ((trivializationAt ℝ (TauCeti.DensityBundle I M) (x : M))
     ⟨(y : M), openEquiv y (ℓ ((trivializationAt F V (x : M)).symmL ℝ (y : M) v))⟩).2 =
     ((trivializationAt ℝ (TauCeti.DensityBundle I U) x)
-      ⟨y, ℓ ((trivializationAt F ((openInclusion (U := U)) *ᵖ V) x).symmL ℝ y v)⟩).2
+      ⟨y, ℓ ((trivializationAt F (c *ᵖ V) x).symmL ℝ y v)⟩).2
   rw [hsymm]
   simpa only [TauCeti.Density.trivializationAt_eq, Trivialization.density_apply] using
     hframe (ℓ ((trivializationAt F V (x : M)).symmL ℝ (y : M) v))
@@ -221,8 +255,9 @@ theorem contMDiff_openHomInclusion :
   filter_upwards [h] with q hq
   simpa only [Function.id_def] using hq q.snd
 
-private abbrev pulledAmbientCoefficients :=
-  (openInclusion (U := U)) *ᵖ (ambientCoefficients (I := I) (V := V))
+/-- The ambient dual-density coefficients pulled back to an open subset. -/
+abbrev pulledAmbientCoefficients :=
+  ((⟨Subtype.val, continuous_subtypeVal⟩ : C(U, M))) *ᵖ (ambientCoefficients (I := I) (V := V))
 
 omit [ContMDiffVectorBundle ∞ F V I] in
 /-- Smoothness of intrinsic-to-pullback dual-density transport. -/
@@ -233,8 +268,8 @@ theorem contMDiff_openHomToPullback :
         TotalSpace.mk' (F →L[ℝ] ℝ) (E := (c *ᵖ (fun x : M ↦ V x →L[ℝ] TauCeti.DensityBundle I M x)))
           p.proj (openHomEquiv p.proj p.snd)) := by
   intro c
-  apply (Bundle.Pullback.contMDiff_iff (openInclusion (U := U))
-    (show ContMDiff I I ∞ (openInclusion (U := U)) from contMDiff_subtypeVal)).2
+  apply (Bundle.Pullback.contMDiff_iff c
+    (show ContMDiff I I ∞ c from contMDiff_subtypeVal)).2
   exact ⟨contMDiff_proj _, contMDiff_openHomInclusion⟩
 
 omit [ContMDiffVectorBundle ∞ F V I] in
@@ -258,7 +293,7 @@ theorem contMDiff_openHomFromPullback :
   change (trivializationAt (F →L[ℝ] ℝ) (localCoefficients (I := I) (V := V) (U := U)) p.proj
       ⟨q.proj, (openHomEquiv q.proj).symm q.snd⟩).2 =
     (trivializationAt (F →L[ℝ] ℝ) (ambientCoefficients (I := I) (V := V)) (p.proj : M)
-      ⟨(q.proj : M), (Pullback.lift (openInclusion (U := U)) q).snd⟩).2
+      ⟨(q.proj : M), (Pullback.lift ((⟨Subtype.val, continuous_subtypeVal⟩ : C(U, M))) q).snd⟩).2
   exact (hq ((openHomEquiv q.proj).symm q.snd)).symm.trans (by rfl)
 
 /-- Intrinsic real bundle-dual densities are diffeomorphic to the ambient pullback. -/
@@ -280,6 +315,7 @@ def openHomDiffeomorph :
 omit [FiniteDimensional ℝ E] [IsManifold I ∞ M] [ContMDiffVectorBundle ∞ F V I]
   [FiberBundle F V] [VectorBundle ℝ F V] [TopologicalSpace (TotalSpace F V)] in
 /-- The open dual-density comparison preserves the underlying fibrewise linear functional. -/
+-- Coercion simplification changes the open pullback carrier first; use presimplification.
 @[simp↓]
 theorem openHomEquiv_apply (x : U)
     (ℓ : ((⟨Subtype.val, continuous_subtypeVal⟩ : C(U, M)) *ᵖ V) x →L[ℝ]
@@ -289,6 +325,7 @@ theorem openHomEquiv_apply (x : U)
 omit [FiniteDimensional ℝ E] [IsManifold I ∞ M] [ContMDiffVectorBundle ∞ F V I]
   [FiberBundle F V] [VectorBundle ℝ F V] [TopologicalSpace (TotalSpace F V)] in
 /-- The inverse open dual-density comparison has the same underlying fibrewise functional. -/
+-- Coercion simplification changes the open pullback carrier first; use presimplification.
 @[simp↓]
 theorem openHomEquiv_symm_apply (x : U)
     (ℓ : V (x : M) →L[ℝ] TauCeti.DensityBundle I M (x : M)) :

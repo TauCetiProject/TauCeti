@@ -259,3 +259,114 @@ theorem extendByZero_smul_function (f : C^n⟮I, M; 𝕜⟯)
   · simp [extendByZero_apply_of_notMem _ hx]
 
 end ContMDiffSection
+
+namespace ContMDiffSection
+section IntermediateOpen
+
+variable {E H M F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+  [LocallyCompactSpace E] [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
+  [TopologicalSpace M] [ChartedSpace H M] [T2Space M]
+  [NormedAddCommGroup F] [NormedSpace ℝ F]
+  {V : M → Type*} [∀ x, AddCommGroup (V x)] [∀ x, Module ℝ (V x)]
+  [∀ x, TopologicalSpace (V x)] [TopologicalSpace (TotalSpace F V)]
+  [FiberBundle F V] [VectorBundle ℝ F V] {n : ℕ∞ω}
+  [ContMDiffVectorBundle n F V I] [IsManifold I n M]
+  [ContMDiffVectorBundle ∞ F V I] [IsManifold I ∞ M] {U D : Opens M}
+
+/-- Extend a compactly supported section from one open subset to a larger open subset. -/
+def extendByZeroToOpenLinearMap (h : U ≤ D) :
+    compactlySupported I F n ((⟨Subtype.val, continuous_subtypeVal⟩ : C(U, M)) *ᵖ V) →ₗ[ℝ]
+      compactlySupported I F n ((⟨Subtype.val, continuous_subtypeVal⟩ : C(D, M)) *ᵖ V) := by
+  let L := (restrictLinearMap I F n V D).comp
+    ((compactlySupported I F n V).subtype.comp
+      (extendByZeroLinearMap (I := I) (F := F) (n := n) (V := V) (U := U)))
+  refine L.codRestrict (compactlySupported I F n
+    ((⟨Subtype.val, continuous_subtypeVal⟩ : C(D, M)) *ᵖ V)) ?_
+  intro s
+  change (restrictLinearMap I F n V D) (extendByZeroLinearMap s).val ∈ _
+  erw [restrictLinearMap_apply]
+  apply restrict_mem_compactlySupported (extendByZeroLinearMap s)
+  erw [extendByZeroLinearMap_apply, tsupport_extendByZero]
+  rintro _ ⟨u, _, rfl⟩
+  exact h u.property
+
+omit [LocallyCompactSpace E] [ContMDiffVectorBundle n F V I] [IsManifold I n M]
+  [ContMDiffVectorBundle ∞ F V I] [IsManifold I ∞ M] in
+/-- The underlying section is the restriction of the ambient extension by zero. -/
+theorem extendByZeroToOpenLinearMap_val (h : U ≤ D)
+    (s : compactlySupported I F n ((⟨Subtype.val, continuous_subtypeVal⟩ : C(U, M)) *ᵖ V)) :
+    (extendByZeroToOpenLinearMap h s).val = (extendByZero s).restrict D := by
+  change (restrictLinearMap I F n V D) (extendByZeroLinearMap s).val = _
+  erw [restrictLinearMap_apply, extendByZeroLinearMap_apply]
+
+omit [LocallyCompactSpace E] [ContMDiffVectorBundle n F V I] [IsManifold I n M]
+  [ContMDiffVectorBundle ∞ F V I] [IsManifold I ∞ M] in
+/-- The support of an intermediate extension is the image of its original support. -/
+theorem tsupport_extendByZeroToOpenLinearMap (h : U ≤ D)
+    (s : compactlySupported I F n ((⟨Subtype.val, continuous_subtypeVal⟩ : C(U, M)) *ᵖ V)) :
+    (extendByZeroToOpenLinearMap h s).val.tsupport = (Opens.inclusion h) '' s.val.tsupport := by
+  rw [extendByZeroToOpenLinearMap_val, tsupport_restrict, tsupport_extendByZero]
+  ext x
+  constructor
+  · rintro ⟨u, hu, heq⟩
+    exact ⟨u, hu, Subtype.ext heq⟩
+  · rintro ⟨u, hu, rfl⟩
+    exact ⟨u, hu, rfl⟩
+
+omit [LocallyCompactSpace E] [ContMDiffVectorBundle n F V I] [IsManifold I n M]
+  [ContMDiffVectorBundle ∞ F V I] [IsManifold I ∞ M] in
+/-- Extension along the identity inclusion preserves the section. -/
+theorem extendByZeroToOpenLinearMap_refl
+    (s : compactlySupported I F n ((⟨Subtype.val, continuous_subtypeVal⟩ : C(U, M)) *ᵖ V)) :
+    extendByZeroToOpenLinearMap (V := V) le_rfl s = s := by
+  apply Subtype.ext
+  rw [extendByZeroToOpenLinearMap_val]
+  exact restrict_extendByZero s
+
+omit [LocallyCompactSpace E] [ContMDiffVectorBundle n F V I] [IsManifold I n M]
+  [ContMDiffVectorBundle ∞ F V I] [IsManifold I ∞ M] in
+/-- Intermediate extension followed by ambient extension is ambient extension. -/
+theorem extendByZero_extendByZeroToOpenLinearMap (h : U ≤ D)
+    (s : compactlySupported I F n ((⟨Subtype.val, continuous_subtypeVal⟩ : C(U, M)) *ᵖ V)) :
+    extendByZero (extendByZeroToOpenLinearMap h s) = extendByZero s := by
+  have hs : (extendByZero s).tsupport ⊆ D := by
+    rw [tsupport_extendByZero]
+    rintro _ ⟨u, _, rfl⟩
+    exact h u.property
+  let t : compactlySupported I F n V := ⟨extendByZero s, extendByZero_mem_compactlySupported s⟩
+  have he := extendByZero_restrict t hs
+  refine (congrArg extendByZero ?_).trans he
+  apply Subtype.ext
+  exact extendByZeroToOpenLinearMap_val h s
+
+omit [LocallyCompactSpace E] [ContMDiffVectorBundle n F V I] [IsManifold I n M]
+  [ContMDiffVectorBundle ∞ F V I] [IsManifold I ∞ M] in
+/-- Extension through nested open subsets composes. -/
+theorem extendByZeroToOpenLinearMap_comp {D' : Opens M} (h : U ≤ D) (h' : D ≤ D')
+    (s : compactlySupported I F n ((⟨Subtype.val, continuous_subtypeVal⟩ : C(U, M)) *ᵖ V)) :
+    extendByZeroToOpenLinearMap h' (extendByZeroToOpenLinearMap h s) =
+      extendByZeroToOpenLinearMap (h.trans h') s := by
+  apply Subtype.ext
+  rw [extendByZeroToOpenLinearMap_val, extendByZeroToOpenLinearMap_val]
+  rw [extendByZero_extendByZeroToOpenLinearMap]
+
+/-- Restriction to the universal open subset on compactly supported sections. -/
+def restrictUnivLinearMap : compactlySupported I F n V →ₗ[ℝ]
+    compactlySupported I F n
+      ((⟨Subtype.val, continuous_subtypeVal⟩ : C((⊤ : Opens M), M)) *ᵖ V) := by
+  let L := (restrictLinearMap I F n V (⊤ : Opens M)).comp (compactlySupported I F n V).subtype
+  refine L.codRestrict _ (fun s ↦ ?_)
+  change (restrictLinearMap I F n V ⊤) s.val ∈ _
+  erw [restrictLinearMap_apply]
+  exact restrict_mem_compactlySupported s (U := (⊤ : Opens M)) (Set.subset_univ _)
+
+omit [LocallyCompactSpace E] [ContMDiffVectorBundle n F V I] [IsManifold I n M]
+  [ContMDiffVectorBundle ∞ F V I] [IsManifold I ∞ M] [T2Space M] in
+/-- The underlying universal-open restriction is ordinary section restriction. -/
+theorem restrictUnivLinearMap_val (s : compactlySupported I F n V) :
+    (restrictUnivLinearMap (I := I) (F := F) (n := n) s).val = s.val.restrict ⊤ := by
+  change (restrictLinearMap I F n V ⊤) s.val = _
+  erw [restrictLinearMap_apply]
+
+end IntermediateOpen
+end ContMDiffSection
