@@ -7,7 +7,6 @@ module
 
 public import TauCeti.AlgebraicGeometry.FormalScheme.Morphism
 public import TauCeti.RingTheory.AdicRing.Padic
-public import TauCeti.RingTheory.Huber.Padic.Basic
 
 /-!
 # Examples and counterexamples for morphisms into `Spf A`

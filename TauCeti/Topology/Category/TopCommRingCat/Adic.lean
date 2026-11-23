@@ -11,9 +11,9 @@ public import TauCeti.RingTheory.AdicRing.Basic
 /-!
 # The category of complete separated adic rings of finite ideal type
 
-We define the object property `TauCeti.TopCommRingCat.isAdicRing` cutting out complete separated
+We define the object property `TopCommRingCat.isAdicRing` cutting out complete separated
 adic rings of finite ideal type inside `TopCommRingCat`, together with its defining equivalence
-`TauCeti.TopCommRingCat.isAdicRing_iff` and the `TauCeti.IsAdicRing` instance on objects of the
+`TopCommRingCat.isAdicRing_iff` and the `TauCeti.IsAdicRing` instance on objects of the
 full subcategory `isAdicRing.FullSubcategory`.
 -/
 
@@ -21,9 +21,9 @@ public section
 
 universe u
 
-open CategoryTheory
+open CategoryTheory TauCeti
 
-namespace TauCeti.TopCommRingCat
+namespace TopCommRingCat
 
 /-- The property of a `TopCommRingCat` being a complete separated adic ring of finite ideal type. -/
 def isAdicRing : ObjectProperty TopCommRingCat.{u} := fun R ↦ IsAdicRing R
@@ -34,4 +34,4 @@ theorem isAdicRing_iff (R : TopCommRingCat.{u}) : isAdicRing R ↔ IsAdicRing R 
 
 instance (R : isAdicRing.{u}.FullSubcategory) : IsAdicRing R.obj := R.property
 
-end TauCeti.TopCommRingCat
+end TopCommRingCat

@@ -42,14 +42,24 @@ variable (f : ∀ i, X.restrict (U i) ⟶ Y)
     X.restrictHomOfLE inf_le_right ≫ f j)
 include hf
 
+omit hU in
+/-- Transporting overlap compatibility of restricted formal-scheme morphisms to
+`LocallyRingedSpace` via `forgetToLocallyRingedSpace`. -/
+theorem forgetToLocallyRingedSpace_map_glue_compat (i j : ι) :
+    (forgetToLocallyRingedSpace.obj X).restrictHomOfLE (inf_le_left : U i ⊓ U j ≤ U i) ≫
+        forgetToLocallyRingedSpace.map (f i) =
+      (forgetToLocallyRingedSpace.obj X).restrictHomOfLE inf_le_right ≫
+        forgetToLocallyRingedSpace.map (f j) := by
+  have h := congrArg forgetToLocallyRingedSpace.map (hf i j)
+  rw [Functor.map_comp, Functor.map_comp, forgetToLocallyRingedSpace_map_restrictHomOfLE,
+    forgetToLocallyRingedSpace_map_restrictHomOfLE] at h
+  exact h
+
 /-- **Gluing morphisms of formal schemes along an open cover** (EGA I, Ch. I, 10.4.6). -/
 noncomputable def glueMorphisms : X ⟶ Y :=
   InducedCategory.homMk <| LocallyRingedSpace.glueMorphisms U hU
-    (fun i ↦ forgetToLocallyRingedSpace.map (f i)) fun i j ↦ by
-      have h := congrArg forgetToLocallyRingedSpace.map (hf i j)
-      rw [Functor.map_comp, Functor.map_comp, forgetToLocallyRingedSpace_map_restrictHomOfLE,
-        forgetToLocallyRingedSpace_map_restrictHomOfLE] at h
-      exact h
+    (fun i ↦ forgetToLocallyRingedSpace.map (f i))
+    (forgetToLocallyRingedSpace_map_glue_compat U f hf)
 
 /-- Forgetting the formal-scheme structure of `glueMorphisms` recovers locally ringed-space
 gluing. -/
@@ -57,11 +67,7 @@ gluing. -/
 theorem forgetToLocallyRingedSpace_map_glueMorphisms :
     forgetToLocallyRingedSpace.map (glueMorphisms U hU f hf) =
       LocallyRingedSpace.glueMorphisms U hU (fun i ↦ forgetToLocallyRingedSpace.map (f i))
-        fun i j ↦ by
-          have h := congrArg forgetToLocallyRingedSpace.map (hf i j)
-          rw [Functor.map_comp, Functor.map_comp, forgetToLocallyRingedSpace_map_restrictHomOfLE,
-            forgetToLocallyRingedSpace_map_restrictHomOfLE] at h
-          exact h := (rfl)
+        (forgetToLocallyRingedSpace_map_glue_compat U f hf) := (rfl)
 
 /-- Restricting the glued morphism to `U i` recovers `f i`. -/
 @[reassoc (attr := simp)]

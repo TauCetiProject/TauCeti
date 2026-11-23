@@ -15,7 +15,8 @@ import TauCeti.Geometry.RingedSpace.OpenImmersion
 
 For opens `V ≤ W` of a locally ringed space `X`, `AlgebraicGeometry.PresheafedSpace.restrictHomOfLE`
 lifts to an open immersion `restrictHomOfLE : X|_V ⟶ X|_W` of locally ringed spaces compatible with
-`ofRestrict` and functorial in inclusions. We also record residue-field compatibility with
+`ofRestrict` and functorial in inclusions, and `restrictRestrictIso` identifies an iterated
+restriction `(X|_U)|_V` with `X|_{U(V)}`. We also record residue-field compatibility with
 `PresheafedSpace.restrictTopSectionsIso` (`evaluation_eq_zero_iff_restrict_Γevaluation_eq_zero`).
 -/
 
@@ -36,14 +37,15 @@ private theorem restrictHomOfLE_eq_lift {V W : Opens X} (h : V ≤ W) :
     (congrArg Hom.toHom (IsOpenImmersion.lift_fac _ _ (range_ofRestrict_subset X h))).symm
 
 /-- Stalk maps of `PresheafedSpace.restrictHomOfLE` are local ring homomorphisms. -/
-theorem isLocalHom_restrictHomOfLE {V W : Opens X} (h : V ≤ W) (x : X.restrict V.isOpenEmbedding) :
+theorem isLocalHom_stalkMap_restrictHomOfLE {V W : Opens X} (h : V ≤ W)
+    (x : X.restrict V.isOpenEmbedding) :
     IsLocalHom ((X.toPresheafedSpace.restrictHomOfLE h).stalkMap x).hom :=
   restrictHomOfLE_eq_lift X h ▸ (IsOpenImmersion.lift _ _ _).prop x
 
 /-- For opens `V ≤ W` of `X`, the open immersion `X|_V ⟶ X|_W` of locally ringed spaces. -/
 def restrictHomOfLE {V W : Opens X} (h : V ≤ W) :
     X.restrict V.isOpenEmbedding ⟶ X.restrict W.isOpenEmbedding :=
-  ⟨X.toPresheafedSpace.restrictHomOfLE h, isLocalHom_restrictHomOfLE X h⟩
+  ⟨X.toPresheafedSpace.restrictHomOfLE h, isLocalHom_stalkMap_restrictHomOfLE X h⟩
 
 @[simp] theorem restrictHomOfLE_toHom {V W : Opens X} (h : V ≤ W) :
     (X.restrictHomOfLE h).toHom = X.toPresheafedSpace.restrictHomOfLE h := (rfl)
@@ -69,6 +71,59 @@ instance isOpenImmersion_restrictHomOfLE {V W : Opens X} (h : V ≤ W) :
 @[reassoc (attr := simp)] theorem restrictHomOfLE_comp {U V W : Opens X} (h : U ≤ V) (k : V ≤ W) :
     X.restrictHomOfLE h ≫ X.restrictHomOfLE k = X.restrictHomOfLE (h.trans k) :=
   Hom.ext' (X.toPresheafedSpace.restrictHomOfLE_comp h k)
+
+private theorem range_comp_ofRestrict (U : Opens X)
+    (V : Opens (X.restrict U.isOpenEmbedding)) :
+    Set.range ((X.restrict U.isOpenEmbedding).ofRestrict V.isOpenEmbedding ≫
+        X.ofRestrict U.isOpenEmbedding).base =
+      Set.range (X.ofRestrict (U.isOpenEmbedding.functor.obj V).isOpenEmbedding).base := by
+  rw [comp_base, TopCat.coe_comp, Set.range_comp]
+  exact (congrArg (Subtype.val '' ·) Subtype.range_coe).trans Subtype.range_coe.symm
+
+/-- Iterated restriction `(X|_U)|_V` is canonically isomorphic to the restriction `X|_{U(V)}`
+to the image open of `V` in `X`. -/
+noncomputable def restrictRestrictIso (U : Opens X)
+    (V : Opens (X.restrict U.isOpenEmbedding)) :
+    (X.restrict U.isOpenEmbedding).restrict V.isOpenEmbedding ≅
+      X.restrict (U.isOpenEmbedding.functor.obj V).isOpenEmbedding :=
+  LocallyRingedSpace.isoOfSheafedSpaceIso <| SheafedSpace.isoMk <|
+    PresheafedSpace.IsOpenImmersion.isoOfRangeEq
+      ((X.restrict U.isOpenEmbedding).ofRestrict V.isOpenEmbedding ≫
+        X.ofRestrict U.isOpenEmbedding).toHom
+      (X.ofRestrict (U.isOpenEmbedding.functor.obj V).isOpenEmbedding).toHom
+      (range_comp_ofRestrict X U V)
+
+/-- Composing `restrictRestrictIso.hom` with `ofRestrict (U(V))` gives the composite inclusion
+`(X|_U)|_V ⟶ X|_U ⟶ X`. -/
+@[reassoc (attr := simp)]
+theorem restrictRestrictIso_hom_ofRestrict (U : Opens X)
+    (V : Opens (X.restrict U.isOpenEmbedding)) :
+    (X.restrictRestrictIso U V).hom ≫
+        X.ofRestrict (U.isOpenEmbedding.functor.obj V).isOpenEmbedding =
+      (X.restrict U.isOpenEmbedding).ofRestrict V.isOpenEmbedding ≫
+        X.ofRestrict U.isOpenEmbedding :=
+  Hom.ext' <| PresheafedSpace.IsOpenImmersion.lift_fac _ _ (range_comp_ofRestrict X U V).le
+
+/-- Composing `restrictRestrictIso.hom` with `restrictHomOfLE` gives `(X|_U).ofRestrict V`. -/
+@[reassoc (attr := simp)]
+theorem restrictRestrictIso_hom_restrictHomOfLE (U : Opens X)
+    (V : Opens (X.restrict U.isOpenEmbedding))
+    (h : U.isOpenEmbedding.functor.obj V ≤ U := fun _ ⟨x, _, hx⟩ ↦ hx ▸ x.2) :
+    (X.restrictRestrictIso U V).hom ≫ X.restrictHomOfLE h =
+      (X.restrict U.isOpenEmbedding).ofRestrict V.isOpenEmbedding := by
+  rw [← cancel_mono (X.ofRestrict U.isOpenEmbedding), Category.assoc, restrictHomOfLE_ofRestrict,
+    restrictRestrictIso_hom_ofRestrict]
+
+/-- Composing `restrictRestrictIso.inv` with `(X|_U).ofRestrict V` gives `restrictHomOfLE`. -/
+@[reassoc (attr := simp)]
+theorem restrictRestrictIso_inv_ofRestrict (U : Opens X)
+    (V : Opens (X.restrict U.isOpenEmbedding))
+    (h : U.isOpenEmbedding.functor.obj V ≤ U := fun _ ⟨x, _, hx⟩ ↦ hx ▸ x.2) :
+    (X.restrictRestrictIso U V).inv ≫
+        (X.restrict U.isOpenEmbedding).ofRestrict V.isOpenEmbedding =
+      X.restrictHomOfLE h := by
+  rw [← cancel_mono (X.ofRestrict U.isOpenEmbedding), Category.assoc,
+    ← restrictRestrictIso_hom_ofRestrict, Iso.inv_hom_id_assoc, restrictHomOfLE_ofRestrict]
 
 /-- `s ∈ Γ(X, U)` vanishes in the residue field at `x ∈ U` iff its image under
 `PresheafedSpace.restrictTopSectionsIso` vanishes in the residue field of `X|_U` at `x`. -/

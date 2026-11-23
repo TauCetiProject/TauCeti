@@ -125,7 +125,7 @@ theorem continuousOnAffines_sectionsHom (f : X ⟶ ofSpf A) :
   have hUV : U ≤ (Opens.map (forgetToLocallyRingedSpace.map f).base).obj ⊤ := fun _ _ ↦ trivial
   exact @Continuous.congr _ _ ‹TopologicalSpace A› (X.sectionsTopology U hU) _ _
     (@Continuous.comp _ _ _ ‹TopologicalSpace A› tTop (X.sectionsTopology U hU) _ _
-      (continuous_c_app_comp_map_sectionsTopology f (isAffineOpen_top_ofSpf A) hU hUV)
+      (continuous_appLE_sectionsTopology f (isAffineOpen_top_ofSpf A) hU hUV)
       ((Spf.topSectionsIso A).commRingCatIsoToRingEquiv.toEquiv.isHomeomorph_iff.mp
         (isHomeomorph_topSectionsIso A)).2)
     fun a ↦ (ConcreteCategory.congr_hom

@@ -89,6 +89,7 @@ theorem app_eq_appLE {X Y : PresheafedSpace.{v, u, w} C} (f : X ⟶ Y) (U : Open
       f.appLE U ((Opens.map f.base).obj U) le_rfl := by
   simp [appLE]
 
+@[simp]
 theorem appLE_eq_app {X Y : PresheafedSpace.{v, u, w} C} (f : X ⟶ Y) (U : Opens Y) :
     f.appLE U ((Opens.map f.base).obj U) le_rfl = f.c.app (op U) :=
   (app_eq_appLE f U).symm
@@ -146,9 +147,10 @@ def restrictHomOfLE {V W : Opens X} (h : V ≤ W) :
   base := (Opens.toTopCat X).map (homOfLE h)
   c :=
     { app Q := X.presheaf.map (homOfLE (Opens.functor_obj_map_homOfLE_obj_le h Q.unop)).op
-      naturality _ _ _ := by
-        dsimp
-        exact TopCat.Presheaf.map_comp_eq_map_comp X.presheaf _ _ _ _ }
+      naturality _ _ i := by
+        exact (congrArg (· ≫ _) (X.restrict_presheaf_map W.isOpenEmbedding i)).trans <|
+          (TopCat.Presheaf.map_comp_eq_map_comp X.presheaf _ _ _ _).trans <|
+            congrArg (_ ≫ ·) (X.restrict_presheaf_map V.isOpenEmbedding _).symm }
 
 /-- The inclusion `X|_V ⟶ X|_W` followed by the inclusion `X|_W ⟶ X` is the inclusion
 `X|_V ⟶ X`. -/
@@ -158,13 +160,13 @@ theorem restrictHomOfLE_ofRestrict {V W : Opens X} (h : V ≤ W) :
   have hbase : (X.restrictHomOfLE h ≫ X.ofRestrict W.isOpenEmbedding).base =
       (X.ofRestrict V.isOpenEmbedding).base := by
     rw [comp_base, ofRestrict_base, ofRestrict_base, restrictHomOfLE_base]
-    rfl
+    exact Opens.toTopCat_map_comp_inclusion' (homOfLE h)
   refine PresheafedSpace.ext _ _ hbase ?_
   ext Q
   rw [NatTrans.comp_app, comp_c_app, Functor.whiskerRight_app, eqToHom_app,
     ofRestrict_c_app, ofRestrict_c_app, restrictHomOfLE_c_app]
-  refine (congrArg (· ≫ (X.restrict V.isOpenEmbedding).presheaf.map _)
-    (X.presheaf.map_comp _ _).symm).trans ?_
+  refine (congrArg₂ (· ≫ ·) (X.presheaf.map_comp _ _).symm
+    (X.restrict_presheaf_map V.isOpenEmbedding _)).trans ?_
   exact TopCat.Presheaf.map_comp_map_eq X.presheaf _ _ _
 
 /-- The inclusion of a restriction into itself is the identity. -/

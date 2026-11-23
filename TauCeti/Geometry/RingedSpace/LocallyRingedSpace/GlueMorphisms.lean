@@ -30,11 +30,22 @@ variable {X Y : LocallyRingedSpace.{u}} {ι : Type w} (U : ι → Opens X) (hU :
   (hf : ∀ i j, X.restrictHomOfLE (inf_le_left : U i ⊓ U j ≤ U i) ≫ f i =
     X.restrictHomOfLE inf_le_right ≫ f j)
 
+include hf in
+/-- Transporting overlap compatibility of restricted locally ringed-space morphisms on `U i ⊓ U j`
+to the presheafed-space pullback of `ofRestrict (U i)` and `ofRestrict (U j)`. -/
+theorem pullback_toHom_of_restrictHomOfLE (i j : ι) :
+    pullback.fst (X.toPresheafedSpace.ofRestrict (U i).isOpenEmbedding)
+        (X.toPresheafedSpace.ofRestrict (U j).isOpenEmbedding) ≫ (f i).toHom =
+      pullback.snd (X.toPresheafedSpace.ofRestrict (U i).isOpenEmbedding)
+        (X.toPresheafedSpace.ofRestrict (U j).isOpenEmbedding) ≫ (f j).toHom :=
+  (X.toPresheafedSpace.pullback_comp_iff_restrictHomOfLE (f i).toHom (f j).toHom).mpr <| by
+    have h := congrArg Hom.toHom (hf i j)
+    rw [comp_toHom, comp_toHom, restrictHomOfLE_toHom, restrictHomOfLE_toHom] at h
+    exact h
+
 private noncomputable def gluePsh : X.toPresheafedSpace ⟶ Y.toPresheafedSpace :=
-  PresheafedSpace.glueMorphisms X.IsSheaf U hU (fun i ↦ (f i).toHom) fun i j ↦
-    (X.toPresheafedSpace.pullback_comp_iff_restrictHomOfLE (f i).toHom (f j).toHom).mpr <| by
-      have h := congrArg Hom.toHom (hf i j)
-      rw [comp_toHom, comp_toHom, restrictHomOfLE_toHom, restrictHomOfLE_toHom] at h; exact h
+  PresheafedSpace.glueMorphisms X.IsSheaf U hU (fun i ↦ (f i).toHom)
+    (pullback_toHom_of_restrictHomOfLE U f hf)
 
 private theorem isLocalHom_stalkMap_gluePsh (x : X) :
     IsLocalHom ((gluePsh U hU f hf).stalkMap x).hom := by
@@ -54,11 +65,8 @@ noncomputable def glueMorphisms : X ⟶ Y :=
 `PresheafedSpace.glueMorphisms`. -/
 @[simp] theorem glueMorphisms_toHom :
     (glueMorphisms U hU f hf).toHom =
-      PresheafedSpace.glueMorphisms X.IsSheaf U hU (fun i ↦ (f i).toHom) fun i j ↦
-        (X.toPresheafedSpace.pullback_comp_iff_restrictHomOfLE (f i).toHom (f j).toHom).mpr <| by
-          have h := congrArg Hom.toHom (hf i j)
-          rw [comp_toHom, comp_toHom, restrictHomOfLE_toHom, restrictHomOfLE_toHom] at h
-          exact h := (rfl)
+      PresheafedSpace.glueMorphisms X.IsSheaf U hU (fun i ↦ (f i).toHom)
+        (pullback_toHom_of_restrictHomOfLE U f hf) := (rfl)
 
 /-- The glued morphism restricts to `f i` on each member `U i` of the open cover. -/
 @[reassoc (attr := simp)] theorem ofRestrict_glueMorphisms (i : ι) :

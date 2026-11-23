@@ -120,6 +120,14 @@ private theorem c_app_top_eq_map_sectionsHom (g : Spf B ⟶ Spf A) :
         (sectionsHom_map _ _).symm).trans
       (c_app_top_comp_topSectionsIso_hom (map (sectionsHom g) (continuous_sectionsHom g))).symm
 
+private theorem appLE_top (k : Spf B ⟶ Spf A) (W : Opens (Spf B))
+    (hle : W ≤ (Opens.map k.base).obj (⊤ : Opens (Spf A)) := fun _ _ ↦ trivial) :
+    k.toHom.appLE (⊤ : Opens (Spf A)) W hle =
+      (k.c.app (op ⊤) : (Spf A).presheaf.obj (op ⊤) ⟶ (Spf B).presheaf.obj (op ⊤)) ≫
+        (Spf B).presheaf.map (homOfLE (le_top : W ≤ ⊤)).op :=
+  (PresheafedSpace.Hom.appLE_def k.toHom _ _ _).trans <|
+    congrArg (_ ≫ (Spf B).presheaf.map ·) (Quiver.Hom.unop_inj (Subsingleton.elim _ _))
+
 private theorem algebraMap_comp_basicOpenSectionsIso_inv_comp_appLE (k : Spf B ⟶ Spf A) (a : A)
     (W : Opens (Spf B))
     (hW : W ≤ (Opens.map k.base).obj (basicOpen a : Opens (Spf A))) :
@@ -133,6 +141,34 @@ private theorem algebraMap_comp_basicOpenSectionsIso_inv_comp_appLE (k : Spf B �
     (Category.assoc _ _ _).trans <|
     congrArg ((topSectionsIso A).inv ≫ ·) (PresheafedSpace.Hom.map_appLE k.toHom hW _)
 
+private theorem topSectionsIso_inv_comp_res_comp_quotientProjection (W : Opens (Spf B)) (n : ℕ) :
+    let hIB := (IsAdicRing.ideal_spec B).2.1
+    (topSectionsIso B).inv ≫ (Spf B).presheaf.map (homOfLE (le_top : W ≤ ⊤)).op ≫
+        (quotientProjection hIB n).hom.app (op W) =
+      CommRingCat.ofHom (Ideal.Quotient.mk (IsAdicRing.ideal B ^ (n + 1))) ≫
+        (quotientSheafGlobalSectionsIso (is_ideal_adic_pow hIB n.succ_pos)).inv ≫
+        (quotientSheaf (is_ideal_adic_pow hIB n.succ_pos)).obj.map
+          (homOfLE (le_top : W ≤ ⊤)).op := by
+  intro hIB
+  have := (IsAdicRing.ideal_spec B).2.2
+  let W' : Opens (carrier B) := ⟨W.1, W.2⟩
+  have hnat : ((quotientProjection hIB n).hom.app (op ⊤) :
+        (structureSheaf hIB).obj.obj (op ⊤) ⟶ _) ≫
+        (quotientSheaf (is_ideal_adic_pow hIB n.succ_pos)).obj.map
+          (homOfLE (le_top : W' ≤ ⊤)).op =
+      (structureSheaf hIB).obj.map (homOfLE (le_top : W' ≤ ⊤)).op ≫
+        (quotientProjection hIB n).hom.app (op W') :=
+    ((quotientProjection hIB n).hom.naturality (homOfLE (le_top : W' ≤ ⊤)).op).symm
+  have hgs : (globalSectionsIso hIB).inv ≫
+        (structureSheaf hIB).obj.map (homOfLE (le_top : W' ≤ ⊤)).op ≫
+        (quotientProjection hIB n).hom.app (op W') =
+      CommRingCat.ofHom (Ideal.Quotient.mk (IsAdicRing.ideal B ^ (n + 1))) ≫
+        (quotientSheafGlobalSectionsIso (is_ideal_adic_pow hIB n.succ_pos)).inv ≫
+        (quotientSheaf (is_ideal_adic_pow hIB n.succ_pos)).obj.map
+          (homOfLE (le_top : W' ≤ ⊤)).op := by
+    rw [← hnat, ← Category.assoc, globalSectionsIso_inv_comp_quotientProjection, Category.assoc]
+  exact (congrArg (·.inv ≫ _) (topSectionsIso_def B)).trans hgs
+
 private theorem topSectionsIso_inv_comp_map_appLE_comp_quotientProjection (φ : A →+* B)
     (hφ : Continuous φ) (W : Opens (Spf B)) (n : ℕ) :
     let hIB := (IsAdicRing.ideal_spec B).2.1
@@ -144,63 +180,30 @@ private theorem topSectionsIso_inv_comp_map_appLE_comp_quotientProjection (φ : 
         (quotientSheaf (is_ideal_adic_pow hIB n.succ_pos)).obj.map
           (homOfLE (le_top : W ≤ ⊤)).op := by
   intro hIB
-  have := (IsAdicRing.ideal_spec A).2.2; have := (IsAdicRing.ideal_spec B).2.2
-  have htop : (topSectionsIso A).inv ≫ ((map φ hφ).c.app (op ⊤) :
-        (Spf A).presheaf.obj (op ⊤) ⟶ (Spf B).presheaf.obj (op ⊤)) =
-      CommRingCat.ofHom φ ≫ (topSectionsIso B).inv := by
-    rw [topSectionsIso_inv_comp_c_app_top, sectionsHom_map]
-  let W' : Opens (Spf.carrier B) := ⟨W.1, W.2⟩
-  have hnat : ((quotientProjection hIB n).hom.app (op ⊤) :
-        (structureSheaf hIB).obj.obj (op ⊤) ⟶ _) ≫
-        (quotientSheaf (is_ideal_adic_pow hIB n.succ_pos)).obj.map
-          (homOfLE (le_top : W' ≤ ⊤)).op =
-      (structureSheaf hIB).obj.map (homOfLE (le_top : W' ≤ ⊤)).op ≫
-        (quotientProjection hIB n).hom.app (op W') :=
-    ((quotientProjection hIB n).hom.naturality (homOfLE (le_top : W' ≤ ⊤)).op).symm
-  have hgs : (globalSectionsIso (IsAdicRing.ideal_spec B).2.1).inv ≫
-        (structureSheaf hIB).obj.map (homOfLE (le_top : W' ≤ ⊤)).op ≫
-        (quotientProjection hIB n).hom.app (op W') =
-      CommRingCat.ofHom (Ideal.Quotient.mk (IsAdicRing.ideal B ^ (n + 1))) ≫
-        (quotientSheafGlobalSectionsIso (is_ideal_adic_pow hIB n.succ_pos)).inv ≫
-        (quotientSheaf (is_ideal_adic_pow hIB n.succ_pos)).obj.map
-          (homOfLE (le_top : W' ≤ ⊤)).op := by
-    rw [← hnat, ← Category.assoc, globalSectionsIso_inv_comp_quotientProjection, Category.assoc]
-  have hcarrier : (topSectionsIso B).inv ≫
+  have h1 : (topSectionsIso A).inv ≫
+        (map φ hφ).toHom.appLE (⊤ : Opens (Spf A)) W (fun _ _ ↦ trivial) ≫
+        (quotientProjection hIB n).hom.app (op W) =
+      ((topSectionsIso A).inv ≫ ((map φ hφ).c.app (op ⊤) : _ ⟶ _)) ≫
+        (Spf B).presheaf.map (homOfLE (le_top : W ≤ ⊤)).op ≫
+        (quotientProjection hIB n).hom.app (op W) :=
+    (congrArg ((topSectionsIso A).inv ≫ ·)
+      (congrArg (· ≫ (quotientProjection hIB n).hom.app (op W)) (appLE_top (map φ hφ) W))).trans <|
+      (congrArg ((topSectionsIso A).inv ≫ ·) (Category.assoc _ _ _)).trans
+        (Category.assoc _ _ _).symm
+  have h2 : ((topSectionsIso A).inv ≫ ((map φ hφ).c.app (op ⊤) :
+          (Spf A).presheaf.obj (op ⊤) ⟶ (Spf B).presheaf.obj (op ⊤))) ≫
         (Spf B).presheaf.map (homOfLE (le_top : W ≤ ⊤)).op ≫
         (quotientProjection hIB n).hom.app (op W) =
-      CommRingCat.ofHom (Ideal.Quotient.mk (IsAdicRing.ideal B ^ (n + 1))) ≫
-        (quotientSheafGlobalSectionsIso (is_ideal_adic_pow hIB n.succ_pos)).inv ≫
-        (quotientSheaf (is_ideal_adic_pow hIB n.succ_pos)).obj.map
-          (homOfLE (le_top : W' ≤ ⊤)).op :=
-    (congrArg (fun e : (Spf B).presheaf.obj (op ⊤) ≅ CommRingCat.of B ↦
-      e.inv ≫ (Spf B).presheaf.map (homOfLE (le_top : W ≤ ⊤)).op ≫
-        (quotientProjection hIB n).hom.app (op W)) (topSectionsIso_def B)).trans hgs
-  have happ : (map φ hφ).toHom.appLE (⊤ : Opens (Spf A)) W (fun _ _ ↦ trivial) =
-      ((map φ hφ).c.app (op ⊤) :
-          (Spf A).presheaf.obj (op ⊤) ⟶ (Spf B).presheaf.obj (op ⊤)) ≫
-        (Spf B).presheaf.map (homOfLE (le_top : W ≤ ⊤)).op :=
-    (PresheafedSpace.Hom.appLE_def _ _ _ _).trans <|
-      congrArg (_ ≫ (Spf B).presheaf.map ·) (Quiver.Hom.unop_inj (Subsingleton.elim _ _))
-  have hpost : CommRingCat.ofHom φ ≫
-        CommRingCat.ofHom (Ideal.Quotient.mk (IsAdicRing.ideal B ^ (n + 1))) ≫
-        (quotientSheafGlobalSectionsIso (is_ideal_adic_pow hIB n.succ_pos)).inv ≫
-        (quotientSheaf (is_ideal_adic_pow hIB n.succ_pos)).obj.map
-          (homOfLE (le_top : W' ≤ ⊤)).op =
-      CommRingCat.ofHom ((Ideal.Quotient.mk (IsAdicRing.ideal B ^ (n + 1))).comp φ) ≫
-        (quotientSheafGlobalSectionsIso (is_ideal_adic_pow hIB n.succ_pos)).inv ≫
-        (quotientSheaf (is_ideal_adic_pow hIB n.succ_pos)).obj.map
-          (homOfLE (le_top : W' ≤ ⊤)).op := by
-    rw [← Category.assoc, ← CommRingCat.ofHom_comp]
-  exact (congrArg ((topSectionsIso A).inv ≫ · ≫ (quotientProjection hIB n).hom.app (op W))
-      happ).trans <|
-    (Category.assoc _ _ _).symm.trans <|
-    (congrArg (· ≫ (quotientProjection hIB n).hom.app (op W))
-      (Category.assoc _ _ _).symm).trans <|
-    (congrArg (fun k ↦ (k ≫ (Spf B).presheaf.map (homOfLE (le_top : W ≤ ⊤)).op) ≫
-      (quotientProjection hIB n).hom.app (op W)) htop).trans <|
-    (Category.assoc _ _ _).trans <|
+      CommRingCat.ofHom φ ≫ (topSectionsIso B).inv ≫
+        (Spf B).presheaf.map (homOfLE (le_top : W ≤ ⊤)).op ≫
+        (quotientProjection hIB n).hom.app (op W) :=
+    (congrArg (· ≫ _) ((topSectionsIso_inv_comp_c_app_top (map φ hφ)).trans
+      (congrArg (· ≫ _) (congrArg CommRingCat.ofHom (sectionsHom_map φ hφ))))).trans
+      (Category.assoc _ _ _)
+  exact h1.trans <| h2.trans <|
     (congrArg (CommRingCat.ofHom φ ≫ ·)
-      ((Category.assoc _ _ _).trans hcarrier)).trans hpost
+      (topSectionsIso_inv_comp_res_comp_quotientProjection W n)).trans <|
+    (Category.assoc _ _ _).symm.trans <| congrArg (· ≫ _) (CommRingCat.ofHom_comp _ _).symm
 
 private theorem exists_pow_map_quotient_eq_bot_of_map (φ : A →+* B) (hφ : Continuous φ)
     (W : Opens (Spf B)) (n : ℕ) :
@@ -245,20 +248,25 @@ private theorem c_app_basicOpen_eq_map_sectionsHom (g : Spf B ⟶ Spf A) (a : A)
     let γ₂ := (bIso ≫ m.toHom.appLE U W le_rfl ≫ πn).hom
     let algTarget : CommRingCat.of A ⟶ Rn :=
       (topSectionsIso A).inv ≫ m.toHom.appLE (⊤ : Opens (Spf A)) W (fun _ _ ↦ trivial) ≫ πn
-    have hA₁ : γ₁.comp (algebraMap A (AdicRing.CompletedAway A a)) = algTarget.hom := by
+    have comp_alg (k : Spf B ⟶ Spf A) (hWk : W ≤ (Opens.map k.base).obj U)
+        (htop : (k.c.app (op ⊤) : (Spf A).presheaf.obj (op ⊤) ⟶ (Spf B).presheaf.obj (op ⊤)) =
+          m.c.app (op ⊤)) :
+        (bIso ≫ k.toHom.appLE U W hWk ≫ πn).hom.comp
+            (algebraMap A (AdicRing.CompletedAway A a)) =
+          algTarget.hom := by
       refine congrArg CommRingCat.Hom.hom <| (CommRingCat.ofHom_comp _ _).trans ?_
-      refine (congrArg (· ≫ πn) ((Category.assoc _ _ _).symm.trans
-        (algebraMap_comp_basicOpenSectionsIso_inv_comp_appLE g a W hWg))).trans ?_
-      refine (Category.assoc _ _ _).trans <| congrArg ((topSectionsIso A).inv ≫ · ≫ πn) ?_
-      exact ((PresheafedSpace.Hom.appLE_def g.toHom _ _ _).trans <|
-        congrArg₂ (· ≫ (Spf B).presheaf.map ·) (c_app_top_eq_map_sectionsHom g)
-          (Quiver.Hom.unop_inj (Subsingleton.elim _ _))).trans
-        (PresheafedSpace.Hom.appLE_def m.toHom _ _ _).symm
-    have hA₂ : γ₂.comp (algebraMap A (AdicRing.CompletedAway A a)) = algTarget.hom := by
-      refine congrArg CommRingCat.Hom.hom <| (CommRingCat.ofHom_comp _ _).trans ?_
-      refine (congrArg (· ≫ πn) ((Category.assoc _ _ _).symm.trans
-        (algebraMap_comp_basicOpenSectionsIso_inv_comp_appLE m a W le_rfl))).trans ?_
-      exact Category.assoc _ _ _
+      refine (congrArg (CommRingCat.ofHom (algebraMap A _) ≫ ·)
+        (CommRingCat.ofHom_hom _)).trans ?_
+      refine (congrArg (CommRingCat.ofHom (algebraMap A _) ≫ ·)
+        (Category.assoc _ _ _).symm).trans ?_
+      refine (Category.assoc _ _ _).symm.trans ?_
+      refine (congrArg (· ≫ πn)
+        (algebraMap_comp_basicOpenSectionsIso_inv_comp_appLE k a W hWk)).trans ?_
+      refine (Category.assoc _ _ _).trans ?_
+      exact congrArg ((topSectionsIso A).inv ≫ · ≫ πn) <|
+        (appLE_top k W).trans <| (congrArg (· ≫ _) htop).trans (appLE_top m W).symm
+    have hA₁ := comp_alg g hWg (c_app_top_eq_map_sectionsHom g)
+    have hA₂ := comp_alg m le_rfl rfl
     let _ : Algebra A Rn := (γ₂.comp (algebraMap A (AdicRing.CompletedAway A a))).toAlgebra
     obtain ⟨k, hk⟩ := exists_pow_map_quotient_eq_bot_of_map φ hφ W n
     exact congr($(AdicRing.CompletedAway.algHom_ext_of_map_pow_eq_bot (hA₂ ▸ hk)
@@ -352,64 +360,6 @@ theorem isHomeomorph_isoToRingEquiv (e : Spf B ≅ Spf A) : IsHomeomorph (isoToR
   (Homeomorph.mk (isoToRingEquiv e).toEquiv
     (continuous_sectionsHom e.hom) (continuous_sectionsHom e.inv)).isHomeomorph
 
-private theorem continuous_structureSheafMap_sectionsTopology (φ : A →+* B) (hφ : Continuous φ)
-    (U : Opens (carrier A)) :
-    let hIA := (IsAdicRing.ideal_spec A).2.1; let hIB := (IsAdicRing.ideal_spec B).2.1
-    @Continuous _ _ (sectionsTopology hIA U)
-      (sectionsTopology hIB ((Opens.map (TopCat.ofHom (comap φ hφ))).obj U))
-      ((structureSheafMap φ hφ hIA hIB).hom.app (op U) :
-        (structureSheaf hIA).obj.obj (op U) ⟶ _) := by
-  intro hIA hIB; let W := (Opens.map (TopCat.ofHom (comap φ hφ))).obj U
-  let _ := sectionsTopology hIA U; refine (continuous_iff_sectionsTopology hIB W).mpr fun n ↦ ?_
-  obtain ⟨m, hm⟩ := hIA.exists_pow_succ_le_comap (hIB.isOpen_pow (n + 1)) hφ
-  let _ : TopologicalSpace ((quotientSheaf (is_ideal_adic_pow hIB n.succ_pos)).obj.obj (op W)) := ⊥
-  exact (@Continuous.comp _ _ _ (sectionsTopology hIA U) ⊥ ⊥ _ _ continuous_bot
-    (continuous_toQuotientSheaf_app hIA (is_ideal_adic_pow hIA m.succ_pos) U)).congr fun x ↦
-      (ConcreteCategory.congr_hom (congrArg (·.hom.app (op U))
-        (structureSheafMap_comp_quotientProjection φ hφ hIA hIB _ n hm)) x).symm
-
-private theorem continuous_structureSheafMap_quotientSectionsTopology (φ : A →+* B)
-    (hφ : Continuous φ) (U : Opens (carrier A)) :
-    let hIA := (IsAdicRing.ideal_spec A).2.1; let hIB := (IsAdicRing.ideal_spec B).2.1
-    @Continuous _ _ (quotientSectionsTopology hIA U)
-      (quotientSectionsTopology hIB ((Opens.map (TopCat.ofHom (comap φ hφ))).obj U))
-      ((structureSheafMap φ hφ hIA hIB).hom.app (op U) :
-        (structureSheaf hIA).obj.obj (op U) ⟶ _) := by
-  intro hIA hIB; let fBase := TopCat.ofHom (comap φ hφ)
-  let η : (structureSheaf hIA).obj ⟶ (TopCat.Presheaf.pushforward CommRingCat fBase).obj
-      (structureSheaf hIB).obj := (structureSheafMap φ hφ hIA hIB).hom
-  let _ := quotientSectionsTopology hIA U
-  refine (continuous_iff_quotientSectionsTopology hIB _).mpr fun b hb ↦ ?_
-  let V (i : { a : A // basicOpen a ≤ U }) : Opens (carrier B) := basicOpen (b * φ i.1)
-  have hVle (i) : V i ≤ basicOpen b := by simp only [V, basicOpen_mul]; exact inf_le_left
-  have hVcov : basicOpen b ≤ ⨆ i, V i := fun q hqb ↦
-    let ⟨a, _, haU⟩ := exists_basicOpen_le (Opens.mem_map.mp (hb hqb))
-    Opens.mem_iSup.mpr ⟨⟨a, haU⟩, by
-      simp only [V, basicOpen_mul]; exact ⟨hqb, by rwa [← comap_basicOpen φ hφ a]⟩⟩
-  let _ := quotientSectionsTopology hIB (basicOpen b)
-  let _ (i) := quotientSectionsTopology hIB (V i)
-  rw [← quotientSectionsTopology_basicOpen hIB b,
-    (quotientSectionsTopology_glue hIB hVle hVcov).isInducing.continuous_iff, continuous_pi_iff]
-  intro ⟨a, haU⟩; let _ := sectionsTopology hIA (basicOpen a)
-  let _ := sectionsTopology hIB ((Opens.map fBase).obj (basicOpen a))
-  have hVφ : V ⟨a, haU⟩ ≤ (Opens.map fBase).obj (basicOpen a) :=
-    (le_of_eq (basicOpen_mul _ _)).trans (inf_le_right.trans (comap_basicOpen φ hφ a).ge)
-  have hnat : (η.app (op U) : _ ⟶ _) ≫ (structureSheaf hIB).obj.map (homOfLE hb).op ≫
-        (structureSheaf hIB).obj.map (homOfLE (hVle ⟨a, haU⟩)).op =
-      (structureSheaf hIA).obj.map (homOfLE haU).op ≫ (η.app (op (basicOpen a)) : _ ⟶ _) ≫
-        (structureSheaf hIB).obj.map (homOfLE hVφ).op := by
-    refine (congrArg (_ ≫ ·) (TopCat.Presheaf.map_comp_eq_map_comp (structureSheaf hIB).obj
-      (homOfLE hb).op (homOfLE (hVle ⟨a, haU⟩)).op
-      ((Opens.map fBase).map (homOfLE haU)).op (homOfLE hVφ).op)).trans ?_
-    rw [← Category.assoc]
-    exact congrArg (· ≫ _) (η.naturality (homOfLE haU).op).symm
-  refine (((quotientSectionsTopology_basicOpen hIB _).symm ▸ sectionsTopology_restrict hIB
-    hVφ : @Continuous _ _ (sectionsTopology hIB ((Opens.map fBase).obj (basicOpen a)))
-      (quotientSectionsTopology hIB (V ⟨a, haU⟩)) _).comp
-    ((continuous_structureSheafMap_sectionsTopology φ hφ (basicOpen a)).comp
-      (continuous_restrict_basicOpen_sectionsTopology hIA haU))).congr fun x ↦
-    (ConcreteCategory.congr_hom hnat x).symm
-
 /-- Every morphism `g : Spf B ⟶ Spf A` is continuous on rings of sections over all opens `U`,
 equipped with `quotientSectionsTopology` (EGA I, Ch. I, 10.2.2 and 10.4.5). -/
 theorem continuous_c_app (g : Spf B ⟶ Spf A) (U : Opens (Spf A)) :
@@ -421,6 +371,7 @@ theorem continuous_c_app (g : Spf B ⟶ Spf A) (U : Opens (Spf A)) :
       (structureSheafMap _ _ (IsAdicRing.ideal_spec A).2.1 (IsAdicRing.ideal_spec B).2.1).hom⟩ :=
     (congrArg LocallyRingedSpace.Hom.toHom (map_sectionsHom g).symm).trans (map_toHom _ _)
   generalize g.toHom = f at heq ⊢; subst heq
-  exact continuous_structureSheafMap_quotientSectionsTopology _ (continuous_sectionsHom g) U
+  exact continuous_structureSheafMap_quotientSectionsTopology _ (continuous_sectionsHom g)
+    (IsAdicRing.ideal_spec A).2.1 (IsAdicRing.ideal_spec B).2.1 U
 end HomEquiv
 end TauCeti.FormalScheme.Spf
