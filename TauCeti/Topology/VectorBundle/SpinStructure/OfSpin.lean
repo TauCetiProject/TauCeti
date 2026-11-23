@@ -14,22 +14,22 @@ A Spin structure `s` of rank `n ≥ 1` on a real vector bundle `E` with fibre in
 principal `Spin(n)`-bundle `P`, induces a `Spinᶜ` structure `s.toSpinC`
 (`TauCeti.SpinStructure.toSpinC`): its principal bundle is the extension of structure group
 `P ×_{Spin(n)} Spinᶜ(n)` along `s ↦ [s, 1]` (`CliffordAlgebra.spinCGroup.ofSpin`), and the frame of
-`[p, 1]` is the frame of `p` (`TauCeti.SpinStructure.toFrame_toSpinC_inl`).
+`[p, 1]` is the frame of `p` (`TauCeti.SpinStructure.toFrame_inlSpinC`).
 
-The determinant character `[s, z] ↦ z²` is trivial on `Spin(n)`, so the determinant line of
-`s.toSpinC` is trivial: the class `[[p, 1], 1]` does not depend on the point `p` of `P` over `x`
-(`TauCeti.SpinStructure.determinantLineSection_eq`), so it is a nowhere vanishing section of the
-determinant line (`TauCeti.SpinStructure.determinantLineSection_ne_zero`), and it is continuous
-(`TauCeti.SpinStructure.continuous_determinantLineSection`). It identifies every fibre with `ℂ`
-(`TauCeti.SpinStructure.determinantLineEquiv`). Hence a `Spinᶜ` structure coming from a Spin
-structure has a trivial determinant line.
+The determinant character `[s, z] ↦ z²` is trivial on `Spin(n)`, so the class `[[p, 1], 1]` in
+the determinant line of `s.toSpinC` does not depend on the point `p` of `P` over `x`
+(`TauCeti.SpinStructure.determinantLineSection_eq`). It is therefore a nowhere vanishing section of
+the determinant line (`TauCeti.SpinStructure.determinantLineSection_ne_zero`), and it is continuous
+(`TauCeti.SpinStructure.continuous_determinantLineSection`). Scaling it identifies every fibre
+with `ℂ` (`TauCeti.SpinStructure.determinantLineEquiv`).
 
 ## Main definitions
 
 * `TauCeti.SpinStructure.toSpinC`: the `Spinᶜ` structure induced by a Spin structure.
 * `TauCeti.SpinStructure.determinantLineSection`: the section `x ↦ [[p, 1], 1]` of its determinant
   line.
-* `TauCeti.SpinStructure.determinantLineEquiv`: the identification `ℂ ≃ L_x`, `c ↦ c [[p, 1], 1]`.
+* `TauCeti.SpinStructure.determinantLineEquiv`: the identification `ℂ ≃ L_x`,
+  `c ↦ c • determinantLineSection x`.
 
 ## References
 
@@ -54,14 +54,6 @@ local notation "hQn" => QuadraticMap.Nondegenerate.ne_zero (nondegenerate_realCl
 
 namespace SpinStructure
 
-/-- The inclusion `Spin(n) → Spinᶜ(n)`, `s ↦ [s, 1]`, is continuous: it is the quotient map
-`Spin(n) × U(1) → Spinᶜ(n)` after `s ↦ (s, 1)`. -/
-private theorem continuous_ofSpin :
-    Continuous (spinCGroup.ofSpin (realCliffordForm n 0) hQn) := by
-  have h := (spinCGroup.isQuotientCoveringMap_mk (realCliffordForm n 0) hQn).continuous.comp
-    (continuous_id.prodMk (continuous_const (y := (1 : Circle))))
-  exact h.congr fun g ↦ (spinCGroup.ofSpin_apply _ hQn g).symm
-
 /-- The inclusion `Spin(n) → Spinᶜ(n)` lifts the vector action `Spin(n) → SO(n)` along the
 rotation homomorphism `Spinᶜ(n) → SO(n)`. -/
 private theorem comp_ofSpin :
@@ -78,26 +70,43 @@ variable (s : SpinStructure F E n)
 /-- **The `Spinᶜ` structure of a Spin structure**: the extension of its principal `Spin(n)`-bundle
 `P` along the inclusion `Spin(n) → Spinᶜ(n)`, `s ↦ [s, 1]`. Its principal bundle is
 `P ×_{Spin(n)} Spinᶜ(n)`, and the frame of `[p, 1]` is the frame of `p`
-(`TauCeti.SpinStructure.toFrame_toSpinC_inl`). -/
+(`TauCeti.SpinStructure.toFrame_inlSpinC`). -/
 noncomputable def toSpinC : SpinCStructure F E n :=
-  s.extendSpinC (spinCGroup.ofSpin _ hQn) continuous_ofSpin comp_ofSpin
+  s.extendSpinC (spinCGroup.ofSpin _ hQn) (spinCGroup.continuous_ofSpin _ hQn) comp_ofSpin
 
 /-- The point `[p, 1]` of the principal bundle of `s.toSpinC` over the point `p` of `s`. -/
 noncomputable def inlSpinC {x : X} (p : s.P x) : s.toSpinC.P x :=
-  PrincipalBundle.Extend.inl (spinCGroup.ofSpin _ hQn) continuous_ofSpin p
+  PrincipalBundle.Extend.inl (spinCGroup.ofSpin _ hQn) (spinCGroup.continuous_ofSpin _ hQn) p
+
+/-- The map `p ↦ [p, 1]` from the total space of `P` to that of the principal bundle of
+`s.toSpinC` is continuous. -/
+theorem continuous_inlSpinC :
+    Continuous fun p : TotalSpace (realCliffordSpinGroupZero n) s.P ↦
+      TotalSpace.mk' (spinCGroup (realCliffordForm n 0) hQn) p.proj (s.inlSpinC p.snd) :=
+  PrincipalBundle.Extend.continuous_inl s.P _ (spinCGroup.continuous_ofSpin _ hQn)
 
 /-- **Compatibility with frames**: the frame of `[p, 1]` in the induced `Spinᶜ` structure is the
 frame of `p`. -/
 @[simp]
-theorem toFrame_toSpinC_inl (x : X) (p : s.P x) :
+theorem toFrame_inlSpinC (x : X) (p : s.P x) :
     s.toSpinC.toFrame ⟨x, s.inlSpinC p⟩ = s.toFrame ⟨x, p⟩ :=
-  OrthonormalFrameLift.toFrame_extendSpinC_inl s (spinCGroup.ofSpin _ hQn) continuous_ofSpin
-    comp_ofSpin x p
+  OrthonormalFrameLift.toFrame_extendSpinC_inl s (spinCGroup.ofSpin _ hQn)
+    (spinCGroup.continuous_ofSpin _ hQn) comp_ofSpin x p
 
 /-- `[p • g, 1] = [p, 1] • [g, 1]` for `g ∈ Spin(n)`. -/
+@[simp]
 theorem inlSpinC_smul {x : X} (p : s.P x) (g : realCliffordSpinGroupZero n) :
     s.inlSpinC (op g • p) = op (spinCGroup.ofSpin _ hQn g) • s.inlSpinC p :=
-  PrincipalBundle.Extend.inl_smul (spinCGroup.ofSpin _ hQn) continuous_ofSpin p g
+  PrincipalBundle.Extend.inl_smul _ (spinCGroup.continuous_ofSpin _ hQn) p g
+
+/-- The principal `Spinᶜ(n)`-division of `[p, 1]` and `[q, 1]` is the image of the principal
+`Spin(n)`-division of `p` and `q`. -/
+@[simp]
+theorem division_inlSpinC {x : X} (p q : s.P x) :
+    PrincipalBundle.division (spinCGroup (realCliffordForm n 0) hQn) (s.inlSpinC p)
+        (s.inlSpinC q) =
+      spinCGroup.ofSpin _ hQn (PrincipalBundle.division (realCliffordSpinGroupZero n) p q) :=
+  PrincipalBundle.Extend.division_inl _ (spinCGroup.continuous_ofSpin _ hQn) p q
 
 /-- The class `[[p, 1], 1]` in the determinant line of `s.toSpinC`. -/
 noncomputable def determinantLineSection (x : X) : s.toSpinC.determinantLine x :=
@@ -110,7 +119,7 @@ model. -/
 theorem determinantLineSection_eq {x : X} (p : s.P x) :
     s.determinantLineSection x =
       AssociatedBundle.mk _ (s.inlSpinC p) (SpinCStructure.DeterminantModel.toComplex.symm 1) := by
-  rw [determinantLineSection, 
+  rw [determinantLineSection,
     ← PrincipalBundle.smul_division (G := realCliffordSpinGroupZero n) p
       (Classical.arbitrary (s.P x)),
     inlSpinC_smul, AssociatedBundle.mk_smul]
@@ -125,8 +134,9 @@ theorem determinantLineSection_ne_zero (x : X) : s.determinantLineSection x ≠ 
     (AssociatedBundle.mk_bijective _).injective.eq_iff]
   exact SpinCStructure.DeterminantModel.toComplex.symm.map_ne_zero_iff.mpr one_ne_zero
 
-/-- **The determinant line of `s.toSpinC` is trivial on every fibre**: `c ↦ c [[p, 1], 1]` is a
-linear isomorphism `ℂ ≃ L_x`. -/
+/-- The identification of the fibre of the determinant line of `s.toSpinC` at `x` with `ℂ` given
+by the canonical section: `c ↦ c • s.determinantLineSection x`
+(`TauCeti.SpinStructure.determinantLineEquiv_apply`). -/
 noncomputable def determinantLineEquiv (x : X) : ℂ ≃ₗ[ℂ] s.toSpinC.determinantLine x :=
   LinearEquiv.trans
     (LinearIsometryEquiv.toLinearEquiv (SpinCStructure.DeterminantModel.toComplex (n := n)).symm)
@@ -141,29 +151,15 @@ theorem determinantLineEquiv_apply (x : X) (c : ℂ) :
     LinearIsometryEquiv.coe_toLinearEquiv, ContinuousLinearEquiv.coe_toLinearEquiv,
     AssociatedBundle.mkContinuousLinearEquiv_apply]
 
-/-- **The section of the determinant line is continuous.** Near each point it is
-`x ↦ [[p x, 1], 1]` for a continuous local section `p` of `P`. -/
+/-- **The section of the determinant line is continuous.** -/
 theorem continuous_determinantLineSection :
     Continuous fun x ↦ TotalSpace.mk' (SpinCStructure.DeterminantModel n) x
       (s.determinantLineSection x) := by
-  refine continuous_iff_continuousAt.2 fun x₀ ↦ ?_
-  set e := trivializationAt (realCliffordSpinGroupZero n) s.P x₀
-  have hx₀ : x₀ ∈ e.baseSet := FiberBundle.mem_baseSet_trivializationAt' x₀
-  -- The local section `x ↦ e⁻¹ (x, 1)` of `P` is continuous on the base set of `e`.
-  have hp : ContinuousOn (fun x ↦ TotalSpace.mk' (realCliffordSpinGroupZero n) x (e.symm x 1))
-      e.baseSet :=
-    e.continuousOn_symm.comp
-      (continuous_id.prodMk
-        (continuous_const (y := (1 : realCliffordSpinGroupZero n)))).continuousOn
-      fun _ hx ↦ ⟨hx, Set.mem_univ _⟩
-  have hq := (hp.totalSpaceMk_extendMk (f := id) (ρ := spinCGroup.ofSpin _ hQn) continuous_ofSpin
-    (continuousOn_const (c := 1))).totalSpaceMk_associatedBundleMk
-      (v := fun _ ↦ (SpinCStructure.DeterminantModel.toComplex (n := n)).symm (1 : ℂ))
-      continuousOn_const
-  refine ((hq x₀ hx₀).continuousAt (e.open_baseSet.mem_nhds hx₀)).congr_of_eventuallyEq ?_
-  filter_upwards [e.open_baseSet.mem_nhds hx₀] with x _
-  rw [determinantLineSection_eq s (e.symm x 1), inlSpinC, PrincipalBundle.Extend.inl_def]
-  rfl
+  -- Pulled back to the total space of `P`, the section is `p ↦ [[p, 1], 1]`.
+  refine (FiberBundle.isQuotientMap_proj (F := realCliffordSpinGroupZero n)
+    (E := s.P)).continuous_iff.2 ?_
+  exact (s.continuous_inlSpinC.totalSpaceMk_associatedBundleMk continuous_const).congr
+    fun ⟨x, p⟩ ↦ by rw [Function.comp_apply, determinantLineSection_eq s p]
 
 end SpinStructure
 
