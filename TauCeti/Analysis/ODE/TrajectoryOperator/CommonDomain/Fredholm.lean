@@ -9,7 +9,6 @@ public import TauCeti.Analysis.ODE.TrajectoryOperator.CommonDomain.SemiFredholm
 public import TauCeti.Analysis.Fredholm.ContinuousFamily
 import TauCeti.Analysis.Fredholm.ClosedRange
 import TauCeti.Analysis.Fredholm.CompactPerturbation
-import TauCeti.Analysis.Normed.Operator.Compact.Interpolation
 import TauCeti.Analysis.SpecialFunctions.SmoothTransition
 
 /-!
