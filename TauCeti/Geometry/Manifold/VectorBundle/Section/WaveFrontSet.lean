@@ -8,10 +8,9 @@ module
 public import TauCeti.Analysis.Distribution.WaveFrontSet.ChangeOfVariables
 public import TauCeti.Analysis.Distribution.WaveFrontSet.SingularSupport
 public import TauCeti.Geometry.Manifold.VectorBundle.Cotangent.Basic
-public import TauCeti.Geometry.Manifold.VectorBundle.Section.Distribution
+public import TauCeti.Geometry.Manifold.VectorBundle.Section.ChartComponent
 public import TauCeti.Geometry.Manifold.VectorBundle.Section.SmulLeft
 public import TauCeti.Topology.VectorBundle.ZeroSection
-import TauCeti.Analysis.Calculus.BumpFunction.FiniteDimension
 import TauCeti.Analysis.Calculus.FDeriv.Equiv
 import TauCeti.Analysis.Distribution.WaveFrontSet.Localization
 import TauCeti.Geometry.Manifold.LocalDiffeomorph.MFDeriv
@@ -27,8 +26,10 @@ on the bundle tests `TauCeti.BundleTest I F V`, for instance a distributional se
 (`TauCeti.BundleDistribution`). In a smooth chart `c` with smooth inverse and a bundle frame `t`
 over its source, `T` has a local representative on the chart target
 (`Bundle.Trivialization.chartDistributionCLM`). Its **component along** `v : F`
-(`Bundle.Trivialization.chartComponent`) is the complex distribution `φ ↦ T (φ • v)` on the chart
-target, the test function `φ • v` being extended to a bundle test through the chart and the frame.
+(`Bundle.Trivialization.chartComponent`, in
+`TauCeti.Geometry.Manifold.VectorBundle.Section.ChartComponent`) is the complex distribution
+`φ ↦ T (φ • v)` on the chart target, the test function `φ • v` being extended to a bundle test
+through the chart and the frame.
 As for vector-valued distributions (`Distribution.vectorWaveFrontSet`), `T` is microlocally smooth
 in the chart at `(y, η)` when all these components are.
 
@@ -58,17 +59,14 @@ it agrees with `WF(T)` where `f ≠ 0`.
 
 ## The argument
 
-Near `y`, a test function `φ • v` read in the chart `c'` and the frame `t'` is the bundle test
-`x ↦ φ(c' x) t'⁻¹(v)`. Over the overlap of the two charts this is
-`t⁻¹(φ(c' x) G(x) v)` for the change of frame `G = t ∘ t'⁻¹`, that is, the test function
-`z ↦ φ(κ⁻¹ z) G(c⁻¹ z) v` read in the chart `c` and the frame `t`. Writing `G v` in a basis `(bⱼ)`
-of `F` and the composition with `κ⁻¹` as the pushforward of test densities along `κ`, which carries
-the Jacobian `|det Dκ⁻¹|` (`TestFunction.pushforwardCLM`), gives near `y`
+Near `y`, the component along `v` in `(t', c')` is
 
 `S'_v = ∑ⱼ gⱼ κ^* S_{bⱼ}`, with `gⱼ = |det Dκ| · bⱼ*(G(c'⁻¹ ·) v)`,
 
-where `κ^*` is the pullback of distributions (`Distribution.compCLMOfOpenPartialHomeomorph`). The
-pullback transforms microlocal smoothness by the transpose of `Dκ`
+for the change of frame `G = t ∘ t'⁻¹` and a basis `(bⱼ)` of `F`
+(`Bundle.Trivialization.restrictCLM_chartComponent_eq_sum`), where `κ^*` is the pullback of
+distributions (`Distribution.compCLMOfOpenPartialHomeomorph`). The pullback transforms microlocal
+smoothness by the transpose of `Dκ`
 (`Distribution.isMicrolocallySmoothAt_compCLMOfOpenPartialHomeomorph_iff`), and smooth multiples
 and finite sums preserve it. Exchanging the roles of the two charts gives the converse. On the
 manifold, the chain rule `D(c⁻¹)(c x) = D(c₀⁻¹)(c₀ x) ∘ Dκ(c x)` for `κ = c₀ ∘ c⁻¹`
@@ -77,8 +75,6 @@ covectors read in two charts.
 
 ## Main declarations
 
-* `Bundle.Trivialization.chartComponent`: the component along `v` of the local representative of
-  `T` in a chart and a frame, as a complex distribution on the chart target.
 * `Bundle.Trivialization.forall_isMicrolocallySmoothAt_chartComponent_iff`: microlocal smoothness
   of all components does not depend on the chart and the frame, covectors transforming by the
   transpose of the derivative of the chart transition.
@@ -151,208 +147,12 @@ variable {E H M F : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [Fin
   [∀ x, TopologicalSpace (V x)] [TopologicalSpace (TotalSpace F V)]
   [FiberBundle F V] [VectorBundle ℝ F V]
   [ContMDiffVectorBundle ∞ F V I] [IsManifold I ∞ M]
-  (t : Trivialization F (π F V)) [MemTrivializationAtlas t]
-  (c : OpenPartialHomeomorph M E)
-  (hc : ContMDiffOn I 𝓘(ℝ, E) ∞ c c.source) (hct : c.source ⊆ t.baseSet)
-
-/-- The **component along `v`** of the local representative of a real functional `T` on bundle
-tests in the chart `c` and the frame `t`: the complex distribution `φ ↦ T (φ • v)` on the chart
-target, the test function `φ • v` being extended to a bundle test through the chart and the
-frame. -/
-def chartComponent (T : BundleTest I F V →L_c[ℝ] ℝ) (v : F) :
-    𝓓'(⟨c.target, c.open_target⟩, ℂ) :=
-  mapCLM (ofRealCLM ∘L ContinuousLinearMap.apply ℝ ℝ v) (t.chartDistributionCLM c hc hct T)
-
-@[simp]
-theorem chartComponent_apply (T : BundleTest I F V →L_c[ℝ] ℝ) (v : F)
-    (φ : 𝓓(⟨c.target, c.open_target⟩, ℝ)) :
-    t.chartComponent c hc hct T v φ =
-      (T (t.chartTestCLM c hc hct (TestFunction.postcompCLM (toSpanSingleton ℝ v) φ)) : ℂ) := by
-  simp [chartComponent]
-
-@[simp]
-theorem chartComponent_zero (v : F) :
-    t.chartComponent c hc hct (0 : BundleTest I F V →L_c[ℝ] ℝ) v = 0 := by
-  ext φ
-  simp
-
-@[simp]
-theorem chartComponent_add (S T : BundleTest I F V →L_c[ℝ] ℝ) (v : F) :
-    t.chartComponent c hc hct (S + T) v =
-      t.chartComponent c hc hct S v + t.chartComponent c hc hct T v := by
-  ext φ
-  simp
-
-@[simp]
-theorem chartComponent_smul (a : ℝ) (T : BundleTest I F V →L_c[ℝ] ℝ) (v : F) :
-    t.chartComponent c hc hct (a • T) v = (a : ℂ) • t.chartComponent c hc hct T v := by
-  ext φ
-  simp
-
-@[simp]
-theorem chartComponent_neg (T : BundleTest I F V →L_c[ℝ] ℝ) (v : F) :
-    t.chartComponent c hc hct (-T) v = -t.chartComponent c hc hct T v := by
-  ext φ
-  simp
-
-/-- The components of the local representative are linear in the vector of the model fibre: in a
-basis `b` of `F`, the component along `v` is the combination of the components along the basis
-vectors with the coordinates of `v`. -/
-theorem chartComponent_eq_sum {ι : Type*} [Fintype ι] (b : Module.Basis ι ℝ F)
-    (T : BundleTest I F V →L_c[ℝ] ℝ) (v : F) :
-    t.chartComponent c hc hct T v = ∑ i, (b.repr v i : ℂ) • t.chartComponent c hc hct T (b i) := by
-  ext φ
-  simp only [sum_apply, smul_apply, chartComponent_apply, smul_eq_mul,
-    ← chartDistributionCLM_apply_apply]
-  conv_lhs => rw [← b.sum_repr v, map_sum]
-  simp only [map_smul, smul_eq_mul, Complex.ofReal_sum, Complex.ofReal_mul]
-
-/-- In a chart whose source contains `x`, every component of the local representative of the
-point mass `δ_x ℓ` is a multiple of the point mass at `c x`: the component along `v` is
-`ℓ (t⁻¹ v) δ_{c x}`. -/
-theorem chartComponent_delta_of_mem {x : M} (hx : x ∈ c.source) (ℓ : V x →L[ℝ] ℝ) (v : F) :
-    t.chartComponent c hc hct (BundleTest.delta x ℓ) v =
-      (ℓ (t.symmL ℝ x v) : ℂ) • mapCLM ofRealCLM (Distribution.delta (c x)) := by
-  ext φ
-  simp [t.chartTestCLM_apply_of_mem c hc hct _ hx, mul_comm]
-
-/-- In a chart whose source does not contain `x`, the local representative of the point mass at
-`x` has vanishing components. -/
-theorem chartComponent_delta_of_notMem {x : M} (hx : x ∉ c.source) (ℓ : V x →L[ℝ] ℝ) (v : F) :
-    t.chartComponent c hc hct (BundleTest.delta x ℓ) v = 0 := by
-  ext φ
-  simp [t.chartTestCLM_apply_of_notMem c hc hct _ hx]
-
-/-! ### Changes of chart and frame -/
-
-section Transition
-
-variable {t c hc hct}
-variable {t' : Trivialization F (π F V)} [MemTrivializationAtlas t']
-  {c' : OpenPartialHomeomorph M E}
+  {t t' : Trivialization F (π F V)} [MemTrivializationAtlas t] [MemTrivializationAtlas t']
+  {c c' : OpenPartialHomeomorph M E}
+  {hc : ContMDiffOn I 𝓘(ℝ, E) ∞ c c.source} {hct : c.source ⊆ t.baseSet}
   {hc' : ContMDiffOn I 𝓘(ℝ, E) ∞ c' c'.source} {hct' : c'.source ⊆ t'.baseSet}
 
-/-- **Change of chart and frame for test functions.** Let `φ` be a test function supported in an
-open set `B` of the source of the chart transition `κ = c ∘ c'⁻¹`, and `gⱼ` smooth functions equal
-on `B` to `|det Dκ| bⱼ*(G(c'⁻¹ ·) v)`, where `G = t ∘ t'⁻¹` is the change of frame and `(bⱼ)` the
-standard basis of `F`. Then the bundle test `φ • v` read in `(t', c')` is the sum of the bundle
-tests `(κ_* (gⱼ φ)) • bⱼ` read in `(t, c)`. -/
-private theorem chartTestCLM_eq_sum_chartTestCLM (v : F)
-    (he : ContDiffOn ℝ (⊤ : ℕ∞) (c'.symm.trans c) (c'.symm.trans c).source)
-    (he' : ContDiffOn ℝ (⊤ : ℕ∞) (c'.symm.trans c).symm (c'.symm.trans c).target)
-    {B : Opens E} (hB : (B : Set E) ⊆ (c'.symm.trans c).source)
-    (hBc : MapsTo (c'.symm.trans c) B (⟨c.target, c.open_target⟩ : Opens E))
-    {g : Fin (Module.finrank ℝ F) → E → ℝ} (hg : ∀ j, ContDiff ℝ ∞ (g j))
-    (hgB : ∀ j, ∀ y ∈ B, g j y = |(fderiv ℝ (c'.symm.trans c) y).det| *
-      (Module.finBasis ℝ F).coord j (t'.coordChangeL ℝ t (c'.symm y) v)) (φ : 𝓓(B, ℝ)) :
-    t'.chartTestCLM c' hc' hct'
-        (TestFunction.postcompCLM (toSpanSingleton ℝ v) (TestFunction.monoCLM ℝ φ)) =
-      ∑ j, t.chartTestCLM c hc hct (TestFunction.postcompCLM
-        (toSpanSingleton ℝ (Module.finBasis ℝ F j)) (TestFunction.pushforwardCLM
-          (c'.symm.trans c) he he' hB hBc (TestFunction.smulLeftCLM (hg j) φ))) := by
-  set b := Module.finBasis ℝ F
-  have hφ (y : E) (hy : y ∉ (B : Set E)) : φ y = 0 :=
-    image_eq_zero_of_notMem_tsupport fun h ↦ hy (φ.tsupport_subset h)
-  have hmono : ⇑(TestFunction.monoCLM ℝ φ : 𝓓(⟨c'.target, c'.open_target⟩, ℝ)) = φ := by
-    simp [show B ≤ ⟨c'.target, c'.open_target⟩ from fun _ hy ↦ (hB hy).1]
-  rw [← map_sum]
-  refine BundleTest.ext fun x ↦ ?_
-  by_cases hx' : x ∈ c'.source
-  · rw [chartTestCLM_apply_of_mem _ _ _ _ _ hx']
-    simp only [TestFunction.postcompCLM_apply, Function.comp_apply, toSpanSingleton_apply, hmono]
-    by_cases hx : x ∈ c.source
-    · rw [chartTestCLM_apply_of_mem _ _ _ _ _ hx, _root_.sum_apply]
-      have hκs : c' x ∈ (c'.symm.trans c).source := by
-        simpa [c'.left_inv hx'] using ⟨c'.map_source hx', hx⟩
-      have hκx : (c'.symm.trans c) (c' x) = c x := by simp [c'.left_inv hx']
-      have hκt : c x ∈ (c'.symm.trans c).target := hκx ▸ (c'.symm.trans c).map_source hκs
-      have hκsx : (c'.symm.trans c).symm (c x) = c' x := by
-        rw [← hκx, (c'.symm.trans c).left_inv hκs]
-      simp only [TestFunction.postcompCLM_apply, Function.comp_apply, toSpanSingleton_apply,
-        TestFunction.pushforwardCLM_apply_of_mem _ hκt, hκsx, TestFunction.smulLeftCLM_apply,
-        smul_eq_mul]
-      by_cases hB' : c' x ∈ B
-      · have hdet := (c'.symm.trans c).det_fderiv_symm_apply_of_contDiffOn he he' (by simp) hκs
-        have hne := (c'.symm.trans c).det_fderiv_ne_zero_of_contDiffOn he he' (by simp) hκs
-        rw [hκx] at hdet
-        -- The Jacobians cancel, and the coordinates of `G x v` reassemble `G x v`.
-        have hsum : ∑ j, (|(fderiv ℝ (c'.symm.trans c) (c' x)).det|⁻¹ *
-            (|(fderiv ℝ (c'.symm.trans c) (c' x)).det| *
-            b.coord j (t'.coordChangeL ℝ t x v) * φ (c' x))) • b j =
-            φ (c' x) • t'.coordChangeL ℝ t x v := by
-          conv_rhs => rw [← b.sum_repr (t'.coordChangeL ℝ t x v), Finset.smul_sum]
-          refine Finset.sum_congr rfl fun j _ ↦ ?_
-          rw [smul_smul, Module.Basis.coord_apply]
-          congr 1
-          field_simp
-        simp only [hgB _ _ hB', c'.left_inv hx', hdet, abs_inv, hsum, map_smul,
-          t.symmL_coordChangeL ℝ t' ⟨hct' hx', hct hx⟩]
-      · simp [hφ _ hB']
-    · rw [chartTestCLM_apply_of_notMem _ _ _ _ _ hx]
-      have hB' : c' x ∉ B := fun h ↦ hx (by simpa [c'.left_inv hx'] using (hB h).2)
-      simp [hφ _ hB']
-  · rw [chartTestCLM_apply_of_notMem _ _ _ _ _ hx']
-    by_cases hx : x ∈ c.source
-    · rw [chartTestCLM_apply_of_mem _ _ _ _ _ hx, _root_.sum_apply]
-      have hκt : c x ∉ (c'.symm.trans c).target := fun h ↦
-        hx' (by simpa [c.left_inv hx] using h.2)
-      simp [TestFunction.pushforwardCLM_apply_of_notMem _ hκt]
-    · rw [chartTestCLM_apply_of_notMem _ _ _ _ _ hx]
-
-/-- **Change of chart and frame for the components.** Near a point of the source of the chart
-transition `κ = c ∘ c'⁻¹`, the component along `v` in `(t', c')` is `∑ⱼ gⱼ κ^* S_{bⱼ}`, where
-`S_{bⱼ}` are the components in `(t, c)` along the standard basis of `F` and `gⱼ` are the smooth
-coefficients of `chartTestCLM_eq_sum_chartTestCLM`. -/
-private theorem restrictCLM_chartComponent_eq_sum (T : BundleTest I F V →L_c[ℝ] ℝ) (v : F)
-    (he : ContDiffOn ℝ (⊤ : ℕ∞) (c'.symm.trans c) (c'.symm.trans c).source)
-    (he' : ContDiffOn ℝ (⊤ : ℕ∞) (c'.symm.trans c).symm (c'.symm.trans c).target)
-    {B : Opens E} (hB : (B : Set E) ⊆ (c'.symm.trans c).source)
-    (hBc : MapsTo (c'.symm.trans c) B (⟨c.target, c.open_target⟩ : Opens E))
-    {g : Fin (Module.finrank ℝ F) → E → ℝ} (hg : ∀ j, ContDiff ℝ ∞ (g j))
-    (hgB : ∀ j, ∀ y ∈ B, g j y = |(fderiv ℝ (c'.symm.trans c) y).det| *
-      (Module.finBasis ℝ F).coord j (t'.coordChangeL ℝ t (c'.symm y) v)) :
-    (restrictCLM (t'.chartComponent c' hc' hct' T v) : 𝓓'(B, ℂ)) =
-      ∑ j, smulLeftCLM (hg j) (compCLMOfOpenPartialHomeomorph (c'.symm.trans c) he he' hB hBc
-        (t.chartComponent c hc hct T (Module.finBasis ℝ F j))) := by
-  ext φ
-  simp only [restrictCLM_apply, chartComponent_apply, _root_.sum_apply, smulLeftCLM_apply,
-    compCLMOfOpenPartialHomeomorph_apply]
-  rw [← Complex.ofReal_sum, ← map_sum,
-    chartTestCLM_eq_sum_chartTestCLM (hc := hc) (hct := hct) v he he' hB hBc hg hgB φ]
-
-omit [FiniteDimensional ℝ E] [T2Space M] [IsManifold I ∞ M] in
-include hct hct' in
-/-- The coefficient `z ↦ |det Dκ(z)| bⱼ*(G(c'⁻¹ z) v)` of the change of chart and frame is smooth
-on the source of the transition `κ = c ∘ c'⁻¹`, where `G = t ∘ t'⁻¹` is the change of frame. -/
-private theorem contDiffOn_transitionCoeff
-    (he : ContDiffOn ℝ (⊤ : ℕ∞) (c'.symm.trans c) (c'.symm.trans c).source)
-    (he' : ContDiffOn ℝ (⊤ : ℕ∞) (c'.symm.trans c).symm (c'.symm.trans c).target)
-    (hcs' : ContMDiffOn 𝓘(ℝ, E) I ∞ c'.symm c'.target) (v : F) (j : Fin (Module.finrank ℝ F)) :
-    ContDiffOn ℝ (⊤ : ℕ∞) (fun z ↦ |(fderiv ℝ (c'.symm.trans c) z).det| *
-      (Module.finBasis ℝ F).coord j (t'.coordChangeL ℝ t (c'.symm z) v))
-      (c'.symm.trans c).source := by
-  set κ := c'.symm.trans c
-  have hdet := κ.contDiffOn_abs_det_fderiv_of_contDiffOn (m := ⊤) (by simp) he he'
-  have hG : ContDiffOn ℝ (⊤ : ℕ∞) (fun z ↦ (t'.coordChangeL ℝ t (c'.symm z) : F →L[ℝ] F))
-      κ.source :=
-    contMDiffOn_iff_contDiffOn.1 ((contMDiffOn_coordChangeL (IB := I) t' t).comp
-      (hcs'.mono fun z hz ↦ hz.1) fun z hz ↦
-        ⟨hct' (c'.map_target hz.1), hct hz.2⟩)
-  have hcoord := (LinearMap.toContinuousLinearMap ((Module.finBasis ℝ F).coord j)).contDiff
-    (n := (⊤ : ℕ∞))
-  exact hdet.mul (hcoord.comp_contDiffOn (hG.clm_apply contDiffOn_const))
-
-omit [FiniteDimensional ℝ E] [T2Space M] [IsManifold I ∞ M] in
-include hc hc' in
-/-- The chart transition `κ = c ∘ c'⁻¹` between smooth charts with smooth inverses is smooth on its
-source, and so is its inverse on its target. -/
-private theorem contDiffOn_transition (hcs : ContMDiffOn 𝓘(ℝ, E) I ∞ c.symm c.target)
-    (hcs' : ContMDiffOn 𝓘(ℝ, E) I ∞ c'.symm c'.target) :
-    ContDiffOn ℝ (⊤ : ℕ∞) (c'.symm.trans c) (c'.symm.trans c).source ∧
-      ContDiffOn ℝ (⊤ : ℕ∞) (c'.symm.trans c).symm (c'.symm.trans c).target := by
-  refine ⟨OpenPartialHomeomorph.contDiffOn_symm_trans_of_contMDiffOn hc hcs', ?_⟩
-  rw [OpenPartialHomeomorph.trans_symm_eq_symm_trans_symm, OpenPartialHomeomorph.symm_symm]
-  exact OpenPartialHomeomorph.contDiffOn_symm_trans_of_contMDiffOn hc' hcs
+/-! ### Changes of chart and frame -/
 
 /-- If every component in `(t, c)` is microlocally smooth at `(κ y, (Dκ⁻¹(κ y))ᵀ ξ)`, for the
 transition `κ = c ∘ c'⁻¹`, then every component in `(t', c')` is microlocally smooth at
@@ -364,25 +164,13 @@ private theorem isMicrolocallySmoothAt_chartComponent_of_forall
     (h : ∀ w, (t.chartComponent c hc hct T w).IsMicrolocallySmoothAt (c'.symm.trans c y)
       (((fderiv ℝ (c'.symm.trans c).symm (c'.symm.trans c y))†) ξ)) (v : F) :
     (t'.chartComponent c' hc' hct' T v).IsMicrolocallySmoothAt y ξ := by
-  obtain ⟨he, he'⟩ := contDiffOn_transition (hc := hc) (hc' := hc') hcs hcs'
-  -- A neighbourhood `B` of `y` with compact closure in the source of the transition.
-  obtain ⟨W, hWo, hyW, hWs, hWc⟩ := exists_open_between_and_isCompact_closure isCompact_singleton
-    (c'.symm.trans c).open_source (singleton_subset_iff.2 hy)
-  let B : Opens E := ⟨W, hWo⟩
-  have hB : (B : Set E) ⊆ (c'.symm.trans c).source := subset_closure.trans hWs
-  have hBc : MapsTo (c'.symm.trans c) B (⟨c.target, c.open_target⟩ : Opens E) :=
-    fun z hz ↦ ((c'.symm.trans c).map_source (hB hz)).1
-  have hBt : B ≤ ⟨c'.target, c'.open_target⟩ := fun z hz ↦ (hB hz).1
-  -- Globally smooth coefficients agreeing with those of the change of chart and frame on `B`.
-  choose g hg _ _ _ hgf using fun j ↦
-    (contDiffOn_transitionCoeff (hct := hct) (hct' := hct') he he' hcs' v
-      j).exists_contDiff_eventuallyEq_on_isCompact hWc (c'.symm.trans c).open_source hWs
-  have hgB (j) (z) (hz : z ∈ B) := (hgf j z (subset_closure hz)).eq_of_nhds
-  rw [← isMicrolocallySmoothAt_restrictCLM_iff hBt (singleton_subset_iff.1 hyW),
-    restrictCLM_chartComponent_eq_sum (hc := hc) (hct := hct) T v he he' hB hBc hg hgB]
-  exact IsMicrolocallySmoothAt.sum _ (singleton_subset_iff.1 hyW) fun j _ ↦
-    ((h _).compCLMOfOpenPartialHomeomorph (c'.symm.trans c) he he' hB hBc
-      (singleton_subset_iff.1 hyW)).smulLeftCLM (hg j)
+  obtain ⟨he, he'⟩ :=
+    OpenPartialHomeomorph.contDiffOn_symm_trans_and_symm_of_contMDiffOn hc' hcs' hc hcs
+  obtain ⟨B, hB, hBc, g, hg, hyB, hS⟩ := exists_restrictCLM_chartComponent_eq_sum (hc := hc)
+    (hct := hct) (hc' := hc') (hct' := hct') hcs' he he' T v hy
+  rw [← isMicrolocallySmoothAt_restrictCLM_iff (fun z hz ↦ (hB hz).1) hyB, hS]
+  exact IsMicrolocallySmoothAt.sum _ hyB fun j _ ↦
+    ((h _).compCLMOfOpenPartialHomeomorph (c'.symm.trans c) he he' hB hBc hyB).smulLeftCLM (hg j)
 
 /-- **Independence of the chart and the frame.** Let `c` and `c'` be smooth charts with smooth
 inverses, with frames `t` and `t'` over their sources, and let `y = c' x` for a point `x` of both
@@ -408,7 +196,8 @@ theorem forall_isMicrolocallySmoothAt_chartComponent_iff
     rw [hzy]
     exact h w
   · intro h v
-    obtain ⟨he, he'⟩ := contDiffOn_transition (hc := hc) (hc' := hc') hcs hcs'
+    obtain ⟨he, he'⟩ :=
+    OpenPartialHomeomorph.contDiffOn_symm_trans_and_symm_of_contMDiffOn hc' hcs' hc hcs
     refine isMicrolocallySmoothAt_chartComponent_of_forall (t := t) (hc := hc) (hct := hct)
       (t' := t') (hc' := hc') (hct' := hct') hcs hcs' T hys (fun w ↦ ?_) v
     have hη := (c'.symm.trans c).adjoint_fderiv_symm_apply_adjoint_fderiv_apply_of_contDiffOn he
@@ -431,8 +220,6 @@ theorem forall_isMicrolocallySmoothAt_chartComponent_iff_of_chart
   have h := forall_isMicrolocallySmoothAt_chartComponent_iff (t := t) (t' := t') (hc := hc)
     (hct := hct) (hc' := hc) (hct' := hct') hcs hcs T hy (c.map_target hy) η
   rwa [hid, ContinuousLinearMap.adjoint_id, ContinuousLinearMap.id_apply, c.right_inv hy] at h
-
-end Transition
 
 end Bundle.Trivialization
 

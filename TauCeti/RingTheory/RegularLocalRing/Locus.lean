@@ -30,6 +30,8 @@ finite type algebras is the J-2 condition of Stacks, Definition 15.48.1 (07P7).
   of `R` vanishes in every localization at a prime of the regular locus.
 * `TauCeti.Excellence.regularLocus_ringEquiv`: a ring isomorphism `R ≃+* S` identifies the regular
   loci through the induced homeomorphism of prime spectra.
+* `Submonoid.preimage_comap_regularLocus`: the regular locus of a localization of `R` is the
+  preimage of the regular locus of `R`.
 * `TauCeti.Excellence.regularLocus_eq_empty_of_subsingleton`: the zero ring has empty regular
   locus, as its spectrum is empty.
 * `TauCeti.Excellence.regularLocus_trivSqZeroExt_eq_empty`: the dual numbers `k[ε]/(ε²)` over a
@@ -44,8 +46,10 @@ finite type algebras is the J-2 condition of Stacks, Definition 15.48.1 (07P7).
   `lean/Pcf/Bounding/FiniteTypeRegularLocus.lean`: `regularLocus` and `regularLocus_eq_univ` are
   its `Pcf.primeRegularLocus` and `Pcf.primeRegularLocus_eq_univ`, and `regularLocus_ringEquiv`
   follows the comap-preimage form of its `Pcf.preimage_primeRegularLocus_of_isLocalization`
-  together with its `Pcf.isRegularLocalRing_iff_of_ringEquiv`. New here, with no source in that
-  project: `mem_regularLocus_iff_of_isLocalization`, `regularLocus_eq_univ_iff`,
+  together with its `Pcf.isRegularLocalRing_iff_of_ringEquiv`;
+  `Submonoid.preimage_comap_regularLocus` is the comap-preimage form of
+  `Pcf.preimage_primeRegularLocus_of_isLocalization` for an arbitrary localization. New here, with
+  no source in that project: `mem_regularLocus_iff_of_isLocalization`, `regularLocus_eq_univ_iff`,
   `algebraMap_eq_zero_of_mem_regularLocus_of_isNilpotent`, the empty-locus results and the
   examples.
 -/
@@ -103,6 +107,19 @@ theorem regularLocus_ringEquiv {S : Type*} [CommRing S] (e : R ≃+* S) :
       (e.map_primeCompl_comap_eq p.asIdeal)
   rw [Set.mem_preimage, mem_regularLocus, mem_regularLocus]
   exact ⟨fun _ ↦ .of_ringEquiv f, fun _ ↦ .of_ringEquiv f.symm⟩
+
+/-- The regular locus of a localization `S` of `R` is the preimage of the regular locus of `R`:
+the local ring of `S` at a prime `p` is the local ring of `R` at the contraction of `p`. -/
+theorem _root_.Submonoid.preimage_comap_regularLocus {S : Type*} [CommRing S] [Algebra R S]
+    (M : Submonoid R) [IsLocalization M S] :
+    PrimeSpectrum.comap (algebraMap R S) ⁻¹' regularLocus R = regularLocus S := by
+  ext p
+  have : IsLocalization.AtPrime (Localization.AtPrime p.asIdeal)
+      (PrimeSpectrum.comap (algebraMap R S) p).asIdeal := by
+    simp only [PrimeSpectrum.comap_asIdeal]
+    exact IsLocalization.isLocalization_isLocalization_atPrime_isLocalization M _ p.asIdeal
+  rw [Set.mem_preimage, mem_regularLocus (p := p)]
+  exact mem_regularLocus_iff_of_isLocalization _
 
 /-- A nilpotent element of `R` vanishes in every localization `S` of `R` at a prime of the regular
 locus, since a regular local ring is a domain. -/
