@@ -77,6 +77,33 @@ lemma freeι_naturality (n : ℕ) {K L : PointedSSet.{0}} (f : K ⟶ L) :
         ((free n).map f).natTrans.app (FiniteBijection.mk n) :=
   (Limits.Sigma.ι_comp_desc (fun h ↦ f ≫ Limits.Sigma.ι (fun _ ↦ L) h) (𝟙 _)).symm
 
+/-- Precomposing the universal generator of `G_n K` with the action of `σ : mk n ⟶ mk m` yields
+the `σ`-summand inclusion into `(G_n K)_m`. -/
+@[reassoc]
+lemma freeι_comp_map (n : ℕ) (K : PointedSSet.{0}) {m : ℕ}
+    (σ : FiniteBijection.mk n ⟶ FiniteBijection.mk m) :
+    freeι n K ≫ ((free n).obj K).functor.map σ =
+      Limits.Sigma.ι (fun _ : FiniteBijection.mk n ⟶ FiniteBijection.mk m ↦ K) σ := by
+  dsimp only [free, Functor.comp_obj, DayFunctor.equiv]
+  rw [freeι, evaluationLeftAdjoint_obj_map]
+  exact (Limits.Sigma.ι_comp_desc _ _).trans (by rw [Category.id_comp])
+
+/-- A morphism out of `(G_n K)_m` is determined on the summands `freeι n K ≫ (G_n K).map σ`. -/
+@[ext]
+lemma free_level_hom_ext {n m : ℕ} {K Y : PointedSSet.{0}}
+    {f g : ((free n).obj K).functor.obj (FiniteBijection.mk m) ⟶ Y}
+    (h : ∀ σ : FiniteBijection.mk n ⟶ FiniteBijection.mk m,
+      freeι n K ≫ ((free n).obj K).functor.map σ ≫ f =
+        freeι n K ≫ ((free n).obj K).functor.map σ ≫ g) :
+    f = g := by
+  have hσ (σ) : Limits.Sigma.ι (fun _ : FiniteBijection.mk n ⟶ FiniteBijection.mk m ↦ K) σ ≫ f =
+      Limits.Sigma.ι (fun _ : FiniteBijection.mk n ⟶ FiniteBijection.mk m ↦ K) σ ≫ g :=
+    ((freeι_comp_map n K σ).symm =≫ f).trans
+      ((Category.assoc _ _ _).trans ((h σ).trans ((Category.assoc _ _ _).symm.trans
+        ((freeι_comp_map n K σ) =≫ g))))
+  dsimp only [free, Functor.comp_obj, DayFunctor.equiv, evaluationLeftAdjoint_obj_obj] at f g hσ
+  exact Limits.Sigma.hom_ext _ _ hσ
+
 /-- The unit of the free symmetric sequence adjunction is the universal generator. -/
 @[simp]
 lemma freeEvaluationAdjunction_unit_app (n : ℕ) (K : PointedSSet.{0}) :
