@@ -528,8 +528,8 @@ private noncomputable def zigZagSeq
 /-- **Generic zig-zag approximate intertwining from finite-set approximation families.** Given
 sequential systems `(A, α)` and `(B, β)` of separable C⋆-algebras and indexed stage-map families
 `Φ n : I n → A n →⋆ₙₐ[ℂ] B (n + 1)` and `Ψ n : J n → B n →⋆ₙₐ[ℂ] A n` such that every member of
-`Φ n` has an `ε`-left-inverse in `Ψ (n + 1)` and every member of `Ψ n` has a `δ`-left-inverse in
-`Φ n` on every finite set, an inductive zig-zag selects sequences `i n : I n`, `j n : J n` and
+`Φ n` has a `δ n`-left-inverse in `Ψ (n + 1)` and every member of `Ψ n` has an `ε n`-left-inverse
+in `Φ n` on every finite set, an inductive zig-zag selects sequences `i n : I n`, `j n : J n` and
 propagating finite sets `F n`, `G n` forming an `IsApproximateIntertwining`. -/
 theorem IsApproximateIntertwining.exists_of_forall_finset_approx
     {α : ∀ n, A n →⋆ₙₐ[ℂ] A (n + 1)} {β : ∀ n, B n →⋆ₙₐ[ℂ] B (n + 1)}
