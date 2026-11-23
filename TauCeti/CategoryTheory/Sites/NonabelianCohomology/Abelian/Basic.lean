@@ -12,7 +12,6 @@ public import Mathlib.Algebra.Homology.ShortComplex.Ab
 public import Mathlib.Algebra.Homology.ShortComplex.ShortExact
 public import Mathlib.CategoryTheory.Preadditive.Injective.Basic
 public import Mathlib.CategoryTheory.Sites.Abelian
-public import Mathlib.CategoryTheory.Sites.Continuous
 public import Mathlib.CategoryTheory.Sites.EpiMono
 public import TauCeti.Algebra.Category.Grp.ForgetCorepresentable
 public import TauCeti.Algebra.Category.Grp.Limits
