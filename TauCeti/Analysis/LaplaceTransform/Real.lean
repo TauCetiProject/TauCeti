@@ -169,10 +169,10 @@ theorem tendsto_pow_succ_smul_integral_exp_neg_mul_mul_pow_smul_nhdsGT_zero [Com
   obtain ⟨hint_sub, hnorm⟩ := integrableOn_and_norm_integral_exp_neg_mul_mul_pow_smul_le
     (h := fun t ↦ h t - L) hp (le_max_right T₀ 0) hc.le j (hh.sub (locallyIntegrableOn_const L))
     fun t ht ↦ by simpa [dist_eq_norm] using hT₀ t ((le_max_left T₀ 0).trans (mem_Ioi.mp ht).le)
-  have hw : IntegrableOn (fun t : ℝ ↦ Real.exp (-(p * t)) * t ^ j) (Ioi 0) := by
-    simpa only [mul_comm] using integrableOn_pow_mul_exp_neg_mul_Ioi j hp
-  have hw_int : ∫ t in Ioi (0 : ℝ), Real.exp (-(p * t)) * t ^ j = j.factorial / p ^ (j + 1) := by
-    simpa only [mul_comm] using integral_pow_mul_exp_neg_mul_Ioi j hp
+  have hw : IntegrableOn (fun t : ℝ ↦ Real.exp (-(p * t)) * t ^ j) (Ioi 0) :=
+    integrableOn_exp_neg_mul_mul_pow_Ioi j hp
+  have hw_int : ∫ t in Ioi (0 : ℝ), Real.exp (-(p * t)) * t ^ j = j.factorial / p ^ (j + 1) :=
+    integral_exp_neg_mul_mul_pow_Ioi j hp
   have hw_eq : p ^ (j + 1) * ∫ t in Ioi (0 : ℝ), Real.exp (-(p * t)) * t ^ j = j.factorial := by
     rw [hw_int, mul_div_cancel₀ _ (pow_pos hp _).ne']
   have hfun : (fun t : ℝ ↦ (Real.exp (-(p * t)) * t ^ j) • h t) = fun t ↦

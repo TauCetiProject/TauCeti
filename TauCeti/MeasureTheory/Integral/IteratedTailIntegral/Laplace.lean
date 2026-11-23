@@ -89,8 +89,8 @@ private theorem integral_Ioi_exp_neg_mul_mul_pow_succ_smul_eq {g : ℝ → E} {p
   have hderiv (s : ℝ) : deriv φ s = φ' s :=
     (((((hasDerivAt_id s).const_mul p).neg.exp).mul
       (hasDerivAt_pow (m + 1) s)).congr_deriv (by simp [φ']; ring)).deriv
-  have hpow_int (k : ℕ) : IntegrableOn (fun s : ℝ ↦ Real.exp (-(p * s)) * s ^ k) (Ioi 0) := by
-    simpa only [mul_comm] using integrableOn_pow_mul_exp_neg_mul_Ioi k hp
+  have hpow_int (k : ℕ) : IntegrableOn (fun s : ℝ ↦ Real.exp (-(p * s)) * s ^ k) (Ioi 0) :=
+    integrableOn_exp_neg_mul_mul_pow_Ioi k hp
   have hφ'_int : IntegrableOn (deriv φ) (Ioi 0) :=
     IntegrableOn.congr_fun
       (((hpow_int m).const_mul (m + 1 : ℝ)).sub ((hpow_int (m + 1)).const_mul p))
