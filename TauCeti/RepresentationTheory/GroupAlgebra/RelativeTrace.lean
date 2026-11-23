@@ -35,9 +35,9 @@ of `R[G]^P` (`TauCeti.relTraceIdeal`), decreasing as `Q` shrinks and equal to `R
 `Q = P`.
 
 Conjugation by `g ∈ G` is an algebra isomorphism `R[G]^H ≃ R[G]^{gHg⁻¹}`
-(`TauCeti.conjInvariantsEquiv`), and it carries `Tr_Q^P` to `Tr_{gQg⁻¹}^{gPg⁻¹}`. For subgroups
-`T` and `Q` of `P`, the **Mackey formula** restricts `Tr_Q^P` to `R[G]^T`: it is the sum, over
-the double cosets `TxQ` in `P`, of the traces from `T ∩ xQx⁻¹` to `T` of `x a x⁻¹`.
+(`TauCeti.conjInvariantsEquiv`), and it carries `Tr_Q^P` to `Tr_{gQg⁻¹}^{gPg⁻¹}`. For `T ≤ P`,
+the **Mackey formula** expresses `Tr_Q^P(a)`, viewed in `R[G]^T`, as the sum over the double
+cosets `TxQ` in `P` of the traces from `T ∩ xQx⁻¹` to `T` of `x a x⁻¹`.
 
 For a `p`-subgroup `P` of a finite group in characteristic `p`, the ideals `R[G]^P_Q` for `Q < P`
 lie in the kernel of the Brauer homomorphism of `P`, and the defect groups of the blocks of `R[G]`
@@ -373,21 +373,23 @@ theorem conjRepresentation_mem_conjInvariants (g : G) {H : Subgroup G} {x : Mono
   rw [← mul_apply_eq_comp, ← map_mul, show h * g = g * (g⁻¹ * h * g) by group, map_mul,
     mul_apply_eq_comp, this]
 
+/-- Conjugation by `g` maps `R[G]^H` onto `R[G]^{gHg⁻¹}`. -/
+theorem map_conjInvariants (g : G) (H : Subgroup G) :
+    (conjInvariants R H).map (MonoidAlgebra.domCongrAut (R := R) (A := R) (MulAut.conj g) :
+      MonoidAlgebra R G →ₐ[R] MonoidAlgebra R G) = conjInvariants R (MulAut.conj g • H) := by
+  refine le_antisymm ?_ fun y hy => ⟨conjRepresentation R G g⁻¹ y, ?_, ?_⟩
+  · rintro _ ⟨x, hx, rfl⟩
+    exact conjRepresentation_mem_conjInvariants g hx
+  · simpa [map_inv, inv_smul_smul] using conjRepresentation_mem_conjInvariants g⁻¹ hy
+  · change conjRepresentation R G g _ = y
+    simp [← mul_apply_eq_comp, ← map_mul]
+
 variable (R) in
 /-- Conjugation by `g` as an algebra isomorphism `R[G]^H ≃ R[G]^{gHg⁻¹}`, `x ↦ g x g⁻¹`. -/
 noncomputable def conjInvariantsEquiv (g : G) (H : Subgroup G) :
-    conjInvariants R H ≃ₐ[R] conjInvariants R (MulAut.conj g • H) where
-  toFun x := ⟨conjRepresentation R G g x, conjRepresentation_mem_conjInvariants g x.property⟩
-  invFun y := ⟨conjRepresentation R G g⁻¹ y, by
-    simpa [map_inv, inv_smul_smul] using conjRepresentation_mem_conjInvariants g⁻¹ y.property⟩
-  left_inv x := Subtype.ext <| by
-    simp [← mul_apply_eq_comp, ← map_mul]
-  right_inv y := Subtype.ext <| by
-    simp [← mul_apply_eq_comp, ← map_mul]
-  map_mul' x y := Subtype.ext <| by simp [conjRepresentation_mul]
-  map_add' x y := Subtype.ext (map_add _ (x : MonoidAlgebra R G) y)
-  commutes' r := Subtype.ext <| by
-    simp [Algebra.algebraMap_eq_smul_one]
+    conjInvariants R H ≃ₐ[R] conjInvariants R (MulAut.conj g • H) :=
+  ((MonoidAlgebra.domCongrAut (MulAut.conj g)).subalgebraMap _).trans
+    (Subalgebra.equivOfEq _ _ (map_conjInvariants g H))
 
 /-- The isomorphism `R[G]^H ≃ R[G]^{gHg⁻¹}` is conjugation by `g`. -/
 @[simp]
@@ -399,8 +401,9 @@ theorem coe_conjInvariantsEquiv (g : G) (H : Subgroup G) (x : conjInvariants R H
 @[simp]
 theorem coe_conjInvariantsEquiv_symm (g : G) (H : Subgroup G)
     (y : conjInvariants R (MulAut.conj g • H)) :
-    ((conjInvariantsEquiv R g H).symm y : MonoidAlgebra R G) = conjRepresentation R G g⁻¹ y :=
-  (rfl)
+    ((conjInvariantsEquiv R g H).symm y : MonoidAlgebra R G) = conjRepresentation R G g⁻¹ y := by
+  rw [conjRepresentation_apply, map_inv]
+  rfl
 
 attribute [local instance] Subgroup.fintypeQuotientOfFiniteIndex Fintype.ofFinite
 
@@ -423,9 +426,9 @@ theorem conjInvariantsEquiv_relTrace (g : G) {Q P : Subgroup G} [(Q.subgroupOf P
   congr 2
   simp [e, MulAut.smul_def, MulAut.conj_apply]
 
-/-- **The Mackey formula for relative traces.** For subgroups `T` and `Q` of `P` and elements
-`xᵢ ∈ P` representing each double coset `T x Q` in `P` exactly once,
-`Tr_Q^P(a) = ∑ᵢ Tr_{T ∩ xᵢQxᵢ⁻¹}^T(xᵢ a xᵢ⁻¹)` in `R[G]^T` (Webb, Lemma 11.3.1, p. 194). Here
+/-- **The Mackey formula for relative traces.** For `T ≤ P`, any subgroup `Q` with `Q ∩ P` of
+finite index in `P`, and elements `xᵢ ∈ P` representing each double coset `T x Q` in `P` exactly
+once, `Tr_Q^P(a) = ∑ᵢ Tr_{T ∩ xᵢQxᵢ⁻¹}^T(xᵢ a xᵢ⁻¹)` in `R[G]^T` (Webb, Lemma 11.3.1, p. 194). Here
 `Tr_{xQx⁻¹}^T` is the relative trace from `T ∩ xQx⁻¹`, applied to the `xQx⁻¹`-fixed element
 `x a x⁻¹`; `T ∩ xQx⁻¹` has finite index in `T` by `Subgroup.finiteIndex_conj_smul_subgroupOf`. -/
 theorem inclusion_relTrace_eq_sum_relTrace_conj {T Q P : Subgroup G}
@@ -445,10 +448,10 @@ theorem inclusion_relTrace_eq_sum_relTrace_conj {T Q P : Subgroup G}
   refine Finset.sum_congr rfl fun j _ => ?_
   rw [coe_conjInvariantsEquiv, ← mul_apply_eq_comp, ← map_mul]
 
-/-- **The Mackey formula over the double cosets.** For subgroups `T` and `Q` of `P`,
-`Tr_Q^P(a) = ∑_{TxQ ⊆ P} Tr_{T ∩ xQx⁻¹}^T(x a x⁻¹)` in `R[G]^T`, summed over the double cosets
-`T \ P / Q`, finite by `TauCeti.finite_doubleCosetQuotient`, with their chosen representatives `x`
-(Webb, Lemma 11.3.1, p. 194). -/
+/-- **The Mackey formula over the double cosets.** For `T ≤ P` and any subgroup `Q` with `Q ∩ P`
+of finite index in `P`, `Tr_Q^P(a) = ∑_{TxQ ⊆ P} Tr_{T ∩ xQx⁻¹}^T(x a x⁻¹)` in `R[G]^T`, summed
+over the double cosets `T \ P / Q`, finite by `TauCeti.finite_doubleCosetQuotient`, with their
+chosen representatives `x` (Webb, Lemma 11.3.1, p. 194). -/
 theorem inclusion_relTrace_eq_sum_doubleCoset {T Q P : Subgroup G} [(Q.subgroupOf P).FiniteIndex]
     (hTP : T ≤ P) (a : conjInvariants R Q) :
     Subalgebra.inclusion (conjInvariants_anti hTP) (relTrace R Q P a) =
