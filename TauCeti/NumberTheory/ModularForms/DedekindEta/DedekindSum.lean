@@ -53,9 +53,12 @@ Euclidean algorithm, matched at the inversion step by Dedekind's reciprocity law
 
 ## Main results
 
+* `TauCeti.ModularForm.etaTransformation`: **Dedekind's functional equation** for every
+  `γ ∈ SL(2, ℤ)`, packaging `ε(γ)²⁴ = 1`, the transformation law, and the explicit `Int.fract`
+  Dedekind-sum evaluation when `c > 0`.
 * `TauCeti.ModularForm.etaMultiplier_eq_exp_sum_fract_of_c_pos`,
-  `TauCeti.ModularForm.eta_smul_of_c_pos`,
-  `TauCeti.ModularForm.etaTransformation`: **Dedekind's functional equation** for `c > 0`.
+  `TauCeti.ModularForm.eta_smul_of_c_pos`: explicit fractional-part and functional-equation forms
+  for `c > 0`.
 * `TauCeti.ModularForm.etaMultiplier_of_c_neg`,
   `TauCeti.ModularForm.etaMultiplier_of_c_ne_zero`: explicit Dedekind-sum formulas for `c < 0` and
   all `c ≠ 0`.
