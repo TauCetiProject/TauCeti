@@ -39,6 +39,8 @@ factors; transposition with `MulOpposite.op` and with `MulOpposite.unop` are mut
   is nonempty and neither factor is zero.
 * `Matrix.submatrix_mul_of_injective`: a submatrix of a product is the product of submatrices
   through an injective inner reindexing whose range carries the relevant rows of the left factor.
+* `Matrix.submatrix_val_mul_of_forall`: the same through the inclusions of subtypes, when the
+  relevant rows of the left factor vanish off the inner subtype.
 * `Matrix.eq_of_mul_apply_ne_zero`: a product of degree-preserving matrices is degree-preserving.
 * `Matrix.eq_of_one_apply_ne_zero`: the identity matrix is degree-preserving.
 * `Matrix.mul_mul_eq_mul_mul_of_mul_eq_mul`: if `D₁ * X = X * D₂` and `D₂ * Y = Y * D₃`, then
@@ -112,6 +114,17 @@ theorem submatrix_mul_of_injective {l o q : Type*} [Fintype o] (A : Matrix m n K
     (A * B).submatrix e₁ e₃ = A.submatrix e₁ e₂ * B.submatrix e₂ e₃ :=
   ext fun i k ↦ (Fintype.sum_of_injective e₂ he₂ _ _
     (fun j hj ↦ by simp [not_ne_iff.mp (mt (hA i j) hj)]) fun _ ↦ rfl).symm
+
+/-- The rows satisfying `r` of a matrix product can be computed through the inner indices
+satisfying `s` alone, when the rows satisfying `r` of the left factor vanish at the inner indices
+not satisfying `s`. This is `Matrix.submatrix_mul_of_injective` for the inclusions of subtypes. -/
+theorem submatrix_val_mul_of_forall {l : Type*} {r : m → Prop} {s : n → Prop}
+    [Fintype {j // s j}] (A : Matrix m n K) (B : Matrix n p K) (e : l → p)
+    (hA : ∀ i j, r i → ¬s j → A i j = 0) :
+    (A * B).submatrix (Subtype.val : {i // r i} → m) e =
+      A.submatrix Subtype.val (Subtype.val : {j // s j} → n) * B.submatrix Subtype.val e :=
+  submatrix_mul_of_injective A B _ _ e Subtype.val_injective fun i j hij ↦
+    ⟨⟨j, by_contra fun hj ↦ hij (hA i j i.property hj)⟩, rfl⟩
 
 /-- **Products preserve degrees.** If the nonzero entries `A i j` and `B j k` of two matrices
 only join indices of the same degree, so do the nonzero entries of `A * B`. -/
