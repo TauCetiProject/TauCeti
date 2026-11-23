@@ -8,7 +8,6 @@ module
 public import TauCeti.Geometry.Manifold.Instances.OnePoint.Basic
 public import TauCeti.Geometry.Manifold.VectorBundle.Core.Scalar
 public import TauCeti.Topology.VectorBundle.Trivialization
-import TauCeti.Topology.VectorBundle.Coordinates
 
 /-!
 # The line bundles `𝒪(k)` on the projective line
@@ -224,26 +223,6 @@ theorem twistCore_indexAt (k : ℤ) (x : OnePoint 𝕜) : (twistCore k).indexAt 
 theorem twistCore_coordChange_apply (k : ℤ) (x y p : OnePoint 𝕜) (v : 𝕜) :
     (twistCore k).coordChange x y p v = twistTransition k x y p * v :=
   (rfl)
-
-/-- The coordinate change of `𝒪(k)` from the chart at `x` to the chart at `y` has determinant the
-transition function. -/
-theorem det_coordChange_twistCore (k : ℤ) (x y p : OnePoint 𝕜) :
-    ((twistCore k).coordChange x y p).det = twistTransition k x y p := by
-  have h : (twistCore k).coordChange x y p =
-      ContinuousLinearMap.toSpanSingleton 𝕜 (twistTransition k x y p) := by
-    ext
-    simp [mul_comm]
-  rw [h, ContinuousLinearMap.det_toSpanSingleton]
-
-/-- The coordinate change between the trivializations at `x` and `y` of `𝒪(k)`, as a linear
-equivalence of the model fibre, has determinant the transition function. -/
-theorem det_coordChangeL_localTriv_twistCore (k : ℤ) {x y p : OnePoint 𝕜}
-    (hx : p ∈ (chartAt 𝕜 x).source) (hy : p ∈ (chartAt 𝕜 y).source) :
-    LinearMap.det ((((twistCore k).localTriv x).coordChangeL 𝕜
-      ((twistCore k).localTriv y) p).toLinearEquiv : 𝕜 →ₗ[𝕜] 𝕜) = twistTransition k x y p := by
-  rw [← det_coordChange_twistCore k x y p,
-    ← (twistCore k).localTriv_coordChangeL (i := x) (j := y) ⟨hx, hy⟩, ContinuousLinearMap.det,
-    ContinuousLinearEquiv.toLinearMap_toContinuousLinearMap]
 
 /-- The native scalar transition between the local trivializations of `𝒪(k)` is its gluing
 function, for every integer degree and every proper nontrivially normed field. -/

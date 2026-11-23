@@ -99,9 +99,11 @@ private theorem isEmpty_vectorBundleOrientation_twistCore_of_odd {k : ℤ} (hk :
     (isPreconnected_chart_source _) (isPreconnected_chart_source _)
     (twistCore_localTriv_baseSet k _).ge (twistCore_localTriv_baseSet k _).ge (h₀ 1)
     (hInf one_ne_zero) (h₀ (-1)) (hInf (neg_ne_zero.2 one_ne_zero)) ?_ ?_
-  · rw [det_coordChangeL_localTriv_twistCore k (h₀ 1) (hInf one_ne_zero)]
+  · rw [(twistCore k).det_coordChangeL_localTriv ((twistCore_baseSet k _).ge (h₀ 1))
+      ((twistCore_baseSet k _).ge (hInf one_ne_zero))]
     simp
-  · rw [det_coordChangeL_localTriv_twistCore k (h₀ (-1)) (hInf (neg_ne_zero.2 one_ne_zero))]
+  · rw [(twistCore k).det_coordChangeL_localTriv ((twistCore_baseSet k _).ge (h₀ (-1)))
+      ((twistCore_baseSet k _).ge (hInf (neg_ne_zero.2 one_ne_zero)))]
     simp [hk.neg.neg_one_zpow]
 
 /-- **The line bundle `𝒪(k)` on the real projective line is orientable exactly when `k` is even.**
@@ -119,8 +121,7 @@ theorem nonempty_vectorBundleOrientation_twistCore_iff (k : ℤ) :
       (fun x ↦ ⟨x, mem_univ _, (twistCore_baseSet k x).ge (mem_chart_source ℝ x)⟩)
       fun i _ j _ x ⟨hi, hj⟩ ↦ by
         rw [twistCore_baseSet] at hi hj
-        rw [det_coordChange_twistCore]
-        exact twistTransition_pos_of_even hk hi hj⟩
+        simpa [LinearMap.det_ring] using twistTransition_pos_of_even hk hi hj⟩
 
 /-- **The zeroth homology of the circle twisted by the orientation of the Möbius line is `ℤ/2`.**
 For odd `k`, the zeroth singular homology of `OnePoint ℝ` with integer coefficients twisted by the
