@@ -96,8 +96,8 @@ a time interval, for a bump `χ` and a small scale `s`, have compact support
 (`ContDiffBump.hasCompactSupport_cutoff_mul`). Where `φ` is differentiable at `q`, the derivative
 at `q` applied to `(1, w)` is `χ (s • q.2) * φ' (1, w) + φ q * χ' (s • w)`
 (`ContDiffBump.fderiv_cutoff_mul_apply`), where `φ'` and `χ'` are the derivatives at `q` and at
-`s • q.2`. For `‖s‖ ≤ 1` and bounds `C`, `B`, `D` on `‖φ'‖`, `‖φ q‖` and `‖χ'‖`, this expression, which
-is defined without any differentiability, has norm at most `(C + B * D) * (1 + ‖w‖)`
+`s • q.2`. For `‖s‖ ≤ 1` and bounds `C`, `B`, `D` on `‖φ'‖`, `‖φ q‖` and `‖χ'‖`, this expression,
+which is defined without any differentiability, has norm at most `(C + B * D) * (1 + ‖w‖)`
 (`ContDiffBump.norm_cutoff_fderiv_le`). With `φ' (1, w)` and `φ q` replaced by arbitrary reals
 `c` and `d`, it tends to `c` as `s → 0` (`ContDiffBump.tendsto_cutoff_fderiv_add`).
 
