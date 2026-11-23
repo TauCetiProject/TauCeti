@@ -16,15 +16,16 @@ as its additive Haar probability measure. (A locally compact ring carrying a fin
 measure is compact, so the statements below assume local compactness only.)
 
 * Multiplication by a unit, on either side, is a continuous additive automorphism of `A`, so it
-  preserves `μ` (`TauCeti.map_mul_left_eq_self_of_isUnit`,
-  `TauCeti.map_mul_right_eq_self_of_isUnit`, and their set-level forms
-  `TauCeti.measure_preimage_mul_left_of_isUnit`, `TauCeti.measure_preimage_mul_right_of_isUnit`).
+  preserves `μ` (`MeasureTheory.Measure.map_mul_left_eq_self_of_isUnit`,
+  `MeasureTheory.Measure.map_mul_right_eq_self_of_isUnit`, and their set-level forms
+  `MeasureTheory.Measure.measure_preimage_mul_left_of_isUnit`,
+  `MeasureTheory.Measure.measure_preimage_mul_right_of_isUnit`).
 * If a compact group `G` embeds continuously and multiplicatively into `A` with open image `U`
   (for instance a compact open subgroup of `A^×`, or `GL_n(O)` inside `M_n(O)`), then the
   normalized Haar measure `haarProb G` is the restriction of `μ` to `U`, pulled back to `G` and
-  divided by `μ U` (`TauCeti.haarProb_eq_smul_comap`). Indeed that measure is left invariant,
-  because left multiplication by the image of `g` preserves `μ`, and it is a Haar probability
-  measure.
+  divided by `μ U` (`MeasureTheory.Measure.haarProb_eq_smul_comap`). Indeed that measure is left
+  invariant, because left multiplication by the image of `g` preserves `μ`, and it is a Haar
+  probability measure.
 
 ## References
 
@@ -34,9 +35,9 @@ measure is compact, so the statements below assume local compactness only.)
 
 public section
 
-open MeasureTheory Set Topology
+open MeasureTheory Set Topology TauCeti
 
-namespace TauCeti
+namespace MeasureTheory.Measure
 
 section Units
 
@@ -54,33 +55,30 @@ theorem map_mul_right_eq_self_of_isUnit {u : A} (hu : IsUnit u) : μ.map (· * u
   (AddMonoidHom.mulRight u).map_addHaar_eq_self (continuous_id.mul continuous_const)
     fun y => ⟨y * ↑hu.unit⁻¹, by simp [mul_assoc]⟩
 
-/-- Left multiplication by a unit preserves the finite additive Haar measure of every measurable
-set. -/
-theorem measure_preimage_mul_left_of_isUnit {u : A} (hu : IsUnit u) {s : Set A}
-    (hs : MeasurableSet s) : μ ((u * ·) ⁻¹' s) = μ s := by
+/-- Left multiplication by a unit preserves the finite additive Haar measure of every set. -/
+theorem measure_preimage_mul_left_of_isUnit {u : A} (hu : IsUnit u) (s : Set A) :
+    μ ((u * ·) ⁻¹' s) = μ s := by
   conv_rhs => rw [← map_mul_left_eq_self_of_isUnit μ hu]
-  have hm : Measurable fun x : A => u * x := by fun_prop
-  rw [Measure.map_apply hm hs]
+  exact ((ContinuousAddEquiv.mulLeft hu.unit).toHomeomorph.measurableEmbedding.map_apply μ s).symm
 
-/-- Right multiplication by a unit preserves the finite additive Haar measure of every measurable
-set. -/
-theorem measure_preimage_mul_right_of_isUnit {u : A} (hu : IsUnit u) {s : Set A}
-    (hs : MeasurableSet s) : μ ((· * u) ⁻¹' s) = μ s := by
+/-- Right multiplication by a unit preserves the finite additive Haar measure of every set. -/
+theorem measure_preimage_mul_right_of_isUnit {u : A} (hu : IsUnit u) (s : Set A) :
+    μ ((· * u) ⁻¹' s) = μ s := by
   conv_rhs => rw [← map_mul_right_eq_self_of_isUnit μ hu]
-  have hm : Measurable fun x : A => x * u := by fun_prop
-  rw [Measure.map_apply hm hs]
+  exact ((ContinuousAddEquiv.mulRight hu.unit).toHomeomorph.measurableEmbedding.map_apply μ s).symm
 
 variable [T2Space A] {G : Type*} [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
   [CompactSpace G] [MeasurableSpace G] [BorelSpace G]
 
 /-- **Haar measure on a compact open group of units.** Let `f` be a continuous injective
 multiplicative map from a compact group `G` into a compact Hausdorff ring `A`, with open image.
-Then the normalized Haar measure of `G` is the additive Haar probability of `A` restricted to the
-image of `f`, pulled back along `f` and normalized by the measure of the image. -/
+Then the normalized Haar measure of `G` is a finite additive Haar measure `μ` of `A` (for
+instance its Haar probability), restricted to the image of `f`, pulled back along `f` and divided
+by `μ` of the image. -/
 theorem haarProb_eq_smul_comap (f : G →* A) (hf : Continuous f) (hinj : Function.Injective f)
     (hopen : IsOpen (range f)) : haarProb G = (μ (range f))⁻¹ • μ.comap f := by
-  have hemb : MeasurableEmbedding f :=
-    (hf.isClosedEmbedding hinj).measurableEmbedding
+  have hoe : IsOpenEmbedding f := .mk (hf.isClosedEmbedding hinj).toIsEmbedding hopen
+  have hemb : MeasurableEmbedding f := hoe.measurableEmbedding
   have hU0 : μ (range f) ≠ 0 := (hopen.measure_pos μ (range_nonempty f)).ne'
   have hUtop : μ (range f) ≠ ⊤ := measure_ne_top μ _
   let ν : Measure G := (μ (range f))⁻¹ • μ.comap f
@@ -101,16 +99,12 @@ theorem haarProb_eq_smul_comap (f : G →* A) (hf : Continuous f) (hinj : Functi
       refine ⟨g⁻¹ * x, by simpa using hx, ?_⟩
       rw [map_mul, hxy, ← mul_assoc, ← map_mul]
       simp
-    rw [himage, measure_preimage_mul_left_of_isUnit μ (hunit g) (hemb.measurableSet_image' hs)]
-  have : ν.IsOpenPosMeasure := ⟨fun s hs hne => by
-    rw [hν]
-    refine mul_ne_zero (ENNReal.inv_ne_zero.2 hUtop) ?_
-    have hopen' : IsOpen (f '' s) :=
-      (IsOpenEmbedding.mk (hf.isClosedEmbedding hinj).toIsEmbedding hopen).isOpenMap s hs
-    exact (hopen'.measure_pos μ (hne.image f)).ne'⟩
+    rw [himage, measure_preimage_mul_left_of_isUnit μ (hunit g)]
+  have := IsOpenPosMeasure.comap μ hoe
+  have : ν.IsOpenPosMeasure := isOpenPosMeasure_smul _ (ENNReal.inv_ne_zero.2 hUtop)
   have : ν.IsHaarMeasure := { }
   exact (Measure.isHaarMeasure_eq_of_isProbabilityMeasure ν (haarProb G)).symm
 
 end Units
 
-end TauCeti
+end MeasureTheory.Measure
