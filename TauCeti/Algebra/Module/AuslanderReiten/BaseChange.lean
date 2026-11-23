@@ -63,20 +63,6 @@ section CommRing
 variable {R P₀ P₁ : Type*} [CommRing R] [AddCommMonoid P₀] [Module R P₀]
   [AddCommMonoid P₁] [Module R P₁]
 
-private lemma exact_dualMap_mk {S Q₀ Q₁ : Type*} [CommRing S]
-    [AddCommMonoid Q₀] [Module S Q₀] [AddCommMonoid Q₁] [Module S Q₁]
-    (p : Q₁ →ₗ[S] Q₀) :
-    Function.Exact p.dualMap ((mk p).restrictScalars S) := by
-  rw [LinearMap.exact_iff, LinearMap.ker_restrictScalars, ker_mk,
-    ← LinearMap.range_restrictScalars, LinearMap.dualMap_eq_lcomp]
-  rfl
-
-private def cokernelDualMapEquiv {S Q₀ Q₁ : Type*} [CommRing S]
-    [AddCommMonoid Q₀] [Module S Q₀] [AddCommMonoid Q₁] [Module S Q₁]
-    (p : Q₁ →ₗ[S] Q₀) :
-    AuslanderReitenTranspose p ≃ₗ[S] Module.Dual S Q₁ ⧸ LinearMap.range p.dualMap :=
-  ((exact_dualMap_mk p).linearEquivOfSurjective (mk_surjective p)).symm
-
 variable (A : Type*) [CommRing A] [Algebra R A]
 
 /-- The canonical `A`-linear comparison map
@@ -98,18 +84,10 @@ def baseChangeHom (f : P₁ →ₗ[R] P₀) :
 theorem baseChangeHom_tmul_mk (f : P₁ →ₗ[R] P₀) (a : A) (φ : Module.Dual R P₁) :
     baseChangeHom A f (a ⊗ₜ[R] mk f φ) =
       a • mk (f.baseChange A) (Module.Dual.baseChange A φ) := by
-  have hmk : cokernelDualMapEquiv f (mk f φ) = Submodule.Quotient.mk φ :=
-    (exact_dualMap_mk f).linearEquivOfSurjective_symm_apply (mk_surjective f) φ
-  have hsymm (ψ : Module.Dual A (A ⊗[R] P₁)) :
-      (cokernelDualMapEquiv (f.baseChange A)).symm (Submodule.Quotient.mk ψ) =
-        mk (f.baseChange A) ψ := by
-    dsimp only [cokernelDualMapEquiv, LinearEquiv.symm_symm]
-    exact ((exact_dualMap_mk (f.baseChange A)).linearEquivOfSurjective_apply
-      (mk_surjective _) (Submodule.Quotient.mk ψ)).trans rfl
   simp only [baseChangeHom, LinearMap.comp_apply, LinearEquiv.coe_coe,
-    LinearEquiv.baseChange_tmul, hmk, LinearMap.cokernelBaseChangeEquiv_tmul,
-    Submodule.mapQ_apply, TauCeti.Module.Dual.baseChangeEvaluation_tmul_eq_smul]
-  rw [Submodule.Quotient.mk_smul, map_smul, hsymm]
+    LinearEquiv.baseChange_tmul, cokernelDualMapEquiv_mk, LinearMap.cokernelBaseChangeEquiv_tmul,
+    Submodule.mapQ_apply, TauCeti.Module.Dual.baseChangeEvaluation_tmul_eq_smul,
+    Submodule.Quotient.mk_smul, map_smul, cokernelDualMapEquiv_symm_mk]
 
 section FiniteProjective
 

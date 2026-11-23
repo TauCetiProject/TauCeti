@@ -8,7 +8,7 @@ module
 public import Mathlib.Geometry.Group.WordMetric
 public import TauCeti.Algebra.Module.Submodule.GroupAction
 public import TauCeti.LinearAlgebra.Matrix.Cartan.Realization.Weyl
-import TauCeti.LinearAlgebra.Dual.Contragredient
+import TauCeti.LinearAlgebra.Dual.Contragredient.Basic
 
 /-!
 # The Weyl group of a Cartan realization: generators, word length, and lattice actions

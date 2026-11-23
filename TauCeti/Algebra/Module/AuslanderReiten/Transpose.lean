@@ -231,6 +231,47 @@ theorem quotientEquiv_symm_mk (Q : Submodule S N) (e : Module.Dual A P₁ ≃ₛ
 
 end QuotientEquiv
 
+section DualMap
+
+/-- Over a commutative ring `S`, `p.dualMap` and `(mk p).restrictScalars S` form an exact pair,
+identifying `AuslanderReitenTranspose p` with the cokernel of `p.dualMap`. -/
+theorem exact_dualMap_mk {S Q₀ Q₁ : Type*} [CommRing S]
+    [AddCommMonoid Q₀] [Module S Q₀] [AddCommMonoid Q₁] [Module S Q₁]
+    (p : Q₁ →ₗ[S] Q₀) :
+    Function.Exact p.dualMap ((mk p).restrictScalars S) := by
+  rw [LinearMap.exact_iff, LinearMap.ker_restrictScalars, ker_mk]
+  ext φ
+  simp [LinearMap.mem_range, LinearMap.dualMap_eq_lcomp, LinearMap.lcomp_apply']
+
+/-- Over a commutative ring `S`, the Auslander--Reiten transpose of `p : Q₁ →ₗ[S] Q₀` is
+`S`-linearly equivalent to the cokernel of `p.dualMap`. -/
+noncomputable def cokernelDualMapEquiv {S Q₀ Q₁ : Type*} [CommRing S]
+    [AddCommMonoid Q₀] [Module S Q₀] [AddCommMonoid Q₁] [Module S Q₁]
+    (p : Q₁ →ₗ[S] Q₀) :
+    AuslanderReitenTranspose p ≃ₗ[S] Module.Dual S Q₁ ⧸ LinearMap.range p.dualMap :=
+  ((exact_dualMap_mk p).linearEquivOfSurjective (mk_surjective p)).symm
+
+/-- `cokernelDualMapEquiv` sends the class of `φ` in the transpose to its class modulo
+`LinearMap.range p.dualMap`. -/
+@[simp]
+theorem cokernelDualMapEquiv_mk {S Q₀ Q₁ : Type*} [CommRing S]
+    [AddCommMonoid Q₀] [Module S Q₀] [AddCommMonoid Q₁] [Module S Q₁]
+    (p : Q₁ →ₗ[S] Q₀) (φ : Module.Dual S Q₁) :
+    cokernelDualMapEquiv p (mk p φ) = Submodule.Quotient.mk φ :=
+  (exact_dualMap_mk p).linearEquivOfSurjective_symm_apply (mk_surjective p) φ
+
+/-- The inverse of `cokernelDualMapEquiv` sends the quotient class of `φ` modulo
+`LinearMap.range p.dualMap` to `mk p φ`. -/
+@[simp]
+theorem cokernelDualMapEquiv_symm_mk {S Q₀ Q₁ : Type*} [CommRing S]
+    [AddCommMonoid Q₀] [Module S Q₀] [AddCommMonoid Q₁] [Module S Q₁]
+    (p : Q₁ →ₗ[S] Q₀) (φ : Module.Dual S Q₁) :
+    (cokernelDualMapEquiv p).symm (Submodule.Quotient.mk φ) = mk p φ := by
+  apply (cokernelDualMapEquiv p).injective
+  simp
+
+end DualMap
+
 section Lift
 
 variable {N : Type*} [AddCommGroup N] [Module Aᵐᵒᵖ N]

@@ -218,6 +218,38 @@ theorem toDualLinearEquiv_symm_apply (φ : Module.Dual R M) :
     (toDualLinearEquiv σ M).symm φ = ofDual φ :=
   (rfl)
 
+/-- `ofDual` and `toDual` form a `((RingEquiv.toOpposite R).symm.trans σ.symm)`-semilinear
+equivalence from `Module.Dual R M` (with its `Rᵐᵒᵖ`-module structure) to
+`ContragredientDual σ M`. -/
+def ofDualOppositeLinearEquiv (σ : S ≃+* R) (M : Type*) [AddCommMonoid M] [Module R M] :
+    let ρ : Rᵐᵒᵖ ≃+* S := (RingEquiv.toOpposite R).symm.trans σ.symm
+    haveI := RingHomInvPair.of_ringEquiv ρ
+    haveI := RingHomInvPair.of_ringEquiv_symm ρ
+    Module.Dual R M ≃ₛₗ[(ρ : Rᵐᵒᵖ →+* S)] ContragredientDual σ M :=
+  let ρ : Rᵐᵒᵖ ≃+* S := (RingEquiv.toOpposite R).symm.trans σ.symm
+  haveI := RingHomInvPair.of_ringEquiv ρ
+  haveI := RingHomInvPair.of_ringEquiv_symm ρ
+  { toFun := ofDual
+    invFun := toDual
+    map_add' := ofDual_add
+    map_smul' := fun r φ ↦ by
+      ext x
+      simp [LinearMap.smul_apply, mul_comm]
+    left_inv := toDual_ofDual
+    right_inv := ofDual_toDual }
+
+/-- `ofDualOppositeLinearEquiv` sends a functional `φ` to `ofDual φ`. -/
+@[simp]
+theorem ofDualOppositeLinearEquiv_apply (φ : Module.Dual R M) :
+    ofDualOppositeLinearEquiv σ M φ = ofDual φ :=
+  (rfl)
+
+/-- The inverse of `ofDualOppositeLinearEquiv` sends `φ` to `φ.toDual`. -/
+@[simp]
+theorem ofDualOppositeLinearEquiv_symm_apply (φ : ContragredientDual σ M) :
+    (ofDualOppositeLinearEquiv σ M).symm φ = φ.toDual :=
+  (rfl)
+
 /-- Precomposition with `f : M →ₗ[R] N` as an `S`-linear map between contragredient duals. -/
 def map (σ : S ≃+* R) (f : M →ₗ[R] N) : ContragredientDual σ N →ₗ[S] ContragredientDual σ M :=
   haveI := RingHomInvPair.of_ringEquiv σ
@@ -250,7 +282,7 @@ theorem map_comp (g : N →ₗ[R] P) (f : M →ₗ[R] N) :
   rfl
 
 @[simp]
-theorem map_zero : map σ (0 : M →ₗ[R] N) = 0 := by
+protected theorem map_zero : map σ (0 : M →ₗ[R] N) = 0 := by
   ext φ x
   simp
 
