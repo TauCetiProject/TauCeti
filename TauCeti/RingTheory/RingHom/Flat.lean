@@ -7,7 +7,6 @@ module
 
 public import Mathlib.RingTheory.Flat.EquationalCriterion
 public import Mathlib.RingTheory.RingHom.Flat
-import TauCeti.Algebra.BigOperators.Group.Finset.Basic
 
 /-!
 # Flat ring homomorphisms
@@ -85,9 +84,9 @@ theorem Flat.exists_eq_sum_mul_of_sum_mul_eq {A B : Type*} [CommRing A] [CommRin
   have hrel : ∑ u : (s : Type _) ⊕ (t : Type _), g (f u) * v u = 0 := by
     rw [Fintype.sum_sum_type]
     simp only [f, v, Sum.elim_inl, Sum.elim_inr, map_neg, neg_mul, Finset.sum_neg_distrib]
-    rw [Finset.sum_coe_sort_eq_sum s (fun i ↦ b i * g (x i)) fun _ _ ↦ mul_comm _ _,
-      Finset.sum_coe_sort_eq_sum t (fun j ↦ b' j * g (x' j)) fun _ _ ↦ mul_comm _ _,
-      hsum, add_neg_cancel]
+    simp_rw [mul_comm (g _)]
+    rw [Finset.sum_coe_sort s (fun i ↦ b i * g (x i)),
+      Finset.sum_coe_sort t (fun j ↦ b' j * g (x' j)), hsum, add_neg_cancel]
   obtain ⟨k, a, c, hvc, hga⟩ := hg.exists_eq_sum_mul_of_sum_mul_eq_zero hrel
   let aL (i : ι) (l : Fin k) : A := if hi : i ∈ s then a (Sum.inl ⟨i, hi⟩) l else 0
   let aR (j : κ) (l : Fin k) : A := if hj : j ∈ t then a (Sum.inr ⟨j, hj⟩) l else 0
@@ -97,10 +96,12 @@ theorem Flat.exists_eq_sum_mul_of_sum_mul_eq {A B : Type*} [CommRing A] [CommRin
   · have hl := hga l
     rw [Fintype.sum_sum_type] at hl
     simp only [f, Sum.elim_inl, Sum.elim_inr, neg_mul, Finset.sum_neg_distrib] at hl
-    rwa [Finset.sum_coe_sort_eq_sum s (fun i ↦ aL i l * x i)
-        (fun i hi ↦ by simp [aL, hi, mul_comm]),
-      Finset.sum_coe_sort_eq_sum t (fun j ↦ aR j l * x' j)
-        (fun j hj ↦ by simp [aR, hj, mul_comm]),
-      ← sub_eq_add_neg, sub_eq_zero] at hl
+    have hs : ∑ i : s, x i.val * a (Sum.inl i) l = ∑ i ∈ s, aL i l * x i :=
+      (Fintype.sum_congr _ _ fun i ↦ by simp [aL, i.property, mul_comm]).trans
+        (Finset.sum_coe_sort s (fun i ↦ aL i l * x i))
+    have ht : ∑ j : t, x' j.val * a (Sum.inr j) l = ∑ j ∈ t, aR j l * x' j :=
+      (Fintype.sum_congr _ _ fun j ↦ by simp [aR, j.property, mul_comm]).trans
+        (Finset.sum_coe_sort t (fun j ↦ aR j l * x' j))
+    rwa [hs, ht, ← sub_eq_add_neg, sub_eq_zero] at hl
 
 end RingHom

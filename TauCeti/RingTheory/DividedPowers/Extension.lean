@@ -13,7 +13,6 @@ public import TauCeti.RingTheory.DividedPowers.Generators
 import Mathlib.Algebra.Order.Antidiag.Pi
 import Mathlib.RingTheory.Flat.Localization
 import Mathlib.RingTheory.Localization.Ideal
-import TauCeti.Algebra.Order.Antidiag.Finsupp
 import TauCeti.RingTheory.Ideal.Maps
 import TauCeti.RingTheory.Localization.Ideal
 import TauCeti.RingTheory.RingHom.Flat
@@ -100,6 +99,18 @@ theorem eq_of_isDPMorphism_map (hI : DividedPowers I) {f : A →+* B}
     ((mem_dpEqualizer_iff hJ hJ').mp
       (le_equalizer_of_isDPMorphism hI f le_rfl hJ hJ' h1 h2 hy)).2 n
 
+private theorem pow_mul_eq_pow_mul_of_mul_eq {M : Type*} [CommMonoid M] {b c y : M}
+    (h : b * y = c * y) (n : ℕ) : b ^ n * y = c ^ n * y := by
+  induction n with
+  | zero => simp
+  | succ n ih =>
+    calc
+      b ^ (n + 1) * y = b ^ n * (b * y) := by rw [pow_succ, mul_assoc]
+      _ = b ^ n * (c * y) := by rw [h]
+      _ = c * (b ^ n * y) := mul_left_comm _ _ _
+      _ = c * (c ^ n * y) := by rw [ih]
+      _ = c ^ (n + 1) * y := by rw [← mul_assoc, ← pow_succ']
+
 /-- Well-definedness of the principal-ideal extension formula: if `I = Ideal.span {x}` and
 `b * f x = c * f x`, then `b ^ n * f (hI.dpow n x) = c ^ n * f (hI.dpow n x)` for every `n`. -/
 theorem pow_mul_map_dpow_eq_of_mul_eq (hI : DividedPowers I) {x : A} (hx : I = Ideal.span {x})
@@ -112,11 +123,7 @@ theorem pow_mul_map_dpow_eq_of_mul_eq (hI : DividedPowers I) {x : A} (hx : I = I
     rw [← ha, map_mul]
     calc
       b ^ n * (f a * f x) = f a * (b ^ n * f x) := by ring
-      _ = f a * (c ^ n * f x) := by
-        have hpow : b ^ n * f x = c ^ n * f x := by
-          simpa only [mul_left_iterate_apply] using
-            (Commute.all b c).function_commute_mul_left.iterate_eq_of_map_eq n hbc
-        rw [hpow]
+      _ = f a * (c ^ n * f x) := by rw [pow_mul_eq_pow_mul_of_mul_eq hbc n]
       _ = c ^ n * (f a * f x) := by ring
 
 private theorem mem_map_principal_iff {x : A} (hx : I = Ideal.span {x}) (f : A →+* B) {y : B} :
@@ -355,45 +362,30 @@ private theorem scaledExp_mul (hI : DividedPowers I) (f : A →+* B) (b : B) (a 
     simp [PowerSeries.coeff_rescale, exp, hI.dpow_mul hx]
   rw [h1, h2, scaledExp]
 
-private noncomputable def scaledExpAddCharLeft (hI : DividedPowers I) (f : A →+* B)
-    {x : A} (hx : x ∈ I) : AddChar B (PowerSeries B) where
-  toFun b := scaledExp hI f b x
-  map_zero_eq_one' := scaledExp_zero_left hI f hx
-  map_add_eq_mul' b c := scaledExp_add_left hI f b c hx
-
-private noncomputable def scaledExpAddCharRight (hI : DividedPowers I) (f : A →+* B)
-    (c : B) : AddChar I (PowerSeries B) where
-  toFun x := scaledExp hI f c x
-  map_zero_eq_one' := scaledExp_zero_right hI f c
-  map_add_eq_mul' x y := scaledExp_add_right hI f c x.property y.property
-
 private theorem scaledExp_sum_left (hI : DividedPowers I) (f : A →+* B)
     {κ : Type*} {t : Finset κ} (u : κ → B) {x : A} (hx : x ∈ I) :
     scaledExp hI f (∑ j ∈ t, u j) x = ∏ j ∈ t, scaledExp hI f (u j) x := by
-  have hchar := map_prod (scaledExpAddCharLeft hI f hx).toMonoidHom
-    (fun j ↦ Multiplicative.ofAdd (u j)) t
-  rw [← ofAdd_sum] at hchar
-  exact hchar
+  induction t using Finset.cons_induction with
+  | empty => simp [scaledExp_zero_left hI f hx]
+  | cons a t ha ih => simp [scaledExp_add_left hI f _ _ hx, ih]
 
 private theorem scaledExp_sum_right (hI : DividedPowers I) (f : A →+* B)
     {ι : Type*} {s : Finset ι} (c : B) {y : ι → A} (hy : ∀ i ∈ s, y i ∈ I) :
     scaledExp hI f c (∑ i ∈ s, y i) = ∏ i ∈ s, scaledExp hI f c (y i) := by
-  have hsum : (⟨∑ i ∈ s, y i, Submodule.sum_mem I hy⟩ : I) =
-      ∑ i ∈ s.attach, (⟨y i.val, hy i.val i.property⟩ : I) :=
-    Subtype.ext (by rw [Submodule.coe_sum, sum_attach])
-  have hchar := map_prod (scaledExpAddCharRight hI f c).toMonoidHom
-    (fun i : {i // i ∈ s} ↦ Multiplicative.ofAdd (⟨y i.val, hy i.val i.property⟩ : I)) s.attach
-  rw [← ofAdd_sum, ← hsum] at hchar
-  simp only [AddChar.toMonoidHom_apply, toAdd_ofAdd, scaledExpAddCharRight, AddChar.coe_mk] at hchar
-  rwa [prod_attach s (fun i ↦ scaledExp hI f c (y i))] at hchar
+  induction s using Finset.cons_induction with
+  | empty => simp [scaledExp_zero_right]
+  | cons a s ha ih =>
+    have hy' : ∀ i ∈ s, y i ∈ I := fun i hi ↦ hy i (mem_cons_of_mem hi)
+    simp [scaledExp_add_right hI f c (hy a (mem_cons_self a s)) (Submodule.sum_mem I hy'),
+      ih hy']
 
 private theorem extCoeff_eq_coeff_prod_scaledExp (hI : DividedPowers I) (f : A →+* B)
     {ι : Type*} [DecidableEq ι] (s : Finset ι) (b : ι → B) (x : ι → A) (n : ℕ) :
     hI.extCoeff f n s b x = PowerSeries.coeff n (∏ i ∈ s, scaledExp hI f (b i) (x i)) := by
-  rw [PowerSeries.coeff_prod,
-    Finset.sum_finsuppAntidiag_eq_sum_piAntidiag s n
-      (fun e ↦ ∏ i ∈ s, PowerSeries.coeff (e i) (scaledExp hI f (b i) (x i)))]
-  simp only [coeff_scaledExp, extCoeff_def]
+  rw [PowerSeries.coeff_prod]
+  simp only [finsuppAntidiag, sum_map, coeff_scaledExp, extCoeff_def]
+  exact (sum_attach (piAntidiag s n)
+    (fun e ↦ ∏ i ∈ s, b i ^ e i * f (hI.dpow (e i) (x i)))).symm
 
 /-- On the empty finset, `extCoeff` is `1` in degree `0` and `0` in positive degrees. -/
 @[simp]
