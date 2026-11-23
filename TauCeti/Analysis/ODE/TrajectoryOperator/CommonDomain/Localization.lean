@@ -206,6 +206,12 @@ private theorem exists_forall_norm_smulLeftCLM_le (AL : Lp (D →L[ℝ] H) ∞ �
   nlinarith [norm_nonneg K, mul_nonneg (mul_nonneg he (abs_nonneg c))
     (norm_nonneg (familyDomainTrajectoryOperator ι AL w))]
 
+/-- An estimate `r ≤ C a` with `0 ≤ a` gives `r ≤ |C| (a + K)` for every `K ≥ 0`: the form in which
+the estimates near the two ends enter the splicing estimate. -/
+private theorem le_abs_mul_add_of_le_mul {r C a K : ℝ} (ha : 0 ≤ a) (hK : 0 ≤ K)
+    (h : r ≤ C * a) : r ≤ |C| * (a + K) :=
+  h.trans (mul_le_mul (le_abs_self _) (le_add_of_nonneg_right hK) ha (abs_nonneg _))
+
 variable {A : ℝ → D →L[ℝ] H} {AL : Lp (D →L[ℝ] H) ∞ μ₀} {Abot Atop : D →L[ℝ] H}
 
 /-- **The semi-Fredholm estimate for `∂ₛ + A(s)` over a common domain.** Let `A : ℝ → (D →L[ℝ] H)`
@@ -249,19 +255,13 @@ theorem exists_forall_norm_le_mul_norm_familyDomainTrajectoryOperator_add_norm_o
     (hb i).imp fun _ hC x _ ↦ hC x
   have h₁ (i : Bool ⊕ ℝ) : ∃ C, ∀ x ∈ (⊤ : Opens ℝ), ‖fderiv ℝ (ψ i) x‖ ≤ C :=
     (hd i).imp fun _ hC x _ ↦ norm_deriv_eq_norm_fderiv (f := ψ i) (x := x) ▸ hC x
-  -- An estimate `‖w‖ ≤ C ‖Dw‖` gives the splicing form.
-  have hend {w : WeakDerivStep volume ⊤ 2 (ι.compLpL 2 μ₀)} {C K : ℝ} (hK : 0 ≤ K)
-      (h : ‖w‖ ≤ C * ‖familyDomainTrajectoryOperator ι AL w‖) :
-      ‖w‖ ≤ |C| * (‖familyDomainTrajectoryOperator ι AL w‖ + K) :=
-    h.trans (mul_le_mul (le_abs_self _) (le_add_of_nonneg_right hK) (norm_nonneg _)
-      (abs_nonneg _))
   obtain ⟨C, hC⟩ := exists_forall_norm_le_of_sum_eq_one AL t ψ hψ h₀ h₁ hsum (fun i _ ↦ hT i) <| by
     rintro ((_ | _) | i) -
-    · refine ⟨|Cb|, fun u ↦ hend (norm_nonneg _) (hCb _ ?_)⟩
+    · refine ⟨|Cb|, fun u ↦ le_abs_mul_add_of_le_mul (norm_nonneg _) (norm_nonneg _) (hCb _ ?_)⟩
       simpa using ae_prev_smulLeftCLM_eq_zero (hψ (.inl false)).contDiffOn (h₀ _) (h₁ _)
         ι.compLpL_multiplicationOperator (Z := Ioi Tb)
         (fun s hs ↦ hψb s (by linarith [neg_abs_le Tb, le_max_right |Tt| |Tb|, mem_Ioi.1 hs])) u
-    · refine ⟨|Ct|, fun u ↦ hend (norm_nonneg _) (hCt _ ?_)⟩
+    · refine ⟨|Ct|, fun u ↦ le_abs_mul_add_of_le_mul (norm_nonneg _) (norm_nonneg _) (hCt _ ?_)⟩
       simpa using ae_prev_smulLeftCLM_eq_zero (hψ (.inl true)).contDiffOn (h₀ _) (h₁ _)
         ι.compLpL_multiplicationOperator (Z := Iio Tt)
         (fun s hs ↦ hψt s (by linarith [le_abs_self Tt, le_max_left |Tt| |Tb|, mem_Iio.1 hs])) u
