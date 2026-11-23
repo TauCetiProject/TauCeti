@@ -11,6 +11,7 @@ public import Mathlib.Topology.Algebra.Module.Equiv.Prod
 public import TauCeti.Analysis.Normed.Module.TensorProduct.FiniteDimension
 public import TauCeti.LinearAlgebra.Determinant.Semilinear
 public import TauCeti.LinearAlgebra.Determinant.TensorProduct
+public import TauCeti.Topology.Algebra.Module.FiniteDimension
 
 /-!
 # The normalized determinant of a complex-linear automorphism
@@ -40,6 +41,8 @@ loop of determinants.
   `normalizedDet A₁ ^ dim E₂ * normalizedDet A₂ ^ dim E₁`.
 * `Continuous.normalizedDet`, `ContinuousOn.normalizedDet`: a continuous family of automorphisms
   has continuous normalized determinant.
+* `Module.Basis.normalizedDet_coordConjL_trans_trans_coordConjL`: conjugating an automorphism by
+  the conjugation of the coordinates inverts its normalized determinant.
 -/
 
 public section
@@ -197,3 +200,28 @@ theorem ContinuousOn.normalizedDet {X : Type*} [TopologicalSpace X] {A : X → E
     ContinuousOn (fun x => (A x).normalizedDet) s := by
   rw [continuousOn_iff_continuous_domRestrict] at hA ⊢
   exact Continuous.normalizedDet (A := fun x : s => A x) hA
+
+/-! ### Conjugation by the conjugation of the coordinates -/
+
+namespace Module.Basis
+
+variable {F : Type*} [NormedAddCommGroup F] [NormedSpace ℂ F]
+  {ι : Type*} [Fintype ι] (b : Basis ι ℂ F)
+
+/-- **Conjugating an automorphism by the conjugation of the coordinates inverts its normalized
+determinant**, since it conjugates the determinant
+(`Module.Basis.det_coordConj_comp_comp_coordConj`) and complex conjugation inverts points of the
+circle. -/
+@[simp]
+theorem normalizedDet_coordConjL_trans_trans_coordConjL (A : F ≃L[ℂ] F) :
+    (b.coordConjL.trans (A.trans b.coordConjL) : F ≃L[ℂ] F).normalizedDet =
+      A.normalizedDet⁻¹ := by
+  have h : ((b.coordConjL.trans (A.trans b.coordConjL) : F ≃L[ℂ] F).toLinearEquiv : F →ₗ[ℂ] F) =
+      b.coordConj.toLinearMap ∘ₛₗ (A.toLinearEquiv : F →ₗ[ℂ] F) ∘ₛₗ b.coordConj.toLinearMap :=
+    LinearMap.ext fun v ↦ by simp
+  ext1
+  rw [Circle.coe_inv_eq_conj, ContinuousLinearEquiv.coe_normalizedDet,
+    ContinuousLinearEquiv.coe_normalizedDet, h, det_coordConj_comp_comp_coordConj]
+  simp
+
+end Module.Basis

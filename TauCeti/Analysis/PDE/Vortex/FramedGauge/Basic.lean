@@ -10,7 +10,7 @@ public import TauCeti.Analysis.PDE.Vortex.Deformation
 import Mathlib.Analysis.Calculus.ContDiff.WithLp
 import Mathlib.Analysis.Complex.Isometry
 import Mathlib.Algebra.Group.Action.Basic
-import TauCeti.Analysis.Complex.Circle
+import TauCeti.Analysis.Complex.Circle.Basic
 import TauCeti.Analysis.Complex.Euclidean.Four
 import TauCeti.Analysis.SpecialFunctions.Complex.Arg
 
@@ -563,6 +563,11 @@ theorem contDiff_gaugeTransform {n : WithTop ℕ∞} {u : ℂ → Circle}
   · exact (hc 1).sub (hg.clm_apply contDiff_const)
   · exact (hr.mul (hc 2)).sub (hi.mul (hc 3))
   · exact (hi.mul (hc 2)).add (hr.mul (hc 3))
+
+/-- A `C¹` gauge transformation of a continuous field is continuous. -/
+theorem continuous_gaugeTransform {u : ℂ → Circle} (hu : ContDiff ℝ 1 (fun w ↦ (u w : ℂ)))
+    {x : ℂ → EuclideanSpace ℝ (Fin 4)} (hx : Continuous x) : Continuous (gaugeTransform u x) :=
+  (contDiff_gaugeTransform (n := 0) (by rwa [zero_add]) (contDiff_zero.2 hx)).continuous
 
 /-- The logarithmic derivative of a `C²` circle-valued gauge is closed. -/
 theorem fderiv_gaugeForm_symm {u : ℂ → Circle} {z : ℂ}
