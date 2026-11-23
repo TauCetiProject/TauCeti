@@ -44,7 +44,7 @@ nor `f` depends on the auxiliary map `P` once its kernel `W` is fixed. For a fam
 (`ContinuousLinearMap.isOpen_setOf_isInvertible_comp`), and on it `K` and `Π` have the regularity
 of the family (`ContinuousAt.leftInverseAlong`, `ContinuousAt.id_sub_comp_leftInverseAlong`,
 `ContDiffAt.leftInverseAlong`, `ContDiffAt.id_sub_comp_leftInverseAlong`, with `WithinAt`, `On` and
-global variants for the left inverse). Their derivatives are in
+global variants). Their derivatives are in
 `TauCeti.Analysis.Calculus.LeftInverseAlong`.
 
 The definition of `ContinuousLinearMap.leftInverseAlong` and its algebraic, complement and
@@ -63,7 +63,7 @@ results and the dependence on a parameter.
 * `ContinuousAt.leftInverseAlong`, `ContinuousAt.id_sub_comp_leftInverseAlong`,
   `ContDiffAt.leftInverseAlong`, `ContDiffAt.id_sub_comp_leftInverseAlong`: regularity in a
   parameter, with `ContinuousWithinAt`, `ContinuousOn`, `Continuous`, `ContDiffWithinAt`,
-  `ContDiffOn` and `ContDiff` variants for the left inverse.
+  `ContDiffOn` and `ContDiff` variants.
 
 ## References
 
@@ -221,6 +221,70 @@ theorem ContDiffAt.id_sub_comp_leftInverseAlong [NormedAddCommGroup X] [NormedSp
       (fun y ↦ ContinuousLinearMap.id 𝕜 F - L y ∘L
         ContinuousLinearMap.leftInverseAlong (L y) (P y)) x :=
   contDiffAt_const.sub (hL.clm_comp (hL.leftInverseAlong hP h))
+
+/-- The projections `1 - L x (P x ∘ L x)⁻¹ P x` onto `ker (P x)` along the range of `L x` are
+continuous within a set at every parameter where both families are and `P x ∘ L x` is
+invertible. -/
+theorem ContinuousWithinAt.id_sub_comp_leftInverseAlong [TopologicalSpace X]
+    {L : X → E →L[𝕜] F} {P : X → F →L[𝕜] Y} {s : Set X} {x : X} (hL : ContinuousWithinAt L s x)
+    (hP : ContinuousWithinAt P s x) (h : (P x ∘L L x).IsInvertible) :
+    ContinuousWithinAt
+      (fun y ↦ ContinuousLinearMap.id 𝕜 F - L y ∘L
+        ContinuousLinearMap.leftInverseAlong (L y) (P y)) s x :=
+  continuousWithinAt_const.sub (hL.clm_comp (hL.leftInverseAlong hP h))
+
+/-- The projections `1 - L x (P x ∘ L x)⁻¹ P x` onto `ker (P x)` along the range of `L x` are
+continuous on a set on which both families are continuous and every `P x ∘ L x` is invertible. -/
+theorem ContinuousOn.id_sub_comp_leftInverseAlong [TopologicalSpace X] {L : X → E →L[𝕜] F}
+    {P : X → F →L[𝕜] Y} {s : Set X} (hL : ContinuousOn L s) (hP : ContinuousOn P s)
+    (h : ∀ x ∈ s, (P x ∘L L x).IsInvertible) :
+    ContinuousOn
+      (fun y ↦ ContinuousLinearMap.id 𝕜 F - L y ∘L
+        ContinuousLinearMap.leftInverseAlong (L y) (P y)) s :=
+  fun x hx ↦ (hL x hx).id_sub_comp_leftInverseAlong (hP x hx) (h x hx)
+
+/-- The projections `1 - L x (P x ∘ L x)⁻¹ P x` onto `ker (P x)` along the range of `L x` are
+continuous when both families are continuous and every `P x ∘ L x` is invertible. -/
+theorem Continuous.id_sub_comp_leftInverseAlong [TopologicalSpace X] {L : X → E →L[𝕜] F}
+    {P : X → F →L[𝕜] Y} (hL : Continuous L) (hP : Continuous P)
+    (h : ∀ x, (P x ∘L L x).IsInvertible) :
+    Continuous
+      (fun y ↦ ContinuousLinearMap.id 𝕜 F - L y ∘L
+        ContinuousLinearMap.leftInverseAlong (L y) (P y)) :=
+  continuous_const.sub (hL.clm_comp (hL.leftInverseAlong hP h))
+
+/-- The projections `1 - L x (P x ∘ L x)⁻¹ P x` onto `ker (P x)` along the range of `L x` have
+the regularity within a set of the two families at every parameter where `P x ∘ L x` is
+invertible. -/
+theorem ContDiffWithinAt.id_sub_comp_leftInverseAlong [NormedAddCommGroup X] [NormedSpace 𝕜 X]
+    {L : X → E →L[𝕜] F} {P : X → F →L[𝕜] Y} {s : Set X} {x : X} {n : WithTop ℕ∞}
+    (hL : ContDiffWithinAt 𝕜 n L s x) (hP : ContDiffWithinAt 𝕜 n P s x)
+    (h : (P x ∘L L x).IsInvertible) :
+    ContDiffWithinAt 𝕜 n
+      (fun y ↦ ContinuousLinearMap.id 𝕜 F - L y ∘L
+        ContinuousLinearMap.leftInverseAlong (L y) (P y)) s x :=
+  contDiffWithinAt_const.sub (hL.clm_comp (hL.leftInverseAlong hP h))
+
+/-- The projections `1 - L x (P x ∘ L x)⁻¹ P x` onto `ker (P x)` along the range of `L x` have
+the regularity of the two families on a set on which every `P x ∘ L x` is invertible. -/
+theorem ContDiffOn.id_sub_comp_leftInverseAlong [NormedAddCommGroup X] [NormedSpace 𝕜 X]
+    {L : X → E →L[𝕜] F} {P : X → F →L[𝕜] Y} {s : Set X} {n : WithTop ℕ∞}
+    (hL : ContDiffOn 𝕜 n L s) (hP : ContDiffOn 𝕜 n P s)
+    (h : ∀ x ∈ s, (P x ∘L L x).IsInvertible) :
+    ContDiffOn 𝕜 n
+      (fun y ↦ ContinuousLinearMap.id 𝕜 F - L y ∘L
+        ContinuousLinearMap.leftInverseAlong (L y) (P y)) s :=
+  fun x hx ↦ (hL x hx).id_sub_comp_leftInverseAlong (hP x hx) (h x hx)
+
+/-- The projections `1 - L x (P x ∘ L x)⁻¹ P x` onto `ker (P x)` along the range of `L x` are
+`C^n` when both families are `C^n` and every `P x ∘ L x` is invertible. -/
+theorem ContDiff.id_sub_comp_leftInverseAlong [NormedAddCommGroup X] [NormedSpace 𝕜 X]
+    {L : X → E →L[𝕜] F} {P : X → F →L[𝕜] Y} {n : WithTop ℕ∞}
+    (hL : ContDiff 𝕜 n L) (hP : ContDiff 𝕜 n P) (h : ∀ x, (P x ∘L L x).IsInvertible) :
+    ContDiff 𝕜 n
+      (fun y ↦ ContinuousLinearMap.id 𝕜 F - L y ∘L
+        ContinuousLinearMap.leftInverseAlong (L y) (P y)) :=
+  contDiff_const.sub (hL.clm_comp (hL.leftInverseAlong hP h))
 
 /-- Near a parameter `x` at which the family is continuous and `P ∘ L x` is invertible, the kernel
 of `P` stays a topological complement of the range of `L y`. -/

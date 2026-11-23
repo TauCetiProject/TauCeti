@@ -16,8 +16,9 @@ Let `L(σ) : E →L[𝕜] F` and `P(σ) : F →L[𝕜] Y` be families of continu
 normed spaces, depending on a parameter `σ` in a normed space, with `E` complete. At a parameter
 where `A(σ) = P(σ) L(σ)` is invertible, the left inverse `K = A⁻¹ P`
 (`ContinuousLinearMap.leftInverseAlong`) of `L` along `ker P` is differentiable when the families
-are (`DifferentiableAt.leftInverseAlong`, with `WithinAt`, `On` and global variants). Writing
-`Π = 1 - L K` for the projection onto `ker P` along the range of `L`, the derivatives along a
+are (`DifferentiableAt.leftInverseAlong`, with `WithinAt`, `On` and global variants). So is
+`Π = 1 - L K`, the projection onto `ker P` along the range of `L`
+(`DifferentiableAt.id_sub_comp_leftInverseAlong` and its variants). The derivatives along a
 direction `v` are
 
 `∂ᵥ K = A⁻¹ (∂ᵥ P) Π - K (∂ᵥ L) K` (`DifferentiableAt.fderiv_leftInverseAlong`),
@@ -77,6 +78,41 @@ theorem Differentiable.leftInverseAlong (hL : Differentiable 𝕜 L) (hP : Diffe
     (h : ∀ x, (P x ∘L L x).IsInvertible) :
     Differentiable 𝕜 (fun y ↦ (L y).leftInverseAlong (P y)) :=
   fun x ↦ (hL x).leftInverseAlong (hP x) (h x)
+
+/-- The projections `1 - L x (P x ∘ L x)⁻¹ P x` onto `ker (P x)` along the range of `L x` are
+differentiable within a set at every parameter where both families are and `P x ∘ L x` is
+invertible. -/
+theorem DifferentiableWithinAt.id_sub_comp_leftInverseAlong
+    (hL : DifferentiableWithinAt 𝕜 L s x) (hP : DifferentiableWithinAt 𝕜 P s x)
+    (h : (P x ∘L L x).IsInvertible) :
+    DifferentiableWithinAt 𝕜
+      (fun y ↦ ContinuousLinearMap.id 𝕜 F - L y ∘L (L y).leftInverseAlong (P y)) s x :=
+  (differentiableWithinAt_const _).sub (hL.clm_comp (hL.leftInverseAlong hP h))
+
+/-- The projections `1 - L x (P x ∘ L x)⁻¹ P x` onto `ker (P x)` along the range of `L x` are
+differentiable at every parameter where both families are and `P x ∘ L x` is invertible. -/
+theorem DifferentiableAt.id_sub_comp_leftInverseAlong (hL : DifferentiableAt 𝕜 L x)
+    (hP : DifferentiableAt 𝕜 P x) (h : (P x ∘L L x).IsInvertible) :
+    DifferentiableAt 𝕜
+      (fun y ↦ ContinuousLinearMap.id 𝕜 F - L y ∘L (L y).leftInverseAlong (P y)) x :=
+  (differentiableAt_const _).sub (hL.clm_comp (hL.leftInverseAlong hP h))
+
+/-- The projections `1 - L x (P x ∘ L x)⁻¹ P x` onto `ker (P x)` along the range of `L x` are
+differentiable on a set on which both families are differentiable and every `P x ∘ L x` is
+invertible. -/
+theorem DifferentiableOn.id_sub_comp_leftInverseAlong (hL : DifferentiableOn 𝕜 L s)
+    (hP : DifferentiableOn 𝕜 P s) (h : ∀ x ∈ s, (P x ∘L L x).IsInvertible) :
+    DifferentiableOn 𝕜
+      (fun y ↦ ContinuousLinearMap.id 𝕜 F - L y ∘L (L y).leftInverseAlong (P y)) s :=
+  fun x hx ↦ (hL x hx).id_sub_comp_leftInverseAlong (hP x hx) (h x hx)
+
+/-- The projections `1 - L x (P x ∘ L x)⁻¹ P x` onto `ker (P x)` along the range of `L x` are
+differentiable when both families are differentiable and every `P x ∘ L x` is invertible. -/
+theorem Differentiable.id_sub_comp_leftInverseAlong (hL : Differentiable 𝕜 L)
+    (hP : Differentiable 𝕜 P) (h : ∀ x, (P x ∘L L x).IsInvertible) :
+    Differentiable 𝕜
+      (fun y ↦ ContinuousLinearMap.id 𝕜 F - L y ∘L (L y).leftInverseAlong (P y)) :=
+  fun x ↦ (hL x).id_sub_comp_leftInverseAlong (hP x) (h x)
 
 /-- The derivative of the left inverse `K = A⁻¹ P`, `A = P L`, of `L` along `ker P` for
 differentiable families, along a direction `v`, at a parameter where `A` is invertible:
