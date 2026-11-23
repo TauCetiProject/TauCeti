@@ -66,32 +66,45 @@ example :
     |>.analyticOrderAt_ne_zero.mpr hzero
 
 /-- The trivial zeros cannot be admitted in the finite-sum inequality: the even quadratic character
-modulo five has `L(-2n, χ) = 0` for every `n ≥ 1`, while at every `σ > 0` the summands
+modulo five has `L(-2n, χ) = 0` for every `n ≥ 1`, while at every real `σ` the summands
 `Re (1 / (σ - (-2n))) = 1 / (σ + 2n)` of these zeros are not summable. -/
 example :
     have : Fact (Nat.Prime 5) := ⟨Nat.prime_five⟩
     let χ : DirichletCharacter ℂ 5 :=
       (quadraticChar (ZMod 5)).ringHomComp (Int.castRingHom ℂ)
     (∀ n : ℕ, 0 < n → χ.LFunction (-(2 * n)) = 0) ∧
-      ∀ σ : ℝ, 0 < σ → ¬Summable fun n : ℕ ↦ (1 / ((σ : ℂ) - (-(2 * n)))).re := by
+      ∀ σ : ℝ, ¬Summable fun n : ℕ ↦ (1 / ((σ : ℂ) - (-(2 * n)))).re := by
   intro _ χ
   have he : χ.Even := by
     have hneg : (quadraticChar (ZMod 5)) (-1) = 1 := by
       rw [quadraticChar_neg_one (F := ZMod 5) (by norm_num [ZMod.ringChar_zmod_n]), ZMod.card]
       exact ZMod.χ₄_nat_one_mod_four (by norm_num)
     simp only [χ, DirichletCharacter.Even, MulChar.ringHomComp_apply, hneg, map_one]
-  refine ⟨fun n hn ↦ ?_, fun σ hσ hsum ↦ ?_⟩
+  refine ⟨fun n hn ↦ ?_, fun σ hsum ↦ ?_⟩
   · have : NeZero n := ⟨hn.ne'⟩
     exact he.LFunction_neg_two_mul_nat n
   · have hre (n : ℕ) : (1 / ((σ : ℂ) - (-(2 * n)))).re = 1 / (σ + 2 * n) := by
       rw [sub_neg_eq_add, show (σ : ℂ) + 2 * n = ((σ + 2 * n : ℝ) : ℂ) by push_cast; ring,
         ← ofReal_one, ← ofReal_div, ofReal_re]
     simp only [hre] at hsum
-    -- `1 / (n + 1) ≤ (σ + 2) / (σ + 2n)` would make the harmonic series summable.
+    -- With `K = ⌈|σ|⌉ + 1`, `1 / (n + 1) ≤ (3|σ| + 4) / (σ + 2(n + K))` would make the harmonic
+    -- series summable.
+    set K := ⌈|σ|⌉₊ + 1
+    have hK : |σ| + 1 ≤ (K : ℝ) ∧ (K : ℝ) < |σ| + 2 := by
+      have h₁ := Nat.le_ceil |σ|
+      have h₂ := Nat.ceil_lt_add_one (abs_nonneg σ)
+      push_cast [K]
+      constructor <;> linarith
+    have hσ := neg_abs_le σ
+    have hσ' := le_abs_self σ
+    have hpos (n : ℕ) : 0 < σ + 2 * ((n + K : ℕ) : ℝ) := by
+      push_cast
+      nlinarith [n.cast_nonneg (α := ℝ)]
     refine Real.not_summable_one_div_natCast ((summable_nat_add_iff 1).mp ?_)
-    refine (hsum.mul_left (σ + 2)).of_nonneg_of_le (fun n ↦ by positivity) fun n ↦ ?_
+    refine (((summable_nat_add_iff K).mpr hsum).mul_left (3 * |σ| + 4)).of_nonneg_of_le
+      (fun n ↦ by positivity) fun n ↦ ?_
+    rw [mul_one_div, div_le_div_iff₀ (by positivity) (hpos n)]
     push_cast
-    rw [mul_one_div, div_le_div_iff₀ (by positivity) (by positivity)]
     nlinarith [n.cast_nonneg (α := ℝ)]
 
 /-- A nonreal character: every character `χ` modulo `5` of order `4` (one exists) satisfies
