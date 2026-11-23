@@ -12,6 +12,8 @@ public import Mathlib.LinearAlgebra.Matrix.Hermitian
 # Star orthogonality of matrices
 
 Transposing both matrices preserves star orthogonality over commutative coefficients.
+For self-adjoint matrices, transposition also preserves zero products without assuming
+associative multiplication of the coefficients.
 -/
 
 public section
@@ -27,3 +29,12 @@ theorem Matrix.isStarOrtho_transpose_iff {n R : Type*} [Fintype n]
   simp only [isStarOrtho_iff, Matrix.star_eq_conjTranspose,
     Matrix.conjTranspose_transpose_eq_transpose_conjTranspose, ← Matrix.transpose_mul,
     Matrix.transpose_eq_zero, and_comm]
+
+/-- Transposition preserves and reflects zero products of self-adjoint square matrices over
+commutative coefficients. -/
+theorem Matrix.transpose_mul_eq_zero_iff_of_isSelfAdjoint {n R : Type*} [Fintype n]
+    [NonUnitalNonAssocCommSemiring R] [StarRing R] (p q : Matrix n n R)
+    (hp : IsSelfAdjoint p) (hq : IsSelfAdjoint q) : pᵀ * qᵀ = 0 ↔ p * q = 0 := by
+  rw [← Matrix.transpose_mul, Matrix.transpose_eq_zero,
+    ← Matrix.conjTranspose_eq_zero (M := q * p), Matrix.conjTranspose_mul,
+    hp.isHermitian.eq, hq.isHermitian.eq]
