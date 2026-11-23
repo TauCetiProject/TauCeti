@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.InnerProductSpace.Adjoint
-public import TauCeti.Analysis.InnerProductSpace.Gram.Basic
+public import TauCeti.Analysis.InnerProductSpace.Gram.Projection
 public import TauCeti.MeasureTheory.Function.L2Space.MeanZero
 import TauCeti.Analysis.InnerProductSpace.Projection.Completeness
 import TauCeti.Analysis.InnerProductSpace.RangeProjection
@@ -17,7 +17,8 @@ import TauCeti.Analysis.InnerProductSpace.RangeProjection
 This file develops the Hilbert-space geometry of score functions in `Lp ℝ 2 P` underlying
 semiparametric efficiency theory. The generic `L²` background lives in its measure-theoretic homes:
 `TauCeti.MeasureTheory.Function.L2Space.MeanZero` for the mean-zero subspace `L²₀(P)`
-(`MeasureTheory.Measure.meanZeroL2`) and its projection/density properties, and
+(`MeasureTheory.Measure.meanZeroL2`) and its projection/density properties (together with
+`TauCeti.MeasureTheory.Function.L2Space.MeanZero.Density` for bounded continuous density), and
 `TauCeti.MeasureTheory.Function.ConditionalExpectation.Pullback` for the `L²` pullback isometry
 (`MeasureTheory.Measure.pullbackL2`) and its conditional-expectation adjoint
 (`MeasureTheory.Measure.condExpOperator`).
@@ -35,7 +36,8 @@ semiparametric efficiency theory. The generic `L²` background lives in its meas
   `Matrix.gram ℝ (fun i ↦ efficientScore P N (ℓ i))`. Enlarging the nuisance set decreases the
   efficient information matrix in the Loewner order, yielding the information-loss inequality
   `Matrix.gram ℝ ℓ - I_eff ≥ 0`, the adaptation criterion `I_eff = Matrix.gram ℝ ℓ` iff every score
-  is orthogonal to `N`, and positive definiteness via `Matrix.posDef_gram_iff_linearIndependent`.
+  is orthogonal to `N`, and positive definiteness iff the efficient scores are linearly independent
+  (`MeasureTheory.Measure.posDef_efficientInformationMatrix_iff`).
 * **Score operators:** For a continuous linear score operator `A : H →L[ℝ] Lp ℝ 2 P` with closed
   range, the tangent space of `Set.range A` equals `A.range`; when the Gram operator `A† A` is
   invertible, the orthogonal projection onto it is `A (A† A)⁻¹ A†`.
@@ -53,14 +55,18 @@ semiparametric efficiency theory. The generic `L²` background lives in its meas
   `MeasureTheory.Measure.toSubmodule_tangentSpace_union_of_isOrtho`,
   `MeasureTheory.Measure.starProjection_tangentSpace_union_of_isOrtho`: tangent space of a union,
   orthogonal sum decomposition, and additivity of projections.
+* `MeasureTheory.Measure.efficientScore_efficientScore`: idempotence of `efficientScore`.
+* `MeasureTheory.Measure.posSemidef_efficientInformationMatrix`,
+  `MeasureTheory.Measure.posDef_efficientInformationMatrix_iff`: positive semidefiniteness and
+  the positive-definiteness criterion (via `Matrix.posDef_gram_iff_linearIndependent`).
 * `MeasureTheory.Measure.posSemidef_efficientInformationMatrix_sub_of_subset`,
   `MeasureTheory.Measure.posSemidef_gram_sub_efficientInformationMatrix`,
-  `MeasureTheory.Measure.efficientInformationMatrix_eq_gram_iff`: information-loss inequalities,
-  adaptation criterion, and positive-definiteness criterion (via
-  `Matrix.posDef_gram_iff_linearIndependent`).
+  `MeasureTheory.Measure.efficientInformationMatrix_eq_gram_iff`: information-loss inequalities
+  and adaptation criterion.
 * `MeasureTheory.Measure.tangentSpace_range_eq_range`,
   `MeasureTheory.Measure.starProjection_tangentSpace_range_eq`: closed range and projection formula
-  `A (A† A)⁻¹ A†` for a score operator with invertible `A† A`.
+  `A (A† A)⁻¹ A†` for a score operator with invertible `A† A`, specializing
+  `ContinuousLinearMap.starProjection_range_eq`.
 
 ## References
 
@@ -102,6 +108,12 @@ theorem tangentSpace_le_iff {P : Measure X} {T : Set (Lp ℝ 2 P)}
     tangentSpace P T ≤ K ↔ T ⊆ K := by
   rw [tangentSpace_def, Submodule.closure_le, Submodule.span_le, ClosedSubmodule.coe_toSubmodule]
 
+/-- `tangentSpace P` forms a Galois connection with coercion of closed submodules to sets. -/
+theorem tangentSpace_gc (P : Measure X) :
+    GaloisConnection (tangentSpace P)
+      (fun K : ClosedSubmodule ℝ (Lp ℝ 2 P) ↦ (K : Set (Lp ℝ 2 P))) :=
+  fun _ _ ↦ tangentSpace_le_iff
+
 /-- Every tangent set is contained in its tangent space. -/
 theorem subset_tangentSpace {P : Measure X} (T : Set (Lp ℝ 2 P)) :
     T ⊆ (tangentSpace P T : Set (Lp ℝ 2 P)) :=
@@ -115,8 +127,9 @@ theorem mem_tangentSpace_of_mem {P : Measure X} {T : Set (Lp ℝ 2 P)} {g : Lp �
 /-- A vector lies in the tangent space of `T` if and only if it lies in the closure of the linear
 span of `T`. -/
 theorem mem_tangentSpace_iff {P : Measure X} {T : Set (Lp ℝ 2 P)} {g : Lp ℝ 2 P} :
-    g ∈ tangentSpace P T ↔ g ∈ closure (Submodule.span ℝ T : Set (Lp ℝ 2 P)) :=
-  Iff.rfl
+    g ∈ tangentSpace P T ↔ g ∈ closure (Submodule.span ℝ T : Set (Lp ℝ 2 P)) := by
+  rw [tangentSpace_def, Submodule.mem_closure_iff, ← SetLike.mem_coe,
+    Submodule.topologicalClosure_coe]
 
 /-- The tangent space is monotone in the generating set. -/
 theorem tangentSpace_mono {P : Measure X} {T T' : Set (Lp ℝ 2 P)} (h : T ⊆ T') :
@@ -149,43 +162,35 @@ theorem toSubmodule_tangentSpace_singleton {P : Measure X} (g : Lp ℝ 2 P) :
 
 /-- If every score in `T` has mean zero, then `tangentSpace P T` is contained in `L²₀(P)`. -/
 theorem tangentSpace_le_meanZeroL2 {P : Measure X} [IsFiniteMeasure P] {T : Set (Lp ℝ 2 P)}
-    (hT : T ⊆ meanZeroL2 P) : (tangentSpace P T).toSubmodule ≤ meanZeroL2 P :=
+    (hT : T ⊆ meanZeroL2 P ℝ (E := ℝ)) : (tangentSpace P T).toSubmodule ≤ meanZeroL2 P ℝ :=
   ClosedSubmodule.toSubmodule_le_toSubmodule.mp
-    ((tangentSpace_le_iff (K := ⟨meanZeroL2 P, isClosed_meanZeroL2 P⟩)).mpr hT)
+    ((tangentSpace_le_iff (K := ⟨meanZeroL2 P ℝ, isClosed_meanZeroL2 P ℝ⟩)).mpr hT)
 
 /-- A vector is orthogonal to `tangentSpace P T` if and only if it is orthogonal to every element
 of `T`. -/
 theorem mem_orthogonal_tangentSpace_iff {P : Measure X} {T : Set (Lp ℝ 2 P)} {f : Lp ℝ 2 P} :
     f ∈ (tangentSpace P T).toSubmoduleᗮ ↔ ∀ g ∈ T, ⟪g, f⟫_ℝ = 0 := by
-  refine ⟨fun hf g hg ↦ Submodule.inner_right_of_mem_orthogonal (subset_tangentSpace T hg) hf,
-    fun h ↦ ?_⟩
-  have hle : tangentSpace P T ≤ ⟨(Submodule.span ℝ {f})ᗮ, Submodule.isClosed_orthogonal _⟩ :=
-    tangentSpace_le_iff.mpr fun g hg ↦
-      Submodule.mem_orthogonal_singleton_iff_inner_left.mpr (h g hg)
-  intro g hg
-  exact Submodule.mem_orthogonal_singleton_iff_inner_left.mp
-    ((ClosedSubmodule.toSubmodule_le_toSubmodule.mp hle) hg)
+  rw [toSubmodule_tangentSpace, Submodule.orthogonal_closure,
+    ← Submodule.span_singleton_le_iff_mem, ← Submodule.isOrtho_iff_le,
+    Submodule.isOrtho_comm, Submodule.isOrtho_span]
+  simp
 
 /-- Two tangent spaces are orthogonal if and only if every element of the first tangent set is
 orthogonal to every element of the second. -/
 theorem isOrtho_tangentSpace_iff {P : Measure X} {T T' : Set (Lp ℝ 2 P)} :
     (tangentSpace P T).toSubmodule.IsOrtho (tangentSpace P T').toSubmodule ↔
       ∀ g ∈ T, ∀ g' ∈ T', ⟪g, g'⟫_ℝ = 0 := by
-  rw [Submodule.isOrtho_iff_le]
-  refine (ClosedSubmodule.toSubmodule_le_toSubmodule (s := tangentSpace P T)
-    (t := ⟨_, Submodule.isClosed_orthogonal _⟩)).symm.trans ?_
-  refine tangentSpace_le_iff.trans ?_
-  simp only [Set.subset_def, SetLike.mem_coe, ClosedSubmodule.mem_mk,
-    mem_orthogonal_tangentSpace_iff, real_inner_comm]
+  rw [toSubmodule_tangentSpace, toSubmodule_tangentSpace, Submodule.isOrtho_iff_le,
+    Submodule.orthogonal_closure, ← Submodule.isOrtho_iff_le, Submodule.isOrtho_comm,
+    Submodule.isOrtho_iff_le, Submodule.orthogonal_closure, ← Submodule.isOrtho_iff_le,
+    Submodule.isOrtho_comm, Submodule.isOrtho_span]
 
 /-- The tangent space of a union is the join of the two tangent spaces in `ClosedSubmodule` (the
 closure of their sum). -/
 @[simp]
 theorem tangentSpace_union {P : Measure X} (T T' : Set (Lp ℝ 2 P)) :
     tangentSpace P (T ∪ T') = tangentSpace P T ⊔ tangentSpace P T' :=
-  (show GaloisConnection (tangentSpace P)
-    (fun K : ClosedSubmodule ℝ (Lp ℝ 2 P) ↦ (K : Set (Lp ℝ 2 P))) from
-      fun _ _ ↦ tangentSpace_le_iff).l_sup
+  (tangentSpace_gc P).l_sup
 
 /-- When two tangent spaces are orthogonal, the tangent space of their union is their algebraic
 sum. -/
@@ -235,6 +240,12 @@ theorem efficientScore_mem_orthogonal {P : Measure X} (N : Set (Lp ℝ 2 P)) (�
     efficientScore P N ℓ ∈ (tangentSpace P N).toSubmoduleᗮ :=
   Submodule.starProjection_apply_mem _ ℓ
 
+/-- Applying the efficient score projection twice leaves it unchanged. -/
+@[simp]
+theorem efficientScore_efficientScore {P : Measure X} (N : Set (Lp ℝ 2 P)) (ℓ : Lp ℝ 2 P) :
+    efficientScore P N (efficientScore P N ℓ) = efficientScore P N ℓ :=
+  Submodule.starProjection_eq_self_iff.mpr (efficientScore_mem_orthogonal N ℓ)
+
 /-- The efficient score is orthogonal to every element of the nuisance tangent space. -/
 theorem inner_efficientScore_eq_zero_of_mem_tangentSpace {P : Measure X} (N : Set (Lp ℝ 2 P))
     (ℓ : Lp ℝ 2 P) {g : Lp ℝ 2 P} (hg : g ∈ tangentSpace P N) :
@@ -271,8 +282,8 @@ theorem efficientScore_singleton {P : Measure X} (n ℓ : Lp ℝ 2 P) :
 
 /-- If `ℓ` and every nuisance score in `N` have mean zero, then so does the efficient score. -/
 theorem efficientScore_mem_meanZeroL2 {P : Measure X} [IsFiniteMeasure P] {N : Set (Lp ℝ 2 P)}
-    {ℓ : Lp ℝ 2 P} (hN : N ⊆ meanZeroL2 P) (hℓ : ℓ ∈ meanZeroL2 P) :
-    efficientScore P N ℓ ∈ meanZeroL2 P := by
+    {ℓ : Lp ℝ 2 P} (hN : N ⊆ meanZeroL2 P ℝ (E := ℝ)) (hℓ : ℓ ∈ meanZeroL2 P ℝ) :
+    efficientScore P N ℓ ∈ meanZeroL2 P ℝ := by
   rw [efficientScore_eq_sub_starProjection]
   exact Submodule.sub_mem _ hℓ
     (tangentSpace_le_meanZeroL2 hN (Submodule.starProjection_apply_mem _ ℓ))
@@ -288,11 +299,31 @@ theorem efficientInformationMatrix_def {P : Measure X} {ι : Type*} (N : Set (Lp
     efficientInformationMatrix P N ℓ = Matrix.gram ℝ (fun i ↦ efficientScore P N (ℓ i)) :=
   (rfl)
 
+/-- The entries of the efficient information matrix. -/
+@[simp]
+theorem efficientInformationMatrix_apply {P : Measure X} {ι : Type*} (N : Set (Lp ℝ 2 P))
+    (ℓ : ι → Lp ℝ 2 P) (i j : ι) :
+    efficientInformationMatrix P N ℓ i j = ⟪efficientScore P N (ℓ i), efficientScore P N (ℓ j)⟫_ℝ :=
+  (rfl)
+
 /-- With no nuisance scores, the efficient information matrix equals the Gram matrix. -/
 @[simp]
 theorem efficientInformationMatrix_empty {P : Measure X} {ι : Type*} (ℓ : ι → Lp ℝ 2 P) :
     efficientInformationMatrix P ∅ ℓ = Matrix.gram ℝ ℓ := by
   simp [efficientInformationMatrix_def]
+
+/-- The efficient information matrix is positive semidefinite. -/
+theorem posSemidef_efficientInformationMatrix {P : Measure X} {ι : Type*} (N : Set (Lp ℝ 2 P))
+    (ℓ : ι → Lp ℝ 2 P) : (efficientInformationMatrix P N ℓ).PosSemidef :=
+  Matrix.posSemidef_gram ℝ _
+
+/-- The efficient information matrix is positive definite if and only if the efficient scores are
+linearly independent. -/
+theorem posDef_efficientInformationMatrix_iff {P : Measure X} {ι : Type*} (N : Set (Lp ℝ 2 P))
+    (ℓ : ι → Lp ℝ 2 P) :
+    (efficientInformationMatrix P N ℓ).PosDef ↔
+      LinearIndependent ℝ (fun i ↦ efficientScore P N (ℓ i)) :=
+  Matrix.posDef_gram_iff_linearIndependent
 
 /-- Enlarging the nuisance set from `N` to `N'` lowers the efficient information matrix by the Gram
 matrix of the projection difference `(Π_{N'} - Π_N) ℓ`. -/
@@ -358,14 +389,15 @@ section ScoreOperators
 variable {X : Type*} [MeasurableSpace X]
 
 /-- The tangent space of the range of a score operator `A` with closed range equals `A.range`. -/
-theorem tangentSpace_range_eq_range {H : Type*} [SeminormedAddCommGroup H] [NormedSpace ℝ H]
+theorem tangentSpace_range_eq_range {H : Type*} [AddCommMonoid H] [Module ℝ H] [TopologicalSpace H]
     {P : Measure X} (A : H →L[ℝ] Lp ℝ 2 P) (hA : IsClosed (A.range : Set (Lp ℝ 2 P))) :
     (tangentSpace P (Set.range A)).toSubmodule = A.range := by
   simpa only [LinearMap.coe_range, ContinuousLinearMap.coe_coe] using
     toSubmodule_tangentSpace_coe hA
 
 /-- The orthogonal projection onto the tangent space of the range of a score operator `A` with
-continuously invertible information operator `A† A` is `A (A† A)⁻¹ A†`. -/
+continuously invertible information operator `A† A` is `A (A† A)⁻¹ A†`, specializing
+`ContinuousLinearMap.starProjection_range_eq`. -/
 theorem starProjection_tangentSpace_range_eq {H : Type*} [NormedAddCommGroup H]
     [InnerProductSpace ℝ H] [CompleteSpace H] {P : Measure X} (A : H →L[ℝ] Lp ℝ 2 P)
     (hA : IsUnit (ContinuousLinearMap.adjoint A ∘L A)) :

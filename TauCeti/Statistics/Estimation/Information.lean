@@ -52,6 +52,8 @@ score is the true score `∂_θ f / f` almost everywhere for `P θ`, and where `
 * `TauCeti.fisherInformation_nonneg`: the Fisher information is nonnegative.
 * `TauCeti.posSemidef_fisherInformationMatrix`: the information matrix of a square-integrable
   vector score is positive semidefinite.
+* `TauCeti.fisherInformationMatrix_coeFn_eq_gram`: the information matrix of `L²(P)` score classes
+  equals their Gram matrix in `L²(P)`.
 * `TauCeti.integral_likelihoodScore_eq_zero`: the score of a regular model has mean `0`.
 * `TauCeti.integral_mul_likelihoodScore_eq_deriv`: `∫ W · score dP θ = d/dθ ∫ W dP θ`.
 * `TauCeti.sq_deriv_le_variance_mul_fisherInformation_of_memLp`: the information inequality for
@@ -130,6 +132,13 @@ theorem fisherInformationMatrix_eq_gram {ι : Type*} {s : ι → X → ℝ} {P :
   filter_upwards [(hs i).coeFn_toLp, (hs j).coeFn_toLp] with x hi hj
   rw [hi, hj, real_inner_eq_re_inner, RCLike.inner_apply, conj_trivial, RCLike.re_to_real,
     mul_comm]
+
+/-- The information matrix of a family of `L²(P)` score classes equals their Gram matrix in
+`L²(P)`. -/
+theorem fisherInformationMatrix_coeFn_eq_gram {ι : Type*} {P : Measure X} (ℓ : ι → Lp ℝ 2 P) :
+    fisherInformationMatrix (fun i x ↦ ℓ i x) P = Matrix.gram ℝ ℓ := by
+  rw [fisherInformationMatrix_eq_gram fun i ↦ Lp.memLp (ℓ i)]
+  simp only [Lp.toLp_coeFn]
 
 /-- The information matrix of a square-integrable vector score is positive semidefinite. -/
 theorem posSemidef_fisherInformationMatrix {ι : Type*} {s : ι → X → ℝ}

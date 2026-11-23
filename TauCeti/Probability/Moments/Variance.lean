@@ -15,6 +15,7 @@ public import TauCeti.MeasureTheory.Function.Lp.Norm
 public import TauCeti.MeasureTheory.Integral.Lebesgue.SetOfEqZero
 public import TauCeti.Probability.Moments.Mixture
 import TauCeti.MeasureTheory.Function.L2Space.Basic
+import TauCeti.MeasureTheory.Function.Lp.Const
 import TauCeti.MeasureTheory.OuterMeasure.BorelCantelli
 
 /-!
@@ -97,7 +98,7 @@ theorem variance_eq_norm_sub_const_sq {α : Type*} [MeasurableSpace α] {μ : Me
 variance. -/
 theorem _root_.MeasureTheory.Measure.norm_starProjection_meanZeroL2_sq_eq_variance
     {X : Type*} [MeasurableSpace X] {P : Measure X} [IsProbabilityMeasure P] (f : Lp ℝ 2 P) :
-    ‖(MeasureTheory.Measure.meanZeroL2 P).starProjection f‖ ^ 2 = variance (f : X → ℝ) P := by
+    ‖(MeasureTheory.Measure.meanZeroL2 P ℝ).starProjection f‖ ^ 2 = variance (f : X → ℝ) P := by
   rw [MeasureTheory.Measure.starProjection_meanZeroL2, variance_eq_norm_sub_const_sq]
 
 /-- The variance is continuous under L² convergence on a finite measure space. -/
