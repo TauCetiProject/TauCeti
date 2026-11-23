@@ -11,7 +11,6 @@ public import TauCeti.AlgebraicTopology.Singular.Twisted.Zero
 import TauCeti.Topology.Connected.PathConnected
 import TauCeti.Topology.VectorBundle.Orientation.ThomClass
 import TauCeti.Topology.Homotopy.Monodromy.Basic
-import TauCeti.Topology.UnitInterval.PathConnected
 
 /-!
 # The rank-degree homology of a Thom pair and the orientation local system
@@ -315,26 +314,23 @@ private theorem fiberClass_of_eq_neg (e : Trivialization F (π F E)) [e.IsLinear
 private theorem fiberClass_eq_of_joined {p q : VectorBundleOrientationCover F E ι}
     (hpq : Joined p q) : fiberClass K hι ωF p = fiberClass K hι ωF q := by
   obtain ⟨Γ⟩ := hpq
-  refine Γ.eq_of_eventually_eq (f := fiberClass K hι ωF) fun t ↦ ?_
-  -- Near `t` the path stays in the sheet of the trivialization at `Γ t` containing `Γ t`.
-  let e := trivializationAt F E (Γ t).proj
-  have ht : (Γ t).proj ∈ e.baseSet := FiberBundle.mem_baseSet_trivializationAt' _
-  let o := e.mapOrientation ι ht (Γ t).orientation
-  have hO : Γ ⁻¹' sheet e o ∈ 𝓝 t :=
-    ((isOpen_sheet hι e o).preimage Γ.continuous).mem_nhds (mem_sheet_iff.2 ⟨ht, rfl⟩)
-  filter_upwards [pathComponentIn_mem_nhds hO] with s hs
-  have hj : JoinedIn (sheet e o) (Γ t) (Γ s) :=
-    (hs.map Γ.continuous.continuousOn).mono (by rintro _ ⟨u, hu, rfl⟩; exact hu)
-  obtain ⟨hsb, hso⟩ := mem_sheet_iff.1 hj.target_mem
+  -- Near each point `z`, take the sheet of the trivialization at `z.proj` containing `z`.
+  refine Γ.eq_of_joinedIn_nhds (f := fiberClass K hι ωF) fun z ↦ ?_
+  let e := trivializationAt F E z.proj
+  have hz : z.proj ∈ e.baseSet := FiberBundle.mem_baseSet_trivializationAt' _
+  let o := e.mapOrientation ι hz z.orientation
+  refine ⟨sheet e o, (isOpen_sheet hι e o).mem_nhds (mem_sheet_iff.2 ⟨hz, rfl⟩), fun a b hj ↦ ?_⟩
+  obtain ⟨ha, hao⟩ := mem_sheet_iff.1 hj.source_mem
+  obtain ⟨hb, hbo⟩ := mem_sheet_iff.1 hj.target_mem
   -- Their base points are joined in the base set of `e`, where the fibre inclusions read
   -- through `e` induce the same map on homology.
-  have hjb : JoinedIn (univ ∩ e.baseSet) (Γ t).proj (Γ s).proj :=
+  have hjb : JoinedIn (univ ∩ e.baseSet) a.proj b.proj :=
     (hj.map continuous_proj.continuousOn).mono (by
       rintro _ ⟨q, hq, rfl⟩
       exact ⟨trivial, (mem_sheet_iff.1 hq).1⟩)
-  have hκ : (trivializationClass K e hsb : ((thomPair F E).singularHomology
+  have hκ : (trivializationClass K e hb : ((thomPair F E).singularHomology
       (ModuleCat.of K (ULift.{max w uι} K)) (finrank ℝ F) : ModuleCat K)) =
-        trivializationClass K e ht := by
+        trivializationClass K e ha := by
     have h := e.singularHomologyMap_complZeroPairIso_inv_comp_fiberThomPairOverMap_eq_of_joinedIn
       (ModuleCat.of K (ULift.{max w uι} K)) hjb (finrank ℝ F) rfl
     have h' := congrArg (· ≫ TopPair.singularHomologyMap (thomPairOverUnivIso F E).hom
@@ -343,9 +339,10 @@ private theorem fiberClass_eq_of_joined {p q : VectorBundleOrientationCover F E 
       fiberThomPairOverMap_comp_thomPairOverUnivIso_hom] at h'
     rw [trivializationClass, trivializationClass, h']
   rcases Orientation.eq_or_eq_neg o ωF (Nat.card_eq_fintype_card.trans hι) with h | h
-  · rw [fiberClass_of_eq K hι ωF e hsb (hso.trans h), fiberClass_of_eq K hι ωF e ht h, hκ]
-  · rw [fiberClass_of_eq_neg K hι ωF e hsb (hso.trans h), fiberClass_of_eq_neg K hι ωF e ht h,
+  · rw [fiberClass_of_eq K hι ωF e ha (hao.trans h), fiberClass_of_eq K hι ωF e hb (hbo.trans h),
       hκ]
+  · rw [fiberClass_of_eq_neg K hι ωF e ha (hao.trans h),
+      fiberClass_of_eq_neg K hι ωF e hb (hbo.trans h), hκ]
 
 /-- **The fibre classes are compatible with transport in `o(E)`.** The identification of the
 fibre of `o(E)` with `Hᵣ(E_b, E_b ∖ {0}; K)`, followed by the inclusion of the fibre pair, is
