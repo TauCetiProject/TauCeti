@@ -26,7 +26,7 @@ tree joining vertices from different components.
 * `TauCeti.TerminalCut.exists_isCutTree_pairCutCapacity`: pair capacities admit cut trees.
 * `Graph.exists_isCutTree_edgeCutCapacity`: finite weighted multigraphs admit cut trees.
 * `Graph.exists_isUnitCutTree`: finite multigraphs admit unit-capacity cut trees.
-* `IsFlowEquivalentTree.reachable_deleteEdges_iff_edgeReachability`: threshold components of a
+* `IsFlowEquivalentTree.reachable_deleteEdges_iff_isEdgeReachable`: threshold components of a
   unit flow-equivalent tree are the local edge-connectivity classes of the multigraph.
 * `IsFlowEquivalentTree.exists_edge_edgeConnectivity_eq_weight`: the global edge connectivity is
   the minimum tree-edge weight.
@@ -100,7 +100,7 @@ theorem exists_weight_eq_edgeReachability
 
 /-- Deleting the tree edges of weight below `k` leaves two actual vertices connected exactly when
 they are natively `k`-edge-reachable. -/
-theorem reachable_deleteEdges_iff_edgeReachability
+theorem reachable_deleteEdges_iff_isEdgeReachable
     (hT : IsFlowEquivalentTree (G.edgeCutCapacity fun _ ↦ (1 : ℕ)) T w) (k : ℕ) {s t : V(G)} :
     (T.deleteEdges {e | w e < k}).Reachable s t ↔
       G.IsEdgeReachable k s t := by

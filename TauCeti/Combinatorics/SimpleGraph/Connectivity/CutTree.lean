@@ -23,7 +23,7 @@ tree edge also records the global edge connectivity.
 
 * `SimpleGraph.unitCutCapacity`: the number of graph edges crossing a vertex cut.
 * `SimpleGraph.exists_isUnitCutTree`: every nonempty finite simple graph has a unit cut tree.
-* `IsFlowEquivalentTree.reachable_deleteEdges_iff_simpleGraph_edgeReachability`: the threshold
+* `IsFlowEquivalentTree.reachable_deleteEdges_iff_simpleGraph_isEdgeReachable`: the threshold
   partition of a unit cut tree is local edge reachability in the original graph.
 * `IsCutTree.simpleGraph_edgeReachability_eq_unitCutCapacity_edgeSide`: a minimum-weight tree-path
   edge recovers a minimum cut in the original graph.
@@ -38,7 +38,7 @@ tree edge also records the global edge connectivity.
 
 The multigraph existence and query interface adapted here is developed in
 `TauCeti.Combinatorics.Network.MinimumCut.Graph`, especially
-`Graph.exists_isUnitCutTree`, `IsFlowEquivalentTree.reachable_deleteEdges_iff_edgeReachability`,
+`Graph.exists_isUnitCutTree`, `IsFlowEquivalentTree.reachable_deleteEdges_iff_isEdgeReachable`,
 and `IsCutTree.edgeReachability_eq_edgeCutCapacity_edgeSide`.
 -/
 
@@ -56,8 +56,7 @@ theorem exists_isUnitCutTree [Fintype V] [Nonempty V] (G : SimpleGraph V) :
     ∃ (T : SimpleGraph V) (w : Sym2 V → ℕ),
       TauCeti.TerminalCut.IsCutTree G.unitCutCapacity T w := by
   classical
-  have hcapacity := funext G.unitCutCapacity_def
-  rw [hcapacity]
+  rw [G.unitCutCapacity_eq_pairCutCapacity]
   apply TauCeti.TerminalCut.exists_isCutTree_pairCutCapacity
   intro x y _
   simp
@@ -84,7 +83,7 @@ theorem exists_weight_eq_simpleGraph_edgeReachability
 
 /-- Deleting the cut-tree edges of weight below `k` leaves two vertices connected exactly when
 they are locally `k`-edge-reachable in the original simple graph. -/
-theorem reachable_deleteEdges_iff_simpleGraph_edgeReachability
+theorem reachable_deleteEdges_iff_simpleGraph_isEdgeReachable
     (hT : IsFlowEquivalentTree G.unitCutCapacity T w) (k : ℕ) {s t : V} :
     (T.deleteEdges {e | w e < k}).Reachable s t ↔
       G.IsEdgeReachable (k : ℕ∞) s t := by

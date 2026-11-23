@@ -218,6 +218,12 @@ theorem unitCutCapacity_def [Fintype V] (G : SimpleGraph V) (S : Finset V) :
       simp [C]
     _ = G.unitCutCapacity S := (G.unitCutCapacity_eq_ncard S).symm
 
+/-- Unit cut capacity is pair cut capacity for the indicator of the graph's edge set. -/
+theorem unitCutCapacity_eq_pairCutCapacity [Fintype V] (G : SimpleGraph V) :
+    G.unitCutCapacity =
+      TauCeti.pairCutCapacity (G.edgeSet.indicator fun _ ↦ 1) :=
+  funext G.unitCutCapacity_def
+
 /-- The empty cut has unit capacity zero. -/
 @[simp]
 theorem unitCutCapacity_empty (G : SimpleGraph V) [Finite G.edgeSet] :
@@ -266,8 +272,7 @@ theorem unitCutCapacity_eq_zero_iff (G : SimpleGraph V) [Finite G.edgeSet] (S : 
 /-- Unit cut capacity is a symmetric submodular set function. -/
 theorem isSymmSubmodular_unitCutCapacity [Fintype V] [DecidableEq V]
     (G : SimpleGraph V) : TauCeti.IsSymmSubmodular G.unitCutCapacity := by
-  have hcapacity := funext G.unitCutCapacity_def
-  rw [hcapacity]
+  rw [G.unitCutCapacity_eq_pairCutCapacity]
   exact TauCeti.isSymmSubmodular_pairCutCapacity _ (by simp)
 
 end SimpleGraph

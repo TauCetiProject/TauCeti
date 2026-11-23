@@ -286,11 +286,7 @@ theorem toOfSimpleGraphFinset_eq_map (S : Finset V) :
 @[simp]
 theorem mem_toOfSimpleGraphFinset {S : Finset V} {x : V} :
     G.ofSimpleGraphVertexEquiv x ∈ G.toOfSimpleGraphFinset S ↔ x ∈ S := by
-  rw [toOfSimpleGraphFinset, Finset.mem_map]
-  simp only [Equiv.toEmbedding_apply]
-  refine ⟨?_, fun hx ↦ ⟨x, hx, rfl⟩⟩
-  rintro ⟨y, hy, hxy⟩
-  simpa only [G.ofSimpleGraphVertexEquiv.injective hxy] using hy
+  rw [toOfSimpleGraphFinset, Finset.mem_map_equiv, Equiv.symm_apply_apply]
 
 @[simp]
 theorem image_val_toOfSimpleGraphFinset (S : Finset V) :
@@ -354,16 +350,11 @@ theorem edgeCutCapacity_eq_pairCutCapacity [Fintype V] [AddCommMonoid K]
         · simp [hp, hcross, hc p hcross.not_isDiag hp]
         · simp [hp, hcross]
 
-/-- Finiteness of the multigraph realization's edge set gives finiteness of the original simple
-graph's edge set. -/
-noncomputable instance instFiniteEdgeSetOfFiniteOfSimpleGraphEdgeSet
-    [Finite (Graph.ofSimpleGraph G).edgeSet] : Finite G.edgeSet :=
-  Finite.of_equiv _ (Set.equivOfEq (Graph.edgeSet_ofSimpleGraph (G := G)))
-
 /-- The native unit cut capacity agrees with unit edge capacity on the multigraph realization of
 the simple graph. -/
 theorem unitCutCapacity_eq_edgeCutCapacity
-    (G : SimpleGraph V) [Fintype (Graph.ofSimpleGraph G).edgeSet] (S : Finset V) :
+    (G : SimpleGraph V) [Finite G.edgeSet]
+    [Fintype (Graph.ofSimpleGraph G).edgeSet] (S : Finset V) :
     G.unitCutCapacity S =
       (Graph.ofSimpleGraph G).edgeCutCapacity (fun _ ↦ (1 : ℕ))
         (G.toOfSimpleGraphFinset S) := by
