@@ -42,8 +42,8 @@ homeomorphic to `ℝ` (with `0₂` in place of `0₁`) and so is connected.
 
 * `TauCeti.IsBicollar.not_isPreconnected_compl_range`: with `H¹_dR(M) = 0`, a bicollared map with
   closed image and preconnected nonempty domain disconnects `M`.
-* `TauCeti.IsBicollar.disjoint_connectedComponentIn_compl_range`: the components of the complement
-  containing the two sides of the bicollar are disjoint.
+* `TauCeti.IsBicollar.disjoint_connectedComponentIn_compl_range_of_subsingleton_deRhamCohomology`:
+  the components of the complement containing the two sides of the bicollar are disjoint.
 * `TauCeti.IsBicollar.separates_of_subsingleton_deRhamCohomology_one`: in a connected boundaryless
   manifold, the complement has exactly these two components, with closures obtained by adding the
   image.
@@ -129,9 +129,9 @@ theorem not_isPreconnected_compl_range (hH : Subsingleton (deRhamCohomology I M 
 hypotheses of `TauCeti.IsBicollar.not_isPreconnected_compl_range`, with `M` preconnected, the
 components of the complement of the image containing the two sides of the bicollar are
 disjoint. -/
-theorem disjoint_connectedComponentIn_compl_range (hH : Subsingleton (deRhamCohomology I M 1))
-    [PreconnectedSpace M] [PreconnectedSpace N] (h : IsBicollar f b)
-    (hclosed : IsClosed (range f)) (a : N) :
+theorem disjoint_connectedComponentIn_compl_range_of_subsingleton_deRhamCohomology
+    (hH : Subsingleton (deRhamCohomology I M 1)) [PreconnectedSpace M] [PreconnectedSpace N]
+    (h : IsBicollar f b) (hclosed : IsClosed (range f)) (a : N) :
     Disjoint (connectedComponentIn (range f)ᶜ (b (a, 1)))
       (connectedComponentIn (range f)ᶜ (b (a, -1))) := by
   have : Nonempty N := ⟨a⟩
@@ -160,7 +160,7 @@ theorem separates_of_subsingleton_deRhamCohomology_one [I.Boundaryless] [Connect
   have hm : b (a, -1) ∈ (range f)ᶜ := by simp [h.apply_mem_range_iff]
   exact ⟨hclosed.isOpen_compl.connectedComponentIn, hclosed.isOpen_compl.connectedComponentIn,
     isConnected_connectedComponentIn_iff.2 hp, isConnected_connectedComponentIn_iff.2 hm,
-    h.disjoint_connectedComponentIn_compl_range hH hclosed a,
+    h.disjoint_connectedComponentIn_compl_range_of_subsingleton_deRhamCohomology hH hclosed a,
     (h.compl_range_eq_union_connectedComponentIn a).symm,
     h.image_subset_connectedComponentIn isPreconnected_Ioi (lt_irrefl 0) a (mem_Ioi.2 one_pos),
     h.image_subset_connectedComponentIn isPreconnected_Iio (lt_irrefl 0) a
