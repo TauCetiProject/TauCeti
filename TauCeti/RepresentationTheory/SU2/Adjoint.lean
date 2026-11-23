@@ -13,6 +13,7 @@ public import TauCeti.RepresentationTheory.SU2.Basic
 public import TauCeti.Topology.Algebra.ContinuousMonoidHom.QuotientKerEquiv
 import TauCeti.LinearAlgebra.Matrix.CrossProduct
 import TauCeti.LinearAlgebra.Matrix.OrthogonalGroup.Basic
+import TauCeti.LinearAlgebra.Matrix.SpecialOrthogonalGroup.Orbit
 import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.Real.Basic
 import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.Real.Three
 import TauCeti.LinearAlgebra.QuadraticForm.SpecialOrthogonal.WeightedSumSquares
@@ -77,7 +78,11 @@ The Pauli map is a covering map (`TauCeti.SU2.isCoveringMap_toSO3`).
 * `TauCeti.SU2.center_ne_top`: `SU(2)` is not commutative.
 * `TauCeti.SU2.coe_toSO3_torusHom`: the maximal torus `diag (z, z⁻¹)` maps to the rotations about
   the axis `(0, 0, 1)`.
+* `TauCeti.SU2.toSO3_mulVec_single_two_eq_self_iff`: the rotation `toSO3 g` fixes the north pole
+  `(0, 0, 1)` exactly when `g` lies in the maximal torus.
 * `TauCeti.SU2.toSO3_surjective`: `SU(2) → SO(3)` is surjective.
+* `TauCeti.SU2.exists_toSO3_mulVec_eq_iff`: the rotations `toSO3 g` act transitively on the
+  spheres of `ℝ³`.
 * `TauCeti.SU2.isCoveringMap_toSO3`: the Pauli map is a covering map.
 
 ## References
@@ -378,6 +383,30 @@ theorem coe_toSO3_torusHom (z : Circle) :
   rw [coe_toSO3, pauliRotation_mulVec, Submonoid.coe_inclusion, coe_torusHom,
     pauliCoord_torusMatrix_mul_pauli_mul_star]
 
+/-- **The stabilizer of the north pole `e₃` is the maximal torus**: the rotation induced by
+`g ∈ SU(2)` fixes the vector `e₃` exactly when `g` is diagonal. -/
+theorem toSO3_mulVec_single_two_eq_self_iff {g : SU2} :
+    (toSO3 g : Matrix (Fin 3) (Fin 3) ℝ) *ᵥ Pi.single 2 1 = Pi.single 2 1 ↔ g ∈ torus := by
+  constructor
+  · intro hg
+    -- The rotation fixes `e₃`, so `g σ₃ g* = σ₃`, and `g` commutes with `σ₃ = diag(1, -1)`.
+    have hU := Matrix.mem_unitaryGroup_iff'.mp (specialUnitaryGroup_le_unitaryGroup g.property)
+    have hconj := pauli_pauliRotation_mulVec
+      (Submonoid.inclusion specialUnitaryGroup_le_unitaryGroup g) (Pi.single 2 1)
+    rw [← coe_toSO3, hg, Submonoid.coe_inclusion] at hconj
+    have hcomm : (g : Matrix (Fin 2) (Fin 2) ℂ) * pauli (Pi.single 2 1) =
+        pauli (Pi.single 2 1) * g := by
+      calc (g : Matrix (Fin 2) (Fin 2) ℂ) * pauli (Pi.single 2 1)
+          = g * pauli (Pi.single 2 1) * (star (g : Matrix (Fin 2) (Fin 2) ℂ) * g) := by
+            rw [hU, mul_one]
+        _ = pauli (Pi.single 2 1) * g := by rw [← mul_assoc, ← hconj]
+    exact mem_torus_iff.mpr (isDiag_of_commute_pauli_single_two hcomm)
+  · intro hg
+    obtain ⟨z, rfl⟩ := mem_torus_iff_exists_torusHom.mp hg
+    rw [coe_toSO3_torusHom]
+    ext i
+    fin_cases i <;> simp [mulVec, dotProduct, Fin.sum_univ_three]
+
 /-- The torus element `diag (e^{iθ}, e^{-iθ})` maps to the identity rotation exactly when `θ` is an
 integer multiple of `π`: the rotation angle `-2θ` is a multiple of `2π`. -/
 theorem toSO3_torusExp_eq_one_iff {θ : ℝ} : toSO3 (torusExp θ) = 1 ↔ ∃ n : ℤ, θ = n * Real.pi := by
@@ -461,6 +490,16 @@ theorem toSO3_surjective : Function.Surjective toSO3 := by
     Subtype.ext ((pauliRotation_eq_iff _).mpr fun x => ?_)⟩
   rw [Submonoid.coe_inclusion, pauli_eq_smul_toComplexMatrix, pauli_eq_smul_toComplexMatrix,
     ← hsx, realSpinThreeEquivSpecialUnitary_action, mul_smul_comm, smul_mul_assoc]
+
+/-- **`SU(2)` acts transitively on the spheres of `ℝ³` through `SO(3)`**: a rotation `toSO3 g`
+carries `n` to `m` for some `g` exactly when `m ⬝ᵥ m = n ⬝ᵥ n`. -/
+theorem exists_toSO3_mulVec_eq_iff {n m : Fin 3 → ℝ} :
+    (∃ g : SU2, (toSO3 g : Matrix (Fin 3) (Fin 3) ℝ) *ᵥ n = m) ↔ m ⬝ᵥ m = n ⬝ᵥ n := by
+  refine ⟨fun ⟨g, hg⟩ ↦ hg ▸ mem_orthogonalGroup_iff_dotProduct_mulVec.mp (toSO3 g).property.1 n n,
+    fun h ↦ ?_⟩
+  obtain ⟨A, hA⟩ := exists_specialOrthogonalGroup_mulVec_eq (by simp) h.symm
+  obtain ⟨g, rfl⟩ := toSO3_surjective A
+  exact ⟨g, hA⟩
 
 /-- The double cover `SU(2) → SO(3)` is continuous. -/
 theorem continuous_toSO3 : Continuous toSO3 := by

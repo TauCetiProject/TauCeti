@@ -10,7 +10,6 @@ public import TauCeti.RepresentationTheory.SU2.LieAlgebra
 public import TauCeti.RepresentationTheory.SU2.StandardBasis
 import TauCeti.LinearAlgebra.Matrix.OrthogonalGroup.Basic
 import TauCeti.LinearAlgebra.Matrix.DotProduct
-import TauCeti.LinearAlgebra.Matrix.SpecialOrthogonalGroup.Orbit
 
 /-!
 # The coadjoint orbits of `SU(2)`
@@ -36,12 +35,13 @@ the coadjoint action:
   `so(3)`, where the sphere of radius `r > 0` has KKS area `4π r`
   (`TauCeti.integralTopForm_smul_sphereAreaForm`).
 * **Stabilizers.** The stabilizer of `ν_(c e₃)`, `c ≠ 0`, is the maximal torus
-  `T = {diag(z, z⁻¹)}` (`TauCeti.SU2.stabilizer_coadjointRepresentation_suTwoDualEquiv_smul`): an
-  element of `SU(2)` fixes the axis `e₃` of the rotation it induces exactly when it commutes with
-  `σ₃`, that is, when it is diagonal (`TauCeti.SU2.toSO3_mulVec_single_two_eq_self_iff`). The
-  stabilizer of any `ν ≠ 0` is a conjugate `g T g⁻¹` of the maximal torus
-  (`TauCeti.SU2.exists_stabilizer_coadjointRepresentation_eq_map_torus`), and the stabilizer of
-  `0` is all of `SU(2)` (`Representation.stabilizer_zero`).
+  `T = {diag(z, z⁻¹)}`
+  (`TauCeti.SU2.stabilizer_coadjointRepresentation_suTwoDualEquiv_smul_single_two`): the rotation
+  `toSO3 g` induced by `g ∈ SU(2)` fixes the vector `e₃` exactly when `g` commutes with `σ₃`, that
+  is, when `g` is diagonal (`TauCeti.SU2.toSO3_mulVec_single_two_eq_self_iff`). The stabilizer of
+  any `ν ≠ 0` is a conjugate `g T g⁻¹` of the maximal torus
+  (`TauCeti.SU2.exists_stabilizer_coadjointRepresentation_eq_torus_map_conj`), and the stabilizer
+  of `0` is all of `SU(2)` (`Representation.stabilizer_zero`).
 
 The kernel of the coadjoint action is exactly the center `{±1}` of `SU(2)`
 (`TauCeti.SU2.coadjointRepresentation_eq_one_iff`), so the coadjoint action factors faithfully
@@ -107,20 +107,10 @@ theorem coadjointRepresentation_suTwoDualEquiv (g : SU2) (n : Fin 3 → ℝ) :
   obtain ⟨x, rfl⟩ := suTwoEquiv.surjective X
   rw [coadjointRepresentation_apply, adjointRepresentation_suTwoEquiv,
     suTwoDualEquiv_apply_suTwoEquiv, suTwoDualEquiv_apply_suTwoEquiv,
-    ← mem_orthogonalGroup_iff_dotProduct_mulVec.mp (toSO3 g).2.1 n, mulVec_mulVec]
-  simp [← Submonoid.coe_mul, -coe_toSO3]
+    ← mem_orthogonalGroup_iff_dotProduct_mulVec.mp (toSO3 g).property.1 n, mulVec_mulVec]
+  simp [-coe_toSO3, (mem_orthogonalGroup_iff (Fin 3) ℝ).mp (toSO3 g).property.1]
 
 /-! ### Orbits -/
-
-/-- **`SU(2)` acts transitively on the spheres of `ℝ³` through `SO(3)`**: a rotation `toSO3 g`
-carries `n` to `m` for some `g` exactly when `m ⬝ᵥ m = n ⬝ᵥ n`. -/
-theorem exists_toSO3_mulVec_eq_iff {n m : Fin 3 → ℝ} :
-    (∃ g : SU2, (toSO3 g : Matrix (Fin 3) (Fin 3) ℝ) *ᵥ n = m) ↔ m ⬝ᵥ m = n ⬝ᵥ n := by
-  refine ⟨fun ⟨g, hg⟩ ↦ hg ▸ mem_orthogonalGroup_iff_dotProduct_mulVec.mp (toSO3 g).2.1 n n,
-    fun h ↦ ?_⟩
-  obtain ⟨A, hA⟩ := exists_specialOrthogonalGroup_mulVec_eq (by simp) h.symm
-  obtain ⟨g, rfl⟩ := toSO3_surjective A
-  exact ⟨g, hA⟩
 
 /-- **The coadjoint orbits of `SU(2)` are the spheres about the origin**: the orbit of `ν_n` is
 `{ν_m | m ⬝ᵥ m = n ⬝ᵥ n}`. -/
@@ -154,33 +144,9 @@ theorem coadjointRepresentation_eq_one_iff {g : SU2} :
 
 /-! ### Stabilizers -/
 
-/-- **The stabilizer of the axis `e₃` is the maximal torus**: the rotation induced by `g ∈ SU(2)`
-fixes `e₃` exactly when `g` is diagonal. -/
-theorem toSO3_mulVec_single_two_eq_self_iff {g : SU2} :
-    (toSO3 g : Matrix (Fin 3) (Fin 3) ℝ) *ᵥ Pi.single 2 1 = Pi.single 2 1 ↔ g ∈ torus := by
-  constructor
-  · intro hg
-    -- The rotation fixes `e₃`, so `g σ₃ g* = σ₃`, and `g` commutes with `σ₃ = diag(1, -1)`.
-    have hU := Matrix.mem_unitaryGroup_iff'.mp (specialUnitaryGroup_le_unitaryGroup g.2)
-    have hconj := pauli_pauliRotation_mulVec
-      (Submonoid.inclusion specialUnitaryGroup_le_unitaryGroup g) (Pi.single 2 1)
-    rw [← coe_toSO3, hg, Submonoid.coe_inclusion] at hconj
-    have hcomm : (g : Matrix (Fin 2) (Fin 2) ℂ) * pauli (Pi.single 2 1) =
-        pauli (Pi.single 2 1) * g := by
-      calc (g : Matrix (Fin 2) (Fin 2) ℂ) * pauli (Pi.single 2 1)
-          = g * pauli (Pi.single 2 1) * (star (g : Matrix (Fin 2) (Fin 2) ℂ) * g) := by
-            rw [hU, mul_one]
-        _ = pauli (Pi.single 2 1) * g := by rw [← mul_assoc, ← hconj]
-    exact mem_torus_iff.mpr (isDiag_of_commute_pauli_single_two hcomm)
-  · intro hg
-    obtain ⟨z, rfl⟩ := mem_torus_iff_exists_torusHom.mp hg
-    rw [coe_toSO3_torusHom]
-    ext i
-    fin_cases i <;> simp [mulVec, dotProduct, Fin.sum_univ_three]
-
 /-- **The stabilizer of `ν_(c e₃)`, `c ≠ 0`, is the maximal torus** `T = {diag(z, z⁻¹)}` of
 `SU(2)`. -/
-theorem stabilizer_coadjointRepresentation_suTwoDualEquiv_smul {c : ℝ} (hc : c ≠ 0) :
+theorem stabilizer_coadjointRepresentation_suTwoDualEquiv_smul_single_two {c : ℝ} (hc : c ≠ 0) :
     coadjointRepresentation.stabilizer (suTwoDualEquiv (c • Pi.single 2 1)) = torus := by
   ext g
   rw [Representation.mem_stabilizer, coadjointRepresentation_suTwoDualEquiv,
@@ -189,11 +155,12 @@ theorem stabilizer_coadjointRepresentation_suTwoDualEquiv_smul {c : ℝ} (hc : c
 
 /-- **The stabilizer of a nonzero point of `𝔰𝔲(2)*` is a maximal torus**: a conjugate `g T g⁻¹` of
 the diagonal torus. -/
-theorem exists_stabilizer_coadjointRepresentation_eq_map_torus {ν : Dual ℝ lieAlgebra}
+theorem exists_stabilizer_coadjointRepresentation_eq_torus_map_conj {ν : Dual ℝ lieAlgebra}
     (hν : ν ≠ 0) : ∃ g : SU2, coadjointRepresentation.stabilizer ν = torus.map (MulAut.conj g) := by
   obtain ⟨n, rfl⟩ := suTwoDualEquiv.surjective ν
   have hn : n ≠ 0 := by rintro rfl; exact hν (map_zero _)
-  -- Rotate `n` onto the positive `e₃`-axis, at the same distance from the origin.
+  -- Rotate the point `c • e₃` of the positive `e₃`-axis, at the same distance from the origin,
+  -- onto `n`.
   have h0 := dotProduct_self_nonneg n
   set c := √(n ⬝ᵥ n)
   have hc : c ≠ 0 := Real.sqrt_ne_zero'.mpr
@@ -204,6 +171,6 @@ theorem exists_stabilizer_coadjointRepresentation_eq_map_torus {ν : Dual ℝ li
     exact (Real.mul_self_sqrt h0).symm
   refine ⟨g, ?_⟩
   rw [← hg, ← coadjointRepresentation_suTwoDualEquiv, Representation.stabilizer_conj,
-    stabilizer_coadjointRepresentation_suTwoDualEquiv_smul hc]
+    stabilizer_coadjointRepresentation_suTwoDualEquiv_smul_single_two hc]
 
 end TauCeti.SU2
