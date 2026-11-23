@@ -27,10 +27,10 @@ integral domain `R` with `(2 : R) ≠ 0` and `IsUnit (m : R)`, this gives primal
 `TauCeti.depressedDiscr R m` for every `m ≥ 2` (`TauCeti.prime_depressedDiscr_of_isUnit`).
 
 For `3 ≤ m` over any integral domain `R` with `(2 : R) ≠ 0` and `(m : R) ≠ 0`, specializing to
-`X ^ m - 1` and `X ^ m - X` shows that `TauCeti.depressedDiscr R m` has unit content
-(`TauCeti.isUnit_of_C_dvd_depressedDiscr_of_three_le`). Localizing away from `m` gives primality
-over `Rₘ`, and specializing `X ^ m + a_{m-1} X` modulo `m` exhibits a unit coefficient `±1` in
-`depressedDiscr (R ⧸ Ideal.span {(m : R)}) m`, which by McCoy's regularity lemma makes the
+`X ^ m - 1` and `X ^ m - X` shows that every constant divisor of `TauCeti.depressedDiscr R m` is a
+unit (`TauCeti.isUnit_of_C_dvd_depressedDiscr_of_three_le`). Localizing away from `m` gives
+primality over `Rₘ`, and specializing `X ^ m + a_{m-1} X` modulo `m` exhibits a unit coefficient
+`±1` in `depressedDiscr (R ⧸ Ideal.span {(m : R)}) m`, which by McCoy's regularity lemma makes the
 discriminant ideal saturated with respect to `m`. Hence `TauCeti.depressedDiscr R m` is prime
 over any integral domain `R` with `(2 : R) ≠ 0` and `(m : R) ≠ 0` (`3 ≤ m`), without requiring
 unique factorization (`TauCeti.prime_depressedDiscr_of_three_le`).
@@ -46,8 +46,8 @@ when `3 = 0`, and over `ℤ` show sharpness.
   monic and depressed discriminants when `m` is invertible.
 * `TauCeti.isUnit_of_C_dvd_depressedDiscr_of_three_le`, `TauCeti.prime_depressedDiscr_of_isUnit`,
   `TauCeti.prime_depressedDiscr_of_three_le`, `TauCeti.prime_depressedDiscr_of_ne_zero`,
-  `TauCeti.depressedDiscr_prime`: unit content for `3 ≤ m` and integral-domain primality of
-  `depressedDiscr`.
+  `TauCeti.depressedDiscr_prime`: every constant divisor is a unit for `3 ≤ m` and
+  integral-domain primality of `depressedDiscr`.
 * `TauCeti.prime_depressedDiscr_two_iff`, `TauCeti.not_prime_depressedDiscr_two_of_two_eq_zero`,
   `TauCeti.not_prime_depressedDiscr_three_of_three_eq_zero`,
   `TauCeti.not_prime_depressedDiscr_int_two`: degree-`2` criterion and sharpness counterexamples.
@@ -176,8 +176,8 @@ private theorem dvd_sub_one_pow_of_C_dvd_depressedDiscr_of_three_le {R : Type*} 
   rw [hf_eq, discr_X_pow_sub_X (by omega)] at hdvd
   exact (isUnit_neg_one.pow _).dvd_mul_left.mp hdvd
 
-/-- For `3 ≤ m` over any commutative ring `R`, if `MvPolynomial.C r ∣ depressedDiscr R m`
-then `r` is a unit (`TauCeti.depressedDiscr R m` has unit content). -/
+/-- For `3 ≤ m` over any commutative ring `R`, every constant divisor of `depressedDiscr R m`
+is a unit: if `MvPolynomial.C r ∣ depressedDiscr R m`, then `IsUnit r`. -/
 theorem isUnit_of_C_dvd_depressedDiscr_of_three_le {R : Type*} [CommRing R] {m : ℕ}
     (hm : 3 ≤ m) {r : R} (hr : MvPolynomial.C r ∣ depressedDiscr R m) : IsUnit r := by
   rcases subsingleton_or_nontrivial R with hR | hR
@@ -234,8 +234,8 @@ private theorem isRegular_depressedDiscr_quotient {R : Type*} [CommRing R] {m : 
     have hrhs : Polynomial.X ^ m - Polynomial.C (-Polynomial.X : R₀[X]) * Polynomial.X =
         Polynomial.X ^ m + Polynomial.C (Polynomial.X : R₀[X]) * Polynomial.X := by
       rw [map_neg]; ring
-    rw [hrhs, AddMonoidAlgebra.ext_iff, DFunLike.ext_iff]
-    intro k
+    rw [hrhs]
+    ext k : 2
     rw [Polynomial.coeff_map, coeff_genericDepressed, Polynomial.coeff_add, Polynomial.coeff_X_pow]
     split_ifs with hkm hk
     · subst hkm
@@ -275,27 +275,9 @@ is prime in `MvPolynomial (Fin (m - 1)) R`. -/
 theorem prime_depressedDiscr_of_three_le {R : Type*} [CommRing R] [IsDomain R]
     (h2 : (2 : R) ≠ 0) {m : ℕ} (hm : 3 ≤ m) (hm0 : (m : R) ≠ 0) :
     Prime (depressedDiscr R m) := by
-  -- Step 1 (fraction field): `depressedDiscr` is prime over `K = FractionRing R`, so
-  -- `depressedDiscr R m` is nonzero and not a unit.
   set D := depressedDiscr R m with hD
-  let K := FractionRing R
-  have hinjK : Function.Injective (algebraMap R K) := IsFractionRing.injective R K
-  have h2K : (2 : K) ≠ 0 := by
-    rw [← map_ofNat (algebraMap R K) 2]
-    exact fun h ↦ h2 (hinjK (h.trans (map_zero _).symm))
-  have hmK : (m : K) ≠ 0 := by
-    rw [← map_natCast (algebraMap R K) m]
-    exact fun h ↦ hm0 (hinjK (h.trans (map_zero _).symm))
-  have hprimeK : Prime (depressedDiscr K m) := prime_depressedDiscr_of_ne_zero h2K (by omega) hmK
-  have hD0 : D ≠ 0 := fun h0 ↦ by
-    apply hprimeK.ne_zero
-    rw [← map_depressedDiscr (algebraMap R K) m, ← hD, h0, map_zero]
-  have hDnu : ¬ IsUnit D := fun hu ↦ by
-    apply hprimeK.not_isUnit
-    rw [← map_depressedDiscr (algebraMap R K) m]
-    exact hu.map (MvPolynomial.map (algebraMap R K))
-  -- Step 2 (localization): over `Rₘ = Localization.Away (m : R)`, `(m : Rₘ)` is a unit so
-  -- `depressedDiscr Rₘ m` is prime.
+  -- Step 1 (localization): over `Rₘ = Localization.Away (m : R)`, `(m : Rₘ)` is a unit so
+  -- `depressedDiscr Rₘ m` is prime, which also forces `D ≠ 0` and `¬ IsUnit D`.
   let Rₘ := Localization.Away (m : R)
   have hM : Submonoid.powers (m : R) ≤ nonZeroDivisors R := by
     rintro _ ⟨k, rfl⟩
@@ -308,9 +290,13 @@ theorem prime_depressedDiscr_of_three_le {R : Type*} [CommRing R] [IsDomain R]
   have hmM : IsUnit (m : Rₘ) := by
     rw [← map_natCast (algebraMap R Rₘ) m]
     exact IsLocalization.Away.algebraMap_isUnit (m : R)
-  have hprimeM : Prime (depressedDiscr Rₘ m) :=
-    prime_depressedDiscr_of_isUnit h2M (by omega) hmM
-  -- Step 3 (saturation): regularity of `depressedDiscr (R ⧸ (m)) m` makes divisibility by `D`
+  have hprimeM : Prime (MvPolynomial.map (algebraMap R Rₘ) D) := by
+    rw [hD, map_depressedDiscr]
+    exact prime_depressedDiscr_of_isUnit h2M (by omega) hmM
+  have hD0 : D ≠ 0 := fun h0 ↦ hprimeM.ne_zero (by rw [h0, map_zero])
+  have hDnu : ¬ IsUnit D :=
+    fun hu ↦ hprimeM.not_isUnit (hu.map (MvPolynomial.map (algebraMap R Rₘ)))
+  -- Step 2 (saturation): regularity of `depressedDiscr (R ⧸ (m)) m` makes divisibility by `D`
   -- `m`-saturated, so divisibility in `Rₘ` descends back to `R`.
   have hreg_quot : IsRegular
       (MvPolynomial.map (Ideal.Quotient.mk (Ideal.span {(m : R)})) D) := by
@@ -324,10 +310,9 @@ theorem prime_depressedDiscr_of_three_le {R : Type*} [CommRing R] [IsDomain R]
       MvPolynomial.map (algebraMap R Rₘ) f * MvPolynomial.map (algebraMap R Rₘ) g := by
     rw [← map_mul]
     exact _root_.map_dvd (MvPolynomial.map (algebraMap R Rₘ)) hfg
-  rw [← map_depressedDiscr (algebraMap R Rₘ) m] at hprimeM
   rcases hprimeM.dvd_or_dvd hfgM with hf | hg
-  · exact Or.inl (MvPolynomial.dvd_of_map_isLocalization_away_dvd Rₘ hinjM hsat hf)
-  · exact Or.inr (MvPolynomial.dvd_of_map_isLocalization_away_dvd Rₘ hinjM hsat hg)
+  · exact Or.inl (MvPolynomial.dvd_of_map_isLocalization_away_dvd Rₘ hsat hf)
+  · exact Or.inr (MvPolynomial.dvd_of_map_isLocalization_away_dvd Rₘ hsat hg)
 
 /-- Over a field `K` of characteristic zero, `TauCeti.depressedDiscr K m` is prime in
 `MvPolynomial (Fin (m - 1)) K` for every `m ≥ 2`. -/

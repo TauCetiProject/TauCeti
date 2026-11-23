@@ -486,11 +486,10 @@ theorem dvd_of_C_pow_mul_dvd_of_isRegular_map_quotient {r : R} (hr : IsRegular r
     refine ih f (hsat1 _ ?_)
     rwa [pow_succ', map_mul, mul_assoc] at hf
 
-/-- If `algebraMap R S` is injective for a localization `S` away from `r` and divisibility by `D`
-is `r`-saturated, then divisibility by `D` after base change to `S` descends back to `R`. -/
+/-- If `S` is a localization away from `r` and divisibility by `D` is `r`-saturated, then
+divisibility by `D` after base change to `S` descends back to `R`. -/
 theorem dvd_of_map_isLocalization_away_dvd (S : Type*) [CommRing S] [Algebra R S] {r : R}
-    [IsLocalization.Away r S] (hinj : Function.Injective (algebraMap R S))
-    {D f : MvPolynomial σ R}
+    [IsLocalization.Away r S] {D f : MvPolynomial σ R}
     (hsat : ∀ k : ℕ, ∀ g : MvPolynomial σ R, D ∣ C (r ^ k) * g → D ∣ g)
     (hdvd : map (algebraMap R S) D ∣ map (algebraMap R S) f) : D ∣ f := by
   classical
@@ -511,7 +510,36 @@ theorem dvd_of_map_isLocalization_away_dvd (S : Type*) [CommRing S] [Algebra R S
   have hmulp : map (algebraMap R S) (C (r ^ k) * f) = map (algebraMap R S) (D * q₀) := by
     rw [map_mul, map_C, hq, map_mul, hq₀]
     ring
-  exact hsat k f ⟨q₀, map_injective (algebraMap R S) hinj hmulp⟩
+  have hex : ∀ d : σ →₀ ℕ, ∃ n : ℕ,
+      r ^ n * (C (r ^ k) * f).coeff d = r ^ n * (D * q₀).coeff d := by
+    intro d
+    have hcoeff : algebraMap R S ((C (r ^ k) * f).coeff d) =
+        algebraMap R S ((D * q₀).coeff d) := by
+      simpa only [coeff_map] using congrArg (fun p : MvPolynomial σ S ↦ p.coeff d) hmulp
+    obtain ⟨⟨_, n, rfl⟩, hn⟩ := IsLocalization.exists_of_eq (M := Submonoid.powers r) hcoeff
+    exact ⟨n, hn⟩
+  choose exp hexp using hex
+  let supp := (C (r ^ k) * f).support ∪ (D * q₀).support
+  let l : ℕ := supp.sup exp
+  have hl_coeff : ∀ d : σ →₀ ℕ,
+      r ^ l * (C (r ^ k) * f).coeff d = r ^ l * (D * q₀).coeff d := by
+    intro d
+    by_cases hd : d ∈ supp
+    · have hle : exp d ≤ l := Finset.le_sup (f := exp) hd
+      have hpow : r ^ l = r ^ (l - exp d) * r ^ exp d := by
+        rw [← pow_add, Nat.sub_add_cancel hle]
+      rw [hpow, mul_assoc, mul_assoc, hexp d]
+    · have h1 : (C (r ^ k) * f).coeff d = 0 :=
+        notMem_support_iff.mp (fun h ↦ hd (Finset.mem_union_left _ h))
+      have h2 : (D * q₀).coeff d = 0 :=
+        notMem_support_iff.mp (fun h ↦ hd (Finset.mem_union_right _ h))
+      rw [h1, h2]
+  have hl : C (r ^ l) * (C (r ^ k) * f) = C (r ^ l) * (D * q₀) := by
+    ext d
+    simpa only [coeff_C_mul] using hl_coeff d
+  refine hsat (l + k) f ⟨C (r ^ l) * q₀, ?_⟩
+  rw [pow_add, map_mul, mul_assoc, hl]
+  ring
 
 end SaturationLocalization
 
