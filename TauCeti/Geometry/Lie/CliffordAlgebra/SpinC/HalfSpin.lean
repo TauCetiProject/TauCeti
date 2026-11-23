@@ -199,7 +199,6 @@ theorem det_realSpinCHalfSpinSmoothHom (h₂ : finrank ℂ S = 2) (x : SpinC) :
 acts by the weight-one half-spin representation `[s, z] ↦ z ρ(s)`
 (`Orientation.realSpinCHalfSpinSmoothHom`), compared with the geometric Clifford model through
 the orthonormal frame `b`. It is the model fiber of the spinor bundle `W^ε`. -/
-@[expose]
 def SpinCHalfSpinor (_o : Orientation ℝ V (Fin 4)) (_hQ : ∀ v, Q v = -‖v‖ ^ 2)
     (_b : OrthonormalBasis (Fin 4) ℝ V) (ρ : CliffordAlgebra Q →ₐ[ℝ] Module.End ℂ W) (ε : ℂ) :
     Type _ :=
@@ -221,17 +220,11 @@ def linearEquiv : SpinCHalfSpinor o hQ b ρ ε ≃ₗ[ℂ] S :=
   LinearEquiv.refl ℂ _
 
 omit [FiniteDimensional ℂ W] in
-/-- The identification of the half-spinor model with the chirality eigenspace is the
-identity. -/
+/-- The identification of the half-spinor model with the chirality eigenspace of `W` preserves
+norms. -/
 @[simp]
-theorem linearEquiv_apply (ψ : SpinCHalfSpinor o hQ b ρ ε) : linearEquiv o hQ b ρ ε ψ = ψ :=
-  (rfl)
-
-omit [FiniteDimensional ℂ W] in
-/-- The inverse identification of the chirality eigenspace with the half-spinor model is the
-identity. -/
-@[simp]
-theorem linearEquiv_symm_apply (ψ : S) : (linearEquiv o hQ b ρ ε).symm ψ = ψ :=
+theorem norm_linearEquiv (ψ : SpinCHalfSpinor o hQ b ρ ε) :
+    ‖(linearEquiv o hQ b ρ ε ψ : W)‖ = ‖ψ‖ :=
   (rfl)
 
 omit [FiniteDimensional ℂ W] in
@@ -241,34 +234,54 @@ theorem finrank_eq : finrank ℂ (SpinCHalfSpinor o hQ b ρ ε) = finrank ℂ S 
 
 /-- `Spinᶜ(4)` acts on the half-spinor model by the half-spin representation. -/
 instance : DistribMulAction SpinC (SpinCHalfSpinor o hQ b ρ ε) :=
-  DistribMulAction.compHom S (realSpinCHalfSpinSmoothHom o hQ b ρ ε).toMonoidHom
+  letI : DistribMulAction SpinC S :=
+    DistribMulAction.compHom S (realSpinCHalfSpinSmoothHom o hQ b ρ ε).toMonoidHom
+  inferInstanceAs (DistribMulAction SpinC S)
 
-/-- The action of `Spinᶜ(4)` on the half-spinor model is evaluation of the half-spin
-representation. -/
+/-- Under the identification with the chirality eigenspace, `Spinᶜ(4)` acts on the half-spinor
+model by the half-spin representation. -/
+@[simp]
+theorem linearEquiv_smul (x : SpinC) (ψ : SpinCHalfSpinor o hQ b ρ ε) :
+    linearEquiv o hQ b ρ ε (x • ψ) =
+      realSpinCHalfSpinSmoothHom o hQ b ρ ε x (linearEquiv o hQ b ρ ε ψ) := (rfl)
+
+/-- The action of `Spinᶜ(4)` on the half-spinor model, transported from the chirality
+eigenspace. -/
 theorem smul_def (x : SpinC) (ψ : SpinCHalfSpinor o hQ b ρ ε) :
-    x • ψ = realSpinCHalfSpinSmoothHom o hQ b ρ ε x ψ := (rfl)
+    x • ψ = (linearEquiv o hQ b ρ ε).symm
+      (realSpinCHalfSpinSmoothHom o hQ b ρ ε x (linearEquiv o hQ b ρ ε ψ)) := by
+  rw [LinearEquiv.eq_symm_apply, linearEquiv_smul]
 
 instance : SMulCommClass SpinC ℂ (SpinCHalfSpinor o hQ b ρ ε) where
-  smul_comm x c ψ := by
-    simp only [smul_def]
-    exact (realSpinCHalfSpinSmoothHom o hQ b ρ ε x).map_smul c ψ
+  smul_comm x c ψ := (linearEquiv o hQ b ρ ε).injective <| by
+    simp only [linearEquiv_smul, map_smul]
 
 instance : SMulCommClass SpinC ℝ (SpinCHalfSpinor o hQ b ρ ε) where
   smul_comm x c ψ := by
-    simp only [smul_def]
-    exact (realSpinCHalfSpinSmoothHom o hQ b ρ ε x).map_smul_of_tower c ψ
+    rw [← Complex.coe_smul, ← Complex.coe_smul, smul_comm]
 
 /-- The half-spin action is smooth. -/
 instance : ContMDiffSMul I 𝓘(ℝ, SpinCHalfSpinor o hQ b ρ ε) ∞ SpinC
     (SpinCHalfSpinor o hQ b ρ ε) where
   contMDiff_smul := by
+    let e : SpinCHalfSpinor o hQ b ρ ε ≃L[ℝ] S :=
+      ((linearEquiv o hQ b ρ ε).toContinuousLinearEquiv).restrictScalars ℝ
+    have he : ContMDiff (ModelWithCorners.prod I 𝓘(ℝ, SpinCHalfSpinor o hQ b ρ ε))
+        (ModelWithCorners.prod I 𝓘(ℝ, S)) ∞
+        (fun p : SpinC × SpinCHalfSpinor o hQ b ρ ε ↦ (p.1, e p.2)) :=
+      contMDiff_fst.prodMk (e.contDiff.contMDiff.comp contMDiff_snd)
     simp only [smul_def]
-    exact contMDiff_realSpinCHalfSpinSmoothHom_apply o hQ b ρ ε
+    exact e.symm.contDiff.contMDiff.comp
+      ((contMDiff_realSpinCHalfSpinSmoothHom_apply o hQ b ρ ε).comp he)
 
 instance : ContinuousSMul SpinC (SpinCHalfSpinor o hQ b ρ ε) where
   continuous_smul := by
+    let e : SpinCHalfSpinor o hQ b ρ ε ≃L[ℝ] S :=
+      ((linearEquiv o hQ b ρ ε).toContinuousLinearEquiv).restrictScalars ℝ
     simp only [smul_def]
-    exact (contMDiff_realSpinCHalfSpinSmoothHom_apply o hQ b ρ ε).continuous
+    exact e.symm.continuous.comp
+      ((contMDiff_realSpinCHalfSpinSmoothHom_apply o hQ b ρ ε).continuous.comp
+        (continuous_fst.prodMk (e.continuous.comp continuous_snd)))
 
 /-- The action of `g` on the half-spinor model, as a linear map, has the determinant of the
 half-spin representation at `g`. -/
@@ -281,9 +294,8 @@ theorem det_toLinearMap (g : SpinC) :
       (realSpinCHalfSpinSmoothHom o hQ b ρ ε g).toLinearMap := by
     refine LinearMap.ext fun ψ ↦ ?_
     simp only [LinearMap.coe_comp, Function.comp_apply, LinearEquiv.coe_coe,
-      linearEquiv_symm_apply, linearEquiv_apply, ContinuousLinearMap.coe_coe]
-    exact (DistribSMul.toLinearMap_apply ℂ (SpinCHalfSpinor o hQ b ρ ε) g ψ).trans
-      (smul_def o hQ b ρ ε g ψ)
+      DistribSMul.toLinearMap_apply, linearEquiv_smul, LinearEquiv.apply_symm_apply,
+      ContinuousLinearMap.coe_coe]
   rw [← h, LinearMap.det_conj]
 
 /-- If the half-spinor model is two-dimensional, every alternating two-form on it with values
@@ -324,12 +336,23 @@ theorem inner_realSpinCHalfSpinSmoothHom_apply
 instance : InnerProductSpace ℂ (SpinCHalfSpinor o hQ b ρ ε) :=
   inferInstanceAs (InnerProductSpace ℂ S)
 
+omit [FiniteDimensional ℂ W] in
+/-- The identification of the half-spinor model with the chirality eigenspace of `W` preserves
+inner products. -/
+@[simp]
+theorem SpinCHalfSpinor.inner_linearEquiv_linearEquiv (ψ χ : SpinCHalfSpinor o hQ b ρ ε) :
+    ⟪(SpinCHalfSpinor.linearEquiv o hQ b ρ ε ψ : W),
+      (SpinCHalfSpinor.linearEquiv o hQ b ρ ε χ : W)⟫_ℂ = ⟪ψ, χ⟫_ℂ :=
+  (rfl)
+
 /-- If the Clifford generators act skew-adjointly on `W`, `Spinᶜ(4)` acts unitarily on the
 half-spinor model. -/
 theorem SpinCHalfSpinor.inner_smul_smul (hρ : ∀ v, LinearMap.adjoint (ρ (ι Q v)) = -ρ (ι Q v))
     (g : SpinC) (ψ χ : SpinCHalfSpinor o hQ b ρ ε) : ⟪g • ψ, g • χ⟫_ℂ = ⟪ψ, χ⟫_ℂ := by
-  rw [SpinCHalfSpinor.smul_def, SpinCHalfSpinor.smul_def]
-  exact inner_realSpinCHalfSpinSmoothHom_apply o hQ b ρ ε hρ g ψ χ
+  rw [← SpinCHalfSpinor.inner_linearEquiv_linearEquiv, SpinCHalfSpinor.linearEquiv_smul,
+    SpinCHalfSpinor.linearEquiv_smul, ← Submodule.coe_inner,
+    inner_realSpinCHalfSpinSmoothHom_apply o hQ b ρ ε hρ, Submodule.coe_inner,
+    SpinCHalfSpinor.inner_linearEquiv_linearEquiv]
 
 /-- If the Clifford generators act skew-adjointly on `W`, `Spinᶜ(4)` acts isometrically on the
 half-spinor model. -/

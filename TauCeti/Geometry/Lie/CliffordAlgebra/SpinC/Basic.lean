@@ -83,7 +83,6 @@ theorem contMDiff_realChargeConj :
 
 /-- The model fiber `ℂ` of the determinant line of a `Spinᶜ(n)`-bundle, on which `Spinᶜ(n)`
 acts through its determinant character `[s, z] ↦ z²` (`CliffordAlgebra.spinCGroup.det`). -/
-@[expose]
 def DetFiber (_n : ℕ) (_hQ : realCliffordForm _n 0 ≠ 0) : Type := ℂ
 
 namespace DetFiber
@@ -95,14 +94,6 @@ instance : NormedSpace ℂ (DetFiber n hQ) := inferInstanceAs (NormedSpace ℂ �
 /-- The model determinant fiber is the line `ℂ`. -/
 def linearEquiv : DetFiber n hQ ≃ₗ[ℂ] ℂ := LinearEquiv.refl ℂ ℂ
 
-/-- The identification of the model determinant fiber with `ℂ` is the identity of `ℂ`. -/
-@[simp]
-theorem linearEquiv_apply (w : DetFiber n hQ) : linearEquiv n hQ w = w := (rfl)
-
-/-- The inverse identification of `ℂ` with the model determinant fiber is the identity of `ℂ`. -/
-@[simp]
-theorem linearEquiv_symm_apply (z : ℂ) : (linearEquiv n hQ).symm z = z := (rfl)
-
 /-- The model determinant fiber is a line. -/
 @[simp]
 theorem finrank_eq : Module.finrank ℂ (DetFiber n hQ) = 1 :=
@@ -112,11 +103,18 @@ instance : FiniteDimensional ℂ (DetFiber n hQ) := inferInstanceAs (FiniteDimen
 
 /-- `Spinᶜ(n)` acts on the model determinant fiber through its determinant character. -/
 instance : DistribMulAction (spinCGroup (realCliffordForm n 0) hQ) (DetFiber n hQ) :=
-  DistribMulAction.compHom ℂ (Circle.coeHom.comp (det (realCliffordForm n 0) hQ))
+  DistribMulAction.compHom (DetFiber n hQ) (Circle.coeHom.comp (det (realCliffordForm n 0) hQ))
 
 /-- `Spinᶜ(n)` acts on the model determinant fiber by its determinant character. -/
 theorem smul_def (x : spinCGroup (realCliffordForm n 0) hQ) (w : DetFiber n hQ) :
     x • w = (det (realCliffordForm n 0) hQ x : ℂ) • w := (rfl)
+
+/-- Under the identification with `ℂ`, `Spinᶜ(n)` acts by multiplication by its determinant
+character. -/
+@[simp]
+theorem linearEquiv_smul (x : spinCGroup (realCliffordForm n 0) hQ) (w : DetFiber n hQ) :
+    linearEquiv n hQ (x • w) = (det (realCliffordForm n 0) hQ x : ℂ) • linearEquiv n hQ w := by
+  rw [smul_def, map_smul]
 
 instance : SMulCommClass (spinCGroup (realCliffordForm n 0) hQ) ℂ (DetFiber n hQ) where
   smul_comm x c w := by simp only [smul_def, smul_comm (det _ hQ x : ℂ) c w]
