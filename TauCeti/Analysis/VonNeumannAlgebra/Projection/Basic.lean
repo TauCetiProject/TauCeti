@@ -72,6 +72,17 @@ variable {H : Type*} [NormedAddCommGroup H] [InnerProductSpace ℂ H] [CompleteS
 
 section SubspaceProjections
 
+/-- If a subspace `U` is invariant under `M.commutant`, then so is its orthogonal complement `Uᗮ`.
+-/
+theorem orthogonal_mem_invtSubmodule_commutant {M : VonNeumannAlgebra H} {U : Submodule ℂ H}
+    (hU : ∀ y ∈ M.commutant, U ∈ Module.End.invtSubmodule y) :
+    ∀ y ∈ M.commutant, Uᗮ ∈ Module.End.invtSubmodule y := by
+  intro y hy
+  have hstar : U ∈ Module.End.invtSubmodule (y†).toLinearMap := by
+    rw [← ContinuousLinearMap.star_eq_adjoint]
+    exact hU (star y) (star_mem hy)
+  exact y.orthogonal_mem_invtSubmodule hstar
+
 /-- If `U.starProjection ∈ M`, then `Uᗮ.starProjection ∈ M`. -/
 theorem starProjection_orthogonal_mem {M : VonNeumannAlgebra H} {U : Submodule ℂ H}
     [U.HasOrthogonalProjection] (hU : U.starProjection ∈ M) :
@@ -528,6 +539,13 @@ theorem inf_compl_eq_bot (p : M.Projection) : p ⊓ pᶜ = ⊥ :=
 theorem sup_compl_eq_top (p : M.Projection) : p ⊔ pᶜ = ⊤ := by
   apply compl_injective
   rw [compl_sup, compl_compl, compl_top, inf_comm, inf_compl_eq_bot]
+
+/-- Every projection and its orthocomplement are lattice complements in `M.Projection`. -/
+theorem isCompl_compl (p : M.Projection) : IsCompl p pᶜ :=
+  ⟨disjoint_iff.2 p.inf_compl_eq_bot, codisjoint_iff.2 p.sup_compl_eq_top⟩
+
+instance : ComplementedLattice M.Projection where
+  exists_isCompl p := ⟨pᶜ, p.isCompl_compl⟩
 
 /-! #### Inclusion along `M ≤ N` and unitary conjugation -/
 

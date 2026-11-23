@@ -219,10 +219,12 @@ theorem closure_span_isStarProjection (M : VonNeumannAlgebra H) :
       (ℑ (⟨x, hx⟩ : M.toStarSubalgebra) : M.toStarSubalgebra).property
   have : IsStarNormal (ℜ x : H →L[ℂ] H) := (ℜ x).property.isStarNormal
   have : IsStarNormal (ℑ x : H →L[ℂ] H) := (ℑ x).property.isStarNormal
-  have hre : (ℜ x : H →L[ℂ] H) ∈ P.topologicalClosure :=
-    mem_closure_span_isStarProjection_of_isStarNormal hre_mem
-  have him : (ℑ x : H →L[ℂ] H) ∈ P.topologicalClosure :=
-    mem_closure_span_isStarProjection_of_isStarNormal him_mem
+  have hre : (ℜ x : H →L[ℂ] H) ∈ P.topologicalClosure := by
+    rw [← SetLike.mem_coe, P.topologicalClosure_coe]
+    exact mem_closure_span_isStarProjection_of_isStarNormal hre_mem
+  have him : (ℑ x : H →L[ℂ] H) ∈ P.topologicalClosure := by
+    rw [← SetLike.mem_coe, P.topologicalClosure_coe]
+    exact mem_closure_span_isStarProjection_of_isStarNormal him_mem
   rw [← P.topologicalClosure_coe, SetLike.mem_coe, ← realPart_add_I_smul_imaginaryPart x]
   exact P.topologicalClosure.add_mem hre (P.topologicalClosure.smul_mem Complex.I him)
 
@@ -240,10 +242,9 @@ theorem adjoin_isStarProjection (M : VonNeumannAlgebra H) :
 in `M`. -/
 theorem mem_commutant_iff_forall_isStarProjection {M : VonNeumannAlgebra H} {y : H →L[ℂ] H} :
     y ∈ M.commutant ↔ ∀ p ∈ M, IsStarProjection p → Commute p y := by
-  refine ⟨fun hy p hp _ => (mem_commutant_iff.1 hy) p hp, fun h => ?_⟩
-  rw [← M.adjoin_isStarProjection, ← SetLike.mem_coe, coe_commutant_adjoin_of_star_subset]
-  · rintro p ⟨hpM, hp⟩
-    exact (h p hpM hp).eq
+  conv_lhs => rw [← M.adjoin_isStarProjection]
+  rw [mem_commutant_adjoin_iff_of_star_subset]
+  · exact ⟨fun h p hpM hp => h p ⟨hpM, hp⟩, fun h p ⟨hpM, hp⟩ => h p hpM hp⟩
   · rintro p hp
     rw [Set.mem_star] at hp
     rw [← star_star p, hp.2.isSelfAdjoint.star_eq]

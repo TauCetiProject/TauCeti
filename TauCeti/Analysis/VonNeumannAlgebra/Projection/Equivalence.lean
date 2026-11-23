@@ -51,10 +51,9 @@ namespace VonNeumannAlgebra
 variable {H : Type*} [NormedAddCommGroup H] [InnerProductSpace ℂ H] [CompleteSpace H]
 
 /-- Murray–von Neumann equivalence `p ∼ q` in `M`, oriented from initial to final projection:
-some `v ∈ M` has `star v * v = p` and `v * star v = q`. -/
+some partial isometry `v ∈ M` has `star v * v = p` and `v * star v = q`. -/
 def ProjectionEquivalent (M : VonNeumannAlgebra H) (p q : H →L[ℂ] H) : Prop :=
-  IsStarProjection p ∧ IsStarProjection q ∧ p ∈ M ∧ q ∈ M ∧
-  ∃ v : H →L[ℂ] H, v ∈ M ∧ star v * v = p ∧ v * star v = q
+  ∃ v : H →L[ℂ] H, v ∈ M ∧ v.IsPartialIsometry ∧ star v * v = p ∧ v * star v = q
 
 namespace ProjectionEquivalent
 
@@ -64,77 +63,86 @@ variable {M N : VonNeumannAlgebra H} {p q r : H →L[ℂ] H}
 final projections are `p` and `q`. -/
 theorem of_isPartialIsometry {v : H →L[ℂ] H} (hvM : v ∈ M) (hv : v.IsPartialIsometry)
     (hvp : star v * v = p) (hvq : v * star v = q) : ProjectionEquivalent M p q :=
-  have hv' : TauCeti.IsPartialIsometry v := ContinuousLinearMap.isPartialIsometry_iff_starMul.1 hv
-  ⟨hvp ▸ hv'.isStarProjection_star_mul_self, hvq ▸ hv'.isStarProjection_mul_star_self,
-    hvp ▸ mul_mem (star_mem hvM) hvM, hvq ▸ mul_mem hvM (star_mem hvM), v, hvM, hvp, hvq⟩
+  ⟨v, hvM, hv, hvp, hvq⟩
 
 theorem isStarProjection_left (h : ProjectionEquivalent M p q) : IsStarProjection p :=
-  h.1
+  let ⟨_, _, hv, hvp, _⟩ := h
+  hvp ▸ (ContinuousLinearMap.isPartialIsometry_iff_starMul.1 hv).isStarProjection_star_mul_self
 
 theorem isStarProjection_right (h : ProjectionEquivalent M p q) : IsStarProjection q :=
-  h.2.1
+  let ⟨_, _, hv, _, hvq⟩ := h
+  hvq ▸ (ContinuousLinearMap.isPartialIsometry_iff_starMul.1 hv).isStarProjection_mul_star_self
 
 theorem mem_left (h : ProjectionEquivalent M p q) : p ∈ M :=
-  h.2.2.1
+  let ⟨_, hvM, _, hvp, _⟩ := h
+  hvp ▸ mul_mem (star_mem hvM) hvM
 
 theorem mem_right (h : ProjectionEquivalent M p q) : q ∈ M :=
-  h.2.2.2.1
+  let ⟨_, hvM, _, _, hvq⟩ := h
+  hvq ▸ mul_mem hvM (star_mem hvM)
 
 /-- Recover an implementing operator `v ∈ M` for a Murray–von Neumann equivalence
 `ProjectionEquivalent M p q`. -/
 theorem exists_mem (h : ProjectionEquivalent M p q) :
     ∃ v : H →L[ℂ] H, v ∈ M ∧ star v * v = p ∧ v * star v = q :=
-  h.2.2.2.2
+  let ⟨v, hvM, _, hvp, hvq⟩ := h
+  ⟨v, hvM, hvp, hvq⟩
 
 /-- Recover an implementing partial isometry `v ∈ M` for a Murray–von Neumann equivalence
 `ProjectionEquivalent M p q`. -/
 theorem exists_isPartialIsometry (h : ProjectionEquivalent M p q) :
-    ∃ v : H →L[ℂ] H, v ∈ M ∧ v.IsPartialIsometry ∧ star v * v = p ∧ v * star v = q := by
-  obtain ⟨hp, -, -, -, v, hvM, hvp, hvq⟩ := h
-  refine ⟨v, hvM, ?_, hvp, hvq⟩
-  rwa [ContinuousLinearMap.isPartialIsometry_iff_isStarProjection_adjoint_comp_self,
-    ← ContinuousLinearMap.star_eq_adjoint, ← ContinuousLinearMap.mul_def, hvp]
+    ∃ v : H →L[ℂ] H, v ∈ M ∧ v.IsPartialIsometry ∧ star v * v = p ∧ v * star v = q :=
+  h
 
 /-- Murray–von Neumann equivalence is monotone in the ambient von Neumann algebra: if `M ≤ N`,
 then projections equivalent in `M` are equivalent in `N`. -/
 theorem mono (hMN : M ≤ N) (h : ProjectionEquivalent M p q) : ProjectionEquivalent N p q :=
-  let ⟨_, hvM, hv, hvp, hvq⟩ := h.exists_isPartialIsometry
-  of_isPartialIsometry (hMN hvM) hv hvp hvq
+  let ⟨v, hvM, hv, hvp, hvq⟩ := h
+  ⟨v, hMN hvM, hv, hvp, hvq⟩
 
 /-- Reflexivity of Murray–von Neumann equivalence on star projections in `M`. -/
 theorem refl (hp : IsStarProjection p) (hpM : p ∈ M) : ProjectionEquivalent M p p :=
-  ⟨hp, hp, hpM, hpM, p, hpM,
+  ⟨p, hpM, ContinuousLinearMap.isPartialIsometry_iff_starMul.2 hp.isPartialIsometry,
     by rw [hp.isSelfAdjoint.star_eq, hp.isIdempotentElem.eq],
     by rw [hp.isSelfAdjoint.star_eq, hp.isIdempotentElem.eq]⟩
 
 /-- Symmetry of Murray–von Neumann equivalence. -/
 theorem symm (h : ProjectionEquivalent M p q) : ProjectionEquivalent M q p := by
-  obtain ⟨hp, hq, hpM, hqM, v, hvM, hvp, hvq⟩ := h
-  exact ⟨hq, hp, hqM, hpM, star v, star_mem hvM,
+  obtain ⟨v, hvM, hv, hvp, hvq⟩ := h
+  exact ⟨star v, star_mem hvM,
+    by simpa only [ContinuousLinearMap.star_eq_adjoint,
+      ContinuousLinearMap.isPartialIsometry_adjoint_iff] using hv,
     by rwa [star_star], by rwa [star_star]⟩
 
 /-- Transitivity of Murray–von Neumann equivalence. -/
 theorem trans (hpq : ProjectionEquivalent M p q) (hqr : ProjectionEquivalent M q r) :
     ProjectionEquivalent M p r := by
-  obtain ⟨hp, -, hpM, -, v, hvM, hvp, hvq⟩ := hpq
-  obtain ⟨-, hr, -, hrM, w, hwM, hwq, hwr⟩ := hqr
-  refine ⟨hp, hr, hpM, hrM, w * v, mul_mem hwM hvM, ?_, ?_⟩
-  · calc star (w * v) * (w * v)
+  have hp := hpq.isStarProjection_left
+  have hr := hqr.isStarProjection_right
+  obtain ⟨v, hvM, _, hvp, hvq⟩ := hpq
+  obtain ⟨w, hwM, _, hwq, hwr⟩ := hqr
+  have hwvp : star (w * v) * (w * v) = p := by
+    calc star (w * v) * (w * v)
       _ = star v * (star w * w) * v := by simp only [star_mul, mul_assoc]
       _ = star v * (v * star v) * v := by rw [hwq, ← hvq]
       _ = (star v * v) * (star v * v) := by simp only [mul_assoc]
       _ = p := by rw [hvp, hp.isIdempotentElem.eq]
-  · calc w * v * star (w * v)
+  have hwvr : (w * v) * star (w * v) = r := by
+    calc w * v * star (w * v)
       _ = w * (v * star v) * star w := by simp only [star_mul, mul_assoc]
       _ = w * (star w * w) * star w := by rw [hvq, ← hwq]
       _ = (w * star w) * (w * star w) := by simp only [mul_assoc]
       _ = r := by rw [hwr, hr.isIdempotentElem.eq]
+  refine ⟨w * v, mul_mem hwM hvM, ?_, hwvp, hwvr⟩
+  rw [ContinuousLinearMap.isPartialIsometry_iff_isStarProjection_adjoint_comp_self,
+    ← ContinuousLinearMap.star_eq_adjoint, ← ContinuousLinearMap.mul_def, hwvp]
+  exact hp
 
 /-- Equivalent projections vanish simultaneously. -/
 theorem eq_zero_iff (h : ProjectionEquivalent M p q) : p = 0 ↔ q = 0 := by
   suffices key : ∀ {e₁ e₂ : H →L[ℂ] H}, ProjectionEquivalent M e₁ e₂ → e₁ = 0 → e₂ = 0
     from ⟨key h, key h.symm⟩
-  rintro e₁ e₂ ⟨-, -, -, -, v, -, hv₁, hv₂⟩ rfl
+  rintro e₁ e₂ ⟨v, -, -, hv₁, hv₂⟩ rfl
   have hv₀ : v = 0 := by
     rwa [star_mul_self_eq_zero] at hv₁
   rw [← hv₂, hv₀, zero_mul]
@@ -143,27 +151,28 @@ theorem eq_zero_iff (h : ProjectionEquivalent M p q) : p = 0 ↔ q = 0 := by
 theorem add {p₁ p₂ q₁ q₂ : H →L[ℂ] H} (hp₁₂ : p₁ * p₂ = 0) (hq₁₂ : q₁ * q₂ = 0)
     (h₁ : ProjectionEquivalent M p₁ q₁) (h₂ : ProjectionEquivalent M p₂ q₂) :
     ProjectionEquivalent M (p₁ + p₂) (q₁ + q₂) := by
-  obtain ⟨v₁, hv₁M, hv₁, hv₁p, hv₁q⟩ := h₁.exists_isPartialIsometry
-  obtain ⟨v₂, hv₂M, hv₂, hv₂p, hv₂q⟩ := h₂.exists_isPartialIsometry
+  have hp₁ := h₁.isStarProjection_left
+  have hp₂ := h₂.isStarProjection_left
+  obtain ⟨v₁, hv₁M, hv₁, hv₁p, hv₁q⟩ := h₁
+  obtain ⟨v₂, hv₂M, hv₂, hv₂p, hv₂q⟩ := h₂
   have hv₁' : TauCeti.IsPartialIsometry v₁ :=
     ContinuousLinearMap.isPartialIsometry_iff_starMul.1 hv₁
   have hv₂' : TauCeti.IsPartialIsometry v₂ :=
     ContinuousLinearMap.isPartialIsometry_iff_starMul.1 hv₂
-  have hcross₁ : star v₁ * v₂ = 0 :=
+  have hstar_mul : star v₁ * v₂ = 0 :=
     hv₁'.star_mul_eq_zero hv₂' (by rwa [hv₁q, hv₂q])
-  have hcross₂ : star v₂ * v₁ = 0 := by
-    simpa only [star_mul, star_star, star_zero] using congrArg star hcross₁
-  have hcross₃ : v₁ * star v₂ = 0 := by
+  have hortho : IsStarOrtho v₁ v₂ := by
+    refine ⟨?_, by simpa only [star_mul, star_star, star_zero] using congrArg star hstar_mul⟩
     simpa only [star_star] using
       hv₁'.star.star_mul_eq_zero hv₂'.star (by simpa only [star_star, hv₁p, hv₂p] using hp₁₂)
-  have hcross₄ : v₂ * star v₁ = 0 := by
-    simpa only [star_mul, star_star, star_zero] using congrArg star hcross₃
-  refine ⟨h₁.isStarProjection_left.add h₂.isStarProjection_left hp₁₂,
-    h₁.isStarProjection_right.add h₂.isStarProjection_right hq₁₂,
-    add_mem h₁.mem_left h₂.mem_left, add_mem h₁.mem_right h₂.mem_right,
-    v₁ + v₂, add_mem hv₁M hv₂M, ?_, ?_⟩
-  · simp only [star_add, add_mul, mul_add, hv₁p, hv₂p, hcross₁, hcross₂, add_zero, zero_add]
-  · simp only [star_add, add_mul, mul_add, hv₁q, hv₂q, hcross₃, hcross₄, add_zero, zero_add]
+  have hadd_p : star (v₁ + v₂) * (v₁ + v₂) = p₁ + p₂ := by
+    rw [hortho.star_add_mul_add, hv₁p, hv₂p]
+  have hadd_q : (v₁ + v₂) * star (v₁ + v₂) = q₁ + q₂ := by
+    rw [hortho.add_mul_star_add, hv₁q, hv₂q]
+  refine ⟨v₁ + v₂, add_mem hv₁M hv₂M, ?_, hadd_p, hadd_q⟩
+  rw [ContinuousLinearMap.isPartialIsometry_iff_isStarProjection_adjoint_comp_self,
+    ← ContinuousLinearMap.star_eq_adjoint, ← ContinuousLinearMap.mul_def, hadd_p]
+  exact hp₁.add hp₂ hp₁₂
 
 /-- Equivalent projections in `M` have the same central support. -/
 theorem centralSupport_eq (h : ProjectionEquivalent M p q) :
@@ -174,7 +183,7 @@ theorem centralSupport_eq (h : ProjectionEquivalent M p q) :
       simpa only [coe_centralSupportProjection] using
         congrArg Projection.val (le_antisymm (key h) (key h.symm))
   intro e₁ e₂ he
-  obtain ⟨v, hvM, hv, hv₁, hv₂⟩ := he.exists_isPartialIsometry
+  obtain ⟨v, hvM, hv, hv₁, hv₂⟩ := he
   rw [centralSupportProjection_le_iff, coe_centralSupportProjection]
   set z := M.centralSupport e₂
   have hqv : e₂ * v = v := by
@@ -196,8 +205,7 @@ terms of an implementing partial isometry in `M`. -/
 theorem projectionEquivalent_iff {M : VonNeumannAlgebra H} {p q : H →L[ℂ] H} :
     ProjectionEquivalent M p q ↔
       ∃ v : H →L[ℂ] H, v ∈ M ∧ v.IsPartialIsometry ∧ star v * v = p ∧ v * star v = q :=
-  ⟨ProjectionEquivalent.exists_isPartialIsometry,
-    fun ⟨_, hvM, hv, hvp, hvq⟩ => ProjectionEquivalent.of_isPartialIsometry hvM hv hvp hvq⟩
+  Iff.rfl
 
 /-- For any operator `x ∈ M`, its initial projection `x.kerᗮ.starProjection` and its final
 projection `x.range.topologicalClosure.starProjection` are Murray–von Neumann equivalent in `M`,

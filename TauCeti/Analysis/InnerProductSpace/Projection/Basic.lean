@@ -561,26 +561,21 @@ theorem starProjection_orthogonal_ker_one_sub_mul [CompleteSpace E]
     exact Submodule.starProjection_comp_starProjection_of_le inf_le_right
   have hr : IsStarProjection r :=
     isStarProjection_starProjection.sub_of_mul_eq_left isStarProjection_starProjection hcomp'
+  have hr_eq : r = (1 - (U ⊓ V).starProjection) * V.starProjection := by
+    rw [sub_mul, one_mul, hcomp']
+  have hker_one_sub : ∀ (W : Submodule 𝕜 E) [W.HasOrthogonalProjection],
+      ((1 - W.starProjection) * V.starProjection).ker =
+        W.comap (V.starProjection : E →ₗ[𝕜] E) := by
+    intro W _
+    rw [ContinuousLinearMap.mul_def, ContinuousLinearMap.toLinearMap_comp, LinearMap.ker_comp,
+      ← W.starProjection_orthogonal', Wᗮ.ker_starProjection, W.orthogonal_orthogonal]
   have hker : x.ker = r.ker := by
-    ext ξ
-    rw [LinearMap.mem_ker, LinearMap.mem_ker, coe_coe, coe_coe]
-    have hx_zero : x ξ = 0 ↔ V.starProjection ξ ∈ U := by
-      dsimp only [x]
-      rw [_root_.mul_apply_eq_comp, sub_apply, one_apply_eq_self, sub_eq_zero,
-        eq_comm, U.starProjection_eq_self_iff]
-    have hUV : (U ⊓ V).starProjection ξ = (U ⊓ V).starProjection (V.starProjection ξ) := by
-      have h := congrArg (fun T : E →L[𝕜] E => T ξ) hcomp'
-      simpa only [_root_.mul_apply_eq_comp] using h.symm
-    have hr_zero : r ξ = 0 ↔ V.starProjection ξ ∈ U := by
-      dsimp only [r]
-      rw [sub_apply, sub_eq_zero, hUV, eq_comm, (U ⊓ V).starProjection_eq_self_iff,
-        Submodule.mem_inf]
-      exact ⟨fun ⟨h, _⟩ => h, fun h => ⟨h, V.starProjection_apply_mem ξ⟩⟩
-    exact hx_zero.trans hr_zero.symm
-  obtain ⟨hr_has, hr_eq⟩ := isStarProjection_iff_eq_starProjection_range.mp hr
+    rw [hr_eq, hker_one_sub U, hker_one_sub (U ⊓ V), Submodule.comap_inf,
+      inf_of_le_left fun ξ _ => V.starProjection_apply_mem ξ]
+  obtain ⟨hr_has, hr_eq_proj⟩ := isStarProjection_iff_eq_starProjection_range.mp hr
   have : CompleteSpace x.ker := x.isClosed_ker.isComplete.completeSpace_coe
   have hker_r : r.ker = r.rangeᗮ := by
-    conv_lhs => rw [hr_eq]
+    conv_lhs => rw [hr_eq_proj]
     exact Submodule.ker_starProjection r.range
   refine IsStarProjection.ext isStarProjection_starProjection hr ?_
   rw [Submodule.range_starProjection, hker, hker_r, Submodule.orthogonal_orthogonal]

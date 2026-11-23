@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.InnerProductSpace.Polar.Bounded
-public import TauCeti.Analysis.VonNeumannAlgebra.Modulus
 public import TauCeti.Analysis.VonNeumannAlgebra.Unitary
 
 /-!
