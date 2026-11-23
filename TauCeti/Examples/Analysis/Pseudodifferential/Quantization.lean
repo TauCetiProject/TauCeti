@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Pseudodifferential.ProperSupport.Basic
-public import TauCeti.Analysis.Distribution.SchwartzKernel.Basic
+public import TauCeti.Analysis.Distribution.SchwartzKernel.Operations
 public import TauCeti.Analysis.Distribution.SchwartzSpace.Gaussian
 public import TauCeti.Analysis.Distribution.Support
 import Mathlib.Analysis.Distribution.AEEqOfIntegralContDiff
@@ -185,12 +185,12 @@ theorem kernelOperator_ofFun_one (ψ : 𝓓((⊤ : Opens ℝ), ℝ)) :
     kernelOperator (Ω := ⊤) (O := ⊤) (V := ⊤) (subset_univ _)
         (ofFun ⊤ (fun _ : ℝ × ℝ ↦ (1 : ℝ)) volume ⊤) ψ =
       (∫ y, ψ y) • ofFun ⊤ (fun _ : ℝ ↦ (1 : ℝ)) volume ⊤ := by
+  rw [Measure.volume_eq_prod,
+    kernelOperator_ofFun _ ((locallyIntegrable_const _).locallyIntegrableOn _)]
   ext φ
-  rw [kernelOperator_apply, smul_apply,
-    ofFun_apply ((locallyIntegrable_const _).locallyIntegrableOn _),
+  rw [smul_apply, ofFun_apply ((locallyIntegrable_const _).locallyIntegrableOn _),
     ofFun_apply ((locallyIntegrable_const _).locallyIntegrableOn _)]
-  simp only [TestFunction.prodSMulCLM_apply, smul_eq_mul, mul_one, mul_comm (ψ _)]
-  rw [Measure.volume_eq_prod, integral_prod_mul (fun x ↦ φ x) (fun y ↦ ψ y), mul_comm]
+  simp [integral_mul_const, mul_comm]
 
 /-- The constant kernel `1` sends a test function of integral `1` to the constant function `1`. -/
 theorem kernelOperator_ofFun_one_of_integral_eq_one {ψ : 𝓓((⊤ : Opens ℝ), ℝ)}
