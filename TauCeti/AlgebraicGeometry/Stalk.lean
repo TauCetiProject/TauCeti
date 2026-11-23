@@ -161,6 +161,8 @@ def affineOpenNhdsDiagramIsoSpec :
       eqToHom (X.affineOpenNhdsDiagram_obj x W) ≫ W.isAffineOpen.isoSpec.hom ≫
         eqToHom (congrArg (fun U ↦ Spec (X.presheaf.obj (op ((OpenNhds.inclusion x).obj U))))
           (AffineOpenNhds.toOpenNhds_obj W).symm) := by
+  -- After unfolding the diagram functors, both `eqToHom`s are `eqToHom rfl = 𝟙 _` and
+  -- `(NatIso.ofComponents ...).hom.app W` is definitionally `W.isAffineOpen.isoSpec.hom`.
   dsimp [affineOpenNhdsDiagramIsoSpec, affineOpenNhdsDiagram, AffineOpenNhds.toOpenNhds,
     OpenNhds.inclusion]
   simp only [Category.id_comp]
@@ -174,6 +176,7 @@ def affineOpenNhdsDiagramIsoSpec :
           (AffineOpenNhds.toOpenNhds_obj W)) ≫
         W.isAffineOpen.isoSpec.inv ≫
         eqToHom (X.affineOpenNhdsDiagram_obj x W).symm := by
+  -- Same definitional reduction as `affineOpenNhdsDiagramIsoSpec_hom_app`, for `.inv.app W`.
   dsimp [affineOpenNhdsDiagramIsoSpec, affineOpenNhdsDiagram, AffineOpenNhds.toOpenNhds,
     OpenNhds.inclusion]
   simp only [Category.comp_id]

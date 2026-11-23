@@ -248,7 +248,7 @@ theorem pullbackRightPullbackFstIsoOfEq_inv_fst :
   simp [pullbackRightPullbackFstIsoOfEq]
 
 /-- Second projection of `(pullbackRightPullbackFstIsoOfEq m g mg h r).inv` as a `pullback.map`. -/
-@[reassoc]
+@[reassoc (attr := simp)]
 theorem pullbackRightPullbackFstIsoOfEq_inv_snd :
     (pullbackRightPullbackFstIsoOfEq m g mg h r).inv ≫ pullback.snd m (pullback.fst g r) =
       pullback.map mg r g r m (𝟙 Z) (𝟙 S) (by simp [h]) (by simp) := by

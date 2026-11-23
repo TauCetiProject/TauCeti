@@ -17,7 +17,7 @@ Let `S` be covered by the images of two open immersions `j₁ : W₁ ⟶ S` and 
 overlap `W₁₂ = W₁ ×_S W₂` and inclusions `i₁ : W₁₂ ⟶ W₁`, `i₂ : W₁₂ ⟶ W₂`. Finite étale covers
 `Y₁` of `W₁` and `Y₂` of `W₂` together with an isomorphism `e` between their restrictions to
 `W₁₂` glue to a finite étale cover `Y` of `S` whose restrictions to `W₁` and `W₂` are `Y₁` and `Y₂`,
-compatibly with `e` (`TauCeti.FiniteEtaleScheme.exists_pullback_iso_of_isPullback`).
+compatibly with `e` (`TauCeti.FiniteEtaleScheme.exists_pullbackCompIsoOfEq_of_isPullback`).
 
 The glued scheme is the pushout of `Y₁` and `Y₂` along `Y₁ ×_{W₁} W₁₂`, which `e` identifies with
 the open `Y₂ ×_{W₂} W₁₂` of `Y₂`. Its inverse images of `W₁` and `W₂` are `Y₁` and `Y₂`
@@ -75,13 +75,8 @@ private lemma isPullback_overlap (e : (pullback i₁).obj Y₁ ≅ (pullback i�
   IsPullback.of_iso_pullback ⟨by rw [Category.assoc, Limits.pullback.condition,
     reassoc_of% overlapIso_hom_snd e]⟩ (overlapIso e) rfl (overlapIso_hom_snd e)
 
-/-- **Gluing finite étale covers along two opens.** Let `j₁ : W₁ ⟶ S` and `j₂ : W₂ ⟶ S` be open
-immersions covering `S`, with overlap `W₁₂` given by a cartesian square `i₁ ≫ j₁ = i₂ ≫ j₂`. Let
-`Y₁` and `Y₂` be finite étale covers of `W₁` and `W₂`, and `e` an isomorphism between their
-restrictions to `W₁₂`. Then there is a finite étale cover `Y` of `S` whose restrictions to `W₁` and
-`W₂` are isomorphic to `Y₁` and `Y₂`, such that the two resulting embeddings of the overlap
-`Y₁ ×_{W₁} W₁₂` into `Y`, directly and through `e`, agree. -/
-theorem exists_pullback_iso_of_isPullback (h : IsPullback i₁ i₂ j₁ j₂)
+/-- Raw pushout-embedding form of gluing finite étale covers along two opens. -/
+private theorem exists_pullback_iso_of_isPullback (h : IsPullback i₁ i₂ j₁ j₂)
     (hcover : j₁.opensRange ⊔ j₂.opensRange = ⊤)
     (e : (pullback i₁).obj Y₁ ≅ (pullback i₂).obj Y₂) :
     ∃ (Y : FiniteEtaleScheme S) (e₁ : (pullback j₁).obj Y ≅ Y₁)
@@ -125,8 +120,11 @@ theorem exists_pullback_iso_of_isPullback (h : IsPullback i₁ i₂ j₁ j₂)
   rw [c₁, c₂, ← overlapIso_hom]
   exact pushout.condition.trans (Category.assoc _ _ _)
 
-/-- **Gluing finite étale covers along two opens**, expressed directly as compatibility of the
-pulled-back restriction isomorphisms via `pullbackCompIsoOfEq`. -/
+/-- **Gluing finite étale covers along two opens.** Let `j₁ : W₁ ⟶ S` and `j₂ : W₂ ⟶ S` be open
+immersions covering `S`, with overlap `W₁₂` given by a cartesian square `i₁ ≫ j₁ = i₂ ≫ j₂`. Let
+`Y₁` and `Y₂` be finite étale covers of `W₁` and `W₂`, and `e` an isomorphism between their
+restrictions to `W₁₂`. Then there is a finite étale cover `Y` of `S` whose restrictions to `W₁` and
+`W₂` are isomorphic to `Y₁` and `Y₂`, compatibly with `e` via `pullbackCompIsoOfEq`. -/
 theorem exists_pullbackCompIsoOfEq_of_isPullback (h : IsPullback i₁ i₂ j₁ j₂)
     (hcover : j₁.opensRange ⊔ j₂.opensRange = ⊤)
     {ij : W₁₂ ⟶ S} (hij₁ : i₁ ≫ j₁ = ij) (hij₂ : i₂ ≫ j₂ = ij)
@@ -149,6 +147,9 @@ theorem exists_pullbackCompIsoOfEq_of_isPullback (h : IsPullback i₁ i₂ j₁ 
   have : Mono (Limits.pullback.fst Y.obj.hom j₂) := IsOpenImmersion.mono _
   apply (cancel_mono e₂.inv.hom.left).mp
   apply (cancel_mono (Limits.pullback.fst Y.obj.hom j₂)).mp
+  -- `((pullback i).obj Y).obj.left` is only semireducibly defeq to `Limits.pullback Y.obj.hom i`
+  -- through `FiniteEtaleScheme.pullback` and `Over.pullback`, so `erw`/`rfl` is unavoidable here
+  -- to bridge the implicit intermediate objects of `CategoryStruct.comp`.
   calc
     ((((pullbackCompIsoOfEq i₁ j₁ ij hij₁).inv.app Y ≫ (pullback i₁).map e₁.hom ≫ e.hom).hom.left ≫
         Limits.pullback.fst Y₂.obj.hom i₂) ≫

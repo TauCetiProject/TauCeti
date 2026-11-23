@@ -92,17 +92,14 @@ theorem exists_hom_pullback_of_isLimit [∀ i, QuasiSeparatedSpace (D.obj i)]
     (hc : Limits.IsLimit c) {i₀ : I} (Y₁ Y₂ : FiniteEtaleScheme (D.obj i₀))
     (α : (pullback (c.π.app i₀)).obj Y₁ ⟶ (pullback (c.π.app i₀)).obj Y₂) :
     ∃ (j : I) (fj : j ⟶ i₀) (β : (pullback (D.map fj)).obj Y₁ ⟶ (pullback (D.map fj)).obj Y₂),
-      (pullbackCompIsoOfEq (c.π.app j) (D.map fj) (c.π.app i₀) (c.w fj)).inv.app Y₁ ≫
-        (pullback (c.π.app j)).map β ≫
-        (pullbackCompIsoOfEq (c.π.app j) (D.map fj) (c.π.app i₀) (c.w fj)).hom.app Y₂ = α := by
+      pullbackTransport (c.w fj) (c.w fj) β = α := by
   have : QuasiCompact Y₁.obj.hom := inferInstance
   have : QuasiSeparated Y₁.obj.hom := inferInstance
   have : LocallyOfFinitePresentation Y₂.obj.hom := inferInstance
   obtain ⟨j, fj, β, hβ⟩ := hc.exists_hom_overPullback_of_isLimit Y₁.obj Y₂.obj α.hom
   refine ⟨j, fj, (finiteEtaleSchemeProperty (D.obj j)).homMk β, ObjectProperty.hom_ext _ ?_⟩
-  simp only [ObjectProperty.FullSubcategory.comp_hom, pullbackCompIsoOfEq_inv_app_hom,
-    pullbackCompIsoOfEq_hom_app_hom, pullback_map_hom]
-  exact (Over.pullbackTransport_def (c.w fj) (c.w fj) β).symm.trans hβ
+  simp only [pullbackTransport_hom]
+  exact hβ
 
 /-- Along a cofiltered limit of quasi-compact schemes with affine transition morphisms, two
 morphisms between finite étale schemes at stage `i₀` that become equal on the limit already become
@@ -121,15 +118,13 @@ theorem exists_pullback_map_eq_of_isLimit (hc : Limits.IsLimit c) {i₀ : I}
 /-- Along a cofiltered limit of quasi-compact quasi-separated schemes with affine transition
 morphisms, an isomorphism `e` on the limit between the pullbacks of two finite étale schemes
 `Y₁, Y₂` at stage `i₀` descends to an isomorphism `ek` at some stage `k` mapping to `i₀` whose
-pullback to the limit recovers `e.hom`. -/
+transport to the limit recovers `e.hom`. -/
 @[stacks 01ZM "for finite étale schemes"]
 theorem exists_iso_pullback_of_isLimit [∀ i, QuasiSeparatedSpace (D.obj i)]
     (hc : Limits.IsLimit c) {i₀ : I} (Y₁ Y₂ : FiniteEtaleScheme (D.obj i₀))
     (e : (pullback (c.π.app i₀)).obj Y₁ ≅ (pullback (c.π.app i₀)).obj Y₂) :
     ∃ (k : I) (fk : k ⟶ i₀) (ek : (pullback (D.map fk)).obj Y₁ ≅ (pullback (D.map fk)).obj Y₂),
-      (pullbackCompIsoOfEq (c.π.app k) (D.map fk) (c.π.app i₀) (c.w fk)).inv.app Y₁ ≫
-        (pullback (c.π.app k)).map ek.hom ≫
-        (pullbackCompIsoOfEq (c.π.app k) (D.map fk) (c.π.app i₀) (c.w fk)).hom.app Y₂ = e.hom := by
+      pullbackTransport (c.w fk) (c.w fk) ek.hom = e.hom := by
   have : QuasiCompact Y₁.obj.hom := inferInstance
   have : QuasiSeparated Y₁.obj.hom := inferInstance
   have : LocallyOfFinitePresentation Y₁.obj.hom := inferInstance
@@ -139,9 +134,8 @@ theorem exists_iso_pullback_of_isLimit [∀ i, QuasiSeparatedSpace (D.obj i)]
   obtain ⟨k, fk, ek, hek⟩ := hc.exists_iso_overPullback_of_isLimit Y₁.obj Y₂.obj
     ((finiteEtaleSchemeProperty _).ι.mapIso e)
   refine ⟨k, fk, ObjectProperty.isoMk _ ek, ObjectProperty.hom_ext _ ?_⟩
-  simp only [ObjectProperty.FullSubcategory.comp_hom, pullbackCompIsoOfEq_inv_app_hom,
-    pullbackCompIsoOfEq_hom_app_hom, pullback_map_hom]
-  exact (Over.pullbackTransport_def (c.w fk) (c.w fk) ek.hom).symm.trans hek
+  simp only [pullbackTransport_hom]
+  exact hek
 
 end LimitSpreading
 
@@ -202,12 +196,16 @@ private theorem overlap_of_limit_desc {Pt Stage A B C S₁ S₂ : Scheme.{u}}
     (pullbackCompIsoOfEq b f₂ _ rfl).app Y₂
   have hab₁ : a ≫ (b ≫ f₁) = ab ≫ f₁ := by rw [← Category.assoc, hab]
   have hab₂ : a ≫ (b ≫ f₂) = ab ≫ f₂ := by rw [← Category.assoc, hab]
+  have hekFlat_hom : ekFlat.hom =
+      (pullbackCompIsoOfEq b f₁ _ rfl).inv.app Y₁ ≫ ek.hom ≫
+        (pullbackCompIsoOfEq b f₂ _ rfl).hom.app Y₂ := rfl
   have hekFlat :
       pullbackTransport hab₁ hab₂ ekFlat.hom = pullbackTransport htop₁ htop₂ e₀'.hom := by
-    rw [← pullbackTransportIso_hom htop₁ htop₂ e₀']
-    simpa [ekFlat] using
-      (pullbackTransport_pullbackCompIsoOfEq_conj hab rfl rfl hab₁ hab₂ rfl rfl ek.hom).trans <|
-        by rw [hek]; simp
+    rw [hekFlat_hom,
+      pullbackTransport_pullbackCompIsoOfEq_conj hab rfl rfl hab₁ hab₂ rfl rfl ek.hom,
+      hek, Iso.trans_hom, Iso.trans_hom, Iso.symm_hom, Iso.app_inv, Iso.app_hom,
+      pullbackTransportIso_hom, ← Category.assoc, Iso.inv_hom_id_app_assoc, Category.assoc,
+      Iso.inv_hom_id_app, Category.comp_id]
   have hae₁ : (iPt.inv ≫ a) ≫ (b ≫ f₁) = g₁ := by
     rw [Category.assoc, hab₁, ← htop₁, Iso.inv_hom_id_assoc]
   have hae₂ : (iPt.inv ≫ a) ≫ (b ≫ f₂) = g₂ := by
@@ -357,7 +355,6 @@ theorem exists_spread_fromSpecStalk {X : Scheme.{u}} {U : X.Opens} [QuasiCompact
     hgU_jU hsW_jW hsW_mapk (X.stalkOpensConePtIso_inv_π_stageIso_inv U s k)
     (X.stalkOpensConePtIso_inv_π_stageIso_inv_nhds U s k) eW₀ e₀ eGlueFlat eU eW hglueSup
     (overlap_of_limit_desc (cO.w fk) iPt eRange htopV htopW hstageV hstageW
-      (X.stalkOpensConePtIso_inv_π_stageIso_inv U s k) hm_mapk e₀' ek
-      ((pullbackTransport_def (cO.w fk) (cO.w fk) ek.hom).trans hek))⟩
+      (X.stalkOpensConePtIso_inv_π_stageIso_inv U s k) hm_mapk e₀' ek hek)⟩
 
 end TauCeti.FiniteEtaleScheme

@@ -608,6 +608,14 @@ noncomputable def pullbackLeftSymm {X Y : C} (f : X ⟶ Y) [HasPullbacksAlong f]
   have hw : g.left ≫ Limits.pullback.snd B.hom f = Limits.pullback.snd A.hom f := Over.w g
   simp [pullbackLeftSymm, hw]
 
+/-- Second projection of `pullbackLeftSymm f g`. -/
+@[reassoc (attr := simp)] theorem pullbackLeftSymm_snd {X Y : C} (f : X ⟶ Y)
+    [HasPullbacksAlong f] {A B : Over Y} [HasPullback f A.hom] [HasPullback f B.hom]
+    (g : (pullback f).obj A ⟶ (pullback f).obj B) :
+    pullbackLeftSymm f g ≫ Limits.pullback.snd f B.hom =
+      (Limits.pullbackSymmetry f A.hom).hom ≫ g.left ≫ Limits.pullback.fst B.hom f := by
+  simp [pullbackLeftSymm]
+
 /-- Conjugating `pullbackLeftSymm f g` back via `pullbackHomOfFstEq` recovers `g`. -/
 @[simp] theorem pullbackHomOfFstEq_pullbackLeftSymm {X Y : C} (f : X ⟶ Y)
     [HasPullbacksAlong f] {A B : Over Y} [HasPullback f A.hom] [HasPullback f B.hom]
@@ -638,6 +646,17 @@ noncomputable def pullbackLeftSymmIso {X Y : C} (f : X ⟶ Y) [HasPullbacksAlong
     (e : (pullback f).obj A ≅ (pullback f).obj B) :
     (pullbackLeftSymmIso f e).hom = pullbackLeftSymm f e.hom := by
   simp [pullbackLeftSymmIso, pullbackLeftSymm]
+
+/-- The inverse morphism of `pullbackLeftSymmIso f e` is `pullbackLeftSymm f e.inv`. -/
+@[simp] theorem pullbackLeftSymmIso_inv {X Y : C} (f : X ⟶ Y) [HasPullbacksAlong f]
+    {A B : Over Y} [HasPullback f A.hom] [HasPullback f B.hom]
+    (e : (pullback f).obj A ≅ (pullback f).obj B) :
+    (pullbackLeftSymmIso f e).inv = pullbackLeftSymm f e.inv := by
+  have h₁ : (Limits.pullbackSymmetry B.hom f).inv = (Limits.pullbackSymmetry f B.hom).hom := by
+    apply Limits.pullback.hom_ext <;> simp
+  have h₂ : (Limits.pullbackSymmetry f A.hom).inv = (Limits.pullbackSymmetry A.hom f).hom := by
+    apply Limits.pullback.hom_ext <;> simp
+  simp [pullbackLeftSymmIso, pullbackLeftSymm, h₁, h₂]
 
 /-- Conjugating `pullbackHomOfFstEq g b hb` along `pullbackCompIsoOfEq m g mg h` yields on
 underlying objects the `pullbackRightPullbackFstIsoOfEq`-conjugate of the raw pullback map of `b`,
@@ -681,7 +700,7 @@ theorem pullbackCompIsoOfEq_conj_left_eq_pullbackMap
         (Limits.pullbackSymmetry Y₁.hom mg).hom ≫
           Limits.pullback.map mg Y₁.hom g Y₁.hom m (𝟙 _) (𝟙 _) (by simp [h]) (by simp) ≫
           b ≫ Limits.pullback.snd g Y₂.hom := by
-      simp [Limits.pullbackRightPullbackFstIsoOfEq_inv_snd_assoc]
+      simp
     exact hLHS.trans hRHS.symm
   · have hw := Over.w ((pullbackCompIsoOfEq m g mg h).inv.app Y₁ ≫
         (pullback m).map (pullbackHomOfFstEq g b hb) ≫
