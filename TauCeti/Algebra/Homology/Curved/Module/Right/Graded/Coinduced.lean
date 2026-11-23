@@ -516,8 +516,9 @@ theorem forgetDifferentialCoinducedAdj_counit_app (h : IsCurvedDGAlgebra 𝒜 d 
 /-- For an injective graded right module `I`, `G⁻ I` is graded-injective. -/
 theorem gradedInjective_coinducedObj (h : IsCurvedDGAlgebra 𝒜 d w)
     (I : GradedModuleCat.{u} (InternalGrading.ofDecomposition 𝒜).opposite.piece) [Injective I] :
-    gradedInjective R h (DGHomotopyCategory.of R (coinducedObj h I)) :=
-  (gradedInjective_iff _).2 (inferInstanceAs (Injective (toGradedModuleCat (coinducedObj h I))))
+    gradedInjective R h (DGHomotopyCategory.of R (coinducedObj h I)) := by
+  rw [gradedInjective_iff, DGHomotopyCategory.underlying_of]
+  infer_instance
 
 /-- Every curved right module `M` admits a closed monomorphism into `G⁻ I` for some injective
 graded right module `I`. -/

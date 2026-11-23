@@ -387,6 +387,21 @@ private def coinducedSinglePieceToHomPiece (𝒜 : ℤ → Submodule k A) [Grade
   map_add' _ _ := Subtype.ext (map_add coinducedSingleApply _ _)
   map_smul' _ _ := Subtype.ext (map_smul coinducedSingleApply _ _)
 
+@[simp]
+private theorem coinducedSinglePieceToHomPiece_apply (p : ℤ)
+    (x : (coinducedSingle 𝒜 V).grading.piece p) :
+    ((coinducedSinglePieceToHomPiece 𝒜 V p x :
+      (InternalGrading.ofDecomposition 𝒜).homPiece V p) : A →ₗ[k] V) =
+      coinducedSingleApply x.val :=
+  rfl
+
+@[simp]
+private theorem coinducedSingleApply_coinducedSinglePieceToHomPiece_symm (p : ℤ)
+    (ψ : (InternalGrading.ofDecomposition 𝒜).homPiece V p) :
+    coinducedSingleApply ((coinducedSinglePieceToHomPiece 𝒜 V p).symm ψ : coinducedSingle 𝒜 V) =
+      ψ.val :=
+  coinducedSingleApply_toCoinducedSingle _
+
 variable (𝒜 V) in
 /-- The degree-`p` piece of `coinducedSingle 𝒜 V` is `k`-linearly equivalent to `𝒜 (-p) →ₗ[k] V`,
 via restricting the underlying functional to `𝒜 (-p)` and extending by zero on other degrees. -/
@@ -404,18 +419,7 @@ functional to `𝒜 (-p)`. -/
 theorem coinducedSinglePieceEquiv_apply (p : ℤ) (x : (coinducedSingle 𝒜 V).grading.piece p)
     (b : 𝒜 (-p)) :
     coinducedSinglePieceEquiv 𝒜 V p x b = coinducedSingleApply x.val b := by
-  simp only [coinducedSinglePieceEquiv, LinearEquiv.trans_apply, LinearEquiv.congrLeft_apply,
-    AddEquiv.toFun_eq_coe, LinearEquiv.arrowCongrAddEquiv_apply, LinearEquiv.refl_toLinearMap,
-    LinearMap.id_comp, LinearMap.comp_apply, LinearEquiv.coe_coe, LinearEquiv.ofEq_symm,
-    LinearEquiv.coe_ofEq_apply, InternalGrading.homPieceEquiv_apply,
-    coinducedSinglePieceToHomPiece, LinearEquiv.coe_mk, LinearMap.coe_mk, AddHom.coe_mk]
-
-private theorem coinducedSingleApply_coinducedSinglePieceToHomPiece_symm (p : ℤ)
-    (ψ : (InternalGrading.ofDecomposition 𝒜).homPiece V p) :
-    coinducedSingleApply ((coinducedSinglePieceToHomPiece 𝒜 V p).symm ψ : coinducedSingle 𝒜 V) =
-      ψ.val := by
-  dsimp only [coinducedSinglePieceToHomPiece, LinearEquiv.coe_symm_mk]
-  exact coinducedSingleApply_toCoinducedSingle _
+  simp [coinducedSinglePieceEquiv]
 
 /-- Evaluating the inverse of `coinducedSinglePieceEquiv` at `b : A` applies the linear map to
 the degree-`(-p)` homogeneous component of `b`. -/
@@ -424,15 +428,13 @@ theorem coinducedSingleApply_coinducedSinglePieceEquiv_symm (p : ℤ) (φ : 𝒜
     (b : A) :
     coinducedSingleApply ((coinducedSinglePieceEquiv 𝒜 V p).symm φ : coinducedSingle 𝒜 V) b =
       φ (DirectSum.decompose 𝒜 b (-p)) := by
-  rw [coinducedSinglePieceEquiv, LinearEquiv.trans_symm, LinearEquiv.trans_symm,
-    LinearEquiv.trans_apply, LinearEquiv.trans_apply,
-    coinducedSingleApply_coinducedSinglePieceToHomPiece_symm,
-    InternalGrading.homPieceEquiv_symm_apply]
-  simp only [LinearEquiv.congrLeft_symm_apply, AddEquiv.invFun_eq_symm,
-    LinearEquiv.arrowCongrAddEquiv_symm_apply, LinearEquiv.refl_symm,
-    LinearEquiv.refl_toLinearMap, LinearMap.id_comp, LinearMap.comp_apply, LinearEquiv.coe_coe]
-  exact congrArg φ
-    (Subtype.ext (InternalGrading.coe_decompose_ofDecomposition_piece_apply 𝒜 b (-p)))
+  have h :
+      (LinearEquiv.ofEq ((InternalGrading.ofDecomposition 𝒜).piece (-p)) (𝒜 (-p))
+          (congrFun (InternalGrading.ofDecomposition_piece 𝒜) (-p)))
+        (DirectSum.decompose (InternalGrading.ofDecomposition 𝒜).piece b (-p)) =
+      DirectSum.decompose 𝒜 b (-p) :=
+    Subtype.ext (InternalGrading.coe_decompose_ofDecomposition_piece_apply 𝒜 b (-p))
+  simp [coinducedSinglePieceEquiv, InternalGrading.homPieceEquiv_symm_apply, h]
 
 omit [GradedAlgebra 𝒜] in
 private def coinducedSingleShiftLiftLinear {M : GradedModuleCat.{max uA v} 𝒜} (n : ℤ)

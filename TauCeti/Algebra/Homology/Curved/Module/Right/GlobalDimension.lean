@@ -185,9 +185,13 @@ private theorem absolutelyAcyclic_of_coacyclic_of_hasInjectiveDimensionLT_succ :
         (ForgetEnrichment (CochainComplex (ModuleCat R) ℤ) (CurvedDGRightModuleCat.{u, u, u} h)) :=
       ShortComplex.mk g (cokernel.π g) (cokernel.condition g)
     have hS : S.ShortExact := { exact := ShortComplex.exact_cokernel g }
+    have hIinj : Injective ((forgetDifferential (h := h)).obj
+        (ForgetEnrichment.of (CochainComplex (ModuleCat R) ℤ) (coinducedObj h I))) := by
+      rw [forgetDifferential_obj_of]
+      infer_instance
     have hCdim : HasInjectiveDimensionLT (toGradedModuleCat (ForgetEnrichment.to _ S.X₃)) (m + 1) :=
       ((hS.map_of_exact (forgetDifferential (h := h))).hasInjectiveDimensionLT_X₃_iff m
-        (inferInstanceAs (Injective (toGradedModuleCat (coinducedObj h I))))).2 hM
+        hIinj).2 hM
     have hI₀ : IsZero (DGHomotopyCategory.of R (coinducedObj h I)) :=
       isZero_homotopy_coinducedObj h I
     have hCc : coacyclic R h (DGHomotopyCategory.of R (ForgetEnrichment.to _ S.X₃)) :=

@@ -210,11 +210,8 @@ theorem mem_range_coeLinearMap_homPiece_iff (G : InternalGrading R M ℤ) (V : T
     simp only [map_sum, DirectSum.coeLinearMap_lof, LinearMap.sum_apply]
     by_cases hqs : q ∈ s
     · rw [Finset.sum_eq_single (-q)]
-      · simp only [homPieceEquiv_symm_apply, LinearMap.comp_apply, Submodule.subtype_apply]
-        have hdec : (DirectSum.decompose G.piece x (- -q) : M) = x := by
-          rw [neg_neg]
-          exact DirectSum.decompose_of_mem_same G.piece hx
-        rw [hdec]
+      · exact G.homPieceEquiv_symm_apply_coe V (-q)
+          (φ ∘ₗ (G.piece (- -q)).subtype) ⟨x, by rwa [neg_neg]⟩
       · intro p _ hp
         exact G.homPiece_apply_eq_zero_of_mem_piece_of_add_ne_zero V
           ((G.homPieceEquiv V p).symm _).property hx (by omega)
@@ -244,11 +241,8 @@ private theorem iSup_homPiece_eq_top (G : InternalGrading R M ℤ) (V : Type w)
   have hzero : (φq : M →ₗ[R] V) = 0 := by
     simpa only [hbot, Submodule.mem_bot] using φq.property
   have heval := congrArg (fun f : M →ₗ[R] V ↦ f x) hzero
-  have hdec : (DirectSum.decompose G.piece x (- -q) : M) = x := by
-    rw [neg_neg]
-    exact DirectSum.decompose_of_mem_same G.piece hx
-  simpa only [φq, homPieceEquiv_symm_apply, LinearMap.comp_apply, Submodule.subtype_apply,
-    hdec, LinearMap.zero_apply] using heval
+  exact (G.homPieceEquiv_symm_apply_coe V (-q)
+    (φ ∘ₗ (G.piece (- -q)).subtype) ⟨x, by rwa [neg_neg]⟩).symm.trans heval
 
 /-- The direct sum of `homPiece` submodules embeds in `M →ₗ[R] V` without a finiteness
 hypothesis. -/
