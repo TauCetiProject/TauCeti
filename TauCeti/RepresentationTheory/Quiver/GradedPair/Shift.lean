@@ -13,8 +13,7 @@ public import TauCeti.RepresentationTheory.Quiver.GradedPair.Basic
 
 For an integer `c`, the shift `S(c)` of a graded coordinate space `S` has the same carrier and
 the grades `S(c)ₐ = Sₐ₋c`: every coordinate of degree `k` is moved to degree `k + c`. A raising or
-lowering pair on `S` is a pair on `S(c)` with the same operator. Under this convention a pair of
-interval type `[b, e]` shifted by `c` has type `[b + c, e + c]`.
+lowering pair on `S` is a pair on `S(c)` with the same operator.
 
 ## Main definitions
 

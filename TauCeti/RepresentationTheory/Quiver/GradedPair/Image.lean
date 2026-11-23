@@ -104,6 +104,18 @@ attribute [simp] SubmoduleModel.embed_mem_grade_iff SubmoduleModel.embed_operato
   embed_mem_grade_iff := Iff.rfl
   embed_operator _ := rfl
 
+@[simp]
+theorem topModel_space (P : GradedPair S d) : P.topModel.space = S :=
+  (rfl)
+
+@[simp]
+theorem topModel_pair (P : GradedPair S d) : P.topModel.pair = P :=
+  (rfl)
+
+@[simp]
+theorem topModel_embed (P : GradedPair S d) : P.topModel.embed = LinearMap.id :=
+  (rfl)
+
 namespace SubmoduleModel
 
 variable {P : GradedPair S d} {W W' : Submodule ℂ S.Carrier}
@@ -126,6 +138,18 @@ theorem mem_iff_exists_embed_eq (M : P.SubmoduleModel W) {w : S.Carrier} :
   range_embed := M.range_embed.trans h
   embed_mem_grade_iff := M.embed_mem_grade_iff
   embed_operator := M.embed_operator
+
+@[simp]
+theorem congr_space (M : P.SubmoduleModel W) (h : W = W') : (M.congr h).space = M.space :=
+  (rfl)
+
+@[simp]
+theorem congr_pair (M : P.SubmoduleModel W) (h : W = W') : (M.congr h).pair = M.pair :=
+  (rfl)
+
+@[simp]
+theorem congr_embed (M : P.SubmoduleModel W) (h : W = W') : (M.congr h).embed = M.embed :=
+  (rfl)
 
 /-- The linear equivalence between the carrier of a model and its submodule. -/
 noncomputable def equiv (M : P.SubmoduleModel W) : M.space.Carrier ≃ₗ[ℂ] W :=
@@ -204,6 +228,25 @@ embedding of `M`. -/
   embed_mem_grade_iff := by simp
   embed_operator v := by simp
 
+section comp
+
+variable (M : P.SubmoduleModel W) {W' : Submodule ℂ M.space.Carrier}
+  (M' : M.pair.SubmoduleModel W')
+
+@[simp]
+theorem comp_space : (M.comp M').space = M'.space :=
+  (rfl)
+
+@[simp]
+theorem comp_pair : (M.comp M').pair = M'.pair :=
+  (rfl)
+
+@[simp]
+theorem comp_embed : (M.comp M').embed = M.embed ∘ₗ M'.embed :=
+  (rfl)
+
+end comp
+
 /-- Shift a model of `W` by `c`: the shifted model pair embeds onto the same submodule for the
 shifted pair. -/
 @[expose] def shift (M : P.SubmoduleModel W) (c : ℤ) : (P.shift c).SubmoduleModel W where
@@ -219,6 +262,18 @@ shifted pair. -/
   embed_operator v := by
     simp only [operator_shift]
     exact M.embed_operator v
+
+@[simp]
+theorem shift_space (M : P.SubmoduleModel W) (c : ℤ) : (M.shift c).space = M.space.shift c :=
+  (rfl)
+
+@[simp]
+theorem shift_pair (M : P.SubmoduleModel W) (c : ℤ) : (M.shift c).pair = M.pair.shift c :=
+  (rfl)
+
+@[simp]
+theorem shift_embed (M : P.SubmoduleModel W) (c : ℤ) : (M.shift c).embed = M.embed :=
+  (rfl)
 
 /-- The embedding of a model carries the image of its operator onto the image of `W` under the
 ambient operator. -/
@@ -252,9 +307,10 @@ theorem nonempty_submoduleModel (P : GradedPair S d) {W : Submodule ℂ S.Carrie
       rw [hmem, LinearEquiv.apply_symm_apply]
       exact hv
     exact (hmem _ (P.operator.restrict hPW (e.symm v))).1 (P.isHomogeneous.map_mem hv')
+  let Q : GradedPair T d := ⟨R, hR⟩
   exact ⟨{
     space := T
-    pair := ⟨R, hR⟩
+    pair := Q
     embed := W.subtype ∘ₗ e.symm.toLinearMap
     embed_injective := W.injective_subtype.comp e.symm.injective
     range_embed := by
@@ -262,7 +318,7 @@ theorem nonempty_submoduleModel (P : GradedPair S d) {W : Submodule ℂ S.Carrie
     embed_mem_grade_iff := by
       intro a v
       simp [hmem]
-    embed_operator := fun v ↦ by simp [R] }⟩
+    embed_operator := fun v ↦ by simp [Q, R] }⟩
 
 /-- The actual range of a pair is spanned by its intersections with the grades. -/
 theorem iSup_range_inf_grade (P : GradedPair S d) :
@@ -295,9 +351,10 @@ theorem imageModel_zero_n : (imageModel (0 : GradedPair S d)).space.n = 0 :=
 
 /-- The image of a shifted pair is the shift of the image, up to graded isomorphism. -/
 theorem isomorphic_shift_imageModel (P : GradedPair S d) (c : ℤ) :
-    (P.imageModel.pair.shift c).Isomorphic (P.shift c).imageModel.pair :=
-  SubmoduleModel.isomorphic ((P.imageModel.shift c).congr (by rw [operator_shift]))
+    (P.imageModel.pair.shift c).Isomorphic (P.shift c).imageModel.pair := by
+  have h := SubmoduleModel.isomorphic ((P.imageModel.shift c).congr (by rw [operator_shift]))
     (P.shift c).imageModel
+  rwa [SubmoduleModel.congr_pair, SubmoduleModel.shift_pair] at h
 
 /-! ### Iterated images -/
 
@@ -310,10 +367,26 @@ variable {P : GradedPair S d} {W : Submodule ℂ S.Carrier}
 @[expose] noncomputable def image (M : P.SubmoduleModel W) : P.SubmoduleModel (W.map P.operator) :=
   (M.comp M.pair.imageModel).congr M.map_range_operator
 
+@[simp]
+theorem image_space (M : P.SubmoduleModel W) : M.image.space = M.pair.imageModel.space :=
+  (rfl)
+
 /-- The image of a model carries the image pair of the model pair. -/
+@[simp]
+theorem image_pair (M : P.SubmoduleModel W) : M.image.pair = M.pair.imageModel.pair :=
+  (rfl)
+
+/-- The image of a model is embedded through the model. -/
+@[simp]
+theorem image_embed (M : P.SubmoduleModel W) :
+    M.image.embed = M.embed ∘ₗ M.pair.imageModel.embed :=
+  (rfl)
+
+/-- The image of a model carries the image pair of the model pair, up to graded isomorphism. -/
 theorem isomorphic_image (M : P.SubmoduleModel W) :
-    M.image.pair.Isomorphic M.pair.imageModel.pair :=
-  Isomorphic.refl _
+    M.image.pair.Isomorphic M.pair.imageModel.pair := by
+  rw [image_pair]
+  exact Isomorphic.refl _
 
 end SubmoduleModel
 
@@ -326,15 +399,51 @@ previous one. -/
   | k + 1 => (P.iteratedImage k).image.congr (by
       rw [pow_succ', Module.End.mul_eq_comp, LinearMap.range_comp])
 
+@[simp]
+theorem iteratedImage_zero_space (P : GradedPair S d) : (P.iteratedImage 0).space = S :=
+  (rfl)
+
 /-- The zeroth iterated image is the pair itself. -/
-theorem isomorphic_iteratedImage_zero (P : GradedPair S d) :
-    (P.iteratedImage 0).pair.Isomorphic P :=
-  Isomorphic.refl _
+@[simp]
+theorem iteratedImage_zero_pair (P : GradedPair S d) : (P.iteratedImage 0).pair = P :=
+  (rfl)
+
+/-- The zeroth iterated image is embedded by the identity. -/
+@[simp]
+theorem iteratedImage_zero_embed (P : GradedPair S d) :
+    (P.iteratedImage 0).embed = LinearMap.id :=
+  (rfl)
+
+@[simp]
+theorem iteratedImage_succ_space (P : GradedPair S d) (k : ℕ) :
+    (P.iteratedImage (k + 1)).space = (P.iteratedImage k).pair.imageModel.space :=
+  (rfl)
 
 /-- The `(k + 1)`-st iterated image is the image of the `k`-th. -/
+@[simp]
+theorem iteratedImage_succ_pair (P : GradedPair S d) (k : ℕ) :
+    (P.iteratedImage (k + 1)).pair = (P.iteratedImage k).pair.imageModel.pair :=
+  (rfl)
+
+/-- The `(k + 1)`-st iterated image is embedded through the `k`-th by the chosen image model of
+its pair. -/
+@[simp]
+theorem iteratedImage_succ_embed (P : GradedPair S d) (k : ℕ) :
+    (P.iteratedImage (k + 1)).embed =
+      (P.iteratedImage k).embed ∘ₗ (P.iteratedImage k).pair.imageModel.embed :=
+  (rfl)
+
+/-- The zeroth iterated image is the pair itself, up to graded isomorphism. -/
+theorem isomorphic_iteratedImage_zero (P : GradedPair S d) :
+    (P.iteratedImage 0).pair.Isomorphic P := by
+  rw [iteratedImage_zero_pair]
+  exact Isomorphic.refl _
+
+/-- The `(k + 1)`-st iterated image is the image of the `k`-th, up to graded isomorphism. -/
 theorem isomorphic_iteratedImage_succ (P : GradedPair S d) (k : ℕ) :
-    (P.iteratedImage (k + 1)).pair.Isomorphic (P.iteratedImage k).pair.imageModel.pair :=
-  Isomorphic.refl _
+    (P.iteratedImage (k + 1)).pair.Isomorphic (P.iteratedImage k).pair.imageModel.pair := by
+  rw [iteratedImage_succ_pair]
+  exact Isomorphic.refl _
 
 /-- The total dimension of the `k`-th iterated image is the rank of `P.operator ^ k`. -/
 theorem iteratedImage_n (P : GradedPair S d) (k : ℕ) :
@@ -355,9 +464,10 @@ theorem exists_iteratedImage_n_eq_zero (P : GradedPair S d) :
 /-- The `k`-th iterated image of a shifted pair is the shift of the `k`-th iterated image, up to
 graded isomorphism. -/
 theorem isomorphic_shift_iteratedImage (P : GradedPair S d) (c : ℤ) (k : ℕ) :
-    ((P.iteratedImage k).pair.shift c).Isomorphic ((P.shift c).iteratedImage k).pair :=
-  SubmoduleModel.isomorphic (((P.iteratedImage k).shift c).congr (by rw [operator_shift]))
-    ((P.shift c).iteratedImage k)
+    ((P.iteratedImage k).pair.shift c).Isomorphic ((P.shift c).iteratedImage k).pair := by
+  have h := SubmoduleModel.isomorphic
+    (((P.iteratedImage k).shift c).congr (by rw [operator_shift])) ((P.shift c).iteratedImage k)
+  rwa [SubmoduleModel.congr_pair, SubmoduleModel.shift_pair] at h
 
 end GradedPair
 

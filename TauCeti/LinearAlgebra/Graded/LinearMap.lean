@@ -99,7 +99,7 @@ theorem IsHomogeneous.add [AddMemClass σN N] {f g : M →ₗ[R] N} {𝒜 : ι �
   simpa using add_mem (hf hx) (hg hx)
 
 /-- The range of a homogeneous linear map out of a module spanned by its graded pieces is spanned
-by its intersections with the target pieces: the range is a graded submodule. -/
+by its intersections with the target pieces. -/
 theorem IsHomogeneous.iSup_range_inf_eq {f : M →ₗ[R] N} {ℳ : ι → Submodule R M}
     {𝒩 : ι → Submodule R N} {q : ι} (hf : IsHomogeneous f ℳ 𝒩 q) (hℳ : ⨆ p, ℳ p = ⊤) :
     ⨆ p, range f ⊓ 𝒩 p = range f := by
