@@ -17,9 +17,8 @@ exactly on the slit plane. These facts control the branches in algebraic transfo
 involving sums of principal roots. The file also records the values `√i = e^{π i / 4}`,
 `√(-i τ) = (√i)⁻¹ √τ` for `τ` in the open upper half-plane, the splitting `√(r z) = √r √z`
 for real `r ≥ 0`, that the real square root of a nonnegative real, cast to `ℂ`, squares back
-to it, the negation law `Complex.sqrt_neg` together with its open half-plane corollaries
-`√(-z) = ∓i √z`, and packages the principal square root of a nonzero complex number as a unit,
-`Complex.sqrtUnit`.
+to it, the negation law `Complex.sqrt_neg`, and packages the principal square root of a nonzero
+complex number as a unit, `Complex.sqrtUnit`.
 -/
 
 public section
@@ -97,16 +96,6 @@ theorem sqrt_neg (z : ℂ) :
     ring_nf
     rw [I_sq]
     ring
-
-/-- In the open upper half-plane, negating the input multiplies the principal square root by `-i`:
-`arg (-z) = arg z - π`. -/
-theorem sqrt_neg_of_im_pos {z : ℂ} (hz : 0 < z.im) : sqrt (-z) = -I * sqrt z := by
-  rw [sqrt_neg, ite_eq_left (Or.inl hz)]
-
-/-- In the open lower half-plane, negating the input multiplies the principal square root by `i`:
-`arg (-z) = arg z + π`. -/
-theorem sqrt_neg_of_im_neg {z : ℂ} (hz : z.im < 0) : sqrt (-z) = I * sqrt z := by
-  rw [sqrt_neg, ite_eq_right (by rintro (h | ⟨h, _⟩) <;> linarith)]
 
 /-- The principal square root has nonnegative real part. -/
 @[simp]

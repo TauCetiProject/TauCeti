@@ -9,7 +9,6 @@ public import TauCeti.NumberTheory.LegendreSymbol.KroneckerSymbol
 public import TauCeti.NumberTheory.ModularForms.DedekindEta.Transformation
 import Mathlib.Data.ZMod.Basic
 import TauCeti.Algebra.Ring.Int.Parity
-import TauCeti.Analysis.SpecialFunctions.Exp.Periodic
 import TauCeti.Data.Int.MulPred
 import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Basic
 import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.ModularGroup
@@ -62,11 +61,9 @@ formula on all odd `c`.
   `c`.
 * `TauCeti.ModularForm.etaMultiplier_eq_kroneckerSym_mul_cexp_of_odd_c`: the Kronecker form with
   `(d / |c|)` for every odd `c` (positive or negative).
-* `TauCeti.ModularForm.etaMultiplier_eq_ite_kroneckerSym_mul_cexp_of_c_nonneg`,
-  `TauCeti.ModularForm.etaMultiplier_eq_ite_kroneckerSym_mul_cexp`: unified Kronecker-symbol
-  formula for `c ≥ 0` and on all of `SL(2, ℤ)`.
-* `TauCeti.ModularForm.etaMultiplier_eq_kroneckerSym_mul_cexp_of_isCoprime_c_six`,
-  `TauCeti.ModularForm.etaMultiplier_eq_kroneckerSym_mul_cexp_of_c_nonneg_of_isCoprime_c_six`:
+* `TauCeti.ModularForm.etaMultiplier_eq_ite_kroneckerSym_mul_cexp`: unified Kronecker-symbol
+  formula on all of `SL(2, ℤ)`.
+* `TauCeti.ModularForm.etaMultiplier_eq_kroneckerSym_mul_cexp_of_isCoprime_c_six`:
   simplified formula `ε(γ) = (d / |c|) e^{π i (a + d - 3) c / 12}` when `c` is prime to `6`.
 
 ## References
@@ -581,23 +578,6 @@ theorem etaMultiplier_eq_ite_kroneckerSym_mul_cexp (γ : SL(2, ℤ)) :
   · rw [ite_eq_right hodd]
     exact etaMultiplier_eq_kroneckerSym_mul_of_even_c γ (Int.not_odd_iff_even.mp hodd)
 
-/-- **Kronecker-symbol formula for the eta multiplier for `c ≥ 0`** (Strömberg, Remark 2.5,
-equation (2.5) for `c > 0`, extended here to `c = 0`): for `γ = (a b; c d) ∈ SL(2, ℤ)` with
-`c ≥ 0`, `|c| = c`, so `ε(γ)` is given in terms of `(d / c)` when `c` is odd and `(c / d)` when
-`c` is even. -/
-theorem etaMultiplier_eq_ite_kroneckerSym_mul_cexp_of_c_nonneg (γ : SL(2, ℤ)) (hc : 0 ≤ γ 1 0) :
-    etaMultiplier γ =
-      if Odd (γ 1 0) then
-        kroneckerSym (γ 1 1) (γ 1 0) *
-          cexp (2 * π * I *
-            (((γ 0 0 + γ 1 1) * γ 1 0 - γ 0 1 * γ 1 1 * (γ 1 0 ^ 2 - 1) - 3 * γ 1 0 : ℤ) : ℂ) / 24)
-      else
-        kroneckerSym (γ 1 0) (γ 1 1) *
-          cexp (2 * π * I *
-            (((γ 0 0 + γ 1 1) * γ 1 0 - γ 0 1 * γ 1 1 * (γ 1 0 ^ 2 - 1) +
-              3 * γ 1 1 - 3 - 3 * γ 1 0 * γ 1 1 : ℤ) : ℂ) / 24) := by
-  simpa [Int.natAbs_of_nonneg hc] using etaMultiplier_eq_ite_kroneckerSym_mul_cexp γ
-
 /-- When `c = γ 1 0` is coprime to `6`, `24 ∣ c² - 1`, so the `b d (c² - 1)` term drops out:
 `ε(γ) = (d / |c|) exp(π i (a + d - 3) c / 12)`. -/
 theorem etaMultiplier_eq_kroneckerSym_mul_cexp_of_isCoprime_c_six (γ : SL(2, ℤ))
@@ -607,22 +587,13 @@ theorem etaMultiplier_eq_kroneckerSym_mul_cexp_of_isCoprime_c_six (γ : SL(2, �
   have hc' : IsCoprime (γ 1 0) (2 * 3) := hc6
   have hodd : Odd (γ 1 0) := Int.isCoprime_two_right.mp hc'.of_mul_right_left
   obtain ⟨m, hm⟩ := Int.twentyFour_dvd_sq_sub_one_of_isCoprime_six hc6
-  have hdvd : (24 : ℤ) ∣ ((γ 0 0 + γ 1 1) * γ 1 0 - γ 0 1 * γ 1 1 * (γ 1 0 ^ 2 - 1) - 3 * γ 1 0) -
-      (γ 0 0 + γ 1 1 - 3) * γ 1 0 :=
-    ⟨-γ 0 1 * γ 1 1 * m, by linear_combination -γ 0 1 * γ 1 1 * hm⟩
-  have hexp := Complex.exp_two_pi_mul_I_mul_intCast_div_eq_of_dvd_sub hdvd
-  rw [Int.cast_ofNat] at hexp
+  have hcongr : (γ 0 0 + γ 1 1) * γ 1 0 - γ 0 1 * γ 1 1 * (γ 1 0 ^ 2 - 1) - 3 * γ 1 0 ≡
+      (γ 0 0 + γ 1 1 - 3) * γ 1 0 [ZMOD 24] :=
+    Int.modEq_iff_dvd.mpr ⟨γ 0 1 * γ 1 1 * m, by linear_combination γ 0 1 * γ 1 1 * hm⟩
+  have hexp := e24_congr hcongr
+  simp only [e24] at hexp
   rw [etaMultiplier_eq_kroneckerSym_mul_cexp_of_odd_c γ hodd, hexp]
   congr 2
   ring
-
-/-- When `c = γ 1 0 ≥ 0` is coprime to `6`, `24 ∣ c² - 1`, so the `b d (c² - 1)` term drops out:
-`ε(γ) = (d / c) exp(π i (a + d - 3) c / 12)`. -/
-theorem etaMultiplier_eq_kroneckerSym_mul_cexp_of_c_nonneg_of_isCoprime_c_six (γ : SL(2, ℤ))
-    (hc : 0 ≤ γ 1 0) (hc6 : IsCoprime (γ 1 0) 6) :
-    etaMultiplier γ = kroneckerSym (γ 1 1) (γ 1 0) *
-      cexp (π * I * (((γ 0 0 + γ 1 1 - 3) * γ 1 0 : ℤ) : ℂ) / 12) := by
-  rw [etaMultiplier_eq_kroneckerSym_mul_cexp_of_isCoprime_c_six γ hc6,
-    Int.natAbs_of_nonneg hc]
 
 end TauCeti.ModularForm

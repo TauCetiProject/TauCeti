@@ -27,15 +27,14 @@ More generally `0 ≤ s * (s - δ)` for every integer `δ` with `|δ| ≤ 1`: th
 The consecutive product `t * (t - 1)` is always even, so every integer satisfies `c ^ 2 ≡ c`
 modulo `2`, and the halved product `n * (n - 1) / 2` is an exact quotient. It satisfies the
 addition law `T(n + k) = T(n) + T(k) + n k` and the reflection `T(1 - n) = T(n)`, and on natural
-numbers it is the binomial coefficient `n.choose 2`. Likewise `3 ∣ c * (c ^ 2 - 1)` for every
-integer `c`, and `24 ∣ c ^ 2 - 1` when `c` is coprime to `6`.
+numbers it is the binomial coefficient `n.choose 2`. Likewise `24 ∣ c ^ 2 - 1` when `c` is coprime
+to `6`.
 
 ## Main results
 
 * `Int.zero_le_mul_sub_one` : `0 ≤ t * (t - 1)`.
 * `Int.zero_le_mul_sub_of_abs_le_one` : `0 ≤ s * (s - δ)` whenever `|δ| ≤ 1`.
 * `Int.two_dvd_sq_sub_self` : `2 ∣ c ^ 2 - c`.
-* `Int.three_dvd_mul_sq_sub_one` : `3 ∣ c * (c ^ 2 - 1)`.
 * `Int.twentyFour_dvd_sq_sub_one_of_isCoprime_six` : `24 ∣ c ^ 2 - 1` for `IsCoprime c 6`.
 * `Int.two_mul_mul_sub_one_ediv_two` : `n * (n - 1) / 2` is an exact quotient.
 * `Int.add_mul_add_sub_one_ediv_two` : the addition law for `n * (n - 1) / 2`.
@@ -68,10 +67,6 @@ theorem zero_le_mul_sub_of_abs_le_one {δ : ℤ} (hδ : |δ| ≤ 1) (s : ℤ) : 
 theorem two_dvd_sq_sub_self (c : ℤ) : (2 : ℤ) ∣ c ^ 2 - c := by
   rw [sq, ← mul_sub_one]
   exact (even_mul_pred_self c).two_dvd
-
-/-- Every integer satisfies `3 ∣ c * (c ^ 2 - 1)` (`c ^ 3 ≡ c` modulo `3`). -/
-theorem three_dvd_mul_sq_sub_one (c : ℤ) : (3 : ℤ) ∣ c * (c ^ 2 - 1) := by
-  simpa [mul_sub, ← pow_succ'] using prime_dvd_pow_self_sub Nat.prime_three c
 
 /-- For an integer `c` coprime to `6`, `24 ∣ c ^ 2 - 1`. -/
 theorem twentyFour_dvd_sq_sub_one_of_isCoprime_six {c : ℤ} (hc : IsCoprime c 6) :
