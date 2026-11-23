@@ -12,8 +12,9 @@ public import Mathlib.Topology.Algebra.Polynomial
 # Integrability and `Lᵖ` membership of polynomials against a finite-moment measure
 
 This file proves that a polynomial over a normed ring, evaluated along a function `g`, is
-integrable as soon as the powers of `g` occurring in it are, and that it lies in every `Lᵖ` with
-`p ≠ ∞` as soon as every power of `g` is integrable:
+integrable as soon as the powers of `g` occurring in it are, and that, when the norm is
+power-multiplicative, it lies in every `Lᵖ` with `p ≠ ∞` as soon as every power of `g` is
+integrable:
 
 * `integrable_eval_of_forall_mem_support` — `ω ↦ q(g ω)` is integrable, being a finite linear
   combination of powers of `g`, as soon as `gᵏ` is integrable for every `k` in the support of `q`,
@@ -26,14 +27,14 @@ integrable as soon as the powers of `g` occurring in it are, and that it lies in
   for every `k` in the support of `q`;
 * `memLp_eval_of_forall_integrable_pow` — over a normed ring with power-multiplicative norm,
   `ω ↦ q(g ω)` lies in `Lᵖ` for every `p ≠ ∞` when every power of `g` is integrable. Unlike the
-  support-indexed results, this assumes all moments, not only those occurring in `q`: they make the
-  measure finite (`g⁰ = 1` is integrable), and `‖gᵏ‖ⁿ = ‖gᵏⁿ‖` puts every power of `g` in every
-  `Lⁿ`.
+  support-indexed results, this assumes every moment, not only those occurring in `q`: for
+  `p > 1` and `k ≥ 1`, the `Lᵖ` membership of `gᵏ` concerns the moment of `‖g‖` of order `kp > k`.
 
-These results consume only the moment hypothesis, with no dependence on the particular measure,
-so they apply verbatim to the Gaussian measure (all moments finite by Fernique) and to the
-compactly supported Chebyshev measure alike. For a finite measure concentrated on a bounded set,
-`integrable_pow_of_ae_norm_le` supplies the hypothesis.
+These results assume nothing about the measure beyond the moment hypotheses, so they apply
+verbatim to the Gaussian measure (all moments finite by Fernique) and to the compactly supported
+Chebyshev measure alike. For an almost everywhere strongly measurable `g` that is almost
+everywhere bounded against a finite measure, `integrable_pow_of_ae_norm_le` supplies the
+hypothesis.
 
 Building on the `Lᵖ` membership, `polynomialEvalLp` sends a real polynomial to the `Lᵖ` class,
 for any `p ≠ ∞`, of its evaluation on `ℝ`, cast into any `[RCLike 𝕜]` scalar field, as an
@@ -91,12 +92,10 @@ theorem memLp_eval_of_forall_mem_support {p : ℝ≥0∞} {q : A[X]}
 
 /-- A polynomial over a normed ring with power-multiplicative norm (`‖aⁿ‖ = ‖a‖ⁿ` for `n ≥ 1`, as
 for `ℝ`, `ℂ`, or a sup-normed product or function algebra), evaluated along `g`, lies in every `Lᵖ`
-with `p ≠ ∞` as soon as every power of `g` is integrable. The measure is then finite, since
-`g⁰ = 1` is integrable, and `‖gᵏ‖ⁿ = ‖gᵏⁿ‖` puts every `gᵏ` in `Lⁿ` for a natural number `n > p`,
-hence in `Lᵖ`; `memLp_eval_of_forall_mem_support` concludes. Some condition on the norm is
-needed: for a square-zero real `2 × 2` matrix `e` and a real function `h`, every power of
-`g = h • e` is integrable against a finite measure as soon as `h` is, since `gᵏ = 0` for `k ≥ 2`,
-even if `h`, hence `g`, is not in `L²`. -/
+with `p ≠ ∞` as soon as every power of `g` is integrable. Some condition on the norm is needed:
+for a square-zero real `2 × 2` matrix `e` and a real function `h`, every power of `g = h • e` is
+integrable against a finite measure as soon as `h` is, since `gᵏ = 0` for `k ≥ 2`, even if `h`,
+hence `g`, is not in `L²`. -/
 theorem memLp_eval_of_forall_integrable_pow (hA : IsPowMul (‖·‖ : A → ℝ)) {p : ℝ≥0∞}
     (hp : p ≠ ∞) (hmom : ∀ k : ℕ, Integrable (fun ω => g ω ^ k) μ) (q : A[X]) :
     MemLp (fun ω => q.eval (g ω)) p μ := by
