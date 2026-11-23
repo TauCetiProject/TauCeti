@@ -5,16 +5,17 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Topology.VectorBundle.FiniteRank.Bundle.Equivalence
+public import TauCeti.Topology.VectorBundle.FiniteRank.Bundle.ToAtlas
 public import TauCeti.Topology.VectorBundle.FiniteRank.Bundle.ULift.Basic
 
 /-!
-# Comparison of universe lifting with the atlas equivalence
+# Comparison of universe lifting with the forward atlas functor
 
-`FiniteRankVectorBundle.uliftFunctor 𝕜 X` commutes with `FiniteRankVectorBundle.toAtlasFunctor 𝕜 X`
-up to the canonical natural isomorphism `FiniteRankVectorBundle.uliftToAtlasNatIso`, which is the
-identity on every coordinate fibre. Consequently, `uliftFunctor 𝕜 X` is an equivalence of categories
-whenever `[UnivLE.{v, w}]` holds.
+`FiniteRankVectorBundle.uliftFunctor 𝕜 X` commutes unconditionally with
+`FiniteRankVectorBundle.toAtlasFunctor 𝕜 X` up to the canonical natural isomorphism
+`FiniteRankVectorBundle.uliftToAtlasNatIso`, which is the identity on every coordinate fibre.
+For the conditional equivalence instance when `[UnivLE.{v, w}]` holds, see
+`TauCeti.Topology.VectorBundle.FiniteRank.Bundle.ULift.Equivalence`.
 
 ## References
 
@@ -67,10 +68,5 @@ variable {𝕜 X}
   simpa only [fiberMap_comp, fiberMap_uliftToAtlasNatIso_hom_app, LinearMap.id_comp, fiberMap_id]
     using congrArg (fun k : (toAtlasFunctor.{u, v, w} 𝕜 X).obj V ⟶ _ ↦ k.fiberMap x)
       ((uliftToAtlasNatIso.{u, v, w, w'} 𝕜 X).inv_hom_id_app V)
-
-instance [UnivLE.{v, w}] : (uliftFunctor.{u, v, w, w'} 𝕜 X).IsEquivalence := by
-  have : UnivLE.{v, max w w'} := @UnivLE.trans.{v, w, max w w'} ‹_› inferInstance
-  have := Functor.isEquivalence_of_iso (uliftToAtlasNatIso.{u, v, w, w'} 𝕜 X).symm
-  exact Functor.isEquivalence_of_comp_right (uliftFunctor 𝕜 X) (toAtlasFunctor 𝕜 X)
 
 end TauCeti.FiniteRankVectorBundle

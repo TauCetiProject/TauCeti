@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Topology.Grassmannian.Infinite.ClassifyingCoordinates
-public import TauCeti.Topology.VectorBundle.FiniteRank.Pullback.Basic
+public import TauCeti.Topology.VectorBundle.FiniteRank.Pullback.RankClass
 public import TauCeti.Topology.VectorBundle.HomotopyInvariance
 import TauCeti.LinearAlgebra.Finsupp.LMapDomain
 import TauCeti.Topology.Category.TopCat.Limits.Homotopy
