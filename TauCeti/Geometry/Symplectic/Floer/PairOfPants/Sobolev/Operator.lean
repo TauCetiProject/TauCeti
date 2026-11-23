@@ -164,50 +164,15 @@ theorem norm_floerConformalJetCoeff_positiveEndChart_le (ω : SymplecticForm V)
       (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x 1)
       (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x Complex.I) u
       (positiveEndChart q ζ)‖ ≤ 1 + B + (1 + B) * B / (2 * π) := by
-  have hB0 : 0 ≤ B := (norm_nonneg _).trans hB
-  rw [floerJetCoeff_def] at hB
-  -- The leading coefficient `J(w, u w) = J_q(t)(u w)` and the end coefficient `C_end(ζ)` are
-  -- components of the coefficient field on jets of the end datum.
-  have hJb : ‖(J (positiveEndChart q ζ)
-      (u (positiveEndChart q ζ))).toLinearMap.toContinuousLinearMap‖ ≤ B := by
-    rw [hJz]
-    exact (norm_le_norm_firstOrderJetCoeff_left _ _).trans hB
-  have hCe : ‖ω.floerLinearizationCoeff
-      (fun ζ' y ↦ (J (positiveEndChart q ζ') y).toLinearMap.toContinuousLinearMap)
-      (fun _ _ ↦ 0) (fun ζ' ↦ positiveEndHamiltonian H q ζ'.2) (u ∘ positiveEndChart q) ζ‖ ≤ B := by
-    have heq : ω.floerLinearizationCoeff
-        (fun ζ' y ↦ (J (positiveEndChart q ζ') y).toLinearMap.toContinuousLinearMap)
-        (fun _ _ ↦ 0) (fun ζ' ↦ positiveEndHamiltonian H q ζ'.2) (u ∘ positiveEndChart q) ζ =
-      ω.floerLinearizationCoeff (fun w y ↦ (Jq w.2 y).toLinearMap.toContinuousLinearMap)
-        (fun _ _ ↦ 0) (fun w ↦ positiveEndHamiltonian H q w.2) (u ∘ positiveEndChart q) ζ := by
-      ext v
-      simp only [floerLinearizationCoeff_apply, Function.comp_apply, hJz]
-    rw [heq]
-    exact (norm_le_norm_firstOrderJetCoeff_right _ _).trans hB
   -- The zeroth-order part `C(w)` is at most `(1 + B) B / (2π d)` with `d = |w - c_q|`, and the
   -- weight is at least `d⁻²`.
-  have hcmp := ω.mul_norm_floerLinearizationCoeff_positiveEndChart_le hH hHs hζ hu hfl
   have hne := equivRealProdCLM_symm_positiveEndChart_ne_endCenter q ζ
-  have hρd := inv_sqrt_cylindricalWeight_le_norm_sub_endCenter q hne
-  generalize ‖Complex.equivRealProdCLM.symm (positiveEndChart q ζ) - q.endCenter‖ = d
-    at hcmp hρd
-  refine (ω.norm_floerConformalJetCoeff_le _ _ _ _ _ _).trans ?_
-  have hc := norm_nonneg (ω.floerLinearizationCoeff
-    (fun z y ↦ (J z y).toLinearMap.toContinuousLinearMap)
-    (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x 1)
-    (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x Complex.I) u
-    (positiveEndChart q ζ))
-  generalize ‖ω.floerLinearizationCoeff (fun z y ↦ (J z y).toLinearMap.toContinuousLinearMap)
-    (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x 1)
-    (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x Complex.I) u
-    (positiveEndChart q ζ)‖ = c at hcmp hc ⊢
-  have hC : d * c ≤ (1 + B) * B / (2 * π) := by
-    rw [le_div_iff₀ (mul_pos two_pos pi_pos)]
-    calc d * c * (2 * π) = 2 * π * d * c := by ring
-      _ ≤ _ := hcmp
-      _ ≤ (1 + B) * B := mul_le_mul (by linarith) hCe (norm_nonneg _) (by linarith)
-  calc _ ≤ 1 + B + d * c := by gcongr
-    _ ≤ 1 + B + (1 + B) * B / (2 * π) := by gcongr
+  refine (ω.norm_floerConformalJetCoeff_le_of_norm_floerJetCoeff_comp_le
+    (ρ := cylindricalWeight) (by simp only [hJz]) hB
+    (ω.mul_norm_floerLinearizationCoeff_positiveEndChart_le hH hHs hζ hu hfl) ?_
+    (inv_nonneg.2 (mul_pos two_pos pi_pos).le)).trans_eq (by ring)
+  rw [← mul_assoc, inv_mul_cancel₀ (mul_pos two_pos pi_pos).ne', one_mul]
+  exact inv_sqrt_cylindricalWeight_le_norm_sub_endCenter q hne
 
 /-- **The linearized operator of a Floer pair of pants is bounded on `W^{1,2}`.** Let `H_q` be
 jointly `C²` period-one Hamiltonians on the three ends of `S = ℂ ∖ {0, 1}`, let `u` be `C¹` on `S`,

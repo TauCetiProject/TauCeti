@@ -27,8 +27,9 @@ The operators `∂s + A ∂t + C` with `A, C : V →L[ℝ] V`, such as the linea
 have the coefficient field `(a, b, c) ↦ b + A c + C a` on jets (`TauCeti.firstOrderJetCoeff`),
 whose norm is at most `1 + ‖A‖ + ‖C‖` (`TauCeti.norm_firstOrderJetCoeff_le`) and at least `‖A‖`
 and `‖C‖` (`TauCeti.norm_le_norm_firstOrderJetCoeff_left`,
-`TauCeti.norm_le_norm_firstOrderJetCoeff_right`), and which depends
-continuously on `A` and `C` (`TauCeti.continuousAt_firstOrderJetCoeff`).
+`TauCeti.norm_le_norm_firstOrderJetCoeff_right`), which changes by at most `‖C - C'‖` when `C`
+is replaced by `C'` (`TauCeti.norm_firstOrderJetCoeff_sub_firstOrderJetCoeff_le`), and which
+depends continuously on `A` and `C` (`TauCeti.continuousAt_firstOrderJetCoeff`).
 
 The Sobolev spaces on the cylinder (with the strip measure) and on conformally weighted domains
 of the plane (with Lebesgue measure restricted to the domain) both realize first-order operators
@@ -171,6 +172,17 @@ theorem norm_firstOrderJetCoeff_le (A C : V →L[ℝ] V) :
       (norm_snd_le ℝ V V)).trans (norm_snd_le ℝ V (V × V)))
   · exact (opNorm_comp_le _ _).trans (mul_le_of_le_one_right (norm_nonneg _)
       (norm_fst_le ℝ V (V × V)))
+
+/-- The coefficient fields of two operators `∂s + A ∂t + C` and `∂s + A ∂t + C'` with the same
+principal part differ by at most `‖C - C'‖`. -/
+theorem norm_firstOrderJetCoeff_sub_firstOrderJetCoeff_le (A C C' : V →L[ℝ] V) :
+    ‖firstOrderJetCoeff A C - firstOrderJetCoeff A C'‖ ≤ ‖C - C'‖ := by
+  have h : firstOrderJetCoeff A C - firstOrderJetCoeff A C' =
+      (C - C').comp (ContinuousLinearMap.fst ℝ V (V × V)) :=
+    ContinuousLinearMap.ext fun v ↦ by simp
+  rw [h]
+  exact (ContinuousLinearMap.opNorm_comp_le _ _).trans
+    (mul_le_of_le_one_right (norm_nonneg _) (ContinuousLinearMap.norm_fst_le ℝ V (V × V)))
 
 /-- The leading coefficient `A` of `∂s + A ∂t + C` is a component of its coefficient field on
 jets: `A v` is the value of the field on `(0, 0, v)`. -/
