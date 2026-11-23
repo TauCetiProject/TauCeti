@@ -9,7 +9,7 @@ public import Mathlib.Analysis.InnerProductSpace.PiL2
 public import Mathlib.Analysis.Normed.Module.Multilinear.Basic
 public import Mathlib.Topology.MetricSpace.Holder
 import TauCeti.Topology.MetricSpace.Holder
-import TauCeti.LinearAlgebra.Multilinear.Basis
+import TauCeti.Analysis.Normed.Module.Multilinear.Basis
 
 /-!
 # The norm of a multilinear map on an orthonormal basis
@@ -17,8 +17,10 @@ import TauCeti.LinearAlgebra.Multilinear.Basis
 A continuous multilinear map `M` on finite-dimensional inner product spaces is determined by its
 values on tuples of vectors of orthonormal bases `b j`, and its operator norm is controlled by
 them: `‖M‖ ≤ ∑_r ‖M (fun j => b j (r j))‖`, the sum running over all tuples `r` of basis indices
-(`ContinuousMultilinearMap.opNorm_le_sum_norm_apply_orthonormalBasis`). For a second derivative,
-this bounds the norm of the Hessian by the sum of the absolute values of its matrix entries.
+(`ContinuousMultilinearMap.opNorm_le_sum_norm_apply_orthonormalBasis`). This is the case of the
+bound `ContinuousMultilinearMap.opNorm_le_prod_mul_sum_norm_apply_basis` for arbitrary bases in
+which the coordinate isomorphisms have norm at most one. For a second derivative, this bounds the
+norm of the Hessian by the sum of the absolute values of its matrix entries.
 The linear case, `‖L‖ ≤ ∑ i, ‖L (b i)‖`, is
 `ContinuousLinearMap.opNorm_le_sum_norm_apply_orthonormalBasis`; for a first derivative it bounds
 the norm of the gradient by the sum of the absolute values of the partial derivatives. Its square
@@ -103,18 +105,15 @@ of the norms of its values on tuples of vectors of orthonormal bases, one for ea
 theorem opNorm_le_sum_norm_apply_orthonormalBasis
     (M : ContinuousMultilinearMap 𝕜 E G) (b : ∀ j, OrthonormalBasis (ι j) 𝕜 (E j)) :
     ‖M‖ ≤ ∑ r : ∀ j, ι j, ‖M fun j => b j (r j)‖ := by
-  refine M.opNorm_le_bound (Finset.sum_nonneg fun _ _ => norm_nonneg _) fun m => ?_
-  -- Expand each argument in the basis and use multilinearity.
-  have hM : M m = ∑ r : ∀ j, ι j, (∏ j, (b j).repr (m j) (r j)) •
-      M fun j => b j (r j) := by
-    simpa only [OrthonormalBasis.coe_toBasis_repr_apply, OrthonormalBasis.coe_toBasis,
-      ContinuousMultilinearMap.coe_coe] using
-      M.toMultilinearMap.apply_eq_sum_prod_repr_smul (fun j => (b j).toBasis) m
-  rw [hM, Finset.sum_mul]
-  refine (norm_sum_le _ _).trans (Finset.sum_le_sum fun r _ => ?_)
-  rw [norm_smul, norm_prod, mul_comm]
-  gcongr with j
-  exact (PiLp.norm_apply_le ((b j).repr (m j)) (r j)).trans_eq ((b j).repr.norm_map (m j))
+  -- The coordinate isomorphisms of orthonormal bases have norm at most one.
+  refine (M.opNorm_le_prod_mul_sum_norm_apply_basis fun j => (b j).toBasis).trans ?_
+  simp only [OrthonormalBasis.coe_toBasis]
+  refine mul_le_of_le_one_left (Finset.sum_nonneg fun _ _ => norm_nonneg _)
+    (Finset.prod_le_one₀ (fun _ _ => norm_nonneg _) fun j _ => ?_)
+  refine ContinuousLinearMap.opNorm_le_bound _ zero_le_one fun x => ?_
+  rw [one_mul]
+  refine (pi_norm_le_iff_of_nonneg (norm_nonneg x)).2 fun i => ?_
+  simpa using (PiLp.norm_apply_le ((b j).repr x) i).trans_eq ((b j).repr.norm_map x)
 
 end ContinuousMultilinearMap
 

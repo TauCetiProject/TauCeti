@@ -103,8 +103,8 @@ theorem eq_of_betaNumber_eq {ν : YoungDiagram} (hμ : μ.colLen 0 ≤ r) (hν :
   · have := h i hi
     rw [betaNumber_def, betaNumber_def] at this
     omega
-  · rw [rowLen_eq_zero_of_colLen_le (hμ.trans (Nat.not_lt.mp hi)),
-      rowLen_eq_zero_of_colLen_le (hν.trans (Nat.not_lt.mp hi))]
+  · rw [rowLen_eq_zero_iff.mpr (hμ.trans (Nat.not_lt.mp hi)),
+      rowLen_eq_zero_iff.mpr (hν.trans (Nat.not_lt.mp hi))]
 
 /-- The beta-numbers relative to a bound `r` strictly decrease along the indices `Fin r`. -/
 theorem strictAnti_betaNumber (μ : YoungDiagram) (r : ℕ) :
