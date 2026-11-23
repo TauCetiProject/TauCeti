@@ -19,7 +19,6 @@ equation into a bound on the full differential: if `L I = A (L 1)` with `‖A‖
 `‖L 1‖ ≤ B` this bounds the operator norm by `(1 + M) * B`
 (`ContinuousLinearMap.norm_le_of_apply_I_eq`), and such an `L` vanishes exactly when `L 1` does
 (`ContinuousLinearMap.eq_zero_iff_apply_one_eq_zero_of_apply_I_eq`). If moreover `A² = -1`, then
-`L 1 + A (L I) = 0` (`ContinuousLinearMap.apply_one_add_apply_apply_I_eq_zero_of_apply_I_eq`), so
 `L I` vanishes exactly when `L 1` does
 (`ContinuousLinearMap.apply_I_eq_zero_iff_apply_one_eq_zero_of_apply_I_eq`).
 
@@ -70,20 +69,15 @@ theorem eq_zero_iff_apply_one_eq_zero_of_apply_I_eq {f : K →L[ℝ] V} {L : V �
   simp [RCLike.ofReal_alg, hCR, h]
 
 /-- If a real-linear map `f : K → V` out of an `RCLike` field satisfies `f I = L (f 1)` for a
-complex structure `L`, `L² = -1`, then `f 1 + L (f I) = 0`. -/
-theorem apply_one_add_apply_apply_I_eq_zero_of_apply_I_eq {f : K →L[ℝ] V} {L : V →L[ℝ] V}
-    (hL : L ∘L L = -ContinuousLinearMap.id ℝ V) (hCR : f RCLike.I = L (f 1)) :
-    f 1 + L (f RCLike.I) = 0 := by
-  rw [hCR, ← comp_apply, hL]
-  simp
-
-/-- If a real-linear map `f : K → V` out of an `RCLike` field satisfies `f I = L (f 1)` for a
 complex structure `L`, `L² = -1`, then `f I` vanishes exactly when `f 1` does. -/
 theorem apply_I_eq_zero_iff_apply_one_eq_zero_of_apply_I_eq {f : K →L[ℝ] V} {L : V →L[ℝ] V}
     (hL : L ∘L L = -ContinuousLinearMap.id ℝ V) (hCR : f RCLike.I = L (f 1)) :
     f RCLike.I = 0 ↔ f 1 = 0 := by
   refine ⟨fun h ↦ ?_, fun h ↦ by rw [hCR, h, map_zero]⟩
-  simpa [h] using apply_one_add_apply_apply_I_eq_zero_of_apply_I_eq hL hCR
+  have h1 : f 1 + L (f RCLike.I) = 0 := by
+    rw [hCR, ← comp_apply, hL]
+    simp
+  simpa [h] using h1
 
 end ContinuousLinearMap
 

@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Complex.CauchyRiemann.RoughCoefficients.HigherOrder
 public import TauCeti.Analysis.Complex.CauchyRiemann.Weak.Invariance
+import TauCeti.Analysis.Complex.CauchyRiemann.NormalDerivative
 import TauCeti.Analysis.Complex.CauchyRiemann.Weak
 import TauCeti.Analysis.RCLike.OperatorNorm
 import TauCeti.Data.ENNReal.Holder
@@ -75,7 +76,8 @@ private theorem isWeakCRSolution_of_cauchyRiemann (hA : ContDiffOn ℝ 1 A Ω)
     IsWeakCRSolution p Ω A (fderiv ℝ A) 0 u 0 :=
   (isWeakCRSolution_iff_of_contDiffOn hA continuous_zero.continuousOn hu
     continuous_zero.continuousOn).2 fun z hz ↦ by
-      simpa using apply_one_add_apply_apply_I_eq_zero_of_apply_I_eq (hAA z hz) (hCR z hz)
+      simpa using (add_apply_add_eq_iff_eq_apply_add_sub (hAA z hz) (c := 0) (y := 0)).2
+        (by simpa using hCR z hz)
 
 /-- `W^{2,p}_loc` regularity for `2 < p < ∞` on an inner product space. -/
 private theorem memWkpLoc_two_of_two_lt (hA : ContDiffOn ℝ 1 A Ω)

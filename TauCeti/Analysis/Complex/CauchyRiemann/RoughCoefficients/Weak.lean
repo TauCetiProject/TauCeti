@@ -430,12 +430,10 @@ end IsWeakCRSolution
 /-- **`C¹` coefficients are Sobolev coefficients.** A field `J` of class `C¹` on `Ω` and a
 continuous zeroth-order term `S` form Sobolev coefficients for every exponent `p`, with weak
 derivative the classical derivative `fderiv ℝ J`. -/
-theorem IsSobolevCRCoefficients.of_contDiffOn [FiniteDimensional ℝ V] (hJ : ContDiffOn ℝ 1 J Ω)
+theorem IsSobolevCRCoefficients.of_contDiffOn (hJ : ContDiffOn ℝ 1 J Ω)
     (hS : ContinuousOn S Ω) (p : ℝ≥0∞) : IsSobolevCRCoefficients p Ω J (fderiv ℝ J) S := by
   have hJ' : ContinuousOn (fderiv ℝ J) Ω := hJ.continuousOn_fderiv_of_isOpen Ω.isOpen le_rfl
-  exact ⟨hasWeakFDerivOn_of_differentiableOn (hJ'.locallyIntegrableOn Ω.isOpen.measurableSet)
-    fun z hz => (hJ.differentiableOn one_ne_zero z hz).differentiableAt (Ω.isOpen.mem_nhds hz),
-    hJ.continuousOn.memLpLoc, hJ'.memLpLoc, hS.memLpLoc⟩
+  exact ⟨hJ.hasWeakFDerivOn_fderiv, hJ.continuousOn.memLpLoc, hJ'.memLpLoc, hS.memLpLoc⟩
 
 /-- **Classical solutions.** For `C¹` coefficients `J` on `Ω`, with `DJ = fderiv ℝ J`, continuous
 `S`, a `C¹` field `ξ` and a continuous right-hand side `η`, the weak equation is the classical
@@ -446,9 +444,7 @@ theorem isWeakCRSolution_iff_of_contDiffOn [FiniteDimensional ℝ V] (hJ : ContD
       ∀ z ∈ (Ω : Set ℂ), fderiv ℝ ξ z 1 + J z (fderiv ℝ ξ z I) + S z (ξ z) = η z := by
   have hξ' : ContinuousOn (fderiv ℝ ξ) Ω := hξ.continuousOn_fderiv_of_isOpen Ω.isOpen le_rfl
   have hc := IsSobolevCRCoefficients.of_contDiffOn hJ hS 2
-  have hξw : HasWeakFDerivOn volume Ω ξ (fderiv ℝ ξ) :=
-    hasWeakFDerivOn_of_differentiableOn (hξ'.locallyIntegrableOn Ω.isOpen.measurableSet)
-      fun z hz => (hξ.differentiableOn one_ne_zero z hz).differentiableAt (Ω.isOpen.mem_nhds hz)
+  have hξw : HasWeakFDerivOn volume Ω ξ (fderiv ℝ ξ) := hξ.hasWeakFDerivOn_fderiv
   have hη' : LocallyIntegrableOn η Ω := hη.locallyIntegrableOn Ω.isOpen.measurableSet
   have hL : ContinuousOn (fun z => fderiv ℝ ξ z 1 + J z (fderiv ℝ ξ z I) + S z (ξ z)) Ω :=
     ((hξ'.clm_apply continuousOn_const).add
