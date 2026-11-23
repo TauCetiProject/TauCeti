@@ -60,12 +60,6 @@ namespace PeriodicComplex
 
 section Compression
 
-/-- Reading the degrees modulo `n` keeps a matrix raising the degrees by one raising them by one. -/
-theorem intCast_eq_intCast_add_one {R : Type*} [Zero R] {ι : Type*} (n : ℕ) {e : ι → ℤ}
-    {D : Matrix ι ι R} (hD : ∀ i k, D i k ≠ 0 → e k = e i + 1) (i k : ι) (h : D i k ≠ 0) :
-    (e k : ZMod n) = e i + 1 := by
-  rw [hD i k h, Int.cast_add, Int.cast_one]
-
 variable {R : Type u} [CommRing R] {ι : Type v} [Fintype ι] (n : ℕ) (e : ι → ℤ)
   (D : Matrix ι ι R) (hD : ∀ i k, D i k ≠ 0 → e k = e i + 1) (hDD : D * D = 0)
 
@@ -74,7 +68,7 @@ residues. -/
 private def toResidue (j : ℤ) (r : ZMod n) :
     (gradedMatrixComplex e D hD hDD).X j ⟶
       (gradedMatrixComplex (fun i ↦ (e i : ZMod n)) D
-        (intCast_eq_intCast_add_one n hD) hDD).X r :=
+        (gradedMatrix_degree_intCast hD) hDD).X r :=
   ModuleCat.ofHom <| (gradedMatrixComplexBasis e D hD hDD j).constr R fun i ↦
     if h : (e i : ZMod n) = r then gradedMatrixComplexBasis _ D _ hDD r ⟨i, h⟩ else 0
 
@@ -82,14 +76,14 @@ private theorem toResidue_basis (j : ℤ) (r : ZMod n) (i : {i // e i = j})
     (h : (e i : ZMod n) = r) :
     (toResidue n e D hD hDD j r).hom (gradedMatrixComplexBasis e D hD hDD j i) =
       gradedMatrixComplexBasis _ D
-        (intCast_eq_intCast_add_one n hD) hDD r ⟨i, h⟩ := by
+        (gradedMatrix_degree_intCast hD) hDD r ⟨i, h⟩ := by
   rw [toResidue, ModuleCat.hom_ofHom, Basis.constr_basis]
   simp [h]
 
 /-- The generators of residue `r` go to the same generators in the summands of their degrees. -/
 private def fromResidue (r : ZMod n) :
     (gradedMatrixComplex (fun i ↦ (e i : ZMod n)) D
-        (intCast_eq_intCast_add_one n hD) hDD).X r ⟶
+        (gradedMatrix_degree_intCast hD) hDD).X r ⟶
       (compression n (gradedMatrixComplex e D hD hDD)).X r :=
   ModuleCat.ofHom <| (gradedMatrixComplexBasis _ D _ hDD r).constr R fun i ↦
     (ιCompression n (gradedMatrixComplex e D hD hDD) (e i) r i.property).hom
@@ -97,7 +91,7 @@ private def fromResidue (r : ZMod n) :
 
 private theorem fromResidue_basis (r : ZMod n) (i : {i // (e i : ZMod n) = r}) :
     (fromResidue n e D hD hDD r).hom (gradedMatrixComplexBasis _ D
-        (intCast_eq_intCast_add_one n hD) hDD r i) =
+        (gradedMatrix_degree_intCast hD) hDD r i) =
       (ιCompression n (gradedMatrixComplex e D hD hDD) (e i) r i.property).hom
         (gradedMatrixComplexBasis e D hD hDD (e i) ⟨i, rfl⟩) := by
   rw [fromResidue, ModuleCat.hom_ofHom, Basis.constr_basis]
@@ -107,7 +101,7 @@ private theorem compressionDesc_toResidue_basis (j : ℤ) (r : ZMod n) (hj : (j 
     (compressionDesc n _ fun j _ ↦ toResidue n e D hD hDD j r).hom
         ((ιCompression n (gradedMatrixComplex e D hD hDD) j r hj).hom
           (gradedMatrixComplexBasis e D hD hDD j i)) =
-      gradedMatrixComplexBasis _ D (intCast_eq_intCast_add_one n hD) hDD r
+      gradedMatrixComplexBasis _ D (gradedMatrix_degree_intCast hD) hDD r
         ⟨i, by rw [i.property, hj]⟩ := by
   rw [← LinearMap.comp_apply, ← ModuleCat.hom_comp, ιCompression_compressionDesc]
   exact toResidue_basis n e D hD hDD j r i _
@@ -117,7 +111,7 @@ private theorem compressionDesc_toResidue_basis (j : ℤ) (r : ZMod n) (hj : (j 
 private def compressionXIso (r : ZMod n) :
     (compression n (gradedMatrixComplex e D hD hDD)).X r ≅
       (gradedMatrixComplex (fun i ↦ (e i : ZMod n)) D
-        (intCast_eq_intCast_add_one n hD) hDD).X r where
+        (gradedMatrix_degree_intCast hD) hDD).X r where
   hom := compressionDesc n _ fun j _ ↦ toResidue n e D hD hDD j r
   inv := fromResidue n e D hD hDD r
   hom_inv_id := by
@@ -138,7 +132,7 @@ The generators of each summand go to the same generators
 def compressionGradedMatrixComplexIso :
     compression n (gradedMatrixComplex e D hD hDD) ≅
       gradedMatrixComplex (fun i ↦ (e i : ZMod n)) D
-        (intCast_eq_intCast_add_one n hD) hDD :=
+        (gradedMatrix_degree_intCast hD) hDD :=
   HomologicalComplex.Hom.isoOfComponents (compressionXIso n e D hD hDD) fun r s hrs ↦ by
     refine compression_hom_ext fun j hj ↦ ModuleCat.hom_ext <|
       (gradedMatrixComplexBasis e D hD hDD j).ext fun i ↦ ?_
@@ -167,7 +161,7 @@ theorem compressionGradedMatrixComplexIso_hom_f_ιCompression (j : ℤ) (r : ZMo
     ((compressionGradedMatrixComplexIso n e D hD hDD).hom.f r).hom
         ((ιCompression n (gradedMatrixComplex e D hD hDD) j r hj).hom
           (gradedMatrixComplexBasis e D hD hDD j i)) =
-      gradedMatrixComplexBasis _ D (intCast_eq_intCast_add_one n hD) hDD
+      gradedMatrixComplexBasis _ D (gradedMatrix_degree_intCast hD) hDD
         r ⟨i, by rw [i.property, hj]⟩ := by
   simp only [compressionGradedMatrixComplexIso, HomologicalComplex.Hom.isoOfComponents_hom_f,
     compressionXIso]
@@ -179,7 +173,7 @@ generator in the summand of its degree. -/
 theorem compressionGradedMatrixComplexIso_inv_f_basis (r : ZMod n)
     (i : {i // (e i : ZMod n) = r}) :
     ((compressionGradedMatrixComplexIso n e D hD hDD).inv.f r).hom
-        (gradedMatrixComplexBasis _ D (intCast_eq_intCast_add_one n hD) hDD r i) =
+        (gradedMatrixComplexBasis _ D (gradedMatrix_degree_intCast hD) hDD r i) =
       (ιCompression n (gradedMatrixComplex e D hD hDD) (e i) r i.property).hom
         (gradedMatrixComplexBasis e D hD hDD (e i) ⟨i, rfl⟩) := by
   simp only [compressionGradedMatrixComplexIso, HomologicalComplex.Hom.isoOfComponents_inv_f,
@@ -193,7 +187,7 @@ the direct sum of the homology of `gradedMatrixComplex e D` in the degrees of `[
 def homologyGradedMatrixComplexIntCastIso (a b : ℤ) (ha : ∀ i, a ≤ e i) (hb : ∀ i, e i ≤ b)
     (r : ZMod n) :
     (gradedMatrixComplex (fun i ↦ (e i : ZMod n)) D
-        (intCast_eq_intCast_add_one n hD) hDD).homology r ≅
+        (gradedMatrix_degree_intCast hD) hDD).homology r ≅
       ⨁ fun j : ({j ∈ Finset.Icc a b | (j : ZMod n) = r} : Finset ℤ) ↦
         (gradedMatrixComplex e D hD hDD).homology j :=
   have := isStrictlyGE_gradedMatrixComplex (hD := hD) (hDD := hDD) ha
@@ -214,7 +208,7 @@ change the total dimension of its homology, if the degrees of the generators lie
 theorem sum_finrank_homology_gradedMatrixComplex_intCast (a b : ℤ) (ha : ∀ i, a ≤ e i)
     (hb : ∀ i, e i ≤ b) :
     ∑ r : ZMod n, finrank k ((gradedMatrixComplex (fun i ↦ (e i : ZMod n)) D
-        (intCast_eq_intCast_add_one n hD) hDD).homology r) =
+        (gradedMatrix_degree_intCast hD) hDD).homology r) =
       ∑ j ∈ Finset.Icc a b, finrank k ((gradedMatrixComplex e D hD hDD).homology j) := by
   have := isStrictlyGE_gradedMatrixComplex (hD := hD) (hDD := hDD) ha
   have := isStrictlyLE_gradedMatrixComplex (hD := hD) (hDD := hDD) hb

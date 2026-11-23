@@ -109,6 +109,18 @@ private theorem blockMap_eq_zero (e : ι → A) (f : κ → A) (a b : A) {M : Ma
 
 end Block
 
+section Degree
+
+/-- Casting integer degrees into an additive group with one keeps a matrix raising the degrees by
+one raising them by one: this is the degree hypothesis of `TauCeti.gradedMatrixComplex` for the
+degrees read in `B`, for instance modulo `n` in `ZMod n`. -/
+theorem gradedMatrix_degree_intCast {R : Type*} [Zero R] {ι : Type*} {B : Type*}
+    [AddGroupWithOne B] {e : ι → ℤ} {D : Matrix ι ι R} (hD : ∀ i k, D i k ≠ 0 → e k = e i + 1)
+    (i k : ι) (h : D i k ≠ 0) : (e k : B) = e i + 1 := by
+  rw [hD i k h, Int.cast_add, Int.cast_one]
+
+end Degree
+
 section Complex
 
 variable {R : Type u} [CommRing R] {A : Type*} [AddRightCancelSemigroup A] [One A]

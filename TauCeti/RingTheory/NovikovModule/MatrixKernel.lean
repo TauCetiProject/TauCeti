@@ -28,7 +28,7 @@ Let `D` be square with integer degrees `e : ι → ℤ` on the generators, raisi
 `D * D = 0`, so that `K = gradedMatrixComplex e D` is a bounded integer-graded complex. For a
 degree on the generators `⟨i, g⟩` reading `e i` modulo `n`, for instance the Laurent degree
 `e i + c g` modulo `n` for a homomorphism `c : H →+ ℤ` with values in `nℤ`
-(`TauCeti.NovikovModule.intCast_add_eq_intCast`), the Laurent extension is a Laurent differential,
+(`TauCeti.NovikovModule.laurentDegree_intCast_eq`), the Laurent extension is a Laurent differential,
 and its cyclic complex is the complex of `D` with the degrees read modulo `n`
 (`TauCeti.NovikovModule.cyclicComplexMatrixKernelIso`), that is, the `n`-periodic compression of
 `K`. So its homology in residue `r` is the direct sum of the homology of `K` in the degrees
@@ -200,7 +200,7 @@ variable {R : Type u} [CommRing R] {H : Type*} {ι : Type v} {n : ℕ} {e : ι �
 
 /-- The Laurent degree `e i + c g` of the generator `⟨i, g⟩`, for a homomorphism `c` with values
 in `nℤ`, reads `e i` modulo `n`. -/
-theorem intCast_add_eq_intCast [AddGroup H] {c : H →+ ℤ} (hc : ∀ g, (n : ℤ) ∣ c g)
+theorem laurentDegree_intCast_eq [AddGroup H] {c : H →+ ℤ} (hc : ∀ g, (n : ℤ) ∣ c g)
     (p : Σ _ : ι, H) : ((e p.fst + c p.snd : ℤ) : ZMod n) = e p.fst := by
   rw [Int.cast_add, (ZMod.intCast_zmod_eq_zero_iff_dvd _ n).2 (hc _), add_zero]
 
@@ -220,7 +220,7 @@ degree reading `e` modulo `n`. -/
 theorem isLaurentKernel_matrixKernel_of_intCast [AddGroup H] [DecidableEq H] [Finite ι] :
     IsLaurentKernel (H := H) d d 1 (matrixKernel D) :=
   isLaurentKernel_matrixKernel fun i k g h ↦ by
-    rw [hd, hd, PeriodicComplex.intCast_eq_intCast_add_one n hD i k h]
+    rw [hd, hd, gradedMatrix_degree_intCast hD i k h]
 
 variable [AddGroup H] [DecidableEq H] [Fintype ι] (hDD : D * D = 0)
 
@@ -259,7 +259,7 @@ def cyclicComplexMatrixKernelIso :
     cyclicComplex R d (apply_vadd_of_intCast hd) (matrixKernel D)
         (isLaurentKernel_matrixKernel_of_intCast hD hd) (kernelComp_matrixKernel_self_eq_zero hDD) ≅
       gradedMatrixComplex (fun i ↦ (e i : ZMod n)) D
-        (PeriodicComplex.intCast_eq_intCast_add_one n hD) hDD :=
+        (gradedMatrix_degree_intCast hD) hDD :=
   isoGradedMatrixComplexOfBasis _ _ _ _ (cyclicBasis hD hd hDD) (cyclicBasis_d hD hd hDD)
 
 /-- The isomorphism `cyclicComplexMatrixKernelIso` sends the orbit of a generator to the
@@ -271,10 +271,10 @@ theorem cyclicComplexMatrixKernelIso_hom_f_basis (r : ZMod n)
         (cyclicComplexBasis R d (apply_vadd_of_intCast hd) (matrixKernel D)
           (isLaurentKernel_matrixKernel_of_intCast hD hd)
           (kernelComp_matrixKernel_self_eq_zero hDD) r i) =
-      gradedMatrixComplexBasis _ D (PeriodicComplex.intCast_eq_intCast_add_one n hD) hDD
+      gradedMatrixComplexBasis _ D (gradedMatrix_degree_intCast hD) hDD
         r ⟨i, (orbitDegree_eq_intCast hd i).symm.trans i.property⟩ := by
   have h := isoGradedMatrixComplexOfBasis_hom_f_basis
-    (hD := PeriodicComplex.intCast_eq_intCast_add_one n hD) (hDD := hDD)
+    (hD := gradedMatrix_degree_intCast hD) (hDD := hDD)
     (cyclicBasis hD hd hDD)
     (cyclicBasis_d hD hd hDD) r ⟨i, (orbitDegree_eq_intCast hd i).symm.trans i.property⟩
   rw [cyclicBasis, Basis.reindex_apply] at h
@@ -284,13 +284,13 @@ theorem cyclicComplexMatrixKernelIso_hom_f_basis (r : ZMod n)
 @[simp]
 theorem cyclicComplexMatrixKernelIso_inv_f_basis (r : ZMod n) (i : {i // (e i : ZMod n) = r}) :
     ((cyclicComplexMatrixKernelIso R hD hd hDD).inv.f r).hom
-        (gradedMatrixComplexBasis _ D (PeriodicComplex.intCast_eq_intCast_add_one n hD) hDD r i) =
+        (gradedMatrixComplexBasis _ D (gradedMatrix_degree_intCast hD) hDD r i) =
       cyclicComplexBasis R d (apply_vadd_of_intCast hd) (matrixKernel D)
         (isLaurentKernel_matrixKernel_of_intCast hD hd)
         (kernelComp_matrixKernel_self_eq_zero hDD) r
         ⟨i, (orbitDegree_eq_intCast hd i).trans i.property⟩ := by
   have h := isoGradedMatrixComplexOfBasis_inv_f_basis
-    (hD := PeriodicComplex.intCast_eq_intCast_add_one n hD) (hDD := hDD)
+    (hD := gradedMatrix_degree_intCast hD) (hDD := hDD)
     (cyclicBasis hD hd hDD) (cyclicBasis_d hD hd hDD) r i
   rw [cyclicBasis, Basis.reindex_apply] at h
   exact h
