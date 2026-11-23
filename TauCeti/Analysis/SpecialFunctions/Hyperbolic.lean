@@ -407,7 +407,9 @@ open scoped Real
 
 /-- `1 + exp (2 * z) = 2 * cosh z * exp z`. -/
 theorem one_add_exp_two_mul (z : ℂ) : 1 + exp (2 * z) = 2 * cosh z * exp z := by
-  rw [two_cosh, add_mul, ← exp_add, ← exp_add, neg_add_cancel, exp_zero, ← two_mul, add_comm]
+  rw [two_cosh]
+  simp only [two_mul, add_mul, ← exp_add, neg_add_cancel, exp_zero]
+  ring
 
 /-- `cosh (α - θ) / (2 * cosh α * cosh θ) = (1 - tanh α * tanh θ) / 2` for complex `α`, `θ`
 with `cosh α ≠ 0` and `cosh θ ≠ 0`: both sides are
@@ -501,11 +503,9 @@ theorem one_sub_tanh_div_two (x : ℝ) :
     ring_nf
   have hc : cosh x ≠ 0 := (cosh_pos x).ne'
   have he : exp (-x) ≠ 0 := (exp_pos (-x)).ne'
-  rw [one_sub_tanh, h1]
-  field_simp
-  rw [sq, hexp]
-  congr 1
-  ring
+  rw [one_sub_tanh, div_div, h1,
+    div_eq_div_iff (mul_ne_zero hc two_ne_zero) (mul_ne_zero (mul_ne_zero two_ne_zero hc) he)]
+  linear_combination 2 * cosh x * hexp
 
 /-- `(1 + tanh x) / 2 = 1 / (1 + exp (-2 * x))`, the logistic sigmoid at `2 * x`. -/
 theorem one_add_tanh_div_two (x : ℝ) :

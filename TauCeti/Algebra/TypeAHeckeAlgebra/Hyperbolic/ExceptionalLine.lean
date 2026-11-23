@@ -65,12 +65,11 @@ theorem hyperbolicProjParam_mul_add_pi_mul_I_div_two {k : ℤ} {θ : ℂ} (hθ :
     (hk : sinh (k * θ) ≠ 0) :
     hyperbolicProjParam (k * θ + π * I / 2) θ = wenzlParam (-k) (exp (-2 * θ)) := by
   have hk_neg : sinh ((-k : ℤ) * θ) ≠ 0 := by simpa [Int.cast_neg, neg_mul, sinh_neg] using hk
-  -- Normalize the shifted exponent `(-k + 1) * θ` as `-(k * θ - θ)` for `sinh_neg` and `sinh_sub`.
-  have harg : (-(k : ℂ) + 1) * θ = -(k * θ - θ) := by ring
   rw [hyperbolicProjParam_def, tanh_add_pi_mul_I_div_two, tanh_eq_sinh_div_cosh,
-    wenzlParam_exp_neg_two_mul (-k) hθ hk_neg, Int.cast_neg, neg_mul, sinh_neg, harg, sinh_neg,
-    sinh_sub]
+    wenzlParam_exp_neg_two_mul (-k) hθ hk_neg]
+  simp only [Int.cast_neg, neg_mul, add_mul, one_mul, sinh_add, cosh_neg, sinh_neg]
   field_simp [hθ, hk]
+  ring
 
 /-- **Wenzl projection parameter on the exceptional line `α = k * θ + π * I / 2`.** Whenever
 `cosh θ ≠ 0` and `sinh (k * θ) ≠ 0`, `hyperbolicWenzlProjParam (k * θ + π * I / 2) θ` equals

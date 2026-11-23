@@ -74,7 +74,8 @@ namespace InfiniteTypeAHeckeAlgebra
 
 private theorem val_inv_mul_eq_add_inv (u : Rˣ) (hu : (u : R) = 1 + (q : R) ^ 2) :
     ((q⁻¹ * u : Rˣ) : R) = (q : R) + ↑q⁻¹ := by
-  rw [Units.val_mul, hu, mul_add, mul_one, sq, ← mul_assoc, q.inv_mul, one_mul, add_comm]
+  rw [Units.val_mul, hu]
+  linear_combination (q : R) * q.inv_mul
 
 private theorem smul_sub_T_eq_one_sub_smul_T_add {c : R} (hc : c * ((q : R) + ↑q⁻¹) = 1)
     (i : ℕ) :
@@ -269,9 +270,10 @@ theorem map_wenzlHeckeEquiv_mul_e (hμ : IsMarkovTrace z μ) (hτ : τ * ((q : R
     (hw : w ∈ BalancedProjectionAlgebra.stage R τ (n + 1)) :
     μ (wenzlHeckeEquiv q hτ (w * e τ n)) =
       τ * ((q : R) + ↑q⁻¹) * ((q : R) - z) * μ (wenzlHeckeEquiv q hτ w) := by
+  have hz : (q : R) - ↑q⁻¹ - z + ↑q⁻¹ = q - z := by ring
   have h := hμ.comp_complementEquiv.map_heckeEquiv_mul_e hτ hw
-  simpa only [LinearMap.comp_apply, AlgEquiv.toLinearMap_apply, ← wenzlHeckeEquiv_apply,
-    sub_add_eq_add_sub, sub_add_cancel, add_sub_cancel_right] using h
+  rw [hz] at h
+  simpa only [LinearMap.comp_apply, AlgEquiv.toLinearMap_apply, ← wenzlHeckeEquiv_apply] using h
 
 /-- **Trace comparison `η_W = 1 - η`.** If `z = q * η - q⁻¹ * (1 - η)`, so that `η` is the native
 projection parameter of `μ`

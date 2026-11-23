@@ -79,9 +79,9 @@ theorem wenzlParam_neg_exp_two_pi_mul_I_div {l k : ℕ} (hl : 3 ≤ l) (hk₀ : 
   have h := wenzlParam_exp_mul_I (-(k : ℤ)) (θ := π / l) (by exact_mod_cast hcos.ne')
     (by rw [Int.cast_neg, Int.cast_natCast, neg_mul, sin_neg, neg_ne_zero, ← mul_div_assoc]
         exact_mod_cast hsin.ne')
-  have hnum : (-(k : ℂ) + 1) * (π / l) = -(((k : ℂ) - 1) * π / l) := by ring
-  have hden : -(k : ℂ) * (π / l) = -(k * π / l) := by ring
-  rw [two_mul_pi_div_mul_I, Int.cast_neg, Int.cast_natCast, hnum, hden, sin_neg, sin_neg] at h
+  rw [two_mul_pi_div_mul_I] at h
+  simp only [Int.cast_neg, Int.cast_natCast, neg_add_eq_sub, ← neg_sub (k : ℂ) 1, neg_mul,
+    ← mul_div_assoc, neg_div, sin_neg] at h
   rw [h]
   push_cast
   field_simp
