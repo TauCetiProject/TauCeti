@@ -200,23 +200,23 @@ theorem coe_integralModel_a₆ : ((integralModel v.valuationSubring W).a₆ : F)
 
 /-- The `a₁`-coefficient of a curve with an integral model is integral. -/
 theorem valuation_a₁_le_one : v W.a₁ ≤ 1 := by
-  rw [← coe_integralModel_a₁ v]; exact (integralModel v.valuationSubring W).a₁.2
+  rw [← coe_integralModel_a₁ v]; exact (integralModel v.valuationSubring W).a₁.property
 
 /-- The `a₂`-coefficient of a curve with an integral model is integral. -/
 theorem valuation_a₂_le_one : v W.a₂ ≤ 1 := by
-  rw [← coe_integralModel_a₂ v]; exact (integralModel v.valuationSubring W).a₂.2
+  rw [← coe_integralModel_a₂ v]; exact (integralModel v.valuationSubring W).a₂.property
 
 /-- The `a₃`-coefficient of a curve with an integral model is integral. -/
 theorem valuation_a₃_le_one : v W.a₃ ≤ 1 := by
-  rw [← coe_integralModel_a₃ v]; exact (integralModel v.valuationSubring W).a₃.2
+  rw [← coe_integralModel_a₃ v]; exact (integralModel v.valuationSubring W).a₃.property
 
 /-- The `a₄`-coefficient of a curve with an integral model is integral. -/
 theorem valuation_a₄_le_one : v W.a₄ ≤ 1 := by
-  rw [← coe_integralModel_a₄ v]; exact (integralModel v.valuationSubring W).a₄.2
+  rw [← coe_integralModel_a₄ v]; exact (integralModel v.valuationSubring W).a₄.property
 
 /-- The `a₆`-coefficient of a curve with an integral model is integral. -/
 theorem valuation_a₆_le_one : v W.a₆ ≤ 1 := by
-  rw [← coe_integralModel_a₆ v]; exact (integralModel v.valuationSubring W).a₆.2
+  rw [← coe_integralModel_a₆ v]; exact (integralModel v.valuationSubring W).a₆.property
 
 /-- For `v(x) > 1`, the right-hand side of the Weierstrass equation has valuation `v(x)³`: the
 `x³` term strictly dominates the rest. This is `Valuation.map_cubic_eq_of_one_lt` at the

@@ -103,7 +103,7 @@ Lebesgue measure on its domain. -/
 theorem mutuallySingular_variationMeasure_cantorFunction (Ω : Opens ℝ) :
     variationMeasure volume Ω cantorFunction ⟂ₘ volume.comap ((↑) : Ω → ℝ) := by
   refine ⟨Subtype.val ⁻¹' cantorSetᶜ,
-    isClosed_cantorSet.isOpen_compl.measurableSet.preimage measurable_subtype_coe,
+    isClosed_cantorSet.isOpen_compl.measurableSet.preimage measurable_subtypeVal,
     variationMeasure_cantorFunction_compl_cantorSet Ω, ?_⟩
   rw [← preimage_compl, compl_compl]
   -- Fix the inclusion's domain as `Ω`, rather than the subtype of its underlying set.

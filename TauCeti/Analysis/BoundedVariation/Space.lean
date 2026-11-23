@@ -134,7 +134,7 @@ theorem mem_bvSubmodule_iff (u : E →₁[μ.restrict Ω] ℝ) :
 namespace BV
 
 /-- The underlying `L¹` class of a BV function. -/
-def toL1 (u : BV μ Ω) : E →₁[μ.restrict Ω] ℝ := u.toSubmodule.1
+def toL1 (u : BV μ Ω) : E →₁[μ.restrict Ω] ℝ := u.toSubmodule.val
 
 instance : CoeFun (BV μ Ω) (fun _ => E → ℝ) := ⟨fun u => u.toL1⟩
 
@@ -155,7 +155,7 @@ theorem integrableOn (u : BV μ Ω) : IntegrableOn (u : E → ℝ) Ω μ :=
 
 /-- Every BV class has finite total variation. -/
 theorem totalVariationOn_lt_top (u : BV μ Ω) : totalVariationOn μ Ω u < ∞ :=
-  u.toSubmodule.2
+  u.toSubmodule.property
 
 /-- The selected representative of a BV class belongs to the unbundled BV predicate. -/
 theorem memBV (u : BV μ Ω) : MemBV μ Ω u :=
@@ -186,6 +186,16 @@ theorem totalVariationOn_ofFunction (u : E → ℝ) (hu : MemBV μ Ω u) :
 @[simp]
 theorem ofFunction_coeFn (u : BV μ Ω) : ofFunction u u.memBV = u :=
   ext (coeFn_ofFunction u u.memBV)
+
+/-- Two BV classes constructed from functions are equal exactly when the functions agree almost
+everywhere on `Ω`. -/
+@[simp]
+theorem ofFunction_eq_ofFunction_iff {u v : E → ℝ} (hu : MemBV μ Ω u) (hv : MemBV μ Ω v) :
+    ofFunction u hu = ofFunction v hv ↔ u =ᵐ[μ.restrict Ω] v :=
+  ⟨fun h => (coeFn_ofFunction u hu).symm.trans
+      ((Filter.EventuallyEq.of_eq (congrArg (fun w : BV μ Ω => (w : E → ℝ)) h)).trans
+        (coeFn_ofFunction v hv)),
+    fun h => ext ((coeFn_ofFunction u hu).trans (h.trans (coeFn_ofFunction v hv).symm))⟩
 
 instance : Zero (BV μ Ω) := ⟨BV.mk 0⟩
 instance : Add (BV μ Ω) := ⟨fun u v => BV.mk (u.toSubmodule + v.toSubmodule)⟩
@@ -289,6 +299,11 @@ theorem norm_toL1_le (u : BV μ Ω) : ‖u.toL1‖ ≤ ‖u‖ := by
   rw [norm_def]
   exact le_add_of_nonneg_right ENNReal.toReal_nonneg
 
+/-- The total variation of a BV class is bounded by its norm. -/
+theorem toReal_totalVariationOn_le_norm (u : BV μ Ω) : (totalVariationOn μ Ω u).toReal ≤ ‖u‖ := by
+  rw [norm_def]
+  exact le_add_of_nonneg_left (norm_nonneg _)
+
 /-- Forgetting finite variation gives a continuous linear inclusion into `L¹(Ω)`. -/
 def toL1CLM : BV μ Ω →L[ℝ] (E →₁[μ.restrict Ω] ℝ) :=
   ({ toFun := toL1, map_add' := toL1_add, map_smul' := toL1_smul } :
@@ -313,7 +328,7 @@ private theorem variation_sub_limit_le {u : ℕ → BV μ Ω} {v : E →₁[μ.r
   rw [← toL1_sub]
   have hC : 0 ≤ C := (norm_nonneg _).trans (hbound N le_rfl)
   apply (ENNReal.le_ofReal_iff_toReal_le (u n - u M).totalVariationOn_lt_top.ne hC).mpr
-  exact (le_add_of_nonneg_left (norm_nonneg (u n - u M).toL1)).trans (hbound n hn)
+  exact (u n - u M).toReal_totalVariationOn_le_norm.trans (hbound n hn)
 
 /-- The BV norm is complete: every Cauchy sequence for the sum of the `L¹` norm and total
 variation converges in that norm. -/
@@ -326,20 +341,11 @@ instance instCompleteSpace : CompleteSpace (BV μ Ω) :=
     have hvar : totalVariationOn μ Ω (v - (u N₀).toL1 : E →₁[μ.restrict Ω] ℝ) < ∞ :=
       (variation_sub_limit_le hv N₀ N₀ fun n hn => by
         simpa only [dist_eq_norm] using (hN₀ n hn N₀ le_rfl).le).trans_lt (by finiteness)
-    have hvBV : MemBV μ Ω v := by
-      apply memBV_iff.mpr
-      refine ⟨L1.integrable_coeFn v, ?_⟩
-      have hsum := totalVariationOn_add_le (v := u N₀)
-        (IntegrableOn.locallyIntegrableOn (L1.integrable_coeFn (v - (u N₀).toL1)))
-      have hae : ((v - (u N₀).toL1 : E →₁[μ.restrict Ω] ℝ) : E → ℝ) + u N₀
-          =ᵐ[μ.restrict Ω] v := by
-        filter_upwards [Lp.coeFn_sub v (u N₀).toL1] with x hx
-        simp only [Pi.add_apply, hx, Pi.sub_apply, sub_add_cancel]
-      rw [totalVariationOn_congr_ae hae] at hsum
-      exact hsum.trans_lt (ENNReal.add_lt_top.mpr ⟨hvar, (u N₀).totalVariationOn_lt_top⟩)
-    let f := ofFunction v hvBV
-    have hf : f.toL1 = v := by
-      exact Integrable.toL1_coeFn v (L1.integrable_coeFn v)
+    have hvmem : v ∈ bvSubmodule μ Ω := by
+      rw [← sub_add_cancel v (u N₀).toL1]
+      exact (bvSubmodule μ Ω).add_mem ((mem_bvSubmodule_iff _).2 hvar) (u N₀).toSubmodule.property
+    let f : BV μ Ω := BV.mk ⟨v, hvmem⟩
+    have hf : f.toL1 = v := rfl
     refine ⟨f, Metric.tendsto_atTop.mpr fun ε hε => ?_⟩
     obtain ⟨N, hN⟩ := Metric.cauchySeq_iff.mp hu (ε / 4) (by positivity)
     have hsmall (n : ℕ) (hn : N ≤ n) : ‖f - u n‖ ≤ ε / 2 := by

@@ -73,8 +73,9 @@ theorem eq_of_eval_eq_on_unitaryGroup {p q : MvPolynomial (ι × ι) ℂ}
         (Matrix.of fun i j => x (i, j)).submatrix e.symm e.symm =
           (U : Matrix _ _ ℂ) * Matrix.diagonal d * (V : Matrix _ _ ℂ) :=
       ⟨_, Matrix.exists_unitary_mul_diagonal_mul_unitary _⟩
-    refine ⟨d ∘ e, ⟨(U : Matrix _ _ ℂ).submatrix e e, Matrix.submatrix_equiv_mem_unitary.mpr U.2⟩,
-      ⟨(V : Matrix _ _ ℂ).submatrix e e, Matrix.submatrix_equiv_mem_unitary.mpr V.2⟩, ?_⟩
+    refine ⟨d ∘ e, ⟨(U : Matrix _ _ ℂ).submatrix e e, Matrix.submatrix_equiv_mem_unitary.mpr
+        U.property⟩,
+      ⟨(V : Matrix _ _ ℂ).submatrix e e, Matrix.submatrix_equiv_mem_unitary.mpr V.property⟩, ?_⟩
     rw [← Matrix.submatrix_diagonal_equiv, Matrix.submatrix_mul_equiv,
       Matrix.submatrix_mul_equiv, ← hUV, Matrix.submatrix_submatrix]
     simp
@@ -82,25 +83,25 @@ theorem eq_of_eval_eq_on_unitaryGroup {p q : MvPolynomial (ι × ι) ℂ}
   let F : ι × ι → MvPolynomial ι ℂ := fun ij =>
     ∑ k, C ((U : Matrix ι ι ℂ) ij.1 k * (V : Matrix ι ι ℂ) k ij.2) * X k
   have hF (z : ι → ℂ) (r : MvPolynomial (ι × ι) ℂ) :
-      eval z (bind₁ F r) = eval (fun ij => ((U : Matrix ι ι ℂ) * Matrix.diagonal z * V) ij.1 ij.2)
+      eval z (aeval F r) = eval (fun ij => ((U : Matrix ι ι ℂ) * Matrix.diagonal z * V) ij.1 ij.2)
         r := by
-    -- `eval z` is `eval₂Hom (RingHom.id ℂ) z` by definition.
-    refine (eval₂Hom_bind₁ (RingHom.id ℂ) z F r).trans
-      (congrArg (fun y => eval y r) (_root_.funext fun ij => ?_))
+    rw [map_aeval, show (eval z).comp (algebraMap ℂ (MvPolynomial ι ℂ)) = RingHom.id ℂ by
+      ext; simp]
+    -- `eval y` is `eval₂Hom (RingHom.id ℂ) y` by definition.
+    refine congrArg (fun y => eval y r) (_root_.funext fun ij => ?_)
     rw [Matrix.mul_apply]
-    simp only [F, map_sum, map_mul, eval₂Hom_C, eval₂Hom_X', RingHom.id_apply,
-      Matrix.mul_diagonal]
+    simp only [F, map_sum, map_mul, eval_C, eval_X, Matrix.mul_diagonal]
     exact Finset.sum_congr rfl fun k _ => by ring
   -- The unit circle is infinite, being connected with more than one point.
   have hS : (Metric.sphere (0 : ℂ) 1).Infinite :=
     IsPreconnected.infinite_of_nontrivial
       (isConnected_sphere (E := ℂ) (by rw [Complex.rank_real_complex]; norm_num) 0
         zero_le_one).isPreconnected ⟨1, by simp, -1, by simp, by norm_num⟩
-  have hpq : bind₁ F p = bind₁ F q := by
+  have hpq : aeval F p = aeval F q := by
     refine MvPolynomial.funext_set (fun _ => Metric.sphere (0 : ℂ) 1) (fun _ => hS)
       fun z hz => ?_
     rw [hF, hF]
-    refine h _ (mul_mem (mul_mem U.2 ?_) V.2)
+    refine h _ (mul_mem (mul_mem U.property ?_) V.property)
     refine Matrix.diagonal_mem_unitary.mpr (Pi.mem_unitary_iff.mpr fun i => ?_)
     -- A complex number of modulus one is unitary: `conj z * z = ‖z‖ ^ 2 = 1`.
     rw [Unitary.mem_iff_star_mul_self, Complex.star_def, Complex.conj_mul',

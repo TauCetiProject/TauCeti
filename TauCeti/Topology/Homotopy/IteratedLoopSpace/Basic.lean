@@ -89,6 +89,12 @@ def loopSpace (f : Hom X Y) : Hom X.loopSpace Y.loopSpace where
   toContinuousMap := f.toContinuousMap.loopMap f.map_basepoint
   map_basepoint := f.toContinuousMap.loopMap_refl f.map_basepoint
 
+/-- The underlying continuous map of `Ω f` is the loop map `ContinuousMap.loopMap` of `f`. -/
+@[simp]
+theorem loopSpace_toContinuousMap (f : Hom X Y) :
+    f.loopSpace.toContinuousMap = f.toContinuousMap.loopMap f.map_basepoint :=
+  (rfl)
+
 /-- The induced loop map postcomposes loops with `f`, for a loop viewed as an element of the
 carrier of `ΩX`. -/
 theorem loopSpace_apply' (f : Hom X Y) (γ : X.loopSpace.carrier) (t : unitInterval) :

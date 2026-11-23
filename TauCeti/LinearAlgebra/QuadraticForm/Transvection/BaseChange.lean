@@ -88,7 +88,7 @@ theorem specialOrthogonalGroupBaseChange_comp_transvectionHom
   apply AddMonoidHom.ext
   intro q
   induction q using Submodule.Quotient.induction_on with | H w =>
-    have huw : polar Q u (w : M) = 0 := LinearMap.mem_ker.mp w.2
+    have huw : polar Q u (w : M) = 0 := LinearMap.mem_ker.mp w.property
     apply Additive.toMul.injective
     simp only [AddMonoidHom.comp_apply, MonoidHom.toAdditive_apply_apply,
       LinearMap.toAddMonoidHom_coe, transvectionParameterBaseChange_mk, toMul_ofMul]

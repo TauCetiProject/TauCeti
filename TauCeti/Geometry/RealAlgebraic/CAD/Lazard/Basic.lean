@@ -93,7 +93,7 @@ theorem IsCAD.exists_isCAD_lazardValuation_eq_of_lazardDelineation_reindex
     subst hCS
     obtain ⟨hθ, ha⟩ := (D.isSemialgebraicStack hSsemi).reindex e
       fun E hE ↦ (D.exists_isAnalyticSubmanifold_of_mem_stackCells hSd hE).imp fun _ h ↦ h.2
-    refine ⟨D.count, fun i x ↦ D.root i ⟨x.1 ∘ e, x.2⟩, hθ, fun E hE ↦ ⟨ha E hE, ?_⟩⟩
+    refine ⟨D.count, fun i x ↦ D.root i ⟨x.val ∘ e, x.property⟩, hθ, fun E hE ↦ ⟨ha E hE, ?_⟩⟩
     rw [stackCells_comp] at hE
     obtain ⟨E, hE, rfl⟩ := hE
     intro i x hx y hy
