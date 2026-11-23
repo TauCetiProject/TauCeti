@@ -19,7 +19,6 @@ import TauCeti.Analysis.Complex.CauchyIntegralPolydisc
 import TauCeti.Analysis.Complex.IteratedDeriv
 import TauCeti.Analysis.Complex.UniformLimit
 import TauCeti.Analysis.Complex.UpperHalfPlane.Exp
-import TauCeti.Analysis.SpecialFunctions.Complex.Log.Bounds
 import TauCeti.Analysis.SpecialFunctions.Exp.Periodic
 import TauCeti.Analysis.SpecialFunctions.Pow.Complex
 import TauCeti.Analysis.SpecificLimits.Normed
@@ -432,8 +431,8 @@ theorem hasDerivAt_lerchSeries_middle {z : ℂ} (hz : ‖z‖ < 1) (s c : ℂ) :
     ext n
     have h1 := iteratedDeriv_middle_lerchSeries_term n 1 z s c
     rw [iteratedDeriv_one, pow_one] at h1
-    rw [show deriv (F n) s = deriv (fun s => z ^ n * Complex.exp (-s * Complex.log (n + c))) s
-      from rfl, h1]
+    dsimp only [F]
+    rw [h1]
     ring
   rw [hterm] at hd
   exact hd.congr_of_eventuallyEq (Eventually.of_forall fun w => (lerchSeries_def z w c).symm)

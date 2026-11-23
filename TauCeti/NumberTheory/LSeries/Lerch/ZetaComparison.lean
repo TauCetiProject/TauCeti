@@ -44,7 +44,7 @@ namespace TauCeti
 boundary `lerchZeta s a 1` by the prefactor `exp (2πia)`. -/
 theorem expZeta_eq_mul_lerchZeta (a : ℝ) {s : ℂ} (hs : 1 < s.re) :
     HurwitzZeta.expZeta a s = Complex.exp (2 * Real.pi * I * a) * lerchZeta s a 1 := by
-  have hs0 : s ≠ 0 := by rintro rfl; simp only [zero_re] at hs; linarith
+  have hs0 : s ≠ 0 := Complex.ne_zero_of_re_pos (by linarith)
   have hsum := HurwitzZeta.hasSum_expZeta_of_one_lt_re a hs
   rw [← hsum.tsum_eq, hsum.summable.tsum_eq_zero_add]
   simp only [Nat.cast_zero, mul_zero, Complex.zero_cpow hs0, div_zero, zero_add]
@@ -52,7 +52,7 @@ theorem expZeta_eq_mul_lerchZeta (a : ℝ) {s : ℂ} (hs : 1 < s.re) :
     ← tsum_mul_left]
   refine tsum_congr fun n => ?_
   have hden : (((n + 1 : ℕ) : ℂ) ^ s)⁻¹ = ((n : ℂ) + 1) ^ (-s) := by
-    rw [← Complex.cpow_neg]; push_cast; rfl
+    rw [← Complex.cpow_neg, Nat.cast_succ]
   have hphase : Complex.exp (2 * Real.pi * I * a * ((n + 1 : ℕ) : ℂ)) =
       Complex.exp (2 * Real.pi * I * a) * Complex.exp (2 * Real.pi * I * a) ^ n := by
     rw [mul_right_comm _ (a : ℂ), ← Complex.exp_two_pi_mul_I_mul_pow, pow_succ']

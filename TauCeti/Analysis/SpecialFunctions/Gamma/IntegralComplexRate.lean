@@ -41,10 +41,8 @@ integrable real majorant on `(0, ∞)`, giving holomorphy in `s` and joint analy
 * `Complex.integral_cpow_mul_exp_neg_mul_Ioi_of_re_pos`: the Gamma integral with complex rate.
 * `Complex.differentiableOn_integral_cpow_mul_exp_neg_mul_Ioi`: holomorphy in the rate on the
   right half-plane.
-* `Complex.analyticOnNhd_integral_cpow_mul_exp_neg_mul_Ioi_prod`,
-  `Complex.differentiableOn_integral_cpow_mul_exp_neg_mul_Ioi_prod`,
-  `Complex.differentiableOn_integral_cpow_mul_exp_neg_mul_Ioi_left`: joint analyticity and
-  holomorphy in `(s, z)` on `{0 < Re s} × {0 < Re z}`, and holomorphy in `s`.
+* `Complex.analyticOnNhd_integral_cpow_mul_exp_neg_mul_Ioi_prod`: joint analyticity in `(s, z)` on
+  `{0 < Re s} × {0 < Re z}`.
 * `TauCeti.integral_norm_cpow_mul_exp_neg_mul_Ioi`: the integral of the norm of the integrand is
   `(Re w)^{−Re s} Γ(Re s)`.
 
@@ -259,22 +257,6 @@ theorem analyticOnNhd_integral_cpow_mul_exp_neg_mul_Ioi_prod :
         (mem_slitPlane_iff.mpr (Or.inl hp.2)))).differentiableWithinAt
   exact (DifferentiableOn.analyticOnNhd_of_finiteDimensional hF hUo).congr hUo fun p hp =>
     (integral_cpow_mul_exp_neg_mul_Ioi_of_re_pos hp.1 hp.2).symm
-
-/-- The complex-rate Gamma integral `(s, z) ↦ ∫₀^∞ t^{s-1} e^{-zt} dt` is jointly complex
-differentiable on `{p : ℂ × ℂ | 0 < p.1.re ∧ 0 < p.2.re}`. -/
-theorem differentiableOn_integral_cpow_mul_exp_neg_mul_Ioi_prod :
-    DifferentiableOn ℂ
-      (fun p : ℂ × ℂ => ∫ t in Ioi (0 : ℝ), (t : ℂ) ^ (p.1 - 1) * exp (-(p.2 * t)))
-      {p : ℂ × ℂ | 0 < p.1.re ∧ 0 < p.2.re} :=
-  analyticOnNhd_integral_cpow_mul_exp_neg_mul_Ioi_prod.differentiableOn
-
-/-- For `Re w > 0`, the Gamma integral `s ↦ ∫₀^∞ t^{s-1} e^{-wt} dt` is holomorphic on the right
-half-plane `{s | 0 < s.re}`. -/
-theorem differentiableOn_integral_cpow_mul_exp_neg_mul_Ioi_left {w : ℂ} (hw : 0 < w.re) :
-    DifferentiableOn ℂ (fun s : ℂ => ∫ t in Ioi (0 : ℝ), (t : ℂ) ^ (s - 1) * exp (-(w * t)))
-      {s | 0 < s.re} :=
-  differentiableOn_integral_cpow_mul_exp_neg_mul_Ioi_prod.comp
-    (differentiableOn_id.prodMk (differentiableOn_const w)) fun _ hs => ⟨hs, hw⟩
 
 end Complex
 
