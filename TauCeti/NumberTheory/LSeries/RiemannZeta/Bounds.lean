@@ -231,7 +231,7 @@ private theorem riemannZeta_re_eq_one_add_inv_sub_mul_integral {σ : ℝ} (hσ :
       ∫ t in Set.Ioi (1 : ℝ), t ^ (-1 - σ) * Int.fract t : ℝ) : ℂ) := by
     rw [h]
     push_cast
-    rfl
+    ring
   rw [h', ofReal_re]
 
 /-- **The lower bound by the pole.** For real `σ > 0`, `σ ≠ 1`, `1/(σ - 1) < Re ζ(σ)`. -/

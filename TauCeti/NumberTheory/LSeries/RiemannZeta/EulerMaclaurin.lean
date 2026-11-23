@@ -298,11 +298,7 @@ theorem riemannZeta₁_eq_add_mul_sum_sawtooth {a : ℝ} (ha : 0 < a) {s : ℂ} 
   have h : riemannZeta₁ s = (s - 1) * riemannZeta s := by
     rw [riemannZeta_eq_inv_sub_mul hs₁]
     field_simp
-  have hζ : riemannZeta s = sawtoothReg a s + (a : ℂ) ^ (1 - s) / (s - 1) := by
-    rw [riemannZeta_eq_sum_add_integral_sawtooth ha hs hs₁, sawtoothReg]
-    ring
-  change _ = (a : ℂ) ^ (1 - s) + (s - 1) * sawtoothReg a s
-  rw [h, hζ]
+  rw [h, riemannZeta_eq_sum_add_integral_sawtooth ha hs hs₁]
   field_simp
   ring
 
@@ -318,7 +314,7 @@ theorem eulerMascheroniConstant_eq_sum_sub_log_add_sawtooth {a : ℝ} (ha : 0 < 
     (isOpen_lt continuous_const continuous_re).mem_nhds (by simp)
   have heq : riemannZeta₁ =ᶠ[𝓝 1] fun z ↦ (a : ℂ) ^ (1 - z) + (z - 1) * sawtoothReg a z := by
     filter_upwards [hmem] with z hz
-    exact riemannZeta₁_eq_add_mul_sum_sawtooth ha hz
+    simpa only [sawtoothReg] using riemannZeta₁_eq_add_mul_sum_sawtooth ha hz
   have hd₁ : HasDerivAt (fun z : ℂ ↦ (a : ℂ) ^ (1 - z)) (-(Real.log a : ℂ)) 1 := by
     simpa [ofReal_log ha.le] using ((hasDerivAt_const (1 : ℂ) (1 : ℂ)).sub
       (hasDerivAt_id (1 : ℂ))).const_cpow (Or.inl (ofReal_ne_zero.mpr ha.ne'))
@@ -327,8 +323,9 @@ theorem eulerMascheroniConstant_eq_sum_sub_log_add_sawtooth {a : ℝ} (ha : 0 < 
       (Or.inl (Nat.cast_ne_zero.mpr (Nat.one_le_iff_ne_zero.mp (Finset.mem_Icc.mp hn).1)))
   have hbd : Differentiable ℂ fun s : ℂ ↦ (bernoulliFun 1 (Int.fract a) : ℂ) * (a : ℂ) ^ (-s) :=
     (differentiable_id.neg.const_cpow (Or.inl (ofReal_ne_zero.mpr ha.ne'))).const_mul _
-  have hreg : DifferentiableOn ℂ (sawtoothReg a) {s : ℂ | 0 < s.re} :=
-    (hsum.differentiableOn.add hbd.differentiableOn).sub
+  have hreg : DifferentiableOn ℂ (sawtoothReg a) {s : ℂ | 0 < s.re} := by
+    unfold sawtoothReg
+    exact (hsum.differentiableOn.add hbd.differentiableOn).sub
       (differentiableOn_id.mul (differentiableOn_integral_mul_cpow_of_isBigO ha isBigO_sawtooth))
   have hd₂ : HasDerivAt (fun z : ℂ ↦ (z - 1) * sawtoothReg a z) (sawtoothReg a 1) 1 := by
     simpa using ((hasDerivAt_id (1 : ℂ)).sub_const (1 : ℂ)).fun_mul

@@ -93,6 +93,7 @@ theorem strictAntiOn_re_of_exists_pos (ha : ∀ n ≥ 2, 0 ≤ (a n).re)
     have h1 : (1 : ℝ) < n₀ := by exact_mod_cast (by omega : 1 < n₀)
     exact div_lt_div_of_pos_left han₀ (Real.rpow_pos_of_pos (by linarith) _)
       (Real.rpow_lt_rpow_of_exponent_lt h1 hxy)
+  simp only [LSeries]
   exact hasSum_lt hle hlt (Complex.hasSum_re hy.hasSum) (Complex.hasSum_re hx.hasSum)
 
 /-- A Dirichlet series with nonnegative coefficients, one of which at a positive index is positive,
