@@ -44,8 +44,7 @@ the common refinement `k` of `i` and `j`, which presents `R(i) ∩ R(j) = R(j)`.
   `A⟨T/s⟩ ⟶ A⟨T'/s'⟩` of a containment `R(T'/s') ⊆ R(T/s)`.
 * `TauCeti.ValuationSpectrum.presentationLimitRationalIso` : the isomorphism
   `presentationLimit Aplus R(T/s) ≅ A⟨T/s⟩` for an admissible presentation `(T, s)`.
-* `TauCeti.ValuationSpectrum.rationalSectionTopIso` and
-  `TauCeti.ValuationSpectrum.rationalSectionRingEquiv` : identification of
+* `TauCeti.ValuationSpectrum.rationalSectionRingEquiv` : identification of
   `presentationLimit Aplus R(T/s)` with any `IsRationalCompletion` model `B`.
 
 ## Main results
@@ -356,7 +355,7 @@ variable (P : PairOfDefinition A) {Aplus : Subring A}
 
 /-- Topological ring isomorphism identifying the presentation limit over `spaBasicOpen Aplus T s`
 with the canonical completed rational localisation `ratLoc P T s _`. -/
-noncomputable def rationalSectionTopIso :
+private noncomputable def rationalSectionTopIso :
     (TopCommRingCat.isCompleteSeparated.ι.obj
       (presentationLimit (P := P) Aplus (spaBasicOpen Aplus T s))) ≅
       TopCommRingCat.of

@@ -222,10 +222,9 @@ theorem IsRationalCompletion.surjective_sub_laurent
     rw [map_sub, map_one, map_mul, hX₀, hmul₁₂, sub_self]
   have hsub := congrArg π₁₂ hw
   rw [map_sub, map_sub, map_mul, hrel, zero_mul, sub_eq_zero] at hsub
-  have hρ₁g := RingHom.congr_fun hρ₁ g
-  have hρ₂h := RingHom.congr_fun hρ₂ h
-  simp only [RingHom.comp_apply, AlgHom.toRingHom_eq_coe, RingHom.coe_coe] at hρ₁g hρ₂h
-  dsimp only [π₁, π₂, π₁₂] at hsub ⊢
+  have hρ₁g : ρ₁ (π₁ g) = π₁₂ _ := RingHom.congr_fun hρ₁ g
+  have hρ₂h : ρ₂ (π₂ h) = π₁₂ _ := RingHom.congr_fun hρ₂ h
+  dsimp only [π₁, π₂, π₁₂] at hsub hρ₁g hρ₂h ⊢
   rwa [hρ₁g, hρ₂h]
 
 /-- Scalar-tower form of `IsRationalCompletion.surjective_sub_laurent`, for `B₁ → B₁₂` and

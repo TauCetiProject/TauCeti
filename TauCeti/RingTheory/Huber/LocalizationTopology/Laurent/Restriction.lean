@@ -166,28 +166,25 @@ theorem laurentRightAlgHom_coe (P : PairOfDefinition A) (f : A)
       @UniformSpace.Completion.coe' (Localization.Away f)
         (P.locUniformSpace ({f * f, 1} : Finset A) f (Localization.Away f) hden₁₂) x := by
   let c₂ : Localization.Away f →+* ratLoc P {1} f hden₂ :=
-    let _ := P.locUniformSpace ({1} : Finset A) f (Localization.Away f) hden₂
-    have _ := P.isUniformAddGroup_locUniformSpace ({1} : Finset A) f (Localization.Away f) hden₂
-    have _ := P.isTopologicalRing_locUniformSpace ({1} : Finset A) f (Localization.Away f) hden₂
+    let _ := P.locUniformSpace _ f _ hden₂
+    have _ := P.isUniformAddGroup_locUniformSpace _ f _ hden₂
+    have _ := P.isTopologicalRing_locUniformSpace _ f _ hden₂
     UniformSpace.Completion.coeRingHom
   let c₁₂ : Localization.Away f →+* ratLoc P {f * f, 1} f hden₁₂ :=
-    let _ := P.locUniformSpace ({f * f, 1} : Finset A) f (Localization.Away f) hden₁₂
-    have _ := P.isUniformAddGroup_locUniformSpace ({f * f, 1} : Finset A) f
-      (Localization.Away f) hden₁₂
-    have _ := P.isTopologicalRing_locUniformSpace ({f * f, 1} : Finset A) f
-      (Localization.Away f) hden₁₂
+    let _ := P.locUniformSpace _ f _ hden₁₂
+    have _ := P.isUniformAddGroup_locUniformSpace _ f _ hden₁₂
+    have _ := P.isTopologicalRing_locUniformSpace _ f _ hden₁₂
     UniformSpace.Completion.coeRingHom
   have h : (laurentRightAlgHom P f (hden₂ := hden₂) (hden₁₂ := hden₁₂)).toRingHom.comp c₂ =
       c₁₂ := by
     refine IsLocalization.ringHom_ext (Submonoid.powers f) (RingHom.ext fun a ↦ ?_)
-    have hc₂ : c₂ (algebraMap A (Localization.Away f) a) =
-        algebraMap A (ratLoc P {1} f hden₂) a := by
-      rw [algebraMap_ratLoc, P.toCompletionLoc_apply]
-      rfl
+    have hc₂ : c₂ (algebraMap A (Localization.Away f) a) = algebraMap A (ratLoc P {1} f hden₂) a :=
+      (P.toCompletionLoc_apply _ f _ hden₂ a).symm.trans
+        (RingHom.congr_fun (algebraMap_ratLoc P {1} f hden₂) a).symm
     have hc₁₂ : c₁₂ (algebraMap A (Localization.Away f) a) =
-        algebraMap A (ratLoc P {f * f, 1} f hden₁₂) a := by
-      rw [algebraMap_ratLoc, P.toCompletionLoc_apply]
-      rfl
+        algebraMap A (ratLoc P {f * f, 1} f hden₁₂) a :=
+      (P.toCompletionLoc_apply _ f _ hden₁₂ a).symm.trans
+        (RingHom.congr_fun (algebraMap_ratLoc P {f * f, 1} f hden₁₂) a).symm
     simp only [RingHom.coe_comp, Function.comp_apply, AlgHom.toRingHom_eq_coe, RingHom.coe_coe,
       hc₂, hc₁₂, (laurentRightAlgHom P f).commutes]
   exact RingHom.congr_fun h x
@@ -235,18 +232,16 @@ theorem continuous_algebraMap_laurentLeftAlgebra (P : PairOfDefinition A) (f : A
     {hden₁ : P.HasDenominatorPower ({f, 1} : Finset A) 1 (Localization.Away (1 : A))}
     {hden₁₂ : P.HasDenominatorPower ({f * f, 1} : Finset A) f (Localization.Away f)} :
     letI := laurentLeftAlgebra P f (hden₁ := hden₁) (hden₁₂ := hden₁₂)
-    Continuous (algebraMap (ratLoc P {f, 1} 1 hden₁) (ratLoc P {f * f, 1} f hden₁₂)) := by
-  rw [algebraMap_laurentLeftAlgebra]
-  exact continuous_laurentLeftAlgHom P f
+    Continuous (algebraMap (ratLoc P {f, 1} 1 hden₁) (ratLoc P {f * f, 1} f hden₁₂)) :=
+  continuous_laurentLeftAlgHom P f
 
 /-- The structure map of `laurentRightAlgebra` is continuous. -/
 theorem continuous_algebraMap_laurentRightAlgebra (P : PairOfDefinition A) (f : A)
     {hden₂ : P.HasDenominatorPower ({1} : Finset A) f (Localization.Away f)}
     {hden₁₂ : P.HasDenominatorPower ({f * f, 1} : Finset A) f (Localization.Away f)} :
     letI := laurentRightAlgebra P f (hden₂ := hden₂) (hden₁₂ := hden₁₂)
-    Continuous (algebraMap (ratLoc P {1} f hden₂) (ratLoc P {f * f, 1} f hden₁₂)) := by
-  rw [algebraMap_laurentRightAlgebra]
-  exact continuous_laurentRightAlgHom P f
+    Continuous (algebraMap (ratLoc P {1} f hden₂) (ratLoc P {f * f, 1} f hden₁₂)) :=
+  continuous_laurentRightAlgHom P f
 
 /-- `laurentLeftAlgebra` makes `A → A⟨{f, 1}/1⟩ → A⟨{f², 1}/f⟩` a scalar tower. -/
 theorem isScalarTower_laurentLeft (P : PairOfDefinition A) (f : A)
@@ -255,8 +250,7 @@ theorem isScalarTower_laurentLeft (P : PairOfDefinition A) (f : A)
     letI := laurentLeftAlgebra P f (hden₁ := hden₁) (hden₁₂ := hden₁₂)
     IsScalarTower A (ratLoc P {f, 1} 1 hden₁) (ratLoc P {f * f, 1} f hden₁₂) :=
   letI := laurentLeftAlgebra P f (hden₁ := hden₁) (hden₁₂ := hden₁₂)
-  IsScalarTower.of_algebraMap_eq fun r ↦ by
-    rw [algebraMap_laurentLeftAlgebra]; exact ((laurentLeftAlgHom P f).commutes r).symm
+  IsScalarTower.of_algebraMap_eq fun r ↦ ((laurentLeftAlgHom P f).commutes r).symm
 
 /-- `laurentRightAlgebra` makes `A → A⟨{1}/f⟩ → A⟨{f², 1}/f⟩` a scalar tower. -/
 theorem isScalarTower_laurentRight (P : PairOfDefinition A) (f : A)
@@ -265,8 +259,7 @@ theorem isScalarTower_laurentRight (P : PairOfDefinition A) (f : A)
     letI := laurentRightAlgebra P f (hden₂ := hden₂) (hden₁₂ := hden₁₂)
     IsScalarTower A (ratLoc P {1} f hden₂) (ratLoc P {f * f, 1} f hden₁₂) :=
   letI := laurentRightAlgebra P f (hden₂ := hden₂) (hden₁₂ := hden₁₂)
-  IsScalarTower.of_algebraMap_eq fun r ↦ by
-    rw [algebraMap_laurentRightAlgebra]; exact ((laurentRightAlgHom P f).commutes r).symm
+  IsScalarTower.of_algebraMap_eq fun r ↦ ((laurentRightAlgHom P f).commutes r).symm
 
 namespace Laurent
 

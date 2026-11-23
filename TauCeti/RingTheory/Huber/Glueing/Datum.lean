@@ -160,14 +160,13 @@ def GlueingDatum.sectionsEquivProdOfSubsingleton [Subsingleton M₁₂]
 /-- Swapping the two pieces of a glueing datum restricts `LinearEquiv.prodComm` to an `R`-linear
 equivalence `D.sections R ≃ₗ[R] D.symm.sections R`. -/
 def GlueingDatum.sectionsEquivSymm (D : GlueingDatum R₁ R₂ R₁₂ M₁ M₂ M₁₂) :
-    D.sections R ≃ₗ[R] D.symm.sections R :=
-  LinearEquiv.ofLinearMap
-    (((LinearEquiv.prodComm R M₁ M₂).toLinearMap.comp (D.sections R).subtype).codRestrict
-      (D.symm.sections R) fun x ↦ x.property.symm)
-    (((LinearEquiv.prodComm R M₂ M₁).toLinearMap.comp (D.symm.sections R).subtype).codRestrict
-      (D.sections R) fun x ↦ x.property.symm)
-    (by ext ⟨⟨m₁, m₂⟩, _⟩ <;> rfl)
-    (by ext ⟨⟨m₂, m₁⟩, _⟩ <;> rfl)
+    D.sections R ≃ₗ[R] D.symm.sections R where
+  toFun x := ⟨(x.val.2, x.val.1), x.property.symm⟩
+  invFun x := ⟨(x.val.2, x.val.1), x.property.symm⟩
+  map_add' _ _ := rfl
+  map_smul' _ _ := rfl
+  left_inv _ := rfl
+  right_inv _ := rfl
 
 section Simps
 

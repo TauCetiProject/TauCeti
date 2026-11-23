@@ -62,12 +62,11 @@ respective rational completions, and `surjective_algebraMap_sub_laurent` recover
 example : Function.Surjective fun x : ℚ_[p] × ℚ_[p] ↦ x.1 - x.2 := by
   classical
   let P := (IsHuberRing.nonempty_pairOfDefinition (A := ℚ_[p])).some
-  have mk : ∀ {T : Finset ℚ_[p]} (h1 : (1 : ℚ_[p]) ∈ T), (∀ t ∈ T, t = 1) →
-      IsRationalCompletion P T 1
-        (isOpen_span_of_one_mem (Finset.mem_coe.mpr h1)) ℚ_[p] :=
-    fun _ hT ↦ isRationalCompletion_self_denom_one _ _ _ fun t ht ↦ hT t ht ▸ isPowerBounded_one
-  exact (mk (T := {(1 : ℚ_[p]), 1}) (by simp) (by simp)).surjective_algebraMap_sub_laurent
-    (mk (T := {1}) (by simp) (by simp)) (mk (T := {(1 : ℚ_[p]) * 1, 1}) (by simp) (by simp))
+  exact (isRationalCompletion_self_denom_one P {(1 : ℚ_[p]), 1}
+      (isOpen_span_of_one_mem (by simp)) (by simp)).surjective_algebraMap_sub_laurent
+    (isRationalCompletion_self_denom_one P {1} (isOpen_span_of_one_mem (by simp)) (by simp))
+    (isRationalCompletion_self_denom_one P {(1 : ℚ_[p]) * 1, 1}
+      (isOpen_span_of_one_mem (by simp)) (by simp))
     continuous_id continuous_id
 
 /-- **Non-example**: `ℚ_[p] × ℚ_[p]` is not a model of `ℚ_[p]⟨{1}/1⟩`, since its two coordinate

@@ -339,19 +339,13 @@ theorem rationalSectionRingEquiv_map_top (P : PairOfDefinition A) {Aplus : Subri
     rationalSectionRingEquiv P hAplus T s hT hB
         ((presentationLimitMap (P := P) (le_top : spaBasicOpen Aplus T s ≤ ⊤)).hom.val x) =
       algebraMap A B (topSectionRingEquiv P hAplus x) := by
-  set r := topSectionRingEquiv P hAplus x
-  have hx : x = (topSectionRingEquiv P hAplus).symm r := by simp [r]
-  have hcomp :
-      (presentationLimitMap (P := P) (le_top : spaBasicOpen Aplus T s ≤ ⊤)).hom.val x =
-        (toPresentationLimit (P := P) Aplus (spaBasicOpen Aplus T s)).hom.val
-          ((eqToHom (CompleteSeparatedTopCommRingCat.of_obj A).symm).val r) := by
-    rw [hx, topSectionRingEquiv_symm_eq]
-    exact congrArg
-      (fun g : CompleteSeparatedTopCommRingCat.of A ⟶
-          presentationLimit (P := P) Aplus (spaBasicOpen Aplus T s) ↦
-        g.hom.val ((eqToHom (CompleteSeparatedTopCommRingCat.of_obj A).symm).val r))
-      (toPresentationLimit_comp_presentationLimitMap Aplus (le_top : spaBasicOpen Aplus T s ≤ ⊤))
-  rw [hcomp, rationalSectionRingEquiv_toPresentationLimit]
+  obtain ⟨r, rfl⟩ := (topSectionRingEquiv P hAplus).symm.surjective x
+  rw [RingEquiv.apply_symm_apply, topSectionRingEquiv_symm_eq]
+  change rationalSectionRingEquiv P hAplus T s hT hB
+      ((toPresentationLimit (P := P) Aplus ⊤ ≫
+        presentationLimitMap (P := P) (le_top : spaBasicOpen Aplus T s ≤ ⊤)).hom.val
+        ((eqToHom (CompleteSeparatedTopCommRingCat.of_obj A).symm).val r)) = _
+  rw [toPresentationLimit_comp_presentationLimitMap, rationalSectionRingEquiv_toPresentationLimit]
 
 end TauCeti.ValuationSpectrum
 

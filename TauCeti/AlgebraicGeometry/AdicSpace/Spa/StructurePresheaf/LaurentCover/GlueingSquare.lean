@@ -41,8 +41,6 @@ This bridges sheafiness and Kedlaya–Liu Lemma 2.4.22 to Definition 2.7.3:
   complete Hausdorff Tate rings form glueing squares.
 * `TauCeti.Huber.GlueingSquare.of_simpleLaurent_ratLoc`: canonical `GlueingSquare` on the three
   explicit `ratLoc` carriers with `laurentLeftAlgHom` and `laurentRightAlgHom`.
-* `TauCeti.Huber.exists_simpleLaurent_glueingSquare`: existential packaging of the canonical
-  `ratLoc` glueing square.
 
 ## References
 
@@ -88,13 +86,11 @@ theorem GlueingSquare.of_simpleLaurent [IsTateRing R] (S : Pair R)
   let _ : Algebra L₁ L₁₂ := φ₁.toAlgebra
   let _ : Algebra L₂ L₁₂ := φ₂.toAlgebra
   have _ : IsScalarTower R L₁ L₁₂ := IsScalarTower.of_algebraMap_eq fun r ↦ by
-    simp only [RingHom.algebraMap_toAlgebra, φ₁, RingHom.comp_apply, RingEquiv.toRingHom_eq_coe,
-      RingHom.coe_coe, AlgEquiv.coe_toRingEquiv]
+    change algebraMap R L₁₂ r = e₁₂.symm (algebraMap R₁ R₁₂ (e₁ (algebraMap R L₁ r)))
     rw [e₁.commutes, ← IsScalarTower.algebraMap_apply R R₁ R₁₂, ← e₁₂.commutes,
       AlgEquiv.symm_apply_apply]
   have _ : IsScalarTower R L₂ L₁₂ := IsScalarTower.of_algebraMap_eq fun r ↦ by
-    simp only [RingHom.algebraMap_toAlgebra, φ₂, RingHom.comp_apply, RingEquiv.toRingHom_eq_coe,
-      RingHom.coe_coe, AlgEquiv.coe_toRingEquiv]
+    change algebraMap R L₁₂ r = e₁₂.symm (algebraMap R₂ R₁₂ (e₂ (algebraMap R L₂ r)))
     rw [e₂.commutes, ← IsScalarTower.algebraMap_apply R R₂ R₁₂, ← e₁₂.commutes,
       AlgEquiv.symm_apply_apply]
   have hL₁ := isRationalCompletion_ratLoc P {f, 1} 1 hT₁
@@ -114,12 +110,7 @@ theorem GlueingSquare.of_simpleLaurent [IsTateRing R] (S : Pair R)
         (RingHom.ext fun x ↦ (IsScalarTower.algebraMap_apply R L₂ L₁₂ x).symm))
       (exists_prime_comap_eq_of_simpleLaurent S.plus S.isRingOfIntegralElements hP₀ f hL₁ hL₂)
   exact hsqL.congr e₁ he₁ he₁' e₂ he₂ he₂' e₁₂.toRingEquiv he₁₂ he₁₂'
-    (fun x ↦ by simp only [RingHom.algebraMap_toAlgebra, φ₁, RingHom.comp_apply,
-      RingEquiv.toRingHom_eq_coe, RingHom.coe_coe, AlgEquiv.coe_toRingEquiv,
-      AlgEquiv.apply_symm_apply])
-    (fun x ↦ by simp only [RingHom.algebraMap_toAlgebra, φ₂, RingHom.comp_apply,
-      RingEquiv.toRingHom_eq_coe, RingHom.coe_coe, AlgEquiv.coe_toRingEquiv,
-      AlgEquiv.apply_symm_apply])
+    (fun _ ↦ e₁₂.apply_symm_apply _) (fun _ ↦ e₁₂.apply_symm_apply _)
 
 /-- Convenience form of `GlueingSquare.of_simpleLaurent` for any sheafy complete Hausdorff Tate
 ring `R`, using the canonical Huber pair `(R, R°)`. -/
@@ -157,31 +148,6 @@ theorem GlueingSquare.of_simpleLaurent_ratLoc {R : Type*} [CommRing R] [UniformS
     (isRationalCompletion_ratLoc P {1} f (isOpen_span_of_one_mem (by simp)))
     (isRationalCompletion_ratLoc P {f * f, 1} f (isOpen_span_of_one_mem (by simp)))
     (continuous_algebraMap_laurentLeftAlgebra P f) (continuous_algebraMap_laurentRightAlgebra P f)
-
-open Classical in
-open scoped TauCeti.Huber.Laurent in
-/-- For any complete Hausdorff sheafy Tate ring `R`, pair of definition `P`, and `f : R`, there
-exist models `R₁`, `R₂`, `R₁₂` of `R⟨f, 1/1⟩`, `R⟨1/f⟩`, and `R⟨f², 1/f⟩` (constructed from
-`ratLoc` and `laurentLeftAlgebra` / `laurentRightAlgebra`) that form a `GlueingSquare`. -/
-theorem exists_simpleLaurent_glueingSquare {R : Type u} [CommRing R] [UniformSpace R]
-    [IsUniformAddGroup R] [IsTopologicalRing R] [IsTateRing R] [CompleteSpace R] [T0Space R]
-    (hs : IsSheafyRing R) (P : PairOfDefinition R) (f : R) :
-    ∃ (R₁ R₂ R₁₂ : Type u) (_ : CommRing R₁) (_ : CommRing R₂) (_ : CommRing R₁₂)
-      (_ : TopologicalSpace R₁) (_ : TopologicalSpace R₂) (_ : TopologicalSpace R₁₂)
-      (_ : Algebra R R₁) (_ : Algebra R R₂) (_ : Algebra R R₁₂)
-      (_ : Algebra R₁ R₁₂) (_ : Algebra R₂ R₁₂)
-      (_ : IsScalarTower R R₁ R₁₂) (_ : IsScalarTower R R₂ R₁₂),
-      IsRationalCompletion P {f, 1} 1 (isOpen_span_of_one_mem (by simp)) R₁ ∧
-        IsRationalCompletion P {1} f (isOpen_span_of_one_mem (by simp)) R₂ ∧
-        IsRationalCompletion P {f * f, 1} f (isOpen_span_of_one_mem (by simp)) R₁₂ ∧
-        GlueingSquare R R₁ R₂ R₁₂ :=
-  ⟨_, _, _, inferInstance, inferInstance, inferInstance, inferInstance, inferInstance,
-    inferInstance, inferInstance, inferInstance, inferInstance, inferInstance, inferInstance,
-    inferInstance, inferInstance,
-    isRationalCompletion_ratLoc P {f, 1} 1 (isOpen_span_of_one_mem (by simp)),
-    isRationalCompletion_ratLoc P {1} f (isOpen_span_of_one_mem (by simp)),
-    isRationalCompletion_ratLoc P {f * f, 1} f (isOpen_span_of_one_mem (by simp)),
-    GlueingSquare.of_simpleLaurent_ratLoc hs P f⟩
 
 end RatLoc
 
