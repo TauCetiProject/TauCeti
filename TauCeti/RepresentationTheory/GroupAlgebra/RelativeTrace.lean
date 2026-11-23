@@ -384,21 +384,20 @@ theorem coeff_relTrace_single_inf_centralizer [Finite G] (P : Subgroup G) (g : G
   let K := P.map (ConjAct.toConjAct (G := G)).toMonoidHom
   let φ : P ≃* K := P.equivMapOfInjective _ ConjAct.toConjAct.injective
   have hsmul (q : P) (a : G) : φ q • a = q * a * (q : G)⁻¹ := ConjAct.toConjAct_smul _ _
-  have hrel (a b : K) : QuotientGroup.leftRel (MulAction.stabilizer K g) a b ↔
-      QuotientGroup.leftRel ((P ⊓ Subgroup.centralizer {g}).subgroupOf P) (φ.symm a)
-        (φ.symm b) := by
-    obtain ⟨a, rfl⟩ := φ.surjective a
-    obtain ⟨b, rfl⟩ := φ.surjective b
-    rw [QuotientGroup.leftRel_apply, QuotientGroup.leftRel_apply, ← map_inv, ← map_mul,
-      MulAction.mem_stabilizer_iff, hsmul, Subgroup.mem_subgroupOf, Subgroup.mem_inf,
-      Subgroup.mem_centralizer_singleton_iff, mul_inv_eq_iff_eq_mul, φ.symm_apply_apply,
-      φ.symm_apply_apply]
-    exact ⟨fun hq => ⟨(a⁻¹ * b).property, hq⟩, fun hq => hq.2⟩
+  have hrel (a b : P) : QuotientGroup.leftRel ((P ⊓ Subgroup.centralizer {g}).subgroupOf P) a b ↔
+      QuotientGroup.leftRel (MulAction.stabilizer K g) (φ a) (φ b) := by
+    rw [QuotientGroup.leftRel_apply, QuotientGroup.leftRel_apply, ← map_inv φ, ← map_mul φ,
+      MulAction.mem_stabilizer_iff, hsmul]
+    simp only [Subgroup.mem_subgroupOf, Subgroup.mem_inf, SetLike.coe_mem, true_and,
+      Subgroup.mem_centralizer_singleton_iff, commute_iff_eq, mul_inv_eq_iff_eq_mul]
   have := Fintype.ofFinite (MulAction.orbit K g)
   let e : MulAction.orbit K g ≃ P ⧸ (P ⊓ Subgroup.centralizer {g}).subgroupOf P :=
-    (MulAction.orbitEquivQuotientStabilizer K g).trans (Quotient.congr φ.symm.toEquiv hrel)
+    ((Quotient.congr φ.toEquiv hrel).trans (MulAction.orbitEquivQuotientStabilizer K g).symm).symm
   have hs (x : MulAction.orbit K g) : ((e x).out : G) * g * ((e x).out : G)⁻¹ = x := by
-    have he (q : P) : (e.symm q : G) = φ q • g := rfl
+    have he (q : P) : (e.symm q : G) = φ q • g := by
+      simp only [e, Equiv.symm_symm, Equiv.trans_apply]
+      -- `Quotient.congr` sends the class of `q` to the class of `φ q` (`Quotient.congr_mk`).
+      exact MulAction.orbitEquivQuotientStabilizer_symm_apply (G := K) g (φ q)
     rw [← hsmul, ← he, QuotientGroup.out_eq', e.symm_apply_apply]
   have hbij : Function.Bijective
       fun x => ((e x).out : P ⧸ (P ⊓ Subgroup.centralizer {g}).subgroupOf P) := by
