@@ -443,12 +443,6 @@ theorem pos_of_mem_Ioo_neg_one_div {K : Type*} [Field K] [LinearOrder K] [IsStri
     {s t : K} (ht : t ∈ Set.Ioo (-1 / s) (1 / s)) : 0 < s :=
   one_div_pos.1 (neg_lt_self_iff.1 (by simpa only [neg_div] using ht.1.trans ht.2))
 
-/-- Rescaling a nonnegative bound across a positive threshold `a ≤ b`: `c ≤ c / a * b`. -/
-theorem le_div_mul_of_le {α : Type*} [CommGroupWithZero α] [LinearOrder α]
-    [PosMulMono α] [PosMulReflectLT α] {a b c : α}
-    (hc : 0 ≤ c) (ha : 0 < a) (hab : a ≤ b) : c ≤ c / a * b :=
-  (div_mul_cancel₀ c ha.ne').symm.trans_le (mul_le_mul_of_nonneg_left hab (div_nonneg hc ha.le))
-
 /-- Given positive `cutoff`, threshold `L₀`, `weight`, and `M`, there is `c > 0` with
 `c ≤ cutoff * L₀` such that whenever `0 < δ`, `L₀ ≤ L`, and `δ ≤ c / L`, we have both
 `δ ≤ cutoff` and `M * L < weight * δ⁻¹`. -/

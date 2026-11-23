@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.Meromorphic.Order
 public import Mathlib.NumberTheory.LSeries.DirichletContinuation
 import TauCeti.Algebra.Order.Field.Basic
+import TauCeti.Algebra.Order.GroupWithZero.Basic
 import TauCeti.Analysis.Meromorphic.Divisor
 import TauCeti.Analysis.RCLike.Basic
 import TauCeti.Analysis.SpecialFunctions.Log.GrowthScale
@@ -35,13 +36,13 @@ level-one character (`riemannZeta`) to any principal character modulo `q` on `Re
 `c ≤ log 3 / 2` places the entire region inside `Re s ≥ 1 / 2`.
 
 For nonprincipal `χ`, Landau's lemma
-(`DirichletCharacter.exists_neg_re_logDeriv_LFunction_add_sum_le` in
+(`TauCeti.exists_neg_re_logDeriv_LFunction_add_sum_le` in
 `TauCeti.NumberTheory.DirichletCharacter.LFunction.LogDeriv.Bounds`) bounds `-Re (L′/L)` up to
 `O(log (q (|t| + 3)))` on `1 ≤ σ ≤ 9 / 8` while retaining zeros in
 `S ∩ closedBall ((9 / 8 : ℝ) + t * I) (1 / 4)` (while the Dirichlet series at `9 / 8` yields the
-half-plane bound `DirichletCharacter.exists_neg_re_logDeriv_LFunction_le` for `1 ≤ Re s` without
-the sum, and `DirichletCharacter.exists_neg_re_logDeriv_LFunction_add_sub_inv_le` provides the
-uniform single-zero bound for all `1 ≤ σ`):
+half-plane bound `TauCeti.exists_neg_re_logDeriv_LFunction_le` for `1 ≤ Re s` without the sum, and
+`TauCeti.exists_neg_re_logDeriv_LFunction_add_sub_inv_le` provides the uniform single-zero bound for
+all `1 ≤ σ`):
 * When `χ ^ 2 ≠ 1`, or when `χ ^ 2 = 1` and `|Im ρ| ≥ 6 (1 - Re ρ)`, the `3–4–1` inequality at
   `σ = 1 + 4 (1 - Re ρ)` rules out any zero in the region (using the `(4 |γ|)⁻¹` bound for the
   pole of `L′/L(σ + 2 i γ, 1_q)` when `χ ^ 2 = 1`).
@@ -108,8 +109,9 @@ private theorem exists_neg_re_logDeriv_sq_two_mul_le :
       1 < σ → 0 < δ → (χ ^ 2 ≠ 1 ∨ 6 * δ ≤ |γ|) →
         -(logDeriv (χ ^ 2).LFunction (σ + 2 * γ * I)).re ≤
           (24 * δ)⁻¹ + B * Real.log (q * (|γ| + 3)) := by
-  obtain ⟨A, hA, hLandau⟩ := DirichletCharacter.exists_neg_re_logDeriv_LFunction_le
-  obtain ⟨B₀, hB₀, hζ⟩ := TauCeti.exists_neg_re_logDeriv_riemannZeta_le_of_im_ne_zero
+  obtain ⟨A, hA, hLandau⟩ := TauCeti.exists_neg_re_logDeriv_LFunction_le
+  obtain ⟨B₀, hB₀, hζ⟩ :=
+    TauCeti.exists_neg_re_logDeriv_riemannZeta_le_inv_add_mul_log_of_im_ne_zero
   refine ⟨2 * A + 2 * B₀ + 1, by positivity, fun {q} _ χ {σ γ δ} hσ1 hδ0 hcase ↦ ?_⟩
   set s : ℂ := σ + 2 * γ * I
   set L : ℝ := Real.log (q * (|γ| + 3))
@@ -128,7 +130,7 @@ private theorem exists_neg_re_logDeriv_sq_two_mul_le :
     have htriv : -(logDeriv (1 : DirichletCharacter ℂ q).LFunction s -
         logDeriv riemannZeta s).re ≤ Real.log q :=
       (neg_le_abs _).trans <| (abs_re_le_norm _).trans <|
-        norm_logDeriv_LFunctionTrivChar_sub_logDeriv_riemannZeta_le (N := q) (s := s)
+        TauCeti.norm_logDeriv_LFunctionTrivChar_sub_logDeriv_riemannZeta_le (N := q) (s := s)
           (by linarith)
     have hlogq : Real.log q ≤ L := Real.log_le_log (by positivity) (by nlinarith [abs_nonneg γ])
     have hζs := hζ (s := s) (by linarith) (by rw [hs_im]; exact mul_ne_zero two_ne_zero hγ_ne)
@@ -150,7 +152,7 @@ private theorem exists_not_pos_meromorphicOrderAt_of_sq_ne_one_or_im_ge :
       ∀ ρ : ℂ, (χ ^ 2 ≠ 1 ∨ 6 * (1 - ρ.re) ≤ |ρ.im|) →
         1 - c / Real.log (q * (|ρ.im| + 3)) ≤ ρ.re →
         ¬ 0 < meromorphicOrderAt χ.LFunction ρ := by
-  obtain ⟨A, hA, hret⟩ := DirichletCharacter.exists_neg_re_logDeriv_LFunction_add_sub_inv_le
+  obtain ⟨A, hA, hret⟩ := TauCeti.exists_neg_re_logDeriv_LFunction_add_sub_inv_le
   obtain ⟨C₁, hC₁0, hpole0⟩ := TauCeti.exists_neg_re_logDeriv_riemannZeta_one_add_le
   obtain ⟨B₂, hB₂, hsq2⟩ := exists_neg_re_logDeriv_sq_two_mul_le
   have hlog3 : 0 < Real.log 3 := Real.log_pos (by norm_num)
@@ -191,7 +193,7 @@ private theorem exists_neg_re_logDeriv_LFunction_conj_pair_le :
       ∀ {ρ : ℂ}, ρ.im ≠ 0 → |ρ.im| < 6 * (1 - ρ.re) → 1 - ρ.re ≤ 1 / 96 → χ.LFunction ρ = 0 →
         -(logDeriv χ.LFunction ((1 + 12 * (1 - ρ.re) : ℝ) : ℂ)).re +
           2 * (13 / 205 * (1 - ρ.re)⁻¹) ≤ A * Real.log (q * (|ρ.im| + 3)) := by
-  obtain ⟨A, hA, hLandau⟩ := DirichletCharacter.exists_neg_re_logDeriv_LFunction_add_sum_le
+  obtain ⟨A, hA, hLandau⟩ := TauCeti.exists_neg_re_logDeriv_LFunction_add_sum_le
   refine ⟨A, hA, fun {q} _ χ hχ hsq {ρ} hγ0 hγ_lt hδ_96 hL0 ↦ ?_⟩
   have hLconj : χ.LFunction (conj ρ) = 0 :=
     (LFunction_conj_eq_zero_iff_of_isQuadratic (MulChar.isQuadratic_iff_sq_eq_one.2 hsq) ρ).2 hL0
@@ -292,20 +294,20 @@ private theorem sum_divisor_mul_re_inv_ge {q : ℕ} [NeZero q] {χ : DirichletCh
       ∑ ρ ∈ S, (MeromorphicOn.divisor χ.LFunction
         (closedBall ((9 / 8 : ℝ) + (0 : ℝ) * I) ((1 / 2 : ℝ) / 2)) ρ : ℝ) *
         (((((1 + 2 * δ : ℝ) : ℂ) + (0 : ℝ) * I) - ρ)⁻¹).re := by
-  rw [Finset.sum_mul]
-  refine Finset.sum_le_sum fun ρ hρ ↦ ?_
-  obtain ⟨him, hle, hL0⟩ := hS ρ hρ
-  have hlt1 : ρ.re < 1 :=
-    by_contra fun h ↦ LFunction_ne_zero_of_one_le_re χ (.inl hχ) (not_lt.mp h) hL0
-  have hD0 : (0 : ℝ) ≤ (MeromorphicOn.divisor χ.LFunction
-      (closedBall ((9 / 8 : ℝ) + (0 : ℝ) * I) ((1 / 2 : ℝ) / 2)) ρ : ℝ) :=
-    mod_cast MeromorphicOn.AnalyticOnNhd.divisor_nonneg
-      (fun z _ ↦ (differentiable_LFunction hχ).analyticAt z) ρ
-  have hdiff : (((1 + 2 * δ : ℝ) : ℂ) + (0 : ℝ) * I) - ρ = ((1 + 2 * δ - ρ.re : ℝ) : ℂ) := by
-    simpa using RCLike.sub_eq_ofReal_re_sub_of_im_eq
-      (z := ((1 + 2 * δ : ℝ) : ℂ) + (0 : ℝ) * I) (w := ρ) (by simp [him])
-  rw [hdiff, ← ofReal_inv, ofReal_re]
-  exact mul_le_mul_of_nonneg_left (inv_anti₀ (by linarith) (by linarith)) hD0
+  simpa using RCLike.sum_mul_inv_le_sum_mul_re_sub_inv
+    (K := ℂ) (S := S)
+    (w := fun ρ ↦ (MeromorphicOn.divisor χ.LFunction
+      (closedBall ((9 / 8 : ℝ) + (0 : ℝ) * I) ((1 / 2 : ℝ) / 2)) ρ : ℝ))
+    (σ := 1 + 2 * δ) (D := 3 * δ)
+    (fun ρ _ ↦ mod_cast MeromorphicOn.AnalyticOnNhd.divisor_nonneg
+      (fun z _ ↦ (differentiable_LFunction hχ).analyticAt z) ρ)
+    fun ρ hρ ↦ by
+      obtain ⟨him, hle, hL0⟩ := hS ρ hρ
+      have hlt1 : ρ.re < 1 :=
+        by_contra fun h ↦ LFunction_ne_zero_of_one_le_re χ (.inl hχ) (not_lt.mp h) hL0
+      refine ⟨by simpa using him, ?_, ?_⟩ <;>
+        · simp only [RCLike.re_to_complex]
+          linarith
 
 private theorem exists_sum_divisor_le_one_of_im_eq_zero :
     ∃ c : ℝ, 0 < c ∧ c ≤ 1 / 16 * Real.log 3 ∧
@@ -313,7 +315,7 @@ private theorem exists_sum_divisor_le_one_of_im_eq_zero :
         (∀ ρ ∈ S, ρ.im = 0 ∧ 1 - c / Real.log (q * 3) ≤ ρ.re ∧ χ.LFunction ρ = 0) →
         ∑ ρ ∈ S, MeromorphicOn.divisor χ.LFunction
           (closedBall ((9 / 8 : ℝ) + (0 : ℝ) * I) ((1 / 2 : ℝ) / 2)) ρ ≤ 1 := by
-  obtain ⟨A, hA, hLandau⟩ := DirichletCharacter.exists_neg_re_logDeriv_LFunction_add_sum_le
+  obtain ⟨A, hA, hLandau⟩ := TauCeti.exists_neg_re_logDeriv_LFunction_add_sum_le
   obtain ⟨M, hM, hcomb0⟩ := exists_sub_inv_mul_inv_le_of_neg_re_logDeriv_LFunction_add_le A hA
   have hlog3 : 0 < Real.log 3 := Real.log_pos (by norm_num)
   obtain ⟨c, hc0, hc16, hcutoff⟩ := TauCeti.exists_pos_le_mul_and_mul_lt_mul_inv
@@ -415,7 +417,7 @@ private theorem exists_im_eq_zero_and_sq_eq_one_of_meromorphicOrderAt_pos (c₃ 
   have hχ : χ ≠ 1 := by
     rintro rfl
     rw [← LFunctionTrivChar,
-      meromorphicOrderAt_LFunctionTrivChar_eq_meromorphicOrderAt_riemannZeta (by linarith),
+      TauCeti.meromorphicOrderAt_LFunctionTrivChar_eq_meromorphicOrderAt_riemannZeta (by linarith),
       TauCeti.meromorphicOrderAt_riemannZeta_pos_iff] at hord
     have hlog_q : Real.log (|ρ.im| + 3) ≤ L :=
       Real.log_le_log (by positivity) (by nlinarith [abs_nonneg ρ.im])

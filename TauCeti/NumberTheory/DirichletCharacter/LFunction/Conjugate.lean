@@ -94,7 +94,7 @@ theorem deriv_LFunction_inv_conj (s : ℂ) :
     deriv χ⁻¹.LFunction (conj s) = conj (deriv χ.LFunction s) := by
   by_cases hs : s = 1 ∧ χ = 1
   · obtain ⟨rfl, rfl⟩ := hs
-    simp [deriv_zero_of_not_differentiableAt not_differentiableAt_LFunctionTrivChar_one]
+    simp [deriv_zero_of_not_differentiableAt TauCeti.not_differentiableAt_LFunctionTrivChar_one]
   have hs := not_and_or.mp hs
   have hloc : χ⁻¹.LFunction =ᶠ[𝓝 (conj s)] conj ∘ χ.LFunction ∘ conj := by
     rcases hs with hs | hχ

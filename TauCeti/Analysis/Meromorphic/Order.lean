@@ -64,6 +64,7 @@ theorem AnalyticOnNhd.meromorphicOrderAt_ne_top_of_exists_ne_zero
 
 /-- An analytic function at `x` has positive meromorphic order at `x` if and only if it vanishes
 at `x` (including when it vanishes identically near `x`, where the order is `⊤`). -/
+@[simp]
 theorem AnalyticAt.meromorphicOrderAt_pos_iff_eq_zero
     {𝕜 E : Type*} [NontriviallyNormedField 𝕜] [NormedAddCommGroup E] [NormedSpace 𝕜 E]
     {f : 𝕜 → E} {x : 𝕜} (hf : AnalyticAt 𝕜 f x) :

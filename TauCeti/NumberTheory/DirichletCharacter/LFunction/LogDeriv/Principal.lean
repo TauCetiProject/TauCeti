@@ -9,8 +9,8 @@ public import Mathlib.NumberTheory.LSeries.DirichletContinuation
 public import Mathlib.Analysis.Calculus.LogDeriv
 import Mathlib.Tactic.Linarith
 import TauCeti.Analysis.SpecialFunctions.Pow.EulerFactor
-import TauCeti.NumberTheory.DirichletCharacter.LFunction.ChangeLevel
 import TauCeti.NumberTheory.DirichletCharacter.LFunction.LogDeriv.Basic
+import TauCeti.NumberTheory.DirichletCharacter.LFunction.LogDeriv.ChangeLevel
 
 /-!
 # Deleted Euler factors and higher-prime-power remainders for principal characters
@@ -162,7 +162,7 @@ theorem abs_neg_re_logDeriv_LFunctionTrivChar_remainder_sub_le (N : ℕ) [NeZero
 
 end Nat
 
-namespace DirichletCharacter
+namespace TauCeti
 
 /-- **Deleted Euler factors in the logarithmic derivative of the principal character.** On the
 closed half-plane `1 ≤ re s`, `logDeriv (LFunctionTrivChar N) s` differs from
@@ -175,4 +175,4 @@ theorem norm_logDeriv_LFunctionTrivChar_sub_logDeriv_riemannZeta_le {N : ℕ} [N
   simpa [hch, LFunctionTrivChar, LFunction_modOne_eq] using
     norm_logDeriv_LFunction_changeLevel_sub_le (1 : DirichletCharacter ℂ 1) (one_dvd N) hs
 
-end DirichletCharacter
+end TauCeti

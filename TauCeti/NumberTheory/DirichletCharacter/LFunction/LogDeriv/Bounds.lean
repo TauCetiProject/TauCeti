@@ -8,10 +8,8 @@ module
 public import Mathlib.Analysis.Calculus.LogDeriv
 public import Mathlib.Analysis.Meromorphic.Divisor
 public import Mathlib.NumberTheory.LSeries.DirichletContinuation
-import Mathlib.NumberTheory.LSeries.Nonvanishing
-import TauCeti.Algebra.Order.Field.Basic
+import TauCeti.Algebra.Order.GroupWithZero.Basic
 import TauCeti.Analysis.Complex.LocalLogDeriv
-import TauCeti.Analysis.RCLike.Basic
 import TauCeti.NumberTheory.DirichletCharacter.LFunction.Bounds
 import TauCeti.NumberTheory.DirichletCharacter.LFunction.LogDeriv.Basic
 import TauCeti.NumberTheory.LSeries.DirichletEulerLog
@@ -23,24 +21,24 @@ For a modulus `q ≥ 1` and a nonprincipal Dirichlet character `χ ≠ 1` modulo
 logarithmic-derivative lemma applied on the disc of radius `1 / 2` centred at `9 / 8 + i t` gives
 the uniform bound `-(logDeriv χ.LFunction s).re ≪ log (q * (|Im s| + 3))`:
 
-* For `1 ≤ σ ≤ 9 / 8`, `DirichletCharacter.exists_neg_re_logDeriv_LFunction_add_sum_le` bounds
+* For `1 ≤ σ ≤ 9 / 8`, `TauCeti.exists_neg_re_logDeriv_LFunction_add_sum_le` bounds
   `-(logDeriv χ.LFunction (σ + t * I)).re` while retaining the divisor-weighted zero terms over
   any finite set `S` (only zeros in `S ∩ closedBall ((9 / 8 : ℝ) + t * I) (1 / 4)` contribute).
 * Extending across `Re s > 9 / 8` via the Dirichlet series at `9 / 8` drops the retained-zero sum
-  and yields the half-plane bound `DirichletCharacter.exists_neg_re_logDeriv_LFunction_le` across
+  and yields the half-plane bound `TauCeti.exists_neg_re_logDeriv_LFunction_le` across
   all `1 ≤ Re s`.
 * Combining the local single-zero term on `1 ≤ σ ≤ 9 / 8` with `7 / 8 ≤ ρ.re` and absorbing the
   bounded term `(σ - ρ.re)⁻¹ ≤ 8` into the half-plane bound outside that range yields
-  `DirichletCharacter.exists_neg_re_logDeriv_LFunction_add_sub_inv_le` for all `σ ≥ 1` and all
+  `TauCeti.exists_neg_re_logDeriv_LFunction_add_sub_inv_le` for all `σ ≥ 1` and all
   zeros `ρ` of `χ.LFunction`.
 
 ## Main results
 
-* `DirichletCharacter.exists_neg_re_logDeriv_LFunction_add_sum_le`: local retained-zero bound on
+* `TauCeti.exists_neg_re_logDeriv_LFunction_add_sum_le`: local retained-zero bound on
   `1 ≤ σ ≤ 9 / 8` for `S ∩ closedBall ((9 / 8 : ℝ) + t * I) (1 / 4)`.
-* `DirichletCharacter.exists_neg_re_logDeriv_LFunction_le`: half-plane bound on `1 ≤ Re s`
+* `TauCeti.exists_neg_re_logDeriv_LFunction_le`: half-plane bound on `1 ≤ Re s`
   without retained zero terms.
-* `DirichletCharacter.exists_neg_re_logDeriv_LFunction_add_sub_inv_le`: uniform single-zero bound
+* `TauCeti.exists_neg_re_logDeriv_LFunction_add_sub_inv_le`: uniform single-zero bound
   for all `1 ≤ σ` and every zero `ρ` of `χ.LFunction`.
 
 ## References
@@ -52,30 +50,9 @@ the uniform bound `-(logDeriv χ.LFunction s).re ≪ log (q * (|Im s| + 3))`:
 
 public section
 
-namespace DirichletCharacter
+open DirichletCharacter
 
-private theorem norm_LFunction_on_closedBall {q : ℕ} [NeZero q] {χ : DirichletCharacter ℂ q}
-    (hχ : χ ≠ 1) {t : ℝ} {w : ℂ}
-    (hw : w ∈ Metric.closedBall ((9 / 8 : ℝ) + t * Complex.I) (1 / 2)) :
-    5 / 8 ≤ w.re ∧ ‖χ.LFunction w‖ ≤ 2 * ((q : ℝ) * (|t| + 3)) := by
-  have hre_diff : |w.re - 9 / 8| ≤ 1 / 2 := by
-    simpa using RCLike.abs_re_sub_le_of_mem_closedBall hw
-  have hw_re : 5 / 8 ≤ w.re := by linarith [(abs_le.mp hre_diff).1]
-  have hwn : ‖w‖ ≤ |t| + 3 := by
-    have h : ‖w‖ ≤ |((9 / 8 : ℝ) + t * Complex.I).re| + |((9 / 8 : ℝ) + t * Complex.I).im| +
-        1 / 2 := RCLike.norm_le_abs_re_add_abs_im_add_of_mem_closedBall hw
-    simp only [Complex.add_re, Complex.ofReal_re, Complex.mul_re, Complex.I_re, mul_zero,
-      Complex.ofReal_im, Complex.I_im, mul_one, sub_zero, add_zero, Complex.add_im, Complex.mul_im,
-      zero_add] at h
-    rw [abs_of_nonneg (by norm_num)] at h
-    linarith
-  refine ⟨hw_re, ?_⟩
-  calc ‖χ.LFunction w‖ ≤ (q : ℝ) * ‖w‖ / w.re :=
-      χ.norm_LFunction_le_level_mul_norm_div_re hχ (by linarith)
-    _ ≤ (q : ℝ) * (|t| + 3) / (5 / 8) := by gcongr
-    _ ≤ 2 * ((q : ℝ) * (|t| + 3)) := by
-      have hq0 : 0 ≤ (q : ℝ) * (|t| + 3) := by positivity
-      linarith
+namespace TauCeti
 
 /-- **Retained-zero Landau upper bound for `-Re (L′/L)` of a nonprincipal character.** There is an
 absolute constant `A > 0` such that for `χ ≠ 1` modulo `q ≥ 1`, `1 ≤ σ ≤ 9 / 8`, and any finite
@@ -90,8 +67,8 @@ theorem exists_neg_re_logDeriv_LFunction_add_sum_le :
               (Metric.closedBall ((9 / 8 : ℝ) + t * Complex.I) ((1 / 2 : ℝ) / 2)) ρ : ℝ) *
               ((((σ : ℂ) + t * Complex.I) - ρ)⁻¹).re ≤
           A * Real.log (q * (|t| + 3)) := by
-  obtain ⟨A, hA, hLandau⟩ := TauCeti.exists_neg_re_logDeriv_add_sum_divisor_half_le
-    (R := 1 / 2) (b := Real.exp (-(riemannZeta (9 / 8 : ℝ)).re))
+  obtain ⟨A, hA, hLandau⟩ := TauCeti.exists_neg_re_logDeriv_add_sum_divisor_half_le_of_re
+    (x₀ := 9 / 8) (R := 1 / 2) (b := Real.exp (-(riemannZeta (9 / 8 : ℝ)).re))
     (c := 2) (K₀ := 3) (by norm_num) (Real.exp_pos _) (by norm_num)
   refine ⟨A, hA, fun {q} _ χ hχ {σ t} hσ1 hσ2 S ↦ ?_⟩
   have hf : AnalyticOnNhd ℂ χ.LFunction
@@ -102,15 +79,21 @@ theorem exists_neg_re_logDeriv_LFunction_add_sum_le :
     simpa using χ.exp_neg_re_riemannZeta_le_norm_LFunction
       (s := (9 / 8 : ℝ) + t * Complex.I) (by simp; norm_num)
   have hq1 : (1 : ℝ) ≤ q := Nat.one_le_cast.mpr NeZero.one_le
-  have hz : ‖((σ : ℂ) + t * Complex.I) - ((9 / 8 : ℝ) + t * Complex.I)‖ ≤ (1 / 2 : ℝ) / 4 := by
-    rw [RCLike.norm_sub_eq_abs_re_sub_of_im_eq (by simp)]
-    simpa [abs_le] using ⟨by linarith, by linarith⟩
-  exact hLandau hf hb₀
-    (fun w hw ↦ (norm_LFunction_on_closedBall hχ (Metric.sphere_subset_closedBall hw)).2) hz
+  refine hLandau hf hb₀ (fun w _ hwre hwn ↦ ?_) (by linarith) hσ2
     (LFunction_ne_zero_of_one_le_re χ (.inl hχ) (by simp [hσ1])) S
     (fun ρ _ _ h0 ↦ (not_le.mp fun h1 ↦ LFunction_ne_zero_of_one_le_re χ (.inl hχ) h1 h0).le.trans
       (by simp [hσ1]))
     (by nlinarith [abs_nonneg t])
+  have hwre' : 5 / 8 ≤ w.re := by linarith
+  have hwn' : ‖w‖ ≤ |t| + 3 := by
+    rw [abs_of_pos (by norm_num : (0 : ℝ) < 9 / 8)] at hwn
+    linarith
+  calc ‖χ.LFunction w‖ ≤ (q : ℝ) * ‖w‖ / w.re :=
+      χ.norm_LFunction_le_level_mul_norm_div_re hχ (by linarith)
+    _ ≤ (q : ℝ) * (|t| + 3) / (5 / 8) := by gcongr
+    _ ≤ 2 * ((q : ℝ) * (|t| + 3)) := by
+      have hq0 : 0 ≤ (q : ℝ) * (|t| + 3) := by positivity
+      linarith
 
 /-- **Upper bound for `-Re (L′/L)` of a nonprincipal character across `1 ≤ Re s`.** There is an
 absolute constant `A > 0` such that
@@ -147,27 +130,15 @@ theorem exists_neg_re_logDeriv_LFunction_add_sub_inv_le :
   have hq1 : (1 : ℝ) ≤ q := Nat.one_le_cast.mpr NeZero.one_le
   have hρ_lt1 : ρ.re < 1 :=
     by_contra fun h ↦ LFunction_ne_zero_of_one_le_re χ (.inl hχ) (not_lt.mp h) hL0
-  have hlog_ge : Real.log 3 ≤ Real.log (q * (|ρ.im| + 3)) :=
-    Real.log_le_log (by norm_num) (by nlinarith [abs_nonneg ρ.im])
-  have hlog_nonneg : 0 ≤ Real.log (q * (|ρ.im| + 3)) := hlog3.le.trans hlog_ge
-  by_cases hloc : σ ≤ 9 / 8 ∧ 7 / 8 ≤ ρ.re
-  · have hloc_le := AnalyticOnNhd.neg_re_logDeriv_add_sub_inv_le
-      (fun z _ ↦ (differentiable_LFunction hχ).analyticAt z)
-      (LFunction_ne_zero_of_one_le_re χ (.inl hχ) (by simp; norm_num))
-      (abs_le.mpr ⟨by linarith [hloc.2], by linarith⟩) hL0 (hρ_lt1.le.trans hσ1)
-      (hsum χ hχ hσ1 hloc.1 {ρ})
-    exact hloc_le.trans (mul_le_mul_of_nonneg_right (le_max_left _ _) hlog_nonneg)
-  · have hgap : (1 / 8 : ℝ) < σ - ρ.re := by
-      rw [not_and_or, not_le, not_le] at hloc
-      rcases hloc with hσ9 | hρ7 <;> linarith
-    have hinv : (σ - ρ.re)⁻¹ ≤ 8 / Real.log 3 * Real.log (q * (|ρ.im| + 3)) :=
-      (inv_le_of_inv_le₀ (by positivity) (by norm_num; linarith)).trans
-        (TauCeti.le_div_mul_of_le (by norm_num) hlog3 hlog_ge)
-    have htail := hle χ hχ (s := σ + ρ.im * Complex.I) (by simp [hσ1])
-    simp only [Complex.add_im, Complex.ofReal_im, Complex.mul_im, Complex.I_re, mul_zero,
-      Complex.I_im, mul_one, Complex.ofReal_re, add_zero, zero_add] at htail
-    have hbound : -(logDeriv χ.LFunction (σ + ρ.im * Complex.I)).re + (σ - ρ.re)⁻¹ ≤
-        (A₂ + 8 / Real.log 3) * Real.log (q * (|ρ.im| + 3)) := by linarith
-    exact hbound.trans (mul_le_mul_of_nonneg_right (le_max_right _ _) hlog_nonneg)
+  have hbound := TauCeti.neg_re_logDeriv_add_sub_inv_le_max
+    (f := χ.LFunction) (ρ := ρ) (σ₁ := 1) (σ₀ := 9 / 8) (σ := σ) (r := (1 / 2 : ℝ) / 2)
+    (d := 1 / 8) (A₁ := A₁) (A₂ := A₂) (L₀ := Real.log 3) (L := Real.log (q * (|ρ.im| + 3)))
+    hσ1 (by norm_num) (by norm_num) (by norm_num) hlog3
+    (Real.log_le_log (by norm_num) (by nlinarith [abs_nonneg ρ.im]))
+    (fun z _ ↦ (differentiable_LFunction hχ).analyticAt z)
+    (LFunction_ne_zero_of_one_le_re χ (.inl hχ) (by simp; norm_num)) hL0 hρ_lt1.le
+    (fun hσ9 ↦ hsum χ hχ hσ1 hσ9 {ρ})
+    (by simpa using hle χ hχ (s := σ + ρ.im * Complex.I) (by simp [hσ1]))
+  simpa [show (1 / 8 : ℝ)⁻¹ = 8 by norm_num] using hbound
 
-end DirichletCharacter
+end TauCeti

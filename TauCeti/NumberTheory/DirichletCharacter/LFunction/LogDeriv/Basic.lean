@@ -7,7 +7,7 @@ module
 
 public import Mathlib.NumberTheory.LSeries.PrimesInAP
 public import TauCeti.NumberTheory.ArithmeticFunction.VonMangoldt
-import TauCeti.Algebra.Order.Field.Basic
+import TauCeti.Algebra.Order.GroupWithZero.Basic
 import TauCeti.NumberTheory.LSeries.ThreeFourOne
 
 /-!
@@ -286,9 +286,10 @@ theorem norm_logDeriv_LFunction_le [NeZero N] (hs : 1 < s.re) :
     ‖logDeriv (LFunction χ) s‖ ≤ -(logDeriv riemannZeta s.re).re :=
   χ.norm_logDeriv_LFunction_le_of_le_re hs le_rfl
 
-/-- Extending an upper bound `-(logDeriv (LFunction χ) s).re ≤ A₀ * M` from `s.re ≤ σ₀` (`1 < σ₀`)
-to arbitrary `s : ℂ` via the Dirichlet-series comparison `‖L′/L(s, χ)‖ ≤ -Re (ζ′/ζ(σ₀))` on
-`σ₀ ≤ s.re`. -/
+/-- Extending an upper bound `-(logDeriv (LFunction χ) s).re ≤ A₀ * M` from `s.re ≤ σ₀`
+(`1 < σ₀`) to arbitrary `s : ℂ` via the Dirichlet-series comparison
+`‖L′/L(s, χ)‖ ≤ -Re (ζ′/ζ(σ₀))` on `σ₀ ≤ s.re`: given `0 < M₀ ≤ M`, this yields
+`-(logDeriv (LFunction χ) s).re ≤ max A₀ (-(logDeriv riemannZeta σ₀).re / M₀) * M`. -/
 theorem neg_re_logDeriv_LFunction_le_max_mul_of_bound_on_left [NeZero N] {σ₀ A₀ M₀ M : ℝ}
     (hσ₀ : 1 < σ₀) (hM₀ : 0 < M₀) (hM : M₀ ≤ M)
     (hre : s.re ≤ σ₀ → -(logDeriv (LFunction χ) s).re ≤ A₀ * M) :

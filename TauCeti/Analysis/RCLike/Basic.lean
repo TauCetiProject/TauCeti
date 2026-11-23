@@ -27,6 +27,8 @@ public import Mathlib.Analysis.RCLike.Basic
   in closed balls.
 * `RCLike.sub_eq_ofReal_re_sub_of_im_eq` and `RCLike.norm_sub_eq_abs_re_sub_of_im_eq`:
   horizontal differences are real casts, with norm equal to `|re z - re w|`.
+* `RCLike.sum_mul_inv_le_sum_mul_re_sub_inv`: lower bound for weighted sums of
+  `re (((σ : K) - ρ)⁻¹)` over real points `ρ ∈ S` with `0 < σ - re ρ ≤ D`.
 * `RCLike.norm_I_le_one`: `‖I‖ ≤ 1`, uniformly over `ℝ` (where `I = 0`) and `ℂ` (where `‖I‖ = 1`).
 -/
 
@@ -115,5 +117,19 @@ theorem sub_eq_ofReal_re_sub_of_im_eq {z w : K} (h : im z = im w) :
 theorem norm_sub_eq_abs_re_sub_of_im_eq {z w : K} (h : im z = im w) :
     ‖z - w‖ = |re z - re w| := by
   rw [sub_eq_ofReal_re_sub_of_im_eq h, norm_ofReal]
+
+/-- For nonnegative weights `w` on real points `ρ ∈ S` (`im ρ = 0`) satisfying
+`0 < σ - re ρ ≤ D`, the weighted reciprocal sum `∑ ρ ∈ S, w ρ * re (((σ : K) - ρ)⁻¹)` is at
+least `(∑ ρ ∈ S, w ρ) * D⁻¹`. -/
+theorem sum_mul_inv_le_sum_mul_re_sub_inv {S : Finset K} {w : K → ℝ} {σ D : ℝ}
+    (hw : ∀ ρ ∈ S, 0 ≤ w ρ) (hρ : ∀ ρ ∈ S, im ρ = 0 ∧ 0 < σ - re ρ ∧ σ - re ρ ≤ D) :
+    (∑ ρ ∈ S, w ρ) * D⁻¹ ≤ ∑ ρ ∈ S, w ρ * re (((σ : K) - ρ)⁻¹) := by
+  rw [Finset.sum_mul]
+  refine Finset.sum_le_sum fun ρ hρS ↦ ?_
+  obtain ⟨him, hpos, hle⟩ := hρ ρ hρS
+  have hdiff : (σ : K) - ρ = ((σ - re ρ : ℝ) : K) := by
+    simpa using sub_eq_ofReal_re_sub_of_im_eq (z := (σ : K)) (w := ρ) (by simp [him])
+  rw [hdiff, ← ofReal_inv, ofReal_re]
+  exact mul_le_mul_of_nonneg_left (inv_anti₀ hpos hle) (hw ρ hρS)
 
 end RCLike
