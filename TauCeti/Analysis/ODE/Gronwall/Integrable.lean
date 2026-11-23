@@ -19,7 +19,9 @@ import TauCeti.MeasureTheory.Function.AbsolutelyContinuous.Comp
 Let `β ≥ 0` be integrable on `[a, b]` and let `u` satisfy `u t ≤ α + ∫ₐᵗ β u` on `[a, b]`, with
 `β u` integrable there. Then `u t ≤ α exp (∫ₐᵗ β)` on `[a, b]`
 (`TauCeti.le_mul_exp_integral_of_le_add_integral_mul`). The backward form, with `∫ₜᵇ` in place of
-`∫ₐᵗ`, is `TauCeti.le_mul_exp_integral_of_le_add_integral_mul_rev`. The kernel need not be
+`∫ₐᵗ`, is `TauCeti.le_mul_exp_integral_of_le_add_integral_mul_rev`, and
+`TauCeti.le_mul_exp_abs_integral_of_le_add_abs_integral_mul` combines the two on either side of a
+base point. The kernel need not be
 bounded, nor `u` continuous; the constant-kernel case for continuous `u` is
 `TauCeti.le_mul_exp_of_le_add_mul_integral`.
 
@@ -118,5 +120,39 @@ theorem le_mul_exp_integral_of_le_add_integral_mul_rev {u β : ℝ → ℝ} {a b
       simpa [intervalIntegral.integral_comp_neg (fun s ↦ β s * u s)] using h (-s) hs')
     (-t) ⟨neg_le_neg ht.2, neg_le_neg ht.1⟩
   simpa [intervalIntegral.integral_comp_neg β] using key
+
+
+/-- **Grönwall's inequality on either side of the base point.** Let `β` be integrable and almost
+everywhere nonnegative between `t₀` and `t`, and let `u` be nonnegative there with `β u`
+integrable. If `u s ≤ α + |∫ r in t₀..s, β r * u r|` for every `s` between `t₀` and `t`, then
+`u t ≤ α exp |∫ r in t₀..t, β r|`. This combines `le_mul_exp_integral_of_le_add_integral_mul` and
+its backward form `le_mul_exp_integral_of_le_add_integral_mul_rev`. -/
+theorem le_mul_exp_abs_integral_of_le_add_abs_integral_mul {u β : ℝ → ℝ} {t₀ t α : ℝ}
+    (hβ : IntegrableOn β (uIcc t₀ t)) (hβ₀ : ∀ᵐ s ∂volume.restrict (uIcc t₀ t), 0 ≤ β s)
+    (hβu : IntegrableOn (fun s ↦ β s * u s) (uIcc t₀ t)) (hu₀ : ∀ s ∈ uIcc t₀ t, 0 ≤ u s)
+    (h : ∀ s ∈ uIcc t₀ t, u s ≤ α + |∫ r in t₀..s, β r * u r|) :
+    u t ≤ α * exp |∫ r in t₀..t, β r| := by
+  rcases le_total t₀ t with hle | hle
+  · rw [uIcc_of_le hle] at hβ hβ₀ hβu hu₀ h
+    rw [abs_of_nonneg (intervalIntegral.integral_nonneg_of_ae_restrict hle hβ₀)]
+    refine le_mul_exp_integral_of_le_add_integral_mul hβ hβ₀ hβu (fun s hs ↦ ?_) t ⟨hle, le_rfl⟩
+    have hβu₀ : ∀ᵐ r ∂volume.restrict (Icc t₀ s), 0 ≤ β r * u r := by
+      filter_upwards [ae_restrict_of_ae_restrict_of_subset (Icc_subset_Icc_right hs.2) hβ₀,
+        ae_restrict_mem measurableSet_Icc] with r hr hrI
+      exact mul_nonneg hr (hu₀ r ⟨hrI.1, hrI.2.trans hs.2⟩)
+    rw [← abs_of_nonneg (intervalIntegral.integral_nonneg_of_ae_restrict hs.1 hβu₀)]
+    exact h s hs
+  · rw [uIcc_of_ge hle] at hβ hβ₀ hβu hu₀ h
+    rw [intervalIntegral.integral_symm, abs_neg,
+      abs_of_nonneg (intervalIntegral.integral_nonneg_of_ae_restrict hle hβ₀)]
+    refine le_mul_exp_integral_of_le_add_integral_mul_rev hβ hβ₀ hβu (fun s hs ↦ ?_) t
+      ⟨le_rfl, hle⟩
+    have hβu₀ : ∀ᵐ r ∂volume.restrict (Icc s t₀), 0 ≤ β r * u r := by
+      filter_upwards [ae_restrict_of_ae_restrict_of_subset (Icc_subset_Icc_left hs.1) hβ₀,
+        ae_restrict_mem measurableSet_Icc] with r hr hrI
+      exact mul_nonneg hr (hu₀ r ⟨hs.1.trans hrI.1, hrI.2⟩)
+    rw [← abs_of_nonneg (intervalIntegral.integral_nonneg_of_ae_restrict hs.2 hβu₀), ← abs_neg,
+      ← intervalIntegral.integral_symm]
+    exact h s hs
 
 end TauCeti
