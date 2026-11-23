@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Topology.VectorBundle.FiniteRank.Atlas.CoordinateHom
-public import TauCeti.Topology.VectorBundle.FiniteRank.Bundle.Equivalence
+public import TauCeti.Topology.VectorBundle.FiniteRank.Bundle.ToAtlas
 
 /-!
 # Fibrewise bijectivity isomorphism criterion for variable-rank vector bundles

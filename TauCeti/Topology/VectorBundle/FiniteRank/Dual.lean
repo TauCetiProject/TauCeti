@@ -8,7 +8,6 @@ module
 public import TauCeti.Topology.VectorBundle.FiniteRank.Biproduct
 public import TauCeti.Topology.VectorBundle.FiniteRank.Monoidal
 public import TauCeti.Analysis.Normed.Operator.PiTranspose
-public import Mathlib.CategoryTheory.Preadditive.Opposite
 import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.PiProd
 
 /-!

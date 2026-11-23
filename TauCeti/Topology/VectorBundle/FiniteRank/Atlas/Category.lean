@@ -9,12 +9,13 @@ public import TauCeti.Topology.VectorBundle.FiniteRank.Atlas.Basic
 public import TauCeti.Topology.VectorBundle.FiniteRank.Glued.Category
 
 /-!
-# Category structure on variable-rank bundle atlases
+# Category and preadditive structure on variable-rank bundle atlases
 
-`TauCeti.FiniteRankAtlas 𝕜 X` inherits its `Category` instance from
-`TauCeti.VariableRankBundle.category` in `TauCeti.Topology.VectorBundle.FiniteRank.Glued.Category`,
-which provides morphisms `VariableRankBundle.Hom`, `totalSpaceFunctor`, `fiberFunctor`, `isoMk`,
-and `Iso.variableRankBundle_rank_eq`.
+`TauCeti.FiniteRankAtlas 𝕜 X` inherits its `Category` and `Preadditive` instances from
+`TauCeti.VariableRankBundle.category` and `TauCeti.VariableRankBundle.preadditive` in
+`TauCeti.Topology.VectorBundle.FiniteRank.Glued.Category`, which provides morphisms
+`VariableRankBundle.Hom`, `totalSpaceFunctor`, `fiberFunctor`, `isoMk`, and
+`Iso.variableRankBundle_rank_eq`.
 -/
 
 public section
@@ -29,5 +30,8 @@ variable {𝕜 : Type v} [NontriviallyNormedField 𝕜] {X : Type u} [Topologica
 
 /-- Small variable-rank coordinate atlases form a category of continuous fibrewise-linear maps. -/
 instance : Category (FiniteRankAtlas 𝕜 X) := VariableRankBundle.category
+
+/-- Composition of bundle-atlas morphisms is bilinear on the pointwise abelian hom groups. -/
+instance : Preadditive (FiniteRankAtlas 𝕜 X) := VariableRankBundle.preadditive
 
 end TauCeti.FiniteRankAtlas

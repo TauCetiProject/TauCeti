@@ -17,7 +17,7 @@ of a locally constant natural-number rank, using only the base and scalar univer
 bounded-rank or finite-cover hypotheses. `FiniteRankAtlas.stratumCore` packages each clopen rank
 stratum's coordinate core as a `TauCeti.FiniteRankBundleCore`. Instantiating
 `TauCeti.VariableRankBundle` equips `TotalSpace Unit A.Fiber` with the glued stratum topology
-(`Atlas/Category.lean` and `Atlas/Preadditive.lean` expose the induced preadditive category);
+(`Atlas/Category.lean` exposes the induced preadditive category);
 `FiniteRankAtlas.chartBaseSet` exposes the open domain in `X` of the preferred stratum chart at
 each base point, and `ofBundles` and `reconstructionHomeomorph` encode actual stratum bundles via
 `TauCeti.pointIndexedCoreHomeomorph`.

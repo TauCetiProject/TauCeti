@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Topology.VectorBundle.FiniteRank.Atlas.Preadditive
+public import TauCeti.Topology.VectorBundle.FiniteRank.Atlas.Category
 public import Mathlib.CategoryTheory.Limits.Shapes.ZeroObjects
 public import Mathlib.Topology.LocallyConstant.Algebra
 
